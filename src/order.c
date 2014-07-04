@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <signal.h>
 #include <math.h>
-#include <strings.h>
+#include <string.h>
 
 #include "GB_copyright.h"
 #define EXTERN extern
@@ -46,7 +46,7 @@ void order(int Playernum, int Governor, int APcount)
   if(argn==1) {  /* display all ship orders */
     DispOrdersHeader(Playernum, Governor);
     nextshipno = start_shiplist(Playernum, Governor, "test");
-    while(shipno = do_shiplist(&ship, &nextshipno))
+    while((shipno = do_shiplist(&ship, &nextshipno)))
 	if(ship->owner==Playernum && authorized(Governor, ship)) {
 	    DispOrders(Playernum, Governor, ship);
 	    free(ship);
@@ -55,7 +55,7 @@ void order(int Playernum, int Governor, int APcount)
   } else if (argn>=2) {
       DispOrdersHeader(Playernum, Governor);
       nextshipno = start_shiplist(Playernum, Governor, args[1]);
-      while(shipno = do_shiplist(&ship, &nextshipno))
+      while((shipno = do_shiplist(&ship, &nextshipno)))
 	  if(in_list(Playernum, args[1], ship, &nextshipno) &&
 	     authorized(Governor, ship)) {
 	      if(argn > 2)

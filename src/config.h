@@ -22,7 +22,7 @@
 #define HELP_FILE	"help.txt"
 #define LEAVE_MESSAGE 	"\n*** Thank you for playing Galactic Bloodshed ***\n"
 
-/*define EXTERNAL_TRIGGER /* if you wish to allow the below passwords to
+#undef EXTERNAL_TRIGGER /* if you wish to allow the below passwords to
                              trigger updates and movement segments */
 #ifdef EXTERNAL_TRIGGER
 #define UPDATE_PASSWORD 	"put_your_update_password_here"

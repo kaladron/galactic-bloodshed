@@ -214,19 +214,6 @@ extern void SortShips P_((void));
 extern int clearlog P_((int));
 extern int check_logsize P_((int));
 
-/* malloc.c */
-
-extern void malloc_initalize P_((char *, void (*warnfun )()));
-extern int malloc_usable_size P_((char *));
-extern char *malloc P_((unsigned));
-extern int free P_((char *));
-extern char *realloc P_((char *, unsigned));
-extern char *calloc P_((unsigned, unsigned ));
-extern int cfree P_((char *));
-extern char *memalign P_((unsigned, unsigned ));
-extern char *valloc P_((int ));
-extern int get_lim_data P_((void));
-
 /* max.c */
 
 extern int maxsupport P_((register racetype *, register sectortype *, register double, register int));

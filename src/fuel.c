@@ -8,6 +8,7 @@
  */
 
 #include <math.h>
+#include <string.h>
 #include <time.h>
 
 #include "GB_copyright.h"

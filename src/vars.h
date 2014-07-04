@@ -257,9 +257,9 @@ EXTERN char args[MAXARGS][COMMANDSIZE];
 EXTERN int argn;
 
 /* bit routines stolen from UNIX <sys/param.h> */
-#define setbit(a, i)	((a)[(i)/32] |= ((i)<32 ? 1<<(i) : 1<<(i)-32))
-#define clrbit(a, i)	((a)[(i)/32] &= ~((i)<32 ? 1<<(i) : 1<<(i)-32))
-#define isset(a, i)	((a)[(i)/32] & ((i)<32 ? 1<<(i) : 1<<(i)-32))
+#define setbit(a, i)	((a)[(i)/32] |= ((i)<32 ? 1<<(i) : 1<<((i)-32)))
+#define clrbit(a, i)	((a)[(i)/32] &= ~((i)<32 ? 1<<(i) : 1<<((i)-32)))
+#define isset(a, i)	((a)[(i)/32] & ((i)<32 ? 1<<(i) : 1<<((i)-32)))
 #define isclr(a, i)	(!isset((a), (i)))
 
 #ifdef DEBUG		/* for debugging option */

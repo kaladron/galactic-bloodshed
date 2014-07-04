@@ -224,7 +224,7 @@ void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
 	  Stars[Starnum]->pnames[Planetnum]);
   notify(Playernum, Governor, buf);
   sprintf(buf, "%s %d",
-      (mode ? "Highest" : "Lowest"), CARE, ThisPlayer);
+      (mode ? "Highest" : "Lowest"), CARE);
   switch (sector_type) 
   {
      case -1     : sprintf (buf, "%s of all", buf); break;

@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
 
 char *Ship(shiptype *s);
 void grant(int, int, int);
@@ -88,7 +89,7 @@ void grant(int Playernum, int Governor, int APcount)
 	putstar(Stars[snum], snum);
     } else if(match(args[2], "ship")) {
 	nextshipno = start_shiplist(Playernum, Governor, args[3]);
-	while(shipno = do_shiplist(&ship, &nextshipno))
+	while((shipno = do_shiplist(&ship, &nextshipno)))
 	    if(in_list(Playernum, args[3], ship, &nextshipno) &&
 	       authorized(Governor, ship)) {
 		ship->governor = gov;
@@ -151,13 +152,13 @@ void governors(int Playernum, int Governor, int APcount)
     if(Governor || argn<3) {	/* the only thing governors can do with this */
 	for(i=0; i<=MAXGOVERNORS; i++) {
 	    if(Governor)
-		sprintf(buf, "%d %-15.15s %8s %10d %s",
+		sprintf(buf, "%d %-15.15s %8s %10ld %s",
 			i, Race->governor[i].name,
 			Race->governor[i].active ? "ACTIVE" : "INACTIVE",
 			Race->governor[i].money,
 			ctime(&Race->governor[i].login));
 	    else
-		sprintf(buf, "%d %-15.15s %-10.10s %8s %10d %s",
+		sprintf(buf, "%d %-15.15s %-10.10s %8s %10ld %s",
 			i, Race->governor[i].name,
 			Race->governor[i].password,
 			Race->governor[i].active ? "ACTIVE" : "INACTIVE",
@@ -269,7 +270,7 @@ void do_revoke(racetype *Race, int gov, int j)
  
     /*  And money too....  */
 
-    sprintf(revoke_buf, "Transferring %d money...\n", Race->governor[gov].money);
+    sprintf(revoke_buf, "Transferring %ld money...\n", Race->governor[gov].money);
     notify(Race->Playernum, 0, revoke_buf);
     Race->governor[j].money = Race->governor[j].money + Race->governor[gov].money;
     Race->governor[gov].money = 0;
@@ -486,7 +487,7 @@ int enufAP(int Playernum, int Governor, unsigned short AP, int x)
 {
   reg int blah;
 
-  if (blah = (AP < x) ) {
+  if ((blah = (AP < x)) ) {
     sprintf(buf,"You don't have %d action points there.\n", x);
     notify(Playernum, Governor, buf);
   }
@@ -626,6 +627,8 @@ void list(int Playernum, int Governor)
   case LEVEL_SHIP:
     sh = Dir[Playernum-1][Governor].shipno;
     break;
+  default:
+    sh = 0; // TODO(jeffbailey): Shouldn't happen.
   }
 
   while (sh) {
@@ -669,7 +672,7 @@ char *DEBUGmalloc(int size, char *fname, int lineno)
   int i;
 
   if ( (p = malloc(size)) == 0) {
-    /*    DEBUGcheck(0); /* send to noone */
+    //    DEBUGcheck(0); /* send to noone */
     sprintf(error_buf, "Out of memory on malloc call from %s line %d\n", 
         fname, lineno);
     /*    panic(error_buf); */
@@ -708,7 +711,7 @@ char *DEBUGrealloc(char *p, int newsize, char *fname, int lineno)
   char *q;
 
   if ( (q = realloc(p, newsize)) == 0) {
-    /*    DEBUGcheck(0); /* send to noone */
+    //    DEBUGcheck(0); /* send to noone */
     sprintf(error_buf, "Out of memory on realloc call from %s line %d\n", 
         fname, lineno);
     /*    panic(error_buf); */

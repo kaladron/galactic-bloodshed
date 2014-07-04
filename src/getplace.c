@@ -8,7 +8,9 @@
  *  testship(ship) -- tests various things for the ship.
  */
 
+#include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "GB_copyright.h"
 #define EXTERN extern

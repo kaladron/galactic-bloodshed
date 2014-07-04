@@ -64,22 +64,22 @@ racetype *Race;
 Race = races[Playernum-1];
 
 sprintf(buf, 
-	"Income last update was: %d\t\tCosts last update was: %d\n",
+	"Income last update was: %ld\t\tCosts last update was: %ld\n",
 	Race->governor[Governor].income+Race->governor[Governor].profit_market,
 	Race->governor[Governor].maintain+Race->governor[Governor].cost_tech+
 	Race->governor[Governor].cost_market);
 notify(Playernum, Governor, buf);
-sprintf(buf, "    Market: %5d\t\t\t     Market: %5d\n",
+sprintf(buf, "    Market: %5ld\t\t\t     Market: %5ld\n",
 	Race->governor[Governor].profit_market,
 	Race->governor[Governor].cost_market);
 notify(Playernum, Governor, buf);
-sprintf(buf, "    Taxes:  %5d\t\t\t       Tech: %5d\n",
+sprintf(buf, "    Taxes:  %5ld\t\t\t       Tech: %5ld\n",
 	Race->governor[Governor].income, Race->governor[Governor].cost_tech);
 notify(Playernum, Governor, buf);
 
-sprintf(buf, "\t\t\t\t\t      Maint: %5d\n", Race->governor[Governor].maintain);
+sprintf(buf, "\t\t\t\t\t      Maint: %5ld\n", Race->governor[Governor].maintain);
 notify(Playernum, Governor, buf);
-sprintf(buf, "You have: %d\n", Race->governor[Governor].money);
+sprintf(buf, "You have: %ld\n", Race->governor[Governor].money);
 notify(Playernum, Governor, buf);
 }
 
@@ -112,7 +112,7 @@ if(argn==1) {
     sprintf(buf,"\t\tRanges:     guns:   %5.0f\n",
 	    gun_range (Race, (shiptype *)NULL, 1));
     notify(Playernum, Governor,buf);
-    sprintf(buf,"Morale: %5d\t\t\t\t\t    space:  %5.0f\n",
+    sprintf(buf,"Morale: %5ld\t\t\t\t\t    space:  %5.0f\n",
 	    Race->morale, tele_range(OTYPE_STELE,Race->tech));
     notify(Playernum, Governor,buf);
     sprintf(buf,"Updates active: %d\t\t\t\t    ground: %5.0f\n\n",

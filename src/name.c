@@ -11,9 +11,10 @@
 */
 #include <ctype.h>
 #include <signal.h>
-#include <strings.h>
+#include <string.h>
 #include <time.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "GB_copyright.h"
 #define EXTERN extern
@@ -203,7 +204,8 @@ void bless(int Playernum, int Governor, int APcount)
     } else if (match(args[2],"planetpopulation")) {
 	planet->info[who-1].popn = atoi(args[3]);
 	planet->popn++;
-	sprintf(buf, "Deity set your population variable to %d at /%s/%s.\n",
+	sprintf(buf, "Deity set your population variable to %ld at /%s/%s.\n",
+		planet->info[who-1].popn,
 		Stars[Dir[Playernum-1][Governor].snum]->name,
 		Stars[Dir[Playernum-1][Governor].snum]->pnames[Dir[Playernum-1][Governor].pnum]);
     } else if (match(args[2],"inhabited")) {
@@ -353,10 +355,10 @@ void insurgency(int Playernum, int Governor, int APcount)
 	  Stars[Dir[Playernum-1][Governor].snum]->name,
 	  eligible, Playernum, them, who);
   strcat(long_buf, buf);
-  sprintf(buf, "\t\t %d morale [%d] vs %d morale [%d]\n",
+  sprintf(buf, "\t\t %ld morale [%d] vs %ld morale [%d]\n",
 	  Race->morale, Playernum, alien->morale, who);
   strcat(long_buf, buf);
-  sprintf(buf, "\t\t %d money against %d population at tax rate %d%%\n",
+  sprintf(buf, "\t\t %d money against %ld population at tax rate %d%%\n",
 	  amount, p->info[who-1].popn, p->info[who-1].tax);
   strcat(long_buf, buf);
   sprintf(buf, "Success chance is %d%%\n", chance);
@@ -590,10 +592,13 @@ void page(int Playernum, int Governor, int APcount0)
   if (!enufAP(Playernum,Governor,Stars[Dir[Playernum-1][Governor].snum]->AP[Playernum-1], APcount))
       return;
 
+  gov = 0; // TODO(jeffbailey): Init to zero.
   to_block = 0;
   if(match(args[1], "block")) {
     to_block = 1;
     notify(Playernum, Governor, "Paging alliance block.\n");
+    who = 0; // TODO(jeffbailey): Init to zero to be sure it's initialized.
+    gov = 0; // TODO(jeffbailey): Init to zero to be sure it's initialized.
   } else {
     if(!(who=GetPlayer(args[1]))) {
       sprintf(buf,"No such player.\n");
@@ -649,6 +654,9 @@ void send_message(int Playernum, int Governor, int APcount0, int postit)
   racetype *Race, *alien;
 
   APcount = APcount0;
+
+  star = 0; // TODO(jeffbailey): Init to zero.
+  who = 0; // TODO(jeffbailey): Init to zero.
 
   to_star = to_block = 0;
 
@@ -1004,6 +1012,8 @@ void announce(int Playernum, int Governor, char *message, int mode)
       symbol = '!'; break;
     case THINK:
       symbol = '='; break;
+    default:
+      symbol = 0; // TODO(jeffbailey): Shouldn't happen.
   }
   sprintf(msg, "%s \"%s\" [%d,%d] %c %s\n", Race->name,
 	  Race->governor[Governor].name, Playernum, Governor,

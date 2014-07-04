@@ -42,6 +42,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <curses.h>
 #include <strings.h>
@@ -260,7 +264,7 @@ char Dessymbols[] = {
     CHAR_SEA, CHAR_LAND, CHAR_MOUNT, CHAR_GAS, CHAR_ICE, CHAR_FOREST,
     CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   int i;
   struct stat	stbuf;
@@ -365,7 +369,7 @@ void main(int argc, char **argv)
   close_sockets ();
   close_data_files();
   printf("Going down.\n");
-  exit(1);
+  return(1);
 }
 
 void set_signals(void)

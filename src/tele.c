@@ -32,9 +32,11 @@
 #include <strings.h>
 #include <errno.h>
 #include <signal.h>
+#include <string.h>
 #include <sys/file.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include <time.h>
 
 
 static long            tm;

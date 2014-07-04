@@ -13,6 +13,7 @@
 #include "power.h"
 #include "buffers.h"
 #include <signal.h>
+#include <string.h>
 
 void enslave(int, int, int);
 #include "files_shl.p"

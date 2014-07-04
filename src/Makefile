@@ -8,7 +8,9 @@
 CC = cc
 #CC = gcc
 
-CFLAGS = -g -O2 -W -Wall -Werror
+CFLAGS = -g -O2 -W -Wall -Werror 
+CFLAGS += -Wno-return-type \
+          -Wno-unused-parameter -Wno-unused-variable -Wno-sign-compare -Wno-unused-but-set-variable
 #CFLAGS = -g -YBSD
 #CFLAGS = -ansi -g3
 

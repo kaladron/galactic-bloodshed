@@ -69,7 +69,7 @@
 #define PLACENAMESIZE (NAMESIZE + NAMESIZE + 13)
 #define NUMSTARS 256
 #define MAXPLANETS 10
-#undef MAXMOONS 3*/
+#undef MAXMOONS /*3*/
 
 
 #define MAX_X 45	/* top range for planet */
@@ -90,7 +90,7 @@
 
 #define AUTO_TELEG_SIZE		2000
 #define UNTRANS_MSG		"[ ? ]"
-#undef TELEG_TRANS_APCOST	1*/
+#undef TELEG_TRANS_APCOST	/*1*/
 #define TELEG_TRANS_RPCOST	5
 #define TELEG_TRANS_AMT		0.45
 #define TELEG_LETTERS		7
@@ -165,7 +165,7 @@
 #define TECH_SCALE		2.0 /* investment scale */
 
 #define MOB_COST		0.00   /* mobiliz.c, doplanet.c cost/mob points*/
-#undef RESOURCE_DEPLETION 	0.015 */
+#undef RESOURCE_DEPLETION 	/*0.015 */
 #define RESOURCE_DEPLETION      0.0
 #define FACTOR_MOBPROD 		0.06	/* mobilization production/person */
 #define MESO_POP_SCALE		20000.0
@@ -199,7 +199,7 @@
 /* description: you could when you just entered planet scope assaault/dock
    with a ship in close orbit, and then immediately land. */
 
-#undef DIST_TO_BURN 50	 /* distance from sun needed to destroy ship */
+#undef DIST_TO_BURN /*50*/	 /* distance from sun needed to destroy ship */
 
 
 #define FACTOR_DAMAGE 		2.0
@@ -219,7 +219,6 @@
 /* assorted macros */
  /* sign,abs val of number */
 #define sgn(x) ( ((x)>=0) ? 1 : -1)
-#define abs(x) ( ( (x)<0) ? -(x) : (x) )
 #define MIN(x,y) ( ((x)>(y)) ? (y) : (x) )
 #define MAX(x,y) ( ((x)<(y)) ? (y) : (x) )
  /* positive modulus */
@@ -280,8 +279,6 @@
 #define Bzero(x)  bzero( (char *)&(x), sizeof(x) )
 #define Malloc(x) (x *)malloc( sizeof(x) )
 
-
-#define _STDLIB_H	/* for compiling on NeXt machines */
 
 #define RESOURCE 0  /* for market */
 #define DESTRUCT 1

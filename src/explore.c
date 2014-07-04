@@ -52,7 +52,7 @@ void colonies_at_star(int Playernum, int Governor, racetype *Race, int star, int
 	    case -1:   /* combined report */
 	    case 0:    /* colonies */
 	      sprintf(buf,
-		      " %c %4.4s/%-4.4s%c%4d%3d%5d%8d%3d%6d%5d%6d %3d/%-3d%3.0f/%-3d%3d/%-3d",
+		      " %c %4.4s/%-4.4s%c%4d%3d%5d%8ld%3d%6d%5d%6d %3d/%-3d%3.0f/%-3d%3d/%-3d",
 		      Psymbol[pl->type],
 		      Stars[star]->name,
 		      Stars[star]->pnames[i],
@@ -84,7 +84,7 @@ void colonies_at_star(int Playernum, int Governor, racetype *Race, int star, int
 	      /* Fall through if (mode == -1) */
 	    case 1:   /* production */
 	      sprintf(buf,
-		      " %c %4.4s/%-4.4s%c%3d%8.4f%8d%3d%6d%5d%6d %6d   %3d%8.2f\n",
+		      " %c %4.4s/%-4.4s%c%3d%8.4f%8ld%3d%6d%5d%6d %6ld   %3d%8.2f\n",
 		      Psymbol[pl->type],
 		      Stars[star]->name, Stars[star]->pnames[i],
 		      (pl->info[Playernum-1].autorep ? '*' : ' '),
@@ -292,7 +292,7 @@ void exploration(int Playernum, int Governor, int APcount)
 	  if (isset(Stars[star]->explored,Playernum))
 	      for (i=0; i<Stars[star]->numplanets; i++) {
 		  getplanet(&pl,star,i);
-		  if (i == 0)
+		  if (i == 0) {
 		      if (Race->tech >= TECH_SEE_STABILITY) {
 			  sprintf(buf,"\n%13s (%2d)[%2d]\n",Stars[star]->name,Stars[star]->stability,
 				  Stars[star]->AP[Playernum-1]);
@@ -302,6 +302,7 @@ void exploration(int Playernum, int Governor, int APcount)
 				  Stars[star]->AP[Playernum-1]);
 			  notify(Playernum, Governor, buf);
 		      }
+                  }
 
 		  sprintf(buf,"\t\t      ");
 		  notify(Playernum, Governor, buf);
@@ -406,7 +407,7 @@ void tech_report_star(int Playernum, int Governor, startype *star, int snum,
 	      && pl->info[Playernum-1].numsectsowned)  {
 	      sprintf(str,"%s/%s%s", star->name, star->pnames[i],
 		      (pl->info[Playernum-1].autorep ? "*" : ""));
-	      sprintf(buf, "%16.16s %10d%10d%8.3lf%8.3lf\n", str,
+	      sprintf(buf, "%16.16s %10ld%10d%8.3lf%8.3lf\n", str,
 		      pl->info[Playernum-1].popn,
 		      pl->info[Playernum-1].tech_invest,
 		      gain = tech_prod((int)pl->info[Playernum-1].tech_invest,

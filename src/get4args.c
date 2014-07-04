@@ -6,6 +6,7 @@
  */
 
 #include "GB_copyright.h"
+#include <stdio.h>
 
 void get4args(char *, int *, int *, int *, int *);
 

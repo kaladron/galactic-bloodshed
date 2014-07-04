@@ -7,6 +7,7 @@ int Sectormappos;
  */
 
 #include <math.h>
+#include <string.h>
 /*#include <malloc.h>*/
 
 #include "GB_copyright.h"
@@ -98,8 +99,10 @@ int oldplanetpopn, oldplanetmaxpopn;
 unsigned char allmod=0,allexp=0;
 
 Sectormappos = planet->sectormappos;
-/*if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
+#if 0
+if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
     return 0;  /* no one's here now */
+#endif
 
 getsmap(Smap,planet);
 PermuteSects(planet);

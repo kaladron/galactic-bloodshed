@@ -6,7 +6,6 @@
 # define P_(s) ()
 #endif
 
-extern void main P_((int, char **));
 extern void set_signals P_((void));
 extern void notify_race P_((int, char *));
 extern int notify P_((int, int, char *));

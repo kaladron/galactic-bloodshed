@@ -25,6 +25,7 @@
 #include "buffers.h"
 #include <curses.h>
 #include <stdio.h>
+#include <string.h>
 extern char Shipltrs[];
 double Lastx, Lasty, Zoom;
 int SCALE = 100;

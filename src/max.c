@@ -16,6 +16,7 @@
 #include "races.h"
 #include "ships.h"
 #include <math.h>
+#include <string.h>
 
 int maxsupport(racetype *, sectortype *, double, int);
 double compatibility(planettype *, racetype *);

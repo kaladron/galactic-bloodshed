@@ -9,42 +9,42 @@ char Shipltrs[]={ 'p','s','X','D','B','I','C','d','f','e','H','S','O','c',
 	'=','\\','-','a','g','h','v','V','@','l','w',':','G','F',
 	'T',';','Z','[','^','P', 'q', 'K', 'Y', 'W', 'J', '&', 'R', 'b', 'L'};
 
-/* table for [ABIL_BUILD]. (bd). sum the numbers to get the correct value.
-/*      1 To allow it to be built on a planet.
-/*      2 For building by warships (d, B, C,..). Currently only for Space Probe.
-/*	  Mines used to be this way too. Built in hanger of building ship.
-/*      4 For building by Shuttles, Cargo ship, Habitats, etc.
-/*        Also forces construction on the outside of the ship. Not in hanger.
-/*      8 For building in Factories. Built on planet, or in hanger of carrying
-/*        ship (Habitat).
-/*     16 For building in Habitats. Used by Pods for instance. Also used by
-/*        Factories. Built inside Habitat. */
+// table for [ABIL_BUILD]. (bd). sum the numbers to get the correct value.
+//      1 To allow it to be built on a planet.
+//      2 For building by warships (d, B, C,..). Currently only for Space Probe.
+//	  Mines used to be this way too. Built in hanger of building ship.
+//      4 For building by Shuttles, Cargo ship, Habitats, etc.
+//        Also forces construction on the outside of the ship. Not in hanger.
+//      8 For building in Factories. Built on planet, or in hanger of carrying
+//        ship (Habitat).
+//     16 For building in Habitats. Used by Pods for instance. Also used by
+//        Factories. Built inside Habitat. */
 
-/* table for [ABIL_CONSTRUCT]. (cn). sum the numbers to get the correct value.
-/*      1 To allow it to build like a planet.
-/*      2 For building like warships (d, B, C,..).
-/*      4 For building like Shuttles, Cargo ship, Habitats, etc.
-/*      8 For building like Factories.
-/*     16 For building like Habitats. */
+// table for [ABIL_CONSTRUCT]. (cn). sum the numbers to get the correct value.
+//      1 To allow it to build like a planet.
+//      2 For building like warships (d, B, C,..).
+//      4 For building like Shuttles, Cargo ship, Habitats, etc.
+//      8 For building like Factories.
+//     16 For building like Habitats. */
 
-/* Changes here to use the new build routine using above tables.  Maarten
-/* Also changed:
-/*   - Pods, Factories, Weapons Plants, Terraforming Devices,
-/*     Orbital Mind Control Lasers and Government Centers can 
-/*     be built inside Habitats.
-/*   - Probes, and other type 2 ships (currently none), are now built inside
-/*     ships, requiring hanger space. This gives more incentive to keep some
-/*     hanger space in the big warships.
-/*   - The big space stations (Habitats, Stations, and Orbital Assault
-/*     Platforms) can now build Probes as well.
+// Changes here to use the new build routine using above tables.  Maarten
+// Also changed:
+//   - Pods, Factories, Weapons Plants, Terraforming Devices,
+//     Orbital Mind Control Lasers and Government Centers can 
+//     be built inside Habitats.
+//   - Probes, and other type 2 ships (currently none), are now built inside
+//     ships, requiring hanger space. This gives more incentive to keep some
+//     hanger space in the big warships.
+//   - The big space stations (Habitats, Stations, and Orbital Assault
+//     Platforms) can now build Probes as well.
 
- /*   - Habitats and Stations had their ability to use a crystal mount removed.
-/*     Since they cannot use it in any way, it was rather useless. It only
-/*     confused the required resources to build the ship, though this has been
-/*     taken care of too.
-/*   - Orbital Mind Control Lasers having 10 guns of caliber 0 seemed strange.
-/*     Now 0 guns. Also removed the 100 destruct carrying capacity. Added 25
-/*     cargo space so it can repair itself. */
+//   - Habitats and Stations had their ability to use a crystal mount removed.
+//     Since they cannot use it in any way, it was rather useless. It only
+//     confused the required resources to build the ship, though this has been
+//     taken care of too.
+//   - Orbital Mind Control Lasers having 10 guns of caliber 0 seemed strange.
+//     Now 0 guns. Also removed the 100 destruct carrying capacity. Added 25
+//     cargo space so it can repair itself. */
 
 
 long Shipdata[NUMSTYPES][NUMABILS] = {

@@ -16,6 +16,7 @@
 #include "power.h"
 #include "buffers.h"
 #include <curses.h>
+#include <string.h>
 
 racetype *Race;
 extern char *Planet_types[];
@@ -141,7 +142,7 @@ void show_map(int Playernum, int Governor, int snum, int pnum, planettype *p,
 	   strcat(temp, "\?\?\?");
        strcat(temp, "\n");
        notify(Playernum, Governor, temp);
-       sprintf(temp, "              Guns : %3d             Mob Points : %d\n",
+       sprintf(temp, "              Guns : %3d             Mob Points : %ld\n",
 	       p->info[Playernum-1].guns,
 	       p->info[Playernum-1].mob_points);
        notify(Playernum, Governor, temp);
@@ -159,17 +160,17 @@ void show_map(int Playernum, int Governor, int snum, int pnum, planettype *p,
 	       p->info[Playernum-1].resource,
 	       p->info[Playernum-1].fuel);
        notify(Playernum, Governor, temp);
-       sprintf(temp, "      Destruct cap : %-9u%18s: %-5u (%u/%u)\n",
+       sprintf(temp, "      Destruct cap : %-9u%18s: %-5lu (%lu/%u)\n",
 	       p->info[Playernum-1].destruct,
 	       Race->Metamorph ? "Tons of biomass" : "Total Population", 
 	       p->info[Playernum-1].popn, p->popn, 
 	       round_rand(.01*(100.-p->conditions[TOXIC])*p->maxpopn) );
        notify(Playernum, Governor, temp);
-       sprintf(temp, "          Crystals : %-9u%18s: %-5u (%u)\n",
+       sprintf(temp, "          Crystals : %-9u%18s: %-5lu (%lu)\n",
 	       p->info[Playernum-1].crystals,
 	       "Ground forces", p->info[Playernum-1].troops, p->troops);
        notify(Playernum, Governor, temp);
-       sprintf(temp, "%d Total Resource Deposits     Tax rate %u%%  New %u%%\n",
+       sprintf(temp, "%ld Total Resource Deposits     Tax rate %u%%  New %u%%\n",
 	       p->total_resources, p->info[Playernum-1].tax,
 	       p->info[Playernum-1].newtax);
        notify(Playernum, Governor, temp);
@@ -190,16 +191,17 @@ reg sectortype *s;
 
 s = &Sector(*p,x,y);
 
-if(s->troops && !r->governor[Governor].toggle.geography)
+if(s->troops && !r->governor[Governor].toggle.geography) {
     if(s->owner==Playernum) return CHAR_MY_TROOPS;
     else if(isset(r->allied, s->owner)) return CHAR_ALLIED_TROOPS;
     else if(isset(r->atwar, s->owner)) return CHAR_ATWAR_TROOPS;
     else return CHAR_NEUTRAL_TROOPS;
+}
 
 if(s->owner && !r->governor[Governor].toggle.geography &&
    !r->governor[Governor].toggle.color) {
     if(!r->governor[Governor].toggle.inverse ||
-       s->owner != r->governor[Governor].toggle.highlight)
+       s->owner != r->governor[Governor].toggle.highlight) {
 	if(!r->governor[Governor].toggle.double_digits)
 	    return s->owner %10 + '0'; 
 	else {
@@ -208,6 +210,7 @@ if(s->owner && !r->governor[Governor].toggle.geography &&
 	    else
 		return s->owner / 10 + '0';
 	}
+    }
 }
 
 

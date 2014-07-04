@@ -16,7 +16,7 @@
 #include "buffers.h"
 #include <signal.h>
 #include <math.h>
-#include <strings.h>
+#include <string.h>
 
 void dock(int, int, int, int);
 #include "GB_server.p"
@@ -56,7 +56,7 @@ void dock(int Playernum, int Governor, int APcount, int Assault)
   }
 
   nextshipno = start_shiplist(Playernum, Governor, args[1]);
-  while(shipno = do_shiplist(&s, &nextshipno))
+  while((shipno = do_shiplist(&s, &nextshipno)))
       if(in_list(Playernum, args[1], s, &nextshipno) &&
 	 (!Governor || s->governor==Governor)) {
 	  if(Assault && s->type==STYPE_POD) {

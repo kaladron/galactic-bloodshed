@@ -5,12 +5,21 @@
 #UV = VER_4_3
 #UV = VER_4_2
 # (the -pipe -g are for development.)
-CC = cc
-#CC = gcc
+#CC = clang
+CC = gcc
 
-CFLAGS = -g -O2 -W -Wall -Werror 
-CFLAGS += -Wno-return-type \
-          -Wno-unused-parameter -Wno-unused-variable -Wno-sign-compare -Wno-unused-but-set-variable
+CFLAGS = -g -O2 -W -Wall -Werror \
+	  -Wno-return-type \
+          -Wno-unused-parameter \
+	  -Wno-unused-variable \
+	  -Wno-sign-compare \
+	  -Wno-array-bounds \
+	  -Wno-char-subscripts
+
+CFLAGS += \
+	  -Wno-maybe-uninitialized \
+	  -Wno-unused-but-set-variable 
+
 #CFLAGS = -g -YBSD
 #CFLAGS = -ansi -g3
 
@@ -250,7 +259,7 @@ enrol.o : vars.h ships.h shipdata.h races.h
 
 # new-fangled enrollment program
 racegen.o : racegen.c
-	${CC} ${CFLAGS} -DPRIV racegen.c -c
+	${CC} $(CFLAGS) -DPRIV racegen.c -c
 racegen : ${RACEGENOBJS}
 	${CC} -o racegen ${RACEGENOBJS} -lm
 

@@ -8,7 +8,7 @@
  */
 #include <errno.h>
 #include <time.h>
-#include <strings.h>
+#include <string.h>
 
 #include "GB_copyright.h"
 #define EXTERN extern
@@ -22,7 +22,7 @@ extern int errno;
 
 void victory(int, int, int);
 void create_victory_list(struct vic [MAXPLAYERS]);
-int victory_sort(struct vic *, struct vic *);
+int victory_sort(const void *, const void *);
 #include "GB_server.p"
 
 void victory(int Playernum, int Governor, int APcount)
@@ -56,7 +56,7 @@ sprintf(buf, "%-4.4s %-15.15s %8s\n",
 notify(Playernum, Governor, buf);
 for (i = 0; i < count; i++) {
     if (god)
-	sprintf(buf, "%2d %c [%2d] %-15.15s %5d  %6.2f %3d %s %s\n",
+	sprintf(buf, "%2d %c [%2d] %-15.15s %5ld  %6.2f %3d %s %s\n",
 		i+1, vic[i].Thing ? 'M' : ' ', vic[i].racenum,
 		vic[i].name, vic[i].rawscore,
 		vic[i].tech, vic[i].IQ, races[vic[i].racenum-1]->password,
@@ -92,8 +92,10 @@ for (i = 1; i <= Num_races; i++) {
 qsort(vic, Num_races, sizeof(struct vic), victory_sort);
 }
 
-int victory_sort(struct vic *a, struct vic *b)
+int victory_sort(const void *A, const void *B)
 {
+    const struct vic*a = A;
+    const struct vic*b = B;
     if (a->no_count)
 	return (1);
     else if (b->no_count)

@@ -14,7 +14,7 @@
 #include <curses.h>
 #include <setjmp.h>
 #include <signal.h>
-#include <strings.h>
+#include <string.h>
 #define EXTERN extern
 #include "vars.h"
 #include "ships.h"

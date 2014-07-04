@@ -6,6 +6,7 @@
  *  load.c -- load/unload stuff
  */
 #include <signal.h>
+#include <string.h>
 
 #include "GB_copyright.h"
 #define EXTERN extern
@@ -68,7 +69,7 @@ if(argn < 2) {
 
 nextshipno = start_shiplist(Playernum, Governor, args[1]);
 
-while(shipno = do_shiplist(&s, &nextshipno))
+while((shipno = do_shiplist(&s, &nextshipno)))
     if(in_list(Playernum, args[1], s, &nextshipno) &&
        authorized(Governor, s)) {
 	if (s->owner!=Playernum || !s->alive) {
@@ -494,7 +495,7 @@ void jettison(int Playernum, int Governor, int APcount)
 
   nextshipno = start_shiplist(Playernum, Governor, args[1]);
 
-  while(shipno = do_shiplist(&s, &nextshipno))
+  while((shipno = do_shiplist(&s, &nextshipno)))
       if(in_list(Playernum, args[1], s, &nextshipno) &&
 	 authorized(Governor, s)) {
 	  if (s->owner!=Playernum || !s->alive) {
@@ -815,7 +816,7 @@ void mount(int Playernum, int Governor, int APcount, int mnt)
   int shipno, nextshipno;
 
   nextshipno = start_shiplist(Playernum, Governor, args[1]);
-  while(shipno = do_shiplist(&ship, &nextshipno))
+  while((shipno = do_shiplist(&ship, &nextshipno)))
       if(in_list(Playernum, args[1], ship, &nextshipno) &&
 	 authorized(Governor, ship)) {
 	  if(!ship->mount) {

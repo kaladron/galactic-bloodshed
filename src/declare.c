@@ -13,6 +13,7 @@
 #include "power.h"
 #include "buffers.h"
 #include <signal.h>
+#include <string.h>
 #include <ctype.h>
 
 void invite(int, int, int, int);

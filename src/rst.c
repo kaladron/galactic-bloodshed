@@ -20,6 +20,7 @@
 
 #include <ctype.h>
 #include <math.h>
+#include <string.h>
 
 #include "GB_copyright.h"
 #define EXTERN extern
@@ -235,7 +236,7 @@ void ship_report(int Playernum, int Governor, int indx, unsigned char rep_on[])
 	if (!SHip)
 	  first=0;
 	}
-      sprintf(buf,"%5d %c %14.14s%3u%4u:%-3u%5u:%-5d%5u:%-5d%7.1f:%-6d%u/%u:%d\n",
+      sprintf(buf,"%5d %c %14.14s%3u%4u:%-3u%5u:%-5ld%5u:%-5ld%7.1f:%-6ld%u/%u:%d\n",
 	      shipno, Shipltrs[s->type], 
 	      (s->active ? s->name : "INACTIVE"),
 	      s->crystals, s->hanger, s->max_hanger,
@@ -251,7 +252,7 @@ void ship_report(int Playernum, int Governor, int indx, unsigned char rep_on[])
 	if (!SHip)
 	  first=0;
 	}
-      sprintf(buf,"%5d %c %14.14s %s%s%s%3u%c/%3u%c%4u%5.0f%4u%5u%7.1f%4u",
+      sprintf(buf,"%5d %c %14.14s %s%s%s%3u%c/%3u%c%4lu%5.0f%4lu%5lu%7.1f%4u",
 	      shipno, Shipltrs[s->type],
 	      (s->active ? s->name : "INACTIVE"),
 	      s->laser ? "yes " : "    ",
@@ -295,7 +296,7 @@ void ship_report(int Playernum, int Governor, int indx, unsigned char rep_on[])
           first=0;
         }
       if ((s->build_type==0)||(s->build_type==OTYPE_FACTORY)) {
-	sprintf(buf,"%5d               (No ship type specified yet)                      75% (OFF)", shipno);
+	sprintf(buf,"%5d               (No ship type specified yet)                      75%% (OFF)", shipno);
 	notify(Playernum, Governor, buf); } else {
       if (s->primtype) sprintf(tmpbuf1,"%2d%s",s->primary,s->primtype==LIGHT?
 	"L":s->primtype==MEDIUM?"M":s->primtype==HEAVY?"H":"N");
@@ -349,8 +350,7 @@ void ship_report(int Playernum, int Governor, int indx, unsigned char rep_on[])
 	      s->damage, s->popn, s->troops,
 	      s->destruct, s->fuel,
 	      s->hyper_drive.has ? (s->mounted ? '+' : '*') : ' ', s->speed, 
-	      Dispshiploc_brief(s), locstrn,
-	      0);
+	      Dispshiploc_brief(s), locstrn);
       notify(Playernum, Governor, buf);
       }
     
@@ -419,7 +419,7 @@ void ship_report(int Playernum, int Governor, int indx, unsigned char rep_on[])
 	for (i=0; i<Num_ships; i++) {
 	  if (i!=indx &&
 	      (Dist = sqrt(Distsq(rd[indx].x, rd[indx].y, 
-				  rd[i].x, rd[i].y))) < gun_range(Race, rd[indx].s, (rd[indx].type==PLANET)))
+				  rd[i].x, rd[i].y))) < gun_range(Race, rd[indx].s, (rd[indx].type==PLANET))) {
 	    if (rd[i].type==PLANET) {
 	      /* tac report at planet */
 	      sprintf(buf," %13s(planet)          %8.0f\n", 
@@ -466,6 +466,7 @@ void ship_report(int Playernum, int Governor, int indx, unsigned char rep_on[])
 		  notify(Playernum, Governor, buf); }
 		  }
 		}
+             }
 	  }
       }
     }

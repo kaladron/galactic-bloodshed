@@ -39,7 +39,7 @@ if(argn < 2) {
 
 nextshipno = start_shiplist(Playernum, Governor, args[1]);
 
-while(shipno = do_shiplist(&s, &nextshipno))
+while((shipno = do_shiplist(&s, &nextshipno)))
     if(in_list(Playernum, args[1], s, &nextshipno) &&
        authorized(Governor, s)) {
 	if (!speed_rating(s) && landed(s)) {

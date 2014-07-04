@@ -12,6 +12,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <sys/file.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "GB_copyright.h"
 #define EXTERN extern
@@ -21,7 +23,6 @@
 
 int sys_nerr;
 
-extern char *sys_errlist[];
 extern int errno;
 
 void Fileread(int, char *, int, int);

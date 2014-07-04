@@ -9,7 +9,7 @@
 
 #include <errno.h>
 #include <time.h>
-#include <strings.h>
+#include <string.h>
 #include "GB_copyright.h"
 #define EXTERN extern
 #include "vars.h"
@@ -139,7 +139,7 @@ if (argn == 3 && match(args[1], "player")) {
     notify(Playernum, Governor, buf);
     for(i=1; i<=n; i++)
 	if(Blocks[i-1].VPs) {
-	    sprintf(buf,"%2d %-19.19s%3d", i, Blocks[i-1].name, Power_blocks.members[i-1]);
+	    sprintf(buf,"%2d %-19.19s%3ld", i, Blocks[i-1].name, Power_blocks.members[i-1]);
 	    sprintf(temp, "%5s", Estimate_i((int)(Power_blocks.money[i-1]), Race, i));
 	    strcat(buf, temp);
 	    sprintf(temp, "%5s", Estimate_i((int)(Power_blocks.popn[i-1]), Race, i));
@@ -212,7 +212,7 @@ if(argn<2) {
 void prepare_output_line(racetype *Race, racetype *r, int i, int rank)
 {
     if(rank) sprintf(buf, "%2d ", rank);
-    else sprintf(buf, "");
+    else buf[0] = '\0';
     sprintf(temp,"[%2d]%s%s%-15.15s %5s", i,
 	    isset(Race->allied, i) ? "+" :
 	    (isset(Race->atwar, i) ? "-" : " "),

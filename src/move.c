@@ -8,7 +8,7 @@
 
 #include <signal.h>
 #include <math.h>
-#include <strings.h>
+#include <string.h>
 
 #include "GB_copyright.h"
 #define EXTERN extern
@@ -234,9 +234,10 @@ while(!done) {
     getsector(&sect2, planet, x2, y2);
     if(argn >= 4) {
 	sscanf(args[3],"%d",&people);
-	if(people < 0)
+	if(people < 0) {
 	    if(what==CIV) people = sect->popn + people;
 	    else if(what==MIL) people = sect->troops + people;
+        }
     } else {
 	if(what==CIV) people = sect->popn;
 	else if(what==MIL) people = sect->troops;

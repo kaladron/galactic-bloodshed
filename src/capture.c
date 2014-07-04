@@ -16,7 +16,7 @@
 #include "buffers.h"
 #include <math.h>
 #include <signal.h>
-#include <strings.h>
+#include <string.h>
 
 extern int Defensedata[];
 
@@ -53,7 +53,7 @@ if(Governor && Stars[snum]->governor[Playernum-1]!=Governor) {
     return;
 }
 nextshipno = start_shiplist(Playernum, Governor, args[1]);
-while(shipno = do_shiplist(&ship, &nextshipno))
+while((shipno = do_shiplist(&ship, &nextshipno)))
     if(ship->owner!=Playernum &&
        in_list((int)ship->owner, args[1], ship, &nextshipno)) {
 	if (!landed(ship) ) {

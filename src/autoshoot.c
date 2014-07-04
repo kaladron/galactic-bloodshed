@@ -7,6 +7,7 @@
  */
 
 #define EXTERN extern
+#include <string.h>
 #include "vars.h"
 #include "ships.h"
 #include "races.h"

@@ -13,6 +13,7 @@
 #include "power.h"
 #include "buffers.h"
 #include <signal.h>
+#include <string.h>
 
 void fire(int, int, int, int);
 void bombard(int, int, int);
@@ -42,6 +43,8 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
   planettype *p;
   int strength, maxstrength, retal, damage;
 
+  sh = 0; // TODO(jeffbailey): No idea what this is, init to 0.
+
   /* for telegramming and retaliating */
   bzero( (char *)Nuked, sizeof(Nuked) );
 
@@ -51,7 +54,7 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
   }
 
   nextshipno = start_shiplist(Playernum, Governor, args[1]);
-  while(fromship = do_shiplist(&from, &nextshipno))
+  while((fromship = do_shiplist(&from, &nextshipno)))
       if(in_list(Playernum, args[1], from, &nextshipno)
 	 && authorized(Governor, from)) {
 	  if (!from->active) {
@@ -287,7 +290,7 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
   }
 
   nextshipno = start_shiplist(Playernum, Governor, args[1]);
-  while(fromship = do_shiplist(&from, &nextshipno))
+  while((fromship = do_shiplist(&from, &nextshipno)))
       if(in_list(Playernum, args[1], from, &nextshipno) &&
 	 authorized(Governor, from)) {
 	  if (!from->active) {
@@ -597,7 +600,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
   }
 
   if (damage < 0) {
-      sprintf(buf,"Target out of range  %.2f!\n", SYSTEMSIZE);
+      sprintf(buf,"Target out of range  %d!\n", SYSTEMSIZE);
       notify(Playernum, Governor, buf);
       free(p);
       free(to);
@@ -688,7 +691,7 @@ void detonate(int Playernum, int Governor, int APcount)
 
   nextshipno = start_shiplist(Playernum, Governor, args[1]);
 
-  while(shipno = do_shiplist(&s, &nextshipno))
+  while((shipno = do_shiplist(&s, &nextshipno)))
       if(in_list(Playernum, args[1], s, &nextshipno) &&
 	 authorized(Governor, s)) {
 	  if(s->type != STYPE_MINE) {

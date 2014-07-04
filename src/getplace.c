@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <strings.h>
 
 #include "GB_copyright.h"
 #define EXTERN extern

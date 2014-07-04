@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <sys/stat.h>
 
 #include "GB_copyright.h"
@@ -27,7 +28,6 @@ int commoddata, pdata, racedata, sectdata, shdata, stdata;
 
 extern int errno;
 int sys_nerr;
-extern char *sys_errlist[];
 
 void close_file(int);
 void open_data_files(void);

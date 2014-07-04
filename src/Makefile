@@ -212,6 +212,9 @@ GUARDOBJS = guardian.o
 
 all: GB enrol racegen makeuniv guardian
 
+clean:
+	-rm -f *.o enrol racegen makeuniv guardian
+
 # the shell 
 GB : ${SHOBJS}
 	${CC} -o GB ${SHOBJS}  -lcurses -ltermcap -lm;

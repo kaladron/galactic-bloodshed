@@ -8,6 +8,7 @@
  *  planet_doVN() -- called by doplanet()
  */
 
+#include <string.h>
 #include "GB_copyright.h"
 #define EXTERN extern
 #include "vars.h"

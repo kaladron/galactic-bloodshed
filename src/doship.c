@@ -14,7 +14,7 @@
 #include "power.h"
 #include "buffers.h"
 #include <math.h>
-#include <strings.h>
+#include <string.h>
 
 extern long Shipdata[NUMSTYPES][NUMABILS];
 

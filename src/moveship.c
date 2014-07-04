@@ -7,6 +7,7 @@
  *	also deducts fuel from the ship's stores.
  */
 #include <math.h>
+#include <string.h>
 
 #include "GB_copyright.h"
 #define EXTERN extern
@@ -25,6 +26,7 @@ double MoveConsts[] = { 600.0, 300.0, 50.0 };
 double SpeedConsts[] = { 0.0, 0.61, 1.26, 1.50, 1.73, 1.81, 1.90, 1.93, 1.96, 1.97};
   /* amount of fuel it costs to move at speed level */
 
+extern int landed (shiptype *);
 void Moveship(shiptype *, int, int, int);
 void msg_OOF(shiptype *);
 int followable(shiptype *, shiptype *);

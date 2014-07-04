@@ -157,13 +157,14 @@ while (shipno) {
 		do_berserker(ship, planet);
 	    break;
 	  case OTYPE_TERRA:
-	    if (ship->on && landed(ship) && ship->popn)
+	    if ((ship->on && landed(ship) && ship->popn)) {
 		if(ship->fuel >= (double)FUEL_COST_TERRA)
 		    terraform(ship, planet);
 		else if (!ship->notified) {
 		    ship->notified = 1;
 		    msg_OOF(ship);
 		}
+            }
 	    break;
 	  case OTYPE_PLOW:
 	    if (ship->on && landed(ship)) {
@@ -217,14 +218,14 @@ while (shipno) {
 	    }
 	    break;
 	  case OTYPE_QUARRY:
-	    if(ship->on && landed(ship) && ship->popn)
+	    if((ship->on && landed(ship) && ship->popn)) {
 		if(ship->fuel >= FUEL_COST_QUARRY)
 		    do_quarry(ship, planet);
 		else if (!ship->notified) {
 		    ship->on = 0;
 		    msg_OOF(ship);
 		}
-	    else {
+	    } else {
 		if (!ship->on) {
 			sprintf(buf, "q%d is not switched on.", ship->number);
 		}
@@ -255,8 +256,10 @@ while (shipno) {
     shipno = ship->nextship;
 }
 
-/*if (!Stinfo[starnum][planetnum].inhab)
+#if 0
+if (!Stinfo[starnum][planetnum].inhab)
     return 0;  /* (no one's explored the planet) */
+#endif
 
   /* check for space mirrors (among other things) warming the planet */
   /* if a change in any artificial warming/cooling trends */
@@ -406,15 +409,15 @@ for (i=1; i<=Num_races; i++) {
 		    planet->conditions[RTEMP], planet->conditions[TEMP]);
 	    strcat(telegram_buf, buf);
 	}
-	sprintf(buf, "Total      Prod: %dr %df %dd\n", prod_res[i-1],
+	sprintf(buf, "Total      Prod: %ldr %ldf %ldd\n", prod_res[i-1],
 		prod_fuel[i-1], prod_destruct[i-1]);
 	strcat(telegram_buf, buf);
 	if(prod_crystals[i-1]) {
-	    sprintf(buf, "    %d crystals found\n", prod_crystals[i-1]);
+	    sprintf(buf, "    %ld crystals found\n", prod_crystals[i-1]);
 	    strcat(telegram_buf, buf);
 	}
 	if(tot_captured) {
-	    sprintf(buf,"%d sectors captured\n", tot_captured);
+	    sprintf(buf,"%ld sectors captured\n", tot_captured);
 	    strcat(telegram_buf, buf);
 	}
 	if (Stars[starnum]->nova_stage) {
@@ -614,7 +617,7 @@ for (i=1; i<=Num_races; i++)
 	    s2->mass = s2->base_mass;
 	    s2->alive = 1;
 	    s2->active = 1;
-	    sprintf(s2->name,"Scum%04d",Num_ships);
+	    sprintf(s2->name,"Scum%04ld",Num_ships);
 
 	    insert_sh_plan(planet, s2);
 

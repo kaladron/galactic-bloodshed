@@ -8,7 +8,7 @@
 CC = cc
 #CC = gcc
 
-CFLAGS = -g
+CFLAGS = -g -O2 -W -Wall -Werror
 #CFLAGS = -g -YBSD
 #CFLAGS = -ansi -g3
 

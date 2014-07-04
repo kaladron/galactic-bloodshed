@@ -29,19 +29,19 @@
 #define SEGMENT_PASSWORD 	"put_your_segment_password_here"
 #endif
 
-/*#define DEBUG	/* comment this out unless you want to use memory debugging */
+#undef DEBUG	/* comment this out unless you want to use memory debugging */
 #define MARKET	/* comment this out if you don't want to use the market */
-/*#define VICTORY /* if you want to use victory conditions */
-/*#define DISSOLVE /* If you want to allow players to dissolve */
+#undef VICTORY /* if you want to use victory conditions */
+#undef DISSOLVE /* If you want to allow players to dissolve */
 #define DEFENSE /* If you want to allow planetary guns */
 #define	VOTING	/* If you want to allow player voting. */
-/*#define ACCESS_CHECK /* If you want to check address authorization. */
-/*#define NOMADS /* If you want to allow min # sexes to always colonize
+#undef ACCESS_CHECK /* If you want to check address authorization. */
+#undef NOMADS /* If you want to allow min # sexes to always colonize
   a sector safely */
 #define MONITOR	/* allows deity to monitor messages etc (deity can set with
 		   'toggle monitor' option. I use it to watch battles in
 		   in progress. -G */
-/*#define SHOW_COWARDS /* If you want the number of invisible players to be
+#undef SHOW_COWARDS /* If you want the number of invisible players to be
   shown to other players */
-/*#define POD_TERRAFORM /* If pods will terraform sectors they infect */
+#undef POD_TERRAFORM /* If pods will terraform sectors they infect */
     

@@ -5,9 +5,10 @@
  */
 
 #define PATH(file) "/tmp/GB/" #file
-#define DATA(file) PATH(Data / file)
-#define NEWS(file) PATH(News / file)
-#define TELE(file) PATH(Tele / file)
+#define DIRPATH(dir, file) "/tmp/GB/" dir #file
+#define DATA(file) DIRPATH("Data/",file)
+#define NEWS(file) DIRPATH("News/",file)
+#define TELE(file) DIRPATH("Tele/",file)
 
 #define PATHLEN 200 /* length of file paths to the game.. */
 

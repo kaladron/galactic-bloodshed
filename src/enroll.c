@@ -7,6 +7,7 @@
  * Anybody who does alter this program, please take credit!
  */
 #include "racegen.h"
+#include <string.h>
 
 #define DEFAULT_ENROLLMENT_FILENAME "enroll.saves"
 #define DEFAULT_ENROLLMENT_FAILURE_FILENAME "failures.saves"
@@ -29,7 +30,7 @@ int enroll_player_race(failure_filename)
   static int recursing = 0 ;
   static int successful_enroll_in_fix_mode = 0 ;
 
-  while (n = critique_to_file(NULL, 1, 1)) {
+  while ((n = critique_to_file(NULL, 1, 1))) {
     printf("Race (%s) unacceptable, for the following reason%c:\n",
 	   race.name, (n > 1) ? 's' : '\0') ;
     critique_to_file(stdout, 1, 1) ;
@@ -54,7 +55,7 @@ int enroll_player_race(failure_filename)
 	}
       continue ;
       }
-    if (failure_filename != NULL) 
+    if (failure_filename != NULL)  {
       if (NULL == fopen(failure_filename, "w+")) {
 	printf("Warning: unable to open failures file \"%s\".\n", 
 	       failure_filename) ;
@@ -65,6 +66,7 @@ int enroll_player_race(failure_filename)
 	printf("Race appended to failures file \"%s\".\n", failure_filename) ;
 	fclose(f) ;
 	}
+    }
     if (n == 0)    /* Abort */
       return 1 ;
     
@@ -154,13 +156,13 @@ int enroll(argc, argv)
   if (strcmp(race.address, TO))
     ret = enroll_player_race(argv[1]) ;
   else
-    if (ret = critique_to_file(NULL, 1, 0)) {
+    if ((ret = critique_to_file(NULL, 1, 0))) {
       printf("Race (%s) unacceptable, for the following reason%c:\n",
 	     race.name, (ret > 1) ? 's' : '\0') ;
       critique_to_file(stdout, 1, 0) ;
       }
     else
-      if (ret = enroll_valid_race())
+      if ((ret = enroll_valid_race()))
 	critique_to_file(stdout, 1, 0) ;
 
   if (ret)

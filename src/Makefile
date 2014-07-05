@@ -15,7 +15,9 @@ CFLAGS = -g -O2 -W -Wall -Werror \
 	  -Wno-sign-compare \
 	  -Wno-array-bounds \
 	  -Wno-char-subscripts \
-	  -Wno-type-limits
+	  -Wno-type-limits \
+	  -Wno-implicit-function-declaration \
+	  -Wno-deprecated-declarations
 
 CFLAGS += \
 	  -Wno-maybe-uninitialized \

@@ -70,8 +70,8 @@ int system(const char *string) ;
 #else
 double atof() ;
 #define const
-int Dialogue() ;
 #endif
+int Dialogue(const char*, ...);
 
 
 

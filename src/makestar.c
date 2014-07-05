@@ -13,6 +13,7 @@ G.O.D. [1] > boils at -33
 #endif
 
 #include <math.h>
+#include <string.h>
 #include "GB_copyright.h"
 #define EXTERN
 #include "vars.h"

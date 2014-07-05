@@ -60,7 +60,8 @@ struct race {
     unsigned short turn;
 
     double tech;                 
-    unsigned char discoveries[80];    /* Tech discoveries. */
+#define NUM_DISCOVERIES 80
+    unsigned char discoveries[NUM_DISCOVERIES];    /* Tech discoveries. */
     unsigned long victory_score;      /* Number of victory points. */
     unsigned long votes;
     unsigned long planet_points;      /* For the determination of global APs */

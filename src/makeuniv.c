@@ -13,11 +13,7 @@
 #include "races.h"
 #include "power.h"	/* (for power) */
 #include <math.h>
-
-#undef malloc
-#undef realloc
-#undef free 
-/* Just in case */
+#include <string.h>
 
 extern int Temperature(double, int);
 extern void PrintStatistics(void);
@@ -46,7 +42,8 @@ int printstarinfo = 0 ;
 
 static int occupied[100][100];
 
-void main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
   FILE *stardata, *planetdata, *sectordata ;
   char str[200] ;

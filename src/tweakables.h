@@ -245,6 +245,7 @@
 #define TYPE_WATER	5
 #define TYPE_FOREST	6
 #define TYPE_DESERT	7
+#define TYPE_MAX        7 // Keep this equal to the greatest one
 
 /* number of global APs each planet is worth */
 #define EARTH_POINTS	int_rand(5,8)

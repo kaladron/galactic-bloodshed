@@ -4,6 +4,7 @@
  * Restrictions in GB_copyright.h.
  */
 #include <signal.h>
+#include <string.h>
 #include "GB_copyright.h"
 
 #define EXTERN
@@ -30,7 +31,6 @@ int planet_translate[N_HOME_PLANET_TYPES] =  {0, 6, 7, 5, 2, 3, 4} ;
 
 
 #ifdef __STDC__
-void srandom(int seed) ;
 long random(void) ;
 
 int getpid(void) ;
@@ -120,7 +120,7 @@ int enroll_valid_race()
     i = int_rand(0, last_star_left) ;
     star = indirect[i] ;
 
-    printf(".", star) ;
+    printf(".") ;
     fflush(stdout) ;
     /* 
      * Skip over inhabited stars and stars with few planets. */
@@ -243,7 +243,7 @@ int enroll_valid_race()
   getsmap(Smap,planet);
   PermuteSects(planet);
   Getxysect(planet, 0, 0, 1);
-  while (i = Getxysect(planet, &x, &y, 0))
+  while ((i = Getxysect(planet, &x, &y, 0)))
     if (Sector(*planet, x, y).condition == Race->likesbest)
       break ;
   if (! i)
@@ -372,5 +372,4 @@ int enroll_valid_race()
 	 race.name, x, y, Stars[star]->name, Stars[star]->pnames[pnum]);
   race.status = STATUS_ENROLLED ;
   return 0 ;
-  }
-loginfo(){}
+}

@@ -726,7 +726,7 @@ void build(int Playernum, int Governor, int APcount)
 		if ((!Shipdata[i][ABIL_GOD]) || Race->God) {
 		    if (Race->pods || (i!=STYPE_POD)) {
 			if (Shipdata[i][ABIL_PROGRAMMED]) {
-			    sprintf(buf, "%1c %-15.15s %5d %5d %3d %4d %3d %3d %3d %4d %4d %2d %4.0f %4d\n",
+			    sprintf(buf, "%1c %-15.15s %5ld %5ld %3ld %4ld %3ld %3ld %3ld %4ld %4ld %2ld %4.0f %4d\n",
 					Shipltrs[i], Shipnames[i],
 					Shipdata[i][ABIL_CARGO],
 					Shipdata[i][ABIL_HANGER],
@@ -804,7 +804,7 @@ void build(int Playernum, int Governor, int APcount)
 			    "pri", "sec", "fuel", "crew", "sp", "tech", "cost");
 		    strcat(buf, temp);
 		    Race = races[Playernum-1];
-		    sprintf(temp, "%1c %-15.15s %5d %5d %3d %4d %3d %3d %3d %4d %4d %2d %4.0f %4d\n",
+		    sprintf(temp, "%1c %-15.15s %5ld %5ld %3ld %4ld %3ld %3ld %3ld %4ld %4ld %2ld %4.0f %4d\n",
 				Shipltrs[i], Shipnames[i],
 				Shipdata[i][ABIL_CARGO],
 				Shipdata[i][ABIL_HANGER],
@@ -1770,8 +1770,8 @@ void bid(int Playernum, int Governor, int APcount)
 		if(c->bidder==Playernum)
 		    sprintf(temp, "%4.4s/%-4.4s", Stars[c->star_to]->name,
 			    Stars[c->star_to]->pnames[c->planet_to]);
-		else sprintf(temp, "");
-		sprintf(buf,  " %4d%c%5d%10s%7d%8d%8d%10.2f%8d %10s\n",
+		else temp[0] = '\0';
+		sprintf(buf,  " %4d%c%5d%10s%7d%8d%8ld%10.2f%8d %10s\n",
 			i, c->deliver ? '*' : ' ', c->amount,
 			Commod[c->type], c->owner, c->bidder, c->bid, rate,
 			shipping_cost((int)c->star_from,
@@ -1802,8 +1802,8 @@ void bid(int Playernum, int Governor, int APcount)
 		if(c->bidder==Playernum)
 		    sprintf(temp, "%4.4s/%-4.4s", Stars[c->star_to]->name,
 			    Stars[c->star_to]->pnames[c->planet_to]);
-		else sprintf(temp, "");
-		sprintf(buf,  " %4d%c%5d%10s%7d%8d%8d%10.2f%8d %10s\n",
+		else temp[0] = '\0';
+		sprintf(buf,  " %4d%c%5d%10s%7d%8d%8ld%10.2f%8d %10s\n",
 			i, c->deliver ? '*' : ' ', c->amount,
 			Commod[c->type], c->owner, c->bidder, c->bid, rate,
 			shipping_cost((int)c->star_from,

@@ -74,12 +74,13 @@
                  non-enroll, non-server racegen.
 */
 
-#include <varargs.h>
+#include <stdarg.h>
 #include <math.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#include <stdlib.h>
 
 #ifdef PRIV			/* Extra stuff for privileged racegen */
 
@@ -94,6 +95,7 @@
 int fd;
 int isserver = 0;
 
+int
 main (argc, argv)
      int argc;
      char *argv[];
@@ -105,7 +107,7 @@ main (argc, argv)
 
   /* Check command line syntax */
 
-  if (argc > 1)
+  if (argc > 1) {
     if ((argv[1][0] == '-') && (isserver = (argv[1][1] == 's')))
       {
 	if (argc > 2)
@@ -121,12 +123,14 @@ main (argc, argv)
     else
       {
 	printf ("Syntax: racegen [-s [port]]\n");
-	exit ();
+	return (0);
       }
+  }
 
   if (isserver)
     {				/* Server version of racegen */
-      int sockfd, clilen;
+      int sockfd;
+      socklen_t clilen;
       struct sockaddr_in cli_addr, serv_addr;
       char buf[256];
 
@@ -1341,9 +1345,7 @@ send2 (argc, argv)
 }
 
 int 
-Dialogue (prompt, va_alist)
-     char *prompt;
-     va_dcl
+Dialogue (const char *prompt, ...)
 {
   va_list ap;
   char input[512];
@@ -1352,7 +1354,7 @@ Dialogue (prompt, va_alist)
   int init = 0;
   char *argv[16];
   printf (prompt);
-  va_start (ap);
+  va_start (ap, prompt);
   while ((carg = va_arg (ap, char *)) != 0)
     {
       if (!init)
@@ -1398,9 +1400,7 @@ Dialogue (prompt, va_alist)
 
 
 void 
-quit (argc, argv)
-     int argc;
-     char *argv[];
+quit (int argc, char **argv)
 {
   int i;
 
@@ -1432,24 +1432,13 @@ quit (argc, argv)
 
 
 
-static void 
-control_c_handler ()
-{
-  printf ("\n");
-  if (isserver)
-    close (fd);
-  exit (0);
-}
-
 
 /**************
  * This function merely takes the space-parsed command line and executes
  * one of the commands above.
  */
 void 
-execute (argc, argv)
-     int argc;
-     char *argv[];
+execute (int argc, char **argv)
 {
   int i;
 
@@ -1503,8 +1492,7 @@ execute (argc, argv)
  * always be zero for player racegens.
  */
 void 
-modify_print_loop (level)
-     int level;
+modify_print_loop (int level)
 {
   char buf[512], *com, *args[4];
   int i;

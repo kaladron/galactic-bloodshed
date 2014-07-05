@@ -8,9 +8,11 @@
 #include "GB_copyright.h"
 #include <stdio.h>
 #include <signal.h>
-#include <strings.h>
+#include <string.h>
 #include <curses.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <unistd.h>
 #define EXTERN
 #include "vars.h"
 #include "ships.h"
@@ -75,18 +77,19 @@ char *Desnames[] = {
   "err in des type!"
 };
 
-main()
+int main()
 {
   int x,y, or;
   int pnum,star=0,found=0,check,vacant,count,i,j,Playernum;
-  int ifd, mask,ppref = -1;
+  int ifd, ppref = -1;
+  sigset_t mask, block;
   int s, idx, k;
   char str[100], c;
   char racepass[MAXCOMMSTRSIZE], govpass[MAXCOMMSTRSIZE];
   sectortype *sect;
   struct stype secttypes[WASTED+1];
   planettype *planet;
-  unsigned char not_found[TYPE_GASGIANT+1];
+  unsigned char not_found[TYPE_MAX+1];
   startype *star_arena;
   FILE *fd;
 
@@ -261,7 +264,7 @@ main()
   }
 
   /* assign racial characteristics */
-  for(i=0; i<100; i++)
+  for(i=0; i<NUM_DISCOVERIES; i++)
     Race->discoveries[i] = 0;
   Race->tech = 0.0;
   Race->morale = 0;
@@ -349,7 +352,14 @@ main()
   printf("Numraces = %d\n", Numraces());
   Playernum = Race->Playernum = Numraces() + 1;
   
-  mask = sigblock(SIGBLOCKS);
+  sigemptyset(&block);
+   sigaddset(&block, SIGHUP);
+   sigaddset(&block, SIGTERM);
+   sigaddset(&block, SIGINT);
+   sigaddset(&block, SIGQUIT);
+   sigaddset(&block, SIGSTOP);
+   sigaddset(&block, SIGTSTP);
+   sigprocmask(SIG_BLOCK, &block, &mask);
   /* build a capital ship to run the government */
   {
     shiptype s;
@@ -457,7 +467,7 @@ main()
   putstar(Stars[star],star);
   close_data_files();
 
-  sigsetmask(mask);
+  sigprocmask(SIG_SETMASK, &mask, NULL);
 
   printf("\nYou are player %d.\n\n",Playernum);
   printf("Your race has been created on sector %d,%d on\n",

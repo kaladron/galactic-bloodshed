@@ -1,5 +1,5 @@
-/* 
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky, 
+/*
+ * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
  * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
  * Restrictions in GB_copyright.h.
  *
@@ -13,9 +13,7 @@
 
 double logscale(int);
 
-double logscale(int x)
-{
-/* return (x+5.0) / (x+10.0); */
- return log10((double)x+1.0)/2.0;
+double logscale(int x) {
+  /* return (x+5.0) / (x+10.0); */
+  return log10((double)x + 1.0) / 2.0;
 }
-

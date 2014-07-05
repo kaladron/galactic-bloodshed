@@ -1,8 +1,8 @@
 /*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky, 
+ * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
  * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
  * Restrictions in GB_copyright.h.
- * enrol.c -- initializes to owner one sector and planet. 
+ * enrol.c -- initializes to owner one sector and planet.
  */
 
 #include "GB_copyright.h"
@@ -25,132 +25,120 @@ racetype *Race;
 
 struct stype {
   char here;
-  char x,y;
+  char x, y;
   int count;
 };
 #define RACIAL_TYPES 10
 
 /* racial types (10 racial types ) */
-int Thing[RACIAL_TYPES] = {
-  1, 1, 1, 0, 0, 0, 0, 0, 0, 0};
-double db_Mass[RACIAL_TYPES] = {
-  .1,.15,.2,.125,.125,.125,.125,.125,.125,.125};
-double db_Birthrate[RACIAL_TYPES] = {
-  0.9, 0.85, 0.8, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8};
-int db_Fighters[RACIAL_TYPES] = {
-  9, 10, 11, 2, 3, 4, 5, 6, 7, 8};
+int Thing[RACIAL_TYPES] = { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
+double db_Mass[RACIAL_TYPES] = { .1,   .15,  .2,   .125, .125,
+                                 .125, .125, .125, .125, .125 };
+double db_Birthrate[RACIAL_TYPES] = { 0.9, 0.85, 0.8, 0.5,  0.55,
+                                      0.6, 0.65, 0.7, 0.75, 0.8 };
+int db_Fighters[RACIAL_TYPES] = { 9, 10, 11, 2, 3, 4, 5, 6, 7, 8 };
 int db_Intelligence[RACIAL_TYPES] = {
-  0, 0, 0, 190, 180, 170, 160, 150, 140, 130};
-double db_Adventurism[RACIAL_TYPES] = {
-  0.89, 0.89, 0.89, .6, .65, .7, .7, .75, .75, .8};
-int Min_Sexes[RACIAL_TYPES] = {
-  1, 1, 1, 2, 2, 2, 2, 2, 2, 2};
-int Max_Sexes[RACIAL_TYPES] = {
-  1, 1, 1, 2, 2, 4, 4, 4, 4, 4};
-double db_Metabolism[RACIAL_TYPES] = {
-  3.0, 2.7, 2.4, 1.0, 1.15, 1.30, 1.45, 1.6, 1.75, 1.9};
+  0, 0, 0, 190, 180, 170, 160, 150, 140, 130
+};
+double db_Adventurism[RACIAL_TYPES] = { 0.89, 0.89, 0.89, .6,  .65,
+                                        .7,   .7,   .75,  .75, .8 };
+int Min_Sexes[RACIAL_TYPES] = { 1, 1, 1, 2, 2, 2, 2, 2, 2, 2 };
+int Max_Sexes[RACIAL_TYPES] = { 1, 1, 1, 2, 2, 4, 4, 4, 4, 4 };
+double db_Metabolism[RACIAL_TYPES] = { 3.0,  2.7,  2.4, 1.0,  1.15,
+                                       1.30, 1.45, 1.6, 1.75, 1.9 };
 
-#define RMass(x) (db_Mass[(x)] + .001*(double)int_rand(-25, 25))
-#define Birthrate(x) (db_Birthrate[(x)] + .01*(double)int_rand(-10, 10))
+#define RMass(x) (db_Mass[(x)] + .001 * (double)int_rand(-25, 25))
+#define Birthrate(x) (db_Birthrate[(x)] + .01 * (double)int_rand(-10, 10))
 #define Fighters(x) (db_Fighters[(x)] + int_rand(-1, 1))
 #define Intelligence(x) (db_Intelligence[(x)] + int_rand(-10, 10))
-#define Adventurism(x) (db_Adventurism[(x)] + 0.01*(double)int_rand(-10,10))
-#define Sexes(x) (int_rand(Min_Sexes[(x)], int_rand(Min_Sexes[(x)], Max_Sexes[(x)])))
-#define Metabolism(x) (db_Metabolism[(x)] + .01*(double)int_rand(-15, 15))
+#define Adventurism(x) (db_Adventurism[(x)] + 0.01 * (double)int_rand(-10, 10))
+#define Sexes(x)                                                               \
+  (int_rand(Min_Sexes[(x)], int_rand(Min_Sexes[(x)], Max_Sexes[(x)])))
+#define Metabolism(x) (db_Metabolism[(x)] + .01 * (double)int_rand(-15, 15))
 
 /* compatibility schematic for sectors.  Note that plated sectors are
    compatible with everything.  */
-double Likes[15] = {
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
-};
+double Likes[15] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2,
+                     0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 };
 
-char *Desnames[] = {
-  "ocean",
-  "land",
-  "mountainous",
-  "gaseous",
-  "ice",
-  "forest",
-  "desert",
-  "plated",
-  "error in des type!",  /* (illegal values) */
-  "err in des type!"
-};
+char *Desnames[] = { "ocean",              "land",   "mountainous", "gaseous",
+                     "ice",                "forest", "desert",      "plated",
+                     "error in des type!", /* (illegal values) */
+                     "err in des type!" };
 
-int main()
-{
-  int x,y, or;
-  int pnum,star=0,found=0,check,vacant,count,i,j,Playernum;
+int main() {
+  int x, y, or;
+  int pnum, star = 0, found = 0, check, vacant, count, i, j, Playernum;
   int ifd, ppref = -1;
   sigset_t mask, block;
   int s, idx, k;
   char str[100], c;
   char racepass[MAXCOMMSTRSIZE], govpass[MAXCOMMSTRSIZE];
   sectortype *sect;
-  struct stype secttypes[WASTED+1];
+  struct stype secttypes[WASTED + 1];
   planettype *planet;
-  unsigned char not_found[TYPE_MAX+1];
+  unsigned char not_found[TYPE_MAX + 1];
   startype *star_arena;
   FILE *fd;
 
-  open_data_files();	
+  open_data_files();
 
   srandom(getpid());
 
-  if ( (Playernum=Numraces()+1) >= MAXPLAYERS) {
-    printf("There are already %d players; No more allowed.\n",MAXPLAYERS-1);
+  if ((Playernum = Numraces() + 1) >= MAXPLAYERS) {
+    printf("There are already %d players; No more allowed.\n", MAXPLAYERS - 1);
     exit(-1);
   }
-
 
   printf("Enter racial type to be created (1-%d):", RACIAL_TYPES);
   scanf("%d", &idx);
   getchr();
 
-  if(idx <= 0 || idx > RACIAL_TYPES) {
+  if (idx <= 0 || idx > RACIAL_TYPES) {
     printf("Bad racial index.\n");
     exit(1);
   }
-  idx=idx-1;
-  
+  idx = idx - 1;
+
   getsdata(&Sdata);
 
   star_arena = (startype *)malloc(Sdata.numstars * sizeof(startype));
-  for (s=0; s<Sdata.numstars; s++) {
+  for (s = 0; s < Sdata.numstars; s++) {
     Stars[s] = &star_arena[s];
-    getstar(&(Stars[s]),s);
+    getstar(&(Stars[s]), s);
   }
   printf("There is still space for player %d.\n", Playernum);
 
   bzero((char *)not_found, sizeof(not_found));
   do {
-    printf("\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, (i)ce, (w)ater, (d)esert, (f)orest? ");
-    c=getchr();
+    printf("\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
+           "(i)ce, (w)ater, (d)esert, (f)orest? ");
+    c = getchr();
     getchr();
 
     switch (c) {
-    case 'w': 
+    case 'w':
       ppref = TYPE_WATER;
       break;
-    case 'e': 
+    case 'e':
       ppref = TYPE_EARTH;
       break;
-    case 'm': 
+    case 'm':
       ppref = TYPE_MARS;
       break;
-    case 'g': 
+    case 'g':
       ppref = TYPE_GASGIANT;
       break;
-    case 'i': 
+    case 'i':
       ppref = TYPE_ICEBALL;
       break;
-    case 'd': 
+    case 'd':
       ppref = TYPE_DESERT;
       break;
-    case 'f': 
+    case 'f':
       ppref = TYPE_FOREST;
       break;
-    default: 
+    default:
       printf("Oh well.\n");
       exit(-1);
       break;
@@ -162,28 +150,27 @@ int main()
     count = 0;
     found = 0;
 
-    for (star=0; star<Sdata.numstars && !found && count < 100; ) {
+    for (star = 0; star < Sdata.numstars && !found && count < 100;) {
 
       check = 1;
       /* skip over inhabited stars - or stars with just one planet! */
-      if (Stars[star]->inhabited[0]+Stars[star]->inhabited[1] ||
-	  Stars[star]->numplanets<2)
+      if (Stars[star]->inhabited[0] + Stars[star]->inhabited[1] ||
+          Stars[star]->numplanets < 2)
         check = 0;
 
       /* look for uninhabited planets */
       if (check) {
         pnum = 0;
-        while (!found && pnum<Stars[star]->numplanets) {
-          getplanet(&planet,star,pnum);
+        while (!found && pnum < Stars[star]->numplanets) {
+          getplanet(&planet, star, pnum);
 
-          if (planet->type==ppref && Stars[star]->numplanets!=1) {
+          if (planet->type == ppref && Stars[star]->numplanets != 1) {
             vacant = 1;
-            for (i=1; i<=Playernum; i++ )
-              if (planet->info[i-1].numsectsowned)
+            for (i = 1; i <= Playernum; i++)
+              if (planet->info[i - 1].numsectsowned)
                 vacant = 0;
-            if (vacant && planet->conditions[RTEMP] >= -50 && planet->conditions[RTEMP]
-                <= 50)
-            {
+            if (vacant && planet->conditions[RTEMP] >= -50 &&
+                planet->conditions[RTEMP] <= 50) {
               found = 1;
             }
           }
@@ -196,15 +183,14 @@ int main()
 
       if (!found) {
         count++;
-        star = int_rand(0,Sdata.numstars-1);
+        star = int_rand(0, Sdata.numstars - 1);
       }
-
     }
 
     if (!found) {
       printf("planet type not found in any free systems.\n");
       not_found[ppref] = 1;
-      for (found=1,i=TYPE_EARTH; i<=TYPE_DESERT; i++)
+      for (found = 1, i = TYPE_EARTH; i <= TYPE_DESERT; i++)
         found &= not_found[i];
       if (found) {
         printf("Looks like there aren't any free planets left.  bye..\n");
@@ -221,15 +207,15 @@ int main()
   Bzero(*Race);
 
   printf("\n\tDeity/Guest/Normal (d/g/n) ?");
-  c=getchr();
+  c = getchr();
   getchr();
 
-  Race->God = (c=='d');
-  Race->Guest = (c=='g');
+  Race->God = (c == 'd');
+  Race->Guest = (c == 'g');
   strcpy(Race->name, "Unknown");
 
-  for(i=0; i<=MAXGOVERNORS; i++) {
-      Race->governor[0].money = 0;
+  for (i = 0; i <= MAXGOVERNORS; i++) {
+    Race->governor[0].money = 0;
   }
   Race->governor[0].homelevel = Race->governor[0].deflevel = LEVEL_PLAN;
   Race->governor[0].homesystem = Race->governor[0].defsystem = star;
@@ -246,25 +232,24 @@ int main()
   scanf("%s", Race->governor[0].password);
   getchr();
 
-
-  /* make conditions preferred by your people set to (more or less) 
+  /* make conditions preferred by your people set to (more or less)
      those of the planet : higher the concentration of gas, the higher
      percentage difference between planet and race (commented out) */
-  for (j=0; j<=OTHER; j++)
+  for (j = 0; j <= OTHER; j++)
     Race->conditions[j] = planet->conditions[j];
-  /*+ int_rand( round_rand(-planet->conditions[j]*2.0), round_rand(planet->conditions[j]*2.0) )*/
+  /*+ int_rand( round_rand(-planet->conditions[j]*2.0),
+   * round_rand(planet->conditions[j]*2.0) )*/
 
-
-  for (i=0; i<MAXPLAYERS; i++) {
+  for (i = 0; i < MAXPLAYERS; i++) {
     /* messages from autoreport, player #1 are decodable */
-    if ((i==Playernum || Playernum==1) || Race->God)
-      Race->translate[i-1] = 100;  /* you can talk to own race */
+    if ((i == Playernum || Playernum == 1) || Race->God)
+      Race->translate[i - 1] = 100; /* you can talk to own race */
     else
-      Race->translate[i-1] = 1;
+      Race->translate[i - 1] = 1;
   }
 
   /* assign racial characteristics */
-  for(i=0; i<NUM_DISCOVERIES; i++)
+  for (i = 0; i < NUM_DISCOVERIES; i++)
     Race->discoveries[i] = 0;
   Race->tech = 0.0;
   Race->morale = 0;
@@ -275,54 +260,55 @@ int main()
     Race->mass = RMass(idx);
     Race->birthrate = Birthrate(idx);
     Race->fighters = Fighters(idx);
-    if(Thing[idx]) {
-	Race->IQ = 0;
-	Race->Metamorph = Race->absorb = Race->collective_iq = Race->pods = 1;
+    if (Thing[idx]) {
+      Race->IQ = 0;
+      Race->Metamorph = Race->absorb = Race->collective_iq = Race->pods = 1;
     } else {
-	Race->IQ = Intelligence(idx);
-	Race->Metamorph = Race->absorb = Race->collective_iq = Race->pods = 0;
+      Race->IQ = Intelligence(idx);
+      Race->Metamorph = Race->absorb = Race->collective_iq = Race->pods = 0;
     }
     Race->adventurism = Adventurism(idx);
     Race->number_sexes = Sexes(idx);
     Race->metabolism = Metabolism(idx);
 
     printf("%s\n", Race->Metamorph ? "METAMORPHIC" : "");
-    printf("       Birthrate: %.3f\n",Race->birthrate);
-    printf("Fighting ability: %d\n",Race->fighters);
-    printf("              IQ: %d\n",Race->IQ);
-    printf("      Metabolism: %.2f\n",Race->metabolism);
-    printf("     Adventurism: %.2f\n",Race->adventurism);
-    printf("            Mass: %.2f\n",Race->mass);
-    printf(" Number of sexes: %d (min req'd for colonization)\n",Race->number_sexes);
+    printf("       Birthrate: %.3f\n", Race->birthrate);
+    printf("Fighting ability: %d\n", Race->fighters);
+    printf("              IQ: %d\n", Race->IQ);
+    printf("      Metabolism: %.2f\n", Race->metabolism);
+    printf("     Adventurism: %.2f\n", Race->adventurism);
+    printf("            Mass: %.2f\n", Race->mass);
+    printf(" Number of sexes: %d (min req'd for colonization)\n",
+           Race->number_sexes);
 
     printf("\n\nLook OK(y/n)\?");
-    if(gets(str)==NULL)
+    if (gets(str) == NULL)
       exit(1);
   } while (str[0] != 'y');
 
   bzero((char *)secttypes, sizeof(secttypes));
 
-  getsmap(Smap,planet);
+  getsmap(Smap, planet);
 
-  printf("\nChoose a primary sector preference. This race will prefer to live\non this type of sector.\n");
+  printf("\nChoose a primary sector preference. This race will prefer to "
+         "live\non this type of sector.\n");
 
   PermuteSects(planet);
   Getxysect(planet, 0, 0, 1);
-  while (Getxysect(planet,&x,&y,0)) {
-    secttypes[Sector(*planet,x,y).condition].count++;
-    if (!secttypes[Sector(*planet,x,y).condition].here) {
-        secttypes[Sector(*planet,x,y).condition].here = 1;
-        secttypes[Sector(*planet,x,y).condition].x = x;
-        secttypes[Sector(*planet,x,y).condition].y = y;
+  while (Getxysect(planet, &x, &y, 0)) {
+    secttypes[Sector(*planet, x, y).condition].count++;
+    if (!secttypes[Sector(*planet, x, y).condition].here) {
+      secttypes[Sector(*planet, x, y).condition].here = 1;
+      secttypes[Sector(*planet, x, y).condition].x = x;
+      secttypes[Sector(*planet, x, y).condition].y = y;
     }
-}
+  }
   planet->explored = 1;
-  for (i=SEA; i<=WASTED; i++)
+  for (i = SEA; i <= WASTED; i++)
     if (secttypes[i].here) {
       printf("(%2d): %c (%d, %d) (%s, %d sectors)\n", i,
-          desshow(planet, secttypes[i].x,secttypes[i].y),
-	     secttypes[i].x, secttypes[i].y,
-	     Desnames[i], secttypes[i].count);
+             desshow(planet, secttypes[i].x, secttypes[i].y), secttypes[i].x,
+             secttypes[i].y, Desnames[i], secttypes[i].count);
     }
   planet->explored = 0;
 
@@ -331,35 +317,35 @@ int main()
     printf("\nchoice (enter the number): ");
     scanf("%d", &i);
     getchr();
-    if (i<SEA || i>WASTED || !secttypes[i].here) {
+    if (i < SEA || i > WASTED || !secttypes[i].here) {
       printf("There are none of that type here..\n");
     } else
       found = 1;
   } while (!found);
 
-  sect = &Sector(*planet,secttypes[i].x,secttypes[i].y);
+  sect = &Sector(*planet, secttypes[i].x, secttypes[i].y);
   Race->likesbest = i;
   Race->likes[i] = 1.0;
   Race->likes[PLATED] = 1.0;
   Race->likes[WASTED] = 0.0;
   printf("\nEnter compatibilities of other sectors -\n");
-  for (j=SEA; j<PLATED; j++)
-    if(i!=j) {
+  for (j = SEA; j < PLATED; j++)
+    if (i != j) {
       printf("%6s (%3d sectors) :", Desnames[j], secttypes[j].count);
       scanf("%d", &k);
-      Race->likes[j]=(double)k/100.0;
+      Race->likes[j] = (double)k / 100.0;
     }
   printf("Numraces = %d\n", Numraces());
   Playernum = Race->Playernum = Numraces() + 1;
-  
+
   sigemptyset(&block);
-   sigaddset(&block, SIGHUP);
-   sigaddset(&block, SIGTERM);
-   sigaddset(&block, SIGINT);
-   sigaddset(&block, SIGQUIT);
-   sigaddset(&block, SIGSTOP);
-   sigaddset(&block, SIGTSTP);
-   sigprocmask(SIG_BLOCK, &block, &mask);
+  sigaddset(&block, SIGHUP);
+  sigaddset(&block, SIGTERM);
+  sigaddset(&block, SIGINT);
+  sigaddset(&block, SIGQUIT);
+  sigaddset(&block, SIGSTOP);
+  sigaddset(&block, SIGTSTP);
+  sigprocmask(SIG_BLOCK, &block, &mask);
   /* build a capital ship to run the government */
   {
     shiptype s;
@@ -405,7 +391,7 @@ int main()
     s.fuel = 0.0;
     s.popn = Shipdata[s.type][ABIL_MAXCREW];
     s.troops = 0;
-    s.mass = s.base_mass + Shipdata[s.type][ABIL_MAXCREW]*Race->mass;
+    s.mass = s.base_mass + Shipdata[s.type][ABIL_MAXCREW] * Race->mass;
     s.destruct = s.resource = 0;
 
     s.alive = 1;
@@ -421,7 +407,7 @@ int main()
     s.storbits = star;
     s.pnumorbits = pnum;
     s.rad = 0;
-    s.damage = 0;  /*Shipdata[s.type][ABIL_DAMAGE];*/
+    s.damage = 0; /*Shipdata[s.type][ABIL_DAMAGE];*/
     /* (first capital is 100% efficient */
     s.retaliate = 0;
 
@@ -431,19 +417,19 @@ int main()
 
     s.name[0] = '\0';
     s.number = shipno;
-    printf("Created on sector %d,%d on /%s/%s\n",
-	   s.land_x, s.land_y, Stars[s.storbits]->name,
-	   Stars[s.storbits]->pnames[s.pnumorbits]);
+    printf("Created on sector %d,%d on /%s/%s\n", s.land_x, s.land_y,
+           Stars[s.storbits]->name, Stars[s.storbits]->pnames[s.pnumorbits]);
     putship(&s);
   }
 
-  for(j=0; j<MAXPLAYERS; j++) Race->points[j]=0;
-  
+  for (j = 0; j < MAXPLAYERS; j++)
+    Race->points[j] = 0;
+
   putrace(Race);
 
-  planet->info[Playernum-1].numsectsowned = 1;
+  planet->info[Playernum - 1].numsectsowned = 1;
   planet->explored = 0;
-  planet->info[Playernum-1].explored = 1;
+  planet->info[Playernum - 1].explored = 1;
   /*planet->info[Playernum-1].autorep = 1;*/
 
   sect->owner = Playernum;
@@ -452,79 +438,69 @@ int main()
   sect->fert = 100;
   sect->eff = 10;
   sect->troops = planet->troops = 0;
-  planet->maxpopn = maxsupport(Race, sect, 100.0,0)
-      * planet->Maxx * planet->Maxy / 2;
+  planet->maxpopn =
+      maxsupport(Race, sect, 100.0, 0) * planet->Maxx * planet->Maxy / 2;
   /* (approximate) */
 
   putsector(sect, planet, secttypes[i].x, secttypes[i].y);
-  putplanet(planet,star,pnum);
+  putplanet(planet, star, pnum);
 
   /* make star explored and stuff */
-  getstar(&Stars[star],star);
-  setbit(Stars[star]->explored,Playernum);
-  setbit(Stars[star]->inhabited,Playernum);
-  Stars[star]->AP[Playernum-1] = 5;
-  putstar(Stars[star],star);
+  getstar(&Stars[star], star);
+  setbit(Stars[star]->explored, Playernum);
+  setbit(Stars[star]->inhabited, Playernum);
+  Stars[star]->AP[Playernum - 1] = 5;
+  putstar(Stars[star], star);
   close_data_files();
 
   sigprocmask(SIG_SETMASK, &mask, NULL);
 
-  printf("\nYou are player %d.\n\n",Playernum);
-  printf("Your race has been created on sector %d,%d on\n",
-      secttypes[i].x,secttypes[i].y);
-  printf("%s/%s.\n\n",Stars[star]->name, Stars[star]->pnames[pnum]);
-
+  printf("\nYou are player %d.\n\n", Playernum);
+  printf("Your race has been created on sector %d,%d on\n", secttypes[i].x,
+         secttypes[i].y);
+  printf("%s/%s.\n\n", Stars[star]->name, Stars[star]->pnames[pnum]);
 }
 
-char desshow(p,x,y) /* copied from map.c */
-reg planettype *p;
-reg int x,y;
+char desshow(p, x, y) /* copied from map.c */
+    reg planettype *p;
+reg int x, y;
 {
   reg sectortype *s;
 
-  s = &Sector(*p,x,y);
+  s = &Sector(*p, x, y);
 
   switch (s->condition) {
-    case WASTED:
-      return CHAR_WASTED;
-    case SEA: 
-      return CHAR_SEA;
-    case LAND: 
-      return CHAR_LAND;
-    case MOUNT: 
-      return CHAR_MOUNT;
-    case GAS: 
-      return CHAR_GAS;
-    case PLATED: 
-      return CHAR_PLATED;
-    case DESERT: 
-      return CHAR_DESERT;
-    case FOREST:
-      return CHAR_FOREST;
-    case ICE: 
-      return CHAR_ICE;
-    default: 
-      return('!');
+  case WASTED:
+    return CHAR_WASTED;
+  case SEA:
+    return CHAR_SEA;
+  case LAND:
+    return CHAR_LAND;
+  case MOUNT:
+    return CHAR_MOUNT;
+  case GAS:
+    return CHAR_GAS;
+  case PLATED:
+    return CHAR_PLATED;
+  case DESERT:
+    return CHAR_DESERT;
+  case FOREST:
+    return CHAR_FOREST;
+  case ICE:
+    return CHAR_ICE;
+  default:
+    return ('!');
   }
 }
 
-void notify(who, gov, msg)
-int who, gov;
+void notify(who, gov, msg) int who, gov;
 char *msg;
-{
-  /* this is a dummy routine */
-}
+{ /* this is a dummy routine */ }
 
-void warn(who, gov, msg)
-int who, gov;
+void warn(who, gov, msg) int who, gov;
 char *msg;
-{
-  /* this is a dummy routine */
-}
+{ /* this is a dummy routine */ }
 
-void push_message(what, who, msg)
-int what, who;
+void push_message(what, who, msg) int what, who;
 char *msg;
-{
-  /* this is a dummy routine */
-}
+{ /* this is a dummy routine */ }

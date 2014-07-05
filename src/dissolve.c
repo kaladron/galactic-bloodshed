@@ -24,10 +24,9 @@ int revolt(planettype *, int, int);
 #include "teleg_send.p"
 #include "rand.p"
 
-void dissolve(int Playernum, int Governor)
-{
+void dissolve(int Playernum, int Governor) {
   int n_ships;
-  int i, j, z, x2, y2, hix, hiy, lowx,lowy;
+  int i, j, z, x2, y2, hix, hiy, lowx, lowy;
   unsigned char waste;
   shiptype *sp;
   racetype *Race;
@@ -37,23 +36,27 @@ void dissolve(int Playernum, int Governor)
   char racepass[100], govpass[100];
 
 #ifndef DISSOLVE
-  notify(Playernum, Governor, "Dissolve has been disabled. Please notify diety.\n");
+  notify(Playernum, Governor,
+         "Dissolve has been disabled. Please notify diety.\n");
   return;
 #endif
 
-  if(Governor) {
-      notify(Playernum, Governor, "Only the leader may dissolve the race. The leader has been notified of your attempt!!!\n");
-      sprintf(buf, "Governor #%d has attempted to dissolve this race.\n",
-	      Governor);
-      notify(Playernum, 0, buf);
-      return;
+  if (Governor) {
+    notify(Playernum, Governor, "Only the leader may dissolve the race. The "
+                                "leader has been notified of your "
+                                "attempt!!!\n");
+    sprintf(buf, "Governor #%d has attempted to dissolve this race.\n",
+            Governor);
+    notify(Playernum, 0, buf);
+    return;
   }
   n_ships = Numships();
 
   if (argn < 3) {
     sprintf(buf, "Self-Destruct sequence requires passwords.\n");
     notify(Playernum, Governor, buf);
-    sprintf(buf, "Please use 'dissolve <race password> <leader password>'<option> to initiate\n");
+    sprintf(buf, "Please use 'dissolve <race password> <leader "
+                 "password>'<option> to initiate\n");
     notify(Playernum, Governor, buf);
     sprintf(buf, "self-destruct sequence.\n");
     notify(Playernum, Governor, buf);
@@ -70,7 +73,7 @@ void dissolve(int Playernum, int Governor)
     sscanf(args[2], "%s", govpass);
 
     waste = 0;
-    if(argn > 3) {
+    if (argn > 3) {
       sscanf(args[3], "%c", &nuke);
       if (nuke == 'w')
         waste = 1;
@@ -84,11 +87,11 @@ void dissolve(int Playernum, int Governor)
       return;
     }
 
-    for (i=1; i<=n_ships; i++) {
+    for (i = 1; i <= n_ships; i++) {
       (void)getship(&sp, i);
       if (sp->owner == Playernum) {
         kill_ship(Playernum, sp);
-        sprintf(buf, "Ship #%d, self-destruct enabled\n",i);
+        sprintf(buf, "Ship #%d, self-destruct enabled\n", i);
         notify(Playernum, Governor, buf);
         putship(sp);
       }
@@ -96,101 +99,98 @@ void dissolve(int Playernum, int Governor)
     }
 
     getsdata(&Sdata);
-    for (z=0; z<Sdata.numstars; z++) {
+    for (z = 0; z < Sdata.numstars; z++) {
       getstar(&(Stars[z]), z);
-      if (isset(Stars[z]->explored,Playernum)) {
-        for (i=0; i<Stars[z]->numplanets; i++) {
-          getplanet(&pl,z,i);
+      if (isset(Stars[z]->explored, Playernum)) {
+        for (i = 0; i < Stars[z]->numplanets; i++) {
+          getplanet(&pl, z, i);
 
-          if (pl->info[Playernum-1].explored
-              && pl->info[Playernum-1].numsectsowned)  {
-            pl->info[Playernum-1].fuel = 0;
-            pl->info[Playernum-1].destruct = 0;
-            pl->info[Playernum-1].resource = 0;
-            pl->info[Playernum-1].popn = 0;
-	    pl->info[Playernum-1].troops = 0;
-	    pl->info[Playernum-1].tax = 0;
-	    pl->info[Playernum-1].newtax = 0;
-            pl->info[Playernum-1].crystals = 0;
-            pl->info[Playernum-1].numsectsowned = 0;
-            pl->info[Playernum-1].explored = 0;
-            pl->info[Playernum-1].autorep = 0;
+          if (pl->info[Playernum - 1].explored &&
+              pl->info[Playernum - 1].numsectsowned) {
+            pl->info[Playernum - 1].fuel = 0;
+            pl->info[Playernum - 1].destruct = 0;
+            pl->info[Playernum - 1].resource = 0;
+            pl->info[Playernum - 1].popn = 0;
+            pl->info[Playernum - 1].troops = 0;
+            pl->info[Playernum - 1].tax = 0;
+            pl->info[Playernum - 1].newtax = 0;
+            pl->info[Playernum - 1].crystals = 0;
+            pl->info[Playernum - 1].numsectsowned = 0;
+            pl->info[Playernum - 1].explored = 0;
+            pl->info[Playernum - 1].autorep = 0;
           }
 
-          getsmap(Smap,pl);
+          getsmap(Smap, pl);
 
           lowx = 0;
           lowy = 0;
-          hix = pl->Maxx-1;
-          hiy = pl->Maxy-1;
-          for (y2=lowy; y2<=hiy; y2++) {
-            for (x2=lowx; x2<=hix; x2++) {
-              s = &Sector(*pl,x2,y2);
+          hix = pl->Maxx - 1;
+          hiy = pl->Maxy - 1;
+          for (y2 = lowy; y2 <= hiy; y2++) {
+            for (x2 = lowx; x2 <= hix; x2++) {
+              s = &Sector(*pl, x2, y2);
               if (s->owner == Playernum) {
                 s->owner = 0;
-		s->troops = 0;
+                s->troops = 0;
                 s->popn = 0;
                 if (waste)
-/* code folded from here */
-  s->condition = WASTED;
-/* unfolding */
+                  /* code folded from here */
+                  s->condition = WASTED;
+                /* unfolding */
               }
             }
           }
-          putsmap(Smap,pl);
+          putsmap(Smap, pl);
           putstar(Stars[z], z);
-          putplanet(pl,z,i);
+          putplanet(pl, z, i);
           free(pl);
         }
       }
     }
 
-    Race = races[Playernum-1];
+    Race = races[Playernum - 1];
     Race->dissolved = 1;
     putrace(Race);
 
     sprintf(buf, "%s [%d] has dissolved.\n", Race->name, Playernum);
     post(buf, DECLARATION);
-
   }
 }
 
-
-int revolt(planettype *pl, int victim, int agent)
-{
-  int x, y, hix, hiy, lowx,lowy;
+int revolt(planettype *pl, int victim, int agent) {
+  int x, y, hix, hiy, lowx, lowy;
   racetype *Race;
   sectortype *s;
   int changed_hands = 0;
 
-  Race = races[victim-1];
-  
-  getsmap(Smap,pl);
+  Race = races[victim - 1];
+
+  getsmap(Smap, pl);
   /* do the revolt */
   lowx = 0;
   lowy = 0;
-  hix = pl->Maxx-1;
-  hiy = pl->Maxy-1;
-  for (y=lowy; y<=hiy; y++) {
-    for (x=lowx; x<=hix; x++) {
-      s = &Sector(*pl,x,y);
-      if (s->owner==victim && s->popn) {
-        if(success(pl->info[victim-1].tax)) {
-          if(int_rand(1,(int)s->popn) > 10*Race->fighters*s->troops) {
-            s->owner = agent;  /* enemy gets it */
-            s->popn = int_rand(1,(int)s->popn); /* some people killed */
-            s->troops = 0;  /* all troops destroyed */
-            pl->info[victim-1].numsectsowned -= 1;
-            pl->info[agent-1].numsectsowned += 1;
-	    pl->info[victim-1].mob_points -= s->mobilization;
-	    pl->info[agent-1].mob_points += s->mobilization;
+  hix = pl->Maxx - 1;
+  hiy = pl->Maxy - 1;
+  for (y = lowy; y <= hiy; y++) {
+    for (x = lowx; x <= hix; x++) {
+      s = &Sector(*pl, x, y);
+      if (s->owner == victim && s->popn) {
+        if (success(pl->info[victim - 1].tax)) {
+          if (int_rand(1, (int)s->popn) > 10 * Race->fighters * s->troops) {
+            s->owner = agent;                    /* enemy gets it */
+            s->popn = int_rand(1, (int)s->popn); /* some people killed */
+            s->troops = 0;                       /* all troops destroyed */
+            pl->info[victim - 1].numsectsowned -= 1;
+            pl->info[agent - 1].numsectsowned += 1;
+            pl->info[victim - 1].mob_points -= s->mobilization;
+            pl->info[agent - 1].mob_points += s->mobilization;
             changed_hands++;
           }
         }
       }
     }
   }
-  putsmap(Smap,pl);
+  putsmap(Smap, pl);
 
   return changed_hands;
 }

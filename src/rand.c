@@ -1,5 +1,5 @@
 /*
-** Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky, 
+** Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
 ** smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
 ** Restrictions in GB_copyright.h.
 **
@@ -26,22 +26,14 @@ int rposneg(void);
 
 long random(void);
 
-double double_rand(void)
-{
-	return (double)random()/2147483648.0;
+double double_rand(void) { return (double)random() / 2147483648.0; }
+
+int int_rand(int low, int hi) {
+  return ((hi <= low) ? low : (random() % (hi - low + 1)) + low);
 }
 
-int int_rand(int low, int hi)
-{
-    return( (hi<=low) ? low : (random() % (hi - low + 1)) + low );
+int round_rand(double x) {
+  return ((double_rand() > (x - (double)((int)x))) ? (int)x : (int)(x + 1));
 }
 
-int round_rand(double x)
-{
-  return ( (double_rand() > (x-(double)((int)x))) ? (int)x : (int)(x+1) );
-}
-
-int rposneg(void)
-{
-  return( (random()&1) ? -1 : 1 );
-}
+int rposneg(void) { return ((random() & 1) ? -1 : 1); }

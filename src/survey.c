@@ -389,7 +389,6 @@ void repair(int Playernum, int Governor, int APcount) {
   sectortype *s;
   planettype *p;
   placetype where;
-  racetype *Race;
 
   /* general code -- jpd -- */
   if (argn == 1) { /* no args */
@@ -414,8 +413,6 @@ void repair(int Playernum, int Governor, int APcount) {
         return;
     }
   }
-
-  Race = races[Playernum - 1];
 
   if (where.level == LEVEL_PLAN) {
     getplanet(&p, (int)where.snum, (int)where.pnum);

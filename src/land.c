@@ -41,7 +41,7 @@ void land(int Playernum, int Governor, int APcount) {
   planettype *p;
   sectortype *sect;
 
-  int shipno, ship2no, x = -1, y = -1, i, numdest, strength, damage;
+  int shipno, ship2no, x = -1, y = -1, i, numdest, strength;
   double fuel;
   double Dist;
   racetype *Race, *alien;
@@ -312,7 +312,6 @@ void land(int Playernum, int Governor, int APcount) {
               strength =
                   MIN((int)p->info[i - 1].guns, (int)p->info[i - 1].destruct);
               if (strength) {
-                damage = shoot_planet_to_ship(alien, p, s, strength, buf, temp);
                 post(temp, COMBAT);
                 notify_star(0, 0, (int)s->owner, (int)s->storbits, temp);
                 warn(i, (int)Stars[s->storbits]->governor[i - 1], buf);

@@ -458,6 +458,7 @@ int main() {
   printf("Your race has been created on sector %d,%d on\n", secttypes[i].x,
          secttypes[i].y);
   printf("%s/%s.\n\n", Stars[star]->name, Stars[star]->pnames[pnum]);
+  return 0;
 }
 
 char desshow(p, x, y) /* copied from map.c */

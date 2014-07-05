@@ -73,7 +73,7 @@ void invite(int Playernum, int Governor, int APcount, int mode) {
 /* declare that you wish to be included in the alliance block */
 void pledge(int Playernum, int Governor, int APcount, int mode) {
   int n;
-  racetype *alien, *Race;
+  racetype *Race;
 
   if (Governor) {
     notify(Playernum, Governor, "Only leaders may pledge.\n");
@@ -89,7 +89,6 @@ void pledge(int Playernum, int Governor, int APcount, int mode) {
     return;
   }
   Race = races[Playernum - 1];
-  alien = races[n - 1];
   if (mode) {
     setbit(Blocks[n - 1].pledge, Playernum);
     sprintf(buf, "%s [%d] has pledged %s.\n", Race->name, Playernum,
@@ -265,7 +264,6 @@ void declare(int Playernum, int Governor, int APcount) {
 
 #ifdef VOTING
 void vote(int Playernum, int Governor, int APcount) {
-  int i;
   racetype *Race;
   int check, nvotes, nays, yays;
 
@@ -287,7 +285,6 @@ void vote(int Playernum, int Governor, int APcount) {
   if (argn > 2) {
     check = 0;
     if (match(args[1], "update")) {
-      i = strlen(args[2]);
       if (match(args[2], "go")) {
         Race->votes |= VOTE_UPDATE_GO;
         check = 1;

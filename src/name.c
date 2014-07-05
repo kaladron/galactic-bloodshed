@@ -880,7 +880,6 @@ void motto(int Playernum, int Governor, int APcount, char *message) {
 void name(int Playernum, int Governor, int APcount) {
   char *ch;
   register int i, spaces;
-  int len;
   unsigned char check = 0;
   shiptype *ship;
   char string[1024];
@@ -914,7 +913,6 @@ void name(int Playernum, int Governor, int APcount) {
       spaces++;
   }
 
-  len = strlen(buf);
   if (spaces == strlen(buf)) {
     notify(Playernum, Governor, "Illegal name.\n");
     return;

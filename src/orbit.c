@@ -221,24 +221,19 @@ void DispStar(int Playernum, int Governor, int level, startype *star,
   int x = 0; // TODO(jeffbailey): Inititalized x and y to 0.
   int y = 0;
   int stand;
-  int iq;
-  double fac;
 
   *string = '\0';
 
   if (level == LEVEL_UNIV) {
-    fac = 1.0;
     x = (int)(SCALE + ((SCALE * (star->xpos - Lastx)) / (UNIVSIZE * Zoom)));
     y = (int)(SCALE + ((SCALE * (star->ypos - Lasty)) / (UNIVSIZE * Zoom)));
   } else if (level == LEVEL_STAR) {
-    fac = 1000.0;
     x = (int)(SCALE + (SCALE * (-Lastx)) / (SYSTEMSIZE * Zoom));
     y = (int)(SCALE + (SCALE * (-Lasty)) / (SYSTEMSIZE * Zoom));
   }
   /*if (star->nova_stage)
     DispArray(x, y, 11,7, Novae[star->nova_stage-1], fac); */
   if (y >= 0 && x >= 0) {
-    iq = 0;
     if (Race->governor[Governor].toggle.color) {
       stand = (isset(star->explored, Playernum) ? Playernum : 0) + '?';
       sprintf(temp, "%c %d %d 0 * ", (char)stand, x, y);

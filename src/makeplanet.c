@@ -270,7 +270,7 @@ double DistmapSq(int x, int y, int x2, int y2) {
 }
 
 int SectorTemp(planettype *pptr, int x, int y) {
-  int p_x, p_xg; /* X of the pole, and the ghost pole. */
+  int p_x; /* X of the pole. */
   int p_y;       /* Y of the nearest pole. */
   double f, d;   /* `distance' to pole. */
   static double renorm[] = { 0,           1.0 / 1.0,  2.0 / 2.0,   4.0 / 3.0,
@@ -294,10 +294,6 @@ int SectorTemp(planettype *pptr, int x, int y) {
     if (p_x >= pptr->Maxx)
       p_x -= pptr->Maxx;
   }
-  if (p_x <= (pptr->Maxy / 2))
-    p_xg = p_x + pptr->Maxy;
-  else
-    p_xg = p_x - pptr->Maxy;
   d = (y - p_y) * (y - p_y);
 
   f = (x - p_x + 0.2) / pptr->Maxx;

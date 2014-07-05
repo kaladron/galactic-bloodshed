@@ -34,7 +34,7 @@ void capture(int Playernum, int Governor, int APcount) {
   shiptype *ship, s;
   planettype *p;
   sectortype *sect;
-  int boarders, olddpopn, oldapopn, oldowner, oldgov, shipdam = 0, booby = 0;
+  int boarders, olddpopn, oldowner, oldgov, shipdam = 0, booby = 0;
   int shipno, nextshipno, x = -1, y = -1, what, olddtroops, i;
   int casualties = 0, casualties1 = 0, casualties2 = 0, casualty_scale = 0;
   double astrength, dstrength;
@@ -135,7 +135,6 @@ void capture(int Playernum, int Governor, int APcount) {
         notify(Playernum, Governor, buf);
       }
 
-      oldapopn = boarders;
       olddpopn = ship->popn;
       olddtroops = ship->troops;
       oldowner = ship->owner;

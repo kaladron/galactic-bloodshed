@@ -167,6 +167,7 @@ char *argv[];
 #else /* Non-PRIV version */
   do_racegen();
 #endif
+  return 0;
 }
 
 /**************

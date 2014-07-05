@@ -83,13 +83,11 @@ double est_production(sectortype *);
 int doplanet(int starnum, planettype *planet, int planetnum) {
   int shipno, x, y, nukex, nukey;
   int o = 0;
-  char *nukem;
   reg int i;
   sectortype *p;
   shiptype *ship;
   double fadd;
   int timer = 20;
-  int oldplanetpopn, oldplanetmaxpopn;
   unsigned char allmod = 0, allexp = 0;
 
   Sectormappos = planet->sectormappos;
@@ -113,10 +111,8 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
   tot_resdep = prod_eff = prod_mob = tot_captured = 0;
   Claims = 0;
 
-  oldplanetmaxpopn = planet->maxpopn;
   planet->maxpopn = 0;
 
-  oldplanetpopn = planet->popn;
   planet->popn = 0; /* initialize population for recount */
   planet->troops = 0;
   planet->total_resources = 0;
@@ -379,11 +375,6 @@ if (!Stinfo[starnum][planetnum].inhab)
     nukey = int_rand(0, (int)planet->Maxy - 1);
     p = &Sector(*planet, nukex, nukey);
     p->condition = WASTED;
-    /* index into accident type array */
-    nukem = p->popn + p->troops
-                ? Accidents_inhab
-                      [int_rand(0, sizeof(Accidents_inhab) / sizeof(char *))]
-                : Accidents_uninhab[p->type * 2 + (random() & 01)];
     p->popn = p->owner = p->troops = 0;
   }
 

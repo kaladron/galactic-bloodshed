@@ -249,7 +249,7 @@ void fuel_output(int Playernum, int Governor, double dist, double fuel,
 }
 
 int do_trip(double fuel, double gravity_factor) {
-  int effective_segment_number, trip_resolved, fuel_resolved, i;
+  int effective_segment_number, trip_resolved, i;
   double gravity_fuel, tmpdist, fuel_level1;
 
   tmpship->fuel = fuel; /* load up the pseudo-ship */
@@ -269,7 +269,6 @@ int do_trip(double fuel, double gravity_factor) {
   }
 
   trip_resolved = 0;
-  fuel_resolved = 0;
   number_segments = 0; /* Reset counter.  */
 
   /*  Launch the ship if it's on a planet.  */

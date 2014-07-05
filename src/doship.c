@@ -251,7 +251,6 @@ void domissile(shiptype *ship) {
   int bombx, bomby, numdest, pdn, i;
   planettype *p;
   double dist;
-  placetype where;
 
   if (!ship->alive || !ship->owner)
     return;
@@ -286,9 +285,6 @@ void domissile(shiptype *ship) {
       }
       sprintf(buf, "%s dropped on sector %d,%d at planet %s.\n", Ship(ship),
               bombx, bomby, prin_ship_orbits(ship));
-      where.level = LEVEL_PLAN;
-      where.snum = ship->storbits;
-      where.pnum = ship->pnumorbits;
 
       numdest = shoot_ship_to_planet(ship, p, (int)ship->destruct, bombx, bomby,
                                      1, 0, HEAVY, long_buf, short_buf);
@@ -432,7 +428,7 @@ void domine(int shipno, int detonate) {
 
 void doabm(shiptype *ship) {
   int sh2;
-  int numdest, caliber;
+  int numdest;
   planettype *p;
 
   if (!ship->alive || !ship->owner)
@@ -442,7 +438,6 @@ void doabm(shiptype *ship) {
 
   if (landed(ship)) {
     p = planets[ship->storbits][ship->pnumorbits];
-    caliber = current_caliber(ship);
     /* check to see if missiles/mines are present */
     sh2 = p->ships;
     while (sh2 && ship->destruct) {

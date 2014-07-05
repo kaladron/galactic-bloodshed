@@ -483,7 +483,7 @@ void walk(int Playernum, int Governor, int APcount) {
   planettype *p;
   sectortype *sect;
   int shipno, x, y, i, sh, succ = 0, civ, mil;
-  int damage, oldowner, oldgov;
+  int oldowner, oldgov;
   int strength, strength1;
   racetype *Race, *alien;
 
@@ -568,8 +568,6 @@ void walk(int Playernum, int Governor, int APcount) {
         while ((strength = retal_strength(ship2)) &&
                (strength1 = retal_strength(ship))) {
           bcopy(ship, &dummy, sizeof(shiptype));
-          damage = shoot_ship_to_ship(ship2, ship, strength, 0, 0, long_buf,
-                                      short_buf);
           use_destruct(ship2, strength);
           notify(Playernum, Governor, long_buf);
           warn((int)ship2->owner, (int)ship2->governor, long_buf);
@@ -578,8 +576,6 @@ void walk(int Playernum, int Governor, int APcount) {
           notify_star(Playernum, Governor, (int)ship2->owner,
                       (int)ship->storbits, short_buf);
           if (strength1) {
-            damage = shoot_ship_to_ship(&dummy, ship2, strength1, 0, 1,
-                                        long_buf, short_buf);
             use_destruct(ship, strength1);
             notify(Playernum, Governor, long_buf);
             warn((int)ship2->owner, (int)ship2->governor, long_buf);

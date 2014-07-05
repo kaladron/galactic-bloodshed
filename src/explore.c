@@ -248,7 +248,6 @@ void exploration(int Playernum, int Governor, int APcount) {
   int star, starq, i, j;
   planettype *pl;
   placetype where;
-  int inhab = 0;
   racetype *Race;
 
   starq = -1;
@@ -316,7 +315,6 @@ void exploration(int Playernum, int Governor, int APcount) {
               sprintf(buf, "SLAVED ");
               notify(Playernum, Governor, buf);
             }
-            inhab = 0;
             for (j = 1; j <= Num_races; j++)
               if (j != Playernum && pl->info[j - 1].numsectsowned) {
                 sprintf(buf, "%d ", j);

@@ -50,23 +50,14 @@ void mutate_sector(sectortype *);
 
 int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
                        int ignore, char *long_msg, char *short_msg) {
-  double range;
-  int hits, casualties, casualties1, primgundamage, secgundamage;
-  int penetrate, crithits, critdam, damage, defense;
+  int hits;
+  int damage, defense;
   double dist, xfrom, yfrom, xto, yto;
   int focus, fevade, fspeed, fbody, tevade, tspeed, tbody, caliber;
   char weapon[32], damage_msg[1024];
 
-  range = 0.0;
-  casualties = 0;
-  casualties1 = 0;
-  primgundamage = 0;
-  secgundamage = 0;
   hits = 0;
   defense = 1;
-  penetrate = 0;
-  crithits = 0;
-  critdam = 0;
   if (strength <= 0)
     return -1;
 
@@ -97,7 +88,6 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
       dist *= dist / 200.0;         /* mines are very effective inside 200 */
     }
   }
-  range = (double)dist;
   if ((double)dist > gun_range((racetype *)NULL, from, 0))
     return -1;
   /* attack parameters */
@@ -162,13 +152,11 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
 #ifdef DEFENSE
 int shoot_planet_to_ship(racetype *Race, planettype *p, shiptype *ship,
                          int strength, char *long_msg, char *short_msg) {
-  int hits, casualties, casualties1, primgundamage, secgundamage;
+  int hits;
   int evade, speed, body;
   int damage;
   char damage_msg[1024];
 
-  casualties = casualties1 = 0;
-  primgundamage = secgundamage = 0;
   hits = 0;
   if (strength <= 0)
     return -1;

@@ -1955,7 +1955,7 @@ void insert_sh_ship(shiptype *s, shiptype *s2) {
 }
 
 void remove_sh_star(shiptype *s) {
-  int sh, sh2;
+  int sh;
   shiptype *s2;
 
   getstar(&Stars[s->storbits], (int)s->storbits);
@@ -1967,7 +1967,6 @@ void remove_sh_star(shiptype *s) {
   } else {
     while (sh != s->number) {
       (void)getship(&s2, sh);
-      sh2 = sh;
       sh = s2->nextship;
       if (sh != s->number)
         free(s2);
@@ -1981,7 +1980,7 @@ void remove_sh_star(shiptype *s) {
 }
 
 void remove_sh_plan(shiptype *s) {
-  int sh, sh2;
+  int sh;
   shiptype *s2;
   planettype *p;
 
@@ -1994,7 +1993,6 @@ void remove_sh_plan(shiptype *s) {
   } else {
     while (sh != s->number) {
       (void)getship(&s2, sh);
-      sh2 = sh;
       sh = s2->nextship;
       if (sh != s->number)
         free(s2); /* don't free it if it is the s2 we want */
@@ -2009,7 +2007,7 @@ void remove_sh_plan(shiptype *s) {
 }
 
 void remove_sh_ship(shiptype *s, shiptype *ship) {
-  int sh, sh2;
+  int sh;
   shiptype *s2;
   sh = ship->ships;
 
@@ -2018,7 +2016,6 @@ void remove_sh_ship(shiptype *s, shiptype *ship) {
   else {
     while (sh != s->number) {
       (void)getship(&s2, sh);
-      sh2 = sh;
       sh = (int)(s2->nextship);
       if (sh != s->number)
         free(s2);

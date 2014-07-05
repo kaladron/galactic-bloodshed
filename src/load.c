@@ -53,7 +53,7 @@ void unload_onto_alien_sector(int, int, planettype *, shiptype *, sectortype *,
 void load(int Playernum, int Governor, int APcount, int mode) {
   char commod;
   unsigned char sh = 0, diff = 0;
-  int proc, lolim, uplim, amt;
+  int lolim, uplim, amt;
   int transfercrew;
   shiptype *s, *s2;
   planettype *p;
@@ -89,7 +89,6 @@ void load(int Playernum, int Governor, int APcount, int mode) {
       } else if (!enufAP(Playernum, Governor,
                          Stars[s->storbits]->AP[Playernum - 1], APcount))
         continue;
-      proc = 0;
       if (!s->docked) {
         sprintf(buf, "%s is not landed or docked.\n", Ship(s));
         notify(Playernum, Governor, buf);
@@ -183,7 +182,6 @@ void load(int Playernum, int Governor, int APcount, int mode) {
                       Max_crystals(s) - s->crystals);
           lolim = -s->crystals;
         }
-        proc = 1;
         break;
       case 'c':
         if (sh) {
@@ -193,7 +191,6 @@ void load(int Playernum, int Governor, int APcount, int mode) {
           uplim = MIN(sect->popn, Max_crew(s) - s->popn);
           lolim = -s->popn;
         }
-        proc = 1;
         break;
       case 'm':
         if (sh) {
@@ -203,7 +200,6 @@ void load(int Playernum, int Governor, int APcount, int mode) {
           uplim = MIN(sect->troops, Max_mil(s) - s->troops);
           lolim = -s->troops;
         }
-        proc = 1;
         break;
       case 'd':
         if (sh) {
@@ -214,7 +210,6 @@ void load(int Playernum, int Governor, int APcount, int mode) {
                       Max_destruct(s) - s->destruct);
           lolim = -s->destruct;
         }
-        proc = 1;
         break;
       case 'f':
         if (sh) {
@@ -226,7 +221,6 @@ void load(int Playernum, int Governor, int APcount, int mode) {
                       (int)Max_fuel(s) - (int)s->fuel);
           lolim = -(int)s->fuel;
         }
-        proc = 1;
         break;
       case 'r':
         if (sh) {
@@ -243,7 +237,6 @@ void load(int Playernum, int Governor, int APcount, int mode) {
                       Max_resource(s) - s->resource);
           lolim = -s->resource;
         }
-        proc = 1;
         break;
       default:
         notify(Playernum, Governor, "No such commodity valid.\n");
@@ -729,10 +722,9 @@ void dump(int Playernum, int Governor, int APcount) {
 }
 
 void transfer(int Playernum, int Governor, int APcount) {
-  int Mod = 0, player, give;
+  int player, give;
   planettype *planet;
   char commod = 0;
-  racetype *r;
 
   if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
     sprintf(buf, "You need to be in planet scope to do this.\n");
@@ -750,7 +742,6 @@ void transfer(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, buf);
     return;
   }
-  r = races[player - 1];
 
   getplanet(&planet, Dir[Playernum - 1][Governor].snum,
             Dir[Playernum - 1][Governor].pnum);
@@ -830,7 +821,6 @@ void transfer(int Playernum, int Governor, int APcount) {
             Dir[Playernum - 1][Governor].pnum);
 
   free(planet);
-  Mod = 1;
 
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
 }

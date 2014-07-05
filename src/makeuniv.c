@@ -45,7 +45,6 @@ int main(int argc, char *argv[]) {
   FILE *stardata, *planetdata, *sectordata;
   char str[200];
   int c, i, star;
-  double xspeed[NUMSTARS], yspeed[NUMSTARS];
 
   /*
    * Initialize: */
@@ -155,8 +154,6 @@ int main(int argc, char *argv[]) {
 
   for (star = 0; star < nstars; star++) {
     Stars[star] = Makestar(planetdata, sectordata);
-    xspeed[star] = 0;
-    yspeed[star] = 0;
   }
   fchmod(planetdata, 00660); /* change data files to group readwrite */
   fclose(planetdata);
@@ -243,6 +240,7 @@ int main(int argc, char *argv[]) {
 
   if (printpostscript)
     produce_postscript(DEFAULT_POSTSCRIPT_MAP_FILENAME);
+  return 0;
 }
 
 void InitFile(char *filename, void *ptr, int len) {

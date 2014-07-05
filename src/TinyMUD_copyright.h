@@ -1,7 +1,7 @@
 /* -*-C-*-
 
 Copyright (c) 1989 by David Applegate, James Aspnes, Timothy Freeman,
-		   and Bennet Yee.
+                   and Bennet Yee.
 
 This material was developed by the above-mentioned authors.
 Permission to copy this software, to redistribute it, and to use it
@@ -30,4 +30,3 @@ there shall be no use of the names of the authors, of Carnegie-Mellon
 University, nor of any adaptation thereof in any advertising,
 promotional, or sales literature without prior written consent from
 the authors and Carnegie-Mellon University in each case. */
-

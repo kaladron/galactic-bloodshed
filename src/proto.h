@@ -1,9 +1,9 @@
 /* GB_server.c */
 
 #if defined(__STDC__) || defined(__cplusplus)
-# define P_(s) s
+#define P_(s) s
 #else
-# define P_(s) ()
+#define P_(s) ()
 #endif
 
 extern void set_signals P_((void));
@@ -34,7 +34,7 @@ extern void do_segment P_((int, int));
 extern void Login_Parse P_((char *, char *, char *));
 extern void dump_users P_((int));
 extern void dump_users2 P_((int, int));
-extern void boot_user P_((int ));
+extern void boot_user P_((int));
 extern void GB_time P_((int, int));
 extern void compute_power_blocks P_((void));
 extern void warn_race P_((int, char *));
@@ -86,9 +86,12 @@ extern double est_production P_((sectortype *));
 /* dosector.c */
 
 extern void produce P_((startype *, planettype *, sectortype *));
-extern void spread P_((register planettype *, register sectortype *, register int, register int));
-extern void Migrate2 P_((planettype *, register int, register int, sectortype *, int *));
-extern void explore P_((register planettype *, register sectortype *, register int, register int, register int));
+extern void spread
+P_((register planettype *, register sectortype *, register int, register int));
+extern void Migrate2
+P_((planettype *, register int, register int, sectortype *, int *));
+extern void explore P_((register planettype *, register sectortype *,
+                        register int, register int, register int));
 extern void plate P_((sectortype *));
 
 /* doship.c */
@@ -173,10 +176,10 @@ extern void clr_shipfree P_((void));
 extern void clr_commodfree P_((void));
 extern void makeshipdead P_((int));
 extern void makecommoddead P_((int));
-extern void Putpower P_((struct power[64 ]));
-extern void Getpower P_((struct power[64 ]));
-extern void Putblock P_((struct block[64 ]));
-extern void Getblock P_((struct block[64 ]));
+extern void Putpower P_((struct power[64]));
+extern void Getpower P_((struct power[64]));
+extern void Putblock P_((struct block[64]));
+extern void Getblock P_((struct block[64]));
 extern void insert_dead_ship P_((shiptype *));
 extern void clear_dead_ship P_((void));
 extern int getdeadship_new P_((int, int));
@@ -215,7 +218,8 @@ extern int check_logsize P_((int));
 
 /* max.c */
 
-extern int maxsupport P_((register racetype *, register sectortype *, register double, register int));
+extern int maxsupport
+P_((register racetype *, register sectortype *, register double, register int));
 extern double compatibility P_((register planettype *, register racetype *));
 extern double gravity P_((planettype *));
 extern char *prin_ship_orbits P_((shiptype *));
@@ -249,7 +253,8 @@ extern int clearhyper P_((shiptype *));
 /* perm.c */
 
 extern void PermuteSects P_((planettype *));
-extern int Getxysect P_((register planettype *, register int *, register int *, register int));
+extern int Getxysect
+P_((register planettype *, register int *, register int *, register int));
 
 /* pod.c */
 
@@ -316,13 +321,18 @@ extern int can_build_at_planet P_((int, int, startype *, planettype *));
 extern int get_build_type P_((char *));
 extern int can_build_this P_((int, racetype *, char *));
 extern int can_build_on_ship P_((int, racetype *, shiptype *, char *));
-extern int can_build_on_sector P_((int, racetype *, planettype *, sectortype *, int, int, char *));
+extern int can_build_on_sector
+P_((int, racetype *, planettype *, sectortype *, int, int, char *));
 extern int build_at_ship P_((int, int, racetype *, shiptype *, int *, int *));
-extern void autoload_at_planet P_((int, shiptype *, planettype *, sectortype *, int *, double *));
+extern void autoload_at_planet
+P_((int, shiptype *, planettype *, sectortype *, int *, double *));
 extern void autoload_at_ship P_((int, shiptype *, shiptype *, int *, double *));
-extern void initialize_new_ship P_((int, int, racetype *, shiptype *, double, int));
-extern void create_ship_by_planet P_((int, int, racetype *, shiptype *, planettype *, int, int, int, int));
-extern void create_ship_by_ship P_((int, int, racetype *, int, startype *, planettype *, shiptype *, shiptype *));
+extern void initialize_new_ship
+P_((int, int, racetype *, shiptype *, double, int));
+extern void create_ship_by_planet
+P_((int, int, racetype *, shiptype *, planettype *, int, int, int, int));
+extern void create_ship_by_ship P_((int, int, racetype *, int, startype *,
+                                    planettype *, shiptype *, shiptype *));
 extern double getmass P_((shiptype *));
 extern int ship_size P_((shiptype *));
 extern double cost P_((shiptype *));
@@ -405,7 +415,8 @@ extern void distance P_((int, int, int));
 extern void star_locations P_((int, int, int));
 extern void exploration P_((int, int, int));
 extern void tech_status P_((int, int, int));
-extern void tech_report_star P_((int, int, startype *, int, int *, double *, double *));
+extern void tech_report_star
+P_((int, int, startype *, int, int *, double *, double *));
 
 /* fire.c */
 
@@ -444,7 +455,6 @@ extern void launch P_((int, int, int));
 
 /* load.c */
 
-
 extern void load P_((int, int, int, int));
 extern void jettison P_((int, int, int));
 extern int jettison_check P_((int, int, int, int));
@@ -464,7 +474,8 @@ extern void rcv_popn P_((shiptype *, int, double));
 extern void rcv_troops P_((shiptype *, int, double));
 extern void do_transporter P_((racetype *, int, shiptype *));
 extern int landed_on P_((shiptype *, int));
-extern void unload_onto_alien_sector P_((int, int, planettype *, shiptype *, sectortype *, int, int));
+extern void unload_onto_alien_sector
+P_((int, int, planettype *, shiptype *, sectortype *, int, int));
 
 /* map.c */
 
@@ -474,22 +485,27 @@ extern char desshow P_((int, int, planettype *, int, int, racetype *));
 
 /* mobiliz.c */
 
-
 extern void mobilize P_((int, int, int));
 extern void tax P_((int, int, int));
 extern int control P_((int, int, startype *));
 
 /* move.c */
 
-
 extern void arm P_((int, int, int, int));
 extern void move_popn P_((int, int, int));
 extern void walk P_((int, int, int));
 extern int get_move P_((char, int, int, int *, int *, planettype *));
-extern void mech_defend P_((int, int, int *, int, planettype *, int, int, sectortype *, int, int, sectortype *));
-extern void mech_attack_people P_((shiptype *, int *, int *, racetype *, racetype *, sectortype *, int, int, int, char *, char *));
-extern void people_attack_mech P_((shiptype *, int, int, racetype *, racetype *, sectortype *, int, int, char *, char *));
-extern void ground_attack P_((racetype *, racetype *, int *, int, unsigned short *, unsigned short *, unsigned int, unsigned int, double, double, double *, double *, int *, int *, int *));
+extern void mech_defend P_((int, int, int *, int, planettype *, int, int,
+                            sectortype *, int, int, sectortype *));
+extern void mech_attack_people
+P_((shiptype *, int *, int *, racetype *, racetype *, sectortype *, int, int,
+    int, char *, char *));
+extern void people_attack_mech P_((shiptype *, int, int, racetype *, racetype *,
+                                   sectortype *, int, int, char *, char *));
+extern void ground_attack
+P_((racetype *, racetype *, int *, int, unsigned short *, unsigned short *,
+    unsigned int, unsigned int, double, double, double *, double *, int *,
+    int *, int *));
 
 /* name.c */
 
@@ -510,8 +526,10 @@ extern void announce P_((int, int, char *, int, int));
 
 extern void orbit P_((int, int, int));
 extern void DispStar P_((int, int, int, startype *, int, int, char *));
-extern void DispPlanet P_((int, int, int, planettype *, char *, int, racetype *, char *));
-extern void DispShip P_((int, int, placetype *, shiptype *, planettype *, int, char *));
+extern void DispPlanet
+P_((int, int, int, planettype *, char *, int, racetype *, char *));
+extern void DispShip
+P_((int, int, placetype *, shiptype *, planettype *, int, char *));
 
 /* order.c */
 
@@ -563,20 +581,25 @@ extern int listed P_((int, char *));
 extern void GB_schedule P_((int, int));
 extern void timedifftoascii P_((long, long, char *));
 
-
 extern void scrap P_((int, int, int));
 
 /* shootblast.c */
 
-extern int shoot_ship_to_ship P_((shiptype *, shiptype *, int, int, int, char *, char *));
-extern int shoot_planet_to_ship P_((racetype *, planettype *, shiptype *, int, char *, char *));
-extern int shoot_ship_to_planet P_((shiptype *, planettype *, int, int, int, int, int, int, char *, char *));
+extern int shoot_ship_to_ship
+P_((shiptype *, shiptype *, int, int, int, char *, char *));
+extern int shoot_planet_to_ship
+P_((racetype *, planettype *, shiptype *, int, char *, char *));
+extern int shoot_ship_to_planet
+P_((shiptype *, planettype *, int, int, int, int, int, int, char *, char *));
 extern int do_radiation P_((shiptype *, double, int, int, char *, char *));
-extern int do_damage P_((int, shiptype *, double, int, int, int, int, double, char *, char *));
+extern int do_damage
+P_((int, shiptype *, double, int, int, int, int, double, char *, char *));
 extern void ship_disposition P_((shiptype *, int *, int *, int *));
 extern int CEW_hit P_((double, int));
-extern int Num_hits P_((double, int, int, double, int, int, int, int, int, int, int, int));
-extern int hit_odds P_((double, int *, double, int, int, int, int, int, int, int, int));
+extern int Num_hits
+P_((double, int, int, double, int, int, int, int, int, int, int, int));
+extern int hit_odds
+P_((double, int *, double, int, int, int, int, int, int, int, int));
 extern int cew_hit_odds P_((double, int));
 extern double gun_range P_((racetype *, shiptype *, int));
 extern double tele_range P_((int, double));
@@ -625,7 +648,7 @@ extern void toxicity P_((int, int, int));
 /* vict.c */
 
 extern void victory P_((int, int));
-extern void create_victory_list P_((struct vic[64 ]));
+extern void create_victory_list P_((struct vic[64]));
 
 /* zoom.c */
 
@@ -636,8 +659,10 @@ extern void csp_zoom P_((int, int));
 
 extern void csp_orbit P_((int, int));
 extern void csp_DispStar P_((int, int, int, int, startype *, int, char *));
-extern void csp_DispPlanet P_((int, int, int, int, int, planettype *, char *, racetype *, char *));
-extern void csp_DispShip P_((int, int, placetype *, shiptype *, planettype *, int, char *));
+extern void csp_DispPlanet
+P_((int, int, int, int, int, planettype *, char *, racetype *, char *));
+extern void csp_DispShip
+P_((int, int, placetype *, shiptype *, planettype *, int, char *));
 
 /* csp_dump */
 extern void csp_planet_dump P_((int, int));

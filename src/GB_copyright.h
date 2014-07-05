@@ -1,5 +1,5 @@
 /*
- * Galactic Bloodshed, copyright (c) 1989 1990 by Robert P. Chansky, 
+ * Galactic Bloodshed, copyright (c) 1989 1990 by Robert P. Chansky,
  * robertc@adobe.com.
  *
  * Version 1.0 - 5.2 copyright (c) 1990-1992 by Garrett W. Van Cleef,

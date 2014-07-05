@@ -20,6 +20,7 @@
 
 #define EXTERN extern
 #include "vars.h"
+#include <string.h>
 #include <math.h>
 
 extern double double_rand(void);
@@ -33,13 +34,13 @@ int xmin[] = {15,  2,  4,  4, 26, 12, 12, 12} ;
 int xmax[] = {23,  4,  8,  8, 32, 20, 20, 20} ;
 
 /*
- * fmin, fmax, rmin, rmax are now all based on the sector type as well 
+ * Fmin, Fmax, rmin, rmax are now all based on the sector type as well 
  * as the planet type.
  */
 
 /*                 .      *     ^     ~     #     (     -             */
 int x_chance[]= {  5,    15,   10,    4,    5,    7,    6};
-int fmin[][8] ={{ 25,    20,   10,    0,   20,   45,    5},  /*   @   */
+int Fmin[][8] ={{ 25,    20,   10,    0,   20,   45,    5},  /*   @   */
                 {  0,     1,    2,    0,    0,    0,    1},  /*   o   */
                 {  0,     3,    2,    0,    0,    0,    2},  /*   O   */
                 {  0,     0,    8,    0,   25,    0,    0},  /*   #   */
@@ -49,7 +50,7 @@ int fmin[][8] ={{ 25,    20,   10,    0,   20,   45,    5},  /*   @   */
                 {  0,     5,    2,    0,    0,    0,    2}}; /*   -   */
 
 /*                 .      *     ^     ~     #     (     -             */
-int fmax[][8] ={{ 40,    35,   20,    0,   40,   65,   15},  /*   @   */
+int Fmax[][8] ={{ 40,    35,   20,    0,   40,   65,   15},  /*   @   */
                 {  0,     2,    3,    0,    0,    0,    2},  /*   o   */
                 {  0,     5,    4,    0,    0,    0,    3},  /*   O   */
                 {  0,     0,   15,    0,   35,    0,    0},  /*   #   */
@@ -420,8 +421,8 @@ void Makesurface(planettype *p)
             s->type = s->condition;
             s->resource = int_rand (rmin[p->type][s->type],
                                     rmax[p->type][s->type]);
-            s->fert = int_rand (fmin[p->type][s->type],
-                                fmax[p->type][s->type]);
+            s->fert = int_rand (Fmin[p->type][s->type],
+                                Fmax[p->type][s->type]);
 	    if(int_rand(0, 1000) < x_chance[s->type])
 		s->crystals=int_rand(4,8);
 	    else

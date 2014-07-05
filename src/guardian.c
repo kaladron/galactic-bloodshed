@@ -5,12 +5,12 @@
 
 #include <stdio.h>
 #include <signal.h>
+#include <stdlib.h>
 
 char *prog;
 
-main(argc,argv)
- int argc;
- char *argv[];
+int
+main(int argc, char **argv)
 {
     int pid;
     

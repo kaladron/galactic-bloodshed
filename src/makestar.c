@@ -44,8 +44,8 @@ void rand_list(int, int *);
 
 int Numtypes[TYPE_DESERT+2] = {0, };
 int Resource[TYPE_DESERT+2] = {0, } ;
-int Numsects[TYPE_DESERT+2][PLATED+1] = {0, } ;
-int Fertsects[TYPE_DESERT+2][PLATED+1] = {0, } ;
+int Numsects[TYPE_DESERT+2][PLATED+1] = {{0, },} ;
+int Fertsects[TYPE_DESERT+2][PLATED+1] = {{0, },} ;
 char *Nametypes[] = {"Earth", "Asteroid", "Airless", "Iceball", "Gaseous",
                        "Water", "Forest", "Desert", " >>"};
 char *Namesects[] = {"sea", "land", "mountain", "gaseous", "ice",

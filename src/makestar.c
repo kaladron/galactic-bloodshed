@@ -24,6 +24,10 @@ G.O.D. [1] > boils at -33
 #define PLANET_DIST_MAX 1900.0
 #define PLANET_DIST_MIN 100.0
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #define ALLOCATE(type) ((type *)malloc(sizeof(type)))
 #undef malloc
 #undef realloc

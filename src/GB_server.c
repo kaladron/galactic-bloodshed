@@ -934,7 +934,7 @@ void force_output(void) {
 }
 
 void make_nonblocking(int s) {
-  if (fcntl(s, F_SETFL, FNDELAY) == -1) {
+  if (fcntl(s, F_SETFL, O_NDELAY) == -1) {
     perror("make_nonblocking: fcntl");
     exit(0);
   }

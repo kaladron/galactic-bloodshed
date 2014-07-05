@@ -44,8 +44,8 @@ static int occupied[100][100];
 int main(int argc, char *argv[]) {
   FILE *stardata, *planetdata, *sectordata;
   char str[200];
-  int c, i, star, x;
-  double att, xspeed[NUMSTARS], yspeed[NUMSTARS];
+  int c, i, star;
+  double xspeed[NUMSTARS], yspeed[NUMSTARS];
 
   /*
    * Initialize: */

@@ -67,20 +67,18 @@ char *Desnames[] = { "ocean",              "land",   "mountainous", "gaseous",
                      "err in des type!" };
 
 int main() {
-  int x, y, or;
+  int x, y;
   int pnum, star = 0, found = 0, check, vacant, count, i, j, Playernum;
-  int ifd, ppref = -1;
+  int ppref = -1;
   sigset_t mask, block;
   int s, idx, k;
 #define STRSIZE 100
   char str[STRSIZE], c;
-  char racepass[MAXCOMMSTRSIZE], govpass[MAXCOMMSTRSIZE];
   sectortype *sect;
   struct stype secttypes[WASTED + 1];
   planettype *planet;
   unsigned char not_found[TYPE_MAX + 1];
   startype *star_arena;
-  FILE *fd;
 
   open_data_files();
 

@@ -98,7 +98,7 @@ planettype Makeplanet(double dist, short stemp, int type) {
   reg int x, y;
   sectortype *s;
   planettype planet;
-  int i, atmos, total_sects;
+  int atmos, total_sects;
   char c, t;
   double f;
 
@@ -380,10 +380,9 @@ void grow(planettype *p, int type, int n, int rate) {
 }
 
 void Makesurface(planettype *p) {
-  reg int r, x, y;
-  reg int x2, y2, xx, temp;
+  reg int x, y;
+  reg int temp;
   reg sectortype *s;
-  double rr;
 
   for (x = 0; x < p->Maxx; x++) {
     for (y = 0; y < p->Maxy; y++) {
@@ -420,7 +419,7 @@ void Makesurface(planettype *p) {
 #define TFAC 10
 
 short SectTemp(planettype *p, int y) {
-  register int i, dy, mid, temp;
+  register int dy, mid, temp;
 
   temp = p->conditions[TEMP];
   mid = (p->Maxy + 1) / 2 - 1;

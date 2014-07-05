@@ -24,7 +24,7 @@ extern int enroll_valid_race();
 int enroll_player_race(failure_filename) char *failure_filename;
 {
   char c[128];
-  FILE *f, *g;
+  FILE *g;
   int n;
   static int recursing = 0;
   static int successful_enroll_in_fix_mode = 0;

@@ -721,14 +721,14 @@ void build(int Playernum, int Governor, int APcount) {
   racetype *Race;
   char c;
   int i, j, m, n, x, y, count, level, what, outside;
-  int shipcost, load_crew, shipno;
-  int hangerbuild, snum, pnum, build_level;
+  int shipcost, load_crew;
+  int snum, pnum, build_level;
   double load_fuel, tech;
 
   FILE *fd;
   planettype *planet;
   sectortype *sector;
-  shiptype *builder, *mothership, *s;
+  shiptype *builder;
   shiptype newship;
 
   if (argn > 1 && args[1][0] == '?') {

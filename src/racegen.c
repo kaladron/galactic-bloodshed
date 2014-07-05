@@ -124,7 +124,6 @@ char *argv[];
     int sockfd;
     socklen_t clilen;
     struct sockaddr_in cli_addr, serv_addr;
-    char buf[256];
 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       fprintf(stderr, "server: can't open stream socket");

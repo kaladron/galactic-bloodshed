@@ -43,14 +43,13 @@ int do_trip(double, double);
 #include "doship.p"
 
 void proj_fuel(int Playernum, int Governor, int APcount) {
-  int shipno, fuel_resolved, trip_resolved, opt_settings, current_settings,
+  int shipno, opt_settings, current_settings,
       current_segs, computing = 1;
-  double fuel_usage, level, dist, tmpdist;
+  double fuel_usage, level, dist;
   shiptype *ship;
   planettype *p;
   char buf[1024];
-  long effective_time;
-  double current_fuel = 0.0, gravity_factor = 0.0, gravity_fuel = 0.0;
+  double current_fuel = 0.0, gravity_factor = 0.0;
 
   if ((argn < 2) || (argn > 3)) {
     notify(Playernum, Governor, "Invalid number of options.\n\"fuel "
@@ -222,8 +221,6 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
 
 void fuel_output(int Playernum, int Governor, double dist, double fuel,
                  double grav, double mass, int segs) {
-  long effective_time;
-  double gravity_fuel = 0.0;
   char buf[1024], grav_buf[1024];
 
   if (grav > 0.00)
@@ -240,7 +237,7 @@ void fuel_output(int Playernum, int Governor, double dist, double fuel,
         Playernum, Governor,
         "Estimated arrival time not available due to segment # discrepancy.\n");
   else {
-    effective_time =
+    long effective_time =
         next_segment_time + (long)((segs - 1) * (update_time / segments) * 60);
     if (segments == 1)
       effective_time =

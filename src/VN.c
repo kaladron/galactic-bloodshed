@@ -90,7 +90,6 @@ void do_VN(shiptype *ship) {
     /* we are not landed */
     if (!ship->special.mind.busy) {
       /* we were just built & launched */
-      reg int s, min = 0, min2 = 0;
 
       if (ship->type == OTYPE_BERS)
         order_berserker(ship);

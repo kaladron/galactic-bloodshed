@@ -269,7 +269,6 @@ char Dessymbols[] = { CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
 int main(int argc, char **argv) {
   int i;
   struct stat stbuf;
-  long ntime;
   FILE *sfile;
 
   open_data_files();
@@ -1446,7 +1445,7 @@ void dump_users(struct descriptor_data *e) {
 }
 
 void process_command(int Playernum, int Governor, char *comm) {
-  int i, j, God, Guest;
+  int j, God, Guest;
   char *string;
   racetype *r;
 
@@ -2099,7 +2098,6 @@ void warn_star(int a, int b, int star, char *message) {
 
 void notify_star(int a, int g, int b, int star, char *message) {
   struct descriptor_data *d;
-  int i;
   racetype *Race;
 
 #ifdef MONITOR

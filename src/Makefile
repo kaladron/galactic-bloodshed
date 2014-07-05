@@ -10,7 +10,6 @@ CC = clang
 
 CFLAGS = -g -O2 -W -Wall -Werror \
           -Wno-unused-parameter \
-	  -Wno-unused-variable \
 	  -Wno-sign-compare \
 	  -Wno-array-bounds \
 	  -Wno-char-subscripts \

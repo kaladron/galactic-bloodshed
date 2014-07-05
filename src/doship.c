@@ -719,7 +719,7 @@ void do_ap(shiptype *ship) {
 
   /* if landed on planet, change conditions to be like race */
   if (landed(ship) && ship->on) {
-    int j, d, a;
+    int j, d;
     planettype *p;
     p = planets[ship->storbits][ship->pnumorbits];
     Race = races[ship->owner - 1];

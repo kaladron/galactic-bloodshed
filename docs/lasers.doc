@@ -1,0 +1,54 @@
+LASERS                  Galactic Bloodshed                      LASERS
+
+
+CONCEPT
+  lasers -- ships may mount combat lasers for use in battle.
+
+DESCRIPTION
+  
+   Some ships may be permitted to mount combat lasers at time
+of construction. Race require a laser tech to do that.
+A ship which has a laser mounted may optionally
+use these for firing instead of the normal guns. Unlike guns,
+lasers use fuel instead of destruct to attack with. Two points
+of fuel is equivalent to 1 light gun. The player must also have a
+crystal mounted to use the fuel for attacking.
+
+   There is no limit to the amount of fuel that may used in
+an attack. However, there is a technological stability limit,
+beyond which crystal damage may result, or even an explosion.
+
+Ship explosion is determined by the formula:
+	Explosion if rand(0, strength) > ship tech/2.
+
+A 100 technology ship may fire up to 50 strength points safely, a
+200 tech ship 100, etc. Pushing it beyond this limit may result
+in a matter/anti-matter explosion!
+
+Crystals may damage before they explode a ship. The chances of
+damage (and hence an automatic dismount and loss of the crystal)
+is determined by
+	Damaged if rand(0, strength) > ship tech/4.
+
+A ship will only fire lasers if told to do so. This is done using
+the order command 'order <ship> laser on <default strength>'.
+The laser may be turned off with 'order <ship> laser off'. If the
+laser is set on, then executing the 'fire' command uses lasers
+instead of normal weapons.
+
+Lasers may be set to 'focus' or 'non-focus' mode by using
+'order <ship> focus <on/off>'. In focused mode, the entire salvo will
+either hit or miss (based onthe hit probability), while in non-
+focused mode each strength point of the salvo is evaluated for hit or
+miss.
+
+Technology limits on functional crystal ranges are proportional to
+the amount of damage on the ship. Heaviliy damaged ships may
+find their crystals breaking at lower limits.
+
+Command 'ship' line 'safe' will tell you maximum salvo ship can 
+fire without chance of breaking the crystal.
+
+SEE ALSO
+   fire, order
+

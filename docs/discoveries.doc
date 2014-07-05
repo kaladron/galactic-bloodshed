@@ -1,0 +1,26 @@
+DISCOVERIES                 Galactic Bloodshed                   DISCOVERIES
+
+
+ In some tech races discovers different new equpments they may use now on.
+Here is list of them with required tech:
+
+Hyper-drive 50      - After this you may upgrade or build new ships 
+	              with hyper-drive engine.
+
+Crystal 80          - Crystal energy source. You may use crystal along
+                      with fuel to make much faster and longer hyperjumps.
+
+Laser 100           - Light-beam weapon that will use fuel instead of 
+                      destruction. 
+
+CEW 150             - Confined energy weapons, which unlike lasers and guns
+		      can be designed to have an optimal range. 
+
+AVPM 200	    - Audio-Vibatory-Physio-Molecular Transport Device.
+                      This will transport loaded material into the hopper of 
+		      its target device.
+
+TRACTOR BEAM 999    - not implemented in code yet
+WORMHOLE 999        - not implemented in code yet
+CLOAKING DEVICE 999 - not implemented in code yet
+

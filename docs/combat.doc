@@ -1,0 +1,64 @@
+COMBAT			Galactic Bloodshed			COMBAT
+
+
+DESCRIPTION
+
+   'move' and 'deploy' commands are used to move civilians/troops from one 
+sector to an adjacent sector. If a destination sector is occupied by 
+aliens, the combat strengths of the player (attacker) and alien (defender) 
+are computed. The combat strengths depend on number of beings, fighting 
+ability, sector terrain and technology of the races according to the
+formula
+
+strength = [(civ) * (fighting ability) + (troops) * (fighting ability) * 10]
+	* (sector compatibility factor) * (terrain defense factor)
+	* morale_factor(difference of race morales)
+
+The assault is evaluated and casualties are removed from each sector.
+
+   The origin sector is where the people will begin to move from. This must
+be occupied by the player.
+
+ Attacking commands are:
+    deploy <origin sector x,y> <direction> <number of troops>
+    move <origin sector x,y> <direction> <number of civilians>
+
+   If number of civs/troops argument is not given, all in the 
+original sector will be moved. If a negative number is specified, the all 
+civs or troops, except for the amount specified, will move. 
+
+   If mesomorphic races are involved in the combat, and are victorious,
+by either taking the assaulted sector or repulsing an attack, they may
+absorb alien bodies, adding to their own numbers. Note that all enemy
+casualties are converted to civilians (not troops!).
+
+	Defense strengths of terrain:
+		land  = 1
+		sea   = 1
+		mount = 3    wasted = 0
+		gas   = 2
+		ice   = 2
+		forest= 3
+		desert= 2
+		plate = 4
+
+ Attacking is not possible on planets that have been enslaved to another race.
+
+   Moving civilians uses up more action points than moving troops.
+
++-----------------------+---+----+-----+------+------+-----+------+------+
+| AP's			| 1 |  2 |  3  |   4  |   5  |  6  |   7  |   8  |
++-----------------------+---+----+-----+------+------+-----+------+------+
+| move		Min	| 1 |  2 |  7  |   20 |   54 | 148 |  403 | 1096 |
+| civilians	Max	| * |  6 | 19  |   53 |  147 | 402 | 1095 |      |
++-----------------------+---+----+-----+------+------+-----+------+------+
+| deploy	Min	| 1 |  9 | 99  |  999 | 9999 |     |      |      |
+| military	MAx	| 8 | 98 | 998 | 9998 |   -  |     |      |      
++-----------------------+---+----+-----+------+------+-----+------+------+
+ * NOTE: moving minsex cost only 1 ap.
+
+For attacks (against alien occupied positions) add 1 to the action point cost.
+
+
+SEE ALSO
+ move, deploy

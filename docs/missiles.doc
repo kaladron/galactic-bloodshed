@@ -1,0 +1,23 @@
+MISSILES                Galactic Bloodshed              MISSILES
+
+
+CONCEPT
+  missile -- interplanetary ballistic missiles
+
+DESCRIPTION
+  Missiles are a special ship type. They must be constructed in
+a factory. The strength of a missile in an attack is dependent
+on it's destruct payload. 
+
+  Missiles attack during the segments. When a missile arrives
+at it's destination it is detonated and damage to the target
+is evaluated. The missile is destroyed.
+
+  To attack with a missile, the destination must be ordered.
+The destination is either a ship or a planet. If the
+destination is a planet, the player can order the sector for
+the missile to land on by using 'order <missile> impact <x,y>'.
+
+SEE ALSO
+   order
+

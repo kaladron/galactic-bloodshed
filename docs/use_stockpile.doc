@@ -1,0 +1,14 @@
+USE_STOCKPILE		Galactic Bloodshed			USE_STOCKPILE
+
+
+STOCKPILE USAGE
+
+TKY's will now use planetary stockpile so basicly you don't have to
+load res or fuel or use thresloading with them - they'll just take
+everything they need from stockpile. Anyhow because they operate
+before production cycle in updates you should look after that there is
+enough resources for _all_ landed ships that use stockpile (or you
+could just use thresloading which is easier I think). This one thing
+which might be done other way i.e. planetary production first and ship
+update then. Stockpile usage can be toggled using 'order TKY
+stockpile [on|off]'.

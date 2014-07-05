@@ -1,0 +1,47 @@
+INSURGENCY		Galactic Bloodshed			INSURGENCY
+
+
+NAME
+   [10]insurgency -- try to force enemy population into civil revolt
+
+
+SYNTAX
+
+insurgency <victim> <funds>   spend a given amount of funds to persuade
+                              the population of the victim to throw a 
+                              bloody little revolt.
+
+DESCRIPTION
+
+   The insurgency command is used to persuade the population of a planet,
+through financial means, that they have had enough of their bloody
+dictator and should rise in revolt. This command will only work at planet
+scope.  You must have population in that planet's system, before you can
+attempt an insurgency.  The probability of a successful insurgency 
+depends following things:
+
+victims population in system  
+victims population in target planet
+victims tax rate in target planet
+your population in system
+amount of money you spend
+
+It is much viser to try several times with smaller amount of money, than
+try one huge investment.
+
+Repair yourself to spend each try about as much money as victims population 
+is in target planet.
+
+  If the attempt fails, some of money spent on it goes to victim and
+the rest of it is lost permanently. 
+ If the attempt succeeds, each individual sector occupied by the player is
+evaluated for revoult. Troops on sector will reduce chance of revolt.
+So you can defend your important secors by arming civilians on those sectors.
+
+If the sector revolts, all troops are killed, and the instigating
+player gains control of the sector. 
+
+NOTE, only sectors that are combatible to you can revolt.
+
+SEE ALSO
+	money, tax, treasury

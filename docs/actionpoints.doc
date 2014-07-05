@@ -1,0 +1,23 @@
+ACTIONPOINTS		Galactic Bloodshed		ACTIONPOINTS
+
+
+CONCEPT: actionpoints
+
+  Action Points are built up slowly by the player's presence in a solar
+system.  They are a mechanism to represent the `bureaucratic grind' of
+a star-spanning government. Every command uses a certain number of action 
+points; some commands, being observatory in nature, use none.  
+
+  A player's action points for each system are displayed in his prompt when
+his scope is in that system (changed by the ``cs'' command). The action point 
+cost of each command can be found just before it's listing in each document 
+entry.
+ Each solar system and the galactic level earn APs on every update for 
+a player based on population and number of ships. When you run out of APs in a
+system, you are unable to do anything in that system.  APs can be reallocated
+from the galactic (global) level to a particular system, but that is usually
+reserved for important situations as global APs are a rare and precious
+commodity.
+
+SEE ALSO
+	commands, allocate

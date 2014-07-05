@@ -1,0 +1,16 @@
+UNDOCK			Galactic Bloodshed		UNDOCK
+
+
+NAME
+   undock [0] -- undock a ship
+
+SYNTAX
+   undock <#shipnum>
+
+DESCRIPTION
+  this command is a synonym for launch.
+
+
+SEE ALSO
+  launch, land, dock
+

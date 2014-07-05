@@ -1,0 +1,24 @@
+SCRAP			Galactic Bloodshed		SCRAP
+
+
+NAME
+   scrap [0] -- junk a ship
+
+SYNTAX
+   scrap <#shipnum>
+
+DESCRIPTION
+  Scrap allows users to reclaim the resources consumed in building
+a ship or object.  Because of labor costs, only 50% of the original cost of
+the ship/object can be reclaimed.
+
+  Upon scrapping the ship, its reclamation value plus any commodities it may
+have in its hold, are added to the stockpiles of the planet it is on. If ship
+is docked with an another ship, commodities up to equal of free space of 
+another ship can be reclaimed. 
+
+ If the ship is not landed, no resources may be reclaimed.
+
+SEE ALSO
+	dock, build
+

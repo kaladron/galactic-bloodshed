@@ -1,0 +1,182 @@
+Racegen help files.
+
+
+CHARACTERISTICS
+
+ Absorbtion -- Only metamorphs may have this attribute, which allows them to
+	absorb enemy troops and civilians in combat if the morph wins.
+	Combined with pods, it allows metamorphs to replace alien population
+	on planets when pods burst.
+
+ Adventurism -- This described what percentage of a sector's population may
+	move and explore other sectors.  High value tend to settle planets on
+	their own far more efficiently. If you have a low value, you can order
+	movements with the 'move' option. The amount of population to move is
+	equal to the number of race's sexes.
+
+	As you can see from the moving percentage equation this	percentage
+	follows linearly race's adventurism so 10% adventurism is two times
+	as effective as 5% adventurism.
+
+	[Note: Experienced players usually settle with low adventurism.]
+
+ Birthrate -- This factor determines how rapidly the population in the
+	sector will converge to the maximum population supportable on the
+	there.  High values mean that the population multiplies faster.
+
+
+ Collective IQ; IQ limit -- The intelligence of a race with collective IQ is
+	related to the race's total population, as follows:
+		IQ = IQ_limit * [ (2/PI) atan(population/50000)]^2. 
+	[Note:  Be careful with this one!  If you can't build pods, then
+	having a collective IQ could be disastrous as you won't have the
+        knowhow to build *any* kind of useful ships for a looooong time.]
+
+ Fertilize -- This attribute represents the percentage chance that a race
+	will increase by one percent the fertility of any sector it owns.  Any
+	race may take advantage of space plows for a similar effect, once it
+	gets to tech level 5.
+
+ Fighting Ability - Higher values mean that the race is more likely to kill
+	an alien than a lower value.  Races with lower values will usually need
+	to have larger forces to win in direct combat over a high fighting
+	ability.  It is important to note that this effects only land combat
+	and ship boarding strengths, and not ship to ship fighting.
+
+ IQ -- The raw growth rate of a race's technology is governed by the race's
+	intelligence.  The technology increase per update is IQ/100.  Addi-
+	tional technology gain is available by technology investments on the
+	individual planets under the race's control.
+
+ Mass -- Each race has a mass.  The heavier the individual, the more fuel it
+	will take to launch land travel and hypejump ships full of the race.
+        Race with a good fight might like low mass since heavy weight
+	tends to limit troops  transfering.		
+
+ Metabolism -- This value controls how industrious the race is.  Higher
+	metabolism races will produce resources more rapidly than lower
+	metabolisms, and also increase the efficiency of sectors faster.
+
+ Pods -- Pods are small ships, available only to metamorphs but at tech
+	level 0, buildable instantly on the surface of planets.  Each one may
+	carry a single crew-thing; this makes them ideal for settling other 
+	planets.  Pods which enter a system after having frozen in deep
+	space will warm and eventually burst, possibly leading to spores
+	landing on worlds in the new system.  If a spore lands on a sector, a
+	ton or more of biomass will be created, resulting in a new colony for
+	the podding race.  Note that spores may never land on alien occupied
+	sectors unless the podding race has absorbtion.
+
+ Racial type -- There are two main racial types in GB: normal races (think of
+	humans, Klingons, Wookies, Pierson's Puppeteers, etc) and metamorphs 
+	(Alien, the Thing, body snatchers, etc.)  The primary difference 
+	between these two erace classes is that only metamorphs may have pods
+	and absorbtion as racial attributes.  Metamorphs are also required to
+	have one sex, which is another advantage. 
+
+ Sexes -- Each race has a number of sexes. This represent the minimum
+	population that a sector must have in order to be able to reproduce.
+	Lower values are preferable to high values for colonization efforts.
+	It is not recommended to have more than 3 to 6 sexes at the outside,
+	unless you are really looking for a challenge
+
+SECTORTYPES
+
+Desert sector -- This is main sectortype of desert planets and also very 
+common on  airless planets, and few sectors can be found on asteroids and 
+class M planets. Desert is resource rich but very low in fertility. 
+It's sligtly most common normal sectortype in galaxy.
+Good choices to combinate with desert: land, mountain
+
+Water sector -- This is main sectortype on waterballs and there is 
+lot of water on class M planets allso. It can be found on forests too. 
+It's medium rich and got better fertility than average sector.
+Good choices to combinate with water: land, ice, forest, mountain  
+
+Land sector -- Land sectors can be found almost everywhere... class M,
+asteroids, airless, deserts. Mostly in class M. Land sectors are low
+in fertility and bit better than average amount of resources.
+Good choices to combinate with land: anything but gas.
+
+Mountain sector -- There is no special mountain planet, but desert worlds
+have sometimes lot of it. It can also be found on airless planets, 
+waterballs and asteroids. Mountain is the richest sectortype, 
+but with very low in fertility.
+Good choices to combinate with mountain: desert, ice, land, water
+ 
+Forest sector -- Forest is highest in fertility sectortype, but it's 
+quite resource poor. It can be found mostly on forest planets. Class M
+planet usually have some sectors too. 
+Good choices to combinate with forest: water, ice. 
+
+Ice sector -- Ice is nice in fertility and average in resource sector. 
+It can be found on class M planets and iceballs. 
+Good choices to combinate with ice: anything but gas. If you choose mountain,
+take at least third sectortype also.
+
+Gas sector -- It's clearly most common sectortype becouse jovian balls are
+so huge, but It can't be found anywhere else. It's extremely poor on 
+resources but large number of them compensates this. It got nice fertility.
+Good choises to combinate with gas: nothing.
+
+Plated sector -- When inhabited non-gas sectors efficciency reaches 100%
+sector becomes plated. It means whole sector is totally built and nothing
+of original sector is left. Tokio is a good example of almost
+plated sector on isle Honshu.
+
+
+PLANET TYPES
+
+Class M - 6% - These planets are usually about everything. Mostly land
+	       and water. This is rarest type, but also  
+	       largest normal planet.
+
+Jovian - 9% - These planets are 100% gaseous, and they are usually
+	      twice as large as the typical class M planet.  They tend
+	      to be very high in fertility too, so you can easily build
+	      up a large population for taxation.
+	      Also, ships in orbit around Jovians add fuel to their
+	      holds every update (tankers are very efficient at this),
+	      so even if you're not a Jovian-type race, having one of
+	      these nearby can be a tremendous asset.
+	      [Note: Remember to take some adventurism if you choose jovian]
+
+Water - 9% - These are largely water planets, and they are generally 
+	     resource rich.  They can be quite large, ranging
+	     up in size to class M quality, but they are usually about 40%
+	     smaller. There is mountain isles and navel ice fields on 
+	     waterballs.
+
+Desert - 8% - These planets are usually 70% desert and 15% mountain
+	      and  15% land.  Resource content is very high, 
+	      but they are very poor in fertility.
+	      They produce lot of resources but population will grow 
+	      very slowly and leave you vulnerable to invasion.
+	      Their size range is bit smaller than class M planets.
+
+Forest - 9% - These planets are almost entirely covered in forest, but there
+	      is allso some water and ice. Size range is like Water 
+	      planets. Fertility is lot higher than in any other planettype.
+
+Iceball - 20% -These planets are generally small (1/5 the size of class M's
+	       or less), and they consist of around 80% ice and 20% mountain.
+	       Relative to their size, they are resource rich, but the
+	       small number of sectors means that resources will come more
+	       slowly. This is most common planettype in galaxy.
+	       [Note: Newbie.. don't choose iceball]
+
+
+Airless - 15% - These small planets are mostly land (60%) with some mountain 
+		and desert sectors.  The atmosphere is almost always 
+		hostile, of course, but these planets are quite resource
+		rich relative to their size (ie. 1/2 the res of a typical
+		forest, but 1/4 the size).
+		[Note: Newbie... don't choose airless]
+
+Asteroid - >20% - These are just floating rocks in space, not good for a
+		  heck of a lot. They don't count as planets in victory
+		  conditions. Small number (but sometimes extreamly rich) of 
+		  sectors and killing heat make it very difficult
+		  for most asteroids to contribute to your cause, though 
+		  having colonies on them have other advantages,such as 
+		  morale bonus.  Sector types are land, desert, and mountain.

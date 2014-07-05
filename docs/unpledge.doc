@@ -1,0 +1,27 @@
+UNPLEDGE                  Galactic Bloodshed                      UNPLEDGE
+
+
+NAME
+   unpledge [0] -- leave a block
+   pledge [0] -- say yes to an invitation to join a block
+   invite [0] -- invite another race to join your block
+   uninvite [0] -- kick a race out of your block
+  
+SYNTAX
+   unpledge <race>
+   pledge <race>
+   invite <race>
+   uninvite <race>
+
+DESCRIPTION
+   Each race may lead one alliance block. In order to get people 
+to into the group you must use the 'invite <race>' to request membership. 
+The other player may join the alliance block by using 'pledge <leader race>'.
+ 
+ A race may quit  by doing 'unpledge <leader race>', 
+or blackball another for his group by doing 'uninvite <race>'. 
+Alliance blocks do not force alliances among its members.
+In fact, it solely is used for political purposes. 
+ 
+ SEE ALSO
+	block, power, relations

@@ -1,0 +1,18 @@
+DISARM			Galactic Bloodshed			DISARM
+
+
+NAME
+   disarm [0] -- convert military into civilians
+
+SYNTAX
+   disarm <sector> [<troops>]
+
+DESCRIPTION
+  This is used to turn troops back into civilians. All weapons are
+lost (there is no recovery of destruct used to arm troops).  
+
+SEE ALSO
+  arm, military
+
+
+

@@ -1,0 +1,20 @@
+STOCK			Galactic Bloodshed		STOCK
+
+
+NAME
+   stock [0] -- stockpile report
+ 
+SYNTAX
+   stock <#shipnum or shiptypes>
+
+DESCRIPTION
+  This command allows users to survey their ships.  It gives basic
+information about cargo and crew.
+
+  If given with no arguments, ``stock'' will start with the current scope
+and give reports on all ships from there down.
+
+
+SEE ALSO
+  ship, report, tactical, scope
+

@@ -1,0 +1,19 @@
+TRANSFER		  Galactic Bloodshed			TRANSFER
+
+
+NAME
+   transfer [0] -- transfer supplies to alien stockpiles
+
+SYNTAX
+   transfer <race> <commodity> <amount>
+
+DESCRIPTION
+   This command allows the player to transfer resources/fuel/destruct 
+to another race. To do this the player must have the planet where the
+transfer is to take place as the current scope. Transferred supplies
+are immediately deducted from the transferring races stockpiles
+and added to the targeted races stockpiles.
+
+
+SEE ALSO
+ scope

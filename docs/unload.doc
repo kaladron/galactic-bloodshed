@@ -1,0 +1,35 @@
+UNLOAD			Galactic Bloodshed			UNLOAD
+
+
+NAME
+   unload [0] -- load/unload commodities to/from a ship
+
+SYNTAX
+   unload <#shipnum> <commodity> <amount>
+
+DESCRIPTION
+  The load command is used for the resupplying of ships, and the disembarking
+of colonies.  
+
+  If no arguments are specified, the program will prompt the user for:
+
+  #shipnum -- What ship to load from/to
+
+ d|c|r|f|x|m -- specify destruction, crew, resources, fuel,
+military or crystals to load/ unload.  Destruction, resources and 
+fuel are taken from that user's stockpiles, while people are taken 
+from the sector the ship is landed on.  If the ship is docked with 
+another ship and not a planet, the tranfers will be direct.
+
+  amount -- the amount to load (if negative, the amount will be subtracted).
+This must be within certain bounds: the maximum cargo capacity of each ship,
+unless one or both of the ships are shuttles.  Shuttles are unique in that
+their design allows cargo to be strapped to their hull, and thus they can
+actually hold more cargo than the maximum.  An overloaded shuttle cannot,
+however, take off or land until it jettisons its excess. If no amount argument
+is specify, the maximum available of the commodity will be loaded on board.
+
+  If the ship is neither landed at a planet nor docked with another vessel,
+the player can't load/unload its cargo / passengers.
+
+

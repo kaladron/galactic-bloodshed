@@ -1,0 +1,46 @@
+ENSLAVE			Galactic Bloodshed		ENSLAVE
+
+
+NAME
+   enslave [1] -- enslave a world
+ 
+SYNTAX
+   enslave <shipnumber>
+
+DESCRIPTION
+  This command is used to convert entire planets to a condition of slavery.
+When invoked the ship specified must be an Orbital Assault Platform, which
+is the only ship type sufficiently impressive to convince the planetary
+population of the futility of resistance.  The platform must be orbiting
+the planet to be enslaved.
+
+  To commence a proper enslavement, the forces bearing (the platform itself
+plus the other ships which might be orbiting the planet) against the
+planet must be more than twice the defending strength (weapons under the
+control of the inhabitants plus the weapons on board any ships they own in
+orbit around the planet).  The enslaving player must have a garrison (at
+least one population) on the planet.  
+
+  The enslaving player is not told how much strength the other players might
+have, but he is told whether the planet was enslaved or not.  Telegram
+messages are sent to any players affected by the command.
+
+  To keep the planet the enslaving player must maintain a garrison of at
+least 0.1% of the total population on the planet.  (The garrison need not be
+that large to initiate slavery, but must be that large to maintain it.)
+If the garrison falls below this threshold, and the OAP is no longer in
+orbit around the planet, a revolution is immediate and devastating:
+all sectors belonging to the former slave holder are destroyed in the
+inhabitants' fury of revolution.  If the OAP is still there, there is a
+chance (50%) that a revolution will not occur, and some occupying sectors
+may not be destroyed (without it overhead, they will be).  Other random
+sectors will be damaged as well in the fight.
+
+  When a planet is under enslavement, everything produced there will be
+credited to the slave-holding player's stockpiles.  Races enslaved on a
+planet can still survey, map, and otherwise observe things happening
+there (there is an active resistance).
+
+
+SEE ALSO
+  survey, map

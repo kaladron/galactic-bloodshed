@@ -1,0 +1,18 @@
+HIGHLIGHT			Galactic Bloodshed		  HIGHLIGHT
+
+
+NAME
+   highlight [0] -- highlight given race's ships on map
+
+SYNOPSIS
+   highlight <race>
+
+DESCRIPTION
+    A player can specify which race he/she wishes to highlight. Given
+race's ships will be easier to note from a map.
+It is initially set to the player.
+
+SEE ALSO
+   map, identify
+
+

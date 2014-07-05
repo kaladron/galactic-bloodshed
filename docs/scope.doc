@@ -1,0 +1,43 @@
+SCOPE   			Galactic Bloodshed			SCOPE
+
+
+CONCEPT: scope
+
+  Scope represents the operative scope of certain commands.  The
+operative scope (displayed along with AP's in the user's prompt, and changed
+with cs) is similar to the tree-like directory level structure found in
+most computer systems, with the root directory being a universe
+scope followed by the various stars, followed by the planets orbiting these
+stars.  The scope can also represent a single ship.
+
+  Commands are affected by the scope in a different manner than that which
+operating systems treat their directory structure.  For example, if
+the current scope is that of a star, the command report, if given with
+no arguments, will prompt reort of each ship orbiting that
+star. If the scope was the universal scope, report would prompt each 
+ship everywhere that the player owns.
+
+  Many commands will work very differently, or not at all in certain scopes.
+
+  The syntax of a scope, when prompted for, is thus:
+
+	path = : | #shipnum | /path | ../path | name | 
+		 path/name
+
+  The shell will interpret a `:' as meaning the object of the current
+scope (star, planet, or ship).
+
+  A `/' at the beginning of the string represents the root.  It could be
+followed by a star name, or not, to represent the upper, interstellar, level.
+
+  A `..' or `.' represents the scope just above the current scope.
+
+  `#shipnum' represents that ship.  A number by itself will be
+interpreted as meaning a star or planet name.
+
+  Specifying a name means to move down to that star or planet.
+
+
+SEE ALSO
+  cs, order, actionpoints
+

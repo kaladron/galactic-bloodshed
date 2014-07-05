@@ -1,0 +1,45 @@
+HYPERDRIVE		Galactic Bloodshed		HYPERDRIVE
+
+
+
+ Hyperdrive is equipment that allows ships to jump through hyper-space,
+and travel much much faster than with normal pulsedrive. 
+
+ Destination can be any starsystem in galaxy and once hyperdrive is
+charged, jump will happen in one update no matter the distance. Charging
+hyperdrive will take two more updates.
+  Hypedrive uses a lot more fuel than normal pulsedrive. Amount
+of spent fuel follows the formula:
+
+	fuel = 5*mass^0.5*(dist/(200*(tech+100)))^3
+
+So it's obvious that ships fuel capacity limits possible jumping distances.
+ If a ship with hyperdrive has at least one crystal on board, the player
+may mount the crystal into the hyperdrive (see help on the 'mount' 
+command). Only one crystal needs to be mounted. If a player has a crystal 
+mounted in the hyperdrive, the ship does not need to recharge, it is always 
+considered to be charged for hyper-space jump during the update. The crystal 
+also allows the ship to travel longer distances due to fuel efficiency.
+Formula with crystal is:
+
+	fuel= 5*mass^0.5*(dist/(200*(tech+100)))^2
+
+  Crystals in the hyperdrive also allows a player to use laser-beam-
+like weapons.
+
+HOW TO USE HYPERDRIVE
+
+ 1) Your ship need to have hyperdrive. (Some ships can't have it at all). 
+Factories built after reaching hyperdrive tech will produce ships
+with it. You can also upgrade hyperdrive to ships with 0% damage.
+ 2) If you have available crystal, load it in ship and mount it.
+ 3) launch ship (if landed) and order the destination.
+ 4) Order jump on.
+
+ Now ships hyperdrive will begin to charge. And after third update (with
+crystal after next update) you'll find your ship in destination starsystem.
+If ship don't have enaugh fuel to do jump, instead of jumping hyperdrive 
+will turn off.
+
+SEE ALSO
+	order, crystal, laser, modify, mount, upgrade 

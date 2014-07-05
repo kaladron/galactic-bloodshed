@@ -1,0 +1,17 @@
+BUG				Galactic Bloodshed		     BUG
+
+
+NAME
+   bug [0] -- make a bug report
+
+SYNTAX
+    bug <message>
+
+DESCRIPTION
+  	This command will send a bug report via internet email to the host
+(god) of the game.  It assures prompt action of possible bugs.  If you
+find a bug, please use this mechanism to alert the god.
+
+
+SEE ALSO
+   page, communications

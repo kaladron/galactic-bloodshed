@@ -1,0 +1,15 @@
+SCHEDULE	 	Galactic Bloodshed			SCHEDULE
+
+
+NAME
+   schedule [0] -- give player information of the schedule for updates
+
+SYNTAX	
+   schedule
+
+DESCRIPTION
+   This option provides information about the update schedule.
+
+SEE ALSO
+   time
+

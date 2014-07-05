@@ -1,0 +1,32 @@
+VOTE			Galactic Bloodshed		     VOTE
+
+
+NAME
+   vote [0] -- Vote on a Galactic Bloodshed issue
+
+SYNTAX
+   vote [issue  [ option ]]
+
+DESCRIPTION
+   Issues - update
+	Options - 'go' or 'wait'
+	You may vote go on the 'update' issue using the command
+		"vote update go".
+	This tells the server that you are done doing whatever it is that
+	you want to do, and are just basically waiting for the next update.
+	If you have voted to go and think of something else that you would
+	like to do before an update, you can 'vote update wait'.
+	After each update, your update vote is reset to the wait state.
+
+	If and when EVERYONE (not counting Deities or Guests) votes to
+	"go"; an update will be done.
+
+	This is most likely to be used during the early portion of the
+	game when not much is happening and most people are just waiting
+	for supplies to build up.  This gives the players a sort of
+	"variable" input to the update process.  The update interval
+	length chosen by the Deity then becomes a maximum length, with
+	a shorter interval occuring when everyone votes to go.
+
+SEE ALSO
+    update, segment

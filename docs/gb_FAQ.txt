@@ -1,0 +1,2498 @@
+Galactic BloodShed FAQ Version HTML 1.0 - Part 1
+
+----------------------------------------------------------------------------
+
+                              Table of Contents
+
+  I. Getting Started
+       1. What is GB?
+       2. What is HAP?
+       3. Where can I get the client and/or server code?
+       4. What are the different versions of the server out?
+       5. What if I have problems compiling something?
+       6. How can I find out more about gb?
+       7. Where are the current games running?
+       8. Do I need a client to play gb?
+       9. How can I start playing a game?
+      10. How much time does it take to play gb?
+      11. Is there a newsgroup for GB?
+ II. The Game Set-Up
+       1. What race should I choose?
+       2. What's the difference between a normal and a morph?
+       3. Which is better, morphs or normals?
+       4. What kind of planet should I choose?
+       5. What sector preferences should I take?
+       6. What happens if I get a rotten home planet?
+III. Playing the Game
+       1. What is a move seg?
+       2. What is an update?
+       3. What strategy should I use?
+       4. Random Questions I Always Seem to Run Into
+            i. How do I change scope?
+           ii. How do I talk to others?
+          iii. What should I do first?
+           iv. How do I interpret the maps?
+            v. How do factories work?
+           vi. What tax rate should I set?
+          vii. What's the difference between military and civilians?
+         viii. What should I set my mobilization level at?
+           ix. How do planetary guns work?
+            x. How do atmosphere processors work?
+           xi. What's the quickest way to jump to other systems?
+          xii. How do I get hyperdrive on board ships?
+         xiii. How do I build ships in space?
+          xiv. How come I don't have any resources yet?
+           xv. How come my pods didn't explode when they reached their
+               destination?
+          xvi. How do I get a list of where my crystals are at?
+         xvii. How do I get crystals?
+        xviii. How do I get a list of ship types I can build?
+       5. Final Warnings and Advice
+
+----------------------------------------------------------------------------
+
+  I. -- Getting Started
+
+                       ------------------------------------
+
+       1. What is GB?
+
+          "GB" stands for "Galactic Bloodshed" GB is a game played on a
+          network by several users at various sites. The home site, where
+          the game and its database reside, is generally referred to as the
+          "server." While telnet is one way to connect to a GB game, most if
+          not all players prefer to use a more complex program, usually
+          called a "client." Not all clients are the same, of course, but
+          for now, don't worry about it.
+
+       2. What is HAP?
+
+          "HAP" stands for "Heuristic Astronomy Project." HAP is a close
+          relative of GB, but there are many very important differences
+          between the two. Rather than go into the differences here, I
+          suggest you continue reading through this and then log in to one
+          of the games yourself. Ask around and experiment and decide for
+          yourself what you like best in a game. Both "flavors" of GB
+          (original and extra crispy, if you like) approach the game in a
+          different way. For example, in HAP games, communication among
+          players who have not met is restricted while on GB, global
+          communication is the rule...thus for help, it would be best to try
+          a GB game first where players can hear you. As a general rule, HAP
+          tries to incorporate many of the best changes from new versions of
+          the original code while bowing more to "realism" where possible.
+
+       3. Where can I get the client and/or server code?
+
+          Just follow this link
+
+          Pretty much everything you'll find there is compressed and/or
+          shared/tarred, so you'll need to know a little bit about
+          manipulating Unix files in order to set things up.
+
+          *** IMPORTANT ***
+
+          When you are transferring a binary file (ie: ends with .Z), you
+          MUST set the file transfer mode to binary! If you do not transfer
+          the file in binary mode, it will be corrupt. If you experience a
+          problem uncompressing/unarchiving a file, this is the problem 99%
+          of the time.
+          Here's a helpful example:
+
+          Suppose you ftp gb.docs.tar.Z.
+          First: uncompress gb.docs.tar.Z (gives you gb.docs.tar)
+          Next: tar -xf gb.docs.tar (separates out all the files)
+          Then: delete the original tar file to save some space.
+
+          OR: If you ftp gb.docs.shar.Z
+
+          First: uncompress gb.docs.shar.Z (gives you gb.docs.shar)
+          Next: /bin/sh gb.docs.shar (separates the files)
+          Then: Delete the original shar file to save space.
+
+          Info on these processes can be found in your system's help files,
+          but if you continue to have problems, telnet to one of the running
+          gb games and ask around for help. This is usually the first best
+          thing to try when you have any problems. After all, the players
+          have all had to go through the same things you will in order to
+          get set up in gb.
+
+          Once the files are in your directory in a conventional format,
+          there will be help files and so forth included. It's a good idea
+          to print the help docs out and have them handy when you play. When
+          you've successfully compiled the client, stripping the executable
+          file will reduce your client to a size of around 130 blocks If
+          you've got a strict quota on disk use, it's best to do most of
+          this work in a temporary directory, then print out the help files
+          and transfer the executable into your permanent directory.
+
+          Note that the client successfully compiles only on Unix machines
+          or a close derivative of Unix. At this time, no client exists
+          which is compatible with VMS. There is also a new version of a PC
+          based client for GB available at the scam ftp site as gbpc.zip,
+          written by Chris Fodor (aka Feepness). As it develops (ie. as soon
+          as Chris sends me a paragraph or two about it), I'll include more
+          information in the FAQ.
+
+       4. What are the different versions of the server out?
+
+          Besides GB and HAP, I know about 4 versions of the server
+          currently out. Most are versions that take bits and pieces of GB
+          and HAP to form another strain of GB. There is currently one
+          available on ftp.ipl.rpi.edu on /sigma/gb/gb.IPL-Server.tar.Z
+          which fixes some bugs. If anyone has any more detailed information
+          about this version please let me know.
+
+          Also, there is a version I am working on, which is currently
+          running at the "NYU" games, which is tentatively called GB+. This
+          version has TONS of bug fixes, and also new ship database code,
+          along with autoscrap, threshloading, minesweepers, and other HAP
+          inherited options. Currently there is no ftp site for this, but
+          once I get one, it will be posted.
+
+          This version seems to be very stable, as there are over 230
+          updates currently in the test game on groucho. Send mail to me
+          (deragon@jethro.nyu.edu) if you want information on this version.
+
+       5. What if I have problems compiling something?
+
+          As mentioned earlier, the first thing you should always try is to
+          log in to one of the existing games as a guest and start asking
+          around. There will often be someone on who can help you with
+          simple problems, but if they can't help you, you'll probably be
+          referred to Evan Koffler (ekoffler@zephyr.cair.du.edu), who has
+          graciously volunteered to deal with _client_ compiling problems,
+          but be polite... give him informed questions rather than just
+          helplessly whining.
+
+          In other words, don't just write and say "It doesn't compile on
+          the NeXT and crashes when I try to boot it." At the least, run the
+          code through a debugger of some kind to get a line number within a
+          routine or at least get some kind of output sequence. This gives
+          the person helping you some reference point from which to track
+          the problem down.
+
+          If you're having a problem with a bug in the server code, your
+          best bet is to post to alt.games.gb. If the authors want to
+          volunteer their addresses (Garrett, Clay, et al.) and/or services
+          for direct email correspondence, I'll let them do it. There are
+          enough users out here familiar with the code to help you deal with
+          whatever problem you're experiencing. What was said in the
+          previous paragraph about finding and reporting bugs and receiving
+          help also goes here.
+
+       6. How can I find out more about gb?
+
+          Try logging in to one of the current games running. Some games
+          have a guest account set up specifically for new users to find
+          their way around and ask questions. When it asks for a password,
+          simply type "guest" or "guest 0" in most places, and you'll be
+          logged in to the game. There's no guarantee that there will be
+          someone on who can help you and/or has the time, but during the
+          evening is generally the best time to try.
+
+       7. Where are the current games running?
+
+          I used to keep a list of this, but it's just too much of a pain.
+          The best way to keep track of which games are running (or about to
+          be) is to watch the alt.games.gb newsgroup. It's very low volume,
+          so that should be no problem. The FAQ gets out of date too quickly
+          and easily in any case.
+
+          Once you get a server address and part, use the following examples
+          to connect you to a game with telnet if you're not using a client.
+          If you're using a client, simply replace "telnet" with "gbII" or
+          whatever you've named the client executable in your directory. on
+          Unix: "telnet pooh.caltech.edu 2010" or "telnet 131.215.48.30
+          2010" or, on VMS: "telnet pooh.caltech.edu /PORT=2010" etc.
+
+          Note: Some of these games are chronically off-line for one reason
+          or another; others are only up at certain (unknown to me)
+          scheduled times. Don't be surprised if you get a refused
+          connection by more than one game. If you want to enter one or more
+          of the games that have not started yet, check alt.games.gb for
+          announcements about where to send your requests.
+
+          Other games will be announced in alt.games.gb as they are started,
+          including periodic "blitz games" run by various people. A blitz
+          game is essentially a gb game in which the updates are squeezed
+          down into 5 to 20 minute intervals as opposed to the usual 1 or 2
+          per day. If you're wondering what an "update" is, read section 3
+          about playing the game.
+
+       8. Do I need a client to play gb?
+
+          If you're going to play seriously, then the answer is yes.
+          Theoretically, one could get by using only telnet, but only the
+          client will process maps correctly and enable you to encrypt your
+          conversations, which is a convenient way to communicate at no cost
+          without being overheard on the game.
+
+       9. How can I start playing a game?
+
+          There are two ways to do this. First, you can wait until someone
+          announces the beginning of a game. This newsgroup is where you'll
+          see such announcements. The person in charge of the new game will
+          either include (or point you to) a racegen program which you can
+          then use to specify what kind of race you want. Then you log in to
+          the game and start playing when it starts! Read on for more
+          details on what racegen is and how it works.
+
+          Another way to get into a game is to log onto a currently running
+          game and ask. In most big games, there are "sleepers," or races
+          which have dropped out for one reason or another (it's not always
+          due to weakness, sometimes time constraints are involved). Also,
+          many players with big races tend to look for people to help them
+          out since playing a big race in gb can be very time consuming.
+
+          Most games now run with the "governor" code, standard since pooh
+          version 5.0 and in current versions of HAP. This allows for races
+          to have one major leader who can delegate authority over given
+          ships and systems to his governors, who are independent players
+          recruited by the race leader. This is a great feature for those of
+          you out there who want to play gb but lack the immense amount of
+          free time that leading a fully active race requires.
+
+          If you see an announcement for a new game starting, but dont want
+          to run your own race, your best bet is to post to alt.games.gb
+          asking if anyone needs a governor.
+
+      10. How much time does it take to play gb?
+
+          That depends entirely on the number of updates per day. For a
+          reasonably large race (say, control of 40 planets) in a game with
+          70 star systems or so (3-8 planets per system), it will take you
+          at least one hour of playing time per update (this is vastly
+          dependent upon how efficient you are...use macros!). This can go
+          way up if you are actively waging war with another player. This
+          time tends to increase as the game goes on and you grow in power,
+          but the main variable in the whole time equation is simply how
+          active _you_ want to be. It takes a very active race to come out
+          on top in gb; even on a one update per day schedule, it can eat up
+          your time, so consider yourself warned.
+
+          Players who join only to play for a little while and then drop
+          out, leaving all that they've built to fall into ruin, are
+          generally frowned upon. Sometimes it is unavoidable, but all
+          deities ask that you plan ahead. Don't get yourself involved in
+          more than you can handle. Drop-out players who don't get
+          replacements can seriously upset the game balance, ruining the
+          game for many other players.
+
+          The advent of team races may offset both of these diadvantages,
+          but it's still best to be aware of them.
+
+      11. Is there a newsgroup for GB?
+
+          The newsgroup for Galactic Bloodshed is:
+
+                                     alt.games.gb
+
+          This newsgroup is for the discussion of everything that has
+          anything to do with GB, including game announcement, rules
+          discussion, game editorials, etc.
+
+                       ------------------------------------
+
+ II. -- The Game Set-Up
+
+                       ------------------------------------
+
+       1. What race should I choose?
+
+          As of this posting, just about every new game that is coming
+          on-line is accepting races generated by a program called
+          "racegen." You can get a copy of this at any of the ftp sites
+          mentioned above, and it compiles pretty easily on most systems.
+          Use this program to generate your race and automatically send it
+          to the appropriate "deity". Note that you usually have to compile
+          a whole new version with the proper destination address (for
+          sendmail) in the code, but this is easy...just find the
+          destination address line (#TO, I believe) in the code and change
+          the address with your editor, then compile.
+
+          NOTE: In some new games, you'll be asked to use your client to
+          connect to a special racegen daemon on the eventual gb server
+          machine. This greatly simplifies the process of game registration
+          since you don't have to have your own copy of racegen, just the
+          client. Watch for specifics with new game announcements.
+
+          Other programs, such as "opt_tech," which optimizes your tech
+          expenditures (read the docs for more details on how tech works),
+          and "psmap," which generates a postscript file containing a map of
+          your game universe from a list of stars.
+
+          Here are the helpfiles included with racegen, which should answer
+          most of the questions about the program and its use:
+
+          --- Begin included racegen docs ---
+
+          How to get and compile racegen
+
+          First off, get net access. Then you can use the file transfer
+          program, ftp, to get racegen from several sites, including
+          scam.berkeley.edu. Connect to the remote system, use "anonymous"
+          as your name (any password is OK), cd to the src/games/gb
+          directory, and get racegen.shar. The whole process should look
+          rather like this:
+
+          > ftp scam.berkeley.edu
+          Connected to scam.berkeley.edu.
+          220 scam.Berkeley.EDU FTP server ready.
+          Name (scam.berkeley.edu:leonard): anonymous
+          331 Guest login ok, send ident as password.
+          Password:
+          230-Welcome Guest - access restricted.
+          ftp> cd src/games/gb
+          200 CWD command okay.
+          ftp> get racegen.shar
+          200 PORT command okay.
+          150 Opening data connection for racegen.shar (60101 bytes).
+          226 Transfer complete.
+          local: racegen.shar remote: racegen.shar
+          62071 bytes received in 6.1 seconds (9.9 Kbytes/s)
+          ftp> quit
+          221 Goodbye.
+          >
+
+          When a game is announced, the host will specify what sort of races
+          are desired. If the game will not use the "vanilla" racegen, the
+          host will post a file called "game_info.h" that you will then use
+          to compile racegen with. Note that racegen.shar comes with a
+          default game_info.h file.
+
+          Now you can make an executable racegen. Unshar the archive you
+          just got, and make it:
+
+          > sh racegen.shar
+          x - racegen.c
+          x - racegen.h
+          x - game_info.h
+          x - Makefile
+          x - racegen.README
+          > make
+          cc -bsd -g -target sun3 -c racegen.c
+          cc -o racegen racegen.o -lm
+          > ls
+          Makefile racegen* racegen.c racegen.o
+          game_info.h racegen.README racegen.h racegen.shar
+
+          Now you are ready to go. Just type "racegen", and it will run. If
+          it does not, make sure you have the current directory "." as a
+          part of your path:
+
+          > printenv PATH
+          .:/usr/imports/bin:/usr/local/bin:/usr/ucb:/bin:/usr/bin
+          >
+
+          (Note that the first directory in my path *is* ".". ':' is used to
+          separate the directories in this list.)
+
+          If "." is not in your path, you must either put the racegen
+          executable file in one of the directories that is in your path, or
+          else put "." into your path. The second option is much easier:
+
+          > setenv PATH .:$PATH
+
+          Now you are ready to go!
+
+          The creation of new races is controlled by the person hosting the
+          game. Player #1 (the first player enrolled into the game) should
+          always be given diety status, as many of the game default
+          operations are placed in player #1's control. Other players may be
+          designated as having diety status during the enrollment procedure,
+          but this isn't recommended (or needed in most cases).
+
+          Race generation is often done using a rather complex point based
+          system, the idea being that you must spend a limited number points
+          to get better attributes. The program that you do this creation
+          process with is called "racegen". There are five types of data
+          associated with each race that the player can choose:
+
+          * Name, password, and other profile information -- While none of
+          these have any direct effect on game play, they add interest. Name
+          and password can be set with racegen before enrolling in the game.
+          All of the others can be changed as needed; see also: name,
+          personal, profile
+
+          * Home planet type -- A race's home planet can drastically affect
+          its game. Jovian home planets are the most costly type, because
+          jovians are huge planets with about half the sector area of the
+          universe on them. Jovians are the only worlds with gas sectors on
+          them; gas tends to be resource-poor but fertile. Class M
+          (Earth-type) home planets are the next most useful, with a good
+          balance of fertility and resources. Forest and water worlds are
+          like class M's and generally more fertile, but they are also
+          smaller on average. Desert worlds have high resource content but
+          are not very fertile. Iceballs and airless worlds are too small to
+          make very good home planets, but they are very common in the
+          universe as a whole.
+
+          * Racial type -- There are two main racial types in GB: normal
+          races (think of humans, Klingons, Wookies, Pierson's Puppeteers,
+          etc) and metamorphs (Alien, the Thing, body snatchers, etc.) The
+          primary difference between these two race classes is that only
+          metamorphs may have pods and absorbtion as racial attributes.
+          Metamorphs are also required to have one sex, which is another
+          advantage. A secondary difference that is rather harder to notice
+          is that the price of various attribute combinations is slightly
+          different for normals and morphs in racegen, especially for some
+          of the attributes' extremes.
+
+          * Compats -- The planets found in the GB universe are represented
+          as arrays of sectors of various types: ice, land, sea, etc.
+          Various races may have varying degrees of compatibility with these
+          sector types, which will affect the amount of population they can
+          grow on that sector type, and other things too.
+
+          * Attributes -- Attributes are quantizations of a race's
+          abilities. Currently there are 11 basic attributes for each race:
+
+          ** Absorbtion -- Only metamorphs may have this attribute, which
+          allows them to absorb enemy troops and civilians in combat if the
+          morph wins. Combined with pods, it allows metamorphs to replace
+          alien population on planets when pods burst.
+
+          ** Adventurism -- This described what percentage of a sector's
+          population may move and explore other sectors. High value tend to
+          settle planets on their own far more efficiently. If you have a
+          low value, you can order movements with the 'move' option.
+
+          ** Birthrate -- This factor determines how rapidly the population
+          in the sector will converge to the maximum population supportable
+          on the there. High values mean that the population multiplies
+          faster.
+
+          ** Fertilize -- This attribute represents the percentage chance
+          that a race will increase by one percent the fertility of any
+          sector it owns. Any race may take advantage of space plows for a
+          similar effect, once it gets to tech level 5.
+
+          ** Fighting Ability - Higher values mean that the race is more
+          likely to kill an alien than a lower value. Races with lower
+          values will usually need to have larger forces to win in direct
+          combat over a high fighting ability. It is important to note that
+          this effects only land combat and ship boarding strengths, and not
+          ship to ship fighting.
+
+          ** IQ -- The raw growth rate of a race's technology is governed by
+          the race's intelligence. The technology increase per update is
+          IQ/100. Addi- tional technology gain is available by technology
+          investments on the individual planets under the race's control.
+
+          ** Collective IQ; IQ limit -- The intelligence of a race with
+          collective IQ is related to the race's total population, as
+          follows: IQ = IQ_limit * [ (2/PI) atan(population/50000)]^2.
+          [Note: Be careful with this one! If you can't build pods, then
+          having a collective IQ could be disastrous as you won't have the
+          know how to build *any* kind of useful ships for a looooong time.]
+
+          ** Mass -- Each race has a mass. The heavier the individual, the
+          more fuel it will take to launch and land ships full of the race.
+
+          ** Metabolism -- This value controls how industrious the race is.
+          Higher metabolism races will produce resources more rapidly than
+          lower metabolisms, and also increase the efficiency of sectors
+          faster.
+
+          ** Pods -- Pods are small ships, available only to metamorphs but
+          at tech level 0, buildable instantly on the surface of planets.
+          Each one may carry a single crew-thing; this makes them ideal for
+          settling other planets. Pods which enter a system after having
+          frozen in deep space will warm and eventually burst, possibly
+          leading to spores landing on worlds in the new system. If a spore
+          lands on a sector, a ton or more of biomass will be created,
+          resulting in a new colony for the podding race. Note that spores
+          may never land on alien occupied sectors unless the podding race
+          has absorbtion.
+
+          ** Sexes -- Each race has a number of sexes. This represent the
+          minimum population that a sector must have in order to be able to
+          reproduce. Lower values are preferable to high values for
+          colonization efforts. It is not recommended to have more than 3 to
+          6 sexes at the outside, unless you are really looking for a
+          challenge --- End included racegen docs ---
+
+       2. What's the difference between a normal and a morph?
+
+          A "morph," or "metamorph," is described in the standard docs as
+          the type of race you'd see in John Carpenter's "The Thing." The
+          major differences between morphs and normals can be summarized
+          like this:
+
+             + Morphs can absorb enemy bodies when they attack a sector
+             + Morphs can build spore pods on planetary surfaces
+             + Morphs' IQ is determined only by their population
+
+          It used to be the case that morphs had a very high metabolism and
+          very high fighting strength to go along with all of this, but the
+          advent of racegen has changed that considerably. Now, morphs can
+          have all of the basic characteristics of normal races -- but the
+          three attributes mentioned above are only available to metamorphs.
+          The disadvantage that offsets this option is that some items will
+          be more expensive in racegen.
+          I'll discuss these three items in reverse order: First, morph IQ
+          is based on some exponential population formula. In all games,
+          this means their iq starts at 0, and the maximum possible morph IQ
+          can be set by the player in racegen. A common practice is for
+          morphs to spend a great deal of tax money investing in tech to
+          offset this disadvantage, but it still takes a while to "take
+          off." The low iq means that morphs cannot rely on shuttles (which
+          require some minor tech ability to build) to ferry them around to
+          colonize planets early in the game. Morphs, however, have the
+          ability to build spore pods. These pods require no tech to build
+          and are very cheap.
+          The major advantage to spore pods is this low cost and the fact
+          that they can be built right on the planet's surface (while most
+          other ship types require factories which need resources to be
+          turned on and time to repair before actually building any ships).
+          The drawbacks to pods are that they are slow and that they explode
+          upon entering star systems. That's not _always_ a drawback, but
+          early in the game, it will mean that several pods must be sent to
+          a system in order for you to have a good chance at landing morphs
+          on a planet or two. The success rate of spore pods (ie. whether
+          they explode harmlessly or result in a colony) varies from game to
+          game from 20% to 40%. The other major difference between morphs
+          and normals which is mentioned above is morphs' special combat
+          ability. If a morph attack force defeats another race in ground
+          combat, a large fraction of the defeated enemy will be "absorbed"
+          by the attacking morph race, enabling morphs to actually
+          _increase_ their population through attacking. Thus, late in the
+          game when all planets are covered and well-defended by other
+          races, morphs still have a chance to do some serious damage by
+          showering an enemy system with pods and perhaps landing enough
+          morphs in the system to cause a lot of problems, if not to take
+          over a planet or two.
+
+       3. Which is better, morphs or normals?
+
+          This is debatable. Each race type has its own advantages and
+          drawbacks. It also depends upon the modifications made for the
+          particular game you are in. Generally, each race type can be led
+          to success by a good player, and alliances between morphs and
+          normals are quite common and can be very effective (since the
+          normals generally have the high tech levels while morph's pod
+          launching ability and generally high metabolism and/or fighting
+          strength can help the alliance).
+
+       4. What kind of planet should I choose?
+
+          This is covered in large part in the above racegen docs, but I can
+          make some comments about common questions that arise. Of all types
+          of planets, class M's are chosen for homeworlds around 75% of the
+          time. This is because they are the largest of any type planet
+          except Jovians. Thus, they can support a high population (for
+          taxation and tech purposes), and they usually have a fairly high
+          number of resources. Another common choice is desert, since it is
+          on the same order of size as a class M planet. Deserts have more
+          resources, but are less fertile and are rarer in some games than
+          class M's (also, you should take 100% desert as a sector
+          preference, which means you can't spend as much on the other, more
+          common, sector types). Advantages of big planets:
+
+            1. The larger the planet, the faster you will produce resources
+               from it once you have covered the planet. The formula for
+               resource production goes as (1 - avg efficiency) ^ (number of
+               sectors), so the more sectors you have, the better. Races
+               that select small home planets tend to get left behind early
+               on in the race to build the first ships for this reason.
+            2. The planet is much harder to conquer. Even if an enemy
+               manages to field a temporarily superior force to your
+               planetary population, odds are he won't have the AP's
+               necessary to take the whole thing in one update, so you have
+               time to marshal reinforcements if you're in a bind.
+
+          Here's a brief summary of the various planet types, to the best of
+          my knowledge, along with an estimate of how common these planet
+          types are. *NOTE* This will vary from game to game. The relative
+          sizes of each of these planets, as well as the benefits (and % of
+          races which choose each type of planet, etc.) will also vary from
+          game to game. When using racegen, you'll typically pay (or get a
+          bonus) for the type of planet you choose to start with, and the
+          deity will try his best to see that your points are fairly spent.
+
+             * Class M - 15% - These planets are usually about 60% water,
+               20% land, and an even mix of everything else. Once in a
+               while, you'll find a class M with an abnormal atmosphere
+               (like heavy in methane content).
+
+             * Jovian - 10% - These planets are 100% gaseous, and they are
+               usually twice as large as the typical class M planet. They
+               tend to be very high in fertility, too, so you can easily
+               build up a large population for taxation and tech purposes.
+               Also, ships in orbit around Jovians add fuel to their holds
+               every update (tankers are twice as efficient at this), so
+               even if you're not a Jovian-type race, having one of these
+               nearby can be a tremendous asset.
+
+             * Water - 5% - These are largely water planets, and I've found
+               that they are generally resource poor. They can be quite
+               large, ranging up in size to class M quality, but they are
+               usually about 40% smaller.
+
+             * Desert - 5% - These planets are usually 80% desert and 15%
+               mtn/ice. They are _very_ nice as far as resource content is
+               concerned, and their size range is much like Class M planets.
+
+             * Forest - 5% - These planets are almost entirely covered in
+               forest, which is the rarest sector type. Resource content is
+               fairly good. Size range is between Water planets and Class
+               M's. Fertility is higher than on a normal class M.
+
+             * Iceball - 20% - These planets are generally small (1/5 the
+               size of class M's or less), and they consist of around 75%
+               ice and 25% mountain. Relative to their size, they are
+               resource rich, but the small number of sectors means that
+               resources will come more slowly.
+
+             * Airless - 30% - These planets are mostly land (75%) with some
+               mountain and ice sectors. The atmosphere is almost always
+               hostile, of course, but these planets are probably the most
+               resource rich relative to their size (ie. 1/3 the res of a
+               typical class M but 1/5 the size).
+
+             * Asteroid - 10% - These are just floating rocks in space, not
+               good for a heck of a lot. They don't count as planets in
+               victory conditions, and they usually have very few resources,
+               and the small number of sectors make it very difficult for
+               most asteroids to ever contribute to your cause, though
+               having colonies on them have other advantages, such as morale
+               bonus. Sector types are random but range among land, desert,
+               ice, and mountain.
+
+       5. What sector preferences should I take?
+
+          The most common sector type besides gas is water, but this is
+          misleading since there are so many water sectors on Class M's (in
+          addition to those on waterball planets). Running a close second is
+          land terrain, which is found on just about every planet type.
+          Forest is probably the least common, making it an unusual and
+          often strategic addition to your list of preferences (remember,
+          you pay for both the % compatibility and an overhead cost for each
+          of your sector prefs). Mountain is convenient to have since it is
+          usually high in resource content and found in small amounts on
+          many planets, and ice is also a common choice. I've also noticed
+          that taking a combination of desert and a choice of mountain, land
+          and/or ice in your sector prefs somehow entices the server into
+          making your race a "methane breather" some of the time (or maybe
+          it's just bad luck). The problem with this is that most planets
+          will be extremely incompatible with your race, meaning your pop
+          will grow very slowly and often leave you vulnerable to invasion.
+          You'll find yourself at a rather large disadvantage until such
+          time as you or an ally can build atmospheric processors (at a
+          pretty high tech level, so it takes a while). Some games (with my
+          strong approval) are phasing out the possibility of methane
+          breathing races except by request. This is not to say that you
+          should always choose water, land, and mountain as your sector
+          prefs. In many cases, alliances are made based on sector
+          incompatibility. In other words, a morph who loves water and
+          forest would rather ally with a desert/mountain/land loving normal
+          than another water loving normal, so don't be afraid to choose an
+          unusual sector type. It may enable you to exploit planets which
+          other races wouldn't mind giving away.
+
+       6. What happens if I get a rotten home planet?
+
+          As it says in the help docs, a good home planet or system can
+          really make or break your race. In some games, the diety actually
+          goes around before the game and manually sets up everyone so that
+          they can more or less start off on an equal footing. If this isn't
+          happening, though, and you start with a crummy home planet, be
+          ready to fight your way out of it. This makes it all the more
+          important that you establish yourself throughout both your system
+          and the surrounding ones. Look on it as a challenge. :)
+
+                       ------------------------------------
+
+III. -- Playing the Game
+
+                       ------------------------------------
+
+       1. What is a move seg?
+
+          A move seg (or movement segment) is a procedure during which the
+          server updates the positions of all ships in the game based on
+          their current orders. For example, if you have a ship ordered to
+          move toward a particular star, planet, or ship, this process moves
+          your ship closer based upon the ship's speed. You'll receive
+          messages from the server when you arrive at your destination, at
+          which time your ship stops moving. Repairs also occur at move
+          segs. This means that everytime there is a move seg, any of your
+          ships which are currently trying to repair them- selves,
+          regardless of how they incurred damage, will have their damage
+          percent reduced by some amount. For more information on how to
+          repair ships and so forth, see the help docs on scam.
+
+       2. What is an update?
+
+          An update is a "glorified move seg." Basically, everything that
+          happens in a move seg happens here PLUS the following:
+
+             + Production occurs at your colonies
+             + Ships attempting hyperspace jumps either jump or charge in
+               increments towards a level where they can jump.
+
+          What this translates to is this: The pace of the game depends
+          almost entirely on how often these updates occur. There will
+          always be a given number of move segs (usually anywhere from 2 to
+          6) between updates, but updates are the real pulse of the game.
+          Also, you should note that the period right after updates is
+          usually when the most frantic action in the game takes place.
+          This is important when choosing what game you wish to play in. For
+          example, if you live over in Europe and the update schedule is
+          such that updates always occur at 4 am for you, you might want to
+          pass on the game. If you aren't on at updates, enemies often get
+          the chance of jump into your system and start attacking while you
+          aren't on to defend yourself. This can have disastrous effects.
+
+       3. What strategy should I use?
+
+          This sounds like a pretty hairy question, but I will try to answer
+          this in a limited fashion for beginners. What you're basically
+          looking for is some simple-minded strategy that will get you
+          through the first 20-30 updates while you're still learning the
+          ropes of the game. Try to follow these two basic principles:
+          Produce and colonize. Your first and foremost need is to produce
+          resources on your home planet so that you can start building
+          ships. The fastest way to start producing is to spread out and
+          cover your home planet as quickly as possible. This will be the
+          sum total of your turns for the first several updates.
+          Once you have resources, you get to start building ships. If
+          you're a metamorphic race, that means you get to build pods. This
+          is something you should do as soon as you get resources. This is
+          one of the major advantages to playing a morph...pod-building
+          ability. The nice thing about pods is that you don't need
+          factories to build them, which means they can be built on the
+          ground and launched immediately. Since pods are slow relative to
+          most ships, however, it is imperative that you launch them quickly
+          so that you have a fighting chance to win the race to all of the
+          unoccupied systems.
+          If you're a normal race, you should build a factory as soon as
+          possible and then modify it so that it can start producing cheap
+          shuttles. After you've played a game, you'll realize why it is so
+          important to win the race toward unoccupied planets: it is far,
+          far easier to take an unoccupied planet than to kick a hostile
+          race off of that planet.
+          The best advice I've heard yet is that you should be sure to
+          understand the commands in the game so you can use them to your
+          full advantage! It takes time and experience to learn the game,
+          and it will be a rewarding and fun experience if you approach it
+          in the right way.
+
+       4. Random Questions I Always Seem to Run Into
+
+            i. How do I change scope?
+
+               That's the cs command. Scope works just like directory trees
+               in Unix. If you want to go to the top (Universe) level, you
+               type "cs /". To go to a given planet, you'd type "cs
+               /starname/planetname". To change scope to one level higher,
+               you use "cs ..".
+
+           ii. How do I talk to others?
+
+               There are three basic ways: br <message> - This broadcasts a
+               message that will appear on all active player screens except
+               those players with a "gag" in place (you can see that in the
+               who list). On HAP, if you broadcast, only those players who
+               know something about your race will be able to "translate"
+               your broadcast or your messages (see send). ann <message> -
+               This is the same as broadcast, except that it limits your
+               audience to those players in the same stellar scope as you.
+               This is a good way to carry on a more sensitive conversation,
+               but there's no way to be sure whether you're being overheard.
+               send <player> <governor> <message> - This sends a telegram to
+               the named player at a cost of 1 AP. There is no cost for
+               communicating this way with the game deity. There is also a
+               "cr <key> <message>" command available with the gbII client,
+               but it is discussed in the client Help just fine.
+
+          iii. What should I do first?
+
+               Once you get into the game and have connected using your
+               password (and your governor password, if applicable), type
+               "help". Read through all of the concepts listed first and
+               then branch out from there. You'll find some topics in the
+               main list have no help files listed. The docs always tend to
+               suffer from game advances which outpace anyone's ability to
+               update them, but they are definitely useful for the basics.
+
+           iv. How do I interpret the maps?
+
+               Well, the stellar system maps and the galaxy map should be
+               pretty simple to figure out. Objects on the map which are
+               darkened completely are those in which you have people,
+               either on ships or planets. Objects which are partially
+               darkened are those which you have data for but no people
+               present. The planetary map is a grid. When you refer to a
+               given sector, be sure to use (column,row) and not vice-versa.
+               If your toggle switches (see "help toggle") are set in the
+               default way, the highlighted sectors are those with your
+               people on them. Any sectors with numbers on them represent
+               sectors occupied by other players. Sectors with letters or
+               symbols on them imply the presence of a ship with that
+               symbol. Also as a part of the map, it lists how many sectors
+               on the planet you own, whether any aliens are present on the
+               planet, what your population is, the planetary compatibility
+               (which depends upon atmosphere and temperature), and a few
+               other things that you can look up in the help docs...it
+               changes from game to game.
+
+            v. How do factories work?
+
+               Well, first you build one, then you cs to it by typing "cs
+               <shipnum>". Next, you use the modify command to get
+               everything just the way you want it, from ship type, to crew
+               capacity, etc. Once it is the "perfect" design for you, type
+               "order <shipnum> on". It will take a few updates for the F's
+               damage level to go from 75 down to 0, and you can only build
+               ships (with the build command) at F's which are undamaged.
+               Once you've turned a factory on, you can't change the basic
+               design of the ship, so plan carefully! You can modify the
+               ship later at double the cost differential (which is new cost
+               - original cost) provided you can fit the necessary resources
+               into the cargo bay of your ship. This means that ships with 0
+               cargo capacity cannot be modified.
+
+           vi. What tax rate should I set?
+
+               After you've covered the planet and are on the verge of
+               building ships, start it off with a few percent. This may
+               vary depending on your race, but I think it is a good rule of
+               thumb. This small amount will pay for your ships and keep you
+               from losing morale. Later on, when you're not so worried
+               about increasing your sector efficiences, you can up the tax
+               rate (but watch out for insurgencies!). Note that the higher
+               the tax rate, the less chance you have to increase in
+               efficiency, and the average.
+
+          vii. What's the difference between military and civilians?
+
+               Civilians have a fighting strength equal to your race's
+               fight. Military have fighting strength 10 times stronger than
+               your civilians. Contrary to what you might think, military
+               _cannot_ pilot ships _or_ fire guns...only civilians can do
+               that. Thus, if you have 5 guns on your explorer and 2 mil and
+               3 crew, you will only be able to fire 3 guns at a time. Also,
+               if you have only mil on board a given ship (ie. your only civ
+               on board gets killed by a lucky shot from an enemy), you
+               cannot order the ship to any destination.
+
+         viii. What should I set my mobilization level at?
+
+               I've found that it's a good idea to mobilize only a few very
+               large planets that you may own. The reasoning for this is
+               long and involved, but you'll learn through experience that
+               mobilizing small planets (as opposed to building weapons
+               plants there) only makes them more vulnerable to a metamorph
+               invasion force. Mobilizing big planets still leaves you
+               vulnerable to a ground assault (your high mob allows enemy
+               troops to arm just as easily as you can if they bring their
+               own destruct and absorb a few hundred civilians, for
+               example), but big planets require a lot of AP's to take and
+               require a lower mobilization in order for planetary guns to
+               come into effect.
+
+           ix. How do planetary guns work?
+
+               You don't have to load them. These guns will take destruct
+               directly from your stockpiles (provided you have some dest
+               there). You can actively use them against ships in orbit
+               around your planet by using the "defend" command (in the help
+               files). These guns will also _automatically_ fire on any
+               non-allied ship that tries to land on your planet...even a
+               couple of medium caliber planetary guns is better than
+               nothing. Also, the ship may not be destroyed, but if it is
+               damaged, there is a chance that it will crash land, thwarting
+               the attack. You get a certain number of planetary guns
+               proportional to how many sectors you own on the planet and
+               how high your mob level is.
+
+            x. How do atmosphere processors work?
+
+               To put it simply, it doesn't matter who builds a processor...
+               only who currently owns it. A processor will slowly change
+               the atmosphere of a planet (rate inversely proportional to
+               planet size) to the ideal preferences of the owner of the
+               processor at a cost of 3 fuel per update, which must be
+               loaded into the processor. The last time I checked,
+               processors will continue to eat up 3 fuel per turn if they
+               have fuel to burn even after a given planet is perfectly
+               atmospherically compatible with the owner, so it's a good
+               idea to scrap processors once you reach this goal.
+
+           xi. What's the quickest way to jump to other systems?
+
+               Since you receive jump technology at a tech level of 50, your
+               best bet is to have a ship ready to modify once you get
+               there. If you're going to build a large fleet of jump ships,
+               you'll save a lot of res by just building a factory and
+               starting it up AFTER you've been able to design the ship with
+               jump included. Some players, though, prefer using a few
+               heavily armed explorers or Terraformers (which have large
+               hanger and fuel capacity for long jumps) which they modify
+               for jumping as soon as they can, saving a few updates by not
+               having to wait for a factory to come on line.
+
+          xii. How do I get hyperdrive on board ships?
+
+               In order to get hyperdrive aboard ships such as e's and T's,
+               you must first have a given number of resources in the cargo
+               bay. The amount depends upon the new cost of the ship with
+               hyperdrive minus the old cost (double that to get the cost of
+               the upgrade). That means you must be able to fit that many
+               resources _on_board_ your ship to make the upgrade. For e's,
+               big cargo holds aren't very common, so you might find that
+               you have to "bootstrap" your way up by upgrading the size of
+               your cargo hold. See the "upgrade" command in the help files
+               for more info. In case the help files aren't very
+               enlightening, here's an example of how to build a jump
+               capable terraformer: > build T 2,2 (let's say this gives you
+               T #1456 in sector 2,2)
+               > load #1456 r 18
+               > cs #1456
+               > upgrade hyper (now you've got hyperdrive capability)
+               > load #1456 r 16 (assume you want to add a crystal mount)
+               > upgrade mount (now when you jump, you'll do it in one
+               update,
+               and you'll use a _lot_ less fuel, if you've
+               got a crystal in the mount, of course)
+               > load #1456 x 1 (assuming you have a crystal on the planet)
+               > mount #1456 (now you can take advantage of your xtal mount)
+
+               Say I wanted to increase the hanger capacity of my T, here's
+               how I would do it:
+               > cs #1456
+               > load #1456 r 2 (This can cost 2 or 4, depending on your T)
+               > upgrade hanger 6 (Default hanger of a T is 5...you must
+               also have a high enough tech to build this kind
+               of ship)
+
+         xiii. How do I build ships in space?
+
+               Well, the way to do this is get a ship into orbit with the
+               resources you need. You can use just about any ship, but a
+               shuttle works just fine. You can load it with an infinite
+               number of resources, but you just can't land an overloaded
+               shuttle...so you _don't_ need ships with huge cargo bays to
+               build some of the larger structures like H's, O's, S's, etc.
+               You can get resources onto the shuttle by ferrying them up
+               from the surface with another ship. Once you have done that,
+               change scope to your shuttle, and type "build <shiptype>".
+               This will create a new ship docked to your shuttle. You can
+               then launch it or do whatever you want with it (but be
+               careful about trying to land damaged ships! Some ships are
+               built with a certain damage level that must then be
+               repaired...others can't land at all).
+
+          xiv. How come I don't have any resources yet?
+
+               Often, races with low metabolisms and/or small homeworlds or
+               worse, a combination of the two, will take painfully long to
+               start generating any resources. You can help alleviate this
+               problem by buying a reasonably high metabolism. I usually
+               find that 1.0 gets me off fairly quickly, but if I have the
+               points to spend, I'll go higher. High metab isn't so crucial
+               for Jovian races since they start with huge homeworlds, so
+               this minimum could go down to around 0.85 or so, in my
+               opinion.
+
+           xv. How come my pods didn't explode when they reached their
+               destination?
+
+               Speaking from personal experience only, pods can explode at
+               an update or a move seg. The chance of this happening for
+               each pod at each update/segment is around 30%. Thus, if your
+               pods arrive at a system, go ahead and set them on course for
+               nearby planets. Some might actually get there before
+               exploding, giving you a new colony in the early parts of the
+               game.
+
+          xvi. How do I get a list of where my crystals are at?
+
+               Once you are at tech 50, you'll be able to see the location
+               of all crystal sectors on planets you have explored. At
+               times, these sectors will be covered by structures built by
+               you or someone else (such as F's, a's, Y's, etc), but you can
+               get around that problem by using "toggle geography" and than
+               viewing the map.
+
+         xvii. How do I get crystals?
+
+               If you occupy any crystal sectors, you have a chance,
+               depending upon that sector's efficiency, to mine a crystal at
+               every update. Once you've mined from around 1-6 crystals from
+               a given sector over time, it will revert to a "normal"
+               sector.
+
+        xviii. How do I get a list of ship types I can build?
+
+               Try "build ?" which is described under "help build." This
+               will give you a summary of ship types. If you want detailed
+               info on a specific ship, type "build ? x" where x is the
+               letter that represents that ship type.
+
+       5. Final Warnings and Advice
+
+          If you see a bug, tell the deity in charge. Period. Many games are
+          thrown out of balance by players who find bugs and exploit them.
+          If you're really in this to have fun and play the game well, you
+          shouldn't need to cheat to win.
+
+          Remember that some types of ships are built with damage that takes
+          a few updates to repair. This means that you'll have to plan
+          ahead, and, more importantly, don't try to land these or any other
+          damaged ships unless you want to risk losing them! You have a
+          percentage chance equal to the ship's damage of crash landing and
+          possibly destroying your ship!
+
+          Use the "tactical" command often to check for the presence of
+          enemy ships which may not show up on your map. Remember, to check
+          an entire system for enemies, it might be better to do a "tact g"
+          rather than just a "tact." This gives tactical reports for your
+          planets only (which is still full coverage most of the time) and
+          avoids repetitive tact reports from every single one of your ships
+          in system. Also, be careful what orders you give in Universal
+          Scope (the top level)...sometimes, asking for tact reports from
+          all of your ships (or even just stock reports) can tie up the game
+          and waste a lot of everyone's time.
+
+          Remember that some types of ships can't be built in factories,
+          most importantly ships such as Stations and Habitats. To build
+          something like this, you can overload a shuttle in orbit! Also, be
+          sure you know what the rules are for Habitats in your game (ie. do
+          they produce extra resources every turn? If so, how many?).
+
+          If you've got "smart guns," learn how to use them and take
+          advantage of them! Don't get caught off-line at an update only to
+          have everything you hold dear destroyed simply because you didn't
+          set up a protection network.
+
+          The beginning of the game is a critical time when you need to get
+          your race started off and several updates occur very close
+          together in order to get things moving. When you sign up for a
+          game, be sure you can make this first update "blitz" or you may
+          find yourself hopelessly behind.
+
+                   --------------------------------------
+     ********************* I M P O R T A N T ***************************
+     Finally, remember that the deity of the game is there to help you.
+        If it weren't for him/her, you wouldn't be playing GB at all.
+           So don't whine. Be polite. Make constructive comments.
+                   It'll be easier for everyone that way.
+    ********************* I M P O R T A N T ***************************
+                   --------------------------------------
+
+                     *** RELAX. IT IS ONLY A GAME. ***
+----------------------------------------------------------------------------
+History: Jan 17, 1997 - Converted to HTML - Evan Koffler
+Galactic Bloodshed FAQ Version HTML 1.0 - Part 2
+
+----------------------------------------------------------------------------
+This posting serves as an appendix to the alt.games.gb FAQ sheet. It has a
+series of ten questions asked to several gb veterans by Mike Varney and
+their responses. These questions and their responses are designed for novice
+players. They don't cover many aspects of the game, but they can be very
+helpful. Unlike the first posting of the FAQ, this one is unlikely to change
+over time unless I get new submissions for answers to these questions. I am
+not exactly looking for new submissions, but...
+
+                              Table of Contents
+
+  I. Setting up your race
+       1. Should I choose a metamorphic race or a normal race?
+       2. What type of home planet should I choose?
+       3. How should I spent my remaining points?
+       4. What sector preferences should I choose?
+ II. The Beginning of the Game
+       1. What should I do before the first update?
+       2. What is the first ship I should build? The second?
+       3. What can I do to increase my resource production on any given
+          planet?
+III. Later in the Game
+       1. Should I colonize the planets in my own system first, or should I
+          focus on arriving in other systems before opponents can?
+       2. What should I do when I see another ship other than my own?
+
+----------------------------------------------------------------------------
+Editorial comment:
+
+   * These answers are not all necessarily right. There may be several
+     misleading and some totally wrong answers in here, so take these with a
+     grain of salt. These strategies are not foolproof.
+
+   * As you will see from the wide range of answers for each question,
+     everyone has their own playing style and their own opinions on how
+     newbies should proceed.
+
+   * A balanced view of the game, in light of all the different viewpoints,
+     is hopefully presented.
+
+   * The original responses were edited where necessary to make them more
+     readable, either by slightly rewording a vague sentence, making the
+     format more readable, changing grammar here and there, etc.
+
+In sum...you have been warned.
+----------------------------------------------------------------------------
+                  Legend of Shorthand Used by Respondents
+
+            GB Name         Real Name       GB Name     Real Name
+         Feepness       Christopher Fodor NB         ???
+         Lestat         Kevin Martin      TheCulture Petri Wessman
+         Keskiolut      Toni Kotinurmi    Froos      Jerry Liu
+         Neue Regel     Derek Jewhurst    Griffons   Paul Daniels
+         Garfel         Jari Koivikko     Pillarian  Scott Donavan
+         ???            Rob Nesius        Tao        Jukka Sinisalo
+         Thing          David Fernandez   Empire     Samuli Suomi
+         Muu            Dan Andersen      ???        Link Baker
+         Fnebish Legion Doug Ingram       Greenies   Mitch Ferguson
+         Microbians     Jason W. Solinsky Zurgithian Mike Simmonds
+         Tribbles       Shire
+
+                       ------------------------------------
+
+  I. -- SETTING UP YOUR RACE
+
+                       ------------------------------------
+
+       1. Should I choose a metamorphic race or a normal race?
+
+          Feepness -
+               Normal for me. With high IQ, and try to max out metabolism.
+
+          Lestat -
+               Metas are more work because they are able to send pods out
+               fairly early in the game. Typically, they will have a large
+               number of pods out at most times. Since they need to get
+               ahead early, you really have to pay attention to them.
+
+          Keskiolut -
+               Whatever, not too specialized race is the main point. If you
+               have a specialized race, you MUST know what you're doing.
+
+          Neue Regel -
+               Normal
+
+          Garfel -
+               I prefer normal 'cause i get lot of tech
+
+          Rob Nesius -
+               The concept of a 'normal' race might be more comfortable for
+               a newbie. There are a number of pros and cons to consider.
+               The normal races, also referred to as 'techies', start out
+               with their IQ at a high number. Their tech then increases
+               roughly at the rate of IQ/100. Which means it grows at a
+               linear rate. Morph's intel- ligence, on the other hand, is
+               based on their population. So, before a Morph can increase
+               it's tech, it must increase it's population. In consideration
+               of this, Morphs have the ability to build 'pods' at zero
+               tech, and launch them to other planets, thus letting them
+               expand throughout their home systems at a comparable rate to
+               the 'techies'. Morph's usually have a higher 'fight' than
+               'normals'. It is possible for Morphs and Techies to be
+               allies. The game is not 'morphs' against 'techies'.
+
+          Thing -
+               If you want to get the higher tech toys first, get a normal
+               race with a high int; otherwise, a meta is a better choice.
+               They start out slow but can catch up quickly.
+
+          Muu -
+               Well, as a newbie, I would start as a normal race. They get a
+               technological advantage over the meta's right from the start.
+               They are also much more straight forward to play. Meta's can
+               get get very complex and very time-consuming in the
+               beginning. Also, Normal's tend to attempt to enslave Meta's
+               as soon as possible. Therefore, if you are not very
+               experienced, you will not be able to keep a Meta as a free
+               empire.
+
+          Fnebish Legion -
+               Choose metamorphs if you want to concentrate more on ground
+               fighting and a more dynamic (and time-consuming) game. Choose
+               a normal race if you'd rather experiment with building ship
+               types, with the ultimate goal of finding a good metamorphic
+               ally to do the "dirty work" for you. Both types of races can
+               just as easily win the game, and they're both just as
+               difficult to learn how to play well.
+
+          Microbians -
+               You can have fun with both types of races. I've always found
+               the HAP racegen to favor normal races and the GB racegen to
+               favor metamorphs, but the universe will always need a mixture
+               of both. In my experience metamorphs have represented a
+               considerably greater time consumption than normals, so you
+               should take this into account. (of course any race will take
+               a long time if you occupy to much of the galaxy). On the GB
+               racegen you can create some interesting crosses between
+               metamorphs and normals (like races with collective IQ's but
+               neither pods nor absorb.) Most of these combinations are
+               disastrous, but others (like a collective IQ, no pods Jovian)
+               can be both interesting AND playable.
+
+          Tribbles -
+               I would suggest a normal race, they tend to have less ship to
+               worry about, and a lot less complications. A meso to be
+               effective must know about tech investiments, how to maximize
+               population, and uses of pods.
+
+          NB -
+               If you want to explore all the nifty ship types of the game,
+               I would suggest you not be a metamorph. Also, being a
+               metamorph successfully requires either tireless fingers or an
+               understanding of macros!
+
+          TheCulture -
+               Depends on whether you want to side with the "Techs" or the
+               "Morphs"... Metamorphs can build pods very early in the game,
+               so they get a head start on the normal races, who have to
+               wait until they can build a shuttle to get off their home
+               world. Morphs have a collective IQ, which means that in the
+               beginning their technology level will increase *very* slowly.
+               Since your tech level determines what kind of whiz-bang stuff
+               you can build, it will take a while until your average Morph
+               race gets its first shuttle up in the air. Things even out
+               later in the game.
+
+          Froos -
+               Depends on your playing strategy. If you enjoy spending a lot
+               of time playing with ships and fleets I'd choose normal. If
+               you don't want to spend a heck a lot of time and don't mind
+               spending your time on planet surfaces, choose morph.
+
+          Griffons -
+               It really depends on the game that you are playing.. If you
+               are playing in one of the clakson games it is a must. With
+               the HAP games you really aught to start out with a tech race.
+               Choosing a normal race will allow you to build better ships
+               earlier, in general, while the meta races tend to allow you
+               to have nice things like higher fighting capability, etc.
+               With the clarkson enroling system the meta's are the
+               strongest races, you can make a meta with the same
+               characteristics as a top line normal cheaper, giving you more
+               points to use for increasing your abilities.
+
+          Pillarian -
+               This is entirely up to individual tastes, If you are just
+               starting then flip a coin.. try that type then next game
+               swap.. then perhaps make a decision as to what you will
+               play...
+
+          Tao -
+               I'd say normal. If for no other reason but because many don't
+               like them...
+
+          Empire -
+               It depends of which tactics you are going to use: if you want
+               to be good in man to man-fight, choose meta (because of
+               absorption), if you want fast developing tech from the very
+               beginning of the game, choose normal ( with iq like 170..)
+               and so on...
+
+          Link Baker -
+               I have only played metamorphic races. I like the fact that
+               they can send up pods immediately and don't have to wait for
+               tech. They are more challenging. You don't have the
+               technology of a normal race. Also, you can take a planet
+               without having to destroy it (absorb). That takes skill.
+               Anyone can bomb someone into the stone age.
+
+          Greenies -
+               Normal for the first games, it all makes much more sense.
+
+          Zurgithian -
+               Well I almost always go for meta, but I depends on the time
+               you have to play or the number of friends you have to help
+               play your race. Metas take time (you need macros as well, but
+               I have done well spending hours podding before I discovered
+               macros), to come in the top 5 of a big game you will need 1-2
+               hours per update if you know how to use macros.
+
+       2. What type of home planet should I choose?
+
+          Feepness -
+               A high resource, low fertility planet (desert or airless) You
+          can always increase fertility later with resources.
+
+          Lestat -
+               Consider the sector compatibilities which are easiest for a
+          given planet type (they're usually marked with a * by racegen).
+          Planet types such as iceballs and airless are more difficult
+          because they tend to be smaller and have less resources, making
+          your race slower in getting underway. Note - choosing Earth (Class
+          M) planets may seem tempting, and it's not a bad idea. However, in
+          some universes, there are many Earth inhabiting players. This
+          means there will be more competition against your race for these
+          planets.
+          Keskiolut -
+               Pick a planet that is rather large ( desert,forest ) because
+          you are not likely to get many planets in your first game...
+
+          Neue Regel -
+               Class M / Earth
+
+          Garfel -
+               1. Desert 2. Forest 3. Earth (you need too many sector
+          preferences to use this planet effectively)
+          Rob Nesius -
+               This primarily depends on the sector compatibilities you
+          choose. Jovian planets (gas giants) are very large, and have the
+          ability to fuel up ships (so I hear). Half of the sector space in
+          a galaxy is gas. Jovians are few and far between. Their resource
+          content is not very rich, but passable. Whether or not Jovian
+          races should be allowed to terraform sectors to gas is being
+          debated. Class M's are primarily like earth. Don't be fooled, they
+          have LOTS of water...usually. If you have water as a compat, class
+          M is not a bad choice. Water balls are usually small but not too
+          bad for resources. Iceballs are few and far between (I think) but
+          also not too bad for resources.
+
+          Thing -
+               Picking planets is tough. I like to start on a Class M or
+          desert since they are usually large. Large home worlds are good
+          because they can be taxed, and a big planet has more res than a
+          small one.
+
+          Muu -
+               I would go for the generic M-type planet. They aren't the
+          most common, but they are really useful. As another option, you
+          could go for a desert planet. These are GREAT for resources, but
+          are generally very rare. Forest planets are also good, as they
+          produce decent amounts of resources and your population will
+          explode. As for other planets, such as asteroids, airballs,
+          iceballs, and jovians, I would not advise choosing any of these as
+          they all have problems associated with them, such as smallness,
+          lack of resources, and rarity (for the jovians).
+
+          Fnebish Legion -
+               Choose either a Jovian, a desert planet, a Class M, or a
+          forest planet. All the other types are too small to start with,
+          and you'll find yourself having a hard time producing resources
+          since production on a given planet goes as _the_power_ "number of
+          sectors owned." Producing resources quickly on your home planet is
+          crucial.
+
+          Microbians -
+               Personally, I like forest and desert planets. They have very
+          good resource concentrations and despite much of the
+          documentation, they are often quite large. To a certain extent,
+          planet choice is moot because planetary size, and atmosphere have
+          a much greater effect on the game than the planet type. Just make
+          sure you are compatible with the vast majority of sectors that
+          appear on your planet. (One reason I dislike class-Ms is because
+          most races don't have enough sector preference diversity to
+          colonize greater than 90% of the sectors, and the uncolonized
+          sectors stick out like a sore thumb.)
+
+          Tribbles -
+               To start out with, use either forest or desert. Higher
+          resources, and costs less in racegen; you can thus pick other
+          sector pref's. I prefer a forest planet myself.
+
+          NB -
+               I tend toward earthlike planets. Jovians are fun too if you
+          don't mind being somewhat separated from the mainstream of the
+          game.
+
+          TheCulture -
+               Again a matter of taste :-) I personally love desert worlds,
+          since they have an extremely high resource content (i.e. you can
+          build huge amounts of stuff from them). On the down side, desert
+          worlds are low on fertility, so your population increses quite
+          slowly. The "basic" home world is a "Type M" (Earth-type) planet,
+          which is pretty even in all respects -- a pretty good choice for
+          your first game. Other choices are the Water world (not that
+          great), Iceball (avoid!), the Forest world (low resources, high
+          fertility), and the Jovian. Jovians are unique in that they
+          automatically make your race a gas-breather (which rules out any
+          other sector preferences). This make for a division in the game
+          between the Jovians and all the other races, as neither can use
+          each other's worlds (although Jovians *can* terraform normal
+          worlds into gas ones -- this could be considered a bug). You
+          probably shouldn't choose a Jovian for your first game, although
+          if you're feeling brave go for it!
+
+          Froos -
+               Doesn't really matter too much. Just don't pick an iceball or
+          asteroid since those usually are kind of small and puts a
+          constraint on your earlier expansion. Don't choose forest worlds,
+          either. There aren't too many of those.
+
+          Griffons -
+               It really depends on what you want out of your home planet.
+          For cheap compatibilites, you should choose a forest. For high
+          populations, forest or water then earth. For resources, desert.
+          The best way is to fiddle around with the enrol system until you
+          have enough points to do what you want. You will find that the
+          cost for compatabilities change as your home planets do. This cost
+          has eliminated iceballs from being a viable starting planet.
+
+          Pillarian -
+               Most choose a class M (All sector types except gas) simply
+          because it enables the player to parallel their race against the
+          thinking of a modern day situation.
+
+          Tao -
+               Maybe earth or forest (if this is asked). Both have fairly
+          good fert and resources. Not desert, because fert is so low there.
+
+          Empire -
+               In earth-,forest- and joviantype planet your population grows
+          faster... In desert-type planet you have relatively greater
+          resources... Of iceballs and Airlesses I have no experiences..
+
+          Link Baker -
+               Earth type planets. Their size can support a decent
+          population (Meso's need population for tech). They have pretty
+          good resources.
+
+          Greenies -
+               Desert, or Earth. Both are fairly large size planets, have
+          plenty of resources, and can be found in just about every system.
+
+          Zurgithian -
+               Desert, Earth or Forest (Jovians are good too, but try the
+          others first), as a meta you can have 1 guy live on any sector
+          type so even if you are on an Earth type with incompatable sectors
+          you can still mine resources there.
+
+       3. How should I spend my remaining points?
+
+          Feepness -
+               Fiddle around, trying different things every game... that
+          makes it fun.
+
+          Lestat -
+               Metabolism is important for producing resources at a
+          reasonable rate, especially early on; many players recommend at
+          least 0.95 or 1.0. Adventurism encourages your people to spread
+          out without your help. IQ is useful for developing tech. They're
+          all useful, of course... which to emphasize the most is your
+          personal preference. Just be sure, in your first few races at
+          least, not to cripple any one stat too greatly, or you may regret
+          it.
+
+          Keskiolut -
+               Metabolism is great, at least 1.0, and fight should never be
+          below 3 or 4.
+
+          Rob Nesius -
+               IQ will take most of them. Good IQ is about 150-170, 200 if
+          you really want to spend the points.
+
+          Garfel -
+               Raise iq to at least 180 and metabolism to 0.9. Drop
+          adventurism to 0.05, birthrate to 0.6 (or maybe 0.5; it's not
+          important to have it high), and get a little fertilize.
+
+          Rob Nesius -
+               Metabolism is a good place to put points. This represents how
+          active your race is. A race with a low metab(.8 is considered low)
+          will build up fuel, and resources(res) at a slower rate than a
+          race with a 1.0 metab. You don't absolutely need a high metab.
+          Lower metab is still playable, but it requires shrewder planning
+          and foresight on the part of the player. Birthrate should be high.
+          Adventurism need not be high. It represents the chances of members
+          of your race deciding to expand the 'frontier'. For techies, iq is
+          usually a good one to boost up. Don't take more than 3-6 sexes
+          required to reproduce.
+
+          Thing -
+               Always try and get a metab of 1.00 or great. I like to have 1
+          sex, since it makes colonizing easier. Concentrate on either a
+          smart race or a good fighter type race.
+
+          Muu -
+               A high IQ is nice, as this allows your technology level to
+          increase more quickly. Sector preferences are also really nice.
+          For a normal race, the other stats aren't as important, in my
+          opinion. A low mass is useful, and sometimes you can save a lot of
+          points by reducing your adventurism to as low as possible. This
+          has the effect of having to move all your population manually...
+          They will not move on their own.
+
+          Fnebish Legion -
+               Get at least three sector preferences, but don't go for the
+          "common" choices. It's best to find an unusual mix. You'll work
+          much better with potential allies since you won't be wanting the
+          same types of sectors. Also, make sure your metab is _at_least_
+          1.0 unless you're a Jovian race (in which case 0.9 is a good
+          minimum). If you're not going to spend the points on a high iq,
+          spend 'em on fight or metabolism. Don't try to max things out too
+          much...at high levels of any attribute, then the cost rises much
+          more quickly than the attribute, but you want something high to
+          give your race a distinct edge, if possible.
+
+          Microbians -
+               It's up to you. Generally, its not possible to take over the
+          universe on yuor own, so you should make sure that you have
+          something to offer potential allies. A perfectly well-rounded
+          race, may not have much to contribute
+
+          Tribbles -
+               For a first time player, try to only add sector prefs, go
+          with the default setting for the most part. They're not great, but
+          they're not bad either. I would try to have these sectors pref's:
+          Forest, Water, Desert, and land. Also drop your # of sexes to 1.
+          It make metabolism a little cheaper.
+
+          NB -
+               Fight ability is good, but I tend to think reproduction
+          (minimizing number of sexes) is more important.
+
+          TheCulture -
+               Hmmm... depends heavily on the type of play you're going to
+          foll. If you're a "tech" then you can downplay the "fight" and
+          invest in IQ, and vice versa if you're going to go for the "Wood
+          Clubs & Brute Strength" -department :-) I personally like
+          investing a lot in IQ (tech).
+
+          Froos -
+               Make sure you have decent IQ (~150), reasonable birthrate
+          (>0.6), good metabolism(1 or so), and try to be compatible with as
+          many sectors as you can.
+
+          Griffons -
+               Well that really depends. To pull out the maximum res you
+          need both a high pop and a high metab (res is required for the
+          building of ships). Also Birth is good and so are compatibilities
+          to sectors; likewise, someone with fight 10 troops is really nasty
+          to come across. The only way to really tell what you need is by
+          your playing style. That only comes with experience... Go for a
+          basic race that populates well and has 180 tech... it is a good
+          start for a beginner.
+
+          Pillarian -
+               Again it depends on what race you chose. If metamorph then
+          fight would be useful followed by birth, then sectors
+          (preferences). You may wish to sacrifice some of the iq tech level
+          for other things. If techie, then perhaps higher iq. Fight is not
+          highly required but a fight of one is a major loss. With such a
+          low fight most techies would be (initially) at the mercy of meso
+          pods. Then you can choose between birth and metab.
+
+          Tao -
+               I usually drop my fight a little, buy metabolism and then
+          just sort of spread the rest evenly (no use taking too much
+          fertilizing or adventure though. If you won't be able to play in
+          the start, then that advantage might help). Be unisex if you have
+          the points.
+
+          Empire -
+               Take higher fight,metabolism and iq... IMHO don't waste your
+          points to get better fertilization; after the tech-level 5, the
+          Space Plows will have the same effect...
+
+          Link Baker -
+               Metabolism is very important. After that a meso should go for
+          fight. Birthrate is fine at 50 - 60 %. Spend extra points on met
+          and fight. Maybe sector compat. also, but it's expensive.
+
+          Greenies -
+               Desert, or Earth. Both are fairly large size planets, have
+          plenty of resources, and can be found in just about every system.
+
+          Zurgithian -
+               Metas need a good fight and metabolism. In a blitz game you
+          will need adventurism more than .25 (unless you have a population
+          spread macro) otherwise have .1, a very high birth rate is needed
+          to take planets quickly (metas like me are greedy, take all those
+          sectors, ask Feep :-). If going for a low IQ meta then have some
+          (.25) fertility, pods and absorb are a must!!! If playing HAP go
+          for metab of 1.8-2.0, in one game I had 6 planets after only 2 and
+          a bit updates cos I got some res and fuel after the first update!
+          You can afford to be pretty heavy as you will not be using techie
+          ships for a while.
+
+       4. What sector preferences should I choose?
+
+          Feepness -
+               Definitely water, desert, land, and mountain. When playing a
+          "Jovian" race, you really can't go wrong since there is a very
+          high percentage of gas giants out there.
+
+          Lestat -
+               Always choose the ones which are best for your planet type;
+          those are cheapest. I don't recommend buying more than one other
+          sector compat, if even that, since the *number* of compatibilities
+          you have is a factor in point cost as well.
+
+          Keskiolut -
+               Main preference plus one or two another ( take 100%, because
+          they're cheap after the first 30% or so... ). So, maybe a desert
+          and forest. Or another good choise: desert, land and mountain.
+
+          Neue Regel -
+               For a Class M planet, take land, water, and ice. These are
+          very common to the other planets too. Forest can also be a good
+          choice.
+
+          Garfel -
+               with desert: land/mountain; with forest: land/mountain/water;
+          with earth: land/water/mount (mount is not important but has high
+          resource content).
+
+          Rob Nesius -
+               Recommendations for these are plated, land, and water. You
+          should have compatibility with these three sectors before you
+          choose others. You don't need 90-100% on every secotr type you do
+          choose. You can select 50% or lower so you can make use of the few
+          odd sectors, or asteroids, forest planets, etc. . . Ice is a good
+          one, since it shows up on iceballs and most classM planets on the
+          poles.
+
+          Thing -
+               Pick as many sector prefs as you can; get them to at least
+          25%. The best ones in my opinion are home planet sector, desert,
+          mountain, land, forest, water then ice.
+
+          Muu -
+               If you don't have a sector preference in a certain sector
+          type, you effectively can't live on those sector types. So, if you
+          can afford it, buy some compatibility in all, or most of the
+          sectors. They don't have to be bought at 100%. 10%-20% should do
+          for most of them. Be sure to get one or two sector-types at a high
+          compatibility, such as 90%-100%. If you live on a Class M, I would
+          suggest land, water, forest, and a little desert. Again, if you
+          can, get at least a little in all the sector types.
+
+          Fnebish Legion -
+               I mentioned this a little bit before. Land and forest have
+          the highest fertility (I'm not mentioning gas since, if you take a
+          Jovian race, gas is your only viable option), hence can support
+          more population. This is good for races with collective iq.
+          Mountain and desert have high resource content but low fertility,
+          so they're good for races with high metab. Ice is useful since it
+          is found on almost all the planets in at least some small amounts,
+          and water is a good choice for a race starting on a class M,
+          though it is generally poor in resource content. Select an unusual
+          mix and you'll find working with allies much easier.
+
+          Microbians -
+               Similarly it's not a good idea to be compatible with every
+          kind of sector. MANY alliances are based on sector
+          incompatibilities.
+
+          Tribbles -
+               See comment to question 3.
+          NB -
+               Land, forest, and water are my favorites.
+
+          TheCulture -
+               100% for your "home" sector type (i.e. water for water worlds
+          etc.), and at least 50% on a couple of others. "Land" and
+          "Mountain" are pretty good choices, since they are quite common.
+          Again, this depends on your play style. You can either invest a
+          lot in sec. preferences and be able to utilize pretty much
+          anything right at once, or you can invest in tech and build
+          Terraformers as soon as possible (with Terraformers you can change
+          sector types into your own preferred sector type.
+
+          Froos -
+               Try to include either land or mountain because many of the
+          asteroid/ iceball type planetary bodies will have one of these two
+          sectors on them.
+
+          Griffons -
+               Totally dependent on your home planet. The more the better
+          but you will find that some sector preferences cost too much due
+          to you being on a planet that does not have the sector much. You
+          will get the idea if you try having a desert home and water
+          compatibility. Water tends to be one of the most common (generally
+          supports high pop but low res production). Forest is the same as
+          water but supports a higher pop and is very rare (throughout the
+          universe, that is). Land, is incredibly common with average pop
+          and res production. Ice is common, supports little population but
+          high than average res. Gas is only good if you are a Jovian race:
+          low pop/sector and low res. Mountain his high res and low pop.
+          Desert same as mountain but generally more res.
+
+          Pillarian -
+               Depending on what race gen is being employed will depend on
+          you avenues of decision. These mainly being that you will require
+          100% of the main sector(s) of what ever planet type you have
+          chosen. Ie class M land(*) or mountain (^) on the GB enroll
+          system. Variances have and will occur in the 2 main race gens
+          available.. (GB's { code, and Clay's port driven system).
+
+          Tao -
+               I've had quite a good start with starting on earth and being
+          able to use water, desert and land. Deserts could be changed to
+          mount, maybe. That way you can land on most planets, get
+          resourceful sectors (desert) and still can spread well on your
+          home planet (water).
+
+          Empire -
+               As many as possible so you have wider basement when you start
+          to colonize colonizeother planets..... Mountain is resource-rich
+          and quite a non- rare sector type, but it costs points. If you
+          take gas, you don't need to take any other sector types.. :)
+
+          Link Baker -
+               Water is pretty abundant in the universe. Forest is rare.
+          Choose water, and then land or mountains. Stay away from rare
+          sector types.
+
+          Greenies -
+               Besides your planet type sector, definitely choose mountain.
+          There are mountains on every planet, and asteroid.
+
+          Zurgithian -
+               The primary sector type must be 100% i.e. on Water planets
+          have water 100%, forest 100% on Forest planets etc. On Desert
+          planets you can usually have desert, mountain or ice as 100%. For
+          metas it is good to have some compat with forest as your
+          population grows fast because of the high fertility. Always go for
+          some on land ! If playing HAP have some mountain as there is lots
+          around.
+
+                       ------------------------------------
+
+ II. -- THE BEGINNING OF THE GAME
+
+                       ------------------------------------
+
+       1. What should I do before the first update?
+
+          Feepness -
+               Beg for an update. It doesn't make much of a difference to
+          unload people from the government center.
+
+          Lestat -
+               Unload a few people from your government center to join in
+          the first reproductive pass. Be sure to leave at least one in so
+          you'll get APs! Spend the APs you have moving a few people around
+          diagonally from your starting sector, to encourage widespread
+          colonization. Decide if you want a tax rate (lowers efficiency I
+          believe) or mobilization (eventu- ally produces destructive
+          capacity at the expense of resources). Chat some with other
+          players.
+
+          Keskiolut -
+               Unload @, spread the ppl to next-to-@-sectors. Because you
+          NEED as much ppl as possible and they do _not_ reproduce without
+          you spreading them. Even if you have high adventurism this is
+          recommended.
+
+          Neue Regel -
+               Get your MIN-SEXES to as many sectors as you can. You will be
+          limited by both AP's and total population. I tend to unload 4-6
+          people from my @ before the 1st update. Load them back in after
+          the update though.
+
+          Garfel -
+               Unload your @ (load #number c -10). Depending on your number
+          of sexes, that number of people to the highest fertility sectors
+          so you have a lot of people after the 1st update.
+
+          Rob Nesius -
+               Move your people around. It's important to get your planet
+          covered as much as possible. Move them around in small groups so
+          you use fewer action points. Soon, your people will start making
+          resources and fuel. HINT: Use the 'analysis' command to determine
+          which sectors are your most resource rich. It's probably not a
+          good idea to unload people from the government center. You need
+          people there to maintain efficiency, which is a very important
+          aspect of secotr stats. The more efficient you are, the faster you
+          pump out res. And the more effecient your goverment, well. . .
+          think about it.
+
+          Thing -
+               On the first update, take enough people out of your @ and
+          move them 1 space away from your @. This will help you spread out
+          faster, but you will not get as many ap's as fast. After the first
+          update, load the @ to full again.
+
+          Muu -
+               The most enjoyable thing to do, and sometimes really useful,
+          is to meet all the people. Potential allies and enemies always pop
+          up. You should also look at your position and determine possible
+          routes to nearby stars. That's about all I usually do before the
+          update, except for unloading the @. On the very first update, I
+          usually unload five(5) crew from the government center. I then
+          spread them around to five nearby sectors. After the first update,
+          one should always reload the center with crew, as an
+          insufficiently manned center does not produce Action Points(AP's),
+          which, as you will find out, limits the number of actions you can
+          do. AP's are vital in the beginning of the game.
+
+          Fnebish Legion -
+               Nothing, unless you want to try unloading your government
+          center Raising tax rates and mobilizing should come after about
+          the 6th or 7th updates, IMHO. If you will be on at the update so
+          that you can reload your center after the first update, go ahead
+          and do it. Unloading your center at the beginning, taking 4 crew
+          out, is nice because it gives you a head start on your expansion
+          at the cost of only a couple of AP's (this is not entirely clear
+          to me due to conflicting information, but I'm told that centers
+          probably _don't_ produce fewer AP's with less crew inside...still,
+          you might as well keep it fully loaded after the first update).
+
+          Microbians -
+               If you are playing in a game where you start out with 1200
+          people, You probabally want to colonize the four sectors on a
+          diagonal from your start sector. (I assume here that all races
+          have six sexes or less) If your race has one sex move one person
+          into each sector, otherwise move six. This will use your APs most
+          efficiently. If you are playing in a game where you start with one
+          person, you might want to unload the government center, but never
+          unload more than 5 and reload it immediately after the first turn.
+
+          Tribbles -
+               Drop the # of civ's in capitol by half. Use extra population
+          on the planet. Rember to load up the cap again later. Also, spread
+          people over sectors, just put your # of sexes in each sector that
+          you have ap for. ample. I have 1 sex, thus I move 1 pop into all
+          but one of the surrounding sectors, I then move all but one in
+          orig sector into the one empty sector, then I repeat the process
+          again until planet is covered. If you have over 40 pop in a sector
+          though, move only half. If costs too much ap to move more than 20
+          pop.
+
+          NB -
+               Not much! Try out commands, read the help extensively, and
+          try to communicate via broadcasting with other players. I've never
+          tried to unload my @! Hey, maybe I'm not all that far from a
+          newbie myself.
+
+          TheCulture -
+               Unload the crew of the government center (@), and move people
+          to nearby sectors that look promising (high resources and
+          compatible sector type). Chat with the other players. Try not to
+          think of the million other things you should be doing instead of
+          playing this (altogether too addictive) game....
+
+          Froos -
+               Spread your people out. I usually unload my @. For a morph,
+          dump off about 3 or 4. You only have 5 AP's to start out with, and
+          it costs one to move one guy, so dropping off more really doesn't
+          help.
+
+          Griffons -
+               Unload your @ and spread the pop out, but don't forget to
+          load the @ back up after the update
+
+          Pillarian -
+               First, unload 5 crew from your capitol (ship number of your
+          capitol will be equal to your race number)...eg, "load @ c -5" or
+          "load #shipnum c -5". Once you have done this, you spread out the
+          5 pop (one at a time as you have only 5 AP's before the first
+          update. Make sure you don't move the pop onto imcompatible
+          sectors. This is, of course only if you are a one sex race; you
+          would have to modify the numbers for how many sexes you have. As
+          long as you move a whole "breeding group" you are okay. The good
+          point of this: It helps get your pop increasing faster; fert and
+          eff on those sectors will already start to increase. Bad: You will
+          get half the AP's that update, so I suggest after the first update
+          you load your gov center back up. Remember that a capitol or gov
+          center will only produce ap in relation to its current level of
+          crew (ie. 100% crew gives you 100% ap, etc.). The next thing you
+          should do is have a look at the number and distribution of the
+          planets in your home system. Next, go to the global scope and have
+          a look at where you are in the universe (this is important as your
+          position will determine as a whole your further strategy). Other
+          things you may consider doing: naming your governor, perhaps
+          changing your password, appointing a second governor (more for
+          your convenience than anything). I would also (if you are willing
+          to, that is) place your email address in your "personal" this
+          helps when you "run" into other races. It makes the politics much
+          simpler. However in a HAP game this is regarded as a BIG nono.
+          Next, I would think about the possible access to a postscript
+          printer. If you have access to one, then I strongly suggest that
+          you pipe a copy of the stars list to a log file, then generate a
+          stars map (the program to do this is available all over the place.
+          Then I would just wait.
+
+          Tao -
+               Not much that you need to do. Talk to others and ask stupid
+          questions... They'll help you. I usually unload people from my
+          government center and spread them out.
+
+          Empire -
+               Use command: help and if theres still something unclear use
+          broadcast and ask it from other players, theres always experienced
+          players around. Unload people from your @ so you can start to
+          populate more quickly.
+
+          Link Baker -
+               View the maps of your home planet, system, and your location
+          in the universe. Unload @ and spread the people around. Find out
+          how close neighboring systems are, which one's you want to explore
+          1st. Unload all but one crew from your @ so you still get some
+          AP's. Spread 'em around. Load it back up after the 1st update. You
+          should have plenty of pop unless you have a really shitty
+          birthrate. Get that planet covered A.S.A.P.
+
+          Greenies -
+               Get all but one of your people out of the Gov Center, and do
+          spread them around it. Look to see where in the universe you are,
+          just for curiosity.
+
+          Zurgithian -
+               As a meta with 1 sex you can take 6 sectors on the first
+          move, unload 8 crew from the @ and move 5 pop 1 sector in
+          different directions. Load up the @ again after the first update.
+          No tax yet, but have mobility at 25 or so after the first update.
+
+       2. What is the first ship I should build? The second?
+
+          Feepness -
+               If you are impatient and have lots of r, you can build a
+          ground telescope and survey your system, otherwise wait and build
+          a factory for shuttles.
+
+          Lestat -
+               If you are a meso, the first and second ship you should build
+          is a pod ;) If you are a normal race, build a factory (F) as soon
+          as you can afford it, and teach it to build shuttles (cs #factnum;
+          make s). If your res production is going to outstrip your tech,
+          use "modify" to make the shuttle lower tech. Put people in the
+          factory, turn it on, wait for it to repair. Use the "fact" command
+          (if present on the server) to keep an eye on the factories over
+          the segs and updates. When it's finished, use "build #" to build #
+          of ships while in that factory.
+
+          Keskiolut -
+               First to build is F. Modify it to make s's, as cheap and FAST
+          as possible, maybe carrying nothing but 1 cargo (for upgrading
+          later) and SEX-number of people plus as much fuel as possible.
+
+          Neue Regel -
+               Make a factory as soon as you can. Have it produce stripped
+          down shuttles so you can get to as many planets as possible.
+
+          Garfel -
+               One ground telescope as soon as you get tech 5 and 2 res then
+          aim at the nearest planets, then a Factory to build shuttles with
+          a modified speed of at least 6.
+
+          Rob Nesius -
+               A good choice for a first ship for a techie is a Factory. Use
+          the factory to build a shuttle to send out to the other planets in
+          the solar system. Also, while your factory is fixing itself,(it
+          starts with 75% damage and needs time to repair.) build a ground
+          telescope so that you can see what the planets in your system are
+          like, and don't send your first shuttle to an incompatible planet.
+
+          Thing -
+               The first ship you should build is a factory; do not build
+          it, though, until you have enough res to turn it on. Wait until
+          you have at least 33 res before building it. You want the shuttle
+          to hold only the minimum number of crew, no guns, no destruct, and
+          no resources. This will let you pay less per shuttle and spend
+          more on speed. If you are a meta, just start building and
+          launching pods as soon as you get the res and fuel to do it.
+
+          Muu -
+               The very first ship I would build is a telescope. That way,
+          you can examine the other planets in your solar system and see
+          which ones you should target for colonization first. The second
+          should probably be a Factory to build colonization shuttles. These
+          should have 5-10 crew and 10 crew if possible. Remember, when you
+          construct a ship design on a Factory, you don't have to be at the
+          given tech of the ship until you want to build them, which is as
+          soon as the Factory comes online (about 3-4 updates after
+          activation).
+
+          Fnebish Legion -
+               If you're a metamorph, build pods like crazy until you have
+          the tech capability to build shuttles with speed 4 or so (you can
+          experiment with a factory to find out what tech you need). Other-
+          wise, build _nothing_ until you've built your factory and turned
+          it on. Don't even build a little telescope. You want that factory
+          turned on ASAP, even if you have to set it to building really
+          crappy and cheap shuttles. Once you have something built, you can
+          always modify it later (when you can afford it)...the important
+          thing is getting that F turned on. Once you've spent your res
+          doing this (it costs 23 plus twice the cost of the ship design to
+          build and then turn on the factory), you can build a telescope to
+          survey surrounding planets in your system.
+
+          Microbians -
+               Pods for a Meso, shuttles for a normal. A lot depends on your
+          strategy, your race, your start planet, and (especially with Ts)
+          the rules of the game.
+
+          Tribbles -
+               Hmmm.... This is questionable. It really depends on the race.
+          For the normal player I would say shuttles and then explorers.
+          Though I've designed races to skip shuttle production before.
+          Remember shuttles are for in system exploration mostly while
+          explorers are for other systems
+
+          NB -
+               The first ship is almost invariably a shuttle from which the
+          weapons systems and so on have been stripped that can carry your
+          minimum number of sexes to another planet in your system for
+          colonization. The second? Another one! Later you should build some
+          shuttles with a bit of destruct on board, to give you a chance of
+          snuffing out unwanted alien colonies at the beginning of their
+          existence. Of course, if you're a morph, you'll build pods first.
+
+          TheCulture -
+               In GB a "ship" is anything that you build, so in GB terms the
+          first ship you should build is (a) a pod, if you're a morph; (b) a
+          ground telescope if you're a normal race. With this gadget you can
+          view your solar system and get some picture of your position so
+          you can send your shuttles to the right places. The second ship
+          type you should build is a factory (F). When you have enough tech
+          and res, you can order it to produce shuttles (for instance) and
+          in a couple of updates, you can start spreading out.
+
+          Froos -
+               If you're a morph, pods. :-) If normal, shuttle, then maybe
+          explorer.
+
+          Griffons -
+               Depends on what you can build pods are good for a meso. a
+          shuttle factory for all those who do not have pods.
+
+          Pillarian -
+               Again it depends on what race you are.. Meso .. You pod like
+          crazy.. if you are a techy then I suggest that you build a
+          telescope (gives you something to do more than anything) then save
+          up for a factory.. the second for a meso.. (second type not the
+          second ship) would be K's (Space plows..) at tech 5 ..
+
+          Tao -
+               First ground telescope to see what planets there are in your
+          system. Then shuttles...
+
+          Empire -
+               Perhaps the Ground Telescope would be best as a firts ship...
+          With it you can survey other planets in your star system... Second
+          would be a factory to produce shuttles to get colonization to
+          start... Dont forget to set your tax to about 5 percent, 'cause
+          maintaining of the ships takes money and if you dont have money
+          your morale drops...
+
+          Link Baker -
+               1st) For a meso, a pod. For a techie, a factory (To build
+          shuttles) 2nd) Meso - pod. Techie - whatever you have the tech for
+          while you are waiting on the shuttles. Domes help the planet and
+          you.
+
+          Greenies -
+               A factory, for shuttles. Then a ground telescope, to check
+          out your system.
+
+          Zurgithian -
+               Find out how many planets there are in your system using the
+          explore command and build a pod for each one (only need 1 fuel)
+          when you have the res. Send the pod to a planet, land it on a good
+          sector (use analysis to find one and scrap the pod, hey presto
+          another colony :-) As soon as you have the res and fuel send 5-10
+          pods to your 10 nearest stars (send them in waves, 1 update apart)
+          you will need 1 fuel per ~8000 distance depending on your race's
+
+          weight.
+
+       3. What can I do to increase my resource production on any given
+          planet?
+
+          Feepness -
+               Cover every sector.
+
+          Lestat -
+               Get a higher metabolism, get more population.
+
+          Keskiolut -
+               Build Y's. Nothing much else.
+
+          Neue Regel -
+               Build Y's or q's. Y's have an added effect of producing
+          plated sectors which make it harder for any ships landed on that
+          sector to be hit. q's produce extra toxicity but give more
+          resources in the beginning. As your sector efficiency goes up, q's
+          become less useful.
+
+          Garfel -
+               You could use quarries, but i don't recommend it. They cost
+          res to build and make the planet more toxic.
+
+          Rob Nesius -
+               You can increase resource production with 'quarries'. Beware,
+          you can generate 'toxicity' with quarries, but they will probably
+          help you out very much. Also, I belive Domes can be helpful.
+
+          Thing -
+               To increase res production, use domes (Y), and start out with
+          a good metabolism. Make the domes on sectors that have the most
+          res in them; use the analysis command to find out which sector has
+          the most res. Also make sure you can live on that type sector.
+
+          Muu -
+               Generally, get as much population as possible. Cover your
+          homeworld as soon as possible. And build Domes (Y's) on a few
+          sectors to get their efficiency up (which affects resource
+          production).
+
+          Fnebish Legion -
+               First, cover every single sector you are compatible with.
+          Next, if you have spare resources, you can build domes to increase
+          the efficiency of some sectors, which will increase your overall
+          average efficiency, which will, in turn, increase production
+          without hurting your planet. I've found that quarries are a real
+          waste of time and resources.
+
+          Microbians -
+               Well, you are going to have to wait a while before you get
+          any significant production. If you are a non-Jovian and you have
+          the tech and resources to spare, you might want to consider domes.
+          Either way, KEEP THE TAXES LOW.
+
+          Tribbles -
+               You can build quarries, though I never do. You can also
+          increase your population using K's and build Y's(domes) to
+          increase it's effiency. If your real brave you can design your
+          race to have a real high metab, like 1.5. Thus you'd never have to
+          worry about resources.
+
+          NB -
+               Spread your population thoroughly (make sure you're
+          compatible with the sectors you put people on however), and build
+          domes when you have the available time and resources; domes
+          increase efficiency greatly.
+
+          TheCulture -
+               Move people to the sectors with the highest resource
+          contents, build domes (Y) on the best sectors, and possibly build
+          a space plow (K) to increase sector fertility so that more people
+          appear there. If the planet has the wrong type of atmosphere or
+          temperature you can use atmosphere processors, space mirrors, dust
+          canisters and greenhouse gas to good effect.
+
+          Froos -
+               You could build quarries, or try to put your guys on high res
+          sectors.
+
+          Griffons -
+               Increase the average efficency(through doming) or increase
+          the pop through space plows etc.
+
+          Pillarian -
+               Well the bets way to increase r productio is to increase you
+          effeciency. you can o this by Doming sectors.. Beleive me it is
+          worht putting r into domes!!!!
+
+          Tao -
+               Build domes, quarrys, terraformers, space plows...
+
+          Empire -
+               You can build Domes after tech-level 5, they increase your
+          sector efficiency on which depends your resource-production....
+
+          Link Baker -
+               Get that entire planet covered! After that you'll have to
+          increase the efficiencies of the sectors with domes. Other than
+          that there's not much else you can do. That's why it's important
+          to have metabolism.
+
+          Greenies -
+               Wait. Quarries are overrated.
+
+          Zurgithian -
+               Cover the whole planet, even sectors you don't like, build
+          domes on these sectors as soon as possible so that you can plate
+          them. I don't use quarries; they're nasty.
+
+                       ------------------------------------
+
+III. -- LATER IN THE GAME
+
+                       ------------------------------------
+
+       1. Should I colonize the planets in my own system first, or should I
+          focus on arriving in other systems before opponents can?
+
+          Feepness -
+               Concentrate on other systems, except hit the high fertility
+          planets in your system at the same time. An enemy could breed on a
+          class M ten times faster than on an iceball.
+
+          Lestat -
+               Yes.
+
+          Keskiolut -
+               Because you are a beginner, take your own system first.
+
+          Neue Regel -
+               Depends on how close the neighboring systems are. I try to go
+          for the neighboring systems first and get a shuttle to my own
+          planets after I have sent out 2 or 3 s's to the other systems. If
+          systems are very close (< 10K) it would probably be better to get
+          those first shuttles to your own planets. Don't forget to build a
+          telescope and check out your own planets. This can save you a lot
+          of time by not having to go to every planet.
+
+          Garfel -
+               Both if possible. Colonize only the best planets of your own
+          system, like those over 40% compatibility and go fast to the
+          nearest systems!
+
+          Rob Nesius -
+               Try to colonize your own system first, and estabilsh a good
+          population base and fleet. Throughout the beginning, you may talk
+          confidentially to other players, or publicly to everyone. If you
+          can get a crypt set up with another player, feel free to ask
+          questions. Also, God is an experienced player who can give advice,
+          but don't run to him before trying to figure it out on your own.
+          Otherwise he'd be swamped. It's good to establish friendly
+          relations with other players, and even better ones with races who
+          are in a position to mess with you. Try to get on peoples' good
+          side. Even if you are going to backstab them. :-)
+
+          Thing -
+               Do both. Use one ship to colonize the planets in your star.
+          Use a telescope to save time by aiming it at the planets and
+          seeing if you can live on them. Use your remaining ships to
+          colonize the nearest stars to you.
+
+          Muu -
+               Generally, get as much population as possible. Cover your
+          homeworld as soon as possible. And build Domes(Y's) on a few
+          sectors to get their efficiency up(which affects resource
+          production).
+
+          Fnebish Legion -
+               Use a telescope to check out the planets in your system if
+          you have the tech to do it. Colonize those you are compatible
+          with, but always send your first dozen or so ships out of system
+          so they can get a head start on the race with the other players to
+          arrive at and colonize unpopulated systems. If waiting to colonize
+          your planets allows some other race to sneak in, odds are it will
+          be quite easy for you to kick that player out since you will have
+          the resources nearby to build the necessary ships to do it. This
+          is a last resort of course, since you should always ally with your
+          neighbors if at all possible.
+
+          Microbians -
+               Contrary to most of the advice I've been given, I ususally
+          colonize my home system first. It costs less in time, and after
+          you colonize your home, you can use the same ships to arrive at
+          other systems.
+
+          Tribbles -
+               BOTH! You start off colonizing your planet until you get
+          enough tech to build speed 6-7 shuttles. Then use upgrade (cs into
+          ship scope have resources on ship and use "upg speed 7"). When you
+          can do this then send some shuttles to other systems. When you can
+          build explorers, do so and send them to other systems. An awesome
+          race would have the ability to skip shuttles, go to explorers and
+          thus explore out space the same time as it colonizes its home
+          planets, but it's risky even for experienced players.
+
+          NB -
+               Colonize your own system quickly! Arriving in other systems
+          early is fine if you can build some speed 9 shuttles to zip to the
+          nearest stars, but hyperdrive will arrive before your slower
+          shuttles reach places much further than a star or two away. If
+          you're a 'morph, of course, you should be firing off pods from the
+          very first updates!
+
+          TheCulture -
+               I'd say focus on the other systems. The primitive ship types
+          (pod, shuttle) move slowly, so you have to be fast if you want to
+          make it to the best spots before anyone alse does. You'll always
+          have time later to focus on your own system.
+
+          Froos -
+               Do your own first. Easier and faster and it'll give you
+          additonal supplies to conquer other systems with.
+
+          Griffons -
+               The latter, the more territory that you can gain early the
+          more that you will not have to fight ovewr later
+
+          Pillarian -
+               Again everything is relative.. But my answer would be YES!
+          You should colonize your system first. You must at least devote
+          your first inter- scope ship to the task.. then work out from
+          there.. if you have close neighbours.. and they get to you first..
+          and you haven't colonized your system, you could be inviting
+          dissaster.
+
+          Tao -
+               I'd say it depends on what kind of planets you've got. If you
+          have great planets in your own system (the telescope!), send the
+          first ones there. Otherwise sort of divide your forces...
+
+          Empire -
+               IMHO, colonize your planets first before somebody else do
+          it...
+
+          Link Baker -
+               Everybody should have their own strategy regarding this.
+
+          Greenies -
+               Usually the competition for other systems doesn't happen for
+          a while. Definetly go for your own system first.
+
+          Zurgithian -
+               Both at the same time, pods are cheap in res so if you have a
+          high metabolism you can send out lots and lots. After the first
+          10-20 updates you should have podded all the systems within 100000
+          dist of you, if you have the time !
+
+       2. What should I do when I see another ship other than my own?
+
+          Feepness -
+               Talk first... don't give away too much. If it's named
+          something nice like "Friendly" then you can assume it's going to
+          be OK. Also, if it is a size 1 shuttle you don't have much to
+          worry about in any case, but a size 6 d, you should definitely
+          make friends if you aren't going to be able to destroy it
+          immediately. Put yourself in the other peson's place (he is just
+          trying to colonize and will be pretty pissed if you blow away his
+          ship for no reason other than he exists.) Also keep in mind that
+          this person is probably very near you as well. A close-in fight
+          like that can be disastrous in a game.
+
+          Lestat -
+               Find out who owns it, try to communicate with that player if
+          you wish. If you're aggressive or foolish, attack it. If it's a
+          colonizing pod, blow it away. This is all more a matter of
+          personal style than learning the rules.
+
+          Keskiolut -
+               Talk, negotiate. Do not shoot first, you'll be losing most
+          probably.
+
+          Neue Regel -
+               Don't try and destroy them right off. That person could be
+          your best ally later on. If you see another ship early in the
+          game, it means that someone else is close by. If you start into a
+          war right away, you will have a really hard time building up at
+          all. The other players who are not fighting right away have more
+          time to expand to other systems.
+
+          Garfel -
+               Try to negotiate armistice if he is in a high place in power
+          list, or if you have good allies near then splat that bastard.
+
+          Rob Nesius -
+               When this first happened to me, I pannicked somewhat. After I
+          calmed my self down and thought it out, Irealized that the ships
+          were not a major threat, and that they couldn't know I was here,
+          so it's not a personal attack on me the player. Open up a
+          dialogue. If there is a planet you can't use but they can, let
+          them in exchange for permission to colonize in their own system.
+          YOU CAN'T WIN GALACTIC BLOODSHED ON YOUR OWN. FIND OUT ABOUT
+          'ALLIANCES' AND BLOCKS. THESE ARE WHAT CAN BE DECIDING FACTORS IN
+          WINNING THE GAME.
+
+          Thing -
+               If you see another ship that is not yours, send a telegram to
+          the ship's owner. If he is hostile, capture it. If it is in your
+          home system, capture it no matter what.
+
+          Muu -
+               That really depends on you. If you want a war, then by all
+          means, do what you will. However, it can be REALLY profitable to
+          team up with a Meta, if you are a norm. They generally produce
+          more rapidly, and make great troops. Be careful, though, they are
+          not as easy to supress as some might lead you to beleive. Thinking
+          of him as "my Meta" might just get you into a nasty little fight.
+          Again, its really up to you and the situation.
+
+          Fnebish Legion -
+               Try to find out what player number owns it by using "tact."
+          If it is your own pod and you see the other ship on a map, tact
+          won't work, but there is a trick for seeing who owns other ships
+          which appear on your map but are too far away for a tactical
+          command to work on them: Use the "highlight" command to run
+          through the list of players, generating a new map for each new
+          highlighted player. As soon as the other ship lights up, you'll be
+          able to see who owns it. It's best to talk to that person since
+          he's probably a neighbor. If you want peace, don't start by making
+          demands or claims of "I was here first." That gets you nowhere. Of
+          course, as a general rule, I only let the _most_ trusted allies
+          colonize my home systems. Players should understand that being
+          allowed to place a colony in another's home system is probably a
+          pretty big act of trust. A lot of full-scale and crippling wars
+          have been fought simply because one player refused to leave
+          another's home system. Deal with this as you see fit.
+
+          Microbians -
+               Diplomacy. Declare neutrality if you have the APs and start
+          talking to the owner. Look for an alliance and try to ascertain
+          the enemy's experence. Oh, and one other thing. I've done
+          EXTREMELY well in my first two games and the secret to my success
+          has been (with the exception the diety of course) NEVER EVER,
+          UNDER ANY CIRCUMSTANCES, LET ON THAT YOU ARE A NEWBIE!!!!
+
+          Tribbles -
+               Talk first, shoot later. Besides, the first ship you see will
+          most likely be in a place where you can't do much any way. Allies
+          can be more powerful than enemies. *grin* Think about it.
+
+          NB -
+               If it's in your own system, or one just adjacent to it, don't
+          shoot right away (unless it's a missile - ALWAYS shoot missiles,
+          and be sure to give their owners a hard time about it in the
+          future!) Try to communicate with the owner. If you're seeing them
+          relatively early in the game, then they're probably a neighbor,
+          and you need to negotiate with neighbors to avoid
+          counterproductive wars. You may have a planet useless to you that
+          would be useful to them - and vice versa. When pods burst in your
+          system, talk to the owners *quick.* If they don't respond, snuff
+          out the one - man invasion that results on whichever planet it
+          showed up, and do it quickly, because 'morphs reproduce like,
+          well, 'morphs. Bunnies can't hold a candle.
+
+          TheCulture -
+               If it's a pod it might be a good idea to shoot it down (at
+          least if its in your home system), otherwise talking is a *very*
+          good idea. Making too many enemies too fast in the game can lead
+          to your home planet being turned into a nuclear test site :-)
+
+          Froos -
+               This really depends on the individual context. Try to talk to
+          the owner, perhaps.
+
+          Griffons -
+               Close to find out who owns it and then try to parley with
+          them. Successful parleying can allow you to have a good
+          relationship or give you time so that you can backstab later.
+
+          Pillarian -
+               Find out who it belongs to (ie tact)! Then the best idea is
+          to talk to the owner (ie email to him) or send him a telegram,
+          etc., then decide between you two what you are going to do. Then
+          progress from there.. However you have to remember that generating
+          a fair trust level in this game is difficult.. if you mess up
+          explain the mess up.. else you could inviyte war at the drop of a
+          hat.. this could be good.. but then again :)
+
+          Tao -
+               Send him a message and say Hi!
+
+          Empire -
+               Try always negotiate first, you need allys to be good in this
+          game... And GOOD LUCK! ..we may meet sometime...
+
+          Link Baker -
+               Do a 'tactical' on it to see what it is, who owns it, etc . .
+          . If it's an enemy and you have an armed ship around, blast it
+          (fire command). If you are close enough board the ship and capture
+          it (Assault command). Any alien ship in your system is a threat.
+          You might want to telegram the person and find out what his
+          intentions are before taking action. A pod is trouble; it means a
+          meso is looking to colonize.
+
+          Greenies -
+               Send a message offering them one of the planets you don't
+          use, or tell them that you live there already.
+
+          Zurgithian -
+               As a meta there is not much you can do, arm up some military
+          on each planet so that they can not kick you off (high fight is
+          important). I usually go the diplomatic route send them some
+          telegrams, you will need a techie ally and they will probably want
+          a meta friend as well. Always check the tactical report in your
+          home star !
+
+          ---------------------------------------------------------
+                Comments, flames, and questions are welcome.
+----------------------------------------------------------------------------
+History: Jan 27, 1997 - Converted to HTML - Evan Koffler
+

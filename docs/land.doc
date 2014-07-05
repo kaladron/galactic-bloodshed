@@ -1,0 +1,40 @@
+LAND			Galactic Bloodshed			LAND
+
+
+NAME
+   land [1] -- land a ship
+ 
+SYNTAX
+   land <#shipnum | ship types> [ <x,y> | #<shipnum>]
+
+DESCRIPTION
+  This command lands ships on planets or one some types of ships. To 
+do so the ship must be closer than 45 distance units away from the planet 
+or ship it is trying to land on. 
+
+  This maneuver costs an amount of fuel proportional to the mass of the
+ship (and the gravitational field of the planet below if landing on a planet). 
+When landing on a planet, if the ship does not have enough fuel it will either
+crash or refuse to try landing. Crashing will give damage to the planet 
+in proportion to the mass of the ship, the gravitational field of the planet,
+and the amount of destructive capacity the ship happens to be carrying.
+If ship is damaged, it got also chance (equal to damage %) to crash 
+when it is trieing to land.
+
+  Ships can be transported by other ships provided hanger space is
+available. The hanger space is the total size of ships which can be
+carried. The mothership and the ships it is carrying move as
+one unit. Ships may be debarked by using the 'launch' command.
+You can see which ships are landed on your motherships by changing
+scope to the mother ships and using report/stock. Landin in hanger
+will not cost actionpoints.
+
+  If a mothership is destroyed for any reason, all loaded ships are 
+also eliminated. If a ship gets captured, all ships on board are also captured.
+
+Land based ships(a, P, G for example) can only be loaded if the mothership
+is landed on the same planet and occupied the same sector. A ship may
+not be loaded if it is 'on' (see order) and, as cargo, cannot be turned on.
+
+SEE ALSO
+  dock, launch, undock, profile, colony

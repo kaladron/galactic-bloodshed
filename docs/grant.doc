@@ -1,0 +1,34 @@
+GRANT			Galactic Bloodshed			GRANT
+
+
+NAME
+   grant [0] -- Give a governor something
+
+SYNTAX
+   grant <governor #> <what> [amount]
+
+DESCRIPTION  
+   This command is used by the race leader to give a governor objects in
+the game.  Things that can be "grant"ed include:
+
+     STARS - Granting a star gives the governor the ownership of all population
+             in the system.  Anything built, produced, etc. in the system will
+             belong to the governor and can be used as the governor wishes.
+             Syntax:   "grant <governor #> star /<Star>"
+
+     SHIPS - This will give the governor complete control over the ship(s).
+             Any new systems the ship discovers, or any ships it takes over
+             will also belong to the governor.  Any number of ships can be
+             used with the command.
+             Syntax:   "grant <governor #> shipnumber <#shipnumber> ..."
+
+     MONEY - Gives the governor money to be put in the treasury.  Each
+             governor has a separate treasury.  Money is used automatically
+             in updates for ship up-keep, and can be used for insurgencies.
+             Syntax:   "grant <governor #> money <amount>"
+
+   To take any of these items back from the governor, the <governor #> can be
+specified as "0".
+
+SEE ALSO
+   appoint, governors, revoke 

@@ -1,0 +1,54 @@
+
+	This is version GB 5.0 HUT release.
+The major changes in this code are documented in README.HUT
+
+
+	Your first step is to run Configure.  Either type Configure
+or sh Configure, your choice.   It will go through and ask you some
+questions about your system, and the host that GB will run on and the
+port and such.  The only questions you really gotta watch out for
+and make sure are right are:
+
+	the hostname and domaniname
+	the port
+	and where the datafiles are to be kept.
+
+	Out of all of them the datafiles is the most important.  The default
+should be fine in most cases.  (it will take your current directory).
+
+	After you answer all the questions, it will extract the Makefiles,
+and perform a few symbolic links.  (the links are for the utilites 
+programs, which share some of the server modules.)
+
+	After all the Makefiles are extracted and the links are made you
+should inspect the hdrs/files.h and hdrs/config.h files to make sure
+the look ok.  If you dont know what they are supposed to look like,
+assume they are ok!  *wink*
+
+
+	Well... now for the moment of truth...
+
+	From the top level directory (where this file resides), type
+
+	make all
+
+	You should see it changing into the various directorys, and do
+the compiles.  After it is done...  you should type...
+
+
+	make install
+
+
+	This will take all the binaries, (GB, enrol, makeuniv) and the
+support files, (planet.list, welcome.txt, ship.dat) and place the
+whole deal in the bin directory.
+
+	THATS IT!!  Just cd to bin, and start things up...
+
+	Run a makeuniv, to set up the universe, and then start enrolling
+players either with the racegen program or the enrol program.
+
+	If you need to debug the user files (via dbx or gbx or whatever),
+use the make target GBX.  This will not link with a library, and instead
+will link with all the .o files in user.  (The list of the .o files, is
+maintained in ./user/OBJECTS.

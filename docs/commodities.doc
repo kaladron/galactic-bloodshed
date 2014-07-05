@@ -1,0 +1,34 @@
+COMMODITIES                Galactic Bloodshed                COMMODITIES
+
+
+RESOURCE
+ Resource is the basic commodity, which is needed to build and fix ships 
+and repair wasted sectors.
+ Each sector have resource deposity. You can mine these by inhabiting sector.
+Amount of produced resources depends mostly on sector efficiency, secondly
+races metabolism and of course when deposity is getting empty production will 
+declerate. Resource production is most important thing among expanding 
+your empire to succeed in game. Often, races with low metabolism and/or
+small homeworls or worse, a combination of the two, will take painfully
+long to start generating any.
+ There is two ships that can turn fuel to resources. Chemistry plant y 
+(y is not wery often in games) and space habitat H. H uses 20 fuels
+to make one resource (this rate depends on game settings however). 
+
+FUEL
+ Fuel is the energy source of all ships. Also lasers use fuel to 
+attack with. 2 points of fuel is equivalent to 1 light gun.
+ Sectors produces fuel just like and as much as resources. One exception 
+is jovian sectors which produces double amount of fuel. Ships orbitting
+jovian planet can also suck fuel from jovian atmosphere. Tanker ships
+are especially effective on this, they can scoop 1/5 of tanker room 
+fuel each update. 
+
+DESTRUCTION
+ Destructive potential is what guns shoot. Arming toops requires 
+destruction also.
+ There is two ways to create destruction. Weapons plant W is a ship
+that produces it (1 fuel + 1 resource = 1 destruction). One W can
+only make tech/2 amount of destruction every update. Another way to
+produce destruction is to rise sector mobilization. On such a sector
+part of resource production pops up directly as destruction. 

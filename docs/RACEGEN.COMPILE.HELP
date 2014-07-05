@@ -1,0 +1,68 @@
+
+How to get and compile racegen
+
+First off, get net access.  Then you can use the file transfer program, ftp,
+to get racegen from several sites, including scam.berkeley.edu.  Connect to
+the remote system, use "anonymous" as your name (any password is OK), cd to
+the src/games/gb directory, and get racegen.shar.  The whole process should
+look rather like this:
+
+> ftp scam.berkeley.edu
+Connected to scam.berkeley.edu.
+220 scam.Berkeley.EDU FTP server ready.
+Name (scam.berkeley.edu:leonard): anonymous
+331 Guest login ok, send ident as password.
+Password:
+230-Welcome Guest - access restricted.
+ftp> cd src/games/gb
+200 CWD command okay.
+ftp> get racegen.shar
+200 PORT command okay.
+150 Opening data connection for racegen.shar (60101 bytes).
+226 Transfer complete.
+local: racegen.shar remote: racegen.shar
+62071 bytes received in 6.1 seconds (9.9 Kbytes/s)
+ftp> quit
+221 Goodbye.
+> 
+
+When a game is announced, the host will specify what sort of races are
+desired.  If the game will not use the "vanilla" racegen, the host will post
+a file called "game_info.h" that you will then use to compile racegen with.
+Note that racegen.shar comes with a default game_info.h file.
+
+Now you can make an executable racegen.  Unshar the archive you just got,
+and make it:
+
+> sh racegen.shar
+x - racegen.c
+x - racegen.h
+x - game_info.h
+x - Makefile
+x - racegen.README
+> make
+cc -bsd -g  -target sun3 -c  racegen.c
+cc -o racegen racegen.o -lm
+> ls
+Makefile        racegen*        racegen.c       racegen.o
+game_info.h     racegen.README  racegen.h       racegen.shar
+
+
+Now you are ready to go.  Just type "racegen", and it will run.  If it
+does not, make sure you have the current directory "." as a part of
+your path:
+
+> printenv PATH
+.:/usr/imports/bin:/usr/local/bin:/usr/ucb:/bin:/usr/bin
+>
+
+(Note that the first directory in my path *is* ".".  ':' is used to
+separate the directories in this list.)
+
+If "." is not in your path, you must either put the racegen executable
+file in one of the directories that is in your path, or else put "."
+into your path.  The second option is much easier:
+
+> setenv PATH .:$PATH
+
+Now you are ready to go!

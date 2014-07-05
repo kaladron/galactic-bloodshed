@@ -1,0 +1,15 @@
+DOCK			Galactic Bloodshed			DOCK
+
+
+NAME
+   dock [0] -- land a ship
+  
+SYNTAX
+   dock <#shipnumber> <#to shipnumber>
+
+DESCRIPTION
+  This command docks two own ships together.   The two ships in question must
+be closer than the minimum landing distance (10).
+
+SEE ALSO
+    undock

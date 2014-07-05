@@ -1,0 +1,246 @@
+What is new on GB 5.0.1 HUT
+
+Universum.
+	Desert's resource deposit values pre sector up by 25.
+	Asteroid's resource deposit values per sector doubled.
+	Asteroid size reduced slightly.
+	Forest and Waterball size reduced slightly.
+	Class M's have few desert, mountain and forest sectors.
+	Waterballs have few mountain sectors.
+	min and max sizes for planet types ( RATIOXY is 3.7)
+             @   o   O   #   ~   .   (   -   
+   min      114  1  15  15  270  75  75  85
+   max      200  6  40  40  407 140 140 161  
+	Every major planettype has 50% chance to have methane athmosphere.
+       
+Racegen.       
+	2 separate race types.
+		Techie: sex min 2.
+		Mesomorph: sex 1, collective IQ, slightly better fight,
+		metabolism and IQ Limit. Options for pods and absorb.
+
+Planetary stockpile.
+	Planetary stockpile use for YKTqWa.
+	Planetary stockpile use for ship repair.
+        Landed ships uses planetary stockpile when ordered to fire.
+	G& autoloads destruction every segment.
+	Civilians on sector help repairing damaged ships.
+	Planetary stockpile limit check to prevent losing stuff.     
+
+Concepts.
+	Hyperjump more expencive.     
+	All weapon ranges are same.
+	Speed formula fully linear: people can easily calculate
+	    how soon their ships arrive.
+	1 AP/numsex moved.
+	Mass of crew in ship to smaller factor in ships mass.
+	Number of population less important in victory list.
+	Morale cutter 10% every update.
+	Tech cutter 0.3% every update.     
+
+Ships.
+	Terraforming doesn't kill.
+	Bombardment destroy little or no deposit.
+	Tankers scoops fuel 1/5 of tank size every update.
+	Mine sweepers are more effective against mines.
+	YKT automove.
+	KT autoscrap option.  
+	Armor more and size less effective in damage generating.
+
+Commands.
+	Upgrade requires civilians inside ship.
+
+
+
+
+LIST OF FIXED PROBLEMS 
+
+Bugs			
+---------------------------------------------------------
+makeuniv creates odd universum.			Fixed
+---
+dest + fuel crashes the server.                 Fixed
+
+1) order #ship dest #ship2
+2) fuel #ship /Planet
+---->>server crashes
+---
+Crazy morale generating after ground combats.	Fixed.
+
+---
+Fuel bug					Comment "Jump needs 'at least'
+order jump tells different amout of fuel        NN fuel to jump" added 
+jump needs than it actually does.
+
+Two reasons here. One is no bug.. Planets move
+before jump happens so distance is slightly different.
+Another one: calculations don't take account of mass of
+hangarships fuel. (Maybe nor resos or dest either?)
+
+---
+insurgency is not working			Fixed
+---
+Adventurism is working odd.			Fixed
+---
+Test1 and Test2 systems.			
+Remove those.                                   Fixed
+---
+Ghost planets/stars				Fixed
+Sometimes one system and/or planet 
+appears to have no name.
+---
+Game corrupts when someone tries to build       Fixed
+shipnumber above available 64K
+
+Checking that there is shipnumbers available
+before building a new ship.
+---
+Crazy number of sectors                 	Fixed
+
+Note here: This happens when you load crew in ship and
+no population is left on that sector.. in this case
+number of your sectors is decreased by one. This happens even
+if you didn't own that sector in first place.
+ This affects negative number of sectors (and it turns to 64K )
+---
+[ is 50% damaged when built.			Fixed
+Should be 48%
+---
+Distance					Fixed
+You can find out number of planets in
+system by asking distance between known
+thing and suspected planet.
+---
+Wrong message is shown when assaulting w.       Fixed
+
+"Boarders are unable to control the pod."
+---
+Terraformers autoscrap themselves without        Fixed
+when there is still work for T to do.
+---
+Terraformers autoscrap without setting autoscrap. Fixed
+---
+You get warning when someone terraforms your     Fixed
+sectors, but warning doesn't include planet where
+this is happening.
+---
+Mines crashes the server
+---
+Mines are not workin.                           Fixed
+When enemy ship enters trigger radius all
+attack messages are shown, but nothing
+actually happens to mine or target.
+---
+Another mine bug.                              Fixed
+
+Mine will never disappear, no matter
+disperse settings.
+(this could be part of the problem above)
+---
+Creating destruction.                           Fixed
+You can easily create 65K dest. Leave one dest inside
+ship that uses planetary stockpile and one dest
+in stockpile. Now shoot larger salvo than 2. Number of
+dest in stockpile becomes negative and turns to 65K.
+
+----------------------------------------------------------------
+
+
+Bad features					Who will fix
+----------------------------------------------------------------
+You don't need to be in scope in question      Fixed
+when you give ships to your ally.
+This way you can spend less important APs.
+---
+Military digs resos and rise effi.              Fixed
+I don't think they should.
+---
+Still some documents incomplete + grammatical   Tapsa
+errors and typos.
+They probably always will be somewhat, but I'm
+doing my best.
+
+Please report all errors you find to
+ rauta@alpha.hut.fi
+---
+Morale generating by number of sectors.		Fixed
+Decreased to 1/10 th of what it is now.
+---
+Too huge max global ap amount.			Fixed
+1023 ---> 511
+---
+Stockpile use for Y and K			Feature documented
+Y and K works before planet produces. This      Warnings added.
+makes problems if Y and K are using
+stockpile. Changeing this order could be 
+a good idea.
+---
+Missile impact default.				Fixed
+Missiles are ordered to impact 0,0 as default.
+This is stupid. Default should be scatter.
+---
+Factory activating.				Fixed
+Factory can be activaded even if it is not
+ordered to make any specific ship. When using
+this factory it will create just new factories.
+---
+Rank of General is required to 			Fixed
+give command 'name'
+---
+Captain syntax					Fixed
+
+command promote requires syntax:
+   promote <gov> captain
+
+command appoint requires syntax:
+   appoint <gov> <passwrd> capitan
+
+when typing just appoint, printing is:
+   1    password   CAPTIAN  ACTIVE
+
+whe you try to give captain commands with lower gov you recieve:
+   The "xxx" command  requires a minimum level of captian to run
+
+All document talks about
+   captain  
+---
+center command					Fixed
+Novice can not give command 'center'.
+---
+Planetary guns shoots landing ships             Fixed  
+even if planet is enslaved.
+---
+Military is not counted as garrisons when       Fixed
+calculating stability of enslave.
+
+You need to leave 0.1% of planets population amount of
+garrison to keep enslaved planet under your control.
+But this garrison needs to be women and children..
+military wont do.
+ So error is in that 0.1% calulations. It should use
+(num_pop + num_mil) instead of (num_pop).
+-------------------------------------------------------------
+
+Earlier fixes
+-------------------------------------------------------------
+Planet doubling bug          
+---
+Needed governor rankings reasonablized.
+---
+Too much alike systemnames removed
+(like no more Taurus, Tardus and Tarsus)
+---
+Unable to use shipsign when using multiship commands if 
+shipnumer higher than you try to use is destroied in scope in question.
+example: You cant load dest into missiles 10000-10100 with using command
+'load ^ dest '  before next segment
+if you have scrapped groud telescope i8000 in the same scope.
+---
+Typos in code.
+---
+Fuel calculation bug.
+---
+Shipmass misscalculation bug.
+----
+numerous of others
+-------------------------------------------------------------

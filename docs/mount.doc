@@ -1,0 +1,28 @@
+MOUNT			Galactic Bloodshed			MOUNT
+
+
+NAME
+   mount [0] -- mount a crystal into a ship's hyperdrive.
+   dismount [0] -- dismount a crystal from the hyperdrive.
+
+SYNTAX
+   mount <ship>
+   dismount <ship>
+
+DESCRIPTION  
+   Normally, a ship requires a waiting period before a hyperspace
+jump can be executed. This requires powering up the drive for
+some period of time. However, the charge-up time can been bypassed
+if a player has a crystal mounted. The effect of a crystal also
+allows the ship to jump farther and more fuel efficiently than
+for a ship without a crystal mounted.
+   Laser guns also requires mounted crystal in ship.
+
+   In order to mount a crystal, the player can change scope to the
+ship which is to have a crystal mounted, or specify the ship's
+number. The ship must have a crystal on board. A crystal can be 
+dismounted using the 'dismount' command.
+
+SEE ALSO
+	crystal, order  
+

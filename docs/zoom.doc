@@ -1,0 +1,37 @@
+ZOOM			   Galactic Bloodshed			ZOOM
+
+
+NAME
+   zoom [0] -- declare zoom values
+ 
+SYNTAX
+   zoom (amount) <x,y>
+
+DESCRIPTION
+  This command allows users to alter the scale used in an orbit display.
+The lower the number, the larger the display will be.
+
+  Amount can be specified in one of two ways: a floating-point format,
+in which case the amount will be the amount given, or an i/j format, in
+which case the amount will be the numerator (i) divided by the denominator (j).
+
+ The optional argument changes the `lastx,lasty' coordinates to the specified
+coordinates, in case the player desires a closeup of an area he has not 
+explored yet.
+
+  At a zoom scale of 1.0, the display will be equal to the screen size.  At
+a scale of greater than 1.0, the display will be smaller than the screen;
+smaller than 1.0, and the screen will zoom in to the displayed map.
+
+  Display is centered around the current `lastx,lasty' coordinates (see
+orbit).
+
+  At game start, the zoom value is declared as 1.0.
+
+   There are two zoom factors, one for 'star' level, and one for 'universe' 
+level. You can specify the 'lastx, lasty' for the universe level with 
+the 'center <star>' command.
+
+
+SEE ALSO
+  orbit, map, center

@@ -1,0 +1,17 @@
+REVOKE			 Galactic Bloodshed		     REVOKE
+
+
+NAME
+   revoke [0] -- Remove a governor's powers
+
+SYNTAX
+   revoke <governor #> <governor to get belongings>
+
+DESCRIPTION
+     This command removes a governor from power, and it can only be done by
+the race's leader.  When a governor is removed, the leader must specify
+which other governor will get the ex-governor's ships, star stsyems, and
+money.  The leader can specify "0" for themselves.
+
+SEE ALSO
+   appoint, governors, grant, who

@@ -1,0 +1,17 @@
+PERSONAL			Galactic Bloodshed		PERSONAL
+
+
+NAME
+   personal [0] -- leave a personal message in your profile
+
+SYNTAX
+   personal <message>
+
+DESCRIPTION  
+  Races can put a personal message in their profile such as mailing
+address or whatever they wish.
+
+SEE ALSO
+   profile
+
+

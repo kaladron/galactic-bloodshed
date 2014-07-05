@@ -1,0 +1,18 @@
+TIME		 	Galactic Bloodshed			TIME
+
+
+NAME
+   time [0] -- show current time and other stats.
+
+SYNTAX	
+   time
+
+DESCRIPTION
+   This command tells the player the current time, times of latest
+updates and movement segments, and when the server was started.
+
+SEE ALSO
+   schedule
+
+
+

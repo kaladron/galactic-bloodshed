@@ -1,0 +1,16 @@
+POST 			   Galactic Bloodshed		         POST
+
+
+NAME
+   post [1] -- post a message to the Galactic News
+
+SYNTAX
+   post 
+
+DESCRIPTION
+   Messages can be posted to the Galactic News using the 'post' command. 
+This (depending on game settings) costs action points.
+
+SEE ALSO
+   send, read
+

@@ -1,0 +1,27 @@
+AUTOREPORT                 Galactic Bloodshed                  AUTOREPORT
+
+
+NAME
+   autoreport [0] -- toggle automatic update reports from a planet
+
+SYNTAX
+   autoreport <planet>
+
+DESCRIPTION
+    This command toggles the automatic reporting feature of a 
+planet. The single parameter is optional, but must be a valid 
+planet scope if specified. If not specified, the current scope 
+must be a planet.
+    When autoreport is set for a planet, a telegram will be sent at 
+each update to the planet owner describing the production, 
+discoveries, and status of the planet. To avoid an overflow of 
+unread telegrams, the reports will be only be sent for a set 
+number of updates after the autoreport command is executed. This 
+number can be changed by the deity, but the default value causes 
+the planet to report to the owner for seven updates before 
+automatically shutting off. If you wish the reports to continue, 
+you must execute autoreport again.
+
+SEE ALSO:
+    colonies
+

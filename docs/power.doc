@@ -1,0 +1,18 @@
+POWER			Galactic Bloodshed			POWER
+
+
+NAME
+   power [0] -- list empires and their approximate influence
+
+SYNTAX
+   power
+
+DESCRIPTION  
+  This command lists all races you know at least 11%. More you know
+about the race, more correct information will be. Pow provides accumulated
+total stockpiles, number of planets on which they have colonies, number of
+ships, and various other information.
+
+
+SEE ALSO
+	victory

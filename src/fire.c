@@ -552,8 +552,8 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
   /* save defense strength for retaliation */
   check_retal_strength(to, &retal);
   bcopy(to, &dummy, sizeof(shiptype));
-  if(argn>=3)
-      sscanf(args[2], "%d,%d", &x, &y);
+
+  sscanf(args[2], "%d,%d", &x, &y);
 
   if(x<0 || x>p->Maxx-1 || y<0 || y>p->Maxy-1) {
       notify(Playernum, Governor, "Illegal sector.\n");

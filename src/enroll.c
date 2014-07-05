@@ -62,9 +62,9 @@ int enroll_player_race(failure_filename)
 	printf("Race not saved to failures file.\n") ;
 	}
       else {
-	print_to_file(f, 0) ;
+	// print_to_file(f, 0) ; // TODO(jeffbailey): What was this supposed to do?
 	printf("Race appended to failures file \"%s\".\n", failure_filename) ;
-	fclose(f) ;
+	// fclose(f) ;
 	}
     }
     if (n == 0)    /* Abort */

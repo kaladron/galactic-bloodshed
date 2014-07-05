@@ -3,7 +3,7 @@
  * Restrictions in GB.c.
  */
 
-#define PATH(file)	"/disk3/GB/"#file
+#define PATH(file)	"/tmp/GB/"#file
 #define	DATA(file)	PATH(Data/file)
 #define NEWS(file)      PATH(News/file)
 #define TELE(file)      PATH(Tele/file)

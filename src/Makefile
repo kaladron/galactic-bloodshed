@@ -5,8 +5,8 @@
 #UV = VER_4_3
 #UV = VER_4_2
 # (the -pipe -g are for development.)
-#CC = clang
-CC = gcc
+CC = clang
+#CC = gcc
 
 CFLAGS = -g -O2 -W -Wall -Werror \
 	  -Wno-return-type \
@@ -17,11 +17,12 @@ CFLAGS = -g -O2 -W -Wall -Werror \
 	  -Wno-char-subscripts \
 	  -Wno-type-limits \
 	  -Wno-implicit-function-declaration \
-	  -Wno-deprecated-declarations
+	  -Wno-deprecated-declarations \
+	  -Wno-tautological-constant-out-of-range-compare
 
-CFLAGS += \
-	  -Wno-maybe-uninitialized \
-	  -Wno-unused-but-set-variable 
+#CFLAGS += \
+#	  -Wno-maybe-uninitialized \
+#	  -Wno-unused-but-set-variable 
 
 #CFLAGS = -g -YBSD
 #CFLAGS = -ansi -g3

@@ -219,7 +219,8 @@ notify(Playernum, Governor, output);
 void DispStar(int Playernum, int Governor, int level, startype *star,
 	      int DontDispStars, int God, char *string)
 {
-    int x,y;
+    int x = 0; // TODO(jeffbailey): Inititalized x and y to 0.
+    int y = 0;
     int stand;
     int iq;
     double fac;
@@ -260,7 +261,8 @@ void DispStar(int Playernum, int Governor, int level, startype *star,
 void DispPlanet(int Playernum, int Governor, int level, planettype *p,
 		char *name, int DontDispPlanets, racetype *r, char *string)
 {
-    int x,y;
+    int x = 0; // TODO(jeffbailey): Check if init to 0 is right.
+    int y = 0;
     int stand;
 
     *string = '\0';

@@ -346,8 +346,8 @@ int main(int argc, char **argv)
   sprintf(segment_buf, "Last Segment %2d : %s", nsegments_done,
 	  ctime(&last_segment_time));
 
-  fprintf(stderr, update_buf);
-  fprintf(stderr, segment_buf);
+  fprintf(stderr, "%s", update_buf);
+  fprintf(stderr, "%s", segment_buf);
   srandom(getpid());
   fprintf(stderr, "      Next Update %d  : %s",
 	  nupdates_done+1, ctime(&next_update_time));

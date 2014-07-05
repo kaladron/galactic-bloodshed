@@ -225,7 +225,7 @@ GUARDOBJS = guardian.o
 all: GB enrol racegen makeuniv guardian
 
 clean:
-	-rm -f *.o enrol racegen makeuniv guardian
+	-rm -f *.o GB enrol racegen makeuniv guardian
 
 # the shell 
 GB : ${SHOBJS}

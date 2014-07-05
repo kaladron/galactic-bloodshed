@@ -16,7 +16,6 @@ CFLAGS = -g -O2 -W -Wall -Werror \
 	  -Wno-char-subscripts \
 	  -Wno-type-limits \
 	  -Wno-implicit-function-declaration \
-	  -Wno-deprecated-declarations \
 	  -Wno-tautological-constant-out-of-range-compare
 
 #CFLAGS += \

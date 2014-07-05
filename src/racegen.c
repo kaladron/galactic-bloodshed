@@ -1260,7 +1260,8 @@ char *argv[];
 
 int Dialogue(const char *prompt, ...) {
   va_list ap;
-  char input[512];
+#define INPUTSIZE 512
+  char input[INPUTSIZE];
   char *carg;
   int len, i, argc = 0;
   int init = 0;
@@ -1282,10 +1283,7 @@ int Dialogue(const char *prompt, ...) {
   printf("> ");
   fflush(stdout);
   while (1) {
-    if (isserver)
-      gets(input);
-    else
-      fgets(input, 512, stdin);
+    fgets(input, INPUTSIZE, stdin);
 
     if (argc == 0)
       return -1;
@@ -1380,7 +1378,8 @@ void execute(int argc, char **argv) {
  * always be zero for player racegens.
  */
 void modify_print_loop(int level) {
-  char buf[512], *com, *args[4];
+#define BUFSIZE 512
+  char buf[BUFSIZE], *com, *args[4];
   int i;
 
   while (!please_quit) {
@@ -1401,10 +1400,7 @@ void modify_print_loop(int level) {
     printf("Command [help/load/modify/print/save/send/quit]> ");
 #endif
     fflush(stdout);
-    if (isserver)
-      com = gets(buf);
-    else
-      com = fgets(buf, 512, stdin);
+    com = fgets(buf, BUFSIZE, stdin);
     buf[strlen(buf) - 1] = '\0';
 
     for (i = 0; i < 4; i++) {

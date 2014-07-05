@@ -72,7 +72,8 @@ int main() {
   int ifd, ppref = -1;
   sigset_t mask, block;
   int s, idx, k;
-  char str[100], c;
+#define STRSIZE 100
+  char str[STRSIZE], c;
   char racepass[MAXCOMMSTRSIZE], govpass[MAXCOMMSTRSIZE];
   sectortype *sect;
   struct stype secttypes[WASTED + 1];
@@ -282,7 +283,7 @@ int main() {
            Race->number_sexes);
 
     printf("\n\nLook OK(y/n)\?");
-    if (gets(str) == NULL)
+    if (fgets(str, STRSIZE, stdin) == NULL)
       exit(1);
   } while (str[0] != 'y');
 

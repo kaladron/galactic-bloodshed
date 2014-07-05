@@ -39,6 +39,7 @@
 #include <fcntl.h>
 #include <sys/errno.h>
 #include <ctype.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -200,7 +201,7 @@ void remove_sh_star(shiptype *);
 void remove_sh_plan(shiptype *);
 void remove_sh_ship(shiptype *, shiptype *);
 double GetComplexity(int);
-int ShipCompare(int *, int *);
+int ShipCompare(const void *, const void *);
 void SortShips(void);
 void warn_race(int, char *);
 void warn(int, int, char *);
@@ -303,12 +304,12 @@ int main(int argc, char **argv)
   }
   fprintf(stderr, "      Port %d\n", port);
   fprintf(stderr, "      %d minutes between updates\n", update_time);
-  fprintf(stderr, "      %d segments/update\n", segments);
+  fprintf(stderr, "      %ld segments/update\n", segments);
   sprintf(start_buf, "Server started  : %s", ctime(&clk));
 
   next_update_time = clk + (update_time * 60);
   if (stat(UPDATEFL, &stbuf) >= 0) {
-      if (sfile = fopen(UPDATEFL, "r")) {
+      if ((sfile = fopen(UPDATEFL, "r"))) {
 	  char	dum[32];
 	  if (fgets(dum, sizeof dum, sfile))
 	      nupdates_done = atoi(dum);
@@ -326,7 +327,7 @@ int main(int argc, char **argv)
   else {
       next_segment_time = clk + (update_time * 60 / segments);
       if (stat(SEGMENTFL, &stbuf) >= 0) {
-	  if (sfile = fopen(SEGMENTFL, "r")) {
+	  if ((sfile = fopen(SEGMENTFL, "r"))) {
 	      char	dum[32];
 	      if (fgets(dum, sizeof dum, sfile))
 		  nsegments_done = atoi(dum);
@@ -647,7 +648,7 @@ struct descriptor_data *new_connection(int sock)
 {
   int newsock;
   struct sockaddr_in addr;
-  int addr_len;
+  socklen_t addr_len;
 
   addr_len = sizeof (addr);
   newsock = accept (sock, (struct sockaddr *) & addr, &addr_len);
@@ -785,7 +786,7 @@ char *addrout(long a)
 {
     static char outbuf[1024];
 
-    sprintf (outbuf, "%d.%d.%d.%d", (a >> 24) & 0xff, (a >> 16) & 0xff,
+    sprintf (outbuf, "%ld.%ld.%ld.%ld", (a >> 24) & 0xff, (a >> 16) & 0xff,
 	     (a >> 8) & 0xff, a & 0xff);
     return outbuf;
 }
@@ -926,7 +927,7 @@ int process_output(struct descriptor_data *d)
     struct text_block **qp, *cur;
     int cnt;
 
-    for (qp = &d->output.head; cur = *qp;) {
+    for (qp = &d->output.head; (cur = *qp);) {
 	cnt = write (d->descriptor, cur -> start, cur -> nchars);
 	if (cnt < 0) {
 	    if (errno == EWOULDBLOCK) return 1;
@@ -1264,7 +1265,7 @@ void check_connect(struct descriptor_data *d, char *message)
 	  sprintf(buf,"Government Center #%d is active.\n", r->Gov_ship);
 	  notify(Playernum, Governor, buf);
       }
-      sprintf(buf, "     Morale: %d\n", r->morale);
+      sprintf(buf, "     Morale: %ld\n", r->morale);
       notify(Playernum, Governor, buf);
       treasury(Playernum, Governor);
   }
@@ -1315,7 +1316,7 @@ void do_update(int override)
 	    nsegments_done==segments ? 1 : nsegments_done+1,
 	    ctime(&next_segment_time));
     unlink(UPDATEFL);
-    if (sfile = fopen(UPDATEFL, "w")) {
+    if ((sfile = fopen(UPDATEFL, "w"))) {
 	fprintf(sfile, "%d\n", nupdates_done);
 	fprintf(sfile, "%ld\n", clk);
 	fprintf(sfile, "%ld\n", next_update_time);
@@ -1323,7 +1324,7 @@ void do_update(int override)
 	fclose(sfile);
     }
     unlink(SEGMENTFL);
-    if (sfile = fopen(SEGMENTFL, "w")) {
+    if ((sfile = fopen(SEGMENTFL, "w"))) {
 	fprintf(sfile, "%d\n", nsegments_done);
 	fprintf(sfile, "%ld\n", clk);
 	fprintf(sfile, "%ld\n", next_segment_time);
@@ -1380,7 +1381,7 @@ void do_segment(int override, int segment)
 	do_turn(0);
     update_flag = 0;
     unlink(SEGMENTFL);
-    if (sfile = fopen(SEGMENTFL, "w")) {
+    if ((sfile = fopen(SEGMENTFL, "w"))) {
 	fprintf(sfile, "%d\n", nsegments_done);
 	fprintf(sfile, "%ld\n", clk);
 	fprintf(sfile, "%ld\n", next_segment_time);
@@ -1460,7 +1461,7 @@ void dump_users(struct descriptor_data *e)
 	  if(!r->governor[d->Governor].toggle.invisible ||
 	     e->Playernum==d->Playernum || God) {
 	      sprintf(temp, "\"%s\"", r->governor[d->Governor].name);
-	      sprintf (buf, "%20.20s %20.20s [%2d,%2d] %4ds idle %-4.4s %s %s\n",
+	      sprintf (buf, "%20.20s %20.20s [%2d,%2d] %4lds idle %-4.4s %s %s\n",
 		       r->name, temp,  d->Playernum, d->Governor,
 		       now - d->last_time,
 		       God ? Stars[Dir[d->Playernum-1][d->Governor].snum]->name : "    ",
@@ -1715,7 +1716,7 @@ void GB_schedule(int Playernum, int Governor)
   clk = time(0);
   sprintf(buf, "%d minute update intervals\n", update_time);
   notify(Playernum, Governor, buf);
-  sprintf(buf, "%d movement segments per update\n", segments);
+  sprintf(buf, "%ld movement segments per update\n", segments);
   notify(Playernum, Governor, buf);
   sprintf(buf, "Current time    : %s", ctime(&clk));
   notify(Playernum, Governor, buf);
@@ -2013,8 +2014,10 @@ double GetComplexity(int ship)
   return complexity(&s);
 }
 
-int ShipCompare(int *s1, int *s2)
+int ShipCompare(const void *S1, const void *S2)
 {
+  const int *s1 = S1;
+  const int *s2 = S2;
   return (int)(GetComplexity(*s1) - GetComplexity(*s2));
 }
 

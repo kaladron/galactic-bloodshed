@@ -180,6 +180,7 @@ placetype Getplace2(int Playernum, int Governor, char *string,
       return(*where);
     }
   }
+  return (*where);
 }
 
 char *Dispshiploc_brief(shiptype *ship)

@@ -9,7 +9,6 @@ CC = clang
 #CC = gcc
 
 CFLAGS = -g -O2 -W -Wall -Werror \
-	  -Wno-return-type \
           -Wno-unused-parameter \
 	  -Wno-unused-variable \
 	  -Wno-sign-compare \

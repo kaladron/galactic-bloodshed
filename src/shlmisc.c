@@ -33,7 +33,7 @@ void fix(int, int);
 int match(char *, char *);
 void DontOwnErr(int, int, int);
 int enufAP(int, int, unsigned short, int);
-int Getracenum(char *, char *, int *, int *);
+void Getracenum(char *, char *, int *, int *);
 int GetPlayer(char *);
 void allocateAPs(int, int, int);
 void deductAPs(int, int, int, int, int);
@@ -494,7 +494,8 @@ int enufAP(int Playernum, int Governor, unsigned short AP, int x)
   return (!blah);
 }
 
-int Getracenum(char *racepass, char *govpass, int *racenum, int *govnum)
+void
+Getracenum(char *racepass, char *govpass, int *racenum, int *govnum)
 {
     reg int i, j;
     for(i=1; i<=Num_races; i++) {

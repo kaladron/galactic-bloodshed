@@ -12,4 +12,3 @@ extern void motto(int, int, int, char *);
 extern void name(int, int, int);
 extern int MostAPs(int, startype *);
 extern void announce(int, int, char *, int);
-

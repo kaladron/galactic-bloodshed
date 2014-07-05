@@ -18,5 +18,4 @@ extern void rcv_troops(shiptype *, int, double);
 extern void do_transporter(racetype *, int, shiptype *);
 extern int landed_on(shiptype *, int);
 extern void unload_onto_alien_sector(int, int, planettype *, shiptype *,
-				      sectortype *, int, int);
-
+                                     sectortype *, int, int);

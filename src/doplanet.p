@@ -9,4 +9,3 @@ extern void do_quarry(shiptype *, planettype *);
 extern void do_berserker(shiptype *, planettype *);
 extern void do_recover(planettype *, int, int);
 extern double est_production(sectortype *);
-

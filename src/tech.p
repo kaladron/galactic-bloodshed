@@ -2,4 +2,3 @@
 
 extern void technology(int, int, int);
 extern double tech_prod(int, int);
-

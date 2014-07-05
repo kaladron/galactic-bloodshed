@@ -2,4 +2,3 @@
 
 extern void PermuteSects(planettype *);
 extern int Getxysect(planettype *, int *, int *, int);
-

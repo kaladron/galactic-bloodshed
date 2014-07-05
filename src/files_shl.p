@@ -43,8 +43,7 @@ extern void clr_shipfree(void);
 extern void clr_commodfree(void);
 extern void makeshipdead(int);
 extern void makecommoddead(int);
-extern void Putpower(struct power [MAXPLAYERS]);
-extern void Getpower(struct power [MAXPLAYERS]);
-extern void Putblock(struct block [MAXPLAYERS]);
-extern void Getblock(struct block [MAXPLAYERS]);
-
+extern void Putpower(struct power[MAXPLAYERS]);
+extern void Getpower(struct power[MAXPLAYERS]);
+extern void Putblock(struct block[MAXPLAYERS]);
+extern void Getblock(struct block[MAXPLAYERS]);

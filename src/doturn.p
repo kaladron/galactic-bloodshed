@@ -13,4 +13,3 @@ extern void maintain(racetype *, int, int);
 extern int attack_planet(shiptype *);
 extern void output_ground_attacks(void);
 extern int planet_points(planettype *);
-

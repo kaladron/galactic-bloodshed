@@ -10,4 +10,3 @@ extern int landed(shiptype *);
 extern void check_overload(shiptype *, int, int *);
 extern void check_retal_strength(shiptype *, int *);
 extern int laser_on(shiptype *);
-

@@ -8,5 +8,3 @@ extern void mk_expl_aimed_at(int, int, shiptype *);
 extern void DispOrdersHeader(int, int);
 extern void DispOrders(int, int, shiptype *);
 extern void route(int, int, int);
-
-

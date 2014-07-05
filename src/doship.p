@@ -20,5 +20,3 @@ extern double crew_factor(shiptype *);
 extern double ap_planet_factor(planettype *);
 extern void do_oap(shiptype *);
 extern int do_weapon_plant(shiptype *);
-
-

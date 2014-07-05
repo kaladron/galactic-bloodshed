@@ -30,4 +30,3 @@ extern void warn_star(int, int, int, char *);
 extern void notify_star(int, int, int, int, char *);
 extern void post_star(char *, int, int);
 extern void adjust_morale(racetype *, racetype *, int);
-

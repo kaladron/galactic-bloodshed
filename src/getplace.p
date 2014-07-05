@@ -6,4 +6,3 @@ extern char *Dispshiploc_brief(shiptype *);
 extern char *Dispshiploc(shiptype *);
 extern char *Dispplace(int, int, placetype *);
 extern int testship(int, int, shiptype *);
-

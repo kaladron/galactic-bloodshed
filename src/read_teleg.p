@@ -2,4 +2,3 @@
 
 extern void teleg_read(int, int);
 extern void news_read(int, int, int);
-

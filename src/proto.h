@@ -300,23 +300,6 @@ extern int get_schedule_info P_((void));
 extern int find_next_update P_((void));
 extern int find_next_segment P_((void));
 
-/* autoreport.c */
-
-extern void autoreport P_((int, int, int));
-
-/* capture.c */
-
-extern void capture P_((int, int, int));
-extern void capture_stuff P_((shiptype *));
-
-/* chan.c */
-
-/* cs.c */
-
-extern void center P_((int, int, int));
-extern void do_prompt P_((int, int));
-extern void cs P_((int, int, int));
-
 /* csp_explore.c */
 
 extern void CSP_exploration P_((int, int));

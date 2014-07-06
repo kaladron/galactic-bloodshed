@@ -299,9 +299,6 @@ extern int match2 P_((char *, char *, int));
 extern int get_schedule_info P_((void));
 extern int find_next_update P_((void));
 extern int find_next_segment P_((void));
-/* analysis.c */
-
-extern void analysis P_((int, int, int));
 
 /* autoreport.c */
 

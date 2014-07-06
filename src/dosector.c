@@ -17,7 +17,6 @@
 #include "ships.h"
 #include "doturn.h"
 
-extern int Defensedata[];
 /* produce stuff in sector */
 
 void produce(startype *, planettype *, sectortype *);

@@ -15,10 +15,10 @@
 #include "races.h"
 #include "power.h"
 #include "buffers.h"
+#include "defense.h"
 
 extern char Dessymbols[];
 extern char *Desnames[];
-extern int Defensedata[];
 char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
 
 void load(int, int, int, int);

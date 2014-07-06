@@ -17,9 +17,7 @@
 #include "races.h"
 #include "power.h"
 #include "buffers.h"
-
-/* defense 5 is inpenetrable */
-int Defensedata[] = { 1, 1, 3, 2, 2, 3, 2, 4, 0 };
+#include "defense.h"
 
 extern char *Desnames[];
 extern char Dessymbols[];

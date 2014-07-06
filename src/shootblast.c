@@ -11,8 +11,7 @@
 
 #include "GB_server.h"
 #include "misc.h"
-
-extern int Defensedata[];
+#include "defense.h"
 
 int hit_probability;
 double penetration_factor;

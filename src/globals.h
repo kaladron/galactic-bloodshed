@@ -27,4 +27,7 @@ char temp[128];
 int ShipVector[NUMSTYPES];
 shiptype **ships;
 
+/* defense 5 is inpenetrable */
+int Defensedata[] = { 1, 1, 3, 2, 2, 3, 2, 4, 0 };
+
 #endif // GLOBALS_H

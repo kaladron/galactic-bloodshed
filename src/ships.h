@@ -335,7 +335,8 @@ struct place { /* used in function return for finding place */
 extern long Shipdata[NUMSTYPES][NUMABILS];
 extern char Shipltrs[];
 extern char *Shipnames[];
+extern int ShipVector[NUMSTYPES];
 
-EXTERN shiptype **ships;
+extern shiptype **ships;
 
 #endif // SHIPS_H

@@ -1,69 +1,33 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h
- * build -- build a ship
- * Mon Apr 15 02:07:08 MDT 1991
- * 	Reformatted the 'make' command when at Factory scope.
- *	Evan Koffler
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "GB_copyright.h"
+/* build -- build a ship */
+
+#define EXTERN extern
+#include "build.h"
 
 #include <math.h>
-#include <curses.h>
-#include <setjmp.h>
-#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#define EXTERN extern
-#include "vars.h"
-#include "ships.h"
+
+#include "GB_server.h"
+#include "buffers.h"
+#include "config.h"
+#include "files.h"
+#include "files_shl.h"
+#include "fire.h"
+#include "getplace.h"
+#include "land.h"
 #include "races.h"
 #include "shipdata.h"
-#include "power.h"
-#include "buffers.h"
-#include "shootblast.h"
-
-extern int ShipVector[];
-
-void upgrade(int, int, int);
-void make_mod(int, int, int, int);
-void build(int, int, int);
-int getcount(int, char *);
-int can_build_at_planet(int, int, startype *, planettype *);
-int get_build_type(char *);
-int can_build_this(int, racetype *, char *);
-int can_build_on_ship(int, racetype *, shiptype *, char *);
-int can_build_on_sector(int, racetype *, planettype *, sectortype *, int, int,
-                        char *);
-int build_at_ship(int, int, racetype *, shiptype *, int *, int *);
-void autoload_at_planet(int, shiptype *, planettype *, sectortype *, int *,
-                        double *);
-void autoload_at_ship(int, shiptype *, shiptype *, int *, double *);
-void initialize_new_ship(int, int, racetype *, shiptype *, double, int);
-void create_ship_by_planet(int, int, racetype *, shiptype *, planettype *, int,
-                           int, int, int);
-void create_ship_by_ship(int, int, racetype *, int, startype *, planettype *,
-                         shiptype *, shiptype *);
-double getmass(shiptype *);
-int ship_size(shiptype *);
-double cost(shiptype *);
-void system_cost(double *, double *, int, int);
-double complexity(shiptype *);
-void Getship(shiptype *, int, racetype *);
-void Getfactship(shiptype *, shiptype *);
-int Shipcost(int, racetype *);
-void sell(int, int, int);
-void bid(int, int, int);
-int shipping_cost(int, int, double *, int);
-#include "GB_server.h"
-#include "files_shl.h"
-#include "getplace.h"
+#include "ships.h"
 #include "shlmisc.h"
-#include "fire.h"
-#include "land.h"
 #include "shootblast.h"
 #include "teleg_send.h"
+#include "tweakables.h"
+#include "vars.h"
 
 /* upgrade ship characteristics */
 void upgrade(int Playernum, int Governor, int APcount) {

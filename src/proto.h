@@ -304,40 +304,6 @@ extern int find_next_segment P_((void));
 
 extern void autoreport P_((int, int, int));
 
-/* build.c */
-
-extern void upgrade P_((int, int, int));
-extern void make_mod P_((int, int, int, int));
-extern void build P_((int, int, int));
-extern int getcount P_((int, char *));
-extern int can_build_at_planet P_((int, int, startype *, planettype *));
-extern int get_build_type P_((char *));
-extern int can_build_this P_((int, racetype *, char *));
-extern int can_build_on_ship P_((int, racetype *, shiptype *, char *));
-extern int can_build_on_sector
-P_((int, racetype *, planettype *, sectortype *, int, int, char *));
-extern int build_at_ship P_((int, int, racetype *, shiptype *, int *, int *));
-extern void autoload_at_planet
-P_((int, shiptype *, planettype *, sectortype *, int *, double *));
-extern void autoload_at_ship P_((int, shiptype *, shiptype *, int *, double *));
-extern void initialize_new_ship
-P_((int, int, racetype *, shiptype *, double, int));
-extern void create_ship_by_planet
-P_((int, int, racetype *, shiptype *, planettype *, int, int, int, int));
-extern void create_ship_by_ship P_((int, int, racetype *, int, startype *,
-                                    planettype *, shiptype *, shiptype *));
-extern double getmass P_((shiptype *));
-extern int ship_size P_((shiptype *));
-extern double cost P_((shiptype *));
-extern void system_cost P_((double *, double *, int, int));
-extern double complexity P_((shiptype *));
-extern void Getship P_((shiptype *, int, racetype *));
-extern void Getfactship P_((shiptype *, shiptype *));
-extern int Shipcost P_((int, racetype *));
-extern void sell P_((int, int, int));
-extern void bid P_((int, int, int));
-extern int shipping_cost P_((int, int, double *, int));
-
 /* capital.c */
 
 extern void capital P_((int, int, int));

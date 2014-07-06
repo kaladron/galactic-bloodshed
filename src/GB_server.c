@@ -2064,7 +2064,6 @@ int ShipCompare(const void *S1, const void *S2) {
   return (int)(GetComplexity(*s1) - GetComplexity(*s2));
 }
 
-int ShipVector[NUMSTYPES];
 void SortShips(void) {
   int i;
 

@@ -10,6 +10,7 @@
 
 #include "power.h"
 #include "races.h"
+#include "ships.h"
 #include "vars.h"
 
 struct power Power[MAXPLAYERS];
@@ -22,5 +23,8 @@ char buf[2047];
 char long_buf[1024], short_buf[256];
 char telegram_buf[AUTO_TELEG_SIZE];
 char temp[128];
+
+int ShipVector[NUMSTYPES];
+shiptype **ships;
 
 #endif // GLOBALS_H

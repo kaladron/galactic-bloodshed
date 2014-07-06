@@ -40,7 +40,7 @@
 #define VOTING  /* If you want to allow player voting. */
 #undef ACCESS_CHECK /* If you want to check address authorization. */
 #undef NOMADS       /* If you want to allow min # sexes to always colonize           \
-  a sector safely */
+a sector safely */
 #define MONITOR /* allows deity to monitor messages etc (deity can set with    \
                    'toggle monitor' option. I use it to watch battles in       \
                    in progress. -G */

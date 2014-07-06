@@ -170,7 +170,8 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
             destlevel = LEVEL_STAR;
           break;
         }
-        /*			if (sqrt( (double)Distsq(s->xpos, s->ypos, xdest,
+        /*			if (sqrt( (double)Distsq(s->xpos, s->ypos,
+           xdest,
            ydest))
                    <= DIST_TO_LAND || !(dsh->alive)) {
                            destlevel = LEVEL_UNIV;

@@ -141,8 +141,9 @@
 #define REPAIR_RATE 25.0 /* rate at which ships get repaired */
 #define SECTOR_REPAIR_COST                                                     \
   10 /* how much it costs to remove a wasted status from a sector */
-#define NATURAL_REPAIR 5 /* chance of the wasted status being removed/update   \
-                            */
+#define NATURAL_REPAIR                                                         \
+  5 /* chance of the wasted status being removed/update                        \
+       */
 
 #define CREAT_UNIV_ITERAT 10 /* iterations for star movement */
 

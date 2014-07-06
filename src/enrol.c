@@ -496,12 +496,15 @@ reg int x, y;
 
 void notify(who, gov, msg) int who, gov;
 char *msg;
-{ /* this is a dummy routine */ }
+{ /* this is a dummy routine */
+}
 
 void warn(who, gov, msg) int who, gov;
 char *msg;
-{ /* this is a dummy routine */ }
+{ /* this is a dummy routine */
+}
 
 void push_message(what, who, msg) int what, who;
 char *msg;
-{ /* this is a dummy routine */ }
+{ /* this is a dummy routine */
+}

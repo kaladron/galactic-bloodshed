@@ -199,9 +199,9 @@ struct file *falloc();
 /* bits to save after open */
 #define FMASK 0510113 /* 0004 */
                       /*
- * FCNTLCANT are flags that are used by the kernel exclusively;
- * the user can't set them via fcntl(2).
- */
+* FCNTLCANT are flags that are used by the kernel exclusively;
+* the user can't set them via fcntl(2).
+*/
 #define FCNTLCANT (FREAD | FWRITE | FMARK | FDEFER | FSHLOCK | FEXLOCK | FNBUF)
 /*
  * FCNLTONLYSET are a set of flags that the user may set via a F_SETFL
@@ -220,8 +220,8 @@ struct file *falloc();
 #define O_RDWR 002   /* open for read & write */
 #define O_WRONLY 001 /* open for writing */
                      /*
- * File status flags for open() and fcntl()
- */
+* File status flags for open() and fcntl()
+*/
 #define O_APPEND _FAPPEND   /* append on each write */
 #define O_NONBLOCK _FNBLOCK /* POSIX non-blocking I/O */
 #if !defined(_POSIX_SOURCE) || defined(_XOPEN_SOURCE)
@@ -242,8 +242,8 @@ struct file *falloc();
 #define O_TERMIO _FTERMIO       /* termio style program */
 #endif                          /* NOT _POSIX_SOURCE */
                                 /*
- * mask for use with file access modes
- */
+* mask for use with file access modes
+*/
 #define O_ACCMODE (O_RDONLY | O_WRONLY | O_RDWR)
 /*
  * Values for cmd used by fcntl()
@@ -263,8 +263,8 @@ struct file *falloc();
 #define F_CLRSYN 11 /* Clear syncronous write *0004*/
 #endif              /* NOT _POSIX_SOURCE */
                     /*
- * file descriptor flags used by fcntl(2)
- */
+* file descriptor flags used by fcntl(2)
+*/
 #define FD_CLOEXEC 1 /* Close file descriptor on exec() */
 
 /* file segment locking set data type - information passed to system by user */
@@ -282,8 +282,8 @@ struct flock {
 };
 #endif /* NOT F_RDLCK or POSIX */
        /*
- *	file segment locking types
- */
+*	file segment locking types
+*/
 #define F_RDLCK 01 /* Read lock */
 #define F_WRLCK 02 /* Write lock */
 #define F_UNLCK 03 /* Remove lock(s) */
@@ -297,8 +297,8 @@ struct flock {
 #define LOCK_NB 4 /* don't block when locking */
 #define LOCK_UN 8 /* unlock */
                   /*
- * Lseek call.
- */
+* Lseek call.
+*/
 #define L_SET 0  /* absolute offset */
 #define L_INCR 1 /* relative to current offset */
 #define L_XTND 2 /* relative to end of file */

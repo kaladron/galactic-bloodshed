@@ -12,7 +12,7 @@ char *prog;
 int main(int argc, char **argv) {
   int pid;
 
-  sigset_t block;   
+  sigset_t block;
   sigemptyset(&block);
   sigaddset(&block, SIGHUP);
   sigprocmask(SIG_BLOCK, &block, NULL);

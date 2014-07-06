@@ -43,8 +43,7 @@ int do_trip(double, double);
 #include "doship.h"
 
 void proj_fuel(int Playernum, int Governor, int APcount) {
-  int shipno, opt_settings, current_settings,
-      current_segs, computing = 1;
+  int shipno, opt_settings, current_settings, current_segs, computing = 1;
   double fuel_usage, level, dist;
   shiptype *ship;
   planettype *p;

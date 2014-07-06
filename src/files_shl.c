@@ -27,7 +27,6 @@
 int commoddata, pdata, racedata, sectdata, shdata, stdata;
 
 extern int errno;
-int sys_nerr;
 
 void close_file(int);
 void open_data_files(void);

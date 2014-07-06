@@ -21,8 +21,6 @@
 #include "files.h"
 #include "buffers.h"
 
-int sys_nerr;
-
 extern int errno;
 
 void Fileread(int, char *, int, int);

@@ -1,32 +1,25 @@
-/*
-** Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
-** smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
-** Restrictions in GB_copyright.h.
-** declare.c -- declare alliance, neutrality, war, the basic thing.
-*/
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "GB_copyright.h"
+/* declare.c -- declare alliance, neutrality, war, the basic thing. */
+
+#include "declare.h"
+
+#include <stdio.h>
+
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "buffers.h"
-#include <signal.h>
-#include <string.h>
-#include <ctype.h>
-
-void invite(int, int, int, int);
-void declare(int, int, int);
-void vote(int, int, int);
-void show_votes(int, int);
-void pledge(int, int, int, int);
-
 #include "GB_server.h"
-#include "teleg_send.h"
+#include "buffers.h"
+#include "config.h"
+#include "files.h"
 #include "files_shl.h"
-#include "shlmisc.h"
+#include "races.h"
 #include "rand.h"
+#include "shlmisc.h"
+#include "teleg_send.h"
+#include "tweakables.h"
+#include "vars.h"
 
 /* invite people to join your alliance block */
 void invite(int Playernum, int Governor, int APcount, int mode) {

@@ -228,7 +228,7 @@ void adjust_morale(racetype *, racetype *, int);
 #include "explore.p"
 #include "load.p"
 #include "dissolve.p"
-#include "doturn.p"
+#include "doturncmd.p"
 #include "enslave.p"
 #include "examine.p"
 #include "explore.p"

@@ -82,7 +82,7 @@ SHOBJS =  getplace.o	\
 	moveplanet.o	\
 	autoshoot.o	\
 	doplanet.o	\
-	doturn.o	\
+	doturncmd.o	\
 	doship.o	\
 	dosector.o	\
 	moveship.o	\
@@ -127,7 +127,7 @@ VROBJS = getplace.o	\
 	fire.o		\
 	victory.o	\
 	powercmd.o	\
-	doturn.o	\
+	doturncmd.o	\
 	doship.o	\
 	makeuniv.o	\
 	makeplanet.o
@@ -165,7 +165,7 @@ SHIPOBJS = autoreport.o	\
 	prof.o		\
 	scrap.o		\
 	orbit.o		\
-	doturn.o	\
+	doturncmd.o	\
 	doship.o	\
 	doplanet.o	\
 	moveship.o	\
@@ -179,7 +179,7 @@ FOBJS =	files_shl.o 	\
 	files_rw.o	\
 	makeuniv.o	\
 	shlmisc.o 	\
-	doturn.o 	\
+	doturncmd.o 	\
 	enrol.o 	\
 	files.o		\
 	GB_server.o	\
@@ -235,9 +235,9 @@ ${SHIPOBJS}: vars.h ships.h
 ${FOBJS}: files.h
 build.o : vars.h ships.h races.h shipdata.h
 victory powercmd.o dissolve.o files_shl.o : power.h
-dissolve.o doturn.o doship.o doplanet.o moveship.o moveplanet.o : doturn.h
+dissolve.o doturncmd.o doship.o doplanet.o moveship.o moveplanet.o : doturn.h
 moveship.o : vars.h ships.h shipdata.h
-doturn.o doplanet.o doship.o : power.h
+doturncmd.o doplanet.o doship.o : power.h
 
 
 #guardian program

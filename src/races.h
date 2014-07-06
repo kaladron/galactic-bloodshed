@@ -1,8 +1,9 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB.c, enroll.dat.
- * Restrictions in GB.c.
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+#ifndef RACES_H
+#define RACES_H
 
 typedef struct {
   char invisible;
@@ -159,7 +160,10 @@ struct power_blocks {
 
 typedef struct race racetype;
 typedef struct block blocktype;
-EXTERN struct block Blocks[MAXPLAYERS];
-EXTERN struct power_blocks Power_blocks;
 
-EXTERN racetype *races[MAXPLAYERS];
+extern struct block Blocks[MAXPLAYERS];
+extern struct power_blocks Power_blocks;
+
+extern racetype *races[MAXPLAYERS];
+
+#endif // RACES_H

@@ -1,6 +1,12 @@
-/* files_shl.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+#ifndef FILES_SHL_H
+#define FILES_SHL_H
 
 #include "power.h"
+#include "races.h"
 
 extern void close_file(int);
 extern void open_data_files(void);
@@ -49,3 +55,5 @@ extern void Putpower(struct power[MAXPLAYERS]);
 extern void Getpower(struct power[MAXPLAYERS]);
 extern void Putblock(struct block[MAXPLAYERS]);
 extern void Getblock(struct block[MAXPLAYERS]);
+
+#endif // FILES_SHL_H

@@ -9,8 +9,13 @@
 #define GLOBALS_H
 
 #include "power.h"
+#include "races.h"
 #include "vars.h"
 
 struct power Power[MAXPLAYERS];
+struct block Blocks[MAXPLAYERS];
+struct power_blocks Power_blocks;
+
+racetype *races[MAXPLAYERS];
 
 #endif // GLOBALS_H

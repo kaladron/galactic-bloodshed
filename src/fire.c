@@ -12,23 +12,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "GB_server.h"
 #include "buffers.h"
 #include "config.h"
-#include "files.h"
-#include "races.h"
-#include "ships.h"
-#include "tweakables.h"
-#include "vars.h"
-
-#include "GB_server.h"
 #include "doship.h"
+#include "files.h"
 #include "files_shl.h"
 #include "getplace.h"
 #include "load.h"
+#include "races.h"
 #include "rand.h"
+#include "ships.h"
 #include "shlmisc.h"
 #include "shootblast.h"
 #include "teleg_send.h"
+#include "tweakables.h"
+#include "vars.h"
 
 void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
 {

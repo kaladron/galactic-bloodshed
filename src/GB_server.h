@@ -1,4 +1,11 @@
-/* GB_server.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+#ifndef GB_SERVER_H
+#define GB_SERVER_H
+
+#include "races.h"
 
 extern void notify_race(int, char *);
 extern int notify(int, int, char *);
@@ -30,3 +37,5 @@ extern void warn_star(int, int, int, char *);
 extern void notify_star(int, int, int, int, char *);
 extern void post_star(char *, int, int);
 extern void adjust_morale(racetype *, racetype *, int);
+
+#endif // GB_SERVER_H

@@ -304,10 +304,6 @@ extern int find_next_segment P_((void));
 
 extern void autoreport P_((int, int, int));
 
-/* autoshoot.c */
-
-extern int Bombard P_((shiptype *, planettype *, racetype *));
-
 /* build.c */
 
 extern void upgrade P_((int, int, int));

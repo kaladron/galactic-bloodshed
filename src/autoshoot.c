@@ -1,29 +1,30 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB.c, enroll.dat.
- * Restrictions in GB.c.
- * autoshoot() -- shoot <-> retaliate routine
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/* autoshoot() -- shoot <-> retaliate routine
  * Bombard() -- ship bombards planet
  */
 
 #define EXTERN extern
+#include "autoshoot.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "doturn.h"
-#include "buffers.h"
 
-extern long Shipdata[NUMSTYPES][NUMABILS];
-
-int Bombard(shiptype *, planettype *, racetype *);
-#include "files_shl.h"
 #include "GB_server.h"
+#include "buffers.h"
+#include "files.h"
+#include "files_shl.h"
 #include "max.h"
 #include "perm.h"
+#include "races.h"
+#include "ships.h"
 #include "shootblast.h"
 #include "teleg_send.h"
+#include "tweakables.h"
+#include "vars.h"
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */

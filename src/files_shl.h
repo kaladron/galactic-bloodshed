@@ -7,6 +7,7 @@
 
 #include "power.h"
 #include "races.h"
+#include "ships.h"
 
 extern void close_file(int);
 extern void open_data_files(void);

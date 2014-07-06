@@ -6,6 +6,7 @@
 #define GB_SERVER_H
 
 #include "races.h"
+#include "ships.h"
 
 extern void notify_race(int, char *);
 extern int notify(int, int, char *);

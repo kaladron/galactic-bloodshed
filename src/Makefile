@@ -71,7 +71,7 @@ SHOBJS =  getplace.o	\
 	build.o		\
 	orbit.o		\
 	victory.o	\
-	power.o		\
+	powercmd.o	\
 	launch.o	\
 	declare.o	\
 	examine.o	\
@@ -126,7 +126,7 @@ VROBJS = getplace.o	\
 	name.o		\
 	fire.o		\
 	victory.o	\
-	power.o		\
+	powercmd.o	\
 	doturn.o	\
 	doship.o	\
 	makeuniv.o	\
@@ -184,7 +184,7 @@ FOBJS =	files_shl.o 	\
 	files.o		\
 	GB_server.o	\
 	build.o		\
-	power.o 	\
+	powercmd.o 	\
 	victory.o	\
 	daemon.o	\
 	examine.o
@@ -234,7 +234,7 @@ ${VROBJS}: races.h vars.h
 ${SHIPOBJS}: vars.h ships.h
 ${FOBJS}: files.h
 build.o : vars.h ships.h races.h shipdata.h
-victory power.o dissolve.o files_shl.o : power.h
+victory powercmd.o dissolve.o files_shl.o : power.h
 dissolve.o doturn.o doship.o doplanet.o moveship.o moveplanet.o : doturn.h
 moveship.o : vars.h ships.h shipdata.h
 doturn.o doplanet.o doship.o : power.h

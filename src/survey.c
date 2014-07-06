@@ -1,29 +1,31 @@
-/*
- * #ident  "@(#)survey.c	1.13 12/9/93 "
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h. Restrictions in
- * GB_copyright.h.
- *
- * survey.c -- print out survey for planets
- *
- * Tue Apr 16 16:34:38 MDT 1991 (Evan Koffler) Added the client_survey and mode
- * parts Thu Apr 25 11:37:56 MDT 1991 Added the ships per sector stuff. Works
- * well.
- *
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "GB_copyright.h"
+/* survey.c -- print out survey for planets */
+
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
+#include "survey.h"
+
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+
+#include "GB_server.h"
 #include "buffers.h"
 #include "csp.h"
 #include "csp_types.h"
-#include "ranks.h"
-#include <strings.h>
-#include <ctype.h>
+#include "files_shl.h"
+#include "fire.h"
+#include "get4args.h"
+#include "getplace.h"
+#include "map.h"
+#include "max.h"
+#include "races.h"
+#include "ships.h"
+#include "tweakables.h"
+#include "vars.h"
 
 #define MAX_SHIPS_PER_SECTOR 10
 extern char *Desnames[], Dessymbols[];
@@ -42,10 +44,6 @@ static char *Tox[] = {
   "Stage 10: WARNING: COMPLETELY TOXIC!!!",
   "???"
 };
-
-EXTERN void survey(int, int, int, int);
-EXTERN void repair(int, int, int);
-#include "proto.h"
 
 void survey(int Playernum, int Governor, int APcount, int mode) {
   int lowx, hix, lowy, hiy, x2;

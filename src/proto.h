@@ -304,10 +304,6 @@ extern int find_next_segment P_((void));
 
 extern void autoreport P_((int, int, int));
 
-/* capital.c */
-
-extern void capital P_((int, int, int));
-
 /* capture.c */
 
 extern void capture P_((int, int, int));

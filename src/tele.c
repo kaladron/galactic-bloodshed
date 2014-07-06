@@ -1,58 +1,27 @@
-/***********************************************
- * #ident  "@(#)tele.c	1.13 12/3/93 "
- * tele.c
- *
- * Created: ??
- * Author:  Robert Chansky
- *
- * Version: 1.10 09:06:00
- *
- * Contains: purge()
- *           post()
- *           push_telegram_race()
- *           push_telegram()
- *           teleg_read()
- *           news_read()
- *
- ***********************************************/
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
 #define EXTERN extern
-#include "GB_copyright.h"
-#include "vars.h"
-#include "files.h"
-#include "races.h"
-#include "buffers.h"
-#include "power.h"
-#include "ships.h"
-#ifdef AIX
-#include <time.h>
-#endif
+#include "tele.h"
+
 #include <stdio.h>
-#include <ctype.h>
-#include <strings.h>
-#include <errno.h>
-#include <signal.h>
 #include <string.h>
-#include <sys/file.h>
-#include <sys/time.h>
 #include <sys/stat.h>
 #include <time.h>
+
+#include "GB_server.h"
+#include "buffers.h"
+#include "files.h"
+#include "files_shl.h"
+#include "races.h"
+#include "tweakables.h"
+#include "vars.h"
 
 static long tm;
 static FILE *teleg_read_fd;
 static char telegram_file[PATHLEN];
 static struct stat telestat;
-
-/*
- * Prototypes
- */
-EXTERN void purge(void);
-EXTERN void post(char *, int);
-EXTERN void push_telegram_race(int, char *);
-EXTERN void push_telegram(int, int, char *);
-EXTERN void teleg_read(int, int);
-EXTERN void news_read(int, int, int);
-#include "proto.h"
 
 static struct tm *current_tm; /* for watching for next update */
 

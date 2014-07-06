@@ -418,19 +418,6 @@ extern void tech_status P_((int, int, int));
 extern void tech_report_star
 P_((int, int, startype *, int, int *, double *, double *));
 
-/* fire.c */
-
-extern void fire P_((int, int, int, int));
-extern void bombard P_((int, int, int));
-extern void defend P_((int, int, int));
-extern void detonate P_((int, int, int));
-extern int retal_strength P_((shiptype *));
-extern int adjacent P_((int, int, int, int, planettype *));
-extern int landed P_((shiptype *));
-extern void check_overload P_((shiptype *, int, int *));
-extern void check_retal_strength P_((shiptype *, int *));
-extern int laser_on P_((shiptype *));
-
 /* fuel.c */
 
 extern void proj_fuel P_((int, int, int));

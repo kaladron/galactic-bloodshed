@@ -1,12 +1,22 @@
-/* fire.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-extern void fire(int, int, int, int);
-extern void bombard(int, int, int);
-extern void defend(int, int, int);
-extern void detonate(int, int, int);
-extern int retal_strength(shiptype *);
-extern int adjacent(int, int, int, int, planettype *);
-extern int landed(shiptype *);
-extern void check_overload(shiptype *, int, int *);
-extern void check_retal_strength(shiptype *, int *);
-extern int laser_on(shiptype *);
+#ifndef FIRE_H
+#define FIRE_H
+
+#include "vars.h"
+#include "ships.h"
+
+void fire(int, int, int, int);
+void bombard(int, int, int);
+void defend(int, int, int);
+void detonate(int, int, int);
+int retal_strength(shiptype *);
+int adjacent(int, int, int, int, planettype *);
+int landed(shiptype *);
+void check_overload(shiptype *, int, int *);
+void check_retal_strength(shiptype *, int *);
+int laser_on(shiptype *);
+
+#endif // FIRE_H

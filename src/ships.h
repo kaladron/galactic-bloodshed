@@ -1,8 +1,10 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB.c, enroll.dat.
- * Restrictions in GB.c.
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+#ifndef SHIPS_H
+#define SHIPS_H
+
 #define LIGHT 1
 #define MEDIUM 2
 #define HEAVY 3
@@ -335,3 +337,5 @@ extern char Shipltrs[];
 extern char *Shipnames[];
 
 EXTERN shiptype **ships;
+
+#endif // SHIPS_H

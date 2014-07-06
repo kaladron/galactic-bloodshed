@@ -1,10 +1,13 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB.c, enroll.dat.
- * Restrictions in GB.c.
- * vars.h --
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/* vars.h --
  *  main bunch of variables
  */
+
+#ifndef VARS_H
+#define VARS_H
 
 #include "files.h"
 #include "tweakables.h"
@@ -272,3 +275,5 @@ EXTERN int argn;
 #endif
 
 #define success(x) (int_rand(1, 100) <= (x))
+
+#endif // VARS_H

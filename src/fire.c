@@ -5,37 +5,30 @@
  * fire.c -- fire at ship or planet from ship or planet
  */
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "buffers.h"
 #include "fire.h"
-#include <signal.h>
+
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-void fire(int, int, int, int);
-void bombard(int, int, int);
-void defend(int, int, int);
-void detonate(int, int, int);
-int retal_strength(shiptype *);
-int adjacent(int, int, int, int, planettype *);
-int landed(shiptype *);
-void check_overload(shiptype *, int, int *);
-void check_retal_strength(shiptype *, int *);
-int laser_on(shiptype *);
+#include "buffers.h"
+#include "config.h"
+#include "files.h"
+#include "races.h"
+#include "ships.h"
+#include "tweakables.h"
+#include "vars.h"
 
 #include "GB_server.h"
-#include "shlmisc.h"
+#include "doship.h"
 #include "files_shl.h"
 #include "getplace.h"
-#include "shootblast.h"
 #include "load.h"
-#include "teleg_send.h"
 #include "rand.h"
-#include "doship.h"
+#include "shlmisc.h"
+#include "shootblast.h"
+#include "teleg_send.h"
 
 void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
 {

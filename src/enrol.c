@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #define EXTERN
+#include "globals.h"
 #include "vars.h"
 #include "ships.h"
 #include "shipdata.h"

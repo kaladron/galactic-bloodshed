@@ -63,6 +63,7 @@ struct stat sbuf;
 
 /* GB headers */
 #define EXTERN
+#include "globals.h"
 #include "vars.h"
 #include "ships.h"
 #include "races.h"

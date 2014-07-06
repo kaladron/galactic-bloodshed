@@ -1,5 +1,7 @@
 /* files_shl.c function prototypes */
 
+#include "power.h"
+
 extern void close_file(int);
 extern void open_data_files(void);
 extern void close_data_files(void);

@@ -8,6 +8,7 @@
 #include "GB_copyright.h"
 
 #define EXTERN
+#include "globals.h"
 #include "vars.h"
 #include "power.h"
 #include "ships.h"

@@ -28,15 +28,15 @@ void mk_expl_aimed_at(int, int, shiptype *);
 void DispOrdersHeader(int, int);
 void DispOrders(int, int, shiptype *);
 void route(int, int, int);
-#include "getplace.p"
-#include "shlmisc.p"
-#include "moveship.p"
-#include "files_shl.p"
-#include "GB_server.p"
-#include "shootblast.p"
-#include "load.p"
-#include "build.p"
-#include "fire.p"
+#include "getplace.h"
+#include "shlmisc.h"
+#include "moveship.h"
+#include "files_shl.h"
+#include "GB_server.h"
+#include "shootblast.h"
+#include "load.h"
+#include "build.h"
+#include "fire.h"
 
 void order(int Playernum, int Governor, int APcount) {
   int shipno, nextshipno;

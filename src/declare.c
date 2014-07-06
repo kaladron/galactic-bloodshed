@@ -22,11 +22,11 @@ void vote(int, int, int);
 void show_votes(int, int);
 void pledge(int, int, int, int);
 
-#include "GB_server.p"
-#include "teleg_send.p"
-#include "files_shl.p"
-#include "shlmisc.p"
-#include "rand.p"
+#include "GB_server.h"
+#include "teleg_send.h"
+#include "files_shl.h"
+#include "shlmisc.h"
+#include "rand.h"
 
 /* invite people to join your alliance block */
 void invite(int Playernum, int Governor, int APcount, int mode) {

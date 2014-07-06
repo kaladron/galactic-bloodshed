@@ -18,9 +18,9 @@
 void toggle(int, int, int);
 void highlight(int, int, int);
 void tog(int, int, char *, char *);
-#include "shlmisc.p"
-#include "GB_server.p"
-#include "files_shl.p"
+#include "shlmisc.h"
+#include "GB_server.h"
+#include "files_shl.h"
 
 void toggle(int Playernum, int Governor, int APcount) {
   racetype *Race;

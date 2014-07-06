@@ -16,11 +16,11 @@
 #include <string.h>
 
 void enslave(int, int, int);
-#include "files_shl.p"
-#include "getplace.p"
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "max.p"
+#include "files_shl.h"
+#include "getplace.h"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "max.h"
 
 void enslave(int Playernum, int Governor, int APcount) {
   shiptype *s, *s2;

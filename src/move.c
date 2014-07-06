@@ -37,16 +37,16 @@ void people_attack_mech(shiptype *, int, int, racetype *, racetype *,
 void ground_attack(racetype *, racetype *, int *, int, unsigned short *,
                    unsigned short *, unsigned int, unsigned int, double, double,
                    double *, double *, int *, int *, int *);
-#include "GB_server.p"
-#include "files_shl.p"
-#include "mobiliz.p"
-#include "shlmisc.p"
-#include "rand.p"
-#include "teleg_send.p"
-#include "getplace.p"
-#include "fire.p"
-#include "shootblast.p"
-#include "load.p"
+#include "GB_server.h"
+#include "files_shl.h"
+#include "mobiliz.h"
+#include "shlmisc.h"
+#include "rand.h"
+#include "teleg_send.h"
+#include "getplace.h"
+#include "fire.h"
+#include "shootblast.h"
+#include "load.h"
 
 void arm(int Playernum, int Governor, int APcount, int mode) {
   planettype *planet;

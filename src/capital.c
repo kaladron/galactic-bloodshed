@@ -16,11 +16,11 @@
 #include <signal.h>
 
 void capital(int, int, int);
-#include "GB_server.p"
-#include "files_shl.p"
-#include "getplace.p"
-#include "fire.p"
-#include "shlmisc.p"
+#include "GB_server.h"
+#include "files_shl.h"
+#include "getplace.h"
+#include "fire.h"
+#include "shlmisc.h"
 
 void capital(int Playernum, int Governor, int APcount) {
   int shipno, stat, snum;

@@ -38,19 +38,19 @@ double crew_factor(shiptype *);
 double ap_planet_factor(planettype *);
 void do_oap(shiptype *);
 int do_weapon_plant(shiptype *);
-#include "rand.p"
-#include "GB_server.p"
-#include "files_shl.p"
-#include "build.p"
-#include "moveship.p"
-#include "VN.p"
-#include "shlmisc.p"
-#include "max.p"
-#include "shootblast.p"
-#include "teleg_send.p"
-#include "fire.p"
-#include "load.p"
-#include "perm.p"
+#include "rand.h"
+#include "GB_server.h"
+#include "files_shl.h"
+#include "build.h"
+#include "moveship.h"
+#include "VN.h"
+#include "shlmisc.h"
+#include "max.h"
+#include "shootblast.h"
+#include "teleg_send.h"
+#include "fire.h"
+#include "load.h"
+#include "perm.h"
 
 void doship(shiptype *ship, int update) {
   racetype *Race;

@@ -18,11 +18,11 @@
 
 void dissolve(int, int);
 int revolt(planettype *, int, int);
-#include "GB_server.p"
-#include "files_shl.p"
-#include "shlmisc.p"
-#include "teleg_send.p"
-#include "rand.p"
+#include "GB_server.h"
+#include "files_shl.h"
+#include "shlmisc.h"
+#include "teleg_send.h"
+#include "rand.h"
 
 void dissolve(int Playernum, int Governor) {
   int n_ships;

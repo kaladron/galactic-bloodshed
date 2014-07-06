@@ -44,7 +44,7 @@ void Makeplanet_init(void);
 char *NextPlanetName(int);
 void rand_list(int, int *);
 
-#include "rand.p"
+#include "rand.h"
 
 int Numtypes[TYPE_DESERT + 2] = { 0, };
 int Resource[TYPE_DESERT + 2] = { 0, };

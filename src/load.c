@@ -40,15 +40,15 @@ void do_transporter(racetype *, int, shiptype *);
 int landed_on(shiptype *, int);
 void unload_onto_alien_sector(int, int, planettype *, shiptype *, sectortype *,
                               int, int);
-#include "getplace.p"
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "files_shl.p"
-#include "fire.p"
-#include "max.p"
-#include "move.p"
-#include "land.p"
-#include "rand.p"
+#include "getplace.h"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "files_shl.h"
+#include "fire.h"
+#include "max.h"
+#include "move.h"
+#include "land.h"
+#include "rand.h"
 
 void load(int Playernum, int Governor, int APcount, int mode) {
   char commod;

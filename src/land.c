@@ -25,16 +25,16 @@ void land(int, int, int);
 int crash(shiptype *, double);
 int docked(shiptype *);
 int overloaded(shiptype *);
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "files_shl.p"
-#include "getplace.p"
-#include "load.p"
-#include "shootblast.p"
-#include "teleg_send.p"
-#include "fire.p"
-#include "rand.p"
-#include "max.p"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "files_shl.h"
+#include "getplace.h"
+#include "load.h"
+#include "shootblast.h"
+#include "teleg_send.h"
+#include "fire.h"
+#include "rand.h"
+#include "max.h"
 
 void land(int Playernum, int Governor, int APcount) {
   shiptype *s, *s2;

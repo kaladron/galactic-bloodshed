@@ -16,9 +16,9 @@
 void center(int, int, int);
 void do_prompt(int, int);
 void cs(int, int, int);
-#include "getplace.p"
-#include "GB_server.p"
-#include "files_shl.p"
+#include "getplace.h"
+#include "GB_server.h"
+#include "files_shl.h"
 
 void center(int Playernum, int Governor, int APcount) {
   placetype where;

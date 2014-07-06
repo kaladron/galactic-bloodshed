@@ -25,11 +25,11 @@ void spread(planettype *, sectortype *, int, int);
 void Migrate2(planettype *, int, int, sectortype *, int *);
 void explore(planettype *, sectortype *, int, int, int);
 void plate(sectortype *);
-#include "rand.p"
-#include "max.p"
-#include "files_shl.p"
-#include "fire.p"
-#include "order.p"
+#include "rand.h"
+#include "max.h"
+#include "files_shl.h"
+#include "fire.h"
+#include "order.h"
 
 void produce(startype *star, planettype *planet, sectortype *s) {
   reg int ss;

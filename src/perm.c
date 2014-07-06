@@ -10,7 +10,7 @@
 #define EXTERN extern
 #include "vars.h"
 
-#include "rand.p"
+#include "rand.h"
 
 struct map {
   char x, y;

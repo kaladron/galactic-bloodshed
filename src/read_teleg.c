@@ -28,8 +28,8 @@ char telegram_file[PATHLEN];
 
 void teleg_read(int, int);
 void news_read(int, int, int);
-#include "GB_server.p"
-#include "files_shl.p"
+#include "GB_server.h"
+#include "files_shl.h"
 
 void teleg_read(int Playernum, int Governor) {
   char *p;

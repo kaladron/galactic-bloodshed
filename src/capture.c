@@ -22,13 +22,13 @@ extern int Defensedata[];
 
 void capture(int, int, int);
 void capture_stuff(shiptype *);
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "fire.p"
-#include "files_shl.p"
-#include "rand.p"
-#include "getplace.p"
-#include "teleg_send.p"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "fire.h"
+#include "files_shl.h"
+#include "rand.h"
+#include "getplace.h"
+#include "teleg_send.h"
 
 void capture(int Playernum, int Governor, int APcount) {
   shiptype *ship, s;

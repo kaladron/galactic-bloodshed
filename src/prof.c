@@ -24,9 +24,9 @@ void profile(int, int, int);
 char *Estimate_f(double, racetype *, int);
 char *Estimate_i(int, racetype *, int);
 int round_perc(int, racetype *, int);
-#include "GB_server.p"
-#include "shootblast.p"
-#include "shlmisc.p"
+#include "GB_server.h"
+#include "shootblast.h"
+#include "shlmisc.h"
 
 void whois(int Playernum, int Governor, int APcount) {
   int i, j, numraces;

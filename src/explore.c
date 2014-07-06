@@ -27,11 +27,11 @@ void star_locations(int, int, int);
 void exploration(int, int, int);
 void tech_status(int, int, int);
 void tech_report_star(int, int, startype *, int, int *, double *, double *);
-#include "getplace.p"
-#include "files_shl.p"
-#include "GB_server.p"
-#include "tech.p"
-#include "max.p"
+#include "getplace.h"
+#include "files_shl.h"
+#include "GB_server.h"
+#include "tech.h"
+#include "max.h"
 
 void colonies_at_star(int Playernum, int Governor, racetype *Race, int star,
                       int mode) {

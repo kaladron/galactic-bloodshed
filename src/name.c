@@ -41,17 +41,17 @@ void motto(int, int, int, char *);
 void name(int, int, int);
 int MostAPs(int, startype *);
 void announce(int, int, char *, int);
-#include "getplace.p"
-#include "GB_server.p"
-#include "files_shl.p"
-#include "shlmisc.p"
-#include "max.p"
-#include "mobiliz.p"
-#include "dissolve.p"
-#include "teleg_send.p"
-#include "capture.p"
-#include "rand.p"
-#include "read_teleg.p"
+#include "getplace.h"
+#include "GB_server.h"
+#include "files_shl.h"
+#include "shlmisc.h"
+#include "max.h"
+#include "mobiliz.h"
+#include "dissolve.h"
+#include "teleg_send.h"
+#include "capture.h"
+#include "rand.h"
+#include "read_teleg.h"
 
 void personal(int Playernum, int Governor, char *message) {
   racetype *Race;

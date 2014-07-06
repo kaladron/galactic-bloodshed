@@ -16,13 +16,13 @@
 #include <signal.h>
 
 void launch(int, int, int);
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "fire.p"
-#include "files_shl.p"
-#include "max.p"
-#include "rand.p"
-#include "load.p"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "fire.h"
+#include "files_shl.h"
+#include "max.h"
+#include "rand.h"
+#include "load.h"
 
 void launch(int Playernum, int Governor, int APcount) {
   int sh2;

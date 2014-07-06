@@ -18,9 +18,9 @@
 #include <ctype.h>
 
 void toxicity(int, int, int);
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "files_shl.p"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "files_shl.h"
 
 void toxicity(int Playernum, int Governor, int APcount) {
   int thresh;

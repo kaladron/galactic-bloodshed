@@ -18,12 +18,12 @@
 extern long Shipdata[NUMSTYPES][NUMABILS];
 
 int Bombard(shiptype *, planettype *, racetype *);
-#include "files_shl.p"
-#include "GB_server.p"
-#include "max.p"
-#include "perm.p"
-#include "shootblast.p"
-#include "teleg_send.p"
+#include "files_shl.h"
+#include "GB_server.h"
+#include "max.h"
+#include "perm.h"
+#include "shootblast.h"
+#include "teleg_send.h"
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */

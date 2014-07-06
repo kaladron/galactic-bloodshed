@@ -9,8 +9,8 @@
 #include "power.h"
 #include "buffers.h"
 
-#include "GB_server.p"
-#include "misc.p"
+#include "GB_server.h"
+#include "misc.h"
 
 extern int Defensedata[];
 
@@ -41,12 +41,12 @@ int getdefense(shiptype *);
 double p_factor(double, double);
 int planet_guns(int);
 void mutate_sector(sectortype *);
-#include "fire.p"
-#include "getplace.p"
-#include "shlmisc.p"
-#include "files_shl.p"
-#include "rand.p"
-#include "build.p"
+#include "fire.h"
+#include "getplace.h"
+#include "shlmisc.h"
+#include "files_shl.h"
+#include "rand.h"
+#include "build.h"
 
 int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
                        int ignore, char *long_msg, char *short_msg) {

@@ -76,7 +76,7 @@ void Putpower(struct power[MAXPLAYERS]);
 void Getpower(struct power[MAXPLAYERS]);
 void Putblock(struct block[MAXPLAYERS]);
 void Getblock(struct block[MAXPLAYERS]);
-#include "files_rw.p"
+#include "files_rw.h"
 
 void close_file(int fd) { close(fd); }
 

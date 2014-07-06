@@ -14,7 +14,7 @@
 #include "buffers.h"
 
 void zoom(int, int, int);
-#include "GB_server.p"
+#include "GB_server.h"
 
 void zoom(int Playernum, int Governor, int APcount) {
   double num, denom;

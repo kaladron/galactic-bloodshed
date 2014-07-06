@@ -24,10 +24,10 @@ extern struct tm *update_tm;
 void block(int, int, int);
 void power(int, int, int);
 void prepare_output_line(racetype *, racetype *, int, int);
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "victory.p"
-#include "prof.p"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "victory.h"
+#include "prof.h"
 
 void block(int Playernum, int Governor, int APcount) {
   register int i, n;

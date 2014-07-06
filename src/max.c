@@ -22,7 +22,7 @@ int maxsupport(racetype *, sectortype *, double, int);
 double compatibility(planettype *, racetype *);
 double gravity(planettype *);
 char *prin_ship_orbits(shiptype *);
-#include "files_shl.p"
+#include "files_shl.h"
 
 int maxsupport(reg racetype *r, reg sectortype *s, reg double c,
                reg int toxic) {

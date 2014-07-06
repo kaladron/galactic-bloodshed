@@ -19,16 +19,16 @@
 #include <string.h>
 
 void dock(int, int, int, int);
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "files_shl.p"
-#include "getplace.p"
-#include "load.p"
-#include "rand.p"
-#include "capture.p"
-#include "teleg_send.p"
-#include "fire.p"
-#include "max.p"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "files_shl.h"
+#include "getplace.h"
+#include "load.h"
+#include "rand.h"
+#include "capture.h"
+#include "teleg_send.h"
+#include "fire.h"
+#include "max.h"
 
 void dock(int Playernum, int Governor, int APcount, int Assault) {
   shiptype *s, *s2, *s3, ship;

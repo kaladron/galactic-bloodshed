@@ -28,9 +28,9 @@ char *Dispshiploc_brief(shiptype *);
 char *Dispshiploc(shiptype *);
 char *Dispplace(int, int, placetype *);
 int testship(int, int, shiptype *);
-#include "files_shl.p"
-#include "shlmisc.p"
-#include "GB_server.p"
+#include "files_shl.h"
+#include "shlmisc.h"
+#include "GB_server.h"
 
 placetype Getplace(int Playernum, int Governor, char *string, int ignoreexpl) {
   placetype where; /* return value */

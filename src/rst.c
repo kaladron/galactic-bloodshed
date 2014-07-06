@@ -60,15 +60,15 @@ void star_getrships(int, int, int);
 int Getrship(int, int, int);
 void Free_rlist(void);
 int listed(int, char *);
-#include "files_shl.p"
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "getplace.p"
-#include "shootblast.p"
-#include "fire.p"
-#include "build.p"
-#include "max.p"
-#include "order.p"
+#include "files_shl.h"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "getplace.h"
+#include "shootblast.h"
+#include "fire.h"
+#include "build.h"
+#include "max.h"
+#include "order.h"
 
 void rst(int Playernum, int Governor, int APcount, int Rst) {
   int shipno;

@@ -24,14 +24,14 @@ extern char *Planet_types[];
 void map(int, int, int);
 void show_map(int, int, int, int, planettype *, int, int);
 char desshow(int, int, planettype *, int, int, racetype *);
-#include "getplace.p"
-#include "GB_server.p"
-#include "files_shl.p"
-#include "fire.p"
-#include "orbit.p"
-#include "shlmisc.p"
-#include "max.p"
-#include "rand.p"
+#include "getplace.h"
+#include "GB_server.h"
+#include "files_shl.h"
+#include "fire.h"
+#include "orbit.h"
+#include "shlmisc.h"
+#include "max.h"
+#include "rand.h"
 
 void map(int Playernum, int Governor, int APcount) {
   planettype *p;

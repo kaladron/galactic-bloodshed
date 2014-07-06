@@ -17,9 +17,9 @@ extern long Shipdata[NUMSTYPES][NUMABILS];
 extern char *Shipnames[];
 
 void examine(int, int, int);
-#include "files_shl.p"
-#include "GB_server.p"
-#include "shlmisc.p"
+#include "files_shl.h"
+#include "GB_server.h"
+#include "shlmisc.h"
 
 void examine(int Playernum, int Governor, int APcount) {
   shiptype *ship;

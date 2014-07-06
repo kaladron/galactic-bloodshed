@@ -33,14 +33,14 @@ placetype tmpdest;
 void proj_fuel(int, int, int);
 void fuel_output(int, int, double, double, double, double, int);
 int do_trip(double, double);
-#include "getplace.p"
-#include "GB_server.p"
-#include "files_shl.p"
-#include "fire.p"
-#include "max.p"
-#include "order.p"
-#include "moveship.p"
-#include "doship.p"
+#include "getplace.h"
+#include "GB_server.h"
+#include "files_shl.h"
+#include "fire.h"
+#include "max.h"
+#include "order.h"
+#include "moveship.h"
+#include "doship.h"
 
 void proj_fuel(int Playernum, int Governor, int APcount) {
   int shipno, opt_settings, current_settings,

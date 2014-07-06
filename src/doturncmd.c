@@ -35,15 +35,15 @@ void maintain(racetype *, int, int);
 int attack_planet(shiptype *);
 void output_ground_attacks(void);
 int planet_points(planettype *);
-#include "files_shl.p"
-#include "doship.p"
-#include "moveplanet.p"
-#include "build.p"
-#include "teleg_send.p"
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "rand.p"
-#include "doplanet.p"
+#include "files_shl.h"
+#include "doship.h"
+#include "moveplanet.h"
+#include "build.h"
+#include "teleg_send.h"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "rand.h"
+#include "doplanet.h"
 
 void do_turn(int update) {
   int star, i, j;

@@ -17,8 +17,8 @@ extern char *Desnames[];
 
 void relation(int, int, int);
 char *allied(racetype *, int, int, int);
-#include "shlmisc.p"
-#include "GB_server.p"
+#include "shlmisc.h"
+#include "GB_server.h"
 
 void relation(int Playernum, int Governor, int APcount) {
   int numraces;

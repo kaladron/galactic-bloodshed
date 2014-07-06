@@ -46,9 +46,9 @@ char *DEBUGrealloc(char *, int, char *, int);
 void DEBUGcheck(int, int);
 void DEBUGreset(int, int);
 #endif
-#include "GB_server.p"
-#include "files_shl.p"
-#include "max.p"
+#include "GB_server.h"
+#include "files_shl.h"
+#include "max.h"
 
 char *Ship(shiptype *s) {
   adr = !adr; /* switch between 0 and 1 - adr is a global variable */

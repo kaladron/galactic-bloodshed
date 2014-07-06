@@ -40,12 +40,12 @@ void orbit(int, int, int);
 void DispStar(int, int, int, startype *, int, int, char *);
 void DispPlanet(int, int, int, planettype *, char *, int, racetype *, char *);
 void DispShip(int, int, placetype *, shiptype *, planettype *, int, char *);
-#include "getplace.p"
-#include "GB_server.p"
-#include "files_shl.p"
-#include "shlmisc.p"
-#include "fire.p"
-#include "max.p"
+#include "getplace.h"
+#include "GB_server.h"
+#include "files_shl.h"
+#include "shlmisc.h"
+#include "fire.h"
+#include "max.h"
 
 void orbit(int Playernum, int Governor, int APcount) {
   register int sh, i, iq;

@@ -22,7 +22,7 @@
 #include "shipdata.h"
 #include "power.h"
 #include "buffers.h"
-#include "shootblast.p"
+#include "shootblast.h"
 
 extern int ShipVector[];
 
@@ -56,14 +56,14 @@ int Shipcost(int, racetype *);
 void sell(int, int, int);
 void bid(int, int, int);
 int shipping_cost(int, int, double *, int);
-#include "GB_server.p"
-#include "files_shl.p"
-#include "getplace.p"
-#include "shlmisc.p"
-#include "fire.p"
-#include "land.p"
-#include "shootblast.p"
-#include "teleg_send.p"
+#include "GB_server.h"
+#include "files_shl.h"
+#include "getplace.h"
+#include "shlmisc.h"
+#include "fire.h"
+#include "land.h"
+#include "shootblast.h"
+#include "teleg_send.h"
 
 /* upgrade ship characteristics */
 void upgrade(int Playernum, int Governor, int APcount) {

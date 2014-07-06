@@ -22,14 +22,14 @@ void planet_doVN(shiptype *, planettype *);
 void order_berserker(shiptype *);
 void order_VN(shiptype *);
 
-#include "max.p"
-#include "fire.p"
-#include "load.p"
-#include "teleg_send.p"
-#include "rand.p"
-#include "build.p"
-#include "perm.p"
-#include "shlmisc.p"
+#include "max.h"
+#include "fire.h"
+#include "load.h"
+#include "teleg_send.h"
+#include "rand.h"
+#include "build.h"
+#include "perm.h"
+#include "shlmisc.h"
 
 void do_VN(shiptype *ship) {
   planettype *p;

@@ -18,10 +18,10 @@
 
 void technology(int, int, int);
 double tech_prod(int, int);
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "files_shl.p"
-#include "mobiliz.p"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "files_shl.h"
+#include "mobiliz.h"
 
 void technology(int Playernum, int Governor, int APcount) {
   short invest;

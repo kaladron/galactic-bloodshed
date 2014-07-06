@@ -26,15 +26,15 @@ void check_overload(shiptype *, int, int *);
 void check_retal_strength(shiptype *, int *);
 int laser_on(shiptype *);
 
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "files_shl.p"
-#include "getplace.p"
-#include "shootblast.p"
-#include "load.p"
-#include "teleg_send.p"
-#include "rand.p"
-#include "doship.p"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "files_shl.h"
+#include "getplace.h"
+#include "shootblast.h"
+#include "load.h"
+#include "teleg_send.h"
+#include "rand.h"
+#include "doship.h"
 
 void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
 {

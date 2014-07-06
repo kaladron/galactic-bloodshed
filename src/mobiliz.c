@@ -22,9 +22,9 @@
 void mobilize(int, int, int);
 void tax(int, int, int);
 int control(int, int, startype *);
-#include "GB_server.p"
-#include "shlmisc.p"
-#include "files_shl.p"
+#include "GB_server.h"
+#include "shlmisc.h"
+#include "files_shl.h"
 
 void mobilize(int Playernum, int Governor, int APcount) {
   int sum_mob = 0;

@@ -1,56 +1,38 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- * doship -- do one ship turn.
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "GB_copyright.h"
+/* doship -- do one ship turn. */
+
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "doturn.h"
-#include "power.h"
-#include "buffers.h"
+#include "doship.h"
+
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-extern long Shipdata[NUMSTYPES][NUMABILS];
-
-void doship(shiptype *, int);
-void domass(shiptype *);
-void doown(shiptype *);
-void domissile(shiptype *);
-void domine(int, int);
-void doabm(shiptype *);
-void do_repair(shiptype *);
-void do_habitat(shiptype *);
-void do_pod(shiptype *);
-int infect_planet(int, int, int);
-void do_meta_infect(int, planettype *);
-void do_canister(shiptype *);
-void do_greenhouse(shiptype *);
-void do_mirror(shiptype *);
-void do_god(shiptype *);
-void do_ap(shiptype *);
-double crew_factor(shiptype *);
-double ap_planet_factor(planettype *);
-void do_oap(shiptype *);
-int do_weapon_plant(shiptype *);
-#include "rand.h"
 #include "GB_server.h"
-#include "files_shl.h"
-#include "build.h"
-#include "moveship.h"
 #include "VN.h"
-#include "shlmisc.h"
-#include "max.h"
-#include "shootblast.h"
-#include "teleg_send.h"
+#include "buffers.h"
+#include "build.h"
+#include "doturn.h"
+#include "files.h"
+#include "files_shl.h"
 #include "fire.h"
 #include "load.h"
+#include "max.h"
+#include "moveship.h"
 #include "perm.h"
+#include "power.h"
+#include "races.h"
+#include "rand.h"
+#include "ships.h"
+#include "shlmisc.h"
+#include "shootblast.h"
+#include "teleg_send.h"
+#include "tweakables.h"
+#include "vars.h"
 
 void doship(shiptype *ship, int update) {
   racetype *Race;

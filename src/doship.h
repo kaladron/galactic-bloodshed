@@ -1,22 +1,32 @@
-/* doship.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-extern void doship(shiptype *, int);
-extern void domass(shiptype *);
-extern void doown(shiptype *);
-extern void domissile(shiptype *);
-extern void domine(int, int);
-extern void doabm(shiptype *);
-extern void do_repair(shiptype *);
-extern void do_habitat(shiptype *);
-extern void do_pod(shiptype *);
-extern int infect_planet(int, int, int);
-extern void do_meta_infect(int, planettype *);
-extern void do_canister(shiptype *);
-extern void do_greenhouse(shiptype *);
-extern void do_mirror(shiptype *);
-extern void do_god(shiptype *);
-extern void do_ap(shiptype *);
-extern double crew_factor(shiptype *);
-extern double ap_planet_factor(planettype *);
-extern void do_oap(shiptype *);
-extern int do_weapon_plant(shiptype *);
+#ifndef DOSHIP_H
+#define DOSHIP_H
+
+#include "ships.h"
+#include "vars.h"
+
+void doship(shiptype *, int);
+void domass(shiptype *);
+void doown(shiptype *);
+void domissile(shiptype *);
+void domine(int, int);
+void doabm(shiptype *);
+void do_repair(shiptype *);
+void do_habitat(shiptype *);
+void do_pod(shiptype *);
+int infect_planet(int, int, int);
+void do_meta_infect(int, planettype *);
+void do_canister(shiptype *);
+void do_greenhouse(shiptype *);
+void do_mirror(shiptype *);
+void do_god(shiptype *);
+void do_ap(shiptype *);
+double crew_factor(shiptype *);
+double ap_planet_factor(planettype *);
+void do_oap(shiptype *);
+int do_weapon_plant(shiptype *);
+
+#endif // DOSHIP_H

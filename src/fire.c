@@ -1,9 +1,8 @@
-/* Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- * fire.c -- fire at ship or planet from ship or planet
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/* fire.c -- fire at ship or planet from ship or planet */
 
 #define EXTERN extern
 #include "fire.h"

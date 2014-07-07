@@ -1,84 +1,41 @@
-int Sectormappos;
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *  doplanet.c -- do one turn on a planet.
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include <math.h>
-#include <string.h>
-/*#include <malloc.h>*/
+/*  doplanet.c -- do one turn on a planet. */
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "doturn.h"
-#include "power.h"
-#include "buffers.h"
+#include "doplanet.h"
 
-extern long Shipdata[NUMSTYPES][NUMABILS];
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-/* types of accidents that can occur on a toxic planet. */
-char *Accidents_uninhab[] = {
-  /* on water sectors */
-  "Widespread waste spill",
-  "Ecological instability",
-  /* on land sectors */
-  "Massive volcanic eruptions",
-  "Ecological instability",
-  /* on mountain sectors */
-  "Massive volcanic eruptions",
-  "Ecological instability",
-  /* gas sectors */
-  "Lethal toxin concentration",
-  "Ecological instability",
-  /* ice */
-  "Leak in isolated chemical plant",
-  "Continental warming cause glacial melting",
-  /* plate */
-  "Nuclear accident",
-  "Untended nuclear plant explodes"
-};
-
-char *Accidents_inhab[] = {
-  "Nuclear accident",           "Terrorists trigger nuclear weapon",
-  "Release of toxic waste",     "Weapons dump explosion",
-  "Massive starvation",         "Virus epidemic",
-  "famine",                     "starvation",
-  "Widespread cultist suicide", "Atomic experiment gone wrong",
-  "Great Hrung collapse"
-};
-
-int doplanet(int, planettype *, int);
-int moveship_onplanet(shiptype *, planettype *);
-void terraform(shiptype *, planettype *);
-void plow(shiptype *, planettype *);
-void do_dome(shiptype *, planettype *);
-void do_quarry(shiptype *, planettype *);
-void do_berserker(shiptype *, planettype *);
-void do_recover(planettype *, int, int);
-double est_production(sectortype *);
-#include "files_shl.h"
-#include "perm.h"
-#include "max.h"
-#include "VN.h"
-#include "fire.h"
-#include "moveship.h"
-#include "doship.h"
-#include "load.h"
-#include "dosector.h"
-#include "rand.h"
-#include "teleg_send.h"
-#include "build.h"
 #include "GB_server.h"
-#include "shootblast.h"
+#include "VN.h"
 #include "autoshoot.h"
-#include "tech.h"
+#include "buffers.h"
+#include "build.h"
+#include "dosector.h"
+#include "doship.h"
+#include "doturn.h"
+#include "files_shl.h"
+#include "fire.h"
+#include "load.h"
+#include "max.h"
 #include "move.h"
+#include "moveship.h"
+#include "perm.h"
+#include "power.h"
+#include "races.h"
+#include "rand.h"
+#include "ships.h"
 #include "shlmisc.h"
+#include "shootblast.h"
+#include "tech.h"
+#include "teleg_send.h"
+#include "tweakables.h"
+#include "vars.h"
 
 int doplanet(int starnum, planettype *planet, int planetnum) {
   int shipno, x, y, nukex, nukey;
@@ -90,7 +47,6 @@ int doplanet(int starnum, planettype *planet, int planetnum) {
   int timer = 20;
   unsigned char allmod = 0, allexp = 0;
 
-  Sectormappos = planet->sectormappos;
 #if 0
 if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
     return 0;  /* no one's here now */

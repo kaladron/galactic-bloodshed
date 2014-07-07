@@ -1,11 +1,21 @@
-/* doplanet.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-extern int doplanet(int, planettype *, int);
-extern int moveship_onplanet(shiptype *, planettype *);
-extern void terraform(shiptype *, planettype *);
-extern void plow(shiptype *, planettype *);
-extern void do_dome(shiptype *, planettype *);
-extern void do_quarry(shiptype *, planettype *);
-extern void do_berserker(shiptype *, planettype *);
-extern void do_recover(planettype *, int, int);
-extern double est_production(sectortype *);
+#ifndef DOPLANET_H
+#define DOPLANET_H
+
+#include "ships.h"
+#include "vars.h"
+
+int doplanet(int, planettype *, int);
+int moveship_onplanet(shiptype *, planettype *);
+void terraform(shiptype *, planettype *);
+void plow(shiptype *, planettype *);
+void do_dome(shiptype *, planettype *);
+void do_quarry(shiptype *, planettype *);
+void do_berserker(shiptype *, planettype *);
+void do_recover(planettype *, int, int);
+double est_production(sectortype *);
+
+#endif // DOPLANET_H

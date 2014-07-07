@@ -39,4 +39,8 @@ struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
 struct vnbrain VN_brain;
 struct sectinfo Sectinfo[MAX_X][MAX_Y];
 
+const char Psymbol[] = { '@', 'o', 'O', '#', '~', '.', ')', '-' };
+const char *Planet_types[] = { "Class M", "Asteroid",  "Airless", "Iceball",
+                               "Jovian",  "Waterball", "Forest",  "Desert" };
+
 #endif // GLOBALS_H

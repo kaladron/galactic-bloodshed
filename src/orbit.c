@@ -26,15 +26,12 @@
 #include <curses.h>
 #include <stdio.h>
 #include <string.h>
+#include "map.h"
 extern char Shipltrs[];
 double Lastx, Lasty, Zoom;
 int SCALE = 100;
 
 racetype *Race;
-
-char Psymbol[] = { '@', 'o', 'O', '#', '~', '.', ')', '-' };
-char *Planet_types[] = { "Class M", "Asteroid",  "Airless", "Iceball",
-                         "Jovian",  "Waterball", "Forest",  "Desert" };
 
 void orbit(int, int, int);
 void DispStar(int, int, int, startype *, int, int, char *);

@@ -1,26 +1,25 @@
-/*
-** Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
-** smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
-** Restrictions in GB_copyright.h.
-**  enslave.c -- ENSLAVE the planet below.
-*/
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "GB_copyright.h"
+/* enslave.c -- ENSLAVE the planet below. */
+
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "buffers.h"
-#include <signal.h>
+#include "enslave.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-void enslave(int, int, int);
+#include "GB_server.h"
+#include "buffers.h"
 #include "files_shl.h"
 #include "getplace.h"
-#include "GB_server.h"
-#include "shlmisc.h"
 #include "max.h"
+#include "races.h"
+#include "ships.h"
+#include "shlmisc.h"
+#include "vars.h"
 
 void enslave(int Playernum, int Governor, int APcount) {
   shiptype *s, *s2;

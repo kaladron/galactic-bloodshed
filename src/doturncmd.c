@@ -1,49 +1,35 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- * doturn -- does one turn.
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include <math.h>
+/* doturn -- does one turn. */
+
 #include <ctype.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "doturn.h"
-#include "power.h"
-#include "buffers.h"
+#include "doturncmd.h"
 
-FILE *fopen();
-extern char *Commod[];
-extern long Shipdata[NUMSTYPES][NUMABILS];
-
-void do_turn(int);
-int APadd(int, int, racetype *);
-int governed(racetype *);
-void fix_stability(startype *);
-void do_reset(int);
-void handle_victory(void);
-void make_discoveries(racetype *);
-#ifdef MARKET
-void maintain(racetype *, int, int);
-#endif
-int attack_planet(shiptype *);
-void output_ground_attacks(void);
-int planet_points(planettype *);
-#include "files_shl.h"
-#include "doship.h"
-#include "moveplanet.h"
-#include "build.h"
-#include "teleg_send.h"
 #include "GB_server.h"
-#include "shlmisc.h"
-#include "rand.h"
+#include "buffers.h"
+#include "build.h"
 #include "doplanet.h"
+#include "doship.h"
+#include "doturn.h"
+#include "files.h"
+#include "files_shl.h"
+#include "moveplanet.h"
+#include "power.h"
+#include "races.h"
+#include "rand.h"
+#include "ships.h"
+#include "shlmisc.h"
+#include "teleg_send.h"
+#include "tweakables.h"
+#include "vars.h"
 
 void do_turn(int update) {
   int star, i, j;

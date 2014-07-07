@@ -1,15 +1,27 @@
-/* doturn.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-extern void do_turn(int);
-extern int APadd(int, int, racetype *);
-extern int governed(racetype *);
-extern void fix_stability(startype *);
-extern void do_reset(int);
-extern void handle_victory(void);
-extern void make_discoveries(racetype *);
+#ifndef DOTURNCMD_H
+#define DOTURNCMD_H
+
+#include "config.h"
+#include "races.h"
+#include "ships.h"
+#include "vars.h"
+
+void do_turn(int);
+int APadd(int, int, racetype *);
+int governed(racetype *);
+void fix_stability(startype *);
+void do_reset(int);
+void handle_victory(void);
+void make_discoveries(racetype *);
 #ifdef MARKET
-extern void maintain(racetype *, int, int);
+void maintain(racetype *, int, int);
 #endif
-extern int attack_planet(shiptype *);
-extern void output_ground_attacks(void);
-extern int planet_points(planettype *);
+int attack_planet(shiptype *);
+void output_ground_attacks(void);
+int planet_points(planettype *);
+
+#endif // DOTURNCMD_H

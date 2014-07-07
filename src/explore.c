@@ -22,7 +22,8 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void tech_report_star(int, int, startype *, int, int *, double *, double *);
+static void tech_report_star(int, int, startype *, int, int *, double *,
+                             double *);
 
 void colonies_at_star(int Playernum, int Governor, racetype *Race, int star,
                       int mode) {
@@ -370,8 +371,9 @@ void tech_status(int Playernum, int Governor, int APcount) {
   notify(Playernum, Governor, buf);
 }
 
-static void tech_report_star(int Playernum, int Governor, startype *star, int snum,
-                      int *t_invest, double *t_gain, double *t_max_gain) {
+static void tech_report_star(int Playernum, int Governor, startype *star,
+                             int snum, int *t_invest, double *t_gain,
+                             double *t_max_gain) {
   int i;
   planettype *pl;
   char str[200];

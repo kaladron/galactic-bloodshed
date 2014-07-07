@@ -34,7 +34,7 @@ static placetype tmpdest;
 
 static int do_trip(double fuel, double gravity_factor);
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
-                 double grav, double mass, int segs);
+                        double grav, double mass, int segs);
 
 void proj_fuel(int Playernum, int Governor, int APcount) {
   int shipno, opt_settings, current_settings, current_segs, computing = 1;
@@ -213,7 +213,7 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
 }
 
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
-                 double grav, double mass, int segs) {
+                        double grav, double mass, int segs) {
   char buf[1024], grav_buf[1024];
 
   if (grav > 0.00)

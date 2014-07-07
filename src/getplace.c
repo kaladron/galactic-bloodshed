@@ -26,8 +26,8 @@
 
 static char Disps[PLACENAMESIZE];
 
-static placetype Getplace2(int Playernum, int Governor, char *string, placetype *where,
-                    int ignoreexpl, int God);
+static placetype Getplace2(int Playernum, int Governor, char *string,
+                           placetype *where, int ignoreexpl, int God);
 
 placetype Getplace(int Playernum, int Governor, char *string, int ignoreexpl) {
   placetype where; /* return value */
@@ -85,8 +85,8 @@ placetype Getplace(int Playernum, int Governor, char *string, int ignoreexpl) {
   }
 }
 
-static placetype Getplace2(int Playernum, int Governor, char *string, placetype *where,
-                    int ignoreexpl, int God) {
+static placetype Getplace2(int Playernum, int Governor, char *string,
+                           placetype *where, int ignoreexpl, int God) {
   char substr[NAMESIZE];
   planettype *p;
   register int i, l;

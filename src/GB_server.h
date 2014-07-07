@@ -41,8 +41,8 @@ void adjust_morale(racetype *, racetype *, int);
 
 extern long next_update_time;  /* When will next update be... approximately */
 extern long next_segment_time; /* When will next segment be... approximately */
-extern int update_time; /* Interval between updates */
-extern int nsegments_done;    /* How many movements have we done so far? */
+extern int update_time;        /* Interval between updates */
+extern int nsegments_done;     /* How many movements have we done so far? */
 
 extern const char *Desnames[];
 extern const char Dessymbols[];

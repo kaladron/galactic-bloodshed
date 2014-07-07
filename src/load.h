@@ -25,7 +25,7 @@ void rcv_popn(shiptype *, int, double);
 void rcv_troops(shiptype *, int, double);
 void do_transporter(racetype *, int, shiptype *);
 int landed_on(shiptype *, int);
-void unload_onto_alien_sector(int, int, planettype *, shiptype *,
-                              sectortype *, int, int);
+void unload_onto_alien_sector(int, int, planettype *, shiptype *, sectortype *,
+                              int, int);
 
 #endif // LOAD_H

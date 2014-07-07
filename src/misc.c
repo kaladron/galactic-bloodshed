@@ -11,6 +11,4 @@
 
 #include <math.h>
 
-double logscale(int x) {
-  return log10((double)x + 1.0) / 2.0;
-}
+double logscale(int x) { return log10((double)x + 1.0) / 2.0; }

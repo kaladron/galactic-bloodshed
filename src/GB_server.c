@@ -77,7 +77,7 @@ static int update_flag = 0;
 
 static long last_update_time;
 static long last_segment_time;
-static int nupdates_done;     /* number of updates so far */
+static int nupdates_done; /* number of updates so far */
 
 int port;              /* port selection */
 struct tm *current_tm; /* for watching for next update */

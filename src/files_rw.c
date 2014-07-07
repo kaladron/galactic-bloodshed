@@ -1,30 +1,20 @@
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/*  disk input/output routines */
+
 /*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *  disk input/output routines
- *
  *  Fileread(p, num, file, posn, routine); -- generic file read
  *  Filewrite(p, num, file, posn, routine); -- generic file write
  *
  */
 
-#include <errno.h>
-#include <signal.h>
+#include <stdio.h>
 #include <sys/file.h>
-#include <sys/types.h>
 #include <unistd.h>
 
-#include "GB_copyright.h"
-#define EXTERN extern
-#include "vars.h"
-#include "files.h"
-#include "buffers.h"
-
-extern int errno;
-
-void Fileread(int, char *, int, int);
-void Filewrite(int, char *, int, int);
+#include "files_rw.h"
 
 void Fileread(int fd, char *p, int num, int posn) {
   int n2;

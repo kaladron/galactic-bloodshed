@@ -1,36 +1,33 @@
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
 /*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
  *  Getplace -- returns directory level from string and current Dir
  *  Dispplace -- returns string from directory level
  *  testship(ship) -- tests various things for the ship.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include <string.h>
-#include <strings.h>
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
+#include "getplace.h"
+
+#include "GB_server.h"
+#include "buffers.h"
+#include "files_shl.h"
 #include "races.h"
 #include "ships.h"
-#include "power.h"
-#include "buffers.h"
-
-char Disps[PLACENAMESIZE];
-placetype Getplace(int, int, char *, int);
-placetype Getplace2(int, int, char *, placetype *, int, int);
-char *Dispshiploc_brief(shiptype *);
-char *Dispshiploc(shiptype *);
-char *Dispplace(int, int, placetype *);
-int testship(int, int, shiptype *);
-#include "files_shl.h"
 #include "shlmisc.h"
-#include "GB_server.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static char Disps[PLACENAMESIZE];
+
+static placetype Getplace2(int Playernum, int Governor, char *string, placetype *where,
+                    int ignoreexpl, int God);
 
 placetype Getplace(int Playernum, int Governor, char *string, int ignoreexpl) {
   placetype where; /* return value */
@@ -88,7 +85,7 @@ placetype Getplace(int Playernum, int Governor, char *string, int ignoreexpl) {
   }
 }
 
-placetype Getplace2(int Playernum, int Governor, char *string, placetype *where,
+static placetype Getplace2(int Playernum, int Governor, char *string, placetype *where,
                     int ignoreexpl, int God) {
   char substr[NAMESIZE];
   planettype *p;

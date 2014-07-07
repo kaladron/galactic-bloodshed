@@ -7,11 +7,10 @@
 
 #include "ships.h"
 
-extern placetype Getplace(int, int, char *, int);
-extern placetype Getplace2(int, int, char *, placetype *, int, int);
-extern char *Dispshiploc_brief(shiptype *);
-extern char *Dispshiploc(shiptype *);
-extern char *Dispplace(int, int, placetype *);
-extern int testship(int, int, shiptype *);
+placetype Getplace(int, int, char *, int);
+char *Dispshiploc_brief(shiptype *);
+char *Dispshiploc(shiptype *);
+char *Dispplace(int, int, placetype *);
+int testship(int, int, shiptype *);
 
 #endif // GETPLACE_H

@@ -73,9 +73,6 @@ struct stat sbuf;
 #include "interface.h"
 #include "buffers.h"
 
-/* datafile descriptors */
-int commoddata, pdata, racedata, sectdata, shdata, stdata;
-
 extern long Shipdata[NUMSTYPES][NUMABILS];
 extern int errno;
 int shutdown_flag = 0;

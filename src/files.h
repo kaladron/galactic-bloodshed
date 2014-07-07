@@ -1,8 +1,9 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky, { *
- * smq@ucscb.ucsc.edu, mods by people in GB.c, enroll.dat.
- * Restrictions in GB.c.
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+#ifndef FILES_H
+#define FILES_H
 
 #define PATH(file) "/tmp/GB/" #file
 #define DIRPATH(dir, file) "/tmp/GB/" dir #file
@@ -51,3 +52,5 @@
 #define ADDRESSFL PATH(Addresses)
 
 extern char *Files[];
+
+#endif // FILES_H

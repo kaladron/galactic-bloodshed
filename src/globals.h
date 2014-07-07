@@ -55,4 +55,6 @@ const char Dessymbols[] = { CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
                             CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
                             CHAR_DESERT, CHAR_PLATED, CHAR_WASTED };
 
+racetype *Race;
+
 #endif // GLOBALS_H

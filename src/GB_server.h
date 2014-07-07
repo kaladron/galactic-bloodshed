@@ -47,4 +47,6 @@ extern int nsegments_done;    /* How many movements have we done so far? */
 extern const char *Desnames[];
 extern const char Dessymbols[];
 
+extern racetype *Race;
+
 #endif // GB_SERVER_H

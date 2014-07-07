@@ -13,8 +13,6 @@
 #include "ships.h"
 #include "buffers.h"
 
-extern char *Desnames[];
-
 void relation(int, int, int);
 char *allied(racetype *, int, int, int);
 #include "shlmisc.h"

@@ -44,4 +44,7 @@ extern long next_segment_time; /* When will next segment be... approximately */
 extern int update_time; /* Interval between updates */
 extern int nsegments_done;    /* How many movements have we done so far? */
 
+extern const char *Desnames[];
+extern const char Dessymbols[];
+
 #endif // GB_SERVER_H

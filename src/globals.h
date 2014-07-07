@@ -45,7 +45,14 @@ const char *Planet_types[] = { "Class M", "Asteroid",  "Airless", "Iceball",
 
 long next_update_time;  /* When will next update be... approximately */
 long next_segment_time; /* When will next segment be... approximately */
-int update_time; /* Interval between updates */
-int nsegments_done;    /* How many movements have we done so far? */
+int update_time;        /* Interval between updates */
+int nsegments_done;     /* How many movements have we done so far? */
+
+const char *Desnames[] = { "ocean",  "land",   "mountainous", "gaseous", "ice",
+                           "forest", "desert", "plated",      "wasted" };
+
+const char Dessymbols[] = { CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
+                            CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
+                            CHAR_DESERT, CHAR_PLATED, CHAR_WASTED };
 
 #endif // GLOBALS_H

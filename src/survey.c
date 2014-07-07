@@ -28,7 +28,6 @@
 #include "vars.h"
 
 #define MAX_SHIPS_PER_SECTOR 10
-extern char *Desnames[], Dessymbols[];
 
 static char *Tox[] = {
   "Stage 0, mild",

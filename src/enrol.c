@@ -62,11 +62,6 @@ double db_Metabolism[RACIAL_TYPES] = { 3.0,  2.7,  2.4, 1.0,  1.15,
 double Likes[15] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2,
                      0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 };
 
-char *Desnames[] = { "ocean",              "land",   "mountainous", "gaseous",
-                     "ice",                "forest", "desert",      "plated",
-                     "error in des type!", /* (illegal values) */
-                     "err in des type!" };
-
 int main() {
   int x, y;
   int pnum, star = 0, found = 0, check, vacant, count, i, j, Playernum;

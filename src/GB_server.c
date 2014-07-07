@@ -253,13 +253,6 @@ void DEBUG_check(int, int);
 void DEBUG_reset(int, int);
 #endif
 
-char *Desnames[] = { "ocean",  "land",   "mountainous", "gaseous", "ice",
-                     "forest", "desert", "plated",      "wasted" };
-
-char Dessymbols[] = { CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
-                      CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
-                      CHAR_DESERT, CHAR_PLATED, CHAR_WASTED };
-
 int main(int argc, char **argv) {
   int i;
   struct stat stbuf;

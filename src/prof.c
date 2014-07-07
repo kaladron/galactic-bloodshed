@@ -17,8 +17,6 @@
 #include "ships.h"
 #include "buffers.h"
 
-extern char *Desnames[];
-
 void whois(int, int, int);
 void profile(int, int, int);
 char *Estimate_f(double, racetype *, int);

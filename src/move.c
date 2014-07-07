@@ -19,9 +19,6 @@
 #include "buffers.h"
 #include "defense.h"
 
-extern char *Desnames[];
-extern char Dessymbols[];
-
 void arm(int, int, int, int);
 void move_popn(int, int, int);
 void walk(int, int, int);

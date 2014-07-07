@@ -218,13 +218,10 @@ RACEGENOBJS = enroll.o \
 	GB_racegen.o	\
 	shlmisc.o
 
-# objects for guardian
-GUARDOBJS = guardian.o
-
-all: GB enrol racegen makeuniv guardian
+all: GB enrol racegen makeuniv
 
 clean:
-	-rm -f *.o GB enrol racegen makeuniv guardian
+	-rm -f *.o GB enrol racegen makeuniv
 
 # the shell 
 GB : ${SHOBJS}
@@ -239,10 +236,6 @@ dissolve.o doturncmd.o doship.o doplanet.o moveship.o moveplanet.o : doturn.h
 moveship.o : vars.h ships.h shipdata.h
 doturncmd.o doplanet.o doship.o : power.h
 
-
-#guardian program
-guardian : ${GUARDOBJS}
-	${CC} -o guardian ${GUARDOBJS} -lcurses -ltermcap -lm
 
 #sizes : vars.h ships.h races.h
 #	 sizes.c

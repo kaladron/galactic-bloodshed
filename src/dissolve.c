@@ -1,28 +1,26 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- * dissolve.c -- commit suicide, nuke all ships and sectors;
- * July 24th, 1989, John Deragon, cruz@cadman.nyu.edu
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "GB_copyright.h"
+/* dissolve.c -- commit suicide, nuke all ships and sectors; */
+
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "doturn.h"
-#include "power.h"
-#include "buffers.h"
-#include <math.h>
+#include "dissolve.h"
 
-void dissolve(int, int);
-int revolt(planettype *, int, int);
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "GB_server.h"
+#include "buffers.h"
+#include "files.h"
 #include "files_shl.h"
+#include "races.h"
+#include "rand.h"
+#include "ships.h"
 #include "shlmisc.h"
 #include "teleg_send.h"
-#include "rand.h"
+#include "tweakables.h"
+#include "vars.h"
 
 void dissolve(int Playernum, int Governor) {
   int n_ships;

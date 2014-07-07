@@ -70,11 +70,10 @@ struct stat sbuf;
 #include "power.h"
 #include "doturn.h"
 
-#include "interface.h"
 #include "buffers.h"
 
-int shutdown_flag = 0;
-int update_flag = 0;
+static int shutdown_flag = 0;
+static int update_flag = 0;
 
 static long last_update_time;
 static long last_segment_time;
@@ -178,7 +177,7 @@ void do_segment(int, int);
 void parse_connect(char *, char *, char *);
 void close_sockets(void);
 void dump_users(struct descriptor_data *);
-void process_command(int, int, char *);
+static void process_command(int, int, char *);
 void load_race_data(void);
 void load_star_data(void);
 void GB_time(int, int);
@@ -245,6 +244,9 @@ void adjust_morale(racetype *, racetype *, int);
 #include "toxicity.h"
 #include "victory.h"
 #include "zoom.h"
+
+#define MAX_COMMAND_LEN 512
+#define BUFFER_LEN ((MAX_COMMAND_LEN) * 8)
 
 #ifdef DEBUG
 void DEBUG_check(int, int);
@@ -1436,7 +1438,7 @@ void dump_users(struct descriptor_data *e) {
   queue_string(e, "Finished.\n");
 }
 
-void process_command(int Playernum, int Governor, char *comm) {
+static void process_command(int Playernum, int Governor, char *comm) {
   int j, God, Guest;
   char *string;
   racetype *r;

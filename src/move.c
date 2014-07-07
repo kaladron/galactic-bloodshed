@@ -1,47 +1,34 @@
-/*
-** Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
-** smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
-** Restrictions in GB_copyright.h.
-**
-**  move.c -- move population and assault aliens on target sector
-*/
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include <signal.h>
+/*  move.c -- move population and assault aliens on target sector */
+
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
+#include "move.h"
+
+#include "GB_server.h"
 #include "buffers.h"
 #include "defense.h"
-
-void arm(int, int, int, int);
-void move_popn(int, int, int);
-void walk(int, int, int);
-int get_move(char, int, int, int *, int *, planettype *);
-void mech_defend(int, int, int *, int, planettype *, int, int, sectortype *,
-                 int, int, sectortype *);
-void mech_attack_people(shiptype *, int *, int *, racetype *, racetype *,
-                        sectortype *, int, int, int, char *, char *);
-void people_attack_mech(shiptype *, int, int, racetype *, racetype *,
-                        sectortype *, int, int, char *, char *);
-void ground_attack(racetype *, racetype *, int *, int, unsigned short *,
-                   unsigned short *, unsigned int, unsigned int, double, double,
-                   double *, double *, int *, int *, int *);
-#include "GB_server.h"
+#include "files.h"
 #include "files_shl.h"
-#include "mobiliz.h"
-#include "shlmisc.h"
-#include "rand.h"
-#include "teleg_send.h"
-#include "getplace.h"
 #include "fire.h"
-#include "shootblast.h"
+#include "getplace.h"
 #include "load.h"
+#include "mobiliz.h"
+#include "races.h"
+#include "rand.h"
+#include "ships.h"
+#include "shlmisc.h"
+#include "shootblast.h"
+#include "teleg_send.h"
+#include "tweakables.h"
+#include "vars.h"
 
 void arm(int Playernum, int Governor, int APcount, int mode) {
   planettype *planet;

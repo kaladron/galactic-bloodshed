@@ -1,7 +1,16 @@
-/* dosector.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-extern void produce(startype *, planettype *, sectortype *);
-extern void spread(planettype *, sectortype *, int, int);
-extern void Migrate2(planettype *, int, int, sectortype *, int *);
-extern void explore(planettype *, sectortype *, int, int, int);
-extern void plate(sectortype *);
+#ifndef DOSECTOR_H
+#define DOSECTOR_H
+
+#include "vars.h"
+
+void produce(startype *, planettype *, sectortype *);
+void spread(planettype *, sectortype *, int, int);
+void Migrate2(planettype *, int, int, sectortype *, int *);
+void explore(planettype *, sectortype *, int, int, int);
+void plate(sectortype *);
+
+#endif // DOSECTOR_H

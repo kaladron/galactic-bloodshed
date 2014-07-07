@@ -1,34 +1,25 @@
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
 /*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h, enroll.dat.
- * Restrictions in GB_copyright.h.
- *  dosector.c
  *  produce() -- produce, stuff like that, on a sector.
  *  spread()  -- spread population around.
  *  explore() -- mark sector and surrounding sectors as having been explored.
  */
-#include <math.h>
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "power.h"
-#include "races.h"
-#include "ships.h"
+#include "dosector.h"
+
 #include "doturn.h"
-
-/* produce stuff in sector */
-
-void produce(startype *, planettype *, sectortype *);
-void spread(planettype *, sectortype *, int, int);
-void Migrate2(planettype *, int, int, sectortype *, int *);
-void explore(planettype *, sectortype *, int, int, int);
-void plate(sectortype *);
-#include "rand.h"
 #include "max.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "order.h"
+#include "races.h"
+#include "rand.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static const int x_adj[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
+static const int y_adj[] = { 1, 1, 1, 0, 0, -1, -1, -1 };
 
 void produce(startype *star, planettype *planet, sectortype *s) {
   reg int ss;
@@ -115,9 +106,6 @@ void produce(startype *star, planettype *planet, sectortype *s) {
   else if (!s->popn)
     s->owner = 0;
 }
-
-int x_adj[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
-int y_adj[] = { 1, 1, 1, 0, 0, -1, -1, -1 };
 
 void spread(reg planettype *pl, reg sectortype *s, reg int x, reg int y) {
   int people;

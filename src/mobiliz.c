@@ -1,30 +1,26 @@
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
 /*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
  * mobiliz.c -- persuade people to build military stuff.
  *    Sectors that are mobilized produce Destructive Potential in
  *    proportion to the % they are mobilized.  they are also more
  *    damage-resistant.
  */
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "buffers.h"
-#include "races.h"
-#include "power.h"
-#include <signal.h>
-#include <ctype.h>
+#include "mobiliz.h"
 
-void mobilize(int, int, int);
-void tax(int, int, int);
-int control(int, int, startype *);
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "GB_server.h"
-#include "shlmisc.h"
+#include "buffers.h"
 #include "files_shl.h"
+#include "races.h"
+#include "shlmisc.h"
+#include "vars.h"
 
 void mobilize(int Playernum, int Governor, int APcount) {
   int sum_mob = 0;

@@ -1,54 +1,34 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- *  load.c -- load/unload stuff
- */
-#include <signal.h>
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/*  load.c -- load/unload stuff */
+
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
+#include "load.h"
+
+#include "GB_server.h"
 #include "buffers.h"
 #include "defense.h"
-
-extern char Dessymbols[];
-extern char *Desnames[];
-char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
-
-void load(int, int, int, int);
-void jettison(int, int, int);
-int jettison_check(int, int, int, int);
-void dump(int, int, int);
-void transfer(int, int, int);
-void mount(int, int, int, int);
-void use_fuel(shiptype *, double);
-void use_destruct(shiptype *, int);
-void use_resource(shiptype *, int);
-void use_popn(shiptype *, int, double);
-void rcv_fuel(shiptype *, double);
-void rcv_resource(shiptype *, int);
-void rcv_destruct(shiptype *, int);
-void rcv_popn(shiptype *, int, double);
-void rcv_troops(shiptype *, int, double);
-void do_transporter(racetype *, int, shiptype *);
-int landed_on(shiptype *, int);
-void unload_onto_alien_sector(int, int, planettype *, shiptype *, sectortype *,
-                              int, int);
-#include "getplace.h"
-#include "GB_server.h"
-#include "shlmisc.h"
 #include "files_shl.h"
 #include "fire.h"
-#include "max.h"
-#include "move.h"
+#include "getplace.h"
 #include "land.h"
+#include "move.h"
+#include "races.h"
 #include "rand.h"
+#include "ships.h"
+#include "shlmisc.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
+
+static int jettison_check(int, int, int, int);
 
 void load(int Playernum, int Governor, int APcount, int mode) {
   char commod;
@@ -623,7 +603,7 @@ void jettison(int Playernum, int Governor, int APcount) {
       free(s);
 }
 
-int jettison_check(int Playernum, int Governor, int amt, int max) {
+static int jettison_check(int Playernum, int Governor, int amt, int max) {
   if (amt == 0)
     amt = max;
   if (amt < 0) {

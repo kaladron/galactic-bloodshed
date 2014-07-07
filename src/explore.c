@@ -1,37 +1,28 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- * explore.c -- display systems/worlds explored
- *  (this command written by Dan Corrin, dan@geomech.engrg.uwo.ca)
- *
- * Thu Apr 11 02:19:44 MDT 1991
- *	Made mods to this prior, but forgot the header. :)
- *	Evan Koffler
- */
-#include <math.h>
-#include <strings.h>
-#include "GB_copyright.h"
-#define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "buffers.h"
-extern char Psymbol[], *Planet_types[];
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-void colonies_at_star(int, int, racetype *, int, int);
-void colonies(int, int, int, int);
-void distance(int, int, int);
-void star_locations(int, int, int);
-void exploration(int, int, int);
-void tech_status(int, int, int);
-void tech_report_star(int, int, startype *, int, int *, double *, double *);
-#include "getplace.h"
-#include "files_shl.h"
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define EXTERN extern
+#include "explore.h"
+
 #include "GB_server.h"
-#include "tech.h"
+#include "buffers.h"
+#include "files_shl.h"
+#include "getplace.h"
+#include "map.h"
 #include "max.h"
+#include "power.h"
+#include "races.h"
+#include "ships.h"
+#include "tech.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static void tech_report_star(int, int, startype *, int, int *, double *, double *);
 
 void colonies_at_star(int Playernum, int Governor, racetype *Race, int star,
                       int mode) {
@@ -379,7 +370,7 @@ void tech_status(int Playernum, int Governor, int APcount) {
   notify(Playernum, Governor, buf);
 }
 
-void tech_report_star(int Playernum, int Governor, startype *star, int snum,
+static void tech_report_star(int Playernum, int Governor, startype *star, int snum,
                       int *t_invest, double *t_gain, double *t_max_gain) {
   int i;
   planettype *pl;

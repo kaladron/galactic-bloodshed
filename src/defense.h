@@ -5,6 +5,6 @@
 #ifndef DEFENSE_H
 #define DEFENSE_H
 
-extern int Defensedata[];
+extern const int *Defensedata;
 
 #endif // DEFENSE_H

@@ -40,4 +40,6 @@ void sell(int, int, int);
 void bid(int, int, int);
 int shipping_cost(int, int, double *, int);
 
+extern const char *Commod[4];
+
 #endif // BUILD_H

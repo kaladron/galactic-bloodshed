@@ -1615,8 +1615,6 @@ int Shipcost(int i, racetype *r) {
 }
 
 #ifdef MARKET
-char *Commod[] = { "resources", "destruct", "fuel", "crystals" };
-
 void sell(int Playernum, int Governor, int APcount) {
   racetype *Race;
   planettype *p;

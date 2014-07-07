@@ -8,6 +8,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#include "doturn.h"
 #include "power.h"
 #include "races.h"
 #include "ships.h"
@@ -28,6 +29,14 @@ int ShipVector[NUMSTYPES];
 shiptype **ships;
 
 /* defense 5 is inpenetrable */
-int Defensedata[] = { 1, 1, 3, 2, 2, 3, 2, 4, 0 };
+const int Defensedata[] = { 1, 1, 3, 2, 2, 3, 2, 4, 0 };
+
+#ifdef MARKET
+const char *Commod[] = { "resources", "destruct", "fuel", "crystals" };
+#endif
+
+struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
+struct vnbrain VN_brain;
+struct sectinfo Sectinfo[MAX_X][MAX_Y];
 
 #endif // GLOBALS_H

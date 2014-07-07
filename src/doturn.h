@@ -1,10 +1,11 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB.c, enroll.dat.
- * Restrictions in GB.c.
- * doturn.h -- various turn things we are keeping track of.
- * Galactic Bloodshed by Robert Chansky
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+#ifndef DOTURN_H
+#define DOTURN_H
+
+#include "tweakables.h"
 
 struct stinfo {
   short temp_add; /* addition to temperature to each planet */
@@ -14,14 +15,14 @@ struct stinfo {
   unsigned char intimidated; /* assault platform is here */
 };
 
-EXTERN struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
+extern struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
 
 struct vnbrain {
   unsigned short Total_mad; /* total # of VN's destroyed so far */
   unsigned char Most_mad;   /* player most mad at */
 };
 
-EXTERN struct vnbrain VN_brain;
+extern struct vnbrain VN_brain;
 
 struct sectinfo {
   char explored;      /* sector has been explored */
@@ -29,4 +30,6 @@ struct sectinfo {
   unsigned char done; /* this sector has been updated */
 };
 
-EXTERN struct sectinfo Sectinfo[MAX_X][MAX_Y];
+extern struct sectinfo Sectinfo[MAX_X][MAX_Y];
+
+#endif // DOTURN_H

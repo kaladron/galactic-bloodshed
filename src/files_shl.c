@@ -1,81 +1,31 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- *  disk input/output routines & msc stuff
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/*  disk input/output routines & msc stuff
  *    all read routines lock the data they just accessed (the file is not
  *    closed).  write routines close and thus unlock that area.
- *
  */
-#include <strings.h>
-#include <signal.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/stat.h>
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#define SHIP_CONSISTENCY
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "buffers.h"
+#include "files_shl.h"
 
-int commoddata, pdata, racedata, sectdata, shdata, stdata;
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-extern int errno;
-
-void close_file(int);
-void open_data_files(void);
-void close_data_files(void);
-void openstardata(int *);
-void openshdata(int *);
-void opencommoddata(int *);
-void openpdata(int *);
-void opensectdata(int *);
-void openracedata(int *);
-void getsdata(struct stardata *S);
-#ifdef DEBUG
-void DEBUGgetrace(racetype **, int, char *, int);
-void DEBUGgetstar(startype **, int, char *, int);
-void DEBUGgetplanet(planettype **, int, int, char *, int);
-int DEBUGgetship(shiptype **, int, char *, int);
-int DEBUGgetcommod(commodtype **, int, char *, int);
-#else
-void getrace(racetype **, int);
-void getstar(startype **, int);
-void getplanet(planettype **, int, int);
-int getship(shiptype **, int);
-int getcommod(commodtype **, int);
-#endif
-void getsector(sectortype **, planettype *, int, int);
-void getsmap(sectortype *, planettype *);
-int getdeadship(void);
-int getdeadcommod(void);
-void putsdata(struct stardata *);
-void putrace(racetype *);
-void putstar(startype *, int);
-void putplanet(planettype *, int, int);
-void putsector(sectortype *, planettype *, int, int);
-void putsmap(sectortype *, planettype *);
-void putship(shiptype *);
-void putcommod(commodtype *, int);
-int Numraces(void);
-int Numships(void);
-int Numcommods(void);
-int Newslength(int);
-void clr_shipfree(void);
-void clr_commodfree(void);
-void makeshipdead(int);
-void makecommoddead(int);
-void Putpower(struct power[MAXPLAYERS]);
-void Getpower(struct power[MAXPLAYERS]);
-void Putblock(struct block[MAXPLAYERS]);
-void Getblock(struct block[MAXPLAYERS]);
+#include "files.h"
 #include "files_rw.h"
+#include "power.h"
+#include "races.h"
+#include "ships.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static int commoddata, pdata, racedata, sectdata, shdata, stdata;
 
 void close_file(int fd) { close(fd); }
 

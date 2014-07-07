@@ -1,46 +1,40 @@
-/* Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- * fuel.c -- See estimations in fuel consumption and travel time.
- *
- * Programmed by varneyml@gb.dorm.clarkson.edu
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/* fuel.c -- See estimations in fuel consumption and travel time. */
 
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
+#include "fuel.h"
 
-extern long next_segment_time;
-extern long next_update_time;
-extern long nsegments_done;
-extern int update_time;
-
-char plan_buf[1024];
-
-int number_segments;
-double x_0, y_0, x_1, y_1;
-shiptype *tmpship;
-placetype tmpdest;
-
-void proj_fuel(int, int, int);
-void fuel_output(int, int, double, double, double, double, int);
-int do_trip(double, double);
-#include "getplace.h"
 #include "GB_server.h"
+#include "doship.h"
 #include "files_shl.h"
 #include "fire.h"
+#include "getplace.h"
 #include "max.h"
-#include "order.h"
 #include "moveship.h"
-#include "doship.h"
+#include "order.h"
+#include "ships.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static char plan_buf[1024];
+
+static int number_segments;
+static double x_0, y_0, x_1, y_1;
+static shiptype *tmpship;
+static placetype tmpdest;
+
+static int do_trip(double fuel, double gravity_factor);
+static void fuel_output(int Playernum, int Governor, double dist, double fuel,
+                 double grav, double mass, int segs);
 
 void proj_fuel(int Playernum, int Governor, int APcount) {
   int shipno, opt_settings, current_settings, current_segs, computing = 1;
@@ -218,7 +212,7 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
   free(tmpship);
 }
 
-void fuel_output(int Playernum, int Governor, double dist, double fuel,
+static void fuel_output(int Playernum, int Governor, double dist, double fuel,
                  double grav, double mass, int segs) {
   char buf[1024], grav_buf[1024];
 
@@ -247,7 +241,7 @@ void fuel_output(int Playernum, int Governor, double dist, double fuel,
   }
 }
 
-int do_trip(double fuel, double gravity_factor) {
+static int do_trip(double fuel, double gravity_factor) {
   int effective_segment_number, trip_resolved, i;
   double gravity_fuel, tmpdist, fuel_level1;
 

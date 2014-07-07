@@ -73,19 +73,13 @@ struct stat sbuf;
 #include "interface.h"
 #include "buffers.h"
 
-extern long Shipdata[NUMSTYPES][NUMABILS];
-extern int errno;
 int shutdown_flag = 0;
 int update_flag = 0;
 
-long next_update_time;  /* When will next update be... approximately */
-long next_segment_time; /* When will next segment be... approximately */
-long last_update_time;
-long last_segment_time;
-int update_time; /* Interval between updates */
+static long last_update_time;
+static long last_segment_time;
+static int nupdates_done;     /* number of updates so far */
 
-int nsegments_done;    /* How many movements have we done so far? */
-int nupdates_done;     /* number of updates so far */
 int port;              /* port selection */
 struct tm *current_tm; /* for watching for next update */
 long clk;

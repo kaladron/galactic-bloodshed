@@ -1,5 +1,10 @@
-/* fuel.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-extern void proj_fuel(int, int, int);
-extern void fuel_output(int, int, double, double, double, double, int);
-extern int do_trip(double, double);
+#ifndef FUEL_H
+#define FUEL_H
+
+void proj_fuel(int, int, int);
+
+#endif // FUEL_H

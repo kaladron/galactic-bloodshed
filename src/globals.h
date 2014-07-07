@@ -43,4 +43,9 @@ const char Psymbol[] = { '@', 'o', 'O', '#', '~', '.', ')', '-' };
 const char *Planet_types[] = { "Class M", "Asteroid",  "Airless", "Iceball",
                                "Jovian",  "Waterball", "Forest",  "Desert" };
 
+long next_update_time;  /* When will next update be... approximately */
+long next_segment_time; /* When will next segment be... approximately */
+int update_time; /* Interval between updates */
+int nsegments_done;    /* How many movements have we done so far? */
+
 #endif // GLOBALS_H

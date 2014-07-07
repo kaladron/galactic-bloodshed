@@ -1,28 +1,28 @@
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
 /*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
  * maxsupport() -- return how many people one sector can support
  * compatibility() -- return how much race is compatible with planet
  * gravity() -- return gravity for planet
  * prin_ship_orbits() -- prints place ship orbits
  */
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "power.h"
-#include "races.h"
-#include "ships.h"
-#include <math.h>
+#include "max.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-int maxsupport(racetype *, sectortype *, double, int);
-double compatibility(planettype *, racetype *);
-double gravity(planettype *);
-char *prin_ship_orbits(shiptype *);
 #include "files_shl.h"
+#include "races.h"
+#include "ships.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static char Dispshiporbits_buf[PLACENAMESIZE + 13];
 
 int maxsupport(reg racetype *r, reg sectortype *s, reg double c,
                reg int toxic) {
@@ -63,8 +63,6 @@ double compatibility(reg planettype *planet, reg racetype *race) {
 double gravity(planettype *p) {
   return (double)(p->Maxx) * (double)(p->Maxy) * GRAV_FACTOR;
 }
-
-char Dispshiporbits_buf[PLACENAMESIZE + 13];
 
 char *prin_ship_orbits(shiptype *s) {
   shiptype *mothership;

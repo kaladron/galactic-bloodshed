@@ -1,4 +1,13 @@
-/* relation.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-extern void relation(int, int, int);
-extern char *allied(racetype *, int, int, int);
+#ifndef RELATION_H
+#define RELATION_H
+
+#include "races.h"
+
+void relation(int, int, int);
+char *allied(racetype *, int, int, int);
+
+#endif // RELATION_H

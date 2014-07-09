@@ -1,22 +1,19 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- * relation.c -- state relations among players
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "GB_copyright.h"
+/* relation.c -- state relations among players */
+
 #define EXTERN extern
-#include "vars.h"
-#include "races.h"
-#include "ships.h"
-#include "buffers.h"
+#include "relation.h"
 
-void relation(int, int, int);
-char *allied(racetype *, int, int, int);
-#include "shlmisc.h"
+#include <stdio.h>
+
 #include "GB_server.h"
+#include "buffers.h"
+#include "races.h"
+#include "shlmisc.h"
+#include "vars.h"
 
 void relation(int Playernum, int Governor, int APcount) {
   int numraces;

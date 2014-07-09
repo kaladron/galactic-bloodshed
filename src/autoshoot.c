@@ -22,7 +22,7 @@
 #include "races.h"
 #include "ships.h"
 #include "shootblast.h"
-#include "teleg_send.h"
+#include "tele.h"
 #include "tweakables.h"
 #include "vars.h"
 

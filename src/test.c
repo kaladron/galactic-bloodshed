@@ -25,7 +25,7 @@ void order_VN(shiptype *);
 #include "max.h"
 #include "fire.h"
 #include "load.h"
-#include "teleg_send.h"
+#include "tele.h"
 #include "rand.h"
 #include "build.h"
 #include "perm.h"

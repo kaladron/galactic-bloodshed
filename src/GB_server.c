@@ -233,7 +233,7 @@ void adjust_morale(racetype *, racetype *, int);
 #include "orbit.h"
 #include "order.h"
 #include "powercmd.h"
-#include "teleg_send.h"
+#include "tele.h"
 #include "rand.h"
 #include "relation.h"
 #include "rst.h"

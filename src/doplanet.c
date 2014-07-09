@@ -33,7 +33,7 @@
 #include "shlmisc.h"
 #include "shootblast.h"
 #include "tech.h"
-#include "teleg_send.h"
+#include "tele.h"
 #include "tweakables.h"
 #include "vars.h"
 

@@ -143,7 +143,7 @@ void push_telegram(int recpient, int gov, char *msg) {
 
   if ((telegram_fd = fopen(telefl, "a")) == NULL)
     if ((telegram_fd = fopen(telefl, "w+")) == NULL) {
-      perror("teleg_send");
+      perror("tele");
       return;
     }
   tm = time(0);

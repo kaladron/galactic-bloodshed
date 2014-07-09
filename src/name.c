@@ -27,7 +27,7 @@
 #include "read_teleg.h"
 #include "ships.h"
 #include "shlmisc.h"
-#include "teleg_send.h"
+#include "tele.h"
 #include "tweakables.h"
 #include "vars.h"
 

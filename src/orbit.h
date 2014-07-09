@@ -9,11 +9,11 @@
 #include "ships.h"
 #include "vars.h"
 
-extern void orbit(int, int, int);
-extern void DispStar(int, int, int, startype *, int, int, char *);
-extern void DispPlanet(int, int, int, planettype *, char *, int, racetype *,
-                       char *);
-extern void DispShip(int, int, placetype *, shiptype *, planettype *, int,
-                     char *);
+void orbit(int, int, int);
+void DispStar(int, int, int, startype *, int, int, char *);
+void DispPlanet(int, int, int, planettype *, char *, int, racetype *,
+                char *);
+void DispShip(int, int, placetype *, shiptype *, planettype *, int,
+              char *);
 
 #endif // ORBIT_H

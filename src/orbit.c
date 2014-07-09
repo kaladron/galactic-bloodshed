@@ -1,11 +1,32 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- *  orbit.c -- display orbits of planets (graphic representation)
- *
- * OPTIONS
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/*  orbit.c -- display orbits of planets (graphic representation) */
+
+#define EXTERN extern
+#include "orbit.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "GB_server.h"
+#include "buffers.h"
+#include "files_shl.h"
+#include "fire.h"
+#include "getplace.h"
+#include "map.h"
+#include "max.h"
+#include "races.h"
+#include "ships.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static double Lastx, Lasty, Zoom;
+static const int SCALE = 100;
+
+/* OPTIONS
  *  -p : If this option is set, ``orbit'' will not display planet names.
  *
  *  -S : Do not display star names.
@@ -15,35 +36,6 @@
  *  -(number) : Do not display that #'d ship or planet (in case it obstructs
  * 		the view of another object)
  */
-
-#include "GB_copyright.h"
-#define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "buffers.h"
-#include <curses.h>
-#include <stdio.h>
-#include <string.h>
-#include "map.h"
-extern char Shipltrs[];
-double Lastx, Lasty, Zoom;
-int SCALE = 100;
-
-racetype *Race;
-
-void orbit(int, int, int);
-void DispStar(int, int, int, startype *, int, int, char *);
-void DispPlanet(int, int, int, planettype *, char *, int, racetype *, char *);
-void DispShip(int, int, placetype *, shiptype *, planettype *, int, char *);
-#include "getplace.h"
-#include "GB_server.h"
-#include "files_shl.h"
-#include "shlmisc.h"
-#include "fire.h"
-#include "max.h"
-
 void orbit(int Playernum, int Governor, int APcount) {
   register int sh, i, iq;
   int DontDispNum = -1, flag;

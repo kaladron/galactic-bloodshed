@@ -80,7 +80,6 @@ static long last_segment_time;
 static int nupdates_done; /* number of updates so far */
 
 int port;              /* port selection */
-struct tm *current_tm; /* for watching for next update */
 long clk;
 char start_buf[128];
 char update_buf[128];

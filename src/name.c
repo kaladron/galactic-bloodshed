@@ -24,7 +24,6 @@
 #include "mobiliz.h"
 #include "races.h"
 #include "rand.h"
-#include "read_teleg.h"
 #include "ships.h"
 #include "shlmisc.h"
 #include "tele.h"

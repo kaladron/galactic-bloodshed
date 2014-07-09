@@ -1,33 +1,23 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- * Galactic Bloodshed (Robert Chansky, smq@ucscb.ucsc.edu)
- * power.c -- display power report
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include <errno.h>
-#include <time.h>
+/* power.c -- display power report */
+
+#include <stdio.h>
 #include <string.h>
-#include "GB_copyright.h"
+
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "buffers.h"
+#include "powercmd.h"
 
-extern int errno;
-extern struct tm *update_tm;
-
-void block(int, int, int);
-void power(int, int, int);
-void prepare_output_line(racetype *, racetype *, int, int);
 #include "GB_server.h"
-#include "shlmisc.h"
-#include "victory.h"
+#include "buffers.h"
+#include "power.h"
 #include "prof.h"
+#include "races.h"
+#include "shlmisc.h"
+#include "vars.h"
+#include "victory.h"
 
 void block(int Playernum, int Governor, int APcount) {
   register int i, n;

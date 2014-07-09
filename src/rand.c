@@ -19,7 +19,7 @@ int int_rand(int low, int hi) {
 
 /* int round_rand(double) - returns double rounded to integer, with
  *			proportional chance of rounding up or
- *			down./
+ *			down. */
 int round_rand(double x) {
   return ((double_rand() > (x - (double)((int)x))) ? (int)x : (int)(x + 1));
 }

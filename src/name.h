@@ -1,14 +1,23 @@
-/* name.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-extern void personal(int, int, char *);
-extern void bless(int, int, int);
-extern void insurgency(int, int, int);
-extern void pay(int, int, int);
-extern void give(int, int, int);
-extern void page(int, int, int);
-extern void send_message(int, int, int, int);
-extern void read_messages(int, int, int);
-extern void motto(int, int, int, char *);
-extern void name(int, int, int);
-extern int MostAPs(int, startype *);
-extern void announce(int, int, char *, int);
+#ifndef NAME_H
+#define NAME_H
+
+#include "vars.h"
+
+void personal(int, int, char *);
+void bless(int, int, int);
+void insurgency(int, int, int);
+void pay(int, int, int);
+void give(int, int, int);
+void page(int, int, int);
+void send_message(int, int, int, int);
+void read_messages(int, int, int);
+void motto(int, int, int, char *);
+void name(int, int, int);
+int MostAPs(int, startype *);
+void announce(int, int, char *, int);
+
+#endif // NAME_H

@@ -1,57 +1,39 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- * name.c -- rename something to something else
-* announce.c -- make announcements in the system you currently in.
-*      You must be inhabiting that system for your message to sent.
-*      You must also be in that system (and inhabiting) to receive
-*announcements.
-* page.c -- send a message to a player requesting his presence in a system.
-*/
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/* name.c -- rename something to something else */
+
 #include <ctype.h>
-#include <signal.h>
-#include <string.h>
-#include <time.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "races.h"
-#include "power.h"
-#include "ships.h"
-#include "buffers.h"
+#include "name.h"
 
-char msg[1024];
-struct tm *current_tm; /* for watching for next update */
-long clk;
-
-void personal(int, int, char *);
-void bless(int, int, int);
-void insurgency(int, int, int);
-void pay(int, int, int);
-void give(int, int, int);
-void page(int, int, int);
-void send_message(int, int, int, int);
-void read_messages(int, int, int);
-void motto(int, int, int, char *);
-void name(int, int, int);
-int MostAPs(int, startype *);
-void announce(int, int, char *, int);
-#include "getplace.h"
 #include "GB_server.h"
+#include "buffers.h"
+#include "capture.h"
+#include "dissolve.h"
+#include "files.h"
 #include "files_shl.h"
-#include "shlmisc.h"
+#include "getplace.h"
 #include "max.h"
 #include "mobiliz.h"
-#include "dissolve.h"
-#include "teleg_send.h"
-#include "capture.h"
+#include "races.h"
 #include "rand.h"
 #include "read_teleg.h"
+#include "ships.h"
+#include "shlmisc.h"
+#include "teleg_send.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static char msg[1024];
+long clk;
+
 
 void personal(int Playernum, int Governor, char *message) {
   racetype *Race;

@@ -1,42 +1,30 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- *  order.c -- give orders to ship
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include <curses.h>
-#include <ctype.h>
-#include <signal.h>
+/*  order.c -- give orders to ship */
+
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "buffers.h"
+#include "order.h"
 
-void order(int, int, int);
-void give_orders(int, int, int, shiptype *);
-char *prin_aimed_at(int, int, shiptype *);
-char *prin_ship_dest(int, int, shiptype *);
-void mk_expl_aimed_at(int, int, shiptype *);
-void DispOrdersHeader(int, int);
-void DispOrders(int, int, shiptype *);
-void route(int, int, int);
-#include "getplace.h"
-#include "shlmisc.h"
-#include "moveship.h"
-#include "files_shl.h"
 #include "GB_server.h"
-#include "shootblast.h"
-#include "load.h"
+#include "buffers.h"
 #include "build.h"
+#include "files_shl.h"
 #include "fire.h"
+#include "getplace.h"
+#include "load.h"
+#include "moveship.h"
+#include "ships.h"
+#include "shlmisc.h"
+#include "shootblast.h"
+#include "tweakables.h"
+#include "vars.h"
 
 void order(int Playernum, int Governor, int APcount) {
   int shipno, nextshipno;

@@ -236,10 +236,6 @@ dissolve.o doturncmd.o doship.o doplanet.o moveship.o moveplanet.o : doturn.h
 moveship.o : vars.h ships.h shipdata.h
 doturncmd.o doplanet.o doship.o : power.h
 
-
-#sizes : vars.h ships.h races.h
-#	 sizes.c
-
 # make data files program
 makeuniv : makeuniv.o makestar.o makeplanet.o rand.o perm.o files.o
 	${CC} -o makeuniv makeuniv.o makestar.o makeplanet.o rand.o perm.o files.o -lcurses -ltermcap -lm

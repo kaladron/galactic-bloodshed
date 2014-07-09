@@ -1,12 +1,35 @@
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
 /*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
  *  ship -- report -- stock -- tactical -- stuff on ship
  *
  *  Command "factories" programmed by varneyml@gb.erc.clarkson.edu
  */
+
+#include <ctype.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define EXTERN extern
+#include "rst.h"
+
+#include "GB_server.h"
+#include "buffers.h"
+#include "build.h"
+#include "files_shl.h"
+#include "fire.h"
+#include "getplace.h"
+#include "order.h"
+#include "races.h"
+#include "ships.h"
+#include "shlmisc.h"
+#include "shootblast.h"
+#include "tweakables.h"
+#include "vars.h"
 
 #define REPORT 0
 #define STOCK 1
@@ -18,22 +41,8 @@
 
 #define PLANET 1
 
-#include <ctype.h>
-#include <math.h>
-#include <string.h>
-
-#include "GB_copyright.h"
-#define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "buffers.h"
-
-extern char Shipltrs[];
-
-char Caliber[] = { ' ', 'L', 'M', 'H' };
-char shiplist[256];
+static const char Caliber[] = { ' ', 'L', 'M', 'H' };
+static char shiplist[256];
 
 static unsigned char Status, SHip, Stock, Report, Tactical, Weapons, Factories,
     first;
@@ -49,26 +58,8 @@ struct reportdata {
   double y;
 };
 
-racetype *Race;
-struct reportdata *rd;
-int enemies_only, who;
-
-void rst(int, int, int, int);
-void ship_report(int, int, int, unsigned char[]);
-void plan_getrships(int, int, int, int);
-void star_getrships(int, int, int);
-int Getrship(int, int, int);
-void Free_rlist(void);
-int listed(int, char *);
-#include "files_shl.h"
-#include "GB_server.h"
-#include "shlmisc.h"
-#include "getplace.h"
-#include "shootblast.h"
-#include "fire.h"
-#include "build.h"
-#include "max.h"
-#include "order.h"
+static struct reportdata *rd;
+static int enemies_only, who;
 
 void rst(int Playernum, int Governor, int APcount, int Rst) {
   int shipno;

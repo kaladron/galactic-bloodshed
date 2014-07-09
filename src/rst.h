@@ -1,9 +1,16 @@
-/* rst.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-extern void rst(int, int, int, int);
-extern void ship_report(int, int, int, unsigned char[]);
-extern void plan_getrships(int, int, int, int);
-extern void star_getrships(int, int, int);
-extern int Getrship(int, int, int);
-extern void Free_rlist(void);
-extern int listed(int, char *);
+#ifndef RST_H
+#define RST_H
+
+void rst(int, int, int, int);
+void ship_report(int, int, int, unsigned char[]);
+void plan_getrships(int, int, int, int);
+void star_getrships(int, int, int);
+int Getrship(int, int, int);
+void Free_rlist(void);
+int listed(int, char *);
+
+#endif // RST_H

@@ -1,8 +1,17 @@
-/* prof.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-extern void whois(int, int, int);
-extern void profile(int, int, int);
-extern char *Estimate_f(double, racetype *, int);
-extern char *Estimate_i(int, racetype *, int);
-extern int round_perc(int, racetype *, int);
-extern void treasury(int, int);
+#ifndef PROF_H
+#define PROF_H
+
+#include "races.h"
+
+void whois(int, int, int);
+void profile(int, int, int);
+char *Estimate_f(double, racetype *, int);
+char *Estimate_i(int, racetype *, int);
+int round_perc(int, racetype *, int);
+void treasury(int, int);
+
+#endif // PROF_H

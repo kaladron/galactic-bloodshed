@@ -1,30 +1,23 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- * Tue Apr  9 16:14:58 MDT 1991 (Evan D. Koffler)
- *	Reformatted the profile and treasury command.
- *
- * prof.c -- print out racial profile
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include <strings.h>
+/* prof.c -- print out racial profile */
+
 #include <stdio.h>
-#include "GB_copyright.h"
+#include <stdlib.h>
+
 #define EXTERN extern
-#include "vars.h"
+#include "prof.h"
+
+#include "GB_server.h"
+#include "buffers.h"
 #include "races.h"
 #include "ships.h"
-#include "buffers.h"
-
-void whois(int, int, int);
-void profile(int, int, int);
-char *Estimate_f(double, racetype *, int);
-char *Estimate_i(int, racetype *, int);
-int round_perc(int, racetype *, int);
-#include "GB_server.h"
-#include "shootblast.h"
 #include "shlmisc.h"
+#include "shootblast.h"
+#include "tweakables.h"
+#include "vars.h"
 
 void whois(int Playernum, int Governor, int APcount) {
   int i, j, numraces;

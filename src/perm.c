@@ -1,23 +1,19 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- * perm.c -- randomly permute a sector list
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "GB_copyright.h"
+/* perm.c -- randomly permute a sector list */
+
 #define EXTERN extern
-#include "vars.h"
+#include "perm.h"
 
 #include "rand.h"
+#include "tweakables.h"
+#include "vars.h"
 
-struct map {
+static struct map {
   char x, y;
 } xymap[(MAX_X + 1) * (MAX_Y + 1)];
-
-void PermuteSects(planettype *);
-int Getxysect(planettype *, int *, int *, int);
 
 /* make a random list of sectors. */
 void PermuteSects(planettype *planet) {

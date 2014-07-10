@@ -1,51 +1,32 @@
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "buffers.h"
+#include "shootblast.h"
 
 #include "GB_server.h"
-#include "misc.h"
+#include "buffers.h"
+#include "build.h"
 #include "defense.h"
-
-int hit_probability;
-double penetration_factor;
-
-int shoot_ship_to_ship(shiptype *, shiptype *, int, int, int, char *, char *);
-#ifdef DEFENSE
-int shoot_planet_to_ship(racetype *, planettype *, shiptype *, int, char *,
-                         char *);
-#endif
-int shoot_ship_to_planet(shiptype *, planettype *, int, int, int, int, int, int,
-                         char *, char *);
-int do_radiation(shiptype *, double, int, int, char *, char *);
-int do_damage(int, shiptype *, double, int, int, int, int, double, char *,
-              char *);
-void ship_disposition(shiptype *, int *, int *, int *);
-int CEW_hit(double, int);
-int Num_hits(double, int, int, double, int, int, int, int, int, int, int, int);
-int hit_odds(double, int *, double, int, int, int, int, int, int, int, int);
-int cew_hit_odds(double, int);
-double gun_range(racetype *, shiptype *, int);
-double tele_range(int, double);
-int current_caliber(shiptype *);
-void do_critical_hits(int, shiptype *, int *, int *, int, char *);
-void do_collateral(shiptype *, int, int *, int *, int *, int *);
-int getdefense(shiptype *);
-double p_factor(double, double);
-int planet_guns(int);
-void mutate_sector(sectortype *);
+#include "files_shl.h"
 #include "fire.h"
 #include "getplace.h"
-#include "shlmisc.h"
-#include "files_shl.h"
+#include "misc.h"
+#include "races.h"
 #include "rand.h"
-#include "build.h"
+#include "ships.h"
+#include "shlmisc.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static int hit_probability;
+static double penetration_factor;
 
 int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
                        int ignore, char *long_msg, char *short_msg) {

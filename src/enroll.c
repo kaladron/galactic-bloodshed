@@ -86,7 +86,7 @@ int enroll_player_race(failure_filename) char *failure_filename;
     fprintf(g, "(Check to make sure you are using racegen %s)\n", VERSION);
     fprintf(g, "\n");
     fprintf(g, "For verification, here is my understanding of your race:\n");
-    print_to_file(g, 1, 0);
+    print_to_file(g, 1);
     fclose(g);
 
     printf("Sending critique to %s via %s...", race.address, MAILER);

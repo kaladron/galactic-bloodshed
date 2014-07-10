@@ -80,6 +80,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include "racegen.h"
 
 #ifdef PRIV /* Extra stuff for privileged racegen */
 
@@ -169,11 +171,6 @@ char *argv[];
 #endif
   return 0;
 }
-
-/**************
- * Definitions for data types and such used in the program.
- */
-#include "racegen.h"
 
 attribute attr[N_ATTRIBUTES] = { { ADVENT,
                                    "Adventurism",

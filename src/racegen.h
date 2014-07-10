@@ -232,3 +232,9 @@ extern int last_npoints;
 extern int altered;     /* 1 iff race has been altered since last saved */
 extern int changed;     /* 1 iff race has been changed since last printed */
 extern int please_quit; /* 1 iff you want to exit ASAP. */
+
+int critique_to_file(FILE *f, int rigorous_checking, int is_player_race);
+void print_to_file(FILE *f, int verbose);
+int load_from_file(FILE *g);
+int cost_of_race();
+void modify_print_loop(int level);

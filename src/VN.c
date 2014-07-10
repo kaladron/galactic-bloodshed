@@ -1,37 +1,31 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- * VN.c -- assorted Von Neumann machine code:
- *  do_VN() -- called by doship()
- *  planet_doVN() -- called by doplanet()
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
+/* VN.c -- assorted Von Neumann machine code */
+
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include "GB_copyright.h"
+
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "doturn.h"
-#include "power.h"
+#include "VN.h"
+
 #include "buffers.h"
-
-void do_VN(shiptype *);
-void planet_doVN(shiptype *, planettype *);
-void order_berserker(shiptype *);
-void order_VN(shiptype *);
-
-#include "max.h"
+#include "build.h"
+#include "doturn.h"
 #include "fire.h"
 #include "load.h"
-#include "tele.h"
-#include "rand.h"
-#include "build.h"
+#include "max.h"
 #include "perm.h"
+#include "rand.h"
+#include "ships.h"
 #include "shlmisc.h"
+#include "tele.h"
+#include "tweakables.h"
+#include "vars.h"
 
+/*  do_VN() -- called by doship() */
 void do_VN(shiptype *ship) {
   planettype *p;
 
@@ -148,6 +142,7 @@ void order_VN(shiptype *ship) {
   ship->speed = Shipdata[OTYPE_VN][ABIL_SPEED];
 }
 
+/*  planet_doVN() -- called by doplanet() */
 void planet_doVN(shiptype *ship, planettype *planet) {
   reg int j;
   sectortype *s;

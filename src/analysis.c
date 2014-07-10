@@ -15,9 +15,9 @@
 #include "ships.h"
 #include "tweakables.h"
 #include "vars.h"
-
-extern char *Desnames[];
-extern char Dessymbols[];
+#include "max.h"
+#include "files_shl.h"
+#include "GB_server.h"
 
 #define CARE 5
 struct anal_sect {

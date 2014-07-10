@@ -13,8 +13,11 @@
 #include "ships.h"
 #include "races.h"
 #include "power.h" /* (for power) */
+#include "rand.h"
 #include <math.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 extern int Temperature(double, int);
 extern void PrintStatistics(void);
@@ -156,9 +159,9 @@ int main(int argc, char *argv[]) {
   for (star = 0; star < nstars; star++) {
     Stars[star] = Makestar(planetdata, sectordata);
   }
-  fchmod(planetdata, 00660); /* change data files to group readwrite */
+  chmod(PLANETDATAFL, 00660); /* change data files to group readwrite */
   fclose(planetdata);
-  fchmod(sectordata, 00660);
+  chmod(SECTORDATAFL, 00660);
   fclose(sectordata);
 
 #if 0
@@ -192,7 +195,7 @@ int main(int argc, char *argv[]) {
   fwrite(&(Sdata), sizeof(Sdata), 1, stardata);
   for (star = 0; star < Sdata.numstars; star++)
     fwrite(Stars[star], sizeof(startype), 1, stardata);
-  fchmod(stardata, 00660);
+  chmod(STARDATAFL, 00660);
   fclose(stardata);
 
   EmptyFile(SHIPDATAFL);
@@ -252,7 +255,7 @@ void InitFile(char *filename, void *ptr, int len) {
     exit(-1);
   }
   fwrite(ptr, len, 1, f);
-  fchmod(f, 00660);
+  chmod(filename, 00660);
   fclose(f);
 }
 

@@ -2,9 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/* vars.h --
- *  main bunch of variables
- */
+/*  main bunch of variables */
 
 #ifndef VARS_H
 #define VARS_H

@@ -1,8 +1,9 @@
-/*
-O * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB.c, enroll.dat.
- * Restrictions in GB.c.
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+#ifndef SHIPDATA_H
+#define SHIPDATA_H
 
 char Shipltrs[] = { 'p', 's', 'X', 'D', 'B', 'I', 'C', 'd',  'f', 'e', 'H', 'S',
                     'O', 'c', 't', '!', '+', 'M', '=', '\\', '-', 'a', 'g', 'h',
@@ -173,3 +174,5 @@ char *Shipnames[NUMSTYPES] = {
   "Space Port",        "ABM Battery",       "Mech",
   "Bunker",            "Lander"
 };
+
+#endif // SHIPDATA_H

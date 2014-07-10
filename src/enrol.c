@@ -1,52 +1,56 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- * enrol.c -- initializes to owner one sector and planet.
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "GB_copyright.h"
-#include <stdio.h>
-#include <signal.h>
-#include <string.h>
+/* enrol.c -- initializes to owner one sector and planet. */
+
 #include <curses.h>
-#include <errno.h>
-#include <sys/types.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+
 #define EXTERN
+#include "files_shl.h"
 #include "globals.h"
-#include "vars.h"
-#include "ships.h"
-#include "shipdata.h"
+#include "max.h"
+#include "perm.h"
 #include "races.h"
-#include "buffers.h"
-extern int errno;
+#include "rand.h"
+#include "shipdata.h"
+#include "ships.h"
+#include "tweakables.h"
+#include "vars.h"
+
 char desshow();
-racetype *Race;
 
 struct stype {
   char here;
   char x, y;
   int count;
 };
+
 #define RACIAL_TYPES 10
 
 /* racial types (10 racial types ) */
-int Thing[RACIAL_TYPES] = { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
-double db_Mass[RACIAL_TYPES] = { .1,   .15,  .2,   .125, .125,
-                                 .125, .125, .125, .125, .125 };
-double db_Birthrate[RACIAL_TYPES] = { 0.9, 0.85, 0.8, 0.5,  0.55,
-                                      0.6, 0.65, 0.7, 0.75, 0.8 };
-int db_Fighters[RACIAL_TYPES] = { 9, 10, 11, 2, 3, 4, 5, 6, 7, 8 };
-int db_Intelligence[RACIAL_TYPES] = {
-  0, 0, 0, 190, 180, 170, 160, 150, 140, 130
-};
-double db_Adventurism[RACIAL_TYPES] = { 0.89, 0.89, 0.89, .6,  .65,
-                                        .7,   .7,   .75,  .75, .8 };
-int Min_Sexes[RACIAL_TYPES] = { 1, 1, 1, 2, 2, 2, 2, 2, 2, 2 };
-int Max_Sexes[RACIAL_TYPES] = { 1, 1, 1, 2, 2, 4, 4, 4, 4, 4 };
-double db_Metabolism[RACIAL_TYPES] = { 3.0,  2.7,  2.4, 1.0,  1.15,
-                                       1.30, 1.45, 1.6, 1.75, 1.9 };
+static int Thing[RACIAL_TYPES] = { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
+
+static double db_Mass[RACIAL_TYPES] = { .1,   .15,  .2,   .125, .125,
+                                        .125, .125, .125, .125, .125 };
+static double db_Birthrate[RACIAL_TYPES] = { 0.9, 0.85, 0.8, 0.5,  0.55,
+                                             0.6, 0.65, 0.7, 0.75, 0.8 };
+static int db_Fighters[RACIAL_TYPES] = { 9, 10, 11, 2, 3, 4, 5, 6, 7, 8 };
+static int db_Intelligence[RACIAL_TYPES] = { 0,   0,   0,   190, 180,
+                                             170, 160, 150, 140, 130 };
+
+static double db_Adventurism[RACIAL_TYPES] = { 0.89, 0.89, 0.89, .6,  .65,
+                                               .7,   .7,   .75,  .75, .8 };
+
+static int Min_Sexes[RACIAL_TYPES] = { 1, 1, 1, 2, 2, 2, 2, 2, 2, 2 };
+static int Max_Sexes[RACIAL_TYPES] = { 1, 1, 1, 2, 2, 4, 4, 4, 4, 4 };
+static double db_Metabolism[RACIAL_TYPES] = { 3.0,  2.7,  2.4, 1.0,  1.15,
+                                              1.30, 1.45, 1.6, 1.75, 1.9 };
 
 #define RMass(x) (db_Mass[(x)] + .001 * (double)int_rand(-25, 25))
 #define Birthrate(x) (db_Birthrate[(x)] + .01 * (double)int_rand(-10, 10))
@@ -56,11 +60,6 @@ double db_Metabolism[RACIAL_TYPES] = { 3.0,  2.7,  2.4, 1.0,  1.15,
 #define Sexes(x)                                                               \
   (int_rand(Min_Sexes[(x)], int_rand(Min_Sexes[(x)], Max_Sexes[(x)])))
 #define Metabolism(x) (db_Metabolism[(x)] + .01 * (double)int_rand(-15, 15))
-
-/* compatibility schematic for sectors.  Note that plated sectors are
-   compatible with everything.  */
-double Likes[15] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2,
-                     0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 };
 
 int main() {
   int x, y;
@@ -457,9 +456,7 @@ int main() {
   return 0;
 }
 
-char desshow(p, x, y) /* copied from map.c */
-    reg planettype *p;
-reg int x, y;
+char desshow(planettype *p, int x, int y) /* copied from map.c */
 {
   reg sectortype *s;
 
@@ -489,17 +486,7 @@ reg int x, y;
   }
 }
 
-void notify(who, gov, msg) int who, gov;
-char *msg;
+void notify(int who, int gov, char *msg)
 { /* this is a dummy routine */
 }
 
-void warn(who, gov, msg) int who, gov;
-char *msg;
-{ /* this is a dummy routine */
-}
-
-void push_message(what, who, msg) int what, who;
-char *msg;
-{ /* this is a dummy routine */
-}

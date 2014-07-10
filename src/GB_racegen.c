@@ -15,6 +15,10 @@
 #include "shipdata.h"
 #include "races.h"
 #include "buffers.h"
+#include "files_shl.h"
+#include "rand.h"
+#include "max.h"
+#include "perm.h"
 
 #include "racegen.h"
 #include "config.h"

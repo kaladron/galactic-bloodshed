@@ -3,7 +3,6 @@ AM_CFLAGS = -g -O2 -W -Wall -Werror \
 	  -Wno-sign-compare \
 	  -Wno-array-bounds \
 	  -Wno-char-subscripts \
-	  -Wno-type-limits \
 	  -Wno-tautological-constant-out-of-range-compare
 
 bin_PROGRAMS = GB enrol makeuniv racegen

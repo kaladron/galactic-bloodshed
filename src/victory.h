@@ -1,5 +1,14 @@
-/* victory.c function prototypes */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-extern void victory(int, int, int);
-extern void create_victory_list(struct vic[MAXPLAYERS]);
-extern int victory_sort(struct vic *, struct vic *);
+#ifndef VICTORY_H
+#define VICTORY_H
+
+#include "vars.h"
+
+void victory(int, int, int);
+void create_victory_list(struct vic[MAXPLAYERS]);
+int victory_sort(const void *, const void *);
+
+#endif // VICTORY_H

@@ -1,26 +1,20 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- *  toggle.c -- toggles some options
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "GB_copyright.h"
+/*  toggle.c -- toggles some options */
+
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "buffers.h"
-#include <strings.h>
+#include "toggle.h"
 
-void toggle(int, int, int);
-void highlight(int, int, int);
-void tog(int, int, char *, char *);
-#include "shlmisc.h"
+#include <stdio.h>
+
 #include "GB_server.h"
+#include "buffers.h"
 #include "files_shl.h"
+#include "races.h"
+#include "shlmisc.h"
+#include "vars.h"
 
 void toggle(int Playernum, int Governor, int APcount) {
   racetype *Race;

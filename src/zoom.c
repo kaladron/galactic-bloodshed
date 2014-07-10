@@ -6,15 +6,14 @@
  * zoom.c -- zoom in or out for orbit display
  */
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "buffers.h"
+#include "zoom.h"
 
-void zoom(int, int, int);
+#include <stdio.h>
+
 #include "GB_server.h"
+#include "buffers.h"
+#include "vars.h"
 
 void zoom(int Playernum, int Governor, int APcount) {
   double num, denom;

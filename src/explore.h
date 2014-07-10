@@ -7,7 +7,6 @@
 
 #include "races.h"
 
-void colonies_at_star(int, int, racetype *, int, int);
 void colonies(int, int, int, int);
 void distance(int, int, int);
 void star_locations(int, int, int);

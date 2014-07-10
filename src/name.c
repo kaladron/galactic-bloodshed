@@ -33,7 +33,6 @@
 static char msg[1024];
 long clk;
 
-
 void personal(int Playernum, int Governor, char *message) {
   racetype *Race;
 

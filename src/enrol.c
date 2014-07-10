@@ -486,7 +486,5 @@ char desshow(planettype *p, int x, int y) /* copied from map.c */
   }
 }
 
-void notify(int who, int gov, char *msg)
-{ /* this is a dummy routine */
+void notify(int who, int gov, char *msg) { /* this is a dummy routine */
 }
-

@@ -11,9 +11,7 @@
 
 void orbit(int, int, int);
 void DispStar(int, int, int, startype *, int, int, char *);
-void DispPlanet(int, int, int, planettype *, char *, int, racetype *,
-                char *);
-void DispShip(int, int, placetype *, shiptype *, planettype *, int,
-              char *);
+void DispPlanet(int, int, int, planettype *, char *, int, racetype *, char *);
+void DispShip(int, int, placetype *, shiptype *, planettype *, int, char *);
 
 #endif // ORBIT_H

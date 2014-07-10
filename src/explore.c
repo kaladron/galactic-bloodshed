@@ -24,9 +24,10 @@
 
 static void tech_report_star(int, int, startype *, int, int *, double *,
                              double *);
+static void colonies_at_star(int, int, racetype *, int, int);
 
-void colonies_at_star(int Playernum, int Governor, racetype *Race, int star,
-                      int mode) {
+static void colonies_at_star(int Playernum, int Governor, racetype *Race,
+                             int star, int mode) {
   int i, j;
   planettype *pl;
 

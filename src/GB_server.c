@@ -79,7 +79,7 @@ static long last_update_time;
 static long last_segment_time;
 static int nupdates_done; /* number of updates so far */
 
-int port;              /* port selection */
+int port; /* port selection */
 long clk;
 char start_buf[128];
 char update_buf[128];

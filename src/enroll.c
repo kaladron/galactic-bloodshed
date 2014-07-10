@@ -6,6 +6,8 @@
  *
  * Anybody who does alter this program, please take credit!
  */
+
+#include "enroll.h"
 #include "racegen.h"
 #include <string.h>
 

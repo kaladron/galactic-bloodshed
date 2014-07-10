@@ -82,6 +82,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "racegen.h"
+#include "enroll.h"
+
+static int do_racegen();
 
 #ifdef PRIV /* Extra stuff for privileged racegen */
 
@@ -1417,7 +1420,7 @@ void modify_print_loop(int level) {
 /**************
  * Print out initial info and then call modify-print loop.
  */
-int do_racegen() {
+static int do_racegen() {
   initialize();
   printf("\n");
   printf("Galactic Bloodshed Race Generator %s\n", VERSION);

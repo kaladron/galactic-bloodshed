@@ -1,9 +1,24 @@
-AM_CFLAGS = -g -O2 -W -Wall -Werror \
-          -Wno-unused-parameter \
-	  -Wno-sign-compare \
-	  -Wno-array-bounds \
-	  -Wno-char-subscripts \
-	  -Wno-tautological-constant-out-of-range-compare
+AM_CFLAGS = -g -O2 -W -Weverything -Werror \
+	    -Wno-unused-macros \
+	    -Wno-missing-prototypes \
+	    -Wno-conditional-uninitialized \
+	    -Wno-float-equal \
+	    -Wno-bad-function-cast \
+	    -Wno-missing-variable-declarations \
+	    -Wno-shadow \
+	    -Wno-undef \
+	    -Wno-unreachable-code \
+	    -Wno-conversion \
+	    -Wno-unused-parameter \
+	    -Wno-sign-compare \
+	    -Wno-array-bounds \
+	    -Wno-char-subscripts \
+	    -Wno-tautological-constant-out-of-range-compare
+
+# These warnings seem like ones we'll never enable
+AM_CFLAGS += \
+	    -Wno-disabled-macro-expansion \
+	    -Wno-padded
 
 bin_PROGRAMS = GB enrol makeuniv racegen
 

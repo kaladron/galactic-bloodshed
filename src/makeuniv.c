@@ -18,6 +18,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include "makeuniv.h"
 
 extern int Temperature(double, int);
 extern void PrintStatistics(void);
@@ -26,7 +27,6 @@ extern void Makestar_init(void);
 extern startype *Makestar(FILE *, FILE *);
 void InitFile(char *, void *, int);
 void EmptyFile(char *);
-void place_star(startype *);
 void produce_postscript(char *);
 
 #define DEFAULT_POSTSCRIPT_MAP_FILENAME "universe.ps"

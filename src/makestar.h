@@ -5,7 +5,14 @@
 #ifndef MAKESTAR_H
 #define MAKESTAR_H
 
+#include <stdio.h>
+
+#include "vars.h"
+
 int Temperature(double dist, int stemp);
+void Makestar_init(void);
+static char *NextStarName(void);
+startype *Makestar(FILE *, FILE *);
+void Makeplanet_init(void);
 
 #endif // MAKESTAR_H
-

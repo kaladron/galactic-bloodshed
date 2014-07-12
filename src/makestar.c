@@ -1,71 +1,47 @@
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-/* makestar.c -- create, name, position, and make planetd for a star.
- *
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- */
-#if 0
-G.O.D. [1] > methane melts at -182C
-G.O.D. [1] > it boils at -164
-G.O.D. [1] > ammonia melts at -78C
-G.O.D. [1] > boils at -33
-#endif
+/* makestar.c -- create, name, position, and make planets for a star. */
+
+// G.O.D. [1] > methane melts at -182C
+// G.O.D. [1] > it boils at -164
+// G.O.D. [1] > ammonia melts at -78C
+// G.O.D. [1] > boils at -33
 
 #include "makestar.h"
-#include <math.h>
-#include <string.h>
-#include "GB_copyright.h"
-#define EXTERN
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h" /* (for power) */
 
-#define PLANET_DIST_MAX 1900.0
-#define PLANET_DIST_MIN 100.0
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define EXTERN
+#include "files.h"
+#include "makeplanet.h"
+#include "makeuniv.h"
+#include "rand.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static const double PLANET_DIST_MAX = 1900.0;
+static const double PLANET_DIST_MIN = 100.0;
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-#define ALLOCATE(type) ((type *)malloc(sizeof(type)))
-#undef malloc
-#undef realloc
-#undef free
-/* Just in case */
+static const char *NextPlanetName(int);
 
-extern void place_star(startype *star);
-extern planettype Makeplanet(double, short, int);
+static int Numtypes[TYPE_DESERT + 2] = { 0, };
+static int Resource[TYPE_DESERT + 2] = { 0, };
+static int Numsects[TYPE_DESERT + 2][PLATED + 1] = { { 0, }, };
+static int Fertsects[TYPE_DESERT + 2][PLATED + 1] = { { 0, }, };
 
-void Makestar_init(void);
-char *NextStarName(void);
-startype *Makestar(FILE *, FILE *);
-void Makeplanet_init(void);
-char *NextPlanetName(int);
-void rand_list(int, int *);
-
-#include "rand.h"
-
-int Numtypes[TYPE_DESERT + 2] = { 0, };
-int Resource[TYPE_DESERT + 2] = { 0, };
-int Numsects[TYPE_DESERT + 2][PLATED + 1] = { { 0, }, };
-int Fertsects[TYPE_DESERT + 2][PLATED + 1] = { { 0, }, };
-char *Nametypes[] = { "Earth", "Asteroid", "Airless", "Iceball", "Gaseous",
-                      "Water", "Forest",   "Desert",  " >>" };
-char *Namesects[] = { "sea", "land",   "mountain", "gaseous",
-                      "ice", "desert", "forest",   "plated" };
-
-/*
- * Variables found in makeuniv.c:  */
-extern int autoname_plan;
-extern int autoname_star;
-extern int minplanets;
-extern int maxplanets;
-extern int nstars;
-extern int planetlesschance;
-extern int printplaninfo;
-extern int printstarinfo;
+// TODO(jeffbailey): This should be syncd with the ones in GB_server.h:
+static const char *Nametypes[] = { "Earth",   "Asteroid", "Airless",
+                                   "Iceball", "Gaseous",  "Water",
+                                   "Forest",  "Desert",   " >>" };
 
 int Temperature(double dist, int stemp) {
   return -269 + stemp * 1315 * 40 / (40 + dist);
@@ -178,9 +154,9 @@ void Makeplanet_init(void) {
   namepcount = 0;
 }
 
-char *NextPlanetName(int i) {
-  static char *Numbers[] = { "1", "2",  "3",  "4",  "5",  "6",  "7", "8",
-                             "9", "10", "11", "12", "13", "14", "15" };
+static const char *NextPlanetName(int i) {
+  const char *Numbers[] = { "1", "2",  "3",  "4",  "5",  "6",  "7", "8",
+                            "9", "10", "11", "12", "13", "14", "15" };
   if (autoname_plan && (namepcount < numplist))
     return PNames[planet_list[namepcount++]];
   else
@@ -199,7 +175,7 @@ void Makestar_init(void) {
   namestcount = 0;
 }
 
-char *NextStarName(void) {
+static char *NextStarName(void) {
   static char buf[20];
   int i;
 
@@ -226,7 +202,7 @@ startype *Makestar(FILE *planetdata, FILE *sectordata) {
   startype *Star;
 
   /* get names, positions of stars first */
-  Star = ALLOCATE(startype);
+  Star = (startype *)malloc(sizeof(startype));
   bzero(Star, sizeof(startype));
   Star->gravity = int_rand(0, int_rand(0, 300)) + int_rand(0, 300) +
                   int_rand(100, 400) + int_rand(0, 9) / 10.0;

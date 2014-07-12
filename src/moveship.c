@@ -1,45 +1,41 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- *  moveship -- moves specified ship according to its orders.
- *	also deducts fuel from the ship's stores.
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/*  moveship -- moves specified ship according to its orders.
+ *	also deducts fuel from the ship's stores. */
+
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "power.h"
-#include "ships.h"
-#include "races.h"
-#include "doturn.h"
+#include "moveship.h"
+
+#include "GB_server.h"
 #include "buffers.h"
+#include "files_shl.h"
+#include "fire.h"
+#include "load.h"
+#include "max.h"
+#include "misc.h"
+#include "order.h"
+#include "races.h"
+#include "ships.h"
+#include "shlmisc.h"
+#include "tele.h"
+#include "tweakables.h"
+#include "vars.h"
 
 /* amount to move for each dir level. I arrived on these #'s only after
         hours of dilligent tweaking */
 /* amount to move for each directory level  */
-double MoveConsts[] = { 600.0, 300.0, 50.0 };
+static const double MoveConsts[] = { 600.0, 300.0, 50.0 };
 /* amnt to move for each ship speed level (ordered) */
-double SpeedConsts[] = { 0.0,  0.61, 1.26, 1.50, 1.73,
+static const double SpeedConsts[] = { 0.0,  0.61, 1.26, 1.50, 1.73,
                          1.81, 1.90, 1.93, 1.96, 1.97 };
 /* amount of fuel it costs to move at speed level */
-
-extern int landed(shiptype *);
-void Moveship(shiptype *, int, int, int);
-void msg_OOF(shiptype *);
-int followable(shiptype *, shiptype *);
-int do_merchant(shiptype *, planettype *);
-#include "tele.h"
-#include "load.h"
-#include "shlmisc.h"
-#include "max.h"
-#include "misc.h"
-#include "GB_server.h"
-#include "files_shl.h"
-#include "order.h"
 
 void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
   double stardist, movedist, truedist, dist, xdest, ydest, sn, cs;

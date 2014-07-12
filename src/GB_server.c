@@ -245,7 +245,6 @@ void adjust_morale(racetype *, racetype *, int);
 #include "zoom.h"
 
 #define MAX_COMMAND_LEN 512
-#define BUFFER_LEN ((MAX_COMMAND_LEN) * 8)
 
 #ifdef DEBUG
 void DEBUG_check(int, int);

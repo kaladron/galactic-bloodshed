@@ -30,8 +30,6 @@ void EmptyFile(char *);
 void produce_postscript(char *);
 
 #define DEFAULT_POSTSCRIPT_MAP_FILENAME "universe.ps"
-#define NRINGS 3
-#define RING_SPACING (10000 * (UNIVSIZE / 10000) / NRINGS)
 
 int autoname_star = -1;
 int autoname_plan = -1;

@@ -100,55 +100,31 @@ void getsdata(struct stardata *S) {
   Fileread(stdata, (char *)S, sizeof(struct stardata), 0);
 }
 
-#ifdef DEBUG
-void DEBUGgetrace(racetype **r, int rnum, char *fname, int lineno)
-#else
 void getrace(racetype **r, int rnum)
-#endif
 {
-#ifdef DEBUG
-  *r = (racetype *)DEBUGmalloc(sizeof(racetype), fname, lineno);
-#else
   *r = (racetype *)malloc(sizeof(racetype));
-#endif
   Fileread(racedata, (char *)*r, sizeof(racetype),
            (rnum - 1) * sizeof(racetype));
 }
 
-#ifdef DEBUG
-void DEBUGgetstar(startype **s, int star, char *fname, int lineno)
-#else
 void getstar(startype **s, int star)
-#endif
 {
   if (s >= &Stars[0] && s < &Stars[NUMSTARS])
     ; /* Do nothing */
   else {
-#ifdef DEBUG
-    *s = (startype *)DEBUGmalloc(sizeof(startype), fname, lineno);
-#else
     *s = (startype *)malloc(sizeof(startype));
-#endif
   }
   Fileread(stdata, (char *)*s, sizeof(startype),
            (int)(sizeof(Sdata) + star * sizeof(startype)));
 }
 
-#ifdef DEBUG
-void DEBUGgetplanet(planettype **p, int star, int pnum, char *fname, int lineno)
-#else
 void getplanet(planettype **p, int star, int pnum)
-#endif
 {
   int filepos;
   if (p >= &planets[0][0] && p < &planets[NUMSTARS][MAXPLANETS])
     ;    /* Do nothing */
   else { /* Allocate space for others */
-#ifdef DEBUG
-    *p = (planettype *)DEBUGmalloc(sizeof(planettype), fname, lineno);
-#else
     *p = (planettype *)malloc(sizeof(planettype));
-#endif
   }
   filepos = Stars[star]->planetpos[pnum];
   Fileread(pdata, (char *)*p, sizeof(planettype), filepos);
@@ -166,11 +142,7 @@ void getsmap(sectortype *map, planettype *p) {
            p->sectormappos);
 }
 
-#ifdef DEBUG
-int DEBUGgetship(shiptype **s, int shipnum, char *fname, int lineno)
-#else
 int getship(shiptype **s, int shipnum)
-#endif
 {
   struct stat buffer;
 
@@ -182,11 +154,7 @@ int getship(shiptype **s, int shipnum)
     return 0;
   else {
 
-#ifdef DEBUG
-    if ((*s = (shiptype *)DEBUGmalloc(sizeof(shiptype), fname, lineno)) == NULL)
-#else
     if ((*s = (shiptype *)malloc(sizeof(shiptype))) == NULL)
-#endif
       printf("getship:Malloc() error \n"), exit(0);
 
     Fileread(shdata, (char *)*s, sizeof(shiptype),
@@ -195,11 +163,7 @@ int getship(shiptype **s, int shipnum)
   }
 }
 
-#ifdef DEBUG
-int DEBUGgetcommod(commodtype **c, int commodnum, char *fname, int lineno)
-#else
 int getcommod(commodtype **c, int commodnum)
-#endif
 {
   struct stat buffer;
 
@@ -211,12 +175,7 @@ int getcommod(commodtype **c, int commodnum)
     return 0;
   else {
 
-#ifdef DEBUG
-    if ((*c = (commodtype *)DEBUGmalloc(sizeof(commodtype), fname, lineno)) ==
-        NULL)
-#else
     if ((*c = (commodtype *)malloc(sizeof(commodtype))) == NULL)
-#endif
       printf("getcommod:Malloc() error \n"), exit(0);
 
     Fileread(commoddata, (char *)*c, sizeof(commodtype),

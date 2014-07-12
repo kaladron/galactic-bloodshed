@@ -26,12 +26,5 @@ void allocateAPs(int, int, int);
 void deductAPs(int, int, int, int, int);
 void list(int, int);
 double morale_factor(double);
-#if DEBUG
-char *DEBUGmalloc(int, char *, int);
-void DEBUGfree(char *);
-char *DEBUGrealloc(char *, int, char *, int);
-void DEBUGcheck(int, int);
-void DEBUGreset(int, int);
-#endif
 
 #endif // SHLMISC_H

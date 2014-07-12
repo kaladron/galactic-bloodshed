@@ -260,18 +260,6 @@ EXTERN int argn;
 #define isset(a, i) ((a)[(i) / 32] & ((i) < 32 ? 1 << (i) : 1 << ((i) - 32)))
 #define isclr(a, i) (!isset((a), (i)))
 
-#ifdef DEBUG /* for debugging option */
-#define malloc(s) DEBUGmalloc(s, __FILE__, __LINE__)
-#define free(s) DEBUGfree(s)
-#define realloc(p, s) DEBUGrealloc(p, s, __FILE__, __LINE__)
-
-#define getrace(a, b, c) DEBUGgetrace(a, b, c, __FILE__, __LINE__)
-#define getstar(a, b, c) DEBUGgetstar(a, b, c, __FILE__, __LINE__)
-#define getplanet(a, b, c) DEBUGgetplanet(a, b, c, __FILE__, __LINE__)
-#define getship(a, b, c) DEBUGgetship(a, b, c, __FILE__, __LINE__)
-#define getcommod(a, b, c) DEBUGgetcommod(a, b, c, __FILE__, __LINE__)
-#endif
-
 #define success(x) (int_rand(1, 100) <= (x))
 
 #endif // VARS_H

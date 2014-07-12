@@ -198,7 +198,7 @@ struct stardata {
   unsigned long dummy[2];
 };
 
-EXTERN struct stardata Sdata;
+struct stardata Sdata;
 
 struct directory {
   unsigned char level;                /* what directory level */
@@ -221,38 +221,38 @@ struct vic {
   long login;
 };
 
-EXTERN struct directory Dir[MAXPLAYERS][MAXGOVERNORS + 1];
+extern struct directory Dir[MAXPLAYERS][MAXGOVERNORS + 1];
 
-EXTERN sectortype Smap[(MAX_X + 1) * (MAX_Y + 1) + 1];
+extern sectortype Smap[(MAX_X + 1) * (MAX_Y + 1) + 1];
 
-EXTERN unsigned char Nuked[MAXPLAYERS];
-EXTERN unsigned long StarsInhab[NUMSTARS];
-EXTERN unsigned long StarsExpl[NUMSTARS];
-EXTERN startype *Stars[NUMSTARS];
-EXTERN unsigned short Sdatanumships[MAXPLAYERS];
-EXTERN unsigned long Sdatapopns[MAXPLAYERS];
-EXTERN unsigned short starnumships[NUMSTARS][MAXPLAYERS];
-EXTERN unsigned long starpopns[NUMSTARS][MAXPLAYERS];
+extern unsigned char Nuked[MAXPLAYERS];
+extern unsigned long StarsInhab[NUMSTARS];
+extern unsigned long StarsExpl[NUMSTARS];
+extern startype *Stars[NUMSTARS];
+extern unsigned short Sdatanumships[MAXPLAYERS];
+extern unsigned long Sdatapopns[MAXPLAYERS];
+extern unsigned short starnumships[NUMSTARS][MAXPLAYERS];
+extern unsigned long starpopns[NUMSTARS][MAXPLAYERS];
 
-EXTERN unsigned long tot_resdep, prod_eff, prod_res[MAXPLAYERS];
-EXTERN unsigned long prod_fuel[MAXPLAYERS], prod_destruct[MAXPLAYERS];
-EXTERN unsigned long prod_crystals[MAXPLAYERS], prod_money[MAXPLAYERS];
-EXTERN unsigned long tot_captured, prod_mob;
-EXTERN unsigned long avg_mob[MAXPLAYERS];
-EXTERN unsigned char sects_gained[MAXPLAYERS], sects_lost[MAXPLAYERS];
-EXTERN unsigned char Claims;
-EXTERN unsigned char adr;
-EXTERN char junk[2][256];
+extern unsigned long tot_resdep, prod_eff, prod_res[MAXPLAYERS];
+extern unsigned long prod_fuel[MAXPLAYERS], prod_destruct[MAXPLAYERS];
+extern unsigned long prod_crystals[MAXPLAYERS], prod_money[MAXPLAYERS];
+extern unsigned long tot_captured, prod_mob;
+extern unsigned long avg_mob[MAXPLAYERS];
+extern unsigned char sects_gained[MAXPLAYERS], sects_lost[MAXPLAYERS];
+extern unsigned char Claims;
+extern unsigned char adr;
+extern char junk[2][256];
 
-EXTERN planettype *planets[NUMSTARS][MAXPLANETS];
-EXTERN unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
-EXTERN unsigned long inhabited[NUMSTARS][2];
-EXTERN double Compat[MAXPLAYERS];
-EXTERN unsigned long Num_races, Num_ships, Num_commods;
-EXTERN unsigned long Planet_count;
-EXTERN unsigned long newslength[4];
-EXTERN char args[MAXARGS][COMMANDSIZE];
-EXTERN int argn;
+extern planettype *planets[NUMSTARS][MAXPLANETS];
+extern unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
+extern unsigned long inhabited[NUMSTARS][2];
+extern double Compat[MAXPLAYERS];
+extern unsigned long Num_races, Num_ships, Num_commods;
+extern unsigned long Planet_count;
+extern unsigned long newslength[4];
+extern char args[MAXARGS][COMMANDSIZE];
+extern int argn;
 
 /* bit routines stolen from UNIX <sys/param.h> */
 #define setbit(a, i) ((a)[(i) / 32] |= ((i) < 32 ? 1 << (i) : 1 << ((i) - 32)))

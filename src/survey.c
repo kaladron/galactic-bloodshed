@@ -4,7 +4,6 @@
 
 /* survey.c -- print out survey for planets */
 
-#define EXTERN extern
 #include "survey.h"
 
 #include <ctype.h>

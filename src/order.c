@@ -4,13 +4,12 @@
 
 /*  order.c -- give orders to ship */
 
+#include "order.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "order.h"
 
 #include "GB_server.h"
 #include "buffers.h"

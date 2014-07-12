@@ -4,7 +4,6 @@
 
 /* doship -- do one ship turn. */
 
-#define EXTERN extern
 #include "doship.h"
 
 #include <math.h>

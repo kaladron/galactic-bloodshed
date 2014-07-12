@@ -9,7 +9,6 @@
  *    damage-resistant.
  */
 
-#define EXTERN extern
 #include "mobiliz.h"
 
 #include <stdio.h>

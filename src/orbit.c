@@ -4,7 +4,6 @@
 
 /*  orbit.c -- display orbits of planets (graphic representation) */
 
-#define EXTERN extern
 #include "orbit.h"
 
 #include <stdio.h>

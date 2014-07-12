@@ -4,13 +4,12 @@
 
 /*  move.c -- move population and assault aliens on target sector */
 
+#include "move.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "move.h"
 
 #include "GB_server.h"
 #include "buffers.h"

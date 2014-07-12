@@ -4,7 +4,6 @@
 
 /* dissolve.c -- commit suicide, nuke all ships and sectors; */
 
-#define EXTERN extern
 #include "dissolve.h"
 
 #include <stdio.h>

@@ -4,7 +4,6 @@
 
 /* launch.c -- launch or undock a ship (also undock) */
 
-#define EXTERN extern
 #include "launch.h"
 
 #include <stdio.h>

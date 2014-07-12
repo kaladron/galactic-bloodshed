@@ -4,7 +4,6 @@
 
 /*  toggle.c -- toggles some options */
 
-#define EXTERN extern
 #include "toggle.h"
 
 #include <stdio.h>

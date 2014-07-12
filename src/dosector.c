@@ -2,13 +2,6 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/*
- *  produce() -- produce, stuff like that, on a sector.
- *  spread()  -- spread population around.
- *  explore() -- mark sector and surrounding sectors as having been explored.
- */
-
-#define EXTERN extern
 #include "dosector.h"
 
 #include "doturn.h"
@@ -21,6 +14,7 @@
 static const int x_adj[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
 static const int y_adj[] = { 1, 1, 1, 0, 0, -1, -1, -1 };
 
+//  produce() -- produce, stuff like that, on a sector.
 void produce(startype *star, planettype *planet, sectortype *s) {
   reg int ss;
   reg int maxsup;
@@ -107,6 +101,7 @@ void produce(startype *star, planettype *planet, sectortype *s) {
     s->owner = 0;
 }
 
+// spread()  -- spread population around.
 void spread(reg planettype *pl, reg sectortype *s, reg int x, reg int y) {
   int people;
   reg int x2, y2, j;
@@ -170,6 +165,7 @@ void Migrate2(planettype *planet, reg int xd, reg int yd, sectortype *ps,
 /* mark sectors on the planet as having been "explored." for sea exploration
         on earthtype planets.  */
 
+//  explore() -- mark sector and surrounding sectors as having been explored.
 void explore(reg planettype *planet, reg sectortype *s, reg int x, reg int y,
              reg int p) {
   reg int d;

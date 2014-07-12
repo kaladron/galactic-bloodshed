@@ -4,7 +4,6 @@
 
 /* build -- build a ship */
 
-#define EXTERN extern
 #include "build.h"
 
 #include <math.h>

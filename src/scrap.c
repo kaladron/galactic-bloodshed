@@ -4,7 +4,6 @@
 
 /* scrap.c -- turn a ship to junk */
 
-#define EXTERN extern
 #include "scrap.h"
 
 #include <stdio.h>

@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 
-#define EXTERN extern
 #include "GB_server.h"
 #include "buffers.h"
 #include "config.h"

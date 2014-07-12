@@ -4,12 +4,11 @@
 
 /*  load.c -- load/unload stuff */
 
+#include "load.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "load.h"
 
 #include "GB_server.h"
 #include "buffers.h"

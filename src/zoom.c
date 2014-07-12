@@ -4,7 +4,6 @@
 
 /* zoom.c -- zoom in or out for orbit display */
 
-#define EXTERN extern
 #include "zoom.h"
 
 #include <stdio.h>

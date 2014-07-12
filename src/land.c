@@ -7,7 +7,6 @@
  *  and..... assault -- a very un-PC version of land/dock
  */
 
-#define EXTERN extern
 #include "land.h"
 
 #include <math.h>

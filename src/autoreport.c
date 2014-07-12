@@ -6,7 +6,6 @@
  * autoreport.c -- tell server to generate a report for each planet
  */
 
-#define EXTERN extern
 #include "autoreport.h"
 
 #include <stdio.h>

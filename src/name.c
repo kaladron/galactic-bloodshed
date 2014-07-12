@@ -4,14 +4,13 @@
 
 /* name.c -- rename something to something else */
 
+#include "name.h"
+
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "name.h"
 
 #include "GB_server.h"
 #include "buffers.h"

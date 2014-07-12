@@ -4,11 +4,10 @@
 
 /* prof.c -- print out racial profile */
 
+#include "prof.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-
-#define EXTERN extern
-#include "prof.h"
 
 #include "GB_server.h"
 #include "buffers.h"

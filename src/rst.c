@@ -8,14 +8,13 @@
  *  Command "factories" programmed by varneyml@gb.erc.clarkson.edu
  */
 
+#include "rst.h"
+
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "rst.h"
 
 #include "GB_server.h"
 #include "buffers.h"

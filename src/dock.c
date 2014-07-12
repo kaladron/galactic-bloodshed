@@ -4,7 +4,6 @@
 
 /*  dock.c -- dock a ship and..... assault -- a very un-PC version of dock */
 
-#define EXTERN extern
 #include "dock.h"
 
 #include <math.h>

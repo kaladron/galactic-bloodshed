@@ -4,7 +4,6 @@
 
 /* enslave.c -- ENSLAVE the planet below. */
 
-#define EXTERN extern
 #include "enslave.h"
 
 #include <stdio.h>

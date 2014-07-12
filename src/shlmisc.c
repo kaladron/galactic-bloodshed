@@ -4,7 +4,6 @@
 
 /*  miscellaneous stuff included in the shell */
 
-#define EXTERN extern
 #include "shlmisc.h"
 
 #include <ctype.h>

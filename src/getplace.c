@@ -8,12 +8,11 @@
  *  testship(ship) -- tests various things for the ship.
  */
 
+#include "getplace.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "getplace.h"
 
 #include "GB_server.h"
 #include "buffers.h"

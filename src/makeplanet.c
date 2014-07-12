@@ -4,7 +4,6 @@
 
 /* makeplanet.c -- makes one planet. */
 
-#define EXTERN extern
 #include "makeplanet.h"
 
 #include <math.h>

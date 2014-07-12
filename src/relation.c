@@ -4,7 +4,6 @@
 
 /* relation.c -- state relations among players */
 
-#define EXTERN extern
 #include "relation.h"
 
 #include <stdio.h>

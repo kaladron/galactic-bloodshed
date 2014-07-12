@@ -4,12 +4,11 @@
 
 /* examine -- check out an object */
 
+#include "examine.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "examine.h"
 
 #include "GB_server.h"
 #include "buffers.h"

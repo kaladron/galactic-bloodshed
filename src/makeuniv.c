@@ -5,7 +5,6 @@
 /* makeuniv.c -- universe creation program.
  *   Makes various required data files; calls makestar for each star desired. */
 
-#define EXTERN
 #include "makeuniv.h"
 
 #include <stdio.h>
@@ -15,8 +14,9 @@
 #include <unistd.h>
 
 #include "files.h"
+#include "globals.h"
 #include "makestar.h"
-#include "power.h" /* (for power) */
+#include "power.h"
 #include "races.h"
 #include "rand.h"
 #include "tweakables.h"

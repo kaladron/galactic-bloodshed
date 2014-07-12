@@ -6,7 +6,6 @@
  * Bombard() -- ship bombards planet
  */
 
-#define EXTERN extern
 #include "autoshoot.h"
 
 #include <stdio.h>

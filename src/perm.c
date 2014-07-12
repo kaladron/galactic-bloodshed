@@ -4,7 +4,6 @@
 
 /* perm.c -- randomly permute a sector list */
 
-#define EXTERN extern
 #include "perm.h"
 
 #include "rand.h"

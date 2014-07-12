@@ -2,13 +2,12 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+#include "shootblast.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "shootblast.h"
 
 #include "GB_server.h"
 #include "buffers.h"

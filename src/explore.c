@@ -2,12 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+#include "explore.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#define EXTERN extern
-#include "explore.h"
 
 #include "GB_server.h"
 #include "buffers.h"

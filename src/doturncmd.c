@@ -4,14 +4,13 @@
 
 /* doturn -- does one turn. */
 
+#include "doturncmd.h"
+
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "doturncmd.h"
 
 #include "GB_server.h"
 #include "buffers.h"

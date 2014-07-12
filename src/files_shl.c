@@ -7,7 +7,6 @@
  *    closed).  write routines close and thus unlock that area.
  */
 
-#define EXTERN extern
 #include "files_shl.h"
 
 #include <errno.h>

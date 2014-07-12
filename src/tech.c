@@ -4,7 +4,6 @@
 
 /* tech.c -- increase investment in technological development. */
 
-#define EXTERN extern
 #include "tech.h"
 
 #include <math.h>

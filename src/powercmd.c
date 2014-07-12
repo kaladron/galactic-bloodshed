@@ -4,11 +4,10 @@
 
 /* power.c -- display power report */
 
+#include "powercmd.h"
+
 #include <stdio.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "powercmd.h"
 
 #include "GB_server.h"
 #include "buffers.h"

@@ -4,7 +4,6 @@
 
 /* capital.c -- designate a capital */
 
-#define EXTERN extern
 #include "capital.h"
 
 #include <stdio.h>

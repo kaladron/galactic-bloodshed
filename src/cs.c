@@ -2,7 +2,6 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#define EXTERN extern
 #include "cs.h"
 
 #include <stdio.h>

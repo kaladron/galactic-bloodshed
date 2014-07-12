@@ -4,14 +4,13 @@
 
 /* fuel.c -- See estimations in fuel consumption and travel time. */
 
+#include "fuel.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-#define EXTERN extern
-#include "fuel.h"
 
 #include "GB_server.h"
 #include "doship.h"

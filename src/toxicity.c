@@ -4,7 +4,6 @@
 
 /* toxicty.c -- change threshold in toxicity to build a wc. */
 
-#define EXTERN extern
 #include "toxicity.h"
 
 #include <stdio.h>

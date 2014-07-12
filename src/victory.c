@@ -2,12 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+#include "victory.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "victory.h"
 
 #include "GB_server.h"
 #include "buffers.h"

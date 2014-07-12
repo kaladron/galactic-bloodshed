@@ -4,12 +4,11 @@
 
 /* VN.c -- assorted Von Neumann machine code */
 
+#include "VN.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define EXTERN extern
-#include "VN.h"
 
 #include "buffers.h"
 #include "build.h"

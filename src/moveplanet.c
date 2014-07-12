@@ -4,7 +4,6 @@
 
 /* moveplanet.c -- move the planet in orbit around its star. */
 
-#define EXTERN extern
 #include "moveplanet.h"
 
 #include <math.h>

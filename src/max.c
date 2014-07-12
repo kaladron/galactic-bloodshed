@@ -9,7 +9,6 @@
  * prin_ship_orbits() -- prints place ship orbits
  */
 
-#define EXTERN extern
 #include "max.h"
 
 #include <stdio.h>

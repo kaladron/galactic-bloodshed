@@ -4,7 +4,6 @@
 
 /* fire.c -- fire at ship or planet from ship or planet */
 
-#define EXTERN extern
 #include "fire.h"
 
 #include <stdio.h>

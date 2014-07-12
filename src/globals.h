@@ -57,4 +57,39 @@ const char Dessymbols[] = { CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
 
 racetype *Race;
 
+struct stardata Sdata;
+
+struct directory Dir[MAXPLAYERS][MAXGOVERNORS + 1];
+
+sectortype Smap[(MAX_X + 1) * (MAX_Y + 1) + 1];
+
+unsigned char Nuked[MAXPLAYERS];
+unsigned long StarsInhab[NUMSTARS];
+unsigned long StarsExpl[NUMSTARS];
+startype *Stars[NUMSTARS];
+unsigned short Sdatanumships[MAXPLAYERS];
+unsigned long Sdatapopns[MAXPLAYERS];
+unsigned short starnumships[NUMSTARS][MAXPLAYERS];
+unsigned long starpopns[NUMSTARS][MAXPLAYERS];
+
+unsigned long tot_resdep, prod_eff, prod_res[MAXPLAYERS];
+unsigned long prod_fuel[MAXPLAYERS], prod_destruct[MAXPLAYERS];
+unsigned long prod_crystals[MAXPLAYERS], prod_money[MAXPLAYERS];
+unsigned long tot_captured, prod_mob;
+unsigned long avg_mob[MAXPLAYERS];
+unsigned char sects_gained[MAXPLAYERS], sects_lost[MAXPLAYERS];
+unsigned char Claims;
+unsigned char adr;
+char junk[2][256];
+
+planettype *planets[NUMSTARS][MAXPLANETS];
+unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
+unsigned long inhabited[NUMSTARS][2];
+double Compat[MAXPLAYERS];
+unsigned long Num_races, Num_ships, Num_commods;
+unsigned long Planet_count;
+unsigned long newslength[4];
+char args[MAXARGS][COMMANDSIZE];
+int argn;
+
 #endif // GLOBALS_H

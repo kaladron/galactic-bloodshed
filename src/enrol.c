@@ -11,7 +11,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#define EXTERN
 #include "files_shl.h"
 #include "globals.h"
 #include "max.h"

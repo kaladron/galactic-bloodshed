@@ -4,7 +4,6 @@
 
 /*  doplanet.c -- do one turn on a planet. */
 
-#define EXTERN extern
 #include "doplanet.h"
 
 #include <stdio.h>

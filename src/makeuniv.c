@@ -1,47 +1,44 @@
-/* makeuniv.c -- universe creation program.
- *   Makes various required data files; calls makestar for each star desired.
- *
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "GB_copyright.h"
+/* makeuniv.c -- universe creation program.
+ *   Makes various required data files; calls makestar for each star desired. */
+
 #define EXTERN
-#include "globals.h"
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h" /* (for power) */
-#include "rand.h"
-#include <math.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/stat.h>
 #include "makeuniv.h"
 
-extern int Temperature(double, int);
-extern void PrintStatistics(void);
-extern void Makeplanet_init(void);
-extern void Makestar_init(void);
-extern startype *Makestar(FILE *, FILE *);
-void InitFile(char *, void *, int);
-void EmptyFile(char *);
-void produce_postscript(char *);
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-#define DEFAULT_POSTSCRIPT_MAP_FILENAME "universe.ps"
+#include "files.h"
+#include "makestar.h"
+#include "power.h" /* (for power) */
+#include "races.h"
+#include "rand.h"
+#include "tweakables.h"
+#include "vars.h"
+
+static void InitFile(char *, void *, int);
+static void EmptyFile(char *);
+static void produce_postscript(const char *);
+
+static const char *DEFAULT_POSTSCRIPT_MAP_FILENAME = "universe.ps";
 
 int autoname_star = -1;
 int autoname_plan = -1;
 int minplanets = -1;
 int maxplanets = -1;
-int nstars = -1;
-int planetlesschance = 0;
-int printpostscript = 0;
 int printplaninfo = 0;
 int printstarinfo = 0;
 
+static int nstars = -1;
 static int occupied[100][100];
+static int planetlesschance = 0;
+static int printpostscript = 0;
 
 int main(int argc, char *argv[]) {
   FILE *stardata, *planetdata, *sectordata;
@@ -245,7 +242,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void InitFile(char *filename, void *ptr, int len) {
+static void InitFile(char *filename, void *ptr, int len) {
   FILE *f = fopen(filename, "w+");
 
   if (f == NULL) {
@@ -257,13 +254,13 @@ void InitFile(char *filename, void *ptr, int len) {
   fclose(f);
 }
 
-void EmptyFile(char *filename) { InitFile(filename, NULL, 0); }
+static void EmptyFile(char *filename) { InitFile(filename, NULL, 0); }
 
 /*
  * The procedure below was adapted from a program which is
  * Copyright: Andreas Girgensohn (andreasg@cs.colorado.edu)
  * produces a Postscript map of the universe. */
-void produce_postscript(char *filename) {
+static void produce_postscript(const char *filename) {
   int min_x, max_x, min_y, max_y, i;
   double scale, nscale;
   FILE *f = fopen(filename, "w+");

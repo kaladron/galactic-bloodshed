@@ -38,6 +38,12 @@ static int Numtypes[TYPE_DESERT + 2] = { 0, };
 static int Resource[TYPE_DESERT + 2] = { 0, };
 static int Numsects[TYPE_DESERT + 2][PLATED + 1] = { { 0, }, };
 static int Fertsects[TYPE_DESERT + 2][PLATED + 1] = { { 0, }, };
+static int numplist, namepcount;
+static char PNames[1000][20];
+static int planet_list[1000];
+static int numslist, namestcount;
+static char SNames[1000][20];
+static int star_list[1000];
 
 // TODO(jeffbailey): This should be syncd with the ones in GB_server.h:
 static const char *Nametypes[] = { "Earth",   "Asteroid", "Airless",
@@ -143,10 +149,6 @@ void rand_list(int n, int *list) /* mix up the numbers 0 thru n */
   }
 }
 
-int numplist, namepcount;
-char PNames[1000][20];
-int planet_list[1000];
-
 void Makeplanet_init(void) {
   numplist = ReadNameList(PNames, 1000, 20, PLANETLIST);
   rand_list(numplist, planet_list);
@@ -163,10 +165,6 @@ static const char *NextPlanetName(int i) {
   else
     return Numbers[i];
 }
-
-int numslist, namestcount;
-char SNames[1000][20];
-int star_list[1000];
 
 void Makestar_init(void) {
   numslist = ReadNameList(SNames, 1000, 20, STARLIST);

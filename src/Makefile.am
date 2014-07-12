@@ -8,7 +8,6 @@ AM_CFLAGS = -g -O2 -W -Weverything -Werror \
 	    -Wno-conversion \
 	    -Wno-unused-parameter \
 	    -Wno-sign-compare \
-	    -Wno-array-bounds \
 	    -Wno-char-subscripts \
 	    -Wno-tautological-constant-out-of-range-compare
 

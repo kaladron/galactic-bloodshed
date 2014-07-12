@@ -23,8 +23,6 @@
 #include "tweakables.h"
 #include "vars.h"
 
-char desshow();
-
 struct stype {
   char here;
   char x, y;
@@ -32,6 +30,9 @@ struct stype {
 };
 
 #define RACIAL_TYPES 10
+
+// TODO(jeffbailey): Copied from map.c, but they've diverged
+static char desshow(planettype *p, int x, int y);
 
 /* racial types (10 racial types ) */
 static int Thing[RACIAL_TYPES] = { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
@@ -456,7 +457,7 @@ int main() {
   return 0;
 }
 
-char desshow(planettype *p, int x, int y) /* copied from map.c */
+static char desshow(planettype *p, int x, int y) /* copied from map.c */
 {
   reg sectortype *s;
 
@@ -486,5 +487,7 @@ char desshow(planettype *p, int x, int y) /* copied from map.c */
   }
 }
 
+// TODO(jeffbailey): We shouldn't need to be providing this function.
+void notify(int, int, char*);
 void notify(int who, int gov, char *msg) { /* this is a dummy routine */
 }

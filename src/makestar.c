@@ -45,6 +45,9 @@ static int numslist, namestcount;
 static char SNames[1000][20];
 static int star_list[1000];
 
+static int ReadNameList(char ss[1000][20], int n, int m, char *filename);
+static void rand_list(int n, int *list);
+
 // TODO(jeffbailey): This should be syncd with the ones in GB_server.h:
 static const char *Nametypes[] = { "Earth",   "Asteroid", "Airless",
                                    "Iceball", "Gaseous",  "Water",
@@ -95,7 +98,7 @@ void PrintStatistics(void) {
   }
 }
 
-int ReadNameList(char ss[1000][20], int n, int m, char *filename) {
+static int ReadNameList(char ss[1000][20], int n, int m, char *filename) {
   register int i, j;
   FILE *f = fopen(filename, "r");
 
@@ -123,7 +126,7 @@ out:
   return i;
 }
 
-void rand_list(int n, int *list) /* mix up the numbers 0 thru n */
+static void rand_list(int n, int *list) /* mix up the numbers 0 thru n */
 {
   short nums[1000], i, j, k;
   short kk, ii;

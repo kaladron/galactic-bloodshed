@@ -1,5 +1,4 @@
 AM_CFLAGS = -g -O2 -W -Weverything -Werror \
-	    -Wno-missing-prototypes \
 	    -Wno-conditional-uninitialized \
 	    -Wno-float-equal \
 	    -Wno-bad-function-cast \

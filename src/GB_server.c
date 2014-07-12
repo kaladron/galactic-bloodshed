@@ -244,6 +244,8 @@ void adjust_morale(racetype *, racetype *, int);
 #include "victory.h"
 #include "zoom.h"
 
+static struct timeval timeval_sub(struct timeval now, struct timeval then);
+
 #define MAX_COMMAND_LEN 512
 
 #ifdef DEBUG
@@ -429,7 +431,7 @@ void d_announce(int Playernum, int Governor, int star, char *message) {
   }
 }
 
-struct timeval timeval_sub(struct timeval now, struct timeval then) {
+static struct timeval timeval_sub(struct timeval now, struct timeval then) {
   now.tv_sec -= then.tv_sec;
   now.tv_usec -= then.tv_usec;
   if (now.tv_usec < 0) {

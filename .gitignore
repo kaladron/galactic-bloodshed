@@ -11,3 +11,4 @@ src/Makefile
 config.log
 config.status
 src/.deps/
+autom4te.cache

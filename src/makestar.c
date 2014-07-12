@@ -9,6 +9,7 @@
 // G.O.D. [1] > ammonia melts at -78C
 // G.O.D. [1] > boils at -33
 
+#define EXTERN
 #include "makestar.h"
 
 #include <math.h>
@@ -16,7 +17,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define EXTERN
 #include "files.h"
 #include "makeplanet.h"
 #include "makeuniv.h"
@@ -31,6 +31,7 @@ static const double PLANET_DIST_MIN = 100.0;
 #define M_PI 3.14159265358979323846
 #endif
 
+static char *NextStarName(void);
 static const char *NextPlanetName(int);
 
 static int Numtypes[TYPE_DESERT + 2] = { 0, };

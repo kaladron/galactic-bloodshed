@@ -11,7 +11,6 @@
 
 int Temperature(double dist, int stemp);
 void Makestar_init(void);
-static char *NextStarName(void);
 startype *Makestar(FILE *, FILE *);
 void Makeplanet_init(void);
 

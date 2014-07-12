@@ -4,14 +4,15 @@
 
 /* moveplanet.c -- move the planet in orbit around its star. */
 
-#include "GB_copyright.h"
 #define EXTERN extern
-#include "vars.h"
-#include "ships.h"
-#include "races.h" /* (needed only for races in doturn.h */
-#include "doturn.h"
-#include <math.h>
 #include "moveplanet.h"
+
+#include <math.h>
+
+#include "doturn.h"
+#include "ships.h"
+#include "tweakables.h"
+#include "vars.h"
 
 void moveplanet(int starnum, planettype *planet, int planetnum) {
   double dist;

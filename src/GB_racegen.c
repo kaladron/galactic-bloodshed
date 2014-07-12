@@ -1,60 +1,36 @@
-/* GB_enroll.c -- GB file interace for GB race enrollment program.
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include "GB_copyright.h"
+#include <unistd.h>
 
 #define EXTERN
-#include "globals.h"
-#include "vars.h"
-#include "power.h"
-#include "ships.h"
-#include "shipdata.h"
-#include "races.h"
-#include "buffers.h"
 #include "files_shl.h"
-#include "rand.h"
+#include "globals.h"
 #include "max.h"
 #include "perm.h"
-
 #include "racegen.h"
-#include "config.h"
+#include "races.h"
+#include "rand.h"
+#include "shipdata.h"
+#include "ships.h"
+#include "tweakables.h"
+#include "vars.h"
 
-extern int errno;
-racetype *Race;
+static const int START_RES = 100;
+static const int START_MESO_RES_DIFF = 40;
+static const int START_FUEL = 100;
+static const int START_DES = 100;
 
-#define START_RES 100
-#define START_MESO_RES_DIFF 40
-#define START_FUEL 100
-#define START_DES 100
-
-int planet_translate[N_HOME_PLANET_TYPES] = { 0, 6, 7, 5, 2, 3, 4 };
-
-#ifdef __STDC__
-long random(void);
-
-int getpid(void);
-
-void modify_print_loop(int level);
-
-#else
-#define const
-#endif
+static const int planet_translate[N_HOME_PLANET_TYPES] = {
+  0, 6, 7, 5, 2, 3, 4
+};
 
 void notify(who, gov, msg) int who, gov;
-char *msg;
-{ /* this is a dummy routine */
-}
-
-void warn(who, gov, msg) int who, gov;
-char *msg;
-{ /* this is a dummy routine */
-}
-
-void push_message(what, who, msg) int what, who;
 char *msg;
 { /* this is a dummy routine */
 }

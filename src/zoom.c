@@ -1,10 +1,8 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- * zoom.c -- zoom in or out for orbit display
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/* zoom.c -- zoom in or out for orbit display */
 
 #define EXTERN extern
 #include "zoom.h"

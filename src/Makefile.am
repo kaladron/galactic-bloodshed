@@ -5,7 +5,6 @@ AM_CFLAGS = -g -O2 -W -Weverything -Werror \
 	    -Wno-bad-function-cast \
 	    -Wno-missing-variable-declarations \
 	    -Wno-shadow \
-	    -Wno-undef \
 	    -Wno-unreachable-code \
 	    -Wno-conversion \
 	    -Wno-unused-parameter \

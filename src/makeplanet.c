@@ -1,36 +1,24 @@
-/* makeplanet.c -- makes one planet.
- *
- * #ident  "@(#)makeplanet.c	1.3 2/17/93 "
- *
- * Galactic Bloodshed, copyright (c) 1989 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, mods by people in GB_copyright.h.
- * Restrictions in GB_copyright.h.
- *
- * Modified Feb 13, 1992 by Shawn Fox : skf5055@tamsun.tamu.edu
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// // Use of this source code is governed by a license that can be
+// // found in the COPYING file.
 
-#include "GB_copyright.h"
-
-#define MAP_ISLANDS 3           /* # of beginning islands for makeuniv */
-#define MAP_MOUNT_PERCENT 0.22  /* percentage of mountain areas */
-#define MAP_DESERT_PERCENT 0.10 /* percent of desert areas */
-#define MAP_GASGIANT_BANDMIN 20 /* min size gasgiants that have bands */
-#define LANDPERCENTAGE int_rand(20, 70) / 100
-#define POLEFUDGE 10
+/* makeplanet.c -- makes one planet. */
 
 #define EXTERN extern
-#include "vars.h"
-#include <string.h>
-#include <math.h>
+#include "makeplanet.h"
 
-extern double double_rand(void);
-extern int int_rand(int, int);
-extern int round_rand(double);
-extern int rposneg(void);
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "makestar.h"
+#include "rand.h"
+#include "tweakables.h"
+#include "vars.h"
 
 /*             @   o   O   #   ~   .   (   -    */
-int xmin[] = { 15, 2, 4, 4, 26, 12, 12, 12 };
-int xmax[] = { 23, 4, 8, 8, 32, 20, 20, 20 };
+static const int xmin[] = { 15, 2, 4, 4, 26, 12, 12, 12 };
+static const int xmax[] = { 23, 4, 8, 8, 32, 20, 20, 20 };
 
 /*
  * Fmin, Fmax, rmin, rmax are now all based on the sector type as well
@@ -38,61 +26,56 @@ int xmax[] = { 23, 4, 8, 8, 32, 20, 20, 20 };
  */
 
 /*                 .      *     ^     ~     #     (     -             */
-int x_chance[] = { 5, 15, 10, 4, 5, 7, 6 };
-int Fmin[][8] = { { 25, 20, 10, 0, 20, 45, 5 },  /*   @   */
-                  { 0, 1, 2, 0, 0, 0, 1 },       /*   o   */
-                  { 0, 3, 2, 0, 0, 0, 2 },       /*   O   */
-                  { 0, 0, 8, 0, 25, 0, 0 },      /*   #   */
-                  { 0, 0, 0, 35, 0, 0, 0 },      /*   ~   */
-                  { 30, 0, 0, 0, 20, 0, 0 },     /*   .   */
-                  { 30, 25, 20, 0, 30, 60, 15 }, /*   (   */
-                  { 0, 5, 2, 0, 0, 0, 2 } };     /*   -   */
+static const int x_chance[] = { 5, 15, 10, 4, 5, 7, 6 };
+static const int Fmin[][8] = { { 25, 20, 10, 0, 20, 45, 5 },  /*   @   */
+                               { 0, 1, 2, 0, 0, 0, 1 },       /*   o   */
+                               { 0, 3, 2, 0, 0, 0, 2 },       /*   O   */
+                               { 0, 0, 8, 0, 25, 0, 0 },      /*   #   */
+                               { 0, 0, 0, 35, 0, 0, 0 },      /*   ~   */
+                               { 30, 0, 0, 0, 20, 0, 0 },     /*   .   */
+                               { 30, 25, 20, 0, 30, 60, 15 }, /*   (   */
+                               { 0, 5, 2, 0, 0, 0, 2 } };     /*   -   */
 
 /*                 .      *     ^     ~     #     (     -             */
-int Fmax[][8] = { { 40, 35, 20, 0, 40, 65, 15 }, /*   @   */
-                  { 0, 2, 3, 0, 0, 0, 2 },       /*   o   */
-                  { 0, 5, 4, 0, 0, 0, 3 },       /*   O   */
-                  { 0, 0, 15, 0, 35, 0, 0 },     /*   #   */
-                  { 0, 0, 0, 55, 0, 0, 0 },      /*   ~   */
-                  { 50, 0, 0, 0, 40, 0, 0 },     /*   .   */
-                  { 60, 45, 30, 0, 50, 90, 25 }, /*   (   */
-                  { 0, 10, 6, 0, 0, 0, 8 } };    /*   -   */
+static const int Fmax[][8] = { { 40, 35, 20, 0, 40, 65, 15 }, /*   @   */
+                               { 0, 2, 3, 0, 0, 0, 2 },       /*   o   */
+                               { 0, 5, 4, 0, 0, 0, 3 },       /*   O   */
+                               { 0, 0, 15, 0, 35, 0, 0 },     /*   #   */
+                               { 0, 0, 0, 55, 0, 0, 0 },      /*   ~   */
+                               { 50, 0, 0, 0, 40, 0, 0 },     /*   .   */
+                               { 60, 45, 30, 0, 50, 90, 25 }, /*   (   */
+                               { 0, 10, 6, 0, 0, 0, 8 } };    /*   -   */
 
 /*                 .      *     ^     ~     #     (     -             */
-int rmin[][8] = { { 200, 225, 300, 0, 200, 0, 250 }, /*   @   */
-                  { 0, 250, 350, 0, 0, 0, 300 },     /*   o   */
-                  { 0, 225, 275, 0, 0, 0, 250 },     /*   O   */
-                  { 0, 0, 250, 0, 225, 0, 0 },       /*   #   */
-                  { 0, 0, 0, 30, 0, 0, 0 },          /*   ~   */
-                  { 175, 0, 0, 0, 200, 0, 0 },       /*   .   */
-                  { 150, 0, 0, 0, 150, 150, 0 },     /*   (   */
-                  { 0, 200, 300, 0, 0, 0, 250 } };   /*   -   */
+static const int rmin[][8] = { { 200, 225, 300, 0, 200, 0, 250 }, /*   @   */
+                               { 0, 250, 350, 0, 0, 0, 300 },     /*   o   */
+                               { 0, 225, 275, 0, 0, 0, 250 },     /*   O   */
+                               { 0, 0, 250, 0, 225, 0, 0 },       /*   #   */
+                               { 0, 0, 0, 30, 0, 0, 0 },          /*   ~   */
+                               { 175, 0, 0, 0, 200, 0, 0 },       /*   .   */
+                               { 150, 0, 0, 0, 150, 150, 0 },     /*   (   */
+                               { 0, 200, 300, 0, 0, 0, 250 } };   /*   -   */
 
 /*                 .      *     ^     ~     #     (     -             */
-int rmax[][8] = { { 250, 325, 400, 0, 250, 0, 300 }, /*   @   */
-                  { 0, 300, 600, 0, 0, 0, 400 },     /*   o   */
-                  { 0, 300, 500, 0, 0, 0, 300 },     /*   O   */
-                  { 0, 0, 350, 0, 300, 0, 0 },       /*   #   */
-                  { 0, 0, 0, 60, 0, 0, 0 },          /*   ~   */
-                  { 225, 0, 0, 0, 250, 0, 0 },       /*   .   */
-                  { 250, 0, 0, 0, 250, 200, 0 },     /*   (   */
-                  { 0, 200, 500, 0, 0, 0, 350 } };   /*   -   */
+static const int rmax[][8] = { { 250, 325, 400, 0, 250, 0, 300 }, /*   @   */
+                               { 0, 300, 600, 0, 0, 0, 400 },     /*   o   */
+                               { 0, 300, 500, 0, 0, 0, 300 },     /*   O   */
+                               { 0, 0, 350, 0, 300, 0, 0 },       /*   #   */
+                               { 0, 0, 0, 60, 0, 0, 0 },          /*   ~   */
+                               { 225, 0, 0, 0, 250, 0, 0 },       /*   .   */
+                               { 250, 0, 0, 0, 250, 200, 0 },     /*   (   */
+                               { 0, 200, 500, 0, 0, 0, 350 } };   /*   -   */
 
 /*  The starting conditions of the sectors given a planet types */
 /*              @      o     O    #    ~    .       (       _  */
-int cond[] = { SEA, MOUNT, LAND, ICE, GAS, SEA, FOREST, DESERT };
+static const int cond[] = { SEA, MOUNT, LAND, ICE, GAS, SEA, FOREST, DESERT };
 
-extern int Temperature(double, int);
-
-double DistmapSq(int, int, int, int);
-void MakeEarthAtmosphere(planettype *, int);
-int neighbors(planettype *, int, int, int);
-int SectorTemp(planettype *, int, int);
-void Makesurface(planettype *);
-short SectTemp(planettype *, int);
-planettype Makeplanet(double, short, int);
-void seed(planettype *, int, int);
-void grow(planettype *, int, int, int);
+static int neighbors(planettype *, int, int, int);
+static void MakeEarthAtmosphere(planettype *, int);
+static void Makesurface(planettype *);
+static short SectTemp(planettype *, int);
+static void seed(planettype *, int, int);
+static void grow(planettype *, int, int, int);
 
 planettype Makeplanet(double dist, short stemp, int type) {
   reg int x, y;
@@ -235,7 +218,7 @@ planettype Makeplanet(double dist, short stemp, int type) {
   return planet;
 }
 
-void MakeEarthAtmosphere(planettype *pptr, int chance) {
+static void MakeEarthAtmosphere(planettype *pptr, int chance) {
   int atmos = 100;
 
   if (int_rand(0, 99) > chance) {
@@ -261,56 +244,11 @@ void MakeEarthAtmosphere(planettype *pptr, int chance) {
   }
 }
 
-double DistmapSq(int x, int y, int x2, int y2) {
-#if 0
-    return fabs((double)(x-x2)) / RATIOXY + fabs( (double)(y-y2));
-#else
-  return (0.8 * (x - x2) * (x - x2) + (y - y2) * (y - y2));
-#endif
-}
-
-int SectorTemp(planettype *pptr, int x, int y) {
-  int p_x;     /* X of the pole. */
-  int p_y;     /* Y of the nearest pole. */
-  double f, d; /* `distance' to pole. */
-  static double renorm[] = { 0,           1.0 / 1.0,  2.0 / 2.0,   4.0 / 3.0,
-                             6.0 / 4.0,   9.0 / 5.0,  12.0 / 6.0,  16.0 / 7.0,
-                             20.0 / 8.0,  25.0 / 9.0, 30.0 / 10.0, 36.0 / 11.0,
-                             42.0 / 12.0, 49.0 / 13.0 };
-  /*                        @   o   O   #   ~   .   (   -    */
-  static int variance[] = { 30, 40, 40, 40, 10, 25, 30, 30 };
-
-  /* I use pptr->sectormappos to calculate the pole position from.
-     This in spite of the fact that the two have nothing to do with each other.
-     I did it because (a) I don't want the pole to move, and sectormappos will
-     also not change, and (b) sectormappos will not show up to the player in
-     any other fashion. */
-  p_x = pptr->sectormappos % pptr->Maxx;
-  if (y < (pptr->Maxy / 2.0))
-    p_y = -1;
-  else {
-    p_y = pptr->Maxy;
-    p_x = p_x + pptr->Maxx / 2.0;
-    if (p_x >= pptr->Maxx)
-      p_x -= pptr->Maxx;
-  }
-  d = (y - p_y) * (y - p_y);
-
-  f = (x - p_x + 0.2) / pptr->Maxx;
-  if (f < 0.0)
-    f = -f;
-  if (f > 0.5)
-    f = 1.0 - f;
-  d = sqrt(d + f - 0.5);
-  return (pptr->conditions[RTEMP] +
-          variance[pptr->type] * (d - renorm[pptr->Maxy]));
-}
-
 /*
     Returns # of neighbors of a given designation that a sector has.
 */
 
-int neighbors(planettype *p, int x, int y, int type) {
+static int neighbors(planettype *p, int x, int y, int type) {
   int l = x - 1;
   int r = x + 1; /* Left and right columns. */
   int n = 0;     /* Number of neighbors so far. */
@@ -338,7 +276,7 @@ int neighbors(planettype *p, int x, int y, int type) {
  * Randomly places n sectors of designation type on a planet.
  */
 
-void seed(planettype *p, int type, int n) {
+static void seed(planettype *p, int type, int n) {
   int x, y;
   sectortype *s;
 
@@ -356,7 +294,7 @@ void seed(planettype *p, int type, int n) {
  * become type.
  */
 
-void grow(planettype *p, int type, int n, int rate) {
+static void grow(planettype *p, int type, int n, int rate) {
   int x, y;
   sectortype *s;
   sectortype Smap2[(MAX_X + 1) * (MAX_Y + 1) + 1];
@@ -375,7 +313,7 @@ void grow(planettype *p, int type, int n, int rate) {
   }
 }
 
-void Makesurface(planettype *p) {
+static void Makesurface(planettype *p) {
   reg int x, y;
   reg int temp;
   reg sectortype *s;
@@ -412,10 +350,9 @@ void Makesurface(planettype *p) {
   }
 }
 
-#define TFAC 10
-
-short SectTemp(planettype *p, int y) {
+static short SectTemp(planettype *p, int y) {
   register int dy, mid, temp;
+  const int TFAC = 10;
 
   temp = p->conditions[TEMP];
   mid = (p->Maxy + 1) / 2 - 1;

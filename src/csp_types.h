@@ -1,16 +1,11 @@
-/*
- * csp_types.h: Variables and defines used internally in CSP related functions
- *
- * CSP, copyright (c) 1993 by John P. Deragon, Evan Koffler
- *
- * Please send any modifications of this file to:
- *    evank@netcom.com
- *    deragon@jethro.nyu.edu
- * #ident  "@(#)csp_types.h	1.3 12/1/93 "
- *
- */
-#ifndef _CSP_TYPES_H_
-#define _CSP_TYPES_H_
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/* csp_types.h: Variables and defines used internally in CSP related functions */
+
+#ifndef CSP_TYPES_H
+#define CSP_TYPES_H
 
 /* character to be found in column 0 of a CSP output line */
 /* sent by server to client */
@@ -113,5 +108,4 @@ enum COMMUNICATION {
 #define CSPD_TROOP_ENEMY_SYMBOL 'E'
 #define CSPD_TROOP_NEUTRAL_SYMBOL 'N'
 
-#endif
-/* _CSP_TYPES_H_ */
+#endif // CSP_TYPES_H

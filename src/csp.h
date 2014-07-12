@@ -1,16 +1,13 @@
-/*
- * csp.h: Contains the defines for all the Client-Server Protocol (CSP)
- *        numbers.
- *
- * CSP, copyright (c) 1993 by John P. Deragon, Evan Koffler
- *
- * #ident  "@(#)csp.h	1.9 12/7/93 "
- *
- * Please send any modifications of this file to:
- *    evank@netcom.com
- *    deragon@jethro.nyu.edu
- *
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+/* csp.h: Contains the defines for all the Client-Server Protocol (CSP)
+          numbers. */
+
+#ifndef CSP_H
+#define CSP_H
+
 /*---- Server responses ----*/
 
 /* VERSION */
@@ -154,3 +151,5 @@
 #define CSP_MAX_SERVER_COMMAND 2000
 
 #define CSP_ZOOM 35
+
+#endif // CSP_H

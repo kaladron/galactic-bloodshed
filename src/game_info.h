@@ -1,5 +1,11 @@
-/* game_info.h - game-variable parameters for compiling racegen
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+// game_info.h - game-variable parameters for compiling racegen
+
+#ifndef GAME_INFO_H
+#define GAME_INFO_H
 
 /**************
  * Game dependencies.  These will likely change for each game.
@@ -28,3 +34,5 @@ Racegen points are increased to 1400. Moderator will play (Zargoons).\n"
 #define MIN_PASSWORD_LENGTH 4
 /* #define TRADITIONAL_RACES */
 #define DEFAULT_MESO_IQ_LIMIT 180
+
+#endif // GAME_INFO_H

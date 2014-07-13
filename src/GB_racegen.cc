@@ -24,12 +24,17 @@
 
 // TODO(jeffbailey): This shouldn't be necessary!
 void notify(int who, int gov, char *msg);
+void warn(int who, int gov, char *msg);
 
 static const int planet_translate[N_HOME_PLANET_TYPES] = {
   0, 6, 7, 5, 2, 3, 4
 };
 
 void notify(int who, int gov, char *msg)
+{ /* this is a dummy routine */
+}
+
+void warn(int who, int gov, char *msg)
 { /* this is a dummy routine */
 }
 
@@ -267,7 +272,7 @@ found_planet:
     s.build_cost = Shipdata[OTYPE_GOV][ABIL_COST];
     s.size = 100;
     s.base_mass = 100.0;
-    sprintf(s.class, "Standard");
+    sprintf(s.shipclass, "Standard");
 
     s.fuel = 0.0;
     s.popn = Shipdata[s.type][ABIL_MAXCREW];

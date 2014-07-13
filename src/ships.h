@@ -102,7 +102,7 @@ struct ship {
   unsigned char owner;       /* owner of ship */
   unsigned char governor;    /* subordinate that controls the ship */
   char name[SHIP_NAMESIZE];  /* name of ship (optional) */
-  char class[SHIP_NAMESIZE]; /* class of ship - designated by players */
+  char shipclass[SHIP_NAMESIZE]; /* shipclass of ship - designated by players */
 
   unsigned char race; /* race type - used when you gain alien
                          ships during revolts and whatnot - usually

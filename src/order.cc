@@ -435,10 +435,10 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
         i++;
       }
       if (i == 0) /* The move list might be empty.. */
-        strcpy(ship->class, "5");
+        strcpy(ship->shipclass, "5");
       else
-        strcpy(ship->class, args[3]);
-      /* This is the index keeping track of which order in class is next. */
+        strcpy(ship->shipclass, args[3]);
+      /* This is the index keeping track of which order in shipclass is next. */
       ship->special.terraform.index = 0;
     } else {
       notify(Playernum, Governor,
@@ -792,12 +792,12 @@ void DispOrders(int Playernum, int Governor, shiptype *ship) {
   }
   if (ship->type == OTYPE_TERRA || ship->type == OTYPE_PLOW) {
     int i;
-    sprintf(temp, "/move %s", &(ship->class[ship->special.terraform.index]));
+    sprintf(temp, "/move %s", &(ship->shipclass[ship->special.terraform.index]));
     if (temp[i = (strlen(temp) - 1)] == 'c') {
-      char c = ship->class[ship->special.terraform.index];
-      ship->class[ship->special.terraform.index] = '\0';
-      sprintf(temp + i, "%sc", ship->class);
-      ship->class[ship->special.terraform.index] = c;
+      char c = ship->shipclass[ship->special.terraform.index];
+      ship->shipclass[ship->special.terraform.index] = '\0';
+      sprintf(temp + i, "%sc", ship->shipclass);
+      ship->shipclass[ship->special.terraform.index] = c;
     }
     strcat(buf, temp);
   }

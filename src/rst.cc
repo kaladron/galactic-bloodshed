@@ -286,7 +286,7 @@ void ship_report(int Playernum, int Governor, int indx,
               s->damage,
               s->type == OTYPE_FACTORY ? Shipltrs[s->build_type] : ' ',
               ((s->type == OTYPE_TERRA) || (s->type == OTYPE_PLOW)) ? "Standard"
-                                                                    : s->class);
+                                                                    : s->shipclass);
       notify(Playernum, Governor, buf);
     }
 

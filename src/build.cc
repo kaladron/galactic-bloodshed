@@ -370,7 +370,7 @@ void make_mod(int Playernum, int Governor, int APcount, int mode) {
         notify(Playernum, Governor, buf);
       } else
         notify(Playernum, Governor, "\n");
-      sprintf(buf, "Class: %s\t\tFuel:     %4d", dirship->class,
+      sprintf(buf, "Class: %s\t\tFuel:     %4d", dirship->shipclass,
               dirship->max_fuel);
       notify(Playernum, Governor, buf);
       if (Shipdata[dirship->build_type][ABIL_JUMP]) {
@@ -469,7 +469,7 @@ void make_mod(int Playernum, int Governor, int APcount, int mode) {
     dirship->size = ship_size(dirship);
     dirship->complexity = complexity(dirship);
 
-    sprintf(dirship->class, "mod %d", Dir[Playernum - 1][Governor].shipno);
+    sprintf(dirship->shipclass, "mod %d", Dir[Playernum - 1][Governor].shipno);
 
     sprintf(buf, "Factory designated to produce %ss.\n", Shipnames[i]);
     notify(Playernum, Governor, buf);
@@ -1354,7 +1354,7 @@ void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
   newship->ypos = Stars[snum]->ypos + planet->ypos;
   newship->land_x = x;
   newship->land_y = y;
-  sprintf(newship->class,
+  sprintf(newship->shipclass,
           (((newship->type == OTYPE_TERRA) || (newship->type == OTYPE_PLOW))
                ? "5"
                : "Standard"));
@@ -1444,7 +1444,7 @@ void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
   newship->ypos = builder->ypos;
   newship->land_x = builder->land_x;
   newship->land_y = builder->land_y;
-  sprintf(newship->class,
+  sprintf(newship->shipclass,
           (((newship->type == OTYPE_TERRA) || (newship->type == OTYPE_PLOW))
                ? "5"
                : "Standard"));

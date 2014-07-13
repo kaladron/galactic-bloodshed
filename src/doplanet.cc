@@ -618,13 +618,13 @@ if (!Stinfo[starnum][planetnum].inhab)
 int moveship_onplanet(shiptype *ship, planettype *planet) {
   int x, y, bounced = 0;
 
-  if (ship->class[ship->special.terraform.index] == 's') {
+  if (ship->shipclass[ship->special.terraform.index] == 's') {
     ship->on = 0;
     return 0;
-  } else if (ship->class[ship->special.terraform.index] == 'c')
+  } else if (ship->shipclass[ship->special.terraform.index] == 'c')
     ship->special.terraform.index = 0; /* reset the orders */
 
-  (void)get_move(ship->class[ship->special.terraform.index], ship->land_x,
+  (void)get_move(ship->shipclass[ship->special.terraform.index], ship->land_x,
                  ship->land_y, &x, &y, planet);
   if (y >= planet->Maxy)
     bounced = 1, y -= 2; /* bounce off of south pole! */
@@ -632,9 +632,9 @@ int moveship_onplanet(shiptype *ship, planettype *planet) {
     bounced = y = 1; /* bounce off of north pole! */
   if (planet->Maxy == 1)
     y = 0;
-  if (ship->class[ship->special.terraform.index + 1] != '\0') {
+  if (ship->shipclass[ship->special.terraform.index + 1] != '\0') {
     ++ship->special.terraform.index;
-    if ((ship->class[ship->special.terraform.index + 1] == '\0') &&
+    if ((ship->shipclass[ship->special.terraform.index + 1] == '\0') &&
         (!ship->notified)) {
       char teleg_buf[1000];
       ship->notified = 1;
@@ -643,8 +643,8 @@ int moveship_onplanet(shiptype *ship, planettype *planet) {
       push_telegram((int)(ship->owner), (int)ship->governor, teleg_buf);
     }
   } else if (bounced)
-    ship->class[ship->special.terraform.index] +=
-        ((ship->class[ship->special.terraform.index] > '5') ? -6 : 6);
+    ship->shipclass[ship->special.terraform.index] +=
+        ((ship->shipclass[ship->special.terraform.index] > '5') ? -6 : 6);
   ship->land_x = x;
   ship->land_y = y;
   return 1;

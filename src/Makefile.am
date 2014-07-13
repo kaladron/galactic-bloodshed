@@ -1,4 +1,8 @@
-AM_CFLAGS = -g -O2 -W -Weverything -Werror \
+
+AM_CXXFLAGS = -g -O2 -W -Weverything -Werror \
+	    -Wno-c++11-compat-deprecated-writable-strings \
+	    -Wno-old-style-cast \
+	    -Wno-logical-not-parentheses \
 	    -Wno-conditional-uninitialized \
 	    -Wno-float-equal \
 	    -Wno-bad-function-cast \
@@ -12,94 +16,94 @@ AM_CFLAGS = -g -O2 -W -Weverything -Werror \
 	    -Wno-tautological-constant-out-of-range-compare
 
 # These warnings seem like ones we'll never enable
-AM_CFLAGS += \
+AM_CXXFLAGS += \
 	    -Wno-disabled-macro-expansion \
 	    -Wno-padded
 
 bin_PROGRAMS = GB enrol makeuniv racegen
 
 GB_SOURCES = \
-	getplace.c	\
-	tele.c		\
-	autoreport.c	\
-	order.c		\
-	fuel.c		\
-	shootblast.c	\
-	explore.c	\
-	relation.c	\
-	mobiliz.c	\
-	shlmisc.c	\
-	enslave.c	\
-	capital.c	\
-	toggle.c	\
-	analysis.c	\
-	survey.c	\
-	files.c		\
-	zoom.c		\
-	perm.c		\
-	prof.c		\
-	GB_server.c	\
-	dissolve.c	\
-	name.c		\
-	fire.c		\
-	land.c		\
-	dock.c		\
-	tech.c		\
-	map.c		\
-	max.c		\
-	move.c		\
-	capture.c	\
-	cs.c		\
-	rst.c		\
-	misc.c		\
-	rand.c		\
-	load.c		\
-	scrap.c		\
-	build.c		\
-	orbit.c		\
-	victory.c	\
-	powercmd.c	\
-	launch.c	\
-	declare.c	\
-	examine.c	\
-	toxicity.c	\
-	get4args.c	\
-	files_rw.c	\
-	files_shl.c 	\
-	moveplanet.c	\
-	autoshoot.c	\
-	doplanet.c	\
-	doturncmd.c	\
-	doship.c	\
-	dosector.c	\
-	moveship.c	\
-	VN.c
+	getplace.cc	\
+	tele.cc		\
+	autoreport.cc	\
+	order.cc	\
+	fuel.cc		\
+	shootblast.cc	\
+	explore.cc	\
+	relation.cc	\
+	mobiliz.cc	\
+	shlmisc.cc	\
+	enslave.cc	\
+	capital.cc	\
+	toggle.cc	\
+	analysis.cc	\
+	survey.cc	\
+	files.cc	\
+	zoom.cc		\
+	perm.cc		\
+	prof.cc		\
+	GB_server.cc	\
+	dissolve.cc	\
+	name.cc		\
+	fire.cc		\
+	land.cc		\
+	dock.cc		\
+	tech.cc		\
+	map.cc		\
+	max.cc		\
+	move.cc		\
+	capture.cc	\
+	cs.cc		\
+	rst.cc		\
+	misc.cc		\
+	rand.cc		\
+	load.cc		\
+	scrap.cc	\
+	build.cc	\
+	orbit.cc	\
+	victory.cc	\
+	powercmd.cc	\
+	launch.cc	\
+	declare.cc	\
+	examine.cc	\
+	toxicity.cc	\
+	get4args.cc	\
+	files_rw.cc	\
+	files_shl.cc 	\
+	moveplanet.cc	\
+	autoshoot.cc	\
+	doplanet.cc	\
+	doturncmd.cc	\
+	doship.cc	\
+	dosector.cc	\
+	moveship.cc	\
+	VN.cc
 
 # the original enrollment program
 enrol_SOURCES = \
-	enrol.c		\
-	files_shl.c	\
-	files_rw.c	\
-	files.c		\
-	max.c		\
-	perm.c		\
-	rand.c		\
-	shlmisc.c
+	enrol.cc	\
+	files_shl.cc	\
+	files_rw.cc	\
+	files.cc	\
+	max.cc		\
+	perm.cc		\
+	rand.cc		\
+	shlmisc.cc
 
 # new-fangled enrollment program (more flexible than 'enrol')
 racegen_SOURCES = \
-	enroll.c	\
-	racegen.c	\
-	files_shl.c	\
-	files_rw.c	\
-	files.c		\
-	max.c		\
-	perm.c		\
-	rand.c		\
-	GB_racegen.c	\
-	shlmisc.c
+	enroll.cc	\
+	racegen.cc	\
+	files_shl.cc	\
+	files_rw.cc	\
+	files.cc	\
+	max.cc		\
+	perm.cc		\
+	rand.cc		\
+	GB_racegen.cc	\
+	shlmisc.cc
 
 racegen_CFLAGS = -DPRIV $(AM_CFLAGS)
 
-makeuniv_SOURCES = makeuniv.c makestar.c makeplanet.c rand.c perm.c files.c
+makeuniv_SOURCES = makeuniv.cc makestar.cc makeplanet.cc rand.cc perm.cc files.cc
 

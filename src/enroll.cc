@@ -137,8 +137,7 @@ static int enroll_player_race(char *failure_filename)
   return 0;
 }
 
-int enroll(argc, argv) int argc;
-char *argv[];
+int enroll(int argc, char *argv[])
 {
   int ret;
   FILE *g;
@@ -171,8 +170,7 @@ char *argv[];
 /**************
  * Iteratively loads races from a file, and enrolls them.
  */
-void process(argc, argv) int argc;
-char *argv[];
+void process(int argc, char *argv[])
 {
   FILE *f, *g;
   int n, nenrolled;

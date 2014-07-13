@@ -923,7 +923,7 @@ void name(int Playernum, int Governor, int APcount) {
         free(ship);
         return;
       }
-      strncpy(ship->class, buf, SHIP_NAMESIZE - 1);
+      strncpy(ship->shipclass, buf, SHIP_NAMESIZE - 1);
       putship(ship);
       notify(Playernum, Governor, "Class set.\n");
       free(ship);

@@ -78,8 +78,8 @@ void create_victory_list(struct vic vic[MAXPLAYERS]) {
 }
 
 int victory_sort(const void *A, const void *B) {
-  const struct vic *a = A;
-  const struct vic *b = B;
+  const struct vic *a = (const struct vic*)A;
+  const struct vic *b = (const struct vic*)B;
   if (a->no_count)
     return (1);
   else if (b->no_count)

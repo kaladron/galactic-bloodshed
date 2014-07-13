@@ -27,6 +27,7 @@
 #include "config.h"
 #include "cs.h"
 #include "declare.h"
+#include "defense.h"
 #include "dissolve.h"
 #include "dock.h"
 #include "doturncmd.h"
@@ -37,7 +38,6 @@
 #include "files_shl.h"
 #include "fire.h"
 #include "fuel.h"
-#include "globals.h"
 #include "land.h"
 #include "launch.h"
 #include "load.h"
@@ -67,6 +67,8 @@
 #include "victory.h"
 #include "zoom.h"
 
+#include "globals.h"
+
 struct stat sbuf;
 
 static int shutdown_flag = 0;
@@ -77,7 +79,6 @@ static long last_segment_time;
 static int nupdates_done; /* number of updates so far */
 
 int port; /* port selection */
-long clk;
 char start_buf[128];
 char update_buf[128];
 char segment_buf[128];
@@ -1952,8 +1953,8 @@ double GetComplexity(int ship) {
 }
 
 int ShipCompare(const void *S1, const void *S2) {
-  const int *s1 = S1;
-  const int *s2 = S2;
+  const int *s1 = (const int*)S1;
+  const int *s2 = (const int*)S2;
   return (int)(GetComplexity(*s1) - GetComplexity(*s2));
 }
 

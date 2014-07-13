@@ -379,7 +379,7 @@ int main() {
     s.build_cost = Shipdata[OTYPE_GOV][ABIL_COST];
     s.size = 100;
     s.base_mass = 100.0;
-    sprintf(s.class, "Standard");
+    sprintf(s.shipclass, "Standard");
 
     s.fuel = 0.0;
     s.popn = Shipdata[s.type][ABIL_MAXCREW];
@@ -488,4 +488,9 @@ static char desshow(planettype *p, int x, int y) /* copied from map.c */
 // TODO(jeffbailey): We shouldn't need to be providing this function.
 void notify(int, int, char*);
 void notify(int who, int gov, char *msg) { /* this is a dummy routine */
+}
+
+// TODO(jeffbailey): We shouldn't need to be providing this function.
+void warn(int, int, char*);
+void warn(int who, int gov, char *msg) { /* this is a dummy routine */
 }

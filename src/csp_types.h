@@ -67,7 +67,7 @@ enum DISCOVERIES {
 enum PLAYER_TYPE {
   CSPD_NORMAL, /* 0 */
   CSPD_DIETY,  /* 1 */
-  CSPD_GUEST,  /* 2 */
+  CSPD_GUEST   /* 2 */
 };
 
 enum SECTOR_TYPES {

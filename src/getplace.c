@@ -248,7 +248,6 @@ char *Dispplace(int Playernum, int Governor, placetype *where) {
     notify(Playernum, Governor, buf);
     where->err = 1;
     return ("/");
-    break;
   }
 }
 

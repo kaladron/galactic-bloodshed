@@ -571,7 +571,6 @@ void give(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, "Something wrong with this ship's scope.\n");
     free(ship);
     return;
-    break;
   }
 
   switch (ship->whatorbits) {
@@ -579,7 +578,6 @@ void give(int Playernum, int Governor, int APcount) {
     deductAPs(Playernum, Governor, APcount, 0, 1);
     free(ship);
     return;
-    break;
   default:
     deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum,
               0);
@@ -734,13 +732,11 @@ void send_message(int Playernum, int Governor, int APcount0, int postit) {
     sprintf(buf, "You can't send messages from universal scope.\n");
     notify(Playernum, Governor, buf);
     return;
-    break;
 
   case LEVEL_SHIP:
     sprintf(buf, "You can't send messages from ship scope.\n");
     notify(Playernum, Governor, buf);
     return;
-    break;
 
   default:
     getstar(&Stars[Dir[Playernum - 1][Governor].snum],

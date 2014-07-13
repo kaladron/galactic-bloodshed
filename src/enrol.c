@@ -135,7 +135,6 @@ int main() {
     default:
       printf("Oh well.\n");
       exit(-1);
-      break;
     }
 
     printf("Looking for type %d planet...\n", ppref);

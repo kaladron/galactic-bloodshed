@@ -11,8 +11,11 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "GB_server.h"
+#include "buffers.h"
+#include "build.h"
 #include "files_shl.h"
-#include "globals.h"
+#include "map.h"
 #include "max.h"
 #include "perm.h"
 #include "races.h"
@@ -21,6 +24,8 @@
 #include "ships.h"
 #include "tweakables.h"
 #include "vars.h"
+
+#include "globals.h"
 
 struct stype {
   char here;
@@ -486,8 +491,8 @@ static char desshow(planettype *p, int x, int y) /* copied from map.c */
 }
 
 // TODO(jeffbailey): We shouldn't need to be providing this function.
-void notify(int, int, char*);
-void notify(int who, int gov, char *msg) { /* this is a dummy routine */
+int notify(int who, int gov, char *msg) { /* this is a dummy routine */
+  return 0;
 }
 
 // TODO(jeffbailey): We shouldn't need to be providing this function.

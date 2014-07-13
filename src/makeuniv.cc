@@ -13,14 +13,19 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "GB_server.h"
+#include "buffers.h"
+#include "build.h"
 #include "files.h"
-#include "globals.h"
 #include "makestar.h"
+#include "map.h"
 #include "power.h"
 #include "races.h"
 #include "rand.h"
 #include "tweakables.h"
 #include "vars.h"
+
+#include "globals.h"
 
 static void InitFile(char *, void *, int);
 static void EmptyFile(char *);

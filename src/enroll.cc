@@ -1,17 +1,17 @@
-/* enroll - racegen interface for Galactic Bloodshed race enrollment program.
- * Copyright (c) Leonard Dickens 1991   (leonard@cs.umd.edu)
- *
- * Permission to copy, distribute, and/or alter is granted as long as the copy-
- * right notice and these terms are left unchanged in all derivatives/copies.
- *
- * Anybody who does alter this program, please take credit!
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+// enroll - racegen interface for Galactic Bloodshed race enrollment program. 
 
 #include "enroll.h"
-#include "racegen.h"
-#include "game_info.h"
-#include <string.h>
+
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "game_info.h"
+#include "racegen.h"
 
 #define DEFAULT_ENROLLMENT_FILENAME "enroll.saves"
 #define DEFAULT_ENROLLMENT_FAILURE_FILENAME "failures.saves"
@@ -32,14 +32,14 @@ static int enroll_player_race(char *failure_filename)
   static int successful_enroll_in_fix_mode = 0;
 
   while ((n = critique_to_file(NULL, 1, 1))) {
-    printf("Race (%s) unacceptable, for the following reason%c:\n", race.name,
+    printf("Race (%s) unacceptable, for the following reason%c:\n", race_info.name,
            (n > 1) ? 's' : '\0');
     critique_to_file(stdout, 1, 1);
     if (recursing) {
       printf("\"Quit\" to break out of fix mode.\n");
       return 1;
     }
-    if (race.status == STATUS_ENROLLED)
+    if (race_info.status == STATUS_ENROLLED)
       return 0;
     n = Dialogue("Abort, enroll anyway, fix, mail rejection?", "abort",
                  "enroll", "fix", "mail", 0);
@@ -76,12 +76,12 @@ static int enroll_player_race(char *failure_filename)
       printf("Unable to open file \"%s\".\n", TMP);
       return 1;
     }
-    fprintf(g, "To: %s\n", race.address);
+    fprintf(g, "To: %s\n", race_info.address);
     fprintf(g, "Subject: %s Race Rejection\n", GAME);
     fprintf(g, "\n");
     fprintf(g, "The race you submitted (%s) was not accepted, for the "
                "following reason%c:\n",
-            race.name, (n > 1) ? 's' : '\0');
+            race_info.name, (n > 1) ? 's' : '\0');
     critique_to_file(g, 1, 1);
     fprintf(g, "\n");
     fprintf(g, "Please re-submit a race if you want to play in %s.\n", GAME);
@@ -91,9 +91,9 @@ static int enroll_player_race(char *failure_filename)
     print_to_file(g, 1);
     fclose(g);
 
-    printf("Sending critique to %s via %s...", race.address, MAILER);
+    printf("Sending critique to %s via %s...", race_info.address, MAILER);
     fflush(stdout);
-    sprintf(c, "cat %s | %s %s", TMP, MAILER, race.address);
+    sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
     system(c);
     printf("done.\n");
 
@@ -113,10 +113,10 @@ static int enroll_player_race(char *failure_filename)
     printf("Unable to open file \"%s\".\n", TMP);
     return 0;
   }
-  fprintf(g, "To: %s\n", race.address);
+  fprintf(g, "To: %s\n", race_info.address);
   fprintf(g, "Subject: %s Race Accepted\n", GAME);
   fprintf(g, "\n");
-  fprintf(g, "The race you submitted (%s) was accepted.\n", race.name);
+  fprintf(g, "The race you submitted (%s) was accepted.\n", race_info.name);
 #if 0
   if (race.modified_by_diety) {
     fprintf(g, "The race was altered in order to be acceptable.\n") ;
@@ -128,9 +128,9 @@ static int enroll_player_race(char *failure_filename)
 #endif
   fclose(g);
 
-  printf("Sending acceptance to %s via %s...", race.address, MAILER);
+  printf("Sending acceptance to %s via %s...", race_info.address, MAILER);
   fflush(stdout);
-  sprintf(c, "cat %s | %s %s", TMP, MAILER, race.address);
+  sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
   system(c);
   printf("done.\n");
 
@@ -148,15 +148,15 @@ int enroll(int argc, char *argv[])
   if (g == NULL)
     printf("Unable to open failures file \"%s\".\n", argv[1]);
   fclose(g);
-  bcopy(&race, &last, sizeof(struct x));
+  bcopy(&race_info, &last, sizeof(struct x));
 
   /*
    * race.address will be unequal to TO in the instance that this is a
    * race submission mailed from somebody other than the moderator.  */
-  if (strcmp(race.address, TO))
+  if (strcmp(race_info.address, TO))
     ret = enroll_player_race(argv[1]);
   else if ((ret = critique_to_file(NULL, 1, 0))) {
-    printf("Race (%s) unacceptable, for the following reason%c:\n", race.name,
+    printf("Race (%s) unacceptable, for the following reason%c:\n", race_info.name,
            (ret > 1) ? 's' : '\0');
     critique_to_file(stdout, 1, 0);
   } else if ((ret = enroll_valid_race()))
@@ -196,7 +196,7 @@ void process(int argc, char *argv[])
     if (!load_from_file(f))
       continue;
     n++;
-    printf("%s, from %s\n", race.name, race.address);
+    printf("%s, from %s\n", race_info.name, race_info.address);
     /* We need the side effects: */
     last_npoints = npoints;
     npoints = STARTING_POINTS - cost_of_race();

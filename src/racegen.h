@@ -192,7 +192,7 @@ struct x {
 /**************
  * Global variables for this program.
  */
-extern struct x race, cost, last;
+extern struct x race_info, cost_info, last;
 
 extern int npoints;
 extern int last_npoints;

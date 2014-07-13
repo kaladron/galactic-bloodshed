@@ -21,6 +21,7 @@
 
 #include "analysis.h"
 #include "autoreport.h"
+#include "buffers.h"
 #include "build.h"
 #include "capital.h"
 #include "capture.h"
@@ -69,7 +70,7 @@
 
 #include "globals.h"
 
-struct stat sbuf;
+static struct stat sbuf;
 
 static int shutdown_flag = 0;
 static int update_flag = 0;
@@ -78,10 +79,10 @@ static long last_update_time;
 static long last_segment_time;
 static int nupdates_done; /* number of updates so far */
 
-int port; /* port selection */
-char start_buf[128];
-char update_buf[128];
-char segment_buf[128];
+static int port; /* port selection */
+static char start_buf[128];
+static char update_buf[128];
+static char segment_buf[128];
 
 static char *connect_fail = "Connection refused.\n";
 static char *flushed_message = "<Output Flushed>\n";
@@ -102,7 +103,7 @@ struct text_queue {
   struct text_block **tail;
 };
 
-struct descriptor_data {
+static struct descriptor_data {
   int descriptor;
   int connected;
   int God;       /* deity status */

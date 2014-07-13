@@ -1,107 +1,48 @@
-/* racegen - a Galactic Bloodshed race creation program.
- * Copyright (c) Leonard Dickens 1991   (leonard@cs.umd.edu)
- *
- * Permission to copy, distribute, and/or alter is granted as long as the copy-
- * right notice and these terms are left unchanged in all derivatives/copies.
- *
- * Anybody who does alter this program, please take credit!
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-/* Slightly hacked version: altered to use varargs by Tom Boutell. */
-
-/*
- * History:
- * 09-13-91 1.0.0 LD Started work
- * 09-14-91 1.0.0 LD Finished except for tweaking cost parameters.
- * 09-15-91 1.0.0 LD Added linear parameterizations for all attributes.
- *   Added exponential portions to most of the attributes.  Structured
- *   attributes to allow easy expansion.
- * 09-15-91 1.1.0 LD Added load and save (non-verbose), and print-to-file.
- * 09-16-91 1.2.0 LD Added sector cost-covariances.
- * 09-16-91 1.2.1 LD Added attribute cost-covariances.  Tweaked n_sector costs.
- * 09-17-91       LD Posted the program.  Let's see what the net digs up.
- * 09-18-91 1.2.2 LD Tweaked help to not display plated as a sector option.
- *   Made gas races unable to have any other sector compat.  Made default
- *   IQ be only 125.  Made max birthrate be 1.0.
- * 09-19-91 1.2.3 LD More tweaks to get attribute costs like I want them.
- * 09-20-91 1.2.4 LD Added new #defines and prints for more game-dependent
- *   information for the players' edification.
- * 09-20-91 1.3.0 LD Added all morph attributes separately; removed race costs.
- * 09-25-91 1.4.0 LD Added ENROLL variant code.
- * 09-25-91       LD Posted the program again.
- * 09-30-91 1.4.1 LD Yeck, this is more complicated than I thought.  Sigh.
- *   Added an address field to the race structure.  Separated critique info
- *   out from modify to allow it to be called from enroll.  Added "last"
- *   race in order to always have a valid race to fall back on.  Added
- *   rejection field to x structure for enroll to use.
- * 09-31-91 1.4.2 LD Added cost extra cost for non-typical sectors.  This
- *   if in essense just a planet_type-compat covariance.
- * 10-01-91 1.4.3 LD Separated out modify-print loop in order to allow
- *   enroll to recursively edit.
- * 10-03-91 1.4.4 LD Mods to compile with old GB enroll.  Changed "IQ" to
- *   something else...A_IQ.  Changed OTHER to OTHER_STUFF.  Changed order
- *   of sector defines to match DES_ defines in tweakables.h
- * 10-03-91 1.5.0 LD File breakup to promote separate compilation.
- * 10-04-91 1.5.1 LD Added Dialogue command to centralize simple exchanges.
- *   this is really just a CS major nicety; it is not needed.
- * 10-06-91 1.5.2 LD Fixed bug in critique that squelched jovian compat.
- * 10-07-91 1.5.3 LD Fixed iq/iq_limit load covariance problem.
- *
- *
- * Thanks to:
- * Clay Luther for the original, (perl) racegen.  I made sure to look at it
- *   before starting this, and in got much of the linear aspects of my
- *   attribute cost functions from his program.  Also, the 125 IQ is Clay's.
- * Keesh, for the numbers, too.  At least, Clay thanks him for them, so I
- *   think I should too.
- * Paul A Daniels for pointing out that help displayed plated as a possible
- *   argument for modify.
- * jtop@cs.kun.nl for the race with gas and other compats too.  My blind spot.
- * Doug Ingram for suggesting more game-dependent info be included.
- */
-
-/*
- * Modifications by Shawn Fox : skf5055@tamsun.tamu.edu
- * 1-14-92 2.0.0 Modified racegen so that it will run as a server
- * Modifications by Matt Haffner : m-haffner@nwu.edu
- * 3-14-93 2.1.0 Replaced defines ENROLL and SERVER by PRIV and runtime
-                 variable isserver. If compiled with -DPRIV creates racegen
-                 which has enroll abilities and related privileges. Also can
-                 be run as a server if given the command line option
-                 '-s [port]'; port defaults to 2020 if not specified,
-                 as before. If compiled without -DPRIV, creates a standard
-                 non-enroll, non-server racegen.
-*/
-
-#include <stdarg.h>
-#include <math.h>
-#include <signal.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include "racegen.h"
+
+#include <math.h>
+#include <stdarg.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "game_info.h"
 #include "enroll.h"
 
 static int do_racegen();
 
 #ifdef PRIV /* Extra stuff for privileged racegen */
 
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-
-#define SERV_HOST_ADDR "janis.astro.nwu.edu"
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 #endif
 
-int fd;
-int isserver = 0;
+static int fd;
+static int isserver = 0;
 
-int main(argc, argv) int argc;
-char *argv[];
+static int critique_modification(void);
+static void execute(int argc, char **argv);
+static void fix_up_iq(void);
+static void initialize(void);
+static void help(int, char*[]);
+static void load(int, char*[]);
+static void metamorph(void);
+static int modify(int argc, char *argv[]);
+static void normal(void);
+static void print(int argc, char *argv[]);
+static void save(int argc, char *argv[]);
+static void send2(int argc, char *argv[]);
+static void quit(int argc, char **argv);
 
+int main(int argc, char *argv[])
 {
 
 #ifdef PRIV
@@ -175,7 +116,7 @@ char *argv[];
   return 0;
 }
 
-attribute attr[N_ATTRIBUTES] = { { ADVENT,
+static attribute attr[N_ATTRIBUTES] = { { ADVENT,
                                    "Adventurism",
                                    0.0,
                                    0.0,
@@ -409,7 +350,7 @@ int cost_of_race() {
   return sum;
 }
 
-void metamorph() {
+static void metamorph() {
   /* Adventurousness is not correlated with Max IQ. */
   attr[ADVENT].cov[A_IQ] = 0.00;
   /* A high birthrate is easier if few sexes, high metab, and low mass.*/
@@ -436,7 +377,7 @@ void metamorph() {
   strcpy(attr[A_IQ].print_name, "IQ Limit");
 }
 
-void normal() {
+static void normal() {
   /* Adventurousness is more likely with people smart enough to do it. */
   attr[ADVENT].cov[A_IQ] = -0.40 / ATTR_RANGE(A_IQ);
   /* Birthrate is easier if few sexes, high metab, low iq, and low mass.*/
@@ -460,7 +401,7 @@ void normal() {
   strcpy(attr[A_IQ].print_name, "IQ");
 }
 
-void fix_up_iq() {
+static void fix_up_iq() {
   if (race.attr[COL_IQ] == 1.0)
     strcpy(attr[A_IQ].print_name, "IQ Limit");
   else
@@ -475,9 +416,7 @@ void fix_up_iq() {
  * print out descriptions of the errors; otherwise, error message(s) will be
  * printed to that file.
  */
-int critique_to_file(f, rigorous_checking, is_player_race) FILE *f;
-int rigorous_checking;
-int is_player_race;
+int critique_to_file(FILE *f, int rigorous_checking, int is_player_race)
 {
   int i, nerrors = 0;
 
@@ -645,7 +584,7 @@ int is_player_race;
 #undef FPRINTF
 }
 
-int critique_modification() {
+static int critique_modification() {
   int nerrors;
 
   race.rejection[0] = '\0';
@@ -662,7 +601,7 @@ int critique_modification() {
  * Initialize the race to the init value, and set the l_fudge values
  * accordingly so that the cost of this race's attributes is zero.
  */
-void initialize() {
+static void initialize() {
   int i;
 
   bzero(&race, sizeof(race));
@@ -692,8 +631,7 @@ void initialize() {
  * trying to tell you about them here, just run the program and diddle
  * with it to get the idea.
  */
-void help(argc, argv) int argc;
-char *argv[];
+static void help(int argc, char *argv[])
 {
   int enroll, process;
   int i, j, helpp, load, modify, print, save, send2, quit;
@@ -868,7 +806,7 @@ char *argv[];
 
 /*
  * Return non-zero on failure, zero on success. */
-int load_from_file(g) FILE *g;
+int load_from_file(FILE *g)
 {
   int i;
   char buf[80], from_address[80];
@@ -913,7 +851,7 @@ premature_end_of_file:
 /*
  * Return non-zero on failure, zero on success. */
 
-static int load_from_filename(filename) char *filename;
+static int load_from_filename(const char *filename)
 {
   int ret;
   FILE *f = fopen(filename, "r");
@@ -927,8 +865,7 @@ static int load_from_filename(filename) char *filename;
   return ret;
 }
 
-void load(argc, argv) int argc;
-char *argv[];
+static void load(int argc, char *argv[])
 {
   char c[64];
   int i;
@@ -954,8 +891,7 @@ char *argv[];
   }
 }
 
-int modify(argc, argv) int argc;
-char *argv[];
+static int modify(int argc, char *argv[])
 {
   int i, j;
   static char *help_strings[2] = { NULL, "modify" };
@@ -1092,8 +1028,7 @@ char *argv[];
   return -1;
 }
 
-void print_to_file(f, verbose) FILE *f;
-int verbose;
+void print_to_file(FILE *f, int verbose)
 {
 #define FPRINTF                                                                \
   if (verbose)                                                                 \
@@ -1177,8 +1112,7 @@ int verbose;
 #undef FPRINTF
 }
 
-static int print_to_filename(filename, verbose) char *filename;
-int verbose;
+static int print_to_filename(const char *filename, int verbose)
 {
   FILE *f = fopen(filename, "w");
 
@@ -1191,8 +1125,7 @@ int verbose;
   return 1;
 }
 
-void print(argc, argv) int argc;
-char *argv[];
+static void print(int argc, char *argv[])
 {
   if (argc == 1)
     print_to_file(stdout, 1);
@@ -1200,8 +1133,7 @@ char *argv[];
     printf("Printed race to file \"%s\".\n", argv[1]);
 }
 
-void save(argc, argv) int argc;
-char *argv[];
+static void save(int argc, char *argv[])
 {
   if (argc > 1)
     strcpy(race.filename, argv[1]);
@@ -1213,8 +1145,7 @@ char *argv[];
   }
 }
 
-void send2(argc, argv) int argc;
-char *argv[];
+static void send2(int argc, char *argv[])
 {
   FILE *f;
   char sys[64];
@@ -1302,7 +1233,7 @@ int Dialogue(const char *prompt, ...) {
   }
 }
 
-void quit(int argc, char **argv) {
+static void quit(int argc, char **argv) {
   int i;
 
   if (please_quit) { /* This could happen if ^c is hit while here. */
@@ -1330,7 +1261,7 @@ void quit(int argc, char **argv) {
  * This function merely takes the space-parsed command line and executes
  * one of the commands above.
  */
-void execute(int argc, char **argv) {
+static void execute(int argc, char **argv) {
   int i;
 
 #if 0

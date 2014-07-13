@@ -99,7 +99,7 @@ racegen_SOURCES = \
 	GB_racegen.c	\
 	shlmisc.c
 
-racegen_CFLAGS = -DPRIV
+racegen_CFLAGS = -DPRIV $(AM_CFLAGS)
 
 makeuniv_SOURCES = makeuniv.c makestar.c makeplanet.c rand.c perm.c files.c
 

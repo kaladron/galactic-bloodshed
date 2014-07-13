@@ -2,13 +2,14 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+#include "GB_racegen.h"
+
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#define EXTERN
 #include "files_shl.h"
 #include "globals.h"
 #include "max.h"
@@ -21,17 +22,14 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static const int START_RES = 100;
-static const int START_MESO_RES_DIFF = 40;
-static const int START_FUEL = 100;
-static const int START_DES = 100;
+// TODO(jeffbailey): This shouldn't be necessary!
+void notify(int who, int gov, char *msg);
 
 static const int planet_translate[N_HOME_PLANET_TYPES] = {
   0, 6, 7, 5, 2, 3, 4
 };
 
-void notify(who, gov, msg) int who, gov;
-char *msg;
+void notify(int who, int gov, char *msg)
 { /* this is a dummy routine */
 }
 

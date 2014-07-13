@@ -1,27 +1,17 @@
-/* racegen.h - defined values and datatypes for racegen
- * Copyright (c) Leonard Dickens 1991   (leonard@cs.umd.edu)
- *
- * Permission to copy, distribute, and/or alter is granted as long as the copy-
- * right notice and these terms are left unchanged in all derivatives/copies.
- *
- * Anybody who does alter this program, please take credit!
- */
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
+
+#ifndef RACEGEN_H
+#define RACEGEN_H
+
 #include <stdio.h>
+
 #define GBVERSION "1.7.3"
 #ifdef VERSION
 #undef VERSION
 #endif
 #define VERSION ""
-
-/**************
- * Game dependencies.  This file should be gotten from the net, whenever
- * a new game is announced.  It contains #defines for addresses, number
- * of points, and other such stuff that may vary from game to game.
- *
- * Look for a later version of this program where all of this information
- * is read in at run-time.  Recompiling racegen for each new game is klunky.
- */
-#include "game_info.h"
 
 /**************
  * This #define is used to compile the code in this program needed for the
@@ -47,29 +37,6 @@
 #define END_RECORD_STRING "************>"
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 
-#ifdef __STDC__
-/* double atof(char *nptr) ; */
-/*
-void bcopy(void *src, void *dst, int length) ;
-void bzero(void *b, int length) ;
-
-int fclose(FILE *stream) ;
-int fflush(FILE *stream) ;
-
-int fprintf(FILE *f, const char *format, ...) ;
-int fscanf(FILE *f, const char *format, ...) ;
-int printf(const char *format, ...) ;
-
-int strncasecmp(const char *s1, const char *s2, int len) ;
-
-*/
-/* void exit(int status) ; */
-int system(const char *string);
-
-#else
-double atof();
-#define const
-#endif
 int Dialogue(const char *, ...);
 
 /**************
@@ -236,5 +203,7 @@ extern int please_quit; /* 1 iff you want to exit ASAP. */
 int critique_to_file(FILE *f, int rigorous_checking, int is_player_race);
 void print_to_file(FILE *f, int verbose);
 int load_from_file(FILE *g);
-int cost_of_race();
+int cost_of_race(void);
 void modify_print_loop(int level);
+
+#endif // RACEGEN_H

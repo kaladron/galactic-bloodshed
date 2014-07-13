@@ -12,3 +12,15 @@ Special thanks to V1.1 playtesting by:
  *                       and
  *                 tons of people
  *                at U.C. Santa Cruz
+
+Racegen
+ * Thanks to:
+ * Clay Luther for the original, (perl) racegen.  I made sure to look at it
+ *   before starting this, and in got much of the linear aspects of my
+ *   attribute cost functions from his program.  Also, the 125 IQ is Clay's.
+ * Keesh, for the numbers, too.  At least, Clay thanks him for them, so I
+ *   think I should too.
+ * Paul A Daniels for pointing out that help displayed plated as a possible
+ *   argument for modify.
+ * jtop@cs.kun.nl for the race with gas and other compats too.  My blind spot.
+ * Doug Ingram for suggesting more game-dependent info be included.

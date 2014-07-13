@@ -9,21 +9,21 @@
 
 #include "enroll.h"
 #include "racegen.h"
+#include "game_info.h"
 #include <string.h>
+#include <stdlib.h>
 
 #define DEFAULT_ENROLLMENT_FILENAME "enroll.saves"
 #define DEFAULT_ENROLLMENT_FAILURE_FILENAME "failures.saves"
 
-#ifdef __STDC__
-extern int enroll_valid_race(void);
-#else
 extern int enroll_valid_race();
-#endif
+
+static int enroll_player_race(char *failure_filename);
 
 /*
  * Returns: 0 if the race was successfully enrolled, or 1 if not.
  */
-int enroll_player_race(failure_filename) char *failure_filename;
+static int enroll_player_race(char *failure_filename)
 {
   char c[128];
   FILE *g;

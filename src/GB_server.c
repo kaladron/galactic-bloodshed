@@ -1,75 +1,73 @@
-/*
- * Galactic Bloodshed, copyright (c) 1989 1990 by Robert P. Chansky,
- * smq@ucscb.ucsc.edu, Univ of Ca Santa Cruz.
- *  You may copy, alter and distribute this game as you please as
- *    long as these notices remain intact.  No duplication for
- *    commercial purposes without permission of the author.
- *
- * Version 1.0 - current mods by:
- *    Garrett Van Cleef, Ph.D
- *       Dept. of Physics
- *     Ohio State University
- * V1.1 playtesting by:
- *         Hanan Baddar
- *          Ken Bloch
- *         John Davis
- *         Robert Jones
- *     Menelaos Kafkaladis
- *         Brett Lowry
- *         Paul Murphy
- *      Garrett van Cleef
- *       Wolfgang Wenzel
- *                       and
- *       tons of people
- *        at U.C. Santa Cruz
- *
- *
- *  Major amounts of help in v2.0-current by Brian Scearce
- *(bls@u02.svl.cdc.com).
-*/
+// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the COPYING file.
 
-#include "TinyMUD_copyright.h"
-/* Copyright for the original TinyMUD interface which was used for the
- * networking */
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/time.h>
-#include <signal.h>
-#include <sys/ioctl.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <sys/errno.h>
+#include "GB_server.h"
+
 #include <ctype.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <netinet/in.h>
-#include <netdb.h>
-#include <string.h>
+#include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
 
-#include <curses.h>
-#include <strings.h>
-#include <pwd.h>
-
-#include <sys/uio.h>
-#include <sys/times.h>
-
-#include <sys/stat.h>
+#include "analysis.h"
+#include "autoreport.h"
+#include "build.h"
+#include "capital.h"
+#include "capture.h"
+#include "config.h"
+#include "cs.h"
+#include "declare.h"
+#include "dissolve.h"
+#include "dock.h"
+#include "doturncmd.h"
+#include "enslave.h"
+#include "examine.h"
+#include "explore.h"
+#include "files.h"
+#include "files_shl.h"
+#include "fire.h"
+#include "fuel.h"
+#include "globals.h"
+#include "land.h"
+#include "launch.h"
+#include "load.h"
+#include "map.h"
+#include "mobiliz.h"
+#include "move.h"
+#include "name.h"
+#include "orbit.h"
+#include "order.h"
+#include "power.h"
+#include "powercmd.h"
+#include "prof.h"
+#include "races.h"
+#include "rand.h"
+#include "relation.h"
+#include "rst.h"
+#include "scrap.h"
+#include "ships.h"
+#include "shlmisc.h"
+#include "survey.h"
+#include "tech.h"
+#include "tele.h"
+#include "toggle.h"
+#include "toxicity.h"
+#include "tweakables.h"
+#include "vars.h"
+#include "victory.h"
+#include "zoom.h"
 
 struct stat sbuf;
-
-/* GB headers */
-#include "globals.h"
-#include "vars.h"
-#include "ships.h"
-#include "races.h"
-#include "power.h"
-#include "doturn.h"
-
-#include "buffers.h"
 
 static int shutdown_flag = 0;
 static int update_flag = 0;
@@ -89,7 +87,6 @@ static char *flushed_message = "<Output Flushed>\n";
 static char *shutdown_message = "Shutdown ordered by deity - Bye\n";
 static char *already_on = "Connection refused.\n";
 
-int errno;
 int sig_null();
 
 struct text_block {
@@ -126,122 +123,44 @@ struct descriptor_data {
 static int sock;
 static int ndescriptors = 0;
 
-void set_signals(void);
-void notify_race(int, char *);
-int notify(int, int, char *);
-void d_think(int, int, char *);
-void d_broadcast(int, int, char *);
-void d_shout(int, int, char *);
-void d_announce(int, int, int, char *);
-struct timeval timeval(struct timeval, struct timeval);
-int msec_diff(struct timeval, struct timeval);
-struct timeval msec_add(struct timeval, int);
-void shovechars(int);
-void do_next_thing(void);
-void shutdownsock(struct descriptor_data *);
-int make_socket(int);
-struct timeval update_quotas(struct timeval, struct timeval);
+static void set_signals(void);
 struct descriptor_data *new_connection(int);
-int address_ok(struct sockaddr_in *);
-int address_match(struct in_addr *, struct in_addr *);
-void add_address(unsigned long, int);
 char *addrout(long);
+void do_update(int);
+void do_segment(int, int);
+int make_socket(int);
 void clearstrings(struct descriptor_data *);
-void shutdown_sock(struct descriptor_data *);
-struct descriptor_data *initializesock(int);
-struct text_block *make_text_block(char *, int);
-void free_text_block(struct text_block *);
-void add_to_queue(struct text_queue *, char *, int);
+void shutdownsock(struct descriptor_data *);
+void freeqs(struct descriptor_data *);
+void make_nonblocking(int);
+struct timeval update_quotas(struct timeval, struct timeval);
+int process_output(struct descriptor_data *);
+void welcome_user(struct descriptor_data *);
 int flush_queue(struct text_queue *, int);
 void queue_write(struct descriptor_data *, char *, int);
 void queue_string(struct descriptor_data *d, char *message);
-int process_output(struct descriptor_data *);
-int process_string(struct descriptor_data *);
-void force_output(void);
-void make_nonblocking(int);
-void freeqs(struct descriptor_data *);
-void welcome_user(struct descriptor_data *);
-void help_user(struct descriptor_data *);
-void goodbye_user(struct descriptor_data *);
+struct text_block *make_text_block(char *, int);
+void free_text_block(struct text_block *);
+void add_to_queue(struct text_queue *, char *, int);
 char *strsave(char *);
-void save_command(struct descriptor_data *, char *);
-int process_input(struct descriptor_data *);
-void set_userstring(char **, char *);
 void process_commands(void);
 int do_command(struct descriptor_data *, char *);
-void check_connect(struct descriptor_data *, char *);
-void do_update(int);
-void do_segment(int, int);
-void parse_connect(char *, char *, char *);
-void close_sockets(void);
+void goodbye_user(struct descriptor_data *);
+void set_userstring(char **, char *);
 void dump_users(struct descriptor_data *);
-static void process_command(int, int, char *);
-void load_race_data(void);
-void load_star_data(void);
-void GB_time(int, int);
-void GB_schedule(int, int);
+void check_connect(struct descriptor_data *, char *);
+void close_sockets(void);
+int process_input(struct descriptor_data *);
 void help(struct descriptor_data *);
-void check_for_telegrams(int, int);
-void kill_ship(int, shiptype *);
-void compute_power_blocks(void);
-void insert_sh_univ(struct stardata *, shiptype *);
-void insert_sh_star(startype *, shiptype *);
-void insert_sh_plan(planettype *, shiptype *);
-void insert_sh_ship(shiptype *, shiptype *);
-void remove_sh_star(shiptype *);
-void remove_sh_plan(shiptype *);
-void remove_sh_ship(shiptype *, shiptype *);
-double GetComplexity(int);
-int ShipCompare(const void *, const void *);
-void SortShips(void);
-void warn_race(int, char *);
-void warn(int, int, char *);
-void warn_star(int, int, int, char *);
-void notify_star(int, int, int, int, char *);
-void post_star(char *, int, int);
-void adjust_morale(racetype *, racetype *, int);
-
-#include "name.h"
-#include "shlmisc.h"
-#include "analysis.h"
-#include "move.h"
-#include "dock.h"
-#include "autoreport.h"
-#include "build.h"
-#include "powercmd.h"
-#include "fire.h"
-#include "cs.h"
-#include "capital.h"
-#include "capture.h"
-#include "declare.h"
-#include "explore.h"
-#include "load.h"
-#include "dissolve.h"
-#include "doturncmd.h"
-#include "enslave.h"
-#include "examine.h"
-#include "explore.h"
-#include "files_shl.h"
-#include "fuel.h"
-#include "toggle.h"
-#include "prof.h"
-#include "land.h"
-#include "launch.h"
-#include "map.h"
-#include "mobiliz.h"
-#include "orbit.h"
-#include "order.h"
-#include "powercmd.h"
-#include "tele.h"
-#include "rand.h"
-#include "relation.h"
-#include "rst.h"
-#include "scrap.h"
-#include "survey.h"
-#include "tech.h"
-#include "toxicity.h"
-#include "victory.h"
-#include "zoom.h"
+void force_output(void);
+void help_user(struct descriptor_data *);
+void parse_connect(char *, char *, char *);
+void shovechars(int);
+int msec_diff(struct timeval, struct timeval);
+struct timeval msec_add(struct timeval, int);
+void save_command(struct descriptor_data *, char *);
+static void process_command(int, int, char *);
+struct descriptor_data *initializesock(int);
 
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
 

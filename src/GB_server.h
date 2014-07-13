@@ -7,6 +7,7 @@
 
 #include "races.h"
 #include "ships.h"
+#include "vars.h"
 
 void notify_race(int, char *);
 int notify(int, int, char *);
@@ -30,7 +31,7 @@ void remove_sh_star(shiptype *);
 void remove_sh_plan(shiptype *);
 void remove_sh_ship(shiptype *, shiptype *);
 double GetComplexity(int);
-int ShipCompare(int *, int *);
+int ShipCompare(const void *, const void *);
 void SortShips(void);
 void warn_race(int, char *);
 void warn(int, int, char *);

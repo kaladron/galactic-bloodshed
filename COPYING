@@ -9,6 +9,8 @@ long as these notices remain intact.  No duplication for
 commercial purposes without permission of the authors.
 
 Some portions taken from TinyMUD:
+/* Copyright for the original TinyMUD interface which was used for the
+ * networking */
 
 Copyright (c) 1989 by David Applegate, James Aspnes, Timothy Freeman,
                    and Bennet Yee.

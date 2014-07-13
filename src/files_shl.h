@@ -20,19 +20,11 @@ void openpdata(int *);
 void opensectdata(int *);
 void openracedata(int *);
 void getsdata(struct stardata *S);
-#ifdef DEBUG
-void DEBUGgetrace(racetype **, int, char *, int);
-void DEBUGgetstar(startype **, int, char *, int);
-void DEBUGgetplanet(planettype **, int, int, char *, int);
-int DEBUGgetship(shiptype **, int, char *, int);
-int DEBUGgetcommod(commodtype **, int, char *, int);
-#else
 void getrace(racetype **, int);
 void getstar(startype **, int);
 void getplanet(planettype **, int, int);
 int getship(shiptype **, int);
 int getcommod(commodtype **, int);
-#endif
 void getsector(sectortype **, planettype *, int, int);
 void getsmap(sectortype *, planettype *);
 int getdeadship(void);

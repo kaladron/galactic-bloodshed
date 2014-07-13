@@ -166,11 +166,6 @@ static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 #define MAX_COMMAND_LEN 512
 
-#ifdef DEBUG
-void DEBUG_check(int, int);
-void DEBUG_reset(int, int);
-#endif
-
 int main(int argc, char **argv) {
   int i;
   struct stat stbuf;
@@ -1473,12 +1468,6 @@ static void process_command(int Playernum, int Governor, char *comm) {
     move_popn(Playernum, Governor, MIL);
   else if (match(args[0], "make"))
     make_mod(Playernum, Governor, 0, 0);
-#ifdef DEBUG
-  else if (match(args[0], "memcheck") && God)
-    DEBUGcheck(Playernum, Governor);
-  else if (match(args[0], "memreset") && God)
-    DEBUGreset(Playernum, Governor);
-#endif
   else if (match(args[0], "modify"))
     make_mod(Playernum, Governor, 0, 1);
   else if (match(args[0], "mount"))

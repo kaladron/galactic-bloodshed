@@ -32,7 +32,6 @@
 #define SEGMENT_PASSWORD "put_your_segment_password_here"
 #endif
 
-#undef DEBUG    /* comment this out unless you want to use memory debugging */
 #define MARKET  /* comment this out if you don't want to use the market */
 #undef VICTORY  /* if you want to use victory conditions */
 #undef DISSOLVE /* If you want to allow players to dissolve */

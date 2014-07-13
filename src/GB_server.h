@@ -50,4 +50,6 @@ extern const char Dessymbols[];
 
 extern racetype *Race;
 
+extern long clk;
+
 #endif // GB_SERVER_H

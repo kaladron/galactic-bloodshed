@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-unsigned long segments; /* number of movement segments (global variable) */
+extern unsigned long segments; /* number of movement segments (global variable) */
 
 #define MAX_ROUTES                                                             \
   4 /* Shipping routes - DON'T change this unless you know                     \
@@ -198,7 +198,7 @@ struct stardata {
   unsigned long dummy[2];
 };
 
-struct stardata Sdata;
+extern struct stardata Sdata;
 
 struct directory {
   unsigned char level;                /* what directory level */

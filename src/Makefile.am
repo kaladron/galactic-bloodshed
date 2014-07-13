@@ -5,7 +5,6 @@ AM_CXXFLAGS = -g -O2 -W -Weverything -Werror \
 	    -Wno-logical-not-parentheses \
 	    -Wno-conditional-uninitialized \
 	    -Wno-float-equal \
-	    -Wno-bad-function-cast \
 	    -Wno-missing-variable-declarations \
 	    -Wno-shadow \
 	    -Wno-unreachable-code \

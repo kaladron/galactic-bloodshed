@@ -1,4 +1,6 @@
 
+AM_CPPFLAGS = -DPKGDATADIR='"$(pkgdatadir)/"'
+
 AM_CXXFLAGS = -g -O2 -W -Weverything -Werror \
 	    -Wno-c++11-compat-deprecated-writable-strings \
 	    -Wno-old-style-cast \

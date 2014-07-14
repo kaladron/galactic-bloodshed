@@ -5,8 +5,8 @@
 #ifndef FILES_H
 #define FILES_H
 
-#define PATH(file) "/tmp/GB/" #file
-#define DIRPATH(dir, file) "/tmp/GB/" dir #file
+#define PATH(file) PKGDATADIR #file
+#define DIRPATH(dir, file) PKGDATADIR dir #file
 #define DATA(file) DIRPATH("Data/", file)
 #define NEWS(file) DIRPATH("News/", file)
 #define TELE(file) DIRPATH("Tele/", file)

@@ -7,6 +7,8 @@ AC_CONFIG_SRCDIR([src/vars.h])
 # Checks for programs.
 AC_PROG_CXX
 
+AM_SILENT_RULES([yes])
+
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lcurses':
 AC_CHECK_LIB([curses], [main])
@@ -15,5 +17,5 @@ AC_CHECK_LIB([m], [main])
 # FIXME: Replace `main' with a function in `-ltermcap':
 AC_CHECK_LIB([termcap], [main])
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile data/Makefile src/Makefile])
 AC_OUTPUT

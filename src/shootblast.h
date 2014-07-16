@@ -17,9 +17,6 @@ int shoot_planet_to_ship(racetype *, planettype *, shiptype *, int, char *,
 #endif
 int shoot_ship_to_planet(shiptype *, planettype *, int, int, int, int, int, int,
                          char *, char *);
-int do_radiation(shiptype *, double, int, int, char *, char *);
-int do_damage(int, shiptype *, double, int, int, int, int, double, char *,
-              char *);
 void ship_disposition(shiptype *, int *, int *, int *);
 int CEW_hit(double, int);
 int Num_hits(double, int, int, double, int, int, int, int, int, int, int, int);

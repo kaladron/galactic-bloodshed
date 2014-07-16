@@ -242,12 +242,14 @@ char *Dispplace(int Playernum, int Governor, placetype *where) {
     sprintf(Disps, "#%d", where->shipno);
     return (Disps);
   case LEVEL_UNIV:
-    return ("/");
+    strcpy(Disps, "/");
+    return (Disps);
   default:
     sprintf(buf, "illegal Dispplace val = %d\n", where->level);
     notify(Playernum, Governor, buf);
     where->err = 1;
-    return ("/");
+    strcpy(Disps, "/");
+    return (Disps);
   }
 }
 

@@ -10,7 +10,7 @@
 #include "vars.h"
 
 void notify_race(int, char *);
-int notify(int, int, char *);
+int notify(int, int, const char *);
 void d_think(int, int, char *);
 void d_broadcast(int, int, char *);
 void d_shout(int, int, char *);

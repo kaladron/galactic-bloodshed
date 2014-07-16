@@ -2,7 +2,6 @@
 AM_CPPFLAGS = -DPKGDATADIR='"$(pkgdatadir)/"'
 
 AM_CXXFLAGS = -g -O2 -W -Weverything -Werror \
-	    -Wno-c++11-compat-deprecated-writable-strings \
 	    -Wno-old-style-cast \
 	    -Wno-logical-not-parentheses \
 	    -Wno-conditional-uninitialized \
@@ -14,6 +13,10 @@ AM_CXXFLAGS = -g -O2 -W -Weverything -Werror \
 	    -Wno-sign-compare \
 	    -Wno-char-subscripts \
 	    -Wno-tautological-constant-out-of-range-compare
+
+AM_CXXFLAGS += \
+	    -Wno-c++11-compat-deprecated-writable-strings 
+
 
 # These warnings seem like ones we'll never enable
 AM_CXXFLAGS += \

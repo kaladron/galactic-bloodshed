@@ -491,7 +491,7 @@ static char desshow(planettype *p, int x, int y) /* copied from map.c */
 }
 
 // TODO(jeffbailey): We shouldn't need to be providing this function.
-int notify(int who, int gov, char *msg) { /* this is a dummy routine */
+int notify(int who, int gov, const char *msg) { /* this is a dummy routine */
   return 0;
 }
 

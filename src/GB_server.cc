@@ -84,10 +84,10 @@ static char start_buf[128];
 static char update_buf[128];
 static char segment_buf[128];
 
-static char *connect_fail = "Connection refused.\n";
-static char *flushed_message = "<Output Flushed>\n";
-static char *shutdown_message = "Shutdown ordered by deity - Bye\n";
-static char *already_on = "Connection refused.\n";
+static const char *connect_fail = "Connection refused.\n";
+static const char *flushed_message = "<Output Flushed>\n";
+static const char *shutdown_message = "Shutdown ordered by deity - Bye\n";
+static const char *already_on = "Connection refused.\n";
 
 int sig_null();
 
@@ -126,6 +126,11 @@ static int sock;
 static int ndescriptors = 0;
 
 static void set_signals(void);
+static void queue_string(struct descriptor_data *d, const char *message);
+static void queue_write(struct descriptor_data *, const char *, int);
+static void add_to_queue(struct text_queue *, const char *, int);
+static struct text_block *make_text_block(const char *, int);
+
 struct descriptor_data *new_connection(int);
 char *addrout(long);
 void do_update(int);
@@ -139,11 +144,7 @@ struct timeval update_quotas(struct timeval, struct timeval);
 int process_output(struct descriptor_data *);
 void welcome_user(struct descriptor_data *);
 int flush_queue(struct text_queue *, int);
-void queue_write(struct descriptor_data *, char *, int);
-void queue_string(struct descriptor_data *d, char *message);
-struct text_block *make_text_block(char *, int);
 void free_text_block(struct text_block *);
-void add_to_queue(struct text_queue *, char *, int);
 char *strsave(char *);
 void process_commands(void);
 int do_command(struct descriptor_data *, char *);
@@ -286,7 +287,7 @@ void notify_race(int race, char *message) {
   }
 }
 
-int notify(int race, int gov, char *message) {
+int notify(int race, int gov, const char *message) {
   struct descriptor_data *d;
   reg int ok;
 
@@ -735,7 +736,7 @@ struct descriptor_data *initializesock(int s) {
   return d;
 }
 
-struct text_block *make_text_block(char *s, int n) {
+static struct text_block *make_text_block(const char *s, int n) {
   struct text_block *p;
 
   p = (struct text_block *)malloc(sizeof(struct text_block));
@@ -752,7 +753,7 @@ void free_text_block(struct text_block *t) {
   free((char *)t);
 }
 
-void add_to_queue(struct text_queue *q, char *b, int n) {
+static void add_to_queue(struct text_queue *q, const char *b, int n) {
   struct text_block *p;
 
   if (n == 0)
@@ -785,7 +786,7 @@ int flush_queue(struct text_queue *q, int n) {
   return really_flushed;
 }
 
-void queue_write(struct descriptor_data *d, char *b, int n) {
+static void queue_write(struct descriptor_data *d, const char *b, int n) {
   int space;
 
   space = MAX_OUTPUT - d->output_size - n;
@@ -795,7 +796,7 @@ void queue_write(struct descriptor_data *d, char *b, int n) {
   d->output_size += n;
 }
 
-void queue_string(struct descriptor_data *d, char *s) {
+static void queue_string(struct descriptor_data *d, const char *s) {
   queue_write(d, s, strlen(s));
 }
 

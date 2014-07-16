@@ -17,7 +17,7 @@ int start_shiplist(int, int, char *);
 int do_shiplist(shiptype **, int *);
 int in_list(int, char *, shiptype *, int *);
 void fix(int, int);
-int match(char *, char *);
+int match(const char *, const char *);
 void DontOwnErr(int, int, int);
 int enufAP(int, int, unsigned short, int);
 void Getracenum(char *, char *, int *, int *);

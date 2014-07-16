@@ -474,7 +474,7 @@ void fix(int Playernum, int Governor) {
     notify(Playernum, Governor, "Fix what?\n");
 }
 
-int match(char *p, char *q) { return (!strncmp(p, q, strlen(p))); }
+int match(const char *p, const char *q) { return (!strncmp(p, q, strlen(p))); }
 
 void DontOwnErr(int Playernum, int Governor, int shipno) {
   sprintf(buf, "You don't own ship #%d.\n", shipno);

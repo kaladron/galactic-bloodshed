@@ -266,12 +266,10 @@ int authorized(int Governor, shiptype *ship) {
   return (!Governor || ship->governor == Governor);
 }
 
-int start_shiplist(int Playernum, int Governor, char *string) {
-  char *p;
+int start_shiplist(int Playernum, int Governor, const char *p) {
   planettype *planet;
   shiptype *ship;
   int st, pl, sh;
-  p = string;
 
   if (*p == '#')
     return (atoi(++p));

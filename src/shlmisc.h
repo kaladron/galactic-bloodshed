@@ -13,7 +13,7 @@ void grant(int, int, int);
 void governors(int, int, int);
 void do_revoke(racetype *, int, int);
 int authorized(int, shiptype *);
-int start_shiplist(int, int, char *);
+int start_shiplist(int, int, const char *);
 int do_shiplist(shiptype **, int *);
 int in_list(int, char *, shiptype *, int *);
 void fix(int, int);

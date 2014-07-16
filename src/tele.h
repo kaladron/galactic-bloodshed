@@ -6,7 +6,7 @@
 #define TELE_H
 
 void purge(void);
-void post(char *, int);
+void post(const char *, int);
 void push_telegram_race(int, char *);
 void push_telegram(int, int, char *);
 void teleg_read(int, int);

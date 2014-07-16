@@ -56,50 +56,50 @@ void purge(void) {
  * description: does the acutal posting of messages to the news files
  *
  */
-void post(char *msg, int type) {
-  char telefl[100];
-  char pbuf[1024]; /* this is needed, don't use global
-                    * pointer! */
-  FILE *news_fd;
-  char *p;
+void post(const char *origmsg, int type) {
+  const char *telefl;
 
-  bzero((char *)telefl, sizeof(telefl));
   switch (type) {
   case DECLARATION:
-    sprintf(telefl, "%s", DECLARATIONFL);
+    telefl = DECLARATIONFL;
     break;
   case TRANSFER:
-    sprintf(telefl, "%s", TRANSFERFL);
+    telefl = TRANSFERFL;
     break;
   case COMBAT:
-    sprintf(telefl, "%s", COMBATFL);
+    telefl = COMBATFL;
     break;
   case ANNOUNCE:
-    sprintf(telefl, "%s", ANNOUNCEFL);
+    telefl = ANNOUNCEFL;
     break;
   default:
     return;
   }
 
+  char *fixmsg = strdupa(origmsg);
+  char *p;
   /* look for special symbols */
-  for (p = msg; *p; p++) {
+  for (p = fixmsg; *p; p++) {
     if (*p == ';')
       *p = '\n';
     else if (*p == '|')
       *p = '\t';
   }
 
+  FILE *news_fd;
   if ((news_fd = fopen(telefl, "a")) == NULL) {
     return;
   } else {
     tm = time(0);
     current_tm = localtime(&tm);
-    sprintf(pbuf, "%2d/%2d %02d:%02d:%02d %s", current_tm->tm_mon + 1,
+    char *outbuf;
+    asprintf(&outbuf, "%2d/%2d %02d:%02d:%02d %s", current_tm->tm_mon + 1,
             current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,
-            current_tm->tm_sec, msg);
-    fprintf(news_fd, "%s", pbuf);
+            current_tm->tm_sec, fixmsg);
+    fprintf(news_fd, "%s", outbuf);
     fclose(news_fd);
-    newslength[type] += strlen(pbuf);
+    newslength[type] += strlen(outbuf);
+    free(outbuf);
   }
 }
 

@@ -5,7 +5,7 @@
 #ifndef SHIPDATA_H
 #define SHIPDATA_H
 
-char Shipltrs[] = { 'p', 's', 'X', 'D', 'B', 'I', 'C', 'd',  'f', 'e', 'H', 'S',
+const char Shipltrs[] = { 'p', 's', 'X', 'D', 'B', 'I', 'C', 'd',  'f', 'e', 'H', 'S',
                     'O', 'c', 't', '!', '+', 'M', '=', '\\', '-', 'a', 'g', 'h',
                     'v', 'V', '@', 'l', 'w', ':', 'G', 'F',  'T', ';', 'Z', '[',
                     '^', 'P', 'q', 'K', 'Y', 'W', 'J', '&',  'R', 'b', 'L' };
@@ -47,7 +47,7 @@ char Shipltrs[] = { 'p', 's', 'X', 'D', 'B', 'I', 'C', 'd',  'f', 'e', 'H', 'S',
 //     Now 0 guns. Also removed the 100 destruct carrying capacity. Added 25
 //     cargo space so it can repair itself. */
 
-long Shipdata[NUMSTYPES][NUMABILS] = {
+const long Shipdata[NUMSTYPES][NUMABILS] = {
   /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
      dm  bd   cn mod las cew clk god prg port rep pay */
   /*SPd*/ { 0, 0, 0, 0, 0, 0, 0, 20, 1, 0, 1, 0, 0, 1,
@@ -156,7 +156,7 @@ long Shipdata[NUMSTYPES][NUMABILS] = {
             0,   2,   50, 8,   0,  1, 0, 0,   0,   0, 1,  0, 1, 1 }
 };
 
-char *Shipnames[NUMSTYPES] = {
+const char *Shipnames[NUMSTYPES] = {
   "Spore pod",         "Shuttle",           "Carrier",
   "Dreadnaught",       "Battleship",        "Interceptor",
   "Cruiser",           "Destroyer",         "Fighter Group",

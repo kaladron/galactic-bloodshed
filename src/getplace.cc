@@ -25,10 +25,10 @@
 
 static char Disps[PLACENAMESIZE];
 
-static placetype Getplace2(int Playernum, int Governor, char *string,
+static placetype Getplace2(int Playernum, int Governor, const char *string,
                            placetype *where, int ignoreexpl, int God);
 
-placetype Getplace(int Playernum, int Governor, char *string, int ignoreexpl) {
+placetype Getplace(int Playernum, int Governor, const char *string, int ignoreexpl) {
   placetype where; /* return value */
   racetype *Race;
   int God;
@@ -84,7 +84,7 @@ placetype Getplace(int Playernum, int Governor, char *string, int ignoreexpl) {
   }
 }
 
-static placetype Getplace2(int Playernum, int Governor, char *string,
+static placetype Getplace2(int Playernum, int Governor, const char *string,
                            placetype *where, int ignoreexpl, int God) {
   char substr[NAMESIZE];
   planettype *p;

@@ -14,8 +14,8 @@ AM_CXXFLAGS = -g -O2 -W -Weverything -Werror \
 	    -Wno-char-subscripts \
 	    -Wno-tautological-constant-out-of-range-compare
 
-AM_CXXFLAGS += \
-	    -Wno-c++11-compat-deprecated-writable-strings 
+#AM_CXXFLAGS += \
+#	    -Wno-c++11-compat-deprecated-writable-strings 
 
 
 # These warnings seem like ones we'll never enable

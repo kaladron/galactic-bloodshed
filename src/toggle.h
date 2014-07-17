@@ -7,6 +7,5 @@
 
 void toggle(int, int, int);
 void highlight(int, int, int);
-void tog(int, int, char *, char *);
 
 #endif // TOGGLE_H

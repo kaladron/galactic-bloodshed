@@ -15,6 +15,8 @@
 #include "shlmisc.h"
 #include "vars.h"
 
+static void tog(int, int, char *, const char *);
+
 void toggle(int Playernum, int Governor, int APcount) {
   racetype *Race;
 
@@ -100,7 +102,7 @@ void highlight(int Playernum, int Governor, int APcount) {
   putrace(Race);
 }
 
-void tog(int Playernum, int Governor, char *op, char *name) {
+static void tog(int Playernum, int Governor, char *op, const char *name) {
   *op = !(*op);
   sprintf(buf, "%s is now %s\n", name, *op ? "on" : "off");
   notify(Playernum, Governor, buf);

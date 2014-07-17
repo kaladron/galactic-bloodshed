@@ -9,7 +9,7 @@
 #include "ships.h"
 #include "vars.h"
 
-void notify_race(int, char *);
+void notify_race(int, const char *);
 int notify(int, int, const char *);
 void d_think(int, int, char *);
 void d_broadcast(int, int, char *);

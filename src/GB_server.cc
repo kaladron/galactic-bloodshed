@@ -162,7 +162,7 @@ void shovechars(int);
 int msec_diff(struct timeval, struct timeval);
 struct timeval msec_add(struct timeval, int);
 void save_command(struct descriptor_data *, char *);
-static void process_command(int, int, char *);
+static void process_command(int, int, const char *);
 struct descriptor_data *initializesock(int);
 
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
 
 void set_signals(void) { signal(SIGPIPE, SIG_IGN); }
 
-void notify_race(int race, char *message) {
+void notify_race(int race, const char *message) {
   struct descriptor_data *d;
   if (update_flag)
     return;
@@ -1347,9 +1347,8 @@ void dump_users(struct descriptor_data *e) {
   queue_string(e, "Finished.\n");
 }
 
-static void process_command(int Playernum, int Governor, char *comm) {
+static void process_command(int Playernum, int Governor, const char *comm) {
   int j, God, Guest;
-  char *string;
   racetype *r;
 
   /*determine which routine to go to and what action to take */
@@ -1360,7 +1359,7 @@ static void process_command(int Playernum, int Governor, char *comm) {
   God = r->God;
   Guest = r->Guest;
 
-  string = comm;
+  const char *string = comm;
   while (*string && *string != ' ')
     string++;
 

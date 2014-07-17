@@ -31,7 +31,7 @@
 
 static char msg[1024];
 
-void personal(int Playernum, int Governor, char *message) {
+void personal(int Playernum, int Governor, const char *message) {
   racetype *Race;
 
   if (Governor) {
@@ -841,7 +841,7 @@ void read_messages(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, "Read what?\n");
 }
 
-void motto(int Playernum, int Governor, int APcount, char *message) {
+void motto(int Playernum, int Governor, int APcount, const char *message) {
   if (Governor) {
     notify(Playernum, Governor, "You are not authorized to do this.\n");
     return;
@@ -1009,7 +1009,7 @@ int MostAPs(int Playernum, startype *s) {
   return (s->AP[Playernum - 1] == t);
 }
 
-void announce(int Playernum, int Governor, char *message, int mode) {
+void announce(int Playernum, int Governor, const char *message, int mode) {
   racetype *Race;
   char symbol;
 

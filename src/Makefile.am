@@ -14,8 +14,6 @@ AM_CXXFLAGS = -g -O2 -W -Weverything -Werror \
 	    -Wno-char-subscripts \
 	    -Wno-tautological-constant-out-of-range-compare
 
-#AM_CXXFLAGS += \
-#	    -Wno-c++11-compat-deprecated-writable-strings 
 
 
 # These warnings seem like ones we'll never enable
@@ -106,7 +104,9 @@ racegen_SOURCES = \
 	GB_racegen.cc	\
 	shlmisc.cc
 
-racegen_CFLAGS = -DPRIV $(AM_CFLAGS)
+racegen_CXXFLAGS = -DPRIV $(AM_CXXFLAGS)
+racegen_CXXFLAGS += \
+	    -Wno-c++11-compat-deprecated-writable-strings
 
 makeuniv_SOURCES = makeuniv.cc makestar.cc makeplanet.cc rand.cc perm.cc files.cc
 

@@ -27,8 +27,8 @@
 
 #include "globals.h"
 
-static void InitFile(char *, void *, int);
-static void EmptyFile(char *);
+static void InitFile(const char *, void *, int);
+static void EmptyFile(const char *);
 static void produce_postscript(const char *);
 
 static const char *DEFAULT_POSTSCRIPT_MAP_FILENAME = "universe.ps";
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-static void InitFile(char *filename, void *ptr, int len) {
+static void InitFile(const char *filename, void *ptr, int len) {
   FILE *f = fopen(filename, "w+");
 
   if (f == NULL) {
@@ -259,7 +259,7 @@ static void InitFile(char *filename, void *ptr, int len) {
   fclose(f);
 }
 
-static void EmptyFile(char *filename) { InitFile(filename, NULL, 0); }
+static void EmptyFile(const char *filename) { InitFile(filename, NULL, 0); }
 
 /*
  * The procedure below was adapted from a program which is

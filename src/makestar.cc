@@ -44,7 +44,7 @@ static int numslist, namestcount;
 static char SNames[1000][20];
 static int star_list[1000];
 
-static int ReadNameList(char ss[1000][20], int n, int m, char *filename);
+static int ReadNameList(char ss[1000][20], int n, int m, const char *filename);
 static void rand_list(int n, int *list);
 
 // TODO(jeffbailey): This should be syncd with the ones in GB_server.h:
@@ -97,7 +97,7 @@ void PrintStatistics(void) {
   }
 }
 
-static int ReadNameList(char ss[1000][20], int n, int m, char *filename) {
+static int ReadNameList(char ss[1000][20], int n, int m, const char *filename) {
   register int i, j;
   FILE *f = fopen(filename, "r");
 

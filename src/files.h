@@ -51,6 +51,6 @@
 #define NOGOFL PATH(nogo)
 #define ADDRESSFL PATH(Addresses)
 
-extern char *Files[];
+extern const char *Files[];
 
 #endif // FILES_H

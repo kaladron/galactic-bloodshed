@@ -4,7 +4,7 @@
 
 #include "files.h"
 
-char *Files[] = { PATH(Data),        PATH(Docs),       PATH(exam.dat),
+const char *Files[] = { PATH(Data),        PATH(Docs),       PATH(exam.dat),
                   PATH(enroll.dat),  DATA(star),       DATA(sector),
                   DATA(planet),      DATA(race),       DATA(block),
                   DATA(ship),        DATA(shipfree),   DATA(dummy),

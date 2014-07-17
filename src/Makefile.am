@@ -14,10 +14,9 @@ AM_CXXFLAGS = -g -O2 -W -Weverything -Werror \
 	    -Wno-char-subscripts \
 	    -Wno-tautological-constant-out-of-range-compare
 
-
-
 # These warnings seem like ones we'll never enable
 AM_CXXFLAGS += \
+	    -Wno-switch-enum \
 	    -Wno-disabled-macro-expansion \
 	    -Wno-padded
 

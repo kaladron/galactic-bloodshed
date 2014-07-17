@@ -113,7 +113,7 @@ void post(const char *origmsg, int type) {
  * description:  Sends a message to everyone in the race
  *
  */
-void push_telegram_race(int recpient, char *msg) {
+void push_telegram_race(int recpient, const char *msg) {
   racetype *Race;
   reg int j;
 

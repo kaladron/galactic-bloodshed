@@ -133,7 +133,7 @@ void push_telegram_race(int recpient, char *msg) {
  * description:  Sends a message to everyone from person to person
  *
  */
-void push_telegram(int recpient, int gov, char *msg) {
+void push_telegram(int recpient, int gov, const char *msg) {
   char telefl[100];
   FILE *telegram_fd;
 

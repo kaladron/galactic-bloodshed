@@ -105,6 +105,7 @@ void analysis(int Playernum, int Governor, int APcount) {
 
     switch (where.level) {
     case LEVEL_UNIV:
+    case LEVEL_SHIP:
       notify(Playernum, Governor, "You can only analyze planets.\n");
       break;
     case LEVEL_PLAN:

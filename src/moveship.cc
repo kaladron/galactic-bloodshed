@@ -164,6 +164,9 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
           if (s->whatorbits != dsh->whatorbits || s->storbits != dsh->storbits)
             destlevel = LEVEL_STAR;
           break;
+        case LEVEL_SHIP:
+          // TODO(jeffbailey): Prove that this is impossible.
+          break;
         }
         /*			if (sqrt( (double)Distsq(s->xpos, s->ypos,
            xdest,

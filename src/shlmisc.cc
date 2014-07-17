@@ -296,8 +296,6 @@ int start_shiplist(int Playernum, int Governor, const char *p) {
     sh = ship->ships;
     free(ship);
     return sh;
-  default:
-    break;
   }
   return 0;
 }
@@ -629,8 +627,6 @@ void list(int Playernum, int Governor) {
   case LEVEL_SHIP:
     sh = Dir[Playernum - 1][Governor].shipno;
     break;
-  default:
-    sh = 0; // TODO(jeffbailey): Shouldn't happen.
   }
 
   while (sh) {

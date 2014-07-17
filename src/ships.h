@@ -2,6 +2,8 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+#include "vars.h"
+
 #ifndef SHIPS_H
 #define SHIPS_H
 
@@ -145,7 +147,7 @@ struct ship {
       unsigned char snum;     /* aimed at what star */
       char intensity;         /* intensity of aiming */
       unsigned char pnum;     /* aimed at what planet */
-      unsigned char level;    /* aimed at what level */
+      levels_t level;    /* aimed at what level */
       unsigned char dummy[4]; /* unused bytes */
     } aimed_at;
     struct {                    /* VNs and berserkers */
@@ -230,8 +232,8 @@ struct ship {
   unsigned char deststar;   /* destination star */
   unsigned char destpnum;   /* destination planet */
   unsigned char pnumorbits; /* # of planet if orbiting */
-  unsigned char whatdest;   /* where going (same as Dir) */
-  unsigned char whatorbits; /* where orbited (same as Dir) */
+  levels_t whatdest;   /* where going (same as Dir) */
+  levels_t whatorbits; /* where orbited (same as Dir) */
 
   unsigned char damage; /* amt of damage */
   unsigned char rad;    /* radiation level */
@@ -270,7 +272,7 @@ struct place { /* used in function return for finding place */
   unsigned char pnum;
   unsigned short shipno;
   shiptype *shipptr;
-  unsigned char level; /* .level: same as Dir */
+  levels_t level; /* .level: same as Dir */
   unsigned char err;   /* if error */
 };
 

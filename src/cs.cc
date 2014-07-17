@@ -121,8 +121,6 @@ void do_prompt(int Playernum, int Governor) {
         }
         free(s2);
         break;
-      default:
-        break;
       }
     }
     free(s);
@@ -240,15 +238,11 @@ void cs(int Playernum, int Governor, int APcount) {
           Dir[Playernum - 1][Governor].lastx[0] =
               Dir[Playernum - 1][Governor].lasty[0] = 0.0;
           break;
-        default:
-          break;
         }
       } else
         Dir[Playernum - 1][Governor].lastx[0] =
             Dir[Playernum - 1][Governor].lasty[0] = 0.0;
       free(s);
-      break;
-    default:
       break;
     }
     Dir[Playernum - 1][Governor].level = where.level;

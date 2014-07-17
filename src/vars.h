@@ -21,10 +21,7 @@ extern unsigned long segments; /* number of movement segments (global variable) 
   4 /* Shipping routes - DON'T change this unless you know                     \
        what you are doing */
 
-#define LEVEL_UNIV 0
-#define LEVEL_STAR 1
-#define LEVEL_PLAN 2
-#define LEVEL_SHIP 3
+enum levels_t { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
 
 #define MAXPLAYERS 64
 #define MAXSTRLEN 2047
@@ -201,7 +198,7 @@ struct stardata {
 extern struct stardata Sdata;
 
 struct directory {
-  unsigned char level;                /* what directory level */
+  levels_t level;                /* what directory level */
   unsigned char snum;                 /* what star system obj # (level=0) */
   unsigned char pnum;                 /* number of planet */
   unsigned short shipno;              /* # of ship */

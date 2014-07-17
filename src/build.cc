@@ -1427,6 +1427,9 @@ void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
     case LEVEL_UNIV:
       insert_sh_univ(&Sdata, newship);
       break;
+    case LEVEL_SHIP:
+      // TODO(jeffbailey): The compiler can't see that this is impossible.
+      break;
     }
   } else {
     newship->whatorbits = LEVEL_SHIP;

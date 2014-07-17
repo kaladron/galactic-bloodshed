@@ -75,7 +75,7 @@ struct race {
     char name[RNAMESIZE];
     char password[RNAMESIZE];
     unsigned char active;
-    unsigned char deflevel;
+    levels_t deflevel;
     unsigned char defsystem;
     unsigned char defplanetnum; /* current default */
     unsigned char homelevel;

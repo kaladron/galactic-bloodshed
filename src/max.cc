@@ -86,8 +86,6 @@ char *prin_ship_orbits(shiptype *s) {
     } else
       strcpy(Dispshiporbits_buf, "/");
     break;
-  default:
-    break;
   }
   return Dispshiporbits_buf;
 }

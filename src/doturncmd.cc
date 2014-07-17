@@ -251,8 +251,6 @@ void do_turn(int update) {
       case LEVEL_SHIP:
         insert_sh_ship(ships[i], ships[ships[i]->destshipno]);
         break;
-      default:
-        break;
       }
     }
   }
@@ -586,8 +584,6 @@ void do_reset(int time_reset) {
         break;
       case LEVEL_SHIP:
         insert_sh_ship(ships[i], ships[ships[i]->destshipno]);
-        break;
-      default:
         break;
       }
     }

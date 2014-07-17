@@ -107,8 +107,9 @@ static placetype Getplace2(int Playernum, int Governor, const char *string,
         if (where->level == LEVEL_SHIP)
           where->shipno = where->shipptr->destshipno;
         free(where->shipptr);
-      } else
-        where->level--;
+      } else if (where->level == LEVEL_STAR) { where->level = LEVEL_UNIV;
+      } else if (where->level == LEVEL_PLAN) { where->level = LEVEL_STAR;
+      }
       while (*string == '.')
         string++;
       while (*string == '/')
@@ -202,9 +203,6 @@ char *Dispshiploc_brief(shiptype *ship) {
   case LEVEL_UNIV:
     sprintf(Disps, "/");
     return (Disps);
-  default:
-    sprintf(Disps, "error");
-    return (Disps);
   }
 }
 
@@ -223,9 +221,6 @@ char *Dispshiploc(shiptype *ship) {
   case LEVEL_UNIV:
     sprintf(Disps, "/");
     return (Disps);
-  default:
-    sprintf(Disps, "error");
-    return (Disps);
   }
 }
 
@@ -242,12 +237,6 @@ char *Dispplace(int Playernum, int Governor, placetype *where) {
     sprintf(Disps, "#%d", where->shipno);
     return (Disps);
   case LEVEL_UNIV:
-    strcpy(Disps, "/");
-    return (Disps);
-  default:
-    sprintf(buf, "illegal Dispplace val = %d\n", where->level);
-    notify(Playernum, Governor, buf);
-    where->err = 1;
     strcpy(Disps, "/");
     return (Disps);
   }

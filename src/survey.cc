@@ -28,7 +28,7 @@
 
 #define MAX_SHIPS_PER_SECTOR 10
 
-static char *Tox[] = {
+static const char *Tox[] = {
   "Stage 0, mild",
   "Stage 1, mild",
   "Stage 2, semi-mild",

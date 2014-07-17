@@ -14,6 +14,8 @@
 #include "shlmisc.h"
 #include "vars.h"
 
+static char *allied(racetype *, int, int, int);
+
 void relation(int Playernum, int Governor, int APcount) {
   int numraces;
   int p, q;
@@ -56,7 +58,7 @@ void relation(int Playernum, int Governor, int APcount) {
     }
 }
 
-char *allied(racetype *r, int p, int q, int God) {
+static char *allied(racetype *r, int p, int q, int God) {
   if (isset(r->atwar, p))
     return "WAR";
   else if (isset(r->allied, p))

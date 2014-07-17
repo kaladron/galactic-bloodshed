@@ -8,6 +8,5 @@
 #include "races.h"
 
 void relation(int, int, int);
-char *allied(racetype *, int, int, int);
 
 #endif // RELATION_H

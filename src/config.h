@@ -32,11 +32,11 @@
 #define SEGMENT_PASSWORD "put_your_segment_password_here"
 #endif
 
-#define MARKET  /* comment this out if you don't want to use the market */
-#undef VICTORY  /* if you want to use victory conditions */
-#undef DISSOLVE /* If you want to allow players to dissolve */
-#define DEFENSE /* If you want to allow planetary guns */
-#define VOTING  /* If you want to allow player voting. */
+#define MARKET      /* comment this out if you don't want to use the market */
+#undef VICTORY      /* if you want to use victory conditions */
+#undef DISSOLVE     /* If you want to allow players to dissolve */
+#define DEFENSE     /* If you want to allow planetary guns */
+#define VOTING      /* If you want to allow player voting. */
 #undef ACCESS_CHECK /* If you want to check address authorization. */
 #undef NOMADS       /* If you want to allow min # sexes to always colonize           \
 a sector safely */

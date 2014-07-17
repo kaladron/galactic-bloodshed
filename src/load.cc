@@ -1040,8 +1040,8 @@ void unload_onto_alien_sector(int Playernum, int Governor, planettype *planet,
            "You have to unload to assault alien sectors.\n");
     return;
   }
-  ground_assaults[Playernum - 1][sect->owner - 1]
-                 [Dir[Playernum - 1][Governor].snum] += 1;
+  ground_assaults[Playernum - 1][sect->owner -
+                                 1][Dir[Playernum - 1][Governor].snum] += 1;
   Race = races[Playernum - 1];
   alien = races[sect->owner - 1];
   /* races find out about each other */

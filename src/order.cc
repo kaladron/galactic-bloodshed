@@ -792,7 +792,8 @@ void DispOrders(int Playernum, int Governor, shiptype *ship) {
   }
   if (ship->type == OTYPE_TERRA || ship->type == OTYPE_PLOW) {
     int i;
-    sprintf(temp, "/move %s", &(ship->shipclass[ship->special.terraform.index]));
+    sprintf(temp, "/move %s",
+            &(ship->shipclass[ship->special.terraform.index]));
     if (temp[i = (strlen(temp) - 1)] == 'c') {
       char c = ship->shipclass[ship->special.terraform.index];
       ship->shipclass[ship->special.terraform.index] = '\0';

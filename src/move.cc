@@ -296,8 +296,8 @@ void move_popn(int Playernum, int Governor, int what) {
     }
 
     if (Assault) {
-      ground_assaults[Playernum - 1][sect2->owner - 1]
-                     [Dir[Playernum - 1][Governor].snum] += 1;
+      ground_assaults[Playernum - 1][sect2->owner -
+                                     1][Dir[Playernum - 1][Governor].snum] += 1;
       Race = races[Playernum - 1];
       alien = races[sect2->owner - 1];
       /* races find out about each other */

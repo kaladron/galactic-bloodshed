@@ -1954,8 +1954,8 @@ double GetComplexity(int ship) {
 }
 
 int ShipCompare(const void *S1, const void *S2) {
-  const int *s1 = (const int*)S1;
-  const int *s2 = (const int*)S2;
+  const int *s1 = (const int *)S1;
+  const int *s2 = (const int *)S2;
   return (int)(GetComplexity(*s1) - GetComplexity(*s2));
 }
 

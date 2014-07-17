@@ -96,4 +96,3 @@ unsigned long segments;
 long clk;
 
 #endif // GLOBALS_H
-

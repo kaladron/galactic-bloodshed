@@ -504,8 +504,9 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
            "Syntax: 'defend <ship> <sector> [<strength>]'.\n");
     return;
   }
-  if (Governor && Stars[Dir[Playernum - 1][Governor].snum]
-                          ->governor[Playernum - 1] != Governor) {
+  if (Governor &&
+      Stars[Dir[Playernum - 1][Governor].snum]->governor[Playernum - 1] !=
+          Governor) {
     notify(Playernum, Governor,
            "You are not authorized to do that in this system.\n");
     return;

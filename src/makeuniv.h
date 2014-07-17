@@ -16,5 +16,4 @@ extern int maxplanets;
 extern int printplaninfo;
 extern int printstarinfo;
 
-
 #endif // MAKEUNIV_H

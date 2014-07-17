@@ -32,8 +32,8 @@ static int critique_modification(void);
 static void execute(int argc, char **argv);
 static void fix_up_iq(void);
 static void initialize(void);
-static void help(int, char*[]);
-static void load(int, char*[]);
+static void help(int, char * []);
+static void load(int, char * []);
 static void metamorph(void);
 static int modify(int argc, char *argv[]);
 static void normal(void);
@@ -42,8 +42,7 @@ static void save(int argc, char *argv[]);
 static void send2(int argc, char *argv[]);
 static void quit(int argc, char **argv);
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 
 #ifdef PRIV
   int port;
@@ -116,138 +115,140 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-static attribute attr[N_ATTRIBUTES] = { { ADVENT,
-                                   "Adventurism",
-                                   0.0,
-                                   0.0,
-                                   0.0,
-                                   300.0,
-                                   0.0,
-                                   0.05,
-                                   0.4,
-                                   0.99,
-                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                   0 },
-                                 { ABSORB,
-                                   "Absorb",
-                                   0.0,
-                                   0.0,
-                                   0.0,
-                                   200.0,
-                                   0.0,
-                                   0.00,
-                                   0.00,
-                                   1.00,
-                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                   2 },
-                                 { BIRTH,
-                                   "Birthrate",
-                                   0.0,
-                                   0.0,
-                                   0.0,
-                                   500.0,
-                                   0.0,
-                                   0.2,
-                                   0.6,
-                                   1.0,
-                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                   0 },
-                                 { COL_IQ,
-                                   "Collective IQ",
-                                   0.0,
-                                   0.0,
-                                   0.0,
-                                   -350.5,
-                                   0.0,
-                                   0.00,
-                                   0.00,
-                                   1.00,
-                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                   2 },
-                                 { FERT,
-                                   "Fertilize",
-                                   200.0,
-                                   1.0,
-                                   1.0,
-                                   300.0,
-                                   0.0,
-                                   0.0,
-                                   0.0,
-                                   1.0,
-                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                   0 },
-                                 { A_IQ,
-                                   "IQ",
-                                   100.0,
-                                   0.03,
-                                   140,
-                                   6,
-                                   0.0,
-                                   50,
-                                   150,
-                                   220,
-                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                   1 },
-                                 { FIGHT,
-                                   "Fight",
-                                   10.0,
-                                   0.4,
-                                   6.0,
-                                   65.0,
-                                   0.0,
-                                   1,
-                                   4,
-                                   20,
-                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                   1 },
-                                 { PODS,
-                                   "Pods",
-                                   0.0,
-                                   0.0,
-                                   0.0,
-                                   200.0,
-                                   0.0,
-                                   0.00,
-                                   0.00,
-                                   1.00,
-                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                   2 },
-                                 { MASS,
-                                   "Mass",
-                                   100.0,
-                                   1.0,
-                                   3.1,
-                                   -100.0,
-                                   0.0,
-                                   0.1,
-                                   1.0,
-                                   3.0,
-                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                   0 },
-                                 { SEXES,
-                                   "Sexes",
-                                   2.2,
-                                   -0.5,
-                                   9.0,
-                                   -3.0,
-                                   0.0,
-                                   1,
-                                   2,
-                                   53,
-                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                   1 },
-                                 { METAB,
-                                   "Metabolism",
-                                   300.0,
-                                   1,
-                                   1.3,
-                                   700.0,
-                                   0.0,
-                                   0.1,
-                                   1.0,
-                                   4.0,
-                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                   0 } };
+static attribute attr[N_ATTRIBUTES] = {
+  { ADVENT,
+    "Adventurism",
+    0.0,
+    0.0,
+    0.0,
+    300.0,
+    0.0,
+    0.05,
+    0.4,
+    0.99,
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+    0 },
+  { ABSORB,
+    "Absorb",
+    0.0,
+    0.0,
+    0.0,
+    200.0,
+    0.0,
+    0.00,
+    0.00,
+    1.00,
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+    2 },
+  { BIRTH,
+    "Birthrate",
+    0.0,
+    0.0,
+    0.0,
+    500.0,
+    0.0,
+    0.2,
+    0.6,
+    1.0,
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+    0 },
+  { COL_IQ,
+    "Collective IQ",
+    0.0,
+    0.0,
+    0.0,
+    -350.5,
+    0.0,
+    0.00,
+    0.00,
+    1.00,
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+    2 },
+  { FERT,
+    "Fertilize",
+    200.0,
+    1.0,
+    1.0,
+    300.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+    0 },
+  { A_IQ,
+    "IQ",
+    100.0,
+    0.03,
+    140,
+    6,
+    0.0,
+    50,
+    150,
+    220,
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+    1 },
+  { FIGHT,
+    "Fight",
+    10.0,
+    0.4,
+    6.0,
+    65.0,
+    0.0,
+    1,
+    4,
+    20,
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+    1 },
+  { PODS,
+    "Pods",
+    0.0,
+    0.0,
+    0.0,
+    200.0,
+    0.0,
+    0.00,
+    0.00,
+    1.00,
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+    2 },
+  { MASS,
+    "Mass",
+    100.0,
+    1.0,
+    3.1,
+    -100.0,
+    0.0,
+    0.1,
+    1.0,
+    3.0,
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+    0 },
+  { SEXES,
+    "Sexes",
+    2.2,
+    -0.5,
+    9.0,
+    -3.0,
+    0.0,
+    1,
+    2,
+    53,
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+    1 },
+  { METAB,
+    "Metabolism",
+    300.0,
+    1,
+    1.3,
+    700.0,
+    0.0,
+    0.1,
+    1.0,
+    4.0,
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+    0 }
+};
 
 const char *planet_print_name[N_HOME_PLANET_TYPES] = {
   "Earth", "Forest", "Desert", "Water", "Airless", "Iceball", "Jovian"
@@ -316,9 +317,10 @@ int cost_of_race() {
 
 #define ROUND(f) ((int)(0.5 + (f)))
   for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
-    cost_info.attr[i] = (exp(attr[i].e_fudge * (race_info.attr[i] - attr[i].e_hinge)) *
-                        attr[i].e_factor +
-                    race_info.attr[i] * attr[i].l_factor);
+    cost_info.attr[i] =
+        (exp(attr[i].e_fudge * (race_info.attr[i] - attr[i].e_hinge)) *
+             attr[i].e_factor +
+         race_info.attr[i] * attr[i].l_factor);
   for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
     for (j = FIRST_ATTRIBUTE; j <= LAST_ATTRIBUTE; j++)
       if (attr[i].cov[j] != 0.0)
@@ -333,7 +335,8 @@ int cost_of_race() {
     if (race_info.compat[i] != 0.0)
       race_info.n_sector_types += 1;
     /* Get the base costs: */
-    cost_info.compat[i] = race_info.compat[i] * 0.5 + 10.8 * log(1.0 + race_info.compat[i]);
+    cost_info.compat[i] =
+        race_info.compat[i] * 0.5 + 10.8 * log(1.0 + race_info.compat[i]);
   }
   for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++)
     for (j = i + 1; j <= LAST_SECTOR_TYPE; j++)
@@ -416,8 +419,7 @@ static void fix_up_iq() {
  * print out descriptions of the errors; otherwise, error message(s) will be
  * printed to that file.
  */
-int critique_to_file(FILE *f, int rigorous_checking, int is_player_race)
-{
+int critique_to_file(FILE *f, int rigorous_checking, int is_player_race) {
   int i, nerrors = 0;
 
 #define FPRINTF                                                                \
@@ -452,7 +454,8 @@ int critique_to_file(FILE *f, int rigorous_checking, int is_player_race)
                (((double)((int)(100.0 * race_info.attr[i]))) / 100.0))
       FPRINTF(f, "%s truncated to next lowest hundredth (%1.2f).\n",
               attr[i].print_name,
-              race_info.attr[i] = (((double)((int)(100.0 * race_info.attr[i]))) / 100.0));
+              race_info.attr[i] =
+                  (((double)((int)(100.0 * race_info.attr[i]))) / 100.0));
   }
 
   /*
@@ -477,7 +480,8 @@ int critique_to_file(FILE *f, int rigorous_checking, int is_player_race)
 
   /*
    * Check for valid privileges:  */
-  if ((race_info.priv_type < FIRST_PRIV_TYPE) || (race_info.priv_type > LAST_PRIV_TYPE)) {
+  if ((race_info.priv_type < FIRST_PRIV_TYPE) ||
+      (race_info.priv_type > LAST_PRIV_TYPE)) {
     FPRINTF(f, "Privileges out of valid range.\n");
     nerrors += 1;
   }
@@ -497,14 +501,16 @@ int critique_to_file(FILE *f, int rigorous_checking, int is_player_race)
 
   /*
    * Check for valid race: */
-  if ((race_info.race_type < FIRST_RACE_TYPE) || (race_info.race_type > LAST_RACE_TYPE)) {
+  if ((race_info.race_type < FIRST_RACE_TYPE) ||
+      (race_info.race_type > LAST_RACE_TYPE)) {
     FPRINTF(f, "Home planet type out of valid range.\n");
     nerrors += 1;
   }
 
   /*
    * Check for valid sector compats: */
-  if ((race_info.home_planet_type != H_JOVIAN) && (race_info.compat[S_PLATED] != 100.0)) {
+  if ((race_info.home_planet_type != H_JOVIAN) &&
+      (race_info.compat[S_PLATED] != 100.0)) {
     FPRINTF(f, "Non-jovian races must have 100%% plated compat.\n");
     nerrors += 1;
   }
@@ -562,7 +568,8 @@ int critique_to_file(FILE *f, int rigorous_checking, int is_player_race)
     }
     /*
    * Check that sector compats are reasonable. */
-    if ((race_info.home_planet_type != H_JOVIAN) && (race_info.n_sector_types == 1)) {
+    if ((race_info.home_planet_type != H_JOVIAN) &&
+        (race_info.n_sector_types == 1)) {
       FPRINTF(f, "Non-jovian races must be compat with at least one sector "
                  "type besides plated.\n");
       nerrors += 1;
@@ -631,8 +638,7 @@ static void initialize() {
  * trying to tell you about them here, just run the program and diddle
  * with it to get the idea.
  */
-static void help(int argc, char *argv[])
-{
+static void help(int argc, char *argv[]) {
   int enroll, process;
   int i, j, helpp, load, modify, print, save, send2, quit;
 
@@ -806,8 +812,7 @@ static void help(int argc, char *argv[])
 
 /*
  * Return non-zero on failure, zero on success. */
-int load_from_file(FILE *g)
-{
+int load_from_file(FILE *g) {
   int i;
   char buf[80], from_address[80];
 
@@ -851,8 +856,7 @@ premature_end_of_file:
 /*
  * Return non-zero on failure, zero on success. */
 
-static int load_from_filename(const char *filename)
-{
+static int load_from_filename(const char *filename) {
   int ret;
   FILE *f = fopen(filename, "r");
 
@@ -865,8 +869,7 @@ static int load_from_filename(const char *filename)
   return ret;
 }
 
-static void load(int argc, char *argv[])
-{
+static void load(int argc, char *argv[]) {
   char c[64];
   int i;
 
@@ -891,8 +894,7 @@ static void load(int argc, char *argv[])
   }
 }
 
-static int modify(int argc, char *argv[])
-{
+static int modify(int argc, char *argv[]) {
   int i, j;
   static char *help_strings[2] = { NULL, "modify" };
   double f;
@@ -1028,8 +1030,7 @@ static int modify(int argc, char *argv[])
   return -1;
 }
 
-void print_to_file(FILE *f, int verbose)
-{
+void print_to_file(FILE *f, int verbose) {
 #define FPRINTF                                                                \
   if (verbose)                                                                 \
   fprintf
@@ -1098,7 +1099,8 @@ void print_to_file(FILE *f, int verbose)
     FPRINTF(f, "%13.13s: ", sector_print_name[i]);
     fprintf(f, " %3.0f", race_info.compat[i]);
     FPRINTF(f, "%%   %c[%4.0f]",
-            (planet_compat_cov[race_info.home_planet_type][i] == 1.0) ? '*' : ' ',
+            (planet_compat_cov[race_info.home_planet_type][i] == 1.0) ? '*'
+                                                                      : ' ',
             cost_info.compat[i]);
     FPRINTF(f, (i & 01) ? "\n" : "     ");
   }
@@ -1112,8 +1114,7 @@ void print_to_file(FILE *f, int verbose)
 #undef FPRINTF
 }
 
-static int print_to_filename(const char *filename, int verbose)
-{
+static int print_to_filename(const char *filename, int verbose) {
   FILE *f = fopen(filename, "w");
 
   if (f == NULL) {
@@ -1125,16 +1126,14 @@ static int print_to_filename(const char *filename, int verbose)
   return 1;
 }
 
-static void print(int argc, char *argv[])
-{
+static void print(int argc, char *argv[]) {
   if (argc == 1)
     print_to_file(stdout, 1);
   else if (print_to_filename(argv[1], 1))
     printf("Printed race to file \"%s\".\n", argv[1]);
 }
 
-static void save(int argc, char *argv[])
-{
+static void save(int argc, char *argv[]) {
   if (argc > 1)
     strcpy(race_info.filename, argv[1]);
   else if (!race_info.filename[0])
@@ -1145,8 +1144,7 @@ static void save(int argc, char *argv[])
   }
 }
 
-static void send2(int argc, char *argv[])
-{
+static void send2(int argc, char *argv[]) {
   FILE *f;
   char sys[64];
 

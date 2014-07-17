@@ -100,10 +100,10 @@ typedef struct ship shiptype;
 typedef struct place placetype;
 
 struct ship {
-  unsigned short number;     /* ship knows its own number */
-  unsigned char owner;       /* owner of ship */
-  unsigned char governor;    /* subordinate that controls the ship */
-  char name[SHIP_NAMESIZE];  /* name of ship (optional) */
+  unsigned short number;         /* ship knows its own number */
+  unsigned char owner;           /* owner of ship */
+  unsigned char governor;        /* subordinate that controls the ship */
+  char name[SHIP_NAMESIZE];      /* name of ship (optional) */
   char shipclass[SHIP_NAMESIZE]; /* shipclass of ship - designated by players */
 
   unsigned char race; /* race type - used when you gain alien
@@ -147,7 +147,7 @@ struct ship {
       unsigned char snum;     /* aimed at what star */
       char intensity;         /* intensity of aiming */
       unsigned char pnum;     /* aimed at what planet */
-      levels_t level;    /* aimed at what level */
+      levels_t level;         /* aimed at what level */
       unsigned char dummy[4]; /* unused bytes */
     } aimed_at;
     struct {                    /* VNs and berserkers */
@@ -232,8 +232,8 @@ struct ship {
   unsigned char deststar;   /* destination star */
   unsigned char destpnum;   /* destination planet */
   unsigned char pnumorbits; /* # of planet if orbiting */
-  levels_t whatdest;   /* where going (same as Dir) */
-  levels_t whatorbits; /* where orbited (same as Dir) */
+  levels_t whatdest;        /* where going (same as Dir) */
+  levels_t whatorbits;      /* where orbited (same as Dir) */
 
   unsigned char damage; /* amt of damage */
   unsigned char rad;    /* radiation level */
@@ -272,8 +272,8 @@ struct place { /* used in function return for finding place */
   unsigned char pnum;
   unsigned short shipno;
   shiptype *shipptr;
-  levels_t level; /* .level: same as Dir */
-  unsigned char err;   /* if error */
+  levels_t level;    /* .level: same as Dir */
+  unsigned char err; /* if error */
 };
 
 /* can takeoff & land, is mobile, etc. */

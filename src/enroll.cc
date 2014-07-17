@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-// enroll - racegen interface for Galactic Bloodshed race enrollment program. 
+// enroll - racegen interface for Galactic Bloodshed race enrollment program.
 
 #include "enroll.h"
 
@@ -23,8 +23,7 @@ static int enroll_player_race(char *failure_filename);
 /*
  * Returns: 0 if the race was successfully enrolled, or 1 if not.
  */
-static int enroll_player_race(char *failure_filename)
-{
+static int enroll_player_race(char *failure_filename) {
   char c[128];
   FILE *g;
   int n;
@@ -32,8 +31,8 @@ static int enroll_player_race(char *failure_filename)
   static int successful_enroll_in_fix_mode = 0;
 
   while ((n = critique_to_file(NULL, 1, 1))) {
-    printf("Race (%s) unacceptable, for the following reason%c:\n", race_info.name,
-           (n > 1) ? 's' : '\0');
+    printf("Race (%s) unacceptable, for the following reason%c:\n",
+           race_info.name, (n > 1) ? 's' : '\0');
     critique_to_file(stdout, 1, 1);
     if (recursing) {
       printf("\"Quit\" to break out of fix mode.\n");
@@ -137,8 +136,7 @@ static int enroll_player_race(char *failure_filename)
   return 0;
 }
 
-int enroll(int argc, char *argv[])
-{
+int enroll(int argc, char *argv[]) {
   int ret;
   FILE *g;
 
@@ -156,8 +154,8 @@ int enroll(int argc, char *argv[])
   if (strcmp(race_info.address, TO))
     ret = enroll_player_race(argv[1]);
   else if ((ret = critique_to_file(NULL, 1, 0))) {
-    printf("Race (%s) unacceptable, for the following reason%c:\n", race_info.name,
-           (ret > 1) ? 's' : '\0');
+    printf("Race (%s) unacceptable, for the following reason%c:\n",
+           race_info.name, (ret > 1) ? 's' : '\0');
     critique_to_file(stdout, 1, 0);
   } else if ((ret = enroll_valid_race()))
     critique_to_file(stdout, 1, 0);
@@ -170,8 +168,7 @@ int enroll(int argc, char *argv[])
 /**************
  * Iteratively loads races from a file, and enrolls them.
  */
-void process(int argc, char *argv[])
-{
+void process(int argc, char *argv[]) {
   FILE *f, *g;
   int n, nenrolled;
 

@@ -28,8 +28,8 @@ static int hit_probability;
 static double penetration_factor;
 
 static int do_radiation(shiptype *, double, int, int, const char *, char *);
-static int do_damage(int, shiptype *, double, int, int, int, int, double, const char *,
-              char *);
+static int do_damage(int, shiptype *, double, int, int, int, int, double,
+                     const char *, char *);
 
 int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
                        int ignore, char *long_msg, char *short_msg) {
@@ -297,7 +297,7 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
 }
 
 static int do_radiation(shiptype *ship, double tech, int strength, int hits,
-                 const char *weapon, char *msg) {
+                        const char *weapon, char *msg) {
   double fac, r;
   int i, arm, body, penetrate, casualties, casualties1;
   int dosage;
@@ -338,8 +338,9 @@ static int do_radiation(shiptype *ship, double tech, int strength, int hits,
   return dosage;
 }
 
-static int do_damage(int who, shiptype *ship, double tech, int strength, int hits,
-              int defense, int caliber, double range, const char *weapon, char *msg) {
+static int do_damage(int who, shiptype *ship, double tech, int strength,
+                     int hits, int defense, int caliber, double range,
+                     const char *weapon, char *msg) {
   double body;
   int i, arm;
   int damage;

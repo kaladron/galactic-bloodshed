@@ -99,15 +99,13 @@ void getsdata(struct stardata *S) {
   Fileread(stdata, (char *)S, sizeof(struct stardata), 0);
 }
 
-void getrace(racetype **r, int rnum)
-{
+void getrace(racetype **r, int rnum) {
   *r = (racetype *)malloc(sizeof(racetype));
   Fileread(racedata, (char *)*r, sizeof(racetype),
            (rnum - 1) * sizeof(racetype));
 }
 
-void getstar(startype **s, int star)
-{
+void getstar(startype **s, int star) {
   if (s >= &Stars[0] && s < &Stars[NUMSTARS])
     ; /* Do nothing */
   else {
@@ -117,8 +115,7 @@ void getstar(startype **s, int star)
            (int)(sizeof(Sdata) + star * sizeof(startype)));
 }
 
-void getplanet(planettype **p, int star, int pnum)
-{
+void getplanet(planettype **p, int star, int pnum) {
   int filepos;
   if (p >= &planets[0][0] && p < &planets[NUMSTARS][MAXPLANETS])
     ;    /* Do nothing */
@@ -141,8 +138,7 @@ void getsmap(sectortype *map, planettype *p) {
            p->sectormappos);
 }
 
-int getship(shiptype **s, int shipnum)
-{
+int getship(shiptype **s, int shipnum) {
   struct stat buffer;
 
   if (shipnum <= 0)
@@ -162,8 +158,7 @@ int getship(shiptype **s, int shipnum)
   }
 }
 
-int getcommod(commodtype **c, int commodnum)
-{
+int getcommod(commodtype **c, int commodnum) {
   struct stat buffer;
 
   if (commodnum <= 0)

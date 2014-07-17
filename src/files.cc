@@ -5,11 +5,11 @@
 #include "files.h"
 
 const char *Files[] = { PATH(Data),        PATH(Docs),       PATH(exam.dat),
-                  PATH(enroll.dat),  DATA(star),       DATA(sector),
-                  DATA(planet),      DATA(race),       DATA(block),
-                  DATA(ship),        DATA(shipfree),   DATA(dummy),
-                  DATA(players),     PATH(Tele),       TELE(tele),
-                  DATA(power),       PATH(News),       NEWS(declaration),
-                  NEWS(transfer),    NEWS(combat),     NEWS(announce),
-                  DATA(commod),      DATA(commodfree), DATA(Update.time),
-                  DATA(Segment.time) };
+                        PATH(enroll.dat),  DATA(star),       DATA(sector),
+                        DATA(planet),      DATA(race),       DATA(block),
+                        DATA(ship),        DATA(shipfree),   DATA(dummy),
+                        DATA(players),     PATH(Tele),       TELE(tele),
+                        DATA(power),       PATH(News),       NEWS(declaration),
+                        NEWS(transfer),    NEWS(combat),     NEWS(announce),
+                        DATA(commod),      DATA(commodfree), DATA(Update.time),
+                        DATA(Segment.time) };

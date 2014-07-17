@@ -496,6 +496,6 @@ int notify(int who, int gov, const char *msg) { /* this is a dummy routine */
 }
 
 // TODO(jeffbailey): We shouldn't need to be providing this function.
-void warn(int, int, char*);
+void warn(int, int, char *);
 void warn(int who, int gov, char *msg) { /* this is a dummy routine */
 }

@@ -643,4 +643,3 @@ void list(int Playernum, int Governor) {
 double morale_factor(double x) {
   return (atan((double)x / 10000.) / 3.14159565 + .5);
 }
-

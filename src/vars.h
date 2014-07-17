@@ -15,7 +15,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern unsigned long segments; /* number of movement segments (global variable) */
+extern unsigned long
+segments; /* number of movement segments (global variable) */
 
 #define MAX_ROUTES                                                             \
   4 /* Shipping routes - DON'T change this unless you know                     \
@@ -129,9 +130,9 @@ struct sector {
 
   unsigned char owner; /* owner of place */
   unsigned char race;  /* race type occupying sector
-                      (usually==owner) - makes things more
-                      realistic when alien races revolt and
-                      you gain control of them! */
+                     (usually==owner) - makes things more
+                     realistic when alien races revolt and
+                     you gain control of them! */
   unsigned char type;      /* underlying sector geology */
   unsigned char condition; /* environmental effects */
   unsigned long dummy2;
@@ -198,7 +199,7 @@ struct stardata {
 extern struct stardata Sdata;
 
 struct directory {
-  levels_t level;                /* what directory level */
+  levels_t level;                     /* what directory level */
   unsigned char snum;                 /* what star system obj # (level=0) */
   unsigned char pnum;                 /* number of planet */
   unsigned short shipno;              /* # of ship */

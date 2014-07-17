@@ -35,13 +35,11 @@ static const int planet_translate[N_HOME_PLANET_TYPES] = {
   0, 6, 7, 5, 2, 3, 4
 };
 
-int notify(int who, int gov, const char *msg)
-{ /* this is a dummy routine */
+int notify(int who, int gov, const char *msg) { /* this is a dummy routine */
   return 0;
 }
 
-void warn(int who, int gov, char *msg)
-{ /* this is a dummy routine */
+void warn(int who, int gov, char *msg) { /* this is a dummy routine */
 }
 
 void init_enroll() { srandom(getpid()); }
@@ -71,8 +69,8 @@ int enroll_valid_race() {
   }
   if (Playernum >= MAXPLAYERS) {
     close_data_files();
-    sprintf(race_info.rejection, "There are already %d players; No more allowed.\n",
-            MAXPLAYERS - 1);
+    sprintf(race_info.rejection,
+            "There are already %d players; No more allowed.\n", MAXPLAYERS - 1);
     race_info.status = STATUS_UNENROLLABLE;
     return 1;
   }

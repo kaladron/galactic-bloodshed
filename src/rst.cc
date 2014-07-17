@@ -277,16 +277,16 @@ void ship_report(int Playernum, int Governor, int indx,
         if (!SHip)
           first = 0;
       }
-      sprintf(buf,
-              "%5d %c %14.14s %s  %3d/%-4d  %4d  %3d%c/%3d%c    %3d%%  %c %s\n",
-              shipno, Shipltrs[s->type], (s->active ? s->name : "INACTIVE"),
-              s->laser ? "yes " : "    ", s->cew, s->cew_range,
-              (int)((1.0 - .01 * s->damage) * s->tech / 4.0), s->primary,
-              Caliber[s->primtype], s->secondary, Caliber[s->sectype],
-              s->damage,
-              s->type == OTYPE_FACTORY ? Shipltrs[s->build_type] : ' ',
-              ((s->type == OTYPE_TERRA) || (s->type == OTYPE_PLOW)) ? "Standard"
-                                                                    : s->shipclass);
+      sprintf(
+          buf,
+          "%5d %c %14.14s %s  %3d/%-4d  %4d  %3d%c/%3d%c    %3d%%  %c %s\n",
+          shipno, Shipltrs[s->type], (s->active ? s->name : "INACTIVE"),
+          s->laser ? "yes " : "    ", s->cew, s->cew_range,
+          (int)((1.0 - .01 * s->damage) * s->tech / 4.0), s->primary,
+          Caliber[s->primtype], s->secondary, Caliber[s->sectype], s->damage,
+          s->type == OTYPE_FACTORY ? Shipltrs[s->build_type] : ' ',
+          ((s->type == OTYPE_TERRA) || (s->type == OTYPE_PLOW)) ? "Standard"
+                                                                : s->shipclass);
       notify(Playernum, Governor, buf);
     }
 

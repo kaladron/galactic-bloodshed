@@ -2,7 +2,8 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/* csp_types.h: Variables and defines used internally in CSP related functions */
+/* csp_types.h: Variables and defines used internally in CSP related functions
+ */
 
 #ifndef CSP_TYPES_H
 #define CSP_TYPES_H

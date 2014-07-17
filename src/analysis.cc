@@ -27,7 +27,7 @@ struct anal_sect {
 
 static void do_analysis(int, int, int, int, int, int, int);
 static void Insert(int, struct anal_sect[], int, int, int, int);
-static void PrintTop(int, int, struct anal_sect[], char *);
+static void PrintTop(int, int, struct anal_sect[], const char *);
 
 void analysis(int Playernum, int Governor, int APcount) {
   int pnum;
@@ -327,7 +327,7 @@ static void Insert(int mode, struct anal_sect arr[], int x, int y, int des,
 }
 
 static void PrintTop(int Playernum, int Governor, struct anal_sect arr[],
-                     char *name) {
+                     const char *name) {
   int i;
 
   sprintf(buf, "%8s:", name);

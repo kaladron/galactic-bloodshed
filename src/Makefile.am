@@ -8,7 +8,6 @@ AM_CXXFLAGS = -g -O2 -W -Weverything -Werror \
 	    -Wno-float-equal \
 	    -Wno-shadow \
 	    -Wno-unreachable-code \
-	    -Wno-conversion \
 	    -Wno-unused-parameter \
 	    -Wno-sign-compare \
 	    -Wno-tautological-constant-out-of-range-compare

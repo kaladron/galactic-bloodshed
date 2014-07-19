@@ -89,7 +89,7 @@ static placetype Getplace2(int Playernum, int Governor, const char *string,
                            placetype *where, int ignoreexpl, int God) {
   char substr[NAMESIZE];
   planettype *p;
-  uint32_t i;
+  uint8_t i;
   size_t l;
   int tick;
 

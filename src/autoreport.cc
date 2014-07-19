@@ -22,7 +22,8 @@
 void autoreport(int Playernum, int Governor, int APcount) {
   planettype *p;
   placetype place;
-  int snum, pnum;
+  starnum_t snum;
+  planetnum_t pnum;
 
   snum = Dir[Playernum - 1][Governor].snum;
   pnum = Dir[Playernum - 1][Governor].pnum;

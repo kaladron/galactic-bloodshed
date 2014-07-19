@@ -101,6 +101,10 @@
 typedef struct ship shiptype;
 typedef struct place placetype;
 
+typedef uint16_t shipnum_t;
+typedef uint8_t starnum_t;
+typedef uint8_t planetnum_t;
+
 struct ship {
   unsigned short number;         /* ship knows its own number */
   unsigned char owner;           /* owner of ship */
@@ -117,9 +121,9 @@ struct ship {
   double mass;
   unsigned char land_x, land_y;
 
-  unsigned short destshipno; /* destination ship # */
-  unsigned short nextship;   /* next ship in linked list */
-  unsigned short ships;      /* ships landed on it */
+  shipnum_t destshipno; /* destination ship # */
+  shipnum_t nextship;   /* next ship in linked list */
+  shipnum_t ships;      /* ships landed on it */
 
   unsigned char armor;
   unsigned short size;
@@ -145,10 +149,10 @@ struct ship {
   /* special ship functions (10 bytes) */
   union {
     struct {                  /* if the ship is a Space Mirror */
-      unsigned short shipno;  /* aimed at what ship */
-      unsigned char snum;     /* aimed at what star */
+      shipnum_t shipno;       /* aimed at what ship */
+      starnum_t snum;         /* aimed at what star */
       char intensity;         /* intensity of aiming */
-      unsigned char pnum;     /* aimed at what planet */
+      planetnum_t pnum;       /* aimed at what planet */
       levels_t level;         /* aimed at what level */
       unsigned char dummy[4]; /* unused bytes */
     } aimed_at;
@@ -270,9 +274,9 @@ struct ship {
 };
 
 struct place { /* used in function return for finding place */
-  uint8_t snum;
-  uint8_t pnum;
-  unsigned short shipno;
+  starnum_t snum;
+  planetnum_t pnum;
+  shipnum_t shipno;
   shiptype *shipptr;
   levels_t level;    /* .level: same as Dir */
   unsigned char err; /* if error */

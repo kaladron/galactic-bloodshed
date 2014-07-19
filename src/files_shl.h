@@ -23,7 +23,7 @@ void openracedata(int *);
 void getsdata(struct stardata *S);
 void getrace(racetype **, int);
 void getstar(startype **, int);
-void getplanet(planettype **, uint32_t, uint32_t);
+void getplanet(planettype **, starnum_t, planetnum_t);
 int getship(shiptype **, int);
 int getcommod(commodtype **, int);
 void getsector(sectortype **, planettype *, int, int);

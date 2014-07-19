@@ -150,7 +150,7 @@ int getship(shiptype **s, int shipnum) {
   else {
 
     if ((*s = (shiptype *)malloc(sizeof(shiptype))) == NULL)
-      printf("getship:Malloc() error \n"), exit(0);
+      printf("getship:malloc() error \n"), exit(0);
 
     Fileread(shdata, (char *)*s, sizeof(shiptype),
              (shipnum - 1) * sizeof(shiptype));
@@ -170,7 +170,7 @@ int getcommod(commodtype **c, int commodnum) {
   else {
 
     if ((*c = (commodtype *)malloc(sizeof(commodtype))) == NULL)
-      printf("getcommod:Malloc() error \n"), exit(0);
+      printf("getcommod:malloc() error \n"), exit(0);
 
     Fileread(commoddata, (char *)*c, sizeof(commodtype),
              (commodnum - 1) * sizeof(commodtype));

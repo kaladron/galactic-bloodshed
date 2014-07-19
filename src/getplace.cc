@@ -34,7 +34,7 @@ placetype Getplace(int Playernum, int Governor, const char *string,
   racetype *Race;
   int God;
 
-  Bzero(where);
+  bzero((char *)&(where), sizeof(where));
 
   Race = races[Playernum - 1];
   God = Race->God;

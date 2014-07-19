@@ -544,7 +544,7 @@ if (!Stinfo[starnum][planetnum].inhab)
         ++Num_ships;
         ships = (shiptype **)realloc(
             ships, (unsigned)((Num_ships + 1) * sizeof(shiptype *)));
-        s2 = ships[Num_ships] = Malloc(shiptype);
+        s2 = ships[Num_ships] = (shiptype *) malloc(sizeof(shiptype));
         bzero((char *)s2, sizeof(shiptype));
         s2->number = Num_ships;
         s2->type = OTYPE_TOXWC;

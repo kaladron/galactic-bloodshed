@@ -126,8 +126,8 @@ int enroll_valid_race() {
 
 found_planet:
   printf(" found!\n");
-  Race = Malloc(racetype);
-  Bzero(*Race);
+  Race = (racetype *) malloc(sizeof(racetype));
+  bzero((char *)&(Race), sizeof(Race));
 
   Race->Playernum = Playernum;
   Race->God = (race_info.priv_type == P_GOD);
@@ -242,7 +242,7 @@ found_planet:
     shiptype s;
     int shipno;
 
-    Bzero(s);
+    bzero((char *)&(s), sizeof(s));
     shipno = Numships() + 1;
     Race->Gov_ship = shipno;
     planet->ships = shipno;

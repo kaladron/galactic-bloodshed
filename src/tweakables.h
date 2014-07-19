@@ -281,9 +281,6 @@
 #define SIGBLOCKS (SIGHUP | SIGTERM | SIGINT | SIGQUIT | SIGSTOP | SIGTSTP)
 /* signals to block... */
 
-#define Bzero(x) bzero((char *)&(x), sizeof(x))
-#define Malloc(x) (x *) malloc(sizeof(x))
-
 #define RESOURCE 0 /* for market */
 #define DESTRUCT 1
 #define FUEL 2

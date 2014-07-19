@@ -84,7 +84,7 @@ planettype Makeplanet(double dist, short stemp, int type) {
   char c, t;
   double f;
 
-  Bzero(planet);
+  bzero((char *)&(planet), sizeof(planet));
   bzero((char *)Smap, sizeof(Smap));
   planet.type = type;
   planet.expltimer = 5;

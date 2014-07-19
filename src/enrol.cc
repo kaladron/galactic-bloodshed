@@ -201,8 +201,8 @@ int main() {
 
   } while (!found);
 
-  Race = Malloc(racetype);
-  Bzero(*Race);
+  Race = (racetype *) malloc(sizeof(racetype));
+  bzero((char *)&(Race), sizeof(Race));
 
   printf("\n\tDeity/Guest/Normal (d/g/n) ?");
   c = getchr();
@@ -349,7 +349,7 @@ int main() {
     shiptype s;
     int shipno;
 
-    Bzero(s);
+    bzero((char *)&(s), sizeof(s));
     shipno = Numships() + 1;
     printf("Creating government ship %d...\n", shipno);
     Race->Gov_ship = shipno;

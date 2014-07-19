@@ -229,7 +229,7 @@ static void fuel_output(int Playernum, int Governor, double dist, double fuel,
         Playernum, Governor,
         "Estimated arrival time not available due to segment # discrepancy.\n");
   else {
-    long effective_time =
+    time_t effective_time =
         next_segment_time + (long)((segs - 1) * (update_time / segments) * 60);
     if (segments == 1)
       effective_time =
@@ -241,7 +241,8 @@ static void fuel_output(int Playernum, int Governor, double dist, double fuel,
 }
 
 static int do_trip(double fuel, double gravity_factor) {
-  int effective_segment_number, trip_resolved, i;
+  segments_t effective_segment_number;
+  int trip_resolved;
   double gravity_fuel, tmpdist, fuel_level1;
 
   tmpship->fuel = fuel; /* load up the pseudo-ship */
@@ -256,7 +257,7 @@ static int do_trip(double fuel, double gravity_factor) {
     /* Bring in the other ships.  Moveship() uses ships[]. */
     Num_ships = Numships();
     ships = (shiptype **)malloc(sizeof(shiptype *) * (Num_ships) + 1);
-    for (i = 1; i <= Num_ships; i++)
+    for (shipnum_t i = 1; i <= Num_ships; i++)
       (void)getship(&ships[i], i);
   }
 
@@ -298,7 +299,7 @@ static int do_trip(double fuel, double gravity_factor) {
     if (((tmpship->fuel == fuel_level1) && (!tmpship->hyper_drive.on)) &&
         (trip_resolved == 0)) {
       if (tmpship->whatdest == LEVEL_SHIP) {
-        for (i = 1; i <= Num_ships; i++)
+        for (shipnum_t i = 1; i <= Num_ships; i++)
           free(ships[i]);
         free(ships);
       }
@@ -306,7 +307,7 @@ static int do_trip(double fuel, double gravity_factor) {
     }
   }
   if (tmpship->whatdest == LEVEL_SHIP || tmpship->ships) {
-    for (i = 1; i <= Num_ships; i++)
+    for (shipnum_t i = 1; i <= Num_ships; i++)
       free(ships[i]);
     free(ships);
   }

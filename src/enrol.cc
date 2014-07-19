@@ -201,7 +201,7 @@ int main() {
 
   } while (!found);
 
-  Race = (racetype *) malloc(sizeof(racetype));
+  Race = (racetype *)malloc(sizeof(racetype));
   bzero((char *)&(Race), sizeof(Race));
 
   printf("\n\tDeity/Guest/Normal (d/g/n) ?");

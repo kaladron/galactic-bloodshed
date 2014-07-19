@@ -8,6 +8,8 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#include <time.h>
+
 #include "doturn.h"
 #include "power.h"
 #include "races.h"
@@ -43,10 +45,10 @@ const char Psymbol[] = { '@', 'o', 'O', '#', '~', '.', ')', '-' };
 const char *Planet_types[] = { "Class M", "Asteroid",  "Airless", "Iceball",
                                "Jovian",  "Waterball", "Forest",  "Desert" };
 
-long next_update_time;  /* When will next update be... approximately */
-long next_segment_time; /* When will next segment be... approximately */
-int update_time;        /* Interval between updates */
-int nsegments_done;     /* How many movements have we done so far? */
+time_t next_update_time;   /* When will next update be... approximately */
+time_t next_segment_time;  /* When will next segment be... approximately */
+unsigned int update_time;           /* Interval between updates in minutes */
+segments_t nsegments_done; /* How many movements have we done so far? */
 
 const char *Desnames[] = { "ocean",  "land",   "mountainous", "gaseous", "ice",
                            "forest", "desert", "plated",      "wasted" };

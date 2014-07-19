@@ -25,6 +25,8 @@ segments; /* number of movement segments (global variable) */
 
 enum levels_t { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
 
+typedef uint8_t player_t;
+
 #define MAXPLAYERS 64
 #define MAXSTRLEN 2047
 #define HUGESTRLEN (2 * MAXSTRLEN + 1)
@@ -104,8 +106,8 @@ struct plinfo {            /* planetary stockpiles */
 #define Crystals(x) ((x) & M_CRYSTALS)
 
 struct commod {
-  uint8_t owner;
-  uint8_t governor;
+  player_t owner;
+  player_t governor;
   uint8_t type;
   unsigned short amount;
   unsigned char dummy;
@@ -131,9 +133,9 @@ struct sector {
 
   unsigned char owner; /* owner of place */
   unsigned char race;  /* race type occupying sector
-                     (usually==owner) - makes things more
-                     realistic when alien races revolt and
-                     you gain control of them! */
+                   (usually==owner) - makes things more
+                   realistic when alien races revolt and
+                   you gain control of them! */
   unsigned char type;      /* underlying sector geology */
   unsigned char condition; /* environmental effects */
   unsigned long dummy2;
@@ -166,7 +168,7 @@ struct planet {
 struct star {
   unsigned short ships;         /* 1st ship in orbit */
   char name[NAMESIZE];          /* name of star */
-  uint8_t governor[MAXPLAYERS];    /* which subordinate maintains the system */
+  player_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
   unsigned char AP[MAXPLAYERS]; /* action pts alotted */
   unsigned long explored[2];    /* who's been here 64 bits*/
   unsigned long inhabited[2];   /* who lives here now 64 bits*/

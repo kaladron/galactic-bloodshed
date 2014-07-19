@@ -40,10 +40,13 @@ void notify_star(int, int, int, int, char *);
 void post_star(char *, int, int);
 void adjust_morale(racetype *, racetype *, int);
 
-extern long next_update_time;  /* When will next update be... approximately */
-extern long next_segment_time; /* When will next segment be... approximately */
-extern int update_time;        /* Interval between updates */
-extern int nsegments_done;     /* How many movements have we done so far? */
+typedef uint32_t segments_t;
+
+extern time_t next_update_time; /* When will next update be... approximately */
+extern time_t
+next_segment_time;         /* When will next segment be... approximately */
+extern unsigned int update_time; /* Interval between updates in minutes */
+extern segments_t nsegments_done; /* How many movements have we done so far? */
 
 extern const char *Desnames[];
 extern const char Dessymbols[];

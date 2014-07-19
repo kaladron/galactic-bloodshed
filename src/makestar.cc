@@ -330,7 +330,7 @@ startype *Makestar(FILE *planetdata, FILE *sectordata) {
      * Tabulate statistics for this star's planets. */
     for (y = 0; y < planet.Maxy; y++)
       for (x = 0; x < planet.Maxx; x++) {
-        char d = Sector(planet, x, y).condition;
+        uint8_t d = Sector(planet, x, y).condition;
         planet.total_resources += Sector(planet, x, y).resource;
         Resource[type] += Sector(planet, x, y).resource;
         Numsects[type][d]++;

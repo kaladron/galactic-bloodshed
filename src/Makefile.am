@@ -11,7 +11,6 @@ AM_CXXFLAGS = -g -O2 -W -Weverything -Werror \
 	    -Wno-conversion \
 	    -Wno-unused-parameter \
 	    -Wno-sign-compare \
-	    -Wno-char-subscripts \
 	    -Wno-tautological-constant-out-of-range-compare
 
 # These warnings seem like ones we'll never enable

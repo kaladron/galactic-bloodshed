@@ -270,8 +270,8 @@ struct ship {
 };
 
 struct place { /* used in function return for finding place */
-  uint32_t snum;
-  uint32_t pnum;
+  uint8_t snum;
+  uint8_t pnum;
   unsigned short shipno;
   shiptype *shipptr;
   levels_t level;    /* .level: same as Dir */

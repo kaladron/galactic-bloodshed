@@ -12,6 +12,7 @@
 #include "config.h"
 #include <sys/types.h>
 #include <sys/file.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -103,9 +104,9 @@ struct plinfo {            /* planetary stockpiles */
 #define Crystals(x) ((x) & M_CRYSTALS)
 
 struct commod {
-  char owner;
-  char governor;
-  char type;
+  uint8_t owner;
+  uint8_t governor;
+  uint8_t type;
   unsigned short amount;
   unsigned char dummy;
   unsigned char deliver; /* whether the lot is ready for shipping or not */
@@ -165,7 +166,7 @@ struct planet {
 struct star {
   unsigned short ships;         /* 1st ship in orbit */
   char name[NAMESIZE];          /* name of star */
-  char governor[MAXPLAYERS];    /* which subordinate maintains the system */
+  uint8_t governor[MAXPLAYERS];    /* which subordinate maintains the system */
   unsigned char AP[MAXPLAYERS]; /* action pts alotted */
   unsigned long explored[2];    /* who's been here 64 bits*/
   unsigned long inhabited[2];   /* who lives here now 64 bits*/

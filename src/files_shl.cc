@@ -115,7 +115,7 @@ void getstar(startype **s, int star) {
            (int)(sizeof(Sdata) + star * sizeof(startype)));
 }
 
-void getplanet(planettype **p, int star, int pnum) {
+void getplanet(planettype **p, uint32_t star, uint32_t pnum) {
   int filepos;
   if (p >= &planets[0][0] && p < &planets[NUMSTARS][MAXPLANETS])
     ;    /* Do nothing */

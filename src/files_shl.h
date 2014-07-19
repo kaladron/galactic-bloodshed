@@ -5,7 +5,8 @@
 #ifndef FILES_SHL_H
 #define FILES_SHL_H
 
-#include "power.h"
+#include <stdint.h>
+
 #include "races.h"
 #include "ships.h"
 #include "vars.h"
@@ -22,7 +23,7 @@ void openracedata(int *);
 void getsdata(struct stardata *S);
 void getrace(racetype **, int);
 void getstar(startype **, int);
-void getplanet(planettype **, int, int);
+void getplanet(planettype **, uint32_t, uint32_t);
 int getship(shiptype **, int);
 int getcommod(commodtype **, int);
 void getsector(sectortype **, planettype *, int, int);

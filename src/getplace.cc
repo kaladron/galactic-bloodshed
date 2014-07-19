@@ -89,7 +89,8 @@ static placetype Getplace2(int Playernum, int Governor, const char *string,
                            placetype *where, int ignoreexpl, int God) {
   char substr[NAMESIZE];
   planettype *p;
-  register int i, l;
+  uint32_t i;
+  size_t l;
   int tick;
 
   if (where->err || *string == '\0' || *string == '\n')
@@ -156,7 +157,7 @@ static placetype Getplace2(int Playernum, int Governor, const char *string,
         if (!strncmp(substr, Stars[where->snum]->pnames[i], l)) {
           where->level = LEVEL_PLAN;
           where->pnum = i;
-          getplanet(&p, (int)where->snum, i);
+          getplanet(&p, where->snum, i);
           if (ignoreexpl || p->info[Playernum - 1].explored || God) {
             free(p);
             tick = (*string == '/');

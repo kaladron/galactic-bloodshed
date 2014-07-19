@@ -2,6 +2,8 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+#include <stdint.h>
+
 #include "vars.h"
 
 #ifndef SHIPS_H
@@ -268,8 +270,8 @@ struct ship {
 };
 
 struct place { /* used in function return for finding place */
-  unsigned char snum;
-  unsigned char pnum;
+  uint32_t snum;
+  uint32_t pnum;
   unsigned short shipno;
   shiptype *shipptr;
   levels_t level;    /* .level: same as Dir */

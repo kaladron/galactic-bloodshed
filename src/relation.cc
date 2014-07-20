@@ -14,13 +14,11 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-static const char *allied(racetype *, int, int, int);
+static const char *allied(racetype *, int);
 
-void relation(int Playernum, int Governor, int APcount) {
-  int p, q;
-  racetype *r, *Race;
-
-  unsigned long numraces = Num_races;
+void relation(player_t Playernum, governor_t Governor, int APcount) {
+  int q;
+  racetype *Race;
 
   if (argn == 1) {
     q = Playernum;
@@ -42,22 +40,22 @@ void relation(int Playernum, int Governor, int APcount) {
   sprintf(buf,
           " -       ----             ---------       -----        ------\n");
   notify(Playernum, Governor, buf);
-  for (p = 1; p <= numraces; p++)
+  for (unsigned long p = 1; p <= Num_races; p++)
     if (p != Race->Playernum) {
-      r = races[p - 1];
-      sprintf(buf, "%2d %s (%3d%%) %20.20s : %10s   %10s\n", p,
+      racetype *r = races[p - 1];
+      sprintf(buf, "%2lu %s (%3d%%) %20.20s : %10s   %10s\n", p,
               ((Race->God || (Race->translate[p - 1] > 30)) && r->Metamorph &&
                (Playernum == q))
                   ? "Morph"
                   : "     ",
               Race->translate[p - 1], r->name,
-              allied(Race, p, 100, (int)Race->God),
-              allied(r, q, (int)Race->translate[p - 1], (int)Race->God));
+              allied(Race, p),
+              allied(r, q));
       notify(Playernum, Governor, buf);
     }
 }
 
-static const char *allied(racetype *r, int p, int q, int God) {
+static const char *allied(racetype *r, int p) {
   if (isset(r->atwar, p))
     return "WAR";
   else if (isset(r->allied, p))

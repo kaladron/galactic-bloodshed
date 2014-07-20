@@ -6,7 +6,8 @@
 #define RELATION_H
 
 #include "races.h"
+#include "vars.h"
 
-void relation(int, int, int);
+void relation(player_t, governor_t, int);
 
 #endif // RELATION_H

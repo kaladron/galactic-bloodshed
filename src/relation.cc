@@ -17,7 +17,7 @@
 static const char *allied(racetype *, int);
 
 void relation(player_t Playernum, governor_t Governor, int APcount) {
-  int q;
+  player_t q;
   racetype *Race;
 
   if (argn == 1) {
@@ -40,10 +40,10 @@ void relation(player_t Playernum, governor_t Governor, int APcount) {
   sprintf(buf,
           " -       ----             ---------       -----        ------\n");
   notify(Playernum, Governor, buf);
-  for (unsigned long p = 1; p <= Num_races; p++)
+  for (player_t p = 1; p <= Num_races; p++)
     if (p != Race->Playernum) {
       racetype *r = races[p - 1];
-      sprintf(buf, "%2lu %s (%3d%%) %20.20s : %10s   %10s\n", p,
+      sprintf(buf, "%2hhu %s (%3d%%) %20.20s : %10s   %10s\n", p,
               ((Race->God || (Race->translate[p - 1] > 30)) && r->Metamorph &&
                (Playernum == q))
                   ? "Morph"

@@ -14,7 +14,7 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-static const char *allied(const racetype *const, const int);
+static const char *allied(const race *const, const int);
 
 void relation(const player_t Playernum, const governor_t Governor, const int APcount) {
   player_t q;
@@ -28,7 +28,7 @@ void relation(const player_t Playernum, const governor_t Governor, const int APc
     }
   }
 
-  racetype *Race = races[q - 1];
+  race *Race = races[q - 1];
 
   sprintf(buf, "\n              Racial Relations Report for %s\n\n",
           Race->name);
@@ -41,7 +41,7 @@ void relation(const player_t Playernum, const governor_t Governor, const int APc
   notify(Playernum, Governor, buf);
   for (player_t p = 1; p <= Num_races; p++)
     if (p != Race->Playernum) {
-      racetype *r = races[p - 1];
+      race *r = races[p - 1];
       sprintf(buf, "%2hhu %s (%3d%%) %20.20s : %10s   %10s\n", p,
               ((Race->God || (Race->translate[p - 1] > 30)) && r->Metamorph &&
                (Playernum == q))
@@ -52,7 +52,7 @@ void relation(const player_t Playernum, const governor_t Governor, const int APc
     }
 }
 
-static const char *allied(const racetype *const r, const int p) {
+static const char *allied(const race *const r, const int p) {
   if (isset(r->atwar, p))
     return "WAR";
   else if (isset(r->allied, p))

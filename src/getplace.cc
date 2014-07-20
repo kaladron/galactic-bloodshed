@@ -247,7 +247,7 @@ char *Dispplace(int Playernum, int Governor, placetype *where) {
 }
 
 int testship(int Playernum, int Governor, shiptype *s) {
-  reg int r;
+  int r;
 
   r = 0;
 

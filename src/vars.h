@@ -137,9 +137,9 @@ struct sector {
 
   unsigned char owner; /* owner of place */
   unsigned char race;  /* race type occupying sector
-                  (usually==owner) - makes things more
-                  realistic when alien races revolt and
-                  you gain control of them! */
+                 (usually==owner) - makes things more
+                 realistic when alien races revolt and
+                 you gain control of them! */
   unsigned char type;      /* underlying sector geology */
   unsigned char condition; /* environmental effects */
   unsigned long dummy2;

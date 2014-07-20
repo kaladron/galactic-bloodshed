@@ -62,7 +62,7 @@ static int enemies_only, who;
 
 void rst(int Playernum, int Governor, int APcount, int Rst) {
   int shipno;
-  reg int shn, i;
+  int shn, i;
   int n_ships, num;
   unsigned char Report_types[NUMSTYPES];
 
@@ -211,7 +211,7 @@ void ship_report(int Playernum, int Governor, int indx,
   shiptype *s;
   planettype *p;
   int shipno;
-  reg int i, sight, caliber;
+  int i, sight, caliber;
   placetype where;
   char orb[PLACENAMESIZE];
   char strng[COMMANDSIZE], locstrn[COMMANDSIZE];
@@ -499,7 +499,7 @@ void ship_report(int Playernum, int Governor, int indx,
 }
 
 void plan_getrships(int Playernum, int Governor, int snum, int pnum) {
-  reg int shn;
+  int shn;
   planettype *p;
 
   getplanet(&(rd[Num_ships].p), snum, pnum);
@@ -521,7 +521,7 @@ void plan_getrships(int Playernum, int Governor, int snum, int pnum) {
 }
 
 void star_getrships(int Playernum, int Governor, int snum) {
-  reg int shn;
+  int shn;
   int i;
 
   if (isset(Stars[snum]->explored, Playernum)) {
@@ -550,7 +550,7 @@ int Getrship(int Playernum, int Governor, int shipno) {
 }
 
 void Free_rlist(void) {
-  reg int i;
+  int i;
   for (i = 0; i < Num_ships; i++)
     if (rd[i].type == PLANET)
       free(rd[i].p);

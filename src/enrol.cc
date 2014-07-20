@@ -462,7 +462,7 @@ int main() {
 
 static char desshow(planettype *p, int x, int y) /* copied from map.c */
 {
-  reg sectortype *s;
+  sectortype *s;
 
   s = &Sector(*p, x, y);
 

@@ -16,7 +16,7 @@ static struct map {
 
 /* make a random list of sectors. */
 void PermuteSects(planettype *planet) {
-  register int i, j, x, y, t;
+  int i, j, x, y, t;
   struct map sw;
 
   t = planet->Maxy * planet->Maxx;
@@ -38,7 +38,7 @@ void PermuteSects(planettype *planet) {
 **  increments the counter & returns whether or not this reset it to 0.
 */
 
-int Getxysect(reg planettype *p, reg int *x, reg int *y, reg int r) {
+int Getxysect(planettype *p, int *x, int *y, int r) {
   static int getxy, max;
 
   if (r) {

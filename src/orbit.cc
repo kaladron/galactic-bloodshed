@@ -36,7 +36,7 @@ static const int SCALE = 100;
  * 		the view of another object)
  */
 void orbit(int Playernum, int Governor, int APcount) {
-  register int sh, i, iq;
+  int sh, i, iq;
   int DontDispNum = -1, flag;
   planettype *p;
   shiptype *s;

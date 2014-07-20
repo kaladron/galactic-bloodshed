@@ -22,7 +22,7 @@ typedef struct {
 } toggletype;
 
 class race {
- public:
+public:
   int Playernum;
   char name[RNAMESIZE]; /* Racial name. */
   char password[RNAMESIZE];

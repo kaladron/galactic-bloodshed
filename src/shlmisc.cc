@@ -116,7 +116,7 @@ void grant(int Playernum, int Governor, int APcount) {
 
 void governors(int Playernum, int Governor, int APcount) {
   racetype *Race;
-  reg int i;
+  int i;
   int gov;
 
   Race = races[Playernum - 1];
@@ -157,7 +157,7 @@ void governors(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, "Governor activated.\n");
     return;
   } else if (match(args[0], "revoke")) {
-    reg int j;
+    int j;
     if (!gov) {
       notify(Playernum, Governor, "You can't revoke your leadership!\n");
       return;
@@ -208,7 +208,7 @@ void governors(int Playernum, int Governor, int APcount) {
 }
 
 void do_revoke(racetype *Race, int gov, int j) {
-  register int i;
+  int i;
   char revoke_buf[1024];
   shiptype *ship;
 
@@ -478,7 +478,7 @@ void DontOwnErr(int Playernum, int Governor, shipnum_t shipno) {
 }
 
 int enufAP(int Playernum, int Governor, unsigned short AP, int x) {
-  reg int blah;
+  int blah;
 
   if ((blah = (AP < x))) {
     sprintf(buf, "You don't have %d action points there.\n", x);
@@ -488,7 +488,7 @@ int enufAP(int Playernum, int Governor, unsigned short AP, int x) {
 }
 
 void Getracenum(char *racepass, char *govpass, int *racenum, int *govnum) {
-  reg int i, j;
+  int i, j;
   for (i = 1; i <= Num_races; i++) {
     if (!strcmp(racepass, races[i - 1]->password)) {
       *racenum = i;
@@ -507,7 +507,7 @@ void Getracenum(char *racepass, char *govpass, int *racenum, int *govnum) {
 /* returns player # from string containing that players name or #. */
 player_t GetPlayer(char *name) {
   int rnum;
-  reg int i;
+  int i;
 
   rnum = 0;
 

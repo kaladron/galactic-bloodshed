@@ -113,6 +113,7 @@ void pledge(int Playernum, int Governor, int APcount, int mode) {
     case 1:
       sprintf(buf, "%s [%d] calls %s [%d] a bunch of geeks and QUITS!\n",
               Race->name, Playernum, Blocks[n - 1].name, n);
+      break;
     default:
       sprintf(buf, "%s [%d] has QUIT %s [%d]!\n", Race->name, Playernum,
               Blocks[n - 1].name, n);

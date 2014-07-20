@@ -98,7 +98,7 @@ void PrintStatistics(void) {
 }
 
 static int ReadNameList(char ss[1000][20], int n, int m, const char *filename) {
-  register int i, j;
+  int i, j;
   FILE *f = fopen(filename, "r");
 
   if (f == NULL) {

@@ -23,8 +23,7 @@
 
 static char Dispshiporbits_buf[PLACENAMESIZE + 13];
 
-int maxsupport(reg racetype *r, reg sectortype *s, reg double c,
-               reg int toxic) {
+int maxsupport(racetype *r, sectortype *s, double c, int toxic) {
   int val;
   double a, b;
 
@@ -38,8 +37,8 @@ int maxsupport(reg racetype *r, reg sectortype *s, reg double c,
   return val;
 }
 
-double compatibility(reg planettype *planet, reg racetype *race) {
-  reg int i, add;
+double compatibility(planettype *planet, racetype *race) {
+  int i, add;
   double sum, atmosphere = 1.0;
 
   /* make an adjustment for planetary temperature */

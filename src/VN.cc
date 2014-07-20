@@ -43,7 +43,7 @@ void do_VN(shiptype *ship) {
         ship->whatdest = LEVEL_UNIV;
       }
     } else {
-      reg int i, f;
+      int i, f;
       int nums[MAXPLAYERS + 1];
       /* we have an assignment.  Since we are landed, this means
          we are engaged in building up resources/fuel. */
@@ -60,7 +60,7 @@ void do_VN(shiptype *ship) {
         if (p->info[nums[i] - 1].resource)
           f = nums[i];
       if (f) {
-        reg int prod;
+        int prod;
         prod = MIN(p->info[f - 1].resource, Shipdata[OTYPE_VN][ABIL_COST]);
         p->info[f - 1].resource -= prod;
         if (ship->type == OTYPE_VN)
@@ -111,7 +111,7 @@ void order_berserker(shiptype *ship) {
 }
 
 void order_VN(shiptype *ship) {
-  reg int s, min = 0, min2 = 0;
+  int s, min = 0, min2 = 0;
 
   /* find closest star */
   for (s = 0; s < Sdata.numstars; s++)
@@ -143,10 +143,10 @@ void order_VN(shiptype *ship) {
 
 /*  planet_doVN() -- called by doplanet() */
 void planet_doVN(shiptype *ship, planettype *planet) {
-  reg int j;
+  int j;
   sectortype *s;
-  reg int oldres, xa, ya, dum, prod;
-  reg int shipbuild;
+  int oldres, xa, ya, dum, prod;
+  int shipbuild;
 
   if (landed(ship)) {
     if (ship->type == OTYPE_VN && ship->special.mind.busy) {
@@ -178,7 +178,7 @@ void planet_doVN(shiptype *ship, planettype *planet) {
           (VN_brain.Total_mad > 100 && random() & 01) ? OTYPE_BERS : OTYPE_VN;
       if (ship->resource >= Shipdata[shipbuild][ABIL_COST]) {
         shiptype *s2;
-        reg int n, numVNs;
+        int n, numVNs;
         /* construct as many VNs as possible */
         numVNs = ship->resource / Shipdata[shipbuild][ABIL_COST];
         for (j = 1; j <= numVNs; j++) {
@@ -276,7 +276,7 @@ void planet_doVN(shiptype *ship, planettype *planet) {
           else {
             /* find a place on the planet to land */
             int x, y;
-            reg int d; /* auto vars for & */
+            int d; /* auto vars for & */
 
             (void)Getxysect(planet, &x, &y, 1);
             while ((d = Getxysect(planet, &x, &y, 0)) &&

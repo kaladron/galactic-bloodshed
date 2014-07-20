@@ -49,7 +49,7 @@ void map(int Playernum, int Governor, int APcount) {
 
 void show_map(int Playernum, int Governor, int snum, int pnum, planettype *p,
               int show, int iq) {
-  reg int x, y, i, f = 0, owner, owned1;
+  int x, y, i, f = 0, owner, owned1;
   int sh;
   shiptype *s;
   char shiplocs[MAX_X][MAX_Y];
@@ -177,7 +177,7 @@ void show_map(int Playernum, int Governor, int snum, int pnum, planettype *p,
 
 char desshow(int Playernum, int Governor, planettype *p, int x, int y,
              racetype *r) {
-  reg sectortype *s;
+  sectortype *s;
 
   s = &Sector(*p, x, y);
 

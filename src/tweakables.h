@@ -215,7 +215,6 @@
                                     /* otherwise move to only 1 adj. space*/
 #define SHIP_MOVE_SCALE 3.0
 
-#define reg register
 /* to save object code */
 #define getchr() fgetc(stdin)
 #define putchr(c) fputc((c), stdout)

@@ -375,7 +375,7 @@ void domine(int shipno, int detonate) {
       /* if the mine is in orbit around a planet, nuke the planet too! */
       if (ship->whatorbits == LEVEL_PLAN) {
         /* pick a random sector to nuke */
-        reg int x, y, numdest;
+        int x, y, numdest;
         getplanet(&planet, (int)ship->storbits, (int)ship->pnumorbits);
         if (landed(ship)) {
           x = ship->land_x;
@@ -447,8 +447,8 @@ void doabm(shiptype *ship) {
 }
 
 void do_repair(shiptype *ship) {
-  reg int drep, cost;
-  reg double maxrep;
+  int drep, cost;
+  double maxrep;
 
   maxrep = REPAIR_RATE / (double)segments;
   /* stations repair for free, and ships docked with them */
@@ -477,7 +477,7 @@ void do_repair(shiptype *ship) {
 }
 
 void do_habitat(shiptype *ship) {
-  reg int sh;
+  int sh;
   int add;
   double fuse;
 
@@ -506,7 +506,7 @@ void do_habitat(shiptype *ship) {
 }
 
 void do_pod(shiptype *ship) {
-  reg int i;
+  int i;
 
   if (ship->whatorbits == LEVEL_STAR) {
     if (ship->special.pod.temperature >= POD_THRESHOLD) {
@@ -580,7 +580,7 @@ void do_canister(shiptype *ship) {
       else
         Stinfo[ship->storbits][ship->pnumorbits].temp_add -= 10;
     } else { /* timer expired; destroy canister */
-      reg int j = 0;
+      int j = 0;
       kill_ship((int)(ship->owner), ship);
       sprintf(telegram_buf,
               "Canister of dust previously covering %s has dissipated.\n",
@@ -603,7 +603,7 @@ void do_greenhouse(shiptype *ship) {
       else
         Stinfo[ship->storbits][ship->pnumorbits].temp_add += 10;
     } else { /* timer expired; destroy canister */
-      reg int j = 0;
+      int j = 0;
 
       kill_ship((int)(ship->owner), ship);
       sprintf(telegram_buf, "Greenhouse gases at %s have dissipated.\n",
@@ -629,7 +629,7 @@ void do_mirror(shiptype *ship) {
         ship->storbits == ships[ship->special.aimed_at.shipno]->storbits &&
         ships[ship->special.aimed_at.shipno]->alive) {
       shiptype *s;
-      reg int i;
+      int i;
       double range;
       s = ships[ship->special.aimed_at.shipno];
       range = sqrt(Distsq(ship->xpos, ship->ypos, s->xpos, s->ypos));
@@ -652,7 +652,7 @@ void do_mirror(shiptype *ship) {
     }
     break;
   case LEVEL_PLAN: {
-    reg int i;
+    int i;
     double range;
     range = sqrt(Distsq(ship->xpos, ship->ypos,
                         Stars[ship->storbits]->xpos +

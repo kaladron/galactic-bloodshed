@@ -66,8 +66,8 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
         notify(Playernum, Governor, "\n");
         if (mode == 0)
           break;
-      /* Fall through if (mode == -1) */
-      case 1: /* production */
+        [[clang::fallthrough]]; /* Fall through if (mode == -1) */
+      case 1:                   /* production */
         sprintf(
             buf, " %c %4.4s/%-4.4s%c%3d%8.4f%8ld%3d%6d%5d%6d %6ld   %3d%8.2f\n",
             Psymbol[pl->type], Stars[star]->name, Stars[star]->pnames[i],
@@ -215,7 +215,7 @@ void distance(int Playernum, int Governor, int APcount) {
 }
 
 void star_locations(int Playernum, int Governor, int APcount) {
-  reg int i;
+  int i;
   double dist, x, y;
   int max;
 

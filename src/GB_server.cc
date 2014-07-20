@@ -289,7 +289,7 @@ void notify_race(int race, const char *message) {
 
 int notify(int race, int gov, const char *message) {
   struct descriptor_data *d;
-  reg int ok;
+  int ok;
 
   if (update_flag)
     return 0;
@@ -576,8 +576,8 @@ typedef struct access {
 static ac_t *ac_tab = (ac_t *)NULL;
 
 int address_ok(struct sockaddr_in *ap) {
-  register int i;
-  register ac_t *acp;
+  int i;
+  ac_t *acp;
   static int ainit = 0;
   FILE *afile;
   char *cp, ibuf[64];
@@ -653,7 +653,7 @@ address_match(struct in_addr *addr, struct in_addr *apat) {
 }
 
 void add_address(unsigned long ina, int aval) {
-  register ac_t *nac_t;
+  ac_t *nac_t;
 
   if (naddresses > 0)
     nac_t = (ac_t *)realloc(ac_tab, sizeof(ac_t) * (naddresses + 1));
@@ -1140,7 +1140,7 @@ void check_connect(struct descriptor_data *d, char *message) {
 }
 
 void do_update(int override) {
-  register int i;
+  int i;
   FILE *sfile;
   struct stat stbuf;
   int fakeit;
@@ -1214,7 +1214,7 @@ void do_update(int override) {
 }
 
 void do_segment(int override, int segment) {
-  register int i;
+  int i;
   FILE *sfile;
   struct stat stbuf;
   int fakeit;
@@ -1968,7 +1968,7 @@ void SortShips(void) {
 }
 
 void warn_race(int who, char *message) {
-  reg int i;
+  int i;
 
   for (i = 0; i <= MAXGOVERNORS; i++)
     if (races[who - 1]->governor[i].active)

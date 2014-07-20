@@ -365,7 +365,7 @@ int followable(shiptype *s1, shiptype *s2) {
         for merchant ships. The ship is within landing distance of
         the target planet */
 int do_merchant(shiptype *s, planettype *p) {
-  reg int i, j;
+  int i, j;
   double fuel;
   char load, unload;
   int amount;

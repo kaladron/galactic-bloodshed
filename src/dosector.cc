@@ -16,11 +16,11 @@ static const int y_adj[] = { 1, 1, 1, 0, 0, -1, -1, -1 };
 
 //  produce() -- produce, stuff like that, on a sector.
 void produce(startype *star, planettype *planet, sectortype *s) {
-  reg int ss;
-  reg int maxsup;
-  reg int pfuel = 0, pdes = 0, pres = 0;
-  reg struct plinfo *pinf;
-  reg int prod, diff;
+  int ss;
+  int maxsup;
+  int pfuel = 0, pdes = 0, pres = 0;
+  struct plinfo *pinf;
+  int prod, diff;
   racetype *Race;
 
   if (!s->owner)
@@ -65,7 +65,7 @@ void produce(startype *star, planettype *planet, sectortype *s) {
 
   /* do efficiency */
   if (s->eff < 100) {
-    reg int chance;
+    int chance;
     chance = round_rand((100.0 - (double)planet->info[s->owner - 1].tax) *
                         Race->likes[s->condition]);
     if (success(chance)) {
@@ -102,10 +102,10 @@ void produce(startype *star, planettype *planet, sectortype *s) {
 }
 
 // spread()  -- spread population around.
-void spread(reg planettype *pl, reg sectortype *s, reg int x, reg int y) {
+void spread(planettype *pl, sectortype *s, int x, int y) {
   int people;
-  reg int x2, y2, j;
-  reg int check;
+  int x2, y2, j;
+  int check;
   racetype *Race;
 
   if (!s->owner)
@@ -132,10 +132,9 @@ void spread(reg planettype *pl, reg sectortype *s, reg int x, reg int y) {
   }
 }
 
-void Migrate2(planettype *planet, reg int xd, reg int yd, sectortype *ps,
-              int *people) {
-  reg sectortype *pd;
-  reg int move;
+void Migrate2(planettype *planet, int xd, int yd, sectortype *ps, int *people) {
+  sectortype *pd;
+  int move;
 
   /* attempt to migrate beyond screen, or too many people */
   if (yd > planet->Maxy - 1 || yd < 0)
@@ -166,9 +165,8 @@ void Migrate2(planettype *planet, reg int xd, reg int yd, sectortype *ps,
         on earthtype planets.  */
 
 //  explore() -- mark sector and surrounding sectors as having been explored.
-void explore(reg planettype *planet, reg sectortype *s, reg int x, reg int y,
-             reg int p) {
-  reg int d;
+void explore(planettype *planet, sectortype *s, int x, int y, int p) {
+  int d;
 
   /* explore sectors surrounding sectors currently explored. */
   if (Sectinfo[x][y].explored) {

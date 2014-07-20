@@ -168,8 +168,8 @@ int shoot_planet_to_ship(racetype *Race, planettype *p, shiptype *ship,
 int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
                          int y, int getmap, int ignore, int caliber,
                          char *long_msg, char *short_msg) {
-  register sectortype *s, *target;
-  register int x2, y2;
+  sectortype *s, *target;
+  int x2, y2;
   int numdest, kills, oldowner;
   int i, num_sectors, sum_mob[MAXPLAYERS];
   double d, r, fac;
@@ -215,7 +215,7 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
 
   for (y2 = 0; y2 < pl->Maxy; y2++) {
     for (x2 = 0; x2 < pl->Maxx; x2++) {
-      register int dx, dy;
+      int dx, dy;
       dx = MIN(abs(x2 - x), abs(x + (pl->Maxx - 1) - x2));
       dy = abs(y2 - y);
       d = sqrt((double)(dx * dx + dy * dy));

@@ -19,7 +19,7 @@
 #include "victory.h"
 
 void block(int Playernum, int Governor, int APcount) {
-  register int i, n;
+  int i, n;
   int p;
   racetype *r, *Race;
   int dummy_, dummy[2];
@@ -168,7 +168,7 @@ void block(int Playernum, int Governor, int APcount) {
 }
 
 void power(int Playernum, int Governor, int APcount) {
-  register int i, n;
+  int i, n;
   int p;
   racetype *r, *Race;
   struct vic vic[MAXPLAYERS];

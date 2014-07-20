@@ -32,13 +32,11 @@
 static char msg[1024];
 
 void personal(int Playernum, int Governor, const char *message) {
-  racetype *Race;
-
   if (Governor) {
     notify(Playernum, Governor, "Only the leader can do this.\n");
     return;
   }
-  Race = races[Playernum - 1];
+  auto Race = races[Playernum - 1];
   strncpy(Race->info, message, PERSONALSIZE - 1);
   putrace(Race);
 }
@@ -269,7 +267,7 @@ void insurgency(int Playernum, int Governor, int APcount) {
   planettype *p;
   double x;
   int changed_hands, chance;
-  register int i;
+  int i;
 
   if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
     notify(Playernum, Governor,
@@ -853,7 +851,7 @@ void motto(int Playernum, int Governor, int APcount, const char *message) {
 
 void name(int Playernum, int Governor, int APcount) {
   char *ch;
-  register int i, spaces;
+  int i, spaces;
   unsigned char check = 0;
   shiptype *ship;
   char string[1024];
@@ -1000,7 +998,7 @@ void name(int Playernum, int Governor, int APcount) {
 }
 
 int MostAPs(int Playernum, startype *s) {
-  register int i, t = 0;
+  int i, t = 0;
 
   for (i = 0; i < MAXPLAYERS; i++)
     if (s->AP[i] >= t)

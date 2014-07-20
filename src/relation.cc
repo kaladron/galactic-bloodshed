@@ -16,7 +16,8 @@
 
 static const char *allied(const race *const, const int);
 
-void relation(const player_t Playernum, const governor_t Governor, const int APcount) {
+void relation(const player_t Playernum, const governor_t Governor,
+              const int APcount) {
   player_t q;
 
   if (argn == 1) {

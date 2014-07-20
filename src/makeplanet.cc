@@ -77,7 +77,7 @@ static void seed(planettype *, int, int);
 static void grow(planettype *, int, int, int);
 
 planettype Makeplanet(double dist, short stemp, int type) {
-  reg int x, y;
+  int x, y;
   sectortype *s;
   planettype planet;
   int atmos, total_sects;
@@ -313,9 +313,9 @@ static void grow(planettype *p, int type, int n, int rate) {
 }
 
 static void Makesurface(planettype *p) {
-  reg int x, y;
-  reg int temp;
-  reg sectortype *s;
+  int x, y;
+  int temp;
+  sectortype *s;
 
   for (x = 0; x < p->Maxx; x++) {
     for (y = 0; y < p->Maxy; y++) {
@@ -350,7 +350,7 @@ static void Makesurface(planettype *p) {
 }
 
 static short SectTemp(planettype *p, int y) {
-  register int dy, mid, temp;
+  int dy, mid, temp;
   const int TFAC = 10;
 
   temp = p->conditions[TEMP];

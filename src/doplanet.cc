@@ -39,7 +39,7 @@
 int doplanet(int starnum, planettype *planet, int planetnum) {
   int shipno, x, y, nukex, nukey;
   int o = 0;
-  reg int i;
+  int i;
   sectortype *p;
   shiptype *ship;
   double fadd;
@@ -540,7 +540,7 @@ if (!Stinfo[starnum][planetnum].inhab)
           planet->conditions[TOXIC] >= planet->info[i - 1].tox_thresh &&
           planet->info[i - 1].resource >= Shipcost(OTYPE_TOXWC, races[i - 1])) {
         shiptype *s2;
-        reg int t;
+        int t;
         ++Num_ships;
         ships = (shiptype **)realloc(
             ships, (unsigned)((Num_ships + 1) * sizeof(shiptype *)));

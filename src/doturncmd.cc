@@ -80,7 +80,7 @@ void do_turn(int update) {
         Planet_count++;
       if (update)
         moveplanet(star, planets[star][i], i);
-      if (Stars[star]->pnames[i] == '\0')
+      if (Stars[star]->pnames[i] == NULL)
         sprintf(Stars[star]->pnames[i], "NULL-%d", i);
     }
     if (Stars[star]->name[0] == '\0')
@@ -92,7 +92,7 @@ void do_turn(int update) {
   for (i = 1; i <= Num_races; i++) {
     /* increase tech; change to something else */
     if (update) {
-      reg int j;
+      int j;
       /* Reset controlled planet count */
       races[i - 1]->controlled_planets = 0;
       races[i - 1]->planet_points = 0;
@@ -303,7 +303,7 @@ void do_turn(int update) {
           clrbit(Stars[star]->inhabited, i);
 
         if (isset(Stars[star]->inhabited, i)) {
-          reg int APs;
+          int APs;
 
           APs = Stars[star]->AP[i - 1] + APadd((int)starnumships[star][i - 1],
                                                (int)starpopns[star][i - 1],
@@ -330,7 +330,7 @@ void do_turn(int update) {
     for (i = 1; i <= Num_races; i++) {
       Blocks[i - 1].systems_owned = 0; /*recount systems owned*/
       if (governed(races[i - 1])) {
-        reg int APs;
+        int APs;
 
         APs = Sdata.AP[i - 1] + races[i - 1]->planet_points;
         if (APs < LIMIT_APs)

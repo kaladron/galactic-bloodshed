@@ -1,7 +1,7 @@
 
 AM_CPPFLAGS = -DPKGDATADIR='"$(pkgdatadir)/"'
 
-AM_CXXFLAGS = -W -Weverything -Werror \
+AM_CXXFLAGS = -std=c++11 -W -Weverything -Werror \
 	    -Wno-old-style-cast \
 	    -Wno-logical-not-parentheses \
 	    -Wno-conditional-uninitialized \
@@ -19,6 +19,7 @@ AM_CXXFLAGS += \
 AM_CXXFLAGS += \
 	    -Wno-switch-enum \
 	    -Wno-disabled-macro-expansion \
+	    -Wno-c++98-compat \
 	    -Wno-padded
 
 bin_PROGRAMS = GB enrol makeuniv racegen

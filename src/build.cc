@@ -923,6 +923,8 @@ void build(int Playernum, int Governor, int APcount) {
             return;
           }
           outside = 1;
+          [[clang::fallthrough]]; // TODO(jeffbailey): Added this to silence
+                                  // warning, check it.
         default:
           if (argn < 2) {
             notify(Playernum, Governor, "Build what?\n");
@@ -1112,7 +1114,7 @@ int can_build_at_planet(int Playernum, int Governor, startype *star,
 
 int get_build_type(char *string) {
   char shipc;
-  reg int i;
+  int i;
 
   shipc = string[0];
   i = -1;
@@ -1193,7 +1195,7 @@ int can_build_on_sector(int what, racetype *Race, planettype *planet,
     return (0);
   }
   if (what == OTYPE_QUARRY) {
-    reg int sh;
+    int sh;
     sh = planet->ships;
     while (sh) {
       (void)getship(&s, sh);
@@ -1625,7 +1627,7 @@ void sell(int Playernum, int Governor, int APcount) {
   int commodno, amount, item, ok = 0, sh;
   char commod;
   int snum, pnum;
-  reg int i;
+  int i;
 
   if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
     notify(Playernum, Governor, "You have to be in a planet scope to sell.\n");

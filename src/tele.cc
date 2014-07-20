@@ -116,7 +116,7 @@ void post(const char *origmsg, int type) {
  */
 void push_telegram_race(int recpient, const char *msg) {
   racetype *Race;
-  reg int j;
+  int j;
 
   Race = races[recpient - 1];
   for (j = 0; j <= MAXGOVERNORS; j++)

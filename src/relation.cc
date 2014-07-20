@@ -14,11 +14,10 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-static const char *allied(racetype *, int);
+static const char *allied(const racetype *const, const int);
 
-void relation(player_t Playernum, governor_t Governor, int APcount) {
+void relation(const player_t Playernum, const governor_t Governor, const int APcount) {
   player_t q;
-  racetype *Race;
 
   if (argn == 1) {
     q = Playernum;
@@ -29,7 +28,7 @@ void relation(player_t Playernum, governor_t Governor, int APcount) {
     }
   }
 
-  Race = races[q - 1];
+  racetype *Race = races[q - 1];
 
   sprintf(buf, "\n              Racial Relations Report for %s\n\n",
           Race->name);
@@ -48,14 +47,12 @@ void relation(player_t Playernum, governor_t Governor, int APcount) {
                (Playernum == q))
                   ? "Morph"
                   : "     ",
-              Race->translate[p - 1], r->name,
-              allied(Race, p),
-              allied(r, q));
+              Race->translate[p - 1], r->name, allied(Race, p), allied(r, q));
       notify(Playernum, Governor, buf);
     }
 }
 
-static const char *allied(racetype *r, int p) {
+static const char *allied(const racetype *const r, const int p) {
   if (isset(r->atwar, p))
     return "WAR";
   else if (isset(r->allied, p))

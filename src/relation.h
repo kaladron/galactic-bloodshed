@@ -5,9 +5,8 @@
 #ifndef RELATION_H
 #define RELATION_H
 
-#include "races.h"
 #include "vars.h"
 
-void relation(player_t, governor_t, int);
+void relation(const player_t, const governor_t, const int);
 
 #endif // RELATION_H

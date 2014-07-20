@@ -349,7 +349,7 @@ int main() {
     shiptype s;
     int shipno;
 
-    bzero((char *)&(s), sizeof(s));
+    bzero(s, sizeof(s));
     shipno = Numships() + 1;
     printf("Creating government ship %d...\n", shipno);
     Race->Gov_ship = shipno;

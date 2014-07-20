@@ -84,8 +84,8 @@ planettype Makeplanet(double dist, short stemp, int type) {
   char c, t;
   double f;
 
-  bzero((char *)&(planet), sizeof(planet));
-  bzero((char *)Smap, sizeof(Smap));
+  bzero(planet, sizeof(planet));
+  bzero(Smap, sizeof(Smap));
   planet.type = type;
   planet.expltimer = 5;
   planet.conditions[TEMP] = planet.conditions[RTEMP] = Temperature(dist, stemp);

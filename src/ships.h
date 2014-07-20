@@ -64,34 +64,36 @@
 #define OTYPE_BUNKER 45
 #define STYPE_LANDER 46
 
-#define ABIL_TECH 0
-#define ABIL_CARGO 1
-#define ABIL_HANGER 2
-#define ABIL_DESTCAP 3
-#define ABIL_GUNS 4
-#define ABIL_PRIMARY 5
-#define ABIL_SECONDARY 6
-#define ABIL_FUELCAP 7
-#define ABIL_MAXCREW 8
-#define ABIL_ARMOR 9
-#define ABIL_COST 10
-#define ABIL_MOUNT 11
-#define ABIL_JUMP 12
-#define ABIL_CANLAND 13
-#define ABIL_HASSWITCH 14
-#define ABIL_SPEED 15
-#define ABIL_DAMAGE 16
-#define ABIL_BUILD 17
-#define ABIL_CONSTRUCT 18
-#define ABIL_MOD 19
-#define ABIL_LASER 20
-#define ABIL_CEW 21
-#define ABIL_CLOAK 22
-#define ABIL_GOD 23 /* only diety can build these objects */
-#define ABIL_PROGRAMMED 24
-#define ABIL_PORT 25
-#define ABIL_REPAIR 26
-#define ABIL_MAINTAIN 27
+enum abil_t {
+  ABIL_TECH,
+  ABIL_CARGO,
+  ABIL_HANGER,
+  ABIL_DESTCAP,
+  ABIL_GUNS,
+  ABIL_PRIMARY,
+  ABIL_SECONDARY,
+  ABIL_FUELCAP,
+  ABIL_MAXCREW,
+  ABIL_ARMOR,
+  ABIL_COST,
+  ABIL_MOUNT,
+  ABIL_JUMP,
+  ABIL_CANLAND,
+  ABIL_HASSWITCH,
+  ABIL_SPEED,
+  ABIL_DAMAGE,
+  ABIL_BUILD,
+  ABIL_CONSTRUCT,
+  ABIL_MOD,
+  ABIL_LASER,
+  ABIL_CEW,
+  ABIL_CLOAK,
+  ABIL_GOD /* only diety can build these objects */,
+  ABIL_PROGRAMMED,
+  ABIL_PORT,
+  ABIL_REPAIR,
+  ABIL_MAINTAIN
+};
 
 #define NUMSTYPES (STYPE_LANDER + 1)
 #define NUMABILS (ABIL_MAINTAIN + 1)

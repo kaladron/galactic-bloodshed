@@ -1,7 +1,7 @@
 
 AM_CPPFLAGS = -DPKGDATADIR='"$(pkgdatadir)/"'
 
-AM_CXXFLAGS = -g -O2 -W -Weverything -Werror \
+AM_CXXFLAGS = -W -Weverything -Werror \
 	    -Wno-old-style-cast \
 	    -Wno-logical-not-parentheses \
 	    -Wno-conditional-uninitialized \

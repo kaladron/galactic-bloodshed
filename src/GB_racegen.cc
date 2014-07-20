@@ -242,7 +242,7 @@ found_planet:
     shiptype s;
     int shipno;
 
-    bzero(s, sizeof(s));
+    bzero(&s, sizeof(s));
     shipno = Numships() + 1;
     Race->Gov_ship = shipno;
     planet->ships = shipno;

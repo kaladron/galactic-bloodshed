@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   /*
    * Initialize: */
   srandom(getpid());
-  bzero(Sdata, sizeof(Sdata));
+  bzero(&Sdata, sizeof(Sdata));
 
   /*
    * Read the arguments for values: */

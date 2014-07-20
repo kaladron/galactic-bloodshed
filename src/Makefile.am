@@ -24,68 +24,68 @@ AM_CXXFLAGS += \
 bin_PROGRAMS = GB enrol makeuniv racegen
 
 GB_SOURCES = \
-	getplace.cc	\
-	tele.cc		\
-	autoreport.cc	\
-	order.cc	\
-	fuel.cc		\
-	shootblast.cc	\
-	explore.cc	\
-	relation.cc	\
-	mobiliz.cc	\
-	shlmisc.cc	\
-	enslave.cc	\
-	capital.cc	\
-	toggle.cc	\
-	analysis.cc	\
-	survey.cc	\
-	files.cc	\
-	zoom.cc		\
-	perm.cc		\
-	prof.cc		\
 	GB_server.cc	\
-	dissolve.cc	\
-	name.cc		\
-	fire.cc		\
-	land.cc		\
-	dock.cc		\
-	tech.cc		\
-	map.cc		\
-	max.cc		\
-	move.cc		\
+	VN.cc		\
+	analysis.cc	\
+	autoreport.cc	\
+	autoshoot.cc	\
+	build.cc	\
+	capital.cc	\
 	capture.cc	\
 	cs.cc		\
-	rst.cc		\
-	misc.cc		\
-	rand.cc		\
-	load.cc		\
-	scrap.cc	\
-	build.cc	\
-	orbit.cc	\
-	victory.cc	\
-	powercmd.cc	\
-	launch.cc	\
 	declare.cc	\
+	dissolve.cc	\
+	dock.cc		\
+	doplanet.cc	\
+	dosector.cc	\
+	doship.cc	\
+	doturncmd.cc	\
+	enslave.cc	\
 	examine.cc	\
-	toxicity.cc	\
-	get4args.cc	\
+	explore.cc	\
+	files.cc	\
 	files_rw.cc	\
 	files_shl.cc 	\
+	fire.cc		\
+	fuel.cc		\
+	get4args.cc	\
+	getplace.cc	\
+	land.cc		\
+	launch.cc	\
+	load.cc		\
+	map.cc		\
+	max.cc		\
+	misc.cc		\
+	mobiliz.cc	\
+	move.cc		\
 	moveplanet.cc	\
-	autoshoot.cc	\
-	doplanet.cc	\
-	doturncmd.cc	\
-	doship.cc	\
-	dosector.cc	\
 	moveship.cc	\
-	VN.cc
+	name.cc		\
+	orbit.cc	\
+	order.cc	\
+	perm.cc		\
+	powercmd.cc	\
+	prof.cc		\
+	rand.cc		\
+	relation.cc	\
+	rst.cc		\
+	scrap.cc	\
+	shlmisc.cc	\
+	shootblast.cc	\
+	survey.cc	\
+	tech.cc		\
+	tele.cc		\
+	toggle.cc	\
+	toxicity.cc	\
+	victory.cc	\
+	zoom.cc	
 
 # the original enrollment program
 enrol_SOURCES = \
 	enrol.cc	\
-	files_shl.cc	\
-	files_rw.cc	\
 	files.cc	\
+	files_rw.cc	\
+	files_shl.cc	\
 	max.cc		\
 	perm.cc		\
 	rand.cc		\
@@ -93,15 +93,15 @@ enrol_SOURCES = \
 
 # new-fangled enrollment program (more flexible than 'enrol')
 racegen_SOURCES = \
+	GB_racegen.cc	\
 	enroll.cc	\
-	racegen.cc	\
-	files_shl.cc	\
-	files_rw.cc	\
 	files.cc	\
+	files_rw.cc	\
+	files_shl.cc	\
 	max.cc		\
 	perm.cc		\
+	racegen.cc	\
 	rand.cc		\
-	GB_racegen.cc	\
 	shlmisc.cc
 
 racegen_CXXFLAGS = -DPRIV $(AM_CXXFLAGS)

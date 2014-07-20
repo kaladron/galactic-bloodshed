@@ -53,7 +53,9 @@ void do_VN(shiptype *ship) {
         nums[i] = i;
       for (i = 1; i <= Num_races; i++) {
         f = int_rand(1, Num_races);
-        swap(nums[i], nums[f]);
+        int tmp = nums[f];
+        nums[f] = nums[i];
+        nums[i] = tmp;
       }
       p = planets[ship->storbits][ship->pnumorbits];
       for (f = 0, i = 1; i <= Num_races; i++)

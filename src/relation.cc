@@ -29,7 +29,7 @@ void relation(const player_t Playernum, const governor_t Governor,
     }
   }
 
-  race *Race = races[q - 1];
+  auto Race = races[q - 1];
 
   sprintf(buf, "\n              Racial Relations Report for %s\n\n",
           Race->name);
@@ -42,7 +42,7 @@ void relation(const player_t Playernum, const governor_t Governor,
   notify(Playernum, Governor, buf);
   for (player_t p = 1; p <= Num_races; p++)
     if (p != Race->Playernum) {
-      race *r = races[p - 1];
+      auto r = races[p - 1];
       sprintf(buf, "%2hhu %s (%3d%%) %20.20s : %10s   %10s\n", p,
               ((Race->God || (Race->translate[p - 1] > 30)) && r->Metamorph &&
                (Playernum == q))

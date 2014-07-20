@@ -100,10 +100,11 @@ enum abil_t {
 
 #define SHIP_NAMESIZE 18
 
-typedef struct ship shiptype;
+typedef class ship shiptype;
 typedef struct place placetype;
 
-struct ship {
+class ship {
+ public:
   unsigned short number;         /* ship knows its own number */
   unsigned char owner;           /* owner of ship */
   unsigned char governor;        /* subordinate that controls the ship */

@@ -201,8 +201,8 @@ int main() {
 
   } while (!found);
 
-  Race = (racetype *)malloc(sizeof(racetype));
-  bzero((char *)&(Race), sizeof(Race));
+  Race = new race;
+  bzero(Race, sizeof(Race));
 
   printf("\n\tDeity/Guest/Normal (d/g/n) ?");
   c = getchr();

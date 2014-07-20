@@ -256,7 +256,7 @@ int testship(int Playernum, int Governor, shiptype *s) {
     notify(Playernum, Governor, buf);
     r = 1;
   } else if (s->owner != Playernum || !authorized(Governor, s)) {
-    DontOwnErr(Playernum, Governor, (int)s->number);
+    DontOwnErr(Playernum, Governor, s->number);
     r = 1;
   } else {
     if (!s->active) {

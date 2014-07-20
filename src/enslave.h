@@ -5,6 +5,8 @@
 #ifndef ENSLAVE_H
 #define ENSLAVE_H
 
-void enslave(int, int, int);
+#include "vars.h"
+
+void enslave(player_t, governor_t, int);
 
 #endif // ENSLAVE_H

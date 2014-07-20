@@ -138,7 +138,7 @@ void getsmap(sectortype *map, planettype *p) {
            p->sectormappos);
 }
 
-int getship(shiptype **s, int shipnum) {
+int getship(shiptype **s, shipnum_t shipnum) {
   struct stat buffer;
 
   if (shipnum <= 0)

@@ -29,6 +29,7 @@ typedef uint64_t shipnum_t;
 typedef uint8_t starnum_t;
 typedef uint8_t planetnum_t;
 typedef uint8_t player_t;
+typedef uint8_t governor_t;
 
 #define MAXPLAYERS 64
 #define MAXSTRLEN 2047
@@ -110,7 +111,7 @@ struct plinfo {            /* planetary stockpiles */
 
 struct commod {
   player_t owner;
-  player_t governor;
+  governor_t governor;
   uint8_t type;
   unsigned short amount;
   unsigned char dummy;
@@ -136,9 +137,9 @@ struct sector {
 
   unsigned char owner; /* owner of place */
   unsigned char race;  /* race type occupying sector
-                   (usually==owner) - makes things more
-                   realistic when alien races revolt and
-                   you gain control of them! */
+                  (usually==owner) - makes things more
+                  realistic when alien races revolt and
+                  you gain control of them! */
   unsigned char type;      /* underlying sector geology */
   unsigned char condition; /* environmental effects */
   unsigned long dummy2;
@@ -169,12 +170,12 @@ struct planet {
 };
 
 struct star {
-  unsigned short ships;         /* 1st ship in orbit */
-  char name[NAMESIZE];          /* name of star */
-  player_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
-  unsigned char AP[MAXPLAYERS]; /* action pts alotted */
-  unsigned long explored[2];    /* who's been here 64 bits*/
-  unsigned long inhabited[2];   /* who lives here now 64 bits*/
+  unsigned short ships;            /* 1st ship in orbit */
+  char name[NAMESIZE];             /* name of star */
+  governor_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
+  unsigned char AP[MAXPLAYERS];    /* action pts alotted */
+  unsigned long explored[2];       /* who's been here 64 bits*/
+  unsigned long inhabited[2];      /* who lives here now 64 bits*/
   double xpos, ypos;
 
   unsigned char numplanets;            /* # of planets in star system */
@@ -206,9 +207,9 @@ extern struct stardata Sdata;
 
 struct directory {
   levels_t level;                     /* what directory level */
-  starnum_t snum;                 /* what star system obj # (level=0) */
-  planetnum_t pnum;                 /* number of planet */
-  shipnum_t shipno;              /* # of ship */
+  starnum_t snum;                     /* what star system obj # (level=0) */
+  planetnum_t pnum;                   /* number of planet */
+  shipnum_t shipno;                   /* # of ship */
   char prompt[3 * NAMESIZE + 5];      /* just to be safe */
   double lastx[2], lasty[2], zoom[2]; /* last coords for zoom */
 };

@@ -20,7 +20,7 @@
 #include "vars.h"
 
 void capital(int Playernum, int Governor, int APcount) {
-  int shipno, stat, snum;
+  int stat, snum;
   shiptype *s;
   racetype *Race;
 
@@ -31,10 +31,11 @@ void capital(int Playernum, int Governor, int APcount) {
     return;
   }
 
+  shipnum_t shipno;
   if (argn != 2)
     shipno = Race->Gov_ship;
   else
-    shipno = atoi(args[1] + (args[1][0] == '#'));
+    shipno = strtoul(args[1] + (args[1][0] == '#'), NULL, 10);
 
   if (shipno <= 0) {
     (void)notify(Playernum, Governor, "Change the capital to be what ship?\n");

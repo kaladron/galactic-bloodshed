@@ -472,8 +472,8 @@ void fix(int Playernum, int Governor) {
 
 int match(const char *p, const char *q) { return (!strncmp(p, q, strlen(p))); }
 
-void DontOwnErr(int Playernum, int Governor, int shipno) {
-  sprintf(buf, "You don't own ship #%d.\n", shipno);
+void DontOwnErr(int Playernum, int Governor, shipnum_t shipno) {
+  sprintf(buf, "You don't own ship #%lu.\n", shipno);
   notify(Playernum, Governor, buf);
 }
 
@@ -505,8 +505,7 @@ void Getracenum(char *racepass, char *govpass, int *racenum, int *govnum) {
 }
 
 /* returns player # from string containing that players name or #. */
-
-int GetPlayer(char *name) {
+player_t GetPlayer(char *name) {
   int rnum;
   reg int i;
 
@@ -631,8 +630,8 @@ void list(int Playernum, int Governor) {
 
   while (sh) {
     (void)getship(&ship, sh);
-    sprintf(buf, "%15s #%d '%s' (pl %d) -> #%lu %s\n", Shipnames[ship->type], sh,
-            ship->name, ship->owner, ship->nextship,
+    sprintf(buf, "%15s #%d '%s' (pl %d) -> #%lu %s\n", Shipnames[ship->type],
+            sh, ship->name, ship->owner, ship->nextship,
             ship->alive ? "" : "(dead)");
     notify(Playernum, Governor, buf);
     sh = ship->nextship;

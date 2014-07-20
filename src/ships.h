@@ -230,12 +230,12 @@ struct ship {
   unsigned char focus;      /* focused laser mode */
   unsigned char fire_laser; /* retaliation strength for lasers */
 
-  starnum_t storbits;   /* what star # orbits */
-  starnum_t deststar;   /* destination star */
+  starnum_t storbits;     /* what star # orbits */
+  starnum_t deststar;     /* destination star */
   planetnum_t destpnum;   /* destination planet */
   planetnum_t pnumorbits; /* # of planet if orbiting */
-  levels_t whatdest;        /* where going (same as Dir) */
-  levels_t whatorbits;      /* where orbited (same as Dir) */
+  levels_t whatdest;      /* where going (same as Dir) */
+  levels_t whatorbits;    /* where orbited (same as Dir) */
 
   unsigned char damage; /* amt of damage */
   unsigned char rad;    /* radiation level */

@@ -1130,7 +1130,7 @@ void check_connect(struct descriptor_data *d, char *message) {
                    "produced\nuntil you build one and designate a capital.\n");
       notify(Playernum, Governor, buf);
     } else {
-      sprintf(buf, "Government Center #%d is active.\n", r->Gov_ship);
+      sprintf(buf, "Government Center #%lu is active.\n", r->Gov_ship);
       notify(Playernum, Governor, buf);
     }
     sprintf(buf, "     Morale: %ld\n", r->morale);

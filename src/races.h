@@ -17,7 +17,7 @@ typedef struct {
   char inverse;
   char geography;
   char autoload;
-  char highlight; /* which race to highlight */
+  player_t highlight; /* which race to highlight */
   char compat;
 } toggletype;
 
@@ -55,7 +55,7 @@ struct race {
   unsigned long atwar[2];  /* war 64 bits*/
   unsigned long allied[2]; /* allies 64 bits*/
 
-  unsigned short Gov_ship;         /* Shipnumber of government ship. */
+  shipnum_t Gov_ship;              /* Shipnumber of government ship. */
   long morale;                     /* race's morale level */
   unsigned int points[MAXPLAYERS]; /* keep track of war status against
                                       another player - for short reports */

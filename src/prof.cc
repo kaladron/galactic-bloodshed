@@ -94,7 +94,7 @@ void profile(int Playernum, int Governor, int APcount) {
     if (Race->Gov_ship == 0)
       sprintf(buf, "NO DESIGNATED CAPITAL!!");
     else
-      sprintf(buf, "Designated Capital: #%-8d", Race->Gov_ship);
+      sprintf(buf, "Designated Capital: #%-8lu", Race->Gov_ship);
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\tRanges:     guns:   %5.0f\n",
             gun_range(Race, (shiptype *)NULL, 1));

@@ -4,6 +4,7 @@
 
 #include "tele.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -238,7 +239,8 @@ void news_read(int Playernum, int Governor, int type) {
     if (Race->governor[Governor].newspos[type] > newslength[type])
       Race->governor[Governor].newspos[type] = 0;
 
-    fseek(teleg_read_fd, Race->governor[Governor].newspos[type], 0);
+    fseek(teleg_read_fd, Race->governor[Governor].newspos[type] & LONG_MAX,
+          SEEK_SET);
     while (fgets(buf, sizeof buf, teleg_read_fd)) {
       for (p = buf; *p; p++)
         if (*p == '\n') {

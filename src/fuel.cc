@@ -36,7 +36,8 @@ static void fuel_output(int Playernum, int Governor, double dist, double fuel,
                         double grav, double mass, segments_t segs);
 
 void proj_fuel(int Playernum, int Governor, int APcount) {
-  int shipno, opt_settings, current_settings, computing = 1;
+  shipnum_t shipno;
+  int opt_settings, current_settings, computing = 1;
   segments_t current_segs;
   double fuel_usage, level, dist;
   shiptype *ship;
@@ -54,9 +55,9 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
            "Invalid first option.\n\"fuel #<shipnumber> [destination]\"...\n");
     return;
   }
-  sscanf(args[1] + (args[1][0] == '#'), "%d", &shipno);
+  sscanf(args[1] + (args[1][0] == '#'), "%ld", &shipno);
   if (shipno > Numships() || shipno < 1) {
-    sprintf(buf, "rst: no such ship #%d \n", shipno);
+    sprintf(buf, "rst: no such ship #%lu \n", shipno);
     notify(Playernum, Governor, buf);
     return;
   }

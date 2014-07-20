@@ -17,11 +17,10 @@
 static const char *allied(racetype *, int, int, int);
 
 void relation(int Playernum, int Governor, int APcount) {
-  int numraces;
   int p, q;
   racetype *r, *Race;
 
-  numraces = Num_races;
+  unsigned long numraces = Num_races;
 
   if (argn == 1) {
     q = Playernum;

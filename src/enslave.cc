@@ -20,13 +20,14 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-void enslave(int Playernum, int Governor, int APcount) {
+void enslave(player_t Playernum, governor_t Governor, int APcount) {
   shiptype *s, *s2;
   planettype *p;
-  int sh, shipno, i, aliens = 0, def = 0, attack = 0;
+  int i, aliens = 0, def = 0, attack = 0;
+  shipnum_t shipno;
   racetype *Race;
 
-  sscanf(args[1] + (args[1][0] == '#'), "%d", &shipno);
+  sscanf(args[1] + (args[1][0] == '#'), "%ld", &shipno);
 
   if (!getship(&s, shipno)) {
     return;
@@ -52,7 +53,7 @@ void enslave(int Playernum, int Governor, int APcount) {
     free(s);
     return;
   }
-  getplanet(&p, (int)s->storbits, (int)s->pnumorbits);
+  getplanet(&p, s->storbits, s->pnumorbits);
   if (p->info[Playernum - 1].numsectsowned == 0) {
     sprintf(buf, "You don't have a garrison on the planet.\n");
     notify(Playernum, Governor, buf);
@@ -79,7 +80,7 @@ void enslave(int Playernum, int Governor, int APcount) {
 
   Race = races[Playernum - 1];
 
-  sh = p->ships;
+  shipnum_t sh = p->ships;
   while (sh) {
     (void)getship(&s2, sh);
     if (s2->alive && s2->active) {

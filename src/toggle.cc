@@ -89,7 +89,7 @@ void toggle(int Playernum, int Governor, int APcount) {
 }
 
 void highlight(int Playernum, int Governor, int APcount) {
-  int n;
+  player_t n;
   racetype *Race;
 
   if (!(n = GetPlayer(args[1]))) {

@@ -79,7 +79,8 @@ void do_prompt(int Playernum, int Governor) {
                 Dir[Playernum - 1][Governor].shipno);
         break;
       case LEVEL_STAR:
-        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/#%lu/#%lu )\n",
+        sprintf(Dir[Playernum - 1][Governor].prompt,
+                " ( [%d] /%s/#%lu/#%lu )\n",
                 Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
                 s->destshipno, Dir[Playernum - 1][Governor].shipno);
         break;

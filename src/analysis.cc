@@ -25,12 +25,11 @@ struct anal_sect {
   int des;
 };
 
-static void do_analysis(int, int, int, int, int, int, int);
+static void do_analysis(int, int, int, int, int, starnum_t, planetnum_t);
 static void Insert(int, struct anal_sect[], int, int, int, int);
 static void PrintTop(int, int, struct anal_sect[], const char *);
 
 void analysis(int Playernum, int Governor, int APcount) {
-  int pnum;
   int sector_type = -1; /* -1 does analysis on all types */
   placetype where;      /* otherwise on specific type */
   int i;
@@ -109,13 +108,13 @@ void analysis(int Playernum, int Governor, int APcount) {
       notify(Playernum, Governor, "You can only analyze planets.\n");
       break;
     case LEVEL_PLAN:
-      do_analysis(Playernum, Governor, do_player, mode, sector_type,
-                  (int)where.snum, (int)where.pnum);
+      do_analysis(Playernum, Governor, do_player, mode, sector_type, where.snum,
+                  where.pnum);
       break;
     case LEVEL_STAR:
-      for (pnum = 0; pnum < Stars[where.snum]->numplanets; pnum++)
+      for (planetnum_t pnum = 0; pnum < Stars[where.snum]->numplanets; pnum++)
         do_analysis(Playernum, Governor, do_player, mode, sector_type,
-                    (int)where.snum, pnum);
+                    where.snum, pnum);
       break;
     }
   } while (0);
@@ -123,7 +122,8 @@ void analysis(int Playernum, int Governor, int APcount) {
 }
 
 static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
-                        int sector_type, int Starnum, int Planetnum) {
+                        int sector_type, starnum_t Starnum,
+                        planetnum_t Planetnum) {
   planettype *planet;
   sectortype *sect;
   racetype *Race;

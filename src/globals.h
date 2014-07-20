@@ -47,7 +47,7 @@ const char *Planet_types[] = { "Class M", "Asteroid",  "Airless", "Iceball",
 
 time_t next_update_time;   /* When will next update be... approximately */
 time_t next_segment_time;  /* When will next segment be... approximately */
-unsigned int update_time;           /* Interval between updates in minutes */
+unsigned int update_time;  /* Interval between updates in minutes */
 segments_t nsegments_done; /* How many movements have we done so far? */
 
 const char *Desnames[] = { "ocean",  "land",   "mountainous", "gaseous", "ice",

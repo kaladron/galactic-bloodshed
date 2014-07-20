@@ -21,13 +21,14 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void tech_report_star(int, int, startype *, int, int *, double *,
+static void tech_report_star(int, int, startype *, starnum_t, int *, double *,
                              double *);
-static void colonies_at_star(int, int, racetype *, int, int);
+static void colonies_at_star(int, int, racetype *, starnum_t, int);
 
 static void colonies_at_star(int Playernum, int Governor, racetype *Race,
-                             int star, int mode) {
-  int i, j;
+                             starnum_t star, int mode) {
+  planetnum_t i;
+  int j;
   planettype *pl;
 
   getstar(&(Stars[star]), star);
@@ -90,7 +91,7 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
 }
 
 void colonies(int Playernum, int Governor, int APcount, int mode) {
-  int i, star;
+  int i;
   racetype *Race;
   placetype where;
 
@@ -124,7 +125,7 @@ void colonies(int Playernum, int Governor, int APcount, int mode) {
   getsdata(&Sdata);
 
   if (argn < 2)
-    for (star = 0; star < Sdata.numstars; star++)
+    for (starnum_t star = 0; star < Sdata.numstars; star++)
       colonies_at_star(Playernum, Governor, Race, star, mode);
   else
     for (i = 1; i < argn; i++) {
@@ -179,7 +180,7 @@ void distance(int Playernum, int Governor, int APcount) {
     y0 = ship->ypos;
     free(ship);
   } else if (from.level == LEVEL_PLAN) {
-    getplanet(&p, (int)from.snum, (int)from.pnum);
+    getplanet(&p, from.snum, from.pnum);
     x0 = p->xpos + Stars[from.snum]->xpos;
     y0 = p->ypos + Stars[from.snum]->ypos;
     free(p);
@@ -199,7 +200,7 @@ void distance(int Playernum, int Governor, int APcount) {
     y1 = ship->ypos;
     free(ship);
   } else if (to.level == LEVEL_PLAN) {
-    getplanet(&p, (int)to.snum, (int)to.pnum);
+    getplanet(&p, to.snum, to.pnum);
     x1 = p->xpos + Stars[to.snum]->xpos;
     y1 = p->ypos + Stars[to.snum]->ypos;
     free(p);
@@ -237,7 +238,7 @@ void star_locations(int Playernum, int Governor, int APcount) {
 }
 
 void exploration(int Playernum, int Governor, int APcount) {
-  int star, starq, i, j;
+  int starq, j;
   planettype *pl;
   placetype where;
   racetype *Race;
@@ -269,11 +270,11 @@ void exploration(int Playernum, int Governor, int APcount) {
       buf,
       " Star  (stability)[AP]   #  Planet [Attributes] Type (Compatibility)\n");
   notify(Playernum, Governor, buf);
-  for (star = 0; star < Sdata.numstars; star++)
+  for (starnum_t star = 0; star < Sdata.numstars; star++)
     if ((starq == -1) || (starq == star)) {
       getstar(&(Stars[star]), star);
       if (isset(Stars[star]->explored, Playernum))
-        for (i = 0; i < Stars[star]->numplanets; i++) {
+        for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
           getplanet(&pl, star, i);
           if (i == 0) {
             if (Race->tech >= TECH_SEE_STABILITY) {
@@ -329,7 +330,7 @@ void exploration(int Playernum, int Governor, int APcount) {
 }
 
 void tech_status(int Playernum, int Governor, int APcount) {
-  int star, k;
+  int k;
   placetype where;
   double total_gain = 0.0;
   double total_max_gain = 0.0;
@@ -344,7 +345,7 @@ void tech_status(int Playernum, int Governor, int APcount) {
   notify(Playernum, Governor, buf);
 
   if (argn == 1) {
-    for (star = 0; star < Sdata.numstars; star++) {
+    for (starnum_t star = 0; star < Sdata.numstars; star++) {
       getstar(&(Stars[star]), star);
       tech_report_star(Playernum, Governor, Stars[star], star, &total_invest,
                        &total_gain, &total_max_gain);
@@ -357,7 +358,7 @@ void tech_status(int Playernum, int Governor, int APcount) {
         notify(Playernum, Governor, buf);
         continue;
       } else { /* ok, a proper location */
-        star = where.snum;
+        starnum_t star = where.snum;
         getstar(&Stars[star], star);
         tech_report_star(Playernum, Governor, Stars[star], star, &total_invest,
                          &total_gain, &total_max_gain);
@@ -372,16 +373,15 @@ void tech_status(int Playernum, int Governor, int APcount) {
 }
 
 static void tech_report_star(int Playernum, int Governor, startype *star,
-                             int snum, int *t_invest, double *t_gain,
+                             starnum_t snum, int *t_invest, double *t_gain,
                              double *t_max_gain) {
-  int i;
   planettype *pl;
   char str[200];
   double gain, max_gain;
 
   if (isset(star->explored, Playernum) &&
       (!Governor || star->governor[Playernum - 1] == Governor)) {
-    for (i = 0; i < star->numplanets; i++) {
+    for (planetnum_t i = 0; i < star->numplanets; i++) {
       getplanet(&pl, snum, i);
       if (pl->info[Playernum - 1].explored &&
           pl->info[Playernum - 1].numsectsowned) {

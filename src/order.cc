@@ -534,7 +534,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
         if (s2->type == STYPE_HABITAT) {
           oncost = HAB_FACT_ON_COST * ship->build_cost;
           if (s2->resource < oncost) {
-            sprintf(buf, "You don't have %d resources on Habitat #%d to "
+            sprintf(buf, "You don't have %d resources on Habitat #%lu to "
                          "activate this factory.\n",
                     oncost, ship->destshipno);
             notify(Playernum, Governor, buf);
@@ -546,7 +546,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
           if (hangerneeded > 0) {
             sprintf(
                 buf,
-                "Not enough hanger space free on Habitat #%d. Need %d more.\n",
+                "Not enough hanger space free on Habitat #%lu. Need %d more.\n",
                 ship->destshipno, hangerneeded);
             notify(Playernum, Governor, buf);
             free(s2);
@@ -568,7 +568,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
         notify(Playernum, Governor, "You cannot activate the factory here.\n");
         return;
       } else {
-        getplanet(&planet, (int)ship->deststar, (int)ship->destpnum);
+        getplanet(&planet, ship->deststar, ship->destpnum);
         oncost = 2 * ship->build_cost;
         if (planet->info[Playernum - 1].resource < oncost) {
           sprintf(buf, "You don't have %d resources on the planet to activate "
@@ -658,7 +658,7 @@ void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
   case LEVEL_PLAN:
     sprintf(buf, "Planet %s ", prin_aimed_at(Playernum, Governor, s));
     notify(Playernum, Governor, buf);
-    getplanet(&p, (int)s->special.aimed_at.snum, (int)s->special.aimed_at.pnum);
+    getplanet(&p, s->special.aimed_at.snum, s->special.aimed_at.pnum);
     if ((dist =
              sqrt(Distsq(xf, yf, str->xpos + p->xpos, str->ypos + p->ypos))) <=
         tele_range((int)s->type, s->tech)) {
@@ -695,7 +695,7 @@ void DispOrders(int Playernum, int Governor, shiptype *ship) {
 
   if (ship->docked)
     if (ship->whatdest == LEVEL_SHIP)
-      sprintf(temp, "D#%d", ship->destshipno);
+      sprintf(temp, "D#%lu", ship->destshipno);
     else
       sprintf(temp, "L%2d,%-2d", ship->land_x, ship->land_y);
   else

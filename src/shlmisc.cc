@@ -631,7 +631,7 @@ void list(int Playernum, int Governor) {
 
   while (sh) {
     (void)getship(&ship, sh);
-    sprintf(buf, "%15s #%d '%s' (pl %d) -> #%d %s\n", Shipnames[ship->type], sh,
+    sprintf(buf, "%15s #%d '%s' (pl %d) -> #%lu %s\n", Shipnames[ship->type], sh,
             ship->name, ship->owner, ship->nextship,
             ship->alive ? "" : "(dead)");
     notify(Playernum, Governor, buf);

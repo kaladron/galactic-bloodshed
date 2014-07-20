@@ -52,16 +52,16 @@ void do_prompt(int Playernum, int Governor) {
     (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
     switch (s->whatorbits) {
     case LEVEL_UNIV:
-      sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /#%d )\n",
+      sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /#%ld )\n",
               Sdata.AP[Playernum - 1], Dir[Playernum - 1][Governor].shipno);
       break;
     case LEVEL_STAR:
-      sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/#%d )\n",
+      sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/#%ld )\n",
               Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
               Dir[Playernum - 1][Governor].shipno);
       break;
     case LEVEL_PLAN:
-      sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/%s/#%d )\n",
+      sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/%s/#%ld )\n",
               Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
               Stars[s->storbits]->pnames[Dir[Playernum - 1][Governor].pnum],
               Dir[Playernum - 1][Governor].shipno);
@@ -74,18 +74,18 @@ void do_prompt(int Playernum, int Governor) {
       (void)getship(&s2, (int)s->destshipno);
       switch (s2->whatorbits) {
       case LEVEL_UNIV:
-        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /#%d/#%d )\n",
+        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /#%lu/#%lu )\n",
                 Sdata.AP[Playernum - 1], s->destshipno,
                 Dir[Playernum - 1][Governor].shipno);
         break;
       case LEVEL_STAR:
-        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/#%d/#%d )\n",
+        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/#%lu/#%lu )\n",
                 Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
                 s->destshipno, Dir[Playernum - 1][Governor].shipno);
         break;
       case LEVEL_PLAN:
         sprintf(Dir[Playernum - 1][Governor].prompt,
-                " ( [%d] /%s/%s/#%d/#%d )\n",
+                " ( [%d] /%s/%s/#%ld/#%ld )\n",
                 Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
                 Stars[s->storbits]->pnames[Dir[Playernum - 1][Governor].pnum],
                 s->destshipno, Dir[Playernum - 1][Governor].shipno);
@@ -98,19 +98,19 @@ void do_prompt(int Playernum, int Governor) {
         switch (s2->whatorbits) {
         case LEVEL_UNIV:
           sprintf(Dir[Playernum - 1][Governor].prompt,
-                  " ( [%d] / /../#%d/#%d )\n", Sdata.AP[Playernum - 1],
+                  " ( [%d] / /../#%ld/#%ld )\n", Sdata.AP[Playernum - 1],
                   s->destshipno, Dir[Playernum - 1][Governor].shipno);
           break;
         case LEVEL_STAR:
           sprintf(Dir[Playernum - 1][Governor].prompt,
-                  " ( [%d] /%s/ /../#%d/#%d )\n",
+                  " ( [%d] /%s/ /../#%ld/#%ld )\n",
                   Stars[s->storbits]->AP[Playernum - 1],
                   Stars[s->storbits]->name, s->destshipno,
                   Dir[Playernum - 1][Governor].shipno);
           break;
         case LEVEL_PLAN:
           sprintf(Dir[Playernum - 1][Governor].prompt,
-                  " ( [%d] /%s/%s/ /../#%d/#%d )\n",
+                  " ( [%d] /%s/%s/ /../#%ld/#%ld )\n",
                   Stars[s->storbits]->AP[Playernum - 1],
                   Stars[s->storbits]->name,
                   Stars[s->storbits]->pnames[Dir[Playernum - 1][Governor].pnum],

@@ -25,6 +25,9 @@ segments; /* number of movement segments (global variable) */
 
 enum levels_t { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
 
+typedef uint64_t shipnum_t;
+typedef uint8_t starnum_t;
+typedef uint8_t planetnum_t;
 typedef uint8_t player_t;
 
 #define MAXPLAYERS 64
@@ -203,9 +206,9 @@ extern struct stardata Sdata;
 
 struct directory {
   levels_t level;                     /* what directory level */
-  unsigned char snum;                 /* what star system obj # (level=0) */
-  unsigned char pnum;                 /* number of planet */
-  unsigned short shipno;              /* # of ship */
+  starnum_t snum;                 /* what star system obj # (level=0) */
+  planetnum_t pnum;                 /* number of planet */
+  shipnum_t shipno;              /* # of ship */
   char prompt[3 * NAMESIZE + 5];      /* just to be safe */
   double lastx[2], lasty[2], zoom[2]; /* last coords for zoom */
 };
@@ -249,7 +252,7 @@ extern planettype *planets[NUMSTARS][MAXPLANETS];
 extern unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
 extern unsigned long inhabited[NUMSTARS][2];
 extern double Compat[MAXPLAYERS];
-extern unsigned long Num_races, Num_ships, Num_commods;
+extern unsigned long Num_races, Num_commods;
 extern unsigned long Planet_count;
 extern unsigned long newslength[4];
 extern char args[MAXARGS][COMMANDSIZE];

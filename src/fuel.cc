@@ -26,17 +26,18 @@
 
 static char plan_buf[1024];
 
-static int number_segments;
+static segments_t number_segments;
 static double x_0, y_0, x_1, y_1;
 static shiptype *tmpship;
 static placetype tmpdest;
 
 static int do_trip(double fuel, double gravity_factor);
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
-                        double grav, double mass, int segs);
+                        double grav, double mass, segments_t segs);
 
 void proj_fuel(int Playernum, int Governor, int APcount) {
-  int shipno, opt_settings, current_settings, current_segs, computing = 1;
+  int shipno, opt_settings, current_settings, computing = 1;
+  segments_t current_segs;
   double fuel_usage, level, dist;
   shiptype *ship;
   planettype *p;
@@ -82,7 +83,7 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
     return;
   }
   if (landed(ship) && (ship->whatorbits == LEVEL_PLAN)) {
-    getplanet(&p, (int)ship->storbits, (int)ship->pnumorbits);
+    getplanet(&p, ship->storbits, ship->pnumorbits);
     gravity_factor = gravity(p);
     sprintf(plan_buf, "/%s/%s", Stars[(int)ship->storbits]->name,
             Stars[(int)ship->storbits]->pnames[(int)ship->pnumorbits]);
@@ -140,7 +141,7 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
     y_1 = tmpship->ypos;
     free(tmpship);
   } else if (tmpdest.level == LEVEL_PLAN) {
-    getplanet(&p, (int)tmpdest.snum, (int)tmpdest.pnum);
+    getplanet(&p, tmpdest.snum, tmpdest.pnum);
     x_1 = p->xpos + Stars[tmpdest.snum]->xpos;
     y_1 = p->ypos + Stars[tmpdest.snum]->ypos;
     free(p);
@@ -212,7 +213,7 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
 }
 
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
-                        double grav, double mass, int segs) {
+                        double grav, double mass, segments_t segs) {
   char buf[1024], grav_buf[1024];
 
   if (grav > 0.00)
@@ -230,7 +231,7 @@ static void fuel_output(int Playernum, int Governor, double dist, double fuel,
         "Estimated arrival time not available due to segment # discrepancy.\n");
   else {
     time_t effective_time =
-        next_segment_time + (long)((segs - 1) * (update_time / segments) * 60);
+        next_segment_time + labs((segs - 1) * (update_time / segments) * 60);
     if (segments == 1)
       effective_time =
           next_update_time + (long)((segs - 1) * (update_time * 60));

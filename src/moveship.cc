@@ -219,7 +219,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
       if (s->whatdest == LEVEL_SHIP && !followable(s, ships[s->destshipno])) {
         s->whatdest = LEVEL_UNIV;
         s->protect.evade = 0;
-        sprintf(telegram_buf, "%s at %s lost sight of destination ship #%d.",
+        sprintf(telegram_buf, "%s at %s lost sight of destination ship #%ld.",
                 Ship(s), prin_ship_orbits(s), s->destshipno);
         if (send_messages)
           push_telegram((int)(s->owner), (int)s->governor, telegram_buf);

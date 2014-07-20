@@ -233,7 +233,7 @@ void upgrade(int Playernum, int Governor, int APcount) {
   if (dirship->whatorbits == LEVEL_SHIP) {
     (void)getship(&s2, dirship->destshipno);
     if (s2->max_hanger - (s2->hanger - dirship->size) < ship_size(&ship)) {
-      sprintf(buf, "Not enough free hanger space on %c%d.\n",
+      sprintf(buf, "Not enough free hanger space on %c%ld.\n",
               Shipltrs[s2->type], dirship->destshipno);
       notify(Playernum, Governor, buf);
       sprintf(buf, "%d more needed.\n",
@@ -469,7 +469,7 @@ void make_mod(int Playernum, int Governor, int APcount, int mode) {
     dirship->size = ship_size(dirship);
     dirship->complexity = complexity(dirship);
 
-    sprintf(dirship->shipclass, "mod %d", Dir[Playernum - 1][Governor].shipno);
+    sprintf(dirship->shipclass, "mod %ld", Dir[Playernum - 1][Governor].shipno);
 
     sprintf(buf, "Factory designated to produce %ss.\n", Shipnames[i]);
     notify(Playernum, Governor, buf);

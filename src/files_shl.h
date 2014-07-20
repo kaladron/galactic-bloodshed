@@ -39,7 +39,7 @@ void putsmap(sectortype *, planettype *);
 void putship(shiptype *);
 void putcommod(commodtype *, int);
 int Numraces(void);
-int Numships(void);
+shipnum_t Numships(void);
 int Numcommods(void);
 int Newslength(int);
 void clr_shipfree(void);

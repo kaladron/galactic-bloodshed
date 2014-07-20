@@ -351,7 +351,7 @@ void ship_report(int Playernum, int Governor, int indx,
       }
       if (s->docked)
         if (s->whatdest == LEVEL_SHIP)
-          sprintf(locstrn, "D#%d", s->destshipno);
+          sprintf(locstrn, "D#%ld", s->destshipno);
         else
           sprintf(locstrn, "L%2d,%-2d", s->land_x, s->land_y);
       else if (s->navigate.on)

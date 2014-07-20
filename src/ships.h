@@ -101,10 +101,6 @@
 typedef struct ship shiptype;
 typedef struct place placetype;
 
-typedef uint16_t shipnum_t;
-typedef uint8_t starnum_t;
-typedef uint8_t planetnum_t;
-
 struct ship {
   unsigned short number;         /* ship knows its own number */
   unsigned char owner;           /* owner of ship */
@@ -234,10 +230,10 @@ struct ship {
   unsigned char focus;      /* focused laser mode */
   unsigned char fire_laser; /* retaliation strength for lasers */
 
-  unsigned char storbits;   /* what star # orbits */
-  unsigned char deststar;   /* destination star */
-  unsigned char destpnum;   /* destination planet */
-  unsigned char pnumorbits; /* # of planet if orbiting */
+  starnum_t storbits;   /* what star # orbits */
+  starnum_t deststar;   /* destination star */
+  planetnum_t destpnum;   /* destination planet */
+  planetnum_t pnumorbits; /* # of planet if orbiting */
   levels_t whatdest;        /* where going (same as Dir) */
   levels_t whatorbits;      /* where orbited (same as Dir) */
 
@@ -340,6 +336,7 @@ struct place { /* used in function return for finding place */
 #define Hanger(s) ((s)->max_hanger - (s)->hanger)
 #define Repair(s) (((s)->type == OTYPE_FACTORY) ? (s)->on : Max_crew(s))
 
+extern shipnum_t Num_ships;
 extern const long Shipdata[NUMSTYPES][NUMABILS];
 extern const char Shipltrs[];
 extern const char *Shipnames[];

@@ -282,7 +282,7 @@ int Numraces(void) {
   return ((int)(buffer.st_size / sizeof(racetype)));
 }
 
-int Numships(void) /* return number of ships */
+shipnum_t Numships(void) /* return number of ships */
 {
   struct stat buffer;
 

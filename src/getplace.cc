@@ -49,7 +49,7 @@ placetype Getplace(int Playernum, int Governor, const char *string,
     return (
         Getplace2(Playernum, Governor, string + 1, &where, ignoreexpl, God));
   case '#':
-    sscanf(++string, "%hd", &where.shipno);
+    sscanf(++string, "%ld", &where.shipno);
     if (!getship(&where.shipptr, where.shipno)) {
       DontOwnErr(Playernum, Governor, where.shipno);
       where.err = 1;
@@ -202,7 +202,7 @@ char *Dispshiploc_brief(shiptype *ship) {
             Stars[ship->storbits]->pnames[ship->pnumorbits]);
     return (Disps);
   case LEVEL_SHIP:
-    sprintf(Disps, "#%d", ship->destshipno);
+    sprintf(Disps, "#%lu", ship->destshipno);
     return (Disps);
   case LEVEL_UNIV:
     sprintf(Disps, "/");
@@ -220,7 +220,7 @@ char *Dispshiploc(shiptype *ship) {
             Stars[ship->storbits]->pnames[ship->pnumorbits]);
     return (Disps);
   case LEVEL_SHIP:
-    sprintf(Disps, "#%d", ship->destshipno);
+    sprintf(Disps, "#%lu", ship->destshipno);
     return (Disps);
   case LEVEL_UNIV:
     sprintf(Disps, "/");
@@ -238,7 +238,7 @@ char *Dispplace(int Playernum, int Governor, placetype *where) {
             Stars[where->snum]->pnames[where->pnum]);
     return (Disps);
   case LEVEL_SHIP:
-    sprintf(Disps, "#%d", where->shipno);
+    sprintf(Disps, "#%lu", where->shipno);
     return (Disps);
   case LEVEL_UNIV:
     strcpy(Disps, "/");

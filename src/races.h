@@ -21,7 +21,8 @@ typedef struct {
   char compat;
 } toggletype;
 
-struct race {
+class race {
+ public:
   int Playernum;
   char name[RNAMESIZE]; /* Racial name. */
   char password[RNAMESIZE];
@@ -161,7 +162,7 @@ struct power_blocks {
   unsigned short VPs[MAXPLAYERS];
 };
 
-typedef struct race racetype;
+typedef class race racetype;
 typedef struct block blocktype;
 
 extern struct block Blocks[MAXPLAYERS];

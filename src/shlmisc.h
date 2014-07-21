@@ -5,6 +5,8 @@
 #ifndef SHLMISC_H
 #define SHLMISC_H
 
+#include <string>
+
 #include "races.h"
 #include "ships.h"
 
@@ -22,6 +24,7 @@ void DontOwnErr(int, int, shipnum_t);
 int enufAP(int, int, unsigned short, int);
 void Getracenum(char *, char *, int *, int *);
 player_t GetPlayer(const char *);
+player_t GetPlayer(const std::string&);
 void allocateAPs(int, int, int);
 void deductAPs(int, int, int, int, int);
 void list(int, int);

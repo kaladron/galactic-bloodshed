@@ -10,6 +10,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 #include <string.h>
 #include <time.h>
 
@@ -519,6 +520,10 @@ player_t GetPlayer(const char *name) {
         return i;
     return 0;
   }
+}
+
+player_t GetPlayer(const std::string& name) {
+  return GetPlayer(name.c_str());
 }
 
 void allocateAPs(int Playernum, int Governor, int APcount) {

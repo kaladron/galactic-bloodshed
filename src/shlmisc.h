@@ -21,7 +21,7 @@ int match(const char *, const char *);
 void DontOwnErr(int, int, shipnum_t);
 int enufAP(int, int, unsigned short, int);
 void Getracenum(char *, char *, int *, int *);
-player_t GetPlayer(char *);
+player_t GetPlayer(const char *);
 void allocateAPs(int, int, int);
 void deductAPs(int, int, int, int, int);
 void list(int, int);

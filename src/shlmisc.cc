@@ -505,18 +505,16 @@ void Getracenum(char *racepass, char *govpass, int *racenum, int *govnum) {
 }
 
 /* returns player # from string containing that players name or #. */
-player_t GetPlayer(char *name) {
-  int rnum;
-  int i;
+player_t GetPlayer(const char *name) {
 
-  rnum = 0;
+  player_t rnum = 0;
 
   if (isdigit(*name)) {
     if ((rnum = atoi(name)) < 1 || rnum > Num_races)
       return 0;
     return rnum;
   } else {
-    for (i = 1; i <= Num_races; i++)
+    for (player_t i = 1; i <= Num_races; i++)
       if (match(name, races[i - 1]->name))
         return i;
     return 0;

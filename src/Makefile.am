@@ -23,6 +23,7 @@ AM_CXXFLAGS += \
 	    -Wno-padded
 
 #AM_CXXFLAGS += -fsanitize=address
+CXXFLAGS = -g -O1
 AM_CXXFLAGS += -fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls
 
 bin_PROGRAMS = GB enrol makeuniv racegen

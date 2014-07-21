@@ -174,8 +174,8 @@ static struct timeval timeval_sub(struct timeval now, struct timeval then);
 #define MAX_COMMAND_LEN 512
 
 typedef void (*CommandFunction)(const command_t &argv, const player_t,
-                                const governor_t, const int);
-static const std::unordered_map<std::string, CommandFunction> *commands;
+                                const governor_t);
+static const std::unordered_map<const char*, CommandFunction> *commands;
 
 int main(int argc, char **argv) {
   int i;
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
   FILE *sfile;
 
   commands =
-      new std::unordered_map<std::string, CommandFunction>{ { "relation",
+      new std::unordered_map<const char*, CommandFunction>{ { "relation",
                                                               relation } };
 
   open_data_files();
@@ -1380,7 +1380,7 @@ static void process_command(int Playernum, int Governor, const char *comm,
 
   auto command = commands->find(args[0]);
   if (command != commands->end()) {
-    command->second(argv, Playernum, Governor, 0);
+    command->second(argv, Playernum, Governor);
   } else if (match(args[0], "announce")) /* keep this at the front */
     announce(Playernum, Governor, string, ANN);
   else if (match(args[0], "allocate"))

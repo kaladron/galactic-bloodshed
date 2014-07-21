@@ -23,7 +23,7 @@ void relation(const command_t &argv, const player_t Playernum,
   if (argv.size() == 1) {
     q = Playernum;
   } else {
-    if (!(q = GetPlayer(argv[1].c_str()))) {
+    if (!(q = GetPlayer(argv[1]))) {
       notify(Playernum, Governor, "No such player.\n");
       return;
     }

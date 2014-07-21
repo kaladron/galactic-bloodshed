@@ -113,3 +113,7 @@ racegen_CXXFLAGS += \
 
 makeuniv_SOURCES = makeuniv.cc makestar.cc makeplanet.cc rand.cc perm.cc files.cc
 
+.PHONY: start
+
+start: GB
+	ASAN_OPTIONS="detect_leaks=1" ./GB

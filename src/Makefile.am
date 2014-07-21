@@ -22,6 +22,8 @@ AM_CXXFLAGS += \
 	    -Wno-c++98-compat \
 	    -Wno-padded
 
+AM_CXXFLAGS += -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls
+
 bin_PROGRAMS = GB enrol makeuniv racegen
 
 GB_SOURCES = \

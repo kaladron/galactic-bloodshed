@@ -22,7 +22,8 @@ AM_CXXFLAGS += \
 	    -Wno-c++98-compat \
 	    -Wno-padded
 
-AM_CXXFLAGS += -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls
+#AM_CXXFLAGS += -fsanitize=address
+AM_CXXFLAGS += -fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls
 
 bin_PROGRAMS = GB enrol makeuniv racegen
 
@@ -116,4 +117,4 @@ makeuniv_SOURCES = makeuniv.cc makestar.cc makeplanet.cc rand.cc perm.cc files.c
 .PHONY: start
 
 start: GB
-	ASAN_OPTIONS="detect_leaks=1" ./GB
+	MSAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5 ASAN_OPTIONS="detect_leaks=1" ./GB

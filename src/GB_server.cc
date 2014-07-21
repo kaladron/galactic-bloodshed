@@ -1603,7 +1603,7 @@ static void process_command(int Playernum, int Governor, const char *comm) {
   else if (match(args[0], "zoom"))
     zoom(Playernum, Governor, 0);
   else {
-    sprintf(buf, "'%s':illegal command error(%d).\n", args[0], *args[0]);
+    sprintf(buf, "'%s':illegal command error.\n", args[0]);
     notify(Playernum, Governor, buf);
   }
 

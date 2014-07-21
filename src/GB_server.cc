@@ -171,7 +171,7 @@ static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 #define MAX_COMMAND_LEN 512
 
-typedef void(*CommandFunction)(const player_t, const governor_t, const int);
+typedef void (*CommandFunction)(const player_t, const governor_t, const int);
 static const std::unordered_map<std::string, CommandFunction> *commands;
 
 int main(int argc, char **argv) {
@@ -179,9 +179,9 @@ int main(int argc, char **argv) {
   struct stat stbuf;
   FILE *sfile;
 
-  commands = new std::unordered_map<std::string, CommandFunction> {
-    {"relation", relation}
-  };
+  commands =
+      new std::unordered_map<std::string, CommandFunction>{ { "relation",
+                                                              relation } };
 
   open_data_files();
   printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
@@ -1373,11 +1373,9 @@ static void process_command(int Playernum, int Governor, const char *comm) {
     string++;
 
   auto command = commands->find(args[0]);
-  if (command != commands->end() ) {
+  if (command != commands->end()) {
     command->second(Playernum, Governor, 0);
-  }
-
-  if (match(args[0], "announce")) /* keep this at the front */
+  } else if (match(args[0], "announce")) /* keep this at the front */
     announce(Playernum, Governor, string, ANN);
   else if (match(args[0], "allocate"))
     allocateAPs(Playernum, Governor, 0);

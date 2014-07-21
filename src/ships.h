@@ -104,7 +104,7 @@ typedef class ship shiptype;
 typedef struct place placetype;
 
 class ship {
- public:
+public:
   unsigned short number;         /* ship knows its own number */
   unsigned char owner;           /* owner of ship */
   unsigned char governor;        /* subordinate that controls the ship */

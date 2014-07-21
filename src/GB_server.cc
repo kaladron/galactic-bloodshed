@@ -4,6 +4,7 @@
 
 #include "GB_server.h"
 
+#include <boost/algorithm/string.hpp>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -20,6 +21,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <unordered_map>
+#include <vector>
 
 #include "analysis.h"
 #include "autoreport.h"
@@ -133,7 +135,7 @@ static void queue_write(struct descriptor_data *, const char *, int);
 static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
 static void help(struct descriptor_data *);
-static void process_command(int, int, const char *);
+static void process_command(int, int, const char *, const command_t &argv);
 
 struct descriptor_data *new_connection(int);
 char *addrout(long);
@@ -171,7 +173,8 @@ static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 #define MAX_COMMAND_LEN 512
 
-typedef void (*CommandFunction)(const player_t, const governor_t, const int);
+typedef void (*CommandFunction)(const command_t &argv, const player_t,
+                                const governor_t, const int);
 static const std::unordered_map<std::string, CommandFunction> *commands;
 
 int main(int argc, char **argv) {
@@ -1023,6 +1026,8 @@ int do_command(struct descriptor_data *d, char *comm) {
   /* check to see if there are a few words typed out, usually for the help
    * command */
   string = comm;
+  command_t argv;
+  boost::split(argv, comm, boost::is_any_of(" "));
   while (!parse_exit) {
     i = 0;
     while (!isspace(*string) && (*string != '\0') && (i < COMMANDSIZE))
@@ -1054,7 +1059,7 @@ int do_command(struct descriptor_data *d, char *comm) {
   } else {
     if (d->connected) {
       /* GB command parser */
-      process_command(d->Playernum, d->Governor, comm);
+      process_command(d->Playernum, d->Governor, comm, argv);
     } else {
       check_connect(
           d, comm); /* Logs player into the game, connects
@@ -1066,7 +1071,7 @@ int do_command(struct descriptor_data *d, char *comm) {
         /* set the scope to home upon login */
         argn = 1;
         strcpy(args[0], "cs");
-        process_command(d->Playernum, d->Governor, "cs");
+        process_command(d->Playernum, d->Governor, "cs", argv);
       }
     }
   }
@@ -1356,7 +1361,8 @@ void dump_users(struct descriptor_data *e) {
   queue_string(e, "Finished.\n");
 }
 
-static void process_command(int Playernum, int Governor, const char *comm) {
+static void process_command(int Playernum, int Governor, const char *comm,
+                            const command_t &argv) {
   int j, God, Guest;
   racetype *r;
 
@@ -1374,7 +1380,7 @@ static void process_command(int Playernum, int Governor, const char *comm) {
 
   auto command = commands->find(args[0]);
   if (command != commands->end()) {
-    command->second(Playernum, Governor, 0);
+    command->second(argv, Playernum, Governor, 0);
   } else if (match(args[0], "announce")) /* keep this at the front */
     announce(Playernum, Governor, string, ANN);
   else if (match(args[0], "allocate"))

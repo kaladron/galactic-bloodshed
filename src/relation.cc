@@ -16,14 +16,14 @@
 
 static const char *allied(const race *const, const player_t);
 
-void relation(const player_t Playernum, const governor_t Governor,
-              const int APcount) {
-  player_t q;
+void relation(const command_t &argv, const player_t Playernum,
+              const governor_t Governor, const int APcount) {
 
-  if (argn == 1) {
+  player_t q;
+  if (argv.size() == 1) {
     q = Playernum;
   } else {
-    if (!(q = GetPlayer(args[1]))) {
+    if (!(q = GetPlayer(argv[1].c_str()))) {
       notify(Playernum, Governor, "No such player.\n");
       return;
     }

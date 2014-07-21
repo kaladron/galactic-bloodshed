@@ -132,6 +132,8 @@ static void queue_string(struct descriptor_data *d, const char *message);
 static void queue_write(struct descriptor_data *, const char *, int);
 static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
+static void help(struct descriptor_data *);
+static void process_command(int, int, const char *);
 
 struct descriptor_data *new_connection(int);
 char *addrout(long);
@@ -156,7 +158,6 @@ void dump_users(struct descriptor_data *);
 void check_connect(struct descriptor_data *, char *);
 void close_sockets(void);
 int process_input(struct descriptor_data *);
-void help(struct descriptor_data *);
 void force_output(void);
 void help_user(struct descriptor_data *);
 void parse_connect(char *, char *, char *);
@@ -164,7 +165,6 @@ void shovechars(int);
 int msec_diff(struct timeval, struct timeval);
 struct timeval msec_add(struct timeval, int);
 void save_command(struct descriptor_data *, char *);
-static void process_command(int, int, const char *);
 struct descriptor_data *initializesock(int);
 
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
@@ -1690,7 +1690,7 @@ void GB_schedule(int Playernum, int Governor) {
   notify(Playernum, Governor, buf);
 }
 
-void help(struct descriptor_data *e) {
+static void help(struct descriptor_data *e) {
 
   FILE *f;
   char file[1024];

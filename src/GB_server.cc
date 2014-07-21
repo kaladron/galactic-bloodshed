@@ -12,12 +12,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+#include <unordered_map>
 
 #include "analysis.h"
 #include "autoreport.h"
@@ -169,10 +171,17 @@ static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 #define MAX_COMMAND_LEN 512
 
+typedef void(*CommandFunction)(const player_t, const governor_t, const int);
+static const std::unordered_map<std::string, CommandFunction> *commands;
+
 int main(int argc, char **argv) {
   int i;
   struct stat stbuf;
   FILE *sfile;
+
+  commands = new std::unordered_map<std::string, CommandFunction> {
+    {"relation", relation}
+  };
 
   open_data_files();
   printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
@@ -1363,6 +1372,11 @@ static void process_command(int Playernum, int Governor, const char *comm) {
   while (*string && *string != ' ')
     string++;
 
+  auto command = commands->find(args[0]);
+  if (command != commands->end() ) {
+    command->second(Playernum, Governor, 0);
+  }
+
   if (match(args[0], "announce")) /* keep this at the front */
     announce(Playernum, Governor, string, ANN);
   else if (match(args[0], "allocate"))
@@ -1504,8 +1518,6 @@ static void process_command(int Playernum, int Governor, const char *comm) {
     purge();
   else if (match(args[0], "fix") && God)
     fix(Playernum, Governor);
-  else if (match(args[0], "relation"))
-    relation(Playernum, Governor, 0);
   else if (match(args[0], "read"))
     read_messages(Playernum, Governor, 0);
   else if (match(args[0], "@@reset") && God) {

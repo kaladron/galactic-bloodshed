@@ -107,7 +107,8 @@ struct text_queue {
   struct text_block **tail;
 };
 
-static struct descriptor_data {
+class descriptor_data {
+public:
   int descriptor;
   int connected;
   int God;       /* deity status */
@@ -122,69 +123,69 @@ static struct descriptor_data {
   char *raw_input_at;
   long last_time;
   int quota;
-  struct descriptor_data *next;
-  struct descriptor_data **prev;
-} *descriptor_list = 0;
+};
 
 static int sock;
 static int ndescriptors = 0;
 
 static void set_signals(void);
-static void queue_string(struct descriptor_data *d, const char *message);
-static void queue_write(struct descriptor_data *, const char *, int);
+static void queue_string(descriptor_data *d, const char *message);
+static void queue_write(descriptor_data *, const char *, int);
 static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
-static void help(struct descriptor_data *);
+static void help(descriptor_data *);
 static void process_command(int, int, const char *, const command_t &argv);
 
-struct descriptor_data *new_connection(int);
+descriptor_data *new_connection(int);
 char *addrout(long);
 void do_update(int);
 void do_segment(int, int);
 int make_socket(int);
-void clearstrings(struct descriptor_data *);
-void shutdownsock(struct descriptor_data *);
-void freeqs(struct descriptor_data *);
+void clearstrings(descriptor_data *);
+void shutdownsock(descriptor_data *);
+void freeqs(descriptor_data *);
 void make_nonblocking(int);
 struct timeval update_quotas(struct timeval, struct timeval);
-int process_output(struct descriptor_data *);
-void welcome_user(struct descriptor_data *);
+int process_output(descriptor_data *);
+void welcome_user(descriptor_data *);
 int flush_queue(struct text_queue *, int);
 void free_text_block(struct text_block *);
 char *strsave(char *);
 void process_commands(void);
-int do_command(struct descriptor_data *, char *);
-void goodbye_user(struct descriptor_data *);
+int do_command(descriptor_data *, char *);
+void goodbye_user(descriptor_data *);
 void set_userstring(char **, char *);
-void dump_users(struct descriptor_data *);
-void check_connect(struct descriptor_data *, char *);
+void dump_users(descriptor_data *);
+void check_connect(descriptor_data *, char *);
 void close_sockets(void);
-int process_input(struct descriptor_data *);
+int process_input(descriptor_data *);
 void force_output(void);
-void help_user(struct descriptor_data *);
+void help_user(descriptor_data *);
 void parse_connect(char *, char *, char *);
 void shovechars(int);
 int msec_diff(struct timeval, struct timeval);
 struct timeval msec_add(struct timeval, int);
-void save_command(struct descriptor_data *, char *);
-struct descriptor_data *initializesock(int);
+void save_command(descriptor_data *, char *);
+descriptor_data *initializesock(int);
 
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 #define MAX_COMMAND_LEN 512
+static std::list<descriptor_data *> *descriptor_list;
 
 typedef void (*CommandFunction)(const command_t &argv, const player_t,
                                 const governor_t);
-static const std::unordered_map<const char*, CommandFunction> *commands;
+static const std::unordered_map<const char *, CommandFunction> *commands;
 
 int main(int argc, char **argv) {
   int i;
   struct stat stbuf;
   FILE *sfile;
 
+  descriptor_list = new std::list<descriptor_data *>();
   commands =
-      new std::unordered_map<const char*, CommandFunction>{ { "relation",
-                                                              relation } };
+      new std::unordered_map<const char *, CommandFunction>{ { "relation",
+                                                               relation } };
 
   open_data_files();
   printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
@@ -289,10 +290,9 @@ int main(int argc, char **argv) {
 void set_signals(void) { signal(SIGPIPE, SIG_IGN); }
 
 void notify_race(int race, const char *message) {
-  struct descriptor_data *d;
   if (update_flag)
     return;
-  for (d = descriptor_list; d; d = d->next) {
+  for (auto d : *descriptor_list) {
     if (d->connected && d->Playernum == race) {
       queue_string(d, message);
     }
@@ -300,13 +300,12 @@ void notify_race(int race, const char *message) {
 }
 
 int notify(int race, int gov, const char *message) {
-  struct descriptor_data *d;
   int ok;
 
   if (update_flag)
     return 0;
   ok = 0;
-  for (d = descriptor_list; d; d = d->next)
+  for (auto d : *descriptor_list)
     if (d->connected && d->Playernum == race && d->Governor == gov) {
       queue_string(d, message);
       ok = 1;
@@ -315,8 +314,7 @@ int notify(int race, int gov, const char *message) {
 }
 
 void d_think(int Playernum, int Governor, char *message) {
-  struct descriptor_data *d;
-  for (d = descriptor_list; d; d = d->next) {
+  for (auto d : *descriptor_list) {
     if (d->connected && d->Playernum == Playernum && d->Governor != Governor &&
         !races[d->Playernum - 1]->governor[d->Governor].toggle.gag) {
       queue_string(d, message);
@@ -325,8 +323,7 @@ void d_think(int Playernum, int Governor, char *message) {
 }
 
 void d_broadcast(int Playernum, int Governor, char *message) {
-  struct descriptor_data *d;
-  for (d = descriptor_list; d; d = d->next) {
+  for (auto d : *descriptor_list) {
     if (d->connected &&
         !(d->Playernum == Playernum && d->Governor == Governor) &&
         !races[d->Playernum - 1]->governor[d->Governor].toggle.gag) {
@@ -336,8 +333,7 @@ void d_broadcast(int Playernum, int Governor, char *message) {
 }
 
 void d_shout(int Playernum, int Governor, char *message) {
-  struct descriptor_data *d;
-  for (d = descriptor_list; d; d = d->next) {
+  for (auto d : *descriptor_list) {
     if (d->connected &&
         !(d->Playernum == Playernum && d->Governor == Governor)) {
       queue_string(d, message);
@@ -346,8 +342,7 @@ void d_shout(int Playernum, int Governor, char *message) {
 }
 
 void d_announce(int Playernum, int Governor, int star, char *message) {
-  struct descriptor_data *d;
-  for (d = descriptor_list; d; d = d->next) {
+  for (auto d : *descriptor_list) {
     if (d->connected &&
         !(d->Playernum == Playernum && d->Governor == Governor) &&
         (isset(Stars[star]->inhabited, d->Playernum) ||
@@ -391,8 +386,7 @@ void shovechars(int port) {
   struct timeval next_slice;
   struct timeval timeout, slice_timeout;
   int maxd, i;
-  struct descriptor_data *d, *dnext;
-  struct descriptor_data *newd;
+  descriptor_data *newd;
   int avail_descriptors;
 
   go_time = 0;
@@ -425,7 +419,7 @@ void shovechars(int port) {
     FD_ZERO(&output_set);
     if (ndescriptors < avail_descriptors)
       FD_SET(sock, &input_set);
-    for (d = descriptor_list; d; d = d->next) {
+    for (auto d : *descriptor_list) {
       if (d->input.head)
         timeout = slice_timeout;
       else
@@ -456,8 +450,7 @@ void shovechars(int port) {
         }
       }
 
-      for (d = descriptor_list; d; d = dnext) {
-        dnext = d->next;
+      for (auto d : *descriptor_list) {
         if (FD_ISSET(d->descriptor, &input_set)) {
           /*      d->last_time = now; */
           if (!process_input(d)) {
@@ -529,12 +522,11 @@ int make_socket(int port) {
 
 struct timeval update_quotas(struct timeval last, struct timeval current) {
   int nslices;
-  struct descriptor_data *d;
 
   nslices = msec_diff(current, last) / COMMAND_TIME_MSEC;
 
   if (nslices > 0) {
-    for (d = descriptor_list; d; d = d->next) {
+    for (auto d : *descriptor_list) {
       d->quota += COMMANDS_PER_TIME * nslices;
       if (d->quota > COMMAND_BURST_SIZE)
         d->quota = COMMAND_BURST_SIZE;
@@ -543,7 +535,7 @@ struct timeval update_quotas(struct timeval last, struct timeval current) {
   return msec_add(last, nslices * COMMAND_TIME_MSEC);
 }
 
-struct descriptor_data *new_connection(int sock) {
+descriptor_data *new_connection(int sock) {
   int newsock;
   struct sockaddr_in addr;
   socklen_t addr_len;
@@ -690,7 +682,7 @@ char *addrout(long a) {
   return outbuf;
 }
 
-void clearstrings(struct descriptor_data *d) {
+void clearstrings(descriptor_data *d) {
   if (d->output_prefix) {
     free(d->output_prefix);
     d->output_prefix = 0;
@@ -701,7 +693,7 @@ void clearstrings(struct descriptor_data *d) {
   }
 }
 
-void shutdownsock(struct descriptor_data *d) {
+void shutdownsock(descriptor_data *d) {
   if (d->connected) {
     fprintf(stderr, "DISCONNECT %d Race=%d Governor=%d\n", d->descriptor,
             d->Playernum, d->Governor);
@@ -712,18 +704,13 @@ void shutdownsock(struct descriptor_data *d) {
   shutdown(d->descriptor, 2);
   close(d->descriptor);
   freeqs(d);
-  *d->prev = d->next;
-  if (d->next)
-    d->next->prev = d->prev;
-  free(d);
-  ndescriptors--;
+  descriptor_list->remove(d);
+  delete d;
 }
 
-struct descriptor_data *initializesock(int s) {
-  struct descriptor_data *d;
+descriptor_data *initializesock(int s) {
+  auto d = new descriptor_data();
 
-  ndescriptors++;
-  d = (struct descriptor_data *)malloc(sizeof(struct descriptor_data));
   d->descriptor = s;
   d->connected = 0;
   make_nonblocking(s);
@@ -738,11 +725,7 @@ struct descriptor_data *initializesock(int s) {
   d->raw_input_at = 0;
   d->quota = COMMAND_BURST_SIZE;
   d->last_time = 0;
-  if (descriptor_list)
-    descriptor_list->prev = &d->next;
-  d->next = descriptor_list;
-  d->prev = &descriptor_list;
-  descriptor_list = d;
+  descriptor_list->push_back(d);
 
   welcome_user(d);
   return d;
@@ -798,7 +781,7 @@ int flush_queue(struct text_queue *q, int n) {
   return really_flushed;
 }
 
-static void queue_write(struct descriptor_data *d, const char *b, int n) {
+static void queue_write(descriptor_data *d, const char *b, int n) {
   int space;
 
   space = MAX_OUTPUT - d->output_size - n;
@@ -808,11 +791,11 @@ static void queue_write(struct descriptor_data *d, const char *b, int n) {
   d->output_size += n;
 }
 
-static void queue_string(struct descriptor_data *d, const char *s) {
+static void queue_string(descriptor_data *d, const char *s) {
   queue_write(d, s, strlen(s));
 }
 
-int process_output(struct descriptor_data *d) {
+int process_output(descriptor_data *d) {
   struct text_block **qp, *cur;
   int cnt;
 
@@ -840,9 +823,7 @@ int process_output(struct descriptor_data *d) {
 }
 
 void force_output(void) {
-  struct descriptor_data *d;
-
-  for (d = descriptor_list; d; d = d->next)
+  for (auto d : *descriptor_list)
     if (d->connected)
       (void)process_output(d);
 }
@@ -854,7 +835,7 @@ void make_nonblocking(int s) {
   }
 }
 
-void freeqs(struct descriptor_data *d) {
+void freeqs(descriptor_data *d) {
   struct text_block *cur, *next;
 
   cur = d->output.head;
@@ -881,7 +862,7 @@ void freeqs(struct descriptor_data *d) {
   d->raw_input_at = 0;
 }
 
-void welcome_user(struct descriptor_data *d) {
+void welcome_user(descriptor_data *d) {
   FILE *f;
   char *p;
 
@@ -902,7 +883,7 @@ void welcome_user(struct descriptor_data *d) {
   }
 }
 
-void help_user(struct descriptor_data *d) {
+void help_user(descriptor_data *d) {
   FILE *f;
   char *p;
 
@@ -920,7 +901,7 @@ void help_user(struct descriptor_data *d) {
   }
 }
 
-void goodbye_user(struct descriptor_data *d) {
+void goodbye_user(descriptor_data *d) {
   if (d->connected) /* this can happen, especially after updates */
     write(d->descriptor, LEAVE_MESSAGE, strlen(LEAVE_MESSAGE));
 }
@@ -935,11 +916,11 @@ char *strsave(char *s) {
   return p;
 }
 
-void save_command(struct descriptor_data *d, char *command) {
+void save_command(descriptor_data *d, char *command) {
   add_to_queue(&d->input, command, strlen(command) + 1);
 }
 
-int process_input(struct descriptor_data *d) {
+int process_input(descriptor_data *d) {
   int got;
   char *p, *pend, *q, *qend;
 
@@ -986,21 +967,20 @@ void set_userstring(char **userstring, char *comm) {
 void process_commands(void) {
   int nprocessed;
   long now;
-  struct descriptor_data *d, *dnext;
   struct text_block *t;
 
   (void)time(&now);
 
   do {
     nprocessed = 0;
-    for (d = descriptor_list; d; d = dnext) {
-      dnext = d->next;
+    for (auto d : *descriptor_list) {
       if (d->quota > 0 && (t = d->input.head)) {
         d->quota--;
         nprocessed++;
 
         if (!do_command(d, t->start)) {
           shutdownsock(d);
+          break;
         } else {
           d->last_time = now; /* experimental code */
           d->input.head = t->nxt;
@@ -1014,7 +994,7 @@ void process_commands(void) {
   } while (nprocessed > 0);
 }
 
-int do_command(struct descriptor_data *d, char *comm) {
+int do_command(descriptor_data *d, char *comm) {
   char *string;
   int parse_exit = 0, i;
 
@@ -1078,13 +1058,12 @@ int do_command(struct descriptor_data *d, char *comm) {
   return 1;
 }
 
-void check_connect(struct descriptor_data *d, char *message) {
+void check_connect(descriptor_data *d, char *message) {
   char race_password[MAX_COMMAND_LEN];
   char gov_password[MAX_COMMAND_LEN];
   int i, j;
   int Playernum, Governor;
   racetype *r;
-  struct descriptor_data *d0, *dnext;
 
   parse_connect(message, race_password, gov_password);
 
@@ -1110,8 +1089,7 @@ void check_connect(struct descriptor_data *d, char *message) {
     r = races[i - 1];
     /* check to see if this player is already connect, if so, nuke the
      * descriptor */
-    for (d0 = descriptor_list; d0; d0 = dnext) {
-      dnext = d0->next;
+    for (auto d0 : *descriptor_list) {
       if (d0->connected && d0->Playernum == Playernum &&
           d0->Governor == Governor) {
         queue_string(d, already_on);
@@ -1303,12 +1281,10 @@ void parse_connect(char *message, char *race_pass, char *gov_pass) {
 }
 
 void close_sockets(void) {
-  struct descriptor_data *d, *dnext;
   /* post message into news file */
   post(shutdown_message, ANNOUNCE);
 
-  for (d = descriptor_list; d; d = dnext) {
-    dnext = d->next;
+  for (auto d : *descriptor_list) {
     write(d->descriptor, shutdown_message, strlen(shutdown_message));
     if (shutdown(d->descriptor, 2) < 0)
       perror("shutdown");
@@ -1317,8 +1293,7 @@ void close_sockets(void) {
   close(sock);
 }
 
-void dump_users(struct descriptor_data *e) {
-  struct descriptor_data *d;
+void dump_users(descriptor_data *e) {
   long now;
   racetype *r;
   int God = 0;
@@ -1333,7 +1308,7 @@ void dump_users(struct descriptor_data *e) {
   } else
     return;
 
-  for (d = descriptor_list; d; d = d->next) {
+  for (auto d : *descriptor_list) {
     if (d->connected && !d->God) {
       r = races[d->Playernum - 1];
       if (!r->governor[d->Governor].toggle.invisible ||
@@ -1696,7 +1671,7 @@ void GB_schedule(int Playernum, int Governor) {
   notify(Playernum, Governor, buf);
 }
 
-static void help(struct descriptor_data *e) {
+static void help(descriptor_data *e) {
 
   FILE *f;
   char file[1024];
@@ -2005,7 +1980,6 @@ void warn_star(int a, int b, int star, char *message) {
 }
 
 void notify_star(int a, int g, int b, int star, char *message) {
-  struct descriptor_data *d;
   racetype *Race;
 
 #ifdef MONITOR
@@ -2013,7 +1987,7 @@ void notify_star(int a, int g, int b, int star, char *message) {
   if (Race->monitor || (a != 1 && b != 1))
     notify_race(1, message);
 #endif
-  for (d = descriptor_list; d; d = d->next)
+  for (auto d : *descriptor_list)
     if (d->connected && (d->Playernum != a || d->Governor != g) &&
         isset(Stars[star]->inhabited, d->Playernum)) {
       queue_string(d, message);

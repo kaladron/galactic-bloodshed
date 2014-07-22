@@ -522,9 +522,7 @@ player_t GetPlayer(const char *name) {
   }
 }
 
-player_t GetPlayer(const std::string& name) {
-  return GetPlayer(name.c_str());
-}
+player_t GetPlayer(const std::string &name) { return GetPlayer(name.c_str()); }
 
 void allocateAPs(int Playernum, int Governor, int APcount) {
   int maxalloc;

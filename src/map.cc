@@ -24,7 +24,10 @@
 
 #define DISP_DATA 1
 
-void map(int Playernum, int Governor, int APcount) {
+static void show_map(int, int, int, int, planettype *, int, int);
+
+void map(const command_t &argv, const player_t Playernum,
+         const governor_t Governor) {
   planettype *p;
   placetype where;
 
@@ -36,19 +39,18 @@ void map(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, "Bad scope.\n");
     return;
   } else if (where.level == LEVEL_PLAN) {
-    getplanet(&p, (int)where.snum, (int)where.pnum);
-    show_map(Playernum, Governor, (int)where.snum, (int)where.pnum, p,
-             DISP_DATA, 0);
+    getplanet(&p, where.snum, where.pnum);
+    show_map(Playernum, Governor, where.snum, where.pnum, p, DISP_DATA, 0);
     free(p);
     if (Stars[where.snum]->stability > 50)
       notify(Playernum, Governor,
              "WARNING! This planet's primary is unstable.\n");
   } else
-    orbit(Playernum, Governor, APcount); /* make orbit map instead */
+    orbit(argv, Playernum, Governor); /* make orbit map instead */
 }
 
-void show_map(int Playernum, int Governor, int snum, int pnum, planettype *p,
-              int show, int iq) {
+static void show_map(int Playernum, int Governor, int snum, int pnum,
+                     planettype *p, int show, int iq) {
   int x, y, i, f = 0, owner, owned1;
   int sh;
   shiptype *s;

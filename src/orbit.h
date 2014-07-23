@@ -9,9 +9,7 @@
 #include "ships.h"
 #include "vars.h"
 
-void orbit(int, int, int);
-void DispStar(int, int, int, startype *, int, int, char *);
-void DispPlanet(int, int, int, planettype *, char *, int, racetype *, char *);
-void DispShip(int, int, placetype *, shiptype *, planettype *, int, char *);
+void orbit(const command_t &argv, const player_t Playernum,
+           const governor_t Governor);
 
 #endif // ORBIT_H

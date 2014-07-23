@@ -25,6 +25,12 @@
 static double Lastx, Lasty, Zoom;
 static const int SCALE = 100;
 
+static void DispStar(int, int, int, startype *, int, int, char *);
+static void DispPlanet(int, int, int, planettype *, char *, int, racetype *,
+                       char *);
+static void DispShip(int, int, placetype *, shiptype *, planettype *, int,
+                     char *);
+
 /* OPTIONS
  *  -p : If this option is set, ``orbit'' will not display planet names.
  *
@@ -35,7 +41,8 @@ static const int SCALE = 100;
  *  -(number) : Do not display that #'d ship or planet (in case it obstructs
  * 		the view of another object)
  */
-void orbit(int Playernum, int Governor, int APcount) {
+void orbit(const command_t &argv, const player_t Playernum,
+           const governor_t Governor) {
   int sh, i, iq;
   int DontDispNum = -1, flag;
   planettype *p;
@@ -204,8 +211,8 @@ void orbit(int Playernum, int Governor, int APcount) {
   notify(Playernum, Governor, output);
 }
 
-void DispStar(int Playernum, int Governor, int level, startype *star,
-              int DontDispStars, int God, char *string) {
+static void DispStar(int Playernum, int Governor, int level, startype *star,
+                     int DontDispStars, int God, char *string) {
   int x = 0; // TODO(jeffbailey): Inititalized x and y to 0.
   int y = 0;
   int stand;
@@ -240,8 +247,9 @@ void DispStar(int Playernum, int Governor, int level, startype *star,
   }
 }
 
-void DispPlanet(int Playernum, int Governor, int level, planettype *p,
-                char *name, int DontDispPlanets, racetype *r, char *string) {
+static void DispPlanet(int Playernum, int Governor, int level, planettype *p,
+                       char *name, int DontDispPlanets, racetype *r,
+                       char *string) {
   int x = 0; // TODO(jeffbailey): Check if init to 0 is right.
   int y = 0;
   int stand;
@@ -282,8 +290,8 @@ void DispPlanet(int Playernum, int Governor, int level, planettype *p,
   }
 }
 
-void DispShip(int Playernum, int Governor, placetype *where, shiptype *ship,
-              planettype *pl, int God, char *string) {
+static void DispShip(int Playernum, int Governor, placetype *where,
+                     shiptype *ship, planettype *pl, int God, char *string) {
   int x, y, wm;
   int stand;
   shiptype *aship;

@@ -183,9 +183,9 @@ int main(int argc, char **argv) {
   FILE *sfile;
 
   descriptor_list = new std::list<descriptor_data *>();
-  commands =
-      new std::unordered_map<std::string, CommandFunction>{ { "relation",
-                                                              relation } };
+  commands = new std::unordered_map<std::string, CommandFunction>{
+    { "map", map }, { "orbit", orbit }, { "relation", relation }
+  };
 
   open_data_files();
   printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
@@ -1449,8 +1449,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     launch(Playernum, Governor, 0);
   else if (match(args[0], "load"))
     load(Playernum, Governor, 0, 0);
-  else if (match(args[0], "map"))
-    map(Playernum, Governor, 0);
   else if (match(args[0], "mobilize"))
     mobilize(Playernum, Governor, 1);
   else if (match(args[0], "move"))
@@ -1467,8 +1465,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     motto(Playernum, Governor, 0, comm);
   else if (match(args[0], "name"))
     name(Playernum, Governor, 0);
-  else if (match(args[0], "orbit"))
-    orbit(Playernum, Governor, 0);
   else if (match(args[0], "order"))
     order(Playernum, Governor, 1);
   else if (match(args[0], "page"))

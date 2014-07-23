@@ -175,7 +175,7 @@ static std::list<descriptor_data *> *descriptor_list;
 
 typedef void (*CommandFunction)(const command_t &argv, const player_t,
                                 const governor_t);
-static const std::unordered_map<const char *, CommandFunction> *commands;
+static const std::unordered_map<std::string, CommandFunction> *commands;
 
 int main(int argc, char **argv) {
   int i;
@@ -184,8 +184,8 @@ int main(int argc, char **argv) {
 
   descriptor_list = new std::list<descriptor_data *>();
   commands =
-      new std::unordered_map<const char *, CommandFunction>{ { "relation",
-                                                               relation } };
+      new std::unordered_map<std::string, CommandFunction>{ { "relation",
+                                                              relation } };
 
   open_data_files();
   printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
@@ -379,19 +379,18 @@ struct timeval msec_add(struct timeval t, int x) {
   return t;
 }
 
-void shovechars(int port) {
+void shovechars(int port) __attribute__((no_sanitize_memory)) {
   fd_set input_set, output_set;
   long now, go_time;
   struct timeval last_slice, current_time;
   struct timeval next_slice;
   struct timeval timeout, slice_timeout;
-  int maxd, i;
+  int i;
   descriptor_data *newd;
   int avail_descriptors;
 
   go_time = 0;
   sock = make_socket(port);
-  maxd = sock + 1;
   gettimeofday(&last_slice, (struct timezone *)0);
 
   avail_descriptors = getdtablesize() - 4;
@@ -428,7 +427,7 @@ void shovechars(int port) {
         FD_SET(d->descriptor, &output_set);
     }
 
-    if (select(maxd, &input_set, &output_set, (fd_set *)0, &timeout) < 0) {
+    if (select(FD_SETSIZE, &input_set, &output_set, NULL, &timeout) < 0) {
       if (errno != EINTR) {
         perror("select");
         return;
@@ -444,9 +443,6 @@ void shovechars(int port) {
             perror("new_connection");
             return;
           }
-        } else {
-          if (newd->descriptor >= maxd)
-            maxd = newd->descriptor + 1;
         }
       }
 
@@ -1353,7 +1349,7 @@ static void process_command(int Playernum, int Governor, const char *comm,
   while (*string && *string != ' ')
     string++;
 
-  auto command = commands->find(args[0]);
+  auto command = commands->find(argv[0]);
   if (command != commands->end()) {
     command->second(argv, Playernum, Governor);
   } else if (match(args[0], "announce")) /* keep this at the front */

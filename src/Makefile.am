@@ -23,7 +23,8 @@ AM_CXXFLAGS += \
 	    -Wno-padded
 
 #AM_CXXFLAGS += -fsanitize=address
-CXXFLAGS = -g -O1
+CXXFLAGS = -g -O0 -fPIE
+LDFLAGS = -pie
 AM_CXXFLAGS += -fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls
 
 bin_PROGRAMS = GB enrol makeuniv racegen
@@ -118,4 +119,4 @@ makeuniv_SOURCES = makeuniv.cc makestar.cc makeplanet.cc rand.cc perm.cc files.c
 .PHONY: start
 
 start: GB
-	MSAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5 ASAN_OPTIONS="detect_leaks=1" ./GB
+	ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5 MSAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5 ASAN_OPTIONS="detect_leaks=1" ./GB

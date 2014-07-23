@@ -22,9 +22,8 @@
 #include "tweakables.h"
 #include "vars.h"
 
-#define DISP_DATA 1
-
-static void show_map(int, int, int, int, planettype *, int, int);
+static void show_map(const player_t, const governor_t, const starnum_t,
+                     const planetnum_t, const planettype *);
 
 void map(const command_t &argv, const player_t Playernum,
          const governor_t Governor) {
@@ -40,7 +39,7 @@ void map(const command_t &argv, const player_t Playernum,
     return;
   } else if (where.level == LEVEL_PLAN) {
     getplanet(&p, where.snum, where.pnum);
-    show_map(Playernum, Governor, where.snum, where.pnum, p, DISP_DATA, 0);
+    show_map(Playernum, Governor, where.snum, where.pnum, p);
     free(p);
     if (Stars[where.snum]->stability > 50)
       notify(Playernum, Governor,
@@ -49,15 +48,20 @@ void map(const command_t &argv, const player_t Playernum,
     orbit(argv, Playernum, Governor); /* make orbit map instead */
 }
 
-static void show_map(int Playernum, int Governor, int snum, int pnum,
-                     planettype *p, int show, int iq) {
+static void show_map(const player_t Playernum, const governor_t Governor,
+                     const starnum_t snum, const planetnum_t pnum,
+                     const planettype *p) {
   int x, y, i, f = 0, owner, owned1;
+  int iq = 0;
   int sh;
   shiptype *s;
-  char shiplocs[MAX_X][MAX_Y];
+  char shiplocs[MAX_X][MAX_Y] = {};
   hugestr output;
 
-  bzero((char *)shiplocs, sizeof(shiplocs));
+  const int show = 1; // TODO(jeffbailey): This was always set to on, but this
+                      // fact is output to the client, which might affect the
+                      // client interface.  Can remove the conditional as soon
+                      // as we know that it's not client affecting.
 
   Race = races[Playernum - 1];
   getsmap(Smap, p);
@@ -177,8 +181,8 @@ static void show_map(int Playernum, int Governor, int snum, int pnum,
   }
 }
 
-char desshow(int Playernum, int Governor, planettype *p, int x, int y,
-             racetype *r) {
+char desshow(const player_t Playernum, const governor_t Governor,
+             const planettype *p, const int x, const int y, const racetype *r) {
   sectortype *s;
 
   s = &Sector(*p, x, y);

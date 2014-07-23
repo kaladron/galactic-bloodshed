@@ -13,6 +13,7 @@ extern const char *Planet_types[];
 
 void map(const command_t &argv, const player_t Playernum,
          const governor_t Governor);
-char desshow(int, int, planettype *, int, int, racetype *);
+char desshow(const player_t, const governor_t, const planettype *, const int,
+             const int, const racetype *);
 
 #endif // MAP_H

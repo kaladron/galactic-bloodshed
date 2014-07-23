@@ -10,7 +10,7 @@
 #include "vars.h"
 
 int maxsupport(racetype *, sectortype *, double, int);
-double compatibility(planettype *, racetype *);
+double compatibility(const planettype *, const racetype *);
 double gravity(planettype *);
 char *prin_ship_orbits(shiptype *);
 

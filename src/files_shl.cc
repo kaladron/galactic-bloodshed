@@ -133,7 +133,7 @@ void getsector(sectortype **s, planettype *p, int x, int y) {
   Fileread(sectdata, (char *)*s, sizeof(sectortype), filepos);
 }
 
-void getsmap(sectortype *map, planettype *p) {
+void getsmap(const sectortype *map, const planettype *p) {
   Fileread(sectdata, (char *)map, p->Maxx * p->Maxy * sizeof(sectortype),
            p->sectormappos);
 }

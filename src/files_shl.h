@@ -27,7 +27,7 @@ void getplanet(planettype **, starnum_t, planetnum_t);
 int getship(shiptype **, shipnum_t);
 int getcommod(commodtype **, int);
 void getsector(sectortype **, planettype *, int, int);
-void getsmap(sectortype *, planettype *);
+void getsmap(const sectortype *, const planettype *);
 int getdeadship(void);
 int getdeadcommod(void);
 void putsdata(struct stardata *);

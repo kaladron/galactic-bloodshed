@@ -37,7 +37,7 @@ int maxsupport(racetype *r, sectortype *s, double c, int toxic) {
   return val;
 }
 
-double compatibility(planettype *planet, racetype *race) {
+double compatibility(const planettype *planet, const racetype *race) {
   int i, add;
   double sum, atmosphere = 1.0;
 

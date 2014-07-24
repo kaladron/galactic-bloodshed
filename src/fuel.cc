@@ -29,9 +29,8 @@ static char plan_buf[1024];
 static segments_t number_segments;
 static double x_0, y_0, x_1, y_1;
 static shiptype *tmpship;
-static placetype tmpdest;
 
-static int do_trip(double fuel, double gravity_factor);
+static int do_trip(const placetype &, double fuel, double gravity_factor);
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
                         double grav, double mass, segments_t segs);
 
@@ -44,6 +43,7 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
   planettype *p;
   char buf[1024];
   double current_fuel = 0.0, gravity_factor = 0.0;
+  placetype tmpdest;
 
   if ((argn < 2) || (argn > 3)) {
     notify(Playernum, Governor, "Invalid number of options.\n\"fuel "
@@ -164,7 +164,7 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
   /*  First get the results based on current fuel load.  */
   (void)getship(&tmpship, shipno);
   level = tmpship->fuel;
-  current_settings = do_trip(tmpship->fuel, gravity_factor);
+  current_settings = do_trip(tmpdest, tmpship->fuel, gravity_factor);
   current_segs = number_segments;
   if (current_settings)
     current_fuel = level - tmpship->fuel;
@@ -175,7 +175,7 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
   opt_settings = 0;
   while (computing) {
     (void)getship(&tmpship, shipno);
-    computing = do_trip(level, gravity_factor);
+    computing = do_trip(tmpdest, level, gravity_factor);
     if ((computing) && (tmpship->fuel >= 0.05)) {
       fuel_usage = level;
       opt_settings = 1;
@@ -242,7 +242,8 @@ static void fuel_output(int Playernum, int Governor, double dist, double fuel,
   }
 }
 
-static int do_trip(double fuel, double gravity_factor) {
+static int do_trip(const placetype &tmpdest, double fuel,
+                   double gravity_factor) {
   segments_t effective_segment_number;
   int trip_resolved;
   double gravity_fuel, tmpdist, fuel_level1;

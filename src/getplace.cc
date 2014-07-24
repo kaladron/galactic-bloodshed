@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 #include <string.h>
 
 #include "GB_server.h"
@@ -28,72 +29,77 @@ static char Disps[PLACENAMESIZE];
 static placetype Getplace2(int Playernum, int Governor, const char *string,
                            placetype *where, int ignoreexpl, int God);
 
-placetype Getplace(int Playernum, int Governor, const char *string,
-                   int ignoreexpl) {
+placetype Getplace(const player_t Playernum, const governor_t Governor,
+                   const std::string &str, const int ignoreexpl) {
+  return Getplace(Playernum, Governor, str.c_str(), ignoreexpl);
+}
+
+placetype Getplace(const player_t Playernum, const governor_t Governor,
+                   const char *const string, const int ignoreexpl) {
   placetype where; /* return value */
   racetype *Race;
   int God;
-
-  bzero(&where, sizeof(where));
 
   Race = races[Playernum - 1];
   God = Race->God;
 
   where.err = 0;
 
-  switch (*string) {
-  case '/':
-    where.level = LEVEL_UNIV; /* scope = root (universe) */
-    where.snum = 0;
-    where.pnum = where.shipno = 0;
-    return (
-        Getplace2(Playernum, Governor, string + 1, &where, ignoreexpl, God));
-  case '#':
-    sscanf(++string, "%ld", &where.shipno);
-    if (!getship(&where.shipptr, where.shipno)) {
-      DontOwnErr(Playernum, Governor, where.shipno);
-      where.err = 1;
+  if (string != 0) {
+    switch (*string) {
+    case '/':
+      where.level = LEVEL_UNIV; /* scope = root (universe) */
+      where.snum = 0;
+      where.pnum = where.shipno = 0;
+      return (
+          Getplace2(Playernum, Governor, string + 1, &where, ignoreexpl, God));
+    case '#':
+      sscanf(string + 1, "%ld", &where.shipno);
+      if (!getship(&where.shipptr, where.shipno)) {
+        DontOwnErr(Playernum, Governor, where.shipno);
+        where.err = 1;
+        return where;
+      }
+      if ((where.shipptr->owner == Playernum || ignoreexpl || God) &&
+          (where.shipptr->alive || God)) {
+        where.level = LEVEL_SHIP;
+        where.snum = where.shipptr->storbits;
+        where.pnum = where.shipptr->pnumorbits;
+        free(where.shipptr);
+        return where;
+      } else {
+        where.err = 1;
+        free(where.shipptr);
+        return where;
+      }
+    case '-':
+      /* no destination */
+      where.level = LEVEL_UNIV;
       return where;
     }
-    if ((where.shipptr->owner == Playernum || ignoreexpl || God) &&
-        (where.shipptr->alive || God)) {
-      where.level = LEVEL_SHIP;
-      where.snum = where.shipptr->storbits;
-      where.pnum = where.shipptr->pnumorbits;
-      free(where.shipptr);
-      return where;
-    } else {
-      where.err = 1;
-      free(where.shipptr);
-      return where;
-    }
-  case '-':
-    /* no destination */
-    where.level = LEVEL_UNIV;
-    return where;
-  default:
-    /* copy current scope to scope */
-    where.level = Dir[Playernum - 1][Governor].level;
-    where.snum = Dir[Playernum - 1][Governor].snum;
-    where.pnum = Dir[Playernum - 1][Governor].pnum;
-    if (where.level == LEVEL_SHIP)
-      where.shipno = Dir[Playernum - 1][Governor].shipno;
-    if (*string == CHAR_CURR_SCOPE)
-      return where;
-    else
-      return Getplace2(Playernum, Governor, string, &where, ignoreexpl, God);
   }
+
+  /* copy current scope to scope */
+  where.level = Dir[Playernum - 1][Governor].level;
+  where.snum = Dir[Playernum - 1][Governor].snum;
+  where.pnum = Dir[Playernum - 1][Governor].pnum;
+  if (where.level == LEVEL_SHIP)
+    where.shipno = Dir[Playernum - 1][Governor].shipno;
+  if (string != NULL && *string == CHAR_CURR_SCOPE)
+    return where;
+  else
+    return Getplace2(Playernum, Governor, string, &where, ignoreexpl, God);
 }
 
-static placetype Getplace2(int Playernum, int Governor, const char *string,
-                           placetype *where, int ignoreexpl, int God) {
+static placetype Getplace2(const int Playernum, const int Governor, const char * string,
+                           placetype *where, const int ignoreexpl, const int God) {
   char substr[NAMESIZE];
   planettype *p;
   uint8_t i;
   size_t l;
   int tick;
 
-  if (where->err || *string == '\0' || *string == '\n')
+  if (where->err || string == NULL || *string == '\0' || *string == '\n')
     return (*where); /* base cases */
   else if (*string == '.') {
     if (where->level == LEVEL_UNIV) {

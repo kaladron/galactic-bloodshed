@@ -276,9 +276,9 @@ struct place { /* used in function return for finding place */
   starnum_t snum;
   planetnum_t pnum;
   shipnum_t shipno;
-  shiptype *shipptr;
+  shiptype *shipptr = NULL;
   levels_t level;    /* .level: same as Dir */
-  unsigned char err; /* if error */
+  unsigned char err = 0; /* if error */
 };
 
 /* can takeoff & land, is mobile, etc. */

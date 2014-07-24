@@ -30,22 +30,30 @@ void map(const command_t &argv, const player_t Playernum,
   planettype *p;
   placetype where;
 
-  where = Getplace(Playernum, Governor, args[1], 0);
+  if (argv.size() > 1) {
+    where = Getplace(Playernum, Governor, argv[1], 0);
+  } else {
+    where = Getplace(Playernum, Governor, NULL, 0);
+  }
 
   if (where.err)
     return;
-  else if (where.level == LEVEL_SHIP) {
+
+  switch (where.level) {
+  case LEVEL_SHIP:
     notify(Playernum, Governor, "Bad scope.\n");
     return;
-  } else if (where.level == LEVEL_PLAN) {
+  case LEVEL_PLAN:
     getplanet(&p, where.snum, where.pnum);
     show_map(Playernum, Governor, where.snum, where.pnum, p);
     free(p);
     if (Stars[where.snum]->stability > 50)
       notify(Playernum, Governor,
              "WARNING! This planet's primary is unstable.\n");
-  } else
+    break;
+  default:
     orbit(argv, Playernum, Governor); /* make orbit map instead */
+  }
 }
 
 static void show_map(const player_t Playernum, const governor_t Governor,

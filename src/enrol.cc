@@ -75,7 +75,7 @@ int main() {
 #define STRSIZE 100
   char str[STRSIZE], c;
   sectortype *sect;
-  struct stype secttypes[WASTED + 1];
+  struct stype secttypes[WASTED + 1] = {};
   planettype *planet;
   unsigned char not_found[TYPE_MAX + 1];
   startype *star_arena;
@@ -283,8 +283,6 @@ int main() {
     if (fgets(str, STRSIZE, stdin) == NULL)
       exit(1);
   } while (str[0] != 'y');
-
-  bzero((char *)secttypes, sizeof(secttypes));
 
   getsmap(Smap, planet);
 

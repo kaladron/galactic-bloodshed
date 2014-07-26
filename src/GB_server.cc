@@ -185,7 +185,7 @@ int main(int argc, char **argv) {
 
   descriptor_list = new std::list<descriptor_data *>();
   commands = new std::unordered_map<std::string, CommandFunction>{
-    { "map", map }, { "orbit", orbit }, { "relation", relation }
+    { "map", map }, {"mount", mount}, { "orbit", orbit }, { "relation", relation }, {"dismount", mount}
   };
 
   open_data_files();
@@ -1405,8 +1405,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     detonate(Playernum, Governor, 0);
   else if (match(args[0], "distance"))
     distance(Playernum, Governor, 0);
-  else if (match(args[0], "dismount"))
-    mount(Playernum, Governor, 0, 0);
   else if (match(args[0], "dissolve") && !Guest)
     dissolve(Playernum, Governor);
   else if (match(args[0], "dock"))
@@ -1460,8 +1458,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     make_mod(Playernum, Governor, 0, 0);
   else if (match(args[0], "modify"))
     make_mod(Playernum, Governor, 0, 1);
-  else if (match(args[0], "mount"))
-    mount(Playernum, Governor, 0, 1);
   else if (match(args[0], "motto"))
     motto(Playernum, Governor, 0, comm);
   else if (match(args[0], "name"))

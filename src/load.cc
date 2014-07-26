@@ -28,6 +28,7 @@
 static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
 
 static int jettison_check(int, int, int, int);
+static int landed_on(shiptype *, int);
 
 void load(int Playernum, int Governor, int APcount, int mode) {
   char commod;
@@ -804,7 +805,11 @@ void transfer(int Playernum, int Governor, int APcount) {
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
 }
 
-void mount(int Playernum, int Governor, int APcount, int mnt) {
+void mount(const command_t &argv, const player_t Playernum,
+                      const governor_t Governor) {
+  bool mnt;
+  if (argv[0] == "mount") mnt=true; else mnt=false;
+
   shiptype *ship;
   int shipno, nextshipno;
 
@@ -1022,7 +1027,7 @@ void do_transporter(racetype *Race, int Governor, shiptype *s) {
   free(s2);
 }
 
-int landed_on(shiptype *s, int shipno) {
+static int landed_on(shiptype *s, int shipno) {
   return (s->whatorbits == LEVEL_SHIP && s->destshipno == shipno);
 }
 

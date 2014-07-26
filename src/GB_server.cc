@@ -128,6 +128,7 @@ public:
 static int sock;
 static int ndescriptors = 0;
 
+static double GetComplexity(int);
 static void set_signals(void);
 static void queue_string(descriptor_data *d, const char *message);
 static void queue_write(descriptor_data *, const char *, int);
@@ -135,6 +136,7 @@ static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
 static void help(descriptor_data *);
 static void process_command(int, int, const char *, const command_t &argv);
+static char *strsave(char *);
 
 descriptor_data *new_connection(int);
 char *addrout(long);
@@ -150,7 +152,6 @@ int process_output(descriptor_data *);
 void welcome_user(descriptor_data *);
 int flush_queue(struct text_queue *, int);
 void free_text_block(struct text_block *);
-char *strsave(char *);
 void process_commands(void);
 int do_command(descriptor_data *, char *);
 void goodbye_user(descriptor_data *);
@@ -902,7 +903,7 @@ void goodbye_user(descriptor_data *d) {
     write(d->descriptor, LEAVE_MESSAGE, strlen(LEAVE_MESSAGE));
 }
 
-char *strsave(char *s) {
+static char *strsave(char *s) {
   char *p;
 
   p = (char *)malloc((strlen(s) + 1) * sizeof(char));
@@ -1907,7 +1908,7 @@ void remove_sh_ship(shiptype *s, shiptype *ship) {
   s->whatorbits = LEVEL_UNIV; /* put in limbo - wait for insert_sh.. */
 }
 
-double GetComplexity(int ship) {
+static double GetComplexity(int ship) {
   shiptype s;
 
   s.armor = Shipdata[ship][ABIL_ARMOR];

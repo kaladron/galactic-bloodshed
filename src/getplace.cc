@@ -91,8 +91,9 @@ placetype Getplace(const player_t Playernum, const governor_t Governor,
     return Getplace2(Playernum, Governor, string, &where, ignoreexpl, God);
 }
 
-static placetype Getplace2(const int Playernum, const int Governor, const char * string,
-                           placetype *where, const int ignoreexpl, const int God) {
+static placetype Getplace2(const int Playernum, const int Governor,
+                           const char *string, placetype *where,
+                           const int ignoreexpl, const int God) {
   char substr[NAMESIZE];
   planettype *p;
   uint8_t i;

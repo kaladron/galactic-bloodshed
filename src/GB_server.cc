@@ -184,8 +184,20 @@ int main(int argc, char **argv) {
   FILE *sfile;
 
   descriptor_list = new std::list<descriptor_data *>();
+  // TODO(jeffbailey): bid, buy and sell should be only available if market is
+  // set.
   commands = new std::unordered_map<std::string, CommandFunction>{
-    { "map", map }, {"mount", mount}, { "orbit", orbit }, { "relation", relation }, {"dismount", mount}
+    { "bid", bid },
+    { "build", build },
+    { "dismount", mount },
+    { "make", make_mod },
+    { "map", map },
+    { "modify", make_mod },
+    { "mount", mount },
+    { "orbit", orbit },
+    { "relation", relation },
+    { "sell", sell },
+    { "upgrade", upgrade }
   };
 
   open_data_files();
@@ -1367,14 +1379,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     dock(Playernum, Governor, 1, 1);
   else if (match(args[0], "autoreport"))
     autoreport(Playernum, Governor, 0);
-  else if (match(args[0], "build"))
-    build(Playernum, Governor, 1);
-#ifdef MARKET
-  else if (match(args[0], "bid"))
-    bid(Playernum, Governor, 0);
-  else if (match(args[0], "sell"))
-    sell(Playernum, Governor, 20);
-#endif
   else if (match(args[0], "bless") && God)
     bless(Playernum, Governor, 0);
   else if (match(args[0], "'") || match(args[0], "broadcast"))
@@ -1454,10 +1458,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     move_popn(Playernum, Governor, CIV);
   else if (match(args[0], "deploy"))
     move_popn(Playernum, Governor, MIL);
-  else if (match(args[0], "make"))
-    make_mod(Playernum, Governor, 0, 0);
-  else if (match(args[0], "modify"))
-    make_mod(Playernum, Governor, 0, 1);
   else if (match(args[0], "motto"))
     motto(Playernum, Governor, 0, comm);
   else if (match(args[0], "name"))
@@ -1554,8 +1554,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     invite(Playernum, Governor, 0, 0);
   else if (match(args[0], "unpledge"))
     pledge(Playernum, Governor, 0, 0);
-  else if (match(args[0], "upgrade"))
-    upgrade(Playernum, Governor, 1);
   else if (match(args[0], "victory"))
     victory(Playernum, Governor, 0);
   else if (match(args[0], "walk"))

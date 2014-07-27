@@ -806,9 +806,12 @@ void transfer(int Playernum, int Governor, int APcount) {
 }
 
 void mount(const command_t &argv, const player_t Playernum,
-                      const governor_t Governor) {
+           const governor_t Governor) {
   bool mnt;
-  if (argv[0] == "mount") mnt=true; else mnt=false;
+  if (argv[0] == "mount")
+    mnt = true;
+  else
+    mnt = false;
 
   shiptype *ship;
   int shipno, nextshipno;

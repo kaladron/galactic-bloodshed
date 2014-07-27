@@ -14,7 +14,7 @@ void jettison(int, int, int);
 void dump(int, int, int);
 void transfer(int, int, int);
 void mount(const command_t &argv, const player_t Playernum,
-                      const governor_t Governor);
+           const governor_t Governor);
 void use_fuel(shiptype *, double);
 void use_destruct(shiptype *, int);
 void use_resource(shiptype *, int);

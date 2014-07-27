@@ -116,7 +116,5 @@ racegen_CXXFLAGS += \
 
 makeuniv_SOURCES = makeuniv.cc makestar.cc makeplanet.cc rand.cc perm.cc files.cc
 
-.PHONY: start run-enroll
-
 run-%: %
 	ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5 MSAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5 ASAN_OPTIONS="detect_leaks=1" ./$<

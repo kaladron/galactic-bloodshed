@@ -30,8 +30,6 @@
 #define COMMANDSIZE 42
 #define MAXARGS 256
 
-#define CHAR_CURR_SCOPE ':' /* for getplace */
-
 #define RTEMP 0   /* regular temp for planet */
 #define TEMP 1    /* temperature */
 #define METHANE 2 /* %age of gases for terraforming */
@@ -44,23 +42,25 @@
 #define OTHER 9
 #define TOXIC 10
 
-#define CHAR_LAND '*'
-#define CHAR_SEA '.'
-#define CHAR_MOUNT '^'
-#define CHAR_DIFFOWNED '?'
-#define CHAR_PLATED 'o'
-#define CHAR_WASTED '%'
-#define CHAR_GAS '~'
-#define CHAR_CLOAKED ' '
-#define CHAR_ICE '#'
-#define CHAR_CRYSTAL 'x'
-#define CHAR_DESERT '-'
-#define CHAR_FOREST ')'
+const char CHAR_CURR_SCOPE = ':'; /* for getplace */
 
-#define CHAR_MY_TROOPS 'X'
-#define CHAR_ALLIED_TROOPS 'A'
-#define CHAR_ATWAR_TROOPS 'E'
-#define CHAR_NEUTRAL_TROOPS 'N'
+const char CHAR_LAND = '*';
+const char CHAR_SEA = '.';
+const char CHAR_MOUNT = '^';
+const char CHAR_DIFFOWNED = '?';
+const char CHAR_PLATED = 'o';
+const char CHAR_WASTED = '%';
+const char CHAR_GAS = '~';
+const char CHAR_CLOAKED = ' ';
+const char CHAR_ICE = '#';
+const char CHAR_CRYSTAL = 'x';
+const char CHAR_DESERT = '-';
+const char CHAR_FOREST = ')';
+
+const char CHAR_MY_TROOPS = 'X';
+const char CHAR_ALLIED_TROOPS = 'A';
+const char CHAR_ATWAR_TROOPS = 'E';
+const char CHAR_NEUTRAL_TROOPS = 'N';
 
 /* 3.0 feature */
 #define LIMITED_RESOURCES                                                      \

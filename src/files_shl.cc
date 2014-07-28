@@ -28,9 +28,7 @@ static int commoddata, pdata, racedata, sectdata, shdata, stdata;
 
 void close_file(int fd) { close(fd); }
 
-void initplanetdata() {
-
-}
+void initplanetdata() {}
 
 void open_data_files(void) {
   opencommoddata(&commoddata);

@@ -70,10 +70,10 @@ void do_VN(shiptype *ship) {
         else if (ship->type == OTYPE_BERS)
           rcv_destruct(ship, prod);
         if (ship->type == OTYPE_VN) {
-          sprintf(buf, "%d resources stolen from [%d] by %c%d at %s.", prod, f,
+          sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
                   Shipltrs[OTYPE_VN], ship->number, prin_ship_orbits(ship));
         } else if (ship->type == OTYPE_BERS) {
-          sprintf(buf, "%d resources stolen from [%d] by %c%d at %s.", prod, f,
+          sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
                   Shipltrs[OTYPE_BERS], ship->number, prin_ship_orbits(ship));
         }
         push_telegram_race(f, buf);

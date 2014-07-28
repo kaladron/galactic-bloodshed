@@ -121,10 +121,10 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
             msg_OOF(ship);
           }
         } else if (ship->on) {
-          sprintf(buf, "K%d is not landed.", ship->number);
+          sprintf(buf, "K%lu is not landed.", ship->number);
           push_telegram(ship->owner, ship->governor, buf);
         } else {
-          sprintf(buf, "K%d is not switched on.", ship->number);
+          sprintf(buf, "K%lu is not switched on.", ship->number);
           push_telegram(ship->owner, ship->governor, buf);
         }
         break;
@@ -133,14 +133,14 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
           if (ship->resource >= RES_COST_DOME)
             do_dome(ship, planet);
           else {
-            sprintf(buf, "Y%d does not have enough resources.", ship->number);
+            sprintf(buf, "Y%lu does not have enough resources.", ship->number);
             push_telegram(ship->owner, ship->governor, buf);
           }
         } else if (ship->on) {
-          sprintf(buf, "Y%d is not landed.", ship->number);
+          sprintf(buf, "Y%lu is not landed.", ship->number);
           push_telegram(ship->owner, ship->governor, buf);
         } else {
-          sprintf(buf, "Y%d is not switched on.", ship->number);
+          sprintf(buf, "Y%lu is not switched on.", ship->number);
           push_telegram(ship->owner, ship->governor, buf);
         }
         break;
@@ -151,15 +151,16 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
             prod_destruct[ship->owner - 1] += do_weapon_plant(ship);
           else {
             if (ship->resource < RES_COST_WPLANT) {
-              sprintf(buf, "W%d does not have enough resources.", ship->number);
+              sprintf(buf, "W%lu does not have enough resources.",
+                      ship->number);
               push_telegram(ship->owner, ship->governor, buf);
             } else {
-              sprintf(buf, "W%d does not have enough fuel.", ship->number);
+              sprintf(buf, "W%lu does not have enough fuel.", ship->number);
               push_telegram(ship->owner, ship->governor, buf);
             }
           }
         else {
-          sprintf(buf, "W%d is not landed.", ship->number);
+          sprintf(buf, "W%lu is not landed.", ship->number);
           push_telegram(ship->owner, ship->governor, buf);
         }
         break;
@@ -173,13 +174,13 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
           }
         } else {
           if (!ship->on) {
-            sprintf(buf, "q%d is not switched on.", ship->number);
+            sprintf(buf, "q%lu is not switched on.", ship->number);
           }
           if (!landed(ship)) {
-            sprintf(buf, "q%d is not landed.", ship->number);
+            sprintf(buf, "q%lu is not landed.", ship->number);
           }
           if (!ship->popn) {
-            sprintf(buf, "q%d does not have workers aboard.", ship->number);
+            sprintf(buf, "q%lu does not have workers aboard.", ship->number);
           }
           push_telegram(ship->owner, ship->governor, buf);
         }
@@ -675,11 +676,11 @@ void terraform(shiptype *ship, planettype *planet) {
       msg_OOF(ship);
     }
   } else if (s->condition == races[ship->owner - 1]->likesbest) {
-    sprintf(buf, " T%d is full of zealots!!!", ship->number);
+    sprintf(buf, " T%lu is full of zealots!!!", ship->number);
     push_telegram(ship->owner, ship->governor, buf);
   }
   if (s->condition == GAS) {
-    sprintf(buf, " T%d is trying to terraform gas.", ship->number);
+    sprintf(buf, " T%lu is trying to terraform gas.", ship->number);
     push_telegram(ship->owner, ship->governor, buf);
   }
 }
@@ -701,7 +702,7 @@ void plow(shiptype *ship, planettype *planet) {
     }
     s->fert = MIN(100, s->fert + adjust);
     if (s->fert >= 100) {
-      sprintf(buf, " K%d is full of zealots!!!", ship->number);
+      sprintf(buf, " K%lu is full of zealots!!!", ship->number);
       push_telegram(ship->owner, ship->governor, buf);
     }
     use_fuel(ship, FUEL_COST_PLOW);
@@ -716,7 +717,7 @@ void do_dome(shiptype *ship, planettype *planet) {
 
   s = &Sector(*planet, (int)ship->land_x, (int)ship->land_y);
   if (s->eff >= 100) {
-    sprintf(buf, " Y%d is full of zealots!!!", ship->number);
+    sprintf(buf, " Y%lu is full of zealots!!!", ship->number);
     push_telegram(ship->owner, ship->governor, buf);
     return;
   }

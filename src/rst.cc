@@ -243,7 +243,8 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
         if (!SHip)
           first = 0;
       }
-      sprintf(buf, "%5lu %c %14.14s %s%s%s%3u%c/%3u%c%4lu%5.0f%4lu%5lu%7.1f%4u",
+      sprintf(buf,
+              "%5lu %c %14.14s %s%s%s%3lu%c/%3lu%c%4lu%5.0f%4lu%5lu%7.1f%4u",
               shipno, Shipltrs[s->type], (s->active ? s->name : "INACTIVE"),
               s->laser ? "yes " : "    ", s->cew ? "yes " : "    ",
               s->hyper_drive.has ? "yes " : "    ", s->primary,
@@ -267,7 +268,7 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
       }
       sprintf(
           buf,
-          "%5lu %c %14.14s %s  %3d/%-4d  %4d  %3d%c/%3d%c    %3d%%  %c %s\n",
+          "%5lu %c %14.14s %s  %3d/%-4d  %4d  %3lu%c/%3lu%c    %3d%%  %c %s\n",
           shipno, Shipltrs[s->type], (s->active ? s->name : "INACTIVE"),
           s->laser ? "yes " : "    ", s->cew, s->cew_range,
           (int)((1.0 - .01 * s->damage) * s->tech / 4.0), s->primary,
@@ -294,7 +295,7 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
         notify(Playernum, Governor, buf);
       } else {
         if (s->primtype)
-          sprintf(tmpbuf1, "%2d%s", s->primary,
+          sprintf(tmpbuf1, "%2lu%s", s->primary,
                   s->primtype == LIGHT ? "L" : s->primtype == MEDIUM
                                                    ? "M"
                                                    : s->primtype == HEAVY
@@ -303,7 +304,7 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
         else
           strcpy(tmpbuf1, "---");
         if (s->sectype)
-          sprintf(tmpbuf2, "%2d%s", s->secondary,
+          sprintf(tmpbuf2, "%2lu%s", s->secondary,
                   s->sectype == LIGHT ? "L" : s->sectype == MEDIUM
                                                   ? "M"
                                                   : s->sectype == HEAVY ? "H"
@@ -391,8 +392,9 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
         }
         fdam = s->damage;
         sprintf(orb, "%30.30s", Dispplace(Playernum, Governor, &where));
-        sprintf(buf, "%3lu %c %16.16s %4.0f%3d%c/%3d%c%6d%5d%5u%7.1f%3d%%  %d  "
-                     "%3s%21.22s",
+        sprintf(buf,
+                "%3lu %c %16.16s %4.0f%3lu%c/%3lu%c%6d%5d%5u%7.1f%3d%%  %d  "
+                "%3s%21.22s",
                 shipno, Shipltrs[s->type], (s->active ? s->name : "INACTIVE"),
                 s->tech, s->primary, Caliber[s->primtype], s->secondary,
                 Caliber[s->sectype], s->armor, s->size, s->destruct, s->fuel,

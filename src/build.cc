@@ -6,6 +6,7 @@
 
 #include "build.h"
 
+#include <ctgmath>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -370,7 +371,7 @@ void make_mod(const command_t &argv, const player_t Playernum,
       notify(Playernum, Governor, buf);
       if (Shipdata[dirship->build_type][ABIL_PRIMARY] &&
           dirship->primtype != NONE) {
-        sprintf(buf, "%3d%c", dirship->primary,
+        sprintf(buf, "%3lu%c", dirship->primary,
                 (dirship->primtype == LIGHT
                      ? 'L'
                      : dirship->primtype == MEDIUM
@@ -380,7 +381,7 @@ void make_mod(const command_t &argv, const player_t Playernum,
       }
       if (Shipdata[dirship->build_type][ABIL_SECONDARY] &&
           dirship->sectype != NONE) {
-        sprintf(buf, "/%d%c", dirship->secondary,
+        sprintf(buf, "/%lu%c", dirship->secondary,
                 (dirship->sectype == LIGHT
                      ? 'L'
                      : dirship->sectype == MEDIUM
@@ -1497,13 +1498,13 @@ double getmass(shiptype *s) {
           MASS_GUNS * s->secondary * s->sectype);
 }
 
-int ship_size(shiptype *s) {
+unsigned int ship_size(shiptype *s) {
   double size;
   size = 1.0 + SIZE_GUNS * s->primary + SIZE_GUNS * s->secondary +
          SIZE_CREW * s->max_crew + SIZE_RESOURCE * s->max_resource +
          SIZE_FUEL * s->max_fuel + SIZE_DESTRUCT * s->max_destruct +
          s->max_hanger;
-  return ((int)size);
+  return (std::floor(size));
 }
 
 double cost(shiptype *s) {

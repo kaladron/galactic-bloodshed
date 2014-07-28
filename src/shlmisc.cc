@@ -26,7 +26,7 @@
 
 char *Ship(shiptype *s) {
   adr = !adr; /* switch between 0 and 1 - adr is a global variable */
-  sprintf(junk[adr], "%c%d %s [%d]", Shipltrs[s->type], s->number, s->name,
+  sprintf(junk[adr], "%c%lu %s [%d]", Shipltrs[s->type], s->number, s->name,
           s->owner);
   return junk[adr]; /* junk is a global buffer */
 }

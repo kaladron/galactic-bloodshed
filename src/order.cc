@@ -701,7 +701,7 @@ void DispOrders(int Playernum, int Governor, shiptype *ship) {
   else
     strcpy(temp, prin_ship_dest(Playernum, Governor, ship));
 
-  sprintf(buf, "%5d %c %14.14s %c%1u %-10s %-10.10s ", ship->number,
+  sprintf(buf, "%5lu %c %14.14s %c%1u %-10s %-10.10s ", ship->number,
           Shipltrs[ship->type], ship->name,
           ship->hyper_drive.has ? (ship->mounted ? '+' : '*') : ' ',
           ship->speed, Dispshiploc_brief(ship), temp);

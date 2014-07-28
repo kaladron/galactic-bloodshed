@@ -403,12 +403,12 @@ static void DispShip(int Playernum, int Governor, placetype *where,
     /* (magnification) */
     if (x >= 0 && y >= 0) {
       if (Race->governor[Governor].toggle.color) {
-        sprintf(string, "%c %d %d %d %c %c %d;", (char)(ship->owner + '?'), x,
+        sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'), x,
                 y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
                 ship->number);
       } else {
         stand = (ship->owner == Race->governor[Governor].toggle.highlight);
-        sprintf(string, "%d %d %d %d %c %d %d;", stand, x, y, wm,
+        sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
                 Shipltrs[ship->type], stand, ship->number);
       }
     }
@@ -424,12 +424,12 @@ static void DispShip(int Playernum, int Governor, placetype *where,
     if (ship->whatorbits != LEVEL_UNIV || ((ship->owner == Playernum) || God))
       if (x >= 0 && y >= 0) {
         if (Race->governor[Governor].toggle.color) {
-          sprintf(string, "%c %d %d %d %c %c %d;", (char)(ship->owner + '?'), x,
-                  y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
+          sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'),
+                  x, y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
                   ship->number);
         } else {
           stand = (ship->owner == Race->governor[Governor].toggle.highlight);
-          sprintf(string, "%d %d %d %d %c %d %d;", stand, x, y, wm,
+          sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
                   Shipltrs[ship->type], stand, ship->number);
         }
       }

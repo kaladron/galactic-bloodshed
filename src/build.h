@@ -17,7 +17,7 @@ void build(const command_t &argv, const player_t Playernum,
            const governor_t Governor);
 double cost(shiptype *);
 double getmass(shiptype *);
-int ship_size(shiptype *);
+unsigned int ship_size(shiptype *);
 double complexity(shiptype *);
 int Shipcost(int, racetype *);
 void sell(const command_t &argv, const player_t Playernum,

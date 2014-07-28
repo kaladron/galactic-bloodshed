@@ -105,9 +105,9 @@ typedef struct place placetype;
 
 class ship {
 public:
-  unsigned short number;         /* ship knows its own number */
-  unsigned char owner;           /* owner of ship */
-  unsigned char governor;        /* subordinate that controls the ship */
+  shipnum_t number;              /* ship knows its own number */
+  player_t owner;                /* owner of ship */
+  governor_t governor;           /* subordinate that controls the ship */
   char name[SHIP_NAMESIZE];      /* name of ship (optional) */
   char shipclass[SHIP_NAMESIZE]; /* shipclass of ship - designated by players */
 
@@ -263,10 +263,10 @@ public:
 
   unsigned char merchant; /* this contains the route number */
   unsigned char guns;     /* current gun system which is active */
-  unsigned char primary;  /* describe primary gun system */
-  unsigned char primtype;
-  unsigned char secondary; /* describe secondary guns */
-  unsigned char sectype;
+  unsigned long primary;  /* describe primary gun system */
+  unsigned long primtype;
+  unsigned long secondary; /* describe secondary guns */
+  unsigned long sectype;
 
   unsigned short hanger;     /* amount of hanger space used */
   unsigned short max_hanger; /* total hanger space */

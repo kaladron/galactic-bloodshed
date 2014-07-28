@@ -92,7 +92,7 @@ int Bombard(shiptype *ship, planettype *planet, racetype *r) {
         numdest = 0;
 
       /* tell the bombarding player about it.. */
-      sprintf(telegram_buf, "REPORT from ship #%d\n\n", ship->number);
+      sprintf(telegram_buf, "REPORT from ship #%lu\n\n", ship->number);
       strcat(telegram_buf, short_buf);
       sprintf(buf, "sector %d,%d (owner %d).  %d sectors destroyed.\n", x, y,
               oldown, numdest);
@@ -103,10 +103,10 @@ int Bombard(shiptype *ship, planettype *planet, racetype *r) {
       sprintf(telegram_buf, "ALERT from planet /%s/%s\n",
               Stars[ship->storbits]->name,
               Stars[ship->storbits]->pnames[ship->pnumorbits]);
-      sprintf(buf, "%c%d %s bombarded sector %d,%d; %d sectors destroyed.\n",
+      sprintf(buf, "%c%lu%s bombarded sector %d,%d; %d sectors destroyed.\n",
               Shipltrs[ship->type], ship->number, ship->name, x, y, numdest);
       strcat(telegram_buf, buf);
-      sprintf(buf, "%c%d %s [%d] bombards %s/%s\n", Shipltrs[ship->type],
+      sprintf(buf, "%c%lu %s [%d] bombards %s/%s\n", Shipltrs[ship->type],
               ship->number, ship->name, ship->owner,
               Stars[ship->storbits]->name,
               Stars[ship->storbits]->pnames[ship->pnumorbits]);
@@ -121,7 +121,7 @@ int Bombard(shiptype *ship, planettype *planet, racetype *r) {
       if (!ship->notified) {
         ship->notified = 1;
         sprintf(telegram_buf,
-                "Bulletin\n\n %c%d %s has no weapons to bombard with.\n",
+                "Bulletin\n\n %c%lu %s has no weapons to bombard with.\n",
                 Shipltrs[ship->type], ship->number, ship->name);
         warn((int)ship->owner, (int)ship->governor, telegram_buf);
       }
@@ -133,7 +133,7 @@ int Bombard(shiptype *ship, planettype *planet, racetype *r) {
     /* there were no sectors worth bombing. */
     if (!ship->notified) {
       ship->notified = 1;
-      sprintf(telegram_buf, "Report from %c%d %s\n\n", Shipltrs[ship->type],
+      sprintf(telegram_buf, "Report from %c%lu %s\n\n", Shipltrs[ship->type],
               ship->number, ship->name);
       sprintf(buf, "Planet /%s/%s has been saturation bombed.\n",
               Stars[ship->storbits]->name,

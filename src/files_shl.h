@@ -30,6 +30,7 @@ void getsector(sectortype **, planettype *, int, int);
 void getsmap(const sectortype *, const planettype *);
 int getdeadship(void);
 int getdeadcommod(void);
+void initplanetdata(void);
 void putsdata(struct stardata *);
 void putrace(racetype *);
 void putstar(startype *, int);

@@ -147,6 +147,8 @@ int main(int argc, char *argv[]) {
   sprintf(str, "/bin/mkdir %s", DATADIR);
   system(str);
 
+  initplanetdata();
+
   if (NULL == (planetdata = fopen(PLANETDATAFL, "w+"))) {
     printf("Unable to open planet data file \"%s\"\n", PLANETDATAFL);
     exit(-1);

@@ -12,8 +12,8 @@ AM_CXXFLAGS = -std=c++11 -W -Weverything -Werror \
 	    -Wno-sign-compare \
 	    -Wno-tautological-constant-out-of-range-compare
 
-#AM_CXXFLAGS += \
-#	    -Wno-conversion
+AM_CXXFLAGS += \
+	    -Wno-conversion
 
 # These warnings seem like ones we'll never enable
 AM_CXXFLAGS += \

@@ -7,6 +7,7 @@
 
 #include "vars.h"
 
-void rst(player_t, governor_t, int, int);
+void rst(const command_t &argv, const player_t Playernum,
+         const governor_t Governor);
 
 #endif // RST_H

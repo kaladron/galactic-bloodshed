@@ -190,14 +190,21 @@ int main(int argc, char **argv) {
     { "bid", bid },
     { "build", build },
     { "dismount", mount },
+    { "factories", rst },
     { "make", make_mod },
     { "map", map },
     { "modify", make_mod },
     { "mount", mount },
     { "orbit", orbit },
     { "relation", relation },
+    { "report", rst },
     { "sell", sell },
-    { "upgrade", upgrade }
+    { "ship", rst },
+    { "stats", rst },
+    { "stock", rst },
+    { "tactical", rst },
+    { "upgrade", upgrade },
+    { "weapons", rst },
   };
 
   open_data_files();
@@ -1495,11 +1502,7 @@ static void process_command(int Playernum, int Governor, const char *comm,
     load_race_data();
     load_star_data();
     do_reset(1);
-  } else if (match(args[0], "report"))
-    rst(Playernum, Governor, 0, 0);
-  else if (match(args[0], "factories"))
-    rst(Playernum, Governor, 0, 6);
-  else if (match(args[0], "repair"))
+  } else if (match(args[0], "repair"))
     repair(Playernum, Governor, 0);
   else if (match(args[0], "route"))
     route(Playernum, Governor, 0);
@@ -1510,12 +1513,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     do_update(1);
   else if (match(args[0], "@@segment") && God)
     do_segment(1, atoi(args[1]));
-  else if (match(args[0], "stock"))
-    rst(Playernum, Governor, 0, 1);
-  else if (match(args[0], "stats"))
-    rst(Playernum, Governor, 0, 4);
-  else if (match(args[0], "ship"))
-    rst(Playernum, Governor, 0, 3);
   else if (match(args[0], "survey"))
     survey(Playernum, Governor, 0, 0);
   else if (match(args[0], "client_survey"))
@@ -1528,8 +1525,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     star_locations(Playernum, Governor, 0);
   else if (match(args[0], "status"))
     tech_status(Playernum, Governor, 0);
-  else if (match(args[0], "tactical"))
-    rst(Playernum, Governor, 0, 2);
 #ifdef MARKET
   else if (match(args[0], "tax"))
     tax(Playernum, Governor, 0);
@@ -1558,8 +1553,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     victory(Playernum, Governor, 0);
   else if (match(args[0], "walk"))
     walk(Playernum, Governor, 1);
-  else if (match(args[0], "weapons"))
-    rst(Playernum, Governor, 0, 5);
   else if (match(args[0], "time"))
     GB_time(Playernum, Governor);
   else if (match(args[0], "schedule"))

@@ -30,21 +30,14 @@
 #include "tweakables.h"
 #include "vars.h"
 
-#define REPORT 0
-#define STOCK 1
-#define TACTICAL 2
-#define SHIP 3
-#define STATUS 4
-#define WEAPONS 5
-#define FACTORIES 6
-
 #define PLANET 1
 
 static const char Caliber[] = { ' ', 'L', 'M', 'H' };
 static char shiplist[256];
 
-static unsigned char Status, SHip, Stock, Report, Tactical, Weapons, Factories,
-    first;
+static unsigned char Status, SHip, Stock, Report, Weapons, Factories, first;
+
+static bool Tactical;
 
 struct reportdata {
   unsigned char type; /* ship or planet */
@@ -67,7 +60,8 @@ static void plan_getrships(player_t, governor_t, starnum_t, planetnum_t);
 static void ship_report(player_t, governor_t, shipnum_t, unsigned char[]);
 static void star_getrships(player_t, governor_t, starnum_t);
 
-void rst(player_t Playernum, governor_t Governor, int APcount, int Rst) {
+void rst(const command_t &argv, const player_t Playernum,
+         const governor_t Governor) {
   shipnum_t shipno;
   unsigned char Report_types[NUMSTYPES];
 
@@ -76,36 +70,28 @@ void rst(player_t Playernum, governor_t Governor, int APcount, int Rst) {
   enemies_only = 0;
   Num_ships = 0;
   first = 1;
-  switch (Rst) {
-  case REPORT:
+  if (argv[0] == "report") {
     Report = 1;
     Weapons = Status = Stock = SHip = Tactical = Factories = 0;
-    break;
-  case STOCK:
+  } else if (argv[0] == "stock") {
     Stock = 1;
     Weapons = Status = Report = SHip = Tactical = Factories = 0;
-    break;
-  case TACTICAL:
-    Tactical = 1;
+  } else if (argv[0] == "tactical") {
+    Tactical = true;
     Weapons = Status = Report = SHip = Stock = Factories = 0;
-    break;
-  case SHIP:
+  } else if (argv[0] == "ship") {
     SHip = Report = Stock = 1;
     Tactical = 0;
     Weapons = Status = Factories = 1;
-    break;
-  case STATUS:
+  } else if (argv[0] == "stats") {
     Status = 1;
     Weapons = Report = Stock = Tactical = SHip = Factories = 0;
-    break;
-  case WEAPONS:
+  } else if (argv[0] == "weapons") {
     Weapons = 1;
     Status = Report = Stock = Tactical = SHip = Factories = 0;
-    break;
-  case FACTORIES:
+  } else if (argv[0] == "factories") {
     Factories = 1;
     Status = Report = Stock = Tactical = SHip = Weapons = 0;
-    break;
   }
   shipnum_t n_ships = Numships();
   rd = (struct reportdata *)malloc(sizeof(struct reportdata) *
@@ -166,7 +152,7 @@ void rst(player_t Playernum, governor_t Governor, int APcount, int Rst) {
 
   switch (Dir[Playernum - 1][Governor].level) {
   case LEVEL_UNIV:
-    if (!(Rst == TACTICAL && argn < 2)) {
+    if (!(Tactical && argn < 2)) {
       shipnum_t shn = Sdata.ships;
       while (shn && Getrship(Playernum, Governor, shn))
         shn = rd[Num_ships - 1].s->nextship;

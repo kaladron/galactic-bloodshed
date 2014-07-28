@@ -114,7 +114,15 @@ racegen_CXXFLAGS = -DPRIV $(AM_CXXFLAGS)
 racegen_CXXFLAGS += \
 	    -Wno-c++11-compat-deprecated-writable-strings
 
-makeuniv_SOURCES = makeuniv.cc makestar.cc makeplanet.cc rand.cc perm.cc files.cc
+makeuniv_SOURCES = \
+	 files.cc \
+	 files_rw.cc \
+	 files_shl.cc \
+	 makeuniv.cc \
+	 makestar.cc \
+	 makeplanet.cc \
+	 perm.cc \
+	 rand.cc
 
 run-%: %
 	ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5 MSAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5 ASAN_OPTIONS="detect_leaks=1" ./$<

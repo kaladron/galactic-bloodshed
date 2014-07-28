@@ -17,6 +17,7 @@
 #include "buffers.h"
 #include "build.h"
 #include "files.h"
+#include "files_shl.h"
 #include "makestar.h"
 #include "map.h"
 #include "power.h"

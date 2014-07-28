@@ -14,6 +14,8 @@ AM_SILENT_RULES([yes])
 AC_CHECK_LIB([curses], [main])
 # FIXME: Replace `main' with a function in `-lm':
 AC_CHECK_LIB([m], [main])
+# FIXME: Replace `main' with a function in `-lsqlite3':
+AC_CHECK_LIB([sqlite3], [main])
 # FIXME: Replace `main' with a function in `-ltermcap':
 AC_CHECK_LIB([termcap], [main])
 

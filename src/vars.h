@@ -141,9 +141,9 @@ struct sector {
 
   unsigned char owner; /* owner of place */
   unsigned char race;  /* race type occupying sector
-           (usually==owner) - makes things more
-           realistic when alien races revolt and
-           you gain control of them! */
+          (usually==owner) - makes things more
+          realistic when alien races revolt and
+          you gain control of them! */
   unsigned char type;      /* underlying sector geology */
   unsigned char condition; /* environmental effects */
   unsigned long dummy2;
@@ -153,7 +153,7 @@ struct planet {
   int sectormappos; /* file posn for sector map */
 
   double xpos, ypos;        /* x,y relative to orbit */
-  unsigned short ships;     /* first ship in orbit (to be changed) */
+  shipnum_t ships;          /* first ship in orbit (to be changed) */
   unsigned char Maxx, Maxy; /* size of map */
 
   struct plinfo info[MAXPLAYERS]; /* player info */

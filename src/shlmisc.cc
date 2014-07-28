@@ -362,7 +362,7 @@ void fix(int Playernum, int Governor) {
     } else if (match(args[2], "ships")) {
       if (argn > 3)
         p->ships = atoi(args[3]);
-      sprintf(buf, "ships = %d\n", p->ships);
+      sprintf(buf, "ships = %ld\n", p->ships);
     } else if (match(args[2], "sectormappos")) {
       if (argn > 3)
         p->sectormappos = atoi(args[3]);

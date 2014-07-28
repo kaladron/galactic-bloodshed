@@ -56,13 +56,12 @@ void victory(int Playernum, int Governor, int APcount) {
 
 void create_victory_list(struct vic vic[MAXPLAYERS]) {
   racetype *vic_races[MAXPLAYERS];
-  int i;
 
-  for (i = 1; i <= Num_races; i++) {
+  for (player_t i = 1; i <= Num_races; i++) {
     vic_races[i - 1] = races[i - 1];
     vic[i - 1].no_count = 0;
   }
-  for (i = 1; i <= Num_races; i++) {
+  for (player_t i = 1; i <= Num_races; i++) {
     vic[i - 1].racenum = i;
     strcpy(vic[i - 1].name, vic_races[i - 1]->name);
     vic[i - 1].rawscore = vic_races[i - 1]->victory_score;

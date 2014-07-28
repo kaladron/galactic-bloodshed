@@ -5,12 +5,8 @@
 #ifndef RST_H
 #define RST_H
 
-void rst(int, int, int, int);
-void ship_report(int, int, int, unsigned char[]);
-void plan_getrships(int, int, int, int);
-void star_getrships(int, int, int);
-int Getrship(int, int, int);
-void Free_rlist(void);
-int listed(int, char *);
+#include "vars.h"
+
+void rst(player_t, governor_t, int, int);
 
 #endif // RST_H

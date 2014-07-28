@@ -50,9 +50,9 @@ struct reportdata {
   unsigned char type; /* ship or planet */
   shiptype *s;
   planettype *p;
-  short n;
-  unsigned char star;
-  unsigned char pnum;
+  shipnum_t n;
+  starnum_t star;
+  planetnum_t pnum;
   double x;
   double y;
 };
@@ -60,13 +60,18 @@ struct reportdata {
 static struct reportdata *rd;
 static int enemies_only, who;
 
-void rst(int Playernum, int Governor, int APcount, int Rst) {
-  int shipno;
-  int shn, i;
-  int n_ships, num;
+static void Free_rlist(void);
+static int Getrship(player_t, governor_t, shipnum_t);
+static int listed(int, char *);
+static void plan_getrships(player_t, governor_t, starnum_t, planetnum_t);
+static void ship_report(player_t, governor_t, shipnum_t, unsigned char[]);
+static void star_getrships(player_t, governor_t, starnum_t);
+
+void rst(player_t Playernum, governor_t Governor, int APcount, int Rst) {
+  shipnum_t shipno;
   unsigned char Report_types[NUMSTYPES];
 
-  for (i = 0; i < NUMSTYPES; i++)
+  for (shipnum_t i = 0; i < NUMSTYPES; i++)
     Report_types[i] = 1;
   enemies_only = 0;
   Num_ships = 0;
@@ -102,7 +107,7 @@ void rst(int Playernum, int Governor, int APcount, int Rst) {
     Status = Report = Stock = Tactical = SHip = Weapons = 0;
     break;
   }
-  n_ships = Numships();
+  shipnum_t n_ships = Numships();
   rd = (struct reportdata *)malloc(sizeof(struct reportdata) *
                                    (n_ships + Sdata.numstars * MAXPLANETS));
   /* (one list entry for each ship, planet in universe) */
@@ -124,32 +129,30 @@ void rst(int Playernum, int Governor, int APcount, int Rst) {
       /* report on a couple ships */
       int l = 1;
       while (l < MAXARGS && *args[l] != '\0') {
-        sscanf(args[l] + (*args[l] == '#'), "%d", &shipno);
+        sscanf(args[l] + (*args[l] == '#'), "%lu", &shipno);
         if (shipno > n_ships || shipno < 1) {
-          sprintf(buf, "rst: no such ship #%d \n", shipno);
+          sprintf(buf, "rst: no such ship #%lu \n", shipno);
           notify(Playernum, Governor, buf);
           free(rd);
           return;
         }
         (void)Getrship(Playernum, Governor, shipno);
-        num = Num_ships;
         if (rd[Num_ships - 1].s->whatorbits != LEVEL_UNIV) {
-          star_getrships(Playernum, Governor, (int)rd[num - 1].s->storbits);
-          ship_report(Playernum, Governor, num - 1, Report_types);
+          star_getrships(Playernum, Governor, rd[Num_ships - 1].s->storbits);
+          ship_report(Playernum, Governor, Num_ships - 1, Report_types);
         } else
-          ship_report(Playernum, Governor, num - 1, Report_types);
+          ship_report(Playernum, Governor, Num_ships - 1, Report_types);
         l++;
       }
       Free_rlist();
       return;
     } else {
-      int l;
-      l = strlen(args[1]);
-      for (i = 0; i < NUMSTYPES; i++)
+      size_t l = strlen(args[1]);
+      for (shipnum_t i = 0; i < NUMSTYPES; i++)
         Report_types[i] = 0;
 
       while (l--) {
-        i = NUMSTYPES;
+        shipnum_t i = NUMSTYPES;
         while (--i && Shipltrs[i] != args[1][l])
           ;
         if (Shipltrs[i] != args[1][l]) {
@@ -164,13 +167,13 @@ void rst(int Playernum, int Governor, int APcount, int Rst) {
   switch (Dir[Playernum - 1][Governor].level) {
   case LEVEL_UNIV:
     if (!(Rst == TACTICAL && argn < 2)) {
-      shn = Sdata.ships;
+      shipnum_t shn = Sdata.ships;
       while (shn && Getrship(Playernum, Governor, shn))
         shn = rd[Num_ships - 1].s->nextship;
 
-      for (i = 0; i < Sdata.numstars; i++)
+      for (starnum_t i = 0; i < Sdata.numstars; i++)
         star_getrships(Playernum, Governor, i);
-      for (i = 0; i < Num_ships; i++)
+      for (shipnum_t i = 0; i < Num_ships; i++)
         ship_report(Playernum, Governor, i, Report_types);
     } else {
       notify(Playernum, Governor,
@@ -182,35 +185,34 @@ void rst(int Playernum, int Governor, int APcount, int Rst) {
   case LEVEL_PLAN:
     plan_getrships(Playernum, Governor, Dir[Playernum - 1][Governor].snum,
                    Dir[Playernum - 1][Governor].pnum);
-    for (i = 0; i < Num_ships; i++)
+    for (shipnum_t i = 0; i < Num_ships; i++)
       ship_report(Playernum, Governor, i, Report_types);
     break;
   case LEVEL_STAR:
     star_getrships(Playernum, Governor, Dir[Playernum - 1][Governor].snum);
-    for (i = 0; i < Num_ships; i++)
+    for (shipnum_t i = 0; i < Num_ships; i++)
       ship_report(Playernum, Governor, i, Report_types);
     break;
   case LEVEL_SHIP:
     (void)Getrship(Playernum, Governor, Dir[Playernum - 1][Governor].shipno);
     ship_report(Playernum, Governor, 0, Report_types); /* first ship report */
-    shn = rd[0].s->ships;
+    shipnum_t shn = rd[0].s->ships;
     Num_ships = 0;
 
     while (shn && Getrship(Playernum, Governor, shn))
       shn = rd[Num_ships - 1].s->nextship;
 
-    for (i = 0; i < Num_ships; i++)
+    for (shipnum_t i = 0; i < Num_ships; i++)
       ship_report(Playernum, Governor, i, Report_types);
     break;
   }
   Free_rlist();
 }
 
-void ship_report(int Playernum, int Governor, int indx,
-                 unsigned char rep_on[]) {
+static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
+                        unsigned char rep_on[]) {
   shiptype *s;
   planettype *p;
-  int shipno;
   int i, sight, caliber;
   placetype where;
   char orb[PLACENAMESIZE];
@@ -221,7 +223,7 @@ void ship_report(int Playernum, int Governor, int indx,
   /* last ship gotten from disk */
   s = rd[indx].s;
   p = rd[indx].p;
-  shipno = rd[indx].n;
+  shipnum_t shipno = rd[indx].n;
 
   /* launched canister, non-owned ships don't show up */
   if ((rd[indx].type == PLANET && p->info[Playernum - 1].numsectsowned) ||
@@ -239,7 +241,7 @@ void ship_report(int Playernum, int Governor, int indx,
       }
       sprintf(
           buf,
-          "%5d %c %14.14s%3u%4u:%-3u%5u:%-5ld%5u:%-5ld%7.1f:%-6ld%u/%u:%d\n",
+          "%5lu %c %14.14s%3u%4u:%-3u%5u:%-5ld%5u:%-5ld%7.1f:%-6ld%u/%u:%d\n",
           shipno, Shipltrs[s->type], (s->active ? s->name : "INACTIVE"),
           s->crystals, s->hanger, s->max_hanger, s->resource, Max_resource(s),
           s->destruct, Max_destruct(s), s->fuel, Max_fuel(s), s->popn,
@@ -255,7 +257,7 @@ void ship_report(int Playernum, int Governor, int indx,
         if (!SHip)
           first = 0;
       }
-      sprintf(buf, "%5d %c %14.14s %s%s%s%3u%c/%3u%c%4lu%5.0f%4lu%5lu%7.1f%4u",
+      sprintf(buf, "%5lu %c %14.14s %s%s%s%3u%c/%3u%c%4lu%5.0f%4lu%5lu%7.1f%4u",
               shipno, Shipltrs[s->type], (s->active ? s->name : "INACTIVE"),
               s->laser ? "yes " : "    ", s->cew ? "yes " : "    ",
               s->hyper_drive.has ? "yes " : "    ", s->primary,
@@ -279,7 +281,7 @@ void ship_report(int Playernum, int Governor, int indx,
       }
       sprintf(
           buf,
-          "%5d %c %14.14s %s  %3d/%-4d  %4d  %3d%c/%3d%c    %3d%%  %c %s\n",
+          "%5lu %c %14.14s %s  %3d/%-4d  %4d  %3d%c/%3d%c    %3d%%  %c %s\n",
           shipno, Shipltrs[s->type], (s->active ? s->name : "INACTIVE"),
           s->laser ? "yes " : "    ", s->cew, s->cew_range,
           (int)((1.0 - .01 * s->damage) * s->tech / 4.0), s->primary,
@@ -299,8 +301,9 @@ void ship_report(int Playernum, int Governor, int indx,
           first = 0;
       }
       if ((s->build_type == 0) || (s->build_type == OTYPE_FACTORY)) {
-        sprintf(buf, "%5d               (No ship type specified yet)           "
-                     "           75%% (OFF)",
+        sprintf(buf,
+                "%5lu               (No ship type specified yet)           "
+                "           75%% (OFF)",
                 shipno);
         notify(Playernum, Governor, buf);
       } else {
@@ -329,7 +332,7 @@ void ship_report(int Playernum, int Governor, int indx,
           sprintf(tmpbuf4, "%5d", s->cew_range);
         else
           strcpy(tmpbuf4, "-----");
-        sprintf(buf, "%5d %c%4d%6.1f%5.1f%3d%2d%4d%4d%4d%4d%4d %s%1d %s/%s %s "
+        sprintf(buf, "%5lu %c%4d%6.1f%5.1f%3d%2d%4d%4d%4d%4d%4d %s%1d %s/%s %s "
                      "%s %s %02d%%%s\n",
                 shipno, Shipltrs[s->build_type], s->build_cost, s->complexity,
                 s->base_mass, ship_size(s), s->armor, s->max_crew, s->max_fuel,
@@ -364,7 +367,7 @@ void ship_report(int Playernum, int Governor, int indx,
         notify(Playernum, Governor, buf);
       }
 
-      sprintf(buf, "%c%-5d %12.12s %2d %3u%5u%4u%5u%5.0f %c%1u %-10s %-18s\n",
+      sprintf(buf, "%c%-5lu %12.12s %2d %3u%5u%4u%5u%5.0f %c%1u %-10s %-18s\n",
               Shipltrs[s->type], shipno, (s->active ? s->name : strng),
               s->governor, s->damage, s->popn, s->troops, s->destruct, s->fuel,
               s->hyper_drive.has ? (s->mounted ? '+' : '*') : ' ', s->speed,
@@ -402,7 +405,7 @@ void ship_report(int Playernum, int Governor, int indx,
         }
         fdam = s->damage;
         sprintf(orb, "%30.30s", Dispplace(Playernum, Governor, &where));
-        sprintf(buf, "%3d %c %16.16s %4.0f%3d%c/%3d%c%6d%5d%5u%7.1f%3d%%  %d  "
+        sprintf(buf, "%3lu %c %16.16s %4.0f%3d%c/%3d%c%6d%5d%5u%7.1f%3d%%  %d  "
                      "%3s%21.22s",
                 shipno, Shipltrs[s->type], (s->active ? s->name : "INACTIVE"),
                 s->tech, s->primary, Caliber[s->primtype], s->secondary,
@@ -464,7 +467,7 @@ void ship_report(int Playernum, int Governor, int indx,
                     rd[indx].s->focus)
                   prob = prob * prob / 100;
                 sprintf(
-                    buf, "%13d %s%2d,%1d %c%14.14s %4.0f  %4d   %4d %d  %3s  "
+                    buf, "%13lu %s%2d,%1d %c%14.14s %4.0f  %4d   %4d %d  %3s  "
                          "%3d%% %3u%%%s",
                     rd[i].n,
                     (isset(races[Playernum - 1]->atwar, rd[i].s->owner))
@@ -498,8 +501,8 @@ void ship_report(int Playernum, int Governor, int indx,
   }
 }
 
-void plan_getrships(int Playernum, int Governor, int snum, int pnum) {
-  int shn;
+static void plan_getrships(player_t Playernum, governor_t Governor,
+                           starnum_t snum, planetnum_t pnum) {
   planettype *p;
 
   getplanet(&(rd[Num_ships].p), snum, pnum);
@@ -514,27 +517,25 @@ void plan_getrships(int Playernum, int Governor, int snum, int pnum) {
   Num_ships++;
 
   if (p->info[Playernum - 1].explored) {
-    shn = p->ships;
+    shipnum_t shn = p->ships;
     while (shn && Getrship(Playernum, Governor, shn))
       shn = rd[Num_ships - 1].s->nextship;
   }
 }
 
-void star_getrships(int Playernum, int Governor, int snum) {
-  int shn;
-  int i;
-
+static void star_getrships(player_t Playernum, governor_t Governor,
+                           starnum_t snum) {
   if (isset(Stars[snum]->explored, Playernum)) {
-    shn = Stars[snum]->ships;
+    shipnum_t shn = Stars[snum]->ships;
     while (shn && Getrship(Playernum, Governor, shn))
       shn = rd[Num_ships - 1].s->nextship;
-    for (i = 0; i < Stars[snum]->numplanets; i++)
+    for (planetnum_t i = 0; i < Stars[snum]->numplanets; i++)
       plan_getrships(Playernum, Governor, snum, i);
   }
 }
 
 /* get a ship from the disk and add it to the ship list we're maintaining. */
-int Getrship(int Playernum, int Governor, int shipno) {
+static int Getrship(player_t Playernum, governor_t Governor, shipnum_t shipno) {
   if (getship(&(rd[Num_ships].s), shipno)) {
     rd[Num_ships].type = 0;
     rd[Num_ships].n = shipno;
@@ -543,13 +544,13 @@ int Getrship(int Playernum, int Governor, int shipno) {
     Num_ships++;
     return 1;
   } else {
-    sprintf(buf, "Getrship: error on ship get (%d).\n", shipno);
+    sprintf(buf, "Getrship: error on ship get (%lu).\n", shipno);
     notify(Playernum, Governor, buf);
     return 0;
   }
 }
 
-void Free_rlist(void) {
+static void Free_rlist(void) {
   int i;
   for (i = 0; i < Num_ships; i++)
     if (rd[i].type == PLANET)
@@ -559,7 +560,7 @@ void Free_rlist(void) {
   free(rd);
 }
 
-int listed(int type, char *string) {
+static int listed(int type, char *string) {
   char *p;
 
   for (p = string; *p; p++) {

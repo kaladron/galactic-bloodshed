@@ -63,7 +63,7 @@ void do_VN(shiptype *ship) {
           f = nums[i];
       if (f) {
         int prod;
-        prod = std::min(p->info[f - 1].resource, Shipdata[OTYPE_VN][ABIL_COST]);
+        prod = MIN(p->info[f - 1].resource, Shipdata[OTYPE_VN][ABIL_COST]);
         p->info[f - 1].resource -= prod;
         if (ship->type == OTYPE_VN)
           rcv_resource(ship, prod);
@@ -251,7 +251,7 @@ void planet_doVN(shiptype *ship, planettype *planet) {
             s2->special.mind.tampered = 0;
           } else {
             s2->tech = ship->tech + 20.0;
-            n = int_rand(3, std::min(10, SHIP_NAMESIZE)); /* for name */
+            n = int_rand(3, MIN(10, SHIP_NAMESIZE)); /* for name */
             s2->name[n] = '\0';
             while (n--)
               s2->name[n] = (random() & 01) + '0';

@@ -11,6 +11,8 @@
 #include "ships.h"
 #include "vars.h"
 
+void opensql(void);
+
 void close_file(int);
 void open_data_files(void);
 void close_data_files(void);
@@ -30,7 +32,7 @@ void getsector(sectortype **, planettype *, int, int);
 void getsmap(const sectortype *, const planettype *);
 int getdeadship(void);
 int getdeadcommod(void);
-void initplanetdata(void);
+void initsqldata(void);
 void putsdata(struct stardata *);
 void putrace(racetype *);
 void putstar(startype *, int);

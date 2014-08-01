@@ -130,8 +130,7 @@ void dissolve(int Playernum, int Governor) {
                 s->owner = 0;
                 s->troops = 0;
                 s->popn = 0;
-                if (waste)
-                  /* code folded from here */
+                if (waste) /* code folded from here */
                   s->condition = WASTED;
                 /* unfolding */
               }

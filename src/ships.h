@@ -164,34 +164,34 @@ public:
       unsigned char who_killed;
       unsigned char dummy[4];
     } mind;
-    struct { /* spore pods */
+    struct {/* spore pods */
       unsigned char decay;
       unsigned char temperature;
       unsigned char dummy[8];
     } pod;
-    struct { /* dust canisters, greenhouse gases */
+    struct {/* dust canisters, greenhouse gases */
       unsigned char count;
       unsigned char dummy[9];
     } timer;
-    struct { /* missiles */
+    struct {/* missiles */
       unsigned char x;
       unsigned char y;
       unsigned char scatter;
       unsigned char dummy[7];
     } impact;
-    struct { /* mines */
+    struct {/* mines */
       unsigned short radius;
       unsigned char dummy[8];
     } trigger;
-    struct { /* terraformers */
+    struct {/* terraformers */
       unsigned char index;
       unsigned char dummy[9];
     } terraform;
-    struct { /* AVPM */
+    struct {/* AVPM */
       unsigned short target;
       unsigned char dummy[8];
     } transport;
-    struct { /* toxic waste containers */
+    struct {/* toxic waste containers */
       unsigned char toxic;
       unsigned char dummy[9];
     } waste;
@@ -272,7 +272,7 @@ public:
   unsigned short max_hanger; /* total hanger space */
 };
 
-struct place { /* used in function return for finding place */
+struct place {/* used in function return for finding place */
   starnum_t snum;
   planetnum_t pnum;
   shipnum_t shipno;
@@ -293,16 +293,16 @@ struct place { /* used in function return for finding place */
 
 /* can navigate */
 #define can_navigate(s)                                                        \
-  (Shipdata[(s)->type][ABIL_SPEED] > 0 &&                                      \
-   (s)->type != OTYPE_TERRA &&(s)->type != OTYPE_VN)
+  (Shipdata[(s)->type][ABIL_SPEED] > 0 && (s)->type != OTYPE_TERRA &&          \
+   (s)->type != OTYPE_VN)
 
 /* can aim at things. */
-#define can_aim(s) ((s)->type >= STYPE_MIRROR &&(s)->type <= OTYPE_TRACT)
+#define can_aim(s) ((s)->type >= STYPE_MIRROR && (s)->type <= OTYPE_TRACT)
 
 /* macros to get ship stats */
 #define Armor(s)                                                               \
   (((s)->type == OTYPE_FACTORY) ? Shipdata[(s)->type][ABIL_ARMOR]              \
-                                : (s)->armor *(100 - (s)->damage) / 100)
+                                : (s)->armor * (100 - (s)->damage) / 100)
 #define Guns(s)                                                                \
   (((s)->guns == NONE) ? 0 : ((s)->guns == PRIMARY ? (s)->primary              \
                                                    : (s)->secondary))
@@ -329,7 +329,7 @@ struct place { /* used in function return for finding place */
                                 : (s)->max_speed)
 #define Cost(s)                                                                \
   (((s)->type == OTYPE_FACTORY)                                                \
-       ? 2 * (s)->build_cost *(s)->on + Shipdata[(s)->type][ABIL_COST]         \
+       ? 2 * (s)->build_cost * (s)->on + Shipdata[(s)->type][ABIL_COST]        \
        : (s)->build_cost)
 #define Mass(s) ((s)->mass)
 #define Sight(s) (((s)->type == OTYPE_PROBE) || (s)->popn)

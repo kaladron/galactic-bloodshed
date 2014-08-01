@@ -32,7 +32,7 @@
 
 #define PLANET 1
 
-static const char Caliber[] = { ' ', 'L', 'M', 'H' };
+static const char Caliber[] = {' ', 'L', 'M', 'H'};
 static char shiplist[256];
 
 static unsigned char Status, SHip, Stock, Report, Weapons, Factories, first;

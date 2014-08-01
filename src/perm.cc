@@ -10,9 +10,7 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static struct map {
-  char x, y;
-} xymap[(MAX_X + 1) * (MAX_Y + 1)];
+static struct map { char x, y; } xymap[(MAX_X + 1) * (MAX_Y + 1)];
 
 /* make a random list of sectors. */
 void PermuteSects(planettype *planet) {

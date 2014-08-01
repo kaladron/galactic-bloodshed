@@ -507,7 +507,6 @@ void Getracenum(char *racepass, char *govpass, int *racenum, int *govnum) {
 
 /* returns player # from string containing that players name or #. */
 player_t GetPlayer(const char *name) {
-
   player_t rnum = 0;
 
   if (isdigit(*name)) {
@@ -566,7 +565,6 @@ void allocateAPs(int Playernum, int Governor, int APcount) {
 
 void deductAPs(int Playernum, int Governor, int n, int snum, int sdata) {
   if (n) {
-
     if (!sdata) {
       getstar(&Stars[snum], snum);
 

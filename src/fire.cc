@@ -669,7 +669,6 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
 
         if ((numdest = shoot_ship_to_planet(ship, p, strength, x, y, 1, 0, 0,
                                             long_buf, short_buf)) >= 0) {
-
           if (laser_on(ship))
             use_fuel(ship, 2.0 * (double)strength);
           else

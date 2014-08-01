@@ -11,6 +11,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -26,11 +27,88 @@
 
 static int commoddata, pdata, racedata, sectdata, shdata, stdata;
 
+static sqlite3 *db;
+
 void close_file(int fd) { close(fd); }
 
-void initplanetdata() {}
+void initsqldata() __attribute__((no_sanitize_memory)) {
+  const char *tbl_create =
+      R"(CREATE TABLE tbl_planet(
+
+planet_id INT PRIMARY KEY NOT NULL,
+star_id INT NOT NULL,
+
+xpos DOUBLE,
+ypos DOUBLE,
+ships INT64,
+ 
+Maxx INT,
+Maxy INT,
+
+popn INT64,
+troops INT64,
+maxpopn INT64,
+total_resources INT64,
+
+slaved_to INT,
+type INT,
+expltimer INT,
+
+condition_rtemp INT,
+condition_temp INT,
+condition_methane INT,
+condition_oxygen INT,
+condition_co2 INT,
+condition_hydrogen INT,
+condition_nitrogen INT,
+condition_sulfur INT,
+condition_helium INT,
+condition_other INT,
+condition_toxic INT,
+explored INT);
+
+CREATE TABLE tbl_sector(
+  planet_id INT NOT NULL, 
+  xpos INT NOT NULL,
+  ypos INT NOT NULL,
+  eff INT, 
+             fert INT, mobilization INT, crystals INT, resource INT,
+             popn INT64, troops INT64, owner INT, race INT, type INT,
+             condition INT, PRIMARY KEY(planet_id, xpos, ypos));
+
+  CREATE TABLE tbl_plinfo(
+      planet_id INT NOT NULL, player_id INT NOT NULL, fuel INT, destruct INT,
+      resource INT, popn INT64, troops INT64, crystals INT, prod_res INT,
+      prod_fuel INT, prod_dest INT, prod_crystals INT, prod_money INT64,
+      prod_tech DOUBLE, tech_invest INT, numsectsowned INT, comread INT,
+      mob_set INT, tox_thresh INT, explored INT, autorep INT, tax INT,
+      newtax INT, guns INT, mob_points INT64, est_production DOUBLE,
+      PRIMARY KEY(planet_id, player_id));
+
+  CREATE TABLE tbl_plinfo_routes(planet_id INT, player_id INT, routenum INT,
+                                 order_set INT, dest_star INT, dest_planet INT,
+                                 load INT, unload INT, x INT, y INT,
+                                 PRIMARY KEY(planet_id, player_id, routenum));
+)";
+  char *err_msg = 0;
+  int err = sqlite3_exec(db, tbl_create, NULL, NULL, &err_msg);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
+  }
+}
+
+void opensql() {
+  fprintf(stderr, "did this");
+  int err = sqlite3_open(PKGDATADIR "gb.db", &db);
+  if (err) {
+    fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+    exit(0);
+  }
+}
 
 void open_data_files(void) {
+  opensql();
   opencommoddata(&commoddata);
   openpdata(&pdata);
   openracedata(&racedata);
@@ -150,7 +228,6 @@ int getship(shiptype **s, shipnum_t shipnum) {
   if (buffer.st_size / sizeof(shiptype) < shipnum)
     return 0;
   else {
-
     if ((*s = (shiptype *)malloc(sizeof(shiptype))) == NULL)
       printf("getship:malloc() error \n"), exit(0);
 
@@ -170,7 +247,6 @@ int getcommod(commodtype **c, int commodnum) {
   if (buffer.st_size / sizeof(commodtype) < commodnum)
     return 0;
   else {
-
     if ((*c = (commodtype *)malloc(sizeof(commodtype))) == NULL)
       printf("getcommod:malloc() error \n"), exit(0);
 

@@ -31,31 +31,31 @@ int ShipVector[NUMSTYPES];
 shiptype **ships;
 
 /* defense 5 is inpenetrable */
-const int Defensedata[] = { 1, 1, 3, 2, 2, 3, 2, 4, 0 };
+const int Defensedata[] = {1, 1, 3, 2, 2, 3, 2, 4, 0};
 
 #ifdef MARKET
-const char *Commod[] = { "resources", "destruct", "fuel", "crystals" };
+const char *Commod[] = {"resources", "destruct", "fuel", "crystals"};
 #endif
 
 struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
 struct vnbrain VN_brain;
 struct sectinfo Sectinfo[MAX_X][MAX_Y];
 
-const char Psymbol[] = { '@', 'o', 'O', '#', '~', '.', ')', '-' };
-const char *Planet_types[] = { "Class M", "Asteroid",  "Airless", "Iceball",
-                               "Jovian",  "Waterball", "Forest",  "Desert" };
+const char Psymbol[] = {'@', 'o', 'O', '#', '~', '.', ')', '-'};
+const char *Planet_types[] = {"Class M", "Asteroid",  "Airless", "Iceball",
+                              "Jovian",  "Waterball", "Forest",  "Desert"};
 
 time_t next_update_time;   /* When will next update be... approximately */
 time_t next_segment_time;  /* When will next segment be... approximately */
 unsigned int update_time;  /* Interval between updates in minutes */
 segments_t nsegments_done; /* How many movements have we done so far? */
 
-const char *Desnames[] = { "ocean",  "land",   "mountainous", "gaseous", "ice",
-                           "forest", "desert", "plated",      "wasted" };
+const char *Desnames[] = {"ocean",  "land",   "mountainous", "gaseous", "ice",
+                          "forest", "desert", "plated",      "wasted"};
 
-const char Dessymbols[] = { CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
-                            CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
-                            CHAR_DESERT, CHAR_PLATED, CHAR_WASTED };
+const char Dessymbols[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
+                           CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
+                           CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
 
 racetype *Race;
 

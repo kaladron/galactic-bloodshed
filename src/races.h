@@ -56,10 +56,10 @@ public:
   unsigned long atwar[2];  /* war 64 bits*/
   unsigned long allied[2]; /* allies 64 bits*/
 
-  shipnum_t Gov_ship;              /* Shipnumber of government ship. */
-  long morale;                     /* race's morale level */
-  unsigned int points[MAXPLAYERS]; /* keep track of war status against
-                                      another player - for short reports */
+  shipnum_t Gov_ship;                /* Shipnumber of government ship. */
+  long morale;                       /* race's morale level */
+  unsigned int points[MAXPLAYERS];   /* keep track of war status against
+                                        another player - for short reports */
   unsigned short controlled_planets; /* Number of planets under control. */
   unsigned short victory_turns;
   unsigned short turn;

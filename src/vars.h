@@ -19,7 +19,7 @@
 #include <vector>
 
 extern unsigned long
-segments; /* number of movement segments (global variable) */
+    segments; /* number of movement segments (global variable) */
 
 #define MAX_ROUTES                                                             \
   4 /* Shipping routes - DON'T change this unless you know                     \
@@ -108,10 +108,10 @@ struct plinfo {            /* planetary stockpiles */
 #define M_DESTRUCT 0x2
 #define M_RESOURCES 0x4
 #define M_CRYSTALS 0x8
-#define Fuel(x) ((x) & M_FUEL)
-#define Destruct(x) ((x) & M_DESTRUCT)
-#define Resources(x) ((x) & M_RESOURCES)
-#define Crystals(x) ((x) & M_CRYSTALS)
+#define Fuel(x) ((x)&M_FUEL)
+#define Destruct(x) ((x)&M_DESTRUCT)
+#define Resources(x) ((x)&M_RESOURCES)
+#define Crystals(x) ((x)&M_CRYSTALS)
 
 struct commod {
   player_t owner;
@@ -139,11 +139,11 @@ struct sector {
   unsigned short popn;
   unsigned short troops; /* troops (additional combat value) */
 
-  unsigned char owner; /* owner of place */
-  unsigned char race;  /* race type occupying sector
-         (usually==owner) - makes things more
-         realistic when alien races revolt and
-         you gain control of them! */
+  unsigned char owner;     /* owner of place */
+  unsigned char race;      /* race type occupying sector
+             (usually==owner) - makes things more
+             realistic when alien races revolt and
+             you gain control of them! */
   unsigned char type;      /* underlying sector geology */
   unsigned char condition; /* environmental effects */
   unsigned long dummy2;
@@ -265,9 +265,9 @@ extern char args[MAXARGS][COMMANDSIZE];
 extern int argn;
 
 /* bit routines stolen from UNIX <sys/param.h> */
-#define setbit(a, i) ((a)[(i) / 32] |= ((i) < 32 ? 1 << (i) : 1 << ((i) - 32)))
-#define clrbit(a, i) ((a)[(i) / 32] &= ~((i) < 32 ? 1 << (i) : 1 << ((i) - 32)))
-#define isset(a, i) ((a)[(i) / 32] & ((i) < 32 ? 1 << (i) : 1 << ((i) - 32)))
+#define setbit(a, i) ((a)[(i) / 32] |= ((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
+#define clrbit(a, i) ((a)[(i) / 32] &= ~((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
+#define isset(a, i) ((a)[(i) / 32] & ((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
 #define isclr(a, i) (!isset((a), (i)))
 
 #define success(x) (int_rand(1, 100) <= (x))

@@ -18,7 +18,6 @@ static const char *allied(const race *const, const player_t);
 
 void relation(const command_t &argv, const player_t Playernum,
               const governor_t Governor) {
-
   player_t q;
   if (argv.size() == 1) {
     q = Playernum;

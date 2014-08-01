@@ -508,7 +508,6 @@ void make_mod(const command_t &argv, const player_t Playernum,
       notify(Playernum, Governor, "You can't produce this design yet!\n");
 
   } else if (mode == 1) {
-
     if (!dirship->build_type) {
       notify(Playernum, Governor,
              "No ship design specified. Use 'make <ship type>' first.\n");
@@ -535,7 +534,6 @@ void make_mod(const command_t &argv, const player_t Playernum,
     }
 
     if (Shipdata[dirship->build_type][ABIL_MOD]) {
-
       if (argv[1] == "armor") {
         dirship->armor = MIN(value, 100);
       } else if (argv[1] == "crew" &&
@@ -952,7 +950,8 @@ void build(const command_t &argv, const player_t Playernum,
             return;
           }
           outside = 1;
-          [[clang::fallthrough]]; // TODO(jeffbailey): Added this to silence
+          [[clang::fallthrough]]; // TODO(jeffbailey): Added this to
+                                  // silence
                                   // warning, check it.
         default:
           if (argv.size() < 2) {

@@ -33,10 +33,22 @@ static const double PLANET_DIST_MIN = 100.0;
 static char *NextStarName(void);
 static const char *NextPlanetName(int);
 
-static int Numtypes[TYPE_DESERT + 2] = { 0, };
-static int Resource[TYPE_DESERT + 2] = { 0, };
-static int Numsects[TYPE_DESERT + 2][PLATED + 1] = { { 0, }, };
-static int Fertsects[TYPE_DESERT + 2][PLATED + 1] = { { 0, }, };
+static int Numtypes[TYPE_DESERT + 2] = {
+    0,
+};
+static int Resource[TYPE_DESERT + 2] = {
+    0,
+};
+static int Numsects[TYPE_DESERT + 2][PLATED + 1] = {
+    {
+     0,
+    },
+};
+static int Fertsects[TYPE_DESERT + 2][PLATED + 1] = {
+    {
+     0,
+    },
+};
 static int numplist, namepcount;
 static char PNames[1000][20];
 static int planet_list[1000];
@@ -48,9 +60,9 @@ static int ReadNameList(char ss[1000][20], int n, int m, const char *filename);
 static void rand_list(int n, int *list);
 
 // TODO(jeffbailey): This should be syncd with the ones in GB_server.h:
-static const char *Nametypes[] = { "Earth",   "Asteroid", "Airless",
-                                   "Iceball", "Gaseous",  "Water",
-                                   "Forest",  "Desert",   " >>" };
+static const char *Nametypes[] = {"Earth",   "Asteroid", "Airless",
+                                  "Iceball", "Gaseous",  "Water",
+                                  "Forest",  "Desert",   " >>"};
 
 int Temperature(double dist, int stemp) {
   return -269 + stemp * 1315 * 40 / (40 + dist);
@@ -160,8 +172,8 @@ void Makeplanet_init(void) {
 }
 
 static const char *NextPlanetName(int i) {
-  const char *Numbers[] = { "1", "2",  "3",  "4",  "5",  "6",  "7", "8",
-                            "9", "10", "11", "12", "13", "14", "15" };
+  const char *Numbers[] = {"1", "2",  "3",  "4",  "5",  "6",  "7", "8",
+                           "9", "10", "11", "12", "13", "14", "15"};
   if (autoname_plan && (namepcount < numplist))
     return PNames[planet_list[namepcount++]];
   else

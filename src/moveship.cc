@@ -30,10 +30,10 @@
 /* amount to move for each dir level. I arrived on these #'s only after
         hours of dilligent tweaking */
 /* amount to move for each directory level  */
-static const double MoveConsts[] = { 600.0, 300.0, 50.0 };
+static const double MoveConsts[] = {600.0, 300.0, 50.0};
 /* amnt to move for each ship speed level (ordered) */
-static const double SpeedConsts[] = { 0.0,  0.61, 1.26, 1.50, 1.73,
-                                      1.81, 1.90, 1.93, 1.96, 1.97 };
+static const double SpeedConsts[] = {0.0,  0.61, 1.26, 1.50, 1.73,
+                                     1.81, 1.90, 1.93, 1.96, 1.97};
 /* amount of fuel it costs to move at speed level */
 
 void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {

@@ -11,8 +11,8 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static const int x_adj[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
-static const int y_adj[] = { 1, 1, 1, 0, 0, -1, -1, -1 };
+static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};
+static const int y_adj[] = {1, 1, 1, 0, 0, -1, -1, -1};
 
 //  produce() -- produce, stuff like that, on a sector.
 void produce(startype *star, planettype *planet, sectortype *s) {

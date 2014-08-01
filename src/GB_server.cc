@@ -187,24 +187,24 @@ int main(int argc, char **argv) {
   // TODO(jeffbailey): bid, buy and sell should be only available if market is
   // set.
   commands = new std::unordered_map<std::string, CommandFunction>{
-    { "bid", bid },
-    { "build", build },
-    { "dismount", mount },
-    { "factories", rst },
-    { "make", make_mod },
-    { "map", map },
-    { "modify", make_mod },
-    { "mount", mount },
-    { "orbit", orbit },
-    { "relation", relation },
-    { "report", rst },
-    { "sell", sell },
-    { "ship", rst },
-    { "stats", rst },
-    { "stock", rst },
-    { "tactical", rst },
-    { "upgrade", upgrade },
-    { "weapons", rst },
+      {"bid", bid},
+      {"build", build},
+      {"dismount", mount},
+      {"factories", rst},
+      {"make", make_mod},
+      {"map", map},
+      {"modify", make_mod},
+      {"mount", mount},
+      {"orbit", orbit},
+      {"relation", relation},
+      {"report", rst},
+      {"sell", sell},
+      {"ship", rst},
+      {"stats", rst},
+      {"stock", rst},
+      {"tactical", rst},
+      {"upgrade", upgrade},
+      {"weapons", rst},
   };
 
   open_data_files();
@@ -454,7 +454,6 @@ void shovechars(int port) __attribute__((no_sanitize_memory)) {
       }
       (void)time(&now);
     } else {
-
       (void)time(&now);
 
       if (FD_ISSET(sock, &input_set)) {
@@ -1652,7 +1651,6 @@ void GB_schedule(int Playernum, int Governor) {
 }
 
 static void help(descriptor_data *e) {
-
   FILE *f;
   char file[1024];
   char *p;

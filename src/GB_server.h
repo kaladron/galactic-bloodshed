@@ -43,7 +43,7 @@ typedef uint32_t segments_t;
 
 extern time_t next_update_time; /* When will next update be... approximately */
 extern time_t
-next_segment_time; /* When will next segment be... approximately */
+    next_segment_time; /* When will next segment be... approximately */
 extern unsigned int update_time;  /* Interval between updates in minutes */
 extern segments_t nsegments_done; /* How many movements have we done so far? */
 

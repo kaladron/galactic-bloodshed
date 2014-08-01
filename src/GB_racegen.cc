@@ -31,9 +31,7 @@
 int notify(int who, int gov, const char *msg);
 void warn(int who, int gov, char *msg);
 
-static const int planet_translate[N_HOME_PLANET_TYPES] = {
-  0, 6, 7, 5, 2, 3, 4
-};
+static const int planet_translate[N_HOME_PLANET_TYPES] = {0, 6, 7, 5, 2, 3, 4};
 
 int notify(int who, int gov, const char *msg) { /* this is a dummy routine */
   return 0;

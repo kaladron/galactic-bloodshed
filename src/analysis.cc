@@ -143,9 +143,9 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
   int PlayTSect[MAXPLAYERS + 1];
   int TotalWasted, WastedSect[MAXPLAYERS + 1];
   int Sect[WASTED + 1];
-  static char SectTypes[] = { CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
-                              CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
-                              CHAR_DESERT, CHAR_PLATED, CHAR_WASTED };
+  static char SectTypes[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
+                             CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
+                             CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
 
   for (i = 0; i < CARE; i++)
     Res[i].value = Eff[i].value = Frt[i].value = Mob[i].value =

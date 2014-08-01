@@ -39,23 +39,23 @@ struct stype {
 static char desshow(planettype *p, int x, int y);
 
 /* racial types (10 racial types ) */
-static int Thing[RACIAL_TYPES] = { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
+static int Thing[RACIAL_TYPES] = {1, 1, 1, 0, 0, 0, 0, 0, 0, 0};
 
-static double db_Mass[RACIAL_TYPES] = { .1,   .15,  .2,   .125, .125,
-                                        .125, .125, .125, .125, .125 };
-static double db_Birthrate[RACIAL_TYPES] = { 0.9, 0.85, 0.8, 0.5,  0.55,
-                                             0.6, 0.65, 0.7, 0.75, 0.8 };
-static int db_Fighters[RACIAL_TYPES] = { 9, 10, 11, 2, 3, 4, 5, 6, 7, 8 };
-static int db_Intelligence[RACIAL_TYPES] = { 0,   0,   0,   190, 180,
-                                             170, 160, 150, 140, 130 };
+static double db_Mass[RACIAL_TYPES] = {.1,   .15,  .2,   .125, .125,
+                                       .125, .125, .125, .125, .125};
+static double db_Birthrate[RACIAL_TYPES] = {0.9, 0.85, 0.8, 0.5,  0.55,
+                                            0.6, 0.65, 0.7, 0.75, 0.8};
+static int db_Fighters[RACIAL_TYPES] = {9, 10, 11, 2, 3, 4, 5, 6, 7, 8};
+static int db_Intelligence[RACIAL_TYPES] = {0,   0,   0,   190, 180,
+                                            170, 160, 150, 140, 130};
 
-static double db_Adventurism[RACIAL_TYPES] = { 0.89, 0.89, 0.89, .6,  .65,
-                                               .7,   .7,   .75,  .75, .8 };
+static double db_Adventurism[RACIAL_TYPES] = {0.89, 0.89, 0.89, .6,  .65,
+                                              .7,   .7,   .75,  .75, .8};
 
-static int Min_Sexes[RACIAL_TYPES] = { 1, 1, 1, 2, 2, 2, 2, 2, 2, 2 };
-static int Max_Sexes[RACIAL_TYPES] = { 1, 1, 1, 2, 2, 4, 4, 4, 4, 4 };
-static double db_Metabolism[RACIAL_TYPES] = { 3.0,  2.7,  2.4, 1.0,  1.15,
-                                              1.30, 1.45, 1.6, 1.75, 1.9 };
+static int Min_Sexes[RACIAL_TYPES] = {1, 1, 1, 2, 2, 2, 2, 2, 2, 2};
+static int Max_Sexes[RACIAL_TYPES] = {1, 1, 1, 2, 2, 4, 4, 4, 4, 4};
+static double db_Metabolism[RACIAL_TYPES] = {3.0,  2.7,  2.4, 1.0,  1.15,
+                                             1.30, 1.45, 1.6, 1.75, 1.9};
 
 #define RMass(x) (db_Mass[(x)] + .001 * (double)int_rand(-25, 25))
 #define Birthrate(x) (db_Birthrate[(x)] + .01 * (double)int_rand(-10, 10))
@@ -149,7 +149,6 @@ int main() {
     found = 0;
 
     for (star = 0; star < Sdata.numstars && !found && count < 100;) {
-
       check = 1;
       /* skip over inhabited stars - or stars with just one planet! */
       if (Stars[star]->inhabited[0] + Stars[star]->inhabited[1] ||

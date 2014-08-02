@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
-set(CMAKE_CXX_FLAGS '-DPKGDATADIR="${CMAKE_INSTALL_PREFIX}/data"')
+set(PKGSTATEDIR "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${PROJECT_NAME}/")
+add_definitions(-DPKGSTATEDIR="${PKGSTATEDIR}")
 
 add_definitions(-std=c++11)
 

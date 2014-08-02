@@ -38,6 +38,8 @@ void initsqldata() __attribute__((no_sanitize_memory)) {
 planet_id INT PRIMARY KEY NOT NULL,
 star_id INT NOT NULL,
 
+name TEXT NOT NULL,
+
 xpos DOUBLE,
 ypos DOUBLE,
 ships INT64,
@@ -89,6 +91,38 @@ CREATE TABLE tbl_sector(
                                  order_set INT, dest_star INT, dest_planet INT,
                                  load INT, unload INT, x INT, y INT,
                                  PRIMARY KEY(planet_id, player_id, routenum));
+
+CREATE TABLE tbl_star(
+  unsigned short ships INT,
+  char name TEXT,
+  governor_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
+  unsigned char AP[MAXPLAYERS];    /* action pts alotted */
+  unsigned long explored[2];       /* who's been here 64 bits*/
+  unsigned long inhabited[2];      /* who lives here now 64 bits*/
+  xpos DOUBLE,
+  ypos DOUBLE,
+
+  unsigned char numplanets INT,
+  char pnames[MAXPLANETS][NAMESIZE];   /* names of planets */
+  unsigned long planetpos[MAXPLANETS]; /* file posns of planets */
+
+  unsigned char stability;   /* how close to nova it is */
+  unsigned char nova_stage;  /* stage of nova */
+  unsigned char temperature; /* factor which expresses how hot the star is*/
+  double gravity;            /* attraction of star in "Standards". */
+
+);
+
+CREATE TABLE tbl_stardata(
+  numstars INT,
+  unsigned short ships INT,
+  unsigned char AP[MAXPLAYERS]; /* Action pts for each player */
+  unsigned short VN_hitlist[MAXPLAYERS];
+  /* # of ships destroyed by each player */
+  unsigned char VN_index1[MAXPLAYERS]; /* negative value is used */
+  unsigned char VN_index2[MAXPLAYERS]; /* VN's record of destroyed ships
+                                        systems where they bought it */
+);
 )";
   char *err_msg = 0;
   int err = sqlite3_exec(db, tbl_create, NULL, NULL, &err_msg);
@@ -100,7 +134,7 @@ CREATE TABLE tbl_sector(
 
 void opensql() {
   fprintf(stderr, "did this");
-  int err = sqlite3_open(PKGDATADIR "gb.db", &db);
+  int err = sqlite3_open(PKGSTATEDIR "gb.db", &db);
   if (err) {
     fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
     exit(0);

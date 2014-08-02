@@ -1,5 +1,5 @@
 
-AM_CPPFLAGS = -DPKGDATADIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = -DPKGSTATEDIR='"$(pkgdatadir)/"'
 
 AM_CXXFLAGS = -std=c++11 -W -Weverything -Werror \
 	    -Wno-old-style-cast \

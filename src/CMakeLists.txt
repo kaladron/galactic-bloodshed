@@ -53,6 +53,7 @@ add_executable(makeuniv
   perm.cc
   rand.cc)
 target_link_libraries(makeuniv sqlite3) 
+install(TARGETS makeuniv DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT binaries)
 
 add_executable(GB
   GB_server.cc
@@ -111,6 +112,7 @@ add_executable(GB
   victory.cc
   zoom.cc)
 target_link_libraries(GB sqlite3) 
+install(TARGETS GB DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT binaries)
 
 add_executable(enrol
   enrol.cc
@@ -122,6 +124,7 @@ add_executable(enrol
   rand.cc
   shlmisc.cc)
 target_link_libraries(enrol sqlite3 ncurses)
+install(TARGETS enrol DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT binaries)
 
 # new-fangled enrollment program (more flexible than 'enrol')
 add_executable(racegen
@@ -137,3 +140,4 @@ add_executable(racegen
   shlmisc.cc)
 target_link_libraries(racegen sqlite3)
 set_target_properties(racegen PROPERTIES COMPILE_DEFINITIONS "PRIV -Wno-c++11-compat-deprecated-writable-strings")
+install(TARGETS racegen DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT binaries)

@@ -139,5 +139,12 @@ add_executable(racegen
   rand.cc
   shlmisc.cc)
 target_link_libraries(racegen sqlite3)
-set_target_properties(racegen PROPERTIES COMPILE_DEFINITIONS "PRIV -Wno-c++11-compat-deprecated-writable-strings")
-install(TARGETS racegen DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT binaries)
+set_target_properties(racegen PROPERTIES
+  COMPILE_DEFINITIONS "PRIV -Wno-c++11-compat-deprecated-writable-strings")
+install(TARGETS racegen DESTINATION ${CMAKE_INSTALL_FULL_BINDIR}
+  COMPONENT binaries)
+
+file(MAKE_DIRECTORY ${PROJECT_NAME})
+install (DIRECTORY ${PROJECT_NAME} DESTINATION "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/"
+  DIRECTORY_PERMISSIONS
+    OWNER_WRITE OWNER_READ OWNER_EXECUTE)

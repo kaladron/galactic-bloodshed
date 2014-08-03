@@ -1,14 +1,1 @@
-Makefile.in
-Makefile
-aclocal.m4
-compile
-configure
-depcomp
-install-sh
-missing
-src/Makefile.in
-src/Makefile
-config.log
-config.status
-src/.deps/
-autom4te.cache
+build*

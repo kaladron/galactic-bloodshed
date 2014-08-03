@@ -31,7 +31,15 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     "-fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls"
     CACHE STRING "Flags used by the C++ compiler during MSan builds"
     FORCE)
-  
+  set(ASANSYM
+    export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5)
+
+  set(MSANSYM
+    export MSAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5)
+
+  set(ASANOPT
+    export ASAN_OPTIONS=detect_leaks=1)
+
   set(CMAKE_CXX_FLAGS_ASAN
     "-fsanitize=address"
     CACHE STRING "Flags used by the C++ compiler during ASan builds"
@@ -41,7 +49,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     CMAKE_CXX_FLAGS_MSAN)
 
   message("* Current build type is : ${CMAKE_BUILD_TYPE}")
-ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+endif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
 add_executable(makeuniv
   files.cc
@@ -54,6 +62,9 @@ add_executable(makeuniv
   rand.cc)
 target_link_libraries(makeuniv sqlite3) 
 install(TARGETS makeuniv DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT binaries)
+add_custom_target(run-makeuniv
+  ${ASANSYM} && ${ASANOPT} && ${MSANSYM} && ${CMAKE_CURRENT_BINARY_DIR}/makeuniv
+  DEPENDS makeuniv)
 
 add_executable(GB
   GB_server.cc
@@ -113,6 +124,9 @@ add_executable(GB
   zoom.cc)
 target_link_libraries(GB sqlite3) 
 install(TARGETS GB DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT binaries)
+add_custom_target(run-GB
+  ${ASANSYM} && ${ASANOPT} &&${MSANSYM} && ${CMAKE_CURRENT_BINARY_DIR}/GB
+  DEPENDS GB)
 
 add_executable(enrol
   enrol.cc
@@ -125,6 +139,9 @@ add_executable(enrol
   shlmisc.cc)
 target_link_libraries(enrol sqlite3 ncurses)
 install(TARGETS enrol DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT binaries)
+add_custom_target(run-enrol
+  ${ASANSYM} && ${ASANOPT} && ${MSANSYM} && ${CMAKE_CURRENT_BINARY_DIR}/enrol
+  DEPENDS enrol)
 
 # new-fangled enrollment program (more flexible than 'enrol')
 add_executable(racegen
@@ -143,6 +160,9 @@ set_target_properties(racegen PROPERTIES
   COMPILE_DEFINITIONS "PRIV -Wno-c++11-compat-deprecated-writable-strings")
 install(TARGETS racegen DESTINATION ${CMAKE_INSTALL_FULL_BINDIR}
   COMPONENT binaries)
+add_custom_target(run-racegen
+  ${ASANSYM} && ${ASANOPT} && ${MSANSYM} && ${CMAKE_CURRENT_BINARY_DIR}/racegen
+  DEPENDS racegen)
 
 file(MAKE_DIRECTORY ${PROJECT_NAME})
 install (DIRECTORY ${PROJECT_NAME} DESTINATION "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/"

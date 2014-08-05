@@ -33,98 +33,159 @@ void close_file(int fd) { close(fd); }
 
 void initsqldata() __attribute__((no_sanitize_memory)) {
   const char *tbl_create =
-      R"(CREATE TABLE tbl_planet(
+      R"(
+CREATE TABLE tbl_planet(
+  planet_id INT PRIMARY KEY NOT NULL,
+  star_id INT NOT NULL,
 
-planet_id INT PRIMARY KEY NOT NULL,
-star_id INT NOT NULL,
+  name TEXT NOT NULL,
+  planet_order INT NOT NULL,
 
-name TEXT NOT NULL,
-
-xpos DOUBLE,
-ypos DOUBLE,
-ships INT64,
+  xpos DOUBLE,
+  ypos DOUBLE,
+  ships INT64,
  
-Maxx INT,
-Maxy INT,
+  Maxx INT,
+  Maxy INT,
 
-popn INT64,
-troops INT64,
-maxpopn INT64,
-total_resources INT64,
+  popn INT64,
+  troops INT64,
+  maxpopn INT64,
+  total_resources INT64,
 
-slaved_to INT,
-type INT,
-expltimer INT,
+  slaved_to INT,
+  type INT,
+  expltimer INT,
 
-condition_rtemp INT,
-condition_temp INT,
-condition_methane INT,
-condition_oxygen INT,
-condition_co2 INT,
-condition_hydrogen INT,
-condition_nitrogen INT,
-condition_sulfur INT,
-condition_helium INT,
-condition_other INT,
-condition_toxic INT,
-explored INT);
+  condition_rtemp INT,
+  condition_temp INT,
+  condition_methane INT,
+  condition_oxygen INT,
+  condition_co2 INT,
+  condition_hydrogen INT,
+  condition_nitrogen INT,
+  condition_sulfur INT,
+  condition_helium INT,
+  condition_other INT,
+  condition_toxic INT,
+  explored INT
+);
 
 CREATE TABLE tbl_sector(
   planet_id INT NOT NULL, 
   xpos INT NOT NULL,
   ypos INT NOT NULL,
-  eff INT, 
-             fert INT, mobilization INT, crystals INT, resource INT,
-             popn INT64, troops INT64, owner INT, race INT, type INT,
-             condition INT, PRIMARY KEY(planet_id, xpos, ypos));
+  eff INT,
+  fert INT,
+  mobilization INT,
+  crystals INT,
+  resource INT,
+  popn INT64,
+  troops INT64,
+  owner INT,
+  race INT,
+  type INT,
+  condition INT,
+  PRIMARY KEY(planet_id, xpos, ypos)
+);
 
-  CREATE TABLE tbl_plinfo(
-      planet_id INT NOT NULL, player_id INT NOT NULL, fuel INT, destruct INT,
-      resource INT, popn INT64, troops INT64, crystals INT, prod_res INT,
-      prod_fuel INT, prod_dest INT, prod_crystals INT, prod_money INT64,
-      prod_tech DOUBLE, tech_invest INT, numsectsowned INT, comread INT,
-      mob_set INT, tox_thresh INT, explored INT, autorep INT, tax INT,
-      newtax INT, guns INT, mob_points INT64, est_production DOUBLE,
-      PRIMARY KEY(planet_id, player_id));
+CREATE TABLE tbl_plinfo(
+  planet_id INT NOT NULL,
+  player_id INT NOT NULL,
+  fuel INT,
+  destruct INT,
+  resource INT,
+  popn INT64,
+  troops INT64,
+  crystals INT,
+  prod_res INT,
+  prod_fuel INT,
+  prod_dest INT,
+  prod_crystals INT,
+  prod_money INT64,
+  prod_tech DOUBLE,
+  tech_invest INT,
+  numsectsowned INT,
+  comread INT,
+  mob_set INT,
+  tox_thresh INT,
+  explored INT,
+  autorep INT,
+  tax INT,
+  newtax INT,
+  guns INT,
+  mob_points INT64,
+  est_production DOUBLE,
+  PRIMARY KEY(planet_id, player_id)
+);
 
-  CREATE TABLE tbl_plinfo_routes(planet_id INT, player_id INT, routenum INT,
-                                 order_set INT, dest_star INT, dest_planet INT,
-                                 load INT, unload INT, x INT, y INT,
-                                 PRIMARY KEY(planet_id, player_id, routenum));
+CREATE TABLE tbl_plinfo_routes(
+  planet_id INT,
+  player_id INT,
+  routenum INT,
+  order_set INT,
+  dest_star INT,
+  dest_planet INT,
+  load INT,
+  unload INT,
+  x INT,
+  y INT,
+  PRIMARY KEY(planet_id, player_id, routenum)
+);
 
 CREATE TABLE tbl_star(
-  unsigned short ships INT,
-  char name TEXT,
-  governor_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
-  unsigned char AP[MAXPLAYERS];    /* action pts alotted */
-  unsigned long explored[2];       /* who's been here 64 bits*/
-  unsigned long inhabited[2];      /* who lives here now 64 bits*/
+  star_id INT NOT NULL PRIMARY KEY,
+  ships INT,
+  name TEXT,
   xpos DOUBLE,
   ypos DOUBLE,
 
-  unsigned char numplanets INT,
-  char pnames[MAXPLANETS][NAMESIZE];   /* names of planets */
-  unsigned long planetpos[MAXPLANETS]; /* file posns of planets */
+  numplanets INT,
 
-  unsigned char stability;   /* how close to nova it is */
-  unsigned char nova_stage;  /* stage of nova */
-  unsigned char temperature; /* factor which expresses how hot the star is*/
-  double gravity;            /* attraction of star in "Standards". */
+  stability INT,
+  nova_stage INT,
+  temperature INT,
+  gravity DOUBLE
+);
 
+CREATE TABLE tbl_star_governor(
+  star_id INT NOT NULL,
+  player_id INT NOT NULL,
+  governor_id INT NOT NULL,
+  PRIMARY KEY(star_id, player_id)
+);
+
+CREATE TABLE tbl_star_explored(
+  star_id INT PRIMARY KEY NOT NULL,
+  player_id INT NOT NULL
+);
+
+CREATE TABLE tbl_star_inhabited(
+  star_id INT PRIMARY KEY NOT NULL,
+  player_id INT NOT NULL
+);
+
+CREATE TABLE tbl_star_playerap(
+  star_id INT NOT NULL,
+  player_id INT NOT NULL,
+  ap INT NOT NULL,
+  PRIMARY KEY(star_id, player_id)
 );
 
 CREATE TABLE tbl_stardata(
   numstars INT,
-  unsigned short ships INT,
-  unsigned char AP[MAXPLAYERS]; /* Action pts for each player */
-  unsigned short VN_hitlist[MAXPLAYERS];
-  /* # of ships destroyed by each player */
-  unsigned char VN_index1[MAXPLAYERS]; /* negative value is used */
-  unsigned char VN_index2[MAXPLAYERS]; /* VN's record of destroyed ships
-                                        systems where they bought it */
+  ships INT
 );
+
+CREATE TABLE tbl_stardata_perplayer(
+  player_id INT PRIMARY KEY NOT NULL,
+  ap INT NOT NULL,
+  VN_hitlist INT NOT NULL,
+  VN_index1 INT NOT NULL,
+  VN_index2 INT NOT NULL
+);
+
 )";
-  return;
   char *err_msg = 0;
   int err = sqlite3_exec(db, tbl_create, NULL, NULL, &err_msg);
   if (err != SQLITE_OK) {

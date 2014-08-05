@@ -1658,7 +1658,7 @@ static void help(descriptor_data *e) {
   if (argn == 1) {
     help_user(e);
   } else {
-    sprintf(file, "%s/%s.doc", DOCSDIR, args[1]);
+    sprintf(file, "%s/%s.doc", DOCDIR, args[1]);
     if ((f = fopen(file, "r")) != 0) {
       while (fgets(buf, sizeof buf, f)) {
         for (p = buf; *p; p++)

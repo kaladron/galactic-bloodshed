@@ -22,7 +22,7 @@
               invaluable for debugging */
 
 #define WELCOME_FILE "welcome.txt"
-#define HELP_FILE "help.txt"
+#define HELP_FILE DOCDIR "help.txt"
 #define LEAVE_MESSAGE "\n*** Thank you for playing Galactic Bloodshed ***\n"
 
 #undef EXTERNAL_TRIGGER /* if you wish to allow the below passwords to         \

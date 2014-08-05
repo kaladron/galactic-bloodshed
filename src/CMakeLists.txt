@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 set(PKGSTATEDIR "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${PROJECT_NAME}/")
+set(PKGDATADIR "${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}/")
+set(DOCDIR "${CMAKE_INSTALL_FULL_DOCDIR}/")
 add_definitions(-DPKGSTATEDIR="${PKGSTATEDIR}")
+add_definitions(-DPKGDATADIR="${PKGDATADIR}")
+add_definitions(-DDOCDIR="${DOCDIR}")
 
 add_definitions(-std=c++11)
 

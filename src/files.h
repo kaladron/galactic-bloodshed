@@ -5,9 +5,9 @@
 #ifndef FILES_H
 #define FILES_H
 
-#define PATH(file) PKGSTATEDIR #file
+#define PATH(file) PKGDATADIR #file
 #define DIRPATH(dir, file) PKGSTATEDIR dir #file
-#define DATA(file) DIRPATH("Data/", file)
+#define DATA(file) PKGSTATEDIR #file
 #define NEWS(file) DIRPATH("News/", file)
 #define TELE(file) DIRPATH("Tele/", file)
 
@@ -48,8 +48,8 @@
 #define PLANETLIST PATH(planet.list)
 #define STARLIST PATH(star.list)
 
-#define NOGOFL PATH(nogo)
-#define ADDRESSFL PATH(Addresses)
+#define NOGOFL DATA(nogo)
+#define ADDRESSFL DATA(Addresses)
 
 extern const char *Files[];
 

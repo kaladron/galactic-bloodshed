@@ -124,6 +124,7 @@ CREATE TABLE tbl_stardata(
                                         systems where they bought it */
 );
 )";
+  return;
   char *err_msg = 0;
   int err = sqlite3_exec(db, tbl_create, NULL, NULL, &err_msg);
   if (err != SQLITE_OK) {

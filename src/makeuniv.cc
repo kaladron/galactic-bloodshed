@@ -49,7 +49,7 @@ static int printpostscript = 0;
 int main(int argc, char *argv[]) {
   FILE *stardata, *planetdata, *sectordata;
   char str[200];
-  int c, i, star;
+  int c, i;
 
   /*
    * Initialize: */
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   sprintf(str, "/bin/mkdir %s", DATADIR);
   system(str);
 
-  opensql();
+  open_data_files();
   initsqldata();
 
   if (NULL == (planetdata = fopen(PLANETDATAFL, "w+"))) {
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
-  for (star = 0; star < nstars; star++) {
+  for (starnum_t star = 0; star < nstars; star++) {
     Stars[star] = Makestar(planetdata, sectordata);
   }
   chmod(PLANETDATAFL, 00660); /* change data files to group readwrite */
@@ -197,8 +197,8 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
   fwrite(&(Sdata), sizeof(Sdata), 1, stardata);
-  for (star = 0; star < Sdata.numstars; star++)
-    fwrite(Stars[star], sizeof(startype), 1, stardata);
+  for (starnum_t star = 0; star < Sdata.numstars; star++)
+    putstar(Stars[star], star);
   chmod(STARDATAFL, 00660);
   fclose(stardata);
 

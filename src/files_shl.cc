@@ -32,170 +32,72 @@ static sqlite3 *db;
 void close_file(int fd) { close(fd); }
 
 void initsqldata() __attribute__((no_sanitize_memory)) {
-  const char *tbl_create =
-      R"(
-CREATE TABLE tbl_planet(
-  planet_id INT PRIMARY KEY NOT NULL,
-  star_id INT NOT NULL,
+  const char *tbl_create = R"(
+      CREATE TABLE tbl_planet(
+          planet_id INT PRIMARY KEY NOT NULL, star_id INT NOT NULL,
+          name TEXT NOT NULL, planet_order INT NOT NULL, xpos DOUBLE,
+          ypos DOUBLE, ships INT64, Maxx INT, Maxy INT, popn INT64,
+          troops INT64, maxpopn INT64, total_resources INT64, slaved_to INT,
+          type INT, expltimer INT, condition_rtemp INT, condition_temp INT,
+          condition_methane INT, condition_oxygen INT, condition_co2 INT,
+          condition_hydrogen INT, condition_nitrogen INT, condition_sulfur INT,
+          condition_helium INT, condition_other INT, condition_toxic INT,
+          explored INT);
 
-  name TEXT NOT NULL,
-  planet_order INT NOT NULL,
+  CREATE TABLE
+  tbl_sector(planet_id INT NOT NULL, xpos INT NOT NULL, ypos INT NOT NULL,
+             eff INT, fert INT, mobilization INT, crystals INT, resource INT,
+             popn INT64, troops INT64, owner INT, race INT, type INT,
+             condition INT, PRIMARY KEY(planet_id, xpos, ypos));
 
-  xpos DOUBLE,
-  ypos DOUBLE,
-  ships INT64,
- 
-  Maxx INT,
-  Maxy INT,
+  CREATE TABLE tbl_plinfo(
+      planet_id INT NOT NULL, player_id INT NOT NULL, fuel INT, destruct INT,
+      resource INT, popn INT64, troops INT64, crystals INT, prod_res INT,
+      prod_fuel INT, prod_dest INT, prod_crystals INT, prod_money INT64,
+      prod_tech DOUBLE, tech_invest INT, numsectsowned INT, comread INT,
+      mob_set INT, tox_thresh INT, explored INT, autorep INT, tax INT,
+      newtax INT, guns INT, mob_points INT64, est_production DOUBLE,
+      PRIMARY KEY(planet_id, player_id));
 
-  popn INT64,
-  troops INT64,
-  maxpopn INT64,
-  total_resources INT64,
+  CREATE TABLE tbl_plinfo_routes(planet_id INT, player_id INT, routenum INT,
+                                 order_set INT, dest_star INT, dest_planet INT,
+                                 load INT, unload INT, x INT, y INT,
+                                 PRIMARY KEY(planet_id, player_id, routenum));
 
-  slaved_to INT,
-  type INT,
-  expltimer INT,
+  CREATE TABLE tbl_star(star_id INT NOT NULL PRIMARY KEY, ships INT, name TEXT,
+                        xpos DOUBLE, ypos DOUBLE, numplanets INT, stability INT,
+                        nova_stage INT, temperature INT, gravity DOUBLE);
 
-  condition_rtemp INT,
-  condition_temp INT,
-  condition_methane INT,
-  condition_oxygen INT,
-  condition_co2 INT,
-  condition_hydrogen INT,
-  condition_nitrogen INT,
-  condition_sulfur INT,
-  condition_helium INT,
-  condition_other INT,
-  condition_toxic INT,
-  explored INT
-);
+  CREATE TABLE tbl_star_governor(star_id INT NOT NULL, player_id INT NOT NULL,
+                                 governor_id INT NOT NULL,
+                                 PRIMARY KEY(star_id, player_id));
 
-CREATE TABLE tbl_sector(
-  planet_id INT NOT NULL, 
-  xpos INT NOT NULL,
-  ypos INT NOT NULL,
-  eff INT,
-  fert INT,
-  mobilization INT,
-  crystals INT,
-  resource INT,
-  popn INT64,
-  troops INT64,
-  owner INT,
-  race INT,
-  type INT,
-  condition INT,
-  PRIMARY KEY(planet_id, xpos, ypos)
-);
+  CREATE TABLE
+  tbl_star_explored(star_id INT PRIMARY KEY NOT NULL, player_id INT NOT NULL);
 
-CREATE TABLE tbl_plinfo(
-  planet_id INT NOT NULL,
-  player_id INT NOT NULL,
-  fuel INT,
-  destruct INT,
-  resource INT,
-  popn INT64,
-  troops INT64,
-  crystals INT,
-  prod_res INT,
-  prod_fuel INT,
-  prod_dest INT,
-  prod_crystals INT,
-  prod_money INT64,
-  prod_tech DOUBLE,
-  tech_invest INT,
-  numsectsowned INT,
-  comread INT,
-  mob_set INT,
-  tox_thresh INT,
-  explored INT,
-  autorep INT,
-  tax INT,
-  newtax INT,
-  guns INT,
-  mob_points INT64,
-  est_production DOUBLE,
-  PRIMARY KEY(planet_id, player_id)
-);
+  CREATE TABLE
+  tbl_star_inhabited(star_id INT PRIMARY KEY NOT NULL, player_id INT NOT NULL);
 
-CREATE TABLE tbl_plinfo_routes(
-  planet_id INT,
-  player_id INT,
-  routenum INT,
-  order_set INT,
-  dest_star INT,
-  dest_planet INT,
-  load INT,
-  unload INT,
-  x INT,
-  y INT,
-  PRIMARY KEY(planet_id, player_id, routenum)
-);
+  CREATE TABLE tbl_star_playerap(star_id INT NOT NULL, player_id INT NOT NULL,
+                                 ap INT NOT NULL,
+                                 PRIMARY KEY(star_id, player_id));
 
-CREATE TABLE tbl_star(
-  star_id INT NOT NULL PRIMARY KEY,
-  ships INT,
-  name TEXT,
-  xpos DOUBLE,
-  ypos DOUBLE,
+  CREATE TABLE tbl_stardata(numstars INT, ships INT);
 
-  numplanets INT,
-
-  stability INT,
-  nova_stage INT,
-  temperature INT,
-  gravity DOUBLE
-);
-
-CREATE TABLE tbl_star_governor(
-  star_id INT NOT NULL,
-  player_id INT NOT NULL,
-  governor_id INT NOT NULL,
-  PRIMARY KEY(star_id, player_id)
-);
-
-CREATE TABLE tbl_star_explored(
-  star_id INT PRIMARY KEY NOT NULL,
-  player_id INT NOT NULL
-);
-
-CREATE TABLE tbl_star_inhabited(
-  star_id INT PRIMARY KEY NOT NULL,
-  player_id INT NOT NULL
-);
-
-CREATE TABLE tbl_star_playerap(
-  star_id INT NOT NULL,
-  player_id INT NOT NULL,
-  ap INT NOT NULL,
-  PRIMARY KEY(star_id, player_id)
-);
-
-CREATE TABLE tbl_stardata(
-  numstars INT,
-  ships INT
-);
-
-CREATE TABLE tbl_stardata_perplayer(
-  player_id INT PRIMARY KEY NOT NULL,
-  ap INT NOT NULL,
-  VN_hitlist INT NOT NULL,
-  VN_index1 INT NOT NULL,
-  VN_index2 INT NOT NULL
-);
+  CREATE TABLE tbl_stardata_perplayer(
+      player_id INT PRIMARY KEY NOT NULL, ap INT NOT NULL,
+      VN_hitlist INT NOT NULL, VN_index1 INT NOT NULL, VN_index2 INT NOT NULL);
 
 )";
   char *err_msg = 0;
-  int err = sqlite3_exec(db, tbl_create, NULL, NULL, &err_msg);
-  if (err != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", err_msg);
-    sqlite3_free(err_msg);
-  }
+int err = sqlite3_exec(db, tbl_create, NULL, NULL, &err_msg);
+if (err != SQLITE_OK) {
+  fprintf(stderr, "SQL error: %s\n", err_msg);
+  sqlite3_free(err_msg);
+}
 }
 
 void opensql() {
-  fprintf(stderr, "did this");
   int err = sqlite3_open(PKGSTATEDIR "gb.db", &db);
   if (err) {
     fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
@@ -417,9 +319,19 @@ void putrace(racetype *r) {
             (r->Playernum - 1) * sizeof(racetype));
 }
 
-void putstar(startype *s, int snum) {
+void putstar(startype *s, starnum_t snum) {
   Filewrite(stdata, (char *)s, sizeof(startype),
             (int)(sizeof(Sdata) + snum * sizeof(startype)));
+  char *sql;
+  asprintf(&sql, 
+           "REPLACE INTO tbl_star (star_id, ships, name, xpos, ypos, numplanets, stability, nova_stage, temperature, gravity) "
+           "VALUES (%d, %d, '%s', %f, %f, %d, %d, %d, %d, %f);", snum, s->ships, s->name, s->xpos, s->ypos, s->numplanets, s->stability, s->nova_stage, s->temperature, s->gravity);
+  char *err_msg = 0;
+  int err = sqlite3_exec(db, sql, NULL, NULL, &err_msg);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
+  }
 }
 
 void putplanet(planettype *p, int star, int pnum) {

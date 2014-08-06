@@ -35,7 +35,7 @@ int getdeadcommod(void);
 void initsqldata(void);
 void putsdata(struct stardata *);
 void putrace(racetype *);
-void putstar(startype *, int);
+void putstar(startype *, starnum_t);
 void putplanet(planettype *, int, int);
 void putsector(sectortype *, planettype *, int, int);
 void putsmap(sectortype *, planettype *);

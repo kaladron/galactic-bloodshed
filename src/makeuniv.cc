@@ -47,7 +47,7 @@ static int planetlesschance = 0;
 static int printpostscript = 0;
 
 int main(int argc, char *argv[]) {
-  FILE *stardata, *planetdata, *sectordata;
+  FILE *planetdata, *sectordata;
   char str[200];
   int c, i;
 
@@ -192,15 +192,10 @@ int main(int argc, char *argv[]) {
       }
 #endif
 
-  if ((stardata = fopen(STARDATAFL, "w+")) == NULL) {
-    printf("Unable to open star data file \"%s\"\n", STARDATAFL);
-    exit(-1);
-  }
-  fwrite(&(Sdata), sizeof(Sdata), 1, stardata);
+  putsdata(&Sdata);
   for (starnum_t star = 0; star < Sdata.numstars; star++)
     putstar(Stars[star], star);
   chmod(STARDATAFL, 00660);
-  fclose(stardata);
 
   EmptyFile(SHIPDATAFL);
   EmptyFile(SHIPFREEDATAFL);

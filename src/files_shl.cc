@@ -82,7 +82,7 @@ void initsqldata() __attribute__((no_sanitize_memory)) {
                                  ap INT NOT NULL,
                                  PRIMARY KEY(star_id, player_id));
 
-  CREATE TABLE tbl_stardata(numstars INT, ships INT);
+  CREATE TABLE tbl_stardata(index INT PRIMARY KET NOT NULL, ships INT);
 
   CREATE TABLE tbl_stardata_perplayer(
       player_id INT PRIMARY KEY NOT NULL, ap INT NOT NULL,
@@ -90,11 +90,11 @@ void initsqldata() __attribute__((no_sanitize_memory)) {
 
 )";
   char *err_msg = 0;
-int err = sqlite3_exec(db, tbl_create, NULL, NULL, &err_msg);
-if (err != SQLITE_OK) {
-  fprintf(stderr, "SQL error: %s\n", err_msg);
-  sqlite3_free(err_msg);
-}
+  int err = sqlite3_exec(db, tbl_create, NULL, NULL, &err_msg);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
+  }
 }
 
 void opensql() {
@@ -219,8 +219,7 @@ void getsmap(const sectortype *map, const planettype *p) {
 int getship(shiptype **s, shipnum_t shipnum) {
   struct stat buffer;
 
-  if (shipnum <= 0)
-    return 0;
+  if (shipnum <= 0) return 0;
 
   fstat(shdata, &buffer);
   if (buffer.st_size / sizeof(shiptype) < shipnum)
@@ -238,8 +237,7 @@ int getship(shiptype **s, shipnum_t shipnum) {
 int getcommod(commodtype **c, int commodnum) {
   struct stat buffer;
 
-  if (commodnum <= 0)
-    return 0;
+  if (commodnum <= 0) return 0;
 
   fstat(commoddata, &buffer);
   if (buffer.st_size / sizeof(commodtype) < commodnum)
@@ -323,9 +321,12 @@ void putstar(startype *s, starnum_t snum) {
   Filewrite(stdata, (char *)s, sizeof(startype),
             (int)(sizeof(Sdata) + snum * sizeof(startype)));
   char *sql;
-  asprintf(&sql, 
-           "REPLACE INTO tbl_star (star_id, ships, name, xpos, ypos, numplanets, stability, nova_stage, temperature, gravity) "
-           "VALUES (%d, %d, '%s', %f, %f, %d, %d, %d, %d, %f);", snum, s->ships, s->name, s->xpos, s->ypos, s->numplanets, s->stability, s->nova_stage, s->temperature, s->gravity);
+  asprintf(&sql,
+           "REPLACE INTO tbl_star (star_id, ships, name, xpos, ypos, "
+           "numplanets, stability, nova_stage, temperature, gravity) "
+           "VALUES (%d, %d, '%s', %f, %f, %d, %d, %d, %d, %f);",
+           snum, s->ships, s->name, s->xpos, s->ypos, s->numplanets,
+           s->stability, s->nova_stage, s->temperature, s->gravity);
   char *err_msg = 0;
   int err = sqlite3_exec(db, sql, NULL, NULL, &err_msg);
   if (err != SQLITE_OK) {
@@ -388,25 +389,22 @@ int Newslength(int type) {
   FILE *fp;
 
   switch (type) {
-  case DECLARATION:
-    if ((fp = fopen(DECLARATIONFL, "r")) == NULL)
-      fp = fopen(DECLARATIONFL, "w+");
-    break;
+    case DECLARATION:
+      if ((fp = fopen(DECLARATIONFL, "r")) == NULL)
+        fp = fopen(DECLARATIONFL, "w+");
+      break;
 
-  case TRANSFER:
-    if ((fp = fopen(TRANSFERFL, "r")) == NULL)
-      fp = fopen(TRANSFERFL, "w+");
-    break;
-  case COMBAT:
-    if ((fp = fopen(COMBATFL, "r")) == NULL)
-      fp = fopen(COMBATFL, "w+");
-    break;
-  case ANNOUNCE:
-    if ((fp = fopen(ANNOUNCEFL, "r")) == NULL)
-      fp = fopen(ANNOUNCEFL, "w+");
-    break;
-  default:
-    return 0;
+    case TRANSFER:
+      if ((fp = fopen(TRANSFERFL, "r")) == NULL) fp = fopen(TRANSFERFL, "w+");
+      break;
+    case COMBAT:
+      if ((fp = fopen(COMBATFL, "r")) == NULL) fp = fopen(COMBATFL, "w+");
+      break;
+    case ANNOUNCE:
+      if ((fp = fopen(ANNOUNCEFL, "r")) == NULL) fp = fopen(ANNOUNCEFL, "w+");
+      break;
+    default:
+      return 0;
   }
   fstat(fileno(fp), &buffer);
   fclose(fp);
@@ -428,8 +426,7 @@ void makeshipdead(int shipnum) {
 
   shipno = shipnum; /* conv to u_short */
 
-  if (shipno == 0)
-    return;
+  if (shipno == 0) return;
 
   if ((fd = open(SHIPFREEDATAFL, O_WRONLY, 0777)) < 0) {
     printf("fd = %d \n", fd);
@@ -453,8 +450,7 @@ void makecommoddead(int commodnum) {
 
   commodno = commodnum; /* conv to u_short */
 
-  if (commodno == 0)
-    return;
+  if (commodno == 0) return;
 
   if ((fd = open(COMMODFREEDATAFL, O_WRONLY, 0777)) < 0) {
     printf("fd = %d \n", fd);

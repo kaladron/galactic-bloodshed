@@ -84,13 +84,13 @@ public:
     unsigned char homeplanetnum; /* home place */
     unsigned long newspos[4];    /* news file pointers */
     toggletype toggle;
-    unsigned long money;
+    money_t money;
     unsigned long income;
     unsigned long maintain;
     unsigned long cost_tech;
     unsigned long cost_market;
     unsigned long profit_market;
-    long login; /* last login for this governor */
+    time_t login; /* last login for this governor */
   } governor[MAXGOVERNORS + 1];
 };
 

@@ -33,7 +33,9 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
   planettype *planet;
   sectortype *sect;
   racetype *Race;
-  int x = -1, y = -1, amount = 0, cost = 0, enlist_cost, max_allowed;
+  int x = -1, y = -1, max_allowed;
+  int amount = 0;
+  money_t cost = 0;
 
   if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
     notify(Playernum, Governor, "Change scope to planet level first.\n");
@@ -90,9 +92,9 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     }
     Race = races[Playernum - 1];
     /*    enlist_cost = ENLIST_TROOP_COST * amount; */
-    enlist_cost = Race->fighters * amount;
+    money_t enlist_cost = Race->fighters * amount;
     if (enlist_cost > Race->governor[Governor].money) {
-      sprintf(buf, "You need %d money to enlist %d troops.\n", enlist_cost,
+      sprintf(buf, "You need %ld money to enlist %d troops.\n", enlist_cost,
               amount);
       notify(Playernum, Governor, buf);
       free(planet);
@@ -110,11 +112,11 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     planet->troops += amount;
     planet->info[Playernum - 1].troops += amount;
     planet->info[Playernum - 1].destruct -= cost;
-    sprintf(buf, "%d population armed at a cost of %dd (now %d civilians, %d "
+    sprintf(buf, "%d population armed at a cost of %ldd (now %d civilians, %d "
                  "military)\n",
             amount, cost, sect->popn, sect->troops);
     notify(Playernum, Governor, buf);
-    sprintf(buf, "This mobilization cost %d money.\n", enlist_cost);
+    sprintf(buf, "This mobilization cost %ld money.\n", enlist_cost);
     notify(Playernum, Governor, buf);
   } else {
     if (argn < 3)

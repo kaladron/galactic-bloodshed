@@ -33,6 +33,8 @@ typedef uint8_t planetnum_t;
 typedef uint8_t player_t;
 typedef uint8_t governor_t;
 
+typedef uint64_t money_t;
+
 typedef std::vector<std::string> command_t;
 
 #define MAXPLAYERS 64

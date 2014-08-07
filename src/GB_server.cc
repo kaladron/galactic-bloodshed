@@ -108,7 +108,7 @@ struct text_queue {
 };
 
 class descriptor_data {
-public:
+ public:
   int descriptor;
   int connected;
   int God;       /* deity status */
@@ -190,6 +190,7 @@ int main(int argc, char **argv) {
       {"bid", bid},
       {"build", build},
       {"dismount", mount},
+      {"enslave", enslave},
       {"factories", rst},
       {"make", make_mod},
       {"map", map},
@@ -216,26 +217,26 @@ int main(int argc, char **argv) {
   printf("      The segment password is '%s'.\n", SEGMENT_PASSWORD);
 #endif
   switch (argc) {
-  case 2:
-    port = atoi(argv[1]);
-    update_time = DEFAULT_UPDATE_TIME;
-    segments = MOVES_PER_UPDATE;
-    break;
-  case 3:
-    port = atoi(argv[1]);
-    update_time = atoi(argv[2]);
-    segments = MOVES_PER_UPDATE;
-    break;
-  case 4:
-    port = atoi(argv[1]);
-    update_time = atoi(argv[2]);
-    segments = atoi(argv[3]);
-    break;
-  default:
-    port = GB_PORT;
-    update_time = DEFAULT_UPDATE_TIME;
-    segments = MOVES_PER_UPDATE;
-    break;
+    case 2:
+      port = atoi(argv[1]);
+      update_time = DEFAULT_UPDATE_TIME;
+      segments = MOVES_PER_UPDATE;
+      break;
+    case 3:
+      port = atoi(argv[1]);
+      update_time = atoi(argv[2]);
+      segments = MOVES_PER_UPDATE;
+      break;
+    case 4:
+      port = atoi(argv[1]);
+      update_time = atoi(argv[2]);
+      segments = atoi(argv[3]);
+      break;
+    default:
+      port = GB_PORT;
+      update_time = DEFAULT_UPDATE_TIME;
+      segments = MOVES_PER_UPDATE;
+      break;
   }
   fprintf(stderr, "      Port %d\n", port);
   fprintf(stderr, "      %d minutes between updates\n", update_time);
@@ -246,12 +247,9 @@ int main(int argc, char **argv) {
   if (stat(UPDATEFL, &stbuf) >= 0) {
     if ((sfile = fopen(UPDATEFL, "r"))) {
       char dum[32];
-      if (fgets(dum, sizeof dum, sfile))
-        nupdates_done = atoi(dum);
-      if (fgets(dum, sizeof dum, sfile))
-        last_update_time = atol(dum);
-      if (fgets(dum, sizeof dum, sfile))
-        next_update_time = atol(dum);
+      if (fgets(dum, sizeof dum, sfile)) nupdates_done = atoi(dum);
+      if (fgets(dum, sizeof dum, sfile)) last_update_time = atol(dum);
+      if (fgets(dum, sizeof dum, sfile)) next_update_time = atol(dum);
       fclose(sfile);
     }
     sprintf(update_buf, "Last Update %3d : %s", nupdates_done,
@@ -264,12 +262,9 @@ int main(int argc, char **argv) {
     if (stat(SEGMENTFL, &stbuf) >= 0) {
       if ((sfile = fopen(SEGMENTFL, "r"))) {
         char dum[32];
-        if (fgets(dum, sizeof dum, sfile))
-          nsegments_done = atoi(dum);
-        if (fgets(dum, sizeof dum, sfile))
-          last_segment_time = atol(dum);
-        if (fgets(dum, sizeof dum, sfile))
-          next_segment_time = atol(dum);
+        if (fgets(dum, sizeof dum, sfile)) nsegments_done = atoi(dum);
+        if (fgets(dum, sizeof dum, sfile)) last_segment_time = atol(dum);
+        if (fgets(dum, sizeof dum, sfile)) next_segment_time = atol(dum);
         fclose(sfile);
       }
     }
@@ -310,8 +305,7 @@ int main(int argc, char **argv) {
 void set_signals(void) { signal(SIGPIPE, SIG_IGN); }
 
 void notify_race(int race, const char *message) {
-  if (update_flag)
-    return;
+  if (update_flag) return;
   for (auto d : *descriptor_list) {
     if (d->connected && d->Playernum == race) {
       queue_string(d, message);
@@ -322,8 +316,7 @@ void notify_race(int race, const char *message) {
 int notify(int race, int gov, const char *message) {
   int ok;
 
-  if (update_flag)
-    return 0;
+  if (update_flag) return 0;
   ok = 0;
   for (auto d : *descriptor_list)
     if (d->connected && d->Playernum == race && d->Governor == gov) {
@@ -415,10 +408,8 @@ void shovechars(int port) __attribute__((no_sanitize_memory)) {
 
   avail_descriptors = getdtablesize() - 4;
 
-  if (!shutdown_flag)
-    post("Server started\n", ANNOUNCE);
-  for (i = 0; i <= ANNOUNCE; i++)
-    newslength[i] = Newslength(i);
+  if (!shutdown_flag) post("Server started\n", ANNOUNCE);
+  for (i = 0; i <= ANNOUNCE; i++) newslength[i] = Newslength(i);
 
   while (!shutdown_flag) {
     fflush(stdout);
@@ -427,8 +418,7 @@ void shovechars(int port) __attribute__((no_sanitize_memory)) {
 
     process_commands();
 
-    if (shutdown_flag)
-      break;
+    if (shutdown_flag) break;
     timeout.tv_sec = 30;
     timeout.tv_usec = 0;
     next_slice = msec_add(last_slice, COMMAND_TIME_MSEC);
@@ -436,15 +426,13 @@ void shovechars(int port) __attribute__((no_sanitize_memory)) {
 
     FD_ZERO(&input_set);
     FD_ZERO(&output_set);
-    if (ndescriptors < avail_descriptors)
-      FD_SET(sock, &input_set);
+    if (ndescriptors < avail_descriptors) FD_SET(sock, &input_set);
     for (auto d : *descriptor_list) {
       if (d->input.head)
         timeout = slice_timeout;
       else
         FD_SET(d->descriptor, &input_set);
-      if (d->output.head)
-        FD_SET(d->descriptor, &output_set);
+      if (d->output.head) FD_SET(d->descriptor, &output_set);
     }
 
     if (select(FD_SETSIZE, &input_set, &output_set, NULL, &timeout) < 0) {
@@ -543,8 +531,7 @@ struct timeval update_quotas(struct timeval last, struct timeval current) {
   if (nslices > 0) {
     for (auto d : *descriptor_list) {
       d->quota += COMMANDS_PER_TIME * nslices;
-      if (d->quota > COMMAND_BURST_SIZE)
-        d->quota = COMMAND_BURST_SIZE;
+      if (d->quota > COMMAND_BURST_SIZE) d->quota = COMMAND_BURST_SIZE;
     }
   }
   return msec_add(last, nslices * COMMAND_TIME_MSEC);
@@ -609,15 +596,13 @@ int address_ok(struct sockaddr_in *ap) {
       while (fgets(ibuf, sizeof ibuf, afile)) {
         cp = ibuf;
         aval = 1;
-        if (*cp == '#' || *cp == '\n' || *cp == '\r')
-          continue;
+        if (*cp == '#' || *cp == '\n' || *cp == '\r') continue;
         if (*cp == '!') {
           cp++;
           aval = 0;
         }
         ina = inet_addr(cp);
-        if (ina != -1)
-          add_address(ina, aval);
+        if (ina != -1) add_address(ina, aval);
       }
       fclose(afile);
       /* Always allow localhost. */
@@ -645,8 +630,7 @@ address_match(struct in_addr *addr, struct in_addr *apat) {
       return 0;
     return 1;
   } else {
-    if (apat->S_un.S_un_b.s_b1 != addr->S_un.S_un_b.s_b1)
-      return 0;
+    if (apat->S_un.S_un_b.s_b1 != addr->S_un.S_un_b.s_b1) return 0;
   }
   if (!apat->S_un.S_un_b.s_b2) {
     if (apat->S_un.S_un_b.s_b4 &&
@@ -654,8 +638,7 @@ address_match(struct in_addr *addr, struct in_addr *apat) {
       return 0;
     return 1;
   } else {
-    if (apat->S_un.S_un_b.s_b2 != addr->S_un.S_un_b.s_b2)
-      return 0;
+    if (apat->S_un.S_un_b.s_b2 != addr->S_un.S_un_b.s_b2) return 0;
   }
   if (!apat->S_un.S_un_b.s_b3) {
     if (apat->S_un.S_un_b.s_b4 &&
@@ -663,11 +646,9 @@ address_match(struct in_addr *addr, struct in_addr *apat) {
       return 0;
     return 1;
   } else {
-    if (apat->S_un.S_un_b.s_b3 != addr->S_un.S_un_b.s_b3)
-      return 0;
+    if (apat->S_un.S_un_b.s_b3 != addr->S_un.S_un_b.s_b3) return 0;
   }
-  if (apat->S_un.S_un_b.s_b4 != addr->S_un.S_un_b.s_b4)
-    return 0;
+  if (apat->S_un.S_un_b.s_b4 != addr->S_un.S_un_b.s_b4) return 0;
   return 1;
 }
 
@@ -766,8 +747,7 @@ void free_text_block(struct text_block *t) {
 static void add_to_queue(struct text_queue *q, const char *b, int n) {
   struct text_block *p;
 
-  if (n == 0)
-    return;
+  if (n == 0) return;
 
   p = make_text_block(b, n);
   p->nxt = 0;
@@ -790,8 +770,7 @@ int flush_queue(struct text_queue *q, int n) {
   p = make_text_block(flushed_message, strlen(flushed_message));
   p->nxt = q->head;
   q->head = p;
-  if (!p->nxt)
-    q->tail = &p->nxt;
+  if (!p->nxt) q->tail = &p->nxt;
   really_flushed -= p->nchars;
   return really_flushed;
 }
@@ -800,8 +779,7 @@ static void queue_write(descriptor_data *d, const char *b, int n) {
   int space;
 
   space = MAX_OUTPUT - d->output_size - n;
-  if (space < 0)
-    d->output_size -= flush_queue(&d->output, -space);
+  if (space < 0) d->output_size -= flush_queue(&d->output, -space);
   add_to_queue(&d->output, b, n);
   d->output_size += n;
 }
@@ -817,15 +795,13 @@ int process_output(descriptor_data *d) {
   for (qp = &d->output.head; (cur = *qp);) {
     cnt = write(d->descriptor, cur->start, cur->nchars);
     if (cnt < 0) {
-      if (errno == EWOULDBLOCK)
-        return 1;
+      if (errno == EWOULDBLOCK) return 1;
       d->connected = 0; /* added this */
       return 0;
     }
     d->output_size -= cnt;
     if (cnt == cur->nchars) {
-      if (!cur->nxt)
-        d->output.tail = qp;
+      if (!cur->nxt) d->output.tail = qp;
       *qp = cur->nxt;
       free_text_block(cur);
       continue; /* do not adv ptr */
@@ -839,8 +815,7 @@ int process_output(descriptor_data *d) {
 
 void force_output(void) {
   for (auto d : *descriptor_list)
-    if (d->connected)
-      (void)process_output(d);
+    if (d->connected) (void)process_output(d);
 }
 
 void make_nonblocking(int s) {
@@ -871,8 +846,7 @@ void freeqs(descriptor_data *d) {
   d->input.head = 0;
   d->input.tail = &d->input.head;
 
-  if (d->raw_input)
-    free(d->raw_input);
+  if (d->raw_input) free(d->raw_input);
   d->raw_input = 0;
   d->raw_input_at = 0;
 }
@@ -926,8 +900,7 @@ static char *strsave(char *s) {
 
   p = (char *)malloc((strlen(s) + 1) * sizeof(char));
 
-  if (p)
-    strcpy(p, s);
+  if (p) strcpy(p, s);
   return p;
 }
 
@@ -940,8 +913,7 @@ int process_input(descriptor_data *d) {
   char *p, *pend, *q, *qend;
 
   got = read(d->descriptor, buf, sizeof buf);
-  if (got <= 0)
-    return 0;
+  if (got <= 0) return 0;
   if (!d->raw_input) {
     d->raw_input = (char *)malloc(MAX_COMMAND_LEN * sizeof(char));
     d->raw_input_at = d->raw_input;
@@ -951,8 +923,7 @@ int process_input(descriptor_data *d) {
   for (q = buf, qend = buf + got; q < qend; q++) {
     if (*q == '\n') {
       *p = '\0';
-      if (p > d->raw_input)
-        save_command(d, d->raw_input);
+      if (p > d->raw_input) save_command(d, d->raw_input);
       p = d->raw_input;
     } else if (p < pend && isascii(*q) && isprint(*q)) {
       *p++ = *q;
@@ -973,10 +944,8 @@ void set_userstring(char **userstring, char *comm) {
     free(*userstring);
     *userstring = 0;
   }
-  while (*comm && isascii(*comm) && isspace(*comm))
-    comm++;
-  if (*comm)
-    *userstring = strsave(comm);
+  while (*comm && isascii(*comm) && isspace(*comm)) comm++;
+  if (*comm) *userstring = strsave(comm);
 }
 
 void process_commands(void) {
@@ -999,8 +968,7 @@ void process_commands(void) {
         } else {
           d->last_time = now; /* experimental code */
           d->input.head = t->nxt;
-          if (!d->input.head)
-            d->input.tail = &d->input.head;
+          if (!d->input.head) d->input.tail = &d->input.head;
           free_text_block(t);
           d->last_time = now; /* experimental code */
         }
@@ -1028,14 +996,11 @@ int do_command(descriptor_data *d, char *comm) {
     while (!isspace(*string) && (*string != '\0') && (i < COMMANDSIZE))
       args[argn][i++] = (*string++);
     args[argn][i] = '\0';
-    while ((*string) == ' ')
-      string++;
-    if ((*string == '\0') || (argn >= MAXARGS))
-      parse_exit = 1;
+    while ((*string) == ' ') string++;
+    if ((*string == '\0') || (argn >= MAXARGS)) parse_exit = 1;
     argn++;
   }
-  for (i = argn; i < MAXARGS; i++)
-    args[i][0] = '\0';
+  for (i = argn; i < MAXARGS; i++) args[i][0] = '\0';
 
   if (!strcmp(args[0], QUIT_COMMAND)) {
     goodbye_user(d);
@@ -1133,8 +1098,9 @@ void check_connect(descriptor_data *d, char *message) {
     r->governor[j].login = time(0);
     putrace(r);
     if (!r->Gov_ship) {
-      sprintf(buf, "You have no Governmental Center.  No action points will be "
-                   "produced\nuntil you build one and designate a capital.\n");
+      sprintf(buf,
+              "You have no Governmental Center.  No action points will be "
+              "produced\nuntil you build one and designate a capital.\n");
       notify(Playernum, Governor, buf);
     } else {
       sprintf(buf, "Government Center #%lu is active.\n", r->Gov_ship);
@@ -1156,8 +1122,7 @@ void do_update(int override) {
 
   sprintf(buf, "%sDOING UPDATE...\n", ctime(&clk));
   if (!fakeit) {
-    for (i = 1; i <= Num_races; i++)
-      notify_race(i, buf);
+    for (i = 1; i <= Num_races; i++) notify_race(i, buf);
     force_output();
   }
 
@@ -1177,8 +1142,7 @@ void do_update(int override) {
   else
     next_update_time += update_time * 60;
 
-  if (!fakeit)
-    nupdates_done++;
+  if (!fakeit) nupdates_done++;
 
   sprintf(Power_blocks.time, "%s", ctime(&clk));
   sprintf(update_buf, "Last Update %3d : %s", nupdates_done, ctime(&clk));
@@ -1208,14 +1172,12 @@ void do_update(int override) {
   }
 
   update_flag = 1;
-  if (!fakeit)
-    do_turn(1);
+  if (!fakeit) do_turn(1);
   update_flag = 0;
   clk = time(0);
   sprintf(buf, "%sUpdate %d finished\n", ctime(&clk), nupdates_done);
   if (!fakeit) {
-    for (i = 1; i <= Num_races; i++)
-      notify_race(i, buf);
+    for (i = 1; i <= Num_races; i++) notify_race(i, buf);
     force_output();
   }
 }
@@ -1228,13 +1190,11 @@ void do_segment(int override, int segment) {
 
   fakeit = (!override && stat(NOGOFL, &stbuf) >= 0);
 
-  if (!override && segments <= 1)
-    return;
+  if (!override && segments <= 1) return;
 
   sprintf(buf, "%sDOING MOVEMENT...\n", ctime(&clk));
   if (!fakeit) {
-    for (i = 1; i <= Num_races; i++)
-      notify_race(i, buf);
+    for (i = 1; i <= Num_races; i++) notify_race(i, buf);
     force_output();
   }
   if (override) {
@@ -1252,8 +1212,7 @@ void do_segment(int override, int segment) {
   }
 
   update_flag = 1;
-  if (!fakeit)
-    do_turn(0);
+  if (!fakeit) do_turn(0);
   update_flag = 0;
   unlink(SEGMENTFL);
   if ((sfile = fopen(SEGMENTFL, "w"))) {
@@ -1270,8 +1229,7 @@ void do_segment(int override, int segment) {
   clk = time(0);
   sprintf(buf, "%sSegment finished\n", ctime(&clk));
   if (!fakeit) {
-    for (i = 1; i <= Num_races; i++)
-      notify_race(i, buf);
+    for (i = 1; i <= Num_races; i++) notify_race(i, buf);
     force_output();
   }
 }
@@ -1280,18 +1238,14 @@ void parse_connect(char *message, char *race_pass, char *gov_pass) {
   char *p;
   char *q;
   /* race password */
-  while (*message && isascii(*message) && isspace(*message))
-    message++;
+  while (*message && isascii(*message) && isspace(*message)) message++;
   p = race_pass;
-  while (*message && isascii(*message) && !isspace(*message))
-    *p++ = *message++;
+  while (*message && isascii(*message) && !isspace(*message)) *p++ = *message++;
   *p = '\0';
   /* governor password */
-  while (*message && isascii(*message) && isspace(*message))
-    message++;
+  while (*message && isascii(*message) && isspace(*message)) message++;
   q = gov_pass;
-  while (*message && isascii(*message) && !isspace(*message))
-    *q++ = *message++;
+  while (*message && isascii(*message) && !isspace(*message)) *q++ = *message++;
   *q = '\0';
 }
 
@@ -1301,8 +1255,7 @@ void close_sockets(void) {
 
   for (auto d : *descriptor_list) {
     write(d->descriptor, shutdown_message, strlen(shutdown_message));
-    if (shutdown(d->descriptor, 2) < 0)
-      perror("shutdown");
+    if (shutdown(d->descriptor, 2) < 0) perror("shutdown");
     close(d->descriptor);
   }
   close(sock);
@@ -1329,18 +1282,17 @@ void dump_users(descriptor_data *e) {
       if (!r->governor[d->Governor].toggle.invisible ||
           e->Playernum == d->Playernum || God) {
         sprintf(temp, "\"%s\"", r->governor[d->Governor].name);
-        sprintf(buf, "%20.20s %20.20s [%2d,%2d] %4lds idle %-4.4s %s %s\n",
-                r->name, temp, d->Playernum, d->Governor, now - d->last_time,
-                God ? Stars[Dir[d->Playernum - 1][d->Governor].snum]->name
-                    : "    ",
-                (r->governor[d->Governor].toggle.gag ? "GAG" : "   "),
-                (r->governor[d->Governor].toggle.invisible ? "INVISIBLE" : ""));
+        sprintf(
+            buf, "%20.20s %20.20s [%2d,%2d] %4lds idle %-4.4s %s %s\n", r->name,
+            temp, d->Playernum, d->Governor, now - d->last_time,
+            God ? Stars[Dir[d->Playernum - 1][d->Governor].snum]->name : "    ",
+            (r->governor[d->Governor].toggle.gag ? "GAG" : "   "),
+            (r->governor[d->Governor].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, buf);
       } else if (!God) /* deity lurks around */
         coward_count++;
 
-      if ((now - d->last_time) > DISCONNECT_TIME)
-        d->connected = 0;
+      if ((now - d->last_time) > DISCONNECT_TIME) d->connected = 0;
     }
   }
 #ifdef SHOW_COWARDS
@@ -1365,8 +1317,7 @@ static void process_command(int Playernum, int Governor, const char *comm,
   Guest = r->Guest;
 
   const char *string = comm;
-  while (*string && *string != ' ')
-    string++;
+  while (*string && *string != ' ') string++;
 
   auto command = commands->find(argv[0]);
   if (command != commands->end()) {
@@ -1421,8 +1372,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     dock(Playernum, Governor, 0, 0);
   else if (match(args[0], "dump") && !Guest)
     dump(Playernum, Governor, 10);
-  else if (match(args[0], "enslave"))
-    enslave(Playernum, Governor, 2);
   else if (match(args[0], "examine"))
     examine(Playernum, Governor, 0);
   else if (match(args[0], "explore"))
@@ -1495,8 +1444,7 @@ static void process_command(int Playernum, int Governor, const char *comm,
   else if (match(args[0], "read"))
     read_messages(Playernum, Governor, 0);
   else if (match(args[0], "@@reset") && God) {
-    for (j = 1; j <= Num_races; j++)
-      notify_race(j, "DOING RESET...\n");
+    for (j = 1; j <= Num_races; j++) notify_race(j, "DOING RESET...\n");
     force_output();
     load_race_data();
     load_star_data();
@@ -1609,8 +1557,7 @@ void load_star_data(void) {
     for (t = 0; t < Stars[s]->numplanets; t++) {
       planets[s][t] = &planet_arena[--pcount];
       getplanet(&planets[s][t], s, t);
-      if (planets[s][t]->type != TYPE_ASTEROID)
-        Planet_count++;
+      if (planets[s][t]->type != TYPE_ASTEROID) Planet_count++;
     }
   }
   /* initialize zoom factors */
@@ -1697,8 +1644,7 @@ void kill_ship(int Playernum, shiptype *ship) {
   if (ship->type != STYPE_POD && ship->type != OTYPE_FACTORY) {
     /* pods don't do things to morale, ditto for factories */
     victim = races[ship->owner - 1];
-    if (victim->Gov_ship == ship->number)
-      victim->Gov_ship = 0;
+    if (victim->Gov_ship == ship->number) victim->Gov_ship = 0;
     if (!victim->God && Playernum != ship->owner && ship->type != OTYPE_VN) {
       killer = races[Playernum - 1];
       adjust_morale(killer, victim, (int)ship->build_cost);
@@ -1833,8 +1779,7 @@ void remove_sh_star(shiptype *s) {
     while (sh != s->number) {
       (void)getship(&s2, sh);
       sh = s2->nextship;
-      if (sh != s->number)
-        free(s2);
+      if (sh != s->number) free(s2);
     }
     s2->nextship = s->nextship;
     putship(s2);
@@ -1859,8 +1804,7 @@ void remove_sh_plan(shiptype *s) {
     while (sh != s->number) {
       (void)getship(&s2, sh);
       sh = s2->nextship;
-      if (sh != s->number)
-        free(s2); /* don't free it if it is the s2 we want */
+      if (sh != s->number) free(s2); /* don't free it if it is the s2 we want */
     }
     s2->nextship = s->nextship;
     putship(s2);
@@ -1882,8 +1826,7 @@ void remove_sh_ship(shiptype *s, shiptype *ship) {
     while (sh != s->number) {
       (void)getship(&s2, sh);
       sh = (int)(s2->nextship);
-      if (sh != s->number)
-        free(s2);
+      if (sh != s->number) free(s2);
     }
     s2->nextship = s->nextship;
     putship(s2);
@@ -1931,8 +1874,7 @@ int ShipCompare(const void *S1, const void *S2) {
 void SortShips(void) {
   int i;
 
-  for (i = 0; i < NUMSTYPES; i++)
-    ShipVector[i] = i;
+  for (i = 0; i < NUMSTYPES; i++) ShipVector[i] = i;
   qsort(ShipVector, NUMSTYPES, sizeof(int), ShipCompare);
 }
 
@@ -1940,8 +1882,7 @@ void warn_race(int who, char *message) {
   int i;
 
   for (i = 0; i <= MAXGOVERNORS; i++)
-    if (races[who - 1]->governor[i].active)
-      warn(who, i, message);
+    if (races[who - 1]->governor[i].active) warn(who, i, message);
 }
 
 void warn(int who, int governor, char *message) {
@@ -1962,8 +1903,7 @@ void notify_star(int a, int g, int b, int star, char *message) {
 
 #ifdef MONITOR
   Race = races[0]; /* deity */
-  if (Race->monitor || (a != 1 && b != 1))
-    notify_race(1, message);
+  if (Race->monitor || (a != 1 && b != 1)) notify_race(1, message);
 #endif
   for (auto d : *descriptor_list)
     if (d->connected && (d->Playernum != a || d->Governor != g) &&
@@ -1976,8 +1916,7 @@ void post_star(char *message, int star, int news) {
   int i;
 
   for (i = 1; i <= Num_races; i++)
-    if (isset(Stars[star]->inhabited, i))
-      push_telegram_race(i, message);
+    if (isset(Stars[star]->inhabited, i)) push_telegram_race(i, message);
 }
 
 void adjust_morale(racetype *winner, racetype *loser, int amount) {

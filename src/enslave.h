@@ -7,6 +7,7 @@
 
 #include "vars.h"
 
-void enslave(player_t, governor_t, int);
+void enslave(const command_t &argv, const player_t Playernum,
+             const governor_t Governor);
 
-#endif // ENSLAVE_H
+#endif  // ENSLAVE_H

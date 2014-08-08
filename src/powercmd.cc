@@ -92,8 +92,9 @@ void block(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, buf);
     sprintf(buf, "         	       %-64.64s\n", Blocks[p - 1].motto);
     notify(Playernum, Governor, buf);
-    sprintf(buf, "  #  Name              troops  pop  money ship  plan  res "
-                 "fuel dest know\n");
+    sprintf(buf,
+            "  #  Name              troops  pop  money ship  plan  res "
+            "fuel dest know\n");
     notify(Playernum, Governor, buf);
 
     for (i = 1; i <= n; i++)
@@ -129,8 +130,9 @@ void block(int Playernum, int Governor, int APcount) {
     sprintf(buf, "         ========== Alliance Blocks as of %s ==========\n",
             Power_blocks.time);
     notify(Playernum, Governor, buf);
-    sprintf(buf, " #  Name             memb money popn ship  sys  res fuel "
-                 "dest  VPs know\n");
+    sprintf(buf,
+            " #  Name             memb money popn ship  sys  res fuel "
+            "dest  VPs know\n");
     notify(Playernum, Governor, buf);
     for (i = 1; i <= n; i++)
       if (Blocks[i - 1].VPs) {
@@ -191,12 +193,14 @@ void power(int Playernum, int Governor, int APcount) {
   notify(Playernum, Governor, buf);
 
   if (Race->God)
-    sprintf(buf, "%s  #  Name               VP  mil  civ cash ship pl  res "
-                 "fuel dest morl VNs\n",
+    sprintf(buf,
+            "%s  #  Name               VP  mil  civ cash ship pl  res "
+            "fuel dest morl VNs\n",
             argn < 2 ? "rank" : "");
   else
-    sprintf(buf, "%s  #  Name               VP  mil  civ cash ship pl  res "
-                 "fuel dest morl know\n",
+    sprintf(buf,
+            "%s  #  Name               VP  mil  civ cash ship pl  res "
+            "fuel dest morl know\n",
             argn < 2 ? "rank" : "");
   notify(Playernum, Governor, buf);
 

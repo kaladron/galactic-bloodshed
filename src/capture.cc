@@ -33,7 +33,8 @@ void capture(int Playernum, int Governor, int APcount) {
   shipnum_t shipno, nextshipno;
   int x = -1, y = -1, what;
   population_t olddpopn, olddtroops;
-  population_t casualties = 0, casualties1 = 0, casualties2 = 0, casualty_scale = 0;
+  population_t casualties = 0, casualties1 = 0, casualties2 = 0,
+               casualty_scale = 0;
   double astrength, dstrength;
   racetype *Race, *alien;
   int snum, pnum;
@@ -204,8 +205,7 @@ void capture(int Playernum, int Governor, int APcount) {
         ship->damage += booby;
       }
       shipdam = MIN(100, shipdam);
-      if (ship->damage >= 100)
-        kill_ship(Playernum, ship);
+      if (ship->damage >= 100) kill_ship(Playernum, ship);
 
       if (!(ship->popn + ship->troops) && ship->alive) {
         /* we got 'em */
@@ -230,8 +230,7 @@ void capture(int Playernum, int Governor, int APcount) {
           sect->troops += boarders;
       }
 
-      if (!(sect->popn + sect->troops))
-        sect->owner = 0;
+      if (!(sect->popn + sect->troops)) sect->owner = 0;
 
       sprintf(buf, "BULLETIN from %s/%s!!\n", Stars[ship->storbits]->name,
               Stars[ship->storbits]->pnames[ship->pnumorbits]);
@@ -319,8 +318,7 @@ void capture(int Playernum, int Governor, int APcount) {
         notify(Playernum, Governor, buf);
       }
       warn(oldowner, oldgov, telegram_buf);
-      if (ship->owner != oldowner || !ship->alive)
-        post(short_buf, COMBAT);
+      if (ship->owner != oldowner || !ship->alive) post(short_buf, COMBAT);
       notify_star(Playernum, Governor, oldowner, (int)ship->storbits,
                   short_buf);
       putship(ship);

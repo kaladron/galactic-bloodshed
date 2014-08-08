@@ -7,4 +7,4 @@
 
 double logscale(int);
 
-#endif // MISC_H
+#endif  // MISC_H

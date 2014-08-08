@@ -21,8 +21,8 @@
 extern unsigned long
     segments; /* number of movement segments (global variable) */
 
-#define MAX_ROUTES                                                             \
-  4 /* Shipping routes - DON'T change this unless you know                     \
+#define MAX_ROUTES                                         \
+  4 /* Shipping routes - DON'T change this unless you know \
        what you are doing */
 
 enum levels_t { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
@@ -68,15 +68,15 @@ struct plinfo {            /* planetary stockpiles */
   unsigned short fuel;     /* fuel for powering things */
   unsigned short destruct; /* destructive potential */
   unsigned short resource; /* resources in storage */
-  unsigned long popn;
-  unsigned long troops;
+  population_t popn;
+  population_t troops;
   unsigned short crystals;
 
   unsigned short prod_res; /* shows last update production */
   unsigned short prod_fuel;
   unsigned short prod_dest;
   unsigned short prod_crystals;
-  unsigned long prod_money;
+  money_t prod_money;
   double prod_tech;
 
   unsigned short tech_invest;
@@ -120,16 +120,16 @@ struct commod {
   player_t owner;
   governor_t governor;
   uint8_t type;
-  unsigned short amount;
+  uint64_t amount;
   unsigned char dummy;
   unsigned char deliver; /* whether the lot is ready for shipping or not */
-  unsigned long bid;
-  unsigned char bidder;
-  unsigned char bidder_gov;
-  unsigned char star_from; /* where the stuff originated from */
-  unsigned char planet_from;
-  unsigned char star_to; /* where it goes to */
-  unsigned char planet_to;
+  money_t bid;
+  player_t bidder;
+  governor_t bidder_gov;
+  starnum_t star_from; /* where the stuff originated from */
+  planetnum_t planet_from;
+  starnum_t star_to; /* where it goes to */
+  planetnum_t planet_to;
 };
 
 struct sector {
@@ -139,14 +139,14 @@ struct sector {
   unsigned char crystals;
   unsigned short resource;
 
-  unsigned short popn;
-  unsigned short troops; /* troops (additional combat value) */
+  population_t popn;
+  population_t troops; /* troops (additional combat value) */
 
-  unsigned char owner;     /* owner of place */
-  unsigned char race;      /* race type occupying sector
-             (usually==owner) - makes things more
-             realistic when alien races revolt and
-             you gain control of them! */
+  player_t owner;          /* owner of place */
+  player_t race;           /* race type occupying sector
+                  (usually==owner) - makes things more
+                  realistic when alien races revolt and
+                  you gain control of them! */
   unsigned char type;      /* underlying sector geology */
   unsigned char condition; /* environmental effects */
   unsigned long dummy2;
@@ -162,12 +162,12 @@ struct planet {
   struct plinfo info[MAXPLAYERS]; /* player info */
   short conditions[TOXIC + 1];    /* atmospheric conditions for terraforming */
 
-  unsigned long popn;
-  unsigned long troops;
-  unsigned long maxpopn; /* maximum population */
+  population_t popn;
+  population_t troops;
+  population_t maxpopn; /* maximum population */
   unsigned long total_resources;
 
-  unsigned char slaved_to;
+  player_t slaved_to;
   unsigned char type;      /* what type planet is */
   unsigned char expltimer; /* timer for explorations */
 
@@ -273,6 +273,4 @@ extern int argn;
 #define isset(a, i) ((a)[(i) / 32] & ((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
 #define isclr(a, i) (!isset((a), (i)))
 
-#define success(x) (int_rand(1, 100) <= (x))
-
-#endif // VARS_H
+#endif  // VARS_H

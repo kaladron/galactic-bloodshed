@@ -16,4 +16,4 @@ void map(const command_t &argv, const player_t Playernum,
 char desshow(const player_t, const governor_t, const planettype *, const int,
              const int, const racetype *);
 
-#endif // MAP_H
+#endif  // MAP_H

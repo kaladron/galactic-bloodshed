@@ -12,4 +12,4 @@ extern char long_buf[1024], short_buf[256];
 extern char telegram_buf[AUTO_TELEG_SIZE];
 extern char temp[128];
 
-#endif // BUFFERS_H
+#endif  // BUFFERS_H

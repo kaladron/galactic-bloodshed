@@ -28,4 +28,4 @@ void do_transporter(racetype *, int, shiptype *);
 void unload_onto_alien_sector(int, int, planettype *, shiptype *, sectortype *,
                               int, int);
 
-#endif // LOAD_H
+#endif  // LOAD_H

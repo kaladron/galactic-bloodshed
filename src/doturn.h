@@ -32,4 +32,4 @@ struct sectinfo {
 
 extern struct sectinfo Sectinfo[MAX_X][MAX_Y];
 
-#endif // DOTURN_H
+#endif  // DOTURN_H

@@ -32,4 +32,4 @@ double p_factor(double, double);
 int planet_guns(int);
 void mutate_sector(sectortype *);
 
-#endif // SHOOTBLAST_H
+#endif  // SHOOTBLAST_H

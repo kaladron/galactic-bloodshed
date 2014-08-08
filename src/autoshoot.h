@@ -11,4 +11,4 @@
 
 int Bombard(shiptype *, planettype *, racetype *);
 
-#endif // AUTOSHOOT_H
+#endif  // AUTOSHOOT_H

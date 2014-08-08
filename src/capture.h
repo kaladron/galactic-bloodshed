@@ -10,4 +10,4 @@
 void capture(int, int, int);
 void capture_stuff(shiptype *);
 
-#endif // CAPTURE_H
+#endif  // CAPTURE_H

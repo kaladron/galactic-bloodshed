@@ -7,4 +7,4 @@
 
 void get4args(char *, int *, int *, int *, int *);
 
-#endif // GET4ARGS_H
+#endif  // GET4ARGS_H

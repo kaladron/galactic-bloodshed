@@ -36,23 +36,22 @@ void map(const command_t &argv, const player_t Playernum,
     where = Getplace(Playernum, Governor, NULL, 0);
   }
 
-  if (where.err)
-    return;
+  if (where.err) return;
 
   switch (where.level) {
-  case LEVEL_SHIP:
-    notify(Playernum, Governor, "Bad scope.\n");
-    return;
-  case LEVEL_PLAN:
-    getplanet(&p, where.snum, where.pnum);
-    show_map(Playernum, Governor, where.snum, where.pnum, p);
-    free(p);
-    if (Stars[where.snum]->stability > 50)
-      notify(Playernum, Governor,
-             "WARNING! This planet's primary is unstable.\n");
-    break;
-  default:
-    orbit(argv, Playernum, Governor); /* make orbit map instead */
+    case LEVEL_SHIP:
+      notify(Playernum, Governor, "Bad scope.\n");
+      return;
+    case LEVEL_PLAN:
+      getplanet(&p, where.snum, where.pnum);
+      show_map(Playernum, Governor, where.snum, where.pnum, p);
+      free(p);
+      if (Stars[where.snum]->stability > 50)
+        notify(Playernum, Governor,
+               "WARNING! This planet's primary is unstable.\n");
+      break;
+    default:
+      orbit(argv, Playernum, Governor); /* make orbit map instead */
   }
 }
 
@@ -66,10 +65,10 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   char shiplocs[MAX_X][MAX_Y] = {};
   hugestr output;
 
-  const int show = 1; // TODO(jeffbailey): This was always set to on, but this
-                      // fact is output to the client, which might affect the
-                      // client interface.  Can remove the conditional as soon
-                      // as we know that it's not client affecting.
+  const int show = 1;  // TODO(jeffbailey): This was always set to on, but this
+                       // fact is output to the client, which might affect the
+                       // client interface.  Can remove the conditional as soon
+                       // as we know that it's not client affecting.
 
   Race = races[Playernum - 1];
   getsmap(Smap, p);
@@ -144,8 +143,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
           sprintf(buf, "%c%d", isset(Race->atwar, i) ? '*' : ' ', i);
           strcat(temp, buf);
         }
-      if (!f)
-        strcat(temp, "(none)");
+      if (!f) strcat(temp, "(none)");
     } else
       strcat(temp, "\?\?\?");
     strcat(temp, "\n");
@@ -221,29 +219,28 @@ char desshow(const player_t Playernum, const governor_t Governor,
     }
   }
 
-  if (s->crystals && (r->discoveries[D_CRYSTAL] || r->God))
-    return CHAR_CRYSTAL;
+  if (s->crystals && (r->discoveries[D_CRYSTAL] || r->God)) return CHAR_CRYSTAL;
 
   switch (s->condition) {
-  case WASTED:
-    return CHAR_WASTED;
-  case SEA:
-    return CHAR_SEA;
-  case LAND:
-    return CHAR_LAND;
-  case MOUNT:
-    return CHAR_MOUNT;
-  case GAS:
-    return CHAR_GAS;
-  case PLATED:
-    return CHAR_PLATED;
-  case ICE:
-    return CHAR_ICE;
-  case DESERT:
-    return CHAR_DESERT;
-  case FOREST:
-    return CHAR_FOREST;
-  default:
-    return ('?');
+    case WASTED:
+      return CHAR_WASTED;
+    case SEA:
+      return CHAR_SEA;
+    case LAND:
+      return CHAR_LAND;
+    case MOUNT:
+      return CHAR_MOUNT;
+    case GAS:
+      return CHAR_GAS;
+    case PLATED:
+      return CHAR_PLATED;
+    case ICE:
+      return CHAR_ICE;
+    case DESERT:
+      return CHAR_DESERT;
+    case FOREST:
+      return CHAR_FOREST;
+    default:
+      return ('?');
   }
 }

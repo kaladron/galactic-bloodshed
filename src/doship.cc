@@ -40,8 +40,7 @@ void doship(shiptype *ship, int update) {
   /*ship is active */
   ship->active = 1;
 
-  if (!ship->owner)
-    ship->alive = 0;
+  if (!ship->owner) ship->alive = 0;
 
   if (ship->alive) {
     /* repair radiation */
@@ -50,8 +49,7 @@ void doship(shiptype *ship, int update) {
       /* irradiated ships are immobile.. */
       /* kill off some people */
       /* check to see if ship is active */
-      if (success(ship->rad))
-        ship->active = 0;
+      if (success(ship->rad)) ship->active = 0;
       if (update) {
         ship->popn = round_rand(ship->popn * .80);
         ship->troops = round_rand(ship->troops * .80);
@@ -83,8 +81,7 @@ void doship(shiptype *ship, int update) {
       ship->tech = Race->tech;
     }
 
-    if (ship->active)
-      Moveship(ship, update, 1, 0);
+    if (ship->active) Moveship(ship, update, 1, 0);
 
     ship->size = ship_size(ship); /* for debugging */
 
@@ -153,43 +150,40 @@ void doship(shiptype *ship, int update) {
       /* repair ship by the amount of crew it has */
       /* industrial complexes can repair (robot ships
          and offline factories can't repair) */
-      if (ship->damage && Repair(ship))
-        do_repair(ship);
+      if (ship->damage && Repair(ship)) do_repair(ship);
 
-      if (update)
-        switch (ship->type) { /* do this stuff during updates only*/
-        case OTYPE_CANIST:
-          do_canister(ship);
-          break;
-        case OTYPE_GREEN:
-          do_greenhouse(ship);
-          break;
-        case STYPE_MIRROR:
-          do_mirror(ship);
-          break;
-        case STYPE_GOD:
-          do_god(ship);
-          break;
-        case OTYPE_AP:
-          do_ap(ship);
-          break;
-        case OTYPE_VN: /* Von Neumann machine */
-        case OTYPE_BERS:
-          if (!ship->special.mind.progenitor)
-            ship->special.mind.progenitor = 1;
-          do_VN(ship);
-          break;
-        case STYPE_OAP:
-          do_oap(ship);
-          break;
-        case STYPE_HABITAT:
-          do_habitat(ship);
-          break;
-        default:
-          break;
+      if (update) switch (ship->type) { /* do this stuff during updates only*/
+          case OTYPE_CANIST:
+            do_canister(ship);
+            break;
+          case OTYPE_GREEN:
+            do_greenhouse(ship);
+            break;
+          case STYPE_MIRROR:
+            do_mirror(ship);
+            break;
+          case STYPE_GOD:
+            do_god(ship);
+            break;
+          case OTYPE_AP:
+            do_ap(ship);
+            break;
+          case OTYPE_VN: /* Von Neumann machine */
+          case OTYPE_BERS:
+            if (!ship->special.mind.progenitor)
+              ship->special.mind.progenitor = 1;
+            do_VN(ship);
+            break;
+          case STYPE_OAP:
+            do_oap(ship);
+            break;
+          case STYPE_HABITAT:
+            do_habitat(ship);
+            break;
+          default:
+            break;
         }
-      if (ship->type == STYPE_POD)
-        do_pod(ship);
+      if (ship->type == STYPE_POD) do_pod(ship);
     }
   }
 }
@@ -233,10 +227,8 @@ void domissile(shiptype *ship) {
   planettype *p;
   double dist;
 
-  if (!ship->alive || !ship->owner)
-    return;
-  if (!ship->on || ship->docked)
-    return;
+  if (!ship->alive || !ship->owner) return;
+  if (!ship->on || ship->docked) return;
 
   /* check to see if it has arrived at it's destination */
   if (ship->whatdest == LEVEL_PLAN && ship->whatorbits == LEVEL_PLAN &&
@@ -317,17 +309,17 @@ void domine(int shipno, int detonate) {
     double xd, yd, range;
 
     switch (ship->whatorbits) {
-    case LEVEL_STAR:
-      sh = Stars[ship->storbits]->ships;
-      break;
-    case LEVEL_PLAN:
-      getplanet(&planet, (int)ship->storbits, (int)ship->pnumorbits);
-      sh = planet->ships;
-      free(planet);
-      break;
-    default:
-      free(ship);
-      return;
+      case LEVEL_STAR:
+        sh = Stars[ship->storbits]->ships;
+        break;
+      case LEVEL_PLAN:
+        getplanet(&planet, (int)ship->storbits, (int)ship->pnumorbits);
+        sh = planet->ships;
+        free(planet);
+        break;
+      default:
+        free(ship);
+        return;
     }
     sh2 = sh;
     /* traverse the list, look for ships that
@@ -412,10 +404,8 @@ void doabm(shiptype *ship) {
   int numdest;
   planettype *p;
 
-  if (!ship->alive || !ship->owner)
-    return;
-  if (!ship->on || !ship->retaliate || !ship->destruct)
-    return;
+  if (!ship->alive || !ship->owner) return;
+  if (!ship->on || !ship->retaliate || !ship->destruct) return;
 
   if (landed(ship)) {
     p = planets[ship->storbits][ship->pnumorbits];
@@ -500,8 +490,7 @@ void do_habitat(shiptype *ship) {
     }
   }
   add = round_rand((double)ship->popn * races[ship->owner - 1]->birthrate);
-  if (ship->popn + add > Max_crew(ship))
-    add = Max_crew(ship) - ship->popn;
+  if (ship->popn + add > Max_crew(ship)) add = Max_crew(ship) - ship->popn;
   rcv_popn(ship, add, races[ship->owner - 1]->mass);
 }
 
@@ -620,64 +609,64 @@ void do_greenhouse(shiptype *ship) {
 
 void do_mirror(shiptype *ship) {
   switch (ship->special.aimed_at.level) {
-  case LEVEL_SHIP: /* ship aimed at is a legal ship now */
-    /* if in the same system */
-    if ((ship->whatorbits == LEVEL_STAR || ship->whatorbits == LEVEL_PLAN) &&
-        (ships[ship->special.aimed_at.shipno] != NULL) &&
-        (ships[ship->special.aimed_at.shipno]->whatorbits == LEVEL_STAR ||
-         ships[ship->special.aimed_at.shipno]->whatorbits == LEVEL_PLAN) &&
-        ship->storbits == ships[ship->special.aimed_at.shipno]->storbits &&
-        ships[ship->special.aimed_at.shipno]->alive) {
-      shiptype *s;
+    case LEVEL_SHIP: /* ship aimed at is a legal ship now */
+      /* if in the same system */
+      if ((ship->whatorbits == LEVEL_STAR || ship->whatorbits == LEVEL_PLAN) &&
+          (ships[ship->special.aimed_at.shipno] != NULL) &&
+          (ships[ship->special.aimed_at.shipno]->whatorbits == LEVEL_STAR ||
+           ships[ship->special.aimed_at.shipno]->whatorbits == LEVEL_PLAN) &&
+          ship->storbits == ships[ship->special.aimed_at.shipno]->storbits &&
+          ships[ship->special.aimed_at.shipno]->alive) {
+        shiptype *s;
+        int i;
+        double range;
+        s = ships[ship->special.aimed_at.shipno];
+        range = sqrt(Distsq(ship->xpos, ship->ypos, s->xpos, s->ypos));
+        i = int_rand(0, round_rand((2. / ((double)(Body(s)))) *
+                                   (double)(ship->special.aimed_at.intensity) /
+                                   (range / PLORBITSIZE + 1.0)));
+        sprintf(telegram_buf, "%s aimed at %s\n", Ship(ship), Ship(s));
+        s->damage += i;
+        if (i) {
+          sprintf(buf, "%d%% damage done.\n", i);
+          strcat(telegram_buf, buf);
+        }
+        if (s->damage >= 100) {
+          sprintf(buf, "%s DESTROYED!!!\n", Ship(s));
+          strcat(telegram_buf, buf);
+          kill_ship((int)(ship->owner), s);
+        }
+        push_telegram((int)s->owner, (int)s->governor, telegram_buf);
+        push_telegram((int)ship->owner, (int)ship->governor, telegram_buf);
+      }
+      break;
+    case LEVEL_PLAN: {
       int i;
       double range;
-      s = ships[ship->special.aimed_at.shipno];
-      range = sqrt(Distsq(ship->xpos, ship->ypos, s->xpos, s->ypos));
-      i = int_rand(0, round_rand((2. / ((double)(Body(s)))) *
-                                 (double)(ship->special.aimed_at.intensity) /
-                                 (range / PLORBITSIZE + 1.0)));
-      sprintf(telegram_buf, "%s aimed at %s\n", Ship(ship), Ship(s));
-      s->damage += i;
-      if (i) {
-        sprintf(buf, "%d%% damage done.\n", i);
-        strcat(telegram_buf, buf);
-      }
-      if (s->damage >= 100) {
-        sprintf(buf, "%s DESTROYED!!!\n", Ship(s));
-        strcat(telegram_buf, buf);
-        kill_ship((int)(ship->owner), s);
-      }
-      push_telegram((int)s->owner, (int)s->governor, telegram_buf);
-      push_telegram((int)ship->owner, (int)ship->governor, telegram_buf);
-    }
-    break;
-  case LEVEL_PLAN: {
-    int i;
-    double range;
-    range = sqrt(Distsq(ship->xpos, ship->ypos,
-                        Stars[ship->storbits]->xpos +
-                            planets[ship->storbits][ship->pnumorbits]->xpos,
-                        Stars[ship->storbits]->ypos +
-                            planets[ship->storbits][ship->pnumorbits]->ypos));
-    if (range > PLORBITSIZE)
-      i = PLORBITSIZE * ship->special.aimed_at.intensity / range;
-    else
-      i = ship->special.aimed_at.intensity;
+      range = sqrt(Distsq(ship->xpos, ship->ypos,
+                          Stars[ship->storbits]->xpos +
+                              planets[ship->storbits][ship->pnumorbits]->xpos,
+                          Stars[ship->storbits]->ypos +
+                              planets[ship->storbits][ship->pnumorbits]->ypos));
+      if (range > PLORBITSIZE)
+        i = PLORBITSIZE * ship->special.aimed_at.intensity / range;
+      else
+        i = ship->special.aimed_at.intensity;
 
-    i = round_rand(.01 * (100.0 - (double)(ship->damage)) * (double)i);
-    Stinfo[ship->storbits][ship->special.aimed_at.pnum].temp_add += i;
-  } break;
-  case LEVEL_STAR: {
-    /* have to be in the same system as the star; otherwise
-       it's not too fair.. */
-    if (ship->special.aimed_at.snum > 0 &&
-        ship->special.aimed_at.snum < Sdata.numstars &&
-        ship->whatorbits > LEVEL_UNIV &&
-        ship->special.aimed_at.snum == ship->storbits)
-      Stars[ship->special.aimed_at.snum]->stability += random() & 01;
-  } break;
-  case LEVEL_UNIV:
-    break;
+      i = round_rand(.01 * (100.0 - (double)(ship->damage)) * (double)i);
+      Stinfo[ship->storbits][ship->special.aimed_at.pnum].temp_add += i;
+    } break;
+    case LEVEL_STAR: {
+      /* have to be in the same system as the star; otherwise
+         it's not too fair.. */
+      if (ship->special.aimed_at.snum > 0 &&
+          ship->special.aimed_at.snum < Sdata.numstars &&
+          ship->whatorbits > LEVEL_UNIV &&
+          ship->special.aimed_at.snum == ship->storbits)
+        Stars[ship->special.aimed_at.snum]->stability += random() & 01;
+    } break;
+    case LEVEL_UNIV:
+      break;
   }
 }
 
@@ -704,8 +693,7 @@ void do_ap(shiptype *ship) {
       for (j = RTEMP + 1; j <= OTHER; j++) {
         d = round_rand(ap_planet_factor(p) * crew_factor(ship) *
                        (double)(Race->conditions[j] - p->conditions[j]));
-        if (d)
-          p->conditions[j] += d;
+        if (d) p->conditions[j] += d;
       }
     } else if (!ship->notified) {
       ship->notified = 1;
@@ -718,8 +706,7 @@ void do_ap(shiptype *ship) {
 double crew_factor(shiptype *ship) {
   int maxcrew;
 
-  if (!(maxcrew = Shipdata[ship->type][ABIL_MAXCREW]))
-    return 0.0;
+  if (!(maxcrew = Shipdata[ship->type][ABIL_MAXCREW])) return 0.0;
   return ((double)ship->popn / (double)maxcrew);
 }
 

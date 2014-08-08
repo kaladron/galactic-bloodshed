@@ -7,4 +7,4 @@
 
 void autoreport(int, int, int);
 
-#endif // AUTOREPORT_H
+#endif  // AUTOREPORT_H

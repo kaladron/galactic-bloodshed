@@ -14,4 +14,4 @@ double compatibility(const planettype *, const racetype *);
 double gravity(planettype *);
 char *prin_ship_orbits(shiptype *);
 
-#endif // MAX_H
+#endif  // MAX_H

@@ -93,111 +93,112 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
       /* planet level functions - do these here because they use the sector map
               or affect planet production */
       switch (ship->type) {
-      case OTYPE_VN:
-        planet_doVN(ship, planet);
-        break;
-      case OTYPE_BERS:
-        if (!ship->destruct || !ship->bombard)
+        case OTYPE_VN:
           planet_doVN(ship, planet);
-        else
-          do_berserker(ship, planet);
-        break;
-      case OTYPE_TERRA:
-        if ((ship->on && landed(ship) && ship->popn)) {
-          if (ship->fuel >= (double)FUEL_COST_TERRA)
-            terraform(ship, planet);
-          else if (!ship->notified) {
-            ship->notified = 1;
-            msg_OOF(ship);
-          }
-        }
-        break;
-      case OTYPE_PLOW:
-        if (ship->on && landed(ship)) {
-          if (ship->fuel >= (double)FUEL_COST_PLOW)
-            plow(ship, planet);
-          else if (!ship->notified) {
-            ship->notified = 1;
-            msg_OOF(ship);
-          }
-        } else if (ship->on) {
-          sprintf(buf, "K%lu is not landed.", ship->number);
-          push_telegram(ship->owner, ship->governor, buf);
-        } else {
-          sprintf(buf, "K%lu is not switched on.", ship->number);
-          push_telegram(ship->owner, ship->governor, buf);
-        }
-        break;
-      case OTYPE_DOME:
-        if (ship->on && landed(ship)) {
-          if (ship->resource >= RES_COST_DOME)
-            do_dome(ship, planet);
-          else {
-            sprintf(buf, "Y%lu does not have enough resources.", ship->number);
-            push_telegram(ship->owner, ship->governor, buf);
-          }
-        } else if (ship->on) {
-          sprintf(buf, "Y%lu is not landed.", ship->number);
-          push_telegram(ship->owner, ship->governor, buf);
-        } else {
-          sprintf(buf, "Y%lu is not switched on.", ship->number);
-          push_telegram(ship->owner, ship->governor, buf);
-        }
-        break;
-      case OTYPE_WPLANT:
-        if (landed(ship))
-          if (ship->resource >= RES_COST_WPLANT &&
-              ship->fuel >= FUEL_COST_WPLANT)
-            prod_destruct[ship->owner - 1] += do_weapon_plant(ship);
-          else {
-            if (ship->resource < RES_COST_WPLANT) {
-              sprintf(buf, "W%lu does not have enough resources.",
-                      ship->number);
-              push_telegram(ship->owner, ship->governor, buf);
-            } else {
-              sprintf(buf, "W%lu does not have enough fuel.", ship->number);
-              push_telegram(ship->owner, ship->governor, buf);
+          break;
+        case OTYPE_BERS:
+          if (!ship->destruct || !ship->bombard)
+            planet_doVN(ship, planet);
+          else
+            do_berserker(ship, planet);
+          break;
+        case OTYPE_TERRA:
+          if ((ship->on && landed(ship) && ship->popn)) {
+            if (ship->fuel >= (double)FUEL_COST_TERRA)
+              terraform(ship, planet);
+            else if (!ship->notified) {
+              ship->notified = 1;
+              msg_OOF(ship);
             }
           }
-        else {
-          sprintf(buf, "W%lu is not landed.", ship->number);
-          push_telegram(ship->owner, ship->governor, buf);
-        }
-        break;
-      case OTYPE_QUARRY:
-        if ((ship->on && landed(ship) && ship->popn)) {
-          if (ship->fuel >= FUEL_COST_QUARRY)
-            do_quarry(ship, planet);
-          else if (!ship->notified) {
-            ship->on = 0;
-            msg_OOF(ship);
+          break;
+        case OTYPE_PLOW:
+          if (ship->on && landed(ship)) {
+            if (ship->fuel >= (double)FUEL_COST_PLOW)
+              plow(ship, planet);
+            else if (!ship->notified) {
+              ship->notified = 1;
+              msg_OOF(ship);
+            }
+          } else if (ship->on) {
+            sprintf(buf, "K%lu is not landed.", ship->number);
+            push_telegram(ship->owner, ship->governor, buf);
+          } else {
+            sprintf(buf, "K%lu is not switched on.", ship->number);
+            push_telegram(ship->owner, ship->governor, buf);
           }
-        } else {
-          if (!ship->on) {
-            sprintf(buf, "q%lu is not switched on.", ship->number);
+          break;
+        case OTYPE_DOME:
+          if (ship->on && landed(ship)) {
+            if (ship->resource >= RES_COST_DOME)
+              do_dome(ship, planet);
+            else {
+              sprintf(buf, "Y%lu does not have enough resources.",
+                      ship->number);
+              push_telegram(ship->owner, ship->governor, buf);
+            }
+          } else if (ship->on) {
+            sprintf(buf, "Y%lu is not landed.", ship->number);
+            push_telegram(ship->owner, ship->governor, buf);
+          } else {
+            sprintf(buf, "Y%lu is not switched on.", ship->number);
+            push_telegram(ship->owner, ship->governor, buf);
           }
-          if (!landed(ship)) {
-            sprintf(buf, "q%lu is not landed.", ship->number);
+          break;
+        case OTYPE_WPLANT:
+          if (landed(ship))
+            if (ship->resource >= RES_COST_WPLANT &&
+                ship->fuel >= FUEL_COST_WPLANT)
+              prod_destruct[ship->owner - 1] += do_weapon_plant(ship);
+            else {
+              if (ship->resource < RES_COST_WPLANT) {
+                sprintf(buf, "W%lu does not have enough resources.",
+                        ship->number);
+                push_telegram(ship->owner, ship->governor, buf);
+              } else {
+                sprintf(buf, "W%lu does not have enough fuel.", ship->number);
+                push_telegram(ship->owner, ship->governor, buf);
+              }
+            }
+          else {
+            sprintf(buf, "W%lu is not landed.", ship->number);
+            push_telegram(ship->owner, ship->governor, buf);
           }
-          if (!ship->popn) {
-            sprintf(buf, "q%lu does not have workers aboard.", ship->number);
+          break;
+        case OTYPE_QUARRY:
+          if ((ship->on && landed(ship) && ship->popn)) {
+            if (ship->fuel >= FUEL_COST_QUARRY)
+              do_quarry(ship, planet);
+            else if (!ship->notified) {
+              ship->on = 0;
+              msg_OOF(ship);
+            }
+          } else {
+            if (!ship->on) {
+              sprintf(buf, "q%lu is not switched on.", ship->number);
+            }
+            if (!landed(ship)) {
+              sprintf(buf, "q%lu is not landed.", ship->number);
+            }
+            if (!ship->popn) {
+              sprintf(buf, "q%lu does not have workers aboard.", ship->number);
+            }
+            push_telegram(ship->owner, ship->governor, buf);
           }
-          push_telegram(ship->owner, ship->governor, buf);
-        }
-        break;
+          break;
       }
       /* add fuel for ships orbiting a gas giant */
       if (!landed(ship) && planet->type == TYPE_GASGIANT) {
         switch (ship->type) {
-        case STYPE_TANKER:
-          fadd = FUEL_GAS_ADD_TANKER;
-          break;
-        case STYPE_HABITAT:
-          fadd = FUEL_GAS_ADD_HABITAT;
-          break;
-        default:
-          fadd = FUEL_GAS_ADD;
-          break;
+          case STYPE_TANKER:
+            fadd = FUEL_GAS_ADD_TANKER;
+            break;
+          case STYPE_HABITAT:
+            fadd = FUEL_GAS_ADD_HABITAT;
+            break;
+          default:
+            fadd = FUEL_GAS_ADD;
+            break;
         }
         fadd = MIN((double)Max_fuel(ship) - ship->fuel, fadd);
         rcv_fuel(ship, fadd);
@@ -286,15 +287,12 @@ if (!Stinfo[starnum][planetnum].inhab)
   (void)Getxysect(planet, &x, &y, 1);
   while (Getxysect(planet, &x, &y, 0)) {
     p = &Sector(*planet, x, y);
-    if (p->owner)
-      planet->info[p->owner - 1].numsectsowned++;
+    if (p->owner) planet->info[p->owner - 1].numsectsowned++;
   }
 
-  if (planet->expltimer >= 1)
-    planet->expltimer--;
+  if (planet->expltimer >= 1) planet->expltimer--;
   if (!Stars[starnum]->nova_stage && !planet->expltimer) {
-    if (!planet->expltimer)
-      planet->expltimer = 5;
+    if (!planet->expltimer) planet->expltimer = 5;
     for (i = 1; !Claims && !allexp && i <= Num_races; i++) {
       /* sectors have been modified for this player*/
       if (planet->info[i - 1].numsectsowned)
@@ -322,8 +320,7 @@ if (!Stinfo[starnum][planetnum].inhab)
     }
   }
 
-  if (allexp)
-    planet->expltimer = 5;
+  if (allexp) planet->expltimer = 5;
 
   /* environment nukes a random sector */
   if (planet->conditions[TOXIC] > ENVIR_DAMAGE_TOX) {
@@ -484,8 +481,9 @@ if (!Stinfo[starnum][planetnum].inhab)
       sprintf(telegram_buf, "\nThere has been a SLAVE REVOLT on /%s/%s!\n",
               Stars[starnum]->name, Stars[starnum]->pnames[planetnum]);
       strcat(telegram_buf, buf);
-      sprintf(buf, "All population belonging to player #%d on the planet have "
-                   "been killed!\n",
+      sprintf(buf,
+              "All population belonging to player #%d on the planet have "
+              "been killed!\n",
               planet->slaved_to);
       strcat(telegram_buf, buf);
       sprintf(buf, "Productions now go to their rightful owners.\n");
@@ -631,8 +629,7 @@ int moveship_onplanet(shiptype *ship, planettype *planet) {
     bounced = 1, y -= 2; /* bounce off of south pole! */
   else if (y < 0)
     bounced = y = 1; /* bounce off of north pole! */
-  if (planet->Maxy == 1)
-    y = 0;
+  if (planet->Maxy == 1) y = 0;
   if (ship->shipclass[ship->special.terraform.index + 1] != '\0') {
     ++ship->special.terraform.index;
     if ((ship->shipclass[ship->special.terraform.index + 1] == '\0') &&
@@ -655,8 +652,7 @@ void terraform(shiptype *ship, planettype *planet) {
   sectortype *s;
 
   /* move, and then terraform. */
-  if (!moveship_onplanet(ship, planet))
-    return;
+  if (!moveship_onplanet(ship, planet)) return;
   s = &Sector(*planet, (int)ship->land_x, (int)ship->land_y);
   if ((s->condition != races[ship->owner - 1]->likesbest) &&
       (s->condition != GAS) &&
@@ -688,8 +684,7 @@ void terraform(shiptype *ship, planettype *planet) {
 void plow(shiptype *ship, planettype *planet) {
   sectortype *s;
 
-  if (!moveship_onplanet(ship, planet))
-    return;
+  if (!moveship_onplanet(ship, planet)) return;
   s = &Sector(*planet, (int)ship->land_x, (int)ship->land_y);
   if ((races[ship->owner - 1]->likes[s->condition]) && (s->fert < 100)) {
     int adjust = round_rand(
@@ -724,8 +719,7 @@ void do_dome(shiptype *ship, planettype *planet) {
   adjust = round_rand(.05 * (100. - (double)ship->damage) * (double)ship->popn /
                       ship->max_crew);
   s->eff += adjust;
-  if (s->eff > 100)
-    s->eff = 100;
+  if (s->eff > 100) s->eff = 100;
   use_resource(ship, RES_COST_DOME);
 }
 
@@ -736,8 +730,7 @@ void do_quarry(shiptype *ship, planettype *planet) {
   s = &Sector(*planet, (int)(ship->land_x), (int)(ship->land_y));
 
   if ((ship->fuel < (double)FUEL_COST_QUARRY)) {
-    if (!ship->notified)
-      msg_OOF(ship);
+    if (!ship->notified) msg_OOF(ship);
     ship->notified = 1;
     return;
   }
@@ -843,8 +836,7 @@ void do_recover(planettype *planet, int starnum, int planetnum) {
       }
     /* Leftovers for last player */
     for (; i <= Num_races; i++)
-      if (isset(ownerbits, i))
-        break;
+      if (isset(ownerbits, i)) break;
     if (i <= Num_races) { /* It should be */
       res = stolenres - givenres;
       des = stolendes - givendes;

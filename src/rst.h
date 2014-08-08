@@ -10,4 +10,4 @@
 void rst(const command_t &argv, const player_t Playernum,
          const governor_t Governor);
 
-#endif // RST_H
+#endif  // RST_H

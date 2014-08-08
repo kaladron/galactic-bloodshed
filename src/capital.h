@@ -7,4 +7,4 @@
 
 void capital(int, int, int);
 
-#endif // CAPITAL_H
+#endif  // CAPITAL_H

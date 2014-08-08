@@ -7,4 +7,4 @@
 
 extern const int Defensedata[];
 
-#endif // DEFENSE_H
+#endif  // DEFENSE_H

@@ -38,8 +38,7 @@ static int enroll_player_race(char *failure_filename) {
       printf("\"Quit\" to break out of fix mode.\n");
       return 1;
     }
-    if (race_info.status == STATUS_ENROLLED)
-      return 0;
+    if (race_info.status == STATUS_ENROLLED) return 0;
     n = Dialogue("Abort, enroll anyway, fix, mail rejection?", "abort",
                  "enroll", "fix", "mail", 0);
     if (n == 1) /* enroll anyway */
@@ -78,8 +77,9 @@ static int enroll_player_race(char *failure_filename) {
     fprintf(g, "To: %s\n", race_info.address);
     fprintf(g, "Subject: %s Race Rejection\n", GAME);
     fprintf(g, "\n");
-    fprintf(g, "The race you submitted (%s) was not accepted, for the "
-               "following reason%c:\n",
+    fprintf(g,
+            "The race you submitted (%s) was not accepted, for the "
+            "following reason%c:\n",
             race_info.name, (n > 1) ? 's' : '\0');
     critique_to_file(g, 1, 1);
     fprintf(g, "\n");
@@ -99,8 +99,7 @@ static int enroll_player_race(char *failure_filename) {
     return 1;
   }
 
-  if (enroll_valid_race())
-    return enroll_player_race(failure_filename);
+  if (enroll_valid_race()) return enroll_player_race(failure_filename);
 
   if (recursing) {
     successful_enroll_in_fix_mode = 1;
@@ -140,11 +139,9 @@ int enroll(int argc, char *argv[]) {
   int ret;
   FILE *g;
 
-  if (argc < 2)
-    argv[1] = DEFAULT_ENROLLMENT_FAILURE_FILENAME;
+  if (argc < 2) argv[1] = DEFAULT_ENROLLMENT_FAILURE_FILENAME;
   g = fopen(argv[1], "w+");
-  if (g == NULL)
-    printf("Unable to open failures file \"%s\".\n", argv[1]);
+  if (g == NULL) printf("Unable to open failures file \"%s\".\n", argv[1]);
   fclose(g);
   bcopy(&race_info, &last, sizeof(struct x));
 
@@ -160,8 +157,7 @@ int enroll(int argc, char *argv[]) {
   } else if ((ret = enroll_valid_race()))
     critique_to_file(stdout, 1, 0);
 
-  if (ret)
-    printf("Enroll failed.\n");
+  if (ret) printf("Enroll failed.\n");
   return ret;
 }
 
@@ -172,33 +168,28 @@ void process(int argc, char *argv[]) {
   FILE *f, *g;
   int n, nenrolled;
 
-  if (argc < 2)
-    argv[1] = DEFAULT_ENROLLMENT_FILENAME;
+  if (argc < 2) argv[1] = DEFAULT_ENROLLMENT_FILENAME;
   f = fopen(argv[1], "r");
   if (f == NULL) {
     printf("Unable to open races file \"%s\".\n", argv[1]);
     return;
   }
 
-  if (argc < 3)
-    argv[2] = DEFAULT_ENROLLMENT_FAILURE_FILENAME;
+  if (argc < 3) argv[2] = DEFAULT_ENROLLMENT_FAILURE_FILENAME;
   g = fopen(argv[2], "w");
-  if (g == NULL)
-    printf("Unable to open failures file \"%s\".\n", argv[2]);
+  if (g == NULL) printf("Unable to open failures file \"%s\".\n", argv[2]);
   fclose(g);
 
   n = 0;
   nenrolled = 0;
   while (!feof(f)) {
-    if (!load_from_file(f))
-      continue;
+    if (!load_from_file(f)) continue;
     n++;
     printf("%s, from %s\n", race_info.name, race_info.address);
     /* We need the side effects: */
     last_npoints = npoints;
     npoints = STARTING_POINTS - cost_of_race();
-    if (!enroll_player_race(argv[2]))
-      nenrolled += 1;
+    if (!enroll_player_race(argv[2])) nenrolled += 1;
   }
   fclose(f);
 

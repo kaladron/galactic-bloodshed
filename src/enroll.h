@@ -8,4 +8,4 @@
 int enroll(int argc, char *argv[]);
 void process(int argc, char *argv[]);
 
-#endif // ENROLL_H
+#endif  // ENROLL_H

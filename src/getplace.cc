@@ -47,35 +47,35 @@ placetype Getplace(const player_t Playernum, const governor_t Governor,
 
   if (string != 0) {
     switch (*string) {
-    case '/':
-      where.level = LEVEL_UNIV; /* scope = root (universe) */
-      where.snum = 0;
-      where.pnum = where.shipno = 0;
-      return (
-          Getplace2(Playernum, Governor, string + 1, &where, ignoreexpl, God));
-    case '#':
-      sscanf(string + 1, "%ld", &where.shipno);
-      if (!getship(&where.shipptr, where.shipno)) {
-        DontOwnErr(Playernum, Governor, where.shipno);
-        where.err = 1;
+      case '/':
+        where.level = LEVEL_UNIV; /* scope = root (universe) */
+        where.snum = 0;
+        where.pnum = where.shipno = 0;
+        return (Getplace2(Playernum, Governor, string + 1, &where, ignoreexpl,
+                          God));
+      case '#':
+        sscanf(string + 1, "%ld", &where.shipno);
+        if (!getship(&where.shipptr, where.shipno)) {
+          DontOwnErr(Playernum, Governor, where.shipno);
+          where.err = 1;
+          return where;
+        }
+        if ((where.shipptr->owner == Playernum || ignoreexpl || God) &&
+            (where.shipptr->alive || God)) {
+          where.level = LEVEL_SHIP;
+          where.snum = where.shipptr->storbits;
+          where.pnum = where.shipptr->pnumorbits;
+          free(where.shipptr);
+          return where;
+        } else {
+          where.err = 1;
+          free(where.shipptr);
+          return where;
+        }
+      case '-':
+        /* no destination */
+        where.level = LEVEL_UNIV;
         return where;
-      }
-      if ((where.shipptr->owner == Playernum || ignoreexpl || God) &&
-          (where.shipptr->alive || God)) {
-        where.level = LEVEL_SHIP;
-        where.snum = where.shipptr->storbits;
-        where.pnum = where.shipptr->pnumorbits;
-        free(where.shipptr);
-        return where;
-      } else {
-        where.err = 1;
-        free(where.shipptr);
-        return where;
-      }
-    case '-':
-      /* no destination */
-      where.level = LEVEL_UNIV;
-      return where;
     }
   }
 
@@ -121,10 +121,8 @@ static placetype Getplace2(const int Playernum, const int Governor,
       } else if (where->level == LEVEL_PLAN) {
         where->level = LEVEL_STAR;
       }
-      while (*string == '.')
-        string++;
-      while (*string == '/')
-        string++;
+      while (*string == '.') string++;
+      while (*string == '/') string++;
       return (Getplace2(Playernum, Governor, string, where, ignoreexpl, God));
     }
   } else {
@@ -198,58 +196,58 @@ char *Dispshiploc_brief(shiptype *ship) {
   int i;
 
   switch (ship->whatorbits) {
-  case LEVEL_STAR:
-    sprintf(Disps, "/%-4.4s", Stars[ship->storbits]->name);
-    return (Disps);
-  case LEVEL_PLAN:
-    sprintf(Disps, "/%s", Stars[ship->storbits]->name);
-    for (i = 2; (Disps[i] && (i < 5)); i++)
-      ;
-    sprintf(Disps + i, "/%-4.4s",
-            Stars[ship->storbits]->pnames[ship->pnumorbits]);
-    return (Disps);
-  case LEVEL_SHIP:
-    sprintf(Disps, "#%lu", ship->destshipno);
-    return (Disps);
-  case LEVEL_UNIV:
-    sprintf(Disps, "/");
-    return (Disps);
+    case LEVEL_STAR:
+      sprintf(Disps, "/%-4.4s", Stars[ship->storbits]->name);
+      return (Disps);
+    case LEVEL_PLAN:
+      sprintf(Disps, "/%s", Stars[ship->storbits]->name);
+      for (i = 2; (Disps[i] && (i < 5)); i++)
+        ;
+      sprintf(Disps + i, "/%-4.4s",
+              Stars[ship->storbits]->pnames[ship->pnumorbits]);
+      return (Disps);
+    case LEVEL_SHIP:
+      sprintf(Disps, "#%lu", ship->destshipno);
+      return (Disps);
+    case LEVEL_UNIV:
+      sprintf(Disps, "/");
+      return (Disps);
   }
 }
 
 char *Dispshiploc(shiptype *ship) {
   switch (ship->whatorbits) {
-  case LEVEL_STAR:
-    sprintf(Disps, "/%s", Stars[ship->storbits]->name);
-    return (Disps);
-  case LEVEL_PLAN:
-    sprintf(Disps, "/%s/%s", Stars[ship->storbits]->name,
-            Stars[ship->storbits]->pnames[ship->pnumorbits]);
-    return (Disps);
-  case LEVEL_SHIP:
-    sprintf(Disps, "#%lu", ship->destshipno);
-    return (Disps);
-  case LEVEL_UNIV:
-    sprintf(Disps, "/");
-    return (Disps);
+    case LEVEL_STAR:
+      sprintf(Disps, "/%s", Stars[ship->storbits]->name);
+      return (Disps);
+    case LEVEL_PLAN:
+      sprintf(Disps, "/%s/%s", Stars[ship->storbits]->name,
+              Stars[ship->storbits]->pnames[ship->pnumorbits]);
+      return (Disps);
+    case LEVEL_SHIP:
+      sprintf(Disps, "#%lu", ship->destshipno);
+      return (Disps);
+    case LEVEL_UNIV:
+      sprintf(Disps, "/");
+      return (Disps);
   }
 }
 
 char *Dispplace(int Playernum, int Governor, placetype *where) {
   switch (where->level) {
-  case LEVEL_STAR:
-    sprintf(Disps, "/%s", Stars[where->snum]->name);
-    return (Disps);
-  case LEVEL_PLAN:
-    sprintf(Disps, "/%s/%s", Stars[where->snum]->name,
-            Stars[where->snum]->pnames[where->pnum]);
-    return (Disps);
-  case LEVEL_SHIP:
-    sprintf(Disps, "#%lu", where->shipno);
-    return (Disps);
-  case LEVEL_UNIV:
-    strcpy(Disps, "/");
-    return (Disps);
+    case LEVEL_STAR:
+      sprintf(Disps, "/%s", Stars[where->snum]->name);
+      return (Disps);
+    case LEVEL_PLAN:
+      sprintf(Disps, "/%s/%s", Stars[where->snum]->name,
+              Stars[where->snum]->pnames[where->pnum]);
+      return (Disps);
+    case LEVEL_SHIP:
+      sprintf(Disps, "#%lu", where->shipno);
+      return (Disps);
+    case LEVEL_UNIV:
+      strcpy(Disps, "/");
+      return (Disps);
   }
 }
 

@@ -56,26 +56,24 @@ void orbit(const command_t &argv, const player_t Playernum,
   /* find options, set flags accordingly */
   for (flag = 1; flag <= argn - 1; flag++)
     if (*args[flag] == '-') {
-      for (i = 1; args[flag][i] != '\0'; i++)
-        switch (args[flag][i]) {
-        case 's':
-          DontDispShips = 1;
-          break;
-        case 'S':
-          DontDispStars = 1;
-          break;
-        case 'p':
-          DontDispPlanets = 1;
-          break;
-        default:
-          if (sscanf(args[flag] + 1, "%d", &DontDispNum) != 1) {
-            sprintf(buf, "Bad number %s.\n", args[flag] + 1);
-            notify(Playernum, Governor, buf);
-            DontDispNum = -1;
-          }
-          if (DontDispNum)
-            DontDispNum--; /* make a '1' into a '0' */
-          break;
+      for (i = 1; args[flag][i] != '\0'; i++) switch (args[flag][i]) {
+          case 's':
+            DontDispShips = 1;
+            break;
+          case 'S':
+            DontDispStars = 1;
+            break;
+          case 'p':
+            DontDispPlanets = 1;
+            break;
+          default:
+            if (sscanf(args[flag] + 1, "%d", &DontDispNum) != 1) {
+              sprintf(buf, "Bad number %s.\n", args[flag] + 1);
+              notify(Playernum, Governor, buf);
+              DontDispNum = -1;
+            }
+            if (DontDispNum) DontDispNum--; /* make a '1' into a '0' */
+            break;
         }
     }
 
@@ -102,46 +100,82 @@ void orbit(const command_t &argv, const player_t Playernum,
   Race = races[Playernum - 1];
 
   switch (where.level) {
-  case LEVEL_UNIV:
-    for (i = 0; i < Sdata.numstars; i++)
-      if (DontDispNum != i) {
-        DispStar(Playernum, Governor, LEVEL_UNIV, Stars[i], DontDispStars,
-                 (int)Race->God, buf);
-        strcat(output, buf);
-      }
-    if (!DontDispShips) {
-      sh = Sdata.ships;
-      while (sh) {
-        (void)getship(&s, sh);
-        if (DontDispNum != sh) {
-          DispShip(Playernum, Governor, &where, s, NULL, (int)Race->God, buf);
+    case LEVEL_UNIV:
+      for (i = 0; i < Sdata.numstars; i++)
+        if (DontDispNum != i) {
+          DispStar(Playernum, Governor, LEVEL_UNIV, Stars[i], DontDispStars,
+                   (int)Race->God, buf);
           strcat(output, buf);
         }
-        sh = s->nextship;
-        free(s);
+      if (!DontDispShips) {
+        sh = Sdata.ships;
+        while (sh) {
+          (void)getship(&s, sh);
+          if (DontDispNum != sh) {
+            DispShip(Playernum, Governor, &where, s, NULL, (int)Race->God, buf);
+            strcat(output, buf);
+          }
+          sh = s->nextship;
+          free(s);
+        }
       }
-    }
-    break;
-  case LEVEL_STAR:
-    DispStar(Playernum, Governor, LEVEL_STAR, Stars[where.snum], DontDispStars,
-             (int)Race->God, buf);
-    strcat(output, buf);
+      break;
+    case LEVEL_STAR:
+      DispStar(Playernum, Governor, LEVEL_STAR, Stars[where.snum],
+               DontDispStars, (int)Race->God, buf);
+      strcat(output, buf);
 
-    for (i = 0; i < Stars[where.snum]->numplanets; i++)
-      if (DontDispNum != i) {
-        getplanet(&p, (int)where.snum, i);
-        DispPlanet(Playernum, Governor, LEVEL_STAR, p,
-                   Stars[where.snum]->pnames[i], DontDispPlanets, Race, buf);
-        strcat(output, buf);
-        free(p);
+      for (i = 0; i < Stars[where.snum]->numplanets; i++)
+        if (DontDispNum != i) {
+          getplanet(&p, (int)where.snum, i);
+          DispPlanet(Playernum, Governor, LEVEL_STAR, p,
+                     Stars[where.snum]->pnames[i], DontDispPlanets, Race, buf);
+          strcat(output, buf);
+          free(p);
+        }
+      /* check to see if you have ships at orbiting the star, if so you can
+         see enemy ships */
+      iq = 0;
+      if (Race->God)
+        iq = 1;
+      else {
+        sh = Stars[where.snum]->ships;
+        while (sh && !iq) {
+          (void)getship(&s, sh);
+          if (s->owner == Playernum && Sight(s))
+            iq = 1; /* you are there to sight, need a crew */
+          sh = s->nextship;
+          free(s);
+        }
       }
-    /* check to see if you have ships at orbiting the star, if so you can
-       see enemy ships */
-    iq = 0;
-    if (Race->God)
-      iq = 1;
-    else {
-      sh = Stars[where.snum]->ships;
+      if (!DontDispShips) {
+        sh = Stars[where.snum]->ships;
+        while (sh) {
+          (void)getship(&s, sh);
+          if (DontDispNum != sh &&
+              !(s->owner != Playernum && s->type == STYPE_MINE)) {
+            if ((s->owner == Playernum) || (iq == 1)) {
+              DispShip(Playernum, Governor, &where, s, NULL, (int)Race->God,
+                       buf);
+              strcat(output, buf);
+            }
+          }
+          sh = s->nextship;
+          free(s);
+        }
+      }
+      break;
+    case LEVEL_PLAN:
+      getplanet(&p, (int)where.snum, (int)where.pnum);
+      DispPlanet(Playernum, Governor, LEVEL_PLAN, p,
+                 Stars[where.snum]->pnames[where.pnum], DontDispPlanets, Race,
+                 buf);
+      strcat(output, buf);
+
+      /* check to see if you have ships at landed or
+         orbiting the planet, if so you can see orbiting enemy ships */
+      iq = 0;
+      sh = p->ships;
       while (sh && !iq) {
         (void)getship(&s, sh);
         if (s->owner == Playernum && Sight(s))
@@ -149,63 +183,29 @@ void orbit(const command_t &argv, const player_t Playernum,
         sh = s->nextship;
         free(s);
       }
-    }
-    if (!DontDispShips) {
-      sh = Stars[where.snum]->ships;
-      while (sh) {
-        (void)getship(&s, sh);
-        if (DontDispNum != sh &&
-            !(s->owner != Playernum && s->type == STYPE_MINE)) {
-          if ((s->owner == Playernum) || (iq == 1)) {
-            DispShip(Playernum, Governor, &where, s, NULL, (int)Race->God, buf);
-            strcat(output, buf);
-          }
-        }
-        sh = s->nextship;
-        free(s);
-      }
-    }
-    break;
-  case LEVEL_PLAN:
-    getplanet(&p, (int)where.snum, (int)where.pnum);
-    DispPlanet(Playernum, Governor, LEVEL_PLAN, p,
-               Stars[where.snum]->pnames[where.pnum], DontDispPlanets, Race,
-               buf);
-    strcat(output, buf);
-
-    /* check to see if you have ships at landed or
-       orbiting the planet, if so you can see orbiting enemy ships */
-    iq = 0;
-    sh = p->ships;
-    while (sh && !iq) {
-      (void)getship(&s, sh);
-      if (s->owner == Playernum && Sight(s))
-        iq = 1; /* you are there to sight, need a crew */
-      sh = s->nextship;
-      free(s);
-    }
-    /* end check */
-    if (!DontDispShips) {
-      sh = p->ships;
-      while (sh) {
-        (void)getship(&s, sh);
-        if (DontDispNum != sh) {
-          if (!landed(s)) {
-            if ((s->owner == Playernum) || (iq == 1)) {
-              DispShip(Playernum, Governor, &where, s, p, (int)Race->God, buf);
-              strcat(output, buf);
+      /* end check */
+      if (!DontDispShips) {
+        sh = p->ships;
+        while (sh) {
+          (void)getship(&s, sh);
+          if (DontDispNum != sh) {
+            if (!landed(s)) {
+              if ((s->owner == Playernum) || (iq == 1)) {
+                DispShip(Playernum, Governor, &where, s, p, (int)Race->God,
+                         buf);
+                strcat(output, buf);
+              }
             }
           }
+          sh = s->nextship;
+          free(s);
         }
-        sh = s->nextship;
-        free(s);
       }
-    }
-    free(p);
-    break;
-  default:
-    notify(Playernum, Governor, "Bad scope.\n");
-    return;
+      free(p);
+      break;
+    default:
+      notify(Playernum, Governor, "Bad scope.\n");
+      return;
   }
   strcat(output, "\n");
   notify(Playernum, Governor, output);
@@ -213,7 +213,7 @@ void orbit(const command_t &argv, const player_t Playernum,
 
 static void DispStar(int Playernum, int Governor, int level, startype *star,
                      int DontDispStars, int God, char *string) {
-  int x = 0; // TODO(jeffbailey): Inititalized x and y to 0.
+  int x = 0;  // TODO(jeffbailey): Inititalized x and y to 0.
   int y = 0;
   int stand;
 
@@ -250,7 +250,7 @@ static void DispStar(int Playernum, int Governor, int level, startype *star,
 static void DispPlanet(int Playernum, int Governor, int level, planettype *p,
                        char *name, int DontDispPlanets, racetype *r,
                        char *string) {
-  int x = 0; // TODO(jeffbailey): Check if init to 0 is right.
+  int x = 0;  // TODO(jeffbailey): Check if init to 0 is right.
   int y = 0;
   int stand;
 
@@ -298,130 +298,96 @@ static void DispShip(int Playernum, int Governor, placetype *where,
   planettype *apl;
   double xt, yt, slope;
 
-  if (!ship->alive)
-    return;
+  if (!ship->alive) return;
 
   *string = '\0';
 
   switch (where->level) {
-  case LEVEL_PLAN:
-    x = (int)(SCALE +
-              (SCALE *
-               (ship->xpos - (Stars[where->snum]->xpos + pl->xpos) - Lastx)) /
-                  (PLORBITSIZE * Zoom));
-    y = (int)(SCALE +
-              (SCALE *
-               (ship->ypos - (Stars[where->snum]->ypos + pl->ypos) - Lasty)) /
-                  (PLORBITSIZE * Zoom));
-    break;
-  case LEVEL_STAR:
-    x = (int)(SCALE +
-              (SCALE * (ship->xpos - Stars[where->snum]->xpos - Lastx)) /
-                  (SYSTEMSIZE * Zoom));
-    y = (int)(SCALE +
-              (SCALE * (ship->ypos - Stars[where->snum]->ypos - Lasty)) /
-                  (SYSTEMSIZE * Zoom));
-    break;
-  case LEVEL_UNIV:
-    x = (int)(SCALE + (SCALE * (ship->xpos - Lastx)) / (UNIVSIZE * Zoom));
-    y = (int)(SCALE + (SCALE * (ship->ypos - Lasty)) / (UNIVSIZE * Zoom));
-    break;
-  default:
-    notify(Playernum, Governor, "WHOA! error in DispShip.\n");
-    return;
+    case LEVEL_PLAN:
+      x = (int)(SCALE +
+                (SCALE *
+                 (ship->xpos - (Stars[where->snum]->xpos + pl->xpos) - Lastx)) /
+                    (PLORBITSIZE * Zoom));
+      y = (int)(SCALE +
+                (SCALE *
+                 (ship->ypos - (Stars[where->snum]->ypos + pl->ypos) - Lasty)) /
+                    (PLORBITSIZE * Zoom));
+      break;
+    case LEVEL_STAR:
+      x = (int)(SCALE +
+                (SCALE * (ship->xpos - Stars[where->snum]->xpos - Lastx)) /
+                    (SYSTEMSIZE * Zoom));
+      y = (int)(SCALE +
+                (SCALE * (ship->ypos - Stars[where->snum]->ypos - Lasty)) /
+                    (SYSTEMSIZE * Zoom));
+      break;
+    case LEVEL_UNIV:
+      x = (int)(SCALE + (SCALE * (ship->xpos - Lastx)) / (UNIVSIZE * Zoom));
+      y = (int)(SCALE + (SCALE * (ship->ypos - Lasty)) / (UNIVSIZE * Zoom));
+      break;
+    default:
+      notify(Playernum, Governor, "WHOA! error in DispShip.\n");
+      return;
   }
 
   switch (ship->type) {
-  case STYPE_MIRROR:
-    if (ship->special.aimed_at.level == LEVEL_STAR) {
-      xt = Stars[ship->special.aimed_at.snum]->xpos;
-      yt = Stars[ship->special.aimed_at.snum]->ypos;
-    } else if (ship->special.aimed_at.level == LEVEL_PLAN) {
-      if (where->level == LEVEL_PLAN &&
-          ship->special.aimed_at.pnum == where->pnum) {
-        /* same planet */
-        xt = Stars[ship->special.aimed_at.snum]->xpos + pl->xpos;
-        yt = Stars[ship->special.aimed_at.snum]->ypos + pl->ypos;
-      } else { /* different planet */
-        getplanet(&apl, (int)where->snum, (int)where->pnum);
-        xt = Stars[ship->special.aimed_at.snum]->xpos + apl->xpos;
-        yt = Stars[ship->special.aimed_at.snum]->ypos + apl->ypos;
-        free(apl);
-      }
-    } else if (ship->special.aimed_at.level == LEVEL_SHIP) {
-      if (getship(&aship, (int)ship->special.aimed_at.shipno)) {
-        xt = aship->xpos;
-        yt = aship->ypos;
-        free(aship);
+    case STYPE_MIRROR:
+      if (ship->special.aimed_at.level == LEVEL_STAR) {
+        xt = Stars[ship->special.aimed_at.snum]->xpos;
+        yt = Stars[ship->special.aimed_at.snum]->ypos;
+      } else if (ship->special.aimed_at.level == LEVEL_PLAN) {
+        if (where->level == LEVEL_PLAN &&
+            ship->special.aimed_at.pnum == where->pnum) {
+          /* same planet */
+          xt = Stars[ship->special.aimed_at.snum]->xpos + pl->xpos;
+          yt = Stars[ship->special.aimed_at.snum]->ypos + pl->ypos;
+        } else { /* different planet */
+          getplanet(&apl, (int)where->snum, (int)where->pnum);
+          xt = Stars[ship->special.aimed_at.snum]->xpos + apl->xpos;
+          yt = Stars[ship->special.aimed_at.snum]->ypos + apl->ypos;
+          free(apl);
+        }
+      } else if (ship->special.aimed_at.level == LEVEL_SHIP) {
+        if (getship(&aship, (int)ship->special.aimed_at.shipno)) {
+          xt = aship->xpos;
+          yt = aship->ypos;
+          free(aship);
+        } else
+          xt = yt = 0.0;
       } else
         xt = yt = 0.0;
-    } else
-      xt = yt = 0.0;
-    wm = 0;
+      wm = 0;
 
-    if (xt == ship->xpos) {
-      if (yt > ship->ypos)
-        wm = 4;
-      else
-        wm = 0;
-    } else {
-      slope = (yt - ship->ypos) / (xt - ship->xpos);
-      if (yt == ship->ypos) {
-        if (xt > ship->xpos)
-          wm = 2;
+      if (xt == ship->xpos) {
+        if (yt > ship->ypos)
+          wm = 4;
         else
-          wm = 6;
-      } else if (yt > ship->ypos) {
-        if (slope < -2.414)
-          wm = 4;
-        if (slope > -2.414)
-          wm = 5;
-        if (slope > -0.414)
-          wm = 6;
-        if (slope > 0.000)
-          wm = 2;
-        if (slope > 0.414)
-          wm = 3;
-        if (slope > 2.414)
-          wm = 4;
-      } else if (yt < ship->ypos) {
-        if (slope < -2.414)
           wm = 0;
-        if (slope > -2.414)
-          wm = 1;
-        if (slope > -0.414)
-          wm = 2;
-        if (slope > 0.000)
-          wm = 6;
-        if (slope > 0.414)
-          wm = 7;
-        if (slope > 2.414)
-          wm = 0;
-      }
-    }
-
-    /* (magnification) */
-    if (x >= 0 && y >= 0) {
-      if (Race->governor[Governor].toggle.color) {
-        sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'), x,
-                y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
-                ship->number);
       } else {
-        stand = (ship->owner == Race->governor[Governor].toggle.highlight);
-        sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
-                Shipltrs[ship->type], stand, ship->number);
+        slope = (yt - ship->ypos) / (xt - ship->xpos);
+        if (yt == ship->ypos) {
+          if (xt > ship->xpos)
+            wm = 2;
+          else
+            wm = 6;
+        } else if (yt > ship->ypos) {
+          if (slope < -2.414) wm = 4;
+          if (slope > -2.414) wm = 5;
+          if (slope > -0.414) wm = 6;
+          if (slope > 0.000) wm = 2;
+          if (slope > 0.414) wm = 3;
+          if (slope > 2.414) wm = 4;
+        } else if (yt < ship->ypos) {
+          if (slope < -2.414) wm = 0;
+          if (slope > -2.414) wm = 1;
+          if (slope > -0.414) wm = 2;
+          if (slope > 0.000) wm = 6;
+          if (slope > 0.414) wm = 7;
+          if (slope > 2.414) wm = 0;
+        }
       }
-    }
-    break;
 
-  case OTYPE_CANIST:
-  case OTYPE_GREEN:
-    break;
-
-  default:
-    /* other ships can only be seen when in system */
-    wm = 0;
-    if (ship->whatorbits != LEVEL_UNIV || ((ship->owner == Playernum) || God))
+      /* (magnification) */
       if (x >= 0 && y >= 0) {
         if (Race->governor[Governor].toggle.color) {
           sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'),
@@ -433,6 +399,27 @@ static void DispShip(int Playernum, int Governor, placetype *where,
                   Shipltrs[ship->type], stand, ship->number);
         }
       }
-    break;
+      break;
+
+    case OTYPE_CANIST:
+    case OTYPE_GREEN:
+      break;
+
+    default:
+      /* other ships can only be seen when in system */
+      wm = 0;
+      if (ship->whatorbits != LEVEL_UNIV || ((ship->owner == Playernum) || God))
+        if (x >= 0 && y >= 0) {
+          if (Race->governor[Governor].toggle.color) {
+            sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'),
+                    x, y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
+                    ship->number);
+          } else {
+            stand = (ship->owner == Race->governor[Governor].toggle.highlight);
+            sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
+                    Shipltrs[ship->type], stand, ship->number);
+          }
+        }
+      break;
   }
 }

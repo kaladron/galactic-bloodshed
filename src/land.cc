@@ -33,18 +33,19 @@
 
 static int roll;
 
-void land(int Playernum, int Governor, int APcount) {
+void land(player_t Playernum, governor_t Governor, int APcount) {
   shiptype *s, *s2;
   planettype *p;
   sectortype *sect;
 
-  int shipno, ship2no, x = -1, y = -1, i, numdest, strength;
+  shipnum_t shipno, ship2no;
+  int x = -1, y = -1, i, numdest, strength;
   double fuel;
   double Dist;
   racetype *Race, *alien;
-  int nextshipno;
+  shipnum_t nextshipno;
 
-  numdest = 0; // TODO(jeffbailey): Init to zero.
+  numdest = 0;  // TODO(jeffbailey): Init to zero.
 
   if (argn < 2) {
     notify(Playernum, Governor, "Land what?\n");
@@ -74,9 +75,9 @@ void land(int Playernum, int Governor, int APcount) {
       }
       if (args[2][0] == '#') {
         /* attempting to land on a friendly ship (for carriers/stations/etc) */
-        sscanf(args[2] + 1, "%d", &ship2no);
+        sscanf(args[2] + 1, "%lu", &ship2no);
         if (!getship(&s2, ship2no)) {
-          sprintf(buf, "Ship #%d wasn't found.\n", ship2no);
+          sprintf(buf, "Ship #%lu wasn't found.\n", ship2no);
           notify(Playernum, Governor, buf);
           free(s);
           continue;
@@ -130,8 +131,9 @@ void land(int Playernum, int Governor, int APcount) {
             continue;
           }
           if (Size(s) > Hanger(s2)) {
-            sprintf(buf, "Mothership does not have %d hanger space available "
-                         "to load ship.\n",
+            sprintf(buf,
+                    "Mothership does not have %d hanger space available "
+                    "to load ship.\n",
                     Size(s));
             notify(Playernum, Governor, buf);
             free(s);
@@ -190,8 +192,9 @@ void land(int Playernum, int Governor, int APcount) {
             continue;
           }
           if (Size(s) > Hanger(s2)) {
-            sprintf(buf, "Mothership does not have %d hanger space available "
-                         "to load ship.\n",
+            sprintf(buf,
+                    "Mothership does not have %d hanger space available "
+                    "to load ship.\n",
                     Size(s));
             notify(Playernum, Governor, buf);
             free(s);
@@ -384,8 +387,7 @@ void land(int Playernum, int Governor, int APcount) {
 
         putplanet(p, (int)s->storbits, (int)s->pnumorbits);
 
-        if (numdest)
-          putsector(sect, p, x, y);
+        if (numdest) putsector(sect, p, x, y);
 
         /* send messages to anyone there */
         sprintf(buf, "%s observed landing on sector %d,%d,planet /%s/%s.\n",

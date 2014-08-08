@@ -19,4 +19,4 @@ void check_overload(shiptype *, int, int *);
 void check_retal_strength(shiptype *, int *);
 int laser_on(shiptype *);
 
-#endif // FIRE_H
+#endif  // FIRE_H

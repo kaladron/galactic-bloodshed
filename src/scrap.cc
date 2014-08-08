@@ -24,7 +24,7 @@ void scrap(int Playernum, int Governor, int APcount) {
   planettype *planet;
   sectortype *sect;
   shiptype *s, *s2;
-  int shipno, nextshipno;
+  shipnum_t shipno, nextshipno;
   int scrapval = 0, destval = 0, crewval = 0, xtalval = 0, troopval = 0;
   double fuelval = 0.0;
   racetype *Race;
@@ -52,8 +52,9 @@ void scrap(int Playernum, int Governor, int APcount) {
         continue;
       }
       if (s->whatorbits == LEVEL_PLAN && s->type == OTYPE_TOXWC) {
-        sprintf(buf, "WARNING: This will release %d toxin points back into the "
-                     "atmosphere!!\n",
+        sprintf(buf,
+                "WARNING: This will release %d toxin points back into the "
+                "atmosphere!!\n",
                 s->special.waste.toxic);
         notify(Playernum, Governor, buf);
       }
@@ -66,8 +67,7 @@ void scrap(int Playernum, int Governor, int APcount) {
       if (s->whatorbits == LEVEL_PLAN) {
         /* wc's release poison */
         getplanet(&planet, (int)s->storbits, (int)s->pnumorbits);
-        if (landed(s))
-          getsector(&sect, planet, (int)s->land_x, (int)s->land_y);
+        if (landed(s)) getsector(&sect, planet, (int)s->land_x, (int)s->land_y);
       }
       if (docked(s)) {
         if (!getship(&s2, (int)(s->destshipno))) {
@@ -132,7 +132,7 @@ void scrap(int Playernum, int Governor, int APcount) {
                     "You don't own this sector; no crew can be recovered.\n");
             notify(Playernum, Governor, buf);
           } else {
-            sprintf(buf, "Population/Troops recovery: %d/%d.\n", s->popn,
+            sprintf(buf, "Population/Troops recovery: %lu/%lu.\n", s->popn,
                     s->troops);
             notify(Playernum, Governor, buf);
             troopval = s->troops;
@@ -178,8 +178,7 @@ void scrap(int Playernum, int Governor, int APcount) {
       }
 
       /* more adjustments needed here for hanger. Maarten */
-      if (s->whatorbits == LEVEL_SHIP)
-        s2->hanger -= s->size;
+      if (s->whatorbits == LEVEL_SHIP) s2->hanger -= s->size;
 
       if (s->whatorbits == LEVEL_UNIV)
         deductAPs(Playernum, Governor, APcount, 0, 1);

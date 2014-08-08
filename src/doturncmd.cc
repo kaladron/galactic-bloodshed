@@ -59,19 +59,19 @@ void do_turn(int update) {
 
   Num_ships = Numships();
 
-  for (i = 1; i <= Num_ships; i++) domine(i, 0);
+  for (shipnum_t i = 1; i <= Num_ships; i++) domine(i, 0);
 
   ships = (shiptype **)malloc(sizeof(shiptype *) * (Num_ships + 1));
-  for (i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
+  for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
 
   /* get all stars and planets */
   getsdata(&Sdata);
   Planet_count = 0;
-  for (star = 0; star < Sdata.numstars; star++) {
+  for (starnum_t star = 0; star < Sdata.numstars; star++) {
     getstar(&Stars[star], star);
     if (update) fix_stability(Stars[star]); /* nova */
 
-    for (i = 0; i < Stars[star]->numplanets; i++) {
+    for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
       getplanet(&planets[star][i], star, i);
       if (planets[star][i]->type != TYPE_ASTEROID) Planet_count++;
       if (update) moveplanet(star, planets[star][i], i);
@@ -84,7 +84,7 @@ void do_turn(int update) {
 
   VN_brain.Most_mad = 0; /* not mad at anyone for starts */
 
-  for (i = 1; i <= Num_races; i++) {
+  for (player_t i = 1; i <= Num_races; i++) {
     /* increase tech; change to something else */
     if (update) {
       int j;
@@ -156,13 +156,13 @@ void do_turn(int update) {
             break;
         }
         sprintf(buf,
-                "Lot %d purchased from %s [%d] at a cost of %ld.\n   %d "
+                "Lot %d purchased from %s [%d] at a cost of %ld.\n   %ld "
                 "%s arrived at /%s/%s\n",
                 i, races[c->owner - 1]->name, c->owner, c->bid, c->amount,
                 Commod[c->type], Stars[c->star_to]->name,
                 Stars[c->star_to]->pnames[c->planet_to]);
         push_telegram((int)c->bidder, (int)c->bidder_gov, buf);
-        sprintf(buf, "Lot %d (%d %s) sold to %s [%d] at a cost of %ld.\n", i,
+        sprintf(buf, "Lot %d (%lu %s) sold to %s [%d] at a cost of %ld.\n", i,
                 c->amount, Commod[c->type], races[c->bidder - 1]->name,
                 c->bidder, c->bid);
         push_telegram((int)c->owner, (int)c->governor, buf);
@@ -364,7 +364,7 @@ void do_turn(int update) {
       } /* end of planet searchings */
     }   /* end of star searchings */
 
-    for (i = 1; i <= Num_ships; i++) {
+    for (shipnum_t i = 1; i <= Num_ships; i++) {
       if (!ships[i]->alive) continue;
       victory[ships[i]->owner - 1].shipcost += ships[i]->build_cost;
       victory[ships[i]->owner - 1].shiptech += ships[i]->tech;
@@ -389,7 +389,7 @@ void do_turn(int update) {
     free(victory);
   } /* end of if (update) */
 
-  for (i = 1; i <= Num_ships; i++) {
+  for (shipnum_t i = 1; i <= Num_ships; i++) {
     putship(ships[i]);
     free(ships[i]);
   }
@@ -516,37 +516,36 @@ void fix_stability(startype *s) {
 }
 
 void do_reset(int time_reset) {
-  int star, i;
-
   Num_ships = Numships();
 
   ships = (shiptype **)malloc(sizeof(shiptype *) * (Num_ships + 1));
-  for (i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
+  for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
 
   /* get all stars and planets */
   getsdata(&Sdata);
-  for (star = 0; star < Sdata.numstars; star++) {
+  for (starnum_t star = 0; star < Sdata.numstars; star++) {
     getstar(&Stars[star], star);
-    for (i = 0; i < Stars[star]->numplanets; i++)
+    for (planetnum_t i = 0; i < Stars[star]->numplanets; i++)
       getplanet(&planets[star][i], star, i);
   }
   output_ground_attacks();
 
   /* erase next ship pointers - reset in insert_sh_... */
-  for (i = 1; i <= Num_ships; i++) {
+  for (shipnum_t i = 1; i <= Num_ships; i++) {
     ships[i]->nextship = 0;
     ships[i]->ships = 0;
   }
 
   /* clear ship list for insertion */
   Sdata.ships = 0;
-  for (star = 0; star < Sdata.numstars; star++) {
+  for (starnum_t star = 0; star < Sdata.numstars; star++) {
     Stars[star]->ships = 0;
-    for (i = 0; i < Stars[star]->numplanets; i++) planets[star][i]->ships = 0;
+    for (planetnum_t i = 0; i < Stars[star]->numplanets; i++)
+      planets[star][i]->ships = 0;
   }
 
   /* insert ship into the list of wherever it might be */
-  for (i = Num_ships; i >= 1; i--) {
+  for (shipnum_t i = Num_ships; i >= 1; i--) {
     if (ships[i]->alive) {
       switch (ships[i]->whatorbits) {
         case LEVEL_UNIV:
@@ -573,15 +572,15 @@ void do_reset(int time_reset) {
   }
 
   /* check ship masses */
-  for (i = 1; i <= Num_ships; i++)
+  for (shipnum_t i = 1; i <= Num_ships; i++)
     if (ships[i]->alive) {
       domass(ships[i]);
       doown(ships[i]);
     }
 
-  for (star = 0; star < Sdata.numstars; star++) {
+  for (starnum_t star = 0; star < Sdata.numstars; star++) {
     if (!isascii(*Stars[star]->name)) sprintf(Stars[star]->name, "%d", star);
-    for (i = 0; i < Stars[star]->numplanets; i++) {
+    for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
       if (!isascii(*Stars[star]->pnames[i]))
         sprintf(Stars[star]->pnames[i], "%d", i);
       putplanet(planets[star][i], star, i);
@@ -590,13 +589,13 @@ void do_reset(int time_reset) {
   }
   putsdata(&Sdata);
 
-  for (i = 1; i <= Num_ships; i++) {
+  for (shipnum_t i = 1; i <= Num_ships; i++) {
     putship(ships[i]);
     free(ships[i]);
   }
   free(ships);
 
-  for (i = 1; i <= Num_races; i++) {
+  for (player_t i = 1; i <= Num_races; i++) {
     putrace(races[i - 1]);
     notify_race(i, "Finished with reset.\n");
   }

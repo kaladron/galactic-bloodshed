@@ -32,8 +32,7 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
   planettype *pl;
 
   getstar(&(Stars[star]), star);
-  if (!isset(Stars[star]->explored, Playernum))
-    return;
+  if (!isset(Stars[star]->explored, Playernum)) return;
 
   for (i = 0; i < Stars[star]->numplanets; i++) {
     getplanet(&pl, star, i);
@@ -42,48 +41,51 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
         pl->info[Playernum - 1].numsectsowned &&
         (!Governor || Stars[star]->governor[Playernum - 1] == Governor)) {
       switch (mode) {
-      case -1: /* combined report */
-      case 0:  /* colonies */
-        sprintf(
-            buf, " %c %4.4s/%-4.4s%c%4d%3d%5d%8ld%3d%6d%5d%6d "
-                 "%3d/%-3d%3.0f/%-3d%3d/%-3d",
-            Psymbol[pl->type], Stars[star]->name, Stars[star]->pnames[i],
-            (pl->info[Playernum - 1].autorep ? '*' : ' '),
-            Stars[star]->governor[Playernum - 1],
-            pl->info[Playernum - 1].numsectsowned,
-            pl->info[Playernum - 1].tech_invest, pl->info[Playernum - 1].popn,
-            pl->info[Playernum - 1].crystals, pl->info[Playernum - 1].resource,
-            pl->info[Playernum - 1].destruct, pl->info[Playernum - 1].fuel,
-            pl->info[Playernum - 1].tax, pl->info[Playernum - 1].newtax,
-            compatibility(pl, Race), pl->conditions[TOXIC],
-            pl->info[Playernum - 1].comread, pl->info[Playernum - 1].mob_set);
-        notify(Playernum, Governor, buf);
-        for (j = 1; j <= Num_races; j++)
-          if ((j != Playernum) && (pl->info[j - 1].numsectsowned > 0)) {
-            sprintf(buf, " %d", j);
-            notify(Playernum, Governor, buf);
-          }
-        notify(Playernum, Governor, "\n");
-        if (mode == 0)
+        case -1: /* combined report */
+        case 0:  /* colonies */
+          sprintf(
+              buf,
+              " %c %4.4s/%-4.4s%c%4d%3d%5d%8ld%3d%6d%5d%6d "
+              "%3d/%-3d%3.0f/%-3d%3d/%-3d",
+              Psymbol[pl->type], Stars[star]->name, Stars[star]->pnames[i],
+              (pl->info[Playernum - 1].autorep ? '*' : ' '),
+              Stars[star]->governor[Playernum - 1],
+              pl->info[Playernum - 1].numsectsowned,
+              pl->info[Playernum - 1].tech_invest, pl->info[Playernum - 1].popn,
+              pl->info[Playernum - 1].crystals,
+              pl->info[Playernum - 1].resource,
+              pl->info[Playernum - 1].destruct, pl->info[Playernum - 1].fuel,
+              pl->info[Playernum - 1].tax, pl->info[Playernum - 1].newtax,
+              compatibility(pl, Race), pl->conditions[TOXIC],
+              pl->info[Playernum - 1].comread, pl->info[Playernum - 1].mob_set);
+          notify(Playernum, Governor, buf);
+          for (j = 1; j <= Num_races; j++)
+            if ((j != Playernum) && (pl->info[j - 1].numsectsowned > 0)) {
+              sprintf(buf, " %d", j);
+              notify(Playernum, Governor, buf);
+            }
+          notify(Playernum, Governor, "\n");
+          if (mode == 0) break;
+          [[clang::fallthrough]]; /* Fall through if (mode == -1) */
+        case 1:                   /* production */
+          sprintf(
+              buf,
+              " %c %4.4s/%-4.4s%c%3d%8.4f%8ld%3d%6d%5d%6d %6ld   %3d%8.2f\n",
+              Psymbol[pl->type], Stars[star]->name, Stars[star]->pnames[i],
+              (pl->info[Playernum - 1].autorep ? '*' : ' '),
+              Stars[star]->governor[Playernum - 1],
+              pl->info[Playernum - 1].prod_tech, pl->total_resources,
+              pl->info[Playernum - 1].prod_crystals,
+              pl->info[Playernum - 1].prod_res,
+              pl->info[Playernum - 1].prod_dest,
+              pl->info[Playernum - 1].prod_fuel,
+              pl->info[Playernum - 1].prod_money,
+              pl->info[Playernum - 1].tox_thresh,
+              pl->info[Playernum - 1].est_production);
+          notify(Playernum, Governor, buf);
           break;
-        [[clang::fallthrough]]; /* Fall through if (mode == -1) */
-      case 1:                   /* production */
-        sprintf(
-            buf, " %c %4.4s/%-4.4s%c%3d%8.4f%8ld%3d%6d%5d%6d %6ld   %3d%8.2f\n",
-            Psymbol[pl->type], Stars[star]->name, Stars[star]->pnames[i],
-            (pl->info[Playernum - 1].autorep ? '*' : ' '),
-            Stars[star]->governor[Playernum - 1],
-            pl->info[Playernum - 1].prod_tech, pl->total_resources,
-            pl->info[Playernum - 1].prod_crystals,
-            pl->info[Playernum - 1].prod_res, pl->info[Playernum - 1].prod_dest,
-            pl->info[Playernum - 1].prod_fuel,
-            pl->info[Playernum - 1].prod_money,
-            pl->info[Playernum - 1].tox_thresh,
-            pl->info[Playernum - 1].est_production);
-        notify(Playernum, Governor, buf);
-        break;
-      default:
-        break;
+        default:
+          break;
       }
     }
     free(pl);
@@ -96,29 +98,32 @@ void colonies(int Playernum, int Governor, int APcount, int mode) {
   placetype where;
 
   switch (mode) {
-  case -1:
-    notify(Playernum, Governor,
-           "          ========= Colonies Prod Report ==========\n");
-    notify(Playernum, Governor, "  Planet     gov sec tech    popn  x   res  "
-                                "des  fuel  tax  cmpt/tox mob   Aliens\n");
-    notify(Playernum, Governor, "               tox  deposit\n");
-    break;
-  case 0:
-    notify(Playernum, Governor,
-           "          ========== Colonization Report ==========\n");
-    notify(Playernum, Governor, "  Planet     gov sec tech    popn  x   res  "
-                                "des  fuel  tax  cmpt/tox mob  Aliens\n");
-    break;
-  case 1:
-    notify(Playernum, Governor,
-           "          ============ Production Report ==========\n");
-    notify(Playernum, Governor, "  Planet     gov    tech deposit  x   res  "
-                                "des  fuel    tax   tox  est prod\n");
-    break;
-  default:
-    notify(Playernum, Governor,
-           "          =============== Unknown Report ==========\n");
-    return;
+    case -1:
+      notify(Playernum, Governor,
+             "          ========= Colonies Prod Report ==========\n");
+      notify(Playernum, Governor,
+             "  Planet     gov sec tech    popn  x   res  "
+             "des  fuel  tax  cmpt/tox mob   Aliens\n");
+      notify(Playernum, Governor, "               tox  deposit\n");
+      break;
+    case 0:
+      notify(Playernum, Governor,
+             "          ========== Colonization Report ==========\n");
+      notify(Playernum, Governor,
+             "  Planet     gov sec tech    popn  x   res  "
+             "des  fuel  tax  cmpt/tox mob  Aliens\n");
+      break;
+    case 1:
+      notify(Playernum, Governor,
+             "          ============ Production Report ==========\n");
+      notify(Playernum, Governor,
+             "  Planet     gov    tech deposit  x   res  "
+             "des  fuel    tax   tox  est prod\n");
+      break;
+    default:
+      notify(Playernum, Governor,
+             "          =============== Unknown Report ==========\n");
+      return;
   }
 
   Race = races[Playernum - 1];

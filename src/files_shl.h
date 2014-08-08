@@ -54,4 +54,4 @@ void Getpower(struct power[MAXPLAYERS]);
 void Putblock(struct block[MAXPLAYERS]);
 void Getblock(struct block[MAXPLAYERS]);
 
-#endif // FILES_SHL_H
+#endif  // FILES_SHL_H

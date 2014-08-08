@@ -25,7 +25,7 @@ void launch(int Playernum, int Governor, int APcount) {
   int sh2;
   shiptype *s, *s2;
   planettype *p;
-  int shipno, i, nextshipno;
+  shipnum_t shipno, nextshipno;
   double fuel;
 
   if (argn < 2) {
@@ -51,8 +51,7 @@ void launch(int Playernum, int Governor, int APcount) {
         free(s);
         continue;
       }
-      if (!landed(s))
-        APcount = 0;
+      if (!landed(s)) APcount = 0;
       if (landed(s) && s->resource > Max_resource(s)) {
         sprintf(buf, "%s is too overloaded to launch.\n", Ship(s));
         notify(Playernum, Governor, buf);
@@ -221,12 +220,12 @@ void launch(int Playernum, int Governor, int APcount) {
         s->docked = 0;
         s->whatdest = LEVEL_UNIV; /* no destination */
         switch (s->type) {
-        case OTYPE_CANIST:
-        case OTYPE_GREEN:
-          s->special.timer.count = 0;
-          break;
-        default:
-          break;
+          case OTYPE_CANIST:
+          case OTYPE_GREEN:
+            s->special.timer.count = 0;
+            break;
+          default:
+            break;
         }
         s->notified = 0;
         putship(s);
@@ -239,7 +238,7 @@ void launch(int Playernum, int Governor, int APcount) {
         sprintf(buf, "%s observed launching from planet /%s/%s.\n", Ship(s),
                 Stars[s->storbits]->name,
                 Stars[s->storbits]->pnames[s->pnumorbits]);
-        for (i = 1; i <= Num_races; i++)
+        for (player_t i = 1; i <= Num_races; i++)
           if (p->info[i - 1].numsectsowned && i != Playernum)
             notify(i, (int)Stars[s->storbits]->governor[i - 1], buf);
         free(p);
@@ -250,16 +249,16 @@ void launch(int Playernum, int Governor, int APcount) {
         notify(Playernum, Governor, buf);
 
         switch (s->type) {
-        case OTYPE_CANIST:
-          notify(Playernum, Governor,
-                 "A cloud of dust envelopes your planet.\n");
-          break;
-        case OTYPE_GREEN:
-          notify(Playernum, Governor,
-                 "Green house gases surround the planet.\n");
-          break;
-        default:
-          break;
+          case OTYPE_CANIST:
+            notify(Playernum, Governor,
+                   "A cloud of dust envelopes your planet.\n");
+            break;
+          case OTYPE_GREEN:
+            notify(Playernum, Governor,
+                   "Green house gases surround the planet.\n");
+            break;
+          default:
+            break;
         }
         free(s);
       }

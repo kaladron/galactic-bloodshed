@@ -206,4 +206,4 @@ int load_from_file(FILE *g);
 int cost_of_race(void);
 void modify_print_loop(int level);
 
-#endif // RACEGEN_H
+#endif  // RACEGEN_H

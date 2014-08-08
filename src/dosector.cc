@@ -20,11 +20,11 @@ void produce(startype *star, planettype *planet, sectortype *s) {
   int maxsup;
   int pfuel = 0, pdes = 0, pres = 0;
   struct plinfo *pinf;
-  int prod, diff;
+  int prod;
+  long diff;
   racetype *Race;
 
-  if (!s->owner)
-    return;
+  if (!s->owner) return;
   Race = races[s->owner - 1];
 
   if (s->resource && success(s->eff)) {
@@ -70,19 +70,16 @@ void produce(startype *star, planettype *planet, sectortype *s) {
                         Race->likes[s->condition]);
     if (success(chance)) {
       s->eff += round_rand(Race->metabolism);
-      if (s->eff >= 100)
-        plate(s);
+      if (s->eff >= 100) plate(s);
     }
   } else
     plate(s);
 
   if ((s->condition != WASTED) && Race->fertilize && (s->fert < 100))
     s->fert += (int_rand(0, 100) < Race->fertilize);
-  if (s->fert > 100)
-    s->fert = 100;
+  if (s->fert > 100) s->fert = 100;
 
-  if (s->condition == WASTED && success(NATURAL_REPAIR))
-    s->condition = s->type;
+  if (s->condition == WASTED && success(NATURAL_REPAIR)) s->condition = s->type;
 
   maxsup = maxsupport(Race, s, Compat[s->owner - 1], planet->conditions[TOXIC]);
   if ((diff = s->popn - maxsup) < 0) {
@@ -91,7 +88,7 @@ void produce(startype *star, planettype *planet, sectortype *s) {
     else
       ss = 0;
   } else
-    ss = -int_rand(0, MIN(2 * diff, s->popn));
+    ss = -int_rand(0, std::min(2 * static_cast<unsigned long>(diff), s->popn));
   s->popn += ss;
 
   if (s->troops)
@@ -108,8 +105,7 @@ void spread(planettype *pl, sectortype *s, int x, int y) {
   int check;
   racetype *Race;
 
-  if (!s->owner)
-    return;
+  if (!s->owner) return;
   if (pl->slaved_to && pl->slaved_to != s->owner)
     return; /* no one wants to go anywhere */
 
@@ -137,8 +133,7 @@ void Migrate2(planettype *planet, int xd, int yd, sectortype *ps, int *people) {
   int move;
 
   /* attempt to migrate beyond screen, or too many people */
-  if (yd > planet->Maxy - 1 || yd < 0)
-    return;
+  if (yd > planet->Maxy - 1 || yd < 0) return;
 
   if (xd < 0)
     xd = planet->Maxx - 1;
@@ -150,8 +145,7 @@ void Migrate2(planettype *planet, int xd, int yd, sectortype *ps, int *people) {
   if (!pd->owner) {
     move = (int)((double)(*people) * Compat[ps->owner - 1] *
                  races[ps->owner - 1]->likes[pd->condition] / 100.0);
-    if (!move)
-      return;
+    if (!move) return;
     *people -= move;
     pd->popn += move;
     ps->popn -= move;
@@ -186,6 +180,5 @@ void explore(planettype *planet, sectortype *s, int x, int y, int p) {
 
 void plate(sectortype *s) {
   s->eff = 100;
-  if (s->condition != GAS)
-    s->condition = PLATED;
+  if (s->condition != GAS) s->condition = PLATED;
 }

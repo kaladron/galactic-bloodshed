@@ -64,7 +64,7 @@ void survey(int Playernum, int Governor, int APcount, int mode) {
     } shipstuffs[MAX_SHIPS_PER_SECTOR];
   };
   struct numshipstuff shiplocs[MAX_X][MAX_Y];
-  int inhere = 0; // TODO(jeffbailey): Force init for some cases below
+  int inhere = 0;  // TODO(jeffbailey): Force init for some cases below
   int shiplist;
   shiptype *shipa;
   int i;
@@ -90,8 +90,7 @@ void survey(int Playernum, int Governor, int APcount, int mode) {
       }
     } else {
       where = Getplace(Playernum, Governor, args[1], 0);
-      if (where.err || where.level == LEVEL_SHIP)
-        return;
+      if (where.err || where.level == LEVEL_SHIP) return;
     }
   }
 
@@ -120,8 +119,9 @@ void survey(int Playernum, int Governor, int APcount, int mode) {
       }
 
       if (!mode) {
-        sprintf(buf, " x,y cond/type  owner race eff mob frt  res  mil popn "
-                     "^popn xtals\n");
+        sprintf(buf,
+                " x,y cond/type  owner race eff mob frt  res  mil popn "
+                "^popn xtals\n");
         notify(Playernum, Governor, buf);
       }
       if (mode) {
@@ -174,7 +174,7 @@ void survey(int Playernum, int Governor, int APcount, int mode) {
               notify(Playernum, Governor, buf);
             } else {
               sprintf(
-                  buf, " %c   %c   %6u%5u%4u%4u%4u%5u%5u%5d%6d%s\n",
+                  buf, " %c   %c   %6u%5u%4u%4u%4u%5u%5lu%5lu%6d%s\n",
                   Dessymbols[s->condition], Dessymbols[s->type], s->owner,
                   s->race, s->eff, s->mobilization, s->fert, s->resource,
                   s->troops, s->popn,
@@ -186,36 +186,36 @@ void survey(int Playernum, int Governor, int APcount, int mode) {
             }
           } else { /* mode */
             switch (s->condition) {
-            case SEA:
-              sect_char = CHAR_SEA;
-              break;
-            case LAND:
-              sect_char = CHAR_LAND;
-              break;
-            case MOUNT:
-              sect_char = CHAR_MOUNT;
-              break;
-            case GAS:
-              sect_char = CHAR_GAS;
-              break;
-            case PLATED:
-              sect_char = CHAR_PLATED;
-              break;
-            case ICE:
-              sect_char = CHAR_ICE;
-              break;
-            case DESERT:
-              sect_char = CHAR_DESERT;
-              break;
-            case FOREST:
-              sect_char = CHAR_FOREST;
-              break;
-            default:
-              sect_char = '?';
-              break;
+              case SEA:
+                sect_char = CHAR_SEA;
+                break;
+              case LAND:
+                sect_char = CHAR_LAND;
+                break;
+              case MOUNT:
+                sect_char = CHAR_MOUNT;
+                break;
+              case GAS:
+                sect_char = CHAR_GAS;
+                break;
+              case PLATED:
+                sect_char = CHAR_PLATED;
+                break;
+              case ICE:
+                sect_char = CHAR_ICE;
+                break;
+              case DESERT:
+                sect_char = CHAR_DESERT;
+                break;
+              case FOREST:
+                sect_char = CHAR_FOREST;
+                break;
+              default:
+                sect_char = '?';
+                break;
             }
             sprintf(
-                buf, "%c %d %d %d %c %c %d %u %u %u %u %d %u %u %u %d",
+                buf, "%c %d %d %d %c %c %d %u %u %u %u %d %u %lu %lu %d",
                 CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
                 desshow(Playernum, Governor, p, lowx, lowy, Race),
                 ((s->condition == WASTED) ? 1 : 0), s->owner, s->eff, s->fert,
@@ -263,14 +263,16 @@ void survey(int Playernum, int Governor, int APcount, int mode) {
               p->conditions[METHANE], Race->conditions[METHANE],
               p->conditions[OXYGEN], Race->conditions[OXYGEN]);
       notify(Playernum, Governor, buf);
-      sprintf(buf, "         CO2 %02d%%(%02d%%)   hydrogen %02d%%(%02d%%)      "
-                   "temperature: %3d (%3d)\n",
+      sprintf(buf,
+              "         CO2 %02d%%(%02d%%)   hydrogen %02d%%(%02d%%)      "
+              "temperature: %3d (%3d)\n",
               p->conditions[CO2], Race->conditions[CO2],
               p->conditions[HYDROGEN], Race->conditions[HYDROGEN],
               p->conditions[TEMP], Race->conditions[TEMP]);
       notify(Playernum, Governor, buf);
-      sprintf(buf, "    nitrogen %02d%%(%02d%%)     sulfur %02d%%(%02d%%)      "
-                   "     normal: %3d\n",
+      sprintf(buf,
+              "    nitrogen %02d%%(%02d%%)     sulfur %02d%%(%02d%%)      "
+              "     normal: %3d\n",
               p->conditions[NITROGEN], Race->conditions[NITROGEN],
               p->conditions[SULFUR], Race->conditions[SULFUR],
               p->conditions[RTEMP]);
@@ -404,8 +406,7 @@ void repair(int Playernum, int Governor, int APcount) {
       }
     } else {
       where = Getplace(Playernum, Governor, args[1], 0);
-      if (where.err || where.level == LEVEL_SHIP)
-        return;
+      if (where.err || where.level == LEVEL_SHIP) return;
     }
   }
 

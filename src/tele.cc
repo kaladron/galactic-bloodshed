@@ -61,20 +61,20 @@ void post(const char *origmsg, int type) {
   const char *telefl;
 
   switch (type) {
-  case DECLARATION:
-    telefl = DECLARATIONFL;
-    break;
-  case TRANSFER:
-    telefl = TRANSFERFL;
-    break;
-  case COMBAT:
-    telefl = COMBATFL;
-    break;
-  case ANNOUNCE:
-    telefl = ANNOUNCEFL;
-    break;
-  default:
-    return;
+    case DECLARATION:
+      telefl = DECLARATIONFL;
+      break;
+    case TRANSFER:
+      telefl = TRANSFERFL;
+      break;
+    case COMBAT:
+      telefl = COMBATFL;
+      break;
+    case ANNOUNCE:
+      telefl = ANNOUNCEFL;
+      break;
+    default:
+      return;
   }
 
   char *fixmsg = strdupa(origmsg);
@@ -120,8 +120,7 @@ void push_telegram_race(int recpient, const char *msg) {
 
   Race = races[recpient - 1];
   for (j = 0; j <= MAXGOVERNORS; j++)
-    if (Race->governor[j].active)
-      push_telegram(recpient, j, msg);
+    if (Race->governor[j].active) push_telegram(recpient, j, msg);
 }
 
 /*
@@ -218,20 +217,20 @@ void news_read(int Playernum, int Governor, int type) {
 
   bzero((char *)telegram_file, sizeof(telegram_file));
   switch (type) {
-  case DECLARATION:
-    sprintf(telegram_file, "%s", DECLARATIONFL);
-    break;
-  case TRANSFER:
-    sprintf(telegram_file, "%s", TRANSFERFL);
-    break;
-  case COMBAT:
-    sprintf(telegram_file, "%s", COMBATFL);
-    break;
-  case ANNOUNCE:
-    sprintf(telegram_file, "%s", ANNOUNCEFL);
-    break;
-  default:
-    return;
+    case DECLARATION:
+      sprintf(telegram_file, "%s", DECLARATIONFL);
+      break;
+    case TRANSFER:
+      sprintf(telegram_file, "%s", TRANSFERFL);
+      break;
+    case COMBAT:
+      sprintf(telegram_file, "%s", COMBATFL);
+      break;
+    case ANNOUNCE:
+      sprintf(telegram_file, "%s", ANNOUNCEFL);
+      break;
+    default:
+      return;
   }
 
   if ((teleg_read_fd = fopen(telegram_file, "r")) != 0) {

@@ -19,10 +19,10 @@
 #define STARS "100"
 #define STARTS "June 22 23:30 GMT"
 #define TO "chris@courses.cstudies.ubc.ca"
-#define UPDATE_SCH                                                             \
+#define UPDATE_SCH \
   "\
 1st 10 updates hourly. Thereafter every 30 hours."
-#define OTHER_STUFF                                                            \
+#define OTHER_STUFF \
   "\n\
 Racegen points are increased to 1400. Moderator will play (Zargoons).\n"
 
@@ -35,4 +35,4 @@ Racegen points are increased to 1400. Moderator will play (Zargoons).\n"
 /* #define TRADITIONAL_RACES */
 #define DEFAULT_MESO_IQ_LIMIT 180
 
-#endif // GAME_INFO_H
+#endif  // GAME_INFO_H

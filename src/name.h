@@ -20,4 +20,4 @@ void name(int, int, int);
 int MostAPs(int, startype *);
 void announce(int, int, const char *, int);
 
-#endif // NAME_H
+#endif  // NAME_H

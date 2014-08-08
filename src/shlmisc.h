@@ -30,4 +30,4 @@ void deductAPs(int, int, int, int, int);
 void list(int, int);
 double morale_factor(double);
 
-#endif // SHLMISC_H
+#endif  // SHLMISC_H

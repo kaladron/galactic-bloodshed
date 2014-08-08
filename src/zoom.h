@@ -7,4 +7,4 @@
 
 void zoom(int, int, int);
 
-#endif // ZOOM_H
+#endif  // ZOOM_H

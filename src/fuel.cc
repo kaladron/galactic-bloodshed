@@ -46,8 +46,9 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
   placetype tmpdest;
 
   if ((argn < 2) || (argn > 3)) {
-    notify(Playernum, Governor, "Invalid number of options.\n\"fuel "
-                                "#<shipnumber> [destination]\"...\n");
+    notify(Playernum, Governor,
+           "Invalid number of options.\n\"fuel "
+           "#<shipnumber> [destination]\"...\n");
     return;
   }
   if (args[1][0] != '#') {
@@ -90,8 +91,7 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
             Stars[(int)ship->storbits]->pnames[(int)ship->pnumorbits]);
     free(p);
   }
-  if (argn == 2)
-    strcpy(args[2], prin_ship_dest(Playernum, Governor, ship));
+  if (argn == 2) strcpy(args[2], prin_ship_dest(Playernum, Governor, ship));
   tmpdest = Getplace(Playernum, Governor, args[2], 1);
   if (tmpdest.err) {
     notify(Playernum, Governor, "fuel:  bad scope.\n");
@@ -166,8 +166,7 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
   level = tmpship->fuel;
   current_settings = do_trip(tmpdest, tmpship->fuel, gravity_factor);
   current_segs = number_segments;
-  if (current_settings)
-    current_fuel = level - tmpship->fuel;
+  if (current_settings) current_fuel = level - tmpship->fuel;
   free(tmpship);
 
   /*  2nd loop to determine lowest fuel needed...  */
@@ -188,8 +187,9 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
   }
 
   (void)getship(&tmpship, shipno);
-  sprintf(buf, "\n  ----- ===== FUEL ESTIMATES ===== ----\n\nAt Current Fuel "
-               "Cargo (%.2ff):\n",
+  sprintf(buf,
+          "\n  ----- ===== FUEL ESTIMATES ===== ----\n\nAt Current Fuel "
+          "Cargo (%.2ff):\n",
           tmpship->fuel);
   domass(tmpship);
   notify(Playernum, Governor, buf);
@@ -260,8 +260,7 @@ static int do_trip(const placetype &tmpdest, double fuel,
     /* Bring in the other ships.  Moveship() uses ships[]. */
     Num_ships = Numships();
     ships = (shiptype **)malloc(sizeof(shiptype *) * (Num_ships)+1);
-    for (shipnum_t i = 1; i <= Num_ships; i++)
-      (void)getship(&ships[i], i);
+    for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
   }
 
   trip_resolved = 0;
@@ -284,34 +283,29 @@ static int do_trip(const placetype &tmpdest, double fuel,
     y_0 = (double)tmpship->ypos;
     tmpdist = sqrt(Distsq(x_0, y_0, x_1, y_1));
     switch ((int)tmpship->whatdest) {
-    case LEVEL_STAR:
-      if (tmpdist <= (double)SYSTEMSIZE)
+      case LEVEL_STAR:
+        if (tmpdist <= (double)SYSTEMSIZE) trip_resolved = 1;
+        break;
+      case LEVEL_PLAN:
+        if (tmpdist <= (double)PLORBITSIZE) trip_resolved = 1;
+        break;
+      case LEVEL_SHIP:
+        if (tmpdist <= (double)DIST_TO_LAND) trip_resolved = 1;
+        break;
+      default:
         trip_resolved = 1;
-      break;
-    case LEVEL_PLAN:
-      if (tmpdist <= (double)PLORBITSIZE)
-        trip_resolved = 1;
-      break;
-    case LEVEL_SHIP:
-      if (tmpdist <= (double)DIST_TO_LAND)
-        trip_resolved = 1;
-      break;
-    default:
-      trip_resolved = 1;
     }
     if (((tmpship->fuel == fuel_level1) && (!tmpship->hyper_drive.on)) &&
         (trip_resolved == 0)) {
       if (tmpship->whatdest == LEVEL_SHIP) {
-        for (shipnum_t i = 1; i <= Num_ships; i++)
-          free(ships[i]);
+        for (shipnum_t i = 1; i <= Num_ships; i++) free(ships[i]);
         free(ships);
       }
       return (0);
     }
   }
   if (tmpship->whatdest == LEVEL_SHIP || tmpship->ships) {
-    for (shipnum_t i = 1; i <= Num_ships; i++)
-      free(ships[i]);
+    for (shipnum_t i = 1; i <= Num_ships; i++) free(ships[i]);
     free(ships);
   }
   return (1);

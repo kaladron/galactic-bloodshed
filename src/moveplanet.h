@@ -9,4 +9,4 @@
 
 void moveplanet(int, planettype *, int);
 
-#endif // MOVEPLANET_H
+#endif  // MOVEPLANET_H

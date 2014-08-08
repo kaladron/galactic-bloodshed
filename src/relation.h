@@ -9,4 +9,4 @@
 
 void relation(const command_t &argv, const player_t, const governor_t);
 
-#endif // RELATION_H
+#endif  // RELATION_H

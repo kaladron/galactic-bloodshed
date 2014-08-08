@@ -15,4 +15,4 @@ startype *Makestar(FILE *, FILE *);
 void Makeplanet_init(void);
 void PrintStatistics(void);
 
-#endif // MAKESTAR_H
+#endif  // MAKESTAR_H

@@ -13,4 +13,4 @@ void Migrate2(planettype *, int, int, sectortype *, int *);
 void explore(planettype *, sectortype *, int, int, int);
 void plate(sectortype *);
 
-#endif // DOSECTOR_H
+#endif  // DOSECTOR_H

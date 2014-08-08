@@ -7,4 +7,4 @@
 
 void proj_fuel(int, int, int);
 
-#endif // FUEL_H
+#endif  // FUEL_H

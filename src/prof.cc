@@ -150,26 +150,16 @@ void profile(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, buf);
 
     notify(Playernum, Governor, "Discoveries:");
-    if (Crystal(Race))
-      notify(Playernum, Governor, "  Crystals");
-    if (Hyper_drive(Race))
-      notify(Playernum, Governor, "  Hyper-drive");
-    if (Laser(Race))
-      notify(Playernum, Governor, "  Combat Lasers");
-    if (Cew(Race))
-      notify(Playernum, Governor, "  Confined Energy Weapons");
-    if (Vn(Race))
-      notify(Playernum, Governor, "  Von Neumann Machines");
-    if (Tractor_beam(Race))
-      notify(Playernum, Governor, "  Tractor Beam");
-    if (Transporter(Race))
-      notify(Playernum, Governor, "  Transporter");
-    if (Avpm(Race))
-      notify(Playernum, Governor, "  AVPM");
-    if (Cloak(Race))
-      notify(Playernum, Governor, "  Cloaking");
-    if (Wormhole(Race))
-      notify(Playernum, Governor, "  Wormhole");
+    if (Crystal(Race)) notify(Playernum, Governor, "  Crystals");
+    if (Hyper_drive(Race)) notify(Playernum, Governor, "  Hyper-drive");
+    if (Laser(Race)) notify(Playernum, Governor, "  Combat Lasers");
+    if (Cew(Race)) notify(Playernum, Governor, "  Confined Energy Weapons");
+    if (Vn(Race)) notify(Playernum, Governor, "  Von Neumann Machines");
+    if (Tractor_beam(Race)) notify(Playernum, Governor, "  Tractor Beam");
+    if (Transporter(Race)) notify(Playernum, Governor, "  Transporter");
+    if (Avpm(Race)) notify(Playernum, Governor, "  AVPM");
+    if (Cloak(Race)) notify(Playernum, Governor, "  Cloaking");
+    if (Wormhole(Race)) notify(Playernum, Governor, "  Wormhole");
     notify(Playernum, Governor, "\n");
   } else {
     if (!(p = GetPlayer(args[1]))) {

@@ -11,4 +11,4 @@ void mobilize(int, int, int);
 void tax(int, int, int);
 int control(int, int, startype *);
 
-#endif // MOBILIZ_H
+#endif  // MOBILIZ_H

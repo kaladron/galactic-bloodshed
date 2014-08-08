@@ -12,4 +12,4 @@
 void orbit(const command_t &argv, const player_t Playernum,
            const governor_t Governor);
 
-#endif // ORBIT_H
+#endif  // ORBIT_H

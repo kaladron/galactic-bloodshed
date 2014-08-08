@@ -8,4 +8,4 @@
 void technology(int, int, int);
 double tech_prod(int, int);
 
-#endif // TECH_H
+#endif  // TECH_H

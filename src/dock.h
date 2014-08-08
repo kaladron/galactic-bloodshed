@@ -9,4 +9,4 @@
 
 void dock(player_t, governor_t, int, int);
 
-#endif // DOCK_H
+#endif  // DOCK_H

@@ -10,4 +10,4 @@
 void PermuteSects(planettype *);
 int Getxysect(planettype *, int *, int *, int);
 
-#endif // PERM_H
+#endif  // PERM_H

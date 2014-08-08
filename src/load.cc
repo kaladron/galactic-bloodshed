@@ -39,7 +39,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
   planettype *p;
   sectortype *sect;
   racetype *Race;
-  int shipno, nextshipno;
+  shipnum_t shipno, nextshipno;
 
   if (argn < 2) {
     notify(Playernum, Governor, "Load what?\n");
@@ -133,14 +133,12 @@ void load(int Playernum, int Governor, int APcount, int mode) {
       else
         amt = 0;
 
-      if (mode)
-        amt = -amt; /* unload */
+      if (mode) amt = -amt; /* unload */
 
       if (amt < 0 && s->type == OTYPE_VN) {
         notify(Playernum, Governor, "You can't unload VNs.\n");
         free(s);
-        if (sh)
-          free(s2);
+        if (sh) free(s2);
         continue;
       }
 
@@ -152,80 +150,82 @@ void load(int Playernum, int Governor, int APcount, int mode) {
         getsector(&sect, p, (int)s->land_x, (int)s->land_y);
 
       switch (commod) {
-      case 'x':
-      case '&':
-        if (sh) {
-          uplim = diff ? 0 : MIN(s2->crystals, Max_crystals(s) - s->crystals);
-          lolim = diff ? 0 : -MIN(s->crystals, Max_crystals(s2) - s2->crystals);
-        } else {
-          uplim = MIN(p->info[Playernum - 1].crystals,
-                      Max_crystals(s) - s->crystals);
-          lolim = -s->crystals;
-        }
-        break;
-      case 'c':
-        if (sh) {
-          uplim = diff ? 0 : MIN(s2->popn, Max_crew(s) - s->popn);
-          lolim = diff ? 0 : -MIN(s->popn, Max_crew(s2) - s2->popn);
-        } else {
-          uplim = MIN(sect->popn, Max_crew(s) - s->popn);
-          lolim = -s->popn;
-        }
-        break;
-      case 'm':
-        if (sh) {
-          uplim = diff ? 0 : MIN(s2->troops, Max_mil(s) - s->troops);
-          lolim = diff ? 0 : -MIN(s->troops, Max_mil(s2) - s2->troops);
-        } else {
-          uplim = MIN(sect->troops, Max_mil(s) - s->troops);
-          lolim = -s->troops;
-        }
-        break;
-      case 'd':
-        if (sh) {
-          uplim = diff ? 0 : MIN(s2->destruct, Max_destruct(s) - s->destruct);
-          lolim = -MIN(s->destruct, Max_destruct(s2) - s2->destruct);
-        } else {
-          uplim = MIN(p->info[Playernum - 1].destruct,
-                      Max_destruct(s) - s->destruct);
-          lolim = -s->destruct;
-        }
-        break;
-      case 'f':
-        if (sh) {
-          uplim =
-              diff ? 0 : MIN((int)s2->fuel, (int)Max_fuel(s) - (int)s->fuel);
-          lolim = -MIN((int)s->fuel, (int)Max_fuel(s2) - (int)s2->fuel);
-        } else {
-          uplim = MIN((int)p->info[Playernum - 1].fuel,
-                      (int)Max_fuel(s) - (int)s->fuel);
-          lolim = -(int)s->fuel;
-        }
-        break;
-      case 'r':
-        if (sh) {
-          if (s->type == STYPE_SHUTTLE && s->whatorbits != LEVEL_SHIP)
-            uplim = diff ? 0 : s2->resource;
-          else
-            uplim = diff ? 0 : MIN(s2->resource, Max_resource(s) - s->resource);
-          if (s2->type == STYPE_SHUTTLE && s->whatorbits != LEVEL_SHIP)
+        case 'x':
+        case '&':
+          if (sh) {
+            uplim = diff ? 0 : MIN(s2->crystals, Max_crystals(s) - s->crystals);
+            lolim =
+                diff ? 0 : -MIN(s->crystals, Max_crystals(s2) - s2->crystals);
+          } else {
+            uplim = MIN(p->info[Playernum - 1].crystals,
+                        Max_crystals(s) - s->crystals);
+            lolim = -s->crystals;
+          }
+          break;
+        case 'c':
+          if (sh) {
+            uplim = diff ? 0 : MIN(s2->popn, Max_crew(s) - s->popn);
+            lolim = diff ? 0 : -MIN(s->popn, Max_crew(s2) - s2->popn);
+          } else {
+            uplim = MIN(sect->popn, Max_crew(s) - s->popn);
+            lolim = -s->popn;
+          }
+          break;
+        case 'm':
+          if (sh) {
+            uplim = diff ? 0 : MIN(s2->troops, Max_mil(s) - s->troops);
+            lolim = diff ? 0 : -MIN(s->troops, Max_mil(s2) - s2->troops);
+          } else {
+            uplim = MIN(sect->troops, Max_mil(s) - s->troops);
+            lolim = -s->troops;
+          }
+          break;
+        case 'd':
+          if (sh) {
+            uplim = diff ? 0 : MIN(s2->destruct, Max_destruct(s) - s->destruct);
+            lolim = -MIN(s->destruct, Max_destruct(s2) - s2->destruct);
+          } else {
+            uplim = MIN(p->info[Playernum - 1].destruct,
+                        Max_destruct(s) - s->destruct);
+            lolim = -s->destruct;
+          }
+          break;
+        case 'f':
+          if (sh) {
+            uplim =
+                diff ? 0 : MIN((int)s2->fuel, (int)Max_fuel(s) - (int)s->fuel);
+            lolim = -MIN((int)s->fuel, (int)Max_fuel(s2) - (int)s2->fuel);
+          } else {
+            uplim = MIN((int)p->info[Playernum - 1].fuel,
+                        (int)Max_fuel(s) - (int)s->fuel);
+            lolim = -(int)s->fuel;
+          }
+          break;
+        case 'r':
+          if (sh) {
+            if (s->type == STYPE_SHUTTLE && s->whatorbits != LEVEL_SHIP)
+              uplim = diff ? 0 : s2->resource;
+            else
+              uplim =
+                  diff ? 0 : MIN(s2->resource, Max_resource(s) - s->resource);
+            if (s2->type == STYPE_SHUTTLE && s->whatorbits != LEVEL_SHIP)
+              lolim = -s->resource;
+            else
+              lolim = -MIN(s->resource, Max_resource(s2) - s2->resource);
+          } else {
+            uplim = MIN(p->info[Playernum - 1].resource,
+                        Max_resource(s) - s->resource);
             lolim = -s->resource;
+          }
+          break;
+        default:
+          notify(Playernum, Governor, "No such commodity valid.\n");
+          if (sh)
+            free(s2);
           else
-            lolim = -MIN(s->resource, Max_resource(s2) - s2->resource);
-        } else {
-          uplim = MIN(p->info[Playernum - 1].resource,
-                      Max_resource(s) - s->resource);
-          lolim = -s->resource;
-        }
-        break;
-      default:
-        notify(Playernum, Governor, "No such commodity valid.\n");
-        if (sh)
-          free(s2);
-        else
-          free(p);
-        free(s);
-        continue;
+            free(p);
+          free(s);
+          continue;
       }
 
       if (amt < lolim || amt > uplim) {
@@ -243,206 +243,205 @@ void load(int Playernum, int Governor, int APcount, int mode) {
 
       Race = races[Playernum - 1];
 
-      if (amt == 0)
-        amt = (mode ? lolim : uplim);
+      if (amt == 0) amt = (mode ? lolim : uplim);
 
       switch (commod) {
-      case 'c':
-        if (sh) {
-          s2->popn -= amt;
-          if (!landed_on(s, sh))
-            s2->mass -= amt * Race->mass;
-          transfercrew = 1;
-        } else if (sect->owner && sect->owner != Playernum) {
-          sprintf(buf, "That sector is already occupied by another player!\n");
-          notify(Playernum, Governor, buf);
-          /* fight a land battle */
-          unload_onto_alien_sector(Playernum, Governor, p, s, sect, CIV, -amt);
-          putship(s);
-          putsector(sect, p, (int)s->land_x, (int)s->land_y);
-          putplanet(p, Dir[Playernum - 1][Governor].snum,
-                    Dir[Playernum - 1][Governor].pnum);
-          free(s);
-          free(sect);
-          free(p);
-          return;
-        } else {
-          transfercrew = 1;
-          if (!sect->popn && !sect->troops && amt < 0) {
-            p->info[Playernum - 1].numsectsowned++;
-            p->info[Playernum - 1].mob_points += sect->mobilization;
-            sect->owner = Playernum;
-            sprintf(buf, "sector %d,%d COLONIZED.\n", s->land_x, s->land_y);
+        case 'c':
+          if (sh) {
+            s2->popn -= amt;
+            if (!landed_on(s, sh)) s2->mass -= amt * Race->mass;
+            transfercrew = 1;
+          } else if (sect->owner && sect->owner != Playernum) {
+            sprintf(buf,
+                    "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
-          }
-          sect->popn -= amt;
-          p->popn -= amt;
-          p->info[Playernum - 1].popn -= amt;
-          if (!sect->popn && !sect->troops) {
-            p->info[Playernum - 1].numsectsowned--;
-            p->info[Playernum - 1].mob_points -= sect->mobilization;
-            sect->owner = 0;
-            sprintf(buf, "sector %d,%d evacuated.\n", s->land_x, s->land_y);
-            notify(Playernum, Governor, buf);
-          }
-        }
-        if (transfercrew) {
-          s->popn += amt;
-          s->mass += amt * Race->mass;
-          sprintf(buf, "crew complement of %s is now %u.\n", Ship(s), s->popn);
-          notify(Playernum, Governor, buf);
-        }
-        break;
-      case 'm':
-        if (sh) {
-          s2->troops -= amt;
-          if (!landed_on(s, sh))
-            s2->mass -= amt * Race->mass;
-          transfercrew = 1;
-        } else if (sect->owner && sect->owner != Playernum) {
-          sprintf(buf, "That sector is already occupied by another player!\n");
-          notify(Playernum, Governor, buf);
-          unload_onto_alien_sector(Playernum, Governor, p, s, sect, MIL, -amt);
-          putship(s);
-          putsector(sect, p, (int)s->land_x, (int)s->land_y);
-          putplanet(p, Dir[Playernum - 1][Governor].snum,
-                    Dir[Playernum - 1][Governor].pnum);
-          free(s);
-          free(sect);
-          free(p);
-          return;
-        } else {
-          transfercrew = 1;
-          if (!(sect->popn + sect->troops) && amt < 0) {
-            p->info[Playernum - 1].numsectsowned++;
-            p->info[Playernum - 1].mob_points += sect->mobilization;
-            sect->owner = Playernum;
-            sprintf(buf, "sector %d,%d OCCUPIED.\n", s->land_x, s->land_y);
-            notify(Playernum, Governor, buf);
-          }
-          sect->troops -= amt;
-          p->troops -= amt;
-          p->info[Playernum - 1].troops -= amt;
-          if (!(sect->troops + sect->popn)) {
-            p->info[Playernum - 1].numsectsowned--;
-            p->info[Playernum - 1].mob_points -= sect->mobilization;
-            sect->owner = 0;
-            sprintf(buf, "sector %d,%d evacuated.\n", s->land_x, s->land_y);
-            notify(Playernum, Governor, buf);
-          }
-        }
-        if (transfercrew) {
-          s->troops += amt;
-          s->mass += amt * Race->mass;
-          sprintf(buf, "troop complement of %s is now %u.\n", Ship(s),
-                  s->troops);
-          notify(Playernum, Governor, buf);
-        }
-        break;
-      case 'd':
-        if (sh) {
-          s2->destruct -= amt;
-          if (!landed_on(s, sh))
-            s2->mass -= amt * MASS_DESTRUCT;
-        } else
-          p->info[Playernum - 1].destruct -= amt;
-
-        s->destruct += amt;
-        s->mass += amt * MASS_DESTRUCT;
-        sprintf(buf, "%d destruct transferred.\n", amt);
-        notify(Playernum, Governor, buf);
-        if (!Max_crew(s)) {
-          sprintf(buf, "\n%s ", Ship(s));
-          notify(Playernum, Governor, buf);
-          if (s->destruct) {
-            sprintf(buf, "now boobytrapped.\n");
+            /* fight a land battle */
+            unload_onto_alien_sector(Playernum, Governor, p, s, sect, CIV,
+                                     -amt);
+            putship(s);
+            putsector(sect, p, (int)s->land_x, (int)s->land_y);
+            putplanet(p, Dir[Playernum - 1][Governor].snum,
+                      Dir[Playernum - 1][Governor].pnum);
+            free(s);
+            free(sect);
+            free(p);
+            return;
           } else {
-            sprintf(buf, "no longer boobytrapped.\n");
+            transfercrew = 1;
+            if (!sect->popn && !sect->troops && amt < 0) {
+              p->info[Playernum - 1].numsectsowned++;
+              p->info[Playernum - 1].mob_points += sect->mobilization;
+              sect->owner = Playernum;
+              sprintf(buf, "sector %d,%d COLONIZED.\n", s->land_x, s->land_y);
+              notify(Playernum, Governor, buf);
+            }
+            sect->popn -= amt;
+            p->popn -= amt;
+            p->info[Playernum - 1].popn -= amt;
+            if (!sect->popn && !sect->troops) {
+              p->info[Playernum - 1].numsectsowned--;
+              p->info[Playernum - 1].mob_points -= sect->mobilization;
+              sect->owner = 0;
+              sprintf(buf, "sector %d,%d evacuated.\n", s->land_x, s->land_y);
+              notify(Playernum, Governor, buf);
+            }
           }
-          notify(Playernum, Governor, buf);
-        }
-        break;
-      case 'x':
-        if (sh) {
-          s2->crystals -= amt;
-        } else
-          p->info[Playernum - 1].crystals -= amt;
-        s->crystals += amt;
-        sprintf(buf, "%d crystal(s) transferred.\n", amt);
-        notify(Playernum, Governor, buf);
-        break;
-      case 'f':
-        if (sh) {
-          s2->fuel -= (double)amt;
-          if (!landed_on(s, sh))
-            s2->mass -= (double)amt * MASS_FUEL;
-        } else
-          p->info[Playernum - 1].fuel -= amt;
-        rcv_fuel(s, (double)amt);
-        sprintf(buf, "%d fuel transferred.\n", amt);
-        notify(Playernum, Governor, buf);
-        break;
-      case 'r':
-        if (sh) {
-          s2->resource -= amt;
-          if (!landed_on(s, sh))
-            s2->mass -= amt * MASS_RESOURCE;
-        } else
-          p->info[Playernum - 1].resource -= amt;
-        rcv_resource(s, amt);
-        sprintf(buf, "%d resources transferred.\n", amt);
-        notify(Playernum, Governor, buf);
-        break;
-      default:
-        notify(Playernum, Governor, "No such commodity.\n");
+          if (transfercrew) {
+            s->popn += amt;
+            s->mass += amt * Race->mass;
+            sprintf(buf, "crew complement of %s is now %lu.\n", Ship(s),
+                    s->popn);
+            notify(Playernum, Governor, buf);
+          }
+          break;
+        case 'm':
+          if (sh) {
+            s2->troops -= amt;
+            if (!landed_on(s, sh)) s2->mass -= amt * Race->mass;
+            transfercrew = 1;
+          } else if (sect->owner && sect->owner != Playernum) {
+            sprintf(buf,
+                    "That sector is already occupied by another player!\n");
+            notify(Playernum, Governor, buf);
+            unload_onto_alien_sector(Playernum, Governor, p, s, sect, MIL,
+                                     -amt);
+            putship(s);
+            putsector(sect, p, (int)s->land_x, (int)s->land_y);
+            putplanet(p, Dir[Playernum - 1][Governor].snum,
+                      Dir[Playernum - 1][Governor].pnum);
+            free(s);
+            free(sect);
+            free(p);
+            return;
+          } else {
+            transfercrew = 1;
+            if (!(sect->popn + sect->troops) && amt < 0) {
+              p->info[Playernum - 1].numsectsowned++;
+              p->info[Playernum - 1].mob_points += sect->mobilization;
+              sect->owner = Playernum;
+              sprintf(buf, "sector %d,%d OCCUPIED.\n", s->land_x, s->land_y);
+              notify(Playernum, Governor, buf);
+            }
+            sect->troops -= amt;
+            p->troops -= amt;
+            p->info[Playernum - 1].troops -= amt;
+            if (!(sect->troops + sect->popn)) {
+              p->info[Playernum - 1].numsectsowned--;
+              p->info[Playernum - 1].mob_points -= sect->mobilization;
+              sect->owner = 0;
+              sprintf(buf, "sector %d,%d evacuated.\n", s->land_x, s->land_y);
+              notify(Playernum, Governor, buf);
+            }
+          }
+          if (transfercrew) {
+            s->troops += amt;
+            s->mass += amt * Race->mass;
+            sprintf(buf, "troop complement of %s is now %lu.\n", Ship(s),
+                    s->troops);
+            notify(Playernum, Governor, buf);
+          }
+          break;
+        case 'd':
+          if (sh) {
+            s2->destruct -= amt;
+            if (!landed_on(s, sh)) s2->mass -= amt * MASS_DESTRUCT;
+          } else
+            p->info[Playernum - 1].destruct -= amt;
 
-        if (sh)
-          free(s2);
-        else
-          free(p);
-        free(s);
-        continue;
+          s->destruct += amt;
+          s->mass += amt * MASS_DESTRUCT;
+          sprintf(buf, "%d destruct transferred.\n", amt);
+          notify(Playernum, Governor, buf);
+          if (!Max_crew(s)) {
+            sprintf(buf, "\n%s ", Ship(s));
+            notify(Playernum, Governor, buf);
+            if (s->destruct) {
+              sprintf(buf, "now boobytrapped.\n");
+            } else {
+              sprintf(buf, "no longer boobytrapped.\n");
+            }
+            notify(Playernum, Governor, buf);
+          }
+          break;
+        case 'x':
+          if (sh) {
+            s2->crystals -= amt;
+          } else
+            p->info[Playernum - 1].crystals -= amt;
+          s->crystals += amt;
+          sprintf(buf, "%d crystal(s) transferred.\n", amt);
+          notify(Playernum, Governor, buf);
+          break;
+        case 'f':
+          if (sh) {
+            s2->fuel -= (double)amt;
+            if (!landed_on(s, sh)) s2->mass -= (double)amt * MASS_FUEL;
+          } else
+            p->info[Playernum - 1].fuel -= amt;
+          rcv_fuel(s, (double)amt);
+          sprintf(buf, "%d fuel transferred.\n", amt);
+          notify(Playernum, Governor, buf);
+          break;
+        case 'r':
+          if (sh) {
+            s2->resource -= amt;
+            if (!landed_on(s, sh)) s2->mass -= amt * MASS_RESOURCE;
+          } else
+            p->info[Playernum - 1].resource -= amt;
+          rcv_resource(s, amt);
+          sprintf(buf, "%d resources transferred.\n", amt);
+          notify(Playernum, Governor, buf);
+          break;
+        default:
+          notify(Playernum, Governor, "No such commodity.\n");
+
+          if (sh)
+            free(s2);
+          else
+            free(p);
+          free(s);
+          continue;
       }
 
       if (sh) {
         /* ship to ship transfer */
         buff[0] = bufr[0] = bufd[0] = bufc[0] = '\0';
         switch (commod) {
-        case 'r':
-          sprintf(buf, "%d resources transferred.\n", amt);
-          notify(Playernum, Governor, buf);
-          sprintf(bufr, "%d Resources\n", amt);
-          break;
-        case 'f':
-          sprintf(buf, "%d fuel transferred.\n", amt);
-          notify(Playernum, Governor, buf);
-          sprintf(buff, "%d Fuel\n", amt);
-          break;
-        case 'd':
-          sprintf(buf, "%d destruct transferred.\n", amt);
-          notify(Playernum, Governor, buf);
-          sprintf(bufd, "%d Destruct\n", amt);
-          break;
-        case 'x':
-        case '&':
-          sprintf(buf, "%d crystals transferred.\n", amt);
-          notify(Playernum, Governor, buf);
-          sprintf(bufd, "%d Crystal(s)\n", amt);
-          break;
-        case 'c':
-          sprintf(buf, "%d popn transferred.\n", amt);
-          notify(Playernum, Governor, buf);
-          sprintf(bufc, "%d %s\n", amt,
-                  Race->Metamorph ? "tons of biomass" : "population");
-          break;
-        case 'm':
-          sprintf(buf, "%d military transferred.\n", amt);
-          notify(Playernum, Governor, buf);
-          sprintf(bufm, "%d %s\n", amt,
-                  Race->Metamorph ? "tons of biomass" : "population");
-          break;
-        default:
-          break;
+          case 'r':
+            sprintf(buf, "%d resources transferred.\n", amt);
+            notify(Playernum, Governor, buf);
+            sprintf(bufr, "%d Resources\n", amt);
+            break;
+          case 'f':
+            sprintf(buf, "%d fuel transferred.\n", amt);
+            notify(Playernum, Governor, buf);
+            sprintf(buff, "%d Fuel\n", amt);
+            break;
+          case 'd':
+            sprintf(buf, "%d destruct transferred.\n", amt);
+            notify(Playernum, Governor, buf);
+            sprintf(bufd, "%d Destruct\n", amt);
+            break;
+          case 'x':
+          case '&':
+            sprintf(buf, "%d crystals transferred.\n", amt);
+            notify(Playernum, Governor, buf);
+            sprintf(bufd, "%d Crystal(s)\n", amt);
+            break;
+          case 'c':
+            sprintf(buf, "%d popn transferred.\n", amt);
+            notify(Playernum, Governor, buf);
+            sprintf(bufc, "%d %s\n", amt,
+                    Race->Metamorph ? "tons of biomass" : "population");
+            break;
+          case 'm':
+            sprintf(buf, "%d military transferred.\n", amt);
+            notify(Playernum, Governor, buf);
+            sprintf(bufm, "%d %s\n", amt,
+                    Race->Metamorph ? "tons of biomass" : "population");
+            break;
+          default:
+            break;
         }
         putship(s2);
         free(s2);
@@ -468,7 +467,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
 
 void jettison(int Playernum, int Governor, int APcount) {
   int Mod = 0;
-  int shipno, nextshipno;
+  shipnum_t shipno, nextshipno;
   int amt;
   char commod;
   shiptype *s;
@@ -519,93 +518,91 @@ void jettison(int Playernum, int Governor, int APcount) {
 
       commod = args[2][0];
       switch (commod) {
-      case 'x':
-        if ((amt = jettison_check(Playernum, Governor, amt,
-                                  (int)(s->crystals))) > 0) {
-          s->crystals -= amt;
-          sprintf(buf, "%d crystal%s jettisoned.\n", amt,
-                  (amt == 1) ? "" : "s");
-          notify(Playernum, Governor, buf);
-          Mod = 1;
-        }
-        break;
-      case 'c':
-        if ((amt = jettison_check(Playernum, Governor, amt, (int)(s->popn))) >
-            0) {
-          s->popn -= amt;
-          s->mass -= amt * Race->mass;
-          sprintf(buf, "%d crew %s into deep space.\n", amt,
-                  (amt == 1) ? "hurls itself" : "hurl themselves");
-          notify(Playernum, Governor, buf);
-          sprintf(buf, "Complement of %s is now %u.\n", Ship(s), s->popn);
-          notify(Playernum, Governor, buf);
-          Mod = 1;
-        }
-        break;
-      case 'm':
-        if ((amt = jettison_check(Playernum, Governor, amt, (int)(s->troops))) >
-            0) {
-          sprintf(buf, "%d military %s into deep space.\n", amt,
-                  (amt == 1) ? "hurls itself" : "hurl themselves");
-          notify(Playernum, Governor, buf);
-          sprintf(buf, "Complement of ship #%d is now %u.\n", shipno,
-                  s->troops - amt);
-          notify(Playernum, Governor, buf);
-          s->troops -= amt;
-          s->mass -= amt * Race->mass;
-          Mod = 1;
-        }
-        break;
-      case 'd':
-        if ((amt = jettison_check(Playernum, Governor, amt,
-                                  (int)(s->destruct))) > 0) {
-          use_destruct(s, amt);
-          sprintf(buf, "%d destruct jettisoned.\n", amt);
-          notify(Playernum, Governor, buf);
-          if (!Max_crew(s)) {
-            sprintf(buf, "\n%s ", Ship(s));
+        case 'x':
+          if ((amt = jettison_check(Playernum, Governor, amt,
+                                    (int)(s->crystals))) > 0) {
+            s->crystals -= amt;
+            sprintf(buf, "%d crystal%s jettisoned.\n", amt,
+                    (amt == 1) ? "" : "s");
             notify(Playernum, Governor, buf);
-            if (s->destruct) {
-              notify(Playernum, Governor, "still boobytrapped.\n");
-            } else {
-              notify(Playernum, Governor, "no longer boobytrapped.\n");
-            }
+            Mod = 1;
           }
-          Mod = 1;
-        }
-        break;
-      case 'f':
-        if ((amt = jettison_check(Playernum, Governor, amt, (int)(s->fuel))) >
-            0) {
-          use_fuel(s, (double)amt);
-          sprintf(buf, "%d fuel jettisoned.\n", amt);
-          notify(Playernum, Governor, buf);
-          Mod = 1;
-        }
-        break;
-      case 'r':
-        if ((amt = jettison_check(Playernum, Governor, amt,
-                                  (int)(s->resource))) > 0) {
-          use_resource(s, amt);
-          sprintf(buf, "%d resources jettisoned.\n", amt);
-          notify(Playernum, Governor, buf);
-          Mod = 1;
-        }
-        break;
-      default:
-        notify(Playernum, Governor, "No such commodity valid.\n");
-        return;
+          break;
+        case 'c':
+          if ((amt = jettison_check(Playernum, Governor, amt, (int)(s->popn))) >
+              0) {
+            s->popn -= amt;
+            s->mass -= amt * Race->mass;
+            sprintf(buf, "%d crew %s into deep space.\n", amt,
+                    (amt == 1) ? "hurls itself" : "hurl themselves");
+            notify(Playernum, Governor, buf);
+            sprintf(buf, "Complement of %s is now %lu.\n", Ship(s), s->popn);
+            notify(Playernum, Governor, buf);
+            Mod = 1;
+          }
+          break;
+        case 'm':
+          if ((amt = jettison_check(Playernum, Governor, amt,
+                                    (int)(s->troops))) > 0) {
+            sprintf(buf, "%d military %s into deep space.\n", amt,
+                    (amt == 1) ? "hurls itself" : "hurl themselves");
+            notify(Playernum, Governor, buf);
+            sprintf(buf, "Complement of ship #%lu is now %lu.\n", shipno,
+                    s->troops - amt);
+            notify(Playernum, Governor, buf);
+            s->troops -= amt;
+            s->mass -= amt * Race->mass;
+            Mod = 1;
+          }
+          break;
+        case 'd':
+          if ((amt = jettison_check(Playernum, Governor, amt,
+                                    (int)(s->destruct))) > 0) {
+            use_destruct(s, amt);
+            sprintf(buf, "%d destruct jettisoned.\n", amt);
+            notify(Playernum, Governor, buf);
+            if (!Max_crew(s)) {
+              sprintf(buf, "\n%s ", Ship(s));
+              notify(Playernum, Governor, buf);
+              if (s->destruct) {
+                notify(Playernum, Governor, "still boobytrapped.\n");
+              } else {
+                notify(Playernum, Governor, "no longer boobytrapped.\n");
+              }
+            }
+            Mod = 1;
+          }
+          break;
+        case 'f':
+          if ((amt = jettison_check(Playernum, Governor, amt, (int)(s->fuel))) >
+              0) {
+            use_fuel(s, (double)amt);
+            sprintf(buf, "%d fuel jettisoned.\n", amt);
+            notify(Playernum, Governor, buf);
+            Mod = 1;
+          }
+          break;
+        case 'r':
+          if ((amt = jettison_check(Playernum, Governor, amt,
+                                    (int)(s->resource))) > 0) {
+            use_resource(s, amt);
+            sprintf(buf, "%d resources jettisoned.\n", amt);
+            notify(Playernum, Governor, buf);
+            Mod = 1;
+          }
+          break;
+        default:
+          notify(Playernum, Governor, "No such commodity valid.\n");
+          return;
       }
-      if (Mod)
-        putship(s);
+      if (Mod) putship(s);
       free(s);
     } else
       free(s);
 }
 
 static int jettison_check(int Playernum, int Governor, int amt, int max) {
-  if (amt == 0)
-    amt = max;
+  if (amt == 0) amt = max;
   if (amt < 0) {
     notify(Playernum, Governor, "Nice try.\n");
     return -1;
@@ -738,63 +735,65 @@ void transfer(int Playernum, int Governor, int APcount) {
           Stars[Dir[Playernum - 1][Governor].snum]
               ->pnames[Dir[Playernum - 1][Governor].pnum]);
   switch (commod) {
-  case 'r':
-    if (give > planet->info[Playernum - 1].resource) {
-      sprintf(buf, "You don't have %d on this planet.\n", give);
+    case 'r':
+      if (give > planet->info[Playernum - 1].resource) {
+        sprintf(buf, "You don't have %d on this planet.\n", give);
+        notify(Playernum, Governor, buf);
+      } else {
+        planet->info[Playernum - 1].resource -= give;
+        planet->info[player - 1].resource += give;
+        sprintf(buf,
+                "%s %d resources transferred from player %d to player #%d\n",
+                temp, give, Playernum, player);
+        notify(Playernum, Governor, buf);
+        warn_race(player, buf);
+      }
+      break;
+    case 'x':
+    case '&':
+      if (give > planet->info[Playernum - 1].crystals) {
+        sprintf(buf, "You don't have %d on this planet.\n", give);
+        notify(Playernum, Governor, buf);
+      } else {
+        planet->info[Playernum - 1].crystals -= give;
+        planet->info[player - 1].crystals += give;
+        sprintf(buf,
+                "%s %d crystal(s) transferred from player %d to player #%d\n",
+                temp, give, Playernum, player);
+        notify(Playernum, Governor, buf);
+        warn_race(player, buf);
+      }
+      break;
+    case 'f':
+      if (give > planet->info[Playernum - 1].fuel) {
+        sprintf(buf, "You don't have %d fuel on this planet.\n", give);
+        notify(Playernum, Governor, buf);
+      } else {
+        planet->info[Playernum - 1].fuel -= give;
+        planet->info[player - 1].fuel += give;
+        sprintf(buf, "%s %d fuel transferred from player %d to player #%d\n",
+                temp, give, Playernum, player);
+        notify(Playernum, Governor, buf);
+        warn_race(player, buf);
+      }
+      break;
+    case 'd':
+      if (give > planet->info[Playernum - 1].destruct) {
+        sprintf(buf, "You don't have %d destruct on this planet.\n", give);
+        notify(Playernum, Governor, buf);
+      } else {
+        planet->info[Playernum - 1].destruct -= give;
+        planet->info[player - 1].destruct += give;
+        sprintf(buf,
+                "%s %d destruct transferred from player %d to player #%d\n",
+                temp, give, Playernum, player);
+        notify(Playernum, Governor, buf);
+        warn_race(player, buf);
+      }
+      break;
+    default:
+      sprintf(buf, "What?\n");
       notify(Playernum, Governor, buf);
-    } else {
-      planet->info[Playernum - 1].resource -= give;
-      planet->info[player - 1].resource += give;
-      sprintf(buf, "%s %d resources transferred from player %d to player #%d\n",
-              temp, give, Playernum, player);
-      notify(Playernum, Governor, buf);
-      warn_race(player, buf);
-    }
-    break;
-  case 'x':
-  case '&':
-    if (give > planet->info[Playernum - 1].crystals) {
-      sprintf(buf, "You don't have %d on this planet.\n", give);
-      notify(Playernum, Governor, buf);
-    } else {
-      planet->info[Playernum - 1].crystals -= give;
-      planet->info[player - 1].crystals += give;
-      sprintf(buf,
-              "%s %d crystal(s) transferred from player %d to player #%d\n",
-              temp, give, Playernum, player);
-      notify(Playernum, Governor, buf);
-      warn_race(player, buf);
-    }
-    break;
-  case 'f':
-    if (give > planet->info[Playernum - 1].fuel) {
-      sprintf(buf, "You don't have %d fuel on this planet.\n", give);
-      notify(Playernum, Governor, buf);
-    } else {
-      planet->info[Playernum - 1].fuel -= give;
-      planet->info[player - 1].fuel += give;
-      sprintf(buf, "%s %d fuel transferred from player %d to player #%d\n",
-              temp, give, Playernum, player);
-      notify(Playernum, Governor, buf);
-      warn_race(player, buf);
-    }
-    break;
-  case 'd':
-    if (give > planet->info[Playernum - 1].destruct) {
-      sprintf(buf, "You don't have %d destruct on this planet.\n", give);
-      notify(Playernum, Governor, buf);
-    } else {
-      planet->info[Playernum - 1].destruct -= give;
-      planet->info[player - 1].destruct += give;
-      sprintf(buf, "%s %d destruct transferred from player %d to player #%d\n",
-              temp, give, Playernum, player);
-      notify(Playernum, Governor, buf);
-      warn_race(player, buf);
-    }
-    break;
-  default:
-    sprintf(buf, "What?\n");
-    notify(Playernum, Governor, buf);
   }
 
   putplanet(planet, Dir[Playernum - 1][Governor].snum,
@@ -814,7 +813,7 @@ void mount(const command_t &argv, const player_t Playernum,
     mnt = false;
 
   shiptype *ship;
-  int shipno, nextshipno;
+  shipnum_t shipno, nextshipno;
 
   nextshipno = start_shiplist(Playernum, Governor, args[1]);
   while ((shipno = do_shiplist(&ship, &nextshipno)))
@@ -845,8 +844,9 @@ void mount(const command_t &argv, const player_t Playernum,
         notify(Playernum, Governor, "Mounted.\n");
       } else if (ship->mounted && !mnt) {
         if (ship->crystals == Max_crystals(ship)) {
-          notify(Playernum, Governor, "You can't dismount the crystal. Max "
-                                      "allowed already on board.\n");
+          notify(Playernum, Governor,
+                 "You can't dismount the crystal. Max "
+                 "allowed already on board.\n");
           free(ship);
           continue;
         }
@@ -993,9 +993,9 @@ void do_transporter(racetype *Race, int Governor, shiptype *s) {
     s2->mass += s->popn * Race->mass;
     s2->popn += s->popn;
 
-    sprintf(buf, "%d population transferred.\n", s->popn);
+    sprintf(buf, "%lu population transferred.\n", s->popn);
     notify(Playernum, Governor, buf);
-    sprintf(bufc, "%d %s\n", s->popn,
+    sprintf(bufc, "%lu %s\n", s->popn,
             Race->Metamorph ? "tons of biomass" : "population");
     s->mass -= s->popn * Race->mass;
     s->popn -= s->popn;
@@ -1068,10 +1068,10 @@ void unload_onto_alien_sector(int Playernum, int Governor, planettype *planet,
   ship->mass -= people * Race->mass;
   sprintf(buf, "%d %s unloaded...\n", people, what == CIV ? "civ" : "mil");
   notify(Playernum, Governor, buf);
-  sprintf(buf, "Crew compliment %d civ  %d mil\n", ship->popn, ship->troops);
+  sprintf(buf, "Crew compliment %lu civ  %lu mil\n", ship->popn, ship->troops);
   notify(Playernum, Governor, buf);
 
-  sprintf(buf, "%d %s assault %d civ/%d mil\n", people,
+  sprintf(buf, "%d %s assault %lu civ/%lu mil\n", people,
           what == CIV ? "civ" : "mil", sect->popn, sect->troops);
 
   notify(Playernum, Governor, buf);

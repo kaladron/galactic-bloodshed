@@ -33,7 +33,8 @@ char *Ship(shiptype *s) {
 
 void grant(int Playernum, int Governor, int APcount) {
   racetype *Race;
-  int gov, nextshipno, shipno;
+  int gov;
+  shipnum_t nextshipno, shipno;
   shiptype *ship;
 
   Race = races[Playernum - 1];
@@ -309,7 +310,8 @@ shipnum_t do_shiplist(shiptype **s, shipnum_t *nextshipno) {
   return shipno;
 }
 
-int in_list(player_t Playernum, char *list, shiptype *s, shipnum_t *nextshipno) {
+int in_list(player_t Playernum, char *list, shiptype *s,
+            shipnum_t *nextshipno) {
   char *p, q;
   if (s->owner != Playernum || !s->alive) return 0;
   q = Shipltrs[s->type];

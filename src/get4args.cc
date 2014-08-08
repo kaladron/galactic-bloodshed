@@ -11,20 +11,17 @@ void get4args(char *s, int *xl, int *xh, int *yl, int *yh) {
   p = s;
 
   sscanf(p, "%[^,]", s1);
-  while ((*p != ':') && (*p != ','))
-    p++;
+  while ((*p != ':') && (*p != ',')) p++;
   if (*p == ':') {
     sscanf(s1, "%d:%d", xl, xh);
-    while (*p != ',')
-      p++;
+    while (*p != ',') p++;
   } else if (*p == ',') {
     sscanf(s1, "%d", xl);
     *xh = (*xl);
   }
 
   sscanf(p, "%s", s2);
-  while ((*p != ':') && (*p != '\0'))
-    p++;
+  while ((*p != ':') && (*p != '\0')) p++;
   if (*p == ':') {
     sscanf(s2, ",%d:%d", yl, yh);
   } else {

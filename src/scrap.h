@@ -7,4 +7,4 @@
 
 void scrap(int, int, int);
 
-#endif // SCRAP_H
+#endif  // SCRAP_H

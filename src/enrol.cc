@@ -62,7 +62,7 @@ static double db_Metabolism[RACIAL_TYPES] = {3.0,  2.7,  2.4, 1.0,  1.15,
 #define Fighters(x) (db_Fighters[(x)] + int_rand(-1, 1))
 #define Intelligence(x) (db_Intelligence[(x)] + int_rand(-10, 10))
 #define Adventurism(x) (db_Adventurism[(x)] + 0.01 * (double)int_rand(-10, 10))
-#define Sexes(x)                                                               \
+#define Sexes(x) \
   (int_rand(Min_Sexes[(x)], int_rand(Min_Sexes[(x)], Max_Sexes[(x)])))
 #define Metabolism(x) (db_Metabolism[(x)] + .01 * (double)int_rand(-15, 15))
 
@@ -110,36 +110,37 @@ int main() {
 
   bzero((char *)not_found, sizeof(not_found));
   do {
-    printf("\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
-           "(i)ce, (w)ater, (d)esert, (f)orest? ");
+    printf(
+        "\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
+        "(i)ce, (w)ater, (d)esert, (f)orest? ");
     c = getchr();
     getchr();
 
     switch (c) {
-    case 'w':
-      ppref = TYPE_WATER;
-      break;
-    case 'e':
-      ppref = TYPE_EARTH;
-      break;
-    case 'm':
-      ppref = TYPE_MARS;
-      break;
-    case 'g':
-      ppref = TYPE_GASGIANT;
-      break;
-    case 'i':
-      ppref = TYPE_ICEBALL;
-      break;
-    case 'd':
-      ppref = TYPE_DESERT;
-      break;
-    case 'f':
-      ppref = TYPE_FOREST;
-      break;
-    default:
-      printf("Oh well.\n");
-      exit(-1);
+      case 'w':
+        ppref = TYPE_WATER;
+        break;
+      case 'e':
+        ppref = TYPE_EARTH;
+        break;
+      case 'm':
+        ppref = TYPE_MARS;
+        break;
+      case 'g':
+        ppref = TYPE_GASGIANT;
+        break;
+      case 'i':
+        ppref = TYPE_ICEBALL;
+        break;
+      case 'd':
+        ppref = TYPE_DESERT;
+        break;
+      case 'f':
+        ppref = TYPE_FOREST;
+        break;
+      default:
+        printf("Oh well.\n");
+        exit(-1);
     }
 
     printf("Looking for type %d planet...\n", ppref);
@@ -164,8 +165,7 @@ int main() {
           if (planet->type == ppref && Stars[star]->numplanets != 1) {
             vacant = 1;
             for (i = 1; i <= Playernum; i++)
-              if (planet->info[i - 1].numsectsowned)
-                vacant = 0;
+              if (planet->info[i - 1].numsectsowned) vacant = 0;
             if (vacant && planet->conditions[RTEMP] >= -50 &&
                 planet->conditions[RTEMP] <= 50) {
               found = 1;
@@ -232,8 +232,7 @@ int main() {
   /* make conditions preferred by your people set to (more or less)
      those of the planet : higher the concentration of gas, the higher
      percentage difference between planet and race (commented out) */
-  for (j = 0; j <= OTHER; j++)
-    Race->conditions[j] = planet->conditions[j];
+  for (j = 0; j <= OTHER; j++) Race->conditions[j] = planet->conditions[j];
   /*+ int_rand( round_rand(-planet->conditions[j]*2.0),
    * round_rand(planet->conditions[j]*2.0) )*/
 
@@ -246,8 +245,7 @@ int main() {
   }
 
   /* assign racial characteristics */
-  for (i = 0; i < NUM_DISCOVERIES; i++)
-    Race->discoveries[i] = 0;
+  for (i = 0; i < NUM_DISCOVERIES; i++) Race->discoveries[i] = 0;
   Race->tech = 0.0;
   Race->morale = 0;
   Race->turn = 0;
@@ -279,14 +277,14 @@ int main() {
            Race->number_sexes);
 
     printf("\n\nLook OK(y/n)\?");
-    if (fgets(str, STRSIZE, stdin) == NULL)
-      exit(1);
+    if (fgets(str, STRSIZE, stdin) == NULL) exit(1);
   } while (str[0] != 'y');
 
   getsmap(Smap, planet);
 
-  printf("\nChoose a primary sector preference. This race will prefer to "
-         "live\non this type of sector.\n");
+  printf(
+      "\nChoose a primary sector preference. This race will prefer to "
+      "live\non this type of sector.\n");
 
   PermuteSects(planet);
   Getxysect(planet, 0, 0, 1);
@@ -417,8 +415,7 @@ int main() {
     putship(&s);
   }
 
-  for (j = 0; j < MAXPLAYERS; j++)
-    Race->points[j] = 0;
+  for (j = 0; j < MAXPLAYERS; j++) Race->points[j] = 0;
 
   putrace(Race);
 
@@ -464,26 +461,26 @@ static char desshow(planettype *p, int x, int y) /* copied from map.c */
   s = &Sector(*p, x, y);
 
   switch (s->condition) {
-  case WASTED:
-    return CHAR_WASTED;
-  case SEA:
-    return CHAR_SEA;
-  case LAND:
-    return CHAR_LAND;
-  case MOUNT:
-    return CHAR_MOUNT;
-  case GAS:
-    return CHAR_GAS;
-  case PLATED:
-    return CHAR_PLATED;
-  case DESERT:
-    return CHAR_DESERT;
-  case FOREST:
-    return CHAR_FOREST;
-  case ICE:
-    return CHAR_ICE;
-  default:
-    return ('!');
+    case WASTED:
+      return CHAR_WASTED;
+    case SEA:
+      return CHAR_SEA;
+    case LAND:
+      return CHAR_LAND;
+    case MOUNT:
+      return CHAR_MOUNT;
+    case GAS:
+      return CHAR_GAS;
+    case PLATED:
+      return CHAR_PLATED;
+    case DESERT:
+      return CHAR_DESERT;
+    case FOREST:
+      return CHAR_FOREST;
+    case ICE:
+      return CHAR_ICE;
+    default:
+      return ('!');
   }
 }
 

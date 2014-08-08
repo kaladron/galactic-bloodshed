@@ -8,4 +8,4 @@
 void toggle(int, int, int);
 void highlight(int, int, int);
 
-#endif // TOGGLE_H
+#endif  // TOGGLE_H

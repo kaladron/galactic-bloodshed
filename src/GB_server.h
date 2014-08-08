@@ -54,4 +54,4 @@ extern racetype *Race;
 
 extern long clk;
 
-#endif // GB_SERVER_H
+#endif  // GB_SERVER_H

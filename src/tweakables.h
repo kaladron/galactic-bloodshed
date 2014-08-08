@@ -63,8 +63,8 @@ const char CHAR_ATWAR_TROOPS = 'E';
 const char CHAR_NEUTRAL_TROOPS = 'N';
 
 /* 3.0 feature */
-#define LIMITED_RESOURCES                                                      \
-  1 /* set to 0 if you want unlimited resource                                 \
+#define LIMITED_RESOURCES                      \
+  1 /* set to 0 if you want unlimited resource \
        availability (pre 3.0)*/
 
 #define NAMESIZE 18
@@ -136,17 +136,17 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 #define FUEL_GAS_ADD_TANKER 100.0
 #define FUEL_GAS_ADD_HABITAT 200.0
 #define FUEL_GAS_ADD_STATION 100.0
-#define FUEL_USE                                                               \
-  0.02 /* fuel use per ship mass pt. per speed                                 \
+#define FUEL_USE                               \
+  0.02 /* fuel use per ship mass pt. per speed \
           factor */
 #define HABITAT_PROD_RATE 0.05
 #define HABITAT_POP_RATE 0.20
 
 #define REPAIR_RATE 25.0 /* rate at which ships get repaired */
-#define SECTOR_REPAIR_COST                                                     \
+#define SECTOR_REPAIR_COST \
   10 /* how much it costs to remove a wasted status from a sector */
-#define NATURAL_REPAIR                                                         \
-  5 /* chance of the wasted status being removed/update                        \
+#define NATURAL_REPAIR                                  \
+  5 /* chance of the wasted status being removed/update \
        */
 
 #define CREAT_UNIV_ITERAT 10 /* iterations for star movement */
@@ -226,7 +226,7 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 /* positive modulus */
 #define mod(a, b, dum) ((dum) = (a) % (b), abs(dum))
 /* euclidean distance */
-#define Distsq(x1, y1, x2, y2)                                                 \
+#define Distsq(x1, y1, x2, y2) \
   (((x1) - (x2)) * ((x1) - (x2)) + ((y1) - (y2)) * ((y1) - (y2)))
 
 /* look up sector */
@@ -246,7 +246,7 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 #define TYPE_WATER 5
 #define TYPE_FOREST 6
 #define TYPE_DESERT 7
-#define TYPE_MAX 7 // Keep this equal to the greatest one
+#define TYPE_MAX 7  // Keep this equal to the greatest one
 
 /* number of global APs each planet is worth */
 #define EARTH_POINTS int_rand(5, 8)
@@ -316,17 +316,17 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 #define VICT_DIVISOR 10000
 
 #define STRIKE_DISTANCE_FACTOR 5.5
-#define COMPLEXITY_FACTOR                                                      \
+#define COMPLEXITY_FACTOR \
   10.0 /* determines steepness of design complexity function */
 
-#define REPEAT_CHARACTER                                                       \
-  ' ' /* this character makes the previous command to                          \
+#define REPEAT_CHARACTER                              \
+  ' ' /* this character makes the previous command to \
          repeat */
 #define MAXGOVERNORS 5
 #define POD_THRESHOLD 18
 #define POD_DECAY 4
-#define AP_FACTOR                                                              \
+#define AP_FACTOR \
   50.0 /* how planet size affects the rate of atmosphere processing */
 #define DISSIPATE 80 /* updates to dissipate dust and gases */
 
-#endif // TWEAKABLES_H
+#endif  // TWEAKABLES_H

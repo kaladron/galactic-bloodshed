@@ -13,4 +13,4 @@ void star_locations(int, int, int);
 void exploration(int, int, int);
 void tech_status(int, int, int);
 
-#endif // EXPLORE_H
+#endif  // EXPLORE_H

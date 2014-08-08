@@ -72,17 +72,16 @@ void PrintStatistics(void) {
   int i, j, y;
 
   printf("\nPlanet/Sector distribution -\n");
-  printf("Type NP     .    *    ^    ~    #    (    -    NS   Avg     Res    "
-         "Avg  A/Sec\n");
+  printf(
+      "Type NP     .    *    ^    ~    #    (    -    NS   Avg     Res    "
+      "Avg  A/Sec\n");
   for (i = 0; i <= TYPE_DESERT + 1; i++) {
     printf("%3.3s%4d ", Nametypes[i], Numtypes[i]);
-    if (i < TYPE_DESERT + 1)
-      Numtypes[TYPE_DESERT + 1] += Numtypes[i];
+    if (i < TYPE_DESERT + 1) Numtypes[TYPE_DESERT + 1] += Numtypes[i];
     for (j = 0; j < PLATED; j++) {
       printf("%5d", Numsects[i][j]);
       Numsects[i][PLATED] += Numsects[i][j];
-      if (i <= TYPE_DESERT)
-        Numsects[TYPE_DESERT + 1][j] += Numsects[i][j];
+      if (i <= TYPE_DESERT) Numsects[TYPE_DESERT + 1][j] += Numsects[i][j];
     }
     printf("%6d %5.1f", Numsects[i][PLATED],
            (1.0 * Numsects[i][PLATED]) / Numtypes[i]);
@@ -126,8 +125,7 @@ static int ReadNameList(char ss[1000][20], int n, int m, const char *filename) {
         goto out;
     ss[i][j - 1] = '\0';
     while ('\n' != (j = getc(f)))
-      if (EOF == j)
-        goto out;
+      if (EOF == j) goto out;
   next:
     ;
   }
@@ -142,12 +140,10 @@ static void rand_list(int n, int *list) /* mix up the numbers 0 thru n */
   short nums[1000], i, j, k;
   short kk, ii;
 
-  for (i = 0; i <= n; i++)
-    nums[i] = 0;
+  for (i = 0; i <= n; i++) nums[i] = 0;
   for (j = 0; j <= n; j++) {
     i = k = int_rand(0, n);
-    while (nums[k] != 0)
-      k += nums[k];
+    while (nums[k] != 0) k += nums[k];
     list[j] = k;
     if (k == n)
       nums[k] = -n, kk = 0;
@@ -166,8 +162,7 @@ static void rand_list(int n, int *list) /* mix up the numbers 0 thru n */
 void Makeplanet_init(void) {
   numplist = ReadNameList(PNames, 1000, 20, PLANETLIST);
   rand_list(numplist, planet_list);
-  if (numplist < 0)
-    exit(0);
+  if (numplist < 0) exit(0);
   namepcount = 0;
 }
 
@@ -183,8 +178,7 @@ static const char *NextPlanetName(int i) {
 void Makestar_init(void) {
   numslist = ReadNameList(SNames, 1000, 20, STARLIST);
   rand_list(numslist, star_list);
-  if (numslist < 0)
-    exit(0);
+  if (numslist < 0) exit(0);
   namestcount = 0;
 }
 
@@ -196,10 +190,8 @@ static char *NextStarName(void) {
     return SNames[star_list[namestcount++]];
   else {
     printf("Next star name:");
-    for (i = 0; i < NAMESIZE - 4; i++)
-      putchr('.');
-    for (i = 0; i < NAMESIZE - 4; i++)
-      putchr('\010'); /* ^H */
+    for (i = 0; i < NAMESIZE - 4; i++) putchr('.');
+    for (i = 0; i < NAMESIZE - 4; i++) putchr('\010'); /* ^H */
     scanf("%14[^\n]", buf);
     getchr();
   }
@@ -308,30 +300,30 @@ startype *Makestar(FILE *planetdata, FILE *sectordata) {
       for (y = 0; y < planet.Maxy; y++) {
         for (x = 0; x < planet.Maxx; x++) {
           switch (Sector(planet, x, y).condition) {
-          case LAND:
-            putchr(CHAR_LAND);
-            break;
-          case SEA:
-            putchr(CHAR_SEA);
-            break;
-          case MOUNT:
-            putchr(CHAR_MOUNT);
-            break;
-          case ICE:
-            putchr(CHAR_ICE);
-            break;
-          case GAS:
-            putchr(CHAR_GAS);
-            break;
-          case DESERT:
-            putchr(CHAR_DESERT);
-            break;
-          case FOREST:
-            putchr(CHAR_FOREST);
-            break;
-          default:
-            putchr('?');
-            break;
+            case LAND:
+              putchr(CHAR_LAND);
+              break;
+            case SEA:
+              putchr(CHAR_SEA);
+              break;
+            case MOUNT:
+              putchr(CHAR_MOUNT);
+              break;
+            case ICE:
+              putchr(CHAR_ICE);
+              break;
+            case GAS:
+              putchr(CHAR_GAS);
+              break;
+            case DESERT:
+              putchr(CHAR_DESERT);
+              break;
+            case FOREST:
+              putchr(CHAR_FOREST);
+              break;
+            default:
+              putchr('?');
+              break;
           }
         }
         putchr('\n');

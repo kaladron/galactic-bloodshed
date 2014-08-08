@@ -240,8 +240,7 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
           else if (what == MIL)
             boarders = s->troops;
         }
-        if (boarders > s2->max_crew)
-          boarders = s2->max_crew;
+        if (boarders > s2->max_crew) boarders = s2->max_crew;
 
         /* Allow assault of crewless ships. */
         if (s2->max_crew && boarders <= 0) {
@@ -305,8 +304,7 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
               0, round_rand(25. * (b2strength + 1.0) / (bstrength + 1.0)));
           dam = MIN(100, dam);
           s->damage = MIN(100, s->damage + dam);
-          if (s->damage >= 100)
-            kill_ship(Playernum, s);
+          if (s->damage >= 100) kill_ship(Playernum, s);
 
           casualties2 =
               int_rand(0, round_rand((double)casualty_scale *
@@ -325,8 +323,7 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
               0, round_rand(25. * (bstrength + 1.0) / (b2strength + 1.0)));
           dam2 = MIN(100, dam2);
           s2->damage = MIN(100, s2->damage + dam2);
-          if (s2->damage >= 100)
-            kill_ship(Playernum, s2);
+          if (s2->damage >= 100) kill_ship(Playernum, s2);
         } else {
           s2->popn = 0;
           s2->troops = 0;
@@ -466,17 +463,16 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
                 casualties3, casualties2, casualties,
                 what == MIL ? "mil" : "civ");
         strcat(telegram_buf, buf);
-        sprintf(buf, "Crew casualties: Yours: %lu %s    Theirs: %lu mil/%lu civ\n",
-                casualties, what == MIL ? "mil" : "civ", casualties3,
-                casualties2);
+        sprintf(
+            buf, "Crew casualties: Yours: %lu %s    Theirs: %lu mil/%lu civ\n",
+            casualties, what == MIL ? "mil" : "civ", casualties3, casualties2);
         notify(Playernum, Governor, buf);
         warn(old2owner, old2gov, telegram_buf);
         sprintf(buf, "%s %s %s at %s.\n", Ship(s),
                 s2->alive ? (s2->owner == Playernum ? "CAPTURED" : "assaulted")
                           : "DESTROYED",
                 Ship(&ship), prin_ship_orbits(s));
-        if (s2->owner == Playernum || !s2->alive)
-          post(buf, COMBAT);
+        if (s2->owner == Playernum || !s2->alive) post(buf, COMBAT);
         notify_star(Playernum, Governor, old2owner, (int)s->storbits, buf);
       } else {
         sprintf(buf, "%s docked with %s.\n", Ship(s), Ship(s2));

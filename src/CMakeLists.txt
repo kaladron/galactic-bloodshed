@@ -16,14 +16,14 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   # Slowly working on removing these
   add_definitions(-Wno-old-style-cast)
   add_definitions(-Wno-logical-not-parentheses)
+  add_definitions(-Wno-conversion)
   add_definitions(-Wno-conditional-uninitialized)
   add_definitions(-Wno-float-equal)
   add_definitions(-Wno-shadow)
   add_definitions(-Wno-unused-parameter)
-  add_definitions(-Wno-sign-compare)
   add_definitions(-Wno-tautological-constant-out-of-range-compare) 
 
-  add_definitions(-Wno-conversion)
+  add_definitions(-Wno-sign-compare)
 
   # Might be needed during development
   #add_definitions(-Wno-unreachable-code)

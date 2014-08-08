@@ -7,4 +7,4 @@
 
 void examine(int, int, int);
 
-#endif // EXAMINE_H
+#endif  // EXAMINE_H

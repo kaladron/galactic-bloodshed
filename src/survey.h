@@ -8,4 +8,4 @@
 void survey(int, int, int, int);
 void repair(int, int, int);
 
-#endif // SURVEY_H
+#endif  // SURVEY_H

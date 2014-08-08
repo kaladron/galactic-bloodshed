@@ -27,8 +27,7 @@ int maxsupport(racetype *r, sectortype *s, double c, int toxic) {
   int val;
   double a, b;
 
-  if (!r->likes[s->condition])
-    return 0.0;
+  if (!r->likes[s->condition]) return 0.0;
   a = ((double)s->eff + 1.0) * (double)s->fert;
   b = (.01 * c);
 
@@ -53,8 +52,7 @@ double compatibility(const planettype *planet, const racetype *race) {
   sum *= atmosphere;
   sum *= 100.0 - planet->conditions[TOXIC];
 
-  if (sum < 0.0)
-    return 0.0;
+  if (sum < 0.0) return 0.0;
   return (sum);
 }
 
@@ -67,24 +65,24 @@ char *prin_ship_orbits(shiptype *s) {
   char *motherorbits;
 
   switch (s->whatorbits) {
-  case LEVEL_UNIV:
-    sprintf(Dispshiporbits_buf, "/(%.0f,%.0f)", s->xpos, s->ypos);
-    break;
-  case LEVEL_STAR:
-    sprintf(Dispshiporbits_buf, "/%s", Stars[s->storbits]->name);
-    break;
-  case LEVEL_PLAN:
-    sprintf(Dispshiporbits_buf, "/%s/%s", Stars[s->storbits]->name,
-            Stars[s->storbits]->pnames[s->pnumorbits]);
-    break;
-  case LEVEL_SHIP:
-    if (getship(&mothership, s->destshipno)) {
-      motherorbits = prin_ship_orbits(mothership);
-      strcpy(Dispshiporbits_buf, motherorbits);
-      free(mothership);
-    } else
-      strcpy(Dispshiporbits_buf, "/");
-    break;
+    case LEVEL_UNIV:
+      sprintf(Dispshiporbits_buf, "/(%.0f,%.0f)", s->xpos, s->ypos);
+      break;
+    case LEVEL_STAR:
+      sprintf(Dispshiporbits_buf, "/%s", Stars[s->storbits]->name);
+      break;
+    case LEVEL_PLAN:
+      sprintf(Dispshiporbits_buf, "/%s/%s", Stars[s->storbits]->name,
+              Stars[s->storbits]->pnames[s->pnumorbits]);
+      break;
+    case LEVEL_SHIP:
+      if (getship(&mothership, s->destshipno)) {
+        motherorbits = prin_ship_orbits(mothership);
+        strcpy(Dispshiporbits_buf, motherorbits);
+        free(mothership);
+      } else
+        strcpy(Dispshiporbits_buf, "/");
+      break;
   }
   return Dispshiporbits_buf;
 }

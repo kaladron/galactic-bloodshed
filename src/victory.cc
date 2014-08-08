@@ -27,14 +27,12 @@ void victory(int Playernum, int Governor, int APcount) {
   #endif
   */
   count = (argn > 1) ? atoi(args[1]) : Num_races;
-  if (count > Num_races)
-    count = Num_races;
+  if (count > Num_races) count = Num_races;
 
   create_victory_list(vic);
 
   Race = races[Playernum - 1];
-  if (Race->God)
-    god = 1;
+  if (Race->God) god = 1;
 
   sprintf(buf, "----==== PLAYER RANKINGS ====----\n");
   notify(Playernum, Governor, buf);

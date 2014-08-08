@@ -85,8 +85,9 @@ void examine(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, buf);
   }
   if (!ship->active) {
-    sprintf(buf, "This device has been irradiated;\nit's crew is dying and it "
-                 "cannot move for the time being.\n");
+    sprintf(buf,
+            "This device has been irradiated;\nit's crew is dying and it "
+            "cannot move for the time being.\n");
     notify(Playernum, Governor, buf);
   }
   free(ship);

@@ -9,4 +9,4 @@
 
 planettype Makeplanet(double, short, int);
 
-#endif // MAKEPLANET_H
+#endif  // MAKEPLANET_H

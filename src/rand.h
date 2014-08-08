@@ -5,9 +5,12 @@
 #ifndef RAND_H
 #define RAND_H
 
+int success(int x);
+
 double double_rand(void);
 int int_rand(int, int);
+long long_rand(long, long);
 int round_rand(double);
 int rposneg(void);
 
-#endif // RAND_H
+#endif  // RAND_H

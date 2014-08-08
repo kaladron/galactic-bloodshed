@@ -63,51 +63,52 @@ int main(int argc, char *argv[]) {
       goto usage;
     else
       switch (argv[i][1]) {
-      case 'a':
-        autoname_star = 1;
-        break;
-      case 'b':
-        autoname_plan = 1;
-        break;
-      case 'e':
-        planetlesschance = atoi(argv[++i]);
-        break;
-      case 'l':
-        minplanets = atoi(argv[++i]);
-        break;
-      case 'm':
-        maxplanets = atoi(argv[++i]);
-        break;
-      case 'p':
-        printpostscript = 1;
-        break;
-      case 's':
-        nstars = atoi(argv[++i]);
-        break;
-      case 'v':
-        printplaninfo = 1;
-        break;
-      case 'w':
-        printstarinfo = 1;
-        break;
-      default:
-        printf("\n");
-        printf("Unknown option \"%s\".\n", argv[i]);
-      usage:
-        printf("\n");
-        printf("Usage: makeuniv [-a] [-b] [-e E] [-l MIN] [-m MAX] [-s N] [-v] "
-               "[-w]\n");
-        printf("  -a      Autoload star names.\n");
-        printf("  -b      Autoload planet names.\n");
-        printf("  -e E    Make E%% of stars have no planets.\n");
-        printf("  -l MIN  Other systems will have at least MIN planets.\n");
-        printf("  -m MAX  Other systems will have at most  MAX planets.\n");
-        printf("  -p      Create postscript map file of the universe.\n");
-        printf("  -s S    The universe will have S stars.\n");
-        printf("  -v      Print info and map of planets generated.\n");
-        printf("  -w      Print info on stars generated.\n");
-        printf("\n");
-        exit(0);
+        case 'a':
+          autoname_star = 1;
+          break;
+        case 'b':
+          autoname_plan = 1;
+          break;
+        case 'e':
+          planetlesschance = atoi(argv[++i]);
+          break;
+        case 'l':
+          minplanets = atoi(argv[++i]);
+          break;
+        case 'm':
+          maxplanets = atoi(argv[++i]);
+          break;
+        case 'p':
+          printpostscript = 1;
+          break;
+        case 's':
+          nstars = atoi(argv[++i]);
+          break;
+        case 'v':
+          printplaninfo = 1;
+          break;
+        case 'w':
+          printstarinfo = 1;
+          break;
+        default:
+          printf("\n");
+          printf("Unknown option \"%s\".\n", argv[i]);
+        usage:
+          printf("\n");
+          printf(
+              "Usage: makeuniv [-a] [-b] [-e E] [-l MIN] [-m MAX] [-s N] [-v] "
+              "[-w]\n");
+          printf("  -a      Autoload star names.\n");
+          printf("  -b      Autoload planet names.\n");
+          printf("  -e E    Make E%% of stars have no planets.\n");
+          printf("  -l MIN  Other systems will have at least MIN planets.\n");
+          printf("  -m MAX  Other systems will have at most  MAX planets.\n");
+          printf("  -p      Create postscript map file of the universe.\n");
+          printf("  -s S    The universe will have S stars.\n");
+          printf("  -v      Print info and map of planets generated.\n");
+          printf("  -w      Print info on stars generated.\n");
+          printf("\n");
+          exit(0);
       }
 
   /*
@@ -116,16 +117,14 @@ int main(int argc, char *argv[]) {
     printf("\nDo you wish to use the file \"%s\" for star names? [y/n]> ",
            STARLIST);
     c = getchr();
-    if (c != '\n')
-      getchr();
+    if (c != '\n') getchr();
     autoname_star = (c == 'y');
   }
   if (autoname_plan == -1) {
     printf("\nDo you wish to use the file \"%s\" for planet names? [y/n]> ",
            PLANETLIST);
     c = getchr();
-    if (c != '\n')
-      getchr();
+    if (c != '\n') getchr();
     autoname_plan = (c == 'y');
   }
   while ((nstars < 1) || (nstars >= NUMSTARS)) {
@@ -241,8 +240,7 @@ int main(int argc, char *argv[]) {
 
   PrintStatistics();
 
-  if (printpostscript)
-    produce_postscript(DEFAULT_POSTSCRIPT_MAP_FILENAME);
+  if (printpostscript) produce_postscript(DEFAULT_POSTSCRIPT_MAP_FILENAME);
   return 0;
 }
 
@@ -278,22 +276,17 @@ static void produce_postscript(const char *filename) {
   min_x = max_x = Stars[0]->xpos;
   min_y = max_y = Stars[0]->ypos;
   for (i = 1; i < nstars; i++) {
-    if (Stars[i]->xpos < min_x)
-      min_x = Stars[i]->xpos;
-    if (Stars[i]->xpos > max_x)
-      max_x = Stars[i]->xpos;
-    if (Stars[i]->ypos < min_y)
-      min_y = Stars[i]->ypos;
-    if (Stars[i]->ypos > max_y)
-      max_y = Stars[i]->ypos;
+    if (Stars[i]->xpos < min_x) min_x = Stars[i]->xpos;
+    if (Stars[i]->xpos > max_x) max_x = Stars[i]->xpos;
+    if (Stars[i]->ypos < min_y) min_y = Stars[i]->ypos;
+    if (Stars[i]->ypos > max_y) max_y = Stars[i]->ypos;
   }
   /* max map size: 8.5in x 11in sheet, 0.5in borders, */
   /* 0.5in on the right for star names */
   /* 72 points = 1in */
   scale = 7.0 * 72 / (max_x - min_x);
   nscale = 10.0 * 72 / (max_y - min_y);
-  if (nscale < scale)
-    scale = nscale;
+  if (nscale < scale) scale = nscale;
   fprintf(f, "%%!PS-Adobe-2.0\n\n");
   /* 0,0 is in the topleft corner */
   fprintf(f, "0.5 72 mul 10.5 72 mul translate\n");
@@ -345,8 +338,7 @@ void place_star(startype *star) {
     /* check to see if another star is nearby */
     i = 100 * ((int)star->xpos + UNIVSIZE) / (2 * UNIVSIZE);
     j = 100 * ((int)star->xpos + UNIVSIZE) / (2 * UNIVSIZE);
-    if (!occupied[i][j])
-      occupied[i][j] = found = 1;
+    if (!occupied[i][j]) occupied[i][j] = found = 1;
   }
   return;
 }

@@ -28,4 +28,4 @@ int shipping_cost(int, int, double *, int);
 
 extern const char *Commod[4];
 
-#endif // BUILD_H
+#endif  // BUILD_H

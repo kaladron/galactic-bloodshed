@@ -84,8 +84,7 @@ int enroll_valid_race() {
   fflush(stdout);
 
   ppref = planet_translate[race_info.home_planet_type];
-  for (i = 0; i < Sdata.numstars; i++)
-    indirect[i] = i;
+  for (i = 0; i < Sdata.numstars; i++) indirect[i] = i;
   last_star_left = Sdata.numstars - 1;
   while (last_star_left >= 0) {
     i = int_rand(0, last_star_left);
@@ -143,8 +142,7 @@ found_planet:
   Race->governor[0].toggle.color = 0;
   Race->governor[0].active = 1;
 
-  for (i = 0; i <= OTHER; i++)
-    Race->conditions[i] = planet->conditions[i];
+  for (i = 0; i <= OTHER; i++) Race->conditions[i] = planet->conditions[i];
 #if 0
   /* make conditions preferred by your people set to (more or less) 
      those of the planet : higher the concentration of gas, the higher
@@ -213,10 +211,8 @@ found_planet:
   PermuteSects(planet);
   Getxysect(planet, 0, 0, 1);
   while ((i = Getxysect(planet, &x, &y, 0)))
-    if (Sector(*planet, x, y).condition == Race->likesbest)
-      break;
-  if (!i)
-    x = y = 0;
+    if (Sector(*planet, x, y).condition == Race->likesbest) break;
+  if (!i) x = y = 0;
   sect = &Sector(*planet, x, y);
   sect->owner = Playernum;
   sect->race = Playernum;

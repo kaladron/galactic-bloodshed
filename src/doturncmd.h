@@ -24,4 +24,4 @@ int attack_planet(shiptype *);
 void output_ground_attacks(void);
 int planet_points(planettype *);
 
-#endif // DOTURNCMD_H
+#endif  // DOTURNCMD_H

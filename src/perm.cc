@@ -22,8 +22,7 @@ void PermuteSects(planettype *planet) {
   for (i = x = y = 0; i < t; i++) {
     xymap[i].x = x;
     xymap[i].y = y;
-    if (++x >= planet->Maxx)
-      x = 0, y++;
+    if (++x >= planet->Maxx) x = 0, y++;
   }
   for (i = 0; i < t; i++) {
     sw = xymap[i];
@@ -45,8 +44,7 @@ int Getxysect(planettype *p, int *x, int *y, int r) {
   } else {
     *x = xymap[getxy].x;
     *y = xymap[getxy].y;
-    if (++getxy > max)
-      getxy = 0;
+    if (++getxy > max) getxy = 0;
   }
   return getxy;
 }

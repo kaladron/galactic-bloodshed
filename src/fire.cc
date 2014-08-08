@@ -29,12 +29,12 @@
 
 void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
 {
-  int fromship, toship, sh, nextshipno;
+  shipnum_t fromship, toship, sh, nextshipno;
   shiptype *from, *to, *ship, dummy;
   planettype *p;
   int strength, maxstrength, retal, damage;
 
-  sh = 0; // TODO(jeffbailey): No idea what this is, init to 0.
+  sh = 0;  // TODO(jeffbailey): No idea what this is, init to 0.
 
   /* for telegramming and retaliating */
   bzero((char *)Nuked, sizeof(Nuked));
@@ -79,7 +79,7 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
           continue;
         }
       }
-      sscanf(args[2] + (args[2][0] == '#'), "%d", &toship);
+      sscanf(args[2] + (args[2][0] == '#'), "%lu", &toship);
       if (toship <= 0) {
         notify(Playernum, Governor, "Bad ship number.\n");
         free(from);
@@ -118,9 +118,10 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
       if (landed(from) && landed(to)) {
         if ((from->storbits != to->storbits) ||
             (from->pnumorbits != to->pnumorbits)) {
-          notify(Playernum, Governor, "Landed ships can only attack other "
-                                      "landed ships if they are on the same "
-                                      "planet!\n");
+          notify(Playernum, Governor,
+                 "Landed ships can only attack other "
+                 "landed ships if they are on the same "
+                 "planet!\n");
           free(from);
           free(to);
           continue;
@@ -144,8 +145,9 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
           free(to);
           continue;
         } else if (landed(from) || landed(to)) {
-          notify(Playernum, Governor, "CEWs cannot originate from or targeted "
-                                      "to ships landed on planets.\n");
+          notify(Playernum, Governor,
+                 "CEWs cannot originate from or targeted "
+                 "to ships landed on planets.\n");
           free(from);
           free(to);
           continue;
@@ -171,8 +173,7 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
       }
 
       /* check to see if there is crystal overloads */
-      if (laser_on(from) || cew)
-        check_overload(from, cew, &strength);
+      if (laser_on(from) || cew) check_overload(from, cew, &strength);
 
       if (strength <= 0) {
         sprintf(buf, "No attack.\n");
@@ -198,8 +199,7 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
       else
         use_destruct(from, strength);
 
-      if (!to->alive)
-        post(short_buf, COMBAT);
+      if (!to->alive) post(short_buf, COMBAT);
       notify_star(Playernum, Governor, (int)to->owner, (int)from->storbits,
                   short_buf);
       warn((int)to->owner, (int)to->governor, long_buf);
@@ -209,8 +209,7 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
       strength = 0;
       if (retal && damage && to->protect.self) {
         strength = retal;
-        if (laser_on(to))
-          check_overload(to, 0, &strength);
+        if (laser_on(to)) check_overload(to, 0, &strength);
 
         if ((damage = shoot_ship_to_ship(&dummy, from, strength, 0, 1, long_buf,
                                          short_buf)) >= 0) {
@@ -218,8 +217,7 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
             use_fuel(to, 2.0 * (double)strength);
           else
             use_destruct(to, strength);
-          if (!from->alive)
-            post(short_buf, COMBAT);
+          if (!from->alive) post(short_buf, COMBAT);
           notify_star(Playernum, Governor, (int)to->owner, (int)from->storbits,
                       short_buf);
           notify(Playernum, Governor, long_buf);
@@ -242,8 +240,7 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
               (ship->protect.ship == toship) && sh != fromship &&
               sh != toship && ship->alive && ship->active) {
             check_retal_strength(ship, &strength);
-            if (laser_on(ship))
-              check_overload(ship, 0, &strength);
+            if (laser_on(ship)) check_overload(ship, 0, &strength);
 
             if ((damage = shoot_ship_to_ship(ship, from, strength, 0, 0,
                                              long_buf, short_buf)) >= 0) {
@@ -251,8 +248,7 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
                 use_fuel(ship, 2.0 * (double)strength);
               else
                 use_destruct(ship, strength);
-              if (!from->alive)
-                post(short_buf, COMBAT);
+              if (!from->alive) post(short_buf, COMBAT);
               notify_star(Playernum, Governor, (int)ship->owner,
                           (int)from->storbits, short_buf);
               notify(Playernum, Governor, long_buf);
@@ -276,7 +272,7 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
 
 void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
 {
-  int fromship, nextshipno, sh;
+  shipnum_t fromship, nextshipno, sh;
   shiptype *from, *ship;
   planettype *p;
   int strength, maxstrength, x, y, ok, numdest, damage;
@@ -334,8 +330,7 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
       }
 
       /* check to see if there is crystal overload */
-      if (laser_on(from))
-        check_overload(from, 0, &strength);
+      if (laser_on(from)) check_overload(from, 0, &strength);
 
       if (strength <= 0) {
         sprintf(buf, "No attack.\n");
@@ -381,9 +376,10 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
       }
 
       if (!ok && !landed(from)) {
-        notify(Playernum, Governor, "Target has planetary defense "
-                                    "networks.\nThese have to be eliminated "
-                                    "before you can attack sectors.\n");
+        notify(Playernum, Governor,
+               "Target has planetary defense "
+               "networks.\nThese have to be eliminated "
+               "before you can attack sectors.\n");
         free(p);
         free(from);
         continue;
@@ -427,8 +423,7 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
                                           short_buf);
             warn(i, (int)Stars[from->storbits]->governor[i - 1], long_buf);
             notify(Playernum, Governor, long_buf);
-            if (!from->alive)
-              post(short_buf, COMBAT);
+            if (!from->alive) post(short_buf, COMBAT);
             notify_star(Playernum, Governor, i, (int)from->storbits, short_buf);
           }
       }
@@ -443,8 +438,7 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
 
           if (ship->protect.planet && sh != fromship && ship->alive &&
               ship->active) {
-            if (laser_on(ship))
-              check_overload(ship, 0, &strength);
+            if (laser_on(ship)) check_overload(ship, 0, &strength);
 
             check_retal_strength(ship, &strength);
 
@@ -454,8 +448,7 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
                 use_fuel(ship, 2.0 * (double)strength);
               else
                 use_destruct(ship, strength);
-              if (!from->alive)
-                post(short_buf, COMBAT);
+              if (!from->alive) post(short_buf, COMBAT);
               notify_star(Playernum, Governor, (int)ship->owner,
                           (int)from->storbits, short_buf);
               warn((int)ship->owner, (int)ship->governor, long_buf);
@@ -625,8 +618,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
   }
 
   p->info[Playernum - 1].destruct -= strength;
-  if (!to->alive)
-    post(short_buf, COMBAT);
+  if (!to->alive) post(short_buf, COMBAT);
   notify_star(Playernum, Governor, (int)to->owner, (int)to->storbits,
               short_buf);
   warn((int)to->owner, (int)to->governor, long_buf);
@@ -637,8 +629,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
   strength = 0;
   if (retal && damage && to->protect.self) {
     strength = retal;
-    if (laser_on(to))
-      check_overload(to, 0, &strength);
+    if (laser_on(to)) check_overload(to, 0, &strength);
 
     if ((numdest = shoot_ship_to_planet(&dummy, p, strength, x, y, 1, 0, 0,
                                         long_buf, short_buf)) >= 0) {
@@ -663,8 +654,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
       if (ship->protect.on && (ship->protect.ship == toship) &&
           (ship->protect.ship == toship) && sh != toship && ship->alive &&
           ship->active) {
-        if (laser_on(ship))
-          check_overload(ship, 0, &strength);
+        if (laser_on(ship)) check_overload(ship, 0, &strength);
         check_retal_strength(ship, &strength);
 
         if ((numdest = shoot_ship_to_planet(ship, p, strength, x, y, 1, 0, 0,
@@ -701,7 +691,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
 
 void detonate(int Playernum, int Governor, int APcount) {
   shiptype *s;
-  int shipno, nextshipno;
+  shipnum_t shipno, nextshipno;
 
   nextshipno = start_shiplist(Playernum, Governor, args[1]);
 
@@ -730,13 +720,10 @@ void detonate(int Playernum, int Governor, int APcount) {
 int retal_strength(shiptype *s) {
   int strength = 0, avail = 0;
 
-  if (!s->alive)
-    return 0;
-  if (!Shipdata[s->type][ABIL_SPEED] && !landed(s))
-    return 0;
+  if (!s->alive) return 0;
+  if (!Shipdata[s->type][ABIL_SPEED] && !landed(s)) return 0;
   /* land based ships */
-  if (!s->popn && (s->type != OTYPE_BERS))
-    return 0;
+  if (!s->popn && (s->type != OTYPE_BERS)) return 0;
 
   if (s->guns == PRIMARY)
     avail = (s->type == STYPE_FIGHTER || s->type == OTYPE_AFV ||

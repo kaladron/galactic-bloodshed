@@ -22,7 +22,7 @@ typedef struct {
 } toggletype;
 
 class race {
-public:
+ public:
   int Playernum;
   char name[RNAMESIZE]; /* Racial name. */
   char password[RNAMESIZE];
@@ -170,4 +170,4 @@ extern struct power_blocks Power_blocks;
 
 extern racetype *races[MAXPLAYERS];
 
-#endif // RACES_H
+#endif  // RACES_H

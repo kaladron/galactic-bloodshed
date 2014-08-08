@@ -7,4 +7,4 @@
 
 void launch(int, int, int);
 
-#endif // LAUNCH_H
+#endif  // LAUNCH_H

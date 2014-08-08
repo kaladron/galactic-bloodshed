@@ -25,4 +25,4 @@ struct power {
 
 extern struct power Power[MAXPLAYERS];
 
-#endif // POWER_H
+#endif  // POWER_H

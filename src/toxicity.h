@@ -7,4 +7,4 @@
 
 void toxicity(int, int, int);
 
-#endif // TOXICITY_H
+#endif  // TOXICITY_H

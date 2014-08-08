@@ -51,33 +51,33 @@ void analysis(int Playernum, int Governor, int APcount) {
       mode = 0;
     }
     switch (*p) {
-    case CHAR_SEA:
-      sector_type = SEA;
-      break;
-    case CHAR_LAND:
-      sector_type = LAND;
-      break;
-    case CHAR_MOUNT:
-      sector_type = MOUNT;
-      break;
-    case CHAR_GAS:
-      sector_type = GAS;
-      break;
-    case CHAR_ICE:
-      sector_type = ICE;
-      break;
-    case CHAR_FOREST:
-      sector_type = FOREST;
-      break;
-    case 'd':
-      sector_type = DESERT;
-      break;
-    case CHAR_PLATED:
-      sector_type = PLATED;
-      break;
-    case CHAR_WASTED:
-      sector_type = WASTED;
-      break;
+      case CHAR_SEA:
+        sector_type = SEA;
+        break;
+      case CHAR_LAND:
+        sector_type = LAND;
+        break;
+      case CHAR_MOUNT:
+        sector_type = MOUNT;
+        break;
+      case CHAR_GAS:
+        sector_type = GAS;
+        break;
+      case CHAR_ICE:
+        sector_type = ICE;
+        break;
+      case CHAR_FOREST:
+        sector_type = FOREST;
+        break;
+      case 'd':
+        sector_type = DESERT;
+        break;
+      case CHAR_PLATED:
+        sector_type = PLATED;
+        break;
+      case CHAR_WASTED:
+        sector_type = WASTED;
+        break;
     }
     if (sector_type != -1 && mode == 1) {
       i++;
@@ -98,24 +98,23 @@ void analysis(int Playernum, int Governor, int APcount) {
     p = args[i];
     if (i < argn && (isalpha(*p) || *p == '/')) {
       where = Getplace(Playernum, Governor, args[i], 0);
-      if (where.err)
-        continue;
+      if (where.err) continue;
     }
 
     switch (where.level) {
-    case LEVEL_UNIV:
-    case LEVEL_SHIP:
-      notify(Playernum, Governor, "You can only analyze planets.\n");
-      break;
-    case LEVEL_PLAN:
-      do_analysis(Playernum, Governor, do_player, mode, sector_type, where.snum,
-                  where.pnum);
-      break;
-    case LEVEL_STAR:
-      for (planetnum_t pnum = 0; pnum < Stars[where.snum]->numplanets; pnum++)
+      case LEVEL_UNIV:
+      case LEVEL_SHIP:
+        notify(Playernum, Governor, "You can only analyze planets.\n");
+        break;
+      case LEVEL_PLAN:
         do_analysis(Playernum, Governor, do_player, mode, sector_type,
-                    where.snum, pnum);
-      break;
+                    where.snum, where.pnum);
+        break;
+      case LEVEL_STAR:
+        for (planetnum_t pnum = 0; pnum < Stars[where.snum]->numplanets; pnum++)
+          do_analysis(Playernum, Governor, do_player, mode, sector_type,
+                      where.snum, pnum);
+        break;
     }
   } while (0);
   return;
@@ -157,12 +156,10 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
     PlayTroops[p] = PlayPopn[p] = PlayMob[p] = PlayEff[p] = PlayCrys[p] =
         PlayRes[p] = PlayTSect[p] = 0;
     WastedSect[p] = 0;
-    for (i = 0; i <= WASTED; i++)
-      PlaySect[p][i] = 0;
+    for (i = 0; i <= WASTED; i++) PlaySect[p][i] = 0;
   }
 
-  for (i = 0; i <= WASTED; i++)
-    Sect[i] = 0;
+  for (i = 0; i <= WASTED; i++) Sect[i] = 0;
 
   Race = races[Playernum - 1];
   getplanet(&planet, Starnum, Planetnum);
@@ -225,36 +222,36 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
   notify(Playernum, Governor, buf);
   sprintf(buf, "%s %d", (mode ? "Highest" : "Lowest"), CARE);
   switch (sector_type) {
-  case -1:
-    sprintf(buf, "%s of all", buf);
-    break;
-  case SEA:
-    sprintf(buf, "%s Ocean", buf);
-    break;
-  case LAND:
-    sprintf(buf, "%s Land", buf);
-    break;
-  case MOUNT:
-    sprintf(buf, "%s Mountain", buf);
-    break;
-  case GAS:
-    sprintf(buf, "%s Gas", buf);
-    break;
-  case ICE:
-    sprintf(buf, "%s Ice", buf);
-    break;
-  case FOREST:
-    sprintf(buf, "%s Forest", buf);
-    break;
-  case DESERT:
-    sprintf(buf, "%s Desert", buf);
-    break;
-  case PLATED:
-    sprintf(buf, "%s Plated", buf);
-    break;
-  case WASTED:
-    sprintf(buf, "%s Wasted", buf);
-    break;
+    case -1:
+      sprintf(buf, "%s of all", buf);
+      break;
+    case SEA:
+      sprintf(buf, "%s Ocean", buf);
+      break;
+    case LAND:
+      sprintf(buf, "%s Land", buf);
+      break;
+    case MOUNT:
+      sprintf(buf, "%s Mountain", buf);
+      break;
+    case GAS:
+      sprintf(buf, "%s Gas", buf);
+      break;
+    case ICE:
+      sprintf(buf, "%s Ice", buf);
+      break;
+    case FOREST:
+      sprintf(buf, "%s Forest", buf);
+      break;
+    case DESERT:
+      sprintf(buf, "%s Desert", buf);
+      break;
+    case PLATED:
+      sprintf(buf, "%s Plated", buf);
+      break;
+    case WASTED:
+      sprintf(buf, "%s Wasted", buf);
+      break;
   }
   notify(Playernum, Governor, buf);
   if (ThisPlayer < 0)
@@ -282,8 +279,9 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
     sprintf(buf, "%4c", SectTypes[i]);
     notify(Playernum, Governor, buf);
   }
-  notify(Playernum, Governor, "\n----------------------------------------------"
-                              "---------------------------------\n");
+  notify(Playernum, Governor,
+         "\n----------------------------------------------"
+         "---------------------------------\n");
   for (p = 0; p <= Num_races; p++)
     if (PlayTSect[p] != 0) {
       sprintf(buf, "%2d %3d %7d %6d %5.1lf %5.1lf %5d %2d", p, PlayTSect[p],
@@ -296,8 +294,9 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
       }
       notify(Playernum, Governor, "\n");
     }
-  notify(Playernum, Governor, "------------------------------------------------"
-                              "-------------------------------\n");
+  notify(Playernum, Governor,
+         "------------------------------------------------"
+         "-------------------------------\n");
   sprintf(buf, "%2s %3d %7d %6d %5.1lf %5.1lf %5d %2d", "Tl", TotalSect,
           TotalPopn, TotalTroops, (double)TotalEff / TotalSect,
           (double)TotalMob / TotalSect, TotalRes, TotalCrys);
@@ -317,8 +316,7 @@ static void Insert(int mode, struct anal_sect arr[], int x, int y, int des,
   for (i = 0; i < CARE; i++)
     if ((mode && arr[i].value < value) ||
         (!mode && (arr[i].value > value || arr[i].value == -1))) {
-      for (j = CARE - 1; j > i; j--)
-        arr[j] = arr[j - 1];
+      for (j = CARE - 1; j > i; j--) arr[j] = arr[j - 1];
       arr[i].value = value;
       arr[i].x = x;
       arr[i].y = y;

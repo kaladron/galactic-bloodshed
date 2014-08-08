@@ -90,16 +90,16 @@ void pledge(int Playernum, int Governor, int APcount, int mode) {
     warn_race(Playernum, buf);
 
     switch (int_rand(1, 20)) {
-    case 1:
-      sprintf(
-          buf,
-          "%s [%d] joins the band wagon and pledges allegiance to %s [%d]!\n",
-          Race->name, Playernum, Blocks[n - 1].name, n);
-      break;
-    default:
-      sprintf(buf, "%s [%d] pledges allegiance to %s [%d].\n", Race->name,
-              Playernum, Blocks[n - 1].name, n);
-      break;
+      case 1:
+        sprintf(
+            buf,
+            "%s [%d] joins the band wagon and pledges allegiance to %s [%d]!\n",
+            Race->name, Playernum, Blocks[n - 1].name, n);
+        break;
+      default:
+        sprintf(buf, "%s [%d] pledges allegiance to %s [%d].\n", Race->name,
+                Playernum, Blocks[n - 1].name, n);
+        break;
     }
   } else {
     clrbit(Blocks[n - 1].pledge, Playernum);
@@ -110,14 +110,14 @@ void pledge(int Playernum, int Governor, int APcount, int mode) {
     warn_race(Playernum, buf);
 
     switch (int_rand(1, 20)) {
-    case 1:
-      sprintf(buf, "%s [%d] calls %s [%d] a bunch of geeks and QUITS!\n",
-              Race->name, Playernum, Blocks[n - 1].name, n);
-      break;
-    default:
-      sprintf(buf, "%s [%d] has QUIT %s [%d]!\n", Race->name, Playernum,
-              Blocks[n - 1].name, n);
-      break;
+      case 1:
+        sprintf(buf, "%s [%d] calls %s [%d] a bunch of geeks and QUITS!\n",
+                Race->name, Playernum, Blocks[n - 1].name, n);
+        break;
+      default:
+        sprintf(buf, "%s [%d] has QUIT %s [%d]!\n", Race->name, Playernum,
+                Blocks[n - 1].name, n);
+        break;
     }
   }
 
@@ -164,84 +164,86 @@ void declare(int Playernum, int Governor, int APcount) {
   alien = races[n - 1];
 
   switch (*args[2]) {
-  case 'a':
-    setbit(Race->allied, n);
-    clrbit(Race->atwar, n);
-    if (success(5)) {
-      sprintf(buf, "But would you want your sister to marry one?\n");
+    case 'a':
+      setbit(Race->allied, n);
+      clrbit(Race->atwar, n);
+      if (success(5)) {
+        sprintf(buf, "But would you want your sister to marry one?\n");
+        notify(Playernum, Governor, buf);
+      } else {
+        sprintf(buf, "Good for you.\n");
+        notify(Playernum, Governor, buf);
+      }
+      sprintf(buf, " Player #%d (%s) has declared an alliance with you!\n",
+              Playernum, Race->name);
+      warn_race(n, buf);
+      sprintf(buf, "%s [%d] declares ALLIANCE with %s [%d].\n", Race->name,
+              Playernum, alien->name, n);
+      d_mod = 30;
+      if (argn > 3) sscanf(args[3], "%d", &d_mod);
+      d_mod = MAX(d_mod, 30);
+      break;
+    case 'n':
+      clrbit(Race->allied, n);
+      clrbit(Race->atwar, n);
+      sprintf(buf, "Done.\n");
       notify(Playernum, Governor, buf);
-    } else {
-      sprintf(buf, "Good for you.\n");
-      notify(Playernum, Governor, buf);
-    }
-    sprintf(buf, " Player #%d (%s) has declared an alliance with you!\n",
-            Playernum, Race->name);
-    warn_race(n, buf);
-    sprintf(buf, "%s [%d] declares ALLIANCE with %s [%d].\n", Race->name,
-            Playernum, alien->name, n);
-    d_mod = 30;
-    if (argn > 3)
-      sscanf(args[3], "%d", &d_mod);
-    d_mod = MAX(d_mod, 30);
-    break;
-  case 'n':
-    clrbit(Race->allied, n);
-    clrbit(Race->atwar, n);
-    sprintf(buf, "Done.\n");
-    notify(Playernum, Governor, buf);
 
-    sprintf(buf, " Player #%d (%s) has declared neutrality with you!\n",
-            Playernum, Race->name);
-    warn_race(n, buf);
-    sprintf(buf, "%s [%d] declares a state of neutrality with %s [%d].\n",
-            Race->name, Playernum, alien->name, n);
-    d_mod = 30;
-    break;
-  case 'w':
-    setbit(Race->atwar, n);
-    clrbit(Race->allied, n);
-    if (success(4)) {
-      sprintf(buf, "Your enemies flaunt their secondary male reproductive "
-                   "glands in your\ngeneral direction.\n");
-      notify(Playernum, Governor, buf);
-    } else {
-      sprintf(buf, "Give 'em hell!\n");
-      notify(Playernum, Governor, buf);
-    }
-    sprintf(buf, " Player #%d (%s) has declared war against you!\n", Playernum,
-            Race->name);
-    warn_race(n, buf);
-    switch (int_rand(1, 5)) {
-    case 1:
-      sprintf(buf, "%s [%d] declares WAR on %s [%d].\n", Race->name, Playernum,
-              alien->name, n);
-      break;
-    case 2:
-      sprintf(buf, "%s [%d] has had enough of %s [%d] and declares WAR!\n",
+      sprintf(buf, " Player #%d (%s) has declared neutrality with you!\n",
+              Playernum, Race->name);
+      warn_race(n, buf);
+      sprintf(buf, "%s [%d] declares a state of neutrality with %s [%d].\n",
               Race->name, Playernum, alien->name, n);
+      d_mod = 30;
       break;
-    case 3:
-      sprintf(buf,
+    case 'w':
+      setbit(Race->atwar, n);
+      clrbit(Race->allied, n);
+      if (success(4)) {
+        sprintf(buf,
+                "Your enemies flaunt their secondary male reproductive "
+                "glands in your\ngeneral direction.\n");
+        notify(Playernum, Governor, buf);
+      } else {
+        sprintf(buf, "Give 'em hell!\n");
+        notify(Playernum, Governor, buf);
+      }
+      sprintf(buf, " Player #%d (%s) has declared war against you!\n",
+              Playernum, Race->name);
+      warn_race(n, buf);
+      switch (int_rand(1, 5)) {
+        case 1:
+          sprintf(buf, "%s [%d] declares WAR on %s [%d].\n", Race->name,
+                  Playernum, alien->name, n);
+          break;
+        case 2:
+          sprintf(buf, "%s [%d] has had enough of %s [%d] and declares WAR!\n",
+                  Race->name, Playernum, alien->name, n);
+          break;
+        case 3:
+          sprintf(
+              buf,
               "%s [%d] decided that it is time to declare WAR on %s [%d]!\n",
               Race->name, Playernum, alien->name, n);
-      break;
-    case 4:
-      sprintf(buf,
-              "%s [%d] had no choice but to declare WAR against %s [%d]!\n",
-              Race->name, Playernum, alien->name, n);
-      break;
-    case 5:
-      sprintf(buf, "%s [%d] says 'screw it!' and declares WAR on %s [%d]!\n",
-              Race->name, Playernum, alien->name, n);
+          break;
+        case 4:
+          sprintf(buf,
+                  "%s [%d] had no choice but to declare WAR against %s [%d]!\n",
+                  Race->name, Playernum, alien->name, n);
+          break;
+        case 5:
+          sprintf(buf,
+                  "%s [%d] says 'screw it!' and declares WAR on %s [%d]!\n",
+                  Race->name, Playernum, alien->name, n);
+          break;
+        default:
+          break;
+      }
+      d_mod = 30;
       break;
     default:
-      break;
-    }
-    d_mod = 30;
-    break;
-  default:
-    notify(Playernum, Governor, "I don't understand.\n");
-    return;
+      notify(Playernum, Governor, "I don't understand.\n");
+      return;
   }
 
   post(buf, DECLARATION);
@@ -303,8 +305,7 @@ void vote(int Playernum, int Governor, int APcount) {
       nvotes = 0;
       for (Playernum = 1; Playernum <= Num_races; Playernum++) {
         Race = races[Playernum - 1];
-        if (Race->God || Race->Guest)
-          continue;
+        if (Race->God || Race->Guest) continue;
         nvotes++;
         if (Race->votes & VOTE_UPDATE_GO)
           yays++;
@@ -332,8 +333,7 @@ void show_votes(int Playernum, int Governor) {
   nays = yays = nvotes = 0;
   for (pnum = 1; pnum <= Num_races; pnum++) {
     Race = races[pnum - 1];
-    if (Race->God || Race->Guest)
-      continue;
+    if (Race->God || Race->Guest) continue;
     nvotes++;
     if (Race->votes & VOTE_UPDATE_GO) {
       yays++;
@@ -342,8 +342,7 @@ void show_votes(int Playernum, int Governor) {
       nays++;
       sprintf(buf, "  %s voted wait.\n", Race->name);
     }
-    if (races[Playernum - 1]->God)
-      notify(Playernum, Governor, buf);
+    if (races[Playernum - 1]->God) notify(Playernum, Governor, buf);
   }
   sprintf(buf, "  Total votes = %d, Go = %d, Wait = %d.\n", nvotes, yays, nays);
   notify(Playernum, Governor, buf);

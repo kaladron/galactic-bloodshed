@@ -41,19 +41,14 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
 
   hits = 0;
   defense = 1;
-  if (strength <= 0)
-    return -1;
+  if (strength <= 0) return -1;
 
-  if (!(from->alive || ignore) || !to->alive)
-    return -1;
+  if (!(from->alive || ignore) || !to->alive) return -1;
   if (from->whatorbits == LEVEL_SHIP || from->whatorbits == LEVEL_UNIV)
     return -1;
-  if (to->whatorbits == LEVEL_SHIP || to->whatorbits == LEVEL_UNIV)
-    return -1;
-  if (from->storbits != to->storbits)
-    return -1;
-  if (has_switch(from) && !from->on)
-    return -1;
+  if (to->whatorbits == LEVEL_SHIP || to->whatorbits == LEVEL_UNIV) return -1;
+  if (from->storbits != to->storbits) return -1;
+  if (has_switch(from) && !from->on) return -1;
 
   xfrom = from->xpos;
   yfrom = from->ypos;
@@ -71,8 +66,7 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
       dist *= dist / 200.0;         /* mines are very effective inside 200 */
     }
   }
-  if ((double)dist > gun_range((racetype *)NULL, from, 0))
-    return -1;
+  if ((double)dist > gun_range((racetype *)NULL, from, 0)) return -1;
   /* attack parameters */
   ship_disposition(from, &fevade, &fspeed, &fbody);
   ship_disposition(to, &tevade, &tspeed, &tbody);
@@ -108,18 +102,18 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
         sprintf(weapon, "strength laser");
     } else
       switch (caliber) {
-      case LIGHT:
-        sprintf(weapon, "light guns");
-        break;
-      case MEDIUM:
-        sprintf(weapon, "medium guns");
-        break;
-      case HEAVY:
-        sprintf(weapon, "heavy guns");
-        break;
-      default:
-        sprintf(weapon, "pea-shooter");
-        return -1;
+        case LIGHT:
+          sprintf(weapon, "light guns");
+          break;
+        case MEDIUM:
+          sprintf(weapon, "medium guns");
+          break;
+        case HEAVY:
+          sprintf(weapon, "heavy guns");
+          break;
+        default:
+          sprintf(weapon, "pea-shooter");
+          return -1;
       }
 
     damage = do_damage((int)from->owner, to, (double)from->tech, strength, hits,
@@ -141,13 +135,10 @@ int shoot_planet_to_ship(racetype *Race, planettype *p, shiptype *ship,
   char damage_msg[1024];
 
   hits = 0;
-  if (strength <= 0)
-    return -1;
-  if (!ship->alive)
-    return -1;
+  if (strength <= 0) return -1;
+  if (!ship->alive) return -1;
 
-  if (ship->whatorbits != LEVEL_PLAN)
-    return -1;
+  if (ship->whatorbits != LEVEL_PLAN) return -1;
 
   ship_disposition(ship, &evade, &speed, &body);
 
@@ -175,17 +166,12 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
   double d, r, fac;
 
   numdest = 0;
-  if (strength <= 0)
-    return -1;
-  if (!(ship->alive || ignore))
-    return -1;
-  if (has_switch(ship) && !ship->on)
-    return -1;
-  if (ship->whatorbits != LEVEL_PLAN)
-    return -1;
+  if (strength <= 0) return -1;
+  if (!(ship->alive || ignore)) return -1;
+  if (has_switch(ship) && !ship->on) return -1;
+  if (ship->whatorbits != LEVEL_PLAN) return -1;
 
-  if (x < 0 || x > pl->Maxx - 1 || y < 0 || y > pl->Maxy - 1)
-    return -1;
+  if (x < 0 || x > pl->Maxx - 1 || y < 0 || y > pl->Maxy - 1) return -1;
 
   r = .4 * strength;
   if (!caliber) { /* figure out the appropriate gun caliber if not given*/
@@ -193,14 +179,14 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
       caliber = LIGHT;
     else
       switch (ship->guns) {
-      case PRIMARY:
-        caliber = ship->primtype;
-        break;
-      case SECONDARY:
-        caliber = ship->sectype;
-        break;
-      default:
-        caliber = LIGHT;
+        case PRIMARY:
+          caliber = ship->primtype;
+          break;
+        case SECONDARY:
+          caliber = ship->sectype;
+          break;
+        default:
+          caliber = LIGHT;
       }
   }
 
@@ -210,8 +196,7 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
   target = &Sector(*pl, x, y);
   oldowner = target->owner;
 
-  for (i = 1; i <= Num_races; i++)
-    sum_mob[i - 1] = 0;
+  for (i = 1; i <= Num_races; i++) sum_mob[i - 1] = 0;
 
   for (y2 = 0; y2 < pl->Maxy; y2++) {
     for (x2 = 0; x2 < pl->Maxx; x2++) {
@@ -242,16 +227,13 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
               s->troops -= kills;
           }
 
-          if (!(s->popn + s->troops))
-            s->owner = 0;
+          if (!(s->popn + s->troops)) s->owner = 0;
         }
 
-        if (fac >= 5.0 && !int_rand(0, 10))
-          mutate_sector(s);
+        if (fac >= 5.0 && !int_rand(0, 10)) mutate_sector(s);
 
         if (round_rand(fac) > Defensedata[s->condition] * int_rand(0, 10)) {
-          if (s->owner)
-            Nuked[s->owner - 1] = 1;
+          if (s->owner) Nuked[s->owner - 1] = 1;
           s->popn = 0;
           s->troops = int_rand(0, (int)s->troops);
           if (!s->troops) /* troops may survive this */
@@ -270,8 +252,7 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
           s->resource = MAX(0, (int)s->resource - (int)fac);
         }
       }
-      if (s->owner)
-        sum_mob[s->owner - 1] += s->mobilization;
+      if (s->owner) sum_mob[s->owner - 1] += s->mobilization;
     }
   }
   num_sectors = pl->Maxx * pl->Maxy;
@@ -310,20 +291,16 @@ static int do_radiation(shiptype *ship, double tech, int strength, int hits,
 
   penetrate = 0;
   r = 1.0;
-  for (i = 1; i <= arm; i++)
-    r *= fac;
+  for (i = 1; i <= arm; i++) r *= fac;
 
   for (i = 1; i <= hits; i++) /* check to see how many hits penetrate */
-    if (double_rand() <= r)
-      penetrate += 1;
+    if (double_rand() <= r) penetrate += 1;
 
   dosage = round_rand(40. * (double)penetrate / (double)body);
   dosage = MIN(100, dosage);
 
-  if (dosage > ship->rad)
-    ship->rad = MAX(ship->rad, dosage);
-  if (success(ship->rad))
-    ship->active = 0;
+  if (dosage > ship->rad) ship->rad = MAX(ship->rad, dosage);
+  if (success(ship->rad)) ship->active = 0;
 
   casualties = 0;
   casualties1 = 0;
@@ -370,20 +347,17 @@ static int do_damage(int who, shiptype *ship, double tech, int strength,
   crithits = 0;
   penetrate = 0;
   r = 1.0;
-  for (i = 1; i <= arm; i++)
-    r *= fac;
+  for (i = 1; i <= arm; i++) r *= fac;
 
   for (i = 1; i <= hits; i++) /* check to see how many hits penetrate */
-    if (double_rand() <= r)
-      penetrate += 1;
+    if (double_rand() <= r) penetrate += 1;
 
   damage = round_rand(SHIP_DAMAGE * (double)caliber * (double)penetrate /
                       (double)body);
 
   do_critical_hits(penetrate, ship, &crithits, &critdam, caliber, critmsg);
 
-  if (crithits)
-    damage += critdam;
+  if (crithits) damage += critdam;
 
   damage = MIN(100, damage);
   ship->damage = MIN(100, (int)(ship->damage) + damage);
@@ -393,8 +367,7 @@ static int do_damage(int who, shiptype *ship, double tech, int strength,
   if (ship->fire_laser) {
     int safe;
     safe = (int)((1.0 - .01 * ship->damage) * ship->tech / 4.0);
-    if (ship->fire_laser > safe)
-      ship->fire_laser = safe;
+    if (ship->fire_laser > safe) ship->fire_laser = safe;
   }
 
   if (penetrate) {
@@ -423,8 +396,7 @@ static int do_damage(int who, shiptype *ship, double tech, int strength,
     strcat(msg, buf);
   }
 
-  if (ship->damage >= 100)
-    kill_ship(who, ship);
+  if (ship->damage >= 100) kill_ship(who, ship);
   ship->build_cost = (int)cost(ship);
   return damage;
 }
@@ -446,8 +418,7 @@ int CEW_hit(double dist, int cew_range) {
   hits = 0;
   prob = cew_hit_odds(dist, cew_range);
 
-  if (success(prob))
-    hits = 1;
+  if (success(prob)) hits = 1;
 
   return hits;
 }
@@ -463,13 +434,11 @@ int Num_hits(double dist, int focus, int guns, double tech, int fdam, int fev,
 
   hits = 0;
   if (focus) {
-    if (success(prob * prob / 100))
-      hits = guns;
+    if (success(prob * prob / 100)) hits = guns;
     hit_probability = prob * prob / 100;
   } else {
     for (i = 1; i <= guns; i++)
-      if (success(prob))
-        hits++;
+      if (success(prob)) hits++;
     hit_probability = prob; /* global variable */
   }
 
@@ -597,22 +566,16 @@ void do_collateral(shiptype *ship, int damage, int *casualties,
   *primgundamage = 0;
   *secgundamage = 0;
 
-  for (i = 1; i <= ship->popn; i++)
-    *casualties += success(damage);
+  for (i = 1; i <= ship->popn; i++) *casualties += success(damage);
   ship->popn -= *casualties;
-  for (i = 1; i <= ship->troops; i++)
-    *casualties1 += success(damage);
+  for (i = 1; i <= ship->troops; i++) *casualties1 += success(damage);
   ship->troops -= *casualties1;
-  for (i = 1; i <= ship->primary; i++)
-    *primgundamage += success(damage);
+  for (i = 1; i <= ship->primary; i++) *primgundamage += success(damage);
   ship->primary -= *primgundamage;
-  for (i = 1; i <= ship->secondary; i++)
-    *secgundamage += success(damage);
+  for (i = 1; i <= ship->secondary; i++) *secgundamage += success(damage);
   ship->secondary -= *secgundamage;
-  if (!ship->primary)
-    ship->primtype = NONE;
-  if (!ship->secondary)
-    ship->sectype = NONE;
+  if (!ship->primary) ship->primtype = NONE;
+  if (!ship->secondary) ship->sectype = NONE;
 }
 
 int getdefense(shiptype *ship) {
@@ -636,12 +599,10 @@ double p_factor(double attacker, double defender) {
 }
 
 int planet_guns(int points) {
-  if (points < 0)
-    return 0; /* shouldn't happen */
+  if (points < 0) return 0; /* shouldn't happen */
   return MIN(20, points / 1000);
 }
 
 void mutate_sector(sectortype *s) {
-  if (int_rand(0, 6) >= Defensedata[s->condition])
-    s->condition = s->type;
+  if (int_rand(0, 6) >= Defensedata[s->condition]) s->condition = s->type;
 }

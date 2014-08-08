@@ -26,7 +26,7 @@
 #include "vars.h"
 
 void order(int Playernum, int Governor, int APcount) {
-  int shipno, nextshipno;
+  shipnum_t shipno, nextshipno;
   shiptype *ship;
 
   if (argn == 1) { /* display all ship orders */
@@ -44,8 +44,7 @@ void order(int Playernum, int Governor, int APcount) {
     while ((shipno = do_shiplist(&ship, &nextshipno)))
       if (in_list(Playernum, args[1], ship, &nextshipno) &&
           authorized(Governor, ship)) {
-        if (argn > 2)
-          give_orders(Playernum, Governor, APcount, ship);
+        if (argn > 2) give_orders(Playernum, Governor, APcount, ship);
         DispOrders(Playernum, Governor, ship);
         free(ship);
       } else
@@ -153,8 +152,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
       ship->navigate.turns = atoi(args[4]);
     } else
       ship->navigate.on = 0;
-    if (ship->hyper_drive.on)
-      ship->hyper_drive.on = 0;
+    if (ship->hyper_drive.on) ship->hyper_drive.on = 0;
   } else if (match(args[2], "switch")) {
     if (ship->type == OTYPE_FACTORY) {
       notify(Playernum, Governor, "Use \"on\" to bring factory online.\n");
@@ -173,25 +171,25 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
     }
     if (ship->on) {
       switch (ship->type) {
-      case STYPE_MINE:
-        notify(Playernum, Governor, "Mine armed and ready.\n");
-        break;
-      case OTYPE_TRANSDEV:
-        notify(Playernum, Governor, "Transporter ready to receive.\n");
-        break;
-      default:
-        break;
+        case STYPE_MINE:
+          notify(Playernum, Governor, "Mine armed and ready.\n");
+          break;
+        case OTYPE_TRANSDEV:
+          notify(Playernum, Governor, "Transporter ready to receive.\n");
+          break;
+        default:
+          break;
       }
     } else {
       switch (ship->type) {
-      case STYPE_MINE:
-        notify(Playernum, Governor, "Mine disarmed.\n");
-        break;
-      case OTYPE_TRANSDEV:
-        notify(Playernum, Governor, "No longer receiving.\n");
-        break;
-      default:
-        break;
+        case STYPE_MINE:
+          notify(Playernum, Governor, "Mine disarmed.\n");
+          break;
+        case OTYPE_TRANSDEV:
+          notify(Playernum, Governor, "No longer receiving.\n");
+          break;
+        default:
+          break;
       }
     }
   } else if (match(args[2], "destination")) {
@@ -304,8 +302,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
         notify(Playernum, Governor, "Specify a positive speed.\n");
         return;
       } else {
-        if (j > speed_rating(ship))
-          j = speed_rating(ship);
+        if (j > speed_rating(ship)) j = speed_rating(ship);
         ship->speed = j;
       }
     } else {
@@ -336,8 +333,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
     if (ship->primary) {
       if (argn < 4) {
         ship->guns = PRIMARY;
-        if (ship->retaliate > ship->primary)
-          ship->retaliate = ship->primary;
+        if (ship->retaliate > ship->primary) ship->retaliate = ship->primary;
       } else {
         j = atoi(args[3]);
         if (j < 0) {
@@ -345,8 +341,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
                  "Specify a nonnegative number of guns.\n");
           return;
         } else {
-          if (j > ship->primary)
-            j = ship->primary;
+          if (j > ship->primary) j = ship->primary;
           ship->retaliate = j;
           ship->guns = PRIMARY;
         }
@@ -368,8 +363,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
                  "Specify a nonnegative number of guns.\n");
           return;
         } else {
-          if (j > ship->secondary)
-            j = ship->secondary;
+          if (j > ship->secondary) j = ship->secondary;
           ship->retaliate = j;
           ship->guns = SECONDARY;
         }
@@ -380,21 +374,21 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
     }
   } else if (match(args[2], "explosive")) {
     switch (ship->type) {
-    case STYPE_MINE:
-    case OTYPE_GR:
-      ship->mode = 0;
-      break;
-    default:
-      return;
+      case STYPE_MINE:
+      case OTYPE_GR:
+        ship->mode = 0;
+        break;
+      default:
+        return;
     }
   } else if (match(args[2], "radiative")) {
     switch (ship->type) {
-    case STYPE_MINE:
-    case OTYPE_GR:
-      ship->mode = 1;
-      break;
-    default:
-      return;
+      case STYPE_MINE:
+      case OTYPE_GR:
+        ship->mode = 1;
+        break;
+      default:
+        return;
     }
   } else if (match(args[2], "move")) {
     if ((ship->type == OTYPE_TERRA) || (ship->type == OTYPE_PLOW)) {
@@ -418,8 +412,9 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
             return;
           }
           if (args[3][i + 1]) {
-            sprintf(buf, "Warning: '%c' should be the last character in the "
-                         "move order.\n",
+            sprintf(buf,
+                    "Warning: '%c' should be the last character in the "
+                    "move order.\n",
                     args[3][i]);
             notify(Playernum, Governor, buf);
             notify(Playernum, Governor,
@@ -534,8 +529,9 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
         if (s2->type == STYPE_HABITAT) {
           oncost = HAB_FACT_ON_COST * ship->build_cost;
           if (s2->resource < oncost) {
-            sprintf(buf, "You don't have %d resources on Habitat #%lu to "
-                         "activate this factory.\n",
+            sprintf(buf,
+                    "You don't have %d resources on Habitat #%lu to "
+                    "activate this factory.\n",
                     oncost, ship->destshipno);
             notify(Playernum, Governor, buf);
             free(s2);
@@ -571,8 +567,9 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
         getplanet(&planet, ship->deststar, ship->destpnum);
         oncost = 2 * ship->build_cost;
         if (planet->info[Playernum - 1].resource < oncost) {
-          sprintf(buf, "You don't have %d resources on the planet to activate "
-                       "this factory.\n",
+          sprintf(buf,
+                  "You don't have %d resources on the planet to activate "
+                  "this factory.\n",
                   oncost);
           notify(Playernum, Governor, buf);
           free(planet);
@@ -589,8 +586,9 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
     ship->on = 1;
   } else if (match(args[2], "off")) {
     if (ship->type == OTYPE_FACTORY && ship->on) {
-      notify(Playernum, Governor, "You can't deactivate a factory once it's "
-                                  "online. Consider using 'scrap'.\n");
+      notify(Playernum, Governor,
+             "You can't deactivate a factory once it's "
+             "online. Consider using 'scrap'.\n");
       return;
     }
     ship->on = 0;
@@ -634,51 +632,51 @@ void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
   yf = s->ypos;
 
   switch (s->special.aimed_at.level) {
-  case LEVEL_UNIV:
-    sprintf(buf, "There is nothing out here to aim at.");
-    notify(Playernum, Governor, buf);
-    break;
-  case LEVEL_STAR:
-    sprintf(buf, "Star %s ", prin_aimed_at(Playernum, Governor, s));
-    notify(Playernum, Governor, buf);
-    if ((dist = sqrt(Distsq(xf, yf, str->xpos, str->ypos))) <=
-        tele_range((int)s->type, s->tech)) {
-      getstar(&str, (int)s->special.aimed_at.snum);
-      setbit(str->explored, Playernum);
-      putstar(str, (int)s->special.aimed_at.snum);
-      sprintf(buf, "Surveyed, distance %g.\n", dist);
+    case LEVEL_UNIV:
+      sprintf(buf, "There is nothing out here to aim at.");
       notify(Playernum, Governor, buf);
-      free(str);
-    } else {
-      sprintf(buf, "Too far to see (%g, max %g).\n", dist,
-              tele_range((int)s->type, s->tech));
+      break;
+    case LEVEL_STAR:
+      sprintf(buf, "Star %s ", prin_aimed_at(Playernum, Governor, s));
       notify(Playernum, Governor, buf);
-    }
-    break;
-  case LEVEL_PLAN:
-    sprintf(buf, "Planet %s ", prin_aimed_at(Playernum, Governor, s));
-    notify(Playernum, Governor, buf);
-    getplanet(&p, s->special.aimed_at.snum, s->special.aimed_at.pnum);
-    if ((dist =
-             sqrt(Distsq(xf, yf, str->xpos + p->xpos, str->ypos + p->ypos))) <=
-        tele_range((int)s->type, s->tech)) {
-      setbit(str->explored, Playernum);
-      p->info[Playernum - 1].explored = 1;
-      putplanet(p, (int)s->special.aimed_at.snum,
-                (int)s->special.aimed_at.pnum);
-      sprintf(buf, "Surveyed, distance %g.\n", dist);
+      if ((dist = sqrt(Distsq(xf, yf, str->xpos, str->ypos))) <=
+          tele_range((int)s->type, s->tech)) {
+        getstar(&str, (int)s->special.aimed_at.snum);
+        setbit(str->explored, Playernum);
+        putstar(str, (int)s->special.aimed_at.snum);
+        sprintf(buf, "Surveyed, distance %g.\n", dist);
+        notify(Playernum, Governor, buf);
+        free(str);
+      } else {
+        sprintf(buf, "Too far to see (%g, max %g).\n", dist,
+                tele_range((int)s->type, s->tech));
+        notify(Playernum, Governor, buf);
+      }
+      break;
+    case LEVEL_PLAN:
+      sprintf(buf, "Planet %s ", prin_aimed_at(Playernum, Governor, s));
       notify(Playernum, Governor, buf);
-    } else {
-      sprintf(buf, "Too far to see (%g, max %g).\n", dist,
-              tele_range((int)s->type, s->tech));
+      getplanet(&p, s->special.aimed_at.snum, s->special.aimed_at.pnum);
+      if ((dist = sqrt(
+               Distsq(xf, yf, str->xpos + p->xpos, str->ypos + p->ypos))) <=
+          tele_range((int)s->type, s->tech)) {
+        setbit(str->explored, Playernum);
+        p->info[Playernum - 1].explored = 1;
+        putplanet(p, (int)s->special.aimed_at.snum,
+                  (int)s->special.aimed_at.pnum);
+        sprintf(buf, "Surveyed, distance %g.\n", dist);
+        notify(Playernum, Governor, buf);
+      } else {
+        sprintf(buf, "Too far to see (%g, max %g).\n", dist,
+                tele_range((int)s->type, s->tech));
+        notify(Playernum, Governor, buf);
+      }
+      free(p);
+      break;
+    case LEVEL_SHIP:
+      sprintf(buf, "You can't see anything of use there.\n");
       notify(Playernum, Governor, buf);
-    }
-    free(p);
-    break;
-  case LEVEL_SHIP:
-    sprintf(buf, "You can't see anything of use there.\n");
-    notify(Playernum, Governor, buf);
-    break;
+      break;
   }
 }
 
@@ -719,32 +717,32 @@ void DispOrders(int Playernum, int Governor, shiptype *ship) {
 
   if (ship->guns == PRIMARY) {
     switch (ship->primtype) {
-    case LIGHT:
-      sprintf(temp, "/lgt primary");
-      break;
-    case MEDIUM:
-      sprintf(temp, "/med primary");
-      break;
-    case HEAVY:
-      sprintf(temp, "/hvy primary");
-      break;
-    default:
-      sprintf(temp, "/none");
+      case LIGHT:
+        sprintf(temp, "/lgt primary");
+        break;
+      case MEDIUM:
+        sprintf(temp, "/med primary");
+        break;
+      case HEAVY:
+        sprintf(temp, "/hvy primary");
+        break;
+      default:
+        sprintf(temp, "/none");
     }
     strcat(buf, temp);
   } else if (ship->guns == SECONDARY) {
     switch (ship->sectype) {
-    case LIGHT:
-      sprintf(temp, "/lgt secondary");
-      break;
-    case MEDIUM:
-      sprintf(temp, "/med secndry");
-      break;
-    case HEAVY:
-      sprintf(temp, "/hvy secndry");
-      break;
-    default:
-      sprintf(temp, "/none");
+      case LIGHT:
+        sprintf(temp, "/lgt secondary");
+        break;
+      case MEDIUM:
+        sprintf(temp, "/med secndry");
+        break;
+      case HEAVY:
+        sprintf(temp, "/hvy secndry");
+        break;
+      default:
+        sprintf(temp, "/none");
     }
     strcat(buf, temp);
   }
@@ -753,15 +751,13 @@ void DispOrders(int Playernum, int Governor, shiptype *ship) {
     sprintf(temp, "/laser %d", ship->fire_laser);
     strcat(buf, temp);
   }
-  if (ship->focus)
-    strcat(buf, "/focus");
+  if (ship->focus) strcat(buf, "/focus");
 
   if (ship->retaliate) {
     sprintf(temp, "/salvo %d", ship->retaliate);
     strcat(buf, temp);
   }
-  if (ship->protect.planet)
-    strcat(buf, "/defense");
+  if (ship->protect.planet) strcat(buf, "/defense");
   if (ship->protect.on) {
     sprintf(temp, "/prot %d", ship->protect.ship);
     strcat(buf, temp);
@@ -780,10 +776,8 @@ void DispOrders(int Playernum, int Governor, shiptype *ship) {
     else
       strcat(buf, "/off");
   }
-  if (ship->protect.evade)
-    strcat(buf, "/evade");
-  if (ship->bombard)
-    strcat(buf, "/bomb");
+  if (ship->protect.evade) strcat(buf, "/evade");
+  if (ship->bombard) strcat(buf, "/bomb");
   if (ship->type == STYPE_MINE || ship->type == OTYPE_GR) {
     if (ship->mode)
       strcat(buf, "/radiate");
@@ -890,8 +884,7 @@ void route(int Playernum, int Governor, int APcount) {
           strcat(buf, "r");
         else
           strcat(buf, " ");
-        if (Crystals(load))
-          strcat(buf, "x");
+        if (Crystals(load)) strcat(buf, "x");
         strcat(buf, " ");
 
         strcat(buf, "  unload: ");
@@ -937,26 +930,18 @@ void route(int Playernum, int Governor, int APcount) {
       if (load) {
         sprintf(temp, "load: ");
         strcat(buf, temp);
-        if (Fuel(load))
-          strcat(buf, "f");
-        if (Destruct(load))
-          strcat(buf, "d");
-        if (Resources(load))
-          strcat(buf, "r");
-        if (Crystals(load))
-          strcat(buf, "x");
+        if (Fuel(load)) strcat(buf, "f");
+        if (Destruct(load)) strcat(buf, "d");
+        if (Resources(load)) strcat(buf, "r");
+        if (Crystals(load)) strcat(buf, "x");
       }
       if (unload) {
         sprintf(temp, "  unload: ");
         strcat(buf, temp);
-        if (Fuel(unload))
-          strcat(buf, "f");
-        if (Destruct(unload))
-          strcat(buf, "d");
-        if (Resources(unload))
-          strcat(buf, "r");
-        if (Crystals(unload))
-          strcat(buf, "x");
+        if (Fuel(unload)) strcat(buf, "f");
+        if (Destruct(unload)) strcat(buf, "d");
+        if (Resources(unload)) strcat(buf, "r");
+        if (Crystals(unload)) strcat(buf, "x");
       }
       sprintf(temp, "  ->  %s/%s\n", Stars[star]->name,
               Stars[star]->pnames[planet]);
@@ -1014,28 +999,21 @@ void route(int Playernum, int Governor, int APcount) {
       p->info[Playernum - 1].route[i - 1].load = 0;
       c = args[3];
       while (*c) {
-        if (*c == 'f')
-          p->info[Playernum - 1].route[i - 1].load |= M_FUEL;
-        if (*c == 'd')
-          p->info[Playernum - 1].route[i - 1].load |= M_DESTRUCT;
-        if (*c == 'r')
-          p->info[Playernum - 1].route[i - 1].load |= M_RESOURCES;
-        if (*c == 'x')
-          p->info[Playernum - 1].route[i - 1].load |= M_CRYSTALS;
+        if (*c == 'f') p->info[Playernum - 1].route[i - 1].load |= M_FUEL;
+        if (*c == 'd') p->info[Playernum - 1].route[i - 1].load |= M_DESTRUCT;
+        if (*c == 'r') p->info[Playernum - 1].route[i - 1].load |= M_RESOURCES;
+        if (*c == 'x') p->info[Playernum - 1].route[i - 1].load |= M_CRYSTALS;
         c++;
       }
     } else if (match(args[2], "unload")) {
       p->info[Playernum - 1].route[i - 1].unload = 0;
       c = args[3];
       while (*c) {
-        if (*c == 'f')
-          p->info[Playernum - 1].route[i - 1].unload |= M_FUEL;
-        if (*c == 'd')
-          p->info[Playernum - 1].route[i - 1].unload |= M_DESTRUCT;
+        if (*c == 'f') p->info[Playernum - 1].route[i - 1].unload |= M_FUEL;
+        if (*c == 'd') p->info[Playernum - 1].route[i - 1].unload |= M_DESTRUCT;
         if (*c == 'r')
           p->info[Playernum - 1].route[i - 1].unload |= M_RESOURCES;
-        if (*c == 'x')
-          p->info[Playernum - 1].route[i - 1].unload |= M_CRYSTALS;
+        if (*c == 'x') p->info[Playernum - 1].route[i - 1].unload |= M_CRYSTALS;
         c++;
       }
     } else {

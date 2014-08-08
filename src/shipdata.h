@@ -172,4 +172,4 @@ const char *Shipnames[NUMSTYPES] = {
     "Space Port",        "ABM Battery",       "Mech",
     "Bunker",            "Lander"};
 
-#endif // SHIPDATA_H
+#endif  // SHIPDATA_H

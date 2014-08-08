@@ -14,4 +14,4 @@ char *Estimate_i(int, racetype *, int);
 int round_perc(int, racetype *, int);
 void treasury(int, int);
 
-#endif // PROF_H
+#endif  // PROF_H

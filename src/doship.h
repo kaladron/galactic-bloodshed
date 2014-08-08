@@ -29,4 +29,4 @@ double ap_planet_factor(planettype *);
 void do_oap(shiptype *);
 int do_weapon_plant(shiptype *);
 
-#endif // DOSHIP_H
+#endif  // DOSHIP_H

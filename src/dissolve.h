@@ -10,4 +10,4 @@
 void dissolve(int, int);
 int revolt(planettype *, int, int);
 
-#endif // DISSOLVE_H
+#endif  // DISSOLVE_H

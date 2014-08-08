@@ -7,9 +7,9 @@
 
 #include "ships.h"
 
-void land(int, int, int);
+void land(player_t, governor_t, int);
 int crash(shiptype *, double);
 int docked(shiptype *);
 int overloaded(shiptype *);
 
-#endif // LAND_H
+#endif  // LAND_H

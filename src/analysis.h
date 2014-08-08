@@ -7,4 +7,4 @@
 
 void analysis(int, int, int);
 
-#endif // ANALYSIS_H
+#endif  // ANALYSIS_H

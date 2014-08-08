@@ -11,4 +11,4 @@ void victory(int, int, int);
 void create_victory_list(struct vic[MAXPLAYERS]);
 int victory_sort(const void *, const void *);
 
-#endif // VICTORY_H
+#endif  // VICTORY_H

@@ -88,8 +88,7 @@ int Bombard(shiptype *ship, planettype *planet, racetype *r) {
       numdest = shoot_ship_to_planet(ship, planet, str, x, y, 0, 0, 0, long_buf,
                                      short_buf);
       /* (0=dont get smap) */
-      if (numdest < 0)
-        numdest = 0;
+      if (numdest < 0) numdest = 0;
 
       /* tell the bombarding player about it.. */
       sprintf(telegram_buf, "REPORT from ship #%lu\n\n", ship->number);

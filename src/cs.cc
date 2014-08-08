@@ -51,78 +51,81 @@ void do_prompt(int Playernum, int Governor) {
   } else if (Dir[Playernum - 1][Governor].level == LEVEL_SHIP) {
     (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
     switch (s->whatorbits) {
-    case LEVEL_UNIV:
-      sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /#%ld )\n",
-              Sdata.AP[Playernum - 1], Dir[Playernum - 1][Governor].shipno);
-      break;
-    case LEVEL_STAR:
-      sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/#%ld )\n",
-              Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
-              Dir[Playernum - 1][Governor].shipno);
-      break;
-    case LEVEL_PLAN:
-      sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/%s/#%ld )\n",
-              Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
-              Stars[s->storbits]->pnames[Dir[Playernum - 1][Governor].pnum],
-              Dir[Playernum - 1][Governor].shipno);
-      break;
-    /* I put this mess in because of non-functioning prompts when you
-       are in a ship within a ship, or deeper. I am certain this can be
-       done more elegantly (a lot more) but I don't feel like trying
-       that right now. right now I want it to function. Maarten */
-    case LEVEL_SHIP:
-      (void)getship(&s2, (int)s->destshipno);
-      switch (s2->whatorbits) {
       case LEVEL_UNIV:
-        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /#%lu/#%lu )\n",
-                Sdata.AP[Playernum - 1], s->destshipno,
-                Dir[Playernum - 1][Governor].shipno);
+        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /#%ld )\n",
+                Sdata.AP[Playernum - 1], Dir[Playernum - 1][Governor].shipno);
         break;
       case LEVEL_STAR:
-        sprintf(Dir[Playernum - 1][Governor].prompt,
-                " ( [%d] /%s/#%lu/#%lu )\n",
+        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/#%ld )\n",
                 Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
-                s->destshipno, Dir[Playernum - 1][Governor].shipno);
+                Dir[Playernum - 1][Governor].shipno);
         break;
       case LEVEL_PLAN:
-        sprintf(Dir[Playernum - 1][Governor].prompt,
+        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/%s/#%ld )\n",
+                Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
+                Stars[s->storbits]->pnames[Dir[Playernum - 1][Governor].pnum],
+                Dir[Playernum - 1][Governor].shipno);
+        break;
+      /* I put this mess in because of non-functioning prompts when you
+         are in a ship within a ship, or deeper. I am certain this can be
+         done more elegantly (a lot more) but I don't feel like trying
+         that right now. right now I want it to function. Maarten */
+      case LEVEL_SHIP:
+        (void)getship(&s2, (int)s->destshipno);
+        switch (s2->whatorbits) {
+          case LEVEL_UNIV:
+            sprintf(Dir[Playernum - 1][Governor].prompt,
+                    " ( [%d] /#%lu/#%lu )\n", Sdata.AP[Playernum - 1],
+                    s->destshipno, Dir[Playernum - 1][Governor].shipno);
+            break;
+          case LEVEL_STAR:
+            sprintf(Dir[Playernum - 1][Governor].prompt,
+                    " ( [%d] /%s/#%lu/#%lu )\n",
+                    Stars[s->storbits]->AP[Playernum - 1],
+                    Stars[s->storbits]->name, s->destshipno,
+                    Dir[Playernum - 1][Governor].shipno);
+            break;
+          case LEVEL_PLAN:
+            sprintf(
+                Dir[Playernum - 1][Governor].prompt,
                 " ( [%d] /%s/%s/#%ld/#%ld )\n",
                 Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
                 Stars[s->storbits]->pnames[Dir[Playernum - 1][Governor].pnum],
                 s->destshipno, Dir[Playernum - 1][Governor].shipno);
-        break;
-      case LEVEL_SHIP:
-        while (s2->whatorbits == LEVEL_SHIP) {
-          free(s2);
-          (void)getship(&s2, (int)s2->destshipno);
+            break;
+          case LEVEL_SHIP:
+            while (s2->whatorbits == LEVEL_SHIP) {
+              free(s2);
+              (void)getship(&s2, (int)s2->destshipno);
+            }
+            switch (s2->whatorbits) {
+              case LEVEL_UNIV:
+                sprintf(Dir[Playernum - 1][Governor].prompt,
+                        " ( [%d] / /../#%ld/#%ld )\n", Sdata.AP[Playernum - 1],
+                        s->destshipno, Dir[Playernum - 1][Governor].shipno);
+                break;
+              case LEVEL_STAR:
+                sprintf(Dir[Playernum - 1][Governor].prompt,
+                        " ( [%d] /%s/ /../#%ld/#%ld )\n",
+                        Stars[s->storbits]->AP[Playernum - 1],
+                        Stars[s->storbits]->name, s->destshipno,
+                        Dir[Playernum - 1][Governor].shipno);
+                break;
+              case LEVEL_PLAN:
+                sprintf(Dir[Playernum - 1][Governor].prompt,
+                        " ( [%d] /%s/%s/ /../#%ld/#%ld )\n",
+                        Stars[s->storbits]->AP[Playernum - 1],
+                        Stars[s->storbits]->name,
+                        Stars[s->storbits]
+                            ->pnames[Dir[Playernum - 1][Governor].pnum],
+                        s->destshipno, Dir[Playernum - 1][Governor].shipno);
+                break;
+              default:
+                break;
+            }
+            free(s2);
+            break;
         }
-        switch (s2->whatorbits) {
-        case LEVEL_UNIV:
-          sprintf(Dir[Playernum - 1][Governor].prompt,
-                  " ( [%d] / /../#%ld/#%ld )\n", Sdata.AP[Playernum - 1],
-                  s->destshipno, Dir[Playernum - 1][Governor].shipno);
-          break;
-        case LEVEL_STAR:
-          sprintf(Dir[Playernum - 1][Governor].prompt,
-                  " ( [%d] /%s/ /../#%ld/#%ld )\n",
-                  Stars[s->storbits]->AP[Playernum - 1],
-                  Stars[s->storbits]->name, s->destshipno,
-                  Dir[Playernum - 1][Governor].shipno);
-          break;
-        case LEVEL_PLAN:
-          sprintf(Dir[Playernum - 1][Governor].prompt,
-                  " ( [%d] /%s/%s/ /../#%ld/#%ld )\n",
-                  Stars[s->storbits]->AP[Playernum - 1],
-                  Stars[s->storbits]->name,
-                  Stars[s->storbits]->pnames[Dir[Playernum - 1][Governor].pnum],
-                  s->destshipno, Dir[Playernum - 1][Governor].shipno);
-          break;
-        default:
-          break;
-        }
-        free(s2);
-        break;
-      }
     }
     free(s);
   }
@@ -171,80 +174,80 @@ void cs(int Playernum, int Governor, int APcount) {
     /* fix lastx, lasty coordinates */
 
     switch (Dir[Playernum - 1][Governor].level) {
-    case LEVEL_UNIV:
-      Dir[Playernum - 1][Governor].lastx[0] =
-          Dir[Playernum - 1][Governor].lasty[0] = 0.0;
-      break;
-    case LEVEL_STAR:
-      if (where.level == LEVEL_UNIV) {
-        Dir[Playernum - 1][Governor].lastx[1] =
-            Stars[Dir[Playernum - 1][Governor].snum]->xpos;
-        Dir[Playernum - 1][Governor].lasty[1] =
-            Stars[Dir[Playernum - 1][Governor].snum]->ypos;
-      } else
+      case LEVEL_UNIV:
         Dir[Playernum - 1][Governor].lastx[0] =
             Dir[Playernum - 1][Governor].lasty[0] = 0.0;
-      break;
-    case LEVEL_PLAN:
-      getplanet(&planet, Dir[Playernum - 1][Governor].snum,
-                Dir[Playernum - 1][Governor].pnum);
-      if (where.level == LEVEL_STAR &&
-          where.snum == Dir[Playernum - 1][Governor].snum) {
-        Dir[Playernum - 1][Governor].lastx[0] = planet->xpos;
-        Dir[Playernum - 1][Governor].lasty[0] = planet->ypos;
-      } else if (where.level == LEVEL_UNIV) {
-        Dir[Playernum - 1][Governor].lastx[1] =
-            Stars[Dir[Playernum - 1][Governor].snum]->xpos + planet->xpos;
-        Dir[Playernum - 1][Governor].lasty[1] =
-            Stars[Dir[Playernum - 1][Governor].snum]->ypos + planet->ypos;
-      } else
-        Dir[Playernum - 1][Governor].lastx[0] =
-            Dir[Playernum - 1][Governor].lasty[0] = 0.0;
-      free(planet);
-      break;
-    case LEVEL_SHIP:
-      (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
-      if (!s->docked) {
-        switch (where.level) {
-        case LEVEL_UNIV:
-          Dir[Playernum - 1][Governor].lastx[1] = s->xpos;
-          Dir[Playernum - 1][Governor].lasty[1] = s->ypos;
-          break;
-        case LEVEL_STAR:
-          if (s->whatorbits >= LEVEL_STAR && s->storbits == where.snum) {
-            /* we are going UP from the ship.. change last*/
-            Dir[Playernum - 1][Governor].lastx[0] =
-                s->xpos - Stars[s->storbits]->xpos;
-            Dir[Playernum - 1][Governor].lasty[0] =
-                s->ypos - Stars[s->storbits]->ypos;
-          } else
-            Dir[Playernum - 1][Governor].lastx[0] =
-                Dir[Playernum - 1][Governor].lasty[0] = 0.0;
-          break;
-        case LEVEL_PLAN:
-          if (s->whatorbits == LEVEL_PLAN && s->storbits == where.snum &&
-              s->pnumorbits == where.pnum) {
-            /* same */
-            getplanet(&planet, (int)s->storbits, (int)s->pnumorbits);
-            Dir[Playernum - 1][Governor].lastx[0] =
-                s->xpos - Stars[s->storbits]->xpos - planet->xpos;
-            Dir[Playernum - 1][Governor].lasty[0] =
-                s->ypos - Stars[s->storbits]->ypos - planet->ypos;
-            free(planet);
-          } else
-            Dir[Playernum - 1][Governor].lastx[0] =
-                Dir[Playernum - 1][Governor].lasty[0] = 0.0;
-          break;
-        case LEVEL_SHIP:
+        break;
+      case LEVEL_STAR:
+        if (where.level == LEVEL_UNIV) {
+          Dir[Playernum - 1][Governor].lastx[1] =
+              Stars[Dir[Playernum - 1][Governor].snum]->xpos;
+          Dir[Playernum - 1][Governor].lasty[1] =
+              Stars[Dir[Playernum - 1][Governor].snum]->ypos;
+        } else
           Dir[Playernum - 1][Governor].lastx[0] =
               Dir[Playernum - 1][Governor].lasty[0] = 0.0;
-          break;
-        }
-      } else
-        Dir[Playernum - 1][Governor].lastx[0] =
-            Dir[Playernum - 1][Governor].lasty[0] = 0.0;
-      free(s);
-      break;
+        break;
+      case LEVEL_PLAN:
+        getplanet(&planet, Dir[Playernum - 1][Governor].snum,
+                  Dir[Playernum - 1][Governor].pnum);
+        if (where.level == LEVEL_STAR &&
+            where.snum == Dir[Playernum - 1][Governor].snum) {
+          Dir[Playernum - 1][Governor].lastx[0] = planet->xpos;
+          Dir[Playernum - 1][Governor].lasty[0] = planet->ypos;
+        } else if (where.level == LEVEL_UNIV) {
+          Dir[Playernum - 1][Governor].lastx[1] =
+              Stars[Dir[Playernum - 1][Governor].snum]->xpos + planet->xpos;
+          Dir[Playernum - 1][Governor].lasty[1] =
+              Stars[Dir[Playernum - 1][Governor].snum]->ypos + planet->ypos;
+        } else
+          Dir[Playernum - 1][Governor].lastx[0] =
+              Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+        free(planet);
+        break;
+      case LEVEL_SHIP:
+        (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
+        if (!s->docked) {
+          switch (where.level) {
+            case LEVEL_UNIV:
+              Dir[Playernum - 1][Governor].lastx[1] = s->xpos;
+              Dir[Playernum - 1][Governor].lasty[1] = s->ypos;
+              break;
+            case LEVEL_STAR:
+              if (s->whatorbits >= LEVEL_STAR && s->storbits == where.snum) {
+                /* we are going UP from the ship.. change last*/
+                Dir[Playernum - 1][Governor].lastx[0] =
+                    s->xpos - Stars[s->storbits]->xpos;
+                Dir[Playernum - 1][Governor].lasty[0] =
+                    s->ypos - Stars[s->storbits]->ypos;
+              } else
+                Dir[Playernum - 1][Governor].lastx[0] =
+                    Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+              break;
+            case LEVEL_PLAN:
+              if (s->whatorbits == LEVEL_PLAN && s->storbits == where.snum &&
+                  s->pnumorbits == where.pnum) {
+                /* same */
+                getplanet(&planet, (int)s->storbits, (int)s->pnumorbits);
+                Dir[Playernum - 1][Governor].lastx[0] =
+                    s->xpos - Stars[s->storbits]->xpos - planet->xpos;
+                Dir[Playernum - 1][Governor].lasty[0] =
+                    s->ypos - Stars[s->storbits]->ypos - planet->ypos;
+                free(planet);
+              } else
+                Dir[Playernum - 1][Governor].lastx[0] =
+                    Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+              break;
+            case LEVEL_SHIP:
+              Dir[Playernum - 1][Governor].lastx[0] =
+                  Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+              break;
+          }
+        } else
+          Dir[Playernum - 1][Governor].lastx[0] =
+              Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+        free(s);
+        break;
     }
     Dir[Playernum - 1][Governor].level = where.level;
     Dir[Playernum - 1][Governor].snum = where.snum;

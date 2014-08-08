@@ -51,16 +51,14 @@ void do_VN(shiptype *ship) {
          we are engaged in building up resources/fuel. */
       /* steal resources from other players */
       /* permute list of people to steal from */
-      for (i = 1; i <= Num_races; i++)
-        nums[i] = i;
+      for (i = 1; i <= Num_races; i++) nums[i] = i;
       for (i = 1; i <= Num_races; i++) {
         f = int_rand(1, Num_races);
         std::swap(nums[i], nums[f]);
       }
       p = planets[ship->storbits][ship->pnumorbits];
       for (f = 0, i = 1; i <= Num_races; i++)
-        if (p->info[nums[i] - 1].resource)
-          f = nums[i];
+        if (p->info[nums[i] - 1].resource) f = nums[i];
       if (f) {
         int prod;
         prod = MIN(p->info[f - 1].resource, Shipdata[OTYPE_VN][ABIL_COST]);
@@ -253,8 +251,7 @@ void planet_doVN(shiptype *ship, planettype *planet) {
             s2->tech = ship->tech + 20.0;
             n = int_rand(3, MIN(10, SHIP_NAMESIZE)); /* for name */
             s2->name[n] = '\0';
-            while (n--)
-              s2->name[n] = (random() & 01) + '0';
+            while (n--) s2->name[n] = (random() & 01) + '0';
             s2->owner = 1;
             s2->governor = 0;
             s2->active = 1;

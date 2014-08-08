@@ -11,4 +11,4 @@ void vote(int, int, int);
 void show_votes(int, int);
 void pledge(int, int, int, int);
 
-#endif // DECLARE_H
+#endif  // DECLARE_H

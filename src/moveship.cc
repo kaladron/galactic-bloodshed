@@ -46,8 +46,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
   planettype *opl, *dpl;
 
   if (s->hyper_drive.has && s->hyper_drive.on) { /* do a hyperspace jump */
-    if (!mode)
-      return; /* we're not ready to jump until the update */
+    if (!mode) return; /* we're not ready to jump until the update */
     if (s->hyper_drive.ready) {
       dist = sqrt(Distsq(s->xpos, s->ypos, Stars[s->deststar]->xpos,
                          Stars[s->deststar]->ypos));
@@ -98,16 +97,14 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
     fuse = 0.5 * s->speed * (1 + s->protect.evade) * s->mass * FUEL_USE /
            (double)segments;
     if (s->fuel < fuse) {
-      if (send_messages)
-        msg_OOF(s); /* send OOF notify */
+      if (send_messages) msg_OOF(s); /* send OOF notify */
       if (s->whatorbits == LEVEL_UNIV &&
           (s->build_cost <= 50 || s->type == OTYPE_VN ||
            s->type == OTYPE_BERS)) {
         sprintf(telegram_buf, "%s has been lost in deep space.", Ship(s));
         if (send_messages)
           push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
-        if (send_messages)
-          kill_ship((int)(s->owner), s);
+        if (send_messages) kill_ship((int)(s->owner), s);
       }
       return;
     }
@@ -124,8 +121,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
       s->xpos += xdest;
       s->ypos += ydest;
       s->navigate.turns--;
-      if (!s->navigate.turns)
-        s->navigate.on = 0;
+      if (!s->navigate.turns) s->navigate.on = 0;
       /* check here for orbit breaking as well. Maarten */
       ost = Stars[s->storbits];
       opl = planets[s->storbits][s->pnumorbits];
@@ -153,20 +149,21 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
         xdest = dsh->xpos;
         ydest = dsh->ypos;
         switch (dsh->whatorbits) {
-        case LEVEL_UNIV:
-          break;
-        case LEVEL_PLAN:
-          if (s->whatorbits != dsh->whatorbits ||
-              s->pnumorbits != dsh->pnumorbits)
-            destlevel = LEVEL_PLAN;
-          break;
-        case LEVEL_STAR:
-          if (s->whatorbits != dsh->whatorbits || s->storbits != dsh->storbits)
-            destlevel = LEVEL_STAR;
-          break;
-        case LEVEL_SHIP:
-          // TODO(jeffbailey): Prove that this is impossible.
-          break;
+          case LEVEL_UNIV:
+            break;
+          case LEVEL_PLAN:
+            if (s->whatorbits != dsh->whatorbits ||
+                s->pnumorbits != dsh->pnumorbits)
+              destlevel = LEVEL_PLAN;
+            break;
+          case LEVEL_STAR:
+            if (s->whatorbits != dsh->whatorbits ||
+                s->storbits != dsh->storbits)
+              destlevel = LEVEL_STAR;
+            break;
+          case LEVEL_SHIP:
+            // TODO(jeffbailey): Prove that this is impossible.
+            break;
         }
         /*			if (sqrt( (double)Distsq(s->xpos, s->ypos,
            xdest,
@@ -280,8 +277,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
             if (send_messages)
               push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
           }
-          if (s->whatdest == LEVEL_STAR)
-            s->whatdest = LEVEL_UNIV;
+          if (s->whatdest == LEVEL_STAR) s->whatdest = LEVEL_UNIV;
         }
       } else if (destlevel == LEVEL_PLAN && deststar == s->storbits) {
         /* headed for a planet in the same system, & not already there.. */
@@ -299,8 +295,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
             sprintf(telegram_buf, "%s within landing distance of %s.", Ship(s),
                     prin_ship_orbits(s));
             if (checking_fuel || !do_merchant(s, dpl))
-              if (s->whatdest == LEVEL_PLAN)
-                s->whatdest = LEVEL_UNIV;
+              if (s->whatdest == LEVEL_PLAN) s->whatdest = LEVEL_UNIV;
           } else {
             sprintf(telegram_buf, "%s arriving at %s.", Ship(s),
                     prin_ship_orbits(s));
@@ -345,8 +340,7 @@ int followable(shiptype *s1, shiptype *s2) {
   double range;
   int allied[2];
 
-  if (!s2->alive || !s1->active || s2->whatorbits == LEVEL_SHIP)
-    return 0;
+  if (!s2->alive || !s1->active || s2->whatorbits == LEVEL_SHIP) return 0;
 
   dx = s1->xpos - s2->xpos;
   dy = s1->ypos - s2->ypos;
@@ -410,8 +404,7 @@ int do_merchant(shiptype *s, planettype *p) {
     strcat(telegram_buf, "\t\t");
     if (Fuel(load)) {
       amount = (int)s->max_fuel - (int)s->fuel;
-      if (amount > p->info[i].fuel)
-        amount = p->info[i].fuel;
+      if (amount > p->info[i].fuel) amount = p->info[i].fuel;
       p->info[i].fuel -= amount;
       rcv_fuel(s, (double)amount);
       sprintf(buf, "%df ", amount);
@@ -419,8 +412,7 @@ int do_merchant(shiptype *s, planettype *p) {
     }
     if (Resources(load)) {
       amount = (int)s->max_resource - (int)s->resource;
-      if (amount > p->info[i].resource)
-        amount = p->info[i].resource;
+      if (amount > p->info[i].resource) amount = p->info[i].resource;
       p->info[i].resource -= amount;
       rcv_resource(s, amount);
       sprintf(buf, "%dr ", amount);
@@ -435,8 +427,7 @@ int do_merchant(shiptype *s, planettype *p) {
     }
     if (Destruct(load)) {
       amount = (int)s->max_destruct - (int)s->destruct;
-      if (amount > p->info[i].destruct)
-        amount = p->info[i].destruct;
+      if (amount > p->info[i].destruct) amount = p->info[i].destruct;
       p->info[i].destruct -= amount;
       rcv_destruct(s, amount);
       sprintf(buf, "%dd ", amount);

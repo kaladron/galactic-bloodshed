@@ -9,4 +9,4 @@ void center(int, int, int);
 void do_prompt(int, int);
 void cs(int, int, int);
 
-#endif // CS_H
+#endif  // CS_H

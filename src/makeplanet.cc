@@ -93,8 +93,7 @@ planettype Makeplanet(double dist, short stemp, int type) {
   planet.Maxx = int_rand(xmin[type], xmax[type]);
   f = (double)planet.Maxx / RATIOXY;
   planet.Maxy = round_rand(f) + 1;
-  if (!(planet.Maxy % 2))
-    planet.Maxy++; /* make odd number of latitude bands */
+  if (!(planet.Maxy % 2)) planet.Maxy++; /* make odd number of latitude bands */
 
   if (type == TYPE_ASTEROID)
     planet.Maxy = int_rand(1, 3); /* Asteroids have funny shapes. */
@@ -111,107 +110,107 @@ planettype Makeplanet(double dist, short stemp, int type) {
   total_sects = (planet.Maxy - 1) * (planet.Maxx - 1);
 
   switch (type) {
-  case TYPE_GASGIANT: /* gas giant planet */
-    /* either lots of meth or not too much */
-    if (int_rand(0, 1)) { /* methane planet */
-      atmos = 100 - (planet.conditions[METHANE] = int_rand(70, 80));
-      atmos -= planet.conditions[HYDROGEN] = int_rand(1, atmos / 2);
-      atmos -= planet.conditions[HELIUM] = 1;
-      atmos -= planet.conditions[OXYGEN] = 0;
-      atmos -= planet.conditions[CO2] = 1;
-      atmos -= planet.conditions[NITROGEN] = int_rand(1, atmos / 2);
-      atmos -= planet.conditions[SULFUR] = 0;
-      planet.conditions[OTHER] = atmos;
-    } else {
-      atmos = 100 - (planet.conditions[HYDROGEN] = int_rand(30, 75));
-      atmos -= planet.conditions[HELIUM] = int_rand(20, atmos / 2);
-      atmos -= planet.conditions[METHANE] = random() & 01;
-      atmos -= planet.conditions[OXYGEN] = 0;
-      atmos -= planet.conditions[CO2] = random() & 01;
-      atmos -= planet.conditions[NITROGEN] = int_rand(1, atmos / 2);
-      atmos -= planet.conditions[SULFUR] = 0;
-      planet.conditions[OTHER] = atmos;
-    }
-    break;
-  case TYPE_MARS:
-    planet.conditions[HYDROGEN] = 0;
-    planet.conditions[HELIUM] = 0;
-    planet.conditions[METHANE] = 0;
-    planet.conditions[OXYGEN] = 0;
-    if (random() & 01) { /* some have an atmosphere, some don't */
-      atmos = 100 - (planet.conditions[CO2] = int_rand(30, 45));
-      atmos -= planet.conditions[NITROGEN] = int_rand(10, atmos / 2);
-      atmos -= planet.conditions[SULFUR] =
-          (random() & 01) ? 0 : int_rand(20, atmos / 2);
-      atmos -= planet.conditions[OTHER] = atmos;
-    } else {
-      planet.conditions[CO2] = 0;
-      planet.conditions[NITROGEN] = 0;
-      planet.conditions[SULFUR] = 0;
-      planet.conditions[OTHER] = 0;
-    }
-    seed(&planet, DESERT, int_rand(1, total_sects));
-    seed(&planet, MOUNT, int_rand(1, total_sects));
-    break;
-  case TYPE_ASTEROID: /* asteroid */
-    /* no atmosphere */
-    for (y = 0; y < planet.Maxy; y++)
-      for (x = 0; x < planet.Maxx; x++)
-        if (!int_rand(0, 3)) {
-          s = &Sector(planet, int_rand(1, planet.Maxx),
-                      int_rand(1, planet.Maxy));
-          s->type = s->condition = LAND;
-        }
-    seed(&planet, DESERT, int_rand(1, total_sects));
-    break;
-  case TYPE_ICEBALL: /* ball of ice */
-    /* no atmosphere */
-    planet.conditions[HYDROGEN] = 0;
-    planet.conditions[HELIUM] = 0;
-    planet.conditions[METHANE] = 0;
-    planet.conditions[OXYGEN] = 0;
-    if (planet.Maxx * planet.Maxy > int_rand(0, 20)) {
-      atmos = 100 - (planet.conditions[CO2] = int_rand(30, 45));
-      atmos -= planet.conditions[NITROGEN] = int_rand(10, atmos / 2);
-      atmos -= planet.conditions[SULFUR] =
-          (random() & 01) ? 0 : int_rand(20, atmos / 2);
-      atmos -= planet.conditions[OTHER] = atmos;
-    } else {
-      planet.conditions[CO2] = 0;
-      planet.conditions[NITROGEN] = 0;
-      planet.conditions[SULFUR] = 0;
-      planet.conditions[OTHER] = 0;
-    }
-    seed(&planet, MOUNT, int_rand(1, total_sects / 2));
-    break;
-  case TYPE_EARTH:
-    MakeEarthAtmosphere(&planet, 33);
-    seed(&planet, LAND, int_rand(total_sects / 30, total_sects / 20));
-    grow(&planet, LAND, 1, 1);
-    grow(&planet, LAND, 1, 2);
-    grow(&planet, LAND, 2, 3);
-    grow(&planet, SEA, 1, 4);
-    break;
-  case TYPE_FOREST:
-    MakeEarthAtmosphere(&planet, 0);
-    seed(&planet, SEA, int_rand(total_sects / 30, total_sects / 20));
-    grow(&planet, SEA, 1, 1);
-    grow(&planet, SEA, 1, 3);
-    grow(&planet, FOREST, 1, 3);
-    break;
-  case TYPE_WATER:
-    MakeEarthAtmosphere(&planet, 25);
-    break;
-  case TYPE_DESERT:
-    MakeEarthAtmosphere(&planet, 50);
-    seed(&planet, MOUNT, int_rand(total_sects / 50, total_sects / 25));
-    grow(&planet, MOUNT, 1, 1);
-    grow(&planet, MOUNT, 1, 2);
-    seed(&planet, LAND, int_rand(total_sects / 50, total_sects / 25));
-    grow(&planet, LAND, 1, 1);
-    grow(&planet, LAND, 1, 3);
-    grow(&planet, DESERT, 1, 3);
-    break;
+    case TYPE_GASGIANT: /* gas giant planet */
+      /* either lots of meth or not too much */
+      if (int_rand(0, 1)) { /* methane planet */
+        atmos = 100 - (planet.conditions[METHANE] = int_rand(70, 80));
+        atmos -= planet.conditions[HYDROGEN] = int_rand(1, atmos / 2);
+        atmos -= planet.conditions[HELIUM] = 1;
+        atmos -= planet.conditions[OXYGEN] = 0;
+        atmos -= planet.conditions[CO2] = 1;
+        atmos -= planet.conditions[NITROGEN] = int_rand(1, atmos / 2);
+        atmos -= planet.conditions[SULFUR] = 0;
+        planet.conditions[OTHER] = atmos;
+      } else {
+        atmos = 100 - (planet.conditions[HYDROGEN] = int_rand(30, 75));
+        atmos -= planet.conditions[HELIUM] = int_rand(20, atmos / 2);
+        atmos -= planet.conditions[METHANE] = random() & 01;
+        atmos -= planet.conditions[OXYGEN] = 0;
+        atmos -= planet.conditions[CO2] = random() & 01;
+        atmos -= planet.conditions[NITROGEN] = int_rand(1, atmos / 2);
+        atmos -= planet.conditions[SULFUR] = 0;
+        planet.conditions[OTHER] = atmos;
+      }
+      break;
+    case TYPE_MARS:
+      planet.conditions[HYDROGEN] = 0;
+      planet.conditions[HELIUM] = 0;
+      planet.conditions[METHANE] = 0;
+      planet.conditions[OXYGEN] = 0;
+      if (random() & 01) { /* some have an atmosphere, some don't */
+        atmos = 100 - (planet.conditions[CO2] = int_rand(30, 45));
+        atmos -= planet.conditions[NITROGEN] = int_rand(10, atmos / 2);
+        atmos -= planet.conditions[SULFUR] =
+            (random() & 01) ? 0 : int_rand(20, atmos / 2);
+        atmos -= planet.conditions[OTHER] = atmos;
+      } else {
+        planet.conditions[CO2] = 0;
+        planet.conditions[NITROGEN] = 0;
+        planet.conditions[SULFUR] = 0;
+        planet.conditions[OTHER] = 0;
+      }
+      seed(&planet, DESERT, int_rand(1, total_sects));
+      seed(&planet, MOUNT, int_rand(1, total_sects));
+      break;
+    case TYPE_ASTEROID: /* asteroid */
+      /* no atmosphere */
+      for (y = 0; y < planet.Maxy; y++)
+        for (x = 0; x < planet.Maxx; x++)
+          if (!int_rand(0, 3)) {
+            s = &Sector(planet, int_rand(1, planet.Maxx),
+                        int_rand(1, planet.Maxy));
+            s->type = s->condition = LAND;
+          }
+      seed(&planet, DESERT, int_rand(1, total_sects));
+      break;
+    case TYPE_ICEBALL: /* ball of ice */
+      /* no atmosphere */
+      planet.conditions[HYDROGEN] = 0;
+      planet.conditions[HELIUM] = 0;
+      planet.conditions[METHANE] = 0;
+      planet.conditions[OXYGEN] = 0;
+      if (planet.Maxx * planet.Maxy > int_rand(0, 20)) {
+        atmos = 100 - (planet.conditions[CO2] = int_rand(30, 45));
+        atmos -= planet.conditions[NITROGEN] = int_rand(10, atmos / 2);
+        atmos -= planet.conditions[SULFUR] =
+            (random() & 01) ? 0 : int_rand(20, atmos / 2);
+        atmos -= planet.conditions[OTHER] = atmos;
+      } else {
+        planet.conditions[CO2] = 0;
+        planet.conditions[NITROGEN] = 0;
+        planet.conditions[SULFUR] = 0;
+        planet.conditions[OTHER] = 0;
+      }
+      seed(&planet, MOUNT, int_rand(1, total_sects / 2));
+      break;
+    case TYPE_EARTH:
+      MakeEarthAtmosphere(&planet, 33);
+      seed(&planet, LAND, int_rand(total_sects / 30, total_sects / 20));
+      grow(&planet, LAND, 1, 1);
+      grow(&planet, LAND, 1, 2);
+      grow(&planet, LAND, 2, 3);
+      grow(&planet, SEA, 1, 4);
+      break;
+    case TYPE_FOREST:
+      MakeEarthAtmosphere(&planet, 0);
+      seed(&planet, SEA, int_rand(total_sects / 30, total_sects / 20));
+      grow(&planet, SEA, 1, 1);
+      grow(&planet, SEA, 1, 3);
+      grow(&planet, FOREST, 1, 3);
+      break;
+    case TYPE_WATER:
+      MakeEarthAtmosphere(&planet, 25);
+      break;
+    case TYPE_DESERT:
+      MakeEarthAtmosphere(&planet, 50);
+      seed(&planet, MOUNT, int_rand(total_sects / 50, total_sects / 25));
+      grow(&planet, MOUNT, 1, 1);
+      grow(&planet, MOUNT, 1, 2);
+      seed(&planet, LAND, int_rand(total_sects / 50, total_sects / 25));
+      grow(&planet, LAND, 1, 1);
+      grow(&planet, LAND, 1, 3);
+      grow(&planet, DESERT, 1, 3);
+      break;
   }
   Makesurface(&planet); /* determine surface geology based on environment */
   return planet;
@@ -322,21 +321,21 @@ static void Makesurface(planettype *p) {
       s = &Sector(*p, x, y);
       temp = SectTemp(p, y);
       switch (s->type) {
-      case SEA:
-        if (success(-temp) && ((y == 0) || (y == p->Maxy - 1)))
-          s->condition = ICE;
-        break;
-      case LAND:
-        if (p->type == TYPE_EARTH) {
-          if (success(-temp) && (y == 0 || y == p->Maxy - 1))
+        case SEA:
+          if (success(-temp) && ((y == 0) || (y == p->Maxy - 1)))
             s->condition = ICE;
-        }
-        break;
-      case FOREST:
-        if (p->type == TYPE_FOREST) {
-          if (success(-temp) && (y == 0 || y == p->Maxy - 1))
-            s->condition = ICE;
-        }
+          break;
+        case LAND:
+          if (p->type == TYPE_EARTH) {
+            if (success(-temp) && (y == 0 || y == p->Maxy - 1))
+              s->condition = ICE;
+          }
+          break;
+        case FOREST:
+          if (p->type == TYPE_FOREST) {
+            if (success(-temp) && (y == 0 || y == p->Maxy - 1))
+              s->condition = ICE;
+          }
       }
       s->type = s->condition;
       s->resource = int_rand(rmin[p->type][s->type], rmax[p->type][s->type]);

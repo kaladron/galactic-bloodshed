@@ -109,4 +109,4 @@ enum COMMUNICATION {
 #define CSPD_TROOP_ENEMY_SYMBOL 'E'
 #define CSPD_TROOP_NEUTRAL_SYMBOL 'N'
 
-#endif // CSP_TYPES_H
+#endif  // CSP_TYPES_H

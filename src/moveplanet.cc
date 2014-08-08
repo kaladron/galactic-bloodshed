@@ -19,8 +19,7 @@ void moveplanet(int starnum, planettype *planet, int planetnum) {
   int sh;
   shiptype *ship;
 
-  if (planet->popn || planet->ships)
-    Stinfo[starnum][planetnum].inhab = 1;
+  if (planet->popn || planet->ships) Stinfo[starnum][planetnum].inhab = 1;
 
   StarsInhab[starnum] =
       !!(Stars[starnum]->inhabited[0] + Stars[starnum]->inhabited[1]);
@@ -28,8 +27,7 @@ void moveplanet(int starnum, planettype *planet, int planetnum) {
       !!(Stars[starnum]->explored[0] + Stars[starnum]->explored[1]);
 
   Stars[starnum]->inhabited[0] = Stars[starnum]->inhabited[1] = 0;
-  if (!StarsExpl[starnum])
-    return; /* no one's explored the star yet */
+  if (!StarsExpl[starnum]) return; /* no one's explored the star yet */
 
   dist = hypot((double)(planet->ypos), (double)(planet->xpos));
 

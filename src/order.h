@@ -16,4 +16,4 @@ void DispOrdersHeader(int, int);
 void DispOrders(int, int, shiptype *);
 void route(int, int, int);
 
-#endif // ORDER_H
+#endif  // ORDER_H

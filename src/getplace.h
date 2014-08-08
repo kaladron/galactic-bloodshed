@@ -17,4 +17,4 @@ char *Dispshiploc(shiptype *);
 char *Dispplace(int, int, placetype *);
 int testship(int, int, shiptype *);
 
-#endif // GETPLACE_H
+#endif  // GETPLACE_H

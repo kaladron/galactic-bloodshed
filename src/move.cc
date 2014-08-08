@@ -112,8 +112,9 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     planet->troops += amount;
     planet->info[Playernum - 1].troops += amount;
     planet->info[Playernum - 1].destruct -= cost;
-    sprintf(buf, "%d population armed at a cost of %ldd (now %d civilians, %d "
-                 "military)\n",
+    sprintf(buf,
+            "%d population armed at a cost of %ldd (now %lu civilians, %lu "
+            "military)\n",
             amount, cost, sect->popn, sect->troops);
     notify(Playernum, Governor, buf);
     sprintf(buf, "This mobilization cost %ld money.\n", enlist_cost);
@@ -138,8 +139,8 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     planet->troops -= amount;
     planet->info[Playernum - 1].popn += amount;
     planet->info[Playernum - 1].troops -= amount;
-    sprintf(buf, "%d troops disarmed (now %d civilians, %d military)\n", amount,
-            sect->popn, sect->troops);
+    sprintf(buf, "%d troops disarmed (now %lu civilians, %lu military)\n",
+            amount, sect->popn, sect->troops);
     notify(Playernum, Governor, buf);
   }
   putsector(sect, planet, x, y);
@@ -244,9 +245,10 @@ void move_popn(int Playernum, int Governor, int what) {
     if ((what == CIV && (abs(people) > sect->popn)) ||
         (what == MIL && (abs(people) > sect->troops)) || people <= 0) {
       if (what == CIV)
-        sprintf(buf, "Bad value - %d civilians in [%d,%d]\n", sect->popn, x, y);
+        sprintf(buf, "Bad value - %lu civilians in [%d,%d]\n", sect->popn, x,
+                y);
       else if (what == MIL)
-        sprintf(buf, "Bad value - %d troops in [%d,%d]\n", sect->troops, x, y);
+        sprintf(buf, "Bad value - %lu troops in [%d,%d]\n", sect->troops, x, y);
       notify(Playernum, Governor, buf);
       putplanet(planet, Dir[Playernum - 1][Governor].snum,
                 Dir[Playernum - 1][Governor].pnum);
@@ -317,10 +319,10 @@ void move_popn(int Playernum, int Governor, int what) {
         sect->troops = MAX(0, sect->troops - people);
 
       if (what == CIV)
-        sprintf(buf, "%d civ assault %d civ/%d mil\n", people, sect2->popn,
+        sprintf(buf, "%d civ assault %lu civ/%lu mil\n", people, sect2->popn,
                 sect2->troops);
       else if (what == MIL)
-        sprintf(buf, "%d mil assault %d civ/%d mil\n", people, sect2->popn,
+        sprintf(buf, "%d mil assault %lu civ/%lu mil\n", people, sect2->popn,
                 sect2->troops);
       notify(Playernum, Governor, buf);
       oldpopn = people;
@@ -554,16 +556,14 @@ void walk(int Playernum, int Governor, int APcount) {
           use_destruct(ship2, strength);
           notify(Playernum, Governor, long_buf);
           warn((int)ship2->owner, (int)ship2->governor, long_buf);
-          if (!ship2->alive)
-            post(short_buf, COMBAT);
+          if (!ship2->alive) post(short_buf, COMBAT);
           notify_star(Playernum, Governor, (int)ship2->owner,
                       (int)ship->storbits, short_buf);
           if (strength1) {
             use_destruct(ship, strength1);
             notify(Playernum, Governor, long_buf);
             warn((int)ship2->owner, (int)ship2->governor, long_buf);
-            if (!ship2->alive)
-              post(short_buf, COMBAT);
+            if (!ship2->alive) post(short_buf, COMBAT);
             notify_star(Playernum, Governor, (int)ship2->owner,
                         (int)ship->storbits, short_buf);
           }
@@ -604,8 +604,7 @@ void walk(int Playernum, int Governor, int APcount) {
         warn(alien->Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, oldowner, (int)ship->storbits,
                     short_buf);
-        if (!ship->alive)
-          post(short_buf, COMBAT);
+        if (!ship->alive) post(short_buf, COMBAT);
 
         sect->popn = civ;
         sect->troops = mil;
@@ -649,62 +648,56 @@ void walk(int Playernum, int Governor, int APcount) {
 int get_move(char direction, int x, int y, int *x2, int *y2,
              planettype *planet) {
   switch (direction) {
-  case '1':
-  case 'b':
-    *x2 = x - 1;
-    *y2 = y + 1;
-    if (*x2 == -1)
-      *x2 = planet->Maxx - 1;
-    return 1;
-  case '2':
-  case 'k':
-    *x2 = x;
-    *y2 = y + 1;
-    return 1;
-  case '3':
-  case 'n':
-    *x2 = x + 1;
-    *y2 = y + 1;
-    if (*x2 == planet->Maxx)
-      *x2 = 0;
-    return 1;
-  case '4':
-  case 'h':
-    *x2 = x - 1;
-    *y2 = y;
-    if (*x2 == -1)
-      *x2 = planet->Maxx - 1;
-    return 1;
-  case '6':
-  case 'l':
-    *x2 = x + 1;
-    *y2 = y;
-    if (*x2 == planet->Maxx)
-      *x2 = 0;
-    return 1;
-  case '7':
-  case 'y':
-    *x2 = x - 1;
-    *y2 = y - 1;
-    if (*x2 == -1)
-      *x2 = planet->Maxx - 1;
-    return 1;
-  case '8':
-  case 'j':
-    *x2 = x;
-    *y2 = y - 1;
-    return 1;
-  case '9':
-  case 'u':
-    *x2 = x + 1;
-    *y2 = y - 1;
-    if (*x2 == planet->Maxx)
-      *x2 = 0;
-    return 1;
-  default:
-    *x2 = x;
-    *y2 = y;
-    return 0;
+    case '1':
+    case 'b':
+      *x2 = x - 1;
+      *y2 = y + 1;
+      if (*x2 == -1) *x2 = planet->Maxx - 1;
+      return 1;
+    case '2':
+    case 'k':
+      *x2 = x;
+      *y2 = y + 1;
+      return 1;
+    case '3':
+    case 'n':
+      *x2 = x + 1;
+      *y2 = y + 1;
+      if (*x2 == planet->Maxx) *x2 = 0;
+      return 1;
+    case '4':
+    case 'h':
+      *x2 = x - 1;
+      *y2 = y;
+      if (*x2 == -1) *x2 = planet->Maxx - 1;
+      return 1;
+    case '6':
+    case 'l':
+      *x2 = x + 1;
+      *y2 = y;
+      if (*x2 == planet->Maxx) *x2 = 0;
+      return 1;
+    case '7':
+    case 'y':
+      *x2 = x - 1;
+      *y2 = y - 1;
+      if (*x2 == -1) *x2 = planet->Maxx - 1;
+      return 1;
+    case '8':
+    case 'j':
+      *x2 = x;
+      *y2 = y - 1;
+      return 1;
+    case '9':
+    case 'u':
+      *x2 = x + 1;
+      *y2 = y - 1;
+      if (*x2 == planet->Maxx) *x2 = 0;
+      return 1;
+    default:
+      *x2 = x;
+      *y2 = y;
+      return 0;
   }
 }
 
@@ -849,7 +842,7 @@ void people_attack_mech(shiptype *ship, int civ, int mil, racetype *Race,
 }
 
 void ground_attack(racetype *Race, racetype *alien, int *people, int what,
-                   unsigned short *civ, unsigned short *mil, unsigned int def1,
+                   population_t *civ, population_t *mil, unsigned int def1,
                    unsigned int def2, double alikes, double dlikes,
                    double *astrength, double *dstrength, int *casualties,
                    int *casualties2, int *casualties3) {

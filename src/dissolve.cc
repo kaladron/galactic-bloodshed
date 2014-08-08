@@ -174,7 +174,8 @@ int revolt(planettype *pl, int victim, int agent) {
       s = &Sector(*pl, x, y);
       if (s->owner == victim && s->popn) {
         if (success(pl->info[victim - 1].tax)) {
-          if (int_rand(1, (int)s->popn) > 10 * Race->fighters * s->troops) {
+          if (static_cast<unsigned long>(long_rand(1, s->popn)) >
+              10 * Race->fighters * s->troops) {
             s->owner = agent;                    /* enemy gets it */
             s->popn = int_rand(1, (int)s->popn); /* some people killed */
             s->troops = 0;                       /* all troops destroyed */

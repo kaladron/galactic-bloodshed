@@ -53,4 +53,4 @@
 
 extern const char *Files[];
 
-#endif // FILES_H
+#endif  // FILES_H

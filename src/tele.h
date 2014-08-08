@@ -12,4 +12,4 @@ void push_telegram(int, int, const char *);
 void teleg_read(int, int);
 void news_read(int, int, int);
 
-#endif // TELE_H
+#endif  // TELE_H

@@ -18,4 +18,4 @@ void do_berserker(shiptype *, planettype *);
 void do_recover(planettype *, int, int);
 double est_production(sectortype *);
 
-#endif // DOPLANET_H
+#endif  // DOPLANET_H

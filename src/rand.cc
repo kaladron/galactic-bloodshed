@@ -13,6 +13,12 @@ double double_rand(void) { return (double)random() / 2147483648.0; }
 
 /*	int int_rand(low,hi) -	this returns an integer random number
  *				between hi and low, inclusive. */
+long long_rand(long low, long hi) {
+  return ((hi <= low) ? low : (random() % (hi - low + 1)) + low);
+}
+
+/*	int int_rand(low,hi) -	this returns an integer random number
+ *				between hi and low, inclusive. */
 int int_rand(int low, int hi) {
   return ((hi <= low) ? low : (random() % (hi - low + 1)) + low);
 }
@@ -26,3 +32,5 @@ int round_rand(double x) {
 
 /* int rposneg() - either -1 or 1 */
 int rposneg(void) { return ((random() & 1) ? -1 : 1); }
+
+int success(int x) { return int_rand(1, 100) <= (x); }

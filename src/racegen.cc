@@ -94,8 +94,7 @@ int main(int argc, char *argv[]) {
     for (;;) {
       clilen = sizeof(cli_addr);
       fd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
-      if (fd < 0)
-        fprintf(stderr, "server: accept error");
+      if (fd < 0) fprintf(stderr, "server: accept error");
       if (fork()) {
         dup2(fd, 1);
         dup2(fd, 0);
@@ -336,8 +335,7 @@ int cost_of_race() {
   sum += (cost_info.race_type = race_cost[race_info.race_type]);
   race_info.n_sector_types = 0;
   for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++) {
-    if (race_info.compat[i] != 0.0)
-      race_info.n_sector_types += 1;
+    if (race_info.compat[i] != 0.0) race_info.n_sector_types += 1;
     /* Get the base costs: */
     cost_info.compat[i] =
         race_info.compat[i] * 0.5 + 10.8 * log(1.0 + race_info.compat[i]);
@@ -426,9 +424,8 @@ static void fix_up_iq() {
 int critique_to_file(FILE *f, int rigorous_checking, int is_player_race) {
   int i, nerrors = 0;
 
-#define FPRINTF                                                                \
-  if (f != NULL)                                                               \
-  fprintf
+#define FPRINTF \
+  if (f != NULL) fprintf
 
   /*
    * Check for valid attributes: */
@@ -574,8 +571,9 @@ int critique_to_file(FILE *f, int rigorous_checking, int is_player_race) {
    * Check that sector compats are reasonable. */
     if ((race_info.home_planet_type != H_JOVIAN) &&
         (race_info.n_sector_types == 1)) {
-      FPRINTF(f, "Non-jovian races must be compat with at least one sector "
-                 "type besides plated.\n");
+      FPRINTF(f,
+              "Non-jovian races must be compat with at least one sector "
+              "type besides plated.\n");
       nerrors += 1;
     }
     for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++)
@@ -583,9 +581,10 @@ int critique_to_file(FILE *f, int rigorous_checking, int is_player_race) {
           (race_info.compat[i] == 100.0))
         break;
     if (i == N_SECTOR_TYPES) {
-      FPRINTF(f, "You must have 100%% compat with at least one sector type "
-                 "that is common on\n  your home planet type.  (Marked with a "
-                 "'*')\n");
+      FPRINTF(f,
+              "You must have 100%% compat with at least one sector type "
+              "that is common on\n  your home planet type.  (Marked with a "
+              "'*')\n");
       nerrors += 1;
     }
   }
@@ -736,8 +735,7 @@ static void help(int argc, char *argv[]) {
     printf("\t\t   <attribute>  ::= %s", attr[0].print_name);
     for (i = FIRST_ATTRIBUTE + 1; i < LAST_ATTRIBUTE; i++) {
       printf(" | %s", attr[i].print_name);
-      if ((i % 3) == 2)
-        printf("\n\t\t                 ");
+      if ((i % 3) == 2) printf("\n\t\t                 ");
     }
     printf("\n");
 
@@ -820,9 +818,8 @@ int load_from_file(FILE *g) {
   int i;
   char buf[80], from_address[80];
 
-#define FSCANF(file, format, variable)                                         \
-  if (EOF == fscanf((file), (format), (variable)))                             \
-  goto premature_end_of_file
+#define FSCANF(file, format, variable) \
+  if (EOF == fscanf((file), (format), (variable))) goto premature_end_of_file
 
   do {
     FSCANF(g, " %s", buf);
@@ -880,8 +877,7 @@ static void load(int argc, char *argv[]) {
   bcopy(&race_info, &last, sizeof(struct x));
   if (altered) {
     i = Dialogue("This race has been altered; load anyway?", "yes", "no", 0);
-    if (i == 1)
-      return;
+    if (i == 1) return;
   }
   if (argc > 1)
     strcpy(c, argv[1]);
@@ -1035,13 +1031,11 @@ static int modify(int argc, char *argv[]) {
 }
 
 void print_to_file(FILE *f, int verbose) {
-#define FPRINTF                                                                \
-  if (verbose)                                                                 \
-  fprintf
+#define FPRINTF \
+  if (verbose) fprintf
   int i;
 
-  if (!verbose)
-    fprintf(f, START_RECORD_STRING);
+  if (!verbose) fprintf(f, START_RECORD_STRING);
 
   FPRINTF(f, "\nAddress  :");
   fprintf(f, " %s", race_info.address);
@@ -1093,8 +1087,7 @@ void print_to_file(FILE *f, int verbose) {
     FPRINTF(f, "  [%4.0f]", cost_info.attr[i]);
     FPRINTF(f, (i & 01) ? "\n" : "     ");
   }
-  if (i & 01)
-    FPRINTF(f, "\n");
+  if (i & 01) FPRINTF(f, "\n");
   FPRINTF(f, "\n");
 
   FPRINTF(f, "Sector Types:    %2d     [%4d]\n", race_info.n_sector_types,
@@ -1102,15 +1095,14 @@ void print_to_file(FILE *f, int verbose) {
   for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++) {
     FPRINTF(f, "%13.13s: ", sector_print_name[i]);
     fprintf(f, " %3.0f", race_info.compat[i]);
-    FPRINTF(f, "%%   %c[%4.0f]",
-            (planet_compat_cov[race_info.home_planet_type][i] == 1.0) ? '*'
-                                                                      : ' ',
-            cost_info.compat[i]);
+    FPRINTF(
+        f, "%%   %c[%4.0f]",
+        (planet_compat_cov[race_info.home_planet_type][i] == 1.0) ? '*' : ' ',
+        cost_info.compat[i]);
     FPRINTF(f, (i & 01) ? "\n" : "     ");
   }
 
-  if (!verbose)
-    fprintf(f, END_RECORD_STRING);
+  if (!verbose) fprintf(f, END_RECORD_STRING);
   FPRINTF(f, "\n");
   FPRINTF(f, "Points left: %d          Previous value: %d\n", npoints,
           last_npoints);
@@ -1153,8 +1145,7 @@ static void send2(int argc, char *argv[]) {
   char sys[64];
 
   bcopy(&race_info, &last, sizeof(struct x));
-  if (critique_to_file(stdout, 1, IS_PLAYER))
-    return;
+  if (critique_to_file(stdout, 1, IS_PLAYER)) return;
 
   f = fopen(race_info.password, "w");
   if (f == NULL) {
@@ -1211,20 +1202,17 @@ int Dialogue(const char *prompt, ...) {
     argv[argc++] = carg++;
   }
   va_end(ap);
-  if (argc)
-    printf("]");
+  if (argc) printf("]");
   printf("> ");
   fflush(stdout);
   while (1) {
     fgets(input, INPUTSIZE, stdin);
 
-    if (argc == 0)
-      return -1;
+    if (argc == 0) return -1;
     len = strlen(input) - 1;
 
     for (i = 0; i < argc; i++)
-      if (!strncasecmp(argv[i], input, len))
-        return i;
+      if (!strncasecmp(argv[i], input, len)) return i;
     /*
    * The input did not match any of the valid responses: */
     printf("Please enter ");
@@ -1239,8 +1227,7 @@ static void quit(int argc, char **argv) {
   int i;
 
   if (please_quit) { /* This could happen if ^c is hit while here. */
-    if (isserver)
-      close(fd);
+    if (isserver) close(fd);
     exit(0);
   }
   please_quit = 1;
@@ -1253,8 +1240,7 @@ static void quit(int argc, char **argv) {
         please_quit = 0;
     } else {
       i = Dialogue("Are you sure?", "yes", "no", "abort", 0);
-      if (i == 1)
-        please_quit = 0;
+      if (i == 1) please_quit = 0;
     }
   }
 }
@@ -1337,13 +1323,10 @@ void modify_print_loop(int level) {
     buf[strlen(buf) - 1] = '\0';
 
     for (i = 0; i < 4; i++) {
-      while (*com && (*com == ' '))
-        *com++ = '\0';
-      if (!*com)
-        break;
+      while (*com && (*com == ' ')) *com++ = '\0';
+      if (!*com) break;
       args[i] = com;
-      while (*com && (*com != ' '))
-        com++;
+      while (*com && (*com != ' ')) com++;
     }
     execute(i, args);
   }

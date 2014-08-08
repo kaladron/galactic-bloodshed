@@ -19,8 +19,8 @@ void mech_attack_people(shiptype *, int *, int *, racetype *, racetype *,
                         sectortype *, int, int, int, char *, char *);
 void people_attack_mech(shiptype *, int, int, racetype *, racetype *,
                         sectortype *, int, int, char *, char *);
-void ground_attack(racetype *, racetype *, int *, int, unsigned short *,
-                   unsigned short *, unsigned int, unsigned int, double, double,
+void ground_attack(racetype *, racetype *, int *, int, population_t *,
+                   population_t *, unsigned int, unsigned int, double, double,
                    double *, double *, int *, int *, int *);
 
-#endif // MOVE_H
+#endif  // MOVE_H

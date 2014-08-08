@@ -73,10 +73,12 @@ void initsqldata() __attribute__((no_sanitize_memory)) {
                                  PRIMARY KEY(star_id, player_id));
 
   CREATE TABLE
-  tbl_star_explored(star_id INT PRIMARY KEY NOT NULL, player_id INT NOT NULL);
+  tbl_star_explored(star_id INT NOT NULL, player_id INT NOT NULL, explored INT,
+                    PRIMARY KEY(star_id, player_id));
 
   CREATE TABLE
-  tbl_star_inhabited(star_id INT PRIMARY KEY NOT NULL, player_id INT NOT NULL);
+  tbl_star_inhabited(star_id INT NOT NULL, player_id INT NOT NULL, explored INT,
+                     PRIMARY KEY(star_id, player_id));
 
   CREATE TABLE tbl_star_playerap(star_id INT NOT NULL, player_id INT NOT NULL,
                                  ap INT NOT NULL,
@@ -330,7 +332,7 @@ void putstar(startype *s, starnum_t snum) {
     const char *sql =
         "REPLACE INTO tbl_star (star_id, ships, name, xpos, ypos, "
         "numplanets, stability, nova_stage, temperature, gravity) "
-        "VALUES (?1, ?2, '?3', ?4, ?5, ?6, ?7, ?8, ?9, ?10)";
+        "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)";
     sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
 
     sqlite3_bind_int(stmt, 1, snum);
@@ -351,8 +353,6 @@ void putstar(startype *s, starnum_t snum) {
   }
 
   {
-    //   governor_t governor[MAXPLAYERS]; /* which subordinate maintains the
-    //   system */  tbl_star_governor
     const char *tail = 0;
     sqlite3_stmt *stmt;
     const char *sql =
@@ -364,6 +364,66 @@ void putstar(startype *s, starnum_t snum) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
       sqlite3_bind_int(stmt, 3, s->governor[i]);
+
+      sqlite3_step(stmt);
+
+      sqlite3_clear_bindings(stmt);
+      sqlite3_reset(stmt);
+    }
+  }
+
+  {
+    const char *tail = 0;
+    sqlite3_stmt *stmt;
+    const char *sql =
+        "REPLACE INTO tbl_star_playerap (star_id, player_id, ap) "
+        "VALUES (?1, ?2, ?3)";
+
+    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+    for (player_t i = 0; i < MAXPLAYERS; i++) {
+      sqlite3_bind_int(stmt, 1, snum);
+      sqlite3_bind_int(stmt, 2, i);
+      sqlite3_bind_int(stmt, 3, s->AP[i]);
+
+      sqlite3_step(stmt);
+
+      sqlite3_clear_bindings(stmt);
+      sqlite3_reset(stmt);
+    }
+  }
+
+  {
+    const char *tail = 0;
+    sqlite3_stmt *stmt;
+    const char *sql =
+        "REPLACE INTO tbl_star_explored (star_id, player_id, explored) "
+        "VALUES (?1, ?2, ?3)";
+
+    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+    for (player_t i = 0; i < MAXPLAYERS; i++) {
+      sqlite3_bind_int(stmt, 1, snum);
+      sqlite3_bind_int(stmt, 2, i);
+      sqlite3_bind_int(stmt, 3, isset(s->explored, i) ? 1 : 0);
+
+      sqlite3_step(stmt);
+
+      sqlite3_clear_bindings(stmt);
+      sqlite3_reset(stmt);
+    }
+  }
+
+  {
+    const char *tail = 0;
+    sqlite3_stmt *stmt;
+    const char *sql =
+        "REPLACE INTO tbl_star_inhabited (star_id, player_id, explored) "
+        "VALUES (?1, ?2, ?3)";
+
+    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+    for (player_t i = 0; i < MAXPLAYERS; i++) {
+      sqlite3_bind_int(stmt, 1, snum);
+      sqlite3_bind_int(stmt, 2, i);
+      sqlite3_bind_int(stmt, 3, isset(s->inhabited, i) ? 1 : 0);
 
       sqlite3_step(stmt);
 

@@ -136,6 +136,7 @@ static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
 static void help(descriptor_data *);
 static void process_command(int, int, const char *, const command_t &argv);
+static void shovechars(int);
 static char *strsave(char *);
 
 descriptor_data *new_connection(int);
@@ -163,7 +164,6 @@ int process_input(descriptor_data *);
 void force_output(void);
 void help_user(descriptor_data *);
 void parse_connect(char *, char *, char *);
-void shovechars(int);
 int msec_diff(struct timeval, struct timeval);
 struct timeval msec_add(struct timeval, int);
 void save_command(descriptor_data *, char *);
@@ -299,7 +299,7 @@ int main(int argc, char **argv) {
   close_sockets();
   close_data_files();
   printf("Going down.\n");
-  return (1);
+  return (0);
 }
 
 void set_signals(void) { signal(SIGPIPE, SIG_IGN); }
@@ -392,7 +392,7 @@ struct timeval msec_add(struct timeval t, int x) {
   return t;
 }
 
-void shovechars(int port) __attribute__((no_sanitize_memory)) {
+static void shovechars(int port) __attribute__((no_sanitize_memory)) {
   fd_set input_set, output_set;
   long now, go_time;
   struct timeval last_slice, current_time;

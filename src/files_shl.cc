@@ -82,7 +82,7 @@ void initsqldata() __attribute__((no_sanitize_memory)) {
                                  ap INT NOT NULL,
                                  PRIMARY KEY(star_id, player_id));
 
-  CREATE TABLE tbl_stardata(index INT PRIMARY KET NOT NULL, ships INT);
+  CREATE TABLE tbl_stardata(indexnum INT PRIMARY KEY NOT NULL, ships INT);
 
   CREATE TABLE tbl_stardata_perplayer(
       player_id INT PRIMARY KEY NOT NULL, ap INT NOT NULL,
@@ -194,13 +194,12 @@ void getstar(startype **s, int star) {
 }
 
 void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
-  int filepos;
   if (p >= &planets[0][0] && p < &planets[NUMSTARS][MAXPLANETS])
     ;    /* Do nothing */
   else { /* Allocate space for others */
     *p = (planettype *)malloc(sizeof(planettype));
   }
-  filepos = Stars[star]->planetpos[pnum];
+  int filepos = Stars[star]->planetpos[pnum];
   Fileread(pdata, (char *)*p, sizeof(planettype), filepos);
 }
 
@@ -320,19 +319,60 @@ void putrace(racetype *r) {
 void putstar(startype *s, starnum_t snum) {
   Filewrite(stdata, (char *)s, sizeof(startype),
             (int)(sizeof(Sdata) + snum * sizeof(startype)));
-  char *sql;
-  asprintf(&sql,
-           "REPLACE INTO tbl_star (star_id, ships, name, xpos, ypos, "
-           "numplanets, stability, nova_stage, temperature, gravity) "
-           "VALUES (%d, %d, '%s', %f, %f, %d, %d, %d, %d, %f);",
-           snum, s->ships, s->name, s->xpos, s->ypos, s->numplanets,
-           s->stability, s->nova_stage, s->temperature, s->gravity);
+
   char *err_msg = 0;
-  int err = sqlite3_exec(db, sql, NULL, NULL, &err_msg);
-  if (err != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", err_msg);
-    sqlite3_free(err_msg);
+  sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &err_msg);
+
+  {
+    const char *tail = 0;
+    sqlite3_stmt *stmt;
+
+    const char *sql =
+        "REPLACE INTO tbl_star (star_id, ships, name, xpos, ypos, "
+        "numplanets, stability, nova_stage, temperature, gravity) "
+        "VALUES (?1, ?2, '?3', ?4, ?5, ?6, ?7, ?8, ?9, ?10)";
+    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+
+    sqlite3_bind_int(stmt, 1, snum);
+    sqlite3_bind_int(stmt, 2, s->ships);
+    sqlite3_bind_text(stmt, 3, s->name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_double(stmt, 4, s->xpos);
+    sqlite3_bind_double(stmt, 5, s->ypos);
+    sqlite3_bind_int(stmt, 6, s->numplanets);
+    sqlite3_bind_int(stmt, 7, s->stability);
+    sqlite3_bind_int(stmt, 8, s->nova_stage);
+    sqlite3_bind_int(stmt, 9, s->temperature);
+    sqlite3_bind_double(stmt, 10, s->gravity);
+
+    sqlite3_step(stmt);
+
+    sqlite3_clear_bindings(stmt);
+    sqlite3_reset(stmt);
   }
+
+  {
+    //   governor_t governor[MAXPLAYERS]; /* which subordinate maintains the
+    //   system */  tbl_star_governor
+    const char *tail = 0;
+    sqlite3_stmt *stmt;
+    const char *sql =
+        "REPLACE INTO tbl_star_governor (star_id, player_id, governor_id) "
+        "VALUES (?1, ?2, ?3)";
+
+    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+    for (player_t i = 0; i < MAXPLAYERS; i++) {
+      sqlite3_bind_int(stmt, 1, snum);
+      sqlite3_bind_int(stmt, 2, i);
+      sqlite3_bind_int(stmt, 3, s->governor[i]);
+
+      sqlite3_step(stmt);
+
+      sqlite3_clear_bindings(stmt);
+      sqlite3_reset(stmt);
+    }
+  }
+
+  sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &err_msg);
 }
 
 void putplanet(planettype *p, int star, int pnum) {

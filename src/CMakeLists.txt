@@ -7,6 +7,8 @@ add_definitions(-DPKGDATADIR="${PKGDATADIR}")
 add_definitions(-DDOCDIR="${DOCDIR}")
 
 add_definitions(-std=c++11)
+add_definitions(-g)
+add_definitions(-O1)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   add_definitions(-Werror -Weverything)

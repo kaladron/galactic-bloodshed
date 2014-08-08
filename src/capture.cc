@@ -27,12 +27,17 @@ void capture(int Playernum, int Governor, int APcount) {
   shiptype *ship, s;
   planettype *p;
   sectortype *sect;
-  int boarders, olddpopn, oldowner, oldgov, shipdam = 0, booby = 0;
-  int shipno, nextshipno, x = -1, y = -1, what, olddtroops, i;
-  int casualties = 0, casualties1 = 0, casualties2 = 0, casualty_scale = 0;
+  player_t oldowner;
+  governor_t oldgov;
+  int shipdam = 0, booby = 0;
+  shipnum_t shipno, nextshipno;
+  int x = -1, y = -1, what;
+  population_t olddpopn, olddtroops;
+  population_t casualties = 0, casualties1 = 0, casualties2 = 0, casualty_scale = 0;
   double astrength, dstrength;
   racetype *Race, *alien;
   int snum, pnum;
+  population_t boarders;
 
   if (argn < 2) {
     notify(Playernum, Governor, "Capture what?\n");
@@ -49,7 +54,7 @@ void capture(int Playernum, int Governor, int APcount) {
     if (ship->owner != Playernum &&
         in_list((int)ship->owner, args[1], ship, &nextshipno)) {
       if (!landed(ship)) {
-        sprintf(buf, "%s #%d is not landed on a planet.\n",
+        sprintf(buf, "%s #%ld is not landed on a planet.\n",
                 Shipnames[ship->type], shipno);
         notify(Playernum, Governor, buf);
         free(ship);
@@ -104,10 +109,10 @@ void capture(int Playernum, int Governor, int APcount) {
         else if (what == MIL)
           boarders = sect->troops;
       } else
-        boarders = atoi(args[2]);
+        boarders = strtoul(args[2], NULL, 10);
 
       if (boarders <= 0) {
-        sprintf(buf, "Illegal number of boarders %d.\n", boarders);
+        sprintf(buf, "Illegal number of boarders %lu.\n", boarders);
         notify(Playernum, Governor, buf);
         free(ship);
         free(sect);
@@ -192,7 +197,7 @@ void capture(int Playernum, int Governor, int APcount) {
         booby = int_rand(0, 10 * (int)ship->destruct);
         booby = MIN(100, booby);
         casualties = casualties2 = 0;
-        for (i = 0; i < boarders; i++)
+        for (unsigned long i = 0; i < boarders; i++)
           casualties += (int_rand(1, 100) < booby);
         boarders -= casualties;
         shipdam += booby;
@@ -271,9 +276,9 @@ void capture(int Playernum, int Governor, int APcount) {
         sprintf(buf, "VICTORY! The ship is yours!\n");
         notify(Playernum, Governor, buf);
         if (what == CIV)
-          sprintf(buf, "%d boarders move in.\n", MIN(boarders, ship->popn));
+          sprintf(buf, "%lu boarders move in.\n", MIN(boarders, ship->popn));
         else if (what == MIL)
-          sprintf(buf, "%d troops move in.\n", MIN(boarders, ship->troops));
+          sprintf(buf, "%lu troops move in.\n", MIN(boarders, ship->troops));
         notify(Playernum, Governor, buf);
         capture_stuff(ship);
         sprintf(short_buf, "%s: %s [%d] CAPTURED %s\n", Dispshiploc(ship),
@@ -304,11 +309,11 @@ void capture(int Playernum, int Governor, int APcount) {
       }
 
       if (casualties || casualties1 || casualties2) {
-        sprintf(buf, "Casualties: Yours: %d civ/%d mil, Theirs: %d %s\n",
+        sprintf(buf, "Casualties: Yours: %ld civ/%ld mil, Theirs: %ld %s\n",
                 casualties1, casualties2, casualties,
                 what == CIV ? "civ" : "mil");
         strcat(telegram_buf, buf);
-        sprintf(buf, "Casualties: Yours: %d %s, Theirs: %d civ/%d mil\n",
+        sprintf(buf, "Casualties: Yours: %ld %s, Theirs: %ld civ/%ld mil\n",
                 casualties, what == CIV ? "civ" : "mil", casualties1,
                 casualties2);
         notify(Playernum, Governor, buf);
@@ -332,7 +337,7 @@ void capture(int Playernum, int Governor, int APcount) {
 }
 
 void capture_stuff(shiptype *ship) {
-  int sh;
+  shipnum_t sh;
   shiptype *s;
 
   sh = ship->ships;

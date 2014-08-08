@@ -299,8 +299,8 @@ int start_shiplist(int Playernum, int Governor, const char *p) {
 }
 
 /* Step through linked list at current player scope */
-int do_shiplist(shiptype **s, int *nextshipno) {
-  int shipno;
+shipnum_t do_shiplist(shiptype **s, shipnum_t *nextshipno) {
+  shipnum_t shipno;
   if (!(shipno = *nextshipno)) return 0;
 
   if (!getship(s, shipno)) /* allocate memory, free in loop */
@@ -309,7 +309,7 @@ int do_shiplist(shiptype **s, int *nextshipno) {
   return shipno;
 }
 
-int in_list(int Playernum, char *list, shiptype *s, int *nextshipno) {
+int in_list(player_t Playernum, char *list, shiptype *s, shipnum_t *nextshipno) {
   char *p, q;
   if (s->owner != Playernum || !s->alive) return 0;
   q = Shipltrs[s->type];

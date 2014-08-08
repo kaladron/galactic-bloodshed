@@ -5,6 +5,8 @@
 #ifndef DOCK_H
 #define DOCK_H
 
-void dock(int, int, int, int);
+#include "vars.h"
+
+void dock(player_t, governor_t, int, int);
 
 #endif // DOCK_H

@@ -340,7 +340,7 @@ struct place {/* used in function return for finding place */
 #define Repair(s) (((s)->type == OTYPE_FACTORY) ? (s)->on : Max_crew(s))
 
 extern shipnum_t Num_ships;
-extern const long Shipdata[NUMSTYPES][NUMABILS];
+extern const unsigned long Shipdata[NUMSTYPES][NUMABILS];
 extern const char Shipltrs[];
 extern const char *Shipnames[];
 extern int ShipVector[NUMSTYPES];

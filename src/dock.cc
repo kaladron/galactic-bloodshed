@@ -28,12 +28,16 @@
 #include "tweakables.h"
 #include "vars.h"
 
-void dock(int Playernum, int Governor, int APcount, int Assault) {
+void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
   shiptype *s, *s2, *s3, ship;
-  int boarders = 0, dam = 0, dam2 = 0, booby = 0;
-  int ship2no, shipno, what, nextshipno;
-  int old2owner, old2gov;
-  int casualties = 0, casualties2 = 0, casualties3 = 0, casualty_scale = 0;
+  population_t boarders = 0;
+  int dam = 0, dam2 = 0, booby = 0;
+  int what;
+  shipnum_t ship2no, shipno, nextshipno;
+  player_t old2owner;
+  governor_t old2gov;
+  population_t casualties = 0, casualties2 = 0, casualties3 = 0;
+  int casualty_scale = 0;
   double fuel, bstrength, b2strength;
   double Dist;
   racetype *Race, *alien;
@@ -105,7 +109,7 @@ void dock(int Playernum, int Governor, int APcount, int Assault) {
         continue;
       }
 
-      sscanf(args[2] + (args[2][0] == '#'), "%d", &ship2no);
+      sscanf(args[2] + (args[2][0] == '#'), "%lu", &ship2no);
 
       if (shipno == ship2no) {
         notify(Playernum, Governor, "You can't dock with yourself!\n");
@@ -199,8 +203,8 @@ void dock(int Playernum, int Governor, int APcount, int Assault) {
         strcpy(dfire[1], args[1]);
         strcpy(dfire[2], args[2]);
         sprintf(args[0], "fire");
-        sprintf(args[1], "#%d", ship2no);
-        sprintf(args[2], "#%d", shipno);
+        sprintf(args[1], "#%lu", ship2no);
+        sprintf(args[2], "#%lu", shipno);
         fire((int)s2->owner, (int)s2->governor, 0, 3);
         strcpy(args[0], dfire[0]);
         strcpy(args[1], dfire[1]);
@@ -225,7 +229,7 @@ void dock(int Playernum, int Governor, int APcount, int Assault) {
         alien = races[s2->owner - 1];
         Race = races[Playernum - 1];
         if (argn >= 4) {
-          sscanf(args[3], "%d", &boarders);
+          sscanf(args[3], "%lu", &boarders);
           if ((what == MIL) && (boarders > s->troops))
             boarders = s->troops;
           else if ((what == CIV) && (boarders > s->popn))
@@ -241,7 +245,7 @@ void dock(int Playernum, int Governor, int APcount, int Assault) {
 
         /* Allow assault of crewless ships. */
         if (s2->max_crew && boarders <= 0) {
-          sprintf(buf, "Illegal number of boarders (%d).\n", boarders);
+          sprintf(buf, "Illegal number of boarders (%lu).\n", boarders);
           notify(Playernum, Governor, buf);
           free(s);
           free(s2);
@@ -425,7 +429,7 @@ void dock(int Playernum, int Governor, int APcount, int Assault) {
             sprintf(buf, "VICTORY! the ship is yours!\n");
             notify(Playernum, Governor, buf);
             if (boarders) {
-              sprintf(buf, "%d boarders move in.\n", boarders);
+              sprintf(buf, "%lu boarders move in.\n", boarders);
               notify(Playernum, Governor, buf);
             }
             capture_stuff(s2);
@@ -458,11 +462,11 @@ void dock(int Playernum, int Governor, int APcount, int Assault) {
           sprintf(buf, "Your ship was weakened too much!\n");
           strcat(telegram_buf, buf);
         }
-        sprintf(buf, "Casualties: Yours: %d mil/%d civ    Theirs: %d %s\n",
+        sprintf(buf, "Casualties: Yours: %lu mil/%lu civ    Theirs: %lu %s\n",
                 casualties3, casualties2, casualties,
                 what == MIL ? "mil" : "civ");
         strcat(telegram_buf, buf);
-        sprintf(buf, "Crew casualties: Yours: %d %s    Theirs: %d mil/%d civ\n",
+        sprintf(buf, "Crew casualties: Yours: %lu %s    Theirs: %lu mil/%lu civ\n",
                 casualties, what == MIL ? "mil" : "civ", casualties3,
                 casualties2);
         notify(Playernum, Governor, buf);

@@ -1766,7 +1766,7 @@ void insert_sh_ship(shiptype *s, shiptype *s2) {
 }
 
 void remove_sh_star(shiptype *s) {
-  int sh;
+  shipnum_t sh;
   shiptype *s2;
 
   getstar(&Stars[s->storbits], (int)s->storbits);
@@ -1790,7 +1790,7 @@ void remove_sh_star(shiptype *s) {
 }
 
 void remove_sh_plan(shiptype *s) {
-  int sh;
+  shipnum_t sh;
   shiptype *s2;
   planettype *p;
 
@@ -1816,9 +1816,8 @@ void remove_sh_plan(shiptype *s) {
 }
 
 void remove_sh_ship(shiptype *s, shiptype *ship) {
-  int sh;
   shiptype *s2;
-  sh = ship->ships;
+  shipnum_t sh = ship->ships;
 
   if (sh == s->number)
     ship->ships = s->nextship;

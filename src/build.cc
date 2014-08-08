@@ -1800,8 +1800,7 @@ void bid(const command_t &argv, const player_t Playernum,
   commodtype *c;
   shiptype *s;
   char commod;
-  int i, item, bid0, lot, shipping, ok = 0, sh;
-  int minbid;
+  int i, item, lot, shipping, ok = 0, sh;
   double dist, rate;
   int snum, pnum;
 
@@ -1912,7 +1911,7 @@ void bid(const command_t &argv, const player_t Playernum,
     }
 
     lot = atoi(argv[1].c_str());
-    bid0 = atoi(argv[2].c_str());
+    money_t bid0 = atoi(argv[2].c_str());
     if ((lot <= 0) || lot > Numcommods()) {
       notify(Playernum, Governor, "Illegal lot number.\n");
       free(p);
@@ -1934,9 +1933,9 @@ void bid(const command_t &argv, const player_t Playernum,
       free(c);
       return;
     }
-    minbid = (int)((double)c->bid * (1.0 + UP_BID));
+    money_t minbid = (int)((double)c->bid * (1.0 + UP_BID));
     if (bid0 < minbid) {
-      sprintf(buf, "You have to bid more than %d.\n", minbid);
+      sprintf(buf, "You have to bid more than %ld.\n", minbid);
       notify(Playernum, Governor, buf);
       free(p);
       free(c);
@@ -1958,7 +1957,7 @@ void bid(const command_t &argv, const player_t Playernum,
     /* notify the previous bidder that he was just outbidded */
     if (c->bidder) {
       sprintf(buf,
-              "The bid on lot #%d (%d %s) has been upped to %d by %s [%d].\n",
+              "The bid on lot #%d (%d %s) has been upped to %ld by %s [%d].\n",
               lot, c->amount, Commod[c->type], bid0, Race->name, Playernum);
       notify((int)c->bidder, (int)c->bidder_gov, buf);
     }

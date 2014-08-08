@@ -272,40 +272,36 @@ int start_shiplist(int Playernum, int Governor, const char *p) {
   shiptype *ship;
   int st, pl, sh;
 
-  if (*p == '#')
-    return (atoi(++p));
-  if (isdigit(*p))
-    return (atoi(p));
+  if (*p == '#') return (atoi(++p));
+  if (isdigit(*p)) return (atoi(p));
 
   /*ship number not given */
   st = Dir[Playernum - 1][Governor].snum;
   pl = Dir[Playernum - 1][Governor].pnum;
   switch (Dir[Playernum - 1][Governor].level) {
-  case LEVEL_UNIV:
-    getsdata(&Sdata);
-    return Sdata.ships;
-  case LEVEL_STAR:
-    getstar(&Stars[st], st); /*Stars doesn't need to be freed */
-    return Stars[st]->ships;
-  case LEVEL_PLAN:
-    getplanet(&planet, st, pl);
-    sh = planet->ships;
-    free(planet);
-    return sh;
-  case LEVEL_SHIP:
-    (void)getship(&ship, Dir[Playernum - 1][Governor].shipno);
-    sh = ship->ships;
-    free(ship);
-    return sh;
+    case LEVEL_UNIV:
+      getsdata(&Sdata);
+      return Sdata.ships;
+    case LEVEL_STAR:
+      getstar(&Stars[st], st); /*Stars doesn't need to be freed */
+      return Stars[st]->ships;
+    case LEVEL_PLAN:
+      getplanet(&planet, st, pl);
+      sh = planet->ships;
+      free(planet);
+      return sh;
+    case LEVEL_SHIP:
+      (void)getship(&ship, Dir[Playernum - 1][Governor].shipno);
+      sh = ship->ships;
+      free(ship);
+      return sh;
   }
-  return 0;
 }
 
 /* Step through linked list at current player scope */
 int do_shiplist(shiptype **s, int *nextshipno) {
   int shipno;
-  if (!(shipno = *nextshipno))
-    return 0;
+  if (!(shipno = *nextshipno)) return 0;
 
   if (!getship(s, shipno)) /* allocate memory, free in loop */
     return 0;
@@ -315,19 +311,16 @@ int do_shiplist(shiptype **s, int *nextshipno) {
 
 int in_list(int Playernum, char *list, shiptype *s, int *nextshipno) {
   char *p, q;
-  if (s->owner != Playernum || !s->alive)
-    return 0;
+  if (s->owner != Playernum || !s->alive) return 0;
   q = Shipltrs[s->type];
   p = list;
   if (*p == '#' || isdigit(*p)) {
-    if (s->owner != Playernum || !s->alive)
-      return 0;
+    if (s->owner != Playernum || !s->alive) return 0;
     *nextshipno = 0;
     return s->number;
   }
   for (; *p; p++)
-    if (*p == q || *p == '*')
-      return s->number; /* '*' is a wildcard */
+    if (*p == q || *p == '*') return s->number; /* '*' is a wildcard */
   return 0;
 }
 
@@ -344,72 +337,55 @@ void fix(int Playernum, int Governor) {
     getplanet(&p, Dir[Playernum - 1][Governor].snum,
               Dir[Playernum - 1][Governor].pnum);
     if (match(args[2], "Maxx")) {
-      if (argn > 3)
-        p->Maxx = atoi(args[3]);
+      if (argn > 3) p->Maxx = atoi(args[3]);
       sprintf(buf, "Maxx = %d\n", p->Maxx);
     } else if (match(args[2], "Maxy")) {
-      if (argn > 3)
-        p->Maxy = atoi(args[3]);
+      if (argn > 3) p->Maxy = atoi(args[3]);
       sprintf(buf, "Maxy = %d\n", p->Maxy);
     } else if (match(args[2], "xpos")) {
-      if (argn > 3)
-        p->xpos = (double)atoi(args[3]);
+      if (argn > 3) p->xpos = (double)atoi(args[3]);
       sprintf(buf, "xpos = %f\n", p->xpos);
     } else if (match(args[2], "ypos")) {
-      if (argn > 3)
-        p->ypos = (double)atoi(args[3]);
+      if (argn > 3) p->ypos = (double)atoi(args[3]);
       sprintf(buf, "ypos = %f\n", p->ypos);
     } else if (match(args[2], "ships")) {
-      if (argn > 3)
-        p->ships = atoi(args[3]);
+      if (argn > 3) p->ships = atoi(args[3]);
       sprintf(buf, "ships = %ld\n", p->ships);
     } else if (match(args[2], "sectormappos")) {
-      if (argn > 3)
-        p->sectormappos = atoi(args[3]);
+      if (argn > 3) p->sectormappos = atoi(args[3]);
       sprintf(buf, "sectormappos = %d\n", p->sectormappos);
     } else if (match(args[2], "rtemp")) {
-      if (argn > 3)
-        p->conditions[RTEMP] = atoi(args[3]);
+      if (argn > 3) p->conditions[RTEMP] = atoi(args[3]);
       sprintf(buf, "RTEMP = %d\n", p->conditions[RTEMP]);
     } else if (match(args[2], "temperature")) {
-      if (argn > 3)
-        p->conditions[TEMP] = atoi(args[3]);
+      if (argn > 3) p->conditions[TEMP] = atoi(args[3]);
       sprintf(buf, "TEMP = %d\n", p->conditions[TEMP]);
     } else if (match(args[2], "methane")) {
-      if (argn > 3)
-        p->conditions[METHANE] = atoi(args[3]);
+      if (argn > 3) p->conditions[METHANE] = atoi(args[3]);
       sprintf(buf, "METHANE = %d\n", p->conditions[METHANE]);
     } else if (match(args[2], "oxygen")) {
-      if (argn > 3)
-        p->conditions[OXYGEN] = atoi(args[3]);
+      if (argn > 3) p->conditions[OXYGEN] = atoi(args[3]);
       sprintf(buf, "OXYGEN = %d\n", p->conditions[OXYGEN]);
     } else if (match(args[2], "co2")) {
-      if (argn > 3)
-        p->conditions[CO2] = atoi(args[3]);
+      if (argn > 3) p->conditions[CO2] = atoi(args[3]);
       sprintf(buf, "CO2 = %d\n", p->conditions[CO2]);
     } else if (match(args[2], "hydrogen")) {
-      if (argn > 3)
-        p->conditions[HYDROGEN] = atoi(args[3]);
+      if (argn > 3) p->conditions[HYDROGEN] = atoi(args[3]);
       sprintf(buf, "HYDROGEN = %d\n", p->conditions[HYDROGEN]);
     } else if (match(args[2], "nitrogen")) {
-      if (argn > 3)
-        p->conditions[NITROGEN] = atoi(args[3]);
+      if (argn > 3) p->conditions[NITROGEN] = atoi(args[3]);
       sprintf(buf, "NITROGEN = %d\n", p->conditions[NITROGEN]);
     } else if (match(args[2], "sulfur")) {
-      if (argn > 3)
-        p->conditions[SULFUR] = atoi(args[3]);
+      if (argn > 3) p->conditions[SULFUR] = atoi(args[3]);
       sprintf(buf, "SULFUR = %d\n", p->conditions[SULFUR]);
     } else if (match(args[2], "helium")) {
-      if (argn > 3)
-        p->conditions[HELIUM] = atoi(args[3]);
+      if (argn > 3) p->conditions[HELIUM] = atoi(args[3]);
       sprintf(buf, "HELIUM = %d\n", p->conditions[HELIUM]);
     } else if (match(args[2], "other")) {
-      if (argn > 3)
-        p->conditions[OTHER] = atoi(args[3]);
+      if (argn > 3) p->conditions[OTHER] = atoi(args[3]);
       sprintf(buf, "OTHER = %d\n", p->conditions[OTHER]);
     } else if (match(args[2], "toxic")) {
-      if (argn > 3)
-        p->conditions[TOXIC] = atoi(args[3]);
+      if (argn > 3) p->conditions[TOXIC] = atoi(args[3]);
       sprintf(buf, "TOXIC = %d\n", p->conditions[TOXIC]);
     } else {
       notify(Playernum, Governor, "No such option for 'fix planet'.\n");
@@ -431,24 +407,19 @@ void fix(int Playernum, int Governor) {
     }
     (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
     if (match(args[2], "fuel")) {
-      if (argn > 3)
-        s->fuel = (double)atoi(args[3]);
+      if (argn > 3) s->fuel = (double)atoi(args[3]);
       sprintf(buf, "fuel = %f\n", s->fuel);
     } else if (match(args[2], "max_fuel")) {
-      if (argn > 3)
-        s->max_fuel = atoi(args[3]);
+      if (argn > 3) s->max_fuel = atoi(args[3]);
       sprintf(buf, "fuel = %d\n", s->max_fuel);
     } else if (match(args[2], "destruct")) {
-      if (argn > 3)
-        s->destruct = atoi(args[3]);
+      if (argn > 3) s->destruct = atoi(args[3]);
       sprintf(buf, "destruct = %d\n", s->destruct);
     } else if (match(args[2], "resource")) {
-      if (argn > 3)
-        s->resource = atoi(args[3]);
+      if (argn > 3) s->resource = atoi(args[3]);
       sprintf(buf, "resource = %d\n", s->resource);
     } else if (match(args[2], "damage")) {
-      if (argn > 3)
-        s->damage = atoi(args[3]);
+      if (argn > 3) s->damage = atoi(args[3]);
       sprintf(buf, "damage = %d\n", s->damage);
     } else if (match(args[2], "alive")) {
       s->alive = 1;
@@ -510,13 +481,11 @@ player_t GetPlayer(const char *name) {
   player_t rnum = 0;
 
   if (isdigit(*name)) {
-    if ((rnum = atoi(name)) < 1 || rnum > Num_races)
-      return 0;
+    if ((rnum = atoi(name)) < 1 || rnum > Num_races) return 0;
     return rnum;
   } else {
     for (player_t i = 1; i <= Num_races; i++)
-      if (match(name, races[i - 1]->name))
-        return i;
+      if (match(name, races[i - 1]->name)) return i;
     return 0;
   }
 }
@@ -572,8 +541,9 @@ void deductAPs(int Playernum, int Governor, int n, int snum, int sdata) {
         Stars[snum]->AP[Playernum - 1] -= n;
       else {
         Stars[snum]->AP[Playernum - 1] = 0;
-        sprintf(buf, "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
-                     "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n");
+        sprintf(buf,
+                "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
+                "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n");
         notify(Playernum, Governor, buf);
       }
 
@@ -608,23 +578,23 @@ void list(int Playernum, int Governor) {
   int sh;
 
   switch (Dir[Playernum - 1][Governor].level) {
-  case LEVEL_UNIV:
-    sh = Sdata.ships;
-    break;
-  case LEVEL_STAR:
-    getstar(&Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].snum);
-    sh = Stars[Dir[Playernum - 1][Governor].snum]->ships;
-    break;
-  case LEVEL_PLAN:
-    getplanet(&p, Dir[Playernum - 1][Governor].snum,
-              Dir[Playernum - 1][Governor].pnum);
-    sh = p->ships;
-    free(p);
-    break;
-  case LEVEL_SHIP:
-    sh = Dir[Playernum - 1][Governor].shipno;
-    break;
+    case LEVEL_UNIV:
+      sh = Sdata.ships;
+      break;
+    case LEVEL_STAR:
+      getstar(&Stars[Dir[Playernum - 1][Governor].snum],
+              Dir[Playernum - 1][Governor].snum);
+      sh = Stars[Dir[Playernum - 1][Governor].snum]->ships;
+      break;
+    case LEVEL_PLAN:
+      getplanet(&p, Dir[Playernum - 1][Governor].snum,
+                Dir[Playernum - 1][Governor].pnum);
+      sh = p->ships;
+      free(p);
+      break;
+    case LEVEL_SHIP:
+      sh = Dir[Playernum - 1][Governor].shipno;
+      break;
   }
 
   while (sh) {

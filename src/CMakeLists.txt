@@ -19,12 +19,14 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   add_definitions(-Wno-conditional-uninitialized)
   add_definitions(-Wno-float-equal)
   add_definitions(-Wno-shadow)
-  add_definitions(-Wno-unreachable-code)
   add_definitions(-Wno-unused-parameter)
   add_definitions(-Wno-sign-compare)
   add_definitions(-Wno-tautological-constant-out-of-range-compare) 
 
   add_definitions(-Wno-conversion)
+
+  # Might be needed during development
+  #add_definitions(-Wno-unreachable-code)
 
   # These warnings seem like ones we'll never enable
   add_definitions(

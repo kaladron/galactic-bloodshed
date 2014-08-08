@@ -22,6 +22,12 @@
 #include "vars.h"
 
 void dissolve(int Playernum, int Governor) {
+#ifndef DISSOLVE
+  notify(Playernum, Governor,
+         "Dissolve has been disabled. Please notify diety.\n");
+  return;
+#else
+
   int n_ships;
   int i, j, z, x2, y2, hix, hiy, lowx, lowy;
   unsigned char waste;
@@ -32,16 +38,11 @@ void dissolve(int Playernum, int Governor) {
   char nuke;
   char racepass[100], govpass[100];
 
-#ifndef DISSOLVE
-  notify(Playernum, Governor,
-         "Dissolve has been disabled. Please notify diety.\n");
-  return;
-#endif
-
   if (Governor) {
-    notify(Playernum, Governor, "Only the leader may dissolve the race. The "
-                                "leader has been notified of your "
-                                "attempt!!!\n");
+    notify(Playernum, Governor,
+           "Only the leader may dissolve the race. The "
+           "leader has been notified of your "
+           "attempt!!!\n");
     sprintf(buf, "Governor #%d has attempted to dissolve this race.\n",
             Governor);
     notify(Playernum, 0, buf);
@@ -52,8 +53,9 @@ void dissolve(int Playernum, int Governor) {
   if (argn < 3) {
     sprintf(buf, "Self-Destruct sequence requires passwords.\n");
     notify(Playernum, Governor, buf);
-    sprintf(buf, "Please use 'dissolve <race password> <leader "
-                 "password>'<option> to initiate\n");
+    sprintf(buf,
+            "Please use 'dissolve <race password> <leader "
+            "password>'<option> to initiate\n");
     notify(Playernum, Governor, buf);
     sprintf(buf, "self-destruct sequence.\n");
     notify(Playernum, Governor, buf);
@@ -72,8 +74,7 @@ void dissolve(int Playernum, int Governor) {
     waste = 0;
     if (argn > 3) {
       sscanf(args[3], "%c", &nuke);
-      if (nuke == 'w')
-        waste = 1;
+      if (nuke == 'w') waste = 1;
     }
 
     Getracenum(racepass, govpass, &i, &j);
@@ -151,6 +152,7 @@ void dissolve(int Playernum, int Governor) {
     sprintf(buf, "%s [%d] has dissolved.\n", Race->name, Playernum);
     post(buf, DECLARATION);
   }
+#endif
 }
 
 int revolt(planettype *pl, int victim, int agent) {

@@ -80,7 +80,7 @@ void grant(int Playernum, int Governor, int APcount) {
       } else
         free(ship);
   } else if (match(args[2], "money")) {
-    int amount;
+    long amount;
     if (argn < 4) {
       notify(Playernum, Governor, "Indicate the amount of money.\n");
       return;
@@ -95,17 +95,17 @@ void grant(int Playernum, int Governor, int APcount) {
     else if (-amount > Race->governor[gov].money)
       amount = -Race->governor[gov].money;
     if (amount >= 0)
-      sprintf(buf, "%d money granted to \"%s\".\n", amount,
+      sprintf(buf, "%ld money granted to \"%s\".\n", amount,
               Race->governor[gov].name);
     else
-      sprintf(buf, "%d money deducted from \"%s\".\n", -amount,
+      sprintf(buf, "%ld money deducted from \"%s\".\n", -amount,
               Race->governor[gov].name);
     notify(Playernum, Governor, buf);
     if (amount >= 0)
-      sprintf(buf, "\"%s\" granted you %d money.\n",
+      sprintf(buf, "\"%s\" granted you %ld money.\n",
               Race->governor[Governor].name, amount);
     else
-      sprintf(buf, "\"%s\" docked you %d money.\n",
+      sprintf(buf, "\"%s\" docked you %ld money.\n",
               Race->governor[Governor].name, -amount);
     warn(Playernum, gov, buf);
     Race->governor[Governor].money -= amount;
@@ -210,7 +210,6 @@ void governors(int Playernum, int Governor, int APcount) {
 }
 
 void do_revoke(racetype *Race, int gov, int j) {
-  int i;
   char revoke_buf[1024];
   shiptype *ship;
 
@@ -220,7 +219,7 @@ void do_revoke(racetype *Race, int gov, int j) {
 
   /*  First do stars....  */
 
-  for (i = 0; i < Sdata.numstars; i++)
+  for (starnum_t i = 0; i < Sdata.numstars; i++)
     if (Stars[i]->governor[Race->Playernum - 1] == gov) {
       Stars[i]->governor[Race->Playernum - 1] = j;
       sprintf(revoke_buf, "Changed juridiction of /%s...\n", Stars[i]->name);
@@ -230,12 +229,12 @@ void do_revoke(racetype *Race, int gov, int j) {
 
   /*  Now do ships....  */
   Num_ships = Numships();
-  for (i = 1; i <= Num_ships; i++) {
+  for (shipnum_t i = 1; i <= Num_ships; i++) {
     (void)getship(&ship, i);
     if (ship->alive && (ship->owner == Race->Playernum) &&
         (ship->governor == gov)) {
       ship->governor = j;
-      sprintf(revoke_buf, "Changed ownership of %c%d...\n",
+      sprintf(revoke_buf, "Changed ownership of %c%lu...\n",
               Shipltrs[ship->type], i);
       notify(Race->Playernum, 0, revoke_buf);
       putship(ship);

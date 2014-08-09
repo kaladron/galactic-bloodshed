@@ -165,7 +165,7 @@ add_executable(racegen
   shlmisc.cc)
 target_link_libraries(racegen sqlite3)
 set_target_properties(racegen PROPERTIES
-  COMPILE_DEFINITIONS "PRIV -Wno-c++11-compat-deprecated-writable-strings")
+  COMPILE_DEFINITIONS "PRIV -Wno-writable-strings")
 install(TARGETS racegen DESTINATION ${CMAKE_INSTALL_FULL_BINDIR}
   COMPONENT binaries)
 add_custom_target(run-racegen

@@ -232,7 +232,7 @@ static void fuel_output(int Playernum, int Governor, double dist, double fuel,
         "Estimated arrival time not available due to segment # discrepancy.\n");
   else {
     time_t effective_time =
-        next_segment_time + labs((segs - 1) * (update_time / segments) * 60);
+        next_segment_time + ((segs - 1) * (update_time / segments) * 60);
     if (segments == 1)
       effective_time =
           next_update_time + (long)((segs - 1) * (update_time * 60));

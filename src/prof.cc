@@ -300,10 +300,6 @@ char *Estimate_i(int data, racetype *r, int p) {
 int round_perc(int data, racetype *r, int p) {
   int k;
 
-#if 0 /* r->captured_prisoners[p-1] is never actually used eslewhere. */
-k = 101 - MIN(r->translate[p-1] + r->captured_prisoners[p-1], 100);
-#else
   k = 101 - MIN(r->translate[p - 1], 100);
-#endif
   return ((data / k) * k);
 }

@@ -201,7 +201,7 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
   for (y2 = 0; y2 < pl->Maxy; y2++) {
     for (x2 = 0; x2 < pl->Maxx; x2++) {
       int dx, dy;
-      dx = MIN(abs(x2 - x), abs(x + (pl->Maxx - 1) - x2));
+      dx = std::min(abs(x2 - x), abs(x + (pl->Maxx - 1) - x2));
       dy = abs(y2 - y);
       d = sqrt((double)(dx * dx + dy * dy));
       s = &Sector(*pl, x2, y2);
@@ -246,10 +246,10 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
           s->condition = WASTED;
           numdest++;
         } else {
-          s->fert = MAX(0, (int)s->fert - (int)fac);
-          s->eff = MAX(0, (int)s->eff - (int)fac);
-          s->mobilization = MAX(0, (int)s->mobilization - (int)fac);
-          s->resource = MAX(0, (int)s->resource - (int)fac);
+          s->fert = std::max(0, (int)s->fert - (int)fac);
+          s->eff = std::max(0, (int)s->eff - (int)fac);
+          s->mobilization = std::max(0, (int)s->mobilization - (int)fac);
+          s->resource = std::max(0, (int)s->resource - (int)fac);
         }
       }
       if (s->owner) sum_mob[s->owner - 1] += s->mobilization;
@@ -297,7 +297,7 @@ static int do_radiation(shiptype *ship, double tech, int strength, int hits,
     if (double_rand() <= r) penetrate += 1;
 
   dosage = round_rand(40. * (double)penetrate / (double)body);
-  dosage = MIN(100, dosage);
+  dosage = std::min(100, dosage);
 
   if (dosage > ship->rad) ship->rad = MAX(ship->rad, dosage);
   if (success(ship->rad)) ship->active = 0;
@@ -359,8 +359,8 @@ static int do_damage(int who, shiptype *ship, double tech, int strength,
 
   if (crithits) damage += critdam;
 
-  damage = MIN(100, damage);
-  ship->damage = MIN(100, (int)(ship->damage) + damage);
+  damage = std::min(100, damage);
+  ship->damage = std::min(100, (int)(ship->damage) + damage);
   do_collateral(ship, damage, &casualties, &casualties1, &primgundamage,
                 &secgundamage);
   /* set laser strength for ships to maximum safe limit */
@@ -517,14 +517,14 @@ void do_critical_hits(int penetrate, shiptype *ship, int *crithits,
   int eff_size, i, dam;
   *critdam = 0;
   *crithits = 0;
-  eff_size = MAX(1, Body(ship) / caliber);
+  eff_size = std::max(1, Body(ship) / caliber);
   for (i = 1; i <= penetrate; i++)
     if (!int_rand(0, eff_size - 1)) {
       *crithits += 1;
       dam = int_rand(0, 100);
       *critdam += dam;
     }
-  *critdam = MIN(100, *critdam);
+  *critdam = std::min(100, *critdam);
   /* check for special systems damage */
   strcpy(critmsg, "\t\tSpecial systems damage: ");
   if (ship->cew && success(*critdam)) {
@@ -600,7 +600,7 @@ double p_factor(double attacker, double defender) {
 
 int planet_guns(int points) {
   if (points < 0) return 0; /* shouldn't happen */
-  return MIN(20, points / 1000);
+  return std::min(20, points / 1000);
 }
 
 void mutate_sector(sectortype *s) {

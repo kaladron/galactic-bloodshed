@@ -107,10 +107,10 @@ void survey(int Playernum, int Governor, int APcount, int mode) {
       if (!all) {
         get4args(args[1], &x2, &hix, &lowy, &hiy);
         /* ^^^ translate from lowx:hix,lowy:hiy */
-        x2 = MAX(0, x2);
-        hix = MIN(hix, p->Maxx - 1);
-        lowy = MAX(0, lowy);
-        hiy = MIN(hiy, p->Maxy - 1);
+        x2 = std::max(0, x2);
+        hix = std::min(hix, p->Maxx - 1);
+        lowy = std::max(0, lowy);
+        hiy = std::min(hiy, p->Maxy - 1);
       } else {
         x2 = 0;
         hix = p->Maxx - 1;
@@ -422,10 +422,10 @@ void repair(int Playernum, int Governor, int APcount) {
     if (isdigit(args[1][0]) && index(args[1], ',') != NULL) {
       get4args(args[1], &x2, &hix, &lowy, &hiy);
       /* ^^^ translate from lowx:hix,lowy:hiy */
-      x2 = MAX(0, x2);
-      hix = MIN(hix, p->Maxx - 1);
-      lowy = MAX(0, lowy);
-      hiy = MIN(hiy, p->Maxy - 1);
+      x2 = std::max(0, x2);
+      hix = std::min(hix, p->Maxx - 1);
+      lowy = std::max(0, lowy);
+      hiy = std::min(hiy, p->Maxy - 1);
     } else {
       /* repair entire planet */
       x2 = 0;
@@ -442,7 +442,7 @@ void repair(int Playernum, int Governor, int APcount) {
           s = &Sector(*p, lowx, lowy);
           if (s->condition == WASTED && (s->owner == Playernum || !s->owner)) {
             s->condition = s->type;
-            s->fert = MIN(100, s->fert + 20);
+            s->fert = std::min(100, s->fert + 20);
             p->info[Playernum - 1].resource -= SECTOR_REPAIR_COST;
             cost += SECTOR_REPAIR_COST;
             sectors += 1;

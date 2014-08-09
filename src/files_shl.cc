@@ -235,7 +235,7 @@ int getship(shiptype **s, shipnum_t shipnum) {
   }
 }
 
-int getcommod(commodtype **c, int commodnum) {
+int getcommod(commodtype **c, commodnum_t commodnum) {
   struct stat buffer;
 
   if (commodnum <= 0) return 0;

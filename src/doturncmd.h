@@ -17,9 +17,6 @@ void fix_stability(startype *);
 void do_reset(int);
 void handle_victory(void);
 void make_discoveries(racetype *);
-#ifdef MARKET
-void maintain(racetype *, int, int);
-#endif
 int attack_planet(shiptype *);
 void output_ground_attacks(void);
 int planet_points(planettype *);

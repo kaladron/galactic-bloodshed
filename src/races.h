@@ -86,7 +86,7 @@ class race {
     toggletype toggle;
     money_t money;
     unsigned long income;
-    unsigned long maintain;
+    money_t maintain;
     unsigned long cost_tech;
     unsigned long cost_market;
     unsigned long profit_market;

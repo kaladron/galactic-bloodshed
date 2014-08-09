@@ -28,7 +28,7 @@
 static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
 
 static int jettison_check(int, int, int, int);
-static int landed_on(shiptype *, int);
+static int landed_on(shiptype *, shipnum_t);
 
 void load(int Playernum, int Governor, int APcount, int mode) {
   char commod;
@@ -1030,7 +1030,7 @@ void do_transporter(racetype *Race, int Governor, shiptype *s) {
   free(s2);
 }
 
-static int landed_on(shiptype *s, int shipno) {
+static int landed_on(shiptype *s, shipnum_t shipno) {
   return (s->whatorbits == LEVEL_SHIP && s->destshipno == shipno);
 }
 

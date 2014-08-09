@@ -27,7 +27,7 @@ void getrace(racetype **, int);
 void getstar(startype **, int);
 void getplanet(planettype **, starnum_t, planetnum_t);
 int getship(shiptype **, shipnum_t);
-int getcommod(commodtype **, int);
+int getcommod(commodtype **, commodnum_t);
 void getsector(sectortype **, planettype *, int, int);
 void getsmap(const sectortype *, const planettype *);
 int getdeadship(void);

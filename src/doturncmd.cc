@@ -30,10 +30,15 @@
 #include "tweakables.h"
 #include "vars.h"
 
+#ifdef MARKET
+static void maintain(racetype *, int, int);
+#endif
+
 void do_turn(int update) {
   int star, i, j;
   commodtype *c;
-  int dummy[2], temp;
+  unsigned long dummy[2];
+  int temp;
   double dist;
   struct victstruct {
     int numsects;
@@ -180,15 +185,15 @@ void do_turn(int update) {
 #endif
 
   /* check ship masses - ownership */
-  for (i = 1; i <= Num_ships; i++)
+  for (shipnum_t i = 1; i <= Num_ships; i++)
     if (ships[i]->alive) {
       domass(ships[i]);
       doown(ships[i]);
     }
 
   /* do all ships one turn - do slower ships first */
-  for (j = 0; j <= 9; j++)
-    for (i = 1; i <= Num_ships; i++) {
+  for (int j = 0; j <= 9; j++)
+    for (shipnum_t i = 1; i <= Num_ships; i++) {
       if (ships[i]->alive && ships[i]->speed == j) {
         doship(ships[i], update);
         if ((ships[i]->type == STYPE_MISSILE) && !attack_planet(ships[i]))
@@ -199,7 +204,7 @@ void do_turn(int update) {
 #ifdef MARKET
   /* do maintenance costs */
   if (update)
-    for (i = 1; i <= Num_ships; i++)
+    for (shipnum_t i = 1; i <= Num_ships; i++)
       if (ships[i]->alive && Shipdata[ships[i]->type][ABIL_MAINTAIN]) {
         if (ships[i]->popn)
           races[ships[i]->owner - 1]->governor[ships[i]->governor].maintain +=
@@ -212,11 +217,11 @@ void do_turn(int update) {
 
   /* prepare dead ships for recycling */
   clr_shipfree();
-  for (i = 1; i <= Num_ships; i++)
+  for (shipnum_t i = 1; i <= Num_ships; i++)
     if (!ships[i]->alive) makeshipdead(i);
 
   /* erase next ship pointers - reset in insert_sh_... */
-  for (i = 1; i <= Num_ships; i++) {
+  for (shipnum_t i = 1; i <= Num_ships; i++) {
     ships[i]->nextship = 0;
     ships[i]->ships = 0;
   }
@@ -250,20 +255,20 @@ void do_turn(int update) {
 
   /* put ABMs and surviving missiles here because ABMs need to have the missile
      in the shiplist of the target planet  Maarten */
-  for (i = 1; i <= Num_ships; i++) /* ABMs defend planet */
+  for (shipnum_t i = 1; i <= Num_ships; i++) /* ABMs defend planet */
     if ((ships[i]->type == OTYPE_ABM) && ships[i]->alive) doabm(ships[i]);
 
-  for (i = 1; i <= Num_ships; i++)
+  for (shipnum_t i = 1; i <= Num_ships; i++)
     if ((ships[i]->type == STYPE_MISSILE) && ships[i]->alive &&
         attack_planet(ships[i]))
       domissile(ships[i]);
 
-  for (i = Num_ships; i >= 1; i--) putship(ships[i]);
+  for (shipnum_t i = Num_ships; i >= 1; i--) putship(ships[i]);
 
-  for (star = 0; star < Sdata.numstars; star++) {
-    for (i = 0; i < Stars[star]->numplanets; i++) {
+  for (starnum_t star = 0; star < Sdata.numstars; star++) {
+    for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
       /* store occupation for VPs */
-      for (j = 1; j <= Num_races; j++) {
+      for (player_t j = 1; j <= Num_races; j++) {
         if (planets[star][i]->info[j - 1].numsectsowned) {
           setbit(inhabited[star], j);
           setbit(Stars[star]->inhabited, j);
@@ -420,7 +425,7 @@ void do_turn(int update) {
 #ifdef MARKET
       for (j = 0; j <= MAXGOVERNORS; j++)
         if (races[i - 1]->governor[j].active)
-          maintain(races[i - 1], j, (int)races[i - 1]->governor[j].maintain);
+          maintain(races[i - 1], j, races[i - 1]->governor[j].maintain);
 #endif
     }
     for (i = 1; i <= Num_races; i++) putrace(races[i - 1]);
@@ -702,7 +707,7 @@ void make_discoveries(racetype *r) {
 }
 
 #ifdef MARKET
-void maintain(racetype *r, int gov, int amount) {
+static void maintain(racetype *r, int gov, int amount) {
   if (r->governor[gov].money >= amount)
     r->governor[gov].money -= amount;
   else {

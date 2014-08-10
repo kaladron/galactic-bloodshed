@@ -18,14 +18,10 @@ void mount(const command_t &argv, const player_t Playernum,
 void use_fuel(shiptype *, double);
 void use_destruct(shiptype *, int);
 void use_resource(shiptype *, int);
-void use_popn(shiptype *, int, double);
 void rcv_fuel(shiptype *, double);
 void rcv_resource(shiptype *, int);
 void rcv_destruct(shiptype *, int);
 void rcv_popn(shiptype *, int, double);
 void rcv_troops(shiptype *, int, double);
-void do_transporter(racetype *, int, shiptype *);
-void unload_onto_alien_sector(int, int, planettype *, shiptype *, sectortype *,
-                              int, int);
 
 #endif  // LOAD_H

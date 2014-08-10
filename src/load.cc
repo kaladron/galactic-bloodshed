@@ -30,6 +30,10 @@ static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
 static int jettison_check(int, int, int, int);
 static int landed_on(shiptype *, shipnum_t);
 
+static void do_transporter(racetype *, int, shiptype *);
+static void unload_onto_alien_sector(int, int, planettype *, shiptype *,
+                                     sectortype *, int, int);
+
 void load(int Playernum, int Governor, int APcount, int mode) {
   char commod;
   unsigned char sh = 0, diff = 0;
@@ -888,11 +892,6 @@ void use_resource(shiptype *s, int amt) {
   s->mass -= (double)amt * MASS_RESOURCE;
 }
 
-void use_popn(shiptype *s, int amt, double mass) {
-  s->popn -= amt;
-  s->mass -= (double)amt * mass;
-}
-
 void rcv_fuel(shiptype *s, double amt) {
   s->fuel += amt;
   s->mass += amt * MASS_FUEL;
@@ -918,7 +917,7 @@ void rcv_troops(shiptype *s, int amt, double mass) {
   s->mass += (double)amt * mass;
 }
 
-void do_transporter(racetype *Race, int Governor, shiptype *s) {
+static void do_transporter(racetype *Race, int Governor, shiptype *s) {
   int Playernum;
   shiptype *s2;
 
@@ -1034,9 +1033,9 @@ static int landed_on(shiptype *s, shipnum_t shipno) {
   return (s->whatorbits == LEVEL_SHIP && s->destshipno == shipno);
 }
 
-void unload_onto_alien_sector(int Playernum, int Governor, planettype *planet,
-                              shiptype *ship, sectortype *sect, int what,
-                              int people) {
+static void unload_onto_alien_sector(int Playernum, int Governor,
+                                     planettype *planet, shiptype *ship,
+                                     sectortype *sect, int what, int people) {
   double astrength, dstrength;
   int oldowner, oldgov, oldpopn, old2popn, old3popn;
   int casualties, casualties2, casualties3;

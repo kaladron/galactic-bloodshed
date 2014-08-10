@@ -14,19 +14,6 @@ void doown(shiptype *);
 void domissile(shiptype *);
 void domine(int, int);
 void doabm(shiptype *);
-void do_repair(shiptype *);
-void do_habitat(shiptype *);
-void do_pod(shiptype *);
-int infect_planet(int, int, int);
-void do_meta_infect(int, planettype *);
-void do_canister(shiptype *);
-void do_greenhouse(shiptype *);
-void do_mirror(shiptype *);
-void do_god(shiptype *);
-void do_ap(shiptype *);
-double crew_factor(shiptype *);
-double ap_planet_factor(planettype *);
-void do_oap(shiptype *);
 int do_weapon_plant(shiptype *);
 
 #endif  // DOSHIP_H

@@ -33,6 +33,20 @@
 #include "tweakables.h"
 #include "vars.h"
 
+static double ap_planet_factor(planettype *);
+static double crew_factor(shiptype *);
+static void do_ap(shiptype *);
+static void do_canister(shiptype *);
+static void do_greenhouse(shiptype *);
+static void do_god(shiptype *);
+static void do_habitat(shiptype *);
+static void do_meta_infect(int, planettype *);
+static void do_mirror(shiptype *);
+static void do_oap(shiptype *);
+static void do_pod(shiptype *);
+static void do_repair(shiptype *);
+static int infect_planet(int, int, int);
+
 void doship(shiptype *ship, int update) {
   racetype *Race;
   shiptype *ship2;
@@ -436,7 +450,7 @@ void doabm(shiptype *ship) {
   }
 }
 
-void do_repair(shiptype *ship) {
+static void do_repair(shiptype *ship) {
   int drep, cost;
   double maxrep;
 
@@ -466,7 +480,7 @@ void do_repair(shiptype *ship) {
   }
 }
 
-void do_habitat(shiptype *ship) {
+static void do_habitat(shiptype *ship) {
   int sh;
   int add;
   double fuse;
@@ -494,7 +508,7 @@ void do_habitat(shiptype *ship) {
   rcv_popn(ship, add, races[ship->owner - 1]->mass);
 }
 
-void do_pod(shiptype *ship) {
+static void do_pod(shiptype *ship) {
   int i;
 
   if (ship->whatorbits == LEVEL_STAR) {
@@ -525,7 +539,7 @@ void do_pod(shiptype *ship) {
   }
 }
 
-int infect_planet(int who, int star, int p) {
+static int infect_planet(int who, int star, int p) {
   if (success(SPORE_SUCCESS_RATE)) {
     do_meta_infect(who, planets[star][p]);
     return 1;
@@ -533,7 +547,7 @@ int infect_planet(int who, int star, int p) {
     return 0;
 }
 
-void do_meta_infect(int who, planettype *p) {
+static void do_meta_infect(int who, planettype *p) {
   int owner, x, y;
 
   getsmap(Smap, p);
@@ -561,7 +575,7 @@ void do_meta_infect(int who, planettype *p) {
   }
 }
 
-void do_canister(shiptype *ship) {
+static void do_canister(shiptype *ship) {
   if (ship->whatorbits == LEVEL_PLAN && !landed(ship)) {
     if (++ship->special.timer.count < DISSIPATE) {
       if (Stinfo[ship->storbits][ship->pnumorbits].temp_add < -90)
@@ -584,7 +598,7 @@ void do_canister(shiptype *ship) {
   }
 }
 
-void do_greenhouse(shiptype *ship) {
+static void do_greenhouse(shiptype *ship) {
   if (ship->whatorbits == LEVEL_PLAN && !landed(ship)) {
     if (++ship->special.timer.count < DISSIPATE) {
       if (Stinfo[ship->storbits][ship->pnumorbits].temp_add > 90)
@@ -607,7 +621,7 @@ void do_greenhouse(shiptype *ship) {
   }
 }
 
-void do_mirror(shiptype *ship) {
+static void do_mirror(shiptype *ship) {
   switch (ship->special.aimed_at.level) {
     case LEVEL_SHIP: /* ship aimed at is a legal ship now */
       /* if in the same system */
@@ -670,7 +684,7 @@ void do_mirror(shiptype *ship) {
   }
 }
 
-void do_god(shiptype *ship) {
+static void do_god(shiptype *ship) {
   /* gods have infinite power.... heh heh heh */
   if (races[ship->owner - 1]->God) {
     ship->fuel = Max_fuel(ship);
@@ -679,7 +693,7 @@ void do_god(shiptype *ship) {
   }
 }
 
-void do_ap(shiptype *ship) {
+static void do_ap(shiptype *ship) {
   racetype *Race;
 
   /* if landed on planet, change conditions to be like race */
@@ -703,21 +717,21 @@ void do_ap(shiptype *ship) {
   }
 }
 
-double crew_factor(shiptype *ship) {
+static double crew_factor(shiptype *ship) {
   int maxcrew;
 
   if (!(maxcrew = Shipdata[ship->type][ABIL_MAXCREW])) return 0.0;
   return ((double)ship->popn / (double)maxcrew);
 }
 
-double ap_planet_factor(planettype *p) {
+static double ap_planet_factor(planettype *p) {
   double x;
 
   x = (double)p->Maxx * (double)p->Maxy;
   return (AP_FACTOR / (AP_FACTOR + x));
 }
 
-void do_oap(shiptype *ship) {
+static void do_oap(shiptype *ship) {
   /* "indimidate" the planet below, for enslavement purposes. */
   if (ship->whatorbits == LEVEL_PLAN)
     Stinfo[ship->storbits][ship->pnumorbits].intimidated = 1;

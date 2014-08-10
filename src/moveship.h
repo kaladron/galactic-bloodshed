@@ -11,6 +11,5 @@
 void Moveship(shiptype *, int, int, int);
 void msg_OOF(shiptype *);
 int followable(shiptype *, shiptype *);
-int do_merchant(shiptype *, planettype *);
 
 #endif  // MOVESHIP_H

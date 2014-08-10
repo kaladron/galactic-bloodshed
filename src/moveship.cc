@@ -36,6 +36,8 @@ static const double SpeedConsts[] = {0.0,  0.61, 1.26, 1.50, 1.73,
                                      1.81, 1.90, 1.93, 1.96, 1.97};
 /* amount of fuel it costs to move at speed level */
 
+static int do_merchant(shiptype *, planettype *);
+
 void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
   double stardist, movedist, truedist, dist, xdest, ydest, sn, cs;
   double mfactor, heading, distfac;
@@ -358,7 +360,7 @@ int followable(shiptype *s1, shiptype *s2) {
 /* this routine will do landing, launching, loading, unloading, etc
         for merchant ships. The ship is within landing distance of
         the target planet */
-int do_merchant(shiptype *s, planettype *p) {
+static int do_merchant(shiptype *s, planettype *p) {
   int i, j;
   double fuel;
   char load, unload;

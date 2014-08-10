@@ -360,10 +360,10 @@ void putstar(startype *s, starnum_t snum) {
         "VALUES (?1, ?2, ?3)";
 
     sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
-    for (player_t i = 0; i < MAXPLAYERS; i++) {
+    for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, s->governor[i]);
+      sqlite3_bind_int(stmt, 3, s->governor[i - 1]);
 
       sqlite3_step(stmt);
 
@@ -380,10 +380,10 @@ void putstar(startype *s, starnum_t snum) {
         "VALUES (?1, ?2, ?3)";
 
     sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
-    for (player_t i = 0; i < MAXPLAYERS; i++) {
+    for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, s->AP[i]);
+      sqlite3_bind_int(stmt, 3, s->AP[i - 1]);
 
       sqlite3_step(stmt);
 
@@ -400,10 +400,10 @@ void putstar(startype *s, starnum_t snum) {
         "VALUES (?1, ?2, ?3)";
 
     sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
-    for (player_t i = 0; i < MAXPLAYERS; i++) {
+    for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, isset(s->explored, i) ? 1 : 0);
+      sqlite3_bind_int(stmt, 3, isset(s->explored, i - 1) ? 1 : 0);
 
       sqlite3_step(stmt);
 
@@ -420,10 +420,10 @@ void putstar(startype *s, starnum_t snum) {
         "VALUES (?1, ?2, ?3)";
 
     sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
-    for (player_t i = 0; i < MAXPLAYERS; i++) {
+    for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, isset(s->inhabited, i) ? 1 : 0);
+      sqlite3_bind_int(stmt, 3, isset(s->inhabited, i - 1) ? 1 : 0);
 
       sqlite3_step(stmt);
 

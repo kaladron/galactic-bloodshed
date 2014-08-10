@@ -17,7 +17,6 @@ void send_message(int, int, int, int);
 void read_messages(int, int, int);
 void motto(int, int, int, const char *);
 void name(int, int, int);
-int MostAPs(int, startype *);
 void announce(int, int, const char *, int);
 
 #endif  // NAME_H

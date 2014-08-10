@@ -992,15 +992,6 @@ void name(int Playernum, int Governor, int APcount) {
   }
 }
 
-int MostAPs(int Playernum, startype *s) {
-  int i, t = 0;
-
-  for (i = 0; i < MAXPLAYERS; i++)
-    if (s->AP[i] >= t) t = s->AP[i];
-
-  return (s->AP[Playernum - 1] == t);
-}
-
 void announce(int Playernum, int Governor, const char *message, int mode) {
   racetype *Race;
   char symbol;

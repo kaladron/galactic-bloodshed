@@ -36,7 +36,7 @@ void initsqldata() __attribute__((no_sanitize_memory)) {
   const char *tbl_create = R"(
       CREATE TABLE tbl_planet(
           planet_id INT PRIMARY KEY NOT NULL, star_id INT NOT NULL,
-          name TEXT NOT NULL, planet_order INT NOT NULL, xpos DOUBLE,
+          planet_order INT NOT NULL, name TEXT NOT NULL, xpos DOUBLE,
           ypos DOUBLE, ships INT64, Maxx INT, Maxy INT, popn INT64,
           troops INT64, maxpopn INT64, total_resources INT64, slaved_to INT,
           type INT, expltimer INT, condition_rtemp INT, condition_temp INT,
@@ -44,6 +44,8 @@ void initsqldata() __attribute__((no_sanitize_memory)) {
           condition_hydrogen INT, condition_nitrogen INT, condition_sulfur INT,
           condition_helium INT, condition_other INT, condition_toxic INT,
           explored INT);
+
+  CREATE INDEX star_planet ON tbl_planet (star_id, planet_order);
 
   CREATE TABLE
   tbl_sector(planet_id INT NOT NULL, xpos INT NOT NULL, ypos INT NOT NULL,

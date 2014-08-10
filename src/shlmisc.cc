@@ -24,6 +24,8 @@
 #include "tweakables.h"
 #include "vars.h"
 
+static void do_revoke(racetype *, int, int);
+
 char *Ship(shiptype *s) {
   adr = !adr; /* switch between 0 and 1 - adr is a global variable */
   sprintf(junk[adr], "%c%lu %s [%d]", Shipltrs[s->type], s->number, s->name,
@@ -209,7 +211,7 @@ void governors(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, "Bad option.\n");
 }
 
-void do_revoke(racetype *Race, int gov, int j) {
+static void do_revoke(racetype *Race, int gov, int j) {
   char revoke_buf[1024];
   shiptype *ship;
 
@@ -569,43 +571,6 @@ void deductAPs(int Playernum, int Governor, int n, int snum, int sdata) {
         Dir[Playernum - 1][Governor].prompt[3] = ']';
       }
     }
-  }
-}
-
-/* lists all ships in current scope for debugging purposes */
-void list(int Playernum, int Governor) {
-  shiptype *ship;
-  planettype *p;
-  int sh;
-
-  switch (Dir[Playernum - 1][Governor].level) {
-    case LEVEL_UNIV:
-      sh = Sdata.ships;
-      break;
-    case LEVEL_STAR:
-      getstar(&Stars[Dir[Playernum - 1][Governor].snum],
-              Dir[Playernum - 1][Governor].snum);
-      sh = Stars[Dir[Playernum - 1][Governor].snum]->ships;
-      break;
-    case LEVEL_PLAN:
-      getplanet(&p, Dir[Playernum - 1][Governor].snum,
-                Dir[Playernum - 1][Governor].pnum);
-      sh = p->ships;
-      free(p);
-      break;
-    case LEVEL_SHIP:
-      sh = Dir[Playernum - 1][Governor].shipno;
-      break;
-  }
-
-  while (sh) {
-    (void)getship(&ship, sh);
-    sprintf(buf, "%15s #%d '%s' (pl %d) -> #%lu %s\n", Shipnames[ship->type],
-            sh, ship->name, ship->owner, ship->nextship,
-            ship->alive ? "" : "(dead)");
-    notify(Playernum, Governor, buf);
-    sh = ship->nextship;
-    free(ship);
   }
 }
 

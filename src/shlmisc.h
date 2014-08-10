@@ -13,7 +13,6 @@
 char *Ship(shiptype *s);
 void grant(int, int, int);
 void governors(int, int, int);
-void do_revoke(racetype *, int, int);
 int authorized(int, shiptype *);
 int start_shiplist(int, int, const char *);
 shipnum_t do_shiplist(shiptype **, shipnum_t *);
@@ -27,7 +26,6 @@ player_t GetPlayer(const char *);
 player_t GetPlayer(const std::string &);
 void allocateAPs(int, int, int);
 void deductAPs(int, int, int, int, int);
-void list(int, int);
 double morale_factor(double);
 
 #endif  // SHLMISC_H

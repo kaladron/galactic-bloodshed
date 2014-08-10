@@ -27,6 +27,9 @@
 #include "tweakables.h"
 #include "vars.h"
 
+static void check_overload(shiptype *, int, int *);
+static void check_retal_strength(shiptype *, int *);
+
 void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
 {
   shipnum_t fromship, toship, sh, nextshipno;
@@ -761,7 +764,7 @@ int landed(shiptype *ship) {
   return (ship->whatdest == LEVEL_PLAN && ship->docked);
 }
 
-void check_overload(shiptype *ship, int cew, int *strength) {
+static void check_overload(shiptype *ship, int cew, int *strength) {
   if ((ship->laser && ship->fire_laser) || cew) {
     if (int_rand(0, *strength) >
         (int)((1.0 - .01 * ship->damage) * ship->tech / 2.0)) {
@@ -787,7 +790,7 @@ void check_overload(shiptype *ship, int cew, int *strength) {
   }
 }
 
-void check_retal_strength(shiptype *ship, int *strength) {
+static void check_retal_strength(shiptype *ship, int *strength) {
   *strength = 0;
   if (ship->active && ship->alive) { /* irradiated ships dont retaliate */
     if (laser_on(ship))

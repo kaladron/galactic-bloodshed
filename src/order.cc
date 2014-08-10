@@ -25,6 +25,11 @@
 #include "tweakables.h"
 #include "vars.h"
 
+static char *prin_aimed_at(int, int, shiptype *);
+static void mk_expl_aimed_at(int, int, shiptype *);
+static void DispOrdersHeader(int, int);
+static void DispOrders(int, int, shiptype *);
+
 void order(int Playernum, int Governor, int APcount) {
   shipnum_t shipno, nextshipno;
   shiptype *ship;
@@ -597,7 +602,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
   putship(ship);
 }
 
-char *prin_aimed_at(int Playernum, int Governor, shiptype *ship) {
+static char *prin_aimed_at(int Playernum, int Governor, shiptype *ship) {
   placetype targ;
 
   targ.level = ship->special.aimed_at.level;
@@ -620,7 +625,7 @@ char *prin_ship_dest(int Playernum, int Governor, shiptype *ship) {
 /*
  * mark wherever the ship is aimed at, as explored by the owning player.
  */
-void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
+static void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
   double dist;
   startype *str;
   planettype *p;
@@ -680,12 +685,12 @@ void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
   }
 }
 
-void DispOrdersHeader(int Playernum, int Governor) {
+static void DispOrdersHeader(int Playernum, int Governor) {
   notify(Playernum, Governor,
          "    #       name       sp orbits     destin     options\n");
 }
 
-void DispOrders(int Playernum, int Governor, shiptype *ship) {
+static void DispOrders(int Playernum, int Governor, shiptype *ship) {
   double distfac;
 
   if (ship->owner != Playernum || !authorized(Governor, ship) || !ship->alive)

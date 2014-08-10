@@ -36,6 +36,15 @@
 #include "tweakables.h"
 #include "vars.h"
 
+static void do_dome(shiptype *, planettype *);
+static void do_quarry(shiptype *, planettype *);
+static void do_berserker(shiptype *, planettype *);
+static void do_recover(planettype *, int, int);
+static double est_production(sectortype *);
+static int moveship_onplanet(shiptype *, planettype *);
+static void plow(shiptype *, planettype *);
+static void terraform(shiptype *, planettype *);
+
 int doplanet(int starnum, planettype *planet, int planetnum) {
   int shipno, x, y, nukex, nukey;
   int o = 0;
@@ -614,7 +623,7 @@ if (!Stinfo[starnum][planetnum].inhab)
   return allmod;
 }
 
-int moveship_onplanet(shiptype *ship, planettype *planet) {
+static int moveship_onplanet(shiptype *ship, planettype *planet) {
   int x, y, bounced = 0;
 
   if (ship->shipclass[ship->special.terraform.index] == 's') {
@@ -648,7 +657,7 @@ int moveship_onplanet(shiptype *ship, planettype *planet) {
   return 1;
 }
 
-void terraform(shiptype *ship, planettype *planet) {
+static void terraform(shiptype *ship, planettype *planet) {
   sectortype *s;
 
   /* move, and then terraform. */
@@ -681,7 +690,7 @@ void terraform(shiptype *ship, planettype *planet) {
   }
 }
 
-void plow(shiptype *ship, planettype *planet) {
+static void plow(shiptype *ship, planettype *planet) {
   sectortype *s;
 
   if (!moveship_onplanet(ship, planet)) return;
@@ -706,7 +715,7 @@ void plow(shiptype *ship, planettype *planet) {
   }
 }
 
-void do_dome(shiptype *ship, planettype *planet) {
+static void do_dome(shiptype *ship, planettype *planet) {
   sectortype *s;
   int adjust;
 
@@ -723,7 +732,7 @@ void do_dome(shiptype *ship, planettype *planet) {
   use_resource(ship, RES_COST_DOME);
 }
 
-void do_quarry(shiptype *ship, planettype *planet) {
+static void do_quarry(shiptype *ship, planettype *planet) {
   sectortype *s;
   int prod, tox;
 
@@ -748,7 +757,7 @@ void do_quarry(shiptype *ship, planettype *planet) {
     s->fert = 0;
 }
 
-void do_berserker(shiptype *ship, planettype *planet) {
+static void do_berserker(shiptype *ship, planettype *planet) {
   if (ship->whatdest == LEVEL_PLAN && ship->whatorbits == LEVEL_PLAN &&
       !landed(ship) && ship->storbits == ship->deststar &&
       ship->pnumorbits == ship->destpnum) {
@@ -759,7 +768,7 @@ void do_berserker(shiptype *ship, planettype *planet) {
   }
 }
 
-void do_recover(planettype *planet, int starnum, int planetnum) {
+static void do_recover(planettype *planet, int starnum, int planetnum) {
   int owners = 0, i, j;
   int ownerbits[2];
   int stolenres = 0, stolendes = 0, stolenfuel = 0, stolencrystals = 0;
@@ -869,7 +878,7 @@ void do_recover(planettype *planet, int starnum, int planetnum) {
   }
 }
 
-double est_production(sectortype *s) {
+static double est_production(sectortype *s) {
   return (races[s->owner - 1]->metabolism * (double)s->eff * (double)s->eff /
           200.0);
 }

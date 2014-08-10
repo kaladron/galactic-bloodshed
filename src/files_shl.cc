@@ -14,6 +14,7 @@
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -191,8 +192,33 @@ void getstar(startype **s, int star) {
   else {
     *s = (startype *)malloc(sizeof(startype));
   }
+  memset(*s, 0, sizeof(startype));
   Fileread(stdata, (char *)*s, sizeof(startype),
            (int)(sizeof(Sdata) + star * sizeof(startype)));
+  const char *tail;
+
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "SELECT ships, name, xpos, ypos, "
+      "numplanets, stability, nova_stage, temperature, gravity "
+      "FROM tbl_star WHERE star_id=?1 LIMIT 1";
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+
+  sqlite3_bind_int(stmt, 1, star);
+  sqlite3_step(stmt);
+  (*s)->ships = static_cast<short>(sqlite3_column_int(stmt, 0));
+  strcpy((*s)->name,
+         reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1)));
+  (*s)->xpos = sqlite3_column_double(stmt, 2);
+  (*s)->ypos = sqlite3_column_double(stmt, 3);
+  (*s)->numplanets = static_cast<short>(sqlite3_column_int(stmt, 4));
+  (*s)->stability = static_cast<short>(sqlite3_column_int(stmt, 5));
+  (*s)->nova_stage = static_cast<short>(sqlite3_column_int(stmt, 6));
+  (*s)->temperature = static_cast<short>(sqlite3_column_int(stmt, 7));
+  (*s)->gravity = sqlite3_column_double(stmt, 8);
+
+  sqlite3_clear_bindings(stmt);
+  sqlite3_reset(stmt);
 }
 
 void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {

@@ -1179,6 +1179,7 @@ void do_update(int override) {
   update_flag = 0;
   clk = time(0);
   sprintf(buf, "%sUpdate %d finished\n", ctime(&clk), nupdates_done);
+  handle_victory();
   if (!fakeit) {
     for (i = 1; i <= Num_races; i++) notify_race(i, buf);
     force_output();

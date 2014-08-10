@@ -34,6 +34,14 @@
 static void maintain(racetype *, int, int);
 #endif
 
+static int APadd(int, int, racetype *);
+static int attack_planet(shiptype *);
+static void fix_stability(startype *);
+static int governed(racetype *);
+static void make_discoveries(racetype *);
+static void output_ground_attacks(void);
+static int planet_points(planettype *);
+
 void do_turn(int update) {
   int star, i, j;
   commodtype *c;
@@ -456,7 +464,7 @@ void do_turn(int update) {
 /* routine for number of AP's to add to each player in ea. system,scaled
     by amount of crew in their palace */
 
-int APadd(int sh, int popn, racetype *race) {
+static int APadd(int sh, int popn, racetype *race) {
   int APs;
 
   APs = round_rand((double)sh / 10.0 + 5. * log10(1.0 + (double)popn));
@@ -657,7 +665,7 @@ void handle_victory(void) {
 #endif
 }
 
-void make_discoveries(racetype *r) {
+static void make_discoveries(racetype *r) {
   /* would be nicer to do this with a loop of course - but it's late */
   if (!Hyper_drive(r) && r->tech >= TECH_HYPER_DRIVE) {
     push_telegram_race(r->Playernum,
@@ -717,14 +725,14 @@ static void maintain(racetype *r, int gov, int amount) {
 }
 #endif
 
-int attack_planet(shiptype *ship) {
+static int attack_planet(shiptype *ship) {
   if (ship->whatdest == LEVEL_PLAN)
     return 1;
   else
     return 0;
 }
 
-void output_ground_attacks(void) {
+static void output_ground_attacks(void) {
   int star, i, j;
 
   for (star = 0; star < Sdata.numstars; star++)
@@ -739,7 +747,7 @@ void output_ground_attacks(void) {
         }
 }
 
-int planet_points(planettype *p) {
+static int planet_points(planettype *p) {
   switch (p->type) {
     case TYPE_ASTEROID:
       return ASTEROID_POINTS;

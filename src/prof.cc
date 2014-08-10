@@ -18,6 +18,9 @@
 #include "tweakables.h"
 #include "vars.h"
 
+static int round_perc(int, racetype *, int);
+static char *Estimate_f(double, racetype *, int);
+
 void whois(int Playernum, int Governor, int APcount) {
   int i, j, numraces;
   racetype *Race;
@@ -259,7 +262,7 @@ void profile(int Playernum, int Governor, int APcount) {
 
 static char est_buf[20];
 
-char *Estimate_f(double data, racetype *r, int p) {
+static char *Estimate_f(double data, racetype *r, int p) {
   int est;
 
   sprintf(est_buf, "?");
@@ -297,7 +300,7 @@ char *Estimate_i(int data, racetype *r, int p) {
   return est_buf;
 }
 
-int round_perc(int data, racetype *r, int p) {
+static int round_perc(int data, racetype *r, int p) {
   int k;
 
   k = 101 - MIN(r->translate[p - 1], 100);

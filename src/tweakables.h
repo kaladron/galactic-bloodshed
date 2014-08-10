@@ -238,15 +238,16 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 /*   (look in doturn)  */
 #define LIMIT_APs 255 /* max # of APs you can have */
 
-#define TYPE_EARTH 0
-#define TYPE_ASTEROID 1
-#define TYPE_MARS 2
-#define TYPE_ICEBALL 3
-#define TYPE_GASGIANT 4
-#define TYPE_WATER 5
-#define TYPE_FOREST 6
-#define TYPE_DESERT 7
-#define TYPE_MAX 7  // Keep this equal to the greatest one
+enum ptype_t {
+  TYPE_EARTH,
+  TYPE_ASTEROID,
+  TYPE_MARS,
+  TYPE_ICEBALL,
+  TYPE_GASGIANT,
+  TYPE_WATER,
+  TYPE_FOREST,
+  TYPE_DESERT
+};
 
 /* number of global APs each planet is worth */
 #define EARTH_POINTS int_rand(5, 8)

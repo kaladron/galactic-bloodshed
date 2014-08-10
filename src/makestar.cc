@@ -200,7 +200,8 @@ static char *NextStarName(void) {
 
 startype *Makestar(FILE *planetdata, FILE *sectordata) {
   planettype planet;
-  int type, roll, temperature;
+  ptype_t type;
+  int roll, temperature;
   int i, y, x;
   double dist, distmin, distmax, distsep;
   double angle, xpos, ypos;

@@ -169,7 +169,7 @@ struct planet {
   unsigned long total_resources;
 
   player_t slaved_to;
-  unsigned char type;      /* what type planet is */
+  ptype_t type;            /* what type planet is */
   unsigned char expltimer; /* timer for explorations */
 
   unsigned char explored;

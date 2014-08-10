@@ -765,7 +765,5 @@ static int planet_points(planettype *p) {
       return FOREST_POINTS;
     case TYPE_DESERT:
       return DESERT_POINTS;
-    default:
-      return 0;
   }
 }

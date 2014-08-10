@@ -76,7 +76,7 @@ static short SectTemp(planettype *, int);
 static void seed(planettype *, int, int);
 static void grow(planettype *, int, int, int);
 
-planettype Makeplanet(double dist, short stemp, int type) {
+planettype Makeplanet(double dist, short stemp, ptype_t type) {
   int x, y;
   sectortype *s;
   planettype planet;

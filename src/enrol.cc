@@ -77,7 +77,7 @@ int main() {
   sectortype *sect;
   struct stype secttypes[WASTED + 1] = {};
   planettype *planet;
-  unsigned char not_found[TYPE_MAX + 1];
+  unsigned char not_found[TYPE_DESERT + 1];
   startype *star_arena;
 
   open_data_files();

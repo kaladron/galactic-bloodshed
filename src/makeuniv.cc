@@ -144,7 +144,6 @@ int main(int argc, char *argv[]) {
   Makeplanet_init();
   Makestar_init();
   Sdata.numstars = nstars;
-  sprintf(str, "/bin/mkdir %s", DATADIR);
   system(str);
 
   open_data_files();

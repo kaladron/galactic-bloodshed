@@ -5,7 +5,11 @@
 #ifndef SURVEY_H
 #define SURVEY_H
 
-void survey(int, int, int, int);
-void repair(int, int, int);
+#include "vars.h"
+
+void survey(const command_t &argv, const player_t Playernum,
+            const governor_t Governor);
+void repair(const command_t &argv, const player_t Playernum,
+            const governor_t Governor);
 
 #endif  // SURVEY_H

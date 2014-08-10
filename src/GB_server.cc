@@ -189,6 +189,7 @@ int main(int argc, char **argv) {
   commands = new std::unordered_map<std::string, CommandFunction>{
       {"bid", bid},
       {"build", build},
+      {"client_survey", survey},
       {"dismount", mount},
       {"enslave", enslave},
       {"factories", rst},
@@ -198,8 +199,10 @@ int main(int argc, char **argv) {
       {"mount", mount},
       {"orbit", orbit},
       {"relation", relation},
+      {"repair", repair},
       {"report", rst},
       {"sell", sell},
+      {"survey", survey},
       {"ship", rst},
       {"stats", rst},
       {"stock", rst},
@@ -1449,9 +1452,7 @@ static void process_command(int Playernum, int Governor, const char *comm,
     load_race_data();
     load_star_data();
     do_reset(1);
-  } else if (match(args[0], "repair"))
-    repair(Playernum, Governor, 0);
-  else if (match(args[0], "route"))
+  } else if (match(args[0], "route"))
     route(Playernum, Governor, 0);
   else if (match(args[0], "@@shutdown") && God) {
     shutdown_flag = 1;
@@ -1460,10 +1461,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     do_update(1);
   else if (match(args[0], "@@segment") && God)
     do_segment(1, atoi(args[1]));
-  else if (match(args[0], "survey"))
-    survey(Playernum, Governor, 0, 0);
-  else if (match(args[0], "client_survey"))
-    survey(Playernum, Governor, 0, 1);
   else if (match(args[0], "send"))
     send_message(Playernum, Governor, !God, 0);
   else if (match(args[0], "scrap") && (argn > 1))

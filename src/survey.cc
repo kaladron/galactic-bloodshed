@@ -42,7 +42,8 @@ static const char *Tox[] = {
     "Stage 10: WARNING: COMPLETELY TOXIC!!!",
     "???"};
 
-void survey(int Playernum, int Governor, int APcount, int mode) {
+void survey(const command_t &argv, const player_t Playernum,
+            const governor_t Governor) {
   int lowx, hix, lowy, hiy, x2;
   char d;
   char sect_char;
@@ -68,6 +69,12 @@ void survey(int Playernum, int Governor, int APcount, int mode) {
   int shiplist;
   shiptype *shipa;
   int i;
+
+  int mode;
+  if (argv[0] == "survey")
+    mode = 0;
+  else
+    mode = 1;
 
   /* general code -- jpd -- */
 
@@ -381,7 +388,8 @@ void survey(int Playernum, int Governor, int APcount, int mode) {
   }
 } /* end survey */
 
-void repair(int Playernum, int Governor, int APcount) {
+void repair(const command_t &argv, const player_t Playernum,
+            const governor_t Governor) {
   int lowx, hix, lowy, hiy, x2, sectors, cost;
   sectortype *s;
   planettype *p;

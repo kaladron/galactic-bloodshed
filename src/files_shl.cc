@@ -128,7 +128,7 @@ void close_data_files(void) {
 
 void openstardata(int *fd) {
   /*printf(" openstardata\n");*/
-  if ((*fd = open(STARDATAFL, O_RDWR, 0777)) < 0) {
+  if ((*fd = open(STARDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("openstardata");
     printf("unable to open %s\n", STARDATAFL);
     exit(-1);
@@ -136,7 +136,7 @@ void openstardata(int *fd) {
 }
 
 void openshdata(int *fd) {
-  if ((*fd = open(SHIPDATAFL, O_RDWR, 0777)) < 0) {
+  if ((*fd = open(SHIPDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("openshdata");
     printf("unable to open %s\n", SHIPDATAFL);
     exit(-1);
@@ -144,7 +144,7 @@ void openshdata(int *fd) {
 }
 
 void opencommoddata(int *fd) {
-  if ((*fd = open(COMMODDATAFL, O_RDWR, 0777)) < 0) {
+  if ((*fd = open(COMMODDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("opencommoddata");
     printf("unable to open %s\n", COMMODDATAFL);
     exit(-1);
@@ -152,7 +152,7 @@ void opencommoddata(int *fd) {
 }
 
 void openpdata(int *fd) {
-  if ((*fd = open(PLANETDATAFL, O_RDWR, 0777)) < 0) {
+  if ((*fd = open(PLANETDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("openpdata");
     printf("unable to open %s\n", PLANETDATAFL);
     exit(-1);
@@ -160,7 +160,7 @@ void openpdata(int *fd) {
 }
 
 void opensectdata(int *fd) {
-  if ((*fd = open(SECTORDATAFL, O_RDWR, 0777)) < 0) {
+  if ((*fd = open(SECTORDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("opensectdata");
     printf("unable to open %s\n", SECTORDATAFL);
     exit(-1);
@@ -168,7 +168,7 @@ void opensectdata(int *fd) {
 }
 
 void openracedata(int *fd) {
-  if ((*fd = open(RACEDATAFL, O_RDWR, 0777)) < 0) {
+  if ((*fd = open(RACEDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("openrdata");
     printf("unable to open %s\n", RACEDATAFL);
     exit(-1);

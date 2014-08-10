@@ -99,7 +99,6 @@ add_executable(GB
   files_shl.cc
   fire.cc
   fuel.cc
-  get4args.cc
   getplace.cc
   land.cc
   launch.cc

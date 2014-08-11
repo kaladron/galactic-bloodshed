@@ -13,6 +13,8 @@
 #include "races.h"
 #include "vars.h"
 
+static int victory_sort(const void *, const void *);
+
 void victory(int Playernum, int Governor, int APcount) {
   struct vic vic[MAXPLAYERS];
   racetype *Race;
@@ -74,7 +76,7 @@ void create_victory_list(struct vic vic[MAXPLAYERS]) {
   qsort(vic, Num_races, sizeof(struct vic), victory_sort);
 }
 
-int victory_sort(const void *A, const void *B) {
+static int victory_sort(const void *A, const void *B) {
   const struct vic *a = (const struct vic *)A;
   const struct vic *b = (const struct vic *)B;
   if (a->no_count)

@@ -31,6 +31,15 @@ static int do_radiation(shiptype *, double, int, int, const char *, char *);
 static int do_damage(int, shiptype *, double, int, int, int, int, double,
                      const char *, char *);
 
+static void ship_disposition(shiptype *, int *, int *, int *);
+static int CEW_hit(double, int);
+static int Num_hits(double, int, int, double, int, int, int, int, int, int, int,
+                    int);
+static int cew_hit_odds(double, int);
+static void do_critical_hits(int, shiptype *, int *, int *, int, char *);
+static double p_factor(double, double);
+static void mutate_sector(sectortype *);
+
 int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
                        int ignore, char *long_msg, char *short_msg) {
   int hits;
@@ -401,7 +410,8 @@ static int do_damage(int who, shiptype *ship, double tech, int strength,
   return damage;
 }
 
-void ship_disposition(shiptype *ship, int *evade, int *speed, int *body) {
+static void ship_disposition(shiptype *ship, int *evade, int *speed,
+                             int *body) {
   *evade = 0;
   *speed = 0;
   *body = Size(ship);
@@ -412,7 +422,7 @@ void ship_disposition(shiptype *ship, int *evade, int *speed, int *body) {
   return;
 }
 
-int CEW_hit(double dist, int cew_range) {
+static int CEW_hit(double dist, int cew_range) {
   int prob, hits;
 
   hits = 0;
@@ -423,9 +433,9 @@ int CEW_hit(double dist, int cew_range) {
   return hits;
 }
 
-int Num_hits(double dist, int focus, int guns, double tech, int fdam, int fev,
-             int tev, int fspeed, int tspeed, int body, int caliber,
-             int defense) {
+static int Num_hits(double dist, int focus, int guns, double tech, int fdam,
+                    int fev, int tev, int fspeed, int tspeed, int body,
+                    int caliber, int defense) {
   int factor;
   int i, prob, hits;
 
@@ -468,7 +478,7 @@ int hit_odds(double range, int *factor, double tech, int fdam, int fev, int tev,
   return odds;
 }
 
-int cew_hit_odds(double range, int cew_range) {
+static int cew_hit_odds(double range, int cew_range) {
   int odds;
   double factor;
 
@@ -512,8 +522,8 @@ int current_caliber(shiptype *ship) {
     return NONE;
 }
 
-void do_critical_hits(int penetrate, shiptype *ship, int *crithits,
-                      int *critdam, int caliber, char *critmsg) {
+static void do_critical_hits(int penetrate, shiptype *ship, int *crithits,
+                             int *critdam, int caliber, char *critmsg) {
   int eff_size, i, dam;
   *critdam = 0;
   *crithits = 0;
@@ -593,7 +603,7 @@ int getdefense(shiptype *ship) {
   return defense;
 }
 
-double p_factor(double attacker, double defender) {
+static double p_factor(double attacker, double defender) {
   return ((2. / 3.141592) *
           atan(5 * (double)((attacker + 1.0) / (defender + 1.0))));
 }
@@ -603,6 +613,6 @@ int planet_guns(int points) {
   return std::min(20, points / 1000);
 }
 
-void mutate_sector(sectortype *s) {
+static void mutate_sector(sectortype *s) {
   if (int_rand(0, 6) >= Defensedata[s->condition]) s->condition = s->type;
 }

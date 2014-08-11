@@ -17,19 +17,12 @@ int shoot_planet_to_ship(racetype *, planettype *, shiptype *, int, char *,
 #endif
 int shoot_ship_to_planet(shiptype *, planettype *, int, int, int, int, int, int,
                          char *, char *);
-void ship_disposition(shiptype *, int *, int *, int *);
-int CEW_hit(double, int);
-int Num_hits(double, int, int, double, int, int, int, int, int, int, int, int);
 int hit_odds(double, int *, double, int, int, int, int, int, int, int, int);
-int cew_hit_odds(double, int);
 double gun_range(racetype *, shiptype *, int);
 double tele_range(int, double);
 int current_caliber(shiptype *);
-void do_critical_hits(int, shiptype *, int *, int *, int, char *);
 void do_collateral(shiptype *, int, int *, int *, int *, int *);
 int getdefense(shiptype *);
-double p_factor(double, double);
 int planet_guns(int);
-void mutate_sector(sectortype *);
 
 #endif  // SHOOTBLAST_H

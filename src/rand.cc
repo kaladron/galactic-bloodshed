@@ -30,7 +30,4 @@ int round_rand(double x) {
   return ((double_rand() > (x - (double)((int)x))) ? (int)x : (int)(x + 1));
 }
 
-/* int rposneg() - either -1 or 1 */
-int rposneg(void) { return ((random() & 1) ? -1 : 1); }
-
 int success(int x) { return int_rand(1, 100) <= (x); }

@@ -18,6 +18,8 @@
 #include "vars.h"
 #include "victory.h"
 
+static void prepare_output_line(racetype *, racetype *, int, int);
+
 void block(int Playernum, int Governor, int APcount) {
   int i, n;
   int p;
@@ -221,7 +223,7 @@ void power(int Playernum, int Governor, int APcount) {
   }
 }
 
-void prepare_output_line(racetype *Race, racetype *r, int i, int rank) {
+static void prepare_output_line(racetype *Race, racetype *r, int i, int rank) {
   if (rank)
     sprintf(buf, "%2d ", rank);
   else

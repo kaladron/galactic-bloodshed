@@ -26,6 +26,9 @@
 #include "tweakables.h"
 #include "vars.h"
 
+static void order_berserker(shiptype *);
+static void order_VN(shiptype *);
+
 /*  do_VN() -- called by doship() */
 void do_VN(shiptype *ship) {
   planettype *p;
@@ -92,7 +95,7 @@ void do_VN(shiptype *ship) {
   }
 }
 
-void order_berserker(shiptype *ship) {
+static void order_berserker(shiptype *ship) {
   /* give berserkers a mission - send to planet of offending player and bombard
    * it */
   ship->bombard = 1;
@@ -110,7 +113,7 @@ void order_berserker(shiptype *ship) {
   }
 }
 
-void order_VN(shiptype *ship) {
+static void order_VN(shiptype *ship) {
   int s, min = 0, min2 = 0;
 
   /* find closest star */

@@ -10,7 +10,5 @@
 
 void do_VN(shiptype *);
 void planet_doVN(shiptype *, planettype *);
-void order_berserker(shiptype *);
-void order_VN(shiptype *);
 
 #endif  // VN_H

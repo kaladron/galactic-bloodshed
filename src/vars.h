@@ -154,6 +154,7 @@ struct sector {
 };
 
 struct planet {
+  int planet_id;
   int sectormappos; /* file posn for sector map */
 
   double xpos, ypos;        /* x,y relative to orbit */

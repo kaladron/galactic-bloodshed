@@ -77,6 +77,7 @@ static void seed(planettype *, int, int);
 static void grow(planettype *, int, int, int);
 
 planettype Makeplanet(double dist, short stemp, ptype_t type) {
+  static planetnum_t planet_id = 0;
   int x, y;
   sectortype *s;
   planettype planet;
@@ -86,6 +87,8 @@ planettype Makeplanet(double dist, short stemp, ptype_t type) {
 
   bzero(&planet, sizeof(planet));
   bzero(&Smap, sizeof(Smap));
+  planet.planet_id = planet_id;
+  planet_id++;
   planet.type = type;
   planet.expltimer = 5;
   planet.conditions[TEMP] = planet.conditions[RTEMP] = Temperature(dist, stemp);

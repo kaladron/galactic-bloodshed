@@ -154,7 +154,6 @@ struct sector {
 };
 
 struct planet {
-  int planet_id;
   int sectormappos; /* file posn for sector map */
 
   double xpos, ypos;        /* x,y relative to orbit */
@@ -175,7 +174,8 @@ struct planet {
 
   unsigned char explored;
 
-  unsigned long dummy[2];
+  int planet_id;
+  unsigned long dummy[1];
 };
 
 struct star {

@@ -257,6 +257,37 @@ void getsector(sectortype **s, planettype *p, int x, int y) {
   filepos = p->sectormappos + (y * p->Maxx + x) * sizeof(sectortype);
   *s = (sectortype *)malloc(sizeof(sectortype));
   Fileread(sectdata, (char *)*s, sizeof(sectortype), filepos);
+  const char *tail;
+  {
+    sqlite3_stmt *stmt;
+    const char *sql =
+        "SELECT planet_id, xpos, ypos, eff, fert, "
+        "mobilization, crystals, resource, popn, troops, owner, "
+        "race, type, condition FROM tbl_sector "
+        "WHERE planet_id=?1, xpos=?2, ypos=?3";
+    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+
+    sqlite3_bind_int(stmt, 1, p->planet_id);
+    sqlite3_bind_int(stmt, 2, x);
+    sqlite3_bind_int(stmt, 3, y);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+      (*s)->eff = sqlite3_column_int(stmt, 3);
+      (*s)->fert = sqlite3_column_int(stmt, 4);
+      (*s)->mobilization = sqlite3_column_int(stmt, 5);
+      (*s)->crystals = sqlite3_column_int(stmt, 6);
+      (*s)->resource = sqlite3_column_int(stmt, 7);
+      (*s)->popn = sqlite3_column_int(stmt, 8);
+      (*s)->troops = sqlite3_column_int(stmt, 9);
+      (*s)->owner = sqlite3_column_int(stmt, 10);
+      (*s)->race = sqlite3_column_int(stmt, 11);
+      (*s)->type = sqlite3_column_int(stmt, 12);
+      (*s)->condition = sqlite3_column_int(stmt, 13);
+    }
+
+    sqlite3_clear_bindings(stmt);
+    sqlite3_reset(stmt);
+  }
 }
 
 void getsmap(const sectortype *map, const planettype *p) {

@@ -54,4 +54,7 @@ void Getpower(struct power[MAXPLAYERS]);
 void Putblock(struct block[MAXPLAYERS]);
 void Getblock(struct block[MAXPLAYERS]);
 
+void start_bulk_insert();
+void end_bulk_insert();
+
 #endif  // FILES_SHL_H

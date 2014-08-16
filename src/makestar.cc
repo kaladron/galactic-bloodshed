@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "files.h"
+#include "files_shl.h"
 #include "makeplanet.h"
 #include "makeuniv.h"
 #include "rand.h"
@@ -343,12 +344,15 @@ startype *Makestar(FILE *planetdata, FILE *sectordata) {
       }
     Star->planetpos[i] = (int)ftell(planetdata);
     /* posn of file-last write*/
-    planet.sectormappos = (int)ftell(sectordata);       /* sector map pos */
+    planet.sectormappos = (int)ftell(sectordata); /* sector map pos */
+    // XXX - switch here to SQL writing and planet_id.
     fwrite(&planet, sizeof(planettype), 1, planetdata); /* write planet */
+    start_bulk_insert();
     /* write each sector row */
     for (y = 0; y < planet.Maxy; y++)
-      fwrite(&Sector(planet, 0, y), sizeof(sectortype), planet.Maxx,
-             sectordata);
+      for (int x = 0; x < planet.Maxx; x++)
+        putsector(&Sector(planet, x, y), &planet, x, y);
+    end_bulk_insert();
   }
   return Star;
 }

@@ -369,8 +369,7 @@ void putstar(startype *s, starnum_t snum) {
   Filewrite(stdata, (char *)s, sizeof(startype),
             (int)(sizeof(Sdata) + snum * sizeof(startype)));
 
-  char *err_msg = 0;
-  sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &err_msg);
+  start_bulk_insert();
 
   {
     const char *tail = 0;
@@ -395,7 +394,6 @@ void putstar(startype *s, starnum_t snum) {
 
     sqlite3_step(stmt);
 
-    sqlite3_clear_bindings(stmt);
     sqlite3_reset(stmt);
   }
 
@@ -414,7 +412,6 @@ void putstar(startype *s, starnum_t snum) {
 
       sqlite3_step(stmt);
 
-      sqlite3_clear_bindings(stmt);
       sqlite3_reset(stmt);
     }
   }
@@ -434,7 +431,6 @@ void putstar(startype *s, starnum_t snum) {
 
       sqlite3_step(stmt);
 
-      sqlite3_clear_bindings(stmt);
       sqlite3_reset(stmt);
     }
   }
@@ -454,7 +450,6 @@ void putstar(startype *s, starnum_t snum) {
 
       sqlite3_step(stmt);
 
-      sqlite3_clear_bindings(stmt);
       sqlite3_reset(stmt);
     }
   }
@@ -474,11 +469,20 @@ void putstar(startype *s, starnum_t snum) {
 
       sqlite3_step(stmt);
 
-      sqlite3_clear_bindings(stmt);
       sqlite3_reset(stmt);
     }
   }
 
+  end_bulk_insert();
+}
+
+void start_bulk_insert() {
+  char *err_msg = 0;
+  sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &err_msg);
+}
+
+void end_bulk_insert() {
+  char *err_msg = 0;
   sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &err_msg);
 }
 
@@ -489,9 +493,38 @@ void putplanet(planettype *p, int star, int pnum) {
 }
 
 void putsector(sectortype *s, planettype *p, int x, int y) {
-  int filepos;
-  filepos = p->sectormappos + (y * p->Maxx + x) * sizeof(sectortype);
+  int filepos = p->sectormappos + (y * p->Maxx + x) * sizeof(sectortype);
   Filewrite(sectdata, (char *)s, sizeof(sectortype), filepos);
+
+  const char *tail = 0;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_sector (planet_id, xpos, ypos, eff, fert, "
+      "mobilization, crystals, resource, popn, troops, owner, "
+      "race, type, condition) "
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, p->planet_id);
+  sqlite3_bind_int(stmt, 2, x);
+  sqlite3_bind_int(stmt, 3, y);
+  sqlite3_bind_int(stmt, 4, s->eff);
+  sqlite3_bind_int(stmt, 5, s->fert);
+  sqlite3_bind_int(stmt, 6, s->mobilization);
+  sqlite3_bind_int(stmt, 7, s->crystals);
+  sqlite3_bind_int(stmt, 8, s->resource);
+  sqlite3_bind_int(stmt, 9, s->popn);
+  sqlite3_bind_int(stmt, 10, s->troops);
+  sqlite3_bind_int(stmt, 11, s->owner);
+  sqlite3_bind_int(stmt, 12, s->race);
+  sqlite3_bind_int(stmt, 13, s->type);
+  sqlite3_bind_int(stmt, 14, s->condition);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "%s\n", sqlite3_errmsg(db));
+  }
+
+  sqlite3_reset(stmt);
 }
 
 void putsmap(sectortype *map, planettype *p) {

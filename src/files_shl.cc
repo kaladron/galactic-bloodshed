@@ -30,6 +30,9 @@ static int commoddata, pdata, racedata, sectdata, shdata, stdata;
 
 static sqlite3 *db;
 
+static void start_bulk_insert();
+static void end_bulk_insert();
+
 void close_file(int fd) { close(fd); }
 
 void initsqldata() __attribute__((no_sanitize_memory)) {
@@ -253,10 +256,6 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
 }
 
 void getsector(sectortype **s, planettype *p, int x, int y) {
-  int filepos;
-  filepos = p->sectormappos + (y * p->Maxx + x) * sizeof(sectortype);
-  *s = (sectortype *)malloc(sizeof(sectortype));
-  Fileread(sectdata, (char *)*s, sizeof(sectortype), filepos);
   const char *tail;
   {
     sqlite3_stmt *stmt;
@@ -290,9 +289,39 @@ void getsector(sectortype **s, planettype *p, int x, int y) {
   }
 }
 
-void getsmap(const sectortype *map, const planettype *p) {
-  Fileread(sectdata, (char *)map, p->Maxx * p->Maxy * sizeof(sectortype),
-           p->sectormappos);
+void getsmap(sectortype *map, const planettype *p) {
+  const char *tail;
+  {
+    sqlite3_stmt *stmt;
+    const char *sql =
+        "SELECT planet_id, xpos, ypos, eff, fert, "
+        "mobilization, crystals, resource, popn, troops, owner, "
+        "race, type, condition FROM tbl_sector "
+        "WHERE planet_id=?1";
+    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+
+    sqlite3_bind_int(stmt, 1, p->planet_id);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+      int x = sqlite3_column_int(stmt, 1);
+      int y = sqlite3_column_int(stmt, 2);
+      sectortype *s = &map[(x) + (y) * p->Maxx];
+      s->eff = sqlite3_column_int(stmt, 3);
+      s->fert = sqlite3_column_int(stmt, 4);
+      s->mobilization = sqlite3_column_int(stmt, 5);
+      s->crystals = sqlite3_column_int(stmt, 6);
+      s->resource = sqlite3_column_int(stmt, 7);
+      s->popn = sqlite3_column_int(stmt, 8);
+      s->troops = sqlite3_column_int(stmt, 9);
+      s->owner = sqlite3_column_int(stmt, 10);
+      s->race = sqlite3_column_int(stmt, 11);
+      s->type = sqlite3_column_int(stmt, 12);
+      s->condition = sqlite3_column_int(stmt, 13);
+    }
+
+    sqlite3_clear_bindings(stmt);
+    sqlite3_reset(stmt);
+  }
 }
 
 int getship(shiptype **s, shipnum_t shipnum) {
@@ -507,12 +536,12 @@ void putstar(startype *s, starnum_t snum) {
   end_bulk_insert();
 }
 
-void start_bulk_insert() {
+static void start_bulk_insert() {
   char *err_msg = 0;
   sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &err_msg);
 }
 
-void end_bulk_insert() {
+static void end_bulk_insert() {
   char *err_msg = 0;
   sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &err_msg);
 }
@@ -524,9 +553,6 @@ void putplanet(planettype *p, int star, int pnum) {
 }
 
 void putsector(sectortype *s, planettype *p, int x, int y) {
-  int filepos = p->sectormappos + (y * p->Maxx + x) * sizeof(sectortype);
-  Filewrite(sectdata, (char *)s, sizeof(sectortype), filepos);
-
   const char *tail = 0;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -559,8 +585,16 @@ void putsector(sectortype *s, planettype *p, int x, int y) {
 }
 
 void putsmap(sectortype *map, planettype *p) {
-  Filewrite(sectdata, (char *)map, p->Maxx * p->Maxy * sizeof(sectortype),
-            p->sectormappos);
+  start_bulk_insert();
+
+  for (int y = 0; y < p->Maxy; y++) {
+    for (int x = 0; x < p->Maxx; x++) {
+      sectortype sec = Smap[(x) + (y) * p->Maxx];
+      putsector(&sec, p, x, y);
+    }
+  }
+
+  end_bulk_insert();
 }
 
 void putship(shiptype *s) {

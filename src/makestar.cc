@@ -347,12 +347,7 @@ startype *Makestar(FILE *planetdata, FILE *sectordata) {
     planet.sectormappos = (int)ftell(sectordata); /* sector map pos */
     // XXX - switch here to SQL writing and planet_id.
     fwrite(&planet, sizeof(planettype), 1, planetdata); /* write planet */
-    start_bulk_insert();
-    /* write each sector row */
-    for (y = 0; y < planet.Maxy; y++)
-      for (int x = 0; x < planet.Maxx; x++)
-        putsector(&Sector(planet, x, y), &planet, x, y);
-    end_bulk_insert();
+    putsmap(Smap, &planet);
   }
   return Star;
 }

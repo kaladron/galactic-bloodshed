@@ -29,7 +29,7 @@ void getplanet(planettype **, starnum_t, planetnum_t);
 int getship(shiptype **, shipnum_t);
 int getcommod(commodtype **, commodnum_t);
 void getsector(sectortype **, planettype *, int, int);
-void getsmap(const sectortype *, const planettype *);
+void getsmap(sectortype *, const planettype *);
 int getdeadship(void);
 int getdeadcommod(void);
 void initsqldata(void);
@@ -53,8 +53,5 @@ void Putpower(struct power[MAXPLAYERS]);
 void Getpower(struct power[MAXPLAYERS]);
 void Putblock(struct block[MAXPLAYERS]);
 void Getblock(struct block[MAXPLAYERS]);
-
-void start_bulk_insert();
-void end_bulk_insert();
 
 #endif  // FILES_SHL_H

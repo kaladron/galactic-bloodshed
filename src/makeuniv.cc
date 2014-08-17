@@ -47,7 +47,7 @@ static int planetlesschance = 0;
 static int printpostscript = 0;
 
 int main(int argc, char *argv[]) {
-  FILE *planetdata, *sectordata;
+  FILE *planetdata;
   char str[200];
   int c, i;
 
@@ -153,18 +153,12 @@ int main(int argc, char *argv[]) {
     printf("Unable to open planet data file \"%s\"\n", PLANETDATAFL);
     exit(-1);
   }
-  if (NULL == (sectordata = fopen(SECTORDATAFL, "w+"))) {
-    printf("Unable to open sector data file \"%s\"\n", SECTORDATAFL);
-    exit(-1);
-  }
 
   for (starnum_t star = 0; star < nstars; star++) {
-    Stars[star] = Makestar(planetdata, sectordata);
+    Stars[star] = Makestar(planetdata);
   }
   chmod(PLANETDATAFL, 00660); /* change data files to group readwrite */
   fclose(planetdata);
-  chmod(SECTORDATAFL, 00660);
-  fclose(sectordata);
 
 #if 0
   /* 

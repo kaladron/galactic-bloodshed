@@ -154,7 +154,7 @@ struct sector {
 };
 
 struct planet {
-  int sectormappos; /* file posn for sector map */
+  int sectormappos; /* file posn for sector map */  // unused
 
   double xpos, ypos;        /* x,y relative to orbit */
   shipnum_t ships;          /* first ship in orbit (to be changed) */

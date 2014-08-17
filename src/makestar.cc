@@ -199,7 +199,7 @@ static char *NextStarName(void) {
   return buf;
 }
 
-startype *Makestar(FILE *planetdata, FILE *sectordata) {
+startype *Makestar(FILE *planetdata) {
   planettype planet;
   ptype_t type;
   int roll, temperature;
@@ -344,7 +344,7 @@ startype *Makestar(FILE *planetdata, FILE *sectordata) {
       }
     Star->planetpos[i] = (int)ftell(planetdata);
     /* posn of file-last write*/
-    planet.sectormappos = (int)ftell(sectordata); /* sector map pos */
+    planet.sectormappos = 0; /* sector map pos */
     // XXX - switch here to SQL writing and planet_id.
     fwrite(&planet, sizeof(planettype), 1, planetdata); /* write planet */
     putsmap(Smap, &planet);

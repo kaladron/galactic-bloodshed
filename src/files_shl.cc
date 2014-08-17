@@ -26,7 +26,7 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static int commoddata, pdata, racedata, sectdata, shdata, stdata;
+static int commoddata, pdata, racedata, shdata, stdata;
 
 static sqlite3 *db;
 
@@ -118,7 +118,6 @@ void open_data_files(void) {
   opencommoddata(&commoddata);
   openpdata(&pdata);
   openracedata(&racedata);
-  opensectdata(&sectdata);
   openshdata(&shdata);
   openstardata(&stdata);
 }
@@ -127,7 +126,6 @@ void close_data_files(void) {
   close_file(commoddata);
   close_file(pdata);
   close_file(racedata);
-  close_file(sectdata);
   close_file(shdata);
   close_file(stdata);
 }
@@ -161,14 +159,6 @@ void openpdata(int *fd) {
   if ((*fd = open(PLANETDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("openpdata");
     printf("unable to open %s\n", PLANETDATAFL);
-    exit(-1);
-  }
-}
-
-void opensectdata(int *fd) {
-  if ((*fd = open(SECTORDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
-    perror("opensectdata");
-    printf("unable to open %s\n", SECTORDATAFL);
     exit(-1);
   }
 }
@@ -305,7 +295,7 @@ void getsmap(sectortype *map, const planettype *p) {
     while (sqlite3_step(stmt) == SQLITE_ROW) {
       int x = sqlite3_column_int(stmt, 1);
       int y = sqlite3_column_int(stmt, 2);
-      sectortype *s = &map[(x) + (y) * p->Maxx];
+      sectortype *s = &map[(x) + (y)*p->Maxx];
       s->eff = sqlite3_column_int(stmt, 3);
       s->fert = sqlite3_column_int(stmt, 4);
       s->mobilization = sqlite3_column_int(stmt, 5);
@@ -589,7 +579,7 @@ void putsmap(sectortype *map, planettype *p) {
 
   for (int y = 0; y < p->Maxy; y++) {
     for (int x = 0; x < p->Maxx; x++) {
-      sectortype sec = Smap[(x) + (y) * p->Maxx];
+      sectortype sec = Smap[(x) + (y)*p->Maxx];
       putsector(&sec, p, x, y);
     }
   }

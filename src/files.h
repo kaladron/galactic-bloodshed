@@ -24,7 +24,6 @@
 #define EXAM_FL Files[2]
 #define ENROLL_FL Files[3]
 #define STARDATAFL Files[4]
-#define SECTORDATAFL Files[5]
 #define PLANETDATAFL Files[6]
 #define RACEDATAFL Files[7]
 #define BLOCKDATAFL Files[8]

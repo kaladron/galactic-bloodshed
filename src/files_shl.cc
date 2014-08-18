@@ -253,7 +253,7 @@ void getsector(sectortype **s, planettype *p, int x, int y) {
         "SELECT planet_id, xpos, ypos, eff, fert, "
         "mobilization, crystals, resource, popn, troops, owner, "
         "race, type, condition FROM tbl_sector "
-        "WHERE planet_id=?1, xpos=?2, ypos=?3";
+        "WHERE planet_id=?1 AND xpos=?2 AND ypos=?3";
     sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
 
     sqlite3_bind_int(stmt, 1, p->planet_id);

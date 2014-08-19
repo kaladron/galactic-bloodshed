@@ -247,36 +247,36 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
 
 void getsector(sectortype **s, planettype *p, int x, int y) {
   const char *tail;
-    sqlite3_stmt *stmt;
-    const char *sql =
-        "SELECT planet_id, xpos, ypos, eff, fert, "
-        "mobilization, crystals, resource, popn, troops, owner, "
-        "race, type, condition FROM tbl_sector "
-        "WHERE planet_id=?1 AND xpos=?2 AND ypos=?3";
-    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "SELECT planet_id, xpos, ypos, eff, fert, "
+      "mobilization, crystals, resource, popn, troops, owner, "
+      "race, type, condition FROM tbl_sector "
+      "WHERE planet_id=?1 AND xpos=?2 AND ypos=?3";
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
 
-    sqlite3_bind_int(stmt, 1, p->planet_id);
-    sqlite3_bind_int(stmt, 2, x);
-    sqlite3_bind_int(stmt, 3, y);
+  sqlite3_bind_int(stmt, 1, p->planet_id);
+  sqlite3_bind_int(stmt, 2, x);
+  sqlite3_bind_int(stmt, 3, y);
 
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-      (*s)->eff = sqlite3_column_int(stmt, 3);
-      (*s)->fert = sqlite3_column_int(stmt, 4);
-      (*s)->mobilization = sqlite3_column_int(stmt, 5);
-      (*s)->crystals = sqlite3_column_int(stmt, 6);
-      (*s)->resource = sqlite3_column_int(stmt, 7);
-      (*s)->popn = sqlite3_column_int(stmt, 8);
-      (*s)->troops = sqlite3_column_int(stmt, 9);
-      (*s)->owner = sqlite3_column_int(stmt, 10);
-      (*s)->race = sqlite3_column_int(stmt, 11);
-      (*s)->type = sqlite3_column_int(stmt, 12);
-      (*s)->condition = sqlite3_column_int(stmt, 13);
-    }
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    (*s)->eff = sqlite3_column_int(stmt, 3);
+    (*s)->fert = sqlite3_column_int(stmt, 4);
+    (*s)->mobilization = sqlite3_column_int(stmt, 5);
+    (*s)->crystals = sqlite3_column_int(stmt, 6);
+    (*s)->resource = sqlite3_column_int(stmt, 7);
+    (*s)->popn = sqlite3_column_int(stmt, 8);
+    (*s)->troops = sqlite3_column_int(stmt, 9);
+    (*s)->owner = sqlite3_column_int(stmt, 10);
+    (*s)->race = sqlite3_column_int(stmt, 11);
+    (*s)->type = sqlite3_column_int(stmt, 12);
+    (*s)->condition = sqlite3_column_int(stmt, 13);
+  }
 
-    int err = sqlite3_finalize(stmt);
-    if (err != SQLITE_OK) {
-      fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
-    }
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
 }
 
 void getsmap(sectortype *map, const planettype *p) {

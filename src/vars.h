@@ -60,7 +60,7 @@ typedef char hugestr[HUGESTRLEN];
 
 long random();
 
-typedef struct sector sectortype;
+typedef class sector sectortype;
 typedef struct planet planettype;
 typedef struct star startype;
 typedef struct commod commodtype;
@@ -133,7 +133,8 @@ struct commod {
   planetnum_t planet_to;
 };
 
-struct sector {
+class sector {
+ public:
   unsigned char eff;          /* efficiency (0-100) */
   unsigned char fert;         /* max popn is proportional to this */
   unsigned char mobilization; /* percent popn is mobilized for war */
@@ -150,7 +151,6 @@ struct sector {
                   you gain control of them! */
   unsigned char type;      /* underlying sector geology */
   unsigned char condition; /* environmental effects */
-  unsigned long dummy2;
 };
 
 struct planet {

@@ -247,7 +247,6 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
 
 void getsector(sectortype **s, planettype *p, int x, int y) {
   const char *tail;
-  {
     sqlite3_stmt *stmt;
     const char *sql =
         "SELECT planet_id, xpos, ypos, eff, fert, "
@@ -274,9 +273,10 @@ void getsector(sectortype **s, planettype *p, int x, int y) {
       (*s)->condition = sqlite3_column_int(stmt, 13);
     }
 
-    sqlite3_clear_bindings(stmt);
-    sqlite3_reset(stmt);
-  }
+    int err = sqlite3_finalize(stmt);
+    if (err != SQLITE_OK) {
+      fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    }
 }
 
 void getsmap(sectortype *map, const planettype *p) {

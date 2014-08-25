@@ -434,7 +434,7 @@ int main() {
       maxsupport(Race, sect, 100.0, 0) * planet->Maxx * planet->Maxy / 2;
   /* (approximate) */
 
-  putsector(sect, planet, secttypes[i].x, secttypes[i].y);
+  putsector(*sect, *planet, secttypes[i].x, secttypes[i].y);
   putplanet(planet, star, pnum);
 
   /* make star explored and stuff */

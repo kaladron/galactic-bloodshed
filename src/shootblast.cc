@@ -590,15 +590,13 @@ void do_collateral(shiptype *ship, int damage, int *casualties,
 
 int getdefense(shiptype *ship) {
   planettype *p;
-  sectortype *sect;
   int defense = 0;
 
   if (landed(ship)) {
     getplanet(&p, (int)ship->storbits, (int)ship->pnumorbits);
-    getsector(&sect, p, (int)ship->land_x, (int)ship->land_y);
+    auto sect = getsector(*p, ship->land_x, ship->land_y);
     defense = 2 * Defensedata[sect->condition];
     free(p);
-    free(sect);
   }
   return defense;
 }

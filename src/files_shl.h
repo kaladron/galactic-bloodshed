@@ -5,6 +5,7 @@
 #ifndef FILES_SHL_H
 #define FILES_SHL_H
 
+#include <memory>
 #include <stdint.h>
 
 #include "races.h"
@@ -28,7 +29,7 @@ void getstar(startype **, int);
 void getplanet(planettype **, starnum_t, planetnum_t);
 int getship(shiptype **, shipnum_t);
 int getcommod(commodtype **, commodnum_t);
-void getsector(sectortype **, planettype *, int, int);
+std::unique_ptr<sector> getsector(const planettype&, const int x, const int y);
 void getsmap(sectortype *, const planettype *);
 int getdeadship(void);
 int getdeadcommod(void);
@@ -37,7 +38,7 @@ void putsdata(struct stardata *);
 void putrace(racetype *);
 void putstar(startype *, starnum_t);
 void putplanet(planettype *, int, int);
-void putsector(sectortype *, planettype *, int, int);
+void putsector(const sector&, const planettype& , const int x, const int y);
 void putsmap(sectortype *, planettype *);
 void putship(shiptype *);
 void putcommod(commodtype *, int);

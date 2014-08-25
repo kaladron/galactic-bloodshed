@@ -326,7 +326,7 @@ found_planet:
 #endif
 
   putrace(Race);
-  putsector(sect, planet, x, y);
+  putsector(*sect, *planet, x, y);
   putplanet(planet, star, pnum);
 
   /* make star explored and stuff */

@@ -455,7 +455,7 @@ void repair(const command_t &argv, const player_t Playernum,
             p->info[Playernum - 1].resource -= SECTOR_REPAIR_COST;
             cost += SECTOR_REPAIR_COST;
             sectors += 1;
-            putsector(s, p, lowx, lowy);
+            putsector(*s, *p, lowx, lowy);
           }
         }
       }

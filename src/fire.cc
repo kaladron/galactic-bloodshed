@@ -481,7 +481,6 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
   int toship, sh;
   shiptype *to, *ship, dummy;
   planettype *p;
-  sectortype *sect;
   int strength, retal, damage, x, y;
   int numdest;
   racetype *Race;
@@ -575,15 +574,13 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
   }
 
   /* check to see if you own the sector */
-  getsector(&sect, p, x, y);
+  auto sect = getsector(*p, x, y);
   if (sect->owner != Playernum) {
     notify(Playernum, Governor, "Nice try.\n");
-    free(sect);
     free(p);
     free(to);
     return;
   }
-  free(sect);
 
   if (argn >= 4)
     sscanf(args[3], "%d", &strength);

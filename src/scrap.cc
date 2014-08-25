@@ -22,7 +22,7 @@
 
 void scrap(int Playernum, int Governor, int APcount) {
   planettype *planet;
-  sectortype *sect;
+  std::unique_ptr<sector> sect;
   shiptype *s, *s2;
   shipnum_t shipno, nextshipno;
   int scrapval = 0, destval = 0, crewval = 0, xtalval = 0, troopval = 0;
@@ -67,7 +67,7 @@ void scrap(int Playernum, int Governor, int APcount) {
       if (s->whatorbits == LEVEL_PLAN) {
         /* wc's release poison */
         getplanet(&planet, (int)s->storbits, (int)s->pnumorbits);
-        if (landed(s)) getsector(&sect, planet, (int)s->land_x, (int)s->land_y);
+        if (landed(s)) sect = getsector(*planet, s->land_x, s->land_y);
       }
       if (docked(s)) {
         if (!getship(&s2, (int)(s->destshipno))) {
@@ -236,8 +236,7 @@ void scrap(int Playernum, int Governor, int APcount) {
           planet->info[Playernum - 1].destruct += destval;
           planet->info[Playernum - 1].fuel += (int)fuelval;
           planet->info[Playernum - 1].crystals += (int)xtalval;
-          putsector(sect, planet, (int)s->land_x, (int)s->land_y);
-          free(sect);
+          putsector(*sect, *planet, s->land_x, s->land_y);
         }
         putplanet(planet, (int)s->storbits, (int)s->pnumorbits);
         free(planet);

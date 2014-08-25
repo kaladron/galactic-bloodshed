@@ -32,7 +32,7 @@ static int landed_on(shiptype *, shipnum_t);
 
 static void do_transporter(racetype *, int, shiptype *);
 static void unload_onto_alien_sector(int, int, planettype *, shiptype *,
-                                     sectortype *, int, int);
+                                     sector&, int, int);
 
 void load(int Playernum, int Governor, int APcount, int mode) {
   char commod;
@@ -41,7 +41,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
   int transfercrew;
   shiptype *s, *s2;
   planettype *p;
-  sectortype *sect;
+  std::unique_ptr<sector> sect;
   racetype *Race;
   shipnum_t shipno, nextshipno;
 
@@ -151,7 +151,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
                   Dir[Playernum - 1][Governor].pnum);
 
       if (!sh && (commod == 'c' || commod == 'm'))
-        getsector(&sect, p, (int)s->land_x, (int)s->land_y);
+        sect = getsector(*p, s->land_x, s->land_y);
 
       switch (commod) {
         case 'x':
@@ -260,14 +260,13 @@ void load(int Playernum, int Governor, int APcount, int mode) {
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
             /* fight a land battle */
-            unload_onto_alien_sector(Playernum, Governor, p, s, sect, CIV,
+            unload_onto_alien_sector(Playernum, Governor, p, s, *sect, CIV,
                                      -amt);
             putship(s);
-            putsector(sect, p, (int)s->land_x, (int)s->land_y);
+            putsector(*sect, *p, s->land_x, s->land_y);
             putplanet(p, Dir[Playernum - 1][Governor].snum,
                       Dir[Playernum - 1][Governor].pnum);
             free(s);
-            free(sect);
             free(p);
             return;
           } else {
@@ -307,14 +306,13 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             sprintf(buf,
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
-            unload_onto_alien_sector(Playernum, Governor, p, s, sect, MIL,
+            unload_onto_alien_sector(Playernum, Governor, p, s, *sect, MIL,
                                      -amt);
             putship(s);
-            putsector(sect, p, (int)s->land_x, (int)s->land_y);
+            putsector(*sect, *p, s->land_x, s->land_y);
             putplanet(p, Dir[Playernum - 1][Governor].snum,
                       Dir[Playernum - 1][Governor].pnum);
             free(s);
-            free(sect);
             free(p);
             return;
           } else {
@@ -451,8 +449,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
         free(s2);
       } else {
         if (commod == 'c' || commod == 'm') {
-          putsector(sect, p, (int)s->land_x, (int)s->land_y);
-          free(sect);
+          putsector(*sect, *p, s->land_x, s->land_y);
         }
         putplanet(p, Dir[Playernum - 1][Governor].snum,
                   Dir[Playernum - 1][Governor].pnum);
@@ -1035,7 +1032,7 @@ static int landed_on(shiptype *s, shipnum_t shipno) {
 
 static void unload_onto_alien_sector(int Playernum, int Governor,
                                      planettype *planet, shiptype *ship,
-                                     sectortype *sect, int what, int people) {
+                                     sector& sect, int what, int people) {
   double astrength, dstrength;
   int oldowner, oldgov, oldpopn, old2popn, old3popn;
   int casualties, casualties2, casualties3;
@@ -1047,18 +1044,18 @@ static void unload_onto_alien_sector(int Playernum, int Governor,
            "You have to unload to assault alien sectors.\n");
     return;
   }
-  ground_assaults[Playernum - 1][sect->owner -
+  ground_assaults[Playernum - 1][sect.owner -
                                  1][Dir[Playernum - 1][Governor].snum] += 1;
   Race = races[Playernum - 1];
-  alien = races[sect->owner - 1];
+  alien = races[sect.owner - 1];
   /* races find out about each other */
   alien->translate[Playernum - 1] =
       MIN(alien->translate[Playernum - 1] + 5, 100);
-  Race->translate[sect->owner - 1] =
-      MIN(Race->translate[sect->owner - 1] + 5, 100);
+  Race->translate[sect.owner - 1] =
+      MIN(Race->translate[sect.owner - 1] + 5, 100);
 
-  oldowner = (int)sect->owner;
-  oldgov = Stars[Dir[Playernum - 1][Governor].snum]->governor[sect->owner - 1];
+  oldowner = (int)sect.owner;
+  oldgov = Stars[Dir[Playernum - 1][Governor].snum]->governor[sect.owner - 1];
 
   if (what == CIV)
     ship->popn -= people;
@@ -1071,22 +1068,22 @@ static void unload_onto_alien_sector(int Playernum, int Governor,
   notify(Playernum, Governor, buf);
 
   sprintf(buf, "%d %s assault %lu civ/%lu mil\n", people,
-          what == CIV ? "civ" : "mil", sect->popn, sect->troops);
+          what == CIV ? "civ" : "mil", sect.popn, sect.troops);
 
   notify(Playernum, Governor, buf);
   oldpopn = people;
-  old2popn = sect->popn;
-  old3popn = sect->troops;
+  old2popn = sect.popn;
+  old3popn = sect.troops;
 
-  defense = Defensedata[sect->condition];
-  ground_attack(Race, alien, &people, what, &sect->popn, &sect->troops,
+  defense = Defensedata[sect.condition];
+  ground_attack(Race, alien, &people, what, &sect.popn, &sect.troops,
                 (int)ship->armor, defense, 1.0 - (double)ship->damage / 100.0,
-                alien->likes[sect->condition], &astrength, &dstrength,
+                alien->likes[sect.condition], &astrength, &dstrength,
                 &casualties, &casualties2, &casualties3);
   sprintf(buf, "Attack: %.2f   Defense: %.2f.\n", astrength, dstrength);
   notify(Playernum, Governor, buf);
 
-  if (!(sect->popn + sect->troops)) { /* we got 'em */
+  if (!(sect.popn + sect.troops)) { /* we got 'em */
     /* mesomorphs absorb the bodies of their victims */
     absorbed = 0;
     if (Race->absorb) {
@@ -1097,12 +1094,12 @@ static void unload_onto_alien_sector(int Playernum, int Governor,
       notify(oldowner, oldgov, buf);
     }
     if (what == CIV)
-      sect->popn = people + absorbed;
+      sect.popn = people + absorbed;
     else if (what == MIL) {
-      sect->popn = absorbed;
-      sect->troops = people;
+      sect.popn = absorbed;
+      sect.troops = people;
     }
-    sect->owner = Playernum;
+    sect.owner = Playernum;
     adjust_morale(Race, alien, (int)alien->fighters);
   } else { /* retreat */
     absorbed = 0;
@@ -1112,7 +1109,7 @@ static void unload_onto_alien_sector(int Playernum, int Governor,
       notify(oldowner, oldgov, buf);
       sprintf(buf, "Metamorphs have absorbed %d bodies!!!\n", absorbed);
       notify(Playernum, Governor, buf);
-      sect->popn += absorbed;
+      sect.popn += absorbed;
     }
     /* load them back up */
     sprintf(buf, "Loading %d %s\n", people, what == CIV ? "civ" : "mil");
@@ -1129,10 +1126,10 @@ static void unload_onto_alien_sector(int Playernum, int Governor,
           Stars[Dir[Playernum - 1][Governor].snum]
               ->pnames[Dir[Playernum - 1][Governor].pnum],
           Race->name, Playernum, Ship(ship), alien->name, alien->Playernum,
-          Dessymbols[sect->condition], ship->land_x, ship->land_y,
-          (sect->owner == Playernum ? "VICTORY" : "DEFEAT"));
+          Dessymbols[sect.condition], ship->land_x, ship->land_y,
+          (sect.owner == Playernum ? "VICTORY" : "DEFEAT"));
 
-  if (sect->owner == Playernum) {
+  if (sect.owner == Playernum) {
     sprintf(buf, "VICTORY! The sector is yours!\n");
     notify(Playernum, Governor, buf);
     sprintf(buf, "Sector CAPTURED!\n");
@@ -1143,16 +1140,16 @@ static void unload_onto_alien_sector(int Playernum, int Governor,
       notify(Playernum, Governor, buf);
     }
     planet->info[Playernum - 1].numsectsowned++;
-    planet->info[Playernum - 1].mob_points += (int)sect->mobilization;
+    planet->info[Playernum - 1].mob_points += sect.mobilization;
     planet->info[oldowner - 1].numsectsowned--;
-    planet->info[oldowner - 1].mob_points -= (int)sect->mobilization;
+    planet->info[oldowner - 1].mob_points -= sect.mobilization;
   } else {
     sprintf(buf, "The invasion was repulsed; try again.\n");
     notify(Playernum, Governor, buf);
     sprintf(buf, "You fought them off!\n");
     strcat(telegram_buf, buf);
   }
-  if (!(sect->popn + sect->troops + people)) {
+  if (!(sect.popn + sect.troops + people)) {
     sprintf(buf, "You killed all of them!\n");
     strcat(telegram_buf, buf);
     /* increase modifier */

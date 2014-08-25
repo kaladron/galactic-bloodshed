@@ -11,6 +11,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <memory>
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -245,7 +246,8 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
   Fileread(pdata, (char *)*p, sizeof(planettype), filepos);
 }
 
-void getsector(sectortype **s, planettype *p, int x, int y) {
+std::unique_ptr<sector> getsector(const planettype& p, const int x, const int y) {
+  std::unique_ptr<sector> s(new sector);
   const char *tail;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -255,28 +257,30 @@ void getsector(sectortype **s, planettype *p, int x, int y) {
       "WHERE planet_id=?1 AND xpos=?2 AND ypos=?3";
   sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
 
-  sqlite3_bind_int(stmt, 1, p->planet_id);
+  sqlite3_bind_int(stmt, 1, p.planet_id);
   sqlite3_bind_int(stmt, 2, x);
   sqlite3_bind_int(stmt, 3, y);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
-    (*s)->eff = sqlite3_column_int(stmt, 3);
-    (*s)->fert = sqlite3_column_int(stmt, 4);
-    (*s)->mobilization = sqlite3_column_int(stmt, 5);
-    (*s)->crystals = sqlite3_column_int(stmt, 6);
-    (*s)->resource = sqlite3_column_int(stmt, 7);
-    (*s)->popn = sqlite3_column_int(stmt, 8);
-    (*s)->troops = sqlite3_column_int(stmt, 9);
-    (*s)->owner = sqlite3_column_int(stmt, 10);
-    (*s)->race = sqlite3_column_int(stmt, 11);
-    (*s)->type = sqlite3_column_int(stmt, 12);
-    (*s)->condition = sqlite3_column_int(stmt, 13);
+    s->eff = sqlite3_column_int(stmt, 3);
+    s->fert = sqlite3_column_int(stmt, 4);
+    s->mobilization = sqlite3_column_int(stmt, 5);
+    s->crystals = sqlite3_column_int(stmt, 6);
+    s->resource = sqlite3_column_int(stmt, 7);
+    s->popn = sqlite3_column_int(stmt, 8);
+    s->troops = sqlite3_column_int(stmt, 9);
+    s->owner = sqlite3_column_int(stmt, 10);
+    s->race = sqlite3_column_int(stmt, 11);
+    s->type = sqlite3_column_int(stmt, 12);
+    s->condition = sqlite3_column_int(stmt, 13);
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
   }
+
+  return s;
 }
 
 void getsmap(sectortype *map, const planettype *p) {
@@ -542,7 +546,7 @@ void putplanet(planettype *p, int star, int pnum) {
   Filewrite(pdata, (char *)p, sizeof(planettype), filepos);
 }
 
-void putsector(sectortype *s, planettype *p, int x, int y) {
+void putsector(const sector& s, const planettype& p, const int x, const int y) {
   const char *tail = 0;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -552,20 +556,20 @@ void putsector(sectortype *s, planettype *p, int x, int y) {
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)";
 
   sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
-  sqlite3_bind_int(stmt, 1, p->planet_id);
+  sqlite3_bind_int(stmt, 1, p.planet_id);
   sqlite3_bind_int(stmt, 2, x);
   sqlite3_bind_int(stmt, 3, y);
-  sqlite3_bind_int(stmt, 4, s->eff);
-  sqlite3_bind_int(stmt, 5, s->fert);
-  sqlite3_bind_int(stmt, 6, s->mobilization);
-  sqlite3_bind_int(stmt, 7, s->crystals);
-  sqlite3_bind_int(stmt, 8, s->resource);
-  sqlite3_bind_int(stmt, 9, s->popn);
-  sqlite3_bind_int(stmt, 10, s->troops);
-  sqlite3_bind_int(stmt, 11, s->owner);
-  sqlite3_bind_int(stmt, 12, s->race);
-  sqlite3_bind_int(stmt, 13, s->type);
-  sqlite3_bind_int(stmt, 14, s->condition);
+  sqlite3_bind_int(stmt, 4, s.eff);
+  sqlite3_bind_int(stmt, 5, s.fert);
+  sqlite3_bind_int(stmt, 6, s.mobilization);
+  sqlite3_bind_int(stmt, 7, s.crystals);
+  sqlite3_bind_int(stmt, 8, s.resource);
+  sqlite3_bind_int(stmt, 9, s.popn);
+  sqlite3_bind_int(stmt, 10, s.troops);
+  sqlite3_bind_int(stmt, 11, s.owner);
+  sqlite3_bind_int(stmt, 12, s.race);
+  sqlite3_bind_int(stmt, 13, s.type);
+  sqlite3_bind_int(stmt, 14, s.condition);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     fprintf(stderr, "%s\n", sqlite3_errmsg(db));
@@ -579,8 +583,8 @@ void putsmap(sectortype *map, planettype *p) {
 
   for (int y = 0; y < p->Maxy; y++) {
     for (int x = 0; x < p->Maxx; x++) {
-      sectortype sec = Smap[(x) + (y)*p->Maxx];
-      putsector(&sec, p, x, y);
+      const sector sec = Smap[(x) + (y)*p->Maxx];
+      putsector(sec, *p, x, y);
     }
   }
 

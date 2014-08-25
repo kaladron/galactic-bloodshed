@@ -30,15 +30,14 @@
 #include "vars.h"
 
 static void mech_defend(int, int, int *, int, planettype *, int, int,
-                        sectortype *, int, int, sectortype *);
+                        const sector&, int, int, const sector&);
 static void mech_attack_people(shiptype *, int *, int *, racetype *, racetype *,
-                               sectortype *, int, int, int, char *, char *);
+                               const sector&, int, int, int, char *, char *);
 static void people_attack_mech(shiptype *, int, int, racetype *, racetype *,
-                               sectortype *, int, int, char *, char *);
+                               const sector&, int, int, char *, char *);
 
 void arm(int Playernum, int Governor, int APcount, int mode) {
   planettype *planet;
-  sectortype *sect;
   racetype *Race;
   int x = -1, y = -1, max_allowed;
   int amount = 0;
@@ -68,11 +67,10 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     return;
   }
 
-  getsector(&sect, planet, x, y);
+  auto sect = getsector(*planet, x, y);
   if (sect->owner != Playernum) {
     notify(Playernum, Governor, "You don't own that sector.\n");
     free(planet);
-    free(sect);
     return;
   }
   if (mode) {
@@ -86,7 +84,6 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
         notify(Playernum, Governor,
                "You must specify a positive number of civs to arm.\n");
         free(planet);
-        free(sect);
         return;
       }
     }
@@ -94,7 +91,6 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     if (!amount) {
       notify(Playernum, Governor, "You can't arm any civilians now.\n");
       free(planet);
-      free(sect);
       return;
     }
     Race = races[Playernum - 1];
@@ -105,7 +101,6 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
               amount);
       notify(Playernum, Governor, buf);
       free(planet);
-      free(sect);
       return;
     }
     Race->governor[Governor].money -= enlist_cost;
@@ -135,7 +130,6 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
         notify(Playernum, Governor,
                "You must specify a positive number of civs to arm.\n");
         free(planet);
-        free(sect);
         return;
       }
       amount = MIN(sect->troops, amount);
@@ -150,10 +144,9 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
             amount, sect->popn, sect->troops);
     notify(Playernum, Governor, buf);
   }
-  putsector(sect, planet, x, y);
+  putsector(*sect, *planet, x, y);
   putplanet(planet, Dir[Playernum - 1][Governor].snum,
             Dir[Playernum - 1][Governor].pnum);
-  free(sect);
   free(planet);
 }
 
@@ -162,7 +155,6 @@ void move_popn(int Playernum, int Governor, int what) {
   int casualties, casualties2, casualties3;
 
   planettype *planet;
-  sectortype *sect, *sect2;
   int people, oldpopn, old2popn, old3popn, x = -1, y = -1, x2 = -1, y2 = -1;
   int old2owner, old2gov, absorbed, n, done;
   double astrength, dstrength;
@@ -197,19 +189,17 @@ void move_popn(int Playernum, int Governor, int what) {
   done = 0;
   n = 0;
   while (!done) {
-    getsector(&sect, planet, x, y);
+    auto sect = getsector(*planet, x, y);
     if (sect->owner != Playernum) {
       sprintf(buf, "You don't own sector %d,%d!\n", x, y);
       notify(Playernum, Governor, buf);
       free(planet);
-      free(sect);
       return;
     }
     if (!get_move(args[2][n++], x, y, &x2, &y2, planet)) {
       notify(Playernum, Governor, "Finished.\n");
       putplanet(planet, Dir[Playernum - 1][Governor].snum,
                 Dir[Playernum - 1][Governor].pnum);
-      free(sect);
       free(planet);
       return;
     }
@@ -219,7 +209,6 @@ void move_popn(int Playernum, int Governor, int what) {
       notify(Playernum, Governor, buf);
       putplanet(planet, Dir[Playernum - 1][Governor].snum,
                 Dir[Playernum - 1][Governor].pnum);
-      free(sect);
       free(planet);
       return;
     }
@@ -228,12 +217,11 @@ void move_popn(int Playernum, int Governor, int what) {
       sprintf(buf, "Illegal move - to adjacent sectors only!\n");
       notify(Playernum, Governor, buf);
       free(planet);
-      free(sect);
       return;
     }
 
     /* ok, the move is legal */
-    getsector(&sect2, planet, x2, y2);
+    auto sect2 = getsector(*planet, x2, y2);
     if (argn >= 4) {
       sscanf(args[3], "%d", &people);
       if (people < 0) {
@@ -259,8 +247,6 @@ void move_popn(int Playernum, int Governor, int what) {
       notify(Playernum, Governor, buf);
       putplanet(planet, Dir[Playernum - 1][Governor].snum,
                 Dir[Playernum - 1][Governor].pnum);
-      free(sect);
-      free(sect2);
       free(planet);
       return;
     }
@@ -270,15 +256,13 @@ void move_popn(int Playernum, int Governor, int what) {
     notify(Playernum, Governor, buf);
 
     /* check for defending mechs */
-    mech_defend(Playernum, Governor, &people, what, planet, x, y, sect, x2, y2,
-                sect2);
+    mech_defend(Playernum, Governor, &people, what, planet, x, y, *sect, x2, y2,
+                *sect2);
     if (!people) {
-      putsector(sect, planet, x, y);
-      putsector(sect2, planet, x2, y2);
+      putsector(*sect, *planet, x, y);
+      putsector(*sect2, *planet, x2, y2);
       putplanet(planet, Dir[Playernum - 1][Governor].snum,
                 Dir[Playernum - 1][Governor].pnum);
-      free(sect);
-      free(sect2);
       free(planet);
       notify(Playernum, Governor, "Attack aborted.\n");
       return;
@@ -298,8 +282,6 @@ void move_popn(int Playernum, int Governor, int what) {
     if (!enufAP(Playernum, Governor,
                 Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
                 APcost)) {
-      free(sect);
-      free(sect2);
       putplanet(planet, Dir[Playernum - 1][Governor].snum,
                 Dir[Playernum - 1][Governor].pnum);
       free(planet);
@@ -456,10 +438,8 @@ void move_popn(int Playernum, int Governor, int what) {
       done = 1;
     }
 
-    putsector(sect, planet, x, y);
-    putsector(sect2, planet, x2, y2);
-    free(sect);
-    free(sect2);
+    putsector(*sect, *planet, x, y);
+    putsector(*sect2, *planet, x2, y2);
 
     deductAPs(Playernum, Governor, APcost, Dir[Playernum - 1][Governor].snum,
               0);
@@ -473,7 +453,6 @@ void move_popn(int Playernum, int Governor, int what) {
 void walk(int Playernum, int Governor, int APcount) {
   shiptype *ship, *ship2, dummy;
   planettype *p;
-  sectortype *sect;
   int shipno, x, y, i, sh, succ = 0, civ, mil;
   int oldowner, oldgov;
   int strength, strength1;
@@ -538,13 +517,12 @@ void walk(int Playernum, int Governor, int APcount) {
     return;
   }
   /* check to see if player is permited on the sector type */
-  getsector(&sect, p, x, y);
+  auto sect = getsector(*p, x, y);
   if (!Race->likes[sect->condition]) {
     notify(Playernum, Governor,
            "Your ships cannot walk into that sector type!\n");
     free(ship);
     free(p);
-    free(sect);
     return;
   }
   /* if the sector is occupied by non-aligned AFVs, each one will attack */
@@ -591,13 +569,12 @@ void walk(int Playernum, int Governor, int APcount) {
         notify(Playernum, Governor, "You have nothing to attack with!\n");
         free(ship);
         free(p);
-        free(sect);
         return;
       }
       while ((sect->popn + sect->troops) && retal_strength(ship)) {
         civ = (int)sect->popn;
         mil = (int)sect->troops;
-        mech_attack_people(ship, &civ, &mil, Race, alien, sect, x, y, 0,
+        mech_attack_people(ship, &civ, &mil, Race, alien, *sect, x, y, 0,
                            long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien->Playernum, oldgov, long_buf);
@@ -605,8 +582,8 @@ void walk(int Playernum, int Governor, int APcount) {
                     short_buf);
         post(short_buf, COMBAT);
 
-        people_attack_mech(ship, (int)sect->popn, (int)sect->troops, alien,
-                           Race, sect, x, y, long_buf, short_buf);
+        people_attack_mech(ship, sect->popn, sect->troops, alien,
+                           Race, *sect, x, y, long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien->Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, oldowner, (int)ship->storbits,
@@ -625,7 +602,7 @@ void walk(int Playernum, int Governor, int APcount) {
     putrace(Race);
     putplanet(p, Dir[Playernum - 1][Governor].snum,
               Dir[Playernum - 1][Governor].pnum);
-    putsector(sect, p, x, y);
+    putsector(*sect, *p, x, y);
   }
 
   if ((sect->owner == Playernum || isset(Race->allied, (int)sect->owner) ||
@@ -649,7 +626,6 @@ void walk(int Playernum, int Governor, int APcount) {
   deductAPs(Playernum, Governor, APcount, (int)ship->storbits, 0);
   free(ship);
   free(p);
-  free(sect);
 }
 
 int get_move(char direction, int x, int y, int *x2, int *y2,
@@ -709,8 +685,8 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
 }
 
 static void mech_defend(int Playernum, int Governor, int *people, int type,
-                        planettype *p, int x, int y, sectortype *s, int x2,
-                        int y2, sectortype *s2) {
+                        planettype *p, int x, int y, const sector& s, int x2,
+                        int y2, const sector& s2) {
   int sh;
   shiptype *ship;
   int civ = 0, mil = 0;
@@ -755,7 +731,7 @@ static void mech_defend(int Playernum, int Governor, int *people, int type,
 
 static void mech_attack_people(shiptype *ship, int *civ, int *mil,
                                racetype *Race, racetype *alien,
-                               sectortype *sect, int x, int y, int ignore,
+                               const sector& sect, int x, int y, int ignore,
                                char *long_msg, char *short_msg) {
   int strength, oldciv, oldmil;
   double astrength, dstrength;
@@ -768,12 +744,12 @@ static void mech_attack_people(shiptype *ship, int *civ, int *mil,
   astrength = MECH_ATTACK * ship->tech * (double)strength *
               ((double)ship->armor + 1.0) * .01 *
               (100.0 - (double)ship->damage) * .01 *
-              (Race->likes[sect->condition] + 1.0) *
+              (Race->likes[sect.condition] + 1.0) *
               morale_factor((double)(Race->morale - alien->morale));
 
   dstrength = (double)(10 * oldmil * alien->fighters + oldciv) * 0.01 *
-              alien->tech * .01 * (alien->likes[sect->condition] + 1.0) *
-              ((double)Defensedata[sect->condition] + 1.0) *
+              alien->tech * .01 * (alien->likes[sect.condition] + 1.0) *
+              ((double)Defensedata[sect.condition] + 1.0) *
               morale_factor((double)(alien->morale - Race->morale));
 
   if (ignore) {
@@ -794,7 +770,7 @@ static void mech_attack_people(shiptype *ship, int *civ, int *mil,
           alien->Playernum);
   strcpy(long_msg, short_msg);
   sprintf(buf, "\tBattle at %d,%d %s: %d guns fired on %d civ/%d mil\n", x, y,
-          Desnames[sect->condition], strength, oldciv, oldmil);
+          Desnames[sect.condition], strength, oldciv, oldmil);
   strcat(long_msg, buf);
   sprintf(buf, "\tAttack: %.3f   Defense: %.3f.\n", astrength, dstrength);
   strcat(long_msg, buf);
@@ -803,7 +779,7 @@ static void mech_attack_people(shiptype *ship, int *civ, int *mil,
 }
 
 static void people_attack_mech(shiptype *ship, int civ, int mil, racetype *Race,
-                               racetype *alien, sectortype *sect, int x, int y,
+                               racetype *alien, const sector& sect, int x, int y,
                                char *long_msg, char *short_msg) {
   int strength;
   double astrength, dstrength;
@@ -815,12 +791,12 @@ static void people_attack_mech(shiptype *ship, int civ, int mil, racetype *Race,
   dstrength = MECH_ATTACK * ship->tech * (double)strength *
               ((double)ship->armor + 1.0) * .01 *
               (100.0 - (double)ship->damage) * .01 *
-              (alien->likes[sect->condition] + 1.0) *
+              (alien->likes[sect.condition] + 1.0) *
               morale_factor((double)(alien->morale - Race->morale));
 
   astrength = (double)(10 * mil * Race->fighters + civ) * .01 * Race->tech *
-              .01 * (Race->likes[sect->condition] + 1.0) *
-              ((double)Defensedata[sect->condition] + 1.0) *
+              .01 * (Race->likes[sect.condition] + 1.0) *
+              ((double)Defensedata[sect.condition] + 1.0) *
               morale_factor((double)(Race->morale - alien->morale));
   ammo = (int)log10((double)astrength + 1.0) - 1;
   ammo = MIN(strength, MAX(0, ammo));
@@ -837,7 +813,7 @@ static void people_attack_mech(shiptype *ship, int civ, int mil, racetype *Race,
           Race->Playernum, ship->alive ? "attacked" : "DESTROYED", Ship(ship));
   strcpy(long_msg, short_msg);
   sprintf(buf, "\tBattle at %d,%d %s: %d civ/%d mil assault %s\n", x, y,
-          Desnames[sect->condition], civ, mil, Shipnames[ship->type]);
+          Desnames[sect.condition], civ, mil, Shipnames[ship->type]);
   strcat(long_msg, buf);
   sprintf(buf, "\tAttack: %.3f   Defense: %.3f.\n", astrength, dstrength);
   strcat(long_msg, buf);

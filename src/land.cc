@@ -36,7 +36,6 @@ static int roll;
 void land(player_t Playernum, governor_t Governor, int APcount) {
   shiptype *s, *s2;
   planettype *p;
-  sectortype *sect;
 
   shipnum_t shipno, ship2no;
   int x = -1, y = -1, i, numdest, strength;
@@ -361,7 +360,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
           s->destpnum = s->pnumorbits;
         }
 
-        getsector(&sect, p, x, y);
+        auto sect = getsector(*p, x, y);
 
         if (sect->condition == WASTED) {
           sprintf(buf, "Warning: That sector is a wasteland!\n");
@@ -387,7 +386,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
 
         putplanet(p, (int)s->storbits, (int)s->pnumorbits);
 
-        if (numdest) putsector(sect, p, x, y);
+        if (numdest) putsector(*sect, *p, x, y);
 
         /* send messages to anyone there */
         sprintf(buf, "%s observed landing on sector %d,%d,planet /%s/%s.\n",
@@ -400,7 +399,6 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
         sprintf(buf, "%s landed on planet.\n", Ship(s));
         notify(Playernum, Governor, buf);
 
-        free(sect);
         free(p);
       }
       putship(s);

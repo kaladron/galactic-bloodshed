@@ -365,7 +365,6 @@ static int do_merchant(shiptype *s, planettype *p) {
   double fuel;
   char load, unload;
   int amount;
-  sectortype *sect;
 
   i = s->owner - 1;
   j = s->merchant - 1; /* try to speed things up a bit */
@@ -373,12 +372,10 @@ static int do_merchant(shiptype *s, planettype *p) {
   if (!s->merchant || !p->info[i].route[j].set) /* not on shipping route */
     return 0;
   /* check to see if the sector is owned by the player */
-  getsector(&sect, p, p->info[i].route[j].x, p->info[i].route[j].y);
+  auto sect = getsector(*p, p->info[i].route[j].x, p->info[i].route[j].y);
   if (sect->owner && (sect->owner != s->owner)) {
-    free(sect);
     return 0;
   }
-  free(sect);
 
   if (!landed(s)) { /* try to land the ship */
     fuel = s->mass * gravity(p) * LAND_GRAV_MASS_FACTOR;

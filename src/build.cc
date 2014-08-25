@@ -29,14 +29,14 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void autoload_at_planet(int, shiptype *, planettype *, sectortype *,
+static void autoload_at_planet(int, shiptype *, planettype *, sector&,
                                int *, double *);
 static void autoload_at_ship(int, shiptype *, shiptype *, int *, double *);
 static int build_at_ship(int, int, racetype *, shiptype *, int *, int *);
 static int can_build_at_planet(int, int, startype *, planettype *);
 static int can_build_this(int, racetype *, char *);
 static int can_build_on_ship(int, racetype *, shiptype *, char *);
-static int can_build_on_sector(int, racetype *, planettype *, sectortype *, int,
+static int can_build_on_sector(int, racetype *, planettype *, const sectortype&, int,
                                int, char *);
 static void create_ship_by_planet(int, int, racetype *, shiptype *,
                                   planettype *, int, int, int, int);
@@ -718,7 +718,7 @@ void build(const command_t &argv, const player_t Playernum,
 
   FILE *fd;
   planettype *planet;
-  sectortype *sector;
+  std::unique_ptr<sector> sector;
   shiptype *builder;
   shiptype newship;
 
@@ -880,18 +880,16 @@ void build(const command_t &argv, const player_t Playernum,
             free(planet);
             return;
           }
-          getsector(&sector, planet, x, y);
-          if (!can_build_on_sector(what, Race, planet, sector, x, y, buf) &&
+          sector = getsector(*planet, x, y);
+          if (!can_build_on_sector(what, Race, planet, *sector, x, y, buf) &&
               !Race->God) {
             notify(Playernum, Governor, buf);
             free(planet);
-            free(sector);
             return;
           }
           if (!(count = getcount(argv.size() < 4, argv[3].c_str()))) {
             notify(Playernum, Governor, "Give a positive number of builds.\n");
             free(planet);
-            free(sector);
             return;
           }
           Getship(&newship, what, Race);
@@ -906,7 +904,7 @@ void build(const command_t &argv, const player_t Playernum,
                               pnum, x, y);
         if (Race->governor[Governor].toggle.autoload &&
             what != OTYPE_TRANSDEV && !Race->God)
-          autoload_at_planet(Playernum, &newship, planet, sector, &load_crew,
+          autoload_at_planet(Playernum, &newship, planet, *sector, &load_crew,
                              &load_fuel);
         else {
           load_crew = 0;
@@ -1005,11 +1003,10 @@ void build(const command_t &argv, const player_t Playernum,
               x = builder->land_x;
               y = builder->land_y;
               what = builder->build_type;
-              getsector(&sector, planet, x, y);
-              if (!can_build_on_sector(what, Race, planet, sector, x, y, buf)) {
+              sector = getsector(*planet, x, y);
+              if (!can_build_on_sector(what, Race, planet, *sector, x, y, buf)) {
                 notify(Playernum, Governor, buf);
                 free(planet);
-                free(sector);
                 free(builder);
                 return;
               }
@@ -1029,7 +1026,7 @@ void build(const command_t &argv, const player_t Playernum,
                                   snum, pnum, x, y);
             if (Race->governor[Governor].toggle.autoload &&
                 what != OTYPE_TRANSDEV && !Race->God) {
-              autoload_at_planet(Playernum, &newship, planet, sector,
+              autoload_at_planet(Playernum, &newship, planet, *sector,
                                  &load_crew, &load_fuel);
             } else {
               load_crew = 0;
@@ -1088,9 +1085,8 @@ void build(const command_t &argv, const player_t Playernum,
 finish:
   switch (level) {
     case LEVEL_PLAN:
-      putsector(sector, planet, x, y);
+      putsector(*sector, *planet, x, y);
       putplanet(planet, snum, pnum);
-      free(sector);
       free(planet);
       break;
     case LEVEL_SHIP:
@@ -1098,8 +1094,7 @@ finish:
           case LEVEL_PLAN:
             putplanet(planet, snum, pnum);
             if (landed(builder)) {
-              putsector(sector, planet, x, y);
-              free(sector);
+              putsector(*sector, *planet, x, y);
             }
             free(planet);
             break;
@@ -1199,20 +1194,20 @@ static int can_build_on_ship(int what, racetype *Race, shiptype *builder,
 }
 
 static int can_build_on_sector(int what, racetype *Race, planettype *planet,
-                               sectortype *sector, int x, int y, char *string) {
+                               const sector& sector, int x, int y, char *string) {
   shiptype *s;
   char shipc;
 
   shipc = Shipltrs[what];
-  if (!sector->popn) {
+  if (!sector.popn) {
     sprintf(string, "You have no more civs in the sector!\n");
     return (0);
   }
-  if (sector->condition == WASTED) {
+  if (sector.condition == WASTED) {
     sprintf(string, "You can't build on wasted sectors.\n");
     return (0);
   }
-  if (sector->owner != Race->Playernum && !Race->God) {
+  if (sector.owner != Race->Playernum && !Race->God) {
     sprintf(string, "You don't own that sector.\n");
     return (0);
   }
@@ -1274,11 +1269,11 @@ static int build_at_ship(int Playernum, int Governor, racetype *Race,
 }
 
 static void autoload_at_planet(int Playernum, shiptype *s, planettype *planet,
-                               sectortype *sector, int *crew, double *fuel) {
-  *crew = MIN(s->max_crew, sector->popn);
+                               sector& sector, int *crew, double *fuel) {
+  *crew = MIN(s->max_crew, sector.popn);
   *fuel = MIN((double)s->max_fuel, (double)planet->info[Playernum - 1].fuel);
-  sector->popn -= *crew;
-  if (!sector->popn && !sector->troops) sector->owner = 0;
+  sector.popn -= *crew;
+  if (!sector.popn && !sector.troops) sector.owner = 0;
   planet->info[Playernum - 1].fuel -= (int)(*fuel);
 }
 

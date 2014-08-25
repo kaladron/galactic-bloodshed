@@ -26,7 +26,6 @@
 void capture(int Playernum, int Governor, int APcount) {
   shiptype *ship, s;
   planettype *p;
-  sectortype *sect;
   player_t oldowner;
   governor_t oldgov;
   int shipdam = 0, booby = 0;
@@ -77,14 +76,13 @@ void capture(int Playernum, int Governor, int APcount) {
       y = ship->land_y;
 
       getplanet(&p, (int)ship->storbits, (int)ship->pnumorbits);
-      getsector(&sect, p, x, y);
+      auto sect = getsector(*p, x, y);
 
       if (sect->owner != Playernum) {
         sprintf(buf,
                 "You don't own the sector where the ship is landed [%d].\n",
                 sect->owner);
         notify(Playernum, Governor, buf);
-        free(sect);
         free(p);
         free(ship);
         continue;
@@ -98,7 +96,6 @@ void capture(int Playernum, int Governor, int APcount) {
         what = MIL;
       else {
         notify(Playernum, Governor, "Capture with what?\n");
-        free(sect);
         free(p);
         free(ship);
         continue;
@@ -116,7 +113,6 @@ void capture(int Playernum, int Governor, int APcount) {
         sprintf(buf, "Illegal number of boarders %lu.\n", boarders);
         notify(Playernum, Governor, buf);
         free(ship);
-        free(sect);
         free(p);
         continue;
       }
@@ -322,14 +318,13 @@ void capture(int Playernum, int Governor, int APcount) {
       notify_star(Playernum, Governor, oldowner, (int)ship->storbits,
                   short_buf);
       putship(ship);
-      putsector(sect, p, x, y);
+      putsector(*sect, *p, x, y);
       putplanet(p, snum, pnum);
       putrace(Race);
       putrace(alien);
       deductAPs(Playernum, Governor, APcount, (int)ship->storbits, 0);
       free(p);
       free(ship);
-      free(sect);
     } else
       free(ship);
 }

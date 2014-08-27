@@ -36,7 +36,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     -Wno-padded)
 
   set(CMAKE_CXX_FLAGS_MSAN
-    "-fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls"
+    "-fsanitize=memory -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls"
     CACHE STRING "Flags used by the C++ compiler during MSan builds"
     FORCE)
   set(ASANSYM
@@ -49,7 +49,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     export ASAN_OPTIONS=detect_leaks=1)
 
   set(CMAKE_CXX_FLAGS_ASAN
-    "-fsanitize=address"
+    "-fsanitize=address -fsanitize=undefined"
     CACHE STRING "Flags used by the C++ compiler during ASan builds"
     FORCE)
   mark_as_advanced(

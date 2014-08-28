@@ -29,15 +29,15 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void autoload_at_planet(int, shiptype *, planettype *, sector&,
-                               int *, double *);
+static void autoload_at_planet(int, shiptype *, planettype *, sector &, int *,
+                               double *);
 static void autoload_at_ship(int, shiptype *, shiptype *, int *, double *);
 static int build_at_ship(int, int, racetype *, shiptype *, int *, int *);
 static int can_build_at_planet(int, int, startype *, planettype *);
 static int can_build_this(int, racetype *, char *);
 static int can_build_on_ship(int, racetype *, shiptype *, char *);
-static int can_build_on_sector(int, racetype *, planettype *, const sectortype&, int,
-                               int, char *);
+static int can_build_on_sector(int, racetype *, planettype *,
+                               const sectortype &, int, int, char *);
 static void create_ship_by_planet(int, int, racetype *, shiptype *,
                                   planettype *, int, int, int, int);
 static void create_ship_by_ship(int, int, racetype *, int, startype *,
@@ -1004,7 +1004,8 @@ void build(const command_t &argv, const player_t Playernum,
               y = builder->land_y;
               what = builder->build_type;
               sector = getsector(*planet, x, y);
-              if (!can_build_on_sector(what, Race, planet, *sector, x, y, buf)) {
+              if (!can_build_on_sector(what, Race, planet, *sector, x, y,
+                                       buf)) {
                 notify(Playernum, Governor, buf);
                 free(planet);
                 free(builder);
@@ -1194,7 +1195,8 @@ static int can_build_on_ship(int what, racetype *Race, shiptype *builder,
 }
 
 static int can_build_on_sector(int what, racetype *Race, planettype *planet,
-                               const sector& sector, int x, int y, char *string) {
+                               const sector &sector, int x, int y,
+                               char *string) {
   shiptype *s;
   char shipc;
 
@@ -1269,7 +1271,7 @@ static int build_at_ship(int Playernum, int Governor, racetype *Race,
 }
 
 static void autoload_at_planet(int Playernum, shiptype *s, planettype *planet,
-                               sector& sector, int *crew, double *fuel) {
+                               sector &sector, int *crew, double *fuel) {
   *crew = MIN(s->max_crew, sector.popn);
   *fuel = MIN((double)s->max_fuel, (double)planet->info[Playernum - 1].fuel);
   sector.popn -= *crew;

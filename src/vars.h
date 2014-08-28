@@ -133,26 +133,6 @@ struct commod {
   planetnum_t planet_to;
 };
 
-class sector {
- public:
-  unsigned char eff;          /* efficiency (0-100) */
-  unsigned char fert;         /* max popn is proportional to this */
-  unsigned char mobilization; /* percent popn is mobilized for war */
-  unsigned char crystals;
-  unsigned short resource;
-
-  population_t popn;
-  population_t troops; /* troops (additional combat value) */
-
-  player_t owner;          /* owner of place */
-  player_t race;           /* race type occupying sector
-                  (usually==owner) - makes things more
-                  realistic when alien races revolt and
-                  you gain control of them! */
-  unsigned char type;      /* underlying sector geology */
-  unsigned char condition; /* environmental effects */
-};
-
 struct planet {
   int sectormappos; /* file posn for sector map */  // unused
 
@@ -176,6 +156,38 @@ struct planet {
 
   int planet_id;
   unsigned long dummy[1];
+};
+
+class sector {
+ public:
+  unsigned char eff;          /* efficiency (0-100) */
+  unsigned char fert;         /* max popn is proportional to this */
+  unsigned char mobilization; /* percent popn is mobilized for war */
+  unsigned char crystals;
+  unsigned short resource;
+
+  population_t popn;
+  population_t troops; /* troops (additional combat value) */
+
+  player_t owner;          /* owner of place */
+  player_t race;           /* race type occupying sector
+                  (usually==owner) - makes things more
+                  realistic when alien races revolt and
+                  you gain control of them! */
+  unsigned char type;      /* underlying sector geology */
+  unsigned char condition; /* environmental effects */
+};
+
+class sector_map {
+ public:
+  sector_map(const planet& planet)
+      : maxx_(planet.Maxx), vec_(planet.Maxx * planet.Maxy) {}
+  sector& get(const int x, const int y) { return vec_[(x) + (y)*maxx_]; }
+  void put(sector&& s) { vec_.emplace_back(s); }
+
+ private:
+  const int maxx_;
+  std::vector<sector> vec_;
 };
 
 struct star {
@@ -242,7 +254,7 @@ extern sectortype Smap[(MAX_X + 1) * (MAX_Y + 1) + 1];
 extern unsigned char Nuked[MAXPLAYERS];
 extern unsigned long StarsInhab[NUMSTARS];
 extern unsigned long StarsExpl[NUMSTARS];
-extern startype *Stars[NUMSTARS];
+extern startype* Stars[NUMSTARS];
 extern unsigned short Sdatanumships[MAXPLAYERS];
 extern unsigned long Sdatapopns[MAXPLAYERS];
 extern unsigned short starnumships[NUMSTARS][MAXPLAYERS];
@@ -258,7 +270,7 @@ extern unsigned char Claims;
 extern unsigned char adr;
 extern char junk[2][256];
 
-extern planettype *planets[NUMSTARS][MAXPLANETS];
+extern planettype* planets[NUMSTARS][MAXPLANETS];
 extern unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
 extern unsigned long inhabited[NUMSTARS][2];
 extern double Compat[MAXPLAYERS];

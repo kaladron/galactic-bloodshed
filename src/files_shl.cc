@@ -246,7 +246,8 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
   Fileread(pdata, (char *)*p, sizeof(planettype), filepos);
 }
 
-std::unique_ptr<sector> getsector(const planettype& p, const int x, const int y) {
+std::unique_ptr<sector> getsector(const planettype &p, const int x,
+                                  const int y) {
   std::unique_ptr<sector> s(new sector);
   const char *tail;
   sqlite3_stmt *stmt;
@@ -299,6 +300,8 @@ void getsmap(sectortype *map, const planettype *p) {
     while (sqlite3_step(stmt) == SQLITE_ROW) {
       int x = sqlite3_column_int(stmt, 1);
       int y = sqlite3_column_int(stmt, 2);
+      // Add ORDER BY to the above SQL and them emplace_back the items into the
+      // vector
       sectortype *s = &map[(x) + (y)*p->Maxx];
       s->eff = sqlite3_column_int(stmt, 3);
       s->fert = sqlite3_column_int(stmt, 4);
@@ -546,7 +549,7 @@ void putplanet(planettype *p, int star, int pnum) {
   Filewrite(pdata, (char *)p, sizeof(planettype), filepos);
 }
 
-void putsector(const sector& s, const planettype& p, const int x, const int y) {
+void putsector(const sector &s, const planettype &p, const int x, const int y) {
   const char *tail = 0;
   sqlite3_stmt *stmt;
   const char *sql =

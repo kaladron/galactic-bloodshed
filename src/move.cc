@@ -30,11 +30,11 @@
 #include "vars.h"
 
 static void mech_defend(int, int, int *, int, planettype *, int, int,
-                        const sector&, int, int, const sector&);
+                        const sector &, int, int, const sector &);
 static void mech_attack_people(shiptype *, int *, int *, racetype *, racetype *,
-                               const sector&, int, int, int, char *, char *);
+                               const sector &, int, int, int, char *, char *);
 static void people_attack_mech(shiptype *, int, int, racetype *, racetype *,
-                               const sector&, int, int, char *, char *);
+                               const sector &, int, int, char *, char *);
 
 void arm(int Playernum, int Governor, int APcount, int mode) {
   planettype *planet;
@@ -582,8 +582,8 @@ void walk(int Playernum, int Governor, int APcount) {
                     short_buf);
         post(short_buf, COMBAT);
 
-        people_attack_mech(ship, sect->popn, sect->troops, alien,
-                           Race, *sect, x, y, long_buf, short_buf);
+        people_attack_mech(ship, sect->popn, sect->troops, alien, Race, *sect,
+                           x, y, long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien->Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, oldowner, (int)ship->storbits,
@@ -685,8 +685,8 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
 }
 
 static void mech_defend(int Playernum, int Governor, int *people, int type,
-                        planettype *p, int x, int y, const sector& s, int x2,
-                        int y2, const sector& s2) {
+                        planettype *p, int x, int y, const sector &s, int x2,
+                        int y2, const sector &s2) {
   int sh;
   shiptype *ship;
   int civ = 0, mil = 0;
@@ -731,7 +731,7 @@ static void mech_defend(int Playernum, int Governor, int *people, int type,
 
 static void mech_attack_people(shiptype *ship, int *civ, int *mil,
                                racetype *Race, racetype *alien,
-                               const sector& sect, int x, int y, int ignore,
+                               const sector &sect, int x, int y, int ignore,
                                char *long_msg, char *short_msg) {
   int strength, oldciv, oldmil;
   double astrength, dstrength;
@@ -779,8 +779,8 @@ static void mech_attack_people(shiptype *ship, int *civ, int *mil,
 }
 
 static void people_attack_mech(shiptype *ship, int civ, int mil, racetype *Race,
-                               racetype *alien, const sector& sect, int x, int y,
-                               char *long_msg, char *short_msg) {
+                               racetype *alien, const sector &sect, int x,
+                               int y, char *long_msg, char *short_msg) {
   int strength;
   double astrength, dstrength;
   int cas_civ, cas_mil, pdam, sdam, damage;

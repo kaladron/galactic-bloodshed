@@ -32,7 +32,7 @@ static int landed_on(shiptype *, shipnum_t);
 
 static void do_transporter(racetype *, int, shiptype *);
 static void unload_onto_alien_sector(int, int, planettype *, shiptype *,
-                                     sector&, int, int);
+                                     sector &, int, int);
 
 void load(int Playernum, int Governor, int APcount, int mode) {
   char commod;
@@ -1032,7 +1032,7 @@ static int landed_on(shiptype *s, shipnum_t shipno) {
 
 static void unload_onto_alien_sector(int Playernum, int Governor,
                                      planettype *planet, shiptype *ship,
-                                     sector& sect, int what, int people) {
+                                     sector &sect, int what, int people) {
   double astrength, dstrength;
   int oldowner, oldgov, oldpopn, old2popn, old3popn;
   int casualties, casualties2, casualties3;

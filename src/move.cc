@@ -68,14 +68,14 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
   }
 
   auto sect = getsector(*planet, x, y);
-  if (sect->owner != Playernum) {
+  if (sect.owner != Playernum) {
     notify(Playernum, Governor, "You don't own that sector.\n");
     free(planet);
     return;
   }
   if (mode) {
-    max_allowed = MIN(sect->popn, planet->info[Playernum - 1].destruct *
-                                      (sect->mobilization + 1));
+    max_allowed = MIN(sect.popn, planet->info[Playernum - 1].destruct *
+                                      (sect.mobilization + 1));
     if (argn < 3)
       amount = max_allowed;
     else {
@@ -106,9 +106,9 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     Race->governor[Governor].money -= enlist_cost;
     putrace(Race);
 
-    cost = MAX(1, amount / (sect->mobilization + 1));
-    sect->troops += amount;
-    sect->popn -= amount;
+    cost = MAX(1, amount / (sect.mobilization + 1));
+    sect.troops += amount;
+    sect.popn -= amount;
     planet->popn -= amount;
     planet->info[Playernum - 1].popn -= amount;
     planet->troops += amount;
@@ -117,13 +117,13 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     sprintf(buf,
             "%d population armed at a cost of %ldd (now %lu civilians, %lu "
             "military)\n",
-            amount, cost, sect->popn, sect->troops);
+            amount, cost, sect.popn, sect.troops);
     notify(Playernum, Governor, buf);
     sprintf(buf, "This mobilization cost %ld money.\n", enlist_cost);
     notify(Playernum, Governor, buf);
   } else {
     if (argn < 3)
-      amount = sect->troops;
+      amount = sect.troops;
     else {
       sscanf(args[2], "%d", &amount);
       if (amount <= 0) {
@@ -132,19 +132,19 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
         free(planet);
         return;
       }
-      amount = MIN(sect->troops, amount);
+      amount = MIN(sect.troops, amount);
     }
-    sect->popn += amount;
-    sect->troops -= amount;
+    sect.popn += amount;
+    sect.troops -= amount;
     planet->popn += amount;
     planet->troops -= amount;
     planet->info[Playernum - 1].popn += amount;
     planet->info[Playernum - 1].troops -= amount;
     sprintf(buf, "%d troops disarmed (now %lu civilians, %lu military)\n",
-            amount, sect->popn, sect->troops);
+            amount, sect.popn, sect.troops);
     notify(Playernum, Governor, buf);
   }
-  putsector(*sect, *planet, x, y);
+  putsector(sect, *planet, x, y);
   putplanet(planet, Dir[Playernum - 1][Governor].snum,
             Dir[Playernum - 1][Governor].pnum);
   free(planet);
@@ -190,7 +190,7 @@ void move_popn(int Playernum, int Governor, int what) {
   n = 0;
   while (!done) {
     auto sect = getsector(*planet, x, y);
-    if (sect->owner != Playernum) {
+    if (sect.owner != Playernum) {
       sprintf(buf, "You don't own sector %d,%d!\n", x, y);
       notify(Playernum, Governor, buf);
       free(planet);
@@ -226,24 +226,24 @@ void move_popn(int Playernum, int Governor, int what) {
       sscanf(args[3], "%d", &people);
       if (people < 0) {
         if (what == CIV)
-          people = sect->popn + people;
+          people = sect.popn + people;
         else if (what == MIL)
-          people = sect->troops + people;
+          people = sect.troops + people;
       }
     } else {
       if (what == CIV)
-        people = sect->popn;
+        people = sect.popn;
       else if (what == MIL)
-        people = sect->troops;
+        people = sect.troops;
     }
 
-    if ((what == CIV && (abs(people) > sect->popn)) ||
-        (what == MIL && (abs(people) > sect->troops)) || people <= 0) {
+    if ((what == CIV && (abs(people) > sect.popn)) ||
+        (what == MIL && (abs(people) > sect.troops)) || people <= 0) {
       if (what == CIV)
-        sprintf(buf, "Bad value - %lu civilians in [%d,%d]\n", sect->popn, x,
+        sprintf(buf, "Bad value - %lu civilians in [%d,%d]\n", sect.popn, x,
                 y);
       else if (what == MIL)
-        sprintf(buf, "Bad value - %lu troops in [%d,%d]\n", sect->troops, x, y);
+        sprintf(buf, "Bad value - %lu troops in [%d,%d]\n", sect.troops, x, y);
       notify(Playernum, Governor, buf);
       putplanet(planet, Dir[Playernum - 1][Governor].snum,
                 Dir[Playernum - 1][Governor].pnum);
@@ -256,11 +256,11 @@ void move_popn(int Playernum, int Governor, int what) {
     notify(Playernum, Governor, buf);
 
     /* check for defending mechs */
-    mech_defend(Playernum, Governor, &people, what, planet, x, y, *sect, x2, y2,
-                *sect2);
+    mech_defend(Playernum, Governor, &people, what, planet, x, y, sect, x2, y2,
+                sect2);
     if (!people) {
-      putsector(*sect, *planet, x, y);
-      putsector(*sect2, *planet, x2, y2);
+      putsector(sect, *planet, x, y);
+      putsector(sect2, *planet, x2, y2);
       putplanet(planet, Dir[Playernum - 1][Governor].snum,
                 Dir[Playernum - 1][Governor].pnum);
       free(planet);
@@ -268,7 +268,7 @@ void move_popn(int Playernum, int Governor, int what) {
       return;
     }
 
-    if (sect2->owner && (sect2->owner != Playernum))
+    if (sect2.owner && (sect2.owner != Playernum))
       Assault = 1;
     else
       Assault = 0;
@@ -289,46 +289,46 @@ void move_popn(int Playernum, int Governor, int what) {
     }
 
     if (Assault) {
-      ground_assaults[Playernum - 1][sect2->owner -
+      ground_assaults[Playernum - 1][sect2.owner -
                                      1][Dir[Playernum - 1][Governor].snum] += 1;
       Race = races[Playernum - 1];
-      alien = races[sect2->owner - 1];
+      alien = races[sect2.owner - 1];
       /* races find out about each other */
       alien->translate[Playernum - 1] =
           MIN(alien->translate[Playernum - 1] + 5, 100);
-      Race->translate[sect2->owner - 1] =
-          MIN(Race->translate[sect2->owner - 1] + 5, 100);
+      Race->translate[sect2.owner - 1] =
+          MIN(Race->translate[sect2.owner - 1] + 5, 100);
 
-      old2owner = (int)(sect2->owner);
+      old2owner = (int)(sect2.owner);
       old2gov =
-          Stars[Dir[Playernum - 1][Governor].snum]->governor[sect2->owner - 1];
+          Stars[Dir[Playernum - 1][Governor].snum]->governor[sect2.owner - 1];
       if (what == CIV)
-        sect->popn = MAX(0, sect->popn - people);
+        sect.popn = MAX(0, sect.popn - people);
       else if (what == MIL)
-        sect->troops = MAX(0, sect->troops - people);
+        sect.troops = MAX(0, sect.troops - people);
 
       if (what == CIV)
-        sprintf(buf, "%d civ assault %lu civ/%lu mil\n", people, sect2->popn,
-                sect2->troops);
+        sprintf(buf, "%d civ assault %lu civ/%lu mil\n", people, sect2.popn,
+                sect2.troops);
       else if (what == MIL)
-        sprintf(buf, "%d mil assault %lu civ/%lu mil\n", people, sect2->popn,
-                sect2->troops);
+        sprintf(buf, "%d mil assault %lu civ/%lu mil\n", people, sect2.popn,
+                sect2.troops);
       notify(Playernum, Governor, buf);
       oldpopn = people;
-      old2popn = sect2->popn;
-      old3popn = sect2->troops;
+      old2popn = sect2.popn;
+      old3popn = sect2.troops;
 
-      ground_attack(Race, alien, &people, what, &sect2->popn, &sect2->troops,
-                    Defensedata[sect->condition], Defensedata[sect2->condition],
-                    Race->likes[sect->condition],
-                    alien->likes[sect2->condition], &astrength, &dstrength,
+      ground_attack(Race, alien, &people, what, &sect2.popn, &sect2.troops,
+                    Defensedata[sect.condition], Defensedata[sect2.condition],
+                    Race->likes[sect.condition],
+                    alien->likes[sect2.condition], &astrength, &dstrength,
                     &casualties, &casualties2, &casualties3);
 
       sprintf(buf, "Attack: %.2f   Defense: %.2f.\n", astrength, dstrength);
       notify(Playernum, Governor, buf);
 
-      if (!(sect2->popn + sect2->troops)) { /* we got 'em */
-        sect2->owner = Playernum;
+      if (!(sect2.popn + sect2.troops)) { /* we got 'em */
+        sect2.owner = Playernum;
         /* mesomorphs absorb the bodies of their victims */
         absorbed = 0;
         if (Race->absorb) {
@@ -339,10 +339,10 @@ void move_popn(int Playernum, int Governor, int what) {
           notify(old2owner, old2gov, buf);
         }
         if (what == CIV)
-          sect2->popn = people + absorbed;
+          sect2.popn = people + absorbed;
         else if (what == MIL) {
-          sect2->popn = absorbed;
-          sect2->troops = people;
+          sect2.popn = absorbed;
+          sect2.troops = people;
         }
         adjust_morale(Race, alien, (int)alien->fighters);
       } else { /* retreat */
@@ -353,12 +353,12 @@ void move_popn(int Playernum, int Governor, int what) {
           notify(old2owner, old2gov, buf);
           sprintf(buf, "Metamorphs have absorbed %d bodies!!!\n", absorbed);
           notify(Playernum, Governor, buf);
-          sect2->popn += absorbed;
+          sect2.popn += absorbed;
         }
         if (what == CIV)
-          sect->popn += people;
+          sect.popn += people;
         else if (what == MIL)
-          sect->troops += people;
+          sect.troops += people;
         adjust_morale(alien, Race, (int)Race->fighters);
       }
 
@@ -367,11 +367,11 @@ void move_popn(int Playernum, int Governor, int what) {
               Stars[Dir[Playernum - 1][Governor].snum]->name,
               Stars[Dir[Playernum - 1][Governor].snum]
                   ->pnames[Dir[Playernum - 1][Governor].pnum],
-              Race->name, Playernum, Dessymbols[sect->condition], x, y,
-              alien->name, alien->Playernum, Dessymbols[sect2->condition], x2,
-              y2, (sect2->owner == Playernum ? "VICTORY" : "DEFEAT"));
+              Race->name, Playernum, Dessymbols[sect.condition], x, y,
+              alien->name, alien->Playernum, Dessymbols[sect2.condition], x2,
+              y2, (sect2.owner == Playernum ? "VICTORY" : "DEFEAT"));
 
-      if (sect2->owner == Playernum) {
+      if (sect2.owner == Playernum) {
         sprintf(buf, "VICTORY! The sector is yours!\n");
         notify(Playernum, Governor, buf);
         sprintf(buf, "Sector CAPTURED!\n");
@@ -381,8 +381,8 @@ void move_popn(int Playernum, int Governor, int what) {
                   what == CIV ? "civilians" : "troops");
           notify(Playernum, Governor, buf);
         }
-        planet->info[Playernum - 1].mob_points += (int)sect2->mobilization;
-        planet->info[old2owner - 1].mob_points -= (int)sect2->mobilization;
+        planet->info[Playernum - 1].mob_points += (int)sect2.mobilization;
+        planet->info[old2owner - 1].mob_points -= (int)sect2.mobilization;
       } else {
         sprintf(buf, "The invasion was repulsed; try again.\n");
         notify(Playernum, Governor, buf);
@@ -391,7 +391,7 @@ void move_popn(int Playernum, int Governor, int what) {
         done = 1; /* end loop */
       }
 
-      if (!(sect->popn + sect->troops + people)) {
+      if (!(sect.popn + sect.troops + people)) {
         sprintf(buf, "You killed all of them!\n");
         strcat(telegram_buf, buf);
         /* increase modifier */
@@ -417,29 +417,29 @@ void move_popn(int Playernum, int Governor, int what) {
       notify(Playernum, Governor, buf);
     } else {
       if (what == CIV) {
-        sect->popn -= people;
-        sect2->popn += people;
+        sect.popn -= people;
+        sect2.popn += people;
       } else if (what == MIL) {
-        sect->troops -= people;
-        sect2->troops += people;
+        sect.troops -= people;
+        sect2.troops += people;
       }
-      if (!sect2->owner)
-        planet->info[Playernum - 1].mob_points += (int)sect2->mobilization;
-      sect2->owner = Playernum;
+      if (!sect2.owner)
+        planet->info[Playernum - 1].mob_points += (int)sect2.mobilization;
+      sect2.owner = Playernum;
     }
 
-    if (!(sect->popn + sect->troops)) {
-      planet->info[Playernum - 1].mob_points -= (int)sect->mobilization;
-      sect->owner = 0;
+    if (!(sect.popn + sect.troops)) {
+      planet->info[Playernum - 1].mob_points -= (int)sect.mobilization;
+      sect.owner = 0;
     }
 
-    if (!(sect2->popn + sect2->troops)) {
-      sect2->owner = 0;
+    if (!(sect2.popn + sect2.troops)) {
+      sect2.owner = 0;
       done = 1;
     }
 
-    putsector(*sect, *planet, x, y);
-    putsector(*sect2, *planet, x2, y2);
+    putsector(sect, *planet, x, y);
+    putsector(sect2, *planet, x2, y2);
 
     deductAPs(Playernum, Governor, APcost, Dir[Playernum - 1][Governor].snum,
               0);
@@ -518,7 +518,7 @@ void walk(int Playernum, int Governor, int APcount) {
   }
   /* check to see if player is permited on the sector type */
   auto sect = getsector(*p, x, y);
-  if (!Race->likes[sect->condition]) {
+  if (!Race->likes[sect.condition]) {
     notify(Playernum, Governor,
            "Your ships cannot walk into that sector type!\n");
     free(ship);
@@ -560,9 +560,9 @@ void walk(int Playernum, int Governor, int APcount) {
     free(ship2);
   }
   /* if the sector is occupied by non-aligned player, attack them first */
-  if (ship->popn && ship->alive && sect->owner && sect->owner != Playernum) {
-    oldowner = sect->owner;
-    oldgov = Stars[ship->storbits]->governor[sect->owner - 1];
+  if (ship->popn && ship->alive && sect.owner && sect.owner != Playernum) {
+    oldowner = sect.owner;
+    oldgov = Stars[ship->storbits]->governor[sect.owner - 1];
     alien = races[oldowner - 1];
     if (!isset(Race->allied, oldowner) || !isset(alien->allied, Playernum)) {
       if (!retal_strength(ship)) {
@@ -571,10 +571,10 @@ void walk(int Playernum, int Governor, int APcount) {
         free(p);
         return;
       }
-      while ((sect->popn + sect->troops) && retal_strength(ship)) {
-        civ = (int)sect->popn;
-        mil = (int)sect->troops;
-        mech_attack_people(ship, &civ, &mil, Race, alien, *sect, x, y, 0,
+      while ((sect.popn + sect.troops) && retal_strength(ship)) {
+        civ = (int)sect.popn;
+        mil = (int)sect.troops;
+        mech_attack_people(ship, &civ, &mil, Race, alien, sect, x, y, 0,
                            long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien->Playernum, oldgov, long_buf);
@@ -582,7 +582,7 @@ void walk(int Playernum, int Governor, int APcount) {
                     short_buf);
         post(short_buf, COMBAT);
 
-        people_attack_mech(ship, sect->popn, sect->troops, alien, Race, *sect,
+        people_attack_mech(ship, sect.popn, sect.troops, alien, Race, sect,
                            x, y, long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien->Playernum, oldgov, long_buf);
@@ -590,11 +590,11 @@ void walk(int Playernum, int Governor, int APcount) {
                     short_buf);
         if (!ship->alive) post(short_buf, COMBAT);
 
-        sect->popn = civ;
-        sect->troops = mil;
-        if (!(sect->popn + sect->troops)) {
-          p->info[sect->owner - 1].mob_points -= (int)sect->mobilization;
-          sect->owner = 0;
+        sect.popn = civ;
+        sect.troops = mil;
+        if (!(sect.popn + sect.troops)) {
+          p->info[sect.owner - 1].mob_points -= (int)sect.mobilization;
+          sect.owner = 0;
         }
       }
     }
@@ -602,11 +602,11 @@ void walk(int Playernum, int Governor, int APcount) {
     putrace(Race);
     putplanet(p, Dir[Playernum - 1][Governor].snum,
               Dir[Playernum - 1][Governor].pnum);
-    putsector(*sect, *p, x, y);
+    putsector(sect, *p, x, y);
   }
 
-  if ((sect->owner == Playernum || isset(Race->allied, (int)sect->owner) ||
-       !sect->owner) &&
+  if ((sect.owner == Playernum || isset(Race->allied, (int)sect.owner) ||
+       !sect.owner) &&
       ship->alive)
     succ = 1;
 

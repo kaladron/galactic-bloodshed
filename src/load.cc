@@ -41,7 +41,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
   int transfercrew;
   shiptype *s, *s2;
   planettype *p;
-  std::unique_ptr<sector> sect;
+  sector sect;
   racetype *Race;
   shipnum_t shipno, nextshipno;
 
@@ -171,7 +171,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             uplim = diff ? 0 : MIN(s2->popn, Max_crew(s) - s->popn);
             lolim = diff ? 0 : -MIN(s->popn, Max_crew(s2) - s2->popn);
           } else {
-            uplim = MIN(sect->popn, Max_crew(s) - s->popn);
+            uplim = MIN(sect.popn, Max_crew(s) - s->popn);
             lolim = -s->popn;
           }
           break;
@@ -180,7 +180,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             uplim = diff ? 0 : MIN(s2->troops, Max_mil(s) - s->troops);
             lolim = diff ? 0 : -MIN(s->troops, Max_mil(s2) - s2->troops);
           } else {
-            uplim = MIN(sect->troops, Max_mil(s) - s->troops);
+            uplim = MIN(sect.troops, Max_mil(s) - s->troops);
             lolim = -s->troops;
           }
           break;
@@ -255,15 +255,15 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             s2->popn -= amt;
             if (!landed_on(s, sh)) s2->mass -= amt * Race->mass;
             transfercrew = 1;
-          } else if (sect->owner && sect->owner != Playernum) {
+          } else if (sect.owner && sect.owner != Playernum) {
             sprintf(buf,
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
             /* fight a land battle */
-            unload_onto_alien_sector(Playernum, Governor, p, s, *sect, CIV,
+            unload_onto_alien_sector(Playernum, Governor, p, s, sect, CIV,
                                      -amt);
             putship(s);
-            putsector(*sect, *p, s->land_x, s->land_y);
+            putsector(sect, *p, s->land_x, s->land_y);
             putplanet(p, Dir[Playernum - 1][Governor].snum,
                       Dir[Playernum - 1][Governor].pnum);
             free(s);
@@ -271,20 +271,20 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             return;
           } else {
             transfercrew = 1;
-            if (!sect->popn && !sect->troops && amt < 0) {
+            if (!sect.popn && !sect.troops && amt < 0) {
               p->info[Playernum - 1].numsectsowned++;
-              p->info[Playernum - 1].mob_points += sect->mobilization;
-              sect->owner = Playernum;
+              p->info[Playernum - 1].mob_points += sect.mobilization;
+              sect.owner = Playernum;
               sprintf(buf, "sector %d,%d COLONIZED.\n", s->land_x, s->land_y);
               notify(Playernum, Governor, buf);
             }
-            sect->popn -= amt;
+            sect.popn -= amt;
             p->popn -= amt;
             p->info[Playernum - 1].popn -= amt;
-            if (!sect->popn && !sect->troops) {
+            if (!sect.popn && !sect.troops) {
               p->info[Playernum - 1].numsectsowned--;
-              p->info[Playernum - 1].mob_points -= sect->mobilization;
-              sect->owner = 0;
+              p->info[Playernum - 1].mob_points -= sect.mobilization;
+              sect.owner = 0;
               sprintf(buf, "sector %d,%d evacuated.\n", s->land_x, s->land_y);
               notify(Playernum, Governor, buf);
             }
@@ -302,14 +302,14 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             s2->troops -= amt;
             if (!landed_on(s, sh)) s2->mass -= amt * Race->mass;
             transfercrew = 1;
-          } else if (sect->owner && sect->owner != Playernum) {
+          } else if (sect.owner && sect.owner != Playernum) {
             sprintf(buf,
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
-            unload_onto_alien_sector(Playernum, Governor, p, s, *sect, MIL,
+            unload_onto_alien_sector(Playernum, Governor, p, s, sect, MIL,
                                      -amt);
             putship(s);
-            putsector(*sect, *p, s->land_x, s->land_y);
+            putsector(sect, *p, s->land_x, s->land_y);
             putplanet(p, Dir[Playernum - 1][Governor].snum,
                       Dir[Playernum - 1][Governor].pnum);
             free(s);
@@ -317,20 +317,20 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             return;
           } else {
             transfercrew = 1;
-            if (!(sect->popn + sect->troops) && amt < 0) {
+            if (!(sect.popn + sect.troops) && amt < 0) {
               p->info[Playernum - 1].numsectsowned++;
-              p->info[Playernum - 1].mob_points += sect->mobilization;
-              sect->owner = Playernum;
+              p->info[Playernum - 1].mob_points += sect.mobilization;
+              sect.owner = Playernum;
               sprintf(buf, "sector %d,%d OCCUPIED.\n", s->land_x, s->land_y);
               notify(Playernum, Governor, buf);
             }
-            sect->troops -= amt;
+            sect.troops -= amt;
             p->troops -= amt;
             p->info[Playernum - 1].troops -= amt;
-            if (!(sect->troops + sect->popn)) {
+            if (!(sect.troops + sect.popn)) {
               p->info[Playernum - 1].numsectsowned--;
-              p->info[Playernum - 1].mob_points -= sect->mobilization;
-              sect->owner = 0;
+              p->info[Playernum - 1].mob_points -= sect.mobilization;
+              sect.owner = 0;
               sprintf(buf, "sector %d,%d evacuated.\n", s->land_x, s->land_y);
               notify(Playernum, Governor, buf);
             }
@@ -449,7 +449,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
         free(s2);
       } else {
         if (commod == 'c' || commod == 'm') {
-          putsector(*sect, *p, s->land_x, s->land_y);
+          putsector(sect, *p, s->land_x, s->land_y);
         }
         putplanet(p, Dir[Playernum - 1][Governor].snum,
                   Dir[Playernum - 1][Governor].pnum);

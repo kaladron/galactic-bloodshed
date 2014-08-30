@@ -718,7 +718,7 @@ void build(const command_t &argv, const player_t Playernum,
 
   FILE *fd;
   planettype *planet;
-  std::unique_ptr<sector> sector;
+  sector sector;
   shiptype *builder;
   shiptype newship;
 
@@ -881,7 +881,7 @@ void build(const command_t &argv, const player_t Playernum,
             return;
           }
           sector = getsector(*planet, x, y);
-          if (!can_build_on_sector(what, Race, planet, *sector, x, y, buf) &&
+          if (!can_build_on_sector(what, Race, planet, sector, x, y, buf) &&
               !Race->God) {
             notify(Playernum, Governor, buf);
             free(planet);
@@ -904,7 +904,7 @@ void build(const command_t &argv, const player_t Playernum,
                               pnum, x, y);
         if (Race->governor[Governor].toggle.autoload &&
             what != OTYPE_TRANSDEV && !Race->God)
-          autoload_at_planet(Playernum, &newship, planet, *sector, &load_crew,
+          autoload_at_planet(Playernum, &newship, planet, sector, &load_crew,
                              &load_fuel);
         else {
           load_crew = 0;
@@ -1004,7 +1004,7 @@ void build(const command_t &argv, const player_t Playernum,
               y = builder->land_y;
               what = builder->build_type;
               sector = getsector(*planet, x, y);
-              if (!can_build_on_sector(what, Race, planet, *sector, x, y,
+              if (!can_build_on_sector(what, Race, planet, sector, x, y,
                                        buf)) {
                 notify(Playernum, Governor, buf);
                 free(planet);
@@ -1027,7 +1027,7 @@ void build(const command_t &argv, const player_t Playernum,
                                   snum, pnum, x, y);
             if (Race->governor[Governor].toggle.autoload &&
                 what != OTYPE_TRANSDEV && !Race->God) {
-              autoload_at_planet(Playernum, &newship, planet, *sector,
+              autoload_at_planet(Playernum, &newship, planet, sector,
                                  &load_crew, &load_fuel);
             } else {
               load_crew = 0;
@@ -1086,7 +1086,7 @@ void build(const command_t &argv, const player_t Playernum,
 finish:
   switch (level) {
     case LEVEL_PLAN:
-      putsector(*sector, *planet, x, y);
+      putsector(sector, *planet, x, y);
       putplanet(planet, snum, pnum);
       free(planet);
       break;
@@ -1095,7 +1095,7 @@ finish:
           case LEVEL_PLAN:
             putplanet(planet, snum, pnum);
             if (landed(builder)) {
-              putsector(*sector, *planet, x, y);
+              putsector(sector, *planet, x, y);
             }
             free(planet);
             break;

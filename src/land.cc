@@ -362,13 +362,13 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
 
         auto sect = getsector(*p, x, y);
 
-        if (sect->condition == WASTED) {
+        if (sect.condition == WASTED) {
           sprintf(buf, "Warning: That sector is a wasteland!\n");
           notify(Playernum, Governor, buf);
-        } else if (sect->owner && sect->owner != Playernum) {
+        } else if (sect.owner && sect.owner != Playernum) {
           Race = races[Playernum - 1];
-          alien = races[sect->owner - 1];
-          if (!(isset(Race->allied, sect->owner) &&
+          alien = races[sect.owner - 1];
+          if (!(isset(Race->allied, sect.owner) &&
                 isset(alien->allied, Playernum))) {
             sprintf(buf, "You have landed on an alien sector (%s).\n",
                     alien->name);
@@ -386,7 +386,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
 
         putplanet(p, (int)s->storbits, (int)s->pnumorbits);
 
-        if (numdest) putsector(*sect, *p, x, y);
+        if (numdest) putsector(sect, *p, x, y);
 
         /* send messages to anyone there */
         sprintf(buf, "%s observed landing on sector %d,%d,planet /%s/%s.\n",

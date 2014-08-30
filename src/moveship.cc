@@ -373,7 +373,7 @@ static int do_merchant(shiptype *s, planettype *p) {
     return 0;
   /* check to see if the sector is owned by the player */
   auto sect = getsector(*p, p->info[i].route[j].x, p->info[i].route[j].y);
-  if (sect->owner && (sect->owner != s->owner)) {
+  if (sect.owner && (sect.owner != s->owner)) {
     return 0;
   }
 

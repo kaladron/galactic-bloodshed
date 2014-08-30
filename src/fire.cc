@@ -575,7 +575,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
 
   /* check to see if you own the sector */
   auto sect = getsector(*p, x, y);
-  if (sect->owner != Playernum) {
+  if (sect.owner != Playernum) {
     notify(Playernum, Governor, "Nice try.\n");
     free(p);
     free(to);

@@ -22,7 +22,7 @@
 
 void scrap(int Playernum, int Governor, int APcount) {
   planettype *planet;
-  std::unique_ptr<sector> sect;
+  sector sect;
   shiptype *s, *s2;
   shipnum_t shipno, nextshipno;
   int scrapval = 0, destval = 0, crewval = 0, xtalval = 0, troopval = 0;
@@ -126,8 +126,8 @@ void scrap(int Playernum, int Governor, int APcount) {
           destval = 0;
 
         if (s->popn + s->troops) {
-          if (s->whatdest == LEVEL_PLAN && sect->owner > 0 &&
-              sect->owner != Playernum) {
+          if (s->whatdest == LEVEL_PLAN && sect.owner > 0 &&
+              sect.owner != Playernum) {
             sprintf(buf,
                     "You don't own this sector; no crew can be recovered.\n");
             notify(Playernum, Governor, buf);
@@ -156,8 +156,8 @@ void scrap(int Playernum, int Governor, int APcount) {
         }
 
         if (s->crystals + s->mounted) {
-          if (s->whatdest == LEVEL_PLAN && sect->owner > 0 &&
-              sect->owner != Playernum) {
+          if (s->whatdest == LEVEL_PLAN && sect.owner > 0 &&
+              sect.owner != Playernum) {
             sprintf(
                 buf,
                 "You don't own this sector; no crystals can be recovered.\n");
@@ -218,13 +218,13 @@ void scrap(int Playernum, int Governor, int APcount) {
         free(planet); /* This has already been allocated */
         getplanet(&planet, (int)s->storbits, (int)s->pnumorbits);
         if (landed(s)) {
-          if (sect->owner == Playernum) {
-            sect->popn += troopval;
-            sect->popn += crewval;
-          } else if (sect->owner == 0) {
-            sect->owner = Playernum;
-            sect->popn += crewval;
-            sect->troops += troopval;
+          if (sect.owner == Playernum) {
+            sect.popn += troopval;
+            sect.popn += crewval;
+          } else if (sect.owner == 0) {
+            sect.owner = Playernum;
+            sect.popn += crewval;
+            sect.troops += troopval;
             planet->info[Playernum - 1].numsectsowned++;
             planet->info[Playernum - 1].popn += crewval;
             planet->info[Playernum - 1].popn += troopval;
@@ -236,7 +236,7 @@ void scrap(int Playernum, int Governor, int APcount) {
           planet->info[Playernum - 1].destruct += destval;
           planet->info[Playernum - 1].fuel += (int)fuelval;
           planet->info[Playernum - 1].crystals += (int)xtalval;
-          putsector(*sect, *planet, s->land_x, s->land_y);
+          putsector(sect, *planet, s->land_x, s->land_y);
         }
         putplanet(planet, (int)s->storbits, (int)s->pnumorbits);
         free(planet);

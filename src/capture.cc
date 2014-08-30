@@ -78,10 +78,10 @@ void capture(int Playernum, int Governor, int APcount) {
       getplanet(&p, (int)ship->storbits, (int)ship->pnumorbits);
       auto sect = getsector(*p, x, y);
 
-      if (sect->owner != Playernum) {
+      if (sect.owner != Playernum) {
         sprintf(buf,
                 "You don't own the sector where the ship is landed [%d].\n",
-                sect->owner);
+                sect.owner);
         notify(Playernum, Governor, buf);
         free(p);
         free(ship);
@@ -103,9 +103,9 @@ void capture(int Playernum, int Governor, int APcount) {
 
       if (argn < 3) {
         if (what == CIV)
-          boarders = sect->popn;
+          boarders = sect.popn;
         else if (what == MIL)
-          boarders = sect->troops;
+          boarders = sect.troops;
       } else
         boarders = strtoul(args[2], NULL, 10);
 
@@ -117,10 +117,10 @@ void capture(int Playernum, int Governor, int APcount) {
         continue;
       }
 
-      if ((boarders > sect->popn) && what == CIV)
-        boarders = sect->popn;
-      else if ((boarders > sect->troops) && what == MIL)
-        boarders = sect->troops;
+      if ((boarders > sect.popn) && what == CIV)
+        boarders = sect.popn;
+      else if ((boarders > sect.troops) && what == MIL)
+        boarders = sect.troops;
 
       Race = races[Playernum - 1];
       alien = races[ship->owner - 1];
@@ -142,17 +142,17 @@ void capture(int Playernum, int Governor, int APcount) {
       casualties2 = 0;
 
       if (what == CIV)
-        sect->popn -= boarders;
+        sect.popn -= boarders;
       else if (what == MIL)
-        sect->troops -= boarders;
+        sect.troops -= boarders;
 
       if (olddpopn + olddtroops) {
         sprintf(buf, "Attack strength: %.2f     Defense strength: %.2f\n",
                 astrength =
                     (double)boarders *
                     (what == MIL ? (double)Race->fighters * 10.0 : 1.0) * .01 *
-                    Race->tech * (Race->likes[sect->condition] + 0.01) *
-                    ((double)Defensedata[sect->condition] + 1.0) *
+                    Race->tech * (Race->likes[sect.condition] + 0.01) *
+                    ((double)Defensedata[sect.condition] + 1.0) *
                     morale_factor((double)(Race->morale - alien->morale)),
                 dstrength =
                     ((double)ship->popn +
@@ -209,11 +209,11 @@ void capture(int Playernum, int Governor, int APcount) {
         ship->governor = Governor;
         if (what == CIV) {
           ship->popn = MIN(boarders, Max_crew(ship));
-          sect->popn += boarders - ship->popn;
+          sect.popn += boarders - ship->popn;
           ship->mass += ship->popn * Race->mass;
         } else if (what == MIL) {
           ship->troops = MIN(boarders, Max_mil(ship));
-          sect->troops += boarders - ship->troops;
+          sect.troops += boarders - ship->troops;
           ship->mass += ship->troops * Race->mass;
         }
         if (olddpopn + olddtroops && ship->type != OTYPE_FACTORY)
@@ -221,12 +221,12 @@ void capture(int Playernum, int Governor, int APcount) {
         /* unoccupied ships and factories don't count */
       } else { /* retreat */
         if (what == CIV)
-          sect->popn += boarders;
+          sect.popn += boarders;
         else if (what == MIL)
-          sect->troops += boarders;
+          sect.troops += boarders;
       }
 
-      if (!(sect->popn + sect->troops)) sect->owner = 0;
+      if (!(sect.popn + sect.troops)) sect.owner = 0;
 
       sprintf(buf, "BULLETIN from %s/%s!!\n", Stars[ship->storbits]->name,
               Stars[ship->storbits]->pnames[ship->pnumorbits]);
@@ -239,7 +239,7 @@ void capture(int Playernum, int Governor, int APcount) {
           Playernum, Race->name);
       strcat(telegram_buf, buf);
       sprintf(buf, "%s at sector %d,%d [owner %d] !\n", Ship(ship), x, y,
-              sect->owner);
+              sect.owner);
       strcat(telegram_buf, buf);
 
       if (booby) {
@@ -287,10 +287,10 @@ void capture(int Playernum, int Governor, int APcount) {
                 Race->name, Playernum, Ship(&s));
       }
       if (ship->alive) {
-        if (sect->popn + sect->troops + boarders) {
+        if (sect.popn + sect.troops + boarders) {
           sprintf(buf, "You killed all the aliens in this sector!\n");
           strcat(telegram_buf, buf);
-          p->info[Playernum - 1].mob_points -= sect->mobilization;
+          p->info[Playernum - 1].mob_points -= sect.mobilization;
         }
         if (!boarders) {
           sprintf(buf, "Oh no! They killed your party to the last man!\n");
@@ -318,7 +318,7 @@ void capture(int Playernum, int Governor, int APcount) {
       notify_star(Playernum, Governor, oldowner, (int)ship->storbits,
                   short_buf);
       putship(ship);
-      putsector(*sect, *p, x, y);
+      putsector(sect, *p, x, y);
       putplanet(p, snum, pnum);
       putrace(Race);
       putrace(alien);

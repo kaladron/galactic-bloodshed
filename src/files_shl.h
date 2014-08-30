@@ -29,7 +29,7 @@ void getstar(startype **, int);
 void getplanet(planettype **, starnum_t, planetnum_t);
 int getship(shiptype **, shipnum_t);
 int getcommod(commodtype **, commodnum_t);
-std::unique_ptr<sector> getsector(const planettype &, const int x, const int y);
+sector getsector(const planettype &, const int x, const int y);
 void getsmap(sectortype *, const planettype *);
 int getdeadship(void);
 int getdeadcommod(void);

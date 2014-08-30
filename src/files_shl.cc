@@ -246,9 +246,9 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
   Fileread(pdata, (char *)*p, sizeof(planettype), filepos);
 }
 
-std::unique_ptr<sector> getsector(const planettype &p, const int x,
+sector getsector(const planettype &p, const int x,
                                   const int y) {
-  std::unique_ptr<sector> s(new sector);
+  sector s;
   const char *tail;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -263,17 +263,17 @@ std::unique_ptr<sector> getsector(const planettype &p, const int x,
   sqlite3_bind_int(stmt, 3, y);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
-    s->eff = sqlite3_column_int(stmt, 3);
-    s->fert = sqlite3_column_int(stmt, 4);
-    s->mobilization = sqlite3_column_int(stmt, 5);
-    s->crystals = sqlite3_column_int(stmt, 6);
-    s->resource = sqlite3_column_int(stmt, 7);
-    s->popn = sqlite3_column_int(stmt, 8);
-    s->troops = sqlite3_column_int(stmt, 9);
-    s->owner = sqlite3_column_int(stmt, 10);
-    s->race = sqlite3_column_int(stmt, 11);
-    s->type = sqlite3_column_int(stmt, 12);
-    s->condition = sqlite3_column_int(stmt, 13);
+    s.eff = sqlite3_column_int(stmt, 3);
+    s.fert = sqlite3_column_int(stmt, 4);
+    s.mobilization = sqlite3_column_int(stmt, 5);
+    s.crystals = sqlite3_column_int(stmt, 6);
+    s.resource = sqlite3_column_int(stmt, 7);
+    s.popn = sqlite3_column_int(stmt, 8);
+    s.troops = sqlite3_column_int(stmt, 9);
+    s.owner = sqlite3_column_int(stmt, 10);
+    s.race = sqlite3_column_int(stmt, 11);
+    s.type = sqlite3_column_int(stmt, 12);
+    s.condition = sqlite3_column_int(stmt, 13);
   }
 
   int err = sqlite3_finalize(stmt);

@@ -14,6 +14,7 @@
 #include <memory>
 #include <sqlite3.h>
 #include <stdio.h>
+#include <stdexcept>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -248,7 +249,6 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
 }
 
 sector getsector(const planettype &p, const int x, const int y) {
-  sector s;
   const char *tail;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -262,19 +262,24 @@ sector getsector(const planettype &p, const int x, const int y) {
   sqlite3_bind_int(stmt, 2, x);
   sqlite3_bind_int(stmt, 3, y);
 
-  while (sqlite3_step(stmt) == SQLITE_ROW) {
-    s.eff = sqlite3_column_int(stmt, 3);
-    s.fert = sqlite3_column_int(stmt, 4);
-    s.mobilization = sqlite3_column_int(stmt, 5);
-    s.crystals = sqlite3_column_int(stmt, 6);
-    s.resource = sqlite3_column_int(stmt, 7);
-    s.popn = sqlite3_column_int(stmt, 8);
-    s.troops = sqlite3_column_int(stmt, 9);
-    s.owner = sqlite3_column_int(stmt, 10);
-    s.race = sqlite3_column_int(stmt, 11);
-    s.type = sqlite3_column_int(stmt, 12);
-    s.condition = sqlite3_column_int(stmt, 13);
+  auto result = sqlite3_step(stmt);
+  if (result != SQLITE_ROW) {
+    throw new std::runtime_error(
+        "Database unable to return the requested sector");
   }
+
+  sector s(sqlite3_column_int(stmt, 3),   // eff
+           sqlite3_column_int(stmt, 4),   // fert
+           sqlite3_column_int(stmt, 5),   // mobilization
+           sqlite3_column_int(stmt, 6),   // crystals
+           sqlite3_column_int(stmt, 7),   // resource
+           sqlite3_column_int(stmt, 8),   // popn
+           sqlite3_column_int(stmt, 9),   // troops
+           sqlite3_column_int(stmt, 10),  // owner
+           sqlite3_column_int(stmt, 11),  // race
+           sqlite3_column_int(stmt, 12),  // type
+           sqlite3_column_int(stmt, 13)   // condition
+           );
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {

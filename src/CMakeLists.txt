@@ -68,7 +68,8 @@ add_executable(makeuniv
   makestar.cc
   makeplanet.cc
   perm.cc
-  rand.cc)
+  rand.cc
+  sector.cc)
 target_link_libraries(makeuniv sqlite3) 
 install(TARGETS makeuniv DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT binaries)
 add_custom_target(run-makeuniv
@@ -121,6 +122,7 @@ add_executable(GB
   relation.cc
   rst.cc
   scrap.cc
+  sector.cc
   shlmisc.cc
   shootblast.cc
   survey.cc
@@ -144,6 +146,7 @@ add_executable(enrol
   max.cc
   perm.cc
   rand.cc
+  sector.cc
   shlmisc.cc)
 target_link_libraries(enrol sqlite3 ncurses)
 install(TARGETS enrol DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT binaries)
@@ -162,6 +165,7 @@ add_executable(racegen
   perm.cc
   racegen.cc
   rand.cc
+  sector.cc
   shlmisc.cc)
 target_link_libraries(racegen sqlite3)
 set_target_properties(racegen PROPERTIES

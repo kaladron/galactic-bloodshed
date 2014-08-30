@@ -194,13 +194,15 @@ class sector {
   void operator=(const sector&) = delete;
   sector(sector&&) = default;
   sector& operator=(sector&&) = default;
+  friend std::ostream& operator<<(std::ostream&, const sector&);
 };
 
 class sector_map {
  public:
-  sector_map(const planet& planet)
-      : maxx_(planet.Maxx), vec_(planet.Maxx * planet.Maxy) {}
-  sector& get(const int x, const int y) { return vec_[(x) + (y)*maxx_]; }
+  sector_map(const planet& planet) : maxx_(planet.Maxx), vec_() {
+    vec_.reserve(planet.Maxx * planet.Maxy);
+  }
+  sector& get(const int x, const int y) { return vec_.at((x) + (y)*maxx_); }
   void put(sector&& s) { vec_.emplace_back(std::move(s)); }
 
  private:

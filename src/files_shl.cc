@@ -18,6 +18,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <iostream>
 
 #include "files.h"
 #include "files_rw.h"
@@ -285,39 +286,40 @@ sector getsector(const planettype &p, const int x, const int y) {
 
 void getsmap(sectortype *map, const planettype *p) {
   const char *tail;
-  {
-    sqlite3_stmt *stmt;
-    const char *sql =
-        "SELECT planet_id, xpos, ypos, eff, fert, "
-        "mobilization, crystals, resource, popn, troops, owner, "
-        "race, type, condition FROM tbl_sector "
-        "WHERE planet_id=?1";
-    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "SELECT planet_id, xpos, ypos, eff, fert, "
+      "mobilization, crystals, resource, popn, troops, owner, "
+      "race, type, condition FROM tbl_sector "
+      "WHERE planet_id=?1 ORDER BY ypos, xpos";
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
 
-    sqlite3_bind_int(stmt, 1, p->planet_id);
+  sqlite3_bind_int(stmt, 1, p->planet_id);
 
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-      int x = sqlite3_column_int(stmt, 1);
-      int y = sqlite3_column_int(stmt, 2);
-      // Add ORDER BY to the above SQL and them emplace_back the items into the
-      // vector
-      sectortype *s = &map[(x) + (y)*p->Maxx];
-      s->eff = sqlite3_column_int(stmt, 3);
-      s->fert = sqlite3_column_int(stmt, 4);
-      s->mobilization = sqlite3_column_int(stmt, 5);
-      s->crystals = sqlite3_column_int(stmt, 6);
-      s->resource = sqlite3_column_int(stmt, 7);
-      s->popn = sqlite3_column_int(stmt, 8);
-      s->troops = sqlite3_column_int(stmt, 9);
-      s->owner = sqlite3_column_int(stmt, 10);
-      s->race = sqlite3_column_int(stmt, 11);
-      s->type = sqlite3_column_int(stmt, 12);
-      s->condition = sqlite3_column_int(stmt, 13);
-    }
+  sector_map smap(*p);
 
-    sqlite3_clear_bindings(stmt);
-    sqlite3_reset(stmt);
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    int x = sqlite3_column_int(stmt, 1);
+    int y = sqlite3_column_int(stmt, 2);
+    sectortype *s = &map[(x) + (y)*p->Maxx];
+    s->eff = sqlite3_column_int(stmt, 3);
+    s->fert = sqlite3_column_int(stmt, 4);
+    s->mobilization = sqlite3_column_int(stmt, 5);
+    s->crystals = sqlite3_column_int(stmt, 6);
+    s->resource = sqlite3_column_int(stmt, 7);
+    s->popn = sqlite3_column_int(stmt, 8);
+    s->troops = sqlite3_column_int(stmt, 9);
+    s->owner = sqlite3_column_int(stmt, 10);
+    s->race = sqlite3_column_int(stmt, 11);
+    s->type = sqlite3_column_int(stmt, 12);
+    s->condition = sqlite3_column_int(stmt, 13);
+    smap.put(sector(s->eff, s->fert, s->mobilization, s->crystals, s->resource,
+                    s->popn, s->troops, s->owner, s->race, s->type,
+                    s->condition));
   }
+
+  sqlite3_clear_bindings(stmt);
+  sqlite3_reset(stmt);
 }
 
 int getship(shiptype **s, shipnum_t shipnum) {

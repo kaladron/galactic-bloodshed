@@ -246,8 +246,7 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
   Fileread(pdata, (char *)*p, sizeof(planettype), filepos);
 }
 
-sector getsector(const planettype &p, const int x,
-                                  const int y) {
+sector getsector(const planettype &p, const int x, const int y) {
   sector s;
   const char *tail;
   sqlite3_stmt *stmt;
@@ -586,7 +585,7 @@ void putsmap(sectortype *map, planettype *p) {
 
   for (int y = 0; y < p->Maxy; y++) {
     for (int x = 0; x < p->Maxx; x++) {
-      const sector sec = Smap[(x) + (y)*p->Maxx];
+      const sector &sec = Smap[(x) + (y)*p->Maxx];
       putsector(sec, *p, x, y);
     }
   }

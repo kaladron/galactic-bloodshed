@@ -1004,8 +1004,7 @@ void build(const command_t &argv, const player_t Playernum,
               y = builder->land_y;
               what = builder->build_type;
               sector = getsector(*planet, x, y);
-              if (!can_build_on_sector(what, Race, planet, sector, x, y,
-                                       buf)) {
+              if (!can_build_on_sector(what, Race, planet, sector, x, y, buf)) {
                 notify(Playernum, Governor, buf);
                 free(planet);
                 free(builder);

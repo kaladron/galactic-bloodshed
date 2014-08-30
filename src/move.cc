@@ -75,7 +75,7 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
   }
   if (mode) {
     max_allowed = MIN(sect.popn, planet->info[Playernum - 1].destruct *
-                                      (sect.mobilization + 1));
+                                     (sect.mobilization + 1));
     if (argn < 3)
       amount = max_allowed;
     else {
@@ -240,8 +240,7 @@ void move_popn(int Playernum, int Governor, int what) {
     if ((what == CIV && (abs(people) > sect.popn)) ||
         (what == MIL && (abs(people) > sect.troops)) || people <= 0) {
       if (what == CIV)
-        sprintf(buf, "Bad value - %lu civilians in [%d,%d]\n", sect.popn, x,
-                y);
+        sprintf(buf, "Bad value - %lu civilians in [%d,%d]\n", sect.popn, x, y);
       else if (what == MIL)
         sprintf(buf, "Bad value - %lu troops in [%d,%d]\n", sect.troops, x, y);
       notify(Playernum, Governor, buf);
@@ -320,9 +319,9 @@ void move_popn(int Playernum, int Governor, int what) {
 
       ground_attack(Race, alien, &people, what, &sect2.popn, &sect2.troops,
                     Defensedata[sect.condition], Defensedata[sect2.condition],
-                    Race->likes[sect.condition],
-                    alien->likes[sect2.condition], &astrength, &dstrength,
-                    &casualties, &casualties2, &casualties3);
+                    Race->likes[sect.condition], alien->likes[sect2.condition],
+                    &astrength, &dstrength, &casualties, &casualties2,
+                    &casualties3);
 
       sprintf(buf, "Attack: %.2f   Defense: %.2f.\n", astrength, dstrength);
       notify(Playernum, Governor, buf);
@@ -582,8 +581,8 @@ void walk(int Playernum, int Governor, int APcount) {
                     short_buf);
         post(short_buf, COMBAT);
 
-        people_attack_mech(ship, sect.popn, sect.troops, alien, Race, sect,
-                           x, y, long_buf, short_buf);
+        people_attack_mech(ship, sect.popn, sect.troops, alien, Race, sect, x,
+                           y, long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien->Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, oldowner, (int)ship->storbits,

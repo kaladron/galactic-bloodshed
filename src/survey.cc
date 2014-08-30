@@ -451,7 +451,7 @@ void repair(const command_t &argv, const player_t Playernum,
           s = &Sector(*p, lowx, lowy);
           if (s->condition == WASTED && (s->owner == Playernum || !s->owner)) {
             s->condition = s->type;
-            s->fert = std::min(100, s->fert + 20);
+            s->fert = std::min(100U, s->fert + 20);
             p->info[Playernum - 1].resource -= SECTOR_REPAIR_COST;
             cost += SECTOR_REPAIR_COST;
             sectors += 1;

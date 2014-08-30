@@ -160,22 +160,40 @@ struct planet {
 
 class sector {
  public:
-  unsigned char eff;          /* efficiency (0-100) */
-  unsigned char fert;         /* max popn is proportional to this */
-  unsigned char mobilization; /* percent popn is mobilized for war */
-  unsigned char crystals;
-  unsigned short resource;
+  sector(int eff, int fert, int mobilization, int crystals, int resource,
+         int popn, int troops, int owner, int race, int type, int condition)
+      : eff(eff),
+        fert(fert),
+        mobilization(mobilization),
+        crystals(crystals),
+        resource(resource),
+        popn(popn),
+        troops(troops),
+        owner(owner),
+        race(race),
+        type(type),
+        condition(condition) {}
+  sector() {}
+  unsigned int eff;          /* efficiency (0-100) */
+  unsigned int fert;         /* max popn is proportional to this */
+  unsigned int mobilization; /* percent popn is mobilized for war */
+  unsigned int crystals;
+  unsigned int resource;
 
   population_t popn;
   population_t troops; /* troops (additional combat value) */
 
-  player_t owner;          /* owner of place */
-  player_t race;           /* race type occupying sector
-                  (usually==owner) - makes things more
-                  realistic when alien races revolt and
-                  you gain control of them! */
-  unsigned char type;      /* underlying sector geology */
-  unsigned char condition; /* environmental effects */
+  player_t owner;         /* owner of place */
+  player_t race;          /* race type occupying sector
+                 (usually==owner) - makes things more
+                 realistic when alien races revolt and
+                 you gain control of them! */
+  unsigned int type;      /* underlying sector geology */
+  unsigned int condition; /* environmental effects */
+  sector(sector&) = delete;
+  void operator=(const sector&) = delete;
+  sector(sector&&) = default;
+  sector& operator=(sector&&) = default;
 };
 
 class sector_map {
@@ -183,7 +201,7 @@ class sector_map {
   sector_map(const planet& planet)
       : maxx_(planet.Maxx), vec_(planet.Maxx * planet.Maxy) {}
   sector& get(const int x, const int y) { return vec_[(x) + (y)*maxx_]; }
-  void put(sector&& s) { vec_.emplace_back(s); }
+  void put(sector&& s) { vec_.emplace_back(std::move(s)); }
 
  private:
   const int maxx_;

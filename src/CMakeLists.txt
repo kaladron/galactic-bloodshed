@@ -73,7 +73,7 @@ add_executable(makeuniv
 target_link_libraries(makeuniv sqlite3) 
 install(TARGETS makeuniv DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT binaries)
 add_custom_target(run-makeuniv
-  ${ASANSYM} && ${ASANOPT} && ${MSANSYM} && ${CMAKE_CURRENT_BINARY_DIR}/makeuniv
+  ${ASANSYM} && ${ASANOPT} && ${MSANSYM} && ${CMAKE_CURRENT_BINARY_DIR}/makeuniv -v
   DEPENDS makeuniv)
 
 add_executable(GB

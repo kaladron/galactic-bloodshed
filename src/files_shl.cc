@@ -289,7 +289,7 @@ sector getsector(const planettype &p, const int x, const int y) {
   return s;
 }
 
-void getsmap(sectortype *map, const planettype *p) {
+sector_map getsmap(const planettype &p) {
   const char *tail;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -299,32 +299,30 @@ void getsmap(sectortype *map, const planettype *p) {
       "WHERE planet_id=?1 ORDER BY ypos, xpos";
   sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
 
-  sqlite3_bind_int(stmt, 1, p->planet_id);
+  sqlite3_bind_int(stmt, 1, p.planet_id);
 
-  sector_map smap(*p);
+  sector_map smap(p);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
-    int x = sqlite3_column_int(stmt, 1);
-    int y = sqlite3_column_int(stmt, 2);
-    sectortype *s = &map[(x) + (y)*p->Maxx];
-    s->eff = sqlite3_column_int(stmt, 3);
-    s->fert = sqlite3_column_int(stmt, 4);
-    s->mobilization = sqlite3_column_int(stmt, 5);
-    s->crystals = sqlite3_column_int(stmt, 6);
-    s->resource = sqlite3_column_int(stmt, 7);
-    s->popn = sqlite3_column_int(stmt, 8);
-    s->troops = sqlite3_column_int(stmt, 9);
-    s->owner = sqlite3_column_int(stmt, 10);
-    s->race = sqlite3_column_int(stmt, 11);
-    s->type = sqlite3_column_int(stmt, 12);
-    s->condition = sqlite3_column_int(stmt, 13);
-    smap.put(sector(s->eff, s->fert, s->mobilization, s->crystals, s->resource,
-                    s->popn, s->troops, s->owner, s->race, s->type,
-                    s->condition));
+    sector s(sqlite3_column_int(stmt, 3),   // eff
+             sqlite3_column_int(stmt, 4),   // fert
+             sqlite3_column_int(stmt, 5),   // mobilization
+             sqlite3_column_int(stmt, 6),   // crystals
+             sqlite3_column_int(stmt, 7),   // resource
+             sqlite3_column_int(stmt, 8),   // popn
+             sqlite3_column_int(stmt, 9),   // troops
+             sqlite3_column_int(stmt, 10),  // owner
+             sqlite3_column_int(stmt, 11),  // race
+             sqlite3_column_int(stmt, 12),  // type
+             sqlite3_column_int(stmt, 13)   // condition
+             );
+    smap.put(std::move(s));
   }
 
   sqlite3_clear_bindings(stmt);
   sqlite3_reset(stmt);
+
+  return smap;
 }
 
 int getship(shiptype **s, shipnum_t shipnum) {
@@ -587,13 +585,13 @@ void putsector(const sector &s, const planettype &p, const int x, const int y) {
   sqlite3_reset(stmt);
 }
 
-void putsmap(sectortype *map, planettype *p) {
+void putsmap(sector_map &map, planettype &p) {
   start_bulk_insert();
 
-  for (int y = 0; y < p->Maxy; y++) {
-    for (int x = 0; x < p->Maxx; x++) {
-      const sector &sec = Smap[(x) + (y)*p->Maxx];
-      putsector(sec, *p, x, y);
+  for (int y = 0; y < p.Maxy; y++) {
+    for (int x = 0; x < p.Maxx; x++) {
+      auto &sec = map.get(x, y);
+      putsector(sec, p, x, y);
     }
   }
 

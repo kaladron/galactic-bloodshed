@@ -48,7 +48,6 @@ void survey(const command_t &argv, const player_t Playernum,
   int lowx, hix, lowy, hiy, x2;
   char d;
   char sect_char;
-  sectortype *s;
   planettype *p;
   int tindex;
   placetype where;
@@ -110,7 +109,7 @@ void survey(const command_t &argv, const player_t Playernum,
     compat = compatibility(p, Race);
 
     if ((isdigit(args[1][0]) && index(args[1], ',') != NULL) || all) {
-      getsmap(Smap, p);
+      auto smap = getsmap(*p);
 
       if (!all) {
         get4args(args[1], &x2, &hix, &lowy, &hiy);
@@ -171,29 +170,28 @@ void survey(const command_t &argv, const player_t Playernum,
       }
       for (; lowy <= hiy; lowy++)
         for (lowx = x2; lowx <= hix; lowx++) {
-          s = &Sector(*p, lowx, lowy);
+          auto &s = smap.get(lowx, lowy);
           /* if (s->owner==Playernum) */
           if (!mode) {
             sprintf(buf, "%2d,%-2d ", lowx, lowy);
             notify(Playernum, Governor, buf);
-            if ((d = desshow(Playernum, Governor, p, lowx, lowy, Race)) ==
+            if ((d = desshow(Playernum, Governor, p, lowx, lowy, Race, smap)) ==
                 CHAR_CLOAKED) {
               sprintf(buf, "?  (    ?    )\n");
               notify(Playernum, Governor, buf);
             } else {
               sprintf(
                   buf, " %c   %c   %6u%5u%4u%4u%4u%5u%5lu%5lu%6d%s\n",
-                  Dessymbols[s->condition], Dessymbols[s->type], s->owner,
-                  s->race, s->eff, s->mobilization, s->fert, s->resource,
-                  s->troops, s->popn,
+                  Dessymbols[s.condition], Dessymbols[s.type], s.owner, s.race,
+                  s.eff, s.mobilization, s.fert, s.resource, s.troops, s.popn,
                   maxsupport(Race, s, compat, p->conditions[TOXIC]),
-                  ((s->crystals && (Race->discoveries[D_CRYSTAL] || Race->God))
+                  ((s.crystals && (Race->discoveries[D_CRYSTAL] || Race->God))
                        ? " yes"
                        : " "));
               notify(Playernum, Governor, buf);
             }
           } else { /* mode */
-            switch (s->condition) {
+            switch (s.condition) {
               case SEA:
                 sect_char = CHAR_SEA;
                 break;
@@ -222,17 +220,16 @@ void survey(const command_t &argv, const player_t Playernum,
                 sect_char = '?';
                 break;
             }
-            sprintf(
-                buf, "%c %d %d %d %c %c %d %u %u %u %u %d %u %lu %lu %d",
-                CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
-                desshow(Playernum, Governor, p, lowx, lowy, Race),
-                ((s->condition == WASTED) ? 1 : 0), s->owner, s->eff, s->fert,
-                s->mobilization,
-                ((s->crystals && (Race->discoveries[D_CRYSTAL] || Race->God))
-                     ? 1
-                     : 0),
-                s->resource, s->popn, s->troops,
-                maxsupport(Race, s, compat, p->conditions[TOXIC]));
+            sprintf(buf, "%c %d %d %d %c %c %d %u %u %u %u %d %u %lu %lu %d",
+                    CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
+                    desshow(Playernum, Governor, p, lowx, lowy, Race, smap),
+                    ((s.condition == WASTED) ? 1 : 0), s.owner, s.eff, s.fert,
+                    s.mobilization,
+                    ((s.crystals && (Race->discoveries[D_CRYSTAL] || Race->God))
+                         ? 1
+                         : 0),
+                    s.resource, s.popn, s.troops,
+                    maxsupport(Race, s, compat, p->conditions[TOXIC]));
             notify(Playernum, Governor, buf);
 
             if (shiplocs[lowx][lowy].pos && inhere) {
@@ -300,16 +297,16 @@ void survey(const command_t &argv, const player_t Playernum,
               compatibility(p, Race));
       notify(Playernum, Governor, buf);
 
-      getsmap(Smap, p);
+      auto smap = getsmap(*p);
 
       crystal_count = avg_fert = avg_resource = 0;
       for (lowx = 0; lowx < p->Maxx; lowx++)
         for (lowy = 0; lowy < p->Maxy; lowy++) {
-          s = &Sector(*p, lowx, lowy);
-          avg_fert += s->fert;
-          avg_resource += s->resource;
+          auto &s = smap.get(lowx, lowy);
+          avg_fert += s.fert;
+          avg_resource += s.resource;
           if (Race->discoveries[D_CRYSTAL] || Race->God)
-            crystal_count += !!s->crystals;
+            crystal_count += !!s.crystals;
         }
       sprintf(buf, "%29s: %d\n%29s: %d\n%29s: %d\n", "Average fertility",
               avg_fert / (p->Maxx * p->Maxy), "Average resource",
@@ -392,7 +389,6 @@ void survey(const command_t &argv, const player_t Playernum,
 void repair(const command_t &argv, const player_t Playernum,
             const governor_t Governor) {
   int lowx, hix, lowy, hiy, x2, sectors, cost;
-  sectortype *s;
   planettype *p;
   placetype where;
 
@@ -427,7 +423,7 @@ void repair(const command_t &argv, const player_t Playernum,
       free((char *)p);
       return;
     }
-    getsmap(Smap, p);
+    auto smap = getsmap(*p);
     if (isdigit(args[1][0]) && index(args[1], ',') != NULL) {
       get4args(args[1], &x2, &hix, &lowy, &hiy);
       /* ^^^ translate from lowx:hix,lowy:hiy */
@@ -448,14 +444,14 @@ void repair(const command_t &argv, const player_t Playernum,
     for (; lowy <= hiy; lowy++)
       for (lowx = x2; lowx <= hix; lowx++) {
         if (p->info[Playernum - 1].resource >= SECTOR_REPAIR_COST) {
-          s = &Sector(*p, lowx, lowy);
-          if (s->condition == WASTED && (s->owner == Playernum || !s->owner)) {
-            s->condition = s->type;
-            s->fert = std::min(100U, s->fert + 20);
+          auto &s = smap.get(lowx, lowy);
+          if (s.condition == WASTED && (s.owner == Playernum || !s.owner)) {
+            s.condition = s.type;
+            s.fert = std::min(100U, s.fert + 20);
             p->info[Playernum - 1].resource -= SECTOR_REPAIR_COST;
             cost += SECTOR_REPAIR_COST;
             sectors += 1;
-            putsector(*s, *p, lowx, lowy);
+            putsector(s, *p, lowx, lowy);
           }
         }
       }

@@ -229,8 +229,6 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 #define Distsq(x1, y1, x2, y2) \
   (((x1) - (x2)) * ((x1) - (x2)) + ((y1) - (y2)) * ((y1) - (y2)))
 
-/* look up sector */
-#define Sector(pl, x, y) (Smap[(x) + (y) * (pl).Maxx])
 /* adjust temperature to displayed */
 #define Temp(x) ((int)(x))
 

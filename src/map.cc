@@ -71,7 +71,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
                        // as we know that it's not client affecting.
 
   Race = races[Playernum - 1];
-  getsmap(Smap, p);
+  auto smap = getsmap(*p);
   if (!Race->governor[Governor].toggle.geography) {
     /* traverse ship list on planet; find out if we can look at
        ships here. */
@@ -104,7 +104,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   /* send map data */
   for (y = 0; y < p->Maxy; y++)
     for (x = 0; x < p->Maxx; x++) {
-      owner = Sector(*p, x, y).owner;
+      owner = smap.get(x, y).owner;
       owned1 = (owner == Race->governor[Governor].toggle.highlight);
       if (shiplocs[x][y] && iq) {
         if (Race->governor[Governor].toggle.color)
@@ -118,12 +118,14 @@ static void show_map(const player_t Playernum, const governor_t Governor,
       } else {
         if (Race->governor[Governor].toggle.color)
           sprintf(buf, "%c%c", (char)(owner + '?'),
-                  desshow(Playernum, Governor, p, x, y, Race));
+                  desshow(Playernum, Governor, p, x, y, Race, smap));
         else {
           if (owned1 && Race->governor[Governor].toggle.inverse)
-            sprintf(buf, "1%c", desshow(Playernum, Governor, p, x, y, Race));
+            sprintf(buf, "1%c",
+                    desshow(Playernum, Governor, p, x, y, Race, smap));
           else
-            sprintf(buf, "0%c", desshow(Playernum, Governor, p, x, y, Race));
+            sprintf(buf, "0%c",
+                    desshow(Playernum, Governor, p, x, y, Race, smap));
         }
       }
       strcat(output, buf);
@@ -188,40 +190,39 @@ static void show_map(const player_t Playernum, const governor_t Governor,
 }
 
 char desshow(const player_t Playernum, const governor_t Governor,
-             const planettype *p, const int x, const int y, const racetype *r) {
-  sectortype *s;
+             const planettype *p, const int x, const int y, const racetype *r,
+             sector_map &smap) {
+  auto &s = smap.get(x, y);
 
-  s = &Sector(*p, x, y);
-
-  if (s->troops && !r->governor[Governor].toggle.geography) {
-    if (s->owner == Playernum)
+  if (s.troops && !r->governor[Governor].toggle.geography) {
+    if (s.owner == Playernum)
       return CHAR_MY_TROOPS;
-    else if (isset(r->allied, s->owner))
+    else if (isset(r->allied, s.owner))
       return CHAR_ALLIED_TROOPS;
-    else if (isset(r->atwar, s->owner))
+    else if (isset(r->atwar, s.owner))
       return CHAR_ATWAR_TROOPS;
     else
       return CHAR_NEUTRAL_TROOPS;
   }
 
-  if (s->owner && !r->governor[Governor].toggle.geography &&
+  if (s.owner && !r->governor[Governor].toggle.geography &&
       !r->governor[Governor].toggle.color) {
     if (!r->governor[Governor].toggle.inverse ||
-        s->owner != r->governor[Governor].toggle.highlight) {
+        s.owner != r->governor[Governor].toggle.highlight) {
       if (!r->governor[Governor].toggle.double_digits)
-        return s->owner % 10 + '0';
+        return s.owner % 10 + '0';
       else {
-        if (s->owner < 10 || x % 2)
-          return s->owner % 10 + '0';
+        if (s.owner < 10 || x % 2)
+          return s.owner % 10 + '0';
         else
-          return s->owner / 10 + '0';
+          return s.owner / 10 + '0';
       }
     }
   }
 
-  if (s->crystals && (r->discoveries[D_CRYSTAL] || r->God)) return CHAR_CRYSTAL;
+  if (s.crystals && (r->discoveries[D_CRYSTAL] || r->God)) return CHAR_CRYSTAL;
 
-  switch (s->condition) {
+  switch (s.condition) {
     case WASTED:
       return CHAR_WASTED;
     case SEA:

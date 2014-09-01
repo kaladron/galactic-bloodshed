@@ -23,15 +23,13 @@
 
 static char Dispshiporbits_buf[PLACENAMESIZE + 13];
 
-int maxsupport(racetype *r, sectortype *s, double c, int toxic) {
-  int val;
-  double a, b;
+int maxsupport(const racetype *r, const sector &s, const double c,
+               const int toxic) {
+  if (!r->likes[s.condition]) return 0.0;
+  double a = ((double)s.eff + 1.0) * (double)s.fert;
+  double b = (.01 * c);
 
-  if (!r->likes[s->condition]) return 0.0;
-  a = ((double)s->eff + 1.0) * (double)s->fert;
-  b = (.01 * c);
-
-  val = (int)(a * b * .01 * (100.0 - (double)toxic));
+  int val = (int)(a * b * .01 * (100.0 - (double)toxic));
 
   return val;
 }

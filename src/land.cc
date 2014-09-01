@@ -330,9 +330,11 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
         /* check to see if the ship crashes from lack of fuel or damage */
         if (crash(s, fuel)) {
           /* damaged ships stand of chance of crash landing */
+          auto smap = getsmap(*p);
           numdest =
               shoot_ship_to_planet(s, p, round_rand((double)(s->destruct) / 3.),
-                                   x, y, 1, 0, HEAVY, long_buf, short_buf);
+                                   x, y, smap, 0, HEAVY, long_buf, short_buf);
+          putsmap(smap, *p);
           sprintf(
               buf,
               "BOOM!! %s crashes on sector %d,%d with blast radius of %d.\n",

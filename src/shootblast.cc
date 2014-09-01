@@ -38,7 +38,7 @@ static int Num_hits(double, int, int, double, int, int, int, int, int, int, int,
 static int cew_hit_odds(double, int);
 static void do_critical_hits(int, shiptype *, int *, int *, int, char *);
 static double p_factor(double, double);
-static void mutate_sector(sectortype *);
+static void mutate_sector(sector &);
 
 int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
                        int ignore, char *long_msg, char *short_msg) {
@@ -166,9 +166,8 @@ int shoot_planet_to_ship(racetype *Race, planettype *p, shiptype *ship,
 #endif
 
 int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
-                         int y, int getmap, int ignore, int caliber,
+                         int y, sector_map &smap, int ignore, int caliber,
                          char *long_msg, char *short_msg) {
-  sectortype *s, *target;
   int x2, y2;
   int numdest, kills, oldowner;
   int i, num_sectors, sum_mob[MAXPLAYERS];
@@ -199,11 +198,8 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
       }
   }
 
-  if (getmap) {
-    getsmap(Smap, pl);
-  }
-  target = &Sector(*pl, x, y);
-  oldowner = target->owner;
+  auto &target = smap.get(x, y);
+  oldowner = target.owner;
 
   for (i = 1; i <= Num_races; i++) sum_mob[i - 1] = 0;
 
@@ -213,55 +209,55 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
       dx = std::min(abs(x2 - x), abs(x + (pl->Maxx - 1) - x2));
       dy = abs(y2 - y);
       d = sqrt((double)(dx * dx + dy * dy));
-      s = &Sector(*pl, x2, y2);
+      auto &s = smap.get(x2, y2);
 
       if (d <= r) {
         fac = SECTOR_DAMAGE * (double)strength * (double)caliber / (d + 1.);
 
-        if (s->owner) {
-          if (s->popn) {
-            kills = int_rand(0, ((int)(fac / 10.0) * s->popn)) /
-                    (1 + (s->condition == PLATED));
-            if (kills > s->popn)
-              s->popn = 0;
+        if (s.owner) {
+          if (s.popn) {
+            kills = int_rand(0, ((int)(fac / 10.0) * s.popn)) /
+                    (1 + (s.condition == PLATED));
+            if (kills > s.popn)
+              s.popn = 0;
             else
-              s->popn -= kills;
+              s.popn -= kills;
           }
-          if (s->troops && (fac > 5.0 * (double)Defensedata[s->condition])) {
-            kills = int_rand(0, ((int)(fac / 20.0) * s->troops)) /
-                    (1 + (s->condition == PLATED));
-            if (kills > s->troops)
-              s->troops = 0;
+          if (s.troops && (fac > 5.0 * (double)Defensedata[s.condition])) {
+            kills = int_rand(0, ((int)(fac / 20.0) * s.troops)) /
+                    (1 + (s.condition == PLATED));
+            if (kills > s.troops)
+              s.troops = 0;
             else
-              s->troops -= kills;
+              s.troops -= kills;
           }
 
-          if (!(s->popn + s->troops)) s->owner = 0;
+          if (!(s.popn + s.troops)) s.owner = 0;
         }
 
         if (fac >= 5.0 && !int_rand(0, 10)) mutate_sector(s);
 
-        if (round_rand(fac) > Defensedata[s->condition] * int_rand(0, 10)) {
-          if (s->owner) Nuked[s->owner - 1] = 1;
-          s->popn = 0;
-          s->troops = int_rand(0, (int)s->troops);
-          if (!s->troops) /* troops may survive this */
-            s->owner = 0;
-          s->eff = 0;
-          s->resource = s->resource / ((int)fac + 1);
-          s->mobilization = 0;
-          s->fert = 0; /*all is lost !*/
-          s->crystals = int_rand(0, (int)s->crystals);
-          s->condition = WASTED;
+        if (round_rand(fac) > Defensedata[s.condition] * int_rand(0, 10)) {
+          if (s.owner) Nuked[s.owner - 1] = 1;
+          s.popn = 0;
+          s.troops = int_rand(0, (int)s.troops);
+          if (!s.troops) /* troops may survive this */
+            s.owner = 0;
+          s.eff = 0;
+          s.resource = s.resource / ((int)fac + 1);
+          s.mobilization = 0;
+          s.fert = 0; /*all is lost !*/
+          s.crystals = int_rand(0, (int)s.crystals);
+          s.condition = WASTED;
           numdest++;
         } else {
-          s->fert = std::max(0, (int)s->fert - (int)fac);
-          s->eff = std::max(0, (int)s->eff - (int)fac);
-          s->mobilization = std::max(0, (int)s->mobilization - (int)fac);
-          s->resource = std::max(0, (int)s->resource - (int)fac);
+          s.fert = std::max(0, (int)s.fert - (int)fac);
+          s.eff = std::max(0, (int)s.eff - (int)fac);
+          s.mobilization = std::max(0, (int)s.mobilization - (int)fac);
+          s.resource = std::max(0, (int)s.resource - (int)fac);
         }
       }
-      if (s->owner) sum_mob[s->owner - 1] += s->mobilization;
+      if (s.owner) sum_mob[s.owner - 1] += s.mobilization;
     }
   }
   num_sectors = pl->Maxx * pl->Maxy;
@@ -280,9 +276,6 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
   strcpy(long_msg, short_msg);
   sprintf(buf, "\t%d sectors destroyed\n", numdest);
   strcat(long_msg, buf);
-  if (getmap) {
-    putsmap(Smap, pl);
-  }
   return numdest;
 }
 
@@ -611,6 +604,6 @@ int planet_guns(int points) {
   return std::min(20, points / 1000);
 }
 
-static void mutate_sector(sectortype *s) {
-  if (int_rand(0, 6) >= Defensedata[s->condition]) s->condition = s->type;
+static void mutate_sector(sector &s) {
+  if (int_rand(0, 6) >= Defensedata[s.condition]) s.condition = s.type;
 }

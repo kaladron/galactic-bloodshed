@@ -43,7 +43,7 @@ void mobilize(int Playernum, int Governor, int APcount) {
   getplanet(&p, Dir[Playernum - 1][Governor].snum,
             Dir[Playernum - 1][Governor].pnum);
 
-  getsmap(Smap, p);
+  auto smap = getsmap(*p);
 
   if (argn < 2) {
     sprintf(buf, "Current mobilization: %d    Quota: %d\n",

@@ -52,17 +52,16 @@ int Bombard(shiptype *ship, planettype *planet, racetype *r) {
     return 0;
   }
 
-  getsmap(Smap, planet);
+  auto smap = getsmap(*planet);
 
   /* look for someone to bombard-check for war */
   (void)Getxysect(planet, 0, 0, 1); /* reset */
   while (!found && Getxysect(planet, &x, &y, 0)) {
-    if (Sector(*planet, x, y).owner &&
-        Sector(*planet, x, y).owner != ship->owner &&
-        (Sector(*planet, x, y).condition != WASTED)) {
-      if (isset(r->atwar, Sector(*planet, x, y).owner) ||
+    if (smap.get(x, y).owner && smap.get(x, y).owner != ship->owner &&
+        (smap.get(x, y).condition != WASTED)) {
+      if (isset(r->atwar, smap.get(x, y).owner) ||
           (ship->type == OTYPE_BERS &&
-           Sector(*planet, x, y).owner == ship->special.mind.target))
+           smap.get(x, y).owner == ship->special.mind.target))
         found = 1;
       else
         x2 = x, y2 = y;
@@ -81,12 +80,12 @@ int Bombard(shiptype *ship, planettype *planet, racetype *r) {
     /* save owner of destroyed sector */
     if (str) {
       bzero(Nuked, sizeof(Nuked));
-      oldown = Sector(*planet, x, y).owner;
+      oldown = smap.get(x, y).owner;
       ship->destruct -= str;
       ship->mass -= str * MASS_DESTRUCT;
 
-      numdest = shoot_ship_to_planet(ship, planet, str, x, y, 0, 0, 0, long_buf,
-                                     short_buf);
+      numdest = shoot_ship_to_planet(ship, planet, str, x, y, smap, 0, 0,
+                                     long_buf, short_buf);
       /* (0=dont get smap) */
       if (numdest < 0) numdest = 0;
 
@@ -126,7 +125,7 @@ int Bombard(shiptype *ship, planettype *planet, racetype *r) {
       }
     }
 
-    putsmap(Smap, planet);
+    putsmap(smap, *planet);
 
   } else {
     /* there were no sectors worth bombing. */

@@ -388,8 +388,10 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
         continue;
       }
 
-      numdest = shoot_ship_to_planet(from, p, strength, x, y, 1, 0, 0, long_buf,
-                                     short_buf);
+      auto smap = getsmap(*p);
+      numdest = shoot_ship_to_planet(from, p, strength, x, y, smap, 0, 0,
+                                     long_buf, short_buf);
+      putsmap(smap, *p);
 
       if (numdest < 0) {
         notify(Playernum, Governor, "Illegal attack.\n");
@@ -631,7 +633,8 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
     strength = retal;
     if (laser_on(to)) check_overload(to, 0, &strength);
 
-    if ((numdest = shoot_ship_to_planet(&dummy, p, strength, x, y, 1, 0, 0,
+    auto smap = getsmap(*p);
+    if ((numdest = shoot_ship_to_planet(&dummy, p, strength, x, y, smap, 0, 0,
                                         long_buf, short_buf)) >= 0) {
       if (laser_on(to))
         use_fuel(to, 2.0 * (double)strength);
@@ -644,6 +647,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
       notify(Playernum, Governor, long_buf);
       warn((int)to->owner, (int)to->governor, long_buf);
     }
+    putsmap(smap, *p);
   }
 
   /* protecting ships retaliate individually if damage was inflicted */
@@ -657,7 +661,8 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
         if (laser_on(ship)) check_overload(ship, 0, &strength);
         check_retal_strength(ship, &strength);
 
-        if ((numdest = shoot_ship_to_planet(ship, p, strength, x, y, 1, 0, 0,
+        auto smap = getsmap(*p);
+        if ((numdest = shoot_ship_to_planet(ship, p, strength, x, y, smap, 0, 0,
                                             long_buf, short_buf)) >= 0) {
           if (laser_on(ship))
             use_fuel(ship, 2.0 * (double)strength);
@@ -669,6 +674,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
           notify(Playernum, Governor, long_buf);
           warn((int)ship->owner, (int)ship->governor, long_buf);
         }
+        putsmap(smap, *p);
         putship(ship);
       }
       sh = ship->nextship;

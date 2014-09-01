@@ -124,7 +124,6 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
                         int sector_type, starnum_t Starnum,
                         planetnum_t Planetnum) {
   planettype *planet;
-  sectortype *sect;
   racetype *Race;
   int x, y;
   int p;
@@ -168,49 +167,49 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
     free((char *)planet);
     return;
   }
-  getsmap(Smap, planet);
+  auto smap = getsmap(*planet);
 
   compat = compatibility(planet, Race);
 
   TotalSect = planet->Maxx * planet->Maxy;
   for (x = planet->Maxx - 1; x >= 0; x--) {
     for (y = planet->Maxy - 1; y >= 0; y--) {
-      sect = &Sector(*planet, x, y);
-      p = sect->owner;
+      auto &sect = smap.get(x, y);
+      p = sect.owner;
 
-      PlayEff[p] += sect->eff;
-      PlayMob[p] += sect->mobilization;
-      PlayRes[p] += sect->resource;
-      PlayPopn[p] += sect->popn;
-      PlayTroops[p] += sect->troops;
-      PlaySect[p][sect->condition]++;
+      PlayEff[p] += sect.eff;
+      PlayMob[p] += sect.mobilization;
+      PlayRes[p] += sect.resource;
+      PlayPopn[p] += sect.popn;
+      PlayTroops[p] += sect.troops;
+      PlaySect[p][sect.condition]++;
       PlayTSect[p]++;
-      TotalEff += sect->eff;
-      TotalMob += sect->mobilization;
-      TotalRes += sect->resource;
-      TotalPopn += sect->popn;
-      TotalTroops += sect->troops;
-      Sect[sect->condition]++;
+      TotalEff += sect.eff;
+      TotalMob += sect.mobilization;
+      TotalRes += sect.resource;
+      TotalPopn += sect.popn;
+      TotalTroops += sect.troops;
+      Sect[sect.condition]++;
 
-      if (sect->condition == WASTED) {
+      if (sect.condition == WASTED) {
         WastedSect[p]++;
         TotalWasted++;
       }
-      if (sect->crystals && Race->tech >= TECH_CRYSTAL) {
+      if (sect.crystals && Race->tech >= TECH_CRYSTAL) {
         PlayCrys[p]++;
         TotalCrys++;
       }
 
-      if (sector_type == -1 || sector_type == sect->condition) {
+      if (sector_type == -1 || sector_type == sect.condition) {
         if (ThisPlayer < 0 || ThisPlayer == p) {
-          Insert(mode, Res, x, y, sect->condition, (int)sect->resource);
-          Insert(mode, Eff, x, y, sect->condition, (int)sect->eff);
-          Insert(mode, Mob, x, y, sect->condition, (int)sect->mobilization);
-          Insert(mode, Frt, x, y, sect->condition, (int)sect->fert);
-          Insert(mode, Popn, x, y, sect->condition, (int)sect->popn);
-          Insert(mode, Troops, x, y, sect->condition, (int)sect->troops);
+          Insert(mode, Res, x, y, sect.condition, (int)sect.resource);
+          Insert(mode, Eff, x, y, sect.condition, (int)sect.eff);
+          Insert(mode, Mob, x, y, sect.condition, (int)sect.mobilization);
+          Insert(mode, Frt, x, y, sect.condition, (int)sect.fert);
+          Insert(mode, Popn, x, y, sect.condition, (int)sect.popn);
+          Insert(mode, Troops, x, y, sect.condition, (int)sect.troops);
           Insert(
-              mode, mPopn, x, y, sect->condition,
+              mode, mPopn, x, y, sect.condition,
               maxsupport(Race, sect, compat, (int)planet->conditions[TOXIC]));
         }
       }

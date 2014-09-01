@@ -63,8 +63,6 @@ struct stardata Sdata;
 
 struct directory Dir[MAXPLAYERS][MAXGOVERNORS + 1];
 
-sectortype Smap[(MAX_X + 1) * (MAX_Y + 1) + 1];
-
 unsigned char Nuked[MAXPLAYERS];
 unsigned long StarsInhab[NUMSTARS];
 unsigned long StarsExpl[NUMSTARS];

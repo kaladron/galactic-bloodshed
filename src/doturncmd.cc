@@ -293,7 +293,9 @@ void do_turn(int update) {
         if (doplanet(star, planets[star][i], i)) {
           /* save smap gotten & altered by doplanet
              only if the planet is expl*/
-          putsmap(Smap, planets[star][i]);
+          // TODO(jeffbailey): Added this in doplanet, but need to audit other
+          // getsmaps to make sure they have matching putsmaps
+          // putsmap(smap, *planets[star][i]);
         }
       }
       putplanet(planets[star][i], star, i);

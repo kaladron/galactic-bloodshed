@@ -8,8 +8,7 @@
 #include "vars.h"
 
 void produce(startype *, planettype *, sectortype *);
-void spread(planettype *, sectortype *, int, int);
-void Migrate2(planettype *, int, int, sectortype *, int *);
+void spread(planettype *, sector &, int, int, sector_map &);
 void explore(planettype *, sectortype *, int, int, int);
 void plate(sectortype *);
 

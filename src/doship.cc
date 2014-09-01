@@ -273,8 +273,10 @@ void domissile(shiptype *ship) {
       sprintf(buf, "%s dropped on sector %d,%d at planet %s.\n", Ship(ship),
               bombx, bomby, prin_ship_orbits(ship));
 
+      auto smap = getsmap(*p);
       numdest = shoot_ship_to_planet(ship, p, (int)ship->destruct, bombx, bomby,
-                                     1, 0, HEAVY, long_buf, short_buf);
+                                     smap, 0, HEAVY, long_buf, short_buf);
+      putsmap(smap, *p);
       push_telegram((int)ship->owner, (int)ship->governor, long_buf);
       kill_ship((int)ship->owner, ship);
       sprintf(buf, "%s dropped on %s.\n\t%d sectors destroyed.\n", Ship(ship),
@@ -390,8 +392,10 @@ void domine(int shipno, int detonate) {
           x = int_rand(0, (int)planet->Maxx - 1);
           y = int_rand(0, (int)planet->Maxy - 1);
         }
+        auto smap = getsmap(*planet);
         numdest = shoot_ship_to_planet(ship, planet, (int)(ship->destruct), x,
-                                       y, 1, 0, LIGHT, long_buf, short_buf);
+                                       y, smap, 0, LIGHT, long_buf, short_buf);
+        putsmap(smap, *planet);
         putplanet(planet, (int)ship->storbits, (int)ship->pnumorbits);
 
         sprintf(telegram_buf, "%s", buf);
@@ -550,28 +554,28 @@ static int infect_planet(int who, int star, int p) {
 static void do_meta_infect(int who, planettype *p) {
   int owner, x, y;
 
-  getsmap(Smap, p);
+  auto smap = getsmap(*p);
   PermuteSects(p);
   bzero((char *)Sectinfo, sizeof(Sectinfo));
   x = int_rand(0, p->Maxx - 1);
   y = int_rand(0, p->Maxy - 1);
-  owner = Sector(*p, x, y).owner;
+  owner = smap.get(x, y).owner;
   if (!owner ||
       (who != owner &&
        (double)int_rand(1, 100) >
            100.0 *
-               (1.0 - exp(-((double)(Sector(*p, x, y).troops *
+               (1.0 - exp(-((double)(smap.get(x, y).troops *
                                      races[owner - 1]->fighters / 50.0)))))) {
     p->info[who - 1].explored = 1;
     p->info[who - 1].numsectsowned += 1;
-    Sector(*p, x, y).troops = 0;
-    Sector(*p, x, y).popn = races[who - 1]->number_sexes;
-    Sector(*p, x, y).owner = who;
-    Sector(*p, x, y).condition = Sector(*p, x, y).type;
+    smap.get(x, y).troops = 0;
+    smap.get(x, y).popn = races[who - 1]->number_sexes;
+    smap.get(x, y).owner = who;
+    smap.get(x, y).condition = smap.get(x, y).type;
 #ifdef POD_TERRAFORM
-    Sector(*p, x, y).condition = races[who - 1]->likesbest;
+    smap.get(x, y).condition = races[who - 1]->likesbest;
 #endif
-    putsmap(Smap, p);
+    putsmap(smap, *p);
   }
 }
 

@@ -14,6 +14,8 @@
 static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const int y_adj[] = {1, 1, 1, 0, 0, -1, -1, -1};
 
+static void Migrate2(planettype *, int, int, sector &, int *, sector_map &);
+
 //  produce() -- produce, stuff like that, on a sector.
 void produce(startype *star, planettype *planet, sectortype *s) {
   int ss;
@@ -81,7 +83,8 @@ void produce(startype *star, planettype *planet, sectortype *s) {
 
   if (s->condition == WASTED && success(NATURAL_REPAIR)) s->condition = s->type;
 
-  maxsup = maxsupport(Race, s, Compat[s->owner - 1], planet->conditions[TOXIC]);
+  maxsup =
+      maxsupport(Race, *s, Compat[s->owner - 1], planet->conditions[TOXIC]);
   if ((diff = s->popn - maxsup) < 0) {
     if (s->popn >= Race->number_sexes)
       ss = round_rand(-(double)diff * Race->birthrate);
@@ -99,21 +102,21 @@ void produce(startype *star, planettype *planet, sectortype *s) {
 }
 
 // spread()  -- spread population around.
-void spread(planettype *pl, sectortype *s, int x, int y) {
+void spread(planettype *pl, sector &s, int x, int y, sector_map &smap) {
   int people;
   int x2, y2, j;
   int check;
   racetype *Race;
 
-  if (!s->owner) return;
-  if (pl->slaved_to && pl->slaved_to != s->owner)
+  if (!s.owner) return;
+  if (pl->slaved_to && pl->slaved_to != s.owner)
     return; /* no one wants to go anywhere */
 
-  Race = races[s->owner - 1];
+  Race = races[s.owner - 1];
 
   /* the higher the fertility, the less people like to leave */
-  people = round_rand((double)Race->adventurism * (double)s->popn *
-                      (100. - (double)s->fert) / 100.) -
+  people = round_rand((double)Race->adventurism * (double)s.popn *
+                      (100. - (double)s.fert) / 100.) -
            Race->number_sexes; /* how many people want to move -
                                                one family stays behind */
 
@@ -123,13 +126,13 @@ void spread(planettype *pl, sectortype *s, int x, int y) {
     j = int_rand(0, 7);
     x2 = x_adj[j];
     y2 = y_adj[j];
-    Migrate2(pl, x + x2, y + y2, s, &people);
+    Migrate2(pl, x + x2, y + y2, s, &people, smap);
     check--;
   }
 }
 
-void Migrate2(planettype *planet, int xd, int yd, sectortype *ps, int *people) {
-  sectortype *pd;
+static void Migrate2(planettype *planet, int xd, int yd, sector &ps,
+                     int *people, sector_map &smap) {
   int move;
 
   /* attempt to migrate beyond screen, or too many people */
@@ -140,16 +143,16 @@ void Migrate2(planettype *planet, int xd, int yd, sectortype *ps, int *people) {
   else if (xd > planet->Maxx - 1)
     xd = 0;
 
-  pd = &Sector(*planet, xd, yd);
+  auto &pd = smap.get(xd, yd);
 
-  if (!pd->owner) {
-    move = (int)((double)(*people) * Compat[ps->owner - 1] *
-                 races[ps->owner - 1]->likes[pd->condition] / 100.0);
+  if (!pd.owner) {
+    move = (int)((double)(*people) * Compat[ps.owner - 1] *
+                 races[ps.owner - 1]->likes[pd.condition] / 100.0);
     if (!move) return;
     *people -= move;
-    pd->popn += move;
-    ps->popn -= move;
-    pd->owner = ps->owner;
+    pd.popn += move;
+    ps.popn -= move;
+    pd.owner = ps.owner;
     tot_captured++;
     Claims = 1;
   }

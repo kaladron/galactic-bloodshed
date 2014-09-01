@@ -158,12 +158,11 @@ void dissolve(int Playernum, int Governor) {
 int revolt(planettype *pl, int victim, int agent) {
   int x, y, hix, hiy, lowx, lowy;
   racetype *Race;
-  sectortype *s;
   int changed_hands = 0;
 
   Race = races[victim - 1];
 
-  getsmap(Smap, pl);
+  auto smap = getsmap(*pl);
   /* do the revolt */
   lowx = 0;
   lowy = 0;
@@ -171,25 +170,25 @@ int revolt(planettype *pl, int victim, int agent) {
   hiy = pl->Maxy - 1;
   for (y = lowy; y <= hiy; y++) {
     for (x = lowx; x <= hix; x++) {
-      s = &Sector(*pl, x, y);
-      if (s->owner == victim && s->popn) {
+      auto &s = smap.get(x, y);
+      if (s.owner == victim && s.popn) {
         if (success(pl->info[victim - 1].tax)) {
-          if (static_cast<unsigned long>(long_rand(1, s->popn)) >
-              10 * Race->fighters * s->troops) {
-            s->owner = agent;                    /* enemy gets it */
-            s->popn = int_rand(1, (int)s->popn); /* some people killed */
-            s->troops = 0;                       /* all troops destroyed */
+          if (static_cast<unsigned long>(long_rand(1, s.popn)) >
+              10 * Race->fighters * s.troops) {
+            s.owner = agent;                   /* enemy gets it */
+            s.popn = int_rand(1, (int)s.popn); /* some people killed */
+            s.troops = 0;                      /* all troops destroyed */
             pl->info[victim - 1].numsectsowned -= 1;
             pl->info[agent - 1].numsectsowned += 1;
-            pl->info[victim - 1].mob_points -= s->mobilization;
-            pl->info[agent - 1].mob_points += s->mobilization;
+            pl->info[victim - 1].mob_points -= s.mobilization;
+            pl->info[agent - 1].mob_points += s.mobilization;
             changed_hands++;
           }
         }
       }
     }
   }
-  putsmap(Smap, pl);
+  putsmap(smap, *pl);
 
   return changed_hands;
 }

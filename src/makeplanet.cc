@@ -9,7 +9,11 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
+#include <tuple>
+#include <vector>
 
+#include "files_shl.h"
 #include "makestar.h"
 #include "rand.h"
 #include "tweakables.h"
@@ -69,24 +73,22 @@ static const int rmax[][8] = {{250, 325, 400, 0, 250, 0, 300}, /*   @   */
 /*              @      o     O    #    ~    .       (       _  */
 static const int cond[] = {SEA, MOUNT, LAND, ICE, GAS, SEA, FOREST, DESERT};
 
-static int neighbors(planettype *, int, int, int);
-static void MakeEarthAtmosphere(planettype *, int);
-static void Makesurface(planettype *);
-static short SectTemp(planettype *, int);
-static void seed(planettype *, int, int);
-static void grow(planettype *, int, int, int);
+static int neighbors(sector_map&, int, int, int);
+static void MakeEarthAtmosphere(planettype*, int);
+static void Makesurface(planettype*, sector_map&);
+static short SectTemp(planettype*, int);
+static void seed(sector_map&, int, int);
+static void grow(sector_map&, int, int, int);
 
 planettype Makeplanet(double dist, short stemp, ptype_t type) {
   static planetnum_t planet_id = 0;
   int x, y;
-  sectortype *s;
   planettype planet;
   int atmos, total_sects;
   char c, t;
   double f;
 
   bzero(&planet, sizeof(planet));
-  bzero(&Smap, sizeof(Smap));
   planet.planet_id = planet_id;
   planet_id++;
   planet.type = type;
@@ -103,10 +105,12 @@ planettype Makeplanet(double dist, short stemp, ptype_t type) {
 
   t = c = cond[type];
 
+  // Initialize with the correct number of sectors.
+  sector_map smap(planet, true);
   for (y = 0; y < planet.Maxy; y++) {
     for (x = 0; x < planet.Maxx; x++) {
-      s = &Sector(planet, x, y);
-      s->type = s->condition = t;
+      auto& s = smap.get(x, y);
+      s.type = s.condition = t;
     }
   }
 
@@ -152,19 +156,19 @@ planettype Makeplanet(double dist, short stemp, ptype_t type) {
         planet.conditions[SULFUR] = 0;
         planet.conditions[OTHER] = 0;
       }
-      seed(&planet, DESERT, int_rand(1, total_sects));
-      seed(&planet, MOUNT, int_rand(1, total_sects));
+      seed(smap, DESERT, int_rand(1, total_sects));
+      seed(smap, MOUNT, int_rand(1, total_sects));
       break;
     case TYPE_ASTEROID: /* asteroid */
       /* no atmosphere */
       for (y = 0; y < planet.Maxy; y++)
         for (x = 0; x < planet.Maxx; x++)
           if (!int_rand(0, 3)) {
-            s = &Sector(planet, int_rand(1, planet.Maxx),
-                        int_rand(1, planet.Maxy));
-            s->type = s->condition = LAND;
+            auto& s = smap.get(int_rand(0, planet.Maxx - 1),
+                               int_rand(0, planet.Maxy - 1));
+            s.type = s.condition = LAND;
           }
-      seed(&planet, DESERT, int_rand(1, total_sects));
+      seed(smap, DESERT, int_rand(1, total_sects));
       break;
     case TYPE_ICEBALL: /* ball of ice */
       /* no atmosphere */
@@ -184,42 +188,44 @@ planettype Makeplanet(double dist, short stemp, ptype_t type) {
         planet.conditions[SULFUR] = 0;
         planet.conditions[OTHER] = 0;
       }
-      seed(&planet, MOUNT, int_rand(1, total_sects / 2));
+      seed(smap, MOUNT, int_rand(1, total_sects / 2));
       break;
     case TYPE_EARTH:
       MakeEarthAtmosphere(&planet, 33);
-      seed(&planet, LAND, int_rand(total_sects / 30, total_sects / 20));
-      grow(&planet, LAND, 1, 1);
-      grow(&planet, LAND, 1, 2);
-      grow(&planet, LAND, 2, 3);
-      grow(&planet, SEA, 1, 4);
+      seed(smap, LAND, int_rand(total_sects / 30, total_sects / 20));
+      grow(smap, LAND, 1, 1);
+      grow(smap, LAND, 1, 2);
+      grow(smap, LAND, 2, 3);
+      grow(smap, SEA, 1, 4);
       break;
     case TYPE_FOREST:
       MakeEarthAtmosphere(&planet, 0);
-      seed(&planet, SEA, int_rand(total_sects / 30, total_sects / 20));
-      grow(&planet, SEA, 1, 1);
-      grow(&planet, SEA, 1, 3);
-      grow(&planet, FOREST, 1, 3);
+      seed(smap, SEA, int_rand(total_sects / 30, total_sects / 20));
+      grow(smap, SEA, 1, 1);
+      grow(smap, SEA, 1, 3);
+      grow(smap, FOREST, 1, 3);
       break;
     case TYPE_WATER:
       MakeEarthAtmosphere(&planet, 25);
       break;
     case TYPE_DESERT:
       MakeEarthAtmosphere(&planet, 50);
-      seed(&planet, MOUNT, int_rand(total_sects / 50, total_sects / 25));
-      grow(&planet, MOUNT, 1, 1);
-      grow(&planet, MOUNT, 1, 2);
-      seed(&planet, LAND, int_rand(total_sects / 50, total_sects / 25));
-      grow(&planet, LAND, 1, 1);
-      grow(&planet, LAND, 1, 3);
-      grow(&planet, DESERT, 1, 3);
+      seed(smap, MOUNT, int_rand(total_sects / 50, total_sects / 25));
+      grow(smap, MOUNT, 1, 1);
+      grow(smap, MOUNT, 1, 2);
+      seed(smap, LAND, int_rand(total_sects / 50, total_sects / 25));
+      grow(smap, LAND, 1, 1);
+      grow(smap, LAND, 1, 3);
+      grow(smap, DESERT, 1, 3);
       break;
   }
-  Makesurface(&planet); /* determine surface geology based on environment */
+  Makesurface(&planet,
+              smap); /* determine surface geology based on environment */
+  putsmap(smap, planet);
   return planet;
 }
 
-static void MakeEarthAtmosphere(planettype *pptr, int chance) {
+static void MakeEarthAtmosphere(planettype* pptr, int chance) {
   int atmos = 100;
 
   if (int_rand(0, 99) > chance) {
@@ -249,109 +255,100 @@ static void MakeEarthAtmosphere(planettype *pptr, int chance) {
     Returns # of neighbors of a given designation that a sector has.
 */
 
-static int neighbors(planettype *p, int x, int y, int type) {
+static int neighbors(sector_map& smap, int x, int y, int type) {
   int l = x - 1;
   int r = x + 1; /* Left and right columns. */
   int n = 0;     /* Number of neighbors so far. */
 
   if (x == 0)
-    l = p->Maxx - 1;
-  else if (r == p->Maxx)
+    l = smap.get_maxx() - 1;
+  else if (r == smap.get_maxx())
     r = 0;
   if (y > 0)
-    n += (Sector(*p, x, y - 1).type == type) +
-         (Sector(*p, l, y - 1).type == type) +
-         (Sector(*p, r, y - 1).type == type);
+    n += (smap.get(x, y - 1).type == type) + (smap.get(l, y - 1).type == type) +
+         (smap.get(r, y - 1).type == type);
 
-  n += (Sector(*p, l, y).type == type) + (Sector(*p, r, y).type == type);
+  n += (smap.get(l, y).type == type) + (smap.get(r, y).type == type);
 
-  if (y < p->Maxy - 1)
-    n += (Sector(*p, x, y + 1).type == type) +
-         (Sector(*p, l, y + 1).type == type) +
-         (Sector(*p, r, y + 1).type == type);
+  if (y < smap.get_maxy() - 1)
+    n += (smap.get(x, y + 1).type == type) + (smap.get(l, y + 1).type == type) +
+         (smap.get(r, y + 1).type == type);
 
   return (n);
 }
 
-/*
- * Randomly places n sectors of designation type on a planet.
- */
-
-static void seed(planettype *p, int type, int n) {
-  int x, y;
-  sectortype *s;
-
+//! Randomly places n sectors of designation type on a planet.
+static void seed(sector_map& smap, int type, int n) {
   while (n-- > 0) {
-    x = int_rand(0, p->Maxx - 1);
-    y = int_rand(0, p->Maxy - 1);
-    s = &Sector(*p, x, y);
-    s->type = s->condition = type;
+    int x = int_rand(0, smap.get_maxx() - 1);
+    int y = int_rand(0, smap.get_maxy() - 1);
+    auto& s = smap.get(x, y);
+    s.type = s.condition = type;
   }
 }
 
-/*
- * Spreat out a sector of a certain type over the planet.  Rate is the number
- * of adjacent sectors of the same type that must be found for the setor to
- * become type.
+/*! Spread out a sector of a certain type over the planet.  Rate is the number
+ *  of adjacent sectors of the same type that must be found for the sector to
+ *  become type.
  */
+static void grow(sector_map& smap, int type, int n, int rate) {
+  std::vector<std::tuple<int, int, int>> worklist;  // x, y, type
 
-static void grow(planettype *p, int type, int n, int rate) {
-  int x, y;
-  sectortype *s;
-  sectortype Smap2[(MAX_X + 1) * (MAX_Y + 1) + 1];
-
+  // We don't want to alter the current map, as this is iterative.
+  // So we store a worklist and apply it after we've done a scan of
+  // the map.
   while (n-- > 0) {
-    memcpy(Smap2, Smap, sizeof(Smap));
-    for (x = 0; x < p->Maxx; x++) {
-      for (y = 0; y < p->Maxy; y++) {
-        if (neighbors(p, x, y, type) >= rate) {
-          s = &Smap2[x + y * p->Maxx + 1];
-          s->condition = s->type = type;
+    for (int x = 0; x < smap.get_maxx(); x++) {
+      for (int y = 0; y < smap.get_maxy(); y++) {
+        if (neighbors(smap, x, y, type) >= rate) {
+          worklist.emplace_back(std::make_tuple(x, y, type));
         }
       }
     }
-    memcpy(Smap, Smap2, sizeof(Smap));
+  }
+
+  for (auto& item : worklist) {
+    int x, y, type;
+    std::tie(x, y, type) = item;
+    auto& s = smap.get(x, y);
+    s.condition = s.type = type;
   }
 }
 
-static void Makesurface(planettype *p) {
-  int x, y;
-  int temp;
-  sectortype *s;
-
-  for (x = 0; x < p->Maxx; x++) {
-    for (y = 0; y < p->Maxy; y++) {
-      s = &Sector(*p, x, y);
-      temp = SectTemp(p, y);
-      switch (s->type) {
+static void Makesurface(planettype* p, sector_map& smap) {
+  for (int x = 0; x < smap.get_maxx(); x++) {
+    for (int y = 0; y < smap.get_maxy(); y++) {
+      auto& s = smap.get(x, y);
+      int temp = SectTemp(p, y);
+      switch (s.type) {
         case SEA:
-          if (success(-temp) && ((y == 0) || (y == p->Maxy - 1)))
-            s->condition = ICE;
+          if (success(-temp) && ((y == 0) || (y == smap.get_maxy() - 1)))
+            s.condition = ICE;
           break;
         case LAND:
           if (p->type == TYPE_EARTH) {
-            if (success(-temp) && (y == 0 || y == p->Maxy - 1))
-              s->condition = ICE;
+            if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
+              s.condition = ICE;
           }
           break;
         case FOREST:
           if (p->type == TYPE_FOREST) {
-            if (success(-temp) && (y == 0 || y == p->Maxy - 1))
-              s->condition = ICE;
+            if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
+              s.condition = ICE;
           }
       }
-      s->type = s->condition;
-      s->resource = int_rand(rmin[p->type][s->type], rmax[p->type][s->type]);
-      s->fert = int_rand(Fmin[p->type][s->type], Fmax[p->type][s->type]);
-      if (int_rand(0, 1000) < x_chance[s->type])
-        s->crystals = int_rand(4, 8);
+      s.type = s.condition;
+      s.resource = int_rand(rmin[p->type][s.type], rmax[p->type][s.type]);
+      s.fert = int_rand(Fmin[p->type][s.type], Fmax[p->type][s.type]);
+      if (int_rand(0, 1000) < x_chance[s.type])
+        s.crystals = int_rand(4, 8);
       else
-        s->crystals = 0;
+        s.crystals = 0;
     }
   }
 }
 
-static short SectTemp(planettype *p, int y) {
+static short SectTemp(planettype* p, int y) {
   int dy, mid, temp;
   const int TFAC = 10;
 
@@ -361,5 +358,4 @@ static short SectTemp(planettype *p, int y) {
 
   temp -= TFAC * dy * dy;
   return temp;
-  /*  return(p->conditions[TEMP]); */
 }

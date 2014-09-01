@@ -289,6 +289,7 @@ startype *Makestar(FILE *planetdata) {
         type = TYPE_GASGIANT;
     }
     planet = Makeplanet(dist, Star->temperature, type);
+    auto smap = getsmap(planet);
     planet.xpos = xpos;
     planet.ypos = ypos;
     planet.total_resources = 0;
@@ -301,7 +302,7 @@ startype *Makestar(FILE *planetdata) {
       printf("sect map(%dx%d):\n", planet.Maxx, planet.Maxy);
       for (y = 0; y < planet.Maxy; y++) {
         for (x = 0; x < planet.Maxx; x++) {
-          switch (Sector(planet, x, y).condition) {
+          switch (smap.get(x, y).condition) {
             case LAND:
               putchr(CHAR_LAND);
               break;
@@ -336,18 +337,17 @@ startype *Makestar(FILE *planetdata) {
      * Tabulate statistics for this star's planets. */
     for (y = 0; y < planet.Maxy; y++)
       for (x = 0; x < planet.Maxx; x++) {
-        uint8_t d = Sector(planet, x, y).condition;
-        planet.total_resources += Sector(planet, x, y).resource;
-        Resource[type] += Sector(planet, x, y).resource;
+        uint8_t d = smap.get(x, y).condition;
+        planet.total_resources += smap.get(x, y).resource;
+        Resource[type] += smap.get(x, y).resource;
         Numsects[type][d]++;
-        Fertsects[type][d] += Sector(planet, x, y).fert;
+        Fertsects[type][d] += smap.get(x, y).fert;
       }
     Star->planetpos[i] = (int)ftell(planetdata);
     /* posn of file-last write*/
     planet.sectormappos = 0; /* sector map pos */
     // XXX - switch here to SQL writing and planet_id.
     fwrite(&planet, sizeof(planettype), 1, planetdata); /* write planet */
-    putsmap(Smap, &planet);
   }
   return Star;
 }

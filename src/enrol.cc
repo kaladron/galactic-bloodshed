@@ -36,7 +36,7 @@ struct stype {
 #define RACIAL_TYPES 10
 
 // TODO(jeffbailey): Copied from map.c, but they've diverged
-static char desshow(planettype *p, int x, int y);
+static char desshow(planettype *p, int x, int y, sector_map &);
 
 /* racial types (10 racial types ) */
 static int Thing[RACIAL_TYPES] = {1, 1, 1, 0, 0, 0, 0, 0, 0, 0};
@@ -74,7 +74,6 @@ int main() {
   int s, idx, k;
 #define STRSIZE 100
   char str[STRSIZE], c;
-  sectortype *sect;
   struct stype secttypes[WASTED + 1] = {};
   planettype *planet;
   unsigned char not_found[TYPE_DESERT + 1];
@@ -280,7 +279,7 @@ int main() {
     if (fgets(str, STRSIZE, stdin) == NULL) exit(1);
   } while (str[0] != 'y');
 
-  getsmap(Smap, planet);
+  auto smap = getsmap(*planet);
 
   printf(
       "\nChoose a primary sector preference. This race will prefer to "
@@ -289,19 +288,19 @@ int main() {
   PermuteSects(planet);
   Getxysect(planet, 0, 0, 1);
   while (Getxysect(planet, &x, &y, 0)) {
-    secttypes[Sector(*planet, x, y).condition].count++;
-    if (!secttypes[Sector(*planet, x, y).condition].here) {
-      secttypes[Sector(*planet, x, y).condition].here = 1;
-      secttypes[Sector(*planet, x, y).condition].x = x;
-      secttypes[Sector(*planet, x, y).condition].y = y;
+    secttypes[smap.get(x, y).condition].count++;
+    if (!secttypes[smap.get(x, y).condition].here) {
+      secttypes[smap.get(x, y).condition].here = 1;
+      secttypes[smap.get(x, y).condition].x = x;
+      secttypes[smap.get(x, y).condition].y = y;
     }
   }
   planet->explored = 1;
   for (i = SEA; i <= WASTED; i++)
     if (secttypes[i].here) {
       printf("(%2d): %c (%d, %d) (%s, %d sectors)\n", i,
-             desshow(planet, secttypes[i].x, secttypes[i].y), secttypes[i].x,
-             secttypes[i].y, Desnames[i], secttypes[i].count);
+             desshow(planet, secttypes[i].x, secttypes[i].y, smap),
+             secttypes[i].x, secttypes[i].y, Desnames[i], secttypes[i].count);
     }
   planet->explored = 0;
 
@@ -316,7 +315,7 @@ int main() {
       found = 1;
   } while (!found);
 
-  sect = &Sector(*planet, secttypes[i].x, secttypes[i].y);
+  auto &sect = smap.get(secttypes[i].x, secttypes[i].y);
   Race->likesbest = i;
   Race->likes[i] = 1.0;
   Race->likes[PLATED] = 1.0;
@@ -424,17 +423,17 @@ int main() {
   planet->info[Playernum - 1].explored = 1;
   /*planet->info[Playernum-1].autorep = 1;*/
 
-  sect->owner = Playernum;
-  sect->race = Playernum;
-  sect->popn = planet->popn = Race->number_sexes;
-  sect->fert = 100;
-  sect->eff = 10;
-  sect->troops = planet->troops = 0;
+  sect.owner = Playernum;
+  sect.race = Playernum;
+  sect.popn = planet->popn = Race->number_sexes;
+  sect.fert = 100;
+  sect.eff = 10;
+  sect.troops = planet->troops = 0;
   planet->maxpopn =
       maxsupport(Race, sect, 100.0, 0) * planet->Maxx * planet->Maxy / 2;
   /* (approximate) */
 
-  putsector(*sect, *planet, secttypes[i].x, secttypes[i].y);
+  putsector(sect, *planet, secttypes[i].x, secttypes[i].y);
   putplanet(planet, star, pnum);
 
   /* make star explored and stuff */
@@ -454,13 +453,12 @@ int main() {
   return 0;
 }
 
-static char desshow(planettype *p, int x, int y) /* copied from map.c */
+static char desshow(planettype *p, int x, int y,
+                    sector_map &smap) /* copied from map.c */
 {
-  sectortype *s;
+  auto &s = smap.get(x, y);
 
-  s = &Sector(*p, x, y);
-
-  switch (s->condition) {
+  switch (s.condition) {
     case WASTED:
       return CHAR_WASTED;
     case SEA:

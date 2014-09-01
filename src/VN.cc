@@ -145,9 +145,8 @@ static void order_VN(shiptype *ship) {
 }
 
 /*  planet_doVN() -- called by doplanet() */
-void planet_doVN(shiptype *ship, planettype *planet) {
+void planet_doVN(shiptype *ship, planettype *planet, sector_map &smap) {
   int j;
-  sectortype *s;
   int oldres, xa, ya, dum, prod;
   int shipbuild;
 
@@ -155,8 +154,8 @@ void planet_doVN(shiptype *ship, planettype *planet) {
     if (ship->type == OTYPE_VN && ship->special.mind.busy) {
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */
-      s = &Sector(*planet, (int)(ship->land_x), (int)(ship->land_y));
-      if (!(oldres = s->resource)) {
+      auto &s = smap.get(ship->land_x, ship->land_y);
+      if (!(oldres = s.resource)) {
         /* move to another sector */
         xa = int_rand(-1, 1);
         ship->land_x = mod((int)(ship->land_x) + xa, planet->Maxx, dum);
@@ -167,9 +166,9 @@ void planet_doVN(shiptype *ship, planettype *planet) {
         ship->land_y += ya;
       } else {
         /* mine the sector */
-        s->resource *= VN_RES_TAKE;
+        s.resource *= VN_RES_TAKE;
         prod =
-            oldres - s->resource; /* poor way for a player to mine resources */
+            oldres - s.resource; /* poor way for a player to mine resources */
         if (ship->type == OTYPE_VN)
           rcv_resource(ship, prod);
         else if (ship->type == OTYPE_BERS)
@@ -282,7 +281,7 @@ void planet_doVN(shiptype *ship, planettype *planet) {
 
             (void)Getxysect(planet, &x, &y, 1);
             while ((d = Getxysect(planet, &x, &y, 0)) &&
-                   Sector(*planet, x, y).resource == 0)
+                   smap.get(x, y).resource == 0)
               ;
             if (d) {
               ship->docked = 1;

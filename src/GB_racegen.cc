@@ -48,7 +48,6 @@ int enroll_valid_race() {
   int x, y, star, pnum, i, ppref, Playernum;
   int last_star_left, indirect[NUMSTARS];
   sigset_t mask, block;
-  sectortype *sect;
   planettype *planet;
   startype *star_arena;
   /*
@@ -207,19 +206,19 @@ found_planet:
 
   /*
    * Find sector to build capital on, and populate it: */
-  getsmap(Smap, planet);
+  auto smap = getsmap(*planet);
   PermuteSects(planet);
   Getxysect(planet, 0, 0, 1);
   while ((i = Getxysect(planet, &x, &y, 0)))
-    if (Sector(*planet, x, y).condition == Race->likesbest) break;
+    if (smap.get(x, y).condition == Race->likesbest) break;
   if (!i) x = y = 0;
-  sect = &Sector(*planet, x, y);
-  sect->owner = Playernum;
-  sect->race = Playernum;
-  sect->popn = planet->popn = Race->number_sexes;
-  sect->fert = 100;
-  sect->eff = 10;
-  sect->troops = planet->troops = 0;
+  auto &sect = smap.get(x, y);
+  sect.owner = Playernum;
+  sect.race = Playernum;
+  sect.popn = planet->popn = Race->number_sexes;
+  sect.fert = 100;
+  sect.eff = 10;
+  sect.troops = planet->troops = 0;
 
   Race->governors = 0;
 
@@ -326,7 +325,7 @@ found_planet:
 #endif
 
   putrace(Race);
-  putsector(*sect, *planet, x, y);
+  putsector(sect, *planet, x, y);
   putplanet(planet, star, pnum);
 
   /* make star explored and stuff */

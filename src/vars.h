@@ -173,7 +173,18 @@ class sector {
         race(race),
         type(type),
         condition(condition) {}
-  sector() {}
+  sector()
+      : eff(0),
+        fert(0),
+        mobilization(0),
+        crystals(0),
+        resource(0),
+        popn(0),
+        troops(0),
+        owner(0),
+        race(0),
+        type(0),
+        condition(0) {}
   unsigned int eff;          /* efficiency (0-100) */
   unsigned int fert;         /* max popn is proportional to this */
   unsigned int mobilization; /* percent popn is mobilized for war */
@@ -199,14 +210,29 @@ class sector {
 
 class sector_map {
  public:
-  sector_map(const planet& planet) : maxx_(planet.Maxx), vec_() {
+  sector_map(const planet& planet) : maxx_(planet.Maxx), maxy_(planet.Maxy) {
     vec_.reserve(planet.Maxx * planet.Maxy);
   }
+
+  //! Add an empty sector for every potential space.  Used for initialization.
+  sector_map(const planet& planet, bool)
+      : maxx_(planet.Maxx),
+        maxy_(planet.Maxy),
+        vec_(planet.Maxx * planet.Maxy) {}
+
   sector& get(const int x, const int y) { return vec_.at((x) + (y)*maxx_); }
   void put(sector&& s) { vec_.emplace_back(std::move(s)); }
+  int get_maxx() { return maxx_; }
+  int get_maxy() { return maxy_; }
+  sector_map(sector_map&) = delete;
+  void operator=(const sector_map&) = delete;
+  sector_map(sector_map&&) = default;
+  sector_map& operator=(sector_map&&) = default;
 
  private:
+  sector_map(const int maxx, const int maxy) : maxx_(maxx), maxy_(maxy) {}
   const int maxx_;
+  const int maxy_;
   std::vector<sector> vec_;
 };
 
@@ -268,8 +294,6 @@ struct vic {
 };
 
 extern struct directory Dir[MAXPLAYERS][MAXGOVERNORS + 1];
-
-extern sectortype Smap[(MAX_X + 1) * (MAX_Y + 1) + 1];
 
 extern unsigned char Nuked[MAXPLAYERS];
 extern unsigned long StarsInhab[NUMSTARS];

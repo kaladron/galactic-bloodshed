@@ -34,7 +34,6 @@ void dissolve(int Playernum, int Governor) {
   shiptype *sp;
   racetype *Race;
   planettype *pl;
-  sectortype *s;
   char nuke;
   char racepass[100], govpass[100];
 
@@ -118,7 +117,7 @@ void dissolve(int Playernum, int Governor) {
             pl->info[Playernum - 1].autorep = 0;
           }
 
-          getsmap(Smap, pl);
+          auto smap = getsmap(*pl);
 
           lowx = 0;
           lowy = 0;
@@ -126,18 +125,18 @@ void dissolve(int Playernum, int Governor) {
           hiy = pl->Maxy - 1;
           for (y2 = lowy; y2 <= hiy; y2++) {
             for (x2 = lowx; x2 <= hix; x2++) {
-              s = &Sector(*pl, x2, y2);
-              if (s->owner == Playernum) {
-                s->owner = 0;
-                s->troops = 0;
-                s->popn = 0;
+              auto& s = smap.get(x2, y2);
+              if (s.owner == Playernum) {
+                s.owner = 0;
+                s.troops = 0;
+                s.popn = 0;
                 if (waste) /* code folded from here */
-                  s->condition = WASTED;
+                  s.condition = WASTED;
                 /* unfolding */
               }
             }
           }
-          putsmap(Smap, pl);
+          putsmap(smap, *pl);
           putstar(Stars[z], z);
           putplanet(pl, z, i);
           free(pl);

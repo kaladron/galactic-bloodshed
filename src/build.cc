@@ -37,7 +37,7 @@ static int can_build_at_planet(int, int, startype *, planettype *);
 static int can_build_this(int, racetype *, char *);
 static int can_build_on_ship(int, racetype *, shiptype *, char *);
 static int can_build_on_sector(int, racetype *, planettype *,
-                               const sectortype &, int, int, char *);
+                               const sector &, int, int, char *);
 static void create_ship_by_planet(int, int, racetype *, shiptype *,
                                   planettype *, int, int, int, int);
 static void create_ship_by_ship(int, int, racetype *, int, startype *,

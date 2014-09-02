@@ -60,7 +60,6 @@ typedef char hugestr[HUGESTRLEN];
 
 long random();
 
-typedef class sector sectortype;
 typedef struct planet planettype;
 typedef struct star startype;
 typedef struct commod commodtype;

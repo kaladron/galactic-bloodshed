@@ -40,7 +40,7 @@ static void do_dome(shiptype *, planettype *, sector_map &);
 static void do_quarry(shiptype *, planettype *, sector_map &);
 static void do_berserker(shiptype *, planettype *);
 static void do_recover(planettype *, int, int);
-static double est_production(sectortype *);
+static double est_production(const sector&);
 static int moveship_onplanet(shiptype *, planettype *);
 static void plow(shiptype *, planettype *, sector_map &);
 static void terraform(shiptype *, planettype *, sector_map &);
@@ -234,9 +234,9 @@ if (!Stinfo[starnum][planetnum].inhab)
     if (p.owner && (p.popn || p.troops)) {
       allmod = 1;
       if (!Stars[starnum]->nova_stage) {
-        produce(Stars[starnum], planet, &p);
+        produce(Stars[starnum], planet, p);
         if (p.owner)
-          planet->info[p.owner - 1].est_production += est_production(&p);
+          planet->info[p.owner - 1].est_production += est_production(p);
         spread(planet, p, x, y, smap);
       } else {
         /* damage sector from supernova */
@@ -321,7 +321,7 @@ if (!Stinfo[starnum][planetnum].inhab)
               p.owner = i;
               tot_captured = 1;
             } else
-              explore(planet, &p, x, y, i);
+              explore(planet, p, x, y, i);
           }
           allexp |= o; /* all sectors explored for this player */
         }
@@ -871,7 +871,7 @@ static void do_recover(planettype *planet, int starnum, int planetnum) {
   }
 }
 
-static double est_production(sectortype *s) {
-  return (races[s->owner - 1]->metabolism * (double)s->eff * (double)s->eff /
+static double est_production(const sector&s) {
+  return (races[s.owner - 1]->metabolism * (double)s.eff * (double)s.eff /
           200.0);
 }

@@ -7,9 +7,8 @@
 
 #include "vars.h"
 
-void produce(startype *, planettype *, sectortype *);
+void produce(startype *, planettype *, sector&);
 void spread(planettype *, sector &, int, int, sector_map &);
-void explore(planettype *, sectortype *, int, int, int);
-void plate(sectortype *);
+void explore(planettype *, sector& , int, int, int);
 
 #endif  // DOSECTOR_H

@@ -223,6 +223,8 @@ class sector_map {
   void put(sector&& s) { vec_.emplace_back(std::move(s)); }
   int get_maxx() { return maxx_; }
   int get_maxy() { return maxy_; }
+  sector& get_random();
+
   sector_map(sector_map&) = delete;
   void operator=(const sector_map&) = delete;
   sector_map(sector_map&&) = default;

@@ -164,8 +164,7 @@ planettype Makeplanet(double dist, short stemp, ptype_t type) {
       for (y = 0; y < planet.Maxy; y++)
         for (x = 0; x < planet.Maxx; x++)
           if (!int_rand(0, 3)) {
-            auto& s = smap.get(int_rand(0, planet.Maxx - 1),
-                               int_rand(0, planet.Maxy - 1));
+            auto& s = smap.get_random();
             s.type = s.condition = LAND;
           }
       seed(smap, DESERT, int_rand(1, total_sects));
@@ -280,9 +279,7 @@ static int neighbors(sector_map& smap, int x, int y, int type) {
 //! Randomly places n sectors of designation type on a planet.
 static void seed(sector_map& smap, int type, int n) {
   while (n-- > 0) {
-    int x = int_rand(0, smap.get_maxx() - 1);
-    int y = int_rand(0, smap.get_maxy() - 1);
-    auto& s = smap.get(x, y);
+    auto& s = smap.get_random();
     s.type = s.condition = type;
   }
 }

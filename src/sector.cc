@@ -3,6 +3,8 @@
 // found in the COPYING file.
 
 #include <iostream>
+
+#include "rand.h"
 #include "vars.h"
 
 std::ostream& operator<<(std::ostream& os, const sector& s) {
@@ -18,4 +20,8 @@ std::ostream& operator<<(std::ostream& os, const sector& s) {
   os << "Type: " << s.type << std::endl;
   os << "Condition: " << s.condition << std::endl;
   return os;
+}
+
+sector& sector_map::get_random() {
+  return get(int_rand(0, maxx_ - 1), int_rand(0, maxy_ - 1));
 }

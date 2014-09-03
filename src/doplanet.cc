@@ -332,6 +332,7 @@ if (!Stinfo[starnum][planetnum].inhab)
 
   /* environment nukes a random sector */
   if (planet->conditions[TOXIC] > ENVIR_DAMAGE_TOX) {
+    // TODO(jeffbailey): Replace this with getrandom.
     nukex = int_rand(0, (int)planet->Maxx - 1);
     nukey = int_rand(0, (int)planet->Maxy - 1);
     auto &p = smap.get(nukex, nukey);

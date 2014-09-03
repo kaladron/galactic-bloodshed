@@ -60,7 +60,7 @@ typedef char hugestr[HUGESTRLEN];
 
 long random();
 
-typedef struct planet planettype;
+typedef class planet planettype;
 typedef struct star startype;
 typedef struct commod commodtype;
 
@@ -132,7 +132,8 @@ struct commod {
   planetnum_t planet_to;
 };
 
-struct planet {
+class planet {
+ public:
   int sectormappos; /* file posn for sector map */  // unused
 
   double xpos, ypos;        /* x,y relative to orbit */

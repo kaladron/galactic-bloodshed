@@ -15,10 +15,10 @@ static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const int y_adj[] = {1, 1, 1, 0, 0, -1, -1, -1};
 
 static void Migrate2(planettype *, int, int, sector &, int *, sector_map &);
-static void plate(sector&);
+static void plate(sector &);
 
 //  produce() -- produce, stuff like that, on a sector.
-void produce(startype *star, planettype *planet, sector&s) {
+void produce(startype *star, planettype *planet, sector &s) {
   int ss;
   int maxsup;
   int pfuel = 0, pdes = 0, pres = 0;
@@ -84,8 +84,7 @@ void produce(startype *star, planettype *planet, sector&s) {
 
   if (s.condition == WASTED && success(NATURAL_REPAIR)) s.condition = s.type;
 
-  maxsup =
-      maxsupport(Race, s, Compat[s.owner - 1], planet->conditions[TOXIC]);
+  maxsup = maxsupport(Race, s, Compat[s.owner - 1], planet->conditions[TOXIC]);
   if ((diff = s.popn - maxsup) < 0) {
     if (s.popn >= Race->number_sexes)
       ss = round_rand(-(double)diff * Race->birthrate);
@@ -163,7 +162,7 @@ static void Migrate2(planettype *planet, int xd, int yd, sector &ps,
         on earthtype planets.  */
 
 //  explore() -- mark sector and surrounding sectors as having been explored.
-void explore(planettype *planet, sector&s, int x, int y, int p) {
+void explore(planettype *planet, sector &s, int x, int y, int p) {
   int d;
 
   /* explore sectors surrounding sectors currently explored. */
@@ -182,7 +181,7 @@ void explore(planettype *planet, sector&s, int x, int y, int p) {
     Sectinfo[x][y].explored = p;
 }
 
-static void plate(sector& s) {
+static void plate(sector &s) {
   s.eff = 100;
   if (s.condition != GAS) s.condition = PLATED;
 }

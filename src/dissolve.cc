@@ -125,7 +125,7 @@ void dissolve(int Playernum, int Governor) {
           hiy = pl->Maxy - 1;
           for (y2 = lowy; y2 <= hiy; y2++) {
             for (x2 = lowx; x2 <= hix; x2++) {
-              auto& s = smap.get(x2, y2);
+              auto &s = smap.get(x2, y2);
               if (s.owner == Playernum) {
                 s.owner = 0;
                 s.troops = 0;

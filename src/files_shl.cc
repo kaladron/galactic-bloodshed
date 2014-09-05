@@ -551,6 +551,24 @@ void putplanet(planettype *p, int star, int pnum) {
   int filepos;
   filepos = Stars[star]->planetpos[pnum];
   Filewrite(pdata, (char *)p, sizeof(planettype), filepos);
+  const char *tail = 0;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_planet (planet_id, star_id, planet_order, name) "
+      "VALUES (?1, ?2, ?3, ?4)";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, p->planet_id);
+  sqlite3_bind_int(stmt, 2, star);
+  sqlite3_bind_int(stmt, 3, pnum);
+  sqlite3_bind_text(stmt, 4, Stars[star]->pnames[pnum],
+                    strlen(Stars[star]->pnames[pnum]), SQLITE_TRANSIENT);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "%s\n", sqlite3_errmsg(db));
+  }
+
+  sqlite3_reset(stmt);
 }
 
 void putsector(const sector &s, const planettype &p, const int x, const int y) {

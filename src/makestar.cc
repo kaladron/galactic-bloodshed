@@ -199,7 +199,7 @@ static char *NextStarName(void) {
   return buf;
 }
 
-startype *Makestar(FILE *planetdata) {
+startype *Makestar(FILE *planetdata, int snum) {
   planettype planet;
   ptype_t type;
   int roll, temperature;
@@ -211,6 +211,7 @@ startype *Makestar(FILE *planetdata) {
   /* get names, positions of stars first */
   Star = (startype *)malloc(sizeof(startype));
   bzero(Star, sizeof(startype));
+  Star->star_id = snum;
   Star->gravity = int_rand(0, int_rand(0, 300)) + int_rand(0, 300) +
                   int_rand(100, 400) + int_rand(0, 9) / 10.0;
   Star->temperature = round_rand(Star->gravity / 100.0);
@@ -347,6 +348,7 @@ startype *Makestar(FILE *planetdata) {
     /* posn of file-last write*/
     planet.sectormappos = 0; /* sector map pos */
     // XXX - switch here to SQL writing and planet_id.
+    //putplanet(&planet, snum, i);
     fwrite(&planet, sizeof(planettype), 1, planetdata); /* write planet */
   }
   return Star;

@@ -154,7 +154,7 @@ class planet {
 
   unsigned char explored;
 
-  int planet_id;
+  planetnum_t planet_id;
   unsigned long dummy[1];
 };
 
@@ -256,7 +256,8 @@ struct star {
   unsigned char temperature; /* factor which expresses how hot the star is*/
   double gravity;            /* attraction of star in "Standards". */
 
-  long dummy[2]; /* dummy bits for development */
+  starnum_t star_id;
+  long dummy[1]; /* dummy bits for development */
 };
 
 /* this data will all be read at once */

@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
   }
 
   for (starnum_t star = 0; star < nstars; star++) {
-    Stars[star] = Makestar(planetdata);
+    Stars[star] = Makestar(planetdata, star);
   }
   chmod(PLANETDATAFL, 00660); /* change data files to group readwrite */
   fclose(planetdata);

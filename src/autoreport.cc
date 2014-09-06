@@ -40,7 +40,7 @@ void autoreport(int Playernum, int Governor, int APcount) {
         p->info[Playernum - 1].autorep = 0;
       else
         p->info[Playernum - 1].autorep = TELEG_MAX_AUTO;
-      putplanet(p, snum, pnum);
+      putplanet(p, Stars[snum], pnum);
 
       sprintf(buf, "Autoreport on %s has been %s.\n", Stars[snum]->pnames[pnum],
               p->info[Playernum - 1].autorep ? "set" : "unset");
@@ -58,7 +58,7 @@ void autoreport(int Playernum, int Governor, int APcount) {
               p->info[Playernum - 1].autorep ? "set" : "unset");
       notify(Playernum, Governor, buf);
       p->info[Playernum - 1].autorep = !p->info[Playernum - 1].autorep;
-      putplanet(p, snum, pnum);
+      putplanet(p, Stars[snum], pnum);
       free(p);
     } else {
       sprintf(buf, "Scope must be a planet.\n");

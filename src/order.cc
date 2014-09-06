@@ -581,7 +581,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
           return;
         } else {
           planet->info[Playernum - 1].resource -= oncost;
-          putplanet(planet, (int)ship->deststar, (int)ship->destpnum);
+          putplanet(planet, Stars[ship->deststar], (int)ship->destpnum);
           free(planet);
         }
       }
@@ -667,7 +667,7 @@ static void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
           tele_range((int)s->type, s->tech)) {
         setbit(str->explored, Playernum);
         p->info[Playernum - 1].explored = 1;
-        putplanet(p, (int)s->special.aimed_at.snum,
+        putplanet(p, Stars[s->special.aimed_at.snum],
                   (int)s->special.aimed_at.pnum);
         sprintf(buf, "Surveyed, distance %g.\n", dist);
         notify(Playernum, Governor, buf);
@@ -1028,7 +1028,7 @@ void route(int Playernum, int Governor, int APcount) {
     }
     notify(Playernum, Governor, "Set.\n");
   }
-  putplanet(p, Dir[Playernum - 1][Governor].snum,
+  putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
   free(p);
 }

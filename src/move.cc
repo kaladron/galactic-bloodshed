@@ -145,7 +145,7 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     notify(Playernum, Governor, buf);
   }
   putsector(sect, *planet, x, y);
-  putplanet(planet, Dir[Playernum - 1][Governor].snum,
+  putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
   free(planet);
 }
@@ -198,7 +198,7 @@ void move_popn(int Playernum, int Governor, int what) {
     }
     if (!get_move(args[2][n++], x, y, &x2, &y2, planet)) {
       notify(Playernum, Governor, "Finished.\n");
-      putplanet(planet, Dir[Playernum - 1][Governor].snum,
+      putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
       free(planet);
       return;
@@ -207,7 +207,7 @@ void move_popn(int Playernum, int Governor, int what) {
     if (x2 < 0 || y2 < 0 || x2 > planet->Maxx - 1 || y2 > planet->Maxy - 1) {
       sprintf(buf, "Illegal coordinates %d,%d.\n", x2, y2);
       notify(Playernum, Governor, buf);
-      putplanet(planet, Dir[Playernum - 1][Governor].snum,
+      putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
       free(planet);
       return;
@@ -244,7 +244,7 @@ void move_popn(int Playernum, int Governor, int what) {
       else if (what == MIL)
         sprintf(buf, "Bad value - %lu troops in [%d,%d]\n", sect.troops, x, y);
       notify(Playernum, Governor, buf);
-      putplanet(planet, Dir[Playernum - 1][Governor].snum,
+      putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
       free(planet);
       return;
@@ -260,7 +260,7 @@ void move_popn(int Playernum, int Governor, int what) {
     if (!people) {
       putsector(sect, *planet, x, y);
       putsector(sect2, *planet, x2, y2);
-      putplanet(planet, Dir[Playernum - 1][Governor].snum,
+      putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
       free(planet);
       notify(Playernum, Governor, "Attack aborted.\n");
@@ -281,7 +281,7 @@ void move_popn(int Playernum, int Governor, int what) {
     if (!enufAP(Playernum, Governor,
                 Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
                 APcost)) {
-      putplanet(planet, Dir[Playernum - 1][Governor].snum,
+      putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
       free(planet);
       return;
@@ -510,7 +510,7 @@ void walk(int Playernum, int Governor, int APcount) {
     sprintf(buf, "Illegal coordinates %d,%d.\n", x, y);
     notify(Playernum, Governor, buf);
     free(ship);
-    putplanet(p, Dir[Playernum - 1][Governor].snum,
+    putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
               Dir[Playernum - 1][Governor].pnum);
     free(p);
     return;
@@ -599,7 +599,7 @@ void walk(int Playernum, int Governor, int APcount) {
     }
     putrace(alien);
     putrace(Race);
-    putplanet(p, Dir[Playernum - 1][Governor].snum,
+    putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
               Dir[Playernum - 1][Governor].pnum);
     putsector(sect, *p, x, y);
   }

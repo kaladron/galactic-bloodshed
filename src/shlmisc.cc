@@ -397,7 +397,7 @@ void fix(int Playernum, int Governor) {
     }
     notify(Playernum, Governor, buf);
     if (argn > 3)
-      putplanet(p, Dir[Playernum - 1][Governor].snum,
+      putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
     free(p);
     return;

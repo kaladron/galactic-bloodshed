@@ -116,7 +116,7 @@ void enslave(const command_t &argv, const player_t Playernum,
 
   if (def <= 2 * attack) {
     p->slaved_to = Playernum;
-    putplanet(p, (int)s->storbits, (int)s->pnumorbits);
+    putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
 
     /* send telegs to anyone there */
     sprintf(buf, "ENSLAVED by %s!!\n", Ship(s));

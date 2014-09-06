@@ -326,10 +326,11 @@ found_planet:
 
   putrace(Race);
   putsector(sect, *planet, x, y);
-  putplanet(planet, star, pnum);
+
+  getstar(&Stars[star], star);
+  putplanet(planet, Stars[star], pnum);
 
   /* make star explored and stuff */
-  getstar(&Stars[star], star);
   setbit(Stars[star]->explored, Playernum);
   setbit(Stars[star]->inhabited, Playernum);
   Stars[star]->AP[Playernum - 1] = 5;

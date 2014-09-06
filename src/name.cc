@@ -254,7 +254,7 @@ void bless(int Playernum, int Governor, int APcount) {
         return;
     }
   }
-  putplanet(planet, Dir[Playernum - 1][Governor].snum,
+  putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
   warn_race(who, buf);
   free(planet);
@@ -560,7 +560,7 @@ void give(int Playernum, int Governor, int APcount) {
 
       getplanet(&planet, (int)ship->storbits, (int)ship->pnumorbits);
       planet->info[who - 1].explored = 1;
-      putplanet(planet, (int)ship->storbits, (int)ship->pnumorbits);
+      putplanet(planet, Stars[ship->storbits], (int)ship->pnumorbits);
       free(planet);
 
       break;

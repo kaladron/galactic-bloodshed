@@ -347,8 +347,8 @@ startype *Makestar(FILE *planetdata, int snum) {
     Star->planetpos[i] = (int)ftell(planetdata);
     /* posn of file-last write*/
     planet.sectormappos = 0; /* sector map pos */
-    // XXX - switch here to SQL writing and planet_id.
-    //putplanet(&planet, snum, i);
+                             // XXX - switch here to SQL writing and planet_id.
+    // putplanet(&planet, snum, i);
     fwrite(&planet, sizeof(planettype), 1, planetdata); /* write planet */
   }
   return Star;

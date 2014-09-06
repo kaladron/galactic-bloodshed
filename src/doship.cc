@@ -396,7 +396,7 @@ void domine(int shipno, int detonate) {
         numdest = shoot_ship_to_planet(ship, planet, (int)(ship->destruct), x,
                                        y, smap, 0, LIGHT, long_buf, short_buf);
         putsmap(smap, *planet);
-        putplanet(planet, (int)ship->storbits, (int)ship->pnumorbits);
+        putplanet(planet, Stars[ship->storbits], (int)ship->pnumorbits);
 
         sprintf(telegram_buf, "%s", buf);
         if (numdest > 0) {

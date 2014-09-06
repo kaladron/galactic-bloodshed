@@ -73,7 +73,7 @@ void launch(int Playernum, int Governor, int APcount) {
           remove_sh_ship(s, s2);
           getplanet(&p, (int)s2->storbits, (int)s2->pnumorbits);
           insert_sh_plan(p, s);
-          putplanet(p, (int)s2->storbits, (int)s2->pnumorbits);
+          putplanet(p, Stars[s2->storbits], (int)s2->pnumorbits);
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
           s->destpnum = s2->pnumorbits;
@@ -106,7 +106,7 @@ void launch(int Playernum, int Governor, int APcount) {
           insert_sh_plan(p, s);
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
-          putplanet(p, (int)s2->storbits, (int)s2->pnumorbits);
+          putplanet(p, Stars[s2->storbits], (int)s2->pnumorbits);
           sprintf(buf, "Orbiting %s/%s.\n", Stars[s->storbits]->name,
                   Stars[s->storbits]->pnames[s->pnumorbits]);
           notify(Playernum, Governor, buf);
@@ -233,7 +233,7 @@ void launch(int Playernum, int Governor, int APcount) {
           /* not yet explored by owner; space exploration causes the
              player to see a whole map */
           p->explored = 1;
-          putplanet(p, (int)s->storbits, (int)s->pnumorbits);
+          putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
         }
         sprintf(buf, "%s observed launching from planet /%s/%s.\n", Ship(s),
                 Stars[s->storbits]->name,

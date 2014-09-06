@@ -1086,13 +1086,13 @@ finish:
   switch (level) {
     case LEVEL_PLAN:
       putsector(sector, *planet, x, y);
-      putplanet(planet, snum, pnum);
+      putplanet(planet, Stars[snum], pnum);
       free(planet);
       break;
     case LEVEL_SHIP:
       if (outside) switch (build_level) {
           case LEVEL_PLAN:
-            putplanet(planet, snum, pnum);
+            putplanet(planet, Stars[snum], pnum);
             if (landed(builder)) {
               putsector(sector, *planet, x, y);
             }
@@ -1781,7 +1781,7 @@ void sell(const command_t &argv, const player_t Playernum,
   post(buf, TRANSFER);
   for (i = 1; i <= Num_races; i++) notify_race(i, buf);
   putcommod(&c, commodno);
-  putplanet(p, snum, pnum);
+  putplanet(p, Stars[snum], pnum);
   free(p);
   deductAPs(Playernum, Governor, APcount, snum, 0);
 }

@@ -62,7 +62,7 @@ void technology(int Playernum, int Governor, int APcount) {
 
   p->info[Playernum - 1].tech_invest = invest;
 
-  putplanet(p, Dir[Playernum - 1][Governor].snum,
+  putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
 
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);

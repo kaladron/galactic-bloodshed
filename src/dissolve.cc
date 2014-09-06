@@ -138,7 +138,7 @@ void dissolve(int Playernum, int Governor) {
           }
           putsmap(smap, *pl);
           putstar(Stars[z], z);
-          putplanet(pl, z, i);
+          putplanet(pl, Stars[z], i);
           free(pl);
         }
       }

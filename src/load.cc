@@ -264,7 +264,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
                                      -amt);
             putship(s);
             putsector(sect, *p, s->land_x, s->land_y);
-            putplanet(p, Dir[Playernum - 1][Governor].snum,
+            putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
                       Dir[Playernum - 1][Governor].pnum);
             free(s);
             free(p);
@@ -310,7 +310,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
                                      -amt);
             putship(s);
             putsector(sect, *p, s->land_x, s->land_y);
-            putplanet(p, Dir[Playernum - 1][Governor].snum,
+            putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
                       Dir[Playernum - 1][Governor].pnum);
             free(s);
             free(p);
@@ -451,7 +451,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
         if (commod == 'c' || commod == 'm') {
           putsector(sect, *p, s->land_x, s->land_y);
         }
-        putplanet(p, Dir[Playernum - 1][Governor].snum,
+        putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
                   Dir[Playernum - 1][Governor].pnum);
         free(p);
       }
@@ -661,7 +661,7 @@ void dump(int Playernum, int Governor, int APcount) {
           getplanet(&planets[star][i], star, i);
           if (planets[star][i]->info[Playernum - 1].explored) {
             planets[star][i]->info[player - 1].explored = 1;
-            putplanet(planets[star][i], star, i);
+            putplanet(planets[star][i], Stars[star], i);
           }
         }
         putstar(Stars[star], star);
@@ -682,7 +682,7 @@ void dump(int Playernum, int Governor, int APcount) {
             getplanet(&planets[star][j], star, j);
             if (planets[star][j]->info[Playernum - 1].explored) {
               planets[star][j]->info[player - 1].explored = 1;
-              putplanet(planets[star][j], star, j);
+              putplanet(planets[star][j], Stars[star], j);
             }
           }
           putstar(Stars[star], star);
@@ -797,7 +797,7 @@ void transfer(int Playernum, int Governor, int APcount) {
       notify(Playernum, Governor, buf);
   }
 
-  putplanet(planet, Dir[Playernum - 1][Governor].snum,
+  putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
 
   free(planet);

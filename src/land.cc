@@ -320,7 +320,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
             }
           }
         if (!s->alive) {
-          putplanet(p, (int)s->storbits, (int)s->pnumorbits);
+          putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
           putship(s);
           free(p);
           free(s);
@@ -386,7 +386,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
         else
           deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
 
-        putplanet(p, (int)s->storbits, (int)s->pnumorbits);
+        putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
 
         if (numdest) putsector(sect, *p, x, y);
 

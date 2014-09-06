@@ -434,7 +434,7 @@ int main() {
   /* (approximate) */
 
   putsector(sect, *planet, secttypes[i].x, secttypes[i].y);
-  putplanet(planet, star, pnum);
+  putplanet(planet, Stars[star], pnum);
 
   /* make star explored and stuff */
   getstar(&Stars[star], star);

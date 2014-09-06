@@ -547,9 +547,9 @@ static void end_bulk_insert() {
   sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &err_msg);
 }
 
-void putplanet(planettype *p, int star, int pnum) {
+void putplanet(planettype *p, startype *star, int pnum) {
   int filepos;
-  filepos = Stars[star]->planetpos[pnum];
+  filepos = star->planetpos[pnum];
   Filewrite(pdata, (char *)p, sizeof(planettype), filepos);
   const char *tail = 0;
   sqlite3_stmt *stmt;
@@ -567,10 +567,10 @@ void putplanet(planettype *p, int star, int pnum) {
 
   sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, p->planet_id);
-  sqlite3_bind_int(stmt, 2, star);
+  sqlite3_bind_int(stmt, 2, star->star_id);
   sqlite3_bind_int(stmt, 3, pnum);
-  sqlite3_bind_text(stmt, 4, Stars[star]->pnames[pnum],
-                    strlen(Stars[star]->pnames[pnum]), SQLITE_TRANSIENT);
+  sqlite3_bind_text(stmt, 4, star->pnames[pnum], strlen(star->pnames[pnum]),
+                    SQLITE_TRANSIENT);
   sqlite3_bind_double(stmt, 5, p->xpos);
   sqlite3_bind_double(stmt, 6, p->ypos);
   sqlite3_bind_int(stmt, 7, p->ships);
@@ -595,7 +595,6 @@ void putplanet(planettype *p, int star, int pnum) {
   sqlite3_bind_int(stmt, 26, p->conditions[9]);
   sqlite3_bind_int(stmt, 27, p->conditions[10]);
   sqlite3_bind_int(stmt, 28, p->explored);
-
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     fprintf(stderr, "%s\n", sqlite3_errmsg(db));

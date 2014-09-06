@@ -61,7 +61,7 @@ void mobilize(int Playernum, int Governor, int APcount) {
     return;
   }
   p->info[Playernum - 1].mob_set = sum_mob;
-  putplanet(p, Dir[Playernum - 1][Governor].snum,
+  putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
 
@@ -118,7 +118,7 @@ void tax(int Playernum, int Governor, int APcount) {
     return;
   }
   p->info[Playernum - 1].newtax = sum_tax;
-  putplanet(p, Dir[Playernum - 1][Governor].snum,
+  putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
 
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);

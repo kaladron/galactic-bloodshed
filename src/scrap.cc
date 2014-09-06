@@ -238,7 +238,7 @@ void scrap(int Playernum, int Governor, int APcount) {
           planet->info[Playernum - 1].crystals += (int)xtalval;
           putsector(sect, *planet, s->land_x, s->land_y);
         }
-        putplanet(planet, (int)s->storbits, (int)s->pnumorbits);
+        putplanet(planet, Stars[s->storbits], (int)s->pnumorbits);
         free(planet);
       }
       if (landed(s)) {

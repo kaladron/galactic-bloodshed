@@ -455,7 +455,7 @@ void repair(const command_t &argv, const player_t Playernum,
           }
         }
       }
-    putplanet(p, (int)where.snum, (int)where.pnum);
+    putplanet(p, Stars[where.snum], (int)where.pnum);
     free((char *)p);
 
     sprintf(buf, "%d sectors repaired at a cost of %d resources.\n", sectors,

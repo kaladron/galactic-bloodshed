@@ -298,7 +298,7 @@ void do_turn(int update) {
           // putsmap(smap, *planets[star][i]);
         }
       }
-      putplanet(planets[star][i], star, i);
+      putplanet(planets[star][i], Stars[star], i);
     }
     /* do AP's for ea. player  */
     if (update)
@@ -598,7 +598,7 @@ void do_reset(int time_reset) {
     for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
       if (!isascii(*Stars[star]->pnames[i]))
         sprintf(Stars[star]->pnames[i], "%d", i);
-      putplanet(planets[star][i], star, i);
+      putplanet(planets[star][i], Stars[star], i);
     }
     putstar(Stars[star], star);
   }

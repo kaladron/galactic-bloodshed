@@ -468,7 +468,7 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
 
       /* write the stuff to disk */
       putship(from);
-      putplanet(p, (int)from->storbits, (int)from->pnumorbits);
+      putplanet(p, Stars[from->storbits], (int)from->pnumorbits);
       deductAPs(Playernum, Governor, APcount, (int)from->storbits, 0);
 
       free(from);
@@ -684,7 +684,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
 
   /* write the ship stuff out to disk */
   putship(to);
-  putplanet(p, Dir[Playernum - 1][Governor].snum,
+  putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
 
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);

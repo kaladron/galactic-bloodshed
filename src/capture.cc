@@ -319,7 +319,7 @@ void capture(int Playernum, int Governor, int APcount) {
                   short_buf);
       putship(ship);
       putsector(sect, *p, x, y);
-      putplanet(p, snum, pnum);
+      putplanet(p, Stars[snum], pnum);
       putrace(Race);
       putrace(alien);
       deductAPs(Playernum, Governor, APcount, (int)ship->storbits, 0);

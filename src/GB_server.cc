@@ -1680,7 +1680,7 @@ void kill_ship(int Playernum, shiptype *ship) {
     getplanet(&planet, (int)ship->storbits, (int)ship->pnumorbits);
     planet->conditions[TOXIC] =
         MIN(100, planet->conditions[TOXIC] + ship->special.waste.toxic);
-    putplanet(planet, (int)ship->storbits, (int)ship->pnumorbits);
+    putplanet(planet, Stars[ship->storbits], (int)ship->pnumorbits);
   }
 
   /* undock the stuff docked with it */
@@ -1797,7 +1797,7 @@ void remove_sh_plan(shiptype *s) {
 
   if (sh == s->number) {
     p->ships = s->nextship;
-    putplanet(p, (int)s->storbits, (int)s->pnumorbits);
+    putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
   } else {
     while (sh != s->number) {
       (void)getship(&s2, sh);

@@ -7,6 +7,7 @@ add_definitions(-DPKGDATADIR="${PKGDATADIR}")
 add_definitions(-DDOCDIR="${DOCDIR}")
 
 add_definitions(-std=c++11)
+#add_definitions(-stdlib=libc++)
 add_definitions(-g)
 add_definitions(-O1)
 

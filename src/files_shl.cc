@@ -554,8 +554,16 @@ void putplanet(planettype *p, int star, int pnum) {
   const char *tail = 0;
   sqlite3_stmt *stmt;
   const char *sql =
-      "REPLACE INTO tbl_planet (planet_id, star_id, planet_order, name) "
-      "VALUES (?1, ?2, ?3, ?4)";
+      "REPLACE INTO tbl_planet (planet_id, star_id, planet_order, name, "
+      "xpos, ypos, ships, maxx, maxy, popn, troops, maxpopn, total_resources, "
+      "slaved_to, type, expltimer, condition_rtemp, condition_temp, "
+      "condition_methane, condition_oxygen, condition_co2, "
+      "condition_hydrogen, condition_nitrogen, condition_sulfur, "
+      "condition_helium, condition_other, condition_toxic, "
+      "explored) "
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, "
+      "?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, "
+      "?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28)";
 
   sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, p->planet_id);
@@ -563,6 +571,31 @@ void putplanet(planettype *p, int star, int pnum) {
   sqlite3_bind_int(stmt, 3, pnum);
   sqlite3_bind_text(stmt, 4, Stars[star]->pnames[pnum],
                     strlen(Stars[star]->pnames[pnum]), SQLITE_TRANSIENT);
+  sqlite3_bind_double(stmt, 5, p->xpos);
+  sqlite3_bind_double(stmt, 6, p->ypos);
+  sqlite3_bind_int(stmt, 7, p->ships);
+  sqlite3_bind_int(stmt, 8, p->Maxx);
+  sqlite3_bind_int(stmt, 9, p->Maxy);
+  sqlite3_bind_int(stmt, 10, p->popn);
+  sqlite3_bind_int(stmt, 11, p->troops);
+  sqlite3_bind_int(stmt, 12, p->maxpopn);
+  sqlite3_bind_int(stmt, 13, p->total_resources);
+  sqlite3_bind_int(stmt, 14, p->slaved_to);
+  sqlite3_bind_int(stmt, 15, p->type);
+  sqlite3_bind_int(stmt, 16, p->expltimer);
+  sqlite3_bind_int(stmt, 17, p->conditions[0]);
+  sqlite3_bind_int(stmt, 18, p->conditions[1]);
+  sqlite3_bind_int(stmt, 19, p->conditions[2]);
+  sqlite3_bind_int(stmt, 20, p->conditions[3]);
+  sqlite3_bind_int(stmt, 21, p->conditions[4]);
+  sqlite3_bind_int(stmt, 22, p->conditions[5]);
+  sqlite3_bind_int(stmt, 23, p->conditions[6]);
+  sqlite3_bind_int(stmt, 24, p->conditions[7]);
+  sqlite3_bind_int(stmt, 25, p->conditions[8]);
+  sqlite3_bind_int(stmt, 26, p->conditions[9]);
+  sqlite3_bind_int(stmt, 27, p->conditions[10]);
+  sqlite3_bind_int(stmt, 28, p->explored);
+
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     fprintf(stderr, "%s\n", sqlite3_errmsg(db));

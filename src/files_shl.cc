@@ -555,7 +555,8 @@ void putplanet(planettype *p, startype *star, int pnum) {
   Filewrite(pdata, (char *)p, sizeof(planettype), filepos);
   const char *tail = 0;
   const char *plinfo_tail = 0;
-  sqlite3_stmt *stmt, *plinfo_stmt;
+  const char *plinfo_route_tail = 0;
+  sqlite3_stmt *stmt, *plinfo_stmt, *plinfo_route_stmt;
   const char *sql =
       "REPLACE INTO tbl_planet (planet_id, star_id, planet_order, name, "
       "xpos, ypos, ships, maxx, maxy, popn, troops, maxpopn, total_resources, "
@@ -580,6 +581,14 @@ void putplanet(planettype *p, startype *star, int pnum) {
       "?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, "
       "?21, ?22, ?23, ?24, ?25, ?26)";
   sqlite3_prepare_v2(db, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail);
+
+  const char *plinfo_route_sql =
+      "REPLACE INTO tbl_plinfo_routes (planet_id, player_id, routenum, "
+      "order_set, dest_star, dest_planet, "
+      "load, unload, x, y) VALUES "
+      "(?1, ?2, ?3, ?4, 5, ?6, ?7, ?8, ?9, ?10)";
+  sqlite3_prepare_v2(db, plinfo_route_sql, -1, &plinfo_route_stmt,
+                     &plinfo_route_tail);
 
   sqlite3_bind_int(stmt, 1, p->planet_id);
   sqlite3_bind_int(stmt, 2, star->star_id);
@@ -614,7 +623,6 @@ void putplanet(planettype *p, startype *star, int pnum) {
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     fprintf(stderr, "%s\n", sqlite3_errmsg(db));
   }
-  sqlite3_finalize(stmt);
 
   {
     for (player_t i = 0; i < MAXPLAYERS; i++) {
@@ -649,16 +657,32 @@ void putplanet(planettype *p, startype *star, int pnum) {
         fprintf(stderr, "%s\n", sqlite3_errmsg(db));
       }
       sqlite3_reset(plinfo_stmt);
-    }
-    sqlite3_finalize(plinfo_stmt);
 
-    /*
-    planet_id INT, player_id INT, routenum INT,
-                                     order_set INT, dest_star INT, dest_planet
-    INT,
-                                     load INT, unload INT, x INT, y INT,
-    */
+      {
+        for (int j = 0; j < MAX_ROUTES; j++) {
+          sqlite3_bind_int(plinfo_route_stmt, 1, p->planet_id);
+          sqlite3_bind_int(plinfo_route_stmt, 2, i);
+          sqlite3_bind_int(plinfo_route_stmt, 3, j);
+          sqlite3_bind_int(plinfo_route_stmt, 4, p->info[i].route[j].set);
+          sqlite3_bind_int(plinfo_route_stmt, 5, p->info[i].route[j].dest_star);
+          sqlite3_bind_int(plinfo_route_stmt, 6,
+                           p->info[i].route[j].dest_planet);
+          sqlite3_bind_int(plinfo_route_stmt, 7, p->info[i].route[j].load);
+          sqlite3_bind_int(plinfo_route_stmt, 8, p->info[i].route[j].unload);
+          sqlite3_bind_int(plinfo_route_stmt, 9, p->info[i].route[j].x);
+          sqlite3_bind_int(plinfo_route_stmt, 10, p->info[i].route[j].y);
+
+          if (sqlite3_step(plinfo_route_stmt) != SQLITE_DONE) {
+            fprintf(stderr, "%s\n", sqlite3_errmsg(db));
+          }
+          sqlite3_reset(plinfo_route_stmt);
+        }
+      }
+    }
   }
+  sqlite3_finalize(stmt);
+  sqlite3_finalize(plinfo_stmt);
+  sqlite3_finalize(plinfo_route_stmt);
 
   end_bulk_insert();
 }

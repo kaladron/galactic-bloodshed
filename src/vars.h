@@ -201,35 +201,35 @@ class sector {
                  you gain control of them! */
   unsigned int type;      /* underlying sector geology */
   unsigned int condition; /* environmental effects */
-  sector(sector&) = delete;
-  void operator=(const sector&) = delete;
-  sector(sector&&) = default;
-  sector& operator=(sector&&) = default;
-  friend std::ostream& operator<<(std::ostream&, const sector&);
+  sector(sector &) = delete;
+  void operator=(const sector &) = delete;
+  sector(sector &&) = default;
+  sector &operator=(sector &&) = default;
+  friend std::ostream &operator<<(std::ostream &, const sector &);
 };
 
 class sector_map {
  public:
-  sector_map(const planet& planet) : maxx_(planet.Maxx), maxy_(planet.Maxy) {
+  sector_map(const planet &planet) : maxx_(planet.Maxx), maxy_(planet.Maxy) {
     vec_.reserve(planet.Maxx * planet.Maxy);
   }
 
   //! Add an empty sector for every potential space.  Used for initialization.
-  sector_map(const planet& planet, bool)
+  sector_map(const planet &planet, bool)
       : maxx_(planet.Maxx),
         maxy_(planet.Maxy),
         vec_(planet.Maxx * planet.Maxy) {}
 
-  sector& get(const int x, const int y) { return vec_.at((x) + (y)*maxx_); }
-  void put(sector&& s) { vec_.emplace_back(std::move(s)); }
+  sector &get(const int x, const int y) { return vec_.at((x) + (y)*maxx_); }
+  void put(sector &&s) { vec_.emplace_back(std::move(s)); }
   int get_maxx() { return maxx_; }
   int get_maxy() { return maxy_; }
-  sector& get_random();
+  sector &get_random();
 
-  sector_map(sector_map&) = delete;
-  void operator=(const sector_map&) = delete;
-  sector_map(sector_map&&) = default;
-  sector_map& operator=(sector_map&&) = default;
+  sector_map(sector_map &) = delete;
+  void operator=(const sector_map &) = delete;
+  sector_map(sector_map &&) = default;
+  sector_map &operator=(sector_map &&) = default;
 
  private:
   sector_map(const int maxx, const int maxy) : maxx_(maxx), maxy_(maxy) {}
@@ -301,7 +301,7 @@ extern struct directory Dir[MAXPLAYERS][MAXGOVERNORS + 1];
 extern unsigned char Nuked[MAXPLAYERS];
 extern unsigned long StarsInhab[NUMSTARS];
 extern unsigned long StarsExpl[NUMSTARS];
-extern startype* Stars[NUMSTARS];
+extern startype *Stars[NUMSTARS];
 extern unsigned short Sdatanumships[MAXPLAYERS];
 extern unsigned long Sdatapopns[MAXPLAYERS];
 extern unsigned short starnumships[NUMSTARS][MAXPLAYERS];
@@ -317,7 +317,7 @@ extern unsigned char Claims;
 extern unsigned char adr;
 extern char junk[2][256];
 
-extern planettype* planets[NUMSTARS][MAXPLANETS];
+extern planettype *planets[NUMSTARS][MAXPLANETS];
 extern unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
 extern unsigned long inhabited[NUMSTARS][2];
 extern double Compat[MAXPLAYERS];

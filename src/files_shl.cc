@@ -238,7 +238,7 @@ void getstar(startype **s, int star) {
 }
 
 void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
-  if (p >= &planets[0][0] && p < &planets[NUMSTARS][MAXPLANETS])
+  if (p >= &planets[0][0] && p < &planets[NUMSTARS - 1][MAXPLANETS - 1])
     ;    /* Do nothing */
   else { /* Allocate space for others */
     *p = (planettype *)malloc(sizeof(planettype));

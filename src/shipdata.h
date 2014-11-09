@@ -155,21 +155,15 @@ const unsigned long Shipdata[NUMSTYPES][NUMABILS] = {
              0, 1, 0, 0, 0, 0, 1, 0, 1, 1}};
 
 const char *Shipnames[NUMSTYPES] = {
-    "Spore pod",         "Shuttle",           "Carrier",
-    "Dreadnaught",       "Battleship",        "Interceptor",
-    "Cruiser",           "Destroyer",         "Fighter Group",
-    "Explorer",          "Habitat",           "Station",
-    "Ob Asst Pltfrm",    "Cargo Ship",        "Tanker",
-    "GODSHIP",           "Space Mine",        "Space Mirror",
-    "Space Telescope",   "Ground Telescope",  "* T-R beam",
-    "Atmosph Processor", "Dust Canister",     "Greenhouse Gases",
-    "V.Neumann Machine", "Berserker",         "Govrnmnt. Center",
-    "Mind Control Lsr",  "Tox Waste Canistr", "Space Probe",
-    "Gamma Ray Laser",   "Factory",           "Terraform Device",
-    "Bers Cntrl Center", "Bers Autofac",      "AVPM Transporter",
-    "Missile",           "Planet Def Net",    "Quarry",
-    "Space Plow",        "Dome",              "Weapons Plant",
-    "Space Port",        "ABM Battery",       "Mech",
-    "Bunker",            "Lander"};
+    "Spore pod", "Shuttle", "Carrier", "Dreadnaught", "Battleship",
+    "Interceptor", "Cruiser", "Destroyer", "Fighter Group", "Explorer",
+    "Habitat", "Station", "Ob Asst Pltfrm", "Cargo Ship", "Tanker", "GODSHIP",
+    "Space Mine", "Space Mirror", "Space Telescope", "Ground Telescope",
+    "* T-R beam", "Atmosph Processor", "Dust Canister", "Greenhouse Gases",
+    "V.Neumann Machine", "Berserker", "Govrnmnt. Center", "Mind Control Lsr",
+    "Tox Waste Canistr", "Space Probe", "Gamma Ray Laser", "Factory",
+    "Terraform Device", "Bers Cntrl Center", "Bers Autofac", "AVPM Transporter",
+    "Missile", "Planet Def Net", "Quarry", "Space Plow", "Dome",
+    "Weapons Plant", "Space Port", "ABM Battery", "Mech", "Bunker", "Lander"};
 
 #endif  // SHIPDATA_H

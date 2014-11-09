@@ -28,18 +28,13 @@
 #define MAX_SHIPS_PER_SECTOR 10
 
 static const char *Tox[] = {
-    "Stage 0, mild",
-    "Stage 1, mild",
-    "Stage 2, semi-mild",
-    "Stage 3, semi-semi mild",
-    "Stage 4, ecologically unsound",
-    "Stage 5: ecologically unsound",
-    "Stage 6: below birth threshold",
+    "Stage 0, mild", "Stage 1, mild", "Stage 2, semi-mild",
+    "Stage 3, semi-semi mild", "Stage 4, ecologically unsound",
+    "Stage 5: ecologically unsound", "Stage 6: below birth threshold",
     "Stage 7: ecologically unstable--below birth threshold",
     "Stage 8: ecologically poisonous --below birth threshold",
     "Stage 9: WARNING: nearing 100% toxicity",
-    "Stage 10: WARNING: COMPLETELY TOXIC!!!",
-    "???"};
+    "Stage 10: WARNING: COMPLETELY TOXIC!!!", "???"};
 
 static void get4args(char *, int *, int *, int *, int *);
 

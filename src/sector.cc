@@ -7,7 +7,7 @@
 #include "rand.h"
 #include "vars.h"
 
-std::ostream& operator<<(std::ostream& os, const sector& s) {
+std::ostream &operator<<(std::ostream &os, const sector &s) {
   os << "Efficiency: " << s.eff << std::endl;
   os << "Fertility: " << s.fert << std::endl;
   os << "Mobilization: " << s.mobilization << std::endl;
@@ -22,6 +22,6 @@ std::ostream& operator<<(std::ostream& os, const sector& s) {
   return os;
 }
 
-sector& sector_map::get_random() {
+sector &sector_map::get_random() {
   return get(int_rand(0, maxx_ - 1), int_rand(0, maxy_ - 1));
 }

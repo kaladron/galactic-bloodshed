@@ -259,7 +259,7 @@ static int do_trip(const placetype &tmpdest, double fuel,
   if (tmpship->whatdest == LEVEL_SHIP || tmpship->ships) {
     /* Bring in the other ships.  Moveship() uses ships[]. */
     Num_ships = Numships();
-    ships = (shiptype **)malloc(sizeof(shiptype *) * (Num_ships)+1);
+    ships = (shiptype **)malloc(sizeof(shiptype *) * (Num_ships) + 1);
     for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
   }
 

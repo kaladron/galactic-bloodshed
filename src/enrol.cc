@@ -237,10 +237,10 @@ int main() {
 
   for (i = 0; i < MAXPLAYERS; i++) {
     /* messages from autoreport, player #1 are decodable */
-    if ((i == Playernum || Playernum == 1) || Race->God)
-      Race->translate[i - 1] = 100; /* you can talk to own race */
+    if ((i == (Playernum - 1) || Playernum == 1) || Race->God)
+      Race->translate[i] = 100; /* you can talk to own race */
     else
-      Race->translate[i - 1] = 1;
+      Race->translate[i] = 1;
   }
 
   /* assign racial characteristics */

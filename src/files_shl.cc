@@ -63,7 +63,7 @@ void initsqldata() __attribute__((no_sanitize_memory)) {
       planet_id INT PRIMARY KEY NOT NULL, player_id INT NOT NULL, fuel INT,
       destruct INT, resource INT, popn INT64, troops INT64, crystals INT,
       prod_res INT, prod_fuel INT, prod_dest INT, prod_crystals INT,
-      prod_money INT64, prod_tech DOUBLE, tech_invest INT, numsectsowned INT,r
+      prod_money INT64, prod_tech DOUBLE, tech_invest INT, numsectsowned INT,
       comread INT, mob_set INT, tox_thresh INT, explored INT, autorep INT,
       tax INT, newtax INT, guns INT, mob_points INT64, est_production DOUBLE);
 
@@ -642,7 +642,10 @@ void putplanet(planettype *p, startype *star, int pnum) {
       "(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, "
       "?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, "
       "?21, ?22, ?23, ?24, ?25, ?26)";
-  sqlite3_prepare_v2(db, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail);
+  if (sqlite3_prepare_v2(db, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail) !=
+      SQLITE_OK) {
+    fprintf(stderr, "PLINFO %s\n", sqlite3_errmsg(db));
+  }
 
   const char *plinfo_route_sql =
       "REPLACE INTO tbl_plinfo_routes (planet_id, player_id, routenum, "
@@ -683,7 +686,7 @@ void putplanet(planettype *p, startype *star, int pnum) {
   sqlite3_bind_int(stmt, 28, p->explored);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "%s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
   }
 
   {
@@ -716,7 +719,7 @@ void putplanet(planettype *p, startype *star, int pnum) {
       sqlite3_bind_double(plinfo_stmt, 26, p->info[i].est_production);
 
       if (sqlite3_step(plinfo_stmt) != SQLITE_DONE) {
-        fprintf(stderr, "%s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "YYY %s\n", sqlite3_errmsg(db));
       }
       sqlite3_reset(plinfo_stmt);
 
@@ -735,7 +738,7 @@ void putplanet(planettype *p, startype *star, int pnum) {
           sqlite3_bind_int(plinfo_route_stmt, 10, p->info[i].route[j].y);
 
           if (sqlite3_step(plinfo_route_stmt) != SQLITE_DONE) {
-            fprintf(stderr, "%s\n", sqlite3_errmsg(db));
+            fprintf(stderr, "ZZZ %s\n", sqlite3_errmsg(db));
           }
           sqlite3_reset(plinfo_route_stmt);
         }
@@ -775,7 +778,7 @@ void putsector(const sector &s, const planettype &p, const int x, const int y) {
   sqlite3_bind_int(stmt, 14, s.condition);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "%s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "000 %s\n", sqlite3_errmsg(db));
   }
 
   sqlite3_reset(stmt);

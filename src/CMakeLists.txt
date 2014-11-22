@@ -38,7 +38,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     -Wno-padded)
 
   set(CMAKE_CXX_FLAGS_MSAN
-    "-fsanitize=memory -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls"
+    "-fsanitize=memory -fsanitize=undefined -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer -fno-optimize-sibling-calls"
     CACHE STRING "Flags used by the C++ compiler during MSan builds"
     FORCE)
   set(ASANSYM
@@ -48,10 +48,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     export MSAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5)
 
   set(ASANOPT
-    export ASAN_OPTIONS=detect_leaks=1)
+    export ASAN_OPTIONS=detect_leaks=1:check_initialization_order=1)
 
   set(CMAKE_CXX_FLAGS_ASAN
-    "-fsanitize=address -fsanitize=undefined"
+    "-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls"
     CACHE STRING "Flags used by the C++ compiler during ASan builds"
     FORCE)
   mark_as_advanced(

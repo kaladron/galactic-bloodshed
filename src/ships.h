@@ -9,10 +9,8 @@
 #ifndef SHIPS_H
 #define SHIPS_H
 
-#define LIGHT 1
-#define MEDIUM 2
-#define HEAVY 3
-#define NONE 0
+enum guntype_t { GTYPE_NONE, GTYPE_LIGHT, GTYPE_MEDIUM, GTYPE_HEAVY };
+
 #define PRIMARY 1
 #define SECONDARY 2
 
@@ -303,9 +301,9 @@ struct place {/* used in function return for finding place */
 #define Armor(s)                                                  \
   (((s)->type == OTYPE_FACTORY) ? Shipdata[(s)->type][ABIL_ARMOR] \
                                 : (s)->armor * (100 - (s)->damage) / 100)
-#define Guns(s)                                                   \
-  (((s)->guns == NONE) ? 0 : ((s)->guns == PRIMARY ? (s)->primary \
-                                                   : (s)->secondary))
+#define Guns(s)                                                         \
+  (((s)->guns == GTYPE_NONE) ? 0 : ((s)->guns == PRIMARY ? (s)->primary \
+                                                         : (s)->secondary))
 #define Max_crew(s)                                      \
   (((s)->type == OTYPE_FACTORY)                          \
        ? Shipdata[(s)->type][ABIL_MAXCREW] - (s)->troops \

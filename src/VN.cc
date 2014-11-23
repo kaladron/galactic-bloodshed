@@ -209,7 +209,7 @@ void planet_doVN(shiptype *ship, planettype *planet, sector_map &smap) {
           s2->type = shipbuild;
           s2->mode = 0;
           s2->armor = ship->armor + 1;
-          s2->guns = Shipdata[shipbuild][ABIL_PRIMARY] ? PRIMARY : NONE;
+          s2->guns = Shipdata[shipbuild][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
           s2->primary = Shipdata[shipbuild][ABIL_GUNS];
           s2->primtype = Shipdata[shipbuild][ABIL_PRIMARY];
           s2->secondary = Shipdata[shipbuild][ABIL_GUNS];

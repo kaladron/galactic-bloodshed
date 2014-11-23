@@ -275,7 +275,7 @@ void domissile(shiptype *ship) {
 
       auto smap = getsmap(*p);
       numdest = shoot_ship_to_planet(ship, p, (int)ship->destruct, bombx, bomby,
-                                     smap, 0, HEAVY, long_buf, short_buf);
+                                     smap, 0, GTYPE_HEAVY, long_buf, short_buf);
       putsmap(smap, *p);
       push_telegram((int)ship->owner, (int)ship->governor, long_buf);
       kill_ship((int)ship->owner, ship);
@@ -393,8 +393,9 @@ void domine(int shipno, int detonate) {
           y = int_rand(0, (int)planet->Maxy - 1);
         }
         auto smap = getsmap(*planet);
-        numdest = shoot_ship_to_planet(ship, planet, (int)(ship->destruct), x,
-                                       y, smap, 0, LIGHT, long_buf, short_buf);
+        numdest =
+            shoot_ship_to_planet(ship, planet, (int)(ship->destruct), x, y,
+                                 smap, 0, GTYPE_LIGHT, long_buf, short_buf);
         putsmap(smap, *planet);
         putplanet(planet, Stars[ship->storbits], (int)ship->pnumorbits);
 

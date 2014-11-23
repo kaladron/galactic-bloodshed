@@ -331,9 +331,9 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
         if (crash(s, fuel)) {
           /* damaged ships stand of chance of crash landing */
           auto smap = getsmap(*p);
-          numdest =
-              shoot_ship_to_planet(s, p, round_rand((double)(s->destruct) / 3.),
-                                   x, y, smap, 0, HEAVY, long_buf, short_buf);
+          numdest = shoot_ship_to_planet(
+              s, p, round_rand((double)(s->destruct) / 3.), x, y, smap, 0,
+              GTYPE_HEAVY, long_buf, short_buf);
           putsmap(smap, *p);
           sprintf(
               buf,

@@ -111,16 +111,16 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
         sprintf(weapon, "strength laser");
     } else
       switch (caliber) {
-        case LIGHT:
+        case GTYPE_LIGHT:
           sprintf(weapon, "light guns");
           break;
-        case MEDIUM:
+        case GTYPE_MEDIUM:
           sprintf(weapon, "medium guns");
           break;
-        case HEAVY:
+        case GTYPE_HEAVY:
           sprintf(weapon, "heavy guns");
           break;
-        default:
+        case GTYPE_NONE:
           sprintf(weapon, "pea-shooter");
           return -1;
       }
@@ -152,10 +152,10 @@ int shoot_planet_to_ship(racetype *Race, planettype *p, shiptype *ship,
   ship_disposition(ship, &evade, &speed, &body);
 
   hits = Num_hits(0.0, 0, strength, Race->tech, 0, evade, 0, speed, 0, body,
-                  MEDIUM, 1);
+                  GTYPE_MEDIUM, 1);
 
   damage = do_damage(Race->Playernum, ship, Race->tech, strength, hits, 0,
-                     MEDIUM, 0.0, "medium guns", damage_msg);
+                     GTYPE_MEDIUM, 0.0, "medium guns", damage_msg);
   sprintf(short_msg, "%s [%d] %s %s\n", Dispshiploc(ship), Race->Playernum,
           ship->alive ? "attacked" : "DESTROYED", Ship(ship));
   strcpy(long_msg, short_msg);
@@ -184,7 +184,7 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
   r = .4 * strength;
   if (!caliber) { /* figure out the appropriate gun caliber if not given*/
     if (ship->fire_laser)
-      caliber = LIGHT;
+      caliber = GTYPE_LIGHT;
     else
       switch (ship->guns) {
         case PRIMARY:
@@ -194,7 +194,7 @@ int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
           caliber = ship->sectype;
           break;
         default:
-          caliber = LIGHT;
+          caliber = GTYPE_LIGHT;
       }
   }
 
@@ -453,7 +453,7 @@ int hit_odds(double range, int *factor, double tech, int fdam, int fev, int tev,
   int odds;
   double a, b, c;
 
-  if (caliber == NONE) {
+  if (caliber == GTYPE_NONE) {
     *factor = 0;
     return 0;
   }
@@ -502,17 +502,17 @@ double tele_range(int type, double tech) {
 
 int current_caliber(shiptype *ship) {
   if (ship->laser && ship->fire_laser)
-    return LIGHT;
+    return GTYPE_LIGHT;
   else if (ship->type == STYPE_MINE)
-    return LIGHT;
+    return GTYPE_LIGHT;
   else if (ship->type == STYPE_MISSILE)
-    return HEAVY;
+    return GTYPE_HEAVY;
   else if (ship->guns == PRIMARY)
     return ship->primtype;
   else if (ship->guns == SECONDARY)
     return ship->sectype;
   else
-    return NONE;
+    return GTYPE_NONE;
 }
 
 static void do_critical_hits(int penetrate, shiptype *ship, int *crithits,
@@ -577,8 +577,8 @@ void do_collateral(shiptype *ship, int damage, int *casualties,
   ship->primary -= *primgundamage;
   for (i = 1; i <= ship->secondary; i++) *secgundamage += success(damage);
   ship->secondary -= *secgundamage;
-  if (!ship->primary) ship->primtype = NONE;
-  if (!ship->secondary) ship->sectype = NONE;
+  if (!ship->primary) ship->primtype = GTYPE_NONE;
+  if (!ship->secondary) ship->sectype = GTYPE_NONE;
 }
 
 int getdefense(shiptype *ship) {

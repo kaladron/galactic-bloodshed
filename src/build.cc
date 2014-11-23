@@ -134,7 +134,7 @@ void upgrade(const command_t &argv, const player_t Playernum,
     } else if (argv[1] == "primary" &&
                Shipdata[dirship->build_type][ABIL_PRIMARY]) {
       if (argv[2] == "strength") {
-        if (ship.primtype == NONE) {
+        if (ship.primtype == GTYPE_NONE) {
           notify(Playernum, Governor, "No caliber defined.\n");
           free(dirship);
           return;
@@ -143,11 +143,11 @@ void upgrade(const command_t &argv, const player_t Playernum,
         ship.primary = MAX(ship.primary, dirship->primary);
       } else if (argv[2] == "caliber") {
         if (argv[3] == "light")
-          ship.primtype = MAX(LIGHT, dirship->primtype);
+          ship.primtype = MAX(GTYPE_LIGHT, dirship->primtype);
         else if (argv[3] == "medium")
-          ship.primtype = MAX(MEDIUM, dirship->primtype);
+          ship.primtype = MAX(GTYPE_MEDIUM, dirship->primtype);
         else if (argv[3] == "heavy")
-          ship.primtype = MAX(HEAVY, dirship->primtype);
+          ship.primtype = MAX(GTYPE_HEAVY, dirship->primtype);
         else {
           notify(Playernum, Governor, "No such caliber.\n");
           free(dirship);
@@ -163,7 +163,7 @@ void upgrade(const command_t &argv, const player_t Playernum,
     } else if (argv[1] == "secondary" &&
                Shipdata[dirship->build_type][ABIL_SECONDARY]) {
       if (argv[2] == "strength") {
-        if (ship.sectype == NONE) {
+        if (ship.sectype == GTYPE_NONE) {
           notify(Playernum, Governor, "No caliber defined.\n");
           free(dirship);
           return;
@@ -172,11 +172,11 @@ void upgrade(const command_t &argv, const player_t Playernum,
         ship.secondary = MAX(ship.secondary, dirship->secondary);
       } else if (argv[2] == "caliber") {
         if (argv[3] == "light")
-          ship.sectype = MAX(LIGHT, dirship->sectype);
+          ship.sectype = MAX(GTYPE_LIGHT, dirship->sectype);
         else if (argv[3] == "medium")
-          ship.sectype = MAX(MEDIUM, dirship->sectype);
+          ship.sectype = MAX(GTYPE_MEDIUM, dirship->sectype);
         else if (argv[3] == "heavy")
-          ship.sectype = MAX(HEAVY, dirship->sectype);
+          ship.sectype = MAX(GTYPE_HEAVY, dirship->sectype);
         else {
           notify(Playernum, Governor, "No such caliber.\n");
           free(dirship);
@@ -369,23 +369,23 @@ void make_mod(const command_t &argv, const player_t Playernum,
               (dirship->on ? "Online" : "Offline"), dirship->armor);
       notify(Playernum, Governor, buf);
       if (Shipdata[dirship->build_type][ABIL_PRIMARY] &&
-          dirship->primtype != NONE) {
+          dirship->primtype != GTYPE_NONE) {
         sprintf(buf, "%3lu%c", dirship->primary,
-                (dirship->primtype == LIGHT
+                (dirship->primtype == GTYPE_LIGHT
                      ? 'L'
-                     : dirship->primtype == MEDIUM
+                     : dirship->primtype == GTYPE_MEDIUM
                            ? 'M'
-                           : dirship->primtype == HEAVY ? 'H' : 'N'));
+                           : dirship->primtype == GTYPE_HEAVY ? 'H' : 'N'));
         notify(Playernum, Governor, buf);
       }
       if (Shipdata[dirship->build_type][ABIL_SECONDARY] &&
-          dirship->sectype != NONE) {
+          dirship->sectype != GTYPE_NONE) {
         sprintf(buf, "/%lu%c", dirship->secondary,
-                (dirship->sectype == LIGHT
+                (dirship->sectype == GTYPE_LIGHT
                      ? 'L'
-                     : dirship->sectype == MEDIUM
+                     : dirship->sectype == GTYPE_MEDIUM
                            ? 'M'
-                           : dirship->sectype == HEAVY ? 'H' : 'N'));
+                           : dirship->sectype == GTYPE_HEAVY ? 'H' : 'N'));
         notify(Playernum, Governor, buf);
       }
       notify(Playernum, Governor, "\n");
@@ -474,7 +474,7 @@ void make_mod(const command_t &argv, const player_t Playernum,
 
     dirship->build_type = i;
     dirship->armor = Shipdata[i][ABIL_ARMOR];
-    dirship->guns = NONE; /* this keeps track of the factory status! */
+    dirship->guns = GTYPE_NONE; /* this keeps track of the factory status! */
     dirship->primary = Shipdata[i][ABIL_GUNS];
     dirship->primtype = Shipdata[i][ABIL_PRIMARY];
     dirship->secondary = Shipdata[i][ABIL_GUNS];
@@ -566,11 +566,11 @@ void make_mod(const command_t &argv, const player_t Playernum,
           dirship->primary = atoi(argv[3].c_str());
         } else if (argv[2] == "caliber") {
           if (argv[3] == "light")
-            dirship->primtype = LIGHT;
+            dirship->primtype = GTYPE_LIGHT;
           else if (argv[3] == "medium")
-            dirship->primtype = MEDIUM;
+            dirship->primtype = GTYPE_MEDIUM;
           else if (argv[3] == "heavy")
-            dirship->primtype = HEAVY;
+            dirship->primtype = GTYPE_HEAVY;
           else {
             notify(Playernum, Governor, "No such caliber.\n");
             free(dirship);
@@ -589,11 +589,11 @@ void make_mod(const command_t &argv, const player_t Playernum,
           dirship->secondary = atoi(argv[3].c_str());
         } else if (argv[2] == "caliber") {
           if (argv[3] == "light")
-            dirship->sectype = LIGHT;
+            dirship->sectype = GTYPE_LIGHT;
           else if (argv[3] == "medium")
-            dirship->sectype = MEDIUM;
+            dirship->sectype = GTYPE_MEDIUM;
           else if (argv[3] == "heavy")
-            dirship->sectype = HEAVY;
+            dirship->sectype = GTYPE_HEAVY;
           else {
             notify(Playernum, Governor, "No such caliber.\n");
             free(dirship);
@@ -1581,7 +1581,7 @@ static void Getship(shiptype *s, int i, racetype *r) {
   bzero((char *)s, sizeof(shiptype));
   s->type = i;
   s->armor = Shipdata[i][ABIL_ARMOR];
-  s->guns = Shipdata[i][ABIL_PRIMARY] ? PRIMARY : NONE;
+  s->guns = Shipdata[i][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
   s->primary = Shipdata[i][ABIL_GUNS];
   s->primtype = Shipdata[i][ABIL_PRIMARY];
   s->secondary = Shipdata[i][ABIL_GUNS];
@@ -1615,7 +1615,7 @@ static void Getfactship(shiptype *s, shiptype *b) {
   s->primtype = b->primtype;
   s->secondary = b->secondary;
   s->sectype = b->sectype;
-  s->guns = s->primary ? PRIMARY : NONE;
+  s->guns = s->primary ? PRIMARY : GTYPE_NONE;
   s->max_crew = b->max_crew;
   s->max_resource = b->max_resource;
   s->max_hanger = b->max_hanger;

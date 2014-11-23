@@ -325,7 +325,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
           j = ship->primary;
         else if (ship->guns == SECONDARY && j > ship->secondary)
           j = ship->secondary;
-        else if (ship->guns == NONE)
+        else if (ship->guns == GTYPE_NONE)
           j = 0;
 
         ship->retaliate = j;
@@ -722,32 +722,34 @@ static void DispOrders(int Playernum, int Governor, shiptype *ship) {
 
   if (ship->guns == PRIMARY) {
     switch (ship->primtype) {
-      case LIGHT:
+      case GTYPE_LIGHT:
         sprintf(temp, "/lgt primary");
         break;
-      case MEDIUM:
+      case GTYPE_MEDIUM:
         sprintf(temp, "/med primary");
         break;
-      case HEAVY:
+      case GTYPE_HEAVY:
         sprintf(temp, "/hvy primary");
         break;
-      default:
+      case GTYPE_NONE:
         sprintf(temp, "/none");
+        break;
     }
     strcat(buf, temp);
   } else if (ship->guns == SECONDARY) {
     switch (ship->sectype) {
-      case LIGHT:
+      case GTYPE_LIGHT:
         sprintf(temp, "/lgt secondary");
         break;
-      case MEDIUM:
+      case GTYPE_MEDIUM:
         sprintf(temp, "/med secndry");
         break;
-      case HEAVY:
+      case GTYPE_HEAVY:
         sprintf(temp, "/hvy secndry");
         break;
-      default:
+      case GTYPE_NONE:
         sprintf(temp, "/none");
+        break;
     }
     strcat(buf, temp);
   }

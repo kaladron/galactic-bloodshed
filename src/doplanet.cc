@@ -557,7 +557,7 @@ if (!Stinfo[starnum][planetnum].inhab)
         s2->type = OTYPE_TOXWC;
 
         s2->armor = Shipdata[OTYPE_TOXWC][ABIL_ARMOR];
-        s2->guns = NONE;
+        s2->guns = GTYPE_NONE;
         s2->primary = Shipdata[OTYPE_TOXWC][ABIL_GUNS];
         s2->primtype = Shipdata[OTYPE_TOXWC][ABIL_PRIMARY];
         s2->secondary = Shipdata[OTYPE_TOXWC][ABIL_GUNS];

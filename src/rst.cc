@@ -294,19 +294,20 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
       } else {
         if (s->primtype)
           sprintf(tmpbuf1, "%2lu%s", s->primary,
-                  s->primtype == LIGHT ? "L" : s->primtype == MEDIUM
-                                                   ? "M"
-                                                   : s->primtype == HEAVY
-                                                         ? "H"
-                                                         : "N");
+                  s->primtype == GTYPE_LIGHT
+                      ? "L"
+                      : s->primtype == GTYPE_MEDIUM
+                            ? "M"
+                            : s->primtype == GTYPE_HEAVY ? "H" : "N");
         else
           strcpy(tmpbuf1, "---");
         if (s->sectype)
           sprintf(tmpbuf2, "%2lu%s", s->secondary,
-                  s->sectype == LIGHT ? "L" : s->sectype == MEDIUM
-                                                  ? "M"
-                                                  : s->sectype == HEAVY ? "H"
-                                                                        : "N");
+                  s->sectype == GTYPE_LIGHT
+                      ? "L"
+                      : s->sectype == GTYPE_MEDIUM
+                            ? "M"
+                            : s->sectype == GTYPE_HEAVY ? "H" : "N");
         else
           strcpy(tmpbuf2, "---");
         if (s->cew)
@@ -379,7 +380,7 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
                 p->info[Playernum - 1].guns, p->info[Playernum - 1].destruct,
                 p->info[Playernum - 1].fuel);
         notify(Playernum, Governor, buf);
-        caliber = MEDIUM;
+        caliber = GTYPE_MEDIUM;
       } else {
         where.level = s->whatorbits;
         where.snum = s->storbits;

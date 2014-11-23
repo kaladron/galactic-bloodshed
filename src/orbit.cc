@@ -43,8 +43,8 @@ static void DispShip(int, int, placetype *, shiptype *, planettype *, int,
  */
 void orbit(const command_t &argv, const player_t Playernum,
            const governor_t Governor) {
-  int sh, i, iq;
-  int DontDispNum = -1, flag;
+  int sh, iq;
+  int DontDispNum = -1;
   planettype *p;
   shiptype *s;
   placetype where;
@@ -54,9 +54,9 @@ void orbit(const command_t &argv, const player_t Playernum,
   DontDispPlanets = DontDispShips = DontDispStars = 0;
 
   /* find options, set flags accordingly */
-  for (flag = 1; flag <= argn - 1; flag++)
+  for (int flag = 1; flag <= argn - 1; flag++)
     if (*args[flag] == '-') {
-      for (i = 1; args[flag][i] != '\0'; i++) switch (args[flag][i]) {
+      for (int i = 1; args[flag][i] != '\0'; i++) switch (args[flag][i]) {
           case 's':
             DontDispShips = 1;
             break;
@@ -79,7 +79,7 @@ void orbit(const command_t &argv, const player_t Playernum,
 
   if (argn == 1) {
     where = Getplace(Playernum, Governor, ":", 0);
-    i = (Dir[Playernum - 1][Governor].level == LEVEL_UNIV);
+    int i = (Dir[Playernum - 1][Governor].level == LEVEL_UNIV);
     Lastx = Dir[Playernum - 1][Governor].lastx[i];
     Lasty = Dir[Playernum - 1][Governor].lasty[i];
     Zoom = Dir[Playernum - 1][Governor].zoom[i];
@@ -101,7 +101,7 @@ void orbit(const command_t &argv, const player_t Playernum,
 
   switch (where.level) {
     case LEVEL_UNIV:
-      for (i = 0; i < Sdata.numstars; i++)
+      for (starnum_t i = 0; i < Sdata.numstars; i++)
         if (DontDispNum != i) {
           DispStar(Playernum, Governor, LEVEL_UNIV, Stars[i], DontDispStars,
                    (int)Race->God, buf);
@@ -125,7 +125,7 @@ void orbit(const command_t &argv, const player_t Playernum,
                DontDispStars, (int)Race->God, buf);
       strcat(output, buf);
 
-      for (i = 0; i < Stars[where.snum]->numplanets; i++)
+      for (planetnum_t i = 0; i < Stars[where.snum]->numplanets; i++)
         if (DontDispNum != i) {
           getplanet(&p, (int)where.snum, i);
           DispPlanet(Playernum, Governor, LEVEL_STAR, p,

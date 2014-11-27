@@ -565,13 +565,7 @@ static descriptor_data *new_connection(int sock) {
     return 0;
   } else {
 #ifdef ACCESS_CHECK
-    if (address_ok(&addr)) {
-      fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n",
-              addrout(ntohl(addr.sin_addr.s_addr)), ntohs(addr.sin_port),
-              newsock);
-      make_nonblocking(newsock);
-      return new descriptor_data(newsock);
-    } else {
+    if (!address_ok(&addr)) {
       write(newsock, "Unauthorized Access.\n", 21);
       fprintf(stderr, "REJECT from %s(%d) on descriptor %d\n",
               addrout(ntohl(addr.sin_addr.s_addr)), ntohs(addr.sin_port),
@@ -581,13 +575,12 @@ static descriptor_data *new_connection(int sock) {
       errno = 0;
       return 0;
     }
-#else
+#endif
     fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n",
             addrout(ntohl(addr.sin_addr.s_addr)), ntohs(addr.sin_port),
             newsock);
     make_nonblocking(newsock);
     return new descriptor_data(newsock);
-#endif
   }
 }
 

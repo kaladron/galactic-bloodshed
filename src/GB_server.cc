@@ -179,7 +179,6 @@ void parse_connect(char *, char *, char *);
 int msec_diff(struct timeval, struct timeval);
 struct timeval msec_add(struct timeval, int);
 void save_command(descriptor_data *, char *);
-static descriptor_data *initializesock(int);
 
 static void check_connect(descriptor_data *, char *);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
@@ -415,7 +414,6 @@ static void shovechars(int port) __attribute__((no_sanitize_memory)) {
   struct timeval next_slice;
   struct timeval timeout, slice_timeout;
   int i;
-  descriptor_data *newd;
   int avail_descriptors;
 
   go_time = 0;
@@ -461,12 +459,15 @@ static void shovechars(int port) __attribute__((no_sanitize_memory)) {
       (void)time(&now);
 
       if (FD_ISSET(sock, &input_set)) {
+        descriptor_data *newd;
         if (!(newd = new_connection(sock))) {
           if (errno && errno != EINTR && errno != EMFILE) {
             perror("new_connection");
             return;
           }
         }
+        descriptor_list->push_back(newd);
+        welcome_user(newd);
       }
 
       for (auto d : *descriptor_list) {
@@ -568,7 +569,8 @@ static descriptor_data *new_connection(int sock) {
       fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n",
               addrout(ntohl(addr.sin_addr.s_addr)), ntohs(addr.sin_port),
               newsock);
-      return initializesock(newsock);
+      make_nonblocking(newsock);
+      return new descriptor_data(newsock);
     } else {
       write(newsock, "Unauthorized Access.\n", 21);
       fprintf(stderr, "REJECT from %s(%d) on descriptor %d\n",
@@ -583,7 +585,8 @@ static descriptor_data *new_connection(int sock) {
     fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n",
             addrout(ntohl(addr.sin_addr.s_addr)), ntohs(addr.sin_port),
             newsock);
-    return initializesock(newsock);
+    make_nonblocking(newsock);
+    return new descriptor_data(newsock);
 #endif
   }
 }
@@ -718,16 +721,6 @@ void shutdownsock(descriptor_data *d) {
   freeqs(d);
   descriptor_list->remove(d);
   delete d;
-}
-
-static descriptor_data *initializesock(int s) {
-  auto d = new descriptor_data(s);
-
-  make_nonblocking(s);
-  descriptor_list->push_back(d);
-
-  welcome_user(d);
-  return d;
 }
 
 static struct text_block *make_text_block(const char *s, int n) {

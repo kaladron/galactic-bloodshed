@@ -109,6 +109,19 @@ struct text_queue {
 
 class descriptor_data {
  public:
+  descriptor_data(int s)
+      : descriptor(s),
+        connected(0),
+        output_prefix(0),
+        output_suffix(0),
+        output_size(0),
+        raw_input(0),
+        raw_input_at(0),
+        last_time(0),
+        quota(COMMAND_BURST_SIZE) {
+    output.tail = &output.head;
+    input.tail = &input.head;
+  }
   int descriptor;
   int connected;
   int God;       /* deity status */
@@ -117,8 +130,8 @@ class descriptor_data {
   char *output_prefix;
   char *output_suffix;
   int output_size;
-  struct text_queue output;
-  struct text_queue input;
+  struct text_queue output = {};
+  struct text_queue input = {};
   char *raw_input;
   char *raw_input_at;
   long last_time;
@@ -708,22 +721,9 @@ void shutdownsock(descriptor_data *d) {
 }
 
 static descriptor_data *initializesock(int s) {
-  auto d = new descriptor_data();
+  auto d = new descriptor_data(s);
 
-  d->descriptor = s;
-  d->connected = 0;
   make_nonblocking(s);
-  d->output_prefix = 0;
-  d->output_suffix = 0;
-  d->output_size = 0;
-  d->output.head = 0;
-  d->output.tail = &d->output.head;
-  d->input.head = 0;
-  d->input.tail = &d->input.head;
-  d->raw_input = 0;
-  d->raw_input_at = 0;
-  d->quota = COMMAND_BURST_SIZE;
-  d->last_time = 0;
   descriptor_list->push_back(d);
 
   welcome_user(d);
@@ -986,8 +986,10 @@ int do_command(descriptor_data *d, char *comm) {
 
   argn = 0;
   /* Main processing loop. When command strings are sent from the client,
-     they are processed here. Responses are sent back to the client via notify.
-     The client will then process the strings in whatever manner is expected. */
+     they are processed here. Responses are sent back to the client via
+     notify.
+     The client will then process the strings in whatever manner is expected.
+     */
 
   /* check to see if there are a few words typed out, usually for the help
    * command */

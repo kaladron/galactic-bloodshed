@@ -139,7 +139,7 @@ static void process_command(int, int, const char *, const command_t &argv);
 static void shovechars(int);
 static char *strsave(char *);
 
-descriptor_data *new_connection(int);
+static descriptor_data *new_connection(int);
 char *addrout(long);
 void do_update(int);
 void do_segment(int, int);
@@ -158,7 +158,6 @@ int do_command(descriptor_data *, char *);
 void goodbye_user(descriptor_data *);
 void set_userstring(char **, char *);
 void dump_users(descriptor_data *);
-void check_connect(descriptor_data *, char *);
 void close_sockets(void);
 int process_input(descriptor_data *);
 void force_output(void);
@@ -167,8 +166,9 @@ void parse_connect(char *, char *, char *);
 int msec_diff(struct timeval, struct timeval);
 struct timeval msec_add(struct timeval, int);
 void save_command(descriptor_data *, char *);
-descriptor_data *initializesock(int);
+static descriptor_data *initializesock(int);
 
+static void check_connect(descriptor_data *, char *);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 #define MAX_COMMAND_LEN 512
@@ -540,7 +540,7 @@ struct timeval update_quotas(struct timeval last, struct timeval current) {
   return msec_add(last, nslices * COMMAND_TIME_MSEC);
 }
 
-descriptor_data *new_connection(int sock) {
+static descriptor_data *new_connection(int sock) {
   int newsock;
   struct sockaddr_in addr;
   socklen_t addr_len;
@@ -707,7 +707,7 @@ void shutdownsock(descriptor_data *d) {
   delete d;
 }
 
-descriptor_data *initializesock(int s) {
+static descriptor_data *initializesock(int s) {
   auto d = new descriptor_data();
 
   d->descriptor = s;
@@ -1041,7 +1041,7 @@ int do_command(descriptor_data *d, char *comm) {
   return 1;
 }
 
-void check_connect(descriptor_data *d, char *message) {
+static void check_connect(descriptor_data *d, char *message) {
   char race_password[MAX_COMMAND_LEN];
   char gov_password[MAX_COMMAND_LEN];
   int i, j;

@@ -470,6 +470,8 @@ static void shovechars(int port) __attribute__((no_sanitize_memory)) {
         welcome_user(newd);
       }
 
+      // TODO(jeffbailey): There's a use-after-free here if the connection is
+      // closed without typing anything or completing the connection.
       for (auto d : *descriptor_list) {
         if (FD_ISSET(d->descriptor, &input_set)) {
           /*      d->last_time = now; */

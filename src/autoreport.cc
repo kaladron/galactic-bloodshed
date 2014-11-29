@@ -19,7 +19,8 @@
 #include "tweakables.h"
 #include "vars.h"
 
-void autoreport(int Playernum, int Governor, int APcount) {
+void autoreport(const command_t &argv, const player_t Playernum,
+                const governor_t Governor) {
   planettype *p;
   placetype place;
   starnum_t snum;

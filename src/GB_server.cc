@@ -194,6 +194,7 @@ int main(int argc, char **argv) {
   // TODO(jeffbailey): bid, buy and sell should be only available if market is
   // set.
   commands = new std::unordered_map<std::string, CommandFunction>{
+      {"autoreport", autoreport},
       {"bid", bid},
       {"build", build},
       {"client_survey", survey},
@@ -1302,8 +1303,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     arm(Playernum, Governor, 0, 0);
   else if (match(args[0], "assault"))
     dock(Playernum, Governor, 1, 1);
-  else if (match(args[0], "autoreport"))
-    autoreport(Playernum, Governor, 0);
   else if (match(args[0], "bless") && God)
     bless(Playernum, Governor, 0);
   else if (match(args[0], "'") || match(args[0], "broadcast"))

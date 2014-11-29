@@ -122,7 +122,7 @@ int enroll_valid_race() {
 
 found_planet:
   printf(" found!\n");
-  Race = (racetype *)malloc(sizeof(racetype));
+  auto Race = new race;
   bzero(Race, sizeof(Race));
 
   Race->Playernum = Playernum;

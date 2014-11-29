@@ -25,11 +25,11 @@
 static double Lastx, Lasty, Zoom;
 static const int SCALE = 100;
 
-static void DispStar(int, int, int, startype *, int, int, char *);
+static void DispStar(int, int, int, startype *, int, int, racetype *, char *);
 static void DispPlanet(int, int, int, planettype *, char *, int, racetype *,
                        char *);
 static void DispShip(int, int, placetype *, shiptype *, planettype *, int,
-                     char *);
+                     racetype *, char *);
 
 /* OPTIONS
  *  -p : If this option is set, ``orbit'' will not display planet names.
@@ -97,14 +97,14 @@ void orbit(const command_t &argv, const player_t Playernum,
   /* orbit type of map */
   sprintf(output, "#");
 
-  Race = races[Playernum - 1];
+  auto Race = races[Playernum - 1];
 
   switch (where.level) {
     case LEVEL_UNIV:
       for (starnum_t i = 0; i < Sdata.numstars; i++)
         if (DontDispNum != i) {
           DispStar(Playernum, Governor, LEVEL_UNIV, Stars[i], DontDispStars,
-                   (int)Race->God, buf);
+                   (int)Race->God, Race, buf);
           strcat(output, buf);
         }
       if (!DontDispShips) {
@@ -112,7 +112,8 @@ void orbit(const command_t &argv, const player_t Playernum,
         while (sh) {
           (void)getship(&s, sh);
           if (DontDispNum != sh) {
-            DispShip(Playernum, Governor, &where, s, NULL, (int)Race->God, buf);
+            DispShip(Playernum, Governor, &where, s, NULL, (int)Race->God, Race,
+                     buf);
             strcat(output, buf);
           }
           sh = s->nextship;
@@ -122,7 +123,7 @@ void orbit(const command_t &argv, const player_t Playernum,
       break;
     case LEVEL_STAR:
       DispStar(Playernum, Governor, LEVEL_STAR, Stars[where.snum],
-               DontDispStars, (int)Race->God, buf);
+               DontDispStars, (int)Race->God, Race, buf);
       strcat(output, buf);
 
       for (planetnum_t i = 0; i < Stars[where.snum]->numplanets; i++)
@@ -156,7 +157,7 @@ void orbit(const command_t &argv, const player_t Playernum,
               !(s->owner != Playernum && s->type == STYPE_MINE)) {
             if ((s->owner == Playernum) || (iq == 1)) {
               DispShip(Playernum, Governor, &where, s, NULL, (int)Race->God,
-                       buf);
+                       Race, buf);
               strcat(output, buf);
             }
           }
@@ -192,7 +193,7 @@ void orbit(const command_t &argv, const player_t Playernum,
             if (!landed(s)) {
               if ((s->owner == Playernum) || (iq == 1)) {
                 DispShip(Playernum, Governor, &where, s, p, (int)Race->God,
-                         buf);
+                         Race, buf);
                 strcat(output, buf);
               }
             }
@@ -212,7 +213,7 @@ void orbit(const command_t &argv, const player_t Playernum,
 }
 
 static void DispStar(int Playernum, int Governor, int level, startype *star,
-                     int DontDispStars, int God, char *string) {
+                     int DontDispStars, int God, racetype *r, char *string) {
   int x = 0;  // TODO(jeffbailey): Inititalized x and y to 0.
   int y = 0;
   int stand;
@@ -229,7 +230,7 @@ static void DispStar(int Playernum, int Governor, int level, startype *star,
   /*if (star->nova_stage)
     DispArray(x, y, 11,7, Novae[star->nova_stage-1], fac); */
   if (y >= 0 && x >= 0) {
-    if (Race->governor[Governor].toggle.color) {
+    if (r->governor[Governor].toggle.color) {
       stand = (isset(star->explored, Playernum) ? Playernum : 0) + '?';
       sprintf(temp, "%c %d %d 0 * ", (char)stand, x, y);
       strcat(string, temp);
@@ -291,7 +292,8 @@ static void DispPlanet(int Playernum, int Governor, int level, planettype *p,
 }
 
 static void DispShip(int Playernum, int Governor, placetype *where,
-                     shiptype *ship, planettype *pl, int God, char *string) {
+                     shiptype *ship, planettype *pl, int God, racetype *r,
+                     char *string) {
   int x, y, wm;
   int stand;
   shiptype *aship;
@@ -389,12 +391,12 @@ static void DispShip(int Playernum, int Governor, placetype *where,
 
       /* (magnification) */
       if (x >= 0 && y >= 0) {
-        if (Race->governor[Governor].toggle.color) {
+        if (r->governor[Governor].toggle.color) {
           sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'),
                   x, y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
                   ship->number);
         } else {
-          stand = (ship->owner == Race->governor[Governor].toggle.highlight);
+          stand = (ship->owner == r->governor[Governor].toggle.highlight);
           sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
                   Shipltrs[ship->type], stand, ship->number);
         }
@@ -410,12 +412,12 @@ static void DispShip(int Playernum, int Governor, placetype *where,
       wm = 0;
       if (ship->whatorbits != LEVEL_UNIV || ((ship->owner == Playernum) || God))
         if (x >= 0 && y >= 0) {
-          if (Race->governor[Governor].toggle.color) {
+          if (r->governor[Governor].toggle.color) {
             sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'),
                     x, y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
                     ship->number);
           } else {
-            stand = (ship->owner == Race->governor[Governor].toggle.highlight);
+            stand = (ship->owner == r->governor[Governor].toggle.highlight);
             sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
                     Shipltrs[ship->type], stand, ship->number);
           }

@@ -70,7 +70,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
                        // client interface.  Can remove the conditional as soon
                        // as we know that it's not client affecting.
 
-  Race = races[Playernum - 1];
+  auto Race = races[Playernum - 1];
   auto smap = getsmap(*p);
   if (!Race->governor[Governor].toggle.geography) {
     /* traverse ship list on planet; find out if we can look at

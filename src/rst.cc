@@ -97,8 +97,6 @@ void rst(const command_t &argv, const player_t Playernum,
                                    (n_ships + Sdata.numstars * MAXPLANETS));
   /* (one list entry for each ship, planet in universe) */
 
-  Race = races[Playernum - 1];
-
   if (argn == 3) {
     if (isdigit(args[2][0]))
       who = atoi(args[2]);
@@ -362,6 +360,8 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
               Dispshiploc_brief(s), locstrn);
       notify(Playernum, Governor, buf);
     }
+
+    auto Race = races[Playernum - 1];
 
     if (Tactical) {
       int fev = 0, fspeed = 0, defense, fdam = 0;

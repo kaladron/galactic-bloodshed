@@ -83,7 +83,6 @@ static long last_update_time;
 static long last_segment_time;
 static int nupdates_done; /* number of updates so far */
 
-static int port; /* port selection */
 static char start_buf[128];
 static char update_buf[128];
 static char segment_buf[128];
@@ -227,6 +226,7 @@ int main(int argc, char **argv) {
   printf("      The update  password is '%s'.\n", UPDATE_PASSWORD);
   printf("      The segment password is '%s'.\n", SEGMENT_PASSWORD);
 #endif
+  int port;
   switch (argc) {
     case 2:
       port = atoi(argv[1]);

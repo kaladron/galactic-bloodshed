@@ -178,7 +178,6 @@ void help_user(descriptor_data *);
 void parse_connect(char *, char *, char *);
 int msec_diff(struct timeval, struct timeval);
 struct timeval msec_add(struct timeval, int);
-void save_command(descriptor_data *, char *);
 
 static void check_connect(descriptor_data *, char *);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
@@ -895,10 +894,6 @@ static char *strsave(char *s) {
   return p;
 }
 
-void save_command(descriptor_data *d, char *command) {
-  add_to_queue(&d->input, command, strlen(command) + 1);
-}
-
 int process_input(descriptor_data *d) {
   int got;
   char *p, *pend, *q, *qend;
@@ -914,7 +909,7 @@ int process_input(descriptor_data *d) {
   for (q = buf, qend = buf + got; q < qend; q++) {
     if (*q == '\n') {
       *p = '\0';
-      if (p > d->raw_input) save_command(d, d->raw_input);
+      if (p > d->raw_input) queue_string(d, d->raw_input);
       p = d->raw_input;
     } else if (p < pend && isascii(*q) && isprint(*q)) {
       *p++ = *q;

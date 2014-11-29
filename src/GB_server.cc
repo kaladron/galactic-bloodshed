@@ -1872,13 +1872,6 @@ void notify_star(int a, int g, int b, int star, char *message) {
     }
 }
 
-void post_star(char *message, int star, int news) {
-  int i;
-
-  for (i = 1; i <= Num_races; i++)
-    if (isset(Stars[star]->inhabited, i)) push_telegram_race(i, message);
-}
-
 void adjust_morale(racetype *winner, racetype *loser, int amount) {
   winner->morale += amount;
   loser->morale -= amount;

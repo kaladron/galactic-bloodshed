@@ -36,7 +36,6 @@ void warn_race(int, char *);
 void warn(int, int, char *);
 void warn_star(int, int, int, char *);
 void notify_star(int, int, int, int, char *);
-void post_star(char *, int, int);
 void adjust_morale(racetype *, racetype *, int);
 
 typedef uint32_t segments_t;

@@ -150,34 +150,32 @@ static struct text_block *make_text_block(const char *, int);
 static void help(descriptor_data *);
 static void process_command(int, int, const char *, const command_t &argv);
 static void shovechars(int);
-static char *strsave(char *);
 
 static descriptor_data *new_connection(int);
-char *addrout(long);
-void do_update(int);
-void do_segment(int, int);
-int make_socket(int);
-void clearstrings(descriptor_data *);
-void shutdownsock(descriptor_data *);
-void freeqs(descriptor_data *);
-void make_nonblocking(int);
-struct timeval update_quotas(struct timeval, struct timeval);
-int process_output(descriptor_data *);
-void welcome_user(descriptor_data *);
-int flush_queue(struct text_queue *, int);
-void free_text_block(struct text_block *);
-void process_commands(void);
-int do_command(descriptor_data *, char *);
-void goodbye_user(descriptor_data *);
-void set_userstring(char **, char *);
-void dump_users(descriptor_data *);
-void close_sockets(void);
-int process_input(descriptor_data *);
-void force_output(void);
-void help_user(descriptor_data *);
-void parse_connect(char *, char *, char *);
-int msec_diff(struct timeval, struct timeval);
-struct timeval msec_add(struct timeval, int);
+static char *addrout(long);
+static void do_update(int);
+static void do_segment(int, int);
+static int make_socket(int);
+static void clearstrings(descriptor_data *);
+static void shutdownsock(descriptor_data *);
+static void freeqs(descriptor_data *);
+static void make_nonblocking(int);
+static struct timeval update_quotas(struct timeval, struct timeval);
+static int process_output(descriptor_data *);
+static void welcome_user(descriptor_data *);
+static int flush_queue(struct text_queue *, int);
+static void free_text_block(struct text_block *);
+static void process_commands(void);
+static int do_command(descriptor_data *, char *);
+static void goodbye_user(descriptor_data *);
+static void dump_users(descriptor_data *);
+static void close_sockets(void);
+static int process_input(descriptor_data *);
+static void force_output(void);
+static void help_user(descriptor_data *);
+static void parse_connect(char *, char *, char *);
+static int msec_diff(struct timeval, struct timeval);
+static struct timeval msec_add(struct timeval, int);
 
 static void check_connect(descriptor_data *, char *);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
@@ -391,12 +389,12 @@ static struct timeval timeval_sub(struct timeval now, struct timeval then) {
   return now;
 }
 
-int msec_diff(struct timeval now, struct timeval then) {
+static int msec_diff(struct timeval now, struct timeval then) {
   return ((now.tv_sec - then.tv_sec) * 1000 +
           (now.tv_usec - then.tv_usec) / 1000);
 }
 
-struct timeval msec_add(struct timeval t, int x) {
+static struct timeval msec_add(struct timeval t, int x) {
   t.tv_sec += x / 1000;
   t.tv_usec += (x % 1000) * 1000;
   if (t.tv_usec >= 1000000) {
@@ -509,7 +507,7 @@ void do_next_thing(void) {
     do_update(0);
 }
 
-int make_socket(int port) {
+static int make_socket(int port) {
   int s;
   struct sockaddr_in server;
   int opt;
@@ -541,7 +539,8 @@ int make_socket(int port) {
   return s;
 }
 
-struct timeval update_quotas(struct timeval last, struct timeval current) {
+static struct timeval update_quotas(struct timeval last,
+                                    struct timeval current) {
   int nslices;
 
   nslices = msec_diff(current, last) / COMMAND_TIME_MSEC;
@@ -683,7 +682,7 @@ void add_address(unsigned long ina, int aval) {
 }
 #endif
 
-char *addrout(long a) {
+static char *addrout(long a) {
   static char outbuf[1024];
 
   sprintf(outbuf, "%ld.%ld.%ld.%ld", (a >> 24) & 0xff, (a >> 16) & 0xff,
@@ -691,7 +690,7 @@ char *addrout(long a) {
   return outbuf;
 }
 
-void clearstrings(descriptor_data *d) {
+static void clearstrings(descriptor_data *d) {
   if (d->output_prefix) {
     free(d->output_prefix);
     d->output_prefix = 0;
@@ -702,7 +701,7 @@ void clearstrings(descriptor_data *d) {
   }
 }
 
-void shutdownsock(descriptor_data *d) {
+static void shutdownsock(descriptor_data *d) {
   if (d->connected) {
     fprintf(stderr, "DISCONNECT %d Race=%d Governor=%d\n", d->descriptor,
             d->Playernum, d->Governor);
@@ -729,7 +728,7 @@ static struct text_block *make_text_block(const char *s, int n) {
   return p;
 }
 
-void free_text_block(struct text_block *t) {
+static void free_text_block(struct text_block *t) {
   free(t->buf);
   free((char *)t);
 }
@@ -745,7 +744,7 @@ static void add_to_queue(struct text_queue *q, const char *b, int n) {
   q->tail = &p->nxt;
 }
 
-int flush_queue(struct text_queue *q, int n) {
+static int flush_queue(struct text_queue *q, int n) {
   struct text_block *p;
   int really_flushed = 0;
 
@@ -778,7 +777,7 @@ static void queue_string(descriptor_data *d, const char *s) {
   queue_write(d, s, strlen(s));
 }
 
-int process_output(descriptor_data *d) {
+static int process_output(descriptor_data *d) {
   struct text_block **qp, *cur;
   int cnt;
 
@@ -803,19 +802,19 @@ int process_output(descriptor_data *d) {
   return 1;
 }
 
-void force_output(void) {
+static void force_output(void) {
   for (auto d : *descriptor_list)
     if (d->connected) (void)process_output(d);
 }
 
-void make_nonblocking(int s) {
+static void make_nonblocking(int s) {
   if (fcntl(s, F_SETFL, O_NDELAY) == -1) {
     perror("make_nonblocking: fcntl");
     exit(0);
   }
 }
 
-void freeqs(descriptor_data *d) {
+static void freeqs(descriptor_data *d) {
   struct text_block *cur, *next;
 
   cur = d->output.head;
@@ -841,7 +840,7 @@ void freeqs(descriptor_data *d) {
   d->raw_input_at = 0;
 }
 
-void welcome_user(descriptor_data *d) {
+static void welcome_user(descriptor_data *d) {
   FILE *f;
   char *p;
 
@@ -862,7 +861,7 @@ void welcome_user(descriptor_data *d) {
   }
 }
 
-void help_user(descriptor_data *d) {
+static void help_user(descriptor_data *d) {
   FILE *f;
   char *p;
 
@@ -880,21 +879,12 @@ void help_user(descriptor_data *d) {
   }
 }
 
-void goodbye_user(descriptor_data *d) {
+static void goodbye_user(descriptor_data *d) {
   if (d->connected) /* this can happen, especially after updates */
     write(d->descriptor, LEAVE_MESSAGE, strlen(LEAVE_MESSAGE));
 }
 
-static char *strsave(char *s) {
-  char *p;
-
-  p = (char *)malloc((strlen(s) + 1) * sizeof(char));
-
-  if (p) strcpy(p, s);
-  return p;
-}
-
-int process_input(descriptor_data *d) {
+static int process_input(descriptor_data *d) {
   int got;
   char *p, *pend, *q, *qend;
 
@@ -925,16 +915,7 @@ int process_input(descriptor_data *d) {
   return 1;
 }
 
-void set_userstring(char **userstring, char *comm) {
-  if (*userstring) {
-    free(*userstring);
-    *userstring = 0;
-  }
-  while (*comm && isascii(*comm) && isspace(*comm)) comm++;
-  if (*comm) *userstring = strsave(comm);
-}
-
-void process_commands(void) {
+static void process_commands(void) {
   int nprocessed;
   long now;
   struct text_block *t;
@@ -963,7 +944,7 @@ void process_commands(void) {
   } while (nprocessed > 0);
 }
 
-int do_command(descriptor_data *d, char *comm) {
+static int do_command(descriptor_data *d, char *comm) {
   char *string;
   int parse_exit = 0, i;
 
@@ -1100,7 +1081,7 @@ static void check_connect(descriptor_data *d, char *message) {
   }
 }
 
-void do_update(int override) {
+static void do_update(int override) {
   int i;
   FILE *sfile;
   struct stat stbuf;
@@ -1171,7 +1152,7 @@ void do_update(int override) {
   }
 }
 
-void do_segment(int override, int segment) {
+static void do_segment(int override, int segment) {
   int i;
   FILE *sfile;
   struct stat stbuf;
@@ -1223,7 +1204,7 @@ void do_segment(int override, int segment) {
   }
 }
 
-void parse_connect(char *message, char *race_pass, char *gov_pass) {
+static void parse_connect(char *message, char *race_pass, char *gov_pass) {
   char *p;
   char *q;
   /* race password */
@@ -1238,7 +1219,7 @@ void parse_connect(char *message, char *race_pass, char *gov_pass) {
   *q = '\0';
 }
 
-void close_sockets(void) {
+static void close_sockets(void) {
   /* post message into news file */
   post(shutdown_message, ANNOUNCE);
 
@@ -1250,7 +1231,7 @@ void close_sockets(void) {
   close(sock);
 }
 
-void dump_users(descriptor_data *e) {
+static void dump_users(descriptor_data *e) {
   long now;
   racetype *r;
   int God = 0;

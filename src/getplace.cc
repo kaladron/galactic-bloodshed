@@ -257,7 +257,7 @@ int testship(int Playernum, int Governor, shiptype *s) {
   r = 0;
 
   if (!s->alive) {
-    sprintf(buf, "%s has been destroyed.\n", Ship(s));
+    sprintf(buf, "%s has been destroyed.\n", Ship(*s).c_str());
     notify(Playernum, Governor, buf);
     r = 1;
   } else if (s->owner != Playernum || !authorized(Governor, s)) {
@@ -265,7 +265,8 @@ int testship(int Playernum, int Governor, shiptype *s) {
     r = 1;
   } else {
     if (!s->active) {
-      sprintf(buf, "%s is irradiated %d%% and inactive.\n", Ship(s), s->rad);
+      sprintf(buf, "%s is irradiated %d%% and inactive.\n", Ship(*s).c_str(),
+              s->rad);
       notify(Playernum, Governor, buf);
       r = 1;
     }

@@ -6,6 +6,7 @@
 
 #include "shlmisc.h"
 
+#include <boost/format.hpp>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -26,11 +27,11 @@
 
 static void do_revoke(racetype *, int, int);
 
-char *Ship(shiptype *s) {
-  adr = !adr; /* switch between 0 and 1 - adr is a global variable */
-  sprintf(junk[adr], "%c%lu %s [%d]", Shipltrs[s->type], s->number, s->name,
-          s->owner);
-  return junk[adr]; /* junk is a global buffer */
+// TODO(jeffbailey): Move this into the ship class when we stop using bzero to
+// initalize it.
+std::string Ship(const ship &s) {
+  return str(boost::format("%c%lu %s [%d]") % Shipltrs[s.type] % s.number %
+             s.name % s.owner);
 }
 
 void grant(int Playernum, int Governor, int APcount) {
@@ -71,11 +72,11 @@ void grant(int Playernum, int Governor, int APcount) {
           authorized(Governor, ship)) {
         ship->governor = gov;
         sprintf(buf, "\"%s\" granted you %s at %s\n",
-                Race->governor[Governor].name, Ship(ship),
+                Race->governor[Governor].name, Ship(*ship).c_str(),
                 prin_ship_orbits(ship));
         warn(Playernum, gov, buf);
         putship(ship);
-        sprintf(buf, "%s granted to \"%s\"\n", Ship(ship),
+        sprintf(buf, "%s granted to \"%s\"\n", Ship(*ship).c_str(),
                 Race->governor[gov].name);
         notify(Playernum, Governor, buf);
         free(ship);
@@ -427,11 +428,11 @@ void fix(int Playernum, int Governor) {
     } else if (match(args[2], "alive")) {
       s->alive = 1;
       s->damage = 0;
-      sprintf(buf, "%s resurrected\n", Ship(s));
+      sprintf(buf, "%s resurrected\n", Ship(*s).c_str());
     } else if (match(args[2], "dead")) {
       s->alive = 0;
       s->damage = 100;
-      sprintf(buf, "%s destroyed\n", Ship(s));
+      sprintf(buf, "%s destroyed\n", Ship(*s).c_str());
     } else {
       notify(Playernum, Governor, "No such option for 'fix ship'.\n");
       free(s);

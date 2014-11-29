@@ -313,8 +313,6 @@ extern unsigned long tot_captured, prod_mob;
 extern unsigned long avg_mob[MAXPLAYERS];
 extern unsigned char sects_gained[MAXPLAYERS], sects_lost[MAXPLAYERS];
 extern unsigned char Claims;
-extern unsigned char adr;
-extern char junk[2][256];
 
 extern planettype *planets[NUMSTARS][MAXPLANETS];
 extern unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];

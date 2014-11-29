@@ -582,7 +582,7 @@ void give(int Playernum, int Governor, int APcount) {
   }
   notify(Playernum, Governor, "Owner changed.\n");
   sprintf(buf, "%s [%d] gave you %s at %s.\n", Race->name, Playernum,
-          Ship(ship), prin_ship_orbits(ship));
+          Ship(*ship).c_str(), prin_ship_orbits(ship));
   warn(who, 0, buf);
 
   if (!Race->God) {

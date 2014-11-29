@@ -10,7 +10,7 @@
 #include "races.h"
 #include "ships.h"
 
-char *Ship(shiptype *s);
+std::string Ship(const ship &);
 void grant(int, int, int);
 void governors(int, int, int);
 int authorized(int, shiptype *);

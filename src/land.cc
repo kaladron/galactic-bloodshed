@@ -57,7 +57,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
     if (in_list(Playernum, args[1], s, &nextshipno) &&
         authorized(Governor, s)) {
       if (overloaded(s)) {
-        sprintf(buf, "%s is too overloaded to land.\n", Ship(s));
+        sprintf(buf, "%s is too overloaded to land.\n", Ship(*s).c_str());
         notify(Playernum, Governor, buf);
         free(s);
         continue;
@@ -95,7 +95,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
         }
         if (landed(s)) {
           if (!landed(s2)) {
-            sprintf(buf, "%s is not landed on a planet.\n", Ship(s2));
+            sprintf(buf, "%s is not landed on a planet.\n", Ship(*s2).c_str());
             notify(Playernum, Governor, buf);
             free(s);
             free(s2);
@@ -123,7 +123,8 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
             continue;
           }
           if (s->on) {
-            sprintf(buf, "%s must be turned off before loading.\n", Ship(s));
+            sprintf(buf, "%s must be turned off before loading.\n",
+                    Ship(*s).c_str());
             notify(Playernum, Governor, buf);
             free(s);
             free(s2);
@@ -150,14 +151,14 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
           s2->mass += s->mass;
           s2->hanger += Size(s);
           fuel = 0.0;
-          sprintf(buf, "%s loaded onto %s using %.1f fuel.\n", Ship(s),
-                  Ship(s2), fuel);
+          sprintf(buf, "%s loaded onto %s using %.1f fuel.\n", Ship(*s).c_str(),
+                  Ship(*s2).c_str(), fuel);
           notify(Playernum, Governor, buf);
           s->docked = 1;
           putship(s2);
           free(s2);
         } else if (s->docked) {
-          sprintf(buf, "%s is already docked or landed.\n", Ship(s));
+          sprintf(buf, "%s is already docked or landed.\n", Ship(*s).c_str());
           notify(Playernum, Governor, buf);
           free(s);
           free(s2);
@@ -175,8 +176,8 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
           /* check to see if close enough to land */
           Dist = sqrt((double)Distsq(s2->xpos, s2->ypos, s->xpos, s->ypos));
           if (Dist > DIST_TO_DOCK) {
-            sprintf(buf, "%s must be %.2f or closer to %s.\n", Ship(s),
-                    DIST_TO_DOCK, Ship(s2));
+            sprintf(buf, "%s must be %.2f or closer to %s.\n", Ship(*s).c_str(),
+                    DIST_TO_DOCK, Ship(*s2).c_str());
             notify(Playernum, Governor, buf);
             free(s);
             free(s2);
@@ -222,8 +223,8 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
           /* increase mass of mothership */
           s2->mass += s->mass;
           s2->hanger += Size(s);
-          sprintf(buf, "%s landed on %s using %.1f fuel.\n", Ship(s), Ship(s2),
-                  fuel);
+          sprintf(buf, "%s landed on %s using %.1f fuel.\n", Ship(*s).c_str(),
+                  Ship(*s2).c_str(), fuel);
           notify(Playernum, Governor, buf);
           s->docked = 1;
           putship(s2);
@@ -231,14 +232,14 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
         }
       } else { /* attempting to land on a planet */
         if (s->docked) {
-          sprintf(buf, "%s is docked.\n", Ship(s));
+          sprintf(buf, "%s is docked.\n", Ship(*s).c_str());
           notify(Playernum, Governor, buf);
           free(s);
           continue;
         }
         sscanf(args[2], "%d,%d", &x, &y);
         if (s->whatorbits != LEVEL_PLAN) {
-          sprintf(buf, "%s doesn't orbit a planet.\n", Ship(s));
+          sprintf(buf, "%s doesn't orbit a planet.\n", Ship(*s).c_str());
           notify(Playernum, Governor, buf);
           free(s);
           continue;
@@ -283,7 +284,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
 
         if (Dist > DIST_TO_LAND) {
           sprintf(buf, "%s must be %.3g or closer to the planet (%.2f).\n",
-                  Ship(s), DIST_TO_LAND, Dist);
+                  Ship(*s).c_str(), DIST_TO_LAND, Dist);
           notify(Playernum, Governor, buf);
           free(s);
           free(p);
@@ -338,7 +339,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
           sprintf(
               buf,
               "BOOM!! %s crashes on sector %d,%d with blast radius of %d.\n",
-              Ship(s), x, y, numdest);
+              Ship(*s).c_str(), x, y, numdest);
           for (i = 1; i <= Num_races; i++)
             if (p->info[i - 1].numsectsowned || i == Playernum)
               warn(i, (int)Stars[s->storbits]->governor[i - 1], buf);
@@ -392,13 +393,14 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
 
         /* send messages to anyone there */
         sprintf(buf, "%s observed landing on sector %d,%d,planet /%s/%s.\n",
-                Ship(s), s->land_x, s->land_y, Stars[s->storbits]->name,
+                Ship(*s).c_str(), s->land_x, s->land_y,
+                Stars[s->storbits]->name,
                 Stars[s->storbits]->pnames[s->pnumorbits]);
         for (i = 1; i <= Num_races; i++)
           if (p->info[i - 1].numsectsowned && i != Playernum)
             notify(i, (int)Stars[s->storbits]->governor[i - 1], buf);
 
-        sprintf(buf, "%s landed on planet.\n", Ship(s));
+        sprintf(buf, "%s landed on planet.\n", Ship(*s).c_str());
         notify(Playernum, Governor, buf);
 
         free(p);

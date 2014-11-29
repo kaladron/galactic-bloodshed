@@ -1413,13 +1413,13 @@ static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
     sprintf(buf, " now %d%%.\n", planet->conditions[TOXIC]);
     notify(Playernum, Governor, buf);
   }
-  sprintf(buf, "%s built at a cost of %d resources.\n", Ship(newship),
+  sprintf(buf, "%s built at a cost of %d resources.\n", Ship(*newship).c_str(),
           newship->build_cost);
   notify(Playernum, Governor, buf);
   sprintf(buf, "Technology %.1f.\n", newship->tech);
   notify(Playernum, Governor, buf);
-  sprintf(buf, "%s is on sector %d,%d.\n", Ship(newship), newship->land_x,
-          newship->land_y);
+  sprintf(buf, "%s is on sector %d,%d.\n", Ship(*newship).c_str(),
+          newship->land_x, newship->land_y);
   notify(Playernum, Governor, buf);
 }
 
@@ -1478,7 +1478,7 @@ static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
                : "Standard"));
   builder->resource -= newship->build_cost;
 
-  sprintf(buf, "%s built at a cost of %d resources.\n", Ship(newship),
+  sprintf(buf, "%s built at a cost of %d resources.\n", Ship(*newship).c_str(),
           newship->build_cost);
   notify(Playernum, Governor, buf);
   sprintf(buf, "Technology %.1f.\n", newship->tech);

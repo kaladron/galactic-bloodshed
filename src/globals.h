@@ -77,8 +77,6 @@ unsigned long tot_captured, prod_mob;
 unsigned long avg_mob[MAXPLAYERS];
 unsigned char sects_gained[MAXPLAYERS], sects_lost[MAXPLAYERS];
 unsigned char Claims;
-unsigned char adr;
-char junk[2][256];
 
 planettype *planets[NUMSTARS][MAXPLANETS];
 unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];

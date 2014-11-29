@@ -61,7 +61,7 @@ void scrap(int Playernum, int Governor, int APcount) {
       if (!s->docked) {
         sprintf(buf,
                 "%s is not landed or docked.\nNo resources can be reclaimed.\n",
-                Ship(s));
+                Ship(*s).c_str());
         notify(Playernum, Governor, buf);
       }
       if (s->whatorbits == LEVEL_PLAN) {
@@ -87,7 +87,7 @@ void scrap(int Playernum, int Governor, int APcount) {
       scrapval = Cost(s) / 2 + s->resource;
 
       if (s->docked) {
-        sprintf(buf, "%s: original cost: %ld\n", Ship(s), Cost(s));
+        sprintf(buf, "%s: original cost: %ld\n", Ship(*s).c_str(), Cost(s));
         notify(Playernum, Governor, buf);
         sprintf(buf, "         scrap value%s: %d rp's.\n",
                 s->resource ? "(with stockpile) " : "", scrapval);

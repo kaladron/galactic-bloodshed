@@ -46,14 +46,14 @@ void launch(int Playernum, int Governor, int APcount) {
       }
 
       if (!(s->docked || s->whatorbits == LEVEL_SHIP)) {
-        sprintf(buf, "%s is not landed or docked.\n", Ship(s));
+        sprintf(buf, "%s is not landed or docked.\n", Ship(*s).c_str());
         notify(Playernum, Governor, buf);
         free(s);
         continue;
       }
       if (!landed(s)) APcount = 0;
       if (landed(s) && s->resource > Max_resource(s)) {
-        sprintf(buf, "%s is too overloaded to launch.\n", Ship(s));
+        sprintf(buf, "%s is too overloaded to launch.\n", Ship(*s).c_str());
         notify(Playernum, Governor, buf);
         free(s);
         continue;
@@ -94,7 +94,8 @@ void launch(int Playernum, int Governor, int APcount) {
           putship(s2);
         } else if (s2->whatorbits == LEVEL_PLAN) {
           remove_sh_ship(s, s2);
-          sprintf(buf, "%s launched from %s.\n", Ship(s), Ship(s2));
+          sprintf(buf, "%s launched from %s.\n", Ship(*s).c_str(),
+                  Ship(*s2).c_str());
           notify(Playernum, Governor, buf);
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
@@ -115,7 +116,8 @@ void launch(int Playernum, int Governor, int APcount) {
           putship(s2);
         } else if (s2->whatorbits == LEVEL_STAR) {
           remove_sh_ship(s, s2);
-          sprintf(buf, "%s launched from %s.\n", Ship(s), Ship(s2));
+          sprintf(buf, "%s launched from %s.\n", Ship(*s).c_str(),
+                  Ship(*s2).c_str());
           notify(Playernum, Governor, buf);
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
@@ -133,7 +135,8 @@ void launch(int Playernum, int Governor, int APcount) {
           putship(s2);
         } else if (s2->whatorbits == LEVEL_UNIV) {
           remove_sh_ship(s, s2);
-          sprintf(buf, "%s launched from %s.\n", Ship(s), Ship(s2));
+          sprintf(buf, "%s launched from %s.\n", Ship(*s).c_str(),
+                  Ship(*s2).c_str());
           notify(Playernum, Governor, buf);
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
@@ -180,7 +183,8 @@ void launch(int Playernum, int Governor, int APcount) {
         s2->docked = 0;
         s2->whatdest = LEVEL_UNIV;
         s2->destshipno = 0;
-        sprintf(buf, "%s undocked from %s.\n", Ship(s), Ship(s2));
+        sprintf(buf, "%s undocked from %s.\n", Ship(*s).c_str(),
+                Ship(*s2).c_str());
         notify(Playernum, Governor, buf);
         putship(s);
         putship(s2);
@@ -210,7 +214,8 @@ void launch(int Playernum, int Governor, int APcount) {
         /* subtract fuel from ship */
         fuel = gravity(p) * s->mass * LAUNCH_GRAV_MASS_FACTOR;
         if (s->fuel < fuel) {
-          sprintf(buf, "%s does not have enough fuel! (%.1f)\n", Ship(s), fuel);
+          sprintf(buf, "%s does not have enough fuel! (%.1f)\n",
+                  Ship(*s).c_str(), fuel);
           notify(Playernum, Governor, buf);
           free(p);
           free(s);
@@ -235,15 +240,15 @@ void launch(int Playernum, int Governor, int APcount) {
           p->explored = 1;
           putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
         }
-        sprintf(buf, "%s observed launching from planet /%s/%s.\n", Ship(s),
-                Stars[s->storbits]->name,
+        sprintf(buf, "%s observed launching from planet /%s/%s.\n",
+                Ship(*s).c_str(), Stars[s->storbits]->name,
                 Stars[s->storbits]->pnames[s->pnumorbits]);
         for (player_t i = 1; i <= Num_races; i++)
           if (p->info[i - 1].numsectsowned && i != Playernum)
             notify(i, (int)Stars[s->storbits]->governor[i - 1], buf);
         free(p);
 
-        sprintf(buf, "%s launched from planet,", Ship(s));
+        sprintf(buf, "%s launched from planet,", Ship(*s).c_str());
         notify(Playernum, Governor, buf);
         sprintf(buf, " using %.1f fuel.\n", fuel);
         notify(Playernum, Governor, buf);

@@ -45,7 +45,7 @@ void enslave(const command_t &argv, const player_t Playernum,
     return;
   }
   if (s->whatorbits != LEVEL_PLAN) {
-    sprintf(buf, "%s doesn't orbit a planet.\n", Ship(s));
+    sprintf(buf, "%s doesn't orbit a planet.\n", Ship(*s).c_str());
     notify(Playernum, Governor, buf);
     free(s);
     return;
@@ -119,7 +119,7 @@ void enslave(const command_t &argv, const player_t Playernum,
     putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
 
     /* send telegs to anyone there */
-    sprintf(buf, "ENSLAVED by %s!!\n", Ship(s));
+    sprintf(buf, "ENSLAVED by %s!!\n", Ship(*s).c_str());
     strcat(telegram_buf, buf);
     sprintf(buf, "All material produced here will be\ndiverted to %s coffers.",
             Race->name);
@@ -140,7 +140,7 @@ void enslave(const command_t &argv, const player_t Playernum,
     sprintf(buf, "enslaved population will revolt.\n");
     notify(Playernum, Governor, buf);
   } else {
-    sprintf(buf, "repulsed attempt at enslavement by %s!!\n", Ship(s));
+    sprintf(buf, "repulsed attempt at enslavement by %s!!\n", Ship(*s).c_str());
     strcat(telegram_buf, buf);
     sprintf(buf, "Enslavement repulsed, defense/attack Ratio : %d to %d.\n",
             def, attack);

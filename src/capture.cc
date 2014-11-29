@@ -238,8 +238,8 @@ void capture(int Playernum, int Governor, int APcount) {
                : (isset(alien->atwar, Playernum) ? " your enemy" : " neutral")),
           Playernum, Race->name);
       strcat(telegram_buf, buf);
-      sprintf(buf, "%s at sector %d,%d [owner %d] !\n", Ship(ship), x, y,
-              sect.owner);
+      sprintf(buf, "%s at sector %d,%d [owner %d] !\n", Ship(*ship).c_str(), x,
+              y, sect.owner);
       strcat(telegram_buf, buf);
 
       if (booby) {
@@ -262,11 +262,11 @@ void capture(int Playernum, int Governor, int APcount) {
         sprintf(buf, "              Their ship DESTROYED!!!\n");
         notify(Playernum, Governor, buf);
         sprintf(short_buf, "%s: %s [%d] DESTROYED %s\n", Dispshiploc(ship),
-                Race->name, Playernum, Ship(&s));
+                Race->name, Playernum, Ship(s).c_str());
       }
 
       if (ship->owner == Playernum) {
-        sprintf(buf, "%s CAPTURED!\n", Ship(&s));
+        sprintf(buf, "%s CAPTURED!\n", Ship(s).c_str());
         notify(oldowner, oldgov, buf);
         sprintf(buf, "VICTORY! The ship is yours!\n");
         notify(Playernum, Governor, buf);
@@ -277,14 +277,14 @@ void capture(int Playernum, int Governor, int APcount) {
         notify(Playernum, Governor, buf);
         capture_stuff(ship);
         sprintf(short_buf, "%s: %s [%d] CAPTURED %s\n", Dispshiploc(ship),
-                Race->name, Playernum, Ship(&s));
+                Race->name, Playernum, Ship(s).c_str());
       } else if (ship->popn + ship->troops) {
         sprintf(buf, "You fought them off!\n");
         notify(oldowner, oldgov, buf);
         sprintf(buf, "The boarding was repulsed; try again.\n");
         notify(Playernum, Governor, buf);
         sprintf(short_buf, "%s: %s [%d] assaults %s\n", Dispshiploc(ship),
-                Race->name, Playernum, Ship(&s));
+                Race->name, Playernum, Ship(s).c_str());
       }
       if (ship->alive) {
         if (sect.popn + sect.troops + boarders) {
@@ -341,7 +341,7 @@ void capture_stuff(shiptype *ship) {
         ship->owner; /* make sure he gets all of the ships landed on it */
     s->governor = ship->governor;
     putship(s);
-    sprintf(buf, "%s CAPTURED!\n", Ship(s));
+    sprintf(buf, "%s CAPTURED!\n", Ship(*s).c_str());
     notify((int)s->owner, (int)s->governor, buf);
     sh = s->nextship;
     free(s);

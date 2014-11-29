@@ -158,19 +158,19 @@ class planet {
 
 class sector {
  public:
-  sector(int eff, int fert, int mobilization, int crystals, int resource,
-         int popn, int troops, int owner, int race, int type, int condition)
-      : eff(eff),
-        fert(fert),
-        mobilization(mobilization),
-        crystals(crystals),
-        resource(resource),
-        popn(popn),
-        troops(troops),
-        owner(owner),
-        race(race),
-        type(type),
-        condition(condition) {}
+  sector(int eff_, int fert_, int mobilization_, int crystals_, int resource_,
+         int popn_, int troops_, int owner_, int race_, int type_, int condition_)
+      : eff(eff_),
+        fert(fert_),
+        mobilization(mobilization_),
+        crystals(crystals_),
+        resource(resource_),
+        popn(popn_),
+        troops(troops_),
+        owner(owner_),
+        race(race_),
+        type(type_),
+        condition(condition_) {}
   sector()
       : eff(0),
         fert(0),

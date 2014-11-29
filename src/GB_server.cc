@@ -135,7 +135,6 @@ class descriptor_data {
   int quota;
 };
 
-static int sock;
 static int ndescriptors = 0;
 
 static double GetComplexity(int);
@@ -146,7 +145,7 @@ static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
 static void help(descriptor_data *);
 static void process_command(int, int, const char *, const command_t &argv);
-static void shovechars(int);
+static int shovechars(int);
 
 static descriptor_data *new_connection(int);
 static char *addrout(long);
@@ -166,7 +165,7 @@ static void process_commands(void);
 static int do_command(descriptor_data *, char *);
 static void goodbye_user(descriptor_data *);
 static void dump_users(descriptor_data *);
-static void close_sockets(void);
+static void close_sockets(int);
 static int process_input(descriptor_data *);
 static void force_output(void);
 static void help_user(descriptor_data *);
@@ -307,8 +306,8 @@ int main(int argc, char **argv) {
   Putblock(Blocks);
   compute_power_blocks();
   set_signals();
-  shovechars(port);
-  close_sockets();
+  int sock = shovechars(port);
+  close_sockets(sock);
   close_data_files();
   printf("Going down.\n");
   return (0);
@@ -404,7 +403,7 @@ static struct timeval msec_add(struct timeval t, int x) {
   return t;
 }
 
-static void shovechars(int port) __attribute__((no_sanitize_memory)) {
+static int shovechars(int port) __attribute__((no_sanitize_memory)) {
   fd_set input_set, output_set;
   long now, go_time;
   struct timeval last_slice, current_time;
@@ -414,7 +413,7 @@ static void shovechars(int port) __attribute__((no_sanitize_memory)) {
   int avail_descriptors;
 
   go_time = 0;
-  sock = make_socket(port);
+  int sock = make_socket(port);
   gettimeofday(&last_slice, (struct timezone *)0);
 
   avail_descriptors = getdtablesize() - 4;
@@ -449,7 +448,7 @@ static void shovechars(int port) __attribute__((no_sanitize_memory)) {
     if (select(FD_SETSIZE, &input_set, &output_set, NULL, &timeout) < 0) {
       if (errno != EINTR) {
         perror("select");
-        return;
+        return sock;
       }
       (void)time(&now);
     } else {
@@ -460,7 +459,7 @@ static void shovechars(int port) __attribute__((no_sanitize_memory)) {
         if (!(newd = new_connection(sock))) {
           if (errno && errno != EINTR && errno != EMFILE) {
             perror("new_connection");
-            return;
+            return sock;
           }
         }
         descriptor_list->push_back(newd);
@@ -497,6 +496,7 @@ static void shovechars(int port) __attribute__((no_sanitize_memory)) {
       go_time = 0;
     }
   }
+  return sock;
 }
 
 void do_next_thing(void) {
@@ -1223,7 +1223,7 @@ static void parse_connect(char *message, char *race_pass, char *gov_pass) {
   *q = '\0';
 }
 
-static void close_sockets(void) {
+static void close_sockets(int sock) {
   /* post message into news file */
   post(shutdown_message, ANNOUNCE);
 

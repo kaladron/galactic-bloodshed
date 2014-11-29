@@ -58,8 +58,6 @@ typedef std::vector<std::string> command_t;
 #define NOERRNO 0
 typedef char hugestr[HUGESTRLEN];
 
-long random();
-
 typedef class planet planettype;
 typedef struct star startype;
 typedef struct commod commodtype;

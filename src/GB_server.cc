@@ -93,8 +93,6 @@ static const char *flushed_message = "<Output Flushed>\n";
 static const char *shutdown_message = "Shutdown ordered by deity - Bye\n";
 static const char *already_on = "Connection refused.\n";
 
-int sig_null();
-
 struct text_block {
   int nchars;
   struct text_block *nxt;

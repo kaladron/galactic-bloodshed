@@ -13,14 +13,6 @@
 #define DISCONNECT_TIME 7200 /* maximum idle time */
 #define MAX_OUTPUT 32768     /* don't change this */
 
-/* don't change these */
-#define QUIT_COMMAND "quit"
-#define WHO_COMMAND "who"
-#define HELP_COMMAND "help"
-#define EMULATE_COMMAND                                 \
-  "emulate" /* allows deity to emulate another player - \
-              invaluable for debugging */
-
 #define WELCOME_FILE "welcome.txt"
 #define HELP_FILE DOCDIR "help.txt"
 #define LEAVE_MESSAGE "\n*** Thank you for playing Galactic Bloodshed ***\n"

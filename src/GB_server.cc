@@ -975,16 +975,16 @@ static int do_command(descriptor_data *d, const char *comm) {
   }
   for (i = argn; i < MAXARGS; i++) args[i][0] = '\0';
 
-  if (!strcmp(args[0], "quit")) {
+  if (argv[0] == "quit") {
     goodbye_user(d);
     return 0;
-  } else if (d->connected && !strcmp(args[0], "who")) {
+  } else if (d->connected && argv[0] == "who") {
     dump_users(d);
-  } else if (!strcmp(args[0], "help")) {
+  } else if (argv[0] == "help") {
     help(d);
-  } else if (d->connected && d->God && !strcmp(args[0], "emulate")) {
-    d->Playernum = atoi(args[1]);
-    d->Governor = atoi(args[2]);
+  } else if (d->connected && d->God && argv[0] == "emulate") {
+    d->Playernum = std::stoi(argv[1]);
+    d->Governor = std::stoi(argv[2]);
     sprintf(buf, "Emulating %s \"%s\" [%d,%d]\n", races[d->Playernum - 1]->name,
             races[d->Playernum - 1]->governor[d->Governor].name, d->Playernum,
             d->Governor);

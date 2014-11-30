@@ -162,19 +162,19 @@ static void welcome_user(descriptor_data *);
 static int flush_queue(struct text_queue *, int);
 static void free_text_block(struct text_block *);
 static void process_commands(void);
-static int do_command(descriptor_data *, char *);
+static int do_command(descriptor_data *, const char *);
 static void goodbye_user(descriptor_data *);
 static void dump_users(descriptor_data *);
 static void close_sockets(int);
 static int process_input(descriptor_data *);
 static void force_output(void);
 static void help_user(descriptor_data *);
-static void parse_connect(char *, char *, char *);
+static void parse_connect(const char *, char *, char *);
 static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
 static void save_command(descriptor_data *, char *);
 
-static void check_connect(descriptor_data *, char *);
+static void check_connect(descriptor_data *, const char *);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 #define MAX_COMMAND_LEN 512
@@ -948,8 +948,8 @@ static void process_commands(void) {
   } while (nprocessed > 0);
 }
 
-static int do_command(descriptor_data *d, char *comm) {
-  char *string;
+static int do_command(descriptor_data *d, const char *comm) {
+  const char *string;
   int parse_exit = 0, i;
 
   argn = 0;
@@ -1011,7 +1011,7 @@ static int do_command(descriptor_data *d, char *comm) {
   return 1;
 }
 
-static void check_connect(descriptor_data *d, char *message) {
+static void check_connect(descriptor_data *d, const char *message) {
   char race_password[MAX_COMMAND_LEN];
   char gov_password[MAX_COMMAND_LEN];
   int i, j;
@@ -1208,7 +1208,7 @@ static void do_segment(int override, int segment) {
   }
 }
 
-static void parse_connect(char *message, char *race_pass, char *gov_pass) {
+static void parse_connect(const char *message, char *race_pass, char *gov_pass) {
   char *p;
   char *q;
   /* race password */

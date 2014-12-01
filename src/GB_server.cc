@@ -1003,8 +1003,8 @@ static int do_command(descriptor_data *d, const char *comm) {
         check_for_telegrams(d->Playernum, d->Governor);
         /* set the scope to home upon login */
         argn = 1;
-        strcpy(args[0], "cs");
-        process_command(d->Playernum, d->Governor, "cs", argv);
+        command_t call_cs = {"cs"};
+        process_command(d->Playernum, d->Governor, "cs", call_cs);
       }
     }
   }
@@ -1208,7 +1208,8 @@ static void do_segment(int override, int segment) {
   }
 }
 
-static void parse_connect(const char *message, char *race_pass, char *gov_pass) {
+static void parse_connect(const char *message, char *race_pass,
+                          char *gov_pass) {
   char *p;
   char *q;
   /* race password */

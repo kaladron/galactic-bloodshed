@@ -173,6 +173,7 @@ static void parse_connect(const char *, char *, char *);
 static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
 static void save_command(descriptor_data *, char *);
+static void do_prompt(player_t, governor_t);
 
 static void check_connect(descriptor_data *, const char *);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
@@ -1880,4 +1881,103 @@ void adjust_morale(racetype *winner, racetype *loser, int amount) {
   winner->morale += amount;
   loser->morale -= amount;
   winner->points[loser->Playernum] += amount;
+}
+
+static void do_prompt(player_t Playernum, governor_t Governor) {
+  shiptype *s, *s2;
+
+  if (Dir[Playernum - 1][Governor].level == LEVEL_UNIV) {
+    sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] / )\n",
+            Sdata.AP[Playernum - 1]);
+  } else if (Dir[Playernum - 1][Governor].level == LEVEL_STAR) {
+    sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s )\n",
+            Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
+            Stars[Dir[Playernum - 1][Governor].snum]->name);
+  } else if (Dir[Playernum - 1][Governor].level == LEVEL_PLAN) {
+    sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/%s )\n",
+            Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
+            Stars[Dir[Playernum - 1][Governor].snum]->name,
+            Stars[Dir[Playernum - 1][Governor].snum]
+                ->pnames[Dir[Playernum - 1][Governor].pnum]);
+  } else if (Dir[Playernum - 1][Governor].level == LEVEL_SHIP) {
+    (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
+    switch (s->whatorbits) {
+      case LEVEL_UNIV:
+        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /#%ld )\n",
+                Sdata.AP[Playernum - 1], Dir[Playernum - 1][Governor].shipno);
+        break;
+      case LEVEL_STAR:
+        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/#%ld )\n",
+                Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
+                Dir[Playernum - 1][Governor].shipno);
+        break;
+      case LEVEL_PLAN:
+        sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/%s/#%ld )\n",
+                Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
+                Stars[s->storbits]->pnames[Dir[Playernum - 1][Governor].pnum],
+                Dir[Playernum - 1][Governor].shipno);
+        break;
+      /* I put this mess in because of non-functioning prompts when you
+         are in a ship within a ship, or deeper. I am certain this can be
+         done more elegantly (a lot more) but I don't feel like trying
+         that right now. right now I want it to function. Maarten */
+      case LEVEL_SHIP:
+        (void)getship(&s2, (int)s->destshipno);
+        switch (s2->whatorbits) {
+          case LEVEL_UNIV:
+            sprintf(Dir[Playernum - 1][Governor].prompt,
+                    " ( [%d] /#%lu/#%lu )\n", Sdata.AP[Playernum - 1],
+                    s->destshipno, Dir[Playernum - 1][Governor].shipno);
+            break;
+          case LEVEL_STAR:
+            sprintf(Dir[Playernum - 1][Governor].prompt,
+                    " ( [%d] /%s/#%lu/#%lu )\n",
+                    Stars[s->storbits]->AP[Playernum - 1],
+                    Stars[s->storbits]->name, s->destshipno,
+                    Dir[Playernum - 1][Governor].shipno);
+            break;
+          case LEVEL_PLAN:
+            sprintf(
+                Dir[Playernum - 1][Governor].prompt,
+                " ( [%d] /%s/%s/#%ld/#%ld )\n",
+                Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
+                Stars[s->storbits]->pnames[Dir[Playernum - 1][Governor].pnum],
+                s->destshipno, Dir[Playernum - 1][Governor].shipno);
+            break;
+          case LEVEL_SHIP:
+            while (s2->whatorbits == LEVEL_SHIP) {
+              free(s2);
+              (void)getship(&s2, (int)s2->destshipno);
+            }
+            switch (s2->whatorbits) {
+              case LEVEL_UNIV:
+                sprintf(Dir[Playernum - 1][Governor].prompt,
+                        " ( [%d] / /../#%ld/#%ld )\n", Sdata.AP[Playernum - 1],
+                        s->destshipno, Dir[Playernum - 1][Governor].shipno);
+                break;
+              case LEVEL_STAR:
+                sprintf(Dir[Playernum - 1][Governor].prompt,
+                        " ( [%d] /%s/ /../#%ld/#%ld )\n",
+                        Stars[s->storbits]->AP[Playernum - 1],
+                        Stars[s->storbits]->name, s->destshipno,
+                        Dir[Playernum - 1][Governor].shipno);
+                break;
+              case LEVEL_PLAN:
+                sprintf(Dir[Playernum - 1][Governor].prompt,
+                        " ( [%d] /%s/%s/ /../#%ld/#%ld )\n",
+                        Stars[s->storbits]->AP[Playernum - 1],
+                        Stars[s->storbits]->name,
+                        Stars[s->storbits]
+                            ->pnames[Dir[Playernum - 1][Governor].pnum],
+                        s->destshipno, Dir[Playernum - 1][Governor].shipno);
+                break;
+              default:
+                break;
+            }
+            free(s2);
+            break;
+        }
+    }
+    free(s);
+  }
 }

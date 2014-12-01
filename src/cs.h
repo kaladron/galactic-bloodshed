@@ -5,8 +5,14 @@
 #ifndef CS_H
 #define CS_H
 
-void center(int, int, int);
+#include "races.h"
+#include "ships.h"
+#include "vars.h"
+
+void center(const command_t &argv, const player_t Playernum,
+            const governor_t Governor);
 void do_prompt(int, int);
-void cs(int, int, int);
+void cs(const command_t &argv, const player_t Playernum,
+        const governor_t Governor);
 
 #endif  // CS_H

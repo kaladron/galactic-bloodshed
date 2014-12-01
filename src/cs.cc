@@ -15,10 +15,9 @@
 #include "ships.h"
 #include "vars.h"
 
-void center(int Playernum, int Governor, int APcount) {
-  placetype where;
-
-  where = Getplace(Playernum, Governor, args[1], 1);
+void center(const command_t &argv, const player_t Playernum,
+            const governor_t Governor) {
+  placetype where = Getplace(Playernum, Governor, argv[1], 1);
 
   if (where.err) {
     sprintf(buf, "cs: bad scope.\n");
@@ -131,15 +130,14 @@ void do_prompt(int Playernum, int Governor) {
   }
 }
 
-void cs(int Playernum, int Governor, int APcount) {
+void cs(const command_t &argv, const player_t Playernum,
+        const governor_t Governor) {
   placetype where;
   planettype *planet;
   shiptype *s;
-  racetype *Race;
+  racetype *Race = races[Playernum - 1];
 
-  Race = races[Playernum - 1];
-
-  if (argn == 1) {
+  if (argv.size() == 1) {
     /* chdir to def scope */
     Dir[Playernum - 1][Governor].level = Race->governor[Governor].deflevel;
     if ((Dir[Playernum - 1][Governor].snum =
@@ -158,7 +156,7 @@ void cs(int Playernum, int Governor, int APcount) {
     Dir[Playernum - 1][Governor].lasty[1] =
         Stars[Dir[Playernum - 1][Governor].snum]->ypos;
     return;
-  } else if (argn == 2) {
+  } else if (argv.size() == 2) {
     /* chdir to specified scope */
 
     where = Getplace(Playernum, Governor, args[1], 0);
@@ -253,9 +251,9 @@ void cs(int Playernum, int Governor, int APcount) {
     Dir[Playernum - 1][Governor].snum = where.snum;
     Dir[Playernum - 1][Governor].pnum = where.pnum;
     Dir[Playernum - 1][Governor].shipno = where.shipno;
-  } else if (argn == 3 && args[1][1] == 'd') {
+  } else if (argv.size() == 3 && argv[1][1] == 'd') {
     /* make new def scope */
-    where = Getplace(Playernum, Governor, args[2], 0);
+    where = Getplace(Playernum, Governor, argv[2], 0);
 
     if (!where.err && where.level != LEVEL_SHIP) {
       Race->governor[Governor].deflevel = where.level;

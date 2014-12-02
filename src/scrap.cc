@@ -74,8 +74,10 @@ void scrap(int Playernum, int Governor, int APcount) {
           free(s);
           continue;
         }
+        // TODO(jeffbailey): Changed from !s->whatorbits, which didn't make any
+        // sense.
         if (!(s2->docked && s2->destshipno == s->number) &&
-            !s->whatorbits == LEVEL_SHIP) {
+            s->whatorbits != LEVEL_SHIP) {
           sprintf(buf, "Warning, other ship not docked..\n");
           notify(Playernum, Governor, buf);
           free(s);

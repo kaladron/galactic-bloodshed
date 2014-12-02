@@ -22,7 +22,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   add_definitions(-Wno-float-equal)
   add_definitions(-Wno-shadow)
   add_definitions(-Wno-unused-parameter)
-  add_definitions(-Wno-tautological-constant-out-of-range-compare) 
 
   add_definitions(-Wno-sign-compare)
 

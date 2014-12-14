@@ -51,8 +51,8 @@ void autoreport(const command_t &argv, const player_t Playernum,
       sprintf(buf, "Scope must be a planet.\n");
       notify(Playernum, Governor, buf);
     }
-  } else if (argn > 1) { /* argn==2, place specified */
-    place = Getplace(Playernum, Governor, args[1], 0);
+  } else if (argv.size() > 1) { /* argn==2, place specified */
+    place = Getplace(Playernum, Governor, argv[1], 0);
     if (place.level == LEVEL_PLAN) {
       getplanet(&p, snum, pnum);
       sprintf(buf, "Autoreport on %s has been %s.\n", Stars[snum]->pnames[pnum],

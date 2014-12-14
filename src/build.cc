@@ -31,8 +31,8 @@
 
 static void autoload_at_planet(int, shiptype *, planettype *, sector &, int *,
                                double *);
-static void autoload_at_ship(int, shiptype *, shiptype *, int *, double *);
-static int build_at_ship(int, int, racetype *, shiptype *, int *, int *);
+static void autoload_at_ship(shiptype *, shiptype *, int *, double *);
+static int build_at_ship(int, int, shiptype *, int *, int *);
 static int can_build_at_planet(int, int, startype *, planettype *);
 static int can_build_this(int, racetype *, char *);
 static int can_build_on_ship(int, racetype *, shiptype *, char *);
@@ -40,8 +40,8 @@ static int can_build_on_sector(int, racetype *, planettype *, const sector &,
                                int, int, char *);
 static void create_ship_by_planet(int, int, racetype *, shiptype *,
                                   planettype *, int, int, int, int);
-static void create_ship_by_ship(int, int, racetype *, int, startype *,
-                                planettype *, shiptype *, shiptype *);
+static void create_ship_by_ship(int, int, racetype *, int, planettype *,
+                                shiptype *, shiptype *);
 static int get_build_type(const char *);
 static int getcount(int, const char *);
 static void Getfactship(shiptype *, shiptype *);
@@ -918,8 +918,8 @@ void build(const command_t &argv, const player_t Playernum,
         if (!count) { /* initialize loop variables */
           (void)getship(&builder, Dir[Playernum - 1][Governor].shipno);
           outside = 0;
-          if ((build_level = build_at_ship(Playernum, Governor, Race, builder,
-                                           &snum, &pnum)) < 0) {
+          if ((build_level = build_at_ship(Playernum, Governor, builder, &snum,
+                                           &pnum)) < 0) {
             notify(Playernum, Governor, "You can't build here.\n");
             free(builder);
             return;
@@ -1040,13 +1040,11 @@ void build(const command_t &argv, const player_t Playernum,
               notify(Playernum, Governor, buf);
               goto finish;
             }
-            create_ship_by_ship(Playernum, Governor, Race, 1,
-                                Stars[builder->storbits], planet, &newship,
+            create_ship_by_ship(Playernum, Governor, Race, 1, planet, &newship,
                                 builder);
             if (Race->governor[Governor].toggle.autoload &&
                 what != OTYPE_TRANSDEV && !Race->God)
-              autoload_at_ship(Playernum, &newship, builder, &load_crew,
-                               &load_fuel);
+              autoload_at_ship(&newship, builder, &load_crew, &load_fuel);
             else {
               load_crew = 0;
               load_fuel = 0.0;
@@ -1062,12 +1060,11 @@ void build(const command_t &argv, const player_t Playernum,
               notify(Playernum, Governor, buf);
               goto finish;
             }
-            create_ship_by_ship(Playernum, Governor, Race, 0, NULL, NULL,
-                                &newship, builder);
+            create_ship_by_ship(Playernum, Governor, Race, 0, NULL, &newship,
+                                builder);
             if (Race->governor[Governor].toggle.autoload &&
                 what != OTYPE_TRANSDEV && !Race->God)
-              autoload_at_ship(Playernum, &newship, builder, &load_crew,
-                               &load_fuel);
+              autoload_at_ship(&newship, builder, &load_crew, &load_fuel);
             else {
               load_crew = 0;
               load_fuel = 0.0;
@@ -1237,8 +1234,8 @@ static int can_build_on_sector(int what, racetype *Race, planettype *planet,
   return (1);
 }
 
-static int build_at_ship(int Playernum, int Governor, racetype *Race,
-                         shiptype *builder, int *snum, int *pnum) {
+static int build_at_ship(int Playernum, int Governor, shiptype *builder,
+                         int *snum, int *pnum) {
   if (testship(Playernum, Governor, builder)) return (-1);
   if (!Shipdata[builder->type][ABIL_CONSTRUCT]) {
     notify(Playernum, Governor, "This ship cannot construct other ships.\n");
@@ -1278,7 +1275,7 @@ static void autoload_at_planet(int Playernum, shiptype *s, planettype *planet,
   planet->info[Playernum - 1].fuel -= (int)(*fuel);
 }
 
-static void autoload_at_ship(int Playernum, shiptype *s, shiptype *b, int *crew,
+static void autoload_at_ship(shiptype *s, shiptype *b, int *crew,
                              double *fuel) {
   *crew = MIN(s->max_crew, b->popn);
   *fuel = MIN((double)s->max_fuel, (double)b->fuel);
@@ -1424,7 +1421,7 @@ static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
 }
 
 static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
-                                int outside, startype *star, planettype *planet,
+                                int outside, planettype *planet,
                                 shiptype *newship, shiptype *builder) {
   int shipno;
 

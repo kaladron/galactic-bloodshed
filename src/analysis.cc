@@ -29,12 +29,13 @@ static void do_analysis(int, int, int, int, int, starnum_t, planetnum_t);
 static void Insert(int, struct anal_sect[], int, int, int, int);
 static void PrintTop(int, int, struct anal_sect[], const char *);
 
-void analysis(int Playernum, int Governor, int APcount) {
+void analysis(const command_t &argv, const player_t Playernum,
+              const governor_t Governor) {
   int sector_type = -1; /* -1 does analysis on all types */
   placetype where;      /* otherwise on specific type */
   int i;
   int do_player = -1;
-  char *p;
+  const char *p;
   int mode = 1; /* does top five. 0 does low five */
 
   i = 1;
@@ -43,7 +44,7 @@ void analysis(int Playernum, int Governor, int APcount) {
     where.snum = Dir[Playernum - 1][Governor].snum;
     where.pnum = Dir[Playernum - 1][Governor].pnum;
 
-    p = args[1];
+    p = argv[1].c_str();
     if (*p == '-') /*  Must use 'd' to do an analysis on */
     {              /*  desert sectors to avoid confusion */
       p++;         /*  with the '-' for the mode type    */
@@ -83,7 +84,7 @@ void analysis(int Playernum, int Governor, int APcount) {
       i++;
     }
 
-    p = args[i];
+    p = argv[i].c_str();
     if (isdigit(*p)) {
       do_player = atoi(p);
       if (do_player > Num_races) {
@@ -95,9 +96,9 @@ void analysis(int Playernum, int Governor, int APcount) {
       where.pnum = Dir[Playernum - 1][Governor].pnum;
       i++;
     }
-    p = args[i];
-    if (i < argn && (isalpha(*p) || *p == '/')) {
-      where = Getplace(Playernum, Governor, args[i], 0);
+    p = argv[i].c_str();
+    if (i < argv.size() && (isalpha(*p) || *p == '/')) {
+      where = Getplace(Playernum, Governor, argv[i], 0);
       if (where.err) continue;
     }
 

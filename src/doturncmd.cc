@@ -43,7 +43,6 @@ static void output_ground_attacks(void);
 static int planet_points(planettype *);
 
 void do_turn(int update) {
-  int star, i, j;
   commodtype *c;
   unsigned long dummy[2];
   int temp;
@@ -132,7 +131,7 @@ void do_turn(int update) {
     /* reset market */
     Num_commods = Numcommods();
     clr_commodfree();
-    for (i = Num_commods; i >= 1; i--) {
+    for (commodnum_t i = Num_commods; i >= 1; i--) {
       getcommod(&c, i);
       if (!c->deliver) {
         c->deliver = 1;
@@ -169,13 +168,13 @@ void do_turn(int update) {
             break;
         }
         sprintf(buf,
-                "Lot %d purchased from %s [%d] at a cost of %ld.\n   %ld "
+                "Lot %lu purchased from %s [%d] at a cost of %ld.\n   %ld "
                 "%s arrived at /%s/%s\n",
                 i, races[c->owner - 1]->name, c->owner, c->bid, c->amount,
                 Commod[c->type], Stars[c->star_to]->name,
                 Stars[c->star_to]->pnames[c->planet_to]);
         push_telegram((int)c->bidder, (int)c->bidder_gov, buf);
-        sprintf(buf, "Lot %d (%lu %s) sold to %s [%d] at a cost of %ld.\n", i,
+        sprintf(buf, "Lot %lu (%lu %s) sold to %s [%d] at a cost of %ld.\n", i,
                 c->amount, Commod[c->type], races[c->bidder - 1]->name,
                 c->bidder, c->bid);
         push_telegram((int)c->owner, (int)c->governor, buf);
@@ -235,13 +234,14 @@ void do_turn(int update) {
   }
   /* clear ship list for insertion */
   Sdata.ships = 0;
-  for (star = 0; star < Sdata.numstars; star++) {
+  for (starnum_t star = 0; star < Sdata.numstars; star++) {
     Stars[star]->ships = 0;
-    for (i = 0; i < Stars[star]->numplanets; i++) planets[star][i]->ships = 0;
+    for (planetnum_t i = 0; i < Stars[star]->numplanets; i++)
+      planets[star][i]->ships = 0;
   }
 
   /* insert ship into the list of wherever it might be */
-  for (i = Num_ships; i >= 1; i--) {
+  for (shipnum_t i = Num_ships; i >= 1; i--) {
     if (ships[i]->alive) {
       switch (ships[i]->whatorbits) {
         case LEVEL_UNIV:
@@ -302,7 +302,7 @@ void do_turn(int update) {
     }
     /* do AP's for ea. player  */
     if (update)
-      for (i = 1; i <= Num_races; i++) {
+      for (player_t i = 1; i <= Num_races; i++) {
         if (starpopns[star][i - 1])
           setbit(Stars[star]->inhabited, i);
         else
@@ -333,7 +333,7 @@ void do_turn(int update) {
 
   /* add APs to sdata for ea. player */
   if (update)
-    for (i = 1; i <= Num_races; i++) {
+    for (player_t i = 1; i <= Num_races; i++) {
       Blocks[i - 1].systems_owned = 0; /*recount systems owned*/
       if (governed(races[i - 1])) {
         int APs;
@@ -352,7 +352,7 @@ void do_turn(int update) {
   if (update) {
     victory =
         (struct victstruct *)malloc(Num_races * sizeof(struct victstruct));
-    for (i = 1; i <= Num_races; i++) {
+    for (player_t i = 1; i <= Num_races; i++) {
       victory[i - 1].numsects = 0;
       victory[i - 1].shipcost = 0;
       victory[i - 1].shiptech = 0;
@@ -361,15 +361,15 @@ void do_turn(int update) {
       victory[i - 1].des = 0;
       victory[i - 1].fuel = 0;
       victory[i - 1].money = races[i - 1]->governor[0].money;
-      for (j = 1; j <= MAXGOVERNORS; j++)
+      for (governor_t j = 1; j <= MAXGOVERNORS; j++)
         if (races[i - 1]->governor[j].active)
           victory[i - 1].money += races[i - 1]->governor[j].money;
     }
 
-    for (star = 0; star < Sdata.numstars; star++) {
+    for (starnum_t star = 0; star < Sdata.numstars; star++) {
       /* do planets in the star next */
-      for (i = 0; i < Stars[star]->numplanets; i++) {
-        for (j = 0; j < Num_races; j++) {
+      for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
+        for (player_t j = 0; j < Num_races; j++) {
           if (!planets[star][i]->info[j].explored) continue;
           victory[j].numsects += (int)planets[star][i]->info[j].numsectsowned;
           victory[j].res += (int)planets[star][i]->info[j].resource;
@@ -389,7 +389,7 @@ void do_turn(int update) {
     }
     /* now that we have the info.. calculate the raw score */
 
-    for (i = 0; i < Num_races; i++) {
+    for (player_t i = 0; i < Num_races; i++) {
       races[i]->victory_score =
           (VICT_SECT * (int)victory[i].numsects) +
           (VICT_SHIP * ((int)victory[i].shipcost +
@@ -410,7 +410,7 @@ void do_turn(int update) {
   }
 
   if (update) {
-    for (i = 1; i <= Num_races; i++) {
+    for (player_t i = 1; i <= Num_races; i++) {
       /* collective intelligence */
       if (races[i - 1]->collective_iq) {
         double x = ((2. / 3.14159265) *
@@ -429,25 +429,26 @@ void do_turn(int update) {
 
       if (races[i - 1]->controlled_planets >=
           Planet_count * VICTORY_PERCENT / 200)
-        for (j = 1; j <= Num_races; j++) races[j - 1]->translate[i - 1] = 100;
+        for (player_t j = 1; j <= Num_races; j++)
+          races[j - 1]->translate[i - 1] = 100;
 
       Blocks[i - 1].VPs = 10 * Blocks[i - 1].systems_owned;
 #ifdef MARKET
-      for (j = 0; j <= MAXGOVERNORS; j++)
+      for (governor_t j = 0; j <= MAXGOVERNORS; j++)
         if (races[i - 1]->governor[j].active)
           maintain(races[i - 1], j, races[i - 1]->governor[j].maintain);
 #endif
     }
-    for (i = 1; i <= Num_races; i++) putrace(races[i - 1]);
+    for (player_t i = 1; i <= Num_races; i++) putrace(races[i - 1]);
   }
 
   free(ships);
 
   if (update) {
     compute_power_blocks();
-    for (i = 1; i <= Num_races; i++) {
+    for (player_t i = 1; i <= Num_races; i++) {
       Power[i - 1].money = 0;
-      for (j = 0; j <= MAXGOVERNORS; j++)
+      for (governor_t j = 0; j <= MAXGOVERNORS; j++)
         if (races[i - 1]->governor[j].active)
           Power[i - 1].money += races[i - 1]->governor[j].money;
     }
@@ -455,7 +456,7 @@ void do_turn(int update) {
     Putblock(Blocks);
   }
 
-  for (j = 1; j <= Num_races; j++) {
+  for (player_t j = 1; j <= Num_races; j++) {
     if (update)
       notify_race(j, "Finished with update.\n");
     else

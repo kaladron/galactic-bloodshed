@@ -201,14 +201,17 @@ int main(int argc, char **argv) {
       {"center", center},
       {"client_survey", survey},
       {"cs", cs},
+      {"declare", declare},
       {"dismount", mount},
       {"enslave", enslave},
       {"factories", rst},
+      {"invite", invite},
       {"make", make_mod},
       {"map", map},
       {"modify", make_mod},
       {"mount", mount},
       {"orbit", orbit},
+      {"pledge", pledge},
       {"relation", relation},
       {"repair", repair},
       {"report", rst},
@@ -218,7 +221,12 @@ int main(int argc, char **argv) {
       {"stats", rst},
       {"stock", rst},
       {"tactical", rst},
+      {"uninvite", invite},
+      {"unpledge", pledge},
       {"upgrade", upgrade},
+#ifdef VOTING
+      {"vote", vote},
+#endif
       {"weapons", rst},
   };
 
@@ -1327,8 +1335,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     capital(Playernum, Governor, 50);
   else if (match(args[0], "capture"))
     capture(Playernum, Governor, 1);
-  else if (match(args[0], "declare"))
-    declare(Playernum, Governor, 1);
 #ifdef DEFENSE
   else if (match(args[0], "defend"))
     defend(Playernum, Governor, 1);
@@ -1368,8 +1374,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
   else if (match(args[0], "insurgency"))
     insurgency(Playernum, Governor, 10);
 #endif
-  else if (match(args[0], "invite"))
-    invite(Playernum, Governor, 0, 1);
   else if (match(args[0], "jettison"))
     jettison(Playernum, Governor, 0);
   else if (match(args[0], "land"))
@@ -1398,8 +1402,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     colonies(Playernum, Governor, 0, 0);
   else if (match(args[0], "personal"))
     personal(Playernum, Governor, string);
-  else if (match(args[0], "pledge"))
-    pledge(Playernum, Governor, 0, 1);
   else if (match(args[0], "power"))
     power(Playernum, Governor, 0);
   else if (match(args[0], "post"))
@@ -1457,10 +1459,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     load(Playernum, Governor, 0, 1);
   else if (match(args[0], "undock"))
     launch(Playernum, Governor, 1);
-  else if (match(args[0], "uninvite"))
-    invite(Playernum, Governor, 0, 0);
-  else if (match(args[0], "unpledge"))
-    pledge(Playernum, Governor, 0, 0);
   else if (match(args[0], "victory"))
     victory(Playernum, Governor, 0);
   else if (match(args[0], "walk"))
@@ -1469,10 +1467,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     GB_time(Playernum, Governor);
   else if (match(args[0], "schedule"))
     GB_schedule(Playernum, Governor);
-#ifdef VOTING
-  else if (match(args[0], "vote"))
-    vote(Playernum, Governor, 0);
-#endif
   else if (match(args[0], "zoom"))
     zoom(Playernum, Governor, 0);
   else {

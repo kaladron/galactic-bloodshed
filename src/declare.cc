@@ -20,8 +20,13 @@
 #include "tweakables.h"
 #include "vars.h"
 
+static void show_votes(int, int);
+
 /* invite people to join your alliance block */
-void invite(int Playernum, int Governor, int APcount, int mode) {
+void invite(const command_t &argv, const player_t Playernum,
+            const governor_t Governor) {
+  bool mode = (argv[0] == "invite") ? true : false;
+
   int n;
   racetype *Race, *alien;
 
@@ -63,7 +68,9 @@ void invite(int Playernum, int Governor, int APcount, int mode) {
 }
 
 /* declare that you wish to be included in the alliance block */
-void pledge(int Playernum, int Governor, int APcount, int mode) {
+void pledge(const command_t &argv, const player_t Playernum,
+            const governor_t Governor) {
+  bool mode = (argv[0] == "pledge") ? true : false;
   int n;
   racetype *Race;
 
@@ -127,7 +134,9 @@ void pledge(int Playernum, int Governor, int APcount, int mode) {
   Putblock(Blocks);
 }
 
-void declare(int Playernum, int Governor, int APcount) {
+void declare(const command_t &argv, const player_t Playernum,
+             const governor_t Governor) {
+  const int APcount = 1;
   int n, d_mod;
   racetype *Race, *alien;
 
@@ -258,7 +267,8 @@ void declare(int Playernum, int Governor, int APcount) {
 }
 
 #ifdef VOTING
-void vote(int Playernum, int Governor, int APcount) {
+void vote(const command_t &argv, const player_t Playernum,
+          const governor_t Governor) {
   racetype *Race;
   int check, nvotes, nays, yays;
 
@@ -303,8 +313,8 @@ void vote(int Playernum, int Governor, int APcount) {
       nays = 0;
       yays = 0;
       nvotes = 0;
-      for (Playernum = 1; Playernum <= Num_races; Playernum++) {
-        Race = races[Playernum - 1];
+      for (player_t pnum = 1; pnum <= Num_races; pnum++) {
+        Race = races[pnum - 1];
         if (Race->God || Race->Guest) continue;
         nvotes++;
         if (Race->votes & VOTE_UPDATE_GO)
@@ -326,7 +336,7 @@ void vote(int Playernum, int Governor, int APcount) {
   }
 }
 
-void show_votes(int Playernum, int Governor) {
+static void show_votes(int Playernum, int Governor) {
   int nvotes, nays, yays, pnum;
   racetype *Race;
 

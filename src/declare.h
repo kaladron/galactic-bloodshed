@@ -5,10 +5,17 @@
 #ifndef DECLARE_H
 #define DECLARE_H
 
-void invite(int, int, int, int);
-void declare(int, int, int);
-void vote(int, int, int);
-void show_votes(int, int);
-void pledge(int, int, int, int);
+#include "races.h"
+#include "ships.h"
+#include "vars.h"
+
+void invite(const command_t &argv, const player_t Playernum,
+            const governor_t Governor);
+void declare(const command_t &argv, const player_t Playernum,
+             const governor_t Governor);
+void vote(const command_t &argv, const player_t Playernum,
+          const governor_t Governor);
+void pledge(const command_t &argv, const player_t Playernum,
+            const governor_t Governor);
 
 #endif  // DECLARE_H

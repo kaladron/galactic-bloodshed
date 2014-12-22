@@ -29,7 +29,7 @@ void enslave(const command_t &argv, const player_t Playernum,
   shipnum_t shipno;
   racetype *Race;
 
-  sscanf(args[1] + (args[1][0] == '#'), "%ld", &shipno);
+  sscanf(argv[1].c_str() + (argv[1].c_str()[0] == '#'), "%ld", &shipno);
 
   if (!getship(&s, shipno)) {
     return;

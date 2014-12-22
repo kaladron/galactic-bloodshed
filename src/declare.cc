@@ -34,7 +34,7 @@ void invite(const command_t &argv, const player_t Playernum,
     notify(Playernum, Governor, "Only leaders may invite.\n");
     return;
   }
-  if (!(n = GetPlayer(args[1]))) {
+  if (!(n = GetPlayer(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -78,7 +78,7 @@ void pledge(const command_t &argv, const player_t Playernum,
     notify(Playernum, Governor, "Only leaders may pledge.\n");
     return;
   }
-  if (!(n = GetPlayer(args[1]))) {
+  if (!(n = GetPlayer(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -145,7 +145,7 @@ void declare(const command_t &argv, const player_t Playernum,
     return;
   }
 
-  if (!(n = GetPlayer(args[1]))) {
+  if (!(n = GetPlayer(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -172,7 +172,7 @@ void declare(const command_t &argv, const player_t Playernum,
   Race = races[Playernum - 1];
   alien = races[n - 1];
 
-  switch (*args[2]) {
+  switch (*argv[2].c_str()) {
     case 'a':
       setbit(Race->allied, n);
       clrbit(Race->atwar, n);
@@ -189,7 +189,7 @@ void declare(const command_t &argv, const player_t Playernum,
       sprintf(buf, "%s [%d] declares ALLIANCE with %s [%d].\n", Race->name,
               Playernum, alien->name, n);
       d_mod = 30;
-      if (argn > 3) sscanf(args[3], "%d", &d_mod);
+      if (argv.size() > 3) sscanf(argv[3].c_str(), "%d", &d_mod);
       d_mod = MAX(d_mod, 30);
       break;
     case 'n':
@@ -287,21 +287,21 @@ void vote(const command_t &argv, const player_t Playernum,
     return;
   }
 
-  if (argn > 2) {
+  if (argv.size() > 2) {
     check = 0;
-    if (match(args[1], "update")) {
-      if (match(args[2], "go")) {
+    if (argv[1] == "update") {
+      if (argv[2] == "go") {
         Race->votes |= VOTE_UPDATE_GO;
         check = 1;
-      } else if (match(args[2], "wait"))
+      } else if (argv[2] == "wait")
         Race->votes &= ~VOTE_UPDATE_GO;
       else {
-        sprintf(buf, "No such update choice '%s'\n", args[2]);
+        sprintf(buf, "No such update choice '%s'\n", argv[2].c_str());
         notify(Playernum, Governor, buf);
         return;
       }
     } else {
-      sprintf(buf, "No such vote '%s'\n", args[1]);
+      sprintf(buf, "No such vote '%s'\n", argv[1].c_str());
       notify(Playernum, Governor, buf);
       return;
     }

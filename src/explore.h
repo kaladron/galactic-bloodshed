@@ -13,9 +13,13 @@
 
 void colonies(const command_t &argv, const player_t Playernum,
               const governor_t Governor);
-void distance(int, int, int);
-void star_locations(int, int, int);
-void exploration(int, int, int);
-void tech_status(int, int, int);
+void distance(const command_t &argv, const player_t Playernum,
+              const governor_t Governor);
+void exploration(const command_t &argv, const player_t Playernum,
+                 const governor_t Governor);
+void star_locations(const command_t &argv, const player_t Playernum,
+                    const governor_t Governor);
+void tech_status(const command_t &argv, const player_t Playernum,
+                 const governor_t Governor);
 
 #endif  // EXPLORE_H

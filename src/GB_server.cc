@@ -204,7 +204,9 @@ int main(int argc, char **argv) {
       {"cs", cs},
       {"declare", declare},
       {"dismount", mount},
+      {"distance", distance},
       {"enslave", enslave},
+      {"explore", exploration},
       {"factories", rst},
       {"invite", invite},
       {"make", make_mod},
@@ -220,7 +222,9 @@ int main(int argc, char **argv) {
       {"sell", sell},
       {"survey", survey},
       {"ship", rst},
+      {"stars", star_locations},
       {"stats", rst},
+      {"status", tech_status},
       {"stock", rst},
       {"tactical", rst},
       {"uninvite", invite},
@@ -1343,8 +1347,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
 #endif
   else if (match(args[0], "detonate") && !Guest)
     detonate(Playernum, Governor, 0);
-  else if (match(args[0], "distance"))
-    distance(Playernum, Governor, 0);
   else if (match(args[0], "dissolve") && !Guest)
     dissolve(Playernum, Governor);
   else if (match(args[0], "dock"))
@@ -1353,8 +1355,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     dump(Playernum, Governor, 10);
   else if (match(args[0], "examine"))
     examine(Playernum, Governor, 0);
-  else if (match(args[0], "explore"))
-    exploration(Playernum, Governor, 0);
   else if (match(args[0], "cew"))
     fire(Playernum, Governor, 1, 1);
   else if (match(args[0], "fire") && !Guest)
@@ -1433,10 +1433,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     send_message(Playernum, Governor, !God, 0);
   else if (match(args[0], "scrap") && (argn > 1))
     scrap(Playernum, Governor, 1);
-  else if (match(args[0], "stars"))
-    star_locations(Playernum, Governor, 0);
-  else if (match(args[0], "status"))
-    tech_status(Playernum, Governor, 0);
 #ifdef MARKET
   else if (match(args[0], "tax"))
     tax(Playernum, Governor, 0);

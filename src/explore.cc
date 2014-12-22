@@ -119,15 +119,15 @@ void colonies(const command_t &argv, const player_t Playernum,
   Race = races[Playernum - 1];
   getsdata(&Sdata);
 
-  if (argn < 2)
+  if (argv.size() < 2)
     for (starnum_t star = 0; star < Sdata.numstars; star++)
       colonies_at_star(Playernum, Governor, Race, star, mode);
   else
-    for (i = 1; i < argn; i++) {
-      where = Getplace(Playernum, Governor, args[i], 0);
+    for (i = 1; i < argv.size(); i++) {
+      where = Getplace(Playernum, Governor, argv[i], 0);
       if (where.err || (where.level == LEVEL_UNIV) ||
           (where.level == LEVEL_SHIP)) {
-        sprintf(buf, "Bad location `%s'.\n", args[i]);
+        sprintf(buf, "Bad location `%s'.\n", argv[i].c_str());
         notify(Playernum, Governor, buf);
         continue;
       } else /* ok, a proper location */
@@ -136,26 +136,27 @@ void colonies(const command_t &argv, const player_t Playernum,
   notify(Playernum, Governor, "\n");
 }
 
-void distance(int Playernum, int Governor, int APcount) {
+void distance(const command_t &argv, const player_t Playernum,
+              const governor_t Governor) {
   placetype from, to;
   planettype *p;
   double x0, y0, x1, y1, dist;
   shiptype *ship;
 
-  if (argn < 3) {
+  if (argv.size() < 3) {
     notify(Playernum, Governor, "Syntax: 'distance <from> <to>'.\n");
     return;
   }
 
-  from = Getplace(Playernum, Governor, args[1], 1);
+  from = Getplace(Playernum, Governor, argv[1], 1);
   if (from.err) {
-    sprintf(buf, "Bad scope '%s'.\n", args[1]);
+    sprintf(buf, "Bad scope '%s'.\n", argv[1].c_str());
     notify(Playernum, Governor, buf);
     return;
   }
-  to = Getplace(Playernum, Governor, args[2], 1);
+  to = Getplace(Playernum, Governor, argv[2], 1);
   if (to.err) {
-    sprintf(buf, "Bad scope '%s'.\n", args[2]);
+    sprintf(buf, "Bad scope '%s'.\n", argv[2].c_str());
     notify(Playernum, Governor, buf);
   }
 
@@ -209,7 +210,8 @@ void distance(int Playernum, int Governor, int APcount) {
   notify(Playernum, Governor, buf);
 }
 
-void star_locations(int Playernum, int Governor, int APcount) {
+void star_locations(const command_t &argv, const player_t Playernum,
+                    const governor_t Governor) {
   int i;
   double dist, x, y;
   int max;
@@ -217,8 +219,8 @@ void star_locations(int Playernum, int Governor, int APcount) {
   x = Dir[Playernum - 1][Governor].lastx[1];
   y = Dir[Playernum - 1][Governor].lasty[1];
 
-  if (argn > 1)
-    max = atoi(args[1]);
+  if (argv.size() > 1)
+    max = std::stoi(argv[1]);
   else
     max = 999999;
 
@@ -232,7 +234,8 @@ void star_locations(int Playernum, int Governor, int APcount) {
   }
 }
 
-void exploration(int Playernum, int Governor, int APcount) {
+void exploration(const command_t &argv, const player_t Playernum,
+                 const governor_t Governor) {
   int starq, j;
   planettype *pl;
   placetype where;
@@ -240,14 +243,14 @@ void exploration(int Playernum, int Governor, int APcount) {
 
   starq = -1;
 
-  if (argn == 2) {
-    where = Getplace(Playernum, Governor, args[1], 0);
+  if (argv.size() == 2) {
+    where = Getplace(Playernum, Governor, argv[1], 0);
     if (where.err) {
       sprintf(buf, "explore: bad scope.\n");
       notify(Playernum, Governor, buf);
       return;
     } else if (where.level == LEVEL_SHIP || where.level == LEVEL_UNIV) {
-      sprintf(buf, "Bad scope '%s'.\n", args[1]);
+      sprintf(buf, "Bad scope '%s'.\n", argv[1].c_str());
       notify(Playernum, Governor, buf);
       return;
     }
@@ -324,7 +327,8 @@ void exploration(int Playernum, int Governor, int APcount) {
     }
 }
 
-void tech_status(int Playernum, int Governor, int APcount) {
+void tech_status(const command_t &argv, const player_t Playernum,
+                 const governor_t Governor) {
   int k;
   placetype where;
   double total_gain = 0.0;
@@ -339,17 +343,17 @@ void tech_status(int Playernum, int Governor, int APcount) {
   sprintf(buf, "       Planet          popn    invest    gain   ^gain\n");
   notify(Playernum, Governor, buf);
 
-  if (argn == 1) {
+  if (argv.size() == 1) {
     for (starnum_t star = 0; star < Sdata.numstars; star++) {
       getstar(&(Stars[star]), star);
       tech_report_star(Playernum, Governor, Stars[star], star, &total_invest,
                        &total_gain, &total_max_gain);
     }
   } else { /* Several arguments */
-    for (k = 1; k < argn; k++) {
-      where = Getplace(Playernum, Governor, args[k], 0);
+    for (k = 1; k < argv.size(); k++) {
+      where = Getplace(Playernum, Governor, argv[k], 0);
       if (where.err || where.level == LEVEL_UNIV || where.level == LEVEL_SHIP) {
-        sprintf(buf, "Bad location `%s'.\n", args[k]);
+        sprintf(buf, "Bad location `%s'.\n", argv[k].c_str());
         notify(Playernum, Governor, buf);
         continue;
       } else { /* ok, a proper location */

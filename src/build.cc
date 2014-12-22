@@ -43,7 +43,7 @@ static void create_ship_by_planet(int, int, racetype *, shiptype *,
 static void create_ship_by_ship(int, int, racetype *, int, planettype *,
                                 shiptype *, shiptype *);
 static int get_build_type(const char *);
-static int getcount(int, const char *);
+static int getcount(const bool, const std::string &);
 static void Getfactship(shiptype *, shiptype *);
 static void Getship(shiptype *, int, racetype *);
 static void initialize_new_ship(int, int, racetype *, shiptype *, double, int);
@@ -139,7 +139,7 @@ void upgrade(const command_t &argv, const player_t Playernum,
           free(dirship);
           return;
         }
-        ship.primary = atoi(argv[3].c_str());
+        ship.primary = std::stoi(argv[3]);
         ship.primary = MAX(ship.primary, dirship->primary);
       } else if (argv[2] == "caliber") {
         if (argv[3] == "light")
@@ -168,7 +168,7 @@ void upgrade(const command_t &argv, const player_t Playernum,
           free(dirship);
           return;
         }
-        ship.secondary = atoi(argv[3].c_str());
+        ship.secondary = std::stoi(argv[3]);
         ship.secondary = MAX(ship.secondary, dirship->secondary);
       } else if (argv[2] == "caliber") {
         if (argv[3] == "light")
@@ -202,7 +202,7 @@ void upgrade(const command_t &argv, const player_t Playernum,
         free(dirship);
         return;
       }
-      value = atoi(argv[3].c_str());
+      value = std::stoi(argv[3]);
       if (argv[2] == "strength") {
         ship.cew = value;
       } else if (argv[2] == "range") {
@@ -563,7 +563,7 @@ void make_mod(const command_t &argv, const player_t Playernum,
       } else if (argv[1] == "primary" &&
                  Shipdata[dirship->build_type][ABIL_PRIMARY]) {
         if (argv[2] == "strength") {
-          dirship->primary = atoi(argv[3].c_str());
+          dirship->primary = std::stoi(argv[3]);
         } else if (argv[2] == "caliber") {
           if (argv[3] == "light")
             dirship->primtype = GTYPE_LIGHT;
@@ -586,7 +586,7 @@ void make_mod(const command_t &argv, const player_t Playernum,
       } else if (argv[1] == "secondary" &&
                  Shipdata[dirship->build_type][ABIL_SECONDARY]) {
         if (argv[2] == "strength") {
-          dirship->secondary = atoi(argv[3].c_str());
+          dirship->secondary = std::stoi(argv[3]);
         } else if (argv[2] == "caliber") {
           if (argv[3] == "light")
             dirship->sectype = GTYPE_LIGHT;
@@ -620,7 +620,7 @@ void make_mod(const command_t &argv, const player_t Playernum,
           free(dirship);
           return;
         }
-        value = atoi(argv[3].c_str());
+        value = std::stoi(argv[3]);
         if (argv[2] == "strength") {
           dirship->cew = value;
         } else if (argv[2] == "range") {
@@ -887,7 +887,7 @@ void build(const command_t &argv, const player_t Playernum,
             free(planet);
             return;
           }
-          if (!(count = getcount(argv.size() < 4, argv[3].c_str()))) {
+          if (!(count = getcount(argv.size() < 4, argv[3]))) {
             notify(Playernum, Governor, "Give a positive number of builds.\n");
             free(planet);
             return;
@@ -926,7 +926,7 @@ void build(const command_t &argv, const player_t Playernum,
           }
           switch (builder->type) {
             case OTYPE_FACTORY:
-              if (!(count = getcount(argv.size() < 2, argv[1].c_str()))) {
+              if (!(count = getcount(argv.size() < 2, argv[1]))) {
                 notify(Playernum, Governor,
                        "Give a positive number of builds.\n");
                 free(builder);
@@ -969,7 +969,7 @@ void build(const command_t &argv, const player_t Playernum,
                 free(builder);
                 return;
               }
-              if (!(count = getcount(argv.size() < 3, argv[2].c_str()))) {
+              if (!(count = getcount(argv.size() < 3, argv[2]))) {
                 notify(Playernum, Governor,
                        "Give a positive number of builds.\n");
                 free(builder);
@@ -1108,15 +1108,12 @@ finish:
   }
 }
 
-static int getcount(int mode, const char *string) {
-  int count;
-
-  if (mode)
-    count = 1;
-  else
-    count = atoi(string);
+// Used for optional parameters.  If mode is true, use the string handed in,
+// otherwise it might be uninitialized memory or empty.  Negative numbers
+// are not permitted and are zeroed out.
+static int getcount(const bool mode, const std::string &s) {
+  int count = mode ? std::stoi(s) : 1;
   if (count <= 0) count = 0;
-
   return (count);
 }
 
@@ -1673,7 +1670,7 @@ void sell(const command_t &argv, const player_t Playernum,
   }
   /* get information on sale */
   commod = argv[1][0];
-  amount = atoi(argv[2].c_str());
+  amount = std::stoi(argv[2]);
   if (amount <= 0) {
     notify(Playernum, Governor, "Try using positive values.\n");
     return;
@@ -1903,8 +1900,8 @@ void bid(const command_t &argv, const player_t Playernum,
       return;
     }
 
-    lot = atoi(argv[1].c_str());
-    money_t bid0 = atoi(argv[2].c_str());
+    lot = std::stoi(argv[1]);
+    money_t bid0 = std::stoi(argv[2]);
     if ((lot <= 0) || lot > Numcommods()) {
       notify(Playernum, Governor, "Illegal lot number.\n");
       free(p);

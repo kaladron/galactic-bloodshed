@@ -97,7 +97,10 @@ void colonies(const command_t &argv, const player_t Playernum,
 
   modes_t mode;
 
-  argv[0] == "colonies" ? mode = COLONIES : mode = PRODUCTION;
+  if (argv[0] == "colonies")
+    mode = COLONIES;
+  else
+    mode = PRODUCTION;
 
   switch (mode) {
     case COLONIES:

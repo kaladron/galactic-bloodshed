@@ -21,12 +21,12 @@
 #include "tweakables.h"
 #include "vars.h"
 
+enum modes_t { COLONIES, PRODUCTION };
+
 static void tech_report_star(int, int, startype *, starnum_t, int *, double *,
                              double *);
-static void colonies_at_star(int, int, racetype *, starnum_t, int);
-
 static void colonies_at_star(int Playernum, int Governor, racetype *Race,
-                             starnum_t star, int mode) {
+                             starnum_t star, modes_t mode) {
   planetnum_t i;
   int j;
   planettype *pl;
@@ -41,8 +41,7 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
         pl->info[Playernum - 1].numsectsowned &&
         (!Governor || Stars[star]->governor[Playernum - 1] == Governor)) {
       switch (mode) {
-        case -1: /* combined report */
-        case 0:  /* colonies */
+        case COLONIES:
           sprintf(
               buf,
               " %c %4.4s/%-4.4s%c%4d%3d%5d%8ld%3d%6d%5d%6d "
@@ -67,7 +66,7 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
           notify(Playernum, Governor, "\n");
           if (mode == 0) break;
           [[clang::fallthrough]]; /* Fall through if (mode == -1) */
-        case 1:                   /* production */
+        case PRODUCTION:
           sprintf(
               buf,
               " %c %4.4s/%-4.4s%c%3d%8.4f%8ld%3d%6d%5d%6d %6ld   %3d%8.2f\n",
@@ -84,46 +83,37 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
               pl->info[Playernum - 1].est_production);
           notify(Playernum, Governor, buf);
           break;
-        default:
-          break;
       }
     }
     free(pl);
   }
 }
 
-void colonies(int Playernum, int Governor, int APcount, int mode) {
+void colonies(const command_t &argv, const player_t Playernum,
+              const governor_t Governor) {
   int i;
   racetype *Race;
   placetype where;
 
+  modes_t mode;
+
+  argv[0] == "colonies" ? mode = COLONIES : mode = PRODUCTION;
+
   switch (mode) {
-    case -1:
-      notify(Playernum, Governor,
-             "          ========= Colonies Prod Report ==========\n");
-      notify(Playernum, Governor,
-             "  Planet     gov sec tech    popn  x   res  "
-             "des  fuel  tax  cmpt/tox mob   Aliens\n");
-      notify(Playernum, Governor, "               tox  deposit\n");
-      break;
-    case 0:
+    case COLONIES:
       notify(Playernum, Governor,
              "          ========== Colonization Report ==========\n");
       notify(Playernum, Governor,
              "  Planet     gov sec tech    popn  x   res  "
              "des  fuel  tax  cmpt/tox mob  Aliens\n");
       break;
-    case 1:
+    case PRODUCTION:
       notify(Playernum, Governor,
              "          ============ Production Report ==========\n");
       notify(Playernum, Governor,
              "  Planet     gov    tech deposit  x   res  "
              "des  fuel    tax   tox  est prod\n");
       break;
-    default:
-      notify(Playernum, Governor,
-             "          =============== Unknown Report ==========\n");
-      return;
   }
 
   Race = races[Playernum - 1];

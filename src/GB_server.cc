@@ -200,6 +200,7 @@ int main(int argc, char **argv) {
       {"build", build},
       {"center", center},
       {"client_survey", survey},
+      {"colonies", colonies},
       {"cs", cs},
       {"declare", declare},
       {"dismount", mount},
@@ -212,6 +213,7 @@ int main(int argc, char **argv) {
       {"mount", mount},
       {"orbit", orbit},
       {"pledge", pledge},
+      {"production", colonies},
       {"relation", relation},
       {"repair", repair},
       {"report", rst},
@@ -1398,8 +1400,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     page(Playernum, Governor, !God);
   else if (match(args[0], "pay") && !Guest)
     pay(Playernum, Governor, 0);
-  else if (match(args[0], "colonies"))
-    colonies(Playernum, Governor, 0, 0);
   else if (match(args[0], "personal"))
     personal(Playernum, Governor, string);
   else if (match(args[0], "power"))
@@ -1408,8 +1408,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     send_message(Playernum, Governor, 0, 1);
   else if (match(args[0], "profile"))
     profile(Playernum, Governor, 0);
-  else if (match(args[0], "production"))
-    colonies(Playernum, Governor, 0, 1);
   else if (match(args[0], "purge") && God)
     purge();
   else if (match(args[0], "fix") && God)

@@ -1421,7 +1421,7 @@ static void process_command(int Playernum, int Governor, const char *comm,
     force_output();
     load_race_data();
     load_star_data();
-    do_reset(1);
+    do_reset();
   } else if (match(args[0], "route"))
     route(Playernum, Governor, 0);
   else if (match(args[0], "@@shutdown") && God) {

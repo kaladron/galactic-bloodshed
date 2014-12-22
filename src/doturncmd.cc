@@ -531,7 +531,7 @@ void fix_stability(startype *s) {
   }
 }
 
-void do_reset(int time_reset) {
+void do_reset() {
   Num_ships = Numships();
 
   ships = (shiptype **)malloc(sizeof(shiptype *) * (Num_ships + 1));

@@ -36,7 +36,7 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void do_dome(shiptype *, planettype *, sector_map &);
+static void do_dome(shiptype *, sector_map &);
 static void do_quarry(shiptype *, planettype *, sector_map &);
 static void do_berserker(shiptype *, planettype *);
 static void do_recover(planettype *, int, int);
@@ -139,7 +139,7 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
         case OTYPE_DOME:
           if (ship->on && landed(ship)) {
             if (ship->resource >= RES_COST_DOME)
-              do_dome(ship, planet, smap);
+              do_dome(ship, smap);
             else {
               sprintf(buf, "Y%lu does not have enough resources.",
                       ship->number);
@@ -711,7 +711,7 @@ static void plow(shiptype *ship, planettype *planet, sector_map &smap) {
   }
 }
 
-static void do_dome(shiptype *ship, planettype *planet, sector_map &smap) {
+static void do_dome(shiptype *ship, sector_map &smap) {
   int adjust;
 
   auto &s = smap.get(ship->land_x, ship->land_y);

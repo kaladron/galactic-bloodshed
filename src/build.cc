@@ -43,7 +43,7 @@ static void create_ship_by_planet(int, int, racetype *, shiptype *,
 static void create_ship_by_ship(int, int, racetype *, int, planettype *,
                                 shiptype *, shiptype *);
 static int get_build_type(const char *);
-static int getcount(const command_t&, const size_t);
+static int getcount(const command_t &, const size_t);
 static void Getfactship(shiptype *, shiptype *);
 static void Getship(shiptype *, int, racetype *);
 static void initialize_new_ship(int, int, racetype *, shiptype *, double, int);
@@ -1110,7 +1110,7 @@ finish:
 
 // Used for optional parameters.  If the element requested exists, use
 // it.  If the number is negative, return zero instead.
-static int getcount(const command_t& argv, const size_t elem) {
+static int getcount(const command_t &argv, const size_t elem) {
   int count = argv.size() > elem ? std::stoi(argv[elem]) : 1;
   if (count <= 0) count = 0;
   return (count);

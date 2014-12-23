@@ -43,7 +43,7 @@ static void create_ship_by_planet(int, int, racetype *, shiptype *,
 static void create_ship_by_ship(int, int, racetype *, int, planettype *,
                                 shiptype *, shiptype *);
 static int get_build_type(const char *);
-static int getcount(const bool, const std::string &);
+static int getcount(const command_t&, const size_t);
 static void Getfactship(shiptype *, shiptype *);
 static void Getship(shiptype *, int, racetype *);
 static void initialize_new_ship(int, int, racetype *, shiptype *, double, int);
@@ -887,7 +887,7 @@ void build(const command_t &argv, const player_t Playernum,
             free(planet);
             return;
           }
-          if (!(count = getcount(argv.size() < 4, argv[3]))) {
+          if (!(count = getcount(argv, 4))) {
             notify(Playernum, Governor, "Give a positive number of builds.\n");
             free(planet);
             return;
@@ -926,7 +926,7 @@ void build(const command_t &argv, const player_t Playernum,
           }
           switch (builder->type) {
             case OTYPE_FACTORY:
-              if (!(count = getcount(argv.size() < 2, argv[1]))) {
+              if (!(count = getcount(argv, 2))) {
                 notify(Playernum, Governor,
                        "Give a positive number of builds.\n");
                 free(builder);
@@ -969,7 +969,7 @@ void build(const command_t &argv, const player_t Playernum,
                 free(builder);
                 return;
               }
-              if (!(count = getcount(argv.size() < 3, argv[2]))) {
+              if (!(count = getcount(argv, 3))) {
                 notify(Playernum, Governor,
                        "Give a positive number of builds.\n");
                 free(builder);
@@ -1108,11 +1108,10 @@ finish:
   }
 }
 
-// Used for optional parameters.  If mode is true, use the string handed in,
-// otherwise it might be uninitialized memory or empty.  Negative numbers
-// are not permitted and are zeroed out.
-static int getcount(const bool mode, const std::string &s) {
-  int count = mode ? std::stoi(s) : 1;
+// Used for optional parameters.  If the element requested exists, use
+// it.  If the number is negative, return zero instead.
+static int getcount(const command_t& argv, const size_t elem) {
+  int count = argv.size() > elem ? std::stoi(argv[elem]) : 1;
   if (count <= 0) count = 0;
   return (count);
 }

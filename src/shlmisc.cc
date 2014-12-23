@@ -312,11 +312,11 @@ shipnum_t do_shiplist(shiptype **s, shipnum_t *nextshipno) {
   return shipno;
 }
 
-int in_list(player_t Playernum, char *list, shiptype *s,
+int in_list(player_t Playernum, const char *list, shiptype *s,
             shipnum_t *nextshipno) {
-  char *p, q;
+  const char *p;
   if (s->owner != Playernum || !s->alive) return 0;
-  q = Shipltrs[s->type];
+  const char q = Shipltrs[s->type];
   p = list;
   if (*p == '#' || isdigit(*p)) {
     if (s->owner != Playernum || !s->alive) return 0;

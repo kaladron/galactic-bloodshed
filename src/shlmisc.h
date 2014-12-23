@@ -16,7 +16,7 @@ void governors(int, int, int);
 int authorized(int, shiptype *);
 int start_shiplist(int, int, const char *);
 shipnum_t do_shiplist(shiptype **, shipnum_t *);
-int in_list(player_t, char *, shiptype *, shipnum_t *);
+int in_list(player_t, const char *, shiptype *, shipnum_t *);
 void fix(int, int);
 int match(const char *, const char *);
 void DontOwnErr(int, int, shipnum_t);

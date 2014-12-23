@@ -695,14 +695,15 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
 }
 #endif
 
-void detonate(int Playernum, int Governor, int APcount) {
+void detonate(const command_t &argv, const player_t Playernum,
+              const governor_t Governor) {
   shiptype *s;
   shipnum_t shipno, nextshipno;
 
-  nextshipno = start_shiplist(Playernum, Governor, args[1]);
+  nextshipno = start_shiplist(Playernum, Governor, argv[1].c_str());
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, args[1], s, &nextshipno) &&
+    if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
         authorized(Governor, s)) {
       if (s->type != STYPE_MINE) {
         notify(Playernum, Governor, "That is not a mine.\n");

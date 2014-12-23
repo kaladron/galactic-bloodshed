@@ -5,13 +5,15 @@
 #ifndef FIRE_H
 #define FIRE_H
 
-#include "vars.h"
+#include "races.h"
 #include "ships.h"
+#include "vars.h"
 
 void fire(int, int, int, int);
 void bombard(int, int, int);
 void defend(int, int, int);
-void detonate(int, int, int);
+void detonate(const command_t &argv, const player_t Playernum,
+              const governor_t Governor);
 int retal_strength(shiptype *);
 int adjacent(int, int, int, int, planettype *);
 int landed(shiptype *);

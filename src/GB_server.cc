@@ -1346,7 +1346,7 @@ static void process_command(int Playernum, int Governor, const char *comm,
     defend(Playernum, Governor, 1);
 #endif
   else if (match(args[0], "detonate") && !Guest)
-    detonate(Playernum, Governor, 0);
+    detonate(argv, Playernum, Governor);
   else if (match(args[0], "dissolve") && !Guest)
     dissolve(Playernum, Governor);
   else if (match(args[0], "dock"))

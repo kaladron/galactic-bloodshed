@@ -208,6 +208,7 @@ int main(int argc, char **argv) {
       {"enslave", enslave},
       {"explore", exploration},
       {"factories", rst},
+      {"fuel", proj_fuel},
       {"invite", invite},
       {"make", make_mod},
       {"map", map},
@@ -1359,8 +1360,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     fire(Playernum, Governor, 1, 1);
   else if (match(args[0], "fire") && !Guest)
     fire(Playernum, Governor, 1, 0);
-  else if (match(args[0], "fuel"))
-    proj_fuel(Playernum, Governor, 0);
   else if (match(args[0], "governors") || match(args[0], "appoint") ||
            match(args[0], "revoke"))
     governors(Playernum, Governor, 0);

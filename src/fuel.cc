@@ -34,7 +34,8 @@ static int do_trip(const placetype &, double fuel, double gravity_factor);
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
                         double grav, double mass, segments_t segs);
 
-void proj_fuel(int Playernum, int Governor, int APcount) {
+void proj_fuel(const command_t &argv, const player_t Playernum,
+               const governor_t Governor) {
   shipnum_t shipno;
   int opt_settings, current_settings, computing = 1;
   segments_t current_segs;
@@ -45,18 +46,18 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
   double current_fuel = 0.0, gravity_factor = 0.0;
   placetype tmpdest;
 
-  if ((argn < 2) || (argn > 3)) {
+  if ((argv.size() < 2) || (argv.size() > 3)) {
     notify(Playernum, Governor,
            "Invalid number of options.\n\"fuel "
            "#<shipnumber> [destination]\"...\n");
     return;
   }
-  if (args[1][0] != '#') {
+  if (argv[1][0] != '#') {
     notify(Playernum, Governor,
            "Invalid first option.\n\"fuel #<shipnumber> [destination]\"...\n");
     return;
   }
-  sscanf(args[1] + (args[1][0] == '#'), "%ld", &shipno);
+  sscanf(argv[1].c_str() + (argv[1][0] == '#'), "%ld", &shipno);
   if (shipno > Numships() || shipno < 1) {
     sprintf(buf, "rst: no such ship #%lu \n", shipno);
     notify(Playernum, Governor, buf);
@@ -68,7 +69,7 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
     free(ship);
     return;
   }
-  if (landed(ship) && (argn == 2)) {
+  if (landed(ship) && (argv.size() == 2)) {
     notify(Playernum, Governor,
            "You must specify a destination for landed or docked ships...\n");
     free(ship);
@@ -91,8 +92,14 @@ void proj_fuel(int Playernum, int Governor, int APcount) {
             Stars[(int)ship->storbits]->pnames[(int)ship->pnumorbits]);
     free(p);
   }
-  if (argn == 2) strcpy(args[2], prin_ship_dest(Playernum, Governor, ship));
-  tmpdest = Getplace(Playernum, Governor, args[2], 1);
+  char *deststr = (char *)malloc(500);
+  if (argv.size() == 2) {
+    strcpy(deststr, prin_ship_dest(Playernum, Governor, ship));
+  } else {
+    strcpy(deststr, argv[2].c_str());
+  }
+  tmpdest = Getplace(Playernum, Governor, deststr, 1);
+  free(deststr);
   if (tmpdest.err) {
     notify(Playernum, Governor, "fuel:  bad scope.\n");
     free(ship);

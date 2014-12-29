@@ -5,6 +5,11 @@
 #ifndef FUEL_H
 #define FUEL_H
 
-void proj_fuel(int, int, int);
+#include "races.h"
+#include "ships.h"
+#include "vars.h"
+
+void proj_fuel(const command_t &argv, const player_t Playernum,
+               const governor_t Governor);
 
 #endif  // FUEL_H

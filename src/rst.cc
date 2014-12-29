@@ -345,7 +345,7 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
       else if (s->navigate.on)
         sprintf(locstrn, "nav:%d (%d)", s->navigate.bearing, s->navigate.turns);
       else
-        strcpy(locstrn, prin_ship_dest(Playernum, Governor, s));
+        strcpy(locstrn, prin_ship_dest(*s).c_str());
 
       if (!s->active) {
         sprintf(strng, "INACTIVE(%d)", s->rad);
@@ -393,7 +393,7 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
           fev = s->protect.evade;
         }
         fdam = s->damage;
-        sprintf(orb, "%30.30s", Dispplace(Playernum, Governor, &where));
+        sprintf(orb, "%30.30s", Dispplace(where).c_str());
         sprintf(buf,
                 "%3lu %c %16.16s %4.0f%3lu%c/%3lu%c%6d%5d%5u%7.1f%3d%%  %d  "
                 "%3s%21.22s",

@@ -162,10 +162,10 @@ void cs(const command_t &argv, const player_t Playernum,
       Race->governor[Governor].defplanetnum = where.pnum;
       putrace(Race);
 
-      sprintf(buf, "New home system is %s\n",
-              Dispplace(Playernum, Governor, &where));
+      sprintf(buf, "New home system is %s\n", Dispplace(where).c_str());
     } else {
       sprintf(buf, "cs: bad home system.\n");
     }
+    notify(Playernum, Governor, buf);
   }
 }

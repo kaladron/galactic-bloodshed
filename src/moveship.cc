@@ -482,8 +482,7 @@ static int do_merchant(shiptype *s, planettype *p) {
   s->destpnum = p->info[i].route[j].dest_planet;
   s->docked = 0;
   use_fuel(s, fuel);
-  sprintf(buf, "\t\tDestination set to %s\n",
-          prin_ship_dest((int)s->owner, (int)s->governor, s));
+  sprintf(buf, "\t\tDestination set to %s\n", prin_ship_dest(*s).c_str());
   strcat(telegram_buf, buf);
   if (s->hyper_drive.has) { /* order the ship to jump if it can */
     if (s->storbits != s->deststar) {

@@ -25,7 +25,7 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static char *prin_aimed_at(int, int, shiptype *);
+static std::string prin_aimed_at(const ship &);
 static void mk_expl_aimed_at(int, int, shiptype *);
 static void DispOrdersHeader(int, int);
 static void DispOrders(int, int, shiptype *);
@@ -494,8 +494,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
             use_fuel(ship, FUEL_MANEUVER);
           if (ship->type == OTYPE_GTELE || ship->type == OTYPE_STELE)
             mk_expl_aimed_at(Playernum, Governor, ship);
-          sprintf(buf, "Aimed at %s\n",
-                  prin_aimed_at(Playernum, Governor, ship));
+          sprintf(buf, "Aimed at %s\n", prin_aimed_at(*ship).c_str());
           notify(Playernum, Governor, buf);
         }
       } else {
@@ -603,24 +602,24 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
   putship(ship);
 }
 
-static char *prin_aimed_at(int Playernum, int Governor, shiptype *ship) {
+static std::string prin_aimed_at(const ship &ship) {
   placetype targ;
 
-  targ.level = ship->special.aimed_at.level;
-  targ.snum = ship->special.aimed_at.snum;
-  targ.pnum = ship->special.aimed_at.pnum;
-  targ.shipno = ship->special.aimed_at.shipno;
-  return Dispplace(Playernum, Governor, &targ);
+  targ.level = ship.special.aimed_at.level;
+  targ.snum = ship.special.aimed_at.snum;
+  targ.pnum = ship.special.aimed_at.pnum;
+  targ.shipno = ship.special.aimed_at.shipno;
+  return Dispplace(targ);
 }
 
-char *prin_ship_dest(int Playernum, int Governor, shiptype *ship) {
+std::string prin_ship_dest(const ship &ship) {
   placetype dest;
 
-  dest.level = ship->whatdest;
-  dest.snum = ship->deststar;
-  dest.pnum = ship->destpnum;
-  dest.shipno = ship->destshipno;
-  return Dispplace(Playernum, Governor, &dest);
+  dest.level = ship.whatdest;
+  dest.snum = ship.deststar;
+  dest.pnum = ship.destpnum;
+  dest.shipno = ship.destshipno;
+  return Dispplace(dest);
 }
 
 /*
@@ -643,7 +642,7 @@ static void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
       notify(Playernum, Governor, buf);
       break;
     case LEVEL_STAR:
-      sprintf(buf, "Star %s ", prin_aimed_at(Playernum, Governor, s));
+      sprintf(buf, "Star %s ", prin_aimed_at(*s).c_str());
       notify(Playernum, Governor, buf);
       if ((dist = sqrt(Distsq(xf, yf, str->xpos, str->ypos))) <=
           tele_range((int)s->type, s->tech)) {
@@ -660,7 +659,7 @@ static void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
       }
       break;
     case LEVEL_PLAN:
-      sprintf(buf, "Planet %s ", prin_aimed_at(Playernum, Governor, s));
+      sprintf(buf, "Planet %s ", prin_aimed_at(*s).c_str());
       notify(Playernum, Governor, buf);
       getplanet(&p, s->special.aimed_at.snum, s->special.aimed_at.pnum);
       if ((dist = sqrt(
@@ -703,7 +702,7 @@ static void DispOrders(int Playernum, int Governor, shiptype *ship) {
     else
       sprintf(temp, "L%2d,%-2d", ship->land_x, ship->land_y);
   else
-    strcpy(temp, prin_ship_dest(Playernum, Governor, ship));
+    strcpy(temp, prin_ship_dest(*ship).c_str());
 
   sprintf(buf, "%5lu %c %14.14s %c%1u %-10s %-10.10s ", ship->number,
           Shipltrs[ship->type], ship->name,
@@ -824,7 +823,7 @@ static void DispOrders(int Playernum, int Governor, shiptype *ship) {
     strcat(buf, temp);
   }
   if (ship->type == STYPE_MIRROR) {
-    sprintf(temp, "/aim %s/int %d", prin_aimed_at(Playernum, Governor, ship),
+    sprintf(temp, "/aim %s/int %d", prin_aimed_at(*ship).c_str(),
             ship->special.aimed_at.intensity);
     strcat(buf, temp);
   }

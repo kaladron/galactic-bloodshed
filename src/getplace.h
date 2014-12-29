@@ -14,7 +14,7 @@ placetype Getplace(const player_t, const governor_t, const std::string &,
 placetype Getplace(const player_t, const governor_t, const char *, const int);
 char *Dispshiploc_brief(shiptype *);
 char *Dispshiploc(shiptype *);
-char *Dispplace(int, int, placetype *);
+std::string Dispplace(const placetype &);
 int testship(int, int, shiptype *);
 
 #endif  // GETPLACE_H

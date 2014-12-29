@@ -92,14 +92,13 @@ void proj_fuel(const command_t &argv, const player_t Playernum,
             Stars[(int)ship->storbits]->pnames[(int)ship->pnumorbits]);
     free(p);
   }
-  char *deststr = (char *)malloc(500);
+  std::string deststr;
   if (argv.size() == 2) {
-    strcpy(deststr, prin_ship_dest(Playernum, Governor, ship));
+    deststr = prin_ship_dest(*ship);
   } else {
-    strcpy(deststr, argv[2].c_str());
+    deststr = argv[2];
   }
   tmpdest = Getplace(Playernum, Governor, deststr, 1);
-  free(deststr);
   if (tmpdest.err) {
     notify(Playernum, Governor, "fuel:  bad scope.\n");
     free(ship);

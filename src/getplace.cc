@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sstream>
 #include <string>
 #include <string.h>
 
@@ -233,21 +234,22 @@ char *Dispshiploc(shiptype *ship) {
   }
 }
 
-char *Dispplace(int Playernum, int Governor, placetype *where) {
-  switch (where->level) {
+std::string Dispplace(const placetype &where) {
+  std::ostringstream buf;
+  switch (where.level) {
     case LEVEL_STAR:
-      sprintf(Disps, "/%s", Stars[where->snum]->name);
-      return (Disps);
+      buf << "/" << Stars[where.snum]->name;
+      return buf.str();
     case LEVEL_PLAN:
-      sprintf(Disps, "/%s/%s", Stars[where->snum]->name,
-              Stars[where->snum]->pnames[where->pnum]);
-      return (Disps);
+      buf << "/" << Stars[where.snum]->name << "/"
+          << Stars[where.snum]->pnames[where.pnum];
+      return buf.str();
     case LEVEL_SHIP:
-      sprintf(Disps, "#%lu", where->shipno);
-      return (Disps);
+      buf << "#" << where.shipno;
+      return buf.str();
     case LEVEL_UNIV:
-      strcpy(Disps, "/");
-      return (Disps);
+      buf << "/";
+      return buf.str();
   }
 }
 

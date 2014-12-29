@@ -5,11 +5,13 @@
 #ifndef ORDER_H
 #define ORDER_H
 
+#include <string>
+
 #include "ships.h"
 
 void give_orders(int, int, int, shiptype *);
 void order(int, int, int);
-char *prin_ship_dest(int, int, shiptype *);
+std::string prin_ship_dest(const ship &);
 void route(int, int, int);
 
 #endif  // ORDER_H

@@ -170,7 +170,7 @@ void survey(const command_t &argv, const player_t Playernum,
           if (!mode) {
             sprintf(buf, "%2d,%-2d ", lowx, lowy);
             notify(Playernum, Governor, buf);
-            if ((d = desshow(Playernum, Governor, p, lowx, lowy, Race, smap)) ==
+            if ((d = desshow(Playernum, Governor, lowx, lowy, Race, smap)) ==
                 CHAR_CLOAKED) {
               sprintf(buf, "?  (    ?    )\n");
               notify(Playernum, Governor, buf);
@@ -217,7 +217,7 @@ void survey(const command_t &argv, const player_t Playernum,
             }
             sprintf(buf, "%c %d %d %d %c %c %d %u %u %u %u %d %u %lu %lu %d",
                     CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
-                    desshow(Playernum, Governor, p, lowx, lowy, Race, smap),
+                    desshow(Playernum, Governor, lowx, lowy, Race, smap),
                     ((s.condition == WASTED) ? 1 : 0), s.owner, s.eff, s.fert,
                     s.mobilization,
                     ((s.crystals && (Race->discoveries[D_CRYSTAL] || Race->God))

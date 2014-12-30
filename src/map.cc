@@ -118,14 +118,12 @@ static void show_map(const player_t Playernum, const governor_t Governor,
       } else {
         if (Race->governor[Governor].toggle.color)
           sprintf(buf, "%c%c", (char)(owner + '?'),
-                  desshow(Playernum, Governor, p, x, y, Race, smap));
+                  desshow(Playernum, Governor, x, y, Race, smap));
         else {
           if (owned1 && Race->governor[Governor].toggle.inverse)
-            sprintf(buf, "1%c",
-                    desshow(Playernum, Governor, p, x, y, Race, smap));
+            sprintf(buf, "1%c", desshow(Playernum, Governor, x, y, Race, smap));
           else
-            sprintf(buf, "0%c",
-                    desshow(Playernum, Governor, p, x, y, Race, smap));
+            sprintf(buf, "0%c", desshow(Playernum, Governor, x, y, Race, smap));
         }
       }
       strcat(output, buf);
@@ -189,9 +187,8 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   }
 }
 
-char desshow(const player_t Playernum, const governor_t Governor,
-             const planettype *p, const int x, const int y, const racetype *r,
-             sector_map &smap) {
+char desshow(const player_t Playernum, const governor_t Governor, const int x,
+             const int y, const racetype *r, sector_map &smap) {
   auto &s = smap.get(x, y);
 
   if (s.troops && !r->governor[Governor].toggle.geography) {

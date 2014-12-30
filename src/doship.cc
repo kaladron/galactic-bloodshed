@@ -478,12 +478,12 @@ static void do_repair(shiptype *ship) {
   if (cost <= ship->resource) {
     use_resource(ship, cost);
     drep = (int)maxrep;
-    ship->damage = MAX(0, (int)(ship->damage) - drep);
+    ship->damage = std::max(0, (int)(ship->damage) - drep);
   } else {
     /* use up all of the ships resources */
     drep = (int)(maxrep * ((double)ship->resource / (int)cost));
     use_resource(ship, ship->resource);
-    ship->damage = MAX(0, (int)(ship->damage) - drep);
+    ship->damage = std::max(0, (int)(ship->damage) - drep);
   }
 }
 

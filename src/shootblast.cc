@@ -288,7 +288,7 @@ static int do_radiation(shiptype *ship, double tech, int strength, int hits,
   fac =
       (2. / 3.14159265) * atan((double)(5 * (tech + 1.0) / (ship->tech + 1.0)));
 
-  arm = MAX(0, Armor(ship) - hits / 5);
+  arm = std::max(0UL, Armor(ship) - hits / 5);
   body = Body(ship);
 
   penetrate = 0;
@@ -301,7 +301,7 @@ static int do_radiation(shiptype *ship, double tech, int strength, int hits,
   dosage = round_rand(40. * (double)penetrate / (double)body);
   dosage = std::min(100, dosage);
 
-  if (dosage > ship->rad) ship->rad = MAX(ship->rad, dosage);
+  if (dosage > ship->rad) ship->rad = std::max(ship->rad, dosage);
   if (success(ship->rad)) ship->active = 0;
 
   casualties = 0;
@@ -342,7 +342,7 @@ static int do_damage(int who, shiptype *ship, double tech, int strength,
 
   fac = p_factor(tech, ship->tech);
   penetration_factor = fac;
-  arm = MAX(0, Armor(ship) + defense - hits / 5);
+  arm = std::max(0UL, Armor(ship) + defense - hits / 5);
   body = sqrt((double)(0.1 * Body(ship)));
 
   critdam = 0;

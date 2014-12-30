@@ -508,7 +508,8 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
     }
   } else if (match(args[2], "intensity")) {
     if (ship->type == STYPE_MIRROR) {
-      ship->special.aimed_at.intensity = MAX(0, MIN(100, atoi(args[3])));
+      ship->special.aimed_at.intensity =
+          std::max(0, std::min(100, atoi(args[3])));
     }
   } else if (match(args[2], "on")) {
     if (!has_switch(ship)) {

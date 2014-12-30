@@ -563,7 +563,7 @@ void deductAPs(int Playernum, int Governor, int n, int snum, int sdata) {
       }
     } else {
       getsdata(&Sdata);
-      Sdata.AP[Playernum - 1] = MAX(0, Sdata.AP[Playernum - 1] - n);
+      Sdata.AP[Playernum - 1] = std::max(0, Sdata.AP[Playernum - 1] - n);
       putsdata(&Sdata);
 
       if (Dir[Playernum - 1][Governor].level == LEVEL_UNIV) {

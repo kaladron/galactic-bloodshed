@@ -190,7 +190,7 @@ void declare(const command_t &argv, const player_t Playernum,
               Playernum, alien->name, n);
       d_mod = 30;
       if (argv.size() > 3) d_mod = std::stoi(argv[3]);
-      d_mod = MAX(d_mod, 30);
+      d_mod = std::max(d_mod, 30);
       break;
     case 'n':
       clrbit(Race->allied, n);

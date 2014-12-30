@@ -106,7 +106,7 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     Race->governor[Governor].money -= enlist_cost;
     putrace(Race);
 
-    cost = MAX(1, amount / (sect.mobilization + 1));
+    cost = std::max(1U, amount / (sect.mobilization + 1));
     sect.troops += amount;
     sect.popn -= amount;
     planet->popn -= amount;
@@ -301,9 +301,9 @@ void move_popn(int Playernum, int Governor, int what) {
       old2gov =
           Stars[Dir[Playernum - 1][Governor].snum]->governor[sect2.owner - 1];
       if (what == CIV)
-        sect.popn = MAX(0, sect.popn - people);
+        sect.popn = std::max(0UL, sect.popn - people);
       else if (what == MIL)
-        sect.troops = MAX(0, sect.troops - people);
+        sect.troops = std::max(0UL, sect.troops - people);
 
       if (what == CIV)
         sprintf(buf, "%d civ assault %lu civ/%lu mil\n", people, sect2.popn,
@@ -751,7 +751,7 @@ static void mech_attack_people(shiptype *ship, int *civ, int *mil,
 
   if (ignore) {
     ammo = (int)log10((double)dstrength + 1.0) - 1;
-    ammo = MIN(MAX(ammo, 0), strength);
+    ammo = std::min(std::max(ammo, 0), strength);
     use_destruct(ship, ammo);
   } else
     use_destruct(ship, strength);
@@ -796,10 +796,10 @@ static void people_attack_mech(shiptype *ship, int civ, int mil, racetype *Race,
               ((double)Defensedata[sect.condition] + 1.0) *
               morale_factor((double)(Race->morale - alien->morale));
   ammo = (int)log10((double)astrength + 1.0) - 1;
-  ammo = MIN(strength, MAX(0, ammo));
+  ammo = std::min(strength, std::max(0, ammo));
   use_destruct(ship, ammo);
   damage = int_rand(0, round_rand(100.0 * astrength / dstrength));
-  damage = MIN(100, damage);
+  damage = std::min(100, damage);
   ship->damage += damage;
   if (ship->damage >= 100) {
     ship->damage = 100;
@@ -843,7 +843,7 @@ void ground_attack(racetype *Race, racetype *alien, int *people, int what,
   *casualties = int_rand(
       0, round_rand((double)((casualty_scale / (what == MIL ? 10 : 1)) *
                              *dstrength / *astrength)));
-  *casualties = MIN(*people, *casualties);
+  *casualties = std::min(*people, *casualties);
   *people -= *casualties;
 
   *casualties2 =

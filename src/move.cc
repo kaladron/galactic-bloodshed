@@ -30,7 +30,7 @@
 #include "vars.h"
 
 static void mech_defend(int, int, int *, int, planettype *, int, int,
-                        const sector &, int, int, const sector &);
+                        const sector &);
 static void mech_attack_people(shiptype *, int *, int *, racetype *, racetype *,
                                const sector &, int, int, int, char *, char *);
 static void people_attack_mech(shiptype *, int, int, racetype *, racetype *,
@@ -255,8 +255,7 @@ void move_popn(int Playernum, int Governor, int what) {
     notify(Playernum, Governor, buf);
 
     /* check for defending mechs */
-    mech_defend(Playernum, Governor, &people, what, planet, x, y, sect, x2, y2,
-                sect2);
+    mech_defend(Playernum, Governor, &people, what, planet, x2, y2, sect2);
     if (!people) {
       putsector(sect, *planet, x, y);
       putsector(sect2, *planet, x2, y2);
@@ -684,8 +683,7 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
 }
 
 static void mech_defend(int Playernum, int Governor, int *people, int type,
-                        planettype *p, int x, int y, const sector &s, int x2,
-                        int y2, const sector &s2) {
+                        planettype *p, int x2, int y2, const sector &s2) {
   int sh;
   shiptype *ship;
   int civ = 0, mil = 0;

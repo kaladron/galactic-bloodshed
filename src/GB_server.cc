@@ -147,6 +147,8 @@ static void help(descriptor_data *);
 static void process_command(int, int, const char *, const command_t &argv);
 static int shovechars(int);
 
+static void GB_time(int, int);
+static void GB_schedule(int, int);
 static descriptor_data *new_connection(int);
 static char *addrout(long);
 static void do_update(int);
@@ -155,6 +157,8 @@ static int make_socket(int);
 static void clearstrings(descriptor_data *);
 static void shutdownsock(descriptor_data *);
 static void freeqs(descriptor_data *);
+static void load_race_data(void);
+static void load_star_data(void);
 static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
 static int process_output(descriptor_data *);
@@ -1473,10 +1477,9 @@ static void process_command(int Playernum, int Governor, const char *comm,
   notify(Playernum, Governor, buf);
 }
 
-void load_race_data(void) {
-  int i;
+static void load_race_data() {
   Num_races = Numraces();
-  for (i = 1; i <= Num_races; i++) {
+  for (int i = 1; i <= Num_races; i++) {
     getrace(&races[i - 1], i); /* allocates into memory */
     if (races[i - 1]->Playernum != i) {
       races[i - 1]->Playernum = i;
@@ -1485,7 +1488,7 @@ void load_race_data(void) {
   }
 }
 
-void load_star_data(void) {
+static void load_star_data() {
   int s, t, i, j;
   startype *star_arena;
   planettype *planet_arena;
@@ -1522,7 +1525,8 @@ void load_star_data(void) {
     }
 }
 
-void GB_time(int Playernum, int Governor) /* report back the update status */
+static void GB_time(int Playernum,
+                    int Governor) /* report back the update status */
 {
   clk = time(0);
   notify(Playernum, Governor, start_buf);
@@ -1532,7 +1536,7 @@ void GB_time(int Playernum, int Governor) /* report back the update status */
   notify(Playernum, Governor, buf);
 }
 
-void GB_schedule(int Playernum, int Governor) {
+static void GB_schedule(int Playernum, int Governor) {
   clk = time(0);
   sprintf(buf, "%d minute update intervals\n", update_time);
   notify(Playernum, Governor, buf);

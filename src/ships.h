@@ -239,7 +239,7 @@ class ship {
   levels_t whatorbits;    /* where orbited (same as Dir) */
 
   unsigned char damage; /* amt of damage */
-  unsigned char rad;    /* radiation level */
+  int rad;    /* radiation level */
   unsigned char retaliate;
   unsigned short target;
 

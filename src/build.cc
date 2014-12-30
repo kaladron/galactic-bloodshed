@@ -87,7 +87,7 @@ void upgrade(const command_t &argv, const player_t Playernum,
   bcopy(dirship, &ship, sizeof(shiptype));
 
   if (argv.size() == 3)
-    sscanf(argv[2].c_str(), "%d", &value);
+    value = std::stoi(argv[2]);
   else
     value = 0;
 
@@ -522,7 +522,7 @@ void make_mod(const command_t &argv, const player_t Playernum,
     }
 
     if (argv.size() == 3)
-      sscanf(argv[2].c_str(), "%d", &value);
+      value = std::stoi(argv[2]);
     else
       value = 0;
 

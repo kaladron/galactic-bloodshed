@@ -189,7 +189,7 @@ void declare(const command_t &argv, const player_t Playernum,
       sprintf(buf, "%s [%d] declares ALLIANCE with %s [%d].\n", Race->name,
               Playernum, alien->name, n);
       d_mod = 30;
-      if (argv.size() > 3) sscanf(argv[3].c_str(), "%d", &d_mod);
+      if (argv.size() > 3) d_mod = std::stoi(argv[3]);
       d_mod = MAX(d_mod, 30);
       break;
     case 'n':

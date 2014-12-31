@@ -30,15 +30,13 @@
 int Bombard(shiptype *ship, planettype *planet, racetype *r) {
   shiptype *s;
   int x, y, x2 = -1, y2, oldown, numdest = 0, found = 0;
-  int i, sh;
-  int ok;
 
   /* for telegramming */
   bzero((char *)Nuked, sizeof(Nuked));
 
   /* check to see if PDNs are present */
-  ok = 1;
-  sh = planet->ships;
+  int ok = 1;
+  shipnum_t sh = planet->ships;
   while (sh && ok) {
     (void)getship(&s, sh);
     ok = !(s->alive && s->type == OTYPE_PLANDEF && s->owner != ship->owner);
@@ -108,7 +106,7 @@ int Bombard(shiptype *ship, planettype *planet, racetype *r) {
               ship->number, ship->name, ship->owner,
               Stars[ship->storbits]->name,
               Stars[ship->storbits]->pnames[ship->pnumorbits]);
-      for (i = 1; i <= Num_races; i++)
+      for (player_t i = 1; i <= Num_races; i++)
         if (Nuked[i - 1] && i != ship->owner)
           warn(i, (int)Stars[ship->storbits]->governor[i - 1], telegram_buf);
       post(buf, COMBAT);

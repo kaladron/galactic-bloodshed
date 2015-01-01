@@ -282,8 +282,7 @@ struct place {/* used in function return for finding place */
 /* can takeoff & land, is mobile, etc. */
 #define speed_rating(s) ((s)->max_speed)
 
-/* has an on/off switch */
-#define has_switch(s) (Shipdata[(s)->type][ABIL_HASSWITCH])
+bool has_switch(shiptype *d);
 
 /* can bombard planets */
 #define can_bombard(s) \

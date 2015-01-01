@@ -122,6 +122,7 @@ add_executable(GB
   rst.cc
   scrap.cc
   sector.cc
+  ships.cc
   shlmisc.cc
   shootblast.cc
   survey.cc

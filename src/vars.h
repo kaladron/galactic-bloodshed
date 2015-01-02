@@ -42,20 +42,12 @@ typedef std::vector<std::string> command_t;
 #define MAXPLAYERS 64
 #define MAXSTRLEN 2047
 #define HUGESTRLEN (2 * MAXSTRLEN + 1)
-#define SMALLSTR 31
 
 #define ANN 0
 #define BROADCAST 1
 #define SHOUT 2
 #define THINK 3
 
-#define LEADER 0
-#define GENERAL 1
-#define CAPTIAN 2
-#define PRIVATE 3
-#define NOVICE 4
-#define ERRORLOG 0
-#define NOERRNO 0
 typedef char hugestr[HUGESTRLEN];
 
 typedef class planet planettype;

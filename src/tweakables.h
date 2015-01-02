@@ -23,10 +23,6 @@
 
 #define LOGIN_NAME_SIZE 64
 
-#define NUM_TIMES_TO_WAIT_FOR_LOCK 200
-#define NEUTRAL_FD 1000
-
-#define MAXCOMMSTRSIZE 250
 #define COMMANDSIZE 42
 #define MAXARGS 256
 
@@ -84,9 +80,6 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 #define UNIVSIZE 150000
 #define SYSTEMSIZE 2000
 #define PLORBITSIZE 50
-
-#define WEEKLY 300
-#define DAILY 180
 
 #define VICTORY_PERCENT 10
 #define VICTORY_UPDATES 5
@@ -203,8 +196,6 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 /* description: you could when you just entered planet scope assaault/dock
    with a ship in close orbit, and then immediately land. */
 
-#undef DIST_TO_BURN /*50*/ /* distance from sun needed to destroy ship */
-
 #define FACTOR_DAMAGE 2.0
 #define FACTOR_DESTPLANET 0.35
 
@@ -219,8 +210,6 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 #define getchr() fgetc(stdin)
 #define putchr(c) fputc((c), stdout)
 /* assorted macros */
-/* sign,abs val of number */
-#define sgn(x) (((x) >= 0) ? 1 : -1)
 #define MIN(x, y) (((x) > (y)) ? (y) : (x))
 #define MAX(x, y) (((x) < (y)) ? (y) : (x))
 /* positive modulus */

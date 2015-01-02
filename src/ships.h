@@ -280,61 +280,37 @@ struct place {/* used in function return for finding place */
 };
 
 /* can takeoff & land, is mobile, etc. */
-#define speed_rating(s) ((s)->max_speed)
+unsigned short speed_rating(shiptype *s);
 
 bool has_switch(shiptype *d);
 
 /* can bombard planets */
-#define can_bombard(s) \
-  (Shipdata[(s)->type][ABIL_GUNS] && ((s)->type != STYPE_MINE))
+bool can_bombard(shiptype *s);
 
 /* can navigate */
-#define can_navigate(s)                                               \
-  (Shipdata[(s)->type][ABIL_SPEED] > 0 && (s)->type != OTYPE_TERRA && \
-   (s)->type != OTYPE_VN)
+bool can_navigate(shiptype *s);
 
 /* can aim at things. */
-#define can_aim(s) ((s)->type >= STYPE_MIRROR && (s)->type <= OTYPE_TRACT)
+bool can_aim(shiptype *s);
 
 /* macros to get ship stats */
-#define Armor(s)                                                  \
-  (((s)->type == OTYPE_FACTORY) ? Shipdata[(s)->type][ABIL_ARMOR] \
-                                : (s)->armor * (100 - (s)->damage) / 100)
-#define Guns(s)                                                         \
-  (((s)->guns == GTYPE_NONE) ? 0 : ((s)->guns == PRIMARY ? (s)->primary \
-                                                         : (s)->secondary))
-#define Max_crew(s)                                      \
-  (((s)->type == OTYPE_FACTORY)                          \
-       ? Shipdata[(s)->type][ABIL_MAXCREW] - (s)->troops \
-       : (s)->max_crew - (s)->troops)
-#define Max_mil(s)                                     \
-  (((s)->type == OTYPE_FACTORY)                        \
-       ? Shipdata[(s)->type][ABIL_MAXCREW] - (s)->popn \
-       : (s)->max_crew - (s)->popn)
-#define Max_resource(s)                                           \
-  (((s)->type == OTYPE_FACTORY) ? Shipdata[(s)->type][ABIL_CARGO] \
-                                : (s)->max_resource)
-#define Max_crystals(s) (127)
-#define Max_fuel(s)                                                 \
-  (((s)->type == OTYPE_FACTORY) ? Shipdata[(s)->type][ABIL_FUELCAP] \
-                                : (s)->max_fuel)
-#define Max_destruct(s)                                             \
-  (((s)->type == OTYPE_FACTORY) ? Shipdata[(s)->type][ABIL_DESTCAP] \
-                                : (s)->max_destruct)
-#define Max_speed(s)                                              \
-  (((s)->type == OTYPE_FACTORY) ? Shipdata[(s)->type][ABIL_SPEED] \
-                                : (s)->max_speed)
-#define Cost(s)                                                         \
-  (((s)->type == OTYPE_FACTORY)                                         \
-       ? 2 * (s)->build_cost * (s)->on + Shipdata[(s)->type][ABIL_COST] \
-       : (s)->build_cost)
-#define Mass(s) ((s)->mass)
-#define Sight(s) (((s)->type == OTYPE_PROBE) || (s)->popn)
-#define Retaliate(s) ((s)->retaliate)
-#define Size(s) ((s)->size)
-#define Body(s) ((s)->size - (s)->max_hanger)
-#define Hanger(s) ((s)->max_hanger - (s)->hanger)
-#define Repair(s) (((s)->type == OTYPE_FACTORY) ? (s)->on : Max_crew(s))
+unsigned long Armor(shiptype *s);
+long Guns(shiptype *s);
+long Max_crew(shiptype *s);
+long Max_mil(shiptype *s);
+long Max_resource(shiptype *s);
+int Max_crystals(shiptype *s);
+long Max_fuel(shiptype *s);
+long Max_destruct(shiptype *s);
+long Max_speed(shiptype *s);
+long Cost(shiptype *s);
+double Mass(shiptype *s);
+long Sight(shiptype *s);
+long Retaliate(shiptype *s);
+int Size(shiptype *s);
+int Body(shiptype *s);
+long Hanger(shiptype *s);
+long Repair(shiptype *s);
 
 extern shipnum_t Num_ships;
 extern const unsigned long Shipdata[NUMSTYPES][NUMABILS];

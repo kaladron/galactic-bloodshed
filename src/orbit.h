@@ -6,7 +6,6 @@
 #define ORBIT_H
 
 #include "races.h"
-#include "ships.h"
 #include "vars.h"
 
 void orbit(const command_t &argv, const player_t Playernum,

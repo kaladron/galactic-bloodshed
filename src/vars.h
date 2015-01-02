@@ -18,12 +18,11 @@
 #include <string>
 #include <vector>
 
-extern unsigned long
-    segments; /* number of movement segments (global variable) */
+/* number of movement segments (global variable) */
+extern unsigned long segments;
 
-#define MAX_ROUTES                                         \
-  4 /* Shipping routes - DON'T change this unless you know \
-       what you are doing */
+/* Shipping routes - DON'T change this unless you know what you are doing */
+const int MAX_ROUTES = 4;
 
 enum levels_t { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
 

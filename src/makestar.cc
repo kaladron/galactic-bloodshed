@@ -344,12 +344,10 @@ startype *Makestar(FILE *planetdata, int snum) {
         Numsects[type][d]++;
         Fertsects[type][d] += smap.get(x, y).fert;
       }
-    Star->planetpos[i] = (int)ftell(planetdata);
-    /* posn of file-last write*/
-    planet.sectormappos = 0; /* sector map pos */
-                             // XXX - switch here to SQL writing and planet_id.
-    // putplanet(&planet, Star, i);
-    fwrite(&planet, sizeof(planettype), 1, planetdata); /* write planet */
+    Star->planetpos[i] = (int)ftell(planetdata);  // posn of file-last write
+    planet.sectormappos = 0;                      // sector map pos
+    putplanet_sql(&planet, Star, i);
+    fwrite(&planet, sizeof(planettype), 1, planetdata);  // write planet
   }
   return Star;
 }

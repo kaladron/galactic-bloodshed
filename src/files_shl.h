@@ -38,6 +38,7 @@ void putsdata(struct stardata *);
 void putrace(racetype *);
 void putstar(startype *, starnum_t);
 void putplanet(planettype *, startype *, int);
+void putplanet_sql(planettype *, startype *, int);
 void putsector(const sector &, const planettype &, const int x, const int y);
 void putsmap(sector_map &map, planettype &p);
 void putship(shiptype *);

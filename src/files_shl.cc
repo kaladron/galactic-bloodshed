@@ -33,6 +33,7 @@ static int commoddata, pdata, racedata, shdata, stdata;
 
 static sqlite3 *db;
 
+static void putplanet_file(planettype *p, startype *star, int pnum);
 static void start_bulk_insert();
 static void end_bulk_insert();
 
@@ -610,11 +611,18 @@ static void end_bulk_insert() {
 }
 
 void putplanet(planettype *p, startype *star, int pnum) {
+  putplanet_file(p, star, pnum);
+  putplanet_sql(p, star, pnum);
+}
+
+static void putplanet_file(planettype *p, startype *star, int pnum) {
+  int filepos = star->planetpos[pnum];
+  Filewrite(pdata, (char *)p, sizeof(planettype), filepos);
+}
+
+void putplanet_sql(planettype *p, startype *star, int pnum) {
   start_bulk_insert();
 
-  int filepos;
-  filepos = star->planetpos[pnum];
-  Filewrite(pdata, (char *)p, sizeof(planettype), filepos);
   const char *tail = 0;
   const char *plinfo_tail = 0;
   const char *plinfo_route_tail = 0;

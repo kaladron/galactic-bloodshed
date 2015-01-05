@@ -246,9 +246,8 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
   }
   int filepos = Stars[star]->planetpos[pnum];
   Fileread(pdata, (char *)*p, sizeof(planettype), filepos);
-#if 0
-  const char *tail, *plinfo_tail, *plinfo_routes_tail;
-  sqlite3_stmt *stmt, *plinfo_stmt, *plinfo_routes_stmt;
+  const char *tail;    //, *plinfo_tail, *plinfo_routes_tail;
+  sqlite3_stmt *stmt;  // , *plinfo_stmt, *plinfo_routes_stmt;
   const char *sql =
       "SELECT planet_id, star_id, planet_order, name, "
       "xpos, ypos, ships, maxx, maxy, popn, troops, maxpopn, total_resources, "
@@ -256,7 +255,7 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
       "condition_methane, condition_oxygen, condition_co2, "
       "condition_hydrogen, condition_nitrogen, condition_sulfur, "
       "condition_helium, condition_other, condition_toxic, "
-      "explored FROM tbl_planet WHERE star_id=?1, planet_order=?2";
+      "explored FROM tbl_planet WHERE star_id=?1 AND planet_order=?2";
   sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
 
   sqlite3_bind_int(stmt, 1, star);
@@ -268,30 +267,59 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
         "Database unable to return the requested planet");
   }
 
-  (*p)->xpos = sqlite3_column_double(stmt, 5);
-  (*p)->ypos = sqlite3_column_double(stmt, 6);
-  (*p)->ships = sqlite3_column_int(stmt, 7);
-  (*p)->Maxx = sqlite3_column_int(stmt, 8);
-  (*p)->Maxy = sqlite3_column_int(stmt, 9);
-  (*p)->popn = sqlite3_column_int(stmt, 10);
-  (*p)->troops = sqlite3_column_int(stmt, 11);
-  (*p)->maxpopn = sqlite3_column_int(stmt, 12);
-  (*p)->total_resources = sqlite3_column_int(stmt, 13);
-  (*p)->slaved_to = sqlite3_column_int(stmt, 14);
-//  (*p)->type = sqlite3_column_int(stmt, 15);
-  (*p)->expltimer = sqlite3_column_int(stmt, 16);
-  (*p)->conditions[RTEMP] = sqlite3_column_int(stmt, 17);
-  (*p)->conditions[TEMP] = sqlite3_column_int(stmt, 18);
-  (*p)->conditions[METHANE] = sqlite3_column_int(stmt, 19);
-  (*p)->conditions[OXYGEN] = sqlite3_column_int(stmt, 20);
-  (*p)->conditions[CO2] = sqlite3_column_int(stmt, 21);
-  (*p)->conditions[HYDROGEN] = sqlite3_column_int(stmt, 22);
-  (*p)->conditions[NITROGEN] = sqlite3_column_int(stmt, 23);
-  (*p)->conditions[SULFUR] = sqlite3_column_int(stmt, 24);
-  (*p)->conditions[HELIUM] = sqlite3_column_int(stmt, 25);
-  (*p)->conditions[OTHER] = sqlite3_column_int(stmt, 26);
-  (*p)->conditions[TOXIC] = sqlite3_column_int(stmt, 27);
+  (*p)->xpos = sqlite3_column_double(stmt, 4);
+  (*p)->ypos = sqlite3_column_double(stmt, 5);
+  (*p)->ships = sqlite3_column_int(stmt, 6);
+  (*p)->Maxx = sqlite3_column_int(stmt, 7);
+  (*p)->Maxy = sqlite3_column_int(stmt, 8);
+  (*p)->popn = sqlite3_column_int(stmt, 9);
+  (*p)->troops = sqlite3_column_int(stmt, 10);
+  (*p)->maxpopn = sqlite3_column_int(stmt, 11);
+  (*p)->total_resources = sqlite3_column_int(stmt, 12);
+  (*p)->slaved_to = sqlite3_column_int(stmt, 13);
+  int p_type = sqlite3_column_int(stmt, 14);
+  switch (p_type) {
+    case 0:
+      (*p)->type = TYPE_EARTH;
+      break;
+    case 1:
+      (*p)->type = TYPE_ASTEROID;
+      break;
+    case 2:
+      (*p)->type = TYPE_MARS;
+      break;
+    case 3:
+      (*p)->type = TYPE_ICEBALL;
+      break;
+    case 4:
+      (*p)->type = TYPE_GASGIANT;
+      break;
+    case 5:
+      (*p)->type = TYPE_WATER;
+      break;
+    case 6:
+      (*p)->type = TYPE_FOREST;
+      break;
+    case 7:
+      (*p)->type = TYPE_DESERT;
+      break;
+    default:
+      throw new std::runtime_error("Bad data in type field");
+  }
+  (*p)->expltimer = sqlite3_column_int(stmt, 15);
+  (*p)->conditions[RTEMP] = sqlite3_column_int(stmt, 16);
+  (*p)->conditions[TEMP] = sqlite3_column_int(stmt, 17);
+  (*p)->conditions[METHANE] = sqlite3_column_int(stmt, 18);
+  (*p)->conditions[OXYGEN] = sqlite3_column_int(stmt, 19);
+  (*p)->conditions[CO2] = sqlite3_column_int(stmt, 20);
+  (*p)->conditions[HYDROGEN] = sqlite3_column_int(stmt, 21);
+  (*p)->conditions[NITROGEN] = sqlite3_column_int(stmt, 22);
+  (*p)->conditions[SULFUR] = sqlite3_column_int(stmt, 23);
+  (*p)->conditions[HELIUM] = sqlite3_column_int(stmt, 24);
+  (*p)->conditions[OTHER] = sqlite3_column_int(stmt, 25);
+  (*p)->conditions[TOXIC] = sqlite3_column_int(stmt, 26);
 
+#if 0
   const char *plinfo_sql =
       "SELECT planet_id, player_id, fuel, destruct, "
       "resource, popn, troops, crystals, prod_res, "

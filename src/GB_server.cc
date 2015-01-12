@@ -199,6 +199,7 @@ int main(int argc, char **argv) {
   // set.
   commands = new std::unordered_map<std::string, CommandFunction>{
       {"analysis", analysis},
+      {"arm", arm},
       {"autoreport", autoreport},
       {"bid", bid},
       {"build", build},
@@ -207,6 +208,8 @@ int main(int argc, char **argv) {
       {"colonies", colonies},
       {"cs", cs},
       {"declare", declare},
+      {"deploy", move_popn},
+      {"disarm", arm},
       {"dismount", mount},
       {"distance", distance},
       {"enslave", enslave},
@@ -217,6 +220,7 @@ int main(int argc, char **argv) {
       {"make", make_mod},
       {"map", map},
       {"modify", make_mod},
+      {"move", move_popn},
       {"mount", mount},
       {"orbit", orbit},
       {"pledge", pledge},
@@ -238,6 +242,7 @@ int main(int argc, char **argv) {
 #ifdef VOTING
       {"vote", vote},
 #endif
+      {"walk", walk},
       {"weapons", rst},
   };
 
@@ -1324,10 +1329,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     announce(Playernum, Governor, string, ANN);
   else if (match(args[0], "allocate"))
     allocateAPs(Playernum, Governor, 0);
-  else if (match(args[0], "arm"))
-    arm(Playernum, Governor, 0, 1);
-  else if (match(args[0], "disarm"))
-    arm(Playernum, Governor, 0, 0);
   else if (match(args[0], "assault"))
     dock(Playernum, Governor, 1, 1);
   else if (match(args[0], "bless") && God)
@@ -1389,10 +1390,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     load(Playernum, Governor, 0, 0);
   else if (match(args[0], "mobilize"))
     mobilize(Playernum, Governor, 1);
-  else if (match(args[0], "move"))
-    move_popn(Playernum, Governor, CIV);
-  else if (match(args[0], "deploy"))
-    move_popn(Playernum, Governor, MIL);
   else if (match(args[0], "motto"))
     motto(Playernum, Governor, 0, comm);
   else if (match(args[0], "name"))
@@ -1458,8 +1455,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     launch(Playernum, Governor, 1);
   else if (match(args[0], "victory"))
     victory(Playernum, Governor, 0);
-  else if (match(args[0], "walk"))
-    walk(Playernum, Governor, 1);
   else if (match(args[0], "time"))
     GB_time(Playernum, Governor);
   else if (match(args[0], "schedule"))

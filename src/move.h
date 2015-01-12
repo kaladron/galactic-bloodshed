@@ -9,9 +9,12 @@
 #include "ships.h"
 #include "vars.h"
 
-void arm(int, int, int, int);
-void move_popn(int, int, int);
-void walk(int, int, int);
+void arm(const command_t &argv, const player_t Playernum,
+         const governor_t Governor);
+void move_popn(const command_t &argv, const player_t Playernum,
+               const governor_t Governor);
+void walk(const command_t &argv, const player_t Playernum,
+          const governor_t Governor);
 int get_move(char, int, int, int *, int *, planettype *);
 void ground_attack(racetype *, racetype *, int *, int, population_t *,
                    population_t *, unsigned int, unsigned int, double, double,

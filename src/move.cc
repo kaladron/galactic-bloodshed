@@ -36,7 +36,14 @@ static void mech_attack_people(shiptype *, int *, int *, racetype *, racetype *,
 static void people_attack_mech(shiptype *, int, int, racetype *, racetype *,
                                const sector &, int, int, char *, char *);
 
-void arm(int Playernum, int Governor, int APcount, int mode) {
+void arm(const command_t &argv, const player_t Playernum,
+         const governor_t Governor) {
+  int mode;
+  if (argv[0] == "arm") {
+    mode = 1;
+  } else {
+    mode = 0;  // disarm
+  }
   planettype *planet;
   racetype *Race;
   int x = -1, y = -1, max_allowed;
@@ -60,7 +67,7 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     return;
   }
 
-  sscanf(args[1], "%d,%d", &x, &y);
+  sscanf(argv[1].c_str(), "%d,%d", &x, &y);
   if (x < 0 || y < 0 || x > planet->Maxx - 1 || y > planet->Maxy - 1) {
     notify(Playernum, Governor, "Illegal coordinates.\n");
     free(planet);
@@ -79,7 +86,7 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     if (argn < 3)
       amount = max_allowed;
     else {
-      sscanf(args[2], "%d", &amount);
+      amount = std::stoi(argv[2]);
       if (amount <= 0) {
         notify(Playernum, Governor,
                "You must specify a positive number of civs to arm.\n");
@@ -125,7 +132,7 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
     if (argn < 3)
       amount = sect.troops;
     else {
-      sscanf(args[2], "%d", &amount);
+      amount = std::stoi(argv[2]);
       if (amount <= 0) {
         notify(Playernum, Governor,
                "You must specify a positive number of civs to arm.\n");
@@ -150,7 +157,14 @@ void arm(int Playernum, int Governor, int APcount, int mode) {
   free(planet);
 }
 
-void move_popn(int Playernum, int Governor, int what) {
+void move_popn(const command_t &argv, const player_t Playernum,
+               const governor_t Governor) {
+  int what;
+  if (argv[0] == "move") {
+    what = CIV;
+  } else {
+    what = MIL;  // deploy
+  }
   int Assault, APcost; /* unfriendly movement */
   int casualties, casualties2, casualties3;
 
@@ -177,7 +191,7 @@ void move_popn(int Playernum, int Governor, int what) {
     free(planet);
     return;
   }
-  sscanf(args[1], "%d,%d", &x, &y);
+  sscanf(argv[1].c_str(), "%d,%d", &x, &y);
   if (x < 0 || y < 0 || x > planet->Maxx - 1 || y > planet->Maxy - 1) {
     sprintf(buf, "Origin coordinates illegal.\n");
     notify(Playernum, Governor, buf);
@@ -196,7 +210,7 @@ void move_popn(int Playernum, int Governor, int what) {
       free(planet);
       return;
     }
-    if (!get_move(args[2][n++], x, y, &x2, &y2, planet)) {
+    if (!get_move(argv[2].c_str()[n++], x, y, &x2, &y2, planet)) {
       notify(Playernum, Governor, "Finished.\n");
       putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
@@ -223,7 +237,7 @@ void move_popn(int Playernum, int Governor, int what) {
     /* ok, the move is legal */
     auto sect2 = getsector(*planet, x2, y2);
     if (argn >= 4) {
-      sscanf(args[3], "%d", &people);
+      people = std::stoi(argv[3]);
       if (people < 0) {
         if (what == CIV)
           people = sect.popn + people;
@@ -448,7 +462,9 @@ void move_popn(int Playernum, int Governor, int what) {
   free(planet);
 }
 
-void walk(int Playernum, int Governor, int APcount) {
+void walk(const command_t &argv, const player_t Playernum,
+          const governor_t Governor) {
+  const int APcount = 1;
   shiptype *ship, *ship2, dummy;
   planettype *p;
   int shipno, x, y, i, sh, succ = 0, civ, mil;
@@ -460,7 +476,7 @@ void walk(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, "Walk what?\n");
     return;
   }
-  sscanf(args[1] + (args[1][0] == '#'), "%d", &shipno);
+  sscanf(argv[1].c_str() + (argv[1].c_str()[0] == '#'), "%d", &shipno);
   if (!getship(&ship, shipno)) {
     notify(Playernum, Governor, "No such ship.\n");
     return;
@@ -499,7 +515,8 @@ void walk(int Playernum, int Governor, int APcount) {
   getplanet(&p, (int)ship->storbits, (int)ship->pnumorbits);
   Race = races[Playernum - 1];
 
-  if (!get_move(args[2][0], (int)ship->land_x, (int)ship->land_y, &x, &y, p)) {
+  if (!get_move(argv[2].c_str()[0], (int)ship->land_x, (int)ship->land_y, &x,
+                &y, p)) {
     notify(Playernum, Governor, "Illegal move.\n");
     free(p);
     free(ship);

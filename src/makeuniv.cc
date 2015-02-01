@@ -48,7 +48,6 @@ static int printpostscript = 0;
 
 int main(int argc, char *argv[]) {
   FILE *planetdata;
-  char str[200];
   int c, i;
 
   /*
@@ -144,7 +143,6 @@ int main(int argc, char *argv[]) {
   Makeplanet_init();
   Makestar_init();
   Sdata.numstars = nstars;
-  system(str);
 
   open_data_files();
   initsqldata();
@@ -210,9 +208,7 @@ int main(int argc, char *argv[]) {
 
   /*
    * Telegram files: directory and a file for each player. */
-  sprintf(str, "/bin/mkdir %s", TELEGRAMDIR);
-  system(str);
-  chmod(TELEGRAMDIR, 00770);
+  mkdir(TELEGRAMDIR, 00770);
 #if 0  
   /* Why is this not needed any more? */
   for (i=1; i<MAXPLAYERS; i++) {
@@ -223,9 +219,7 @@ int main(int argc, char *argv[]) {
 
   /*
    * News files: directory and the 4 types of news. */
-  sprintf(str, "/bin/mkdir %s", NEWSDIR);
-  system(str);
-  chmod(NEWSDIR, 00770);
+  mkdir(NEWSDIR, 00770);
   EmptyFile(DECLARATIONFL);
   EmptyFile(TRANSFERFL);
   EmptyFile(COMBATFL);

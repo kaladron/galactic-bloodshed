@@ -244,10 +244,9 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
   else { /* Allocate space for others */
     *p = (planettype *)malloc(sizeof(planettype));
   }
-  int filepos = Stars[star]->planetpos[pnum];
-  Fileread(pdata, (char *)*p, sizeof(planettype), filepos);
-  const char *tail;    //, *plinfo_tail, *plinfo_routes_tail;
-  sqlite3_stmt *stmt;  // , *plinfo_stmt, *plinfo_routes_stmt;
+  bzero(*p, sizeof(planettype));
+  const char *tail, *plinfo_tail, *plinfo_routes_tail;
+  sqlite3_stmt *stmt, *plinfo_stmt, *plinfo_routes_stmt;
   const char *sql =
       "SELECT planet_id, star_id, planet_order, name, "
       "xpos, ypos, ships, maxx, maxy, popn, troops, maxpopn, total_resources, "
@@ -267,6 +266,7 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
         "Database unable to return the requested planet");
   }
 
+  (*p)->planet_id = sqlite3_column_int(stmt, 0);
   (*p)->xpos = sqlite3_column_double(stmt, 4);
   (*p)->ypos = sqlite3_column_double(stmt, 5);
   (*p)->ships = sqlite3_column_int(stmt, 6);
@@ -319,7 +319,6 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
   (*p)->conditions[OTHER] = sqlite3_column_int(stmt, 25);
   (*p)->conditions[TOXIC] = sqlite3_column_int(stmt, 26);
 
-#if 0
   const char *plinfo_sql =
       "SELECT planet_id, player_id, fuel, destruct, "
       "resource, popn, troops, crystals, prod_res, "
@@ -329,6 +328,34 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
       "newtax, guns, mob_points, est_production FROM tbl_plinfo "
       "WHERE planet_id=?1";
   sqlite3_prepare_v2(db, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail);
+  sqlite3_bind_int(plinfo_stmt, 1, (*p)->planet_id);
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    int player_id = sqlite3_column_int(plinfo_stmt, 1);
+    (*p)->info[player_id].fuel = sqlite3_column_int(plinfo_stmt, 2);
+    (*p)->info[player_id].destruct = sqlite3_column_int(plinfo_stmt, 3);
+    (*p)->info[player_id].resource = sqlite3_column_int(plinfo_stmt, 4);
+    (*p)->info[player_id].popn = sqlite3_column_int(plinfo_stmt, 5);
+    (*p)->info[player_id].troops = sqlite3_column_int(plinfo_stmt, 6);
+    (*p)->info[player_id].crystals = sqlite3_column_int(plinfo_stmt, 7);
+    (*p)->info[player_id].prod_res = sqlite3_column_int(plinfo_stmt, 8);
+    (*p)->info[player_id].prod_fuel = sqlite3_column_int(plinfo_stmt, 9);
+    (*p)->info[player_id].prod_dest = sqlite3_column_int(plinfo_stmt, 10);
+    (*p)->info[player_id].prod_crystals = sqlite3_column_int(plinfo_stmt, 11);
+    (*p)->info[player_id].prod_money = sqlite3_column_int(plinfo_stmt, 12);
+    (*p)->info[player_id].prod_tech = sqlite3_column_int(plinfo_stmt, 13);
+    (*p)->info[player_id].tech_invest = sqlite3_column_int(plinfo_stmt, 14);
+    (*p)->info[player_id].numsectsowned = sqlite3_column_int(plinfo_stmt, 15);
+    (*p)->info[player_id].comread = sqlite3_column_int(plinfo_stmt, 16);
+    (*p)->info[player_id].mob_set = sqlite3_column_int(plinfo_stmt, 17);
+    (*p)->info[player_id].tox_thresh = sqlite3_column_int(plinfo_stmt, 18);
+    (*p)->info[player_id].explored = sqlite3_column_int(plinfo_stmt, 19);
+    (*p)->info[player_id].autorep = sqlite3_column_int(plinfo_stmt, 20);
+    (*p)->info[player_id].tax = sqlite3_column_int(plinfo_stmt, 21);
+    (*p)->info[player_id].newtax = sqlite3_column_int(plinfo_stmt, 22);
+    (*p)->info[player_id].guns = sqlite3_column_int(plinfo_stmt, 23);
+    (*p)->info[player_id].mob_points = sqlite3_column_int(plinfo_stmt, 24);
+    (*p)->info[player_id].est_production = sqlite3_column_int(plinfo_stmt, 25);
+  }
 
   const char *plinfo_routes_sql =
       "SELECT planet_id, player_id, routenum, order_set, dest_star, "
@@ -336,7 +363,25 @@ void getplanet(planettype **p, starnum_t star, planetnum_t pnum) {
       "planet_id=1";
   sqlite3_prepare_v2(db, plinfo_routes_sql, -1, &plinfo_routes_stmt,
                      &plinfo_routes_tail);
-#endif
+  sqlite3_bind_int(plinfo_routes_stmt, 1, (*p)->planet_id);
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    int player_id = sqlite3_column_int(plinfo_routes_stmt, 1);
+    int routenum = sqlite3_column_int(plinfo_routes_stmt, 2);
+    (*p)->info[player_id].route[routenum].set =
+        sqlite3_column_int(plinfo_routes_stmt, 3);
+    (*p)->info[player_id].route[routenum].dest_star =
+        sqlite3_column_int(plinfo_routes_stmt, 4);
+    (*p)->info[player_id].route[routenum].dest_planet =
+        sqlite3_column_int(plinfo_routes_stmt, 5);
+    (*p)->info[player_id].route[routenum].load =
+        sqlite3_column_int(plinfo_routes_stmt, 6);
+    (*p)->info[player_id].route[routenum].unload =
+        sqlite3_column_int(plinfo_routes_stmt, 7);
+    (*p)->info[player_id].route[routenum].x =
+        sqlite3_column_int(plinfo_routes_stmt, 8);
+    (*p)->info[player_id].route[routenum].y =
+        sqlite3_column_int(plinfo_routes_stmt, 9);
+  }
 }
 
 sector getsector(const planettype &p, const int x, const int y) {
@@ -708,17 +753,17 @@ void putplanet_sql(planettype *p, startype *star, int pnum) {
   sqlite3_bind_int(stmt, 14, p->slaved_to);
   sqlite3_bind_int(stmt, 15, p->type);
   sqlite3_bind_int(stmt, 16, p->expltimer);
-  sqlite3_bind_int(stmt, 17, p->conditions[0]);
-  sqlite3_bind_int(stmt, 18, p->conditions[1]);
-  sqlite3_bind_int(stmt, 19, p->conditions[2]);
-  sqlite3_bind_int(stmt, 20, p->conditions[3]);
-  sqlite3_bind_int(stmt, 21, p->conditions[4]);
-  sqlite3_bind_int(stmt, 22, p->conditions[5]);
-  sqlite3_bind_int(stmt, 23, p->conditions[6]);
-  sqlite3_bind_int(stmt, 24, p->conditions[7]);
-  sqlite3_bind_int(stmt, 25, p->conditions[8]);
-  sqlite3_bind_int(stmt, 26, p->conditions[9]);
-  sqlite3_bind_int(stmt, 27, p->conditions[10]);
+  sqlite3_bind_int(stmt, 17, p->conditions[RTEMP]);
+  sqlite3_bind_int(stmt, 18, p->conditions[TEMP]);
+  sqlite3_bind_int(stmt, 19, p->conditions[METHANE]);
+  sqlite3_bind_int(stmt, 20, p->conditions[OXYGEN]);
+  sqlite3_bind_int(stmt, 21, p->conditions[CO2]);
+  sqlite3_bind_int(stmt, 22, p->conditions[HYDROGEN]);
+  sqlite3_bind_int(stmt, 23, p->conditions[NITROGEN]);
+  sqlite3_bind_int(stmt, 24, p->conditions[SULFUR]);
+  sqlite3_bind_int(stmt, 25, p->conditions[HELIUM]);
+  sqlite3_bind_int(stmt, 26, p->conditions[OTHER]);
+  sqlite3_bind_int(stmt, 27, p->conditions[TOXIC]);
   sqlite3_bind_int(stmt, 28, p->explored);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {

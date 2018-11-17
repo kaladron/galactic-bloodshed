@@ -6,14 +6,14 @@
 
 #include "shlmisc.h"
 
-#include <boost/format.hpp>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
 #include <string.h>
 #include <time.h>
+#include <sstream>
+#include <string>
 
 #include "GB_server.h"
 #include "buffers.h"
@@ -30,8 +30,11 @@ static void do_revoke(racetype *, int, int);
 // TODO(jeffbailey): Move this into the ship class when we stop using bzero to
 // initalize it.
 std::string Ship(const ship &s) {
-  return str(boost::format("%c%lu %s [%d]") % Shipltrs[s.type] % s.number %
-             s.name % s.owner);
+  // return str(boost::format("%c%lu %s [%d]") % Shipltrs[s.type] % s.number %
+  //           s.name % s.owner);
+  std::stringstream ss;
+  ss << Shipltrs[s.type] << s.number << " " << s.name << " [" << s.owner << "]";
+  return ss.str();
 }
 
 void grant(int Playernum, int Governor, int APcount) {

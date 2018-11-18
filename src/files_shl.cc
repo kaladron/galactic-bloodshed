@@ -38,7 +38,7 @@ static void end_bulk_insert();
 
 void close_file(int fd) { close(fd); }
 
-void initsqldata() __attribute__((no_sanitize_memory)) {
+void initsqldata() { // __attribute__((no_sanitize_memory)) {
   const char *tbl_create = R"(
       CREATE TABLE tbl_planet(
           planet_id INT PRIMARY KEY NOT NULL, star_id INT NOT NULL,

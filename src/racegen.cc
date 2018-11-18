@@ -740,7 +740,7 @@ static void help(int argc, char *argv[]) {
     printf("\n");
 
     printf("\t\t   <planettype> ::= %s", planet_print_name[0]);
-    for (i = FIRST_HOME_PLANET_TYPE + 1; i <= min(4, LAST_HOME_PLANET_TYPE);
+    for (i = FIRST_HOME_PLANET_TYPE + 1; i <= std::min(4, LAST_HOME_PLANET_TYPE);
          i++) {
       printf(" | %s", planet_print_name[i]);
     }
@@ -757,7 +757,7 @@ static void help(int argc, char *argv[]) {
     printf("\n");
 
     printf("\t\t   <sectortype> ::= %s", sector_print_name[1]);
-    for (i = FIRST_SECTOR_TYPE + 2; i <= min(5, LAST_SECTOR_TYPE); i++) {
+    for (i = FIRST_SECTOR_TYPE + 2; i <= std::min(5, LAST_SECTOR_TYPE); i++) {
       printf(" | %s", sector_print_name[i]);
     }
     printf("\n\t\t                 ");

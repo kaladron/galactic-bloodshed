@@ -431,7 +431,7 @@ static struct timeval msec_add(struct timeval t, int x) {
   return t;
 }
 
-static int shovechars(int port) __attribute__((no_sanitize_memory)) {
+static int shovechars(int port) { // __attribute__((no_sanitize_memory)) {
   fd_set input_set, output_set;
   long now, go_time;
   struct timeval last_slice, current_time;

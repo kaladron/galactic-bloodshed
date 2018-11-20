@@ -41,7 +41,6 @@ void proj_fuel(const command_t &argv, const player_t Playernum,
   segments_t current_segs;
   double fuel_usage, level, dist;
   shiptype *ship;
-  planettype *p;
   char buf[1024];
   double current_fuel = 0.0, gravity_factor = 0.0;
   placetype tmpdest;
@@ -86,11 +85,10 @@ void proj_fuel(const command_t &argv, const player_t Playernum,
     return;
   }
   if (landed(ship) && (ship->whatorbits == LEVEL_PLAN)) {
-    getplanet(&p, ship->storbits, ship->pnumorbits);
+    const auto &p = getplanet(ship->storbits, ship->pnumorbits);
     gravity_factor = gravity(p);
     sprintf(plan_buf, "/%s/%s", Stars[(int)ship->storbits]->name,
             Stars[(int)ship->storbits]->pnames[(int)ship->pnumorbits]);
-    free(p);
   }
   std::string deststr;
   if (argv.size() == 2) {
@@ -148,10 +146,9 @@ void proj_fuel(const command_t &argv, const player_t Playernum,
     y_1 = tmpship->ypos;
     free(tmpship);
   } else if (tmpdest.level == LEVEL_PLAN) {
-    getplanet(&p, tmpdest.snum, tmpdest.pnum);
-    x_1 = p->xpos + Stars[tmpdest.snum]->xpos;
-    y_1 = p->ypos + Stars[tmpdest.snum]->ypos;
-    free(p);
+    const auto &p = getplanet(tmpdest.snum, tmpdest.pnum);
+    x_1 = p.xpos + Stars[tmpdest.snum]->xpos;
+    y_1 = p.ypos + Stars[tmpdest.snum]->ypos;
   } else if (tmpdest.level == LEVEL_STAR) {
     x_1 = Stars[tmpdest.snum]->xpos;
     y_1 = Stars[tmpdest.snum]->ypos;

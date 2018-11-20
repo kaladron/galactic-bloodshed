@@ -61,7 +61,6 @@ void order(int Playernum, int Governor, int APcount) {
 void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
   int i, j;
   placetype where, pl;
-  planettype *planet;
   shiptype *tmpship;
 
   if (!ship->active) {
@@ -570,20 +569,18 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
         notify(Playernum, Governor, "You cannot activate the factory here.\n");
         return;
       } else {
-        getplanet(&planet, ship->deststar, ship->destpnum);
+        auto planet = getplanet(ship->deststar, ship->destpnum);
         oncost = 2 * ship->build_cost;
-        if (planet->info[Playernum - 1].resource < oncost) {
+        if (planet.info[Playernum - 1].resource < oncost) {
           sprintf(buf,
                   "You don't have %d resources on the planet to activate "
                   "this factory.\n",
                   oncost);
           notify(Playernum, Governor, buf);
-          free(planet);
           return;
         } else {
-          planet->info[Playernum - 1].resource -= oncost;
+          planet.info[Playernum - 1].resource -= oncost;
           putplanet(planet, Stars[ship->deststar], (int)ship->destpnum);
-          free(planet);
         }
       }
       sprintf(buf, "Factory activated at a cost of %d resources.\n", oncost);
@@ -629,7 +626,6 @@ std::string prin_ship_dest(const ship &ship) {
 static void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
   double dist;
   startype *str;
-  planettype *p;
   double xf, yf;
 
   str = Stars[s->special.aimed_at.snum];
@@ -659,15 +655,15 @@ static void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
         notify(Playernum, Governor, buf);
       }
       break;
-    case LEVEL_PLAN:
+    case LEVEL_PLAN: {
       sprintf(buf, "Planet %s ", prin_aimed_at(*s).c_str());
       notify(Playernum, Governor, buf);
-      getplanet(&p, s->special.aimed_at.snum, s->special.aimed_at.pnum);
-      if ((dist = sqrt(
-               Distsq(xf, yf, str->xpos + p->xpos, str->ypos + p->ypos))) <=
+      auto p = getplanet(s->special.aimed_at.snum, s->special.aimed_at.pnum);
+      if ((dist =
+               sqrt(Distsq(xf, yf, str->xpos + p.xpos, str->ypos + p.ypos))) <=
           tele_range((int)s->type, s->tech)) {
         setbit(str->explored, Playernum);
-        p->info[Playernum - 1].explored = 1;
+        p.info[Playernum - 1].explored = 1;
         putplanet(p, Stars[s->special.aimed_at.snum],
                   (int)s->special.aimed_at.pnum);
         sprintf(buf, "Surveyed, distance %g.\n", dist);
@@ -677,8 +673,7 @@ static void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
                 tele_range((int)s->type, s->tech));
         notify(Playernum, Governor, buf);
       }
-      free(p);
-      break;
+    } break;
     case LEVEL_SHIP:
       sprintf(buf, "You can't see anything of use there.\n");
       notify(Playernum, Governor, buf);
@@ -859,7 +854,6 @@ void route(int Playernum, int Governor, int APcount) {
   int i, x, y;
   unsigned char star, planet, load, unload;
   char *c;
-  planettype *p;
   placetype where;
 
   if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
@@ -867,18 +861,18 @@ void route(int Playernum, int Governor, int APcount) {
            "You have to 'cs' to a planet to examine routes.\n");
     return;
   }
-  getplanet(&p, Dir[Playernum - 1][Governor].snum,
-            Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
+                     Dir[Playernum - 1][Governor].pnum);
   if (argn == 1) { /* display all shipping routes that are active */
     for (i = 1; i <= MAX_ROUTES; i++)
-      if (p->info[Playernum - 1].route[i - 1].set) {
-        star = p->info[Playernum - 1].route[i - 1].dest_star;
-        planet = p->info[Playernum - 1].route[i - 1].dest_planet;
-        load = p->info[Playernum - 1].route[i - 1].load;
-        unload = p->info[Playernum - 1].route[i - 1].unload;
+      if (p.info[Playernum - 1].route[i - 1].set) {
+        star = p.info[Playernum - 1].route[i - 1].dest_star;
+        planet = p.info[Playernum - 1].route[i - 1].dest_planet;
+        load = p.info[Playernum - 1].route[i - 1].load;
+        unload = p.info[Playernum - 1].route[i - 1].unload;
         sprintf(buf, "%2d  land %2d,%2d   ", i,
-                p->info[Playernum - 1].route[i - 1].x,
-                p->info[Playernum - 1].route[i - 1].y);
+                p.info[Playernum - 1].route[i - 1].x,
+                p.info[Playernum - 1].route[i - 1].y);
         strcat(buf, "load: ");
         if (Fuel(load))
           strcat(buf, "f");
@@ -918,23 +912,21 @@ void route(int Playernum, int Governor, int APcount) {
         notify(Playernum, Governor, buf);
       }
     notify(Playernum, Governor, "Done.\n");
-    free(p);
     return;
   } else if (argn == 2) {
     sscanf(args[1], "%d", &i);
     if (i > MAX_ROUTES || i < 1) {
       notify(Playernum, Governor, "Bad route number.\n");
-      free(p);
       return;
     }
-    if (p->info[Playernum - 1].route[i - 1].set) {
-      star = p->info[Playernum - 1].route[i - 1].dest_star;
-      planet = p->info[Playernum - 1].route[i - 1].dest_planet;
-      load = p->info[Playernum - 1].route[i - 1].load;
-      unload = p->info[Playernum - 1].route[i - 1].unload;
+    if (p.info[Playernum - 1].route[i - 1].set) {
+      star = p.info[Playernum - 1].route[i - 1].dest_star;
+      planet = p.info[Playernum - 1].route[i - 1].dest_planet;
+      load = p.info[Playernum - 1].route[i - 1].load;
+      unload = p.info[Playernum - 1].route[i - 1].unload;
       sprintf(buf, "%2d  land %2d,%2d   ", i,
-              p->info[Playernum - 1].route[i - 1].x,
-              p->info[Playernum - 1].route[i - 1].y);
+              p.info[Playernum - 1].route[i - 1].x,
+              p.info[Playernum - 1].route[i - 1].y);
       if (load) {
         sprintf(temp, "load: ");
         strcat(buf, temp);
@@ -957,33 +949,29 @@ void route(int Playernum, int Governor, int APcount) {
       notify(Playernum, Governor, buf);
     }
     notify(Playernum, Governor, "Done.\n");
-    free(p);
     return;
   } else if (argn == 3) {
     sscanf(args[1], "%d", &i);
     if (i > MAX_ROUTES || i < 1) {
       notify(Playernum, Governor, "Bad route number.\n");
-      free(p);
       return;
     }
     if (match(args[2], "activate"))
-      p->info[Playernum - 1].route[i - 1].set = 1;
+      p.info[Playernum - 1].route[i - 1].set = 1;
     else if (match(args[2], "deactivate"))
-      p->info[Playernum - 1].route[i - 1].set = 0;
+      p.info[Playernum - 1].route[i - 1].set = 0;
     else {
       where = Getplace(Playernum, Governor, args[2], 1);
       if (!where.err) {
         if (where.level != LEVEL_PLAN) {
           notify(Playernum, Governor, "You have to designate a planet.\n");
-          free(p);
           return;
         }
-        p->info[Playernum - 1].route[i - 1].dest_star = where.snum;
-        p->info[Playernum - 1].route[i - 1].dest_planet = where.pnum;
+        p.info[Playernum - 1].route[i - 1].dest_star = where.snum;
+        p.info[Playernum - 1].route[i - 1].dest_planet = where.pnum;
         notify(Playernum, Governor, "Set.\n");
       } else {
         notify(Playernum, Governor, "Illegal destination.\n");
-        free(p);
         return;
       }
     }
@@ -991,47 +979,42 @@ void route(int Playernum, int Governor, int APcount) {
     sscanf(args[1], "%d", &i);
     if (i > MAX_ROUTES || i < 1) {
       notify(Playernum, Governor, "Bad route number.\n");
-      free(p);
       return;
     }
     if (match(args[2], "land")) {
       sscanf(args[3], "%d,%d", &x, &y);
-      if (x < 0 || x > p->Maxx - 1 || y < 0 || y > p->Maxy - 1) {
+      if (x < 0 || x > p.Maxx - 1 || y < 0 || y > p.Maxy - 1) {
         notify(Playernum, Governor, "Bad sector coordinates.\n");
-        free(p);
         return;
       }
-      p->info[Playernum - 1].route[i - 1].x = x;
-      p->info[Playernum - 1].route[i - 1].y = y;
+      p.info[Playernum - 1].route[i - 1].x = x;
+      p.info[Playernum - 1].route[i - 1].y = y;
     } else if (match(args[2], "load")) {
-      p->info[Playernum - 1].route[i - 1].load = 0;
+      p.info[Playernum - 1].route[i - 1].load = 0;
       c = args[3];
       while (*c) {
-        if (*c == 'f') p->info[Playernum - 1].route[i - 1].load |= M_FUEL;
-        if (*c == 'd') p->info[Playernum - 1].route[i - 1].load |= M_DESTRUCT;
-        if (*c == 'r') p->info[Playernum - 1].route[i - 1].load |= M_RESOURCES;
-        if (*c == 'x') p->info[Playernum - 1].route[i - 1].load |= M_CRYSTALS;
+        if (*c == 'f') p.info[Playernum - 1].route[i - 1].load |= M_FUEL;
+        if (*c == 'd') p.info[Playernum - 1].route[i - 1].load |= M_DESTRUCT;
+        if (*c == 'r') p.info[Playernum - 1].route[i - 1].load |= M_RESOURCES;
+        if (*c == 'x') p.info[Playernum - 1].route[i - 1].load |= M_CRYSTALS;
         c++;
       }
     } else if (match(args[2], "unload")) {
-      p->info[Playernum - 1].route[i - 1].unload = 0;
+      p.info[Playernum - 1].route[i - 1].unload = 0;
       c = args[3];
       while (*c) {
-        if (*c == 'f') p->info[Playernum - 1].route[i - 1].unload |= M_FUEL;
-        if (*c == 'd') p->info[Playernum - 1].route[i - 1].unload |= M_DESTRUCT;
-        if (*c == 'r')
-          p->info[Playernum - 1].route[i - 1].unload |= M_RESOURCES;
-        if (*c == 'x') p->info[Playernum - 1].route[i - 1].unload |= M_CRYSTALS;
+        if (*c == 'f') p.info[Playernum - 1].route[i - 1].unload |= M_FUEL;
+        if (*c == 'd') p.info[Playernum - 1].route[i - 1].unload |= M_DESTRUCT;
+        if (*c == 'r') p.info[Playernum - 1].route[i - 1].unload |= M_RESOURCES;
+        if (*c == 'x') p.info[Playernum - 1].route[i - 1].unload |= M_CRYSTALS;
         c++;
       }
     } else {
       notify(Playernum, Governor, "What are you trying to do?\n");
-      free(p);
       return;
     }
     notify(Playernum, Governor, "Set.\n");
   }
   putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
-  free(p);
 }

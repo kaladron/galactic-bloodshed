@@ -27,7 +27,7 @@
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */
-int Bombard(shiptype *ship, planettype *planet, racetype *r) {
+int Bombard(shiptype *ship, planet *planet, racetype *r) {
   shiptype *s;
   int x, y, x2 = -1, y2, oldown, numdest = 0, found = 0;
 
@@ -53,8 +53,8 @@ int Bombard(shiptype *ship, planettype *planet, racetype *r) {
   auto smap = getsmap(*planet);
 
   /* look for someone to bombard-check for war */
-  (void)Getxysect(planet, 0, 0, 1); /* reset */
-  while (!found && Getxysect(planet, &x, &y, 0)) {
+  (void)Getxysect(*planet, 0, 0, 1); /* reset */
+  while (!found && Getxysect(*planet, &x, &y, 0)) {
     if (smap.get(x, y).owner && smap.get(x, y).owner != ship->owner &&
         (smap.get(x, y).condition != WASTED)) {
       if (isset(r->atwar, smap.get(x, y).owner) ||

@@ -12,9 +12,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sstream>
 #include <string>
-#include <string.h>
 
 #include "GB_server.h"
 #include "buffers.h"
@@ -96,7 +96,6 @@ static placetype Getplace2(const int Playernum, const int Governor,
                            const char *string, placetype *where,
                            const int ignoreexpl, const int God) {
   char substr[NAMESIZE];
-  planettype *p;
   uint8_t i;
   size_t l;
   int tick;
@@ -163,9 +162,8 @@ static placetype Getplace2(const int Playernum, const int Governor,
         if (!strncmp(substr, Stars[where->snum]->pnames[i], l)) {
           where->level = LEVEL_PLAN;
           where->pnum = i;
-          getplanet(&p, where->snum, i);
-          if (ignoreexpl || p->info[Playernum - 1].explored || God) {
-            free(p);
+          const auto &p = getplanet(where->snum, i);
+          if (ignoreexpl || p.info[Playernum - 1].explored || God) {
             tick = (*string == '/');
             return (Getplace2(Playernum, Governor, string + tick, where,
                               ignoreexpl, God));
@@ -174,7 +172,6 @@ static placetype Getplace2(const int Playernum, const int Governor,
                   Stars[where->snum]->pnames[i]);
           notify(Playernum, Governor, buf);
           where->err = 1;
-          free(p);
           return (*where);
         }
       if (i >= Stars[where->snum]->numplanets) {

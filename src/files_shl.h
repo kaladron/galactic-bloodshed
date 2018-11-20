@@ -5,8 +5,8 @@
 #ifndef FILES_SHL_H
 #define FILES_SHL_H
 
-#include <memory>
 #include <stdint.h>
+#include <memory>
 
 #include "races.h"
 #include "ships.h"
@@ -26,20 +26,20 @@ void openracedata(int *);
 void getsdata(struct stardata *S);
 void getrace(racetype **, int);
 void getstar(startype **, int);
-void getplanet(planettype **, starnum_t, planetnum_t);
+planet getplanet(const starnum_t, const planetnum_t);
 int getship(shiptype **, shipnum_t);
 int getcommod(commodtype **, commodnum_t);
-sector getsector(const planettype &, const int x, const int y);
-sector_map getsmap(const planettype &);
+sector getsector(const planet &, const int x, const int y);
+sector_map getsmap(const planet &);
 int getdeadship(void);
 int getdeadcommod(void);
 void initsqldata(void);
 void putsdata(struct stardata *);
 void putrace(racetype *);
 void putstar(startype *, starnum_t);
-void putplanet(planettype *, startype *, int);
-void putsector(const sector &, const planettype &, const int x, const int y);
-void putsmap(sector_map &map, planettype &p);
+void putplanet(const planet &, startype *, const int);
+void putsector(const sector &, const planet &, const int x, const int y);
+void putsmap(sector_map &map, planet &p);
 void putship(shiptype *);
 void putcommod(commodtype *, int);
 int Numraces(void);

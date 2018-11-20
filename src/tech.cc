@@ -20,7 +20,6 @@
 
 void technology(int Playernum, int Governor, int APcount) {
   short invest;
-  planettype *p;
 
   if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
     sprintf(buf, "scope must be a planet (%d).\n",
@@ -38,17 +37,16 @@ void technology(int Playernum, int Governor, int APcount) {
     return;
   }
 
-  getplanet(&p, Dir[Playernum - 1][Governor].snum,
-            Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
+                     Dir[Playernum - 1][Governor].pnum);
 
   if (argn < 2) {
     sprintf(buf,
             "Current investment : %d    Technology production/update: %.3f\n",
-            p->info[Playernum - 1].tech_invest,
-            tech_prod((int)(p->info[Playernum - 1].tech_invest),
-                      (int)(p->info[Playernum - 1].popn)));
+            p.info[Playernum - 1].tech_invest,
+            tech_prod((int)(p.info[Playernum - 1].tech_invest),
+                      (int)(p.info[Playernum - 1].popn)));
     notify(Playernum, Governor, buf);
-    free(p);
     return;
   }
   invest = atoi(args[1]);
@@ -56,11 +54,10 @@ void technology(int Playernum, int Governor, int APcount) {
   if (invest < 0) {
     sprintf(buf, "Illegal value.\n");
     notify(Playernum, Governor, buf);
-    free(p);
     return;
   }
 
-  p->info[Playernum - 1].tech_invest = invest;
+  p.info[Playernum - 1].tech_invest = invest;
 
   putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
@@ -68,11 +65,9 @@ void technology(int Playernum, int Governor, int APcount) {
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
 
   sprintf(buf, "   New (ideal) tech production: %.3f (this planet)\n",
-          tech_prod((int)(p->info[Playernum - 1].tech_invest),
-                    (int)(p->info[Playernum - 1].popn)));
+          tech_prod((int)(p.info[Playernum - 1].tech_invest),
+                    (int)(p.info[Playernum - 1].popn)));
   notify(Playernum, Governor, buf);
-
-  free(p);
 }
 
 double tech_prod(int investment, int popn) {

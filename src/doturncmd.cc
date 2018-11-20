@@ -40,7 +40,7 @@ static void fix_stability(startype *);
 static int governed(racetype *);
 static void make_discoveries(racetype *);
 static void output_ground_attacks(void);
-static int planet_points(planettype *);
+static int planet_points(const planet &);
 
 void do_turn(int update) {
   commodtype *c;
@@ -84,7 +84,7 @@ void do_turn(int update) {
     if (update) fix_stability(Stars[star]); /* nova */
 
     for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
-      getplanet(&planets[star][i], star, i);
+      planets[star][i] = new planet(getplanet(star, i));
       if (planets[star][i]->type != TYPE_ASTEROID) Planet_count++;
       if (update) moveplanet(star, planets[star][i], i);
       if (Stars[star]->pnames[i] == NULL)
@@ -287,7 +287,7 @@ void do_turn(int update) {
           races[j - 1]->controlled_planets++;
 
         if (planets[star][i]->info[j - 1].numsectsowned)
-          races[j - 1]->planet_points += planet_points(planets[star][i]);
+          races[j - 1]->planet_points += planet_points(*planets[star][i]);
       }
       if (update) {
         if (doplanet(star, planets[star][i], i)) {
@@ -298,7 +298,7 @@ void do_turn(int update) {
           // putsmap(smap, *planets[star][i]);
         }
       }
-      putplanet(planets[star][i], Stars[star], i);
+      putplanet(*planets[star][i], Stars[star], i);
     }
     /* do AP's for ea. player  */
     if (update)
@@ -542,7 +542,7 @@ void do_reset() {
   for (starnum_t star = 0; star < Sdata.numstars; star++) {
     getstar(&Stars[star], star);
     for (planetnum_t i = 0; i < Stars[star]->numplanets; i++)
-      getplanet(&planets[star][i], star, i);
+      planets[star][i] = new planet(getplanet(star, i));
   }
   output_ground_attacks();
 
@@ -599,7 +599,7 @@ void do_reset() {
     for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
       if (!isascii(*Stars[star]->pnames[i]))
         sprintf(Stars[star]->pnames[i], "%d", i);
-      putplanet(planets[star][i], Stars[star], i);
+      putplanet(*planets[star][i], Stars[star], i);
     }
     putstar(Stars[star], star);
   }
@@ -750,8 +750,8 @@ static void output_ground_attacks(void) {
         }
 }
 
-static int planet_points(planettype *p) {
-  switch (p->type) {
+static int planet_points(const planet &p) {
+  switch (p.type) {
     case TYPE_ASTEROID:
       return ASTEROID_POINTS;
     case TYPE_EARTH:

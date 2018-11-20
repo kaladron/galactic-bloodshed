@@ -274,7 +274,6 @@ int authorized(int Governor, shiptype *ship) {
 }
 
 int start_shiplist(int Playernum, int Governor, const char *p) {
-  planettype *planet;
   shiptype *ship;
   int st, pl, sh;
 
@@ -291,11 +290,11 @@ int start_shiplist(int Playernum, int Governor, const char *p) {
     case LEVEL_STAR:
       getstar(&Stars[st], st); /*Stars doesn't need to be freed */
       return Stars[st]->ships;
-    case LEVEL_PLAN:
-      getplanet(&planet, st, pl);
-      sh = planet->ships;
-      free(planet);
+    case LEVEL_PLAN: {
+      const auto &planet = getplanet(st, pl);
+      sh = planet.ships;
       return sh;
+    }
     case LEVEL_SHIP:
       (void)getship(&ship, Dir[Playernum - 1][Governor].shipno);
       sh = ship->ships;
@@ -333,7 +332,6 @@ int in_list(player_t Playernum, const char *list, shiptype *s,
 
 /* Deity fix-it utilities */
 void fix(int Playernum, int Governor) {
-  planettype *p;
   shiptype *s;
 
   if (match(args[1], "planet")) {
@@ -341,69 +339,67 @@ void fix(int Playernum, int Governor) {
       notify(Playernum, Governor, "Change scope to the planet first.\n");
       return;
     }
-    getplanet(&p, Dir[Playernum - 1][Governor].snum,
-              Dir[Playernum - 1][Governor].pnum);
+    auto p = getplanet(Dir[Playernum - 1][Governor].snum,
+                       Dir[Playernum - 1][Governor].pnum);
     if (match(args[2], "Maxx")) {
-      if (argn > 3) p->Maxx = atoi(args[3]);
-      sprintf(buf, "Maxx = %d\n", p->Maxx);
+      if (argn > 3) p.Maxx = atoi(args[3]);
+      sprintf(buf, "Maxx = %d\n", p.Maxx);
     } else if (match(args[2], "Maxy")) {
-      if (argn > 3) p->Maxy = atoi(args[3]);
-      sprintf(buf, "Maxy = %d\n", p->Maxy);
+      if (argn > 3) p.Maxy = atoi(args[3]);
+      sprintf(buf, "Maxy = %d\n", p.Maxy);
     } else if (match(args[2], "xpos")) {
-      if (argn > 3) p->xpos = (double)atoi(args[3]);
-      sprintf(buf, "xpos = %f\n", p->xpos);
+      if (argn > 3) p.xpos = (double)atoi(args[3]);
+      sprintf(buf, "xpos = %f\n", p.xpos);
     } else if (match(args[2], "ypos")) {
-      if (argn > 3) p->ypos = (double)atoi(args[3]);
-      sprintf(buf, "ypos = %f\n", p->ypos);
+      if (argn > 3) p.ypos = (double)atoi(args[3]);
+      sprintf(buf, "ypos = %f\n", p.ypos);
     } else if (match(args[2], "ships")) {
-      if (argn > 3) p->ships = atoi(args[3]);
-      sprintf(buf, "ships = %ld\n", p->ships);
+      if (argn > 3) p.ships = atoi(args[3]);
+      sprintf(buf, "ships = %ld\n", p.ships);
     } else if (match(args[2], "sectormappos")) {
-      if (argn > 3) p->sectormappos = atoi(args[3]);
-      sprintf(buf, "sectormappos = %d\n", p->sectormappos);
+      if (argn > 3) p.sectormappos = atoi(args[3]);
+      sprintf(buf, "sectormappos = %d\n", p.sectormappos);
     } else if (match(args[2], "rtemp")) {
-      if (argn > 3) p->conditions[RTEMP] = atoi(args[3]);
-      sprintf(buf, "RTEMP = %d\n", p->conditions[RTEMP]);
+      if (argn > 3) p.conditions[RTEMP] = atoi(args[3]);
+      sprintf(buf, "RTEMP = %d\n", p.conditions[RTEMP]);
     } else if (match(args[2], "temperature")) {
-      if (argn > 3) p->conditions[TEMP] = atoi(args[3]);
-      sprintf(buf, "TEMP = %d\n", p->conditions[TEMP]);
+      if (argn > 3) p.conditions[TEMP] = atoi(args[3]);
+      sprintf(buf, "TEMP = %d\n", p.conditions[TEMP]);
     } else if (match(args[2], "methane")) {
-      if (argn > 3) p->conditions[METHANE] = atoi(args[3]);
-      sprintf(buf, "METHANE = %d\n", p->conditions[METHANE]);
+      if (argn > 3) p.conditions[METHANE] = atoi(args[3]);
+      sprintf(buf, "METHANE = %d\n", p.conditions[METHANE]);
     } else if (match(args[2], "oxygen")) {
-      if (argn > 3) p->conditions[OXYGEN] = atoi(args[3]);
-      sprintf(buf, "OXYGEN = %d\n", p->conditions[OXYGEN]);
+      if (argn > 3) p.conditions[OXYGEN] = atoi(args[3]);
+      sprintf(buf, "OXYGEN = %d\n", p.conditions[OXYGEN]);
     } else if (match(args[2], "co2")) {
-      if (argn > 3) p->conditions[CO2] = atoi(args[3]);
-      sprintf(buf, "CO2 = %d\n", p->conditions[CO2]);
+      if (argn > 3) p.conditions[CO2] = atoi(args[3]);
+      sprintf(buf, "CO2 = %d\n", p.conditions[CO2]);
     } else if (match(args[2], "hydrogen")) {
-      if (argn > 3) p->conditions[HYDROGEN] = atoi(args[3]);
-      sprintf(buf, "HYDROGEN = %d\n", p->conditions[HYDROGEN]);
+      if (argn > 3) p.conditions[HYDROGEN] = atoi(args[3]);
+      sprintf(buf, "HYDROGEN = %d\n", p.conditions[HYDROGEN]);
     } else if (match(args[2], "nitrogen")) {
-      if (argn > 3) p->conditions[NITROGEN] = atoi(args[3]);
-      sprintf(buf, "NITROGEN = %d\n", p->conditions[NITROGEN]);
+      if (argn > 3) p.conditions[NITROGEN] = atoi(args[3]);
+      sprintf(buf, "NITROGEN = %d\n", p.conditions[NITROGEN]);
     } else if (match(args[2], "sulfur")) {
-      if (argn > 3) p->conditions[SULFUR] = atoi(args[3]);
-      sprintf(buf, "SULFUR = %d\n", p->conditions[SULFUR]);
+      if (argn > 3) p.conditions[SULFUR] = atoi(args[3]);
+      sprintf(buf, "SULFUR = %d\n", p.conditions[SULFUR]);
     } else if (match(args[2], "helium")) {
-      if (argn > 3) p->conditions[HELIUM] = atoi(args[3]);
-      sprintf(buf, "HELIUM = %d\n", p->conditions[HELIUM]);
+      if (argn > 3) p.conditions[HELIUM] = atoi(args[3]);
+      sprintf(buf, "HELIUM = %d\n", p.conditions[HELIUM]);
     } else if (match(args[2], "other")) {
-      if (argn > 3) p->conditions[OTHER] = atoi(args[3]);
-      sprintf(buf, "OTHER = %d\n", p->conditions[OTHER]);
+      if (argn > 3) p.conditions[OTHER] = atoi(args[3]);
+      sprintf(buf, "OTHER = %d\n", p.conditions[OTHER]);
     } else if (match(args[2], "toxic")) {
-      if (argn > 3) p->conditions[TOXIC] = atoi(args[3]);
-      sprintf(buf, "TOXIC = %d\n", p->conditions[TOXIC]);
+      if (argn > 3) p.conditions[TOXIC] = atoi(args[3]);
+      sprintf(buf, "TOXIC = %d\n", p.conditions[TOXIC]);
     } else {
       notify(Playernum, Governor, "No such option for 'fix planet'.\n");
-      free(p);
       return;
     }
     notify(Playernum, Governor, buf);
     if (argn > 3)
       putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
-    free(p);
     return;
   }
   if (match(args[1], "ship")) {

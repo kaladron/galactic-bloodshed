@@ -7,7 +7,7 @@
 
 #include "vars.h"
 
-void PermuteSects(planettype *);
-int Getxysect(planettype *, int *, int *, int);
+void PermuteSects(const planet &);
+int Getxysect(const planet &, int *, int *, int);
 
 #endif  // PERM_H

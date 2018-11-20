@@ -6,10 +6,10 @@
 
 #include "VN.h"
 
-#include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>
 #include <utility>
 
 #include "buffers.h"
@@ -31,8 +31,6 @@ static void order_VN(shiptype *);
 
 /*  do_VN() -- called by doship() */
 void do_VN(shiptype *ship) {
-  planettype *p;
-
   if (landed(ship)) {
     Stinfo[ship->storbits][ship->pnumorbits].inhab = 1;
     /* launch if no assignment */
@@ -59,7 +57,7 @@ void do_VN(shiptype *ship) {
         f = int_rand(1, Num_races);
         std::swap(nums[i], nums[f]);
       }
-      p = planets[ship->storbits][ship->pnumorbits];
+      auto p = planets[ship->storbits][ship->pnumorbits];
       for (f = 0, i = 1; i <= Num_races; i++)
         if (p->info[nums[i] - 1].resource) f = nums[i];
       if (f) {
@@ -145,7 +143,7 @@ static void order_VN(shiptype *ship) {
 }
 
 /*  planet_doVN() -- called by doplanet() */
-void planet_doVN(shiptype *ship, planettype *planet, sector_map &smap) {
+void planet_doVN(shiptype *ship, planet *planet, sector_map &smap) {
   int j;
   int oldres, xa, ya, dum, prod;
   int shipbuild;
@@ -280,8 +278,8 @@ void planet_doVN(shiptype *ship, planettype *planet, sector_map &smap) {
             int x, y;
             int d; /* auto vars for & */
 
-            (void)Getxysect(planet, &x, &y, 1);
-            while ((d = Getxysect(planet, &x, &y, 0)) &&
+            (void)Getxysect(*planet, &x, &y, 1);
+            while ((d = Getxysect(*planet, &x, &y, 0)) &&
                    smap.get(x, y).resource == 0)
               ;
             if (d) {

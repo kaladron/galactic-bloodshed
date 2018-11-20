@@ -14,15 +14,14 @@
 static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const int y_adj[] = {1, 1, 1, 0, 0, -1, -1, -1};
 
-static void Migrate2(planettype *, int, int, sector &, int *, sector_map &);
+static void Migrate2(const planet &, int, int, sector &, int *, sector_map &);
 static void plate(sector &);
 
 //  produce() -- produce, stuff like that, on a sector.
-void produce(startype *star, planettype *planet, sector &s) {
+void produce(startype *star, const planet &planet, sector &s) {
   int ss;
   int maxsup;
   int pfuel = 0, pdes = 0, pres = 0;
-  struct plinfo *pinf;
   int prod;
   long diff;
   racetype *Race;
@@ -50,7 +49,7 @@ void produce(startype *star, planettype *planet, sector &s) {
     prod_crystals[s.owner - 1]++;
     s.crystals--;
   }
-  pinf = &planet->info[s.owner - 1];
+  const auto pinf = &planet.info[s.owner - 1];
 
   /* increase mobilization to planetary quota */
   if (s.mobilization < pinf->mob_set) {
@@ -69,7 +68,7 @@ void produce(startype *star, planettype *planet, sector &s) {
   /* do efficiency */
   if (s.eff < 100) {
     int chance;
-    chance = round_rand((100.0 - (double)planet->info[s.owner - 1].tax) *
+    chance = round_rand((100.0 - (double)planet.info[s.owner - 1].tax) *
                         Race->likes[s.condition]);
     if (success(chance)) {
       s.eff += round_rand(Race->metabolism);
@@ -84,7 +83,7 @@ void produce(startype *star, planettype *planet, sector &s) {
 
   if (s.condition == WASTED && success(NATURAL_REPAIR)) s.condition = s.type;
 
-  maxsup = maxsupport(Race, s, Compat[s.owner - 1], planet->conditions[TOXIC]);
+  maxsup = maxsupport(Race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
   if ((diff = s.popn - maxsup) < 0) {
     if (s.popn >= Race->number_sexes)
       ss = round_rand(-(double)diff * Race->birthrate);
@@ -102,14 +101,14 @@ void produce(startype *star, planettype *planet, sector &s) {
 }
 
 // spread()  -- spread population around.
-void spread(planettype *pl, sector &s, int x, int y, sector_map &smap) {
+void spread(const planet &pl, sector &s, int x, int y, sector_map &smap) {
   int people;
   int x2, y2, j;
   int check;
   racetype *Race;
 
   if (!s.owner) return;
-  if (pl->slaved_to && pl->slaved_to != s.owner)
+  if (pl.slaved_to && pl.slaved_to != s.owner)
     return; /* no one wants to go anywhere */
 
   Race = races[s.owner - 1];
@@ -131,16 +130,16 @@ void spread(planettype *pl, sector &s, int x, int y, sector_map &smap) {
   }
 }
 
-static void Migrate2(planettype *planet, int xd, int yd, sector &ps,
+static void Migrate2(const planet &planet, int xd, int yd, sector &ps,
                      int *people, sector_map &smap) {
   int move;
 
   /* attempt to migrate beyond screen, or too many people */
-  if (yd > planet->Maxy - 1 || yd < 0) return;
+  if (yd > planet.Maxy - 1 || yd < 0) return;
 
   if (xd < 0)
-    xd = planet->Maxx - 1;
-  else if (xd > planet->Maxx - 1)
+    xd = planet.Maxx - 1;
+  else if (xd > planet.Maxx - 1)
     xd = 0;
 
   auto &pd = smap.get(xd, yd);
@@ -162,16 +161,16 @@ static void Migrate2(planettype *planet, int xd, int yd, sector &ps,
         on earthtype planets.  */
 
 //  explore() -- mark sector and surrounding sectors as having been explored.
-void explore(planettype *planet, sector &s, int x, int y, int p) {
+void explore(const planet &planet, sector &s, int x, int y, int p) {
   int d;
 
   /* explore sectors surrounding sectors currently explored. */
   if (Sectinfo[x][y].explored) {
-    Sectinfo[mod(x - 1, planet->Maxx, d)][y].explored = p;
-    Sectinfo[mod(x + 1, planet->Maxx, d)][y].explored = p;
+    Sectinfo[mod(x - 1, planet.Maxx, d)][y].explored = p;
+    Sectinfo[mod(x + 1, planet.Maxx, d)][y].explored = p;
     if (y == 0) {
       Sectinfo[x][1].explored = p;
-    } else if (y == planet->Maxy - 1) {
+    } else if (y == planet.Maxy - 1) {
       Sectinfo[x][y - 1].explored = p;
     } else {
       Sectinfo[x][y - 1].explored = Sectinfo[x][y + 1].explored = p;

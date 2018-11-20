@@ -31,8 +31,8 @@ static int jettison_check(int, int, int, int);
 static int landed_on(shiptype *, shipnum_t);
 
 static void do_transporter(racetype *, int, shiptype *);
-static void unload_onto_alien_sector(int, int, planettype *, shiptype *,
-                                     sector &, int, int);
+static void unload_onto_alien_sector(int, int, planet *, shiptype *, sector &,
+                                     int, int);
 
 void load(int Playernum, int Governor, int APcount, int mode) {
   char commod;
@@ -40,7 +40,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
   int lolim, uplim, amt;
   int transfercrew;
   shiptype *s, *s2;
-  planettype *p;
+  planet p;
   sector sect;
   racetype *Race;
   shipnum_t shipno, nextshipno;
@@ -148,11 +148,11 @@ void load(int Playernum, int Governor, int APcount, int mode) {
       }
 
       if (!sh)
-        getplanet(&p, Dir[Playernum - 1][Governor].snum,
-                  Dir[Playernum - 1][Governor].pnum);
+        p = getplanet(Dir[Playernum - 1][Governor].snum,
+                      Dir[Playernum - 1][Governor].pnum);
 
       if (!sh && (commod == 'c' || commod == 'm'))
-        sect = getsector(*p, s->land_x, s->land_y);
+        sect = getsector(p, s->land_x, s->land_y);
 
       switch (commod) {
         case 'x':
@@ -162,7 +162,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             lolim =
                 diff ? 0 : -MIN(s->crystals, Max_crystals(s2) - s2->crystals);
           } else {
-            uplim = MIN(p->info[Playernum - 1].crystals,
+            uplim = MIN(p.info[Playernum - 1].crystals,
                         Max_crystals(s) - s->crystals);
             lolim = -s->crystals;
           }
@@ -190,7 +190,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             uplim = diff ? 0 : MIN(s2->destruct, Max_destruct(s) - s->destruct);
             lolim = -MIN(s->destruct, Max_destruct(s2) - s2->destruct);
           } else {
-            uplim = MIN(p->info[Playernum - 1].destruct,
+            uplim = MIN(p.info[Playernum - 1].destruct,
                         Max_destruct(s) - s->destruct);
             lolim = -s->destruct;
           }
@@ -201,7 +201,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
                 diff ? 0 : MIN((int)s2->fuel, (int)Max_fuel(s) - (int)s->fuel);
             lolim = -MIN((int)s->fuel, (int)Max_fuel(s2) - (int)s2->fuel);
           } else {
-            uplim = MIN((int)p->info[Playernum - 1].fuel,
+            uplim = MIN((int)p.info[Playernum - 1].fuel,
                         (int)Max_fuel(s) - (int)s->fuel);
             lolim = -(int)s->fuel;
           }
@@ -218,17 +218,14 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             else
               lolim = -MIN(s->resource, Max_resource(s2) - s2->resource);
           } else {
-            uplim = MIN(p->info[Playernum - 1].resource,
+            uplim = MIN(p.info[Playernum - 1].resource,
                         Max_resource(s) - s->resource);
             lolim = -s->resource;
           }
           break;
         default:
           notify(Playernum, Governor, "No such commodity valid.\n");
-          if (sh)
-            free(s2);
-          else
-            free(p);
+          if (sh) free(s2);
           free(s);
           continue;
       }
@@ -238,10 +235,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
                 uplim);
         notify(Playernum, Governor, buf);
 
-        if (sh)
-          free(s2);
-        else
-          free(p);
+        if (sh) free(s2);
         free(s);
         continue;
       }
@@ -261,30 +255,29 @@ void load(int Playernum, int Governor, int APcount, int mode) {
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
             /* fight a land battle */
-            unload_onto_alien_sector(Playernum, Governor, p, s, sect, CIV,
+            unload_onto_alien_sector(Playernum, Governor, &p, s, sect, CIV,
                                      -amt);
             putship(s);
-            putsector(sect, *p, s->land_x, s->land_y);
+            putsector(sect, p, s->land_x, s->land_y);
             putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
                       Dir[Playernum - 1][Governor].pnum);
             free(s);
-            free(p);
             return;
           } else {
             transfercrew = 1;
             if (!sect.popn && !sect.troops && amt < 0) {
-              p->info[Playernum - 1].numsectsowned++;
-              p->info[Playernum - 1].mob_points += sect.mobilization;
+              p.info[Playernum - 1].numsectsowned++;
+              p.info[Playernum - 1].mob_points += sect.mobilization;
               sect.owner = Playernum;
               sprintf(buf, "sector %d,%d COLONIZED.\n", s->land_x, s->land_y);
               notify(Playernum, Governor, buf);
             }
             sect.popn -= amt;
-            p->popn -= amt;
-            p->info[Playernum - 1].popn -= amt;
+            p.popn -= amt;
+            p.info[Playernum - 1].popn -= amt;
             if (!sect.popn && !sect.troops) {
-              p->info[Playernum - 1].numsectsowned--;
-              p->info[Playernum - 1].mob_points -= sect.mobilization;
+              p.info[Playernum - 1].numsectsowned--;
+              p.info[Playernum - 1].mob_points -= sect.mobilization;
               sect.owner = 0;
               sprintf(buf, "sector %d,%d evacuated.\n", s->land_x, s->land_y);
               notify(Playernum, Governor, buf);
@@ -307,30 +300,29 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             sprintf(buf,
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
-            unload_onto_alien_sector(Playernum, Governor, p, s, sect, MIL,
+            unload_onto_alien_sector(Playernum, Governor, &p, s, sect, MIL,
                                      -amt);
             putship(s);
-            putsector(sect, *p, s->land_x, s->land_y);
+            putsector(sect, p, s->land_x, s->land_y);
             putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
                       Dir[Playernum - 1][Governor].pnum);
             free(s);
-            free(p);
             return;
           } else {
             transfercrew = 1;
             if (!(sect.popn + sect.troops) && amt < 0) {
-              p->info[Playernum - 1].numsectsowned++;
-              p->info[Playernum - 1].mob_points += sect.mobilization;
+              p.info[Playernum - 1].numsectsowned++;
+              p.info[Playernum - 1].mob_points += sect.mobilization;
               sect.owner = Playernum;
               sprintf(buf, "sector %d,%d OCCUPIED.\n", s->land_x, s->land_y);
               notify(Playernum, Governor, buf);
             }
             sect.troops -= amt;
-            p->troops -= amt;
-            p->info[Playernum - 1].troops -= amt;
+            p.troops -= amt;
+            p.info[Playernum - 1].troops -= amt;
             if (!(sect.troops + sect.popn)) {
-              p->info[Playernum - 1].numsectsowned--;
-              p->info[Playernum - 1].mob_points -= sect.mobilization;
+              p.info[Playernum - 1].numsectsowned--;
+              p.info[Playernum - 1].mob_points -= sect.mobilization;
               sect.owner = 0;
               sprintf(buf, "sector %d,%d evacuated.\n", s->land_x, s->land_y);
               notify(Playernum, Governor, buf);
@@ -349,7 +341,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             s2->destruct -= amt;
             if (!landed_on(s, sh)) s2->mass -= amt * MASS_DESTRUCT;
           } else
-            p->info[Playernum - 1].destruct -= amt;
+            p.info[Playernum - 1].destruct -= amt;
 
           s->destruct += amt;
           s->mass += amt * MASS_DESTRUCT;
@@ -370,7 +362,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
           if (sh) {
             s2->crystals -= amt;
           } else
-            p->info[Playernum - 1].crystals -= amt;
+            p.info[Playernum - 1].crystals -= amt;
           s->crystals += amt;
           sprintf(buf, "%d crystal(s) transferred.\n", amt);
           notify(Playernum, Governor, buf);
@@ -380,7 +372,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             s2->fuel -= (double)amt;
             if (!landed_on(s, sh)) s2->mass -= (double)amt * MASS_FUEL;
           } else
-            p->info[Playernum - 1].fuel -= amt;
+            p.info[Playernum - 1].fuel -= amt;
           rcv_fuel(s, (double)amt);
           sprintf(buf, "%d fuel transferred.\n", amt);
           notify(Playernum, Governor, buf);
@@ -390,7 +382,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             s2->resource -= amt;
             if (!landed_on(s, sh)) s2->mass -= amt * MASS_RESOURCE;
           } else
-            p->info[Playernum - 1].resource -= amt;
+            p.info[Playernum - 1].resource -= amt;
           rcv_resource(s, amt);
           sprintf(buf, "%d resources transferred.\n", amt);
           notify(Playernum, Governor, buf);
@@ -398,10 +390,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
         default:
           notify(Playernum, Governor, "No such commodity.\n");
 
-          if (sh)
-            free(s2);
-          else
-            free(p);
+          if (sh) free(s2);
           free(s);
           continue;
       }
@@ -450,11 +439,10 @@ void load(int Playernum, int Governor, int APcount, int mode) {
         free(s2);
       } else {
         if (commod == 'c' || commod == 'm') {
-          putsector(sect, *p, s->land_x, s->land_y);
+          putsector(sect, p, s->land_x, s->land_y);
         }
         putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
                   Dir[Playernum - 1][Governor].pnum);
-        free(p);
       }
 
       /* do transporting here */
@@ -660,10 +648,10 @@ void dump(int Playernum, int Governor, int APcount) {
         setbit(Stars[star]->explored, player);
 
         for (i = 0; i < Stars[star]->numplanets; i++) {
-          getplanet(&planets[star][i], star, i);
+          planets[star][i] = new planet(getplanet(star, i));
           if (planets[star][i]->info[Playernum - 1].explored) {
             planets[star][i]->info[player - 1].explored = 1;
-            putplanet(planets[star][i], Stars[star], i);
+            putplanet(*planets[star][i], Stars[star], i);
           }
         }
         putstar(Stars[star], star);
@@ -681,10 +669,10 @@ void dump(int Playernum, int Governor, int APcount) {
           setbit(Stars[star]->explored, player);
 
           for (j = 0; j < Stars[star]->numplanets; j++) {
-            getplanet(&planets[star][j], star, j);
+            planets[star][j] = new planet(getplanet(star, j));
             if (planets[star][j]->info[Playernum - 1].explored) {
               planets[star][j]->info[player - 1].explored = 1;
-              putplanet(planets[star][j], Stars[star], j);
+              putplanet(*planets[star][j], Stars[star], j);
             }
           }
           putstar(Stars[star], star);
@@ -703,7 +691,6 @@ void dump(int Playernum, int Governor, int APcount) {
 
 void transfer(int Playernum, int Governor, int APcount) {
   int player, give;
-  planettype *planet;
   char commod = 0;
 
   if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
@@ -723,15 +710,14 @@ void transfer(int Playernum, int Governor, int APcount) {
     return;
   }
 
-  getplanet(&planet, Dir[Playernum - 1][Governor].snum,
-            Dir[Playernum - 1][Governor].pnum);
+  auto planet = getplanet(Dir[Playernum - 1][Governor].snum,
+                          Dir[Playernum - 1][Governor].pnum);
 
   sscanf(args[2], "%c", &commod);
   give = atoi(args[3]);
 
   if (give < 0) {
     notify(Playernum, Governor, "You must specify a positive amount.\n");
-    free(planet);
     return;
   }
   sprintf(temp, "%s/%s:", Stars[Dir[Playernum - 1][Governor].snum]->name,
@@ -739,12 +725,12 @@ void transfer(int Playernum, int Governor, int APcount) {
               ->pnames[Dir[Playernum - 1][Governor].pnum]);
   switch (commod) {
     case 'r':
-      if (give > planet->info[Playernum - 1].resource) {
+      if (give > planet.info[Playernum - 1].resource) {
         sprintf(buf, "You don't have %d on this planet.\n", give);
         notify(Playernum, Governor, buf);
       } else {
-        planet->info[Playernum - 1].resource -= give;
-        planet->info[player - 1].resource += give;
+        planet.info[Playernum - 1].resource -= give;
+        planet.info[player - 1].resource += give;
         sprintf(buf,
                 "%s %d resources transferred from player %d to player #%d\n",
                 temp, give, Playernum, player);
@@ -754,12 +740,12 @@ void transfer(int Playernum, int Governor, int APcount) {
       break;
     case 'x':
     case '&':
-      if (give > planet->info[Playernum - 1].crystals) {
+      if (give > planet.info[Playernum - 1].crystals) {
         sprintf(buf, "You don't have %d on this planet.\n", give);
         notify(Playernum, Governor, buf);
       } else {
-        planet->info[Playernum - 1].crystals -= give;
-        planet->info[player - 1].crystals += give;
+        planet.info[Playernum - 1].crystals -= give;
+        planet.info[player - 1].crystals += give;
         sprintf(buf,
                 "%s %d crystal(s) transferred from player %d to player #%d\n",
                 temp, give, Playernum, player);
@@ -768,12 +754,12 @@ void transfer(int Playernum, int Governor, int APcount) {
       }
       break;
     case 'f':
-      if (give > planet->info[Playernum - 1].fuel) {
+      if (give > planet.info[Playernum - 1].fuel) {
         sprintf(buf, "You don't have %d fuel on this planet.\n", give);
         notify(Playernum, Governor, buf);
       } else {
-        planet->info[Playernum - 1].fuel -= give;
-        planet->info[player - 1].fuel += give;
+        planet.info[Playernum - 1].fuel -= give;
+        planet.info[player - 1].fuel += give;
         sprintf(buf, "%s %d fuel transferred from player %d to player #%d\n",
                 temp, give, Playernum, player);
         notify(Playernum, Governor, buf);
@@ -781,12 +767,12 @@ void transfer(int Playernum, int Governor, int APcount) {
       }
       break;
     case 'd':
-      if (give > planet->info[Playernum - 1].destruct) {
+      if (give > planet.info[Playernum - 1].destruct) {
         sprintf(buf, "You don't have %d destruct on this planet.\n", give);
         notify(Playernum, Governor, buf);
       } else {
-        planet->info[Playernum - 1].destruct -= give;
-        planet->info[player - 1].destruct += give;
+        planet.info[Playernum - 1].destruct -= give;
+        planet.info[player - 1].destruct += give;
         sprintf(buf,
                 "%s %d destruct transferred from player %d to player #%d\n",
                 temp, give, Playernum, player);
@@ -801,8 +787,6 @@ void transfer(int Playernum, int Governor, int APcount) {
 
   putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
-
-  free(planet);
 
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
 }
@@ -1034,7 +1018,7 @@ static int landed_on(shiptype *s, shipnum_t shipno) {
 }
 
 static void unload_onto_alien_sector(int Playernum, int Governor,
-                                     planettype *planet, shiptype *ship,
+                                     planet *planet, shiptype *ship,
                                      sector &sect, int what, int people) {
   double astrength, dstrength;
   int oldowner, oldgov, oldpopn, old2popn, old3popn;
@@ -1047,8 +1031,8 @@ static void unload_onto_alien_sector(int Playernum, int Governor,
            "You have to unload to assault alien sectors.\n");
     return;
   }
-  ground_assaults[Playernum - 1][sect.owner -
-                                 1][Dir[Playernum - 1][Governor].snum] += 1;
+  ground_assaults[Playernum - 1][sect.owner - 1]
+                 [Dir[Playernum - 1][Governor].snum] += 1;
   Race = races[Playernum - 1];
   alien = races[sect.owner - 1];
   /* races find out about each other */

@@ -33,7 +33,6 @@ void dissolve(int Playernum, int Governor) {
   unsigned char waste;
   shiptype *sp;
   racetype *Race;
-  planettype *pl;
   char nuke;
   char racepass[100], govpass[100];
 
@@ -100,29 +99,29 @@ void dissolve(int Playernum, int Governor) {
       getstar(&(Stars[z]), z);
       if (isset(Stars[z]->explored, Playernum)) {
         for (i = 0; i < Stars[z]->numplanets; i++) {
-          getplanet(&pl, z, i);
+          auto pl = getplanet(z, i);
 
-          if (pl->info[Playernum - 1].explored &&
-              pl->info[Playernum - 1].numsectsowned) {
-            pl->info[Playernum - 1].fuel = 0;
-            pl->info[Playernum - 1].destruct = 0;
-            pl->info[Playernum - 1].resource = 0;
-            pl->info[Playernum - 1].popn = 0;
-            pl->info[Playernum - 1].troops = 0;
-            pl->info[Playernum - 1].tax = 0;
-            pl->info[Playernum - 1].newtax = 0;
-            pl->info[Playernum - 1].crystals = 0;
-            pl->info[Playernum - 1].numsectsowned = 0;
-            pl->info[Playernum - 1].explored = 0;
-            pl->info[Playernum - 1].autorep = 0;
+          if (pl.info[Playernum - 1].explored &&
+              pl.info[Playernum - 1].numsectsowned) {
+            pl.info[Playernum - 1].fuel = 0;
+            pl.info[Playernum - 1].destruct = 0;
+            pl.info[Playernum - 1].resource = 0;
+            pl.info[Playernum - 1].popn = 0;
+            pl.info[Playernum - 1].troops = 0;
+            pl.info[Playernum - 1].tax = 0;
+            pl.info[Playernum - 1].newtax = 0;
+            pl.info[Playernum - 1].crystals = 0;
+            pl.info[Playernum - 1].numsectsowned = 0;
+            pl.info[Playernum - 1].explored = 0;
+            pl.info[Playernum - 1].autorep = 0;
           }
 
-          auto smap = getsmap(*pl);
+          auto smap = getsmap(pl);
 
           lowx = 0;
           lowy = 0;
-          hix = pl->Maxx - 1;
-          hiy = pl->Maxy - 1;
+          hix = pl.Maxx - 1;
+          hiy = pl.Maxy - 1;
           for (y2 = lowy; y2 <= hiy; y2++) {
             for (x2 = lowx; x2 <= hix; x2++) {
               auto &s = smap.get(x2, y2);
@@ -136,10 +135,9 @@ void dissolve(int Playernum, int Governor) {
               }
             }
           }
-          putsmap(smap, *pl);
+          putsmap(smap, pl);
           putstar(Stars[z], z);
           putplanet(pl, Stars[z], i);
-          free(pl);
         }
       }
     }
@@ -154,7 +152,7 @@ void dissolve(int Playernum, int Governor) {
 #endif
 }
 
-int revolt(planettype *pl, int victim, int agent) {
+int revolt(planet *pl, int victim, int agent) {
   int x, y, hix, hiy, lowx, lowy;
   racetype *Race;
   int changed_hands = 0;

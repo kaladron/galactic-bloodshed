@@ -75,8 +75,9 @@ void toggle(int Playernum, int Governor, int APcount) {
     sprintf(buf, "compatibility is %s\n",
             Race->governor[Governor].toggle.compat ? "ON" : "OFF");
     notify(Playernum, Governor, buf);
-    sprintf(buf, "%s\n", Race->governor[Governor].toggle.invisible ? "INVISIBLE"
-                                                                   : "VISIBLE");
+    sprintf(
+        buf, "%s\n",
+        Race->governor[Governor].toggle.invisible ? "INVISIBLE" : "VISIBLE");
     notify(Playernum, Governor, buf);
     sprintf(buf, "highlight player %d\n",
             Race->governor[Governor].toggle.highlight);

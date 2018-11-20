@@ -36,7 +36,7 @@ struct stype {
 #define RACIAL_TYPES 10
 
 // TODO(jeffbailey): Copied from map.c, but they've diverged
-static char desshow(planettype *p, int x, int y, sector_map &);
+static char desshow(const int x, const int y, sector_map &);
 
 /* racial types (10 racial types ) */
 static int Thing[RACIAL_TYPES] = {1, 1, 1, 0, 0, 0, 0, 0, 0, 0};
@@ -75,7 +75,7 @@ int main() {
 #define STRSIZE 100
   char str[STRSIZE], c;
   struct stype secttypes[WASTED + 1] = {};
-  planettype *planet;
+  planet planet;
   unsigned char not_found[TYPE_DESERT + 1];
   startype *star_arena;
 
@@ -159,19 +159,18 @@ int main() {
       if (check) {
         pnum = 0;
         while (!found && pnum < Stars[star]->numplanets) {
-          getplanet(&planet, star, pnum);
+          planet = getplanet(star, pnum);
 
-          if (planet->type == ppref && Stars[star]->numplanets != 1) {
+          if (planet.type == ppref && Stars[star]->numplanets != 1) {
             vacant = 1;
             for (i = 1; i <= Playernum; i++)
-              if (planet->info[i - 1].numsectsowned) vacant = 0;
-            if (vacant && planet->conditions[RTEMP] >= -50 &&
-                planet->conditions[RTEMP] <= 50) {
+              if (planet.info[i - 1].numsectsowned) vacant = 0;
+            if (vacant && planet.conditions[RTEMP] >= -50 &&
+                planet.conditions[RTEMP] <= 50) {
               found = 1;
             }
           }
           if (!found) {
-            free(planet);
             pnum++;
           }
         }
@@ -231,7 +230,7 @@ int main() {
   /* make conditions preferred by your people set to (more or less)
      those of the planet : higher the concentration of gas, the higher
      percentage difference between planet and race (commented out) */
-  for (j = 0; j <= OTHER; j++) Race->conditions[j] = planet->conditions[j];
+  for (j = 0; j <= OTHER; j++) Race->conditions[j] = planet.conditions[j];
   /*+ int_rand( round_rand(-planet->conditions[j]*2.0),
    * round_rand(planet->conditions[j]*2.0) )*/
 
@@ -279,7 +278,7 @@ int main() {
     if (fgets(str, STRSIZE, stdin) == NULL) exit(1);
   } while (str[0] != 'y');
 
-  auto smap = getsmap(*planet);
+  auto smap = getsmap(planet);
 
   printf(
       "\nChoose a primary sector preference. This race will prefer to "
@@ -295,14 +294,14 @@ int main() {
       secttypes[smap.get(x, y).condition].y = y;
     }
   }
-  planet->explored = 1;
+  planet.explored = 1;
   for (i = SEA; i <= WASTED; i++)
     if (secttypes[i].here) {
       printf("(%2d): %c (%d, %d) (%s, %d sectors)\n", i,
-             desshow(planet, secttypes[i].x, secttypes[i].y, smap),
-             secttypes[i].x, secttypes[i].y, Desnames[i], secttypes[i].count);
+             desshow(secttypes[i].x, secttypes[i].y, smap), secttypes[i].x,
+             secttypes[i].y, Desnames[i], secttypes[i].count);
     }
-  planet->explored = 0;
+  planet.explored = 0;
 
   found = 0;
   do {
@@ -347,12 +346,12 @@ int main() {
     shipno = Numships() + 1;
     printf("Creating government ship %d...\n", shipno);
     Race->Gov_ship = shipno;
-    planet->ships = shipno;
+    planet.ships = shipno;
     s.nextship = 0;
 
     s.type = OTYPE_GOV;
-    s.xpos = Stars[star]->xpos + planet->xpos;
-    s.ypos = Stars[star]->ypos + planet->ypos;
+    s.xpos = Stars[star]->xpos + planet.xpos;
+    s.ypos = Stars[star]->ypos + planet.ypos;
     s.land_x = (char)secttypes[i].x;
     s.land_y = (char)secttypes[i].y;
 
@@ -418,22 +417,22 @@ int main() {
 
   putrace(Race);
 
-  planet->info[Playernum - 1].numsectsowned = 1;
-  planet->explored = 0;
-  planet->info[Playernum - 1].explored = 1;
+  planet.info[Playernum - 1].numsectsowned = 1;
+  planet.explored = 0;
+  planet.info[Playernum - 1].explored = 1;
   /*planet->info[Playernum-1].autorep = 1;*/
 
   sect.owner = Playernum;
   sect.race = Playernum;
-  sect.popn = planet->popn = Race->number_sexes;
+  sect.popn = planet.popn = Race->number_sexes;
   sect.fert = 100;
   sect.eff = 10;
-  sect.troops = planet->troops = 0;
-  planet->maxpopn =
-      maxsupport(Race, sect, 100.0, 0) * planet->Maxx * planet->Maxy / 2;
+  sect.troops = planet.troops = 0;
+  planet.maxpopn =
+      maxsupport(Race, sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
   /* (approximate) */
 
-  putsector(sect, *planet, secttypes[i].x, secttypes[i].y);
+  putsector(sect, planet, secttypes[i].x, secttypes[i].y);
   putplanet(planet, Stars[star], pnum);
 
   /* make star explored and stuff */
@@ -453,10 +452,10 @@ int main() {
   return 0;
 }
 
-static char desshow(planettype *p, int x, int y,
+static char desshow(const int x, const int y,
                     sector_map &smap) /* copied from map.c */
 {
-  auto &s = smap.get(x, y);
+  const auto &s = smap.get(x, y);
 
   switch (s.condition) {
     case WASTED:

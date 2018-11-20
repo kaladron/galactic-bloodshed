@@ -34,28 +34,28 @@ int maxsupport(const racetype *r, const sector &s, const double c,
   return val;
 }
 
-double compatibility(const planettype *planet, const racetype *race) {
+double compatibility(const planet &planet, const racetype *race) {
   int i, add;
   double sum, atmosphere = 1.0;
 
   /* make an adjustment for planetary temperature */
-  add = 0.1 * ((double)planet->conditions[TEMP] - race->conditions[TEMP]);
+  add = 0.1 * ((double)planet.conditions[TEMP] - race->conditions[TEMP]);
   sum = 1.0 - (double)abs(add) / 100.0;
 
   /* step through and report compatibility of each planetary gas */
   for (i = TEMP + 1; i <= OTHER; i++) {
-    add = (double)planet->conditions[i] - race->conditions[i];
+    add = (double)planet.conditions[i] - race->conditions[i];
     atmosphere *= 1.0 - (double)abs(add) / 100.0;
   }
   sum *= atmosphere;
-  sum *= 100.0 - planet->conditions[TOXIC];
+  sum *= 100.0 - planet.conditions[TOXIC];
 
   if (sum < 0.0) return 0.0;
   return (sum);
 }
 
-double gravity(planettype *p) {
-  return (double)(p->Maxx) * (double)(p->Maxy) * GRAV_FACTOR;
+double gravity(const planet &p) {
+  return (double)(p.Maxx) * (double)(p.Maxy) * GRAV_FACTOR;
 }
 
 char *prin_ship_orbits(shiptype *s) {

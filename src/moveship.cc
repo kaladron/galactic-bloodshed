@@ -36,7 +36,7 @@ static const double SpeedConsts[] = {0.0,  0.61, 1.26, 1.50, 1.73,
                                      1.81, 1.90, 1.93, 1.96, 1.97};
 /* amount of fuel it costs to move at speed level */
 
-static int do_merchant(shiptype *, planettype *);
+static int do_merchant(shiptype *, planet *);
 
 void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
   double stardist, movedist, truedist, dist, xdest, ydest, sn, cs;
@@ -45,7 +45,6 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
   int destlevel, deststar = 0, destpnum = 0;
   shiptype *dsh;
   startype *ost, *dst;
-  planettype *opl, *dpl;
 
   if (s->hyper_drive.has && s->hyper_drive.on) { /* do a hyperspace jump */
     if (!mode) return; /* we're not ready to jump until the update */
@@ -128,7 +127,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
       if (!s->navigate.turns) s->navigate.on = 0;
       /* check here for orbit breaking as well. Maarten */
       ost = Stars[s->storbits];
-      opl = planets[s->storbits][s->pnumorbits];
+      const auto &opl = planets[s->storbits][s->pnumorbits];
       if (s->whatorbits == LEVEL_PLAN) {
         dist = sqrt(Distsq(s->xpos, s->ypos, ost->xpos + opl->xpos,
                            ost->ypos + opl->ypos));
@@ -196,8 +195,8 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
       }
       dst = Stars[deststar];
       ost = Stars[s->storbits];
-      dpl = planets[deststar][destpnum];
-      opl = planets[s->storbits][s->pnumorbits];
+      const auto &dpl = planets[deststar][destpnum];
+      const auto &opl = planets[s->storbits][s->pnumorbits];
       truedist = movedist = sqrt(Distsq(s->xpos, s->ypos, xdest, ydest));
       /* Save some unneccesary calculation and domain errors for atan2
             Maarten */
@@ -363,7 +362,7 @@ int followable(shiptype *s1, shiptype *s2) {
 /* this routine will do landing, launching, loading, unloading, etc
         for merchant ships. The ship is within landing distance of
         the target planet */
-static int do_merchant(shiptype *s, planettype *p) {
+static int do_merchant(shiptype *s, planet *p) {
   int i, j;
   double fuel;
   char load, unload;
@@ -381,7 +380,7 @@ static int do_merchant(shiptype *s, planettype *p) {
   }
 
   if (!landed(s)) { /* try to land the ship */
-    fuel = s->mass * gravity(p) * LAND_GRAV_MASS_FACTOR;
+    fuel = s->mass * gravity(*p) * LAND_GRAV_MASS_FACTOR;
     if (s->fuel < fuel) { /* ship can't land - cancel all orders */
       s->whatdest = LEVEL_UNIV;
       strcat(telegram_buf, "\t\tNot enough fuel to land!\n");
@@ -471,7 +470,7 @@ static int do_merchant(shiptype *s, planettype *p) {
   }
 
   /* launch the ship */
-  fuel = s->mass * gravity(p) * LAUNCH_GRAV_MASS_FACTOR;
+  fuel = s->mass * gravity(*p) * LAUNCH_GRAV_MASS_FACTOR;
   if (s->fuel < fuel) {
     strcat(telegram_buf, "\t\tNot enough fuel to launch!\n");
     return 1;

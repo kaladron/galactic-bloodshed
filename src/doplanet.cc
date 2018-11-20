@@ -37,15 +37,15 @@
 #include "vars.h"
 
 static void do_dome(shiptype *, sector_map &);
-static void do_quarry(shiptype *, planettype *, sector_map &);
-static void do_berserker(shiptype *, planettype *);
-static void do_recover(planettype *, int, int);
+static void do_quarry(shiptype *, planet *, sector_map &);
+static void do_berserker(shiptype *, planet *);
+static void do_recover(planet *, int, int);
 static double est_production(const sector &);
-static int moveship_onplanet(shiptype *, planettype *);
-static void plow(shiptype *, planettype *, sector_map &);
-static void terraform(shiptype *, planettype *, sector_map &);
+static int moveship_onplanet(shiptype *, planet *);
+static void plow(shiptype *, planet *, sector_map &);
+static void terraform(shiptype *, planet *, sector_map &);
 
-int doplanet(int starnum, planettype *planet, int planetnum) {
+int doplanet(int starnum, planet *planet, int planetnum) {
   int shipno, x, y, nukex, nukey;
   int o = 0;
   int i;
@@ -60,7 +60,7 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
 #endif
 
   auto smap = getsmap(*planet);
-  PermuteSects(planet);
+  PermuteSects(*planet);
   bzero((char *)Sectinfo, sizeof(Sectinfo));
 
   bzero((char *)avg_mob, sizeof(avg_mob));
@@ -82,7 +82,7 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
 
   /* reset global variables */
   for (i = 1; i <= Num_races; i++) {
-    Compat[i - 1] = compatibility(planet, races[i - 1]);
+    Compat[i - 1] = compatibility(*planet, races[i - 1]);
     planet->info[i - 1].numsectsowned = 0;
     planet->info[i - 1].troops = 0;
     planet->info[i - 1].popn = 0;
@@ -226,18 +226,18 @@ if (!Stinfo[starnum][planetnum].inhab)
                              Stinfo[starnum][planetnum].temp_add +
                              int_rand(-5, 5);
 
-  (void)Getxysect(planet, &x, &y, 1);
+  (void)Getxysect(*planet, &x, &y, 1);
 
-  while (Getxysect(planet, &x, &y, 0)) {
+  while (Getxysect(*planet, &x, &y, 0)) {
     auto &p = smap.get(x, y);
 
     if (p.owner && (p.popn || p.troops)) {
       allmod = 1;
       if (!Stars[starnum]->nova_stage) {
-        produce(Stars[starnum], planet, p);
+        produce(Stars[starnum], *planet, p);
         if (p.owner)
           planet->info[p.owner - 1].est_production += est_production(p);
-        spread(planet, p, x, y, smap);
+        spread(*planet, p, x, y, smap);
       } else {
         /* damage sector from supernova */
         p.resource++;
@@ -292,8 +292,8 @@ if (!Stinfo[starnum][planetnum].inhab)
                         */
   }
 
-  (void)Getxysect(planet, &x, &y, 1);
-  while (Getxysect(planet, &x, &y, 0)) {
+  (void)Getxysect(*planet, &x, &y, 1);
+  while (Getxysect(*planet, &x, &y, 0)) {
     auto &p = smap.get(x, y);
     if (p.owner) planet->info[p.owner - 1].numsectsowned++;
   }
@@ -307,8 +307,8 @@ if (!Stinfo[starnum][planetnum].inhab)
         while (!Claims && !allexp && timer > 0) {
           timer -= 1;
           o = 1;
-          (void)Getxysect(planet, &x, &y, 1);
-          while (!Claims && Getxysect(planet, &x, &y, 0)) {
+          (void)Getxysect(*planet, &x, &y, 1);
+          while (!Claims && Getxysect(*planet, &x, &y, 0)) {
             /* find out if all sectors have been explored */
             o &= Sectinfo[x][y].explored;
             auto &p = smap.get(x, y);
@@ -321,7 +321,7 @@ if (!Stinfo[starnum][planetnum].inhab)
               p.owner = i;
               tot_captured = 1;
             } else
-              explore(planet, p, x, y, i);
+              explore(*planet, p, x, y, i);
           }
           allexp |= o; /* all sectors explored for this player */
         }
@@ -424,8 +424,8 @@ if (!Stinfo[starnum][planetnum].inhab)
     planet->info[i - 1].troops = 0;
   }
 
-  (void)Getxysect(planet, &x, &y, 1);
-  while (Getxysect(planet, &x, &y, 0)) {
+  (void)Getxysect(*planet, &x, &y, 1);
+  while (Getxysect(*planet, &x, &y, 0)) {
     auto &p = smap.get(x, y);
     if (p.owner) {
       planet->info[p.owner - 1].numsectsowned++;
@@ -473,8 +473,8 @@ if (!Stinfo[starnum][planetnum].inhab)
         }
       }
       /* now nuke all sectors belonging to former master */
-      (void)Getxysect(planet, &x, &y, 1);
-      while (Getxysect(planet, &x, &y, 0)) {
+      (void)Getxysect(*planet, &x, &y, 1);
+      while (Getxysect(*planet, &x, &y, 0)) {
         if (Stinfo[starnum][planetnum].intimidated && random() & 01) {
           auto &p = smap.get(x, y);
           if (p.owner == planet->slaved_to) {
@@ -623,7 +623,7 @@ if (!Stinfo[starnum][planetnum].inhab)
   return allmod;
 }
 
-static int moveship_onplanet(shiptype *ship, planettype *planet) {
+static int moveship_onplanet(shiptype *ship, planet *planet) {
   int x, y, bounced = 0;
 
   if (ship->shipclass[ship->special.terraform.index] == 's') {
@@ -633,7 +633,7 @@ static int moveship_onplanet(shiptype *ship, planettype *planet) {
     ship->special.terraform.index = 0; /* reset the orders */
 
   (void)get_move(ship->shipclass[ship->special.terraform.index], ship->land_x,
-                 ship->land_y, &x, &y, planet);
+                 ship->land_y, &x, &y, *planet);
   if (y >= planet->Maxy)
     bounced = 1, y -= 2; /* bounce off of south pole! */
   else if (y < 0)
@@ -657,7 +657,7 @@ static int moveship_onplanet(shiptype *ship, planettype *planet) {
   return 1;
 }
 
-static void terraform(shiptype *ship, planettype *planet, sector_map &smap) {
+static void terraform(shiptype *ship, planet *planet, sector_map &smap) {
   /* move, and then terraform. */
   if (!moveship_onplanet(ship, planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
@@ -688,7 +688,7 @@ static void terraform(shiptype *ship, planettype *planet, sector_map &smap) {
   }
 }
 
-static void plow(shiptype *ship, planettype *planet, sector_map &smap) {
+static void plow(shiptype *ship, planet *planet, sector_map &smap) {
   if (!moveship_onplanet(ship, planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
   if ((races[ship->owner - 1]->likes[s.condition]) && (s.fert < 100)) {
@@ -727,7 +727,7 @@ static void do_dome(shiptype *ship, sector_map &smap) {
   use_resource(ship, RES_COST_DOME);
 }
 
-static void do_quarry(shiptype *ship, planettype *planet, sector_map &smap) {
+static void do_quarry(shiptype *ship, planet *planet, sector_map &smap) {
   int prod, tox;
 
   auto &s = smap.get(ship->land_x, ship->land_y);
@@ -751,7 +751,7 @@ static void do_quarry(shiptype *ship, planettype *planet, sector_map &smap) {
     s.fert = 0;
 }
 
-static void do_berserker(shiptype *ship, planettype *planet) {
+static void do_berserker(shiptype *ship, planet *planet) {
   if (ship->whatdest == LEVEL_PLAN && ship->whatorbits == LEVEL_PLAN &&
       !landed(ship) && ship->storbits == ship->deststar &&
       ship->pnumorbits == ship->destpnum) {
@@ -762,7 +762,7 @@ static void do_berserker(shiptype *ship, planettype *planet) {
   }
 }
 
-static void do_recover(planettype *planet, int starnum, int planetnum) {
+static void do_recover(planet *planet, int starnum, int planetnum) {
   int owners = 0, i, j;
   int ownerbits[2];
   int stolenres = 0, stolendes = 0, stolenfuel = 0, stolencrystals = 0;

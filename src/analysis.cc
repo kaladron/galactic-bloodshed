@@ -8,15 +8,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "GB_server.h"
 #include "buffers.h"
+#include "files_shl.h"
 #include "getplace.h"
+#include "max.h"
 #include "races.h"
 #include "ships.h"
 #include "tweakables.h"
 #include "vars.h"
-#include "max.h"
-#include "files_shl.h"
-#include "GB_server.h"
 
 #define CARE 5
 struct anal_sect {
@@ -124,7 +124,6 @@ void analysis(const command_t &argv, const player_t Playernum,
 static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
                         int sector_type, starnum_t Starnum,
                         planetnum_t Planetnum) {
-  planettype *planet;
   racetype *Race;
   int x, y;
   int p;
@@ -162,19 +161,18 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
   for (i = 0; i <= WASTED; i++) Sect[i] = 0;
 
   Race = races[Playernum - 1];
-  getplanet(&planet, Starnum, Planetnum);
+  const auto &planet = getplanet(Starnum, Planetnum);
 
-  if (!planet->info[Playernum - 1].explored) {
-    free((char *)planet);
+  if (!planet.info[Playernum - 1].explored) {
     return;
   }
-  auto smap = getsmap(*planet);
+  auto smap = getsmap(planet);
 
   compat = compatibility(planet, Race);
 
-  TotalSect = planet->Maxx * planet->Maxy;
-  for (x = planet->Maxx - 1; x >= 0; x--) {
-    for (y = planet->Maxy - 1; y >= 0; y--) {
+  TotalSect = planet.Maxx * planet.Maxy;
+  for (x = planet.Maxx - 1; x >= 0; x--) {
+    for (y = planet.Maxy - 1; y >= 0; y--) {
       auto &sect = smap.get(x, y);
       p = sect.owner;
 
@@ -209,9 +207,8 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
           Insert(mode, Frt, x, y, sect.condition, (int)sect.fert);
           Insert(mode, Popn, x, y, sect.condition, (int)sect.popn);
           Insert(mode, Troops, x, y, sect.condition, (int)sect.troops);
-          Insert(
-              mode, mPopn, x, y, sect.condition,
-              maxsupport(Race, sect, compat, (int)planet->conditions[TOXIC]));
+          Insert(mode, mPopn, x, y, sect.condition,
+                 maxsupport(Race, sect, compat, (int)planet.conditions[TOXIC]));
         }
       }
     }
@@ -306,7 +303,6 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
     notify(Playernum, Governor, buf);
   }
   notify(Playernum, Governor, "\n");
-  free((char *)planet);
 }
 
 static void Insert(int mode, struct anal_sect arr[], int x, int y, int des,

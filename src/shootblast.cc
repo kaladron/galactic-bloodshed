@@ -136,8 +136,8 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
 }
 
 #ifdef DEFENSE
-int shoot_planet_to_ship(racetype *Race, planettype *p, shiptype *ship,
-                         int strength, char *long_msg, char *short_msg) {
+int shoot_planet_to_ship(racetype *Race, shiptype *ship, int strength,
+                         char *long_msg, char *short_msg) {
   int hits;
   int evade, speed, body;
   int damage;
@@ -165,8 +165,8 @@ int shoot_planet_to_ship(racetype *Race, planettype *p, shiptype *ship,
 }
 #endif
 
-int shoot_ship_to_planet(shiptype *ship, planettype *pl, int strength, int x,
-                         int y, sector_map &smap, int ignore, int caliber,
+int shoot_ship_to_planet(shiptype *ship, planet *pl, int strength, int x, int y,
+                         sector_map &smap, int ignore, int caliber,
                          char *long_msg, char *short_msg) {
   int x2, y2;
   int numdest, kills, oldowner;
@@ -492,7 +492,7 @@ double gun_range(racetype *r, shiptype *s, int mode) {
 
 /*
  * range of telescopes, ground or space, given race and ship
-*/
+ */
 double tele_range(int type, double tech) {
   if (type == OTYPE_GTELE)
     return log1p((double)tech) * 400 + SYSTEMSIZE / 8;
@@ -582,14 +582,12 @@ void do_collateral(shiptype *ship, int damage, int *casualties,
 }
 
 int getdefense(shiptype *ship) {
-  planettype *p;
   int defense = 0;
 
   if (landed(ship)) {
-    getplanet(&p, (int)ship->storbits, (int)ship->pnumorbits);
-    auto sect = getsector(*p, ship->land_x, ship->land_y);
+    const auto &p = getplanet((int)ship->storbits, (int)ship->pnumorbits);
+    auto sect = getsector(p, ship->land_x, ship->land_y);
     defense = 2 * Defensedata[sect.condition];
-    free(p);
   }
   return defense;
 }

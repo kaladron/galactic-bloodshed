@@ -24,7 +24,6 @@ void enslave(const command_t &argv, const player_t Playernum,
              const governor_t Governor) {
   int APcount = 2;
   shiptype *s, *s2;
-  planettype *p;
   int i, aliens = 0, def = 0, attack = 0;
   shipnum_t shipno;
   racetype *Race;
@@ -55,20 +54,19 @@ void enslave(const command_t &argv, const player_t Playernum,
     free(s);
     return;
   }
-  getplanet(&p, s->storbits, s->pnumorbits);
-  if (p->info[Playernum - 1].numsectsowned == 0) {
+  auto p = getplanet(s->storbits, s->pnumorbits);
+  if (p.info[Playernum - 1].numsectsowned == 0) {
     sprintf(buf, "You don't have a garrison on the planet.\n");
     notify(Playernum, Governor, buf);
     free(s);
-    free(p);
     return;
   }
 
   /* add up forces attacking, defending */
   for (attack = aliens = def = 0, i = 1; i < MAXPLAYERS; i++) {
-    if (p->info[i - 1].numsectsowned && i != Playernum) {
+    if (p.info[i - 1].numsectsowned && i != Playernum) {
       aliens = 1;
-      def += p->info[i - 1].destruct;
+      def += p.info[i - 1].destruct;
     }
   }
 
@@ -76,17 +74,16 @@ void enslave(const command_t &argv, const player_t Playernum,
     sprintf(buf, "There is no one else on this planet to enslave!\n");
     notify(Playernum, Governor, buf);
     free(s);
-    free(p);
     return;
   }
 
   Race = races[Playernum - 1];
 
-  shipnum_t sh = p->ships;
+  shipnum_t sh = p.ships;
   while (sh) {
     (void)getship(&s2, sh);
     if (s2->alive && s2->active) {
-      if (p->info[s2->owner].numsectsowned && s2->owner != Playernum)
+      if (p.info[s2->owner].numsectsowned && s2->owner != Playernum)
         def += s2->destruct;
       else if (s2->owner == Playernum)
         attack += s2->destruct;
@@ -115,7 +112,7 @@ void enslave(const command_t &argv, const player_t Playernum,
           Stars[s->storbits]->pnames[s->pnumorbits]);
 
   if (def <= 2 * attack) {
-    p->slaved_to = Playernum;
+    p.slaved_to = Playernum;
     putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
 
     /* send telegs to anyone there */
@@ -135,7 +132,7 @@ void enslave(const command_t &argv, const player_t Playernum,
     notify(Playernum, Governor, buf);
     sprintf(buf,
             "planet (at least %.0f); otherwise there is a 50%% chance that\n",
-            p->popn * 0.001);
+            p.popn * 0.001);
     notify(Playernum, Governor, buf);
     sprintf(buf, "enslaved population will revolt.\n");
     notify(Playernum, Governor, buf);
@@ -153,9 +150,8 @@ void enslave(const command_t &argv, const player_t Playernum,
   }
 
   for (i = 1; i < MAXPLAYERS; i++)
-    if (p->info[i - 1].numsectsowned && i != Playernum)
+    if (p.info[i - 1].numsectsowned && i != Playernum)
       warn(i, (int)Stars[s->storbits]->governor[i - 1], telegram_buf);
 
-  free(p);
   free(s);
 }

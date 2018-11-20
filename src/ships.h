@@ -162,34 +162,34 @@ class ship {
       unsigned char who_killed;
       unsigned char dummy[4];
     } mind;
-    struct {/* spore pods */
+    struct { /* spore pods */
       unsigned char decay;
       unsigned char temperature;
       unsigned char dummy[8];
     } pod;
-    struct {/* dust canisters, greenhouse gases */
+    struct { /* dust canisters, greenhouse gases */
       unsigned char count;
       unsigned char dummy[9];
     } timer;
-    struct {/* missiles */
+    struct { /* missiles */
       unsigned char x;
       unsigned char y;
       unsigned char scatter;
       unsigned char dummy[7];
     } impact;
-    struct {/* mines */
+    struct { /* mines */
       unsigned short radius;
       unsigned char dummy[8];
     } trigger;
-    struct {/* terraformers */
+    struct { /* terraformers */
       unsigned char index;
       unsigned char dummy[9];
     } terraform;
-    struct {/* AVPM */
+    struct { /* AVPM */
       unsigned short target;
       unsigned char dummy[8];
     } transport;
-    struct {/* toxic waste containers */
+    struct { /* toxic waste containers */
       unsigned char toxic;
       unsigned char dummy[9];
     } waste;
@@ -270,7 +270,7 @@ class ship {
   unsigned short max_hanger; /* total hanger space */
 };
 
-struct place {/* used in function return for finding place */
+struct place { /* used in function return for finding place */
   starnum_t snum;
   planetnum_t pnum;
   shipnum_t shipno;

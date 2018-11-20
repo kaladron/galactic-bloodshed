@@ -74,16 +74,16 @@ static const int rmax[][8] = {{250, 325, 400, 0, 250, 0, 300}, /*   @   */
 static const int cond[] = {SEA, MOUNT, LAND, ICE, GAS, SEA, FOREST, DESERT};
 
 static int neighbors(sector_map &, int, int, int);
-static void MakeEarthAtmosphere(planettype *, int);
-static void Makesurface(planettype *, sector_map &);
-static short SectTemp(planettype *, int);
+static void MakeEarthAtmosphere(planet *, int);
+static void Makesurface(const planet &, sector_map &);
+static short SectTemp(const planet &, int);
 static void seed(sector_map &, int, int);
 static void grow(sector_map &, int, int, int);
 
-planettype Makeplanet(double dist, short stemp, ptype_t type) {
+planet Makeplanet(double dist, short stemp, ptype_t type) {
   static planetnum_t planet_id = 0;
   int x, y;
-  planettype planet;
+  planet planet;
   int atmos, total_sects;
   char c, t;
   double f;
@@ -218,13 +218,13 @@ planettype Makeplanet(double dist, short stemp, ptype_t type) {
       grow(smap, DESERT, 1, 3);
       break;
   }
-  Makesurface(&planet,
+  Makesurface(planet,
               smap); /* determine surface geology based on environment */
   putsmap(smap, planet);
   return planet;
 }
 
-static void MakeEarthAtmosphere(planettype *pptr, int chance) {
+static void MakeEarthAtmosphere(planet *pptr, int chance) {
   int atmos = 100;
 
   if (int_rand(0, 99) > chance) {
@@ -312,7 +312,7 @@ static void grow(sector_map &smap, int type, int n, int rate) {
   }
 }
 
-static void Makesurface(planettype *p, sector_map &smap) {
+static void Makesurface(const planet &p, sector_map &smap) {
   for (int x = 0; x < smap.get_maxx(); x++) {
     for (int y = 0; y < smap.get_maxy(); y++) {
       auto &s = smap.get(x, y);
@@ -323,20 +323,20 @@ static void Makesurface(planettype *p, sector_map &smap) {
             s.condition = ICE;
           break;
         case LAND:
-          if (p->type == TYPE_EARTH) {
+          if (p.type == TYPE_EARTH) {
             if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
               s.condition = ICE;
           }
           break;
         case FOREST:
-          if (p->type == TYPE_FOREST) {
+          if (p.type == TYPE_FOREST) {
             if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
               s.condition = ICE;
           }
       }
       s.type = s.condition;
-      s.resource = int_rand(rmin[p->type][s.type], rmax[p->type][s.type]);
-      s.fert = int_rand(Fmin[p->type][s.type], Fmax[p->type][s.type]);
+      s.resource = int_rand(rmin[p.type][s.type], rmax[p.type][s.type]);
+      s.fert = int_rand(Fmin[p.type][s.type], Fmax[p.type][s.type]);
       if (int_rand(0, 1000) < x_chance[s.type])
         s.crystals = int_rand(4, 8);
       else
@@ -345,12 +345,12 @@ static void Makesurface(planettype *p, sector_map &smap) {
   }
 }
 
-static short SectTemp(planettype *p, int y) {
+static short SectTemp(const planet &p, int y) {
   int dy, mid, temp;
   const int TFAC = 10;
 
-  temp = p->conditions[TEMP];
-  mid = (p->Maxy + 1) / 2 - 1;
+  temp = p.conditions[TEMP];
+  mid = (p.Maxy + 1) / 2 - 1;
   dy = abs(y - mid);
 
   temp -= TFAC * dy * dy;

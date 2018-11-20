@@ -15,7 +15,7 @@ void defend(int, int, int);
 void detonate(const command_t &argv, const player_t Playernum,
               const governor_t Governor);
 int retal_strength(shiptype *);
-int adjacent(int, int, int, int, planettype *);
+int adjacent(int, int, int, int, const planet &);
 int landed(shiptype *);
 int laser_on(shiptype *);
 

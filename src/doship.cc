@@ -33,14 +33,14 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static double ap_planet_factor(planettype *);
+static double ap_planet_factor(planet *);
 static double crew_factor(shiptype *);
 static void do_ap(shiptype *);
 static void do_canister(shiptype *);
 static void do_greenhouse(shiptype *);
 static void do_god(shiptype *);
 static void do_habitat(shiptype *);
-static void do_meta_infect(int, planettype *);
+static void do_meta_infect(int, planet *);
 static void do_mirror(shiptype *);
 static void do_oap(shiptype *);
 static void do_pod(shiptype *);
@@ -238,7 +238,6 @@ void doown(shiptype *ship) {
 void domissile(shiptype *ship) {
   int sh2;
   int bombx, bomby, numdest, pdn, i;
-  planettype *p;
   double dist;
 
   if (!ship->alive || !ship->owner) return;
@@ -247,7 +246,7 @@ void domissile(shiptype *ship) {
   /* check to see if it has arrived at it's destination */
   if (ship->whatdest == LEVEL_PLAN && ship->whatorbits == LEVEL_PLAN &&
       ship->destpnum == ship->pnumorbits) {
-    p = planets[ship->storbits][ship->pnumorbits];
+    auto p = planets[ship->storbits][ship->pnumorbits];
     /* check to see if PDNs are present */
     pdn = 0;
     sh2 = p->ships;
@@ -311,7 +310,6 @@ void domissile(shiptype *ship) {
 void domine(int shipno, int detonate) {
   int sh, sh2, i;
   shiptype *s, *ship;
-  planettype *planet;
   racetype *r;
 
   (void)getship(&ship, shipno);
@@ -329,11 +327,11 @@ void domine(int shipno, int detonate) {
       case LEVEL_STAR:
         sh = Stars[ship->storbits]->ships;
         break;
-      case LEVEL_PLAN:
-        getplanet(&planet, (int)ship->storbits, (int)ship->pnumorbits);
-        sh = planet->ships;
-        free(planet);
-        break;
+      case LEVEL_PLAN: {
+        const auto &planet =
+            getplanet((int)ship->storbits, (int)ship->pnumorbits);
+        sh = planet.ships;
+      } break;
       default:
         free(ship);
         return;
@@ -386,19 +384,19 @@ void domine(int shipno, int detonate) {
       if (ship->whatorbits == LEVEL_PLAN) {
         /* pick a random sector to nuke */
         int x, y, numdest;
-        getplanet(&planet, (int)ship->storbits, (int)ship->pnumorbits);
+        auto planet = getplanet((int)ship->storbits, (int)ship->pnumorbits);
         if (landed(ship)) {
           x = ship->land_x;
           y = ship->land_y;
         } else {
-          x = int_rand(0, (int)planet->Maxx - 1);
-          y = int_rand(0, (int)planet->Maxy - 1);
+          x = int_rand(0, (int)planet.Maxx - 1);
+          y = int_rand(0, (int)planet.Maxy - 1);
         }
-        auto smap = getsmap(*planet);
+        auto smap = getsmap(planet);
         numdest =
-            shoot_ship_to_planet(ship, planet, (int)(ship->destruct), x, y,
+            shoot_ship_to_planet(ship, &planet, (int)(ship->destruct), x, y,
                                  smap, 0, GTYPE_LIGHT, long_buf, short_buf);
-        putsmap(smap, *planet);
+        putsmap(smap, planet);
         putplanet(planet, Stars[ship->storbits], (int)ship->pnumorbits);
 
         sprintf(telegram_buf, "%s", buf);
@@ -411,7 +409,6 @@ void domine(int shipno, int detonate) {
           if (Nuked[i - 1])
             warn(i, (int)Stars[ship->storbits]->governor[i - 1], telegram_buf);
         notify((int)(ship->owner), (int)ship->governor, telegram_buf);
-        free(planet);
       }
       kill_ship((int)(ship->owner), ship);
     }
@@ -423,18 +420,18 @@ void domine(int shipno, int detonate) {
 void doabm(shiptype *ship) {
   int sh2;
   int numdest;
-  planettype *p;
 
   if (!ship->alive || !ship->owner) return;
   if (!ship->on || !ship->retaliate || !ship->destruct) return;
 
   if (landed(ship)) {
-    p = planets[ship->storbits][ship->pnumorbits];
+    const auto &p = planets[ship->storbits][ship->pnumorbits];
     /* check to see if missiles/mines are present */
     sh2 = p->ships;
     while (sh2 && ship->destruct) {
-      if (ships[sh2]->alive && ((ships[sh2]->type == STYPE_MISSILE) ||
-                                (ships[sh2]->type == STYPE_MINE)) &&
+      if (ships[sh2]->alive &&
+          ((ships[sh2]->type == STYPE_MISSILE) ||
+           (ships[sh2]->type == STYPE_MINE)) &&
           (ships[sh2]->owner != ship->owner) &&
           !(isset(races[ship->owner - 1]->allied, ships[sh2]->owner) &&
             isset(races[ships[sh2]->owner - 1]->allied, ship->owner))) {
@@ -554,11 +551,11 @@ static int infect_planet(int who, int star, int p) {
     return 0;
 }
 
-static void do_meta_infect(int who, planettype *p) {
+static void do_meta_infect(int who, planet *p) {
   int owner, x, y;
 
   auto smap = getsmap(*p);
-  PermuteSects(p);
+  PermuteSects(*p);
   bzero((char *)Sectinfo, sizeof(Sectinfo));
   x = int_rand(0, p->Maxx - 1);
   y = int_rand(0, p->Maxy - 1);
@@ -707,8 +704,9 @@ static void do_ap(shiptype *ship) {
   /* if landed on planet, change conditions to be like race */
   if (landed(ship) && ship->on) {
     int j, d;
-    planettype *p;
-    p = planets[ship->storbits][ship->pnumorbits];
+    // TODO(jeffbailey): Not obvious here how the modified planet is saved to
+    // disk
+    auto p = planets[ship->storbits][ship->pnumorbits];
     Race = races[ship->owner - 1];
     if (ship->fuel >= 3.0) {
       use_fuel(ship, 3.0);
@@ -732,7 +730,7 @@ static double crew_factor(shiptype *ship) {
   return ((double)ship->popn / (double)maxcrew);
 }
 
-static double ap_planet_factor(planettype *p) {
+static double ap_planet_factor(planet *p) {
   double x;
 
   x = (double)p->Maxx * (double)p->Maxy;

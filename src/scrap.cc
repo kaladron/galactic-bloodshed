@@ -21,7 +21,6 @@
 #include "vars.h"
 
 void scrap(int Playernum, int Governor, int APcount) {
-  planettype *planet;
   sector sect;
   shiptype *s, *s2;
   shipnum_t shipno, nextshipno;
@@ -66,8 +65,8 @@ void scrap(int Playernum, int Governor, int APcount) {
       }
       if (s->whatorbits == LEVEL_PLAN) {
         /* wc's release poison */
-        getplanet(&planet, (int)s->storbits, (int)s->pnumorbits);
-        if (landed(s)) sect = getsector(*planet, s->land_x, s->land_y);
+        const auto &planet = getplanet((int)s->storbits, (int)s->pnumorbits);
+        if (landed(s)) sect = getsector(planet, s->land_x, s->land_y);
       }
       if (docked(s)) {
         if (!getship(&s2, (int)(s->destshipno))) {
@@ -217,8 +216,7 @@ void scrap(int Playernum, int Governor, int APcount) {
       }
 
       if (s->whatorbits == LEVEL_PLAN) {
-        free(planet); /* This has already been allocated */
-        getplanet(&planet, (int)s->storbits, (int)s->pnumorbits);
+        auto planet = getplanet((int)s->storbits, (int)s->pnumorbits);
         if (landed(s)) {
           if (sect.owner == Playernum) {
             sect.popn += troopval;
@@ -227,21 +225,20 @@ void scrap(int Playernum, int Governor, int APcount) {
             sect.owner = Playernum;
             sect.popn += crewval;
             sect.troops += troopval;
-            planet->info[Playernum - 1].numsectsowned++;
-            planet->info[Playernum - 1].popn += crewval;
-            planet->info[Playernum - 1].popn += troopval;
+            planet.info[Playernum - 1].numsectsowned++;
+            planet.info[Playernum - 1].popn += crewval;
+            planet.info[Playernum - 1].popn += troopval;
             sprintf(buf, "Sector %d,%d Colonized.\n", s->land_x, s->land_y);
             notify(Playernum, Governor, buf);
           }
-          planet->info[Playernum - 1].resource += scrapval;
-          planet->popn += crewval;
-          planet->info[Playernum - 1].destruct += destval;
-          planet->info[Playernum - 1].fuel += (int)fuelval;
-          planet->info[Playernum - 1].crystals += (int)xtalval;
-          putsector(sect, *planet, s->land_x, s->land_y);
+          planet.info[Playernum - 1].resource += scrapval;
+          planet.popn += crewval;
+          planet.info[Playernum - 1].destruct += destval;
+          planet.info[Playernum - 1].fuel += (int)fuelval;
+          planet.info[Playernum - 1].crystals += (int)xtalval;
+          putsector(sect, planet, s->land_x, s->land_y);
         }
         putplanet(planet, Stars[s->storbits], (int)s->pnumorbits);
-        free(planet);
       }
       if (landed(s)) {
         sprintf(buf, "\nScrapped.\n");

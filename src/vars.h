@@ -7,16 +7,16 @@
 #ifndef VARS_H
 #define VARS_H
 
-#include "files.h"
-#include "tweakables.h"
-#include "config.h"
-#include <sys/types.h>
-#include <sys/file.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/file.h>
+#include <sys/types.h>
 #include <string>
 #include <vector>
+#include "config.h"
+#include "files.h"
+#include "tweakables.h"
 
 /* number of movement segments (global variable) */
 extern unsigned long segments;

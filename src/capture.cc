@@ -25,7 +25,6 @@
 
 void capture(int Playernum, int Governor, int APcount) {
   shiptype *ship, s;
-  planettype *p;
   player_t oldowner;
   governor_t oldgov;
   int shipdam = 0, booby = 0;
@@ -75,15 +74,14 @@ void capture(int Playernum, int Governor, int APcount) {
       x = ship->land_x;
       y = ship->land_y;
 
-      getplanet(&p, (int)ship->storbits, (int)ship->pnumorbits);
-      auto sect = getsector(*p, x, y);
+      auto p = getplanet((int)ship->storbits, (int)ship->pnumorbits);
+      auto sect = getsector(p, x, y);
 
       if (sect.owner != Playernum) {
         sprintf(buf,
                 "You don't own the sector where the ship is landed [%d].\n",
                 sect.owner);
         notify(Playernum, Governor, buf);
-        free(p);
         free(ship);
         continue;
       }
@@ -96,7 +94,6 @@ void capture(int Playernum, int Governor, int APcount) {
         what = MIL;
       else {
         notify(Playernum, Governor, "Capture with what?\n");
-        free(p);
         free(ship);
         continue;
       }
@@ -113,7 +110,6 @@ void capture(int Playernum, int Governor, int APcount) {
         sprintf(buf, "Illegal number of boarders %lu.\n", boarders);
         notify(Playernum, Governor, buf);
         free(ship);
-        free(p);
         continue;
       }
 
@@ -147,19 +143,19 @@ void capture(int Playernum, int Governor, int APcount) {
         sect.troops -= boarders;
 
       if (olddpopn + olddtroops) {
-        sprintf(buf, "Attack strength: %.2f     Defense strength: %.2f\n",
-                astrength =
-                    (double)boarders *
-                    (what == MIL ? (double)Race->fighters * 10.0 : 1.0) * .01 *
-                    Race->tech * (Race->likes[sect.condition] + 0.01) *
-                    ((double)Defensedata[sect.condition] + 1.0) *
-                    morale_factor((double)(Race->morale - alien->morale)),
-                dstrength =
-                    ((double)ship->popn +
-                     (double)ship->troops * 10.0 * (double)alien->fighters) *
-                    .01 * alien->tech * ((double)(Armor(ship)) + 0.01) * .01 *
-                    (100.0 - (double)ship->damage) *
-                    morale_factor((double)(alien->morale - Race->morale)));
+        sprintf(
+            buf, "Attack strength: %.2f     Defense strength: %.2f\n",
+            astrength = (double)boarders *
+                        (what == MIL ? (double)Race->fighters * 10.0 : 1.0) *
+                        .01 * Race->tech *
+                        (Race->likes[sect.condition] + 0.01) *
+                        ((double)Defensedata[sect.condition] + 1.0) *
+                        morale_factor((double)(Race->morale - alien->morale)),
+            dstrength = ((double)ship->popn + (double)ship->troops * 10.0 *
+                                                  (double)alien->fighters) *
+                        .01 * alien->tech * ((double)(Armor(ship)) + 0.01) *
+                        .01 * (100.0 - (double)ship->damage) *
+                        morale_factor((double)(alien->morale - Race->morale)));
         notify(Playernum, Governor, buf);
         casualty_scale = MIN(boarders, ship->popn + ship->troops);
         if (astrength > 0.0)
@@ -290,7 +286,7 @@ void capture(int Playernum, int Governor, int APcount) {
         if (sect.popn + sect.troops + boarders) {
           sprintf(buf, "You killed all the aliens in this sector!\n");
           strcat(telegram_buf, buf);
-          p->info[Playernum - 1].mob_points -= sect.mobilization;
+          p.info[Playernum - 1].mob_points -= sect.mobilization;
         }
         if (!boarders) {
           sprintf(buf, "Oh no! They killed your party to the last man!\n");
@@ -318,12 +314,11 @@ void capture(int Playernum, int Governor, int APcount) {
       notify_star(Playernum, Governor, oldowner, (int)ship->storbits,
                   short_buf);
       putship(ship);
-      putsector(sect, *p, x, y);
+      putsector(sect, p, x, y);
       putplanet(p, Stars[snum], pnum);
       putrace(Race);
       putrace(alien);
       deductAPs(Playernum, Governor, APcount, (int)ship->storbits, 0);
-      free(p);
       free(ship);
     } else
       free(ship);

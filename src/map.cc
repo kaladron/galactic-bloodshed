@@ -23,11 +23,10 @@
 #include "vars.h"
 
 static void show_map(const player_t, const governor_t, const starnum_t,
-                     const planetnum_t, const planettype *);
+                     const planetnum_t, const planet &);
 
 void map(const command_t &argv, const player_t Playernum,
          const governor_t Governor) {
-  planettype *p;
   placetype where;
 
   if (argv.size() > 1) {
@@ -42,14 +41,13 @@ void map(const command_t &argv, const player_t Playernum,
     case LEVEL_SHIP:
       notify(Playernum, Governor, "Bad scope.\n");
       return;
-    case LEVEL_PLAN:
-      getplanet(&p, where.snum, where.pnum);
+    case LEVEL_PLAN: {
+      const auto &p = getplanet(where.snum, where.pnum);
       show_map(Playernum, Governor, where.snum, where.pnum, p);
-      free(p);
       if (Stars[where.snum]->stability > 50)
         notify(Playernum, Governor,
                "WARNING! This planet's primary is unstable.\n");
-      break;
+    } break;
     default:
       orbit(argv, Playernum, Governor); /* make orbit map instead */
   }
@@ -57,7 +55,7 @@ void map(const command_t &argv, const player_t Playernum,
 
 static void show_map(const player_t Playernum, const governor_t Governor,
                      const starnum_t snum, const planetnum_t pnum,
-                     const planettype *p) {
+                     const planet &p) {
   int x, y, i, f = 0, owner, owned1;
   int iq = 0;
   int sh;
@@ -71,12 +69,12 @@ static void show_map(const player_t Playernum, const governor_t Governor,
                        // as we know that it's not client affecting.
 
   auto Race = races[Playernum - 1];
-  auto smap = getsmap(*p);
+  auto smap = getsmap(p);
   if (!Race->governor[Governor].toggle.geography) {
     /* traverse ship list on planet; find out if we can look at
        ships here. */
-    iq = !!p->info[Playernum - 1].numsectsowned;
-    sh = p->ships;
+    iq = !!p.info[Playernum - 1].numsectsowned;
+    sh = p.ships;
 
     while (sh) {
       if (!getship(&s, sh)) {
@@ -98,12 +96,12 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   sprintf(buf, "%s;", Stars[snum]->pnames[pnum]);
   strcat(output, buf);
 
-  sprintf(buf, "%d;%d;%d;", p->Maxx, p->Maxy, show);
+  sprintf(buf, "%d;%d;%d;", p.Maxx, p.Maxy, show);
   strcat(output, buf);
 
   /* send map data */
-  for (y = 0; y < p->Maxy; y++)
-    for (x = 0; x < p->Maxx; x++) {
+  for (y = 0; y < p.Maxy; y++)
+    for (x = 0; x < p.Maxx; x++) {
       owner = smap.get(x, y).owner;
       owned1 = (owner == Race->governor[Governor].toggle.highlight);
       if (shiplocs[x][y] && iq) {
@@ -132,13 +130,13 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   notify(Playernum, Governor, output);
 
   if (show) {
-    sprintf(temp, "Type: %8s   Sects %7s: %3u   Aliens:", Planet_types[p->type],
+    sprintf(temp, "Type: %8s   Sects %7s: %3u   Aliens:", Planet_types[p.type],
             Race->Metamorph ? "covered" : "owned",
-            p->info[Playernum - 1].numsectsowned);
-    if (p->explored || Race->tech >= TECH_EXPLORE) {
+            p.info[Playernum - 1].numsectsowned);
+    if (p.explored || Race->tech >= TECH_EXPLORE) {
       f = 0;
       for (i = 1; i < MAXPLAYERS; i++)
-        if (p->info[i - 1].numsectsowned && i != Playernum) {
+        if (p.info[i - 1].numsectsowned && i != Playernum) {
           f = 1;
           sprintf(buf, "%c%d", isset(Race->atwar, i) ? '*' : ' ', i);
           strcat(temp, buf);
@@ -149,39 +147,39 @@ static void show_map(const player_t Playernum, const governor_t Governor,
     strcat(temp, "\n");
     notify(Playernum, Governor, temp);
     sprintf(temp, "              Guns : %3d             Mob Points : %ld\n",
-            p->info[Playernum - 1].guns, p->info[Playernum - 1].mob_points);
+            p.info[Playernum - 1].guns, p.info[Playernum - 1].mob_points);
     notify(Playernum, Governor, temp);
     sprintf(temp, "      Mobilization : %3d (%3d)     Compatibility: %.2f%%",
-            p->info[Playernum - 1].comread, p->info[Playernum - 1].mob_set,
+            p.info[Playernum - 1].comread, p.info[Playernum - 1].mob_set,
             compatibility(p, Race));
-    if (p->conditions[TOXIC] > 50) {
-      sprintf(buf, "    (%d%% TOXIC)", p->conditions[TOXIC]);
+    if (p.conditions[TOXIC] > 50) {
+      sprintf(buf, "    (%d%% TOXIC)", p.conditions[TOXIC]);
       strcat(temp, buf);
     }
     strcat(temp, "\n");
     notify(Playernum, Governor, temp);
     sprintf(temp, "Resource stockpile : %-9u    Fuel stockpile: %u\n",
-            p->info[Playernum - 1].resource, p->info[Playernum - 1].fuel);
+            p.info[Playernum - 1].resource, p.info[Playernum - 1].fuel);
     notify(Playernum, Governor, temp);
     sprintf(temp, "      Destruct cap : %-9u%18s: %-5lu (%lu/%u)\n",
-            p->info[Playernum - 1].destruct,
+            p.info[Playernum - 1].destruct,
             Race->Metamorph ? "Tons of biomass" : "Total Population",
-            p->info[Playernum - 1].popn, p->popn,
-            round_rand(.01 * (100. - p->conditions[TOXIC]) * p->maxpopn));
+            p.info[Playernum - 1].popn, p.popn,
+            round_rand(.01 * (100. - p.conditions[TOXIC]) * p.maxpopn));
     notify(Playernum, Governor, temp);
     sprintf(temp, "          Crystals : %-9u%18s: %-5lu (%lu)\n",
-            p->info[Playernum - 1].crystals, "Ground forces",
-            p->info[Playernum - 1].troops, p->troops);
+            p.info[Playernum - 1].crystals, "Ground forces",
+            p.info[Playernum - 1].troops, p.troops);
     notify(Playernum, Governor, temp);
     sprintf(temp, "%ld Total Resource Deposits     Tax rate %u%%  New %u%%\n",
-            p->total_resources, p->info[Playernum - 1].tax,
-            p->info[Playernum - 1].newtax);
+            p.total_resources, p.info[Playernum - 1].tax,
+            p.info[Playernum - 1].newtax);
     notify(Playernum, Governor, temp);
     sprintf(temp, "Estimated Production Next Update : %.2f\n",
-            p->info[Playernum - 1].est_production);
+            p.info[Playernum - 1].est_production);
     notify(Playernum, Governor, temp);
-    if (p->slaved_to) {
-      sprintf(temp, "      ENSLAVED to player %d\n", p->slaved_to);
+    if (p.slaved_to) {
+      sprintf(temp, "      ENSLAVED to player %d\n", p.slaved_to);
       notify(Playernum, Governor, temp);
     }
   }

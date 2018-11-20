@@ -24,7 +24,6 @@
 void launch(int Playernum, int Governor, int APcount) {
   int sh2;
   shiptype *s, *s2;
-  planettype *p;
   shipnum_t shipno, nextshipno;
   double fuel;
 
@@ -71,8 +70,8 @@ void launch(int Playernum, int Governor, int APcount) {
         (void)getship(&s2, sh2);
         if (landed(s2)) {
           remove_sh_ship(s, s2);
-          getplanet(&p, (int)s2->storbits, (int)s2->pnumorbits);
-          insert_sh_plan(p, s);
+          auto p = getplanet((int)s2->storbits, (int)s2->pnumorbits);
+          insert_sh_plan(&p, s);
           putplanet(p, Stars[s2->storbits], (int)s2->pnumorbits);
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
@@ -89,7 +88,6 @@ void launch(int Playernum, int Governor, int APcount) {
           sprintf(buf, "Landed on %s/%s.\n", Stars[s->storbits]->name,
                   Stars[s->storbits]->pnames[s->pnumorbits]);
           notify(Playernum, Governor, buf);
-          free(p);
           putship(s);
           putship(s2);
         } else if (s2->whatorbits == LEVEL_PLAN) {
@@ -103,15 +101,14 @@ void launch(int Playernum, int Governor, int APcount) {
           s->whatdest = LEVEL_UNIV;
           s2->mass -= s->mass;
           s2->hanger -= Size(s);
-          getplanet(&p, (int)s2->storbits, (int)s2->pnumorbits);
-          insert_sh_plan(p, s);
+          auto p = getplanet((int)s2->storbits, (int)s2->pnumorbits);
+          insert_sh_plan(&p, s);
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
           putplanet(p, Stars[s2->storbits], (int)s2->pnumorbits);
           sprintf(buf, "Orbiting %s/%s.\n", Stars[s->storbits]->name,
                   Stars[s->storbits]->pnames[s->pnumorbits]);
           notify(Playernum, Governor, buf);
-          free(p);
           putship(s);
           putship(s2);
         } else if (s2->whatorbits == LEVEL_STAR) {
@@ -199,16 +196,16 @@ void launch(int Playernum, int Governor, int APcount) {
           deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
 
         /* adjust x,ypos to absolute coords */
-        getplanet(&p, (int)s->storbits, (int)s->pnumorbits);
+        auto p = getplanet((int)s->storbits, (int)s->pnumorbits);
         sprintf(buf, "Planet /%s/%s has gravity field of %.2f\n",
                 Stars[s->storbits]->name,
                 Stars[s->storbits]->pnames[s->pnumorbits], gravity(p));
         notify(Playernum, Governor, buf);
         s->xpos =
-            Stars[s->storbits]->xpos + p->xpos +
+            Stars[s->storbits]->xpos + p.xpos +
             (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
         s->ypos =
-            Stars[s->storbits]->ypos + p->ypos +
+            Stars[s->storbits]->ypos + p.ypos +
             (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
 
         /* subtract fuel from ship */
@@ -217,7 +214,6 @@ void launch(int Playernum, int Governor, int APcount) {
           sprintf(buf, "%s does not have enough fuel! (%.1f)\n",
                   Ship(*s).c_str(), fuel);
           notify(Playernum, Governor, buf);
-          free(p);
           free(s);
           return;
         }
@@ -234,19 +230,18 @@ void launch(int Playernum, int Governor, int APcount) {
         }
         s->notified = 0;
         putship(s);
-        if (!p->explored) {
+        if (!p.explored) {
           /* not yet explored by owner; space exploration causes the
              player to see a whole map */
-          p->explored = 1;
+          p.explored = 1;
           putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
         }
         sprintf(buf, "%s observed launching from planet /%s/%s.\n",
                 Ship(*s).c_str(), Stars[s->storbits]->name,
                 Stars[s->storbits]->pnames[s->pnumorbits]);
         for (player_t i = 1; i <= Num_races; i++)
-          if (p->info[i - 1].numsectsowned && i != Playernum)
+          if (p.info[i - 1].numsectsowned && i != Playernum)
             notify(i, (int)Stars[s->storbits]->governor[i - 1], buf);
-        free(p);
 
         sprintf(buf, "%s launched from planet,", Ship(*s).c_str());
         notify(Playernum, Governor, buf);

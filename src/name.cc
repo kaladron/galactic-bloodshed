@@ -42,7 +42,6 @@ void personal(int Playernum, int Governor, const char *message) {
 }
 
 void bless(int Playernum, int Governor, int APcount) {
-  planettype *planet;
   racetype *Race;
   int who, amount, Mod;
   char commod;
@@ -165,10 +164,10 @@ void bless(int Playernum, int Governor, int APcount) {
   if (Mod) return;
   /* ok, must be the planet then */
   commod = args[2][0];
-  getplanet(&planet, Dir[Playernum - 1][Governor].snum,
-            Dir[Playernum - 1][Governor].pnum);
+  auto planet = getplanet(Dir[Playernum - 1][Governor].snum,
+                          Dir[Playernum - 1][Governor].pnum);
   if (match(args[2], "explorebit")) {
-    planet->info[who - 1].explored = 1;
+    planet.info[who - 1].explored = 1;
     getstar(&Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].snum);
     setbit(Stars[Dir[Playernum - 1][Governor].snum]->explored, who);
@@ -179,16 +178,16 @@ void bless(int Playernum, int Governor, int APcount) {
             Stars[Dir[Playernum - 1][Governor].snum]
                 ->pnames[Dir[Playernum - 1][Governor].pnum]);
   } else if (match(args[2], "noexplorebit")) {
-    planet->info[who - 1].explored = 0;
+    planet.info[who - 1].explored = 0;
     sprintf(buf, "Deity reset your explored bit at /%s/%s.\n",
             Stars[Dir[Playernum - 1][Governor].snum]->name,
             Stars[Dir[Playernum - 1][Governor].snum]
                 ->pnames[Dir[Playernum - 1][Governor].pnum]);
   } else if (match(args[2], "planetpopulation")) {
-    planet->info[who - 1].popn = atoi(args[3]);
-    planet->popn++;
+    planet.info[who - 1].popn = atoi(args[3]);
+    planet.popn++;
     sprintf(buf, "Deity set your population variable to %ld at /%s/%s.\n",
-            planet->info[who - 1].popn,
+            planet.info[who - 1].popn,
             Stars[Dir[Playernum - 1][Governor].snum]->name,
             Stars[Dir[Playernum - 1][Governor].snum]
                 ->pnames[Dir[Playernum - 1][Governor].pnum]);
@@ -203,37 +202,37 @@ void bless(int Playernum, int Governor, int APcount) {
             Stars[Dir[Playernum - 1][Governor].snum]
                 ->pnames[Dir[Playernum - 1][Governor].pnum]);
   } else if (match(args[2], "numsectsowned")) {
-    planet->info[who - 1].numsectsowned = atoi(args[3]);
+    planet.info[who - 1].numsectsowned = atoi(args[3]);
     sprintf(buf, "Deity set your \"numsectsowned\" variable at /%s/%s to %d.\n",
             Stars[Dir[Playernum - 1][Governor].snum]->name,
             Stars[Dir[Playernum - 1][Governor].snum]
                 ->pnames[Dir[Playernum - 1][Governor].pnum],
-            planet->info[who - 1].numsectsowned);
+            planet.info[who - 1].numsectsowned);
   } else {
     switch (commod) {
       case 'r':
-        planet->info[who - 1].resource += amount;
+        planet.info[who - 1].resource += amount;
         sprintf(buf, "Deity gave you %d resources at %s/%s.\n", amount,
                 Stars[Dir[Playernum - 1][Governor].snum]->name,
                 Stars[Dir[Playernum - 1][Governor].snum]
                     ->pnames[Dir[Playernum - 1][Governor].pnum]);
         break;
       case 'd':
-        planet->info[who - 1].destruct += amount;
+        planet.info[who - 1].destruct += amount;
         sprintf(buf, "Deity gave you %d destruct at %s/%s.\n", amount,
                 Stars[Dir[Playernum - 1][Governor].snum]->name,
                 Stars[Dir[Playernum - 1][Governor].snum]
                     ->pnames[Dir[Playernum - 1][Governor].pnum]);
         break;
       case 'f':
-        planet->info[who - 1].fuel += amount;
+        planet.info[who - 1].fuel += amount;
         sprintf(buf, "Deity gave you %d fuel at %s/%s.\n", amount,
                 Stars[Dir[Playernum - 1][Governor].snum]->name,
                 Stars[Dir[Playernum - 1][Governor].snum]
                     ->pnames[Dir[Playernum - 1][Governor].pnum]);
         break;
       case 'x':
-        planet->info[who - 1].crystals += amount;
+        planet.info[who - 1].crystals += amount;
         sprintf(buf, "Deity gave you %d crystals at %s/%s.\n", amount,
                 Stars[Dir[Playernum - 1][Governor].snum]->name,
                 Stars[Dir[Playernum - 1][Governor].snum]
@@ -250,20 +249,17 @@ void bless(int Playernum, int Governor, int APcount) {
         break;
       default:
         notify(Playernum, Governor, "No such commodity.\n");
-        free(planet);
         return;
     }
   }
   putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
   warn_race(who, buf);
-  free(planet);
 }
 
 void insurgency(int Playernum, int Governor, int APcount) {
   int who, amount, eligible, them = 0;
   racetype *Race, *alien;
-  planettype *p;
   double x;
   int changed_hands, chance;
   int i;
@@ -304,10 +300,9 @@ void insurgency(int Playernum, int Governor, int APcount) {
   eligible = 0;
   them = 0;
   for (i = 0; i < Stars[Dir[Playernum - 1][Governor].snum]->numplanets; i++) {
-    getplanet(&p, Dir[Playernum - 1][Governor].snum, i);
-    eligible += p->info[Playernum - 1].popn;
-    them += p->info[who - 1].popn;
-    free(p);
+    auto p = getplanet(Dir[Playernum - 1][Governor].snum, i);
+    eligible += p.info[Playernum - 1].popn;
+    them += p.info[who - 1].popn;
   }
   if (!eligible) {
     notify(
@@ -315,12 +310,11 @@ void insurgency(int Playernum, int Governor, int APcount) {
         "You must have population in the star system to attempt insurgency\n.");
     return;
   }
-  getplanet(&p, Dir[Playernum - 1][Governor].snum,
-            Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
+                     Dir[Playernum - 1][Governor].pnum);
 
-  if (!p->info[who - 1].popn) {
+  if (!p.info[who - 1].popn) {
     notify(Playernum, Governor, "This player does not occupy this planet.\n");
-    free(p);
     return;
   }
 
@@ -328,22 +322,20 @@ void insurgency(int Playernum, int Governor, int APcount) {
   if (amount < 0) {
     notify(Playernum, Governor,
            "You have to use a positive amount of money.\n");
-    free(p);
     return;
   }
   if (Race->governor[Governor].money < amount) {
     notify(Playernum, Governor, "Nice try.\n");
-    free(p);
     return;
   }
 
-  x = INSURG_FACTOR * (double)amount * (double)p->info[who - 1].tax /
-      (double)p->info[who - 1].popn;
+  x = INSURG_FACTOR * (double)amount * (double)p.info[who - 1].tax /
+      (double)p.info[who - 1].popn;
   x *= morale_factor((double)(Race->morale - alien->morale));
   x *= morale_factor((double)(eligible - them) / 50.0);
   x *= morale_factor(10.0 *
-                     (double)(Race->fighters * p->info[Playernum - 1].troops -
-                              alien->fighters * p->info[who - 1].troops)) /
+                     (double)(Race->fighters * p.info[Playernum - 1].troops -
+                              alien->fighters * p.info[who - 1].troops)) /
        50.0;
   sprintf(buf, "x = %f\n", x);
   notify(Playernum, Governor, buf);
@@ -361,12 +353,12 @@ void insurgency(int Playernum, int Governor, int APcount) {
           Playernum, alien->morale, who);
   strcat(long_buf, buf);
   sprintf(buf, "\t\t %d money against %ld population at tax rate %d%%\n",
-          amount, p->info[who - 1].popn, p->info[who - 1].tax);
+          amount, p.info[who - 1].popn, p.info[who - 1].tax);
   strcat(long_buf, buf);
   sprintf(buf, "Success chance is %d%%\n", chance);
   strcat(long_buf, buf);
   if (success(chance)) {
-    changed_hands = revolt(p, who, Playernum);
+    changed_hands = revolt(&p, who, Playernum);
     notify(Playernum, Governor, long_buf);
     sprintf(buf, "Success!  You liberate %d sector%s.\n", changed_hands,
             (changed_hands == 1) ? "" : "s");
@@ -380,7 +372,7 @@ void insurgency(int Playernum, int Governor, int APcount) {
     strcat(long_buf, buf);
     warn(who, (int)Stars[Dir[Playernum - 1][Governor].snum]->governor[who - 1],
          long_buf);
-    p->info[Playernum - 1].tax = p->info[who - 1].tax;
+    p.info[Playernum - 1].tax = p.info[who - 1].tax;
     /* you inherit their tax rate (insurgency wars he he ) */
     sprintf(buf, "/%s/%s: Successful insurgency by %s [%d] against %s [%d]\n",
             Stars[Dir[Playernum - 1][Governor].snum]->name,
@@ -409,7 +401,6 @@ void insurgency(int Playernum, int Governor, int APcount) {
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
   Race->governor[Governor].money -= amount;
   putrace(Race);
-  free(p);
 }
 
 void pay(int Playernum, int Governor, int APcount) {
@@ -462,7 +453,6 @@ void pay(int Playernum, int Governor, int APcount) {
 void give(int Playernum, int Governor, int APcount) {
   int who, sh;
   shiptype *ship;
-  planettype *planet;
   racetype *Race, *alien;
 
   if (!(who = GetPlayer(args[1]))) {
@@ -553,17 +543,16 @@ void give(int Playernum, int Governor, int APcount) {
       setbit(Stars[ship->storbits]->explored, who);
       putstar(Stars[ship->storbits], (int)ship->storbits);
       break;
-    case LEVEL_PLAN:
+    case LEVEL_PLAN: {
       getstar(&(Stars[ship->storbits]), (int)ship->storbits);
       setbit(Stars[ship->storbits]->explored, who);
       putstar(Stars[ship->storbits], (int)ship->storbits);
 
-      getplanet(&planet, (int)ship->storbits, (int)ship->pnumorbits);
-      planet->info[who - 1].explored = 1;
+      auto planet = getplanet((int)ship->storbits, (int)ship->pnumorbits);
+      planet.info[who - 1].explored = 1;
       putplanet(planet, Stars[ship->storbits], (int)ship->pnumorbits);
-      free(planet);
 
-      break;
+    } break;
     default:
       notify(Playernum, Governor, "Something wrong with this ship's scope.\n");
       free(ship);

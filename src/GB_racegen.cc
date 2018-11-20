@@ -11,8 +11,8 @@
 #include <unistd.h>
 
 #include "GB_server.h"
-#include "build.h"
 #include "buffers.h"
+#include "build.h"
 #include "files_shl.h"
 #include "map.h"
 #include "max.h"
@@ -48,7 +48,7 @@ int enroll_valid_race() {
   int x, y, star, pnum, i, ppref, Playernum;
   int last_star_left, indirect[NUMSTARS];
   sigset_t mask, block;
-  planettype *planet;
+  planet planet;
   startype *star_arena;
   /*
     if (race.status == STATUS_ENROLLED) {
@@ -98,11 +98,10 @@ int enroll_valid_race() {
     } else {
       /* look for uninhabited planets */
       for (pnum = 0; pnum < Stars[star]->numplanets; pnum++) {
-        getplanet(&planet, star, pnum);
-        if ((planet->type == ppref) && (planet->conditions[RTEMP] >= -200) &&
-            (planet->conditions[RTEMP] <= 100))
+        planet = getplanet(star, pnum);
+        if ((planet.type == ppref) && (planet.conditions[RTEMP] >= -200) &&
+            (planet.conditions[RTEMP] <= 100))
           goto found_planet;
-        free(planet);
       }
     }
     /*
@@ -141,7 +140,7 @@ found_planet:
   Race->governor[0].toggle.color = 0;
   Race->governor[0].active = 1;
 
-  for (i = 0; i <= OTHER; i++) Race->conditions[i] = planet->conditions[i];
+  for (i = 0; i <= OTHER; i++) Race->conditions[i] = planet.conditions[i];
 #if 0
   /* make conditions preferred by your people set to (more or less) 
      those of the planet : higher the concentration of gas, the higher
@@ -206,7 +205,7 @@ found_planet:
 
   /*
    * Find sector to build capital on, and populate it: */
-  auto smap = getsmap(*planet);
+  auto smap = getsmap(planet);
   PermuteSects(planet);
   Getxysect(planet, 0, 0, 1);
   while ((i = Getxysect(planet, &x, &y, 0)))
@@ -215,10 +214,10 @@ found_planet:
   auto &sect = smap.get(x, y);
   sect.owner = Playernum;
   sect.race = Playernum;
-  sect.popn = planet->popn = Race->number_sexes;
+  sect.popn = planet.popn = Race->number_sexes;
   sect.fert = 100;
   sect.eff = 10;
-  sect.troops = planet->troops = 0;
+  sect.troops = planet.troops = 0;
 
   Race->governors = 0;
 
@@ -238,12 +237,12 @@ found_planet:
     bzero(&s, sizeof(s));
     shipno = Numships() + 1;
     Race->Gov_ship = shipno;
-    planet->ships = shipno;
+    planet.ships = shipno;
     s.nextship = 0;
 
     s.type = OTYPE_GOV;
-    s.xpos = Stars[star]->xpos + planet->xpos;
-    s.ypos = Stars[star]->ypos + planet->ypos;
+    s.xpos = Stars[star]->xpos + planet.xpos;
+    s.ypos = Stars[star]->ypos + planet.ypos;
     s.land_x = x;
     s.land_y = y;
 
@@ -303,29 +302,29 @@ found_planet:
     putship(&s);
   }
 
-  planet->info[Playernum - 1].numsectsowned = 1;
-  planet->explored = 0;
-  planet->info[Playernum - 1].explored = 1;
+  planet.info[Playernum - 1].numsectsowned = 1;
+  planet.explored = 0;
+  planet.info[Playernum - 1].explored = 1;
   /*planet->info[Playernum-1].autorep = 1;*/
 
-  planet->maxpopn =
-      maxsupport(Race, sect, 100.0, 0) * planet->Maxx * planet->Maxy / 2;
-/* (approximate) */
+  planet.maxpopn =
+      maxsupport(Race, sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
+  /* (approximate) */
 
 #ifdef STARTING_INVENTORY
 
   if (Race->Metamorph)
-    planet->info[Playernum - 1].resource += (START_RES - START_MESO_RES_DIFF);
+    planet.info[Playernum - 1].resource += (START_RES - START_MESO_RES_DIFF);
   else
-    planet->info[Playernum - 1].resource += START_RES;
+    planet.info[Playernum - 1].resource += START_RES;
 
-  planet->info[Playernum - 1].fuel += START_FUEL;
-  planet->info[Playernum - 1].destruct += START_DES;
+  planet.info[Playernum - 1].fuel += START_FUEL;
+  planet.info[Playernum - 1].destruct += START_DES;
 
 #endif
 
   putrace(Race);
-  putsector(sect, *planet, x, y);
+  putsector(sect, planet, x, y);
 
   getstar(&Stars[star], star);
   putplanet(planet, Stars[star], pnum);

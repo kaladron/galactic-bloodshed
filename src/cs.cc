@@ -34,7 +34,6 @@ void center(const command_t &argv, const player_t Playernum,
 void cs(const command_t &argv, const player_t Playernum,
         const governor_t Governor) {
   placetype where;
-  planettype *planet;
   shiptype *s;
   racetype *Race = races[Playernum - 1];
 
@@ -87,23 +86,22 @@ void cs(const command_t &argv, const player_t Playernum,
           Dir[Playernum - 1][Governor].lastx[0] =
               Dir[Playernum - 1][Governor].lasty[0] = 0.0;
         break;
-      case LEVEL_PLAN:
-        getplanet(&planet, Dir[Playernum - 1][Governor].snum,
-                  Dir[Playernum - 1][Governor].pnum);
+      case LEVEL_PLAN: {
+        const auto &planet = getplanet(Dir[Playernum - 1][Governor].snum,
+                                       Dir[Playernum - 1][Governor].pnum);
         if (where.level == LEVEL_STAR &&
             where.snum == Dir[Playernum - 1][Governor].snum) {
-          Dir[Playernum - 1][Governor].lastx[0] = planet->xpos;
-          Dir[Playernum - 1][Governor].lasty[0] = planet->ypos;
+          Dir[Playernum - 1][Governor].lastx[0] = planet.xpos;
+          Dir[Playernum - 1][Governor].lasty[0] = planet.ypos;
         } else if (where.level == LEVEL_UNIV) {
           Dir[Playernum - 1][Governor].lastx[1] =
-              Stars[Dir[Playernum - 1][Governor].snum]->xpos + planet->xpos;
+              Stars[Dir[Playernum - 1][Governor].snum]->xpos + planet.xpos;
           Dir[Playernum - 1][Governor].lasty[1] =
-              Stars[Dir[Playernum - 1][Governor].snum]->ypos + planet->ypos;
+              Stars[Dir[Playernum - 1][Governor].snum]->ypos + planet.ypos;
         } else
           Dir[Playernum - 1][Governor].lastx[0] =
               Dir[Playernum - 1][Governor].lasty[0] = 0.0;
-        free(planet);
-        break;
+      } break;
       case LEVEL_SHIP:
         (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
         if (!s->docked) {
@@ -127,12 +125,12 @@ void cs(const command_t &argv, const player_t Playernum,
               if (s->whatorbits == LEVEL_PLAN && s->storbits == where.snum &&
                   s->pnumorbits == where.pnum) {
                 /* same */
-                getplanet(&planet, (int)s->storbits, (int)s->pnumorbits);
+                const auto &planet =
+                    getplanet((int)s->storbits, (int)s->pnumorbits);
                 Dir[Playernum - 1][Governor].lastx[0] =
-                    s->xpos - Stars[s->storbits]->xpos - planet->xpos;
+                    s->xpos - Stars[s->storbits]->xpos - planet.xpos;
                 Dir[Playernum - 1][Governor].lasty[0] =
-                    s->ypos - Stars[s->storbits]->ypos - planet->ypos;
-                free(planet);
+                    s->ypos - Stars[s->storbits]->ypos - planet.ypos;
               } else
                 Dir[Playernum - 1][Governor].lastx[0] =
                     Dir[Playernum - 1][Governor].lasty[0] = 0.0;

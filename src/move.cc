@@ -29,7 +29,7 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void mech_defend(int, int, int *, int, planettype *, int, int,
+static void mech_defend(int, int, int *, int, const planet &, int, int,
                         const sector &);
 static void mech_attack_people(shiptype *, int *, int *, racetype *, racetype *,
                                const sector &, int, int, int, char *, char *);
@@ -44,7 +44,6 @@ void arm(const command_t &argv, const player_t Playernum,
   } else {
     mode = 0;  // disarm
   }
-  planettype *planet;
   racetype *Race;
   int x = -1, y = -1, max_allowed;
   int amount = 0;
@@ -58,30 +57,27 @@ void arm(const command_t &argv, const player_t Playernum,
     notify(Playernum, Governor, "You are not authorized to do that here.\n");
     return;
   }
-  getplanet(&planet, Dir[Playernum - 1][Governor].snum,
-            Dir[Playernum - 1][Governor].pnum);
+  auto planet = getplanet(Dir[Playernum - 1][Governor].snum,
+                          Dir[Playernum - 1][Governor].pnum);
 
-  if (planet->slaved_to > 0 && planet->slaved_to != Playernum) {
+  if (planet.slaved_to > 0 && planet.slaved_to != Playernum) {
     notify(Playernum, Governor, "That planet has been enslaved!\n");
-    free(planet);
     return;
   }
 
   sscanf(argv[1].c_str(), "%d,%d", &x, &y);
-  if (x < 0 || y < 0 || x > planet->Maxx - 1 || y > planet->Maxy - 1) {
+  if (x < 0 || y < 0 || x > planet.Maxx - 1 || y > planet.Maxy - 1) {
     notify(Playernum, Governor, "Illegal coordinates.\n");
-    free(planet);
     return;
   }
 
-  auto sect = getsector(*planet, x, y);
+  auto sect = getsector(planet, x, y);
   if (sect.owner != Playernum) {
     notify(Playernum, Governor, "You don't own that sector.\n");
-    free(planet);
     return;
   }
   if (mode) {
-    max_allowed = MIN(sect.popn, planet->info[Playernum - 1].destruct *
+    max_allowed = MIN(sect.popn, planet.info[Playernum - 1].destruct *
                                      (sect.mobilization + 1));
     if (argn < 3)
       amount = max_allowed;
@@ -90,14 +86,12 @@ void arm(const command_t &argv, const player_t Playernum,
       if (amount <= 0) {
         notify(Playernum, Governor,
                "You must specify a positive number of civs to arm.\n");
-        free(planet);
         return;
       }
     }
     amount = MIN(amount, max_allowed);
     if (!amount) {
       notify(Playernum, Governor, "You can't arm any civilians now.\n");
-      free(planet);
       return;
     }
     Race = races[Playernum - 1];
@@ -107,7 +101,6 @@ void arm(const command_t &argv, const player_t Playernum,
       sprintf(buf, "You need %ld money to enlist %d troops.\n", enlist_cost,
               amount);
       notify(Playernum, Governor, buf);
-      free(planet);
       return;
     }
     Race->governor[Governor].money -= enlist_cost;
@@ -116,11 +109,11 @@ void arm(const command_t &argv, const player_t Playernum,
     cost = std::max(1U, amount / (sect.mobilization + 1));
     sect.troops += amount;
     sect.popn -= amount;
-    planet->popn -= amount;
-    planet->info[Playernum - 1].popn -= amount;
-    planet->troops += amount;
-    planet->info[Playernum - 1].troops += amount;
-    planet->info[Playernum - 1].destruct -= cost;
+    planet.popn -= amount;
+    planet.info[Playernum - 1].popn -= amount;
+    planet.troops += amount;
+    planet.info[Playernum - 1].troops += amount;
+    planet.info[Playernum - 1].destruct -= cost;
     sprintf(buf,
             "%d population armed at a cost of %ldd (now %lu civilians, %lu "
             "military)\n",
@@ -136,25 +129,23 @@ void arm(const command_t &argv, const player_t Playernum,
       if (amount <= 0) {
         notify(Playernum, Governor,
                "You must specify a positive number of civs to arm.\n");
-        free(planet);
         return;
       }
       amount = MIN(sect.troops, amount);
     }
     sect.popn += amount;
     sect.troops -= amount;
-    planet->popn += amount;
-    planet->troops -= amount;
-    planet->info[Playernum - 1].popn += amount;
-    planet->info[Playernum - 1].troops -= amount;
+    planet.popn += amount;
+    planet.troops -= amount;
+    planet.info[Playernum - 1].popn += amount;
+    planet.info[Playernum - 1].troops -= amount;
     sprintf(buf, "%d troops disarmed (now %lu civilians, %lu military)\n",
             amount, sect.popn, sect.troops);
     notify(Playernum, Governor, buf);
   }
-  putsector(sect, *planet, x, y);
+  putsector(sect, planet, x, y);
   putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
-  free(planet);
 }
 
 void move_popn(const command_t &argv, const player_t Playernum,
@@ -168,7 +159,6 @@ void move_popn(const command_t &argv, const player_t Playernum,
   int Assault, APcost; /* unfriendly movement */
   int casualties, casualties2, casualties3;
 
-  planettype *planet;
   int people, oldpopn, old2popn, old3popn, x = -1, y = -1, x2 = -1, y2 = -1;
   int old2owner, old2gov, absorbed, n, done;
   double astrength, dstrength;
@@ -182,20 +172,18 @@ void move_popn(const command_t &argv, const player_t Playernum,
     notify(Playernum, Governor, "You are not authorized to do that here.\n");
     return;
   }
-  getplanet(&planet, Dir[Playernum - 1][Governor].snum,
-            Dir[Playernum - 1][Governor].pnum);
+  auto planet = getplanet(Dir[Playernum - 1][Governor].snum,
+                          Dir[Playernum - 1][Governor].pnum);
 
-  if (planet->slaved_to > 0 && planet->slaved_to != Playernum) {
+  if (planet.slaved_to > 0 && planet.slaved_to != Playernum) {
     sprintf(buf, "That planet has been enslaved!\n");
     notify(Playernum, Governor, buf);
-    free(planet);
     return;
   }
   sscanf(argv[1].c_str(), "%d,%d", &x, &y);
-  if (x < 0 || y < 0 || x > planet->Maxx - 1 || y > planet->Maxy - 1) {
+  if (x < 0 || y < 0 || x > planet.Maxx - 1 || y > planet.Maxy - 1) {
     sprintf(buf, "Origin coordinates illegal.\n");
     notify(Playernum, Governor, buf);
-    free(planet);
     return;
   }
 
@@ -203,39 +191,35 @@ void move_popn(const command_t &argv, const player_t Playernum,
   done = 0;
   n = 0;
   while (!done) {
-    auto sect = getsector(*planet, x, y);
+    auto sect = getsector(planet, x, y);
     if (sect.owner != Playernum) {
       sprintf(buf, "You don't own sector %d,%d!\n", x, y);
       notify(Playernum, Governor, buf);
-      free(planet);
       return;
     }
     if (!get_move(argv[2].c_str()[n++], x, y, &x2, &y2, planet)) {
       notify(Playernum, Governor, "Finished.\n");
       putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
-      free(planet);
       return;
     }
 
-    if (x2 < 0 || y2 < 0 || x2 > planet->Maxx - 1 || y2 > planet->Maxy - 1) {
+    if (x2 < 0 || y2 < 0 || x2 > planet.Maxx - 1 || y2 > planet.Maxy - 1) {
       sprintf(buf, "Illegal coordinates %d,%d.\n", x2, y2);
       notify(Playernum, Governor, buf);
       putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
-      free(planet);
       return;
     }
 
     if (!adjacent(x, y, x2, y2, planet)) {
       sprintf(buf, "Illegal move - to adjacent sectors only!\n");
       notify(Playernum, Governor, buf);
-      free(planet);
       return;
     }
 
     /* ok, the move is legal */
-    auto sect2 = getsector(*planet, x2, y2);
+    auto sect2 = getsector(planet, x2, y2);
     if (argn >= 4) {
       people = std::stoi(argv[3]);
       if (people < 0) {
@@ -260,7 +244,6 @@ void move_popn(const command_t &argv, const player_t Playernum,
       notify(Playernum, Governor, buf);
       putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
-      free(planet);
       return;
     }
 
@@ -271,11 +254,10 @@ void move_popn(const command_t &argv, const player_t Playernum,
     /* check for defending mechs */
     mech_defend(Playernum, Governor, &people, what, planet, x2, y2, sect2);
     if (!people) {
-      putsector(sect, *planet, x, y);
-      putsector(sect2, *planet, x2, y2);
+      putsector(sect, planet, x, y);
+      putsector(sect2, planet, x2, y2);
       putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
-      free(planet);
       notify(Playernum, Governor, "Attack aborted.\n");
       return;
     }
@@ -296,13 +278,12 @@ void move_popn(const command_t &argv, const player_t Playernum,
                 APcost)) {
       putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
                 Dir[Playernum - 1][Governor].pnum);
-      free(planet);
       return;
     }
 
     if (Assault) {
-      ground_assaults[Playernum - 1][sect2.owner -
-                                     1][Dir[Playernum - 1][Governor].snum] += 1;
+      ground_assaults[Playernum - 1][sect2.owner - 1]
+                     [Dir[Playernum - 1][Governor].snum] += 1;
       Race = races[Playernum - 1];
       alien = races[sect2.owner - 1];
       /* races find out about each other */
@@ -393,8 +374,8 @@ void move_popn(const command_t &argv, const player_t Playernum,
                   what == CIV ? "civilians" : "troops");
           notify(Playernum, Governor, buf);
         }
-        planet->info[Playernum - 1].mob_points += (int)sect2.mobilization;
-        planet->info[old2owner - 1].mob_points -= (int)sect2.mobilization;
+        planet.info[Playernum - 1].mob_points += (int)sect2.mobilization;
+        planet.info[old2owner - 1].mob_points -= (int)sect2.mobilization;
       } else {
         sprintf(buf, "The invasion was repulsed; try again.\n");
         notify(Playernum, Governor, buf);
@@ -436,12 +417,12 @@ void move_popn(const command_t &argv, const player_t Playernum,
         sect2.troops += people;
       }
       if (!sect2.owner)
-        planet->info[Playernum - 1].mob_points += (int)sect2.mobilization;
+        planet.info[Playernum - 1].mob_points += (int)sect2.mobilization;
       sect2.owner = Playernum;
     }
 
     if (!(sect.popn + sect.troops)) {
-      planet->info[Playernum - 1].mob_points -= (int)sect.mobilization;
+      planet.info[Playernum - 1].mob_points -= (int)sect.mobilization;
       sect.owner = 0;
     }
 
@@ -450,8 +431,8 @@ void move_popn(const command_t &argv, const player_t Playernum,
       done = 1;
     }
 
-    putsector(sect, *planet, x, y);
-    putsector(sect2, *planet, x2, y2);
+    putsector(sect, planet, x, y);
+    putsector(sect2, planet, x2, y2);
 
     deductAPs(Playernum, Governor, APcost, Dir[Playernum - 1][Governor].snum,
               0);
@@ -459,14 +440,12 @@ void move_popn(const command_t &argv, const player_t Playernum,
     y = y2; /* get ready for the next round */
   }
   notify(Playernum, Governor, "Finished.\n");
-  free(planet);
 }
 
 void walk(const command_t &argv, const player_t Playernum,
           const governor_t Governor) {
   const int APcount = 1;
   shiptype *ship, *ship2, dummy;
-  planettype *p;
   int shipno, x, y, i, sh, succ = 0, civ, mil;
   int oldowner, oldgov;
   int strength, strength1;
@@ -512,36 +491,33 @@ void walk(const command_t &argv, const player_t Playernum,
     free(ship);
     return;
   }
-  getplanet(&p, (int)ship->storbits, (int)ship->pnumorbits);
+  auto p = getplanet((int)ship->storbits, (int)ship->pnumorbits);
   Race = races[Playernum - 1];
 
   if (!get_move(argv[2].c_str()[0], (int)ship->land_x, (int)ship->land_y, &x,
                 &y, p)) {
     notify(Playernum, Governor, "Illegal move.\n");
-    free(p);
     free(ship);
     return;
   }
-  if (x < 0 || y < 0 || x > p->Maxx - 1 || y > p->Maxy - 1) {
+  if (x < 0 || y < 0 || x > p.Maxx - 1 || y > p.Maxy - 1) {
     sprintf(buf, "Illegal coordinates %d,%d.\n", x, y);
     notify(Playernum, Governor, buf);
     free(ship);
     putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
               Dir[Playernum - 1][Governor].pnum);
-    free(p);
     return;
   }
   /* check to see if player is permited on the sector type */
-  auto sect = getsector(*p, x, y);
+  auto sect = getsector(p, x, y);
   if (!Race->likes[sect.condition]) {
     notify(Playernum, Governor,
            "Your ships cannot walk into that sector type!\n");
     free(ship);
-    free(p);
     return;
   }
   /* if the sector is occupied by non-aligned AFVs, each one will attack */
-  sh = p->ships;
+  sh = p.ships;
   while (sh && ship->alive) {
     (void)getship(&ship2, sh);
     if (ship2->owner != Playernum && ship2->type == OTYPE_AFV &&
@@ -583,7 +559,6 @@ void walk(const command_t &argv, const player_t Playernum,
       if (!retal_strength(ship)) {
         notify(Playernum, Governor, "You have nothing to attack with!\n");
         free(ship);
-        free(p);
         return;
       }
       while ((sect.popn + sect.troops) && retal_strength(ship)) {
@@ -608,7 +583,7 @@ void walk(const command_t &argv, const player_t Playernum,
         sect.popn = civ;
         sect.troops = mil;
         if (!(sect.popn + sect.troops)) {
-          p->info[sect.owner - 1].mob_points -= (int)sect.mobilization;
+          p.info[sect.owner - 1].mob_points -= (int)sect.mobilization;
           sect.owner = 0;
         }
       }
@@ -617,7 +592,7 @@ void walk(const command_t &argv, const player_t Playernum,
     putrace(Race);
     putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
               Dir[Playernum - 1][Governor].pnum);
-    putsector(sect, *p, x, y);
+    putsector(sect, p, x, y);
   }
 
   if ((sect.owner == Playernum || isset(Race->allied, (int)sect.owner) ||
@@ -632,7 +607,7 @@ void walk(const command_t &argv, const player_t Playernum,
     ship->land_y = y;
     use_fuel(ship, AFV_FUEL_COST);
     for (i = 1; i <= Num_races; i++)
-      if (i != Playernum && p->info[i - 1].numsectsowned)
+      if (i != Playernum && p.info[i - 1].numsectsowned)
         notify(i,
                (int)Stars[Dir[Playernum - 1][Governor].snum]->governor[i - 1],
                buf);
@@ -640,17 +615,16 @@ void walk(const command_t &argv, const player_t Playernum,
   putship(ship);
   deductAPs(Playernum, Governor, APcount, (int)ship->storbits, 0);
   free(ship);
-  free(p);
 }
 
 int get_move(char direction, int x, int y, int *x2, int *y2,
-             planettype *planet) {
+             const planet &planet) {
   switch (direction) {
     case '1':
     case 'b':
       *x2 = x - 1;
       *y2 = y + 1;
-      if (*x2 == -1) *x2 = planet->Maxx - 1;
+      if (*x2 == -1) *x2 = planet.Maxx - 1;
       return 1;
     case '2':
     case 'k':
@@ -661,25 +635,25 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
     case 'n':
       *x2 = x + 1;
       *y2 = y + 1;
-      if (*x2 == planet->Maxx) *x2 = 0;
+      if (*x2 == planet.Maxx) *x2 = 0;
       return 1;
     case '4':
     case 'h':
       *x2 = x - 1;
       *y2 = y;
-      if (*x2 == -1) *x2 = planet->Maxx - 1;
+      if (*x2 == -1) *x2 = planet.Maxx - 1;
       return 1;
     case '6':
     case 'l':
       *x2 = x + 1;
       *y2 = y;
-      if (*x2 == planet->Maxx) *x2 = 0;
+      if (*x2 == planet.Maxx) *x2 = 0;
       return 1;
     case '7':
     case 'y':
       *x2 = x - 1;
       *y2 = y - 1;
-      if (*x2 == -1) *x2 = planet->Maxx - 1;
+      if (*x2 == -1) *x2 = planet.Maxx - 1;
       return 1;
     case '8':
     case 'j':
@@ -690,7 +664,7 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
     case 'u':
       *x2 = x + 1;
       *y2 = y - 1;
-      if (*x2 == planet->Maxx) *x2 = 0;
+      if (*x2 == planet.Maxx) *x2 = 0;
       return 1;
     default:
       *x2 = x;
@@ -700,7 +674,7 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
 }
 
 static void mech_defend(int Playernum, int Governor, int *people, int type,
-                        planettype *p, int x2, int y2, const sector &s2) {
+                        const planet &p, int x2, int y2, const sector &s2) {
   int sh;
   shiptype *ship;
   int civ = 0, mil = 0;
@@ -712,7 +686,7 @@ static void mech_defend(int Playernum, int Governor, int *people, int type,
   else
     mil = *people;
 
-  sh = p->ships;
+  sh = p.ships;
   Race = races[Playernum - 1];
   while (sh && (civ + mil)) {
     (void)getship(&ship, sh);

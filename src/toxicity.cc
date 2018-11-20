@@ -17,7 +17,6 @@
 
 void toxicity(int Playernum, int Governor, int APcount) {
   int thresh;
-  planettype *p;
 
   sscanf(args[1], "%d", &thresh);
 
@@ -38,15 +37,13 @@ void toxicity(int Playernum, int Governor, int APcount) {
     return;
   }
 
-  getplanet(&p, Dir[Playernum - 1][Governor].snum,
-            Dir[Playernum - 1][Governor].pnum);
-  p->info[Playernum - 1].tox_thresh = thresh;
+  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
+                     Dir[Playernum - 1][Governor].pnum);
+  p.info[Playernum - 1].tox_thresh = thresh;
   putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
 
-  sprintf(buf, " New threshold is: %u\n", p->info[Playernum - 1].tox_thresh);
+  sprintf(buf, " New threshold is: %u\n", p.info[Playernum - 1].tox_thresh);
   notify(Playernum, Governor, buf);
-
-  free(p);
 }

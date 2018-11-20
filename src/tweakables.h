@@ -140,7 +140,7 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
   10 /* how much it costs to remove a wasted status from a sector */
 #define NATURAL_REPAIR                                  \
   5 /* chance of the wasted status being removed/update \
-       */
+     */
 
 #define CREAT_UNIV_ITERAT 10 /* iterations for star movement */
 

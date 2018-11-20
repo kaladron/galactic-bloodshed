@@ -9,6 +9,6 @@
 #include "vars.h"
 
 void do_VN(shiptype *);
-void planet_doVN(shiptype *, planettype *, sector_map &);
+void planet_doVN(shiptype *, planet *, sector_map &);
 
 #endif  // VN_H

@@ -4,7 +4,6 @@
 
 #include "GB_server.h"
 
-#include <boost/algorithm/string.hpp>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -13,13 +12,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <string>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+#include <boost/algorithm/string.hpp>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -431,7 +431,7 @@ static struct timeval msec_add(struct timeval t, int x) {
   return t;
 }
 
-static int shovechars(int port) { // __attribute__((no_sanitize_memory)) {
+static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
   fd_set input_set, output_set;
   long now, go_time;
   struct timeval last_slice, current_time;
@@ -1486,7 +1486,6 @@ static void load_race_data() {
 static void load_star_data() {
   int s, t, i, j;
   startype *star_arena;
-  planettype *planet_arena;
   int pcount = 0;
 
   /* get star database */
@@ -1501,12 +1500,14 @@ static void load_star_data() {
     pcount += Stars[s]->numplanets;
   }
 
-  planet_arena = (planettype *)malloc(pcount * sizeof(planettype));
+  auto planet_arena = (planettype *)malloc(pcount * sizeof(planettype));
 
   for (s = 0; s < Sdata.numstars; s++) {
     for (t = 0; t < Stars[s]->numplanets; t++) {
+      // TODO(jeffbailey): This is a leak - will fix as part of global planet
+      // array cleanup.
       planets[s][t] = &planet_arena[--pcount];
-      getplanet(&planets[s][t], s, t);
+      planets[s][t] = new planet(getplanet(s, t));
       if (planets[s][t]->type != TYPE_ASTEROID) Planet_count++;
     }
   }
@@ -1583,7 +1584,6 @@ void check_for_telegrams(int Playernum, int Governor) {
 }
 
 void kill_ship(int Playernum, shiptype *ship) {
-  planettype *planet;
   racetype *killer, *victim;
   shiptype *s;
   int sh;
@@ -1630,9 +1630,9 @@ void kill_ship(int Playernum, shiptype *ship) {
   }
 
   if (ship->type == OTYPE_TOXWC && ship->whatorbits == LEVEL_PLAN) {
-    getplanet(&planet, (int)ship->storbits, (int)ship->pnumorbits);
-    planet->conditions[TOXIC] =
-        MIN(100, planet->conditions[TOXIC] + ship->special.waste.toxic);
+    auto planet = getplanet((int)ship->storbits, (int)ship->pnumorbits);
+    planet.conditions[TOXIC] =
+        MIN(100, planet.conditions[TOXIC] + ship->special.waste.toxic);
     putplanet(planet, Stars[ship->storbits], (int)ship->pnumorbits);
   }
 
@@ -1702,7 +1702,7 @@ void insert_sh_star(startype *star, shiptype *s) {
   s->whatorbits = LEVEL_STAR;
 }
 
-void insert_sh_plan(planettype *pl, shiptype *s) {
+void insert_sh_plan(planet *pl, shiptype *s) {
   s->nextship = pl->ships;
   pl->ships = s->number;
   s->whatorbits = LEVEL_PLAN;
@@ -1743,13 +1743,12 @@ void remove_sh_star(shiptype *s) {
 void remove_sh_plan(shiptype *s) {
   shipnum_t sh;
   shiptype *s2;
-  planettype *p;
 
-  getplanet(&p, (int)s->storbits, (int)s->pnumorbits);
-  sh = p->ships;
+  auto p = getplanet((int)s->storbits, (int)s->pnumorbits);
+  sh = p.ships;
 
   if (sh == s->number) {
-    p->ships = s->nextship;
+    p.ships = s->nextship;
     putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
   } else {
     while (sh != s->number) {
@@ -1761,7 +1760,6 @@ void remove_sh_plan(shiptype *s) {
     putship(s2);
     free(s2);
   }
-  free(p);
   s->nextship = 0;
   s->whatorbits = LEVEL_UNIV;
 }

@@ -42,7 +42,7 @@ static bool Tactical;
 struct reportdata {
   unsigned char type; /* ship or planet */
   shiptype *s;
-  planettype *p;
+  planet *p;
   shipnum_t n;
   starnum_t star;
   planetnum_t pnum;
@@ -194,7 +194,7 @@ void rst(const command_t &argv, const player_t Playernum,
 static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
                         unsigned char rep_on[]) {
   shiptype *s;
-  planettype *p;
+  planet *p;
   int i, sight, caliber;
   placetype where;
   char orb[PLACENAMESIZE];
@@ -495,10 +495,8 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
 
 static void plan_getrships(player_t Playernum, governor_t Governor,
                            starnum_t snum, planetnum_t pnum) {
-  planettype *p;
-
-  getplanet(&(rd[Num_ships].p), snum, pnum);
-  p = rd[Num_ships].p;
+  rd[Num_ships].p = new planet(getplanet(snum, pnum));
+  const auto &p = rd[Num_ships].p;
   /* add this planet into the ship list */
   rd[Num_ships].star = snum;
   rd[Num_ships].pnum = pnum;
@@ -546,7 +544,7 @@ static void Free_rlist(void) {
   int i;
   for (i = 0; i < Num_ships; i++)
     if (rd[i].type == PLANET)
-      free(rd[i].p);
+      delete rd[i].p;
     else
       free(rd[i].s);
   free(rd);

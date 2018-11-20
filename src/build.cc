@@ -6,11 +6,11 @@
 
 #include "build.h"
 
-#include <ctgmath>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctgmath>
 
 #include "GB_server.h"
 #include "buffers.h"
@@ -29,19 +29,19 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void autoload_at_planet(int, shiptype *, planettype *, sector &, int *,
+static void autoload_at_planet(int, shiptype *, planet *, sector &, int *,
                                double *);
 static void autoload_at_ship(shiptype *, shiptype *, int *, double *);
 static int build_at_ship(int, int, shiptype *, int *, int *);
-static int can_build_at_planet(int, int, startype *, planettype *);
+static int can_build_at_planet(int, int, startype *, const planet &);
 static int can_build_this(int, racetype *, char *);
 static int can_build_on_ship(int, racetype *, shiptype *, char *);
-static int can_build_on_sector(int, racetype *, planettype *, const sector &,
+static int can_build_on_sector(int, racetype *, const planet &, const sector &,
                                int, int, char *);
-static void create_ship_by_planet(int, int, racetype *, shiptype *,
-                                  planettype *, int, int, int, int);
-static void create_ship_by_ship(int, int, racetype *, int, planettype *,
-                                shiptype *, shiptype *);
+static void create_ship_by_planet(int, int, racetype *, shiptype *, planet *,
+                                  int, int, int, int);
+static void create_ship_by_ship(int, int, racetype *, int, planet *, shiptype *,
+                                shiptype *);
 static int get_build_type(const char *);
 static int getcount(const command_t &, const size_t);
 static void Getfactship(shiptype *, shiptype *);
@@ -710,6 +710,7 @@ void build(const command_t &argv, const player_t Playernum,
            const governor_t Governor) {
   // TODO(jeffbailey): Fix unused int APcount = 1;
   racetype *Race;
+  planet planet;
   char c;
   int i, j, m, n, x, y, count, level, what, outside;
   int shipcost, load_crew;
@@ -717,7 +718,6 @@ void build(const command_t &argv, const player_t Playernum,
   double load_fuel, tech;
 
   FILE *fd;
-  planettype *planet;
   sector sector;
   shiptype *builder;
   shiptype newship;
@@ -867,44 +867,40 @@ void build(const command_t &argv, const player_t Playernum,
             notify(Playernum, Governor, "Build where?\n");
             return;
           }
-          getplanet(&planet, snum, pnum);
+          planet = getplanet(snum, pnum);
           if (!can_build_at_planet(Playernum, Governor, Stars[snum], planet) &&
               !Race->God) {
             notify(Playernum, Governor, "You can't build that here.\n");
-            free(planet);
             return;
           }
           sscanf(argv[2].c_str(), "%d,%d", &x, &y);
-          if (x < 0 || x >= planet->Maxx || y < 0 || y >= planet->Maxy) {
+          if (x < 0 || x >= planet.Maxx || y < 0 || y >= planet.Maxy) {
             notify(Playernum, Governor, "Illegal sector.\n");
-            free(planet);
             return;
           }
-          sector = getsector(*planet, x, y);
+          sector = getsector(planet, x, y);
           if (!can_build_on_sector(what, Race, planet, sector, x, y, buf) &&
               !Race->God) {
             notify(Playernum, Governor, buf);
-            free(planet);
             return;
           }
           if (!(count = getcount(argv, 4))) {
             notify(Playernum, Governor, "Give a positive number of builds.\n");
-            free(planet);
             return;
           }
           Getship(&newship, what, Race);
         }
         if ((shipcost = newship.build_cost) >
-            planet->info[Playernum - 1].resource) {
+            planet.info[Playernum - 1].resource) {
           sprintf(buf, "You need %dr to construct this ship.\n", shipcost);
           notify(Playernum, Governor, buf);
           goto finish;
         }
-        create_ship_by_planet(Playernum, Governor, Race, &newship, planet, snum,
-                              pnum, x, y);
+        create_ship_by_planet(Playernum, Governor, Race, &newship, &planet,
+                              snum, pnum, x, y);
         if (Race->governor[Governor].toggle.autoload &&
             what != OTYPE_TRANSDEV && !Race->God)
-          autoload_at_planet(Playernum, &newship, planet, sector, &load_crew,
+          autoload_at_planet(Playernum, &newship, &planet, sector, &load_crew,
                              &load_fuel);
         else {
           load_crew = 0;
@@ -991,22 +987,20 @@ void build(const command_t &argv, const player_t Playernum,
             return;
           }
           if (outside && build_level == LEVEL_PLAN) {
-            getplanet(&planet, snum, pnum);
+            planet = getplanet(snum, pnum);
             if (builder->type == OTYPE_FACTORY) {
               if (!can_build_at_planet(Playernum, Governor, Stars[snum],
                                        planet)) {
                 notify(Playernum, Governor, "You can't build that here.\n");
-                free(planet);
                 free(builder);
                 return;
               }
               x = builder->land_x;
               y = builder->land_y;
               what = builder->build_type;
-              sector = getsector(*planet, x, y);
+              sector = getsector(planet, x, y);
               if (!can_build_on_sector(what, Race, planet, sector, x, y, buf)) {
                 notify(Playernum, Governor, buf);
-                free(planet);
                 free(builder);
                 return;
               }
@@ -1017,16 +1011,16 @@ void build(const command_t &argv, const player_t Playernum,
         switch (builder->type) {
           case OTYPE_FACTORY:
             if ((shipcost = newship.build_cost) >
-                planet->info[Playernum - 1].resource) {
+                planet.info[Playernum - 1].resource) {
               sprintf(buf, "You need %dr to construct this ship.\n", shipcost);
               notify(Playernum, Governor, buf);
               goto finish;
             }
-            create_ship_by_planet(Playernum, Governor, Race, &newship, planet,
+            create_ship_by_planet(Playernum, Governor, Race, &newship, &planet,
                                   snum, pnum, x, y);
             if (Race->governor[Governor].toggle.autoload &&
                 what != OTYPE_TRANSDEV && !Race->God) {
-              autoload_at_planet(Playernum, &newship, planet, sector,
+              autoload_at_planet(Playernum, &newship, &planet, sector,
                                  &load_crew, &load_fuel);
             } else {
               load_crew = 0;
@@ -1040,7 +1034,7 @@ void build(const command_t &argv, const player_t Playernum,
               notify(Playernum, Governor, buf);
               goto finish;
             }
-            create_ship_by_ship(Playernum, Governor, Race, 1, planet, &newship,
+            create_ship_by_ship(Playernum, Governor, Race, 1, &planet, &newship,
                                 builder);
             if (Race->governor[Governor].toggle.autoload &&
                 what != OTYPE_TRANSDEV && !Race->God)
@@ -1082,18 +1076,16 @@ void build(const command_t &argv, const player_t Playernum,
 finish:
   switch (level) {
     case LEVEL_PLAN:
-      putsector(sector, *planet, x, y);
+      putsector(sector, planet, x, y);
       putplanet(planet, Stars[snum], pnum);
-      free(planet);
       break;
     case LEVEL_SHIP:
       if (outside) switch (build_level) {
           case LEVEL_PLAN:
             putplanet(planet, Stars[snum], pnum);
             if (landed(builder)) {
-              putsector(sector, *planet, x, y);
+              putsector(sector, planet, x, y);
             }
-            free(planet);
             break;
           case LEVEL_STAR:
             putstar(Stars[snum], snum);
@@ -1117,9 +1109,9 @@ static int getcount(const command_t &argv, const size_t elem) {
 }
 
 static int can_build_at_planet(int Playernum, int Governor, startype *star,
-                               planettype *planet) {
-  if (planet->slaved_to && planet->slaved_to != Playernum) {
-    sprintf(buf, "This planet is enslaved by player %d.\n", planet->slaved_to);
+                               const planet &planet) {
+  if (planet.slaved_to && planet.slaved_to != Playernum) {
+    sprintf(buf, "This planet is enslaved by player %d.\n", planet.slaved_to);
     notify(Playernum, Governor, buf);
     return (0);
   }
@@ -1186,7 +1178,7 @@ static int can_build_on_ship(int what, racetype *Race, shiptype *builder,
   return (1);
 }
 
-static int can_build_on_sector(int what, racetype *Race, planettype *planet,
+static int can_build_on_sector(int what, racetype *Race, const planet &planet,
                                const sector &sector, int x, int y,
                                char *string) {
   shiptype *s;
@@ -1214,7 +1206,7 @@ static int can_build_on_sector(int what, racetype *Race, planettype *planet,
   }
   if (what == OTYPE_QUARRY) {
     int sh;
-    sh = planet->ships;
+    sh = planet.ships;
     while (sh) {
       (void)getship(&s, sh);
       if (s->alive && s->type == OTYPE_QUARRY && s->land_x == x &&
@@ -1262,7 +1254,7 @@ static int build_at_ship(int Playernum, int Governor, shiptype *builder,
   return (builder->whatorbits);
 }
 
-static void autoload_at_planet(int Playernum, shiptype *s, planettype *planet,
+static void autoload_at_planet(int Playernum, shiptype *s, planet *planet,
                                sector &sector, int *crew, double *fuel) {
   *crew = MIN(s->max_crew, sector.popn);
   *fuel = MIN((double)s->max_fuel, (double)planet->info[Playernum - 1].fuel);
@@ -1365,8 +1357,8 @@ static void initialize_new_ship(int Playernum, int Governor, racetype *Race,
 }
 
 static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
-                                  shiptype *newship, planettype *planet,
-                                  int snum, int pnum, int x, int y) {
+                                  shiptype *newship, planet *planet, int snum,
+                                  int pnum, int x, int y) {
   int shipno;
 
   newship->tech = Race->tech;
@@ -1417,8 +1409,8 @@ static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
 }
 
 static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
-                                int outside, planettype *planet,
-                                shiptype *newship, shiptype *builder) {
+                                int outside, planet *planet, shiptype *newship,
+                                shiptype *builder) {
   int shipno;
 
   while ((shipno = getdeadship()) == 0)
@@ -1640,7 +1632,6 @@ void sell(const command_t &argv, const player_t Playernum,
           const governor_t Governor) {
   int APcount = 20;
   racetype *Race;
-  planettype *p;
   shiptype *s;
   commodtype c;
   int commodno, amount, item, ok = 0, sh;
@@ -1677,16 +1668,15 @@ void sell(const command_t &argv, const player_t Playernum,
   APcount = MIN(APcount, amount);
   if (!enufAP(Playernum, Governor, Stars[snum]->AP[Playernum - 1], APcount))
     return;
-  getplanet(&p, snum, pnum);
+  auto p = getplanet(snum, pnum);
 
-  if (p->slaved_to && p->slaved_to != Playernum) {
-    sprintf(buf, "This planet is enslaved to player %d.\n", p->slaved_to);
+  if (p.slaved_to && p.slaved_to != Playernum) {
+    sprintf(buf, "This planet is enslaved to player %d.\n", p.slaved_to);
     notify(Playernum, Governor, buf);
-    free(p);
     return;
   }
   /* check to see if there is an undamage gov center or space port here */
-  sh = p->ships;
+  sh = p.ships;
   while (sh && !ok) {
     (void)getship(&s, sh);
     if (s->alive && (s->owner == Playernum) && !s->damage &&
@@ -1699,57 +1689,51 @@ void sell(const command_t &argv, const player_t Playernum,
     notify(
         Playernum, Governor,
         "You don't have an undamaged space port or government center here.\n");
-    free(p);
     return;
   }
   switch (commod) {
     case 'r':
-      if (!p->info[Playernum - 1].resource) {
+      if (!p.info[Playernum - 1].resource) {
         notify(Playernum, Governor,
                "You don't have any resources here to sell!\n");
-        free(p);
         return;
       }
-      amount = MIN(amount, p->info[Playernum - 1].resource);
-      p->info[Playernum - 1].resource -= amount;
+      amount = MIN(amount, p.info[Playernum - 1].resource);
+      p.info[Playernum - 1].resource -= amount;
       item = RESOURCE;
       break;
     case 'd':
-      if (!p->info[Playernum - 1].destruct) {
+      if (!p.info[Playernum - 1].destruct) {
         notify(Playernum, Governor,
                "You don't have any destruct here to sell!\n");
-        free(p);
         return;
       }
-      amount = MIN(amount, p->info[Playernum - 1].destruct);
-      p->info[Playernum - 1].destruct -= amount;
+      amount = MIN(amount, p.info[Playernum - 1].destruct);
+      p.info[Playernum - 1].destruct -= amount;
       item = DESTRUCT;
       break;
     case 'f':
-      if (!p->info[Playernum - 1].fuel) {
+      if (!p.info[Playernum - 1].fuel) {
         notify(Playernum, Governor, "You don't have any fuel here to sell!\n");
-        free(p);
         return;
       }
-      amount = MIN(amount, p->info[Playernum - 1].fuel);
-      p->info[Playernum - 1].fuel -= amount;
+      amount = MIN(amount, p.info[Playernum - 1].fuel);
+      p.info[Playernum - 1].fuel -= amount;
       item = FUEL;
       break;
     case 'x':
-      if (!p->info[Playernum - 1].crystals) {
+      if (!p.info[Playernum - 1].crystals) {
         notify(Playernum, Governor,
                "You don't have any crystals here to sell!\n");
-        free(p);
         return;
       }
-      amount = MIN(amount, p->info[Playernum - 1].crystals);
-      p->info[Playernum - 1].crystals -= amount;
+      amount = MIN(amount, p.info[Playernum - 1].crystals);
+      p.info[Playernum - 1].crystals -= amount;
       item = CRYSTAL;
       break;
     default:
       notify(Playernum, Governor,
              "Permitted commodities are r, d, f, and x.\n");
-      free(p);
       return;
   }
 
@@ -1775,14 +1759,13 @@ void sell(const command_t &argv, const player_t Playernum,
   for (i = 1; i <= Num_races; i++) notify_race(i, buf);
   putcommod(&c, commodno);
   putplanet(p, Stars[snum], pnum);
-  free(p);
   deductAPs(Playernum, Governor, APcount, snum, 0);
 }
 
 void bid(const command_t &argv, const player_t Playernum,
          const governor_t Governor) {
   racetype *Race;
-  planettype *p;
+  planet p;
   commodtype *c;
   shiptype *s;
   char commod;
@@ -1873,16 +1856,15 @@ void bid(const command_t &argv, const player_t Playernum,
       notify(Playernum, Governor, "You are not authorized in this system.\n");
       return;
     }
-    getplanet(&p, snum, pnum);
+    p = getplanet(snum, pnum);
 
-    if (p->slaved_to && p->slaved_to != Playernum) {
-      sprintf(buf, "This planet is enslaved to player %d.\n", p->slaved_to);
+    if (p.slaved_to && p.slaved_to != Playernum) {
+      sprintf(buf, "This planet is enslaved to player %d.\n", p.slaved_to);
       notify(Playernum, Governor, buf);
-      free(p);
       return;
     }
     /* check to see if there is an undamaged gov center or space port here */
-    sh = p->ships;
+    sh = p.ships;
     while (sh && !ok) {
       (void)getship(&s, sh);
       if (s->alive && (s->owner == Playernum) && !s->damage &&
@@ -1895,7 +1877,6 @@ void bid(const command_t &argv, const player_t Playernum,
       notify(Playernum, Governor,
              "You don't have an undamaged space port or "
              "government center here.\n");
-      free(p);
       return;
     }
 
@@ -1903,13 +1884,11 @@ void bid(const command_t &argv, const player_t Playernum,
     money_t bid0 = std::stoi(argv[2]);
     if ((lot <= 0) || lot > Numcommods()) {
       notify(Playernum, Governor, "Illegal lot number.\n");
-      free(p);
       return;
     }
     getcommod(&c, lot);
     if (!c->owner) {
       notify(Playernum, Governor, "No such lot for sale.\n");
-      free(p);
       free(c);
       return;
     }
@@ -1919,7 +1898,6 @@ void bid(const command_t &argv, const player_t Playernum,
       notify(Playernum, Governor,
              "You can only set a minimum price for your "
              "lot from the location it was sold.\n");
-      free(p);
       free(c);
       return;
     }
@@ -1927,20 +1905,17 @@ void bid(const command_t &argv, const player_t Playernum,
     if (bid0 < minbid) {
       sprintf(buf, "You have to bid more than %ld.\n", minbid);
       notify(Playernum, Governor, buf);
-      free(p);
       free(c);
       return;
     }
     Race = races[Playernum - 1];
     if (Race->Guest) {
       notify(Playernum, Governor, "Guest races cannot bid.\n");
-      free(p);
       free(c);
       return;
     }
     if (bid0 > Race->governor[Governor].money) {
       notify(Playernum, Governor, "Sorry, no buying on credit allowed.\n");
-      free(p);
       free(c);
       return;
     }
@@ -1966,7 +1941,6 @@ void bid(const command_t &argv, const player_t Playernum,
     notify(Playernum, Governor, buf);
     putcommod(c, lot);
     notify(Playernum, Governor, "Bid accepted.\n");
-    free(p);
     free(c);
   }
 }

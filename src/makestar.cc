@@ -42,12 +42,12 @@ static int Resource[TYPE_DESERT + 2] = {
 };
 static int Numsects[TYPE_DESERT + 2][PLATED + 1] = {
     {
-     0,
+        0,
     },
 };
 static int Fertsects[TYPE_DESERT + 2][PLATED + 1] = {
     {
-     0,
+        0,
     },
 };
 static int numplist, namepcount;
@@ -127,8 +127,7 @@ static int ReadNameList(char ss[1000][20], int n, int m, const char *filename) {
     ss[i][j - 1] = '\0';
     while ('\n' != (j = getc(f)))
       if (EOF == j) goto out;
-  next:
-    ;
+  next:;
   }
 out:
   fclose(f);
@@ -200,7 +199,6 @@ static char *NextStarName(void) {
 }
 
 startype *Makestar(FILE *planetdata, int snum) {
-  planettype planet;
   ptype_t type;
   int roll, temperature;
   int i, y, x;
@@ -289,7 +287,7 @@ startype *Makestar(FILE *planetdata, int snum) {
       else
         type = TYPE_GASGIANT;
     }
-    planet = Makeplanet(dist, Star->temperature, type);
+    auto planet = Makeplanet(dist, Star->temperature, type);
     auto smap = getsmap(planet);
     planet.xpos = xpos;
     planet.ypos = ypos;
@@ -344,9 +342,9 @@ startype *Makestar(FILE *planetdata, int snum) {
         Numsects[type][d]++;
         Fertsects[type][d] += smap.get(x, y).fert;
       }
-    Star->planetpos[i] = 0; // old posn of file-last write
-    planet.sectormappos = 0; // sector map pos
-    putplanet(&planet, Star, i);
+    Star->planetpos[i] = 0;   // old posn of file-last write
+    planet.sectormappos = 0;  // sector map pos
+    putplanet(planet, Star, i);
   }
   return Star;
 }

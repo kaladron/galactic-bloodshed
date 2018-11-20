@@ -23,7 +23,6 @@
 
 void mobilize(int Playernum, int Governor, int APcount) {
   int sum_mob = 0;
-  planettype *p;
 
   if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
     sprintf(buf, "scope must be a planet.\n");
@@ -40,16 +39,15 @@ void mobilize(int Playernum, int Governor, int APcount) {
     return;
   }
 
-  getplanet(&p, Dir[Playernum - 1][Governor].snum,
-            Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
+                     Dir[Playernum - 1][Governor].pnum);
 
-  auto smap = getsmap(*p);
+  auto smap = getsmap(p);
 
   if (argn < 2) {
     sprintf(buf, "Current mobilization: %d    Quota: %d\n",
-            p->info[Playernum - 1].comread, p->info[Playernum - 1].mob_set);
+            p.info[Playernum - 1].comread, p.info[Playernum - 1].mob_set);
     notify(Playernum, Governor, buf);
-    free(p);
     return;
   }
   sum_mob = atoi(args[1]);
@@ -57,20 +55,16 @@ void mobilize(int Playernum, int Governor, int APcount) {
   if (sum_mob > 100 || sum_mob < 0) {
     sprintf(buf, "Illegal value.\n");
     notify(Playernum, Governor, buf);
-    free(p);
     return;
   }
-  p->info[Playernum - 1].mob_set = sum_mob;
+  p.info[Playernum - 1].mob_set = sum_mob;
   putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
-
-  free(p);
 }
 
 void tax(int Playernum, int Governor, int APcount) {
   int sum_tax = 0;
-  planettype *p;
   racetype *Race;
 
   if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
@@ -98,14 +92,13 @@ void tax(int Playernum, int Governor, int APcount) {
     return;
   }
 
-  getplanet(&p, Dir[Playernum - 1][Governor].snum,
-            Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
+                     Dir[Playernum - 1][Governor].pnum);
 
   if (argn < 2) {
     sprintf(buf, "Current tax rate: %d%%    Target: %d%%\n",
-            p->info[Playernum - 1].tax, p->info[Playernum - 1].newtax);
+            p.info[Playernum - 1].tax, p.info[Playernum - 1].newtax);
     notify(Playernum, Governor, buf);
-    free(p);
     return;
   }
 
@@ -114,16 +107,14 @@ void tax(int Playernum, int Governor, int APcount) {
   if (sum_tax > 100 || sum_tax < 0) {
     sprintf(buf, "Illegal value.\n");
     notify(Playernum, Governor, buf);
-    free(p);
     return;
   }
-  p->info[Playernum - 1].newtax = sum_tax;
+  p.info[Playernum - 1].newtax = sum_tax;
   putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
             Dir[Playernum - 1][Governor].pnum);
 
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
   notify(Playernum, Governor, "Set.\n");
-  free(p);
 }
 
 int control(int Playernum, int Governor, startype *star) {

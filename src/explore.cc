@@ -29,16 +29,15 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
                              starnum_t star, modes_t mode) {
   planetnum_t i;
   int j;
-  planettype *pl;
 
   getstar(&(Stars[star]), star);
   if (!isset(Stars[star]->explored, Playernum)) return;
 
   for (i = 0; i < Stars[star]->numplanets; i++) {
-    getplanet(&pl, star, i);
+    const auto &pl = getplanet(star, i);
 
-    if (pl->info[Playernum - 1].explored &&
-        pl->info[Playernum - 1].numsectsowned &&
+    if (pl.info[Playernum - 1].explored &&
+        pl.info[Playernum - 1].numsectsowned &&
         (!Governor || Stars[star]->governor[Playernum - 1] == Governor)) {
       switch (mode) {
         case COLONIES:
@@ -46,20 +45,19 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
               buf,
               " %c %4.4s/%-4.4s%c%4d%3d%5d%8ld%3d%6d%5d%6d "
               "%3d/%-3d%3.0f/%-3d%3d/%-3d",
-              Psymbol[pl->type], Stars[star]->name, Stars[star]->pnames[i],
-              (pl->info[Playernum - 1].autorep ? '*' : ' '),
+              Psymbol[pl.type], Stars[star]->name, Stars[star]->pnames[i],
+              (pl.info[Playernum - 1].autorep ? '*' : ' '),
               Stars[star]->governor[Playernum - 1],
-              pl->info[Playernum - 1].numsectsowned,
-              pl->info[Playernum - 1].tech_invest, pl->info[Playernum - 1].popn,
-              pl->info[Playernum - 1].crystals,
-              pl->info[Playernum - 1].resource,
-              pl->info[Playernum - 1].destruct, pl->info[Playernum - 1].fuel,
-              pl->info[Playernum - 1].tax, pl->info[Playernum - 1].newtax,
-              compatibility(pl, Race), pl->conditions[TOXIC],
-              pl->info[Playernum - 1].comread, pl->info[Playernum - 1].mob_set);
+              pl.info[Playernum - 1].numsectsowned,
+              pl.info[Playernum - 1].tech_invest, pl.info[Playernum - 1].popn,
+              pl.info[Playernum - 1].crystals, pl.info[Playernum - 1].resource,
+              pl.info[Playernum - 1].destruct, pl.info[Playernum - 1].fuel,
+              pl.info[Playernum - 1].tax, pl.info[Playernum - 1].newtax,
+              compatibility(pl, Race), pl.conditions[TOXIC],
+              pl.info[Playernum - 1].comread, pl.info[Playernum - 1].mob_set);
           notify(Playernum, Governor, buf);
           for (j = 1; j <= Num_races; j++)
-            if ((j != Playernum) && (pl->info[j - 1].numsectsowned > 0)) {
+            if ((j != Playernum) && (pl.info[j - 1].numsectsowned > 0)) {
               sprintf(buf, " %d", j);
               notify(Playernum, Governor, buf);
             }
@@ -70,22 +68,20 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
           sprintf(
               buf,
               " %c %4.4s/%-4.4s%c%3d%8.4f%8ld%3d%6d%5d%6d %6ld   %3d%8.2f\n",
-              Psymbol[pl->type], Stars[star]->name, Stars[star]->pnames[i],
-              (pl->info[Playernum - 1].autorep ? '*' : ' '),
+              Psymbol[pl.type], Stars[star]->name, Stars[star]->pnames[i],
+              (pl.info[Playernum - 1].autorep ? '*' : ' '),
               Stars[star]->governor[Playernum - 1],
-              pl->info[Playernum - 1].prod_tech, pl->total_resources,
-              pl->info[Playernum - 1].prod_crystals,
-              pl->info[Playernum - 1].prod_res,
-              pl->info[Playernum - 1].prod_dest,
-              pl->info[Playernum - 1].prod_fuel,
-              pl->info[Playernum - 1].prod_money,
-              pl->info[Playernum - 1].tox_thresh,
-              pl->info[Playernum - 1].est_production);
+              pl.info[Playernum - 1].prod_tech, pl.total_resources,
+              pl.info[Playernum - 1].prod_crystals,
+              pl.info[Playernum - 1].prod_res, pl.info[Playernum - 1].prod_dest,
+              pl.info[Playernum - 1].prod_fuel,
+              pl.info[Playernum - 1].prod_money,
+              pl.info[Playernum - 1].tox_thresh,
+              pl.info[Playernum - 1].est_production);
           notify(Playernum, Governor, buf);
           break;
       }
     }
-    free(pl);
   }
 }
 
@@ -142,7 +138,6 @@ void colonies(const command_t &argv, const player_t Playernum,
 void distance(const command_t &argv, const player_t Playernum,
               const governor_t Governor) {
   placetype from, to;
-  planettype *p;
   double x0, y0, x1, y1, dist;
   shiptype *ship;
 
@@ -179,10 +174,9 @@ void distance(const command_t &argv, const player_t Playernum,
     y0 = ship->ypos;
     free(ship);
   } else if (from.level == LEVEL_PLAN) {
-    getplanet(&p, from.snum, from.pnum);
-    x0 = p->xpos + Stars[from.snum]->xpos;
-    y0 = p->ypos + Stars[from.snum]->ypos;
-    free(p);
+    const auto &p = getplanet(from.snum, from.pnum);
+    x0 = p.xpos + Stars[from.snum]->xpos;
+    y0 = p.ypos + Stars[from.snum]->ypos;
   } else if (from.level == LEVEL_STAR) {
     x0 = Stars[from.snum]->xpos;
     y0 = Stars[from.snum]->ypos;
@@ -199,10 +193,9 @@ void distance(const command_t &argv, const player_t Playernum,
     y1 = ship->ypos;
     free(ship);
   } else if (to.level == LEVEL_PLAN) {
-    getplanet(&p, to.snum, to.pnum);
-    x1 = p->xpos + Stars[to.snum]->xpos;
-    y1 = p->ypos + Stars[to.snum]->ypos;
-    free(p);
+    const auto &p = getplanet(to.snum, to.pnum);
+    x1 = p.xpos + Stars[to.snum]->xpos;
+    y1 = p.ypos + Stars[to.snum]->ypos;
   } else if (to.level == LEVEL_STAR) {
     x1 = Stars[to.snum]->xpos;
     y1 = Stars[to.snum]->ypos;
@@ -240,7 +233,6 @@ void star_locations(const command_t &argv, const player_t Playernum,
 void exploration(const command_t &argv, const player_t Playernum,
                  const governor_t Governor) {
   int starq, j;
-  planettype *pl;
   placetype where;
   racetype *Race;
 
@@ -276,7 +268,7 @@ void exploration(const command_t &argv, const player_t Playernum,
       getstar(&(Stars[star]), star);
       if (isset(Stars[star]->explored, Playernum))
         for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
-          getplanet(&pl, star, i);
+          const auto &pl = getplanet(star, i);
           if (i == 0) {
             if (Race->tech >= TECH_SEE_STABILITY) {
               sprintf(buf, "\n%13s (%2d)[%2d]\n", Stars[star]->name,
@@ -294,38 +286,37 @@ void exploration(const command_t &argv, const player_t Playernum,
 
           sprintf(buf, "  #%d. %-15s [ ", i + 1, Stars[star]->pnames[i]);
           notify(Playernum, Governor, buf);
-          if (pl->info[Playernum - 1].explored) {
+          if (pl.info[Playernum - 1].explored) {
             sprintf(buf, "Ex ");
             notify(Playernum, Governor, buf);
-            if (pl->info[Playernum - 1].autorep) {
+            if (pl.info[Playernum - 1].autorep) {
               sprintf(buf, "Rep ");
               notify(Playernum, Governor, buf);
             }
-            if (pl->info[Playernum - 1].numsectsowned) {
+            if (pl.info[Playernum - 1].numsectsowned) {
               sprintf(buf, "Inhab ");
               notify(Playernum, Governor, buf);
             }
-            if (pl->slaved_to) {
+            if (pl.slaved_to) {
               sprintf(buf, "SLAVED ");
               notify(Playernum, Governor, buf);
             }
             for (j = 1; j <= Num_races; j++)
-              if (j != Playernum && pl->info[j - 1].numsectsowned) {
+              if (j != Playernum && pl.info[j - 1].numsectsowned) {
                 sprintf(buf, "%d ", j);
                 notify(Playernum, Governor, buf);
               }
-            if (pl->conditions[TOXIC] > 70) {
+            if (pl.conditions[TOXIC] > 70) {
               sprintf(buf, "TOXIC ");
               notify(Playernum, Governor, buf);
             }
-            sprintf(buf, "] %s %2.0f%%\n", Planet_types[pl->type],
+            sprintf(buf, "] %s %2.0f%%\n", Planet_types[pl.type],
                     compatibility(pl, Race));
             notify(Playernum, Governor, buf);
           } else {
             sprintf(buf, "No Data ]\n");
             notify(Playernum, Governor, buf);
           }
-          free(pl);
         }
     }
 }
@@ -377,31 +368,28 @@ void tech_status(const command_t &argv, const player_t Playernum,
 static void tech_report_star(int Playernum, int Governor, startype *star,
                              starnum_t snum, int *t_invest, double *t_gain,
                              double *t_max_gain) {
-  planettype *pl;
   char str[200];
   double gain, max_gain;
 
   if (isset(star->explored, Playernum) &&
       (!Governor || star->governor[Playernum - 1] == Governor)) {
     for (planetnum_t i = 0; i < star->numplanets; i++) {
-      getplanet(&pl, snum, i);
-      if (pl->info[Playernum - 1].explored &&
-          pl->info[Playernum - 1].numsectsowned) {
+      const auto &pl = getplanet(snum, i);
+      if (pl.info[Playernum - 1].explored &&
+          pl.info[Playernum - 1].numsectsowned) {
         sprintf(str, "%s/%s%s", star->name, star->pnames[i],
-                (pl->info[Playernum - 1].autorep ? "*" : ""));
+                (pl.info[Playernum - 1].autorep ? "*" : ""));
         sprintf(buf, "%16.16s %10ld%10d%8.3lf%8.3lf\n", str,
-                pl->info[Playernum - 1].popn,
-                pl->info[Playernum - 1].tech_invest,
-                gain = tech_prod((int)pl->info[Playernum - 1].tech_invest,
-                                 (int)pl->info[Playernum - 1].popn),
-                max_gain = tech_prod((int)pl->info[Playernum - 1].prod_res,
-                                     (int)pl->info[Playernum - 1].popn));
+                pl.info[Playernum - 1].popn, pl.info[Playernum - 1].tech_invest,
+                gain = tech_prod((int)pl.info[Playernum - 1].tech_invest,
+                                 (int)pl.info[Playernum - 1].popn),
+                max_gain = tech_prod((int)pl.info[Playernum - 1].prod_res,
+                                     (int)pl.info[Playernum - 1].popn));
         notify(Playernum, Governor, buf);
-        *t_invest += pl->info[Playernum - 1].tech_invest;
+        *t_invest += pl.info[Playernum - 1].tech_invest;
         *t_gain += gain;
         *t_max_gain += max_gain;
       }
-      free(pl);
     }
   }
 }

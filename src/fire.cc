@@ -34,7 +34,6 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
 {
   shipnum_t fromship, toship, sh, nextshipno;
   shiptype *from, *to, *ship, dummy;
-  planettype *p;
   int strength, maxstrength, retal, damage;
 
   sh = 0;  // TODO(jeffbailey): No idea what this is, init to 0.
@@ -129,16 +128,14 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
           free(to);
           continue;
         }
-        getplanet(&p, (int)from->storbits, (int)from->pnumorbits);
+        const auto &p = getplanet((int)from->storbits, (int)from->pnumorbits);
         if (!adjacent((int)from->land_x, (int)from->land_y, (int)to->land_x,
                       (int)to->land_y, p)) {
           notify(Playernum, Governor, "You are not adjacent to your target!\n");
           free(from);
           free(to);
-          free(p);
           continue;
         }
-        free(p);
       }
       if (cew) {
         if (from->fuel < (double)from->cew) {
@@ -233,9 +230,8 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
         if (to->whatorbits == LEVEL_STAR) /* star level ships */
           sh = Stars[to->storbits]->ships;
         if (to->whatorbits == LEVEL_PLAN) { /* planet level ships */
-          getplanet(&p, (int)to->storbits, (int)to->pnumorbits);
-          sh = p->ships;
-          free(p);
+          const auto &p = getplanet((int)to->storbits, (int)to->pnumorbits);
+          sh = p.ships;
         }
         while (sh && from->alive) {
           (void)getship(&ship, sh);
@@ -277,7 +273,6 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
 {
   shipnum_t fromship, nextshipno, sh;
   shiptype *from, *ship;
-  planettype *p;
   int strength, maxstrength, x, y, ok, numdest, damage;
   int i;
   racetype *alien;
@@ -344,24 +339,22 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
       }
 
       /* get planet */
-      getplanet(&p, (int)from->storbits, (int)from->pnumorbits);
+      auto p = getplanet((int)from->storbits, (int)from->pnumorbits);
 
       if (argn > 2) {
         sscanf(args[2], "%d,%d", &x, &y);
-        if (x < 0 || x > p->Maxx - 1 || y < 0 || y > p->Maxy - 1) {
+        if (x < 0 || x > p.Maxx - 1 || y < 0 || y > p.Maxy - 1) {
           notify(Playernum, Governor, "Illegal sector.\n");
-          free(p);
           free(from);
           continue;
         }
       } else {
-        x = int_rand(0, (int)p->Maxx - 1);
-        y = int_rand(0, (int)p->Maxy - 1);
+        x = int_rand(0, (int)p.Maxx - 1);
+        y = int_rand(0, (int)p.Maxy - 1);
       }
       if (landed(from) &&
           !adjacent((int)from->land_x, (int)from->land_y, x, y, p)) {
         notify(Playernum, Governor, "You are not adjacent to that sector.\n");
-        free(p);
         free(from);
         continue;
       }
@@ -369,7 +362,7 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
       /* check to see if there are any planetary defense networks on the planet
        */
       ok = 1;
-      sh = p->ships;
+      sh = p.ships;
       while (sh && ok) {
         (void)getship(&ship, sh);
         ok = !(ship->alive && ship->type == OTYPE_PLANDEF &&
@@ -383,20 +376,18 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
                "Target has planetary defense "
                "networks.\nThese have to be eliminated "
                "before you can attack sectors.\n");
-        free(p);
         free(from);
         continue;
       }
 
-      auto smap = getsmap(*p);
-      numdest = shoot_ship_to_planet(from, p, strength, x, y, smap, 0, 0,
+      auto smap = getsmap(p);
+      numdest = shoot_ship_to_planet(from, &p, strength, x, y, smap, 0, 0,
                                      long_buf, short_buf);
-      putsmap(smap, *p);
+      putsmap(smap, p);
 
       if (numdest < 0) {
         notify(Playernum, Governor, "Illegal attack.\n");
         free(from);
-        free(p);
         continue;
       }
 
@@ -417,14 +408,14 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
       if (numdest && from->type != OTYPE_AFV) {
         damage = 0;
         for (i = 1; i <= Num_races; i++)
-          if (Nuked[i - 1] && !p->slaved_to) {
+          if (Nuked[i - 1] && !p.slaved_to) {
             /* add planet defense strength */
             alien = races[i - 1];
-            strength = MIN(p->info[i - 1].destruct, p->info[i - 1].guns);
+            strength = MIN(p.info[i - 1].destruct, p.info[i - 1].guns);
 
-            p->info[i - 1].destruct -= strength;
+            p.info[i - 1].destruct -= strength;
 
-            damage = shoot_planet_to_ship(alien, p, from, strength, long_buf,
+            damage = shoot_planet_to_ship(alien, from, strength, long_buf,
                                           short_buf);
             warn(i, (int)Stars[from->storbits]->governor[i - 1], long_buf);
             notify(Playernum, Governor, long_buf);
@@ -437,7 +428,7 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
       /* protecting ships retaliate individually if damage was inflicted */
       /* AFVs are immune to this */
       if (numdest && from->alive && from->type != OTYPE_AFV) {
-        sh = p->ships;
+        sh = p.ships;
         while (sh && from->alive) {
           (void)getship(&ship, sh);
 
@@ -472,7 +463,6 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
       deductAPs(Playernum, Governor, APcount, (int)from->storbits, 0);
 
       free(from);
-      free(p);
     } else
       free(from);
 }
@@ -482,7 +472,6 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
 {
   int toship, sh;
   shiptype *to, *ship, dummy;
-  planettype *p;
   int strength, retal, damage, x, y;
   int numdest;
   racetype *Race;
@@ -520,30 +509,26 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
     return;
   }
 
-  getplanet(&p, Dir[Playernum - 1][Governor].snum,
-            Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
+                     Dir[Playernum - 1][Governor].pnum);
 
-  if (!p->info[Playernum - 1].numsectsowned) {
+  if (!p.info[Playernum - 1].numsectsowned) {
     notify(Playernum, Governor, "You do not occupy any sectors here.\n");
-    free(p);
     return;
   }
 
-  if (p->slaved_to && p->slaved_to != Playernum) {
+  if (p.slaved_to && p.slaved_to != Playernum) {
     notify(Playernum, Governor, "This planet is enslaved.\n");
-    free(p);
     return;
   }
 
   if (!getship(&to, toship)) {
-    free(p);
     return;
   }
 
   if (to->whatorbits != LEVEL_PLAN) {
     notify(Playernum, Governor, "The ship is not in planet orbit.\n");
     free(to);
-    free(p);
     return;
   }
 
@@ -551,14 +536,12 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
       to->pnumorbits != Dir[Playernum - 1][Governor].pnum) {
     notify(Playernum, Governor, "Target is not in orbit around this planet.\n");
     free(to);
-    free(p);
     return;
   }
 
   if (landed(to)) {
     notify(Playernum, Governor, "Planet guns can't fire on landed ships.\n");
     free(to);
-    free(p);
     return;
   }
 
@@ -568,18 +551,16 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
 
   sscanf(args[2], "%d,%d", &x, &y);
 
-  if (x < 0 || x > p->Maxx - 1 || y < 0 || y > p->Maxy - 1) {
+  if (x < 0 || x > p.Maxx - 1 || y < 0 || y > p.Maxy - 1) {
     notify(Playernum, Governor, "Illegal sector.\n");
-    free(p);
     free(to);
     return;
   }
 
   /* check to see if you own the sector */
-  auto sect = getsector(*p, x, y);
+  auto sect = getsector(p, x, y);
   if (sect.owner != Playernum) {
     notify(Playernum, Governor, "Nice try.\n");
-    free(p);
     free(to);
     return;
   }
@@ -587,39 +568,36 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
   if (argn >= 4)
     sscanf(args[3], "%d", &strength);
   else
-    strength = p->info[Playernum - 1].guns;
+    strength = p.info[Playernum - 1].guns;
 
-  strength = MIN(strength, p->info[Playernum - 1].destruct);
-  strength = MIN(strength, p->info[Playernum - 1].guns);
+  strength = MIN(strength, p.info[Playernum - 1].destruct);
+  strength = MIN(strength, p.info[Playernum - 1].guns);
 
   if (strength <= 0) {
-    sprintf(buf, "No attack - %d guns, %dd\n", p->info[Playernum - 1].guns,
-            p->info[Playernum - 1].destruct);
+    sprintf(buf, "No attack - %d guns, %dd\n", p.info[Playernum - 1].guns,
+            p.info[Playernum - 1].destruct);
     notify(Playernum, Governor, buf);
-    free(p);
     free(to);
     return;
   }
   Race = races[Playernum - 1];
 
-  damage = shoot_planet_to_ship(Race, p, to, strength, long_buf, short_buf);
+  damage = shoot_planet_to_ship(Race, to, strength, long_buf, short_buf);
 
   if (!to->alive && to->type == OTYPE_TOXWC) {
     /* get planet again since toxicity probably has changed */
-    free(p);
-    getplanet(&p, Dir[Playernum - 1][Governor].snum,
-              Dir[Playernum - 1][Governor].pnum);
+    p = getplanet(Dir[Playernum - 1][Governor].snum,
+                  Dir[Playernum - 1][Governor].pnum);
   }
 
   if (damage < 0) {
     sprintf(buf, "Target out of range  %d!\n", SYSTEMSIZE);
     notify(Playernum, Governor, buf);
-    free(p);
     free(to);
     return;
   }
 
-  p->info[Playernum - 1].destruct -= strength;
+  p.info[Playernum - 1].destruct -= strength;
   if (!to->alive) post(short_buf, COMBAT);
   notify_star(Playernum, Governor, (int)to->owner, (int)to->storbits,
               short_buf);
@@ -633,8 +611,8 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
     strength = retal;
     if (laser_on(to)) check_overload(to, 0, &strength);
 
-    auto smap = getsmap(*p);
-    if ((numdest = shoot_ship_to_planet(&dummy, p, strength, x, y, smap, 0, 0,
+    auto smap = getsmap(p);
+    if ((numdest = shoot_ship_to_planet(&dummy, &p, strength, x, y, smap, 0, 0,
                                         long_buf, short_buf)) >= 0) {
       if (laser_on(to))
         use_fuel(to, 2.0 * (double)strength);
@@ -647,12 +625,12 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
       notify(Playernum, Governor, long_buf);
       warn((int)to->owner, (int)to->governor, long_buf);
     }
-    putsmap(smap, *p);
+    putsmap(smap, p);
   }
 
   /* protecting ships retaliate individually if damage was inflicted */
   if (damage) {
-    sh = p->ships;
+    sh = p.ships;
     while (sh) {
       (void)getship(&ship, sh);
       if (ship->protect.on && (ship->protect.ship == toship) &&
@@ -661,9 +639,9 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
         if (laser_on(ship)) check_overload(ship, 0, &strength);
         check_retal_strength(ship, &strength);
 
-        auto smap = getsmap(*p);
-        if ((numdest = shoot_ship_to_planet(ship, p, strength, x, y, smap, 0, 0,
-                                            long_buf, short_buf)) >= 0) {
+        auto smap = getsmap(p);
+        if ((numdest = shoot_ship_to_planet(ship, &p, strength, x, y, smap, 0,
+                                            0, long_buf, short_buf)) >= 0) {
           if (laser_on(ship))
             use_fuel(ship, 2.0 * (double)strength);
           else
@@ -674,7 +652,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
           notify(Playernum, Governor, long_buf);
           warn((int)ship->owner, (int)ship->governor, long_buf);
         }
-        putsmap(smap, *p);
+        putsmap(smap, p);
         putship(ship);
       }
       sh = ship->nextship;
@@ -689,7 +667,6 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
 
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
 
-  free(p);
   free(to);
   return;
 }
@@ -750,13 +727,13 @@ int retal_strength(shiptype *s) {
   return strength;
 }
 
-int adjacent(int fx, int fy, int tx, int ty, planettype *p) {
+int adjacent(int fx, int fy, int tx, int ty, const planet &p) {
   if (abs(fy - ty) <= 1) {
     if (abs(fx - tx) <= 1)
       return 1;
-    else if (fx == p->Maxx - 1 && tx == 0)
+    else if (fx == p.Maxx - 1 && tx == 0)
       return 1;
-    else if (fx == 0 && tx == p->Maxx - 1)
+    else if (fx == 0 && tx == p.Maxx - 1)
       return 1;
     else
       return 0;

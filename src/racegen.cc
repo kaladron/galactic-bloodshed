@@ -6,14 +6,13 @@
 
 #include <math.h>
 #include <stdarg.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "game_info.h"
 #include "enroll.h"
+#include "game_info.h"
 
 static int do_racegen();
 
@@ -264,20 +263,34 @@ const int blah[N_SECTOR_TYPES] = {-1, 0, 50, 100, 200, 300, 400, 500};
 const double compat_cov[N_SECTOR_TYPES][N_SECTOR_TYPES] = {
     /*  .       *        ^       ~       #       )       -      o  */
     {
-     0.0,
+        0.0,
     },
     {.001, 0.0},
     {
-     .002, -.0005, 0.0,
+        .002,
+        -.0005,
+        0.0,
     },
     {
-     999, 999, 999, 0.0,
+        999,
+        999,
+        999,
+        0.0,
     },
     {
-     .001, 0.0, -.002, 999, 0.0,
+        .001,
+        0.0,
+        -.002,
+        999,
+        0.0,
     },
     {
-     0.0, -.001, 0.0, 999, .001, 0.0,
+        0.0,
+        -.001,
+        0.0,
+        999,
+        .001,
+        0.0,
     },
     {.003, -.0005, 0.0, 999, 0.0, .001, 0.0},
     {0.0, 0.0, 0.0, 999, 0.0, 0.0, 0.0, 0.0}};
@@ -542,13 +555,13 @@ int critique_to_file(FILE *f, int rigorous_checking, int is_player_race) {
 
   if (rigorous_checking) {
     /*
-   * Any rejection notice is an error: */
+     * Any rejection notice is an error: */
     if (strlen(race_info.rejection)) {
       FPRINTF(f, "%s", race_info.rejection);
       nerrors += 1;
     }
     /*
-   * Check for valid password: */
+     * Check for valid password: */
     if (MIN_PASSWORD_LENGTH > strlen(race_info.password)) {
       FPRINTF(f, "Passwords are required to be at least %d characters long.\n",
               MIN_PASSWORD_LENGTH);
@@ -562,13 +575,13 @@ int critique_to_file(FILE *f, int rigorous_checking, int is_player_race) {
       nerrors += 1;
     }
     /*
-   * Check that race isn't 'superrace': */
+     * Check that race isn't 'superrace': */
     if (npoints < 0) {
       FPRINTF(f, "You can't have negative points left!\n");
       nerrors += 1;
     }
     /*
-   * Check that sector compats are reasonable. */
+     * Check that sector compats are reasonable. */
     if ((race_info.home_planet_type != H_JOVIAN) &&
         (race_info.n_sector_types == 1)) {
       FPRINTF(f,
@@ -740,8 +753,8 @@ static void help(int argc, char *argv[]) {
     printf("\n");
 
     printf("\t\t   <planettype> ::= %s", planet_print_name[0]);
-    for (i = FIRST_HOME_PLANET_TYPE + 1; i <= std::min(4, LAST_HOME_PLANET_TYPE);
-         i++) {
+    for (i = FIRST_HOME_PLANET_TYPE + 1;
+         i <= std::min(4, LAST_HOME_PLANET_TYPE); i++) {
       printf(" | %s", planet_print_name[i]);
     }
     printf("\n\t\t                 ");
@@ -1214,7 +1227,7 @@ int Dialogue(const char *prompt, ...) {
     for (i = 0; i < argc; i++)
       if (!strncasecmp(argv[i], input, len)) return i;
     /*
-   * The input did not match any of the valid responses: */
+     * The input did not match any of the valid responses: */
     printf("Please enter ");
     for (i = 0; i < argc - 1; i++) {
       printf("\"%s\", ", argv[i]);

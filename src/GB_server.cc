@@ -1049,10 +1049,10 @@ static void check_connect(descriptor_data *d, const char *message) {
   parse_connect(message, race_password, gov_password);
 
 #ifdef EXTERNAL_TRIGGER
-  if (!strcmp(password, SEGMENT_PASSWORD)) {
+  if (!strcmp(race_password, SEGMENT_PASSWORD)) {
     do_segment(1, 0);
     return;
-  } else if (!strcmp(password, UPDATE_PASSWORD)) {
+  } else if (!strcmp(race_password, UPDATE_PASSWORD)) {
     do_update(1);
     return;
   }

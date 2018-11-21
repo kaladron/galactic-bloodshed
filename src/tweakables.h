@@ -162,7 +162,7 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 #define TECH_INVEST 0.01 /* invest factor */
 #define TECH_SCALE 2.0   /* investment scale */
 
-#define MOB_COST 0.00     /* mobiliz.c, doplanet.c cost/mob points*/
+#define MOB_COST 0.00     /* mobiliz.c, planet.c cost/mob points*/
 #undef RESOURCE_DEPLETION /*0.015 */
 #define RESOURCE_DEPLETION 0.0
 #define FACTOR_MOBPROD 0.06 /* mobilization production/person */

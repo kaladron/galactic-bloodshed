@@ -648,10 +648,10 @@ void dump(int Playernum, int Governor, int APcount) {
         setbit(Stars[star]->explored, player);
 
         for (i = 0; i < Stars[star]->numplanets; i++) {
-          planets[star][i] = new planet(getplanet(star, i));
-          if (planets[star][i]->info[Playernum - 1].explored) {
-            planets[star][i]->info[player - 1].explored = 1;
-            putplanet(*planets[star][i], Stars[star], i);
+          auto planet = getplanet(star, i);
+          if (planet.info[Playernum - 1].explored) {
+            planet.info[player - 1].explored = 1;
+            putplanet(planet, Stars[star], i);
           }
         }
         putstar(Stars[star], star);
@@ -669,10 +669,10 @@ void dump(int Playernum, int Governor, int APcount) {
           setbit(Stars[star]->explored, player);
 
           for (j = 0; j < Stars[star]->numplanets; j++) {
-            planets[star][j] = new planet(getplanet(star, j));
-            if (planets[star][j]->info[Playernum - 1].explored) {
-              planets[star][j]->info[player - 1].explored = 1;
-              putplanet(*planets[star][j], Stars[star], j);
+            auto planet = getplanet(star, j);
+            if (planet.info[Playernum - 1].explored) {
+              planet.info[player - 1].explored = 1;
+              putplanet(planet, Stars[star], j);
             }
           }
           putstar(Stars[star], star);

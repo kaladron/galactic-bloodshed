@@ -203,6 +203,7 @@ int main(int argc, char **argv) {
       {"autoreport", autoreport},
       {"bid", bid},
       {"build", build},
+      {"capture", capture},
       {"center", center},
       {"client_survey", survey},
       {"colonies", colonies},
@@ -1345,8 +1346,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     bombard(Playernum, Governor, 1);
   else if (match(args[0], "capital"))
     capital(Playernum, Governor, 50);
-  else if (match(args[0], "capture"))
-    capture(Playernum, Governor, 1);
 #ifdef DEFENSE
   else if (match(args[0], "defend"))
     defend(Playernum, Governor, 1);

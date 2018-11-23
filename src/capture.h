@@ -7,7 +7,7 @@
 
 #include "ships.h"
 
-void capture(int, int, int);
+void capture(const command_t &, const player_t, const governor_t);
 void capture_stuff(shiptype *);
 
 #endif  // CAPTURE_H

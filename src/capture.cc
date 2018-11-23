@@ -23,7 +23,9 @@
 #include "tweakables.h"
 #include "vars.h"
 
-void capture(int Playernum, int Governor, int APcount) {
+void capture(const command_t &argv, const player_t Playernum,
+             const governor_t Governor) {
+  const int APcount = 1;
   shiptype *ship, s;
   player_t oldowner;
   governor_t oldgov;
@@ -38,7 +40,7 @@ void capture(int Playernum, int Governor, int APcount) {
   int snum, pnum;
   population_t boarders;
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     notify(Playernum, Governor, "Capture what?\n");
     return;
   }
@@ -48,10 +50,10 @@ void capture(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, "You are not authorized in this system.\n");
     return;
   }
-  nextshipno = start_shiplist(Playernum, Governor, args[1]);
+  nextshipno = start_shiplist(Playernum, Governor, argv[1].c_str());
   while ((shipno = do_shiplist(&ship, &nextshipno)))
     if (ship->owner != Playernum &&
-        in_list((int)ship->owner, args[1], ship, &nextshipno)) {
+        in_list((int)ship->owner, argv[1].c_str(), ship, &nextshipno)) {
       if (!landed(ship)) {
         sprintf(buf, "%s #%ld is not landed on a planet.\n",
                 Shipnames[ship->type], shipno);
@@ -86,11 +88,11 @@ void capture(int Playernum, int Governor, int APcount) {
         continue;
       }
 
-      if (argn < 4)
+      if (argv.size() < 4)
         what = CIV;
-      else if (match(args[3], "civilians"))
+      else if (argv[3] == "civilians")
         what = CIV;
-      else if (match(args[3], "military"))
+      else if (argv[3] == "military")
         what = MIL;
       else {
         notify(Playernum, Governor, "Capture with what?\n");
@@ -98,13 +100,13 @@ void capture(int Playernum, int Governor, int APcount) {
         continue;
       }
 
-      if (argn < 3) {
+      if (argv.size() < 3) {
         if (what == CIV)
           boarders = sect.popn;
         else if (what == MIL)
           boarders = sect.troops;
       } else
-        boarders = strtoul(args[2], NULL, 10);
+        boarders = std::stoul(argv[2]);
 
       if (boarders <= 0) {
         sprintf(buf, "Illegal number of boarders %lu.\n", boarders);

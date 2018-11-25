@@ -199,7 +199,7 @@ static char *NextStarName(void) {
 }
 
 startype *Makestar(int snum) {
-  ptype_t type;
+  PlanetType type;
   int roll, temperature;
   int i, y, x;
   double dist, distmin, distmax, distsep;

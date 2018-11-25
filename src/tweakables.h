@@ -225,7 +225,7 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 /*   (look in doturn)  */
 #define LIMIT_APs 255 /* max # of APs you can have */
 
-enum ptype_t {
+enum PlanetType {
   TYPE_EARTH,
   TYPE_ASTEROID,
   TYPE_MARS,

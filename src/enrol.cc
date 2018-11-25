@@ -482,8 +482,15 @@ static char desshow(const int x, const int y,
 }
 
 // TODO(jeffbailey): We shouldn't need to be providing this function.
-int notify(int who, int gov, const char *msg) { /* this is a dummy routine */
-  return 0;
+bool notify(const player_t who, governor_t gov,
+            const char *msg) { /* this is a dummy routine */
+  return false;
+}
+
+// TODO(jeffbailey): We shouldn't need to be providing this function.
+bool notify(const player_t who, governor_t gov,
+            const std::string &msg) { /* this is a dummy routine */
+  return false;
 }
 
 // TODO(jeffbailey): We shouldn't need to be providing this function.

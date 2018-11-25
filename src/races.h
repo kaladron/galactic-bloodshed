@@ -23,7 +23,7 @@ typedef struct {
 
 class race {
  public:
-  int Playernum;
+  player_t Playernum;
   char name[RNAMESIZE]; /* Racial name. */
   char password[RNAMESIZE];
   char info[PERSONALSIZE];     /* personal information */
@@ -132,7 +132,7 @@ class race {
 #define TECH_CRYSTAL 50.0
 
 struct block {
-  int Playernum;
+  player_t Playernum;
   char name[RNAMESIZE];
   char motto[MOTTOSIZE];
   unsigned long invite[2];

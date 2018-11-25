@@ -5,12 +5,14 @@
 #ifndef GB_SERVER_H
 #define GB_SERVER_H
 
+#include <string>
 #include "races.h"
 #include "ships.h"
 #include "vars.h"
 
 void notify_race(int, const char *);
-int notify(int, int, const char *);
+bool notify(player_t, governor_t, const char *);
+bool notify(player_t, governor_t, const std::string &);
 void d_think(int, int, char *);
 void d_broadcast(int, int, char *);
 void d_shout(int, int, char *);

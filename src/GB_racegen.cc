@@ -28,13 +28,20 @@
 #include "globals.h"
 
 // TODO(jeffbailey): This shouldn't be necessary!
-int notify(int who, int gov, const char *msg);
+bool notify(const player_t who, const governor_t gov, const char *msg);
+bool notify(const player_t who, const governor_t gov, const std::string &msg);
 void warn(int who, int gov, char *msg);
 
 static const int planet_translate[N_HOME_PLANET_TYPES] = {0, 6, 7, 5, 2, 3, 4};
 
-int notify(int who, int gov, const char *msg) { /* this is a dummy routine */
-  return 0;
+/* this is a dummy routine */
+bool notify(const player_t who, const governor_t gov, const char *msg) {
+  return false;
+}
+
+/* this is a dummy routine */
+bool notify(const player_t who, const governor_t gov, const std::string &msg) {
+  return false;
 }
 
 void warn(int who, int gov, char *msg) { /* this is a dummy routine */

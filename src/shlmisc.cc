@@ -25,16 +25,15 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void do_revoke(racetype *, int, int);
+#include "boost/format.hpp"
+
+static void do_revoke(racetype *, const governor_t, const governor_t);
 
 // TODO(jeffbailey): Move this into the ship class when we stop using bzero to
 // initalize it.
 std::string Ship(const ship &s) {
-  // return str(boost::format("%c%lu %s [%d]") % Shipltrs[s.type] % s.number %
-  //           s.name % s.owner);
-  std::stringstream ss;
-  ss << Shipltrs[s.type] << s.number << " " << s.name << " [" << s.owner << "]";
-  return ss.str();
+  return str(boost::format("%c%lu %s [%d]") % Shipltrs[s.type] % s.number %
+             s.name % s.owner);
 }
 
 void grant(int Playernum, int Governor, int APcount) {
@@ -215,21 +214,24 @@ void governors(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, "Bad option.\n");
 }
 
-static void do_revoke(racetype *Race, int gov, int j) {
-  char revoke_buf[1024];
+static void do_revoke(racetype *Race, const governor_t src_gov,
+                      const governor_t tgt_gov) {
   shiptype *ship;
 
-  sprintf(revoke_buf, "*** Transferring [%d,%d]'s ownings to [%d,%d] ***\n\n",
-          Race->Playernum, gov, Race->Playernum, j);
-  notify(Race->Playernum, 0, revoke_buf);
+  std::string outmsg;
+  outmsg = str(
+      boost::format("*** Transferring [%d,%d]'s ownings to [%d,%d] ***\n\n") %
+      Race->Playernum % src_gov % Race->Playernum % tgt_gov);
+  notify(Race->Playernum, (governor_t)0, outmsg);
 
   /*  First do stars....  */
 
   for (starnum_t i = 0; i < Sdata.numstars; i++)
-    if (Stars[i]->governor[Race->Playernum - 1] == gov) {
-      Stars[i]->governor[Race->Playernum - 1] = j;
-      sprintf(revoke_buf, "Changed juridiction of /%s...\n", Stars[i]->name);
-      notify(Race->Playernum, 0, revoke_buf);
+    if (Stars[i]->governor[Race->Playernum - 1] == src_gov) {
+      Stars[i]->governor[Race->Playernum - 1] = tgt_gov;
+      outmsg = str(boost::format("Changed juridiction of /%s...\n") %
+                   Stars[i]->name);
+      notify(Race->Playernum, 0, outmsg);
       putstar(Stars[i], i);
     }
 
@@ -238,11 +240,11 @@ static void do_revoke(racetype *Race, int gov, int j) {
   for (shipnum_t i = 1; i <= Num_ships; i++) {
     (void)getship(&ship, i);
     if (ship->alive && (ship->owner == Race->Playernum) &&
-        (ship->governor == gov)) {
-      ship->governor = j;
-      sprintf(revoke_buf, "Changed ownership of %c%lu...\n",
-              Shipltrs[ship->type], i);
-      notify(Race->Playernum, 0, revoke_buf);
+        (ship->governor == src_gov)) {
+      ship->governor = tgt_gov;
+      outmsg = str(boost::format("Changed ownership of %c%lu...\n") %
+                   Shipltrs[ship->type] % i);
+      notify(Race->Playernum, 0, outmsg);
       putship(ship);
     }
     free(ship);
@@ -250,20 +252,25 @@ static void do_revoke(racetype *Race, int gov, int j) {
 
   /*  And money too....  */
 
-  sprintf(revoke_buf, "Transferring %ld money...\n", Race->governor[gov].money);
-  notify(Race->Playernum, 0, revoke_buf);
-  Race->governor[j].money = Race->governor[j].money + Race->governor[gov].money;
-  Race->governor[gov].money = 0;
+  outmsg = str(boost::format("Transferring %ld money...\n") %
+               Race->governor[src_gov].money);
+  notify(Race->Playernum, 0, outmsg);
+  Race->governor[tgt_gov].money =
+      Race->governor[tgt_gov].money + Race->governor[src_gov].money;
+  Race->governor[src_gov].money = 0;
 
   /* And last but not least, flag the governor as inactive.... */
 
-  Race->governor[gov].active = 0;
-  strcpy(Race->governor[gov].password, "");
-  strcpy(Race->governor[gov].name, "");
-  sprintf(revoke_buf, "\n*** Governor [%d,%d]'s powers have been REVOKED ***\n",
-          Race->Playernum, gov);
-  notify(Race->Playernum, 0, revoke_buf);
-  sprintf(revoke_buf, "rm %s.%d.%d", TELEGRAMFL, Race->Playernum, gov);
+  Race->governor[src_gov].active = 0;
+  strcpy(Race->governor[src_gov].password, "");
+  strcpy(Race->governor[src_gov].name, "");
+  outmsg = str(
+      boost::format("\n*** Governor [%d,%d]'s powers have been REVOKED ***\n") %
+      Race->Playernum % src_gov);
+  notify(Race->Playernum, 0, outmsg);
+
+  char revoke_buf[1024];
+  sprintf(revoke_buf, "rm %s.%d.%d", TELEGRAMFL, Race->Playernum, src_gov);
   system(revoke_buf); /*  Remove the telegram file too....  */
 
   return;

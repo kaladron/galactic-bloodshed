@@ -354,17 +354,18 @@ void notify_race(int race, const char *message) {
   }
 }
 
-int notify(int race, int gov, const char *message) {
-  int ok;
+bool notify(player_t race, governor_t gov, const std::string &message) {
+  return notify(race, gov, message.c_str());
+}
 
+bool notify(player_t race, governor_t gov, const char *message) {
   if (update_flag) return 0;
-  ok = 0;
   for (auto d : *descriptor_list)
     if (d->connected && d->Playernum == race && d->Governor == gov) {
       queue_string(d, message);
-      ok = 1;
+      return true;
     }
-  return ok;
+  return false;
 }
 
 void d_think(int Playernum, int Governor, char *message) {

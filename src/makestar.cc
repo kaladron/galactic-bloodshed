@@ -198,7 +198,7 @@ static char *NextStarName(void) {
   return buf;
 }
 
-startype *Makestar(FILE *planetdata, int snum) {
+startype *Makestar(int snum) {
   ptype_t type;
   int roll, temperature;
   int i, y, x;

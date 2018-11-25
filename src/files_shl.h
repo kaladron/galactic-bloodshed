@@ -20,7 +20,6 @@ void close_data_files(void);
 void openstardata(int *);
 void openshdata(int *);
 void opencommoddata(int *);
-void openpdata(int *);
 void opensectdata(int *);
 void openracedata(int *);
 void getsdata(struct stardata *S);

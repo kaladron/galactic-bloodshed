@@ -29,7 +29,7 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static int commoddata, pdata, racedata, shdata, stdata;
+static int commoddata, racedata, shdata, stdata;
 
 static sqlite3 *db;
 
@@ -118,7 +118,6 @@ void opensql() {
 void open_data_files(void) {
   opensql();
   opencommoddata(&commoddata);
-  openpdata(&pdata);
   openracedata(&racedata);
   openshdata(&shdata);
   openstardata(&stdata);
@@ -126,7 +125,6 @@ void open_data_files(void) {
 
 void close_data_files(void) {
   close_file(commoddata);
-  close_file(pdata);
   close_file(racedata);
   close_file(shdata);
   close_file(stdata);
@@ -153,14 +151,6 @@ void opencommoddata(int *fd) {
   if ((*fd = open(COMMODDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("opencommoddata");
     printf("unable to open %s\n", COMMODDATAFL);
-    exit(-1);
-  }
-}
-
-void openpdata(int *fd) {
-  if ((*fd = open(PLANETDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
-    perror("openpdata");
-    printf("unable to open %s\n", PLANETDATAFL);
     exit(-1);
   }
 }

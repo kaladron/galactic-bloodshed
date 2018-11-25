@@ -69,14 +69,14 @@ static double db_Metabolism[RACIAL_TYPES] = {3.0,  2.7,  2.4, 1.0,  1.15,
 int main() {
   int x, y;
   int pnum, star = 0, found = 0, check, vacant, count, i, j, Playernum;
-  int ppref = -1;
+  PlanetType ppref;
   sigset_t mask, block;
   int s, idx, k;
 #define STRSIZE 100
   char str[STRSIZE], c;
-  struct stype secttypes[WASTED + 1] = {};
+  struct stype secttypes[SEC_WASTED + 1] = {};
   planet planet;
-  unsigned char not_found[TYPE_DESERT + 1];
+  unsigned char not_found[PlanetType::DESERT + 1];
   startype *star_arena;
 
   open_data_files();
@@ -117,25 +117,25 @@ int main() {
 
     switch (c) {
       case 'w':
-        ppref = TYPE_WATER;
+        ppref = PlanetType::WATER;
         break;
       case 'e':
-        ppref = TYPE_EARTH;
+        ppref = PlanetType::EARTH;
         break;
       case 'm':
-        ppref = TYPE_MARS;
+        ppref = PlanetType::MARS;
         break;
       case 'g':
-        ppref = TYPE_GASGIANT;
+        ppref = PlanetType::GASGIANT;
         break;
       case 'i':
-        ppref = TYPE_ICEBALL;
+        ppref = PlanetType::ICEBALL;
         break;
       case 'd':
-        ppref = TYPE_DESERT;
+        ppref = PlanetType::DESERT;
         break;
       case 'f':
-        ppref = TYPE_FOREST;
+        ppref = PlanetType::FOREST;
         break;
       default:
         printf("Oh well.\n");
@@ -185,7 +185,7 @@ int main() {
     if (!found) {
       printf("planet type not found in any free systems.\n");
       not_found[ppref] = 1;
-      for (found = 1, i = TYPE_EARTH; i <= TYPE_DESERT; i++)
+      for (found = 1, i = PlanetType::EARTH; i <= PlanetType::DESERT; i++)
         found &= not_found[i];
       if (found) {
         printf("Looks like there aren't any free planets left.  bye..\n");
@@ -295,7 +295,7 @@ int main() {
     }
   }
   planet.explored = 1;
-  for (i = SEA; i <= WASTED; i++)
+  for (i = SEC_SEA; i <= SEC_WASTED; i++)
     if (secttypes[i].here) {
       printf("(%2d): %c (%d, %d) (%s, %d sectors)\n", i,
              desshow(secttypes[i].x, secttypes[i].y, smap), secttypes[i].x,
@@ -308,7 +308,7 @@ int main() {
     printf("\nchoice (enter the number): ");
     scanf("%d", &i);
     getchr();
-    if (i < SEA || i > WASTED || !secttypes[i].here) {
+    if (i < SEC_SEA || i > SEC_WASTED || !secttypes[i].here) {
       printf("There are none of that type here..\n");
     } else
       found = 1;
@@ -317,10 +317,10 @@ int main() {
   auto &sect = smap.get(secttypes[i].x, secttypes[i].y);
   Race->likesbest = i;
   Race->likes[i] = 1.0;
-  Race->likes[PLATED] = 1.0;
-  Race->likes[WASTED] = 0.0;
+  Race->likes[SEC_PLATED] = 1.0;
+  Race->likes[SEC_WASTED] = 0.0;
   printf("\nEnter compatibilities of other sectors -\n");
-  for (j = SEA; j < PLATED; j++)
+  for (j = SEC_SEA; j < SEC_PLATED; j++)
     if (i != j) {
       printf("%6s (%3d sectors) :", Desnames[j], secttypes[j].count);
       scanf("%d", &k);
@@ -458,23 +458,23 @@ static char desshow(const int x, const int y,
   const auto &s = smap.get(x, y);
 
   switch (s.condition) {
-    case WASTED:
+    case SEC_WASTED:
       return CHAR_WASTED;
-    case SEA:
+    case SEC_SEA:
       return CHAR_SEA;
-    case LAND:
+    case SEC_LAND:
       return CHAR_LAND;
-    case MOUNT:
+    case SEC_MOUNT:
       return CHAR_MOUNT;
-    case GAS:
+    case SEC_GAS:
       return CHAR_GAS;
-    case PLATED:
+    case SEC_PLATED:
       return CHAR_PLATED;
-    case DESERT:
+    case SEC_DESERT:
       return CHAR_DESERT;
-    case FOREST:
+    case SEC_FOREST:
       return CHAR_FOREST;
-    case ICE:
+    case SEC_ICE:
       return CHAR_ICE;
     default:
       return ('!');

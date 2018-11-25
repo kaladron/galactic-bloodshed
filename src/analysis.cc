@@ -53,31 +53,31 @@ void analysis(const command_t &argv, const player_t Playernum,
     }
     switch (*p) {
       case CHAR_SEA:
-        sector_type = SEA;
+        sector_type = SEC_SEA;
         break;
       case CHAR_LAND:
-        sector_type = LAND;
+        sector_type = SEC_LAND;
         break;
       case CHAR_MOUNT:
-        sector_type = MOUNT;
+        sector_type = SEC_MOUNT;
         break;
       case CHAR_GAS:
-        sector_type = GAS;
+        sector_type = SEC_GAS;
         break;
       case CHAR_ICE:
-        sector_type = ICE;
+        sector_type = SEC_ICE;
         break;
       case CHAR_FOREST:
-        sector_type = FOREST;
+        sector_type = SEC_FOREST;
         break;
       case 'd':
-        sector_type = DESERT;
+        sector_type = SEC_DESERT;
         break;
       case CHAR_PLATED:
-        sector_type = PLATED;
+        sector_type = SEC_PLATED;
         break;
       case CHAR_WASTED:
-        sector_type = WASTED;
+        sector_type = SEC_WASTED;
         break;
     }
     if (sector_type != -1 && mode == 1) {
@@ -137,10 +137,10 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
   int TotalMob, PlayMob[MAXPLAYERS + 1];
   int TotalEff, PlayEff[MAXPLAYERS + 1];
   int TotalRes, PlayRes[MAXPLAYERS + 1];
-  int TotalSect, PlaySect[MAXPLAYERS + 1][WASTED + 1];
+  int TotalSect, PlaySect[MAXPLAYERS + 1][SEC_WASTED + 1];
   int PlayTSect[MAXPLAYERS + 1];
   int TotalWasted, WastedSect[MAXPLAYERS + 1];
-  int Sect[WASTED + 1];
+  int Sect[SEC_WASTED + 1];
   static char SectTypes[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
                              CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
                              CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
@@ -155,10 +155,10 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
     PlayTroops[p] = PlayPopn[p] = PlayMob[p] = PlayEff[p] = PlayCrys[p] =
         PlayRes[p] = PlayTSect[p] = 0;
     WastedSect[p] = 0;
-    for (i = 0; i <= WASTED; i++) PlaySect[p][i] = 0;
+    for (i = 0; i <= SEC_WASTED; i++) PlaySect[p][i] = 0;
   }
 
-  for (i = 0; i <= WASTED; i++) Sect[i] = 0;
+  for (i = 0; i <= SEC_WASTED; i++) Sect[i] = 0;
 
   Race = races[Playernum - 1];
   const auto &planet = getplanet(Starnum, Planetnum);
@@ -190,7 +190,7 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
       TotalTroops += sect.troops;
       Sect[sect.condition]++;
 
-      if (sect.condition == WASTED) {
+      if (sect.condition == SEC_WASTED) {
         WastedSect[p]++;
         TotalWasted++;
       }
@@ -222,31 +222,31 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
     case -1:
       sprintf(buf, "%s of all", buf);
       break;
-    case SEA:
+    case SEC_SEA:
       sprintf(buf, "%s Ocean", buf);
       break;
-    case LAND:
+    case SEC_LAND:
       sprintf(buf, "%s Land", buf);
       break;
-    case MOUNT:
+    case SEC_MOUNT:
       sprintf(buf, "%s Mountain", buf);
       break;
-    case GAS:
+    case SEC_GAS:
       sprintf(buf, "%s Gas", buf);
       break;
-    case ICE:
+    case SEC_ICE:
       sprintf(buf, "%s Ice", buf);
       break;
-    case FOREST:
+    case SEC_FOREST:
       sprintf(buf, "%s Forest", buf);
       break;
-    case DESERT:
+    case SEC_DESERT:
       sprintf(buf, "%s Desert", buf);
       break;
-    case PLATED:
+    case SEC_PLATED:
       sprintf(buf, "%s Plated", buf);
       break;
-    case WASTED:
+    case SEC_WASTED:
       sprintf(buf, "%s Wasted", buf);
       break;
   }
@@ -272,7 +272,7 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
           "a.eff", "a.mob", "res", "x");
   notify(Playernum, Governor, buf);
 
-  for (i = 0; i <= WASTED; i++) {
+  for (i = 0; i <= SEC_WASTED; i++) {
     sprintf(buf, "%4c", SectTypes[i]);
     notify(Playernum, Governor, buf);
   }
@@ -285,7 +285,7 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
               PlayPopn[p], PlayTroops[p], (double)PlayEff[p] / PlayTSect[p],
               (double)PlayMob[p] / PlayTSect[p], PlayRes[p], PlayCrys[p]);
       notify(Playernum, Governor, buf);
-      for (i = 0; i <= WASTED; i++) {
+      for (i = 0; i <= SEC_WASTED; i++) {
         sprintf(buf, "%4d", PlaySect[p][i]);
         notify(Playernum, Governor, buf);
       }
@@ -298,7 +298,7 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
           TotalPopn, TotalTroops, (double)TotalEff / TotalSect,
           (double)TotalMob / TotalSect, TotalRes, TotalCrys);
   notify(Playernum, Governor, buf);
-  for (i = 0; i <= WASTED; i++) {
+  for (i = 0; i <= SEC_WASTED; i++) {
     sprintf(buf, "%4d", Sect[i]);
     notify(Playernum, Governor, buf);
   }

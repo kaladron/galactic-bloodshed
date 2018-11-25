@@ -264,28 +264,28 @@ planet getplanet(const starnum_t star, const planetnum_t pnum) {
   int p_type = sqlite3_column_int(stmt, 14);
   switch (p_type) {
     case 0:
-      p.type = TYPE_EARTH;
+      p.type = PlanetType::EARTH;
       break;
     case 1:
-      p.type = TYPE_ASTEROID;
+      p.type = PlanetType::ASTEROID;
       break;
     case 2:
-      p.type = TYPE_MARS;
+      p.type = PlanetType::MARS;
       break;
     case 3:
-      p.type = TYPE_ICEBALL;
+      p.type = PlanetType::ICEBALL;
       break;
     case 4:
-      p.type = TYPE_GASGIANT;
+      p.type = PlanetType::GASGIANT;
       break;
     case 5:
-      p.type = TYPE_WATER;
+      p.type = PlanetType::WATER;
       break;
     case 6:
-      p.type = TYPE_FOREST;
+      p.type = PlanetType::FOREST;
       break;
     case 7:
-      p.type = TYPE_DESERT;
+      p.type = PlanetType::DESERT;
       break;
     default:
       throw new std::runtime_error("Bad data in type field");

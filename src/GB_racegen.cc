@@ -32,7 +32,10 @@ bool notify(const player_t who, const governor_t gov, const char *msg);
 bool notify(const player_t who, const governor_t gov, const std::string &msg);
 void warn(int who, int gov, char *msg);
 
-static const int planet_translate[N_HOME_PLANET_TYPES] = {0, 6, 7, 5, 2, 3, 4};
+static const PlanetType planet_translate[N_HOME_PLANET_TYPES] = {
+    PlanetType::EARTH,   PlanetType::FOREST, PlanetType::DESERT,
+    PlanetType::WATER,   PlanetType::MARS,   PlanetType::ICEBALL,
+    PlanetType::GASGIANT};
 
 /* this is a dummy routine */
 bool notify(const player_t who, const governor_t gov, const char *msg) {
@@ -52,7 +55,8 @@ void init_enroll() { srandom(getpid()); }
 /*
  * Returns 0 if successfully enrolled, or 1 if failure. */
 int enroll_valid_race() {
-  int x, y, star, pnum, i, ppref, Playernum;
+  int x, y, star, pnum, i, Playernum;
+  PlanetType ppref;
   int last_star_left, indirect[NUMSTARS];
   sigset_t mask, block;
   planet planet;

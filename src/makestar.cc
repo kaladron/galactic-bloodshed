@@ -34,18 +34,18 @@ static const double PLANET_DIST_MIN = 100.0;
 static char *NextStarName(void);
 static const char *NextPlanetName(int);
 
-static int Numtypes[TYPE_DESERT + 2] = {
+static int Numtypes[PlanetType::DESERT + 2] = {
     0,
 };
-static int Resource[TYPE_DESERT + 2] = {
+static int Resource[PlanetType::DESERT + 2] = {
     0,
 };
-static int Numsects[TYPE_DESERT + 2][PLATED + 1] = {
+static int Numsects[PlanetType::DESERT + 2][SEC_PLATED + 1] = {
     {
         0,
     },
 };
-static int Fertsects[TYPE_DESERT + 2][PLATED + 1] = {
+static int Fertsects[PlanetType::DESERT + 2][SEC_PLATED + 1] = {
     {
         0,
     },
@@ -76,36 +76,38 @@ void PrintStatistics(void) {
   printf(
       "Type NP     .    *    ^    ~    #    (    -    NS   Avg     Res    "
       "Avg  A/Sec\n");
-  for (i = 0; i <= TYPE_DESERT + 1; i++) {
+  for (i = 0; i <= PlanetType::DESERT + 1; i++) {
     printf("%3.3s%4d ", Nametypes[i], Numtypes[i]);
-    if (i < TYPE_DESERT + 1) Numtypes[TYPE_DESERT + 1] += Numtypes[i];
-    for (j = 0; j < PLATED; j++) {
+    if (i < PlanetType::DESERT + 1)
+      Numtypes[PlanetType::DESERT + 1] += Numtypes[i];
+    for (j = 0; j < SEC_PLATED; j++) {
       printf("%5d", Numsects[i][j]);
-      Numsects[i][PLATED] += Numsects[i][j];
-      if (i <= TYPE_DESERT) Numsects[TYPE_DESERT + 1][j] += Numsects[i][j];
+      Numsects[i][SEC_PLATED] += Numsects[i][j];
+      if (i <= PlanetType::DESERT)
+        Numsects[PlanetType::DESERT + 1][j] += Numsects[i][j];
     }
-    printf("%6d %5.1f", Numsects[i][PLATED],
-           (1.0 * Numsects[i][PLATED]) / Numtypes[i]);
+    printf("%6d %5.1f", Numsects[i][SEC_PLATED],
+           (1.0 * Numsects[i][SEC_PLATED]) / Numtypes[i]);
     printf("%8d %7.1f %5.1f\n", Resource[i],
            ((double)Resource[i]) / Numtypes[i],
-           ((double)Resource[i]) / Numsects[i][PLATED]);
-    Resource[TYPE_DESERT + 1] += Resource[i];
+           ((double)Resource[i]) / Numsects[i][SEC_PLATED]);
+    Resource[PlanetType::DESERT + 1] += Resource[i];
   }
   printf("Average Sector Fertility -\n");
   printf("Type NP     .    *    ^    ~    #    (    -    Fert  /Plan  /Sect\n");
-  for (i = 0; i <= TYPE_DESERT + 1; i++) {
+  for (i = 0; i <= PlanetType::DESERT + 1; i++) {
     printf("%3.3s%4d ", Nametypes[i], Numtypes[i]);
     y = 0;
-    for (j = 0; j < PLATED; j++) {
+    for (j = 0; j < SEC_PLATED; j++) {
       if (Numsects[i][j])
         printf("%5.1f", ((double)Fertsects[i][j]) / Numsects[i][j]);
       else
         printf("    -");
       y += Fertsects[i][j];
-      Fertsects[TYPE_DESERT + 1][j] += Fertsects[i][j];
+      Fertsects[PlanetType::DESERT + 1][j] += Fertsects[i][j];
     }
     printf("%8d %7.1f %5.1f\n", y, (1.0 * y) / Numtypes[i],
-           (1.0 * y) / Numsects[i][PLATED]);
+           (1.0 * y) / Numsects[i][SEC_PLATED]);
   }
 }
 
@@ -239,53 +241,53 @@ startype *Makestar(int snum) {
 
     roll = int_rand(1, 100);
     if ((int_rand(1, 100) <= 10) || (temperature > 400)) {
-      type = TYPE_ASTEROID;
+      type = PlanetType::ASTEROID;
     } else if ((temperature > 100) && (temperature <= 400)) {
       if (roll <= 60)
-        type = TYPE_MARS;
+        type = PlanetType::MARS;
       else
-        type = TYPE_DESERT;
+        type = PlanetType::DESERT;
     } else if ((temperature > 30) && (temperature <= 100)) {
       if (roll <= 25)
-        type = TYPE_EARTH;
+        type = PlanetType::EARTH;
       else if (roll <= 50)
-        type = TYPE_WATER;
+        type = PlanetType::WATER;
       else if (roll <= 80)
-        type = TYPE_FOREST;
+        type = PlanetType::FOREST;
       else if (roll <= 90)
-        type = TYPE_DESERT;
+        type = PlanetType::DESERT;
       else
-        type = TYPE_MARS;
+        type = PlanetType::MARS;
     } else if ((temperature > -10) && (temperature <= 30)) {
       if (roll <= 45)
-        type = TYPE_EARTH;
+        type = PlanetType::EARTH;
       else if (roll <= 70)
-        type = TYPE_WATER;
+        type = PlanetType::WATER;
       else if (roll <= 95)
-        type = TYPE_FOREST;
+        type = PlanetType::FOREST;
       else
-        type = TYPE_DESERT;
+        type = PlanetType::DESERT;
     } else if ((temperature > -50) && (temperature <= -10)) {
       if (roll <= 30)
-        type = TYPE_DESERT;
+        type = PlanetType::DESERT;
       else if (roll <= 60)
-        type = TYPE_ICEBALL;
+        type = PlanetType::ICEBALL;
       else if (roll <= 90)
-        type = TYPE_FOREST;
+        type = PlanetType::FOREST;
       else
-        type = TYPE_MARS;
+        type = PlanetType::MARS;
     } else if ((temperature > -100) && (temperature <= -50)) {
       if (roll <= 50)
-        type = TYPE_GASGIANT;
+        type = PlanetType::GASGIANT;
       else if (roll <= 80)
-        type = TYPE_ICEBALL;
+        type = PlanetType::ICEBALL;
       else
-        type = TYPE_MARS;
+        type = PlanetType::MARS;
     } else if (temperature <= -100) {
       if (roll <= 80)
-        type = TYPE_ICEBALL;
+        type = PlanetType::ICEBALL;
       else
-        type = TYPE_GASGIANT;
+        type = PlanetType::GASGIANT;
     }
     auto planet = Makeplanet(dist, Star->temperature, type);
     auto smap = getsmap(planet);
@@ -302,25 +304,25 @@ startype *Makestar(int snum) {
       for (y = 0; y < planet.Maxy; y++) {
         for (x = 0; x < planet.Maxx; x++) {
           switch (smap.get(x, y).condition) {
-            case LAND:
+            case SEC_LAND:
               putchr(CHAR_LAND);
               break;
-            case SEA:
+            case SEC_SEA:
               putchr(CHAR_SEA);
               break;
-            case MOUNT:
+            case SEC_MOUNT:
               putchr(CHAR_MOUNT);
               break;
-            case ICE:
+            case SEC_ICE:
               putchr(CHAR_ICE);
               break;
-            case GAS:
+            case SEC_GAS:
               putchr(CHAR_GAS);
               break;
-            case DESERT:
+            case SEC_DESERT:
               putchr(CHAR_DESERT);
               break;
-            case FOREST:
+            case SEC_FOREST:
               putchr(CHAR_FOREST);
               break;
             default:

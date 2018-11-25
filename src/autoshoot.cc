@@ -56,7 +56,7 @@ int Bombard(shiptype *ship, planet *planet, racetype *r) {
   (void)Getxysect(*planet, 0, 0, 1); /* reset */
   while (!found && Getxysect(*planet, &x, &y, 0)) {
     if (smap.get(x, y).owner && smap.get(x, y).owner != ship->owner &&
-        (smap.get(x, y).condition != WASTED)) {
+        (smap.get(x, y).condition != SEC_WASTED)) {
       if (isset(r->atwar, smap.get(x, y).owner) ||
           (ship->type == OTYPE_BERS &&
            smap.get(x, y).owner == ship->special.mind.target))

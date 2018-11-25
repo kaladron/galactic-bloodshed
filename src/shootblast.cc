@@ -217,7 +217,7 @@ int shoot_ship_to_planet(shiptype *ship, planet *pl, int strength, int x, int y,
         if (s.owner) {
           if (s.popn) {
             kills = int_rand(0, ((int)(fac / 10.0) * s.popn)) /
-                    (1 + (s.condition == PLATED));
+                    (1 + (s.condition == SEC_PLATED));
             if (kills > s.popn)
               s.popn = 0;
             else
@@ -225,7 +225,7 @@ int shoot_ship_to_planet(shiptype *ship, planet *pl, int strength, int x, int y,
           }
           if (s.troops && (fac > 5.0 * (double)Defensedata[s.condition])) {
             kills = int_rand(0, ((int)(fac / 20.0) * s.troops)) /
-                    (1 + (s.condition == PLATED));
+                    (1 + (s.condition == SEC_PLATED));
             if (kills > s.troops)
               s.troops = 0;
             else
@@ -248,7 +248,7 @@ int shoot_ship_to_planet(shiptype *ship, planet *pl, int strength, int x, int y,
           s.mobilization = 0;
           s.fert = 0; /*all is lost !*/
           s.crystals = int_rand(0, (int)s.crystals);
-          s.condition = WASTED;
+          s.condition = SEC_WASTED;
           numdest++;
         } else {
           s.fert = std::max(0, (int)s.fert - (int)fac);

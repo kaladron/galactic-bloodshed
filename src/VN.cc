@@ -271,7 +271,7 @@ void planet_doVN(shiptype *ship, planet *planet, sector_map &smap) {
       if (ship->special.mind.busy) {
         if (ship->whatdest == LEVEL_PLAN && ship->deststar == ship->storbits &&
             ship->destpnum == ship->pnumorbits) {
-          if (planet->type == TYPE_GASGIANT)
+          if (planet->type == PlanetType::GASGIANT)
             ship->special.mind.busy = 0;
           else {
             /* find a place on the planet to land */

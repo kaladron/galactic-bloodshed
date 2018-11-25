@@ -85,7 +85,7 @@ void do_turn(int update) {
 
     for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
       planets[star][i] = new planet(getplanet(star, i));
-      if (planets[star][i]->type != TYPE_ASTEROID) Planet_count++;
+      if (planets[star][i]->type != PlanetType::ASTEROID) Planet_count++;
       if (update) moveplanet(star, planets[star][i], i);
       if (Stars[star]->pnames[i] == NULL)
         sprintf(Stars[star]->pnames[i], "NULL-%d", i);
@@ -281,7 +281,7 @@ void do_turn(int update) {
           setbit(inhabited[star], j);
           setbit(Stars[star]->inhabited, j);
         }
-        if (planets[star][i]->type != TYPE_ASTEROID &&
+        if (planets[star][i]->type != PlanetType::ASTEROID &&
             (planets[star][i]->info[j - 1].numsectsowned >
              planets[star][i]->Maxx * planets[star][i]->Maxy / 2))
           races[j - 1]->controlled_planets++;
@@ -752,21 +752,21 @@ static void output_ground_attacks(void) {
 
 static int planet_points(const planet &p) {
   switch (p.type) {
-    case TYPE_ASTEROID:
+    case PlanetType::ASTEROID:
       return ASTEROID_POINTS;
-    case TYPE_EARTH:
+    case PlanetType::EARTH:
       return EARTH_POINTS;
-    case TYPE_MARS:
+    case PlanetType::MARS:
       return MARS_POINTS;
-    case TYPE_ICEBALL:
+    case PlanetType::ICEBALL:
       return ICEBALL_POINTS;
-    case TYPE_GASGIANT:
+    case PlanetType::GASGIANT:
       return GASGIANT_POINTS;
-    case TYPE_WATER:
+    case PlanetType::WATER:
       return WATER_POINTS;
-    case TYPE_FOREST:
+    case PlanetType::FOREST:
       return FOREST_POINTS;
-    case TYPE_DESERT:
+    case PlanetType::DESERT:
       return DESERT_POINTS;
   }
 }

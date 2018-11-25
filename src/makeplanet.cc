@@ -71,7 +71,8 @@ static const int rmax[][8] = {{250, 325, 400, 0, 250, 0, 300}, /*   @   */
 
 /*  The starting conditions of the sectors given a planet types */
 /*              @      o     O    #    ~    .       (       _  */
-static const int cond[] = {SEA, MOUNT, LAND, ICE, GAS, SEA, FOREST, DESERT};
+static const int cond[] = {SEC_SEA, SEC_MOUNT, SEC_LAND,   SEC_ICE,
+                           SEC_GAS, SEC_SEA,   SEC_FOREST, SEC_DESERT};
 
 static int neighbors(sector_map &, int, int, int);
 static void MakeEarthAtmosphere(planet *, int);
@@ -100,7 +101,7 @@ planet Makeplanet(double dist, short stemp, PlanetType type) {
   planet.Maxy = round_rand(f) + 1;
   if (!(planet.Maxy % 2)) planet.Maxy++; /* make odd number of latitude bands */
 
-  if (type == TYPE_ASTEROID)
+  if (type == PlanetType::ASTEROID)
     planet.Maxy = int_rand(1, 3); /* Asteroids have funny shapes. */
 
   t = c = cond[type];
@@ -117,7 +118,7 @@ planet Makeplanet(double dist, short stemp, PlanetType type) {
   total_sects = (planet.Maxy - 1) * (planet.Maxx - 1);
 
   switch (type) {
-    case TYPE_GASGIANT: /* gas giant planet */
+    case PlanetType::GASGIANT: /* gas giant planet */
       /* either lots of meth or not too much */
       if (int_rand(0, 1)) { /* methane planet */
         atmos = 100 - (planet.conditions[METHANE] = int_rand(70, 80));
@@ -139,7 +140,7 @@ planet Makeplanet(double dist, short stemp, PlanetType type) {
         planet.conditions[OTHER] = atmos;
       }
       break;
-    case TYPE_MARS:
+    case PlanetType::MARS:
       planet.conditions[HYDROGEN] = 0;
       planet.conditions[HELIUM] = 0;
       planet.conditions[METHANE] = 0;
@@ -156,20 +157,20 @@ planet Makeplanet(double dist, short stemp, PlanetType type) {
         planet.conditions[SULFUR] = 0;
         planet.conditions[OTHER] = 0;
       }
-      seed(smap, DESERT, int_rand(1, total_sects));
-      seed(smap, MOUNT, int_rand(1, total_sects));
+      seed(smap, SEC_DESERT, int_rand(1, total_sects));
+      seed(smap, SEC_MOUNT, int_rand(1, total_sects));
       break;
-    case TYPE_ASTEROID: /* asteroid */
+    case PlanetType::ASTEROID: /* asteroid */
       /* no atmosphere */
       for (y = 0; y < planet.Maxy; y++)
         for (x = 0; x < planet.Maxx; x++)
           if (!int_rand(0, 3)) {
             auto &s = smap.get_random();
-            s.type = s.condition = LAND;
+            s.type = s.condition = SEC_LAND;
           }
       seed(smap, DESERT, int_rand(1, total_sects));
       break;
-    case TYPE_ICEBALL: /* ball of ice */
+    case PlanetType::ICEBALL: /* ball of ice */
       /* no atmosphere */
       planet.conditions[HYDROGEN] = 0;
       planet.conditions[HELIUM] = 0;
@@ -187,35 +188,35 @@ planet Makeplanet(double dist, short stemp, PlanetType type) {
         planet.conditions[SULFUR] = 0;
         planet.conditions[OTHER] = 0;
       }
-      seed(smap, MOUNT, int_rand(1, total_sects / 2));
+      seed(smap, SEC_MOUNT, int_rand(1, total_sects / 2));
       break;
-    case TYPE_EARTH:
+    case PlanetType::EARTH:
       MakeEarthAtmosphere(&planet, 33);
-      seed(smap, LAND, int_rand(total_sects / 30, total_sects / 20));
-      grow(smap, LAND, 1, 1);
-      grow(smap, LAND, 1, 2);
-      grow(smap, LAND, 2, 3);
-      grow(smap, SEA, 1, 4);
+      seed(smap, SEC_LAND, int_rand(total_sects / 30, total_sects / 20));
+      grow(smap, SEC_LAND, 1, 1);
+      grow(smap, SEC_LAND, 1, 2);
+      grow(smap, SEC_LAND, 2, 3);
+      grow(smap, SEC_SEA, 1, 4);
       break;
-    case TYPE_FOREST:
+    case PlanetType::FOREST:
       MakeEarthAtmosphere(&planet, 0);
-      seed(smap, SEA, int_rand(total_sects / 30, total_sects / 20));
-      grow(smap, SEA, 1, 1);
-      grow(smap, SEA, 1, 3);
-      grow(smap, FOREST, 1, 3);
+      seed(smap, SEC_SEA, int_rand(total_sects / 30, total_sects / 20));
+      grow(smap, SEC_SEA, 1, 1);
+      grow(smap, SEC_SEA, 1, 3);
+      grow(smap, SEC_FOREST, 1, 3);
       break;
-    case TYPE_WATER:
+    case PlanetType::WATER:
       MakeEarthAtmosphere(&planet, 25);
       break;
-    case TYPE_DESERT:
+    case PlanetType::DESERT:
       MakeEarthAtmosphere(&planet, 50);
-      seed(smap, MOUNT, int_rand(total_sects / 50, total_sects / 25));
-      grow(smap, MOUNT, 1, 1);
-      grow(smap, MOUNT, 1, 2);
-      seed(smap, LAND, int_rand(total_sects / 50, total_sects / 25));
-      grow(smap, LAND, 1, 1);
-      grow(smap, LAND, 1, 3);
-      grow(smap, DESERT, 1, 3);
+      seed(smap, SEC_MOUNT, int_rand(total_sects / 50, total_sects / 25));
+      grow(smap, SEC_MOUNT, 1, 1);
+      grow(smap, SEC_MOUNT, 1, 2);
+      seed(smap, SEC_LAND, int_rand(total_sects / 50, total_sects / 25));
+      grow(smap, SEC_LAND, 1, 1);
+      grow(smap, SEC_LAND, 1, 3);
+      grow(smap, SEC_DESERT, 1, 3);
       break;
   }
   Makesurface(planet,
@@ -318,20 +319,20 @@ static void Makesurface(const planet &p, sector_map &smap) {
       auto &s = smap.get(x, y);
       int temp = SectTemp(p, y);
       switch (s.type) {
-        case SEA:
+        case SEC_SEA:
           if (success(-temp) && ((y == 0) || (y == smap.get_maxy() - 1)))
-            s.condition = ICE;
+            s.condition = SEC_ICE;
           break;
-        case LAND:
-          if (p.type == TYPE_EARTH) {
+        case SEC_LAND:
+          if (p.type == PlanetType::EARTH) {
             if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
-              s.condition = ICE;
+              s.condition = SEC_ICE;
           }
           break;
-        case FOREST:
-          if (p.type == TYPE_FOREST) {
+        case SEC_FOREST:
+          if (p.type == PlanetType::FOREST) {
             if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
-              s.condition = ICE;
+              s.condition = SEC_ICE;
           }
       }
       s.type = s.condition;

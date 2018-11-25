@@ -1507,7 +1507,7 @@ static void load_star_data() {
       // array cleanup.
       planets[s][t] = &planet_arena[--pcount];
       planets[s][t] = new planet(getplanet(s, t));
-      if (planets[s][t]->type != TYPE_ASTEROID) Planet_count++;
+      if (planets[s][t]->type != PlanetType::ASTEROID) Planet_count++;
     }
   }
   /* initialize zoom factors */

@@ -33,7 +33,7 @@ void produce(startype *star, const planet &planet, sector &s) {
     prod = round_rand(Race->metabolism) * int_rand(1, s.eff);
     prod = MIN(prod, s.resource);
     s.resource -= prod;
-    pfuel = prod * (1 + (s.condition == GAS));
+    pfuel = prod * (1 + (s.condition == SEC_GAS));
     if (success(s.mobilization))
       pdes = prod;
     else
@@ -77,11 +77,12 @@ void produce(startype *star, const planet &planet, sector &s) {
   } else
     plate(s);
 
-  if ((s.condition != WASTED) && Race->fertilize && (s.fert < 100))
+  if ((s.condition != SEC_WASTED) && Race->fertilize && (s.fert < 100))
     s.fert += (int_rand(0, 100) < Race->fertilize);
   if (s.fert > 100) s.fert = 100;
 
-  if (s.condition == WASTED && success(NATURAL_REPAIR)) s.condition = s.type;
+  if (s.condition == SEC_WASTED && success(NATURAL_REPAIR))
+    s.condition = s.type;
 
   maxsup = maxsupport(Race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
   if ((diff = s.popn - maxsup) < 0) {
@@ -182,5 +183,5 @@ void explore(const planet &planet, sector &s, int x, int y, int p) {
 
 static void plate(sector &s) {
   s.eff = 100;
-  if (s.condition != GAS) s.condition = PLATED;
+  if (s.condition != SEC_GAS) s.condition = SEC_PLATED;
 }

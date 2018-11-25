@@ -191,28 +191,28 @@ void survey(const command_t &argv, const player_t Playernum,
             }
           } else { /* mode */
             switch (s.condition) {
-              case SEA:
+              case SEC_SEA:
                 sect_char = CHAR_SEA;
                 break;
-              case LAND:
+              case SEC_LAND:
                 sect_char = CHAR_LAND;
                 break;
-              case MOUNT:
+              case SEC_MOUNT:
                 sect_char = CHAR_MOUNT;
                 break;
-              case GAS:
+              case SEC_GAS:
                 sect_char = CHAR_GAS;
                 break;
-              case PLATED:
+              case SEC_PLATED:
                 sect_char = CHAR_PLATED;
                 break;
-              case ICE:
+              case SEC_ICE:
                 sect_char = CHAR_ICE;
                 break;
-              case DESERT:
+              case SEC_DESERT:
                 sect_char = CHAR_DESERT;
                 break;
-              case FOREST:
+              case SEC_FOREST:
                 sect_char = CHAR_FOREST;
                 break;
               default:
@@ -222,8 +222,8 @@ void survey(const command_t &argv, const player_t Playernum,
             sprintf(buf, "%c %d %d %d %c %c %d %u %u %u %u %d %u %lu %lu %d",
                     CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
                     desshow(Playernum, Governor, lowx, lowy, Race, smap),
-                    ((s.condition == WASTED) ? 1 : 0), s.owner, s.eff, s.fert,
-                    s.mobilization,
+                    ((s.condition == SEC_WASTED) ? 1 : 0), s.owner, s.eff,
+                    s.fert, s.mobilization,
                     ((s.crystals && (Race->discoveries[D_CRYSTAL] || Race->God))
                          ? 1
                          : 0),
@@ -440,7 +440,7 @@ void repair(const command_t &argv, const player_t Playernum,
       for (lowx = x2; lowx <= hix; lowx++) {
         if (p.info[Playernum - 1].resource >= SECTOR_REPAIR_COST) {
           auto &s = smap.get(lowx, lowy);
-          if (s.condition == WASTED && (s.owner == Playernum || !s.owner)) {
+          if (s.condition == SEC_WASTED && (s.owner == Playernum || !s.owner)) {
             s.condition = s.type;
             s.fert = std::min(100U, s.fert + 20);
             p.info[Playernum - 1].resource -= SECTOR_REPAIR_COST;

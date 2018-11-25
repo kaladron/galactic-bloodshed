@@ -226,14 +226,14 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 #define LIMIT_APs 255 /* max # of APs you can have */
 
 enum PlanetType {
-  TYPE_EARTH,
-  TYPE_ASTEROID,
-  TYPE_MARS,
-  TYPE_ICEBALL,
-  TYPE_GASGIANT,
-  TYPE_WATER,
-  TYPE_FOREST,
-  TYPE_DESERT
+  EARTH = 0,
+  ASTEROID = 1,
+  MARS = 2,
+  ICEBALL = 3,
+  GASGIANT = 4,
+  WATER = 5,
+  FOREST = 6,
+  DESERT = 7,
 };
 
 /* number of global APs each planet is worth */
@@ -246,15 +246,15 @@ enum PlanetType {
 #define FOREST_POINTS int_rand(2, 3)
 #define DESERT_POINTS int_rand(2, 3)
 
-#define SEA 0
-#define LAND 1
-#define MOUNT 2
-#define GAS 3
-#define ICE 4
-#define FOREST 5
-#define DESERT 6
-#define PLATED 7
-#define WASTED 8
+#define SEC_SEA 0
+#define SEC_LAND 1
+#define SEC_MOUNT 2
+#define SEC_GAS 3
+#define SEC_ICE 4
+#define SEC_FOREST 5
+#define SEC_DESERT 6
+#define SEC_PLATED 7
+#define SEC_WASTED 8
 
 #define CIV 0
 #define MIL 1

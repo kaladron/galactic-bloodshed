@@ -41,9 +41,9 @@ class race {
   double birthrate;
   double mass;
   double metabolism;
-  short conditions[OTHER + 1]; /* Atmosphere/temperature this race likes. */
-  double likes[WASTED + 1];    /* Sector condition compats. */
-  unsigned char likesbest;     /* 100% compat sector condition for this race. */
+  short conditions[OTHER + 1];  /* Atmosphere/temperature this race likes. */
+  double likes[SEC_WASTED + 1]; /* Sector condition compats. */
+  unsigned char likesbest; /* 100% compat sector condition for this race. */
 
   char dissolved; /* Player has quit. */
   char God;       /* Player is a God race. */

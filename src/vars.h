@@ -144,7 +144,6 @@ class planet {
   unsigned char explored;
 
   planetnum_t planet_id;
-  unsigned long dummy[1];
 };
 
 class sector {

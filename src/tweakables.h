@@ -246,15 +246,17 @@ enum PlanetType {
 #define FOREST_POINTS int_rand(2, 3)
 #define DESERT_POINTS int_rand(2, 3)
 
-#define SEC_SEA 0
-#define SEC_LAND 1
-#define SEC_MOUNT 2
-#define SEC_GAS 3
-#define SEC_ICE 4
-#define SEC_FOREST 5
-#define SEC_DESERT 6
-#define SEC_PLATED 7
-#define SEC_WASTED 8
+enum SectorType {
+  SEC_SEA = 0,
+  SEC_LAND = 1,
+  SEC_MOUNT = 2,
+  SEC_GAS = 3,
+  SEC_ICE = 4,
+  SEC_FOREST = 5,
+  SEC_DESERT = 6,
+  SEC_PLATED = 7,
+  SEC_WASTED = 8,
+};
 
 #define CIV 0
 #define MIL 1

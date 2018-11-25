@@ -25,7 +25,7 @@
 #include "tweakables.h"
 #include "vars.h"
 
-#include "boost/format.hpp"
+#include <boost/format.hpp>
 
 static void do_revoke(racetype *, const governor_t, const governor_t);
 
@@ -269,9 +269,10 @@ static void do_revoke(racetype *Race, const governor_t src_gov,
       Race->Playernum % src_gov);
   notify(Race->Playernum, 0, outmsg);
 
-  char revoke_buf[1024];
-  sprintf(revoke_buf, "rm %s.%d.%d", TELEGRAMFL, Race->Playernum, src_gov);
-  system(revoke_buf); /*  Remove the telegram file too....  */
+  // TODO(jeffbailey): Use C++17 Filesystem stuff when available
+  std::string rm_telegram_file = str(boost::format("rm %s.%d.%d") % TELEGRAMFL %
+                                     Race->Playernum % src_gov);
+  system(rm_telegram_file.c_str()); /*  Remove the telegram file too....  */
 
   return;
 }

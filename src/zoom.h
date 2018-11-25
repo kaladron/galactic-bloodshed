@@ -5,6 +5,8 @@
 #ifndef ZOOM_H
 #define ZOOM_H
 
-void zoom(int, int, int);
+#include "vars.h"
+
+void zoom(const command_t &, const player_t, const governor_t);
 
 #endif  // ZOOM_H

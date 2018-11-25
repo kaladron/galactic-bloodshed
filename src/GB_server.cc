@@ -245,6 +245,7 @@ int main(int argc, char **argv) {
 #endif
       {"walk", walk},
       {"weapons", rst},
+      {"zoom", zoom},
   };
 
   open_data_files();
@@ -1458,8 +1459,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     GB_time(Playernum, Governor);
   else if (match(args[0], "schedule"))
     GB_schedule(Playernum, Governor);
-  else if (match(args[0], "zoom"))
-    zoom(Playernum, Governor, 0);
   else {
     sprintf(buf, "'%s':illegal command error.\n", args[0]);
     notify(Playernum, Governor, buf);

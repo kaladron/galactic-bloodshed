@@ -12,14 +12,13 @@
 #include "buffers.h"
 #include "vars.h"
 
-void zoom(int Playernum, int Governor, int APcount) {
-  double num, denom;
-  int i;
-
-  i = (Dir[Playernum - 1][Governor].level == LEVEL_UNIV);
+void zoom(const command_t &argv, const player_t Playernum,
+          const governor_t Governor) {
+  int i = (Dir[Playernum - 1][Governor].level == LEVEL_UNIV);
 
   if (argn > 1) {
-    if (sscanf(args[1], "%lf/%lf", &num, &denom) == 2) {
+    double num, denom;
+    if (sscanf(argv[1].c_str(), "%lf/%lf", &num, &denom) == 2) {
       /* num/denom format */
       if (denom == 0.0) {
         sprintf(buf, "Illegal denominator value.\n");

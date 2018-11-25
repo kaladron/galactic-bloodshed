@@ -8,9 +8,10 @@
 #include "zoom.h"
 
 #include <stdio.h>
+#include <boost/format.hpp>
+#include <string>
 
 #include "GB_server.h"
-#include "buffers.h"
 #include "vars.h"
 
 /// Zoom in or out for orbit display
@@ -23,8 +24,8 @@ void zoom(const command_t &argv, const player_t Playernum,
     if (sscanf(argv[1].c_str(), "%lf/%lf", &num, &denom) == 2) {
       /* num/denom format */
       if (denom == 0.0) {
-        sprintf(buf, "Illegal denominator value.\n");
-        notify(Playernum, Governor, buf);
+        std::string outmsg = "Illegal denominator value.\n";
+        notify(Playernum, Governor, outmsg);
       } else
         Dir[Playernum - 1][Governor].zoom[i] = num / denom;
     } else {
@@ -33,9 +34,10 @@ void zoom(const command_t &argv, const player_t Playernum,
     }
   }
 
-  sprintf(buf, "Zoom value %g, lastx = %g, lasty = %g.\n",
-          Dir[Playernum - 1][Governor].zoom[i],
-          Dir[Playernum - 1][Governor].lastx[i],
+  std::string outmsg =
+      str(boost::format("Zoom value %g, lastx = %g, lasty = %g.\n") %
+          Dir[Playernum - 1][Governor].zoom[i] %
+          Dir[Playernum - 1][Governor].lastx[i] %
           Dir[Playernum - 1][Governor].lasty[i]);
-  notify(Playernum, Governor, buf);
+  notify(Playernum, Governor, outmsg);
 }

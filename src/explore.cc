@@ -124,8 +124,8 @@ void colonies(const command_t &argv, const player_t Playernum,
   else
     for (i = 1; i < argv.size(); i++) {
       where = Getplace(Playernum, Governor, argv[i], 0);
-      if (where.err || (where.level == LEVEL_UNIV) ||
-          (where.level == LEVEL_SHIP)) {
+      if (where.err || (where.level == ScopeLevel::LEVEL_UNIV) ||
+          (where.level == ScopeLevel::LEVEL_SHIP)) {
         sprintf(buf, "Bad location `%s'.\n", argv[i].c_str());
         notify(Playernum, Governor, buf);
         continue;
@@ -163,7 +163,7 @@ void distance(const command_t &argv, const player_t Playernum,
   x1 = 0.0;
   y1 = 0.0;
   /* get position in absolute units */
-  if (from.level == LEVEL_SHIP) {
+  if (from.level == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&ship, from.shipno);
     if (ship->owner != Playernum) {
       notify(Playernum, Governor, "Nice try.\n");
@@ -173,16 +173,16 @@ void distance(const command_t &argv, const player_t Playernum,
     x0 = ship->xpos;
     y0 = ship->ypos;
     free(ship);
-  } else if (from.level == LEVEL_PLAN) {
+  } else if (from.level == ScopeLevel::LEVEL_PLAN) {
     const auto &p = getplanet(from.snum, from.pnum);
     x0 = p.xpos + Stars[from.snum]->xpos;
     y0 = p.ypos + Stars[from.snum]->ypos;
-  } else if (from.level == LEVEL_STAR) {
+  } else if (from.level == ScopeLevel::LEVEL_STAR) {
     x0 = Stars[from.snum]->xpos;
     y0 = Stars[from.snum]->ypos;
   }
 
-  if (to.level == LEVEL_SHIP) {
+  if (to.level == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&ship, to.shipno);
     if (ship->owner != Playernum) {
       notify(Playernum, Governor, "Nice try.\n");
@@ -192,11 +192,11 @@ void distance(const command_t &argv, const player_t Playernum,
     x1 = ship->xpos;
     y1 = ship->ypos;
     free(ship);
-  } else if (to.level == LEVEL_PLAN) {
+  } else if (to.level == ScopeLevel::LEVEL_PLAN) {
     const auto &p = getplanet(to.snum, to.pnum);
     x1 = p.xpos + Stars[to.snum]->xpos;
     y1 = p.ypos + Stars[to.snum]->ypos;
-  } else if (to.level == LEVEL_STAR) {
+  } else if (to.level == ScopeLevel::LEVEL_STAR) {
     x1 = Stars[to.snum]->xpos;
     y1 = Stars[to.snum]->ypos;
   }
@@ -244,7 +244,8 @@ void exploration(const command_t &argv, const player_t Playernum,
       sprintf(buf, "explore: bad scope.\n");
       notify(Playernum, Governor, buf);
       return;
-    } else if (where.level == LEVEL_SHIP || where.level == LEVEL_UNIV) {
+    } else if (where.level == ScopeLevel::LEVEL_SHIP ||
+               where.level == ScopeLevel::LEVEL_UNIV) {
       sprintf(buf, "Bad scope '%s'.\n", argv[1].c_str());
       notify(Playernum, Governor, buf);
       return;
@@ -346,7 +347,8 @@ void tech_status(const command_t &argv, const player_t Playernum,
   } else { /* Several arguments */
     for (k = 1; k < argv.size(); k++) {
       where = Getplace(Playernum, Governor, argv[k], 0);
-      if (where.err || where.level == LEVEL_UNIV || where.level == LEVEL_SHIP) {
+      if (where.err || where.level == ScopeLevel::LEVEL_UNIV ||
+          where.level == ScopeLevel::LEVEL_SHIP) {
         sprintf(buf, "Bad location `%s'.\n", argv[k].c_str());
         notify(Playernum, Governor, buf);
         continue;

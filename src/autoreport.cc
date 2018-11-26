@@ -34,7 +34,7 @@ void autoreport(const command_t &argv, const player_t Playernum,
   }
 
   if (argn == 1) { /* no args */
-    if (Dir[Playernum - 1][Governor].level == LEVEL_PLAN) {
+    if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_PLAN) {
       auto p = getplanet(snum, pnum);
       if (p.info[Playernum - 1].autorep)
         p.info[Playernum - 1].autorep = 0;
@@ -51,7 +51,7 @@ void autoreport(const command_t &argv, const player_t Playernum,
     }
   } else if (argv.size() > 1) { /* argn==2, place specified */
     place = Getplace(Playernum, Governor, argv[1], 0);
-    if (place.level == LEVEL_PLAN) {
+    if (place.level == ScopeLevel::LEVEL_PLAN) {
       auto p = getplanet(snum, pnum);
       sprintf(buf, "Autoreport on %s has been %s.\n", Stars[snum]->pnames[pnum],
               p.info[Playernum - 1].autorep ? "set" : "unset");

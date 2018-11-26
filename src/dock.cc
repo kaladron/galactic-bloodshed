@@ -70,7 +70,7 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
         continue;
       }
       if (!Assault) {
-        if (s->docked || s->whatorbits == LEVEL_SHIP) {
+        if (s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP) {
           sprintf(buf, "%s is already docked.\n", Ship(*s).c_str());
           notify(Playernum, Governor, buf);
           free(s);
@@ -80,13 +80,13 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
         notify(Playernum, Governor, "Your ship is already docked.\n");
         free(s);
         continue;
-      } else if (s->whatorbits == LEVEL_SHIP) {
+      } else if (s->whatorbits == ScopeLevel::LEVEL_SHIP) {
         notify(Playernum, Governor, "Your ship is landed on another ship.\n");
         free(s);
         continue;
       }
 
-      if (s->whatorbits == LEVEL_UNIV) {
+      if (s->whatorbits == ScopeLevel::LEVEL_UNIV) {
         if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
           free(s);
           continue;
@@ -146,7 +146,7 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
         return;
       }
 
-      if (s2->docked || (s->whatorbits == LEVEL_SHIP)) {
+      if (s2->docked || (s->whatorbits == ScopeLevel::LEVEL_SHIP)) {
         sprintf(buf, "%s is already docked.\n", Ship(*s2).c_str());
         notify(Playernum, Governor, buf);
         free(s);
@@ -168,10 +168,10 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
       } else if (s->docked && Assault) {
         /* first undock the target ship */
         s->docked = 0;
-        s->whatdest = LEVEL_UNIV;
+        s->whatdest = ScopeLevel::LEVEL_UNIV;
         (void)getship(&s3, (int)s->destshipno);
         s3->docked = 0;
-        s3->whatdest = LEVEL_UNIV;
+        s3->whatdest = ScopeLevel::LEVEL_UNIV;
         putship(s3);
         free(s3);
       }
@@ -278,16 +278,16 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
       }
       if (Assault) {
         /* if the assaulted ship is docked, undock it first */
-        if (s2->docked && s2->whatdest == LEVEL_SHIP) {
+        if (s2->docked && s2->whatdest == ScopeLevel::LEVEL_SHIP) {
           (void)getship(&s3, (int)s2->destshipno);
           s3->docked = 0;
-          s3->whatdest = LEVEL_UNIV;
+          s3->whatdest = ScopeLevel::LEVEL_UNIV;
           s3->destshipno = 0;
           putship(s3);
           free(s3);
 
           s2->docked = 0;
-          s2->whatdest = LEVEL_UNIV;
+          s2->whatdest = ScopeLevel::LEVEL_UNIV;
           s2->destshipno = 0;
         }
         /* nuke both populations, ships */
@@ -338,11 +338,11 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
         if ((!s2->popn && !s2->troops) && s->alive && s2->alive) {
           /* we got 'em */
           s->docked = 1;
-          s->whatdest = LEVEL_SHIP;
+          s->whatdest = ScopeLevel::LEVEL_SHIP;
           s->destshipno = ship2no;
 
           s2->docked = 1;
-          s2->whatdest = LEVEL_SHIP;
+          s2->whatdest = ScopeLevel::LEVEL_SHIP;
           s2->destshipno = shipno;
           old2owner = s2->owner;
           old2gov = s2->governor;
@@ -382,11 +382,11 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
         putrace(alien);
       } else {
         s->docked = 1;
-        s->whatdest = LEVEL_SHIP;
+        s->whatdest = ScopeLevel::LEVEL_SHIP;
         s->destshipno = ship2no;
 
         s2->docked = 1;
-        s2->whatdest = LEVEL_SHIP;
+        s2->whatdest = ScopeLevel::LEVEL_SHIP;
         s2->destshipno = shipno;
       }
 
@@ -480,7 +480,7 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
         notify(Playernum, Governor, buf);
       }
 
-      if (Dir[Playernum - 1][Governor].level == LEVEL_UNIV)
+      if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_UNIV)
         deductAPs(Playernum, Governor, APcount, 0, 1);
       else
         deductAPs(Playernum, Governor, APcount,

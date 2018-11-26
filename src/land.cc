@@ -203,9 +203,9 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
           use_fuel(s, fuel);
 
           /* remove the ship from whatever scope it is currently in */
-          if (s->whatorbits == LEVEL_PLAN)
+          if (s->whatorbits == ScopeLevel::LEVEL_PLAN)
             remove_sh_plan(s);
-          else if (s->whatorbits == LEVEL_STAR)
+          else if (s->whatorbits == ScopeLevel::LEVEL_STAR)
             remove_sh_star(s);
           else {
             notify(Playernum, Governor,
@@ -237,7 +237,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
           continue;
         }
         sscanf(args[2], "%d,%d", &x, &y);
-        if (s->whatorbits != LEVEL_PLAN) {
+        if (s->whatorbits != ScopeLevel::LEVEL_PLAN) {
           sprintf(buf, "%s doesn't orbit a planet.\n", Ship(*s).c_str());
           notify(Playernum, Governor, buf);
           free(s);
@@ -354,7 +354,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
           s->ypos = p.ypos + Stars[s->storbits]->ypos;
           use_fuel(s, fuel);
           s->docked = 1;
-          s->whatdest = LEVEL_PLAN; /* no destination */
+          s->whatdest = ScopeLevel::LEVEL_PLAN; /* no destination */
           s->deststar = s->storbits;
           s->destpnum = s->pnumorbits;
         }
@@ -378,7 +378,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
             notify(Playernum, Governor, buf);
           }
         }
-        if (s->whatorbits == LEVEL_UNIV)
+        if (s->whatorbits == ScopeLevel::LEVEL_UNIV)
           deductAPs(Playernum, Governor, APcount, 0, 1);
         else
           deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
@@ -416,7 +416,9 @@ int crash(shiptype *s, double fuel) {
     return 0;
 }
 
-int docked(shiptype *s) { return (s->docked && s->whatdest == LEVEL_SHIP); }
+int docked(shiptype *s) {
+  return (s->docked && s->whatdest == ScopeLevel::LEVEL_SHIP);
+}
 
 int overloaded(shiptype *s) {
   return ((s->resource > Max_resource(s)) || (s->fuel > Max_fuel(s)) ||

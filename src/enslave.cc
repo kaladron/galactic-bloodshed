@@ -43,7 +43,7 @@ void enslave(const command_t &argv, const player_t Playernum,
     free(s);
     return;
   }
-  if (s->whatorbits != LEVEL_PLAN) {
+  if (s->whatorbits != ScopeLevel::LEVEL_PLAN) {
     sprintf(buf, "%s doesn't orbit a planet.\n", Ship(*s).c_str());
     notify(Playernum, Governor, buf);
     free(s);

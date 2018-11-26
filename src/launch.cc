@@ -44,7 +44,7 @@ void launch(int Playernum, int Governor, int APcount) {
         continue;
       }
 
-      if (!(s->docked || s->whatorbits == LEVEL_SHIP)) {
+      if (!(s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP)) {
         sprintf(buf, "%s is not landed or docked.\n", Ship(*s).c_str());
         notify(Playernum, Governor, buf);
         free(s);
@@ -57,7 +57,7 @@ void launch(int Playernum, int Governor, int APcount) {
         free(s);
         continue;
       }
-      if (s->whatorbits == LEVEL_SHIP) {
+      if (s->whatorbits == ScopeLevel::LEVEL_SHIP) {
         /* Factories cannot be launched once turned on. Maarten */
         if (s->type == OTYPE_FACTORY && s->on) {
           notify(Playernum, Governor,
@@ -82,7 +82,7 @@ void launch(int Playernum, int Governor, int APcount) {
           s->land_x = s2->land_x;
           s->land_y = s2->land_y;
           s->docked = 1;
-          s->whatdest = LEVEL_PLAN;
+          s->whatdest = ScopeLevel::LEVEL_PLAN;
           s2->mass -= s->mass;
           s2->hanger -= Size(s);
           sprintf(buf, "Landed on %s/%s.\n", Stars[s->storbits]->name,
@@ -90,7 +90,7 @@ void launch(int Playernum, int Governor, int APcount) {
           notify(Playernum, Governor, buf);
           putship(s);
           putship(s2);
-        } else if (s2->whatorbits == LEVEL_PLAN) {
+        } else if (s2->whatorbits == ScopeLevel::LEVEL_PLAN) {
           remove_sh_ship(s, s2);
           sprintf(buf, "%s launched from %s.\n", Ship(*s).c_str(),
                   Ship(*s2).c_str());
@@ -98,7 +98,7 @@ void launch(int Playernum, int Governor, int APcount) {
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
           s->docked = 0;
-          s->whatdest = LEVEL_UNIV;
+          s->whatdest = ScopeLevel::LEVEL_UNIV;
           s2->mass -= s->mass;
           s2->hanger -= Size(s);
           auto p = getplanet((int)s2->storbits, (int)s2->pnumorbits);
@@ -111,7 +111,7 @@ void launch(int Playernum, int Governor, int APcount) {
           notify(Playernum, Governor, buf);
           putship(s);
           putship(s2);
-        } else if (s2->whatorbits == LEVEL_STAR) {
+        } else if (s2->whatorbits == ScopeLevel::LEVEL_STAR) {
           remove_sh_ship(s, s2);
           sprintf(buf, "%s launched from %s.\n", Ship(*s).c_str(),
                   Ship(*s2).c_str());
@@ -119,7 +119,7 @@ void launch(int Playernum, int Governor, int APcount) {
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
           s->docked = 0;
-          s->whatdest = LEVEL_UNIV;
+          s->whatdest = ScopeLevel::LEVEL_UNIV;
           s2->mass -= s->mass;
           s2->hanger -= Size(s);
           getstar(&(Stars[s2->storbits]), (int)s2->storbits);
@@ -130,7 +130,7 @@ void launch(int Playernum, int Governor, int APcount) {
           notify(Playernum, Governor, buf);
           putship(s);
           putship(s2);
-        } else if (s2->whatorbits == LEVEL_UNIV) {
+        } else if (s2->whatorbits == ScopeLevel::LEVEL_UNIV) {
           remove_sh_ship(s, s2);
           sprintf(buf, "%s launched from %s.\n", Ship(*s).c_str(),
                   Ship(*s2).c_str());
@@ -138,7 +138,7 @@ void launch(int Playernum, int Governor, int APcount) {
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
           s->docked = 0;
-          s->whatdest = LEVEL_UNIV;
+          s->whatdest = ScopeLevel::LEVEL_UNIV;
           s2->mass -= s->mass;
           s2->hanger -= Size(s);
           getsdata(&Sdata);
@@ -155,10 +155,10 @@ void launch(int Playernum, int Governor, int APcount) {
         }
         free(s2);
         free(s);
-      } else if (s->whatdest == LEVEL_SHIP) {
+      } else if (s->whatdest == ScopeLevel::LEVEL_SHIP) {
         sh2 = s->destshipno;
         (void)getship(&s2, sh2);
-        if (s2->whatorbits == LEVEL_UNIV) {
+        if (s2->whatorbits == ScopeLevel::LEVEL_UNIV) {
           if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
             free(s);
             free(s2);
@@ -175,10 +175,10 @@ void launch(int Playernum, int Governor, int APcount) {
             deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
         }
         s->docked = 0;
-        s->whatdest = LEVEL_UNIV;
+        s->whatdest = ScopeLevel::LEVEL_UNIV;
         s->destshipno = 0;
         s2->docked = 0;
-        s2->whatdest = LEVEL_UNIV;
+        s2->whatdest = ScopeLevel::LEVEL_UNIV;
         s2->destshipno = 0;
         sprintf(buf, "%s undocked from %s.\n", Ship(*s).c_str(),
                 Ship(*s2).c_str());
@@ -219,7 +219,7 @@ void launch(int Playernum, int Governor, int APcount) {
         }
         use_fuel(s, fuel);
         s->docked = 0;
-        s->whatdest = LEVEL_UNIV; /* no destination */
+        s->whatdest = ScopeLevel::LEVEL_UNIV; /* no destination */
         switch (s->type) {
           case OTYPE_CANIST:
           case OTYPE_GREEN:

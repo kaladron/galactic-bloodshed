@@ -142,7 +142,8 @@ found_planet:
   strcpy(Race->password, race_info.password);
 
   strcpy(Race->governor[0].password, "0");
-  Race->governor[0].homelevel = Race->governor[0].deflevel = LEVEL_PLAN;
+  Race->governor[0].homelevel = Race->governor[0].deflevel =
+      ScopeLevel::LEVEL_PLAN;
   Race->governor[0].homesystem = Race->governor[0].defsystem = star;
   Race->governor[0].homeplanetnum = Race->governor[0].defplanetnum = pnum;
   /* display options */
@@ -293,8 +294,8 @@ found_planet:
 
     s.docked = 1;
     /* docked on the planet */
-    s.whatorbits = LEVEL_PLAN;
-    s.whatdest = LEVEL_PLAN;
+    s.whatorbits = ScopeLevel::LEVEL_PLAN;
+    s.whatdest = ScopeLevel::LEVEL_PLAN;
     s.deststar = star;
     s.destpnum = pnum;
     s.storbits = star;

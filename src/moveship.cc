@@ -42,7 +42,8 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
   double stardist, movedist, truedist, dist, xdest, ydest, sn, cs;
   double mfactor, heading, distfac;
   double fuse;
-  int destlevel, deststar = 0, destpnum = 0;
+  ScopeLevel destlevel;
+  int deststar = 0, destpnum = 0;
   shiptype *dsh;
   startype *ost, *dst;
 
@@ -74,7 +75,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
       cs = cos(heading);
       s->xpos = Stars[s->deststar]->xpos - sn * 0.9 * SYSTEMSIZE;
       s->ypos = Stars[s->deststar]->ypos - cs * 0.9 * SYSTEMSIZE;
-      s->whatorbits = LEVEL_STAR;
+      s->whatorbits = ScopeLevel::LEVEL_STAR;
       s->storbits = s->deststar;
       s->protect.planet = 0;
       s->hyper_drive.on = 0;
@@ -95,12 +96,12 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
     }
     return;
   } else if (s->speed && !s->docked && s->alive &&
-             (s->whatdest != LEVEL_UNIV || s->navigate.on)) {
+             (s->whatdest != ScopeLevel::LEVEL_UNIV || s->navigate.on)) {
     fuse = 0.5 * s->speed * (1 + s->protect.evade) * s->mass * FUEL_USE /
            (double)segments;
     if (s->fuel < fuse) {
       if (send_messages) msg_OOF(s); /* send OOF notify */
-      if (s->whatorbits == LEVEL_UNIV &&
+      if (s->whatorbits == ScopeLevel::LEVEL_UNIV &&
           (s->build_cost <= 50 || s->type == OTYPE_VN ||
            s->type == OTYPE_BERS)) {
         sprintf(telegram_buf, "%s has been lost in deep space.",
@@ -128,43 +129,43 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
       /* check here for orbit breaking as well. Maarten */
       ost = Stars[s->storbits];
       const auto &opl = planets[s->storbits][s->pnumorbits];
-      if (s->whatorbits == LEVEL_PLAN) {
+      if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
         dist = sqrt(Distsq(s->xpos, s->ypos, ost->xpos + opl->xpos,
                            ost->ypos + opl->ypos));
         if (dist > PLORBITSIZE) {
-          s->whatorbits = LEVEL_STAR;
+          s->whatorbits = ScopeLevel::LEVEL_STAR;
           s->protect.planet = 0;
         }
-      } else if (s->whatorbits == LEVEL_STAR) {
+      } else if (s->whatorbits == ScopeLevel::LEVEL_STAR) {
         dist = sqrt(Distsq(s->xpos, s->ypos, ost->xpos, ost->ypos));
         if (dist > SYSTEMSIZE) {
-          s->whatorbits = LEVEL_UNIV;
+          s->whatorbits = ScopeLevel::LEVEL_UNIV;
           s->protect.evade = 0;
           s->protect.planet = 0;
         }
       }
     } else { /*		navigate is off            */
       destlevel = s->whatdest;
-      if (destlevel == LEVEL_SHIP) {
+      if (destlevel == ScopeLevel::LEVEL_SHIP) {
         dsh = ships[s->destshipno];
         s->deststar = dsh->storbits;
         s->destpnum = dsh->pnumorbits;
         xdest = dsh->xpos;
         ydest = dsh->ypos;
         switch (dsh->whatorbits) {
-          case LEVEL_UNIV:
+          case ScopeLevel::LEVEL_UNIV:
             break;
-          case LEVEL_PLAN:
+          case ScopeLevel::LEVEL_PLAN:
             if (s->whatorbits != dsh->whatorbits ||
                 s->pnumorbits != dsh->pnumorbits)
-              destlevel = LEVEL_PLAN;
+              destlevel = ScopeLevel::LEVEL_PLAN;
             break;
-          case LEVEL_STAR:
+          case ScopeLevel::LEVEL_STAR:
             if (s->whatorbits != dsh->whatorbits ||
                 s->storbits != dsh->storbits)
-              destlevel = LEVEL_STAR;
+              destlevel = ScopeLevel::LEVEL_STAR;
             break;
-          case LEVEL_SHIP:
+          case ScopeLevel::LEVEL_SHIP:
             // TODO(jeffbailey): Prove that this is impossible.
             break;
         }
@@ -172,26 +173,28 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
            xdest,
            ydest))
                    <= DIST_TO_LAND || !(dsh->alive)) {
-                           destlevel = LEVEL_UNIV;
-                                                   s->whatdest=LEVEL_UNIV;
+                           destlevel = ScopeLevel::LEVEL_UNIV;
+                                                   s->whatdest=ScopeLevel::LEVEL_UNIV;
                                    } */
       }
       /*		else */
-      if (destlevel == LEVEL_STAR ||
-          (destlevel == LEVEL_PLAN &&
-           (s->storbits != s->deststar || s->whatorbits == LEVEL_UNIV))) {
-        destlevel = LEVEL_STAR;
+      if (destlevel == ScopeLevel::LEVEL_STAR ||
+          (destlevel == ScopeLevel::LEVEL_PLAN &&
+           (s->storbits != s->deststar ||
+            s->whatorbits == ScopeLevel::LEVEL_UNIV))) {
+        destlevel = ScopeLevel::LEVEL_STAR;
         deststar = s->deststar;
         xdest = Stars[deststar]->xpos;
         ydest = Stars[deststar]->ypos;
-      } else if (destlevel == LEVEL_PLAN && s->storbits == s->deststar) {
-        destlevel = LEVEL_PLAN;
+      } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
+                 s->storbits == s->deststar) {
+        destlevel = ScopeLevel::LEVEL_PLAN;
         deststar = s->deststar;
         destpnum = s->destpnum;
         xdest = Stars[deststar]->xpos + planets[deststar][destpnum]->xpos;
         ydest = Stars[deststar]->ypos + planets[deststar][destpnum]->ypos;
         if (sqrt(Distsq(s->xpos, s->ypos, xdest, ydest)) <= DIST_TO_LAND)
-          destlevel = LEVEL_UNIV;
+          destlevel = ScopeLevel::LEVEL_UNIV;
       }
       dst = Stars[deststar];
       ost = Stars[s->storbits];
@@ -209,15 +212,17 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
                 MoveConsts[s->whatorbits] / (double)segments;
 
       /* keep from ending up in the middle of the system. */
-      if (destlevel == LEVEL_STAR &&
-          (s->storbits != deststar || s->whatorbits == LEVEL_UNIV))
+      if (destlevel == ScopeLevel::LEVEL_STAR &&
+          (s->storbits != deststar || s->whatorbits == ScopeLevel::LEVEL_UNIV))
         movedist -= SYSTEMSIZE * 0.90;
-      else if (destlevel == LEVEL_PLAN && s->whatorbits == LEVEL_STAR &&
+      else if (destlevel == ScopeLevel::LEVEL_PLAN &&
+               s->whatorbits == ScopeLevel::LEVEL_STAR &&
                s->storbits == deststar && truedist >= PLORBITSIZE)
         movedist -= PLORBITSIZE * 0.90;
 
-      if (s->whatdest == LEVEL_SHIP && !followable(s, ships[s->destshipno])) {
-        s->whatdest = LEVEL_UNIV;
+      if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
+          !followable(s, ships[s->destshipno])) {
+        s->whatdest = ScopeLevel::LEVEL_UNIV;
         s->protect.evade = 0;
         sprintf(telegram_buf, "%s at %s lost sight of destination ship #%ld.",
                 Ship(*s).c_str(), prin_ship_orbits(s), s->destshipno);
@@ -241,29 +246,30 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
       }
       /***** check if far enough away from object it's orbiting to break orbit
        * *****/
-      if (s->whatorbits == LEVEL_PLAN) {
+      if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
         dist = sqrt(Distsq(s->xpos, s->ypos, ost->xpos + opl->xpos,
                            ost->ypos + opl->ypos));
         if (dist > PLORBITSIZE) {
-          s->whatorbits = LEVEL_STAR;
+          s->whatorbits = ScopeLevel::LEVEL_STAR;
           s->protect.planet = 0;
         }
-      } else if (s->whatorbits == LEVEL_STAR) {
+      } else if (s->whatorbits == ScopeLevel::LEVEL_STAR) {
         dist = sqrt(Distsq(s->xpos, s->ypos, ost->xpos, ost->ypos));
         if (dist > SYSTEMSIZE) {
-          s->whatorbits = LEVEL_UNIV;
+          s->whatorbits = ScopeLevel::LEVEL_UNIV;
           s->protect.evade = 0;
           s->protect.planet = 0;
         }
       }
 
       /*******   check for arriving at destination *******/
-      if (destlevel == LEVEL_STAR ||
-          (destlevel == LEVEL_PLAN &&
-           (s->storbits != deststar || s->whatorbits == LEVEL_UNIV))) {
+      if (destlevel == ScopeLevel::LEVEL_STAR ||
+          (destlevel == ScopeLevel::LEVEL_PLAN &&
+           (s->storbits != deststar ||
+            s->whatorbits == ScopeLevel::LEVEL_UNIV))) {
         stardist = sqrt(Distsq(s->xpos, s->ypos, dst->xpos, dst->ypos));
         if (stardist <= SYSTEMSIZE * 1.5) {
-          s->whatorbits = LEVEL_STAR;
+          s->whatorbits = ScopeLevel::LEVEL_STAR;
           s->protect.planet = 0;
           s->storbits = deststar;
           /* if this system isn't inhabited by you, give it to the
@@ -280,9 +286,11 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
             if (send_messages)
               push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
           }
-          if (s->whatdest == LEVEL_STAR) s->whatdest = LEVEL_UNIV;
+          if (s->whatdest == ScopeLevel::LEVEL_STAR)
+            s->whatdest = ScopeLevel::LEVEL_UNIV;
         }
-      } else if (destlevel == LEVEL_PLAN && deststar == s->storbits) {
+      } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
+                 deststar == s->storbits) {
         /* headed for a planet in the same system, & not already there.. */
         dist = sqrt(Distsq(s->xpos, s->ypos, dst->xpos + dpl->xpos,
                            dst->ypos + dpl->ypos));
@@ -292,13 +300,14 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
             setbit(dst->explored, (int)(s->owner));
             setbit(dst->inhabited, (int)(s->owner));
           }
-          s->whatorbits = LEVEL_PLAN;
+          s->whatorbits = ScopeLevel::LEVEL_PLAN;
           s->pnumorbits = destpnum;
           if (dist <= (double)DIST_TO_LAND) {
             sprintf(telegram_buf, "%s within landing distance of %s.",
                     Ship(*s).c_str(), prin_ship_orbits(s));
             if (checking_fuel || !do_merchant(s, dpl))
-              if (s->whatdest == LEVEL_PLAN) s->whatdest = LEVEL_UNIV;
+              if (s->whatdest == ScopeLevel::LEVEL_PLAN)
+                s->whatdest = ScopeLevel::LEVEL_UNIV;
           } else {
             sprintf(telegram_buf, "%s arriving at %s.", Ship(*s).c_str(),
                     prin_ship_orbits(s));
@@ -310,15 +319,15 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
           if (send_messages && s->type != OTYPE_VN)
             push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
         }
-      } else if (destlevel == LEVEL_SHIP) {
+      } else if (destlevel == ScopeLevel::LEVEL_SHIP) {
         dist = sqrt(Distsq(s->xpos, s->ypos, dsh->xpos, dsh->ypos));
         if (dist <= PLORBITSIZE) {
-          if (dsh->whatorbits == LEVEL_PLAN) {
-            s->whatorbits = LEVEL_PLAN;
+          if (dsh->whatorbits == ScopeLevel::LEVEL_PLAN) {
+            s->whatorbits = ScopeLevel::LEVEL_PLAN;
             s->storbits = dsh->storbits;
             s->pnumorbits = dsh->pnumorbits;
-          } else if (dsh->whatorbits == LEVEL_STAR) {
-            s->whatorbits = LEVEL_STAR;
+          } else if (dsh->whatorbits == ScopeLevel::LEVEL_STAR) {
+            s->whatorbits = ScopeLevel::LEVEL_STAR;
             s->storbits = dsh->storbits;
             s->protect.planet = 0;
           }
@@ -344,7 +353,8 @@ int followable(shiptype *s1, shiptype *s2) {
   double range;
   int allied[2];
 
-  if (!s2->alive || !s1->active || s2->whatorbits == LEVEL_SHIP) return 0;
+  if (!s2->alive || !s1->active || s2->whatorbits == ScopeLevel::LEVEL_SHIP)
+    return 0;
 
   dx = s1->xpos - s2->xpos;
   dy = s1->ypos - s2->ypos;
@@ -382,7 +392,7 @@ static int do_merchant(shiptype *s, planet *p) {
   if (!landed(s)) { /* try to land the ship */
     fuel = s->mass * gravity(*p) * LAND_GRAV_MASS_FACTOR;
     if (s->fuel < fuel) { /* ship can't land - cancel all orders */
-      s->whatdest = LEVEL_UNIV;
+      s->whatdest = ScopeLevel::LEVEL_UNIV;
       strcat(telegram_buf, "\t\tNot enough fuel to land!\n");
       return 1;
     }
@@ -394,7 +404,7 @@ static int do_merchant(shiptype *s, planet *p) {
     s->ypos = p->ypos + Stars[s->storbits]->ypos;
     use_fuel(s, fuel);
     s->docked = 1;
-    s->whatdest = LEVEL_PLAN;
+    s->whatdest = ScopeLevel::LEVEL_PLAN;
     s->deststar = s->storbits;
     s->destpnum = s->pnumorbits;
   }
@@ -476,7 +486,7 @@ static int do_merchant(shiptype *s, planet *p) {
     return 1;
   }
   /* ship is ready to fly - order the ship to its next destination */
-  s->whatdest = LEVEL_PLAN;
+  s->whatdest = ScopeLevel::LEVEL_PLAN;
   s->deststar = p->info[i].route[j].dest_star;
   s->destpnum = p->info[i].route[j].dest_planet;
   s->docked = 0;

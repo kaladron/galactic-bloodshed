@@ -52,7 +52,7 @@ void bless(int Playernum, int Governor, int APcount) {
            "You are not privileged to use this command.\n");
     return;
   }
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor, "Please cs to the planet in question.\n");
     return;
   }
@@ -264,7 +264,7 @@ void insurgency(int Playernum, int Governor, int APcount) {
   int changed_hands, chance;
   int i;
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor,
            "You must 'cs' to the planet you wish to try it on.\n");
     return;
@@ -512,7 +512,7 @@ void give(int Playernum, int Governor, int APcount) {
     return;
   }
   switch (ship->whatorbits) {
-    case LEVEL_UNIV:
+    case ScopeLevel::LEVEL_UNIV:
       if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
         free(ship);
         return;
@@ -536,14 +536,14 @@ void give(int Playernum, int Governor, int APcount) {
 
   /* set inhabited/explored bits */
   switch (ship->whatorbits) {
-    case LEVEL_UNIV:
+    case ScopeLevel::LEVEL_UNIV:
       break;
-    case LEVEL_STAR:
+    case ScopeLevel::LEVEL_STAR:
       getstar(&(Stars[ship->storbits]), (int)ship->storbits);
       setbit(Stars[ship->storbits]->explored, who);
       putstar(Stars[ship->storbits], (int)ship->storbits);
       break;
-    case LEVEL_PLAN: {
+    case ScopeLevel::LEVEL_PLAN: {
       getstar(&(Stars[ship->storbits]), (int)ship->storbits);
       setbit(Stars[ship->storbits]->explored, who);
       putstar(Stars[ship->storbits], (int)ship->storbits);
@@ -560,7 +560,7 @@ void give(int Playernum, int Governor, int APcount) {
   }
 
   switch (ship->whatorbits) {
-    case LEVEL_UNIV:
+    case ScopeLevel::LEVEL_UNIV:
       deductAPs(Playernum, Governor, APcount, 0, 1);
       free(ship);
       return;
@@ -611,7 +611,7 @@ void page(int Playernum, int Governor, int APcount0) {
   }
 
   switch (Dir[Playernum - 1][Governor].level) {
-    case LEVEL_UNIV:
+    case ScopeLevel::LEVEL_UNIV:
       sprintf(buf, "You can't make pages at universal scope.\n");
       notify(Playernum, Governor, buf);
       break;
@@ -694,7 +694,7 @@ void send_message(int Playernum, int Governor, int APcount0, int postit) {
     to_star = 1;
     notify(Playernum, Governor, "Sending message to star system.\n");
     where = Getplace(Playernum, Governor, args[2], 1);
-    if (where.err || where.level != LEVEL_STAR) {
+    if (where.err || where.level != ScopeLevel::LEVEL_STAR) {
       sprintf(buf, "No such star.\n");
       notify(Playernum, Governor, buf);
       return;
@@ -712,12 +712,12 @@ void send_message(int Playernum, int Governor, int APcount0, int postit) {
   }
 
   switch (Dir[Playernum - 1][Governor].level) {
-    case LEVEL_UNIV:
+    case ScopeLevel::LEVEL_UNIV:
       sprintf(buf, "You can't send messages from universal scope.\n");
       notify(Playernum, Governor, buf);
       return;
 
-    case LEVEL_SHIP:
+    case ScopeLevel::LEVEL_SHIP:
       sprintf(buf, "You can't send messages from ship scope.\n");
       notify(Playernum, Governor, buf);
       return;
@@ -881,7 +881,7 @@ void name(int Playernum, int Governor, int APcount) {
   }
 
   if (match(args[1], "ship")) {
-    if (Dir[Playernum - 1][Governor].level == LEVEL_SHIP) {
+    if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_SHIP) {
       (void)getship(&ship, Dir[Playernum - 1][Governor].shipno);
       strncpy(ship->name, buf, SHIP_NAMESIZE);
       putship(ship);
@@ -893,7 +893,7 @@ void name(int Playernum, int Governor, int APcount) {
       return;
     }
   } else if (match(args[1], "class")) {
-    if (Dir[Playernum - 1][Governor].level == LEVEL_SHIP) {
+    if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_SHIP) {
       (void)getship(&ship, Dir[Playernum - 1][Governor].shipno);
       if (ship->type != OTYPE_FACTORY) {
         notify(Playernum, Governor, "You are not at a factory!\n");
@@ -925,7 +925,7 @@ void name(int Playernum, int Governor, int APcount) {
     Putblock(Blocks);
     notify(Playernum, Governor, "Done.\n");
   } else if (match(args[1], "star")) {
-    if (Dir[Playernum - 1][Governor].level == LEVEL_STAR) {
+    if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_STAR) {
       Race = races[Playernum - 1];
       if (!Race->God) {
         notify(Playernum, Governor, "Only dieties may name a star.\n");
@@ -940,7 +940,7 @@ void name(int Playernum, int Governor, int APcount) {
       return;
     }
   } else if (match(args[1], "planet")) {
-    if (Dir[Playernum - 1][Governor].level == LEVEL_PLAN) {
+    if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_PLAN) {
       getstar(&Stars[Dir[Playernum - 1][Governor].snum],
               Dir[Playernum - 1][Governor].snum);
       Race = races[Playernum - 1];
@@ -992,7 +992,7 @@ void announce(int Playernum, int Governor, const char *message, int mode) {
     return;
   }
   switch (Dir[Playernum - 1][Governor].level) {
-    case LEVEL_UNIV:
+    case ScopeLevel::LEVEL_UNIV:
       if (mode == ANN) mode = BROADCAST;
       break;
     default:

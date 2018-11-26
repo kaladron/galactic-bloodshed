@@ -24,7 +24,7 @@ extern unsigned long segments;
 /* Shipping routes - DON'T change this unless you know what you are doing */
 const int MAX_ROUTES = 4;
 
-enum levels_t { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
+enum ScopeLevel { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
 
 typedef uint64_t shipnum_t;
 typedef uint8_t starnum_t;
@@ -263,7 +263,7 @@ struct stardata {
 extern struct stardata Sdata;
 
 struct directory {
-  levels_t level;                     /* what directory level */
+  ScopeLevel level;                   /* what directory level */
   starnum_t snum;                     /* what star system obj # (level=0) */
   planetnum_t pnum;                   /* number of planet */
   shipnum_t shipno;                   /* # of ship */

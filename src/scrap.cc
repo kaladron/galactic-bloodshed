@@ -43,14 +43,14 @@ void scrap(int Playernum, int Governor, int APcount) {
         free(s);
         continue;
       }
-      if (s->whatorbits == LEVEL_UNIV) {
+      if (s->whatorbits == ScopeLevel::LEVEL_UNIV) {
         continue;
       } else if (!enufAP(Playernum, Governor,
                          Stars[s->storbits]->AP[Playernum - 1], APcount)) {
         free(s);
         continue;
       }
-      if (s->whatorbits == LEVEL_PLAN && s->type == OTYPE_TOXWC) {
+      if (s->whatorbits == ScopeLevel::LEVEL_PLAN && s->type == OTYPE_TOXWC) {
         sprintf(buf,
                 "WARNING: This will release %d toxin points back into the "
                 "atmosphere!!\n",
@@ -63,7 +63,7 @@ void scrap(int Playernum, int Governor, int APcount) {
                 Ship(*s).c_str());
         notify(Playernum, Governor, buf);
       }
-      if (s->whatorbits == LEVEL_PLAN) {
+      if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
         /* wc's release poison */
         const auto &planet = getplanet((int)s->storbits, (int)s->pnumorbits);
         if (landed(s)) sect = getsector(planet, s->land_x, s->land_y);
@@ -76,7 +76,7 @@ void scrap(int Playernum, int Governor, int APcount) {
         // TODO(jeffbailey): Changed from !s->whatorbits, which didn't make any
         // sense.
         if (!(s2->docked && s2->destshipno == s->number) &&
-            s->whatorbits != LEVEL_SHIP) {
+            s->whatorbits != ScopeLevel::LEVEL_SHIP) {
           sprintf(buf, "Warning, other ship not docked..\n");
           notify(Playernum, Governor, buf);
           free(s);
@@ -94,7 +94,7 @@ void scrap(int Playernum, int Governor, int APcount) {
                 s->resource ? "(with stockpile) " : "", scrapval);
         notify(Playernum, Governor, buf);
 
-        if (s->whatdest == LEVEL_SHIP &&
+        if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
             s2->resource + scrapval > Max_resource(s2) &&
             s2->type != STYPE_SHUTTLE) {
           scrapval = Max_resource(s2) - s2->resource;
@@ -105,7 +105,8 @@ void scrap(int Playernum, int Governor, int APcount) {
           sprintf(buf, "Fuel recovery: %.0f.\n", s->fuel);
           notify(Playernum, Governor, buf);
           fuelval = s->fuel;
-          if (s->whatdest == LEVEL_SHIP && s2->fuel + fuelval > Max_fuel(s2)) {
+          if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
+              s2->fuel + fuelval > Max_fuel(s2)) {
             fuelval = Max_fuel(s2) - s2->fuel;
             sprintf(buf, "(There is only room for %.2f fuel.)\n", fuelval);
             notify(Playernum, Governor, buf);
@@ -117,7 +118,7 @@ void scrap(int Playernum, int Governor, int APcount) {
           sprintf(buf, "Weapons recovery: %d.\n", s->destruct);
           notify(Playernum, Governor, buf);
           destval = s->destruct;
-          if (s->whatdest == LEVEL_SHIP &&
+          if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
               s2->destruct + destval > Max_destruct(s2)) {
             destval = Max_destruct(s2) - s2->destruct;
             sprintf(buf, "(There is only room for %d destruct.)\n", destval);
@@ -127,7 +128,7 @@ void scrap(int Playernum, int Governor, int APcount) {
           destval = 0;
 
         if (s->popn + s->troops) {
-          if (s->whatdest == LEVEL_PLAN && sect.owner > 0 &&
+          if (s->whatdest == ScopeLevel::LEVEL_PLAN && sect.owner > 0 &&
               sect.owner != Playernum) {
             sprintf(buf,
                     "You don't own this sector; no crew can be recovered.\n");
@@ -137,14 +138,14 @@ void scrap(int Playernum, int Governor, int APcount) {
                     s->troops);
             notify(Playernum, Governor, buf);
             troopval = s->troops;
-            if (s->whatdest == LEVEL_SHIP &&
+            if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
                 s2->troops + troopval > Max_mil(s2)) {
               troopval = Max_mil(s2) - s2->troops;
               sprintf(buf, "(There is only room for %d troops.)\n", troopval);
               notify(Playernum, Governor, buf);
             }
             crewval = s->popn;
-            if (s->whatdest == LEVEL_SHIP &&
+            if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
                 s2->popn + crewval > Max_crew(s2)) {
               crewval = Max_crew(s2) - s2->popn;
               sprintf(buf, "(There is only room for %d crew.)\n", crewval);
@@ -157,7 +158,7 @@ void scrap(int Playernum, int Governor, int APcount) {
         }
 
         if (s->crystals + s->mounted) {
-          if (s->whatdest == LEVEL_PLAN && sect.owner > 0 &&
+          if (s->whatdest == ScopeLevel::LEVEL_PLAN && sect.owner > 0 &&
               sect.owner != Playernum) {
             sprintf(
                 buf,
@@ -165,7 +166,7 @@ void scrap(int Playernum, int Governor, int APcount) {
             notify(Playernum, Governor, buf);
           } else {
             xtalval = s->crystals + s->mounted;
-            if (s->whatdest == LEVEL_SHIP &&
+            if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
                 s2->crystals + xtalval > Max_crystals(s2)) {
               xtalval = Max_crystals(s2) - s2->crystals;
               sprintf(buf, "(There is only room for %d crystals.)\n", xtalval);
@@ -179,9 +180,9 @@ void scrap(int Playernum, int Governor, int APcount) {
       }
 
       /* more adjustments needed here for hanger. Maarten */
-      if (s->whatorbits == LEVEL_SHIP) s2->hanger -= s->size;
+      if (s->whatorbits == ScopeLevel::LEVEL_SHIP) s2->hanger -= s->size;
 
-      if (s->whatorbits == LEVEL_UNIV)
+      if (s->whatorbits == ScopeLevel::LEVEL_UNIV)
         deductAPs(Playernum, Governor, APcount, 0, 1);
       else
         deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
@@ -206,16 +207,16 @@ void scrap(int Playernum, int Governor, int APcount) {
         rcv_troops(s2, troopval, Race->mass);
         rcv_popn(s2, crewval, Race->mass);
         /* check for docking status in case scrapped ship is landed. Maarten */
-        if (!(s->whatorbits == LEVEL_SHIP)) {
+        if (!(s->whatorbits == ScopeLevel::LEVEL_SHIP)) {
           s2->docked = 0; /* undock the surviving ship */
-          s2->whatdest = LEVEL_UNIV;
+          s2->whatdest = ScopeLevel::LEVEL_UNIV;
           s2->destshipno = 0;
         }
         putship(s2);
         free(s2);
       }
 
-      if (s->whatorbits == LEVEL_PLAN) {
+      if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
         auto planet = getplanet((int)s->storbits, (int)s->pnumorbits);
         if (landed(s)) {
           if (sect.owner == Playernum) {

@@ -76,10 +76,10 @@ class race {
     char name[RNAMESIZE];
     char password[RNAMESIZE];
     unsigned char active;
-    levels_t deflevel;
+    ScopeLevel deflevel;
     unsigned char defsystem;
     unsigned char defplanetnum; /* current default */
-    unsigned char homelevel;
+    ScopeLevel homelevel;
     unsigned char homesystem;
     unsigned char homeplanetnum; /* home place */
     unsigned long newspos[4];    /* news file pointers */

@@ -578,7 +578,7 @@ if (!Stinfo[starnum][planetnum].inhab)
 
         insert_sh_plan(planet, s2);
 
-        s2->whatorbits = LEVEL_PLAN;
+        s2->whatorbits = ScopeLevel::LEVEL_PLAN;
         s2->storbits = starnum;
         s2->pnumorbits = planetnum;
         s2->docked = 1;
@@ -586,7 +586,7 @@ if (!Stinfo[starnum][planetnum].inhab)
         s2->ypos = Stars[starnum]->ypos + planet->ypos;
         s2->land_x = int_rand(0, (int)planet->Maxx - 1);
         s2->land_y = int_rand(0, (int)planet->Maxy - 1);
-        s2->whatdest = LEVEL_PLAN;
+        s2->whatdest = ScopeLevel::LEVEL_PLAN;
         s2->deststar = starnum;
         s2->destpnum = planetnum;
         s2->owner = i;
@@ -753,9 +753,9 @@ static void do_quarry(shiptype *ship, planet *planet, sector_map &smap) {
 }
 
 static void do_berserker(shiptype *ship, planet *planet) {
-  if (ship->whatdest == LEVEL_PLAN && ship->whatorbits == LEVEL_PLAN &&
-      !landed(ship) && ship->storbits == ship->deststar &&
-      ship->pnumorbits == ship->destpnum) {
+  if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
+      ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship) &&
+      ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {
     if (!Bombard(ship, planet, races[ship->owner - 1]))
       ship->destpnum = int_rand(0, Stars[ship->storbits]->numplanets - 1);
     else if (Sdata.VN_hitlist[ship->special.mind.who_killed - 1] > 0)

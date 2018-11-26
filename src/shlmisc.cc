@@ -57,7 +57,7 @@ void grant(int Playernum, int Governor, int APcount) {
     return;
   } else if (match(args[2], "star")) {
     int snum;
-    if (Dir[Playernum - 1][Governor].level != LEVEL_STAR) {
+    if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_STAR) {
       notify(Playernum, Governor, "Please cs to the star system first.\n");
       return;
     }
@@ -292,18 +292,18 @@ int start_shiplist(int Playernum, int Governor, const char *p) {
   st = Dir[Playernum - 1][Governor].snum;
   pl = Dir[Playernum - 1][Governor].pnum;
   switch (Dir[Playernum - 1][Governor].level) {
-    case LEVEL_UNIV:
+    case ScopeLevel::LEVEL_UNIV:
       getsdata(&Sdata);
       return Sdata.ships;
-    case LEVEL_STAR:
+    case ScopeLevel::LEVEL_STAR:
       getstar(&Stars[st], st); /*Stars doesn't need to be freed */
       return Stars[st]->ships;
-    case LEVEL_PLAN: {
+    case ScopeLevel::LEVEL_PLAN: {
       const auto &planet = getplanet(st, pl);
       sh = planet.ships;
       return sh;
     }
-    case LEVEL_SHIP:
+    case ScopeLevel::LEVEL_SHIP:
       (void)getship(&ship, Dir[Playernum - 1][Governor].shipno);
       sh = ship->ships;
       free(ship);
@@ -343,7 +343,7 @@ void fix(int Playernum, int Governor) {
   shiptype *s;
 
   if (match(args[1], "planet")) {
-    if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+    if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
       notify(Playernum, Governor, "Change scope to the planet first.\n");
       return;
     }
@@ -408,7 +408,7 @@ void fix(int Playernum, int Governor) {
     return;
   }
   if (match(args[1], "ship")) {
-    if (Dir[Playernum - 1][Governor].level != LEVEL_SHIP) {
+    if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_SHIP) {
       notify(Playernum, Governor,
              "Change scope to the ship you wish to fix.\n");
       return;
@@ -504,7 +504,7 @@ void allocateAPs(int Playernum, int Governor, int APcount) {
   int maxalloc;
   int alloc;
 
-  if (Dir[Playernum - 1][Governor].level == LEVEL_UNIV) {
+  if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_UNIV) {
     sprintf(
         buf,
         "Change scope to the system you which to transfer global APs to.\n");
@@ -557,7 +557,7 @@ void deductAPs(int Playernum, int Governor, int n, int snum, int sdata) {
 
       putstar(Stars[snum], snum);
 
-      if (Dir[Playernum - 1][Governor].level != LEVEL_UNIV &&
+      if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_UNIV &&
           Dir[Playernum - 1][Governor].snum == snum) {
         /* fix the prompt */
         sprintf(Dir[Playernum - 1][Governor].prompt + 5, "%02d",
@@ -570,7 +570,7 @@ void deductAPs(int Playernum, int Governor, int n, int snum, int sdata) {
       Sdata.AP[Playernum - 1] = std::max(0, Sdata.AP[Playernum - 1] - n);
       putsdata(&Sdata);
 
-      if (Dir[Playernum - 1][Governor].level == LEVEL_UNIV) {
+      if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_UNIV) {
         sprintf(Dir[Playernum - 1][Governor].prompt + 2, "%02d",
                 Sdata.AP[Playernum - 1]);
         Dir[Playernum - 1][Governor].prompt[3] = ']';

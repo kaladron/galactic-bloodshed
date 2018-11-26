@@ -24,7 +24,7 @@
 void mobilize(int Playernum, int Governor, int APcount) {
   int sum_mob = 0;
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     sprintf(buf, "scope must be a planet.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -67,7 +67,7 @@ void tax(int Playernum, int Governor, int APcount) {
   int sum_tax = 0;
   racetype *Race;
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     sprintf(buf, "scope must be a planet.\n");
     notify(Playernum, Governor, buf);
     return;

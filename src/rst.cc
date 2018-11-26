@@ -120,7 +120,7 @@ void rst(const command_t &argv, const player_t Playernum,
           return;
         }
         (void)Getrship(Playernum, Governor, shipno);
-        if (rd[Num_ships - 1].s->whatorbits != LEVEL_UNIV) {
+        if (rd[Num_ships - 1].s->whatorbits != ScopeLevel::LEVEL_UNIV) {
           star_getrships(Playernum, Governor, rd[Num_ships - 1].s->storbits);
           ship_report(Playernum, Governor, Num_ships - 1, Report_types);
         } else
@@ -147,7 +147,7 @@ void rst(const command_t &argv, const player_t Playernum,
   }
 
   switch (Dir[Playernum - 1][Governor].level) {
-    case LEVEL_UNIV:
+    case ScopeLevel::LEVEL_UNIV:
       if (!(Tactical && argn < 2)) {
         shipnum_t shn = Sdata.ships;
         while (shn && Getrship(Playernum, Governor, shn))
@@ -164,18 +164,18 @@ void rst(const command_t &argv, const player_t Playernum,
         return;
       }
       break;
-    case LEVEL_PLAN:
+    case ScopeLevel::LEVEL_PLAN:
       plan_getrships(Playernum, Governor, Dir[Playernum - 1][Governor].snum,
                      Dir[Playernum - 1][Governor].pnum);
       for (shipnum_t i = 0; i < Num_ships; i++)
         ship_report(Playernum, Governor, i, Report_types);
       break;
-    case LEVEL_STAR:
+    case ScopeLevel::LEVEL_STAR:
       star_getrships(Playernum, Governor, Dir[Playernum - 1][Governor].snum);
       for (shipnum_t i = 0; i < Num_ships; i++)
         ship_report(Playernum, Governor, i, Report_types);
       break;
-    case LEVEL_SHIP:
+    case ScopeLevel::LEVEL_SHIP:
       (void)Getrship(Playernum, Governor, Dir[Playernum - 1][Governor].shipno);
       ship_report(Playernum, Governor, 0, Report_types); /* first ship report */
       shipnum_t shn = rd[0].s->ships;
@@ -338,7 +338,7 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
         if (!SHip) first = 0;
       }
       if (s->docked)
-        if (s->whatdest == LEVEL_SHIP)
+        if (s->whatdest == ScopeLevel::LEVEL_SHIP)
           sprintf(locstrn, "D#%ld", s->destshipno);
         else
           sprintf(locstrn, "L%2d,%-2d", s->land_x, s->land_y);
@@ -387,8 +387,8 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
         where.pnum = s->pnumorbits;
         tech = s->tech;
         caliber = current_caliber(s);
-        if ((s->whatdest != LEVEL_UNIV || s->navigate.on) && !s->docked &&
-            s->active) {
+        if ((s->whatdest != ScopeLevel::LEVEL_UNIV || s->navigate.on) &&
+            !s->docked && s->active) {
           fspeed = s->speed;
           fev = s->protect.evade;
         }
@@ -445,7 +445,8 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
                   rd[i].s->type != OTYPE_GREEN) {
                 int tev = 0, tspeed = 0, body = 0, prob = 0;
                 int factor = 0;
-                if ((rd[i].s->whatdest != LEVEL_UNIV || rd[i].s->navigate.on) &&
+                if ((rd[i].s->whatdest != ScopeLevel::LEVEL_UNIV ||
+                     rd[i].s->navigate.on) &&
                     !rd[i].s->docked && rd[i].s->active) {
                   tspeed = rd[i].s->speed;
                   tev = rd[i].s->protect.evade;

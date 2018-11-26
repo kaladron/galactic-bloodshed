@@ -26,7 +26,7 @@ void toxicity(int Playernum, int Governor, int APcount) {
     return;
   }
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     sprintf(buf, "scope must be a planet.\n");
     notify(Playernum, Governor, buf);
     return;

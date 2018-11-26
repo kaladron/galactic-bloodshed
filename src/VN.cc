@@ -43,7 +43,7 @@ void do_VN(shiptype *ship) {
                      planets[ship->storbits][ship->pnumorbits]->ypos +
                      int_rand(-10, 10);
         ship->docked = 0;
-        ship->whatdest = LEVEL_UNIV;
+        ship->whatdest = ScopeLevel::LEVEL_UNIV;
       }
     } else {
       int i, f;
@@ -98,7 +98,7 @@ static void order_berserker(shiptype *ship) {
    * it */
   ship->bombard = 1;
   ship->special.mind.target = VN_brain.Most_mad; /* who to attack */
-  ship->whatdest = LEVEL_PLAN;
+  ship->whatdest = ScopeLevel::LEVEL_PLAN;
   if (random() & 01)
     ship->deststar = Sdata.VN_index1[ship->special.mind.target - 1];
   else
@@ -133,7 +133,7 @@ static void order_VN(shiptype *ship) {
 
   if (Stars[ship->deststar]->numplanets) {
     ship->destpnum = int_rand(0, (int)Stars[ship->deststar]->numplanets - 1);
-    ship->whatdest = LEVEL_PLAN;
+    ship->whatdest = ScopeLevel::LEVEL_PLAN;
     ship->special.mind.busy = 1;
   } else {
     /* no good; find someplace else. */
@@ -193,7 +193,7 @@ void planet_doVN(shiptype *ship, planet *planet, sector_map &smap) {
           s2->nextship = planet->ships;
           planet->ships = Num_ships;
           s2->number = Num_ships;
-          s2->whatorbits = LEVEL_PLAN;
+          s2->whatorbits = ScopeLevel::LEVEL_PLAN;
           s2->storbits = ship->storbits;
           s2->pnumorbits = ship->pnumorbits;
           s2->docked = 1;
@@ -269,7 +269,8 @@ void planet_doVN(shiptype *ship, planet *planet, sector_map &smap) {
       }
     } else { /* orbiting a planet */
       if (ship->special.mind.busy) {
-        if (ship->whatdest == LEVEL_PLAN && ship->deststar == ship->storbits &&
+        if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
+            ship->deststar == ship->storbits &&
             ship->destpnum == ship->pnumorbits) {
           if (planet->type == PlanetType::GASGIANT)
             ship->special.mind.busy = 0;
@@ -284,7 +285,7 @@ void planet_doVN(shiptype *ship, planet *planet, sector_map &smap) {
               ;
             if (d) {
               ship->docked = 1;
-              ship->whatdest = LEVEL_PLAN;
+              ship->whatdest = ScopeLevel::LEVEL_PLAN;
               ship->deststar = ship->storbits;
               ship->destpnum = ship->pnumorbits;
               ship->xpos = Stars[ship->storbits]->xpos + planet->xpos;

@@ -23,7 +23,7 @@ void center(const command_t &argv, const player_t Playernum,
     sprintf(buf, "cs: bad scope.\n");
     notify(Playernum, Governor, buf);
     return;
-  } else if (where.level == LEVEL_SHIP) {
+  } else if (where.level == ScopeLevel::LEVEL_SHIP) {
     notify(Playernum, Governor, "CHEATER!!!\n");
     return;
   }
@@ -72,12 +72,12 @@ void cs(const command_t &argv, const player_t Playernum,
     /* fix lastx, lasty coordinates */
 
     switch (Dir[Playernum - 1][Governor].level) {
-      case LEVEL_UNIV:
+      case ScopeLevel::LEVEL_UNIV:
         Dir[Playernum - 1][Governor].lastx[0] =
             Dir[Playernum - 1][Governor].lasty[0] = 0.0;
         break;
-      case LEVEL_STAR:
-        if (where.level == LEVEL_UNIV) {
+      case ScopeLevel::LEVEL_STAR:
+        if (where.level == ScopeLevel::LEVEL_UNIV) {
           Dir[Playernum - 1][Governor].lastx[1] =
               Stars[Dir[Playernum - 1][Governor].snum]->xpos;
           Dir[Playernum - 1][Governor].lasty[1] =
@@ -86,14 +86,14 @@ void cs(const command_t &argv, const player_t Playernum,
           Dir[Playernum - 1][Governor].lastx[0] =
               Dir[Playernum - 1][Governor].lasty[0] = 0.0;
         break;
-      case LEVEL_PLAN: {
+      case ScopeLevel::LEVEL_PLAN: {
         const auto &planet = getplanet(Dir[Playernum - 1][Governor].snum,
                                        Dir[Playernum - 1][Governor].pnum);
-        if (where.level == LEVEL_STAR &&
+        if (where.level == ScopeLevel::LEVEL_STAR &&
             where.snum == Dir[Playernum - 1][Governor].snum) {
           Dir[Playernum - 1][Governor].lastx[0] = planet.xpos;
           Dir[Playernum - 1][Governor].lasty[0] = planet.ypos;
-        } else if (where.level == LEVEL_UNIV) {
+        } else if (where.level == ScopeLevel::LEVEL_UNIV) {
           Dir[Playernum - 1][Governor].lastx[1] =
               Stars[Dir[Playernum - 1][Governor].snum]->xpos + planet.xpos;
           Dir[Playernum - 1][Governor].lasty[1] =
@@ -102,16 +102,17 @@ void cs(const command_t &argv, const player_t Playernum,
           Dir[Playernum - 1][Governor].lastx[0] =
               Dir[Playernum - 1][Governor].lasty[0] = 0.0;
       } break;
-      case LEVEL_SHIP:
+      case ScopeLevel::LEVEL_SHIP:
         (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
         if (!s->docked) {
           switch (where.level) {
-            case LEVEL_UNIV:
+            case ScopeLevel::LEVEL_UNIV:
               Dir[Playernum - 1][Governor].lastx[1] = s->xpos;
               Dir[Playernum - 1][Governor].lasty[1] = s->ypos;
               break;
-            case LEVEL_STAR:
-              if (s->whatorbits >= LEVEL_STAR && s->storbits == where.snum) {
+            case ScopeLevel::LEVEL_STAR:
+              if (s->whatorbits >= ScopeLevel::LEVEL_STAR &&
+                  s->storbits == where.snum) {
                 /* we are going UP from the ship.. change last*/
                 Dir[Playernum - 1][Governor].lastx[0] =
                     s->xpos - Stars[s->storbits]->xpos;
@@ -121,9 +122,9 @@ void cs(const command_t &argv, const player_t Playernum,
                 Dir[Playernum - 1][Governor].lastx[0] =
                     Dir[Playernum - 1][Governor].lasty[0] = 0.0;
               break;
-            case LEVEL_PLAN:
-              if (s->whatorbits == LEVEL_PLAN && s->storbits == where.snum &&
-                  s->pnumorbits == where.pnum) {
+            case ScopeLevel::LEVEL_PLAN:
+              if (s->whatorbits == ScopeLevel::LEVEL_PLAN &&
+                  s->storbits == where.snum && s->pnumorbits == where.pnum) {
                 /* same */
                 const auto &planet =
                     getplanet((int)s->storbits, (int)s->pnumorbits);
@@ -135,7 +136,7 @@ void cs(const command_t &argv, const player_t Playernum,
                 Dir[Playernum - 1][Governor].lastx[0] =
                     Dir[Playernum - 1][Governor].lasty[0] = 0.0;
               break;
-            case LEVEL_SHIP:
+            case ScopeLevel::LEVEL_SHIP:
               Dir[Playernum - 1][Governor].lastx[0] =
                   Dir[Playernum - 1][Governor].lasty[0] = 0.0;
               break;
@@ -154,7 +155,7 @@ void cs(const command_t &argv, const player_t Playernum,
     /* make new def scope */
     where = Getplace(Playernum, Governor, argv[2], 0);
 
-    if (!where.err && where.level != LEVEL_SHIP) {
+    if (!where.err && where.level != ScopeLevel::LEVEL_SHIP) {
       Race->governor[Governor].deflevel = where.level;
       Race->governor[Governor].defsystem = where.snum;
       Race->governor[Governor].defplanetnum = where.pnum;

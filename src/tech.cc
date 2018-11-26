@@ -21,7 +21,7 @@
 void technology(int Playernum, int Governor, int APcount) {
   short invest;
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     sprintf(buf, "scope must be a planet (%d).\n",
             Dir[Playernum - 1][Governor].level);
     notify(Playernum, Governor, buf);

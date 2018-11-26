@@ -63,17 +63,17 @@ char *prin_ship_orbits(shiptype *s) {
   char *motherorbits;
 
   switch (s->whatorbits) {
-    case LEVEL_UNIV:
+    case ScopeLevel::LEVEL_UNIV:
       sprintf(Dispshiporbits_buf, "/(%.0f,%.0f)", s->xpos, s->ypos);
       break;
-    case LEVEL_STAR:
+    case ScopeLevel::LEVEL_STAR:
       sprintf(Dispshiporbits_buf, "/%s", Stars[s->storbits]->name);
       break;
-    case LEVEL_PLAN:
+    case ScopeLevel::LEVEL_PLAN:
       sprintf(Dispshiporbits_buf, "/%s/%s", Stars[s->storbits]->name,
               Stars[s->storbits]->pnames[s->pnumorbits]);
       break;
-    case LEVEL_SHIP:
+    case ScopeLevel::LEVEL_SHIP:
       if (getship(&mothership, s->destshipno)) {
         motherorbits = prin_ship_orbits(mothership);
         strcpy(Dispshiporbits_buf, motherorbits);

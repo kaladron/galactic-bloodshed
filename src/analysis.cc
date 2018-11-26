@@ -103,15 +103,15 @@ void analysis(const command_t &argv, const player_t Playernum,
     }
 
     switch (where.level) {
-      case LEVEL_UNIV:
-      case LEVEL_SHIP:
+      case ScopeLevel::LEVEL_UNIV:
+      case ScopeLevel::LEVEL_SHIP:
         notify(Playernum, Governor, "You can only analyze planets.\n");
         break;
-      case LEVEL_PLAN:
+      case ScopeLevel::LEVEL_PLAN:
         do_analysis(Playernum, Governor, do_player, mode, sector_type,
                     where.snum, where.pnum);
         break;
-      case LEVEL_STAR:
+      case ScopeLevel::LEVEL_STAR:
         for (planetnum_t pnum = 0; pnum < Stars[where.snum]->numplanets; pnum++)
           do_analysis(Playernum, Governor, do_player, mode, sector_type,
                       where.snum, pnum);

@@ -244,17 +244,17 @@ void do_turn(int update) {
   for (shipnum_t i = Num_ships; i >= 1; i--) {
     if (ships[i]->alive) {
       switch (ships[i]->whatorbits) {
-        case LEVEL_UNIV:
+        case ScopeLevel::LEVEL_UNIV:
           insert_sh_univ(&Sdata, ships[i]);
           break;
-        case LEVEL_STAR:
+        case ScopeLevel::LEVEL_STAR:
           insert_sh_star(Stars[ships[i]->storbits], ships[i]);
           break;
-        case LEVEL_PLAN:
+        case ScopeLevel::LEVEL_PLAN:
           insert_sh_plan(planets[ships[i]->storbits][ships[i]->pnumorbits],
                          ships[i]);
           break;
-        case LEVEL_SHIP:
+        case ScopeLevel::LEVEL_SHIP:
           insert_sh_ship(ships[i], ships[ships[i]->destshipno]);
           break;
       }
@@ -479,15 +479,16 @@ static int APadd(int sh, int popn, racetype *race) {
 }
 
 int governed(racetype *race) {
-  return (
-      race->Gov_ship && race->Gov_ship <= Num_ships &&
-      ships[race->Gov_ship] != NULL && ships[race->Gov_ship]->alive &&
-      ships[race->Gov_ship]->docked &&
-      (ships[race->Gov_ship]->whatdest == LEVEL_PLAN ||
-       (ships[race->Gov_ship]->whatorbits == LEVEL_SHIP &&
-        ships[ships[race->Gov_ship]->destshipno]->type == STYPE_HABITAT &&
-        (ships[ships[race->Gov_ship]->destshipno]->whatorbits == LEVEL_PLAN ||
-         ships[ships[race->Gov_ship]->destshipno]->whatorbits == LEVEL_STAR))));
+  return (race->Gov_ship && race->Gov_ship <= Num_ships &&
+          ships[race->Gov_ship] != NULL && ships[race->Gov_ship]->alive &&
+          ships[race->Gov_ship]->docked &&
+          (ships[race->Gov_ship]->whatdest == ScopeLevel::LEVEL_PLAN ||
+           (ships[race->Gov_ship]->whatorbits == ScopeLevel::LEVEL_SHIP &&
+            ships[ships[race->Gov_ship]->destshipno]->type == STYPE_HABITAT &&
+            (ships[ships[race->Gov_ship]->destshipno]->whatorbits ==
+                 ScopeLevel::LEVEL_PLAN ||
+             ships[ships[race->Gov_ship]->destshipno]->whatorbits ==
+                 ScopeLevel::LEVEL_STAR))));
 }
 
 /* fix stability for stars */
@@ -564,13 +565,13 @@ void do_reset() {
   for (shipnum_t i = Num_ships; i >= 1; i--) {
     if (ships[i]->alive) {
       switch (ships[i]->whatorbits) {
-        case LEVEL_UNIV:
+        case ScopeLevel::LEVEL_UNIV:
           insert_sh_univ(&Sdata, ships[i]);
           break;
-        case LEVEL_STAR:
+        case ScopeLevel::LEVEL_STAR:
           insert_sh_star(Stars[ships[i]->storbits], ships[i]);
           break;
-        case LEVEL_PLAN:
+        case ScopeLevel::LEVEL_PLAN:
           insert_sh_plan(planets[ships[i]->storbits][ships[i]->pnumorbits],
                          ships[i]);
           ships[i]->xpos =
@@ -580,7 +581,7 @@ void do_reset() {
               planets[ships[i]->storbits][ships[i]->pnumorbits]->ypos +
               Stars[ships[i]->storbits]->ypos;
           break;
-        case LEVEL_SHIP:
+        case ScopeLevel::LEVEL_SHIP:
           insert_sh_ship(ships[i], ships[ships[i]->destshipno]);
           break;
       }
@@ -729,7 +730,7 @@ static void maintain(racetype *r, int gov, int amount) {
 #endif
 
 static int attack_planet(shiptype *ship) {
-  if (ship->whatdest == LEVEL_PLAN)
+  if (ship->whatdest == ScopeLevel::LEVEL_PLAN)
     return 1;
   else
     return 0;

@@ -65,7 +65,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
         free(s);
         continue;
       }
-      if (s->whatorbits == LEVEL_UNIV) {
+      if (s->whatorbits == ScopeLevel::LEVEL_UNIV) {
         if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
           free(s);
           continue;
@@ -79,7 +79,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
         free(s);
         continue;
       } else { /* ship has a recipient */
-        if (s->whatdest == LEVEL_PLAN) {
+        if (s->whatdest == ScopeLevel::LEVEL_PLAN) {
           sprintf(buf, "%s at %d,%d\n", Ship(*s).c_str(), s->land_x, s->land_y);
           notify(Playernum, Governor, buf);
           if (s->storbits != Dir[Playernum - 1][Governor].snum ||
@@ -100,12 +100,12 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             free(s);
             continue;
           }
-          if (!s2->alive ||
-              !(s->whatorbits == LEVEL_SHIP || s2->destshipno == shipno)) {
+          if (!s2->alive || !(s->whatorbits == ScopeLevel::LEVEL_SHIP ||
+                              s2->destshipno == shipno)) {
             /* the ship it was docked with died or
                undocked with it or something. */
             s->docked = 0;
-            s->whatdest = LEVEL_UNIV;
+            s->whatdest = ScopeLevel::LEVEL_UNIV;
             putship(s);
             sprintf(buf, "%s is not docked.\n", Ship(*s2).c_str());
             notify(Playernum, Governor, buf);
@@ -113,7 +113,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
             free(s2);
             continue;
           }
-          if (overloaded(s2) && s2->whatorbits == LEVEL_SHIP) {
+          if (overloaded(s2) && s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
             sprintf(buf, "%s is overloaded!\n", Ship(*s2).c_str());
             notify(Playernum, Governor, buf);
             free(s);
@@ -208,12 +208,14 @@ void load(int Playernum, int Governor, int APcount, int mode) {
           break;
         case 'r':
           if (sh) {
-            if (s->type == STYPE_SHUTTLE && s->whatorbits != LEVEL_SHIP)
+            if (s->type == STYPE_SHUTTLE &&
+                s->whatorbits != ScopeLevel::LEVEL_SHIP)
               uplim = diff ? 0 : s2->resource;
             else
               uplim =
                   diff ? 0 : MIN(s2->resource, Max_resource(s) - s->resource);
-            if (s2->type == STYPE_SHUTTLE && s->whatorbits != LEVEL_SHIP)
+            if (s2->type == STYPE_SHUTTLE &&
+                s->whatorbits != ScopeLevel::LEVEL_SHIP)
               lolim = -s->resource;
             else
               lolim = -MIN(s->resource, Max_resource(s2) - s2->resource);
@@ -488,7 +490,7 @@ void jettison(int Playernum, int Governor, int APcount) {
         free(s);
         continue;
       }
-      if (s->whatorbits == LEVEL_UNIV) {
+      if (s->whatorbits == ScopeLevel::LEVEL_UNIV) {
         if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
           free(s);
           continue;
@@ -660,8 +662,8 @@ void dump(int Playernum, int Governor, int APcount) {
   } else { /* list of places given */
     for (i = 2; i < argn; i++) {
       where = Getplace(Playernum, Governor, args[i], 1);
-      if (!where.err && where.level != LEVEL_UNIV &&
-          where.level != LEVEL_SHIP) {
+      if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
+          where.level != ScopeLevel::LEVEL_SHIP) {
         star = where.snum;
         getstar(&Stars[star], star);
 
@@ -693,7 +695,7 @@ void transfer(int Playernum, int Governor, int APcount) {
   int player, give;
   char commod = 0;
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     sprintf(buf, "You need to be in planet scope to do this.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -1014,7 +1016,7 @@ static void do_transporter(racetype *Race, int Governor, shiptype *s) {
 }
 
 static int landed_on(shiptype *s, shipnum_t shipno) {
-  return (s->whatorbits == LEVEL_SHIP && s->destshipno == shipno);
+  return (s->whatorbits == ScopeLevel::LEVEL_SHIP && s->destshipno == shipno);
 }
 
 static void unload_onto_alien_sector(int Playernum, int Governor,

@@ -57,7 +57,7 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
         free(from);
         continue;
       }
-      if (from->whatorbits == LEVEL_UNIV) {
+      if (from->whatorbits == ScopeLevel::LEVEL_UNIV) {
         if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
           free(from);
           continue;
@@ -227,9 +227,9 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
       /* protecting ships retaliate individually if damage was inflicted */
       /* AFVs immune to retaliation of this type */
       if (damage && from->alive && from->type != OTYPE_AFV) {
-        if (to->whatorbits == LEVEL_STAR) /* star level ships */
+        if (to->whatorbits == ScopeLevel::LEVEL_STAR) /* star level ships */
           sh = Stars[to->storbits]->ships;
-        if (to->whatorbits == LEVEL_PLAN) { /* planet level ships */
+        if (to->whatorbits == ScopeLevel::LEVEL_PLAN) { /* planet level ships */
           const auto &p = getplanet((int)to->storbits, (int)to->pnumorbits);
           sh = p.ships;
         }
@@ -297,7 +297,7 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
         continue;
       }
 
-      if (from->whatorbits != LEVEL_PLAN) {
+      if (from->whatorbits != ScopeLevel::LEVEL_PLAN) {
         notify(Playernum, Governor,
                "You must be in orbit around a planet to bombard.\n");
         free(from);
@@ -480,7 +480,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
   bzero((char *)Nuked, sizeof(Nuked));
 
   /* get the planet from the players current scope */
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor, "You have to set scope to the planet first.\n");
     return;
   }
@@ -526,7 +526,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
     return;
   }
 
-  if (to->whatorbits != LEVEL_PLAN) {
+  if (to->whatorbits != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor, "The ship is not in planet orbit.\n");
     free(to);
     return;
@@ -690,7 +690,7 @@ void detonate(const command_t &argv, const player_t Playernum,
         notify(Playernum, Governor, "The mine is not activated.\n");
         free(s);
         continue;
-      } else if (s->docked || s->whatorbits == LEVEL_SHIP) {
+      } else if (s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP) {
         notify(Playernum, Governor, "The mine is docked or landed.\n");
         free(s);
         continue;
@@ -742,7 +742,7 @@ int adjacent(int fx, int fy, int tx, int ty, const planet &p) {
 }
 
 int landed(shiptype *ship) {
-  return (ship->whatdest == LEVEL_PLAN && ship->docked);
+  return (ship->whatdest == ScopeLevel::LEVEL_PLAN && ship->docked);
 }
 
 static void check_overload(shiptype *ship, int cew, int *strength) {

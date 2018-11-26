@@ -53,9 +53,12 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
   if (strength <= 0) return -1;
 
   if (!(from->alive || ignore) || !to->alive) return -1;
-  if (from->whatorbits == LEVEL_SHIP || from->whatorbits == LEVEL_UNIV)
+  if (from->whatorbits == ScopeLevel::LEVEL_SHIP ||
+      from->whatorbits == ScopeLevel::LEVEL_UNIV)
     return -1;
-  if (to->whatorbits == LEVEL_SHIP || to->whatorbits == LEVEL_UNIV) return -1;
+  if (to->whatorbits == ScopeLevel::LEVEL_SHIP ||
+      to->whatorbits == ScopeLevel::LEVEL_UNIV)
+    return -1;
   if (from->storbits != to->storbits) return -1;
   if (has_switch(from) && !from->on) return -1;
 
@@ -147,7 +150,7 @@ int shoot_planet_to_ship(racetype *Race, shiptype *ship, int strength,
   if (strength <= 0) return -1;
   if (!ship->alive) return -1;
 
-  if (ship->whatorbits != LEVEL_PLAN) return -1;
+  if (ship->whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
 
   ship_disposition(ship, &evade, &speed, &body);
 
@@ -177,7 +180,7 @@ int shoot_ship_to_planet(shiptype *ship, planet *pl, int strength, int x, int y,
   if (strength <= 0) return -1;
   if (!(ship->alive || ignore)) return -1;
   if (has_switch(ship) && !ship->on) return -1;
-  if (ship->whatorbits != LEVEL_PLAN) return -1;
+  if (ship->whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
 
   if (x < 0 || x > pl->Maxx - 1 || y < 0 || y > pl->Maxy - 1) return -1;
 

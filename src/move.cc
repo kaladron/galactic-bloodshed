@@ -49,7 +49,7 @@ void arm(const command_t &argv, const player_t Playernum,
   int amount = 0;
   money_t cost = 0;
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor, "Change scope to planet level first.\n");
     return;
   }
@@ -164,7 +164,7 @@ void move_popn(const command_t &argv, const player_t Playernum,
   double astrength, dstrength;
   racetype *Race, *alien;
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     sprintf(buf, "Wrong scope\n");
     return;
   }

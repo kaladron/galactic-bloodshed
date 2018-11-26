@@ -38,10 +38,10 @@ void map(const command_t &argv, const player_t Playernum,
   if (where.err) return;
 
   switch (where.level) {
-    case LEVEL_SHIP:
+    case ScopeLevel::LEVEL_SHIP:
       notify(Playernum, Governor, "Bad scope.\n");
       return;
-    case LEVEL_PLAN: {
+    case ScopeLevel::LEVEL_PLAN: {
       const auto &p = getplanet(where.snum, where.pnum);
       show_map(Playernum, Governor, where.snum, where.pnum, p);
       if (Stars[where.snum]->stability > 50)

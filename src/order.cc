@@ -114,7 +114,8 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
       if (match(args[3], "off"))
         ship->hyper_drive.on = 0;
       else {
-        if (ship->whatdest != LEVEL_STAR && ship->whatdest != LEVEL_PLAN) {
+        if (ship->whatdest != ScopeLevel::LEVEL_STAR &&
+            ship->whatdest != ScopeLevel::LEVEL_PLAN) {
           notify(Playernum, Governor, "Destination must be star or planet.\n");
           return;
         }
@@ -164,7 +165,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
       return;
     }
     if (has_switch(ship)) {
-      if (ship->whatorbits == LEVEL_SHIP) {
+      if (ship->whatorbits == ScopeLevel::LEVEL_SHIP) {
         notify(Playernum, Governor, "That ship is being transported.\n");
         return;
       }
@@ -206,7 +207,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
       }
       where = Getplace(Playernum, Governor, args[3], 1);
       if (!where.err) {
-        if (where.level == LEVEL_SHIP) {
+        if (where.level == ScopeLevel::LEVEL_SHIP) {
           (void)getship(&tmpship, where.shipno);
           if (!followable(ship, tmpship)) {
             notify(Playernum, Governor,
@@ -216,11 +217,12 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
           }
           free(tmpship);
           ship->destshipno = where.shipno;
-          ship->whatdest = LEVEL_SHIP;
+          ship->whatdest = ScopeLevel::LEVEL_SHIP;
         } else {
           /* to foil cheaters */
-          if (where.level != LEVEL_UNIV &&
-              ((ship->storbits != where.snum) && where.level != LEVEL_STAR) &&
+          if (where.level != ScopeLevel::LEVEL_UNIV &&
+              ((ship->storbits != where.snum) &&
+               where.level != ScopeLevel::LEVEL_STAR) &&
               isclr(Stars[where.snum]->explored, ship->owner)) {
             notify(Playernum, Governor, "You haven't explored this system.\n");
             return;
@@ -526,7 +528,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
     }
     if (ship->type == OTYPE_FACTORY) {
       unsigned int oncost;
-      if (ship->whatorbits == LEVEL_SHIP) {
+      if (ship->whatorbits == ScopeLevel::LEVEL_SHIP) {
         shiptype *s2;
         int hangerneeded;
 
@@ -634,11 +636,11 @@ static void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
   yf = s->ypos;
 
   switch (s->special.aimed_at.level) {
-    case LEVEL_UNIV:
+    case ScopeLevel::LEVEL_UNIV:
       sprintf(buf, "There is nothing out here to aim at.");
       notify(Playernum, Governor, buf);
       break;
-    case LEVEL_STAR:
+    case ScopeLevel::LEVEL_STAR:
       sprintf(buf, "Star %s ", prin_aimed_at(*s).c_str());
       notify(Playernum, Governor, buf);
       if ((dist = sqrt(Distsq(xf, yf, str->xpos, str->ypos))) <=
@@ -655,7 +657,7 @@ static void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
         notify(Playernum, Governor, buf);
       }
       break;
-    case LEVEL_PLAN: {
+    case ScopeLevel::LEVEL_PLAN: {
       sprintf(buf, "Planet %s ", prin_aimed_at(*s).c_str());
       notify(Playernum, Governor, buf);
       auto p = getplanet(s->special.aimed_at.snum, s->special.aimed_at.pnum);
@@ -674,7 +676,7 @@ static void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
         notify(Playernum, Governor, buf);
       }
     } break;
-    case LEVEL_SHIP:
+    case ScopeLevel::LEVEL_SHIP:
       sprintf(buf, "You can't see anything of use there.\n");
       notify(Playernum, Governor, buf);
       break;
@@ -693,7 +695,7 @@ static void DispOrders(int Playernum, int Governor, shiptype *ship) {
     return;
 
   if (ship->docked)
-    if (ship->whatdest == LEVEL_SHIP)
+    if (ship->whatdest == ScopeLevel::LEVEL_SHIP)
       sprintf(temp, "D#%lu", ship->destshipno);
     else
       sprintf(temp, "L%2d,%-2d", ship->land_x, ship->land_y);
@@ -800,7 +802,7 @@ static void DispOrders(int Playernum, int Governor, shiptype *ship) {
     strcat(buf, temp);
   }
 
-  if (ship->type == STYPE_MISSILE && ship->whatdest == LEVEL_PLAN) {
+  if (ship->type == STYPE_MISSILE && ship->whatdest == ScopeLevel::LEVEL_PLAN) {
     if (ship->special.impact.scatter)
       strcat(buf, "/scatter");
     else {
@@ -856,7 +858,7 @@ void route(int Playernum, int Governor, int APcount) {
   char *c;
   placetype where;
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor,
            "You have to 'cs' to a planet to examine routes.\n");
     return;
@@ -963,7 +965,7 @@ void route(int Playernum, int Governor, int APcount) {
     else {
       where = Getplace(Playernum, Governor, args[2], 1);
       if (!where.err) {
-        if (where.level != LEVEL_PLAN) {
+        if (where.level != ScopeLevel::LEVEL_PLAN) {
           notify(Playernum, Governor, "You have to designate a planet.\n");
           return;
         }

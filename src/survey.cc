@@ -85,24 +85,24 @@ void survey(const command_t &argv, const player_t Playernum,
     /* they are surveying a sector */
     if ((isdigit(args[1][0]) && index(args[1], ',') != NULL) ||
         ((*args[1] == '-') && (all = 1))) {
-      if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+      if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
         sprintf(buf, "There are no sectors here.\n");
         notify(Playernum, Governor, buf);
         return;
       } else {
-        where.level = LEVEL_PLAN;
+        where.level = ScopeLevel::LEVEL_PLAN;
         where.snum = Dir[Playernum - 1][Governor].snum;
         where.pnum = Dir[Playernum - 1][Governor].pnum;
       }
     } else {
       where = Getplace(Playernum, Governor, args[1], 0);
-      if (where.err || where.level == LEVEL_SHIP) return;
+      if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;
     }
   }
 
   Race = races[Playernum - 1];
 
-  if (where.level == LEVEL_PLAN) {
+  if (where.level == ScopeLevel::LEVEL_PLAN) {
     const auto &p = getplanet((int)where.snum, (int)where.pnum);
 
     compat = compatibility(p, Race);
@@ -330,7 +330,7 @@ void survey(const command_t &argv, const player_t Playernum,
         notify(Playernum, Governor, buf);
       }
     }
-  } else if (where.level == LEVEL_STAR) {
+  } else if (where.level == ScopeLevel::LEVEL_STAR) {
     sprintf(buf, "Star %s\n", Stars[where.snum]->name);
     notify(Playernum, Governor, buf);
     sprintf(buf, "locn: %f,%f\n", Stars[where.snum]->xpos,
@@ -373,7 +373,7 @@ void survey(const command_t &argv, const player_t Playernum,
     }
     sprintf(buf, "\n");
     notify(Playernum, Governor, buf);
-  } else if (where.level == LEVEL_UNIV) {
+  } else if (where.level == ScopeLevel::LEVEL_UNIV) {
     sprintf(buf, "It's just _there_, you know?\n");
     notify(Playernum, Governor, buf);
   } else {
@@ -395,22 +395,22 @@ void repair(const command_t &argv, const player_t Playernum,
   } else {
     /* repairing a sector */
     if (isdigit(args[1][0]) && index(args[1], ',') != NULL) {
-      if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+      if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
         sprintf(buf, "There are no sectors here.\n");
         notify(Playernum, Governor, buf);
         return;
       } else {
-        where.level = LEVEL_PLAN;
+        where.level = ScopeLevel::LEVEL_PLAN;
         where.snum = Dir[Playernum - 1][Governor].snum;
         where.pnum = Dir[Playernum - 1][Governor].pnum;
       }
     } else {
       where = Getplace(Playernum, Governor, args[1], 0);
-      if (where.err || where.level == LEVEL_SHIP) return;
+      if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;
     }
   }
 
-  if (where.level == LEVEL_PLAN) {
+  if (where.level == ScopeLevel::LEVEL_PLAN) {
     auto p = getplanet((int)where.snum, (int)where.pnum);
     if (!p.info[Playernum - 1].numsectsowned) {
       notify(Playernum, Governor,

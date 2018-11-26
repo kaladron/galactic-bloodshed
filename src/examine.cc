@@ -40,7 +40,7 @@ void examine(int Playernum, int Governor, int APcount) {
     free(ship);
     return;
   }
-  if (ship->whatorbits == LEVEL_UNIV ||
+  if (ship->whatorbits == ScopeLevel::LEVEL_UNIV ||
       isclr(Stars[ship->storbits]->inhabited, Playernum)) {
     sprintf(buf, "That ship it not visible to you.\n");
     notify(Playernum, Governor, buf);
@@ -70,7 +70,7 @@ void examine(int Playernum, int Governor, int APcount) {
   fclose(fd);
 
   if (!ship->examined) {
-    if (ship->whatorbits == LEVEL_UNIV)
+    if (ship->whatorbits == ScopeLevel::LEVEL_UNIV)
       deductAPs(Playernum, Governor, APcount, 0, 1); /* ded from sdata */
     else
       deductAPs(Playernum, Governor, APcount, (int)ship->storbits, 0);

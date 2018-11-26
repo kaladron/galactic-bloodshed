@@ -84,7 +84,7 @@ void proj_fuel(const command_t &argv, const player_t Playernum,
     free(ship);
     return;
   }
-  if (landed(ship) && (ship->whatorbits == LEVEL_PLAN)) {
+  if (landed(ship) && (ship->whatorbits == ScopeLevel::LEVEL_PLAN)) {
     const auto &p = getplanet(ship->storbits, ship->pnumorbits);
     gravity_factor = gravity(p);
     sprintf(plan_buf, "/%s/%s", Stars[(int)ship->storbits]->name,
@@ -102,7 +102,7 @@ void proj_fuel(const command_t &argv, const player_t Playernum,
     free(ship);
     return;
   }
-  if (tmpdest.level == LEVEL_SHIP) {
+  if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&tmpship, tmpdest.shipno);
     if (!followable(ship, tmpship)) {
       notify(Playernum, Governor, "The ship's destination is out of range.\n");
@@ -112,15 +112,17 @@ void proj_fuel(const command_t &argv, const player_t Playernum,
     }
     free(tmpship);
   }
-  if (tmpdest.level != LEVEL_UNIV && tmpdest.level != LEVEL_SHIP &&
-      ((ship->storbits != tmpdest.snum) && tmpdest.level != LEVEL_STAR) &&
+  if (tmpdest.level != ScopeLevel::LEVEL_UNIV &&
+      tmpdest.level != ScopeLevel::LEVEL_SHIP &&
+      ((ship->storbits != tmpdest.snum) &&
+       tmpdest.level != ScopeLevel::LEVEL_STAR) &&
       isclr(Stars[tmpdest.snum]->explored, ship->owner)) {
     notify(Playernum, Governor,
            "You haven't explored the destination system.\n");
     free(ship);
     return;
   }
-  if (tmpdest.level == LEVEL_UNIV) {
+  if (tmpdest.level == ScopeLevel::LEVEL_UNIV) {
     notify(Playernum, Governor, "Invalid ship destination.\n");
     free(ship);
     return;
@@ -131,12 +133,12 @@ void proj_fuel(const command_t &argv, const player_t Playernum,
   y_0 = ship->ypos;
   free(ship);
 
-  if (tmpdest.level == LEVEL_UNIV) {
+  if (tmpdest.level == ScopeLevel::LEVEL_UNIV) {
     notify(Playernum, Governor,
            "That ship currently has no destination orders...\n");
     return;
   }
-  if (tmpdest.level == LEVEL_SHIP) {
+  if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&tmpship, tmpdest.shipno);
     if (tmpship->owner != Playernum) {
       notify(Playernum, Governor, "Nice try.\n");
@@ -145,11 +147,11 @@ void proj_fuel(const command_t &argv, const player_t Playernum,
     x_1 = tmpship->xpos;
     y_1 = tmpship->ypos;
     free(tmpship);
-  } else if (tmpdest.level == LEVEL_PLAN) {
+  } else if (tmpdest.level == ScopeLevel::LEVEL_PLAN) {
     const auto &p = getplanet(tmpdest.snum, tmpdest.pnum);
     x_1 = p.xpos + Stars[tmpdest.snum]->xpos;
     y_1 = p.ypos + Stars[tmpdest.snum]->ypos;
-  } else if (tmpdest.level == LEVEL_STAR) {
+  } else if (tmpdest.level == ScopeLevel::LEVEL_STAR) {
     x_1 = Stars[tmpdest.snum]->xpos;
     y_1 = Stars[tmpdest.snum]->ypos;
   } else
@@ -259,7 +261,7 @@ static int do_trip(const placetype &tmpdest, double fuel,
   tmpship->whatdest = tmpdest.level;
   tmpship->deststar = tmpdest.snum;
   tmpship->destpnum = tmpdest.pnum;
-  if (tmpship->whatdest == LEVEL_SHIP || tmpship->ships) {
+  if (tmpship->whatdest == ScopeLevel::LEVEL_SHIP || tmpship->ships) {
     /* Bring in the other ships.  Moveship() uses ships[]. */
     Num_ships = Numships();
     ships = (shiptype **)malloc(sizeof(shiptype *) * (Num_ships) + 1);
@@ -285,14 +287,14 @@ static int do_trip(const placetype &tmpdest, double fuel,
     x_0 = (double)tmpship->xpos;
     y_0 = (double)tmpship->ypos;
     tmpdist = sqrt(Distsq(x_0, y_0, x_1, y_1));
-    switch ((int)tmpship->whatdest) {
-      case LEVEL_STAR:
+    switch (tmpship->whatdest) {
+      case ScopeLevel::LEVEL_STAR:
         if (tmpdist <= (double)SYSTEMSIZE) trip_resolved = 1;
         break;
-      case LEVEL_PLAN:
+      case ScopeLevel::LEVEL_PLAN:
         if (tmpdist <= (double)PLORBITSIZE) trip_resolved = 1;
         break;
-      case LEVEL_SHIP:
+      case ScopeLevel::LEVEL_SHIP:
         if (tmpdist <= (double)DIST_TO_LAND) trip_resolved = 1;
         break;
       default:
@@ -300,14 +302,14 @@ static int do_trip(const placetype &tmpdest, double fuel,
     }
     if (((tmpship->fuel == fuel_level1) && (!tmpship->hyper_drive.on)) &&
         (trip_resolved == 0)) {
-      if (tmpship->whatdest == LEVEL_SHIP) {
+      if (tmpship->whatdest == ScopeLevel::LEVEL_SHIP) {
         for (shipnum_t i = 1; i <= Num_ships; i++) free(ships[i]);
         free(ships);
       }
       return (0);
     }
   }
-  if (tmpship->whatdest == LEVEL_SHIP || tmpship->ships) {
+  if (tmpship->whatdest == ScopeLevel::LEVEL_SHIP || tmpship->ships) {
     for (shipnum_t i = 1; i <= Num_ships; i++) free(ships[i]);
     free(ships);
   }

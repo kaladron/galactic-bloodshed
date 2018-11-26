@@ -150,7 +150,7 @@ class ship {
       starnum_t snum;         /* aimed at what star */
       char intensity;         /* intensity of aiming */
       planetnum_t pnum;       /* aimed at what planet */
-      levels_t level;         /* aimed at what level */
+      ScopeLevel level;       /* aimed at what level */
       unsigned char dummy[4]; /* unused bytes */
     } aimed_at;
     struct {                    /* VNs and berserkers */
@@ -235,8 +235,8 @@ class ship {
   starnum_t deststar;     /* destination star */
   planetnum_t destpnum;   /* destination planet */
   planetnum_t pnumorbits; /* # of planet if orbiting */
-  levels_t whatdest;      /* where going (same as Dir) */
-  levels_t whatorbits;    /* where orbited (same as Dir) */
+  ScopeLevel whatdest;    /* where going (same as Dir) */
+  ScopeLevel whatorbits;  /* where orbited (same as Dir) */
 
   unsigned char damage; /* amt of damage */
   int rad;              /* radiation level */
@@ -275,7 +275,7 @@ struct place { /* used in function return for finding place */
   planetnum_t pnum;
   shipnum_t shipno;
   shiptype *shipptr = NULL;
-  levels_t level;        /* .level: same as Dir */
+  ScopeLevel level;      /* .level: same as Dir */
   unsigned char err = 0; /* if error */
 };
 

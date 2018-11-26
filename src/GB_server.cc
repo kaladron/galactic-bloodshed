@@ -1628,7 +1628,7 @@ void kill_ship(int Playernum, shiptype *ship) {
     putsdata(&Sdata);
   }
 
-  if (ship->type == OTYPE_TOXWC && ship->whatorbits == LEVEL_PLAN) {
+  if (ship->type == OTYPE_TOXWC && ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
     auto planet = getplanet((int)ship->storbits, (int)ship->pnumorbits);
     planet.conditions[TOXIC] =
         MIN(100, planet.conditions[TOXIC] + ship->special.waste.toxic);
@@ -1636,11 +1636,11 @@ void kill_ship(int Playernum, shiptype *ship) {
   }
 
   /* undock the stuff docked with it */
-  if (ship->docked && ship->whatorbits != LEVEL_SHIP &&
-      ship->whatdest == LEVEL_SHIP) {
+  if (ship->docked && ship->whatorbits != ScopeLevel::LEVEL_SHIP &&
+      ship->whatdest == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&s, (int)ship->destshipno);
     s->docked = 0;
-    s->whatdest = LEVEL_UNIV;
+    s->whatdest = ScopeLevel::LEVEL_UNIV;
     putship(s);
     free(s);
   }
@@ -1692,26 +1692,26 @@ void compute_power_blocks(void) {
 void insert_sh_univ(struct stardata *sdata, shiptype *s) {
   s->nextship = sdata->ships;
   sdata->ships = s->number;
-  s->whatorbits = LEVEL_UNIV;
+  s->whatorbits = ScopeLevel::LEVEL_UNIV;
 }
 
 void insert_sh_star(startype *star, shiptype *s) {
   s->nextship = star->ships;
   star->ships = s->number;
-  s->whatorbits = LEVEL_STAR;
+  s->whatorbits = ScopeLevel::LEVEL_STAR;
 }
 
 void insert_sh_plan(planet *pl, shiptype *s) {
   s->nextship = pl->ships;
   pl->ships = s->number;
-  s->whatorbits = LEVEL_PLAN;
+  s->whatorbits = ScopeLevel::LEVEL_PLAN;
 }
 
 void insert_sh_ship(shiptype *s, shiptype *s2) {
   s->nextship = s2->ships;
   s2->ships = s->number;
-  s->whatorbits = LEVEL_SHIP;
-  s->whatdest = LEVEL_SHIP;
+  s->whatorbits = ScopeLevel::LEVEL_SHIP;
+  s->whatdest = ScopeLevel::LEVEL_SHIP;
   s->destshipno = s2->number;
 }
 
@@ -1735,7 +1735,7 @@ void remove_sh_star(shiptype *s) {
     putship(s2);
     free(s2);
   }
-  s->whatorbits = LEVEL_UNIV;
+  s->whatorbits = ScopeLevel::LEVEL_UNIV;
   s->nextship = 0;
 }
 
@@ -1760,7 +1760,7 @@ void remove_sh_plan(shiptype *s) {
     free(s2);
   }
   s->nextship = 0;
-  s->whatorbits = LEVEL_UNIV;
+  s->whatorbits = ScopeLevel::LEVEL_UNIV;
 }
 
 void remove_sh_ship(shiptype *s, shiptype *ship) {
@@ -1780,7 +1780,8 @@ void remove_sh_ship(shiptype *s, shiptype *ship) {
     free(s2);
   }
   s->nextship = 0;
-  s->whatorbits = LEVEL_UNIV; /* put in limbo - wait for insert_sh.. */
+  s->whatorbits =
+      ScopeLevel::LEVEL_UNIV; /* put in limbo - wait for insert_sh.. */
 }
 
 static double GetComplexity(int ship) {
@@ -1868,32 +1869,32 @@ void adjust_morale(racetype *winner, racetype *loser, int amount) {
 static void do_prompt(player_t Playernum, governor_t Governor) {
   shiptype *s, *s2;
 
-  if (Dir[Playernum - 1][Governor].level == LEVEL_UNIV) {
+  if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_UNIV) {
     sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] / )\n",
             Sdata.AP[Playernum - 1]);
-  } else if (Dir[Playernum - 1][Governor].level == LEVEL_STAR) {
+  } else if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_STAR) {
     sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s )\n",
             Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
             Stars[Dir[Playernum - 1][Governor].snum]->name);
-  } else if (Dir[Playernum - 1][Governor].level == LEVEL_PLAN) {
+  } else if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_PLAN) {
     sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/%s )\n",
             Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
             Stars[Dir[Playernum - 1][Governor].snum]->name,
             Stars[Dir[Playernum - 1][Governor].snum]
                 ->pnames[Dir[Playernum - 1][Governor].pnum]);
-  } else if (Dir[Playernum - 1][Governor].level == LEVEL_SHIP) {
+  } else if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
     switch (s->whatorbits) {
-      case LEVEL_UNIV:
+      case ScopeLevel::LEVEL_UNIV:
         sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /#%ld )\n",
                 Sdata.AP[Playernum - 1], Dir[Playernum - 1][Governor].shipno);
         break;
-      case LEVEL_STAR:
+      case ScopeLevel::LEVEL_STAR:
         sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/#%ld )\n",
                 Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
                 Dir[Playernum - 1][Governor].shipno);
         break;
-      case LEVEL_PLAN:
+      case ScopeLevel::LEVEL_PLAN:
         sprintf(Dir[Playernum - 1][Governor].prompt, " ( [%d] /%s/%s/#%ld )\n",
                 Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
                 Stars[s->storbits]->pnames[Dir[Playernum - 1][Governor].pnum],
@@ -1903,22 +1904,22 @@ static void do_prompt(player_t Playernum, governor_t Governor) {
          are in a ship within a ship, or deeper. I am certain this can be
          done more elegantly (a lot more) but I don't feel like trying
          that right now. right now I want it to function. Maarten */
-      case LEVEL_SHIP:
+      case ScopeLevel::LEVEL_SHIP:
         (void)getship(&s2, (int)s->destshipno);
         switch (s2->whatorbits) {
-          case LEVEL_UNIV:
+          case ScopeLevel::LEVEL_UNIV:
             sprintf(Dir[Playernum - 1][Governor].prompt,
                     " ( [%d] /#%lu/#%lu )\n", Sdata.AP[Playernum - 1],
                     s->destshipno, Dir[Playernum - 1][Governor].shipno);
             break;
-          case LEVEL_STAR:
+          case ScopeLevel::LEVEL_STAR:
             sprintf(Dir[Playernum - 1][Governor].prompt,
                     " ( [%d] /%s/#%lu/#%lu )\n",
                     Stars[s->storbits]->AP[Playernum - 1],
                     Stars[s->storbits]->name, s->destshipno,
                     Dir[Playernum - 1][Governor].shipno);
             break;
-          case LEVEL_PLAN:
+          case ScopeLevel::LEVEL_PLAN:
             sprintf(
                 Dir[Playernum - 1][Governor].prompt,
                 " ( [%d] /%s/%s/#%ld/#%ld )\n",
@@ -1926,25 +1927,25 @@ static void do_prompt(player_t Playernum, governor_t Governor) {
                 Stars[s->storbits]->pnames[Dir[Playernum - 1][Governor].pnum],
                 s->destshipno, Dir[Playernum - 1][Governor].shipno);
             break;
-          case LEVEL_SHIP:
-            while (s2->whatorbits == LEVEL_SHIP) {
+          case ScopeLevel::LEVEL_SHIP:
+            while (s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
               free(s2);
               (void)getship(&s2, (int)s2->destshipno);
             }
             switch (s2->whatorbits) {
-              case LEVEL_UNIV:
+              case ScopeLevel::LEVEL_UNIV:
                 sprintf(Dir[Playernum - 1][Governor].prompt,
                         " ( [%d] / /../#%ld/#%ld )\n", Sdata.AP[Playernum - 1],
                         s->destshipno, Dir[Playernum - 1][Governor].shipno);
                 break;
-              case LEVEL_STAR:
+              case ScopeLevel::LEVEL_STAR:
                 sprintf(Dir[Playernum - 1][Governor].prompt,
                         " ( [%d] /%s/ /../#%ld/#%ld )\n",
                         Stars[s->storbits]->AP[Playernum - 1],
                         Stars[s->storbits]->name, s->destshipno,
                         Dir[Playernum - 1][Governor].shipno);
                 break;
-              case LEVEL_PLAN:
+              case ScopeLevel::LEVEL_PLAN:
                 sprintf(Dir[Playernum - 1][Governor].prompt,
                         " ( [%d] /%s/%s/ /../#%ld/#%ld )\n",
                         Stars[s->storbits]->AP[Playernum - 1],

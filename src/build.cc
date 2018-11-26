@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctgmath>
+#include <optional>
 
 #include "GB_server.h"
 #include "buffers.h"
@@ -32,7 +33,8 @@
 static void autoload_at_planet(int, shiptype *, planet *, sector &, int *,
                                double *);
 static void autoload_at_ship(shiptype *, shiptype *, int *, double *);
-static int build_at_ship(int, int, shiptype *, int *, int *);
+static std::optional<ScopeLevel> build_at_ship(int, int, shiptype *, int *,
+                                               int *);
 static int can_build_at_planet(int, int, startype *, const planet &);
 static int can_build_this(int, racetype *, char *);
 static int can_build_on_ship(int, racetype *, shiptype *, char *);
@@ -58,7 +60,7 @@ void upgrade(const command_t &argv, const player_t Playernum,
   double complex;
   racetype *Race;
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_SHIP) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_SHIP) {
     notify(Playernum, Governor,
            "You have to change scope to the ship you wish to upgrade.\n");
     return;
@@ -252,7 +254,7 @@ void upgrade(const command_t &argv, const player_t Playernum,
 
   /* check to see if the new ship will actually fit inside the hanger if it is
      on another ship. Maarten */
-  if (dirship->whatorbits == LEVEL_SHIP) {
+  if (dirship->whatorbits == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&s2, dirship->destshipno);
     if (s2->max_hanger - (s2->hanger - dirship->size) < ship_size(&ship)) {
       sprintf(buf, "Not enough free hanger space on %c%ld.\n",
@@ -293,7 +295,7 @@ void upgrade(const command_t &argv, const player_t Playernum,
     notify(Playernum, Governor, buf);
     bcopy(&ship, dirship, sizeof(shiptype));
     dirship->resource -= netcost;
-    if (dirship->whatorbits == LEVEL_SHIP) {
+    if (dirship->whatorbits == ScopeLevel::LEVEL_SHIP) {
       s2->hanger -= dirship->size;
       dirship->size = ship_size(dirship);
       s2->hanger += dirship->size;
@@ -324,7 +326,7 @@ void make_mod(const command_t &argv, const player_t Playernum,
   racetype *Race;
   double cost0;
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_SHIP) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_SHIP) {
     notify(Playernum, Governor,
            "You have to change scope to an installation.\n");
     return;
@@ -712,9 +714,10 @@ void build(const command_t &argv, const player_t Playernum,
   racetype *Race;
   planet planet;
   char c;
-  int i, j, m, n, x, y, count, level, what, outside;
+  int i, j, m, n, x, y, count, what, outside;
+  ScopeLevel level, build_level;
   int shipcost, load_crew;
-  int snum, pnum, build_level;
+  int snum, pnum;
   double load_fuel, tech;
 
   FILE *fd;
@@ -833,7 +836,7 @@ void build(const command_t &argv, const player_t Playernum,
   }
 
   level = Dir[Playernum - 1][Governor].level;
-  if (level != LEVEL_SHIP && level != LEVEL_PLAN) {
+  if (level != ScopeLevel::LEVEL_SHIP && level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor,
            "You must change scope to a ship or planet to build.\n");
     return;
@@ -844,7 +847,7 @@ void build(const command_t &argv, const player_t Playernum,
   count = 0; /* this used used to reset count in the loop */
   do {
     switch (level) {
-      case LEVEL_PLAN:
+      case ScopeLevel::LEVEL_PLAN:
         if (!count) { /* initialize loop variables */
           if (argv.size() < 2) {
             notify(Playernum, Governor, "Build what?\n");
@@ -910,16 +913,18 @@ void build(const command_t &argv, const player_t Playernum,
                             load_crew);
         putship(&newship);
         break;
-      case LEVEL_SHIP:
+      case ScopeLevel::LEVEL_SHIP:
         if (!count) { /* initialize loop variables */
           (void)getship(&builder, Dir[Playernum - 1][Governor].shipno);
           outside = 0;
-          if ((build_level = build_at_ship(Playernum, Governor, builder, &snum,
-                                           &pnum)) < 0) {
+          auto test_build_level =
+              build_at_ship(Playernum, Governor, builder, &snum, &pnum);
+          if (!test_build_level) {
             notify(Playernum, Governor, "You can't build here.\n");
             free(builder);
             return;
           }
+          build_level = test_build_level.value();
           switch (builder->type) {
             case OTYPE_FACTORY:
               if (!(count = getcount(argv, 2))) {
@@ -986,7 +991,7 @@ void build(const command_t &argv, const player_t Playernum,
             free(builder);
             return;
           }
-          if (outside && build_level == LEVEL_PLAN) {
+          if (outside && build_level == ScopeLevel::LEVEL_PLAN) {
             planet = getplanet(snum, pnum);
             if (builder->type == OTYPE_FACTORY) {
               if (!can_build_at_planet(Playernum, Governor, Stars[snum],
@@ -1075,22 +1080,22 @@ void build(const command_t &argv, const player_t Playernum,
 /* free stuff */
 finish:
   switch (level) {
-    case LEVEL_PLAN:
+    case ScopeLevel::LEVEL_PLAN:
       putsector(sector, planet, x, y);
       putplanet(planet, Stars[snum], pnum);
       break;
-    case LEVEL_SHIP:
+    case ScopeLevel::LEVEL_SHIP:
       if (outside) switch (build_level) {
-          case LEVEL_PLAN:
+          case ScopeLevel::LEVEL_PLAN:
             putplanet(planet, Stars[snum], pnum);
             if (landed(builder)) {
               putsector(sector, planet, x, y);
             }
             break;
-          case LEVEL_STAR:
+          case ScopeLevel::LEVEL_STAR:
             putstar(Stars[snum], snum);
             break;
-          case LEVEL_UNIV:
+          case ScopeLevel::LEVEL_UNIV:
             putsdata(&Sdata);
             break;
         }
@@ -1222,32 +1227,33 @@ static int can_build_on_sector(int what, racetype *Race, const planet &planet,
   return (1);
 }
 
-static int build_at_ship(int Playernum, int Governor, shiptype *builder,
-                         int *snum, int *pnum) {
-  if (testship(Playernum, Governor, builder)) return (-1);
+static std::optional<ScopeLevel> build_at_ship(int Playernum, int Governor,
+                                               shiptype *builder, int *snum,
+                                               int *pnum) {
+  if (testship(Playernum, Governor, builder)) return {};
   if (!Shipdata[builder->type][ABIL_CONSTRUCT]) {
     notify(Playernum, Governor, "This ship cannot construct other ships.\n");
-    return (-1);
+    return {};
   }
   if (!builder->popn) {
     notify(Playernum, Governor, "This ship has no crew.\n");
-    return (-1);
+    return {};
   }
   if (docked(builder)) {
     notify(Playernum, Governor, "Undock this ship first.\n");
-    return (-1);
+    return {};
   }
   if (builder->damage) {
     notify(Playernum, Governor, "This ship is damaged and cannot build.\n");
-    return (-1);
+    return {};
   }
   if (builder->type == OTYPE_FACTORY && !builder->on) {
     notify(Playernum, Governor, "This factory is not online.\n");
-    return (-1);
+    return {};
   }
   if (builder->type == OTYPE_FACTORY && !landed(builder)) {
     notify(Playernum, Governor, "Factories must be landed on a planet.\n");
-    return (-1);
+    return {};
   }
   *snum = builder->storbits;
   *pnum = builder->pnumorbits;
@@ -1370,8 +1376,8 @@ static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
           (((newship->type == OTYPE_TERRA) || (newship->type == OTYPE_PLOW))
                ? "5"
                : "Standard"));
-  newship->whatorbits = LEVEL_PLAN;
-  newship->whatdest = LEVEL_PLAN;
+  newship->whatorbits = ScopeLevel::LEVEL_PLAN;
+  newship->whatdest = ScopeLevel::LEVEL_PLAN;
   newship->deststar = snum;
   newship->destpnum = pnum;
   newship->storbits = snum;
@@ -1421,29 +1427,29 @@ static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
   newship->governor = Governor;
   if (outside) {
     newship->whatorbits = builder->whatorbits;
-    newship->whatdest = LEVEL_UNIV;
+    newship->whatdest = ScopeLevel::LEVEL_UNIV;
     newship->deststar = builder->deststar;
     newship->destpnum = builder->destpnum;
     newship->storbits = builder->storbits;
     newship->pnumorbits = builder->pnumorbits;
     newship->docked = 0;
     switch (builder->whatorbits) {
-      case LEVEL_PLAN:
+      case ScopeLevel::LEVEL_PLAN:
         insert_sh_plan(planet, newship);
         break;
-      case LEVEL_STAR:
+      case ScopeLevel::LEVEL_STAR:
         insert_sh_star(Stars[builder->storbits], newship);
         break;
-      case LEVEL_UNIV:
+      case ScopeLevel::LEVEL_UNIV:
         insert_sh_univ(&Sdata, newship);
         break;
-      case LEVEL_SHIP:
+      case ScopeLevel::LEVEL_SHIP:
         // TODO(jeffbailey): The compiler can't see that this is impossible.
         break;
     }
   } else {
-    newship->whatorbits = LEVEL_SHIP;
-    newship->whatdest = LEVEL_SHIP;
+    newship->whatorbits = ScopeLevel::LEVEL_SHIP;
+    newship->whatdest = ScopeLevel::LEVEL_SHIP;
     newship->deststar = builder->deststar;
     newship->destpnum = builder->destpnum;
     newship->destshipno = builder->number;
@@ -1639,7 +1645,7 @@ void sell(const command_t &argv, const player_t Playernum,
   int snum, pnum;
   int i;
 
-  if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor, "You have to be in a planet scope to sell.\n");
     return;
   }
@@ -1846,7 +1852,7 @@ void bid(const command_t &argv, const player_t Playernum,
       free(c);
     }
   } else {
-    if (Dir[Playernum - 1][Governor].level != LEVEL_PLAN) {
+    if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
       notify(Playernum, Governor, "You have to be in a planet scope to buy.\n");
       return;
     }

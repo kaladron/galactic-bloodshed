@@ -339,8 +339,7 @@ void survey(const command_t &argv, const player_t Playernum,
     if (Race->God) {
       for (i = 0; i < Stars[where.snum]->numplanets; i++) {
         const auto &p = getplanet((int)where.snum, i);
-        sprintf(buf, "%8d \"%s\"\n", p.sectormappos,
-                Stars[where.snum]->pnames[i]);
+        sprintf(buf, " \"%s\"\n", Stars[where.snum]->pnames[i]);
         notify(Playernum, Governor, buf);
       }
     }

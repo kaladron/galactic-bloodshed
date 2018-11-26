@@ -344,8 +344,7 @@ startype *Makestar(int snum) {
         Numsects[type][d]++;
         Fertsects[type][d] += smap.get(x, y).fert;
       }
-    Star->planetpos[i] = 0;   // old posn of file-last write
-    planet.sectormappos = 0;  // sector map pos
+    Star->planetpos[i] = 0;  // old posn of file-last write
     putplanet(planet, Star, i);
   }
   return Star;

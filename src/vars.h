@@ -130,7 +130,7 @@ class planet {
   unsigned char Maxx, Maxy; /* size of map */
 
   struct plinfo info[MAXPLAYERS]; /* player info */
-  short conditions[TOXIC + 1];    /* atmospheric conditions for terraforming */
+  int conditions[TOXIC + 1];      /* atmospheric conditions for terraforming */
 
   population_t popn;
   population_t troops;

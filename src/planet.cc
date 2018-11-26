@@ -208,7 +208,7 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
             fadd = FUEL_GAS_ADD;
             break;
         }
-        fadd = MIN((double)Max_fuel(ship) - ship->fuel, fadd);
+        fadd = std::min((double)Max_fuel(ship) - ship->fuel, fadd);
         rcv_fuel(ship, fadd);
       }
     }
@@ -519,7 +519,7 @@ if (!Stinfo[starnum][planetnum].inhab)
                        (double)planet->info[i - 1].popn);
         races[i - 1]->governor[Stars[starnum]->governor[i - 1]].money +=
             planet->info[i - 1].prod_money;
-        planet->info[i - 1].tax += MIN(
+        planet->info[i - 1].tax += std::min(
             (int)planet->info[i - 1].newtax - (int)planet->info[i - 1].tax, 5);
       } else
         planet->info[i - 1].prod_money = 0;
@@ -591,7 +591,7 @@ if (!Stinfo[starnum][planetnum].inhab)
         s2->destpnum = planetnum;
         s2->owner = i;
         s2->governor = Stars[starnum]->governor[i - 1];
-        t = MIN(TOXMAX, planet->conditions[TOXIC]); /* amt of tox */
+        t = std::min(TOXMAX, planet->conditions[TOXIC]); /* amt of tox */
         planet->conditions[TOXIC] -= t;
         s2->special.waste.toxic = t;
       }
@@ -701,7 +701,7 @@ static void plow(shiptype *ship, planet *planet, sector_map &smap) {
       msg_OOF(ship);
       return;
     }
-    s.fert = MIN(100, s.fert + adjust);
+    s.fert = std::min(100u, s.fert + adjust);
     if (s.fert >= 100) {
       sprintf(buf, " K%lu is full of zealots!!!", ship->number);
       push_telegram(ship->owner, ship->governor, buf);
@@ -745,7 +745,7 @@ static void do_quarry(shiptype *ship, planet *planet, sector_map &smap) {
   ship->fuel -= FUEL_COST_QUARRY;
   prod_res[ship->owner - 1] += prod;
   tox = int_rand(0, int_rand(0, prod));
-  planet->conditions[TOXIC] = MIN(100, planet->conditions[TOXIC] + tox);
+  planet->conditions[TOXIC] = std::min(100, planet->conditions[TOXIC] + tox);
   if (s.fert >= prod)
     s.fert -= prod;
   else

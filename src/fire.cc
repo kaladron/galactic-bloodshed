@@ -727,7 +727,7 @@ int retal_strength(shiptype *s) {
   return strength;
 }
 
-int adjacent(int fx, int fy, int tx, int ty, const planet &p) {
+int adjacent(int fx, int fy, int tx, int ty, const Planet &p) {
   if (abs(fy - ty) <= 1) {
     if (abs(fx - tx) <= 1)
       return 1;

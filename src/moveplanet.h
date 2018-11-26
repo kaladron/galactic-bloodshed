@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void moveplanet(int, planet *, int);
+void moveplanet(int, Planet *, int);
 
 #endif  // MOVEPLANET_H

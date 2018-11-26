@@ -227,7 +227,7 @@ void getstar(startype **s, int star) {
   }
 }
 
-planet getplanet(const starnum_t star, const planetnum_t pnum) {
+Planet getplanet(const starnum_t star, const planetnum_t pnum) {
   const char *tail, *plinfo_tail, *plinfo_routes_tail;
   sqlite3_stmt *stmt, *plinfo_stmt, *plinfo_routes_stmt;
   const char *sql =
@@ -249,7 +249,7 @@ planet getplanet(const starnum_t star, const planetnum_t pnum) {
         "Database unable to return the requested planet");
   }
 
-  planet p;
+  Planet p;
   p.planet_id = sqlite3_column_int(stmt, 0);
   p.xpos = sqlite3_column_double(stmt, 4);
   p.ypos = sqlite3_column_double(stmt, 5);
@@ -369,7 +369,7 @@ planet getplanet(const starnum_t star, const planetnum_t pnum) {
   return p;
 }
 
-sector getsector(const planet &p, const int x, const int y) {
+sector getsector(const Planet &p, const int x, const int y) {
   const char *tail;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -410,7 +410,7 @@ sector getsector(const planet &p, const int x, const int y) {
   return s;
 }
 
-sector_map getsmap(const planet &p) {
+sector_map getsmap(const Planet &p) {
   const char *tail;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -668,7 +668,7 @@ static void end_bulk_insert() {
   sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &err_msg);
 }
 
-void putplanet(const planet &p, startype *star, const int pnum) {
+void putplanet(const Planet &p, startype *star, const int pnum) {
   start_bulk_insert();
 
   const char *tail = 0;
@@ -808,7 +808,7 @@ void putplanet(const planet &p, startype *star, const int pnum) {
   end_bulk_insert();
 }
 
-void putsector(const sector &s, const planet &p, const int x, const int y) {
+void putsector(const sector &s, const Planet &p, const int x, const int y) {
   const char *tail = 0;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -840,7 +840,7 @@ void putsector(const sector &s, const planet &p, const int x, const int y) {
   sqlite3_reset(stmt);
 }
 
-void putsmap(sector_map &map, planet &p) {
+void putsmap(sector_map &map, Planet &p) {
   start_bulk_insert();
 
   for (int y = 0; y < p.Maxy; y++) {

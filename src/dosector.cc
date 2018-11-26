@@ -14,11 +14,11 @@
 static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const int y_adj[] = {1, 1, 1, 0, 0, -1, -1, -1};
 
-static void Migrate2(const planet &, int, int, sector &, int *, sector_map &);
+static void Migrate2(const Planet &, int, int, sector &, int *, sector_map &);
 static void plate(sector &);
 
 //  produce() -- produce, stuff like that, on a sector.
-void produce(startype *star, const planet &planet, sector &s) {
+void produce(startype *star, const Planet &planet, sector &s) {
   int ss;
   int maxsup;
   int pfuel = 0, pdes = 0, pres = 0;
@@ -103,7 +103,7 @@ void produce(startype *star, const planet &planet, sector &s) {
 }
 
 // spread()  -- spread population around.
-void spread(const planet &pl, sector &s, int x, int y, sector_map &smap) {
+void spread(const Planet &pl, sector &s, int x, int y, sector_map &smap) {
   int people;
   int x2, y2, j;
   int check;
@@ -132,7 +132,7 @@ void spread(const planet &pl, sector &s, int x, int y, sector_map &smap) {
   }
 }
 
-static void Migrate2(const planet &planet, int xd, int yd, sector &ps,
+static void Migrate2(const Planet &planet, int xd, int yd, sector &ps,
                      int *people, sector_map &smap) {
   int move;
 
@@ -163,7 +163,7 @@ static void Migrate2(const planet &planet, int xd, int yd, sector &ps,
         on earthtype planets.  */
 
 //  explore() -- mark sector and surrounding sectors as having been explored.
-void explore(const planet &planet, sector &s, int x, int y, int p) {
+void explore(const Planet &planet, sector &s, int x, int y, int p) {
   int d;
 
   /* explore sectors surrounding sectors currently explored. */

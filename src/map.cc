@@ -23,7 +23,7 @@
 #include "vars.h"
 
 static void show_map(const player_t, const governor_t, const starnum_t,
-                     const planetnum_t, const planet &);
+                     const planetnum_t, const Planet &);
 
 void map(const command_t &argv, const player_t Playernum,
          const governor_t Governor) {
@@ -55,7 +55,7 @@ void map(const command_t &argv, const player_t Playernum,
 
 static void show_map(const player_t Playernum, const governor_t Governor,
                      const starnum_t snum, const planetnum_t pnum,
-                     const planet &p) {
+                     const Planet &p) {
   int x, y, i, f = 0, owner, owned1;
   int iq = 0;
   int sh;

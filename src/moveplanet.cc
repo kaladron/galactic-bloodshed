@@ -13,7 +13,7 @@
 #include "tweakables.h"
 #include "vars.h"
 
-void moveplanet(int starnum, planet *planet, int planetnum) {
+void moveplanet(int starnum, Planet *planet, int planetnum) {
   double dist;
   double xadd, yadd, phase, period;
   int sh;

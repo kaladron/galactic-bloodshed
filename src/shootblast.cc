@@ -168,7 +168,7 @@ int shoot_planet_to_ship(racetype *Race, shiptype *ship, int strength,
 }
 #endif
 
-int shoot_ship_to_planet(shiptype *ship, planet *pl, int strength, int x, int y,
+int shoot_ship_to_planet(shiptype *ship, Planet *pl, int strength, int x, int y,
                          sector_map &smap, int ignore, int caliber,
                          char *long_msg, char *short_msg) {
   int x2, y2;

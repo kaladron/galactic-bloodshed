@@ -23,7 +23,7 @@ void kill_ship(int, shiptype *);
 void compute_power_blocks(void);
 void insert_sh_univ(struct stardata *, shiptype *);
 void insert_sh_star(startype *, shiptype *);
-void insert_sh_plan(planet *, shiptype *);
+void insert_sh_plan(Planet *, shiptype *);
 void insert_sh_ship(shiptype *, shiptype *);
 void remove_sh_star(shiptype *);
 void remove_sh_plan(shiptype *);

@@ -59,7 +59,7 @@ int enroll_valid_race() {
   PlanetType ppref;
   int last_star_left, indirect[NUMSTARS];
   sigset_t mask, block;
-  planet planet;
+  Planet planet;
   startype *star_arena;
   /*
     if (race.status == STATUS_ENROLLED) {

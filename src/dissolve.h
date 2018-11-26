@@ -8,6 +8,6 @@
 #include "vars.h"
 
 void dissolve(int, int);
-int revolt(planet *, int, int);
+int revolt(Planet *, int, int);
 
 #endif  // DISSOLVE_H

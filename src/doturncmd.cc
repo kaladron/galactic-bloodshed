@@ -40,7 +40,7 @@ static void fix_stability(startype *);
 static int governed(racetype *);
 static void make_discoveries(racetype *);
 static void output_ground_attacks(void);
-static int planet_points(const planet &);
+static int planet_points(const Planet &);
 
 void do_turn(int update) {
   commodtype *c;
@@ -84,7 +84,7 @@ void do_turn(int update) {
     if (update) fix_stability(Stars[star]); /* nova */
 
     for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
-      planets[star][i] = new planet(getplanet(star, i));
+      planets[star][i] = new Planet(getplanet(star, i));
       if (planets[star][i]->type != PlanetType::ASTEROID) Planet_count++;
       if (update) moveplanet(star, planets[star][i], i);
       if (Stars[star]->pnames[i] == NULL)
@@ -543,7 +543,7 @@ void do_reset() {
   for (starnum_t star = 0; star < Sdata.numstars; star++) {
     getstar(&Stars[star], star);
     for (planetnum_t i = 0; i < Stars[star]->numplanets; i++)
-      planets[star][i] = new planet(getplanet(star, i));
+      planets[star][i] = new Planet(getplanet(star, i));
   }
   output_ground_attacks();
 
@@ -751,7 +751,7 @@ static void output_ground_attacks(void) {
         }
 }
 
-static int planet_points(const planet &p) {
+static int planet_points(const Planet &p) {
   switch (p.type) {
     case PlanetType::ASTEROID:
       return ASTEROID_POINTS;

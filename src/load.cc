@@ -31,7 +31,7 @@ static int jettison_check(int, int, int, int);
 static int landed_on(shiptype *, shipnum_t);
 
 static void do_transporter(racetype *, int, shiptype *);
-static void unload_onto_alien_sector(int, int, planet *, shiptype *, sector &,
+static void unload_onto_alien_sector(int, int, Planet *, shiptype *, sector &,
                                      int, int);
 
 void load(int Playernum, int Governor, int APcount, int mode) {
@@ -40,7 +40,7 @@ void load(int Playernum, int Governor, int APcount, int mode) {
   int lolim, uplim, amt;
   int transfercrew;
   shiptype *s, *s2;
-  planet p;
+  Planet p;
   sector sect;
   racetype *Race;
   shipnum_t shipno, nextshipno;
@@ -1020,7 +1020,7 @@ static int landed_on(shiptype *s, shipnum_t shipno) {
 }
 
 static void unload_onto_alien_sector(int Playernum, int Governor,
-                                     planet *planet, shiptype *ship,
+                                     Planet *planet, shiptype *ship,
                                      sector &sect, int what, int people) {
   double astrength, dstrength;
   int oldowner, oldgov, oldpopn, old2popn, old3popn;

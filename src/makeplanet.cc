@@ -77,16 +77,16 @@ static const int cond[] = {SectorType::SEC_SEA,    SectorType::SEC_MOUNT,
                            SectorType::SEC_FOREST, SectorType::SEC_DESERT};
 
 static int neighbors(sector_map &, int, int, int);
-static void MakeEarthAtmosphere(planet *, int);
-static void Makesurface(const planet &, sector_map &);
-static short SectTemp(const planet &, int);
+static void MakeEarthAtmosphere(Planet *, int);
+static void Makesurface(const Planet &, sector_map &);
+static short SectTemp(const Planet &, int);
 static void seed(sector_map &, int, int);
 static void grow(sector_map &, int, int, int);
 
-planet Makeplanet(double dist, short stemp, PlanetType type) {
+Planet Makeplanet(double dist, short stemp, PlanetType type) {
   static planetnum_t planet_id = 0;
   int x, y;
-  planet planet;
+  Planet planet;
   int atmos, total_sects;
   char c, t;
   double f;
@@ -120,7 +120,7 @@ planet Makeplanet(double dist, short stemp, PlanetType type) {
   total_sects = (planet.Maxy - 1) * (planet.Maxx - 1);
 
   switch (type) {
-    case PlanetType::GASGIANT: /* gas giant planet */
+    case PlanetType::GASGIANT: /* gas giant Planet */
       /* either lots of meth or not too much */
       if (int_rand(0, 1)) { /* methane planet */
         atmos = 100 - (planet.conditions[METHANE] = int_rand(70, 80));
@@ -231,7 +231,7 @@ planet Makeplanet(double dist, short stemp, PlanetType type) {
   return planet;
 }
 
-static void MakeEarthAtmosphere(planet *pptr, int chance) {
+static void MakeEarthAtmosphere(Planet *pptr, int chance) {
   int atmos = 100;
 
   if (int_rand(0, 99) > chance) {
@@ -319,7 +319,7 @@ static void grow(sector_map &smap, int type, int n, int rate) {
   }
 }
 
-static void Makesurface(const planet &p, sector_map &smap) {
+static void Makesurface(const Planet &p, sector_map &smap) {
   for (int x = 0; x < smap.get_maxx(); x++) {
     for (int y = 0; y < smap.get_maxy(); y++) {
       auto &s = smap.get(x, y);
@@ -352,7 +352,7 @@ static void Makesurface(const planet &p, sector_map &smap) {
   }
 }
 
-static short SectTemp(const planet &p, int y) {
+static short SectTemp(const Planet &p, int y) {
   int dy, mid, temp;
   const int TFAC = 10;
 

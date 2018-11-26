@@ -37,15 +37,15 @@
 #include "vars.h"
 
 static void do_dome(shiptype *, sector_map &);
-static void do_quarry(shiptype *, planet *, sector_map &);
-static void do_berserker(shiptype *, planet *);
-static void do_recover(planet *, int, int);
+static void do_quarry(shiptype *, Planet *, sector_map &);
+static void do_berserker(shiptype *, Planet *);
+static void do_recover(Planet *, int, int);
 static double est_production(const sector &);
-static int moveship_onplanet(shiptype *, planet *);
-static void plow(shiptype *, planet *, sector_map &);
-static void terraform(shiptype *, planet *, sector_map &);
+static int moveship_onplanet(shiptype *, Planet *);
+static void plow(shiptype *, Planet *, sector_map &);
+static void terraform(shiptype *, Planet *, sector_map &);
 
-int doplanet(int starnum, planet *planet, int planetnum) {
+int doplanet(int starnum, Planet *planet, int planetnum) {
   int shipno, x, y, nukex, nukey;
   int o = 0;
   int i;
@@ -624,7 +624,7 @@ if (!Stinfo[starnum][planetnum].inhab)
   return allmod;
 }
 
-static int moveship_onplanet(shiptype *ship, planet *planet) {
+static int moveship_onplanet(shiptype *ship, Planet *planet) {
   int x, y, bounced = 0;
 
   if (ship->shipclass[ship->special.terraform.index] == 's') {
@@ -658,7 +658,7 @@ static int moveship_onplanet(shiptype *ship, planet *planet) {
   return 1;
 }
 
-static void terraform(shiptype *ship, planet *planet, sector_map &smap) {
+static void terraform(shiptype *ship, Planet *planet, sector_map &smap) {
   /* move, and then terraform. */
   if (!moveship_onplanet(ship, planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
@@ -689,7 +689,7 @@ static void terraform(shiptype *ship, planet *planet, sector_map &smap) {
   }
 }
 
-static void plow(shiptype *ship, planet *planet, sector_map &smap) {
+static void plow(shiptype *ship, Planet *planet, sector_map &smap) {
   if (!moveship_onplanet(ship, planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
   if ((races[ship->owner - 1]->likes[s.condition]) && (s.fert < 100)) {
@@ -728,7 +728,7 @@ static void do_dome(shiptype *ship, sector_map &smap) {
   use_resource(ship, RES_COST_DOME);
 }
 
-static void do_quarry(shiptype *ship, planet *planet, sector_map &smap) {
+static void do_quarry(shiptype *ship, Planet *planet, sector_map &smap) {
   int prod, tox;
 
   auto &s = smap.get(ship->land_x, ship->land_y);
@@ -752,7 +752,7 @@ static void do_quarry(shiptype *ship, planet *planet, sector_map &smap) {
     s.fert = 0;
 }
 
-static void do_berserker(shiptype *ship, planet *planet) {
+static void do_berserker(shiptype *ship, Planet *planet) {
   if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
       ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship) &&
       ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {
@@ -763,7 +763,7 @@ static void do_berserker(shiptype *ship, planet *planet) {
   }
 }
 
-static void do_recover(planet *planet, int starnum, int planetnum) {
+static void do_recover(Planet *planet, int starnum, int planetnum) {
   int owners = 0, i, j;
   int ownerbits[2];
   int stolenres = 0, stolendes = 0, stolenfuel = 0, stolencrystals = 0;

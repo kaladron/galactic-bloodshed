@@ -34,7 +34,7 @@ int maxsupport(const racetype *r, const sector &s, const double c,
   return val;
 }
 
-double compatibility(const planet &planet, const racetype *race) {
+double compatibility(const Planet &planet, const racetype *race) {
   int i, add;
   double sum, atmosphere = 1.0;
 
@@ -54,7 +54,7 @@ double compatibility(const planet &planet, const racetype *race) {
   return (sum);
 }
 
-double gravity(const planet &p) {
+double gravity(const Planet &p) {
   return (double)(p.Maxx) * (double)(p.Maxy) * GRAV_FACTOR;
 }
 

@@ -9,6 +9,6 @@
 #include "ships.h"
 #include "vars.h"
 
-int Bombard(shiptype *, planet *, racetype *);
+int Bombard(shiptype *, Planet *, racetype *);
 
 #endif  // AUTOSHOOT_H

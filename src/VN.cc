@@ -143,7 +143,7 @@ static void order_VN(shiptype *ship) {
 }
 
 /*  planet_doVN() -- called by doplanet() */
-void planet_doVN(shiptype *ship, planet *planet, sector_map &smap) {
+void planet_doVN(shiptype *ship, Planet *planet, sector_map &smap) {
   int j;
   int oldres, xa, ya, dum, prod;
   int shipbuild;

@@ -15,7 +15,7 @@ void move_popn(const command_t &argv, const player_t Playernum,
                const governor_t Governor);
 void walk(const command_t &argv, const player_t Playernum,
           const governor_t Governor);
-int get_move(char, int, int, int *, int *, const planet &);
+int get_move(char, int, int, int *, int *, const Planet &);
 void ground_attack(racetype *, racetype *, int *, int, population_t *,
                    population_t *, unsigned int, unsigned int, double, double,
                    double *, double *, int *, int *, int *);

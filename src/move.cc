@@ -29,7 +29,7 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void mech_defend(int, int, int *, int, const planet &, int, int,
+static void mech_defend(int, int, int *, int, const Planet &, int, int,
                         const sector &);
 static void mech_attack_people(shiptype *, int *, int *, racetype *, racetype *,
                                const sector &, int, int, int, char *, char *);
@@ -618,7 +618,7 @@ void walk(const command_t &argv, const player_t Playernum,
 }
 
 int get_move(char direction, int x, int y, int *x2, int *y2,
-             const planet &planet) {
+             const Planet &planet) {
   switch (direction) {
     case '1':
     case 'b':
@@ -674,7 +674,7 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
 }
 
 static void mech_defend(int Playernum, int Governor, int *people, int type,
-                        const planet &p, int x2, int y2, const sector &s2) {
+                        const Planet &p, int x2, int y2, const sector &s2) {
   int sh;
   shiptype *ship;
   int civ = 0, mil = 0;

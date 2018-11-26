@@ -1506,7 +1506,7 @@ static void load_star_data() {
       // TODO(jeffbailey): This is a leak - will fix as part of global planet
       // array cleanup.
       planets[s][t] = &planet_arena[--pcount];
-      planets[s][t] = new planet(getplanet(s, t));
+      planets[s][t] = new Planet(getplanet(s, t));
       if (planets[s][t]->type != PlanetType::ASTEROID) Planet_count++;
     }
   }
@@ -1701,7 +1701,7 @@ void insert_sh_star(startype *star, shiptype *s) {
   s->whatorbits = ScopeLevel::LEVEL_STAR;
 }
 
-void insert_sh_plan(planet *pl, shiptype *s) {
+void insert_sh_plan(Planet *pl, shiptype *s) {
   s->nextship = pl->ships;
   pl->ships = s->number;
   s->whatorbits = ScopeLevel::LEVEL_PLAN;

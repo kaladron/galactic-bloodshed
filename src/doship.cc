@@ -33,14 +33,14 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static double ap_planet_factor(planet *);
+static double ap_planet_factor(Planet *);
 static double crew_factor(shiptype *);
 static void do_ap(shiptype *);
 static void do_canister(shiptype *);
 static void do_greenhouse(shiptype *);
 static void do_god(shiptype *);
 static void do_habitat(shiptype *);
-static void do_meta_infect(int, planet *);
+static void do_meta_infect(int, Planet *);
 static void do_mirror(shiptype *);
 static void do_oap(shiptype *);
 static void do_pod(shiptype *);
@@ -554,7 +554,7 @@ static int infect_planet(int who, int star, int p) {
     return 0;
 }
 
-static void do_meta_infect(int who, planet *p) {
+static void do_meta_infect(int who, Planet *p) {
   int owner, x, y;
 
   auto smap = getsmap(*p);
@@ -736,7 +736,7 @@ static double crew_factor(shiptype *ship) {
   return ((double)ship->popn / (double)maxcrew);
 }
 
-static double ap_planet_factor(planet *p) {
+static double ap_planet_factor(Planet *p) {
   double x;
 
   x = (double)p->Maxx * (double)p->Maxy;

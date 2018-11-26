@@ -75,7 +75,7 @@ int main() {
 #define STRSIZE 100
   char str[STRSIZE], c;
   struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
-  planet planet;
+  Planet planet;
   unsigned char not_found[PlanetType::DESERT + 1];
   startype *star_arena;
 

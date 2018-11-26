@@ -152,7 +152,7 @@ void dissolve(int Playernum, int Governor) {
 #endif
 }
 
-int revolt(planet *pl, int victim, int agent) {
+int revolt(Planet *pl, int victim, int agent) {
   int x, y, hix, hiy, lowx, lowy;
   racetype *Race;
   int changed_hands = 0;

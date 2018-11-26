@@ -30,19 +30,19 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void autoload_at_planet(int, shiptype *, planet *, sector &, int *,
+static void autoload_at_planet(int, shiptype *, Planet *, sector &, int *,
                                double *);
 static void autoload_at_ship(shiptype *, shiptype *, int *, double *);
 static std::optional<ScopeLevel> build_at_ship(int, int, shiptype *, int *,
                                                int *);
-static int can_build_at_planet(int, int, startype *, const planet &);
+static int can_build_at_planet(int, int, startype *, const Planet &);
 static int can_build_this(int, racetype *, char *);
 static int can_build_on_ship(int, racetype *, shiptype *, char *);
-static int can_build_on_sector(int, racetype *, const planet &, const sector &,
+static int can_build_on_sector(int, racetype *, const Planet &, const sector &,
                                int, int, char *);
-static void create_ship_by_planet(int, int, racetype *, shiptype *, planet *,
+static void create_ship_by_planet(int, int, racetype *, shiptype *, Planet *,
                                   int, int, int, int);
-static void create_ship_by_ship(int, int, racetype *, int, planet *, shiptype *,
+static void create_ship_by_ship(int, int, racetype *, int, Planet *, shiptype *,
                                 shiptype *);
 static int get_build_type(const char *);
 static int getcount(const command_t &, const size_t);
@@ -712,7 +712,7 @@ void build(const command_t &argv, const player_t Playernum,
            const governor_t Governor) {
   // TODO(jeffbailey): Fix unused int APcount = 1;
   racetype *Race;
-  planet planet;
+  Planet planet;
   char c;
   int i, j, m, n, x, y, count, what, outside;
   ScopeLevel level, build_level;
@@ -1114,7 +1114,7 @@ static int getcount(const command_t &argv, const size_t elem) {
 }
 
 static int can_build_at_planet(int Playernum, int Governor, startype *star,
-                               const planet &planet) {
+                               const Planet &planet) {
   if (planet.slaved_to && planet.slaved_to != Playernum) {
     sprintf(buf, "This planet is enslaved by player %d.\n", planet.slaved_to);
     notify(Playernum, Governor, buf);
@@ -1183,7 +1183,7 @@ static int can_build_on_ship(int what, racetype *Race, shiptype *builder,
   return (1);
 }
 
-static int can_build_on_sector(int what, racetype *Race, const planet &planet,
+static int can_build_on_sector(int what, racetype *Race, const Planet &planet,
                                const sector &sector, int x, int y,
                                char *string) {
   shiptype *s;
@@ -1260,7 +1260,7 @@ static std::optional<ScopeLevel> build_at_ship(int Playernum, int Governor,
   return (builder->whatorbits);
 }
 
-static void autoload_at_planet(int Playernum, shiptype *s, planet *planet,
+static void autoload_at_planet(int Playernum, shiptype *s, Planet *planet,
                                sector &sector, int *crew, double *fuel) {
   *crew = MIN(s->max_crew, sector.popn);
   *fuel = MIN((double)s->max_fuel, (double)planet->info[Playernum - 1].fuel);
@@ -1363,7 +1363,7 @@ static void initialize_new_ship(int Playernum, int Governor, racetype *Race,
 }
 
 static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
-                                  shiptype *newship, planet *planet, int snum,
+                                  shiptype *newship, Planet *planet, int snum,
                                   int pnum, int x, int y) {
   int shipno;
 
@@ -1415,7 +1415,7 @@ static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
 }
 
 static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
-                                int outside, planet *planet, shiptype *newship,
+                                int outside, Planet *planet, shiptype *newship,
                                 shiptype *builder) {
   int shipno;
 
@@ -1771,7 +1771,7 @@ void sell(const command_t &argv, const player_t Playernum,
 void bid(const command_t &argv, const player_t Playernum,
          const governor_t Governor) {
   racetype *Race;
-  planet p;
+  Planet p;
   commodtype *c;
   shiptype *s;
   char commod;

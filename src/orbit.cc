@@ -27,10 +27,10 @@ static const int SCALE = 100;
 
 static void DispStar(int, int, const ScopeLevel, startype *, int, int,
                      racetype *, char *);
-static void DispPlanet(int, int, const ScopeLevel, const planet &, char *, int,
+static void DispPlanet(int, int, const ScopeLevel, const Planet &, char *, int,
                        racetype *, char *);
 static void DispShip(int, int, placetype *, shiptype *, int, racetype *, char *,
-                     const planet & = planet());
+                     const Planet & = Planet());
 
 /* OPTIONS
  *  -p : If this option is set, ``orbit'' will not display planet names.
@@ -247,7 +247,7 @@ static void DispStar(int Playernum, int Governor, const ScopeLevel level,
 }
 
 static void DispPlanet(int Playernum, int Governor, const ScopeLevel level,
-                       const planet &p, char *name, int DontDispPlanets,
+                       const Planet &p, char *name, int DontDispPlanets,
                        racetype *r, char *string) {
   int x = 0;  // TODO(jeffbailey): Check if init to 0 is right.
   int y = 0;
@@ -290,7 +290,7 @@ static void DispPlanet(int Playernum, int Governor, const ScopeLevel level,
 
 static void DispShip(int Playernum, int Governor, placetype *where,
                      shiptype *ship, int God, racetype *r, char *string,
-                     const planet &pl) {
+                     const Planet &pl) {
   int x, y, wm;
   int stand;
   shiptype *aship;

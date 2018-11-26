@@ -49,7 +49,7 @@ typedef std::vector<std::string> command_t;
 
 typedef char hugestr[HUGESTRLEN];
 
-typedef class planet planettype;
+typedef class Planet planettype;
 typedef struct star startype;
 typedef struct commod commodtype;
 
@@ -121,7 +121,7 @@ struct commod {
   planetnum_t planet_to;
 };
 
-class planet {
+class Planet {
  public:
   double xpos, ypos;        /* x,y relative to orbit */
   shipnum_t ships;          /* first ship in orbit (to be changed) */
@@ -197,12 +197,12 @@ class sector {
 
 class sector_map {
  public:
-  sector_map(const planet &planet) : maxx_(planet.Maxx), maxy_(planet.Maxy) {
+  sector_map(const Planet &planet) : maxx_(planet.Maxx), maxy_(planet.Maxy) {
     vec_.reserve(planet.Maxx * planet.Maxy);
   }
 
   //! Add an empty sector for every potential space.  Used for initialization.
-  sector_map(const planet &planet, bool)
+  sector_map(const Planet &planet, bool)
       : maxx_(planet.Maxx),
         maxy_(planet.Maxy),
         vec_(planet.Maxx * planet.Maxy) {}

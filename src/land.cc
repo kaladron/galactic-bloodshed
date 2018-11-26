@@ -361,7 +361,7 @@ void land(player_t Playernum, governor_t Governor, int APcount) {
 
         auto sect = getsector(p, x, y);
 
-        if (sect.condition == SEC_WASTED) {
+        if (sect.condition == SectorType::SEC_WASTED) {
           sprintf(buf, "Warning: That sector is a wasteland!\n");
           notify(Playernum, Governor, buf);
         } else if (sect.owner && sect.owner != Playernum) {

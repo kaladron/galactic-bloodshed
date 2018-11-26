@@ -1189,7 +1189,7 @@ static int can_build_on_sector(int what, racetype *Race, const planet &planet,
     sprintf(string, "You have no more civs in the sector!\n");
     return (0);
   }
-  if (sector.condition == SEC_WASTED) {
+  if (sector.condition == SectorType::SEC_WASTED) {
     sprintf(string, "You can't build on wasted sectors.\n");
     return (0);
   }

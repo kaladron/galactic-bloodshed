@@ -116,40 +116,46 @@ void profile(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, buf);
     sprintf(buf,
             "Rate:    %3.1f\t\t  methane  %5d%%\t      %-8.8s %c %3.0f%%\n",
-            Race->birthrate, Race->conditions[METHANE], Desnames[SEC_SEA],
-            CHAR_SEA, Race->likes[SEC_SEA] * 100.);
+            Race->birthrate, Race->conditions[METHANE],
+            Desnames[SectorType::SEC_SEA], CHAR_SEA,
+            Race->likes[SectorType::SEC_SEA] * 100.);
     notify(Playernum, Governor, buf);
     sprintf(buf,
             "Mass:    %4.2f\t\t  oxygen   %5d%%\t      %-8.8s %c %3.0f%%\n",
-            Race->mass, Race->conditions[OXYGEN], Desnames[SEC_GAS], CHAR_GAS,
-            Race->likes[SEC_GAS] * 100.);
+            Race->mass, Race->conditions[OXYGEN], Desnames[SectorType::SEC_GAS],
+            CHAR_GAS, Race->likes[SectorType::SEC_GAS] * 100.);
     notify(Playernum, Governor, buf);
     sprintf(buf, "Fight:   %d\t\t  helium   %5d%%\t      %-8.8s %c %3.0f%%\n",
-            Race->fighters, Race->conditions[HELIUM], Desnames[SEC_ICE],
-            CHAR_ICE, Race->likes[SEC_ICE] * 100.);
+            Race->fighters, Race->conditions[HELIUM],
+            Desnames[SectorType::SEC_ICE], CHAR_ICE,
+            Race->likes[SectorType::SEC_ICE] * 100.);
     notify(Playernum, Governor, buf);
     sprintf(buf,
             "Metab:   %4.2f\t\t  nitrogen %5d%%\t      %-8.8s %c %3.0f%%\n",
-            Race->metabolism, Race->conditions[NITROGEN], Desnames[SEC_MOUNT],
-            CHAR_MOUNT, Race->likes[SEC_MOUNT] * 100.);
+            Race->metabolism, Race->conditions[NITROGEN],
+            Desnames[SectorType::SEC_MOUNT], CHAR_MOUNT,
+            Race->likes[SectorType::SEC_MOUNT] * 100.);
     notify(Playernum, Governor, buf);
     sprintf(buf, "Sexes:   %1d\t\t  CO2      %5d%%\t      %-8.8s %c %3.0f%%\n",
-            Race->number_sexes, Race->conditions[CO2], Desnames[SEC_LAND],
-            CHAR_LAND, Race->likes[SEC_LAND] * 100.);
+            Race->number_sexes, Race->conditions[CO2],
+            Desnames[SectorType::SEC_LAND], CHAR_LAND,
+            Race->likes[SectorType::SEC_LAND] * 100.);
     notify(Playernum, Governor, buf);
     sprintf(buf,
             "Explore: %-3.0f%%\t\t  hydrogen %5d%%\t      %-8.8s %c %3.0f%%\n",
             Race->adventurism * 100.0, Race->conditions[HYDROGEN],
-            Desnames[SEC_DESERT], CHAR_DESERT, Race->likes[SEC_DESERT] * 100.);
+            Desnames[SectorType::SEC_DESERT], CHAR_DESERT,
+            Race->likes[SectorType::SEC_DESERT] * 100.);
     notify(Playernum, Governor, buf);
     sprintf(buf, "Avg Int: %3d\t\t  sulfer   %5d%%\t      %-8.8s %c %3.0f%%\n",
-            Race->IQ, Race->conditions[SULFUR], Desnames[SEC_FOREST],
-            CHAR_FOREST, Race->likes[SEC_FOREST] * 100.);
+            Race->IQ, Race->conditions[SULFUR],
+            Desnames[SectorType::SEC_FOREST], CHAR_FOREST,
+            Race->likes[SectorType::SEC_FOREST] * 100.);
     notify(Playernum, Governor, buf);
-    sprintf(buf,
-            "Tech:    %-6.2f\t\t  other    %5d%%\t      %-8.8s %c %3.0f%%\n",
-            Race->tech, Race->conditions[OTHER], Desnames[SEC_PLATED],
-            CHAR_PLATED, Race->likes[SEC_PLATED] * 100.);
+    sprintf(
+        buf, "Tech:    %-6.2f\t\t  other    %5d%%\t      %-8.8s %c %3.0f%%\n",
+        Race->tech, Race->conditions[OTHER], Desnames[SectorType::SEC_PLATED],
+        CHAR_PLATED, Race->likes[SectorType::SEC_PLATED] * 100.);
     notify(Playernum, Governor, buf);
 
     notify(Playernum, Governor, "Discoveries:");

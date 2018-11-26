@@ -40,12 +40,12 @@ static int Numtypes[PlanetType::DESERT + 2] = {
 static int Resource[PlanetType::DESERT + 2] = {
     0,
 };
-static int Numsects[PlanetType::DESERT + 2][SEC_PLATED + 1] = {
+static int Numsects[PlanetType::DESERT + 2][SectorType::SEC_PLATED + 1] = {
     {
         0,
     },
 };
-static int Fertsects[PlanetType::DESERT + 2][SEC_PLATED + 1] = {
+static int Fertsects[PlanetType::DESERT + 2][SectorType::SEC_PLATED + 1] = {
     {
         0,
     },
@@ -80,17 +80,17 @@ void PrintStatistics(void) {
     printf("%3.3s%4d ", Nametypes[i], Numtypes[i]);
     if (i < PlanetType::DESERT + 1)
       Numtypes[PlanetType::DESERT + 1] += Numtypes[i];
-    for (j = 0; j < SEC_PLATED; j++) {
+    for (j = 0; j < SectorType::SEC_PLATED; j++) {
       printf("%5d", Numsects[i][j]);
-      Numsects[i][SEC_PLATED] += Numsects[i][j];
+      Numsects[i][SectorType::SEC_PLATED] += Numsects[i][j];
       if (i <= PlanetType::DESERT)
         Numsects[PlanetType::DESERT + 1][j] += Numsects[i][j];
     }
-    printf("%6d %5.1f", Numsects[i][SEC_PLATED],
-           (1.0 * Numsects[i][SEC_PLATED]) / Numtypes[i]);
+    printf("%6d %5.1f", Numsects[i][SectorType::SEC_PLATED],
+           (1.0 * Numsects[i][SectorType::SEC_PLATED]) / Numtypes[i]);
     printf("%8d %7.1f %5.1f\n", Resource[i],
            ((double)Resource[i]) / Numtypes[i],
-           ((double)Resource[i]) / Numsects[i][SEC_PLATED]);
+           ((double)Resource[i]) / Numsects[i][SectorType::SEC_PLATED]);
     Resource[PlanetType::DESERT + 1] += Resource[i];
   }
   printf("Average Sector Fertility -\n");
@@ -98,7 +98,7 @@ void PrintStatistics(void) {
   for (i = 0; i <= PlanetType::DESERT + 1; i++) {
     printf("%3.3s%4d ", Nametypes[i], Numtypes[i]);
     y = 0;
-    for (j = 0; j < SEC_PLATED; j++) {
+    for (j = 0; j < SectorType::SEC_PLATED; j++) {
       if (Numsects[i][j])
         printf("%5.1f", ((double)Fertsects[i][j]) / Numsects[i][j]);
       else
@@ -107,7 +107,7 @@ void PrintStatistics(void) {
       Fertsects[PlanetType::DESERT + 1][j] += Fertsects[i][j];
     }
     printf("%8d %7.1f %5.1f\n", y, (1.0 * y) / Numtypes[i],
-           (1.0 * y) / Numsects[i][SEC_PLATED]);
+           (1.0 * y) / Numsects[i][SectorType::SEC_PLATED]);
   }
 }
 
@@ -304,25 +304,25 @@ startype *Makestar(int snum) {
       for (y = 0; y < planet.Maxy; y++) {
         for (x = 0; x < planet.Maxx; x++) {
           switch (smap.get(x, y).condition) {
-            case SEC_LAND:
+            case SectorType::SEC_LAND:
               putchr(CHAR_LAND);
               break;
-            case SEC_SEA:
+            case SectorType::SEC_SEA:
               putchr(CHAR_SEA);
               break;
-            case SEC_MOUNT:
+            case SectorType::SEC_MOUNT:
               putchr(CHAR_MOUNT);
               break;
-            case SEC_ICE:
+            case SectorType::SEC_ICE:
               putchr(CHAR_ICE);
               break;
-            case SEC_GAS:
+            case SectorType::SEC_GAS:
               putchr(CHAR_GAS);
               break;
-            case SEC_DESERT:
+            case SectorType::SEC_DESERT:
               putchr(CHAR_DESERT);
               break;
-            case SEC_FOREST:
+            case SectorType::SEC_FOREST:
               putchr(CHAR_FOREST);
               break;
             default:

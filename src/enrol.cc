@@ -74,7 +74,7 @@ int main() {
   int s, idx, k;
 #define STRSIZE 100
   char str[STRSIZE], c;
-  struct stype secttypes[SEC_WASTED + 1] = {};
+  struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
   planet planet;
   unsigned char not_found[PlanetType::DESERT + 1];
   startype *star_arena;
@@ -295,7 +295,7 @@ int main() {
     }
   }
   planet.explored = 1;
-  for (i = SEC_SEA; i <= SEC_WASTED; i++)
+  for (i = SectorType::SEC_SEA; i <= SectorType::SEC_WASTED; i++)
     if (secttypes[i].here) {
       printf("(%2d): %c (%d, %d) (%s, %d sectors)\n", i,
              desshow(secttypes[i].x, secttypes[i].y, smap), secttypes[i].x,
@@ -308,7 +308,8 @@ int main() {
     printf("\nchoice (enter the number): ");
     scanf("%d", &i);
     getchr();
-    if (i < SEC_SEA || i > SEC_WASTED || !secttypes[i].here) {
+    if (i < SectorType::SEC_SEA || i > SectorType::SEC_WASTED ||
+        !secttypes[i].here) {
       printf("There are none of that type here..\n");
     } else
       found = 1;
@@ -317,10 +318,10 @@ int main() {
   auto &sect = smap.get(secttypes[i].x, secttypes[i].y);
   Race->likesbest = i;
   Race->likes[i] = 1.0;
-  Race->likes[SEC_PLATED] = 1.0;
-  Race->likes[SEC_WASTED] = 0.0;
+  Race->likes[SectorType::SEC_PLATED] = 1.0;
+  Race->likes[SectorType::SEC_WASTED] = 0.0;
   printf("\nEnter compatibilities of other sectors -\n");
-  for (j = SEC_SEA; j < SEC_PLATED; j++)
+  for (j = SectorType::SEC_SEA; j < SectorType::SEC_PLATED; j++)
     if (i != j) {
       printf("%6s (%3d sectors) :", Desnames[j], secttypes[j].count);
       scanf("%d", &k);
@@ -458,23 +459,23 @@ static char desshow(const int x, const int y,
   const auto &s = smap.get(x, y);
 
   switch (s.condition) {
-    case SEC_WASTED:
+    case SectorType::SEC_WASTED:
       return CHAR_WASTED;
-    case SEC_SEA:
+    case SectorType::SEC_SEA:
       return CHAR_SEA;
-    case SEC_LAND:
+    case SectorType::SEC_LAND:
       return CHAR_LAND;
-    case SEC_MOUNT:
+    case SectorType::SEC_MOUNT:
       return CHAR_MOUNT;
-    case SEC_GAS:
+    case SectorType::SEC_GAS:
       return CHAR_GAS;
-    case SEC_PLATED:
+    case SectorType::SEC_PLATED:
       return CHAR_PLATED;
-    case SEC_DESERT:
+    case SectorType::SEC_DESERT:
       return CHAR_DESERT;
-    case SEC_FOREST:
+    case SectorType::SEC_FOREST:
       return CHAR_FOREST;
-    case SEC_ICE:
+    case SectorType::SEC_ICE:
       return CHAR_ICE;
     default:
       return ('!');

@@ -132,28 +132,28 @@ void bless(int Playernum, int Governor, int APcount) {
     sprintf(buf, "Deity turned you into a mortal race.\n");
     /* sector preferences */
   } else if (match(args[2], "water")) {
-    Race->likes[SEC_SEA] = 0.01 * (double)amount;
+    Race->likes[SectorType::SEC_SEA] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your water preference to %d%%\n", amount);
   } else if (match(args[2], "land")) {
-    Race->likes[SEC_LAND] = 0.01 * (double)amount;
+    Race->likes[SectorType::SEC_LAND] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your land preference to %d%%\n", amount);
   } else if (match(args[2], "mountain")) {
-    Race->likes[SEC_MOUNT] = 0.01 * (double)amount;
+    Race->likes[SectorType::SEC_MOUNT] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your mountain preference to %d%%\n", amount);
   } else if (match(args[2], "gas")) {
-    Race->likes[SEC_GAS] = 0.01 * (double)amount;
+    Race->likes[SectorType::SEC_GAS] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your gas preference to %d%%\n", amount);
   } else if (match(args[2], "ice")) {
-    Race->likes[SEC_ICE] = 0.01 * (double)amount;
+    Race->likes[SectorType::SEC_ICE] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your ice preference to %d%%\n", amount);
   } else if (match(args[2], "forest")) {
-    Race->likes[SEC_FOREST] = 0.01 * (double)amount;
+    Race->likes[SectorType::SEC_FOREST] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your forest preference to %d%%\n", amount);
   } else if (match(args[2], "desert")) {
-    Race->likes[SEC_DESERT] = 0.01 * (double)amount;
+    Race->likes[SectorType::SEC_DESERT] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your desert preference to %d%%\n", amount);
   } else if (match(args[2], "plated")) {
-    Race->likes[SEC_PLATED] = 0.01 * (double)amount;
+    Race->likes[SectorType::SEC_PLATED] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your plated preference to %d%%\n", amount);
   } else
     Mod = 0;

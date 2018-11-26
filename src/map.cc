@@ -218,23 +218,23 @@ char desshow(const player_t Playernum, const governor_t Governor, const int x,
   if (s.crystals && (r->discoveries[D_CRYSTAL] || r->God)) return CHAR_CRYSTAL;
 
   switch (s.condition) {
-    case SEC_WASTED:
+    case SectorType::SEC_WASTED:
       return CHAR_WASTED;
-    case SEC_SEA:
+    case SectorType::SEC_SEA:
       return CHAR_SEA;
-    case SEC_LAND:
+    case SectorType::SEC_LAND:
       return CHAR_LAND;
-    case SEC_MOUNT:
+    case SectorType::SEC_MOUNT:
       return CHAR_MOUNT;
-    case SEC_GAS:
+    case SectorType::SEC_GAS:
       return CHAR_GAS;
-    case SEC_PLATED:
+    case SectorType::SEC_PLATED:
       return CHAR_PLATED;
-    case SEC_ICE:
+    case SectorType::SEC_ICE:
       return CHAR_ICE;
-    case SEC_DESERT:
+    case SectorType::SEC_DESERT:
       return CHAR_DESERT;
-    case SEC_FOREST:
+    case SectorType::SEC_FOREST:
       return CHAR_FOREST;
     default:
       return ('?');

@@ -130,7 +130,7 @@ void dissolve(int Playernum, int Governor) {
                 s.troops = 0;
                 s.popn = 0;
                 if (waste) /* code folded from here */
-                  s.condition = SEC_WASTED;
+                  s.condition = SectorType::SEC_WASTED;
                 /* unfolding */
               }
             }

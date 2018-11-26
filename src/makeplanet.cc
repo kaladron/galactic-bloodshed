@@ -71,8 +71,10 @@ static const int rmax[][8] = {{250, 325, 400, 0, 250, 0, 300}, /*   @   */
 
 /*  The starting conditions of the sectors given a planet types */
 /*              @      o     O    #    ~    .       (       _  */
-static const int cond[] = {SEC_SEA, SEC_MOUNT, SEC_LAND,   SEC_ICE,
-                           SEC_GAS, SEC_SEA,   SEC_FOREST, SEC_DESERT};
+static const int cond[] = {SectorType::SEC_SEA,    SectorType::SEC_MOUNT,
+                           SectorType::SEC_LAND,   SectorType::SEC_ICE,
+                           SectorType::SEC_GAS,    SectorType::SEC_SEA,
+                           SectorType::SEC_FOREST, SectorType::SEC_DESERT};
 
 static int neighbors(sector_map &, int, int, int);
 static void MakeEarthAtmosphere(planet *, int);
@@ -157,8 +159,8 @@ planet Makeplanet(double dist, short stemp, PlanetType type) {
         planet.conditions[SULFUR] = 0;
         planet.conditions[OTHER] = 0;
       }
-      seed(smap, SEC_DESERT, int_rand(1, total_sects));
-      seed(smap, SEC_MOUNT, int_rand(1, total_sects));
+      seed(smap, SectorType::SEC_DESERT, int_rand(1, total_sects));
+      seed(smap, SectorType::SEC_MOUNT, int_rand(1, total_sects));
       break;
     case PlanetType::ASTEROID: /* asteroid */
       /* no atmosphere */
@@ -166,7 +168,7 @@ planet Makeplanet(double dist, short stemp, PlanetType type) {
         for (x = 0; x < planet.Maxx; x++)
           if (!int_rand(0, 3)) {
             auto &s = smap.get_random();
-            s.type = s.condition = SEC_LAND;
+            s.type = s.condition = SectorType::SEC_LAND;
           }
       seed(smap, DESERT, int_rand(1, total_sects));
       break;
@@ -188,35 +190,39 @@ planet Makeplanet(double dist, short stemp, PlanetType type) {
         planet.conditions[SULFUR] = 0;
         planet.conditions[OTHER] = 0;
       }
-      seed(smap, SEC_MOUNT, int_rand(1, total_sects / 2));
+      seed(smap, SectorType::SEC_MOUNT, int_rand(1, total_sects / 2));
       break;
     case PlanetType::EARTH:
       MakeEarthAtmosphere(&planet, 33);
-      seed(smap, SEC_LAND, int_rand(total_sects / 30, total_sects / 20));
-      grow(smap, SEC_LAND, 1, 1);
-      grow(smap, SEC_LAND, 1, 2);
-      grow(smap, SEC_LAND, 2, 3);
-      grow(smap, SEC_SEA, 1, 4);
+      seed(smap, SectorType::SEC_LAND,
+           int_rand(total_sects / 30, total_sects / 20));
+      grow(smap, SectorType::SEC_LAND, 1, 1);
+      grow(smap, SectorType::SEC_LAND, 1, 2);
+      grow(smap, SectorType::SEC_LAND, 2, 3);
+      grow(smap, SectorType::SEC_SEA, 1, 4);
       break;
     case PlanetType::FOREST:
       MakeEarthAtmosphere(&planet, 0);
-      seed(smap, SEC_SEA, int_rand(total_sects / 30, total_sects / 20));
-      grow(smap, SEC_SEA, 1, 1);
-      grow(smap, SEC_SEA, 1, 3);
-      grow(smap, SEC_FOREST, 1, 3);
+      seed(smap, SectorType::SEC_SEA,
+           int_rand(total_sects / 30, total_sects / 20));
+      grow(smap, SectorType::SEC_SEA, 1, 1);
+      grow(smap, SectorType::SEC_SEA, 1, 3);
+      grow(smap, SectorType::SEC_FOREST, 1, 3);
       break;
     case PlanetType::WATER:
       MakeEarthAtmosphere(&planet, 25);
       break;
     case PlanetType::DESERT:
       MakeEarthAtmosphere(&planet, 50);
-      seed(smap, SEC_MOUNT, int_rand(total_sects / 50, total_sects / 25));
-      grow(smap, SEC_MOUNT, 1, 1);
-      grow(smap, SEC_MOUNT, 1, 2);
-      seed(smap, SEC_LAND, int_rand(total_sects / 50, total_sects / 25));
-      grow(smap, SEC_LAND, 1, 1);
-      grow(smap, SEC_LAND, 1, 3);
-      grow(smap, SEC_DESERT, 1, 3);
+      seed(smap, SectorType::SEC_MOUNT,
+           int_rand(total_sects / 50, total_sects / 25));
+      grow(smap, SectorType::SEC_MOUNT, 1, 1);
+      grow(smap, SectorType::SEC_MOUNT, 1, 2);
+      seed(smap, SectorType::SEC_LAND,
+           int_rand(total_sects / 50, total_sects / 25));
+      grow(smap, SectorType::SEC_LAND, 1, 1);
+      grow(smap, SectorType::SEC_LAND, 1, 3);
+      grow(smap, SectorType::SEC_DESERT, 1, 3);
       break;
   }
   Makesurface(planet,
@@ -319,20 +325,20 @@ static void Makesurface(const planet &p, sector_map &smap) {
       auto &s = smap.get(x, y);
       int temp = SectTemp(p, y);
       switch (s.type) {
-        case SEC_SEA:
+        case SectorType::SEC_SEA:
           if (success(-temp) && ((y == 0) || (y == smap.get_maxy() - 1)))
-            s.condition = SEC_ICE;
+            s.condition = SectorType::SEC_ICE;
           break;
-        case SEC_LAND:
+        case SectorType::SEC_LAND:
           if (p.type == PlanetType::EARTH) {
             if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
-              s.condition = SEC_ICE;
+              s.condition = SectorType::SEC_ICE;
           }
           break;
-        case SEC_FOREST:
+        case SectorType::SEC_FOREST:
           if (p.type == PlanetType::FOREST) {
             if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
-              s.condition = SEC_ICE;
+              s.condition = SectorType::SEC_ICE;
           }
       }
       s.type = s.condition;

@@ -313,7 +313,7 @@ if (!Stinfo[starnum][planetnum].inhab)
             o &= Sectinfo[x][y].explored;
             auto &p = smap.get(x, y);
             if (((Sectinfo[x][y].explored == i) && !(random() & 02)) &&
-                (!p.owner && p.condition != SEC_WASTED &&
+                (!p.owner && p.condition != SectorType::SEC_WASTED &&
                  p.condition == races[i - 1]->likesbest)) {
               /*  explorations have found an island */
               Claims = i;
@@ -336,7 +336,7 @@ if (!Stinfo[starnum][planetnum].inhab)
     nukex = int_rand(0, (int)planet->Maxx - 1);
     nukey = int_rand(0, (int)planet->Maxy - 1);
     auto &p = smap.get(nukex, nukey);
-    p.condition = SEC_WASTED;
+    p.condition = SectorType::SEC_WASTED;
     p.popn = p.owner = p.troops = 0;
   }
 
@@ -470,7 +470,7 @@ if (!Stinfo[starnum][planetnum].inhab)
                            int_rand(0, (int)planet->Maxy - 1));
         if (p.popn + p.troops) {
           p.owner = p.popn = p.troops = 0;
-          p.condition = SEC_WASTED;
+          p.condition = SectorType::SEC_WASTED;
         }
       }
       /* now nuke all sectors belonging to former master */
@@ -482,7 +482,7 @@ if (!Stinfo[starnum][planetnum].inhab)
             p.owner = 0;
             p.popn = 0;
             p.troops = 0;
-            p.condition = SEC_WASTED;
+            p.condition = SectorType::SEC_WASTED;
           }
         }
         /* also add up the populations while here */
@@ -663,7 +663,7 @@ static void terraform(shiptype *ship, planet *planet, sector_map &smap) {
   if (!moveship_onplanet(ship, planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
   if ((s.condition != races[ship->owner - 1]->likesbest) &&
-      (s.condition != SEC_GAS) &&
+      (s.condition != SectorType::SEC_GAS) &&
       success((100 - (int)ship->damage) * ship->popn / ship->max_crew)) {
     /* gas sectors can't be terraformed. */
     /* only condition can be terraformed, type doesn't change */
@@ -683,7 +683,7 @@ static void terraform(shiptype *ship, planet *planet, sector_map &smap) {
     sprintf(buf, " T%lu is full of zealots!!!", ship->number);
     push_telegram(ship->owner, ship->governor, buf);
   }
-  if (s.condition == SEC_GAS) {
+  if (s.condition == SectorType::SEC_GAS) {
     sprintf(buf, " T%lu is trying to terraform gas.", ship->number);
     push_telegram(ship->owner, ship->governor, buf);
   }
@@ -739,7 +739,7 @@ static void do_quarry(shiptype *ship, planet *planet, sector_map &smap) {
     return;
   }
   /* nuke the sector */
-  s.condition = SEC_WASTED;
+  s.condition = SectorType::SEC_WASTED;
   prod = round_rand(races[ship->owner - 1]->metabolism * (double)ship->popn /
                     (double)ship->max_crew);
   ship->fuel -= FUEL_COST_QUARRY;

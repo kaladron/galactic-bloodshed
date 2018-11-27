@@ -15,20 +15,28 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-void toxicity(int Playernum, int Governor, int APcount) {
+void toxicity(const command_t &argv, const player_t Playernum,
+              const governor_t Governor) {
   int thresh;
+  int APcount = 1;
 
-  sscanf(args[1], "%d", &thresh);
+  if (argv.size() != 2) {
+    std::string response = "Provide exactly one value between 0 and 100.\n";
+    notify(Playernum, Governor, response);
+    return;
+  }
+
+  sscanf(argv[1].c_str(), "%d", &thresh);
 
   if (thresh > 100 || thresh < 0) {
-    sprintf(buf, "Illegal value.\n");
-    notify(Playernum, Governor, buf);
+    std::string response = "Illegal value.\n";
+    notify(Playernum, Governor, response);
     return;
   }
 
   if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
-    sprintf(buf, "scope must be a planet.\n");
-    notify(Playernum, Governor, buf);
+    std::string response = "scope must be a planet.\n";
+    notify(Playernum, Governor, response);
     return;
   }
   if (!enufAP(Playernum, Governor,

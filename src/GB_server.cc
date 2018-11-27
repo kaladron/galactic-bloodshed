@@ -237,6 +237,7 @@ int main(int argc, char **argv) {
       {"status", tech_status},
       {"stock", rst},
       {"tactical", rst},
+      {"toxicity", toxicity},
       {"uninvite", invite},
       {"unpledge", pledge},
       {"upgrade", upgrade},
@@ -1442,8 +1443,6 @@ static void process_command(int Playernum, int Governor, const char *comm,
     technology(Playernum, Governor, 1);
   else if (match(args[0], "toggle"))
     toggle(Playernum, Governor, 0);
-  else if (match(args[0], "toxicity"))
-    toxicity(Playernum, Governor, 1);
 #ifdef MARKET
   else if (match(args[0], "treasury"))
     treasury(Playernum, Governor);

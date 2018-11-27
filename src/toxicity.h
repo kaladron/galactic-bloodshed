@@ -5,6 +5,8 @@
 #ifndef TOXICITY_H
 #define TOXICITY_H
 
-void toxicity(int, int, int);
+#include "vars.h"
+
+void toxicity(const command_t &, const player_t, const governor_t);
 
 #endif  // TOXICITY_H

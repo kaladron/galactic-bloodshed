@@ -109,8 +109,6 @@ class descriptor_data {
   descriptor_data(int s)
       : descriptor(s),
         connected(0),
-        output_prefix(0),
-        output_suffix(0),
         output_size(0),
         raw_input(0),
         raw_input_at(0),
@@ -124,8 +122,6 @@ class descriptor_data {
   int God;       /* deity status */
   int Playernum; /* race */
   int Governor;  /* governor/subcommander */
-  char *output_prefix;
-  char *output_suffix;
   int output_size;
   struct text_queue output = {};
   struct text_queue input = {};
@@ -154,7 +150,6 @@ static char *addrout(long);
 static void do_update(int);
 static void do_segment(int, int);
 static int make_socket(int);
-static void clearstrings(descriptor_data *);
 static void shutdownsock(descriptor_data *);
 static void freeqs(descriptor_data *);
 static void load_race_data(void);
@@ -722,17 +717,6 @@ static char *addrout(long a) {
   return outbuf;
 }
 
-static void clearstrings(descriptor_data *d) {
-  if (d->output_prefix) {
-    free(d->output_prefix);
-    d->output_prefix = 0;
-  }
-  if (d->output_suffix) {
-    free(d->output_suffix);
-    d->output_suffix = 0;
-  }
-}
-
 static void shutdownsock(descriptor_data *d) {
   if (d->connected) {
     fprintf(stderr, "DISCONNECT %d Race=%d Governor=%d\n", d->descriptor,
@@ -740,7 +724,6 @@ static void shutdownsock(descriptor_data *d) {
   } else {
     fprintf(stderr, "DISCONNECT %d never connected\n", d->descriptor);
   }
-  clearstrings(d);
   shutdown(d->descriptor, 2);
   close(d->descriptor);
   freeqs(d);

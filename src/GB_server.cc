@@ -117,7 +117,7 @@ class descriptor_data {
     output.tail = &output.head;
     input.tail = &input.head;
   }
-  int descriptor;
+  const int descriptor;
   int connected;
   int God;       /* deity status */
   int Playernum; /* race */

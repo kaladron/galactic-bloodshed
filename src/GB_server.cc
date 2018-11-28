@@ -178,7 +178,8 @@ static void check_connect(descriptor_data *, const char *);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 #define MAX_COMMAND_LEN 512
-static std::list<descriptor_data *> *descriptor_list;
+
+static std::list<descriptor_data *> descriptor_list;
 
 typedef void (*CommandFunction)(const command_t &argv, const player_t,
                                 const governor_t);
@@ -189,7 +190,6 @@ int main(int argc, char **argv) {
   struct stat stbuf;
   FILE *sfile;
 
-  descriptor_list = new std::list<descriptor_data *>();
   // TODO(jeffbailey): bid, buy and sell should be only available if market is
   // set.
   commands = new std::unordered_map<std::string, CommandFunction>{
@@ -343,7 +343,7 @@ void set_signals(void) { signal(SIGPIPE, SIG_IGN); }
 
 void notify_race(int race, const char *message) {
   if (update_flag) return;
-  for (auto d : *descriptor_list) {
+  for (auto d : descriptor_list) {
     if (d->connected && d->Playernum == race) {
       queue_string(d, message);
     }
@@ -356,7 +356,7 @@ bool notify(player_t race, governor_t gov, const std::string &message) {
 
 bool notify(player_t race, governor_t gov, const char *message) {
   if (update_flag) return 0;
-  for (auto d : *descriptor_list)
+  for (auto d : descriptor_list)
     if (d->connected && d->Playernum == race && d->Governor == gov) {
       queue_string(d, message);
       return true;
@@ -365,7 +365,7 @@ bool notify(player_t race, governor_t gov, const char *message) {
 }
 
 void d_think(int Playernum, int Governor, char *message) {
-  for (auto d : *descriptor_list) {
+  for (auto d : descriptor_list) {
     if (d->connected && d->Playernum == Playernum && d->Governor != Governor &&
         !races[d->Playernum - 1]->governor[d->Governor].toggle.gag) {
       queue_string(d, message);
@@ -374,7 +374,7 @@ void d_think(int Playernum, int Governor, char *message) {
 }
 
 void d_broadcast(int Playernum, int Governor, char *message) {
-  for (auto d : *descriptor_list) {
+  for (auto d : descriptor_list) {
     if (d->connected &&
         !(d->Playernum == Playernum && d->Governor == Governor) &&
         !races[d->Playernum - 1]->governor[d->Governor].toggle.gag) {
@@ -384,7 +384,7 @@ void d_broadcast(int Playernum, int Governor, char *message) {
 }
 
 void d_shout(int Playernum, int Governor, char *message) {
-  for (auto d : *descriptor_list) {
+  for (auto d : descriptor_list) {
     if (d->connected &&
         !(d->Playernum == Playernum && d->Governor == Governor)) {
       queue_string(d, message);
@@ -393,7 +393,7 @@ void d_shout(int Playernum, int Governor, char *message) {
 }
 
 void d_announce(int Playernum, int Governor, int star, char *message) {
-  for (auto d : *descriptor_list) {
+  for (auto d : descriptor_list) {
     if (d->connected &&
         !(d->Playernum == Playernum && d->Governor == Governor) &&
         (isset(Stars[star]->inhabited, d->Playernum) ||
@@ -464,7 +464,7 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
     FD_ZERO(&input_set);
     FD_ZERO(&output_set);
     if (ndescriptors < avail_descriptors) FD_SET(sock, &input_set);
-    for (auto d : *descriptor_list) {
+    for (auto d : descriptor_list) {
       if (d->input.head)
         timeout = slice_timeout;
       else
@@ -489,13 +489,13 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
             return sock;
           }
         }
-        descriptor_list->push_back(newd);
+        descriptor_list.push_back(newd);
         welcome_user(newd);
       }
 
       // TODO(jeffbailey): There's a use-after-free here if the connection is
       // closed without typing anything or completing the connection.
-      for (auto d : *descriptor_list) {
+      for (auto d : descriptor_list) {
         if (FD_ISSET(d->descriptor, &input_set)) {
           /*      d->last_time = now; */
           if (!process_input(d)) {
@@ -573,7 +573,7 @@ static struct timeval update_quotas(struct timeval last,
   nslices = msec_diff(current, last) / COMMAND_TIME_MSEC;
 
   if (nslices > 0) {
-    for (auto d : *descriptor_list) {
+    for (auto d : descriptor_list) {
       d->quota += COMMANDS_PER_TIME * nslices;
       if (d->quota > COMMAND_BURST_SIZE) d->quota = COMMAND_BURST_SIZE;
     }
@@ -727,7 +727,7 @@ static void shutdownsock(descriptor_data *d) {
   shutdown(d->descriptor, 2);
   close(d->descriptor);
   freeqs(d);
-  descriptor_list->remove(d);
+  descriptor_list.remove(d);
   delete d;
 }
 
@@ -818,7 +818,7 @@ static int process_output(descriptor_data *d) {
 }
 
 static void force_output(void) {
-  for (auto d : *descriptor_list)
+  for (auto d : descriptor_list)
     if (d->connected) (void)process_output(d);
 }
 
@@ -943,7 +943,7 @@ static void process_commands(void) {
 
   do {
     nprocessed = 0;
-    for (auto d : *descriptor_list) {
+    for (auto d : descriptor_list) {
       if (d->quota > 0 && (t = d->input.head)) {
         d->quota--;
         nprocessed++;
@@ -1057,7 +1057,7 @@ static void check_connect(descriptor_data *d, const char *message) {
     r = races[i - 1];
     /* check to see if this player is already connect, if so, nuke the
      * descriptor */
-    for (auto d0 : *descriptor_list) {
+    for (auto d0 : descriptor_list) {
       if (d0->connected && d0->Playernum == Playernum &&
           d0->Governor == Governor) {
         queue_string(d, already_on);
@@ -1243,7 +1243,7 @@ static void close_sockets(int sock) {
   /* post message into news file */
   post(shutdown_message, ANNOUNCE);
 
-  for (auto d : *descriptor_list) {
+  for (auto d : descriptor_list) {
     write(d->descriptor, shutdown_message, strlen(shutdown_message));
     if (shutdown(d->descriptor, 2) < 0) perror("shutdown");
     close(d->descriptor);
@@ -1266,7 +1266,7 @@ static void dump_users(descriptor_data *e) {
   } else
     return;
 
-  for (auto d : *descriptor_list) {
+  for (auto d : descriptor_list) {
     if (d->connected && !d->God) {
       r = races[d->Playernum - 1];
       if (!r->governor[d->Governor].toggle.invisible ||
@@ -1835,7 +1835,7 @@ void notify_star(int a, int g, int b, int star, char *message) {
   Race = races[0]; /* deity */
   if (Race->monitor || (a != 1 && b != 1)) notify_race(1, message);
 #endif
-  for (auto d : *descriptor_list)
+  for (auto d : descriptor_list)
     if (d->connected && (d->Playernum != a || d->Governor != g) &&
         isset(Stars[star]->inhabited, d->Playernum)) {
       queue_string(d, message);

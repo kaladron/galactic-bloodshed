@@ -104,7 +104,7 @@ struct text_queue {
   struct text_block **tail;
 };
 
-class descriptor_data {
+class descriptor_data : public GameObj {
  public:
   descriptor_data(int s)
       : descriptor(s),
@@ -119,9 +119,6 @@ class descriptor_data {
   }
   const int descriptor;
   int connected;
-  int God;       /* deity status */
-  int Playernum; /* race */
-  int Governor;  /* governor/subcommander */
   int output_size;
   struct text_queue output = {};
   struct text_queue input = {};
@@ -344,7 +341,7 @@ void set_signals(void) { signal(SIGPIPE, SIG_IGN); }
 void notify_race(int race, const char *message) {
   if (update_flag) return;
   for (auto d : descriptor_list) {
-    if (d->connected && d->Playernum == race) {
+    if (d->connected && d->player == race) {
       queue_string(d, message);
     }
   }
@@ -357,7 +354,7 @@ bool notify(player_t race, governor_t gov, const std::string &message) {
 bool notify(player_t race, governor_t gov, const char *message) {
   if (update_flag) return 0;
   for (auto d : descriptor_list)
-    if (d->connected && d->Playernum == race && d->Governor == gov) {
+    if (d->connected && d->player == race && d->governor == gov) {
       queue_string(d, message);
       return true;
     }
@@ -366,8 +363,8 @@ bool notify(player_t race, governor_t gov, const char *message) {
 
 void d_think(int Playernum, int Governor, char *message) {
   for (auto d : descriptor_list) {
-    if (d->connected && d->Playernum == Playernum && d->Governor != Governor &&
-        !races[d->Playernum - 1]->governor[d->Governor].toggle.gag) {
+    if (d->connected && d->player == Playernum && d->governor != Governor &&
+        !races[d->player - 1]->governor[d->governor].toggle.gag) {
       queue_string(d, message);
     }
   }
@@ -376,8 +373,8 @@ void d_think(int Playernum, int Governor, char *message) {
 void d_broadcast(int Playernum, int Governor, char *message) {
   for (auto d : descriptor_list) {
     if (d->connected &&
-        !(d->Playernum == Playernum && d->Governor == Governor) &&
-        !races[d->Playernum - 1]->governor[d->Governor].toggle.gag) {
+        !(d->player == Playernum && d->governor == Governor) &&
+        !races[d->player - 1]->governor[d->governor].toggle.gag) {
       queue_string(d, message);
     }
   }
@@ -386,7 +383,7 @@ void d_broadcast(int Playernum, int Governor, char *message) {
 void d_shout(int Playernum, int Governor, char *message) {
   for (auto d : descriptor_list) {
     if (d->connected &&
-        !(d->Playernum == Playernum && d->Governor == Governor)) {
+        !(d->player == Playernum && d->governor == Governor)) {
       queue_string(d, message);
     }
   }
@@ -395,11 +392,11 @@ void d_shout(int Playernum, int Governor, char *message) {
 void d_announce(int Playernum, int Governor, int star, char *message) {
   for (auto d : descriptor_list) {
     if (d->connected &&
-        !(d->Playernum == Playernum && d->Governor == Governor) &&
-        (isset(Stars[star]->inhabited, d->Playernum) ||
-         races[d->Playernum - 1]->God) &&
-        Dir[d->Playernum - 1][d->Governor].snum == star &&
-        !races[d->Playernum - 1]->governor[d->Governor].toggle.gag) {
+        !(d->player == Playernum && d->governor == Governor) &&
+        (isset(Stars[star]->inhabited, d->player) ||
+         races[d->player - 1]->God) &&
+        Dir[d->player - 1][d->governor].snum == star &&
+        !races[d->player - 1]->governor[d->governor].toggle.gag) {
       queue_string(d, message);
     }
   }
@@ -720,7 +717,7 @@ static char *addrout(long a) {
 static void shutdownsock(descriptor_data *d) {
   if (d->connected) {
     fprintf(stderr, "DISCONNECT %d Race=%d Governor=%d\n", d->descriptor,
-            d->Playernum, d->Governor);
+            d->player, d->governor);
   } else {
     fprintf(stderr, "DISCONNECT %d never connected\n", d->descriptor);
   }
@@ -997,17 +994,17 @@ static int do_command(descriptor_data *d, const char *comm) {
     dump_users(d);
   } else if (argv[0] == "help") {
     help(d);
-  } else if (d->connected && d->God && argv[0] == "emulate") {
-    d->Playernum = std::stoi(argv[1]);
-    d->Governor = std::stoi(argv[2]);
-    sprintf(buf, "Emulating %s \"%s\" [%d,%d]\n", races[d->Playernum - 1]->name,
-            races[d->Playernum - 1]->governor[d->Governor].name, d->Playernum,
-            d->Governor);
+  } else if (d->connected && d->god && argv[0] == "emulate") {
+    d->player = std::stoi(argv[1]);
+    d->governor = std::stoi(argv[2]);
+    sprintf(buf, "Emulating %s \"%s\" [%d,%d]\n", races[d->player - 1]->name,
+            races[d->player - 1]->governor[d->governor].name, d->player,
+            d->governor);
     queue_string(d, buf);
   } else {
     if (d->connected) {
       /* GB command parser */
-      process_command(d->Playernum, d->Governor, comm, argv);
+      process_command(d->player, d->governor, comm, argv);
     } else {
       check_connect(
           d, comm); /* Logs player into the game, connects
@@ -1015,11 +1012,11 @@ static int do_command(descriptor_data *d, const char *comm) {
       if (!d->connected) {
         goodbye_user(d);
       } else {
-        check_for_telegrams(d->Playernum, d->Governor);
+        check_for_telegrams(d->player, d->governor);
         /* set the scope to home upon login */
         argn = 1;
         command_t call_cs = {"cs"};
-        process_command(d->Playernum, d->Governor, "cs", call_cs);
+        process_command(d->player, d->governor, "cs", call_cs);
       }
     }
   }
@@ -1058,8 +1055,8 @@ static void check_connect(descriptor_data *d, const char *message) {
     /* check to see if this player is already connect, if so, nuke the
      * descriptor */
     for (auto d0 : descriptor_list) {
-      if (d0->connected && d0->Playernum == Playernum &&
-          d0->Governor == Governor) {
+      if (d0->connected && d0->player == Playernum &&
+          d0->governor == Governor) {
         queue_string(d, already_on);
         return;
       }
@@ -1069,9 +1066,9 @@ static void check_connect(descriptor_data *d, const char *message) {
             r->governor[j].name, Playernum, Governor, d->descriptor);
     d->connected = 1;
 
-    d->God = r->God;
-    d->Playernum = Playernum;
-    d->Governor = Governor;
+    d->god = r->God;
+    d->player = Playernum;
+    d->governor = Governor;
 
     sprintf(buf, "\n%s \"%s\" [%d,%d] logged on.\n", r->name,
             r->governor[j].name, Playernum, Governor);
@@ -1260,24 +1257,24 @@ static void dump_users(descriptor_data *e) {
   (void)time(&now);
   sprintf(buf, "Current Players: %s", ctime(&now));
   queue_string(e, buf);
-  if (e->Playernum) {
-    r = races[e->Playernum - 1];
+  if (e->player) {
+    r = races[e->player - 1];
     God = r->God;
   } else
     return;
 
   for (auto d : descriptor_list) {
-    if (d->connected && !d->God) {
-      r = races[d->Playernum - 1];
-      if (!r->governor[d->Governor].toggle.invisible ||
-          e->Playernum == d->Playernum || God) {
-        sprintf(temp, "\"%s\"", r->governor[d->Governor].name);
+    if (d->connected && !d->god) {
+      r = races[d->player - 1];
+      if (!r->governor[d->governor].toggle.invisible ||
+          e->player == d->player || God) {
+        sprintf(temp, "\"%s\"", r->governor[d->governor].name);
         sprintf(
             buf, "%20.20s %20.20s [%2d,%2d] %4lds idle %-4.4s %s %s\n", r->name,
-            temp, d->Playernum, d->Governor, now - d->last_time,
-            God ? Stars[Dir[d->Playernum - 1][d->Governor].snum]->name : "    ",
-            (r->governor[d->Governor].toggle.gag ? "GAG" : "   "),
-            (r->governor[d->Governor].toggle.invisible ? "INVISIBLE" : ""));
+            temp, d->player, d->governor, now - d->last_time,
+            God ? Stars[Dir[d->player - 1][d->governor].snum]->name : "    ",
+            (r->governor[d->governor].toggle.gag ? "GAG" : "   "),
+            (r->governor[d->governor].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, buf);
       } else if (!God) /* deity lurks around */
         coward_count++;
@@ -1836,8 +1833,8 @@ void notify_star(int a, int g, int b, int star, char *message) {
   if (Race->monitor || (a != 1 && b != 1)) notify_race(1, message);
 #endif
   for (auto d : descriptor_list)
-    if (d->connected && (d->Playernum != a || d->Governor != g) &&
-        isset(Stars[star]->inhabited, d->Playernum)) {
+    if (d->connected && (d->player != a || d->governor != g) &&
+        isset(Stars[star]->inhabited, d->player)) {
       queue_string(d, message);
     }
 }

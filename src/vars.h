@@ -121,6 +121,13 @@ struct commod {
   planetnum_t planet_to;
 };
 
+class GameObj {
+ public:
+  player_t player; // Player number of the 
+  governor_t governor;
+  bool god;
+};
+
 class Planet {
  public:
   double xpos, ypos;        /* x,y relative to orbit */

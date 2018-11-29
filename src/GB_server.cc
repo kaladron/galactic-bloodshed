@@ -104,9 +104,9 @@ struct text_queue {
   struct text_block **tail;
 };
 
-class descriptor_data : public GameObj {
+class DescriptorData : public GameObj {
  public:
-  descriptor_data(int s)
+  DescriptorData(int s)
       : descriptor(s),
         connected(0),
         output_size(0),
@@ -132,52 +132,52 @@ static int ndescriptors = 0;
 
 static double GetComplexity(int);
 static void set_signals(void);
-static void queue_string(descriptor_data *d, const char *message);
-static void queue_write(descriptor_data *, const char *, int);
+static void queue_string(DescriptorData *d, const char *message);
+static void queue_write(DescriptorData *, const char *, int);
 static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
-static void help(descriptor_data *);
-static void process_command(const descriptor_data &, const char *,
+static void help(DescriptorData *);
+static void process_command(const DescriptorData &, const char *,
                             const command_t &argv);
 static int shovechars(int);
 
 static void GB_time(int, int);
 static void GB_schedule(int, int);
-static descriptor_data *new_connection(int);
+static DescriptorData *new_connection(int);
 static char *addrout(long);
 static void do_update(int);
 static void do_segment(int, int);
 static int make_socket(int);
-static void shutdownsock(descriptor_data *);
-static void freeqs(descriptor_data *);
+static void shutdownsock(DescriptorData *);
+static void freeqs(DescriptorData *);
 static void load_race_data(void);
 static void load_star_data(void);
 static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
-static int process_output(descriptor_data *);
-static void welcome_user(descriptor_data *);
+static int process_output(DescriptorData *);
+static void welcome_user(DescriptorData *);
 static int flush_queue(struct text_queue *, int);
 static void free_text_block(struct text_block *);
 static void process_commands(void);
-static int do_command(descriptor_data *, const char *);
-static void goodbye_user(descriptor_data *);
-static void dump_users(descriptor_data *);
+static int do_command(DescriptorData *, const char *);
+static void goodbye_user(DescriptorData *);
+static void dump_users(DescriptorData *);
 static void close_sockets(int);
-static int process_input(descriptor_data *);
+static int process_input(DescriptorData *);
 static void force_output(void);
-static void help_user(descriptor_data *);
+static void help_user(DescriptorData *);
 static void parse_connect(const char *, char *, char *);
 static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
-static void save_command(descriptor_data *, char *);
+static void save_command(DescriptorData *, char *);
 static void do_prompt(player_t, governor_t);
 
-static void check_connect(descriptor_data *, const char *);
+static void check_connect(DescriptorData *, const char *);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 #define MAX_COMMAND_LEN 512
 
-static std::list<descriptor_data *> descriptor_list;
+static std::list<DescriptorData *> descriptor_list;
 
 typedef void (*CommandFunction)(const command_t &, const GameObj &);
 static const std::unordered_map<std::string, CommandFunction> *commands;
@@ -476,7 +476,7 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
       (void)time(&now);
 
       if (FD_ISSET(sock, &input_set)) {
-        descriptor_data *newd;
+        DescriptorData *newd;
         if (!(newd = new_connection(sock))) {
           if (errno && errno != EINTR && errno != EMFILE) {
             perror("new_connection");
@@ -575,7 +575,7 @@ static struct timeval update_quotas(struct timeval last,
   return msec_add(last, nslices * COMMAND_TIME_MSEC);
 }
 
-static descriptor_data *new_connection(int sock) {
+static DescriptorData *new_connection(int sock) {
   int newsock;
   struct sockaddr_in addr;
   socklen_t addr_len;
@@ -601,7 +601,7 @@ static descriptor_data *new_connection(int sock) {
             addrout(ntohl(addr.sin_addr.s_addr)), ntohs(addr.sin_port),
             newsock);
     make_nonblocking(newsock);
-    return new descriptor_data(newsock);
+    return new DescriptorData(newsock);
   }
 }
 
@@ -711,7 +711,7 @@ static char *addrout(long a) {
   return outbuf;
 }
 
-static void shutdownsock(descriptor_data *d) {
+static void shutdownsock(DescriptorData *d) {
   if (d->connected) {
     fprintf(stderr, "DISCONNECT %d Race=%d Governor=%d\n", d->descriptor,
             d->player, d->governor);
@@ -773,7 +773,7 @@ static int flush_queue(struct text_queue *q, int n) {
   return really_flushed;
 }
 
-static void queue_write(descriptor_data *d, const char *b, int n) {
+static void queue_write(DescriptorData *d, const char *b, int n) {
   int space;
 
   space = MAX_OUTPUT - d->output_size - n;
@@ -782,11 +782,11 @@ static void queue_write(descriptor_data *d, const char *b, int n) {
   d->output_size += n;
 }
 
-static void queue_string(descriptor_data *d, const char *s) {
+static void queue_string(DescriptorData *d, const char *s) {
   queue_write(d, s, strlen(s));
 }
 
-static int process_output(descriptor_data *d) {
+static int process_output(DescriptorData *d) {
   struct text_block **qp, *cur;
   int cnt;
 
@@ -823,7 +823,7 @@ static void make_nonblocking(int s) {
   }
 }
 
-static void freeqs(descriptor_data *d) {
+static void freeqs(DescriptorData *d) {
   struct text_block *cur, *next;
 
   cur = d->output.head;
@@ -849,7 +849,7 @@ static void freeqs(descriptor_data *d) {
   d->raw_input_at = 0;
 }
 
-static void welcome_user(descriptor_data *d) {
+static void welcome_user(DescriptorData *d) {
   FILE *f;
   char *p;
 
@@ -870,7 +870,7 @@ static void welcome_user(descriptor_data *d) {
   }
 }
 
-static void help_user(descriptor_data *d) {
+static void help_user(DescriptorData *d) {
   FILE *f;
   char *p;
 
@@ -888,16 +888,16 @@ static void help_user(descriptor_data *d) {
   }
 }
 
-static void goodbye_user(descriptor_data *d) {
+static void goodbye_user(DescriptorData *d) {
   if (d->connected) /* this can happen, especially after updates */
     write(d->descriptor, LEAVE_MESSAGE, strlen(LEAVE_MESSAGE));
 }
 
-static void save_command(descriptor_data *d, char *command) {
+static void save_command(DescriptorData *d, char *command) {
   add_to_queue(&d->input, command, strlen(command) + 1);
 }
 
-static int process_input(descriptor_data *d) {
+static int process_input(DescriptorData *d) {
   int got;
   char *p, *pend, *q, *qend;
 
@@ -957,7 +957,7 @@ static void process_commands(void) {
   } while (nprocessed > 0);
 }
 
-static int do_command(descriptor_data *d, const char *comm) {
+static int do_command(DescriptorData *d, const char *comm) {
   const char *string;
   int parse_exit = 0, i;
 
@@ -1020,7 +1020,7 @@ static int do_command(descriptor_data *d, const char *comm) {
   return 1;
 }
 
-static void check_connect(descriptor_data *d, const char *message) {
+static void check_connect(DescriptorData *d, const char *message) {
   char race_password[MAX_COMMAND_LEN];
   char gov_password[MAX_COMMAND_LEN];
   int i, j;
@@ -1245,7 +1245,7 @@ static void close_sockets(int sock) {
   close(sock);
 }
 
-static void dump_users(descriptor_data *e) {
+static void dump_users(DescriptorData *e) {
   long now;
   racetype *r;
   int God = 0;
@@ -1287,7 +1287,7 @@ static void dump_users(descriptor_data *e) {
   queue_string(e, "Finished.\n");
 }
 
-static void process_command(const descriptor_data &d, const char *comm,
+static void process_command(const DescriptorData &d, const char *comm,
                             const command_t &argv) {
   int j, God, Guest;
   racetype *r;
@@ -1527,7 +1527,7 @@ static void GB_schedule(int Playernum, int Governor) {
   notify(Playernum, Governor, buf);
 }
 
-static void help(descriptor_data *e) {
+static void help(DescriptorData *e) {
   FILE *f;
   char file[1024];
   char *p;

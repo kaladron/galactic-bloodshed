@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void toxicity(const command_t &, const player_t, const governor_t);
+void toxicity(const command_t &, const GameObj &);
 
 #endif  // TOXICITY_H

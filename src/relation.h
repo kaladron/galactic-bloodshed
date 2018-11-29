@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void relation(const command_t &argv, const player_t, const governor_t);
+void relation(const command_t &, const GameObj &);
 
 #endif  // RELATION_H

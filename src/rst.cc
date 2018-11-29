@@ -60,8 +60,9 @@ static void plan_getrships(player_t, governor_t, starnum_t, planetnum_t);
 static void ship_report(player_t, governor_t, shipnum_t, unsigned char[]);
 static void star_getrships(player_t, governor_t, starnum_t);
 
-void rst(const command_t &argv, const player_t Playernum,
-         const governor_t Governor) {
+void rst(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   shipnum_t shipno;
   unsigned char Report_types[NUMSTYPES];
 

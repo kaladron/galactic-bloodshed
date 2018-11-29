@@ -123,7 +123,7 @@ struct commod {
 
 class GameObj {
  public:
-  player_t player; // Player number of the 
+  player_t player;  // Player number of the
   governor_t governor;
   bool god;
 };

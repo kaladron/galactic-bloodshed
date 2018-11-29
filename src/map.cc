@@ -25,8 +25,9 @@
 static void show_map(const player_t, const governor_t, const starnum_t,
                      const planetnum_t, const Planet &);
 
-void map(const command_t &argv, const player_t Playernum,
-         const governor_t Governor) {
+void map(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   placetype where;
 
   if (argv.size() > 1) {
@@ -49,7 +50,7 @@ void map(const command_t &argv, const player_t Playernum,
                "WARNING! This planet's primary is unstable.\n");
     } break;
     default:
-      orbit(argv, Playernum, Governor); /* make orbit map instead */
+      orbit(argv, g); /* make orbit map instead */
   }
 }
 

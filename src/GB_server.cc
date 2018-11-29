@@ -137,7 +137,8 @@ static void queue_write(descriptor_data *, const char *, int);
 static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
 static void help(descriptor_data *);
-static void process_command(int, int, const char *, const command_t &argv);
+static void process_command(const descriptor_data &, const char *,
+                            const command_t &argv);
 static int shovechars(int);
 
 static void GB_time(int, int);
@@ -178,8 +179,7 @@ static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 static std::list<descriptor_data *> descriptor_list;
 
-typedef void (*CommandFunction)(const command_t &argv, const player_t,
-                                const governor_t);
+typedef void (*CommandFunction)(const command_t &, const GameObj &);
 static const std::unordered_map<std::string, CommandFunction> *commands;
 
 int main(int argc, char **argv) {
@@ -372,8 +372,7 @@ void d_think(int Playernum, int Governor, char *message) {
 
 void d_broadcast(int Playernum, int Governor, char *message) {
   for (auto d : descriptor_list) {
-    if (d->connected &&
-        !(d->player == Playernum && d->governor == Governor) &&
+    if (d->connected && !(d->player == Playernum && d->governor == Governor) &&
         !races[d->player - 1]->governor[d->governor].toggle.gag) {
       queue_string(d, message);
     }
@@ -382,8 +381,7 @@ void d_broadcast(int Playernum, int Governor, char *message) {
 
 void d_shout(int Playernum, int Governor, char *message) {
   for (auto d : descriptor_list) {
-    if (d->connected &&
-        !(d->player == Playernum && d->governor == Governor)) {
+    if (d->connected && !(d->player == Playernum && d->governor == Governor)) {
       queue_string(d, message);
     }
   }
@@ -391,8 +389,7 @@ void d_shout(int Playernum, int Governor, char *message) {
 
 void d_announce(int Playernum, int Governor, int star, char *message) {
   for (auto d : descriptor_list) {
-    if (d->connected &&
-        !(d->player == Playernum && d->governor == Governor) &&
+    if (d->connected && !(d->player == Playernum && d->governor == Governor) &&
         (isset(Stars[star]->inhabited, d->player) ||
          races[d->player - 1]->God) &&
         Dir[d->player - 1][d->governor].snum == star &&
@@ -1004,7 +1001,7 @@ static int do_command(descriptor_data *d, const char *comm) {
   } else {
     if (d->connected) {
       /* GB command parser */
-      process_command(d->player, d->governor, comm, argv);
+      process_command(*d, comm, argv);
     } else {
       check_connect(
           d, comm); /* Logs player into the game, connects
@@ -1016,7 +1013,7 @@ static int do_command(descriptor_data *d, const char *comm) {
         /* set the scope to home upon login */
         argn = 1;
         command_t call_cs = {"cs"};
-        process_command(d->player, d->governor, "cs", call_cs);
+        process_command(*d, "cs", call_cs);
       }
     }
   }
@@ -1290,10 +1287,13 @@ static void dump_users(descriptor_data *e) {
   queue_string(e, "Finished.\n");
 }
 
-static void process_command(int Playernum, int Governor, const char *comm,
+static void process_command(const descriptor_data &d, const char *comm,
                             const command_t &argv) {
   int j, God, Guest;
   racetype *r;
+
+  int Playernum = d.player;
+  int Governor = d.governor;
 
   /*determine which routine to go to and what action to take */
   /* target routine is specified by the first substring, other options
@@ -1308,7 +1308,7 @@ static void process_command(int Playernum, int Governor, const char *comm,
 
   auto command = commands->find(argv[0]);
   if (command != commands->end()) {
-    command->second(argv, Playernum, Governor);
+    command->second(argv, d);
   } else if (match(args[0], "announce")) /* keep this at the front */
     announce(Playernum, Governor, string, ANN);
   else if (match(args[0], "allocate"))
@@ -1334,7 +1334,7 @@ static void process_command(int Playernum, int Governor, const char *comm,
     defend(Playernum, Governor, 1);
 #endif
   else if (match(args[0], "detonate") && !Guest)
-    detonate(argv, Playernum, Governor);
+    detonate(argv, d);
   else if (match(args[0], "dissolve") && !Guest)
     dissolve(Playernum, Governor);
   else if (match(args[0], "dock"))

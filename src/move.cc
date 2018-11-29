@@ -36,8 +36,9 @@ static void mech_attack_people(shiptype *, int *, int *, racetype *, racetype *,
 static void people_attack_mech(shiptype *, int, int, racetype *, racetype *,
                                const sector &, int, int, char *, char *);
 
-void arm(const command_t &argv, const player_t Playernum,
-         const governor_t Governor) {
+void arm(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int mode;
   if (argv[0] == "arm") {
     mode = 1;
@@ -148,8 +149,9 @@ void arm(const command_t &argv, const player_t Playernum,
             Dir[Playernum - 1][Governor].pnum);
 }
 
-void move_popn(const command_t &argv, const player_t Playernum,
-               const governor_t Governor) {
+void move_popn(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int what;
   if (argv[0] == "move") {
     what = CIV;
@@ -442,8 +444,9 @@ void move_popn(const command_t &argv, const player_t Playernum,
   notify(Playernum, Governor, "Finished.\n");
 }
 
-void walk(const command_t &argv, const player_t Playernum,
-          const governor_t Governor) {
+void walk(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   const int APcount = 1;
   shiptype *ship, *ship2, dummy;
   int shipno, x, y, i, sh, succ = 0, civ, mil;

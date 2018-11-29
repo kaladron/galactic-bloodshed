@@ -52,8 +52,9 @@ static void initialize_new_ship(int, int, racetype *, shiptype *, double, int);
 static void system_cost(double *, double *, int, int);
 
 /* upgrade ship characteristics */
-void upgrade(const command_t &argv, const player_t Playernum,
-             const governor_t Governor) {
+void upgrade(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused int APcount = 1;
   int value, oldcost, newcost, netcost;
   shiptype ship, *dirship, *s2;
@@ -312,8 +313,9 @@ void upgrade(const command_t &argv, const player_t Playernum,
   free(dirship);
 }
 
-void make_mod(const command_t &argv, const player_t Playernum,
-              const governor_t Governor) {
+void make_mod(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int mode;
   if (argv[0] == "make")
     mode = 0;
@@ -708,8 +710,9 @@ void make_mod(const command_t &argv, const player_t Playernum,
   free(dirship);
 }
 
-void build(const command_t &argv, const player_t Playernum,
-           const governor_t Governor) {
+void build(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused int APcount = 1;
   racetype *Race;
   Planet planet;
@@ -1634,8 +1637,9 @@ int Shipcost(int i, racetype *r) {
 }
 
 #ifdef MARKET
-void sell(const command_t &argv, const player_t Playernum,
-          const governor_t Governor) {
+void sell(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int APcount = 20;
   racetype *Race;
   shiptype *s;
@@ -1768,8 +1772,9 @@ void sell(const command_t &argv, const player_t Playernum,
   deductAPs(Playernum, Governor, APcount, snum, 0);
 }
 
-void bid(const command_t &argv, const player_t Playernum,
-         const governor_t Governor) {
+void bid(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   racetype *Race;
   Planet p;
   commodtype *c;

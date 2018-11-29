@@ -6,8 +6,9 @@
 #define CAPTURE_H
 
 #include "ships.h"
+#include "vars.h"
 
-void capture(const command_t &, const player_t, const governor_t);
+void capture(const command_t &, const GameObj &);
 void capture_stuff(shiptype *);
 
 #endif  // CAPTURE_H

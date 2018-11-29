@@ -5,10 +5,8 @@
 #ifndef ORBIT_H
 #define ORBIT_H
 
-#include "races.h"
 #include "vars.h"
 
-void orbit(const command_t &argv, const player_t Playernum,
-           const governor_t Governor);
+void orbit(const command_t &, const GameObj &);
 
 #endif  // ORBIT_H

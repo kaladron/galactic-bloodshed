@@ -23,8 +23,9 @@
 static void show_votes(int, int);
 
 /* invite people to join your alliance block */
-void invite(const command_t &argv, const player_t Playernum,
-            const governor_t Governor) {
+void invite(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   bool mode = (argv[0] == "invite") ? true : false;
 
   int n;
@@ -68,8 +69,9 @@ void invite(const command_t &argv, const player_t Playernum,
 }
 
 /* declare that you wish to be included in the alliance block */
-void pledge(const command_t &argv, const player_t Playernum,
-            const governor_t Governor) {
+void pledge(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   bool mode = (argv[0] == "pledge") ? true : false;
   int n;
   racetype *Race;
@@ -134,8 +136,9 @@ void pledge(const command_t &argv, const player_t Playernum,
   Putblock(Blocks);
 }
 
-void declare(const command_t &argv, const player_t Playernum,
-             const governor_t Governor) {
+void declare(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   const int APcount = 1;
   int n, d_mod;
   racetype *Race, *alien;
@@ -267,8 +270,9 @@ void declare(const command_t &argv, const player_t Playernum,
 }
 
 #ifdef VOTING
-void vote(const command_t &argv, const player_t Playernum,
-          const governor_t Governor) {
+void vote(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   racetype *Race;
   int check, nvotes, nays, yays;
 

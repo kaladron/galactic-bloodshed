@@ -23,8 +23,9 @@
 #include "tweakables.h"
 #include "vars.h"
 
-void capture(const command_t &argv, const player_t Playernum,
-             const governor_t Governor) {
+void capture(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   const int APcount = 1;
   shiptype *ship, s;
   player_t oldowner;

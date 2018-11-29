@@ -43,8 +43,9 @@ static const char *Tox[] = {
 
 static void get4args(char *, int *, int *, int *, int *);
 
-void survey(const command_t &argv, const player_t Playernum,
-            const governor_t Governor) {
+void survey(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int lowx, hix, lowy, hiy, x2;
   char d;
   char sect_char;
@@ -382,8 +383,9 @@ void survey(const command_t &argv, const player_t Playernum,
   }
 } /* end survey */
 
-void repair(const command_t &argv, const player_t Playernum,
-            const governor_t Governor) {
+void repair(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int lowx, hix, lowy, hiy, x2, sectors, cost;
   placetype where;
 

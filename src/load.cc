@@ -793,8 +793,9 @@ void transfer(int Playernum, int Governor, int APcount) {
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
 }
 
-void mount(const command_t &argv, const player_t Playernum,
-           const governor_t Governor) {
+void mount(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   bool mnt;
   if (argv[0] == "mount")
     mnt = true;

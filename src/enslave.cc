@@ -20,8 +20,9 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-void enslave(const command_t &argv, const player_t Playernum,
-             const governor_t Governor) {
+void enslave(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int APcount = 2;
   shiptype *s, *s2;
   int i, aliens = 0, def = 0, attack = 0;

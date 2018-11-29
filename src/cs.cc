@@ -15,8 +15,9 @@
 #include "ships.h"
 #include "vars.h"
 
-void center(const command_t &argv, const player_t Playernum,
-            const governor_t Governor) {
+void center(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   placetype where = Getplace(Playernum, Governor, argv[1], 1);
 
   if (where.err) {
@@ -31,8 +32,9 @@ void center(const command_t &argv, const player_t Playernum,
   Dir[Playernum - 1][Governor].lasty[1] = Stars[where.snum]->ypos;
 }
 
-void cs(const command_t &argv, const player_t Playernum,
-        const governor_t Governor) {
+void cs(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   placetype where;
   shiptype *s;
   racetype *Race = races[Playernum - 1];

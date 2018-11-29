@@ -6,15 +6,11 @@
 #define MOVE_H
 
 #include "races.h"
-#include "ships.h"
 #include "vars.h"
 
-void arm(const command_t &argv, const player_t Playernum,
-         const governor_t Governor);
-void move_popn(const command_t &argv, const player_t Playernum,
-               const governor_t Governor);
-void walk(const command_t &argv, const player_t Playernum,
-          const governor_t Governor);
+void arm(const command_t &, const GameObj &);
+void move_popn(const command_t &, const GameObj &);
+void walk(const command_t &, const GameObj &);
 int get_move(char, int, int, int *, int *, const Planet &);
 void ground_attack(racetype *, racetype *, int *, int, population_t *,
                    population_t *, unsigned int, unsigned int, double, double,

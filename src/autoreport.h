@@ -5,11 +5,8 @@
 #ifndef AUTOREPORT_H
 #define AUTOREPORT_H
 
-#include "races.h"
-#include "ships.h"
 #include "vars.h"
 
-void autoreport(const command_t &argv, const player_t Playernum,
-                const governor_t Governor);
+void autoreport(const command_t &, const GameObj &);
 
 #endif  // AUTOREPORT_H

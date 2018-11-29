@@ -85,8 +85,9 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
   }
 }
 
-void colonies(const command_t &argv, const player_t Playernum,
-              const governor_t Governor) {
+void colonies(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int i;
   racetype *Race;
   placetype where;
@@ -135,8 +136,9 @@ void colonies(const command_t &argv, const player_t Playernum,
   notify(Playernum, Governor, "\n");
 }
 
-void distance(const command_t &argv, const player_t Playernum,
-              const governor_t Governor) {
+void distance(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   placetype from, to;
   double x0, y0, x1, y1, dist;
   shiptype *ship;
@@ -206,8 +208,9 @@ void distance(const command_t &argv, const player_t Playernum,
   notify(Playernum, Governor, buf);
 }
 
-void star_locations(const command_t &argv, const player_t Playernum,
-                    const governor_t Governor) {
+void star_locations(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int i;
   double dist, x, y;
   int max;
@@ -230,8 +233,9 @@ void star_locations(const command_t &argv, const player_t Playernum,
   }
 }
 
-void exploration(const command_t &argv, const player_t Playernum,
-                 const governor_t Governor) {
+void exploration(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int starq, j;
   placetype where;
   racetype *Race;
@@ -322,8 +326,9 @@ void exploration(const command_t &argv, const player_t Playernum,
     }
 }
 
-void tech_status(const command_t &argv, const player_t Playernum,
-                 const governor_t Governor) {
+void tech_status(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int k;
   placetype where;
   double total_gain = 0.0;

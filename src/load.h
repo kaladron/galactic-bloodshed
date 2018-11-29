@@ -5,7 +5,6 @@
 #ifndef LOAD_H
 #define LOAD_H
 
-#include "races.h"
 #include "ships.h"
 #include "vars.h"
 
@@ -13,8 +12,7 @@ void load(int, int, int, int);
 void jettison(int, int, int);
 void dump(int, int, int);
 void transfer(int, int, int);
-void mount(const command_t &argv, const player_t Playernum,
-           const governor_t Governor);
+void mount(const command_t &, const GameObj &);
 void use_fuel(shiptype *, double);
 void use_destruct(shiptype *, int);
 void use_resource(shiptype *, int);

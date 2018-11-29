@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void zoom(const command_t &, const player_t, const governor_t);
+void zoom(const command_t &, const GameObj &);
 
 #endif  // ZOOM_H

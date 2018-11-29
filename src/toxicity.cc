@@ -15,8 +15,9 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-void toxicity(const command_t &argv, const player_t Playernum,
-              const governor_t Governor) {
+void toxicity(const command_t &argv, const GameObj &g) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   int thresh;
   int APcount = 1;
 

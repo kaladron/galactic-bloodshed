@@ -180,66 +180,65 @@ static struct timeval timeval_sub(struct timeval now, struct timeval then);
 static std::list<DescriptorData *> descriptor_list;
 
 typedef void (*CommandFunction)(const command_t &, const GameObj &);
-static const std::unordered_map<std::string, CommandFunction> *commands;
+
+// TODO(jeffbailey): bid, buy and sell should be only available if market is
+// set.
+static const std::unordered_map<std::string, CommandFunction> commands{
+    {"analysis", analysis},
+    {"arm", arm},
+    {"autoreport", autoreport},
+    {"bid", bid},
+    {"build", build},
+    {"capture", capture},
+    {"center", center},
+    {"client_survey", survey},
+    {"colonies", colonies},
+    {"cs", cs},
+    {"declare", declare},
+    {"deploy", move_popn},
+    {"disarm", arm},
+    {"dismount", mount},
+    {"distance", distance},
+    {"enslave", enslave},
+    {"explore", exploration},
+    {"factories", rst},
+    {"fuel", proj_fuel},
+    {"invite", invite},
+    {"make", make_mod},
+    {"map", map},
+    {"modify", make_mod},
+    {"move", move_popn},
+    {"mount", mount},
+    {"orbit", orbit},
+    {"pledge", pledge},
+    {"production", colonies},
+    {"relation", relation},
+    {"repair", repair},
+    {"report", rst},
+    {"sell", sell},
+    {"survey", survey},
+    {"ship", rst},
+    {"stars", star_locations},
+    {"stats", rst},
+    {"status", tech_status},
+    {"stock", rst},
+    {"tactical", rst},
+    {"toxicity", toxicity},
+    {"uninvite", invite},
+    {"unpledge", pledge},
+    {"upgrade", upgrade},
+#ifdef VOTING
+    {"vote", vote},
+#endif
+    {"walk", walk},
+    {"weapons", rst},
+    {"zoom", zoom},
+};
 
 int main(int argc, char **argv) {
   int i;
   struct stat stbuf;
   FILE *sfile;
-
-  // TODO(jeffbailey): bid, buy and sell should be only available if market is
-  // set.
-  commands = new std::unordered_map<std::string, CommandFunction>{
-      {"analysis", analysis},
-      {"arm", arm},
-      {"autoreport", autoreport},
-      {"bid", bid},
-      {"build", build},
-      {"capture", capture},
-      {"center", center},
-      {"client_survey", survey},
-      {"colonies", colonies},
-      {"cs", cs},
-      {"declare", declare},
-      {"deploy", move_popn},
-      {"disarm", arm},
-      {"dismount", mount},
-      {"distance", distance},
-      {"enslave", enslave},
-      {"explore", exploration},
-      {"factories", rst},
-      {"fuel", proj_fuel},
-      {"invite", invite},
-      {"make", make_mod},
-      {"map", map},
-      {"modify", make_mod},
-      {"move", move_popn},
-      {"mount", mount},
-      {"orbit", orbit},
-      {"pledge", pledge},
-      {"production", colonies},
-      {"relation", relation},
-      {"repair", repair},
-      {"report", rst},
-      {"sell", sell},
-      {"survey", survey},
-      {"ship", rst},
-      {"stars", star_locations},
-      {"stats", rst},
-      {"status", tech_status},
-      {"stock", rst},
-      {"tactical", rst},
-      {"toxicity", toxicity},
-      {"uninvite", invite},
-      {"unpledge", pledge},
-      {"upgrade", upgrade},
-#ifdef VOTING
-      {"vote", vote},
-#endif
-      {"walk", walk},
-      {"weapons", rst},
-      {"zoom", zoom},
-  };
 
   open_data_files();
   printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
@@ -1306,8 +1305,8 @@ static void process_command(const DescriptorData &d, const char *comm,
   const char *string = comm;
   while (*string && *string != ' ') string++;
 
-  auto command = commands->find(argv[0]);
-  if (command != commands->end()) {
+  auto command = commands.find(argv[0]);
+  if (command != commands.end()) {
     command->second(argv, d);
   } else if (match(args[0], "announce")) /* keep this at the front */
     announce(Playernum, Governor, string, ANN);

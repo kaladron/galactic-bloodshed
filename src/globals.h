@@ -91,6 +91,5 @@ char args[MAXARGS][COMMANDSIZE];
 int argn;
 
 unsigned long segments;
-long clk;
 
 #endif  // GLOBALS_H

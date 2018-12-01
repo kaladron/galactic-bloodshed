@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
 
   open_data_files();
   printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
-  clk = time(0);
+  time_t clk = time(0);
   printf("      %s", ctime(&clk));
 #ifdef EXTERNAL_TRIGGER
   printf("      The update  password is '%s'.\n", UPDATE_PASSWORD);
@@ -522,7 +522,6 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
 }
 
 void do_next_thing(void) {
-  clk = time(0);
   if (nsegments_done < segments)
     do_segment(0, 1);
   else
@@ -1096,6 +1095,7 @@ static void check_connect(DescriptorData *d, const char *message) {
 }
 
 static void do_update(int override) {
+  time_t clk = time(0);
   int i;
   FILE *sfile;
   struct stat stbuf;
@@ -1167,6 +1167,7 @@ static void do_update(int override) {
 }
 
 static void do_segment(int override, int segment) {
+  time_t clk = time(0);
   int i;
   FILE *sfile;
   struct stat stbuf;
@@ -1499,7 +1500,7 @@ static void load_star_data() {
 static void GB_time(int Playernum,
                     int Governor) /* report back the update status */
 {
-  clk = time(0);
+  time_t clk = time(0);
   notify(Playernum, Governor, start_buf);
   notify(Playernum, Governor, update_buf);
   notify(Playernum, Governor, segment_buf);
@@ -1508,7 +1509,7 @@ static void GB_time(int Playernum,
 }
 
 static void GB_schedule(int Playernum, int Governor) {
-  clk = time(0);
+  time_t clk = time(0);
   sprintf(buf, "%d minute update intervals\n", update_time);
   notify(Playernum, Governor, buf);
   sprintf(buf, "%ld movement segments per update\n", segments);
@@ -1633,7 +1634,8 @@ void kill_ship(int Playernum, shiptype *ship) {
   }
 }
 
-void compute_power_blocks(void) {
+void compute_power_blocks() {
+  const time_t clk = time(0);
   int i, j, dummy[2];
   /* compute alliance block power */
   sprintf(Power_blocks.time, "%s", ctime(&clk));

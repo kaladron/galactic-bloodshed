@@ -18,32 +18,33 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-void examine(int Playernum, int Governor, int APcount) {
+void examine(const command_t &argv, const GameObj &g) {
   shiptype *ship;
-  int t, shipno;
+  const int APcount = 0;
+  int shipno;
   FILE *fd;
   char ch;
 
-  if (argn < 2) {
-    notify(Playernum, Governor, "Examine what?\n");
+  if (argv.size() < 2) {
+    notify(g.player, g.governor, "Examine what?\n");
     return;
   }
 
-  sscanf(args[1] + (*args[1] == '#'), "%d", &shipno);
+  sscanf(argv[1].c_str() + (argv[1].c_str()[0] == '#'), "%d", &shipno);
 
   if (!getship(&ship, shipno)) {
     return;
   }
   if (!ship->alive) {
     sprintf(buf, "that ship is dead.\n");
-    notify(Playernum, Governor, buf);
+    notify(g.player, g.governor, buf);
     free(ship);
     return;
   }
   if (ship->whatorbits == ScopeLevel::LEVEL_UNIV ||
-      isclr(Stars[ship->storbits]->inhabited, Playernum)) {
+      isclr(Stars[ship->storbits]->inhabited, g.player)) {
     sprintf(buf, "That ship it not visible to you.\n");
-    notify(Playernum, Governor, buf);
+    notify(g.player, g.governor, buf);
     free(ship);
     return;
   }
@@ -55,7 +56,7 @@ void examine(int Playernum, int Governor, int APcount) {
   }
 
   /* look through ship data file */
-  for (t = 0; t <= ship->type; t++)
+  for (int t = 0; t <= ship->type; t++)
     while (fgetc(fd) != '~')
       ;
 
@@ -66,14 +67,14 @@ void examine(int Playernum, int Governor, int APcount) {
     sprintf(temp, "%c", ch);
     strcat(buf, temp);
   }
-  notify(Playernum, Governor, buf);
+  notify(g.player, g.governor, buf);
   fclose(fd);
 
   if (!ship->examined) {
     if (ship->whatorbits == ScopeLevel::LEVEL_UNIV)
-      deductAPs(Playernum, Governor, APcount, 0, 1); /* ded from sdata */
+      deductAPs(g.player, g.governor, APcount, 0, 1); /* ded from sdata */
     else
-      deductAPs(Playernum, Governor, APcount, (int)ship->storbits, 0);
+      deductAPs(g.player, g.governor, APcount, (int)ship->storbits, 0);
 
     ship->examined = 1;
     putship(ship);
@@ -82,13 +83,13 @@ void examine(int Playernum, int Governor, int APcount) {
   if (has_switch(ship)) {
     sprintf(buf,
             "This device has an on/off switch that can be set with order.\n");
-    notify(Playernum, Governor, buf);
+    notify(g.player, g.governor, buf);
   }
   if (!ship->active) {
     sprintf(buf,
             "This device has been irradiated;\nit's crew is dying and it "
             "cannot move for the time being.\n");
-    notify(Playernum, Governor, buf);
+    notify(g.player, g.governor, buf);
   }
   free(ship);
 }

@@ -200,6 +200,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"dismount", mount},
     {"distance", distance},
     {"enslave", enslave},
+    {"examine", examine},
     {"explore", exploration},
     {"factories", rst},
     {"fuel", proj_fuel},
@@ -1340,8 +1341,6 @@ static void process_command(const DescriptorData &d, const char *comm,
     dock(Playernum, Governor, 0, 0);
   else if (match(args[0], "dump") && !Guest)
     dump(Playernum, Governor, 10);
-  else if (match(args[0], "examine"))
-    examine(Playernum, Governor, 0);
   else if (match(args[0], "cew"))
     fire(Playernum, Governor, 1, 1);
   else if (match(args[0], "fire") && !Guest)

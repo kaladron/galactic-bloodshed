@@ -5,6 +5,8 @@
 #ifndef EXAMINE_H
 #define EXAMINE_H
 
-void examine(int, int, int);
+#include "vars.h"
+
+void examine(const command_t &, const GameObj &);
 
 #endif  // EXAMINE_H

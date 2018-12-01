@@ -15,12 +15,8 @@
 
 static int victory_sort(const void *, const void *);
 
-void victory(int Playernum, int Governor, int APcount) {
+void victory(const command_t &argv, const GameObj &g) {
   struct vic vic[MAXPLAYERS];
-  racetype *Race;
-  int i;
-  int count;
-  int god = 0;
 
   /*
   #ifndef VICTORY
@@ -28,20 +24,17 @@ void victory(int Playernum, int Governor, int APcount) {
   return;
   #endif
   */
-  count = (argn > 1) ? atoi(args[1]) : Num_races;
+  int count = (argv.size() > 1) ? std::stoi(argv[1]) : Num_races;
   if (count > Num_races) count = Num_races;
 
   create_victory_list(vic);
 
-  Race = races[Playernum - 1];
-  if (Race->God) god = 1;
-
   sprintf(buf, "----==== PLAYER RANKINGS ====----\n");
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "%-4.4s %-15.15s %8s\n", "No.", "Name", (god ? "Score" : ""));
-  notify(Playernum, Governor, buf);
-  for (i = 0; i < count; i++) {
-    if (god)
+  notify(g.player, g.governor, buf);
+  sprintf(buf, "%-4.4s %-15.15s %8s\n", "No.", "Name", (g.god ? "Score" : ""));
+  notify(g.player, g.governor, buf);
+  for (int i = 0; i < count; i++) {
+    if (g.god)
       sprintf(buf, "%2d %c [%2d] %-15.15s %5ld  %6.2f %3d %s %s\n", i + 1,
               vic[i].Thing ? 'M' : ' ', vic[i].racenum, vic[i].name,
               vic[i].rawscore, vic[i].tech, vic[i].IQ,
@@ -50,7 +43,7 @@ void victory(int Playernum, int Governor, int APcount) {
     else
       sprintf(buf, "%2d   [%2d] %-15.15s\n", i + 1, vic[i].racenum,
               vic[i].name);
-    notify(Playernum, Governor, buf);
+    notify(g.player, g.governor, buf);
   }
 }
 

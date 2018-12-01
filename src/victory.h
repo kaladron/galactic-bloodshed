@@ -7,7 +7,7 @@
 
 #include "vars.h"
 
-void victory(int, int, int);
+void victory(const command_t &, const GameObj &);
 void create_victory_list(struct vic[MAXPLAYERS]);
 
 #endif  // VICTORY_H

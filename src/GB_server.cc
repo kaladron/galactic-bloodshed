@@ -228,6 +228,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"uninvite", invite},
     {"unpledge", pledge},
     {"upgrade", upgrade},
+    {"victory", victory},
 #ifdef VOTING
     {"vote", vote},
 #endif
@@ -1431,8 +1432,6 @@ static void process_command(const DescriptorData &d, const char *comm,
     load(Playernum, Governor, 0, 1);
   else if (match(args[0], "undock"))
     launch(Playernum, Governor, 1);
-  else if (match(args[0], "victory"))
-    victory(Playernum, Governor, 0);
   else if (match(args[0], "time"))
     GB_time(Playernum, Governor);
   else if (match(args[0], "schedule"))

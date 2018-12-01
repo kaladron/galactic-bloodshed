@@ -236,7 +236,7 @@ struct star {
   unsigned short ships;            /* 1st ship in orbit */
   char name[NAMESIZE];             /* name of star */
   governor_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
-  unsigned char AP[MAXPLAYERS];    /* action pts alotted */
+  unsigned int AP[MAXPLAYERS];     /* action pts alotted */
   unsigned long explored[2];       /* who's been here 64 bits*/
   unsigned long inhabited[2];      /* who lives here now 64 bits*/
   double xpos, ypos;
@@ -256,9 +256,9 @@ struct star {
 
 /* this data will all be read at once */
 struct stardata {
-  unsigned short numstars;      /* # of stars */
-  unsigned short ships;         /* 1st ship in orbit */
-  unsigned char AP[MAXPLAYERS]; /* Action pts for each player */
+  unsigned short numstars;     /* # of stars */
+  unsigned short ships;        /* 1st ship in orbit */
+  unsigned int AP[MAXPLAYERS]; /* Action pts for each player */
   unsigned short VN_hitlist[MAXPLAYERS];
   /* # of ships destroyed by each player */
   char VN_index1[MAXPLAYERS]; /* negative value is used */
@@ -274,7 +274,6 @@ struct directory {
   starnum_t snum;                     /* what star system obj # (level=0) */
   planetnum_t pnum;                   /* number of planet */
   shipnum_t shipno;                   /* # of ship */
-  char prompt[3 * NAMESIZE + 5];      /* just to be safe */
   double lastx[2], lasty[2], zoom[2]; /* last coords for zoom */
 };
 

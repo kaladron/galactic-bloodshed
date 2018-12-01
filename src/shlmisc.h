@@ -25,7 +25,7 @@ void Getracenum(char *, char *, int *, int *);
 player_t GetPlayer(const char *);
 player_t GetPlayer(const std::string &);
 void allocateAPs(int, int, int);
-void deductAPs(int, int, int, int, int);
+void deductAPs(const player_t, const governor_t, unsigned int, starnum_t, int);
 double morale_factor(double);
 
 #endif  // SHLMISC_H

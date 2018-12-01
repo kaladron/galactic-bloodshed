@@ -540,7 +540,8 @@ void allocateAPs(int Playernum, int Governor, int APcount) {
   notify(Playernum, Governor, buf);
 }
 
-void deductAPs(int Playernum, int Governor, int n, int snum, int sdata) {
+void deductAPs(const player_t Playernum, const governor_t Governor,
+               unsigned int n, starnum_t snum, int sdata) {
   if (n) {
     if (!sdata) {
       getstar(&Stars[snum], snum);
@@ -556,25 +557,10 @@ void deductAPs(int Playernum, int Governor, int n, int snum, int sdata) {
       }
 
       putstar(Stars[snum], snum);
-
-      if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_UNIV &&
-          Dir[Playernum - 1][Governor].snum == snum) {
-        /* fix the prompt */
-        sprintf(Dir[Playernum - 1][Governor].prompt + 5, "%02d",
-                Stars[snum]->AP[Playernum - 1]);
-        Dir[Playernum - 1][Governor].prompt[7] =
-            ']'; /* fix bracket (made '\0' by sprintf)*/
-      }
     } else {
       getsdata(&Sdata);
-      Sdata.AP[Playernum - 1] = std::max(0, Sdata.AP[Playernum - 1] - n);
+      Sdata.AP[Playernum - 1] = std::max(0u, Sdata.AP[Playernum - 1] - n);
       putsdata(&Sdata);
-
-      if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_UNIV) {
-        sprintf(Dir[Playernum - 1][Governor].prompt + 2, "%02d",
-                Sdata.AP[Playernum - 1]);
-        Dir[Playernum - 1][Governor].prompt[3] = ']';
-      }
     }
   }
 }

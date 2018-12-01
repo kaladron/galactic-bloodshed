@@ -4,7 +4,7 @@
 
 #include "files.h"
 
-const char *Files[] = {PKGSTATEDIR,       DOCDIR,           DATA(exam.dat),
+const char *Files[] = {PKGSTATEDIR,       DOCDIR,           PATH(exam.dat),
                        DATA(enroll.dat),  DATA(star),       "",
                        DATA(planet),      DATA(race),       DATA(block),
                        DATA(ship),        DATA(shipfree),   DATA(dummy),

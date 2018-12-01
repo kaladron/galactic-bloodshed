@@ -4,7 +4,8 @@ PKGSTATEDIR = PREFIX + "/lib/galactic-bloodshed/"
 
 PKGDATADIR = PREFIX + "/share/galactic-bloodshed/"
 
-DOCDIR = PREFIX + "/share/doc/galactic-bloodshed/"
+#DOCDIR = PREFIX + "/share/doc/galactic-bloodshed/"
+DOCDIR = PREFIX + "/share/galactic-bloodshed/"
 
 COPTS = [
     '-DPKGSTATEDIR=\\"' + PKGSTATEDIR + '\\"',

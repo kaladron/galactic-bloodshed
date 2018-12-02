@@ -129,6 +129,9 @@ class GameObj {
   double lastx[2] = {0.0, 0.0};
   double lasty[2] = {0.0, 0.0};
   double zoom[2] = {1.0, 0.5}; /* last coords for zoom */
+  GameObj() = default;
+  GameObj(const GameObj &) = delete;
+  GameObj &operator=(const GameObj &) = delete;
 };
 
 class Planet {

@@ -7,9 +7,9 @@
 
 #include "vars.h"
 
-void invite(const command_t &, const GameObj &);
-void declare(const command_t &, const GameObj &);
-void vote(const command_t &, const GameObj &);
-void pledge(const command_t &, const GameObj &);
+void invite(const command_t &, GameObj &);
+void declare(const command_t &, GameObj &);
+void vote(const command_t &, GameObj &);
+void pledge(const command_t &, GameObj &);
 
 #endif  // DECLARE_H

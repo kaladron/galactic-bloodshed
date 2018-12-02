@@ -11,7 +11,7 @@
 extern const char Psymbol[];
 extern const char *Planet_types[];
 
-void map(const command_t &, const GameObj &);
+void map(const command_t &, GameObj &);
 char desshow(const player_t, const governor_t, const int, const int,
              const racetype *, sector_map &);
 

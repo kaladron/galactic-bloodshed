@@ -672,7 +672,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
 }
 #endif
 
-void detonate(const command_t &argv, const GameObj &g) {
+void detonate(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   shiptype *s;

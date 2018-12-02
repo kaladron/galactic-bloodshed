@@ -85,7 +85,7 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
   }
 }
 
-void colonies(const command_t &argv, const GameObj &g) {
+void colonies(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int i;
@@ -136,7 +136,7 @@ void colonies(const command_t &argv, const GameObj &g) {
   notify(Playernum, Governor, "\n");
 }
 
-void distance(const command_t &argv, const GameObj &g) {
+void distance(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   placetype from, to;
@@ -208,7 +208,7 @@ void distance(const command_t &argv, const GameObj &g) {
   notify(Playernum, Governor, buf);
 }
 
-void star_locations(const command_t &argv, const GameObj &g) {
+void star_locations(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int i;
@@ -233,7 +233,7 @@ void star_locations(const command_t &argv, const GameObj &g) {
   }
 }
 
-void exploration(const command_t &argv, const GameObj &g) {
+void exploration(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int starq, j;
@@ -326,7 +326,7 @@ void exploration(const command_t &argv, const GameObj &g) {
     }
 }
 
-void tech_status(const command_t &argv, const GameObj &g) {
+void tech_status(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int k;

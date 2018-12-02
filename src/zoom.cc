@@ -15,7 +15,7 @@
 #include "vars.h"
 
 /// Zoom in or out for orbit display
-void zoom(const command_t &argv, const GameObj &g) {
+void zoom(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int i = (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_UNIV);

@@ -7,7 +7,7 @@
 
 #include "vars.h"
 
-void center(const command_t &, const GameObj &);
-void cs(const command_t &, const GameObj &);
+void center(const command_t &, GameObj &);
+void cs(const command_t &, GameObj &);
 
 #endif  // CS_H

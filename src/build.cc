@@ -52,7 +52,7 @@ static void initialize_new_ship(int, int, racetype *, shiptype *, double, int);
 static void system_cost(double *, double *, int, int);
 
 /* upgrade ship characteristics */
-void upgrade(const command_t &argv, const GameObj &g) {
+void upgrade(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused int APcount = 1;
@@ -313,7 +313,7 @@ void upgrade(const command_t &argv, const GameObj &g) {
   free(dirship);
 }
 
-void make_mod(const command_t &argv, const GameObj &g) {
+void make_mod(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int mode;
@@ -710,7 +710,7 @@ void make_mod(const command_t &argv, const GameObj &g) {
   free(dirship);
 }
 
-void build(const command_t &argv, const GameObj &g) {
+void build(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused int APcount = 1;
@@ -1637,7 +1637,7 @@ int Shipcost(int i, racetype *r) {
 }
 
 #ifdef MARKET
-void sell(const command_t &argv, const GameObj &g) {
+void sell(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int APcount = 20;
@@ -1772,7 +1772,7 @@ void sell(const command_t &argv, const GameObj &g) {
   deductAPs(Playernum, Governor, APcount, snum, 0);
 }
 
-void bid(const command_t &argv, const GameObj &g) {
+void bid(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   racetype *Race;

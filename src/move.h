@@ -8,9 +8,9 @@
 #include "races.h"
 #include "vars.h"
 
-void arm(const command_t &, const GameObj &);
-void move_popn(const command_t &, const GameObj &);
-void walk(const command_t &, const GameObj &);
+void arm(const command_t &, GameObj &);
+void move_popn(const command_t &, GameObj &);
+void walk(const command_t &, GameObj &);
 int get_move(char, int, int, int *, int *, const Planet &);
 void ground_attack(racetype *, racetype *, int *, int, population_t *,
                    population_t *, unsigned int, unsigned int, double, double,

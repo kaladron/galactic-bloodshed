@@ -7,7 +7,7 @@
 
 #include "vars.h"
 
-void survey(const command_t &, const GameObj &);
-void repair(const command_t &, const GameObj &);
+void survey(const command_t &, GameObj &);
+void repair(const command_t &, GameObj &);
 
 #endif  // SURVEY_H

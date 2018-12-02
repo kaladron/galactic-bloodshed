@@ -182,7 +182,7 @@ static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 static std::list<DescriptorData *> descriptor_list;
 
-typedef void (*CommandFunction)(const command_t &, const GameObj &);
+typedef void (*CommandFunction)(const command_t &, GameObj &);
 
 // TODO(jeffbailey): bid, buy and sell should be only available if market is
 // set.

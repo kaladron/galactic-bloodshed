@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void scrap(const command_t &argv, const GameObj &g);
+void scrap(const command_t &argv, GameObj &g);
 
 #endif  // SCRAP_H

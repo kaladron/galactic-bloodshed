@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void enslave(const command_t &, const GameObj &);
+void enslave(const command_t &, GameObj &);
 
 #endif  // ENSLAVE_H

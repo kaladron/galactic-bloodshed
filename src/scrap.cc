@@ -20,7 +20,7 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-void scrap(const command_t &argv, const GameObj &g) {
+void scrap(const command_t &argv, GameObj &g) {
   int APcount = 1;
   sector sect;
   shiptype *s, *s2;

@@ -34,7 +34,7 @@ static int do_trip(const placetype &, double fuel, double gravity_factor);
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
                         double grav, double mass, segments_t segs);
 
-void proj_fuel(const command_t &argv, const GameObj &g) {
+void proj_fuel(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   shipnum_t shipno;

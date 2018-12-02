@@ -19,7 +19,7 @@
 #include "tweakables.h"
 #include "vars.h"
 
-void autoreport(const command_t &argv, const GameObj &g) {
+void autoreport(const command_t &argv, GameObj &g) {
   const int Playernum = g.player;
   const int Governor = g.governor;
   placetype place;

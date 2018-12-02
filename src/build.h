@@ -9,16 +9,16 @@
 #include "ships.h"
 #include "vars.h"
 
-void upgrade(const command_t &, const GameObj &);
-void make_mod(const command_t &, const GameObj &);
-void build(const command_t &, const GameObj &);
+void upgrade(const command_t &, GameObj &);
+void make_mod(const command_t &, GameObj &);
+void build(const command_t &, GameObj &);
 double cost(shiptype *);
 double getmass(shiptype *);
 unsigned int ship_size(shiptype *);
 double complexity(shiptype *);
 int Shipcost(int, racetype *);
-void sell(const command_t &, const GameObj &);
-void bid(const command_t &argv, const GameObj &);
+void sell(const command_t &, GameObj &);
+void bid(const command_t &argv, GameObj &);
 int shipping_cost(int, int, double *, int);
 
 extern const char *Commod[4];

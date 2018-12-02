@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void autoreport(const command_t &, const GameObj &);
+void autoreport(const command_t &, GameObj &);
 
 #endif  // AUTOREPORT_H

@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void orbit(const command_t &, const GameObj &);
+void orbit(const command_t &, GameObj &);
 
 #endif  // ORBIT_H

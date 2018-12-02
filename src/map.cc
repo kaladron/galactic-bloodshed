@@ -25,7 +25,7 @@
 static void show_map(const player_t, const governor_t, const starnum_t,
                      const planetnum_t, const Planet &);
 
-void map(const command_t &argv, const GameObj &g) {
+void map(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   placetype where;

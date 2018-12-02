@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void examine(const command_t &, const GameObj &);
+void examine(const command_t &, GameObj &);
 
 #endif  // EXAMINE_H

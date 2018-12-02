@@ -16,7 +16,7 @@
 
 static const char *allied(const race *const, const player_t);
 
-void relation(const command_t &argv, const GameObj &g) {
+void relation(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   player_t q;

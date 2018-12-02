@@ -29,7 +29,7 @@ static void do_analysis(int, int, int, int, int, starnum_t, planetnum_t);
 static void Insert(int, struct anal_sect[], int, int, int, int);
 static void PrintTop(int, int, struct anal_sect[], const char *);
 
-void analysis(const command_t &argv, const GameObj &g) {
+void analysis(const command_t &argv, GameObj &g) {
   const int Playernum = g.player;
   const int Governor = g.governor;
   int sector_type = -1; /* -1 does analysis on all types */

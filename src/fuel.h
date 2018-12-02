@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void proj_fuel(const command_t &, const GameObj &);
+void proj_fuel(const command_t &, GameObj &);
 
 #endif  // FUEL_H

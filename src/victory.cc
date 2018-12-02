@@ -15,7 +15,7 @@
 
 static int victory_sort(const void *, const void *);
 
-void victory(const command_t &argv, const GameObj &g) {
+void victory(const command_t &argv, GameObj &g) {
   struct vic vic[MAXPLAYERS];
 
   /*

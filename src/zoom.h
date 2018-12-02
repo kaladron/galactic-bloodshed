@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void zoom(const command_t &, const GameObj &);
+void zoom(const command_t &, GameObj &);
 
 #endif  // ZOOM_H

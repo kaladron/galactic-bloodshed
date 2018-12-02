@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void rst(const command_t &, const GameObj &);
+void rst(const command_t &, GameObj &);
 
 #endif  // RST_H

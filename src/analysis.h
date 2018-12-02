@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void analysis(const command_t &, const GameObj &);
+void analysis(const command_t &, GameObj &);
 
 #endif  // ANALYSIS_H

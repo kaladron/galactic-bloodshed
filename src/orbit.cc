@@ -42,7 +42,7 @@ static void DispShip(int, int, placetype *, shiptype *, int, racetype *, char *,
  *  -(number) : Do not display that #'d ship or planet (in case it obstructs
  * 		the view of another object)
  */
-void orbit(const command_t &argv, const GameObj &g) {
+void orbit(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int sh, iq;

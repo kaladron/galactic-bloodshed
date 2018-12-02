@@ -18,7 +18,7 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-void examine(const command_t &argv, const GameObj &g) {
+void examine(const command_t &argv, GameObj &g) {
   shiptype *ship;
   const int APcount = 0;
   int shipno;

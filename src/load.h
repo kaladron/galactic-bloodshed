@@ -12,7 +12,7 @@ void load(int, int, int, int);
 void jettison(int, int, int);
 void dump(int, int, int);
 void transfer(int, int, int);
-void mount(const command_t &, const GameObj &);
+void mount(const command_t &, GameObj &);
 void use_fuel(shiptype *, double);
 void use_destruct(shiptype *, int);
 void use_resource(shiptype *, int);

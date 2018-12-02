@@ -140,7 +140,7 @@ static void queue_write(DescriptorData *, const char *, int);
 static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
 static void help(DescriptorData *);
-static void process_command(const DescriptorData &, const char *,
+static void process_command(DescriptorData &, const char *,
                             const command_t &argv);
 static int shovechars(int);
 
@@ -1292,7 +1292,7 @@ static void dump_users(DescriptorData *e) {
   queue_string(e, "Finished.\n");
 }
 
-static void process_command(const DescriptorData &d, const char *comm,
+static void process_command(DescriptorData &d, const char *comm,
                             const command_t &argv) {
   int j, God, Guest;
   racetype *r;

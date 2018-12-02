@@ -16,9 +16,7 @@
 
 /// Zoom in or out for orbit display
 void zoom(const command_t &argv, GameObj &g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
-  int i = (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_UNIV);
+  int i = (Dir[g.player - 1][g.governor].level == ScopeLevel::LEVEL_UNIV);
 
   if (argv.size() > 1) {
     double num, denom;
@@ -26,7 +24,7 @@ void zoom(const command_t &argv, GameObj &g) {
       /* num/denom format */
       if (denom == 0.0) {
         std::string outmsg = "Illegal denominator value.\n";
-        notify(Playernum, Governor, outmsg);
+        notify(g.player, g.governor, outmsg);
       } else
         g.zoom[i] = num / denom;
     } else {
@@ -38,5 +36,5 @@ void zoom(const command_t &argv, GameObj &g) {
   std::string outmsg =
       str(boost::format("Zoom value %g, lastx = %g, lasty = %g.\n") %
           g.zoom[i] % g.lastx[i] % g.lasty[i]);
-  notify(Playernum, Governor, outmsg);
+  notify(g.player, g.governor, outmsg);
 }

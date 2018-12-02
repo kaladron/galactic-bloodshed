@@ -86,7 +86,7 @@ placetype Getplace(const player_t Playernum, const governor_t Governor,
   where.pnum = Dir[Playernum - 1][Governor].pnum;
   if (where.level == ScopeLevel::LEVEL_SHIP)
     where.shipno = Dir[Playernum - 1][Governor].shipno;
-  if (string != NULL && *string == CHAR_CURR_SCOPE)
+  if (string != nullptr && *string == CHAR_CURR_SCOPE)
     return where;
   else
     return Getplace2(Playernum, Governor, string, &where, ignoreexpl, God);

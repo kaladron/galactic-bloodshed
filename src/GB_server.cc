@@ -219,6 +219,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"relation", relation},
     {"repair", repair},
     {"report", rst},
+    {"scrap", scrap},
     {"sell", sell},
     {"survey", survey},
     {"ship", rst},
@@ -1416,8 +1417,6 @@ static void process_command(DescriptorData &d, const char *comm,
     do_segment(1, atoi(args[1]));
   else if (match(args[0], "send"))
     send_message(Playernum, Governor, !God, 0);
-  else if (match(args[0], "scrap") && (argn > 1))
-    scrap(Playernum, Governor, 1);
 #ifdef MARKET
   else if (match(args[0], "tax"))
     tax(Playernum, Governor, 0);

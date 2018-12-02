@@ -1400,13 +1400,7 @@ static void process_command(DescriptorData &d, const char *comm,
     fix(Playernum, Governor);
   else if (match(args[0], "read"))
     read_messages(Playernum, Governor, 0);
-  else if (match(args[0], "@@reset") && God) {
-    for (j = 1; j <= Num_races; j++) notify_race(j, "DOING RESET...\n");
-    force_output();
-    load_race_data();
-    load_star_data();
-    do_reset();
-  } else if (match(args[0], "route"))
+  else if (match(args[0], "route"))
     route(Playernum, Governor, 0);
   else if (match(args[0], "@@shutdown") && God) {
     shutdown_flag = 1;

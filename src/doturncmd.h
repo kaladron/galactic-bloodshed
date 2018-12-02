@@ -6,7 +6,6 @@
 #define DOTURNCMD_H
 
 void do_turn(int);
-void do_reset();
 void handle_victory(void);
 
 #endif  // DOTURNCMD_H

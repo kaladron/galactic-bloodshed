@@ -53,9 +53,10 @@ void orbit(const command_t &argv, GameObj &g) {
   DontDispPlanets = DontDispShips = DontDispStars = 0;
 
   /* find options, set flags accordingly */
-  for (int flag = 1; flag <= argn - 1; flag++)
-    if (*args[flag] == '-') {
-      for (int i = 1; args[flag][i] != '\0'; i++) switch (args[flag][i]) {
+  for (int flag = 1; flag <= argv.size() - 1; flag++)
+    if (*argv[flag].c_str() == '-') {
+      for (int i = 1; argv[flag].c_str()[i] != '\0'; i++)
+        switch (argv[flag].c_str()[i]) {
           case 's':
             DontDispShips = 1;
             break;
@@ -66,8 +67,8 @@ void orbit(const command_t &argv, GameObj &g) {
             DontDispPlanets = 1;
             break;
           default:
-            if (sscanf(args[flag] + 1, "%d", &DontDispNum) != 1) {
-              sprintf(buf, "Bad number %s.\n", args[flag] + 1);
+            if (sscanf(argv[flag].c_str() + 1, "%d", &DontDispNum) != 1) {
+              sprintf(buf, "Bad number %s.\n", argv[flag].c_str() + 1);
               notify(g.player, g.governor, buf);
               DontDispNum = -1;
             }
@@ -76,14 +77,14 @@ void orbit(const command_t &argv, GameObj &g) {
         }
     }
 
-  if (argn == 1) {
+  if (argv.size() == 1) {
     where = Getplace(g.player, g.governor, ":", 0);
     int i = (Dir[g.player - 1][g.governor].level == ScopeLevel::LEVEL_UNIV);
     Lastx = g.lastx[i];
     Lasty = g.lasty[i];
     Zoom = g.zoom[i];
   } else {
-    where = Getplace(g.player, g.governor, args[argn - 1], 0);
+    where = Getplace(g.player, g.governor, argv[argv.size() - 1].c_str(), 0);
     Lastx = Lasty = 0.0;
     Zoom = 1.1;
   }

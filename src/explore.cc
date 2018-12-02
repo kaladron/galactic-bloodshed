@@ -215,8 +215,8 @@ void star_locations(const command_t &argv, GameObj &g) {
   double dist, x, y;
   int max;
 
-  x = Dir[Playernum - 1][Governor].lastx[1];
-  y = Dir[Playernum - 1][Governor].lasty[1];
+  x = g.lastx[1];
+  y = g.lasty[1];
 
   if (argv.size() > 1)
     max = std::stoi(argv[1]);

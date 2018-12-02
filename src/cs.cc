@@ -28,8 +28,8 @@ void center(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "CHEATER!!!\n");
     return;
   }
-  Dir[Playernum - 1][Governor].lastx[1] = Stars[where.snum]->xpos;
-  Dir[Playernum - 1][Governor].lasty[1] = Stars[where.snum]->ypos;
+  g.lastx[1] = Stars[where.snum]->xpos;
+  g.lasty[1] = Stars[where.snum]->ypos;
 }
 
 void cs(const command_t &argv, GameObj &g) {
@@ -50,12 +50,9 @@ void cs(const command_t &argv, GameObj &g) {
       Dir[Playernum - 1][Governor].pnum =
           Stars[Dir[Playernum - 1][Governor].snum]->numplanets - 1;
     Dir[Playernum - 1][Governor].shipno = 0;
-    Dir[Playernum - 1][Governor].lastx[0] =
-        Dir[Playernum - 1][Governor].lasty[0] = 0.0;
-    Dir[Playernum - 1][Governor].lastx[1] =
-        Stars[Dir[Playernum - 1][Governor].snum]->xpos;
-    Dir[Playernum - 1][Governor].lasty[1] =
-        Stars[Dir[Playernum - 1][Governor].snum]->ypos;
+    g.lastx[0] = g.lasty[0] = 0.0;
+    g.lastx[1] = Stars[Dir[Playernum - 1][Governor].snum]->xpos;
+    g.lasty[1] = Stars[Dir[Playernum - 1][Governor].snum]->ypos;
     return;
   } else if (argv.size() == 2) {
     /* chdir to specified scope */
@@ -65,8 +62,7 @@ void cs(const command_t &argv, GameObj &g) {
     if (where.err) {
       sprintf(buf, "cs: bad scope.\n");
       notify(Playernum, Governor, buf);
-      Dir[Playernum - 1][Governor].lastx[0] =
-          Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+      g.lastx[0] = g.lasty[0] = 0.0;
       return;
     }
 
@@ -74,54 +70,46 @@ void cs(const command_t &argv, GameObj &g) {
 
     switch (Dir[Playernum - 1][Governor].level) {
       case ScopeLevel::LEVEL_UNIV:
-        Dir[Playernum - 1][Governor].lastx[0] =
-            Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+        g.lastx[0] = g.lasty[0] = 0.0;
         break;
       case ScopeLevel::LEVEL_STAR:
         if (where.level == ScopeLevel::LEVEL_UNIV) {
-          Dir[Playernum - 1][Governor].lastx[1] =
-              Stars[Dir[Playernum - 1][Governor].snum]->xpos;
-          Dir[Playernum - 1][Governor].lasty[1] =
-              Stars[Dir[Playernum - 1][Governor].snum]->ypos;
+          g.lastx[1] = Stars[Dir[Playernum - 1][Governor].snum]->xpos;
+          g.lasty[1] = Stars[Dir[Playernum - 1][Governor].snum]->ypos;
         } else
-          Dir[Playernum - 1][Governor].lastx[0] =
-              Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+          g.lastx[0] = g.lasty[0] = 0.0;
         break;
       case ScopeLevel::LEVEL_PLAN: {
         const auto &planet = getplanet(Dir[Playernum - 1][Governor].snum,
                                        Dir[Playernum - 1][Governor].pnum);
         if (where.level == ScopeLevel::LEVEL_STAR &&
             where.snum == Dir[Playernum - 1][Governor].snum) {
-          Dir[Playernum - 1][Governor].lastx[0] = planet.xpos;
-          Dir[Playernum - 1][Governor].lasty[0] = planet.ypos;
+          g.lastx[0] = planet.xpos;
+          g.lasty[0] = planet.ypos;
         } else if (where.level == ScopeLevel::LEVEL_UNIV) {
-          Dir[Playernum - 1][Governor].lastx[1] =
+          g.lastx[1] =
               Stars[Dir[Playernum - 1][Governor].snum]->xpos + planet.xpos;
-          Dir[Playernum - 1][Governor].lasty[1] =
+          g.lasty[1] =
               Stars[Dir[Playernum - 1][Governor].snum]->ypos + planet.ypos;
         } else
-          Dir[Playernum - 1][Governor].lastx[0] =
-              Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+          g.lastx[0] = g.lasty[0] = 0.0;
       } break;
       case ScopeLevel::LEVEL_SHIP:
         (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
         if (!s->docked) {
           switch (where.level) {
             case ScopeLevel::LEVEL_UNIV:
-              Dir[Playernum - 1][Governor].lastx[1] = s->xpos;
-              Dir[Playernum - 1][Governor].lasty[1] = s->ypos;
+              g.lastx[1] = s->xpos;
+              g.lasty[1] = s->ypos;
               break;
             case ScopeLevel::LEVEL_STAR:
               if (s->whatorbits >= ScopeLevel::LEVEL_STAR &&
                   s->storbits == where.snum) {
                 /* we are going UP from the ship.. change last*/
-                Dir[Playernum - 1][Governor].lastx[0] =
-                    s->xpos - Stars[s->storbits]->xpos;
-                Dir[Playernum - 1][Governor].lasty[0] =
-                    s->ypos - Stars[s->storbits]->ypos;
+                g.lastx[0] = s->xpos - Stars[s->storbits]->xpos;
+                g.lasty[0] = s->ypos - Stars[s->storbits]->ypos;
               } else
-                Dir[Playernum - 1][Governor].lastx[0] =
-                    Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+                g.lastx[0] = g.lasty[0] = 0.0;
               break;
             case ScopeLevel::LEVEL_PLAN:
               if (s->whatorbits == ScopeLevel::LEVEL_PLAN &&
@@ -129,22 +117,17 @@ void cs(const command_t &argv, GameObj &g) {
                 /* same */
                 const auto &planet =
                     getplanet((int)s->storbits, (int)s->pnumorbits);
-                Dir[Playernum - 1][Governor].lastx[0] =
-                    s->xpos - Stars[s->storbits]->xpos - planet.xpos;
-                Dir[Playernum - 1][Governor].lasty[0] =
-                    s->ypos - Stars[s->storbits]->ypos - planet.ypos;
+                g.lastx[0] = s->xpos - Stars[s->storbits]->xpos - planet.xpos;
+                g.lasty[0] = s->ypos - Stars[s->storbits]->ypos - planet.ypos;
               } else
-                Dir[Playernum - 1][Governor].lastx[0] =
-                    Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+                g.lastx[0] = g.lasty[0] = 0.0;
               break;
             case ScopeLevel::LEVEL_SHIP:
-              Dir[Playernum - 1][Governor].lastx[0] =
-                  Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+              g.lastx[0] = g.lasty[0] = 0.0;
               break;
           }
         } else
-          Dir[Playernum - 1][Governor].lastx[0] =
-              Dir[Playernum - 1][Governor].lasty[0] = 0.0;
+          g.lastx[0] = g.lasty[0] = 0.0;
         free(s);
         break;
     }

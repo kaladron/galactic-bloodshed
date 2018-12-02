@@ -123,9 +123,12 @@ struct commod {
 
 class GameObj {
  public:
-  player_t player;  // Player number of the
+  player_t player;
   governor_t governor;
   bool god;
+  double lastx[2] = {0.0, 0.0};
+  double lasty[2] = {0.0, 0.0};
+  double zoom[2] = {1.0, 0.5}; /* last coords for zoom */
 };
 
 class Planet {
@@ -270,11 +273,10 @@ struct stardata {
 extern struct stardata Sdata;
 
 struct directory {
-  ScopeLevel level;                   /* what directory level */
-  starnum_t snum;                     /* what star system obj # (level=0) */
-  planetnum_t pnum;                   /* number of planet */
-  shipnum_t shipno;                   /* # of ship */
-  double lastx[2], lasty[2], zoom[2]; /* last coords for zoom */
+  ScopeLevel level; /* what directory level */
+  starnum_t snum;   /* what star system obj # (level=0) */
+  planetnum_t pnum; /* number of planet */
+  shipnum_t shipno; /* # of ship */
 };
 
 struct vic {

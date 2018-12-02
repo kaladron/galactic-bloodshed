@@ -28,17 +28,15 @@ void zoom(const command_t &argv, GameObj &g) {
         std::string outmsg = "Illegal denominator value.\n";
         notify(Playernum, Governor, outmsg);
       } else
-        Dir[Playernum - 1][Governor].zoom[i] = num / denom;
+        g.zoom[i] = num / denom;
     } else {
       /* one number */
-      Dir[Playernum - 1][Governor].zoom[i] = num;
+      g.zoom[i] = num;
     }
   }
 
   std::string outmsg =
       str(boost::format("Zoom value %g, lastx = %g, lasty = %g.\n") %
-          Dir[Playernum - 1][Governor].zoom[i] %
-          Dir[Playernum - 1][Governor].lastx[i] %
-          Dir[Playernum - 1][Governor].lasty[i]);
+          g.zoom[i] % g.lastx[i] % g.lasty[i]);
   notify(Playernum, Governor, outmsg);
 }

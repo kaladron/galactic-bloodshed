@@ -1488,14 +1488,6 @@ static void load_star_data() {
       if (planets[s][t]->type != PlanetType::ASTEROID) Planet_count++;
     }
   }
-  /* initialize zoom factors */
-  for (i = 1; i <= Num_races; i++)
-    for (j = 0; j <= MAXGOVERNORS; j++) {
-      Dir[i - 1][j].zoom[0] = 1.0;
-      Dir[i - 1][j].zoom[1] = 0.5;
-      Dir[i - 1][j].lastx[0] = Dir[i - 1][j].lastx[1] = 0.0;
-      Dir[i - 1][j].lasty[0] = Dir[i - 1][j].lasty[1] = 0.0;
-    }
 }
 
 static void GB_time(int Playernum,

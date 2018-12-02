@@ -81,9 +81,9 @@ void orbit(const command_t &argv, GameObj &g) {
   if (argn == 1) {
     where = Getplace(Playernum, Governor, ":", 0);
     int i = (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_UNIV);
-    Lastx = Dir[Playernum - 1][Governor].lastx[i];
-    Lasty = Dir[Playernum - 1][Governor].lasty[i];
-    Zoom = Dir[Playernum - 1][Governor].zoom[i];
+    Lastx = g.lastx[i];
+    Lasty = g.lasty[i];
+    Zoom = g.zoom[i];
   } else {
     where = Getplace(Playernum, Governor, args[argn - 1], 0);
     Lastx = Lasty = 0.0;

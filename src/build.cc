@@ -1647,7 +1647,6 @@ void sell(const command_t &argv, GameObj &g) {
   int commodno, amount, item, ok = 0, sh;
   char commod;
   int snum, pnum;
-  int i;
 
   if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor, "You have to be in a planet scope to sell.\n");
@@ -1766,7 +1765,7 @@ void sell(const command_t &argv, GameObj &g) {
   sprintf(buf, "Lot #%d - %d units of %s for sale by %s [%d].\n", commodno,
           amount, Commod[item], races[Playernum - 1]->name, Playernum);
   post(buf, TRANSFER);
-  for (i = 1; i <= Num_races; i++) notify_race(i, buf);
+  for (player_t i = 1; i <= Num_races; i++) notify_race(i, buf);
   putcommod(&c, commodno);
   putplanet(p, Stars[snum], pnum);
   deductAPs(Playernum, Governor, APcount, snum, 0);

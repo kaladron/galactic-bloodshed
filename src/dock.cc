@@ -204,7 +204,9 @@ void dock(const command_t &argv, GameObj &g) {
       /* defending fire gets defensive fire */
       bcopy(s2, &ship, sizeof(shiptype)); /* for reports */
       if (Assault) {
-        command_t fire_argv{"fire", str(boost::format("#%lu") % ship2no),
+        // Set the command to be distinctive here.  In the target function,
+        // APcount is set to 0 and cew is set to 3.
+        command_t fire_argv{"fire-from-dock", str(boost::format("#%lu") % ship2no),
                             str(boost::format("#%lu") % shipno)};
         fire(fire_argv, g);
         /* retrieve ships again, since battle may change ship stats */

@@ -36,13 +36,16 @@ void fire(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   int APcount;
   int cew;
-  if (argv[0] == "dock" || argv[0] == "assault") {
+  // This is called from dock.cc.
+  if (argv[0] == "fire-from-dock") {
+    // TODO(jeffbailey): It's not clear that cew is ever used as anything other
+    // than a true/false value.
     cew = 3;
     APcount = 0;
   } else if (argv[0] == "cew") {
     cew = 1;
     APcount = 1;
-  } else {  // argv[0] = assault
+  } else {  // argv[0] = fire
     cew = 0;
     APcount = 1;
   }

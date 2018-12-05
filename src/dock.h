@@ -7,6 +7,6 @@
 
 #include "vars.h"
 
-void dock(player_t, governor_t, int, int);
+void dock(const command_t &, GameObj &);
 
 #endif  // DOCK_H

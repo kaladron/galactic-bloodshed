@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <boost/format.hpp>
+
 #include "GB_server.h"
 #include "buffers.h"
 #include "capture.h"
@@ -28,7 +30,11 @@
 #include "tweakables.h"
 #include "vars.h"
 
-void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
+void dock(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = (argv[0] == "dock") ? 0 : 1;
+  int Assault = (argv[0] == "assault") ? 1 : 0;
   shiptype *s, *s2, *s3, ship;
   population_t boarders = 0;
   int dam = 0, dam2 = 0, booby = 0;
@@ -41,7 +47,6 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
   double fuel, bstrength, b2strength;
   double Dist;
   racetype *Race, *alien;
-  char dfire[MAXARGS][COMMANDSIZE];
 
   if (argn < 3) {
     notify(Playernum, Governor, "Dock with what?\n");
@@ -199,16 +204,9 @@ void dock(player_t Playernum, governor_t Governor, int APcount, int Assault) {
       /* defending fire gets defensive fire */
       bcopy(s2, &ship, sizeof(shiptype)); /* for reports */
       if (Assault) {
-        strcpy(dfire[0], args[0]);
-        strcpy(dfire[1], args[1]);
-        strcpy(dfire[2], args[2]);
-        sprintf(args[0], "fire");
-        sprintf(args[1], "#%lu", ship2no);
-        sprintf(args[2], "#%lu", shipno);
-        fire((int)s2->owner, (int)s2->governor, 0, 3);
-        strcpy(args[0], dfire[0]);
-        strcpy(args[1], dfire[1]);
-        strcpy(args[2], dfire[2]);
+        command_t fire_argv{"fire", str(boost::format("#%lu") % ship2no),
+                            str(boost::format("#%lu") % shipno)};
+        fire(fire_argv, g);
         /* retrieve ships again, since battle may change ship stats */
         free(s);
         free(s2);

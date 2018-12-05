@@ -30,8 +30,22 @@
 static void check_overload(shiptype *, int, int *);
 static void check_retal_strength(shiptype *, int *);
 
-void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
-{
+/*! Ship vs ship */
+void fire(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount;
+  int cew;
+  if (argv[0] == "dock" || argv[0] == "assault") {
+    cew = 3;
+    APcount = 0;
+  } else if (argv[0] == "cew") {
+    cew = 1;
+    APcount = 1;
+  } else {  // argv[0] = assault
+    cew = 0;
+    APcount = 1;
+  }
   shipnum_t fromship, toship, sh, nextshipno;
   shiptype *from, *to, *ship, dummy;
   int strength, maxstrength, retal, damage;
@@ -41,15 +55,16 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
   /* for telegramming and retaliating */
   bzero((char *)Nuked, sizeof(Nuked));
 
-  if (argn < 3) {
-    notify(Playernum, Governor,
-           "Syntax: 'fire <ship> <target> [<strength>]'.\n");
+  if (argv.size() < 3) {
+    std::string msg =
+        "Syntax: '" + argv[0] + " <ship> <target> [<strength>]'.\n";
+    notify(Playernum, Governor, msg);
     return;
   }
 
-  nextshipno = start_shiplist(Playernum, Governor, args[1]);
+  nextshipno = start_shiplist(Playernum, Governor, argv[1].c_str());
   while ((fromship = do_shiplist(&from, &nextshipno)))
-    if (in_list(Playernum, args[1], from, &nextshipno) &&
+    if (in_list(Playernum, argv[1].c_str(), from, &nextshipno) &&
         authorized(Governor, from)) {
       if (!from->active) {
         sprintf(buf, "%s is irradiated and inactive.\n", Ship(*from).c_str());
@@ -81,7 +96,7 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
           continue;
         }
       }
-      sscanf(args[2] + (args[2][0] == '#'), "%lu", &toship);
+      sscanf(argv[2].c_str() + (argv[2].c_str()[0] == '#'), "%lu", &toship);
       if (toship <= 0) {
         notify(Playernum, Governor, "Bad ship number.\n");
         free(from);
@@ -159,8 +174,8 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
       } else {
         check_retal_strength(from, &maxstrength);
 
-        if (argn >= 4)
-          sscanf(args[3], "%d", &strength);
+        if (argv.size() >= 4)
+          sscanf(argv[3].c_str(), "%d", &strength);
         else
           check_retal_strength(from, &strength);
 
@@ -269,8 +284,11 @@ void fire(int Playernum, int Governor, int APcount, int cew) /* ship vs ship */
       free(from);
 }
 
-void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
-{
+/*! Ship vs planet */
+void bombard(const command_t &argv, GameObj &g) {
+  int Playernum = g.player;
+  int Governor = g.governor;
+  int APcount = 1;
   shipnum_t fromship, nextshipno, sh;
   shiptype *from, *ship;
   int strength, maxstrength, x, y, ok, numdest, damage;
@@ -280,15 +298,15 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
   /* for telegramming and retaliating */
   bzero((char *)Nuked, sizeof(Nuked));
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     notify(Playernum, Governor,
            "Syntax: 'bombard <ship> [<x,y> [<strength>]]'.\n");
     return;
   }
 
-  nextshipno = start_shiplist(Playernum, Governor, args[1]);
+  nextshipno = start_shiplist(Playernum, Governor, argv[1].c_str());
   while ((fromship = do_shiplist(&from, &nextshipno)))
-    if (in_list(Playernum, args[1], from, &nextshipno) &&
+    if (in_list(Playernum, argv[1].c_str(), from, &nextshipno) &&
         authorized(Governor, from)) {
       if (!from->active) {
         sprintf(buf, "%s is irradiated and inactive.\n", Ship(*from).c_str());
@@ -315,8 +333,8 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
 
       check_retal_strength(from, &maxstrength);
 
-      if (argn > 3)
-        sscanf(args[3], "%d", &strength);
+      if (argv.size() > 3)
+        sscanf(argv[3].c_str(), "%d", &strength);
       else
         check_retal_strength(from, &strength);
 
@@ -341,8 +359,8 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
       /* get planet */
       auto p = getplanet((int)from->storbits, (int)from->pnumorbits);
 
-      if (argn > 2) {
-        sscanf(args[2], "%d,%d", &x, &y);
+      if (argv.size() > 2) {
+        sscanf(argv[2].c_str(), "%d,%d", &x, &y);
         if (x < 0 || x > p.Maxx - 1 || y < 0 || y > p.Maxy - 1) {
           notify(Playernum, Governor, "Illegal sector.\n");
           free(from);
@@ -468,8 +486,11 @@ void bombard(int Playernum, int Governor, int APcount) /* ship vs planet */
 }
 
 #ifdef DEFENSE
-void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
-{
+/*! Planet vs ship */
+void defend(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 1;
   int toship, sh;
   shiptype *to, *ship, dummy;
   int strength, retal, damage, x, y;
@@ -485,7 +506,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
     return;
   }
 
-  if (argn < 3) {
+  if (argv.size() < 3) {
     notify(Playernum, Governor,
            "Syntax: 'defend <ship> <sector> [<strength>]'.\n");
     return;
@@ -497,7 +518,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
            "You are not authorized to do that in this system.\n");
     return;
   }
-  sscanf(args[1] + (args[1][0] == '#'), "%d", &toship);
+  sscanf(argv[1].c_str() + (argv[1].c_str()[0] == '#'), "%d", &toship);
   if (toship <= 0) {
     notify(Playernum, Governor, "Bad ship number.\n");
     return;
@@ -549,7 +570,7 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
   check_retal_strength(to, &retal);
   bcopy(to, &dummy, sizeof(shiptype));
 
-  sscanf(args[2], "%d,%d", &x, &y);
+  sscanf(argv[2].c_str(), "%d,%d", &x, &y);
 
   if (x < 0 || x > p.Maxx - 1 || y < 0 || y > p.Maxy - 1) {
     notify(Playernum, Governor, "Illegal sector.\n");
@@ -565,8 +586,8 @@ void defend(int Playernum, int Governor, int APcount) /* planet vs ship */
     return;
   }
 
-  if (argn >= 4)
-    sscanf(args[3], "%d", &strength);
+  if (argv.size() >= 4)
+    sscanf(argv[3].c_str(), "%d", &strength);
   else
     strength = p.info[Playernum - 1].guns;
 

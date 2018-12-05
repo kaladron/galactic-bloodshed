@@ -8,9 +8,9 @@
 #include "ships.h"
 #include "vars.h"
 
-void fire(int, int, int, int);
-void bombard(int, int, int);
-void defend(int, int, int);
+void fire(const command_t &, GameObj &);
+void bombard(const command_t &, GameObj &);
+void defend(const command_t &, GameObj &);
 void detonate(const command_t &argv, GameObj &);
 int retal_strength(shiptype *);
 int adjacent(int, int, int, int, const Planet &);

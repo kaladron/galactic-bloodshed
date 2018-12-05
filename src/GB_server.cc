@@ -188,24 +188,32 @@ typedef void (*CommandFunction)(const command_t &, GameObj &);
 // set.
 static const std::unordered_map<std::string, CommandFunction> commands{
     {"analysis", analysis},
+    {"assault", dock},
     {"arm", arm},
     {"autoreport", autoreport},
     {"bid", bid},
+    {"bombard", bombard},  // TODO(jeffbailey): !guest
     {"build", build},
     {"capture", capture},
     {"center", center},
+    {"cew", fire},
     {"client_survey", survey},
     {"colonies", colonies},
     {"cs", cs},
     {"declare", declare},
+#ifdef DEFENSE
+    {"defend", defend},
+#endif
     {"deploy", move_popn},
     {"disarm", arm},
     {"dismount", mount},
     {"distance", distance},
+    {"dock", dock},
     {"enslave", enslave},
     {"examine", examine},
     {"explore", exploration},
     {"factories", rst},
+    {"fire", fire},  // TODO(jeffbailey): !guest
     {"fuel", proj_fuel},
     {"invite", invite},
     {"make", make_mod},
@@ -1308,8 +1316,6 @@ static void process_command(DescriptorData &d, const char *comm,
     announce(Playernum, Governor, string, ANN);
   else if (match(args[0], "allocate"))
     allocateAPs(Playernum, Governor, 0);
-  else if (match(args[0], "assault"))
-    dock(Playernum, Governor, 1, 1);
   else if (match(args[0], "bless") && God)
     bless(Playernum, Governor, 0);
   else if (match(args[0], "'") || match(args[0], "broadcast"))
@@ -1320,26 +1326,14 @@ static void process_command(DescriptorData &d, const char *comm,
     announce(Playernum, Governor, string, THINK);
   else if (match(args[0], "block"))
     block(Playernum, Governor, 0);
-  else if (match(args[0], "bombard") && !Guest)
-    bombard(Playernum, Governor, 1);
   else if (match(args[0], "capital"))
     capital(Playernum, Governor, 50);
-#ifdef DEFENSE
-  else if (match(args[0], "defend"))
-    defend(Playernum, Governor, 1);
-#endif
   else if (match(args[0], "detonate") && !Guest)
     detonate(argv, d);
   else if (match(args[0], "dissolve") && !Guest)
     dissolve(Playernum, Governor);
-  else if (match(args[0], "dock"))
-    dock(Playernum, Governor, 0, 0);
   else if (match(args[0], "dump") && !Guest)
     dump(Playernum, Governor, 10);
-  else if (match(args[0], "cew"))
-    fire(Playernum, Governor, 1, 1);
-  else if (match(args[0], "fire") && !Guest)
-    fire(Playernum, Governor, 1, 0);
   else if (match(args[0], "governors") || match(args[0], "appoint") ||
            match(args[0], "revoke"))
     governors(Playernum, Governor, 0);

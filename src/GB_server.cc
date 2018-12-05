@@ -4,6 +4,7 @@
 
 #include "GB_server.h"
 
+#include <arpa/inet.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -147,7 +148,6 @@ static int shovechars(int);
 static void GB_time(int, int);
 static void GB_schedule(int, int);
 static DescriptorData *new_connection(int);
-static char *addrout(long);
 static void do_update(int);
 static void do_segment(int, int);
 static int make_socket(int);
@@ -534,10 +534,10 @@ void do_next_thing(void) {
 
 static int make_socket(int port) {
   int s;
-  struct sockaddr_in server;
+  struct sockaddr_in6 server;
   int opt;
 
-  s = socket(AF_INET, SOCK_STREAM, 0);
+  s = socket(AF_INET6, SOCK_STREAM, 0);
   if (s < 0) {
     perror("creating stream socket");
     exit(3);
@@ -552,9 +552,10 @@ static int make_socket(int port) {
     perror("setsockopt");
     exit(1);
   }
-  server.sin_family = AF_INET;
-  server.sin_addr.s_addr = INADDR_ANY;
-  server.sin_port = htons(port);
+  memset(&server, 0, sizeof(server));
+  server.sin6_family = AF_INET6;
+  server.sin6_addr = in6addr_any;
+  server.sin6_port = htons(port);
   if (bind(s, (struct sockaddr *)&server, sizeof(server))) {
     perror("binding stream socket");
     close(s);
@@ -581,32 +582,28 @@ static struct timeval update_quotas(struct timeval last,
 
 static DescriptorData *new_connection(int sock) {
   int newsock;
-  struct sockaddr_in addr;
-  socklen_t addr_len;
+  struct sockaddr_in6 addr;
+  socklen_t addr_len = sizeof(addr);
+  char addrstr[INET6_ADDRSTRLEN];
 
-  addr_len = sizeof(addr);
   newsock = accept(sock, (struct sockaddr *)&addr, &addr_len);
-  if (newsock <= 0) {
-    return 0;
-  } else {
+  if (newsock <= 0) return nullptr;
+  inet_ntop(AF_INET6, &addr.sin6_addr, addrstr, sizeof(addrstr));
 #ifdef ACCESS_CHECK
-    if (!address_ok(&addr)) {
-      write(newsock, "Unauthorized Access.\n", 21);
-      fprintf(stderr, "REJECT from %s(%d) on descriptor %d\n",
-              addrout(ntohl(addr.sin_addr.s_addr)), ntohs(addr.sin_port),
-              newsock);
-      shutdown(newsock, 2);
-      close(newsock);
-      errno = 0;
-      return 0;
-    }
-#endif
-    fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n",
-            addrout(ntohl(addr.sin_addr.s_addr)), ntohs(addr.sin_port),
-            newsock);
-    make_nonblocking(newsock);
-    return new DescriptorData(newsock);
+  if (!address_ok(&addr)) {
+    write(newsock, "Unauthorized Access.\n", 21);
+    fprintf(stderr, "REJECT from %s(%d) on descriptor %d\n", addrstr,
+            ntohs(addr.sin6_port), newsock);
+    shutdown(newsock, 2);
+    close(newsock);
+    errno = 0;
+    return 0;
   }
+#endif
+  fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n", addrstr,
+          ntohs(addr.sin6_port), newsock);
+  make_nonblocking(newsock);
+  return new DescriptorData(newsock);
 }
 
 #ifdef ACCESS_CHECK
@@ -706,14 +703,6 @@ void add_address(unsigned long ina, int aval) {
   nac_t->access_value = aval;
 }
 #endif
-
-static char *addrout(long a) {
-  static char outbuf[1024];
-
-  sprintf(outbuf, "%ld.%ld.%ld.%ld", (a >> 24) & 0xff, (a >> 16) & 0xff,
-          (a >> 8) & 0xff, a & 0xff);
-  return outbuf;
-}
 
 static void shutdownsock(DescriptorData *d) {
   if (d->connected) {

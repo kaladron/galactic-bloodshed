@@ -187,6 +187,7 @@ typedef void (*CommandFunction)(const command_t &, GameObj &);
 // TODO(jeffbailey): bid, buy and sell should be only available if market is
 // set.
 static const std::unordered_map<std::string, CommandFunction> commands{
+    {"allocate", allocateAPs},
     {"analysis", analysis},
     {"assault", dock},
     {"arm", arm},
@@ -1314,8 +1315,6 @@ static void process_command(DescriptorData &d, const char *comm,
     command->second(argv, d);
   } else if (match(args[0], "announce")) /* keep this at the front */
     announce(Playernum, Governor, string, ANN);
-  else if (match(args[0], "allocate"))
-    allocateAPs(Playernum, Governor, 0);
   else if (match(args[0], "bless") && God)
     bless(Playernum, Governor, 0);
   else if (match(args[0], "'") || match(args[0], "broadcast"))

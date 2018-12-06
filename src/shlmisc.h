@@ -24,7 +24,7 @@ int enufAP(int, int, unsigned short, int);
 void Getracenum(char *, char *, int *, int *);
 player_t GetPlayer(const char *);
 player_t GetPlayer(const std::string &);
-void allocateAPs(int, int, int);
+void allocateAPs(const command_t &, GameObj &);
 void deductAPs(const player_t, const governor_t, unsigned int, starnum_t, int);
 double morale_factor(double);
 

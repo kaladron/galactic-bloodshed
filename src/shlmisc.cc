@@ -500,7 +500,10 @@ player_t GetPlayer(const char *name) {
 
 player_t GetPlayer(const std::string &name) { return GetPlayer(name.c_str()); }
 
-void allocateAPs(int Playernum, int Governor, int APcount) {
+void allocateAPs(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 0;
   int maxalloc;
   int alloc;
 

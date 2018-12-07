@@ -217,6 +217,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"fire", fire},  // TODO(jeffbailey): !guest
     {"fuel", proj_fuel},
     {"invite", invite},
+    {"load", load},
     {"make", make_mod},
     {"map", map},
     {"modify", make_mod},
@@ -239,6 +240,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"tactical", rst},
     {"toxicity", toxicity},
     {"uninvite", invite},
+    {"unload", load},
     {"unpledge", pledge},
     {"upgrade", upgrade},
     {"victory", victory},
@@ -1354,8 +1356,6 @@ static void process_command(DescriptorData &d, const char *comm,
     land(Playernum, Governor, 1);
   else if (match(args[0], "launch"))
     launch(Playernum, Governor, 0);
-  else if (match(args[0], "load"))
-    load(Playernum, Governor, 0, 0);
   else if (match(args[0], "mobilize"))
     mobilize(Playernum, Governor, 1);
   else if (match(args[0], "motto"))
@@ -1407,8 +1407,6 @@ static void process_command(DescriptorData &d, const char *comm,
 #endif
   else if (match(args[0], "transfer") && !Guest)
     transfer(Playernum, Governor, 1);
-  else if (match(args[0], "unload"))
-    load(Playernum, Governor, 0, 1);
   else if (match(args[0], "undock"))
     launch(Playernum, Governor, 1);
   else if (match(args[0], "time"))

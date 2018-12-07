@@ -8,7 +8,7 @@
 #include "ships.h"
 #include "vars.h"
 
-void load(int, int, int, int);
+void load(const command_t &, GameObj &);
 void jettison(int, int, int);
 void dump(int, int, int);
 void transfer(int, int, int);

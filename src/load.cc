@@ -34,7 +34,11 @@ static void do_transporter(racetype *, int, shiptype *);
 static void unload_onto_alien_sector(int, int, Planet *, shiptype *, sector &,
                                      int, int);
 
-void load(int Playernum, int Governor, int APcount, int mode) {
+void load(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 0;
+  int mode = argv[0] == "load" ? 0 : 1; // load or unload
   char commod;
   unsigned char sh = 0, diff = 0;
   int lolim, uplim, amt;
@@ -46,7 +50,11 @@ void load(int Playernum, int Governor, int APcount, int mode) {
   shipnum_t shipno, nextshipno;
 
   if (argn < 2) {
-    notify(Playernum, Governor, "Load what?\n");
+    if (mode == 0) {
+      notify(Playernum, Governor, "Load what?\n");
+    } else {
+      notify(Playernum, Governor, "Unload what?\n");
+    }
     return;
   }
 

@@ -1295,7 +1295,7 @@ static void dump_users(DescriptorData *e) {
 
 static void process_command(DescriptorData &d, const char *comm,
                             const command_t &argv) {
-  int j, God, Guest;
+  int God, Guest;
   racetype *r;
 
   int Playernum = d.player;
@@ -1435,7 +1435,7 @@ static void load_race_data() {
 }
 
 static void load_star_data() {
-  int s, t, i, j;
+  int s, t;
   startype *star_arena;
   int pcount = 0;
 

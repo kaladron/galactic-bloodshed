@@ -7,17 +7,51 @@ PKGDATADIR = PREFIX + "/share/galactic-bloodshed/"
 #DOCDIR = PREFIX + "/share/doc/galactic-bloodshed/"
 DOCDIR = PREFIX + "/share/galactic-bloodshed/"
 
-COPTS = [
-    '-DPKGSTATEDIR=\\"' + PKGSTATEDIR + '\\"',
-    '-DPKGDATADIR=\\"' + PKGDATADIR + '\\"',
-    '-DDOCDIR=\\"' + DOCDIR + '\\"',
-    "-std=c++1z",
-    "-O1",
-    "-g3",
+LLVM_COPTS_DEFAULT = [
+    "-Werror",
+    "-Weverything",
+    "-Wno-c++98-compat", # Keep this one
+    "-Wno-padded", # Keep this one
+    "-Wno-c++98-compat-pedantic", # Keep
+]
+
+LLVM_COPTS_OPTIONAL = [
+    "-Wno-sign-conversion",
+    "-Wno-shorten-64-to-32",
+    "-Wno-float-equal",
+    "-Wno-old-style-cast",
+    "-Wno-conversion",
+    "-Wno-comma",
+    "-Wno-zero-as-null-pointer-constant",
+    "-Wno-unused-parameter",
+    "-Wno-conditional-uninitialized",
+    "-Wno-sign-compare",
+    "-Wno-shadow",
+    "-Wno-sizeof-pointer-memaccess",
+    "-Wno-switch-enum",
+    "-Wno-switch",
+    "-Wno-logical-not-parentheses",
+    "-Wno-writable-strings",
+    "-Wno-exit-time-destructors",
+    "-Wno-global-constructors",
+]
+
+LLVM_COPTS = LLVM_COPTS_DEFAULT + LLVM_COPTS_OPTIONAL
+
+GCC_COPTS = [
     "-Wno-sign-compare",
     "-Wno-maybe-uninitialized",
     "-Wno-return-type",
     "-Wno-unused-variable",
+]
+
+COPTS = LLVM_COPTS + [
+    '-DPKGSTATEDIR=\\"' + PKGSTATEDIR + '\\"',
+    '-DPKGDATADIR=\\"' + PKGDATADIR + '\\"',
+    '-DDOCDIR=\\"' + DOCDIR + '\\"',
+    "-std=c++2a",
+    "-O1",
+    "-g3",
 ]
 
 cc_binary(

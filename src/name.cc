@@ -33,13 +33,6 @@
 
 static char msg[1024];
 
-enum class Communicate {
-  ANN,
-  BROADCAST,
-  SHOUT,
-  THINK,
-};
-
 void personal(int Playernum, int Governor, const char *message) {
   if (Governor) {
     notify(Playernum, Governor, "Only the leader can do this.\n");
@@ -993,6 +986,13 @@ void name(int Playernum, int Governor, int APcount) {
 void announce(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
+
+  enum class Communicate {
+    ANN,
+    BROADCAST,
+    SHOUT,
+    THINK,
+  };
 
   Communicate mode;
   if (argv[0] == "announce")

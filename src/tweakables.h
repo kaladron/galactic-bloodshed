@@ -265,9 +265,6 @@ enum SectorType {
 
 #define TOXMAX 20 /* max a toxwc can hold */
 
-#define SIGBLOCKS (SIGHUP | SIGTERM | SIGINT | SIGQUIT | SIGSTOP | SIGTSTP)
-/* signals to block... */
-
 #define RESOURCE 0 /* for market */
 #define DESTRUCT 1
 #define FUEL 2

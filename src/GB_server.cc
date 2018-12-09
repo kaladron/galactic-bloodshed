@@ -141,8 +141,7 @@ static void queue_write(DescriptorData *, const char *, int);
 static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
 static void help(DescriptorData *);
-static void process_command(DescriptorData &, const char *,
-                            const command_t &argv);
+static void process_command(DescriptorData &, const command_t &argv);
 static int shovechars(int);
 
 static void GB_time(int, int);
@@ -226,7 +225,9 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"modify", make_mod},
     {"move", move_popn},
     {"mount", mount},
+    {"motto", motto},
     {"orbit", orbit},
+    {"personal", personal},
     {"pledge", pledge},
     {"production", colonies},
     {"relation", relation},
@@ -1010,7 +1011,7 @@ static int do_command(DescriptorData *d, const char *comm) {
   } else {
     if (d->connected) {
       /* GB command parser */
-      process_command(*d, comm, argv);
+      process_command(*d, argv);
     } else {
       check_connect(
           d, comm); /* Logs player into the game, connects
@@ -1022,7 +1023,7 @@ static int do_command(DescriptorData *d, const char *comm) {
         /* set the scope to home upon login */
         argn = 1;
         command_t call_cs = {"cs"};
-        process_command(*d, "cs", call_cs);
+        process_command(*d, call_cs);
       }
     }
   }
@@ -1298,8 +1299,7 @@ static void dump_users(DescriptorData *e) {
   queue_string(e, "Finished.\n");
 }
 
-static void process_command(DescriptorData &d, const char *comm,
-                            const command_t &argv) {
+static void process_command(DescriptorData &d, const command_t &argv) {
   int God, Guest;
   racetype *r;
 
@@ -1313,9 +1313,6 @@ static void process_command(DescriptorData &d, const char *comm,
   r = races[Playernum - 1];
   God = r->God;
   Guest = r->Guest;
-
-  const char *string = comm;
-  while (*string && *string != ' ') string++;
 
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
@@ -1355,8 +1352,6 @@ static void process_command(DescriptorData &d, const char *comm,
     launch(Playernum, Governor, 0);
   else if (match(args[0], "mobilize"))
     mobilize(Playernum, Governor, 1);
-  else if (match(args[0], "motto"))
-    motto(Playernum, Governor, 0, comm);
   else if (match(args[0], "name"))
     name(Playernum, Governor, 0);
   else if (match(args[0], "order"))
@@ -1365,8 +1360,6 @@ static void process_command(DescriptorData &d, const char *comm,
     page(Playernum, Governor, !God);
   else if (match(args[0], "pay") && !Guest)
     pay(Playernum, Governor, 0);
-  else if (match(args[0], "personal"))
-    personal(Playernum, Governor, string);
   else if (match(args[0], "power"))
     power(Playernum, Governor, 0);
   else if (match(args[0], "post"))

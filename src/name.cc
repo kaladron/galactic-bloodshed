@@ -33,13 +33,21 @@
 
 static char msg[1024];
 
-void personal(int Playernum, int Governor, const char *message) {
+void personal(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+
+  std::stringstream ss_message;
+  std::copy(++argv.begin(), argv.end(),
+            std::ostream_iterator<std::string>(ss_message, " "));
+  std::string message = ss_message.str();
+
   if (Governor) {
     notify(Playernum, Governor, "Only the leader can do this.\n");
     return;
   }
   auto Race = races[Playernum - 1];
-  strncpy(Race->info, message, PERSONALSIZE - 1);
+  strncpy(Race->info, message.c_str(), PERSONALSIZE - 1);
   putrace(Race);
 }
 
@@ -826,12 +834,21 @@ void read_messages(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, "Read what?\n");
 }
 
-void motto(int Playernum, int Governor, int APcount, const char *message) {
+void motto(const command_t &argv, GameObj &g) {
+  // TODO(jeffbailey): int APcount = 0;
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+
+  std::stringstream ss_message;
+  std::copy(++argv.begin(), argv.end(),
+            std::ostream_iterator<std::string>(ss_message, " "));
+  std::string message = ss_message.str();
+
   if (Governor) {
     notify(Playernum, Governor, "You are not authorized to do this.\n");
     return;
   }
-  strncpy(Blocks[Playernum - 1].motto, message, MOTTOSIZE - 1);
+  strncpy(Blocks[Playernum - 1].motto, message.c_str(), MOTTOSIZE - 1);
   Putblock(Blocks);
   notify(Playernum, Governor, "Done.\n");
 }

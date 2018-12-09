@@ -7,7 +7,7 @@
 
 #include "vars.h"
 
-void personal(int, int, const char *);
+void personal(const command_t &, GameObj &);
 void bless(int, int, int);
 void insurgency(int, int, int);
 void pay(int, int, int);
@@ -15,7 +15,7 @@ void give(int, int, int);
 void page(int, int, int);
 void send_message(int, int, int, int);
 void read_messages(int, int, int);
-void motto(int, int, int, const char *);
+void motto(const command_t &, GameObj &);
 void name(int, int, int);
 void announce(const command_t &, GameObj &);
 

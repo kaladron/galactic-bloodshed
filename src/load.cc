@@ -38,7 +38,7 @@ void load(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 0;
-  int mode = argv[0] == "load" ? 0 : 1; // load or unload
+  int mode = argv[0] == "load" ? 0 : 1;  // load or unload
   char commod;
   unsigned char sh = 0, diff = 0;
   int lolim, uplim, amt;

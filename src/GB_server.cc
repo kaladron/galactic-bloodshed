@@ -187,13 +187,16 @@ typedef void (*CommandFunction)(const command_t &, GameObj &);
 // TODO(jeffbailey): bid, buy and sell should be only available if market is
 // set.
 static const std::unordered_map<std::string, CommandFunction> commands{
+    {"'", announce},
     {"allocate", allocateAPs},
     {"analysis", analysis},
+    {"announce", announce},
     {"assault", dock},
     {"arm", arm},
     {"autoreport", autoreport},
     {"bid", bid},
     {"bombard", bombard},  // TODO(jeffbailey): !guest
+    {"broadcast", announce},
     {"build", build},
     {"capture", capture},
     {"center", center},
@@ -231,6 +234,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"report", rst},
     {"scrap", scrap},
     {"sell", sell},
+    {"shout", announce},
     {"survey", survey},
     {"ship", rst},
     {"stars", star_locations},
@@ -238,6 +242,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"status", tech_status},
     {"stock", rst},
     {"tactical", rst},
+    {"think", announce},
     {"toxicity", toxicity},
     {"uninvite", invite},
     {"unload", load},
@@ -1315,16 +1320,8 @@ static void process_command(DescriptorData &d, const char *comm,
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
     command->second(argv, d);
-  } else if (match(args[0], "announce")) /* keep this at the front */
-    announce(Playernum, Governor, string, ANN);
-  else if (match(args[0], "bless") && God)
+  } else if (match(args[0], "bless") && God)
     bless(Playernum, Governor, 0);
-  else if (match(args[0], "'") || match(args[0], "broadcast"))
-    announce(Playernum, Governor, string, BROADCAST);
-  else if (match(args[0], "shout") && God)
-    announce(Playernum, Governor, string, SHOUT);
-  else if (match(args[0], "think"))
-    announce(Playernum, Governor, string, THINK);
   else if (match(args[0], "block"))
     block(Playernum, Governor, 0);
   else if (match(args[0], "capital"))

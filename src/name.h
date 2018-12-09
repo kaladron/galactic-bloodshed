@@ -17,6 +17,6 @@ void send_message(int, int, int, int);
 void read_messages(int, int, int);
 void motto(int, int, int, const char *);
 void name(int, int, int);
-void announce(int, int, const char *, int);
+void announce(const command_t &, GameObj &);
 
 #endif  // NAME_H

@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iterator>
+#include <sstream>
 
 #include "GB_server.h"
 #include "buffers.h"
@@ -30,6 +32,13 @@
 #include "vars.h"
 
 static char msg[1024];
+
+enum class Communicate {
+  ANN,
+  BROADCAST,
+  SHOUT,
+  THINK,
+};
 
 void personal(int Playernum, int Governor, const char *message) {
   if (Governor) {
@@ -981,22 +990,45 @@ void name(int Playernum, int Governor, int APcount) {
   }
 }
 
-void announce(int Playernum, int Governor, const char *message, int mode) {
+void announce(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+
+  Communicate mode;
+  if (argv[0] == "announce")
+    mode = Communicate::ANN;
+  else if (argv[0] == "broadcast")
+    mode = Communicate::BROADCAST;
+  else if (argv[0] == "shout")
+    mode = Communicate::SHOUT;
+  else if (argv[0] == "think")
+    mode = Communicate::THINK;
+  else {
+    notify(Playernum, Governor, "Not sure how you got here");
+    return;
+  }
+
   racetype *Race;
   char symbol;
 
   Race = races[Playernum - 1];
-  if (mode == SHOUT && !Race->God) {
+  if (mode == Communicate::SHOUT && !Race->God) {
     notify(Playernum, Governor,
            "You are not privileged to use this command.\n");
     return;
   }
+
+  std::stringstream ss_message;
+  std::copy(++argv.begin(), argv.end(),
+            std::ostream_iterator<std::string>(ss_message, " "));
+  std::string message = ss_message.str();
+
   switch (Dir[Playernum - 1][Governor].level) {
     case ScopeLevel::LEVEL_UNIV:
-      if (mode == ANN) mode = BROADCAST;
+      if (mode == Communicate::ANN) mode = Communicate::BROADCAST;
       break;
     default:
-      if ((mode == ANN) &&
+      if ((mode == Communicate::ANN) &&
           !(!!isset(Stars[Dir[Playernum - 1][Governor].snum]->inhabited,
                     Playernum) ||
             Race->God)) {
@@ -1008,38 +1040,35 @@ void announce(int Playernum, int Governor, const char *message, int mode) {
   }
 
   switch (mode) {
-    case ANN:
+    case Communicate::ANN:
       symbol = ':';
       break;
-    case BROADCAST:
+    case Communicate::BROADCAST:
       symbol = '>';
       break;
-    case SHOUT:
+    case Communicate::SHOUT:
       symbol = '!';
       break;
-    case THINK:
+    case Communicate::THINK:
       symbol = '=';
       break;
-    default:
-      symbol = 0;  // TODO(jeffbailey): Shouldn't happen.
   }
   sprintf(msg, "%s \"%s\" [%d,%d] %c %s\n", Race->name,
-          Race->governor[Governor].name, Playernum, Governor, symbol, message);
+          Race->governor[Governor].name, Playernum, Governor, symbol,
+          message.c_str());
 
   switch (mode) {
-    case ANN:
+    case Communicate::ANN:
       d_announce(Playernum, Governor, Dir[Playernum - 1][Governor].snum, msg);
       break;
-    case BROADCAST:
+    case Communicate::BROADCAST:
       d_broadcast(Playernum, Governor, msg);
       break;
-    case SHOUT:
+    case Communicate::SHOUT:
       d_shout(Playernum, Governor, msg);
       break;
-    case THINK:
+    case Communicate::THINK:
       d_think(Playernum, Governor, msg);
-      break;
-    default:
       break;
   }
 }

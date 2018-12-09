@@ -999,12 +999,14 @@ void announce(const command_t &argv, GameObj &g) {
     mode = Communicate::ANN;
   else if (argv[0] == "broadcast")
     mode = Communicate::BROADCAST;
+  else if (argv[0] == "'")
+    mode = Communicate::BROADCAST;
   else if (argv[0] == "shout")
     mode = Communicate::SHOUT;
   else if (argv[0] == "think")
     mode = Communicate::THINK;
   else {
-    notify(Playernum, Governor, "Not sure how you got here");
+    notify(Playernum, Governor, "Not sure how you got here.\n");
     return;
   }
 

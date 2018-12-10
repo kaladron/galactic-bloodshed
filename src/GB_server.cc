@@ -220,7 +220,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"factories", rst},
     {"fire", fire},  // TODO(jeffbailey): !guest
     {"fuel", proj_fuel},
-    {"give", give}, // TODO(jeffbailey): !guest
+    {"give", give},  // TODO(jeffbailey): !guest
 #ifdef MARKET
     {"insurgency", insurgency},
 #endif
@@ -232,17 +232,22 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"move", move_popn},
     {"mount", mount},
     {"motto", motto},
+    {"name", name},
     {"orbit", orbit},
-    {"pay", pay}, // TODO(jeffbailey): !guest
+    {"page", page},
+    {"pay", pay},  // TODO(jeffbailey): !guest
     {"personal", personal},
     {"pledge", pledge},
     {"power", power},
+    {"post", send_message},
     {"production", colonies},
     {"relation", relation},
+    {"read", read_messages},
     {"repair", repair},
     {"report", rst},
     {"scrap", scrap},
     {"sell", sell},
+    {"send", send_message},
     {"shout", announce},
     {"survey", survey},
     {"ship", rst},
@@ -1350,22 +1355,14 @@ static void process_command(DescriptorData &d, const command_t &argv) {
     launch(Playernum, Governor, 0);
   else if (match(args[0], "mobilize"))
     mobilize(Playernum, Governor, 1);
-  else if (match(args[0], "name"))
-    name(Playernum, Governor, 0);
   else if (match(args[0], "order"))
     order(Playernum, Governor, 1);
-  else if (match(args[0], "page"))
-    page(Playernum, Governor, !God);
-  else if (match(args[0], "post"))
-    send_message(Playernum, Governor, 0, 1);
   else if (match(args[0], "profile"))
     profile(Playernum, Governor, 0);
   else if (match(args[0], "purge") && God)
     purge();
   else if (match(args[0], "fix") && God)
     fix(Playernum, Governor);
-  else if (match(args[0], "read"))
-    read_messages(Playernum, Governor, 0);
   else if (match(args[0], "route"))
     route(Playernum, Governor, 0);
   else if (match(args[0], "@@shutdown") && God) {
@@ -1375,8 +1372,6 @@ static void process_command(DescriptorData &d, const command_t &argv) {
     do_update(1);
   else if (match(args[0], "@@segment") && God)
     do_segment(1, atoi(args[1]));
-  else if (match(args[0], "send"))
-    send_message(Playernum, Governor, !God, 0);
 #ifdef MARKET
   else if (match(args[0], "tax"))
     tax(Playernum, Governor, 0);

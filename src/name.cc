@@ -604,11 +604,13 @@ void give(const command_t &argv, GameObj &g) {
   }
 }
 
-void page(int Playernum, int Governor, int APcount0) {
-  int i, who, gov, to_block, dummy[2], APcount;
+void page(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = g.god ? 0 : 1;
+  int i, who, gov, to_block, dummy[2];
   racetype *Race, *alien;
 
-  APcount = APcount0;
   if (!enufAP(Playernum, Governor,
               Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
               APcount))
@@ -672,13 +674,20 @@ void page(int Playernum, int Governor, int APcount0) {
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
 }
 
-void send_message(int Playernum, int Governor, int APcount0, int postit) {
-  int who, i, j, to_block, dummy[2], APcount;
+void send_message(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  bool postit = argv[0] == "post" ? true : false;
+  int APcount;
+  if (postit) {
+    APcount = 0;
+  } else {
+    APcount = g.god ? 0 : 1;
+  }
+  int who, i, j, to_block, dummy[2];
   int to_star, star, start;
   placetype where;
   racetype *Race, *alien;
-
-  APcount = APcount0;
 
   star = 0;  // TODO(jeffbailey): Init to zero.
   who = 0;   // TODO(jeffbailey): Init to zero.
@@ -825,7 +834,10 @@ void send_message(int Playernum, int Governor, int APcount0, int postit) {
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
 }
 
-void read_messages(int Playernum, int Governor, int APcount) {
+void read_messages(const command_t &argv, GameObj &g) {
+  // TODO(jeffbailey): int APcount = 0;
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   if (argn == 1 || match(args[1], "telegram"))
     teleg_read(Playernum, Governor);
   else if (match(args[1], "news")) {
@@ -865,7 +877,10 @@ void motto(const command_t &argv, GameObj &g) {
   notify(Playernum, Governor, "Done.\n");
 }
 
-void name(int Playernum, int Governor, int APcount) {
+void name(const command_t &argv, GameObj &g) {
+  int APcount = 0;
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   char *ch;
   int i, spaces;
   unsigned char check = 0;

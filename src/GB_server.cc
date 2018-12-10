@@ -220,7 +220,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"factories", rst},
     {"fire", fire},  // TODO(jeffbailey): !guest
     {"fuel", proj_fuel},
-    {"give", give},
+    {"give", give}, // TODO(jeffbailey): !guest
 #ifdef MARKET
     {"insurgency", insurgency},
 #endif
@@ -233,7 +233,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"mount", mount},
     {"motto", motto},
     {"orbit", orbit},
-    {"pay", pay},
+    {"pay", pay}, // TODO(jeffbailey): !guest
     {"personal", personal},
     {"pledge", pledge},
     {"power", power},

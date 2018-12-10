@@ -51,7 +51,10 @@ void personal(const command_t &argv, GameObj &g) {
   putrace(Race);
 }
 
-void bless(int Playernum, int Governor, int APcount) {
+void bless(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // TODO(jeffbailey): int APcount = 0;
   racetype *Race;
   int who, amount, Mod;
   char commod;
@@ -267,7 +270,10 @@ void bless(int Playernum, int Governor, int APcount) {
   warn_race(who, buf);
 }
 
-void insurgency(int Playernum, int Governor, int APcount) {
+void insurgency(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 10;
   int who, amount, eligible, them = 0;
   racetype *Race, *alien;
   double x;
@@ -413,7 +419,10 @@ void insurgency(int Playernum, int Governor, int APcount) {
   putrace(Race);
 }
 
-void pay(int Playernum, int Governor, int APcount) {
+void pay(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // TODO(jeffbailey): int APcount = 0;
   int who, amount;
   racetype *Race, *alien;
 
@@ -460,7 +469,10 @@ void pay(int Playernum, int Governor, int APcount) {
   putrace(Race);
 }
 
-void give(int Playernum, int Governor, int APcount) {
+void give(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 5;
   int who, sh;
   shiptype *ship;
   racetype *Race, *alien;

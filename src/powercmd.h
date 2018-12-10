@@ -5,9 +5,9 @@
 #ifndef POWERCMD_H
 #define POWERCMD_H
 
-#include "races.h"
+#include "vars.h"
 
-void block(int, int, int);
-void power(int, int, int);
+void block(const command_t &, GameObj &);
+void power(const command_t &, GameObj &);
 
 #endif  // POWERCMD_H

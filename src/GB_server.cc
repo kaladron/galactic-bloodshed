@@ -194,6 +194,8 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"arm", arm},
     {"autoreport", autoreport},
     {"bid", bid},
+    {"bless", bless},
+    {"block", block},
     {"bombard", bombard},  // TODO(jeffbailey): !guest
     {"broadcast", announce},
     {"build", build},
@@ -218,6 +220,10 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"factories", rst},
     {"fire", fire},  // TODO(jeffbailey): !guest
     {"fuel", proj_fuel},
+    {"give", give},
+#ifdef MARKET
+    {"insurgency", insurgency},
+#endif
     {"invite", invite},
     {"load", load},
     {"make", make_mod},
@@ -227,8 +233,10 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"mount", mount},
     {"motto", motto},
     {"orbit", orbit},
+    {"pay", pay},
     {"personal", personal},
     {"pledge", pledge},
+    {"power", power},
     {"production", colonies},
     {"relation", relation},
     {"repair", repair},
@@ -1317,11 +1325,7 @@ static void process_command(DescriptorData &d, const command_t &argv) {
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
     command->second(argv, d);
-  } else if (match(args[0], "bless") && God)
-    bless(Playernum, Governor, 0);
-  else if (match(args[0], "block"))
-    block(Playernum, Governor, 0);
-  else if (match(args[0], "capital"))
+  } else if (match(args[0], "capital"))
     capital(Playernum, Governor, 50);
   else if (match(args[0], "detonate") && !Guest)
     detonate(argv, d);
@@ -1334,16 +1338,10 @@ static void process_command(DescriptorData &d, const command_t &argv) {
     governors(Playernum, Governor, 0);
   else if (match(args[0], "grant"))
     grant(Playernum, Governor, 0);
-  else if (match(args[0], "give") && !Guest)
-    give(Playernum, Governor, 5);
   else if (match(args[0], "highlight"))
     highlight(Playernum, Governor, 0);
   else if (match(args[0], "identify") || match(args[0], "whois"))
     whois(Playernum, Governor, 0);
-#ifdef MARKET
-  else if (match(args[0], "insurgency"))
-    insurgency(Playernum, Governor, 10);
-#endif
   else if (match(args[0], "jettison"))
     jettison(Playernum, Governor, 0);
   else if (match(args[0], "land"))
@@ -1358,10 +1356,6 @@ static void process_command(DescriptorData &d, const command_t &argv) {
     order(Playernum, Governor, 1);
   else if (match(args[0], "page"))
     page(Playernum, Governor, !God);
-  else if (match(args[0], "pay") && !Guest)
-    pay(Playernum, Governor, 0);
-  else if (match(args[0], "power"))
-    power(Playernum, Governor, 0);
   else if (match(args[0], "post"))
     send_message(Playernum, Governor, 0, 1);
   else if (match(args[0], "profile"))

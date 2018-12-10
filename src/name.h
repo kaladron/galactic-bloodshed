@@ -8,10 +8,10 @@
 #include "vars.h"
 
 void personal(const command_t &, GameObj &);
-void bless(int, int, int);
-void insurgency(int, int, int);
-void pay(int, int, int);
-void give(int, int, int);
+void bless(const command_t &, GameObj &);
+void insurgency(const command_t &, GameObj &);
+void pay(const command_t &, GameObj &);
+void give(const command_t &, GameObj &);
 void page(int, int, int);
 void send_message(int, int, int, int);
 void read_messages(int, int, int);

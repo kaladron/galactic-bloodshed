@@ -20,7 +20,10 @@
 
 static void prepare_output_line(racetype *, racetype *, int, int);
 
-void block(int Playernum, int Governor, int APcount) {
+void block(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // TODO(jeffbailey): int APcount = 0;
   int i, n;
   int p;
   racetype *r, *Race;
@@ -171,7 +174,10 @@ void block(int Playernum, int Governor, int APcount) {
   }
 }
 
-void power(int Playernum, int Governor, int APcount) {
+void power(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // TODO(jeffbailey): int APcount = 0;
   int i, n;
   int p;
   racetype *r, *Race;

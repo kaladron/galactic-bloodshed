@@ -144,8 +144,8 @@ static void help(DescriptorData *);
 static void process_command(DescriptorData &, const command_t &argv);
 static int shovechars(int);
 
-static void GB_time(int, int);
-static void GB_schedule(int, int);
+static void GB_time(const command_t &, GameObj &);
+static void GB_schedule(const command_t &, GameObj &);
 static DescriptorData *new_connection(int);
 static void do_update(int);
 static void do_segment(int, int);
@@ -190,6 +190,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"allocate", allocateAPs},
     {"analysis", analysis},
     {"announce", announce},
+    {"appoint", governors},
     {"assault", dock},
     {"arm", arm},
     {"autoreport", autoreport},
@@ -199,6 +200,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"bombard", bombard},  // TODO(jeffbailey): !guest
     {"broadcast", announce},
     {"build", build},
+    {"capital", capital},
     {"capture", capture},
     {"center", center},
     {"cew", fire},
@@ -210,41 +212,58 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"defend", defend},
 #endif
     {"deploy", move_popn},
+    {"detonate", detonate},  // TODO(jeffbailey): !guest
     {"disarm", arm},
     {"dismount", mount},
+    {"dissolve", dissolve},  // TODO(jeffbailey): !guest
     {"distance", distance},
     {"dock", dock},
+    {"dump", dump},
     {"enslave", enslave},
     {"examine", examine},
     {"explore", exploration},
     {"factories", rst},
     {"fire", fire},  // TODO(jeffbailey): !guest
+    {"fix", fix},
     {"fuel", proj_fuel},
     {"give", give},  // TODO(jeffbailey): !guest
+    {"governors", governors},
+    {"grant", grant},
+    {"highlight", highlight},
+    {"identify", whois},
 #ifdef MARKET
     {"insurgency", insurgency},
 #endif
     {"invite", invite},
+    {"jettison", jettison},
+    {"land", land},
+    {"launch", launch},
     {"load", load},
     {"make", make_mod},
     {"map", map},
+    {"mobilize", mobilize},
     {"modify", make_mod},
     {"move", move_popn},
     {"mount", mount},
     {"motto", motto},
     {"name", name},
     {"orbit", orbit},
+    {"order", order},
     {"page", page},
     {"pay", pay},  // TODO(jeffbailey): !guest
     {"personal", personal},
     {"pledge", pledge},
     {"power", power},
+    {"profile", profile},
     {"post", send_message},
     {"production", colonies},
     {"relation", relation},
     {"read", read_messages},
     {"repair", repair},
     {"report", rst},
+    {"revoke", governors},
+    {"route", route},
+    {"schedule", GB_schedule},
     {"scrap", scrap},
     {"sell", sell},
     {"send", send_message},
@@ -256,8 +275,19 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"status", tech_status},
     {"stock", rst},
     {"tactical", rst},
+    {"technology", technology},
     {"think", announce},
+    {"time", GB_time},
+#ifdef MARKET
+    {"tax", tax},
+#endif
+    {"toggle", toggle},
     {"toxicity", toxicity},
+    {"transfer", transfer},
+#ifdef MARKET
+    {"treasury", treasury},
+#endif
+    {"undock", launch},
     {"uninvite", invite},
     {"unload", load},
     {"unpledge", pledge},
@@ -267,6 +297,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"vote", vote},
 #endif
     {"walk", walk},
+    {"whois", whois},
     {"weapons", rst},
     {"zoom", zoom},
 };
@@ -1097,7 +1128,7 @@ static void check_connect(DescriptorData *d, const char *message) {
             r->governor[j].toggle.invisible ? "invisible" : "visible");
     notify(Playernum, Governor, buf);
 
-    GB_time(Playernum, Governor);
+    GB_time({}, *d);
     sprintf(buf, "\nLast login      : %s", ctime(&(r->governor[j].login)));
     notify(Playernum, Governor, buf);
     r->governor[j].login = time(0);
@@ -1113,7 +1144,7 @@ static void check_connect(DescriptorData *d, const char *message) {
     }
     sprintf(buf, "     Morale: %ld\n", r->morale);
     notify(Playernum, Governor, buf);
-    treasury(Playernum, Governor);
+    treasury({}, *d);
   }
 }
 
@@ -1330,41 +1361,8 @@ static void process_command(DescriptorData &d, const command_t &argv) {
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
     command->second(argv, d);
-  } else if (match(args[0], "capital"))
-    capital(Playernum, Governor, 50);
-  else if (match(args[0], "detonate") && !Guest)
-    detonate(argv, d);
-  else if (match(args[0], "dissolve") && !Guest)
-    dissolve(Playernum, Governor);
-  else if (match(args[0], "dump") && !Guest)
-    dump(Playernum, Governor, 10);
-  else if (match(args[0], "governors") || match(args[0], "appoint") ||
-           match(args[0], "revoke"))
-    governors(Playernum, Governor, 0);
-  else if (match(args[0], "grant"))
-    grant(Playernum, Governor, 0);
-  else if (match(args[0], "highlight"))
-    highlight(Playernum, Governor, 0);
-  else if (match(args[0], "identify") || match(args[0], "whois"))
-    whois(Playernum, Governor, 0);
-  else if (match(args[0], "jettison"))
-    jettison(Playernum, Governor, 0);
-  else if (match(args[0], "land"))
-    land(Playernum, Governor, 1);
-  else if (match(args[0], "launch"))
-    launch(Playernum, Governor, 0);
-  else if (match(args[0], "mobilize"))
-    mobilize(Playernum, Governor, 1);
-  else if (match(args[0], "order"))
-    order(Playernum, Governor, 1);
-  else if (match(args[0], "profile"))
-    profile(Playernum, Governor, 0);
-  else if (match(args[0], "purge") && God)
+  } else if (match(args[0], "purge") && God)
     purge();
-  else if (match(args[0], "fix") && God)
-    fix(Playernum, Governor);
-  else if (match(args[0], "route"))
-    route(Playernum, Governor, 0);
   else if (match(args[0], "@@shutdown") && God) {
     shutdown_flag = 1;
     notify(Playernum, Governor, "Doing shutdown.\n");
@@ -1372,26 +1370,6 @@ static void process_command(DescriptorData &d, const command_t &argv) {
     do_update(1);
   else if (match(args[0], "@@segment") && God)
     do_segment(1, atoi(args[1]));
-#ifdef MARKET
-  else if (match(args[0], "tax"))
-    tax(Playernum, Governor, 0);
-#endif
-  else if (match(args[0], "technology"))
-    technology(Playernum, Governor, 1);
-  else if (match(args[0], "toggle"))
-    toggle(Playernum, Governor, 0);
-#ifdef MARKET
-  else if (match(args[0], "treasury"))
-    treasury(Playernum, Governor);
-#endif
-  else if (match(args[0], "transfer") && !Guest)
-    transfer(Playernum, Governor, 1);
-  else if (match(args[0], "undock"))
-    launch(Playernum, Governor, 1);
-  else if (match(args[0], "time"))
-    GB_time(Playernum, Governor);
-  else if (match(args[0], "schedule"))
-    GB_schedule(Playernum, Governor);
   else {
     sprintf(buf, "'%s':illegal command error.\n", args[0]);
     notify(Playernum, Governor, buf);
@@ -1443,9 +1421,10 @@ static void load_star_data() {
   }
 }
 
-static void GB_time(int Playernum,
-                    int Governor) /* report back the update status */
-{
+/* report back the update status */
+static void GB_time(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   time_t clk = time(0);
   notify(Playernum, Governor, start_buf);
   notify(Playernum, Governor, update_buf);
@@ -1454,7 +1433,9 @@ static void GB_time(int Playernum,
   notify(Playernum, Governor, buf);
 }
 
-static void GB_schedule(int Playernum, int Governor) {
+static void GB_schedule(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   time_t clk = time(0);
   sprintf(buf, "%d minute update intervals\n", update_time);
   notify(Playernum, Governor, buf);

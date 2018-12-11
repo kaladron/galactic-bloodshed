@@ -21,7 +21,10 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-void mobilize(int Playernum, int Governor, int APcount) {
+void mobilize(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 1;
   int sum_mob = 0;
 
   if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
@@ -63,7 +66,10 @@ void mobilize(int Playernum, int Governor, int APcount) {
   deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
 }
 
-void tax(int Playernum, int Governor, int APcount) {
+void tax(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 0;
   int sum_tax = 0;
   racetype *Race;
 

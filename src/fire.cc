@@ -699,6 +699,13 @@ void defend(const command_t &argv, GameObj &g) {
 void detonate(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
+
+  if (argv.size() < 3) {
+    std::string msg = "Syntax: '" + argv[0] + " <mine>'\n";
+    notify(Playernum, Governor, msg);
+    return;
+  }
+
   shiptype *s;
   shipnum_t shipno, nextshipno;
 

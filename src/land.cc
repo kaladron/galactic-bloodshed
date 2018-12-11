@@ -33,7 +33,10 @@
 
 static int roll;
 
-void land(player_t Playernum, governor_t Governor, int APcount) {
+void land(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 1;
   shiptype *s, *s2;
 
   shipnum_t shipno, ship2no;

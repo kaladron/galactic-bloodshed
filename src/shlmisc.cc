@@ -36,7 +36,10 @@ std::string Ship(const ship &s) {
              s.name % s.owner);
 }
 
-void grant(int Playernum, int Governor, int APcount) {
+void grant(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // int APcount = 0; TODO(jeffbailey);
   racetype *Race;
   int gov;
   shipnum_t nextshipno, shipno;
@@ -121,7 +124,10 @@ void grant(int Playernum, int Governor, int APcount) {
     notify(Playernum, Governor, "You can't grant that.\n");
 }
 
-void governors(int Playernum, int Governor, int APcount) {
+void governors(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // TODO(jeffbailey): int APcount = 0;
   racetype *Race;
   int i;
   int gov;
@@ -338,8 +344,16 @@ int in_list(player_t Playernum, const char *list, shiptype *s,
   return 0;
 }
 
-/* Deity fix-it utilities */
-void fix(int Playernum, int Governor) {
+/** Deity fix-it utilities */
+void fix(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  if (!g.god) {
+    notify(Playernum, Governor,
+           "This command is only available to the deity.\n");
+    return;
+  }
+
   shiptype *s;
 
   if (match(args[1], "planet")) {

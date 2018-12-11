@@ -7,8 +7,8 @@
 
 #include "vars.h"
 
-void mobilize(int, int, int);
-void tax(int, int, int);
+void mobilize(const command_t &, GameObj &);
+void tax(const command_t &, GameObj &);
 int control(int, int, startype *);
 
 #endif  // MOBILIZ_H

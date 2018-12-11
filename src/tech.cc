@@ -18,7 +18,10 @@
 #include "tweakables.h"
 #include "vars.h"
 
-void technology(int Playernum, int Governor, int APcount) {
+void technology(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 1;
   short invest;
 
   if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {

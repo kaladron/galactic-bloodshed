@@ -5,7 +5,9 @@
 #ifndef TECH_H
 #define TECH_H
 
-void technology(int, int, int);
+#include "vars.h"
+
+void technology(const command_t &, GameObj &);
 double tech_prod(int, int);
 
 #endif  // TECH_H

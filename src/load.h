@@ -9,9 +9,9 @@
 #include "vars.h"
 
 void load(const command_t &, GameObj &);
-void jettison(int, int, int);
-void dump(int, int, int);
-void transfer(int, int, int);
+void jettison(const command_t &, GameObj &);
+void dump(const command_t &, GameObj &);
+void transfer(const command_t &, GameObj &);
 void mount(const command_t &, GameObj &);
 void use_fuel(shiptype *, double);
 void use_destruct(shiptype *, int);

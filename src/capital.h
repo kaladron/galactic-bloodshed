@@ -5,6 +5,8 @@
 #ifndef CAPITAL_H
 #define CAPITAL_H
 
-void capital(int, int, int);
+#include "vars.h"
+
+void capital(const command_t &, GameObj &);
 
 #endif  // CAPITAL_H

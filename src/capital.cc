@@ -19,7 +19,10 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-void capital(int Playernum, int Governor, int APcount) {
+void capital(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 50;
   int stat, snum;
   shiptype *s;
   racetype *Race;

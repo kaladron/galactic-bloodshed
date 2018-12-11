@@ -9,15 +9,16 @@
 
 #include "races.h"
 #include "ships.h"
+#include "vars.h"
 
 std::string Ship(const ship &);
-void grant(int, int, int);
-void governors(int, int, int);
+void grant(const command_t &, GameObj &);
+void governors(const command_t &, GameObj &);
 int authorized(int, shiptype *);
 int start_shiplist(int, int, const char *);
 shipnum_t do_shiplist(shiptype **, shipnum_t *);
 int in_list(player_t, const char *, shiptype *, shipnum_t *);
-void fix(int, int);
+void fix(const command_t &, GameObj &);
 int match(const char *, const char *);
 void DontOwnErr(int, int, shipnum_t);
 int enufAP(int, int, unsigned short, int);

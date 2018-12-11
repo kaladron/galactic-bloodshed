@@ -30,7 +30,10 @@ static void mk_expl_aimed_at(int, int, shiptype *);
 static void DispOrdersHeader(int, int);
 static void DispOrders(int, int, shiptype *);
 
-void order(int Playernum, int Governor, int APcount) {
+void order(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 1;
   shipnum_t shipno, nextshipno;
   shiptype *ship;
 
@@ -852,7 +855,11 @@ static void DispOrders(int Playernum, int Governor, shiptype *ship) {
   }
 }
 
-void route(int Playernum, int Governor, int APcount) {
+void route(const command_t &argv, GameObj &g) {
+  // TODO(jeffbailey): This seems to segfault with no args.
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // TODO(jeffbailey): int APcount = 0;
   int i, x, y;
   unsigned char star, planet, load, unload;
   char *c;

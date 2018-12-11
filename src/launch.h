@@ -5,6 +5,8 @@
 #ifndef LAUNCH_H
 #define LAUNCH_H
 
-void launch(int, int, int);
+#include "vars.h"
+
+void launch(const command_t &, GameObj &);
 
 #endif  // LAUNCH_H

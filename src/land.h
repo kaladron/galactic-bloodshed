@@ -6,8 +6,9 @@
 #define LAND_H
 
 #include "ships.h"
+#include "vars.h"
 
-void land(player_t, governor_t, int);
+void land(const command_t &, GameObj &);
 int crash(shiptype *, double);
 int docked(shiptype *);
 int overloaded(shiptype *);

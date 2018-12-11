@@ -465,7 +465,10 @@ void load(const command_t &argv, GameObj &g) {
       free(s); /* make sure you do this! */
 }
 
-void jettison(int Playernum, int Governor, int APcount) {
+void jettison(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 0;
   int Mod = 0;
   shipnum_t shipno, nextshipno;
   int amt;
@@ -615,7 +618,10 @@ static int jettison_check(int Playernum, int Governor, int amt, int max) {
   return amt;
 }
 
-void dump(int Playernum, int Governor, int APcount) {
+void dump(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 10;
   int player, star, i, j;
   racetype *Race, *r;
   placetype where;
@@ -699,7 +705,10 @@ void dump(int Playernum, int Governor, int APcount) {
   notify(Playernum, Governor, "Exploration Data transferred.\n");
 }
 
-void transfer(int Playernum, int Governor, int APcount) {
+void transfer(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int APcount = 1;
   int player, give;
   char commod = 0;
 

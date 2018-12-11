@@ -17,7 +17,10 @@
 
 static void tog(int, int, char *, const char *);
 
-void toggle(int Playernum, int Governor, int APcount) {
+void toggle(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // TODO(jeffbailey): int APcount = 0;
   racetype *Race;
 
   Race = races[Playernum - 1];
@@ -89,7 +92,10 @@ void toggle(int Playernum, int Governor, int APcount) {
   }
 }
 
-void highlight(int Playernum, int Governor, int APcount) {
+void highlight(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // TODO(jeffbailey): int APcount = 0;
   player_t n;
   racetype *Race;
 

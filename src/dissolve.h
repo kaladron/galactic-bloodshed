@@ -7,7 +7,7 @@
 
 #include "vars.h"
 
-void dissolve(int, int);
+void dissolve(const command_t &, GameObj &);
 int revolt(Planet *, int, int);
 
 #endif  // DISSOLVE_H

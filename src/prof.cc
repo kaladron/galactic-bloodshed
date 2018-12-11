@@ -21,7 +21,10 @@
 static int round_perc(int, racetype *, int);
 static char *Estimate_f(double, racetype *, int);
 
-void whois(int Playernum, int Governor, int APcount) {
+void whois(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // TODO(jeffbailey): int APcount = 0;
   int i, j, numraces;
   racetype *Race;
 
@@ -47,7 +50,10 @@ void whois(int Playernum, int Governor, int APcount) {
   }
 }
 
-void treasury(int Playernum, int Governor) {
+void treasury(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // TODO(jeffbailey): int APcount = 0;
   racetype *Race;
 
   Race = races[Playernum - 1];
@@ -73,7 +79,10 @@ void treasury(int Playernum, int Governor) {
   notify(Playernum, Governor, buf);
 }
 
-void profile(int Playernum, int Governor, int APcount) {
+void profile(const command_t &argv, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  // TODO(jeffbailey): int APcount = 0;
   int p;
   racetype *r, *Race;
 

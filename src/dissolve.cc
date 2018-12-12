@@ -50,7 +50,7 @@ void dissolve(const command_t &argv, GameObj &g) {
   }
   n_ships = Numships();
 
-  if (argn < 3) {
+  if (argv.size() < 3) {
     sprintf(buf, "Self-Destruct sequence requires passwords.\n");
     notify(Playernum, Governor, buf);
     sprintf(buf,
@@ -72,7 +72,7 @@ void dissolve(const command_t &argv, GameObj &g) {
     sscanf(args[2], "%s", govpass);
 
     waste = 0;
-    if (argn > 3) {
+    if (argv.size() > 3) {
       sscanf(args[3], "%c", &nuke);
       if (nuke == 'w') waste = 1;
     }

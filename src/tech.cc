@@ -39,7 +39,7 @@ void technology(const command_t &argv, GameObj &g) {
 
   auto p = getplanet(g.snum, g.pnum);
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     sprintf(buf,
             "Current investment : %d    Technology production/update: %.3f\n",
             p.info[Playernum - 1].tech_invest,

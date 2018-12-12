@@ -44,7 +44,7 @@ void mobilize(const command_t &argv, GameObj &g) {
 
   auto smap = getsmap(p);
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     sprintf(buf, "Current mobilization: %d    Quota: %d\n",
             p.info[Playernum - 1].comread, p.info[Playernum - 1].mob_set);
     notify(Playernum, Governor, buf);
@@ -94,7 +94,7 @@ void tax(const command_t &argv, GameObj &g) {
 
   auto p = getplanet(g.snum, g.pnum);
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     sprintf(buf, "Current tax rate: %d%%    Target: %d%%\n",
             p.info[Playernum - 1].tax, p.info[Playernum - 1].newtax);
     notify(Playernum, Governor, buf);

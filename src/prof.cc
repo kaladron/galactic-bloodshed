@@ -28,7 +28,7 @@ void whois(const command_t &argv, GameObj &g) {
   int i, j, numraces;
   racetype *Race;
 
-  if (argn <= 1) {
+  if (argv.size() <= 1) {
     sprintf(args[1], "%d", Playernum); /* The coward's way out */
     argn = 2;
   }
@@ -88,7 +88,7 @@ void profile(const command_t &argv, GameObj &g) {
 
   Race = races[Playernum - 1];
 
-  if (argn == 1) {
+  if (argv.size() == 1) {
     sprintf(buf, "--==** Racial profile for %s (player %d) **==--\n",
             Race->name, Race->Playernum);
     notify(Playernum, Governor, buf);

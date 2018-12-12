@@ -34,7 +34,7 @@ void autoreport(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (argn == 1) { /* no args */
+  if (argv.size() == 1) { /* no args */
     if (g.level == ScopeLevel::LEVEL_PLAN) {
       auto p = getplanet(snum, pnum);
       if (p.info[Playernum - 1].autorep)
@@ -50,7 +50,7 @@ void autoreport(const command_t &argv, GameObj &g) {
       sprintf(buf, "Scope must be a planet.\n");
       notify(Playernum, Governor, buf);
     }
-  } else if (argv.size() > 1) { /* argn==2, place specified */
+  } else if (argv.size() > 1) { /* argv.size()==2, place specified */
     place = Getplace(g, argv[1], 0);
     if (place.level == ScopeLevel::LEVEL_PLAN) {
       auto p = getplanet(snum, pnum);

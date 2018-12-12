@@ -48,11 +48,11 @@ void dock(const command_t &argv, GameObj &g) {
   double Dist;
   racetype *Race, *alien;
 
-  if (argn < 3) {
+  if (argv.size() < 3) {
     notify(Playernum, Governor, "Dock with what?\n");
     return;
   }
-  if (argn < 5)
+  if (argv.size() < 5)
     what = MIL;
   else if (Assault) {
     if (match(args[4], "civilians"))
@@ -229,7 +229,7 @@ void dock(const command_t &argv, GameObj &g) {
       if (Assault) {
         alien = races[s2->owner - 1];
         Race = races[Playernum - 1];
-        if (argn >= 4) {
+        if (argv.size() >= 4) {
           sscanf(args[3], "%lu", &boarders);
           if ((what == MIL) && (boarders > s->troops))
             boarders = s->troops;

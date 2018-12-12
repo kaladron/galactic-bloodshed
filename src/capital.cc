@@ -35,7 +35,7 @@ void capital(const command_t &argv, GameObj &g) {
   }
 
   shipnum_t shipno;
-  if (argn != 2)
+  if (argv.size() != 2)
     shipno = Race->Gov_ship;
   else
     shipno = strtoul(args[1] + (args[1][0] == '#'), NULL, 10);
@@ -47,7 +47,7 @@ void capital(const command_t &argv, GameObj &g) {
 
   stat = getship(&s, shipno);
 
-  if (argn == 2) {
+  if (argv.size() == 2) {
     snum = s->storbits;
     if (!stat || testship(Playernum, Governor, s)) {
       (void)notify(Playernum, Governor, "You can't do that!\n");

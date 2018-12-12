@@ -25,7 +25,7 @@ void toggle(const command_t &argv, GameObj &g) {
 
   Race = races[Playernum - 1];
 
-  if (argn > 1) {
+  if (argv.size() > 1) {
     if (match(args[1], "inverse"))
       tog(Playernum, Governor, &Race->governor[Governor].toggle.inverse,
           "inverse");

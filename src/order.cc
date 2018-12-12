@@ -29,7 +29,7 @@ static std::string prin_aimed_at(const ship &);
 static void mk_expl_aimed_at(int, int, shiptype *);
 static void DispOrdersHeader(int, int);
 static void DispOrders(int, int, shiptype *);
-static void give_orders(GameObj &, int, shiptype *);
+static void give_orders(GameObj &, const command_t &, int, shiptype *);
 
 void order(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
@@ -38,7 +38,7 @@ void order(const command_t &argv, GameObj &g) {
   shipnum_t shipno, nextshipno;
   shiptype *ship;
 
-  if (argn == 1) { /* display all ship orders */
+  if (argv.size() == 1) { /* display all ship orders */
     DispOrdersHeader(Playernum, Governor);
     nextshipno = start_shiplist(g, "test");
     while ((shipno = do_shiplist(&ship, &nextshipno)))
@@ -47,13 +47,13 @@ void order(const command_t &argv, GameObj &g) {
         free(ship);
       } else
         free(ship);
-  } else if (argn >= 2) {
+  } else if (argv.size() >= 2) {
     DispOrdersHeader(Playernum, Governor);
     nextshipno = start_shiplist(g, args[1]);
     while ((shipno = do_shiplist(&ship, &nextshipno)))
       if (in_list(Playernum, args[1], ship, &nextshipno) &&
           authorized(Governor, ship)) {
-        if (argn > 2) give_orders(g, APcount, ship);
+        if (argv.size() > 2) give_orders(g, argv, APcount, ship);
         DispOrders(Playernum, Governor, ship);
         free(ship);
       } else
@@ -62,7 +62,8 @@ void order(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "I don't understand what you mean.\n");
 }
 
-static void give_orders(GameObj &g, int APcount, shiptype *ship) {
+static void give_orders(GameObj &g, const command_t &argv, int APcount,
+                        shiptype *ship) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int i, j;
@@ -138,7 +139,7 @@ static void give_orders(GameObj &g, int APcount, shiptype *ship) {
       return;
     }
   } else if (match(args[2], "protect")) {
-    if (argn > 3)
+    if (argv.size() > 3)
       sscanf(args[3] + (args[3][0] == '#'), "%d", &j);
     else
       j = 0;
@@ -158,7 +159,7 @@ static void give_orders(GameObj &g, int APcount, shiptype *ship) {
       return;
     }
   } else if (match(args[2], "navigate")) {
-    if (argn >= 5) {
+    if (argv.size() >= 5) {
       ship->navigate.on = 1;
       ship->navigate.bearing = atoi(args[3]);
       ship->navigate.turns = atoi(args[4]);
@@ -344,7 +345,7 @@ static void give_orders(GameObj &g, int APcount, shiptype *ship) {
     }
   } else if (match(args[2], "primary")) {
     if (ship->primary) {
-      if (argn < 4) {
+      if (argv.size() < 4) {
         ship->guns = PRIMARY;
         if (ship->retaliate > ship->primary) ship->retaliate = ship->primary;
       } else {
@@ -365,7 +366,7 @@ static void give_orders(GameObj &g, int APcount, shiptype *ship) {
     }
   } else if (match(args[2], "secondary")) {
     if (ship->secondary) {
-      if (argn < 4) {
+      if (argv.size() < 4) {
         ship->guns = SECONDARY;
         if (ship->retaliate > ship->secondary)
           ship->retaliate = ship->secondary;
@@ -874,7 +875,7 @@ void route(const command_t &argv, GameObj &g) {
     return;
   }
   auto p = getplanet(g.snum, g.pnum);
-  if (argn == 1) { /* display all shipping routes that are active */
+  if (argv.size() == 1) { /* display all shipping routes that are active */
     for (i = 1; i <= MAX_ROUTES; i++)
       if (p.info[Playernum - 1].route[i - 1].set) {
         star = p.info[Playernum - 1].route[i - 1].dest_star;
@@ -924,7 +925,7 @@ void route(const command_t &argv, GameObj &g) {
       }
     notify(Playernum, Governor, "Done.\n");
     return;
-  } else if (argn == 2) {
+  } else if (argv.size() == 2) {
     sscanf(args[1], "%d", &i);
     if (i > MAX_ROUTES || i < 1) {
       notify(Playernum, Governor, "Bad route number.\n");
@@ -961,7 +962,7 @@ void route(const command_t &argv, GameObj &g) {
     }
     notify(Playernum, Governor, "Done.\n");
     return;
-  } else if (argn == 3) {
+  } else if (argv.size() == 3) {
     sscanf(args[1], "%d", &i);
     if (i > MAX_ROUTES || i < 1) {
       notify(Playernum, Governor, "Bad route number.\n");

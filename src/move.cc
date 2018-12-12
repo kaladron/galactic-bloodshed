@@ -79,7 +79,7 @@ void arm(const command_t &argv, GameObj &g) {
   if (mode) {
     max_allowed = MIN(sect.popn, planet.info[Playernum - 1].destruct *
                                      (sect.mobilization + 1));
-    if (argn < 3)
+    if (argv.size() < 3)
       amount = max_allowed;
     else {
       amount = std::stoi(argv[2]);
@@ -122,7 +122,7 @@ void arm(const command_t &argv, GameObj &g) {
     sprintf(buf, "This mobilization cost %ld money.\n", enlist_cost);
     notify(Playernum, Governor, buf);
   } else {
-    if (argn < 3)
+    if (argv.size() < 3)
       amount = sect.troops;
     else {
       amount = std::stoi(argv[2]);
@@ -217,7 +217,7 @@ void move_popn(const command_t &argv, GameObj &g) {
 
     /* ok, the move is legal */
     auto sect2 = getsector(planet, x2, y2);
-    if (argn >= 4) {
+    if (argv.size() >= 4) {
       people = std::stoi(argv[3]);
       if (people < 0) {
         if (what == CIV)
@@ -440,7 +440,7 @@ void walk(const command_t &argv, GameObj &g) {
   int strength, strength1;
   racetype *Race, *alien;
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     notify(Playernum, Governor, "Walk what?\n");
     return;
   }

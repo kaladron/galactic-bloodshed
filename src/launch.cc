@@ -30,7 +30,7 @@ void launch(const command_t &argv, GameObj &g) {
   shipnum_t shipno, nextshipno;
   double fuel;
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     notify(Playernum, Governor, "Launch what?\n");
     return;
   }

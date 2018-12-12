@@ -33,7 +33,7 @@ void block(const command_t &argv, GameObj &g) {
 
   Race = races[Playernum - 1];
 
-  if (argn == 3 && match(args[1], "player")) {
+  if (argv.size() == 3 && match(args[1], "player")) {
     if (!(p = GetPlayer(args[2]))) {
       notify(Playernum, Governor, "No such player.\n");
       return;
@@ -83,7 +83,7 @@ void block(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, "no blocks\n");
     else
       notify(Playernum, Governor, "\n");
-  } else if (argn > 1) {
+  } else if (argv.size() > 1) {
     if (!(p = GetPlayer(args[1]))) {
       notify(Playernum, Governor, "No such player,\n");
       return;
@@ -186,7 +186,7 @@ void power(const command_t &argv, GameObj &g) {
   n = Num_races;
   p = -1;
 
-  if (argn >= 2) {
+  if (argv.size() >= 2) {
     if (!(p = GetPlayer(args[1]))) {
       notify(Playernum, Governor, "No such player,\n");
       return;
@@ -204,15 +204,15 @@ void power(const command_t &argv, GameObj &g) {
     sprintf(buf,
             "%s  #  Name               VP  mil  civ cash ship pl  res "
             "fuel dest morl VNs\n",
-            argn < 2 ? "rank" : "");
+            argv.size() < 2 ? "rank" : "");
   else
     sprintf(buf,
             "%s  #  Name               VP  mil  civ cash ship pl  res "
             "fuel dest morl know\n",
-            argn < 2 ? "rank" : "");
+            argv.size() < 2 ? "rank" : "");
   notify(Playernum, Governor, buf);
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     create_victory_list(vic);
     for (i = 1; i <= n; i++) {
       p = vic[i - 1].racenum;

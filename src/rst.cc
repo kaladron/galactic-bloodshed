@@ -98,7 +98,7 @@ void rst(const command_t &argv, GameObj &g) {
                                    (n_ships + Sdata.numstars * MAXPLANETS));
   /* (one list entry for each ship, planet in universe) */
 
-  if (argn == 3) {
+  if (argv.size() == 3) {
     if (isdigit(args[2][0]))
       who = atoi(args[2]);
     else {
@@ -108,7 +108,7 @@ void rst(const command_t &argv, GameObj &g) {
   } else
     who = 0;
 
-  if (argn >= 2) {
+  if (argv.size() >= 2) {
     if (*args[1] == '#' || isdigit(*args[1])) {
       /* report on a couple ships */
       int l = 1;
@@ -149,7 +149,7 @@ void rst(const command_t &argv, GameObj &g) {
 
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
-      if (!(Tactical && argn < 2)) {
+      if (!(Tactical && argv.size() < 2)) {
         shipnum_t shn = Sdata.ships;
         while (shn && Getrship(Playernum, Governor, shn))
           shn = rd[Num_ships - 1].s->nextship;

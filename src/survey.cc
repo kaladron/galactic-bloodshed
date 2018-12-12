@@ -78,7 +78,7 @@ void survey(const command_t &argv, GameObj &g) {
 
   /* general code -- jpd -- */
 
-  if (argn == 1) { /* no args */
+  if (argv.size() == 1) { /* no args */
     where.level = g.level;
     where.snum = g.snum;
     where.pnum = g.pnum;
@@ -389,7 +389,7 @@ void repair(const command_t &argv, GameObj &g) {
   placetype where;
 
   /* general code -- jpd -- */
-  if (argn == 1) { /* no args */
+  if (argv.size() == 1) { /* no args */
     where.level = g.level;
     where.snum = g.snum;
     where.pnum = g.pnum;

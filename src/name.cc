@@ -74,7 +74,7 @@ void bless(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "No such player number.\n");
     return;
   }
-  if (argn < 3) {
+  if (argv.size() < 3) {
     notify(Playernum, Governor, "Syntax: bless <player> <what> <+amount>\n");
     return;
   }
@@ -263,7 +263,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "You are not authorized to do that here.\n");
     return;
   }
-  /*  if(argn<3) {
+  /*  if(argv.size()<3) {
         notify(Playernum, Governor, "The correct syntax is 'insurgency <race>
     <money>'\n");
         return;
@@ -585,7 +585,7 @@ void page(const command_t &argv, GameObj &g) {
     }
     alien = races[who - 1];
     APcount *= !alien->God;
-    if (argn > 1) gov = atoi(args[2]);
+    if (argv.size() > 1) gov = atoi(args[2]);
   }
 
   switch (g.level) {
@@ -613,7 +613,7 @@ void page(const command_t &argv, GameObj &g) {
         for (i = 1; i <= Num_races; i++)
           if (isset(dummy, i) && i != Playernum) notify_race(i, buf);
       } else {
-        if (argn > 1)
+        if (argv.size() > 1)
           notify(who, gov, buf);
         else
           notify_race(who, buf);
@@ -645,7 +645,7 @@ void send_message(const command_t &argv, GameObj &g) {
 
   to_star = to_block = 0;
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     notify(Playernum, Governor, "Send what?\n");
     return;
   }
@@ -654,7 +654,7 @@ void send_message(const command_t &argv, GameObj &g) {
     sprintf(msg, "%s \"%s\" [%d,%d]: ", Race->name,
             Race->governor[Governor].name, Playernum, Governor);
     /* put the message together */
-    for (j = 1; j < argn; j++) {
+    for (j = 1; j < argv.size(); j++) {
       sprintf(buf, "%s ", args[j]);
       strcat(msg, buf);
     }
@@ -734,7 +734,7 @@ void send_message(const command_t &argv, GameObj &g) {
   else
     start = 2;
   /* put the message together */
-  for (j = start; j < argn; j++) {
+  for (j = start; j < argv.size(); j++) {
     sprintf(buf, "%s ", args[j]);
     strcat(msg, buf);
   }
@@ -787,7 +787,7 @@ void read_messages(const command_t &argv, GameObj &g) {
   // TODO(jeffbailey): int APcount = 0;
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  if (argn == 1 || match(args[1], "telegram"))
+  if (argv.size() == 1 || match(args[1], "telegram"))
     teleg_read(Playernum, Governor);
   else if (match(args[1], "news")) {
     notify(Playernum, Governor, CUTE_MESSAGE);
@@ -838,13 +838,13 @@ void name(const command_t &argv, GameObj &g) {
   char temp[128];
   racetype *Race;
 
-  if (!isalnum(args[2][0]) || argn < 3) {
+  if (!isalnum(args[2][0]) || argv.size() < 3) {
     notify(Playernum, Governor, "Illegal name format.\n");
     return;
   }
 
   sprintf(buf, "%s", args[2]);
-  for (i = 3; i < argn; i++) {
+  for (i = 3; i < argv.size(); i++) {
     sprintf(temp, " %s", args[i]);
     strcat(buf, temp);
   }

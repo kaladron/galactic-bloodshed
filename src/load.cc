@@ -49,7 +49,7 @@ void load(const command_t &argv, GameObj &g) {
   racetype *Race;
   shipnum_t shipno, nextshipno;
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     if (mode == 0) {
       notify(Playernum, Governor, "Load what?\n");
     } else {
@@ -140,7 +140,7 @@ void load(const command_t &argv, GameObj &g) {
       }
 
       commod = args[2][0];
-      if (argn > 3)
+      if (argv.size() > 3)
         amt = atoi(args[3]);
       else
         amt = 0;
@@ -468,7 +468,7 @@ void jettison(const command_t &argv, GameObj &g) {
   shiptype *s;
   racetype *Race;
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     notify(Playernum, Governor, "Jettison what?\n");
     return;
   }
@@ -504,7 +504,7 @@ void jettison(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      if (argn > 3)
+      if (argv.size() > 3)
         amt = atoi(args[3]);
       else
         amt = 0;
@@ -646,7 +646,7 @@ void dump(const command_t &argv, GameObj &g) {
   }
   getsdata(&Sdata);
 
-  if (argn < 3) {
+  if (argv.size() < 3) {
     for (star = 0; star < Sdata.numstars; star++) {
       getstar(&Stars[star], star);
 
@@ -664,7 +664,7 @@ void dump(const command_t &argv, GameObj &g) {
       }
     }
   } else { /* list of places given */
-    for (i = 2; i < argn; i++) {
+    for (i = 2; i < argv.size(); i++) {
       where = Getplace(g, args[i], 1);
       if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
           where.level != ScopeLevel::LEVEL_SHIP) {

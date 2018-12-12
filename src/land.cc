@@ -48,7 +48,7 @@ void land(const command_t &argv, GameObj &g) {
 
   numdest = 0;  // TODO(jeffbailey): Init to zero.
 
-  if (argn < 2) {
+  if (argv.size() < 2) {
     notify(Playernum, Governor, "Land what?\n");
     return;
   }

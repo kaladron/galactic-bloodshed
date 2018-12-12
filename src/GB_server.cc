@@ -140,7 +140,7 @@ static void queue_string(DescriptorData *d, const char *message);
 static void queue_write(DescriptorData *, const char *, int);
 static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
-static void help(DescriptorData *);
+static void help(const command_t &, GameObj &);
 static void process_command(DescriptorData &, const command_t &argv);
 static int shovechars(int);
 
@@ -167,7 +167,7 @@ static void dump_users(DescriptorData *);
 static void close_sockets(int);
 static int process_input(DescriptorData *);
 static void force_output(void);
-static void help_user(DescriptorData *);
+static void help_user(GameObj &);
 static void parse_connect(const char *, char *, char *);
 static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
@@ -229,6 +229,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"give", give},  // TODO(jeffbailey): !guest
     {"governors", governors},
     {"grant", grant},
+    {"help", help},
     {"highlight", highlight},
     {"identify", whois},
 #ifdef MARKET
@@ -926,7 +927,7 @@ static void welcome_user(DescriptorData *d) {
   }
 }
 
-static void help_user(DescriptorData *d) {
+static void help_user(GameObj &g) {
   FILE *f;
   char *p;
 
@@ -937,8 +938,8 @@ static void help_user(DescriptorData *d) {
           *p = '\0';
           break;
         }
-      queue_string(d, buf);
-      queue_string(d, "\n");
+      notify(g.player, g.governor, buf);
+      notify(g.player, g.governor, "\n");
     }
     fclose(f);
   }
@@ -1017,7 +1018,7 @@ static int do_command(DescriptorData *d, const char *comm) {
   const char *string;
   int parse_exit = 0, i;
 
-  argn = 0;
+  int argn = 0;
   /* Main processing loop. When command strings are sent from the client,
      they are processed here. Responses are sent back to the client via
      notify.
@@ -1045,8 +1046,6 @@ static int do_command(DescriptorData *d, const char *comm) {
     return 0;
   } else if (d->connected && argv[0] == "who") {
     dump_users(d);
-  } else if (argv[0] == "help") {
-    help(d);
   } else if (d->connected && d->god && argv[0] == "emulate") {
     d->player = std::stoi(argv[1]);
     d->governor = std::stoi(argv[2]);
@@ -1453,15 +1452,15 @@ static void GB_schedule(const command_t &argv, GameObj &g) {
   notify(Playernum, Governor, buf);
 }
 
-static void help(DescriptorData *e) {
+static void help(const command_t &argv, GameObj &g) {
   FILE *f;
   char file[1024];
   char *p;
 
-  if (argn == 1) {
-    help_user(e);
+  if (argv.size() == 1) {
+    help_user(g);
   } else {
-    sprintf(file, "%s/%s.doc", DOCDIR, args[1]);
+    sprintf(file, "%s/%s.doc", DOCDIR, argv[1].c_str());
     if ((f = fopen(file, "r")) != 0) {
       while (fgets(buf, sizeof buf, f)) {
         for (p = buf; *p; p++)
@@ -1470,12 +1469,12 @@ static void help(DescriptorData *e) {
             break;
           }
         strcat(buf, "\n");
-        queue_string(e, buf);
+        notify(g.player, g.governor, buf);
       }
       fclose(f);
-      queue_string(e, "----\nFinished.\n");
+      notify(g.player, g.governor, "----\nFinished.\n");
     } else
-      queue_string(e, "Help on that subject unavailable.\n");
+      notify(g.player, g.governor, "Help on that subject unavailable.\n");
   }
 }
 

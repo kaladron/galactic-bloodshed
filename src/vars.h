@@ -314,7 +314,6 @@ extern unsigned long Num_commods;
 extern planetnum_t Planet_count;
 extern unsigned long newslength[4];
 extern char args[MAXARGS][COMMANDSIZE];
-extern int argn;
 
 /* bit routines stolen from UNIX <sys/param.h> */
 #define setbit(a, i) ((a)[(i) / 32] |= ((i) < 32 ? 1 << (i) : 1 << ((i)-32)))

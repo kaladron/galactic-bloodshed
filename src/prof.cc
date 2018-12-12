@@ -28,6 +28,8 @@ void whois(const command_t &argv, GameObj &g) {
   int i, j, numraces;
   racetype *Race;
 
+  int argn = argv.size();  // Need a mutable value for below
+
   if (argv.size() <= 1) {
     sprintf(args[1], "%d", Playernum); /* The coward's way out */
     argn = 2;

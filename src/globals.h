@@ -86,7 +86,6 @@ shipnum_t Num_ships;
 planetnum_t Planet_count;
 unsigned long newslength[4];
 char args[MAXARGS][COMMANDSIZE];
-int argn;
 
 unsigned long segments;
 

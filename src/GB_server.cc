@@ -183,8 +183,6 @@ static std::list<DescriptorData *> descriptor_list;
 
 typedef void (*CommandFunction)(const command_t &, GameObj &);
 
-// TODO(jeffbailey): bid, buy and sell should be only available if market is
-// set.
 static const std::unordered_map<std::string, CommandFunction> commands{
     {"'", announce},
     {"allocate", allocateAPs},

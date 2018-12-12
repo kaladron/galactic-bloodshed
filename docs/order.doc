@@ -154,7 +154,7 @@ Currently the orders that can be changed are:
 
   move  -- If the ship is a terraforming device of space plow, the direction
 	it is to move across the planet.  The direction is given as a single
-	digie, similar to those used in the regular "move" command.
+	digit, similar to those used in the regular "move" command.
 	Syntax: order <shipnumber> move <x>
 
   hop -- If ship is terraformer, space plow or dome, hop order can be given.

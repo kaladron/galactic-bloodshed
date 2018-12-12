@@ -3,7 +3,7 @@
 // found in the COPYING file.
 
 /*
- *  Getplace -- returns directory level from string and current Dir
+ *  Getplace -- returns directory level from string and game object
  *  Dispplace -- returns string from directory level
  *  testship(ship) -- tests various things for the ship.
  */

@@ -235,8 +235,8 @@ class ship {
   starnum_t deststar;     /* destination star */
   planetnum_t destpnum;   /* destination planet */
   planetnum_t pnumorbits; /* # of planet if orbiting */
-  ScopeLevel whatdest;    /* where going (same as Dir) */
-  ScopeLevel whatorbits;  /* where orbited (same as Dir) */
+  ScopeLevel whatdest;    /* where going */
+  ScopeLevel whatorbits;  /* where orbited */
 
   unsigned char damage; /* amt of damage */
   int rad;              /* radiation level */
@@ -275,7 +275,7 @@ struct place { /* used in function return for finding place */
   planetnum_t pnum;
   shipnum_t shipno;
   shiptype *shipptr = NULL;
-  ScopeLevel level;      /* .level: same as Dir */
+  ScopeLevel level;      /* .level */
   unsigned char err = 0; /* if error */
 };
 

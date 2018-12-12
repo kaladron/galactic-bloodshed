@@ -288,8 +288,6 @@ struct vic {
   long login;
 };
 
-extern struct directory Dir[MAXPLAYERS][MAXGOVERNORS + 1];
-
 extern unsigned char Nuked[MAXPLAYERS];
 extern unsigned long StarsInhab[NUMSTARS];
 extern unsigned long StarsExpl[NUMSTARS];

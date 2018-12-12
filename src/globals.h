@@ -59,8 +59,6 @@ const char Dessymbols[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
 
 struct stardata Sdata;
 
-struct directory Dir[MAXPLAYERS][MAXGOVERNORS + 1];
-
 unsigned char Nuked[MAXPLAYERS];
 unsigned long StarsInhab[NUMSTARS];
 unsigned long StarsExpl[NUMSTARS];

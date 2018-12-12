@@ -194,7 +194,9 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"assault", dock},
     {"arm", arm},
     {"autoreport", autoreport},
+#ifdef MARKET
     {"bid", bid},
+#endif
     {"bless", bless},
     {"block", block},
     {"bombard", bombard},  // TODO(jeffbailey): !guest
@@ -265,7 +267,9 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"route", route},
     {"schedule", GB_schedule},
     {"scrap", scrap},
+#ifdef MARKET
     {"sell", sell},
+#endif
     {"send", send_message},
     {"shout", announce},
     {"survey", survey},

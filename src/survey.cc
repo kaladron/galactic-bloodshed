@@ -80,8 +80,8 @@ void survey(const command_t &argv, GameObj &g) {
 
   if (argn == 1) { /* no args */
     where.level = g.level;
-    where.snum = Dir[Playernum - 1][Governor].snum;
-    where.pnum = Dir[Playernum - 1][Governor].pnum;
+    where.snum = g.snum;
+    where.pnum = g.pnum;
   } else {
     /* they are surveying a sector */
     if ((isdigit(args[1][0]) && index(args[1], ',') != NULL) ||
@@ -92,8 +92,8 @@ void survey(const command_t &argv, GameObj &g) {
         return;
       } else {
         where.level = ScopeLevel::LEVEL_PLAN;
-        where.snum = Dir[Playernum - 1][Governor].snum;
-        where.pnum = Dir[Playernum - 1][Governor].pnum;
+        where.snum = g.snum;
+        where.pnum = g.pnum;
       }
     } else {
       where = Getplace(g, args[1], 0);
@@ -391,8 +391,8 @@ void repair(const command_t &argv, GameObj &g) {
   /* general code -- jpd -- */
   if (argn == 1) { /* no args */
     where.level = g.level;
-    where.snum = Dir[Playernum - 1][Governor].snum;
-    where.pnum = Dir[Playernum - 1][Governor].pnum;
+    where.snum = g.snum;
+    where.pnum = g.pnum;
   } else {
     /* repairing a sector */
     if (isdigit(args[1][0]) && index(args[1], ',') != NULL) {
@@ -402,8 +402,8 @@ void repair(const command_t &argv, GameObj &g) {
         return;
       } else {
         where.level = ScopeLevel::LEVEL_PLAN;
-        where.snum = Dir[Playernum - 1][Governor].snum;
-        where.pnum = Dir[Playernum - 1][Governor].pnum;
+        where.snum = g.snum;
+        where.pnum = g.pnum;
       }
     } else {
       where = Getplace(g, args[1], 0);

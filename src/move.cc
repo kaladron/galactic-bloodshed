@@ -54,12 +54,11 @@ void arm(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "Change scope to planet level first.\n");
     return;
   }
-  if (!control(Playernum, Governor, Stars[Dir[Playernum - 1][Governor].snum])) {
+  if (!control(Playernum, Governor, Stars[g.snum])) {
     notify(Playernum, Governor, "You are not authorized to do that here.\n");
     return;
   }
-  auto planet = getplanet(Dir[Playernum - 1][Governor].snum,
-                          Dir[Playernum - 1][Governor].pnum);
+  auto planet = getplanet(g.snum, g.pnum);
 
   if (planet.slaved_to > 0 && planet.slaved_to != Playernum) {
     notify(Playernum, Governor, "That planet has been enslaved!\n");
@@ -145,8 +144,7 @@ void arm(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
   }
   putsector(sect, planet, x, y);
-  putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].pnum);
+  putplanet(planet, Stars[g.snum], g.pnum);
 }
 
 void move_popn(const command_t &argv, GameObj &g) {
@@ -170,12 +168,11 @@ void move_popn(const command_t &argv, GameObj &g) {
     sprintf(buf, "Wrong scope\n");
     return;
   }
-  if (!control(Playernum, Governor, Stars[Dir[Playernum - 1][Governor].snum])) {
+  if (!control(Playernum, Governor, Stars[g.snum])) {
     notify(Playernum, Governor, "You are not authorized to do that here.\n");
     return;
   }
-  auto planet = getplanet(Dir[Playernum - 1][Governor].snum,
-                          Dir[Playernum - 1][Governor].pnum);
+  auto planet = getplanet(g.snum, g.pnum);
 
   if (planet.slaved_to > 0 && planet.slaved_to != Playernum) {
     sprintf(buf, "That planet has been enslaved!\n");
@@ -201,16 +198,14 @@ void move_popn(const command_t &argv, GameObj &g) {
     }
     if (!get_move(argv[2].c_str()[n++], x, y, &x2, &y2, planet)) {
       notify(Playernum, Governor, "Finished.\n");
-      putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
-                Dir[Playernum - 1][Governor].pnum);
+      putplanet(planet, Stars[g.snum], g.pnum);
       return;
     }
 
     if (x2 < 0 || y2 < 0 || x2 > planet.Maxx - 1 || y2 > planet.Maxy - 1) {
       sprintf(buf, "Illegal coordinates %d,%d.\n", x2, y2);
       notify(Playernum, Governor, buf);
-      putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
-                Dir[Playernum - 1][Governor].pnum);
+      putplanet(planet, Stars[g.snum], g.pnum);
       return;
     }
 
@@ -244,8 +239,7 @@ void move_popn(const command_t &argv, GameObj &g) {
       else if (what == MIL)
         sprintf(buf, "Bad value - %lu troops in [%d,%d]\n", sect.troops, x, y);
       notify(Playernum, Governor, buf);
-      putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
-                Dir[Playernum - 1][Governor].pnum);
+      putplanet(planet, Stars[g.snum], g.pnum);
       return;
     }
 
@@ -258,8 +252,7 @@ void move_popn(const command_t &argv, GameObj &g) {
     if (!people) {
       putsector(sect, planet, x, y);
       putsector(sect2, planet, x2, y2);
-      putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
-                Dir[Playernum - 1][Governor].pnum);
+      putplanet(planet, Stars[g.snum], g.pnum);
       notify(Playernum, Governor, "Attack aborted.\n");
       return;
     }
@@ -275,17 +268,14 @@ void move_popn(const command_t &argv, GameObj &g) {
     else if (what == MIL)
       APcost = MOVE_FACTOR * ((int)log10(1.0 + (double)people) + Assault) + 1;
 
-    if (!enufAP(Playernum, Governor,
-                Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
+    if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1],
                 APcost)) {
-      putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
-                Dir[Playernum - 1][Governor].pnum);
+      putplanet(planet, Stars[g.snum], g.pnum);
       return;
     }
 
     if (Assault) {
-      ground_assaults[Playernum - 1][sect2.owner - 1]
-                     [Dir[Playernum - 1][Governor].snum] += 1;
+      ground_assaults[Playernum - 1][sect2.owner - 1][g.snum] += 1;
       Race = races[Playernum - 1];
       alien = races[sect2.owner - 1];
       /* races find out about each other */
@@ -295,8 +285,7 @@ void move_popn(const command_t &argv, GameObj &g) {
           MIN(Race->translate[sect2.owner - 1] + 5, 100);
 
       old2owner = (int)(sect2.owner);
-      old2gov =
-          Stars[Dir[Playernum - 1][Governor].snum]->governor[sect2.owner - 1];
+      old2gov = Stars[g.snum]->governor[sect2.owner - 1];
       if (what == CIV)
         sect.popn = std::max(0UL, sect.popn - people);
       else if (what == MIL)
@@ -359,12 +348,10 @@ void move_popn(const command_t &argv, GameObj &g) {
 
       sprintf(telegram_buf,
               "/%s/%s: %s [%d] %c(%d,%d) assaults %s [%d] %c(%d,%d) %s\n",
-              Stars[Dir[Playernum - 1][Governor].snum]->name,
-              Stars[Dir[Playernum - 1][Governor].snum]
-                  ->pnames[Dir[Playernum - 1][Governor].pnum],
-              Race->name, Playernum, Dessymbols[sect.condition], x, y,
-              alien->name, alien->Playernum, Dessymbols[sect2.condition], x2,
-              y2, (sect2.owner == Playernum ? "VICTORY" : "DEFEAT"));
+              Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
+              Playernum, Dessymbols[sect.condition], x, y, alien->name,
+              alien->Playernum, Dessymbols[sect2.condition], x2, y2,
+              (sect2.owner == Playernum ? "VICTORY" : "DEFEAT"));
 
       if (sect2.owner == Playernum) {
         sprintf(buf, "VICTORY! The sector is yours!\n");
@@ -436,8 +423,7 @@ void move_popn(const command_t &argv, GameObj &g) {
     putsector(sect, planet, x, y);
     putsector(sect2, planet, x2, y2);
 
-    deductAPs(Playernum, Governor, APcost, Dir[Playernum - 1][Governor].snum,
-              0);
+    deductAPs(Playernum, Governor, APcost, g.snum, 0);
     x = x2;
     y = y2; /* get ready for the next round */
   }
@@ -507,8 +493,7 @@ void walk(const command_t &argv, GameObj &g) {
     sprintf(buf, "Illegal coordinates %d,%d.\n", x, y);
     notify(Playernum, Governor, buf);
     free(ship);
-    putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-              Dir[Playernum - 1][Governor].pnum);
+    putplanet(p, Stars[g.snum], g.pnum);
     return;
   }
   /* check to see if player is permited on the sector type */
@@ -593,8 +578,7 @@ void walk(const command_t &argv, GameObj &g) {
     }
     putrace(alien);
     putrace(Race);
-    putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-              Dir[Playernum - 1][Governor].pnum);
+    putplanet(p, Stars[g.snum], g.pnum);
     putsector(sect, p, x, y);
   }
 
@@ -611,9 +595,7 @@ void walk(const command_t &argv, GameObj &g) {
     use_fuel(ship, AFV_FUEL_COST);
     for (i = 1; i <= Num_races; i++)
       if (i != Playernum && p.info[i - 1].numsectsowned)
-        notify(i,
-               (int)Stars[Dir[Playernum - 1][Governor].snum]->governor[i - 1],
-               buf);
+        notify(i, (int)Stars[g.snum]->governor[i - 1], buf);
   }
   putship(ship);
   deductAPs(Playernum, Governor, APcount, (int)ship->storbits, 0);

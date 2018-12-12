@@ -29,18 +29,15 @@ void technology(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     return;
   }
-  if (!control(Playernum, Governor, Stars[Dir[Playernum - 1][Governor].snum])) {
+  if (!control(Playernum, Governor, Stars[g.snum])) {
     notify(Playernum, Governor, "You are not authorized to do that here.\n");
     return;
   }
-  if (!enufAP(Playernum, Governor,
-              Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
-              APcount)) {
+  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount)) {
     return;
   }
 
-  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
-                     Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(g.snum, g.pnum);
 
   if (argn < 2) {
     sprintf(buf,
@@ -61,10 +58,9 @@ void technology(const command_t &argv, GameObj &g) {
 
   p.info[Playernum - 1].tech_invest = invest;
 
-  putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].pnum);
+  putplanet(p, Stars[g.snum], g.pnum);
 
-  deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
+  deductAPs(Playernum, Governor, APcount, g.snum, 0);
 
   sprintf(buf, "   New (ideal) tech production: %.3f (this planet)\n",
           tech_prod((int)(p.info[Playernum - 1].tech_invest),

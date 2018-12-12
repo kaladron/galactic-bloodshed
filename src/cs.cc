@@ -41,18 +41,15 @@ void cs(const command_t &argv, GameObj &g) {
   if (argv.size() == 1) {
     /* chdir to def scope */
     g.level = Race->governor[Governor].deflevel;
-    if ((Dir[Playernum - 1][Governor].snum =
-             Race->governor[Governor].defsystem) >= Sdata.numstars)
-      Dir[Playernum - 1][Governor].snum = Sdata.numstars - 1;
-    if ((Dir[Playernum - 1][Governor].pnum =
-             Race->governor[Governor].defplanetnum) >=
-        Stars[Dir[Playernum - 1][Governor].snum]->numplanets)
-      Dir[Playernum - 1][Governor].pnum =
-          Stars[Dir[Playernum - 1][Governor].snum]->numplanets - 1;
-    Dir[Playernum - 1][Governor].shipno = 0;
+    if ((g.snum = Race->governor[Governor].defsystem) >= Sdata.numstars)
+      g.snum = Sdata.numstars - 1;
+    if ((g.pnum = Race->governor[Governor].defplanetnum) >=
+        Stars[g.snum]->numplanets)
+      g.pnum = Stars[g.snum]->numplanets - 1;
+    g.shipno = 0;
     g.lastx[0] = g.lasty[0] = 0.0;
-    g.lastx[1] = Stars[Dir[Playernum - 1][Governor].snum]->xpos;
-    g.lasty[1] = Stars[Dir[Playernum - 1][Governor].snum]->ypos;
+    g.lastx[1] = Stars[g.snum]->xpos;
+    g.lasty[1] = Stars[g.snum]->ypos;
     return;
   } else if (argv.size() == 2) {
     /* chdir to specified scope */
@@ -74,28 +71,24 @@ void cs(const command_t &argv, GameObj &g) {
         break;
       case ScopeLevel::LEVEL_STAR:
         if (where.level == ScopeLevel::LEVEL_UNIV) {
-          g.lastx[1] = Stars[Dir[Playernum - 1][Governor].snum]->xpos;
-          g.lasty[1] = Stars[Dir[Playernum - 1][Governor].snum]->ypos;
+          g.lastx[1] = Stars[g.snum]->xpos;
+          g.lasty[1] = Stars[g.snum]->ypos;
         } else
           g.lastx[0] = g.lasty[0] = 0.0;
         break;
       case ScopeLevel::LEVEL_PLAN: {
-        const auto &planet = getplanet(Dir[Playernum - 1][Governor].snum,
-                                       Dir[Playernum - 1][Governor].pnum);
-        if (where.level == ScopeLevel::LEVEL_STAR &&
-            where.snum == Dir[Playernum - 1][Governor].snum) {
+        const auto &planet = getplanet(g.snum, g.pnum);
+        if (where.level == ScopeLevel::LEVEL_STAR && where.snum == g.snum) {
           g.lastx[0] = planet.xpos;
           g.lasty[0] = planet.ypos;
         } else if (where.level == ScopeLevel::LEVEL_UNIV) {
-          g.lastx[1] =
-              Stars[Dir[Playernum - 1][Governor].snum]->xpos + planet.xpos;
-          g.lasty[1] =
-              Stars[Dir[Playernum - 1][Governor].snum]->ypos + planet.ypos;
+          g.lastx[1] = Stars[g.snum]->xpos + planet.xpos;
+          g.lasty[1] = Stars[g.snum]->ypos + planet.ypos;
         } else
           g.lastx[0] = g.lasty[0] = 0.0;
       } break;
       case ScopeLevel::LEVEL_SHIP:
-        (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
+        (void)getship(&s, g.shipno);
         if (!s->docked) {
           switch (where.level) {
             case ScopeLevel::LEVEL_UNIV:
@@ -132,9 +125,9 @@ void cs(const command_t &argv, GameObj &g) {
         break;
     }
     g.level = where.level;
-    Dir[Playernum - 1][Governor].snum = where.snum;
-    Dir[Playernum - 1][Governor].pnum = where.pnum;
-    Dir[Playernum - 1][Governor].shipno = where.shipno;
+    g.snum = where.snum;
+    g.pnum = where.pnum;
+    g.shipno = where.shipno;
   } else if (argv.size() == 3 && argv[1][1] == 'd') {
     /* make new def scope */
     auto where = Getplace(g, argv[2], 0);

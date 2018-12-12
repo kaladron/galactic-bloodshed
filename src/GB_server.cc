@@ -460,7 +460,7 @@ void d_announce(int Playernum, int Governor, int star, char *message) {
     if (d->connected && !(d->player == Playernum && d->governor == Governor) &&
         (isset(Stars[star]->inhabited, d->player) ||
          races[d->player - 1]->God) &&
-        Dir[d->player - 1][d->governor].snum == star &&
+        d->snum == star &&
         !races[d->player - 1]->governor[d->governor].toggle.gag) {
       queue_string(d, message);
     }
@@ -1324,12 +1324,11 @@ static void dump_users(DescriptorData *e) {
       if (!r->governor[d->governor].toggle.invisible ||
           e->player == d->player || God) {
         sprintf(temp, "\"%s\"", r->governor[d->governor].name);
-        sprintf(
-            buf, "%20.20s %20.20s [%2d,%2d] %4lds idle %-4.4s %s %s\n", r->name,
-            temp, d->player, d->governor, now - d->last_time,
-            God ? Stars[Dir[d->player - 1][d->governor].snum]->name : "    ",
-            (r->governor[d->governor].toggle.gag ? "GAG" : "   "),
-            (r->governor[d->governor].toggle.invisible ? "INVISIBLE" : ""));
+        sprintf(buf, "%20.20s %20.20s [%2d,%2d] %4lds idle %-4.4s %s %s\n",
+                r->name, temp, d->player, d->governor, now - d->last_time,
+                God ? Stars[d->snum]->name : "    ",
+                (r->governor[d->governor].toggle.gag ? "GAG" : "   "),
+                (r->governor[d->governor].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, buf);
       } else if (!God) /* deity lurks around */
         coward_count++;
@@ -1775,7 +1774,6 @@ void adjust_morale(racetype *winner, racetype *loser, int amount) {
 
 static std::string do_prompt(DescriptorData &d) {
   player_t Playernum = d.player;
-  governor_t Governor = d.governor;
   shiptype *s, *s2;
   std::stringstream prompt;
 
@@ -1783,34 +1781,28 @@ static std::string do_prompt(DescriptorData &d) {
     prompt << boost::format(" ( [%d] / )\n") % Sdata.AP[Playernum - 1];
   } else if (d.level == ScopeLevel::LEVEL_STAR) {
     prompt << boost::format(" ( [%d] /%s )\n") %
-                  Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1] %
-                  Stars[Dir[Playernum - 1][Governor].snum]->name;
+                  Stars[d.snum]->AP[Playernum - 1] % Stars[d.snum]->name;
   } else if (d.level == ScopeLevel::LEVEL_PLAN) {
     prompt << boost::format(" ( [%d] /%s/%s )\n") %
-                  Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1] %
-                  Stars[Dir[Playernum - 1][Governor].snum]->name %
-                  Stars[Dir[Playernum - 1][Governor].snum]
-                      ->pnames[Dir[Playernum - 1][Governor].pnum];
+                  Stars[d.snum]->AP[Playernum - 1] % Stars[d.snum]->name %
+                  Stars[d.snum]->pnames[d.pnum];
   } else if (d.level == ScopeLevel::LEVEL_SHIP) {
-    (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
+    (void)getship(&s, d.shipno);
     switch (s->whatorbits) {
       case ScopeLevel::LEVEL_UNIV:
         prompt << boost::format(" ( [%d] /#%ld )\n") % Sdata.AP[Playernum - 1] %
-                      Dir[Playernum - 1][Governor].shipno;
+                      d.shipno;
         break;
       case ScopeLevel::LEVEL_STAR:
         prompt << boost::format(" ( [%d] /%s/#%ld )\n") %
                       Stars[s->storbits]->AP[Playernum - 1] %
-                      Stars[s->storbits]->name %
-                      Dir[Playernum - 1][Governor].shipno;
+                      Stars[s->storbits]->name % d.shipno;
         break;
       case ScopeLevel::LEVEL_PLAN:
         prompt << boost::format(" ( [%d] /%s/%s/#%ld )\n") %
                       Stars[s->storbits]->AP[Playernum - 1] %
                       Stars[s->storbits]->name %
-                      Stars[s->storbits]
-                          ->pnames[Dir[Playernum - 1][Governor].pnum] %
-                      Dir[Playernum - 1][Governor].shipno;
+                      Stars[s->storbits]->pnames[d.pnum] % d.shipno;
         break;
       /* I put this mess in because of non-functioning prompts when you
          are in a ship within a ship, or deeper. I am certain this can be
@@ -1821,22 +1813,19 @@ static std::string do_prompt(DescriptorData &d) {
         switch (s2->whatorbits) {
           case ScopeLevel::LEVEL_UNIV:
             prompt << boost::format(" ( [%d] /#%lu/#%lu )\n") %
-                          Sdata.AP[Playernum - 1] % s->destshipno %
-                          Dir[Playernum - 1][Governor].shipno;
+                          Sdata.AP[Playernum - 1] % s->destshipno % d.shipno;
             break;
           case ScopeLevel::LEVEL_STAR:
             prompt << boost::format(" ( [%d] /%s/#%lu/#%lu )\n") %
                           Stars[s->storbits]->AP[Playernum - 1] %
-                          Stars[s->storbits]->name % s->destshipno %
-                          Dir[Playernum - 1][Governor].shipno;
+                          Stars[s->storbits]->name % s->destshipno % d.shipno;
             break;
           case ScopeLevel::LEVEL_PLAN:
             prompt << boost::format(" ( [%d] /%s/%s/#%ld/#%ld )\n") %
                           Stars[s->storbits]->AP[Playernum - 1] %
                           Stars[s->storbits]->name %
-                          Stars[s->storbits]
-                              ->pnames[Dir[Playernum - 1][Governor].pnum] %
-                          s->destshipno % Dir[Playernum - 1][Governor].shipno;
+                          Stars[s->storbits]->pnames[d.pnum] % s->destshipno %
+                          d.shipno;
             break;
           case ScopeLevel::LEVEL_SHIP:
             while (s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
@@ -1847,22 +1836,20 @@ static std::string do_prompt(DescriptorData &d) {
               case ScopeLevel::LEVEL_UNIV:
                 prompt << boost::format(" ( [%d] / /../#%ld/#%ld )\n") %
                               Sdata.AP[Playernum - 1] % s->destshipno %
-                              Dir[Playernum - 1][Governor].shipno;
+                              d.shipno;
                 break;
               case ScopeLevel::LEVEL_STAR:
                 prompt << boost::format(" ( [%d] /%s/ /../#%ld/#%ld )\n") %
                               Stars[s->storbits]->AP[Playernum - 1] %
                               Stars[s->storbits]->name % s->destshipno %
-                              Dir[Playernum - 1][Governor].shipno;
+                              d.shipno;
                 break;
               case ScopeLevel::LEVEL_PLAN:
                 prompt << boost::format(" ( [%d] /%s/%s/ /../#%ld/#%ld )\n") %
                               Stars[s->storbits]->AP[Playernum - 1] %
                               Stars[s->storbits]->name %
-                              Stars[s->storbits]
-                                  ->pnames[Dir[Playernum - 1][Governor].pnum] %
-                              s->destshipno %
-                              Dir[Playernum - 1][Governor].shipno;
+                              Stars[s->storbits]->pnames[d.pnum] %
+                              s->destshipno % d.shipno;
                 break;
               default:
                 break;

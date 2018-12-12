@@ -26,8 +26,8 @@ void autoreport(const command_t &argv, GameObj &g) {
   starnum_t snum;
   planetnum_t pnum;
 
-  snum = Dir[Playernum - 1][Governor].snum;
-  pnum = Dir[Playernum - 1][Governor].pnum;
+  snum = g.snum;
+  pnum = g.pnum;
 
   if (Governor && Stars[snum]->governor[Playernum - 1] != Governor) {
     notify(Playernum, Governor, "You are not authorized to do this here.\n");

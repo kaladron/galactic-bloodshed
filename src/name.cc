@@ -177,96 +177,70 @@ void bless(const command_t &argv, GameObj &g) {
   if (Mod) return;
   /* ok, must be the planet then */
   commod = args[2][0];
-  auto planet = getplanet(Dir[Playernum - 1][Governor].snum,
-                          Dir[Playernum - 1][Governor].pnum);
+  auto planet = getplanet(g.snum, g.pnum);
   if (match(args[2], "explorebit")) {
     planet.info[who - 1].explored = 1;
-    getstar(&Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].snum);
-    setbit(Stars[Dir[Playernum - 1][Governor].snum]->explored, who);
-    putstar(Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].snum);
+    getstar(&Stars[g.snum], g.snum);
+    setbit(Stars[g.snum]->explored, who);
+    putstar(Stars[g.snum], g.snum);
     sprintf(buf, "Deity set your explored bit at /%s/%s.\n",
-            Stars[Dir[Playernum - 1][Governor].snum]->name,
-            Stars[Dir[Playernum - 1][Governor].snum]
-                ->pnames[Dir[Playernum - 1][Governor].pnum]);
+            Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
   } else if (match(args[2], "noexplorebit")) {
     planet.info[who - 1].explored = 0;
     sprintf(buf, "Deity reset your explored bit at /%s/%s.\n",
-            Stars[Dir[Playernum - 1][Governor].snum]->name,
-            Stars[Dir[Playernum - 1][Governor].snum]
-                ->pnames[Dir[Playernum - 1][Governor].pnum]);
+            Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
   } else if (match(args[2], "planetpopulation")) {
     planet.info[who - 1].popn = atoi(args[3]);
     planet.popn++;
     sprintf(buf, "Deity set your population variable to %ld at /%s/%s.\n",
-            planet.info[who - 1].popn,
-            Stars[Dir[Playernum - 1][Governor].snum]->name,
-            Stars[Dir[Playernum - 1][Governor].snum]
-                ->pnames[Dir[Playernum - 1][Governor].pnum]);
+            planet.info[who - 1].popn, Stars[g.snum]->name,
+            Stars[g.snum]->pnames[g.pnum]);
   } else if (match(args[2], "inhabited")) {
-    getstar(&Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].snum);
-    setbit(Stars[Dir[Playernum - 1][Governor].snum]->inhabited, Playernum);
-    putstar(Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].snum);
+    getstar(&Stars[g.snum], g.snum);
+    setbit(Stars[g.snum]->inhabited, Playernum);
+    putstar(Stars[g.snum], g.snum);
     sprintf(buf, "Deity has set your inhabited bit for /%s/%s.\n",
-            Stars[Dir[Playernum - 1][Governor].snum]->name,
-            Stars[Dir[Playernum - 1][Governor].snum]
-                ->pnames[Dir[Playernum - 1][Governor].pnum]);
+            Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
   } else if (match(args[2], "numsectsowned")) {
     planet.info[who - 1].numsectsowned = atoi(args[3]);
     sprintf(buf, "Deity set your \"numsectsowned\" variable at /%s/%s to %d.\n",
-            Stars[Dir[Playernum - 1][Governor].snum]->name,
-            Stars[Dir[Playernum - 1][Governor].snum]
-                ->pnames[Dir[Playernum - 1][Governor].pnum],
+            Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum],
             planet.info[who - 1].numsectsowned);
   } else {
     switch (commod) {
       case 'r':
         planet.info[who - 1].resource += amount;
         sprintf(buf, "Deity gave you %d resources at %s/%s.\n", amount,
-                Stars[Dir[Playernum - 1][Governor].snum]->name,
-                Stars[Dir[Playernum - 1][Governor].snum]
-                    ->pnames[Dir[Playernum - 1][Governor].pnum]);
+                Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
         break;
       case 'd':
         planet.info[who - 1].destruct += amount;
         sprintf(buf, "Deity gave you %d destruct at %s/%s.\n", amount,
-                Stars[Dir[Playernum - 1][Governor].snum]->name,
-                Stars[Dir[Playernum - 1][Governor].snum]
-                    ->pnames[Dir[Playernum - 1][Governor].pnum]);
+                Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
         break;
       case 'f':
         planet.info[who - 1].fuel += amount;
         sprintf(buf, "Deity gave you %d fuel at %s/%s.\n", amount,
-                Stars[Dir[Playernum - 1][Governor].snum]->name,
-                Stars[Dir[Playernum - 1][Governor].snum]
-                    ->pnames[Dir[Playernum - 1][Governor].pnum]);
+                Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
         break;
       case 'x':
         planet.info[who - 1].crystals += amount;
         sprintf(buf, "Deity gave you %d crystals at %s/%s.\n", amount,
-                Stars[Dir[Playernum - 1][Governor].snum]->name,
-                Stars[Dir[Playernum - 1][Governor].snum]
-                    ->pnames[Dir[Playernum - 1][Governor].pnum]);
+                Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
         break;
       case 'a':
-        getstar(&Stars[Dir[Playernum - 1][Governor].snum],
-                Dir[Playernum - 1][Governor].snum);
-        Stars[Dir[Playernum - 1][Governor].snum]->AP[who - 1] += amount;
-        putstar(Stars[Dir[Playernum - 1][Governor].snum],
-                Dir[Playernum - 1][Governor].snum);
+        getstar(&Stars[g.snum], g.snum);
+        Stars[g.snum]->AP[who - 1] += amount;
+        putstar(Stars[g.snum], g.snum);
         sprintf(buf, "Deity gave you %d action points at %s.\n", amount,
-                Stars[Dir[Playernum - 1][Governor].snum]->name);
+                Stars[g.snum]->name);
         break;
       default:
         notify(Playernum, Governor, "No such commodity.\n");
         return;
     }
   }
-  putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].pnum);
+  putplanet(planet, Stars[g.snum], g.pnum);
   warn_race(who, buf);
 }
 
@@ -285,7 +259,7 @@ void insurgency(const command_t &argv, GameObj &g) {
            "You must 'cs' to the planet you wish to try it on.\n");
     return;
   }
-  if (!control(Playernum, Governor, Stars[Dir[Playernum - 1][Governor].snum])) {
+  if (!control(Playernum, Governor, Stars[g.snum])) {
     notify(Playernum, Governor, "You are not authorized to do that here.\n");
     return;
   }
@@ -294,9 +268,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     <money>'\n");
         return;
     }*/
-  if (!enufAP(Playernum, Governor,
-              Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
-              APcount))
+  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
   if (!(who = GetPlayer(args[1]))) {
     sprintf(buf, "No such player.\n");
@@ -315,8 +287,8 @@ void insurgency(const command_t &argv, GameObj &g) {
   }
   eligible = 0;
   them = 0;
-  for (i = 0; i < Stars[Dir[Playernum - 1][Governor].snum]->numplanets; i++) {
-    auto p = getplanet(Dir[Playernum - 1][Governor].snum, i);
+  for (i = 0; i < Stars[g.snum]->numplanets; i++) {
+    auto p = getplanet(g.snum, i);
     eligible += p.info[Playernum - 1].popn;
     them += p.info[who - 1].popn;
   }
@@ -326,8 +298,7 @@ void insurgency(const command_t &argv, GameObj &g) {
         "You must have population in the star system to attempt insurgency\n.");
     return;
   }
-  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
-                     Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(g.snum, g.pnum);
 
   if (!p.info[who - 1].popn) {
     notify(Playernum, Governor, "This player does not occupy this planet.\n");
@@ -357,13 +328,10 @@ void insurgency(const command_t &argv, GameObj &g) {
   notify(Playernum, Governor, buf);
   chance = round_rand(200.0 * atan((double)x) / 3.14159265);
   sprintf(long_buf, "%s/%s: %s [%d] tries insurgency vs %s [%d]\n",
-          Stars[Dir[Playernum - 1][Governor].snum]->name,
-          Stars[Dir[Playernum - 1][Governor].snum]
-              ->pnames[Dir[Playernum - 1][Governor].pnum],
-          Race->name, Playernum, alien->name, who);
+          Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
+          Playernum, alien->name, who);
   sprintf(buf, "\t%s: %d total civs [%d]  opposing %d total civs [%d]\n",
-          Stars[Dir[Playernum - 1][Governor].snum]->name, eligible, Playernum,
-          them, who);
+          Stars[g.snum]->name, eligible, Playernum, them, who);
   strcat(long_buf, buf);
   sprintf(buf, "\t\t %ld morale [%d] vs %ld morale [%d]\n", Race->morale,
           Playernum, alien->morale, who);
@@ -379,42 +347,32 @@ void insurgency(const command_t &argv, GameObj &g) {
     sprintf(buf, "Success!  You liberate %d sector%s.\n", changed_hands,
             (changed_hands == 1) ? "" : "s");
     notify(Playernum, Governor, buf);
-    sprintf(
-        buf, "A revolt on /%s/%s instigated by %s [%d] costs you %d sector%s\n",
-        Stars[Dir[Playernum - 1][Governor].snum]->name,
-        Stars[Dir[Playernum - 1][Governor].snum]
-            ->pnames[Dir[Playernum - 1][Governor].pnum],
-        Race->name, Playernum, changed_hands, (changed_hands == 1) ? "" : "s");
+    sprintf(buf,
+            "A revolt on /%s/%s instigated by %s [%d] costs you %d sector%s\n",
+            Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
+            Playernum, changed_hands, (changed_hands == 1) ? "" : "s");
     strcat(long_buf, buf);
-    warn(who, (int)Stars[Dir[Playernum - 1][Governor].snum]->governor[who - 1],
-         long_buf);
+    warn(who, (int)Stars[g.snum]->governor[who - 1], long_buf);
     p.info[Playernum - 1].tax = p.info[who - 1].tax;
     /* you inherit their tax rate (insurgency wars he he ) */
     sprintf(buf, "/%s/%s: Successful insurgency by %s [%d] against %s [%d]\n",
-            Stars[Dir[Playernum - 1][Governor].snum]->name,
-            Stars[Dir[Playernum - 1][Governor].snum]
-                ->pnames[Dir[Playernum - 1][Governor].pnum],
-            Race->name, Playernum, alien->name, who);
+            Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
+            Playernum, alien->name, who);
     post(buf, DECLARATION);
   } else {
     notify(Playernum, Governor, long_buf);
     notify(Playernum, Governor, "The insurgency failed!\n");
     sprintf(buf, "A revolt on /%s/%s instigated by %s [%d] fails\n",
-            Stars[Dir[Playernum - 1][Governor].snum]->name,
-            Stars[Dir[Playernum - 1][Governor].snum]
-                ->pnames[Dir[Playernum - 1][Governor].pnum],
-            Race->name, Playernum);
+            Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
+            Playernum);
     strcat(long_buf, buf);
-    warn(who, (int)Stars[Dir[Playernum - 1][Governor].snum]->governor[who - 1],
-         long_buf);
+    warn(who, (int)Stars[g.snum]->governor[who - 1], long_buf);
     sprintf(buf, "/%s/%s: Failed insurgency by %s [%d] against %s [%d]\n",
-            Stars[Dir[Playernum - 1][Governor].snum]->name,
-            Stars[Dir[Playernum - 1][Governor].snum]
-                ->pnames[Dir[Playernum - 1][Governor].pnum],
-            Race->name, Playernum, alien->name, who);
+            Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
+            Playernum, alien->name, who);
     post(buf, DECLARATION);
   }
-  deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
+  deductAPs(Playernum, Governor, APcount, g.snum, 0);
   Race->governor[Governor].money -= amount;
   putrace(Race);
 }
@@ -541,8 +499,7 @@ void give(const command_t &argv, GameObj &g) {
       }
       break;
     default:
-      if (!enufAP(Playernum, Governor,
-                  Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
+      if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1],
                   APcount)) {
         free(ship);
         return;
@@ -587,8 +544,7 @@ void give(const command_t &argv, GameObj &g) {
       free(ship);
       return;
     default:
-      deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum,
-                0);
+      deductAPs(Playernum, Governor, APcount, g.snum, 0);
       break;
   }
   notify(Playernum, Governor, "Owner changed.\n");
@@ -611,9 +567,7 @@ void page(const command_t &argv, GameObj &g) {
   int i, who, gov, to_block, dummy[2];
   racetype *Race, *alien;
 
-  if (!enufAP(Playernum, Governor,
-              Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
-              APcount))
+  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
 
   gov = 0;  // TODO(jeffbailey): Init to zero.
@@ -640,10 +594,8 @@ void page(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, buf);
       break;
     default:
-      getstar(&Stars[Dir[Playernum - 1][Governor].snum],
-              Dir[Playernum - 1][Governor].snum);
-      if (!enufAP(Playernum, Governor,
-                  Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
+      getstar(&Stars[g.snum], g.snum);
+      if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1],
                   APcount)) {
         return;
       }
@@ -651,8 +603,7 @@ void page(const command_t &argv, GameObj &g) {
       Race = races[Playernum - 1];
 
       sprintf(buf, "%s \"%s\" page(s) you from the %s star system.\n",
-              Race->name, Race->governor[Governor].name,
-              Stars[Dir[Playernum - 1][Governor].snum]->name);
+              Race->name, Race->governor[Governor].name, Stars[g.snum]->name);
 
       if (to_block) {
         dummy[0] =
@@ -671,7 +622,7 @@ void page(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, "Request sent.\n");
       break;
   }
-  deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
+  deductAPs(Playernum, Governor, APcount, g.snum, 0);
 }
 
 void send_message(const command_t &argv, GameObj &g) {
@@ -754,10 +705,8 @@ void send_message(const command_t &argv, GameObj &g) {
       return;
 
     default:
-      getstar(&Stars[Dir[Playernum - 1][Governor].snum],
-              Dir[Playernum - 1][Governor].snum);
-      if (!enufAP(Playernum, Governor,
-                  Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
+      getstar(&Stars[g.snum], g.snum);
+      if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1],
                   APcount))
         return;
       break;
@@ -831,7 +780,7 @@ void send_message(const command_t &argv, GameObj &g) {
     putrace(alien);
   }
   notify(Playernum, Governor, "Message sent.\n");
-  deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
+  deductAPs(Playernum, Governor, APcount, g.snum, 0);
 }
 
 void read_messages(const command_t &argv, GameObj &g) {
@@ -928,7 +877,7 @@ void name(const command_t &argv, GameObj &g) {
 
   if (match(args[1], "ship")) {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
-      (void)getship(&ship, Dir[Playernum - 1][Governor].shipno);
+      (void)getship(&ship, g.shipno);
       strncpy(ship->name, buf, SHIP_NAMESIZE);
       putship(ship);
       notify(Playernum, Governor, "Name set.\n");
@@ -940,7 +889,7 @@ void name(const command_t &argv, GameObj &g) {
     }
   } else if (match(args[1], "class")) {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
-      (void)getship(&ship, Dir[Playernum - 1][Governor].shipno);
+      (void)getship(&ship, g.shipno);
       if (ship->type != OTYPE_FACTORY) {
         notify(Playernum, Governor, "You are not at a factory!\n");
         free(ship);
@@ -977,30 +926,23 @@ void name(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, "Only dieties may name a star.\n");
         return;
       }
-      strncpy(Stars[Dir[Playernum - 1][Governor].snum]->name, buf,
-              NAMESIZE - 1);
-      putstar(Stars[Dir[Playernum - 1][Governor].snum],
-              Dir[Playernum - 1][Governor].snum);
+      strncpy(Stars[g.snum]->name, buf, NAMESIZE - 1);
+      putstar(Stars[g.snum], g.snum);
     } else {
       notify(Playernum, Governor, "You have to 'cs' to a star to name it.\n");
       return;
     }
   } else if (match(args[1], "planet")) {
     if (g.level == ScopeLevel::LEVEL_PLAN) {
-      getstar(&Stars[Dir[Playernum - 1][Governor].snum],
-              Dir[Playernum - 1][Governor].snum);
+      getstar(&Stars[g.snum], g.snum);
       Race = races[Playernum - 1];
       if (!Race->God) {
         notify(Playernum, Governor, "Only deity can rename planets.\n");
         return;
       }
-      strncpy(Stars[Dir[Playernum - 1][Governor].snum]
-                  ->pnames[Dir[Playernum - 1][Governor].pnum],
-              buf, NAMESIZE - 1);
-      putstar(Stars[Dir[Playernum - 1][Governor].snum],
-              Dir[Playernum - 1][Governor].snum);
-      deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum,
-                0);
+      strncpy(Stars[g.snum]->pnames[g.pnum], buf, NAMESIZE - 1);
+      putstar(Stars[g.snum], g.snum);
+      deductAPs(Playernum, Governor, APcount, g.snum, 0);
     } else {
       notify(Playernum, Governor, "You have to 'cs' to a planet to name it.\n");
       return;
@@ -1075,9 +1017,7 @@ void announce(const command_t &argv, GameObj &g) {
       break;
     default:
       if ((mode == Communicate::ANN) &&
-          !(!!isset(Stars[Dir[Playernum - 1][Governor].snum]->inhabited,
-                    Playernum) ||
-            Race->God)) {
+          !(!!isset(Stars[g.snum]->inhabited, Playernum) || Race->God)) {
         sprintf(buf,
                 "You do not inhabit this system or have diety privileges.\n");
         notify(Playernum, Governor, buf);
@@ -1105,7 +1045,7 @@ void announce(const command_t &argv, GameObj &g) {
 
   switch (mode) {
     case Communicate::ANN:
-      d_announce(Playernum, Governor, Dir[Playernum - 1][Governor].snum, msg);
+      d_announce(Playernum, Governor, g.snum, msg);
       break;
     case Communicate::BROADCAST:
       d_broadcast(Playernum, Governor, msg);

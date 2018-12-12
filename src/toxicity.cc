@@ -40,18 +40,14 @@ void toxicity(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, response);
     return;
   }
-  if (!enufAP(Playernum, Governor,
-              Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
-              APcount)) {
+  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount)) {
     return;
   }
 
-  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
-                     Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(g.snum, g.pnum);
   p.info[Playernum - 1].tox_thresh = thresh;
-  putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].pnum);
-  deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
+  putplanet(p, Stars[g.snum], g.pnum);
+  deductAPs(Playernum, Governor, APcount, g.snum, 0);
 
   sprintf(buf, " New threshold is: %u\n", p.info[Playernum - 1].tox_thresh);
   notify(Playernum, Governor, buf);

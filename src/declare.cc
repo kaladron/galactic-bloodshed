@@ -161,11 +161,9 @@ void declare(const command_t &argv, GameObj &g) {
     /* otherwise use current star */
   } else if ((g.level == ScopeLevel::LEVEL_STAR ||
               g.level == ScopeLevel::LEVEL_PLAN) &&
-             enufAP(Playernum, Governor,
-                    Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
+             enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1],
                     APcount)) {
-    deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum,
-              0);
+    deductAPs(Playernum, Governor, APcount, g.snum, 0);
   } else {
     sprintf(buf, "You don't have enough AP's (%d)\n", APcount);
     notify(Playernum, Governor, buf);

@@ -82,10 +82,9 @@ placetype Getplace(GameObj &g, const char *const string, const int ignoreexpl) {
 
   /* copy current scope to scope */
   where.level = g.level;
-  where.snum = Dir[Playernum - 1][Governor].snum;
-  where.pnum = Dir[Playernum - 1][Governor].pnum;
-  if (where.level == ScopeLevel::LEVEL_SHIP)
-    where.shipno = Dir[Playernum - 1][Governor].shipno;
+  where.snum = g.snum;
+  where.pnum = g.pnum;
+  if (where.level == ScopeLevel::LEVEL_SHIP) where.shipno = g.shipno;
   if (string != nullptr && *string == CHAR_CURR_SCOPE)
     return where;
   else

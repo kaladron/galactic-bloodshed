@@ -45,8 +45,8 @@ void capture(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "Capture what?\n");
     return;
   }
-  snum = Dir[Playernum - 1][Governor].snum;
-  pnum = Dir[Playernum - 1][Governor].pnum;
+  snum = g.snum;
+  pnum = g.pnum;
   if (Governor && Stars[snum]->governor[Playernum - 1] != Governor) {
     notify(Playernum, Governor, "You are not authorized in this system.\n");
     return;

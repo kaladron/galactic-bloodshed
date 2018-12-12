@@ -30,8 +30,8 @@ static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
 static int jettison_check(int, int, int, int);
 static int landed_on(shiptype *, shipnum_t);
 
-static void do_transporter(racetype *, int, shiptype *);
-static void unload_onto_alien_sector(int, int, Planet *, shiptype *, sector &,
+static void do_transporter(racetype *, GameObj &, shiptype *);
+static void unload_onto_alien_sector(GameObj &, Planet *, shiptype *, sector &,
                                      int, int);
 
 void load(const command_t &argv, GameObj &g) {
@@ -90,8 +90,7 @@ void load(const command_t &argv, GameObj &g) {
         if (s->whatdest == ScopeLevel::LEVEL_PLAN) {
           sprintf(buf, "%s at %d,%d\n", Ship(*s).c_str(), s->land_x, s->land_y);
           notify(Playernum, Governor, buf);
-          if (s->storbits != Dir[Playernum - 1][Governor].snum ||
-              s->pnumorbits != Dir[Playernum - 1][Governor].pnum) {
+          if (s->storbits != g.snum || s->pnumorbits != g.pnum) {
             notify(Playernum, Governor,
                    "Change scope to the planet this ship is landed on.\n");
             free(s);
@@ -155,9 +154,7 @@ void load(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      if (!sh)
-        p = getplanet(Dir[Playernum - 1][Governor].snum,
-                      Dir[Playernum - 1][Governor].pnum);
+      if (!sh) p = getplanet(g.snum, g.pnum);
 
       if (!sh && (commod == 'c' || commod == 'm'))
         sect = getsector(p, s->land_x, s->land_y);
@@ -265,12 +262,10 @@ void load(const command_t &argv, GameObj &g) {
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
             /* fight a land battle */
-            unload_onto_alien_sector(Playernum, Governor, &p, s, sect, CIV,
-                                     -amt);
+            unload_onto_alien_sector(g, &p, s, sect, CIV, -amt);
             putship(s);
             putsector(sect, p, s->land_x, s->land_y);
-            putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-                      Dir[Playernum - 1][Governor].pnum);
+            putplanet(p, Stars[g.snum], g.pnum);
             free(s);
             return;
           } else {
@@ -310,12 +305,10 @@ void load(const command_t &argv, GameObj &g) {
             sprintf(buf,
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
-            unload_onto_alien_sector(Playernum, Governor, &p, s, sect, MIL,
-                                     -amt);
+            unload_onto_alien_sector(g, &p, s, sect, MIL, -amt);
             putship(s);
             putsector(sect, p, s->land_x, s->land_y);
-            putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-                      Dir[Playernum - 1][Governor].pnum);
+            putplanet(p, Stars[g.snum], g.pnum);
             free(s);
             return;
           } else {
@@ -451,13 +444,12 @@ void load(const command_t &argv, GameObj &g) {
         if (commod == 'c' || commod == 'm') {
           putsector(sect, p, s->land_x, s->land_y);
         }
-        putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-                  Dir[Playernum - 1][Governor].pnum);
+        putplanet(p, Stars[g.snum], g.pnum);
       }
 
       /* do transporting here */
       if (s->type == OTYPE_TRANSDEV && s->special.transport.target && s->on)
-        do_transporter(Race, Governor, s);
+        do_transporter(Race, g, s);
 
       putship(s);
       free(s);
@@ -626,9 +618,7 @@ void dump(const command_t &argv, GameObj &g) {
   racetype *Race, *r;
   placetype where;
 
-  if (!enufAP(Playernum, Governor,
-              Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
-              APcount))
+  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
 
   if (!(player = GetPlayer(args[1]))) {
@@ -697,7 +687,7 @@ void dump(const command_t &argv, GameObj &g) {
     }
   }
 
-  deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
+  deductAPs(Playernum, Governor, APcount, g.snum, 0);
 
   sprintf(buf, "%s [%d] has given you exploration data.\n", Race->name,
           Playernum);
@@ -718,9 +708,7 @@ void transfer(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (!enufAP(Playernum, Governor,
-              Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
-              APcount))
+  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
 
   if (!(player = GetPlayer(args[1]))) {
@@ -729,8 +717,7 @@ void transfer(const command_t &argv, GameObj &g) {
     return;
   }
 
-  auto planet = getplanet(Dir[Playernum - 1][Governor].snum,
-                          Dir[Playernum - 1][Governor].pnum);
+  auto planet = getplanet(g.snum, g.pnum);
 
   sscanf(args[2], "%c", &commod);
   give = atoi(args[3]);
@@ -739,9 +726,7 @@ void transfer(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "You must specify a positive amount.\n");
     return;
   }
-  sprintf(temp, "%s/%s:", Stars[Dir[Playernum - 1][Governor].snum]->name,
-          Stars[Dir[Playernum - 1][Governor].snum]
-              ->pnames[Dir[Playernum - 1][Governor].pnum]);
+  sprintf(temp, "%s/%s:", Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
   switch (commod) {
     case 'r':
       if (give > planet.info[Playernum - 1].resource) {
@@ -804,10 +789,9 @@ void transfer(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, buf);
   }
 
-  putplanet(planet, Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].pnum);
+  putplanet(planet, Stars[g.snum], g.pnum);
 
-  deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
+  deductAPs(Playernum, Governor, APcount, g.snum, 0);
 }
 
 void mount(const command_t &argv, GameObj &g) {
@@ -920,8 +904,9 @@ void rcv_troops(shiptype *s, int amt, double mass) {
   s->mass += (double)amt * mass;
 }
 
-static void do_transporter(racetype *Race, int Governor, shiptype *s) {
-  int Playernum;
+static void do_transporter(racetype *Race, GameObj &g, shiptype *s) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   shiptype *s2;
 
   Playernum = Race->Playernum;
@@ -930,8 +915,7 @@ static void do_transporter(racetype *Race, int Governor, shiptype *s) {
     notify(Playernum, Governor, "Origin ship not landed.\n");
     return;
   }
-  if (s->storbits != Dir[Playernum - 1][Governor].snum ||
-      s->pnumorbits != Dir[Playernum - 1][Governor].pnum) {
+  if (s->storbits != g.snum || s->pnumorbits != g.pnum) {
     sprintf(buf, "Change scope to the planet the ship is landed on!\n");
     notify(Playernum, Governor, buf);
     return;
@@ -1037,9 +1021,10 @@ static int landed_on(shiptype *s, shipnum_t shipno) {
   return (s->whatorbits == ScopeLevel::LEVEL_SHIP && s->destshipno == shipno);
 }
 
-static void unload_onto_alien_sector(int Playernum, int Governor,
-                                     Planet *planet, shiptype *ship,
+static void unload_onto_alien_sector(GameObj &g, Planet *planet, shiptype *ship,
                                      sector &sect, int what, int people) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   double astrength, dstrength;
   int oldowner, oldgov, oldpopn, old2popn, old3popn;
   int casualties, casualties2, casualties3;
@@ -1051,8 +1036,7 @@ static void unload_onto_alien_sector(int Playernum, int Governor,
            "You have to unload to assault alien sectors.\n");
     return;
   }
-  ground_assaults[Playernum - 1][sect.owner - 1]
-                 [Dir[Playernum - 1][Governor].snum] += 1;
+  ground_assaults[Playernum - 1][sect.owner - 1][g.snum] += 1;
   Race = races[Playernum - 1];
   alien = races[sect.owner - 1];
   /* races find out about each other */
@@ -1062,7 +1046,7 @@ static void unload_onto_alien_sector(int Playernum, int Governor,
       MIN(Race->translate[sect.owner - 1] + 5, 100);
 
   oldowner = (int)sect.owner;
-  oldgov = Stars[Dir[Playernum - 1][Governor].snum]->governor[sect.owner - 1];
+  oldgov = Stars[g.snum]->governor[sect.owner - 1];
 
   if (what == CIV)
     ship->popn -= people;
@@ -1129,12 +1113,10 @@ static void unload_onto_alien_sector(int Playernum, int Governor,
     adjust_morale(alien, Race, (int)Race->fighters);
   }
   sprintf(telegram_buf, "/%s/%s: %s [%d] %s assaults %s [%d] %c(%d,%d) %s\n",
-          Stars[Dir[Playernum - 1][Governor].snum]->name,
-          Stars[Dir[Playernum - 1][Governor].snum]
-              ->pnames[Dir[Playernum - 1][Governor].pnum],
-          Race->name, Playernum, Ship(*ship).c_str(), alien->name,
-          alien->Playernum, Dessymbols[sect.condition], ship->land_x,
-          ship->land_y, (sect.owner == Playernum ? "VICTORY" : "DEFEAT"));
+          Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
+          Playernum, Ship(*ship).c_str(), alien->name, alien->Playernum,
+          Dessymbols[sect.condition], ship->land_x, ship->land_y,
+          (sect.owner == Playernum ? "VICTORY" : "DEFEAT"));
 
   if (sect.owner == Playernum) {
     sprintf(buf, "VICTORY! The sector is yours!\n");

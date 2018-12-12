@@ -64,7 +64,7 @@ void grant(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, "Please cs to the star system first.\n");
       return;
     }
-    snum = Dir[Playernum - 1][Governor].snum;
+    snum = g.snum;
     Stars[snum]->governor[Playernum - 1] = gov;
     sprintf(buf, "\"%s\" has granted you control of the /%s star system.\n",
             Race->governor[Governor].name, Stars[snum]->name);
@@ -290,15 +290,13 @@ int authorized(int Governor, shiptype *ship) {
 int start_shiplist(GameObj &g, const char *p) {
   shiptype *ship;
   int st, pl, sh;
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
 
   if (*p == '#') return (atoi(++p));
   if (isdigit(*p)) return (atoi(p));
 
   /*ship number not given */
-  st = Dir[Playernum - 1][Governor].snum;
-  pl = Dir[Playernum - 1][Governor].pnum;
+  st = g.snum;
+  pl = g.pnum;
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
       getsdata(&Sdata);
@@ -312,7 +310,7 @@ int start_shiplist(GameObj &g, const char *p) {
       return sh;
     }
     case ScopeLevel::LEVEL_SHIP:
-      (void)getship(&ship, Dir[Playernum - 1][Governor].shipno);
+      (void)getship(&ship, g.shipno);
       sh = ship->ships;
       free(ship);
       return sh;
@@ -363,8 +361,7 @@ void fix(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, "Change scope to the planet first.\n");
       return;
     }
-    auto p = getplanet(Dir[Playernum - 1][Governor].snum,
-                       Dir[Playernum - 1][Governor].pnum);
+    auto p = getplanet(g.snum, g.pnum);
     if (match(args[2], "Maxx")) {
       if (argn > 3) p.Maxx = atoi(args[3]);
       sprintf(buf, "Maxx = %d\n", p.Maxx);
@@ -418,9 +415,7 @@ void fix(const command_t &argv, GameObj &g) {
       return;
     }
     notify(Playernum, Governor, buf);
-    if (argn > 3)
-      putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-                Dir[Playernum - 1][Governor].pnum);
+    if (argn > 3) putplanet(p, Stars[g.snum], g.pnum);
     return;
   }
   if (match(args[1], "ship")) {
@@ -429,7 +424,7 @@ void fix(const command_t &argv, GameObj &g) {
              "Change scope to the ship you wish to fix.\n");
       return;
     }
-    (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
+    (void)getship(&s, g.shipno);
     if (match(args[2], "fuel")) {
       if (argn > 3) s->fuel = (double)atoi(args[3]);
       sprintf(buf, "fuel = %f\n", s->fuel);
@@ -538,9 +533,8 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   }
 
   getsdata(&Sdata);
-  maxalloc = MIN(
-      Sdata.AP[Playernum - 1],
-      LIMIT_APs - Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1]);
+  maxalloc = MIN(Sdata.AP[Playernum - 1],
+                 LIMIT_APs - Stars[g.snum]->AP[Playernum - 1]);
   if (alloc > maxalloc) {
     sprintf(buf, "Illegal value (%d) - maximum = %d\n", alloc, maxalloc);
     notify(Playernum, Governor, buf);
@@ -548,13 +542,10 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   }
   Sdata.AP[Playernum - 1] -= alloc;
   putsdata(&Sdata);
-  getstar(&Stars[Dir[Playernum - 1][Governor].snum],
-          Dir[Playernum - 1][Governor].snum);
-  Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1] =
-      MIN(LIMIT_APs,
-          Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1] + alloc);
-  putstar(Stars[Dir[Playernum - 1][Governor].snum],
-          Dir[Playernum - 1][Governor].snum);
+  getstar(&Stars[g.snum], g.snum);
+  Stars[g.snum]->AP[Playernum - 1] =
+      MIN(LIMIT_APs, Stars[g.snum]->AP[Playernum - 1] + alloc);
+  putstar(Stars[g.snum], g.snum);
   sprintf(buf, "Allocated\n");
   notify(Playernum, Governor, buf);
 }

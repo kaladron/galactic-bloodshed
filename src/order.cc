@@ -873,8 +873,7 @@ void route(const command_t &argv, GameObj &g) {
            "You have to 'cs' to a planet to examine routes.\n");
     return;
   }
-  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
-                     Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(g.snum, g.pnum);
   if (argn == 1) { /* display all shipping routes that are active */
     for (i = 1; i <= MAX_ROUTES; i++)
       if (p.info[Playernum - 1].route[i - 1].set) {
@@ -1027,6 +1026,5 @@ void route(const command_t &argv, GameObj &g) {
     }
     notify(Playernum, Governor, "Set.\n");
   }
-  putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].pnum);
+  putplanet(p, Stars[g.snum], g.pnum);
 }

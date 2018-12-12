@@ -32,18 +32,15 @@ void mobilize(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     return;
   }
-  if (!control(Playernum, Governor, Stars[Dir[Playernum - 1][Governor].snum])) {
+  if (!control(Playernum, Governor, Stars[g.snum])) {
     notify(Playernum, Governor, "You are not authorized to do this here.\n");
     return;
   }
-  if (!enufAP(Playernum, Governor,
-              Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
-              APcount)) {
+  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount)) {
     return;
   }
 
-  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
-                     Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(g.snum, g.pnum);
 
   auto smap = getsmap(p);
 
@@ -61,9 +58,8 @@ void mobilize(const command_t &argv, GameObj &g) {
     return;
   }
   p.info[Playernum - 1].mob_set = sum_mob;
-  putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].pnum);
-  deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
+  putplanet(p, Stars[g.snum], g.pnum);
+  deductAPs(Playernum, Governor, APcount, g.snum, 0);
 }
 
 void tax(const command_t &argv, GameObj &g) {
@@ -78,7 +74,7 @@ void tax(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     return;
   }
-  if (!control(Playernum, Governor, Stars[Dir[Playernum - 1][Governor].snum])) {
+  if (!control(Playernum, Governor, Stars[g.snum])) {
     notify(Playernum, Governor, "You are not authorized to do that here.\n");
     return;
   }
@@ -92,14 +88,11 @@ void tax(const command_t &argv, GameObj &g) {
            "Sorry, but you can't do this when you are a guest.\n");
     return;
   }
-  if (!enufAP(Playernum, Governor,
-              Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
-              APcount)) {
+  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount)) {
     return;
   }
 
-  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
-                     Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(g.snum, g.pnum);
 
   if (argn < 2) {
     sprintf(buf, "Current tax rate: %d%%    Target: %d%%\n",
@@ -116,10 +109,9 @@ void tax(const command_t &argv, GameObj &g) {
     return;
   }
   p.info[Playernum - 1].newtax = sum_tax;
-  putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].pnum);
+  putplanet(p, Stars[g.snum], g.pnum);
 
-  deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
+  deductAPs(Playernum, Governor, APcount, g.snum, 0);
   notify(Playernum, Governor, "Set.\n");
 }
 

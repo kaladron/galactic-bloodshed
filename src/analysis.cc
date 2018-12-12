@@ -42,8 +42,8 @@ void analysis(const command_t &argv, GameObj &g) {
   i = 1;
   do {
     where.level = g.level;
-    where.snum = Dir[Playernum - 1][Governor].snum;
-    where.pnum = Dir[Playernum - 1][Governor].pnum;
+    where.snum = g.snum;
+    where.pnum = g.pnum;
 
     p = argv[1].c_str();
     if (*p == '-') /*  Must use 'd' to do an analysis on */
@@ -93,8 +93,8 @@ void analysis(const command_t &argv, GameObj &g) {
         return;
       }
       where.level = g.level;
-      where.snum = Dir[Playernum - 1][Governor].snum;
-      where.pnum = Dir[Playernum - 1][Governor].pnum;
+      where.snum = g.snum;
+      where.pnum = g.pnum;
       i++;
     }
     p = argv[i].c_str();

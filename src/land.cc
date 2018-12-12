@@ -252,8 +252,7 @@ void land(const command_t &argv, GameObj &g) {
           free(s);
           continue;
         }
-        if ((s->storbits != Dir[Playernum - 1][Governor].snum) ||
-            (s->pnumorbits != Dir[Playernum - 1][Governor].pnum)) {
+        if ((s->storbits != g.snum) || (s->pnumorbits != g.pnum)) {
           sprintf(buf, "You have to cs to the planet it orbits.\n");
           notify(Playernum, Governor, buf);
           free(s);

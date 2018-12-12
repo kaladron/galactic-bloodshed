@@ -166,18 +166,17 @@ void rst(const command_t &argv, GameObj &g) {
       }
       break;
     case ScopeLevel::LEVEL_PLAN:
-      plan_getrships(Playernum, Governor, Dir[Playernum - 1][Governor].snum,
-                     Dir[Playernum - 1][Governor].pnum);
+      plan_getrships(Playernum, Governor, g.snum, g.pnum);
       for (shipnum_t i = 0; i < Num_ships; i++)
         ship_report(Playernum, Governor, i, Report_types);
       break;
     case ScopeLevel::LEVEL_STAR:
-      star_getrships(Playernum, Governor, Dir[Playernum - 1][Governor].snum);
+      star_getrships(Playernum, Governor, g.snum);
       for (shipnum_t i = 0; i < Num_ships; i++)
         ship_report(Playernum, Governor, i, Report_types);
       break;
     case ScopeLevel::LEVEL_SHIP:
-      (void)Getrship(Playernum, Governor, Dir[Playernum - 1][Governor].shipno);
+      (void)Getrship(Playernum, Governor, g.shipno);
       ship_report(Playernum, Governor, 0, Report_types); /* first ship report */
       shipnum_t shn = rd[0].s->ships;
       Num_ships = 0;

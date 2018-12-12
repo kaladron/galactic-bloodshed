@@ -66,7 +66,7 @@ void upgrade(const command_t &argv, GameObj &g) {
            "You have to change scope to the ship you wish to upgrade.\n");
     return;
   }
-  if (!getship(&dirship, Dir[Playernum - 1][Governor].shipno)) {
+  if (!getship(&dirship, g.shipno)) {
     sprintf(buf, "Illegal dir value.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -334,7 +334,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (!getship(&dirship, Dir[Playernum - 1][Governor].shipno)) {
+  if (!getship(&dirship, g.shipno)) {
     sprintf(buf, "Illegal dir value.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -500,7 +500,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     dirship->size = ship_size(dirship);
     dirship->complexity = complexity(dirship);
 
-    sprintf(dirship->shipclass, "mod %ld", Dir[Playernum - 1][Governor].shipno);
+    sprintf(dirship->shipclass, "mod %ld", g.shipno);
 
     sprintf(buf, "Factory designated to produce %ss.\n", Shipnames[i]);
     notify(Playernum, Governor, buf);
@@ -844,8 +844,8 @@ void build(const command_t &argv, GameObj &g) {
            "You must change scope to a ship or planet to build.\n");
     return;
   }
-  snum = Dir[Playernum - 1][Governor].snum;
-  pnum = Dir[Playernum - 1][Governor].pnum;
+  snum = g.snum;
+  pnum = g.pnum;
   Race = races[Playernum - 1];
   count = 0; /* this used used to reset count in the loop */
   do {
@@ -918,7 +918,7 @@ void build(const command_t &argv, GameObj &g) {
         break;
       case ScopeLevel::LEVEL_SHIP:
         if (!count) { /* initialize loop variables */
-          (void)getship(&builder, Dir[Playernum - 1][Governor].shipno);
+          (void)getship(&builder, g.shipno);
           outside = 0;
           auto test_build_level =
               build_at_ship(Playernum, Governor, builder, &snum, &pnum);
@@ -1652,8 +1652,8 @@ void sell(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "You have to be in a planet scope to sell.\n");
     return;
   }
-  snum = Dir[Playernum - 1][Governor].snum;
-  pnum = Dir[Playernum - 1][Governor].pnum;
+  snum = g.snum;
+  pnum = g.pnum;
   if (argv.size() < 3) {
     notify(Playernum, Governor, "Syntax: sell <commodity> <amount>\n");
     return;
@@ -1799,13 +1799,12 @@ void bid(const command_t &argv, GameObj &g) {
                   Stars[c->star_to]->pnames[c->planet_to]);
         else
           temp[0] = '\0';
-        sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
-                c->deliver ? '*' : ' ', c->amount, Commod[c->type], c->owner,
-                c->bidder, c->bid, rate,
-                shipping_cost((int)c->star_from,
-                              (int)Dir[Playernum - 1][Governor].snum, &dist,
-                              (int)c->bid),
-                temp);
+        sprintf(
+            buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
+            c->deliver ? '*' : ' ', c->amount, Commod[c->type], c->owner,
+            c->bidder, c->bid, rate,
+            shipping_cost((int)c->star_from, (int)g.snum, &dist, (int)c->bid),
+            temp);
         notify(Playernum, Governor, buf);
       }
       free(c);
@@ -1844,13 +1843,12 @@ void bid(const command_t &argv, GameObj &g) {
                   Stars[c->star_to]->pnames[c->planet_to]);
         else
           temp[0] = '\0';
-        sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
-                c->deliver ? '*' : ' ', c->amount, Commod[c->type], c->owner,
-                c->bidder, c->bid, rate,
-                shipping_cost((int)c->star_from,
-                              (int)Dir[Playernum - 1][Governor].snum, &dist,
-                              (int)c->bid),
-                temp);
+        sprintf(
+            buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
+            c->deliver ? '*' : ' ', c->amount, Commod[c->type], c->owner,
+            c->bidder, c->bid, rate,
+            shipping_cost((int)c->star_from, (int)g.snum, &dist, (int)c->bid),
+            temp);
         notify(Playernum, Governor, buf);
       }
       free(c);
@@ -1860,8 +1858,8 @@ void bid(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, "You have to be in a planet scope to buy.\n");
       return;
     }
-    snum = Dir[Playernum - 1][Governor].snum;
-    pnum = Dir[Playernum - 1][Governor].pnum;
+    snum = g.snum;
+    pnum = g.pnum;
     if (Governor && Stars[snum]->governor[Playernum - 1] != Governor) {
       notify(Playernum, Governor, "You are not authorized in this system.\n");
       return;
@@ -1902,9 +1900,8 @@ void bid(const command_t &argv, GameObj &g) {
       free(c);
       return;
     }
-    if (c->owner == Playernum &&
-        (c->star_from != Dir[Playernum - 1][c->governor].snum ||
-         c->planet_from != Dir[Playernum - 1][c->governor].pnum)) {
+    if (c->owner == g.player &&
+        (c->star_from != g.snum || c->planet_from != g.pnum)) {
       notify(Playernum, Governor,
              "You can only set a minimum price for your "
              "lot from the location it was sold.\n");

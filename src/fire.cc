@@ -514,9 +514,7 @@ void defend(const command_t &argv, GameObj &g) {
            "Syntax: 'defend <ship> <sector> [<strength>]'.\n");
     return;
   }
-  if (Governor &&
-      Stars[Dir[Playernum - 1][Governor].snum]->governor[Playernum - 1] !=
-          Governor) {
+  if (Governor && Stars[g.snum]->governor[Playernum - 1] != Governor) {
     notify(Playernum, Governor,
            "You are not authorized to do that in this system.\n");
     return;
@@ -527,14 +525,11 @@ void defend(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (!enufAP(Playernum, Governor,
-              Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
-              APcount)) {
+  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount)) {
     return;
   }
 
-  auto p = getplanet(Dir[Playernum - 1][Governor].snum,
-                     Dir[Playernum - 1][Governor].pnum);
+  auto p = getplanet(g.snum, g.pnum);
 
   if (!p.info[Playernum - 1].numsectsowned) {
     notify(Playernum, Governor, "You do not occupy any sectors here.\n");
@@ -556,8 +551,7 @@ void defend(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (to->storbits != Dir[Playernum - 1][Governor].snum ||
-      to->pnumorbits != Dir[Playernum - 1][Governor].pnum) {
+  if (to->storbits != g.snum || to->pnumorbits != g.pnum) {
     notify(Playernum, Governor, "Target is not in orbit around this planet.\n");
     free(to);
     return;
@@ -610,8 +604,7 @@ void defend(const command_t &argv, GameObj &g) {
 
   if (!to->alive && to->type == OTYPE_TOXWC) {
     /* get planet again since toxicity probably has changed */
-    p = getplanet(Dir[Playernum - 1][Governor].snum,
-                  Dir[Playernum - 1][Governor].pnum);
+    p = getplanet(g.snum, g.pnum);
   }
 
   if (damage < 0) {
@@ -686,10 +679,9 @@ void defend(const command_t &argv, GameObj &g) {
 
   /* write the ship stuff out to disk */
   putship(to);
-  putplanet(p, Stars[Dir[Playernum - 1][Governor].snum],
-            Dir[Playernum - 1][Governor].pnum);
+  putplanet(p, Stars[g.snum], g.pnum);
 
-  deductAPs(Playernum, Governor, APcount, Dir[Playernum - 1][Governor].snum, 0);
+  deductAPs(Playernum, Governor, APcount, g.snum, 0);
 
   free(to);
   return;

@@ -29,6 +29,7 @@ static std::string prin_aimed_at(const ship &);
 static void mk_expl_aimed_at(int, int, shiptype *);
 static void DispOrdersHeader(int, int);
 static void DispOrders(int, int, shiptype *);
+static void give_orders(GameObj &, int, shiptype *);
 
 void order(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
@@ -39,7 +40,7 @@ void order(const command_t &argv, GameObj &g) {
 
   if (argn == 1) { /* display all ship orders */
     DispOrdersHeader(Playernum, Governor);
-    nextshipno = start_shiplist(Playernum, Governor, "test");
+    nextshipno = start_shiplist(g, "test");
     while ((shipno = do_shiplist(&ship, &nextshipno)))
       if (ship->owner == Playernum && authorized(Governor, ship)) {
         DispOrders(Playernum, Governor, ship);
@@ -48,11 +49,11 @@ void order(const command_t &argv, GameObj &g) {
         free(ship);
   } else if (argn >= 2) {
     DispOrdersHeader(Playernum, Governor);
-    nextshipno = start_shiplist(Playernum, Governor, args[1]);
+    nextshipno = start_shiplist(g, args[1]);
     while ((shipno = do_shiplist(&ship, &nextshipno)))
       if (in_list(Playernum, args[1], ship, &nextshipno) &&
           authorized(Governor, ship)) {
-        if (argn > 2) give_orders(Playernum, Governor, APcount, ship);
+        if (argn > 2) give_orders(g, APcount, ship);
         DispOrders(Playernum, Governor, ship);
         free(ship);
       } else
@@ -61,7 +62,9 @@ void order(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "I don't understand what you mean.\n");
 }
 
-void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
+static void give_orders(GameObj &g, int APcount, shiptype *ship) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   int i, j;
   placetype where, pl;
   shiptype *tmpship;
@@ -208,7 +211,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
                "That ship is docked; use undock or launch first.\n");
         return;
       }
-      where = Getplace(Playernum, Governor, args[3], 1);
+      where = Getplace(g, args[3], 1);
       if (!where.err) {
         if (where.level == ScopeLevel::LEVEL_SHIP) {
           (void)getship(&tmpship, where.shipno);
@@ -485,7 +488,7 @@ void give_orders(int Playernum, int Governor, int APcount, shiptype *ship) {
           notify(Playernum, Governor, buf);
           return;
         }
-        pl = Getplace(Playernum, Governor, args[3], 1);
+        pl = Getplace(g, args[3], 1);
         if (pl.err) {
           notify(Playernum, Governor, "Error in destination.\n");
           return;
@@ -865,7 +868,7 @@ void route(const command_t &argv, GameObj &g) {
   char *c;
   placetype where;
 
-  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor,
            "You have to 'cs' to a planet to examine routes.\n");
     return;
@@ -970,7 +973,7 @@ void route(const command_t &argv, GameObj &g) {
     else if (match(args[2], "deactivate"))
       p.info[Playernum - 1].route[i - 1].set = 0;
     else {
-      where = Getplace(Playernum, Governor, args[2], 1);
+      where = Getplace(g, args[2], 1);
       if (!where.err) {
         if (where.level != ScopeLevel::LEVEL_PLAN) {
           notify(Playernum, Governor, "You have to designate a planet.\n");

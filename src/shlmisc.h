@@ -15,7 +15,7 @@ std::string Ship(const ship &);
 void grant(const command_t &, GameObj &);
 void governors(const command_t &, GameObj &);
 int authorized(int, shiptype *);
-int start_shiplist(int, int, const char *);
+int start_shiplist(GameObj &, const char *);
 shipnum_t do_shiplist(shiptype **, shipnum_t *);
 int in_list(player_t, const char *, shiptype *, shipnum_t *);
 void fix(const command_t &, GameObj &);

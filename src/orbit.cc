@@ -78,13 +78,13 @@ void orbit(const command_t &argv, GameObj &g) {
     }
 
   if (argv.size() == 1) {
-    where = Getplace(g.player, g.governor, ":", 0);
-    int i = (Dir[g.player - 1][g.governor].level == ScopeLevel::LEVEL_UNIV);
+    where = Getplace(g, ":", 0);
+    int i = (g.level == ScopeLevel::LEVEL_UNIV);
     Lastx = g.lastx[i];
     Lasty = g.lasty[i];
     Zoom = g.zoom[i];
   } else {
-    where = Getplace(g.player, g.governor, argv[argv.size() - 1].c_str(), 0);
+    where = Getplace(g, argv[argv.size() - 1].c_str(), 0);
     Lastx = Lasty = 0.0;
     Zoom = 1.1;
   }

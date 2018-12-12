@@ -31,9 +31,9 @@ void map(const command_t &argv, GameObj &g) {
   placetype where;
 
   if (argv.size() > 1) {
-    where = Getplace(Playernum, Governor, argv[1], 0);
+    where = Getplace(g, argv[1], 0);
   } else {
-    where = Getplace(Playernum, Governor, NULL, 0);
+    where = Getplace(g, NULL, 0);
   }
 
   if (where.err) return;

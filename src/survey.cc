@@ -79,14 +79,14 @@ void survey(const command_t &argv, GameObj &g) {
   /* general code -- jpd -- */
 
   if (argn == 1) { /* no args */
-    where.level = Dir[Playernum - 1][Governor].level;
+    where.level = g.level;
     where.snum = Dir[Playernum - 1][Governor].snum;
     where.pnum = Dir[Playernum - 1][Governor].pnum;
   } else {
     /* they are surveying a sector */
     if ((isdigit(args[1][0]) && index(args[1], ',') != NULL) ||
         ((*args[1] == '-') && (all = 1))) {
-      if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
+      if (g.level != ScopeLevel::LEVEL_PLAN) {
         sprintf(buf, "There are no sectors here.\n");
         notify(Playernum, Governor, buf);
         return;
@@ -96,7 +96,7 @@ void survey(const command_t &argv, GameObj &g) {
         where.pnum = Dir[Playernum - 1][Governor].pnum;
       }
     } else {
-      where = Getplace(Playernum, Governor, args[1], 0);
+      where = Getplace(g, args[1], 0);
       if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;
     }
   }
@@ -390,13 +390,13 @@ void repair(const command_t &argv, GameObj &g) {
 
   /* general code -- jpd -- */
   if (argn == 1) { /* no args */
-    where.level = Dir[Playernum - 1][Governor].level;
+    where.level = g.level;
     where.snum = Dir[Playernum - 1][Governor].snum;
     where.pnum = Dir[Playernum - 1][Governor].pnum;
   } else {
     /* repairing a sector */
     if (isdigit(args[1][0]) && index(args[1], ',') != NULL) {
-      if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
+      if (g.level != ScopeLevel::LEVEL_PLAN) {
         sprintf(buf, "There are no sectors here.\n");
         notify(Playernum, Governor, buf);
         return;
@@ -406,7 +406,7 @@ void repair(const command_t &argv, GameObj &g) {
         where.pnum = Dir[Playernum - 1][Governor].pnum;
       }
     } else {
-      where = Getplace(Playernum, Governor, args[1], 0);
+      where = Getplace(g, args[1], 0);
       if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;
     }
   }

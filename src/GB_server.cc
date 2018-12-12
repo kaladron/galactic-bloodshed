@@ -172,7 +172,7 @@ static void parse_connect(const char *, char *, char *);
 static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
 static void save_command(DescriptorData *, char *);
-static std::string do_prompt(const player_t, const governor_t);
+static std::string do_prompt(DescriptorData &);
 
 static void check_connect(DescriptorData *, const char *);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
@@ -1378,7 +1378,7 @@ static void process_command(DescriptorData &d, const command_t &argv) {
   }
 
   /* compute the prompt and send to the player */
-  std::string prompt = do_prompt(Playernum, Governor);
+  std::string prompt = do_prompt(d);
   notify(Playernum, Governor, prompt);
 }
 
@@ -1773,24 +1773,25 @@ void adjust_morale(racetype *winner, racetype *loser, int amount) {
   winner->points[loser->Playernum] += amount;
 }
 
-static std::string do_prompt(const player_t Playernum,
-                             const governor_t Governor) {
+static std::string do_prompt(DescriptorData &d) {
+  player_t Playernum = d.player;
+  governor_t Governor = d.governor;
   shiptype *s, *s2;
   std::stringstream prompt;
 
-  if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_UNIV) {
+  if (d.level == ScopeLevel::LEVEL_UNIV) {
     prompt << boost::format(" ( [%d] / )\n") % Sdata.AP[Playernum - 1];
-  } else if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_STAR) {
+  } else if (d.level == ScopeLevel::LEVEL_STAR) {
     prompt << boost::format(" ( [%d] /%s )\n") %
                   Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1] %
                   Stars[Dir[Playernum - 1][Governor].snum]->name;
-  } else if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_PLAN) {
+  } else if (d.level == ScopeLevel::LEVEL_PLAN) {
     prompt << boost::format(" ( [%d] /%s/%s )\n") %
                   Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1] %
                   Stars[Dir[Playernum - 1][Governor].snum]->name %
                   Stars[Dir[Playernum - 1][Governor].snum]
                       ->pnames[Dir[Playernum - 1][Governor].pnum];
-  } else if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_SHIP) {
+  } else if (d.level == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&s, Dir[Playernum - 1][Governor].shipno);
     switch (s->whatorbits) {
       case ScopeLevel::LEVEL_UNIV:

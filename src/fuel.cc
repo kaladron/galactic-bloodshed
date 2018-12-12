@@ -97,7 +97,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   } else {
     deststr = argv[2];
   }
-  tmpdest = Getplace(Playernum, Governor, deststr, 1);
+  tmpdest = Getplace(g, deststr, 1);
   if (tmpdest.err) {
     notify(Playernum, Governor, "fuel:  bad scope.\n");
     free(ship);

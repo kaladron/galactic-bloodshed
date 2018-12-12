@@ -24,9 +24,8 @@ void technology(const command_t &argv, GameObj &g) {
   int APcount = 1;
   short invest;
 
-  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
-    sprintf(buf, "scope must be a planet (%d).\n",
-            Dir[Playernum - 1][Governor].level);
+  if (g.level != ScopeLevel::LEVEL_PLAN) {
+    sprintf(buf, "scope must be a planet (%d).\n", g.level);
     notify(Playernum, Governor, buf);
     return;
   }

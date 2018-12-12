@@ -9,9 +9,8 @@
 
 #include "ships.h"
 
-placetype Getplace(const player_t, const governor_t, const std::string &,
-                   const int);
-placetype Getplace(const player_t, const governor_t, const char *, const int);
+placetype Getplace(GameObj &, const std::string &, const int);
+placetype Getplace(GameObj &, const char *, const int);
 char *Dispshiploc_brief(shiptype *);
 char *Dispshiploc(shiptype *);
 std::string Dispplace(const placetype &);

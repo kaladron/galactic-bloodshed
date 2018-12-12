@@ -51,7 +51,7 @@ void capture(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "You are not authorized in this system.\n");
     return;
   }
-  nextshipno = start_shiplist(Playernum, Governor, argv[1].c_str());
+  nextshipno = start_shiplist(g, argv[1].c_str());
   while ((shipno = do_shiplist(&ship, &nextshipno)))
     if (ship->owner != Playernum &&
         in_list((int)ship->owner, argv[1].c_str(), ship, &nextshipno)) {

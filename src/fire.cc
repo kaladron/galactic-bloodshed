@@ -65,7 +65,7 @@ void fire(const command_t &argv, GameObj &g) {
     return;
   }
 
-  nextshipno = start_shiplist(Playernum, Governor, argv[1].c_str());
+  nextshipno = start_shiplist(g, argv[1].c_str());
   while ((fromship = do_shiplist(&from, &nextshipno)))
     if (in_list(Playernum, argv[1].c_str(), from, &nextshipno) &&
         authorized(Governor, from)) {
@@ -307,7 +307,7 @@ void bombard(const command_t &argv, GameObj &g) {
     return;
   }
 
-  nextshipno = start_shiplist(Playernum, Governor, argv[1].c_str());
+  nextshipno = start_shiplist(g, argv[1].c_str());
   while ((fromship = do_shiplist(&from, &nextshipno)))
     if (in_list(Playernum, argv[1].c_str(), from, &nextshipno) &&
         authorized(Governor, from)) {
@@ -504,7 +504,7 @@ void defend(const command_t &argv, GameObj &g) {
   bzero((char *)Nuked, sizeof(Nuked));
 
   /* get the planet from the players current scope */
-  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor, "You have to set scope to the planet first.\n");
     return;
   }
@@ -709,7 +709,7 @@ void detonate(const command_t &argv, GameObj &g) {
   shiptype *s;
   shipnum_t shipno, nextshipno;
 
-  nextshipno = start_shiplist(Playernum, Governor, argv[1].c_str());
+  nextshipno = start_shiplist(g, argv[1].c_str());
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&

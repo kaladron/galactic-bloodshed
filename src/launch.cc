@@ -35,7 +35,7 @@ void launch(const command_t &argv, GameObj &g) {
     return;
   }
 
-  nextshipno = start_shiplist(Playernum, Governor, args[1]);
+  nextshipno = start_shiplist(g, args[1]);
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, args[1], s, &nextshipno) &&

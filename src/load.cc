@@ -58,7 +58,7 @@ void load(const command_t &argv, GameObj &g) {
     return;
   }
 
-  nextshipno = start_shiplist(Playernum, Governor, args[1]);
+  nextshipno = start_shiplist(g, args[1]);
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, args[1], s, &nextshipno) &&
@@ -481,7 +481,7 @@ void jettison(const command_t &argv, GameObj &g) {
     return;
   }
 
-  nextshipno = start_shiplist(Playernum, Governor, args[1]);
+  nextshipno = start_shiplist(g, args[1]);
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, args[1], s, &nextshipno) &&
@@ -675,7 +675,7 @@ void dump(const command_t &argv, GameObj &g) {
     }
   } else { /* list of places given */
     for (i = 2; i < argn; i++) {
-      where = Getplace(Playernum, Governor, args[i], 1);
+      where = Getplace(g, args[i], 1);
       if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
           where.level != ScopeLevel::LEVEL_SHIP) {
         star = where.snum;
@@ -712,7 +712,7 @@ void transfer(const command_t &argv, GameObj &g) {
   int player, give;
   char commod = 0;
 
-  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level != ScopeLevel::LEVEL_PLAN) {
     sprintf(buf, "You need to be in planet scope to do this.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -822,7 +822,7 @@ void mount(const command_t &argv, GameObj &g) {
   shiptype *ship;
   shipnum_t shipno, nextshipno;
 
-  nextshipno = start_shiplist(Playernum, Governor, args[1]);
+  nextshipno = start_shiplist(g, args[1]);
   while ((shipno = do_shiplist(&ship, &nextshipno)))
     if (in_list(Playernum, args[1], ship, &nextshipno) &&
         authorized(Governor, ship)) {

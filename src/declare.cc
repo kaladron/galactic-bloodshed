@@ -159,8 +159,8 @@ void declare(const command_t &argv, GameObj &g) {
   if ((int)Sdata.AP[Playernum - 1] >= APcount) {
     deductAPs(Playernum, Governor, APcount, 0, 1);
     /* otherwise use current star */
-  } else if ((Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_STAR ||
-              Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_PLAN) &&
+  } else if ((g.level == ScopeLevel::LEVEL_STAR ||
+              g.level == ScopeLevel::LEVEL_PLAN) &&
              enufAP(Playernum, Governor,
                     Stars[Dir[Playernum - 1][Governor].snum]->AP[Playernum - 1],
                     APcount)) {

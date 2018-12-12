@@ -41,7 +41,7 @@ void analysis(const command_t &argv, GameObj &g) {
 
   i = 1;
   do {
-    where.level = Dir[Playernum - 1][Governor].level;
+    where.level = g.level;
     where.snum = Dir[Playernum - 1][Governor].snum;
     where.pnum = Dir[Playernum - 1][Governor].pnum;
 
@@ -92,14 +92,14 @@ void analysis(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, "No such player #.\n");
         return;
       }
-      where.level = Dir[Playernum - 1][Governor].level;
+      where.level = g.level;
       where.snum = Dir[Playernum - 1][Governor].snum;
       where.pnum = Dir[Playernum - 1][Governor].pnum;
       i++;
     }
     p = argv[i].c_str();
     if (i < argv.size() && (isalpha(*p) || *p == '/')) {
-      where = Getplace(Playernum, Governor, argv[i], 0);
+      where = Getplace(g, argv[i], 0);
       if (where.err) continue;
     }
 

@@ -9,7 +9,6 @@
 
 #include "ships.h"
 
-void give_orders(int, int, int, shiptype *);
 void order(const command_t &, GameObj &);
 std::string prin_ship_dest(const ship &);
 void route(const command_t &, GameObj &);

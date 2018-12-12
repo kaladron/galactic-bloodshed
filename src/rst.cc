@@ -147,7 +147,7 @@ void rst(const command_t &argv, GameObj &g) {
     }
   }
 
-  switch (Dir[Playernum - 1][Governor].level) {
+  switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
       if (!(Tactical && argn < 2)) {
         shipnum_t shn = Sdata.ships;

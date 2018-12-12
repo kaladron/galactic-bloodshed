@@ -35,7 +35,7 @@ void toxicity(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level != ScopeLevel::LEVEL_PLAN) {
     std::string response = "scope must be a planet.\n";
     notify(Playernum, Governor, response);
     return;

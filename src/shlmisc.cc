@@ -60,7 +60,7 @@ void grant(const command_t &argv, GameObj &g) {
     return;
   } else if (match(args[2], "star")) {
     int snum;
-    if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_STAR) {
+    if (g.level != ScopeLevel::LEVEL_STAR) {
       notify(Playernum, Governor, "Please cs to the star system first.\n");
       return;
     }
@@ -71,7 +71,7 @@ void grant(const command_t &argv, GameObj &g) {
     warn(Playernum, gov, buf);
     putstar(Stars[snum], snum);
   } else if (match(args[2], "ship")) {
-    nextshipno = start_shiplist(Playernum, Governor, args[3]);
+    nextshipno = start_shiplist(g, args[3]);
     while ((shipno = do_shiplist(&ship, &nextshipno)))
       if (in_list(Playernum, args[3], ship, &nextshipno) &&
           authorized(Governor, ship)) {
@@ -287,9 +287,11 @@ int authorized(int Governor, shiptype *ship) {
   return (!Governor || ship->governor == Governor);
 }
 
-int start_shiplist(int Playernum, int Governor, const char *p) {
+int start_shiplist(GameObj &g, const char *p) {
   shiptype *ship;
   int st, pl, sh;
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
 
   if (*p == '#') return (atoi(++p));
   if (isdigit(*p)) return (atoi(p));
@@ -297,7 +299,7 @@ int start_shiplist(int Playernum, int Governor, const char *p) {
   /*ship number not given */
   st = Dir[Playernum - 1][Governor].snum;
   pl = Dir[Playernum - 1][Governor].pnum;
-  switch (Dir[Playernum - 1][Governor].level) {
+  switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
       getsdata(&Sdata);
       return Sdata.ships;
@@ -357,7 +359,7 @@ void fix(const command_t &argv, GameObj &g) {
   shiptype *s;
 
   if (match(args[1], "planet")) {
-    if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
+    if (g.level != ScopeLevel::LEVEL_PLAN) {
       notify(Playernum, Governor, "Change scope to the planet first.\n");
       return;
     }
@@ -422,7 +424,7 @@ void fix(const command_t &argv, GameObj &g) {
     return;
   }
   if (match(args[1], "ship")) {
-    if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_SHIP) {
+    if (g.level != ScopeLevel::LEVEL_SHIP) {
       notify(Playernum, Governor,
              "Change scope to the ship you wish to fix.\n");
       return;
@@ -521,7 +523,7 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   int maxalloc;
   int alloc;
 
-  if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_UNIV) {
+  if (g.level == ScopeLevel::LEVEL_UNIV) {
     sprintf(
         buf,
         "Change scope to the system you which to transfer global APs to.\n");

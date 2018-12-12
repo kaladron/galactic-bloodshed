@@ -16,7 +16,7 @@
 
 /// Zoom in or out for orbit display
 void zoom(const command_t &argv, GameObj &g) {
-  int i = (Dir[g.player - 1][g.governor].level == ScopeLevel::LEVEL_UNIV);
+  int i = (g.level == ScopeLevel::LEVEL_UNIV);
 
   if (argv.size() > 1) {
     double num, denom;

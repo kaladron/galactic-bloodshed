@@ -30,13 +30,13 @@ static char Disps[PLACENAMESIZE];
 static placetype Getplace2(int Playernum, int Governor, const char *string,
                            placetype *where, int ignoreexpl, int God);
 
-placetype Getplace(const player_t Playernum, const governor_t Governor,
-                   const std::string &str, const int ignoreexpl) {
-  return Getplace(Playernum, Governor, str.c_str(), ignoreexpl);
+placetype Getplace(GameObj &g, const std::string &str, const int ignoreexpl) {
+  return Getplace(g, str.c_str(), ignoreexpl);
 }
 
-placetype Getplace(const player_t Playernum, const governor_t Governor,
-                   const char *const string, const int ignoreexpl) {
+placetype Getplace(GameObj &g, const char *const string, const int ignoreexpl) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   placetype where; /* return value */
   racetype *Race;
   int God;
@@ -81,7 +81,7 @@ placetype Getplace(const player_t Playernum, const governor_t Governor,
   }
 
   /* copy current scope to scope */
-  where.level = Dir[Playernum - 1][Governor].level;
+  where.level = g.level;
   where.snum = Dir[Playernum - 1][Governor].snum;
   where.pnum = Dir[Playernum - 1][Governor].pnum;
   if (where.level == ScopeLevel::LEVEL_SHIP)

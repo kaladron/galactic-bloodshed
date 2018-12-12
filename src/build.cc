@@ -61,7 +61,7 @@ void upgrade(const command_t &argv, GameObj &g) {
   double complex;
   racetype *Race;
 
-  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_SHIP) {
+  if (g.level != ScopeLevel::LEVEL_SHIP) {
     notify(Playernum, Governor,
            "You have to change scope to the ship you wish to upgrade.\n");
     return;
@@ -328,7 +328,7 @@ void make_mod(const command_t &argv, GameObj &g) {
   racetype *Race;
   double cost0;
 
-  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_SHIP) {
+  if (g.level != ScopeLevel::LEVEL_SHIP) {
     notify(Playernum, Governor,
            "You have to change scope to an installation.\n");
     return;
@@ -838,7 +838,7 @@ void build(const command_t &argv, GameObj &g) {
     return;
   }
 
-  level = Dir[Playernum - 1][Governor].level;
+  level = g.level;
   if (level != ScopeLevel::LEVEL_SHIP && level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor,
            "You must change scope to a ship or planet to build.\n");
@@ -1648,7 +1648,7 @@ void sell(const command_t &argv, GameObj &g) {
   char commod;
   int snum, pnum;
 
-  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor, "You have to be in a planet scope to sell.\n");
     return;
   }
@@ -1856,7 +1856,7 @@ void bid(const command_t &argv, GameObj &g) {
       free(c);
     }
   } else {
-    if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
+    if (g.level != ScopeLevel::LEVEL_PLAN) {
       notify(Playernum, Governor, "You have to be in a planet scope to buy.\n");
       return;
     }

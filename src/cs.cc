@@ -18,7 +18,7 @@
 void center(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  auto where = Getplace(Playernum, Governor, argv[1], 1);
+  auto where = Getplace(g, argv[1], 1);
 
   if (where.err) {
     sprintf(buf, "cs: bad scope.\n");
@@ -40,7 +40,7 @@ void cs(const command_t &argv, GameObj &g) {
 
   if (argv.size() == 1) {
     /* chdir to def scope */
-    Dir[Playernum - 1][Governor].level = Race->governor[Governor].deflevel;
+    g.level = Race->governor[Governor].deflevel;
     if ((Dir[Playernum - 1][Governor].snum =
              Race->governor[Governor].defsystem) >= Sdata.numstars)
       Dir[Playernum - 1][Governor].snum = Sdata.numstars - 1;
@@ -57,7 +57,7 @@ void cs(const command_t &argv, GameObj &g) {
   } else if (argv.size() == 2) {
     /* chdir to specified scope */
 
-    auto where = Getplace(Playernum, Governor, args[1], 0);
+    auto where = Getplace(g, args[1], 0);
 
     if (where.err) {
       sprintf(buf, "cs: bad scope.\n");
@@ -68,7 +68,7 @@ void cs(const command_t &argv, GameObj &g) {
 
     /* fix lastx, lasty coordinates */
 
-    switch (Dir[Playernum - 1][Governor].level) {
+    switch (g.level) {
       case ScopeLevel::LEVEL_UNIV:
         g.lastx[0] = g.lasty[0] = 0.0;
         break;
@@ -131,13 +131,13 @@ void cs(const command_t &argv, GameObj &g) {
         free(s);
         break;
     }
-    Dir[Playernum - 1][Governor].level = where.level;
+    g.level = where.level;
     Dir[Playernum - 1][Governor].snum = where.snum;
     Dir[Playernum - 1][Governor].pnum = where.pnum;
     Dir[Playernum - 1][Governor].shipno = where.shipno;
   } else if (argv.size() == 3 && argv[1][1] == 'd') {
     /* make new def scope */
-    auto where = Getplace(Playernum, Governor, argv[2], 0);
+    auto where = Getplace(g, argv[2], 0);
 
     if (!where.err && where.level != ScopeLevel::LEVEL_SHIP) {
       Race->governor[Governor].deflevel = where.level;

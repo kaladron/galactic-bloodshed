@@ -65,7 +65,7 @@ void bless(const command_t &argv, GameObj &g) {
            "You are not privileged to use this command.\n");
     return;
   }
-  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor, "Please cs to the planet in question.\n");
     return;
   }
@@ -280,7 +280,7 @@ void insurgency(const command_t &argv, GameObj &g) {
   int changed_hands, chance;
   int i;
 
-  if (Dir[Playernum - 1][Governor].level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor,
            "You must 'cs' to the planet you wish to try it on.\n");
     return;
@@ -634,7 +634,7 @@ void page(const command_t &argv, GameObj &g) {
     if (argn > 1) gov = atoi(args[2]);
   }
 
-  switch (Dir[Playernum - 1][Governor].level) {
+  switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
       sprintf(buf, "You can't make pages at universal scope.\n");
       notify(Playernum, Governor, buf);
@@ -724,7 +724,7 @@ void send_message(const command_t &argv, GameObj &g) {
   } else if (match(args[1], "star")) {
     to_star = 1;
     notify(Playernum, Governor, "Sending message to star system.\n");
-    where = Getplace(Playernum, Governor, args[2], 1);
+    where = Getplace(g, args[2], 1);
     if (where.err || where.level != ScopeLevel::LEVEL_STAR) {
       sprintf(buf, "No such star.\n");
       notify(Playernum, Governor, buf);
@@ -742,7 +742,7 @@ void send_message(const command_t &argv, GameObj &g) {
     APcount *= !alien->God;
   }
 
-  switch (Dir[Playernum - 1][Governor].level) {
+  switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
       sprintf(buf, "You can't send messages from universal scope.\n");
       notify(Playernum, Governor, buf);
@@ -927,7 +927,7 @@ void name(const command_t &argv, GameObj &g) {
   }
 
   if (match(args[1], "ship")) {
-    if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_SHIP) {
+    if (g.level == ScopeLevel::LEVEL_SHIP) {
       (void)getship(&ship, Dir[Playernum - 1][Governor].shipno);
       strncpy(ship->name, buf, SHIP_NAMESIZE);
       putship(ship);
@@ -939,7 +939,7 @@ void name(const command_t &argv, GameObj &g) {
       return;
     }
   } else if (match(args[1], "class")) {
-    if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_SHIP) {
+    if (g.level == ScopeLevel::LEVEL_SHIP) {
       (void)getship(&ship, Dir[Playernum - 1][Governor].shipno);
       if (ship->type != OTYPE_FACTORY) {
         notify(Playernum, Governor, "You are not at a factory!\n");
@@ -971,7 +971,7 @@ void name(const command_t &argv, GameObj &g) {
     Putblock(Blocks);
     notify(Playernum, Governor, "Done.\n");
   } else if (match(args[1], "star")) {
-    if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_STAR) {
+    if (g.level == ScopeLevel::LEVEL_STAR) {
       Race = races[Playernum - 1];
       if (!Race->God) {
         notify(Playernum, Governor, "Only dieties may name a star.\n");
@@ -986,7 +986,7 @@ void name(const command_t &argv, GameObj &g) {
       return;
     }
   } else if (match(args[1], "planet")) {
-    if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_PLAN) {
+    if (g.level == ScopeLevel::LEVEL_PLAN) {
       getstar(&Stars[Dir[Playernum - 1][Governor].snum],
               Dir[Playernum - 1][Governor].snum);
       Race = races[Playernum - 1];
@@ -1069,7 +1069,7 @@ void announce(const command_t &argv, GameObj &g) {
             std::ostream_iterator<std::string>(ss_message, " "));
   std::string message = ss_message.str();
 
-  switch (Dir[Playernum - 1][Governor].level) {
+  switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
       if (mode == Communicate::ANN) mode = Communicate::BROADCAST;
       break;

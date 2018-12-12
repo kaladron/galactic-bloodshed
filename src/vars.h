@@ -124,6 +124,7 @@ class GameObj {
   double lastx[2] = {0.0, 0.0};
   double lasty[2] = {0.0, 0.0};
   double zoom[2] = {1.0, 0.5}; /* last coords for zoom */
+  ScopeLevel level;            /* what directory level */
   GameObj() = default;
   GameObj(const GameObj &) = delete;
   GameObj &operator=(const GameObj &) = delete;
@@ -271,7 +272,6 @@ struct stardata {
 extern struct stardata Sdata;
 
 struct directory {
-  ScopeLevel level; /* what directory level */
   starnum_t snum;   /* what star system obj # (level=0) */
   planetnum_t pnum; /* number of planet */
   shipnum_t shipno; /* # of ship */

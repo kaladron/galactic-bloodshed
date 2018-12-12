@@ -65,7 +65,7 @@ void dock(const command_t &argv, GameObj &g) {
     }
   }
 
-  nextshipno = start_shiplist(Playernum, Governor, args[1]);
+  nextshipno = start_shiplist(g, args[1]);
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, args[1], s, &nextshipno) &&
         (!Governor || s->governor == Governor)) {
@@ -481,7 +481,7 @@ void dock(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
       }
 
-      if (Dir[Playernum - 1][Governor].level == ScopeLevel::LEVEL_UNIV)
+      if (g.level == ScopeLevel::LEVEL_UNIV)
         deductAPs(Playernum, Governor, APcount, 0, 1);
       else
         deductAPs(Playernum, Governor, APcount,

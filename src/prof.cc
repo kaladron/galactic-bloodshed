@@ -28,16 +28,14 @@ void whois(const command_t &argv, GameObj &g) {
   int i, j, numraces;
   racetype *Race;
 
-  int argn = argv.size();  // Need a mutable value for below
-
   if (argv.size() <= 1) {
-    sprintf(args[1], "%d", Playernum); /* The coward's way out */
-    argn = 2;
+    whois({"whois", std::to_string(Playernum)}, g);
+    return;
   }
   numraces = Num_races;
 
-  for (i = 1; i <= argn - 1; i++) {
-    j = atoi(args[i]);
+  for (i = 1; i <= argv.size() - 1; i++) {
+    j = atoi(argv[i].c_str());
     if (!(j < 1 || j > numraces)) {
       Race = races[j - 1];
       if (j == Playernum)
@@ -182,7 +180,7 @@ void profile(const command_t &argv, GameObj &g) {
     if (Wormhole(Race)) notify(Playernum, Governor, "  Wormhole");
     notify(Playernum, Governor, "\n");
   } else {
-    if (!(p = GetPlayer(args[1]))) {
+    if (!(p = GetPlayer(argv[1].c_str()))) {
       sprintf(buf, "Player does not exist.\n");
       notify(Playernum, Governor, buf);
       return;

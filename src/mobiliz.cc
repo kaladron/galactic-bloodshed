@@ -50,7 +50,7 @@ void mobilize(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     return;
   }
-  sum_mob = atoi(args[1]);
+  sum_mob = atoi(argv[1].c_str());
 
   if (sum_mob > 100 || sum_mob < 0) {
     sprintf(buf, "Illegal value.\n");
@@ -101,7 +101,7 @@ void tax(const command_t &argv, GameObj &g) {
     return;
   }
 
-  sum_tax = atoi(args[1]);
+  sum_tax = atoi(argv[1].c_str());
 
   if (sum_tax > 100 || sum_tax < 0) {
     sprintf(buf, "Illegal value.\n");

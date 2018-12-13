@@ -58,10 +58,10 @@ void load(const command_t &argv, GameObj &g) {
     return;
   }
 
-  nextshipno = start_shiplist(g, args[1]);
+  nextshipno = start_shiplist(g, argv[1].c_str());
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, args[1], s, &nextshipno) &&
+    if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
         authorized(Governor, s)) {
       if (s->owner != Playernum || !s->alive) {
         free(s);
@@ -139,9 +139,9 @@ void load(const command_t &argv, GameObj &g) {
         }
       }
 
-      commod = args[2][0];
+      commod = argv[2].c_str()[0];
       if (argv.size() > 3)
-        amt = atoi(args[3]);
+        amt = atoi(argv[3].c_str());
       else
         amt = 0;
 
@@ -473,10 +473,10 @@ void jettison(const command_t &argv, GameObj &g) {
     return;
   }
 
-  nextshipno = start_shiplist(g, args[1]);
+  nextshipno = start_shiplist(g, argv[1].c_str());
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, args[1], s, &nextshipno) &&
+    if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
         authorized(Governor, s)) {
       if (s->owner != Playernum || !s->alive) {
         free(s);
@@ -505,13 +505,13 @@ void jettison(const command_t &argv, GameObj &g) {
       }
 
       if (argv.size() > 3)
-        amt = atoi(args[3]);
+        amt = atoi(argv[3].c_str());
       else
         amt = 0;
 
       Race = races[Playernum - 1];
 
-      commod = args[2][0];
+      commod = argv[2].c_str()[0];
       switch (commod) {
         case 'x':
           if ((amt = jettison_check(Playernum, Governor, amt,
@@ -621,7 +621,7 @@ void dump(const command_t &argv, GameObj &g) {
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
 
-  if (!(player = GetPlayer(args[1]))) {
+  if (!(player = GetPlayer(argv[1].c_str()))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -665,7 +665,7 @@ void dump(const command_t &argv, GameObj &g) {
     }
   } else { /* list of places given */
     for (i = 2; i < argv.size(); i++) {
-      where = Getplace(g, args[i], 1);
+      where = Getplace(g, argv[i].c_str(), 1);
       if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
           where.level != ScopeLevel::LEVEL_SHIP) {
         star = where.snum;
@@ -711,7 +711,7 @@ void transfer(const command_t &argv, GameObj &g) {
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
 
-  if (!(player = GetPlayer(args[1]))) {
+  if (!(player = GetPlayer(argv[1].c_str()))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -719,8 +719,8 @@ void transfer(const command_t &argv, GameObj &g) {
 
   auto planet = getplanet(g.snum, g.pnum);
 
-  sscanf(args[2], "%c", &commod);
-  give = atoi(args[3]);
+  sscanf(argv[2].c_str(), "%c", &commod);
+  give = atoi(argv[3].c_str());
 
   if (give < 0) {
     notify(Playernum, Governor, "You must specify a positive amount.\n");
@@ -806,9 +806,9 @@ void mount(const command_t &argv, GameObj &g) {
   shiptype *ship;
   shipnum_t shipno, nextshipno;
 
-  nextshipno = start_shiplist(g, args[1]);
+  nextshipno = start_shiplist(g, argv[1].c_str());
   while ((shipno = do_shiplist(&ship, &nextshipno)))
-    if (in_list(Playernum, args[1], ship, &nextshipno) &&
+    if (in_list(Playernum, argv[1].c_str(), ship, &nextshipno) &&
         authorized(Governor, ship)) {
       if (!ship->mount) {
         notify(Playernum, Governor,

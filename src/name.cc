@@ -69,7 +69,7 @@ void bless(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "Please cs to the planet in question.\n");
     return;
   }
-  who = atoi(args[1]);
+  who = atoi(argv[1].c_str());
   if (who < 1 || who > Num_races) {
     notify(Playernum, Governor, "No such player number.\n");
     return;
@@ -78,94 +78,94 @@ void bless(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "Syntax: bless <player> <what> <+amount>\n");
     return;
   }
-  amount = atoi(args[3]);
+  amount = atoi(argv[3].c_str());
 
   Race = races[who - 1];
   /* race characteristics? */
   Mod = 1;
 
-  if (match(args[2], "money")) {
+  if (match(argv[2].c_str(), "money")) {
     Race->governor[0].money += amount;
     sprintf(buf, "Deity gave you %d money.\n", amount);
-  } else if (match(args[2], "password")) {
-    strcpy(Race->password, args[3]);
-    sprintf(buf, "Deity changed your race password to `%s'\n", args[3]);
-  } else if (match(args[2], "morale")) {
+  } else if (match(argv[2].c_str(), "password")) {
+    strcpy(Race->password, argv[3].c_str());
+    sprintf(buf, "Deity changed your race password to `%s'\n", argv[3].c_str());
+  } else if (match(argv[2].c_str(), "morale")) {
     Race->morale += amount;
     sprintf(buf, "Deity gave you %d morale.\n", amount);
-  } else if (match(args[2], "pods")) {
+  } else if (match(argv[2].c_str(), "pods")) {
     Race->pods = 1;
     sprintf(buf, "Deity gave you pod ability.\n");
-  } else if (match(args[2], "nopods")) {
+  } else if (match(argv[2].c_str(), "nopods")) {
     Race->pods = 0;
     sprintf(buf, "Deity took away pod ability.\n");
-  } else if (match(args[2], "collectiveiq")) {
+  } else if (match(argv[2].c_str(), "collectiveiq")) {
     Race->collective_iq = 1;
     sprintf(buf, "Deity gave you collective intelligence.\n");
-  } else if (match(args[2], "nocollectiveiq")) {
+  } else if (match(argv[2].c_str(), "nocollectiveiq")) {
     Race->collective_iq = 0;
     sprintf(buf, "Deity took away collective intelligence.\n");
-  } else if (match(args[2], "maxiq")) {
-    Race->IQ_limit = atoi(args[3]);
+  } else if (match(argv[2].c_str(), "maxiq")) {
+    Race->IQ_limit = atoi(argv[3].c_str());
     sprintf(buf, "Deity gave you a maximum IQ of %d.\n", Race->IQ_limit);
-  } else if (match(args[2], "mass")) {
-    Race->mass = atof(args[3]);
+  } else if (match(argv[2].c_str(), "mass")) {
+    Race->mass = atof(argv[3].c_str());
     sprintf(buf, "Deity gave you %.2f mass.\n", Race->mass);
-  } else if (match(args[2], "metabolism")) {
-    Race->metabolism = atof(args[3]);
+  } else if (match(argv[2].c_str(), "metabolism")) {
+    Race->metabolism = atof(argv[3].c_str());
     sprintf(buf, "Deity gave you %.2f metabolism.\n", Race->metabolism);
-  } else if (match(args[2], "adventurism")) {
-    Race->adventurism = atof(args[3]);
+  } else if (match(argv[2].c_str(), "adventurism")) {
+    Race->adventurism = atof(argv[3].c_str());
     sprintf(buf, "Deity gave you %-3.0f%% adventurism.\n",
             Race->adventurism * 100.0);
-  } else if (match(args[2], "birthrate")) {
-    Race->birthrate = atof(args[3]);
+  } else if (match(argv[2].c_str(), "birthrate")) {
+    Race->birthrate = atof(argv[3].c_str());
     sprintf(buf, "Deity gave you %.2f birthrate.\n", Race->birthrate);
-  } else if (match(args[2], "fertility")) {
+  } else if (match(argv[2].c_str(), "fertility")) {
     Race->fertilize = amount;
     sprintf(buf, "Deity gave you a fetilization ability of %d.\n", amount);
-  } else if (match(args[2], "IQ")) {
+  } else if (match(argv[2].c_str(), "IQ")) {
     Race->IQ = amount;
     sprintf(buf, "Deity gave you %d IQ.\n", amount);
-  } else if (match(args[2], "fight")) {
+  } else if (match(argv[2].c_str(), "fight")) {
     Race->fighters = amount;
     sprintf(buf, "Deity set your fighting ability to %d.\n", amount);
-  } else if (match(args[2], "technology")) {
+  } else if (match(argv[2].c_str(), "technology")) {
     Race->tech += (double)amount;
     sprintf(buf, "Deity gave you %d technology.\n", amount);
-  } else if (match(args[2], "guest")) {
+  } else if (match(argv[2].c_str(), "guest")) {
     Race->Guest = 1;
     sprintf(buf, "Deity turned you into a guest race.\n");
-  } else if (match(args[2], "god")) {
+  } else if (match(argv[2].c_str(), "god")) {
     Race->God = 1;
     sprintf(buf, "Deity turned you into a deity race.\n");
-  } else if (match(args[2], "mortal")) {
+  } else if (match(argv[2].c_str(), "mortal")) {
     Race->God = 0;
     Race->Guest = 0;
     sprintf(buf, "Deity turned you into a mortal race.\n");
     /* sector preferences */
-  } else if (match(args[2], "water")) {
+  } else if (match(argv[2].c_str(), "water")) {
     Race->likes[SectorType::SEC_SEA] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your water preference to %d%%\n", amount);
-  } else if (match(args[2], "land")) {
+  } else if (match(argv[2].c_str(), "land")) {
     Race->likes[SectorType::SEC_LAND] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your land preference to %d%%\n", amount);
-  } else if (match(args[2], "mountain")) {
+  } else if (match(argv[2].c_str(), "mountain")) {
     Race->likes[SectorType::SEC_MOUNT] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your mountain preference to %d%%\n", amount);
-  } else if (match(args[2], "gas")) {
+  } else if (match(argv[2].c_str(), "gas")) {
     Race->likes[SectorType::SEC_GAS] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your gas preference to %d%%\n", amount);
-  } else if (match(args[2], "ice")) {
+  } else if (match(argv[2].c_str(), "ice")) {
     Race->likes[SectorType::SEC_ICE] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your ice preference to %d%%\n", amount);
-  } else if (match(args[2], "forest")) {
+  } else if (match(argv[2].c_str(), "forest")) {
     Race->likes[SectorType::SEC_FOREST] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your forest preference to %d%%\n", amount);
-  } else if (match(args[2], "desert")) {
+  } else if (match(argv[2].c_str(), "desert")) {
     Race->likes[SectorType::SEC_DESERT] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your desert preference to %d%%\n", amount);
-  } else if (match(args[2], "plated")) {
+  } else if (match(argv[2].c_str(), "plated")) {
     Race->likes[SectorType::SEC_PLATED] = 0.01 * (double)amount;
     sprintf(buf, "Deity set your plated preference to %d%%\n", amount);
   } else
@@ -176,33 +176,33 @@ void bless(const command_t &argv, GameObj &g) {
   }
   if (Mod) return;
   /* ok, must be the planet then */
-  commod = args[2][0];
+  commod = argv[2].c_str()[0];
   auto planet = getplanet(g.snum, g.pnum);
-  if (match(args[2], "explorebit")) {
+  if (match(argv[2].c_str(), "explorebit")) {
     planet.info[who - 1].explored = 1;
     getstar(&Stars[g.snum], g.snum);
     setbit(Stars[g.snum]->explored, who);
     putstar(Stars[g.snum], g.snum);
     sprintf(buf, "Deity set your explored bit at /%s/%s.\n",
             Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
-  } else if (match(args[2], "noexplorebit")) {
+  } else if (match(argv[2].c_str(), "noexplorebit")) {
     planet.info[who - 1].explored = 0;
     sprintf(buf, "Deity reset your explored bit at /%s/%s.\n",
             Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
-  } else if (match(args[2], "planetpopulation")) {
-    planet.info[who - 1].popn = atoi(args[3]);
+  } else if (match(argv[2].c_str(), "planetpopulation")) {
+    planet.info[who - 1].popn = atoi(argv[3].c_str());
     planet.popn++;
     sprintf(buf, "Deity set your population variable to %ld at /%s/%s.\n",
             planet.info[who - 1].popn, Stars[g.snum]->name,
             Stars[g.snum]->pnames[g.pnum]);
-  } else if (match(args[2], "inhabited")) {
+  } else if (match(argv[2].c_str(), "inhabited")) {
     getstar(&Stars[g.snum], g.snum);
     setbit(Stars[g.snum]->inhabited, Playernum);
     putstar(Stars[g.snum], g.snum);
     sprintf(buf, "Deity has set your inhabited bit for /%s/%s.\n",
             Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
-  } else if (match(args[2], "numsectsowned")) {
-    planet.info[who - 1].numsectsowned = atoi(args[3]);
+  } else if (match(argv[2].c_str(), "numsectsowned")) {
+    planet.info[who - 1].numsectsowned = atoi(argv[3].c_str());
     sprintf(buf, "Deity set your \"numsectsowned\" variable at /%s/%s to %d.\n",
             Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum],
             planet.info[who - 1].numsectsowned);
@@ -270,7 +270,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     }*/
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
-  if (!(who = GetPlayer(args[1]))) {
+  if (!(who = GetPlayer(argv[1].c_str()))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -305,7 +305,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     return;
   }
 
-  sscanf(args[2], "%d", &amount);
+  sscanf(argv[2].c_str(), "%d", &amount);
   if (amount < 0) {
     notify(Playernum, Governor,
            "You have to use a positive amount of money.\n");
@@ -384,7 +384,7 @@ void pay(const command_t &argv, GameObj &g) {
   int who, amount;
   racetype *Race, *alien;
 
-  if (!(who = GetPlayer(args[1]))) {
+  if (!(who = GetPlayer(argv[1].c_str()))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -396,7 +396,7 @@ void pay(const command_t &argv, GameObj &g) {
   Race = races[Playernum - 1];
   alien = races[who - 1];
 
-  sscanf(args[2], "%d", &amount);
+  sscanf(argv[2].c_str(), "%d", &amount);
   if (amount < 0) {
     notify(Playernum, Governor,
            "You have to give a player a positive amount of money.\n");
@@ -435,7 +435,7 @@ void give(const command_t &argv, GameObj &g) {
   shiptype *ship;
   racetype *Race, *alien;
 
-  if (!(who = GetPlayer(args[1]))) {
+  if (!(who = GetPlayer(argv[1].c_str()))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -460,7 +460,7 @@ void give(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "You two are not mutually allied.\n");
     return;
   }
-  sscanf(args[2] + (args[2][0] == '#'), "%d", &sh);
+  sscanf(argv[2].c_str() + (argv[2].c_str()[0] == '#'), "%d", &sh);
 
   if (!getship(&ship, sh)) {
     notify(Playernum, Governor, "Illegal ship number.\n");
@@ -572,20 +572,20 @@ void page(const command_t &argv, GameObj &g) {
 
   gov = 0;  // TODO(jeffbailey): Init to zero.
   to_block = 0;
-  if (match(args[1], "block")) {
+  if (match(argv[1].c_str(), "block")) {
     to_block = 1;
     notify(Playernum, Governor, "Paging alliance block.\n");
     who = 0;  // TODO(jeffbailey): Init to zero to be sure it's initialized.
     gov = 0;  // TODO(jeffbailey): Init to zero to be sure it's initialized.
   } else {
-    if (!(who = GetPlayer(args[1]))) {
+    if (!(who = GetPlayer(argv[1].c_str()))) {
       sprintf(buf, "No such player.\n");
       notify(Playernum, Governor, buf);
       return;
     }
     alien = races[who - 1];
     APcount *= !alien->God;
-    if (argv.size() > 1) gov = atoi(args[2]);
+    if (argv.size() > 1) gov = atoi(argv[2].c_str());
   }
 
   switch (g.level) {
@@ -655,27 +655,27 @@ void send_message(const command_t &argv, GameObj &g) {
             Race->governor[Governor].name, Playernum, Governor);
     /* put the message together */
     for (j = 1; j < argv.size(); j++) {
-      sprintf(buf, "%s ", args[j]);
+      sprintf(buf, "%s ", argv[j].c_str());
       strcat(msg, buf);
     }
     strcat(msg, "\n");
     post(msg, ANNOUNCE);
     return;
   }
-  if (match(args[1], "block")) {
+  if (match(argv[1].c_str(), "block")) {
     to_block = 1;
     notify(Playernum, Governor, "Sending message to alliance block.\n");
-    if (!(who = GetPlayer(args[2]))) {
+    if (!(who = GetPlayer(argv[2].c_str()))) {
       sprintf(buf, "No such alliance block.\n");
       notify(Playernum, Governor, buf);
       return;
     }
     alien = races[who - 1];
     APcount *= !alien->God;
-  } else if (match(args[1], "star")) {
+  } else if (match(argv[1].c_str(), "star")) {
     to_star = 1;
     notify(Playernum, Governor, "Sending message to star system.\n");
-    where = Getplace(g, args[2], 1);
+    where = Getplace(g, argv[2].c_str(), 1);
     if (where.err || where.level != ScopeLevel::LEVEL_STAR) {
       sprintf(buf, "No such star.\n");
       notify(Playernum, Governor, buf);
@@ -684,7 +684,7 @@ void send_message(const command_t &argv, GameObj &g) {
     star = where.snum;
     getstar(&(Stars[star]), star);
   } else {
-    if (!(who = GetPlayer(args[1]))) {
+    if (!(who = GetPlayer(argv[1].c_str()))) {
       sprintf(buf, "No such player.\n");
       notify(Playernum, Governor, buf);
       return;
@@ -727,7 +727,7 @@ void send_message(const command_t &argv, GameObj &g) {
     sprintf(msg, "%s \"%s\" [%d,%d]: ", Race->name,
             Race->governor[Governor].name, Playernum, Governor);
 
-  if (to_star || to_block || isdigit(*args[2]))
+  if (to_star || to_block || isdigit(*argv[2].c_str()))
     start = 3;
   else if (postit)
     start = 1;
@@ -735,7 +735,7 @@ void send_message(const command_t &argv, GameObj &g) {
     start = 2;
   /* put the message together */
   for (j = start; j < argv.size(); j++) {
-    sprintf(buf, "%s ", args[j]);
+    sprintf(buf, "%s ", argv[j].c_str());
     strcat(msg, buf);
   }
   /* post it */
@@ -764,7 +764,7 @@ void send_message(const command_t &argv, GameObj &g) {
   } else {
     int gov;
     if (who == Playernum) APcount = 0;
-    if (isdigit(*args[2]) && (gov = atoi(args[2])) >= 0 &&
+    if (isdigit(*argv[2].c_str()) && (gov = atoi(argv[2].c_str())) >= 0 &&
         gov <= MAXGOVERNORS) {
       push_telegram(who, gov, msg);
       notify(who, gov, buf);
@@ -787,9 +787,9 @@ void read_messages(const command_t &argv, GameObj &g) {
   // TODO(jeffbailey): int APcount = 0;
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  if (argv.size() == 1 || match(args[1], "telegram"))
+  if (argv.size() == 1 || match(argv[1].c_str(), "telegram"))
     teleg_read(Playernum, Governor);
-  else if (match(args[1], "news")) {
+  else if (match(argv[1].c_str(), "news")) {
     notify(Playernum, Governor, CUTE_MESSAGE);
     notify(Playernum, Governor,
            "\n----------        Declarations        ----------\n");
@@ -838,20 +838,20 @@ void name(const command_t &argv, GameObj &g) {
   char temp[128];
   racetype *Race;
 
-  if (!isalnum(args[2][0]) || argv.size() < 3) {
+  if (!isalnum(argv[2].c_str()[0]) || argv.size() < 3) {
     notify(Playernum, Governor, "Illegal name format.\n");
     return;
   }
 
-  sprintf(buf, "%s", args[2]);
+  sprintf(buf, "%s", argv[2].c_str());
   for (i = 3; i < argv.size(); i++) {
-    sprintf(temp, " %s", args[i]);
+    sprintf(temp, " %s", argv[i].c_str());
     strcat(buf, temp);
   }
 
   sprintf(string, "%s", buf);
 
-  i = strlen(args[0]);
+  i = strlen(argv[0].c_str());
 
   /* make sure there are no ^'s or '/' in name,
     also make sure the name has at least 1 character in it */
@@ -875,7 +875,7 @@ void name(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (match(args[1], "ship")) {
+  if (match(argv[1].c_str(), "ship")) {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
       (void)getship(&ship, g.shipno);
       strncpy(ship->name, buf, SHIP_NAMESIZE);
@@ -887,7 +887,7 @@ void name(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, "You have to 'cs' to a ship to name it.\n");
       return;
     }
-  } else if (match(args[1], "class")) {
+  } else if (match(argv[1].c_str(), "class")) {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
       (void)getship(&ship, g.shipno);
       if (ship->type != OTYPE_FACTORY) {
@@ -910,7 +910,7 @@ void name(const command_t &argv, GameObj &g) {
              "You have to 'cs' to a factory to name the ship class.\n");
       return;
     }
-  } else if (match(args[1], "block")) {
+  } else if (match(argv[1].c_str(), "block")) {
     /* name your alliance block */
     if (Governor) {
       notify(Playernum, Governor, "You are not authorized to do this.\n");
@@ -919,7 +919,7 @@ void name(const command_t &argv, GameObj &g) {
     strncpy(Blocks[Playernum - 1].name, buf, RNAMESIZE - 1);
     Putblock(Blocks);
     notify(Playernum, Governor, "Done.\n");
-  } else if (match(args[1], "star")) {
+  } else if (match(argv[1].c_str(), "star")) {
     if (g.level == ScopeLevel::LEVEL_STAR) {
       Race = races[Playernum - 1];
       if (!Race->God) {
@@ -932,7 +932,7 @@ void name(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, "You have to 'cs' to a star to name it.\n");
       return;
     }
-  } else if (match(args[1], "planet")) {
+  } else if (match(argv[1].c_str(), "planet")) {
     if (g.level == ScopeLevel::LEVEL_PLAN) {
       getstar(&Stars[g.snum], g.snum);
       Race = races[Playernum - 1];
@@ -947,7 +947,7 @@ void name(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, "You have to 'cs' to a planet to name it.\n");
       return;
     }
-  } else if (match(args[1], "race")) {
+  } else if (match(argv[1].c_str(), "race")) {
     Race = races[Playernum - 1];
     if (Governor) {
       notify(Playernum, Governor, "You are not authorized to do this.\n");
@@ -957,7 +957,7 @@ void name(const command_t &argv, GameObj &g) {
     sprintf(buf, "Name changed to `%s'.\n", Race->name);
     notify(Playernum, Governor, buf);
     putrace(Race);
-  } else if (match(args[1], "governor")) {
+  } else if (match(argv[1].c_str(), "governor")) {
     Race = races[Playernum - 1];
     strncpy(Race->governor[Governor].name, buf, RNAMESIZE - 1);
     sprintf(buf, "Name changed to `%s'.\n", Race->governor[Governor].name);

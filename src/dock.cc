@@ -55,9 +55,9 @@ void dock(const command_t &argv, GameObj &g) {
   if (argv.size() < 5)
     what = MIL;
   else if (Assault) {
-    if (match(args[4], "civilians"))
+    if (match(argv[4].c_str(), "civilians"))
       what = CIV;
-    else if (match(args[4], "military"))
+    else if (match(argv[4].c_str(), "military"))
       what = MIL;
     else {
       notify(Playernum, Governor, "Assault with what?\n");
@@ -65,9 +65,9 @@ void dock(const command_t &argv, GameObj &g) {
     }
   }
 
-  nextshipno = start_shiplist(g, args[1]);
+  nextshipno = start_shiplist(g, argv[1].c_str());
   while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, args[1], s, &nextshipno) &&
+    if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
         (!Governor || s->governor == Governor)) {
       if (Assault && s->type == STYPE_POD) {
         notify(Playernum, Governor, "Sorry. Pods cannot be used to assault.\n");
@@ -114,7 +114,7 @@ void dock(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      sscanf(args[2] + (args[2][0] == '#'), "%lu", &ship2no);
+      sscanf(argv[2].c_str() + (argv[2].c_str()[0] == '#'), "%lu", &ship2no);
 
       if (shipno == ship2no) {
         notify(Playernum, Governor, "You can't dock with yourself!\n");
@@ -230,7 +230,7 @@ void dock(const command_t &argv, GameObj &g) {
         alien = races[s2->owner - 1];
         Race = races[Playernum - 1];
         if (argv.size() >= 4) {
-          sscanf(args[3], "%lu", &boarders);
+          sscanf(argv[3].c_str(), "%lu", &boarders);
           if ((what == MIL) && (boarders > s->troops))
             boarders = s->troops;
           else if ((what == CIV) && (boarders > s->popn))

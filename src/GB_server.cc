@@ -1015,31 +1015,15 @@ static void process_commands(void) {
 }
 
 static int do_command(DescriptorData *d, const char *comm) {
-  const char *string;
-  int parse_exit = 0, i;
-
-  int argn = 0;
   /* Main processing loop. When command strings are sent from the client,
      they are processed here. Responses are sent back to the client via
      notify.
-     The client will then process the strings in whatever manner is expected.
      */
 
   /* check to see if there are a few words typed out, usually for the help
    * command */
-  string = comm;
   command_t argv;
   boost::split(argv, comm, boost::is_any_of(" "));
-  while (!parse_exit) {
-    i = 0;
-    while (!isspace(*string) && (*string != '\0') && (i < COMMANDSIZE))
-      args[argn][i++] = (*string++);
-    args[argn][i] = '\0';
-    while ((*string) == ' ') string++;
-    if ((*string == '\0') || (argn >= MAXARGS)) parse_exit = 1;
-    argn++;
-  }
-  for (i = argn; i < MAXARGS; i++) args[i][0] = '\0';
 
   if (argv[0] == "quit") {
     goodbye_user(d);
@@ -1066,7 +1050,6 @@ static int do_command(DescriptorData *d, const char *comm) {
       } else {
         check_for_telegrams(d->player, d->governor);
         /* set the scope to home upon login */
-        argn = 1;
         command_t call_cs = {"cs"};
         process_command(*d, call_cs);
       }
@@ -1361,17 +1344,17 @@ static void process_command(DescriptorData &d, const command_t &argv) {
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
     command->second(argv, d);
-  } else if (match(args[0], "purge") && God)
+  } else if (match(argv[0].c_str(), "purge") && God)
     purge();
-  else if (match(args[0], "@@shutdown") && God) {
+  else if (match(argv[0].c_str(), "@@shutdown") && God) {
     shutdown_flag = 1;
     notify(Playernum, Governor, "Doing shutdown.\n");
-  } else if (match(args[0], "@@update") && God)
+  } else if (match(argv[0].c_str(), "@@update") && God)
     do_update(1);
-  else if (match(args[0], "@@segment") && God)
-    do_segment(1, atoi(args[1]));
+  else if (match(argv[0].c_str(), "@@segment") && God)
+    do_segment(1, atoi(argv[1].c_str()));
   else {
-    sprintf(buf, "'%s':illegal command error.\n", args[0]);
+    sprintf(buf, "'%s':illegal command error.\n", argv[0].c_str());
     notify(Playernum, Governor, buf);
   }
 

@@ -41,7 +41,7 @@ static const char *Tox[] = {
     "Stage 10: WARNING: COMPLETELY TOXIC!!!",
     "???"};
 
-static void get4args(char *, int *, int *, int *, int *);
+static void get4args(const char *, int *, int *, int *, int *);
 
 void survey(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
@@ -84,8 +84,8 @@ void survey(const command_t &argv, GameObj &g) {
     where.pnum = g.pnum;
   } else {
     /* they are surveying a sector */
-    if ((isdigit(args[1][0]) && index(args[1], ',') != NULL) ||
-        ((*args[1] == '-') && (all = 1))) {
+    if ((isdigit(argv[1].c_str()[0]) && index(argv[1].c_str(), ',') != NULL) ||
+        ((*argv[1].c_str() == '-') && (all = 1))) {
       if (g.level != ScopeLevel::LEVEL_PLAN) {
         sprintf(buf, "There are no sectors here.\n");
         notify(Playernum, Governor, buf);
@@ -96,7 +96,7 @@ void survey(const command_t &argv, GameObj &g) {
         where.pnum = g.pnum;
       }
     } else {
-      where = Getplace(g, args[1], 0);
+      where = Getplace(g, argv[1].c_str(), 0);
       if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;
     }
   }
@@ -108,11 +108,12 @@ void survey(const command_t &argv, GameObj &g) {
 
     compat = compatibility(p, Race);
 
-    if ((isdigit(args[1][0]) && index(args[1], ',') != NULL) || all) {
+    if ((isdigit(argv[1].c_str()[0]) && index(argv[1].c_str(), ',') != NULL) ||
+        all) {
       auto smap = getsmap(p);
 
       if (!all) {
-        get4args(args[1], &x2, &hix, &lowy, &hiy);
+        get4args(argv[1].c_str(), &x2, &hix, &lowy, &hiy);
         /* ^^^ translate from lowx:hix,lowy:hiy */
         x2 = std::max(0, x2);
         hix = std::min(hix, p.Maxx - 1);
@@ -395,7 +396,7 @@ void repair(const command_t &argv, GameObj &g) {
     where.pnum = g.pnum;
   } else {
     /* repairing a sector */
-    if (isdigit(args[1][0]) && index(args[1], ',') != NULL) {
+    if (isdigit(argv[1].c_str()[0]) && index(argv[1].c_str(), ',') != NULL) {
       if (g.level != ScopeLevel::LEVEL_PLAN) {
         sprintf(buf, "There are no sectors here.\n");
         notify(Playernum, Governor, buf);
@@ -406,7 +407,7 @@ void repair(const command_t &argv, GameObj &g) {
         where.pnum = g.pnum;
       }
     } else {
-      where = Getplace(g, args[1], 0);
+      where = Getplace(g, argv[1].c_str(), 0);
       if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;
     }
   }
@@ -419,8 +420,8 @@ void repair(const command_t &argv, GameObj &g) {
       return;
     }
     auto smap = getsmap(p);
-    if (isdigit(args[1][0]) && index(args[1], ',') != NULL) {
-      get4args(args[1], &x2, &hix, &lowy, &hiy);
+    if (isdigit(argv[1].c_str()[0]) && index(argv[1].c_str(), ',') != NULL) {
+      get4args(argv[1].c_str(), &x2, &hix, &lowy, &hiy);
       /* ^^^ translate from lowx:hix,lowy:hiy */
       x2 = std::max(0, x2);
       hix = std::min(hix, p.Maxx - 1);
@@ -462,9 +463,9 @@ void repair(const command_t &argv, GameObj &g) {
   }
 }
 
-static void get4args(char *s, int *xl, int *xh, int *yl, int *yh) {
-  char *p, s1[17], s2[17];
-  p = s;
+static void get4args(const char *s, int *xl, int *xh, int *yl, int *yh) {
+  char s1[17], s2[17];
+  const char *p = s;
 
   sscanf(p, "%[^,]", s1);
   while ((*p != ':') && (*p != ',')) p++;

@@ -38,7 +38,7 @@ void capital(const command_t &argv, GameObj &g) {
   if (argv.size() != 2)
     shipno = Race->Gov_ship;
   else
-    shipno = strtoul(args[1] + (args[1][0] == '#'), NULL, 10);
+    shipno = strtoul(argv[1].c_str() + (argv[1].c_str()[0] == '#'), NULL, 10);
 
   if (shipno <= 0) {
     (void)notify(Playernum, Governor, "Change the capital to be what ship?\n");

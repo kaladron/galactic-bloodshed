@@ -48,7 +48,7 @@ void technology(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     return;
   }
-  invest = atoi(args[1]);
+  invest = atoi(argv[1].c_str());
 
   if (invest < 0) {
     sprintf(buf, "Illegal value.\n");

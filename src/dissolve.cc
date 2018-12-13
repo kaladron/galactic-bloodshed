@@ -68,12 +68,12 @@ void dissolve(const command_t &argv, GameObj &g) {
     sprintf(buf, "Entering self destruct sequence!\n");
     notify(Playernum, Governor, buf);
 
-    sscanf(args[1], "%s", racepass);
-    sscanf(args[2], "%s", govpass);
+    sscanf(argv[1].c_str(), "%s", racepass);
+    sscanf(argv[2].c_str(), "%s", govpass);
 
     waste = 0;
     if (argv.size() > 3) {
-      sscanf(args[3], "%c", &nuke);
+      sscanf(argv[3].c_str(), "%c", &nuke);
       if (nuke == 'w') waste = 1;
     }
 

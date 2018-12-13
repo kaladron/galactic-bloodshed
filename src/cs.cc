@@ -54,7 +54,7 @@ void cs(const command_t &argv, GameObj &g) {
   } else if (argv.size() == 2) {
     /* chdir to specified scope */
 
-    auto where = Getplace(g, args[1], 0);
+    auto where = Getplace(g, argv[1].c_str(), 0);
 
     if (where.err) {
       sprintf(buf, "cs: bad scope.\n");

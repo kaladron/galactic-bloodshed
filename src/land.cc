@@ -53,10 +53,10 @@ void land(const command_t &argv, GameObj &g) {
     return;
   }
 
-  nextshipno = start_shiplist(g, args[1]);
+  nextshipno = start_shiplist(g, argv[1].c_str());
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, args[1], s, &nextshipno) &&
+    if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
         authorized(Governor, s)) {
       if (overloaded(s)) {
         sprintf(buf, "%s is too overloaded to land.\n", Ship(*s).c_str());
@@ -74,9 +74,9 @@ void land(const command_t &argv, GameObj &g) {
         free(s);
         continue;
       }
-      if (args[2][0] == '#') {
+      if (argv[2].c_str()[0] == '#') {
         /* attempting to land on a friendly ship (for carriers/stations/etc) */
-        sscanf(args[2] + 1, "%lu", &ship2no);
+        sscanf(argv[2].c_str() + 1, "%lu", &ship2no);
         if (!getship(&s2, ship2no)) {
           sprintf(buf, "Ship #%lu wasn't found.\n", ship2no);
           notify(Playernum, Governor, buf);
@@ -239,7 +239,7 @@ void land(const command_t &argv, GameObj &g) {
           free(s);
           continue;
         }
-        sscanf(args[2], "%d,%d", &x, &y);
+        sscanf(argv[2].c_str(), "%d,%d", &x, &y);
         if (s->whatorbits != ScopeLevel::LEVEL_PLAN) {
           sprintf(buf, "%s doesn't orbit a planet.\n", Ship(*s).c_str());
           notify(Playernum, Governor, buf);

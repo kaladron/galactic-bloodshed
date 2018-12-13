@@ -26,32 +26,32 @@ void toggle(const command_t &argv, GameObj &g) {
   Race = races[Playernum - 1];
 
   if (argv.size() > 1) {
-    if (match(args[1], "inverse"))
+    if (match(argv[1].c_str(), "inverse"))
       tog(Playernum, Governor, &Race->governor[Governor].toggle.inverse,
           "inverse");
-    else if (match(args[1], "double_digits"))
+    else if (match(argv[1].c_str(), "double_digits"))
       tog(Playernum, Governor, &Race->governor[Governor].toggle.double_digits,
           "double_digits");
-    else if (match(args[1], "geography"))
+    else if (match(argv[1].c_str(), "geography"))
       tog(Playernum, Governor, &Race->governor[Governor].toggle.geography,
           "geography");
-    else if (match(args[1], "gag"))
+    else if (match(argv[1].c_str(), "gag"))
       tog(Playernum, Governor, &Race->governor[Governor].toggle.gag, "gag");
-    else if (match(args[1], "autoload"))
+    else if (match(argv[1].c_str(), "autoload"))
       tog(Playernum, Governor, &Race->governor[Governor].toggle.autoload,
           "autoload");
-    else if (match(args[1], "color"))
+    else if (match(argv[1].c_str(), "color"))
       tog(Playernum, Governor, &Race->governor[Governor].toggle.color, "color");
-    else if (match(args[1], "visible"))
+    else if (match(argv[1].c_str(), "visible"))
       tog(Playernum, Governor, &Race->governor[Governor].toggle.invisible,
           "invisible");
-    else if (Race->God && match(args[1], "monitor"))
+    else if (Race->God && match(argv[1].c_str(), "monitor"))
       tog(Playernum, Governor, &Race->monitor, "monitor");
-    else if (match(args[1], "compatibility"))
+    else if (match(argv[1].c_str(), "compatibility"))
       tog(Playernum, Governor, &Race->governor[Governor].toggle.compat,
           "compatibility");
     else {
-      sprintf(buf, "No such option '%s'\n", args[1]);
+      sprintf(buf, "No such option '%s'\n", argv[1].c_str());
       notify(Playernum, Governor, buf);
       return;
     }
@@ -99,7 +99,7 @@ void highlight(const command_t &argv, GameObj &g) {
   player_t n;
   racetype *Race;
 
-  if (!(n = GetPlayer(args[1]))) {
+  if (!(n = GetPlayer(argv[1].c_str()))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;

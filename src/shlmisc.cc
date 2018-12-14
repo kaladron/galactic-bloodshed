@@ -41,7 +41,7 @@ void grant(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   // int APcount = 0; TODO(jeffbailey);
   racetype *Race;
-  int gov;
+  governor_t gov;
   shipnum_t nextshipno, shipno;
   shiptype *ship;
 
@@ -52,7 +52,7 @@ void grant(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "        grant <governor> money <amount>\n");
     return;
   }
-  if ((gov = atoi(argv[1].c_str())) < 0 || gov > MAXGOVERNORS) {
+  if ((gov = atoi(argv[1].c_str())) > MAXGOVERNORS) {
     notify(Playernum, Governor, "Bad governor number.\n");
     return;
   } else if (!Race->governor[gov].active) {

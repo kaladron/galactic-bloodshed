@@ -309,7 +309,7 @@ enum SectorType {
 #define REPEAT_CHARACTER                              \
   ' ' /* this character makes the previous command to \
          repeat */
-#define MAXGOVERNORS 5
+#define MAXGOVERNORS 5u
 #define POD_THRESHOLD 18
 #define POD_DECAY 4
 #define AP_FACTOR \

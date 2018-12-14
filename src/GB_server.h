@@ -31,7 +31,7 @@ void remove_sh_ship(shiptype *, shiptype *);
 int ShipCompare(const void *, const void *);
 void SortShips(void);
 void warn_race(int, char *);
-void warn(int, int, char *);
+void warn(player_t, governor_t, char *);
 void warn_star(int, int, int, char *);
 void notify_star(int, int, int, int, char *);
 void adjust_morale(racetype *, racetype *, int);

@@ -1721,7 +1721,7 @@ void warn_race(int who, char *message) {
     if (races[who - 1]->governor[i].active) warn(who, i, message);
 }
 
-void warn(int who, int governor, char *message) {
+void warn(player_t who, governor_t governor, char *message) {
   if (!notify(who, governor, message) && !notify(who, 0, message))
     push_telegram(who, governor, message);
 }

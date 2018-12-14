@@ -496,6 +496,7 @@ bool notify(const player_t who, governor_t gov,
 }
 
 // TODO(jeffbailey): We shouldn't need to be providing this function.
-void warn(int, int, char *);
-void warn(int who, int gov, char *msg) { /* this is a dummy routine */
+void warn(player_t, governor_t, char *);
+void warn(player_t who, governor_t gov,
+          char *msg) { /* this is a dummy routine */
 }

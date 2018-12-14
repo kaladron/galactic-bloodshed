@@ -35,7 +35,6 @@
  */
 #define START_RECORD_STRING "<************"
 #define END_RECORD_STRING "************>"
-#define min(x, y) (((x) < (y)) ? (x) : (y))
 
 int Dialogue(const char *, ...);
 

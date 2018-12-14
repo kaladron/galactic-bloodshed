@@ -6,9 +6,9 @@
 
 #include "makeplanet.h"
 
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <tuple>
 #include <vector>

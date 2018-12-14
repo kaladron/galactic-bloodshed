@@ -11,9 +11,9 @@
 
 #include "max.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "files_shl.h"
 #include "races.h"

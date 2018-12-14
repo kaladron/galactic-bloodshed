@@ -10,9 +10,9 @@
  *
  */
 
-#include <stdio.h>
 #include <sys/file.h>
 #include <unistd.h>
+#include <cstdio>
 
 #include "files_rw.h"
 

@@ -4,11 +4,11 @@
 
 #include "GB_racegen.h"
 
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "GB_server.h"
 #include "buffers.h"

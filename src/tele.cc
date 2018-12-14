@@ -4,11 +4,11 @@
 
 #include "tele.h"
 
-#include <limits.h>
-#include <stdio.h>
-#include <string.h>
 #include <sys/stat.h>
-#include <time.h>
+#include <climits>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
 
 #include "GB_server.h"
 #include "buffers.h"

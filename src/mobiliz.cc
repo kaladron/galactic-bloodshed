@@ -11,8 +11,8 @@
 
 #include "mobiliz.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #include "GB_server.h"
 #include "buffers.h"

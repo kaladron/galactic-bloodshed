@@ -6,10 +6,10 @@
 
 #include "VN.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <algorithm>
 #include <utility>
 
 #include "buffers.h"

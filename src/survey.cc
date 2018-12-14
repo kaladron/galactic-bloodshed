@@ -6,10 +6,10 @@
 
 #include "survey.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <strings.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
 #include "GB_server.h"
 #include "buffers.h"

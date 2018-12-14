@@ -4,12 +4,12 @@
 
 #include "racegen.h"
 
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <cmath>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "enroll.h"
 #include "game_info.h"

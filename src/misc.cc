@@ -9,6 +9,6 @@
 
 #include "misc.h"
 
-#include <math.h>
+#include <cmath>
 
 double logscale(int x) { return log10((double)x + 1.0) / 2.0; }

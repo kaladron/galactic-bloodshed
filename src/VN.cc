@@ -118,8 +118,11 @@ static void order_VN(shiptype *ship) {
   for (s = 0; s < Sdata.numstars; s++)
     if (s != ship->storbits &&
         Distsq(Stars[s]->xpos, Stars[s]->ypos, ship->xpos, ship->ypos) <
-            Distsq(Stars[min]->xpos, Stars[min]->ypos, ship->xpos, ship->ypos))
-      min2 = min, min = s;
+            Distsq(Stars[min]->xpos, Stars[min]->ypos, ship->xpos,
+                   ship->ypos)) {
+      min2 = min;
+      min = s;
+    }
 
   /* don't go there if we have a choice,
      and we have VN's there already */

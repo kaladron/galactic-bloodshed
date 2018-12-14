@@ -635,9 +635,10 @@ static int moveship_onplanet(shiptype *ship, Planet *planet) {
 
   (void)get_move(ship->shipclass[ship->special.terraform.index], ship->land_x,
                  ship->land_y, &x, &y, *planet);
-  if (y >= planet->Maxy)
-    bounced = 1, y -= 2; /* bounce off of south pole! */
-  else if (y < 0)
+  if (y >= planet->Maxy) {
+    bounced = 1;
+    y -= 2; /* bounce off of south pole! */
+  } else if (y < 0)
     bounced = y = 1; /* bounce off of north pole! */
   if (planet->Maxy == 1) y = 0;
   if (ship->shipclass[ship->special.terraform.index + 1] != '\0') {

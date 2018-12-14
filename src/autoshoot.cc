@@ -61,8 +61,10 @@ int Bombard(shiptype *ship, Planet *planet, racetype *r) {
           (ship->type == OTYPE_BERS &&
            smap.get(x, y).owner == ship->special.mind.target))
         found = 1;
-      else
-        x2 = x, y2 = y;
+      else {
+        x2 = x;
+        y2 = y;
+      }
     }
   }
   if (x2 != -1) {

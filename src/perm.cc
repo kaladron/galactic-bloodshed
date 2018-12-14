@@ -22,7 +22,10 @@ void PermuteSects(const Planet& planet) {
   for (i = x = y = 0; i < t; i++) {
     xymap[i].x = x;
     xymap[i].y = y;
-    if (++x >= planet.Maxx) x = 0, y++;
+    if (++x >= planet.Maxx) {
+      x = 0;
+      y++;
+    };
   }
   for (i = 0; i < t; i++) {
     sw = xymap[i];

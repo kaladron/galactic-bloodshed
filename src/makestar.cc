@@ -147,10 +147,13 @@ static void rand_list(int n, int *list) /* mix up the numbers 0 thru n */
     i = k = int_rand(0, n);
     while (nums[k] != 0) k += nums[k];
     list[j] = k;
-    if (k == n)
-      nums[k] = -n, kk = 0;
-    else
-      nums[k] = 1, kk = k + 1;
+    if (k == n) {
+      nums[k] = -n;
+      kk = 0;
+    } else {
+      nums[k] = 1;
+      kk = k + 1;
+    }
     /* K is now the next position in the list after the most recent number. */
     /* Go through the list, making each pointer point to k.  */
     while (i != k) {

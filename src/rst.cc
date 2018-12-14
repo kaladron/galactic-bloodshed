@@ -66,7 +66,7 @@ void rst(const command_t &argv, GameObj &g) {
   shipnum_t shipno;
   unsigned char Report_types[NUMSTYPES];
 
-  for (shipnum_t i = 0; i < NUMSTYPES; i++) Report_types[i] = 1;
+  for (auto &Report_type : Report_types) Report_type = 1;
   enemies_only = 0;
   Num_ships = 0;
   first = 1;
@@ -132,7 +132,7 @@ void rst(const command_t &argv, GameObj &g) {
       return;
     } else {
       size_t l = strlen(argv[1].c_str());
-      for (shipnum_t i = 0; i < NUMSTYPES; i++) Report_types[i] = 0;
+      for (auto &Report_type : Report_types) Report_type = 0;
 
       while (l--) {
         shipnum_t i = NUMSTYPES;

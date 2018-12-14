@@ -10,9 +10,9 @@ DOCDIR = PREFIX + "/share/galactic-bloodshed/"
 LLVM_COPTS_DEFAULT = [
     "-Werror",
     "-Weverything",
-    "-Wno-c++98-compat", # Keep this one
-    "-Wno-padded", # Keep this one
-    "-Wno-c++98-compat-pedantic", # Keep
+    "-Wno-c++98-compat",  # Keep this one
+    "-Wno-padded",  # Keep this one
+    "-Wno-c++98-compat-pedantic",  # Keep
 ]
 
 LLVM_COPTS_OPTIONAL = [
@@ -31,7 +31,6 @@ LLVM_COPTS_OPTIONAL = [
     "-Wno-switch-enum",
     "-Wno-switch",
     "-Wno-logical-not-parentheses",
-    "-Wno-writable-strings",
     "-Wno-exit-time-destructors",
     "-Wno-global-constructors",
 ]
@@ -312,6 +311,8 @@ cc_binary(
             "tweakables.h",
             "vars.h",
         ],
-    copts = COPTS,
+    copts = COPTS + [
+        "-Wno-writable-strings",
+    ],
     linkopts = ["-lsqlite3"],
 )

@@ -53,7 +53,7 @@ int Bombard(shiptype *ship, Planet *planet, racetype *r) {
   auto smap = getsmap(*planet);
 
   /* look for someone to bombard-check for war */
-  (void)Getxysect(*planet, 0, 0, 1); /* reset */
+  (void)Getxysect(*planet, nullptr, nullptr, 1); /* reset */
   while (!found && Getxysect(*planet, &x, &y, 0)) {
     if (smap.get(x, y).owner && smap.get(x, y).owner != ship->owner &&
         (smap.get(x, y).condition != SectorType::SEC_WASTED)) {

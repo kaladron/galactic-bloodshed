@@ -21,7 +21,6 @@ LLVM_COPTS_OPTIONAL = [
     "-Wno-float-equal",
     "-Wno-old-style-cast",
     "-Wno-conversion",
-    "-Wno-zero-as-null-pointer-constant",
     "-Wno-unused-parameter",
     "-Wno-conditional-uninitialized",
     "-Wno-sign-compare",

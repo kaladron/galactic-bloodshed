@@ -30,7 +30,7 @@ static int enroll_player_race(char *failure_filename) {
   static int recursing = 0;
   static int successful_enroll_in_fix_mode = 0;
 
-  while ((n = critique_to_file(NULL, 1, 1))) {
+  while ((n = critique_to_file(nullptr, 1, 1))) {
     printf("Race (%s) unacceptable, for the following reason%c:\n",
            race_info.name, (n > 1) ? 's' : '\0');
     critique_to_file(stdout, 1, 1);
@@ -54,8 +54,8 @@ static int enroll_player_race(char *failure_filename) {
       }
       continue;
     }
-    if (failure_filename != NULL) {
-      if (NULL == fopen(failure_filename, "w+")) {
+    if (failure_filename != nullptr) {
+      if (nullptr == fopen(failure_filename, "w+")) {
         printf("Warning: unable to open failures file \"%s\".\n",
                failure_filename);
         printf("Race not saved to failures file.\n");
@@ -70,7 +70,7 @@ static int enroll_player_race(char *failure_filename) {
       return 1;
 
     g = fopen(TMP, "w");
-    if (g == NULL) {
+    if (g == nullptr) {
       printf("Unable to open file \"%s\".\n", TMP);
       return 1;
     }
@@ -107,7 +107,7 @@ static int enroll_player_race(char *failure_filename) {
   }
 
   g = fopen(TMP, "w");
-  if (g == NULL) {
+  if (g == nullptr) {
     printf("Unable to open file \"%s\".\n", TMP);
     return 0;
   }
@@ -141,7 +141,7 @@ int enroll(int argc, char *argv[]) {
 
   if (argc < 2) argv[1] = DEFAULT_ENROLLMENT_FAILURE_FILENAME;
   g = fopen(argv[1], "w+");
-  if (g == NULL) printf("Unable to open failures file \"%s\".\n", argv[1]);
+  if (g == nullptr) printf("Unable to open failures file \"%s\".\n", argv[1]);
   fclose(g);
   bcopy(&race_info, &last, sizeof(struct x));
 
@@ -150,7 +150,7 @@ int enroll(int argc, char *argv[]) {
    * race submission mailed from somebody other than the moderator.  */
   if (strcmp(race_info.address, TO))
     ret = enroll_player_race(argv[1]);
-  else if ((ret = critique_to_file(NULL, 1, 0))) {
+  else if ((ret = critique_to_file(nullptr, 1, 0))) {
     printf("Race (%s) unacceptable, for the following reason%c:\n",
            race_info.name, (ret > 1) ? 's' : '\0');
     critique_to_file(stdout, 1, 0);
@@ -170,14 +170,14 @@ void process(int argc, char *argv[]) {
 
   if (argc < 2) argv[1] = DEFAULT_ENROLLMENT_FILENAME;
   f = fopen(argv[1], "r");
-  if (f == NULL) {
+  if (f == nullptr) {
     printf("Unable to open races file \"%s\".\n", argv[1]);
     return;
   }
 
   if (argc < 3) argv[2] = DEFAULT_ENROLLMENT_FAILURE_FILENAME;
   g = fopen(argv[2], "w");
-  if (g == NULL) printf("Unable to open failures file \"%s\".\n", argv[2]);
+  if (g == nullptr) printf("Unable to open failures file \"%s\".\n", argv[2]);
   fclose(g);
 
   n = 0;

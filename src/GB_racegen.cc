@@ -220,7 +220,7 @@ found_planet:
    * Find sector to build capital on, and populate it: */
   auto smap = getsmap(planet);
   PermuteSects(planet);
-  Getxysect(planet, 0, 0, 1);
+  Getxysect(planet, nullptr, nullptr, 1);
   while ((i = Getxysect(planet, &x, &y, 0)))
     if (smap.get(x, y).condition == Race->likesbest) break;
   if (!i) x = y = 0;
@@ -349,7 +349,7 @@ found_planet:
   putstar(Stars[star], star);
   close_data_files();
 
-  sigprocmask(SIG_SETMASK, &mask, NULL);
+  sigprocmask(SIG_SETMASK, &mask, nullptr);
 
   printf("Player %d (%s) created on sector %d,%d on %s/%s.\n", Playernum,
          race_info.name, x, y, Stars[star]->name, Stars[star]->pnames[pnum]);

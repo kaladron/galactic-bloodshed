@@ -99,8 +99,8 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
       VN_hitlist INT NOT NULL, VN_index1 INT NOT NULL, VN_index2 INT NOT NULL);
 
 )";
-  char *err_msg = 0;
-  int err = sqlite3_exec(db, tbl_create, NULL, NULL, &err_msg);
+  char *err_msg = nullptr;
+  int err = sqlite3_exec(db, tbl_create, nullptr, nullptr, &err_msg);
   if (err != SQLITE_OK) {
     fprintf(stderr, "SQL error: %s\n", err_msg);
     sqlite3_free(err_msg);
@@ -455,7 +455,7 @@ int getship(shiptype **s, shipnum_t shipnum) {
   if (buffer.st_size / sizeof(shiptype) < shipnum)
     return 0;
   else {
-    if ((*s = (shiptype *)malloc(sizeof(shiptype))) == NULL) {
+    if ((*s = (shiptype *)malloc(sizeof(shiptype))) == nullptr) {
       printf("getship:malloc() error \n");
       exit(0);
     }
@@ -475,7 +475,7 @@ int getcommod(commodtype **c, commodnum_t commodnum) {
   if (buffer.st_size / sizeof(commodtype) < commodnum)
     return 0;
   else {
-    if ((*c = (commodtype *)malloc(sizeof(commodtype))) == NULL) {
+    if ((*c = (commodtype *)malloc(sizeof(commodtype))) == nullptr) {
       printf("getcommod:malloc() error \n");
       exit(0);
     }
@@ -558,7 +558,7 @@ void putstar(startype *s, starnum_t snum) {
   start_bulk_insert();
 
   {
-    const char *tail = 0;
+    const char *tail = nullptr;
     sqlite3_stmt *stmt;
 
     const char *sql =
@@ -584,7 +584,7 @@ void putstar(startype *s, starnum_t snum) {
   }
 
   {
-    const char *tail = 0;
+    const char *tail = nullptr;
     sqlite3_stmt *stmt;
     const char *sql =
         "REPLACE INTO tbl_star_governor (star_id, player_id, governor_id) "
@@ -603,7 +603,7 @@ void putstar(startype *s, starnum_t snum) {
   }
 
   {
-    const char *tail = 0;
+    const char *tail = nullptr;
     sqlite3_stmt *stmt;
     const char *sql =
         "REPLACE INTO tbl_star_playerap (star_id, player_id, ap) "
@@ -622,7 +622,7 @@ void putstar(startype *s, starnum_t snum) {
   }
 
   {
-    const char *tail = 0;
+    const char *tail = nullptr;
     sqlite3_stmt *stmt;
     const char *sql =
         "REPLACE INTO tbl_star_explored (star_id, player_id, explored) "
@@ -641,7 +641,7 @@ void putstar(startype *s, starnum_t snum) {
   }
 
   {
-    const char *tail = 0;
+    const char *tail = nullptr;
     sqlite3_stmt *stmt;
     const char *sql =
         "REPLACE INTO tbl_star_inhabited (star_id, player_id, explored) "
@@ -663,21 +663,21 @@ void putstar(startype *s, starnum_t snum) {
 }
 
 static void start_bulk_insert() {
-  char *err_msg = 0;
-  sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &err_msg);
+  char *err_msg = nullptr;
+  sqlite3_exec(db, "BEGIN TRANSACTION", nullptr, nullptr, &err_msg);
 }
 
 static void end_bulk_insert() {
-  char *err_msg = 0;
-  sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &err_msg);
+  char *err_msg = nullptr;
+  sqlite3_exec(db, "END TRANSACTION", nullptr, nullptr, &err_msg);
 }
 
 void putplanet(const Planet &p, startype *star, const int pnum) {
   start_bulk_insert();
 
-  const char *tail = 0;
-  const char *plinfo_tail = 0;
-  const char *plinfo_route_tail = 0;
+  const char *tail = nullptr;
+  const char *plinfo_tail = nullptr;
+  const char *plinfo_route_tail = nullptr;
   sqlite3_stmt *stmt, *plinfo_stmt, *plinfo_route_stmt;
   const char *sql =
       "REPLACE INTO tbl_planet (planet_id, star_id, planet_order, name, "
@@ -813,7 +813,7 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
 }
 
 void putsector(const sector &s, const Planet &p, const int x, const int y) {
-  const char *tail = 0;
+  const char *tail = nullptr;
   sqlite3_stmt *stmt;
   const char *sql =
       "REPLACE INTO tbl_sector (planet_id, xpos, ypos, eff, fert, "
@@ -895,18 +895,20 @@ int Newslength(int type) {
 
   switch (type) {
     case DECLARATION:
-      if ((fp = fopen(DECLARATIONFL, "r")) == NULL)
+      if ((fp = fopen(DECLARATIONFL, "r")) == nullptr)
         fp = fopen(DECLARATIONFL, "w+");
       break;
 
     case TRANSFER:
-      if ((fp = fopen(TRANSFERFL, "r")) == NULL) fp = fopen(TRANSFERFL, "w+");
+      if ((fp = fopen(TRANSFERFL, "r")) == nullptr)
+        fp = fopen(TRANSFERFL, "w+");
       break;
     case COMBAT:
-      if ((fp = fopen(COMBATFL, "r")) == NULL) fp = fopen(COMBATFL, "w+");
+      if ((fp = fopen(COMBATFL, "r")) == nullptr) fp = fopen(COMBATFL, "w+");
       break;
     case ANNOUNCE:
-      if ((fp = fopen(ANNOUNCEFL, "r")) == NULL) fp = fopen(ANNOUNCEFL, "w+");
+      if ((fp = fopen(ANNOUNCEFL, "r")) == nullptr)
+        fp = fopen(ANNOUNCEFL, "w+");
       break;
     default:
       return 0;

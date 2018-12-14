@@ -109,7 +109,7 @@ void profile(const command_t &argv, GameObj &g) {
       sprintf(buf, "Designated Capital: #%-8lu", Race->Gov_ship);
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\tRanges:     guns:   %5.0f\n",
-            gun_range(Race, (shiptype *)NULL, 1));
+            gun_range(Race, (shiptype *)nullptr, 1));
     notify(Playernum, Governor, buf);
     sprintf(buf, "Morale: %5ld\t\t\t\t\t    space:  %5.0f\n", Race->morale,
             tele_range(OTYPE_STELE, Race->tech));
@@ -229,7 +229,7 @@ void profile(const command_t &argv, GameObj &g) {
             Estimate_i((int)(r->conditions[OXYGEN]), Race, p));
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\t  guns:   %6s\n",
-            Estimate_f(gun_range(r, (shiptype *)NULL, 1), Race, p));
+            Estimate_f(gun_range(r, (shiptype *)nullptr, 1), Race, p));
     notify(Playernum, Governor, buf);
     sprintf(buf, "Fight:   %s", Estimate_i((int)(r->fighters), Race, p));
     notify(Playernum, Governor, buf);

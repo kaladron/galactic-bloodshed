@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
 static void InitFile(const char *filename, void *ptr, int len) {
   FILE *f = fopen(filename, "w+");
 
-  if (f == NULL) {
+  if (f == nullptr) {
     printf("Unable to open \"%s\".\n", filename);
     exit(-1);
   }
@@ -235,7 +235,7 @@ static void InitFile(const char *filename, void *ptr, int len) {
   fclose(f);
 }
 
-static void EmptyFile(const char *filename) { InitFile(filename, NULL, 0); }
+static void EmptyFile(const char *filename) { InitFile(filename, nullptr, 0); }
 
 /*
  * The procedure below was adapted from a program which is
@@ -246,7 +246,7 @@ static void produce_postscript(const char *filename) {
   double scale, nscale;
   FILE *f = fopen(filename, "w+");
 
-  if (f == NULL) {
+  if (f == nullptr) {
     printf("Unable to open postscript file \"%s\".\n", filename);
     return;
   }

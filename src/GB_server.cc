@@ -114,8 +114,8 @@ class DescriptorData : public GameObj {
       : descriptor(s),
         connected(0),
         output_size(0),
-        raw_input(0),
-        raw_input_at(0),
+        raw_input(nullptr),
+        raw_input_at(nullptr),
         last_time(0),
         quota(COMMAND_BURST_SIZE) {
     output.tail = &output.head;
@@ -312,7 +312,7 @@ int main(int argc, char **argv) {
 
   open_data_files();
   printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
-  time_t clk = time(0);
+  time_t clk = time(nullptr);
   printf("      %s", ctime(&clk));
 #ifdef EXTERNAL_TRIGGER
   printf("      The update  password is '%s'.\n", UPDATE_PASSWORD);
@@ -504,7 +504,7 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
 
   go_time = 0;
   int sock = make_socket(port);
-  gettimeofday(&last_slice, (struct timezone *)0);
+  gettimeofday(&last_slice, nullptr);
 
   avail_descriptors = getdtablesize() - 4;
 
@@ -513,7 +513,7 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
 
   while (!shutdown_flag) {
     fflush(stdout);
-    gettimeofday(&current_time, (struct timezone *)0);
+    gettimeofday(&current_time, nullptr);
     last_slice = update_quotas(last_slice, current_time);
 
     process_commands();
@@ -535,7 +535,7 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
       if (d->output.head) FD_SET(d->descriptor, &output_set);
     }
 
-    if (select(FD_SETSIZE, &input_set, &output_set, NULL, &timeout) < 0) {
+    if (select(FD_SETSIZE, &input_set, &output_set, nullptr, &timeout) < 0) {
       if (errno != EINTR) {
         perror("select");
         return sock;
@@ -677,7 +677,7 @@ typedef struct access {
   struct in_addr ac_addr;
   int access_value;
 } ac_t;
-static ac_t *ac_tab = (ac_t *)NULL;
+static ac_t *ac_tab = (ac_t *)nullptr;
 
 int address_ok(struct sockaddr_in *ap) {
   int i;
@@ -790,7 +790,7 @@ static struct text_block *make_text_block(const char *s, int n) {
   bcopy(s, p->buf, n);
   p->nchars = n;
   p->start = p->buf;
-  p->nxt = 0;
+  p->nxt = nullptr;
   return p;
 }
 
@@ -805,7 +805,7 @@ static void add_to_queue(struct text_queue *q, const char *b, int n) {
   if (n == 0) return;
 
   p = make_text_block(b, n);
-  p->nxt = 0;
+  p->nxt = nullptr;
   *q->tail = p;
   q->tail = &p->nxt;
 }
@@ -889,7 +889,7 @@ static void freeqs(DescriptorData *d) {
     free_text_block(cur);
     cur = next;
   }
-  d->output.head = 0;
+  d->output.head = nullptr;
   d->output.tail = &d->output.head;
 
   cur = d->input.head;
@@ -898,12 +898,12 @@ static void freeqs(DescriptorData *d) {
     free_text_block(cur);
     cur = next;
   }
-  d->input.head = 0;
+  d->input.head = nullptr;
   d->input.tail = &d->input.head;
 
   if (d->raw_input) free(d->raw_input);
-  d->raw_input = 0;
-  d->raw_input_at = 0;
+  d->raw_input = nullptr;
+  d->raw_input_at = nullptr;
 }
 
 static void welcome_user(DescriptorData *d) {
@@ -913,7 +913,7 @@ static void welcome_user(DescriptorData *d) {
   sprintf(buf, "***   Welcome to Galactic Bloodshed %s ***\n", VERS);
   queue_string(d, buf);
 
-  if ((f = fopen(WELCOME_FILE, "r")) != NULL) {
+  if ((f = fopen(WELCOME_FILE, "r")) != nullptr) {
     while (fgets(buf, sizeof buf, f)) {
       for (p = buf; *p; p++)
         if (*p == '\n') {
@@ -931,7 +931,7 @@ static void help_user(GameObj &g) {
   FILE *f;
   char *p;
 
-  if ((f = fopen(HELP_FILE, "r")) != NULL) {
+  if ((f = fopen(HELP_FILE, "r")) != nullptr) {
     while (fgets(buf, sizeof buf, f)) {
       for (p = buf; *p; p++)
         if (*p == '\n') {
@@ -979,8 +979,8 @@ static int process_input(DescriptorData *d) {
     d->raw_input_at = p;
   } else {
     free(d->raw_input);
-    d->raw_input = 0;
-    d->raw_input_at = 0;
+    d->raw_input = nullptr;
+    d->raw_input_at = nullptr;
   }
   return 1;
 }
@@ -1115,7 +1115,7 @@ static void check_connect(DescriptorData *d, const char *message) {
     GB_time({}, *d);
     sprintf(buf, "\nLast login      : %s", ctime(&(r->governor[j].login)));
     notify(Playernum, Governor, buf);
-    r->governor[j].login = time(0);
+    r->governor[j].login = time(nullptr);
     putrace(r);
     if (!r->Gov_ship) {
       sprintf(buf,
@@ -1133,7 +1133,7 @@ static void check_connect(DescriptorData *d, const char *message) {
 }
 
 static void do_update(int override) {
-  time_t clk = time(0);
+  time_t clk = time(nullptr);
   int i;
   FILE *sfile;
   struct stat stbuf;
@@ -1195,7 +1195,7 @@ static void do_update(int override) {
   update_flag = 1;
   if (!fakeit) do_turn(1);
   update_flag = 0;
-  clk = time(0);
+  clk = time(nullptr);
   sprintf(buf, "%sUpdate %d finished\n", ctime(&clk), nupdates_done);
   handle_victory();
   if (!fakeit) {
@@ -1205,7 +1205,7 @@ static void do_update(int override) {
 }
 
 static void do_segment(int override, int segment) {
-  time_t clk = time(0);
+  time_t clk = time(nullptr);
   int i;
   FILE *sfile;
   struct stat stbuf;
@@ -1249,7 +1249,7 @@ static void do_segment(int override, int segment) {
   fprintf(stderr, "%s", ctime(&clk));
   fprintf(stderr, "Next Segment %2d : %s", nsegments_done,
           ctime(&next_segment_time));
-  clk = time(0);
+  clk = time(nullptr);
   sprintf(buf, "%sSegment finished\n", ctime(&clk));
   if (!fakeit) {
     for (i = 1; i <= Num_races; i++) notify_race(i, buf);
@@ -1408,7 +1408,7 @@ static void load_star_data() {
 static void GB_time(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  time_t clk = time(0);
+  time_t clk = time(nullptr);
   notify(Playernum, Governor, start_buf);
   notify(Playernum, Governor, update_buf);
   notify(Playernum, Governor, segment_buf);
@@ -1419,7 +1419,7 @@ static void GB_time(const command_t &argv, GameObj &g) {
 static void GB_schedule(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  time_t clk = time(0);
+  time_t clk = time(nullptr);
   sprintf(buf, "%d minute update intervals\n", update_time);
   notify(Playernum, Governor, buf);
   sprintf(buf, "%ld movement segments per update\n", segments);
@@ -1444,7 +1444,7 @@ static void help(const command_t &argv, GameObj &g) {
     help_user(g);
   } else {
     sprintf(file, "%s/%s.doc", DOCDIR, argv[1].c_str());
-    if ((f = fopen(file, "r")) != 0) {
+    if ((f = fopen(file, "r")) != nullptr) {
       while (fgets(buf, sizeof buf, f)) {
         for (p = buf; *p; p++)
           if (*p == '\n') {
@@ -1545,7 +1545,7 @@ void kill_ship(int Playernum, shiptype *ship) {
 }
 
 void compute_power_blocks() {
-  const time_t clk = time(0);
+  const time_t clk = time(nullptr);
   int i, j, dummy[2];
   /* compute alliance block power */
   sprintf(Power_blocks.time, "%s", ctime(&clk));

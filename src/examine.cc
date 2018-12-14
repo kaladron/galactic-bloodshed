@@ -49,7 +49,7 @@ void examine(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if ((fd = fopen(EXAM_FL, "r")) == NULL) {
+  if ((fd = fopen(EXAM_FL, "r")) == nullptr) {
     perror(EXAM_FL);
     free(ship);
     return;

@@ -88,10 +88,10 @@ void post(const char *origmsg, int type) {
   }
 
   FILE *news_fd;
-  if ((news_fd = fopen(telefl, "a")) == NULL) {
+  if ((news_fd = fopen(telefl, "a")) == nullptr) {
     return;
   } else {
-    tm = time(0);
+    tm = time(nullptr);
     current_tm = localtime(&tm);
     char *outbuf;
     asprintf(&outbuf, "%2d/%2d %02d:%02d:%02d %s", current_tm->tm_mon + 1,
@@ -140,12 +140,12 @@ void push_telegram(int recpient, int gov, const char *msg) {
   bzero((char *)telefl, sizeof(telefl));
   sprintf(telefl, "%s.%d.%d", TELEGRAMFL, recpient, gov);
 
-  if ((telegram_fd = fopen(telefl, "a")) == NULL)
-    if ((telegram_fd = fopen(telefl, "w+")) == NULL) {
+  if ((telegram_fd = fopen(telefl, "a")) == nullptr)
+    if ((telegram_fd = fopen(telefl, "w+")) == nullptr) {
       perror("tele");
       return;
     }
-  tm = time(0);
+  tm = time(nullptr);
   current_tm = localtime(&tm);
 
   fprintf(telegram_fd, "%2d/%2d %02d:%02d:%02d %s\n", current_tm->tm_mon + 1,
@@ -176,7 +176,7 @@ void teleg_read(int Playernum, int Governor) {
   bzero((char *)telegram_file, sizeof(telegram_file));
   sprintf(telegram_file, "%s.%d.%d", TELEGRAMFL, Playernum, Governor);
 
-  if ((teleg_read_fd = fopen(telegram_file, "r")) != 0) {
+  if ((teleg_read_fd = fopen(telegram_file, "r")) != nullptr) {
     notify(Playernum, Governor, "Telegrams:");
     stat(telegram_file, &telestat);
     if (telestat.st_size > 0) {
@@ -233,7 +233,7 @@ void news_read(int Playernum, int Governor, int type) {
       return;
   }
 
-  if ((teleg_read_fd = fopen(telegram_file, "r")) != 0) {
+  if ((teleg_read_fd = fopen(telegram_file, "r")) != nullptr) {
     Race = races[Playernum - 1];
     if (Race->governor[Governor].newspos[type] > newslength[type])
       Race->governor[Governor].newspos[type] = 0;

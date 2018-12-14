@@ -115,7 +115,7 @@ static int ReadNameList(char ss[1000][20], int n, int m, const char *filename) {
   int i, j;
   FILE *f = fopen(filename, "r");
 
-  if (f == NULL) {
+  if (f == nullptr) {
     printf("Unable to open \"%s\".\n", filename);
     return -1;
   }

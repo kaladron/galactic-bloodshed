@@ -84,7 +84,8 @@ void survey(const command_t &argv, GameObj &g) {
     where.pnum = g.pnum;
   } else {
     /* they are surveying a sector */
-    if ((isdigit(argv[1].c_str()[0]) && index(argv[1].c_str(), ',') != NULL) ||
+    if ((isdigit(argv[1].c_str()[0]) &&
+         index(argv[1].c_str(), ',') != nullptr) ||
         ((*argv[1].c_str() == '-') && (all = 1))) {
       if (g.level != ScopeLevel::LEVEL_PLAN) {
         sprintf(buf, "There are no sectors here.\n");
@@ -108,7 +109,8 @@ void survey(const command_t &argv, GameObj &g) {
 
     compat = compatibility(p, Race);
 
-    if ((isdigit(argv[1].c_str()[0]) && index(argv[1].c_str(), ',') != NULL) ||
+    if ((isdigit(argv[1].c_str()[0]) &&
+         index(argv[1].c_str(), ',') != nullptr) ||
         all) {
       auto smap = getsmap(p);
 
@@ -396,7 +398,7 @@ void repair(const command_t &argv, GameObj &g) {
     where.pnum = g.pnum;
   } else {
     /* repairing a sector */
-    if (isdigit(argv[1].c_str()[0]) && index(argv[1].c_str(), ',') != NULL) {
+    if (isdigit(argv[1].c_str()[0]) && index(argv[1].c_str(), ',') != nullptr) {
       if (g.level != ScopeLevel::LEVEL_PLAN) {
         sprintf(buf, "There are no sectors here.\n");
         notify(Playernum, Governor, buf);
@@ -420,7 +422,7 @@ void repair(const command_t &argv, GameObj &g) {
       return;
     }
     auto smap = getsmap(p);
-    if (isdigit(argv[1].c_str()[0]) && index(argv[1].c_str(), ',') != NULL) {
+    if (isdigit(argv[1].c_str()[0]) && index(argv[1].c_str(), ',') != nullptr) {
       get4args(argv[1].c_str(), &x2, &hix, &lowy, &hiy);
       /* ^^^ translate from lowx:hix,lowy:hiy */
       x2 = std::max(0, x2);

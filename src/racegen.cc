@@ -430,7 +430,7 @@ static void fix_up_iq() {
  * VERY IMPORTANT FUNCTION: this function is a representation function
  * for the race datatype.  That is, it will return a positive integer iff
  * the race is NOT valid.  It is thus useful both when modifying a race and
- * when loading a race.  The file f should be NULL if you do not want to
+ * when loading a race.  The file f should be nullptr if you do not want to
  * print out descriptions of the errors; otherwise, error message(s) will be
  * printed to that file.
  */
@@ -438,7 +438,7 @@ int critique_to_file(FILE *f, int rigorous_checking, int is_player_race) {
   int i, nerrors = 0;
 
 #define FPRINTF \
-  if (f != NULL) fprintf
+  if (f != nullptr) fprintf
 
   /*
    * Check for valid attributes: */
@@ -874,7 +874,7 @@ static int load_from_filename(const char *filename) {
   int ret;
   FILE *f = fopen(filename, "r");
 
-  if (f == NULL) {
+  if (f == nullptr) {
     printf("Unable to open file \"%s\".\n", filename);
     return 1;
   }
@@ -909,7 +909,7 @@ static void load(int argc, char *argv[]) {
 
 static int modify(int argc, char *argv[]) {
   int i, j;
-  static char *help_strings[2] = {NULL, "modify"};
+  static char *help_strings[2] = {nullptr, "modify"};
   double f;
 
   if (argc < 3) {
@@ -1126,7 +1126,7 @@ void print_to_file(FILE *f, int verbose) {
 static int print_to_filename(const char *filename, int verbose) {
   FILE *f = fopen(filename, "w");
 
-  if (f == NULL) {
+  if (f == nullptr) {
     printf("Unable to open file \"%s\".\n", filename);
     return 0;
   }
@@ -1161,7 +1161,7 @@ static void send2(int argc, char *argv[]) {
   if (critique_to_file(stdout, 1, IS_PLAYER)) return;
 
   f = fopen(race_info.password, "w");
-  if (f == NULL) {
+  if (f == nullptr) {
     printf("Unable to open file \"%s\".\n", race_info.password);
     return;
   }
@@ -1178,7 +1178,7 @@ static void send2(int argc, char *argv[]) {
   printf("done.\n");
 
   f = fopen(race_info.password, "w");
-  if (f == NULL) {
+  if (f == nullptr) {
     printf("Unable to open file \"%s\".\n", race_info.password);
     return;
   }
@@ -1205,7 +1205,7 @@ int Dialogue(const char *prompt, ...) {
   char *argv[16];
   printf("%s", prompt);
   va_start(ap, prompt);
-  while ((carg = va_arg(ap, char *)) != 0) {
+  while ((carg = va_arg(ap, char *)) != nullptr) {
     if (!init) {
       printf(" [%s", carg);
       init = 1;
@@ -1248,7 +1248,7 @@ static void quit(int argc, char **argv) {
     if (!isserver) {
       i = Dialogue("Save this race before quitting?", "yes", "no", "abort", 0);
       if (i == 0)
-        save(1, NULL);
+        save(1, nullptr);
       else if (i == 2)
         please_quit = 0;
     } else {

@@ -46,7 +46,7 @@ placetype Getplace(GameObj &g, const char *const string, const int ignoreexpl) {
 
   where.err = 0;
 
-  if (string != 0) {
+  if (string != nullptr) {
     switch (*string) {
       case '/':
         where.level = ScopeLevel::LEVEL_UNIV; /* scope = root (universe) */
@@ -99,7 +99,7 @@ static placetype Getplace2(const int Playernum, const int Governor,
   size_t l;
   int tick;
 
-  if (where->err || string == NULL || *string == '\0' || *string == '\n')
+  if (where->err || string == nullptr || *string == '\0' || *string == '\n')
     return (*where); /* base cases */
   else if (*string == '.') {
     if (where->level == ScopeLevel::LEVEL_UNIV) {

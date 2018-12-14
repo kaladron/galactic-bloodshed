@@ -634,7 +634,7 @@ static void do_mirror(shiptype *ship) {
       /* if in the same system */
       if ((ship->whatorbits == ScopeLevel::LEVEL_STAR ||
            ship->whatorbits == ScopeLevel::LEVEL_PLAN) &&
-          (ships[ship->special.aimed_at.shipno] != NULL) &&
+          (ships[ship->special.aimed_at.shipno] != nullptr) &&
           (ships[ship->special.aimed_at.shipno]->whatorbits ==
                ScopeLevel::LEVEL_STAR ||
            ships[ship->special.aimed_at.shipno]->whatorbits ==

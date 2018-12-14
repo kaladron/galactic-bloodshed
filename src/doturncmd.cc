@@ -87,11 +87,11 @@ void do_turn(int update) {
       planets[star][i] = new Planet(getplanet(star, i));
       if (planets[star][i]->type != PlanetType::ASTEROID) Planet_count++;
       if (update) moveplanet(star, planets[star][i], i);
-      if (Stars[star]->pnames[i] == NULL)
-        sprintf(Stars[star]->pnames[i], "NULL-%d", i);
+      if (Stars[star]->pnames[i] == nullptr)
+        sprintf(Stars[star]->pnames[i], "nullptr-%d", i);
     }
     if (Stars[star]->name[0] == '\0')
-      sprintf(Stars[star]->name, "NULL-%d", star);
+      sprintf(Stars[star]->name, "nullptr-%d", star);
   }
 
   VN_brain.Most_mad = 0; /* not mad at anyone for starts */
@@ -480,7 +480,7 @@ static int APadd(int sh, int popn, racetype *race) {
 
 int governed(racetype *race) {
   return (race->Gov_ship && race->Gov_ship <= Num_ships &&
-          ships[race->Gov_ship] != NULL && ships[race->Gov_ship]->alive &&
+          ships[race->Gov_ship] != nullptr && ships[race->Gov_ship]->alive &&
           ships[race->Gov_ship]->docked &&
           (ships[race->Gov_ship]->whatdest == ScopeLevel::LEVEL_PLAN ||
            (ships[race->Gov_ship]->whatorbits == ScopeLevel::LEVEL_SHIP &&

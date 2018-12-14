@@ -770,7 +770,7 @@ void build(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor,
                "This ship type has not been programmed.\n");
       else {
-        if ((fd = fopen(EXAM_FL, "r")) == NULL) {
+        if ((fd = fopen(EXAM_FL, "r")) == nullptr) {
           perror(EXAM_FL);
           return;
         } else {
@@ -1062,7 +1062,7 @@ void build(const command_t &argv, GameObj &g) {
               notify(Playernum, Governor, buf);
               goto finish;
             }
-            create_ship_by_ship(Playernum, Governor, Race, 0, NULL, &newship,
+            create_ship_by_ship(Playernum, Governor, Race, 0, nullptr, &newship,
                                 builder);
             if (Race->governor[Governor].toggle.autoload &&
                 what != OTYPE_TRANSDEV && !Race->God)

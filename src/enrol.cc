@@ -276,7 +276,7 @@ int main() {
            Race->number_sexes);
 
     printf("\n\nLook OK(y/n)\?");
-    if (fgets(str, STRSIZE, stdin) == NULL) exit(1);
+    if (fgets(str, STRSIZE, stdin) == nullptr) exit(1);
   } while (str[0] != 'y');
 
   auto smap = getsmap(planet);
@@ -286,7 +286,7 @@ int main() {
       "live\non this type of sector.\n");
 
   PermuteSects(planet);
-  Getxysect(planet, 0, 0, 1);
+  Getxysect(planet, nullptr, nullptr, 1);
   while (Getxysect(planet, &x, &y, 0)) {
     secttypes[smap.get(x, y).condition].count++;
     if (!secttypes[smap.get(x, y).condition].here) {
@@ -445,7 +445,7 @@ int main() {
   putstar(Stars[star], star);
   close_data_files();
 
-  sigprocmask(SIG_SETMASK, &mask, NULL);
+  sigprocmask(SIG_SETMASK, &mask, nullptr);
 
   printf("\nYou are player %d.\n\n", Playernum);
   printf("Your race has been created on sector %d,%d on\n", secttypes[i].x,

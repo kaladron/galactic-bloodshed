@@ -78,7 +78,7 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
       dist *= dist / 200.0;         /* mines are very effective inside 200 */
     }
   }
-  if ((double)dist > gun_range((racetype *)NULL, from, 0)) return -1;
+  if ((double)dist > gun_range((racetype *)nullptr, from, 0)) return -1;
   /* attack parameters */
   ship_disposition(from, &fevade, &fspeed, &fbody);
   ship_disposition(to, &tevade, &tspeed, &tbody);

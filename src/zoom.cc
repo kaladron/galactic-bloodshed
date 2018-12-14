@@ -7,7 +7,6 @@
 
 #include "zoom.h"
 
-#include <stdio.h>
 #include <boost/format.hpp>
 #include <string>
 

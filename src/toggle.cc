@@ -6,7 +6,7 @@
 
 #include "toggle.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "GB_server.h"
 #include "buffers.h"

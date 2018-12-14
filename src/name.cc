@@ -831,7 +831,7 @@ void name(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   char *ch;
-  int i, spaces;
+  int spaces;
   unsigned char check = 0;
   shiptype *ship;
   char string[1024];
@@ -844,14 +844,12 @@ void name(const command_t &argv, GameObj &g) {
   }
 
   sprintf(buf, "%s", argv[2].c_str());
-  for (i = 3; i < argv.size(); i++) {
+  for (int i = 3; i < argv.size(); i++) {
     sprintf(temp, " %s", argv[i].c_str());
     strcat(buf, temp);
   }
 
   sprintf(string, "%s", buf);
-
-  i = strlen(argv[0].c_str());
 
   /* make sure there are no ^'s or '/' in name,
     also make sure the name has at least 1 character in it */

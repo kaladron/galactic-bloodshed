@@ -5,7 +5,7 @@
 #ifndef FILES_SHL_H
 #define FILES_SHL_H
 
-#include <stdint.h>
+#include <cstdint>
 #include <memory>
 
 #include "races.h"

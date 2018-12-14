@@ -5,7 +5,7 @@
 #ifndef RACEGEN_H
 #define RACEGEN_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #define GBVERSION "1.7.3"
 #ifdef VERSION

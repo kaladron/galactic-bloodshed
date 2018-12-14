@@ -7,11 +7,11 @@
 #ifndef VARS_H
 #define VARS_H
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/file.h>
 #include <sys/types.h>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <vector>
 #include "config.h"

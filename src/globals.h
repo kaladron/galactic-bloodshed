@@ -8,7 +8,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include <time.h>
+#include <ctime>
 
 #include "doturn.h"
 #include "power.h"

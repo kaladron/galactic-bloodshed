@@ -84,9 +84,9 @@ static struct stat sbuf;
 static int shutdown_flag = 0;
 static int update_flag = 0;
 
-static long last_update_time;
-static long last_segment_time;
-static int nupdates_done; /* number of updates so far */
+static time_t last_update_time;
+static time_t last_segment_time;
+static unsigned int nupdates_done; /* number of updates so far */
 
 static char start_buf[128];
 static char update_buf[128];
@@ -116,24 +116,22 @@ class DescriptorData : public GameObj {
  public:
   DescriptorData(int s)
       : descriptor(s),
-        connected(0),
+        connected(false),
         output_size(0),
         raw_input(nullptr),
         raw_input_at(nullptr),
         last_time(0),
         quota(COMMAND_BURST_SIZE) {}
   const int descriptor;
-  int connected;
-  int output_size;
+  bool connected;
+  ssize_t output_size;
   std::deque<TextBlock> output;
   std::deque<TextBlock> input;
   char *raw_input;
   char *raw_input_at;
-  long last_time;
+  time_t last_time;
   int quota;
 };
-
-static int ndescriptors = 0;
 
 static double GetComplexity(int);
 static void set_signals(void);
@@ -492,21 +490,17 @@ static struct timeval msec_add(struct timeval t, int x) {
 
 static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
   fd_set input_set, output_set;
-  long now, go_time;
   struct timeval last_slice, current_time;
   struct timeval next_slice;
   struct timeval timeout, slice_timeout;
-  int i;
-  int avail_descriptors;
+  time_t now;
+  time_t go_time;
 
-  go_time = 0;
   int sock = make_socket(port);
   gettimeofday(&last_slice, nullptr);
 
-  avail_descriptors = getdtablesize() - 4;
-
   if (!shutdown_flag) post("Server started\n", ANNOUNCE);
-  for (i = 0; i <= ANNOUNCE; i++) newslength[i] = Newslength(i);
+  for (int i = 0; i <= ANNOUNCE; i++) newslength[i] = Newslength(i);
 
   while (!shutdown_flag) {
     fflush(stdout);
@@ -523,7 +517,7 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
 
     FD_ZERO(&input_set);
     FD_ZERO(&output_set);
-    if (ndescriptors < avail_descriptors) FD_SET(sock, &input_set);
+    FD_SET(sock, &input_set);
     for (auto d : descriptor_list) {
       if (!d->input.empty())
         timeout = slice_timeout;
@@ -704,7 +698,7 @@ static void queue_string(DescriptorData *d, const std::string &b) {
 }
 
 static int process_output(DescriptorData *d) {
-  int cnt;
+  ssize_t cnt;
 
   // Flush the stringstream buffer into the output queue.
   queue_string(d, d->out.str());
@@ -716,7 +710,7 @@ static int process_output(DescriptorData *d) {
     cnt = write(d->descriptor, cur.start, cur.nchars);
     if (cnt < 0) {
       if (errno == EWOULDBLOCK) return 1;
-      d->connected = 0; /* added this */
+      d->connected = false;
       return 0;
     }
     d->output_size -= cnt;
@@ -935,7 +929,7 @@ static void check_connect(DescriptorData *d, const char *message) {
 
     fprintf(stderr, "CONNECTED %s \"%s\" [%d,%d] on descriptor %d\n", r->name,
             r->governor[j].name, Playernum, Governor, d->descriptor);
-    d->connected = 1;
+    d->connected = true;
 
     d->god = r->God;
     d->player = Playernum;

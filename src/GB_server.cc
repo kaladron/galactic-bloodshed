@@ -652,120 +652,13 @@ static DescriptorData *new_connection(int sock) {
   newsock = accept(sock, (struct sockaddr *)&addr, &addr_len);
   if (newsock <= 0) return nullptr;
   inet_ntop(AF_INET6, &addr.sin6_addr, addrstr, sizeof(addrstr));
-#ifdef ACCESS_CHECK
-  if (!address_ok(&addr)) {
-    write(newsock, "Unauthorized Access.\n", 21);
-    fprintf(stderr, "REJECT from %s(%d) on descriptor %d\n", addrstr,
-            ntohs(addr.sin6_port), newsock);
-    shutdown(newsock, 2);
-    close(newsock);
-    errno = 0;
-    return 0;
-  }
-#endif
+  // TODO(jeffbailey): There used to be custom access check stuff here.
+  // It should be replaced with TCP wrappers or something similar
   fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n", addrstr,
           ntohs(addr.sin6_port), newsock);
   make_nonblocking(newsock);
   return new DescriptorData(newsock);
 }
-
-#ifdef ACCESS_CHECK
-
-static int naddresses = 0;
-typedef struct access {
-  struct in_addr ac_addr;
-  int access_value;
-} ac_t;
-static ac_t *ac_tab = (ac_t *)nullptr;
-
-int address_ok(struct sockaddr_in *ap) {
-  int i;
-  ac_t *acp;
-  static int ainit = 0;
-  FILE *afile;
-  char *cp, ibuf[64];
-  int aval;
-  unsigned long ina;
-
-  if (!ainit) {
-    ainit = 1;
-    if ((afile = fopen(ADDRESSFL, "r"))) {
-      while (fgets(ibuf, sizeof ibuf, afile)) {
-        cp = ibuf;
-        aval = 1;
-        if (*cp == '#' || *cp == '\n' || *cp == '\r') continue;
-        if (*cp == '!') {
-          cp++;
-          aval = 0;
-        }
-        ina = inet_addr(cp);
-        if (ina != -1) add_address(ina, aval);
-      }
-      fclose(afile);
-      /* Always allow localhost. */
-      add_address(inet_addr("127"), 1);
-    } else {
-      /* Allow anything. */
-      add_address(inet_addr("0"), 1);
-    }
-  }
-
-  acp = ac_tab;
-  for (i = 0; i < naddresses; i++, acp++) {
-    if (address_match(&ap->sin_addr.s_addr, &acp->ac_addr))
-      return acp->access_value;
-  }
-  return 0;
-}
-
-address_match(struct in_addr *addr, struct in_addr *apat) {
-  /* Ugh!  There HAS to be a better way... */
-
-  if (!apat->S_un.S_un_b.s_b1) {
-    if (apat->S_un.S_un_b.s_b4 &&
-        apat->S_un.S_un_b.s_b4 != addr->S_un.S_un_b.s_b1)
-      return 0;
-    return 1;
-  } else {
-    if (apat->S_un.S_un_b.s_b1 != addr->S_un.S_un_b.s_b1) return 0;
-  }
-  if (!apat->S_un.S_un_b.s_b2) {
-    if (apat->S_un.S_un_b.s_b4 &&
-        apat->S_un.S_un_b.s_b4 != addr->S_un.S_un_b.s_b2)
-      return 0;
-    return 1;
-  } else {
-    if (apat->S_un.S_un_b.s_b2 != addr->S_un.S_un_b.s_b2) return 0;
-  }
-  if (!apat->S_un.S_un_b.s_b3) {
-    if (apat->S_un.S_un_b.s_b4 &&
-        apat->S_un.S_un_b.s_b4 != addr->S_un.S_un_b.s_b3)
-      return 0;
-    return 1;
-  } else {
-    if (apat->S_un.S_un_b.s_b3 != addr->S_un.S_un_b.s_b3) return 0;
-  }
-  if (apat->S_un.S_un_b.s_b4 != addr->S_un.S_un_b.s_b4) return 0;
-  return 1;
-}
-
-void add_address(unsigned long ina, int aval) {
-  ac_t *nac_t;
-
-  if (naddresses > 0)
-    nac_t = (ac_t *)realloc(ac_tab, sizeof(ac_t) * (naddresses + 1));
-  else
-    nac_t = (ac_t *)calloc(1, sizeof(ac_t));
-  if (!nac_t) {
-    printf("add_address: Out of memory.\n");
-    return;
-  }
-  ac_tab = nac_t;
-  nac_t = &ac_tab[naddresses++];
-  nac_t->ac_addr.s_addr = ina;
-  nac_t->access_value = aval;
-}
-#endif
 
 static void shutdownsock(DescriptorData *d) {
   if (d->connected) {

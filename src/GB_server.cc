@@ -97,7 +97,15 @@ static const char *flushed_message = "<Output Flushed>\n";
 static const char *shutdown_message = "Shutdown ordered by deity - Bye\n";
 static const char *already_on = "Connection refused.\n";
 
-struct text_block {
+class text_block {
+ public:
+  text_block(const std::string &in) {
+    nchars = in.size();
+    buf = strdup(in.c_str());
+    start = buf;
+  }
+
+  ~text_block() { free(buf); }
   int nchars;
   char *start;
   char *buf;
@@ -129,8 +137,7 @@ static int ndescriptors = 0;
 static double GetComplexity(int);
 static void set_signals(void);
 static void queue_string(DescriptorData *, const std::string &);
-static void add_to_queue(std::deque<text_block *> &, const char *, int);
-static struct text_block *make_text_block(const char *, int);
+static void add_to_queue(std::deque<text_block *> &, const std::string &);
 static void help(const command_t &, GameObj &);
 static void process_command(DescriptorData &, const command_t &argv);
 static int shovechars(int);
@@ -150,7 +157,6 @@ static struct timeval update_quotas(struct timeval, struct timeval);
 static int process_output(DescriptorData *);
 static void welcome_user(DescriptorData *);
 static int flush_queue(std::deque<text_block *> &, int);
-static void free_text_block(struct text_block *);
 static void process_commands(void);
 static int do_command(DescriptorData *, const char *);
 static void goodbye_user(DescriptorData *);
@@ -162,7 +168,7 @@ static void help_user(GameObj &);
 static void parse_connect(const char *, char *, char *);
 static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
-static void save_command(DescriptorData *, char *);
+static void save_command(DescriptorData *, const std::string &);
 static std::string do_prompt(DescriptorData &);
 
 static void check_connect(DescriptorData *, const char *);
@@ -775,28 +781,10 @@ static void shutdownsock(DescriptorData *d) {
   delete d;
 }
 
-static struct text_block *make_text_block(const char *s, int n) {
-  struct text_block *p;
+static void add_to_queue(std::deque<text_block *> &q, const std::string &b) {
+  if (b.empty()) return;
 
-  p = (struct text_block *)malloc(sizeof(struct text_block));
-  p->buf = (char *)malloc(n * sizeof(char));
-  bcopy(s, p->buf, n);
-  p->nchars = n;
-  p->start = p->buf;
-  return p;
-}
-
-static void free_text_block(struct text_block *t) {
-  free(t->buf);
-  free((char *)t);
-}
-
-static void add_to_queue(std::deque<text_block *> &q, const char *b, int n) {
-  struct text_block *p;
-
-  if (n == 0) return;
-
-  p = make_text_block(b, n);
+  auto *p = new text_block(b);
   q.push_back(p);
 }
 
@@ -806,14 +794,13 @@ static int flush_queue(std::deque<text_block *> &q, int n) {
   n += strlen(flushed_message);
 
   while (n > 0 && !q.empty()) {
-    struct text_block *p = q.front();
+    text_block *p = q.front();
     n -= p->nchars;
     really_flushed += p->nchars;
-    free_text_block(p);
+    delete p;
     q.pop_front();
   }
-  struct text_block *p =
-      make_text_block(flushed_message, strlen(flushed_message));
+  auto *p = new text_block(flushed_message);
   q.push_back(p);
   really_flushed -= p->nchars;
   return really_flushed;
@@ -824,7 +811,7 @@ static void queue_string(DescriptorData *d, const std::string &b) {
 
   space = MAX_OUTPUT - d->output_size - b.size();
   if (space < 0) d->output_size -= flush_queue(d->output, -space);
-  add_to_queue(d->output, b.c_str(), b.size());
+  add_to_queue(d->output, b);
   d->output_size += b.size();
 }
 
@@ -837,7 +824,7 @@ static int process_output(DescriptorData *d) {
   d->out.str("");
 
   while (!d->output.empty()) {
-    struct text_block *cur = d->output.front();
+    text_block *cur = d->output.front();
     cnt = write(d->descriptor, cur->start, cur->nchars);
     if (cnt < 0) {
       if (errno == EWOULDBLOCK) return 1;
@@ -846,7 +833,7 @@ static int process_output(DescriptorData *d) {
     }
     d->output_size -= cnt;
     if (cnt == cur->nchars) {  // We output the entire block
-      free_text_block(cur);
+      delete cur;
       d->output.pop_front();
       continue;
     }
@@ -872,12 +859,12 @@ static void make_nonblocking(int s) {
 
 static void freeqs(DescriptorData *d) {
   while (!d->output.empty()) {
-    free_text_block(d->output.front());
+    delete d->output.front();
     d->output.pop_front();
   }
 
   while (!d->input.empty()) {
-    free_text_block(d->input.front());
+    delete d->input.front();
     d->input.pop_front();
   }
 }
@@ -926,8 +913,8 @@ static void goodbye_user(DescriptorData *d) {
     write(d->descriptor, LEAVE_MESSAGE, strlen(LEAVE_MESSAGE));
 }
 
-static void save_command(DescriptorData *d, char *command) {
-  add_to_queue(d->input, command, strlen(command) + 1);
+static void save_command(DescriptorData *d, const std::string &command) {
+  add_to_queue(d->input, command);
 }
 
 static int process_input(DescriptorData *d) {
@@ -964,7 +951,6 @@ static int process_input(DescriptorData *d) {
 static void process_commands(void) {
   int nprocessed;
   long now;
-  struct text_block *t;
 
   (void)time(&now);
 
@@ -972,7 +958,7 @@ static void process_commands(void) {
     nprocessed = 0;
     for (auto d : descriptor_list) {
       if (d->quota > 0 && !d->input.empty()) {
-        t = d->input.front();
+        text_block *t = d->input.front();
         d->quota--;
         nprocessed++;
 
@@ -981,7 +967,7 @@ static void process_commands(void) {
           break;
         } else {
           d->last_time = now; /* experimental code */
-          free_text_block(t);
+          delete t;
           d->input.pop_front();
           d->last_time = now; /* experimental code */
         }

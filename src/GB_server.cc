@@ -97,18 +97,20 @@ static const char *flushed_message = "<Output Flushed>\n";
 static const char *shutdown_message = "Shutdown ordered by deity - Bye\n";
 static const char *already_on = "Connection refused.\n";
 
-class text_block {
+class TextBlock {
  public:
-  text_block(const std::string &in) {
+  TextBlock(const std::string &in) {
     nchars = in.size();
     buf = strdup(in.c_str());
     start = buf;
   }
 
-  ~text_block() { free(buf); }
+  ~TextBlock() { free(buf); }
   int nchars;
   char *start;
   char *buf;
+  TextBlock(const TextBlock &) = delete;
+  TextBlock &operator=(const TextBlock &) = delete;
 };
 
 class DescriptorData : public GameObj {
@@ -124,8 +126,8 @@ class DescriptorData : public GameObj {
   const int descriptor;
   int connected;
   int output_size;
-  std::deque<text_block> output;
-  std::deque<text_block> input;
+  std::deque<TextBlock> output;
+  std::deque<TextBlock> input;
   char *raw_input;
   char *raw_input_at;
   long last_time;
@@ -137,7 +139,7 @@ static int ndescriptors = 0;
 static double GetComplexity(int);
 static void set_signals(void);
 static void queue_string(DescriptorData *, const std::string &);
-static void add_to_queue(std::deque<text_block> &, const std::string &);
+static void add_to_queue(std::deque<TextBlock> &, const std::string &);
 static void help(const command_t &, GameObj &);
 static void process_command(DescriptorData &, const command_t &argv);
 static int shovechars(int);
@@ -156,7 +158,7 @@ static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
 static int process_output(DescriptorData *);
 static void welcome_user(DescriptorData *);
-static int flush_queue(std::deque<text_block> &, int);
+static int flush_queue(std::deque<TextBlock> &, int);
 static void process_commands(void);
 static int do_command(DescriptorData *, const char *);
 static void goodbye_user(DescriptorData *);
@@ -781,13 +783,13 @@ static void shutdownsock(DescriptorData *d) {
   delete d;
 }
 
-static void add_to_queue(std::deque<text_block> &q, const std::string &b) {
+static void add_to_queue(std::deque<TextBlock> &q, const std::string &b) {
   if (b.empty()) return;
 
   q.emplace_back(b);
 }
 
-static int flush_queue(std::deque<text_block> &q, int n) {
+static int flush_queue(std::deque<TextBlock> &q, int n) {
   int really_flushed = 0;
 
   n += strlen(flushed_message);

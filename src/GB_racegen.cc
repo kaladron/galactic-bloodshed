@@ -38,18 +38,12 @@ static const PlanetType planet_translate[N_HOME_PLANET_TYPES] = {
     PlanetType::GASGIANT};
 
 /* this is a dummy routine */
-bool notify(const player_t who, const governor_t gov, const char *msg) {
+bool notify(const player_t, const governor_t, const std::string &) {
   return false;
 }
 
 /* this is a dummy routine */
-bool notify(const player_t who, const governor_t gov, const std::string &msg) {
-  return false;
-}
-
-void warn(player_t who, governor_t gov,
-          char *msg) { /* this is a dummy routine */
-}
+void warn(const player_t, const governor_t, const std::string &) { return; }
 
 void init_enroll() { srandom(getpid()); }
 

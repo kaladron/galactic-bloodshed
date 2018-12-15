@@ -484,19 +484,11 @@ static char desshow(const int x, const int y,
 }
 
 // TODO(jeffbailey): We shouldn't need to be providing this function.
-bool notify(const player_t who, governor_t gov,
-            const char *msg) { /* this is a dummy routine */
+/* this is a dummy routine */
+bool notify(const player_t, const governor_t, const std::string &) {
   return false;
 }
 
 // TODO(jeffbailey): We shouldn't need to be providing this function.
-bool notify(const player_t who, governor_t gov,
-            const std::string &msg) { /* this is a dummy routine */
-  return false;
-}
-
-// TODO(jeffbailey): We shouldn't need to be providing this function.
-void warn(player_t, governor_t, char *);
-void warn(player_t who, governor_t gov,
-          char *msg) { /* this is a dummy routine */
-}
+/* this is a dummy routine */
+void warn(const player_t, const governor_t, const std::string &) { return; };

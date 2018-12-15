@@ -136,8 +136,7 @@ static int ndescriptors = 0;
 
 static double GetComplexity(int);
 static void set_signals(void);
-static void queue_string(DescriptorData *d, const char *message);
-static void queue_write(DescriptorData *, const char *, int);
+static void queue_string(DescriptorData *, const std::string &);
 static void add_to_queue(struct text_queue *, const char *, int);
 static struct text_block *make_text_block(const char *, int);
 static void help(const command_t &, GameObj &);
@@ -405,9 +404,9 @@ int main(int argc, char **argv) {
   return (0);
 }
 
-void set_signals(void) { signal(SIGPIPE, SIG_IGN); }
+static void set_signals(void) { signal(SIGPIPE, SIG_IGN); }
 
-void notify_race(int race, const char *message) {
+void notify_race(player_t race, const std::string &message) {
   if (update_flag) return;
   for (auto d : descriptor_list) {
     if (d->connected && d->player == race) {
@@ -417,10 +416,6 @@ void notify_race(int race, const char *message) {
 }
 
 bool notify(player_t race, governor_t gov, const std::string &message) {
-  return notify(race, gov, message.c_str());
-}
-
-bool notify(player_t race, governor_t gov, const char *message) {
   if (update_flag) return 0;
   for (auto d : descriptor_list)
     if (d->connected && d->player == race && d->governor == gov) {
@@ -430,7 +425,8 @@ bool notify(player_t race, governor_t gov, const char *message) {
   return false;
 }
 
-void d_think(int Playernum, int Governor, char *message) {
+void d_think(player_t Playernum, governor_t Governor,
+             const std::string &message) {
   for (auto d : descriptor_list) {
     if (d->connected && d->player == Playernum && d->governor != Governor &&
         !races[d->player - 1]->governor[d->governor].toggle.gag) {
@@ -439,7 +435,8 @@ void d_think(int Playernum, int Governor, char *message) {
   }
 }
 
-void d_broadcast(int Playernum, int Governor, char *message) {
+void d_broadcast(player_t Playernum, governor_t Governor,
+                 const std::string &message) {
   for (auto d : descriptor_list) {
     if (d->connected && !(d->player == Playernum && d->governor == Governor) &&
         !races[d->player - 1]->governor[d->governor].toggle.gag) {
@@ -448,7 +445,8 @@ void d_broadcast(int Playernum, int Governor, char *message) {
   }
 }
 
-void d_shout(int Playernum, int Governor, char *message) {
+void d_shout(player_t Playernum, governor_t Governor,
+             const std::string &message) {
   for (auto d : descriptor_list) {
     if (d->connected && !(d->player == Playernum && d->governor == Governor)) {
       queue_string(d, message);
@@ -456,7 +454,8 @@ void d_shout(int Playernum, int Governor, char *message) {
   }
 }
 
-void d_announce(int Playernum, int Governor, int star, char *message) {
+void d_announce(player_t Playernum, governor_t Governor, starnum_t star,
+                const std::string &message) {
   for (auto d : descriptor_list) {
     if (d->connected && !(d->player == Playernum && d->governor == Governor) &&
         (isset(Stars[star]->inhabited, d->player) ||
@@ -830,17 +829,13 @@ static int flush_queue(struct text_queue *q, int n) {
   return really_flushed;
 }
 
-static void queue_write(DescriptorData *d, const char *b, int n) {
+static void queue_string(DescriptorData *d, const std::string &b) {
   int space;
 
-  space = MAX_OUTPUT - d->output_size - n;
+  space = MAX_OUTPUT - d->output_size - b.size();
   if (space < 0) d->output_size -= flush_queue(&d->output, -space);
-  add_to_queue(&d->output, b, n);
-  d->output_size += n;
-}
-
-static void queue_string(DescriptorData *d, const char *s) {
-  queue_write(d, s, strlen(s));
+  add_to_queue(&d->output, b.c_str(), b.size());
+  d->output_size += b.size();
 }
 
 static int process_output(DescriptorData *d) {
@@ -1721,7 +1716,8 @@ void warn_race(int who, char *message) {
     if (races[who - 1]->governor[i].active) warn(who, i, message);
 }
 
-void warn(player_t who, governor_t governor, char *message) {
+void warn(const player_t who, const governor_t governor,
+          const std::string &message) {
   if (!notify(who, governor, message) && !notify(who, 0, message))
     push_telegram(who, governor, message);
 }

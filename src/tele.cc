@@ -114,13 +114,13 @@ void post(const char *origmsg, int type) {
  * description:  Sends a message to everyone in the race
  *
  */
-void push_telegram_race(int recpient, const char *msg) {
+void push_telegram_race(const player_t recipient, const std::string &msg) {
   racetype *Race;
   int j;
 
-  Race = races[recpient - 1];
+  Race = races[recipient - 1];
   for (j = 0; j <= MAXGOVERNORS; j++)
-    if (Race->governor[j].active) push_telegram(recpient, j, msg);
+    if (Race->governor[j].active) push_telegram(recipient, j, msg);
 }
 
 /*
@@ -133,12 +133,13 @@ void push_telegram_race(int recpient, const char *msg) {
  * description:  Sends a message to everyone from person to person
  *
  */
-void push_telegram(int recpient, int gov, const char *msg) {
+void push_telegram(const player_t recipient, const governor_t gov,
+                   const std::string &msg) {
   char telefl[100];
   FILE *telegram_fd;
 
   bzero((char *)telefl, sizeof(telefl));
-  sprintf(telefl, "%s.%d.%d", TELEGRAMFL, recpient, gov);
+  sprintf(telefl, "%s.%d.%d", TELEGRAMFL, recipient, gov);
 
   if ((telegram_fd = fopen(telefl, "a")) == nullptr)
     if ((telegram_fd = fopen(telefl, "w+")) == nullptr) {
@@ -150,7 +151,7 @@ void push_telegram(int recpient, int gov, const char *msg) {
 
   fprintf(telegram_fd, "%2d/%2d %02d:%02d:%02d %s\n", current_tm->tm_mon + 1,
           current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,
-          current_tm->tm_sec, msg);
+          current_tm->tm_sec, msg.c_str());
   fclose(telegram_fd);
 }
 /*

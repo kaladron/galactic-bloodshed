@@ -10,13 +10,12 @@
 #include "ships.h"
 #include "vars.h"
 
-void notify_race(int, const char *);
-bool notify(player_t, governor_t, const char *);
-bool notify(player_t, governor_t, const std::string &);
-void d_think(int, int, char *);
-void d_broadcast(int, int, char *);
-void d_shout(int, int, char *);
-void d_announce(int, int, int, char *);
+void notify_race(const player_t, const std::string &);
+bool notify(const player_t, const governor_t, const std::string &);
+void d_think(player_t, governor_t, const std::string &);
+void d_broadcast(player_t, governor_t, const std::string &);
+void d_shout(player_t, governor_t, const std::string &);
+void d_announce(player_t, governor_t, starnum_t, const std::string &);
 void do_next_thing(void);
 void check_for_telegrams(int, int);
 void kill_ship(int, shiptype *);
@@ -31,7 +30,7 @@ void remove_sh_ship(shiptype *, shiptype *);
 int ShipCompare(const void *, const void *);
 void SortShips(void);
 void warn_race(int, char *);
-void warn(player_t, governor_t, char *);
+void warn(const player_t, const governor_t, const std::string &);
 void warn_star(int, int, int, char *);
 void notify_star(int, int, int, int, char *);
 void adjust_morale(racetype *, racetype *, int);

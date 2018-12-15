@@ -5,10 +5,12 @@
 #ifndef TELE_H
 #define TELE_H
 
+#include "vars.h"
+
 void purge(void);
 void post(const char *, int);
-void push_telegram_race(int, const char *);
-void push_telegram(int, int, const char *);
+void push_telegram_race(const player_t, const std::string &);
+void push_telegram(const player_t, const governor_t, const std::string &);
 void teleg_read(int, int);
 void news_read(int, int, int);
 

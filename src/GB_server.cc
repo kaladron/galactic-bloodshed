@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <deque>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -98,14 +99,8 @@ static const char *already_on = "Connection refused.\n";
 
 struct text_block {
   int nchars;
-  struct text_block *nxt;
   char *start;
   char *buf;
-};
-
-struct text_queue {
-  struct text_block *head;
-  struct text_block **tail;
 };
 
 class DescriptorData : public GameObj {
@@ -117,15 +112,12 @@ class DescriptorData : public GameObj {
         raw_input(nullptr),
         raw_input_at(nullptr),
         last_time(0),
-        quota(COMMAND_BURST_SIZE) {
-    output.tail = &output.head;
-    input.tail = &input.head;
-  }
+        quota(COMMAND_BURST_SIZE) {}
   const int descriptor;
   int connected;
   int output_size;
-  struct text_queue output = {};
-  struct text_queue input = {};
+  std::deque<text_block *> output;
+  std::deque<text_block *> input;
   char *raw_input;
   char *raw_input_at;
   long last_time;
@@ -137,7 +129,7 @@ static int ndescriptors = 0;
 static double GetComplexity(int);
 static void set_signals(void);
 static void queue_string(DescriptorData *, const std::string &);
-static void add_to_queue(struct text_queue *, const char *, int);
+static void add_to_queue(std::deque<text_block *> &, const char *, int);
 static struct text_block *make_text_block(const char *, int);
 static void help(const command_t &, GameObj &);
 static void process_command(DescriptorData &, const command_t &argv);
@@ -157,7 +149,7 @@ static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
 static int process_output(DescriptorData *);
 static void welcome_user(DescriptorData *);
-static int flush_queue(struct text_queue *, int);
+static int flush_queue(std::deque<text_block *> &, int);
 static void free_text_block(struct text_block *);
 static void process_commands(void);
 static int do_command(DescriptorData *, const char *);
@@ -527,12 +519,12 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
     FD_ZERO(&output_set);
     if (ndescriptors < avail_descriptors) FD_SET(sock, &input_set);
     for (auto d : descriptor_list) {
-      if (d->input.head)
+      if (!d->input.empty())
         timeout = slice_timeout;
       else
         FD_SET(d->descriptor, &input_set);
       // Is there anything in the output queue?
-      if (d->output.head || !d->out.str().empty())
+      if (!d->output.empty() || !d->out.str().empty())
         FD_SET(d->descriptor, &output_set);
     }
 
@@ -791,7 +783,6 @@ static struct text_block *make_text_block(const char *s, int n) {
   bcopy(s, p->buf, n);
   p->nchars = n;
   p->start = p->buf;
-  p->nxt = nullptr;
   return p;
 }
 
@@ -800,33 +791,30 @@ static void free_text_block(struct text_block *t) {
   free((char *)t);
 }
 
-static void add_to_queue(struct text_queue *q, const char *b, int n) {
+static void add_to_queue(std::deque<text_block *> &q, const char *b, int n) {
   struct text_block *p;
 
   if (n == 0) return;
 
   p = make_text_block(b, n);
-  p->nxt = nullptr;
-  *q->tail = p;
-  q->tail = &p->nxt;
+  q.push_back(p);
 }
 
-static int flush_queue(struct text_queue *q, int n) {
-  struct text_block *p;
+static int flush_queue(std::deque<text_block *> &q, int n) {
   int really_flushed = 0;
 
   n += strlen(flushed_message);
 
-  while (n > 0 && (p = q->head)) {
+  while (n > 0 && !q.empty()) {
+    struct text_block *p = q.front();
     n -= p->nchars;
     really_flushed += p->nchars;
-    q->head = p->nxt;
     free_text_block(p);
+    q.pop_front();
   }
-  p = make_text_block(flushed_message, strlen(flushed_message));
-  p->nxt = q->head;
-  q->head = p;
-  if (!p->nxt) q->tail = &p->nxt;
+  struct text_block *p =
+      make_text_block(flushed_message, strlen(flushed_message));
+  q.push_back(p);
   really_flushed -= p->nchars;
   return really_flushed;
 }
@@ -835,13 +823,12 @@ static void queue_string(DescriptorData *d, const std::string &b) {
   int space;
 
   space = MAX_OUTPUT - d->output_size - b.size();
-  if (space < 0) d->output_size -= flush_queue(&d->output, -space);
-  add_to_queue(&d->output, b.c_str(), b.size());
+  if (space < 0) d->output_size -= flush_queue(d->output, -space);
+  add_to_queue(d->output, b.c_str(), b.size());
   d->output_size += b.size();
 }
 
 static int process_output(DescriptorData *d) {
-  struct text_block **qp, *cur;
   int cnt;
 
   // Flush the stringstream buffer into the output queue.
@@ -849,7 +836,8 @@ static int process_output(DescriptorData *d) {
   d->out.clear();
   d->out.str("");
 
-  for (qp = &d->output.head; (cur = *qp);) {
+  while (!d->output.empty()) {
+    struct text_block *cur = d->output.front();
     cnt = write(d->descriptor, cur->start, cur->nchars);
     if (cnt < 0) {
       if (errno == EWOULDBLOCK) return 1;
@@ -857,12 +845,12 @@ static int process_output(DescriptorData *d) {
       return 0;
     }
     d->output_size -= cnt;
-    if (cnt == cur->nchars) {
-      if (!cur->nxt) d->output.tail = qp;
-      *qp = cur->nxt;
+    if (cnt == cur->nchars) {  // We output the entire block
       free_text_block(cur);
-      continue; /* do not adv ptr */
+      d->output.pop_front();
+      continue;
     }
+    // We only output part of it, so we don't clear it out.
     cur->nchars -= cnt;
     cur->start += cnt;
     break;
@@ -883,29 +871,15 @@ static void make_nonblocking(int s) {
 }
 
 static void freeqs(DescriptorData *d) {
-  struct text_block *cur, *next;
-
-  cur = d->output.head;
-  while (cur) {
-    next = cur->nxt;
-    free_text_block(cur);
-    cur = next;
+  while (!d->output.empty()) {
+    free_text_block(d->output.front());
+    d->output.pop_front();
   }
-  d->output.head = nullptr;
-  d->output.tail = &d->output.head;
 
-  cur = d->input.head;
-  while (cur) {
-    next = cur->nxt;
-    free_text_block(cur);
-    cur = next;
+  while (!d->input.empty()) {
+    free_text_block(d->input.front());
+    d->input.pop_front();
   }
-  d->input.head = nullptr;
-  d->input.tail = &d->input.head;
-
-  if (d->raw_input) free(d->raw_input);
-  d->raw_input = nullptr;
-  d->raw_input_at = nullptr;
 }
 
 static void welcome_user(DescriptorData *d) {
@@ -953,7 +927,7 @@ static void goodbye_user(DescriptorData *d) {
 }
 
 static void save_command(DescriptorData *d, char *command) {
-  add_to_queue(&d->input, command, strlen(command) + 1);
+  add_to_queue(d->input, command, strlen(command) + 1);
 }
 
 static int process_input(DescriptorData *d) {
@@ -997,7 +971,8 @@ static void process_commands(void) {
   do {
     nprocessed = 0;
     for (auto d : descriptor_list) {
-      if (d->quota > 0 && (t = d->input.head)) {
+      if (d->quota > 0 && !d->input.empty()) {
+        t = d->input.front();
         d->quota--;
         nprocessed++;
 
@@ -1006,9 +981,8 @@ static void process_commands(void) {
           break;
         } else {
           d->last_time = now; /* experimental code */
-          d->input.head = t->nxt;
-          if (!d->input.head) d->input.tail = &d->input.head;
           free_text_block(t);
+          d->input.pop_front();
           d->last_time = now; /* experimental code */
         }
       }

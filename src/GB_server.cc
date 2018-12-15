@@ -151,7 +151,6 @@ static void do_update(int);
 static void do_segment(int, int);
 static int make_socket(int);
 static void shutdownsock(DescriptorData *);
-static void freeqs(DescriptorData *);
 static void load_race_data(void);
 static void load_star_data(void);
 static void make_nonblocking(int);
@@ -778,7 +777,6 @@ static void shutdownsock(DescriptorData *d) {
   }
   shutdown(d->descriptor, 2);
   close(d->descriptor);
-  freeqs(d);
   descriptor_list.remove(d);
   delete d;
 }
@@ -852,16 +850,6 @@ static void make_nonblocking(int s) {
   if (fcntl(s, F_SETFL, O_NDELAY) == -1) {
     perror("make_nonblocking: fcntl");
     exit(0);
-  }
-}
-
-static void freeqs(DescriptorData *d) {
-  while (!d->output.empty()) {
-    d->output.pop_front();
-  }
-
-  while (!d->input.empty()) {
-    d->input.pop_front();
   }
 }
 

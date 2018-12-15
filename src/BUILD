@@ -13,6 +13,7 @@ LLVM_COPTS_DEFAULT = [
     "-Wno-c++98-compat",  # Keep this one
     "-Wno-padded",  # Keep this one
     "-Wno-c++98-compat-pedantic",  # Keep
+    "-fno-omit-frame-pointer",
 ]
 
 LLVM_COPTS_OPTIONAL = [
@@ -47,7 +48,7 @@ COPTS = LLVM_COPTS + [
     '-DPKGDATADIR=\\"' + PKGDATADIR + '\\"',
     '-DDOCDIR=\\"' + DOCDIR + '\\"',
     "-std=c++2a",
-    "-O1",
+    "-O0",
     "-g3",
 ]
 

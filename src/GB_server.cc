@@ -93,7 +93,6 @@ static char update_buf[128];
 static char segment_buf[128];
 
 static const char *connect_fail = "Connection refused.\n";
-static const char *flushed_message = "<Output Flushed>\n";
 static const char *shutdown_message = "Shutdown ordered by deity - Bye\n";
 static const char *already_on = "Connection refused.\n";
 
@@ -790,6 +789,7 @@ static void add_to_queue(std::deque<TextBlock> &q, const std::string &b) {
 static int flush_queue(std::deque<TextBlock> &q, int n) {
   int really_flushed = 0;
 
+  const char *flushed_message = "<Output Flushed>\n";
   n += strlen(flushed_message);
 
   while (n > 0 && !q.empty()) {
@@ -804,9 +804,7 @@ static int flush_queue(std::deque<TextBlock> &q, int n) {
 }
 
 static void queue_string(DescriptorData *d, const std::string &b) {
-  int space;
-
-  space = MAX_OUTPUT - d->output_size - b.size();
+  int space = MAX_OUTPUT - d->output_size - b.size();
   if (space < 0) d->output_size -= flush_queue(d->output, -space);
   add_to_queue(d->output, b);
   d->output_size += b.size();

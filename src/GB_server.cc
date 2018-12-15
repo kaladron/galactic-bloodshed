@@ -531,7 +531,9 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
         timeout = slice_timeout;
       else
         FD_SET(d->descriptor, &input_set);
-      if (d->output.head) FD_SET(d->descriptor, &output_set);
+      // Is there anything in the output queue?
+      if (d->output.head || !d->out.str().empty())
+        FD_SET(d->descriptor, &output_set);
     }
 
     if (select(FD_SETSIZE, &input_set, &output_set, nullptr, &timeout) < 0) {
@@ -841,6 +843,11 @@ static void queue_string(DescriptorData *d, const std::string &b) {
 static int process_output(DescriptorData *d) {
   struct text_block **qp, *cur;
   int cnt;
+
+  // Flush the stringstream buffer into the output queue.
+  queue_string(d, d->out.str());
+  d->out.clear();
+  d->out.str("");
 
   for (qp = &d->output.head; (cur = *qp);) {
     cnt = write(d->descriptor, cur->start, cur->nchars);
@@ -1354,8 +1361,7 @@ static void process_command(DescriptorData &d, const command_t &argv) {
   }
 
   /* compute the prompt and send to the player */
-  std::string prompt = do_prompt(d);
-  notify(Playernum, Governor, prompt);
+  d.out << do_prompt(d);
 }
 
 static void load_race_data() {

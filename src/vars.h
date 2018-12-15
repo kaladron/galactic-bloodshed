@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
 #include <string>
 #include <vector>
 #include "config.h"
@@ -128,6 +129,7 @@ class GameObj {
   starnum_t snum;              /* what star system obj # (level=0) */
   planetnum_t pnum;            /* number of planet */
   shipnum_t shipno;            /* # of ship */
+  std::stringstream out;
   GameObj() = default;
   GameObj(const GameObj &) = delete;
   GameObj &operator=(const GameObj &) = delete;

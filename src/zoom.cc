@@ -22,7 +22,7 @@ void zoom(const command_t &argv, GameObj &g) {
     if (sscanf(argv[1].c_str(), "%lf/%lf", &num, &denom) == 2) {
       /* num/denom format */
       if (denom == 0.0) {
-        notify(g.player, g.governor, "Illegal denominator value.\n");
+        g.out << "Illegal denominator value.\n";
       } else
         g.zoom[i] = num / denom;
     } else {
@@ -31,8 +31,6 @@ void zoom(const command_t &argv, GameObj &g) {
     }
   }
 
-  std::string outmsg =
-      str(boost::format("Zoom value %g, lastx = %g, lasty = %g.\n") %
-          g.zoom[i] % g.lastx[i] % g.lasty[i]);
-  notify(g.player, g.governor, outmsg);
+  g.out << boost::format("Zoom value %g, lastx = %g, lasty = %g.\n") %
+               g.zoom[i] % g.lastx[i] % g.lasty[i];
 }

@@ -27,11 +27,6 @@
 
 #include "globals.h"
 
-// TODO(jeffbailey): This shouldn't be necessary!
-bool notify(const player_t who, const governor_t gov, const char *msg);
-bool notify(const player_t who, const governor_t gov, const std::string &msg);
-void warn(player_t who, governor_t gov, char *msg);
-
 static const PlanetType planet_translate[N_HOME_PLANET_TYPES] = {
     PlanetType::EARTH,   PlanetType::FOREST, PlanetType::DESERT,
     PlanetType::WATER,   PlanetType::MARS,   PlanetType::ICEBALL,

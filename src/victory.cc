@@ -29,8 +29,7 @@ void victory(const command_t &argv, GameObj &g) {
 
   create_victory_list(vic);
 
-  sprintf(buf, "----==== PLAYER RANKINGS ====----\n");
-  notify(g.player, g.governor, buf);
+  g.out << "----==== PLAYER RANKINGS ====----\n";
   sprintf(buf, "%-4.4s %-15.15s %8s\n", "No.", "Name", (g.god ? "Score" : ""));
   notify(g.player, g.governor, buf);
   for (int i = 0; i < count; i++) {

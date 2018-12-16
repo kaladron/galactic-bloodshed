@@ -168,6 +168,7 @@ static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
 static void save_command(DescriptorData *, const std::string &);
 static std::string do_prompt(DescriptorData &);
+static void strstr_to_queue(DescriptorData *);
 
 static void check_connect(DescriptorData *, const char *);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
@@ -415,6 +416,7 @@ bool notify(player_t race, governor_t gov, const std::string &message) {
   if (update_flag) return 0;
   for (auto d : descriptor_list)
     if (d->connected && d->player == race && d->governor == gov) {
+      strstr_to_queue(d);  // Ensuring anything queued up is flushed out.
       queue_string(d, message);
       return true;
     }
@@ -691,19 +693,26 @@ static int flush_queue(std::deque<TextBlock> &q, int n) {
 }
 
 static void queue_string(DescriptorData *d, const std::string &b) {
+  if (b.empty()) return;
   int space = MAX_OUTPUT - d->output_size - b.size();
   if (space < 0) d->output_size -= flush_queue(d->output, -space);
   add_to_queue(d->output, b);
   d->output_size += b.size();
 }
 
+//* Push contents of the stream to the queues
+static void strstr_to_queue(DescriptorData *d) {
+  if (d->out.str().empty()) return;
+  queue_string(d, d->out.str());
+  d->out.clear();
+  d->out.str("");
+}
+
 static int process_output(DescriptorData *d) {
   ssize_t cnt;
 
   // Flush the stringstream buffer into the output queue.
-  queue_string(d, d->out.str());
-  d->out.clear();
-  d->out.str("");
+  strstr_to_queue(d);
 
   while (!d->output.empty()) {
     auto &cur = d->output.front();

@@ -354,9 +354,9 @@ int main(int argc, char **argv) {
       segments = MOVES_PER_UPDATE;
       break;
   }
-  fprintf(stderr, "      Port %d\n", port);
-  fprintf(stderr, "      %d minutes between updates\n", update_time);
-  fprintf(stderr, "      %ld segments/update\n", segments);
+  std::cerr << "      Port " << port << std::endl;
+  std::cerr << "      " << update_time << " minutes between updates" << std::endl;
+  std::cerr << "      " << segments << " segments/update" << std::endl;
   sprintf(start_buf, "Server started  : %s", ctime(&clk));
 
   next_update_time = clk + (update_time * 60);

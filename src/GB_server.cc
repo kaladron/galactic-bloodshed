@@ -115,15 +115,32 @@ class TextBlock {
 
 class DescriptorData : public GameObj {
  public:
-  DescriptorData(int s)
-      : descriptor(s),
-        connected(false),
+  DescriptorData(int sock)
+      : connected(false),
         output_size(0),
         raw_input(nullptr),
         raw_input_at(nullptr),
         last_time(0),
-        quota(COMMAND_BURST_SIZE) {}
-  const int descriptor;
+        quota(COMMAND_BURST_SIZE) {
+    // TODO(jeffbailey): Pull the fprintf stuff out of this constructor
+    struct sockaddr_in6 addr;
+    socklen_t addr_len = sizeof(addr);
+
+    descriptor = accept(sock, (struct sockaddr *)&addr, &addr_len);
+    // TODO(jeffbailey): The original code didn't error on EINTR or EMFILE, but
+    // also didn't halt processing on an invalid socket.  Need to evaluate the
+    // cases we should handle here properly.
+    if (descriptor <= 0) throw std::runtime_error(std::string{strerror(errno)});
+
+    char addrstr[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, &addr.sin6_addr, addrstr, sizeof(addrstr));
+    // TODO(jeffbailey): There used to be custom access check stuff here.
+    // It should be replaced with TCP wrappers or something similar
+    fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n", addrstr,
+            ntohs(addr.sin6_port), descriptor);
+    return;
+  }
+  int descriptor;
   bool connected;
   ssize_t output_size;
   std::deque<TextBlock> output;
@@ -144,7 +161,6 @@ static int shovechars(int);
 
 static void GB_time(const command_t &, GameObj &);
 static void GB_schedule(const command_t &, GameObj &);
-static DescriptorData *new_connection(int);
 static void do_update(int);
 static void do_segment(int, int);
 static int make_socket(int);
@@ -542,7 +558,8 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
 
       if (FD_ISSET(sock, &input_set)) {
         try {
-          DescriptorData *newd = new_connection(sock);
+          DescriptorData *newd = new DescriptorData(sock);
+          make_nonblocking(newd->descriptor);
           descriptor_list.push_back(newd);
           welcome_user(newd);
         } catch (const std::runtime_error &) {
@@ -637,26 +654,6 @@ static struct timeval update_quotas(struct timeval last,
     }
   }
   return msec_add(last, nslices * COMMAND_TIME_MSEC);
-}
-
-static DescriptorData *new_connection(int sock) {
-  int newsock;
-  struct sockaddr_in6 addr;
-  socklen_t addr_len = sizeof(addr);
-  char addrstr[INET6_ADDRSTRLEN];
-
-  newsock = accept(sock, (struct sockaddr *)&addr, &addr_len);
-  // TODO(jeffbailey): The original code didn't error on EINTR or EMFILE, but
-  // also didn't halt processing on an invalid socket.  Need to evaluate the
-  // cases we should handle here properly.
-  if (newsock <= 0) throw std::runtime_error(std::string{strerror(errno)});
-  inet_ntop(AF_INET6, &addr.sin6_addr, addrstr, sizeof(addrstr));
-  // TODO(jeffbailey): There used to be custom access check stuff here.
-  // It should be replaced with TCP wrappers or something similar
-  fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n", addrstr,
-          ntohs(addr.sin6_port), newsock);
-  make_nonblocking(newsock);
-  return new DescriptorData(newsock);
 }
 
 static void shutdownsock(DescriptorData *d) {

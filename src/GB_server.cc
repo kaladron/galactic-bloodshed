@@ -22,6 +22,7 @@
 #include <cstring>
 #include <ctime>
 #include <deque>
+#include <exception>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -540,15 +541,14 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
       (void)time(&now);
 
       if (FD_ISSET(sock, &input_set)) {
-        DescriptorData *newd;
-        if (!(newd = new_connection(sock))) {
-          if (errno && errno != EINTR && errno != EMFILE) {
-            perror("new_connection");
-            return sock;
-          }
+        try {
+          DescriptorData *newd = new_connection(sock);
+          descriptor_list.push_back(newd);
+          welcome_user(newd);
+        } catch (const std::runtime_error &) {
+          perror("new_connection");
+          return sock;
         }
-        descriptor_list.push_back(newd);
-        welcome_user(newd);
       }
 
       // TODO(jeffbailey): There's a use-after-free here if the connection is
@@ -646,7 +646,10 @@ static DescriptorData *new_connection(int sock) {
   char addrstr[INET6_ADDRSTRLEN];
 
   newsock = accept(sock, (struct sockaddr *)&addr, &addr_len);
-  if (newsock <= 0) return nullptr;
+  // TODO(jeffbailey): The original code didn't error on EINTR or EMFILE, but
+  // also didn't halt processing on an invalid socket.  Need to evaluate the
+  // cases we should handle here properly.
+  if (newsock <= 0) throw std::runtime_error(std::string{strerror(errno)});
   inet_ntop(AF_INET6, &addr.sin6_addr, addrstr, sizeof(addrstr));
   // TODO(jeffbailey): There used to be custom access check stuff here.
   // It should be replaced with TCP wrappers or something similar

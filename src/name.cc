@@ -759,8 +759,8 @@ void send_message(const command_t &argv, GameObj &g) {
     sprintf(buf, "%s \"%s\" [%d,%d] sends a stargram to %s.\n", Race->name,
             Race->governor[Governor].name, Playernum, Governor,
             Stars[star]->name);
-    notify_star(Playernum, Governor, 0, star, buf);
-    warn_star(Playernum, 0, star, msg);
+    notify_star(Playernum, Governor, star, buf);
+    warn_star(Playernum, star, msg);
   } else {
     int gov;
     if (who == Playernum) APcount = 0;

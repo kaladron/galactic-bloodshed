@@ -106,7 +106,7 @@ class TextBlock {
   }
 
   ~TextBlock() { free(buf); }
-  int nchars;
+  size_t nchars;
   char *start;
   char *buf;
   TextBlock(const TextBlock &) = delete;
@@ -1554,10 +1554,8 @@ void SortShips(void) {
   qsort(ShipVector, NUMSTYPES, sizeof(int), ShipCompare);
 }
 
-void warn_race(int who, char *message) {
-  int i;
-
-  for (i = 0; i <= MAXGOVERNORS; i++)
+void warn_race(const player_t who, const std::string &message) {
+  for (int i = 0; i <= MAXGOVERNORS; i++)
     if (races[who - 1]->governor[i].active) warn(who, i, message);
 }
 
@@ -1567,21 +1565,14 @@ void warn(const player_t who, const governor_t governor,
     push_telegram(who, governor, message);
 }
 
-void warn_star(int a, int b, int star, char *message) {
-  int i;
-
-  for (i = 1; i <= Num_races; i++)
-    if (i != a && i != b && isset(Stars[star]->inhabited, i))
-      warn_race(i, message);
+void warn_star(const player_t a, const starnum_t star,
+               const std::string &message) {
+  for (int i = 1; i <= Num_races; i++)
+    if (i != a && isset(Stars[star]->inhabited, i)) warn_race(i, message);
 }
 
-void notify_star(int a, int g, int b, int star, char *message) {
-  racetype *Race;
-
-#ifdef MONITOR
-  Race = races[0]; /* deity */
-  if (Race->monitor || (a != 1 && b != 1)) notify_race(1, message);
-#endif
+void notify_star(const player_t a, const governor_t g, const starnum_t star,
+                 const std::string &message) {
   for (auto &d : descriptor_list)
     if (d.connected && (d.player != a || d.governor != g) &&
         isset(Stars[star]->inhabited, d.player)) {

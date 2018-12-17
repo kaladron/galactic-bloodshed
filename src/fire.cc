@@ -218,8 +218,7 @@ void fire(const command_t &argv, GameObj &g) {
         use_destruct(from, strength);
 
       if (!to->alive) post(short_buf, COMBAT);
-      notify_star(Playernum, Governor, (int)to->owner, (int)from->storbits,
-                  short_buf);
+      notify_star(Playernum, Governor, from->storbits, short_buf);
       warn((int)to->owner, (int)to->governor, long_buf);
       notify(Playernum, Governor, long_buf);
       /* defending ship retaliates */
@@ -236,8 +235,7 @@ void fire(const command_t &argv, GameObj &g) {
           else
             use_destruct(to, strength);
           if (!from->alive) post(short_buf, COMBAT);
-          notify_star(Playernum, Governor, (int)to->owner, (int)from->storbits,
-                      short_buf);
+          notify_star(Playernum, Governor, from->storbits, short_buf);
           notify(Playernum, Governor, long_buf);
           warn((int)to->owner, (int)to->governor, long_buf);
         }
@@ -266,8 +264,7 @@ void fire(const command_t &argv, GameObj &g) {
               else
                 use_destruct(ship, strength);
               if (!from->alive) post(short_buf, COMBAT);
-              notify_star(Playernum, Governor, (int)ship->owner,
-                          (int)from->storbits, short_buf);
+              notify_star(Playernum, Governor, from->storbits, short_buf);
               notify(Playernum, Governor, long_buf);
               warn((int)ship->owner, (int)ship->governor, long_buf);
             }
@@ -418,7 +415,7 @@ void bombard(const command_t &argv, GameObj &g) {
         use_destruct(from, strength);
 
       post(short_buf, COMBAT);
-      notify_star(Playernum, Governor, 0, (int)from->storbits, short_buf);
+      notify_star(Playernum, Governor, from->storbits, short_buf);
       for (i = 1; i <= Num_races; i++)
         if (Nuked[i - 1])
           warn(i, Stars[from->storbits]->governor[i - 1], long_buf);
@@ -441,7 +438,7 @@ void bombard(const command_t &argv, GameObj &g) {
             warn(i, (int)Stars[from->storbits]->governor[i - 1], long_buf);
             notify(Playernum, Governor, long_buf);
             if (!from->alive) post(short_buf, COMBAT);
-            notify_star(Playernum, Governor, i, (int)from->storbits, short_buf);
+            notify_star(Playernum, Governor, from->storbits, short_buf);
           }
       }
 #endif
@@ -466,8 +463,7 @@ void bombard(const command_t &argv, GameObj &g) {
               else
                 use_destruct(ship, strength);
               if (!from->alive) post(short_buf, COMBAT);
-              notify_star(Playernum, Governor, (int)ship->owner,
-                          (int)from->storbits, short_buf);
+              notify_star(Playernum, Governor, from->storbits, short_buf);
               warn((int)ship->owner, (int)ship->governor, long_buf);
               notify(Playernum, Governor, long_buf);
             }
@@ -616,8 +612,7 @@ void defend(const command_t &argv, GameObj &g) {
 
   p.info[Playernum - 1].destruct -= strength;
   if (!to->alive) post(short_buf, COMBAT);
-  notify_star(Playernum, Governor, (int)to->owner, (int)to->storbits,
-              short_buf);
+  notify_star(Playernum, Governor, to->storbits, short_buf);
   warn((int)to->owner, (int)to->governor, long_buf);
   notify(Playernum, Governor, long_buf);
 
@@ -637,8 +632,7 @@ void defend(const command_t &argv, GameObj &g) {
         use_destruct(to, strength);
 
       post(short_buf, COMBAT);
-      notify_star(Playernum, Governor, (int)to->owner, (int)to->storbits,
-                  short_buf);
+      notify_star(Playernum, Governor, to->storbits, short_buf);
       notify(Playernum, Governor, long_buf);
       warn((int)to->owner, (int)to->governor, long_buf);
     }
@@ -664,8 +658,7 @@ void defend(const command_t &argv, GameObj &g) {
           else
             use_destruct(ship, strength);
           post(short_buf, COMBAT);
-          notify_star(Playernum, Governor, (int)ship->owner,
-                      (int)ship->storbits, short_buf);
+          notify_star(Playernum, Governor, ship->storbits, short_buf);
           notify(Playernum, Governor, long_buf);
           warn((int)ship->owner, (int)ship->governor, long_buf);
         }
@@ -781,8 +774,7 @@ static void check_overload(shiptype *ship, int cew, int *strength) {
       *strength = 0;
       warn((int)ship->owner, (int)ship->governor, buf);
       post(buf, COMBAT);
-      notify_star((int)ship->owner, (int)ship->governor, 0, (int)ship->storbits,
-                  buf);
+      notify_star(ship->owner, ship->governor, ship->storbits, buf);
     } else if (int_rand(0, *strength) >
                (int)((1.0 - .01 * ship->damage) * ship->tech / 4.0)) {
       sprintf(buf, "%s: Crystal damaged from overloading on %s.\n",

@@ -49,7 +49,8 @@ class race {
   char God;       /* Player is a God race. */
   char Guest;     /* Player is a guest race. */
   char Metamorph; /* Player is a morph; (for printing). */
-  char monitor;   /* God is monitering this race. */
+  char monitor;
+  /* God is monitering this race. */  // TODO(jeffbailey): Remove this.
 
   char translate[MAXPLAYERS]; /* translation mod for each player */
 

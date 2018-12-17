@@ -364,8 +364,7 @@ void domine(int shipno, int detonate) {
       sprintf(buf, "%s detonated at %s\n", Ship(*ship).c_str(),
               prin_ship_orbits(ship));
       post(buf, COMBAT);
-      notify_star((int)ship->owner, (int)ship->governor, 0, (int)ship->storbits,
-                  buf);
+      notify_star(ship->owner, ship->governor, ship->storbits, buf);
       sh = sh2;
       while (sh) {
         (void)getship(&s, sh);

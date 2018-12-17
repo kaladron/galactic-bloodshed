@@ -312,7 +312,7 @@ void land(const command_t &argv, GameObj &g) {
                   MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);
               if (strength) {
                 post(temp, COMBAT);
-                notify_star(0, 0, (int)s->owner, (int)s->storbits, temp);
+                notify_star(0, 0, s->storbits, temp);
                 warn(i, (int)Stars[s->storbits]->governor[i - 1], buf);
                 notify((int)s->owner, (int)s->governor, buf);
                 p.info[i - 1].destruct -= strength;

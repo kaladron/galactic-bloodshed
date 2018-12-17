@@ -835,7 +835,7 @@ void name(const command_t &argv, GameObj &g) {
   unsigned char check = 0;
   shiptype *ship;
   char string[1024];
-  char temp[128];
+  char tmp[128];
   racetype *Race;
 
   if (!isalnum(argv[2].c_str()[0]) || argv.size() < 3) {
@@ -845,8 +845,8 @@ void name(const command_t &argv, GameObj &g) {
 
   sprintf(buf, "%s", argv[2].c_str());
   for (int i = 3; i < argv.size(); i++) {
-    sprintf(temp, " %s", argv[i].c_str());
-    strcat(buf, temp);
+    sprintf(tmp, " %s", argv[i].c_str());
+    strcat(buf, tmp);
   }
 
   sprintf(string, "%s", buf);

@@ -45,7 +45,6 @@ static int planet_points(const Planet &);
 void do_turn(int update) {
   commodtype *c;
   unsigned long dummy[2];
-  int temp;
   double dist;
   struct victstruct {
     int numsects;
@@ -143,12 +142,12 @@ void do_turn(int update) {
           (races[c->bidder - 1]->governor[c->bidder_gov].money >= c->bid)) {
         races[c->bidder - 1]->governor[c->bidder_gov].money -= c->bid;
         races[c->owner - 1]->governor[c->governor].money += c->bid;
-        temp = shipping_cost((int)c->star_to, (int)c->star_from, &dist,
-                             (int)c->bid);
+        int cost = shipping_cost((int)c->star_to, (int)c->star_from, &dist,
+                                 (int)c->bid);
         races[c->bidder - 1]->governor[c->bidder_gov].cost_market +=
-            c->bid + temp;
+            c->bid + cost;
         races[c->owner - 1]->governor[c->governor].profit_market += c->bid;
-        maintain(races[c->bidder - 1], (int)c->bidder_gov, temp);
+        maintain(races[c->bidder - 1], (int)c->bidder_gov, cost);
         switch (c->type) {
           case RESOURCE:
             planets[c->star_to][c->planet_to]->info[c->bidder - 1].resource +=

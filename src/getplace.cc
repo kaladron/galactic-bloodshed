@@ -231,21 +231,21 @@ char *Dispshiploc(shiptype *ship) {
 }
 
 std::string Dispplace(const placetype &where) {
-  std::ostringstream buf;
+  std::ostringstream out;
   switch (where.level) {
     case ScopeLevel::LEVEL_STAR:
-      buf << "/" << Stars[where.snum]->name;
-      return buf.str();
+      out << "/" << Stars[where.snum]->name;
+      return out.str();
     case ScopeLevel::LEVEL_PLAN:
-      buf << "/" << Stars[where.snum]->name << "/"
+      out << "/" << Stars[where.snum]->name << "/"
           << Stars[where.snum]->pnames[where.pnum];
-      return buf.str();
+      return out.str();
     case ScopeLevel::LEVEL_SHIP:
-      buf << "#" << where.shipno;
-      return buf.str();
+      out << "#" << where.shipno;
+      return out.str();
     case ScopeLevel::LEVEL_UNIV:
-      buf << "/";
-      return buf.str();
+      out << "/";
+      return out.str();
   }
 }
 

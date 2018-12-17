@@ -311,11 +311,9 @@ static void grow(sector_map &smap, int type, int n, int rate) {
     }
   }
 
-  for (auto &item : worklist) {
-    int x, y, type;
-    std::tie(x, y, type) = item;
+  for (auto &[x, y, sector_type] : worklist) {
     auto &s = smap.get(x, y);
-    s.condition = s.type = type;
+    s.condition = s.type = sector_type;
   }
 }
 

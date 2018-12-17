@@ -71,7 +71,7 @@ int main() {
   int pnum, star = 0, found = 0, check, vacant, count, i, j, Playernum;
   PlanetType ppref;
   sigset_t mask, block;
-  int s, idx, k;
+  int idx, k;
 #define STRSIZE 100
   char str[STRSIZE], c;
   struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
@@ -101,7 +101,7 @@ int main() {
   getsdata(&Sdata);
 
   star_arena = (startype *)malloc(Sdata.numstars * sizeof(startype));
-  for (s = 0; s < Sdata.numstars; s++) {
+  for (int s = 0; s < Sdata.numstars; s++) {
     Stars[s] = &star_arena[s];
     getstar(&(Stars[s]), s);
   }

@@ -1536,7 +1536,7 @@ static void system_cost(double *advantage, double *disadvantage, int value,
 
 double complexity(shiptype *s) {
   int i;
-  double advantage, disadvantage, factor, temp;
+  double advantage, disadvantage, factor, tmp;
 
   i = s->build_type;
 
@@ -1563,11 +1563,12 @@ double complexity(shiptype *s) {
               Shipdata[i][ABIL_ARMOR]);
   /* additional advantages/disadvantages */
 
+  // TODO(jeffbailey): document this function in English.
   factor = sqrt((1.0 + advantage) * exp(-(double)disadvantage / 10.0));
-  temp = COMPLEXITY_FACTOR * (factor - 1.0) /
-             sqrt((double)(Shipdata[i][ABIL_TECH] + 1)) +
-         1.0;
-  factor = temp * temp;
+  tmp = COMPLEXITY_FACTOR * (factor - 1.0) /
+            sqrt((double)(Shipdata[i][ABIL_TECH] + 1)) +
+        1.0;
+  factor = tmp * tmp;
   return (factor * (double)Shipdata[i][ABIL_TECH]);
 }
 

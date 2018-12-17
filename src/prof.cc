@@ -50,7 +50,7 @@ void whois(const command_t &argv, GameObj &g) {
   }
 }
 
-void treasury(const command_t &argv, GameObj &g) {
+void treasury(const command_t &, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;

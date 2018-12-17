@@ -22,7 +22,6 @@ LLVM_COPTS_OPTIONAL = [
     "-Wno-float-equal",
     "-Wno-old-style-cast",
     "-Wno-conversion",
-    "-Wno-unused-parameter",
     "-Wno-conditional-uninitialized",
     "-Wno-sign-compare",
     "-Wno-shadow",

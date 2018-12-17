@@ -62,7 +62,8 @@ void order(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "I don't understand what you mean.\n");
 }
 
-static void give_orders(GameObj &g, const command_t &argv, int APcount,
+// TODO(jeffbailey): We take in a non-zero APcount, and do nothing with it!
+static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
                         shiptype *ship) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;

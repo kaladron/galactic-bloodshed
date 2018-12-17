@@ -41,7 +41,7 @@ static void save(int argc, char *argv[]);
 static void send2(int argc, char *argv[]);
 static void quit(int argc, char **argv);
 
-int main(int argc, char *argv[]) {
+int main() {
 #ifdef PRIV
   int port;
 
@@ -1153,7 +1153,7 @@ static void save(int argc, char *argv[]) {
   }
 }
 
-static void send2(int argc, char *argv[]) {
+static void send2(int, char **) {
   FILE *f;
   char sys[64];
 
@@ -1236,7 +1236,7 @@ int Dialogue(const char *prompt, ...) {
   }
 }
 
-static void quit(int argc, char **argv) {
+static void quit(int, char **) {
   int i;
 
   if (please_quit) { /* This could happen if ^c is hit while here. */
@@ -1309,7 +1309,7 @@ static void execute(int argc, char **argv) {
  * number of higher level modify print loops above this one.  It will
  * always be zero for player racegens.
  */
-void modify_print_loop(int level) {
+void modify_print_loop(int) {
 #define BUFSIZE 512
   char buf[BUFSIZE], *com, *args[4];
   int i;

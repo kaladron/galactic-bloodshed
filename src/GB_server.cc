@@ -1247,7 +1247,7 @@ static void load_star_data() {
 }
 
 /* report back the update status */
-static void GB_time(const command_t &argv, GameObj &g) {
+static void GB_time(const command_t &, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   time_t clk = time(nullptr);
@@ -1258,7 +1258,7 @@ static void GB_time(const command_t &argv, GameObj &g) {
   notify(Playernum, Governor, buf);
 }
 
-static void GB_schedule(const command_t &argv, GameObj &g) {
+static void GB_schedule(const command_t &, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   time_t clk = time(nullptr);

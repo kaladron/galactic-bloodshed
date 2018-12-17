@@ -207,8 +207,10 @@ void orbit(const command_t &argv, GameObj &g) {
   notify(g.player, g.governor, output);
 }
 
+// TODO(jeffbailey) Remove DontDispStar parameter as unused, but it really looks
+// like we should be doing something here.
 static void DispStar(const GameObj &g, const ScopeLevel level, startype *star,
-                     int DontDispStars, racetype *r, char *string) {
+                     int /* DontDispStars */, racetype *r, char *string) {
   int x = 0;  // TODO(jeffbailey): Inititalized x and y to 0.
   int y = 0;
   int stand;
@@ -243,8 +245,10 @@ static void DispStar(const GameObj &g, const ScopeLevel level, startype *star,
   }
 }
 
+// TODO(jeffbailey): We remove DontDispPlanets as unused, but it really seems
+// like we should be doing something here!
 static void DispPlanet(const GameObj &g, const ScopeLevel level,
-                       const Planet &p, char *name, int DontDispPlanets,
+                       const Planet &p, char *name, int /* DontDispPlanets */,
                        racetype *r, char *string) {
   int x = 0;  // TODO(jeffbailey): Check if init to 0 is right.
   int y = 0;

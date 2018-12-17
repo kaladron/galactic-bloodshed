@@ -192,6 +192,8 @@ static struct timeval msec_add(struct timeval, int);
 static void save_command(DescriptorData &, const std::string &);
 static std::string do_prompt(DescriptorData &);
 static void strstr_to_queue(DescriptorData &);
+static int ShipCompare(const void *, const void *);
+static void SortShips();
 
 static void check_connect(DescriptorData &, const char *);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
@@ -1541,13 +1543,13 @@ static double GetComplexity(int ship) {
   return complexity(&s);
 }
 
-int ShipCompare(const void *S1, const void *S2) {
+static int ShipCompare(const void *S1, const void *S2) {
   const int *s1 = (const int *)S1;
   const int *s2 = (const int *)S2;
   return (int)(GetComplexity(*s1) - GetComplexity(*s2));
 }
 
-void SortShips(void) {
+static void SortShips() {
   int i;
 
   for (i = 0; i < NUMSTYPES; i++) ShipVector[i] = i;

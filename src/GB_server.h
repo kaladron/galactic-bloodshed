@@ -27,8 +27,6 @@ void insert_sh_ship(shiptype *, shiptype *);
 void remove_sh_star(shiptype *);
 void remove_sh_plan(shiptype *);
 void remove_sh_ship(shiptype *, shiptype *);
-int ShipCompare(const void *, const void *);
-void SortShips(void);
 void warn_race(const player_t, const std::string &);
 void warn(const player_t, const governor_t, const std::string &);
 void warn_star(const player_t, const starnum_t, const std::string &);

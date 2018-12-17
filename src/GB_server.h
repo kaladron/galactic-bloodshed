@@ -46,6 +46,4 @@ extern segments_t nsegments_done; /* How many movements have we done so far? */
 extern const char *Desnames[];
 extern const char Dessymbols[];
 
-extern long clk;
-
 #endif  // GB_SERVER_H

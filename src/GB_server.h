@@ -12,10 +12,11 @@
 
 void notify_race(const player_t, const std::string &);
 bool notify(const player_t, const governor_t, const std::string &);
-void d_think(player_t, governor_t, const std::string &);
-void d_broadcast(player_t, governor_t, const std::string &);
-void d_shout(player_t, governor_t, const std::string &);
-void d_announce(player_t, governor_t, starnum_t, const std::string &);
+void d_think(const player_t, const governor_t, const std::string &);
+void d_broadcast(const player_t, const governor_t, const std::string &);
+void d_shout(const player_t, const governor_t, const std::string &);
+void d_announce(const player_t, const governor_t, const starnum_t,
+                const std::string &);
 void do_next_thing(void);
 void check_for_telegrams(int, int);
 void kill_ship(int, shiptype *);

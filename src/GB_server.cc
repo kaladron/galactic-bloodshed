@@ -429,7 +429,7 @@ int main(int argc, char **argv) {
 
 static void set_signals(void) { signal(SIGPIPE, SIG_IGN); }
 
-void notify_race(player_t race, const std::string &message) {
+void notify_race(const player_t race, const std::string &message) {
   if (update_flag) return;
   for (auto &d : descriptor_list) {
     if (d.connected && d.player == race) {
@@ -438,7 +438,8 @@ void notify_race(player_t race, const std::string &message) {
   }
 }
 
-bool notify(player_t race, governor_t gov, const std::string &message) {
+bool notify(const player_t race, const governor_t gov,
+            const std::string &message) {
   if (update_flag) return 0;
   for (auto &d : descriptor_list)
     if (d.connected && d.player == race && d.governor == gov) {
@@ -449,7 +450,7 @@ bool notify(player_t race, governor_t gov, const std::string &message) {
   return false;
 }
 
-void d_think(player_t Playernum, governor_t Governor,
+void d_think(const player_t Playernum, const governor_t Governor,
              const std::string &message) {
   for (auto &d : descriptor_list) {
     if (d.connected && d.player == Playernum && d.governor != Governor &&
@@ -459,7 +460,7 @@ void d_think(player_t Playernum, governor_t Governor,
   }
 }
 
-void d_broadcast(player_t Playernum, governor_t Governor,
+void d_broadcast(const player_t Playernum, const governor_t Governor,
                  const std::string &message) {
   for (auto &d : descriptor_list) {
     if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
@@ -469,7 +470,7 @@ void d_broadcast(player_t Playernum, governor_t Governor,
   }
 }
 
-void d_shout(player_t Playernum, governor_t Governor,
+void d_shout(const player_t Playernum, const governor_t Governor,
              const std::string &message) {
   for (auto &d : descriptor_list) {
     if (d.connected && !(d.player == Playernum && d.governor == Governor)) {
@@ -478,8 +479,8 @@ void d_shout(player_t Playernum, governor_t Governor,
   }
 }
 
-void d_announce(player_t Playernum, governor_t Governor, starnum_t star,
-                const std::string &message) {
+void d_announce(const player_t Playernum, const governor_t Governor,
+                const starnum_t star, const std::string &message) {
   for (auto &d : descriptor_list) {
     if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
         (isset(Stars[star]->inhabited, d.player) || races[d.player - 1]->God) &&

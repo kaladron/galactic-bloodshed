@@ -374,7 +374,7 @@ void domine(int shipno, int detonate) {
                                    long_buf, short_buf);
           if (rad > 0) {
             post(short_buf, COMBAT);
-            warn((int)s->owner, (int)s->governor, long_buf);
+            warn(s->owner, s->governor, long_buf);
             putship(s);
           }
         }
@@ -409,7 +409,7 @@ void domine(int shipno, int detonate) {
         strcat(telegram_buf, "\n");
         for (i = 1; i <= Num_races; i++)
           if (Nuked[i - 1])
-            warn(i, (int)Stars[ship->storbits]->governor[i - 1], telegram_buf);
+            warn(i, Stars[ship->storbits]->governor[i - 1], telegram_buf);
         notify((int)(ship->owner), (int)ship->governor, telegram_buf);
       }
       kill_ship((int)(ship->owner), ship);

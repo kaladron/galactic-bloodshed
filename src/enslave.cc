@@ -152,7 +152,7 @@ void enslave(const command_t &argv, GameObj &g) {
 
   for (i = 1; i < MAXPLAYERS; i++)
     if (p.info[i - 1].numsectsowned && i != Playernum)
-      warn(i, (int)Stars[s->storbits]->governor[i - 1], telegram_buf);
+      warn(i, Stars[s->storbits]->governor[i - 1], telegram_buf);
 
   free(s);
 }

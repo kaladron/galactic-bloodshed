@@ -219,7 +219,7 @@ void fire(const command_t &argv, GameObj &g) {
 
       if (!to->alive) post(short_buf, COMBAT);
       notify_star(Playernum, Governor, from->storbits, short_buf);
-      warn((int)to->owner, (int)to->governor, long_buf);
+      warn(to->owner, to->governor, long_buf);
       notify(Playernum, Governor, long_buf);
       /* defending ship retaliates */
 
@@ -237,7 +237,7 @@ void fire(const command_t &argv, GameObj &g) {
           if (!from->alive) post(short_buf, COMBAT);
           notify_star(Playernum, Governor, from->storbits, short_buf);
           notify(Playernum, Governor, long_buf);
-          warn((int)to->owner, (int)to->governor, long_buf);
+          warn(to->owner, to->governor, long_buf);
         }
       }
       /* protecting ships retaliate individually if damage was inflicted */
@@ -266,7 +266,7 @@ void fire(const command_t &argv, GameObj &g) {
               if (!from->alive) post(short_buf, COMBAT);
               notify_star(Playernum, Governor, from->storbits, short_buf);
               notify(Playernum, Governor, long_buf);
-              warn((int)ship->owner, (int)ship->governor, long_buf);
+              warn(ship->owner, ship->governor, long_buf);
             }
             putship(ship);
           }
@@ -435,7 +435,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
             damage = shoot_planet_to_ship(alien, from, strength, long_buf,
                                           short_buf);
-            warn(i, (int)Stars[from->storbits]->governor[i - 1], long_buf);
+            warn(i, Stars[from->storbits]->governor[i - 1], long_buf);
             notify(Playernum, Governor, long_buf);
             if (!from->alive) post(short_buf, COMBAT);
             notify_star(Playernum, Governor, from->storbits, short_buf);
@@ -464,7 +464,7 @@ void bombard(const command_t &argv, GameObj &g) {
                 use_destruct(ship, strength);
               if (!from->alive) post(short_buf, COMBAT);
               notify_star(Playernum, Governor, from->storbits, short_buf);
-              warn((int)ship->owner, (int)ship->governor, long_buf);
+              warn(ship->owner, ship->governor, long_buf);
               notify(Playernum, Governor, long_buf);
             }
             putship(ship);
@@ -613,7 +613,7 @@ void defend(const command_t &argv, GameObj &g) {
   p.info[Playernum - 1].destruct -= strength;
   if (!to->alive) post(short_buf, COMBAT);
   notify_star(Playernum, Governor, to->storbits, short_buf);
-  warn((int)to->owner, (int)to->governor, long_buf);
+  warn(to->owner, to->governor, long_buf);
   notify(Playernum, Governor, long_buf);
 
   /* defending ship retaliates */
@@ -634,7 +634,7 @@ void defend(const command_t &argv, GameObj &g) {
       post(short_buf, COMBAT);
       notify_star(Playernum, Governor, to->storbits, short_buf);
       notify(Playernum, Governor, long_buf);
-      warn((int)to->owner, (int)to->governor, long_buf);
+      warn(to->owner, to->governor, long_buf);
     }
     putsmap(smap, p);
   }
@@ -660,7 +660,7 @@ void defend(const command_t &argv, GameObj &g) {
           post(short_buf, COMBAT);
           notify_star(Playernum, Governor, ship->storbits, short_buf);
           notify(Playernum, Governor, long_buf);
-          warn((int)ship->owner, (int)ship->governor, long_buf);
+          warn(ship->owner, ship->governor, long_buf);
         }
         putsmap(smap, p);
         putship(ship);
@@ -772,7 +772,7 @@ static void check_overload(shiptype *ship, int cew, int *strength) {
               Dispshiploc(ship), Ship(*ship).c_str());
       kill_ship((int)(ship->owner), ship);
       *strength = 0;
-      warn((int)ship->owner, (int)ship->governor, buf);
+      warn(ship->owner, ship->governor, buf);
       post(buf, COMBAT);
       notify_star(ship->owner, ship->governor, ship->storbits, buf);
     } else if (int_rand(0, *strength) >
@@ -782,7 +782,7 @@ static void check_overload(shiptype *ship, int cew, int *strength) {
       ship->fire_laser = 0;
       ship->mounted = 0;
       *strength = 0;
-      warn((int)ship->owner, (int)ship->governor, buf);
+      warn(ship->owner, ship->governor, buf);
     }
   }
 }

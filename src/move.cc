@@ -519,13 +519,13 @@ void walk(const command_t &argv, GameObj &g) {
           bcopy(ship, &dummy, sizeof(shiptype));
           use_destruct(ship2, strength);
           notify(Playernum, Governor, long_buf);
-          warn((int)ship2->owner, (int)ship2->governor, long_buf);
+          warn(ship2->owner, ship2->governor, long_buf);
           if (!ship2->alive) post(short_buf, COMBAT);
           notify_star(Playernum, Governor, ship->storbits, short_buf);
           if (strength1) {
             use_destruct(ship, strength1);
             notify(Playernum, Governor, long_buf);
-            warn((int)ship2->owner, (int)ship2->governor, long_buf);
+            warn(ship2->owner, ship2->governor, long_buf);
             if (!ship2->alive) post(short_buf, COMBAT);
             notify_star(Playernum, Governor, ship->storbits, short_buf);
           }

@@ -352,7 +352,7 @@ void insurgency(const command_t &argv, GameObj &g) {
             Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
             Playernum, changed_hands, (changed_hands == 1) ? "" : "s");
     strcat(long_buf, buf);
-    warn(who, (int)Stars[g.snum]->governor[who - 1], long_buf);
+    warn(who, Stars[g.snum]->governor[who - 1], long_buf);
     p.info[Playernum - 1].tax = p.info[who - 1].tax;
     /* you inherit their tax rate (insurgency wars he he ) */
     sprintf(buf, "/%s/%s: Successful insurgency by %s [%d] against %s [%d]\n",
@@ -366,7 +366,7 @@ void insurgency(const command_t &argv, GameObj &g) {
             Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
             Playernum);
     strcat(long_buf, buf);
-    warn(who, (int)Stars[g.snum]->governor[who - 1], long_buf);
+    warn(who, Stars[g.snum]->governor[who - 1], long_buf);
     sprintf(buf, "/%s/%s: Failed insurgency by %s [%d] against %s [%d]\n",
             Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
             Playernum, alien->name, who);

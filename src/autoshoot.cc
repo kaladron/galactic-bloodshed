@@ -46,7 +46,7 @@ int Bombard(shiptype *ship, Planet *planet, racetype *r) {
   if (!ok) {
     sprintf(buf, "Bombardment of %s cancelled, PDNs are present.\n",
             prin_ship_orbits(ship));
-    warn((int)ship->owner, (int)ship->governor, buf);
+    warn(ship->owner, ship->governor, buf);
     return 0;
   }
 
@@ -110,7 +110,7 @@ int Bombard(shiptype *ship, Planet *planet, racetype *r) {
               Stars[ship->storbits]->pnames[ship->pnumorbits]);
       for (player_t i = 1; i <= Num_races; i++)
         if (Nuked[i - 1] && i != ship->owner)
-          warn(i, (int)Stars[ship->storbits]->governor[i - 1], telegram_buf);
+          warn(i, Stars[ship->storbits]->governor[i - 1], telegram_buf);
       post(buf, COMBAT);
 
       /* enemy planet retaliates along with defending forces */
@@ -121,7 +121,7 @@ int Bombard(shiptype *ship, Planet *planet, racetype *r) {
         sprintf(telegram_buf,
                 "Bulletin\n\n %c%lu %s has no weapons to bombard with.\n",
                 Shipltrs[ship->type], ship->number, ship->name);
-        warn((int)ship->owner, (int)ship->governor, telegram_buf);
+        warn(ship->owner, ship->governor, telegram_buf);
       }
     }
 

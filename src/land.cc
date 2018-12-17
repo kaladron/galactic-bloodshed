@@ -313,7 +313,7 @@ void land(const command_t &argv, GameObj &g) {
               if (strength) {
                 post(temp, COMBAT);
                 notify_star(0, 0, s->storbits, temp);
-                warn(i, (int)Stars[s->storbits]->governor[i - 1], buf);
+                warn(i, Stars[s->storbits]->governor[i - 1], buf);
                 notify((int)s->owner, (int)s->governor, buf);
                 p.info[i - 1].destruct -= strength;
               }
@@ -340,7 +340,7 @@ void land(const command_t &argv, GameObj &g) {
               Ship(*s).c_str(), x, y, numdest);
           for (i = 1; i <= Num_races; i++)
             if (p.info[i - 1].numsectsowned || i == Playernum)
-              warn(i, (int)Stars[s->storbits]->governor[i - 1], buf);
+              warn(i, Stars[s->storbits]->governor[i - 1], buf);
           if (roll)
             sprintf(buf, "Ship damage %d%% (you rolled a %d)\n", (int)s->damage,
                     roll);

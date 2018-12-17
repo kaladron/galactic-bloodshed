@@ -1010,7 +1010,7 @@ static void do_transporter(racetype *Race, GameObj &g, shiptype *s) {
     strcat(telegram_buf, bufc);
     strcat(telegram_buf, bufm);
     strcat(telegram_buf, bufx);
-    warn((int)s2->owner, (int)s2->governor, telegram_buf);
+    warn(s2->owner, s2->governor, telegram_buf);
   }
 
   putship(s2);

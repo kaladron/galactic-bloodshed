@@ -123,7 +123,7 @@ int enroll_valid_race() {
 found_planet:
   printf(" found!\n");
   auto Race = new race;
-  bzero(Race, sizeof(Race));
+  bzero(Race, sizeof(race));
 
   Race->Playernum = Playernum;
   Race->God = (race_info.priv_type == P_GOD);

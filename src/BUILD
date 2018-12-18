@@ -23,7 +23,6 @@ LLVM_COPTS_OPTIONAL = [
     "-Wno-conversion",
     "-Wno-conditional-uninitialized",
     "-Wno-sign-compare",
-    "-Wno-sizeof-pointer-memaccess",
     "-Wno-switch-enum",
     "-Wno-switch",
     "-Wno-logical-not-parentheses",

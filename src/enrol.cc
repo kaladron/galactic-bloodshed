@@ -199,7 +199,7 @@ int main() {
   } while (!found);
 
   auto Race = new race;
-  bzero(Race, sizeof(Race));
+  bzero(Race, sizeof(race));
 
   printf("\n\tDeity/Guest/Normal (d/g/n) ?");
   c = getchr();

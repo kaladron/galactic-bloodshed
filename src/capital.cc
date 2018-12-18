@@ -29,8 +29,7 @@ void capital(const command_t &argv, GameObj &g) {
 
   Race = races[Playernum - 1];
   if (Governor) {
-    (void)notify(Playernum, Governor,
-                 "Only the leader may designate the capital.\n");
+    notify(Playernum, Governor, "Only the leader may designate the capital.\n");
     return;
   }
 
@@ -42,7 +41,7 @@ void capital(const command_t &argv, GameObj &g) {
         strtoul(argv[1].c_str() + (argv[1].c_str()[0] == '#'), nullptr, 10);
 
   if (shipno <= 0) {
-    (void)notify(Playernum, Governor, "Change the capital to be what ship?\n");
+    notify(Playernum, Governor, "Change the capital to be what ship?\n");
     return;
   }
 
@@ -51,12 +50,12 @@ void capital(const command_t &argv, GameObj &g) {
   if (argv.size() == 2) {
     snum = s->storbits;
     if (!stat || testship(Playernum, Governor, s)) {
-      (void)notify(Playernum, Governor, "You can't do that!\n");
+      notify(Playernum, Governor, "You can't do that!\n");
       free(s);
       return;
     }
     if (!landed(s)) {
-      (void)notify(Playernum, Governor, "Try landing this ship first!\n");
+      notify(Playernum, Governor, "Try landing this ship first!\n");
       free(s);
       return;
     }
@@ -66,7 +65,7 @@ void capital(const command_t &argv, GameObj &g) {
     }
     if (s->type != OTYPE_GOV) {
       sprintf(buf, "That ship is not a %s.\n", Shipnames[OTYPE_GOV]);
-      (void)notify(Playernum, Governor, buf);
+      notify(Playernum, Governor, buf);
       free(s);
       return;
     }
@@ -77,6 +76,6 @@ void capital(const command_t &argv, GameObj &g) {
 
   sprintf(buf, "Efficiency of governmental center: %.0f%%.\n",
           ((double)s->popn / (double)Max_crew(s)) * (100 - (double)s->damage));
-  (void)notify(Playernum, Governor, buf);
+  notify(Playernum, Governor, buf);
   free(s);
 }

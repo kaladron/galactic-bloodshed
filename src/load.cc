@@ -621,7 +621,7 @@ void dump(const command_t &argv, GameObj &g) {
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
 
-  if (!(player = GetPlayer(argv[1].c_str()))) {
+  if (!(player = get_player(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -711,7 +711,7 @@ void transfer(const command_t &argv, GameObj &g) {
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
 
-  if (!(player = GetPlayer(argv[1].c_str()))) {
+  if (!(player = get_player(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;

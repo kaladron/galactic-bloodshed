@@ -99,7 +99,7 @@ void highlight(const command_t &argv, GameObj &g) {
   player_t n;
   racetype *Race;
 
-  if (!(n = GetPlayer(argv[1].c_str()))) {
+  if (!(n = get_player(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;

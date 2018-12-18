@@ -23,7 +23,7 @@ void relation(const command_t &argv, GameObj &g) {
   if (argv.size() == 1) {
     q = Playernum;
   } else {
-    if (!(q = GetPlayer(argv[1]))) {
+    if (!(q = get_player(argv[1]))) {
       notify(Playernum, Governor, "No such player.\n");
       return;
     }

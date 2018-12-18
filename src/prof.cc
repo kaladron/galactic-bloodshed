@@ -180,7 +180,7 @@ void profile(const command_t &argv, GameObj &g) {
     if (Wormhole(Race)) notify(Playernum, Governor, "  Wormhole");
     notify(Playernum, Governor, "\n");
   } else {
-    if (!(p = GetPlayer(argv[1].c_str()))) {
+    if (!(p = get_player(argv[1]))) {
       sprintf(buf, "Player does not exist.\n");
       notify(Playernum, Governor, buf);
       return;

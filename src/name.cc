@@ -270,7 +270,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     }*/
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
-  if (!(who = GetPlayer(argv[1].c_str()))) {
+  if (!(who = get_player(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -384,7 +384,7 @@ void pay(const command_t &argv, GameObj &g) {
   int who, amount;
   racetype *Race, *alien;
 
-  if (!(who = GetPlayer(argv[1].c_str()))) {
+  if (!(who = get_player(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -435,7 +435,7 @@ void give(const command_t &argv, GameObj &g) {
   shiptype *ship;
   racetype *Race, *alien;
 
-  if (!(who = GetPlayer(argv[1].c_str()))) {
+  if (!(who = get_player(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -578,7 +578,7 @@ void page(const command_t &argv, GameObj &g) {
     who = 0;  // TODO(jeffbailey): Init to zero to be sure it's initialized.
     gov = 0;  // TODO(jeffbailey): Init to zero to be sure it's initialized.
   } else {
-    if (!(who = GetPlayer(argv[1].c_str()))) {
+    if (!(who = get_player(argv[1]))) {
       sprintf(buf, "No such player.\n");
       notify(Playernum, Governor, buf);
       return;
@@ -665,7 +665,7 @@ void send_message(const command_t &argv, GameObj &g) {
   if (match(argv[1].c_str(), "block")) {
     to_block = 1;
     notify(Playernum, Governor, "Sending message to alliance block.\n");
-    if (!(who = GetPlayer(argv[2].c_str()))) {
+    if (!(who = get_player(argv[2]))) {
       sprintf(buf, "No such alliance block.\n");
       notify(Playernum, Governor, buf);
       return;
@@ -684,7 +684,7 @@ void send_message(const command_t &argv, GameObj &g) {
     star = where.snum;
     getstar(&(Stars[star]), star);
   } else {
-    if (!(who = GetPlayer(argv[1].c_str()))) {
+    if (!(who = get_player(argv[1]))) {
       sprintf(buf, "No such player.\n");
       notify(Playernum, Governor, buf);
       return;

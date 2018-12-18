@@ -34,7 +34,7 @@ void block(const command_t &argv, GameObj &g) {
   Race = races[Playernum - 1];
 
   if (argv.size() == 3 && match(argv[1].c_str(), "player")) {
-    if (!(p = GetPlayer(argv[2].c_str()))) {
+    if (!(p = get_player(argv[2]))) {
       notify(Playernum, Governor, "No such player.\n");
       return;
     }
@@ -84,7 +84,7 @@ void block(const command_t &argv, GameObj &g) {
     else
       notify(Playernum, Governor, "\n");
   } else if (argv.size() > 1) {
-    if (!(p = GetPlayer(argv[1].c_str()))) {
+    if (!(p = get_player(argv[1]))) {
       notify(Playernum, Governor, "No such player,\n");
       return;
     }
@@ -187,7 +187,7 @@ void power(const command_t &argv, GameObj &g) {
   p = -1;
 
   if (argv.size() >= 2) {
-    if (!(p = GetPlayer(argv[1].c_str()))) {
+    if (!(p = get_player(argv[1]))) {
       notify(Playernum, Governor, "No such player,\n");
       return;
     }

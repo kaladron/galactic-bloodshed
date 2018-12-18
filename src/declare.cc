@@ -35,7 +35,7 @@ void invite(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "Only leaders may invite.\n");
     return;
   }
-  if (!(n = GetPlayer(argv[1]))) {
+  if (!(n = get_player(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -80,7 +80,7 @@ void pledge(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, "Only leaders may pledge.\n");
     return;
   }
-  if (!(n = GetPlayer(argv[1]))) {
+  if (!(n = get_player(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;
@@ -148,7 +148,7 @@ void declare(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (!(n = GetPlayer(argv[1]))) {
+  if (!(n = get_player(argv[1]))) {
     sprintf(buf, "No such player.\n");
     notify(Playernum, Governor, buf);
     return;

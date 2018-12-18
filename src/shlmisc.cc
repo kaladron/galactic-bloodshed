@@ -497,20 +497,18 @@ void Getracenum(char *racepass, char *govpass, int *racenum, int *govnum) {
 }
 
 /* returns player # from string containing that players name or #. */
-player_t GetPlayer(const char *name) {
+player_t get_player(const std::string &name) {
   player_t rnum = 0;
 
-  if (isdigit(*name)) {
-    if ((rnum = atoi(name)) < 1 || rnum > Num_races) return 0;
+  if (isdigit(name[0])) {
+    if ((rnum = std::stoi(name)) < 1 || rnum > Num_races) return 0;
     return rnum;
   } else {
     for (player_t i = 1; i <= Num_races; i++)
-      if (match(name, races[i - 1]->name)) return i;
+      if (match(name.c_str(), races[i - 1]->name)) return i;
     return 0;
   }
 }
-
-player_t GetPlayer(const std::string &name) { return GetPlayer(name.c_str()); }
 
 void allocateAPs(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

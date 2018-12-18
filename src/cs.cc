@@ -15,10 +15,13 @@
 #include "vars.h"
 
 void center(const command_t &argv, GameObj &g) {
+  if (argv.size() != 2) {
+    g.out << "center: which star?\n";
+  }
   auto where = Getplace(g, argv[1], 1);
 
   if (where.err) {
-    g.out << "cs: bad scope.\n";
+    g.out << "center: bad scope.\n";
     return;
   } else if (where.level == ScopeLevel::LEVEL_SHIP) {
     g.out << "CHEATER!!!\n";

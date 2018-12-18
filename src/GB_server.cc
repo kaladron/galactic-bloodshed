@@ -1170,7 +1170,7 @@ static void dump_users(DescriptorData &e) {
 }
 
 //* Dispatch to the function to run the command based on the string input by the
-//user.
+// user.
 static void process_command(DescriptorData &d, const command_t &argv) {
   int God = races[d.player - 1]->God;
 

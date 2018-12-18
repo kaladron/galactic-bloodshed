@@ -327,7 +327,6 @@ static const std::unordered_map<std::string, CommandFunction> commands{
 };
 
 int main(int argc, char **argv) {
-  int i;
   struct stat stbuf;
   FILE *sfile;
 
@@ -413,7 +412,7 @@ int main(int argc, char **argv) {
   Getpower(Power);  /* get power report from disk */
   Getblock(Blocks); /* get alliance block data */
   SortShips();      /* Sort the ship list by tech for "build ?" */
-  for (i = 1; i <= MAXPLAYERS; i++) {
+  for (int i = 1; i <= MAXPLAYERS; i++) {
     setbit(Blocks[i - 1].invite, i - 1);
     setbit(Blocks[i - 1].pledge, i - 1);
   }

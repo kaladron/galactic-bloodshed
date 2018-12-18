@@ -58,7 +58,7 @@ void grant(const command_t &argv, GameObj &g) {
   } else if (!Race->governor[gov].active) {
     notify(Playernum, Governor, "That governor is not active.\n");
     return;
-  } else if (match(argv[2].c_str(), "star")) {
+  } else if (argv[2] == "star") {
     int snum;
     if (g.level != ScopeLevel::LEVEL_STAR) {
       notify(Playernum, Governor, "Please cs to the star system first.\n");
@@ -70,7 +70,7 @@ void grant(const command_t &argv, GameObj &g) {
             Race->governor[Governor].name, Stars[snum]->name);
     warn(Playernum, gov, buf);
     putstar(Stars[snum], snum);
-  } else if (match(argv[2].c_str(), "ship")) {
+  } else if (argv[2] == "ship") {
     nextshipno = start_shiplist(g, argv[3].c_str());
     while ((shipno = do_shiplist(&ship, &nextshipno)))
       if (in_list(Playernum, argv[3].c_str(), ship, &nextshipno) &&
@@ -87,7 +87,7 @@ void grant(const command_t &argv, GameObj &g) {
         free(ship);
       } else
         free(ship);
-  } else if (match(argv[2].c_str(), "money")) {
+  } else if (argv[2] == "money") {
     long amount;
     if (argv.size() < 4) {
       notify(Playernum, Governor, "Indicate the amount of money.\n");
@@ -150,7 +150,7 @@ void governors(const command_t &argv, GameObj &g) {
   } else if ((gov = atoi(argv[1].c_str())) < 0 || gov > MAXGOVERNORS) {
     notify(Playernum, Governor, "No such governor.\n");
     return;
-  } else if (match(argv[0].c_str(), "appoint")) {
+  } else if (argv[0] == "appoint") {
     /* Syntax: 'appoint <gov> <password>' */
     if (Race->governor[gov].active) {
       notify(Playernum, Governor, "That governor is already appointed.\n");
@@ -170,7 +170,7 @@ void governors(const command_t &argv, GameObj &g) {
     putrace(Race);
     notify(Playernum, Governor, "Governor activated.\n");
     return;
-  } else if (match(argv[0].c_str(), "revoke")) {
+  } else if (argv[0] == "revoke") {
     int j;
     if (!gov) {
       notify(Playernum, Governor, "You can't revoke your leadership!\n");
@@ -200,7 +200,7 @@ void governors(const command_t &argv, GameObj &g) {
     putrace(Race);
     notify(Playernum, Governor, "Done.\n");
     return;
-  } else if (match(argv[2].c_str(), "password")) {
+  } else if (argv[2] == "password") {
     if (Race->Guest) {
       notify(Playernum, Governor, "Guest races cannot change passwords.\n");
       return;
@@ -357,58 +357,58 @@ void fix(const command_t &argv, GameObj &g) {
 
   shiptype *s;
 
-  if (match(argv[1].c_str(), "planet")) {
+  if (argv[1] == "planet") {
     if (g.level != ScopeLevel::LEVEL_PLAN) {
       notify(Playernum, Governor, "Change scope to the planet first.\n");
       return;
     }
     auto p = getplanet(g.snum, g.pnum);
-    if (match(argv[2].c_str(), "Maxx")) {
+    if (argv[2] == "Maxx") {
       if (argv.size() > 3) p.Maxx = atoi(argv[3].c_str());
       sprintf(buf, "Maxx = %d\n", p.Maxx);
-    } else if (match(argv[2].c_str(), "Maxy")) {
+    } else if (argv[2] == "Maxy") {
       if (argv.size() > 3) p.Maxy = atoi(argv[3].c_str());
       sprintf(buf, "Maxy = %d\n", p.Maxy);
-    } else if (match(argv[2].c_str(), "xpos")) {
+    } else if (argv[2] == "xpos") {
       if (argv.size() > 3) p.xpos = (double)atoi(argv[3].c_str());
       sprintf(buf, "xpos = %f\n", p.xpos);
-    } else if (match(argv[2].c_str(), "ypos")) {
+    } else if (argv[2] == "ypos") {
       if (argv.size() > 3) p.ypos = (double)atoi(argv[3].c_str());
       sprintf(buf, "ypos = %f\n", p.ypos);
-    } else if (match(argv[2].c_str(), "ships")) {
+    } else if (argv[2] == "ships") {
       if (argv.size() > 3) p.ships = atoi(argv[3].c_str());
       sprintf(buf, "ships = %ld\n", p.ships);
-    } else if (match(argv[2].c_str(), "rtemp")) {
+    } else if (argv[2] == "rtemp") {
       if (argv.size() > 3) p.conditions[RTEMP] = atoi(argv[3].c_str());
       sprintf(buf, "RTEMP = %d\n", p.conditions[RTEMP]);
-    } else if (match(argv[2].c_str(), "temperature")) {
+    } else if (argv[2] == "temperature") {
       if (argv.size() > 3) p.conditions[TEMP] = atoi(argv[3].c_str());
       sprintf(buf, "TEMP = %d\n", p.conditions[TEMP]);
-    } else if (match(argv[2].c_str(), "methane")) {
+    } else if (argv[2] == "methane") {
       if (argv.size() > 3) p.conditions[METHANE] = atoi(argv[3].c_str());
       sprintf(buf, "METHANE = %d\n", p.conditions[METHANE]);
-    } else if (match(argv[2].c_str(), "oxygen")) {
+    } else if (argv[2] == "oxygen") {
       if (argv.size() > 3) p.conditions[OXYGEN] = atoi(argv[3].c_str());
       sprintf(buf, "OXYGEN = %d\n", p.conditions[OXYGEN]);
-    } else if (match(argv[2].c_str(), "co2")) {
+    } else if (argv[2] == "co2") {
       if (argv.size() > 3) p.conditions[CO2] = atoi(argv[3].c_str());
       sprintf(buf, "CO2 = %d\n", p.conditions[CO2]);
-    } else if (match(argv[2].c_str(), "hydrogen")) {
+    } else if (argv[2] == "hydrogen") {
       if (argv.size() > 3) p.conditions[HYDROGEN] = atoi(argv[3].c_str());
       sprintf(buf, "HYDROGEN = %d\n", p.conditions[HYDROGEN]);
-    } else if (match(argv[2].c_str(), "nitrogen")) {
+    } else if (argv[2] == "nitrogen") {
       if (argv.size() > 3) p.conditions[NITROGEN] = atoi(argv[3].c_str());
       sprintf(buf, "NITROGEN = %d\n", p.conditions[NITROGEN]);
-    } else if (match(argv[2].c_str(), "sulfur")) {
+    } else if (argv[2] == "sulfur") {
       if (argv.size() > 3) p.conditions[SULFUR] = atoi(argv[3].c_str());
       sprintf(buf, "SULFUR = %d\n", p.conditions[SULFUR]);
-    } else if (match(argv[2].c_str(), "helium")) {
+    } else if (argv[2] == "helium") {
       if (argv.size() > 3) p.conditions[HELIUM] = atoi(argv[3].c_str());
       sprintf(buf, "HELIUM = %d\n", p.conditions[HELIUM]);
-    } else if (match(argv[2].c_str(), "other")) {
+    } else if (argv[2] == "other") {
       if (argv.size() > 3) p.conditions[OTHER] = atoi(argv[3].c_str());
       sprintf(buf, "OTHER = %d\n", p.conditions[OTHER]);
-    } else if (match(argv[2].c_str(), "toxic")) {
+    } else if (argv[2] == "toxic") {
       if (argv.size() > 3) p.conditions[TOXIC] = atoi(argv[3].c_str());
       sprintf(buf, "TOXIC = %d\n", p.conditions[TOXIC]);
     } else {
@@ -419,33 +419,33 @@ void fix(const command_t &argv, GameObj &g) {
     if (argv.size() > 3) putplanet(p, Stars[g.snum], g.pnum);
     return;
   }
-  if (match(argv[1].c_str(), "ship")) {
+  if (argv[1] == "ship") {
     if (g.level != ScopeLevel::LEVEL_SHIP) {
       notify(Playernum, Governor,
              "Change scope to the ship you wish to fix.\n");
       return;
     }
     (void)getship(&s, g.shipno);
-    if (match(argv[2].c_str(), "fuel")) {
+    if (argv[2] == "fuel") {
       if (argv.size() > 3) s->fuel = (double)atoi(argv[3].c_str());
       sprintf(buf, "fuel = %f\n", s->fuel);
-    } else if (match(argv[2].c_str(), "max_fuel")) {
+    } else if (argv[2] == "max_fuel") {
       if (argv.size() > 3) s->max_fuel = atoi(argv[3].c_str());
       sprintf(buf, "fuel = %d\n", s->max_fuel);
-    } else if (match(argv[2].c_str(), "destruct")) {
+    } else if (argv[2] == "destruct") {
       if (argv.size() > 3) s->destruct = atoi(argv[3].c_str());
       sprintf(buf, "destruct = %d\n", s->destruct);
-    } else if (match(argv[2].c_str(), "resource")) {
+    } else if (argv[2] == "resource") {
       if (argv.size() > 3) s->resource = atoi(argv[3].c_str());
       sprintf(buf, "resource = %d\n", s->resource);
-    } else if (match(argv[2].c_str(), "damage")) {
+    } else if (argv[2] == "damage") {
       if (argv.size() > 3) s->damage = atoi(argv[3].c_str());
       sprintf(buf, "damage = %d\n", s->damage);
-    } else if (match(argv[2].c_str(), "alive")) {
+    } else if (argv[2] == "alive") {
       s->alive = 1;
       s->damage = 0;
       sprintf(buf, "%s resurrected\n", Ship(*s).c_str());
-    } else if (match(argv[2].c_str(), "dead")) {
+    } else if (argv[2] == "dead") {
       s->alive = 0;
       s->damage = 100;
       sprintf(buf, "%s destroyed\n", Ship(*s).c_str());
@@ -461,8 +461,6 @@ void fix(const command_t &argv, GameObj &g) {
   } else
     notify(Playernum, Governor, "Fix what?\n");
 }
-
-int match(const char *p, const char *q) { return (!strncmp(p, q, strlen(p))); }
 
 void DontOwnErr(int Playernum, int Governor, shipnum_t shipno) {
   sprintf(buf, "You don't own ship #%lu.\n", shipno);
@@ -505,7 +503,7 @@ player_t get_player(const std::string &name) {
     return rnum;
   } else {
     for (player_t i = 1; i <= Num_races; i++)
-      if (match(name.c_str(), races[i - 1]->name)) return i;
+      if (name == races[i - 1]->name) return i;
     return 0;
   }
 }

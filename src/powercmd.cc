@@ -33,7 +33,7 @@ void block(const command_t &argv, GameObj &g) {
 
   Race = races[Playernum - 1];
 
-  if (argv.size() == 3 && match(argv[1].c_str(), "player")) {
+  if (argv.size() == 3 && argv[1] == "player") {
     if (!(p = get_player(argv[2]))) {
       notify(Playernum, Governor, "No such player.\n");
       return;

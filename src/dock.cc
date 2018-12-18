@@ -55,9 +55,9 @@ void dock(const command_t &argv, GameObj &g) {
   if (argv.size() < 5)
     what = MIL;
   else if (Assault) {
-    if (match(argv[4].c_str(), "civilians"))
+    if (argv[4] == "civilians")
       what = CIV;
-    else if (match(argv[4].c_str(), "military"))
+    else if (argv[4] == "military")
       what = MIL;
     else {
       notify(Playernum, Governor, "Assault with what?\n");

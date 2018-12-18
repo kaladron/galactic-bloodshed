@@ -26,28 +26,28 @@ void toggle(const command_t &argv, GameObj &g) {
   Race = races[Playernum - 1];
 
   if (argv.size() > 1) {
-    if (match(argv[1].c_str(), "inverse"))
+    if (argv[1] == "inverse")
       tog(Playernum, Governor, &Race->governor[Governor].toggle.inverse,
           "inverse");
-    else if (match(argv[1].c_str(), "double_digits"))
+    else if (argv[1] == "double_digits")
       tog(Playernum, Governor, &Race->governor[Governor].toggle.double_digits,
           "double_digits");
-    else if (match(argv[1].c_str(), "geography"))
+    else if (argv[1] == "geography")
       tog(Playernum, Governor, &Race->governor[Governor].toggle.geography,
           "geography");
-    else if (match(argv[1].c_str(), "gag"))
+    else if (argv[1] == "gag")
       tog(Playernum, Governor, &Race->governor[Governor].toggle.gag, "gag");
-    else if (match(argv[1].c_str(), "autoload"))
+    else if (argv[1] == "autoload")
       tog(Playernum, Governor, &Race->governor[Governor].toggle.autoload,
           "autoload");
-    else if (match(argv[1].c_str(), "color"))
+    else if (argv[1] == "color")
       tog(Playernum, Governor, &Race->governor[Governor].toggle.color, "color");
-    else if (match(argv[1].c_str(), "visible"))
+    else if (argv[1] == "visible")
       tog(Playernum, Governor, &Race->governor[Governor].toggle.invisible,
           "invisible");
-    else if (Race->God && match(argv[1].c_str(), "monitor"))
+    else if (Race->God && argv[1] == "monitor")
       tog(Playernum, Governor, &Race->monitor, "monitor");
-    else if (match(argv[1].c_str(), "compatibility"))
+    else if (argv[1] == "compatibility")
       tog(Playernum, Governor, &Race->governor[Governor].toggle.compat,
           "compatibility");
     else {

@@ -19,7 +19,6 @@ int start_shiplist(GameObj &, const char *);
 shipnum_t do_shiplist(shiptype **, shipnum_t *);
 int in_list(player_t, const char *, shiptype *, shipnum_t *);
 void fix(const command_t &, GameObj &);
-int match(const char *, const char *);
 void DontOwnErr(int, int, shipnum_t);
 int enufAP(int, int, unsigned short, int);
 void Getracenum(char *, char *, int *, int *);

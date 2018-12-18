@@ -1188,14 +1188,14 @@ static void process_command(DescriptorData &d, const command_t &argv) {
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
     command->second(argv, d);
-  } else if (match(argv[0].c_str(), "purge") && God)
+  } else if (argv[0] == "purge" && God)
     purge();
-  else if (match(argv[0].c_str(), "@@shutdown") && God) {
+  else if (argv[0] == "@@shutdown" && God) {
     shutdown_flag = 1;
     notify(Playernum, Governor, "Doing shutdown.\n");
-  } else if (match(argv[0].c_str(), "@@update") && God)
+  } else if (argv[0] == "@@update" && God)
     do_update(1);
-  else if (match(argv[0].c_str(), "@@segment") && God)
+  else if (argv[0] == "@@segment" && God)
     do_segment(1, atoi(argv[1].c_str()));
   else {
     sprintf(buf, "'%s':illegal command error.\n", argv[0].c_str());

@@ -84,9 +84,9 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     return;
   }
 
-  if (match(argv[2].c_str(), "defense")) {
+  if (argv[2] == "defense") {
     if (can_bombard(ship)) {
-      if (match(argv[3].c_str(), "off"))
+      if (argv[3] == "off")
         ship->protect.planet = 0;
       else
         ship->protect.planet = 1;
@@ -95,13 +95,13 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
              "That ship cannot be assigned those orders.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "scatter")) {
+  } else if (argv[2] == "scatter") {
     if (ship->type != STYPE_MISSILE) {
       notify(Playernum, Governor, "Only missiles can be given this order.\n");
       return;
     }
     ship->special.impact.scatter = 1;
-  } else if (match(argv[2].c_str(), "impact")) {
+  } else if (argv[2] == "impact") {
     int x, y;
     if (ship->type != STYPE_MISSILE) {
       notify(Playernum, Governor,
@@ -112,14 +112,14 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     ship->special.impact.x = x;
     ship->special.impact.y = y;
     ship->special.impact.scatter = 0;
-  } else if (match(argv[2].c_str(), "jump")) {
+  } else if (argv[2] == "jump") {
     if (ship->docked) {
       notify(Playernum, Governor,
              "That ship is docked. Use 'launch' or 'undock' first.\n");
       return;
     }
     if (ship->hyper_drive.has) {
-      if (match(argv[3].c_str(), "off"))
+      if (argv[3] == "off")
         ship->hyper_drive.on = 0;
       else {
         if (ship->whatdest != ScopeLevel::LEVEL_STAR &&
@@ -139,7 +139,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
              "This ship does not have hyper drive capability.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "protect")) {
+  } else if (argv[2] == "protect") {
     if (argv.size() > 3)
       sscanf(argv[3].c_str() + (argv[3].c_str()[0] == '#'), "%d", &j);
     else
@@ -159,7 +159,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       notify(Playernum, Governor, "That ship cannot protect.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "navigate")) {
+  } else if (argv[2] == "navigate") {
     if (argv.size() >= 5) {
       ship->navigate.on = 1;
       ship->navigate.bearing = atoi(argv[3].c_str());
@@ -167,7 +167,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     } else
       ship->navigate.on = 0;
     if (ship->hyper_drive.on) ship->hyper_drive.on = 0;
-  } else if (match(argv[2].c_str(), "switch")) {
+  } else if (argv[2] == "switch") {
     if (ship->type == OTYPE_FACTORY) {
       notify(Playernum, Governor, "Use \"on\" to bring factory online.\n");
       return;
@@ -206,7 +206,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           break;
       }
     }
-  } else if (match(argv[2].c_str(), "destination")) {
+  } else if (argv[2] == "destination") {
     if (speed_rating(ship)) {
       if (ship->docked) {
         notify(Playernum, Governor,
@@ -245,49 +245,49 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       notify(Playernum, Governor, "That ship cannot be launched.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "evade")) {
+  } else if (argv[2] == "evade") {
     if (Max_crew(ship) && Max_speed(ship)) {
-      if (match(argv[3].c_str(), "on"))
+      if (argv[3] == "on")
         ship->protect.evade = 1;
-      else if (match(argv[3].c_str(), "off"))
+      else if (argv[3] == "off")
         ship->protect.evade = 0;
     } else
       return;
-  } else if (match(argv[2].c_str(), "bombard")) {
+  } else if (argv[2] == "bombard") {
     if (ship->type != OTYPE_OMCL) {
       if (can_bombard(ship)) {
-        if (match(argv[3].c_str(), "off"))
+        if (argv[3] == "off")
           ship->bombard = 0;
-        else if (match(argv[3].c_str(), "on"))
+        else if (argv[3] == "on")
           ship->bombard = 1;
       } else
         notify(Playernum, Governor,
                "This type of ship cannot be set to retaliate.\n");
     }
-  } else if (match(argv[2].c_str(), "retaliate")) {
+  } else if (argv[2] == "retaliate") {
     if (ship->type != OTYPE_OMCL) {
       if (can_bombard(ship)) {
-        if (match(argv[3].c_str(), "off"))
+        if (argv[3] == "off")
           ship->protect.self = 0;
-        else if (match(argv[3].c_str(), "on"))
+        else if (argv[3] == "on")
           ship->protect.self = 1;
       } else
         notify(Playernum, Governor,
                "This type of ship cannot be set to retaliate.\n");
     }
-  } else if (match(argv[2].c_str(), "focus")) {
+  } else if (argv[2] == "focus") {
     if (ship->laser) {
-      if (match(argv[3].c_str(), "on"))
+      if (argv[3] == "on")
         ship->focus = 1;
       else
         ship->focus = 0;
     } else
       notify(Playernum, Governor, "No laser.\n");
-  } else if (match(argv[2].c_str(), "laser")) {
+  } else if (argv[2] == "laser") {
     if (ship->laser) {
       if (can_bombard(ship)) {
         if (ship->mounted) {
-          if (match(argv[3].c_str(), "on"))
+          if (argv[3] == "on")
             ship->fire_laser = atoi(argv[4].c_str());
           else
             ship->fire_laser = 0;
@@ -299,8 +299,8 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     } else
       notify(Playernum, Governor,
              "This ship is not equipped with combat lasers.\n");
-  } else if (match(argv[2].c_str(), "merchant")) {
-    if (match(argv[3].c_str(), "off"))
+  } else if (argv[2] == "merchant") {
+    if (argv[3] == "off")
       ship->merchant = 0;
     else {
       j = atoi(argv[3].c_str());
@@ -310,7 +310,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       }
       ship->merchant = j;
     }
-  } else if (match(argv[2].c_str(), "speed")) {
+  } else if (argv[2] == "speed") {
     if (speed_rating(ship)) {
       j = atoi(argv[3].c_str());
       if (j < 0) {
@@ -324,7 +324,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       notify(Playernum, Governor, "This ship does not have a speed rating.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "salvo")) {
+  } else if (argv[2] == "salvo") {
     if (can_bombard(ship)) {
       j = atoi(argv[3].c_str());
       if (j < 0) {
@@ -344,7 +344,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       notify(Playernum, Governor, "This ship cannot be set to retaliate.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "primary")) {
+  } else if (argv[2] == "primary") {
     if (ship->primary) {
       if (argv.size() < 4) {
         ship->guns = PRIMARY;
@@ -365,7 +365,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       notify(Playernum, Governor, "This ship does not have primary guns.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "secondary")) {
+  } else if (argv[2] == "secondary") {
     if (ship->secondary) {
       if (argv.size() < 4) {
         ship->guns = SECONDARY;
@@ -387,7 +387,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       notify(Playernum, Governor, "This ship does not have secondary guns.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "explosive")) {
+  } else if (argv[2] == "explosive") {
     switch (ship->type) {
       case STYPE_MINE:
       case OTYPE_GR:
@@ -396,7 +396,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       default:
         return;
     }
-  } else if (match(argv[2].c_str(), "radiative")) {
+  } else if (argv[2] == "radiative") {
     switch (ship->type) {
       case STYPE_MINE:
       case OTYPE_GR:
@@ -405,7 +405,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       default:
         return;
     }
-  } else if (match(argv[2].c_str(), "move")) {
+  } else if (argv[2] == "move") {
     if ((ship->type == OTYPE_TERRA) || (ship->type == OTYPE_PLOW)) {
       std::string moveseq;
       if (argv.size() > 3) {
@@ -456,7 +456,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
              "That ship is not a terraformer or a space plow.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "trigger")) {
+  } else if (argv[2] == "trigger") {
     if (ship->type == STYPE_MINE) {
       if (atoi(argv[3].c_str()) < 0)
         ship->special.trigger.radius = 0;
@@ -467,7 +467,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
              "This ship cannot be assigned a trigger radius.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "transport")) {
+  } else if (argv[2] == "transport") {
     if (ship->type == OTYPE_TRANSDEV) {
       ship->special.transport.target = atoi(argv[3].c_str());
       if (ship->special.transport.target == ship->number) {
@@ -482,7 +482,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       notify(Playernum, Governor, "This ship is not a transporter.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "aim")) {
+  } else if (argv[2] == "aim") {
     if (can_aim(ship)) {
       if (ship->type == OTYPE_GTELE || ship->type == OTYPE_TRACT ||
           ship->fuel >= FUEL_MANEUVER) {
@@ -516,12 +516,12 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       notify(Playernum, Governor, "You can't aim that kind of ship.\n");
       return;
     }
-  } else if (match(argv[2].c_str(), "intensity")) {
+  } else if (argv[2] == "intensity") {
     if (ship->type == STYPE_MIRROR) {
       ship->special.aimed_at.intensity =
           std::max(0, std::min(100, atoi(argv[3].c_str())));
     }
-  } else if (match(argv[2].c_str(), "on")) {
+  } else if (argv[2] == "on") {
     if (!has_switch(ship)) {
       notify(Playernum, Governor,
              "This ship does not have an on/off setting.\n");
@@ -598,7 +598,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       notify(Playernum, Governor, buf);
     }
     ship->on = 1;
-  } else if (match(argv[2].c_str(), "off")) {
+  } else if (argv[2] == "off") {
     if (ship->type == OTYPE_FACTORY && ship->on) {
       notify(Playernum, Governor,
              "You can't deactivate a factory once it's "
@@ -970,9 +970,9 @@ void route(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, "Bad route number.\n");
       return;
     }
-    if (match(argv[2].c_str(), "activate"))
+    if (argv[2] == "activate")
       p.info[Playernum - 1].route[i - 1].set = 1;
-    else if (match(argv[2].c_str(), "deactivate"))
+    else if (argv[2] == "deactivate")
       p.info[Playernum - 1].route[i - 1].set = 0;
     else {
       where = Getplace(g, argv[2].c_str(), 1);
@@ -995,7 +995,7 @@ void route(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, "Bad route number.\n");
       return;
     }
-    if (match(argv[2].c_str(), "land")) {
+    if (argv[2] == "land") {
       sscanf(argv[3].c_str(), "%d,%d", &x, &y);
       if (x < 0 || x > p.Maxx - 1 || y < 0 || y > p.Maxy - 1) {
         notify(Playernum, Governor, "Bad sector coordinates.\n");
@@ -1003,7 +1003,7 @@ void route(const command_t &argv, GameObj &g) {
       }
       p.info[Playernum - 1].route[i - 1].x = x;
       p.info[Playernum - 1].route[i - 1].y = y;
-    } else if (match(argv[2].c_str(), "load")) {
+    } else if (argv[2] == "load") {
       p.info[Playernum - 1].route[i - 1].load = 0;
       c = argv[3].c_str();
       while (*c) {
@@ -1013,7 +1013,7 @@ void route(const command_t &argv, GameObj &g) {
         if (*c == 'x') p.info[Playernum - 1].route[i - 1].load |= M_CRYSTALS;
         c++;
       }
-    } else if (match(argv[2].c_str(), "unload")) {
+    } else if (argv[2] == "unload") {
       p.info[Playernum - 1].route[i - 1].unload = 0;
       c = argv[3].c_str();
       while (*c) {

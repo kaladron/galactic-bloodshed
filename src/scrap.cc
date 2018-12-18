@@ -186,7 +186,7 @@ void scrap(const command_t &argv, GameObj &g) {
       if (s->whatorbits == ScopeLevel::LEVEL_UNIV)
         deductAPs(g.player, g.governor, APcount, 0, 1);
       else
-        deductAPs(g.player, g.governor, APcount, (int)s->storbits, 0);
+        deductAPs(g.player, g.governor, APcount, s->storbits, 0);
 
       Race = races[g.player - 1];
       kill_ship(g.player, s);
@@ -218,7 +218,7 @@ void scrap(const command_t &argv, GameObj &g) {
       }
 
       if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
-        auto planet = getplanet((int)s->storbits, (int)s->pnumorbits);
+        auto planet = getplanet(s->storbits, s->pnumorbits);
         if (landed(s)) {
           if (sect.owner == g.player) {
             sect.popn += troopval;

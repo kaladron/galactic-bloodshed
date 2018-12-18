@@ -157,7 +157,7 @@ class DescriptorData : public GameObj {
   }
 };
 
-static double GetComplexity(int);
+static double GetComplexity(const shipnum_t);
 static void set_signals(void);
 static void queue_string(DescriptorData &, const std::string &);
 static void add_to_queue(std::deque<TextBlock> &, const std::string &);
@@ -1346,16 +1346,16 @@ void kill_ship(int Playernum, shiptype *ship) {
   }
 
   if (ship->type == OTYPE_TOXWC && ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
-    auto planet = getplanet((int)ship->storbits, (int)ship->pnumorbits);
+    auto planet = getplanet(ship->storbits, ship->pnumorbits);
     planet.conditions[TOXIC] =
         MIN(100, planet.conditions[TOXIC] + ship->special.waste.toxic);
-    putplanet(planet, Stars[ship->storbits], (int)ship->pnumorbits);
+    putplanet(planet, Stars[ship->storbits], ship->pnumorbits);
   }
 
   /* undock the stuff docked with it */
   if (ship->docked && ship->whatorbits != ScopeLevel::LEVEL_SHIP &&
       ship->whatdest == ScopeLevel::LEVEL_SHIP) {
-    (void)getship(&s, (int)ship->destshipno);
+    getship(&s, ship->destshipno);
     s->docked = 0;
     s->whatdest = ScopeLevel::LEVEL_UNIV;
     putship(s);
@@ -1461,15 +1461,15 @@ void remove_sh_plan(shiptype *s) {
   shipnum_t sh;
   shiptype *s2;
 
-  auto p = getplanet((int)s->storbits, (int)s->pnumorbits);
+  auto p = getplanet(s->storbits, s->pnumorbits);
   sh = p.ships;
 
   if (sh == s->number) {
     p.ships = s->nextship;
-    putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
+    putplanet(p, Stars[s->storbits], s->pnumorbits);
   } else {
     while (sh != s->number) {
-      (void)getship(&s2, sh);
+      getship(&s2, sh);
       sh = s2->nextship;
       if (sh != s->number) free(s2); /* don't free it if it is the s2 we want */
     }
@@ -1489,8 +1489,8 @@ void remove_sh_ship(shiptype *s, shiptype *ship) {
     ship->ships = s->nextship;
   else {
     while (sh != s->number) {
-      (void)getship(&s2, sh);
-      sh = (int)(s2->nextship);
+      getship(&s2, sh);
+      sh = (s2->nextship);
       if (sh != s->number) free(s2);
     }
     s2->nextship = s->nextship;
@@ -1502,7 +1502,7 @@ void remove_sh_ship(shiptype *s, shiptype *ship) {
       ScopeLevel::LEVEL_UNIV; /* put in limbo - wait for insert_sh.. */
 }
 
-static double GetComplexity(int ship) {
+static double GetComplexity(const shipnum_t ship) {
   shiptype s;
 
   s.armor = Shipdata[ship][ABIL_ARMOR];
@@ -1538,9 +1538,7 @@ static int ShipCompare(const void *S1, const void *S2) {
 }
 
 static void SortShips() {
-  int i;
-
-  for (i = 0; i < NUMSTYPES; i++) ShipVector[i] = i;
+  for (int i = 0; i < NUMSTYPES; i++) ShipVector[i] = i;
   qsort(ShipVector, NUMSTYPES, sizeof(int), ShipCompare);
 }
 

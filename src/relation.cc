@@ -24,7 +24,7 @@ void relation(const command_t &argv, GameObj &g) {
     q = Playernum;
   } else {
     if (!(q = get_player(argv[1]))) {
-      notify(Playernum, Governor, "No such player.\n");
+      g.out << "No such player.\n";
       return;
     }
   }

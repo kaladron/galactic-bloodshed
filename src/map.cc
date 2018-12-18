@@ -40,7 +40,7 @@ void map(const command_t &argv, GameObj &g) {
 
   switch (where.level) {
     case ScopeLevel::LEVEL_SHIP:
-      notify(Playernum, Governor, "Bad scope.\n");
+      g.out << "Bad scope.\n";
       return;
     case ScopeLevel::LEVEL_PLAN: {
       const auto &p = getplanet(where.snum, where.pnum);

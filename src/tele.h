@@ -11,7 +11,7 @@ void purge(void);
 void post(const char *, int);
 void push_telegram_race(const player_t, const std::string &);
 void push_telegram(const player_t, const governor_t, const std::string &);
-void teleg_read(int, int);
+void teleg_read(GameObj &);
 void news_read(int, int, int);
 
 #endif  // TELE_H

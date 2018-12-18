@@ -65,7 +65,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   }
   (void)getship(&ship, shipno);
   if (ship->owner != Playernum) {
-    notify(Playernum, Governor, "You do not own this ship.\n");
+    g.out << "You do not own this ship.\n";
     free(ship);
     return;
   }
@@ -76,12 +76,12 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     return;
   }
   if (!ship->speed) {
-    notify(Playernum, Governor, "That ship is not moving!\n");
+    g.out << "That ship is not moving!\n";
     free(ship);
     return;
   }
   if ((!speed_rating(ship)) || (ship->type == OTYPE_FACTORY)) {
-    notify(Playernum, Governor, "That ship does not have a speed rating...\n");
+    g.out << "That ship does not have a speed rating...\n";
     free(ship);
     return;
   }
@@ -99,14 +99,14 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   }
   tmpdest = Getplace(g, deststr, 1);
   if (tmpdest.err) {
-    notify(Playernum, Governor, "fuel:  bad scope.\n");
+    g.out << "fuel:  bad scope.\n";
     free(ship);
     return;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&tmpship, tmpdest.shipno);
     if (!followable(ship, tmpship)) {
-      notify(Playernum, Governor, "The ship's destination is out of range.\n");
+      g.out << "The ship's destination is out of range.\n";
       free(tmpship);
       free(ship);
       return;
@@ -124,7 +124,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     return;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_UNIV) {
-    notify(Playernum, Governor, "Invalid ship destination.\n");
+    g.out << "Invalid ship destination.\n";
     free(ship);
     return;
   }
@@ -142,7 +142,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&tmpship, tmpdest.shipno);
     if (tmpship->owner != Playernum) {
-      notify(Playernum, Governor, "Nice try.\n");
+      g.out << "Nice try.\n";
       return;
     }
     x_1 = tmpship->xpos;

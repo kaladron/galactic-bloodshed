@@ -57,7 +57,7 @@ static void Free_rlist(void);
 static int Getrship(player_t, governor_t, shipnum_t);
 static int listed(int, char *);
 static void plan_getrships(player_t, governor_t, starnum_t, planetnum_t);
-static void ship_report(player_t, governor_t, shipnum_t, unsigned char[]);
+static void ship_report(GameObj &, shipnum_t, unsigned char[]);
 static void star_getrships(player_t, governor_t, starnum_t);
 
 void rst(const command_t &argv, GameObj &g) {
@@ -123,9 +123,9 @@ void rst(const command_t &argv, GameObj &g) {
         (void)Getrship(Playernum, Governor, shipno);
         if (rd[Num_ships - 1].s->whatorbits != ScopeLevel::LEVEL_UNIV) {
           star_getrships(Playernum, Governor, rd[Num_ships - 1].s->storbits);
-          ship_report(Playernum, Governor, Num_ships - 1, Report_types);
+          ship_report(g, Num_ships - 1, Report_types);
         } else
-          ship_report(Playernum, Governor, Num_ships - 1, Report_types);
+          ship_report(g, Num_ships - 1, Report_types);
         l++;
       }
       Free_rlist();
@@ -157,7 +157,7 @@ void rst(const command_t &argv, GameObj &g) {
         for (starnum_t i = 0; i < Sdata.numstars; i++)
           star_getrships(Playernum, Governor, i);
         for (shipnum_t i = 0; i < Num_ships; i++)
-          ship_report(Playernum, Governor, i, Report_types);
+          ship_report(g, i, Report_types);
       } else {
         notify(Playernum, Governor,
                "You can't do tactical option from universe level.\n");
@@ -167,32 +167,30 @@ void rst(const command_t &argv, GameObj &g) {
       break;
     case ScopeLevel::LEVEL_PLAN:
       plan_getrships(Playernum, Governor, g.snum, g.pnum);
-      for (shipnum_t i = 0; i < Num_ships; i++)
-        ship_report(Playernum, Governor, i, Report_types);
+      for (shipnum_t i = 0; i < Num_ships; i++) ship_report(g, i, Report_types);
       break;
     case ScopeLevel::LEVEL_STAR:
       star_getrships(Playernum, Governor, g.snum);
-      for (shipnum_t i = 0; i < Num_ships; i++)
-        ship_report(Playernum, Governor, i, Report_types);
+      for (shipnum_t i = 0; i < Num_ships; i++) ship_report(g, i, Report_types);
       break;
     case ScopeLevel::LEVEL_SHIP:
       (void)Getrship(Playernum, Governor, g.shipno);
-      ship_report(Playernum, Governor, 0, Report_types); /* first ship report */
+      ship_report(g, 0, Report_types); /* first ship report */
       shipnum_t shn = rd[0].s->ships;
       Num_ships = 0;
 
       while (shn && Getrship(Playernum, Governor, shn))
         shn = rd[Num_ships - 1].s->nextship;
 
-      for (shipnum_t i = 0; i < Num_ships; i++)
-        ship_report(Playernum, Governor, i, Report_types);
+      for (shipnum_t i = 0; i < Num_ships; i++) ship_report(g, i, Report_types);
       break;
   }
   Free_rlist();
 }
 
-static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
-                        unsigned char rep_on[]) {
+static void ship_report(GameObj &g, shipnum_t indx, unsigned char rep_on[]) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   shiptype *s;
   Planet *p;
   int i, sight, caliber;
@@ -251,7 +249,7 @@ static void ship_report(player_t Playernum, governor_t Governor, shipnum_t indx,
         sprintf(buf, " (%d)", s->special.pod.temperature);
         notify(Playernum, Governor, buf);
       }
-      notify(Playernum, Governor, "\n");
+      g.out << "\n";
     }
 
     if (rd[indx].type != PLANET && Weapons) {

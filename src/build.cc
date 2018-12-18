@@ -33,9 +33,9 @@
 static void autoload_at_planet(int, shiptype *, Planet *, sector &, int *,
                                double *);
 static void autoload_at_ship(shiptype *, shiptype *, int *, double *);
-static std::optional<ScopeLevel> build_at_ship(int, int, shiptype *, int *,
+static std::optional<ScopeLevel> build_at_ship(GameObj &, shiptype *, int *,
                                                int *);
-static int can_build_at_planet(int, int, startype *, const Planet &);
+static int can_build_at_planet(GameObj &, startype *, const Planet &);
 static int can_build_this(int, racetype *, char *);
 static int can_build_on_ship(int, racetype *, shiptype *, char *);
 static int can_build_on_sector(int, racetype *, const Planet &, const sector &,
@@ -48,7 +48,7 @@ static int get_build_type(const char *);
 static int getcount(const command_t &, const size_t);
 static void Getfactship(shiptype *, shiptype *);
 static void Getship(shiptype *, int, racetype *);
-static void initialize_new_ship(int, int, racetype *, shiptype *, double, int);
+static void initialize_new_ship(GameObj &, racetype *, shiptype *, double, int);
 static void system_cost(double *, double *, int, int);
 
 /* upgrade ship characteristics */
@@ -76,12 +76,12 @@ void upgrade(const command_t &argv, GameObj &g) {
     return;
   }
   if (dirship->damage) {
-    notify(Playernum, Governor, "You cannot upgrade damaged ships.\n");
+    g.out << "You cannot upgrade damaged ships.\n";
     free(dirship);
     return;
   }
   if (dirship->type == OTYPE_FACTORY) {
-    notify(Playernum, Governor, "You can't upgrade factories.\n");
+    g.out << "You can't upgrade factories.\n";
     free(dirship);
     return;
   }
@@ -95,7 +95,7 @@ void upgrade(const command_t &argv, GameObj &g) {
     value = 0;
 
   if (value < 0) {
-    notify(Playernum, Governor, "That's a ridiculous setting.\n");
+    g.out << "That's a ridiculous setting.\n";
     free(dirship);
     return;
   }
@@ -138,7 +138,7 @@ void upgrade(const command_t &argv, GameObj &g) {
                Shipdata[dirship->build_type][ABIL_PRIMARY]) {
       if (argv[2] == "strength") {
         if (ship.primtype == GTYPE_NONE) {
-          notify(Playernum, Governor, "No caliber defined.\n");
+          g.out << "No caliber defined.\n";
           free(dirship);
           return;
         }
@@ -152,14 +152,14 @@ void upgrade(const command_t &argv, GameObj &g) {
         else if (argv[3] == "heavy")
           ship.primtype = MAX(GTYPE_HEAVY, dirship->primtype);
         else {
-          notify(Playernum, Governor, "No such caliber.\n");
+          g.out << "No such caliber.\n";
           free(dirship);
           return;
         }
         ship.primtype =
             MIN(Shipdata[dirship->build_type][ABIL_PRIMARY], ship.primtype);
       } else {
-        notify(Playernum, Governor, "No such gun characteristic.\n");
+        g.out << "No such gun characteristic.\n";
         free(dirship);
         return;
       }
@@ -167,7 +167,7 @@ void upgrade(const command_t &argv, GameObj &g) {
                Shipdata[dirship->build_type][ABIL_SECONDARY]) {
       if (argv[2] == "strength") {
         if (ship.sectype == GTYPE_NONE) {
-          notify(Playernum, Governor, "No caliber defined.\n");
+          g.out << "No caliber defined.\n";
           free(dirship);
           return;
         }
@@ -181,14 +181,14 @@ void upgrade(const command_t &argv, GameObj &g) {
         else if (argv[3] == "heavy")
           ship.sectype = MAX(GTYPE_HEAVY, dirship->sectype);
         else {
-          notify(Playernum, Governor, "No such caliber.\n");
+          g.out << "No such caliber.\n";
           free(dirship);
           return;
         }
         ship.sectype =
             MIN(Shipdata[dirship->build_type][ABIL_SECONDARY], ship.sectype);
       } else {
-        notify(Playernum, Governor, "No such gun characteristic.\n");
+        g.out << "No such gun characteristic.\n";
         free(dirship);
         return;
       }
@@ -211,7 +211,7 @@ void upgrade(const command_t &argv, GameObj &g) {
       } else if (argv[2] == "range") {
         ship.cew_range = value;
       } else {
-        notify(Playernum, Governor, "No such option for CEWs.\n");
+        g.out << "No such option for CEWs.\n";
         free(dirship);
         return;
       }
@@ -239,7 +239,7 @@ void upgrade(const command_t &argv, GameObj &g) {
       return;
     }
   } else {
-    notify(Playernum, Governor, "This ship cannot be upgraded.\n");
+    g.out << "This ship cannot be upgraded.\n";
     free(dirship);
     return;
   }
@@ -276,7 +276,7 @@ void upgrade(const command_t &argv, GameObj &g) {
   oldcost = Race->God ? 0 : dirship->build_cost;
   netcost = Race->God ? 0 : 2 * (newcost - oldcost); /* upgrade is expensive */
   if (newcost < oldcost) {
-    notify(Playernum, Governor, "You cannot downgrade ships!\n");
+    g.out << "You cannot downgrade ships!\n";
     free(dirship);
     return;
   }
@@ -309,7 +309,7 @@ void upgrade(const command_t &argv, GameObj &g) {
 
     putship(dirship);
   } else
-    notify(Playernum, Governor, "You can not make this modification.\n");
+    g.out << "You can not make this modification.\n";
   free(dirship);
 }
 
@@ -344,12 +344,12 @@ void make_mod(const command_t &argv, GameObj &g) {
     return;
   }
   if (dirship->type != OTYPE_FACTORY) {
-    notify(Playernum, Governor, "That is not a factory.\n");
+    g.out << "That is not a factory.\n";
     free(dirship);
     return;
   }
   if (dirship->on && argv.size() > 1) {
-    notify(Playernum, Governor, "This factory is already online.\n");
+    g.out << "This factory is already online.\n";
     free(dirship);
     return;
   }
@@ -363,7 +363,7 @@ void make_mod(const command_t &argv, GameObj &g) {
   if (mode == 0) {
     if (argv.size() < 2) { /* list the current settings for the factory */
       if (!dirship->build_type) {
-        notify(Playernum, Governor, "No ship type specified.\n");
+        g.out << "No ship type specified.\n";
         free(dirship);
         return;
       }
@@ -392,7 +392,7 @@ void make_mod(const command_t &argv, GameObj &g) {
                            : dirship->sectype == GTYPE_HEAVY ? 'H' : 'N'));
         notify(Playernum, Governor, buf);
       }
-      notify(Playernum, Governor, "\n");
+      g.out << "\n";
       sprintf(buf, "Ship:  %-16.16s\tCrew:     %4d",
               Shipnames[dirship->build_type], dirship->max_crew);
       notify(Playernum, Governor, buf);
@@ -400,7 +400,7 @@ void make_mod(const command_t &argv, GameObj &g) {
         sprintf(buf, "\t\tXtal Mount: %s\n", (dirship->mount ? "yes" : "no"));
         notify(Playernum, Governor, buf);
       } else
-        notify(Playernum, Governor, "\n");
+        g.out << "\n";
       sprintf(buf, "Class: %s\t\tFuel:     %4d", dirship->shipclass,
               dirship->max_fuel);
       notify(Playernum, Governor, buf);
@@ -409,7 +409,7 @@ void make_mod(const command_t &argv, GameObj &g) {
                 (dirship->hyper_drive.has ? "yes" : "no"));
         notify(Playernum, Governor, buf);
       } else
-        notify(Playernum, Governor, "\n");
+        g.out << "\n";
       sprintf(buf, "Cost:  %d r\t\tCargo:    %4d", dirship->build_cost,
               dirship->max_resource);
       notify(Playernum, Governor, buf);
@@ -418,7 +418,7 @@ void make_mod(const command_t &argv, GameObj &g) {
                 (dirship->laser ? "yes" : "no"));
         notify(Playernum, Governor, buf);
       } else
-        notify(Playernum, Governor, "\n");
+        g.out << "\n";
       sprintf(buf, "Mass:  %.1f\t\tHanger:   %4u", dirship->base_mass,
               dirship->max_hanger);
       notify(Playernum, Governor, buf);
@@ -426,7 +426,7 @@ void make_mod(const command_t &argv, GameObj &g) {
         sprintf(buf, "\t\tCEW: %s\n", (dirship->cew ? "yes" : "no"));
         notify(Playernum, Governor, buf);
       } else
-        notify(Playernum, Governor, "\n");
+        g.out << "\n";
       sprintf(buf, "Size:  %-6d\t\tDestruct: %4d", dirship->size,
               dirship->max_destruct);
       notify(Playernum, Governor, buf);
@@ -434,7 +434,7 @@ void make_mod(const command_t &argv, GameObj &g) {
         sprintf(buf, "\t\t   Opt Range: %4d\n", dirship->cew_range);
         notify(Playernum, Governor, buf);
       } else
-        notify(Playernum, Governor, "\n");
+        g.out << "\n";
       sprintf(buf, "Tech:  %.1f (%.1f)\tSpeed:    %4d", dirship->complexity,
               Race->tech, dirship->max_speed);
       notify(Playernum, Governor, buf);
@@ -442,7 +442,7 @@ void make_mod(const command_t &argv, GameObj &g) {
         sprintf(buf, "\t\t   Energy:    %4d\n", dirship->cew);
         notify(Playernum, Governor, buf);
       } else
-        notify(Playernum, Governor, "\n");
+        g.out << "\n";
 
       if (Race->tech < dirship->complexity)
         notify(Playernum, Governor,
@@ -465,7 +465,7 @@ void make_mod(const command_t &argv, GameObj &g) {
       return;
     }
     if (Shipdata[i][ABIL_GOD] && !Race->God) {
-      notify(Playernum, Governor, "Nice try!\n");
+      g.out << "Nice try!\n";
       free(dirship);
       return;
     }
@@ -508,7 +508,7 @@ void make_mod(const command_t &argv, GameObj &g) {
             Race->tech);
     notify(Playernum, Governor, buf);
     if (dirship->complexity > Race->tech)
-      notify(Playernum, Governor, "You can't produce this design yet!\n");
+      g.out << "You can't produce this design yet!\n";
 
   } else if (mode == 1) {
     if (!dirship->build_type) {
@@ -531,7 +531,7 @@ void make_mod(const command_t &argv, GameObj &g) {
       value = 0;
 
     if (value < 0) {
-      notify(Playernum, Governor, "That's a ridiculous setting.\n");
+      g.out << "That's a ridiculous setting.\n";
       free(dirship);
       return;
     }
@@ -576,14 +576,14 @@ void make_mod(const command_t &argv, GameObj &g) {
           else if (argv[3] == "heavy")
             dirship->primtype = GTYPE_HEAVY;
           else {
-            notify(Playernum, Governor, "No such caliber.\n");
+            g.out << "No such caliber.\n";
             free(dirship);
             return;
           }
           dirship->primtype = MIN(Shipdata[dirship->build_type][ABIL_PRIMARY],
                                   dirship->primtype);
         } else {
-          notify(Playernum, Governor, "No such gun characteristic.\n");
+          g.out << "No such gun characteristic.\n";
           free(dirship);
           return;
         }
@@ -599,14 +599,14 @@ void make_mod(const command_t &argv, GameObj &g) {
           else if (argv[3] == "heavy")
             dirship->sectype = GTYPE_HEAVY;
           else {
-            notify(Playernum, Governor, "No such caliber.\n");
+            g.out << "No such caliber.\n";
             free(dirship);
             return;
           }
           dirship->sectype = MIN(Shipdata[dirship->build_type][ABIL_SECONDARY],
                                  dirship->sectype);
         } else {
-          notify(Playernum, Governor, "No such gun characteristic.\n");
+          g.out << "No such gun characteristic.\n";
           free(dirship);
           return;
         }
@@ -630,7 +630,7 @@ void make_mod(const command_t &argv, GameObj &g) {
         } else if (argv[2] == "range") {
           dirship->cew_range = value;
         } else {
-          notify(Playernum, Governor, "No such option for CEWs.\n");
+          g.out << "No such option for CEWs.\n";
           free(dirship);
           return;
         }
@@ -674,7 +674,7 @@ void make_mod(const command_t &argv, GameObj &g) {
       return;
     }
   } else {
-    notify(Playernum, Governor, "Weird error.\n");
+    g.out << "Weird error.\n";
     free(dirship);
     return;
   }
@@ -732,7 +732,7 @@ void build(const command_t &argv, GameObj &g) {
     /* information request */
     if (argv.size() == 2) {
       /* Ship parameter list */
-      notify(Playernum, Governor, "     - Default ship parameters -\n");
+      g.out << "     - Default ship parameters -\n";
       sprintf(buf,
               "%1s %-15s %5s %5s %3s %4s %3s %3s %3s %4s %4s %2s %4s %4s\n",
               "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
@@ -765,7 +765,7 @@ void build(const command_t &argv, GameObj &g) {
       i = 0;
       while (Shipltrs[i] != argv[2][0] && i < NUMSTYPES) i++;
       if (i < 0 || i >= NUMSTYPES)
-        notify(Playernum, Governor, "No such ship type.\n");
+        g.out << "No such ship type.\n";
       else if (!Shipdata[i][ABIL_PROGRAMMED])
         notify(Playernum, Governor,
                "This ship type has not been programmed.\n");
@@ -853,11 +853,11 @@ void build(const command_t &argv, GameObj &g) {
       case ScopeLevel::LEVEL_PLAN:
         if (!count) { /* initialize loop variables */
           if (argv.size() < 2) {
-            notify(Playernum, Governor, "Build what?\n");
+            g.out << "Build what?\n";
             return;
           }
           if ((what = get_build_type(argv[1].c_str())) < 0) {
-            notify(Playernum, Governor, "No such ship type.\n");
+            g.out << "No such ship type.\n";
             return;
           }
           if (!can_build_this(what, Race, buf) && !Race->God) {
@@ -870,18 +870,17 @@ void build(const command_t &argv, GameObj &g) {
             return;
           }
           if (argv.size() < 3) {
-            notify(Playernum, Governor, "Build where?\n");
+            g.out << "Build where?\n";
             return;
           }
           planet = getplanet(snum, pnum);
-          if (!can_build_at_planet(Playernum, Governor, Stars[snum], planet) &&
-              !Race->God) {
-            notify(Playernum, Governor, "You can't build that here.\n");
+          if (!can_build_at_planet(g, Stars[snum], planet) && !Race->God) {
+            g.out << "You can't build that here.\n";
             return;
           }
           sscanf(argv[2].c_str(), "%d,%d", &x, &y);
           if (x < 0 || x >= planet.Maxx || y < 0 || y >= planet.Maxy) {
-            notify(Playernum, Governor, "Illegal sector.\n");
+            g.out << "Illegal sector.\n";
             return;
           }
           sector = getsector(planet, x, y);
@@ -891,7 +890,7 @@ void build(const command_t &argv, GameObj &g) {
             return;
           }
           if (!(count = getcount(argv, 4))) {
-            notify(Playernum, Governor, "Give a positive number of builds.\n");
+            g.out << "Give a positive number of builds.\n";
             return;
           }
           Getship(&newship, what, Race);
@@ -912,18 +911,16 @@ void build(const command_t &argv, GameObj &g) {
           load_crew = 0;
           load_fuel = 0.0;
         }
-        initialize_new_ship(Playernum, Governor, Race, &newship, load_fuel,
-                            load_crew);
+        initialize_new_ship(g, Race, &newship, load_fuel, load_crew);
         putship(&newship);
         break;
       case ScopeLevel::LEVEL_SHIP:
         if (!count) { /* initialize loop variables */
           (void)getship(&builder, g.shipno);
           outside = 0;
-          auto test_build_level =
-              build_at_ship(Playernum, Governor, builder, &snum, &pnum);
+          auto test_build_level = build_at_ship(g, builder, &snum, &pnum);
           if (!test_build_level) {
-            notify(Playernum, Governor, "You can't build here.\n");
+            g.out << "You can't build here.\n";
             free(builder);
             return;
           }
@@ -959,12 +956,12 @@ void build(const command_t &argv, GameObj &g) {
                                        // warning, check it.
             default:
               if (argv.size() < 2) {
-                notify(Playernum, Governor, "Build what?\n");
+                g.out << "Build what?\n";
                 free(builder);
                 return;
               }
               if ((what = get_build_type(argv[1].c_str())) < 0) {
-                notify(Playernum, Governor, "No such ship type.\n");
+                g.out << "No such ship type.\n";
                 free(builder);
                 return;
               }
@@ -997,9 +994,8 @@ void build(const command_t &argv, GameObj &g) {
           if (outside && build_level == ScopeLevel::LEVEL_PLAN) {
             planet = getplanet(snum, pnum);
             if (builder->type == OTYPE_FACTORY) {
-              if (!can_build_at_planet(Playernum, Governor, Stars[snum],
-                                       planet)) {
-                notify(Playernum, Governor, "You can't build that here.\n");
+              if (!can_build_at_planet(g, Stars[snum], planet)) {
+                g.out << "You can't build that here.\n";
                 free(builder);
                 return;
               }
@@ -1054,7 +1050,7 @@ void build(const command_t &argv, GameObj &g) {
             break;
           default:
             if (builder->hanger + ship_size(&newship) > builder->max_hanger) {
-              notify(Playernum, Governor, "Not enough hanger space.\n");
+              g.out << "Not enough hanger space.\n";
               goto finish;
             }
             if (builder->resource < (shipcost = newship.build_cost)) {
@@ -1073,8 +1069,7 @@ void build(const command_t &argv, GameObj &g) {
             }
             break;
         }
-        initialize_new_ship(Playernum, Governor, Race, &newship, load_fuel,
-                            load_crew);
+        initialize_new_ship(g, Race, &newship, load_fuel, load_crew);
         putship(&newship);
         break;
     }
@@ -1116,15 +1111,17 @@ static int getcount(const command_t &argv, const size_t elem) {
   return (count);
 }
 
-static int can_build_at_planet(int Playernum, int Governor, startype *star,
+static int can_build_at_planet(GameObj &g, startype *star,
                                const Planet &planet) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   if (planet.slaved_to && planet.slaved_to != Playernum) {
     sprintf(buf, "This planet is enslaved by player %d.\n", planet.slaved_to);
     notify(Playernum, Governor, buf);
     return (0);
   }
   if (Governor && star->governor[Playernum - 1] != Governor) {
-    notify(Playernum, Governor, "You are not authorized in this system.\n");
+    g.out << "You are not authorized in this system.\n";
     return (0);
   }
   return (1);
@@ -1230,32 +1227,33 @@ static int can_build_on_sector(int what, racetype *Race, const Planet &planet,
   return (1);
 }
 
-static std::optional<ScopeLevel> build_at_ship(int Playernum, int Governor,
-                                               shiptype *builder, int *snum,
-                                               int *pnum) {
+static std::optional<ScopeLevel> build_at_ship(GameObj &g, shiptype *builder,
+                                               int *snum, int *pnum) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   if (testship(Playernum, Governor, builder)) return {};
   if (!Shipdata[builder->type][ABIL_CONSTRUCT]) {
-    notify(Playernum, Governor, "This ship cannot construct other ships.\n");
+    g.out << "This ship cannot construct other ships.\n";
     return {};
   }
   if (!builder->popn) {
-    notify(Playernum, Governor, "This ship has no crew.\n");
+    g.out << "This ship has no crew.\n";
     return {};
   }
   if (docked(builder)) {
-    notify(Playernum, Governor, "Undock this ship first.\n");
+    g.out << "Undock this ship first.\n";
     return {};
   }
   if (builder->damage) {
-    notify(Playernum, Governor, "This ship is damaged and cannot build.\n");
+    g.out << "This ship is damaged and cannot build.\n";
     return {};
   }
   if (builder->type == OTYPE_FACTORY && !builder->on) {
-    notify(Playernum, Governor, "This factory is not online.\n");
+    g.out << "This factory is not online.\n";
     return {};
   }
   if (builder->type == OTYPE_FACTORY && !landed(builder)) {
-    notify(Playernum, Governor, "Factories must be landed on a planet.\n");
+    g.out << "Factories must be landed on a planet.\n";
     return {};
   }
   *snum = builder->storbits;
@@ -1280,9 +1278,10 @@ static void autoload_at_ship(shiptype *s, shiptype *b, int *crew,
   b->fuel -= *fuel;
 }
 
-static void initialize_new_ship(int Playernum, int Governor, racetype *Race,
-                                shiptype *newship, double load_fuel,
-                                int load_crew) {
+static void initialize_new_ship(GameObj &g, racetype *Race, shiptype *newship,
+                                double load_fuel, int load_crew) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   newship->speed = newship->max_speed;
   newship->owner = Playernum;
   newship->governor = Governor;
@@ -1329,10 +1328,10 @@ static void initialize_new_ship(int Playernum, int Governor, racetype *Race,
     case OTYPE_TRANSDEV:
       newship->special.transport.target = 0;
       newship->on = 0;
-      notify(Playernum, Governor, "Receive OFF.  Change with order.\n");
+      g.out << "Receive OFF.  Change with order.\n";
       break;
     case OTYPE_AP:
-      notify(Playernum, Governor, "Processor OFF.\n");
+      g.out << "Processor OFF.\n";
       break;
     case OTYPE_STELE:
     case OTYPE_GTELE:
@@ -1650,29 +1649,29 @@ void sell(const command_t &argv, GameObj &g) {
   int snum, pnum;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
-    notify(Playernum, Governor, "You have to be in a planet scope to sell.\n");
+    g.out << "You have to be in a planet scope to sell.\n";
     return;
   }
   snum = g.snum;
   pnum = g.pnum;
   if (argv.size() < 3) {
-    notify(Playernum, Governor, "Syntax: sell <commodity> <amount>\n");
+    g.out << "Syntax: sell <commodity> <amount>\n";
     return;
   }
   if (Governor && Stars[snum]->governor[Playernum - 1] != Governor) {
-    notify(Playernum, Governor, "You are not authorized in this system.\n");
+    g.out << "You are not authorized in this system.\n";
     return;
   }
   Race = races[Playernum - 1];
   if (Race->Guest) {
-    notify(Playernum, Governor, "Guest races can't sell anything.\n");
+    g.out << "Guest races can't sell anything.\n";
     return;
   }
   /* get information on sale */
   commod = argv[1][0];
   amount = std::stoi(argv[2]);
   if (amount <= 0) {
-    notify(Playernum, Governor, "Try using positive values.\n");
+    g.out << "Try using positive values.\n";
     return;
   }
   APcount = MIN(APcount, amount);
@@ -1724,7 +1723,7 @@ void sell(const command_t &argv, GameObj &g) {
       break;
     case 'f':
       if (!p.info[Playernum - 1].fuel) {
-        notify(Playernum, Governor, "You don't have any fuel here to sell!\n");
+        g.out << "You don't have any fuel here to sell!\n";
         return;
       }
       amount = MIN(amount, p.info[Playernum - 1].fuel);
@@ -1827,7 +1826,7 @@ void bid(const command_t &argv, GameObj &g) {
         item = CRYSTAL;
         break;
       default:
-        notify(Playernum, Governor, "No such type of commodity.\n");
+        g.out << "No such type of commodity.\n";
         return;
     }
     notify(Playernum, Governor,
@@ -1856,13 +1855,13 @@ void bid(const command_t &argv, GameObj &g) {
     }
   } else {
     if (g.level != ScopeLevel::LEVEL_PLAN) {
-      notify(Playernum, Governor, "You have to be in a planet scope to buy.\n");
+      g.out << "You have to be in a planet scope to buy.\n";
       return;
     }
     snum = g.snum;
     pnum = g.pnum;
     if (Governor && Stars[snum]->governor[Playernum - 1] != Governor) {
-      notify(Playernum, Governor, "You are not authorized in this system.\n");
+      g.out << "You are not authorized in this system.\n";
       return;
     }
     p = getplanet(snum, pnum);
@@ -1892,12 +1891,12 @@ void bid(const command_t &argv, GameObj &g) {
     lot = std::stoi(argv[1]);
     money_t bid0 = std::stoi(argv[2]);
     if ((lot <= 0) || lot > Numcommods()) {
-      notify(Playernum, Governor, "Illegal lot number.\n");
+      g.out << "Illegal lot number.\n";
       return;
     }
     getcommod(&c, lot);
     if (!c->owner) {
-      notify(Playernum, Governor, "No such lot for sale.\n");
+      g.out << "No such lot for sale.\n";
       free(c);
       return;
     }
@@ -1918,12 +1917,12 @@ void bid(const command_t &argv, GameObj &g) {
     }
     Race = races[Playernum - 1];
     if (Race->Guest) {
-      notify(Playernum, Governor, "Guest races cannot bid.\n");
+      g.out << "Guest races cannot bid.\n";
       free(c);
       return;
     }
     if (bid0 > Race->governor[Governor].money) {
-      notify(Playernum, Governor, "Sorry, no buying on credit allowed.\n");
+      g.out << "Sorry, no buying on credit allowed.\n";
       free(c);
       return;
     }
@@ -1948,7 +1947,7 @@ void bid(const command_t &argv, GameObj &g) {
         shipping);
     notify(Playernum, Governor, buf);
     putcommod(c, lot);
-    notify(Playernum, Governor, "Bid accepted.\n");
+    g.out << "Bid accepted.\n";
     free(c);
   }
 }

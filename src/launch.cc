@@ -31,7 +31,7 @@ void launch(const command_t &argv, GameObj &g) {
   double fuel;
 
   if (argv.size() < 2) {
-    notify(Playernum, Governor, "Launch what?\n");
+    g.out << "Launch what?\n";
     return;
   }
 
@@ -65,7 +65,7 @@ void launch(const command_t &argv, GameObj &g) {
         if (s->type == OTYPE_FACTORY && s->on) {
           notify(Playernum, Governor,
                  "Factories cannot be launched once turned on.\n");
-          notify(Playernum, Governor, "Consider using 'scrap'.\n");
+          g.out << "Consider using 'scrap'.\n";
           free(s);
           continue;
         }
@@ -146,12 +146,12 @@ void launch(const command_t &argv, GameObj &g) {
           s2->hanger -= Size(s);
           getsdata(&Sdata);
           insert_sh_univ(&Sdata, s);
-          notify(Playernum, Governor, "Universe level.\n");
+          g.out << "Universe level.\n";
           putsdata(&Sdata);
           putship(s);
           putship(s2);
         } else {
-          notify(Playernum, Governor, "You can't launch that ship.\n");
+          g.out << "You can't launch that ship.\n";
           free(s2);
           free(s);
           continue;

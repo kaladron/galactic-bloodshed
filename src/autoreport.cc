@@ -30,7 +30,7 @@ void autoreport(const command_t &argv, GameObj &g) {
   pnum = g.pnum;
 
   if (Governor && Stars[snum]->governor[Playernum - 1] != Governor) {
-    notify(Playernum, Governor, "You are not authorized to do this here.\n");
+    g.out << "You are not authorized to do this here.\n";
     return;
   }
 

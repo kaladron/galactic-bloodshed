@@ -25,8 +25,11 @@ enum modes_t { COLONIES, PRODUCTION };
 
 static void tech_report_star(int, int, startype *, starnum_t, int *, double *,
                              double *);
-static void colonies_at_star(int Playernum, int Governor, racetype *Race,
-                             starnum_t star, modes_t mode) {
+
+static void colonies_at_star(GameObj &g, racetype *Race, starnum_t star,
+                             modes_t mode) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   planetnum_t i;
   int j;
 
@@ -61,7 +64,7 @@ static void colonies_at_star(int Playernum, int Governor, racetype *Race,
               sprintf(buf, " %d", j);
               notify(Playernum, Governor, buf);
             }
-          notify(Playernum, Governor, "\n");
+          g.out << "\n";
           if (mode == 0) break;
           [[clang::fallthrough]]; /* Fall through if (mode == -1) */
         case PRODUCTION:
@@ -121,7 +124,7 @@ void colonies(const command_t &argv, GameObj &g) {
 
   if (argv.size() < 2)
     for (starnum_t star = 0; star < Sdata.numstars; star++)
-      colonies_at_star(Playernum, Governor, Race, star, mode);
+      colonies_at_star(g, Race, star, mode);
   else
     for (i = 1; i < argv.size(); i++) {
       where = Getplace(g, argv[i], 0);
@@ -131,9 +134,9 @@ void colonies(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
         continue;
       } else /* ok, a proper location */
-        colonies_at_star(Playernum, Governor, Race, where.snum, mode);
+        colonies_at_star(g, Race, where.snum, mode);
     }
-  notify(Playernum, Governor, "\n");
+  g.out << "\n";
 }
 
 void distance(const command_t &argv, GameObj &g) {
@@ -144,7 +147,7 @@ void distance(const command_t &argv, GameObj &g) {
   shiptype *ship;
 
   if (argv.size() < 3) {
-    notify(Playernum, Governor, "Syntax: 'distance <from> <to>'.\n");
+    g.out << "Syntax: 'distance <from> <to>'.\n";
     return;
   }
 
@@ -168,7 +171,7 @@ void distance(const command_t &argv, GameObj &g) {
   if (from.level == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&ship, from.shipno);
     if (ship->owner != Playernum) {
-      notify(Playernum, Governor, "Nice try.\n");
+      g.out << "Nice try.\n";
       free(ship);
       return;
     }
@@ -187,7 +190,7 @@ void distance(const command_t &argv, GameObj &g) {
   if (to.level == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&ship, to.shipno);
     if (ship->owner != Playernum) {
-      notify(Playernum, Governor, "Nice try.\n");
+      g.out << "Nice try.\n";
       free(ship);
       return;
     }

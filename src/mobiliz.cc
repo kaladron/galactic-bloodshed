@@ -33,7 +33,7 @@ void mobilize(const command_t &argv, GameObj &g) {
     return;
   }
   if (!control(Playernum, Governor, Stars[g.snum])) {
-    notify(Playernum, Governor, "You are not authorized to do this here.\n");
+    g.out << "You are not authorized to do this here.\n";
     return;
   }
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount)) {
@@ -75,12 +75,12 @@ void tax(const command_t &argv, GameObj &g) {
     return;
   }
   if (!control(Playernum, Governor, Stars[g.snum])) {
-    notify(Playernum, Governor, "You are not authorized to do that here.\n");
+    g.out << "You are not authorized to do that here.\n";
     return;
   }
   Race = races[Playernum - 1];
   if (!Race->Gov_ship) {
-    notify(Playernum, Governor, "You have no government center active.\n");
+    g.out << "You have no government center active.\n";
     return;
   }
   if (Race->Guest) {
@@ -112,7 +112,7 @@ void tax(const command_t &argv, GameObj &g) {
   putplanet(p, Stars[g.snum], g.pnum);
 
   deductAPs(Playernum, Governor, APcount, g.snum, 0);
-  notify(Playernum, Governor, "Set.\n");
+  g.out << "Set.\n";
 }
 
 int control(int Playernum, int Governor, startype *star) {

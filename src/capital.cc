@@ -29,7 +29,7 @@ void capital(const command_t &argv, GameObj &g) {
 
   Race = races[Playernum - 1];
   if (Governor) {
-    notify(Playernum, Governor, "Only the leader may designate the capital.\n");
+    g.out << "Only the leader may designate the capital.\n";
     return;
   }
 
@@ -41,7 +41,7 @@ void capital(const command_t &argv, GameObj &g) {
         strtoul(argv[1].c_str() + (argv[1].c_str()[0] == '#'), nullptr, 10);
 
   if (shipno <= 0) {
-    notify(Playernum, Governor, "Change the capital to be what ship?\n");
+    g.out << "Change the capital to be what ship?\n";
     return;
   }
 
@@ -50,12 +50,12 @@ void capital(const command_t &argv, GameObj &g) {
   if (argv.size() == 2) {
     snum = s->storbits;
     if (!stat || testship(Playernum, Governor, s)) {
-      notify(Playernum, Governor, "You can't do that!\n");
+      g.out << "You can't do that!\n";
       free(s);
       return;
     }
     if (!landed(s)) {
-      notify(Playernum, Governor, "Try landing this ship first!\n");
+      g.out << "Try landing this ship first!\n";
       free(s);
       return;
     }

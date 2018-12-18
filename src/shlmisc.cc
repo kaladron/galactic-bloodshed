@@ -47,21 +47,21 @@ void grant(const command_t &argv, GameObj &g) {
 
   Race = races[Playernum - 1];
   if (argv.size() < 3) {
-    notify(Playernum, Governor, "Syntax: grant <governor> star\n");
-    notify(Playernum, Governor, "        grant <governor> ship <shiplist>\n");
-    notify(Playernum, Governor, "        grant <governor> money <amount>\n");
+    g.out << "Syntax: grant <governor> star\n";
+    g.out << "        grant <governor> ship <shiplist>\n";
+    g.out << "        grant <governor> money <amount>\n";
     return;
   }
   if ((gov = atoi(argv[1].c_str())) > MAXGOVERNORS) {
-    notify(Playernum, Governor, "Bad governor number.\n");
+    g.out << "Bad governor number.\n";
     return;
   } else if (!Race->governor[gov].active) {
-    notify(Playernum, Governor, "That governor is not active.\n");
+    g.out << "That governor is not active.\n";
     return;
   } else if (argv[2] == "star") {
     int snum;
     if (g.level != ScopeLevel::LEVEL_STAR) {
-      notify(Playernum, Governor, "Please cs to the star system first.\n");
+      g.out << "Please cs to the star system first.\n";
       return;
     }
     snum = g.snum;
@@ -90,12 +90,12 @@ void grant(const command_t &argv, GameObj &g) {
   } else if (argv[2] == "money") {
     long amount;
     if (argv.size() < 4) {
-      notify(Playernum, Governor, "Indicate the amount of money.\n");
+      g.out << "Indicate the amount of money.\n";
       return;
     }
     amount = atoi(argv[3].c_str());
     if (amount < 0 && Governor) {
-      notify(Playernum, Governor, "Only leaders may make take away money.\n");
+      g.out << "Only leaders may make take away money.\n";
       return;
     }
     if (amount > Race->governor[Governor].money)
@@ -121,7 +121,7 @@ void grant(const command_t &argv, GameObj &g) {
     putrace(Race);
     return;
   } else
-    notify(Playernum, Governor, "You can't grant that.\n");
+    g.out << "You can't grant that.\n";
 }
 
 void governors(const command_t &argv, GameObj &g) {
@@ -148,12 +148,12 @@ void governors(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, buf);
     }
   } else if ((gov = atoi(argv[1].c_str())) < 0 || gov > MAXGOVERNORS) {
-    notify(Playernum, Governor, "No such governor.\n");
+    g.out << "No such governor.\n";
     return;
   } else if (argv[0] == "appoint") {
     /* Syntax: 'appoint <gov> <password>' */
     if (Race->governor[gov].active) {
-      notify(Playernum, Governor, "That governor is already appointed.\n");
+      g.out << "That governor is already appointed.\n";
       return;
     }
     Race->governor[gov].active = 1;
@@ -168,16 +168,16 @@ void governors(const command_t &argv, GameObj &g) {
     Race->governor[gov].toggle.inverse = 1;
     strncpy(Race->governor[gov].password, argv[2].c_str(), RNAMESIZE - 1);
     putrace(Race);
-    notify(Playernum, Governor, "Governor activated.\n");
+    g.out << "Governor activated.\n";
     return;
   } else if (argv[0] == "revoke") {
     int j;
     if (!gov) {
-      notify(Playernum, Governor, "You can't revoke your leadership!\n");
+      g.out << "You can't revoke your leadership!\n";
       return;
     }
     if (!Race->governor[gov].active) {
-      notify(Playernum, Governor, "That governor is not active.\n");
+      g.out << "That governor is not active.\n";
       return;
     }
     if (argv.size() < 4)
@@ -185,40 +185,40 @@ void governors(const command_t &argv, GameObj &g) {
     else
       j = atoi(argv[3].c_str()); /* who gets this governors stuff */
     if (j < 0 || j > MAXGOVERNORS) {
-      notify(Playernum, Governor, "You can't give stuff to that governor!\n");
+      g.out << "You can't give stuff to that governor!\n";
       return;
     }
     if (!strcmp(Race->governor[gov].password, argv[2].c_str())) {
-      notify(Playernum, Governor, "Incorrect password.\n");
+      g.out << "Incorrect password.\n";
       return;
     }
     if (!Race->governor[j].active || j == gov) {
-      notify(Playernum, Governor, "Bad target governor.\n");
+      g.out << "Bad target governor.\n";
       return;
     }
     do_revoke(Race, gov, j); /* give stuff from gov to j */
     putrace(Race);
-    notify(Playernum, Governor, "Done.\n");
+    g.out << "Done.\n";
     return;
   } else if (argv[2] == "password") {
     if (Race->Guest) {
-      notify(Playernum, Governor, "Guest races cannot change passwords.\n");
+      g.out << "Guest races cannot change passwords.\n";
       return;
     }
     if (argv.size() < 4) {
-      notify(Playernum, Governor, "You must give a password.\n");
+      g.out << "You must give a password.\n";
       return;
     }
     if (!Race->governor[gov].active) {
-      notify(Playernum, Governor, "That governor is inactive.\n");
+      g.out << "That governor is inactive.\n";
       return;
     }
     strncpy(Race->governor[gov].password, argv[3].c_str(), RNAMESIZE - 1);
     putrace(Race);
-    notify(Playernum, Governor, "Password changed.\n");
+    g.out << "Password changed.\n";
     return;
   } else
-    notify(Playernum, Governor, "Bad option.\n");
+    g.out << "Bad option.\n";
 }
 
 static void do_revoke(racetype *Race, const governor_t src_gov,
@@ -359,7 +359,7 @@ void fix(const command_t &argv, GameObj &g) {
 
   if (argv[1] == "planet") {
     if (g.level != ScopeLevel::LEVEL_PLAN) {
-      notify(Playernum, Governor, "Change scope to the planet first.\n");
+      g.out << "Change scope to the planet first.\n";
       return;
     }
     auto p = getplanet(g.snum, g.pnum);
@@ -412,7 +412,7 @@ void fix(const command_t &argv, GameObj &g) {
       if (argv.size() > 3) p.conditions[TOXIC] = atoi(argv[3].c_str());
       sprintf(buf, "TOXIC = %d\n", p.conditions[TOXIC]);
     } else {
-      notify(Playernum, Governor, "No such option for 'fix planet'.\n");
+      g.out << "No such option for 'fix planet'.\n";
       return;
     }
     notify(Playernum, Governor, buf);
@@ -450,7 +450,7 @@ void fix(const command_t &argv, GameObj &g) {
       s->damage = 100;
       sprintf(buf, "%s destroyed\n", Ship(*s).c_str());
     } else {
-      notify(Playernum, Governor, "No such option for 'fix ship'.\n");
+      g.out << "No such option for 'fix ship'.\n";
       free(s);
       return;
     }
@@ -459,7 +459,7 @@ void fix(const command_t &argv, GameObj &g) {
     free(s);
     return;
   } else
-    notify(Playernum, Governor, "Fix what?\n");
+    g.out << "Fix what?\n";
 }
 
 void DontOwnErr(int Playernum, int Governor, shipnum_t shipno) {

@@ -167,18 +167,18 @@ void profile(const command_t &argv, GameObj &g) {
         CHAR_PLATED, Race->likes[SectorType::SEC_PLATED] * 100.);
     notify(Playernum, Governor, buf);
 
-    notify(Playernum, Governor, "Discoveries:");
-    if (Crystal(Race)) notify(Playernum, Governor, "  Crystals");
-    if (Hyper_drive(Race)) notify(Playernum, Governor, "  Hyper-drive");
-    if (Laser(Race)) notify(Playernum, Governor, "  Combat Lasers");
-    if (Cew(Race)) notify(Playernum, Governor, "  Confined Energy Weapons");
-    if (Vn(Race)) notify(Playernum, Governor, "  Von Neumann Machines");
-    if (Tractor_beam(Race)) notify(Playernum, Governor, "  Tractor Beam");
-    if (Transporter(Race)) notify(Playernum, Governor, "  Transporter");
-    if (Avpm(Race)) notify(Playernum, Governor, "  AVPM");
-    if (Cloak(Race)) notify(Playernum, Governor, "  Cloaking");
-    if (Wormhole(Race)) notify(Playernum, Governor, "  Wormhole");
-    notify(Playernum, Governor, "\n");
+    g.out << "Discoveries:";
+    if (Crystal(Race)) g.out << "  Crystals";
+    if (Hyper_drive(Race)) g.out << "  Hyper-drive";
+    if (Laser(Race)) g.out << "  Combat Lasers";
+    if (Cew(Race)) g.out << "  Confined Energy Weapons";
+    if (Vn(Race)) g.out << "  Von Neumann Machines";
+    if (Tractor_beam(Race)) g.out << "  Tractor Beam";
+    if (Transporter(Race)) g.out << "  Transporter";
+    if (Avpm(Race)) g.out << "  AVPM";
+    if (Cloak(Race)) g.out << "  Cloaking";
+    if (Wormhole(Race)) g.out << "  Wormhole";
+    g.out << "\n";
   } else {
     if (!(p = get_player(argv[1]))) {
       sprintf(buf, "Player does not exist.\n");

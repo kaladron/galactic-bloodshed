@@ -49,7 +49,7 @@ void dock(const command_t &argv, GameObj &g) {
   racetype *Race, *alien;
 
   if (argv.size() < 3) {
-    notify(Playernum, Governor, "Dock with what?\n");
+    g.out << "Dock with what?\n";
     return;
   }
   if (argv.size() < 5)
@@ -60,7 +60,7 @@ void dock(const command_t &argv, GameObj &g) {
     else if (argv[4] == "military")
       what = MIL;
     else {
-      notify(Playernum, Governor, "Assault with what?\n");
+      g.out << "Assault with what?\n";
       return;
     }
   }
@@ -70,7 +70,7 @@ void dock(const command_t &argv, GameObj &g) {
     if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
         (!Governor || s->governor == Governor)) {
       if (Assault && s->type == STYPE_POD) {
-        notify(Playernum, Governor, "Sorry. Pods cannot be used to assault.\n");
+        g.out << "Sorry. Pods cannot be used to assault.\n";
         free(s);
         continue;
       }
@@ -82,11 +82,11 @@ void dock(const command_t &argv, GameObj &g) {
           continue;
         }
       } else if (s->docked) {
-        notify(Playernum, Governor, "Your ship is already docked.\n");
+        g.out << "Your ship is already docked.\n";
         free(s);
         continue;
       } else if (s->whatorbits == ScopeLevel::LEVEL_SHIP) {
-        notify(Playernum, Governor, "Your ship is landed on another ship.\n");
+        g.out << "Your ship is landed on another ship.\n";
         free(s);
         continue;
       }
@@ -117,19 +117,19 @@ void dock(const command_t &argv, GameObj &g) {
       sscanf(argv[2].c_str() + (argv[2].c_str()[0] == '#'), "%lu", &ship2no);
 
       if (shipno == ship2no) {
-        notify(Playernum, Governor, "You can't dock with yourself!\n");
+        g.out << "You can't dock with yourself!\n";
         free(s);
         continue;
       }
 
       if (!getship(&s2, ship2no)) {
-        notify(Playernum, Governor, "The ship wasn't found.\n");
+        g.out << "The ship wasn't found.\n";
         free(s);
         return;
       }
 
       if (!Assault && testship(Playernum, Governor, s2)) {
-        notify(Playernum, Governor, "You are not authorized to do this.\n");
+        g.out << "You are not authorized to do this.\n";
         free(s2);
         free(s);
         return;
@@ -137,7 +137,7 @@ void dock(const command_t &argv, GameObj &g) {
 
       /* Check if ships are on same scope level. Maarten */
       if (s->whatorbits != s2->whatorbits) {
-        notify(Playernum, Governor, "Those ships are not in the same scope.\n");
+        g.out << "Those ships are not in the same scope.\n";
         free(s);
         free(s2);
         return;
@@ -275,7 +275,7 @@ void dock(const command_t &argv, GameObj &g) {
       s->ypos = s2->ypos + int_rand(-1, 1);
       if (s->hyper_drive.on) {
         s->hyper_drive.on = 0;
-        notify(Playernum, Governor, "Hyper-drive deactivated.\n");
+        g.out << "Hyper-drive deactivated.\n";
       }
       if (Assault) {
         /* if the assaulted ship is docked, undock it first */

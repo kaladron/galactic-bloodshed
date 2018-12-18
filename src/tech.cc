@@ -30,7 +30,7 @@ void technology(const command_t &argv, GameObj &g) {
     return;
   }
   if (!control(Playernum, Governor, Stars[g.snum])) {
-    notify(Playernum, Governor, "You are not authorized to do that here.\n");
+    g.out << "You are not authorized to do that here.\n";
     return;
   }
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount)) {

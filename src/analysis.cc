@@ -25,13 +25,11 @@ struct anal_sect {
   int des;
 };
 
-static void do_analysis(int, int, int, int, int, starnum_t, planetnum_t);
+static void do_analysis(GameObj &, int, int, int, starnum_t, planetnum_t);
 static void Insert(int, struct anal_sect[], int, int, int, int);
-static void PrintTop(int, int, struct anal_sect[], const char *);
+static void PrintTop(GameObj &, struct anal_sect[], const char *);
 
 void analysis(const command_t &argv, GameObj &g) {
-  const int Playernum = g.player;
-  const int Governor = g.governor;
   int sector_type = -1; /* -1 does analysis on all types */
   placetype where;      /* otherwise on specific type */
   int i;
@@ -89,7 +87,7 @@ void analysis(const command_t &argv, GameObj &g) {
     if (isdigit(*p)) {
       do_player = atoi(p);
       if (do_player > Num_races) {
-        notify(Playernum, Governor, "No such player #.\n");
+        g.out << "No such player #.\n";
         return;
       }
       where.level = g.level;
@@ -106,25 +104,24 @@ void analysis(const command_t &argv, GameObj &g) {
     switch (where.level) {
       case ScopeLevel::LEVEL_UNIV:
       case ScopeLevel::LEVEL_SHIP:
-        notify(Playernum, Governor, "You can only analyze planets.\n");
+        g.out << "You can only analyze planets.\n";
         break;
       case ScopeLevel::LEVEL_PLAN:
-        do_analysis(Playernum, Governor, do_player, mode, sector_type,
-                    where.snum, where.pnum);
+        do_analysis(g, do_player, mode, sector_type, where.snum, where.pnum);
         break;
       case ScopeLevel::LEVEL_STAR:
         for (planetnum_t pnum = 0; pnum < Stars[where.snum]->numplanets; pnum++)
-          do_analysis(Playernum, Governor, do_player, mode, sector_type,
-                      where.snum, pnum);
+          do_analysis(g, do_player, mode, sector_type, where.snum, pnum);
         break;
     }
   } while (0);
   return;
 }
 
-static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
-                        int sector_type, starnum_t Starnum,
-                        planetnum_t Planetnum) {
+static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
+                        starnum_t Starnum, planetnum_t Planetnum) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   racetype *Race;
   int x, y;
   int p;
@@ -260,15 +257,15 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
     sprintf(buf, " sectors owned by %d.\n", ThisPlayer);
   notify(Playernum, Governor, buf);
 
-  PrintTop(Playernum, Governor, Troops, "Troops");
-  PrintTop(Playernum, Governor, Res, "Res");
-  PrintTop(Playernum, Governor, Eff, "Eff");
-  PrintTop(Playernum, Governor, Frt, "Frt");
-  PrintTop(Playernum, Governor, Mob, "Mob");
-  PrintTop(Playernum, Governor, Popn, "Popn");
-  PrintTop(Playernum, Governor, mPopn, "^Popn");
+  PrintTop(g, Troops, "Troops");
+  PrintTop(g, Res, "Res");
+  PrintTop(g, Eff, "Eff");
+  PrintTop(g, Frt, "Frt");
+  PrintTop(g, Mob, "Mob");
+  PrintTop(g, Popn, "Popn");
+  PrintTop(g, mPopn, "^Popn");
 
-  notify(Playernum, Governor, "\n");
+  g.out << "\n";
   sprintf(buf, "%2s %3s %7s %6s %5s %5s %5s %2s", "Pl", "sec", "popn", "troops",
           "a.eff", "a.mob", "res", "x");
   notify(Playernum, Governor, buf);
@@ -290,7 +287,7 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
         sprintf(buf, "%4d", PlaySect[p][i]);
         notify(Playernum, Governor, buf);
       }
-      notify(Playernum, Governor, "\n");
+      g.out << "\n";
     }
   notify(Playernum, Governor,
          "------------------------------------------------"
@@ -303,7 +300,7 @@ static void do_analysis(int Playernum, int Governor, int ThisPlayer, int mode,
     sprintf(buf, "%4d", Sect[i]);
     notify(Playernum, Governor, buf);
   }
-  notify(Playernum, Governor, "\n");
+  g.out << "\n";
 }
 
 static void Insert(int mode, struct anal_sect arr[], int x, int y, int des,
@@ -322,16 +319,16 @@ static void Insert(int mode, struct anal_sect arr[], int x, int y, int des,
     }
 }
 
-static void PrintTop(int Playernum, int Governor, struct anal_sect arr[],
-                     const char *name) {
-  int i;
+static void PrintTop(GameObj &g, struct anal_sect arr[], const char *name) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
 
   sprintf(buf, "%8s:", name);
   notify(Playernum, Governor, buf);
-  for (i = 0; i < CARE && arr[i].value != -1; i++) {
+  for (int i = 0; i < CARE && arr[i].value != -1; i++) {
     sprintf(buf, "%5d%c(%2d,%2d)", arr[i].value, Dessymbols[arr[i].des],
             arr[i].x, arr[i].y);
     notify(Playernum, Governor, buf);
   }
-  notify(Playernum, Governor, "\n");
+  g.out << "\n";
 }

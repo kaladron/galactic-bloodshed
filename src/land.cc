@@ -49,7 +49,7 @@ void land(const command_t &argv, GameObj &g) {
   numdest = 0;  // TODO(jeffbailey): Init to zero.
 
   if (argv.size() < 2) {
-    notify(Playernum, Governor, "Land what?\n");
+    g.out << "Land what?\n";
     return;
   }
 
@@ -65,12 +65,12 @@ void land(const command_t &argv, GameObj &g) {
         continue;
       }
       if (s->type == OTYPE_QUARRY) {
-        notify(Playernum, Governor, "You can't load quarries onto ship.\n");
+        g.out << "You can't load quarries onto ship.\n";
         free(s);
         continue;
       }
       if (docked(s)) {
-        notify(Playernum, Governor, "That ship is docked to another ship.\n");
+        g.out << "That ship is docked to another ship.\n";
         free(s);
         continue;
       }
@@ -84,13 +84,13 @@ void land(const command_t &argv, GameObj &g) {
           continue;
         }
         if (testship(Playernum, Governor, s2)) {
-          notify(Playernum, Governor, "Illegal format.\n");
+          g.out << "Illegal format.\n";
           free(s);
           free(s2);
           continue;
         }
         if (s2->type == OTYPE_FACTORY) {
-          notify(Playernum, Governor, "Can't land on factories.\n");
+          g.out << "Can't land on factories.\n";
           free(s);
           free(s2);
           continue;

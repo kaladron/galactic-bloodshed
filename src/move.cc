@@ -51,29 +51,29 @@ void arm(const command_t &argv, GameObj &g) {
   money_t cost = 0;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
-    notify(Playernum, Governor, "Change scope to planet level first.\n");
+    g.out << "Change scope to planet level first.\n";
     return;
   }
   if (!control(Playernum, Governor, Stars[g.snum])) {
-    notify(Playernum, Governor, "You are not authorized to do that here.\n");
+    g.out << "You are not authorized to do that here.\n";
     return;
   }
   auto planet = getplanet(g.snum, g.pnum);
 
   if (planet.slaved_to > 0 && planet.slaved_to != Playernum) {
-    notify(Playernum, Governor, "That planet has been enslaved!\n");
+    g.out << "That planet has been enslaved!\n";
     return;
   }
 
   sscanf(argv[1].c_str(), "%d,%d", &x, &y);
   if (x < 0 || y < 0 || x > planet.Maxx - 1 || y > planet.Maxy - 1) {
-    notify(Playernum, Governor, "Illegal coordinates.\n");
+    g.out << "Illegal coordinates.\n";
     return;
   }
 
   auto sect = getsector(planet, x, y);
   if (sect.owner != Playernum) {
-    notify(Playernum, Governor, "You don't own that sector.\n");
+    g.out << "You don't own that sector.\n";
     return;
   }
   if (mode) {
@@ -91,7 +91,7 @@ void arm(const command_t &argv, GameObj &g) {
     }
     amount = MIN(amount, max_allowed);
     if (!amount) {
-      notify(Playernum, Governor, "You can't arm any civilians now.\n");
+      g.out << "You can't arm any civilians now.\n";
       return;
     }
     Race = races[Playernum - 1];
@@ -169,7 +169,7 @@ void move_popn(const command_t &argv, GameObj &g) {
     return;
   }
   if (!control(Playernum, Governor, Stars[g.snum])) {
-    notify(Playernum, Governor, "You are not authorized to do that here.\n");
+    g.out << "You are not authorized to do that here.\n";
     return;
   }
   auto planet = getplanet(g.snum, g.pnum);
@@ -197,7 +197,7 @@ void move_popn(const command_t &argv, GameObj &g) {
       return;
     }
     if (!get_move(argv[2].c_str()[n++], x, y, &x2, &y2, planet)) {
-      notify(Playernum, Governor, "Finished.\n");
+      g.out << "Finished.\n";
       putplanet(planet, Stars[g.snum], g.pnum);
       return;
     }
@@ -253,7 +253,7 @@ void move_popn(const command_t &argv, GameObj &g) {
       putsector(sect, planet, x, y);
       putsector(sect2, planet, x2, y2);
       putplanet(planet, Stars[g.snum], g.pnum);
-      notify(Playernum, Governor, "Attack aborted.\n");
+      g.out << "Attack aborted.\n";
       return;
     }
 
@@ -427,7 +427,7 @@ void move_popn(const command_t &argv, GameObj &g) {
     x = x2;
     y = y2; /* get ready for the next round */
   }
-  notify(Playernum, Governor, "Finished.\n");
+  g.out << "Finished.\n";
 }
 
 void walk(const command_t &argv, GameObj &g) {
@@ -441,31 +441,31 @@ void walk(const command_t &argv, GameObj &g) {
   racetype *Race, *alien;
 
   if (argv.size() < 2) {
-    notify(Playernum, Governor, "Walk what?\n");
+    g.out << "Walk what?\n";
     return;
   }
   sscanf(argv[1].c_str() + (argv[1].c_str()[0] == '#'), "%d", &shipno);
   if (!getship(&ship, shipno)) {
-    notify(Playernum, Governor, "No such ship.\n");
+    g.out << "No such ship.\n";
     return;
   }
   if (testship(Playernum, Governor, ship)) {
-    notify(Playernum, Governor, "You do not control this ship.\n");
+    g.out << "You do not control this ship.\n";
     free(ship);
     return;
   }
   if (ship->type != OTYPE_AFV) {
-    notify(Playernum, Governor, "This ship doesn't walk!\n");
+    g.out << "This ship doesn't walk!\n";
     free(ship);
     return;
   }
   if (!landed(ship)) {
-    notify(Playernum, Governor, "This ship is not landed on a planet.\n");
+    g.out << "This ship is not landed on a planet.\n";
     free(ship);
     return;
   }
   if (!ship->popn) {
-    notify(Playernum, Governor, "No crew.\n");
+    g.out << "No crew.\n";
     free(ship);
     return;
   }
@@ -485,7 +485,7 @@ void walk(const command_t &argv, GameObj &g) {
 
   if (!get_move(argv[2].c_str()[0], (int)ship->land_x, (int)ship->land_y, &x,
                 &y, p)) {
-    notify(Playernum, Governor, "Illegal move.\n");
+    g.out << "Illegal move.\n";
     free(ship);
     return;
   }
@@ -543,7 +543,7 @@ void walk(const command_t &argv, GameObj &g) {
     alien = races[oldowner - 1];
     if (!isset(Race->allied, oldowner) || !isset(alien->allied, Playernum)) {
       if (!retal_strength(ship)) {
-        notify(Playernum, Governor, "You have nothing to attack with!\n");
+        g.out << "You have nothing to attack with!\n";
         free(ship);
         return;
       }

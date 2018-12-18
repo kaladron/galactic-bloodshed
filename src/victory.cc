@@ -20,7 +20,7 @@ void victory(const command_t &argv, GameObj &g) {
 
   /*
   #ifndef VICTORY
-  notify(Playernum, Governor, "Victory conditions disabled.\n");
+  g.out << "Victory conditions disabled.\n";
   return;
   #endif
   */

@@ -43,7 +43,7 @@ void personal(const command_t &argv, GameObj &g) {
   std::string message = ss_message.str();
 
   if (Governor) {
-    notify(Playernum, Governor, "Only the leader can do this.\n");
+    g.out << "Only the leader can do this.\n";
     return;
   }
   auto Race = races[Playernum - 1];
@@ -66,16 +66,16 @@ void bless(const command_t &argv, GameObj &g) {
     return;
   }
   if (g.level != ScopeLevel::LEVEL_PLAN) {
-    notify(Playernum, Governor, "Please cs to the planet in question.\n");
+    g.out << "Please cs to the planet in question.\n";
     return;
   }
   who = atoi(argv[1].c_str());
   if (who < 1 || who > Num_races) {
-    notify(Playernum, Governor, "No such player number.\n");
+    g.out << "No such player number.\n";
     return;
   }
   if (argv.size() < 3) {
-    notify(Playernum, Governor, "Syntax: bless <player> <what> <+amount>\n");
+    g.out << "Syntax: bless <player> <what> <+amount>\n";
     return;
   }
   amount = atoi(argv[3].c_str());
@@ -236,7 +236,7 @@ void bless(const command_t &argv, GameObj &g) {
                 Stars[g.snum]->name);
         break;
       default:
-        notify(Playernum, Governor, "No such commodity.\n");
+        g.out << "No such commodity.\n";
         return;
     }
   }
@@ -260,7 +260,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     return;
   }
   if (!control(Playernum, Governor, Stars[g.snum])) {
-    notify(Playernum, Governor, "You are not authorized to do that here.\n");
+    g.out << "You are not authorized to do that here.\n";
     return;
   }
   /*  if(argv.size()<3) {
@@ -278,11 +278,11 @@ void insurgency(const command_t &argv, GameObj &g) {
   Race = races[Playernum - 1];
   alien = races[who - 1];
   if (alien->Guest) {
-    notify(Playernum, Governor, "Don't be such a dickweed.\n");
+    g.out << "Don't be such a dickweed.\n";
     return;
   }
   if (who == Playernum) {
-    notify(Playernum, Governor, "You can't revolt against yourself!\n");
+    g.out << "You can't revolt against yourself!\n";
     return;
   }
   eligible = 0;
@@ -301,7 +301,7 @@ void insurgency(const command_t &argv, GameObj &g) {
   auto p = getplanet(g.snum, g.pnum);
 
   if (!p.info[who - 1].popn) {
-    notify(Playernum, Governor, "This player does not occupy this planet.\n");
+    g.out << "This player does not occupy this planet.\n";
     return;
   }
 
@@ -312,7 +312,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     return;
   }
   if (Race->governor[Governor].money < amount) {
-    notify(Playernum, Governor, "Nice try.\n");
+    g.out << "Nice try.\n";
     return;
   }
 
@@ -361,7 +361,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     post(buf, DECLARATION);
   } else {
     notify(Playernum, Governor, long_buf);
-    notify(Playernum, Governor, "The insurgency failed!\n");
+    g.out << "The insurgency failed!\n";
     sprintf(buf, "A revolt on /%s/%s instigated by %s [%d] fails\n",
             Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
             Playernum);
@@ -390,7 +390,7 @@ void pay(const command_t &argv, GameObj &g) {
     return;
   }
   if (Governor) {
-    notify(Playernum, Governor, "You are not authorized to do that.\n");
+    g.out << "You are not authorized to do that.\n";
     return;
   }
   Race = races[Playernum - 1];
@@ -408,7 +408,7 @@ void pay(const command_t &argv, GameObj &g) {
     return;
   }
   if (Race->governor[Governor].money < amount) {
-    notify(Playernum, Governor, "You don't have that much money to give!\n");
+    g.out << "You don't have that much money to give!\n";
     return;
   }
 
@@ -441,29 +441,29 @@ void give(const command_t &argv, GameObj &g) {
     return;
   }
   if (Governor) {
-    notify(Playernum, Governor, "You are not authorized to do that.\n");
+    g.out << "You are not authorized to do that.\n";
     return;
   }
   alien = races[who - 1];
   Race = races[Playernum - 1];
   if (alien->Guest && !Race->God) {
-    notify(Playernum, Governor, "You can't give this player anything.\n");
+    g.out << "You can't give this player anything.\n";
     return;
   }
   if (Race->Guest) {
-    notify(Playernum, Governor, "You can't give anyone anything.\n");
+    g.out << "You can't give anyone anything.\n";
     return;
   }
   /* check to see if both players are mutually allied */
   if (!Race->God &&
       !(isset(Race->allied, who) && isset(alien->allied, Playernum))) {
-    notify(Playernum, Governor, "You two are not mutually allied.\n");
+    g.out << "You two are not mutually allied.\n";
     return;
   }
   sscanf(argv[2].c_str() + (argv[2].c_str()[0] == '#'), "%d", &sh);
 
   if (!getship(&ship, sh)) {
-    notify(Playernum, Governor, "Illegal ship number.\n");
+    g.out << "Illegal ship number.\n";
     return;
   }
 
@@ -533,7 +533,7 @@ void give(const command_t &argv, GameObj &g) {
 
     } break;
     default:
-      notify(Playernum, Governor, "Something wrong with this ship's scope.\n");
+      g.out << "Something wrong with this ship's scope.\n";
       free(ship);
       return;
   }
@@ -547,7 +547,7 @@ void give(const command_t &argv, GameObj &g) {
       deductAPs(Playernum, Governor, APcount, g.snum, 0);
       break;
   }
-  notify(Playernum, Governor, "Owner changed.\n");
+  g.out << "Owner changed.\n";
   sprintf(buf, "%s [%d] gave you %s at %s.\n", Race->name, Playernum,
           Ship(*ship).c_str(), prin_ship_orbits(ship));
   warn(who, 0, buf);
@@ -574,7 +574,7 @@ void page(const command_t &argv, GameObj &g) {
   to_block = 0;
   if (argv[1] == "block") {
     to_block = 1;
-    notify(Playernum, Governor, "Paging alliance block.\n");
+    g.out << "Paging alliance block.\n";
     who = 0;  // TODO(jeffbailey): Init to zero to be sure it's initialized.
     gov = 0;  // TODO(jeffbailey): Init to zero to be sure it's initialized.
   } else {
@@ -619,7 +619,7 @@ void page(const command_t &argv, GameObj &g) {
           notify_race(who, buf);
       }
 
-      notify(Playernum, Governor, "Request sent.\n");
+      g.out << "Request sent.\n";
       break;
   }
   deductAPs(Playernum, Governor, APcount, g.snum, 0);
@@ -646,7 +646,7 @@ void send_message(const command_t &argv, GameObj &g) {
   to_star = to_block = 0;
 
   if (argv.size() < 2) {
-    notify(Playernum, Governor, "Send what?\n");
+    g.out << "Send what?\n";
     return;
   }
   if (postit) {
@@ -664,7 +664,7 @@ void send_message(const command_t &argv, GameObj &g) {
   }
   if (argv[1] == "block") {
     to_block = 1;
-    notify(Playernum, Governor, "Sending message to alliance block.\n");
+    g.out << "Sending message to alliance block.\n";
     if (!(who = get_player(argv[2]))) {
       sprintf(buf, "No such alliance block.\n");
       notify(Playernum, Governor, buf);
@@ -674,7 +674,7 @@ void send_message(const command_t &argv, GameObj &g) {
     APcount *= !alien->God;
   } else if (argv[1] == "star") {
     to_star = 1;
-    notify(Playernum, Governor, "Sending message to star system.\n");
+    g.out << "Sending message to star system.\n";
     where = Getplace(g, argv[2].c_str(), 1);
     if (where.err || where.level != ScopeLevel::LEVEL_STAR) {
       sprintf(buf, "No such star.\n");
@@ -779,7 +779,7 @@ void send_message(const command_t &argv, GameObj &g) {
         MIN(alien->translate[Playernum - 1] + 2, 100);
     putrace(alien);
   }
-  notify(Playernum, Governor, "Message sent.\n");
+  g.out << "Message sent.\n";
   deductAPs(Playernum, Governor, APcount, g.snum, 0);
 }
 
@@ -788,7 +788,7 @@ void read_messages(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   if (argv.size() == 1 || argv[1] == "telegram")
-    teleg_read(Playernum, Governor);
+    teleg_read(g);
   else if (argv[1] == "news") {
     notify(Playernum, Governor, CUTE_MESSAGE);
     notify(Playernum, Governor,
@@ -804,7 +804,7 @@ void read_messages(const command_t &argv, GameObj &g) {
            "\n----------          Bulletins         ----------\n");
     news_read(Playernum, Governor, ANNOUNCE);
   } else
-    notify(Playernum, Governor, "Read what?\n");
+    g.out << "Read what?\n";
 }
 
 void motto(const command_t &argv, GameObj &g) {
@@ -818,12 +818,12 @@ void motto(const command_t &argv, GameObj &g) {
   std::string message = ss_message.str();
 
   if (Governor) {
-    notify(Playernum, Governor, "You are not authorized to do this.\n");
+    g.out << "You are not authorized to do this.\n";
     return;
   }
   strncpy(Blocks[Playernum - 1].motto, message.c_str(), MOTTOSIZE - 1);
   Putblock(Blocks);
-  notify(Playernum, Governor, "Done.\n");
+  g.out << "Done.\n";
 }
 
 void name(const command_t &argv, GameObj &g) {
@@ -839,7 +839,7 @@ void name(const command_t &argv, GameObj &g) {
   racetype *Race;
 
   if (!isalnum(argv[2].c_str()[0]) || argv.size() < 3) {
-    notify(Playernum, Governor, "Illegal name format.\n");
+    g.out << "Illegal name format.\n";
     return;
   }
 
@@ -863,7 +863,7 @@ void name(const command_t &argv, GameObj &g) {
   }
 
   if (spaces == strlen(buf)) {
-    notify(Playernum, Governor, "Illegal name.\n");
+    g.out << "Illegal name.\n";
     return;
   }
 
@@ -878,29 +878,29 @@ void name(const command_t &argv, GameObj &g) {
       (void)getship(&ship, g.shipno);
       strncpy(ship->name, buf, SHIP_NAMESIZE);
       putship(ship);
-      notify(Playernum, Governor, "Name set.\n");
+      g.out << "Name set.\n";
       free(ship);
       return;
     } else {
-      notify(Playernum, Governor, "You have to 'cs' to a ship to name it.\n");
+      g.out << "You have to 'cs' to a ship to name it.\n";
       return;
     }
   } else if (argv[1] == "class") {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
       (void)getship(&ship, g.shipno);
       if (ship->type != OTYPE_FACTORY) {
-        notify(Playernum, Governor, "You are not at a factory!\n");
+        g.out << "You are not at a factory!\n";
         free(ship);
         return;
       }
       if (ship->on) {
-        notify(Playernum, Governor, "This factory is already on line.\n");
+        g.out << "This factory is already on line.\n";
         free(ship);
         return;
       }
       strncpy(ship->shipclass, buf, SHIP_NAMESIZE - 1);
       putship(ship);
-      notify(Playernum, Governor, "Class set.\n");
+      g.out << "Class set.\n";
       free(ship);
       return;
     } else {
@@ -911,23 +911,23 @@ void name(const command_t &argv, GameObj &g) {
   } else if (argv[1] == "block") {
     /* name your alliance block */
     if (Governor) {
-      notify(Playernum, Governor, "You are not authorized to do this.\n");
+      g.out << "You are not authorized to do this.\n";
       return;
     }
     strncpy(Blocks[Playernum - 1].name, buf, RNAMESIZE - 1);
     Putblock(Blocks);
-    notify(Playernum, Governor, "Done.\n");
+    g.out << "Done.\n";
   } else if (argv[1] == "star") {
     if (g.level == ScopeLevel::LEVEL_STAR) {
       Race = races[Playernum - 1];
       if (!Race->God) {
-        notify(Playernum, Governor, "Only dieties may name a star.\n");
+        g.out << "Only dieties may name a star.\n";
         return;
       }
       strncpy(Stars[g.snum]->name, buf, NAMESIZE - 1);
       putstar(Stars[g.snum], g.snum);
     } else {
-      notify(Playernum, Governor, "You have to 'cs' to a star to name it.\n");
+      g.out << "You have to 'cs' to a star to name it.\n";
       return;
     }
   } else if (argv[1] == "planet") {
@@ -935,20 +935,20 @@ void name(const command_t &argv, GameObj &g) {
       getstar(&Stars[g.snum], g.snum);
       Race = races[Playernum - 1];
       if (!Race->God) {
-        notify(Playernum, Governor, "Only deity can rename planets.\n");
+        g.out << "Only deity can rename planets.\n";
         return;
       }
       strncpy(Stars[g.snum]->pnames[g.pnum], buf, NAMESIZE - 1);
       putstar(Stars[g.snum], g.snum);
       deductAPs(Playernum, Governor, APcount, g.snum, 0);
     } else {
-      notify(Playernum, Governor, "You have to 'cs' to a planet to name it.\n");
+      g.out << "You have to 'cs' to a planet to name it.\n";
       return;
     }
   } else if (argv[1] == "race") {
     Race = races[Playernum - 1];
     if (Governor) {
-      notify(Playernum, Governor, "You are not authorized to do this.\n");
+      g.out << "You are not authorized to do this.\n";
       return;
     }
     strncpy(Race->name, buf, RNAMESIZE - 1);
@@ -962,7 +962,7 @@ void name(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     putrace(Race);
   } else {
-    notify(Playernum, Governor, "I don't know what you mean.\n");
+    g.out << "I don't know what you mean.\n";
     return;
   }
 }
@@ -990,7 +990,7 @@ void announce(const command_t &argv, GameObj &g) {
   else if (argv[0] == "think")
     mode = Communicate::THINK;
   else {
-    notify(Playernum, Governor, "Not sure how you got here.\n");
+    g.out << "Not sure how you got here.\n";
     return;
   }
 

@@ -171,17 +171,19 @@ void push_telegram(const player_t recipient, const governor_t gov,
  * telegram is the sending player number or 254 to denote an autoreport.
  * Then the time send, then the message, then terminated by TELEG_DELIM
  */
-void teleg_read(int Playernum, int Governor) {
+void teleg_read(GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   char *p;
 
   bzero((char *)telegram_file, sizeof(telegram_file));
   sprintf(telegram_file, "%s.%d.%d", TELEGRAMFL, Playernum, Governor);
 
   if ((teleg_read_fd = fopen(telegram_file, "r")) != nullptr) {
-    notify(Playernum, Governor, "Telegrams:");
+    g.out << "Telegrams:";
     stat(telegram_file, &telestat);
     if (telestat.st_size > 0) {
-      notify(Playernum, Governor, "\n");
+      g.out << "\n";
       while (fgets(buf, sizeof buf, teleg_read_fd)) {
         for (p = buf; *p; p++)
           if (*p == '\n') {
@@ -192,7 +194,7 @@ void teleg_read(int Playernum, int Governor) {
         notify(Playernum, Governor, buf);
       }
     } else {
-      notify(Playernum, Governor, " None.\n");
+      g.out << " None.\n";
     }
 
     fclose(teleg_read_fd);

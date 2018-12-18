@@ -35,7 +35,7 @@ void block(const command_t &argv, GameObj &g) {
 
   if (argv.size() == 3 && argv[1] == "player") {
     if (!(p = get_player(argv[2]))) {
-      notify(Playernum, Governor, "No such player.\n");
+      g.out << "No such player.\n";
       return;
     }
     r = races[p - 1];
@@ -50,9 +50,9 @@ void block(const command_t &argv, GameObj &g) {
       }
     }
     if (dummy_ == 0)
-      notify(Playernum, Governor, "no blocks\n");
+      g.out << "no blocks\n";
     else
-      notify(Playernum, Governor, "\n");
+      g.out << "\n";
 
     dummy_ = 0; /* Used as flag for finding a block */
     sprintf(buf, "Race #%d [%s] has been invited to join ", p, r->name);
@@ -65,9 +65,9 @@ void block(const command_t &argv, GameObj &g) {
       }
     }
     if (dummy_ == 0)
-      notify(Playernum, Governor, "no blocks\n");
+      g.out << "no blocks\n";
     else
-      notify(Playernum, Governor, "\n");
+      g.out << "\n";
 
     dummy_ = 0; /* Used as flag for finding a block */
     sprintf(buf, "Race #%d [%s] has pledged ", p, r->name);
@@ -80,12 +80,12 @@ void block(const command_t &argv, GameObj &g) {
       }
     }
     if (!dummy_)
-      notify(Playernum, Governor, "no blocks\n");
+      g.out << "no blocks\n";
     else
-      notify(Playernum, Governor, "\n");
+      g.out << "\n";
   } else if (argv.size() > 1) {
     if (!(p = get_player(argv[1]))) {
-      notify(Playernum, Governor, "No such player,\n");
+      g.out << "No such player,\n";
       return;
     }
     r = races[p - 1];
@@ -188,7 +188,7 @@ void power(const command_t &argv, GameObj &g) {
 
   if (argv.size() >= 2) {
     if (!(p = get_player(argv[1]))) {
-      notify(Playernum, Governor, "No such player,\n");
+      g.out << "No such player,\n";
       return;
     }
     r = races[p - 1];

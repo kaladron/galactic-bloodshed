@@ -101,12 +101,12 @@ void fire(const command_t &argv, GameObj &g) {
       }
       sscanf(argv[2].c_str() + (argv[2].c_str()[0] == '#'), "%lu", &toship);
       if (toship <= 0) {
-        notify(Playernum, Governor, "Bad ship number.\n");
+        g.out << "Bad ship number.\n";
         free(from);
         continue;
       }
       if (toship == fromship) {
-        notify(Playernum, Governor, "Get real.\n");
+        g.out << "Get real.\n";
         free(from);
         continue;
       }
@@ -149,7 +149,7 @@ void fire(const command_t &argv, GameObj &g) {
         const auto &p = getplanet((int)from->storbits, (int)from->pnumorbits);
         if (!adjacent((int)from->land_x, (int)from->land_y, (int)to->land_x,
                       (int)to->land_y, p)) {
-          notify(Playernum, Governor, "You are not adjacent to your target!\n");
+          g.out << "You are not adjacent to your target!\n";
           free(from);
           free(to);
           continue;
@@ -206,7 +206,7 @@ void fire(const command_t &argv, GameObj &g) {
           shoot_ship_to_ship(from, to, strength, cew, 0, long_buf, short_buf);
 
       if (damage < 0) {
-        notify(Playernum, Governor, "Illegal attack.\n");
+        g.out << "Illegal attack.\n";
         free(from);
         free(to);
         continue;
@@ -322,7 +322,7 @@ void bombard(const command_t &argv, GameObj &g) {
         continue;
       }
       if (from->type == OTYPE_AFV && !landed(from)) {
-        notify(Playernum, Governor, "This ship is not landed on the planet.\n");
+        g.out << "This ship is not landed on the planet.\n";
         free(from);
         continue;
       } else if (!enufAP(Playernum, Governor,
@@ -362,7 +362,7 @@ void bombard(const command_t &argv, GameObj &g) {
       if (argv.size() > 2) {
         sscanf(argv[2].c_str(), "%d,%d", &x, &y);
         if (x < 0 || x > p.Maxx - 1 || y < 0 || y > p.Maxy - 1) {
-          notify(Playernum, Governor, "Illegal sector.\n");
+          g.out << "Illegal sector.\n";
           free(from);
           continue;
         }
@@ -372,7 +372,7 @@ void bombard(const command_t &argv, GameObj &g) {
       }
       if (landed(from) &&
           !adjacent((int)from->land_x, (int)from->land_y, x, y, p)) {
-        notify(Playernum, Governor, "You are not adjacent to that sector.\n");
+        g.out << "You are not adjacent to that sector.\n";
         free(from);
         continue;
       }
@@ -404,7 +404,7 @@ void bombard(const command_t &argv, GameObj &g) {
       putsmap(smap, p);
 
       if (numdest < 0) {
-        notify(Playernum, Governor, "Illegal attack.\n");
+        g.out << "Illegal attack.\n";
         free(from);
         continue;
       }
@@ -501,7 +501,7 @@ void defend(const command_t &argv, GameObj &g) {
 
   /* get the planet from the players current scope */
   if (g.level != ScopeLevel::LEVEL_PLAN) {
-    notify(Playernum, Governor, "You have to set scope to the planet first.\n");
+    g.out << "You have to set scope to the planet first.\n";
     return;
   }
 
@@ -517,7 +517,7 @@ void defend(const command_t &argv, GameObj &g) {
   }
   sscanf(argv[1].c_str() + (argv[1].c_str()[0] == '#'), "%d", &toship);
   if (toship <= 0) {
-    notify(Playernum, Governor, "Bad ship number.\n");
+    g.out << "Bad ship number.\n";
     return;
   }
 
@@ -528,12 +528,12 @@ void defend(const command_t &argv, GameObj &g) {
   auto p = getplanet(g.snum, g.pnum);
 
   if (!p.info[Playernum - 1].numsectsowned) {
-    notify(Playernum, Governor, "You do not occupy any sectors here.\n");
+    g.out << "You do not occupy any sectors here.\n";
     return;
   }
 
   if (p.slaved_to && p.slaved_to != Playernum) {
-    notify(Playernum, Governor, "This planet is enslaved.\n");
+    g.out << "This planet is enslaved.\n";
     return;
   }
 
@@ -542,19 +542,19 @@ void defend(const command_t &argv, GameObj &g) {
   }
 
   if (to->whatorbits != ScopeLevel::LEVEL_PLAN) {
-    notify(Playernum, Governor, "The ship is not in planet orbit.\n");
+    g.out << "The ship is not in planet orbit.\n";
     free(to);
     return;
   }
 
   if (to->storbits != g.snum || to->pnumorbits != g.pnum) {
-    notify(Playernum, Governor, "Target is not in orbit around this planet.\n");
+    g.out << "Target is not in orbit around this planet.\n";
     free(to);
     return;
   }
 
   if (landed(to)) {
-    notify(Playernum, Governor, "Planet guns can't fire on landed ships.\n");
+    g.out << "Planet guns can't fire on landed ships.\n";
     free(to);
     return;
   }
@@ -566,7 +566,7 @@ void defend(const command_t &argv, GameObj &g) {
   sscanf(argv[2].c_str(), "%d,%d", &x, &y);
 
   if (x < 0 || x > p.Maxx - 1 || y < 0 || y > p.Maxy - 1) {
-    notify(Playernum, Governor, "Illegal sector.\n");
+    g.out << "Illegal sector.\n";
     free(to);
     return;
   }
@@ -574,7 +574,7 @@ void defend(const command_t &argv, GameObj &g) {
   /* check to see if you own the sector */
   auto sect = getsector(p, x, y);
   if (sect.owner != Playernum) {
-    notify(Playernum, Governor, "Nice try.\n");
+    g.out << "Nice try.\n";
     free(to);
     return;
   }
@@ -700,15 +700,15 @@ void detonate(const command_t &argv, GameObj &g) {
     if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
         authorized(Governor, s)) {
       if (s->type != STYPE_MINE) {
-        notify(Playernum, Governor, "That is not a mine.\n");
+        g.out << "That is not a mine.\n";
         free(s);
         continue;
       } else if (!s->on) {
-        notify(Playernum, Governor, "The mine is not activated.\n");
+        g.out << "The mine is not activated.\n";
         free(s);
         continue;
       } else if (s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP) {
-        notify(Playernum, Governor, "The mine is docked or landed.\n");
+        g.out << "The mine is docked or landed.\n";
         free(s);
         continue;
       }

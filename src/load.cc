@@ -27,7 +27,7 @@
 
 static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
 
-static int jettison_check(int, int, int, int);
+static int jettison_check(GameObj &, int, int);
 static int landed_on(shiptype *, shipnum_t);
 
 static void do_transporter(racetype *, GameObj &, shiptype *);
@@ -51,9 +51,9 @@ void load(const command_t &argv, GameObj &g) {
 
   if (argv.size() < 2) {
     if (mode == 0) {
-      notify(Playernum, Governor, "Load what?\n");
+      g.out << "Load what?\n";
     } else {
-      notify(Playernum, Governor, "Unload what?\n");
+      g.out << "Unload what?\n";
     }
     return;
   }
@@ -103,7 +103,7 @@ void load(const command_t &argv, GameObj &g) {
             continue;
           }
           if (!getship(&s2, (int)s->destshipno)) {
-            notify(Playernum, Governor, "Destination ship is bogus.\n");
+            g.out << "Destination ship is bogus.\n";
             free(s);
             continue;
           }
@@ -148,7 +148,7 @@ void load(const command_t &argv, GameObj &g) {
       if (mode) amt = -amt; /* unload */
 
       if (amt < 0 && s->type == OTYPE_VN) {
-        notify(Playernum, Governor, "You can't unload VNs.\n");
+        g.out << "You can't unload VNs.\n";
         free(s);
         if (sh) free(s2);
         continue;
@@ -231,7 +231,7 @@ void load(const command_t &argv, GameObj &g) {
           }
           break;
         default:
-          notify(Playernum, Governor, "No such commodity valid.\n");
+          g.out << "No such commodity valid.\n";
           if (sh) free(s2);
           free(s);
           continue;
@@ -391,7 +391,7 @@ void load(const command_t &argv, GameObj &g) {
           notify(Playernum, Governor, buf);
           break;
         default:
-          notify(Playernum, Governor, "No such commodity.\n");
+          g.out << "No such commodity.\n";
 
           if (sh) free(s2);
           free(s);
@@ -469,7 +469,7 @@ void jettison(const command_t &argv, GameObj &g) {
   racetype *Race;
 
   if (argv.size() < 2) {
-    notify(Playernum, Governor, "Jettison what?\n");
+    g.out << "Jettison what?\n";
     return;
   }
 
@@ -483,7 +483,7 @@ void jettison(const command_t &argv, GameObj &g) {
         continue;
       }
       if (landed(s)) {
-        notify(Playernum, Governor, "Ship is landed, cannot jettison.\n");
+        g.out << "Ship is landed, cannot jettison.\n";
         free(s);
         continue;
       }
@@ -514,8 +514,7 @@ void jettison(const command_t &argv, GameObj &g) {
       commod = argv[2].c_str()[0];
       switch (commod) {
         case 'x':
-          if ((amt = jettison_check(Playernum, Governor, amt,
-                                    (int)(s->crystals))) > 0) {
+          if ((amt = jettison_check(g, amt, (int)(s->crystals))) > 0) {
             s->crystals -= amt;
             sprintf(buf, "%d crystal%s jettisoned.\n", amt,
                     (amt == 1) ? "" : "s");
@@ -524,8 +523,7 @@ void jettison(const command_t &argv, GameObj &g) {
           }
           break;
         case 'c':
-          if ((amt = jettison_check(Playernum, Governor, amt, (int)(s->popn))) >
-              0) {
+          if ((amt = jettison_check(g, amt, (int)(s->popn))) > 0) {
             s->popn -= amt;
             s->mass -= amt * Race->mass;
             sprintf(buf, "%d crew %s into deep space.\n", amt,
@@ -538,8 +536,7 @@ void jettison(const command_t &argv, GameObj &g) {
           }
           break;
         case 'm':
-          if ((amt = jettison_check(Playernum, Governor, amt,
-                                    (int)(s->troops))) > 0) {
+          if ((amt = jettison_check(g, amt, (int)(s->troops))) > 0) {
             sprintf(buf, "%d military %s into deep space.\n", amt,
                     (amt == 1) ? "hurls itself" : "hurl themselves");
             notify(Playernum, Governor, buf);
@@ -552,8 +549,7 @@ void jettison(const command_t &argv, GameObj &g) {
           }
           break;
         case 'd':
-          if ((amt = jettison_check(Playernum, Governor, amt,
-                                    (int)(s->destruct))) > 0) {
+          if ((amt = jettison_check(g, amt, (int)(s->destruct))) > 0) {
             use_destruct(s, amt);
             sprintf(buf, "%d destruct jettisoned.\n", amt);
             notify(Playernum, Governor, buf);
@@ -561,17 +557,16 @@ void jettison(const command_t &argv, GameObj &g) {
               sprintf(buf, "\n%s ", Ship(*s).c_str());
               notify(Playernum, Governor, buf);
               if (s->destruct) {
-                notify(Playernum, Governor, "still boobytrapped.\n");
+                g.out << "still boobytrapped.\n";
               } else {
-                notify(Playernum, Governor, "no longer boobytrapped.\n");
+                g.out << "no longer boobytrapped.\n";
               }
             }
             Mod = 1;
           }
           break;
         case 'f':
-          if ((amt = jettison_check(Playernum, Governor, amt, (int)(s->fuel))) >
-              0) {
+          if ((amt = jettison_check(g, amt, (int)(s->fuel))) > 0) {
             use_fuel(s, (double)amt);
             sprintf(buf, "%d fuel jettisoned.\n", amt);
             notify(Playernum, Governor, buf);
@@ -579,8 +574,7 @@ void jettison(const command_t &argv, GameObj &g) {
           }
           break;
         case 'r':
-          if ((amt = jettison_check(Playernum, Governor, amt,
-                                    (int)(s->resource))) > 0) {
+          if ((amt = jettison_check(g, amt, (int)(s->resource))) > 0) {
             use_resource(s, amt);
             sprintf(buf, "%d resources jettisoned.\n", amt);
             notify(Playernum, Governor, buf);
@@ -588,7 +582,7 @@ void jettison(const command_t &argv, GameObj &g) {
           }
           break;
         default:
-          notify(Playernum, Governor, "No such commodity valid.\n");
+          g.out << "No such commodity valid.\n";
           return;
       }
       if (Mod) putship(s);
@@ -597,10 +591,12 @@ void jettison(const command_t &argv, GameObj &g) {
       free(s);
 }
 
-static int jettison_check(int Playernum, int Governor, int amt, int max) {
+static int jettison_check(GameObj &g, int amt, int max) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   if (amt == 0) amt = max;
   if (amt < 0) {
-    notify(Playernum, Governor, "Nice try.\n");
+    g.out << "Nice try.\n";
     return -1;
   } else if (amt > max) {
     sprintf(buf, "You can jettison at most %d\n", max);
@@ -629,7 +625,7 @@ void dump(const command_t &argv, GameObj &g) {
   r = races[player - 1];
 
   if (r->Guest) {
-    notify(Playernum, Governor, "Cheater!\n");
+    g.out << "Cheater!\n";
     return;
   }
 
@@ -637,11 +633,11 @@ void dump(const command_t &argv, GameObj &g) {
   /* get all stars and planets */
   Race = races[Playernum - 1];
   if (Race->Guest) {
-    notify(Playernum, Governor, "Cheater!\n");
+    g.out << "Cheater!\n";
     return;
   }
   if (Governor) {
-    notify(Playernum, Governor, "Only leaders are allowed to use dump.\n");
+    g.out << "Only leaders are allowed to use dump.\n";
     return;
   }
   getsdata(&Sdata);
@@ -692,7 +688,7 @@ void dump(const command_t &argv, GameObj &g) {
   sprintf(buf, "%s [%d] has given you exploration data.\n", Race->name,
           Playernum);
   warn_race(player, buf);
-  notify(Playernum, Governor, "Exploration Data transferred.\n");
+  g.out << "Exploration Data transferred.\n";
 }
 
 void transfer(const command_t &argv, GameObj &g) {
@@ -723,7 +719,7 @@ void transfer(const command_t &argv, GameObj &g) {
   give = atoi(argv[3].c_str());
 
   if (give < 0) {
-    notify(Playernum, Governor, "You must specify a positive amount.\n");
+    g.out << "You must specify a positive amount.\n";
     return;
   }
   sprintf(temp, "%s/%s:", Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
@@ -817,22 +813,22 @@ void mount(const command_t &argv, GameObj &g) {
         continue;
       }
       if (ship->mounted && mnt) {
-        notify(Playernum, Governor, "You already have a crystal mounted.\n");
+        g.out << "You already have a crystal mounted.\n";
         free(ship);
         continue;
       } else if (!ship->mounted && !mnt) {
-        notify(Playernum, Governor, "You don't have a crystal mounted.\n");
+        g.out << "You don't have a crystal mounted.\n";
         free(ship);
         continue;
       } else if (!ship->mounted && mnt) {
         if (!ship->crystals) {
-          notify(Playernum, Governor, "You have no crystals on board.\n");
+          g.out << "You have no crystals on board.\n";
           free(ship);
           continue;
         }
         ship->mounted = 1;
         ship->crystals--;
-        notify(Playernum, Governor, "Mounted.\n");
+        g.out << "Mounted.\n";
       } else if (ship->mounted && !mnt) {
         if (ship->crystals == Max_crystals(ship)) {
           notify(Playernum, Governor,
@@ -843,18 +839,18 @@ void mount(const command_t &argv, GameObj &g) {
         }
         ship->mounted = 0;
         ship->crystals++;
-        notify(Playernum, Governor, "Dismounted.\n");
+        g.out << "Dismounted.\n";
         if (ship->hyper_drive.charge || ship->hyper_drive.ready) {
           ship->hyper_drive.charge = 0;
           ship->hyper_drive.ready = 0;
-          notify(Playernum, Governor, "Discharged.\n");
+          g.out << "Discharged.\n";
         }
         if (ship->laser && ship->fire_laser) {
           ship->fire_laser = 0;
-          notify(Playernum, Governor, "Laser deactivated.\n");
+          g.out << "Laser deactivated.\n";
         }
       } else {
-        notify(Playernum, Governor, "Weird error in 'mount'.\n");
+        g.out << "Weird error in 'mount'.\n";
         free(ship);
         continue;
       }
@@ -912,7 +908,7 @@ static void do_transporter(racetype *Race, GameObj &g, shiptype *s) {
   Playernum = Race->Playernum;
 
   if (!landed(s)) {
-    notify(Playernum, Governor, "Origin ship not landed.\n");
+    g.out << "Origin ship not landed.\n";
     return;
   }
   if (s->storbits != g.snum || s->pnumorbits != g.pnum) {
@@ -921,7 +917,7 @@ static void do_transporter(racetype *Race, GameObj &g, shiptype *s) {
     return;
   }
   if (s->damage) {
-    notify(Playernum, Governor, "Origin device is damaged.\n");
+    g.out << "Origin device is damaged.\n";
     return;
   }
   if (!getship(&s2, (int)s->special.transport.target)) {
@@ -936,12 +932,12 @@ static void do_transporter(racetype *Race, GameObj &g, shiptype *s) {
     return;
   }
   if (!landed(s2)) {
-    notify(Playernum, Governor, "Target ship not landed.\n");
+    g.out << "Target ship not landed.\n";
     free(s2);
     return;
   }
   if (s2->damage) {
-    notify(Playernum, Governor, "Target device is damaged.\n");
+    g.out << "Target device is damaged.\n";
     free(s2);
     return;
   }

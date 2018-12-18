@@ -236,7 +236,7 @@ void survey(const command_t &argv, GameObj &g) {
             notify(Playernum, Governor, buf);
 
             if (shiplocs[lowx][lowy].pos && inhere) {
-              notify(Playernum, Governor, ";");
+              g.out << ";";
               for (i = 0; i < shiplocs[lowx][lowy].pos; i++) {
                 sprintf(buf, " %d %c %u;",
                         shiplocs[lowx][lowy].shipstuffs[i].shipno,
@@ -245,7 +245,7 @@ void survey(const command_t &argv, GameObj &g) {
                 notify(Playernum, Governor, buf);
               }
             }
-            notify(Playernum, Governor, "\n");
+            g.out << "\n";
           }
         }
       if (mode) {

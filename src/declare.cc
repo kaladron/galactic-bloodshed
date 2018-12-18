@@ -32,7 +32,7 @@ void invite(const command_t &argv, GameObj &g) {
   racetype *Race, *alien;
 
   if (Governor) {
-    notify(Playernum, Governor, "Only leaders may invite.\n");
+    g.out << "Only leaders may invite.\n";
     return;
   }
   if (!(n = get_player(argv[1]))) {
@@ -41,7 +41,7 @@ void invite(const command_t &argv, GameObj &g) {
     return;
   }
   if (n == Playernum) {
-    notify(Playernum, Governor, "Not needed, you are the leader.\n");
+    g.out << "Not needed, you are the leader.\n";
     return;
   }
   Race = races[Playernum - 1];
@@ -77,7 +77,7 @@ void pledge(const command_t &argv, GameObj &g) {
   racetype *Race;
 
   if (Governor) {
-    notify(Playernum, Governor, "Only leaders may pledge.\n");
+    g.out << "Only leaders may pledge.\n";
     return;
   }
   if (!(n = get_player(argv[1]))) {
@@ -86,7 +86,7 @@ void pledge(const command_t &argv, GameObj &g) {
     return;
   }
   if (n == Playernum) {
-    notify(Playernum, Governor, "Not needed, you are the leader.\n");
+    g.out << "Not needed, you are the leader.\n";
     return;
   }
   Race = races[Playernum - 1];
@@ -144,7 +144,7 @@ void declare(const command_t &argv, GameObj &g) {
   racetype *Race, *alien;
 
   if (Governor) {
-    notify(Playernum, Governor, "Only leaders may declare.\n");
+    g.out << "Only leaders may declare.\n";
     return;
   }
 
@@ -252,7 +252,7 @@ void declare(const command_t &argv, GameObj &g) {
       d_mod = 30;
       break;
     default:
-      notify(Playernum, Governor, "I don't understand.\n");
+      g.out << "I don't understand.\n";
       return;
   }
 

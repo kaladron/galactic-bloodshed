@@ -42,13 +42,13 @@ void capture(const command_t &argv, GameObj &g) {
   population_t boarders;
 
   if (argv.size() < 2) {
-    notify(Playernum, Governor, "Capture what?\n");
+    g.out << "Capture what?\n";
     return;
   }
   snum = g.snum;
   pnum = g.pnum;
   if (Governor && Stars[snum]->governor[Playernum - 1] != Governor) {
-    notify(Playernum, Governor, "You are not authorized in this system.\n");
+    g.out << "You are not authorized in this system.\n";
     return;
   }
   nextshipno = start_shiplist(g, argv[1].c_str());
@@ -96,7 +96,7 @@ void capture(const command_t &argv, GameObj &g) {
       else if (argv[3] == "military")
         what = MIL;
       else {
-        notify(Playernum, Governor, "Capture with what?\n");
+        g.out << "Capture with what?\n";
         free(ship);
         continue;
       }

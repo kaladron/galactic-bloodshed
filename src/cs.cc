@@ -8,7 +8,6 @@
 #include <cstdlib>
 
 #include "GB_server.h"
-#include "buffers.h"
 #include "files_shl.h"
 #include "getplace.h"
 #include "races.h"
@@ -16,16 +15,13 @@
 #include "vars.h"
 
 void center(const command_t &argv, GameObj &g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
   auto where = Getplace(g, argv[1], 1);
 
   if (where.err) {
-    sprintf(buf, "cs: bad scope.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "cs: bad scope.\n";
     return;
   } else if (where.level == ScopeLevel::LEVEL_SHIP) {
-    notify(Playernum, Governor, "CHEATER!!!\n");
+    g.out << "CHEATER!!!\n";
     return;
   }
   g.lastx[1] = Stars[where.snum]->xpos;
@@ -57,8 +53,7 @@ void cs(const command_t &argv, GameObj &g) {
     auto where = Getplace(g, argv[1].c_str(), 0);
 
     if (where.err) {
-      sprintf(buf, "cs: bad scope.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "cs: bad scope.\n";
       g.lastx[0] = g.lasty[0] = 0.0;
       return;
     }
@@ -108,8 +103,7 @@ void cs(const command_t &argv, GameObj &g) {
               if (s->whatorbits == ScopeLevel::LEVEL_PLAN &&
                   s->storbits == where.snum && s->pnumorbits == where.pnum) {
                 /* same */
-                const auto &planet =
-                    getplanet((int)s->storbits, (int)s->pnumorbits);
+                const auto &planet = getplanet(s->storbits, s->pnumorbits);
                 g.lastx[0] = s->xpos - Stars[s->storbits]->xpos - planet.xpos;
                 g.lasty[0] = s->ypos - Stars[s->storbits]->ypos - planet.ypos;
               } else
@@ -138,10 +132,9 @@ void cs(const command_t &argv, GameObj &g) {
       Race->governor[Governor].defplanetnum = where.pnum;
       putrace(Race);
 
-      sprintf(buf, "New home system is %s\n", Dispplace(where).c_str());
+      g.out << "New home system is " << Dispplace(where) << "\n";
     } else {
-      sprintf(buf, "cs: bad home system.\n");
+      g.out << "cs: bad home system.\n";
     }
-    notify(Playernum, Governor, buf);
   }
 }

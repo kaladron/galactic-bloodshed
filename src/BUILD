@@ -17,7 +17,6 @@ LLVM_COPTS_DEFAULT = [
 ]
 
 LLVM_COPTS_OPTIONAL = [
-    "-Wno-sign-conversion",
     "-Wno-float-equal",
     "-Wno-old-style-cast",
     "-Wno-conversion",

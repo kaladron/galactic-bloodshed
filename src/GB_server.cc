@@ -521,7 +521,7 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
   struct timeval next_slice;
   struct timeval timeout, slice_timeout;
   time_t now;
-  time_t go_time;
+  time_t go_time = 0;
 
   int sock = make_socket(port);
   gettimeofday(&last_slice, nullptr);
@@ -600,7 +600,7 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
       }
     }
     if (go_time > 0 && now >= go_time) {
-      (void)do_next_thing();
+      do_next_thing();
       go_time = 0;
     }
   }

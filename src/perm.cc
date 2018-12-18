@@ -13,7 +13,7 @@
 static struct map { char x, y; } xymap[(MAX_X + 1) * (MAX_Y + 1)];
 
 /* make a random list of sectors. */
-void PermuteSects(const Planet& planet) {
+void PermuteSects(const Planet &planet) {
   int i, j, x, y, t;
   struct map sw;
 
@@ -38,7 +38,7 @@ void PermuteSects(const Planet& planet) {
 **  increments the counter & returns whether or not this reset it to 0.
 */
 
-int Getxysect(const Planet& p, int* x, int* y, int r) {
+int Getxysect(const Planet &p, int *x, int *y, int r) {
   static int getxy, max;
 
   if (r) {

@@ -858,12 +858,11 @@ static void process_commands(void) {
   } while (nprocessed > 0);
 }
 
+/** Main processing loop. When command strings are sent from the client,
+   they are processed here. Responses are sent back to the client via
+   notify.
+   */
 static int do_command(DescriptorData &d, const char *comm) {
-  /* Main processing loop. When command strings are sent from the client,
-     they are processed here. Responses are sent back to the client via
-     notify.
-     */
-
   /* check to see if there are a few words typed out, usually for the help
    * command */
   command_t argv;

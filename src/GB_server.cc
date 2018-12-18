@@ -1169,20 +1169,10 @@ static void dump_users(DescriptorData &e) {
   queue_string(e, "Finished.\n");
 }
 
+//* Dispatch to the function to run the command based on the string input by the
+//user.
 static void process_command(DescriptorData &d, const command_t &argv) {
-  int God, Guest;
-  racetype *r;
-
-  int Playernum = d.player;
-  int Governor = d.governor;
-
-  /*determine which routine to go to and what action to take */
-  /* target routine is specified by the first substring, other options
-  are the substrings which follow */
-
-  r = races[Playernum - 1];
-  God = r->God;
-  Guest = r->Guest;
+  int God = races[d.player - 1]->God;
 
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
@@ -1191,14 +1181,13 @@ static void process_command(DescriptorData &d, const command_t &argv) {
     purge();
   else if (argv[0] == "@@shutdown" && God) {
     shutdown_flag = 1;
-    notify(Playernum, Governor, "Doing shutdown.\n");
+    d.out << "Doing shutdown.\n";
   } else if (argv[0] == "@@update" && God)
     do_update(1);
   else if (argv[0] == "@@segment" && God)
-    do_segment(1, atoi(argv[1].c_str()));
+    do_segment(1, std::stoi(argv[1]));
   else {
-    sprintf(buf, "'%s':illegal command error.\n", argv[0].c_str());
-    notify(Playernum, Governor, buf);
+    d.out << "'" << argv[0] << "':illegal command error.\n";
   }
 
   /* compute the prompt and send to the player */

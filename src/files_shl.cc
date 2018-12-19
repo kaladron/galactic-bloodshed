@@ -98,6 +98,133 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
       player_id INT PRIMARY KEY NOT NULL, ap INT NOT NULL,
       VN_hitlist INT NOT NULL, VN_index1 INT NOT NULL, VN_index2 INT NOT NULL);
 
+  CREATE TABLE tbl_ship(
+      ship_id INT PRIMARY KEY NOT NULL,
+      player_id INT NOT NULL,
+      governor_id INT NOT NULL,
+      name TEXT NOT NULL,
+      shipclass TEXT NOT NULL,
+      race INT NOT NULL,
+      xpos DOUBLE NOT NULL,
+      ypos DOUBLE NOT NULL,
+      mass DOUBLE NOT NULL,
+      land_x INT,
+      land_y INT,
+      destshipno INT,
+      nextship INT,
+      ships INT,
+      armor INT,
+      size INT,
+
+      max_crew INT,
+      max_resource INT,
+      max_destruct INT,
+      max_fuel INT,
+      max_speed INT,
+      build_type INT,
+      build_cost INT,
+
+      base_mass DOUBLE,
+      tech DOUBLE,
+      complexity DOUBLE,
+
+      destruct INT,
+      resource INT,
+      population INT64,
+      troops INT64,
+      crystals INT,
+
+      aimed_shipno INT,
+      aimed_snum INT,
+      aimed_intensity INT,
+      aimed_pnum INT,
+      aimed_level INT,
+
+      mind_progenitor INT,
+      mind_target INT,
+      mind_generation INT,
+      mind_busy INT,
+      mind_tampered INT,
+      mind_who_killed INT,
+
+      pod_decay INT,
+      pod_temperature INT,
+
+      timer_count INT,
+
+      impact_x INT,
+      impact_y INT,
+      impact_scatter INT,
+
+      trigger_radius INT,
+
+      terraform_index INT,
+
+      transport_target INT,
+
+      waste_toxic INT,
+
+      who_killed INT,
+
+      navigate_on INT,
+      navigate_speed INT,
+      navigate_turns INT,
+      navigate_bearing INT,
+
+      protect_maxrng DOUBLE,
+      protect_on INT,
+      protect_planet INT,
+      protect_self INT,
+      protect_evade INT,
+      protect_ship INT,
+
+      hyper_drive_charge INT,
+      hyper_drive_ready INT,
+      hyper_drive_on INT,
+      hyper_drive has INT,
+
+      cew INT,
+      cew_range INT,
+      cloak INT,
+      laser INT,
+      focus INT,
+      fire_laser INT,
+      storbits INT,
+      deststar INT,
+      destpnum INT,
+      pnumorbits INT,
+      whatdest INT,
+      whatorbits INT,
+
+      damage INT,
+      rad INT,
+      retaliate INT,
+      target INT,
+
+      type INT,
+      speed INT,
+
+      active INT,
+      alive INT,
+      mode INT,
+      bombard INT,
+      mounted INT,
+      cloaked INT,
+      sheep INT,
+      docked INT,
+      notified INT,
+      examined INT,
+      on_off INT,
+
+      merchant INT,
+      guns INT,
+      primary_gun INT,
+      primtype INT,
+      secondary_gun INT,
+      sectype INT,
+
+      hanger INT,
+      max_hanger INT);
 )";
   char *err_msg = nullptr;
   int err = sqlite3_exec(db, tbl_create, nullptr, nullptr, &err_msg);

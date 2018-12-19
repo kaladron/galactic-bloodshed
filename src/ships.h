@@ -103,11 +103,11 @@ typedef struct place placetype;
 
 class ship {
  public:
-  shipnum_t number;              ///< ship knows its own number
-  player_t owner;                ///< owner of ship
-  governor_t governor;           ///< subordinate that controls the ship
-  char name[SHIP_NAMESIZE];      ///< name of ship (optional)
-  char shipclass[SHIP_NAMESIZE]; ///< shipclass of ship - designated by player
+  shipnum_t number;               ///< ship knows its own number
+  player_t owner;                 ///< owner of ship
+  governor_t governor;            ///< subordinate that controls the ship
+  char name[SHIP_NAMESIZE];       ///< name of ship (optional)
+  char shipclass[SHIP_NAMESIZE];  ///< shipclass of ship - designated by player
 
   unsigned char race; /* race type - used when you gain alien
                          ships during revolts and whatnot - usually

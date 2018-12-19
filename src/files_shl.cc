@@ -538,7 +538,7 @@ sector getsector(const Planet &p, const int x, const int y) {
 }
 
 sector_map getsmap(const Planet &p) {
-  const char *tail;
+  const char *tail = nullptr;
   sqlite3_stmt *stmt;
   const char *sql =
       "SELECT planet_id, xpos, ypos, eff, fert, "
@@ -985,8 +985,38 @@ void putsmap(sector_map &map, Planet &p) {
 }
 
 void putship(shiptype *s) {
+  const char *tail;
   Filewrite(shdata, (char *)s, sizeof(shiptype),
             (s->number - 1) * sizeof(shiptype));
+  start_bulk_insert();
+
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_ship (ship_id, player_id, governor_id, name, "
+      "shipclass, race, xpos, ypos, mass)"
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9);";
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, s->number);
+  sqlite3_bind_int(stmt, 2, s->owner);
+  sqlite3_bind_int(stmt, 3, s->governor);
+  sqlite3_bind_text(stmt, 4, s->name, strlen(s->name), SQLITE_TRANSIENT);
+  sqlite3_bind_text(stmt, 5, s->shipclass, strlen(s->shipclass),
+                    SQLITE_TRANSIENT);
+  sqlite3_bind_int(stmt, 6, s->race);
+  sqlite3_bind_double(stmt, 7, s->xpos);
+  sqlite3_bind_double(stmt, 8, s->ypos);
+  sqlite3_bind_double(stmt, 9, s->mass);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+
+  end_bulk_insert();
 }
 
 void putcommod(commodtype *c, int commodnum) {

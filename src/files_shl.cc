@@ -993,8 +993,10 @@ void putship(shiptype *s) {
   sqlite3_stmt *stmt;
   const char *sql =
       "REPLACE INTO tbl_ship (ship_id, player_id, governor_id, name, "
-      "shipclass, race, xpos, ypos, mass)"
-      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9);";
+      "shipclass, race, xpos, ypos, mass,"
+      "land_x, land_y, destshipno, nextship, ships, armor, size)"
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9,"
+      "?10, ?11, ?12, ?13, ?14, ?15, ?16);";
   sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s->number);
   sqlite3_bind_int(stmt, 2, s->owner);
@@ -1006,6 +1008,13 @@ void putship(shiptype *s) {
   sqlite3_bind_double(stmt, 7, s->xpos);
   sqlite3_bind_double(stmt, 8, s->ypos);
   sqlite3_bind_double(stmt, 9, s->mass);
+  sqlite3_bind_int(stmt, 10, s->land_x);
+  sqlite3_bind_int(stmt, 11, s->land_y);
+  sqlite3_bind_int(stmt, 12, s->destshipno);
+  sqlite3_bind_int(stmt, 13, s->nextship);
+  sqlite3_bind_int(stmt, 14, s->ships);
+  sqlite3_bind_int(stmt, 15, s->armor);
+  sqlite3_bind_int(stmt, 16, s->size);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));

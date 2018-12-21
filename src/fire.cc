@@ -178,7 +178,7 @@ void fire(const command_t &argv, GameObj &g) {
         check_retal_strength(from, &maxstrength);
 
         if (argv.size() >= 4)
-          sscanf(argv[3].c_str(), "%d", &strength);
+          strength = std::stoi(argv[3]);
         else
           check_retal_strength(from, &strength);
 
@@ -334,7 +334,7 @@ void bombard(const command_t &argv, GameObj &g) {
       check_retal_strength(from, &maxstrength);
 
       if (argv.size() > 3)
-        sscanf(argv[3].c_str(), "%d", &strength);
+        strength = std::stoi(argv[3]);
       else
         check_retal_strength(from, &strength);
 
@@ -580,7 +580,7 @@ void defend(const command_t &argv, GameObj &g) {
   }
 
   if (argv.size() >= 4)
-    sscanf(argv[3].c_str(), "%d", &strength);
+    strength = std::stoi(argv[3]);
   else
     strength = p.info[Playernum - 1].guns;
 

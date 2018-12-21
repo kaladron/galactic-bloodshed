@@ -483,8 +483,7 @@ void walk(const command_t &argv, GameObj &g) {
   auto p = getplanet((int)ship->storbits, (int)ship->pnumorbits);
   Race = races[Playernum - 1];
 
-  if (!get_move(argv[2][0], (int)ship->land_x, (int)ship->land_y, &x,
-                &y, p)) {
+  if (!get_move(argv[2][0], (int)ship->land_x, (int)ship->land_y, &x, &y, p)) {
     g.out << "Illegal move.\n";
     free(ship);
     return;

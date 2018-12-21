@@ -392,7 +392,7 @@ void pay(const command_t &argv, GameObj &g) {
   Race = races[Playernum - 1];
   alien = races[who - 1];
 
-  sscanf(argv[2].c_str(), "%d", &amount);
+  amount = std::stoi(argv[2]);
   if (amount < 0) {
     notify(Playernum, Governor,
            "You have to give a player a positive amount of money.\n");

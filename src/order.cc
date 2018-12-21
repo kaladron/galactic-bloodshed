@@ -928,7 +928,7 @@ void route(const command_t &argv, GameObj &g) {
     g.out << "Done.\n";
     return;
   } else if (argv.size() == 2) {
-    sscanf(argv[1].c_str(), "%d", &i);
+    i = std::stoi(argv[1]);
     if (i > MAX_ROUTES || i < 1) {
       g.out << "Bad route number.\n";
       return;
@@ -965,7 +965,7 @@ void route(const command_t &argv, GameObj &g) {
     g.out << "Done.\n";
     return;
   } else if (argv.size() == 3) {
-    sscanf(argv[1].c_str(), "%d", &i);
+    i = std::stoi(argv[1]);
     if (i > MAX_ROUTES || i < 1) {
       g.out << "Bad route number.\n";
       return;
@@ -990,7 +990,7 @@ void route(const command_t &argv, GameObj &g) {
       }
     }
   } else {
-    sscanf(argv[1].c_str(), "%d", &i);
+    i = std::stoi(argv[1]);
     if (i > MAX_ROUTES || i < 1) {
       g.out << "Bad route number.\n";
       return;

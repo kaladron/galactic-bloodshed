@@ -84,8 +84,7 @@ void survey(const command_t &argv, GameObj &g) {
     where.pnum = g.pnum;
   } else {
     /* they are surveying a sector */
-    if ((isdigit(argv[1][0]) &&
-         index(argv[1].c_str(), ',') != nullptr) ||
+    if ((isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) ||
         ((*argv[1].c_str() == '-') && (all = 1))) {
       if (g.level != ScopeLevel::LEVEL_PLAN) {
         sprintf(buf, "There are no sectors here.\n");
@@ -109,8 +108,7 @@ void survey(const command_t &argv, GameObj &g) {
 
     compat = compatibility(p, Race);
 
-    if ((isdigit(argv[1][0]) &&
-         index(argv[1].c_str(), ',') != nullptr) ||
+    if ((isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) ||
         all) {
       auto smap = getsmap(p);
 

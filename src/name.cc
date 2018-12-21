@@ -838,7 +838,7 @@ void name(const command_t &argv, GameObj &g) {
   char tmp[128];
   racetype *Race;
 
-  if (!isalnum(argv[2].c_str()[0]) || argv.size() < 3) {
+  if (argv.size() < 3 ||!isalnum(argv[2].c_str()[0])) {
     g.out << "Illegal name format.\n";
     return;
   }

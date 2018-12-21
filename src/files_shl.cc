@@ -994,9 +994,13 @@ void putship(shiptype *s) {
   const char *sql =
       "REPLACE INTO tbl_ship (ship_id, player_id, governor_id, name, "
       "shipclass, race, xpos, ypos, mass,"
-      "land_x, land_y, destshipno, nextship, ships, armor, size)"
+      "land_x, land_y, destshipno, nextship, ships, armor, size,"
+      "max_crew, max_resource, max_destruct, max_fuel, max_speed, build_type,"
+      "build_cost, base_mass, tech, complexity)"
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9,"
-      "?10, ?11, ?12, ?13, ?14, ?15, ?16);";
+      "?10, ?11, ?12, ?13, ?14, ?15, ?16,"
+      "?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26);";
+
   sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s->number);
   sqlite3_bind_int(stmt, 2, s->owner);
@@ -1015,6 +1019,16 @@ void putship(shiptype *s) {
   sqlite3_bind_int(stmt, 14, s->ships);
   sqlite3_bind_int(stmt, 15, s->armor);
   sqlite3_bind_int(stmt, 16, s->size);
+  sqlite3_bind_int(stmt, 17, s->max_crew);
+  sqlite3_bind_int(stmt, 18, s->max_resource);
+  sqlite3_bind_int(stmt, 19, s->max_destruct);
+  sqlite3_bind_int(stmt, 20, s->max_fuel);
+  sqlite3_bind_int(stmt, 21, s->max_speed);
+  sqlite3_bind_int(stmt, 22, s->build_type);
+  sqlite3_bind_int(stmt, 23, s->build_cost);
+  sqlite3_bind_double(stmt, 24, s->base_mass);
+  sqlite3_bind_double(stmt, 25, s->tech);
+  sqlite3_bind_double(stmt, 26, s->complexity);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));

@@ -53,14 +53,12 @@ void personal(const command_t &argv, GameObj &g) {
 
 void bless(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
-  governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
   int who, amount, Mod;
   char commod;
 
   if (!g.god) {
-    notify(Playernum, Governor,
-           "You are not privileged to use this command.\n");
+    g.out << "You are not privileged to use this command.\n";
     return;
   }
   if (g.level != ScopeLevel::LEVEL_PLAN) {
@@ -253,8 +251,7 @@ void insurgency(const command_t &argv, GameObj &g) {
   int i;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
-    notify(Playernum, Governor,
-           "You must 'cs' to the planet you wish to try it on.\n");
+    g.out << "You must 'cs' to the planet you wish to try it on.\n";
     return;
   }
   if (!control(Playernum, Governor, Stars[g.snum])) {
@@ -269,8 +266,7 @@ void insurgency(const command_t &argv, GameObj &g) {
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
   if (!(who = get_player(argv[1]))) {
-    sprintf(buf, "No such player.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "No such player.\n";
     return;
   }
   Race = races[Playernum - 1];
@@ -381,8 +377,7 @@ void pay(const command_t &argv, GameObj &g) {
   racetype *Race, *alien;
 
   if (!(who = get_player(argv[1]))) {
-    sprintf(buf, "No such player.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "No such player.\n";
     return;
   }
   if (Governor) {
@@ -394,13 +389,11 @@ void pay(const command_t &argv, GameObj &g) {
 
   amount = std::stoi(argv[2]);
   if (amount < 0) {
-    notify(Playernum, Governor,
-           "You have to give a player a positive amount of money.\n");
+    g.out << "You have to give a player a positive amount of money.\n";
     return;
   }
   if (Race->Guest) {
-    notify(Playernum, Governor,
-           "Nice try. Your attempt has been duly noted.\n");
+    g.out << "Nice try. Your attempt has been duly noted.\n";
     return;
   }
   if (Race->governor[Governor].money < amount) {
@@ -432,8 +425,7 @@ void give(const command_t &argv, GameObj &g) {
   racetype *Race, *alien;
 
   if (!(who = get_player(argv[1]))) {
-    sprintf(buf, "No such player.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "No such player.\n";
     return;
   }
   if (Governor) {
@@ -469,21 +461,19 @@ void give(const command_t &argv, GameObj &g) {
     return;
   }
   if (ship->type == STYPE_POD) {
-    notify(Playernum, Governor,
-           "You cannot change the ownership of spore pods.\n");
+    g.out << "You cannot change the ownership of spore pods.\n";
     free(ship);
     return;
   }
 
   if ((ship->popn + ship->troops) && !Race->God) {
-    notify(Playernum, Governor,
-           "You can't give this ship away while it has crew/mil on board.\n");
+    g.out << "You can't give this ship away while it has crew/mil on board.\n";
     free(ship);
     return;
   }
   if (ship->ships && !Race->God) {
-    notify(Playernum, Governor,
-           "You can't give away this ship, it has other ships loaded on it.\n");
+    g.out
+        << "You can't give away this ship, it has other ships loaded on it.\n";
     free(ship);
     return;
   }
@@ -575,8 +565,7 @@ void page(const command_t &argv, GameObj &g) {
     gov = 0;  // TODO(jeffbailey): Init to zero to be sure it's initialized.
   } else {
     if (!(who = get_player(argv[1]))) {
-      sprintf(buf, "No such player.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "No such player.\n";
       return;
     }
     alien = races[who - 1];
@@ -586,8 +575,7 @@ void page(const command_t &argv, GameObj &g) {
 
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
-      sprintf(buf, "You can't make pages at universal scope.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "You can't make pages at universal scope.\n";
       break;
     default:
       getstar(&Stars[g.snum], g.snum);
@@ -662,8 +650,7 @@ void send_message(const command_t &argv, GameObj &g) {
     to_block = 1;
     g.out << "Sending message to alliance block.\n";
     if (!(who = get_player(argv[2]))) {
-      sprintf(buf, "No such alliance block.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "No such alliance block.\n";
       return;
     }
     alien = races[who - 1];
@@ -673,16 +660,14 @@ void send_message(const command_t &argv, GameObj &g) {
     g.out << "Sending message to star system.\n";
     where = Getplace(g, argv[2].c_str(), 1);
     if (where.err || where.level != ScopeLevel::LEVEL_STAR) {
-      sprintf(buf, "No such star.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "No such star.\n";
       return;
     }
     star = where.snum;
     getstar(&(Stars[star]), star);
   } else {
     if (!(who = get_player(argv[1]))) {
-      sprintf(buf, "No such player.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "No such player.\n";
       return;
     }
     alien = races[who - 1];
@@ -691,13 +676,11 @@ void send_message(const command_t &argv, GameObj &g) {
 
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
-      sprintf(buf, "You can't send messages from universal scope.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "You can't send messages from universal scope.\n";
       return;
 
     case ScopeLevel::LEVEL_SHIP:
-      sprintf(buf, "You can't send messages from ship scope.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "You can't send messages from ship scope.\n";
       return;
 
     default:
@@ -900,8 +883,7 @@ void name(const command_t &argv, GameObj &g) {
       free(ship);
       return;
     } else {
-      notify(Playernum, Governor,
-             "You have to 'cs' to a factory to name the ship class.\n");
+      g.out << "You have to 'cs' to a factory to name the ship class.\n";
       return;
     }
   } else if (argv[1] == "block") {
@@ -995,8 +977,7 @@ void announce(const command_t &argv, GameObj &g) {
 
   Race = races[Playernum - 1];
   if (mode == Communicate::SHOUT && !Race->God) {
-    notify(Playernum, Governor,
-           "You are not privileged to use this command.\n");
+    g.out << "You are not privileged to use this command.\n";
     return;
   }
 
@@ -1012,9 +993,7 @@ void announce(const command_t &argv, GameObj &g) {
     default:
       if ((mode == Communicate::ANN) &&
           !(!!isset(Stars[g.snum]->inhabited, Playernum) || Race->God)) {
-        sprintf(buf,
-                "You do not inhabit this system or have diety privileges.\n");
-        notify(Playernum, Governor, buf);
+        g.out << "You do not inhabit this system or have diety privileges.\n";
         return;
       }
   }

@@ -55,12 +55,10 @@ void bless(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
-  racetype *Race;
   int who, amount, Mod;
   char commod;
 
-  Race = races[Playernum - 1];
-  if (!Race->God) {
+  if (!g.god) {
     notify(Playernum, Governor,
            "You are not privileged to use this command.\n");
     return;
@@ -80,7 +78,7 @@ void bless(const command_t &argv, GameObj &g) {
   }
   amount = atoi(argv[3].c_str());
 
-  Race = races[who - 1];
+  racetype *Race = races[who - 1];
   /* race characteristics? */
   Mod = 1;
 

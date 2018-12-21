@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/// \file toxicty.cc
+/// \file toxicity.cc
 /// \brief Change threshold in toxicity to build a wc.
 
 #include "toxicity.h"

@@ -99,7 +99,7 @@ void fire(const command_t &argv, GameObj &g) {
           continue;
         }
       }
-      sscanf(argv[2].c_str() + (argv[2].c_str()[0] == '#'), "%lu", &toship);
+      sscanf(argv[2].c_str() + (argv[2][0] == '#'), "%lu", &toship);
       if (toship <= 0) {
         g.out << "Bad ship number.\n";
         free(from);
@@ -515,7 +515,7 @@ void defend(const command_t &argv, GameObj &g) {
            "You are not authorized to do that in this system.\n");
     return;
   }
-  sscanf(argv[1].c_str() + (argv[1].c_str()[0] == '#'), "%d", &toship);
+  sscanf(argv[1].c_str() + (argv[1][0] == '#'), "%d", &toship);
   if (toship <= 0) {
     g.out << "Bad ship number.\n";
     return;

@@ -55,8 +55,8 @@ void orbit(const command_t &argv, GameObj &g) {
   /* find options, set flags accordingly */
   for (int flag = 1; flag <= argv.size() - 1; flag++)
     if (*argv[flag].c_str() == '-') {
-      for (int i = 1; argv[flag].c_str()[i] != '\0'; i++)
-        switch (argv[flag].c_str()[i]) {
+      for (int i = 1; argv[flag][i] != '\0'; i++)
+        switch (argv[flag][i]) {
           case 's':
             DontDispShips = 1;
             break;

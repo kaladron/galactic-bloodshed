@@ -30,7 +30,7 @@ void examine(const command_t &argv, GameObj &g) {
     return;
   }
 
-  sscanf(argv[1].c_str() + (argv[1].c_str()[0] == '#'), "%d", &shipno);
+  sscanf(argv[1].c_str() + (argv[1][0] == '#'), "%d", &shipno);
 
   if (!getship(&ship, shipno)) {
     return;

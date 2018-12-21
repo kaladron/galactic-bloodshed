@@ -141,7 +141,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
   } else if (argv[2] == "protect") {
     if (argv.size() > 3)
-      sscanf(argv[3].c_str() + (argv[3].c_str()[0] == '#'), "%d", &j);
+      sscanf(argv[3].c_str() + (argv[3][0] == '#'), "%d", &j);
     else
       j = 0;
     if (j == ship->number) {

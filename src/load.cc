@@ -139,7 +139,7 @@ void load(const command_t &argv, GameObj &g) {
         }
       }
 
-      commod = argv[2].c_str()[0];
+      commod = argv[2][0];
       if (argv.size() > 3)
         amt = atoi(argv[3].c_str());
       else
@@ -511,7 +511,7 @@ void jettison(const command_t &argv, GameObj &g) {
 
       Race = races[Playernum - 1];
 
-      commod = argv[2].c_str()[0];
+      commod = argv[2][0];
       switch (commod) {
         case 'x':
           if ((amt = jettison_check(g, amt, (int)(s->crystals))) > 0) {

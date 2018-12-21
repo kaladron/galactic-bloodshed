@@ -114,7 +114,7 @@ void dock(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      sscanf(argv[2].c_str() + (argv[2].c_str()[0] == '#'), "%lu", &ship2no);
+      sscanf(argv[2].c_str() + (argv[2][0] == '#'), "%lu", &ship2no);
 
       if (shipno == ship2no) {
         g.out << "You can't dock with yourself!\n";

@@ -74,7 +74,7 @@ void land(const command_t &argv, GameObj &g) {
         free(s);
         continue;
       }
-      if (argv[2].c_str()[0] == '#') {
+      if (argv[2][0] == '#') {
         /* attempting to land on a friendly ship (for carriers/stations/etc) */
         sscanf(argv[2].c_str() + 1, "%lu", &ship2no);
         if (!getship(&s2, ship2no)) {

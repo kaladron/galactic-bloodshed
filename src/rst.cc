@@ -99,7 +99,7 @@ void rst(const command_t &argv, GameObj &g) {
   /* (one list entry for each ship, planet in universe) */
 
   if (argv.size() == 3) {
-    if (isdigit(argv[2].c_str()[0]))
+    if (isdigit(argv[2][0]))
       who = atoi(argv[2].c_str());
     else {
       who = 999; /* treat argv[2].c_str() as a list of ship types */
@@ -136,10 +136,10 @@ void rst(const command_t &argv, GameObj &g) {
 
       while (l--) {
         shipnum_t i = NUMSTYPES;
-        while (--i && Shipltrs[i] != argv[1].c_str()[l])
+        while (--i && Shipltrs[i] != argv[1][l])
           ;
-        if (Shipltrs[i] != argv[1].c_str()[l]) {
-          sprintf(buf, "'%c' -- no such ship letter\n", argv[1].c_str()[l]);
+        if (Shipltrs[i] != argv[1][l]) {
+          sprintf(buf, "'%c' -- no such ship letter\n", argv[1][l]);
           notify(Playernum, Governor, buf);
         } else
           Report_types[i] = 1;

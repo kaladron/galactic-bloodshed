@@ -174,7 +174,7 @@ void bless(const command_t &argv, GameObj &g) {
   }
   if (Mod) return;
   /* ok, must be the planet then */
-  commod = argv[2].c_str()[0];
+  commod = argv[2][0];
   auto planet = getplanet(g.snum, g.pnum);
   if (argv[2] == "explorebit") {
     planet.info[who - 1].explored = 1;
@@ -456,7 +456,7 @@ void give(const command_t &argv, GameObj &g) {
     g.out << "You two are not mutually allied.\n";
     return;
   }
-  sscanf(argv[2].c_str() + (argv[2].c_str()[0] == '#'), "%d", &sh);
+  sscanf(argv[2].c_str() + (argv[2][0] == '#'), "%d", &sh);
 
   if (!getship(&ship, sh)) {
     g.out << "Illegal ship number.\n";

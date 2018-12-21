@@ -196,7 +196,7 @@ void move_popn(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, buf);
       return;
     }
-    if (!get_move(argv[2].c_str()[n++], x, y, &x2, &y2, planet)) {
+    if (!get_move(argv[2][n++], x, y, &x2, &y2, planet)) {
       g.out << "Finished.\n";
       putplanet(planet, Stars[g.snum], g.pnum);
       return;
@@ -444,7 +444,7 @@ void walk(const command_t &argv, GameObj &g) {
     g.out << "Walk what?\n";
     return;
   }
-  sscanf(argv[1].c_str() + (argv[1].c_str()[0] == '#'), "%d", &shipno);
+  sscanf(argv[1].c_str() + (argv[1][0] == '#'), "%d", &shipno);
   if (!getship(&ship, shipno)) {
     g.out << "No such ship.\n";
     return;
@@ -483,7 +483,7 @@ void walk(const command_t &argv, GameObj &g) {
   auto p = getplanet((int)ship->storbits, (int)ship->pnumorbits);
   Race = races[Playernum - 1];
 
-  if (!get_move(argv[2].c_str()[0], (int)ship->land_x, (int)ship->land_y, &x,
+  if (!get_move(argv[2][0], (int)ship->land_x, (int)ship->land_y, &x,
                 &y, p)) {
     g.out << "Illegal move.\n";
     free(ship);

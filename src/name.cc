@@ -246,7 +246,7 @@ void insurgency(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 10;
-  int who, amount, eligible, them = 0;
+  int who, eligible, them = 0;
   racetype *Race, *alien;
   double x;
   int changed_hands, chance;
@@ -291,9 +291,8 @@ void insurgency(const command_t &argv, GameObj &g) {
     them += p.info[who - 1].popn;
   }
   if (!eligible) {
-    notify(
-        Playernum, Governor,
-        "You must have population in the star system to attempt insurgency\n.");
+    g.out << "You must have population in the star system to attempt "
+             "insurgency\n.";
     return;
   }
   auto p = getplanet(g.snum, g.pnum);
@@ -303,10 +302,9 @@ void insurgency(const command_t &argv, GameObj &g) {
     return;
   }
 
-  sscanf(argv[2].c_str(), "%d", &amount);
+  int amount = std::stoi(argv[2]);
   if (amount < 0) {
-    notify(Playernum, Governor,
-           "You have to use a positive amount of money.\n");
+    g.out << "You have to use a positive amount of money.\n";
     return;
   }
   if (Race->governor[Governor].money < amount) {
@@ -836,7 +834,7 @@ void name(const command_t &argv, GameObj &g) {
   char tmp[128];
   racetype *Race;
 
-  if (argv.size() < 3 ||!isalnum(argv[2][0])) {
+  if (argv.size() < 3 || !isalnum(argv[2][0])) {
     g.out << "Illegal name format.\n";
     return;
   }

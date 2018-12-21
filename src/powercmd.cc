@@ -24,12 +24,9 @@ void block(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
-  int i, n;
-  int p;
+  player_t p;
   racetype *r, *Race;
   int dummy_, dummy[2];
-
-  n = Num_races;
 
   Race = races[Playernum - 1];
 
@@ -42,7 +39,7 @@ void block(const command_t &argv, GameObj &g) {
     dummy_ = 0; /* Used as flag for finding a block */
     sprintf(buf, "Race #%d [%s] is a member of ", p, r->name);
     notify(Playernum, Governor, buf);
-    for (i = 1; i <= n; i++) {
+    for (int i = 1; i <= Num_races; i++) {
       if (isset(Blocks[i - 1].pledge, p) && isset(Blocks[i - 1].invite, p)) {
         sprintf(buf, "%s%d", (dummy_ == 0) ? " " : ", ", i);
         notify(Playernum, Governor, buf);
@@ -57,7 +54,7 @@ void block(const command_t &argv, GameObj &g) {
     dummy_ = 0; /* Used as flag for finding a block */
     sprintf(buf, "Race #%d [%s] has been invited to join ", p, r->name);
     notify(Playernum, Governor, buf);
-    for (i = 1; i <= n; i++) {
+    for (int i = 1; i <= Num_races; i++) {
       if (!isset(Blocks[i - 1].pledge, p) && isset(Blocks[i - 1].invite, p)) {
         sprintf(buf, "%s%d", (dummy_ == 0) ? " " : ", ", i);
         notify(Playernum, Governor, buf);
@@ -72,7 +69,7 @@ void block(const command_t &argv, GameObj &g) {
     dummy_ = 0; /* Used as flag for finding a block */
     sprintf(buf, "Race #%d [%s] has pledged ", p, r->name);
     notify(Playernum, Governor, buf);
-    for (i = 1; i <= n; i++) {
+    for (int i = 1; i <= Num_races; i++) {
       if (isset(Blocks[i - 1].pledge, p) && !isset(Blocks[i - 1].invite, p)) {
         sprintf(buf, "%s%d", (dummy_ == 0) ? " " : ", ", i);
         notify(Playernum, Governor, buf);
@@ -102,7 +99,7 @@ void block(const command_t &argv, GameObj &g) {
             "fuel dest know\n");
     notify(Playernum, Governor, buf);
 
-    for (i = 1; i <= n; i++)
+    for (int i = 1; i <= Num_races; i++)
       if (isset(dummy, i)) {
         r = races[i - 1];
         if (!r->dissolved) {
@@ -139,7 +136,7 @@ void block(const command_t &argv, GameObj &g) {
             " #  Name             memb money popn ship  sys  res fuel "
             "dest  VPs know\n");
     notify(Playernum, Governor, buf);
-    for (i = 1; i <= n; i++)
+    for (int i = 1; i <= Num_races; i++)
       if (Blocks[i - 1].VPs) {
         sprintf(buf, "%2d %-19.19s%3ld", i, Blocks[i - 1].name,
                 Power_blocks.members[i - 1]);
@@ -178,12 +175,10 @@ void power(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
-  int i, n;
-  int p;
+  player_t p;
   racetype *r, *Race;
   struct vic vic[MAXPLAYERS];
 
-  n = Num_races;
   p = -1;
 
   if (argv.size() >= 2) {
@@ -214,7 +209,7 @@ void power(const command_t &argv, GameObj &g) {
 
   if (argv.size() < 2) {
     create_victory_list(vic);
-    for (i = 1; i <= n; i++) {
+    for (int i = 1; i <= Num_races; i++) {
       p = vic[i - 1].racenum;
       r = races[p - 1];
       if (!r->dissolved && Race->translate[p - 1] >= 10) {

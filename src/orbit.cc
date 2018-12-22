@@ -29,8 +29,8 @@ static void DispStar(const GameObj &, const ScopeLevel, startype *, int,
                      racetype *, char *);
 static void DispPlanet(const GameObj &, const ScopeLevel, const Planet &,
                        char *, int, racetype *, char *);
-static void DispShip(const GameObj &, placetype *, shiptype *, racetype *,
-                     char *, const Planet & = Planet());
+static void DispShip(const GameObj &, placetype *, Ship *, racetype *, char *,
+                     const Planet & = Planet());
 
 /* OPTIONS
  *  -p : If this option is set, ``orbit'' will not display planet names.
@@ -45,7 +45,7 @@ static void DispShip(const GameObj &, placetype *, shiptype *, racetype *,
 void orbit(const command_t &argv, GameObj &g) {
   int sh, iq;
   int DontDispNum = -1;
-  shiptype *s;
+  Ship *s;
   placetype where;
   int DontDispPlanets, DontDispShips, DontDispStars;
   char output[100000];
@@ -289,11 +289,11 @@ static void DispPlanet(const GameObj &g, const ScopeLevel level,
   }
 }
 
-static void DispShip(const GameObj &g, placetype *where, shiptype *ship,
+static void DispShip(const GameObj &g, placetype *where, Ship *ship,
                      racetype *r, char *string, const Planet &pl) {
   int x, y, wm;
   int stand;
-  shiptype *aship;
+  Ship *aship;
   double xt, yt, slope;
 
   if (!ship->alive) return;

@@ -28,7 +28,7 @@ static char plan_buf[1024];
 
 static segments_t number_segments;
 static double x_0, y_0, x_1, y_1;
-static shiptype *tmpship;
+static Ship *tmpship;
 
 static int do_trip(const placetype &, double fuel, double gravity_factor);
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
@@ -41,7 +41,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   int opt_settings, current_settings, computing = 1;
   segments_t current_segs;
   double fuel_usage, level, dist;
-  shiptype *ship;
+  Ship *ship;
   char buf[1024];
   double current_fuel = 0.0, gravity_factor = 0.0;
   placetype tmpdest;
@@ -265,7 +265,7 @@ static int do_trip(const placetype &tmpdest, double fuel,
   if (tmpship->whatdest == ScopeLevel::LEVEL_SHIP || tmpship->ships) {
     /* Bring in the other ships.  Moveship() uses ships[]. */
     Num_ships = Numships();
-    ships = (shiptype **)malloc(sizeof(shiptype *) * (Num_ships) + 1);
+    ships = (Ship **)malloc(sizeof(Ship *) * (Num_ships) + 1);
     for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
   }
 

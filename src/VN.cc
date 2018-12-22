@@ -26,11 +26,11 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void order_berserker(shiptype *);
-static void order_VN(shiptype *);
+static void order_berserker(Ship *);
+static void order_VN(Ship *);
 
 /*  do_VN() -- called by doship() */
-void do_VN(shiptype *ship) {
+void do_VN(Ship *ship) {
   if (landed(ship)) {
     Stinfo[ship->storbits][ship->pnumorbits].inhab = 1;
     /* launch if no assignment */
@@ -93,7 +93,7 @@ void do_VN(shiptype *ship) {
   }
 }
 
-static void order_berserker(shiptype *ship) {
+static void order_berserker(Ship *ship) {
   /* give berserkers a mission - send to planet of offending player and bombard
    * it */
   ship->bombard = 1;
@@ -111,7 +111,7 @@ static void order_berserker(shiptype *ship) {
   }
 }
 
-static void order_VN(shiptype *ship) {
+static void order_VN(Ship *ship) {
   int s, min = 0, min2 = 0;
 
   /* find closest star */
@@ -146,7 +146,7 @@ static void order_VN(shiptype *ship) {
 }
 
 /*  planet_doVN() -- called by doplanet() */
-void planet_doVN(shiptype *ship, Planet *planet, sector_map &smap) {
+void planet_doVN(Ship *ship, Planet *planet, sector_map &smap) {
   int j;
   int oldres, xa, ya, dum, prod;
   int shipbuild;
@@ -180,7 +180,7 @@ void planet_doVN(shiptype *ship, Planet *planet, sector_map &smap) {
       shipbuild =
           (VN_brain.Total_mad > 100 && random() & 01) ? OTYPE_BERS : OTYPE_VN;
       if (ship->resource >= Shipdata[shipbuild][ABIL_COST]) {
-        shiptype *s2;
+        Ship *s2;
         int n, numVNs;
         /* construct as many VNs as possible */
         numVNs = ship->resource / Shipdata[shipbuild][ABIL_COST];
@@ -188,11 +188,10 @@ void planet_doVN(shiptype *ship, Planet *planet, sector_map &smap) {
           use_resource(ship, Shipdata[shipbuild][ABIL_COST]);
           /* must change size of ships pointer */
           ++Num_ships;
-          ships =
-              (shiptype **)realloc(ships, (Num_ships + 1) * sizeof(shiptype *));
-          ships[Num_ships] = (shiptype *)malloc(sizeof(shiptype));
+          ships = (Ship **)realloc(ships, (Num_ships + 1) * sizeof(Ship *));
+          ships[Num_ships] = (Ship *)malloc(sizeof(Ship));
           s2 = ships[Num_ships];
-          bzero((char *)s2, sizeof(shiptype));
+          bzero((char *)s2, sizeof(Ship));
           s2->nextship = planet->ships;
           planet->ships = Num_ships;
           s2->number = Num_ships;

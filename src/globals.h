@@ -28,7 +28,7 @@ char telegram_buf[AUTO_TELEG_SIZE];
 char temp[128];
 
 int ShipVector[NUMSTYPES];
-shiptype **ships;
+Ship **ships;
 
 /* defense 5 is inpenetrable */
 const int Defensedata[] = {1, 1, 3, 2, 2, 3, 2, 4, 0};

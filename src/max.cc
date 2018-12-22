@@ -58,8 +58,8 @@ double gravity(const Planet &p) {
   return (double)(p.Maxx) * (double)(p.Maxy) * GRAV_FACTOR;
 }
 
-char *prin_ship_orbits(shiptype *s) {
-  shiptype *mothership;
+char *prin_ship_orbits(Ship *s) {
+  Ship *mothership;
   char *motherorbits;
 
   switch (s->whatorbits) {

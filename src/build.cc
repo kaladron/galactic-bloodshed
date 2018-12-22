@@ -30,25 +30,24 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void autoload_at_planet(int, shiptype *, Planet *, sector &, int *,
+static void autoload_at_planet(int, Ship *, Planet *, sector &, int *,
                                double *);
-static void autoload_at_ship(shiptype *, shiptype *, int *, double *);
-static std::optional<ScopeLevel> build_at_ship(GameObj &, shiptype *, int *,
-                                               int *);
+static void autoload_at_ship(Ship *, Ship *, int *, double *);
+static std::optional<ScopeLevel> build_at_ship(GameObj &, Ship *, int *, int *);
 static int can_build_at_planet(GameObj &, startype *, const Planet &);
 static int can_build_this(int, racetype *, char *);
-static int can_build_on_ship(int, racetype *, shiptype *, char *);
+static int can_build_on_ship(int, racetype *, Ship *, char *);
 static int can_build_on_sector(int, racetype *, const Planet &, const sector &,
                                int, int, char *);
-static void create_ship_by_planet(int, int, racetype *, shiptype *, Planet *,
-                                  int, int, int, int);
-static void create_ship_by_ship(int, int, racetype *, int, Planet *, shiptype *,
-                                shiptype *);
+static void create_ship_by_planet(int, int, racetype *, Ship *, Planet *, int,
+                                  int, int, int);
+static void create_ship_by_ship(int, int, racetype *, int, Planet *, Ship *,
+                                Ship *);
 static int get_build_type(const char *);
 static int getcount(const command_t &, const size_t);
-static void Getfactship(shiptype *, shiptype *);
-static void Getship(shiptype *, int, racetype *);
-static void initialize_new_ship(GameObj &, racetype *, shiptype *, double, int);
+static void Getfactship(Ship *, Ship *);
+static void Getship(Ship *, int, racetype *);
+static void initialize_new_ship(GameObj &, racetype *, Ship *, double, int);
 static void system_cost(double *, double *, int, int);
 
 /* upgrade ship characteristics */
@@ -57,7 +56,7 @@ void upgrade(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused int APcount = 1;
   int value, oldcost, newcost, netcost;
-  shiptype ship, *dirship, *s2;
+  Ship ship, *dirship, *s2;
   double complex;
   racetype *Race;
 
@@ -87,7 +86,7 @@ void upgrade(const command_t &argv, GameObj &g) {
   }
 
   Race = races[Playernum - 1];
-  bcopy(dirship, &ship, sizeof(shiptype));
+  bcopy(dirship, &ship, sizeof(Ship));
 
   if (argv.size() == 3)
     value = std::stoi(argv[2]);
@@ -294,7 +293,7 @@ void upgrade(const command_t &argv, GameObj &g) {
     sprintf(buf, "Characteristic modified at a cost of %d resources.\n",
             netcost);
     notify(Playernum, Governor, buf);
-    bcopy(&ship, dirship, sizeof(shiptype));
+    bcopy(&ship, dirship, sizeof(Ship));
     dirship->resource -= netcost;
     if (dirship->whatorbits == ScopeLevel::LEVEL_SHIP) {
       s2->hanger -= dirship->size;
@@ -324,7 +323,7 @@ void make_mod(const command_t &argv, GameObj &g) {
   int i, value;
   unsigned short size;
   char shipc;
-  shiptype *dirship;
+  Ship *dirship;
   racetype *Race;
   double cost0;
 
@@ -725,8 +724,8 @@ void build(const command_t &argv, GameObj &g) {
 
   FILE *fd;
   sector sector;
-  shiptype *builder;
-  shiptype newship;
+  Ship *builder;
+  Ship newship;
 
   if (argv.size() > 1 && argv[1][0] == '?') {
     /* information request */
@@ -1169,7 +1168,7 @@ static int can_build_this(int what, racetype *Race, char *string) {
   return 1;
 }
 
-static int can_build_on_ship(int what, racetype *Race, shiptype *builder,
+static int can_build_on_ship(int what, racetype *Race, Ship *builder,
                              char *string) {
   if (!(Shipdata[what][ABIL_BUILD] & Shipdata[builder->type][ABIL_CONSTRUCT]) &&
       !Race->God) {
@@ -1186,7 +1185,7 @@ static int can_build_on_ship(int what, racetype *Race, shiptype *builder,
 static int can_build_on_sector(int what, racetype *Race, const Planet &planet,
                                const sector &sector, int x, int y,
                                char *string) {
-  shiptype *s;
+  Ship *s;
   char shipc;
 
   shipc = Shipltrs[what];
@@ -1227,7 +1226,7 @@ static int can_build_on_sector(int what, racetype *Race, const Planet &planet,
   return (1);
 }
 
-static std::optional<ScopeLevel> build_at_ship(GameObj &g, shiptype *builder,
+static std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder,
                                                int *snum, int *pnum) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -1261,7 +1260,7 @@ static std::optional<ScopeLevel> build_at_ship(GameObj &g, shiptype *builder,
   return (builder->whatorbits);
 }
 
-static void autoload_at_planet(int Playernum, shiptype *s, Planet *planet,
+static void autoload_at_planet(int Playernum, Ship *s, Planet *planet,
                                sector &sector, int *crew, double *fuel) {
   *crew = MIN(s->max_crew, sector.popn);
   *fuel = MIN((double)s->max_fuel, (double)planet->info[Playernum - 1].fuel);
@@ -1270,15 +1269,14 @@ static void autoload_at_planet(int Playernum, shiptype *s, Planet *planet,
   planet->info[Playernum - 1].fuel -= (int)(*fuel);
 }
 
-static void autoload_at_ship(shiptype *s, shiptype *b, int *crew,
-                             double *fuel) {
+static void autoload_at_ship(Ship *s, Ship *b, int *crew, double *fuel) {
   *crew = MIN(s->max_crew, b->popn);
   *fuel = MIN((double)s->max_fuel, (double)b->fuel);
   b->popn -= *crew;
   b->fuel -= *fuel;
 }
 
-static void initialize_new_ship(GameObj &g, racetype *Race, shiptype *newship,
+static void initialize_new_ship(GameObj &g, racetype *Race, Ship *newship,
                                 double load_fuel, int load_crew) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -1365,7 +1363,7 @@ static void initialize_new_ship(GameObj &g, racetype *Race, shiptype *newship,
 }
 
 static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
-                                  shiptype *newship, Planet *planet, int snum,
+                                  Ship *newship, Planet *planet, int snum,
                                   int pnum, int x, int y) {
   int shipno;
 
@@ -1417,8 +1415,8 @@ static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
 }
 
 static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
-                                int outside, Planet *planet, shiptype *newship,
-                                shiptype *builder) {
+                                int outside, Planet *planet, Ship *newship,
+                                Ship *builder) {
   int shipno;
 
   while ((shipno = getdeadship()) == 0)
@@ -1478,13 +1476,13 @@ static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
   notify(Playernum, Governor, buf);
 }
 
-double getmass(shiptype *s) {
+double getmass(Ship *s) {
   return (1.0 + MASS_ARMOR * s->armor + MASS_SIZE * (s->size - s->max_hanger) +
           MASS_HANGER * s->max_hanger + MASS_GUNS * s->primary * s->primtype +
           MASS_GUNS * s->secondary * s->sectype);
 }
 
-unsigned int ship_size(shiptype *s) {
+unsigned int ship_size(Ship *s) {
   double size;
   size = 1.0 + SIZE_GUNS * s->primary + SIZE_GUNS * s->secondary +
          SIZE_CREW * s->max_crew + SIZE_RESOURCE * s->max_resource +
@@ -1493,7 +1491,7 @@ unsigned int ship_size(shiptype *s) {
   return (std::floor(size));
 }
 
-double cost(shiptype *s) {
+double cost(Ship *s) {
   int i;
   double factor = 0.0, advantage = 0.0;
 
@@ -1533,7 +1531,7 @@ static void system_cost(double *advantage, double *disadvantage, int value,
     *disadvantage -= factor;
 }
 
-double complexity(shiptype *s) {
+double complexity(Ship *s) {
   int i;
   double advantage, disadvantage, factor, tmp;
 
@@ -1571,8 +1569,8 @@ double complexity(shiptype *s) {
   return (factor * (double)Shipdata[i][ABIL_TECH]);
 }
 
-static void Getship(shiptype *s, int i, racetype *r) {
-  bzero((char *)s, sizeof(shiptype));
+static void Getship(Ship *s, int i, racetype *r) {
+  bzero((char *)s, sizeof(Ship));
   s->type = i;
   s->armor = Shipdata[i][ABIL_ARMOR];
   s->guns = Shipdata[i][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
@@ -1601,8 +1599,8 @@ static void Getship(shiptype *s, int i, racetype *r) {
     s->special.mind.progenitor = r->Playernum;
 }
 
-static void Getfactship(shiptype *s, shiptype *b) {
-  bzero((char *)s, sizeof(shiptype));
+static void Getfactship(Ship *s, Ship *b) {
+  bzero((char *)s, sizeof(Ship));
   s->type = b->build_type;
   s->armor = b->armor;
   s->primary = b->primary;
@@ -1630,7 +1628,7 @@ static void Getfactship(shiptype *s, shiptype *b) {
 }
 
 int Shipcost(int i, racetype *r) {
-  shiptype s;
+  Ship s;
 
   Getship(&s, i, r);
   return ((int)cost(&s));
@@ -1642,7 +1640,7 @@ void sell(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   int APcount = 20;
   racetype *Race;
-  shiptype *s;
+  Ship *s;
   commodtype c;
   int commodno, amount, item, ok = 0, sh;
   char commod;
@@ -1777,7 +1775,7 @@ void bid(const command_t &argv, GameObj &g) {
   racetype *Race;
   Planet p;
   commodtype *c;
-  shiptype *s;
+  Ship *s;
   char commod;
   int i, item, lot, shipping, ok = 0, sh;
   double dist, rate;

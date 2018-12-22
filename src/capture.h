@@ -9,6 +9,6 @@
 #include "vars.h"
 
 void capture(const command_t &, GameObj &);
-void capture_stuff(shiptype *);
+void capture_stuff(Ship *);
 
 #endif  // CAPTURE_H

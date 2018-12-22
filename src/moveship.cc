@@ -36,15 +36,15 @@ static const double SpeedConsts[] = {0.0,  0.61, 1.26, 1.50, 1.73,
                                      1.81, 1.90, 1.93, 1.96, 1.97};
 /* amount of fuel it costs to move at speed level */
 
-static int do_merchant(shiptype *, Planet *);
+static int do_merchant(Ship *, Planet *);
 
-void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
+void Moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
   double stardist, movedist, truedist, dist, xdest, ydest, sn, cs;
   double mfactor, heading, distfac;
   double fuse;
   ScopeLevel destlevel;
   int deststar = 0, destpnum = 0;
-  shiptype *dsh;
+  Ship *dsh;
   startype *ost, *dst;
 
   if (s->hyper_drive.has && s->hyper_drive.on) { /* do a hyperspace jump */
@@ -340,14 +340,14 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
 /* deliver an "out of fuel" message.  Used by a number of ship-updating
  *  code segments; so that code isn't duplicated.
  */
-void msg_OOF(shiptype *s) {
+void msg_OOF(Ship *s) {
   sprintf(buf, "%s is out of fuel at %s.", ship_to_string(*s).c_str(),
           prin_ship_orbits(s));
   push_telegram((int)(s->owner), (int)s->governor, buf);
 }
 
 /* followable: returns 1 iff s1 can follow s2 */
-int followable(shiptype *s1, shiptype *s2) {
+int followable(Ship *s1, Ship *s2) {
   double dx, dy;
   racetype *r;
   double range;
@@ -372,7 +372,7 @@ int followable(shiptype *s1, shiptype *s2) {
 /* this routine will do landing, launching, loading, unloading, etc
         for merchant ships. The ship is within landing distance of
         the target Planet */
-static int do_merchant(shiptype *s, Planet *p) {
+static int do_merchant(Ship *s, Planet *p) {
   int i, j;
   double fuel;
   char load, unload;

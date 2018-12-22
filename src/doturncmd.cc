@@ -35,7 +35,7 @@ static void maintain(racetype *, int, int);
 #endif
 
 static int APadd(int, int, racetype *);
-static int attack_planet(shiptype *);
+static int attack_planet(Ship *);
 static void fix_stability(startype *);
 static int governed(racetype *);
 static void make_discoveries(racetype *);
@@ -72,7 +72,7 @@ void do_turn(int update) {
 
   for (shipnum_t i = 1; i <= Num_ships; i++) domine(i, 0);
 
-  ships = (shiptype **)malloc(sizeof(shiptype *) * (Num_ships + 1));
+  ships = (Ship **)malloc(sizeof(Ship *) * (Num_ships + 1));
   for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
 
   /* get all stars and planets */
@@ -642,7 +642,7 @@ static void maintain(racetype *r, int gov, int amount) {
 }
 #endif
 
-static int attack_planet(shiptype *ship) {
+static int attack_planet(Ship *ship) {
   if (ship->whatdest == ScopeLevel::LEVEL_PLAN)
     return 1;
   else

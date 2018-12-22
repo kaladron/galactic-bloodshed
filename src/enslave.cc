@@ -24,7 +24,7 @@ void enslave(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int APcount = 2;
-  shiptype *s, *s2;
+  Ship *s, *s2;
   int i, aliens = 0, def = 0, attack = 0;
   shipnum_t shipno;
   racetype *Race;

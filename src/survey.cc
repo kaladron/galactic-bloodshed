@@ -67,7 +67,7 @@ void survey(const command_t &argv, GameObj &g) {
   struct numshipstuff shiplocs[MAX_X][MAX_Y];
   int inhere = 0;  // TODO(jeffbailey): Force init for some cases below
   int shiplist;
-  shiptype *shipa;
+  Ship *shipa;
   int i;
 
   int mode;

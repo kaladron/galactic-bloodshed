@@ -573,22 +573,21 @@ sector_map getsmap(const Planet &p) {
   return smap;
 }
 
-int getship(shiptype **s, shipnum_t shipnum) {
+int getship(Ship **s, shipnum_t shipnum) {
   struct stat buffer;
 
   if (shipnum <= 0) return 0;
 
   fstat(shdata, &buffer);
-  if (buffer.st_size / sizeof(shiptype) < shipnum)
+  if (buffer.st_size / sizeof(Ship) < shipnum)
     return 0;
   else {
-    if ((*s = (shiptype *)malloc(sizeof(shiptype))) == nullptr) {
+    if ((*s = (Ship *)malloc(sizeof(Ship))) == nullptr) {
       printf("getship:malloc() error \n");
       exit(0);
     }
 
-    Fileread(shdata, (char *)*s, sizeof(shiptype),
-             (shipnum - 1) * sizeof(shiptype));
+    Fileread(shdata, (char *)*s, sizeof(Ship), (shipnum - 1) * sizeof(Ship));
     return 1;
   }
 }
@@ -984,10 +983,9 @@ void putsmap(sector_map &map, Planet &p) {
   end_bulk_insert();
 }
 
-void putship(shiptype *s) {
+void putship(Ship *s) {
   const char *tail;
-  Filewrite(shdata, (char *)s, sizeof(shiptype),
-            (s->number - 1) * sizeof(shiptype));
+  Filewrite(shdata, (char *)s, sizeof(Ship), (s->number - 1) * sizeof(Ship));
   start_bulk_insert();
 
   sqlite3_stmt *stmt;
@@ -1066,7 +1064,7 @@ shipnum_t Numships(void) /* return number of ships */
   struct stat buffer;
 
   fstat(shdata, &buffer);
-  return ((int)(buffer.st_size / sizeof(shiptype)));
+  return ((int)(buffer.st_size / sizeof(Ship)));
 }
 
 int Numcommods(void) {

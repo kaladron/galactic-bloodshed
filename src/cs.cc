@@ -34,7 +34,7 @@ void center(const command_t &argv, GameObj &g) {
 void cs(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  shiptype *s;
+  Ship *s;
   racetype *Race = races[Playernum - 1];
 
   if (argv.size() == 1) {

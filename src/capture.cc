@@ -27,7 +27,7 @@ void capture(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   const int APcount = 1;
-  shiptype *ship, s;
+  Ship *ship, s;
   player_t oldowner;
   governor_t oldgov;
   int shipdam = 0, booby = 0;
@@ -133,7 +133,7 @@ void capture(const command_t &argv, GameObj &g) {
       olddtroops = ship->troops;
       oldowner = ship->owner;
       oldgov = ship->governor;
-      bcopy(ship, &s, sizeof(shiptype));
+      bcopy(ship, &s, sizeof(Ship));
 
       shipdam = 0;
       casualties = 0;
@@ -326,9 +326,9 @@ void capture(const command_t &argv, GameObj &g) {
       free(ship);
 }
 
-void capture_stuff(shiptype *ship) {
+void capture_stuff(Ship *ship) {
   shipnum_t sh;
-  shiptype *s;
+  Ship *s;
 
   sh = ship->ships;
   while (sh) {

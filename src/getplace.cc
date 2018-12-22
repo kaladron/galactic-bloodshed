@@ -189,7 +189,7 @@ static placetype Getplace2(const int Playernum, const int Governor,
   return (*where);
 }
 
-char *Dispshiploc_brief(shiptype *ship) {
+char *Dispshiploc_brief(Ship *ship) {
   int i;
 
   switch (ship->whatorbits) {
@@ -212,7 +212,7 @@ char *Dispshiploc_brief(shiptype *ship) {
   }
 }
 
-char *Dispshiploc(shiptype *ship) {
+char *Dispshiploc(Ship *ship) {
   switch (ship->whatorbits) {
     case ScopeLevel::LEVEL_STAR:
       sprintf(Disps, "/%s", Stars[ship->storbits]->name);
@@ -249,7 +249,7 @@ std::string Dispplace(const placetype &where) {
   }
 }
 
-int testship(int Playernum, int Governor, shiptype *s) {
+int testship(int Playernum, int Governor, Ship *s) {
   int r;
 
   r = 0;

@@ -10,7 +10,7 @@
 #include "ships.h"
 
 void order(const command_t &, GameObj &);
-std::string prin_ship_dest(const ship &);
+std::string prin_ship_dest(const Ship &);
 void route(const command_t &, GameObj &);
 
 #endif  // ORDER_H

@@ -26,7 +26,7 @@ void launch(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   int APcount = 1;
   int sh2;
-  shiptype *s, *s2;
+  Ship *s, *s2;
   shipnum_t shipno, nextshipno;
   double fuel;
 

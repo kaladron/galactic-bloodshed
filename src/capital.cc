@@ -24,7 +24,7 @@ void capital(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   int APcount = 50;
   int stat, snum;
-  shiptype *s;
+  Ship *s;
   racetype *Race;
 
   Race = races[Playernum - 1];

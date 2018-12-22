@@ -10,18 +10,18 @@
 #include "ships.h"
 #include "vars.h"
 
-int shoot_ship_to_ship(shiptype *, shiptype *, int, int, int, char *, char *);
+int shoot_ship_to_ship(Ship *, Ship *, int, int, int, char *, char *);
 #ifdef DEFENSE
-int shoot_planet_to_ship(racetype *, shiptype *, int, char *, char *);
+int shoot_planet_to_ship(racetype *, Ship *, int, char *, char *);
 #endif
-int shoot_ship_to_planet(shiptype *, Planet *, int, int, int, sector_map &, int,
+int shoot_ship_to_planet(Ship *, Planet *, int, int, int, sector_map &, int,
                          int, char *, char *);
 int hit_odds(double, int *, double, int, int, int, int, int, int, int, int);
-double gun_range(racetype *, shiptype *, int);
+double gun_range(racetype *, Ship *, int);
 double tele_range(int, double);
-int current_caliber(shiptype *);
-void do_collateral(shiptype *, int, int *, int *, int *, int *);
-int getdefense(shiptype *);
+int current_caliber(Ship *);
+void do_collateral(Ship *, int, int *, int *, int *, int *);
+int getdefense(Ship *);
 int planet_guns(int);
 
 #endif  // SHOOTBLAST_H

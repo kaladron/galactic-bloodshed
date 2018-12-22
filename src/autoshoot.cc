@@ -27,8 +27,8 @@
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */
-int Bombard(shiptype *ship, Planet *planet, racetype *r) {
-  shiptype *s;
+int Bombard(Ship *ship, Planet *planet, racetype *r) {
+  Ship *s;
   int x, y, x2 = -1, y2, oldown, numdest = 0, found = 0;
 
   /* for telegramming */

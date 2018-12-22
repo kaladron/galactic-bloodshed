@@ -17,7 +17,7 @@ void moveplanet(int starnum, Planet *planet, int planetnum) {
   double dist;
   double xadd, yadd, phase, period;
   int sh;
-  shiptype *ship;
+  Ship *ship;
 
   if (planet->popn || planet->ships) Stinfo[starnum][planetnum].inhab = 1;
 

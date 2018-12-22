@@ -11,13 +11,13 @@
 #include "ships.h"
 #include "vars.h"
 
-std::string ship_to_string(const ship &);
+std::string ship_to_string(const Ship &);
 void grant(const command_t &, GameObj &);
 void governors(const command_t &, GameObj &);
-int authorized(int, shiptype *);
+int authorized(int, Ship *);
 int start_shiplist(GameObj &, const char *);
-shipnum_t do_shiplist(shiptype **, shipnum_t *);
-int in_list(player_t, const char *, shiptype *, shipnum_t *);
+shipnum_t do_shiplist(Ship **, shipnum_t *);
+int in_list(player_t, const char *, Ship *, shipnum_t *);
 void fix(const command_t &, GameObj &);
 void DontOwnErr(int, int, shipnum_t);
 int enufAP(int, int, unsigned short, int);

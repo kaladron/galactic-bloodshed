@@ -37,7 +37,7 @@ void land(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 1;
-  shiptype *s, *s2;
+  Ship *s, *s2;
 
   shipnum_t shipno, ship2no;
   int x = -1, y = -1, i, numdest, strength;
@@ -414,7 +414,7 @@ void land(const command_t &argv, GameObj &g) {
       free(s);
 }
 
-int crash(shiptype *s, double fuel) {
+int crash(Ship *s, double fuel) {
   roll = 0;
 
   if (s->fuel < fuel)
@@ -425,11 +425,11 @@ int crash(shiptype *s, double fuel) {
     return 0;
 }
 
-int docked(shiptype *s) {
+int docked(Ship *s) {
   return (s->docked && s->whatdest == ScopeLevel::LEVEL_SHIP);
 }
 
-int overloaded(shiptype *s) {
+int overloaded(Ship *s) {
   return ((s->resource > Max_resource(s)) || (s->fuel > Max_fuel(s)) ||
           (s->popn + s->troops > s->max_crew) ||
           (s->destruct > Max_destruct(s)));

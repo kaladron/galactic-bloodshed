@@ -25,18 +25,18 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static std::string prin_aimed_at(const ship &);
-static void mk_expl_aimed_at(int, int, shiptype *);
+static std::string prin_aimed_at(const Ship &);
+static void mk_expl_aimed_at(int, int, Ship *);
 static void DispOrdersHeader(int, int);
-static void DispOrders(int, int, shiptype *);
-static void give_orders(GameObj &, const command_t &, int, shiptype *);
+static void DispOrders(int, int, Ship *);
+static void give_orders(GameObj &, const command_t &, int, Ship *);
 
 void order(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 1;
   shipnum_t shipno, nextshipno;
-  shiptype *ship;
+  Ship *ship;
 
   if (argv.size() == 1) { /* display all ship orders */
     DispOrdersHeader(Playernum, Governor);
@@ -64,12 +64,12 @@ void order(const command_t &argv, GameObj &g) {
 
 // TODO(jeffbailey): We take in a non-zero APcount, and do nothing with it!
 static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
-                        shiptype *ship) {
+                        Ship *ship) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int j;
   placetype where, pl;
-  shiptype *tmpship;
+  Ship *tmpship;
 
   if (!ship->active) {
     sprintf(buf, "%s is irradiated (%d); it cannot be given orders.\n",
@@ -538,7 +538,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     if (ship->type == OTYPE_FACTORY) {
       unsigned int oncost;
       if (ship->whatorbits == ScopeLevel::LEVEL_SHIP) {
-        shiptype *s2;
+        Ship *s2;
         int hangerneeded;
 
         (void)getship(&s2, (int)ship->destshipno);
@@ -611,7 +611,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
   putship(ship);
 }
 
-static std::string prin_aimed_at(const ship &ship) {
+static std::string prin_aimed_at(const Ship &ship) {
   placetype targ;
 
   targ.level = ship.special.aimed_at.level;
@@ -621,7 +621,7 @@ static std::string prin_aimed_at(const ship &ship) {
   return Dispplace(targ);
 }
 
-std::string prin_ship_dest(const ship &ship) {
+std::string prin_ship_dest(const Ship &ship) {
   placetype dest;
 
   dest.level = ship.whatdest;
@@ -634,7 +634,7 @@ std::string prin_ship_dest(const ship &ship) {
 /*
  * mark wherever the ship is aimed at, as explored by the owning player.
  */
-static void mk_expl_aimed_at(int Playernum, int Governor, shiptype *s) {
+static void mk_expl_aimed_at(int Playernum, int Governor, Ship *s) {
   double dist;
   startype *str;
   double xf, yf;
@@ -697,7 +697,7 @@ static void DispOrdersHeader(int Playernum, int Governor) {
          "    #       name       sp orbits     destin     options\n");
 }
 
-static void DispOrders(int Playernum, int Governor, shiptype *ship) {
+static void DispOrders(int Playernum, int Governor, Ship *ship) {
   double distfac;
 
   if (ship->owner != Playernum || !authorized(Governor, ship) || !ship->alive)

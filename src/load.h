@@ -13,13 +13,13 @@ void jettison(const command_t &, GameObj &);
 void dump(const command_t &, GameObj &);
 void transfer(const command_t &, GameObj &);
 void mount(const command_t &, GameObj &);
-void use_fuel(shiptype *, double);
-void use_destruct(shiptype *, int);
-void use_resource(shiptype *, int);
-void rcv_fuel(shiptype *, double);
-void rcv_resource(shiptype *, int);
-void rcv_destruct(shiptype *, int);
-void rcv_popn(shiptype *, int, double);
-void rcv_troops(shiptype *, int, double);
+void use_fuel(Ship *, double);
+void use_destruct(Ship *, int);
+void use_resource(Ship *, int);
+void rcv_fuel(Ship *, double);
+void rcv_resource(Ship *, int);
+void rcv_destruct(Ship *, int);
+void rcv_popn(Ship *, int, double);
+void rcv_troops(Ship *, int, double);
 
 #endif  // LOAD_H

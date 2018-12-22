@@ -11,9 +11,9 @@
 
 placetype Getplace(GameObj &, const std::string &, const int);
 placetype Getplace(GameObj &, const char *, const int);
-char *Dispshiploc_brief(shiptype *);
-char *Dispshiploc(shiptype *);
+char *Dispshiploc_brief(Ship *);
+char *Dispshiploc(Ship *);
 std::string Dispplace(const placetype &);
-int testship(int, int, shiptype *);
+int testship(int, int, Ship *);
 
 #endif  // GETPLACE_H

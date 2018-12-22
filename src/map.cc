@@ -60,7 +60,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   int x, y, i, f = 0, owner, owned1;
   int iq = 0;
   int sh;
-  shiptype *s;
+  Ship *s;
   char shiplocs[MAX_X][MAX_Y] = {};
   hugestr output;
 

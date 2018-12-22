@@ -144,7 +144,7 @@ void distance(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   placetype from, to;
   double x0, y0, x1, y1, dist;
-  shiptype *ship;
+  Ship *ship;
 
   if (argv.size() < 3) {
     g.out << "Syntax: 'distance <from> <to>'.\n";

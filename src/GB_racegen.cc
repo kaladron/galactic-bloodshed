@@ -233,7 +233,7 @@ found_planet:
   sigprocmask(SIG_BLOCK, &block, &mask);
   /* build a capital ship to run the government */
   {
-    shiptype s;
+    Ship s;
     int shipno;
 
     bzero(&s, sizeof(s));

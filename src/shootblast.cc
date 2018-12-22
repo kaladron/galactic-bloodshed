@@ -27,21 +27,21 @@
 static int hit_probability;
 static double penetration_factor;
 
-static int do_radiation(shiptype *, double, int, int, const char *, char *);
-static int do_damage(int, shiptype *, double, int, int, int, int, double,
+static int do_radiation(Ship *, double, int, int, const char *, char *);
+static int do_damage(int, Ship *, double, int, int, int, int, double,
                      const char *, char *);
 
-static void ship_disposition(shiptype *, int *, int *, int *);
+static void ship_disposition(Ship *, int *, int *, int *);
 static int CEW_hit(double, int);
 static int Num_hits(double, int, int, double, int, int, int, int, int, int, int,
                     int);
 static int cew_hit_odds(double, int);
-static void do_critical_hits(int, shiptype *, int *, int *, int, char *);
+static void do_critical_hits(int, Ship *, int *, int *, int, char *);
 static double p_factor(double, double);
 static void mutate_sector(sector &);
 
-int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
-                       int ignore, char *long_msg, char *short_msg) {
+int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
+                       char *long_msg, char *short_msg) {
   int hits;
   int damage, defense;
   double dist, xfrom, yfrom, xto, yto;
@@ -141,7 +141,7 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
 }
 
 #ifdef DEFENSE
-int shoot_planet_to_ship(racetype *Race, shiptype *ship, int strength,
+int shoot_planet_to_ship(racetype *Race, Ship *ship, int strength,
                          char *long_msg, char *short_msg) {
   int hits;
   int evade, speed, body;
@@ -171,7 +171,7 @@ int shoot_planet_to_ship(racetype *Race, shiptype *ship, int strength,
 }
 #endif
 
-int shoot_ship_to_planet(shiptype *ship, Planet *pl, int strength, int x, int y,
+int shoot_ship_to_planet(Ship *ship, Planet *pl, int strength, int x, int y,
                          sector_map &smap, int ignore, int caliber,
                          char *long_msg, char *short_msg) {
   int x2, y2;
@@ -285,7 +285,7 @@ int shoot_ship_to_planet(shiptype *ship, Planet *pl, int strength, int x, int y,
   return numdest;
 }
 
-static int do_radiation(shiptype *ship, double tech, int strength, int hits,
+static int do_radiation(Ship *ship, double tech, int strength, int hits,
                         const char *weapon, char *msg) {
   double fac, r;
   int i, arm, body, penetrate, casualties, casualties1;
@@ -323,9 +323,9 @@ static int do_radiation(shiptype *ship, double tech, int strength, int hits,
   return dosage;
 }
 
-static int do_damage(int who, shiptype *ship, double tech, int strength,
-                     int hits, int defense, int caliber, double range,
-                     const char *weapon, char *msg) {
+static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
+                     int defense, int caliber, double range, const char *weapon,
+                     char *msg) {
   double body;
   int i, arm;
   int damage;
@@ -409,8 +409,7 @@ static int do_damage(int who, shiptype *ship, double tech, int strength,
   return damage;
 }
 
-static void ship_disposition(shiptype *ship, int *evade, int *speed,
-                             int *body) {
+static void ship_disposition(Ship *ship, int *evade, int *speed, int *body) {
   *evade = 0;
   *speed = 0;
   *body = Size(ship);
@@ -489,7 +488,7 @@ static int cew_hit_odds(double range, int cew_range) {
 /*
  * gun range of given ship, given race and ship
  */
-double gun_range(racetype *r, shiptype *s, int mode) {
+double gun_range(racetype *r, Ship *s, int mode) {
   if (mode)
     return (logscale((int)(r->tech + 1.0)) * SYSTEMSIZE);
   else
@@ -506,7 +505,7 @@ double tele_range(int type, double tech) {
     return log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
 }
 
-int current_caliber(shiptype *ship) {
+int current_caliber(Ship *ship) {
   if (ship->laser && ship->fire_laser)
     return GTYPE_LIGHT;
   else if (ship->type == STYPE_MINE)
@@ -521,7 +520,7 @@ int current_caliber(shiptype *ship) {
     return GTYPE_NONE;
 }
 
-static void do_critical_hits(int penetrate, shiptype *ship, int *crithits,
+static void do_critical_hits(int penetrate, Ship *ship, int *crithits,
                              int *critdam, int caliber, char *critmsg) {
   int eff_size, i, dam;
   *critdam = 0;
@@ -566,8 +565,8 @@ static void do_critical_hits(int penetrate, shiptype *ship, int *crithits,
   strcat(critmsg, "\n");
 }
 
-void do_collateral(shiptype *ship, int damage, int *casualties,
-                   int *casualties1, int *primgundamage, int *secgundamage) {
+void do_collateral(Ship *ship, int damage, int *casualties, int *casualties1,
+                   int *primgundamage, int *secgundamage) {
   int i;
   /* compute crew/troop casualties */
   *casualties = 0;
@@ -587,7 +586,7 @@ void do_collateral(shiptype *ship, int damage, int *casualties,
   if (!ship->secondary) ship->sectype = GTYPE_NONE;
 }
 
-int getdefense(shiptype *ship) {
+int getdefense(Ship *ship) {
   int defense = 0;
 
   if (landed(ship)) {

@@ -33,7 +33,7 @@ void dissolve(const command_t &argv, GameObj &g) {
   int n_ships;
   int i, j, z, x2, y2, hix, hiy, lowx, lowy;
   unsigned char waste;
-  shiptype *sp;
+  Ship *sp;
   racetype *Race;
   char nuke;
   char racepass[100], govpass[100];

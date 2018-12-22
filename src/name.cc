@@ -421,7 +421,7 @@ void give(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   int APcount = 5;
   int who, sh;
-  shiptype *ship;
+  Ship *ship;
   racetype *Race, *alien;
 
   if (!(who = get_player(argv[1]))) {
@@ -812,7 +812,7 @@ void name(const command_t &argv, GameObj &g) {
   char *ch;
   int spaces;
   unsigned char check = 0;
-  shiptype *ship;
+  Ship *ship;
   char string[1024];
   char tmp[128];
   racetype *Race;

@@ -1299,9 +1299,9 @@ void check_for_telegrams(int Playernum, int Governor) {
            "You have telegram(s) waiting. Use 'read' to read them.\n");
 }
 
-void kill_ship(int Playernum, shiptype *ship) {
+void kill_ship(int Playernum, Ship *ship) {
   racetype *killer, *victim;
-  shiptype *s;
+  Ship *s;
   int sh;
 
   ship->special.mind.who_killed = Playernum;
@@ -1407,25 +1407,25 @@ void compute_power_blocks() {
 }
 
 /*utilities for dealing with ship lists */
-void insert_sh_univ(struct stardata *sdata, shiptype *s) {
+void insert_sh_univ(struct stardata *sdata, Ship *s) {
   s->nextship = sdata->ships;
   sdata->ships = s->number;
   s->whatorbits = ScopeLevel::LEVEL_UNIV;
 }
 
-void insert_sh_star(startype *star, shiptype *s) {
+void insert_sh_star(startype *star, Ship *s) {
   s->nextship = star->ships;
   star->ships = s->number;
   s->whatorbits = ScopeLevel::LEVEL_STAR;
 }
 
-void insert_sh_plan(Planet *pl, shiptype *s) {
+void insert_sh_plan(Planet *pl, Ship *s) {
   s->nextship = pl->ships;
   pl->ships = s->number;
   s->whatorbits = ScopeLevel::LEVEL_PLAN;
 }
 
-void insert_sh_ship(shiptype *s, shiptype *s2) {
+void insert_sh_ship(Ship *s, Ship *s2) {
   s->nextship = s2->ships;
   s2->ships = s->number;
   s->whatorbits = ScopeLevel::LEVEL_SHIP;
@@ -1433,9 +1433,9 @@ void insert_sh_ship(shiptype *s, shiptype *s2) {
   s->destshipno = s2->number;
 }
 
-void remove_sh_star(shiptype *s) {
+void remove_sh_star(Ship *s) {
   shipnum_t sh;
-  shiptype *s2;
+  Ship *s2;
 
   getstar(&Stars[s->storbits], (int)s->storbits);
   sh = Stars[s->storbits]->ships;
@@ -1457,9 +1457,9 @@ void remove_sh_star(shiptype *s) {
   s->nextship = 0;
 }
 
-void remove_sh_plan(shiptype *s) {
+void remove_sh_plan(Ship *s) {
   shipnum_t sh;
-  shiptype *s2;
+  Ship *s2;
 
   auto p = getplanet(s->storbits, s->pnumorbits);
   sh = p.ships;
@@ -1481,8 +1481,8 @@ void remove_sh_plan(shiptype *s) {
   s->whatorbits = ScopeLevel::LEVEL_UNIV;
 }
 
-void remove_sh_ship(shiptype *s, shiptype *ship) {
-  shiptype *s2;
+void remove_sh_ship(Ship *s, Ship *ship) {
+  Ship *s2;
   shipnum_t sh = ship->ships;
 
   if (sh == s->number)
@@ -1503,7 +1503,7 @@ void remove_sh_ship(shiptype *s, shiptype *ship) {
 }
 
 static double GetComplexity(const shipnum_t ship) {
-  shiptype s;
+  Ship s;
 
   s.armor = Shipdata[ship][ABIL_ARMOR];
   s.guns = Shipdata[ship][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
@@ -1576,7 +1576,7 @@ void adjust_morale(racetype *winner, racetype *loser, int amount) {
 
 static std::string do_prompt(DescriptorData &d) {
   player_t Playernum = d.player;
-  shiptype *s, *s2;
+  Ship *s, *s2;
   std::stringstream prompt;
 
   if (d.level == ScopeLevel::LEVEL_UNIV) {

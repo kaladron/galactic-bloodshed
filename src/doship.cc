@@ -34,22 +34,22 @@
 #include "vars.h"
 
 static double ap_planet_factor(Planet *);
-static double crew_factor(shiptype *);
-static void do_ap(shiptype *);
-static void do_canister(shiptype *);
-static void do_greenhouse(shiptype *);
-static void do_god(shiptype *);
-static void do_habitat(shiptype *);
+static double crew_factor(Ship *);
+static void do_ap(Ship *);
+static void do_canister(Ship *);
+static void do_greenhouse(Ship *);
+static void do_god(Ship *);
+static void do_habitat(Ship *);
 static void do_meta_infect(int, Planet *);
-static void do_mirror(shiptype *);
-static void do_oap(shiptype *);
-static void do_pod(shiptype *);
-static void do_repair(shiptype *);
+static void do_mirror(Ship *);
+static void do_oap(Ship *);
+static void do_pod(Ship *);
+static void do_repair(Ship *);
 static int infect_planet(int, int, int);
 
-void doship(shiptype *ship, int update) {
+void doship(Ship *ship, int update) {
   racetype *Race;
-  shiptype *ship2;
+  Ship *ship2;
 
   /*ship is active */
   ship->active = 1;
@@ -203,7 +203,7 @@ void doship(shiptype *ship, int update) {
   }
 }
 
-void domass(shiptype *ship) {
+void domass(Ship *ship) {
   double rmass;
   int sh;
 
@@ -225,7 +225,7 @@ void domass(shiptype *ship) {
   ship->mass += (double)ship->resource * MASS_RESOURCE;
 }
 
-void doown(shiptype *ship) {
+void doown(Ship *ship) {
   int sh;
   sh = ship->ships;
   while (sh) {
@@ -236,7 +236,7 @@ void doown(shiptype *ship) {
   }
 }
 
-void domissile(shiptype *ship) {
+void domissile(Ship *ship) {
   int sh2;
   int bombx, bomby, numdest, pdn, i;
   double dist;
@@ -313,7 +313,7 @@ void domissile(shiptype *ship) {
 
 void domine(int shipno, int detonate) {
   int sh, sh2, i;
-  shiptype *s, *ship;
+  Ship *s, *ship;
   racetype *r;
 
   (void)getship(&ship, shipno);
@@ -420,7 +420,7 @@ void domine(int shipno, int detonate) {
   free(ship);
 }
 
-void doabm(shiptype *ship) {
+void doabm(Ship *ship) {
   int sh2;
   int numdest;
 
@@ -457,7 +457,7 @@ void doabm(shiptype *ship) {
   }
 }
 
-static void do_repair(shiptype *ship) {
+static void do_repair(Ship *ship) {
   int drep, cost;
   double maxrep;
 
@@ -487,7 +487,7 @@ static void do_repair(shiptype *ship) {
   }
 }
 
-static void do_habitat(shiptype *ship) {
+static void do_habitat(Ship *ship) {
   int sh;
   int add;
   double fuse;
@@ -515,7 +515,7 @@ static void do_habitat(shiptype *ship) {
   rcv_popn(ship, add, races[ship->owner - 1]->mass);
 }
 
-static void do_pod(shiptype *ship) {
+static void do_pod(Ship *ship) {
   int i;
 
   if (ship->whatorbits == ScopeLevel::LEVEL_STAR) {
@@ -582,7 +582,7 @@ static void do_meta_infect(int who, Planet *p) {
   }
 }
 
-static void do_canister(shiptype *ship) {
+static void do_canister(Ship *ship) {
   if (ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
     if (++ship->special.timer.count < DISSIPATE) {
       if (Stinfo[ship->storbits][ship->pnumorbits].temp_add < -90)
@@ -605,7 +605,7 @@ static void do_canister(shiptype *ship) {
   }
 }
 
-static void do_greenhouse(shiptype *ship) {
+static void do_greenhouse(Ship *ship) {
   if (ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
     if (++ship->special.timer.count < DISSIPATE) {
       if (Stinfo[ship->storbits][ship->pnumorbits].temp_add > 90)
@@ -628,7 +628,7 @@ static void do_greenhouse(shiptype *ship) {
   }
 }
 
-static void do_mirror(shiptype *ship) {
+static void do_mirror(Ship *ship) {
   switch (ship->special.aimed_at.level) {
     case ScopeLevel::LEVEL_SHIP: /* ship aimed at is a legal ship now */
       /* if in the same system */
@@ -641,7 +641,7 @@ static void do_mirror(shiptype *ship) {
                ScopeLevel::LEVEL_PLAN) &&
           ship->storbits == ships[ship->special.aimed_at.shipno]->storbits &&
           ships[ship->special.aimed_at.shipno]->alive) {
-        shiptype *s;
+        Ship *s;
         int i;
         double range;
         s = ships[ship->special.aimed_at.shipno];
@@ -695,7 +695,7 @@ static void do_mirror(shiptype *ship) {
   }
 }
 
-static void do_god(shiptype *ship) {
+static void do_god(Ship *ship) {
   /* gods have infinite power.... heh heh heh */
   if (races[ship->owner - 1]->God) {
     ship->fuel = Max_fuel(ship);
@@ -704,7 +704,7 @@ static void do_god(shiptype *ship) {
   }
 }
 
-static void do_ap(shiptype *ship) {
+static void do_ap(Ship *ship) {
   racetype *Race;
 
   /* if landed on planet, change conditions to be like race */
@@ -729,7 +729,7 @@ static void do_ap(shiptype *ship) {
   }
 }
 
-static double crew_factor(shiptype *ship) {
+static double crew_factor(Ship *ship) {
   int maxcrew;
 
   if (!(maxcrew = Shipdata[ship->type][ABIL_MAXCREW])) return 0.0;
@@ -743,13 +743,13 @@ static double ap_planet_factor(Planet *p) {
   return (AP_FACTOR / (AP_FACTOR + x));
 }
 
-static void do_oap(shiptype *ship) {
+static void do_oap(Ship *ship) {
   /* "indimidate" the planet below, for enslavement purposes. */
   if (ship->whatorbits == ScopeLevel::LEVEL_PLAN)
     Stinfo[ship->storbits][ship->pnumorbits].intimidated = 1;
 }
 
-int do_weapon_plant(shiptype *ship) {
+int do_weapon_plant(Ship *ship) {
   int maxrate, rate;
   maxrate = (int)(races[ship->owner - 1]->tech / 2.0);
 

@@ -27,8 +27,8 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void check_overload(shiptype *, int, int *);
-static void check_retal_strength(shiptype *, int *);
+static void check_overload(Ship *, int, int *);
+static void check_retal_strength(Ship *, int *);
 
 /*! Ship vs ship */
 void fire(const command_t &argv, GameObj &g) {
@@ -50,7 +50,7 @@ void fire(const command_t &argv, GameObj &g) {
     APcount = 1;
   }
   shipnum_t fromship, toship, sh, nextshipno;
-  shiptype *from, *to, *ship, dummy;
+  Ship *from, *to, *ship, dummy;
   int strength, maxstrength, retal, damage;
 
   sh = 0;  // TODO(jeffbailey): No idea what this is, init to 0.
@@ -118,7 +118,7 @@ void fire(const command_t &argv, GameObj &g) {
 
       /* save defense attack strength for retaliation */
       check_retal_strength(to, &retal);
-      bcopy(to, &dummy, sizeof(shiptype));
+      bcopy(to, &dummy, sizeof(Ship));
 
       if (from->type == OTYPE_AFV) {
         if (!landed(from)) {
@@ -293,7 +293,7 @@ void bombard(const command_t &argv, GameObj &g) {
   int Governor = g.governor;
   int APcount = 1;
   shipnum_t fromship, nextshipno, sh;
-  shiptype *from, *ship;
+  Ship *from, *ship;
   int strength, maxstrength, x, y, ok, numdest, damage;
   int i;
   racetype *alien;
@@ -495,7 +495,7 @@ void defend(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   int APcount = 1;
   int toship, sh;
-  shiptype *to, *ship, dummy;
+  Ship *to, *ship, dummy;
   int strength, retal, damage, x, y;
   int numdest;
   racetype *Race;
@@ -565,7 +565,7 @@ void defend(const command_t &argv, GameObj &g) {
 
   /* save defense strength for retaliation */
   check_retal_strength(to, &retal);
-  bcopy(to, &dummy, sizeof(shiptype));
+  bcopy(to, &dummy, sizeof(Ship));
 
   sscanf(argv[2].c_str(), "%d,%d", &x, &y);
 
@@ -695,7 +695,7 @@ void detonate(const command_t &argv, GameObj &g) {
     return;
   }
 
-  shiptype *s;
+  Ship *s;
   shipnum_t shipno, nextshipno;
 
   nextshipno = start_shiplist(g, argv[1].c_str());
@@ -722,7 +722,7 @@ void detonate(const command_t &argv, GameObj &g) {
       free(s);
 }
 
-int retal_strength(shiptype *s) {
+int retal_strength(Ship *s) {
   int strength = 0, avail = 0;
 
   if (!s->alive) return 0;
@@ -762,11 +762,11 @@ int adjacent(int fx, int fy, int tx, int ty, const Planet &p) {
     return 0;
 }
 
-int landed(shiptype *ship) {
+int landed(Ship *ship) {
   return (ship->whatdest == ScopeLevel::LEVEL_PLAN && ship->docked);
 }
 
-static void check_overload(shiptype *ship, int cew, int *strength) {
+static void check_overload(Ship *ship, int cew, int *strength) {
   if ((ship->laser && ship->fire_laser) || cew) {
     if (int_rand(0, *strength) >
         (int)((1.0 - .01 * ship->damage) * ship->tech / 2.0)) {
@@ -791,7 +791,7 @@ static void check_overload(shiptype *ship, int cew, int *strength) {
   }
 }
 
-static void check_retal_strength(shiptype *ship, int *strength) {
+static void check_retal_strength(Ship *ship, int *strength) {
   *strength = 0;
   if (ship->active && ship->alive) { /* irradiated ships dont retaliate */
     if (laser_on(ship))
@@ -801,4 +801,4 @@ static void check_retal_strength(shiptype *ship, int *strength) {
   }
 }
 
-int laser_on(shiptype *ship) { return (ship->laser && ship->fire_laser); }
+int laser_on(Ship *ship) { return (ship->laser && ship->fire_laser); }

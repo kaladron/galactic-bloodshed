@@ -31,7 +31,7 @@ static void do_revoke(racetype *, const governor_t, const governor_t);
 
 // TODO(jeffbailey): Move this into the ship class when we stop using bzero to
 // initalize it.
-std::string ship_to_string(const ship &s) {
+std::string ship_to_string(const Ship &s) {
   return str(boost::format("%c%lu %s [%d]") % Shipltrs[s.type] % s.number %
              s.name % s.owner);
 }
@@ -43,7 +43,7 @@ void grant(const command_t &argv, GameObj &g) {
   racetype *Race;
   governor_t gov;
   shipnum_t nextshipno, shipno;
-  shiptype *ship;
+  Ship *ship;
 
   Race = races[Playernum - 1];
   if (argv.size() < 3) {
@@ -223,7 +223,7 @@ void governors(const command_t &argv, GameObj &g) {
 
 static void do_revoke(racetype *Race, const governor_t src_gov,
                       const governor_t tgt_gov) {
-  shiptype *ship;
+  Ship *ship;
 
   std::string outmsg;
   outmsg = str(
@@ -284,12 +284,12 @@ static void do_revoke(racetype *Race, const governor_t src_gov,
   return;
 }
 
-int authorized(int Governor, shiptype *ship) {
+int authorized(int Governor, Ship *ship) {
   return (!Governor || ship->governor == Governor);
 }
 
 int start_shiplist(GameObj &g, const char *p) {
-  shiptype *ship;
+  Ship *ship;
   int st, pl, sh;
 
   if (*p == '#') return (atoi(++p));
@@ -319,7 +319,7 @@ int start_shiplist(GameObj &g, const char *p) {
 }
 
 /* Step through linked list at current player scope */
-shipnum_t do_shiplist(shiptype **s, shipnum_t *nextshipno) {
+shipnum_t do_shiplist(Ship **s, shipnum_t *nextshipno) {
   shipnum_t shipno;
   if (!(shipno = *nextshipno)) return 0;
 
@@ -329,7 +329,7 @@ shipnum_t do_shiplist(shiptype **s, shipnum_t *nextshipno) {
   return shipno;
 }
 
-int in_list(player_t Playernum, const char *list, shiptype *s,
+int in_list(player_t Playernum, const char *list, Ship *s,
             shipnum_t *nextshipno) {
   const char *p;
   if (s->owner != Playernum || !s->alive) return 0;
@@ -355,7 +355,7 @@ void fix(const command_t &argv, GameObj &g) {
     return;
   }
 
-  shiptype *s;
+  Ship *s;
 
   if (argv[1] == "planet") {
     if (g.level != ScopeLevel::LEVEL_PLAN) {

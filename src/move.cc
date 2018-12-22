@@ -31,9 +31,9 @@
 
 static void mech_defend(int, int, int *, int, const Planet &, int, int,
                         const sector &);
-static void mech_attack_people(shiptype *, int *, int *, racetype *, racetype *,
+static void mech_attack_people(Ship *, int *, int *, racetype *, racetype *,
                                const sector &, int, int, int, char *, char *);
-static void people_attack_mech(shiptype *, int, int, racetype *, racetype *,
+static void people_attack_mech(Ship *, int, int, racetype *, racetype *,
                                const sector &, int, int, char *, char *);
 
 void arm(const command_t &argv, GameObj &g) {
@@ -434,7 +434,7 @@ void walk(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   const int APcount = 1;
-  shiptype *ship, *ship2, dummy;
+  Ship *ship, *ship2, dummy;
   int shipno, x, y, i, sh, succ = 0, civ, mil;
   int oldowner, oldgov;
   int strength, strength1;
@@ -515,7 +515,7 @@ void walk(const command_t &argv, GameObj &g) {
           !isset(alien->allied, Playernum)) {
         while ((strength = retal_strength(ship2)) &&
                (strength1 = retal_strength(ship))) {
-          bcopy(ship, &dummy, sizeof(shiptype));
+          bcopy(ship, &dummy, sizeof(Ship));
           use_destruct(ship2, strength);
           notify(Playernum, Governor, long_buf);
           warn(ship2->owner, ship2->governor, long_buf);
@@ -657,7 +657,7 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
 static void mech_defend(int Playernum, int Governor, int *people, int type,
                         const Planet &p, int x2, int y2, const sector &s2) {
   int sh;
-  shiptype *ship;
+  Ship *ship;
   int civ = 0, mil = 0;
   int oldgov;
   racetype *Race, *alien;
@@ -698,10 +698,10 @@ static void mech_defend(int Playernum, int Governor, int *people, int type,
   *people = civ + mil;
 }
 
-static void mech_attack_people(shiptype *ship, int *civ, int *mil,
-                               racetype *Race, racetype *alien,
-                               const sector &sect, int x, int y, int ignore,
-                               char *long_msg, char *short_msg) {
+static void mech_attack_people(Ship *ship, int *civ, int *mil, racetype *Race,
+                               racetype *alien, const sector &sect, int x,
+                               int y, int ignore, char *long_msg,
+                               char *short_msg) {
   int strength, oldciv, oldmil;
   double astrength, dstrength;
   int cas_civ, cas_mil, ammo;
@@ -748,7 +748,7 @@ static void mech_attack_people(shiptype *ship, int *civ, int *mil,
   strcat(long_msg, buf);
 }
 
-static void people_attack_mech(shiptype *ship, int civ, int mil, racetype *Race,
+static void people_attack_mech(Ship *ship, int civ, int mil, racetype *Race,
                                racetype *alien, const sector &sect, int x,
                                int y, char *long_msg, char *short_msg) {
   int strength;

@@ -41,7 +41,7 @@ static bool Tactical;
 
 struct reportdata {
   unsigned char type; /* ship or planet */
-  shiptype *s;
+  Ship *s;
   Planet *p;
   shipnum_t n;
   starnum_t star;
@@ -191,7 +191,7 @@ void rst(const command_t &argv, GameObj &g) {
 static void ship_report(GameObj &g, shipnum_t indx, unsigned char rep_on[]) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  shiptype *s;
+  Ship *s;
   Planet *p;
   int i, sight, caliber;
   placetype where;

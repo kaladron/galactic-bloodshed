@@ -28,11 +28,11 @@
 static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
 
 static int jettison_check(GameObj &, int, int);
-static int landed_on(shiptype *, shipnum_t);
+static int landed_on(Ship *, shipnum_t);
 
-static void do_transporter(racetype *, GameObj &, shiptype *);
-static void unload_onto_alien_sector(GameObj &, Planet *, shiptype *, sector &,
-                                     int, int);
+static void do_transporter(racetype *, GameObj &, Ship *);
+static void unload_onto_alien_sector(GameObj &, Planet *, Ship *, sector &, int,
+                                     int);
 
 void load(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
@@ -43,7 +43,7 @@ void load(const command_t &argv, GameObj &g) {
   unsigned char sh = 0, diff = 0;
   int lolim, uplim, amt;
   int transfercrew;
-  shiptype *s, *s2;
+  Ship *s, *s2;
   Planet p;
   sector sect;
   racetype *Race;
@@ -468,7 +468,7 @@ void jettison(const command_t &argv, GameObj &g) {
   shipnum_t shipno, nextshipno;
   int amt;
   char commod;
-  shiptype *s;
+  Ship *s;
   racetype *Race;
 
   if (argv.size() < 2) {
@@ -803,7 +803,7 @@ void mount(const command_t &argv, GameObj &g) {
   else
     mnt = false;
 
-  shiptype *ship;
+  Ship *ship;
   shipnum_t shipno, nextshipno;
 
   nextshipno = start_shiplist(g, argv[1].c_str());
@@ -864,50 +864,50 @@ void mount(const command_t &argv, GameObj &g) {
       free(ship);
 }
 
-void use_fuel(shiptype *s, double amt) {
+void use_fuel(Ship *s, double amt) {
   s->fuel -= amt;
   s->mass -= amt * MASS_FUEL;
 }
 
-void use_destruct(shiptype *s, int amt) {
+void use_destruct(Ship *s, int amt) {
   s->destruct -= amt;
   s->mass -= (double)amt * MASS_DESTRUCT;
 }
 
-void use_resource(shiptype *s, int amt) {
+void use_resource(Ship *s, int amt) {
   s->resource -= amt;
   s->mass -= (double)amt * MASS_RESOURCE;
 }
 
-void rcv_fuel(shiptype *s, double amt) {
+void rcv_fuel(Ship *s, double amt) {
   s->fuel += amt;
   s->mass += amt * MASS_FUEL;
 }
 
-void rcv_resource(shiptype *s, int amt) {
+void rcv_resource(Ship *s, int amt) {
   s->resource += amt;
   s->mass += (double)amt * MASS_RESOURCE;
 }
 
-void rcv_destruct(shiptype *s, int amt) {
+void rcv_destruct(Ship *s, int amt) {
   s->destruct += amt;
   s->mass += (double)amt * MASS_DESTRUCT;
 }
 
-void rcv_popn(shiptype *s, int amt, double mass) {
+void rcv_popn(Ship *s, int amt, double mass) {
   s->popn += amt;
   s->mass += (double)amt * mass;
 }
 
-void rcv_troops(shiptype *s, int amt, double mass) {
+void rcv_troops(Ship *s, int amt, double mass) {
   s->troops += amt;
   s->mass += (double)amt * mass;
 }
 
-static void do_transporter(racetype *Race, GameObj &g, shiptype *s) {
+static void do_transporter(racetype *Race, GameObj &g, Ship *s) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  shiptype *s2;
+  Ship *s2;
 
   Playernum = Race->Playernum;
 
@@ -1017,11 +1017,11 @@ static void do_transporter(racetype *Race, GameObj &g, shiptype *s) {
   free(s2);
 }
 
-static int landed_on(shiptype *s, shipnum_t shipno) {
+static int landed_on(Ship *s, shipnum_t shipno) {
   return (s->whatorbits == ScopeLevel::LEVEL_SHIP && s->destshipno == shipno);
 }
 
-static void unload_onto_alien_sector(GameObj &g, Planet *planet, shiptype *ship,
+static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
                                      sector &sect, int what, int people) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;

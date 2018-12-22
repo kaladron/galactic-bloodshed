@@ -36,20 +36,20 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void do_dome(shiptype *, sector_map &);
-static void do_quarry(shiptype *, Planet *, sector_map &);
-static void do_berserker(shiptype *, Planet *);
+static void do_dome(Ship *, sector_map &);
+static void do_quarry(Ship *, Planet *, sector_map &);
+static void do_berserker(Ship *, Planet *);
 static void do_recover(Planet *, int, int);
 static double est_production(const sector &);
-static int moveship_onplanet(shiptype *, Planet *);
-static void plow(shiptype *, Planet *, sector_map &);
-static void terraform(shiptype *, Planet *, sector_map &);
+static int moveship_onplanet(Ship *, Planet *);
+static void plow(Ship *, Planet *, sector_map &);
+static void terraform(Ship *, Planet *, sector_map &);
 
 int doplanet(int starnum, Planet *planet, int planetnum) {
   int shipno, x, y, nukex, nukey;
   int o = 0;
   int i;
-  shiptype *ship;
+  Ship *ship;
   double fadd;
   int timer = 20;
   unsigned char allmod = 0, allexp = 0;
@@ -547,13 +547,13 @@ if (!Stinfo[starnum][planetnum].inhab)
       if (planet->info[i - 1].tox_thresh > 0 &&
           planet->conditions[TOXIC] >= planet->info[i - 1].tox_thresh &&
           planet->info[i - 1].resource >= Shipcost(OTYPE_TOXWC, races[i - 1])) {
-        shiptype *s2;
+        Ship *s2;
         int t;
         ++Num_ships;
-        ships = (shiptype **)realloc(
-            ships, (unsigned)((Num_ships + 1) * sizeof(shiptype *)));
-        s2 = ships[Num_ships] = (shiptype *)malloc(sizeof(shiptype));
-        bzero((char *)s2, sizeof(shiptype));
+        ships = (Ship **)realloc(ships,
+                                 (unsigned)((Num_ships + 1) * sizeof(Ship *)));
+        s2 = ships[Num_ships] = (Ship *)malloc(sizeof(Ship));
+        bzero((char *)s2, sizeof(Ship));
         s2->number = Num_ships;
         s2->type = OTYPE_TOXWC;
 
@@ -624,7 +624,7 @@ if (!Stinfo[starnum][planetnum].inhab)
   return allmod;
 }
 
-static int moveship_onplanet(shiptype *ship, Planet *planet) {
+static int moveship_onplanet(Ship *ship, Planet *planet) {
   int x, y, bounced = 0;
 
   if (ship->shipclass[ship->special.terraform.index] == 's') {
@@ -659,7 +659,7 @@ static int moveship_onplanet(shiptype *ship, Planet *planet) {
   return 1;
 }
 
-static void terraform(shiptype *ship, Planet *planet, sector_map &smap) {
+static void terraform(Ship *ship, Planet *planet, sector_map &smap) {
   /* move, and then terraform. */
   if (!moveship_onplanet(ship, planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
@@ -690,7 +690,7 @@ static void terraform(shiptype *ship, Planet *planet, sector_map &smap) {
   }
 }
 
-static void plow(shiptype *ship, Planet *planet, sector_map &smap) {
+static void plow(Ship *ship, Planet *planet, sector_map &smap) {
   if (!moveship_onplanet(ship, planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
   if ((races[ship->owner - 1]->likes[s.condition]) && (s.fert < 100)) {
@@ -713,7 +713,7 @@ static void plow(shiptype *ship, Planet *planet, sector_map &smap) {
   }
 }
 
-static void do_dome(shiptype *ship, sector_map &smap) {
+static void do_dome(Ship *ship, sector_map &smap) {
   int adjust;
 
   auto &s = smap.get(ship->land_x, ship->land_y);
@@ -729,7 +729,7 @@ static void do_dome(shiptype *ship, sector_map &smap) {
   use_resource(ship, RES_COST_DOME);
 }
 
-static void do_quarry(shiptype *ship, Planet *planet, sector_map &smap) {
+static void do_quarry(Ship *ship, Planet *planet, sector_map &smap) {
   int prod, tox;
 
   auto &s = smap.get(ship->land_x, ship->land_y);
@@ -753,7 +753,7 @@ static void do_quarry(shiptype *ship, Planet *planet, sector_map &smap) {
     s.fert = 0;
 }
 
-static void do_berserker(shiptype *ship, Planet *planet) {
+static void do_berserker(Ship *ship, Planet *planet) {
   if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
       ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship) &&
       ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {

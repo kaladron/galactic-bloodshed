@@ -13,6 +13,6 @@ int maxsupport(const racetype *r, const sector &s, const double c,
                const int toxic);
 double compatibility(const Planet &, const racetype *);
 double gravity(const Planet &);
-char *prin_ship_orbits(shiptype *);
+char *prin_ship_orbits(Ship *);
 
 #endif  // MAX_H

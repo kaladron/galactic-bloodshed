@@ -35,7 +35,7 @@ void dock(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   int APcount = (argv[0] == "dock") ? 0 : 1;
   int Assault = (argv[0] == "assault") ? 1 : 0;
-  shiptype *s, *s2, *s3, ship;
+  Ship *s, *s2, *s3, ship;
   population_t boarders = 0;
   int dam = 0, dam2 = 0, booby = 0;
   int what;
@@ -204,7 +204,7 @@ void dock(const command_t &argv, GameObj &g) {
         return;
       }
       /* defending fire gets defensive fire */
-      bcopy(s2, &ship, sizeof(shiptype)); /* for reports */
+      bcopy(s2, &ship, sizeof(Ship)); /* for reports */
       if (Assault) {
         // Set the command to be distinctive here.  In the target function,
         // APcount is set to 0 and cew is set to 3.

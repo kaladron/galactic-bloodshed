@@ -8,12 +8,12 @@
 #include "ships.h"
 #include "vars.h"
 
-void doship(shiptype *, int);
-void domass(shiptype *);
-void doown(shiptype *);
-void domissile(shiptype *);
+void doship(Ship *, int);
+void domass(Ship *);
+void doown(Ship *);
+void domissile(Ship *);
 void domine(int, int);
-void doabm(shiptype *);
-int do_weapon_plant(shiptype *);
+void doabm(Ship *);
+int do_weapon_plant(Ship *);
 
 #endif  // DOSHIP_H

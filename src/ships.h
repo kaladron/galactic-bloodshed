@@ -98,10 +98,9 @@ enum abil_t {
 
 #define SHIP_NAMESIZE 18
 
-typedef class ship shiptype;
 typedef struct place placetype;
 
-class ship {
+class Ship {
  public:
   shipnum_t number;               ///< ship knows its own number
   player_t owner;                 ///< owner of ship
@@ -274,43 +273,43 @@ struct place { /* used in function return for finding place */
   starnum_t snum;
   planetnum_t pnum;
   shipnum_t shipno;
-  shiptype *shipptr = nullptr;
+  Ship *shipptr = nullptr;
   ScopeLevel level;      /* .level */
   unsigned char err = 0; /* if error */
 };
 
 /* can takeoff & land, is mobile, etc. */
-unsigned short speed_rating(shiptype *s);
+unsigned short speed_rating(Ship *s);
 
-bool has_switch(shiptype *d);
+bool has_switch(Ship *d);
 
 /* can bombard planets */
-bool can_bombard(shiptype *s);
+bool can_bombard(Ship *s);
 
 /* can navigate */
-bool can_navigate(shiptype *s);
+bool can_navigate(Ship *s);
 
 /* can aim at things. */
-bool can_aim(shiptype *s);
+bool can_aim(Ship *s);
 
 /* macros to get ship stats */
-unsigned long Armor(shiptype *s);
-long Guns(shiptype *s);
-long Max_crew(shiptype *s);
-long Max_mil(shiptype *s);
-long Max_resource(shiptype *s);
-int Max_crystals(shiptype *s);
-long Max_fuel(shiptype *s);
-long Max_destruct(shiptype *s);
-long Max_speed(shiptype *s);
-long Cost(shiptype *s);
-double Mass(shiptype *s);
-long Sight(shiptype *s);
-long Retaliate(shiptype *s);
-int Size(shiptype *s);
-int Body(shiptype *s);
-long Hanger(shiptype *s);
-long Repair(shiptype *s);
+unsigned long Armor(Ship *s);
+long Guns(Ship *s);
+long Max_crew(Ship *s);
+long Max_mil(Ship *s);
+long Max_resource(Ship *s);
+int Max_crystals(Ship *s);
+long Max_fuel(Ship *s);
+long Max_destruct(Ship *s);
+long Max_speed(Ship *s);
+long Cost(Ship *s);
+double Mass(Ship *s);
+long Sight(Ship *s);
+long Retaliate(Ship *s);
+int Size(Ship *s);
+int Body(Ship *s);
+long Hanger(Ship *s);
+long Repair(Ship *s);
 
 extern shipnum_t Num_ships;
 extern const unsigned long Shipdata[NUMSTYPES][NUMABILS];
@@ -318,6 +317,6 @@ extern const char Shipltrs[];
 extern const char *Shipnames[];
 extern int ShipVector[NUMSTYPES];
 
-extern shiptype **ships;
+extern Ship **ships;
 
 #endif  // SHIPS_H

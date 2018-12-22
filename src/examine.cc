@@ -19,7 +19,7 @@
 #include "vars.h"
 
 void examine(const command_t &argv, GameObj &g) {
-  shiptype *ship;
+  Ship *ship;
   const int APcount = 0;
   int shipno;
   FILE *fd;

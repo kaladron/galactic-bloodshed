@@ -149,7 +149,7 @@ void survey(const command_t &argv, GameObj &g) {
         while (shiplist) {
           (void)getship(&shipa, shiplist);
           if (shipa->owner == Playernum &&
-              (shipa->popn || (shipa->type == OTYPE_PROBE)))
+              (shipa->popn || (shipa->type == ShipType::OTYPE_PROBE)))
             inhere = 1;
           if (shipa->alive && landed(shipa) &&
               shiplocs[shipa->land_x][shipa->land_y].pos <

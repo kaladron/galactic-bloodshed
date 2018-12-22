@@ -77,7 +77,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     notify(Playernum, Governor, buf);
     return;
   }
-  if (ship->type != OTYPE_TRANSDEV && !ship->popn && Max_crew(ship)) {
+  if (ship->type != ShipType::OTYPE_TRANSDEV && !ship->popn && Max_crew(ship)) {
     sprintf(buf, "%s has no crew and is not a robotic ship.\n",
             ship_to_string(*ship).c_str());
     notify(Playernum, Governor, buf);
@@ -96,14 +96,14 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       return;
     }
   } else if (argv[2] == "scatter") {
-    if (ship->type != STYPE_MISSILE) {
+    if (ship->type != ShipType::STYPE_MISSILE) {
       g.out << "Only missiles can be given this order.\n";
       return;
     }
     ship->special.impact.scatter = 1;
   } else if (argv[2] == "impact") {
     int x, y;
-    if (ship->type != STYPE_MISSILE) {
+    if (ship->type != ShipType::STYPE_MISSILE) {
       notify(Playernum, Governor,
              "Only missiles can be designated for this.\n");
       return;
@@ -168,7 +168,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       ship->navigate.on = 0;
     if (ship->hyper_drive.on) ship->hyper_drive.on = 0;
   } else if (argv[2] == "switch") {
-    if (ship->type == OTYPE_FACTORY) {
+    if (ship->type == ShipType::OTYPE_FACTORY) {
       g.out << "Use \"on\" to bring factory online.\n";
       return;
     }
@@ -185,10 +185,10 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
     if (ship->on) {
       switch (ship->type) {
-        case STYPE_MINE:
+        case ShipType::STYPE_MINE:
           g.out << "Mine armed and ready.\n";
           break;
-        case OTYPE_TRANSDEV:
+        case ShipType::OTYPE_TRANSDEV:
           g.out << "Transporter ready to receive.\n";
           break;
         default:
@@ -196,10 +196,10 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       }
     } else {
       switch (ship->type) {
-        case STYPE_MINE:
+        case ShipType::STYPE_MINE:
           g.out << "Mine disarmed.\n";
           break;
-        case OTYPE_TRANSDEV:
+        case ShipType::OTYPE_TRANSDEV:
           g.out << "No longer receiving.\n";
           break;
         default:
@@ -254,7 +254,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     } else
       return;
   } else if (argv[2] == "bombard") {
-    if (ship->type != OTYPE_OMCL) {
+    if (ship->type != ShipType::OTYPE_OMCL) {
       if (can_bombard(ship)) {
         if (argv[3] == "off")
           ship->bombard = 0;
@@ -265,7 +265,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
                "This type of ship cannot be set to retaliate.\n");
     }
   } else if (argv[2] == "retaliate") {
-    if (ship->type != OTYPE_OMCL) {
+    if (ship->type != ShipType::OTYPE_OMCL) {
       if (can_bombard(ship)) {
         if (argv[3] == "off")
           ship->protect.self = 0;
@@ -389,8 +389,8 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
   } else if (argv[2] == "explosive") {
     switch (ship->type) {
-      case STYPE_MINE:
-      case OTYPE_GR:
+      case ShipType::STYPE_MINE:
+      case ShipType::OTYPE_GR:
         ship->mode = 0;
         break;
       default:
@@ -398,15 +398,16 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
   } else if (argv[2] == "radiative") {
     switch (ship->type) {
-      case STYPE_MINE:
-      case OTYPE_GR:
+      case ShipType::STYPE_MINE:
+      case ShipType::OTYPE_GR:
         ship->mode = 1;
         break;
       default:
         return;
     }
   } else if (argv[2] == "move") {
-    if ((ship->type == OTYPE_TERRA) || (ship->type == OTYPE_PLOW)) {
+    if ((ship->type == ShipType::OTYPE_TERRA) ||
+        (ship->type == ShipType::OTYPE_PLOW)) {
       std::string moveseq;
       if (argv.size() > 3) {
         moveseq = argv[3];
@@ -457,7 +458,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       return;
     }
   } else if (argv[2] == "trigger") {
-    if (ship->type == STYPE_MINE) {
+    if (ship->type == ShipType::STYPE_MINE) {
       if (atoi(argv[3].c_str()) < 0)
         ship->special.trigger.radius = 0;
       else
@@ -468,7 +469,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       return;
     }
   } else if (argv[2] == "transport") {
-    if (ship->type == OTYPE_TRANSDEV) {
+    if (ship->type == ShipType::OTYPE_TRANSDEV) {
       ship->special.transport.target = atoi(argv[3].c_str());
       if (ship->special.transport.target == ship->number) {
         notify(Playernum, Governor,
@@ -484,9 +485,9 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
   } else if (argv[2] == "aim") {
     if (can_aim(ship)) {
-      if (ship->type == OTYPE_GTELE || ship->type == OTYPE_TRACT ||
-          ship->fuel >= FUEL_MANEUVER) {
-        if (ship->type == STYPE_MIRROR && ship->docked) {
+      if (ship->type == ShipType::OTYPE_GTELE ||
+          ship->type == ShipType::OTYPE_TRACT || ship->fuel >= FUEL_MANEUVER) {
+        if (ship->type == ShipType::STYPE_MIRROR && ship->docked) {
           sprintf(buf, "docked; use undock or launch first.\n");
           notify(Playernum, Governor, buf);
           return;
@@ -500,9 +501,11 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           ship->special.aimed_at.pnum = pl.pnum;
           ship->special.aimed_at.snum = pl.snum;
           ship->special.aimed_at.shipno = pl.shipno;
-          if (ship->type != OTYPE_TRACT && ship->type != OTYPE_GTELE)
+          if (ship->type != ShipType::OTYPE_TRACT &&
+              ship->type != ShipType::OTYPE_GTELE)
             use_fuel(ship, FUEL_MANEUVER);
-          if (ship->type == OTYPE_GTELE || ship->type == OTYPE_STELE)
+          if (ship->type == ShipType::OTYPE_GTELE ||
+              ship->type == ShipType::OTYPE_STELE)
             mk_expl_aimed_at(Playernum, Governor, ship);
           sprintf(buf, "Aimed at %s\n", prin_aimed_at(*ship).c_str());
           notify(Playernum, Governor, buf);
@@ -517,7 +520,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       return;
     }
   } else if (argv[2] == "intensity") {
-    if (ship->type == STYPE_MIRROR) {
+    if (ship->type == ShipType::STYPE_MIRROR) {
       ship->special.aimed_at.intensity =
           std::max(0, std::min(100, atoi(argv[3].c_str())));
     }
@@ -527,7 +530,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
              "This ship does not have an on/off setting.\n");
       return;
     }
-    if (ship->damage && ship->type != OTYPE_FACTORY) {
+    if (ship->damage && ship->type != ShipType::OTYPE_FACTORY) {
       g.out << "Damaged ships cannot be activated.\n";
       return;
     }
@@ -535,14 +538,14 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       g.out << "This ship is already activated.\n";
       return;
     }
-    if (ship->type == OTYPE_FACTORY) {
+    if (ship->type == ShipType::OTYPE_FACTORY) {
       unsigned int oncost;
       if (ship->whatorbits == ScopeLevel::LEVEL_SHIP) {
         Ship *s2;
         int hangerneeded;
 
         (void)getship(&s2, (int)ship->destshipno);
-        if (s2->type == STYPE_HABITAT) {
+        if (s2->type == ShipType::STYPE_HABITAT) {
           oncost = HAB_FACT_ON_COST * ship->build_cost;
           if (s2->resource < oncost) {
             sprintf(buf,
@@ -599,7 +602,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
     ship->on = 1;
   } else if (argv[2] == "off") {
-    if (ship->type == OTYPE_FACTORY && ship->on) {
+    if (ship->type == ShipType::OTYPE_FACTORY && ship->on) {
       notify(Playernum, Governor,
              "You can't deactivate a factory once it's "
              "online. Consider using 'scrap'.\n");
@@ -792,13 +795,14 @@ static void DispOrders(int Playernum, int Governor, Ship *ship) {
   }
   if (ship->protect.evade) strcat(buf, "/evade");
   if (ship->bombard) strcat(buf, "/bomb");
-  if (ship->type == STYPE_MINE || ship->type == OTYPE_GR) {
+  if (ship->type == ShipType::STYPE_MINE || ship->type == ShipType::OTYPE_GR) {
     if (ship->mode)
       strcat(buf, "/radiate");
     else
       strcat(buf, "/explode");
   }
-  if (ship->type == OTYPE_TERRA || ship->type == OTYPE_PLOW) {
+  if (ship->type == ShipType::OTYPE_TERRA ||
+      ship->type == ShipType::OTYPE_PLOW) {
     int i;
     sprintf(temp, "/move %s",
             &(ship->shipclass[ship->special.terraform.index]));
@@ -811,7 +815,8 @@ static void DispOrders(int Playernum, int Governor, Ship *ship) {
     strcat(buf, temp);
   }
 
-  if (ship->type == STYPE_MISSILE && ship->whatdest == ScopeLevel::LEVEL_PLAN) {
+  if (ship->type == ShipType::STYPE_MISSILE &&
+      ship->whatdest == ScopeLevel::LEVEL_PLAN) {
     if (ship->special.impact.scatter)
       strcat(buf, "/scatter");
     else {
@@ -821,15 +826,15 @@ static void DispOrders(int Playernum, int Governor, Ship *ship) {
     }
   }
 
-  if (ship->type == STYPE_MINE) {
+  if (ship->type == ShipType::STYPE_MINE) {
     sprintf(temp, "/trigger %d", ship->special.trigger.radius);
     strcat(buf, temp);
   }
-  if (ship->type == OTYPE_TRANSDEV) {
+  if (ship->type == ShipType::OTYPE_TRANSDEV) {
     sprintf(temp, "/target %d", ship->special.transport.target);
     strcat(buf, temp);
   }
-  if (ship->type == STYPE_MIRROR) {
+  if (ship->type == ShipType::STYPE_MIRROR) {
     sprintf(temp, "/aim %s/int %d", prin_aimed_at(*ship).c_str(),
             ship->special.aimed_at.intensity);
     strcat(buf, temp);

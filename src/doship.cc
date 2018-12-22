@@ -90,7 +90,7 @@ void doship(Ship *ship, int update) {
       }
     }
 
-    if (ship->type == OTYPE_FACTORY && !ship->on) {
+    if (ship->type == ShipType::OTYPE_FACTORY && !ship->on) {
       Race = races[ship->owner - 1];
       ship->tech = Race->tech;
     }
@@ -109,7 +109,7 @@ void doship(Ship *ship, int update) {
       free(ship2);
       /* just making sure */
     } else if (ship->whatorbits != ScopeLevel::LEVEL_UNIV &&
-               (ship->popn || ship->type == OTYPE_PROBE)) {
+               (ship->popn || ship->type == ShipType::OTYPE_PROBE)) {
       /* Though I have often used TWCs for exploring, I don't think it is right
        */
       /* to be able to map out worlds with this type of junk. Either a manned
@@ -144,7 +144,7 @@ void doship(Ship *ship, int update) {
       starpopns[ship->storbits][ship->owner - 1] += ship->popn;
       /* set inhabited for ship */
       /* only if manned or probe.  Maarten */
-      if (ship->popn || ship->type == OTYPE_PROBE) {
+      if (ship->popn || ship->type == ShipType::OTYPE_PROBE) {
         StarsInhab[ship->storbits] = 1;
         setbit(Stars[ship->storbits]->inhabited, ship->owner);
         setbit(Stars[ship->storbits]->explored, ship->owner);
@@ -168,37 +168,37 @@ void doship(Ship *ship, int update) {
       if (ship->damage && Repair(ship)) do_repair(ship);
 
       if (update) switch (ship->type) { /* do this stuff during updates only*/
-          case OTYPE_CANIST:
+          case ShipType::OTYPE_CANIST:
             do_canister(ship);
             break;
-          case OTYPE_GREEN:
+          case ShipType::OTYPE_GREEN:
             do_greenhouse(ship);
             break;
-          case STYPE_MIRROR:
+          case ShipType::STYPE_MIRROR:
             do_mirror(ship);
             break;
-          case STYPE_GOD:
+          case ShipType::STYPE_GOD:
             do_god(ship);
             break;
-          case OTYPE_AP:
+          case ShipType::OTYPE_AP:
             do_ap(ship);
             break;
-          case OTYPE_VN: /* Von Neumann machine */
-          case OTYPE_BERS:
+          case ShipType::OTYPE_VN: /* Von Neumann machine */
+          case ShipType::OTYPE_BERS:
             if (!ship->special.mind.progenitor)
               ship->special.mind.progenitor = 1;
             do_VN(ship);
             break;
-          case STYPE_OAP:
+          case ShipType::STYPE_OAP:
             do_oap(ship);
             break;
-          case STYPE_HABITAT:
+          case ShipType::STYPE_HABITAT:
             do_habitat(ship);
             break;
           default:
             break;
         }
-      if (ship->type == STYPE_POD) do_pod(ship);
+      if (ship->type == ShipType::STYPE_POD) do_pod(ship);
     }
   }
 }
@@ -253,7 +253,7 @@ void domissile(Ship *ship) {
     pdn = 0;
     sh2 = p->ships;
     while (sh2 && !pdn) {
-      if (ships[sh2]->alive && ships[sh2]->type == OTYPE_PLANDEF) {
+      if (ships[sh2]->alive && ships[sh2]->type == ShipType::OTYPE_PLANDEF) {
         /* attack the PDN instead */
         ship->whatdest =
             ScopeLevel::LEVEL_SHIP; /* move missile to PDN for attack */
@@ -318,7 +318,7 @@ void domine(int shipno, int detonate) {
 
   (void)getship(&ship, shipno);
 
-  if (ship->type != STYPE_MINE || !ship->alive || !ship->owner) {
+  if (ship->type != ShipType::STYPE_MINE || !ship->alive || !ship->owner) {
     free(ship);
     return;
   }
@@ -369,8 +369,8 @@ void domine(int shipno, int detonate) {
       sh = sh2;
       while (sh) {
         (void)getship(&s, sh);
-        if (sh != shipno && s->alive && (s->type != OTYPE_CANIST) &&
-            (s->type != OTYPE_GREEN)) {
+        if (sh != shipno && s->alive && (s->type != ShipType::OTYPE_CANIST) &&
+            (s->type != ShipType::OTYPE_GREEN)) {
           rad = shoot_ship_to_ship(ship, s, (int)(ship->destruct), 0, 0,
                                    long_buf, short_buf);
           if (rad > 0) {
@@ -433,8 +433,8 @@ void doabm(Ship *ship) {
     sh2 = p->ships;
     while (sh2 && ship->destruct) {
       if (ships[sh2]->alive &&
-          ((ships[sh2]->type == STYPE_MISSILE) ||
-           (ships[sh2]->type == STYPE_MINE)) &&
+          ((ships[sh2]->type == ShipType::STYPE_MISSILE) ||
+           (ships[sh2]->type == ShipType::STYPE_MINE)) &&
           (ships[sh2]->owner != ship->owner) &&
           !(isset(races[ship->owner - 1]->allied, ships[sh2]->owner) &&
             isset(races[ships[sh2]->owner - 1]->allied, ship->owner))) {
@@ -466,10 +466,10 @@ static void do_repair(Ship *ship) {
   if (Shipdata[ship->type][ABIL_REPAIR])
     cost = 0;
   else if (ship->docked && ship->whatdest == ScopeLevel::LEVEL_SHIP &&
-           ships[ship->destshipno]->type == STYPE_STATION)
+           ships[ship->destshipno]->type == ShipType::STYPE_STATION)
     cost = 0;
   else if (ship->docked && ship->whatorbits == ScopeLevel::LEVEL_SHIP &&
-           ships[ship->destshipno]->type == STYPE_STATION)
+           ships[ship->destshipno]->type == ShipType::STYPE_STATION)
     cost = 0;
   else {
     maxrep *= (double)(ship->popn) / (double)ship->max_crew;
@@ -505,7 +505,7 @@ static void do_habitat(Ship *ship) {
 
     sh = ship->ships;
     while (sh) {
-      if (ships[sh]->type == OTYPE_WPLANT)
+      if (ships[sh]->type == ShipType::OTYPE_WPLANT)
         rcv_destruct(ship, do_weapon_plant(ships[sh]));
       sh = ships[sh]->nextship;
     }

@@ -80,7 +80,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     free(ship);
     return;
   }
-  if ((!speed_rating(ship)) || (ship->type == OTYPE_FACTORY)) {
+  if ((!speed_rating(ship)) || (ship->type == ShipType::OTYPE_FACTORY)) {
     g.out << "That ship does not have a speed rating...\n";
     free(ship);
     return;

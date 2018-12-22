@@ -64,7 +64,7 @@ void launch(const command_t &argv, GameObj &g) {
       }
       if (s->whatorbits == ScopeLevel::LEVEL_SHIP) {
         /* Factories cannot be launched once turned on. Maarten */
-        if (s->type == OTYPE_FACTORY && s->on) {
+        if (s->type == ShipType::OTYPE_FACTORY && s->on) {
           notify(Playernum, Governor,
                  "Factories cannot be launched once turned on.\n");
           g.out << "Consider using 'scrap'.\n";
@@ -226,8 +226,8 @@ void launch(const command_t &argv, GameObj &g) {
         s->docked = 0;
         s->whatdest = ScopeLevel::LEVEL_UNIV; /* no destination */
         switch (s->type) {
-          case OTYPE_CANIST:
-          case OTYPE_GREEN:
+          case ShipType::OTYPE_CANIST:
+          case ShipType::OTYPE_GREEN:
             s->special.timer.count = 0;
             break;
           default:
@@ -254,11 +254,11 @@ void launch(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
 
         switch (s->type) {
-          case OTYPE_CANIST:
+          case ShipType::OTYPE_CANIST:
             notify(Playernum, Governor,
                    "A cloud of dust envelopes your planet.\n");
             break;
-          case OTYPE_GREEN:
+          case ShipType::OTYPE_GREEN:
             notify(Playernum, Governor,
                    "Green house gases surround the planet.\n");
             break;

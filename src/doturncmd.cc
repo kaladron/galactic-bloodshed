@@ -202,7 +202,8 @@ void do_turn(int update) {
     for (shipnum_t i = 1; i <= Num_ships; i++) {
       if (ships[i]->alive && ships[i]->speed == j) {
         doship(ships[i], update);
-        if ((ships[i]->type == STYPE_MISSILE) && !attack_planet(ships[i]))
+        if ((ships[i]->type == ShipType::STYPE_MISSILE) &&
+            !attack_planet(ships[i]))
           domissile(ships[i]);
       }
     }
@@ -263,10 +264,11 @@ void do_turn(int update) {
   /* put ABMs and surviving missiles here because ABMs need to have the missile
      in the shiplist of the target planet  Maarten */
   for (shipnum_t i = 1; i <= Num_ships; i++) /* ABMs defend planet */
-    if ((ships[i]->type == OTYPE_ABM) && ships[i]->alive) doabm(ships[i]);
+    if ((ships[i]->type == ShipType::OTYPE_ABM) && ships[i]->alive)
+      doabm(ships[i]);
 
   for (shipnum_t i = 1; i <= Num_ships; i++)
-    if ((ships[i]->type == STYPE_MISSILE) && ships[i]->alive &&
+    if ((ships[i]->type == ShipType::STYPE_MISSILE) && ships[i]->alive &&
         attack_planet(ships[i]))
       domissile(ships[i]);
 
@@ -483,7 +485,8 @@ int governed(racetype *race) {
           ships[race->Gov_ship]->docked &&
           (ships[race->Gov_ship]->whatdest == ScopeLevel::LEVEL_PLAN ||
            (ships[race->Gov_ship]->whatorbits == ScopeLevel::LEVEL_SHIP &&
-            ships[ships[race->Gov_ship]->destshipno]->type == STYPE_HABITAT &&
+            ships[ships[race->Gov_ship]->destshipno]->type ==
+                ShipType::STYPE_HABITAT &&
             (ships[ships[race->Gov_ship]->destshipno]->whatorbits ==
                  ScopeLevel::LEVEL_PLAN ||
              ships[ships[race->Gov_ship]->destshipno]->whatorbits ==

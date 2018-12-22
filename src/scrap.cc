@@ -51,7 +51,8 @@ void scrap(const command_t &argv, GameObj &g) {
         free(s);
         continue;
       }
-      if (s->whatorbits == ScopeLevel::LEVEL_PLAN && s->type == OTYPE_TOXWC) {
+      if (s->whatorbits == ScopeLevel::LEVEL_PLAN &&
+          s->type == ShipType::OTYPE_TOXWC) {
         sprintf(buf,
                 "WARNING: This will release %d toxin points back into the "
                 "atmosphere!!\n",
@@ -98,7 +99,7 @@ void scrap(const command_t &argv, GameObj &g) {
 
         if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
             s2->resource + scrapval > Max_resource(s2) &&
-            s2->type != STYPE_SHUTTLE) {
+            s2->type != ShipType::STYPE_SHUTTLE) {
           scrapval = Max_resource(s2) - s2->resource;
           sprintf(buf, "(There is only room for %d resources.)\n", scrapval);
           notify(g.player, g.governor, buf);
@@ -196,7 +197,8 @@ void scrap(const command_t &argv, GameObj &g) {
 #ifdef NEVER
         fuelval = MIN(fuelval, 1. * Max_fuel(s2) - s2->fuel);
         destval = MIN(destval, Max_destruct(s2) - s2->destruct);
-        if (s2->type != STYPE_SHUTTLE) /* Leave scrapval alone for shuttles */
+        if (s2->type !=
+            ShipType::STYPE_SHUTTLE) /* Leave scrapval alone for shuttles */
           scrapval = MIN(scrapval, Max_resource(s2) - s2->resource);
         troopval = MIN(troopval, Max_crew(s2) - s2->troops);
         crewval = MIN(crewval, Max_crew(s2) - s2->popn);

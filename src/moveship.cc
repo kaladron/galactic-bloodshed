@@ -102,8 +102,8 @@ void Moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
     if (s->fuel < fuse) {
       if (send_messages) msg_OOF(s); /* send OOF notify */
       if (s->whatorbits == ScopeLevel::LEVEL_UNIV &&
-          (s->build_cost <= 50 || s->type == OTYPE_VN ||
-           s->type == OTYPE_BERS)) {
+          (s->build_cost <= 50 || s->type == ShipType::OTYPE_VN ||
+           s->type == ShipType::OTYPE_BERS)) {
         sprintf(telegram_buf, "%s has been lost in deep space.",
                 ship_to_string(*s).c_str());
         if (send_messages)
@@ -274,13 +274,13 @@ void Moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
           s->storbits = deststar;
           /* if this system isn't inhabited by you, give it to the
              governor of the ship */
-          if (!checking_fuel && (s->popn || s->type == OTYPE_PROBE)) {
+          if (!checking_fuel && (s->popn || s->type == ShipType::OTYPE_PROBE)) {
             if (!isset(dst->inhabited, (int)s->owner))
               dst->governor[s->owner - 1] = s->governor;
             setbit(dst->explored, (int)s->owner);
             setbit(dst->inhabited, (int)s->owner);
           }
-          if (s->type != OTYPE_VN) {
+          if (s->type != ShipType::OTYPE_VN) {
             sprintf(telegram_buf, "%s arrived at %s.",
                     ship_to_string(*s).c_str(), prin_ship_orbits(s));
             if (send_messages)
@@ -295,7 +295,7 @@ void Moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
         dist = sqrt(Distsq(s->xpos, s->ypos, dst->xpos + dpl->xpos,
                            dst->ypos + dpl->ypos));
         if (dist <= PLORBITSIZE) {
-          if (!checking_fuel && (s->popn || s->type == OTYPE_PROBE)) {
+          if (!checking_fuel && (s->popn || s->type == ShipType::OTYPE_PROBE)) {
             dpl->info[s->owner - 1].explored = 1;
             setbit(dst->explored, (int)(s->owner));
             setbit(dst->inhabited, (int)(s->owner));
@@ -312,11 +312,11 @@ void Moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
             sprintf(telegram_buf, "%s arriving at %s.",
                     ship_to_string(*s).c_str(), prin_ship_orbits(s));
           }
-          if (s->type == STYPE_OAP) {
+          if (s->type == ShipType::STYPE_OAP) {
             sprintf(buf, "\nEnslavement of the planet is now possible.");
             strcat(telegram_buf, buf);
           }
-          if (send_messages && s->type != OTYPE_VN)
+          if (send_messages && s->type != ShipType::OTYPE_VN)
             push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
         }
       } else if (destlevel == ScopeLevel::LEVEL_SHIP) {

@@ -69,7 +69,7 @@ void dock(const command_t &argv, GameObj &g) {
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
         (!Governor || s->governor == Governor)) {
-      if (Assault && s->type == STYPE_POD) {
+      if (Assault && s->type == ShipType::STYPE_POD) {
         g.out << "Sorry. Pods cannot be used to assault.\n";
         free(s);
         continue;
@@ -143,7 +143,7 @@ void dock(const command_t &argv, GameObj &g) {
         return;
       }
 
-      if (Assault && (s2->type == OTYPE_VN)) {
+      if (Assault && (s2->type == ShipType::OTYPE_VN)) {
         notify(Playernum, Governor,
                "You can't assault Von Neumann machines.\n");
         free(s);

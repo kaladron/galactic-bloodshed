@@ -70,12 +70,13 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
   /* compute caliber */
   caliber = current_caliber(from);
 
-  if (from->type == STYPE_MISSILE) /* missiles hit at point blank range */
+  if (from->type ==
+      ShipType::STYPE_MISSILE) /* missiles hit at point blank range */
     dist = 0.0;
   else {
     dist = sqrt((double)Distsq(xfrom, yfrom, xto, yto));
-    if (from->type == STYPE_MINE) { /* compute the effective range */
-      dist *= dist / 200.0;         /* mines are very effective inside 200 */
+    if (from->type == ShipType::STYPE_MINE) { /* compute the effective range */
+      dist *= dist / 200.0; /* mines are very effective inside 200 */
     }
   }
   if ((double)dist > gun_range((racetype *)nullptr, from, 0)) return -1;
@@ -499,7 +500,7 @@ double gun_range(racetype *r, Ship *s, int mode) {
  * range of telescopes, ground or space, given race and ship
  */
 double tele_range(int type, double tech) {
-  if (type == OTYPE_GTELE)
+  if (type == ShipType::OTYPE_GTELE)
     return log1p((double)tech) * 400 + SYSTEMSIZE / 8;
   else
     return log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
@@ -508,9 +509,9 @@ double tele_range(int type, double tech) {
 int current_caliber(Ship *ship) {
   if (ship->laser && ship->fire_laser)
     return GTYPE_LIGHT;
-  else if (ship->type == STYPE_MINE)
+  else if (ship->type == ShipType::STYPE_MINE)
     return GTYPE_LIGHT;
-  else if (ship->type == STYPE_MISSILE)
+  else if (ship->type == ShipType::STYPE_MISSILE)
     return GTYPE_HEAVY;
   else if (ship->guns == PRIMARY)
     return ship->primtype;

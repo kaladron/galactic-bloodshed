@@ -38,8 +38,8 @@ void enslave(const command_t &argv, GameObj &g) {
     free(s);
     return;
   }
-  if (s->type != STYPE_OAP) {
-    sprintf(buf, "This ship is not an %s.\n", Shipnames[STYPE_OAP]);
+  if (s->type != ShipType::STYPE_OAP) {
+    sprintf(buf, "This ship is not an %s.\n", Shipnames[ShipType::STYPE_OAP]);
     notify(Playernum, Governor, buf);
     free(s);
     return;

@@ -209,8 +209,8 @@ static void ship_report(GameObj &g, shipnum_t indx, unsigned char rep_on[]) {
   if ((rd[indx].type == PLANET && p->info[Playernum - 1].numsectsowned) ||
       (rd[indx].type != PLANET && s->alive && s->owner == Playernum &&
        authorized(Governor, s) && rep_on[s->type] &&
-       !(s->type == OTYPE_CANIST && !s->docked) &&
-       !(s->type == OTYPE_GREEN && !s->docked))) {
+       !(s->type == ShipType::OTYPE_CANIST && !s->docked) &&
+       !(s->type == ShipType::OTYPE_GREEN && !s->docked))) {
     if (rd[indx].type != PLANET && Stock) {
       if (first) {
         sprintf(buf,
@@ -245,7 +245,7 @@ static void ship_report(GameObj &g, shipnum_t indx, unsigned char rep_on[]) {
               Caliber[s->primtype], s->secondary, Caliber[s->sectype], Armor(s),
               s->tech, Max_speed(s), Cost(s), Mass(s), Size(s));
       notify(Playernum, Governor, buf);
-      if (s->type == STYPE_POD) {
+      if (s->type == ShipType::STYPE_POD) {
         sprintf(buf, " (%d)", s->special.pod.temperature);
         notify(Playernum, Governor, buf);
       }
@@ -267,13 +267,16 @@ static void ship_report(GameObj &g, shipnum_t indx, unsigned char rep_on[]) {
           s->laser ? "yes " : "    ", s->cew, s->cew_range,
           (int)((1.0 - .01 * s->damage) * s->tech / 4.0), s->primary,
           Caliber[s->primtype], s->secondary, Caliber[s->sectype], s->damage,
-          s->type == OTYPE_FACTORY ? Shipltrs[s->build_type] : ' ',
-          ((s->type == OTYPE_TERRA) || (s->type == OTYPE_PLOW)) ? "Standard"
-                                                                : s->shipclass);
+          s->type == ShipType::OTYPE_FACTORY ? Shipltrs[s->build_type] : ' ',
+          ((s->type == ShipType::OTYPE_TERRA) ||
+           (s->type == ShipType::OTYPE_PLOW))
+              ? "Standard"
+              : s->shipclass);
       notify(Playernum, Governor, buf);
     }
 
-    if (rd[indx].type != PLANET && Factories && (s->type == OTYPE_FACTORY)) {
+    if (rd[indx].type != PLANET && Factories &&
+        (s->type == ShipType::OTYPE_FACTORY)) {
       if (first) {
         sprintf(buf,
                 "   #    Cost Tech Mass Sz A Crw Ful Crg Hng Dst Sp "
@@ -281,7 +284,7 @@ static void ship_report(GameObj &g, shipnum_t indx, unsigned char rep_on[]) {
         notify(Playernum, Governor, buf);
         if (!SHip) first = 0;
       }
-      if ((s->build_type == 0) || (s->build_type == OTYPE_FACTORY)) {
+      if ((s->build_type == 0) || (s->build_type == ShipType::OTYPE_FACTORY)) {
         sprintf(buf,
                 "%5lu               (No ship type specified yet)           "
                 "           75%% (OFF)",
@@ -439,8 +442,8 @@ static void ship_report(GameObj &g, shipnum_t indx, unsigned char rep_on[]) {
               /* tac report at ship */
               if ((rd[i].s->owner != Playernum ||
                    !authorized(Governor, rd[i].s)) &&
-                  rd[i].s->alive && rd[i].s->type != OTYPE_CANIST &&
-                  rd[i].s->type != OTYPE_GREEN) {
+                  rd[i].s->alive && rd[i].s->type != ShipType::OTYPE_CANIST &&
+                  rd[i].s->type != ShipType::OTYPE_GREEN) {
                 int tev = 0, tspeed = 0, body = 0, prob = 0;
                 int factor = 0;
                 if ((rd[i].s->whatdest != ScopeLevel::LEVEL_UNIV ||

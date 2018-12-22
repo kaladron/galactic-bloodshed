@@ -1308,11 +1308,13 @@ void kill_ship(int Playernum, Ship *ship) {
   ship->alive = 0;
   ship->notified = 0; /* prepare the ship for recycling */
 
-  if (ship->type != STYPE_POD && ship->type != OTYPE_FACTORY) {
+  if (ship->type != ShipType::STYPE_POD &&
+      ship->type != ShipType::OTYPE_FACTORY) {
     /* pods don't do things to morale, ditto for factories */
     victim = races[ship->owner - 1];
     if (victim->Gov_ship == ship->number) victim->Gov_ship = 0;
-    if (!victim->God && Playernum != ship->owner && ship->type != OTYPE_VN) {
+    if (!victim->God && Playernum != ship->owner &&
+        ship->type != ShipType::OTYPE_VN) {
       killer = races[Playernum - 1];
       adjust_morale(killer, victim, (int)ship->build_cost);
       putrace(killer);
@@ -1322,7 +1324,7 @@ void kill_ship(int Playernum, Ship *ship) {
     putrace(victim);
   }
 
-  if (ship->type == OTYPE_VN || ship->type == OTYPE_BERS) {
+  if (ship->type == ShipType::OTYPE_VN || ship->type == ShipType::OTYPE_BERS) {
     getsdata(&Sdata);
     /* add ship to VN shit list */
     Sdata.VN_hitlist[ship->special.mind.who_killed - 1] += 1;
@@ -1345,7 +1347,8 @@ void kill_ship(int Playernum, Ship *ship) {
     putsdata(&Sdata);
   }
 
-  if (ship->type == OTYPE_TOXWC && ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
+  if (ship->type == ShipType::OTYPE_TOXWC &&
+      ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
     auto planet = getplanet(ship->storbits, ship->pnumorbits);
     planet.conditions[TOXIC] =
         MIN(100, planet.conditions[TOXIC] + ship->special.waste.toxic);

@@ -460,7 +460,7 @@ void give(const command_t &argv, GameObj &g) {
     free(ship);
     return;
   }
-  if (ship->type == STYPE_POD) {
+  if (ship->type == ShipType::STYPE_POD) {
     g.out << "You cannot change the ownership of spore pods.\n";
     free(ship);
     return;
@@ -867,7 +867,7 @@ void name(const command_t &argv, GameObj &g) {
   } else if (argv[1] == "class") {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
       (void)getship(&ship, g.shipno);
-      if (ship->type != OTYPE_FACTORY) {
+      if (ship->type != ShipType::OTYPE_FACTORY) {
         g.out << "You are not at a factory!\n";
         free(ship);
         return;

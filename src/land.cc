@@ -65,7 +65,7 @@ void land(const command_t &argv, GameObj &g) {
         free(s);
         continue;
       }
-      if (s->type == OTYPE_QUARRY) {
+      if (s->type == ShipType::OTYPE_QUARRY) {
         g.out << "You can't load quarries onto ship.\n";
         free(s);
         continue;
@@ -90,7 +90,7 @@ void land(const command_t &argv, GameObj &g) {
           free(s2);
           continue;
         }
-        if (s2->type == OTYPE_FACTORY) {
+        if (s2->type == ShipType::OTYPE_FACTORY) {
           g.out << "Can't land on factories.\n";
           free(s);
           free(s2);

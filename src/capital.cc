@@ -62,8 +62,8 @@ void capital(const command_t &argv, GameObj &g) {
       free(s);
       return;
     }
-    if (s->type != OTYPE_GOV) {
-      sprintf(buf, "That ship is not a %s.\n", Shipnames[OTYPE_GOV]);
+    if (s->type != ShipType::OTYPE_GOV) {
+      sprintf(buf, "That ship is not a %s.\n", Shipnames[ShipType::OTYPE_GOV]);
       notify(Playernum, Governor, buf);
       free(s);
       return;

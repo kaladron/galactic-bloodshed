@@ -150,7 +150,7 @@ void load(const command_t &argv, GameObj &g) {
 
       if (mode) amt = -amt; /* unload */
 
-      if (amt < 0 && s->type == OTYPE_VN) {
+      if (amt < 0 && s->type == ShipType::OTYPE_VN) {
         g.out << "You can't unload VNs.\n";
         free(s);
         if (sh) free(s2);
@@ -216,13 +216,13 @@ void load(const command_t &argv, GameObj &g) {
           break;
         case 'r':
           if (sh) {
-            if (s->type == STYPE_SHUTTLE &&
+            if (s->type == ShipType::STYPE_SHUTTLE &&
                 s->whatorbits != ScopeLevel::LEVEL_SHIP)
               uplim = diff ? 0 : s2->resource;
             else
               uplim =
                   diff ? 0 : MIN(s2->resource, Max_resource(s) - s->resource);
-            if (s2->type == STYPE_SHUTTLE &&
+            if (s2->type == ShipType::STYPE_SHUTTLE &&
                 s->whatorbits != ScopeLevel::LEVEL_SHIP)
               lolim = -s->resource;
             else
@@ -451,7 +451,8 @@ void load(const command_t &argv, GameObj &g) {
       }
 
       /* do transporting here */
-      if (s->type == OTYPE_TRANSDEV && s->special.transport.target && s->on)
+      if (s->type == ShipType::OTYPE_TRANSDEV && s->special.transport.target &&
+          s->on)
         do_transporter(Race, g, s);
 
       putship(s);
@@ -929,7 +930,7 @@ static void do_transporter(racetype *Race, GameObj &g, Ship *s) {
     notify(Playernum, Governor, buf);
     return;
   }
-  if (!s2->alive || s2->type != OTYPE_TRANSDEV || !s2->on) {
+  if (!s2->alive || s2->type != ShipType::OTYPE_TRANSDEV || !s2->on) {
     sprintf(buf, "The target device is not receiving.\n");
     notify(Playernum, Governor, buf);
     free(s2);

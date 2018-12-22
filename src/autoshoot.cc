@@ -39,7 +39,8 @@ int Bombard(Ship *ship, Planet *planet, racetype *r) {
   shipnum_t sh = planet->ships;
   while (sh && ok) {
     (void)getship(&s, sh);
-    ok = !(s->alive && s->type == OTYPE_PLANDEF && s->owner != ship->owner);
+    ok = !(s->alive && s->type == ShipType::OTYPE_PLANDEF &&
+           s->owner != ship->owner);
     sh = s->nextship;
     free(s);
   }
@@ -58,7 +59,7 @@ int Bombard(Ship *ship, Planet *planet, racetype *r) {
     if (smap.get(x, y).owner && smap.get(x, y).owner != ship->owner &&
         (smap.get(x, y).condition != SectorType::SEC_WASTED)) {
       if (isset(r->atwar, smap.get(x, y).owner) ||
-          (ship->type == OTYPE_BERS &&
+          (ship->type == ShipType::OTYPE_BERS &&
            smap.get(x, y).owner == ship->special.mind.target))
         found = 1;
       else {

@@ -242,7 +242,7 @@ found_planet:
     planet.ships = shipno;
     s.nextship = 0;
 
-    s.type = OTYPE_GOV;
+    s.type = ShipType::OTYPE_GOV;
     s.xpos = Stars[star]->xpos + planet.xpos;
     s.ypos = Stars[star]->ypos + planet.ypos;
     s.land_x = x;
@@ -255,19 +255,19 @@ found_planet:
 
     s.tech = 100.0;
 
-    s.build_type = OTYPE_GOV;
-    s.armor = Shipdata[OTYPE_GOV][ABIL_ARMOR];
+    s.build_type = ShipType::OTYPE_GOV;
+    s.armor = Shipdata[ShipType::OTYPE_GOV][ABIL_ARMOR];
     s.guns = PRIMARY;
-    s.primary = Shipdata[OTYPE_GOV][ABIL_GUNS];
-    s.primtype = Shipdata[OTYPE_GOV][ABIL_PRIMARY];
-    s.secondary = Shipdata[OTYPE_GOV][ABIL_GUNS];
-    s.sectype = Shipdata[OTYPE_GOV][ABIL_SECONDARY];
-    s.max_crew = Shipdata[OTYPE_GOV][ABIL_MAXCREW];
-    s.max_destruct = Shipdata[OTYPE_GOV][ABIL_DESTCAP];
-    s.max_resource = Shipdata[OTYPE_GOV][ABIL_CARGO];
-    s.max_fuel = Shipdata[OTYPE_GOV][ABIL_FUELCAP];
-    s.max_speed = Shipdata[OTYPE_GOV][ABIL_SPEED];
-    s.build_cost = Shipdata[OTYPE_GOV][ABIL_COST];
+    s.primary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
+    s.primtype = Shipdata[ShipType::OTYPE_GOV][ABIL_PRIMARY];
+    s.secondary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
+    s.sectype = Shipdata[ShipType::OTYPE_GOV][ABIL_SECONDARY];
+    s.max_crew = Shipdata[ShipType::OTYPE_GOV][ABIL_MAXCREW];
+    s.max_destruct = Shipdata[ShipType::OTYPE_GOV][ABIL_DESTCAP];
+    s.max_resource = Shipdata[ShipType::OTYPE_GOV][ABIL_CARGO];
+    s.max_fuel = Shipdata[ShipType::OTYPE_GOV][ABIL_FUELCAP];
+    s.max_speed = Shipdata[ShipType::OTYPE_GOV][ABIL_SPEED];
+    s.build_cost = Shipdata[ShipType::OTYPE_GOV][ABIL_COST];
     s.size = 100;
     s.base_mass = 100.0;
     sprintf(s.shipclass, "Standard");

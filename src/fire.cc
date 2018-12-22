@@ -120,7 +120,7 @@ void fire(const command_t &argv, GameObj &g) {
       check_retal_strength(to, &retal);
       bcopy(to, &dummy, sizeof(Ship));
 
-      if (from->type == OTYPE_AFV) {
+      if (from->type == ShipType::OTYPE_AFV) {
         if (!landed(from)) {
           sprintf(buf, "%s isn't landed on a planet!\n",
                   ship_to_string(*from).c_str());
@@ -245,7 +245,7 @@ void fire(const command_t &argv, GameObj &g) {
       }
       /* protecting ships retaliate individually if damage was inflicted */
       /* AFVs immune to retaliation of this type */
-      if (damage && from->alive && from->type != OTYPE_AFV) {
+      if (damage && from->alive && from->type != ShipType::OTYPE_AFV) {
         if (to->whatorbits == ScopeLevel::LEVEL_STAR) /* star level ships */
           sh = Stars[to->storbits]->ships;
         if (to->whatorbits == ScopeLevel::LEVEL_PLAN) { /* planet level ships */
@@ -325,7 +325,7 @@ void bombard(const command_t &argv, GameObj &g) {
         free(from);
         continue;
       }
-      if (from->type == OTYPE_AFV && !landed(from)) {
+      if (from->type == ShipType::OTYPE_AFV && !landed(from)) {
         g.out << "This ship is not landed on the planet.\n";
         free(from);
         continue;
@@ -387,7 +387,7 @@ void bombard(const command_t &argv, GameObj &g) {
       sh = p.ships;
       while (sh && ok) {
         (void)getship(&ship, sh);
-        ok = !(ship->alive && ship->type == OTYPE_PLANDEF &&
+        ok = !(ship->alive && ship->type == ShipType::OTYPE_PLANDEF &&
                ship->owner != Playernum);
         sh = ship->nextship;
         free(ship);
@@ -427,7 +427,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
 #ifdef DEFENSE
       /* planet retaliates - AFVs are immune to this */
-      if (numdest && from->type != OTYPE_AFV) {
+      if (numdest && from->type != ShipType::OTYPE_AFV) {
         damage = 0;
         for (i = 1; i <= Num_races; i++)
           if (Nuked[i - 1] && !p.slaved_to) {
@@ -449,7 +449,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
       /* protecting ships retaliate individually if damage was inflicted */
       /* AFVs are immune to this */
-      if (numdest && from->alive && from->type != OTYPE_AFV) {
+      if (numdest && from->alive && from->type != ShipType::OTYPE_AFV) {
         sh = p.ships;
         while (sh && from->alive) {
           (void)getship(&ship, sh);
@@ -602,7 +602,7 @@ void defend(const command_t &argv, GameObj &g) {
 
   damage = shoot_planet_to_ship(Race, to, strength, long_buf, short_buf);
 
-  if (!to->alive && to->type == OTYPE_TOXWC) {
+  if (!to->alive && to->type == ShipType::OTYPE_TOXWC) {
     /* get planet again since toxicity probably has changed */
     p = getplanet(g.snum, g.pnum);
   }
@@ -703,7 +703,7 @@ void detonate(const command_t &argv, GameObj &g) {
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
         authorized(Governor, s)) {
-      if (s->type != STYPE_MINE) {
+      if (s->type != ShipType::STYPE_MINE) {
         g.out << "That is not a mine.\n";
         free(s);
         continue;
@@ -728,16 +728,16 @@ int retal_strength(Ship *s) {
   if (!s->alive) return 0;
   if (!Shipdata[s->type][ABIL_SPEED] && !landed(s)) return 0;
   /* land based ships */
-  if (!s->popn && (s->type != OTYPE_BERS)) return 0;
+  if (!s->popn && (s->type != ShipType::OTYPE_BERS)) return 0;
 
   if (s->guns == PRIMARY)
-    avail = (s->type == STYPE_FIGHTER || s->type == OTYPE_AFV ||
-             s->type == OTYPE_BERS)
+    avail = (s->type == ShipType::STYPE_FIGHTER ||
+             s->type == ShipType::OTYPE_AFV || s->type == ShipType::OTYPE_BERS)
                 ? s->primary
                 : MIN(s->popn, s->primary);
   else if (s->guns == SECONDARY)
-    avail = (s->type == STYPE_FIGHTER || s->type == OTYPE_AFV ||
-             s->type == OTYPE_BERS)
+    avail = (s->type == ShipType::STYPE_FIGHTER ||
+             s->type == ShipType::OTYPE_AFV || s->type == ShipType::OTYPE_BERS)
                 ? s->secondary
                 : MIN(s->popn, s->secondary);
   else

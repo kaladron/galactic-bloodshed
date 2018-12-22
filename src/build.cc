@@ -79,7 +79,7 @@ void upgrade(const command_t &argv, GameObj &g) {
     free(dirship);
     return;
   }
-  if (dirship->type == OTYPE_FACTORY) {
+  if (dirship->type == ShipType::OTYPE_FACTORY) {
     g.out << "You can't upgrade factories.\n";
     free(dirship);
     return;
@@ -342,7 +342,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     free(dirship);
     return;
   }
-  if (dirship->type != OTYPE_FACTORY) {
+  if (dirship->type != ShipType::OTYPE_FACTORY) {
     g.out << "That is not a factory.\n";
     free(dirship);
     return;
@@ -457,7 +457,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     i = 0;
     while ((Shipltrs[i] != shipc) && (i < NUMSTYPES)) i++;
 
-    if ((i >= NUMSTYPES) || ((i == STYPE_POD) && (!Race->pods))) {
+    if ((i >= NUMSTYPES) || ((i == ShipType::STYPE_POD) && (!Race->pods))) {
       sprintf(buf, "Illegal ship letter.\n");
       notify(Playernum, Governor, buf);
       free(dirship);
@@ -468,7 +468,8 @@ void make_mod(const command_t &argv, GameObj &g) {
       free(dirship);
       return;
     }
-    if (!(Shipdata[i][ABIL_BUILD] & Shipdata[OTYPE_FACTORY][ABIL_CONSTRUCT])) {
+    if (!(Shipdata[i][ABIL_BUILD] &
+          Shipdata[ShipType::OTYPE_FACTORY][ABIL_CONSTRUCT])) {
       notify(Playernum, Governor,
              "This kind of ship does not require a factory to construct.\n");
       free(dirship);
@@ -741,7 +742,7 @@ void build(const command_t &argv, GameObj &g) {
       for (j = 0; j < NUMSTYPES; j++) {
         i = ShipVector[j];
         if ((!Shipdata[i][ABIL_GOD]) || Race->God) {
-          if (Race->pods || (i != STYPE_POD)) {
+          if (Race->pods || (i != ShipType::STYPE_POD)) {
             if (Shipdata[i][ABIL_PROGRAMMED]) {
               sprintf(buf,
                       "%1c %-15.15s %5ld %5ld %3ld %4ld %3ld %3ld %3ld "
@@ -903,7 +904,7 @@ void build(const command_t &argv, GameObj &g) {
         create_ship_by_planet(Playernum, Governor, Race, &newship, &planet,
                               snum, pnum, x, y);
         if (Race->governor[Governor].toggle.autoload &&
-            what != OTYPE_TRANSDEV && !Race->God)
+            what != ShipType::OTYPE_TRANSDEV && !Race->God)
           autoload_at_planet(Playernum, &newship, &planet, sector, &load_crew,
                              &load_fuel);
         else {
@@ -925,7 +926,7 @@ void build(const command_t &argv, GameObj &g) {
           }
           build_level = test_build_level.value();
           switch (builder->type) {
-            case OTYPE_FACTORY:
+            case ShipType::OTYPE_FACTORY:
               if (!(count = getcount(argv, 2))) {
                 notify(Playernum, Governor,
                        "Give a positive number of builds.\n");
@@ -941,8 +942,8 @@ void build(const command_t &argv, GameObj &g) {
               Getfactship(&newship, builder);
               outside = 1;
               break;
-            case STYPE_SHUTTLE:
-            case STYPE_CARGO:
+            case ShipType::STYPE_SHUTTLE:
+            case ShipType::STYPE_CARGO:
               if (landed(builder)) {
                 notify(Playernum, Governor,
                        "This ships cannot build when landed.\n");
@@ -978,7 +979,7 @@ void build(const command_t &argv, GameObj &g) {
               Getship(&newship, what, Race);
               break;
           }
-          if ((tech = builder->type == OTYPE_FACTORY
+          if ((tech = builder->type == ShipType::OTYPE_FACTORY
                           ? complexity(builder)
                           : Shipdata[what][ABIL_TECH]) > Race->tech &&
               !Race->God) {
@@ -992,7 +993,7 @@ void build(const command_t &argv, GameObj &g) {
           }
           if (outside && build_level == ScopeLevel::LEVEL_PLAN) {
             planet = getplanet(snum, pnum);
-            if (builder->type == OTYPE_FACTORY) {
+            if (builder->type == ShipType::OTYPE_FACTORY) {
               if (!can_build_at_planet(g, Stars[snum], planet)) {
                 g.out << "You can't build that here.\n";
                 free(builder);
@@ -1012,7 +1013,7 @@ void build(const command_t &argv, GameObj &g) {
         }
         /* build 'em */
         switch (builder->type) {
-          case OTYPE_FACTORY:
+          case ShipType::OTYPE_FACTORY:
             if ((shipcost = newship.build_cost) >
                 planet.info[Playernum - 1].resource) {
               sprintf(buf, "You need %dr to construct this ship.\n", shipcost);
@@ -1022,7 +1023,7 @@ void build(const command_t &argv, GameObj &g) {
             create_ship_by_planet(Playernum, Governor, Race, &newship, &planet,
                                   snum, pnum, x, y);
             if (Race->governor[Governor].toggle.autoload &&
-                what != OTYPE_TRANSDEV && !Race->God) {
+                what != ShipType::OTYPE_TRANSDEV && !Race->God) {
               autoload_at_planet(Playernum, &newship, &planet, sector,
                                  &load_crew, &load_fuel);
             } else {
@@ -1030,8 +1031,8 @@ void build(const command_t &argv, GameObj &g) {
               load_fuel = 0.0;
             }
             break;
-          case STYPE_SHUTTLE:
-          case STYPE_CARGO:
+          case ShipType::STYPE_SHUTTLE:
+          case ShipType::STYPE_CARGO:
             if (builder->resource < (shipcost = newship.build_cost)) {
               sprintf(buf, "You need %dr to construct the ship.\n", shipcost);
               notify(Playernum, Governor, buf);
@@ -1040,7 +1041,7 @@ void build(const command_t &argv, GameObj &g) {
             create_ship_by_ship(Playernum, Governor, Race, 1, &planet, &newship,
                                 builder);
             if (Race->governor[Governor].toggle.autoload &&
-                what != OTYPE_TRANSDEV && !Race->God)
+                what != ShipType::OTYPE_TRANSDEV && !Race->God)
               autoload_at_ship(&newship, builder, &load_crew, &load_fuel);
             else {
               load_crew = 0;
@@ -1060,7 +1061,7 @@ void build(const command_t &argv, GameObj &g) {
             create_ship_by_ship(Playernum, Governor, Race, 0, nullptr, &newship,
                                 builder);
             if (Race->governor[Governor].toggle.autoload &&
-                what != OTYPE_TRANSDEV && !Race->God)
+                what != ShipType::OTYPE_TRANSDEV && !Race->God)
               autoload_at_ship(&newship, builder, &load_crew, &load_fuel);
             else {
               load_crew = 0;
@@ -1138,7 +1139,7 @@ static int get_build_type(const char *string) {
 }
 
 static int can_build_this(int what, racetype *Race, char *string) {
-  if (what == STYPE_POD && !Race->pods) {
+  if (what == ShipType::STYPE_POD && !Race->pods) {
     sprintf(string, "Only Metamorphic races can build Spore Pods.\n");
     return (0);
   }
@@ -1150,11 +1151,11 @@ static int can_build_this(int what, racetype *Race, char *string) {
     sprintf(string, "Only Gods can build this type of ship.\n");
     return (0);
   }
-  if (what == OTYPE_VN && !Vn(Race)) {
+  if (what == ShipType::OTYPE_VN && !Vn(Race)) {
     sprintf(string, "You have not discovered VN technology.\n");
     return (0);
   }
-  if (what == OTYPE_TRANSDEV && !Avpm(Race)) {
+  if (what == ShipType::OTYPE_TRANSDEV && !Avpm(Race)) {
     sprintf(string, "You have not discovered AVPM technology.\n");
     return (0);
   }
@@ -1208,12 +1209,12 @@ static int can_build_on_sector(int what, racetype *Race, const Planet &planet,
     strcat(string, temp);
     return (0);
   }
-  if (what == OTYPE_QUARRY) {
+  if (what == ShipType::OTYPE_QUARRY) {
     int sh;
     sh = planet.ships;
     while (sh) {
       (void)getship(&s, sh);
-      if (s->alive && s->type == OTYPE_QUARRY && s->land_x == x &&
+      if (s->alive && s->type == ShipType::OTYPE_QUARRY && s->land_x == x &&
           s->land_y == y) {
         sprintf(string, "There already is a quarry here.\n");
         free(s);
@@ -1247,11 +1248,11 @@ static std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder,
     g.out << "This ship is damaged and cannot build.\n";
     return {};
   }
-  if (builder->type == OTYPE_FACTORY && !builder->on) {
+  if (builder->type == ShipType::OTYPE_FACTORY && !builder->on) {
     g.out << "This factory is not online.\n";
     return {};
   }
-  if (builder->type == OTYPE_FACTORY && !landed(builder)) {
+  if (builder->type == ShipType::OTYPE_FACTORY && !landed(builder)) {
     g.out << "Factories must be landed on a planet.\n";
     return {};
   }
@@ -1311,28 +1312,28 @@ static void initialize_new_ship(GameObj &g, racetype *Race, Ship *newship,
   newship->ships = 0;
   newship->on = 0;
   switch (newship->type) {
-    case OTYPE_VN:
+    case ShipType::OTYPE_VN:
       newship->special.mind.busy = 1;
       newship->special.mind.progenitor = Playernum;
       newship->special.mind.generation = 1;
       newship->special.mind.target = 0;
       newship->special.mind.tampered = 0;
       break;
-    case STYPE_MINE:
+    case ShipType::STYPE_MINE:
       newship->special.trigger.radius = 100; /* trigger radius */
       notify(Playernum, Governor,
              "Mine disarmed.\nTrigger radius set at 100.\n");
       break;
-    case OTYPE_TRANSDEV:
+    case ShipType::OTYPE_TRANSDEV:
       newship->special.transport.target = 0;
       newship->on = 0;
       g.out << "Receive OFF.  Change with order.\n";
       break;
-    case OTYPE_AP:
+    case ShipType::OTYPE_AP:
       g.out << "Processor OFF.\n";
       break;
-    case OTYPE_STELE:
-    case OTYPE_GTELE:
+    case ShipType::OTYPE_STELE:
+    case ShipType::OTYPE_GTELE:
       sprintf(buf, "Telescope range is %.2f.\n",
               tele_range(newship->type, newship->tech));
       notify(Playernum, Governor, buf);
@@ -1352,7 +1353,7 @@ static void initialize_new_ship(GameObj &g, racetype *Race, Ship *newship,
   if (Shipdata[newship->type][ABIL_REPAIR] && newship->max_crew)
     notify(Playernum, Governor,
            "This ship does not need resources to repair.\n");
-  if (newship->type == OTYPE_FACTORY)
+  if (newship->type == ShipType::OTYPE_FACTORY)
     notify(Playernum, Governor,
            "This factory may not begin repairs until it has been activated.\n");
   if (!newship->max_crew)
@@ -1372,10 +1373,10 @@ static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
   newship->ypos = Stars[snum]->ypos + planet->ypos;
   newship->land_x = x;
   newship->land_y = y;
-  sprintf(newship->shipclass,
-          (((newship->type == OTYPE_TERRA) || (newship->type == OTYPE_PLOW))
-               ? "5"
-               : "Standard"));
+  sprintf(newship->shipclass, (((newship->type == ShipType::OTYPE_TERRA) ||
+                                (newship->type == ShipType::OTYPE_PLOW))
+                                   ? "5"
+                                   : "Standard"));
   newship->whatorbits = ScopeLevel::LEVEL_PLAN;
   newship->whatdest = ScopeLevel::LEVEL_PLAN;
   newship->deststar = snum;
@@ -1392,7 +1393,7 @@ static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
   newship->governor = Governor;
   newship->ships = 0;
   insert_sh_plan(planet, newship);
-  if (newship->type == OTYPE_TOXWC) {
+  if (newship->type == ShipType::OTYPE_TOXWC) {
     sprintf(buf, "Toxin concentration on planet was %d%%,",
             planet->conditions[TOXIC]);
     notify(Playernum, Governor, buf);
@@ -1463,10 +1464,10 @@ static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
   newship->ypos = builder->ypos;
   newship->land_x = builder->land_x;
   newship->land_y = builder->land_y;
-  sprintf(newship->shipclass,
-          (((newship->type == OTYPE_TERRA) || (newship->type == OTYPE_PLOW))
-               ? "5"
-               : "Standard"));
+  sprintf(newship->shipclass, (((newship->type == ShipType::OTYPE_TERRA) ||
+                                (newship->type == ShipType::OTYPE_PLOW))
+                                   ? "5"
+                                   : "Standard"));
   builder->resource -= newship->build_cost;
 
   sprintf(buf, "%s built at a cost of %d resources.\n",
@@ -1595,7 +1596,7 @@ static void Getship(Ship *s, int i, racetype *r) {
   s->base_mass = getmass(s);
   s->mass = getmass(s);
   s->build_cost = r->God ? 0 : (int)cost(s);
-  if (s->type == OTYPE_VN || s->type == OTYPE_BERS)
+  if (s->type == ShipType::OTYPE_VN || s->type == ShipType::OTYPE_BERS)
     s->special.mind.progenitor = r->Playernum;
 }
 

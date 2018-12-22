@@ -151,7 +151,7 @@ void orbit(const command_t &argv, GameObj &g) {
         while (sh) {
           (void)getship(&s, sh);
           if (DontDispNum != sh &&
-              !(s->owner != g.player && s->type == STYPE_MINE)) {
+              !(s->owner != g.player && s->type == ShipType::STYPE_MINE)) {
             if ((s->owner == g.player) || (iq == 1)) {
               DispShip(g, &where, s, Race, buf);
               strcat(output, buf);
@@ -329,7 +329,7 @@ static void DispShip(const GameObj &g, placetype *where, Ship *ship,
   }
 
   switch (ship->type) {
-    case STYPE_MIRROR:
+    case ShipType::STYPE_MIRROR:
       if (ship->special.aimed_at.level == ScopeLevel::LEVEL_STAR) {
         xt = Stars[ship->special.aimed_at.snum]->xpos;
         yt = Stars[ship->special.aimed_at.snum]->ypos;
@@ -398,8 +398,8 @@ static void DispShip(const GameObj &g, placetype *where, Ship *ship,
       }
       break;
 
-    case OTYPE_CANIST:
-    case OTYPE_GREEN:
+    case ShipType::OTYPE_CANIST:
+    case ShipType::OTYPE_GREEN:
       break;
 
     default:

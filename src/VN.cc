@@ -62,18 +62,21 @@ void do_VN(Ship *ship) {
         if (p->info[nums[i] - 1].resource) f = nums[i];
       if (f) {
         int prod;
-        prod = MIN(p->info[f - 1].resource, Shipdata[OTYPE_VN][ABIL_COST]);
+        prod = MIN(p->info[f - 1].resource,
+                   Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
         p->info[f - 1].resource -= prod;
-        if (ship->type == OTYPE_VN)
+        if (ship->type == ShipType::OTYPE_VN)
           rcv_resource(ship, prod);
-        else if (ship->type == OTYPE_BERS)
+        else if (ship->type == ShipType::OTYPE_BERS)
           rcv_destruct(ship, prod);
-        if (ship->type == OTYPE_VN) {
+        if (ship->type == ShipType::OTYPE_VN) {
           sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
-                  Shipltrs[OTYPE_VN], ship->number, prin_ship_orbits(ship));
-        } else if (ship->type == OTYPE_BERS) {
+                  Shipltrs[ShipType::OTYPE_VN], ship->number,
+                  prin_ship_orbits(ship));
+        } else if (ship->type == ShipType::OTYPE_BERS) {
           sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
-                  Shipltrs[OTYPE_BERS], ship->number, prin_ship_orbits(ship));
+                  Shipltrs[ShipType::OTYPE_BERS], ship->number,
+                  prin_ship_orbits(ship));
         }
         push_telegram_race(f, buf);
         if (f != ship->owner)
@@ -85,7 +88,7 @@ void do_VN(Ship *ship) {
     if (!ship->special.mind.busy) {
       /* we were just built & launched */
 
-      if (ship->type == OTYPE_BERS)
+      if (ship->type == ShipType::OTYPE_BERS)
         order_berserker(ship);
       else
         order_VN(ship);
@@ -142,7 +145,7 @@ static void order_VN(Ship *ship) {
     /* no good; find someplace else. */
     ship->special.mind.busy = 0;
   }
-  ship->speed = Shipdata[OTYPE_VN][ABIL_SPEED];
+  ship->speed = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
 }
 
 /*  planet_doVN() -- called by doplanet() */
@@ -152,7 +155,7 @@ void planet_doVN(Ship *ship, Planet *planet, sector_map &smap) {
   int shipbuild;
 
   if (landed(ship)) {
-    if (ship->type == OTYPE_VN && ship->special.mind.busy) {
+    if (ship->type == ShipType::OTYPE_VN && ship->special.mind.busy) {
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */
       auto &s = smap.get(ship->land_x, ship->land_y);
@@ -170,15 +173,16 @@ void planet_doVN(Ship *ship, Planet *planet, sector_map &smap) {
         s.resource *= VN_RES_TAKE;
         prod =
             oldres - s.resource; /* poor way for a player to mine resources */
-        if (ship->type == OTYPE_VN)
+        if (ship->type == ShipType::OTYPE_VN)
           rcv_resource(ship, prod);
-        else if (ship->type == OTYPE_BERS)
+        else if (ship->type == ShipType::OTYPE_BERS)
           rcv_destruct(ship, 5 * prod);
         rcv_fuel(ship, (double)prod);
       }
       /* now try to construct another machine */
-      shipbuild =
-          (VN_brain.Total_mad > 100 && random() & 01) ? OTYPE_BERS : OTYPE_VN;
+      shipbuild = (VN_brain.Total_mad > 100 && random() & 01)
+                      ? ShipType::OTYPE_BERS
+                      : ShipType::OTYPE_VN;
       if (ship->resource >= Shipdata[shipbuild][ABIL_COST]) {
         Ship *s2;
         int n, numVNs;
@@ -223,11 +227,11 @@ void planet_doVN(Ship *ship, Planet *planet, sector_map &smap) {
           s2->base_mass = getmass(s2);
           s2->mass = s2->base_mass;
           s2->alive = 1;
-          if (shipbuild == OTYPE_BERS) {
+          if (shipbuild == ShipType::OTYPE_BERS) {
             /* special.mind.target = person killed the most VN's */
             s2->special.mind.target = VN_brain.Most_mad;
             sprintf(s2->name, "%x", s2->special.mind.target);
-            s2->speed = Shipdata[OTYPE_BERS][ABIL_SPEED];
+            s2->speed = Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED];
             s2->tech = ship->tech + 100.0;
             s2->bombard = 1;
             s2->protect.self = 1;
@@ -258,7 +262,7 @@ void planet_doVN(Ship *ship, Planet *planet, sector_map &smap) {
             s2->owner = 1;
             s2->governor = 0;
             s2->active = 1;
-            s2->speed = Shipdata[OTYPE_VN][ABIL_SPEED];
+            s2->speed = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
             s2->bombard = 0;
             s2->fuel = 0.5 * ship->fuel;
             ship->fuel *= 0.5;

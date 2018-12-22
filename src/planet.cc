@@ -101,16 +101,16 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
       /* planet level functions - do these here because they use the sector map
               or affect planet production */
       switch (ship->type) {
-        case OTYPE_VN:
+        case ShipType::OTYPE_VN:
           planet_doVN(ship, planet, smap);
           break;
-        case OTYPE_BERS:
+        case ShipType::OTYPE_BERS:
           if (!ship->destruct || !ship->bombard)
             planet_doVN(ship, planet, smap);
           else
             do_berserker(ship, planet);
           break;
-        case OTYPE_TERRA:
+        case ShipType::OTYPE_TERRA:
           if ((ship->on && landed(ship) && ship->popn)) {
             if (ship->fuel >= (double)FUEL_COST_TERRA)
               terraform(ship, planet, smap);
@@ -120,7 +120,7 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
             }
           }
           break;
-        case OTYPE_PLOW:
+        case ShipType::OTYPE_PLOW:
           if (ship->on && landed(ship)) {
             if (ship->fuel >= (double)FUEL_COST_PLOW)
               plow(ship, planet, smap);
@@ -136,7 +136,7 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
             push_telegram(ship->owner, ship->governor, buf);
           }
           break;
-        case OTYPE_DOME:
+        case ShipType::OTYPE_DOME:
           if (ship->on && landed(ship)) {
             if (ship->resource >= RES_COST_DOME)
               do_dome(ship, smap);
@@ -153,7 +153,7 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
             push_telegram(ship->owner, ship->governor, buf);
           }
           break;
-        case OTYPE_WPLANT:
+        case ShipType::OTYPE_WPLANT:
           if (landed(ship))
             if (ship->resource >= RES_COST_WPLANT &&
                 ship->fuel >= FUEL_COST_WPLANT)
@@ -173,7 +173,7 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
             push_telegram(ship->owner, ship->governor, buf);
           }
           break;
-        case OTYPE_QUARRY:
+        case ShipType::OTYPE_QUARRY:
           if ((ship->on && landed(ship) && ship->popn)) {
             if (ship->fuel >= FUEL_COST_QUARRY)
               do_quarry(ship, planet, smap);
@@ -198,10 +198,10 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
       /* add fuel for ships orbiting a gas giant */
       if (!landed(ship) && planet->type == PlanetType::GASGIANT) {
         switch (ship->type) {
-          case STYPE_TANKER:
+          case ShipType::STYPE_TANKER:
             fadd = FUEL_GAS_ADD_TANKER;
             break;
-          case STYPE_HABITAT:
+          case ShipType::STYPE_HABITAT:
             fadd = FUEL_GAS_ADD_HABITAT;
             break;
           default:
@@ -546,7 +546,8 @@ if (!Stinfo[starnum][planetnum].inhab)
       /* build wc's if it's been ordered */
       if (planet->info[i - 1].tox_thresh > 0 &&
           planet->conditions[TOXIC] >= planet->info[i - 1].tox_thresh &&
-          planet->info[i - 1].resource >= Shipcost(OTYPE_TOXWC, races[i - 1])) {
+          planet->info[i - 1].resource >=
+              Shipcost(ShipType::OTYPE_TOXWC, races[i - 1])) {
         Ship *s2;
         int t;
         ++Num_ships;
@@ -555,20 +556,20 @@ if (!Stinfo[starnum][planetnum].inhab)
         s2 = ships[Num_ships] = (Ship *)malloc(sizeof(Ship));
         bzero((char *)s2, sizeof(Ship));
         s2->number = Num_ships;
-        s2->type = OTYPE_TOXWC;
+        s2->type = ShipType::OTYPE_TOXWC;
 
-        s2->armor = Shipdata[OTYPE_TOXWC][ABIL_ARMOR];
+        s2->armor = Shipdata[ShipType::OTYPE_TOXWC][ABIL_ARMOR];
         s2->guns = GTYPE_NONE;
-        s2->primary = Shipdata[OTYPE_TOXWC][ABIL_GUNS];
-        s2->primtype = Shipdata[OTYPE_TOXWC][ABIL_PRIMARY];
-        s2->secondary = Shipdata[OTYPE_TOXWC][ABIL_GUNS];
-        s2->sectype = Shipdata[OTYPE_TOXWC][ABIL_SECONDARY];
-        s2->max_crew = Shipdata[OTYPE_TOXWC][ABIL_MAXCREW];
-        s2->max_resource = Shipdata[OTYPE_TOXWC][ABIL_CARGO];
-        s2->max_fuel = Shipdata[OTYPE_TOXWC][ABIL_FUELCAP];
-        s2->max_destruct = Shipdata[OTYPE_TOXWC][ABIL_DESTCAP];
-        s2->max_speed = Shipdata[OTYPE_TOXWC][ABIL_SPEED];
-        s2->build_cost = Shipcost(OTYPE_TOXWC, races[i - 1]);
+        s2->primary = Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS];
+        s2->primtype = Shipdata[ShipType::OTYPE_TOXWC][ABIL_PRIMARY];
+        s2->secondary = Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS];
+        s2->sectype = Shipdata[ShipType::OTYPE_TOXWC][ABIL_SECONDARY];
+        s2->max_crew = Shipdata[ShipType::OTYPE_TOXWC][ABIL_MAXCREW];
+        s2->max_resource = Shipdata[ShipType::OTYPE_TOXWC][ABIL_CARGO];
+        s2->max_fuel = Shipdata[ShipType::OTYPE_TOXWC][ABIL_FUELCAP];
+        s2->max_destruct = Shipdata[ShipType::OTYPE_TOXWC][ABIL_DESTCAP];
+        s2->max_speed = Shipdata[ShipType::OTYPE_TOXWC][ABIL_SPEED];
+        s2->build_cost = Shipcost(ShipType::OTYPE_TOXWC, races[i - 1]);
         s2->size = ship_size(s2);
         s2->base_mass = 1.0; /* a hack */
         s2->mass = s2->base_mass;

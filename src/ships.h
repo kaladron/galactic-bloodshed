@@ -95,7 +95,7 @@ enum abil_t {
   ABIL_MAINTAIN
 };
 
-#define NUMSTYPES (STYPE_LANDER + 1)
+#define NUMSTYPES (ShipType::STYPE_LANDER + 1)
 #define NUMABILS (ABIL_MAINTAIN + 1)
 
 #define SHIP_NAMESIZE 18

@@ -112,10 +112,10 @@ void profile(const command_t &argv, GameObj &g) {
             gun_range(Race, (Ship *)nullptr, 1));
     notify(Playernum, Governor, buf);
     sprintf(buf, "Morale: %5ld\t\t\t\t\t    space:  %5.0f\n", Race->morale,
-            tele_range(OTYPE_STELE, Race->tech));
+            tele_range(ShipType::OTYPE_STELE, Race->tech));
     notify(Playernum, Governor, buf);
     sprintf(buf, "Updates active: %d\t\t\t\t    ground: %5.0f\n\n", Race->turn,
-            tele_range(OTYPE_GTELE, Race->tech));
+            tele_range(ShipType::OTYPE_GTELE, Race->tech));
     notify(Playernum, Governor, buf);
     sprintf(buf, "%s  Planet Conditions\t      Sector Preferences\n",
             Race->Metamorph ? "Metamorphic Race\t" : "Normal Race\t\t");
@@ -237,7 +237,7 @@ void profile(const command_t &argv, GameObj &g) {
             Estimate_i((int)(r->conditions[HELIUM]), Race, p));
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\t  space:  %6s\n",
-            Estimate_f(tele_range(OTYPE_STELE, r->tech), Race, p));
+            Estimate_f(tele_range(ShipType::OTYPE_STELE, r->tech), Race, p));
     notify(Playernum, Governor, buf);
     sprintf(buf, "Metab:   %s", Estimate_f(r->metabolism, Race, p));
     notify(Playernum, Governor, buf);
@@ -245,7 +245,7 @@ void profile(const command_t &argv, GameObj &g) {
             Estimate_i((int)(r->conditions[NITROGEN]), Race, p));
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\t  ground: %6s\n",
-            Estimate_f(tele_range(OTYPE_GTELE, r->tech), Race, p));
+            Estimate_f(tele_range(ShipType::OTYPE_GTELE, r->tech), Race, p));
     notify(Playernum, Governor, buf);
     sprintf(buf, "Sexes:   %s", Estimate_i((int)(r->number_sexes), Race, p));
     notify(Playernum, Governor, buf);

@@ -62,7 +62,7 @@ void capture(const command_t &argv, GameObj &g) {
         free(ship);
         continue;
       }
-      if (ship->type == OTYPE_VN) {
+      if (ship->type == ShipType::OTYPE_VN) {
         notify(Playernum, Governor,
                "You can't capture Von Neumann machines.\n");
         free(ship);
@@ -215,7 +215,7 @@ void capture(const command_t &argv, GameObj &g) {
           sect.troops += boarders - ship->troops;
           ship->mass += ship->troops * Race->mass;
         }
-        if (olddpopn + olddtroops && ship->type != OTYPE_FACTORY)
+        if (olddpopn + olddtroops && ship->type != ShipType::OTYPE_FACTORY)
           adjust_morale(Race, alien, (int)ship->build_cost);
         /* unoccupied ships and factories don't count */
       } else { /* retreat */

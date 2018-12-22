@@ -247,8 +247,8 @@ void planet_doVN(shiptype *ship, Planet *planet, sector_map &smap) {
             s2->hyper_drive.ready = 1;
             s2->hyper_drive.charge = 0;
             s2->mounted = 1;
-            sprintf(buf, "%s constructed %s.", Ship(*ship).c_str(),
-                    Ship(*s2).c_str());
+            sprintf(buf, "%s constructed %s.", ship_to_string(*ship).c_str(),
+                    ship_to_string(*s2).c_str());
             push_telegram((int)ship->owner, (int)ship->governor, buf);
             s2->special.mind.tampered = 0;
           } else {

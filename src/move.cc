@@ -583,8 +583,9 @@ void walk(const command_t &argv, GameObj &g) {
     succ = 1;
 
   if (ship->alive && ship->popn && succ) {
-    sprintf(buf, "%s moving from %d,%d to %d,%d on %s.\n", Ship(*ship).c_str(),
-            (int)ship->land_x, (int)ship->land_y, x, y, Dispshiploc(ship));
+    sprintf(buf, "%s moving from %d,%d to %d,%d on %s.\n",
+            ship_to_string(*ship).c_str(), (int)ship->land_x, (int)ship->land_y,
+            x, y, Dispshiploc(ship));
     ship->land_x = x;
     ship->land_y = y;
     use_fuel(ship, AFV_FUEL_COST);
@@ -734,8 +735,9 @@ static void mech_attack_people(shiptype *ship, int *civ, int *mil,
   *civ -= cas_civ;
   *mil -= cas_mil;
   sprintf(short_msg, "%s: %s %s %s [%d]\n", Dispshiploc(ship),
-          Ship(*ship).c_str(), (*civ + *mil) ? "attacked" : "slaughtered",
-          alien->name, alien->Playernum);
+          ship_to_string(*ship).c_str(),
+          (*civ + *mil) ? "attacked" : "slaughtered", alien->name,
+          alien->Playernum);
   strcpy(long_msg, short_msg);
   sprintf(buf, "\tBattle at %d,%d %s: %d guns fired on %d civ/%d mil\n", x, y,
           Desnames[sect.condition], strength, oldciv, oldmil);
@@ -779,7 +781,7 @@ static void people_attack_mech(shiptype *ship, int civ, int mil, racetype *Race,
   do_collateral(ship, damage, &cas_civ, &cas_mil, &pdam, &sdam);
   sprintf(short_msg, "%s: %s [%d] %s %s\n", Dispshiploc(ship), Race->name,
           Race->Playernum, ship->alive ? "attacked" : "DESTROYED",
-          Ship(*ship).c_str());
+          ship_to_string(*ship).c_str());
   strcpy(long_msg, short_msg);
   sprintf(buf, "\tBattle at %d,%d %s: %d civ/%d mil assault %s\n", x, y,
           Desnames[sect.condition], civ, mil, Shipnames[ship->type]);

@@ -31,7 +31,7 @@ static void do_revoke(racetype *, const governor_t, const governor_t);
 
 // TODO(jeffbailey): Move this into the ship class when we stop using bzero to
 // initalize it.
-std::string Ship(const ship &s) {
+std::string ship_to_string(const ship &s) {
   return str(boost::format("%c%lu %s [%d]") % Shipltrs[s.type] % s.number %
              s.name % s.owner);
 }
@@ -77,11 +77,11 @@ void grant(const command_t &argv, GameObj &g) {
           authorized(Governor, ship)) {
         ship->governor = gov;
         sprintf(buf, "\"%s\" granted you %s at %s\n",
-                Race->governor[Governor].name, Ship(*ship).c_str(),
+                Race->governor[Governor].name, ship_to_string(*ship).c_str(),
                 prin_ship_orbits(ship));
         warn(Playernum, gov, buf);
         putship(ship);
-        sprintf(buf, "%s granted to \"%s\"\n", Ship(*ship).c_str(),
+        sprintf(buf, "%s granted to \"%s\"\n", ship_to_string(*ship).c_str(),
                 Race->governor[gov].name);
         notify(Playernum, Governor, buf);
         free(ship);
@@ -444,11 +444,11 @@ void fix(const command_t &argv, GameObj &g) {
     } else if (argv[2] == "alive") {
       s->alive = 1;
       s->damage = 0;
-      sprintf(buf, "%s resurrected\n", Ship(*s).c_str());
+      sprintf(buf, "%s resurrected\n", ship_to_string(*s).c_str());
     } else if (argv[2] == "dead") {
       s->alive = 0;
       s->damage = 100;
-      sprintf(buf, "%s destroyed\n", Ship(*s).c_str());
+      sprintf(buf, "%s destroyed\n", ship_to_string(*s).c_str());
     } else {
       g.out << "No such option for 'fix ship'.\n";
       free(s);

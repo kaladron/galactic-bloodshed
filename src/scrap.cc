@@ -61,7 +61,7 @@ void scrap(const command_t &argv, GameObj &g) {
       if (!s->docked) {
         sprintf(buf,
                 "%s is not landed or docked.\nNo resources can be reclaimed.\n",
-                Ship(*s).c_str());
+                ship_to_string(*s).c_str());
         notify(g.player, g.governor, buf);
       }
       if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
@@ -89,7 +89,8 @@ void scrap(const command_t &argv, GameObj &g) {
       scrapval = Cost(s) / 2 + s->resource;
 
       if (s->docked) {
-        sprintf(buf, "%s: original cost: %ld\n", Ship(*s).c_str(), Cost(s));
+        sprintf(buf, "%s: original cost: %ld\n", ship_to_string(*s).c_str(),
+                Cost(s));
         notify(g.player, g.governor, buf);
         sprintf(buf, "         scrap value%s: %d rp's.\n",
                 s->resource ? "(with stockpile) " : "", scrapval);

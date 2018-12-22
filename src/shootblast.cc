@@ -100,8 +100,9 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
   if (from->mode) {
     damage =
         do_radiation(to, from->tech, strength, hits, "radiation", damage_msg);
-    sprintf(short_msg, "%s: %s %s %s\n", Dispshiploc(to), Ship(*from).c_str(),
-            to->alive ? "attacked" : "DESTROYED", Ship(*to).c_str());
+    sprintf(short_msg, "%s: %s %s %s\n", Dispshiploc(to),
+            ship_to_string(*from).c_str(), to->alive ? "attacked" : "DESTROYED",
+            ship_to_string(*to).c_str());
     strcpy(long_msg, short_msg);
     strcat(long_msg, damage_msg);
   } else {
@@ -130,8 +131,9 @@ int shoot_ship_to_ship(shiptype *from, shiptype *to, int strength, int cew,
 
     damage = do_damage((int)from->owner, to, (double)from->tech, strength, hits,
                        defense, caliber, (double)dist, weapon, damage_msg);
-    sprintf(short_msg, "%s: %s %s %s\n", Dispshiploc(to), Ship(*from).c_str(),
-            to->alive ? "attacked" : "DESTROYED", Ship(*to).c_str());
+    sprintf(short_msg, "%s: %s %s %s\n", Dispshiploc(to),
+            ship_to_string(*from).c_str(), to->alive ? "attacked" : "DESTROYED",
+            ship_to_string(*to).c_str());
     strcpy(long_msg, short_msg);
     strcat(long_msg, damage_msg);
   }
@@ -160,7 +162,8 @@ int shoot_planet_to_ship(racetype *Race, shiptype *ship, int strength,
   damage = do_damage(Race->Playernum, ship, Race->tech, strength, hits, 0,
                      GTYPE_MEDIUM, 0.0, "medium guns", damage_msg);
   sprintf(short_msg, "%s [%d] %s %s\n", Dispshiploc(ship), Race->Playernum,
-          ship->alive ? "attacked" : "DESTROYED", Ship(*ship).c_str());
+          ship->alive ? "attacked" : "DESTROYED",
+          ship_to_string(*ship).c_str());
   strcpy(long_msg, short_msg);
   strcat(long_msg, damage_msg);
 
@@ -274,7 +277,7 @@ int shoot_ship_to_planet(shiptype *ship, Planet *pl, int strength, int x, int y,
   pl->conditions[TOXIC] += (100 - pl->conditions[TOXIC]) *
                            ((double)numdest / (double)(pl->Maxx * pl->Maxy));
 
-  sprintf(short_msg, "%s bombards %s [%d]\n", Ship(*ship).c_str(),
+  sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(*ship).c_str(),
           Dispshiploc(ship), oldowner);
   strcpy(long_msg, short_msg);
   sprintf(buf, "\t%d sectors destroyed\n", numdest);

@@ -73,13 +73,13 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
 
   if (!ship->active) {
     sprintf(buf, "%s is irradiated (%d); it cannot be given orders.\n",
-            Ship(*ship).c_str(), ship->rad);
+            ship_to_string(*ship).c_str(), ship->rad);
     notify(Playernum, Governor, buf);
     return;
   }
   if (ship->type != OTYPE_TRANSDEV && !ship->popn && Max_crew(ship)) {
     sprintf(buf, "%s has no crew and is not a robotic ship.\n",
-            Ship(*ship).c_str());
+            ship_to_string(*ship).c_str());
     notify(Playernum, Governor, buf);
     return;
   }

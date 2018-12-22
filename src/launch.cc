@@ -48,14 +48,16 @@ void launch(const command_t &argv, GameObj &g) {
       }
 
       if (!(s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP)) {
-        sprintf(buf, "%s is not landed or docked.\n", Ship(*s).c_str());
+        sprintf(buf, "%s is not landed or docked.\n",
+                ship_to_string(*s).c_str());
         notify(Playernum, Governor, buf);
         free(s);
         continue;
       }
       if (!landed(s)) APcount = 0;
       if (landed(s) && s->resource > Max_resource(s)) {
-        sprintf(buf, "%s is too overloaded to launch.\n", Ship(*s).c_str());
+        sprintf(buf, "%s is too overloaded to launch.\n",
+                ship_to_string(*s).c_str());
         notify(Playernum, Governor, buf);
         free(s);
         continue;
@@ -95,8 +97,8 @@ void launch(const command_t &argv, GameObj &g) {
           putship(s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_PLAN) {
           remove_sh_ship(s, s2);
-          sprintf(buf, "%s launched from %s.\n", Ship(*s).c_str(),
-                  Ship(*s2).c_str());
+          sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
+                  ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
@@ -116,8 +118,8 @@ void launch(const command_t &argv, GameObj &g) {
           putship(s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_STAR) {
           remove_sh_ship(s, s2);
-          sprintf(buf, "%s launched from %s.\n", Ship(*s).c_str(),
-                  Ship(*s2).c_str());
+          sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
+                  ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
@@ -135,8 +137,8 @@ void launch(const command_t &argv, GameObj &g) {
           putship(s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_UNIV) {
           remove_sh_ship(s, s2);
-          sprintf(buf, "%s launched from %s.\n", Ship(*s).c_str(),
-                  Ship(*s2).c_str());
+          sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
+                  ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
@@ -183,8 +185,8 @@ void launch(const command_t &argv, GameObj &g) {
         s2->docked = 0;
         s2->whatdest = ScopeLevel::LEVEL_UNIV;
         s2->destshipno = 0;
-        sprintf(buf, "%s undocked from %s.\n", Ship(*s).c_str(),
-                Ship(*s2).c_str());
+        sprintf(buf, "%s undocked from %s.\n", ship_to_string(*s).c_str(),
+                ship_to_string(*s2).c_str());
         notify(Playernum, Governor, buf);
         putship(s);
         putship(s2);
@@ -215,7 +217,7 @@ void launch(const command_t &argv, GameObj &g) {
         fuel = gravity(p) * s->mass * LAUNCH_GRAV_MASS_FACTOR;
         if (s->fuel < fuel) {
           sprintf(buf, "%s does not have enough fuel! (%.1f)\n",
-                  Ship(*s).c_str(), fuel);
+                  ship_to_string(*s).c_str(), fuel);
           notify(Playernum, Governor, buf);
           free(s);
           return;
@@ -240,13 +242,13 @@ void launch(const command_t &argv, GameObj &g) {
           putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
         }
         sprintf(buf, "%s observed launching from planet /%s/%s.\n",
-                Ship(*s).c_str(), Stars[s->storbits]->name,
+                ship_to_string(*s).c_str(), Stars[s->storbits]->name,
                 Stars[s->storbits]->pnames[s->pnumorbits]);
         for (player_t i = 1; i <= Num_races; i++)
           if (p.info[i - 1].numsectsowned && i != Playernum)
             notify(i, (int)Stars[s->storbits]->governor[i - 1], buf);
 
-        sprintf(buf, "%s launched from planet,", Ship(*s).c_str());
+        sprintf(buf, "%s launched from planet,", ship_to_string(*s).c_str());
         notify(Playernum, Governor, buf);
         sprintf(buf, " using %.1f fuel.\n", fuel);
         notify(Playernum, Governor, buf);

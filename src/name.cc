@@ -535,7 +535,7 @@ void give(const command_t &argv, GameObj &g) {
   }
   g.out << "Owner changed.\n";
   sprintf(buf, "%s [%d] gave you %s at %s.\n", Race->name, Playernum,
-          Ship(*ship).c_str(), prin_ship_orbits(ship));
+          ship_to_string(*ship).c_str(), prin_ship_orbits(ship));
   warn(who, 0, buf);
 
   if (!Race->God) {

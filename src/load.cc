@@ -68,7 +68,8 @@ void load(const command_t &argv, GameObj &g) {
         continue;
       }
       if (!s->active) {
-        sprintf(buf, "%s is irradiated and inactive.\n", Ship(*s).c_str());
+        sprintf(buf, "%s is irradiated and inactive.\n",
+                ship_to_string(*s).c_str());
         notify(Playernum, Governor, buf);
         free(s);
         continue;
@@ -82,13 +83,15 @@ void load(const command_t &argv, GameObj &g) {
                          Stars[s->storbits]->AP[Playernum - 1], APcount))
         continue;
       if (!s->docked) {
-        sprintf(buf, "%s is not landed or docked.\n", Ship(*s).c_str());
+        sprintf(buf, "%s is not landed or docked.\n",
+                ship_to_string(*s).c_str());
         notify(Playernum, Governor, buf);
         free(s);
         continue;
       } else { /* ship has a recipient */
         if (s->whatdest == ScopeLevel::LEVEL_PLAN) {
-          sprintf(buf, "%s at %d,%d\n", Ship(*s).c_str(), s->land_x, s->land_y);
+          sprintf(buf, "%s at %d,%d\n", ship_to_string(*s).c_str(), s->land_x,
+                  s->land_y);
           notify(Playernum, Governor, buf);
           if (s->storbits != g.snum || s->pnumorbits != g.pnum) {
             notify(Playernum, Governor,
@@ -98,7 +101,7 @@ void load(const command_t &argv, GameObj &g) {
           }
         } else { /* ship is docked */
           if (!s->destshipno) {
-            sprintf(buf, "%s is not docked.\n", Ship(*s).c_str());
+            sprintf(buf, "%s is not docked.\n", ship_to_string(*s).c_str());
             free(s);
             continue;
           }
@@ -114,21 +117,21 @@ void load(const command_t &argv, GameObj &g) {
             s->docked = 0;
             s->whatdest = ScopeLevel::LEVEL_UNIV;
             putship(s);
-            sprintf(buf, "%s is not docked.\n", Ship(*s2).c_str());
+            sprintf(buf, "%s is not docked.\n", ship_to_string(*s2).c_str());
             notify(Playernum, Governor, buf);
             free(s);
             free(s2);
             continue;
           }
           if (overloaded(s2) && s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
-            sprintf(buf, "%s is overloaded!\n", Ship(*s2).c_str());
+            sprintf(buf, "%s is overloaded!\n", ship_to_string(*s2).c_str());
             notify(Playernum, Governor, buf);
             free(s);
             free(s2);
             continue;
           }
-          sprintf(buf, "%s docked with %s\n", Ship(*s).c_str(),
-                  Ship(*s2).c_str());
+          sprintf(buf, "%s docked with %s\n", ship_to_string(*s).c_str(),
+                  ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
           sh = 1;
           if (s2->owner != Playernum) {
@@ -292,7 +295,7 @@ void load(const command_t &argv, GameObj &g) {
             s->popn += amt;
             s->mass += amt * Race->mass;
             sprintf(buf, "crew complement of %s is now %lu.\n",
-                    Ship(*s).c_str(), s->popn);
+                    ship_to_string(*s).c_str(), s->popn);
             notify(Playernum, Governor, buf);
           }
           break;
@@ -335,7 +338,7 @@ void load(const command_t &argv, GameObj &g) {
             s->troops += amt;
             s->mass += amt * Race->mass;
             sprintf(buf, "troop complement of %s is now %lu.\n",
-                    Ship(*s).c_str(), s->troops);
+                    ship_to_string(*s).c_str(), s->troops);
             notify(Playernum, Governor, buf);
           }
           break;
@@ -351,7 +354,7 @@ void load(const command_t &argv, GameObj &g) {
           sprintf(buf, "%d destruct transferred.\n", amt);
           notify(Playernum, Governor, buf);
           if (!Max_crew(s)) {
-            sprintf(buf, "\n%s ", Ship(*s).c_str());
+            sprintf(buf, "\n%s ", ship_to_string(*s).c_str());
             notify(Playernum, Governor, buf);
             if (s->destruct) {
               sprintf(buf, "now boobytrapped.\n");
@@ -488,7 +491,8 @@ void jettison(const command_t &argv, GameObj &g) {
         continue;
       }
       if (!s->active) {
-        sprintf(buf, "%s is irradiated and inactive.\n", Ship(*s).c_str());
+        sprintf(buf, "%s is irradiated and inactive.\n",
+                ship_to_string(*s).c_str());
         notify(Playernum, Governor, buf);
         free(s);
         continue;
@@ -529,8 +533,8 @@ void jettison(const command_t &argv, GameObj &g) {
             sprintf(buf, "%d crew %s into deep space.\n", amt,
                     (amt == 1) ? "hurls itself" : "hurl themselves");
             notify(Playernum, Governor, buf);
-            sprintf(buf, "Complement of %s is now %lu.\n", Ship(*s).c_str(),
-                    s->popn);
+            sprintf(buf, "Complement of %s is now %lu.\n",
+                    ship_to_string(*s).c_str(), s->popn);
             notify(Playernum, Governor, buf);
             Mod = 1;
           }
@@ -554,7 +558,7 @@ void jettison(const command_t &argv, GameObj &g) {
             sprintf(buf, "%d destruct jettisoned.\n", amt);
             notify(Playernum, Governor, buf);
             if (!Max_crew(s)) {
-              sprintf(buf, "\n%s ", Ship(*s).c_str());
+              sprintf(buf, "\n%s ", ship_to_string(*s).c_str());
               notify(Playernum, Governor, buf);
               if (s->destruct) {
                 g.out << "still boobytrapped.\n";
@@ -997,8 +1001,8 @@ static void do_transporter(racetype *Race, GameObj &g, shiptype *s) {
 
   if (s2->owner != s->owner) {
     sprintf(telegram_buf, "Audio-vibatory-physio-molecular transport device #");
-    sprintf(buf, "%s gave your ship %s the following:\n", Ship(*s).c_str(),
-            Ship(*s2).c_str());
+    sprintf(buf, "%s gave your ship %s the following:\n",
+            ship_to_string(*s).c_str(), ship_to_string(*s2).c_str());
     strcat(telegram_buf, buf);
     strcat(telegram_buf, bufr);
     strcat(telegram_buf, bufd);
@@ -1110,9 +1114,9 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, shiptype *ship,
   }
   sprintf(telegram_buf, "/%s/%s: %s [%d] %s assaults %s [%d] %c(%d,%d) %s\n",
           Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
-          Playernum, Ship(*ship).c_str(), alien->name, alien->Playernum,
-          Dessymbols[sect.condition], ship->land_x, ship->land_y,
-          (sect.owner == Playernum ? "VICTORY" : "DEFEAT"));
+          Playernum, ship_to_string(*ship).c_str(), alien->name,
+          alien->Playernum, Dessymbols[sect.condition], ship->land_x,
+          ship->land_y, (sect.owner == Playernum ? "VICTORY" : "DEFEAT"));
 
   if (sect.owner == Playernum) {
     sprintf(buf, "VICTORY! The sector is yours!\n");

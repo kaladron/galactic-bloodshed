@@ -76,7 +76,7 @@ void dock(const command_t &argv, GameObj &g) {
       }
       if (!Assault) {
         if (s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP) {
-          sprintf(buf, "%s is already docked.\n", Ship(*s).c_str());
+          sprintf(buf, "%s is already docked.\n", ship_to_string(*s).c_str());
           notify(Playernum, Governor, buf);
           free(s);
           continue;
@@ -152,7 +152,7 @@ void dock(const command_t &argv, GameObj &g) {
       }
 
       if (s2->docked || (s->whatorbits == ScopeLevel::LEVEL_SHIP)) {
-        sprintf(buf, "%s is already docked.\n", Ship(*s2).c_str());
+        sprintf(buf, "%s is already docked.\n", ship_to_string(*s2).c_str());
         notify(Playernum, Governor, buf);
         free(s);
         free(s2);
@@ -164,8 +164,9 @@ void dock(const command_t &argv, GameObj &g) {
           0.05 + Dist * 0.025 * (Assault ? 2.0 : 1.0) * sqrt((double)s->mass);
 
       if (Dist > DIST_TO_DOCK) {
-        sprintf(buf, "%s must be %.2f or closer to %s.\n", Ship(*s).c_str(),
-                DIST_TO_DOCK, Ship(*s2).c_str());
+        sprintf(buf, "%s must be %.2f or closer to %s.\n",
+                ship_to_string(*s).c_str(), DIST_TO_DOCK,
+                ship_to_string(*s2).c_str());
         notify(Playernum, Governor, buf);
         free(s);
         free(s2);
@@ -188,14 +189,15 @@ void dock(const command_t &argv, GameObj &g) {
         free(s2);
         continue;
       }
-      sprintf(buf, "Distance to %s: %.2f.\n", Ship(*s2).c_str(), Dist);
+      sprintf(buf, "Distance to %s: %.2f.\n", ship_to_string(*s2).c_str(),
+              Dist);
       notify(Playernum, Governor, buf);
       sprintf(buf, "This maneuver will take %.2f fuel (of %.2f.)\n\n", fuel,
               s->fuel);
       notify(Playernum, Governor, buf);
 
       if (s2->docked && !Assault) {
-        sprintf(buf, "%s is already docked.\n", Ship(*s2).c_str());
+        sprintf(buf, "%s is already docked.\n", ship_to_string(*s2).c_str());
         notify(Playernum, Governor, buf);
         free(s);
         free(s2);
@@ -392,8 +394,9 @@ void dock(const command_t &argv, GameObj &g) {
       }
 
       if (Assault) {
-        sprintf(telegram_buf, "%s ASSAULTED by %s at %s\n", Ship(ship).c_str(),
-                Ship(*s).c_str(), prin_ship_orbits(s2));
+        sprintf(telegram_buf, "%s ASSAULTED by %s at %s\n",
+                ship_to_string(ship).c_str(), ship_to_string(*s).c_str(),
+                prin_ship_orbits(s2));
         sprintf(buf, "Your damage: %d%%, theirs: %d%%.\n", dam2, dam);
         strcat(telegram_buf, buf);
         if (!s2->max_crew && s2->destruct) {
@@ -469,15 +472,15 @@ void dock(const command_t &argv, GameObj &g) {
             casualties, what == MIL ? "mil" : "civ", casualties3, casualties2);
         notify(Playernum, Governor, buf);
         warn(old2owner, old2gov, telegram_buf);
-        sprintf(buf, "%s %s %s at %s.\n", Ship(*s).c_str(),
+        sprintf(buf, "%s %s %s at %s.\n", ship_to_string(*s).c_str(),
                 s2->alive ? (s2->owner == Playernum ? "CAPTURED" : "assaulted")
                           : "DESTROYED",
-                Ship(ship).c_str(), prin_ship_orbits(s));
+                ship_to_string(ship).c_str(), prin_ship_orbits(s));
         if (s2->owner == Playernum || !s2->alive) post(buf, COMBAT);
         notify_star(Playernum, Governor, s->storbits, buf);
       } else {
-        sprintf(buf, "%s docked with %s.\n", Ship(*s).c_str(),
-                Ship(*s2).c_str());
+        sprintf(buf, "%s docked with %s.\n", ship_to_string(*s).c_str(),
+                ship_to_string(*s2).c_str());
         notify(Playernum, Governor, buf);
       }
 

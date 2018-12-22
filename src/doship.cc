@@ -273,7 +273,8 @@ void domissile(shiptype *ship) {
         bomby = ship->special.impact.y % p->Maxy;
       }
       sprintf(buf, "%s dropped on sector %d,%d at planet %s.\n",
-              Ship(*ship).c_str(), bombx, bomby, prin_ship_orbits(ship));
+              ship_to_string(*ship).c_str(), bombx, bomby,
+              prin_ship_orbits(ship));
 
       auto smap = getsmap(*p);
       numdest = shoot_ship_to_planet(ship, p, (int)ship->destruct, bombx, bomby,
@@ -282,12 +283,12 @@ void domissile(shiptype *ship) {
       push_telegram((int)ship->owner, (int)ship->governor, long_buf);
       kill_ship((int)ship->owner, ship);
       sprintf(buf, "%s dropped on %s.\n\t%d sectors destroyed.\n",
-              Ship(*ship).c_str(), prin_ship_orbits(ship), numdest);
+              ship_to_string(*ship).c_str(), prin_ship_orbits(ship), numdest);
       for (i = 1; i <= Num_races; i++)
         if (p->info[i - 1].numsectsowned && i != ship->owner)
           push_telegram(i, Stars[ship->storbits]->governor[i - 1], buf);
       if (numdest) {
-        sprintf(buf, "%s dropped on %s.\n", Ship(*ship).c_str(),
+        sprintf(buf, "%s dropped on %s.\n", ship_to_string(*ship).c_str(),
                 prin_ship_orbits(ship));
         post(buf, COMBAT);
       }
@@ -361,7 +362,7 @@ void domine(int shipno, int detonate) {
       rad = 1;
 
     if (rad) {
-      sprintf(buf, "%s detonated at %s\n", Ship(*ship).c_str(),
+      sprintf(buf, "%s detonated at %s\n", ship_to_string(*ship).c_str(),
               prin_ship_orbits(ship));
       post(buf, COMBAT);
       notify_star(ship->owner, ship->governor, ship->storbits, buf);
@@ -521,7 +522,7 @@ static void do_pod(shiptype *ship) {
     if (ship->special.pod.temperature >= POD_THRESHOLD) {
       i = int_rand(0, (int)Stars[ship->storbits]->numplanets - 1);
       sprintf(telegram_buf, "%s has warmed and exploded at %s\n",
-              Ship(*ship).c_str(), prin_ship_orbits(ship));
+              ship_to_string(*ship).c_str(), prin_ship_orbits(ship));
       if (infect_planet((int)ship->owner, (int)ship->storbits, i)) {
         sprintf(buf, "\tmeta-colony established on %s.",
                 Stars[ship->storbits]->pnames[i]);
@@ -535,8 +536,8 @@ static void do_pod(shiptype *ship) {
           (double)Stars[ship->storbits]->temperature / (double)segments);
   } else if (ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
     if (ship->special.pod.decay >= POD_DECAY) {
-      sprintf(telegram_buf, "%s has decayed at %s\n", Ship(*ship).c_str(),
-              prin_ship_orbits(ship));
+      sprintf(telegram_buf, "%s has decayed at %s\n",
+              ship_to_string(*ship).c_str(), prin_ship_orbits(ship));
       push_telegram((int)ship->owner, (int)ship->governor, telegram_buf);
       kill_ship((int)ship->owner, ship);
     } else {
@@ -648,15 +649,15 @@ static void do_mirror(shiptype *ship) {
         i = int_rand(0, round_rand((2. / ((double)(Body(s)))) *
                                    (double)(ship->special.aimed_at.intensity) /
                                    (range / PLORBITSIZE + 1.0)));
-        sprintf(telegram_buf, "%s aimed at %s\n", Ship(*ship).c_str(),
-                Ship(*s).c_str());
+        sprintf(telegram_buf, "%s aimed at %s\n", ship_to_string(*ship).c_str(),
+                ship_to_string(*s).c_str());
         s->damage += i;
         if (i) {
           sprintf(buf, "%d%% damage done.\n", i);
           strcat(telegram_buf, buf);
         }
         if (s->damage >= 100) {
-          sprintf(buf, "%s DESTROYED!!!\n", Ship(*s).c_str());
+          sprintf(buf, "%s DESTROYED!!!\n", ship_to_string(*s).c_str());
           strcat(telegram_buf, buf);
           kill_ship((int)(ship->owner), s);
         }

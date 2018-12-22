@@ -62,7 +62,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
       if (s->fuel < fuse) {
         sprintf(telegram_buf,
                 "%s at system %s does not have %.1ff to do hyperspace jump.",
-                Ship(*s).c_str(), prin_ship_orbits(s), fuse);
+                ship_to_string(*s).c_str(), prin_ship_orbits(s), fuse);
         if (send_messages)
           push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
         s->hyper_drive.on = 0;
@@ -81,7 +81,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
       s->hyper_drive.on = 0;
       s->hyper_drive.ready = 0;
       s->hyper_drive.charge = 0;
-      sprintf(telegram_buf, "%s arrived at %s.", Ship(*s).c_str(),
+      sprintf(telegram_buf, "%s arrived at %s.", ship_to_string(*s).c_str(),
               prin_ship_orbits(s));
       if (send_messages)
         push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
@@ -105,7 +105,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
           (s->build_cost <= 50 || s->type == OTYPE_VN ||
            s->type == OTYPE_BERS)) {
         sprintf(telegram_buf, "%s has been lost in deep space.",
-                Ship(*s).c_str());
+                ship_to_string(*s).c_str());
         if (send_messages)
           push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
         if (send_messages) kill_ship((int)(s->owner), s);
@@ -225,7 +225,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
         s->whatdest = ScopeLevel::LEVEL_UNIV;
         s->protect.evade = 0;
         sprintf(telegram_buf, "%s at %s lost sight of destination ship #%ld.",
-                Ship(*s).c_str(), prin_ship_orbits(s), s->destshipno);
+                ship_to_string(*s).c_str(), prin_ship_orbits(s), s->destshipno);
         if (send_messages)
           push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
         return;
@@ -281,8 +281,8 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
             setbit(dst->inhabited, (int)s->owner);
           }
           if (s->type != OTYPE_VN) {
-            sprintf(telegram_buf, "%s arrived at %s.", Ship(*s).c_str(),
-                    prin_ship_orbits(s));
+            sprintf(telegram_buf, "%s arrived at %s.",
+                    ship_to_string(*s).c_str(), prin_ship_orbits(s));
             if (send_messages)
               push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
           }
@@ -304,13 +304,13 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
           s->pnumorbits = destpnum;
           if (dist <= (double)DIST_TO_LAND) {
             sprintf(telegram_buf, "%s within landing distance of %s.",
-                    Ship(*s).c_str(), prin_ship_orbits(s));
+                    ship_to_string(*s).c_str(), prin_ship_orbits(s));
             if (checking_fuel || !do_merchant(s, dpl))
               if (s->whatdest == ScopeLevel::LEVEL_PLAN)
                 s->whatdest = ScopeLevel::LEVEL_UNIV;
           } else {
-            sprintf(telegram_buf, "%s arriving at %s.", Ship(*s).c_str(),
-                    prin_ship_orbits(s));
+            sprintf(telegram_buf, "%s arriving at %s.",
+                    ship_to_string(*s).c_str(), prin_ship_orbits(s));
           }
           if (s->type == STYPE_OAP) {
             sprintf(buf, "\nEnslavement of the planet is now possible.");
@@ -341,7 +341,7 @@ void Moveship(shiptype *s, int mode, int send_messages, int checking_fuel) {
  *  code segments; so that code isn't duplicated.
  */
 void msg_OOF(shiptype *s) {
-  sprintf(buf, "%s is out of fuel at %s.", Ship(*s).c_str(),
+  sprintf(buf, "%s is out of fuel at %s.", ship_to_string(*s).c_str(),
           prin_ship_orbits(s));
   push_telegram((int)(s->owner), (int)s->governor, buf);
 }

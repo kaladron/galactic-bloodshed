@@ -647,8 +647,8 @@ static int moveship_onplanet(shiptype *ship, Planet *planet) {
         (!ship->notified)) {
       char teleg_buf[1000];
       ship->notified = 1;
-      sprintf(teleg_buf, "%s is out of orders at %s.", Ship(*ship).c_str(),
-              prin_ship_orbits(ship));
+      sprintf(teleg_buf, "%s is out of orders at %s.",
+              ship_to_string(*ship).c_str(), prin_ship_orbits(ship));
       push_telegram((int)(ship->owner), (int)ship->governor, teleg_buf);
     }
   } else if (bounced)

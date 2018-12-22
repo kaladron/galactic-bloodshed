@@ -11,7 +11,7 @@
 #include "ships.h"
 #include "vars.h"
 
-std::string Ship(const ship &);
+std::string ship_to_string(const ship &);
 void grant(const command_t &, GameObj &);
 void governors(const command_t &, GameObj &);
 int authorized(int, shiptype *);

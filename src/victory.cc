@@ -13,7 +13,22 @@
 #include "races.h"
 #include "vars.h"
 
-static int victory_sort(const void *, const void *);
+static auto constexpr victory_sort(const void *A, const void *B) {
+  const struct vic *a = (const struct vic *)A;
+  const struct vic *b = (const struct vic *)B;
+  if (a->no_count)
+    return 1;
+  else if (b->no_count)
+    return -1;
+
+  if (b->rawscore > a->rawscore)
+    return 1;
+  else if (b->rawscore < a->rawscore)
+    return -1;
+
+  // Must be equal
+  return 0;
+}
 
 void victory(const command_t &argv, GameObj &g) {
   struct vic vic[MAXPLAYERS];
@@ -66,15 +81,4 @@ void create_victory_list(struct vic vic[MAXPLAYERS]) {
       vic[i - 1].no_count = 1;
   }
   qsort(vic, Num_races, sizeof(struct vic), victory_sort);
-}
-
-static int victory_sort(const void *A, const void *B) {
-  const struct vic *a = (const struct vic *)A;
-  const struct vic *b = (const struct vic *)B;
-  if (a->no_count)
-    return (1);
-  else if (b->no_count)
-    return (-1);
-  else
-    return (b->rawscore - a->rawscore);
 }

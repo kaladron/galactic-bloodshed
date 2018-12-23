@@ -61,13 +61,11 @@ void upgrade(const command_t &argv, GameObj &g) {
   racetype *Race;
 
   if (g.level != ScopeLevel::LEVEL_SHIP) {
-    notify(Playernum, Governor,
-           "You have to change scope to the ship you wish to upgrade.\n");
+    g.out << "You have to change scope to the ship you wish to upgrade.\n";
     return;
   }
   if (!getship(&dirship, g.shipno)) {
-    sprintf(buf, "Illegal dir value.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "Illegal dir value.\n";
     return;
   }
   if (testship(Playernum, Governor, dirship)) {
@@ -119,8 +117,7 @@ void upgrade(const command_t &argv, GameObj &g) {
   } else if (argv[1] == "mount" && Shipdata[dirship->build_type][ABIL_MOUNT] &&
              !dirship->mount) {
     if (!Crystal(Race)) {
-      notify(Playernum, Governor,
-             "Your race does not now how to utilize crystal power yet.\n");
+      g.out << "Your race does not now how to utilize crystal power yet.\n";
       free(dirship);
       return;
     }
@@ -194,14 +191,12 @@ void upgrade(const command_t &argv, GameObj &g) {
     }
   } else if (argv[1] == "cew" && Shipdata[dirship->build_type][ABIL_CEW]) {
     if (!Cew(Race)) {
-      sprintf(buf, "Your race cannot build confined energy weapons.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "Your race cannot build confined energy weapons.\n";
       free(dirship);
       return;
     }
     if (!Shipdata[dirship->build_type][ABIL_CEW]) {
-      notify(Playernum, Governor,
-             "This kind of ship cannot mount confined energy weapons.\n");
+      g.out << "This kind of ship cannot mount confined energy weapons.\n";
       free(dirship);
       return;
     }
@@ -217,22 +212,19 @@ void upgrade(const command_t &argv, GameObj &g) {
     }
   } else if (argv[1] == "laser" && Shipdata[dirship->build_type][ABIL_LASER]) {
     if (!Laser(Race)) {
-      sprintf(buf, "Your race cannot build lasers.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "Your race cannot build lasers.\n";
       free(dirship);
       return;
     }
     if (Shipdata[dirship->build_type][ABIL_LASER])
       ship.laser = 1;
     else {
-      notify(Playernum, Governor,
-             "That ship cannot be fitted with combat lasers.\n");
+      g.out << "That ship cannot be fitted with combat lasers.\n";
       free(dirship);
       return;
     }
   } else {
-    notify(Playernum, Governor,
-           "That characteristic either doesn't exist or can't be modified.\n");
+    g.out << "That characteristic either doesn't exist or can't be modified.\n";
     free(dirship);
     return;
   }
@@ -322,14 +314,12 @@ void make_mod(const command_t &argv, GameObj &g) {
   double cost0;
 
   if (g.level != ScopeLevel::LEVEL_SHIP) {
-    notify(Playernum, Governor,
-           "You have to change scope to an installation.\n");
+    g.out << "You have to change scope to an installation.\n";
     return;
   }
 
   if (!getship(&dirship, g.shipno)) {
-    sprintf(buf, "Illegal dir value.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "Illegal dir value.\n";
     return;
   }
   if (testship(Playernum, Governor, dirship)) {
@@ -452,8 +442,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     while ((Shipltrs[i] != shipc) && (i < NUMSTYPES)) i++;
 
     if ((i >= NUMSTYPES) || ((i == ShipType::STYPE_POD) && (!Race->pods))) {
-      sprintf(buf, "Illegal ship letter.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "Illegal ship letter.\n";
       free(dirship);
       return;
     }
@@ -464,8 +453,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     }
     if (!(Shipdata[i][ABIL_BUILD] &
           Shipdata[ShipType::OTYPE_FACTORY][ABIL_CONSTRUCT])) {
-      notify(Playernum, Governor,
-             "This kind of ship does not require a factory to construct.\n");
+      g.out << "This kind of ship does not require a factory to construct.\n";
       free(dirship);
       return;
     }
@@ -506,15 +494,13 @@ void make_mod(const command_t &argv, GameObj &g) {
 
   } else if (mode == 1) {
     if (!dirship->build_type) {
-      notify(Playernum, Governor,
-             "No ship design specified. Use 'make <ship type>' first.\n");
+      g.out << "No ship design specified. Use 'make <ship type>' first.\n";
       free(dirship);
       return;
     }
 
     if (argv.size() < 2) {
-      notify(Playernum, Governor,
-             "You have to specify the characteristic you wish to modify.\n");
+      g.out << "You have to specify the characteristic you wish to modify.\n";
       free(dirship);
       return;
     }
@@ -606,15 +592,12 @@ void make_mod(const command_t &argv, GameObj &g) {
         }
       } else if (argv[1] == "cew" && Shipdata[dirship->build_type][ABIL_CEW]) {
         if (!Cew(Race)) {
-          sprintf(buf,
-                  "Your race does not understand confined energy weapons.\n");
-          notify(Playernum, Governor, buf);
+          g.out << "Your race does not understand confined energy weapons.\n";
           free(dirship);
           return;
         }
         if (!Shipdata[dirship->build_type][ABIL_CEW]) {
-          notify(Playernum, Governor,
-                 "This kind of ship cannot mount confined energy weapons.\n");
+          g.out << "This kind of ship cannot mount confined energy weapons.\n";
           free(dirship);
           return;
         }
@@ -631,23 +614,20 @@ void make_mod(const command_t &argv, GameObj &g) {
       } else if (argv[1] == "laser" &&
                  Shipdata[dirship->build_type][ABIL_LASER]) {
         if (!Laser(Race)) {
-          sprintf(buf, "Your race does not understand lasers yet.\n");
-          notify(Playernum, Governor, buf);
+          g.out << "Your race does not understand lasers yet.\n";
           free(dirship);
           return;
         }
         if (Shipdata[dirship->build_type][ABIL_LASER])
           dirship->laser = !dirship->laser;
         else {
-          notify(Playernum, Governor,
-                 "That ship cannot be fitted with combat lasers.\n");
+          g.out << "That ship cannot be fitted with combat lasers.\n";
           free(dirship);
           return;
         }
       } else {
-        notify(
-            Playernum, Governor,
-            "That characteristic either doesn't exist or can't be modified.\n");
+        g.out << "That characteristic either doesn't exist or can't be "
+                 "modified.\n";
         free(dirship);
         return;
       }
@@ -655,15 +635,13 @@ void make_mod(const command_t &argv, GameObj &g) {
       if (argv[1] == "hyperdrive") {
         dirship->hyper_drive.has = !dirship->hyper_drive.has;
       } else {
-        notify(Playernum, Governor,
-               "You may only modify hyperdrive "
-               "installation on this kind of ship.\n");
+        g.out << "You may only modify hyperdrive "
+                 "installation on this kind of ship.\n";
         free(dirship);
         return;
       }
     } else {
-      notify(Playernum, Governor,
-             "Sorry, but you can't modify this ship right now.\n");
+      g.out << "Sorry, but you can't modify this ship right now.\n";
       free(dirship);
       return;
     }
@@ -675,9 +653,8 @@ void make_mod(const command_t &argv, GameObj &g) {
   /* compute how much it's going to cost to build the ship */
 
   if ((cost0 = cost(dirship)) > 65535.0) {
-    notify(Playernum, Governor,
-           "Woah!! YOU CHEATER!!!  The max cost allowed "
-           "is 65535!!! I'm Telllllllling!!!\n");
+    g.out << "Woah!! YOU CHEATER!!!  The max cost allowed "
+             "is 65535!!! I'm Telllllllling!!!\n";
     free(dirship);
     return;
   }
@@ -761,8 +738,7 @@ void build(const command_t &argv, GameObj &g) {
       if (i < 0 || i >= NUMSTYPES)
         g.out << "No such ship type.\n";
       else if (!Shipdata[i][ABIL_PROGRAMMED])
-        notify(Playernum, Governor,
-               "This ship type has not been programmed.\n");
+        g.out << "This ship type has not been programmed.\n";
       else {
         if ((fd = fopen(EXAM_FL, "r")) == nullptr) {
           perror(EXAM_FL);
@@ -834,8 +810,7 @@ void build(const command_t &argv, GameObj &g) {
 
   level = g.level;
   if (level != ScopeLevel::LEVEL_SHIP && level != ScopeLevel::LEVEL_PLAN) {
-    notify(Playernum, Governor,
-           "You must change scope to a ship or planet to build.\n");
+    g.out << "You must change scope to a ship or planet to build.\n";
     return;
   }
   snum = g.snum;
@@ -859,8 +834,7 @@ void build(const command_t &argv, GameObj &g) {
             return;
           }
           if (!(Shipdata[what][ABIL_BUILD] & 1) && !Race->God) {
-            notify(Playernum, Governor,
-                   "This ship cannot be built by a planet.\n");
+            g.out << "This ship cannot be built by a planet.\n";
             return;
           }
           if (argv.size() < 3) {
@@ -922,14 +896,12 @@ void build(const command_t &argv, GameObj &g) {
           switch (builder->type) {
             case ShipType::OTYPE_FACTORY:
               if (!(count = getcount(argv, 2))) {
-                notify(Playernum, Governor,
-                       "Give a positive number of builds.\n");
+                g.out << "Give a positive number of builds.\n";
                 free(builder);
                 return;
               }
               if (!landed(builder)) {
-                notify(Playernum, Governor,
-                       "Factories can only build when landed on a planet.\n");
+                g.out << "Factories can only build when landed on a planet.\n";
                 free(builder);
                 return;
               }
@@ -939,8 +911,7 @@ void build(const command_t &argv, GameObj &g) {
             case ShipType::STYPE_SHUTTLE:
             case ShipType::STYPE_CARGO:
               if (landed(builder)) {
-                notify(Playernum, Governor,
-                       "This ships cannot build when landed.\n");
+                g.out << "This ships cannot build when landed.\n";
                 free(builder);
                 return;
               }
@@ -965,8 +936,7 @@ void build(const command_t &argv, GameObj &g) {
                 return;
               }
               if (!(count = getcount(argv, 3))) {
-                notify(Playernum, Governor,
-                       "Give a positive number of builds.\n");
+                g.out << "Give a positive number of builds.\n";
                 free(builder);
                 return;
               }
@@ -1315,8 +1285,7 @@ static void initialize_new_ship(GameObj &g, racetype *Race, Ship *newship,
       break;
     case ShipType::STYPE_MINE:
       newship->special.trigger.radius = 100; /* trigger radius */
-      notify(Playernum, Governor,
-             "Mine disarmed.\nTrigger radius set at 100.\n");
+      g.out << "Mine disarmed.\nTrigger radius set at 100.\n";
       break;
     case ShipType::OTYPE_TRANSDEV:
       newship->special.transport.target = 0;
@@ -1345,14 +1314,12 @@ static void initialize_new_ship(GameObj &g, racetype *Race, Ship *newship,
              "It will need resources to become fully operational.\n");
   }
   if (Shipdata[newship->type][ABIL_REPAIR] && newship->max_crew)
-    notify(Playernum, Governor,
-           "This ship does not need resources to repair.\n");
+    g.out << "This ship does not need resources to repair.\n";
   if (newship->type == ShipType::OTYPE_FACTORY)
-    notify(Playernum, Governor,
-           "This factory may not begin repairs until it has been activated.\n");
+    g.out
+        << "This factory may not begin repairs until it has been activated.\n";
   if (!newship->max_crew)
-    notify(Playernum, Governor,
-           "This ship is robotic, and may not repair itself.\n");
+    g.out << "This ship is robotic, and may not repair itself.\n";
   sprintf(buf, "Loaded with %d crew and %.1f fuel.\n", load_crew, load_fuel);
   notify(Playernum, Governor, buf);
 }
@@ -1688,16 +1655,14 @@ void sell(const command_t &argv, GameObj &g) {
     free(s);
   }
   if (!ok) {
-    notify(
-        Playernum, Governor,
-        "You don't have an undamaged space port or government center here.\n");
+    g.out << "You don't have an undamaged space port or government center "
+             "here.\n";
     return;
   }
   switch (commod) {
     case 'r':
       if (!p.info[Playernum - 1].resource) {
-        notify(Playernum, Governor,
-               "You don't have any resources here to sell!\n");
+        g.out << "You don't have any resources here to sell!\n";
         return;
       }
       amount = MIN(amount, p.info[Playernum - 1].resource);
@@ -1706,8 +1671,7 @@ void sell(const command_t &argv, GameObj &g) {
       break;
     case 'd':
       if (!p.info[Playernum - 1].destruct) {
-        notify(Playernum, Governor,
-               "You don't have any destruct here to sell!\n");
+        g.out << "You don't have any destruct here to sell!\n";
         return;
       }
       amount = MIN(amount, p.info[Playernum - 1].destruct);
@@ -1725,8 +1689,7 @@ void sell(const command_t &argv, GameObj &g) {
       break;
     case 'x':
       if (!p.info[Playernum - 1].crystals) {
-        notify(Playernum, Governor,
-               "You don't have any crystals here to sell!\n");
+        g.out << "You don't have any crystals here to sell!\n";
         return;
       }
       amount = MIN(amount, p.info[Playernum - 1].crystals);
@@ -1734,8 +1697,7 @@ void sell(const command_t &argv, GameObj &g) {
       item = CRYSTAL;
       break;
     default:
-      notify(Playernum, Governor,
-             "Permitted commodities are r, d, f, and x.\n");
+      g.out << "Permitted commodities are r, d, f, and x.\n";
       return;
   }
 
@@ -1822,11 +1784,9 @@ void bid(const command_t &argv, GameObj &g) {
         g.out << "No such type of commodity.\n";
         return;
     }
-    notify(Playernum, Governor,
-           "+++ Galactic Bloodshed Commodities Market +++\n\n");
-    notify(Playernum, Governor,
-           "  Lot Stock      Type  Owner  Bidder  Amount "
-           "Cost/Unit    Ship  Dest\n");
+    g.out << "+++ Galactic Bloodshed Commodities Market +++\n\n";
+    g.out << "  Lot Stock      Type  Owner  Bidder  Amount "
+             "Cost/Unit    Ship  Dest\n";
     for (i = 1; i <= Numcommods(); i++) {
       getcommod(&c, i);
       if (c->owner && c->amount && (c->type == item)) {
@@ -1875,9 +1835,8 @@ void bid(const command_t &argv, GameObj &g) {
       free(s);
     }
     if (!ok) {
-      notify(Playernum, Governor,
-             "You don't have an undamaged space port or "
-             "government center here.\n");
+      g.out << "You don't have an undamaged space port or "
+               "government center here.\n";
       return;
     }
 
@@ -1895,9 +1854,8 @@ void bid(const command_t &argv, GameObj &g) {
     }
     if (c->owner == g.player &&
         (c->star_from != g.snum || c->planet_from != g.pnum)) {
-      notify(Playernum, Governor,
-             "You can only set a minimum price for your "
-             "lot from the location it was sold.\n");
+      g.out << "You can only set a minimum price for your "
+               "lot from the location it was sold.\n";
       free(c);
       return;
     }

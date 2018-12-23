@@ -34,12 +34,10 @@
 /// Determine whether the ship crashed or not.
 static std::tuple<bool, int> crash(const Ship *s, const double fuel) noexcept {
   // Crash from insufficient fuel.
-  if (s->fuel < fuel)
-    return {true, 0};
+  if (s->fuel < fuel) return {true, 0};
 
   // Damaged ships stand of chance of crash landing.
-  if (auto roll = int_rand(1, 100); roll <= s->damage)
-    return {true, roll};
+  if (auto roll = int_rand(1, 100); roll <= s->damage) return {true, roll};
 
   // No crash.
   return {false, 0};

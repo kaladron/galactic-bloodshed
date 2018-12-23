@@ -9,7 +9,6 @@
 #include "vars.h"
 
 void land(const command_t &, GameObj &);
-int crash(Ship *, double);
 int docked(Ship *);
 int overloaded(Ship *);
 

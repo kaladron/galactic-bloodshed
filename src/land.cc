@@ -33,6 +33,17 @@
 
 static int roll;
 
+static auto crash(Ship *s, double fuel) noexcept {
+  roll = 0;
+
+  if (s->fuel < fuel)
+    return 1;
+  else if ((roll = int_rand(1, 100)) <= (int)s->damage)
+    return 1;
+  else
+    return 0;
+}
+
 void land(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -412,17 +423,6 @@ void land(const command_t &argv, GameObj &g) {
       free(s);
     } else
       free(s);
-}
-
-int crash(Ship *s, double fuel) {
-  roll = 0;
-
-  if (s->fuel < fuel)
-    return 1;
-  else if ((roll = int_rand(1, 100)) <= (int)s->damage)
-    return 1;
-  else
-    return 0;
 }
 
 int docked(Ship *s) {

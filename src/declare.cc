@@ -36,8 +36,7 @@ void invite(const command_t &argv, GameObj &g) {
     return;
   }
   if (!(n = get_player(argv[1]))) {
-    sprintf(buf, "No such player.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "No such player.\n";
     return;
   }
   if (n == Playernum) {
@@ -81,8 +80,7 @@ void pledge(const command_t &argv, GameObj &g) {
     return;
   }
   if (!(n = get_player(argv[1]))) {
-    sprintf(buf, "No such player.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "No such player.\n";
     return;
   }
   if (n == Playernum) {
@@ -149,8 +147,7 @@ void declare(const command_t &argv, GameObj &g) {
   }
 
   if (!(n = get_player(argv[1]))) {
-    sprintf(buf, "No such player.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "No such player.\n";
     return;
   }
 

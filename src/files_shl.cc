@@ -181,7 +181,7 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
       hyper_drive_charge INT,
       hyper_drive_ready INT,
       hyper_drive_on INT,
-      hyper_drive has INT,
+      hyper_drive_has INT,
 
       cew INT,
       cew_range INT,
@@ -995,11 +995,43 @@ void putship(Ship *s) {
       "land_x, land_y, destshipno, nextship, ships, armor, size,"
       "max_crew, max_resource, max_destruct, max_fuel, max_speed, build_type,"
       "build_cost, base_mass, tech, complexity,"
-      "destruct, resource, population, troops, crystals)"
+      "destruct, resource, population, troops, crystals,"
+      "who_killed,"
+      "navigate_on, navigate_speed, navigate_turns, navigate_bearing,"
+      "protect_maxrng, protect_on, protect_planet, protect_self,"
+      "protect_evade, protect_ship,"
+      "hyper_drive_charge, hyper_drive_ready, hyper_drive_on,"
+      "hyper_drive_has,"
+      "cew, cew_range, cloak, laser, focus, fire_laser,"
+      "storbits, deststar, destpnum, pnumorbits, whatdest,"
+      "whatorbits,"
+      "damage, rad, retaliate, target,"
+      "type, speed,"
+      "active, alive, mode, bombard, mounted, cloaked,"
+      "sheep, docked, notified, examined, on_off,"
+      "merchant, guns, primary_gun, primtype,"
+      "secondary_gun, sectype,"
+      "hanger, max_hanger)"
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9,"
       "?10, ?11, ?12, ?13, ?14, ?15, ?16,"
       "?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26,"
-      "?27, ?28, ?29, ?30, ?31);";
+      "?27, ?28, ?29, ?30, ?31,"
+      "?32,"
+      "?33, ?34, ?35, ?36,"
+      "?37, ?38, ?39, ?40,"
+      "?41, ?42,"
+      "?43, ?44, ?45,"
+      "?46,"
+      "?47, ?48, ?49, ?50, ?51, ?52,"
+      "?53, ?54, ?55, ?56, ?57,"
+      "?58,"
+      "?59, ?60, ?61, ?62,"
+      "?63, ?64,"
+      "?65, ?66, ?67, ?68, ?69, ?70,"
+      "?71, ?72, ?73, ?74, ?75,"
+      "?76, ?77, ?78, ?79,"
+      "?80, ?81,"
+      "?82, ?83);";
 
   sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s->number);
@@ -1034,6 +1066,74 @@ void putship(Ship *s) {
   sqlite3_bind_int(stmt, 29, s->popn);
   sqlite3_bind_int(stmt, 30, s->troops);
   sqlite3_bind_int(stmt, 31, s->crystals);
+  sqlite3_bind_int(stmt, 32, s->who_killed);
+  sqlite3_bind_int(stmt, 33, s->navigate.on);
+  sqlite3_bind_int(stmt, 34, s->navigate.speed);
+  sqlite3_bind_int(stmt, 35, s->navigate.turns);
+  sqlite3_bind_int(stmt, 36, s->navigate.bearing);
+  sqlite3_bind_double(stmt, 37, s->protect.maxrng);
+  sqlite3_bind_int(stmt, 38, s->protect.on);
+  sqlite3_bind_int(stmt, 39, s->protect.planet);
+  sqlite3_bind_int(stmt, 40, s->protect.self);
+  sqlite3_bind_int(stmt, 41, s->protect.evade);
+  sqlite3_bind_int(stmt, 42, s->protect.ship);
+  // TODO(jeffbailey): ADD MOUNT!
+  sqlite3_bind_int(stmt, 43, s->hyper_drive.charge);
+  sqlite3_bind_int(stmt, 44, s->hyper_drive.ready);
+  sqlite3_bind_int(stmt, 45, s->hyper_drive.on);
+  sqlite3_bind_int(stmt, 46, s->hyper_drive.has);
+  sqlite3_bind_int(stmt, 47, s->cew);
+  sqlite3_bind_int(stmt, 48, s->cew_range);
+  sqlite3_bind_int(stmt, 49, s->cloak);
+  sqlite3_bind_int(stmt, 50, s->laser);
+  sqlite3_bind_int(stmt, 51, s->focus);
+  sqlite3_bind_int(stmt, 52, s->fire_laser);
+  sqlite3_bind_int(stmt, 53, s->storbits);
+  sqlite3_bind_int(stmt, 54, s->deststar);
+  sqlite3_bind_int(stmt, 55, s->destpnum);
+  sqlite3_bind_int(stmt, 56, s->pnumorbits);
+  sqlite3_bind_int(stmt, 57, s->whatdest);
+  sqlite3_bind_int(stmt, 58, s->whatorbits);
+  sqlite3_bind_int(stmt, 59, s->damage);
+  sqlite3_bind_int(stmt, 60, s->rad);
+  sqlite3_bind_int(stmt, 61, s->retaliate);
+  sqlite3_bind_int(stmt, 62, s->target);
+  sqlite3_bind_int(stmt, 63, s->type);
+  sqlite3_bind_int(stmt, 64, s->speed);
+  sqlite3_bind_int(stmt, 65, s->active);
+  sqlite3_bind_int(stmt, 66, s->alive);
+  sqlite3_bind_int(stmt, 67, s->mode);
+  sqlite3_bind_int(stmt, 68, s->bombard);
+  sqlite3_bind_int(stmt, 69, s->mounted);
+  sqlite3_bind_int(stmt, 70, s->cloaked);
+  sqlite3_bind_int(stmt, 71, s->sheep);
+  sqlite3_bind_int(stmt, 72, s->docked);
+  sqlite3_bind_int(stmt, 73, s->notified);
+  sqlite3_bind_int(stmt, 74, s->examined);
+  sqlite3_bind_int(stmt, 75, s->on);
+  sqlite3_bind_int(stmt, 76, s->merchant);
+  sqlite3_bind_int(stmt, 77, s->guns);
+  sqlite3_bind_int(stmt, 78, s->primary);
+  sqlite3_bind_int(stmt, 79, s->primtype);
+  sqlite3_bind_int(stmt, 80, s->secondary);
+  sqlite3_bind_int(stmt, 81, s->sectype);
+  sqlite3_bind_int(stmt, 82, s->hanger);
+  sqlite3_bind_int(stmt, 83, s->max_hanger);
+
+#if 0
+  // These are the members of the union.  We'll emit these conditional
+  // on ship type
+      "aimed_shipno, aimed_snum, aimed_intensity, aimed_pnum, aimed_level,"
+      "mind_progenitor, mind_target, mind_generation, mind_busy, mind_tampered,"
+      "mind_who_killed,"
+      "pod_decay, pod_temperature,"
+      "timer_count,"
+      "impact_x, impact_y, impact_scatter,"
+      "trigger_radius,"
+      "terraform_index,"
+      "transport_target,"
+      "waste_toxic,";
+#endif
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));

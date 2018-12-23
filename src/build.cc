@@ -99,146 +99,140 @@ void upgrade(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (Shipdata[dirship->build_type][ABIL_MOD]) {
-    if (argv[1] == "armor") {
-      ship.armor = MAX(dirship->armor, MIN(value, 100));
-    } else if (argv[1] == "crew" &&
-               Shipdata[dirship->build_type][ABIL_MAXCREW]) {
-      ship.max_crew = MAX(dirship->max_crew, MIN(value, 10000));
-    } else if (argv[1] == "cargo" &&
-               Shipdata[dirship->build_type][ABIL_CARGO]) {
-      ship.max_resource = MAX(dirship->max_resource, MIN(value, 10000));
-    } else if (argv[1] == "hanger" &&
-               Shipdata[dirship->build_type][ABIL_HANGER]) {
-      ship.max_hanger = MAX(dirship->max_hanger, MIN(value, 10000));
-    } else if (argv[1] == "fuel" &&
-               Shipdata[dirship->build_type][ABIL_FUELCAP]) {
-      ship.max_fuel = MAX(dirship->max_fuel, MIN(value, 10000));
-    } else if (argv[1] == "mount" &&
-               Shipdata[dirship->build_type][ABIL_MOUNT] && !dirship->mount) {
-      if (!Crystal(Race)) {
-        notify(Playernum, Governor,
-               "Your race does not now how to utilize crystal power yet.\n");
+  if (!Shipdata[dirship->build_type][ABIL_MOD]) {
+    g.out << "This ship cannot be upgraded.\n";
+    free(dirship);
+    return;
+  }
+
+  if (argv[1] == "armor") {
+    ship.armor = MAX(dirship->armor, MIN(value, 100));
+  } else if (argv[1] == "crew" && Shipdata[dirship->build_type][ABIL_MAXCREW]) {
+    ship.max_crew = MAX(dirship->max_crew, MIN(value, 10000));
+  } else if (argv[1] == "cargo" && Shipdata[dirship->build_type][ABIL_CARGO]) {
+    ship.max_resource = MAX(dirship->max_resource, MIN(value, 10000));
+  } else if (argv[1] == "hanger" &&
+             Shipdata[dirship->build_type][ABIL_HANGER]) {
+    ship.max_hanger = MAX(dirship->max_hanger, MIN(value, 10000));
+  } else if (argv[1] == "fuel" && Shipdata[dirship->build_type][ABIL_FUELCAP]) {
+    ship.max_fuel = MAX(dirship->max_fuel, MIN(value, 10000));
+  } else if (argv[1] == "mount" && Shipdata[dirship->build_type][ABIL_MOUNT] &&
+             !dirship->mount) {
+    if (!Crystal(Race)) {
+      notify(Playernum, Governor,
+             "Your race does not now how to utilize crystal power yet.\n");
+      free(dirship);
+      return;
+    }
+    ship.mount = !ship.mount;
+  } else if (argv[1] == "destruct" &&
+             Shipdata[dirship->build_type][ABIL_DESTCAP]) {
+    ship.max_destruct = MAX(dirship->max_destruct, MIN(value, 10000));
+  } else if (argv[1] == "speed" && Shipdata[dirship->build_type][ABIL_SPEED]) {
+    ship.max_speed = MAX(dirship->max_speed, MAX(1, MIN(value, 9)));
+  } else if (argv[1] == "hyperdrive" &&
+             Shipdata[dirship->build_type][ABIL_JUMP] &&
+             !dirship->hyper_drive.has && Hyper_drive(Race)) {
+    ship.hyper_drive.has = 1;
+  } else if (argv[1] == "primary" &&
+             Shipdata[dirship->build_type][ABIL_PRIMARY]) {
+    if (argv[2] == "strength") {
+      if (ship.primtype == GTYPE_NONE) {
+        g.out << "No caliber defined.\n";
         free(dirship);
         return;
       }
-      ship.mount = !ship.mount;
-    } else if (argv[1] == "destruct" &&
-               Shipdata[dirship->build_type][ABIL_DESTCAP]) {
-      ship.max_destruct = MAX(dirship->max_destruct, MIN(value, 10000));
-    } else if (argv[1] == "speed" &&
-               Shipdata[dirship->build_type][ABIL_SPEED]) {
-      ship.max_speed = MAX(dirship->max_speed, MAX(1, MIN(value, 9)));
-    } else if (argv[1] == "hyperdrive" &&
-               Shipdata[dirship->build_type][ABIL_JUMP] &&
-               !dirship->hyper_drive.has && Hyper_drive(Race)) {
-      ship.hyper_drive.has = 1;
-    } else if (argv[1] == "primary" &&
-               Shipdata[dirship->build_type][ABIL_PRIMARY]) {
-      if (argv[2] == "strength") {
-        if (ship.primtype == GTYPE_NONE) {
-          g.out << "No caliber defined.\n";
-          free(dirship);
-          return;
-        }
-        ship.primary = std::stoi(argv[3]);
-        ship.primary = MAX(ship.primary, dirship->primary);
-      } else if (argv[2] == "caliber") {
-        if (argv[3] == "light")
-          ship.primtype = MAX(GTYPE_LIGHT, dirship->primtype);
-        else if (argv[3] == "medium")
-          ship.primtype = MAX(GTYPE_MEDIUM, dirship->primtype);
-        else if (argv[3] == "heavy")
-          ship.primtype = MAX(GTYPE_HEAVY, dirship->primtype);
-        else {
-          g.out << "No such caliber.\n";
-          free(dirship);
-          return;
-        }
-        ship.primtype =
-            MIN(Shipdata[dirship->build_type][ABIL_PRIMARY], ship.primtype);
-      } else {
-        g.out << "No such gun characteristic.\n";
-        free(dirship);
-        return;
-      }
-    } else if (argv[1] == "secondary" &&
-               Shipdata[dirship->build_type][ABIL_SECONDARY]) {
-      if (argv[2] == "strength") {
-        if (ship.sectype == GTYPE_NONE) {
-          g.out << "No caliber defined.\n";
-          free(dirship);
-          return;
-        }
-        ship.secondary = std::stoi(argv[3]);
-        ship.secondary = MAX(ship.secondary, dirship->secondary);
-      } else if (argv[2] == "caliber") {
-        if (argv[3] == "light")
-          ship.sectype = MAX(GTYPE_LIGHT, dirship->sectype);
-        else if (argv[3] == "medium")
-          ship.sectype = MAX(GTYPE_MEDIUM, dirship->sectype);
-        else if (argv[3] == "heavy")
-          ship.sectype = MAX(GTYPE_HEAVY, dirship->sectype);
-        else {
-          g.out << "No such caliber.\n";
-          free(dirship);
-          return;
-        }
-        ship.sectype =
-            MIN(Shipdata[dirship->build_type][ABIL_SECONDARY], ship.sectype);
-      } else {
-        g.out << "No such gun characteristic.\n";
-        free(dirship);
-        return;
-      }
-    } else if (argv[1] == "cew" && Shipdata[dirship->build_type][ABIL_CEW]) {
-      if (!Cew(Race)) {
-        sprintf(buf, "Your race cannot build confined energy weapons.\n");
-        notify(Playernum, Governor, buf);
-        free(dirship);
-        return;
-      }
-      if (!Shipdata[dirship->build_type][ABIL_CEW]) {
-        notify(Playernum, Governor,
-               "This kind of ship cannot mount confined energy weapons.\n");
-        free(dirship);
-        return;
-      }
-      value = std::stoi(argv[3]);
-      if (argv[2] == "strength") {
-        ship.cew = value;
-      } else if (argv[2] == "range") {
-        ship.cew_range = value;
-      } else {
-        g.out << "No such option for CEWs.\n";
-        free(dirship);
-        return;
-      }
-    } else if (argv[1] == "laser" &&
-               Shipdata[dirship->build_type][ABIL_LASER]) {
-      if (!Laser(Race)) {
-        sprintf(buf, "Your race cannot build lasers.\n");
-        notify(Playernum, Governor, buf);
-        free(dirship);
-        return;
-      }
-      if (Shipdata[dirship->build_type][ABIL_LASER])
-        ship.laser = 1;
+      ship.primary = std::stoi(argv[3]);
+      ship.primary = MAX(ship.primary, dirship->primary);
+    } else if (argv[2] == "caliber") {
+      if (argv[3] == "light")
+        ship.primtype = MAX(GTYPE_LIGHT, dirship->primtype);
+      else if (argv[3] == "medium")
+        ship.primtype = MAX(GTYPE_MEDIUM, dirship->primtype);
+      else if (argv[3] == "heavy")
+        ship.primtype = MAX(GTYPE_HEAVY, dirship->primtype);
       else {
-        notify(Playernum, Governor,
-               "That ship cannot be fitted with combat lasers.\n");
+        g.out << "No such caliber.\n";
         free(dirship);
         return;
       }
+      ship.primtype =
+          MIN(Shipdata[dirship->build_type][ABIL_PRIMARY], ship.primtype);
     } else {
-      notify(
-          Playernum, Governor,
-          "That characteristic either doesn't exist or can't be modified.\n");
+      g.out << "No such gun characteristic.\n";
+      free(dirship);
+      return;
+    }
+  } else if (argv[1] == "secondary" &&
+             Shipdata[dirship->build_type][ABIL_SECONDARY]) {
+    if (argv[2] == "strength") {
+      if (ship.sectype == GTYPE_NONE) {
+        g.out << "No caliber defined.\n";
+        free(dirship);
+        return;
+      }
+      ship.secondary = std::stoi(argv[3]);
+      ship.secondary = MAX(ship.secondary, dirship->secondary);
+    } else if (argv[2] == "caliber") {
+      if (argv[3] == "light")
+        ship.sectype = MAX(GTYPE_LIGHT, dirship->sectype);
+      else if (argv[3] == "medium")
+        ship.sectype = MAX(GTYPE_MEDIUM, dirship->sectype);
+      else if (argv[3] == "heavy")
+        ship.sectype = MAX(GTYPE_HEAVY, dirship->sectype);
+      else {
+        g.out << "No such caliber.\n";
+        free(dirship);
+        return;
+      }
+      ship.sectype =
+          MIN(Shipdata[dirship->build_type][ABIL_SECONDARY], ship.sectype);
+    } else {
+      g.out << "No such gun characteristic.\n";
+      free(dirship);
+      return;
+    }
+  } else if (argv[1] == "cew" && Shipdata[dirship->build_type][ABIL_CEW]) {
+    if (!Cew(Race)) {
+      sprintf(buf, "Your race cannot build confined energy weapons.\n");
+      notify(Playernum, Governor, buf);
+      free(dirship);
+      return;
+    }
+    if (!Shipdata[dirship->build_type][ABIL_CEW]) {
+      notify(Playernum, Governor,
+             "This kind of ship cannot mount confined energy weapons.\n");
+      free(dirship);
+      return;
+    }
+    value = std::stoi(argv[3]);
+    if (argv[2] == "strength") {
+      ship.cew = value;
+    } else if (argv[2] == "range") {
+      ship.cew_range = value;
+    } else {
+      g.out << "No such option for CEWs.\n";
+      free(dirship);
+      return;
+    }
+  } else if (argv[1] == "laser" && Shipdata[dirship->build_type][ABIL_LASER]) {
+    if (!Laser(Race)) {
+      sprintf(buf, "Your race cannot build lasers.\n");
+      notify(Playernum, Governor, buf);
+      free(dirship);
+      return;
+    }
+    if (Shipdata[dirship->build_type][ABIL_LASER])
+      ship.laser = 1;
+    else {
+      notify(Playernum, Governor,
+             "That ship cannot be fitted with combat lasers.\n");
       free(dirship);
       return;
     }
   } else {
-    g.out << "This ship cannot be upgraded.\n";
+    notify(Playernum, Governor,
+           "That characteristic either doesn't exist or can't be modified.\n");
     free(dirship);
     return;
   }

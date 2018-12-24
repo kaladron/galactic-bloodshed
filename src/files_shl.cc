@@ -224,7 +224,8 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
       sectype INT,
 
       hanger INT,
-      max_hanger INT);
+      max_hanger INT,
+      mount INT);
 )";
   char *err_msg = nullptr;
   int err = sqlite3_exec(db, tbl_create, nullptr, nullptr, &err_msg);
@@ -1011,7 +1012,7 @@ void putship(Ship *s) {
       "sheep, docked, notified, examined, on_off,"
       "merchant, guns, primary_gun, primtype,"
       "secondary_gun, sectype,"
-      "hanger, max_hanger)"
+      "hanger, max_hanger, mount)"
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9,"
       "?10, ?11, ?12, ?13, ?14, ?15, ?16,"
       "?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26,"
@@ -1031,7 +1032,7 @@ void putship(Ship *s) {
       "?71, ?72, ?73, ?74, ?75,"
       "?76, ?77, ?78, ?79,"
       "?80, ?81,"
-      "?82, ?83);";
+      "?82, ?83, ?84);";
 
   sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s->number);
@@ -1077,7 +1078,6 @@ void putship(Ship *s) {
   sqlite3_bind_int(stmt, 40, s->protect.self);
   sqlite3_bind_int(stmt, 41, s->protect.evade);
   sqlite3_bind_int(stmt, 42, s->protect.ship);
-  // TODO(jeffbailey): ADD MOUNT!
   sqlite3_bind_int(stmt, 43, s->hyper_drive.charge);
   sqlite3_bind_int(stmt, 44, s->hyper_drive.ready);
   sqlite3_bind_int(stmt, 45, s->hyper_drive.on);
@@ -1119,6 +1119,7 @@ void putship(Ship *s) {
   sqlite3_bind_int(stmt, 81, s->sectype);
   sqlite3_bind_int(stmt, 82, s->hanger);
   sqlite3_bind_int(stmt, 83, s->max_hanger);
+  sqlite3_bind_int(stmt, 84, s->mount);
 
 #if 0
   // These are the members of the union.  We'll emit these conditional

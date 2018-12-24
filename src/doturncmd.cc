@@ -87,10 +87,10 @@ void do_turn(int update) {
       if (planets[star][i]->type != PlanetType::ASTEROID) Planet_count++;
       if (update) moveplanet(star, planets[star][i], i);
       if (Stars[star]->pnames[i] == nullptr)
-        sprintf(Stars[star]->pnames[i], "nullptr-%d", i);
+        sprintf(Stars[star]->pnames[i], "NULL-%d", i);
     }
     if (Stars[star]->name[0] == '\0')
-      sprintf(Stars[star]->name, "nullptr-%d", star);
+      sprintf(Stars[star]->name, "NULL-%d", star);
   }
 
   VN_brain.Most_mad = 0; /* not mad at anyone for starts */

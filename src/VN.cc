@@ -152,7 +152,6 @@ static void order_VN(Ship *ship) {
 void planet_doVN(Ship *ship, Planet *planet, sector_map &smap) {
   int j;
   int oldres, xa, ya, dum, prod;
-  int shipbuild;
 
   if (landed(ship)) {
     if (ship->type == ShipType::OTYPE_VN && ship->special.mind.busy) {
@@ -180,9 +179,9 @@ void planet_doVN(Ship *ship, Planet *planet, sector_map &smap) {
         rcv_fuel(ship, (double)prod);
       }
       /* now try to construct another machine */
-      shipbuild = (VN_brain.Total_mad > 100 && random() & 01)
-                      ? ShipType::OTYPE_BERS
-                      : ShipType::OTYPE_VN;
+      ShipType shipbuild = (VN_brain.Total_mad > 100 && random() & 01)
+                               ? ShipType::OTYPE_BERS
+                               : ShipType::OTYPE_VN;
       if (ship->resource >= Shipdata[shipbuild][ABIL_COST]) {
         Ship *s2;
         int n, numVNs;

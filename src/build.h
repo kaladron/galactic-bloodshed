@@ -16,7 +16,7 @@ double cost(Ship *);
 double getmass(Ship *);
 unsigned int ship_size(Ship *);
 double complexity(Ship *);
-int Shipcost(int, racetype *);
+int Shipcost(ShipType, racetype *);
 void sell(const command_t &, GameObj &);
 void bid(const command_t &argv, GameObj &);
 int shipping_cost(int, int, double *, int);

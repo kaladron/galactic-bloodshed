@@ -157,7 +157,7 @@ class DescriptorData : public GameObj {
   }
 };
 
-static double GetComplexity(const shipnum_t);
+static double GetComplexity(const ShipType);
 static void set_signals(void);
 static void queue_string(DescriptorData &, const std::string &);
 static void add_to_queue(std::deque<TextBlock> &, const std::string &);
@@ -1505,7 +1505,7 @@ void remove_sh_ship(Ship *s, Ship *ship) {
       ScopeLevel::LEVEL_UNIV; /* put in limbo - wait for insert_sh.. */
 }
 
-static double GetComplexity(const shipnum_t ship) {
+static double GetComplexity(const ShipType ship) {
   Ship s;
 
   s.armor = Shipdata[ship][ABIL_ARMOR];
@@ -1535,8 +1535,8 @@ static double GetComplexity(const shipnum_t ship) {
 }
 
 static int ShipCompare(const void *S1, const void *S2) {
-  const int *s1 = (const int *)S1;
-  const int *s2 = (const int *)S2;
+  const ShipType *s1 = (const ShipType *)S1;
+  const ShipType *s2 = (const ShipType *)S2;
   return (int)(GetComplexity(*s1) - GetComplexity(*s2));
 }
 

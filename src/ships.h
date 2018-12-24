@@ -14,7 +14,7 @@ enum guntype_t { GTYPE_NONE, GTYPE_LIGHT, GTYPE_MEDIUM, GTYPE_HEAVY };
 #define PRIMARY 1
 #define SECONDARY 2
 
-enum ShipType {
+enum ShipType : int {
   STYPE_POD,
   STYPE_SHUTTLE,
   STYPE_CARRIER,
@@ -131,7 +131,7 @@ class Ship {
   unsigned short max_destruct;
   unsigned short max_fuel;
   unsigned short max_speed;
-  unsigned short build_type; /* for factories - type of ship it makes */
+  ShipType build_type;  ///< for factories - type of ship it makes
   unsigned short build_cost;
 
   double base_mass;
@@ -244,7 +244,7 @@ class Ship {
   unsigned char retaliate;
   unsigned short target;
 
-  unsigned char type;  /* what type ship is */
+  ShipType type;       /* what type ship is */
   unsigned char speed; /* what speed to travel at 0-9 */
 
   unsigned active : 1; /* tells whether the ship is active */

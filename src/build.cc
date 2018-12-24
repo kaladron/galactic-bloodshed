@@ -43,10 +43,10 @@ static void create_ship_by_planet(int, int, racetype *, Ship *, Planet *, int,
                                   int, int, int);
 static void create_ship_by_ship(int, int, racetype *, int, Planet *, Ship *,
                                 Ship *);
-static int get_build_type(const char *);
+static std::optional<ShipType> get_build_type(const char);
 static int getcount(const command_t &, const size_t);
 static void Getfactship(Ship *, Ship *);
-static void Getship(Ship *, int, racetype *);
+static void Getship(Ship *, ShipType, racetype *);
 static void initialize_new_ship(GameObj &, racetype *, Ship *, double, int);
 static void system_cost(double *, double *, int, int);
 
@@ -306,7 +306,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     mode = 0;
   else
     mode = 1 /* modify */;
-  int i, value;
+  int value;
   unsigned short size;
   char shipc;
   Ship *dirship;
@@ -438,44 +438,43 @@ void make_mod(const command_t &argv, GameObj &g) {
 
     shipc = argv[1][0];
 
-    i = 0;
-    while ((Shipltrs[i] != shipc) && (i < NUMSTYPES)) i++;
+    auto i = get_build_type(shipc);
 
-    if ((i >= NUMSTYPES) || ((i == ShipType::STYPE_POD) && (!Race->pods))) {
+    if ((!i) || ((*i == ShipType::STYPE_POD) && (!Race->pods))) {
       g.out << "Illegal ship letter.\n";
       free(dirship);
       return;
     }
-    if (Shipdata[i][ABIL_GOD] && !Race->God) {
+    if (Shipdata[*i][ABIL_GOD] && !Race->God) {
       g.out << "Nice try!\n";
       free(dirship);
       return;
     }
-    if (!(Shipdata[i][ABIL_BUILD] &
+    if (!(Shipdata[*i][ABIL_BUILD] &
           Shipdata[ShipType::OTYPE_FACTORY][ABIL_CONSTRUCT])) {
       g.out << "This kind of ship does not require a factory to construct.\n";
       free(dirship);
       return;
     }
 
-    dirship->build_type = i;
-    dirship->armor = Shipdata[i][ABIL_ARMOR];
+    dirship->build_type = *i;
+    dirship->armor = Shipdata[*i][ABIL_ARMOR];
     dirship->guns = GTYPE_NONE; /* this keeps track of the factory status! */
-    dirship->primary = Shipdata[i][ABIL_GUNS];
-    dirship->primtype = Shipdata[i][ABIL_PRIMARY];
-    dirship->secondary = Shipdata[i][ABIL_GUNS];
-    dirship->sectype = Shipdata[i][ABIL_SECONDARY];
-    dirship->max_crew = Shipdata[i][ABIL_MAXCREW];
-    dirship->max_resource = Shipdata[i][ABIL_CARGO];
-    dirship->max_hanger = Shipdata[i][ABIL_HANGER];
-    dirship->max_fuel = Shipdata[i][ABIL_FUELCAP];
-    dirship->max_destruct = Shipdata[i][ABIL_DESTCAP];
-    dirship->max_speed = Shipdata[i][ABIL_SPEED];
+    dirship->primary = Shipdata[*i][ABIL_GUNS];
+    dirship->primtype = Shipdata[*i][ABIL_PRIMARY];
+    dirship->secondary = Shipdata[*i][ABIL_GUNS];
+    dirship->sectype = Shipdata[*i][ABIL_SECONDARY];
+    dirship->max_crew = Shipdata[*i][ABIL_MAXCREW];
+    dirship->max_resource = Shipdata[*i][ABIL_CARGO];
+    dirship->max_hanger = Shipdata[*i][ABIL_HANGER];
+    dirship->max_fuel = Shipdata[*i][ABIL_FUELCAP];
+    dirship->max_destruct = Shipdata[*i][ABIL_DESTCAP];
+    dirship->max_speed = Shipdata[*i][ABIL_SPEED];
 
-    dirship->mount = Shipdata[i][ABIL_MOUNT] * Crystal(Race);
-    dirship->hyper_drive.has = Shipdata[i][ABIL_JUMP] * Hyper_drive(Race);
-    dirship->cloak = Shipdata[i][ABIL_CLOAK] * Cloak(Race);
-    dirship->laser = Shipdata[i][ABIL_LASER] * Laser(Race);
+    dirship->mount = Shipdata[*i][ABIL_MOUNT] * Crystal(Race);
+    dirship->hyper_drive.has = Shipdata[*i][ABIL_JUMP] * Hyper_drive(Race);
+    dirship->cloak = Shipdata[*i][ABIL_CLOAK] * Cloak(Race);
+    dirship->laser = Shipdata[*i][ABIL_LASER] * Laser(Race);
     dirship->cew = 0;
     dirship->mode = 0;
 
@@ -484,7 +483,7 @@ void make_mod(const command_t &argv, GameObj &g) {
 
     sprintf(dirship->shipclass, "mod %ld", g.shipno);
 
-    sprintf(buf, "Factory designated to produce %ss.\n", Shipnames[i]);
+    sprintf(buf, "Factory designated to produce %ss.\n", Shipnames[*i]);
     notify(Playernum, Governor, buf);
     sprintf(buf, "Design complexity %.1f (%.1f).\n", dirship->complexity,
             Race->tech);
@@ -688,7 +687,7 @@ void build(const command_t &argv, GameObj &g) {
   racetype *Race;
   Planet planet;
   char c;
-  int i, j, m, n, x, y, count, what, outside;
+  int j, m, n, x, y, count, outside;
   ScopeLevel level, build_level;
   int shipcost, load_crew;
   int snum, pnum;
@@ -711,7 +710,7 @@ void build(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, buf);
       Race = races[Playernum - 1];
       for (j = 0; j < NUMSTYPES; j++) {
-        i = ShipVector[j];
+        ShipType i{ShipVector[j]};
         if ((!Shipdata[i][ABIL_GOD]) || Race->God) {
           if (Race->pods || (i != ShipType::STYPE_POD)) {
             if (Shipdata[i][ABIL_PROGRAMMED]) {
@@ -733,11 +732,10 @@ void build(const command_t &argv, GameObj &g) {
       return;
     } else {
       /* Description of specific ship type */
-      i = 0;
-      while (Shipltrs[i] != argv[2][0] && i < NUMSTYPES) i++;
-      if (i < 0 || i >= NUMSTYPES)
+      auto i = get_build_type(argv[2][0]);
+      if (!i)
         g.out << "No such ship type.\n";
-      else if (!Shipdata[i][ABIL_PROGRAMMED])
+      else if (!Shipdata[*i][ABIL_PROGRAMMED])
         g.out << "This ship type has not been programmed.\n";
       else {
         if ((fd = fopen(EXAM_FL, "r")) == nullptr) {
@@ -756,19 +754,19 @@ void build(const command_t &argv, GameObj &g) {
           }
           fclose(fd);
           /* Built where? */
-          if (Shipdata[i][ABIL_BUILD] & 1) {
+          if (Shipdata[*i][ABIL_BUILD] & 1) {
             sprintf(temp, "\nCan be constructed on planet.");
             strcat(buf, temp);
           }
           n = 0;
           sprintf(temp, "\nCan be built by ");
           for (j = 0; j < NUMSTYPES; j++)
-            if (Shipdata[i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) n++;
+            if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) n++;
           if (n) {
             m = 0;
             strcat(buf, temp);
             for (j = 0; j < NUMSTYPES; j++) {
-              if (Shipdata[i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) {
+              if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) {
                 m++;
                 if (n - m > 1)
                   sprintf(temp, "%c, ", Shipltrs[j]);
@@ -793,13 +791,13 @@ void build(const command_t &argv, GameObj &g) {
           sprintf(temp,
                   "%1c %-15.15s %5ld %5ld %3ld %4ld %3ld %3ld %3ld %4ld "
                   "%4ld %2ld %4.0f %4d\n",
-                  Shipltrs[i], Shipnames[i], Shipdata[i][ABIL_CARGO],
-                  Shipdata[i][ABIL_HANGER], Shipdata[i][ABIL_ARMOR],
-                  Shipdata[i][ABIL_DESTCAP], Shipdata[i][ABIL_GUNS],
-                  Shipdata[i][ABIL_PRIMARY], Shipdata[i][ABIL_SECONDARY],
-                  Shipdata[i][ABIL_FUELCAP], Shipdata[i][ABIL_MAXCREW],
-                  Shipdata[i][ABIL_SPEED], (double)Shipdata[i][ABIL_TECH],
-                  Shipcost(i, Race));
+                  Shipltrs[*i], Shipnames[*i], Shipdata[*i][ABIL_CARGO],
+                  Shipdata[*i][ABIL_HANGER], Shipdata[*i][ABIL_ARMOR],
+                  Shipdata[*i][ABIL_DESTCAP], Shipdata[*i][ABIL_GUNS],
+                  Shipdata[*i][ABIL_PRIMARY], Shipdata[*i][ABIL_SECONDARY],
+                  Shipdata[*i][ABIL_FUELCAP], Shipdata[*i][ABIL_MAXCREW],
+                  Shipdata[*i][ABIL_SPEED], (double)Shipdata[*i][ABIL_TECH],
+                  Shipcost(*i, Race));
           strcat(buf, temp);
           notify(Playernum, Governor, buf);
         }
@@ -817,6 +815,7 @@ void build(const command_t &argv, GameObj &g) {
   pnum = g.pnum;
   Race = races[Playernum - 1];
   count = 0; /* this used used to reset count in the loop */
+  std::optional<ShipType> what;
   do {
     switch (level) {
       case ScopeLevel::LEVEL_PLAN:
@@ -825,15 +824,16 @@ void build(const command_t &argv, GameObj &g) {
             g.out << "Build what?\n";
             return;
           }
-          if ((what = get_build_type(argv[1].c_str())) < 0) {
+          what = get_build_type(argv[1][0]);
+          if (!what) {
             g.out << "No such ship type.\n";
             return;
           }
-          if (!can_build_this(what, Race, buf) && !Race->God) {
+          if (!can_build_this(*what, Race, buf) && !Race->God) {
             notify(Playernum, Governor, buf);
             return;
           }
-          if (!(Shipdata[what][ABIL_BUILD] & 1) && !Race->God) {
+          if (!(Shipdata[*what][ABIL_BUILD] & 1) && !Race->God) {
             g.out << "This ship cannot be built by a planet.\n";
             return;
           }
@@ -852,7 +852,7 @@ void build(const command_t &argv, GameObj &g) {
             return;
           }
           sector = getsector(planet, x, y);
-          if (!can_build_on_sector(what, Race, planet, sector, x, y, buf) &&
+          if (!can_build_on_sector(*what, Race, planet, sector, x, y, buf) &&
               !Race->God) {
             notify(Playernum, Governor, buf);
             return;
@@ -861,7 +861,7 @@ void build(const command_t &argv, GameObj &g) {
             g.out << "Give a positive number of builds.\n";
             return;
           }
-          Getship(&newship, what, Race);
+          Getship(&newship, *what, Race);
         }
         if ((shipcost = newship.build_cost) >
             planet.info[Playernum - 1].resource) {
@@ -925,12 +925,12 @@ void build(const command_t &argv, GameObj &g) {
                 free(builder);
                 return;
               }
-              if ((what = get_build_type(argv[1].c_str())) < 0) {
+              if ((what = get_build_type(argv[1][0])) < 0) {
                 g.out << "No such ship type.\n";
                 free(builder);
                 return;
               }
-              if (!can_build_on_ship(what, Race, builder, buf)) {
+              if (!can_build_on_ship(*what, Race, builder, buf)) {
                 notify(Playernum, Governor, buf);
                 free(builder);
                 return;
@@ -940,12 +940,12 @@ void build(const command_t &argv, GameObj &g) {
                 free(builder);
                 return;
               }
-              Getship(&newship, what, Race);
+              Getship(&newship, *what, Race);
               break;
           }
           if ((tech = builder->type == ShipType::OTYPE_FACTORY
                           ? complexity(builder)
-                          : Shipdata[what][ABIL_TECH]) > Race->tech &&
+                          : Shipdata[*what][ABIL_TECH]) > Race->tech &&
               !Race->God) {
             sprintf(buf,
                     "You are not advanced enough to build this ship.\n%.1f "
@@ -967,7 +967,8 @@ void build(const command_t &argv, GameObj &g) {
               y = builder->land_y;
               what = builder->build_type;
               sector = getsector(planet, x, y);
-              if (!can_build_on_sector(what, Race, planet, sector, x, y, buf)) {
+              if (!can_build_on_sector(*what, Race, planet, sector, x, y,
+                                       buf)) {
                 notify(Playernum, Governor, buf);
                 free(builder);
                 return;
@@ -1091,15 +1092,11 @@ static int can_build_at_planet(GameObj &g, startype *star,
   return (1);
 }
 
-static int get_build_type(const char *string) {
-  char shipc;
-  int i;
-
-  shipc = string[0];
-  i = -1;
-  while (Shipltrs[i] != shipc && i < NUMSTYPES) i++;
-  if (i < 0 || i >= NUMSTYPES) return (-1);
-  return i;
+static std::optional<ShipType> get_build_type(const char shipc) {
+  for (int i = 0; i < std::extent<decltype(Shipltrs)>::value; ++i) {
+    if (Shipltrs[i] == shipc) return ShipType{i};
+  }
+  return {};
 }
 
 static int can_build_this(int what, racetype *Race, char *string) {
@@ -1531,7 +1528,7 @@ double complexity(Ship *s) {
   return (factor * (double)Shipdata[i][ABIL_TECH]);
 }
 
-static void Getship(Ship *s, int i, racetype *r) {
+static void Getship(Ship *s, ShipType i, racetype *r) {
   bzero((char *)s, sizeof(Ship));
   s->type = i;
   s->armor = Shipdata[i][ABIL_ARMOR];
@@ -1589,7 +1586,7 @@ static void Getfactship(Ship *s, Ship *b) {
   s->mass = getmass(s);
 }
 
-int Shipcost(int i, racetype *r) {
+int Shipcost(ShipType i, racetype *r) {
   Ship s;
 
   Getship(&s, i, r);

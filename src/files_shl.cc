@@ -1124,15 +1124,24 @@ void putship(Ship *s) {
 #if 0
   // These are the members of the union.  We'll emit these conditional
   // on ship type
+  ShipType::STYPE_MIRROR
       "aimed_shipno, aimed_snum, aimed_intensity, aimed_pnum, aimed_level,"
+  ShipType::OTYPE_BERS, ShipType::OTYPE_VN
       "mind_progenitor, mind_target, mind_generation, mind_busy, mind_tampered,"
       "mind_who_killed,"
+  ShipType::STYPE_POD
       "pod_decay, pod_temperature,"
+  ShipType::OTYPE_CANIST, ShipType::OTYPE_GREEN
       "timer_count,"
+  ShipType::STYPE_MISSILE
       "impact_x, impact_y, impact_scatter,"
+  ShipType::STYPE_MINE
       "trigger_radius,"
+  ShipType::OTYPE_TERRA, ShipType::OTYPE_PLOW
       "terraform_index,"
+  ShipType::OTYPE_TRANSDEV
       "transport_target,"
+  ShipType::OTYPE_TOXWC
       "waste_toxic,";
 #endif
 

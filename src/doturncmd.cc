@@ -31,7 +31,15 @@
 #include "vars.h"
 
 #ifdef MARKET
-static void maintain(racetype *, int, int);
+static constexpr void maintain(racetype &r, race::gov &governor,
+                               const money_t amount) noexcept {
+  if (governor.money >= amount)
+    governor.money -= amount;
+  else {
+    r.morale -= (amount - governor.money) / 10;
+    governor.money = 0;
+  }
+}
 #endif
 
 static int APadd(int, int, racetype *);
@@ -101,7 +109,7 @@ void do_turn(int update) {
       /* Reset controlled planet count */
       races[i - 1]->controlled_planets = 0;
       races[i - 1]->planet_points = 0;
-      for (auto& governor : races[i - 1]->governor)
+      for (auto &governor : races[i - 1]->governor)
         if (governor.active) {
 #ifdef MARKET
           governor.maintain = 0;
@@ -146,7 +154,8 @@ void do_turn(int update) {
         races[c->bidder - 1]->governor[c->bidder_gov].cost_market +=
             c->bid + cost;
         races[c->owner - 1]->governor[c->governor].profit_market += c->bid;
-        maintain(races[c->bidder - 1], (int)c->bidder_gov, cost);
+        maintain(*races[c->bidder - 1],
+                 races[c->bidder - 1]->governor[c->bidder_gov], cost);
         switch (c->type) {
           case RESOURCE:
             planets[c->star_to][c->planet_to]->info[c->bidder - 1].resource +=
@@ -361,9 +370,8 @@ void do_turn(int update) {
       victory[i - 1].des = 0;
       victory[i - 1].fuel = 0;
       victory[i - 1].money = races[i - 1]->governor[0].money;
-      for (governor_t j = 1; j <= MAXGOVERNORS; j++)
-        if (races[i - 1]->governor[j].active)
-          victory[i - 1].money += races[i - 1]->governor[j].money;
+      for (auto &governor : races[i - 1]->governor)
+        if (governor.active) victory[i - 1].money += governor.money;
     }
 
     for (starnum_t star = 0; star < Sdata.numstars; star++) {
@@ -434,9 +442,9 @@ void do_turn(int update) {
 
       Blocks[i - 1].VPs = 10 * Blocks[i - 1].systems_owned;
 #ifdef MARKET
-      for (governor_t j = 0; j <= MAXGOVERNORS; j++)
-        if (races[i - 1]->governor[j].active)
-          maintain(races[i - 1], j, races[i - 1]->governor[j].maintain);
+      for (auto &governor : races[i - 1]->governor)
+        if (governor.active)
+          maintain(*races[i - 1], governor, governor.maintain);
 #endif
     }
     for (player_t i = 1; i <= Num_races; i++) putrace(races[i - 1]);
@@ -448,9 +456,8 @@ void do_turn(int update) {
     compute_power_blocks();
     for (player_t i = 1; i <= Num_races; i++) {
       Power[i - 1].money = 0;
-      for (governor_t j = 0; j <= MAXGOVERNORS; j++)
-        if (races[i - 1]->governor[j].active)
-          Power[i - 1].money += races[i - 1]->governor[j].money;
+      for (auto &governor : races[i - 1]->governor)
+        if (governor.active) Power[i - 1].money += governor.money;
     }
     Putpower(Power);
     Putblock(Blocks);
@@ -631,17 +638,6 @@ static void make_discoveries(racetype *r) {
     r->discoveries[D_CRYSTAL] = 1;
   }
 }
-
-#ifdef MARKET
-static void maintain(racetype *r, int gov, int amount) {
-  if (r->governor[gov].money >= amount)
-    r->governor[gov].money -= amount;
-  else {
-    r->morale -= (amount - r->governor[gov].money) / 10;
-    r->governor[gov].money = 0;
-  }
-}
-#endif
 
 static int attack_planet(Ship *ship) {
   if (ship->whatdest == ScopeLevel::LEVEL_PLAN) return 1;

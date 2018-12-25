@@ -17,10 +17,10 @@ void d_broadcast(const player_t, const governor_t, const std::string &);
 void d_shout(const player_t, const governor_t, const std::string &);
 void d_announce(const player_t, const governor_t, const starnum_t,
                 const std::string &);
-void do_next_thing(void);
+void do_next_thing();
 void check_for_telegrams(int, int);
 void kill_ship(int, Ship *);
-void compute_power_blocks(void);
+void compute_power_blocks();
 void insert_sh_univ(struct stardata *, Ship *);
 void insert_sh_star(startype *, Ship *);
 void insert_sh_plan(Planet *, Ship *);
@@ -35,7 +35,7 @@ void notify_star(const player_t, const governor_t, const starnum_t,
                  const std::string &);
 void adjust_morale(racetype *, racetype *, int);
 
-typedef uint32_t segments_t;
+using segments_t = uint32_t;
 
 extern time_t next_update_time; /* When will next update be... approximately */
 extern time_t

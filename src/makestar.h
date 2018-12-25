@@ -8,9 +8,9 @@
 #include "vars.h"
 
 int Temperature(double dist, int stemp);
-void Makestar_init(void);
+void Makestar_init();
 startype *Makestar(int);
-void Makeplanet_init(void);
-void PrintStatistics(void);
+void Makeplanet_init();
+void PrintStatistics();
 
 #endif  // MAKESTAR_H

@@ -100,7 +100,7 @@ enum abil_t {
 
 #define SHIP_NAMESIZE 18
 
-typedef struct place placetype;
+using placetype = struct place;
 
 class Ship {
  public:

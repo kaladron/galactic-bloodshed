@@ -7,7 +7,7 @@
 
 #include "vars.h"
 
-void purge(void);
+void purge();
 void post(const char *, int);
 void push_telegram_race(const player_t, const std::string &);
 void push_telegram(const player_t, const governor_t, const std::string &);

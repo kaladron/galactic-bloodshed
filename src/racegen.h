@@ -202,7 +202,7 @@ extern int please_quit; /* 1 iff you want to exit ASAP. */
 int critique_to_file(FILE *f, int rigorous_checking, int is_player_race);
 void print_to_file(FILE *f, int verbose);
 int load_from_file(FILE *g);
-int cost_of_race(void);
+int cost_of_race();
 void modify_print_loop(int level);
 
 #endif  // RACEGEN_H

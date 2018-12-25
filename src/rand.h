@@ -7,7 +7,7 @@
 
 int success(int x);
 
-double double_rand(void);
+double double_rand();
 int int_rand(int, int);
 long long_rand(long, long);
 int round_rand(double);

@@ -27,17 +27,17 @@ const int MAX_ROUTES = 4;
 
 enum ScopeLevel { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
 
-typedef uint64_t shipnum_t;
-typedef uint8_t starnum_t;
-typedef uint8_t planetnum_t;
-typedef uint8_t player_t;
-typedef uint8_t governor_t;
-typedef uint64_t commodnum_t;
+using shipnum_t = uint64_t;
+using starnum_t = uint8_t;
+using planetnum_t = uint8_t;
+using player_t = uint8_t;
+using governor_t = uint8_t;
+using commodnum_t = uint64_t;
 
-typedef int64_t money_t;
-typedef uint64_t population_t;
+using money_t = int64_t;
+using population_t = uint64_t;
 
-typedef std::vector<std::string> command_t;
+using command_t = std::vector<std::string>;
 
 #define MAXPLAYERS 64
 #define MAXSTRLEN 2047
@@ -45,9 +45,9 @@ typedef std::vector<std::string> command_t;
 
 typedef char hugestr[HUGESTRLEN];
 
-typedef class Planet planettype;
-typedef struct star startype;
-typedef struct commod commodtype;
+using planettype = class Planet;
+using startype = struct star;
+using commodtype = struct commod;
 
 struct plinfo {            /* planetary stockpiles */
   unsigned short fuel;     /* fuel for powering things */
@@ -175,33 +175,24 @@ class sector {
         type(type_),
         condition(condition_) {}
   sector()
-      : eff(0),
-        fert(0),
-        mobilization(0),
-        crystals(0),
-        resource(0),
-        popn(0),
-        troops(0),
-        owner(0),
-        race(0),
-        type(0),
-        condition(0) {}
-  unsigned int eff;          /* efficiency (0-100) */
-  unsigned int fert;         /* max popn is proportional to this */
-  unsigned int mobilization; /* percent popn is mobilized for war */
-  unsigned int crystals;
-  unsigned int resource;
 
-  population_t popn;
-  population_t troops; /* troops (additional combat value) */
+  {}
+  unsigned int eff{0};          /* efficiency (0-100) */
+  unsigned int fert{0};         /* max popn is proportional to this */
+  unsigned int mobilization{0}; /* percent popn is mobilized for war */
+  unsigned int crystals{0};
+  unsigned int resource{0};
 
-  player_t owner;         /* owner of place */
-  player_t race;          /* race type occupying sector
+  population_t popn{0};
+  population_t troops{0}; /* troops (additional combat value) */
+
+  player_t owner{0};         /* owner of place */
+  player_t race{0};          /* race type occupying sector
                  (usually==owner) - makes things more
                  realistic when alien races revolt and
                  you gain control of them! */
-  unsigned int type;      /* underlying sector geology */
-  unsigned int condition; /* environmental effects */
+  unsigned int type{0};      /* underlying sector geology */
+  unsigned int condition{0}; /* environmental effects */
   sector(sector &) = delete;
   void operator=(const sector &) = delete;
   sector(sector &&) = default;

@@ -5,7 +5,7 @@
 #ifndef GB_RACEGEN_H
 #define GB_RACEGEN_H
 
-int enroll_valid_race(void);
-void init_enroll(void);
+int enroll_valid_race();
+void init_enroll();
 
 #endif

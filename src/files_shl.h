@@ -12,11 +12,11 @@
 #include "ships.h"
 #include "vars.h"
 
-void opensql(void);
+void opensql();
 
 void close_file(int);
-void open_data_files(void);
-void close_data_files(void);
+void open_data_files();
+void close_data_files();
 void openstardata(int *);
 void openshdata(int *);
 void opencommoddata(int *);
@@ -30,9 +30,9 @@ int getship(Ship **, shipnum_t);
 int getcommod(commodtype **, commodnum_t);
 sector getsector(const Planet &, const int x, const int y);
 sector_map getsmap(const Planet &);
-int getdeadship(void);
-int getdeadcommod(void);
-void initsqldata(void);
+int getdeadship();
+int getdeadcommod();
+void initsqldata();
 void putsdata(struct stardata *);
 void putrace(racetype *);
 void putstar(startype *, starnum_t);
@@ -41,12 +41,12 @@ void putsector(const sector &, const Planet &, const int x, const int y);
 void putsmap(sector_map &map, Planet &p);
 void putship(Ship *);
 void putcommod(commodtype *, int);
-int Numraces(void);
-shipnum_t Numships(void);
-int Numcommods(void);
+int Numraces();
+shipnum_t Numships();
+int Numcommods();
 int Newslength(int);
-void clr_shipfree(void);
-void clr_commodfree(void);
+void clr_shipfree();
+void clr_commodfree();
 void makeshipdead(int);
 void makecommoddead(int);
 void Putpower(struct power[MAXPLAYERS]);

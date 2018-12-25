@@ -412,22 +412,20 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       } else { /* The move list might be empty.. */
         moveseq = "5";
       }
-      for (int i = 0; i < moveseq.size(); ++i) {
+      for (auto i = 0; i < moveseq.size(); ++i) {
         /* Make sure the list of moves is short enough. */
         if (i == SHIP_NAMESIZE - 1) {
           sprintf(buf, "Warning: that is more than %d moves.\n",
                   SHIP_NAMESIZE - 1);
           notify(Playernum, Governor, buf);
-          notify(Playernum, Governor,
-                 "These move orders have been truncated.\n");
+          g.out << "These move orders have been truncated.\n";
           moveseq.resize(i);
           break;
         }
         /* Make sure this move is OK. */
         if ((moveseq[i] == 'c') || (moveseq[i] == 's')) {
           if ((i == 0) && (moveseq[0] == 'c')) {
-            notify(Playernum, Governor,
-                   "Cycling move orders can not be empty!\n");
+            g.out << "Cycling move orders can not be empty!\n";
             return;
           }
           if (moveseq[i + 1]) {
@@ -436,8 +434,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
                     "move order.\n",
                     moveseq[i]);
             notify(Playernum, Governor, buf);
-            notify(Playernum, Governor,
-                   "These move orders have been truncated.\n");
+            g.out << "These move orders have been truncated.\n";
             moveseq.resize(i + 1);
             break;
           }
@@ -451,8 +448,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       /* This is the index keeping track of which order in shipclass is next. */
       ship->special.terraform.index = 0;
     } else {
-      notify(Playernum, Governor,
-             "That ship is not a terraformer or a space plow.\n");
+      g.out << "That ship is not a terraformer or a space plow.\n";
       return;
     }
   } else if (argv[2] == "trigger") {

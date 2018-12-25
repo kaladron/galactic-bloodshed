@@ -404,53 +404,52 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
         return;
     }
   } else if (argv[2] == "move") {
-    if ((ship->type == ShipType::OTYPE_TERRA) ||
-        (ship->type == ShipType::OTYPE_PLOW)) {
-      std::string moveseq;
-      if (argv.size() > 3) {
-        moveseq = argv[3];
-      } else { /* The move list might be empty.. */
-        moveseq = "5";
-      }
-      for (auto i = 0; i < moveseq.size(); ++i) {
-        /* Make sure the list of moves is short enough. */
-        if (i == SHIP_NAMESIZE - 1) {
-          sprintf(buf, "Warning: that is more than %d moves.\n",
-                  SHIP_NAMESIZE - 1);
-          notify(Playernum, Governor, buf);
-          g.out << "These move orders have been truncated.\n";
-          moveseq.resize(i);
-          break;
-        }
-        /* Make sure this move is OK. */
-        if ((moveseq[i] == 'c') || (moveseq[i] == 's')) {
-          if ((i == 0) && (moveseq[0] == 'c')) {
-            g.out << "Cycling move orders can not be empty!\n";
-            return;
-          }
-          if (moveseq[i + 1]) {
-            sprintf(buf,
-                    "Warning: '%c' should be the last character in the "
-                    "move order.\n",
-                    moveseq[i]);
-            notify(Playernum, Governor, buf);
-            g.out << "These move orders have been truncated.\n";
-            moveseq.resize(i + 1);
-            break;
-          }
-        } else if ((moveseq[i] < '1') || ('9' < moveseq[i])) {
-          sprintf(buf, "'%c' is not a valid move direction.\n", moveseq[i]);
-          notify(Playernum, Governor, buf);
-          return;
-        }
-      }
-      strcpy(ship->shipclass, moveseq.c_str());
-      /* This is the index keeping track of which order in shipclass is next. */
-      ship->special.terraform.index = 0;
-    } else {
+    if ((ship->type != ShipType::OTYPE_TERRA) &&
+        (ship->type != ShipType::OTYPE_PLOW)) {
       g.out << "That ship is not a terraformer or a space plow.\n";
       return;
     }
+    std::string moveseq;
+    if (argv.size() > 3) {
+      moveseq = argv[3];
+    } else { /* The move list might be empty.. */
+      moveseq = "5";
+    }
+    for (auto i = 0; i < moveseq.size(); ++i) {
+      /* Make sure the list of moves is short enough. */
+      if (i == SHIP_NAMESIZE - 1) {
+        sprintf(buf, "Warning: that is more than %d moves.\n",
+                SHIP_NAMESIZE - 1);
+        notify(Playernum, Governor, buf);
+        g.out << "These move orders have been truncated.\n";
+        moveseq.resize(i);
+        break;
+      }
+      /* Make sure this move is OK. */
+      if ((moveseq[i] == 'c') || (moveseq[i] == 's')) {
+        if ((i == 0) && (moveseq[0] == 'c')) {
+          g.out << "Cycling move orders can not be empty!\n";
+          return;
+        }
+        if (moveseq[i + 1]) {
+          sprintf(buf,
+                  "Warning: '%c' should be the last character in the "
+                  "move order.\n",
+                  moveseq[i]);
+          notify(Playernum, Governor, buf);
+          g.out << "These move orders have been truncated.\n";
+          moveseq.resize(i + 1);
+          break;
+        }
+      } else if ((moveseq[i] < '1') || ('9' < moveseq[i])) {
+        sprintf(buf, "'%c' is not a valid move direction.\n", moveseq[i]);
+        notify(Playernum, Governor, buf);
+        return;
+      }
+    }
+    strcpy(ship->shipclass, moveseq.c_str());
+    /* This is the index keeping track of which order in shipclass is next. */
+    ship->special.terraform.index = 0;
   } else if (argv[2] == "trigger") {
     if (ship->type == ShipType::STYPE_MINE) {
       if (std::stoi(argv[3]) < 0)

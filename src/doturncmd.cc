@@ -62,7 +62,7 @@ void do_turn(int update) {
     int res;
     int des;
     int fuel;
-    int money;
+    money_t money;
   } * victory;
 
   /* make all 0 for first iteration of doplanet */

@@ -14,7 +14,11 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-static const char *allied(const race *const, const player_t);
+static auto allied(const race &r, const player_t p) {
+  if (isset(r.atwar, p)) return "WAR";
+  if (isset(r.allied, p)) return "ALLIED";
+  return "neutral";
+}
 
 void relation(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
@@ -34,12 +38,8 @@ void relation(const command_t &argv, GameObj &g) {
   sprintf(buf, "\n              Racial Relations Report for %s\n\n",
           Race->name);
   notify(Playernum, Governor, buf);
-  sprintf(buf,
-          " #       know             Race name       Yours        Theirs\n");
-  notify(Playernum, Governor, buf);
-  sprintf(buf,
-          " -       ----             ---------       -----        ------\n");
-  notify(Playernum, Governor, buf);
+  g.out << " #       know             Race name       Yours        Theirs\n";
+  g.out << " -       ----             ---------       -----        ------\n";
   for (player_t p = 1; p <= Num_races; p++)
     if (p != Race->Playernum) {
       auto r = races[p - 1];
@@ -48,14 +48,7 @@ void relation(const command_t &argv, GameObj &g) {
                (Playernum == q))
                   ? "Morph"
                   : "     ",
-              Race->translate[p - 1], r->name, allied(Race, p), allied(r, q));
+              Race->translate[p - 1], r->name, allied(*Race, p), allied(*r, q));
       notify(Playernum, Governor, buf);
     }
-}
-
-static const char *allied(const race *const r, const player_t p) {
-  if (isset(r->atwar, p)) return "WAR";
-  if (isset(r->allied, p)) return "ALLIED";
-
-  return "neutral";
 }

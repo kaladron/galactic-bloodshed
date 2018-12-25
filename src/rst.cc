@@ -130,20 +130,19 @@ void rst(const command_t &argv, GameObj &g) {
       }
       Free_rlist();
       return;
-    } else {
-      size_t l = strlen(argv[1].c_str());
-      for (auto &Report_type : Report_types) Report_type = 0;
+    }
+    size_t l = strlen(argv[1].c_str());
+    for (auto &Report_type : Report_types) Report_type = 0;
 
-      while (l--) {
-        shipnum_t i = NUMSTYPES;
-        while (--i && Shipltrs[i] != argv[1][l])
-          ;
-        if (Shipltrs[i] != argv[1][l]) {
-          sprintf(buf, "'%c' -- no such ship letter\n", argv[1][l]);
-          notify(Playernum, Governor, buf);
-        } else
-          Report_types[i] = 1;
-      }
+    while (l--) {
+      shipnum_t i = NUMSTYPES;
+      while (--i && Shipltrs[i] != argv[1][l])
+        ;
+      if (Shipltrs[i] != argv[1][l]) {
+        sprintf(buf, "'%c' -- no such ship letter\n", argv[1][l]);
+        notify(Playernum, Governor, buf);
+      } else
+        Report_types[i] = 1;
     }
   }
 
@@ -535,11 +534,10 @@ static int Getrship(player_t Playernum, governor_t Governor, shipnum_t shipno) {
     rd[Num_ships].y = rd[Num_ships].s->ypos;
     Num_ships++;
     return 1;
-  } else {
-    sprintf(buf, "Getrship: error on ship get (%lu).\n", shipno);
-    notify(Playernum, Governor, buf);
-    return 0;
   }
+  sprintf(buf, "Getrship: error on ship get (%lu).\n", shipno);
+  notify(Playernum, Governor, buf);
+  return 0;
 }
 
 static void Free_rlist() {

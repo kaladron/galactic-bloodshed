@@ -580,17 +580,15 @@ int getship(Ship **s, shipnum_t shipnum) {
   if (shipnum <= 0) return 0;
 
   fstat(shdata, &buffer);
-  if (buffer.st_size / sizeof(Ship) < shipnum)
-    return 0;
-  else {
-    if ((*s = (Ship *)malloc(sizeof(Ship))) == nullptr) {
-      printf("getship:malloc() error \n");
-      exit(0);
-    }
+  if (buffer.st_size / sizeof(Ship) < shipnum) return 0;
 
-    Fileread(shdata, (char *)*s, sizeof(Ship), (shipnum - 1) * sizeof(Ship));
-    return 1;
+  if ((*s = (Ship *)malloc(sizeof(Ship))) == nullptr) {
+    printf("getship:malloc() error \n");
+    exit(0);
   }
+
+  Fileread(shdata, (char *)*s, sizeof(Ship), (shipnum - 1) * sizeof(Ship));
+  return 1;
 }
 
 int getcommod(commodtype **c, commodnum_t commodnum) {
@@ -599,18 +597,16 @@ int getcommod(commodtype **c, commodnum_t commodnum) {
   if (commodnum <= 0) return 0;
 
   fstat(commoddata, &buffer);
-  if (buffer.st_size / sizeof(commodtype) < commodnum)
-    return 0;
-  else {
-    if ((*c = (commodtype *)malloc(sizeof(commodtype))) == nullptr) {
-      printf("getcommod:malloc() error \n");
-      exit(0);
-    }
+  if (buffer.st_size / sizeof(commodtype) < commodnum) return 0;
 
-    Fileread(commoddata, (char *)*c, sizeof(commodtype),
-             (commodnum - 1) * sizeof(commodtype));
-    return 1;
+  if ((*c = (commodtype *)malloc(sizeof(commodtype))) == nullptr) {
+    printf("getcommod:malloc() error \n");
+    exit(0);
   }
+
+  Fileread(commoddata, (char *)*c, sizeof(commodtype),
+           (commodnum - 1) * sizeof(commodtype));
+  return 1;
 }
 
 /* gets the ship # listed in the top of the file SHIPFREEDATAFL. this
@@ -637,8 +633,8 @@ int getdeadship() {
     ftruncate(fd, (long)(buffer.st_size - sizeof(short)));
     close_file(fd);
     return (int)shnum;
-  } else
-    close_file(fd);
+  }
+  close_file(fd);
   return -1;
 }
 
@@ -664,8 +660,8 @@ int getdeadcommod() {
     ftruncate(fd, (long)(buffer.st_size - sizeof(short)));
     close_file(fd);
     return (int)commodnum;
-  } else
-    close_file(fd);
+  }
+  close_file(fd);
   return -1;
 }
 
@@ -1288,10 +1284,9 @@ void Getpower(struct power p[MAXPLAYERS]) {
     perror("open power data");
     printf("unable to open %s\n", POWFL);
     return;
-  } else {
-    read(power_fd, (char *)p, sizeof(*p) * MAXPLAYERS);
-    close_file(power_fd);
   }
+  read(power_fd, (char *)p, sizeof(*p) * MAXPLAYERS);
+  close_file(power_fd);
 }
 
 void Putblock(struct block b[MAXPLAYERS]) {
@@ -1313,8 +1308,7 @@ void Getblock(struct block b[MAXPLAYERS]) {
     perror("open block data");
     printf("unable to open %s\n", BLOCKDATAFL);
     return;
-  } else {
-    read(block_fd, (char *)b, sizeof(*b) * MAXPLAYERS);
-    close_file(block_fd);
   }
+  read(block_fd, (char *)b, sizeof(*b) * MAXPLAYERS);
+  close_file(block_fd);
 }

@@ -848,11 +848,10 @@ static void process_commands() {
         if (!do_command(d, t.start)) {
           shutdownsock(d);
           break;
-        } else {
-          d.last_time = now; /* experimental code */
-          d.input.pop_front();
-          d.last_time = now; /* experimental code */
         }
+        d.last_time = now; /* experimental code */
+        d.input.pop_front();
+        d.last_time = now; /* experimental code */
       }
     }
   } while (nprocessed > 0);
@@ -871,7 +870,8 @@ static int do_command(DescriptorData &d, const char *comm) {
   if (argv[0] == "quit") {
     goodbye_user(d);
     return 0;
-  } else if (d.connected && argv[0] == "who") {
+  }
+  if (d.connected && argv[0] == "who") {
     dump_users(d);
   } else if (d.connected && d.god && argv[0] == "emulate") {
     d.player = std::stoi(argv[1]);

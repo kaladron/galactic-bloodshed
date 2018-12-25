@@ -191,9 +191,8 @@ char desshow(const player_t Playernum, const governor_t Governor, const int x,
   auto &s = smap.get(x, y);
 
   if (s.troops && !r->governor[Governor].toggle.geography) {
-    if (s.owner == Playernum)
-      return CHAR_MY_TROOPS;
-    else if (isset(r->allied, s.owner))
+    if (s.owner == Playernum) return CHAR_MY_TROOPS;
+    if (isset(r->allied, s.owner))
       return CHAR_ALLIED_TROOPS;
     else if (isset(r->atwar, s.owner))
       return CHAR_ATWAR_TROOPS;
@@ -207,12 +206,10 @@ char desshow(const player_t Playernum, const governor_t Governor, const int x,
         s.owner != r->governor[Governor].toggle.highlight) {
       if (!r->governor[Governor].toggle.double_digits)
         return s.owner % 10 + '0';
-      else {
-        if (s.owner < 10 || x % 2)
-          return s.owner % 10 + '0';
-        else
-          return s.owner / 10 + '0';
-      }
+
+      if (s.owner < 10 || x % 2) return s.owner % 10 + '0';
+
+      return s.owner / 10 + '0';
     }
   }
 

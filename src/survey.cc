@@ -90,11 +90,11 @@ void survey(const command_t &argv, GameObj &g) {
         sprintf(buf, "There are no sectors here.\n");
         notify(Playernum, Governor, buf);
         return;
-      } else {
-        where.level = ScopeLevel::LEVEL_PLAN;
-        where.snum = g.snum;
-        where.pnum = g.pnum;
       }
+      where.level = ScopeLevel::LEVEL_PLAN;
+      where.snum = g.snum;
+      where.pnum = g.pnum;
+
     } else {
       where = Getplace(g, argv[1].c_str(), 0);
       if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;
@@ -401,11 +401,11 @@ void repair(const command_t &argv, GameObj &g) {
         sprintf(buf, "There are no sectors here.\n");
         notify(Playernum, Governor, buf);
         return;
-      } else {
-        where.level = ScopeLevel::LEVEL_PLAN;
-        where.snum = g.snum;
-        where.pnum = g.pnum;
       }
+      where.level = ScopeLevel::LEVEL_PLAN;
+      where.snum = g.snum;
+      where.pnum = g.pnum;
+
     } else {
       where = Getplace(g, argv[1].c_str(), 0);
       if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;

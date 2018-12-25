@@ -23,7 +23,8 @@ void center(const command_t &argv, GameObj &g) {
   if (where.err) {
     g.out << "center: bad scope.\n";
     return;
-  } else if (where.level == ScopeLevel::LEVEL_SHIP) {
+  }
+  if (where.level == ScopeLevel::LEVEL_SHIP) {
     g.out << "CHEATER!!!\n";
     return;
   }
@@ -50,7 +51,8 @@ void cs(const command_t &argv, GameObj &g) {
     g.lastx[1] = Stars[g.snum]->xpos;
     g.lasty[1] = Stars[g.snum]->ypos;
     return;
-  } else if (argv.size() == 2) {
+  }
+  if (argv.size() == 2) {
     /* chdir to specified scope */
 
     auto where = Getplace(g, argv[1].c_str(), 0);

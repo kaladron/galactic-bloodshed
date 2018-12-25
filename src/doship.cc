@@ -550,8 +550,8 @@ static int infect_planet(int who, int star, int p) {
   if (success(SPORE_SUCCESS_RATE)) {
     do_meta_infect(who, planets[star][p]);
     return 1;
-  } else
-    return 0;
+  }
+  return 0;
 }
 
 static void do_meta_infect(int who, Planet *p) {

@@ -55,7 +55,8 @@ void grant(const command_t &argv, GameObj &g) {
   if ((gov = atoi(argv[1].c_str())) > MAXGOVERNORS) {
     g.out << "Bad governor number.\n";
     return;
-  } else if (!Race->governor[gov].active) {
+  }
+  if (!Race->governor[gov].active) {
     g.out << "That governor is not active.\n";
     return;
   } else if (argv[2] == "star") {
@@ -458,8 +459,8 @@ void fix(const command_t &argv, GameObj &g) {
     putship(s);
     free(s);
     return;
-  } else
-    g.out << "Fix what?\n";
+  }
+  g.out << "Fix what?\n";
 }
 
 void DontOwnErr(int Playernum, int Governor, shipnum_t shipno) {
@@ -501,11 +502,10 @@ player_t get_player(const std::string &name) {
   if (isdigit(name[0])) {
     if ((rnum = std::stoi(name)) < 1 || rnum > Num_races) return 0;
     return rnum;
-  } else {
-    for (player_t i = 1; i <= Num_races; i++)
-      if (name == races[i - 1]->name) return i;
-    return 0;
   }
+  for (player_t i = 1; i <= Num_races; i++)
+    if (name == races[i - 1]->name) return i;
+  return 0;
 }
 
 void allocateAPs(const command_t &argv, GameObj &g) {

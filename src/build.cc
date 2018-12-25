@@ -730,79 +730,77 @@ void build(const command_t &argv, GameObj &g) {
         }
       }
       return;
-    } else {
-      /* Description of specific ship type */
-      auto i = get_build_type(argv[2][0]);
-      if (!i)
-        g.out << "No such ship type.\n";
-      else if (!Shipdata[*i][ABIL_PROGRAMMED])
-        g.out << "This ship type has not been programmed.\n";
-      else {
-        if ((fd = fopen(EXAM_FL, "r")) == nullptr) {
-          perror(EXAM_FL);
-          return;
-        } else {
-          /* look through ship description file */
-          sprintf(buf, "\n");
-          for (j = 0; j <= i; j++)
-            while (fgetc(fd) != '~')
-              ;
-          /* Give description */
-          while ((c = fgetc(fd)) != '~') {
-            sprintf(temp, "%c", c);
+    }
+    /* Description of specific ship type */
+    auto i = get_build_type(argv[2][0]);
+    if (!i)
+      g.out << "No such ship type.\n";
+    else if (!Shipdata[*i][ABIL_PROGRAMMED])
+      g.out << "This ship type has not been programmed.\n";
+    else {
+      if ((fd = fopen(EXAM_FL, "r")) == nullptr) {
+        perror(EXAM_FL);
+        return;
+      }
+      /* look through ship description file */
+      sprintf(buf, "\n");
+      for (j = 0; j <= i; j++)
+        while (fgetc(fd) != '~')
+          ;
+      /* Give description */
+      while ((c = fgetc(fd)) != '~') {
+        sprintf(temp, "%c", c);
+        strcat(buf, temp);
+      }
+      fclose(fd);
+      /* Built where? */
+      if (Shipdata[*i][ABIL_BUILD] & 1) {
+        sprintf(temp, "\nCan be constructed on planet.");
+        strcat(buf, temp);
+      }
+      n = 0;
+      sprintf(temp, "\nCan be built by ");
+      for (j = 0; j < NUMSTYPES; j++)
+        if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) n++;
+      if (n) {
+        m = 0;
+        strcat(buf, temp);
+        for (j = 0; j < NUMSTYPES; j++) {
+          if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) {
+            m++;
+            if (n - m > 1)
+              sprintf(temp, "%c, ", Shipltrs[j]);
+            else if (n - m > 0)
+              sprintf(temp, "%c and ", Shipltrs[j]);
+            else
+              sprintf(temp, "%c ", Shipltrs[j]);
             strcat(buf, temp);
           }
-          fclose(fd);
-          /* Built where? */
-          if (Shipdata[*i][ABIL_BUILD] & 1) {
-            sprintf(temp, "\nCan be constructed on planet.");
-            strcat(buf, temp);
-          }
-          n = 0;
-          sprintf(temp, "\nCan be built by ");
-          for (j = 0; j < NUMSTYPES; j++)
-            if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) n++;
-          if (n) {
-            m = 0;
-            strcat(buf, temp);
-            for (j = 0; j < NUMSTYPES; j++) {
-              if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) {
-                m++;
-                if (n - m > 1)
-                  sprintf(temp, "%c, ", Shipltrs[j]);
-                else if (n - m > 0)
-                  sprintf(temp, "%c and ", Shipltrs[j]);
-                else
-                  sprintf(temp, "%c ", Shipltrs[j]);
-                strcat(buf, temp);
-              }
-            }
-            sprintf(temp, "type ships.\n");
-            strcat(buf, temp);
-          }
-          /* default parameters */
-          sprintf(
-              temp,
+        }
+        sprintf(temp, "type ships.\n");
+        strcat(buf, temp);
+      }
+      /* default parameters */
+      sprintf(temp,
               "\n%1s %-15s %5s %5s %3s %4s %3s %3s %3s %4s %4s %2s %4s %4s\n",
               "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
               "fuel", "crew", "sp", "tech", "cost");
-          strcat(buf, temp);
-          Race = races[Playernum - 1];
-          sprintf(temp,
-                  "%1c %-15.15s %5ld %5ld %3ld %4ld %3ld %3ld %3ld %4ld "
-                  "%4ld %2ld %4.0f %4d\n",
-                  Shipltrs[*i], Shipnames[*i], Shipdata[*i][ABIL_CARGO],
-                  Shipdata[*i][ABIL_HANGER], Shipdata[*i][ABIL_ARMOR],
-                  Shipdata[*i][ABIL_DESTCAP], Shipdata[*i][ABIL_GUNS],
-                  Shipdata[*i][ABIL_PRIMARY], Shipdata[*i][ABIL_SECONDARY],
-                  Shipdata[*i][ABIL_FUELCAP], Shipdata[*i][ABIL_MAXCREW],
-                  Shipdata[*i][ABIL_SPEED], (double)Shipdata[*i][ABIL_TECH],
-                  Shipcost(*i, Race));
-          strcat(buf, temp);
-          notify(Playernum, Governor, buf);
-        }
-      }
+      strcat(buf, temp);
+      Race = races[Playernum - 1];
+      sprintf(temp,
+              "%1c %-15.15s %5ld %5ld %3ld %4ld %3ld %3ld %3ld %4ld "
+              "%4ld %2ld %4.0f %4d\n",
+              Shipltrs[*i], Shipnames[*i], Shipdata[*i][ABIL_CARGO],
+              Shipdata[*i][ABIL_HANGER], Shipdata[*i][ABIL_ARMOR],
+              Shipdata[*i][ABIL_DESTCAP], Shipdata[*i][ABIL_GUNS],
+              Shipdata[*i][ABIL_PRIMARY], Shipdata[*i][ABIL_SECONDARY],
+              Shipdata[*i][ABIL_FUELCAP], Shipdata[*i][ABIL_MAXCREW],
+              Shipdata[*i][ABIL_SPEED], (double)Shipdata[*i][ABIL_TECH],
+              Shipcost(*i, Race));
+      strcat(buf, temp);
+      notify(Playernum, Governor, buf);
     }
+
     return;
   }
 

@@ -95,8 +95,9 @@ void Moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
         s->hyper_drive.charge += 1;
     }
     return;
-  } else if (s->speed && !s->docked && s->alive &&
-             (s->whatdest != ScopeLevel::LEVEL_UNIV || s->navigate.on)) {
+  }
+  if (s->speed && !s->docked && s->alive &&
+      (s->whatdest != ScopeLevel::LEVEL_UNIV || s->navigate.on)) {
     fuse = 0.5 * s->speed * (1 + s->protect.evade) * s->mass * FUEL_USE /
            (double)segments;
     if (s->fuel < fuse) {

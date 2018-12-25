@@ -860,10 +860,10 @@ void name(const command_t &argv, GameObj &g) {
       g.out << "Name set.\n";
       free(ship);
       return;
-    } else {
-      g.out << "You have to 'cs' to a ship to name it.\n";
-      return;
     }
+    g.out << "You have to 'cs' to a ship to name it.\n";
+    return;
+
   } else if (argv[1] == "class") {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
       (void)getship(&ship, g.shipno);
@@ -882,10 +882,10 @@ void name(const command_t &argv, GameObj &g) {
       g.out << "Class set.\n";
       free(ship);
       return;
-    } else {
-      g.out << "You have to 'cs' to a factory to name the ship class.\n";
-      return;
     }
+    g.out << "You have to 'cs' to a factory to name the ship class.\n";
+    return;
+
   } else if (argv[1] == "block") {
     /* name your alliance block */
     if (Governor) {

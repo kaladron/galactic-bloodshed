@@ -90,18 +90,17 @@ void post(const char *origmsg, int type) {
   FILE *news_fd;
   if ((news_fd = fopen(telefl, "a")) == nullptr) {
     return;
-  } else {
-    tm = time(nullptr);
-    current_tm = localtime(&tm);
-    char *outbuf;
-    asprintf(&outbuf, "%2d/%2d %02d:%02d:%02d %s", current_tm->tm_mon + 1,
-             current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,
-             current_tm->tm_sec, fixmsg);
-    fprintf(news_fd, "%s", outbuf);
-    fclose(news_fd);
-    newslength[type] += strlen(outbuf);
-    free(outbuf);
   }
+  tm = time(nullptr);
+  current_tm = localtime(&tm);
+  char *outbuf;
+  asprintf(&outbuf, "%2d/%2d %02d:%02d:%02d %s", current_tm->tm_mon + 1,
+           current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,
+           current_tm->tm_sec, fixmsg);
+  fprintf(news_fd, "%s", outbuf);
+  fclose(news_fd);
+  newslength[type] += strlen(outbuf);
+  free(outbuf);
 }
 
 /*

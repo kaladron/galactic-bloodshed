@@ -88,57 +88,56 @@ void load(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
         free(s);
         continue;
-      } else { /* ship has a recipient */
-        if (s->whatdest == ScopeLevel::LEVEL_PLAN) {
-          sprintf(buf, "%s at %d,%d\n", ship_to_string(*s).c_str(), s->land_x,
-                  s->land_y);
+      } /* ship has a recipient */
+      if (s->whatdest == ScopeLevel::LEVEL_PLAN) {
+        sprintf(buf, "%s at %d,%d\n", ship_to_string(*s).c_str(), s->land_x,
+                s->land_y);
+        notify(Playernum, Governor, buf);
+        if (s->storbits != g.snum || s->pnumorbits != g.pnum) {
+          notify(Playernum, Governor,
+                 "Change scope to the planet this ship is landed on.\n");
+          free(s);
+          continue;
+        }
+      } else { /* ship is docked */
+        if (!s->destshipno) {
+          sprintf(buf, "%s is not docked.\n", ship_to_string(*s).c_str());
+          free(s);
+          continue;
+        }
+        if (!getship(&s2, (int)s->destshipno)) {
+          g.out << "Destination ship is bogus.\n";
+          free(s);
+          continue;
+        }
+        if (!s2->alive || !(s->whatorbits == ScopeLevel::LEVEL_SHIP ||
+                            s2->destshipno == shipno)) {
+          /* the ship it was docked with died or
+             undocked with it or something. */
+          s->docked = 0;
+          s->whatdest = ScopeLevel::LEVEL_UNIV;
+          putship(s);
+          sprintf(buf, "%s is not docked.\n", ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
-          if (s->storbits != g.snum || s->pnumorbits != g.pnum) {
-            notify(Playernum, Governor,
-                   "Change scope to the planet this ship is landed on.\n");
-            free(s);
-            continue;
-          }
-        } else { /* ship is docked */
-          if (!s->destshipno) {
-            sprintf(buf, "%s is not docked.\n", ship_to_string(*s).c_str());
-            free(s);
-            continue;
-          }
-          if (!getship(&s2, (int)s->destshipno)) {
-            g.out << "Destination ship is bogus.\n";
-            free(s);
-            continue;
-          }
-          if (!s2->alive || !(s->whatorbits == ScopeLevel::LEVEL_SHIP ||
-                              s2->destshipno == shipno)) {
-            /* the ship it was docked with died or
-               undocked with it or something. */
-            s->docked = 0;
-            s->whatdest = ScopeLevel::LEVEL_UNIV;
-            putship(s);
-            sprintf(buf, "%s is not docked.\n", ship_to_string(*s2).c_str());
-            notify(Playernum, Governor, buf);
-            free(s);
-            free(s2);
-            continue;
-          }
-          if (overloaded(s2) && s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
-            sprintf(buf, "%s is overloaded!\n", ship_to_string(*s2).c_str());
-            notify(Playernum, Governor, buf);
-            free(s);
-            free(s2);
-            continue;
-          }
-          sprintf(buf, "%s docked with %s\n", ship_to_string(*s).c_str(),
-                  ship_to_string(*s2).c_str());
+          free(s);
+          free(s2);
+          continue;
+        }
+        if (overloaded(s2) && s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
+          sprintf(buf, "%s is overloaded!\n", ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
-          sh = 1;
-          if (s2->owner != Playernum) {
-            sprintf(buf, "Player %d owns that ship.\n", s2->owner);
-            notify(Playernum, Governor, buf);
-            diff = 1;
-          }
+          free(s);
+          free(s2);
+          continue;
+        }
+        sprintf(buf, "%s docked with %s\n", ship_to_string(*s).c_str(),
+                ship_to_string(*s2).c_str());
+        notify(Playernum, Governor, buf);
+        sh = 1;
+        if (s2->owner != Playernum) {
+          sprintf(buf, "Player %d owns that ship.\n", s2->owner);
+          notify(Playernum, Governor, buf);
+          diff = 1;
         }
       }
 
@@ -603,7 +602,8 @@ static int jettison_check(GameObj &g, int amt, int max) {
   if (amt < 0) {
     g.out << "Nice try.\n";
     return -1;
-  } else if (amt > max) {
+  }
+  if (amt > max) {
     sprintf(buf, "You can jettison at most %d\n", max);
     notify(Playernum, Governor, buf);
     return -1;
@@ -821,7 +821,8 @@ void mount(const command_t &argv, GameObj &g) {
         g.out << "You already have a crystal mounted.\n";
         free(ship);
         continue;
-      } else if (!ship->mounted && !mnt) {
+      }
+      if (!ship->mounted && !mnt) {
         g.out << "You don't have a crystal mounted.\n";
         free(ship);
         continue;

@@ -133,8 +133,8 @@ void colonies(const command_t &argv, GameObj &g) {
         sprintf(buf, "Bad location `%s'.\n", argv[i].c_str());
         notify(Playernum, Governor, buf);
         continue;
-      } else /* ok, a proper location */
-        colonies_at_star(g, Race, where.snum, mode);
+      } /* ok, a proper location */
+      colonies_at_star(g, Race, where.snum, mode);
     }
   g.out << "\n";
 }
@@ -251,8 +251,9 @@ void exploration(const command_t &argv, GameObj &g) {
       sprintf(buf, "explore: bad scope.\n");
       notify(Playernum, Governor, buf);
       return;
-    } else if (where.level == ScopeLevel::LEVEL_SHIP ||
-               where.level == ScopeLevel::LEVEL_UNIV) {
+    }
+    if (where.level == ScopeLevel::LEVEL_SHIP ||
+        where.level == ScopeLevel::LEVEL_UNIV) {
       sprintf(buf, "Bad scope '%s'.\n", argv[1].c_str());
       notify(Playernum, Governor, buf);
       return;
@@ -360,12 +361,11 @@ void tech_status(const command_t &argv, GameObj &g) {
         sprintf(buf, "Bad location `%s'.\n", argv[k].c_str());
         notify(Playernum, Governor, buf);
         continue;
-      } else { /* ok, a proper location */
-        starnum_t star = where.snum;
-        getstar(&Stars[star], star);
-        tech_report_star(Playernum, Governor, Stars[star], star, &total_invest,
-                         &total_gain, &total_max_gain);
-      }
+      } /* ok, a proper location */
+      starnum_t star = where.snum;
+      getstar(&Stars[star], star);
+      tech_report_star(Playernum, Governor, Stars[star], star, &total_invest,
+                       &total_gain, &total_max_gain);
     }
   }
   sprintf(buf, "       Total Popn:  %7ld\n", Power[Playernum - 1].popn);

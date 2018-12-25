@@ -46,8 +46,9 @@ void scrap(const command_t &argv, GameObj &g) {
       }
       if (s->whatorbits == ScopeLevel::LEVEL_UNIV) {
         continue;
-      } else if (!enufAP(g.player, g.governor,
-                         Stars[s->storbits]->AP[g.player - 1], APcount)) {
+      }
+      if (!enufAP(g.player, g.governor, Stars[s->storbits]->AP[g.player - 1],
+                  APcount)) {
         free(s);
         continue;
       }

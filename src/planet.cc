@@ -631,7 +631,8 @@ static int moveship_onplanet(Ship *ship, Planet *planet) {
   if (ship->shipclass[ship->special.terraform.index] == 's') {
     ship->on = 0;
     return 0;
-  } else if (ship->shipclass[ship->special.terraform.index] == 'c')
+  }
+  if (ship->shipclass[ship->special.terraform.index] == 'c')
     ship->special.terraform.index = 0; /* reset the orders */
 
   (void)get_move(ship->shipclass[ship->special.terraform.index], ship->land_x,

@@ -168,16 +168,16 @@ void launch(const command_t &argv, GameObj &g) {
             free(s);
             free(s2);
             continue;
-          } else
-            deductAPs(Playernum, Governor, APcount, 0, 1);
+          }
+          deductAPs(Playernum, Governor, APcount, 0, 1);
         } else {
           if (!enufAP(Playernum, Governor,
                       Stars[s->storbits]->AP[Playernum - 1], APcount)) {
             free(s);
             free(s2);
             continue;
-          } else
-            deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
+          }
+          deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
         }
         s->docked = 0;
         s->whatdest = ScopeLevel::LEVEL_UNIV;
@@ -197,8 +197,8 @@ void launch(const command_t &argv, GameObj &g) {
                     APcount)) {
           free(s);
           return;
-        } else
-          deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
+        }
+        deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
 
         /* adjust x,ypos to absolute coords */
         auto p = getplanet((int)s->storbits, (int)s->pnumorbits);

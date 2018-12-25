@@ -60,97 +60,97 @@ void dissolve(const command_t &argv, GameObj &g) {
     sprintf(buf, "self-destruct sequence.\n");
     notify(Playernum, Governor, buf);
     return;
-  } else {
-    sprintf(buf, "WARNING!! WARNING!! WARNING!!\n");
+  }
+  sprintf(buf, "WARNING!! WARNING!! WARNING!!\n");
+  notify(Playernum, Governor, buf);
+  sprintf(buf, "-------------------------------\n");
+  notify(Playernum, Governor, buf);
+  sprintf(buf, "Entering self destruct sequence!\n");
+  notify(Playernum, Governor, buf);
+
+  sscanf(argv[1].c_str(), "%s", racepass);
+  sscanf(argv[2].c_str(), "%s", govpass);
+
+  waste = 0;
+  if (argv.size() > 3) {
+    sscanf(argv[3].c_str(), "%c", &nuke);
+    if (nuke == 'w') waste = 1;
+  }
+
+  Getracenum(racepass, govpass, &i, &j);
+
+  if (!i || !j) {
+    sprintf(buf, "Password mismatch, self-destruct not initiated!\n");
     notify(Playernum, Governor, buf);
-    sprintf(buf, "-------------------------------\n");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "Entering self destruct sequence!\n");
-    notify(Playernum, Governor, buf);
+    return;
+  }
 
-    sscanf(argv[1].c_str(), "%s", racepass);
-    sscanf(argv[2].c_str(), "%s", govpass);
-
-    waste = 0;
-    if (argv.size() > 3) {
-      sscanf(argv[3].c_str(), "%c", &nuke);
-      if (nuke == 'w') waste = 1;
-    }
-
-    Getracenum(racepass, govpass, &i, &j);
-
-    if (!i || !j) {
-      sprintf(buf, "Password mismatch, self-destruct not initiated!\n");
+  for (i = 1; i <= n_ships; i++) {
+    (void)getship(&sp, i);
+    if (sp->owner == Playernum) {
+      kill_ship(Playernum, sp);
+      sprintf(buf, "Ship #%d, self-destruct enabled\n", i);
       notify(Playernum, Governor, buf);
-      return;
+      putship(sp);
     }
+    free(sp);
+  }
 
-    for (i = 1; i <= n_ships; i++) {
-      (void)getship(&sp, i);
-      if (sp->owner == Playernum) {
-        kill_ship(Playernum, sp);
-        sprintf(buf, "Ship #%d, self-destruct enabled\n", i);
-        notify(Playernum, Governor, buf);
-        putship(sp);
-      }
-      free(sp);
-    }
+  getsdata(&Sdata);
+  for (z = 0; z < Sdata.numstars; z++) {
+    getstar(&(Stars[z]), z);
+    if (isset(Stars[z]->explored, Playernum)) {
+      for (i = 0; i < Stars[z]->numplanets; i++) {
+        auto pl = getplanet(z, i);
 
-    getsdata(&Sdata);
-    for (z = 0; z < Sdata.numstars; z++) {
-      getstar(&(Stars[z]), z);
-      if (isset(Stars[z]->explored, Playernum)) {
-        for (i = 0; i < Stars[z]->numplanets; i++) {
-          auto pl = getplanet(z, i);
+        if (pl.info[Playernum - 1].explored &&
+            pl.info[Playernum - 1].numsectsowned) {
+          pl.info[Playernum - 1].fuel = 0;
+          pl.info[Playernum - 1].destruct = 0;
+          pl.info[Playernum - 1].resource = 0;
+          pl.info[Playernum - 1].popn = 0;
+          pl.info[Playernum - 1].troops = 0;
+          pl.info[Playernum - 1].tax = 0;
+          pl.info[Playernum - 1].newtax = 0;
+          pl.info[Playernum - 1].crystals = 0;
+          pl.info[Playernum - 1].numsectsowned = 0;
+          pl.info[Playernum - 1].explored = 0;
+          pl.info[Playernum - 1].autorep = 0;
+        }
 
-          if (pl.info[Playernum - 1].explored &&
-              pl.info[Playernum - 1].numsectsowned) {
-            pl.info[Playernum - 1].fuel = 0;
-            pl.info[Playernum - 1].destruct = 0;
-            pl.info[Playernum - 1].resource = 0;
-            pl.info[Playernum - 1].popn = 0;
-            pl.info[Playernum - 1].troops = 0;
-            pl.info[Playernum - 1].tax = 0;
-            pl.info[Playernum - 1].newtax = 0;
-            pl.info[Playernum - 1].crystals = 0;
-            pl.info[Playernum - 1].numsectsowned = 0;
-            pl.info[Playernum - 1].explored = 0;
-            pl.info[Playernum - 1].autorep = 0;
-          }
+        auto smap = getsmap(pl);
 
-          auto smap = getsmap(pl);
-
-          lowx = 0;
-          lowy = 0;
-          hix = pl.Maxx - 1;
-          hiy = pl.Maxy - 1;
-          for (y2 = lowy; y2 <= hiy; y2++) {
-            for (x2 = lowx; x2 <= hix; x2++) {
-              auto &s = smap.get(x2, y2);
-              if (s.owner == Playernum) {
-                s.owner = 0;
-                s.troops = 0;
-                s.popn = 0;
-                if (waste) /* code folded from here */
-                  s.condition = SectorType::SEC_WASTED;
-                /* unfolding */
-              }
+        lowx = 0;
+        lowy = 0;
+        hix = pl.Maxx - 1;
+        hiy = pl.Maxy - 1;
+        for (y2 = lowy; y2 <= hiy; y2++) {
+          for (x2 = lowx; x2 <= hix; x2++) {
+            auto &s = smap.get(x2, y2);
+            if (s.owner == Playernum) {
+              s.owner = 0;
+              s.troops = 0;
+              s.popn = 0;
+              if (waste) /* code folded from here */
+                s.condition = SectorType::SEC_WASTED;
+              /* unfolding */
             }
           }
-          putsmap(smap, pl);
-          putstar(Stars[z], z);
-          putplanet(pl, Stars[z], i);
         }
+        putsmap(smap, pl);
+        putstar(Stars[z], z);
+        putplanet(pl, Stars[z], i);
       }
     }
-
-    Race = races[Playernum - 1];
-    Race->dissolved = 1;
-    putrace(Race);
-
-    sprintf(buf, "%s [%d] has dissolved.\n", Race->name, Playernum);
-    post(buf, DECLARATION);
   }
+
+  Race = races[Playernum - 1];
+  Race->dissolved = 1;
+  putrace(Race);
+
+  sprintf(buf, "%s [%d] has dissolved.\n", Race->name, Playernum);
+  post(buf, DECLARATION);
+
 #endif
 }
 

@@ -54,9 +54,8 @@ void relation(const command_t &argv, GameObj &g) {
 }
 
 static const char *allied(const race *const r, const player_t p) {
-  if (isset(r->atwar, p))
-    return "WAR";
-  else if (isset(r->allied, p))
+  if (isset(r->atwar, p)) return "WAR";
+  if (isset(r->allied, p))
     return "ALLIED";
   else
     return "neutral";

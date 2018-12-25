@@ -316,10 +316,10 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       if (j < 0) {
         g.out << "Specify a positive speed.\n";
         return;
-      } else {
-        if (j > speed_rating(ship)) j = speed_rating(ship);
-        ship->speed = j;
       }
+      if (j > speed_rating(ship)) j = speed_rating(ship);
+      ship->speed = j;
+
     } else {
       g.out << "This ship does not have a speed rating.\n";
       return;
@@ -330,16 +330,16 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       if (j < 0) {
         g.out << "Specify a positive number of guns.\n";
         return;
-      } else {
-        if (ship->guns == PRIMARY && j > ship->primary)
-          j = ship->primary;
-        else if (ship->guns == SECONDARY && j > ship->secondary)
-          j = ship->secondary;
-        else if (ship->guns == GTYPE_NONE)
-          j = 0;
-
-        ship->retaliate = j;
       }
+      if (ship->guns == PRIMARY && j > ship->primary)
+        j = ship->primary;
+      else if (ship->guns == SECONDARY && j > ship->secondary)
+        j = ship->secondary;
+      else if (ship->guns == GTYPE_NONE)
+        j = 0;
+
+      ship->retaliate = j;
+
     } else {
       g.out << "This ship cannot be set to retaliate.\n";
       return;
@@ -355,11 +355,10 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           notify(Playernum, Governor,
                  "Specify a nonnegative number of guns.\n");
           return;
-        } else {
-          if (j > ship->primary) j = ship->primary;
-          ship->retaliate = j;
-          ship->guns = PRIMARY;
         }
+        if (j > ship->primary) j = ship->primary;
+        ship->retaliate = j;
+        ship->guns = PRIMARY;
       }
     } else {
       g.out << "This ship does not have primary guns.\n";
@@ -377,11 +376,10 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           notify(Playernum, Governor,
                  "Specify a nonnegative number of guns.\n");
           return;
-        } else {
-          if (j > ship->secondary) j = ship->secondary;
-          ship->retaliate = j;
-          ship->guns = SECONDARY;
         }
+        if (j > ship->secondary) j = ship->secondary;
+        ship->retaliate = j;
+        ship->guns = SECONDARY;
       }
     } else {
       g.out << "This ship does not have secondary guns.\n";
@@ -496,20 +494,20 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
         if (pl.err) {
           g.out << "Error in destination.\n";
           return;
-        } else {
-          ship->special.aimed_at.level = pl.level;
-          ship->special.aimed_at.pnum = pl.pnum;
-          ship->special.aimed_at.snum = pl.snum;
-          ship->special.aimed_at.shipno = pl.shipno;
-          if (ship->type != ShipType::OTYPE_TRACT &&
-              ship->type != ShipType::OTYPE_GTELE)
-            use_fuel(ship, FUEL_MANEUVER);
-          if (ship->type == ShipType::OTYPE_GTELE ||
-              ship->type == ShipType::OTYPE_STELE)
-            mk_expl_aimed_at(Playernum, Governor, ship);
-          sprintf(buf, "Aimed at %s\n", prin_aimed_at(*ship).c_str());
-          notify(Playernum, Governor, buf);
         }
+        ship->special.aimed_at.level = pl.level;
+        ship->special.aimed_at.pnum = pl.pnum;
+        ship->special.aimed_at.snum = pl.snum;
+        ship->special.aimed_at.shipno = pl.shipno;
+        if (ship->type != ShipType::OTYPE_TRACT &&
+            ship->type != ShipType::OTYPE_GTELE)
+          use_fuel(ship, FUEL_MANEUVER);
+        if (ship->type == ShipType::OTYPE_GTELE ||
+            ship->type == ShipType::OTYPE_STELE)
+          mk_expl_aimed_at(Playernum, Governor, ship);
+        sprintf(buf, "Aimed at %s\n", prin_aimed_at(*ship).c_str());
+        notify(Playernum, Governor, buf);
+
       } else {
         sprintf(buf, "Not enough maneuvering fuel (%.2f).\n", FUEL_MANEUVER);
         notify(Playernum, Governor, buf);
@@ -592,10 +590,9 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
                   oncost);
           notify(Playernum, Governor, buf);
           return;
-        } else {
-          planet.info[Playernum - 1].resource -= oncost;
-          putplanet(planet, Stars[ship->deststar], (int)ship->destpnum);
         }
+        planet.info[Playernum - 1].resource -= oncost;
+        putplanet(planet, Stars[ship->deststar], (int)ship->destpnum);
       }
       sprintf(buf, "Factory activated at a cost of %d resources.\n", oncost);
       notify(Playernum, Governor, buf);
@@ -932,7 +929,8 @@ void route(const command_t &argv, GameObj &g) {
       }
     g.out << "Done.\n";
     return;
-  } else if (argv.size() == 2) {
+  }
+  if (argv.size() == 2) {
     i = std::stoi(argv[1]);
     if (i > MAX_ROUTES || i < 1) {
       g.out << "Bad route number.\n";

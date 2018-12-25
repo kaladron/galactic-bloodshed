@@ -473,10 +473,9 @@ static int APadd(int sh, int popn, racetype *race) {
 
   APs = round_rand((double)sh / 10.0 + 5. * log10(1.0 + (double)popn));
 
-  if (governed(race))
-    return APs;
-  else /* dont have an active gov center */
-    return round_rand((double)APs / 20.);
+  if (governed(race)) return APs;
+  /* dont have an active gov center */
+  return round_rand((double)APs / 20.);
 }
 
 int governed(racetype *race) {
@@ -646,10 +645,9 @@ static void maintain(racetype *r, int gov, int amount) {
 #endif
 
 static int attack_planet(Ship *ship) {
-  if (ship->whatdest == ScopeLevel::LEVEL_PLAN)
-    return 1;
-  else
-    return 0;
+  if (ship->whatdest == ScopeLevel::LEVEL_PLAN) return 1;
+
+  return 0;
 }
 
 static void output_ground_attacks() {

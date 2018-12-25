@@ -490,10 +490,9 @@ static int cew_hit_odds(double range, int cew_range) {
  * gun range of given ship, given race and ship
  */
 double gun_range(racetype *r, Ship *s, int mode) {
-  if (mode)
-    return (logscale((int)(r->tech + 1.0)) * SYSTEMSIZE);
-  else
-    return (logscale((int)(s->tech + 1.0)) * SYSTEMSIZE);
+  if (mode) return (logscale((int)(r->tech + 1.0)) * SYSTEMSIZE);
+
+  return (logscale((int)(s->tech + 1.0)) * SYSTEMSIZE);
 }
 
 /*
@@ -502,14 +501,13 @@ double gun_range(racetype *r, Ship *s, int mode) {
 double tele_range(int type, double tech) {
   if (type == ShipType::OTYPE_GTELE)
     return log1p((double)tech) * 400 + SYSTEMSIZE / 8;
-  else
-    return log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
+
+  return log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
 }
 
 int current_caliber(Ship *ship) {
-  if (ship->laser && ship->fire_laser)
-    return GTYPE_LIGHT;
-  else if (ship->type == ShipType::STYPE_MINE)
+  if (ship->laser && ship->fire_laser) return GTYPE_LIGHT;
+  if (ship->type == ShipType::STYPE_MINE)
     return GTYPE_LIGHT;
   else if (ship->type == ShipType::STYPE_MISSILE)
     return GTYPE_HEAVY;

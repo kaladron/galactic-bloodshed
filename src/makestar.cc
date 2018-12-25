@@ -176,8 +176,8 @@ static const char *NextPlanetName(int i) {
                            "9", "10", "11", "12", "13", "14", "15"};
   if (autoname_plan && (namepcount < numplist))
     return PNames[planet_list[namepcount++]];
-  else
-    return Numbers[i];
+
+  return Numbers[i];
 }
 
 void Makestar_init() {
@@ -193,13 +193,13 @@ static char *NextStarName() {
 
   if (autoname_star && (namestcount <= numslist))
     return SNames[star_list[namestcount++]];
-  else {
-    printf("Next star name:");
-    for (i = 0; i < NAMESIZE - 4; i++) putchr('.');
-    for (i = 0; i < NAMESIZE - 4; i++) putchr('\010'); /* ^H */
-    scanf("%14[^\n]", buf);
-    getchr();
-  }
+
+  printf("Next star name:");
+  for (i = 0; i < NAMESIZE - 4; i++) putchr('.');
+  for (i = 0; i < NAMESIZE - 4; i++) putchr('\010'); /* ^H */
+  scanf("%14[^\n]", buf);
+  getchr();
+
   return buf;
 }
 

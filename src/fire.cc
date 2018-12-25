@@ -165,7 +165,8 @@ void fire(const command_t &argv, GameObj &g) {
           free(from);
           free(to);
           continue;
-        } else if (landed(from) || landed(to)) {
+        }
+        if (landed(from) || landed(to)) {
           notify(Playernum, Governor,
                  "CEWs cannot originate from or targeted "
                  "to ships landed on planets.\n");
@@ -329,8 +330,9 @@ void bombard(const command_t &argv, GameObj &g) {
         g.out << "This ship is not landed on the planet.\n";
         free(from);
         continue;
-      } else if (!enufAP(Playernum, Governor,
-                         Stars[from->storbits]->AP[Playernum - 1], APcount)) {
+      }
+      if (!enufAP(Playernum, Governor, Stars[from->storbits]->AP[Playernum - 1],
+                  APcount)) {
         free(from);
         continue;
       }
@@ -707,7 +709,8 @@ void detonate(const command_t &argv, GameObj &g) {
         g.out << "That is not a mine.\n";
         free(s);
         continue;
-      } else if (!s->on) {
+      }
+      if (!s->on) {
         g.out << "The mine is not activated.\n";
         free(s);
         continue;
@@ -750,9 +753,8 @@ int retal_strength(Ship *s) {
 
 int adjacent(int fx, int fy, int tx, int ty, const Planet &p) {
   if (abs(fy - ty) <= 1) {
-    if (abs(fx - tx) <= 1)
-      return 1;
-    else if (fx == p.Maxx - 1 && tx == 0)
+    if (abs(fx - tx) <= 1) return 1;
+    if (fx == p.Maxx - 1 && tx == 0)
       return 1;
     else if (fx == 0 && tx == p.Maxx - 1)
       return 1;

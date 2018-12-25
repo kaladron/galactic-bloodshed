@@ -68,11 +68,11 @@ placetype Getplace(GameObj &g, const char *const string, const int ignoreexpl) {
           where.pnum = where.shipptr->pnumorbits;
           free(where.shipptr);
           return where;
-        } else {
-          where.err = 1;
-          free(where.shipptr);
-          return where;
         }
+        where.err = 1;
+        free(where.shipptr);
+        return where;
+
       case '-':
         /* no destination */
         where.level = ScopeLevel::LEVEL_UNIV;
@@ -85,10 +85,9 @@ placetype Getplace(GameObj &g, const char *const string, const int ignoreexpl) {
   where.snum = g.snum;
   where.pnum = g.pnum;
   if (where.level == ScopeLevel::LEVEL_SHIP) where.shipno = g.shipno;
-  if (string != nullptr && *string == CHAR_CURR_SCOPE)
-    return where;
-  else
-    return Getplace2(Playernum, Governor, string, &where, ignoreexpl, God);
+  if (string != nullptr && *string == CHAR_CURR_SCOPE) return where;
+
+  return Getplace2(Playernum, Governor, string, &where, ignoreexpl, God);
 }
 
 static placetype Getplace2(const int Playernum, const int Governor,
@@ -101,29 +100,29 @@ static placetype Getplace2(const int Playernum, const int Governor,
 
   if (where->err || string == nullptr || *string == '\0' || *string == '\n')
     return (*where); /* base cases */
-  else if (*string == '.') {
+  if (*string == '.') {
     if (where->level == ScopeLevel::LEVEL_UNIV) {
       sprintf(buf, "Can't go higher.\n");
       notify(Playernum, Governor, buf);
       where->err = 1;
       return (*where);
-    } else {
-      if (where->level == ScopeLevel::LEVEL_SHIP) {
-        (void)getship(&where->shipptr, where->shipno);
-        where->level = where->shipptr->whatorbits;
-        /* Fix 'cs .' for ships within ships. Maarten */
-        if (where->level == ScopeLevel::LEVEL_SHIP)
-          where->shipno = where->shipptr->destshipno;
-        free(where->shipptr);
-      } else if (where->level == ScopeLevel::LEVEL_STAR) {
-        where->level = ScopeLevel::LEVEL_UNIV;
-      } else if (where->level == ScopeLevel::LEVEL_PLAN) {
-        where->level = ScopeLevel::LEVEL_STAR;
-      }
-      while (*string == '.') string++;
-      while (*string == '/') string++;
-      return (Getplace2(Playernum, Governor, string, where, ignoreexpl, God));
     }
+    if (where->level == ScopeLevel::LEVEL_SHIP) {
+      (void)getship(&where->shipptr, where->shipno);
+      where->level = where->shipptr->whatorbits;
+      /* Fix 'cs .' for ships within ships. Maarten */
+      if (where->level == ScopeLevel::LEVEL_SHIP)
+        where->shipno = where->shipptr->destshipno;
+      free(where->shipptr);
+    } else if (where->level == ScopeLevel::LEVEL_STAR) {
+      where->level = ScopeLevel::LEVEL_UNIV;
+    } else if (where->level == ScopeLevel::LEVEL_PLAN) {
+      where->level = ScopeLevel::LEVEL_STAR;
+    }
+    while (*string == '.') string++;
+    while (*string == '/') string++;
+    return (Getplace2(Playernum, Governor, string, where, ignoreexpl, God));
+
   } else {
     /* is a char string, name of something */
     sscanf(string, "%[^/ \n]", substr);

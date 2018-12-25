@@ -107,7 +107,8 @@ void dock(const command_t &argv, GameObj &g) {
                "You have no crew on this ship to assault with.\n");
         free(s);
         continue;
-      } else if (Assault && (what == MIL) && !s->troops) {
+      }
+      if (Assault && (what == MIL) && !s->troops) {
         notify(Playernum, Governor,
                "You have no troops on this ship to assault with.\n");
         free(s);
@@ -171,7 +172,8 @@ void dock(const command_t &argv, GameObj &g) {
         free(s);
         free(s2);
         continue;
-      } else if (s->docked && Assault) {
+      }
+      if (s->docked && Assault) {
         /* first undock the target ship */
         s->docked = 0;
         s->whatdest = ScopeLevel::LEVEL_UNIV;
@@ -221,7 +223,8 @@ void dock(const command_t &argv, GameObj &g) {
           free(s);
           free(s2);
           continue;
-        } else if (!s2->alive) {
+        }
+        if (!s2->alive) {
           free(s);
           free(s2);
           return;

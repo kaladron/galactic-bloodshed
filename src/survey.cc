@@ -85,10 +85,9 @@ void survey(const command_t &argv, GameObj &g) {
   } else {
     /* they are surveying a sector */
     if ((isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) ||
-        ((*argv[1].c_str() == '-') && (all = 1))) {
+        ((argv[1][0] == '-') && (all = 1))) {
       if (g.level != ScopeLevel::LEVEL_PLAN) {
-        sprintf(buf, "There are no sectors here.\n");
-        notify(Playernum, Governor, buf);
+        g.out << "There are no sectors here.\n";
         return;
       }
       where.level = ScopeLevel::LEVEL_PLAN;
@@ -104,7 +103,7 @@ void survey(const command_t &argv, GameObj &g) {
   Race = races[Playernum - 1];
 
   if (where.level == ScopeLevel::LEVEL_PLAN) {
-    const auto &p = getplanet((int)where.snum, (int)where.pnum);
+    const auto p = getplanet(where.snum, where.pnum);
 
     compat = compatibility(p, Race);
 

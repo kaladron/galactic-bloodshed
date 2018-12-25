@@ -122,69 +122,68 @@ static placetype Getplace2(const int Playernum, const int Governor,
     while (*string == '.') string++;
     while (*string == '/') string++;
     return (Getplace2(Playernum, Governor, string, where, ignoreexpl, God));
-
-  } else {
-    /* is a char string, name of something */
-    sscanf(string, "%[^/ \n]", substr);
-    do {
-      /*if (isupper(*string) )
-        (*string) = tolower(*string);*/
-      string++;
-    } while (*string != '/' && *string != '\n' && *string != '\0');
-    l = strlen(substr);
-    if (where->level == ScopeLevel::LEVEL_UNIV) {
-      for (i = 0; i < Sdata.numstars; i++)
-        if (!strncmp(substr, Stars[i]->name, l)) {
-          where->level = ScopeLevel::LEVEL_STAR;
-          where->snum = i;
-          if (ignoreexpl || isset(Stars[where->snum]->explored, Playernum) ||
-              God) {
-            tick = (*string == '/');
-            return (Getplace2(Playernum, Governor, string + tick, where,
-                              ignoreexpl, God));
-          }
-          sprintf(buf, "You have not explored %s yet.\n",
-                  Stars[where->snum]->name);
-          notify(Playernum, Governor, buf);
-          where->err = 1;
-          return (*where);
+  }
+  /* is a char string, name of something */
+  sscanf(string, "%[^/ \n]", substr);
+  do {
+    /*if (isupper(*string) )
+      (*string) = tolower(*string);*/
+    string++;
+  } while (*string != '/' && *string != '\n' && *string != '\0');
+  l = strlen(substr);
+  if (where->level == ScopeLevel::LEVEL_UNIV) {
+    for (i = 0; i < Sdata.numstars; i++)
+      if (!strncmp(substr, Stars[i]->name, l)) {
+        where->level = ScopeLevel::LEVEL_STAR;
+        where->snum = i;
+        if (ignoreexpl || isset(Stars[where->snum]->explored, Playernum) ||
+            God) {
+          tick = (*string == '/');
+          return (Getplace2(Playernum, Governor, string + tick, where,
+                            ignoreexpl, God));
         }
-      if (i >= Sdata.numstars) {
-        sprintf(buf, "No such star %s.\n", substr);
+        sprintf(buf, "You have not explored %s yet.\n",
+                Stars[where->snum]->name);
         notify(Playernum, Governor, buf);
         where->err = 1;
         return (*where);
       }
-    } else if (where->level == ScopeLevel::LEVEL_STAR) {
-      for (i = 0; i < Stars[where->snum]->numplanets; i++)
-        if (!strncmp(substr, Stars[where->snum]->pnames[i], l)) {
-          where->level = ScopeLevel::LEVEL_PLAN;
-          where->pnum = i;
-          const auto &p = getplanet(where->snum, i);
-          if (ignoreexpl || p.info[Playernum - 1].explored || God) {
-            tick = (*string == '/');
-            return (Getplace2(Playernum, Governor, string + tick, where,
-                              ignoreexpl, God));
-          }
-          sprintf(buf, "You have not explored %s yet.\n",
-                  Stars[where->snum]->pnames[i]);
-          notify(Playernum, Governor, buf);
-          where->err = 1;
-          return (*where);
-        }
-      if (i >= Stars[where->snum]->numplanets) {
-        sprintf(buf, "No such planet %s.\n", substr);
-        notify(Playernum, Governor, buf);
-        where->err = 1;
-        return (*where);
-      }
-    } else {
-      sprintf(buf, "Can't descend to %s.\n", substr);
+    if (i >= Sdata.numstars) {
+      sprintf(buf, "No such star %s.\n", substr);
       notify(Playernum, Governor, buf);
       where->err = 1;
       return (*where);
     }
+  } else if (where->level == ScopeLevel::LEVEL_STAR) {
+    for (i = 0; i < Stars[where->snum]->numplanets; i++)
+      if (!strncmp(substr, Stars[where->snum]->pnames[i], l)) {
+        where->level = ScopeLevel::LEVEL_PLAN;
+        where->pnum = i;
+        const auto &p = getplanet(where->snum, i);
+        if (ignoreexpl || p.info[Playernum - 1].explored || God) {
+          tick = (*string == '/');
+          return (Getplace2(Playernum, Governor, string + tick, where,
+                            ignoreexpl, God));
+        }
+        sprintf(buf, "You have not explored %s yet.\n",
+                Stars[where->snum]->pnames[i]);
+        notify(Playernum, Governor, buf);
+        where->err = 1;
+        return (*where);
+      }
+    if (i >= Stars[where->snum]->numplanets) {
+      sprintf(buf, "No such planet %s.\n", substr);
+      notify(Playernum, Governor, buf);
+      where->err = 1;
+      return (*where);
+    }
+  } else {
+    sprintf(buf, "Can't descend to %s.\n", substr);
+    notify(Playernum, Governor, buf);
+    where->err = 1;
+    return (*where);
   }
+
   return (*where);
 }
 

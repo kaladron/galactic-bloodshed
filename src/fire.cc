@@ -173,11 +173,11 @@ void fire(const command_t &argv, GameObj &g) {
           free(from);
           free(to);
           continue;
-        } else {
-          sprintf(buf, "CEW strength %d.\n", from->cew);
-          notify(Playernum, Governor, buf);
-          strength = from->cew / 2;
         }
+        sprintf(buf, "CEW strength %d.\n", from->cew);
+        notify(Playernum, Governor, buf);
+        strength = from->cew / 2;
+
       } else {
         check_retal_strength(from, &maxstrength);
 
@@ -714,7 +714,8 @@ void detonate(const command_t &argv, GameObj &g) {
         g.out << "The mine is not activated.\n";
         free(s);
         continue;
-      } else if (s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP) {
+      }
+      if (s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP) {
         g.out << "The mine is docked or landed.\n";
         free(s);
         continue;
@@ -754,14 +755,12 @@ int retal_strength(Ship *s) {
 int adjacent(int fx, int fy, int tx, int ty, const Planet &p) {
   if (abs(fy - ty) <= 1) {
     if (abs(fx - tx) <= 1) return 1;
-    if (fx == p.Maxx - 1 && tx == 0)
-      return 1;
-    else if (fx == 0 && tx == p.Maxx - 1)
-      return 1;
-    else
-      return 0;
-  } else
+    if (fx == p.Maxx - 1 && tx == 0) return 1;
+    if (fx == 0 && tx == p.Maxx - 1) return 1;
+
     return 0;
+  }
+  return 0;
 }
 
 int landed(Ship *ship) {

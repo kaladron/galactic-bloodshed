@@ -967,7 +967,8 @@ void route(const command_t &argv, GameObj &g) {
     }
     g.out << "Done.\n";
     return;
-  } else if (argv.size() == 3) {
+  }
+  if (argv.size() == 3) {
     i = std::stoi(argv[1]);
     if (i > MAX_ROUTES || i < 1) {
       g.out << "Bad route number.\n";

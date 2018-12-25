@@ -59,7 +59,8 @@ void grant(const command_t &argv, GameObj &g) {
   if (!Race->governor[gov].active) {
     g.out << "That governor is not active.\n";
     return;
-  } else if (argv[2] == "star") {
+  }
+  if (argv[2] == "star") {
     int snum;
     if (g.level != ScopeLevel::LEVEL_STAR) {
       g.out << "Please cs to the star system first.\n";

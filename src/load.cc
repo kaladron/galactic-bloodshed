@@ -826,7 +826,8 @@ void mount(const command_t &argv, GameObj &g) {
         g.out << "You don't have a crystal mounted.\n";
         free(ship);
         continue;
-      } else if (!ship->mounted && mnt) {
+      }
+      if (!ship->mounted && mnt) {
         if (!ship->crystals) {
           g.out << "You have no crystals on board.\n";
           free(ship);

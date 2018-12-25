@@ -863,8 +863,8 @@ void name(const command_t &argv, GameObj &g) {
     }
     g.out << "You have to 'cs' to a ship to name it.\n";
     return;
-
-  } else if (argv[1] == "class") {
+  }
+  if (argv[1] == "class") {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
       (void)getship(&ship, g.shipno);
       if (ship->type != ShipType::OTYPE_FACTORY) {
@@ -885,8 +885,8 @@ void name(const command_t &argv, GameObj &g) {
     }
     g.out << "You have to 'cs' to a factory to name the ship class.\n";
     return;
-
-  } else if (argv[1] == "block") {
+  }
+  if (argv[1] == "block") {
     /* name your alliance block */
     if (Governor) {
       g.out << "You are not authorized to do this.\n";

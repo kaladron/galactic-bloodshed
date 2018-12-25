@@ -507,16 +507,12 @@ double tele_range(int type, double tech) {
 
 int current_caliber(Ship *ship) {
   if (ship->laser && ship->fire_laser) return GTYPE_LIGHT;
-  if (ship->type == ShipType::STYPE_MINE)
-    return GTYPE_LIGHT;
-  else if (ship->type == ShipType::STYPE_MISSILE)
-    return GTYPE_HEAVY;
-  else if (ship->guns == PRIMARY)
-    return ship->primtype;
-  else if (ship->guns == SECONDARY)
-    return ship->sectype;
-  else
-    return GTYPE_NONE;
+  if (ship->type == ShipType::STYPE_MINE) return GTYPE_LIGHT;
+  if (ship->type == ShipType::STYPE_MISSILE) return GTYPE_HEAVY;
+  if (ship->guns == PRIMARY) return ship->primtype;
+  if (ship->guns == SECONDARY) return ship->sectype;
+
+  return GTYPE_NONE;
 }
 
 static void do_critical_hits(int penetrate, Ship *ship, int *crithits,

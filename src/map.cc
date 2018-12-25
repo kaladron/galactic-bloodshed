@@ -192,12 +192,10 @@ char desshow(const player_t Playernum, const governor_t Governor, const int x,
 
   if (s.troops && !r->governor[Governor].toggle.geography) {
     if (s.owner == Playernum) return CHAR_MY_TROOPS;
-    if (isset(r->allied, s.owner))
-      return CHAR_ALLIED_TROOPS;
-    else if (isset(r->atwar, s.owner))
-      return CHAR_ATWAR_TROOPS;
-    else
-      return CHAR_NEUTRAL_TROOPS;
+    if (isset(r->allied, s.owner)) return CHAR_ALLIED_TROOPS;
+    if (isset(r->atwar, s.owner)) return CHAR_ATWAR_TROOPS;
+
+    return CHAR_NEUTRAL_TROOPS;
   }
 
   if (s.owner && !r->governor[Governor].toggle.geography &&

@@ -114,7 +114,7 @@ void analysis(const command_t &argv, GameObj &g) {
           do_analysis(g, do_player, mode, sector_type, where.snum, pnum);
         break;
     }
-  } while (0);
+  } while (false);
   return;
 }
 

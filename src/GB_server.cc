@@ -158,7 +158,7 @@ class DescriptorData : public GameObj {
 };
 
 static double GetComplexity(const ShipType);
-static void set_signals(void);
+static void set_signals();
 static void queue_string(DescriptorData &, const std::string &);
 static void add_to_queue(std::deque<TextBlock> &, const std::string &);
 static void help(const command_t &, GameObj &);
@@ -171,20 +171,20 @@ static void do_update(int);
 static void do_segment(int, int);
 static int make_socket(int);
 static void shutdownsock(DescriptorData &);
-static void load_race_data(void);
-static void load_star_data(void);
+static void load_race_data();
+static void load_star_data();
 static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
 static int process_output(DescriptorData &);
 static void welcome_user(DescriptorData &);
 static int flush_queue(std::deque<TextBlock> &, int);
-static void process_commands(void);
+static void process_commands();
 static int do_command(DescriptorData &, const char *);
 static void goodbye_user(DescriptorData &);
 static void dump_users(DescriptorData &);
 static void close_sockets(int);
 static int process_input(DescriptorData &);
-static void force_output(void);
+static void force_output();
 static void help_user(GameObj &);
 static void parse_connect(const char *, char *, char *);
 static int msec_diff(struct timeval, struct timeval);
@@ -202,7 +202,7 @@ static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 static std::list<DescriptorData> descriptor_list;
 
-typedef void (*CommandFunction)(const command_t &, GameObj &);
+using CommandFunction = void (*)(const command_t &, GameObj &);
 
 static const std::unordered_map<std::string, CommandFunction> commands{
     {"'", announce},
@@ -426,7 +426,7 @@ int main(int argc, char **argv) {
   return (0);
 }
 
-static void set_signals(void) { signal(SIGPIPE, SIG_IGN); }
+static void set_signals() { signal(SIGPIPE, SIG_IGN); }
 
 void notify_race(const player_t race, const std::string &message) {
   if (update_flag) return;
@@ -439,7 +439,7 @@ void notify_race(const player_t race, const std::string &message) {
 
 bool notify(const player_t race, const governor_t gov,
             const std::string &message) {
-  if (update_flag) return 0;
+  if (update_flag) return false;
   for (auto &d : descriptor_list)
     if (d.connected && d.player == race && d.governor == gov) {
       strstr_to_queue(d);  // Ensuring anything queued up is flushed out.
@@ -607,7 +607,7 @@ static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
   return sock;
 }
 
-void do_next_thing(void) {
+void do_next_thing() {
   if (nsegments_done < segments)
     do_segment(0, 1);
   else
@@ -740,7 +740,7 @@ static int process_output(DescriptorData &d) {
   return 1;
 }
 
-static void force_output(void) {
+static void force_output() {
   for (auto &d : descriptor_list)
     if (d.connected) (void)process_output(d);
 }
@@ -831,7 +831,7 @@ static int process_input(DescriptorData &d) {
   return 1;
 }
 
-static void process_commands(void) {
+static void process_commands() {
   int nprocessed;
   long now;
 
@@ -1157,7 +1157,7 @@ static void dump_users(DescriptorData &e) {
       } else if (!God) /* deity lurks around */
         coward_count++;
 
-      if ((now - d.last_time) > DISCONNECT_TIME) d.connected = 0;
+      if ((now - d.last_time) > DISCONNECT_TIME) d.connected = false;
     }
   }
 #ifdef SHOW_COWARDS
@@ -1535,8 +1535,8 @@ static double GetComplexity(const ShipType ship) {
 }
 
 static int ShipCompare(const void *S1, const void *S2) {
-  const ShipType *s1 = (const ShipType *)S1;
-  const ShipType *s2 = (const ShipType *)S2;
+  const auto *s1 = (const ShipType *)S1;
+  const auto *s2 = (const ShipType *)S2;
   return (int)(GetComplexity(*s1) - GetComplexity(*s2));
 }
 

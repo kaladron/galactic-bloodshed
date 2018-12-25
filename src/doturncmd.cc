@@ -39,7 +39,7 @@ static int attack_planet(Ship *);
 static void fix_stability(startype *);
 static int governed(racetype *);
 static void make_discoveries(racetype *);
-static void output_ground_attacks(void);
+static void output_ground_attacks();
 static int planet_points(const Planet &);
 
 void do_turn(int update) {
@@ -534,7 +534,7 @@ void fix_stability(startype *s) {
   }
 }
 
-void handle_victory(void) {
+void handle_victory() {
 #ifndef VICTORY
   return;
 #else
@@ -652,7 +652,7 @@ static int attack_planet(Ship *ship) {
     return 0;
 }
 
-static void output_ground_attacks(void) {
+static void output_ground_attacks() {
   int star, i, j;
 
   for (star = 0; star < Sdata.numstars; star++)

@@ -243,7 +243,7 @@ void opensql() {
   }
 }
 
-void open_data_files(void) {
+void open_data_files() {
   opensql();
   opencommoddata(&commoddata);
   openracedata(&racedata);
@@ -251,7 +251,7 @@ void open_data_files(void) {
   openstardata(&stdata);
 }
 
-void close_data_files(void) {
+void close_data_files() {
   close_file(commoddata);
   close_file(racedata);
   close_file(shdata);
@@ -616,7 +616,7 @@ int getcommod(commodtype **c, commodnum_t commodnum) {
 /* gets the ship # listed in the top of the file SHIPFREEDATAFL. this
 ** might have no other uses besides build().
 */
-int getdeadship(void) {
+int getdeadship() {
   struct stat buffer;
   short shnum;
   int fd;
@@ -642,7 +642,7 @@ int getdeadship(void) {
   return -1;
 }
 
-int getdeadcommod(void) {
+int getdeadcommod() {
   struct stat buffer;
   short commodnum;
   int fd;
@@ -1162,14 +1162,14 @@ void putcommod(commodtype *c, int commodnum) {
             (commodnum - 1) * sizeof(commodtype));
 }
 
-int Numraces(void) {
+int Numraces() {
   struct stat buffer;
 
   fstat(racedata, &buffer);
   return ((int)(buffer.st_size / sizeof(racetype)));
 }
 
-shipnum_t Numships(void) /* return number of ships */
+shipnum_t Numships() /* return number of ships */
 {
   struct stat buffer;
 
@@ -1177,7 +1177,7 @@ shipnum_t Numships(void) /* return number of ships */
   return ((int)(buffer.st_size / sizeof(Ship)));
 }
 
-int Numcommods(void) {
+int Numcommods() {
   struct stat buffer;
 
   fstat(commoddata, &buffer);
@@ -1214,9 +1214,9 @@ int Newslength(int type) {
 }
 
 /* delete contents of dead ship file */
-void clr_shipfree(void) { fclose(fopen(SHIPFREEDATAFL, "w+")); }
+void clr_shipfree() { fclose(fopen(SHIPFREEDATAFL, "w+")); }
 
-void clr_commodfree(void) { fclose(fopen(COMMODFREEDATAFL, "w+")); }
+void clr_commodfree() { fclose(fopen(COMMODFREEDATAFL, "w+")); }
 
 /*
 ** writes the ship to the dead ship file at its end.

@@ -144,7 +144,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
         }
       if (!f) strcat(temp, "(none)");
     } else
-      strcat(temp, "\?\?\?");
+      strcat(temp, R"(???)");
     strcat(temp, "\n");
     notify(Playernum, Governor, temp);
     sprintf(temp, "              Guns : %3d             Mob Points : %ld\n",

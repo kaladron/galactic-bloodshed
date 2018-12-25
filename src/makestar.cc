@@ -31,7 +31,7 @@ static const double PLANET_DIST_MIN = 100.0;
 #define M_PI 3.14159265358979323846
 #endif
 
-static char *NextStarName(void);
+static char *NextStarName();
 static const char *NextPlanetName(int);
 
 static int Numtypes[PlanetType::DESERT + 2] = {
@@ -69,7 +69,7 @@ int Temperature(double dist, int stemp) {
   return -269 + stemp * 1315 * 40 / (40 + dist);
 }
 
-void PrintStatistics(void) {
+void PrintStatistics() {
   int i, j, y;
 
   printf("\nPlanet/Sector distribution -\n");
@@ -164,7 +164,7 @@ static void rand_list(int n, int *list) /* mix up the numbers 0 thru n */
   }
 }
 
-void Makeplanet_init(void) {
+void Makeplanet_init() {
   numplist = ReadNameList(PNames, 1000, 20, PLANETLIST);
   rand_list(numplist, planet_list);
   if (numplist < 0) exit(0);
@@ -180,14 +180,14 @@ static const char *NextPlanetName(int i) {
     return Numbers[i];
 }
 
-void Makestar_init(void) {
+void Makestar_init() {
   numslist = ReadNameList(SNames, 1000, 20, STARLIST);
   rand_list(numslist, star_list);
   if (numslist < 0) exit(0);
   namestcount = 0;
 }
 
-static char *NextStarName(void) {
+static char *NextStarName() {
   static char buf[20];
   int i;
 

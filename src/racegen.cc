@@ -27,15 +27,15 @@ static int do_racegen();
 static int fd;
 static int isserver = 0;
 
-static int critique_modification(void);
+static int critique_modification();
 static void execute(int argc, char **argv);
-static void fix_up_iq(void);
-static void initialize(void);
+static void fix_up_iq();
+static void initialize();
 static void help(int, char *[]);
 static void load(int, char *[]);
-static void metamorph(void);
+static void metamorph();
 static int modify(int argc, char *argv[]);
-static void normal(void);
+static void normal();
 static void print(int argc, char *argv[]);
 static void save(int argc, char *argv[]);
 static void send2(int argc, char *argv[]);
@@ -1218,7 +1218,7 @@ int Dialogue(const char *prompt, ...) {
   if (argc) printf("]");
   printf("> ");
   fflush(stdout);
-  while (1) {
+  while (true) {
     fgets(input, INPUTSIZE, stdin);
 
     if (argc == 0) return -1;

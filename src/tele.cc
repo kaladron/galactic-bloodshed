@@ -35,7 +35,7 @@ static struct tm *current_tm; /* for watching for next update */
  * description:  Used to purge the News files.
  *
  */
-void purge(void) {
+void purge() {
   fclose(fopen(DECLARATIONFL, "w+"));
   newslength[0] = 0;
   fclose(fopen(COMBATFL, "w+"));

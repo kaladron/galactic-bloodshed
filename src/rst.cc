@@ -53,7 +53,7 @@ struct reportdata {
 static struct reportdata *rd;
 static int enemies_only, who;
 
-static void Free_rlist(void);
+static void Free_rlist();
 static int Getrship(player_t, governor_t, shipnum_t);
 static int listed(int, char *);
 static void plan_getrships(player_t, governor_t, starnum_t, planetnum_t);
@@ -81,7 +81,7 @@ void rst(const command_t &argv, GameObj &g) {
     Weapons = Status = Report = SHip = Stock = Factories = 0;
   } else if (argv[0] == "ship") {
     SHip = Report = Stock = 1;
-    Tactical = 0;
+    Tactical = false;
     Weapons = Status = Factories = 1;
   } else if (argv[0] == "stats") {
     Status = 1;
@@ -542,7 +542,7 @@ static int Getrship(player_t Playernum, governor_t Governor, shipnum_t shipno) {
   }
 }
 
-static void Free_rlist(void) {
+static void Free_rlist() {
   int i;
   for (i = 0; i < Num_ships; i++)
     if (rd[i].type == PLANET)

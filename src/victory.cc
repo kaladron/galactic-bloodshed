@@ -14,8 +14,8 @@
 #include "vars.h"
 
 static auto constexpr victory_sort(const void *A, const void *B) {
-  const struct vic *a = (const struct vic *)A;
-  const struct vic *b = (const struct vic *)B;
+  const auto *a = (const struct vic *)A;
+  const auto *b = (const struct vic *)B;
   if (a->no_count)
     return 1;
   else if (b->no_count)

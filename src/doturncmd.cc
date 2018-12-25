@@ -98,19 +98,18 @@ void do_turn(int update) {
   for (player_t i = 1; i <= Num_races; i++) {
     /* increase tech; change to something else */
     if (update) {
-      int j;
       /* Reset controlled planet count */
       races[i - 1]->controlled_planets = 0;
       races[i - 1]->planet_points = 0;
-      for (j = 0; j <= MAXGOVERNORS; j++)
-        if (races[i - 1]->governor[j].active) {
+      for (auto& governor : races[i - 1]->governor)
+        if (governor.active) {
 #ifdef MARKET
-          races[i - 1]->governor[j].maintain = 0;
-          races[i - 1]->governor[j].cost_market = 0;
-          races[i - 1]->governor[j].profit_market = 0;
+          governor.maintain = 0;
+          governor.cost_market = 0;
+          governor.profit_market = 0;
 #endif
-          races[i - 1]->governor[j].cost_tech = 0;
-          races[i - 1]->governor[j].income = 0;
+          governor.cost_tech = 0;
+          governor.income = 0;
         }
       /* add VN program */
       VN_brain.Total_mad += Sdata.VN_hitlist[i - 1];

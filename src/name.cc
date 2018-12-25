@@ -65,7 +65,7 @@ void bless(const command_t &argv, GameObj &g) {
     g.out << "Please cs to the planet in question.\n";
     return;
   }
-  who = atoi(argv[1].c_str());
+  who = std::stoi(argv[1]);
   if (who < 1 || who > Num_races) {
     g.out << "No such player number.\n";
     return;
@@ -74,7 +74,7 @@ void bless(const command_t &argv, GameObj &g) {
     g.out << "Syntax: bless <player> <what> <+amount>\n";
     return;
   }
-  amount = atoi(argv[3].c_str());
+  amount = std::stoi(argv[3]);
 
   racetype *Race = races[who - 1];
   /* race characteristics? */
@@ -102,7 +102,7 @@ void bless(const command_t &argv, GameObj &g) {
     Race->collective_iq = 0;
     sprintf(buf, "Deity took away collective intelligence.\n");
   } else if (argv[2] == "maxiq") {
-    Race->IQ_limit = atoi(argv[3].c_str());
+    Race->IQ_limit = std::stoi(argv[3]);
     sprintf(buf, "Deity gave you a maximum IQ of %d.\n", Race->IQ_limit);
   } else if (argv[2] == "mass") {
     Race->mass = atof(argv[3].c_str());
@@ -186,7 +186,7 @@ void bless(const command_t &argv, GameObj &g) {
     sprintf(buf, "Deity reset your explored bit at /%s/%s.\n",
             Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
   } else if (argv[2] == "planetpopulation") {
-    planet.info[who - 1].popn = atoi(argv[3].c_str());
+    planet.info[who - 1].popn = std::stoi(argv[3]);
     planet.popn++;
     sprintf(buf, "Deity set your population variable to %ld at /%s/%s.\n",
             planet.info[who - 1].popn, Stars[g.snum]->name,
@@ -198,7 +198,7 @@ void bless(const command_t &argv, GameObj &g) {
     sprintf(buf, "Deity has set your inhabited bit for /%s/%s.\n",
             Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
   } else if (argv[2] == "numsectsowned") {
-    planet.info[who - 1].numsectsowned = atoi(argv[3].c_str());
+    planet.info[who - 1].numsectsowned = std::stoi(argv[3]);
     sprintf(buf, "Deity set your \"numsectsowned\" variable at /%s/%s to %d.\n",
             Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum],
             planet.info[who - 1].numsectsowned);
@@ -570,7 +570,7 @@ void page(const command_t &argv, GameObj &g) {
     }
     alien = races[who - 1];
     APcount *= !alien->God;
-    if (argv.size() > 1) gov = atoi(argv[2].c_str());
+    if (argv.size() > 1) gov = std::stoi(argv[2]);
   }
 
   switch (g.level) {
@@ -743,7 +743,7 @@ void send_message(const command_t &argv, GameObj &g) {
   } else {
     int gov;
     if (who == Playernum) APcount = 0;
-    if (isdigit(*argv[2].c_str()) && (gov = atoi(argv[2].c_str())) >= 0 &&
+    if (isdigit(*argv[2].c_str()) && (gov = std::stoi(argv[2])) >= 0 &&
         gov <= MAXGOVERNORS) {
       push_telegram(who, gov, msg);
       notify(who, gov, buf);

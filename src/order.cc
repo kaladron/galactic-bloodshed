@@ -162,8 +162,8 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
   } else if (argv[2] == "navigate") {
     if (argv.size() >= 5) {
       ship->navigate.on = 1;
-      ship->navigate.bearing = atoi(argv[3].c_str());
-      ship->navigate.turns = atoi(argv[4].c_str());
+      ship->navigate.bearing = std::stoi(argv[3]);
+      ship->navigate.turns = std::stoi(argv[4]);
     } else
       ship->navigate.on = 0;
     if (ship->hyper_drive.on) ship->hyper_drive.on = 0;
@@ -288,7 +288,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       if (can_bombard(ship)) {
         if (ship->mounted) {
           if (argv[3] == "on")
-            ship->fire_laser = atoi(argv[4].c_str());
+            ship->fire_laser = std::stoi(argv[4]);
           else
             ship->fire_laser = 0;
         } else
@@ -303,7 +303,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     if (argv[3] == "off")
       ship->merchant = 0;
     else {
-      j = atoi(argv[3].c_str());
+      j = std::stoi(argv[3]);
       if (j < 0 || j > MAX_ROUTES) {
         g.out << "Bad route number.\n";
         return;
@@ -312,7 +312,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
   } else if (argv[2] == "speed") {
     if (speed_rating(ship)) {
-      j = atoi(argv[3].c_str());
+      j = std::stoi(argv[3]);
       if (j < 0) {
         g.out << "Specify a positive speed.\n";
         return;
@@ -326,7 +326,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
   } else if (argv[2] == "salvo") {
     if (can_bombard(ship)) {
-      j = atoi(argv[3].c_str());
+      j = std::stoi(argv[3]);
       if (j < 0) {
         g.out << "Specify a positive number of guns.\n";
         return;
@@ -350,7 +350,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
         ship->guns = PRIMARY;
         if (ship->retaliate > ship->primary) ship->retaliate = ship->primary;
       } else {
-        j = atoi(argv[3].c_str());
+        j = std::stoi(argv[3]);
         if (j < 0) {
           notify(Playernum, Governor,
                  "Specify a nonnegative number of guns.\n");
@@ -371,7 +371,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
         if (ship->retaliate > ship->secondary)
           ship->retaliate = ship->secondary;
       } else {
-        j = atoi(argv[3].c_str());
+        j = std::stoi(argv[3]);
         if (j < 0) {
           notify(Playernum, Governor,
                  "Specify a nonnegative number of guns.\n");
@@ -457,10 +457,10 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
   } else if (argv[2] == "trigger") {
     if (ship->type == ShipType::STYPE_MINE) {
-      if (atoi(argv[3].c_str()) < 0)
+      if (std::stoi(argv[3]) < 0)
         ship->special.trigger.radius = 0;
       else
-        ship->special.trigger.radius = atoi(argv[3].c_str());
+        ship->special.trigger.radius = std::stoi(argv[3]);
     } else {
       notify(Playernum, Governor,
              "This ship cannot be assigned a trigger radius.\n");
@@ -468,7 +468,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
   } else if (argv[2] == "transport") {
     if (ship->type == ShipType::OTYPE_TRANSDEV) {
-      ship->special.transport.target = atoi(argv[3].c_str());
+      ship->special.transport.target = std::stoi(argv[3]);
       if (ship->special.transport.target == ship->number) {
         notify(Playernum, Governor,
                "A transporter cannot transport to itself.");
@@ -520,7 +520,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
   } else if (argv[2] == "intensity") {
     if (ship->type == ShipType::STYPE_MIRROR) {
       ship->special.aimed_at.intensity =
-          std::max(0, std::min(100, atoi(argv[3].c_str())));
+          std::max(0, std::min(100, std::stoi(argv[3])));
     }
   } else if (argv[2] == "on") {
     if (!has_switch(ship)) {

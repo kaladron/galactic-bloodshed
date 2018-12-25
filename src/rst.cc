@@ -100,7 +100,7 @@ void rst(const command_t &argv, GameObj &g) {
 
   if (argv.size() == 3) {
     if (isdigit(argv[2][0]))
-      who = atoi(argv[2].c_str());
+      who = std::stoi(argv[2]);
     else {
       who = 999; /* treat argv[2].c_str() as a list of ship types */
       strcpy(shiplist, argv[2].c_str());

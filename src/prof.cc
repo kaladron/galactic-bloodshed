@@ -35,7 +35,7 @@ void whois(const command_t &argv, GameObj &g) {
   numraces = Num_races;
 
   for (i = 1; i <= argv.size() - 1; i++) {
-    j = atoi(argv[i].c_str());
+    j = std::stoi(argv[i]);
     if (!(j < 1 || j > numraces)) {
       Race = races[j - 1];
       if (j == Playernum)

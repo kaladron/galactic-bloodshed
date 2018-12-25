@@ -52,7 +52,7 @@ void grant(const command_t &argv, GameObj &g) {
     g.out << "        grant <governor> money <amount>\n";
     return;
   }
-  if ((gov = atoi(argv[1].c_str())) > MAXGOVERNORS) {
+  if ((gov = std::stoi(argv[1])) > MAXGOVERNORS) {
     g.out << "Bad governor number.\n";
     return;
   }
@@ -94,7 +94,7 @@ void grant(const command_t &argv, GameObj &g) {
       g.out << "Indicate the amount of money.\n";
       return;
     }
-    amount = atoi(argv[3].c_str());
+    amount = std::stoi(argv[3]);
     if (amount < 0 && Governor) {
       g.out << "Only leaders may make take away money.\n";
       return;
@@ -148,7 +148,7 @@ void governors(const command_t &argv, GameObj &g) {
                 Race->governor[i].money, ctime(&Race->governor[i].login));
       notify(Playernum, Governor, buf);
     }
-  } else if ((gov = atoi(argv[1].c_str())) < 0 || gov > MAXGOVERNORS) {
+  } else if ((gov = std::stoi(argv[1])) < 0 || gov > MAXGOVERNORS) {
     g.out << "No such governor.\n";
     return;
   } else if (argv[0] == "appoint") {
@@ -184,7 +184,7 @@ void governors(const command_t &argv, GameObj &g) {
     if (argv.size() < 4)
       j = 0;
     else
-      j = atoi(argv[3].c_str()); /* who gets this governors stuff */
+      j = std::stoi(argv[3]); /* who gets this governors stuff */
     if (j < 0 || j > MAXGOVERNORS) {
       g.out << "You can't give stuff to that governor!\n";
       return;
@@ -365,52 +365,52 @@ void fix(const command_t &argv, GameObj &g) {
     }
     auto p = getplanet(g.snum, g.pnum);
     if (argv[2] == "Maxx") {
-      if (argv.size() > 3) p.Maxx = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.Maxx = std::stoi(argv[3]);
       sprintf(buf, "Maxx = %d\n", p.Maxx);
     } else if (argv[2] == "Maxy") {
-      if (argv.size() > 3) p.Maxy = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.Maxy = std::stoi(argv[3]);
       sprintf(buf, "Maxy = %d\n", p.Maxy);
     } else if (argv[2] == "xpos") {
-      if (argv.size() > 3) p.xpos = (double)atoi(argv[3].c_str());
+      if (argv.size() > 3) p.xpos = (double)std::stoi(argv[3]);
       sprintf(buf, "xpos = %f\n", p.xpos);
     } else if (argv[2] == "ypos") {
-      if (argv.size() > 3) p.ypos = (double)atoi(argv[3].c_str());
+      if (argv.size() > 3) p.ypos = (double)std::stoi(argv[3]);
       sprintf(buf, "ypos = %f\n", p.ypos);
     } else if (argv[2] == "ships") {
-      if (argv.size() > 3) p.ships = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.ships = std::stoi(argv[3]);
       sprintf(buf, "ships = %ld\n", p.ships);
     } else if (argv[2] == "rtemp") {
-      if (argv.size() > 3) p.conditions[RTEMP] = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.conditions[RTEMP] = std::stoi(argv[3]);
       sprintf(buf, "RTEMP = %d\n", p.conditions[RTEMP]);
     } else if (argv[2] == "temperature") {
-      if (argv.size() > 3) p.conditions[TEMP] = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.conditions[TEMP] = std::stoi(argv[3]);
       sprintf(buf, "TEMP = %d\n", p.conditions[TEMP]);
     } else if (argv[2] == "methane") {
-      if (argv.size() > 3) p.conditions[METHANE] = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.conditions[METHANE] = std::stoi(argv[3]);
       sprintf(buf, "METHANE = %d\n", p.conditions[METHANE]);
     } else if (argv[2] == "oxygen") {
-      if (argv.size() > 3) p.conditions[OXYGEN] = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.conditions[OXYGEN] = std::stoi(argv[3]);
       sprintf(buf, "OXYGEN = %d\n", p.conditions[OXYGEN]);
     } else if (argv[2] == "co2") {
-      if (argv.size() > 3) p.conditions[CO2] = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.conditions[CO2] = std::stoi(argv[3]);
       sprintf(buf, "CO2 = %d\n", p.conditions[CO2]);
     } else if (argv[2] == "hydrogen") {
-      if (argv.size() > 3) p.conditions[HYDROGEN] = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.conditions[HYDROGEN] = std::stoi(argv[3]);
       sprintf(buf, "HYDROGEN = %d\n", p.conditions[HYDROGEN]);
     } else if (argv[2] == "nitrogen") {
-      if (argv.size() > 3) p.conditions[NITROGEN] = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.conditions[NITROGEN] = std::stoi(argv[3]);
       sprintf(buf, "NITROGEN = %d\n", p.conditions[NITROGEN]);
     } else if (argv[2] == "sulfur") {
-      if (argv.size() > 3) p.conditions[SULFUR] = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.conditions[SULFUR] = std::stoi(argv[3]);
       sprintf(buf, "SULFUR = %d\n", p.conditions[SULFUR]);
     } else if (argv[2] == "helium") {
-      if (argv.size() > 3) p.conditions[HELIUM] = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.conditions[HELIUM] = std::stoi(argv[3]);
       sprintf(buf, "HELIUM = %d\n", p.conditions[HELIUM]);
     } else if (argv[2] == "other") {
-      if (argv.size() > 3) p.conditions[OTHER] = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.conditions[OTHER] = std::stoi(argv[3]);
       sprintf(buf, "OTHER = %d\n", p.conditions[OTHER]);
     } else if (argv[2] == "toxic") {
-      if (argv.size() > 3) p.conditions[TOXIC] = atoi(argv[3].c_str());
+      if (argv.size() > 3) p.conditions[TOXIC] = std::stoi(argv[3]);
       sprintf(buf, "TOXIC = %d\n", p.conditions[TOXIC]);
     } else {
       g.out << "No such option for 'fix planet'.\n";
@@ -428,19 +428,19 @@ void fix(const command_t &argv, GameObj &g) {
     }
     (void)getship(&s, g.shipno);
     if (argv[2] == "fuel") {
-      if (argv.size() > 3) s->fuel = (double)atoi(argv[3].c_str());
+      if (argv.size() > 3) s->fuel = (double)std::stoi(argv[3]);
       sprintf(buf, "fuel = %f\n", s->fuel);
     } else if (argv[2] == "max_fuel") {
-      if (argv.size() > 3) s->max_fuel = atoi(argv[3].c_str());
+      if (argv.size() > 3) s->max_fuel = std::stoi(argv[3]);
       sprintf(buf, "fuel = %d\n", s->max_fuel);
     } else if (argv[2] == "destruct") {
-      if (argv.size() > 3) s->destruct = atoi(argv[3].c_str());
+      if (argv.size() > 3) s->destruct = std::stoi(argv[3]);
       sprintf(buf, "destruct = %d\n", s->destruct);
     } else if (argv[2] == "resource") {
-      if (argv.size() > 3) s->resource = atoi(argv[3].c_str());
+      if (argv.size() > 3) s->resource = std::stoi(argv[3]);
       sprintf(buf, "resource = %d\n", s->resource);
     } else if (argv[2] == "damage") {
-      if (argv.size() > 3) s->damage = atoi(argv[3].c_str());
+      if (argv.size() > 3) s->damage = std::stoi(argv[3]);
       sprintf(buf, "damage = %d\n", s->damage);
     } else if (argv[2] == "alive") {
       s->alive = 1;
@@ -522,7 +522,7 @@ void allocateAPs(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     return;
   }
-  alloc = atoi(argv[1].c_str());
+  alloc = std::stoi(argv[1]);
   if (alloc <= 0) {
     notify(Playernum, Governor,
            "You must specify a positive amount of APs to allocate.\n");

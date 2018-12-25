@@ -143,7 +143,7 @@ void load(const command_t &argv, GameObj &g) {
 
       commod = argv[2][0];
       if (argv.size() > 3)
-        amt = atoi(argv[3].c_str());
+        amt = std::stoi(argv[3]);
       else
         amt = 0;
 
@@ -509,7 +509,7 @@ void jettison(const command_t &argv, GameObj &g) {
       }
 
       if (argv.size() > 3)
-        amt = atoi(argv[3].c_str());
+        amt = std::stoi(argv[3]);
       else
         amt = 0;
 
@@ -721,7 +721,7 @@ void transfer(const command_t &argv, GameObj &g) {
   auto planet = getplanet(g.snum, g.pnum);
 
   sscanf(argv[2].c_str(), "%c", &commod);
-  give = atoi(argv[3].c_str());
+  give = std::stoi(argv[3]);
 
   if (give < 0) {
     g.out << "You must specify a positive amount.\n";

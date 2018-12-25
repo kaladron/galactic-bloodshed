@@ -96,7 +96,7 @@ void tax(const command_t &argv, GameObj &g) {
     return;
   }
 
-  int sum_tax = atoi(argv[1].c_str());
+  int sum_tax = std::stoi(argv[1]);
 
   if (sum_tax > 100 || sum_tax < 0) {
     g.out << "Illegal value.\n";

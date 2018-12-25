@@ -209,9 +209,8 @@ int main() {
   Race->Guest = (c == 'g');
   strcpy(Race->name, "Unknown");
 
-  for (i = 0; i <= MAXGOVERNORS; i++) {
-    Race->governor[0].money = 0;
-  }
+  // TODO(jeffbailey): What initializes the rest of the governors?
+  Race->governor[0].money = 0;
   Race->governor[0].homelevel = Race->governor[0].deflevel =
       ScopeLevel::LEVEL_PLAN;
   Race->governor[0].homesystem = Race->governor[0].defsystem = star;

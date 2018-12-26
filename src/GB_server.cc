@@ -151,7 +151,7 @@ class DescriptorData : public GameObj {
   int quota;
   bool operator==(const DescriptorData &rhs) noexcept {
     return descriptor == rhs.descriptor && player == rhs.player &&
-        governor == rhs.governor;
+           governor == rhs.governor;
   }
 };
 

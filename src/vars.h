@@ -137,6 +137,11 @@ class GameObj {
 
 class Planet {
  public:
+  Planet() = default;
+  Planet(Planet &) = delete;
+  Planet &operator=(const Planet &) = delete;
+  Planet(Planet &&) = default;
+  Planet &operator=(Planet &&) = default;
   double xpos, ypos;        /* x,y relative to orbit */
   shipnum_t ships;          /* first ship in orbit (to be changed) */
   unsigned char Maxx, Maxy; /* size of map */

@@ -282,8 +282,6 @@ static void do_revoke(racetype *Race, const governor_t src_gov,
   std::string rm_telegram_file = str(boost::format("rm %s.%d.%d") % TELEGRAMFL %
                                      Race->Playernum % src_gov);
   system(rm_telegram_file.c_str()); /*  Remove the telegram file too....  */
-
-  return;
 }
 
 int authorized(int Governor, Ship *ship) {

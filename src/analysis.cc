@@ -115,7 +115,6 @@ void analysis(const command_t &argv, GameObj &g) {
         break;
     }
   } while (false);
-  return;
 }
 
 static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,

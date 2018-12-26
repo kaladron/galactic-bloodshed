@@ -683,7 +683,6 @@ void defend(const command_t &argv, GameObj &g) {
   deductAPs(Playernum, Governor, APcount, g.snum, 0);
 
   free(to);
-  return;
 }
 #endif
 

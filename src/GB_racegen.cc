@@ -38,7 +38,7 @@ bool notify(const player_t, const governor_t, const std::string &) {
 }
 
 /* this is a dummy routine */
-void warn(const player_t, const governor_t, const std::string &) { return; }
+void warn(const player_t, const governor_t, const std::string &) {}
 
 void init_enroll() { srandom(getpid()); }
 

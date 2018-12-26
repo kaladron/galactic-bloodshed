@@ -418,7 +418,6 @@ static void ship_disposition(Ship *ship, int *evade, int *speed, int *body) {
     *evade = ship->protect.evade;
     *speed = ship->speed;
   }
-  return;
 }
 
 static int CEW_hit(double dist, int cew_range) {

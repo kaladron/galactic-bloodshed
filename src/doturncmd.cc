@@ -541,7 +541,6 @@ void fix_stability(startype *s) {
 
 void handle_victory() {
 #ifndef VICTORY
-  return;
 #else
 
   int i, j;

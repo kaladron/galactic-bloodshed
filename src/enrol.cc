@@ -490,4 +490,4 @@ bool notify(const player_t, const governor_t, const std::string &) {
 
 // TODO(jeffbailey): We shouldn't need to be providing this function.
 /* this is a dummy routine */
-void warn(const player_t, const governor_t, const std::string &) { return; };
+void warn(const player_t, const governor_t, const std::string &){};

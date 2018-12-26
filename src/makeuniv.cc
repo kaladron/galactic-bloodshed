@@ -319,5 +319,4 @@ void place_star(startype *star) {
     j = 100 * ((int)star->xpos + UNIVSIZE) / (2 * UNIVSIZE);
     if (!occupied[i][j]) occupied[i][j] = found = 1;
   }
-  return;
 }

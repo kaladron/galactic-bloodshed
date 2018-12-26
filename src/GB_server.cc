@@ -138,8 +138,8 @@ class DescriptorData : public GameObj {
     // It should be replaced with TCP wrappers or something similar
     fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n", addrstr,
             ntohs(addr.sin6_port), descriptor);
-    return;
   }
+
   int descriptor;
   bool connected;
   ssize_t output_size;

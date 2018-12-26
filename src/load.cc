@@ -1164,5 +1164,4 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
   sprintf(buf, "Casualties: You: %d %s, Them: %d civ/%d mil\n", casualties,
           what == CIV ? "civ" : "mil", casualties2, casualties3);
   notify(Playernum, Governor, buf);
-  return;
 }

@@ -831,7 +831,7 @@ static int process_input(DescriptorData &d) {
 
 static void process_commands() {
   int nprocessed;
-  long now;
+  time_t now;
 
   (void)time(&now);
 
@@ -1126,7 +1126,7 @@ static void close_sockets(int sock) {
 }
 
 static void dump_users(DescriptorData &e) {
-  long now;
+  time_t now;
   racetype *r;
   int God = 0;
   int coward_count = 0;

@@ -612,7 +612,7 @@ void page(const command_t &argv, GameObj &g) {
 void send_message(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  bool postit = argv[0] == "post" ? true : false;
+  bool postit = argv[0] == "post";
   int APcount;
   if (postit) {
     APcount = 0;

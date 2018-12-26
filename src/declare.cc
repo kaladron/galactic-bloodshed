@@ -26,7 +26,7 @@ static void show_votes(int, int);
 void invite(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  bool mode = (argv[0] == "invite") ? true : false;
+  bool mode = argv[0] == "invite";
 
   int n;
   racetype *Race, *alien;
@@ -71,7 +71,7 @@ void invite(const command_t &argv, GameObj &g) {
 void pledge(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  bool mode = (argv[0] == "pledge") ? true : false;
+  bool mode = argv[0] == "pledge";
   int n;
   racetype *Race;
 

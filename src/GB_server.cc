@@ -150,10 +150,8 @@ class DescriptorData : public GameObj {
   time_t last_time;
   int quota;
   bool operator==(const DescriptorData &rhs) noexcept {
-    if (descriptor == rhs.descriptor && player == rhs.player &&
-        governor == rhs.governor)
-      return true;
-    return false;
+    return descriptor == rhs.descriptor && player == rhs.player &&
+        governor == rhs.governor;
   }
 };
 

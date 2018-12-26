@@ -799,10 +799,7 @@ void mount(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   bool mnt;
-  if (argv[0] == "mount")
-    mnt = true;
-  else
-    mnt = false;
+  mnt = argv[0] == "mount";
 
   Ship *ship;
   shipnum_t shipno, nextshipno;

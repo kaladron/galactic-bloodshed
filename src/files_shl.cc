@@ -980,6 +980,202 @@ void putsmap(sector_map &map, Planet &p) {
   end_bulk_insert();
 }
 
+static void putship_aimed(const Ship &s) {
+  const char *tail;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_ship (ship_id, aimed_shipno, aimed_snum, "
+      "aimed_intensity, aimed_pnum, aimed_level)"
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6);";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_int(stmt, 2, s.special.aimed_at.shipno);
+  sqlite3_bind_int(stmt, 3, s.special.aimed_at.snum);
+  sqlite3_bind_int(stmt, 4, s.special.aimed_at.intensity);
+  sqlite3_bind_int(stmt, 5, s.special.aimed_at.pnum);
+  sqlite3_bind_int(stmt, 6, s.special.aimed_at.level);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+}
+static void putship_mind(const Ship &s) {
+  const char *tail;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_ship (ship_id, mind_progenitor, mind_target, "
+      "mind_generation, mind_busy, mind_tampered,"
+      "mind_who_killed)"
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7);";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_int(stmt, 2, s.special.mind.progenitor);
+  sqlite3_bind_int(stmt, 3, s.special.mind.target);
+  sqlite3_bind_int(stmt, 4, s.special.mind.generation);
+  sqlite3_bind_int(stmt, 5, s.special.mind.busy);
+  sqlite3_bind_int(stmt, 6, s.special.mind.tampered);
+  sqlite3_bind_int(stmt, 7, s.special.mind.who_killed);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+}
+static void putship_pod(const Ship &s) {
+  const char *tail;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_ship (ship_id, pod_decay, pod_temperature)"
+      "VALUES (?1, ?2, ?3);";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_int(stmt, 2, s.special.pod.decay);
+  sqlite3_bind_int(stmt, 3, s.special.pod.temperature);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+}
+static void putship_timer(const Ship &s) {
+  const char *tail;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_ship (ship_id, timer_count)"
+      "VALUES (?1, ?2);";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_int(stmt, 2, s.special.timer.count);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+}
+static void putship_impact(const Ship &s) {
+  const char *tail;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_ship (ship_id, impact_x, impact_y, impact_scatter)"
+      "VALUES (?1, ?2, ?3, ?4);";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_int(stmt, 2, s.special.impact.x);
+  sqlite3_bind_int(stmt, 3, s.special.impact.y);
+  sqlite3_bind_int(stmt, 4, s.special.impact.scatter);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+}
+static void putship_trigger(const Ship &s) {
+  const char *tail;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_ship (ship_id, trigger_radius)"
+      "VALUES (?1, ?2);";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_int(stmt, 2, s.special.trigger.radius);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+}
+static void putship_terraform(const Ship &s) {
+  const char *tail;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_ship (ship_id, terraform_index)"
+      "VALUES (?1, ?2);";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_int(stmt, 2, s.special.terraform.index);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+}
+static void putship_transport(const Ship &s) {
+  const char *tail;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_ship (ship_id, transport_target)"
+      "VALUES (?1, ?2);";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_int(stmt, 2, s.special.transport.target);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+}
+static void putship_waste(const Ship &s) {
+  const char *tail;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_ship (ship_id, waste_toxic)"
+      "VALUES (?1, ?2);";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_int(stmt, 2, s.special.waste.toxic);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+}
+
 void putship(Ship *s) {
   const char *tail;
   Filewrite(shdata, (char *)s, sizeof(Ship), (s->number - 1) * sizeof(Ship));
@@ -1117,30 +1313,6 @@ void putship(Ship *s) {
   sqlite3_bind_int(stmt, 83, s->max_hanger);
   sqlite3_bind_int(stmt, 84, s->mount);
 
-#if 0
-  // These are the members of the union.  We'll emit these conditional
-  // on ship type
-  ShipType::STYPE_MIRROR
-      "aimed_shipno, aimed_snum, aimed_intensity, aimed_pnum, aimed_level,"
-  ShipType::OTYPE_BERS, ShipType::OTYPE_VN
-      "mind_progenitor, mind_target, mind_generation, mind_busy, mind_tampered,"
-      "mind_who_killed,"
-  ShipType::STYPE_POD
-      "pod_decay, pod_temperature,"
-  ShipType::OTYPE_CANIST, ShipType::OTYPE_GREEN
-      "timer_count,"
-  ShipType::STYPE_MISSILE
-      "impact_x, impact_y, impact_scatter,"
-  ShipType::STYPE_MINE
-      "trigger_radius,"
-  ShipType::OTYPE_TERRA, ShipType::OTYPE_PLOW
-      "terraform_index,"
-  ShipType::OTYPE_TRANSDEV
-      "transport_target,"
-  ShipType::OTYPE_TOXWC
-      "waste_toxic,";
-#endif
-
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
   }
@@ -1148,6 +1320,44 @@ void putship(Ship *s) {
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+
+  switch (s->type) {
+    case ShipType::STYPE_MIRROR:
+      putship_aimed(*s);
+      break;
+    case ShipType::OTYPE_BERS:
+      [[fallthrough]];
+    case ShipType::OTYPE_VN:
+      putship_mind(*s);
+      break;
+    case ShipType::STYPE_POD:
+      putship_pod(*s);
+      break;
+    case ShipType::OTYPE_CANIST:
+      [[fallthrough]];
+    case ShipType::OTYPE_GREEN:
+      putship_timer(*s);
+      break;
+    case ShipType::STYPE_MISSILE:
+      putship_impact(*s);
+      break;
+    case ShipType::STYPE_MINE:
+      putship_trigger(*s);
+      break;
+    case ShipType::OTYPE_TERRA:
+      [[fallthrough]];
+    case ShipType::OTYPE_PLOW:
+      putship_terraform(*s);
+      break;
+    case ShipType::OTYPE_TRANSDEV:
+      putship_transport(*s);
+      break;
+    case ShipType::OTYPE_TOXWC:
+      putship_waste(*s);
+      break;
+    default:
+      break;
   }
 
   end_bulk_insert();

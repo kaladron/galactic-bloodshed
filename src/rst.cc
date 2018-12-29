@@ -50,6 +50,8 @@ struct reportdata {
   double y;
 };
 
+using report_array = std::array<char, NUMSTYPES>;
+
 static struct reportdata *rd;
 static int enemies_only, who;
 
@@ -57,16 +59,17 @@ static void Free_rlist();
 static int Getrship(player_t, governor_t, shipnum_t);
 static int listed(int, char *);
 static void plan_getrships(player_t, governor_t, starnum_t, planetnum_t);
-static void ship_report(GameObj &, shipnum_t, unsigned char[]);
+static void ship_report(GameObj &, shipnum_t, const report_array&);
 static void star_getrships(player_t, governor_t, starnum_t);
 
 void rst(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   shipnum_t shipno;
-  unsigned char Report_types[NUMSTYPES];
 
-  for (auto &Report_type : Report_types) Report_type = 1;
+  report_array Report_types;
+  Report_types.fill(1);
+
   enemies_only = 0;
   Num_ships = 0;
   first = 1;
@@ -132,7 +135,7 @@ void rst(const command_t &argv, GameObj &g) {
       return;
     }
     size_t l = strlen(argv[1].c_str());
-    for (auto &Report_type : Report_types) Report_type = 0;
+    Report_types.fill(0);
 
     while (l--) {
       shipnum_t i = NUMSTYPES;
@@ -187,7 +190,7 @@ void rst(const command_t &argv, GameObj &g) {
   Free_rlist();
 }
 
-static void ship_report(GameObj &g, shipnum_t indx, unsigned char rep_on[]) {
+static void ship_report(GameObj &g, shipnum_t indx, const report_array& rep_on) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   Ship *s;

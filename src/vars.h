@@ -179,9 +179,13 @@ class sector {
         race(race_),
         type(type_),
         condition(condition_) {}
-  sector()
 
-  {}
+  sector() = default;
+  sector(sector &) = delete;
+  void operator=(const sector &) = delete;
+  sector(sector &&) = default;
+  sector &operator=(sector &&) = default;
+
   unsigned int eff{0};          /* efficiency (0-100) */
   unsigned int fert{0};         /* max popn is proportional to this */
   unsigned int mobilization{0}; /* percent popn is mobilized for war */
@@ -198,10 +202,6 @@ class sector {
                  you gain control of them! */
   unsigned int type{0};      /* underlying sector geology */
   unsigned int condition{0}; /* environmental effects */
-  sector(sector &) = delete;
-  void operator=(const sector &) = delete;
-  sector(sector &&) = default;
-  sector &operator=(sector &&) = default;
   friend std::ostream &operator<<(std::ostream &, const sector &);
 };
 

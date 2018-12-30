@@ -213,7 +213,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
                "That ship is docked; use undock or launch first.\n");
         return;
       }
-      where = Getplace(g, argv[3].c_str(), 1);
+      where = Getplace(g, argv[3], 1);
       if (!where.err) {
         if (where.level == ScopeLevel::LEVEL_SHIP) {
           (void)getship(&tmpship, where.shipno);
@@ -485,7 +485,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           notify(Playernum, Governor, buf);
           return;
         }
-        pl = Getplace(g, argv[3].c_str(), 1);
+        pl = Getplace(g, argv[3], 1);
         if (pl.err) {
           g.out << "Error in destination.\n";
           return;
@@ -974,7 +974,7 @@ void route(const command_t &argv, GameObj &g) {
     else if (argv[2] == "deactivate")
       p.info[Playernum - 1].route[i - 1].set = 0;
     else {
-      where = Getplace(g, argv[2].c_str(), 1);
+      where = Getplace(g, argv[2], 1);
       if (!where.err) {
         if (where.level != ScopeLevel::LEVEL_PLAN) {
           g.out << "You have to designate a planet.\n";

@@ -30,32 +30,26 @@ static char Disps[PLACENAMESIZE];
 static placetype Getplace2(int Playernum, int Governor, const char *string,
                            placetype *where, int ignoreexpl, int God);
 
-placetype Getplace(GameObj &g, const std::string &str, const int ignoreexpl) {
-  return Getplace(g, str.c_str(), ignoreexpl);
-}
-
-placetype Getplace(GameObj &g, const char *const string, const int ignoreexpl) {
+placetype Getplace(GameObj &g, const std::string &string,
+                   const int ignoreexpl) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   placetype where; /* return value */
-  racetype *Race;
-  int God;
 
-  Race = races[Playernum - 1];
-  God = Race->God;
+  const auto God = races[Playernum - 1]->God;
 
   where.err = 0;
 
-  if (string != nullptr) {
-    switch (*string) {
+  if (string.size() != 0) {
+    switch (string[0]) {
       case '/':
         where.level = ScopeLevel::LEVEL_UNIV; /* scope = root (universe) */
         where.snum = 0;
         where.pnum = where.shipno = 0;
-        return (Getplace2(Playernum, Governor, string + 1, &where, ignoreexpl,
-                          God));
+        return (Getplace2(Playernum, Governor, string.c_str() + 1, &where,
+                          ignoreexpl, God));
       case '#':
-        sscanf(string + 1, "%ld", &where.shipno);
+        sscanf(string.c_str() + 1, "%ld", &where.shipno);
         if (!getship(&where.shipptr, where.shipno)) {
           DontOwnErr(Playernum, Governor, where.shipno);
           where.err = 1;
@@ -85,9 +79,10 @@ placetype Getplace(GameObj &g, const char *const string, const int ignoreexpl) {
   where.snum = g.snum;
   where.pnum = g.pnum;
   if (where.level == ScopeLevel::LEVEL_SHIP) where.shipno = g.shipno;
-  if (string != nullptr && *string == CHAR_CURR_SCOPE) return where;
+  if (string.size() != 0 && string[0] == CHAR_CURR_SCOPE) return where;
 
-  return Getplace2(Playernum, Governor, string, &where, ignoreexpl, God);
+  return Getplace2(Playernum, Governor, string.c_str(), &where, ignoreexpl,
+                   God);
 }
 
 static placetype Getplace2(const int Playernum, const int Governor,

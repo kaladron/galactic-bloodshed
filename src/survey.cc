@@ -95,7 +95,7 @@ void survey(const command_t &argv, GameObj &g) {
       where.pnum = g.pnum;
 
     } else {
-      where = Getplace(g, argv[1].c_str(), 0);
+      where = Getplace(g, argv[1], 0);
       if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;
     }
   }
@@ -406,7 +406,7 @@ void repair(const command_t &argv, GameObj &g) {
       where.pnum = g.pnum;
 
     } else {
-      where = Getplace(g, argv[1].c_str(), 0);
+      where = Getplace(g, argv[1], 0);
       if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;
     }
   }

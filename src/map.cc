@@ -33,7 +33,7 @@ void map(const command_t &argv, GameObj &g) {
   if (argv.size() > 1) {
     where = Getplace(g, argv[1], 0);
   } else {
-    where = Getplace(g, nullptr, 0);
+    where = Getplace(g, "", 0);
   }
 
   if (where.err) return;

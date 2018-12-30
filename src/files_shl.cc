@@ -588,6 +588,66 @@ int getship(Ship **s, shipnum_t shipnum) {
   }
 
   Fileread(shdata, (char *)*s, sizeof(Ship), (shipnum - 1) * sizeof(Ship));
+
+  const char *tail;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "SELECT ship_id, player_id, governor_id, name, "
+      "shipclass, race, xpos, ypos, mass,"
+      "land_x, land_y, destshipno, nextship, ships, armor, size,"
+      "max_crew, max_resource, max_destruct, max_fuel, max_speed, build_type,"
+      "build_cost, base_mass, tech, complexity,"
+      "destruct, resource, population, troops, crystals,"
+      "who_killed,"
+      "navigate_on, navigate_speed, navigate_turns, navigate_bearing,"
+      "protect_maxrng, protect_on, protect_planet, protect_self,"
+      "protect_evade, protect_ship,"
+      "hyper_drive_charge, hyper_drive_ready, hyper_drive_on,"
+      "hyper_drive_has,"
+      "cew, cew_range, cloak, laser, focus, fire_laser,"
+      "storbits, deststar, destpnum, pnumorbits, whatdest,"
+      "whatorbits,"
+      "damage, rad, retaliate, target,"
+      "type, speed,"
+      "active, alive, mode, bombard, mounted, cloaked,"
+      "sheep, docked, notified, examined, on_off,"
+      "merchant, guns, primary_gun, primtype,"
+      "secondary_gun, sectype,"
+      "hanger, max_hanger, mount,"
+      "aimed_shipno, aimed_snum,"
+      "aimed_intensity, aimed_pnum, aimed_level,"
+      "mind_progenitor, mind_target,"
+      "mind_generation, mind_busy, mind_tampered,"
+      "mind_who_killed,"
+      "pod_decay, pod_temperature,"
+      "timer_count,"
+      "impact_x, impact_y, impact_scatter,"
+      "trigger_radius,"
+      "terraform_index,"
+      "transport_target,"
+      "waste_toxic "
+      "FROM tbl_ship WHERE ship_id=?1 LIMIT 1";
+
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, shipnum);
+
+  auto result = sqlite3_step(stmt);
+  if (result != SQLITE_ROW) {
+    int err = sqlite3_finalize(stmt);
+    if (err != SQLITE_OK) {
+      fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    }
+    return 0;
+  }
+
+  (*s)->number = sqlite3_column_int(stmt, 0);
+  (*s)->owner = sqlite3_column_int(stmt, 1);
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+  }
+
   return 1;
 }
 

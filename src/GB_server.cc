@@ -647,9 +647,7 @@ static int make_socket(int port) {
 
 static struct timeval update_quotas(struct timeval last,
                                     struct timeval current) {
-  int nslices;
-
-  nslices = msec_diff(current, last) / COMMAND_TIME_MSEC;
+  int nslices = msec_diff(current, last) / COMMAND_TIME_MSEC;
 
   if (nslices > 0) {
     for (auto &d : descriptor_list) {
@@ -681,8 +679,8 @@ static void add_to_queue(std::deque<TextBlock> &q, const std::string &b) {
 static int flush_queue(std::deque<TextBlock> &q, int n) {
   int really_flushed = 0;
 
-  const char *flushed_message = "<Output Flushed>\n";
-  n += strlen(flushed_message);
+  const std::string flushed_message = "<Output Flushed>\n";
+  n += flushed_message.size();
 
   while (n > 0 && !q.empty()) {
     auto &p = q.front();
@@ -691,7 +689,7 @@ static int flush_queue(std::deque<TextBlock> &q, int n) {
     q.pop_front();
   }
   q.emplace_back(flushed_message);
-  really_flushed -= strlen(flushed_message);
+  really_flushed -= flushed_message.size();
   return really_flushed;
 }
 

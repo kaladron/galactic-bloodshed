@@ -31,69 +31,71 @@ static void order_VN(Ship *);
 
 /*  do_VN() -- called by doship() */
 void do_VN(Ship *ship) {
-  if (landed(ship)) {
-    Stinfo[ship->storbits][ship->pnumorbits].inhab = 1;
-    /* launch if no assignment */
-    if (!ship->special.mind.busy) {
-      if (ship->fuel >= (double)ship->max_fuel) {
-        ship->xpos = Stars[ship->storbits]->xpos +
-                     planets[ship->storbits][ship->pnumorbits]->xpos +
-                     int_rand(-10, 10);
-        ship->ypos = Stars[ship->storbits]->ypos +
-                     planets[ship->storbits][ship->pnumorbits]->ypos +
-                     int_rand(-10, 10);
-        ship->docked = 0;
-        ship->whatdest = ScopeLevel::LEVEL_UNIV;
-      }
-    } else {
-      int i, f;
-      int nums[MAXPLAYERS + 1];
-      /* we have an assignment.  Since we are landed, this means
-         we are engaged in building up resources/fuel. */
-      /* steal resources from other players */
-      /* permute list of people to steal from */
-      for (i = 1; i <= Num_races; i++) nums[i] = i;
-      for (i = 1; i <= Num_races; i++) {
-        f = int_rand(1, Num_races);
-        std::swap(nums[i], nums[f]);
-      }
-      auto p = planets[ship->storbits][ship->pnumorbits];
-      for (f = 0, i = 1; i <= Num_races; i++)
-        if (p->info[nums[i] - 1].resource) f = nums[i];
-      if (f) {
-        int prod;
-        prod = MIN(p->info[f - 1].resource,
-                   Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
-        p->info[f - 1].resource -= prod;
-        if (ship->type == ShipType::OTYPE_VN)
-          rcv_resource(ship, prod);
-        else if (ship->type == ShipType::OTYPE_BERS)
-          rcv_destruct(ship, prod);
-        if (ship->type == ShipType::OTYPE_VN) {
-          sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
-                  Shipltrs[ShipType::OTYPE_VN], ship->number,
-                  prin_ship_orbits(ship));
-        } else if (ship->type == ShipType::OTYPE_BERS) {
-          sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
-                  Shipltrs[ShipType::OTYPE_BERS], ship->number,
-                  prin_ship_orbits(ship));
-        }
-        push_telegram_race(f, buf);
-        if (f != ship->owner)
-          push_telegram((int)ship->owner, (int)ship->governor, buf);
-      }
-    }
-  } else {
-    /* we are not landed */
-    if (!ship->special.mind.busy) {
-      /* we were just built & launched */
+  if (!landed(ship)) {
+    // Doing other things
+    if (!ship->special.mind.busy) return;
 
-      if (ship->type == ShipType::OTYPE_BERS)
-        order_berserker(ship);
-      else
-        order_VN(ship);
-    }
+    // we were just built & launched
+    if (ship->type == ShipType::OTYPE_BERS)
+      order_berserker(ship);
+    else
+      order_VN(ship);
+    return;
   }
+
+  Stinfo[ship->storbits][ship->pnumorbits].inhab = 1;
+
+  /* launch if no assignment */
+  if (!ship->special.mind.busy) {
+    if (ship->fuel >= (double)ship->max_fuel) {
+      ship->xpos = Stars[ship->storbits]->xpos +
+                   planets[ship->storbits][ship->pnumorbits]->xpos +
+                   int_rand(-10, 10);
+      ship->ypos = Stars[ship->storbits]->ypos +
+                   planets[ship->storbits][ship->pnumorbits]->ypos +
+                   int_rand(-10, 10);
+      ship->docked = 0;
+      ship->whatdest = ScopeLevel::LEVEL_UNIV;
+    }
+    return;
+  }
+
+  /* we have an assignment.  Since we are landed, this means
+     we are engaged in building up resources/fuel. */
+  /* steal resources from other players */
+  /* permute list of people to steal from */
+  int nums[MAXPLAYERS + 1];
+  for (int i = 1; i <= Num_races; i++) nums[i] = i;
+  for (int i = 1; i <= Num_races; i++) {
+    int f = int_rand(1, Num_races);
+    std::swap(nums[i], nums[f]);
+  }
+  auto p = planets[ship->storbits][ship->pnumorbits];
+
+  int i, f;
+  for (f = 0, i = 1; i <= Num_races; i++)
+    if (p->info[nums[i] - 1].resource) f = nums[i];
+
+  // No resources to steal
+  if (!f) return;
+
+  int prod = std::min(p->info[f - 1].resource,
+                      Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
+  p->info[f - 1].resource -= prod;
+
+  if (ship->type == ShipType::OTYPE_VN) {
+    rcv_resource(ship, prod);
+    sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
+            Shipltrs[ShipType::OTYPE_VN], ship->number, prin_ship_orbits(ship));
+  } else if (ship->type == ShipType::OTYPE_BERS) {
+    rcv_destruct(ship, prod);
+    sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
+            Shipltrs[ShipType::OTYPE_BERS], ship->number,
+            prin_ship_orbits(ship));
+  }
+
+  push_telegram_race(f, buf);
+  if (f != ship->owner) push_telegram(ship->owner, ship->governor, buf);
 }
 
 static void order_berserker(Ship *ship) {

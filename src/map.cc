@@ -159,7 +159,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
     }
     strcat(temp, "\n");
     notify(Playernum, Governor, temp);
-    sprintf(temp, "Resource stockpile : %-9u    Fuel stockpile: %u\n",
+    sprintf(temp, "Resource stockpile : %-9lu    Fuel stockpile: %u\n",
             p.info[Playernum - 1].resource, p.info[Playernum - 1].fuel);
     notify(Playernum, Governor, temp);
     sprintf(temp, "      Destruct cap : %-9u%18s: %-5lu (%lu/%u)\n",

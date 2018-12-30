@@ -52,7 +52,7 @@ using commodtype = struct commod;
 struct plinfo {            /* planetary stockpiles */
   unsigned short fuel;     /* fuel for powering things */
   unsigned short destruct; /* destructive potential */
-  unsigned short resource; /* resources in storage */
+  unsigned long resource;  /* resources in storage */
   population_t popn;
   population_t troops;
   unsigned short crystals;

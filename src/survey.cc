@@ -133,7 +133,7 @@ void survey(const command_t &argv, GameObj &g) {
       }
       if (mode) {
         if (all) {
-          sprintf(buf, "%c %d %d %d %s %s %d %d %d %ld %ld %d %.2f %d\n",
+          sprintf(buf, "%c %d %d %d %s %s %lu %d %d %ld %ld %d %.2f %d\n",
                   CSP_CLIENT, CSP_SURVEY_INTRO, p.Maxx, p.Maxy,
                   Stars[where.snum]->name,
                   Stars[where.snum]->pnames[where.pnum],
@@ -322,7 +322,7 @@ void survey(const command_t &argv, GameObj &g) {
               Race->Metamorph ? "biomass" : "popltn",
               Race->Metamorph ? "biomass" : "popltn");
       notify(Playernum, Governor, buf);
-      sprintf(buf, "%10u  %14u %9u  %7lu%11lu\n", p.info[Playernum - 1].fuel,
+      sprintf(buf, "%10u  %14lu %9u  %7lu%11lu\n", p.info[Playernum - 1].fuel,
               p.info[Playernum - 1].resource, p.info[Playernum - 1].destruct,
               p.popn, p.maxpopn);
       notify(Playernum, Governor, buf);

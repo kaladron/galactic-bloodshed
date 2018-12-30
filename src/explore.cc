@@ -46,7 +46,7 @@ static void colonies_at_star(GameObj &g, racetype *Race, starnum_t star,
         case COLONIES:
           sprintf(
               buf,
-              " %c %4.4s/%-4.4s%c%4d%3d%5d%8ld%3d%6d%5d%6d "
+              " %c %4.4s/%-4.4s%c%4d%3d%5d%8ld%3d%6lu%5d%6d "
               "%3d/%-3d%3.0f/%-3d%3d/%-3d",
               Psymbol[pl.type], Stars[star]->name, Stars[star]->pnames[i],
               (pl.info[Playernum - 1].autorep ? '*' : ' '),

@@ -202,7 +202,6 @@ cc_binary(
             "map.h",
             "max.cc",
             "max.h",
-            "misc.cc",
             "misc.h",
             "mobiliz.cc",
             "mobiliz.h",

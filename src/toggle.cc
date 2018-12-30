@@ -15,7 +15,14 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-static void tog(int, int, char *, const char *);
+namespace {
+void tog(const player_t Playernum, const governor_t Governor, char *op,
+         const char *name) {
+  *op = !(*op);
+  sprintf(buf, "%s is now %s\n", name, *op ? "on" : "off");
+  notify(Playernum, Governor, buf);
+}
+}  // namespace
 
 void toggle(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
@@ -100,17 +107,10 @@ void highlight(const command_t &argv, GameObj &g) {
   racetype *Race;
 
   if (!(n = get_player(argv[1]))) {
-    sprintf(buf, "No such player.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "No such player.\n";
     return;
   }
   Race = races[Playernum - 1];
   Race->governor[Governor].toggle.highlight = n;
   putrace(Race);
-}
-
-static void tog(int Playernum, int Governor, char *op, const char *name) {
-  *op = !(*op);
-  sprintf(buf, "%s is now %s\n", name, *op ? "on" : "off");
-  notify(Playernum, Governor, buf);
 }

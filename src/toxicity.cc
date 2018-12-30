@@ -7,9 +7,6 @@
 
 #include "toxicity.h"
 
-#include <cstdio>
-#include <cstdlib>
-
 #include "GB_server.h"
 #include "files_shl.h"
 #include "shlmisc.h"

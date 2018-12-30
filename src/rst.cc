@@ -59,7 +59,7 @@ static void Free_rlist();
 static int Getrship(player_t, governor_t, shipnum_t);
 static int listed(int, char *);
 static void plan_getrships(player_t, governor_t, starnum_t, planetnum_t);
-static void ship_report(GameObj &, shipnum_t, const report_array&);
+static void ship_report(GameObj &, shipnum_t, const report_array &);
 static void star_getrships(player_t, governor_t, starnum_t);
 
 void rst(const command_t &argv, GameObj &g) {
@@ -134,15 +134,14 @@ void rst(const command_t &argv, GameObj &g) {
       Free_rlist();
       return;
     }
-    size_t l = strlen(argv[1].c_str());
     Report_types.fill(0);
 
-    while (l--) {
+    for (const auto &c : argv[1]) {
       shipnum_t i = NUMSTYPES;
-      while (--i && Shipltrs[i] != argv[1][l])
+      while (--i && Shipltrs[i] != c)
         ;
-      if (Shipltrs[i] != argv[1][l]) {
-        sprintf(buf, "'%c' -- no such ship letter\n", argv[1][l]);
+      if (Shipltrs[i] != c) {
+        sprintf(buf, "'%c' -- no such ship letter\n", c);
         notify(Playernum, Governor, buf);
       } else
         Report_types[i] = 1;
@@ -190,7 +189,8 @@ void rst(const command_t &argv, GameObj &g) {
   Free_rlist();
 }
 
-static void ship_report(GameObj &g, shipnum_t indx, const report_array& rep_on) {
+static void ship_report(GameObj &g, shipnum_t indx,
+                        const report_array &rep_on) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   Ship *s;

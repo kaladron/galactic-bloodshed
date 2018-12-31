@@ -69,8 +69,6 @@ void technology(const command_t &argv, GameObj &g) {
 }
 
 double tech_prod(int investment, int popn) {
-  double scale;
-
-  scale = (double)popn / 10000.;
+  double scale = (double)popn / 10000.;
   return (TECH_INVEST * log10((double)investment * scale + 1.0));
 }

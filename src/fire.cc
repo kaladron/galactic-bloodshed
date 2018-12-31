@@ -65,7 +65,7 @@ void fire(const command_t &argv, GameObj &g) {
     return;
   }
 
-  nextshipno = start_shiplist(g, argv[1].c_str());
+  nextshipno = start_shiplist(g, argv[1]);
   while ((fromship = do_shiplist(&from, &nextshipno)))
     if (in_list(Playernum, argv[1].c_str(), from, &nextshipno) &&
         authorized(Governor, from)) {
@@ -308,7 +308,7 @@ void bombard(const command_t &argv, GameObj &g) {
     return;
   }
 
-  nextshipno = start_shiplist(g, argv[1].c_str());
+  nextshipno = start_shiplist(g, argv[1]);
   while ((fromship = do_shiplist(&from, &nextshipno)))
     if (in_list(Playernum, argv[1].c_str(), from, &nextshipno) &&
         authorized(Governor, from)) {
@@ -699,7 +699,7 @@ void detonate(const command_t &argv, GameObj &g) {
   Ship *s;
   shipnum_t shipno, nextshipno;
 
-  nextshipno = start_shiplist(g, argv[1].c_str());
+  nextshipno = start_shiplist(g, argv[1]);
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&

@@ -34,7 +34,7 @@ void scrap(const command_t &argv, GameObj &g) {
     return;
   }
 
-  nextshipno = start_shiplist(g, argv[1].c_str());
+  nextshipno = start_shiplist(g, argv[1]);
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(g.player, argv[1].c_str(), s, &nextshipno) &&

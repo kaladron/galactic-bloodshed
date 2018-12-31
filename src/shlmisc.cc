@@ -29,6 +29,23 @@
 
 static void do_revoke(racetype *, const governor_t, const governor_t);
 
+/**
+ * \brief Convert input string to a shipnum_t
+ * \param s User-provided input string
+ * \return If the user provided a valid number, return it.
+ */
+std::optional<shipnum_t> string_to_shipnum(std::string_view s) {
+  if (s.size() > 1 && s[0] == '#') {
+    s.remove_prefix(1);
+    return string_to_shipnum(s);
+  }
+
+  if (s.size() > 0 && std::isdigit(s[0])) {
+    return (std::stoi(std::string(s.begin(), s.end())));
+  }
+  return {};
+}
+
 // TODO(jeffbailey): Move this into the ship class when we stop using bzero to
 // initalize it.
 std::string ship_to_string(const Ship &s) {
@@ -73,7 +90,7 @@ void grant(const command_t &argv, GameObj &g) {
     warn(Playernum, gov, buf);
     putstar(Stars[snum], snum);
   } else if (argv[2] == "ship") {
-    nextshipno = start_shiplist(g, argv[3].c_str());
+    nextshipno = start_shiplist(g, argv[3]);
     while ((shipno = do_shiplist(&ship, &nextshipno)))
       if (in_list(Playernum, argv[3].c_str(), ship, &nextshipno) &&
           authorized(Governor, ship)) {
@@ -288,31 +305,35 @@ int authorized(int Governor, Ship *ship) {
   return (!Governor || ship->governor == Governor);
 }
 
-int start_shiplist(GameObj &g, const char *p) {
-  Ship *ship;
-  int st, pl, sh;
+/**
+ * \brief Get start of ship lists from either a ship number or ScopeLevel
+ * \param g Game object for scope
+ * \param p String that might contain ship number
+ * \return Ship number at the start of the ship list.
+ */
+shipnum_t start_shiplist(GameObj &g, std::string_view p) {
+  // If a ship number is given, return that.
+  auto s = string_to_shipnum(p);
+  if (s) {
+    return *s;
+  }
 
-  if (*p == '#') return (atoi(++p));
-  if (isdigit(*p)) return (atoi(p));
-
-  /*ship number not given */
-  st = g.snum;
-  pl = g.pnum;
+  // Ship number not given
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
       getsdata(&Sdata);
       return Sdata.ships;
     case ScopeLevel::LEVEL_STAR:
-      getstar(&Stars[st], st); /*Stars doesn't need to be freed */
-      return Stars[st]->ships;
+      getstar(&Stars[g.snum], g.snum); /*Stars doesn't need to be freed */
+      return Stars[g.snum]->ships;
     case ScopeLevel::LEVEL_PLAN: {
-      const auto &planet = getplanet(st, pl);
-      sh = planet.ships;
-      return sh;
+      const auto planet = getplanet(g.snum, g.pnum);
+      return planet.ships;
     }
     case ScopeLevel::LEVEL_SHIP:
+      Ship *ship;
       (void)getship(&ship, g.shipno);
-      sh = ship->ships;
+      auto sh = ship->ships;
       free(ship);
       return sh;
   }

@@ -5,17 +5,19 @@
 #ifndef SHLMISC_H
 #define SHLMISC_H
 
+#include <optional>
 #include <string>
 
 #include "races.h"
 #include "ships.h"
 #include "vars.h"
 
+std::optional<shipnum_t> string_to_shipnum(std::string_view);
 std::string ship_to_string(const Ship &);
 void grant(const command_t &, GameObj &);
 void governors(const command_t &, GameObj &);
 int authorized(int, Ship *);
-int start_shiplist(GameObj &, const char *);
+shipnum_t start_shiplist(GameObj &, const std::string_view);
 shipnum_t do_shiplist(Ship **, shipnum_t *);
 int in_list(player_t, const char *, Ship *, shipnum_t *);
 void fix(const command_t &, GameObj &);

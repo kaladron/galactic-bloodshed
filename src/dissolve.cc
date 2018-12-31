@@ -32,10 +32,8 @@ void dissolve(const command_t &argv, GameObj &g) {
 
   int n_ships;
   int i, j, z, x2, y2, hix, hiy, lowx, lowy;
-  unsigned char waste;
   Ship *sp;
   racetype *Race;
-  char nuke;
   char racepass[100], govpass[100];
 
   if (Governor) {
@@ -48,33 +46,24 @@ void dissolve(const command_t &argv, GameObj &g) {
     notify(Playernum, 0, buf);
     return;
   }
-  n_ships = Numships();
 
   if (argv.size() < 3) {
-    sprintf(buf, "Self-Destruct sequence requires passwords.\n");
-    notify(Playernum, Governor, buf);
-    sprintf(buf,
-            "Please use 'dissolve <race password> <leader "
-            "password>'<option> to initiate\n");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "self-destruct sequence.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "Self-Destruct sequence requires passwords.\n";
+    g.out << "Please use 'dissolve <race password> <leader "
+             "password>'<option> to initiate\n";
+    g.out << "self-destruct sequence.\n";
     return;
   }
-  sprintf(buf, "WARNING!! WARNING!! WARNING!!\n");
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "-------------------------------\n");
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "Entering self destruct sequence!\n");
-  notify(Playernum, Governor, buf);
+  g.out << "WARNING!! WARNING!! WARNING!!\n";
+  g.out << "-------------------------------\n";
+  g.out << "Entering self destruct sequence!\n";
 
   sscanf(argv[1].c_str(), "%s", racepass);
   sscanf(argv[2].c_str(), "%s", govpass);
 
-  waste = 0;
+  bool waste = false;
   if (argv.size() > 3) {
-    sscanf(argv[3].c_str(), "%c", &nuke);
-    if (nuke == 'w') waste = 1;
+    if (argv[3][0] == 'w') waste = true;
   }
 
   Getracenum(racepass, govpass, &i, &j);
@@ -85,6 +74,7 @@ void dissolve(const command_t &argv, GameObj &g) {
     return;
   }
 
+  n_ships = Numships();
   for (i = 1; i <= n_ships; i++) {
     (void)getship(&sp, i);
     if (sp->owner == Playernum) {

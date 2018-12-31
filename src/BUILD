@@ -309,3 +309,22 @@ cc_binary(
     ],
     linkopts = ["-lsqlite3"],
 )
+
+cc_test(
+    name = "shlmisc-test",
+    srcs = [
+        "GB_server.h",
+        "buffers.h",
+        "config.h",
+        "files.h",
+        "files_shl.h",
+        "max.h",
+        "races.h",
+        "ships.h",
+        "shlmisc.h",
+        "shlmisc_test.cc",
+        "tweakables.h",
+        "vars.h",
+    ],
+    copts = COPTS,
+)

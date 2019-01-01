@@ -24,7 +24,6 @@ LLVM_COPTS_OPTIONAL = [
     "-Wno-sign-compare",
     "-Wno-switch-enum",
     "-Wno-switch",
-    "-Wno-logical-not-parentheses",
     "-Wno-exit-time-destructors",
     "-Wno-global-constructors",
 ]

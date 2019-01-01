@@ -1161,7 +1161,7 @@ static int can_build_on_sector(int what, racetype *Race, const Planet &planet,
     sprintf(string, "You don't own that sector.\n");
     return (0);
   }
-  if ((!Shipdata[what][ABIL_BUILD] & 1) && !Race->God) {
+  if ((!(Shipdata[what][ABIL_BUILD] & 1)) && !Race->God) {
     sprintf(string, "This ship type cannot be built on a planet.\n");
     sprintf(temp, "Use 'build ? %c' to find out where it can be built.\n",
             shipc);

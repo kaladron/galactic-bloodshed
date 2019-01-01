@@ -22,7 +22,7 @@ void produce(startype *star, const Planet &planet, sector &s) {
   int ss;
   int maxsup;
   int pfuel = 0, pdes = 0, pres = 0;
-  int prod;
+  resource_t prod;
   long diff;
   racetype *Race;
 
@@ -31,7 +31,7 @@ void produce(startype *star, const Planet &planet, sector &s) {
 
   if (s.resource && success(s.eff)) {
     prod = round_rand(Race->metabolism) * int_rand(1, s.eff);
-    prod = MIN(prod, s.resource);
+    prod = std::min(prod, s.resource);
     s.resource -= prod;
     pfuel = prod * (1 + (s.condition == SectorType::SEC_GAS));
     if (success(s.mobilization))

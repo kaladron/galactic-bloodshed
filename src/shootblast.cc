@@ -176,7 +176,9 @@ int shoot_ship_to_planet(Ship *ship, Planet *pl, int strength, int x, int y,
                          sector_map &smap, int ignore, int caliber,
                          char *long_msg, char *short_msg) {
   int x2, y2;
-  int numdest, kills, oldowner;
+  int numdest;
+  player_t oldowner;
+  population_t kills;
   int i, num_sectors, sum_mob[MAXPLAYERS];
   double d, r, fac;
 

@@ -221,13 +221,13 @@ static void ship_report(GameObj &g, shipnum_t indx,
         notify(Playernum, Governor, buf);
         if (!SHip) first = 0;
       }
-      sprintf(
-          buf,
-          "%5lu %c %14.14s%3u%4u:%-3u%5u:%-5ld%5u:%-5ld%7.1f:%-6ld%lu/%lu:%d\n",
-          shipno, Shipltrs[s->type], (s->active ? s->name : "INACTIVE"),
-          s->crystals, s->hanger, s->max_hanger, s->resource, Max_resource(s),
-          s->destruct, Max_destruct(s), s->fuel, Max_fuel(s), s->popn,
-          s->troops, s->max_crew);
+      sprintf(buf,
+              "%5lu %c "
+              "%14.14s%3u%4u:%-3u%5lu:%-5ld%5u:%-5ld%7.1f:%-6ld%lu/%lu:%d\n",
+              shipno, Shipltrs[s->type], (s->active ? s->name : "INACTIVE"),
+              s->crystals, s->hanger, s->max_hanger, s->resource,
+              Max_resource(s), s->destruct, Max_destruct(s), s->fuel,
+              Max_fuel(s), s->popn, s->troops, s->max_crew);
       notify(Playernum, Governor, buf);
     }
 
@@ -320,7 +320,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
         else
           strcpy(tmpbuf4, "-----");
         sprintf(buf,
-                "%5lu %c%4d%6.1f%5.1f%3d%2d%4d%4d%4d%4d%4d %s%1d %s/%s %s "
+                "%5lu %c%4d%6.1f%5.1f%3d%2d%4d%4d%4lu%4d%4d %s%1d %s/%s %s "
                 "%s %s %02d%%%s\n",
                 shipno, Shipltrs[s->build_type], s->build_cost, s->complexity,
                 s->base_mass, ship_size(s), s->armor, s->max_crew, s->max_fuel,

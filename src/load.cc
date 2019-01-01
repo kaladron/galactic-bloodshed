@@ -615,7 +615,7 @@ void dump(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 10;
-  int player, star, i, j;
+  int player, star, j;
   racetype *Race, *r;
   placetype where;
 
@@ -654,7 +654,7 @@ void dump(const command_t &argv, GameObj &g) {
       if (isset(Stars[star]->explored, Playernum)) {
         setbit(Stars[star]->explored, player);
 
-        for (i = 0; i < Stars[star]->numplanets; i++) {
+        for (size_t i = 0; i < Stars[star]->numplanets; i++) {
           auto planet = getplanet(star, i);
           if (planet.info[Playernum - 1].explored) {
             planet.info[player - 1].explored = 1;
@@ -665,7 +665,7 @@ void dump(const command_t &argv, GameObj &g) {
       }
     }
   } else { /* list of places given */
-    for (i = 2; i < argv.size(); i++) {
+    for (size_t i = 2; i < argv.size(); i++) {
       where = Getplace(g, argv[i], 1);
       if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
           where.level != ScopeLevel::LEVEL_SHIP) {
@@ -700,7 +700,7 @@ void transfer(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 1;
-  int player, give;
+  player_t player;
   char commod = 0;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
@@ -721,23 +721,20 @@ void transfer(const command_t &argv, GameObj &g) {
   auto planet = getplanet(g.snum, g.pnum);
 
   sscanf(argv[2].c_str(), "%c", &commod);
-  give = std::stoi(argv[3]);
+  // TODO(jeffbailey): May throw an exception on a negative number.
+  resource_t give = std::stoul(argv[3]);
 
-  if (give < 0) {
-    g.out << "You must specify a positive amount.\n";
-    return;
-  }
   sprintf(temp, "%s/%s:", Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
   switch (commod) {
     case 'r':
       if (give > planet.info[Playernum - 1].resource) {
-        sprintf(buf, "You don't have %d on this planet.\n", give);
+        sprintf(buf, "You don't have %lu on this planet.\n", give);
         notify(Playernum, Governor, buf);
       } else {
         planet.info[Playernum - 1].resource -= give;
         planet.info[player - 1].resource += give;
         sprintf(buf,
-                "%s %d resources transferred from player %d to player #%d\n",
+                "%s %lu resources transferred from player %d to player #%d\n",
                 temp, give, Playernum, player);
         notify(Playernum, Governor, buf);
         warn_race(player, buf);
@@ -746,13 +743,13 @@ void transfer(const command_t &argv, GameObj &g) {
     case 'x':
     case '&':
       if (give > planet.info[Playernum - 1].crystals) {
-        sprintf(buf, "You don't have %d on this planet.\n", give);
+        sprintf(buf, "You don't have %lu on this planet.\n", give);
         notify(Playernum, Governor, buf);
       } else {
         planet.info[Playernum - 1].crystals -= give;
         planet.info[player - 1].crystals += give;
         sprintf(buf,
-                "%s %d crystal(s) transferred from player %d to player #%d\n",
+                "%s %lu crystal(s) transferred from player %d to player #%d\n",
                 temp, give, Playernum, player);
         notify(Playernum, Governor, buf);
         warn_race(player, buf);
@@ -760,12 +757,12 @@ void transfer(const command_t &argv, GameObj &g) {
       break;
     case 'f':
       if (give > planet.info[Playernum - 1].fuel) {
-        sprintf(buf, "You don't have %d fuel on this planet.\n", give);
+        sprintf(buf, "You don't have %lu fuel on this planet.\n", give);
         notify(Playernum, Governor, buf);
       } else {
         planet.info[Playernum - 1].fuel -= give;
         planet.info[player - 1].fuel += give;
-        sprintf(buf, "%s %d fuel transferred from player %d to player #%d\n",
+        sprintf(buf, "%s %lu fuel transferred from player %d to player #%d\n",
                 temp, give, Playernum, player);
         notify(Playernum, Governor, buf);
         warn_race(player, buf);
@@ -773,13 +770,13 @@ void transfer(const command_t &argv, GameObj &g) {
       break;
     case 'd':
       if (give > planet.info[Playernum - 1].destruct) {
-        sprintf(buf, "You don't have %d destruct on this planet.\n", give);
+        sprintf(buf, "You don't have %lu destruct on this planet.\n", give);
         notify(Playernum, Governor, buf);
       } else {
         planet.info[Playernum - 1].destruct -= give;
         planet.info[player - 1].destruct += give;
         sprintf(buf,
-                "%s %d destruct transferred from player %d to player #%d\n",
+                "%s %lu destruct transferred from player %d to player #%d\n",
                 temp, give, Playernum, player);
         notify(Playernum, Governor, buf);
         warn_race(player, buf);
@@ -951,9 +948,9 @@ static void do_transporter(racetype *Race, GameObj &g, Ship *s) {
   /* send stuff to other ship (could be transport device) */
   if (s->resource) {
     rcv_resource(s2, (int)s->resource);
-    sprintf(buf, "%d resources transferred.\n", s->resource);
+    sprintf(buf, "%lu resources transferred.\n", s->resource);
     notify(Playernum, Governor, buf);
-    sprintf(bufr, "%d Resources\n", s->resource);
+    sprintf(bufr, "%lu Resources\n", s->resource);
     use_resource(s, (int)s->resource);
   } else
     bufr[0] = '\0';

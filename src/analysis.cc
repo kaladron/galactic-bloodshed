@@ -32,12 +32,11 @@ static void PrintTop(GameObj &, struct anal_sect[], const char *);
 void analysis(const command_t &argv, GameObj &g) {
   int sector_type = -1; /* -1 does analysis on all types */
   placetype where;      /* otherwise on specific type */
-  int i;
   int do_player = -1;
   const char *p;
   int mode = 1; /* does top five. 0 does low five */
 
-  i = 1;
+  size_t i = 1;
   do {
     where.level = g.level;
     where.snum = g.snum;

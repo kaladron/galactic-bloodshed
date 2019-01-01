@@ -127,7 +127,7 @@ class Ship {
   unsigned short size;
 
   unsigned short max_crew;
-  unsigned short max_resource;
+  resource_t max_resource;
   unsigned short max_destruct;
   unsigned short max_fuel;
   unsigned short max_speed;
@@ -139,7 +139,7 @@ class Ship {
   double complexity; /* complexity rating */
 
   unsigned short destruct; /* stuff it's carrying */
-  unsigned short resource;
+  resource_t resource;
   population_t popn;   /* crew */
   population_t troops; /* marines */
   unsigned short crystals;

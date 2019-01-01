@@ -393,7 +393,7 @@ void make_mod(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
       } else
         g.out << "\n";
-      sprintf(buf, "Cost:  %d r\t\tCargo:    %4d", dirship->build_cost,
+      sprintf(buf, "Cost:  %d r\t\tCargo:    %4lu", dirship->build_cost,
               dirship->max_resource);
       notify(Playernum, Governor, buf);
       if (Shipdata[dirship->build_type][ABIL_LASER]) {

@@ -181,7 +181,7 @@ void survey(const command_t &argv, GameObj &g) {
               notify(Playernum, Governor, buf);
             } else {
               sprintf(
-                  buf, " %c   %c   %6u%5u%4u%4u%4u%5u%5lu%5lu%6d%s\n",
+                  buf, " %c   %c   %6u%5u%4u%4u%4u%5lu%5lu%5lu%6d%s\n",
                   Dessymbols[s.condition], Dessymbols[s.type], s.owner, s.race,
                   s.eff, s.mobilization, s.fert, s.resource, s.troops, s.popn,
                   maxsupport(Race, s, compat, p.conditions[TOXIC]),
@@ -220,7 +220,7 @@ void survey(const command_t &argv, GameObj &g) {
                 sect_char = '?';
                 break;
             }
-            sprintf(buf, "%c %d %d %d %c %c %d %u %u %u %u %d %u %lu %lu %d",
+            sprintf(buf, "%c %d %d %d %c %c %d %u %u %u %u %d %lu %lu %lu %d",
                     CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
                     desshow(Playernum, Governor, lowx, lowy, Race, smap),
                     ((s.condition == SectorType::SEC_WASTED) ? 1 : 0), s.owner,

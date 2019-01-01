@@ -148,13 +148,12 @@ void governors(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
   racetype *Race;
-  int i;
-  int gov;
+  governor_t gov;
 
   Race = races[Playernum - 1];
   if (Governor ||
       argv.size() < 3) { /* the only thing governors can do with this */
-    for (i = 0; i <= MAXGOVERNORS; i++) {
+    for (governor_t i = 0; i <= MAXGOVERNORS; i++) {
       if (Governor)
         sprintf(buf, "%d %-15.15s %8s %10ld %s", i, Race->governor[i].name,
                 Race->governor[i].active ? "ACTIVE" : "INACTIVE",
@@ -166,7 +165,7 @@ void governors(const command_t &argv, GameObj &g) {
                 Race->governor[i].money, ctime(&Race->governor[i].login));
       notify(Playernum, Governor, buf);
     }
-  } else if ((gov = std::stoi(argv[1])) < 0 || gov > MAXGOVERNORS) {
+  } else if ((gov = std::stoi(argv[1])) > MAXGOVERNORS) {
     g.out << "No such governor.\n";
     return;
   } else if (argv[0] == "appoint") {
@@ -190,7 +189,7 @@ void governors(const command_t &argv, GameObj &g) {
     g.out << "Governor activated.\n";
     return;
   } else if (argv[0] == "revoke") {
-    int j;
+    governor_t j;
     if (!gov) {
       g.out << "You can't revoke your leadership!\n";
       return;
@@ -202,8 +201,8 @@ void governors(const command_t &argv, GameObj &g) {
     if (argv.size() < 4)
       j = 0;
     else
-      j = std::stoi(argv[3]); /* who gets this governors stuff */
-    if (j < 0 || j > MAXGOVERNORS) {
+      j = std::stoul(argv[3]); /* who gets this governors stuff */
+    if (j > MAXGOVERNORS) {
       g.out << "You can't give stuff to that governor!\n";
       return;
     }
@@ -458,7 +457,7 @@ void fix(const command_t &argv, GameObj &g) {
       sprintf(buf, "destruct = %d\n", s->destruct);
     } else if (argv[2] == "resource") {
       if (argv.size() > 3) s->resource = std::stoi(argv[3]);
-      sprintf(buf, "resource = %d\n", s->resource);
+      sprintf(buf, "resource = %lu\n", s->resource);
     } else if (argv[2] == "damage") {
       if (argv.size() > 3) s->damage = std::stoi(argv[3]);
       sprintf(buf, "damage = %d\n", s->damage);
@@ -499,11 +498,10 @@ int enufAP(int Playernum, int Governor, unsigned short AP, int x) {
 }
 
 void Getracenum(char *racepass, char *govpass, int *racenum, int *govnum) {
-  int i, j;
-  for (i = 1; i <= Num_races; i++) {
+  for (player_t i = 1; i <= Num_races; i++) {
     if (!strcmp(racepass, races[i - 1]->password)) {
       *racenum = i;
-      for (j = 0; j <= MAXGOVERNORS; j++) {
+      for (governor_t j = 0; j <= MAXGOVERNORS; j++) {
         if (*races[i - 1]->governor[j].password &&
             !strcmp(govpass, races[i - 1]->governor[j].password)) {
           *govnum = j;

@@ -25,7 +25,7 @@ void whois(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
-  int i, j, numraces;
+  int j, numraces;
   racetype *Race;
 
   if (argv.size() <= 1) {
@@ -34,7 +34,7 @@ void whois(const command_t &argv, GameObj &g) {
   }
   numraces = Num_races;
 
-  for (i = 1; i <= argv.size() - 1; i++) {
+  for (size_t i = 1; i <= argv.size() - 1; i++) {
     j = std::stoi(argv[i]);
     if (!(j < 1 || j > numraces)) {
       Race = races[j - 1];

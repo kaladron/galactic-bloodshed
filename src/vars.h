@@ -33,6 +33,7 @@ using planetnum_t = uint8_t;
 using player_t = uint8_t;
 using governor_t = uint8_t;
 using commodnum_t = uint64_t;
+using resource_t = unsigned long;
 
 using money_t = int64_t;
 using population_t = uint64_t;
@@ -52,7 +53,7 @@ using commodtype = struct commod;
 struct plinfo {            /* planetary stockpiles */
   unsigned short fuel;     /* fuel for powering things */
   unsigned short destruct; /* destructive potential */
-  unsigned long resource;  /* resources in storage */
+  resource_t resource;     /* resources in storage */
   population_t popn;
   population_t troops;
   unsigned short crystals;
@@ -152,7 +153,7 @@ class Planet {
   population_t popn;
   population_t troops;
   population_t maxpopn; /* maximum population */
-  unsigned long total_resources;
+  resource_t total_resources;
 
   player_t slaved_to;
   PlanetType type;         /* what type planet is */
@@ -190,7 +191,7 @@ class sector {
   unsigned int fert{0};         /* max popn is proportional to this */
   unsigned int mobilization{0}; /* percent popn is mobilized for war */
   unsigned int crystals{0};
-  unsigned int resource{0};
+  resource_t resource{0};
 
   population_t popn{0};
   population_t troops{0}; /* troops (additional combat value) */

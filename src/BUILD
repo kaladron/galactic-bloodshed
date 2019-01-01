@@ -135,9 +135,18 @@ cc_import(
 
 cc_binary(
     name = "GB",
+    srcs = [
+        "GB_server.cc",
+    ],
+    copts = COPTS,
+    linkopts = ["-lsqlite3"],
+    deps = [":gblib"],
+)
+
+cc_library(
+    name = "gblib",
     srcs =
         [
-            "GB_server.cc",
             "GB_server.h",
             "VN.cc",
             "VN.h",
@@ -261,7 +270,6 @@ cc_binary(
             "zoom.h",
         ],
     copts = COPTS,
-    linkopts = ["-lsqlite3"],
 )
 
 cc_binary(
@@ -326,5 +334,7 @@ cc_test(
         "tweakables.h",
         "vars.h",
     ],
+    #    deps = [":gblib"],
     copts = COPTS,
+    linkopts = ["-lsqlite3"],
 )

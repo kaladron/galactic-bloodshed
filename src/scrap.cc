@@ -30,7 +30,7 @@ void scrap(const command_t &argv, GameObj &g) {
   racetype *Race;
 
   if (argv.size() < 2) {
-    notify(g.player, g.governor, "Scrap what?\n");
+    g.out << "Scrap what?\n";
     return;
   }
 
@@ -80,8 +80,7 @@ void scrap(const command_t &argv, GameObj &g) {
         // sense.
         if (!(s2->docked && s2->destshipno == s->number) &&
             s->whatorbits != ScopeLevel::LEVEL_SHIP) {
-          sprintf(buf, "Warning, other ship not docked..\n");
-          notify(g.player, g.governor, buf);
+          g.out << "Warning, other ship not docked..\n";
           free(s);
           free(s2);
           continue;
@@ -134,9 +133,7 @@ void scrap(const command_t &argv, GameObj &g) {
         if (s->popn + s->troops) {
           if (s->whatdest == ScopeLevel::LEVEL_PLAN && sect.owner > 0 &&
               sect.owner != g.player) {
-            sprintf(buf,
-                    "You don't own this sector; no crew can be recovered.\n");
-            notify(g.player, g.governor, buf);
+            g.out << "You don't own this sector; no crew can be recovered.\n";
           } else {
             sprintf(buf, "Population/Troops recovery: %lu/%lu.\n", s->popn,
                     s->troops);
@@ -164,10 +161,8 @@ void scrap(const command_t &argv, GameObj &g) {
         if (s->crystals + s->mounted) {
           if (s->whatdest == ScopeLevel::LEVEL_PLAN && sect.owner > 0 &&
               sect.owner != g.player) {
-            sprintf(
-                buf,
-                "You don't own this sector; no crystals can be recovered.\n");
-            notify(g.player, g.governor, buf);
+            g.out
+                << "You don't own this sector; no crystals can be recovered.\n";
           } else {
             xtalval = s->crystals + s->mounted;
             if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
@@ -247,11 +242,9 @@ void scrap(const command_t &argv, GameObj &g) {
         putplanet(planet, Stars[s->storbits], (int)s->pnumorbits);
       }
       if (landed(s)) {
-        sprintf(buf, "\nScrapped.\n");
-        notify(g.player, g.governor, buf);
+        g.out << "\nScrapped.\n";
       } else {
-        sprintf(buf, "\nDestroyed.\n");
-        notify(g.player, g.governor, buf);
+        g.out << "\nDestroyed.\n";
       }
       free(s);
     } else

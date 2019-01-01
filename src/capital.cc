@@ -36,8 +36,14 @@ void capital(const command_t &argv, GameObj &g) {
   shipnum_t shipno;
   if (argv.size() != 2)
     shipno = Race->Gov_ship;
-  else
-    shipno = strtoul(argv[1].c_str() + (argv[1][0] == '#'), nullptr, 10);
+  else {
+    auto shiptmp = string_to_shipnum(argv[1]);
+    if (!shiptmp) {
+      g.out << "Specify a valid ship number.\n";
+      return;
+    }
+    shipno = *shiptmp;
+  }
 
   if (shipno <= 0) {
     g.out << "Change the capital to be what ship?\n";

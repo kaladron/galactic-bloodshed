@@ -26,12 +26,12 @@ void enslave(const command_t &argv, GameObj &g) {
   int APcount = 2;
   Ship *s, *s2;
   int i, aliens = 0, def = 0, attack = 0;
-  shipnum_t shipno;
   racetype *Race;
 
-  sscanf(argv[1].c_str() + (argv[1][0] == '#'), "%ld", &shipno);
+  auto shipno = string_to_shipnum(argv[1]);
+  if (!shipno) return;
 
-  if (!getship(&s, shipno)) {
+  if (!getship(&s, *shipno)) {
     return;
   }
   if (testship(Playernum, Governor, s)) {

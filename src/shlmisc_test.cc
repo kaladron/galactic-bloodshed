@@ -5,8 +5,8 @@
 #include "GB_server.h"
 #include "buffers.h"
 #include "build.h"
-#include "globals.h"
 #include "map.h"
+#include "globals.h"
 #include "shlmisc.h"
 
 // TODO(jeffbailey): Puke.  Detangling the dependencies is too

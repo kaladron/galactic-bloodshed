@@ -48,8 +48,12 @@ placetype Getplace(GameObj &g, const std::string &string,
         where.pnum = where.shipno = 0;
         return (Getplace2(Playernum, Governor, string.c_str() + 1, &where,
                           ignoreexpl, God));
-      case '#':
-        sscanf(string.c_str() + 1, "%ld", &where.shipno);
+      case '#': {
+        auto shipnotmp = string_to_shipnum(string);
+        if (shipnotmp)
+          where.shipno = *shipnotmp;
+        else
+          where.shipno = -1;
         if (!getship(&where.shipptr, where.shipno)) {
           DontOwnErr(Playernum, Governor, where.shipno);
           where.err = 1;
@@ -66,7 +70,7 @@ placetype Getplace(GameObj &g, const std::string &string,
         where.err = 1;
         free(where.shipptr);
         return where;
-
+      }
       case '-':
         /* no destination */
         where.level = ScopeLevel::LEVEL_UNIV;

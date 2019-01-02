@@ -23,7 +23,7 @@ void capital(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 50;
-  int stat, snum;
+  int snum;
   Ship *s;
   racetype *Race;
 
@@ -50,7 +50,7 @@ void capital(const command_t &argv, GameObj &g) {
     return;
   }
 
-  stat = getship(&s, shipno);
+  auto stat = getship(&s, shipno);
 
   if (argv.size() == 2) {
     snum = s->storbits;

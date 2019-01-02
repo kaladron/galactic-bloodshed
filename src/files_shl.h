@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "races.h"
 #include "ships.h"
@@ -26,7 +27,8 @@ void getsdata(struct stardata *S);
 void getrace(racetype **, int);
 void getstar(startype **, int);
 Planet getplanet(const starnum_t, const planetnum_t);
-int getship(Ship **, shipnum_t);
+std::optional<Ship> getship(const shipnum_t);
+std::optional<Ship> getship(Ship **, const shipnum_t);
 int getcommod(commodtype **, commodnum_t);
 sector getsector(const Planet &, const int x, const int y);
 sector_map getsmap(const Planet &);

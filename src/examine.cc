@@ -19,7 +19,6 @@
 #include "vars.h"
 
 void examine(const command_t &argv, GameObj &g) {
-  Ship *ship;
   const int APcount = 0;
   FILE *fd;
   char ch;
@@ -31,26 +30,28 @@ void examine(const command_t &argv, GameObj &g) {
 
   auto shipno = string_to_shipnum(argv[1]);
 
-  if (!shipno || !getship(&ship, *shipno)) {
+  if (!shipno) {
     return;
   }
+
+  auto ship = getship(*shipno);
+
+  if (!ship) {
+    return;
+  }
+
   if (!ship->alive) {
-    sprintf(buf, "that ship is dead.\n");
-    notify(g.player, g.governor, buf);
-    free(ship);
+    g.out << "that ship is dead.\n";
     return;
   }
   if (ship->whatorbits == ScopeLevel::LEVEL_UNIV ||
       isclr(Stars[ship->storbits]->inhabited, g.player)) {
-    sprintf(buf, "That ship it not visible to you.\n");
-    notify(g.player, g.governor, buf);
-    free(ship);
+    g.out << "That ship it not visible to you.\n";
     return;
   }
 
   if ((fd = fopen(EXAM_FL, "r")) == nullptr) {
     perror(EXAM_FL);
-    free(ship);
     return;
   }
 
@@ -76,19 +77,14 @@ void examine(const command_t &argv, GameObj &g) {
       deductAPs(g.player, g.governor, APcount, (int)ship->storbits, 0);
 
     ship->examined = 1;
-    putship(ship);
+    putship(&*ship);
   }
 
-  if (has_switch(ship)) {
-    sprintf(buf,
-            "This device has an on/off switch that can be set with order.\n");
-    notify(g.player, g.governor, buf);
+  if (has_switch(&*ship)) {
+    g.out << "This device has an on/off switch that can be set with order.\n";
   }
   if (!ship->active) {
-    sprintf(buf,
-            "This device has been irradiated;\nit's crew is dying and it "
-            "cannot move for the time being.\n");
-    notify(g.player, g.governor, buf);
+    g.out << "This device has been irradiated;\nit's crew is dying and it "
+             "cannot move for the time being.\n";
   }
-  free(ship);
 }

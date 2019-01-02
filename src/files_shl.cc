@@ -574,15 +574,24 @@ sector_map getsmap(const Planet &p) {
   return smap;
 }
 
-int getship(Ship **s, shipnum_t shipnum) {
+std::optional<Ship> getship(const shipnum_t shipnum) {
+  return getship(nullptr, shipnum);
+}
+
+std::optional<Ship> getship(Ship **s, const shipnum_t shipnum) {
   struct stat buffer;
 
-  if (shipnum <= 0) return 0;
+  if (shipnum <= 0) return {};
 
   fstat(shdata, &buffer);
-  if (buffer.st_size / sizeof(Ship) < shipnum) return 0;
+  if (buffer.st_size / sizeof(Ship) < shipnum) return {};
 
-  if ((*s = (Ship *)malloc(sizeof(Ship))) == nullptr) {
+  Ship tmpship;
+  Ship *tmpship1;
+  if (s == nullptr) {
+    tmpship1 = &tmpship;
+    s = &tmpship1;
+  } else if ((*s = (Ship *)malloc(sizeof(Ship))) == nullptr) {
     printf("getship:malloc() error \n");
     exit(0);
   }
@@ -637,7 +646,7 @@ int getship(Ship **s, shipnum_t shipnum) {
     if (err != SQLITE_OK) {
       fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
     }
-    return 0;
+    return {};
   }
 
   (*s)->number = sqlite3_column_int(stmt, 0);
@@ -732,7 +741,7 @@ int getship(Ship **s, shipnum_t shipnum) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
   }
 
-  return 1;
+  return **s;
 }
 
 int getcommod(commodtype **c, commodnum_t commodnum) {

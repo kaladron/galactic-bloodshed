@@ -67,7 +67,6 @@ void survey(const command_t &argv, GameObj &g) {
   struct numshipstuff shiplocs[MAX_X][MAX_Y];
   int inhere = 0;  // TODO(jeffbailey): Force init for some cases below
   int shiplist;
-  Ship *shipa;
   int i;
 
   int mode;
@@ -146,11 +145,11 @@ void survey(const command_t &argv, GameObj &g) {
         inhere = p.info[Playernum - 1].numsectsowned;
         shiplist = p.ships;
         while (shiplist) {
-          (void)getship(&shipa, shiplist);
+          auto shipa = getship(shiplist);
           if (shipa->owner == Playernum &&
               (shipa->popn || (shipa->type == ShipType::OTYPE_PROBE)))
             inhere = 1;
-          if (shipa->alive && landed(shipa) &&
+          if (shipa->alive && landed(&*shipa) &&
               shiplocs[shipa->land_x][shipa->land_y].pos <
                   MAX_SHIPS_PER_SECTOR) {
             shiplocs[shipa->land_x][shipa->land_y]
@@ -165,7 +164,6 @@ void survey(const command_t &argv, GameObj &g) {
             shiplocs[shipa->land_x][shipa->land_y].pos++;
           }
           shiplist = shipa->nextship;
-          free((char *)shipa);
         }
       }
       for (; lowy <= hiy; lowy++)

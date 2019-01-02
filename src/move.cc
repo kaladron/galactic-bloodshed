@@ -435,7 +435,7 @@ void walk(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   const int APcount = 1;
   Ship *ship, *ship2, dummy;
-  int shipno, x, y, i, sh, succ = 0, civ, mil;
+  int x, y, i, sh, succ = 0, civ, mil;
   int oldowner, oldgov;
   int strength, strength1;
   racetype *Race, *alien;
@@ -444,8 +444,8 @@ void walk(const command_t &argv, GameObj &g) {
     g.out << "Walk what?\n";
     return;
   }
-  sscanf(argv[1].c_str() + (argv[1][0] == '#'), "%d", &shipno);
-  if (!getship(&ship, shipno)) {
+  auto shipno = string_to_shipnum(argv[1]);
+  if (!shipno || !getship(&ship, *shipno)) {
     g.out << "No such ship.\n";
     return;
   }

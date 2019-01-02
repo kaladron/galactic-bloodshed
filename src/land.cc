@@ -87,13 +87,14 @@ void land(const command_t &argv, GameObj &g) {
       }
       if (argv[2][0] == '#') {
         /* attempting to land on a friendly ship (for carriers/stations/etc) */
-        sscanf(argv[2].c_str() + 1, "%lu", &ship2no);
-        if (!getship(&s2, ship2no)) {
-          sprintf(buf, "Ship #%lu wasn't found.\n", ship2no);
+        auto ship2tmp = string_to_shipnum(argv[2]);
+        if (!ship2tmp || !getship(&s2, *ship2tmp)) {
+          sprintf(buf, "Ship #%lu wasn't found.\n", *ship2tmp);
           notify(Playernum, Governor, buf);
           free(s);
           continue;
         }
+        ship2no = *ship2tmp;
         if (testship(Playernum, Governor, s2)) {
           g.out << "Illegal format.\n";
           free(s);

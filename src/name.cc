@@ -420,7 +420,7 @@ void give(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 5;
-  int who, sh;
+  int who;
   Ship *ship;
   racetype *Race, *alien;
 
@@ -448,15 +448,15 @@ void give(const command_t &argv, GameObj &g) {
     g.out << "You two are not mutually allied.\n";
     return;
   }
-  sscanf(argv[2].c_str() + (argv[2][0] == '#'), "%d", &sh);
+  auto shipno = string_to_shipnum(argv[2]);
 
-  if (!getship(&ship, sh)) {
+  if (!shipno || !getship(&ship, *shipno)) {
     g.out << "Illegal ship number.\n";
     return;
   }
 
   if (ship->owner != Playernum || !ship->alive) {
-    DontOwnErr(Playernum, Governor, sh);
+    DontOwnErr(Playernum, Governor, *shipno);
     free(ship);
     return;
   }

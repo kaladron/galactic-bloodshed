@@ -21,7 +21,6 @@
 void examine(const command_t &argv, GameObj &g) {
   Ship *ship;
   const int APcount = 0;
-  int shipno;
   FILE *fd;
   char ch;
 
@@ -30,9 +29,9 @@ void examine(const command_t &argv, GameObj &g) {
     return;
   }
 
-  sscanf(argv[1].c_str() + (argv[1][0] == '#'), "%d", &shipno);
+  auto shipno = string_to_shipnum(argv[1]);
 
-  if (!getship(&ship, shipno)) {
+  if (!shipno || !getship(&ship, *shipno)) {
     return;
   }
   if (!ship->alive) {

@@ -46,8 +46,7 @@ void map(const command_t &argv, GameObj &g) {
       const auto &p = getplanet(where.snum, where.pnum);
       show_map(Playernum, Governor, where.snum, where.pnum, p);
       if (Stars[where.snum]->stability > 50)
-        notify(Playernum, Governor,
-               "WARNING! This planet's primary is unstable.\n");
+        g.out << "WARNING! This planet's primary is unstable.\n";
     } break;
     default:
       orbit(argv, g); /* make orbit map instead */
@@ -59,8 +58,6 @@ static void show_map(const player_t Playernum, const governor_t Governor,
                      const Planet &p) {
   int x, y, i, f = 0, owner, owned1;
   int iq = 0;
-  int sh;
-  Ship *s;
   char shiplocs[MAX_X][MAX_Y] = {};
   hugestr output;
 
@@ -75,20 +72,17 @@ static void show_map(const player_t Playernum, const governor_t Governor,
     /* traverse ship list on planet; find out if we can look at
        ships here. */
     iq = !!p.info[Playernum - 1].numsectsowned;
-    sh = p.ships;
 
+    auto sh = p.ships;
     while (sh) {
-      if (!getship(&s, sh)) {
-        sh = 0;
-        continue;
-      }
-      if (s->owner == Playernum && authorized(Governor, s) &&
+      auto s = getship(sh);
+      if (!s) break;
+      if (s->owner == Playernum && authorized(Governor, &*s) &&
           (s->popn || (s->type == ShipType::OTYPE_PROBE)))
         iq = 1;
-      if (s->alive && landed(s))
+      if (s->alive && landed(&*s))
         shiplocs[s->land_x][s->land_y] = Shipltrs[s->type];
       sh = s->nextship;
-      free(s);
     }
   }
   /* report that this is a planet map */

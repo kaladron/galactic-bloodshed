@@ -271,6 +271,30 @@ class Ship {
   unsigned short max_hanger; /* total hanger space */
 };
 
+class Shiplist {
+ public:
+  Shiplist(shipnum_t a) : first(a) {}
+
+  class Iterator {
+   public:
+    Iterator(shipnum_t a);
+    auto &operator*() { return elem; }
+    Iterator &operator++();
+    bool operator!=(const Iterator &rhs) {
+      return elem.number != rhs.elem.number;
+    }
+
+   private:
+    Ship elem{};
+  };
+
+  auto begin() { return Shiplist::Iterator(first); }
+  auto end() { return Shiplist::Iterator(0); }
+
+ private:
+  shipnum_t first;
+};
+
 struct place { /* used in function return for finding place */
   starnum_t snum;
   planetnum_t pnum;

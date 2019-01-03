@@ -3,6 +3,7 @@
 // found in the COPYING file.
 
 #include "ships.h"
+#include "files_shl.h"
 
 /* can takeoff & land, is mobile, etc. */
 unsigned short speed_rating(Ship *s) { return (s)->max_speed; }
@@ -99,4 +100,25 @@ long Hanger(Ship *s) { return (s)->max_hanger - (s)->hanger; }
 
 long Repair(Ship *s) {
   return ((s)->type == ShipType::OTYPE_FACTORY) ? (s)->on : Max_crew(s);
+}
+
+Shiplist::Iterator::Iterator(shipnum_t a) {
+  auto tmpship = getship(a);
+  if (tmpship) {
+    elem = *tmpship;
+  } else {
+    elem = Ship{};
+    elem.number = 0;
+  }
+}
+
+Shiplist::Iterator &Shiplist::Iterator::operator++() {
+  auto tmpship = getship(elem.nextship);
+  if (tmpship) {
+    elem = *tmpship;
+  } else {
+    elem = Ship{};
+    elem.number = 0;
+  }
+  return *this;
 }

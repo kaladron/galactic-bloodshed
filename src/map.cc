@@ -73,16 +73,13 @@ static void show_map(const player_t Playernum, const governor_t Governor,
        ships here. */
     iq = !!p.info[Playernum - 1].numsectsowned;
 
-    auto sh = p.ships;
-    while (sh) {
-      auto s = getship(sh);
-      if (!s) break;
-      if (s->owner == Playernum && authorized(Governor, &*s) &&
-          (s->popn || (s->type == ShipType::OTYPE_PROBE)))
+    Shiplist shiplist{p.ships};
+    for (auto &s : shiplist) {
+      if (s.owner == Playernum && authorized(Governor, &s) &&
+          (s.popn || (s.type == ShipType::OTYPE_PROBE)))
         iq = 1;
-      if (s->alive && landed(&*s))
-        shiplocs[s->land_x][s->land_y] = Shipltrs[s->type];
-      sh = s->nextship;
+      if (s.alive && landed(&s))
+        shiplocs[s.land_x][s.land_y] = Shipltrs[s.type];
     }
   }
   /* report that this is a planet map */

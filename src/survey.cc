@@ -125,10 +125,8 @@ void survey(const command_t &argv, GameObj &g) {
       }
 
       if (!mode) {
-        sprintf(buf,
-                " x,y cond/type  owner race eff mob frt  res  mil popn "
-                "^popn xtals\n");
-        notify(Playernum, Governor, buf);
+        g.out << " x,y cond/type  owner race eff mob frt  res  mil popn "
+                 "^popn xtals\n";
       }
       if (mode) {
         if (all) {
@@ -258,10 +256,8 @@ void survey(const command_t &argv, GameObj &g) {
               p.xpos + Stars[where.snum]->xpos,
               p.ypos + Stars[where.snum]->ypos, p.xpos, p.ypos);
       notify(Playernum, Governor, buf);
-      sprintf(buf, "======== Planetary conditions: ========\n");
-      notify(Playernum, Governor, buf);
-      sprintf(buf, "atmosphere concentrations:\n");
-      notify(Playernum, Governor, buf);
+      g.out << "======== Planetary conditions: ========\n";
+      g.out << "atmosphere concentrations:\n";
       sprintf(buf, "     methane %02d%%(%02d%%)     oxygen %02d%%(%02d%%)\n",
               p.conditions[METHANE], Race->conditions[METHANE],
               p.conditions[OXYGEN], Race->conditions[OXYGEN]);
@@ -372,11 +368,9 @@ void survey(const command_t &argv, GameObj &g) {
     sprintf(buf, "\n");
     notify(Playernum, Governor, buf);
   } else if (where.level == ScopeLevel::LEVEL_UNIV) {
-    sprintf(buf, "It's just _there_, you know?\n");
-    notify(Playernum, Governor, buf);
+    g.out << "It's just _there_, you know?\n";
   } else {
-    sprintf(buf, "Illegal scope.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "Illegal scope.\n";
   }
 } /* end survey */
 

@@ -187,6 +187,9 @@ void scrap(const command_t &argv, GameObj &g) {
         deductAPs(g.player, g.governor, APcount, s->storbits, 0);
 
       Race = races[g.player - 1];
+
+      // TODO(jeffbailey): kill_ship gets and saves the ship, which looks like
+      // it'll be overwritten maybe here?
       kill_ship(g.player, s);
       putship(s);
       if (docked(s)) {

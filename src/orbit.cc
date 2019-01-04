@@ -43,9 +43,7 @@ static void DispShip(const GameObj &, placetype *, Ship *, racetype *, char *,
  * 		the view of another object)
  */
 void orbit(const command_t &argv, GameObj &g) {
-  int sh, iq;
   int DontDispNum = -1;
-  Ship *s;
   placetype where;
   int DontDispPlanets, DontDispShips, DontDispStars;
   char output[100000];
@@ -107,19 +105,16 @@ void orbit(const command_t &argv, GameObj &g) {
           strcat(output, buf);
         }
       if (!DontDispShips) {
-        sh = Sdata.ships;
-        while (sh) {
-          (void)getship(&s, sh);
-          if (DontDispNum != sh) {
-            DispShip(g, &where, s, Race, buf);
+        Shiplist shiplist{Sdata.ships};
+        for (auto &s : shiplist) {
+          if (DontDispNum != s.number) {
+            DispShip(g, &where, &s, Race, buf);
             strcat(output, buf);
           }
-          sh = s->nextship;
-          free(s);
         }
       }
       break;
-    case ScopeLevel::LEVEL_STAR:
+    case ScopeLevel::LEVEL_STAR: {
       DispStar(g, ScopeLevel::LEVEL_STAR, Stars[where.snum], DontDispStars,
                Race, buf);
       strcat(output, buf);
@@ -133,35 +128,31 @@ void orbit(const command_t &argv, GameObj &g) {
         }
       /* check to see if you have ships at orbiting the star, if so you can
          see enemy ships */
-      iq = 0;
+      bool iq = false;
       if (g.god)
-        iq = 1;
+        iq = true;
       else {
-        sh = Stars[where.snum]->ships;
-        while (sh && !iq) {
-          (void)getship(&s, sh);
-          if (s->owner == g.player && Sight(s))
-            iq = 1; /* you are there to sight, need a crew */
-          sh = s->nextship;
-          free(s);
+        Shiplist shiplist{Stars[where.snum]->ships};
+        for (auto &s : shiplist) {
+          if (s.owner == g.player && Sight(&s)) {
+            iq = true; /* you are there to sight, need a crew */
+            break;
+          }
         }
       }
       if (!DontDispShips) {
-        sh = Stars[where.snum]->ships;
-        while (sh) {
-          (void)getship(&s, sh);
-          if (DontDispNum != sh &&
-              !(s->owner != g.player && s->type == ShipType::STYPE_MINE)) {
-            if ((s->owner == g.player) || (iq == 1)) {
-              DispShip(g, &where, s, Race, buf);
+        Shiplist shiplist{Stars[where.snum]->ships};
+        for (auto &s : shiplist) {
+          if (DontDispNum != s.number &&
+              !(s.owner != g.player && s.type == ShipType::STYPE_MINE)) {
+            if ((s.owner == g.player) || iq) {
+              DispShip(g, &where, &s, Race, buf);
               strcat(output, buf);
             }
           }
-          sh = s->nextship;
-          free(s);
         }
       }
-      break;
+    } break;
     case ScopeLevel::LEVEL_PLAN: {
       const auto &p = getplanet((int)where.snum, (int)where.pnum);
       DispPlanet(g, ScopeLevel::LEVEL_PLAN, p,
@@ -171,30 +162,25 @@ void orbit(const command_t &argv, GameObj &g) {
 
       /* check to see if you have ships at landed or
          orbiting the planet, if so you can see orbiting enemy ships */
-      iq = 0;
-      sh = p.ships;
-      while (sh && !iq) {
-        (void)getship(&s, sh);
-        if (s->owner == g.player && Sight(s))
-          iq = 1; /* you are there to sight, need a crew */
-        sh = s->nextship;
-        free(s);
+      bool iq = false;
+      Shiplist shiplist{p.ships};
+      for (auto &s : shiplist) {
+        if (s.owner == g.player && Sight(&s)) {
+          iq = true; /* you are there to sight, need a crew */
+          break;
+        }
       }
       /* end check */
       if (!DontDispShips) {
-        sh = p.ships;
-        while (sh) {
-          (void)getship(&s, sh);
-          if (DontDispNum != sh) {
-            if (!landed(s)) {
-              if ((s->owner == g.player) || (iq == 1)) {
-                DispShip(g, &where, s, Race, buf, p);
+        for (auto &s : shiplist) {
+          if (DontDispNum != s.number) {
+            if (!landed(&s)) {
+              if ((s.owner == g.player) || iq) {
+                DispShip(g, &where, &s, Race, buf, p);
                 strcat(output, buf);
               }
             }
           }
-          sh = s->nextship;
-          free(s);
         }
       }
     } break;

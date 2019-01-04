@@ -241,8 +241,6 @@ void governors(const command_t &argv, GameObj &g) {
 
 static void do_revoke(racetype *Race, const governor_t src_gov,
                       const governor_t tgt_gov) {
-  Ship *ship;
-
   std::string outmsg;
   outmsg = str(
       boost::format("*** Transferring [%d,%d]'s ownings to [%d,%d] ***\n\n") %
@@ -263,16 +261,16 @@ static void do_revoke(racetype *Race, const governor_t src_gov,
   /*  Now do ships....  */
   Num_ships = Numships();
   for (shipnum_t i = 1; i <= Num_ships; i++) {
-    (void)getship(&ship, i);
+    auto ship = getship(i);
+    if (!ship) continue;
     if (ship->alive && (ship->owner == Race->Playernum) &&
         (ship->governor == src_gov)) {
       ship->governor = tgt_gov;
       outmsg = str(boost::format("Changed ownership of %c%lu...\n") %
                    Shipltrs[ship->type] % i);
       notify(Race->Playernum, 0, outmsg);
-      putship(ship);
+      putship(&*ship);
     }
-    free(ship);
   }
 
   /*  And money too....  */
@@ -330,11 +328,8 @@ shipnum_t start_shiplist(GameObj &g, std::string_view p) {
       return planet.ships;
     }
     case ScopeLevel::LEVEL_SHIP:
-      Ship *ship;
-      (void)getship(&ship, g.shipno);
-      auto sh = ship->ships;
-      free(ship);
-      return sh;
+      auto ship = getship(g.shipno);
+      return ship->ships;
   }
 }
 
@@ -374,8 +369,6 @@ void fix(const command_t &argv, GameObj &g) {
            "This command is only available to the deity.\n");
     return;
   }
-
-  Ship *s;
 
   if (argv[1] == "planet") {
     if (g.level != ScopeLevel::LEVEL_PLAN) {
@@ -445,7 +438,7 @@ void fix(const command_t &argv, GameObj &g) {
              "Change scope to the ship you wish to fix.\n");
       return;
     }
-    (void)getship(&s, g.shipno);
+    auto s = getship(g.shipno);
     if (argv[2] == "fuel") {
       if (argv.size() > 3) s->fuel = (double)std::stoi(argv[3]);
       sprintf(buf, "fuel = %f\n", s->fuel);
@@ -471,12 +464,10 @@ void fix(const command_t &argv, GameObj &g) {
       sprintf(buf, "%s destroyed\n", ship_to_string(*s).c_str());
     } else {
       g.out << "No such option for 'fix ship'.\n";
-      free(s);
       return;
     }
     notify(Playernum, Governor, buf);
-    putship(s);
-    free(s);
+    putship(&*s);
     return;
   }
   g.out << "Fix what?\n";

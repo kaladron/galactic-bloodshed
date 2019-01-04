@@ -25,8 +25,7 @@ void launch(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 1;
-  int sh2;
-  Ship *s, *s2;
+  Ship *s;
   shipnum_t shipno, nextshipno;
   double fuel;
 
@@ -71,13 +70,12 @@ void launch(const command_t &argv, GameObj &g) {
           free(s);
           continue;
         }
-        sh2 = s->destshipno;
-        (void)getship(&s2, sh2);
-        if (landed(s2)) {
-          remove_sh_ship(s, s2);
-          auto p = getplanet((int)s2->storbits, (int)s2->pnumorbits);
+        auto s2 = getship(s->destshipno);
+        if (landed(&*s2)) {
+          remove_sh_ship(s, &*s2);
+          auto p = getplanet(s2->storbits, s2->pnumorbits);
           insert_sh_plan(&p, s);
-          putplanet(p, Stars[s2->storbits], (int)s2->pnumorbits);
+          putplanet(p, Stars[s2->storbits], s2->pnumorbits);
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
           s->destpnum = s2->pnumorbits;
@@ -94,9 +92,9 @@ void launch(const command_t &argv, GameObj &g) {
                   Stars[s->storbits]->pnames[s->pnumorbits]);
           notify(Playernum, Governor, buf);
           putship(s);
-          putship(s2);
+          putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_PLAN) {
-          remove_sh_ship(s, s2);
+          remove_sh_ship(s, &*s2);
           sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
                   ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
@@ -106,18 +104,18 @@ void launch(const command_t &argv, GameObj &g) {
           s->whatdest = ScopeLevel::LEVEL_UNIV;
           s2->mass -= s->mass;
           s2->hanger -= Size(s);
-          auto p = getplanet((int)s2->storbits, (int)s2->pnumorbits);
+          auto p = getplanet(s2->storbits, s2->pnumorbits);
           insert_sh_plan(&p, s);
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
-          putplanet(p, Stars[s2->storbits], (int)s2->pnumorbits);
+          putplanet(p, Stars[s2->storbits], s2->pnumorbits);
           sprintf(buf, "Orbiting %s/%s.\n", Stars[s->storbits]->name,
                   Stars[s->storbits]->pnames[s->pnumorbits]);
           notify(Playernum, Governor, buf);
           putship(s);
-          putship(s2);
+          putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_STAR) {
-          remove_sh_ship(s, s2);
+          remove_sh_ship(s, &*s2);
           sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
                   ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
@@ -134,9 +132,9 @@ void launch(const command_t &argv, GameObj &g) {
           sprintf(buf, "Orbiting %s.\n", Stars[s->storbits]->name);
           notify(Playernum, Governor, buf);
           putship(s);
-          putship(s2);
+          putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_UNIV) {
-          remove_sh_ship(s, s2);
+          remove_sh_ship(s, &*s2);
           sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
                   ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
@@ -151,22 +149,18 @@ void launch(const command_t &argv, GameObj &g) {
           g.out << "Universe level.\n";
           putsdata(&Sdata);
           putship(s);
-          putship(s2);
+          putship(&*s2);
         } else {
           g.out << "You can't launch that ship.\n";
-          free(s2);
           free(s);
           continue;
         }
-        free(s2);
         free(s);
       } else if (s->whatdest == ScopeLevel::LEVEL_SHIP) {
-        sh2 = s->destshipno;
-        (void)getship(&s2, sh2);
+        auto s2 = getship(s->destshipno);
         if (s2->whatorbits == ScopeLevel::LEVEL_UNIV) {
           if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
             free(s);
-            free(s2);
             continue;
           }
           deductAPs(Playernum, Governor, APcount, 0, 1);
@@ -174,7 +168,6 @@ void launch(const command_t &argv, GameObj &g) {
           if (!enufAP(Playernum, Governor,
                       Stars[s->storbits]->AP[Playernum - 1], APcount)) {
             free(s);
-            free(s2);
             continue;
           }
           deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
@@ -189,9 +182,8 @@ void launch(const command_t &argv, GameObj &g) {
                 ship_to_string(*s2).c_str());
         notify(Playernum, Governor, buf);
         putship(s);
-        putship(s2);
+        putship(&*s2);
         free(s);
-        free(s2);
       } else {
         if (!enufAP(Playernum, Governor, Stars[s->storbits]->AP[Playernum - 1],
                     APcount)) {

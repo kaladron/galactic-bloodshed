@@ -420,7 +420,6 @@ void give(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   int APcount = 5;
   int who;
-  Ship *ship;
   racetype *Race, *alien;
 
   if (!(who = get_player(argv[1]))) {
@@ -448,45 +447,44 @@ void give(const command_t &argv, GameObj &g) {
     return;
   }
   auto shipno = string_to_shipnum(argv[2]);
-
-  if (!shipno || !getship(&ship, *shipno)) {
+  if (!shipno) {
     g.out << "Illegal ship number.\n";
+    return;
+  }
+
+  auto ship = getship(*shipno);
+  if (!ship) {
+    g.out << "No such ship.\n";
     return;
   }
 
   if (ship->owner != Playernum || !ship->alive) {
     DontOwnErr(Playernum, Governor, *shipno);
-    free(ship);
     return;
   }
   if (ship->type == ShipType::STYPE_POD) {
     g.out << "You cannot change the ownership of spore pods.\n";
-    free(ship);
     return;
   }
 
   if ((ship->popn + ship->troops) && !Race->God) {
     g.out << "You can't give this ship away while it has crew/mil on board.\n";
-    free(ship);
     return;
   }
   if (ship->ships && !Race->God) {
     g.out
         << "You can't give away this ship, it has other ships loaded on it.\n";
-    free(ship);
     return;
   }
   switch (ship->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
       if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
-        free(ship);
         return;
       }
       break;
     default:
       if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1],
                   APcount)) {
-        free(ship);
         return;
       }
       break;
@@ -494,9 +492,9 @@ void give(const command_t &argv, GameObj &g) {
 
   ship->owner = who;
   ship->governor = 0; /* give to the leader */
-  capture_stuff(ship);
+  capture_stuff(&*ship);
 
-  putship(ship);
+  putship(&*ship);
 
   /* set inhabited/explored bits */
   switch (ship->whatorbits) {
@@ -519,14 +517,12 @@ void give(const command_t &argv, GameObj &g) {
     } break;
     default:
       g.out << "Something wrong with this ship's scope.\n";
-      free(ship);
       return;
   }
 
   switch (ship->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
       deductAPs(Playernum, Governor, APcount, 0, 1);
-      free(ship);
       return;
     default:
       deductAPs(Playernum, Governor, APcount, g.snum, 0);
@@ -534,14 +530,13 @@ void give(const command_t &argv, GameObj &g) {
   }
   g.out << "Owner changed.\n";
   sprintf(buf, "%s [%d] gave you %s at %s.\n", Race->name, Playernum,
-          ship_to_string(*ship).c_str(), prin_ship_orbits(ship));
+          ship_to_string(*ship).c_str(), prin_ship_orbits(&*ship));
   warn(who, 0, buf);
 
   if (!Race->God) {
     sprintf(buf, "%s [%d] gives %s [%d] a ship.\n", Race->name, Playernum,
             alien->name, who);
     post(buf, TRANSFER);
-    free(ship);
   }
 }
 
@@ -811,7 +806,6 @@ void name(const command_t &argv, GameObj &g) {
   char *ch;
   int spaces;
   unsigned char check = 0;
-  Ship *ship;
   char string[1024];
   char tmp[128];
   racetype *Race;
@@ -853,11 +847,10 @@ void name(const command_t &argv, GameObj &g) {
 
   if (argv[1] == "ship") {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
-      (void)getship(&ship, g.shipno);
+      auto ship = getship(g.shipno);
       strncpy(ship->name, buf, SHIP_NAMESIZE);
-      putship(ship);
+      putship(&*ship);
       g.out << "Name set.\n";
-      free(ship);
       return;
     }
     g.out << "You have to 'cs' to a ship to name it.\n";
@@ -865,21 +858,18 @@ void name(const command_t &argv, GameObj &g) {
   }
   if (argv[1] == "class") {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
-      (void)getship(&ship, g.shipno);
+      auto ship = getship(g.shipno);
       if (ship->type != ShipType::OTYPE_FACTORY) {
         g.out << "You are not at a factory!\n";
-        free(ship);
         return;
       }
       if (ship->on) {
         g.out << "This factory is already on line.\n";
-        free(ship);
         return;
       }
       strncpy(ship->shipclass, buf, SHIP_NAMESIZE - 1);
-      putship(ship);
+      putship(&*ship);
       g.out << "Class set.\n";
-      free(ship);
       return;
     }
     g.out << "You have to 'cs' to a factory to name the ship class.\n";

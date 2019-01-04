@@ -69,7 +69,6 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
   governor_t Governor = g.governor;
   int j;
   placetype where, pl;
-  Ship *tmpship;
 
   if (!ship->active) {
     sprintf(buf, "%s is irradiated (%d); it cannot be given orders.\n",
@@ -216,14 +215,11 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       where = Getplace(g, argv[3], 1);
       if (!where.err) {
         if (where.level == ScopeLevel::LEVEL_SHIP) {
-          (void)getship(&tmpship, where.shipno);
-          if (!followable(ship, tmpship)) {
-            notify(Playernum, Governor,
-                   "Warning: that ship is out of range.\n");
-            free(tmpship);
+          auto tmpship = getship(where.shipno);
+          if (!followable(ship, &*tmpship)) {
+            g.out << "Warning: that ship is out of range.\n";
             return;
           }
-          free(tmpship);
           ship->destshipno = where.shipno;
           ship->whatdest = ScopeLevel::LEVEL_SHIP;
         } else {
@@ -534,10 +530,9 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     if (ship->type == ShipType::OTYPE_FACTORY) {
       unsigned int oncost;
       if (ship->whatorbits == ScopeLevel::LEVEL_SHIP) {
-        Ship *s2;
         int hangerneeded;
 
-        (void)getship(&s2, (int)ship->destshipno);
+        auto s2 = getship(ship->destshipno);
         if (s2->type == ShipType::STYPE_HABITAT) {
           oncost = HAB_FACT_ON_COST * ship->build_cost;
           if (s2->resource < oncost) {
@@ -546,7 +541,6 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
                     "activate this factory.\n",
                     oncost, ship->destshipno);
             notify(Playernum, Governor, buf);
-            free(s2);
             return;
           }
           hangerneeded = (1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship))) -
@@ -557,19 +551,15 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
                 "Not enough hanger space free on Habitat #%lu. Need %d more.\n",
                 ship->destshipno, hangerneeded);
             notify(Playernum, Governor, buf);
-            free(s2);
             return;
           }
           s2->resource -= oncost;
           s2->hanger -= ship->size;
           ship->size = 1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship));
           s2->hanger += ship->size;
-          putship(s2);
-          free(s2);
+          putship(&*s2);
         } else {
-          notify(Playernum, Governor,
-                 "The factory is currently being transported.\n");
-          free(s2);
+          g.out << "The factory is currently being transported.\n";
           return;
         }
       } else if (!landed(ship)) {

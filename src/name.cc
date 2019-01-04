@@ -35,14 +35,13 @@ static char msg[1024];
 
 void personal(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
-  governor_t Governor = g.governor;
 
   std::stringstream ss_message;
   std::copy(++argv.begin(), argv.end(),
             std::ostream_iterator<std::string>(ss_message, " "));
   std::string message = ss_message.str();
 
-  if (Governor) {
+  if (g.governor != 0) {
     g.out << "Only the leader can do this.\n";
     return;
   }
@@ -54,7 +53,7 @@ void personal(const command_t &argv, GameObj &g) {
 void bless(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   // TODO(jeffbailey): int APcount = 0;
-  int who, amount, Mod;
+  int amount, Mod;
   char commod;
 
   if (!g.god) {
@@ -65,7 +64,7 @@ void bless(const command_t &argv, GameObj &g) {
     g.out << "Please cs to the planet in question.\n";
     return;
   }
-  who = std::stoi(argv[1]);
+  player_t who = std::stoi(argv[1]);
   if (who < 1 || who > Num_races) {
     g.out << "No such player number.\n";
     return;

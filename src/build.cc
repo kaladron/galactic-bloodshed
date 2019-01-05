@@ -56,7 +56,7 @@ void upgrade(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused int APcount = 1;
   int value, oldcost, newcost, netcost;
-  Ship ship, *dirship, *s2;
+  Ship ship, *s2;
   double complex;
   racetype *Race;
 
@@ -64,27 +64,25 @@ void upgrade(const command_t &argv, GameObj &g) {
     g.out << "You have to change scope to the ship you wish to upgrade.\n";
     return;
   }
-  if (!getship(&dirship, g.shipno)) {
+  auto dirship = getship(g.shipno);
+  if (!dirship) {
     g.out << "Illegal dir value.\n";
     return;
   }
-  if (testship(Playernum, Governor, dirship)) {
-    free(dirship);
+  if (testship(Playernum, Governor, &*dirship)) {
     return;
   }
   if (dirship->damage) {
     g.out << "You cannot upgrade damaged ships.\n";
-    free(dirship);
     return;
   }
   if (dirship->type == ShipType::OTYPE_FACTORY) {
     g.out << "You can't upgrade factories.\n";
-    free(dirship);
     return;
   }
 
   Race = races[Playernum - 1];
-  bcopy(dirship, &ship, sizeof(Ship));
+  bcopy(&*dirship, &ship, sizeof(Ship));
 
   if (argv.size() == 3)
     value = std::stoi(argv[2]);
@@ -93,13 +91,11 @@ void upgrade(const command_t &argv, GameObj &g) {
 
   if (value < 0) {
     g.out << "That's a ridiculous setting.\n";
-    free(dirship);
     return;
   }
 
   if (!Shipdata[dirship->build_type][ABIL_MOD]) {
     g.out << "This ship cannot be upgraded.\n";
-    free(dirship);
     return;
   }
 
@@ -118,7 +114,6 @@ void upgrade(const command_t &argv, GameObj &g) {
              !dirship->mount) {
     if (!Crystal(Race)) {
       g.out << "Your race does not now how to utilize crystal power yet.\n";
-      free(dirship);
       return;
     }
     ship.mount = !ship.mount;
@@ -136,7 +131,6 @@ void upgrade(const command_t &argv, GameObj &g) {
     if (argv[2] == "strength") {
       if (ship.primtype == GTYPE_NONE) {
         g.out << "No caliber defined.\n";
-        free(dirship);
         return;
       }
       ship.primary = std::stoi(argv[3]);
@@ -150,14 +144,12 @@ void upgrade(const command_t &argv, GameObj &g) {
         ship.primtype = MAX(GTYPE_HEAVY, dirship->primtype);
       else {
         g.out << "No such caliber.\n";
-        free(dirship);
         return;
       }
       ship.primtype =
           MIN(Shipdata[dirship->build_type][ABIL_PRIMARY], ship.primtype);
     } else {
       g.out << "No such gun characteristic.\n";
-      free(dirship);
       return;
     }
   } else if (argv[1] == "secondary" &&
@@ -165,7 +157,6 @@ void upgrade(const command_t &argv, GameObj &g) {
     if (argv[2] == "strength") {
       if (ship.sectype == GTYPE_NONE) {
         g.out << "No caliber defined.\n";
-        free(dirship);
         return;
       }
       ship.secondary = std::stoi(argv[3]);
@@ -179,25 +170,21 @@ void upgrade(const command_t &argv, GameObj &g) {
         ship.sectype = MAX(GTYPE_HEAVY, dirship->sectype);
       else {
         g.out << "No such caliber.\n";
-        free(dirship);
         return;
       }
       ship.sectype =
           MIN(Shipdata[dirship->build_type][ABIL_SECONDARY], ship.sectype);
     } else {
       g.out << "No such gun characteristic.\n";
-      free(dirship);
       return;
     }
   } else if (argv[1] == "cew" && Shipdata[dirship->build_type][ABIL_CEW]) {
     if (!Cew(Race)) {
       g.out << "Your race cannot build confined energy weapons.\n";
-      free(dirship);
       return;
     }
     if (!Shipdata[dirship->build_type][ABIL_CEW]) {
       g.out << "This kind of ship cannot mount confined energy weapons.\n";
-      free(dirship);
       return;
     }
     value = std::stoi(argv[3]);
@@ -207,25 +194,21 @@ void upgrade(const command_t &argv, GameObj &g) {
       ship.cew_range = value;
     } else {
       g.out << "No such option for CEWs.\n";
-      free(dirship);
       return;
     }
   } else if (argv[1] == "laser" && Shipdata[dirship->build_type][ABIL_LASER]) {
     if (!Laser(Race)) {
       g.out << "Your race cannot build lasers.\n";
-      free(dirship);
       return;
     }
     if (Shipdata[dirship->build_type][ABIL_LASER])
       ship.laser = 1;
     else {
       g.out << "That ship cannot be fitted with combat lasers.\n";
-      free(dirship);
       return;
     }
   } else {
     g.out << "That characteristic either doesn't exist or can't be modified.\n";
-    free(dirship);
     return;
   }
 
@@ -234,7 +217,6 @@ void upgrade(const command_t &argv, GameObj &g) {
     sprintf(buf, "This upgrade requires an engineering technology of %.1f.\n",
             complex);
     notify(Playernum, Governor, buf);
-    free(dirship);
     return;
   }
 
@@ -251,7 +233,6 @@ void upgrade(const command_t &argv, GameObj &g) {
           ship_size(&ship) - (s2->max_hanger - (s2->hanger - dirship->size)));
       notify(Playernum, Governor, buf);
       free(s2);
-      free(dirship);
       return;
     }
   }
@@ -262,7 +243,6 @@ void upgrade(const command_t &argv, GameObj &g) {
   netcost = Race->God ? 0 : 2 * (newcost - oldcost); /* upgrade is expensive */
   if (newcost < oldcost) {
     g.out << "You cannot downgrade ships!\n";
-    free(dirship);
     return;
   }
   if (!Race->God) netcost += !netcost;
@@ -279,23 +259,22 @@ void upgrade(const command_t &argv, GameObj &g) {
     sprintf(buf, "Characteristic modified at a cost of %d resources.\n",
             netcost);
     notify(Playernum, Governor, buf);
-    bcopy(&ship, dirship, sizeof(Ship));
+    bcopy(&ship, &*dirship, sizeof(Ship));
     dirship->resource -= netcost;
     if (dirship->whatorbits == ScopeLevel::LEVEL_SHIP) {
       s2->hanger -= dirship->size;
-      dirship->size = ship_size(dirship);
+      dirship->size = ship_size(&*dirship);
       s2->hanger += dirship->size;
       putship(s2);
     }
-    dirship->size = ship_size(dirship);
-    dirship->base_mass = getmass(dirship);
-    dirship->build_cost = Race->God ? 0 : cost(dirship);
-    dirship->complexity = complexity(dirship);
+    dirship->size = ship_size(&*dirship);
+    dirship->base_mass = getmass(&*dirship);
+    dirship->build_cost = Race->God ? 0 : cost(&*dirship);
+    dirship->complexity = complexity(&*dirship);
 
-    putship(dirship);
+    putship(&*dirship);
   } else
     g.out << "You can not make this modification.\n";
-  free(dirship);
 }
 
 void make_mod(const command_t &argv, GameObj &g) {

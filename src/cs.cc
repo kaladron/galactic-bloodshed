@@ -35,7 +35,6 @@ void center(const command_t &argv, GameObj &g) {
 void cs(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  Ship *s;
   racetype *Race = races[Playernum - 1];
 
   if (argv.size() == 1) {
@@ -88,7 +87,7 @@ void cs(const command_t &argv, GameObj &g) {
           g.lastx[0] = g.lasty[0] = 0.0;
       } break;
       case ScopeLevel::LEVEL_SHIP:
-        (void)getship(&s, g.shipno);
+        auto s = getship(g.shipno);
         if (!s->docked) {
           switch (where.level) {
             case ScopeLevel::LEVEL_UNIV:
@@ -120,7 +119,6 @@ void cs(const command_t &argv, GameObj &g) {
           }
         } else
           g.lastx[0] = g.lasty[0] = 0.0;
-        free(s);
         break;
     }
     g.level = where.level;

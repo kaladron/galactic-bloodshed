@@ -59,7 +59,6 @@ double gravity(const Planet &p) {
 }
 
 char *prin_ship_orbits(Ship *s) {
-  Ship *mothership;
   char *motherorbits;
 
   switch (s->whatorbits) {
@@ -74,10 +73,9 @@ char *prin_ship_orbits(Ship *s) {
               Stars[s->storbits]->pnames[s->pnumorbits]);
       break;
     case ScopeLevel::LEVEL_SHIP:
-      if (getship(&mothership, s->destshipno)) {
-        motherorbits = prin_ship_orbits(mothership);
+      if (auto mothership = getship(s->destshipno); mothership) {
+        motherorbits = prin_ship_orbits(&*mothership);
         strcpy(Dispshiporbits_buf, motherorbits);
-        free(mothership);
       } else
         strcpy(Dispshiporbits_buf, "/");
       break;

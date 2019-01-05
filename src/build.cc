@@ -648,7 +648,7 @@ void build(const command_t &argv, GameObj &g) {
 
   FILE *fd;
   sector sector;
-  Ship *builder;
+  std::optional<Ship> builder;
   Ship newship;
 
   if (argv.size() > 1 && argv[1][0] == '?') {
@@ -835,12 +835,11 @@ void build(const command_t &argv, GameObj &g) {
         break;
       case ScopeLevel::LEVEL_SHIP:
         if (!count) { /* initialize loop variables */
-          (void)getship(&builder, g.shipno);
+          builder = getship(g.shipno);
           outside = 0;
-          auto test_build_level = build_at_ship(g, builder, &snum, &pnum);
+          auto test_build_level = build_at_ship(g, &*builder, &snum, &pnum);
           if (!test_build_level) {
             g.out << "You can't build here.\n";
-            free(builder);
             return;
           }
           build_level = test_build_level.value();
@@ -848,22 +847,19 @@ void build(const command_t &argv, GameObj &g) {
             case ShipType::OTYPE_FACTORY:
               if (!(count = getcount(argv, 2))) {
                 g.out << "Give a positive number of builds.\n";
-                free(builder);
                 return;
               }
-              if (!landed(builder)) {
+              if (!landed(&*builder)) {
                 g.out << "Factories can only build when landed on a planet.\n";
-                free(builder);
                 return;
               }
-              Getfactship(&newship, builder);
+              Getfactship(&newship, &*builder);
               outside = 1;
               break;
             case ShipType::STYPE_SHUTTLE:
             case ShipType::STYPE_CARGO:
-              if (landed(builder)) {
+              if (landed(&*builder)) {
                 g.out << "This ships cannot build when landed.\n";
-                free(builder);
                 return;
               }
               outside = 1;
@@ -873,29 +869,25 @@ void build(const command_t &argv, GameObj &g) {
             default:
               if (argv.size() < 2) {
                 g.out << "Build what?\n";
-                free(builder);
                 return;
               }
               if ((what = get_build_type(argv[1][0])) < 0) {
                 g.out << "No such ship type.\n";
-                free(builder);
                 return;
               }
-              if (!can_build_on_ship(*what, Race, builder, buf)) {
+              if (!can_build_on_ship(*what, Race, &*builder, buf)) {
                 notify(Playernum, Governor, buf);
-                free(builder);
                 return;
               }
               if (!(count = getcount(argv, 3))) {
                 g.out << "Give a positive number of builds.\n";
-                free(builder);
                 return;
               }
               Getship(&newship, *what, Race);
               break;
           }
           if ((tech = builder->type == ShipType::OTYPE_FACTORY
-                          ? complexity(builder)
+                          ? complexity(&*builder)
                           : Shipdata[*what][ABIL_TECH]) > Race->tech &&
               !Race->God) {
             sprintf(buf,
@@ -903,7 +895,6 @@ void build(const command_t &argv, GameObj &g) {
                     "enginering technology needed. You have %.1f.\n",
                     tech, Race->tech);
             notify(Playernum, Governor, buf);
-            free(builder);
             return;
           }
           if (outside && build_level == ScopeLevel::LEVEL_PLAN) {
@@ -911,7 +902,6 @@ void build(const command_t &argv, GameObj &g) {
             if (builder->type == ShipType::OTYPE_FACTORY) {
               if (!can_build_at_planet(g, Stars[snum], planet)) {
                 g.out << "You can't build that here.\n";
-                free(builder);
                 return;
               }
               x = builder->land_x;
@@ -921,7 +911,6 @@ void build(const command_t &argv, GameObj &g) {
               if (!can_build_on_sector(*what, Race, planet, sector, x, y,
                                        buf)) {
                 notify(Playernum, Governor, buf);
-                free(builder);
                 return;
               }
             }
@@ -955,10 +944,10 @@ void build(const command_t &argv, GameObj &g) {
               goto finish;
             }
             create_ship_by_ship(Playernum, Governor, Race, 1, &planet, &newship,
-                                builder);
+                                &*builder);
             if (Race->governor[Governor].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !Race->God)
-              autoload_at_ship(&newship, builder, &load_crew, &load_fuel);
+              autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
             else {
               load_crew = 0;
               load_fuel = 0.0;
@@ -975,10 +964,10 @@ void build(const command_t &argv, GameObj &g) {
               goto finish;
             }
             create_ship_by_ship(Playernum, Governor, Race, 0, nullptr, &newship,
-                                builder);
+                                &*builder);
             if (Race->governor[Governor].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !Race->God)
-              autoload_at_ship(&newship, builder, &load_crew, &load_fuel);
+              autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
             else {
               load_crew = 0;
               load_fuel = 0.0;
@@ -1002,7 +991,7 @@ finish:
       if (outside) switch (build_level) {
           case ScopeLevel::LEVEL_PLAN:
             putplanet(planet, Stars[snum], pnum);
-            if (landed(builder)) {
+            if (landed(&*builder)) {
               putsector(sector, planet, x, y);
             }
             break;
@@ -1013,8 +1002,7 @@ finish:
             putsdata(&Sdata);
             break;
         }
-      putship(builder);
-      free(builder);
+      putship(&*builder);
       break;
   }
 }

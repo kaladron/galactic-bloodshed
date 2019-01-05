@@ -32,7 +32,6 @@ void dissolve(const command_t &argv, GameObj &g) {
 
   int n_ships;
   int i, j, z, x2, y2, hix, hiy, lowx, lowy;
-  Ship *sp;
   racetype *Race;
   char racepass[100], govpass[100];
 
@@ -69,21 +68,18 @@ void dissolve(const command_t &argv, GameObj &g) {
   Getracenum(racepass, govpass, &i, &j);
 
   if (!i || !j) {
-    sprintf(buf, "Password mismatch, self-destruct not initiated!\n");
-    notify(Playernum, Governor, buf);
+    g.out << "Password mismatch, self-destruct not initiated!\n";
     return;
   }
 
   n_ships = Numships();
   for (i = 1; i <= n_ships; i++) {
-    (void)getship(&sp, i);
-    if (sp->owner == Playernum) {
-      kill_ship(Playernum, sp);
-      sprintf(buf, "Ship #%d, self-destruct enabled\n", i);
-      notify(Playernum, Governor, buf);
-      putship(sp);
-    }
-    free(sp);
+    auto sp = getship(i);
+    if (sp->owner != Playernum) continue;
+    kill_ship(Playernum, &*sp);
+    sprintf(buf, "Ship #%d, self-destruct enabled\n", i);
+    notify(Playernum, Governor, buf);
+    putship(&*sp);
   }
 
   getsdata(&Sdata);

@@ -56,7 +56,7 @@ void upgrade(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused int APcount = 1;
   int value, oldcost, newcost, netcost;
-  Ship ship, *s2;
+  Ship *s2;
   double complex;
   racetype *Race;
 
@@ -82,7 +82,7 @@ void upgrade(const command_t &argv, GameObj &g) {
   }
 
   Race = races[Playernum - 1];
-  bcopy(&*dirship, &ship, sizeof(Ship));
+  auto ship = *dirship;
 
   if (argv.size() == 3)
     value = std::stoi(argv[2]);
@@ -288,7 +288,6 @@ void make_mod(const command_t &argv, GameObj &g) {
   int value;
   unsigned short size;
   char shipc;
-  Ship *dirship;
   racetype *Race;
   double cost0;
 
@@ -297,22 +296,20 @@ void make_mod(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (!getship(&dirship, g.shipno)) {
+  auto dirship = getship(g.shipno);
+  if (!dirship) {
     g.out << "Illegal dir value.\n";
     return;
   }
-  if (testship(Playernum, Governor, dirship)) {
-    free(dirship);
+  if (testship(Playernum, Governor, &*dirship)) {
     return;
   }
   if (dirship->type != ShipType::OTYPE_FACTORY) {
     g.out << "That is not a factory.\n";
-    free(dirship);
     return;
   }
   if (dirship->on && argv.size() > 1) {
     g.out << "This factory is already online.\n";
-    free(dirship);
     return;
   }
   Race = races[Playernum - 1];
@@ -320,13 +317,12 @@ void make_mod(const command_t &argv, GameObj &g) {
   /* Save  size of the factory, and set it to the
      correct values for the design.  Maarten */
   size = dirship->size;
-  dirship->size = ship_size(dirship);
+  dirship->size = ship_size(&*dirship);
 
   if (mode == 0) {
     if (argv.size() < 2) { /* list the current settings for the factory */
       if (!dirship->build_type) {
         g.out << "No ship type specified.\n";
-        free(dirship);
         return;
       }
       notify(Playernum, Governor,
@@ -411,7 +407,6 @@ void make_mod(const command_t &argv, GameObj &g) {
                "Your engineering capability is not "
                "advanced enough to produce this "
                "design.\n");
-      free(dirship);
       return;
     }
 
@@ -421,18 +416,15 @@ void make_mod(const command_t &argv, GameObj &g) {
 
     if ((!i) || ((*i == ShipType::STYPE_POD) && (!Race->pods))) {
       g.out << "Illegal ship letter.\n";
-      free(dirship);
       return;
     }
     if (Shipdata[*i][ABIL_GOD] && !Race->God) {
       g.out << "Nice try!\n";
-      free(dirship);
       return;
     }
     if (!(Shipdata[*i][ABIL_BUILD] &
           Shipdata[ShipType::OTYPE_FACTORY][ABIL_CONSTRUCT])) {
       g.out << "This kind of ship does not require a factory to construct.\n";
-      free(dirship);
       return;
     }
 
@@ -457,8 +449,8 @@ void make_mod(const command_t &argv, GameObj &g) {
     dirship->cew = 0;
     dirship->mode = 0;
 
-    dirship->size = ship_size(dirship);
-    dirship->complexity = complexity(dirship);
+    dirship->size = ship_size(&*dirship);
+    dirship->complexity = complexity(&*dirship);
 
     sprintf(dirship->shipclass, "mod %ld", g.shipno);
 
@@ -473,13 +465,11 @@ void make_mod(const command_t &argv, GameObj &g) {
   } else if (mode == 1) {
     if (!dirship->build_type) {
       g.out << "No ship design specified. Use 'make <ship type>' first.\n";
-      free(dirship);
       return;
     }
 
     if (argv.size() < 2) {
       g.out << "You have to specify the characteristic you wish to modify.\n";
-      free(dirship);
       return;
     }
 
@@ -490,7 +480,6 @@ void make_mod(const command_t &argv, GameObj &g) {
 
     if (value < 0) {
       g.out << "That's a ridiculous setting.\n";
-      free(dirship);
       return;
     }
 
@@ -535,14 +524,12 @@ void make_mod(const command_t &argv, GameObj &g) {
             dirship->primtype = GTYPE_HEAVY;
           else {
             g.out << "No such caliber.\n";
-            free(dirship);
             return;
           }
           dirship->primtype = MIN(Shipdata[dirship->build_type][ABIL_PRIMARY],
                                   dirship->primtype);
         } else {
           g.out << "No such gun characteristic.\n";
-          free(dirship);
           return;
         }
       } else if (argv[1] == "secondary" &&
@@ -558,25 +545,21 @@ void make_mod(const command_t &argv, GameObj &g) {
             dirship->sectype = GTYPE_HEAVY;
           else {
             g.out << "No such caliber.\n";
-            free(dirship);
             return;
           }
           dirship->sectype = MIN(Shipdata[dirship->build_type][ABIL_SECONDARY],
                                  dirship->sectype);
         } else {
           g.out << "No such gun characteristic.\n";
-          free(dirship);
           return;
         }
       } else if (argv[1] == "cew" && Shipdata[dirship->build_type][ABIL_CEW]) {
         if (!Cew(Race)) {
           g.out << "Your race does not understand confined energy weapons.\n";
-          free(dirship);
           return;
         }
         if (!Shipdata[dirship->build_type][ABIL_CEW]) {
           g.out << "This kind of ship cannot mount confined energy weapons.\n";
-          free(dirship);
           return;
         }
         value = std::stoi(argv[3]);
@@ -586,27 +569,23 @@ void make_mod(const command_t &argv, GameObj &g) {
           dirship->cew_range = value;
         } else {
           g.out << "No such option for CEWs.\n";
-          free(dirship);
           return;
         }
       } else if (argv[1] == "laser" &&
                  Shipdata[dirship->build_type][ABIL_LASER]) {
         if (!Laser(Race)) {
           g.out << "Your race does not understand lasers yet.\n";
-          free(dirship);
           return;
         }
         if (Shipdata[dirship->build_type][ABIL_LASER])
           dirship->laser = !dirship->laser;
         else {
           g.out << "That ship cannot be fitted with combat lasers.\n";
-          free(dirship);
           return;
         }
       } else {
         g.out << "That characteristic either doesn't exist or can't be "
                  "modified.\n";
-        free(dirship);
         return;
       }
     } else if (Hyper_drive(Race)) {
@@ -615,25 +594,21 @@ void make_mod(const command_t &argv, GameObj &g) {
       } else {
         g.out << "You may only modify hyperdrive "
                  "installation on this kind of ship.\n";
-        free(dirship);
         return;
       }
     } else {
       g.out << "Sorry, but you can't modify this ship right now.\n";
-      free(dirship);
       return;
     }
   } else {
     g.out << "Weird error.\n";
-    free(dirship);
     return;
   }
   /* compute how much it's going to cost to build the ship */
 
-  if ((cost0 = cost(dirship)) > 65535.0) {
+  if ((cost0 = cost(&*dirship)) > 65535.0) {
     g.out << "Woah!! YOU CHEATER!!!  The max cost allowed "
              "is 65535!!! I'm Telllllllling!!!\n";
-    free(dirship);
     return;
   }
 
@@ -641,12 +616,12 @@ void make_mod(const command_t &argv, GameObj &g) {
   sprintf(buf, "The current cost of the ship is %d resources.\n",
           dirship->build_cost);
   notify(Playernum, Governor, buf);
-  dirship->size = ship_size(dirship);
-  dirship->base_mass = getmass(dirship);
+  dirship->size = ship_size(&*dirship);
+  dirship->base_mass = getmass(&*dirship);
   sprintf(buf, "The current base mass of the ship is %.1f - size is %d.\n",
           dirship->base_mass, dirship->size);
   notify(Playernum, Governor, buf);
-  dirship->complexity = complexity(dirship);
+  dirship->complexity = complexity(&*dirship);
   sprintf(buf,
           "Ship complexity is %.1f (you have %.1f engineering technology).\n",
           dirship->complexity, Race->tech);
@@ -655,8 +630,7 @@ void make_mod(const command_t &argv, GameObj &g) {
   /* Restore size to what it was before.  Maarten */
   dirship->size = size;
 
-  putship(dirship);
-  free(dirship);
+  putship(&*dirship);
 }
 
 void build(const command_t &argv, GameObj &g) {

@@ -144,7 +144,6 @@ void distance(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   placetype from, to;
   double x0, y0, x1, y1, dist;
-  Ship *ship;
 
   if (argv.size() < 3) {
     g.out << "Syntax: 'distance <from> <to>'.\n";
@@ -169,15 +168,13 @@ void distance(const command_t &argv, GameObj &g) {
   y1 = 0.0;
   /* get position in absolute units */
   if (from.level == ScopeLevel::LEVEL_SHIP) {
-    (void)getship(&ship, from.shipno);
+    auto ship = getship(from.shipno);
     if (ship->owner != Playernum) {
       g.out << "Nice try.\n";
-      free(ship);
       return;
     }
     x0 = ship->xpos;
     y0 = ship->ypos;
-    free(ship);
   } else if (from.level == ScopeLevel::LEVEL_PLAN) {
     const auto &p = getplanet(from.snum, from.pnum);
     x0 = p.xpos + Stars[from.snum]->xpos;
@@ -188,15 +185,13 @@ void distance(const command_t &argv, GameObj &g) {
   }
 
   if (to.level == ScopeLevel::LEVEL_SHIP) {
-    (void)getship(&ship, to.shipno);
+    auto ship = getship(to.shipno);
     if (ship->owner != Playernum) {
       g.out << "Nice try.\n";
-      free(ship);
       return;
     }
     x1 = ship->xpos;
     y1 = ship->ypos;
-    free(ship);
   } else if (to.level == ScopeLevel::LEVEL_PLAN) {
     const auto &p = getplanet(to.snum, to.pnum);
     x1 = p.xpos + Stars[to.snum]->xpos;

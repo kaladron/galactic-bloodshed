@@ -1297,8 +1297,6 @@ void check_for_telegrams(int Playernum, int Governor) {
 
 void kill_ship(int Playernum, Ship *ship) {
   racetype *killer, *victim;
-  Ship *s;
-  int sh;
 
   ship->special.mind.who_killed = Playernum;
   ship->alive = 0;
@@ -1354,22 +1352,16 @@ void kill_ship(int Playernum, Ship *ship) {
   /* undock the stuff docked with it */
   if (ship->docked && ship->whatorbits != ScopeLevel::LEVEL_SHIP &&
       ship->whatdest == ScopeLevel::LEVEL_SHIP) {
-    getship(&s, ship->destshipno);
+    auto s = getship(ship->destshipno);
     s->docked = 0;
     s->whatdest = ScopeLevel::LEVEL_UNIV;
-    putship(s);
-    free(s);
+    putship(&*s);
   }
   /* landed ships are killed */
-  if (ship->ships) {
-    sh = ship->ships;
-    while (sh) {
-      (void)getship(&s, sh);
-      kill_ship(Playernum, s);
-      putship(s);
-      sh = s->nextship;
-      free(s);
-    }
+  Shiplist shiplist(ship->ships);
+  for (auto s : shiplist) {
+    kill_ship(Playernum, &s);
+    putship(&s);
   }
 }
 

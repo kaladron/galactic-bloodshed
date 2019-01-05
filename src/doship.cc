@@ -49,7 +49,6 @@ static int infect_planet(int, int, int);
 
 void doship(Ship *ship, int update) {
   racetype *Race;
-  Ship *ship2;
 
   /*ship is active */
   ship->active = 1;
@@ -100,13 +99,12 @@ void doship(Ship *ship, int update) {
     ship->size = ship_size(ship); /* for debugging */
 
     if (ship->whatorbits == ScopeLevel::LEVEL_SHIP) {
-      (void)getship(&ship2, (int)ship->destshipno);
+      auto ship2 = getship(ship->destshipno);
       if (ship2->owner != ship->owner) {
         ship2->owner = ship->owner;
         ship2->governor = ship->governor;
-        putship(ship2);
+        putship(&*ship2);
       }
-      free(ship2);
       /* just making sure */
     } else if (ship->whatorbits != ScopeLevel::LEVEL_UNIV &&
                (ship->popn || ship->type == ShipType::OTYPE_PROBE)) {
@@ -312,19 +310,17 @@ void domissile(Ship *ship) {
 }
 
 void domine(int shipno, int detonate) {
-  int sh, sh2, i;
-  Ship *s, *ship;
+  int i;
+  shipnum_t sh;
   racetype *r;
 
-  (void)getship(&ship, shipno);
+  auto ship = getship(shipno);
 
   if (ship->type != ShipType::STYPE_MINE || !ship->alive || !ship->owner) {
-    free(ship);
     return;
   }
   /* check around and see if we should explode. */
   if (ship->on || detonate) {
-    int rad = 0;
     double xd, yd, range;
 
     switch (ship->whatorbits) {
@@ -332,55 +328,48 @@ void domine(int shipno, int detonate) {
         sh = Stars[ship->storbits]->ships;
         break;
       case ScopeLevel::LEVEL_PLAN: {
-        const auto &planet =
-            getplanet((int)ship->storbits, (int)ship->pnumorbits);
+        const auto &planet = getplanet(ship->storbits, ship->pnumorbits);
         sh = planet.ships;
       } break;
       default:
-        free(ship);
         return;
     }
-    sh2 = sh;
     /* traverse the list, look for ships that
        are closer than the trigger radius... */
-    rad = 0;
+    bool rad = false;
     if (!detonate) {
       r = races[ship->owner - 1];
-      while (sh && !rad) {
-        (void)getship(&s, sh);
-        xd = s->xpos - ship->xpos;
-        yd = s->ypos - ship->ypos;
+      Shiplist shiplist(sh);
+      for (auto s : shiplist) {
+        xd = s.xpos - ship->xpos;
+        yd = s.ypos - ship->ypos;
         range = sqrt(xd * xd + yd * yd);
-        if (!isset(r->allied, s->owner) && (s->owner != ship->owner) &&
-            ((int)range <= ship->special.trigger.radius))
-          rad = 1;
-        else
-          sh = s->nextship;
-        free(s);
+        if (!isset(r->allied, s.owner) && (s.owner != ship->owner) &&
+            ((int)range <= ship->special.trigger.radius)) {
+          rad = true;
+          break;
+        }
       }
     } else
-      rad = 1;
+      rad = true;
 
     if (rad) {
       sprintf(buf, "%s detonated at %s\n", ship_to_string(*ship).c_str(),
-              prin_ship_orbits(ship));
+              prin_ship_orbits(&*ship));
       post(buf, COMBAT);
       notify_star(ship->owner, ship->governor, ship->storbits, buf);
-      sh = sh2;
-      while (sh) {
-        (void)getship(&s, sh);
-        if (sh != shipno && s->alive && (s->type != ShipType::OTYPE_CANIST) &&
-            (s->type != ShipType::OTYPE_GREEN)) {
-          rad = shoot_ship_to_ship(ship, s, (int)(ship->destruct), 0, 0,
-                                   long_buf, short_buf);
-          if (rad > 0) {
+      Shiplist shiplist(sh);
+      for (auto s : shiplist) {
+        if (sh != shipno && s.alive && (s.type != ShipType::OTYPE_CANIST) &&
+            (s.type != ShipType::OTYPE_GREEN)) {
+          auto damage = shoot_ship_to_ship(&*ship, &s, (int)(ship->destruct), 0,
+                                           0, long_buf, short_buf);
+          if (damage > 0) {
             post(short_buf, COMBAT);
-            warn(s->owner, s->governor, long_buf);
-            putship(s);
+            warn(s.owner, s.governor, long_buf);
+            putship(&s);
           }
         }
-        sh = s->nextship;
-        free(s);
       }
 
       /* if the mine is in orbit around a planet, nuke the planet too! */
@@ -388,7 +377,7 @@ void domine(int shipno, int detonate) {
         /* pick a random sector to nuke */
         int x, y, numdest;
         auto planet = getplanet((int)ship->storbits, (int)ship->pnumorbits);
-        if (landed(ship)) {
+        if (landed(&*ship)) {
           x = ship->land_x;
           y = ship->land_y;
         } else {
@@ -397,7 +386,7 @@ void domine(int shipno, int detonate) {
         }
         auto smap = getsmap(planet);
         numdest =
-            shoot_ship_to_planet(ship, &planet, (int)(ship->destruct), x, y,
+            shoot_ship_to_planet(&*ship, &planet, (int)(ship->destruct), x, y,
                                  smap, 0, GTYPE_LIGHT, long_buf, short_buf);
         putsmap(smap, planet);
         putplanet(planet, Stars[ship->storbits], (int)ship->pnumorbits);
@@ -411,13 +400,12 @@ void domine(int shipno, int detonate) {
         for (i = 1; i <= Num_races; i++)
           if (Nuked[i - 1])
             warn(i, Stars[ship->storbits]->governor[i - 1], telegram_buf);
-        notify((int)(ship->owner), (int)ship->governor, telegram_buf);
+        notify((ship->owner), ship->governor, telegram_buf);
       }
-      kill_ship((int)(ship->owner), ship);
+      kill_ship((ship->owner), &*ship);
     }
-    putship(ship);
+    putship(&*ship);
   }
-  free(ship);
 }
 
 void doabm(Ship *ship) {

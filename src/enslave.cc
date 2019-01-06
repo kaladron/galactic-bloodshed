@@ -24,42 +24,36 @@ void enslave(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int APcount = 2;
-  Ship *s, *s2;
   int i, aliens = 0, def = 0, attack = 0;
   racetype *Race;
 
   auto shipno = string_to_shipnum(argv[1]);
   if (!shipno) return;
+  auto s = getship(*shipno);
 
-  if (!getship(&s, *shipno)) {
+  if (!s) {
     return;
   }
-  if (testship(Playernum, Governor, s)) {
-    free(s);
+  if (testship(Playernum, Governor, &*s)) {
     return;
   }
   if (s->type != ShipType::STYPE_OAP) {
     sprintf(buf, "This ship is not an %s.\n", Shipnames[ShipType::STYPE_OAP]);
     notify(Playernum, Governor, buf);
-    free(s);
     return;
   }
   if (s->whatorbits != ScopeLevel::LEVEL_PLAN) {
     sprintf(buf, "%s doesn't orbit a planet.\n", ship_to_string(*s).c_str());
     notify(Playernum, Governor, buf);
-    free(s);
     return;
   }
   if (!enufAP(Playernum, Governor, Stars[s->storbits]->AP[Playernum - 1],
               APcount)) {
-    free(s);
     return;
   }
   auto p = getplanet(s->storbits, s->pnumorbits);
   if (p.info[Playernum - 1].numsectsowned == 0) {
-    sprintf(buf, "You don't have a garrison on the planet.\n");
-    notify(Playernum, Governor, buf);
-    free(s);
+    g.out << "You don't have a garrison on the planet.\n";
     return;
   }
 
@@ -72,40 +66,29 @@ void enslave(const command_t &argv, GameObj &g) {
   }
 
   if (!aliens) {
-    sprintf(buf, "There is no one else on this planet to enslave!\n");
-    notify(Playernum, Governor, buf);
-    free(s);
+    g.out << "There is no one else on this planet to enslave!\n";
     return;
   }
 
   Race = races[Playernum - 1];
 
-  shipnum_t sh = p.ships;
-  while (sh) {
-    (void)getship(&s2, sh);
-    if (s2->alive && s2->active) {
-      if (p.info[s2->owner].numsectsowned && s2->owner != Playernum)
-        def += s2->destruct;
-      else if (s2->owner == Playernum)
-        attack += s2->destruct;
+  Shiplist shiplist(p.ships);
+  for (auto s2 : shiplist) {
+    if (s2.alive && s2.active) {
+      if (p.info[s2.owner].numsectsowned && s2.owner != Playernum)
+        def += s2.destruct;
+      else if (s2.owner == Playernum)
+        attack += s2.destruct;
     }
-    sh = s2->nextship;
-    free(s2);
   }
 
   deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
 
-  sprintf(buf,
-          "\nFor successful enslavement this ship and the other ships here\n");
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "that are yours must have a weapons\n");
-  notify(Playernum, Governor, buf);
-  sprintf(buf,
-          "capacity greater than twice that the enemy can muster, including\n");
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "the planet and all ships orbiting it.\n");
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "\nTotal forces bearing on %s:   %d\n", prin_ship_orbits(s),
+  g.out << "\nFor successful enslavement this ship and the other ships here\n";
+  g.out << "that are yours must have a weapons\n";
+  g.out << "capacity greater than twice that the enemy can muster, including\n";
+  g.out << "the planet and all ships orbiting it.\n";
+  sprintf(buf, "\nTotal forces bearing on %s:   %d\n", prin_ship_orbits(&*s),
           attack);
   notify(Playernum, Governor, buf);
 
@@ -154,6 +137,4 @@ void enslave(const command_t &argv, GameObj &g) {
   for (i = 1; i < MAXPLAYERS; i++)
     if (p.info[i - 1].numsectsowned && i != Playernum)
       warn(i, Stars[s->storbits]->governor[i - 1], telegram_buf);
-
-  free(s);
 }

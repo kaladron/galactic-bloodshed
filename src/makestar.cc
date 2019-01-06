@@ -70,7 +70,9 @@ int Temperature(double dist, int stemp) {
 }
 
 void PrintStatistics() {
-  int i, j, y;
+  int i;
+  int j;
+  int y;
 
   printf("\nPlanet/Sector distribution -\n");
   printf(
@@ -112,7 +114,8 @@ void PrintStatistics() {
 }
 
 static int ReadNameList(char ss[1000][20], int n, int m, const char *filename) {
-  int i, j;
+  int i;
+  int j;
   FILE *f = fopen(filename, "r");
 
   if (f == nullptr) {
@@ -139,8 +142,12 @@ out:
 
 static void rand_list(int n, int *list) /* mix up the numbers 0 thru n */
 {
-  short nums[1000], i, j, k;
-  short kk, ii;
+  short nums[1000];
+  short i;
+  short j;
+  short k;
+  short kk;
+  short ii;
 
   for (i = 0; i <= n; i++) nums[i] = 0;
   for (j = 0; j <= n; j++) {
@@ -205,10 +212,18 @@ static char *NextStarName() {
 
 startype *Makestar(int snum) {
   PlanetType type;
-  int roll, temperature;
-  int i, y, x;
-  double dist, distmin, distmax, distsep;
-  double angle, xpos, ypos;
+  int roll;
+  int temperature;
+  int i;
+  int y;
+  int x;
+  double dist;
+  double distmin;
+  double distmax;
+  double distsep;
+  double angle;
+  double xpos;
+  double ypos;
   startype *Star;
 
   /* get names, positions of stars first */

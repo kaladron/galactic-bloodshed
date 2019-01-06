@@ -329,7 +329,9 @@ int please_quit = 0; /* 1 iff you want to exit ASAP. */
  * stuffed into `cost' for later printing.
  */
 int cost_of_race() {
-  int i, j, sum = 0;
+  int i;
+  int j;
+  int sum = 0;
 
 #define ROUND(f) ((int)(0.5 + (f)))
   for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
@@ -435,7 +437,8 @@ static void fix_up_iq() {
  * printed to that file.
  */
 int critique_to_file(FILE *f, int rigorous_checking, int is_player_race) {
-  int i, nerrors = 0;
+  int i;
+  int nerrors = 0;
 
 #define FPRINTF \
   if (f != nullptr) fprintf
@@ -655,8 +658,17 @@ static void initialize() {
  * with it to get the idea.
  */
 static void help(int argc, char *argv[]) {
-  int enroll, process;
-  int i, j, helpp, load, modify, print, save, send2, quit;
+  int enroll;
+  int process;
+  int i;
+  int j;
+  int helpp;
+  int load;
+  int modify;
+  int print;
+  int save;
+  int send2;
+  int quit;
 
   if (argc == 1) {
     enroll = process = helpp = load = modify = print = save = send2 = quit = 1;
@@ -829,7 +841,8 @@ static void help(int argc, char *argv[]) {
  * Return non-zero on failure, zero on success. */
 int load_from_file(FILE *g) {
   int i;
-  char buf[80], from_address[80];
+  char buf[80];
+  char from_address[80];
 
 #define FSCANF(file, format, variable) \
   if (EOF == fscanf((file), (format), (variable))) goto premature_end_of_file
@@ -908,7 +921,8 @@ static void load(int argc, char *argv[]) {
 }
 
 static int modify(int argc, char *argv[]) {
-  int i, j;
+  int i;
+  int j;
   static char *help_strings[2] = {nullptr, "modify"};
   double f;
 
@@ -1200,7 +1214,9 @@ int Dialogue(const char *prompt, ...) {
 #define INPUTSIZE 512
   char input[INPUTSIZE];
   char *carg;
-  int len, i, argc = 0;
+  int len;
+  int i;
+  int argc = 0;
   int init = 0;
   char *argv[16];
   printf("%s", prompt);
@@ -1311,7 +1327,9 @@ static void execute(int argc, char **argv) {
  */
 void modify_print_loop(int) {
 #define BUFSIZE 512
-  char buf[BUFSIZE], *com, *args[4];
+  char buf[BUFSIZE];
+  char *com;
+  char *args[4];
   int i;
 
   while (!please_quit) {

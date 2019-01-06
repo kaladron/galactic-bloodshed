@@ -46,7 +46,9 @@ void arm(const command_t &argv, GameObj &g) {
     mode = 0;  // disarm
   }
   racetype *Race;
-  int x = -1, y = -1, max_allowed;
+  int x = -1;
+  int y = -1;
+  int max_allowed;
   int amount = 0;
   money_t cost = 0;
 
@@ -156,13 +158,29 @@ void move_popn(const command_t &argv, GameObj &g) {
   } else {
     what = MIL;  // deploy
   }
-  int Assault, APcost; /* unfriendly movement */
-  int casualties, casualties2, casualties3;
+  int Assault;
+  int APcost; /* unfriendly movement */
+  int casualties;
+  int casualties2;
+  int casualties3;
 
-  int people, oldpopn, old2popn, old3popn, x = -1, y = -1, x2 = -1, y2 = -1;
-  int old2owner, old2gov, absorbed, n, done;
-  double astrength, dstrength;
-  racetype *Race, *alien;
+  int people;
+  int oldpopn;
+  int old2popn;
+  int old3popn;
+  int x = -1;
+  int y = -1;
+  int x2 = -1;
+  int y2 = -1;
+  int old2owner;
+  int old2gov;
+  int absorbed;
+  int n;
+  int done;
+  double astrength;
+  double dstrength;
+  racetype *Race;
+  racetype *alien;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
     sprintf(buf, "Wrong scope\n");
@@ -434,11 +452,22 @@ void walk(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   const int APcount = 1;
-  Ship *ship, *ship2, dummy;
-  int x, y, i, sh, succ = 0, civ, mil;
-  int oldowner, oldgov;
-  int strength, strength1;
-  racetype *Race, *alien;
+  Ship *ship;
+  Ship *ship2;
+  Ship dummy;
+  int x;
+  int y;
+  int i;
+  int sh;
+  int succ = 0;
+  int civ;
+  int mil;
+  int oldowner;
+  int oldgov;
+  int strength;
+  int strength1;
+  racetype *Race;
+  racetype *alien;
 
   if (argv.size() < 2) {
     g.out << "Walk what?\n";
@@ -658,9 +687,11 @@ static void mech_defend(int Playernum, int Governor, int *people, int type,
                         const Planet &p, int x2, int y2, const sector &s2) {
   int sh;
   Ship *ship;
-  int civ = 0, mil = 0;
+  int civ = 0;
+  int mil = 0;
   int oldgov;
-  racetype *Race, *alien;
+  racetype *Race;
+  racetype *alien;
 
   if (type == CIV)
     civ = *people;
@@ -703,9 +734,14 @@ static void mech_attack_people(Ship *ship, int *civ, int *mil, racetype *Race,
                                racetype *alien, const sector &sect, int x,
                                int y, int ignore, char *long_msg,
                                char *short_msg) {
-  int strength, oldciv, oldmil;
-  double astrength, dstrength;
-  int cas_civ, cas_mil, ammo;
+  int strength;
+  int oldciv;
+  int oldmil;
+  double astrength;
+  double dstrength;
+  int cas_civ;
+  int cas_mil;
+  int ammo;
 
   oldciv = *civ;
   oldmil = *mil;
@@ -753,8 +789,13 @@ static void people_attack_mech(Ship *ship, int civ, int mil, racetype *Race,
                                racetype *alien, const sector &sect, int x,
                                int y, char *long_msg, char *short_msg) {
   int strength;
-  double astrength, dstrength;
-  int cas_civ, cas_mil, pdam, sdam, damage;
+  double astrength;
+  double dstrength;
+  int cas_civ;
+  int cas_mil;
+  int pdam;
+  int sdam;
+  int damage;
   int ammo;
 
   strength = retal_strength(ship);

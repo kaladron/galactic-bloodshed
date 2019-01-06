@@ -21,7 +21,9 @@ static void plate(sector &);
 void produce(startype *star, const Planet &planet, sector &s) {
   int ss;
   int maxsup;
-  int pfuel = 0, pdes = 0, pres = 0;
+  int pfuel = 0;
+  int pdes = 0;
+  int pres = 0;
   resource_t prod;
   long diff;
   racetype *Race;
@@ -105,7 +107,9 @@ void produce(startype *star, const Planet &planet, sector &s) {
 // spread()  -- spread population around.
 void spread(const Planet &pl, sector &s, int x, int y, sector_map &smap) {
   int people;
-  int x2, y2, j;
+  int x2;
+  int y2;
+  int j;
   int check;
   racetype *Race;
 

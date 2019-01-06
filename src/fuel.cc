@@ -38,12 +38,17 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   shipnum_t shipno;
-  int opt_settings, current_settings, computing = 1;
+  int opt_settings;
+  int current_settings;
+  int computing = 1;
   segments_t current_segs;
-  double fuel_usage, level, dist;
+  double fuel_usage;
+  double level;
+  double dist;
   Ship *ship;
   char buf[1024];
-  double current_fuel = 0.0, gravity_factor = 0.0;
+  double current_fuel = 0.0;
+  double gravity_factor = 0.0;
   placetype tmpdest;
 
   if ((argv.size() < 2) || (argv.size() > 3)) {
@@ -221,7 +226,8 @@ void proj_fuel(const command_t &argv, GameObj &g) {
 
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
                         double grav, double mass, segments_t segs) {
-  char buf[1024], grav_buf[1024];
+  char buf[1024];
+  char grav_buf[1024];
 
   if (grav > 0.00)
     sprintf(grav_buf, " (%.2f used to launch from %s)\n",
@@ -252,7 +258,9 @@ static int do_trip(const placetype &tmpdest, double fuel,
                    double gravity_factor) {
   segments_t effective_segment_number;
   int trip_resolved;
-  double gravity_fuel, tmpdist, fuel_level1;
+  double gravity_fuel;
+  double tmpdist;
+  double fuel_level1;
 
   tmpship->fuel = fuel; /* load up the pseudo-ship */
   effective_segment_number = nsegments_done;

@@ -46,13 +46,18 @@ static void plow(Ship *, Planet *, sector_map &);
 static void terraform(Ship *, Planet *, sector_map &);
 
 int doplanet(int starnum, Planet *planet, int planetnum) {
-  int shipno, x, y, nukex, nukey;
+  int shipno;
+  int x;
+  int y;
+  int nukex;
+  int nukey;
   int o = 0;
   int i;
   Ship *ship;
   double fadd;
   int timer = 20;
-  unsigned char allmod = 0, allexp = 0;
+  unsigned char allmod = 0;
+  unsigned char allexp = 0;
 
   auto smap = getsmap(*planet);
   PermuteSects(*planet);
@@ -616,7 +621,9 @@ int doplanet(int starnum, Planet *planet, int planetnum) {
 }
 
 static int moveship_onplanet(Ship *ship, Planet *planet) {
-  int x, y, bounced = 0;
+  int x;
+  int y;
+  int bounced = 0;
 
   if (ship->shipclass[ship->special.terraform.index] == 's') {
     ship->on = 0;
@@ -722,7 +729,8 @@ static void do_dome(Ship *ship, sector_map &smap) {
 }
 
 static void do_quarry(Ship *ship, Planet *planet, sector_map &smap) {
-  int prod, tox;
+  int prod;
+  int tox;
 
   auto &s = smap.get(ship->land_x, ship->land_y);
 
@@ -757,9 +765,14 @@ static void do_berserker(Ship *ship, Planet *planet) {
 }
 
 static void do_recover(Planet *planet, int starnum, int planetnum) {
-  int owners = 0, i, j;
+  int owners = 0;
+  int i;
+  int j;
   int ownerbits[2];
-  int stolenres = 0, stolendes = 0, stolenfuel = 0, stolencrystals = 0;
+  int stolenres = 0;
+  int stolendes = 0;
+  int stolenfuel = 0;
+  int stolencrystals = 0;
   int all_buddies_here = 1;
 
   ownerbits[0] = ownerbits[1] = 0;
@@ -786,8 +799,14 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
        stolencrystals > 0)) {
     /* Okay, we've got some loot to divvy up */
     int shares = owners;
-    int res, des, fuel, crystals;
-    int givenres = 0, givendes = 0, givenfuel = 0, givencrystals = 0;
+    int res;
+    int des;
+    int fuel;
+    int crystals;
+    int givenres = 0;
+    int givendes = 0;
+    int givenfuel = 0;
+    int givencrystals = 0;
 
     for (i = 1; i <= Num_races; i++)
       if (isset(ownerbits, i)) {

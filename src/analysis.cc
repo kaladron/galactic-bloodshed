@@ -121,21 +121,35 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   racetype *Race;
-  int x, y;
+  int x;
+  int y;
   int p;
   int i;
   double compat;
-  struct anal_sect Res[CARE], Eff[CARE], Frt[CARE], Mob[CARE];
-  struct anal_sect Troops[CARE], Popn[CARE], mPopn[CARE];
-  int TotalCrys, PlayCrys[MAXPLAYERS + 1];
-  int TotalTroops, PlayTroops[MAXPLAYERS + 1];
-  int TotalPopn, PlayPopn[MAXPLAYERS + 1];
-  int TotalMob, PlayMob[MAXPLAYERS + 1];
-  int TotalEff, PlayEff[MAXPLAYERS + 1];
-  int TotalRes, PlayRes[MAXPLAYERS + 1];
-  int TotalSect, PlaySect[MAXPLAYERS + 1][SectorType::SEC_WASTED + 1];
+  struct anal_sect Res[CARE];
+  struct anal_sect Eff[CARE];
+  struct anal_sect Frt[CARE];
+  struct anal_sect Mob[CARE];
+  struct anal_sect Troops[CARE];
+  struct anal_sect Popn[CARE];
+  struct anal_sect mPopn[CARE];
+  int TotalCrys;
+  int PlayCrys[MAXPLAYERS + 1];
+  int TotalTroops;
+  int PlayTroops[MAXPLAYERS + 1];
+  int TotalPopn;
+  int PlayPopn[MAXPLAYERS + 1];
+  int TotalMob;
+  int PlayMob[MAXPLAYERS + 1];
+  int TotalEff;
+  int PlayEff[MAXPLAYERS + 1];
+  int TotalRes;
+  int PlayRes[MAXPLAYERS + 1];
+  int TotalSect;
+  int PlaySect[MAXPLAYERS + 1][SectorType::SEC_WASTED + 1];
   int PlayTSect[MAXPLAYERS + 1];
-  int TotalWasted, WastedSect[MAXPLAYERS + 1];
+  int TotalWasted;
+  int WastedSect[MAXPLAYERS + 1];
   int Sect[SectorType::SEC_WASTED + 1];
   static char SectTypes[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
                              CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
@@ -303,7 +317,8 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
 
 static void Insert(int mode, struct anal_sect arr[], int x, int y, int des,
                    int value) {
-  int i, j;
+  int i;
+  int j;
 
   for (i = 0; i < CARE; i++)
     if ((mode && arr[i].value < value) ||

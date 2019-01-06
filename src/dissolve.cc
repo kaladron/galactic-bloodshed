@@ -31,9 +31,18 @@ void dissolve(const command_t &argv, GameObj &g) {
 #else
 
   int n_ships;
-  int i, j, z, x2, y2, hix, hiy, lowx, lowy;
+  int i;
+  int j;
+  int z;
+  int x2;
+  int y2;
+  int hix;
+  int hiy;
+  int lowx;
+  int lowy;
   racetype *Race;
-  char racepass[100], govpass[100];
+  char racepass[100];
+  char govpass[100];
 
   if (Governor) {
     notify(Playernum, Governor,
@@ -141,7 +150,12 @@ void dissolve(const command_t &argv, GameObj &g) {
 }
 
 int revolt(Planet *pl, int victim, int agent) {
-  int x, y, hix, hiy, lowx, lowy;
+  int x;
+  int y;
+  int hix;
+  int hiy;
+  int lowx;
+  int lowy;
   racetype *Race;
   int changed_hands = 0;
 

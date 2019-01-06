@@ -356,8 +356,12 @@ void getstar(startype **s, int star) {
 }
 
 Planet getplanet(const starnum_t star, const planetnum_t pnum) {
-  const char *tail, *plinfo_tail, *plinfo_routes_tail;
-  sqlite3_stmt *stmt, *plinfo_stmt, *plinfo_routes_stmt;
+  const char *tail;
+  const char *plinfo_tail;
+  const char *plinfo_routes_tail;
+  sqlite3_stmt *stmt;
+  sqlite3_stmt *plinfo_stmt;
+  sqlite3_stmt *plinfo_routes_stmt;
   const char *sql =
       "SELECT planet_id, star_id, planet_order, name, "
       "xpos, ypos, ships, maxx, maxy, popn, troops, maxpopn, total_resources, "
@@ -954,7 +958,9 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
   const char *tail = nullptr;
   const char *plinfo_tail = nullptr;
   const char *plinfo_route_tail = nullptr;
-  sqlite3_stmt *stmt, *plinfo_stmt, *plinfo_route_stmt;
+  sqlite3_stmt *stmt;
+  sqlite3_stmt *plinfo_stmt;
+  sqlite3_stmt *plinfo_route_stmt;
   const char *sql =
       "REPLACE INTO tbl_planet (planet_id, star_id, planet_order, name, "
       "xpos, ypos, ships, maxx, maxy, popn, troops, maxpopn, total_resources, "

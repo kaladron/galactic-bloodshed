@@ -236,7 +236,11 @@ void doown(Ship *ship) {
 
 void domissile(Ship *ship) {
   int sh2;
-  int bombx, bomby, numdest, pdn, i;
+  int bombx;
+  int bomby;
+  int numdest;
+  int pdn;
+  int i;
   double dist;
 
   if (!ship->alive || !ship->owner) return;
@@ -321,7 +325,9 @@ void domine(int shipno, int detonate) {
   }
   /* check around and see if we should explode. */
   if (ship->on || detonate) {
-    double xd, yd, range;
+    double xd;
+    double yd;
+    double range;
 
     switch (ship->whatorbits) {
       case ScopeLevel::LEVEL_STAR:
@@ -375,7 +381,9 @@ void domine(int shipno, int detonate) {
       /* if the mine is in orbit around a planet, nuke the planet too! */
       if (ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
         /* pick a random sector to nuke */
-        int x, y, numdest;
+        int x;
+        int y;
+        int numdest;
         auto planet = getplanet((int)ship->storbits, (int)ship->pnumorbits);
         if (landed(&*ship)) {
           x = ship->land_x;
@@ -446,7 +454,8 @@ void doabm(Ship *ship) {
 }
 
 static void do_repair(Ship *ship) {
-  int drep, cost;
+  int drep;
+  int cost;
   double maxrep;
 
   maxrep = REPAIR_RATE / (double)segments;
@@ -543,7 +552,9 @@ static int infect_planet(int who, int star, int p) {
 }
 
 static void do_meta_infect(int who, Planet *p) {
-  int owner, x, y;
+  int owner;
+  int x;
+  int y;
 
   auto smap = getsmap(*p);
   PermuteSects(*p);
@@ -697,7 +708,8 @@ static void do_ap(Ship *ship) {
 
   /* if landed on planet, change conditions to be like race */
   if (landed(ship) && ship->on) {
-    int j, d;
+    int j;
+    int d;
     // TODO(jeffbailey): Not obvious here how the modified planet is saved to
     // disk
     auto p = planets[ship->storbits][ship->pnumorbits];
@@ -738,7 +750,8 @@ static void do_oap(Ship *ship) {
 }
 
 int do_weapon_plant(Ship *ship) {
-  int maxrate, rate;
+  int maxrate;
+  int rate;
   maxrate = (int)(races[ship->owner - 1]->tech / 2.0);
 
   rate = round_rand(MIN((double)ship->resource / (double)RES_COST_WPLANT,

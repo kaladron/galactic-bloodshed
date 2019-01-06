@@ -56,7 +56,12 @@ void map(const command_t &argv, GameObj &g) {
 static void show_map(const player_t Playernum, const governor_t Governor,
                      const starnum_t snum, const planetnum_t pnum,
                      const Planet &p) {
-  int x, y, i, f = 0, owner, owned1;
+  int x;
+  int y;
+  int i;
+  int f = 0;
+  int owner;
+  int owned1;
   int iq = 0;
   char shiplocs[MAX_X][MAX_Y] = {};
   hugestr output;

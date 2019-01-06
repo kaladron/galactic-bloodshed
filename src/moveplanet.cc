@@ -15,7 +15,10 @@
 
 void moveplanet(int starnum, Planet *planet, int planetnum) {
   double dist;
-  double xadd, yadd, phase, period;
+  double xadd;
+  double yadd;
+  double phase;
+  double period;
   int sh;
   Ship *ship;
 

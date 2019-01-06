@@ -43,10 +43,23 @@ static void mutate_sector(sector &);
 int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
                        char *long_msg, char *short_msg) {
   int hits;
-  int damage, defense;
-  double dist, xfrom, yfrom, xto, yto;
-  int focus, fevade, fspeed, fbody, tevade, tspeed, tbody, caliber;
-  char weapon[32], damage_msg[1024];
+  int damage;
+  int defense;
+  double dist;
+  double xfrom;
+  double yfrom;
+  double xto;
+  double yto;
+  int focus;
+  int fevade;
+  int fspeed;
+  int fbody;
+  int tevade;
+  int tspeed;
+  int tbody;
+  int caliber;
+  char weapon[32];
+  char damage_msg[1024];
 
   hits = 0;
   defense = 1;
@@ -145,7 +158,9 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
 int shoot_planet_to_ship(racetype *Race, Ship *ship, int strength,
                          char *long_msg, char *short_msg) {
   int hits;
-  int evade, speed, body;
+  int evade;
+  int speed;
+  int body;
   int damage;
   char damage_msg[1024];
 
@@ -175,12 +190,17 @@ int shoot_planet_to_ship(racetype *Race, Ship *ship, int strength,
 int shoot_ship_to_planet(Ship *ship, Planet *pl, int strength, int x, int y,
                          sector_map &smap, int ignore, int caliber,
                          char *long_msg, char *short_msg) {
-  int x2, y2;
+  int x2;
+  int y2;
   int numdest;
   player_t oldowner;
   population_t kills;
-  int i, num_sectors, sum_mob[MAXPLAYERS];
-  double d, r, fac;
+  int i;
+  int num_sectors;
+  int sum_mob[MAXPLAYERS];
+  double d;
+  double r;
+  double fac;
 
   numdest = 0;
   if (strength <= 0) return -1;
@@ -214,7 +234,8 @@ int shoot_ship_to_planet(Ship *ship, Planet *pl, int strength, int x, int y,
 
   for (y2 = 0; y2 < pl->Maxy; y2++) {
     for (x2 = 0; x2 < pl->Maxx; x2++) {
-      int dx, dy;
+      int dx;
+      int dy;
       dx = std::min(abs(x2 - x), abs(x + (pl->Maxx - 1) - x2));
       dy = abs(y2 - y);
       d = sqrt((double)(dx * dx + dy * dy));
@@ -290,8 +311,14 @@ int shoot_ship_to_planet(Ship *ship, Planet *pl, int strength, int x, int y,
 
 static int do_radiation(Ship *ship, double tech, int strength, int hits,
                         const char *weapon, char *msg) {
-  double fac, r;
-  int i, arm, body, penetrate, casualties, casualties1;
+  double fac;
+  double r;
+  int i;
+  int arm;
+  int body;
+  int penetrate;
+  int casualties;
+  int casualties1;
   int dosage;
 
   fac =
@@ -330,11 +357,18 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
                      int defense, int caliber, double range, const char *weapon,
                      char *msg) {
   double body;
-  int i, arm;
+  int i;
+  int arm;
   int damage;
-  int penetrate, crithits, critdam;
-  int casualties, casualties1, primgundamage, secgundamage;
-  double fac, r;
+  int penetrate;
+  int crithits;
+  int critdam;
+  int casualties;
+  int casualties1;
+  int primgundamage;
+  int secgundamage;
+  double fac;
+  double r;
   char critmsg[1024];
 
   sprintf(buf, "\tAttack: %d %s at a range of %.0f\n", strength, weapon, range);
@@ -423,7 +457,8 @@ static void ship_disposition(Ship *ship, int *evade, int *speed, int *body) {
 }
 
 static int CEW_hit(double dist, int cew_range) {
-  int prob, hits;
+  int prob;
+  int hits;
 
   hits = 0;
   prob = cew_hit_odds(dist, cew_range);
@@ -437,7 +472,9 @@ static int Num_hits(double dist, int focus, int guns, double tech, int fdam,
                     int fev, int tev, int fspeed, int tspeed, int body,
                     int caliber, int defense) {
   int factor;
-  int i, prob, hits;
+  int i;
+  int prob;
+  int hits;
 
   prob = hit_odds(dist, &factor, tech, fdam, fev, tev, fspeed, tspeed, body,
                   caliber, defense);
@@ -458,7 +495,9 @@ static int Num_hits(double dist, int focus, int guns, double tech, int fdam,
 int hit_odds(double range, int *factor, double tech, int fdam, int fev, int tev,
              int fspeed, int tspeed, int body, int caliber, int defense) {
   int odds;
-  double a, b, c;
+  double a;
+  double b;
+  double c;
 
   if (caliber == GTYPE_NONE) {
     *factor = 0;
@@ -518,7 +557,9 @@ int current_caliber(Ship *ship) {
 
 static void do_critical_hits(int penetrate, Ship *ship, int *crithits,
                              int *critdam, int caliber, char *critmsg) {
-  int eff_size, i, dam;
+  int eff_size;
+  int i;
+  int dam;
   *critdam = 0;
   *crithits = 0;
   eff_size = std::max(1, Body(ship) / caliber);

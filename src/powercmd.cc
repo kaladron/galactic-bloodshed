@@ -25,8 +25,10 @@ void block(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
   player_t p;
-  racetype *r, *Race;
-  int dummy_, dummy[2];
+  racetype *r;
+  racetype *Race;
+  int dummy_;
+  int dummy[2];
 
   Race = races[Playernum - 1];
 
@@ -176,7 +178,8 @@ void power(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
   player_t p;
-  racetype *r, *Race;
+  racetype *r;
+  racetype *Race;
   struct vic vic[MAXPLAYERS];
 
   p = -1;

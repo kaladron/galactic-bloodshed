@@ -49,9 +49,18 @@ void fire(const command_t &argv, GameObj &g) {
     cew = 0;
     APcount = 1;
   }
-  shipnum_t fromship, toship, sh, nextshipno;
-  Ship *from, *to, *ship, dummy;
-  int strength, maxstrength, retal, damage;
+  shipnum_t fromship;
+  shipnum_t toship;
+  shipnum_t sh;
+  shipnum_t nextshipno;
+  Ship *from;
+  Ship *to;
+  Ship *ship;
+  Ship dummy;
+  int strength;
+  int maxstrength;
+  int retal;
+  int damage;
 
   sh = 0;  // TODO(jeffbailey): No idea what this is, init to 0.
 
@@ -294,9 +303,18 @@ void bombard(const command_t &argv, GameObj &g) {
   int Playernum = g.player;
   int Governor = g.governor;
   int APcount = 1;
-  shipnum_t fromship, nextshipno, sh;
-  Ship *from, *ship;
-  int strength, maxstrength, x, y, ok, numdest, damage;
+  shipnum_t fromship;
+  shipnum_t nextshipno;
+  shipnum_t sh;
+  Ship *from;
+  Ship *ship;
+  int strength;
+  int maxstrength;
+  int x;
+  int y;
+  int ok;
+  int numdest;
+  int damage;
   int i;
   racetype *alien;
 
@@ -497,9 +515,16 @@ void defend(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 1;
-  int toship, sh;
-  Ship *to, *ship, dummy;
-  int strength, retal, damage, x, y;
+  int toship;
+  int sh;
+  Ship *to;
+  Ship *ship;
+  Ship dummy;
+  int strength;
+  int retal;
+  int damage;
+  int x;
+  int y;
   int numdest;
   racetype *Race;
 
@@ -699,7 +724,8 @@ void detonate(const command_t &argv, GameObj &g) {
   }
 
   Ship *s;
-  shipnum_t shipno, nextshipno;
+  shipnum_t shipno;
+  shipnum_t nextshipno;
 
   nextshipno = start_shiplist(g, argv[1]);
 
@@ -728,7 +754,8 @@ void detonate(const command_t &argv, GameObj &g) {
 }
 
 int retal_strength(Ship *s) {
-  int strength = 0, avail = 0;
+  int strength = 0;
+  int avail = 0;
 
   if (!s->alive) return 0;
   if (!Shipdata[s->type][ABIL_SPEED] && !landed(s)) return 0;

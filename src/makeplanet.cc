@@ -85,10 +85,13 @@ static void grow(sector_map &, int, int, int);
 
 Planet Makeplanet(double dist, short stemp, PlanetType type) {
   static planetnum_t planet_id = 0;
-  int x, y;
+  int x;
+  int y;
   Planet planet;
-  int atmos, total_sects;
-  char c, t;
+  int atmos;
+  int total_sects;
+  char c;
+  char t;
   double f;
 
   bzero(&planet, sizeof(planet));
@@ -351,7 +354,9 @@ static void Makesurface(const Planet &p, sector_map &smap) {
 }
 
 static short SectTemp(const Planet &p, int y) {
-  int dy, mid, temp;
+  int dy;
+  int mid;
+  int temp;
   const int TFAC = 10;
 
   temp = p.conditions[TEMP];

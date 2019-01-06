@@ -500,7 +500,8 @@ int governed(racetype *race) {
 
 /* fix stability for stars */
 void fix_stability(startype *s) {
-  int a, i;
+  int a;
+  int i;
 
   if (s->nova_stage > 0) {
     if (s->nova_stage > 14) {
@@ -645,7 +646,9 @@ static int attack_planet(Ship *ship) {
 }
 
 static void output_ground_attacks() {
-  int star, i, j;
+  int star;
+  int i;
+  int j;
 
   for (star = 0; star < Sdata.numstars; star++)
     for (i = 1; i <= Num_races; i++)

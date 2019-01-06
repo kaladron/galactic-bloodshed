@@ -45,10 +45,17 @@ void init_enroll() { srandom(getpid()); }
 /*
  * Returns 0 if successfully enrolled, or 1 if failure. */
 int enroll_valid_race() {
-  int x, y, star, pnum, i, Playernum;
+  int x;
+  int y;
+  int star;
+  int pnum;
+  int i;
+  int Playernum;
   PlanetType ppref;
-  int last_star_left, indirect[NUMSTARS];
-  sigset_t mask, block;
+  int last_star_left;
+  int indirect[NUMSTARS];
+  sigset_t mask;
+  sigset_t block;
   Planet planet;
   startype *star_arena;
   /*

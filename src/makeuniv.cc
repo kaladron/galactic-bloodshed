@@ -47,7 +47,8 @@ static int planetlesschance = 0;
 static int printpostscript = 0;
 
 int main(int argc, char *argv[]) {
-  int c, i;
+  int c;
+  int i;
 
   /*
    * Initialize: */
@@ -242,8 +243,13 @@ static void EmptyFile(const char *filename) { InitFile(filename, nullptr, 0); }
  * Copyright: Andreas Girgensohn (andreasg@cs.colorado.edu)
  * produces a Postscript map of the universe. */
 static void produce_postscript(const char *filename) {
-  int min_x, max_x, min_y, max_y, i;
-  double scale, nscale;
+  int min_x;
+  int max_x;
+  int min_y;
+  int max_y;
+  int i;
+  double scale;
+  double nscale;
   FILE *f = fopen(filename, "w+");
 
   if (f == nullptr) {
@@ -310,7 +316,9 @@ static void produce_postscript(const char *filename) {
 }
 
 void place_star(startype *star) {
-  int found = 0, i, j;
+  int found = 0;
+  int i;
+  int j;
   while (!found) {
     star->xpos = (double)int_rand(-UNIVSIZE, UNIVSIZE);
     star->ypos = (double)int_rand(-UNIVSIZE, UNIVSIZE);

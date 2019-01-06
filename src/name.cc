@@ -53,7 +53,8 @@ void personal(const command_t &argv, GameObj &g) {
 void bless(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   // TODO(jeffbailey): int APcount = 0;
-  int amount, Mod;
+  int amount;
+  int Mod;
   char commod;
 
   if (!g.god) {
@@ -243,10 +244,14 @@ void insurgency(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 10;
-  int who, eligible, them = 0;
-  racetype *Race, *alien;
+  int who;
+  int eligible;
+  int them = 0;
+  racetype *Race;
+  racetype *alien;
   double x;
-  int changed_hands, chance;
+  int changed_hands;
+  int chance;
   int i;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
@@ -372,8 +377,10 @@ void pay(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
-  int who, amount;
-  racetype *Race, *alien;
+  int who;
+  int amount;
+  racetype *Race;
+  racetype *alien;
 
   if (!(who = get_player(argv[1]))) {
     g.out << "No such player.\n";
@@ -420,7 +427,8 @@ void give(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   int APcount = 5;
   int who;
-  racetype *Race, *alien;
+  racetype *Race;
+  racetype *alien;
 
   if (!(who = get_player(argv[1]))) {
     g.out << "No such player.\n";
@@ -544,8 +552,13 @@ void page(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = g.god ? 0 : 1;
-  int i, who, gov, to_block, dummy[2];
-  racetype *Race, *alien;
+  int i;
+  int who;
+  int gov;
+  int to_block;
+  int dummy[2];
+  racetype *Race;
+  racetype *alien;
 
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
@@ -613,10 +626,17 @@ void send_message(const command_t &argv, GameObj &g) {
   } else {
     APcount = g.god ? 0 : 1;
   }
-  int who, i, j, to_block, dummy[2];
-  int to_star, star, start;
+  int who;
+  int i;
+  int j;
+  int to_block;
+  int dummy[2];
+  int to_star;
+  int star;
+  int start;
   placetype where;
-  racetype *Race, *alien;
+  racetype *Race;
+  racetype *alien;
 
   star = 0;  // TODO(jeffbailey): Init to zero.
   who = 0;   // TODO(jeffbailey): Init to zero.

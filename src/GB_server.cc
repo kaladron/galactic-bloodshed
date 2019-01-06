@@ -514,10 +514,13 @@ static struct timeval msec_add(struct timeval t, int x) {
 }
 
 static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
-  fd_set input_set, output_set;
-  struct timeval last_slice, current_time;
+  fd_set input_set;
+  fd_set output_set;
+  struct timeval last_slice;
+  struct timeval current_time;
   struct timeval next_slice;
-  struct timeval timeout, slice_timeout;
+  struct timeval timeout;
+  struct timeval slice_timeout;
   time_t now;
   time_t go_time = 0;
 
@@ -798,7 +801,10 @@ static void save_command(DescriptorData &d, const std::string &command) {
 
 static int process_input(DescriptorData &d) {
   int got;
-  char *p, *pend, *q, *qend;
+  char *p;
+  char *pend;
+  char *q;
+  char *qend;
 
   got = read(d.descriptor, buf, sizeof buf);
   if (got <= 0) return 0;
@@ -900,8 +906,10 @@ static int do_command(DescriptorData &d, const char *comm) {
 static void check_connect(DescriptorData &d, const char *message) {
   char race_password[MAX_COMMAND_LEN];
   char gov_password[MAX_COMMAND_LEN];
-  int i, j;
-  int Playernum, Governor;
+  int i;
+  int j;
+  int Playernum;
+  int Governor;
   racetype *r;
 
   parse_connect(message, race_password, gov_password);
@@ -1201,7 +1209,8 @@ static void load_race_data() {
 }
 
 static void load_star_data() {
-  int s, t;
+  int s;
+  int t;
   startype *star_arena;
   int pcount = 0;
 
@@ -1296,7 +1305,8 @@ void check_for_telegrams(int Playernum, int Governor) {
 }
 
 void kill_ship(int Playernum, Ship *ship) {
-  racetype *killer, *victim;
+  racetype *killer;
+  racetype *victim;
 
   ship->special.mind.who_killed = Playernum;
   ship->alive = 0;
@@ -1367,7 +1377,9 @@ void kill_ship(int Playernum, Ship *ship) {
 
 void compute_power_blocks() {
   const time_t clk = time(nullptr);
-  int i, j, dummy[2];
+  int i;
+  int j;
+  int dummy[2];
   /* compute alliance block power */
   sprintf(Power_blocks.time, "%s", ctime(&clk));
   for (i = 1; i <= Num_races; i++) {
@@ -1567,7 +1579,8 @@ void adjust_morale(racetype *winner, racetype *loser, int amount) {
 
 static std::string do_prompt(DescriptorData &d) {
   player_t Playernum = d.player;
-  Ship *s, *s2;
+  Ship *s;
+  Ship *s2;
   std::stringstream prompt;
 
   if (d.level == ScopeLevel::LEVEL_UNIV) {

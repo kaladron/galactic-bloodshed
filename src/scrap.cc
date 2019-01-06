@@ -23,9 +23,15 @@
 void scrap(const command_t &argv, GameObj &g) {
   int APcount = 1;
   sector sect;
-  Ship *s, *s2;
-  shipnum_t shipno, nextshipno;
-  int scrapval = 0, destval = 0, crewval = 0, xtalval = 0, troopval = 0;
+  Ship *s;
+  Ship *s2;
+  shipnum_t shipno;
+  shipnum_t nextshipno;
+  int scrapval = 0;
+  int destval = 0;
+  int crewval = 0;
+  int xtalval = 0;
+  int troopval = 0;
   double fuelval = 0.0;
   racetype *Race;
 

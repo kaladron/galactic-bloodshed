@@ -59,7 +59,8 @@ void grant(const command_t &argv, GameObj &g) {
   // int APcount = 0; TODO(jeffbailey);
   racetype *Race;
   governor_t gov;
-  shipnum_t nextshipno, shipno;
+  shipnum_t nextshipno;
+  shipnum_t shipno;
   Ship *ship;
 
   Race = races[Playernum - 1];

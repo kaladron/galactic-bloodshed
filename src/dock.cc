@@ -35,18 +35,30 @@ void dock(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   int APcount = (argv[0] == "dock") ? 0 : 1;
   int Assault = (argv[0] == "assault") ? 1 : 0;
-  Ship *s, *s2, *s3, ship;
+  Ship *s;
+  Ship *s2;
+  Ship *s3;
+  Ship ship;
   population_t boarders = 0;
-  int dam = 0, dam2 = 0, booby = 0;
+  int dam = 0;
+  int dam2 = 0;
+  int booby = 0;
   int what;
-  shipnum_t ship2no, shipno, nextshipno;
+  shipnum_t ship2no;
+  shipnum_t shipno;
+  shipnum_t nextshipno;
   player_t old2owner;
   governor_t old2gov;
-  population_t casualties = 0, casualties2 = 0, casualties3 = 0;
+  population_t casualties = 0;
+  population_t casualties2 = 0;
+  population_t casualties3 = 0;
   int casualty_scale = 0;
-  double fuel, bstrength, b2strength;
+  double fuel;
+  double bstrength;
+  double b2strength;
   double Dist;
-  racetype *Race, *alien;
+  racetype *Race;
+  racetype *alien;
 
   if (argv.size() < 3) {
     g.out << "Dock with what?\n";

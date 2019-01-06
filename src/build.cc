@@ -55,7 +55,10 @@ void upgrade(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused int APcount = 1;
-  int value, oldcost, newcost, netcost;
+  int value;
+  int oldcost;
+  int newcost;
+  int netcost;
   Ship *s2;
   double complex;
   racetype *Race;
@@ -640,11 +643,21 @@ void build(const command_t &argv, GameObj &g) {
   racetype *Race;
   Planet planet;
   char c;
-  int j, m, n, x, y, count, outside;
-  ScopeLevel level, build_level;
-  int shipcost, load_crew;
-  int snum, pnum;
-  double load_fuel, tech;
+  int j;
+  int m;
+  int n;
+  int x;
+  int y;
+  int count;
+  int outside;
+  ScopeLevel level;
+  ScopeLevel build_level;
+  int shipcost;
+  int load_crew;
+  int snum;
+  int pnum;
+  double load_fuel;
+  double tech;
 
   FILE *fd;
   sector sector;
@@ -1391,7 +1404,8 @@ unsigned int ship_size(Ship *s) {
 
 double cost(Ship *s) {
   int i;
-  double factor = 0.0, advantage = 0.0;
+  double factor = 0.0;
+  double advantage = 0.0;
 
   i = s->build_type;
   /* compute how much it costs to build this ship */
@@ -1431,7 +1445,10 @@ static void system_cost(double *advantage, double *disadvantage, int value,
 
 double complexity(Ship *s) {
   int i;
-  double advantage, disadvantage, factor, tmp;
+  double advantage;
+  double disadvantage;
+  double factor;
+  double tmp;
 
   i = s->build_type;
 
@@ -1540,9 +1557,14 @@ void sell(const command_t &argv, GameObj &g) {
   racetype *Race;
   Ship *s;
   commodtype c;
-  int commodno, amount, item, ok = 0, sh;
+  int commodno;
+  int amount;
+  int item;
+  int ok = 0;
+  int sh;
   char commod;
-  int snum, pnum;
+  int snum;
+  int pnum;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to be in a planet scope to sell.\n";
@@ -1670,9 +1692,16 @@ void bid(const command_t &argv, GameObj &g) {
   commodtype *c;
   Ship *s;
   char commod;
-  int i, item, lot, shipping, ok = 0, sh;
-  double dist, rate;
-  int snum, pnum;
+  int i;
+  int item;
+  int lot;
+  int shipping;
+  int ok = 0;
+  int sh;
+  double dist;
+  double rate;
+  int snum;
+  int pnum;
 
   if (argv.size() == 1) {
     /* list all market blocks for sale */
@@ -1840,7 +1869,8 @@ void bid(const command_t &argv, GameObj &g) {
 }
 
 int shipping_cost(int to, int from, double *dist, int value) {
-  double factor, fcost;
+  double factor;
+  double fcost;
   int junk;
 
   *dist = sqrt(Distsq(Stars[to]->xpos, Stars[to]->ypos, Stars[from]->xpos,

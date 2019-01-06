@@ -40,14 +40,19 @@ void load(const command_t &argv, GameObj &g) {
   int APcount = 0;
   int mode = argv[0] == "load" ? 0 : 1;  // load or unload
   char commod;
-  unsigned char sh = 0, diff = 0;
-  int lolim, uplim, amt;
+  unsigned char sh = 0;
+  unsigned char diff = 0;
+  int lolim;
+  int uplim;
+  int amt;
   int transfercrew;
-  Ship *s, *s2;
+  Ship *s;
+  Ship *s2;
   Planet p;
   sector sect;
   racetype *Race;
-  shipnum_t shipno, nextshipno;
+  shipnum_t shipno;
+  shipnum_t nextshipno;
 
   if (argv.size() < 2) {
     if (mode == 0) {
@@ -465,7 +470,8 @@ void jettison(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   int APcount = 0;
   int Mod = 0;
-  shipnum_t shipno, nextshipno;
+  shipnum_t shipno;
+  shipnum_t nextshipno;
   int amt;
   char commod;
   Ship *s;
@@ -615,8 +621,11 @@ void dump(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 10;
-  int player, star, j;
-  racetype *Race, *r;
+  int player;
+  int star;
+  int j;
+  racetype *Race;
+  racetype *r;
   placetype where;
 
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
@@ -799,7 +808,8 @@ void mount(const command_t &argv, GameObj &g) {
   mnt = argv[0] == "mount";
 
   Ship *ship;
-  shipnum_t shipno, nextshipno;
+  shipnum_t shipno;
+  shipnum_t nextshipno;
 
   nextshipno = start_shiplist(g, argv[1]);
   while ((shipno = do_shiplist(&ship, &nextshipno)))
@@ -1022,11 +1032,20 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
                                      sector &sect, int what, int people) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  double astrength, dstrength;
-  int oldowner, oldgov, oldpopn, old2popn, old3popn;
-  int casualties, casualties2, casualties3;
-  int absorbed, defense;
-  racetype *Race, *alien;
+  double astrength;
+  double dstrength;
+  int oldowner;
+  int oldgov;
+  int oldpopn;
+  int old2popn;
+  int old3popn;
+  int casualties;
+  int casualties2;
+  int casualties3;
+  int absorbed;
+  int defense;
+  racetype *Race;
+  racetype *alien;
 
   if (people <= 0) {
     notify(Playernum, Governor,

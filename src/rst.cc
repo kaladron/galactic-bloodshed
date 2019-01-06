@@ -195,11 +195,17 @@ static void ship_report(GameObj &g, shipnum_t indx,
   governor_t Governor = g.governor;
   Ship *s;
   Planet *p;
-  int i, sight, caliber;
+  int i;
+  int sight;
+  int caliber;
   placetype where;
   char orb[PLACENAMESIZE];
-  char strng[COMMANDSIZE], locstrn[COMMANDSIZE];
-  char tmpbuf1[10], tmpbuf2[10], tmpbuf3[10], tmpbuf4[10];
+  char strng[COMMANDSIZE];
+  char locstrn[COMMANDSIZE];
+  char tmpbuf1[10];
+  char tmpbuf2[10];
+  char tmpbuf3[10];
+  char tmpbuf4[10];
   double Dist;
 
   /* last ship gotten from disk */
@@ -367,7 +373,10 @@ static void ship_report(GameObj &g, shipnum_t indx,
     auto Race = races[Playernum - 1];
 
     if (Tactical) {
-      int fev = 0, fspeed = 0, defense, fdam = 0;
+      int fev = 0;
+      int fspeed = 0;
+      int defense;
+      int fdam = 0;
       double tech;
 
       sprintf(buf,
@@ -446,7 +455,10 @@ static void ship_report(GameObj &g, shipnum_t indx,
                    !authorized(Governor, rd[i].s)) &&
                   rd[i].s->alive && rd[i].s->type != ShipType::OTYPE_CANIST &&
                   rd[i].s->type != ShipType::OTYPE_GREEN) {
-                int tev = 0, tspeed = 0, body = 0, prob = 0;
+                int tev = 0;
+                int tspeed = 0;
+                int body = 0;
+                int prob = 0;
                 int factor = 0;
                 if ((rd[i].s->whatdest != ScopeLevel::LEVEL_UNIV ||
                      rd[i].s->navigate.on) &&

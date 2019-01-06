@@ -18,7 +18,8 @@ void zoom(const command_t &argv, GameObj &g) {
   int i = (g.level == ScopeLevel::LEVEL_UNIV);
 
   if (argv.size() > 1) {
-    double num, denom;
+    double num;
+    double denom;
     if (sscanf(argv[1].c_str(), "%lf/%lf", &num, &denom) == 2) {
       /* num/denom format */
       if (denom == 0.0) {

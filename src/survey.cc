@@ -46,13 +46,18 @@ static void get4args(const char *, int *, int *, int *, int *);
 void survey(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  int lowx, hix, lowy, hiy, x2;
+  int lowx;
+  int hix;
+  int lowy;
+  int hiy;
+  int x2;
   char d;
   char sect_char;
   int tindex;
   placetype where;
   double compat;
-  int avg_fert, avg_resource;
+  int avg_fert;
+  int avg_resource;
   int crystal_count;
   racetype *Race;
   int all = 0; /* full survey 1, specific 0 */
@@ -377,7 +382,13 @@ void survey(const command_t &argv, GameObj &g) {
 void repair(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  int lowx, hix, lowy, hiy, x2, sectors, cost;
+  int lowx;
+  int hix;
+  int lowy;
+  int hiy;
+  int x2;
+  int sectors;
+  int cost;
   placetype where;
 
   /* general code -- jpd -- */
@@ -455,7 +466,8 @@ void repair(const command_t &argv, GameObj &g) {
 }
 
 static void get4args(const char *s, int *xl, int *xh, int *yl, int *yh) {
-  char s1[17], s2[17];
+  char s1[17];
+  char s2[17];
   const char *p = s;
 
   sscanf(p, "%[^,]", s1);

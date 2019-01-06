@@ -39,13 +39,24 @@ static const double SpeedConsts[] = {0.0,  0.61, 1.26, 1.50, 1.73,
 static int do_merchant(Ship *, Planet *);
 
 void Moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
-  double stardist, movedist, truedist, dist, xdest, ydest, sn, cs;
-  double mfactor, heading, distfac;
+  double stardist;
+  double movedist;
+  double truedist;
+  double dist;
+  double xdest;
+  double ydest;
+  double sn;
+  double cs;
+  double mfactor;
+  double heading;
+  double distfac;
   double fuse;
   ScopeLevel destlevel;
-  int deststar = 0, destpnum = 0;
+  int deststar = 0;
+  int destpnum = 0;
   Ship *dsh;
-  startype *ost, *dst;
+  startype *ost;
+  startype *dst;
 
   if (s->hyper_drive.has && s->hyper_drive.on) { /* do a hyperspace jump */
     if (!mode) return; /* we're not ready to jump until the update */
@@ -349,7 +360,8 @@ void msg_OOF(Ship *s) {
 
 /* followable: returns 1 iff s1 can follow s2 */
 int followable(Ship *s1, Ship *s2) {
-  double dx, dy;
+  double dx;
+  double dy;
   racetype *r;
   double range;
   int allied[2];
@@ -374,9 +386,11 @@ int followable(Ship *s1, Ship *s2) {
         for merchant ships. The ship is within landing distance of
         the target Planet */
 static int do_merchant(Ship *s, Planet *p) {
-  int i, j;
+  int i;
+  int j;
   double fuel;
-  char load, unload;
+  char load;
+  char unload;
   int amount;
 
   i = s->owner - 1;

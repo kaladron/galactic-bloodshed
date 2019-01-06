@@ -28,7 +28,13 @@
 /* ship #shipno bombards planet, then alert whom it may concern.
  */
 int Bombard(Ship *ship, Planet *planet, racetype *r) {
-  int x, y, x2 = -1, y2, oldown, numdest = 0, found = 0;
+  int x;
+  int y;
+  int x2 = -1;
+  int y2;
+  int oldown;
+  int numdest = 0;
+  int found = 0;
 
   /* for telegramming */
   bzero((char *)Nuked, sizeof(Nuked));

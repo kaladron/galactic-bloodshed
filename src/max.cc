@@ -35,8 +35,10 @@ int maxsupport(const racetype *r, const sector &s, const double c,
 }
 
 double compatibility(const Planet &planet, const racetype *race) {
-  int i, add;
-  double sum, atmosphere = 1.0;
+  int i;
+  int add;
+  double sum;
+  double atmosphere = 1.0;
 
   /* make an adjustment for planetary temperature */
   add = 0.1 * ((double)planet.conditions[TEMP] - race->conditions[TEMP]);

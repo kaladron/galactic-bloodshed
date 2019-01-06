@@ -29,7 +29,8 @@ void invite(const command_t &argv, GameObj &g) {
   bool mode = argv[0] == "invite";
 
   int n;
-  racetype *Race, *alien;
+  racetype *Race;
+  racetype *alien;
 
   if (Governor) {
     g.out << "Only leaders may invite.\n";
@@ -138,8 +139,10 @@ void declare(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   const int APcount = 1;
-  int n, d_mod;
-  racetype *Race, *alien;
+  int n;
+  int d_mod;
+  racetype *Race;
+  racetype *alien;
 
   if (Governor) {
     g.out << "Only leaders may declare.\n";
@@ -269,7 +272,10 @@ void vote(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   racetype *Race;
-  int check, nvotes, nays, yays;
+  int check;
+  int nvotes;
+  int nays;
+  int yays;
 
   Race = races[Playernum - 1];
 
@@ -336,7 +342,10 @@ void vote(const command_t &argv, GameObj &g) {
 }
 
 static void show_votes(int Playernum, int Governor) {
-  int nvotes, nays, yays, pnum;
+  int nvotes;
+  int nays;
+  int yays;
+  int pnum;
   racetype *Race;
 
   nays = yays = nvotes = 0;

@@ -47,13 +47,20 @@ void land(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 1;
-  Ship *s, *s2;
+  Ship *s;
+  Ship *s2;
 
-  shipnum_t shipno, ship2no;
-  int x = -1, y = -1, i, numdest, strength;
+  shipnum_t shipno;
+  shipnum_t ship2no;
+  int x = -1;
+  int y = -1;
+  int i;
+  int numdest;
+  int strength;
   double fuel;
   double Dist;
-  racetype *Race, *alien;
+  racetype *Race;
+  racetype *alien;
   shipnum_t nextshipno;
 
   numdest = 0;  // TODO(jeffbailey): Init to zero.

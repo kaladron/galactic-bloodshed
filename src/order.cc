@@ -35,7 +35,8 @@ void order(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 1;
-  shipnum_t shipno, nextshipno;
+  shipnum_t shipno;
+  shipnum_t nextshipno;
   Ship *ship;
 
   if (argv.size() == 1) { /* display all ship orders */
@@ -68,7 +69,8 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int j;
-  placetype where, pl;
+  placetype where;
+  placetype pl;
 
   if (!ship->active) {
     sprintf(buf, "%s is irradiated (%d); it cannot be given orders.\n",
@@ -101,7 +103,8 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
     ship->special.impact.scatter = 1;
   } else if (argv[2] == "impact") {
-    int x, y;
+    int x;
+    int y;
     if (ship->type != ShipType::STYPE_MISSILE) {
       notify(Playernum, Governor,
              "Only missiles can be designated for this.\n");
@@ -622,7 +625,8 @@ std::string prin_ship_dest(const Ship &ship) {
 static void mk_expl_aimed_at(int Playernum, int Governor, Ship *s) {
   double dist;
   startype *str;
-  double xf, yf;
+  double xf;
+  double yf;
 
   str = Stars[s->special.aimed_at.snum];
 
@@ -827,7 +831,8 @@ static void DispOrders(int Playernum, int Governor, Ship *ship) {
   /* if hyper space is on estimate how much fuel it will cost to get to the
    * destination */
   if (ship->hyper_drive.on) {
-    double dist, fuse;
+    double dist;
+    double fuse;
 
     dist = sqrt(Distsq(ship->xpos, ship->ypos, Stars[ship->deststar]->xpos,
                        Stars[ship->deststar]->ypos));
@@ -853,8 +858,13 @@ void route(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
-  int i, x, y;
-  unsigned char star, planet, load, unload;
+  int i;
+  int x;
+  int y;
+  unsigned char star;
+  unsigned char planet;
+  unsigned char load;
+  unsigned char unload;
   const char *c;
   placetype where;
 

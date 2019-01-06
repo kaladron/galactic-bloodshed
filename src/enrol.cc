@@ -67,13 +67,25 @@ static double db_Metabolism[RACIAL_TYPES] = {3.0,  2.7,  2.4, 1.0,  1.15,
 #define Metabolism(x) (db_Metabolism[(x)] + .01 * (double)int_rand(-15, 15))
 
 int main() {
-  int x, y;
-  int pnum, star = 0, found = 0, check, vacant, count, i, j, Playernum;
+  int x;
+  int y;
+  int pnum;
+  int star = 0;
+  int found = 0;
+  int check;
+  int vacant;
+  int count;
+  int i;
+  int j;
+  int Playernum;
   PlanetType ppref;
-  sigset_t mask, block;
-  int idx, k;
+  sigset_t mask;
+  sigset_t block;
+  int idx;
+  int k;
 #define STRSIZE 100
-  char str[STRSIZE], c;
+  char str[STRSIZE];
+  char c;
   struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
   Planet planet;
   unsigned char not_found[PlanetType::DESERT + 1];

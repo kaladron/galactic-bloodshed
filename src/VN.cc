@@ -72,7 +72,8 @@ void do_VN(Ship *ship) {
   }
   auto p = planets[ship->storbits][ship->pnumorbits];
 
-  int i, f;
+  int i;
+  int f;
   for (f = 0, i = 1; i <= Num_races; i++)
     if (p->info[nums[i] - 1].resource) f = nums[i];
 
@@ -117,7 +118,9 @@ static void order_berserker(Ship *ship) {
 }
 
 static void order_VN(Ship *ship) {
-  int s, min = 0, min2 = 0;
+  int s;
+  int min = 0;
+  int min2 = 0;
 
   /* find closest star */
   for (s = 0; s < Sdata.numstars; s++)
@@ -153,7 +156,11 @@ static void order_VN(Ship *ship) {
 /*  planet_doVN() -- called by doplanet() */
 void planet_doVN(Ship *ship, Planet *planet, sector_map &smap) {
   int j;
-  int oldres, xa, ya, dum, prod;
+  int oldres;
+  int xa;
+  int ya;
+  int dum;
+  int prod;
 
   if (landed(ship)) {
     if (ship->type == ShipType::OTYPE_VN && ship->special.mind.busy) {
@@ -186,7 +193,8 @@ void planet_doVN(Ship *ship, Planet *planet, sector_map &smap) {
                                : ShipType::OTYPE_VN;
       if (ship->resource >= Shipdata[shipbuild][ABIL_COST]) {
         Ship *s2;
-        int n, numVNs;
+        int n;
+        int numVNs;
         /* construct as many VNs as possible */
         numVNs = ship->resource / Shipdata[shipbuild][ABIL_COST];
         for (j = 1; j <= numVNs; j++) {
@@ -283,7 +291,8 @@ void planet_doVN(Ship *ship, Planet *planet, sector_map &smap) {
             ship->special.mind.busy = 0;
           else {
             /* find a place on the planet to land */
-            int x, y;
+            int x;
+            int y;
             int d; /* auto vars for & */
 
             (void)Getxysect(*planet, &x, &y, 1);

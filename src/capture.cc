@@ -27,18 +27,29 @@ void capture(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   const int APcount = 1;
-  Ship *ship, s;
+  Ship *ship;
+  Ship s;
   player_t oldowner;
   governor_t oldgov;
-  int shipdam = 0, booby = 0;
-  shipnum_t shipno, nextshipno;
-  int x = -1, y = -1, what;
-  population_t olddpopn, olddtroops;
-  population_t casualties = 0, casualties1 = 0, casualties2 = 0,
-               casualty_scale = 0;
-  double astrength, dstrength;
-  racetype *Race, *alien;
-  int snum, pnum;
+  int shipdam = 0;
+  int booby = 0;
+  shipnum_t shipno;
+  shipnum_t nextshipno;
+  int x = -1;
+  int y = -1;
+  int what;
+  population_t olddpopn;
+  population_t olddtroops;
+  population_t casualties = 0;
+  population_t casualties1 = 0;
+  population_t casualties2 = 0;
+  population_t casualty_scale = 0;
+  double astrength;
+  double dstrength;
+  racetype *Race;
+  racetype *alien;
+  int snum;
+  int pnum;
   population_t boarders;
 
   if (argv.size() < 2) {

@@ -25,7 +25,8 @@ void whois(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
-  int j, numraces;
+  int j;
+  int numraces;
   racetype *Race;
 
   if (argv.size() <= 1) {
@@ -84,7 +85,8 @@ void profile(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
   int p;
-  racetype *r, *Race;
+  racetype *r;
+  racetype *Race;
 
   Race = races[Playernum - 1];
 

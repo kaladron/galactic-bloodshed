@@ -165,8 +165,10 @@ int enroll(int argc, char *argv[]) {
  * Iteratively loads races from a file, and enrolls them.
  */
 void process(int argc, char *argv[]) {
-  FILE *f, *g;
-  int n, nenrolled;
+  FILE *f;
+  FILE *g;
+  int n;
+  int nenrolled;
 
   if (argc < 2) argv[1] = DEFAULT_ENROLLMENT_FILENAME;
   f = fopen(argv[1], "r");

@@ -142,8 +142,13 @@ void colonies(const command_t &argv, GameObj &g) {
 void distance(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  placetype from, to;
-  double x0, y0, x1, y1, dist;
+  placetype from;
+  placetype to;
+  double x0;
+  double y0;
+  double x1;
+  double y1;
+  double dist;
 
   if (argv.size() < 3) {
     g.out << "Syntax: 'distance <from> <to>'.\n";
@@ -210,7 +215,9 @@ void star_locations(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int i;
-  double dist, x, y;
+  double dist;
+  double x;
+  double y;
   int max;
 
   x = g.lastx[1];
@@ -234,7 +241,8 @@ void star_locations(const command_t &argv, GameObj &g) {
 void exploration(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  int starq, j;
+  int starq;
+  int j;
   placetype where;
   racetype *Race;
 
@@ -374,7 +382,8 @@ static void tech_report_star(int Playernum, int Governor, startype *star,
                              starnum_t snum, int *t_invest, double *t_gain,
                              double *t_max_gain) {
   char str[200];
-  double gain, max_gain;
+  double gain;
+  double max_gain;
 
   if (isset(star->explored, Playernum) &&
       (!Governor || star->governor[Playernum - 1] == Governor)) {

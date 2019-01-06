@@ -492,7 +492,7 @@ void give(const command_t &argv, GameObj &g) {
 
   ship->owner = who;
   ship->governor = 0; /* give to the leader */
-  capture_stuff(&*ship);
+  capture_stuff(*ship);
 
   putship(&*ship);
 

@@ -440,7 +440,7 @@ void dock(const command_t &argv, GameObj &g) {
               sprintf(buf, "%lu boarders move in.\n", boarders);
               notify(Playernum, Governor, buf);
             }
-            capture_stuff(s2);
+            capture_stuff(*s2);
           } else if (s2->popn + s2->troops) {
             sprintf(buf, "The boarding was repulsed; try again.\n");
             notify(Playernum, Governor, buf);

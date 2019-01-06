@@ -274,7 +274,7 @@ void capture(const command_t &argv, GameObj &g) {
         else if (what == MIL)
           sprintf(buf, "%lu troops move in.\n", MIN(boarders, ship->troops));
         notify(Playernum, Governor, buf);
-        capture_stuff(ship);
+        capture_stuff(*ship);
         sprintf(short_buf, "%s: %s [%d] CAPTURED %s\n", Dispshiploc(ship),
                 Race->name, Playernum, ship_to_string(s).c_str());
       } else if (ship->popn + ship->troops) {
@@ -326,21 +326,14 @@ void capture(const command_t &argv, GameObj &g) {
       free(ship);
 }
 
-void capture_stuff(Ship *ship) {
-  shipnum_t sh;
-  Ship *s;
-
-  sh = ship->ships;
-  while (sh) {
-    (void)getship(&s, sh);
-    capture_stuff(s); /* recursive call */
-    s->owner =
-        ship->owner; /* make sure he gets all of the ships landed on it */
-    s->governor = ship->governor;
-    putship(s);
-    sprintf(buf, "%s CAPTURED!\n", ship_to_string(*s).c_str());
-    notify((int)s->owner, (int)s->governor, buf);
-    sh = s->nextship;
-    free(s);
+void capture_stuff(const Ship &ship) {
+  Shiplist shiplist(ship.ships);
+  for (auto s : shiplist) {
+    capture_stuff(s);     /* recursive call */
+    s.owner = ship.owner; /* make sure he gets all of the ships landed on it */
+    s.governor = ship.governor;
+    putship(&s);
+    sprintf(buf, "%s CAPTURED!\n", ship_to_string(s).c_str());
+    notify(s.owner, s.governor, buf);
   }
 }

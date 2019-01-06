@@ -193,16 +193,6 @@ void scrap(const command_t &argv, GameObj &g) {
       kill_ship(g.player, s);
       putship(s);
       if (docked(s)) {
-#ifdef NEVER
-        fuelval = MIN(fuelval, 1. * Max_fuel(s2) - s2->fuel);
-        destval = MIN(destval, Max_destruct(s2) - s2->destruct);
-        if (s2->type !=
-            ShipType::STYPE_SHUTTLE) /* Leave scrapval alone for shuttles */
-          scrapval = MIN(scrapval, Max_resource(s2) - s2->resource);
-        troopval = MIN(troopval, Max_crew(s2) - s2->troops);
-        crewval = MIN(crewval, Max_crew(s2) - s2->popn);
-        xtalval = MIN(xtalval, Max_crystals(s2) - s2->crystals);
-#endif
         s2->crystals += xtalval;
         rcv_fuel(s2, (double)fuelval);
         rcv_destruct(s2, destval);

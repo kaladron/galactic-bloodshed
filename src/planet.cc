@@ -54,11 +54,6 @@ int doplanet(int starnum, Planet *planet, int planetnum) {
   int timer = 20;
   unsigned char allmod = 0, allexp = 0;
 
-#if 0
-if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
-    return 0;  /* no one's here now */
-#endif
-
   auto smap = getsmap(*planet);
   PermuteSects(*planet);
   bzero((char *)Sectinfo, sizeof(Sectinfo));
@@ -214,11 +209,6 @@ if (!(Stars[starnum]->inhabited[0]+Stars[starnum]->inhabited[1]))
     }
     shipno = ship->nextship;
   }
-
-#if 0
-if (!Stinfo[starnum][planetnum].inhab)
-    return 0;  /* (no one's explored the planet) */
-#endif
 
   /* check for space mirrors (among other things) warming the planet */
   /* if a change in any artificial warming/cooling trends */

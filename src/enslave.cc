@@ -128,10 +128,8 @@ void enslave(const command_t &argv, GameObj &g) {
             def, attack);
     strcat(telegram_buf, buf);
 
-    sprintf(buf, "Enslavement repulsed.\n");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "You needed more weapons bearing on the planet...\n");
-    notify(Playernum, Governor, buf);
+    g.out << "Enslavement repulsed.\n";
+    g.out << "You needed more weapons bearing on the planet...\n";
   }
 
   for (i = 1; i < MAXPLAYERS; i++)

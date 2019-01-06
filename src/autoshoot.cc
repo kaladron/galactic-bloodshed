@@ -28,27 +28,21 @@
 /* ship #shipno bombards planet, then alert whom it may concern.
  */
 int Bombard(Ship *ship, Planet *planet, racetype *r) {
-  Ship *s;
   int x, y, x2 = -1, y2, oldown, numdest = 0, found = 0;
 
   /* for telegramming */
   bzero((char *)Nuked, sizeof(Nuked));
 
   /* check to see if PDNs are present */
-  int ok = 1;
-  shipnum_t sh = planet->ships;
-  while (sh && ok) {
-    (void)getship(&s, sh);
-    ok = !(s->alive && s->type == ShipType::OTYPE_PLANDEF &&
-           s->owner != ship->owner);
-    sh = s->nextship;
-    free(s);
-  }
-  if (!ok) {
-    sprintf(buf, "Bombardment of %s cancelled, PDNs are present.\n",
-            prin_ship_orbits(ship));
-    warn(ship->owner, ship->governor, buf);
-    return 0;
+  Shiplist shiplist(planet->ships);
+  for (auto s : shiplist) {
+    if (s.alive && s.type == ShipType::OTYPE_PLANDEF &&
+        s.owner != ship->owner) {
+      sprintf(buf, "Bombardment of %s cancelled, PDNs are present.\n",
+              prin_ship_orbits(ship));
+      warn(ship->owner, ship->governor, buf);
+      return 0;
+    }
   }
 
   auto smap = getsmap(*planet);
@@ -96,7 +90,7 @@ int Bombard(Ship *ship, Planet *planet, racetype *r) {
       sprintf(buf, "sector %d,%d (owner %d).  %d sectors destroyed.\n", x, y,
               oldown, numdest);
       strcat(telegram_buf, buf);
-      notify((int)ship->owner, (int)ship->governor, telegram_buf);
+      notify(ship->owner, ship->governor, telegram_buf);
 
       /* notify other player. */
       sprintf(telegram_buf, "ALERT from planet /%s/%s\n",
@@ -138,7 +132,7 @@ int Bombard(Ship *ship, Planet *planet, racetype *r) {
               Stars[ship->storbits]->name,
               Stars[ship->storbits]->pnames[ship->pnumorbits]);
       strcat(telegram_buf, buf);
-      notify((int)ship->owner, (int)ship->governor, telegram_buf);
+      notify(ship->owner, ship->governor, telegram_buf);
     }
   }
   return numdest;

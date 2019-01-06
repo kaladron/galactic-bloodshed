@@ -23,8 +23,6 @@ void capital(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 50;
-  int snum;
-  Ship *s;
   racetype *Race;
 
   Race = races[Playernum - 1];
@@ -45,33 +43,28 @@ void capital(const command_t &argv, GameObj &g) {
     shipno = *shiptmp;
   }
 
-  if (shipno <= 0) {
+  auto s = getship(shipno);
+  if (!s) {
     g.out << "Change the capital to be what ship?\n";
     return;
   }
 
-  auto stat = getship(&s, shipno);
-
   if (argv.size() == 2) {
-    snum = s->storbits;
-    if (!stat || testship(Playernum, Governor, s)) {
+    shipnum_t snum = s->storbits;
+    if (testship(Playernum, Governor, &*s)) {
       g.out << "You can't do that!\n";
-      free(s);
       return;
     }
-    if (!landed(s)) {
+    if (!landed(&*s)) {
       g.out << "Try landing this ship first!\n";
-      free(s);
       return;
     }
     if (!enufAP(Playernum, Governor, Stars[snum]->AP[Playernum - 1], APcount)) {
-      free(s);
       return;
     }
     if (s->type != ShipType::OTYPE_GOV) {
       sprintf(buf, "That ship is not a %s.\n", Shipnames[ShipType::OTYPE_GOV]);
       notify(Playernum, Governor, buf);
-      free(s);
       return;
     }
     deductAPs(Playernum, Governor, APcount, snum, 0);
@@ -79,8 +72,8 @@ void capital(const command_t &argv, GameObj &g) {
     putrace(Race);
   }
 
-  sprintf(buf, "Efficiency of governmental center: %.0f%%.\n",
-          ((double)s->popn / (double)Max_crew(s)) * (100 - (double)s->damage));
+  sprintf(
+      buf, "Efficiency of governmental center: %.0f%%.\n",
+      ((double)s->popn / (double)Max_crew(&*s)) * (100 - (double)s->damage));
   notify(Playernum, Governor, buf);
-  free(s);
 }

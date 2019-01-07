@@ -14,7 +14,7 @@
 static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const int y_adj[] = {1, 1, 1, 0, 0, -1, -1, -1};
 
-static void Migrate2(const Planet &, int, int, sector &, int *, sector_map &);
+static void Migrate2(const Planet &, int, int, sector &, int *, SectorMap &);
 static void plate(sector &);
 
 //  produce() -- produce, stuff like that, on a sector.
@@ -105,7 +105,7 @@ void produce(startype *star, const Planet &planet, sector &s) {
 }
 
 // spread()  -- spread population around.
-void spread(const Planet &pl, sector &s, int x, int y, sector_map &smap) {
+void spread(const Planet &pl, sector &s, int x, int y, SectorMap &smap) {
   int people;
   int x2;
   int y2;
@@ -137,7 +137,7 @@ void spread(const Planet &pl, sector &s, int x, int y, sector_map &smap) {
 }
 
 static void Migrate2(const Planet &planet, int xd, int yd, sector &ps,
-                     int *people, sector_map &smap) {
+                     int *people, SectorMap &smap) {
   int move;
 
   /* attempt to migrate beyond screen, or too many people */

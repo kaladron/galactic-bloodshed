@@ -542,7 +542,7 @@ sector getsector(const Planet &p, const int x, const int y) {
   return s;
 }
 
-sector_map getsmap(const Planet &p) {
+SectorMap getsmap(const Planet &p) {
   const char *tail = nullptr;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -554,7 +554,7 @@ sector_map getsmap(const Planet &p) {
 
   sqlite3_bind_int(stmt, 1, p.planet_id);
 
-  sector_map smap(p);
+  SectorMap smap(p);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     sector s(sqlite3_column_int(stmt, 3),   // eff
@@ -1126,7 +1126,7 @@ void putsector(const sector &s, const Planet &p, const int x, const int y) {
   sqlite3_reset(stmt);
 }
 
-void putsmap(sector_map &map, Planet &p) {
+void putsmap(SectorMap &map, Planet &p) {
   start_bulk_insert();
 
   for (int y = 0; y < p.Maxy; y++) {

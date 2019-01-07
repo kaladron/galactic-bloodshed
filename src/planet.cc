@@ -36,14 +36,14 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void do_dome(Ship *, sector_map &);
-static void do_quarry(Ship *, Planet *, sector_map &);
+static void do_dome(Ship *, SectorMap &);
+static void do_quarry(Ship *, Planet *, SectorMap &);
 static void do_berserker(Ship *, Planet *);
 static void do_recover(Planet *, int, int);
 static double est_production(const sector &);
 static int moveship_onplanet(Ship *, Planet *);
-static void plow(Ship *, Planet *, sector_map &);
-static void terraform(Ship *, Planet *, sector_map &);
+static void plow(Ship *, Planet *, SectorMap &);
+static void terraform(Ship *, Planet *, SectorMap &);
 
 int doplanet(int starnum, Planet *planet, int planetnum) {
   int shipno;
@@ -658,7 +658,7 @@ static int moveship_onplanet(Ship *ship, Planet *planet) {
   return 1;
 }
 
-static void terraform(Ship *ship, Planet *planet, sector_map &smap) {
+static void terraform(Ship *ship, Planet *planet, SectorMap &smap) {
   /* move, and then terraform. */
   if (!moveship_onplanet(ship, planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
@@ -689,7 +689,7 @@ static void terraform(Ship *ship, Planet *planet, sector_map &smap) {
   }
 }
 
-static void plow(Ship *ship, Planet *planet, sector_map &smap) {
+static void plow(Ship *ship, Planet *planet, SectorMap &smap) {
   if (!moveship_onplanet(ship, planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
   if ((races[ship->owner - 1]->likes[s.condition]) && (s.fert < 100)) {
@@ -712,7 +712,7 @@ static void plow(Ship *ship, Planet *planet, sector_map &smap) {
   }
 }
 
-static void do_dome(Ship *ship, sector_map &smap) {
+static void do_dome(Ship *ship, SectorMap &smap) {
   int adjust;
 
   auto &s = smap.get(ship->land_x, ship->land_y);
@@ -728,7 +728,7 @@ static void do_dome(Ship *ship, sector_map &smap) {
   use_resource(ship, RES_COST_DOME);
 }
 
-static void do_quarry(Ship *ship, Planet *planet, sector_map &smap) {
+static void do_quarry(Ship *ship, Planet *planet, SectorMap &smap) {
   int prod;
   int tox;
 

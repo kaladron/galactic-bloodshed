@@ -76,12 +76,12 @@ static const int cond[] = {SectorType::SEC_SEA,    SectorType::SEC_MOUNT,
                            SectorType::SEC_GAS,    SectorType::SEC_SEA,
                            SectorType::SEC_FOREST, SectorType::SEC_DESERT};
 
-static int neighbors(sector_map &, int, int, int);
+static int neighbors(SectorMap &, int, int, int);
 static void MakeEarthAtmosphere(Planet *, int);
-static void Makesurface(const Planet &, sector_map &);
+static void Makesurface(const Planet &, SectorMap &);
 static short SectTemp(const Planet &, int);
-static void seed(sector_map &, int, int);
-static void grow(sector_map &, int, int, int);
+static void seed(SectorMap &, int, int);
+static void grow(SectorMap &, int, int, int);
 
 Planet Makeplanet(double dist, short stemp, PlanetType type) {
   static planetnum_t planet_id = 0;
@@ -112,7 +112,7 @@ Planet Makeplanet(double dist, short stemp, PlanetType type) {
   t = c = cond[type];
 
   // Initialize with the correct number of sectors.
-  sector_map smap(planet, true);
+  SectorMap smap(planet, true);
   for (y = 0; y < planet.Maxy; y++) {
     for (x = 0; x < planet.Maxx; x++) {
       auto &s = smap.get(x, y);
@@ -264,7 +264,7 @@ static void MakeEarthAtmosphere(Planet *pptr, int chance) {
     Returns # of neighbors of a given designation that a sector has.
 */
 
-static int neighbors(sector_map &smap, int x, int y, int type) {
+static int neighbors(SectorMap &smap, int x, int y, int type) {
   int l = x - 1;
   int r = x + 1; /* Left and right columns. */
   int n = 0;     /* Number of neighbors so far. */
@@ -287,7 +287,7 @@ static int neighbors(sector_map &smap, int x, int y, int type) {
 }
 
 //! Randomly places n sectors of designation type on a planet.
-static void seed(sector_map &smap, int type, int n) {
+static void seed(SectorMap &smap, int type, int n) {
   while (n-- > 0) {
     auto &s = smap.get_random();
     s.type = s.condition = type;
@@ -298,7 +298,7 @@ static void seed(sector_map &smap, int type, int n) {
  *  of adjacent sectors of the same type that must be found for the sector to
  *  become type.
  */
-static void grow(sector_map &smap, int type, int n, int rate) {
+static void grow(SectorMap &smap, int type, int n, int rate) {
   std::vector<std::tuple<int, int, int>> worklist;  // x, y, type
 
   // We don't want to alter the current map, as this is iterative.
@@ -320,7 +320,7 @@ static void grow(sector_map &smap, int type, int n, int rate) {
   }
 }
 
-static void Makesurface(const Planet &p, sector_map &smap) {
+static void Makesurface(const Planet &p, SectorMap &smap) {
   for (int x = 0; x < smap.get_maxx(); x++) {
     for (int y = 0; y < smap.get_maxy(); y++) {
       auto &s = smap.get(x, y);

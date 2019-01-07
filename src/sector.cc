@@ -22,6 +22,6 @@ std::ostream &operator<<(std::ostream &os, const sector &s) {
   return os;
 }
 
-sector &sector_map::get_random() {
+sector &SectorMap::get_random() {
   return get(int_rand(0, maxx_ - 1), int_rand(0, maxy_ - 1));
 }

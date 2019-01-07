@@ -183,7 +183,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
 }
 
 char desshow(const player_t Playernum, const governor_t Governor, const int x,
-             const int y, const racetype *r, sector_map &smap) {
+             const int y, const racetype *r, SectorMap &smap) {
   auto &s = smap.get(x, y);
 
   if (s.troops && !r->governor[Governor].toggle.geography) {

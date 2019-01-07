@@ -36,7 +36,7 @@ struct stype {
 #define RACIAL_TYPES 10
 
 // TODO(jeffbailey): Copied from map.c, but they've diverged
-static char desshow(const int x, const int y, sector_map &);
+static char desshow(const int x, const int y, SectorMap &);
 
 /* racial types (10 racial types ) */
 static int Thing[RACIAL_TYPES] = {1, 1, 1, 0, 0, 0, 0, 0, 0, 0};
@@ -466,7 +466,7 @@ int main() {
 }
 
 static char desshow(const int x, const int y,
-                    sector_map &smap) /* copied from map.c */
+                    SectorMap &smap) /* copied from map.c */
 {
   const auto &s = smap.get(x, y);
 

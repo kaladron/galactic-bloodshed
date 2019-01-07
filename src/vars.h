@@ -206,14 +206,14 @@ class sector {
   friend std::ostream &operator<<(std::ostream &, const sector &);
 };
 
-class sector_map {
+class SectorMap {
  public:
-  sector_map(const Planet &planet) : maxx_(planet.Maxx), maxy_(planet.Maxy) {
+  SectorMap(const Planet &planet) : maxx_(planet.Maxx), maxy_(planet.Maxy) {
     vec_.reserve(planet.Maxx * planet.Maxy);
   }
 
   //! Add an empty sector for every potential space.  Used for initialization.
-  sector_map(const Planet &planet, bool)
+  SectorMap(const Planet &planet, bool)
       : maxx_(planet.Maxx),
         maxy_(planet.Maxy),
         vec_(planet.Maxx * planet.Maxy) {}
@@ -224,13 +224,13 @@ class sector_map {
   int get_maxy() { return maxy_; }
   sector &get_random();
 
-  sector_map(sector_map &) = delete;
-  void operator=(const sector_map &) = delete;
-  sector_map(sector_map &&) = default;
-  sector_map &operator=(sector_map &&) = default;
+  SectorMap(SectorMap &) = delete;
+  void operator=(const SectorMap &) = delete;
+  SectorMap(SectorMap &&) = default;
+  SectorMap &operator=(SectorMap &&) = default;
 
  private:
-  sector_map(const int maxx, const int maxy) : maxx_(maxx), maxy_(maxy) {}
+  SectorMap(const int maxx, const int maxy) : maxx_(maxx), maxy_(maxy) {}
   const int maxx_;
   const int maxy_;
   std::vector<sector> vec_;

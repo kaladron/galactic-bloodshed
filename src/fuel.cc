@@ -21,6 +21,7 @@
 #include "moveship.h"
 #include "order.h"
 #include "ships.h"
+#include "shlmisc.h"
 #include "tweakables.h"
 #include "vars.h"
 
@@ -37,7 +38,6 @@ static void fuel_output(int Playernum, int Governor, double dist, double fuel,
 void proj_fuel(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  shipnum_t shipno;
   int opt_settings;
   int current_settings;
   int computing = 1;
@@ -45,7 +45,6 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   double fuel_usage;
   double level;
   double dist;
-  Ship *ship;
   char buf[1024];
   double current_fuel = 0.0;
   double gravity_factor = 0.0;
@@ -62,35 +61,30 @@ void proj_fuel(const command_t &argv, GameObj &g) {
            "Invalid first option.\n\"fuel #<shipnumber> [destination]\"...\n");
     return;
   }
-  sscanf(argv[1].c_str() + (argv[1][0] == '#'), "%ld", &shipno);
-  if (shipno > Numships() || shipno < 1) {
-    sprintf(buf, "rst: no such ship #%lu \n", shipno);
+  auto shipno = string_to_shipnum(argv[1]);
+  if (!shipno || *shipno > Numships() || *shipno < 1) {
+    sprintf(buf, "rst: no such ship #%lu \n", *shipno);
     notify(Playernum, Governor, buf);
     return;
   }
-  (void)getship(&ship, shipno);
+  auto ship = getship(*shipno);
   if (ship->owner != Playernum) {
     g.out << "You do not own this ship.\n";
-    free(ship);
     return;
   }
-  if (landed(ship) && (argv.size() == 2)) {
-    notify(Playernum, Governor,
-           "You must specify a destination for landed or docked ships...\n");
-    free(ship);
+  if (landed(&*ship) && (argv.size() == 2)) {
+    g.out << "You must specify a destination for landed or docked ships...\n";
     return;
   }
   if (!ship->speed) {
     g.out << "That ship is not moving!\n";
-    free(ship);
     return;
   }
-  if ((!speed_rating(ship)) || (ship->type == ShipType::OTYPE_FACTORY)) {
+  if ((!speed_rating(&*ship)) || (ship->type == ShipType::OTYPE_FACTORY)) {
     g.out << "That ship does not have a speed rating...\n";
-    free(ship);
     return;
   }
-  if (landed(ship) && (ship->whatorbits == ScopeLevel::LEVEL_PLAN)) {
+  if (landed(&*ship) && (ship->whatorbits == ScopeLevel::LEVEL_PLAN)) {
     const auto &p = getplanet(ship->storbits, ship->pnumorbits);
     gravity_factor = gravity(p);
     sprintf(plan_buf, "/%s/%s", Stars[(int)ship->storbits]->name,
@@ -105,15 +99,13 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   tmpdest = Getplace(g, deststr, 1);
   if (tmpdest.err) {
     g.out << "fuel:  bad scope.\n";
-    free(ship);
     return;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
     (void)getship(&tmpship, tmpdest.shipno);
-    if (!followable(ship, tmpship)) {
+    if (!followable(&*ship, tmpship)) {
       g.out << "The ship's destination is out of range.\n";
       free(tmpship);
-      free(ship);
       return;
     }
     free(tmpship);
@@ -123,21 +115,17 @@ void proj_fuel(const command_t &argv, GameObj &g) {
       ((ship->storbits != tmpdest.snum) &&
        tmpdest.level != ScopeLevel::LEVEL_STAR) &&
       isclr(Stars[tmpdest.snum]->explored, ship->owner)) {
-    notify(Playernum, Governor,
-           "You haven't explored the destination system.\n");
-    free(ship);
+    g.out << "You haven't explored the destination system.\n";
     return;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_UNIV) {
     g.out << "Invalid ship destination.\n";
-    free(ship);
     return;
   }
   x_0 = y_0 = x_1 = y_1 = 0.0;
 
   x_0 = ship->xpos;
   y_0 = ship->ypos;
-  free(ship);
 
   if (tmpdest.level == ScopeLevel::LEVEL_UNIV) {
     notify(Playernum, Governor,
@@ -173,7 +161,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   }
 
   /*  First get the results based on current fuel load.  */
-  (void)getship(&tmpship, shipno);
+  (void)getship(&tmpship, *shipno);
   level = tmpship->fuel;
   current_settings = do_trip(tmpdest, tmpship->fuel, gravity_factor);
   current_segs = number_segments;
@@ -184,7 +172,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   fuel_usage = level = tmpship->max_fuel;
   opt_settings = 0;
   while (computing) {
-    (void)getship(&tmpship, shipno);
+    (void)getship(&tmpship, *shipno);
     computing = do_trip(tmpdest, level, gravity_factor);
     if ((computing) && (tmpship->fuel >= 0.05)) {
       fuel_usage = level;
@@ -197,7 +185,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     free(tmpship);
   }
 
-  (void)getship(&tmpship, shipno);
+  (void)getship(&tmpship, *shipno);
   sprintf(buf,
           "\n  ----- ===== FUEL ESTIMATES ===== ----\n\nAt Current Fuel "
           "Cargo (%.2ff):\n",

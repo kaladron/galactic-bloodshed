@@ -283,7 +283,6 @@ static void DispShip(const GameObj &g, placetype *where, Ship *ship,
   int y;
   int wm;
   int stand;
-  Ship *aship;
   double xt;
   double yt;
   double slope;
@@ -332,15 +331,15 @@ static void DispShip(const GameObj &g, placetype *where, Ship *ship,
           xt = Stars[ship->special.aimed_at.snum]->xpos + pl.xpos;
           yt = Stars[ship->special.aimed_at.snum]->ypos + pl.ypos;
         } else { /* different planet */
-          const auto &apl = getplanet((int)where->snum, (int)where->pnum);
+          const auto apl = getplanet(where->snum, where->pnum);
           xt = Stars[ship->special.aimed_at.snum]->xpos + apl.xpos;
           yt = Stars[ship->special.aimed_at.snum]->ypos + apl.ypos;
         }
       } else if (ship->special.aimed_at.level == ScopeLevel::LEVEL_SHIP) {
-        if (getship(&aship, (int)ship->special.aimed_at.shipno)) {
+        auto aship = getship(ship->special.aimed_at.shipno);
+        if (aship) {
           xt = aship->xpos;
           yt = aship->ypos;
-          free(aship);
         } else
           xt = yt = 0.0;
       } else

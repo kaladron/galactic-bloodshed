@@ -685,8 +685,6 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
 
 static void mech_defend(int Playernum, int Governor, int *people, int type,
                         const Planet &p, int x2, int y2, const sector &s2) {
-  int sh;
-  Ship *ship;
   int civ = 0;
   int mil = 0;
   int oldgov;
@@ -698,34 +696,33 @@ static void mech_defend(int Playernum, int Governor, int *people, int type,
   else
     mil = *people;
 
-  sh = p.ships;
   Race = races[Playernum - 1];
-  while (sh && (civ + mil)) {
-    (void)getship(&ship, sh);
-    if (ship->owner != Playernum && ship->type == ShipType::OTYPE_AFV &&
-        landed(ship) && retal_strength(ship) && (ship->land_x == x2) &&
-        (ship->land_y == y2)) {
-      alien = races[ship->owner - 1];
-      if (!isset(Race->allied, (int)ship->owner) ||
+
+  Shiplist shiplist{p.ships};
+  for (auto ship : shiplist) {
+    if (civ + mil == 0) break;
+    if (ship.owner != Playernum && ship.type == ShipType::OTYPE_AFV &&
+        landed(&ship) && retal_strength(&ship) && (ship.land_x == x2) &&
+        (ship.land_y == y2)) {
+      alien = races[ship.owner - 1];
+      if (!isset(Race->allied, ship.owner) ||
           !isset(alien->allied, Playernum)) {
-        while ((civ + mil) && retal_strength(ship)) {
-          oldgov = Stars[ship->storbits]->governor[alien->Playernum - 1];
-          mech_attack_people(ship, &civ, &mil, alien, Race, s2, x2, y2, 1,
+        while ((civ + mil) > 0 && retal_strength(&ship)) {
+          oldgov = Stars[ship.storbits]->governor[alien->Playernum - 1];
+          mech_attack_people(&ship, &civ, &mil, alien, Race, s2, x2, y2, 1,
                              long_buf, short_buf);
           notify(Playernum, Governor, long_buf);
           warn(alien->Playernum, oldgov, long_buf);
           if (civ + mil) {
-            people_attack_mech(ship, civ, mil, Race, alien, s2, x2, y2,
+            people_attack_mech(&ship, civ, mil, Race, alien, s2, x2, y2,
                                long_buf, short_buf);
             notify(Playernum, Governor, long_buf);
             warn(alien->Playernum, oldgov, long_buf);
           }
         }
       }
-      putship(ship);
+      putship(&ship);
     }
-    sh = ship->nextship;
-    free(ship);
   }
   *people = civ + mil;
 }

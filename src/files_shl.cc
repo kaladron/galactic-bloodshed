@@ -1536,10 +1536,20 @@ int Numraces() {
 
 shipnum_t Numships() /* return number of ships */
 {
-  struct stat buffer;
+  const char *tail = nullptr;
+  sqlite3_stmt *stmt;
 
-  fstat(shdata, &buffer);
-  return ((int)(buffer.st_size / sizeof(Ship)));
+  const auto sql = "SELECT COUNT(*) FROM tbl_ship;";
+  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+
+  auto result = sqlite3_step(stmt);
+  if (result != SQLITE_ROW) {
+    throw new std::runtime_error(
+        "Database unable to return the requested planet");
+  }
+
+  return sqlite3_column_int(stmt, 0);
+  // TODO(jeffbailey): Pretty certain we have to free stmt
 }
 
 int Numcommods() {

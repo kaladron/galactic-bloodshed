@@ -123,7 +123,7 @@ void orbit(const command_t &argv, GameObj &g) {
 
       for (planetnum_t i = 0; i < Stars[where.snum]->numplanets; i++)
         if (DontDispNum != i) {
-          const auto &p = getplanet((int)where.snum, i);
+          const auto p = getplanet((int)where.snum, i);
           DispPlanet(g, ScopeLevel::LEVEL_STAR, p, Stars[where.snum]->pnames[i],
                      DontDispPlanets, Race, buf);
           strcat(output, buf);
@@ -156,7 +156,7 @@ void orbit(const command_t &argv, GameObj &g) {
       }
     } break;
     case ScopeLevel::LEVEL_PLAN: {
-      const auto &p = getplanet((int)where.snum, (int)where.pnum);
+      const auto p = getplanet(where.snum, where.pnum);
       DispPlanet(g, ScopeLevel::LEVEL_PLAN, p,
                  Stars[where.snum]->pnames[where.pnum], DontDispPlanets, Race,
                  buf);

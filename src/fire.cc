@@ -159,7 +159,7 @@ void fire(const command_t &argv, GameObj &g) {
           free(to);
           continue;
         }
-        const auto &p = getplanet((int)from->storbits, (int)from->pnumorbits);
+        const auto p = getplanet(from->storbits, from->pnumorbits);
         if (!adjacent((int)from->land_x, (int)from->land_y, (int)to->land_x,
                       (int)to->land_y, p)) {
           g.out << "You are not adjacent to your target!\n";
@@ -260,7 +260,7 @@ void fire(const command_t &argv, GameObj &g) {
         if (to->whatorbits == ScopeLevel::LEVEL_STAR) /* star level ships */
           sh = Stars[to->storbits]->ships;
         if (to->whatorbits == ScopeLevel::LEVEL_PLAN) { /* planet level ships */
-          const auto &p = getplanet((int)to->storbits, (int)to->pnumorbits);
+          const auto p = getplanet(to->storbits, to->pnumorbits);
           sh = p.ships;
         }
         while (sh && from->alive) {

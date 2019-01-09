@@ -171,7 +171,7 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
   for (i = 0; i <= SectorType::SEC_WASTED; i++) Sect[i] = 0;
 
   Race = races[Playernum - 1];
-  const auto &planet = getplanet(Starnum, Planetnum);
+  const auto planet = getplanet(Starnum, Planetnum);
 
   if (!planet.info[Playernum - 1].explored) {
     return;

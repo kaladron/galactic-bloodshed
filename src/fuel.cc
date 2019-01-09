@@ -85,7 +85,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     return;
   }
   if (landed(&*ship) && (ship->whatorbits == ScopeLevel::LEVEL_PLAN)) {
-    const auto &p = getplanet(ship->storbits, ship->pnumorbits);
+    const auto p = getplanet(ship->storbits, ship->pnumorbits);
     gravity_factor = gravity(p);
     sprintf(plan_buf, "/%s/%s", Stars[(int)ship->storbits]->name,
             Stars[(int)ship->storbits]->pnames[(int)ship->pnumorbits]);
@@ -142,7 +142,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     y_1 = tmpship->ypos;
     free(tmpship);
   } else if (tmpdest.level == ScopeLevel::LEVEL_PLAN) {
-    const auto &p = getplanet(tmpdest.snum, tmpdest.pnum);
+    const auto p = getplanet(tmpdest.snum, tmpdest.pnum);
     x_1 = p.xpos + Stars[tmpdest.snum]->xpos;
     y_1 = p.ypos + Stars[tmpdest.snum]->ypos;
   } else if (tmpdest.level == ScopeLevel::LEVEL_STAR) {

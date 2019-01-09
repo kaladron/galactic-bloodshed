@@ -37,7 +37,7 @@ static void colonies_at_star(GameObj &g, racetype *Race, starnum_t star,
   if (!isset(Stars[star]->explored, Playernum)) return;
 
   for (i = 0; i < Stars[star]->numplanets; i++) {
-    const auto &pl = getplanet(star, i);
+    const auto pl = getplanet(star, i);
 
     if (pl.info[Playernum - 1].explored &&
         pl.info[Playernum - 1].numsectsowned &&
@@ -181,7 +181,7 @@ void distance(const command_t &argv, GameObj &g) {
     x0 = ship->xpos;
     y0 = ship->ypos;
   } else if (from.level == ScopeLevel::LEVEL_PLAN) {
-    const auto &p = getplanet(from.snum, from.pnum);
+    const auto p = getplanet(from.snum, from.pnum);
     x0 = p.xpos + Stars[from.snum]->xpos;
     y0 = p.ypos + Stars[from.snum]->ypos;
   } else if (from.level == ScopeLevel::LEVEL_STAR) {
@@ -198,7 +198,7 @@ void distance(const command_t &argv, GameObj &g) {
     x1 = ship->xpos;
     y1 = ship->ypos;
   } else if (to.level == ScopeLevel::LEVEL_PLAN) {
-    const auto &p = getplanet(to.snum, to.pnum);
+    const auto p = getplanet(to.snum, to.pnum);
     x1 = p.xpos + Stars[to.snum]->xpos;
     y1 = p.ypos + Stars[to.snum]->ypos;
   } else if (to.level == ScopeLevel::LEVEL_STAR) {
@@ -280,7 +280,7 @@ void exploration(const command_t &argv, GameObj &g) {
       getstar(&(Stars[star]), star);
       if (isset(Stars[star]->explored, Playernum))
         for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
-          const auto &pl = getplanet(star, i);
+          const auto pl = getplanet(star, i);
           if (i == 0) {
             if (Race->tech >= TECH_SEE_STABILITY) {
               sprintf(buf, "\n%13s (%2d)[%2d]\n", Stars[star]->name,
@@ -388,7 +388,7 @@ static void tech_report_star(int Playernum, int Governor, startype *star,
   if (isset(star->explored, Playernum) &&
       (!Governor || star->governor[Playernum - 1] == Governor)) {
     for (planetnum_t i = 0; i < star->numplanets; i++) {
-      const auto &pl = getplanet(snum, i);
+      const auto pl = getplanet(snum, i);
       if (pl.info[Playernum - 1].explored &&
           pl.info[Playernum - 1].numsectsowned) {
         sprintf(str, "%s/%s%s", star->name, star->pnames[i],

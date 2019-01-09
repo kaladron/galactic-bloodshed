@@ -43,7 +43,7 @@ void map(const command_t &argv, GameObj &g) {
       g.out << "Bad scope.\n";
       return;
     case ScopeLevel::LEVEL_PLAN: {
-      const auto &p = getplanet(where.snum, where.pnum);
+      const auto p = getplanet(where.snum, where.pnum);
       show_map(Playernum, Governor, where.snum, where.pnum, p);
       if (Stars[where.snum]->stability > 50)
         g.out << "WARNING! This planet's primary is unstable.\n";

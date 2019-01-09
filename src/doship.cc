@@ -334,7 +334,7 @@ void domine(int shipno, int detonate) {
         sh = Stars[ship->storbits]->ships;
         break;
       case ScopeLevel::LEVEL_PLAN: {
-        const auto &planet = getplanet(ship->storbits, ship->pnumorbits);
+        const auto planet = getplanet(ship->storbits, ship->pnumorbits);
         sh = planet.ships;
       } break;
       default:

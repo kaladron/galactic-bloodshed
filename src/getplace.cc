@@ -158,7 +158,7 @@ static placetype Getplace2(const int Playernum, const int Governor,
       if (!strncmp(substr, Stars[where->snum]->pnames[i], l)) {
         where->level = ScopeLevel::LEVEL_PLAN;
         where->pnum = i;
-        const auto &p = getplanet(where->snum, i);
+        const auto p = getplanet(where->snum, i);
         if (ignoreexpl || p.info[Playernum - 1].explored || God) {
           tick = (*string == '/');
           return (Getplace2(Playernum, Governor, string + tick, where,

@@ -627,7 +627,7 @@ int getdefense(Ship *ship) {
   int defense = 0;
 
   if (landed(ship)) {
-    const auto &p = getplanet((int)ship->storbits, (int)ship->pnumorbits);
+    const auto p = getplanet(ship->storbits, ship->pnumorbits);
     auto sect = getsector(p, ship->land_x, ship->land_y);
     defense = 2 * Defensedata[sect.condition];
   }

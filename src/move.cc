@@ -129,8 +129,7 @@ void arm(const command_t &argv, GameObj &g) {
     else {
       amount = std::stoi(argv[2]);
       if (amount <= 0) {
-        notify(Playernum, Governor,
-               "You must specify a positive number of civs to arm.\n");
+        g.out << "You must specify a positive number of civs to arm.\n";
         return;
       }
       amount = MIN(sect.troops, amount);

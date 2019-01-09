@@ -76,7 +76,7 @@ void cs(const command_t &argv, GameObj &g) {
           g.lastx[0] = g.lasty[0] = 0.0;
         break;
       case ScopeLevel::LEVEL_PLAN: {
-        const auto &planet = getplanet(g.snum, g.pnum);
+        const auto planet = getplanet(g.snum, g.pnum);
         if (where.level == ScopeLevel::LEVEL_STAR && where.snum == g.snum) {
           g.lastx[0] = planet.xpos;
           g.lasty[0] = planet.ypos;
@@ -107,7 +107,7 @@ void cs(const command_t &argv, GameObj &g) {
               if (s->whatorbits == ScopeLevel::LEVEL_PLAN &&
                   s->storbits == where.snum && s->pnumorbits == where.pnum) {
                 /* same */
-                const auto &planet = getplanet(s->storbits, s->pnumorbits);
+                const auto planet = getplanet(s->storbits, s->pnumorbits);
                 g.lastx[0] = s->xpos - Stars[s->storbits]->xpos - planet.xpos;
                 g.lasty[0] = s->ypos - Stars[s->storbits]->ypos - planet.ypos;
               } else

@@ -73,7 +73,7 @@ void scrap(const command_t &argv, GameObj &g) {
       }
       if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
         /* wc's release poison */
-        const auto &planet = getplanet((int)s->storbits, (int)s->pnumorbits);
+        const auto planet = getplanet(s->storbits, s->pnumorbits);
         if (landed(s)) sect = getsector(planet, s->land_x, s->land_y);
       }
       std::optional<Ship> s2;

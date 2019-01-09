@@ -42,7 +42,7 @@ static bool Tactical;
 struct reportdata {
   unsigned char type; /* ship or planet */
   Ship *s;
-  Planet *p;
+  Planet p;
   shipnum_t n;
   starnum_t star;
   planetnum_t pnum;
@@ -194,7 +194,6 @@ static void ship_report(GameObj &g, shipnum_t indx,
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   Ship *s;
-  Planet *p;
   int i;
   int sight;
   int caliber;
@@ -210,11 +209,11 @@ static void ship_report(GameObj &g, shipnum_t indx,
 
   /* last ship gotten from disk */
   s = rd[indx].s;
-  p = rd[indx].p;
+  auto &p = rd[indx].p;
   shipnum_t shipno = rd[indx].n;
 
   /* launched canister, non-owned ships don't show up */
-  if ((rd[indx].type == PLANET && p->info[Playernum - 1].numsectsowned) ||
+  if ((rd[indx].type == PLANET && p.info[Playernum - 1].numsectsowned) ||
       (rd[indx].type != PLANET && s->alive && s->owner == Playernum &&
        authorized(Governor, s) && rep_on[s->type] &&
        !(s->type == ShipType::OTYPE_CANIST && !s->docked) &&
@@ -389,8 +388,8 @@ static void ship_report(GameObj &g, shipnum_t indx,
         /* tac report from planet */
         sprintf(buf, "(planet)%15.15s%4.0f %4dM           %5u %6u\n",
                 Stars[rd[indx].star]->pnames[rd[indx].pnum], tech,
-                p->info[Playernum - 1].guns, p->info[Playernum - 1].destruct,
-                p->info[Playernum - 1].fuel);
+                p.info[Playernum - 1].guns, p.info[Playernum - 1].destruct,
+                p.info[Playernum - 1].fuel);
         notify(Playernum, Governor, buf);
         caliber = GTYPE_MEDIUM;
       } else {
@@ -511,19 +510,19 @@ static void ship_report(GameObj &g, shipnum_t indx,
 
 static void plan_getrships(player_t Playernum, governor_t Governor,
                            starnum_t snum, planetnum_t pnum) {
-  rd[Num_ships].p = new Planet(getplanet(snum, pnum));
+  rd[Num_ships].p = getplanet(snum, pnum);
   const auto &p = rd[Num_ships].p;
   /* add this planet into the ship list */
   rd[Num_ships].star = snum;
   rd[Num_ships].pnum = pnum;
   rd[Num_ships].type = PLANET;
   rd[Num_ships].n = 0;
-  rd[Num_ships].x = Stars[snum]->xpos + p->xpos;
-  rd[Num_ships].y = Stars[snum]->ypos + p->ypos;
+  rd[Num_ships].x = Stars[snum]->xpos + p.xpos;
+  rd[Num_ships].y = Stars[snum]->ypos + p.ypos;
   Num_ships++;
 
-  if (p->info[Playernum - 1].explored) {
-    shipnum_t shn = p->ships;
+  if (p.info[Playernum - 1].explored) {
+    shipnum_t shn = p.ships;
     while (shn && Getrship(Playernum, Governor, shn))
       shn = rd[Num_ships - 1].s->nextship;
   }
@@ -558,9 +557,8 @@ static int Getrship(player_t Playernum, governor_t Governor, shipnum_t shipno) {
 static void Free_rlist() {
   int i;
   for (i = 0; i < Num_ships; i++)
-    if (rd[i].type == PLANET)
-      delete rd[i].p;
-    else
+    if (rd[i].type == PLANET) {
+    } else
       free(rd[i].s);
   free(rd);
 }

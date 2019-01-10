@@ -129,87 +129,87 @@ int enroll_valid_race() {
 
 found_planet:
   printf(" found!\n");
-  auto Race = new race;
-  bzero(Race, sizeof(race));
+  auto race = new Race;
+  bzero(race, sizeof(Race));
 
-  Race->Playernum = Playernum;
-  Race->God = (race_info.priv_type == P_GOD);
-  Race->Guest = (race_info.priv_type == P_GUEST);
-  strcpy(Race->name, race_info.name);
-  strcpy(Race->password, race_info.password);
+  race->Playernum = Playernum;
+  race->God = (race_info.priv_type == P_GOD);
+  race->Guest = (race_info.priv_type == P_GUEST);
+  strcpy(race->name, race_info.name);
+  strcpy(race->password, race_info.password);
 
-  strcpy(Race->governor[0].password, "0");
-  Race->governor[0].homelevel = Race->governor[0].deflevel =
+  strcpy(race->governor[0].password, "0");
+  race->governor[0].homelevel = race->governor[0].deflevel =
       ScopeLevel::LEVEL_PLAN;
-  Race->governor[0].homesystem = Race->governor[0].defsystem = star;
-  Race->governor[0].homeplanetnum = Race->governor[0].defplanetnum = pnum;
+  race->governor[0].homesystem = race->governor[0].defsystem = star;
+  race->governor[0].homeplanetnum = race->governor[0].defplanetnum = pnum;
   /* display options */
-  Race->governor[0].toggle.highlight = Playernum;
-  Race->governor[0].toggle.inverse = 1;
-  Race->governor[0].toggle.color = 0;
-  Race->governor[0].active = 1;
+  race->governor[0].toggle.highlight = Playernum;
+  race->governor[0].toggle.inverse = 1;
+  race->governor[0].toggle.color = 0;
+  race->governor[0].active = 1;
 
-  for (i = 0; i <= OTHER; i++) Race->conditions[i] = planet.conditions[i];
+  for (i = 0; i <= OTHER; i++) race->conditions[i] = planet.conditions[i];
 #if 0
   /* make conditions preferred by your people set to (more or less) 
      those of the planet : higher the concentration of gas, the higher
      percentage difference between planet and race */
   for (j=0; j<=OTHER; j++)
-    Race->conditions[j] = planet->conditions[j]
+    race->conditions[j] = planet->conditions[j]
       + int_rand(round_rand(-planet->conditions[j]*2.0), 
 		 round_rand(planet->conditions[j]*2.0) ) ;
 #endif
 
   for (i = 0; i < MAXPLAYERS; i++) {
     /* messages from autoreport, player #1 are decodable */
-    if ((i == Playernum) || (Playernum == 1) || Race->God)
-      Race->translate[i - 1] = 100; /* you can talk to own race */
+    if ((i == Playernum) || (Playernum == 1) || race->God)
+      race->translate[i - 1] = 100; /* you can talk to own race */
     else
-      Race->translate[i - 1] = 1;
+      race->translate[i - 1] = 1;
   }
 
 #if 0
   /* All of the following zeros are not really needed, because the race
      was bzero'ed out above. */
   for (i=0; i<80; i++)
-    Race->discoveries[i] = 0;
-  Race->tech = 0.0;
-  Race->morale = 0;
-  Race->turn = 0;
-  Race->allied[0] = Race->allied[1] = 0;
-  Race->atwar[0] = Race->atwar[1] = 0;
+    race->discoveries[i] = 0;
+  race->tech = 0.0;
+  race->morale = 0;
+  race->turn = 0;
+  race->allied[0] = race->allied[1] = 0;
+  race->atwar[0] = race->atwar[1] = 0;
   for (i=0; i<MAXPLAYERS; i++) 
-    Race->points[i]=0;
+    race->points[i]=0;
 #endif
 
   /*
    * Assign racial characteristics. */
-  Race->absorb = race_info.attr[ABSORB];
-  Race->collective_iq = race_info.attr[COL_IQ];
-  Race->Metamorph = (race_info.race_type == R_METAMORPH);
-  Race->pods = race_info.attr[PODS];
+  race->absorb = race_info.attr[ABSORB];
+  race->collective_iq = race_info.attr[COL_IQ];
+  race->Metamorph = (race_info.race_type == R_METAMORPH);
+  race->pods = race_info.attr[PODS];
 
-  Race->fighters = race_info.attr[FIGHT];
+  race->fighters = race_info.attr[FIGHT];
   if (race_info.attr[COL_IQ] == 1.0)
-    Race->IQ_limit = race_info.attr[A_IQ];
+    race->IQ_limit = race_info.attr[A_IQ];
   else
-    Race->IQ = race_info.attr[A_IQ];
-  Race->number_sexes = race_info.attr[SEXES];
+    race->IQ = race_info.attr[A_IQ];
+  race->number_sexes = race_info.attr[SEXES];
 
-  Race->fertilize = race_info.attr[FERT] * 100;
+  race->fertilize = race_info.attr[FERT] * 100;
 
-  Race->adventurism = race_info.attr[ADVENT];
-  Race->birthrate = race_info.attr[BIRTH];
-  Race->mass = race_info.attr[MASS];
-  Race->metabolism = race_info.attr[METAB];
+  race->adventurism = race_info.attr[ADVENT];
+  race->birthrate = race_info.attr[BIRTH];
+  race->mass = race_info.attr[MASS];
+  race->metabolism = race_info.attr[METAB];
 
   /*
    * Assign sector compats and determine a primary sector type. */
   for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++) {
-    Race->likes[i] = race_info.compat[i] / 100.0;
+    race->likes[i] = race_info.compat[i] / 100.0;
     if ((100 == race_info.compat[i]) &&
         (1.0 == planet_compat_cov[race_info.home_planet_type][i]))
-      Race->likesbest = i;
+      race->likesbest = i;
   }
 
   /*
@@ -218,17 +218,17 @@ found_planet:
   PermuteSects(planet);
   Getxysect(planet, nullptr, nullptr, 1);
   while ((i = Getxysect(planet, &x, &y, 0)))
-    if (smap.get(x, y).condition == Race->likesbest) break;
+    if (smap.get(x, y).condition == race->likesbest) break;
   if (!i) x = y = 0;
   auto &sect = smap.get(x, y);
   sect.owner = Playernum;
   sect.race = Playernum;
-  sect.popn = planet.popn = Race->number_sexes;
+  sect.popn = planet.popn = race->number_sexes;
   sect.fert = 100;
   sect.eff = 10;
   sect.troops = planet.troops = 0;
 
-  Race->governors = 0;
+  race->governors = 0;
 
   sigemptyset(&block);
   sigaddset(&block, SIGHUP);
@@ -245,7 +245,7 @@ found_planet:
 
     bzero(&s, sizeof(s));
     shipno = Numships() + 1;
-    Race->Gov_ship = shipno;
+    race->Gov_ship = shipno;
     planet.ships = shipno;
     s.nextship = 0;
 
@@ -282,7 +282,7 @@ found_planet:
     s.fuel = 0.0;
     s.popn = Shipdata[s.type][ABIL_MAXCREW];
     s.troops = 0;
-    s.mass = s.base_mass + Shipdata[s.type][ABIL_MAXCREW] * Race->mass;
+    s.mass = s.base_mass + Shipdata[s.type][ABIL_MAXCREW] * race->mass;
     s.destruct = s.resource = 0;
 
     s.alive = 1;
@@ -317,12 +317,12 @@ found_planet:
   /*planet->info[Playernum-1].autorep = 1;*/
 
   planet.maxpopn =
-      maxsupport(Race, sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
+      maxsupport(race, sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
   /* (approximate) */
 
 #ifdef STARTING_INVENTORY
 
-  if (Race->Metamorph)
+  if (race->Metamorph)
     planet.info[Playernum - 1].resource += (START_RES - START_MESO_RES_DIFF);
   else
     planet.info[Playernum - 1].resource += START_RES;
@@ -332,7 +332,7 @@ found_planet:
 
 #endif
 
-  putrace(Race);
+  putrace(race);
   putsector(sect, planet, x, y);
 
   getstar(&Stars[star], star);

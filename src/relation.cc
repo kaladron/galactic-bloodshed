@@ -14,7 +14,7 @@
 #include "shlmisc.h"
 #include "vars.h"
 
-static auto allied(const race &r, const player_t p) {
+static auto allied(const Race &r, const player_t p) {
   if (isset(r.atwar, p)) return "WAR";
   if (isset(r.allied, p)) return "ALLIED";
   return "neutral";

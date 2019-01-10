@@ -21,7 +21,7 @@ typedef struct {
   char compat;
 } toggletype;
 
-class race {
+class Race {
  public:
   player_t Playernum;
   char name[RNAMESIZE]; /* Racial name. */
@@ -163,7 +163,7 @@ struct power_blocks {
   unsigned short VPs[MAXPLAYERS];
 };
 
-using racetype = class race;
+using racetype = class Race;
 using blocktype = struct block;
 
 extern struct block Blocks[MAXPLAYERS];

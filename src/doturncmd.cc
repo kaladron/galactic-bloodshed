@@ -31,7 +31,7 @@
 #include "vars.h"
 
 #ifdef MARKET
-static constexpr void maintain(racetype &r, race::gov &governor,
+static constexpr void maintain(racetype &r, Race::gov &governor,
                                const money_t amount) noexcept {
   if (governor.money >= amount)
     governor.money -= amount;

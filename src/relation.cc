@@ -40,15 +40,15 @@ void relation(const command_t &argv, GameObj &g) {
   notify(Playernum, Governor, buf);
   g.out << " #       know             Race name       Yours        Theirs\n";
   g.out << " -       ----             ---------       -----        ------\n";
-  for (player_t p = 1; p <= Num_races; p++)
-    if (p != Race->Playernum) {
-      auto r = races[p - 1];
-      sprintf(buf, "%2hhu %s (%3d%%) %20.20s : %10s   %10s\n", p,
-              ((Race->God || (Race->translate[p - 1] > 30)) && r->Metamorph &&
-               (Playernum == q))
-                  ? "Morph"
-                  : "     ",
-              Race->translate[p - 1], r->name, allied(*Race, p), allied(*r, q));
-      notify(Playernum, Governor, buf);
-    }
+  for (auto r : races) {
+    if (r->Playernum == Race->Playernum) continue;
+    sprintf(buf, "%2hhu %s (%3d%%) %20.20s : %10s   %10s\n", r->Playernum,
+            ((Race->God || (Race->translate[r->Playernum - 1] > 30)) &&
+             r->Metamorph && (Playernum == q))
+                ? "Morph"
+                : "     ",
+            Race->translate[r->Playernum - 1], r->name,
+            allied(*Race, r->Playernum), allied(*r, q));
+    notify(Playernum, Governor, buf);
+  }
 }

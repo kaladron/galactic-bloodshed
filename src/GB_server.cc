@@ -1201,11 +1201,13 @@ static void load_race_data() {
   Num_races = Numraces();
   races.reserve(Num_races);
   for (int i = 1; i <= Num_races; i++) {
-    getrace(&races[i - 1], i); /* allocates into memory */
-    if (races[i - 1]->Playernum != i) {
-      races[i - 1]->Playernum = i;
-      putrace(races[i - 1]);
+    racetype *r;
+    getrace(&r, i); /* allocates into memory */
+    if (r->Playernum != i) {
+      r->Playernum = i;
+      putrace(r);
     }
+    races.push_back(r);
   }
 }
 

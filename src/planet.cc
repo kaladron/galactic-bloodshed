@@ -194,6 +194,8 @@ int doplanet(int starnum, Planet *planet, int planetnum) {
             push_telegram(ship->owner, ship->governor, buf);
           }
           break;
+        default:
+          break;
       }
       /* add fuel for ships orbiting a gas giant */
       if (!landed(ship) && planet->type == PlanetType::GASGIANT) {

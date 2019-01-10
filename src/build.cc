@@ -990,6 +990,9 @@ void build(const command_t &argv, GameObj &g) {
         initialize_new_ship(g, Race, &newship, load_fuel, load_crew);
         putship(&newship);
         break;
+      default:
+        // Shouldn't be possible.
+        break;
     }
     count--;
   } while (count);
@@ -1014,8 +1017,13 @@ finish:
           case ScopeLevel::LEVEL_UNIV:
             putsdata(&Sdata);
             break;
+          default:
+            break;
         }
       putship(&*builder);
+      break;
+    default:
+      // Shouldn't be possible.
       break;
   }
 }

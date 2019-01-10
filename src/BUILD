@@ -23,7 +23,6 @@ LLVM_COPTS_OPTIONAL = [
     "-Wno-conditional-uninitialized",
     "-Wno-sign-compare",
     "-Wno-switch-enum",
-    "-Wno-switch",
     "-Wno-exit-time-destructors",
     "-Wno-global-constructors",
 ]

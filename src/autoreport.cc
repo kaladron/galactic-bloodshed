@@ -22,46 +22,40 @@
 void autoreport(const command_t &argv, GameObj &g) {
   const int Playernum = g.player;
   const int Governor = g.governor;
-  placetype place;
-  starnum_t snum;
-  planetnum_t pnum;
 
-  snum = g.snum;
-  pnum = g.pnum;
-
-  if (Governor && Stars[snum]->governor[Playernum - 1] != Governor) {
+  if (Governor && Stars[g.snum]->governor[Playernum - 1] != Governor) {
     g.out << "You are not authorized to do this here.\n";
     return;
   }
 
   if (argv.size() == 1) { /* no args */
     if (g.level == ScopeLevel::LEVEL_PLAN) {
-      auto p = getplanet(snum, pnum);
+      auto p = getplanet(g.snum, g.pnum);
       if (p.info[Playernum - 1].autorep)
         p.info[Playernum - 1].autorep = 0;
       else
         p.info[Playernum - 1].autorep = TELEG_MAX_AUTO;
-      putplanet(p, Stars[snum], pnum);
+      putplanet(p, Stars[g.snum], g.pnum);
 
-      sprintf(buf, "Autoreport on %s has been %s.\n", Stars[snum]->pnames[pnum],
+      sprintf(buf, "Autoreport on %s has been %s.\n",
+              Stars[g.snum]->pnames[g.pnum],
               p.info[Playernum - 1].autorep ? "set" : "unset");
       notify(Playernum, Governor, buf);
     } else {
-      sprintf(buf, "Scope must be a planet.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "Scope must be a planet.\n";
     }
   } else if (argv.size() > 1) { /* argv.size()==2, place specified */
-    place = Getplace(g, argv[1], 0);
+    auto place = Getplace(g, argv[1], 0);
     if (place.level == ScopeLevel::LEVEL_PLAN) {
-      auto p = getplanet(snum, pnum);
-      sprintf(buf, "Autoreport on %s has been %s.\n", Stars[snum]->pnames[pnum],
+      auto p = getplanet(g.snum, g.pnum);
+      sprintf(buf, "Autoreport on %s has been %s.\n",
+              Stars[g.snum]->pnames[g.pnum],
               p.info[Playernum - 1].autorep ? "set" : "unset");
       notify(Playernum, Governor, buf);
       p.info[Playernum - 1].autorep = !p.info[Playernum - 1].autorep;
-      putplanet(p, Stars[snum], pnum);
+      putplanet(p, Stars[g.snum], g.pnum);
     } else {
-      sprintf(buf, "Scope must be a planet.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "Scope must be a planet.\n";
     }
   }
 }

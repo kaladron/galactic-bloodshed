@@ -295,10 +295,9 @@ void getsdata(struct stardata *S) {
   Fileread(stdata, (char *)S, sizeof(struct stardata), 0);
 }
 
-void getrace(racetype **r, int rnum) {
-  *r = (racetype *)malloc(sizeof(racetype));
-  Fileread(racedata, (char *)*r, sizeof(racetype),
-           (rnum - 1) * sizeof(racetype));
+void getrace(Race **r, int rnum) {
+  *r = (Race *)malloc(sizeof(Race));
+  Fileread(racedata, (char *)*r, sizeof(Race), (rnum - 1) * sizeof(Race));
 }
 
 void getstar(startype **s, int star) {
@@ -826,9 +825,9 @@ void putsdata(struct stardata *S) {
   Filewrite(stdata, (char *)S, sizeof(struct stardata), 0);
 }
 
-void putrace(racetype *r) {
-  Filewrite(racedata, (char *)r, sizeof(racetype),
-            (r->Playernum - 1) * sizeof(racetype));
+void putrace(Race *r) {
+  Filewrite(racedata, (char *)r, sizeof(Race),
+            (r->Playernum - 1) * sizeof(Race));
 }
 
 void putstar(startype *s, starnum_t snum) {
@@ -1531,7 +1530,7 @@ int Numraces() {
   struct stat buffer;
 
   fstat(racedata, &buffer);
-  return ((int)(buffer.st_size / sizeof(racetype)));
+  return ((int)(buffer.st_size / sizeof(Race)));
 }
 
 shipnum_t Numships() /* return number of ships */

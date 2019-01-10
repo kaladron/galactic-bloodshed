@@ -31,7 +31,7 @@
 #include "vars.h"
 
 #ifdef MARKET
-static constexpr void maintain(racetype &r, Race::gov &governor,
+static constexpr void maintain(Race &r, Race::gov &governor,
                                const money_t amount) noexcept {
   if (governor.money >= amount)
     governor.money -= amount;
@@ -42,11 +42,11 @@ static constexpr void maintain(racetype &r, Race::gov &governor,
 }
 #endif
 
-static int APadd(int, int, racetype *);
+static int APadd(int, int, Race *);
 static int attack_planet(Ship *);
 static void fix_stability(startype *);
-static int governed(racetype *);
-static void make_discoveries(racetype *);
+static int governed(Race *);
+static void make_discoveries(Race *);
 static void output_ground_attacks();
 static int planet_points(const Planet &);
 
@@ -474,7 +474,7 @@ void do_turn(int update) {
 /* routine for number of AP's to add to each player in ea. system,scaled
     by amount of crew in their palace */
 
-static int APadd(int sh, int popn, racetype *race) {
+static int APadd(int sh, int popn, Race *race) {
   int APs;
 
   APs = round_rand((double)sh / 10.0 + 5. * log10(1.0 + (double)popn));
@@ -484,7 +484,7 @@ static int APadd(int sh, int popn, racetype *race) {
   return round_rand((double)APs / 20.);
 }
 
-int governed(racetype *race) {
+int governed(Race *race) {
   return (race->Gov_ship && race->Gov_ship <= Num_ships &&
           ships[race->Gov_ship] != nullptr && ships[race->Gov_ship]->alive &&
           ships[race->Gov_ship]->docked &&
@@ -590,7 +590,7 @@ void handle_victory() {
 #endif
 }
 
-static void make_discoveries(racetype *r) {
+static void make_discoveries(Race *r) {
   /* would be nicer to do this with a loop of course - but it's late */
   if (!Hyper_drive(r) && r->tech >= TECH_HYPER_DRIVE) {
     push_telegram_race(r->Playernum,

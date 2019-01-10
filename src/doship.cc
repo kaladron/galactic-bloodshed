@@ -316,7 +316,7 @@ void domissile(Ship *ship) {
 void domine(int shipno, int detonate) {
   int i;
   shipnum_t sh;
-  racetype *r;
+  Race *r;
 
   auto ship = getship(shipno);
 

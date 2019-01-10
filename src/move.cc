@@ -31,10 +31,10 @@
 
 static void mech_defend(int, int, int *, int, const Planet &, int, int,
                         const sector &);
-static void mech_attack_people(Ship *, int *, int *, racetype *, racetype *,
+static void mech_attack_people(Ship *, int *, int *, Race *, Race *,
                                const sector &, int, int, int, char *, char *);
-static void people_attack_mech(Ship *, int, int, racetype *, racetype *,
-                               const sector &, int, int, char *, char *);
+static void people_attack_mech(Ship *, int, int, Race *, Race *, const sector &,
+                               int, int, char *, char *);
 
 void arm(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;

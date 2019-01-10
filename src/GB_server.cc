@@ -910,7 +910,7 @@ static void check_connect(DescriptorData &d, const char *message) {
   int j;
   int Playernum;
   int Governor;
-  racetype *r;
+  Race *r;
 
   parse_connect(message, race_password, gov_password);
 
@@ -1133,7 +1133,7 @@ static void close_sockets(int sock) {
 
 static void dump_users(DescriptorData &e) {
   time_t now;
-  racetype *r;
+  Race *r;
   int God = 0;
   int coward_count = 0;
 
@@ -1201,7 +1201,7 @@ static void load_race_data() {
   Num_races = Numraces();
   races.reserve(Num_races);
   for (int i = 1; i <= Num_races; i++) {
-    racetype *r;
+    Race *r;
     getrace(&r, i); /* allocates into memory */
     if (r->Playernum != i) {
       r->Playernum = i;
@@ -1308,8 +1308,8 @@ void check_for_telegrams(int Playernum, int Governor) {
 }
 
 void kill_ship(int Playernum, Ship *ship) {
-  racetype *killer;
-  racetype *victim;
+  Race *killer;
+  Race *victim;
 
   ship->special.mind.who_killed = Playernum;
   ship->alive = 0;
@@ -1574,7 +1574,7 @@ void notify_star(const player_t a, const governor_t g, const starnum_t star,
     }
 }
 
-void adjust_morale(racetype *winner, racetype *loser, int amount) {
+void adjust_morale(Race *winner, racetype *loser, int amount) {
   winner->morale += amount;
   loser->morale -= amount;
   winner->points[loser->Playernum] += amount;

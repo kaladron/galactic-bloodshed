@@ -25,11 +25,11 @@
 static double Lastx, Lasty, Zoom;
 static const int SCALE = 100;
 
-static void DispStar(const GameObj &, const ScopeLevel, startype *, int,
-                     racetype *, char *);
+static void DispStar(const GameObj &, const ScopeLevel, startype *, int, Race *,
+                     char *);
 static void DispPlanet(const GameObj &, const ScopeLevel, const Planet &,
-                       char *, int, racetype *, char *);
-static void DispShip(const GameObj &, placetype *, Ship *, racetype *, char *,
+                       char *, int, Race *, char *);
+static void DispShip(const GameObj &, placetype *, Ship *, Race *, char *,
                      const Planet & = Planet());
 
 /* OPTIONS
@@ -197,7 +197,7 @@ void orbit(const command_t &argv, GameObj &g) {
 // TODO(jeffbailey) Remove DontDispStar parameter as unused, but it really looks
 // like we should be doing something here.
 static void DispStar(const GameObj &g, const ScopeLevel level, startype *star,
-                     int /* DontDispStars */, racetype *r, char *string) {
+                     int /* DontDispStars */, Race *r, char *string) {
   int x = 0;  // TODO(jeffbailey): Inititalized x and y to 0.
   int y = 0;
   int stand;
@@ -236,7 +236,7 @@ static void DispStar(const GameObj &g, const ScopeLevel level, startype *star,
 // like we should be doing something here!
 static void DispPlanet(const GameObj &g, const ScopeLevel level,
                        const Planet &p, char *name, int /* DontDispPlanets */,
-                       racetype *r, char *string) {
+                       Race *r, char *string) {
   int x = 0;  // TODO(jeffbailey): Check if init to 0 is right.
   int y = 0;
   int stand;
@@ -277,8 +277,8 @@ static void DispPlanet(const GameObj &g, const ScopeLevel level,
   }
 }
 
-static void DispShip(const GameObj &g, placetype *where, Ship *ship,
-                     racetype *r, char *string, const Planet &pl) {
+static void DispShip(const GameObj &g, placetype *where, Ship *ship, Race *r,
+                     char *string, const Planet &pl) {
   int x;
   int y;
   int wm;

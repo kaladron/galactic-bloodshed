@@ -12,8 +12,8 @@ void arm(const command_t &, GameObj &);
 void move_popn(const command_t &, GameObj &);
 void walk(const command_t &, GameObj &);
 int get_move(char, int, int, int *, int *, const Planet &);
-void ground_attack(racetype *, racetype *, int *, int, population_t *,
-                   population_t *, unsigned int, unsigned int, double, double,
-                   double *, double *, int *, int *, int *);
+void ground_attack(Race *, Race *, int *, int, population_t *, population_t *,
+                   unsigned int, unsigned int, double, double, double *,
+                   double *, int *, int *, int *);
 
 #endif  // MOVE_H

@@ -27,7 +27,7 @@
 
 #include <boost/format.hpp>
 
-static void do_revoke(racetype *, const governor_t, const governor_t);
+static void do_revoke(Race *, const governor_t, const governor_t);
 
 /**
  * \brief Convert input string to a shipnum_t

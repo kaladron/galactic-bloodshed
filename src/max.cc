@@ -23,7 +23,7 @@
 
 static char Dispshiporbits_buf[PLACENAMESIZE + 13];
 
-int maxsupport(const racetype *r, const sector &s, const double c,
+int maxsupport(const Race *r, const sector &s, const double c,
                const int toxic) {
   if (!r->likes[s.condition]) return 0.0;
   double a = ((double)s.eff + 1.0) * (double)s.fert;
@@ -34,7 +34,7 @@ int maxsupport(const racetype *r, const sector &s, const double c,
   return val;
 }
 
-double compatibility(const Planet &planet, const racetype *race) {
+double compatibility(const Planet &planet, const Race *race) {
   int i;
   int add;
   double sum;

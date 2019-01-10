@@ -30,7 +30,7 @@ static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
 static int jettison_check(GameObj &, int, int);
 static int landed_on(Ship *, shipnum_t);
 
-static void do_transporter(racetype *, GameObj &, Ship *);
+static void do_transporter(Race *, GameObj &, Ship *);
 static void unload_onto_alien_sector(GameObj &, Planet *, Ship *, sector &, int,
                                      int);
 

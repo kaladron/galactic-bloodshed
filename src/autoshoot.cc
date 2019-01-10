@@ -27,7 +27,7 @@
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */
-int Bombard(Ship *ship, Planet *planet, racetype *r) {
+int Bombard(Ship *ship, Planet *planet, Race *r) {
   int x;
   int y;
   int x2 = -1;

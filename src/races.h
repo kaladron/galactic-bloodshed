@@ -169,6 +169,6 @@ using blocktype = struct block;
 extern struct block Blocks[MAXPLAYERS];
 extern struct power_blocks Power_blocks;
 
-extern std::vector<racetype *> races;
+extern std::vector<Race *> races;
 
 #endif  // RACES_H

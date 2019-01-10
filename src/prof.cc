@@ -18,8 +18,8 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static int round_perc(int, racetype *, int);
-static char *Estimate_f(double, racetype *, int);
+static int round_perc(int, Race *, int);
+static char *Estimate_f(double, Race *, int);
 
 void whois(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
@@ -85,7 +85,7 @@ void profile(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
   int p;
-  racetype *r;
+  Race *r;
   racetype *Race;
 
   Race = races[Playernum - 1];
@@ -279,7 +279,7 @@ void profile(const command_t &argv, GameObj &g) {
 
 static char est_buf[20];
 
-static char *Estimate_f(double data, racetype *r, int p) {
+static char *Estimate_f(double data, Race *r, int p) {
   int est;
 
   sprintf(est_buf, "?");
@@ -298,7 +298,7 @@ static char *Estimate_f(double data, racetype *r, int p) {
   return est_buf;
 }
 
-char *Estimate_i(int data, racetype *r, int p) {
+char *Estimate_i(int data, Race *r, int p) {
   int est;
 
   sprintf(est_buf, "?");
@@ -317,7 +317,7 @@ char *Estimate_i(int data, racetype *r, int p) {
   return est_buf;
 }
 
-static int round_perc(int data, racetype *r, int p) {
+static int round_perc(int data, Race *r, int p) {
   int k;
 
   k = 101 - MIN(r->translate[p - 1], 100);

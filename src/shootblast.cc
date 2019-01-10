@@ -92,7 +92,7 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
       dist *= dist / 200.0; /* mines are very effective inside 200 */
     }
   }
-  if ((double)dist > gun_range((racetype *)nullptr, from, 0)) return -1;
+  if ((double)dist > gun_range((Race *)nullptr, from, 0)) return -1;
   /* attack parameters */
   ship_disposition(from, &fevade, &fspeed, &fbody);
   ship_disposition(to, &tevade, &tspeed, &tbody);
@@ -529,7 +529,7 @@ static int cew_hit_odds(double range, int cew_range) {
 /*
  * gun range of given ship, given race and ship
  */
-double gun_range(racetype *r, Ship *s, int mode) {
+double gun_range(Race *r, Ship *s, int mode) {
   if (mode) return (logscale((int)(r->tech + 1.0)) * SYSTEMSIZE);
 
   return (logscale((int)(s->tech + 1.0)) * SYSTEMSIZE);

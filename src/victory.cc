@@ -58,7 +58,7 @@ void victory(const command_t &argv, GameObj &g) {
 }
 
 void create_victory_list(struct vic vic[MAXPLAYERS]) {
-  racetype *vic_races[MAXPLAYERS];
+  Race *vic_races[MAXPLAYERS];
 
   for (player_t i = 1; i <= Num_races; i++) {
     vic_races[i - 1] = races[i - 1];

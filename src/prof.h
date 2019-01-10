@@ -10,7 +10,7 @@
 
 void whois(const command_t &, GameObj &);
 void profile(const command_t &, GameObj &);
-char *Estimate_i(int, racetype *, int);
+char *Estimate_i(int, Race *, int);
 void treasury(const command_t &, GameObj &);
 
 #endif  // PROF_H

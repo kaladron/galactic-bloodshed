@@ -18,7 +18,7 @@
 #include "vars.h"
 #include "victory.h"
 
-static void prepare_output_line(racetype *, racetype *, int, int);
+static void prepare_output_line(Race *, Race *, int, int);
 
 void block(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

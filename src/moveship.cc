@@ -362,7 +362,7 @@ void msg_OOF(Ship *s) {
 int followable(Ship *s1, Ship *s2) {
   double dx;
   double dy;
-  racetype *r;
+  Race *r;
   double range;
   int allied[2];
 

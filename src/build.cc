@@ -35,19 +35,19 @@ static void autoload_at_planet(int, Ship *, Planet *, sector &, int *,
 static void autoload_at_ship(Ship *, Ship *, int *, double *);
 static std::optional<ScopeLevel> build_at_ship(GameObj &, Ship *, int *, int *);
 static int can_build_at_planet(GameObj &, startype *, const Planet &);
-static int can_build_this(int, racetype *, char *);
-static int can_build_on_ship(int, racetype *, Ship *, char *);
-static int can_build_on_sector(int, racetype *, const Planet &, const sector &,
-                               int, int, char *);
-static void create_ship_by_planet(int, int, racetype *, Ship *, Planet *, int,
-                                  int, int, int);
-static void create_ship_by_ship(int, int, racetype *, int, Planet *, Ship *,
+static int can_build_this(int, Race *, char *);
+static int can_build_on_ship(int, Race *, Ship *, char *);
+static int can_build_on_sector(int, Race *, const Planet &, const sector &, int,
+                               int, char *);
+static void create_ship_by_planet(int, int, Race *, Ship *, Planet *, int, int,
+                                  int, int);
+static void create_ship_by_ship(int, int, Race *, int, Planet *, Ship *,
                                 Ship *);
 static std::optional<ShipType> get_build_type(const char);
 static int getcount(const command_t &, const size_t);
 static void Getfactship(Ship *, Ship *);
-static void Getship(Ship *, ShipType, racetype *);
-static void initialize_new_ship(GameObj &, racetype *, Ship *, double, int);
+static void Getship(Ship *, ShipType, Race *);
+static void initialize_new_ship(GameObj &, Race *, Ship *, double, int);
 static void system_cost(double *, double *, int, int);
 
 /* upgrade ship characteristics */
@@ -1492,7 +1492,7 @@ double complexity(Ship *s) {
   return (factor * (double)Shipdata[i][ABIL_TECH]);
 }
 
-static void Getship(Ship *s, ShipType i, racetype *r) {
+static void Getship(Ship *s, ShipType i, Race *r) {
   bzero((char *)s, sizeof(Ship));
   s->type = i;
   s->armor = Shipdata[i][ABIL_ARMOR];
@@ -1550,7 +1550,7 @@ static void Getfactship(Ship *s, Ship *b) {
   s->mass = getmass(s);
 }
 
-int Shipcost(ShipType i, racetype *r) {
+int Shipcost(ShipType i, Race *r) {
   Ship s;
 
   Getship(&s, i, r);

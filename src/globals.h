@@ -20,7 +20,7 @@ struct power Power[MAXPLAYERS];
 struct block Blocks[MAXPLAYERS];
 struct power_blocks Power_blocks;
 
-std::vector<racetype *> races;
+std::vector<Race *> races;
 
 char buf[2047];
 char long_buf[1024], short_buf[256];

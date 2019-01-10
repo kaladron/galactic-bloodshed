@@ -9,9 +9,8 @@
 #include "ships.h"
 #include "vars.h"
 
-int maxsupport(const racetype *r, const sector &s, const double c,
-               const int toxic);
-double compatibility(const Planet &, const racetype *);
+int maxsupport(const Race *r, const sector &s, const double c, const int toxic);
+double compatibility(const Planet &, const Race *);
 double gravity(const Planet &);
 char *prin_ship_orbits(Ship *);
 

@@ -1199,6 +1199,7 @@ static void process_command(DescriptorData &d, const command_t &argv) {
 
 static void load_race_data() {
   Num_races = Numraces();
+  races.reserve(Num_races);
   for (int i = 1; i <= Num_races; i++) {
     getrace(&races[i - 1], i); /* allocates into memory */
     if (races[i - 1]->Playernum != i) {

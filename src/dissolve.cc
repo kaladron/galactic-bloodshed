@@ -32,7 +32,6 @@ void dissolve(const command_t &argv, GameObj &g) {
 
   int n_ships;
   int i;
-  int j;
   int z;
   int x2;
   int y2;
@@ -74,9 +73,9 @@ void dissolve(const command_t &argv, GameObj &g) {
     if (argv[3][0] == 'w') waste = true;
   }
 
-  Getracenum(racepass, govpass, &i, &j);
+  auto [player, governor] = getracenum(racepass, govpass);
 
-  if (!i || !j) {
+  if (!player || !governor) {
     g.out << "Password mismatch, self-destruct not initiated!\n";
     return;
   }

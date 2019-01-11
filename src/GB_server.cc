@@ -906,10 +906,6 @@ static int do_command(DescriptorData &d, const char *comm) {
 static void check_connect(DescriptorData &d, const char *message) {
   char race_password[MAX_COMMAND_LEN];
   char gov_password[MAX_COMMAND_LEN];
-  int i;
-  int j;
-  int Playernum;
-  int Governor;
   Race *r;
 
   parse_connect(message, race_password, gov_password);
@@ -924,58 +920,57 @@ static void check_connect(DescriptorData &d, const char *message) {
   }
 #endif
 
-  Getracenum(race_password, gov_password, &i, &j);
+  auto [Playernum, Governor] = getracenum(race_password, gov_password);
 
-  if (!i) {
+  if (!Playernum) {
     queue_string(d, connect_fail);
     fprintf(stderr, "FAILED CONNECT %s,%s on descriptor %d\n", race_password,
             gov_password, d.descriptor);
-  } else {
-    Playernum = i;
-    Governor = j;
-    r = races[i - 1];
-    /* check to see if this player is already connect, if so, nuke the
-     * descriptor */
-    for (auto &d0 : descriptor_list) {
-      if (d0.connected && d0.player == Playernum && d0.governor == Governor) {
-        queue_string(d, already_on);
-        return;
-      }
-    }
-
-    fprintf(stderr, "CONNECTED %s \"%s\" [%d,%d] on descriptor %d\n", r->name,
-            r->governor[j].name, Playernum, Governor, d.descriptor);
-    d.connected = true;
-
-    d.god = r->God;
-    d.player = Playernum;
-    d.governor = Governor;
-
-    sprintf(buf, "\n%s \"%s\" [%d,%d] logged on.\n", r->name,
-            r->governor[j].name, Playernum, Governor);
-    notify_race(Playernum, buf);
-    sprintf(buf, "You are %s.\n",
-            r->governor[j].toggle.invisible ? "invisible" : "visible");
-    notify(Playernum, Governor, buf);
-
-    GB_time({}, d);
-    sprintf(buf, "\nLast login      : %s", ctime(&(r->governor[j].login)));
-    notify(Playernum, Governor, buf);
-    r->governor[j].login = time(nullptr);
-    putrace(r);
-    if (!r->Gov_ship) {
-      sprintf(buf,
-              "You have no Governmental Center.  No action points will be "
-              "produced\nuntil you build one and designate a capital.\n");
-      notify(Playernum, Governor, buf);
-    } else {
-      sprintf(buf, "Government Center #%lu is active.\n", r->Gov_ship);
-      notify(Playernum, Governor, buf);
-    }
-    sprintf(buf, "     Morale: %ld\n", r->morale);
-    notify(Playernum, Governor, buf);
-    treasury({}, d);
+    return;
   }
+
+  r = races[Playernum - 1];
+  /* check to see if this player is already connect, if so, nuke the
+   * descriptor */
+  for (auto &d0 : descriptor_list) {
+    if (d0.connected && d0.player == Playernum && d0.governor == Governor) {
+      queue_string(d, already_on);
+      return;
+    }
+  }
+
+  fprintf(stderr, "CONNECTED %s \"%s\" [%d,%d] on descriptor %d\n", r->name,
+          r->governor[Governor].name, Playernum, Governor, d.descriptor);
+  d.connected = true;
+
+  d.god = r->God;
+  d.player = Playernum;
+  d.governor = Governor;
+
+  sprintf(buf, "\n%s \"%s\" [%d,%d] logged on.\n", r->name,
+          r->governor[Governor].name, Playernum, Governor);
+  notify_race(Playernum, buf);
+  sprintf(buf, "You are %s.\n",
+          r->governor[Governor].toggle.invisible ? "invisible" : "visible");
+  notify(Playernum, Governor, buf);
+
+  GB_time({}, d);
+  sprintf(buf, "\nLast login      : %s", ctime(&(r->governor[Governor].login)));
+  notify(Playernum, Governor, buf);
+  r->governor[Governor].login = time(nullptr);
+  putrace(r);
+  if (!r->Gov_ship) {
+    sprintf(buf,
+            "You have no Governmental Center.  No action points will be "
+            "produced\nuntil you build one and designate a capital.\n");
+    notify(Playernum, Governor, buf);
+  } else {
+    sprintf(buf, "Government Center #%lu is active.\n", r->Gov_ship);
+    notify(Playernum, Governor, buf);
+  }
+  sprintf(buf, "     Morale: %ld\n", r->morale);
+  notify(Playernum, Governor, buf);
+  treasury({}, d);
 }
 
 static void do_update(int override) {

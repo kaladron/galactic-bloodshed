@@ -489,20 +489,19 @@ int enufAP(int Playernum, int Governor, unsigned short AP, int x) {
   return (!blah);
 }
 
-void Getracenum(char *racepass, char *govpass, int *racenum, int *govnum) {
-  for (player_t i = 1; i <= Num_races; i++) {
-    if (!strcmp(racepass, races[i - 1]->password)) {
-      *racenum = i;
+std::tuple<player_t, governor_t> getracenum(const char *racepass,
+                                            const char *govpass) {
+  for (auto race : races) {
+    if (!strcmp(racepass, race->password)) {
       for (governor_t j = 0; j <= MAXGOVERNORS; j++) {
-        if (*races[i - 1]->governor[j].password &&
-            !strcmp(govpass, races[i - 1]->governor[j].password)) {
-          *govnum = j;
-          return;
+        if (*race->governor[j].password &&
+            !strcmp(govpass, race->governor[j].password)) {
+          return {race->Playernum, j};
         }
       }
     }
   }
-  *racenum = *govnum = 0;
+  return {0, 0};
 }
 
 /* returns player # from string containing that players name or #. */

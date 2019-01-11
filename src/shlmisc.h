@@ -23,7 +23,7 @@ int in_list(player_t, const char *, Ship *, shipnum_t *);
 void fix(const command_t &, GameObj &);
 void DontOwnErr(int, int, shipnum_t);
 int enufAP(int, int, unsigned short, int);
-void Getracenum(char *, char *, int *, int *);
+std::tuple<player_t, governor_t> getracenum(const char *, const char *);
 player_t get_player(const std::string &);
 void allocateAPs(const command_t &, GameObj &);
 void deductAPs(const player_t, const governor_t, unsigned int, starnum_t, int);

@@ -489,6 +489,12 @@ int enufAP(int Playernum, int Governor, unsigned short AP, int x) {
   return (!blah);
 }
 
+/**
+ * \brief Find the player/governor that matches passwords
+ * \param racepass Password for the race
+ * \param govpass Password for the governor
+ * \return player and governor numbers, or 0 and 0 if not found
+ */
 std::tuple<player_t, governor_t> getracenum(const std::string &racepass,
                                             const std::string &govpass) {
   for (auto race : races) {

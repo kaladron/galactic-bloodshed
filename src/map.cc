@@ -31,9 +31,9 @@ void map(const command_t &argv, GameObj &g) {
   placetype where;
 
   if (argv.size() > 1) {
-    where = Getplace(g, argv[1], 0);
+    where = getplace(g, argv[1], 0);
   } else {
-    where = Getplace(g, "", 0);
+    where = getplace(g, "", 0);
   }
 
   if (where.err) return;

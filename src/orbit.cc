@@ -77,13 +77,13 @@ void orbit(const command_t &argv, GameObj &g) {
     }
 
   if (argv.size() == 1) {
-    where = Getplace(g, ":", 0);
+    where = getplace(g, ":", 0);
     int i = (g.level == ScopeLevel::LEVEL_UNIV);
     Lastx = g.lastx[i];
     Lasty = g.lasty[i];
     Zoom = g.zoom[i];
   } else {
-    where = Getplace(g, argv[argv.size() - 1], 0);
+    where = getplace(g, argv[argv.size() - 1], 0);
     Lastx = Lasty = 0.0;
     Zoom = 1.1;
   }

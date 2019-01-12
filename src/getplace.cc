@@ -3,7 +3,7 @@
 // found in the COPYING file.
 
 /*
- *  Getplace -- returns directory level from string and game object
+ *  getplace -- returns directory level from string and game object
  *  Dispplace -- returns string from directory level
  *  testship(ship) -- tests various things for the ship.
  */
@@ -27,10 +27,10 @@
 
 static char Disps[PLACENAMESIZE];
 
-static placetype Getplace2(int Playernum, int Governor, const char *string,
+static placetype getplace2(int Playernum, int Governor, const char *string,
                            placetype *where, int ignoreexpl, int God);
 
-placetype Getplace(GameObj &g, const std::string &string,
+placetype getplace(GameObj &g, const std::string &string,
                    const int ignoreexpl) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -46,7 +46,7 @@ placetype Getplace(GameObj &g, const std::string &string,
         where.level = ScopeLevel::LEVEL_UNIV; /* scope = root (universe) */
         where.snum = 0;
         where.pnum = where.shipno = 0;
-        return (Getplace2(Playernum, Governor, string.c_str() + 1, &where,
+        return (getplace2(Playernum, Governor, string.c_str() + 1, &where,
                           ignoreexpl, God));
       case '#': {
         auto shipnotmp = string_to_shipnum(string);
@@ -85,11 +85,11 @@ placetype Getplace(GameObj &g, const std::string &string,
   if (where.level == ScopeLevel::LEVEL_SHIP) where.shipno = g.shipno;
   if (string.size() != 0 && string[0] == CHAR_CURR_SCOPE) return where;
 
-  return Getplace2(Playernum, Governor, string.c_str(), &where, ignoreexpl,
+  return getplace2(Playernum, Governor, string.c_str(), &where, ignoreexpl,
                    God);
 }
 
-static placetype Getplace2(const int Playernum, const int Governor,
+static placetype getplace2(const int Playernum, const int Governor,
                            const char *string, placetype *where,
                            const int ignoreexpl, const int God) {
   char substr[NAMESIZE];
@@ -120,7 +120,7 @@ static placetype Getplace2(const int Playernum, const int Governor,
     }
     while (*string == '.') string++;
     while (*string == '/') string++;
-    return (Getplace2(Playernum, Governor, string, where, ignoreexpl, God));
+    return (getplace2(Playernum, Governor, string, where, ignoreexpl, God));
   }
   /* is a char string, name of something */
   sscanf(string, "%[^/ \n]", substr);
@@ -138,7 +138,7 @@ static placetype Getplace2(const int Playernum, const int Governor,
         if (ignoreexpl || isset(Stars[where->snum]->explored, Playernum) ||
             God) {
           tick = (*string == '/');
-          return (Getplace2(Playernum, Governor, string + tick, where,
+          return (getplace2(Playernum, Governor, string + tick, where,
                             ignoreexpl, God));
         }
         sprintf(buf, "You have not explored %s yet.\n",
@@ -161,7 +161,7 @@ static placetype Getplace2(const int Playernum, const int Governor,
         const auto p = getplanet(where->snum, i);
         if (ignoreexpl || p.info[Playernum - 1].explored || God) {
           tick = (*string == '/');
-          return (Getplace2(Playernum, Governor, string + tick, where,
+          return (getplace2(Playernum, Governor, string + tick, where,
                             ignoreexpl, God));
         }
         sprintf(buf, "You have not explored %s yet.\n",

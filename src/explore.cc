@@ -127,7 +127,7 @@ void colonies(const command_t &argv, GameObj &g) {
       colonies_at_star(g, Race, star, mode);
   else
     for (i = 1; i < argv.size(); i++) {
-      where = Getplace(g, argv[i], 0);
+      where = getplace(g, argv[i], 0);
       if (where.err || (where.level == ScopeLevel::LEVEL_UNIV) ||
           (where.level == ScopeLevel::LEVEL_SHIP)) {
         sprintf(buf, "Bad location `%s'.\n", argv[i].c_str());
@@ -155,13 +155,13 @@ void distance(const command_t &argv, GameObj &g) {
     return;
   }
 
-  from = Getplace(g, argv[1], 1);
+  from = getplace(g, argv[1], 1);
   if (from.err) {
     sprintf(buf, "Bad scope '%s'.\n", argv[1].c_str());
     notify(Playernum, Governor, buf);
     return;
   }
-  to = Getplace(g, argv[2], 1);
+  to = getplace(g, argv[2], 1);
   if (to.err) {
     sprintf(buf, "Bad scope '%s'.\n", argv[2].c_str());
     notify(Playernum, Governor, buf);
@@ -249,7 +249,7 @@ void exploration(const command_t &argv, GameObj &g) {
   starq = -1;
 
   if (argv.size() == 2) {
-    where = Getplace(g, argv[1], 0);
+    where = getplace(g, argv[1], 0);
     if (where.err) {
       sprintf(buf, "explore: bad scope.\n");
       notify(Playernum, Governor, buf);
@@ -358,7 +358,7 @@ void tech_status(const command_t &argv, GameObj &g) {
     }
   } else { /* Several arguments */
     for (k = 1; k < argv.size(); k++) {
-      where = Getplace(g, argv[k], 0);
+      where = getplace(g, argv[k], 0);
       if (where.err || where.level == ScopeLevel::LEVEL_UNIV ||
           where.level == ScopeLevel::LEVEL_SHIP) {
         sprintf(buf, "Bad location `%s'.\n", argv[k].c_str());

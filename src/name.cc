@@ -672,7 +672,7 @@ void send_message(const command_t &argv, GameObj &g) {
   } else if (argv[1] == "star") {
     to_star = 1;
     g.out << "Sending message to star system.\n";
-    where = Getplace(g, argv[2], 1);
+    where = getplace(g, argv[2], 1);
     if (where.err || where.level != ScopeLevel::LEVEL_STAR) {
       g.out << "No such star.\n";
       return;

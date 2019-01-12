@@ -96,7 +96,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   } else {
     deststr = argv[2];
   }
-  tmpdest = Getplace(g, deststr, 1);
+  tmpdest = getplace(g, deststr, 1);
   if (tmpdest.err) {
     g.out << "fuel:  bad scope.\n";
     return;

@@ -96,7 +96,7 @@ void analysis(const command_t &argv, GameObj &g) {
     }
     p = argv[i].c_str();
     if (i < argv.size() && (isalpha(*p) || *p == '/')) {
-      where = Getplace(g, argv[i], 0);
+      where = getplace(g, argv[i], 0);
       if (where.err) continue;
     }
 

@@ -675,7 +675,7 @@ void dump(const command_t &argv, GameObj &g) {
     }
   } else { /* list of places given */
     for (size_t i = 2; i < argv.size(); i++) {
-      where = Getplace(g, argv[i], 1);
+      where = getplace(g, argv[i], 1);
       if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
           where.level != ScopeLevel::LEVEL_SHIP) {
         star = where.snum;

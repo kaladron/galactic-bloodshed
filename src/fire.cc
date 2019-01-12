@@ -55,7 +55,6 @@ void fire(const command_t &argv, GameObj &g) {
   shipnum_t sh;
   shipnum_t nextshipno;
   Ship *from;
-  Ship *ship;
   Ship dummy;
   int strength;
   int maxstrength;
@@ -255,29 +254,28 @@ void fire(const command_t &argv, GameObj &g) {
           const auto p = getplanet(to->storbits, to->pnumorbits);
           sh = p.ships;
         }
-        while (sh && from->alive) {
-          (void)getship(&ship, sh);
-          if (ship->protect.on && (ship->protect.ship == toship) &&
-              (ship->protect.ship == toship) && sh != fromship &&
-              sh != toship && ship->alive && ship->active) {
-            check_retal_strength(ship, &strength);
-            if (laser_on(ship)) check_overload(ship, 0, &strength);
+        Shiplist shiplist(sh);
+        for (auto &ship : shiplist) {
+          if (!from->alive) break;
+          if (ship.protect.on && (ship.protect.ship == toship) &&
+              (ship.protect.ship == toship) && ship.number != fromship &&
+              ship.number != toship && ship.alive && ship.active) {
+            check_retal_strength(&ship, &strength);
+            if (laser_on(&ship)) check_overload(&ship, 0, &strength);
 
-            if ((damage = shoot_ship_to_ship(ship, from, strength, 0, 0,
+            if ((damage = shoot_ship_to_ship(&ship, from, strength, 0, 0,
                                              long_buf, short_buf)) >= 0) {
-              if (laser_on(ship))
-                use_fuel(ship, 2.0 * (double)strength);
+              if (laser_on(&ship))
+                use_fuel(&ship, 2.0 * (double)strength);
               else
-                use_destruct(ship, strength);
+                use_destruct(&ship, strength);
               if (!from->alive) post(short_buf, COMBAT);
               notify_star(Playernum, Governor, from->storbits, short_buf);
               notify(Playernum, Governor, long_buf);
-              warn(ship->owner, ship->governor, long_buf);
+              warn(ship.owner, ship.governor, long_buf);
             }
-            putship(ship);
+            putship(&ship);
           }
-          sh = ship->nextship;
-          free(ship);
         }
       }
       putship(from);

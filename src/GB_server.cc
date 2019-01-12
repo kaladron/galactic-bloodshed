@@ -184,7 +184,6 @@ static void close_sockets(int);
 static int process_input(DescriptorData &);
 static void force_output();
 static void help_user(GameObj &);
-static void parse_connect(const char *, char *, char *);
 static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
 static void save_command(DescriptorData &, const std::string &);
@@ -323,6 +322,25 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"weapons", rst},
     {"zoom", zoom},
 };
+
+namespace {
+/**
+ * \brief Parse input string for player and governor password
+ * \param message Input string from the user
+ * \return player and governor password or empty strings if invalid
+ */
+static std::tuple<std::string, std::string> parse_connect(
+    const std::string &message) {
+  command_t argv;
+  boost::split(argv, message, boost::is_any_of(" "));
+
+  if (argv.size() != 2) {
+    return {"", ""};
+  }
+
+  return {argv[0], argv[1]};
+}
+}  // namespace
 
 int main(int argc, char **argv) {
   struct stat stbuf;
@@ -904,17 +922,13 @@ static int do_command(DescriptorData &d, const char *comm) {
 }
 
 static void check_connect(DescriptorData &d, const char *message) {
-  char race_password[MAX_COMMAND_LEN];
-  char gov_password[MAX_COMMAND_LEN];
-  Race *r;
-
-  parse_connect(message, race_password, gov_password);
+  auto [race_password, gov_password] = parse_connect(message);
 
 #ifdef EXTERNAL_TRIGGER
-  if (!strcmp(race_password, SEGMENT_PASSWORD)) {
+  if (race_password == SEGMENT_PASSWORD) {
     do_segment(1, 0);
     return;
-  } else if (!strcmp(race_password, UPDATE_PASSWORD)) {
+  } else if (race_password == UPDATE_PASSWORD) {
     do_update(1);
     return;
   }
@@ -924,13 +938,13 @@ static void check_connect(DescriptorData &d, const char *message) {
 
   if (!Playernum) {
     queue_string(d, connect_fail);
-    fprintf(stderr, "FAILED CONNECT %s,%s on descriptor %d\n", race_password,
-            gov_password, d.descriptor);
+    fprintf(stderr, "FAILED CONNECT %s,%s on descriptor %d\n",
+            race_password.c_str(), gov_password.c_str(), d.descriptor);
     return;
   }
 
-  r = races[Playernum - 1];
-  /* check to see if this player is already connect, if so, nuke the
+  auto r = races[Playernum - 1];
+  /* check to see if this player is already connected, if so, nuke the
    * descriptor */
   for (auto &d0 : descriptor_list) {
     if (d0.connected && d0.player == Playernum && d0.governor == Governor) {
@@ -1096,22 +1110,6 @@ static void do_segment(int override, int segment) {
     for (i = 1; i <= Num_races; i++) notify_race(i, buf);
     force_output();
   }
-}
-
-static void parse_connect(const char *message, char *race_pass,
-                          char *gov_pass) {
-  char *p;
-  char *q;
-  /* race password */
-  while (*message && isascii(*message) && isspace(*message)) message++;
-  p = race_pass;
-  while (*message && isascii(*message) && !isspace(*message)) *p++ = *message++;
-  *p = '\0';
-  /* governor password */
-  while (*message && isascii(*message) && isspace(*message)) message++;
-  q = gov_pass;
-  while (*message && isascii(*message) && !isspace(*message)) *q++ = *message++;
-  *q = '\0';
 }
 
 static void close_sockets(int sock) {

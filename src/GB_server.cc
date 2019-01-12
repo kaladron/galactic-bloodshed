@@ -187,7 +187,6 @@ static void help_user(GameObj &);
 static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
 static void save_command(DescriptorData &, const std::string &);
-static std::string do_prompt(DescriptorData &);
 static void strstr_to_queue(DescriptorData &);
 static int ShipCompare(const void *, const void *);
 static void SortShips();
@@ -329,8 +328,7 @@ namespace {
  * \param message Input string from the user
  * \return player and governor password or empty strings if invalid
  */
-static std::tuple<std::string, std::string> parse_connect(
-    const std::string &message) {
+std::tuple<std::string, std::string> parse_connect(const std::string &message) {
   command_t argv;
   boost::split(argv, message, boost::is_any_of(" "));
 
@@ -339,6 +337,106 @@ static std::tuple<std::string, std::string> parse_connect(
   }
 
   return {argv[0], argv[1]};
+}
+
+/**
+ * \brief Create a prompt that shows the current AP and location of the player
+ * \param d Game Object with player information
+ * \return Prompt string for display to the user
+ */
+std::string do_prompt(DescriptorData &d) {
+  player_t Playernum = d.player;
+  std::stringstream prompt;
+
+  switch (d.level) {
+    case ScopeLevel::LEVEL_UNIV:
+      prompt << boost::format(" ( [%d] / )\n") % Sdata.AP[Playernum - 1];
+      return prompt.str();
+    case ScopeLevel::LEVEL_STAR:
+      prompt << boost::format(" ( [%d] /%s )\n") %
+                    Stars[d.snum]->AP[Playernum - 1] % Stars[d.snum]->name;
+      return prompt.str();
+    case ScopeLevel::LEVEL_PLAN:
+      prompt << boost::format(" ( [%d] /%s/%s )\n") %
+                    Stars[d.snum]->AP[Playernum - 1] % Stars[d.snum]->name %
+                    Stars[d.snum]->pnames[d.pnum];
+      return prompt.str();
+    case ScopeLevel::LEVEL_SHIP:
+      break;  // That's the rest of this function.
+  }
+
+  auto s = getship(d.shipno);
+  switch (s->whatorbits) {
+    case ScopeLevel::LEVEL_UNIV:
+      prompt << boost::format(" ( [%d] /#%ld )\n") % Sdata.AP[Playernum - 1] %
+                    d.shipno;
+      return prompt.str();
+    case ScopeLevel::LEVEL_STAR:
+      prompt << boost::format(" ( [%d] /%s/#%ld )\n") %
+                    Stars[s->storbits]->AP[Playernum - 1] %
+                    Stars[s->storbits]->name % d.shipno;
+      return prompt.str();
+    case ScopeLevel::LEVEL_PLAN:
+      prompt << boost::format(" ( [%d] /%s/%s/#%ld )\n") %
+                    Stars[s->storbits]->AP[Playernum - 1] %
+                    Stars[s->storbits]->name %
+                    Stars[s->storbits]->pnames[d.pnum] % d.shipno;
+      return prompt.str();
+    case ScopeLevel::LEVEL_SHIP:
+      break;  // That's the rest of this function.  (Ship within a ship)
+  }
+
+  /* I put this mess in because of non-functioning prompts when you
+     are in a ship within a ship, or deeper. I am certain this can be
+     done more elegantly (a lot more) but I don't feel like trying
+     that right now. right now I want it to function. Maarten */
+  auto s2 = getship(s->destshipno);
+  switch (s2->whatorbits) {
+    case ScopeLevel::LEVEL_UNIV:
+      prompt << boost::format(" ( [%d] /#%lu/#%lu )\n") %
+                    Sdata.AP[Playernum - 1] % s->destshipno % d.shipno;
+      return prompt.str();
+    case ScopeLevel::LEVEL_STAR:
+      prompt << boost::format(" ( [%d] /%s/#%lu/#%lu )\n") %
+                    Stars[s->storbits]->AP[Playernum - 1] %
+                    Stars[s->storbits]->name % s->destshipno % d.shipno;
+      return prompt.str();
+    case ScopeLevel::LEVEL_PLAN:
+      prompt << boost::format(" ( [%d] /%s/%s/#%ld/#%ld )\n") %
+                    Stars[s->storbits]->AP[Playernum - 1] %
+                    Stars[s->storbits]->name %
+                    Stars[s->storbits]->pnames[d.pnum] % s->destshipno %
+                    d.shipno;
+      return prompt.str();
+    case ScopeLevel::LEVEL_SHIP:
+      break;  // That's the rest of this function.  (Ship w/in ship w/in ship)
+  }
+
+  while (s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
+    s2 = getship(s2->destshipno);
+  }
+  switch (s2->whatorbits) {
+    case ScopeLevel::LEVEL_UNIV:
+      prompt << boost::format(" ( [%d] / /../#%ld/#%ld )\n") %
+                    Sdata.AP[Playernum - 1] % s->destshipno % d.shipno;
+      return prompt.str();
+    case ScopeLevel::LEVEL_STAR:
+      prompt << boost::format(" ( [%d] /%s/ /../#%ld/#%ld )\n") %
+                    Stars[s->storbits]->AP[Playernum - 1] %
+                    Stars[s->storbits]->name % s->destshipno % d.shipno;
+      return prompt.str();
+    case ScopeLevel::LEVEL_PLAN:
+      prompt << boost::format(" ( [%d] /%s/%s/ /../#%ld/#%ld )\n") %
+                    Stars[s->storbits]->AP[Playernum - 1] %
+                    Stars[s->storbits]->name %
+                    Stars[s->storbits]->pnames[d.pnum] % s->destshipno %
+                    d.shipno;
+      return prompt.str();
+    case ScopeLevel::LEVEL_SHIP:
+      break;  // (Ship w/in ship w/in ship w/in ship)
+  }
+  // Kidding!  All done. =)
+  return prompt.str();
 }
 }  // namespace
 
@@ -1571,96 +1669,4 @@ void adjust_morale(Race *winner, racetype *loser, int amount) {
   winner->morale += amount;
   loser->morale -= amount;
   winner->points[loser->Playernum] += amount;
-}
-
-static std::string do_prompt(DescriptorData &d) {
-  player_t Playernum = d.player;
-  Ship *s;
-  Ship *s2;
-  std::stringstream prompt;
-
-  if (d.level == ScopeLevel::LEVEL_UNIV) {
-    prompt << boost::format(" ( [%d] / )\n") % Sdata.AP[Playernum - 1];
-  } else if (d.level == ScopeLevel::LEVEL_STAR) {
-    prompt << boost::format(" ( [%d] /%s )\n") %
-                  Stars[d.snum]->AP[Playernum - 1] % Stars[d.snum]->name;
-  } else if (d.level == ScopeLevel::LEVEL_PLAN) {
-    prompt << boost::format(" ( [%d] /%s/%s )\n") %
-                  Stars[d.snum]->AP[Playernum - 1] % Stars[d.snum]->name %
-                  Stars[d.snum]->pnames[d.pnum];
-  } else if (d.level == ScopeLevel::LEVEL_SHIP) {
-    (void)getship(&s, d.shipno);
-    switch (s->whatorbits) {
-      case ScopeLevel::LEVEL_UNIV:
-        prompt << boost::format(" ( [%d] /#%ld )\n") % Sdata.AP[Playernum - 1] %
-                      d.shipno;
-        break;
-      case ScopeLevel::LEVEL_STAR:
-        prompt << boost::format(" ( [%d] /%s/#%ld )\n") %
-                      Stars[s->storbits]->AP[Playernum - 1] %
-                      Stars[s->storbits]->name % d.shipno;
-        break;
-      case ScopeLevel::LEVEL_PLAN:
-        prompt << boost::format(" ( [%d] /%s/%s/#%ld )\n") %
-                      Stars[s->storbits]->AP[Playernum - 1] %
-                      Stars[s->storbits]->name %
-                      Stars[s->storbits]->pnames[d.pnum] % d.shipno;
-        break;
-      /* I put this mess in because of non-functioning prompts when you
-         are in a ship within a ship, or deeper. I am certain this can be
-         done more elegantly (a lot more) but I don't feel like trying
-         that right now. right now I want it to function. Maarten */
-      case ScopeLevel::LEVEL_SHIP:
-        (void)getship(&s2, (int)s->destshipno);
-        switch (s2->whatorbits) {
-          case ScopeLevel::LEVEL_UNIV:
-            prompt << boost::format(" ( [%d] /#%lu/#%lu )\n") %
-                          Sdata.AP[Playernum - 1] % s->destshipno % d.shipno;
-            break;
-          case ScopeLevel::LEVEL_STAR:
-            prompt << boost::format(" ( [%d] /%s/#%lu/#%lu )\n") %
-                          Stars[s->storbits]->AP[Playernum - 1] %
-                          Stars[s->storbits]->name % s->destshipno % d.shipno;
-            break;
-          case ScopeLevel::LEVEL_PLAN:
-            prompt << boost::format(" ( [%d] /%s/%s/#%ld/#%ld )\n") %
-                          Stars[s->storbits]->AP[Playernum - 1] %
-                          Stars[s->storbits]->name %
-                          Stars[s->storbits]->pnames[d.pnum] % s->destshipno %
-                          d.shipno;
-            break;
-          case ScopeLevel::LEVEL_SHIP:
-            while (s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
-              free(s2);
-              (void)getship(&s2, (int)s2->destshipno);
-            }
-            switch (s2->whatorbits) {
-              case ScopeLevel::LEVEL_UNIV:
-                prompt << boost::format(" ( [%d] / /../#%ld/#%ld )\n") %
-                              Sdata.AP[Playernum - 1] % s->destshipno %
-                              d.shipno;
-                break;
-              case ScopeLevel::LEVEL_STAR:
-                prompt << boost::format(" ( [%d] /%s/ /../#%ld/#%ld )\n") %
-                              Stars[s->storbits]->AP[Playernum - 1] %
-                              Stars[s->storbits]->name % s->destshipno %
-                              d.shipno;
-                break;
-              case ScopeLevel::LEVEL_PLAN:
-                prompt << boost::format(" ( [%d] /%s/%s/ /../#%ld/#%ld )\n") %
-                              Stars[s->storbits]->AP[Playernum - 1] %
-                              Stars[s->storbits]->name %
-                              Stars[s->storbits]->pnames[d.pnum] %
-                              s->destshipno % d.shipno;
-                break;
-              default:
-                break;
-            }
-            free(s2);
-            break;
-        }
-    }
-    free(s);
-  }
-  return prompt.str();
 }

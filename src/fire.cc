@@ -2,7 +2,8 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/* fire.c -- fire at ship or planet from ship or planet */
+/// \file fire.c
+/// \brief Fire at ship or planet from ship or planet
 
 #include "fire.h"
 
@@ -54,7 +55,6 @@ void fire(const command_t &argv, GameObj &g) {
   shipnum_t sh;
   shipnum_t nextshipno;
   Ship *from;
-  Ship *to;
   Ship *ship;
   Ship dummy;
   int strength;
@@ -121,14 +121,14 @@ void fire(const command_t &argv, GameObj &g) {
         free(from);
         continue;
       }
-      if (!getship(&to, toship)) {
-        free(from);
+      auto to = getship(toship);
+      if (!to) {
         continue;
       }
 
       /* save defense attack strength for retaliation */
-      check_retal_strength(to, &retal);
-      bcopy(to, &dummy, sizeof(Ship));
+      check_retal_strength(&*to, &retal);
+      bcopy(&*to, &dummy, sizeof(Ship));
 
       if (from->type == ShipType::OTYPE_AFV) {
         if (!landed(from)) {
@@ -136,19 +136,17 @@ void fire(const command_t &argv, GameObj &g) {
                   ship_to_string(*from).c_str());
           notify(Playernum, Governor, buf);
           free(from);
-          free(to);
           continue;
         }
-        if (!landed(to)) {
+        if (!landed(&*to)) {
           sprintf(buf, "%s isn't landed on a planet!\n",
                   ship_to_string(*from).c_str());
           notify(Playernum, Governor, buf);
           free(from);
-          free(to);
           continue;
         }
       }
-      if (landed(from) && landed(to)) {
+      if (landed(from) && landed(&*to)) {
         if ((from->storbits != to->storbits) ||
             (from->pnumorbits != to->pnumorbits)) {
           notify(Playernum, Governor,
@@ -156,7 +154,6 @@ void fire(const command_t &argv, GameObj &g) {
                  "landed ships if they are on the same "
                  "planet!\n");
           free(from);
-          free(to);
           continue;
         }
         const auto p = getplanet(from->storbits, from->pnumorbits);
@@ -164,7 +161,6 @@ void fire(const command_t &argv, GameObj &g) {
                       (int)to->land_y, p)) {
           g.out << "You are not adjacent to your target!\n";
           free(from);
-          free(to);
           continue;
         }
       }
@@ -173,15 +169,13 @@ void fire(const command_t &argv, GameObj &g) {
           sprintf(buf, "You need %d fuel to fire CEWs.\n", from->cew);
           notify(Playernum, Governor, buf);
           free(from);
-          free(to);
           continue;
         }
-        if (landed(from) || landed(to)) {
+        if (landed(from) || landed(&*to)) {
           notify(Playernum, Governor,
                  "CEWs cannot originate from or targeted "
                  "to ships landed on planets.\n");
           free(from);
-          free(to);
           continue;
         }
         sprintf(buf, "CEW strength %d.\n", from->cew);
@@ -212,17 +206,15 @@ void fire(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
         putship(from);
         free(from);
-        free(to);
         continue;
       }
 
       damage =
-          shoot_ship_to_ship(from, to, strength, cew, 0, long_buf, short_buf);
+          shoot_ship_to_ship(from, &*to, strength, cew, 0, long_buf, short_buf);
 
       if (damage < 0) {
         g.out << "Illegal attack.\n";
         free(from);
-        free(to);
         continue;
       }
 
@@ -240,14 +232,14 @@ void fire(const command_t &argv, GameObj &g) {
       strength = 0;
       if (retal && damage && to->protect.self) {
         strength = retal;
-        if (laser_on(to)) check_overload(to, 0, &strength);
+        if (laser_on(&*to)) check_overload(&*to, 0, &strength);
 
         if ((damage = shoot_ship_to_ship(&dummy, from, strength, 0, 1, long_buf,
                                          short_buf)) >= 0) {
-          if (laser_on(to))
-            use_fuel(to, 2.0 * (double)strength);
+          if (laser_on(&*to))
+            use_fuel(&*to, 2.0 * (double)strength);
           else
-            use_destruct(to, strength);
+            use_destruct(&*to, strength);
           if (!from->alive) post(short_buf, COMBAT);
           notify_star(Playernum, Governor, from->storbits, short_buf);
           notify(Playernum, Governor, long_buf);
@@ -289,11 +281,10 @@ void fire(const command_t &argv, GameObj &g) {
         }
       }
       putship(from);
-      putship(to);
+      putship(&*to);
       deductAPs(Playernum, Governor, APcount, (int)from->storbits, 0);
 
       free(from);
-      free(to);
     } else
       free(from);
 }
@@ -517,7 +508,6 @@ void defend(const command_t &argv, GameObj &g) {
   int APcount = 1;
   int toship;
   int sh;
-  Ship *to;
   Ship *ship;
   Ship dummy;
   int strength;
@@ -570,37 +560,34 @@ void defend(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (!getship(&to, toship)) {
+  auto to = getship(toship);
+  if (!to) {
     return;
   }
 
   if (to->whatorbits != ScopeLevel::LEVEL_PLAN) {
     g.out << "The ship is not in planet orbit.\n";
-    free(to);
     return;
   }
 
   if (to->storbits != g.snum || to->pnumorbits != g.pnum) {
     g.out << "Target is not in orbit around this planet.\n";
-    free(to);
     return;
   }
 
-  if (landed(to)) {
+  if (landed(&*to)) {
     g.out << "Planet guns can't fire on landed ships.\n";
-    free(to);
     return;
   }
 
   /* save defense strength for retaliation */
-  check_retal_strength(to, &retal);
-  bcopy(to, &dummy, sizeof(Ship));
+  check_retal_strength(&*to, &retal);
+  bcopy(&*to, &dummy, sizeof(Ship));
 
   sscanf(argv[2].c_str(), "%d,%d", &x, &y);
 
   if (x < 0 || x > p.Maxx - 1 || y < 0 || y > p.Maxy - 1) {
     g.out << "Illegal sector.\n";
-    free(to);
     return;
   }
 
@@ -608,7 +595,6 @@ void defend(const command_t &argv, GameObj &g) {
   auto sect = getsector(p, x, y);
   if (sect.owner != Playernum) {
     g.out << "Nice try.\n";
-    free(to);
     return;
   }
 
@@ -624,12 +610,11 @@ void defend(const command_t &argv, GameObj &g) {
     sprintf(buf, "No attack - %d guns, %dd\n", p.info[Playernum - 1].guns,
             p.info[Playernum - 1].destruct);
     notify(Playernum, Governor, buf);
-    free(to);
     return;
   }
   Race = races[Playernum - 1];
 
-  damage = shoot_planet_to_ship(Race, to, strength, long_buf, short_buf);
+  damage = shoot_planet_to_ship(Race, &*to, strength, long_buf, short_buf);
 
   if (!to->alive && to->type == ShipType::OTYPE_TOXWC) {
     /* get planet again since toxicity probably has changed */
@@ -639,7 +624,6 @@ void defend(const command_t &argv, GameObj &g) {
   if (damage < 0) {
     sprintf(buf, "Target out of range  %d!\n", SYSTEMSIZE);
     notify(Playernum, Governor, buf);
-    free(to);
     return;
   }
 
@@ -654,15 +638,15 @@ void defend(const command_t &argv, GameObj &g) {
   strength = 0;
   if (retal && damage && to->protect.self) {
     strength = retal;
-    if (laser_on(to)) check_overload(to, 0, &strength);
+    if (laser_on(&*to)) check_overload(&*to, 0, &strength);
 
     auto smap = getsmap(p);
     if ((numdest = shoot_ship_to_planet(&dummy, &p, strength, x, y, smap, 0, 0,
                                         long_buf, short_buf)) >= 0) {
-      if (laser_on(to))
-        use_fuel(to, 2.0 * (double)strength);
+      if (laser_on(&*to))
+        use_fuel(&*to, 2.0 * (double)strength);
       else
-        use_destruct(to, strength);
+        use_destruct(&*to, strength);
 
       post(short_buf, COMBAT);
       notify_star(Playernum, Governor, to->storbits, short_buf);
@@ -704,12 +688,10 @@ void defend(const command_t &argv, GameObj &g) {
   }
 
   /* write the ship stuff out to disk */
-  putship(to);
+  putship(&*to);
   putplanet(p, Stars[g.snum], g.pnum);
 
   deductAPs(Playernum, Governor, APcount, g.snum, 0);
-
-  free(to);
 }
 #endif
 

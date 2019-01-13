@@ -758,7 +758,7 @@ int do_weapon_plant(Ship *ship) {
                         ship->fuel / FUEL_COST_WPLANT) *
                     (1. - .01 * (double)ship->damage) * (double)ship->popn /
                     (double)ship->max_crew);
-  rate = MIN(rate, maxrate);
+  rate = std::min(rate, maxrate);
   use_resource(ship, (rate * RES_COST_WPLANT));
   use_fuel(ship, ((double)rate * FUEL_COST_WPLANT));
   return rate;

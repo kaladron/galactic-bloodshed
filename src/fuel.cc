@@ -259,7 +259,7 @@ static int do_trip(const placetype &tmpdest, double fuel,
   tmpship->deststar = tmpdest.snum;
   tmpship->destpnum = tmpdest.pnum;
   if (tmpship->whatdest == ScopeLevel::LEVEL_SHIP || tmpship->ships) {
-    /* Bring in the other ships.  Moveship() uses ships[]. */
+    /* Bring in the other ships.  moveship() uses ships[]. */
     Num_ships = Numships();
     ships = (Ship **)malloc(sizeof(Ship *) * (Num_ships) + 1);
     for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
@@ -276,7 +276,7 @@ static int do_trip(const placetype &tmpdest, double fuel,
   while (trip_resolved == 0) {
     domass(tmpship);
     fuel_level1 = tmpship->fuel;
-    Moveship(tmpship, (effective_segment_number == segments), 0, 1);
+    moveship(tmpship, (effective_segment_number == segments), 0, 1);
     number_segments++;
     effective_segment_number++;
     if (effective_segment_number == (segments + 1))

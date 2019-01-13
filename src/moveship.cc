@@ -38,7 +38,7 @@ static const double SpeedConsts[] = {0.0,  0.61, 1.26, 1.50, 1.73,
 
 static int do_merchant(Ship *, Planet *);
 
-void Moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
+void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
   double stardist;
   double movedist;
   double truedist;

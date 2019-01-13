@@ -94,7 +94,7 @@ void doship(Ship *ship, int update) {
       ship->tech = Race->tech;
     }
 
-    if (ship->active) Moveship(ship, update, 1, 0);
+    if (ship->active) moveship(ship, update, 1, 0);
 
     ship->size = ship_size(ship); /* for debugging */
 

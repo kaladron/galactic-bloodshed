@@ -8,7 +8,7 @@
 #include "ships.h"
 #include "vars.h"
 
-void Moveship(Ship *, int, int, int);
+void moveship(Ship *, int, int, int);
 void msg_OOF(Ship *);
 int followable(Ship *, Ship *);
 

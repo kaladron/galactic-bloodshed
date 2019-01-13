@@ -232,10 +232,9 @@ void land(const command_t &argv, GameObj &g) {
           if (s->whatorbits == ScopeLevel::LEVEL_PLAN)
             remove_sh_plan(s);
           else if (s->whatorbits == ScopeLevel::LEVEL_STAR)
-            remove_sh_star(s);
+            remove_sh_star(*s);
           else {
-            notify(Playernum, Governor,
-                   "Ship is not in planet or star scope.\n");
+            g.out << "Ship is not in planet or star scope.\n";
             free(s);
             free(s2);
             continue;

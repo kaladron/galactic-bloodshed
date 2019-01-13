@@ -25,7 +25,7 @@ void insert_sh_univ(struct stardata *, Ship *);
 void insert_sh_star(startype *, Ship *);
 void insert_sh_plan(Planet *, Ship *);
 void insert_sh_ship(Ship *, Ship *);
-void remove_sh_star(Ship *);
+void remove_sh_star(Ship &);
 void remove_sh_plan(Ship *);
 void remove_sh_ship(Ship *, Ship *);
 void warn_race(const player_t, const std::string &);

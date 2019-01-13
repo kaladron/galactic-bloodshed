@@ -376,8 +376,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
 
   auto result = sqlite3_step(stmt);
   if (result != SQLITE_ROW) {
-    throw new std::runtime_error(
-        "Database unable to return the requested planet");
+    throw std::runtime_error("Database unable to return the requested planet");
   }
 
   Planet p;
@@ -419,7 +418,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
       p.type = PlanetType::DESERT;
       break;
     default:
-      throw new std::runtime_error("Bad data in type field");
+      throw std::runtime_error("Bad data in type field");
   }
   p.expltimer = sqlite3_column_int(stmt, 15);
   p.conditions[RTEMP] = sqlite3_column_int(stmt, 16);
@@ -516,8 +515,7 @@ sector getsector(const Planet &p, const int x, const int y) {
 
   auto result = sqlite3_step(stmt);
   if (result != SQLITE_ROW) {
-    throw new std::runtime_error(
-        "Database unable to return the requested sector");
+    throw std::runtime_error("Database unable to return the requested sector");
   }
 
   sector s(sqlite3_column_int(stmt, 3),   // eff
@@ -1543,8 +1541,7 @@ shipnum_t Numships() /* return number of ships */
 
   auto result = sqlite3_step(stmt);
   if (result != SQLITE_ROW) {
-    throw new std::runtime_error(
-        "Database unable to return the requested planet");
+    throw std::runtime_error("Database unable to return the requested planet");
   }
 
   return sqlite3_column_int(stmt, 0);

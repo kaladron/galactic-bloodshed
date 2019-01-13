@@ -59,7 +59,6 @@ void upgrade(const command_t &argv, GameObj &g) {
   int oldcost;
   int newcost;
   int netcost;
-  Ship *s2;
   double complex;
   racetype *Race;
 
@@ -225,8 +224,9 @@ void upgrade(const command_t &argv, GameObj &g) {
 
   /* check to see if the new ship will actually fit inside the hanger if it is
      on another ship. Maarten */
+  std::optional<Ship> s2;
   if (dirship->whatorbits == ScopeLevel::LEVEL_SHIP) {
-    (void)getship(&s2, dirship->destshipno);
+    s2 = getship(dirship->destshipno);
     if (s2->max_hanger - (s2->hanger - dirship->size) < ship_size(&ship)) {
       sprintf(buf, "Not enough free hanger space on %c%ld.\n",
               Shipltrs[s2->type], dirship->destshipno);
@@ -235,7 +235,6 @@ void upgrade(const command_t &argv, GameObj &g) {
           buf, "%d more needed.\n",
           ship_size(&ship) - (s2->max_hanger - (s2->hanger - dirship->size)));
       notify(Playernum, Governor, buf);
-      free(s2);
       return;
     }
   }
@@ -268,7 +267,7 @@ void upgrade(const command_t &argv, GameObj &g) {
       s2->hanger -= dirship->size;
       dirship->size = ship_size(&*dirship);
       s2->hanger += dirship->size;
-      putship(s2);
+      putship(&*s2);
     }
     dirship->size = ship_size(&*dirship);
     dirship->base_mass = getmass(&*dirship);

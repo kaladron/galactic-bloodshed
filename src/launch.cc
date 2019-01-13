@@ -73,7 +73,7 @@ void launch(const command_t &argv, GameObj &g) {
         }
         auto s2 = getship(s->destshipno);
         if (landed(&*s2)) {
-          remove_sh_ship(s, &*s2);
+          remove_sh_ship(*s, *s2);
           auto p = getplanet(s2->storbits, s2->pnumorbits);
           insert_sh_plan(&p, s);
           putplanet(p, Stars[s2->storbits], s2->pnumorbits);
@@ -95,7 +95,7 @@ void launch(const command_t &argv, GameObj &g) {
           putship(s);
           putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_PLAN) {
-          remove_sh_ship(s, &*s2);
+          remove_sh_ship(*s, *s2);
           sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
                   ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
@@ -116,7 +116,7 @@ void launch(const command_t &argv, GameObj &g) {
           putship(s);
           putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_STAR) {
-          remove_sh_ship(s, &*s2);
+          remove_sh_ship(*s, *s2);
           sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
                   ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
@@ -135,7 +135,7 @@ void launch(const command_t &argv, GameObj &g) {
           putship(s);
           putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_UNIV) {
-          remove_sh_ship(s, &*s2);
+          remove_sh_ship(*s, *s2);
           sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
                   ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);

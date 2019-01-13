@@ -27,7 +27,7 @@ void insert_sh_plan(Planet *, Ship *);
 void insert_sh_ship(Ship *, Ship *);
 void remove_sh_star(Ship &);
 void remove_sh_plan(Ship &);
-void remove_sh_ship(Ship *, Ship *);
+void remove_sh_ship(Ship &, Ship &);
 void warn_race(const player_t, const std::string &);
 void warn(const player_t, const governor_t, const std::string &);
 void warn_star(const player_t, const starnum_t, const std::string &);

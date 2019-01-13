@@ -1554,6 +1554,7 @@ void remove_sh_star(Ship &s) {
     }
   }
 
+  // put in limbo - wait for insert_sh
   s.whatorbits = ScopeLevel::LEVEL_UNIV;
   s.nextship = 0;
 }
@@ -1563,14 +1564,14 @@ void remove_sh_star(Ship &s) {
  * \arg s Ship to remove
  */
 void remove_sh_plan(Ship &s) {
-  auto p = getplanet(s.storbits, s.pnumorbits);
-  shipnum_t sh = p.ships;
+  auto host = getplanet(s.storbits, s.pnumorbits);
+  shipnum_t sh = host.ships;
 
   // If the ship is the first of the chain, point the star to the
   // next, which is zero if there are no other ships.
   if (sh == s.number) {
-    p.ships = s.nextship;
-    putplanet(p, Stars[s.storbits], s.pnumorbits);
+    host.ships = s.nextship;
+    putplanet(host, Stars[s.storbits], s.pnumorbits);
   } else {
     Shiplist shiplist(sh);
     for (auto s2 : shiplist) {
@@ -1582,29 +1583,36 @@ void remove_sh_plan(Ship &s) {
     }
   }
 
+  // put in limbo - wait for insert_sh
   s.whatorbits = ScopeLevel::LEVEL_UNIV;
   s.nextship = 0;
 }
 
-void remove_sh_ship(Ship *s, Ship *ship) {
-  Ship *s2;
-  shipnum_t sh = ship->ships;
+/**
+ * \brief Remove a ship from the list of ships in the ship
+ * \arg s Ship to remove
+ */
+void remove_sh_ship(Ship &s, Ship &host) {
+  shipnum_t sh = host.ships;
 
-  if (sh == s->number)
-    ship->ships = s->nextship;
-  else {
-    while (sh != s->number) {
-      getship(&s2, sh);
-      sh = (s2->nextship);
-      if (sh != s->number) free(s2);
+  // If the ship is the first of the chain, point the ship to the
+  // next, which is zero if there are no other ships.
+  if (sh == s.number) {
+    host.ships = s.nextship;
+  } else {
+    Shiplist shiplist(sh);
+    for (auto s2 : shiplist) {
+      if (s2.nextship == s.number) {
+        s2.nextship = s.nextship;
+        putship(&s2);
+        break;
+      }
     }
-    s2->nextship = s->nextship;
-    putship(s2);
-    free(s2);
   }
-  s->nextship = 0;
-  s->whatorbits =
-      ScopeLevel::LEVEL_UNIV; /* put in limbo - wait for insert_sh.. */
+
+  // put in limbo - wait for insert_sh
+  s.whatorbits = ScopeLevel::LEVEL_UNIV;
+  s.nextship = 0;
 }
 
 static double GetComplexity(const ShipType ship) {

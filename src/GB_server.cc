@@ -1558,28 +1558,32 @@ void remove_sh_star(Ship &s) {
   s.nextship = 0;
 }
 
-void remove_sh_plan(Ship *s) {
-  shipnum_t sh;
-  Ship *s2;
+/**
+ * \brief Remove a ship from the list of ships orbiting the planet
+ * \arg s Ship to remove
+ */
+void remove_sh_plan(Ship &s) {
+  auto p = getplanet(s.storbits, s.pnumorbits);
+  shipnum_t sh = p.ships;
 
-  auto p = getplanet(s->storbits, s->pnumorbits);
-  sh = p.ships;
-
-  if (sh == s->number) {
-    p.ships = s->nextship;
-    putplanet(p, Stars[s->storbits], s->pnumorbits);
+  // If the ship is the first of the chain, point the star to the
+  // next, which is zero if there are no other ships.
+  if (sh == s.number) {
+    p.ships = s.nextship;
+    putplanet(p, Stars[s.storbits], s.pnumorbits);
   } else {
-    while (sh != s->number) {
-      getship(&s2, sh);
-      sh = s2->nextship;
-      if (sh != s->number) free(s2); /* don't free it if it is the s2 we want */
+    Shiplist shiplist(sh);
+    for (auto s2 : shiplist) {
+      if (s2.nextship == s.number) {
+        s2.nextship = s.nextship;
+        putship(&s2);
+        break;
+      }
     }
-    s2->nextship = s->nextship;
-    putship(s2);
-    free(s2);
   }
-  s->nextship = 0;
-  s->whatorbits = ScopeLevel::LEVEL_UNIV;
+
+  s.whatorbits = ScopeLevel::LEVEL_UNIV;
+  s.nextship = 0;
 }
 
 void remove_sh_ship(Ship *s, Ship *ship) {

@@ -163,7 +163,7 @@ void land(const command_t &argv, GameObj &g) {
             continue;
           }
           /* ok, load 'em up */
-          remove_sh_plan(s);
+          remove_sh_plan(*s);
           /* get the target ship again because it had a pointer changed (and put
            * to disk) in the remove routines */
           free(s2);
@@ -230,7 +230,7 @@ void land(const command_t &argv, GameObj &g) {
 
           /* remove the ship from whatever scope it is currently in */
           if (s->whatorbits == ScopeLevel::LEVEL_PLAN)
-            remove_sh_plan(s);
+            remove_sh_plan(*s);
           else if (s->whatorbits == ScopeLevel::LEVEL_STAR)
             remove_sh_star(*s);
           else {

@@ -80,8 +80,6 @@
 
 #include "globals.h"
 
-static struct stat sbuf;
-
 static int shutdown_flag = 0;
 static int update_flag = 0;
 
@@ -1009,7 +1007,7 @@ static int do_command(DescriptorData &d, const char *comm) {
       if (!d.connected) {
         goodbye_user(d);
       } else {
-        check_for_telegrams(d.player, d.governor);
+        check_for_telegrams(d);
         /* set the scope to home upon login */
         command_t call_cs = {"cs"};
         process_command(d, call_cs);
@@ -1388,14 +1386,6 @@ static void help(const command_t &argv, GameObj &g) {
     } else
       notify(g.player, g.governor, "Help on that subject unavailable.\n");
   }
-}
-
-void check_for_telegrams(int Playernum, int Governor) {
-  sprintf(buf, "%s.%d.%d", TELEGRAMFL, Playernum, Governor);
-  stat(buf, &sbuf);
-  if (sbuf.st_size)
-    notify(Playernum, Governor,
-           "You have telegram(s) waiting. Use 'read' to read them.\n");
 }
 
 void kill_ship(int Playernum, Ship *ship) {

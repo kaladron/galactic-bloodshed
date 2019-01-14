@@ -7,6 +7,7 @@
 
 #include "vars.h"
 
+void check_for_telegrams(GameObj &);
 void purge();
 void post(const char *, int);
 void push_telegram_race(const player_t, const std::string &);

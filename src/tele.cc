@@ -5,6 +5,8 @@
 #include "tele.h"
 
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <climits>
 #include <cstdio>
 #include <cstring>
@@ -259,5 +261,21 @@ void news_read(int Playernum, int Governor, int type) {
     sprintf(buf, "\nNews file %s non-existent.\n", telegram_file);
     notify(Playernum, Governor, buf);
     return;
+  }
+}
+
+/**
+ * \brief Check for telegrams and notify the player if there is any.
+ * \arg g Game object
+ */
+void check_for_telegrams(GameObj &g) {
+  std::string filename = std::string(TELEGRAMFL) + '.' +
+                         std::to_string(g.player) + '.' +
+                         std::to_string(g.governor);
+  struct stat sbuf;
+  std::memset(&sbuf, 0, sizeof(sbuf));
+  stat(filename.c_str(), &sbuf);
+  if (sbuf.st_size != 0) {
+    g.out << "You have telegram(s) waiting. Use 'read' to read them.\n";
   }
 }

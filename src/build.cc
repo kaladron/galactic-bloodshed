@@ -37,8 +37,6 @@ static std::optional<ScopeLevel> build_at_ship(GameObj &, Ship *, int *, int *);
 static int can_build_at_planet(GameObj &, startype *, const Planet &);
 static int can_build_this(int, Race *, char *);
 static int can_build_on_ship(int, Race *, Ship *, char *);
-static int can_build_on_sector(int, Race *, const Planet &, const sector &, int,
-                               int, char *);
 static void create_ship_by_planet(int, int, Race *, Ship *, Planet *, int, int,
                                   int, int);
 static void create_ship_by_ship(int, int, Race *, int, Planet *, Ship *,
@@ -49,6 +47,44 @@ static void Getfactship(Ship *, Ship *);
 static void Getship(Ship *, ShipType, Race *);
 static void initialize_new_ship(GameObj &, Race *, Ship *, double, int);
 static void system_cost(double *, double *, int, int);
+
+namespace {
+bool can_build_on_sector(const int what, const racetype *Race,
+                         const Planet &planet, const sector &sector,
+                         const int x, const int y, char *string) {
+  auto shipc = Shipltrs[what];
+  if (!sector.popn) {
+    sprintf(string, "You have no more civs in the sector!\n");
+    return false;
+  }
+  if (sector.condition == SectorType::SEC_WASTED) {
+    sprintf(string, "You can't build on wasted sectors.\n");
+    return false;
+  }
+  if (sector.owner != Race->Playernum && !Race->God) {
+    sprintf(string, "You don't own that sector.\n");
+    return false;
+  }
+  if ((!(Shipdata[what][ABIL_BUILD] & 1)) && !Race->God) {
+    sprintf(string, "This ship type cannot be built on a planet.\n");
+    sprintf(temp, "Use 'build ? %c' to find out where it can be built.\n",
+            shipc);
+    strcat(string, temp);
+    return false;
+  }
+  if (what == ShipType::OTYPE_QUARRY) {
+    Shiplist shiplist(planet.ships);
+    for (auto s : shiplist) {
+      if (s.alive && s.type == ShipType::OTYPE_QUARRY && s.land_x == x &&
+          s.land_y == y) {
+        sprintf(string, "There already is a quarry here.\n");
+        return false;
+      }
+    }
+  }
+  return true;
+}
+}  // namespace
 
 /* upgrade ship characteristics */
 void upgrade(const command_t &argv, GameObj &g) {
@@ -1099,50 +1135,6 @@ static int can_build_on_ship(int what, racetype *Race, Ship *builder,
             Shipltrs[what]);
     strcat(string, temp);
     return (0);
-  }
-  return (1);
-}
-
-static int can_build_on_sector(int what, racetype *Race, const Planet &planet,
-                               const sector &sector, int x, int y,
-                               char *string) {
-  Ship *s;
-  char shipc;
-
-  shipc = Shipltrs[what];
-  if (!sector.popn) {
-    sprintf(string, "You have no more civs in the sector!\n");
-    return (0);
-  }
-  if (sector.condition == SectorType::SEC_WASTED) {
-    sprintf(string, "You can't build on wasted sectors.\n");
-    return (0);
-  }
-  if (sector.owner != Race->Playernum && !Race->God) {
-    sprintf(string, "You don't own that sector.\n");
-    return (0);
-  }
-  if ((!(Shipdata[what][ABIL_BUILD] & 1)) && !Race->God) {
-    sprintf(string, "This ship type cannot be built on a planet.\n");
-    sprintf(temp, "Use 'build ? %c' to find out where it can be built.\n",
-            shipc);
-    strcat(string, temp);
-    return (0);
-  }
-  if (what == ShipType::OTYPE_QUARRY) {
-    int sh;
-    sh = planet.ships;
-    while (sh) {
-      (void)getship(&s, sh);
-      if (s->alive && s->type == ShipType::OTYPE_QUARRY && s->land_x == x &&
-          s->land_y == y) {
-        sprintf(string, "There already is a quarry here.\n");
-        free(s);
-        return (0);
-      }
-      sh = s->nextship;
-      free(s);
-    }
   }
   return (1);
 }

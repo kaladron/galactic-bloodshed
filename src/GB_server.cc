@@ -163,7 +163,7 @@ static int shovechars(int);
 
 static void GB_time(const command_t &, GameObj &);
 static void GB_schedule(const command_t &, GameObj &);
-static void do_update(int);
+static void do_update(bool = false);
 static void do_segment(int, int);
 static int make_socket(int);
 static void shutdownsock(DescriptorData &);
@@ -726,7 +726,7 @@ void do_next_thing() {
   if (nsegments_done < segments)
     do_segment(0, 1);
   else
-    do_update(0);
+    do_update();
 }
 
 static int make_socket(int port) {
@@ -1025,7 +1025,7 @@ static void check_connect(DescriptorData &d, const char *message) {
     do_segment(1, 0);
     return;
   } else if (race_password == UPDATE_PASSWORD) {
-    do_update(1);
+    do_update(true);
     return;
   }
 #endif
@@ -1083,14 +1083,14 @@ static void check_connect(DescriptorData &d, const char *message) {
   treasury({}, d);
 }
 
-static void do_update(int override) {
+static void do_update(bool force) {
   time_t clk = time(nullptr);
   int i;
   FILE *sfile;
   struct stat stbuf;
   int fakeit;
 
-  fakeit = (!override && stat(NOGOFL, &stbuf) >= 0);
+  fakeit = (!force && stat(NOGOFL, &stbuf) >= 0);
 
   sprintf(buf, "%sDOING UPDATE...\n", ctime(&clk));
   if (!fakeit) {
@@ -1103,13 +1103,13 @@ static void do_update(int override) {
     next_segment_time = clk + (144 * 3600);
     nsegments_done = segments;
   } else {
-    if (override)
+    if (force)
       next_segment_time = clk + update_time * 60 / segments;
     else
       next_segment_time = next_update_time + update_time * 60 / segments;
     nsegments_done = 1;
   }
-  if (override)
+  if (force)
     next_update_time = clk + update_time * 60;
   else
     next_update_time += update_time * 60;
@@ -1275,7 +1275,7 @@ static void process_command(DescriptorData &d, const command_t &argv) {
     shutdown_flag = 1;
     d.out << "Doing shutdown.\n";
   } else if (argv[0] == "@@update" && God)
-    do_update(1);
+    do_update(true);
   else if (argv[0] == "@@segment" && God)
     do_segment(1, std::stoi(argv[1]));
   else {

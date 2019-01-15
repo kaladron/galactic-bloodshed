@@ -1554,13 +1554,10 @@ void sell(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   int APcount = 20;
   racetype *Race;
-  Ship *s;
   commodtype c;
   int commodno;
   int amount;
   int item;
-  int ok = 0;
-  int sh;
   char commod;
   int snum;
   int pnum;
@@ -1602,14 +1599,14 @@ void sell(const command_t &argv, GameObj &g) {
     return;
   }
   /* check to see if there is an undamage gov center or space port here */
-  sh = p.ships;
-  while (sh && !ok) {
-    (void)getship(&s, sh);
-    if (s->alive && (s->owner == Playernum) && !s->damage &&
-        Shipdata[s->type][ABIL_PORT])
-      ok = 1;
-    sh = s->nextship;
-    free(s);
+  bool ok = false;
+  Shiplist shiplist(p.ships);
+  for (auto s : shiplist) {
+    if (s.alive && (s.owner == Playernum) && !s.damage &&
+        Shipdata[s.type][ABIL_PORT]) {
+      ok = true;
+      break;
+    }
   }
   if (!ok) {
     g.out << "You don't have an undamaged space port or government center "

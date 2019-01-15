@@ -36,7 +36,6 @@ void dock(const command_t &argv, GameObj &g) {
   int APcount = (argv[0] == "dock") ? 0 : 1;
   int Assault = (argv[0] == "assault") ? 1 : 0;
   Ship *s;
-  Ship *s2;
   Ship ship;
   population_t boarders = 0;
   int dam = 0;
@@ -138,15 +137,15 @@ void dock(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      if (!getship(&s2, ship2no)) {
+      auto s2 = getship(ship2no);
+      if (!s2) {
         g.out << "The ship wasn't found.\n";
         free(s);
         return;
       }
 
-      if (!Assault && testship(Playernum, Governor, s2)) {
+      if (!Assault && testship(Playernum, Governor, &*s2)) {
         g.out << "You are not authorized to do this.\n";
-        free(s2);
         free(s);
         return;
       }
@@ -155,7 +154,6 @@ void dock(const command_t &argv, GameObj &g) {
       if (s->whatorbits != s2->whatorbits) {
         g.out << "Those ships are not in the same scope.\n";
         free(s);
-        free(s2);
         return;
       }
 
@@ -163,7 +161,6 @@ void dock(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor,
                "You can't assault Von Neumann machines.\n");
         free(s);
-        free(s2);
         return;
       }
 
@@ -171,7 +168,6 @@ void dock(const command_t &argv, GameObj &g) {
         sprintf(buf, "%s is already docked.\n", ship_to_string(*s2).c_str());
         notify(Playernum, Governor, buf);
         free(s);
-        free(s2);
         return;
       }
 
@@ -185,7 +181,6 @@ void dock(const command_t &argv, GameObj &g) {
                 ship_to_string(*s2).c_str());
         notify(Playernum, Governor, buf);
         free(s);
-        free(s2);
         continue;
       }
       if (s->docked && Assault) {
@@ -202,7 +197,6 @@ void dock(const command_t &argv, GameObj &g) {
         sprintf(buf, "Not enough fuel.\n");
         notify(Playernum, Governor, buf);
         free(s);
-        free(s2);
         continue;
       }
       sprintf(buf, "Distance to %s: %.2f.\n", ship_to_string(*s2).c_str(),
@@ -216,11 +210,10 @@ void dock(const command_t &argv, GameObj &g) {
         sprintf(buf, "%s is already docked.\n", ship_to_string(*s2).c_str());
         notify(Playernum, Governor, buf);
         free(s);
-        free(s2);
         return;
       }
       /* defending fire gets defensive fire */
-      bcopy(s2, &ship, sizeof(Ship)); /* for reports */
+      bcopy(&*s2, &ship, sizeof(Ship)); /* for reports */
       if (Assault) {
         // Set the command to be distinctive here.  In the target function,
         // APcount is set to 0 and cew is set to 3.
@@ -230,17 +223,14 @@ void dock(const command_t &argv, GameObj &g) {
         fire(fire_argv, g);
         /* retrieve ships again, since battle may change ship stats */
         free(s);
-        free(s2);
         (void)getship(&s, shipno);
-        (void)getship(&s2, ship2no);
+        s2 = getship(ship2no);
         if (!s->alive) {
           free(s);
-          free(s2);
           continue;
         }
         if (!s2->alive) {
           free(s);
-          free(s2);
           return;
         }
       }
@@ -267,7 +257,6 @@ void dock(const command_t &argv, GameObj &g) {
           sprintf(buf, "Illegal number of boarders (%lu).\n", boarders);
           notify(Playernum, Governor, buf);
           free(s);
-          free(s2);
           continue;
         }
         old2owner = s2->owner;
@@ -342,7 +331,7 @@ void dock(const command_t &argv, GameObj &g) {
               0, round_rand(25. * (bstrength + 1.0) / (b2strength + 1.0)));
           dam2 = MIN(100, dam2);
           s2->damage = MIN(100, s2->damage + dam2);
-          if (s2->damage >= 100) kill_ship(Playernum, s2);
+          if (s2->damage >= 100) kill_ship(Playernum, &*s2);
         } else {
           s2->popn = 0;
           s2->troops = 0;
@@ -412,7 +401,7 @@ void dock(const command_t &argv, GameObj &g) {
       if (Assault) {
         sprintf(telegram_buf, "%s ASSAULTED by %s at %s\n",
                 ship_to_string(ship).c_str(), ship_to_string(*s).c_str(),
-                prin_ship_orbits(s2));
+                prin_ship_orbits(&*s2));
         sprintf(buf, "Your damage: %d%%, theirs: %d%%.\n", dam2, dam);
         strcat(telegram_buf, buf);
         if (!s2->max_crew && s2->destruct) {
@@ -507,8 +496,7 @@ void dock(const command_t &argv, GameObj &g) {
 
       s->notified = s2->notified = 0;
       putship(s);
-      putship(s2);
-      free(s2);
+      putship(&*s2);
       free(s);
     } else
       free(s);

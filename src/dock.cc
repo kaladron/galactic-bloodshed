@@ -37,7 +37,6 @@ void dock(const command_t &argv, GameObj &g) {
   int Assault = (argv[0] == "assault") ? 1 : 0;
   Ship *s;
   Ship *s2;
-  Ship *s3;
   Ship ship;
   population_t boarders = 0;
   int dam = 0;
@@ -193,11 +192,10 @@ void dock(const command_t &argv, GameObj &g) {
         /* first undock the target ship */
         s->docked = 0;
         s->whatdest = ScopeLevel::LEVEL_UNIV;
-        (void)getship(&s3, (int)s->destshipno);
+        auto s3 = getship(s->destshipno);
         s3->docked = 0;
         s3->whatdest = ScopeLevel::LEVEL_UNIV;
-        putship(s3);
-        free(s3);
+        putship(&*s3);
       }
 
       if (fuel > s->fuel) {
@@ -301,12 +299,11 @@ void dock(const command_t &argv, GameObj &g) {
       if (Assault) {
         /* if the assaulted ship is docked, undock it first */
         if (s2->docked && s2->whatdest == ScopeLevel::LEVEL_SHIP) {
-          (void)getship(&s3, (int)s2->destshipno);
+          auto s3 = getship(s2->destshipno);
           s3->docked = 0;
           s3->whatdest = ScopeLevel::LEVEL_UNIV;
           s3->destshipno = 0;
-          putship(s3);
-          free(s3);
+          putship(&*s3);
 
           s2->docked = 0;
           s2->whatdest = ScopeLevel::LEVEL_UNIV;

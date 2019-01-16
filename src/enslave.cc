@@ -24,7 +24,6 @@ void enslave(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int APcount = 2;
-  int i;
   int aliens = 0;
   int def = 0;
   int attack = 0;
@@ -61,7 +60,8 @@ void enslave(const command_t &argv, GameObj &g) {
   }
 
   /* add up forces attacking, defending */
-  for (attack = aliens = def = 0, i = 1; i < MAXPLAYERS; i++) {
+  attack = aliens = def = 0;
+  for (auto i = 1; i < MAXPLAYERS; i++) {
     if (p.info[i - 1].numsectsowned && i != Playernum) {
       aliens = 1;
       def += p.info[i - 1].destruct;
@@ -135,7 +135,7 @@ void enslave(const command_t &argv, GameObj &g) {
     g.out << "You needed more weapons bearing on the planet...\n";
   }
 
-  for (i = 1; i < MAXPLAYERS; i++)
+  for (auto i = 1; i < MAXPLAYERS; i++)
     if (p.info[i - 1].numsectsowned && i != Playernum)
       warn(i, Stars[s->storbits]->governor[i - 1], telegram_buf);
 }

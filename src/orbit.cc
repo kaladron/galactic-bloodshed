@@ -187,7 +187,7 @@ void orbit(const command_t &argv, GameObj &g) {
       }
     } break;
     default:
-      notify(g.player, g.governor, "Bad scope.\n");
+      g.out << "Bad scope.\n";
       return;
   }
   strcat(output, "\n");

@@ -1686,14 +1686,11 @@ void bid(const command_t &argv, GameObj &g) {
   racetype *Race;
   Planet p;
   commodtype *c;
-  Ship *s;
   char commod;
   int i;
   int item;
   int lot;
   int shipping;
-  int ok = 0;
-  int sh;
   double dist;
   double rate;
   int snum;
@@ -1786,14 +1783,14 @@ void bid(const command_t &argv, GameObj &g) {
       return;
     }
     /* check to see if there is an undamaged gov center or space port here */
-    sh = p.ships;
-    while (sh && !ok) {
-      (void)getship(&s, sh);
-      if (s->alive && (s->owner == Playernum) && !s->damage &&
-          Shipdata[s->type][ABIL_PORT])
-        ok = 1;
-      sh = s->nextship;
-      free(s);
+    Shiplist shiplist(p.ships);
+    bool ok = false;
+    for (auto s : shiplist) {
+      if (s.alive && (s.owner == Playernum) && !s.damage &&
+          Shipdata[s.type][ABIL_PORT]) {
+        ok = true;
+        break;
+      }
     }
     if (!ok) {
       g.out << "You don't have an undamaged space port or "

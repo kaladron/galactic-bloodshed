@@ -452,12 +452,10 @@ void walk(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   const int APcount = 1;
   Ship *ship;
-  Ship *ship2;
   Ship dummy;
   int x;
   int y;
   int i;
-  int sh;
   int succ = 0;
   int civ;
   int mil;
@@ -532,36 +530,34 @@ void walk(const command_t &argv, GameObj &g) {
     return;
   }
   /* if the sector is occupied by non-aligned AFVs, each one will attack */
-  sh = p.ships;
-  while (sh && ship->alive) {
-    (void)getship(&ship2, sh);
-    if (ship2->owner != Playernum && ship2->type == ShipType::OTYPE_AFV &&
-        landed(ship2) && retal_strength(ship2) && (ship2->land_x == x) &&
-        (ship2->land_y == y)) {
-      alien = races[ship2->owner - 1];
-      if (!isset(Race->allied, (int)ship2->owner) ||
+  Shiplist shiplist{p.ships};
+  for (auto ship2 : shiplist) {
+    if (ship2.owner != Playernum && ship2.type == ShipType::OTYPE_AFV &&
+        landed(&ship2) && retal_strength(&ship2) && (ship2.land_x == x) &&
+        (ship2.land_y == y)) {
+      alien = races[ship2.owner - 1];
+      if (!isset(Race->allied, (int)ship2.owner) ||
           !isset(alien->allied, Playernum)) {
-        while ((strength = retal_strength(ship2)) &&
+        while ((strength = retal_strength(&ship2)) &&
                (strength1 = retal_strength(ship))) {
           bcopy(ship, &dummy, sizeof(Ship));
-          use_destruct(ship2, strength);
+          use_destruct(&ship2, strength);
           notify(Playernum, Governor, long_buf);
-          warn(ship2->owner, ship2->governor, long_buf);
-          if (!ship2->alive) post(short_buf, COMBAT);
+          warn(ship2.owner, ship2.governor, long_buf);
+          if (!ship2.alive) post(short_buf, COMBAT);
           notify_star(Playernum, Governor, ship->storbits, short_buf);
           if (strength1) {
             use_destruct(ship, strength1);
             notify(Playernum, Governor, long_buf);
-            warn(ship2->owner, ship2->governor, long_buf);
-            if (!ship2->alive) post(short_buf, COMBAT);
+            warn(ship2.owner, ship2.governor, long_buf);
+            if (!ship2.alive) post(short_buf, COMBAT);
             notify_star(Playernum, Governor, ship->storbits, short_buf);
           }
         }
-        putship(ship2);
+        putship(&ship2);
       }
     }
-    sh = ship2->nextship;
-    free(ship2);
+    if (!ship->alive) break;
   }
   /* if the sector is occupied by non-aligned player, attack them first */
   if (ship->popn && ship->alive && sect.owner && sect.owner != Playernum) {

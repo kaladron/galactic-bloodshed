@@ -48,24 +48,19 @@ void capture(const command_t &argv, GameObj &g) {
   double dstrength;
   racetype *Race;
   racetype *alien;
-  int snum;
-  int pnum;
-  population_t boarders;
 
   if (argv.size() < 2) {
     g.out << "Capture what?\n";
     return;
   }
-  snum = g.snum;
-  pnum = g.pnum;
-  if (Governor && Stars[snum]->governor[Playernum - 1] != Governor) {
+  if (Governor && Stars[g.snum]->governor[Playernum - 1] != Governor) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
   nextshipno = start_shiplist(g, argv[1]);
   while ((shipno = do_shiplist(&ship, &nextshipno)))
     if (ship->owner != Playernum &&
-        in_list((int)ship->owner, argv[1].c_str(), ship, &nextshipno)) {
+        in_list(ship->owner, argv[1].c_str(), ship, &nextshipno)) {
       if (!landed(ship)) {
         sprintf(buf, "%s #%ld is not landed on a planet.\n",
                 Shipnames[ship->type], shipno);
@@ -74,8 +69,7 @@ void capture(const command_t &argv, GameObj &g) {
         continue;
       }
       if (ship->type == ShipType::OTYPE_VN) {
-        notify(Playernum, Governor,
-               "You can't capture Von Neumann machines.\n");
+        g.out << "You can't capture Von Neumann machines.\n";
         free(ship);
         continue;
       }
@@ -88,7 +82,7 @@ void capture(const command_t &argv, GameObj &g) {
       x = ship->land_x;
       y = ship->land_y;
 
-      auto p = getplanet((int)ship->storbits, (int)ship->pnumorbits);
+      auto p = getplanet(ship->storbits, ship->pnumorbits);
       auto sect = getsector(p, x, y);
 
       if (sect.owner != Playernum) {
@@ -112,17 +106,17 @@ void capture(const command_t &argv, GameObj &g) {
         continue;
       }
 
+      population_t boarders;
       if (argv.size() < 3) {
         if (what == CIV)
           boarders = sect.popn;
-        else if (what == MIL)
+        else // MIL
           boarders = sect.troops;
       } else
         boarders = std::stoul(argv[2]);
 
-      if (boarders <= 0) {
-        sprintf(buf, "Illegal number of boarders %lu.\n", boarders);
-        notify(Playernum, Governor, buf);
+      if (boarders == 0) {
+        g.out << "Illegal number of boarders.\n";
         free(ship);
         continue;
       }
@@ -135,7 +129,7 @@ void capture(const command_t &argv, GameObj &g) {
       Race = races[Playernum - 1];
       alien = races[ship->owner - 1];
 
-      if (isset(Race->allied, (int)(ship->owner))) {
+      if (isset(Race->allied, (ship->owner))) {
         sprintf(buf, "Boarding the ship of your ally, %s\n", alien->name);
         notify(Playernum, Governor, buf);
       }
@@ -171,7 +165,7 @@ void capture(const command_t &argv, GameObj &g) {
                         .01 * (100.0 - (double)ship->damage) *
                         morale_factor((double)(alien->morale - Race->morale)));
         notify(Playernum, Governor, buf);
-        casualty_scale = MIN(boarders, ship->popn + ship->troops);
+        casualty_scale = std::min(boarders, ship->popn + ship->troops);
         if (astrength > 0.0)
           casualties =
               int_rand(0, round_rand((double)casualty_scale *
@@ -186,23 +180,23 @@ void capture(const command_t &argv, GameObj &g) {
                                      (astrength + 1.0) / (dstrength + 1.0)));
           shipdam = int_rand(
               0, round_rand(25. * (astrength + 1.0) / (dstrength + 1.0)));
-          ship->damage = MIN(100, ship->damage + shipdam);
+          ship->damage = std::min(100, ship->damage + shipdam);
         }
 
-        casualties = MIN(boarders, casualties);
+        casualties = std::min(boarders, casualties);
         boarders -= casualties;
 
-        casualties1 = MIN(olddpopn, casualties1);
+        casualties1 = std::min(olddpopn, casualties1);
         ship->popn -= casualties1;
         ship->mass -= casualties1 * alien->mass;
 
-        casualties2 = MIN(olddtroops, casualties2);
+        casualties2 = std::min(olddtroops, casualties2);
         ship->troops -= casualties2;
         ship->mass -= casualties2 * alien->mass;
 
       } else if (ship->destruct) { /* booby trapped robot ships */
-        booby = int_rand(0, 10 * (int)ship->destruct);
-        booby = MIN(100, booby);
+        booby = int_rand(0, 10 * ship->destruct);
+        booby = std::min(100, booby);
         casualties = casualties2 = 0;
         for (unsigned long i = 0; i < boarders; i++)
           casualties += (int_rand(1, 100) < booby);
@@ -210,7 +204,7 @@ void capture(const command_t &argv, GameObj &g) {
         shipdam += booby;
         ship->damage += booby;
       }
-      shipdam = MIN(100, shipdam);
+      shipdam = std::min(100, shipdam);
       if (ship->damage >= 100) kill_ship(Playernum, ship);
 
       if (!(ship->popn + ship->troops) && ship->alive) {
@@ -218,16 +212,16 @@ void capture(const command_t &argv, GameObj &g) {
         ship->owner = Playernum;
         ship->governor = Governor;
         if (what == CIV) {
-          ship->popn = MIN(boarders, Max_crew(ship));
+          ship->popn = std::min(boarders, Max_crew(ship));
           sect.popn += boarders - ship->popn;
           ship->mass += ship->popn * Race->mass;
         } else if (what == MIL) {
-          ship->troops = MIN(boarders, Max_mil(ship));
+          ship->troops = std::min(boarders, Max_mil(ship));
           sect.troops += boarders - ship->troops;
           ship->mass += ship->troops * Race->mass;
         }
         if (olddpopn + olddtroops && ship->type != ShipType::OTYPE_FACTORY)
-          adjust_morale(Race, alien, (int)ship->build_cost);
+          adjust_morale(Race, alien, ship->build_cost);
         /* unoccupied ships and factories don't count */
       } else { /* retreat */
         if (what == CIV)
@@ -269,8 +263,7 @@ void capture(const command_t &argv, GameObj &g) {
       if (!ship->alive) {
         sprintf(buf, "              YOUR SHIP WAS DESTROYED!!!\n");
         strcat(telegram_buf, buf);
-        sprintf(buf, "              Their ship DESTROYED!!!\n");
-        notify(Playernum, Governor, buf);
+        g.out << "              Their ship DESTROYED!!!\n";
         sprintf(short_buf, "%s: %s [%d] DESTROYED %s\n", Dispshiploc(ship),
                 Race->name, Playernum, ship_to_string(s).c_str());
       }
@@ -281,9 +274,9 @@ void capture(const command_t &argv, GameObj &g) {
         sprintf(buf, "VICTORY! The ship is yours!\n");
         notify(Playernum, Governor, buf);
         if (what == CIV)
-          sprintf(buf, "%lu boarders move in.\n", MIN(boarders, ship->popn));
+          sprintf(buf, "%lu boarders move in.\n", std::min(boarders, ship->popn));
         else if (what == MIL)
-          sprintf(buf, "%lu troops move in.\n", MIN(boarders, ship->troops));
+          sprintf(buf, "%lu troops move in.\n", std::min(boarders, ship->troops));
         notify(Playernum, Governor, buf);
         capture_stuff(*ship);
         sprintf(short_buf, "%s: %s [%d] CAPTURED %s\n", Dispshiploc(ship),
@@ -291,8 +284,7 @@ void capture(const command_t &argv, GameObj &g) {
       } else if (ship->popn + ship->troops) {
         sprintf(buf, "You fought them off!\n");
         notify(oldowner, oldgov, buf);
-        sprintf(buf, "The boarding was repulsed; try again.\n");
-        notify(Playernum, Governor, buf);
+        g.out << "The boarding was repulsed; try again.\n";
         sprintf(short_buf, "%s: %s [%d] assaults %s\n", Dispshiploc(ship),
                 Race->name, Playernum, ship_to_string(s).c_str());
       }
@@ -303,14 +295,12 @@ void capture(const command_t &argv, GameObj &g) {
           p.info[Playernum - 1].mob_points -= sect.mobilization;
         }
         if (!boarders) {
-          sprintf(buf, "Oh no! They killed your party to the last man!\n");
-          notify(Playernum, Governor, buf);
+          g.out << "Oh no! They killed your party to the last man!\n";
         }
       } else {
         sprintf(buf, "Your ship was weakened too much!\n");
         strcat(telegram_buf, buf);
-        sprintf(buf, "The assault weakened their ship too much!\n");
-        notify(Playernum, Governor, buf);
+        g.out << "The assault weakened their ship too much!\n";
       }
 
       if (casualties || casualties1 || casualties2) {
@@ -328,10 +318,10 @@ void capture(const command_t &argv, GameObj &g) {
       notify_star(Playernum, Governor, ship->storbits, short_buf);
       putship(ship);
       putsector(sect, p, x, y);
-      putplanet(p, Stars[snum], pnum);
+      putplanet(p, Stars[g.snum], g.pnum);
       putrace(Race);
       putrace(alien);
-      deductAPs(Playernum, Governor, APcount, (int)ship->storbits, 0);
+      deductAPs(Playernum, Governor, APcount, ship->storbits, 0);
       free(ship);
     } else
       free(ship);

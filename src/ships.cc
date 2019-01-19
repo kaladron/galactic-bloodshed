@@ -41,13 +41,13 @@ long Guns(Ship *s) {
              : ((s)->guns == PRIMARY ? (s)->primary : (s)->secondary);
 }
 
-long Max_crew(Ship *s) {
+population_t Max_crew(Ship *s) {
   return ((s)->type == ShipType::OTYPE_FACTORY)
              ? Shipdata[(s)->type][ABIL_MAXCREW] - (s)->troops
              : (s)->max_crew - (s)->troops;
 }
 
-long Max_mil(Ship *s) {
+population_t Max_mil(Ship *s) {
   return ((s)->type == ShipType::OTYPE_FACTORY)
              ? Shipdata[(s)->type][ABIL_MAXCREW] - (s)->popn
              : (s)->max_crew - (s)->popn;

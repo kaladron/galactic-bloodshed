@@ -321,8 +321,8 @@ bool can_aim(Ship *s);
 /* macros to get ship stats */
 unsigned long Armor(Ship *s);
 long Guns(Ship *s);
-long Max_crew(Ship *s);
-long Max_mil(Ship *s);
+population_t Max_crew(Ship *s);
+population_t Max_mil(Ship *s);
 long Max_resource(Ship *s);
 int Max_crystals(Ship *s);
 long Max_fuel(Ship *s);

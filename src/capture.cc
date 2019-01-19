@@ -110,7 +110,7 @@ void capture(const command_t &argv, GameObj &g) {
       if (argv.size() < 3) {
         if (what == CIV)
           boarders = sect.popn;
-        else // MIL
+        else  // MIL
           boarders = sect.troops;
       } else
         boarders = std::stoul(argv[2]);
@@ -274,9 +274,11 @@ void capture(const command_t &argv, GameObj &g) {
         sprintf(buf, "VICTORY! The ship is yours!\n");
         notify(Playernum, Governor, buf);
         if (what == CIV)
-          sprintf(buf, "%lu boarders move in.\n", std::min(boarders, ship->popn));
+          sprintf(buf, "%lu boarders move in.\n",
+                  std::min(boarders, ship->popn));
         else if (what == MIL)
-          sprintf(buf, "%lu troops move in.\n", std::min(boarders, ship->troops));
+          sprintf(buf, "%lu troops move in.\n",
+                  std::min(boarders, ship->troops));
         notify(Playernum, Governor, buf);
         capture_stuff(*ship);
         sprintf(short_buf, "%s: %s [%d] CAPTURED %s\n", Dispshiploc(ship),

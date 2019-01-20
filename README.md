@@ -1,4 +1,4 @@
-# Project Title
+# Galactic Bloodshed
 
 Galactic Bloodshed is one of the oldest games on the Internet and was one of the first 4-X games.
 

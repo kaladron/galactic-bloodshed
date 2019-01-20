@@ -7,6 +7,8 @@ Galactic Bloodshed is one of the oldest games on the Internet and was one of the
 GB is currently hosted on GitHub at https://github.com/kaladron/galactic-bloodshed.  It uses Bazel
 for building.
 
+Doxygen output from the source is at http://doxygen.galacticbloodshed.com/
+
 cd into the src directory and run '''bazel build ...'''
 
 ### Prerequisites

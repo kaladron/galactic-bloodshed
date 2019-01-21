@@ -311,8 +311,8 @@ int authorized(int Governor, Ship *ship) {
  * * 1234 - a ship number
  * * #1234 - a ship number prefixed by an octothorpe.
  * * f - a letter representing the type of ship
- * * frd - A sequence of letters representing the type of ship.  Processing stops
- * after first match.
+ * * frd - A sequence of letters representing the type of ship.  Processing
+ * stops after first match.
  * * \* - An Asterisk as a wildcard for first match.
  *
  * When a letter or asterisk is given, the shiplist is taken from the current
@@ -363,8 +363,8 @@ shipnum_t do_shiplist(Ship **s, shipnum_t *nextshipno) {
  *
  * See start_shiplist's comment for more details.
  */
-int in_list(player_t Playernum, const char *list, Ship *s,
-            shipnum_t *nextshipno) {
+bool in_list(player_t Playernum, const char *list, Ship *s,
+             shipnum_t *nextshipno) {
   const char *p;
   if (s->owner != Playernum || !s->alive) return 0;
   const char q = Shipltrs[s->type];
@@ -372,11 +372,11 @@ int in_list(player_t Playernum, const char *list, Ship *s,
   if (*p == '#' || isdigit(*p)) {
     if (s->owner != Playernum || !s->alive) return 0;
     *nextshipno = 0;
-    return s->number;
+    return true;
   }
   for (; *p; p++)
-    if (*p == q || *p == '*') return s->number; /* '*' is a wildcard */
-  return 0;
+    if (*p == q || *p == '*') return true; /* '*' is a wildcard */
+  return false;
 }
 
 /** Deity fix-it utilities */

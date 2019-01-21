@@ -91,10 +91,6 @@ static char start_buf[128];
 static char update_buf[128];
 static char segment_buf[128];
 
-static const char *connect_fail = "Connection refused.\n";
-static const char *shutdown_message = "Shutdown ordered by deity - Bye\n";
-static const char *already_on = "Connection refused.\n";
-
 class TextBlock {
  public:
   TextBlock(const std::string &in) {
@@ -1033,7 +1029,7 @@ static void check_connect(DescriptorData &d, const char *message) {
   auto [Playernum, Governor] = getracenum(race_password, gov_password);
 
   if (!Playernum) {
-    queue_string(d, connect_fail);
+    queue_string(d, "Connection refused.\n");
     fprintf(stderr, "FAILED CONNECT %s,%s on descriptor %d\n",
             race_password.c_str(), gov_password.c_str(), d.descriptor);
     return;
@@ -1044,7 +1040,7 @@ static void check_connect(DescriptorData &d, const char *message) {
    * descriptor */
   for (auto &d0 : descriptor_list) {
     if (d0.connected && d0.player == Playernum && d0.governor == Governor) {
-      queue_string(d, already_on);
+      queue_string(d, "Connection refused.\n");
       return;
     }
   }
@@ -1210,6 +1206,7 @@ static void do_segment(int override, int segment) {
 
 static void close_sockets(int sock) {
   /* post message into news file */
+  const char *shutdown_message = "Shutdown ordered by deity - Bye\n";
   post(shutdown_message, ANNOUNCE);
 
   for (auto &d : descriptor_list) {

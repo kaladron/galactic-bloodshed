@@ -322,7 +322,7 @@ int authorized(int Governor, Ship *ship) {
  * \param p String that might contain ship number
  * \return Ship number at the start of the ship list.
  */
-shipnum_t start_shiplist(GameObj &g, std::string_view p) {
+shipnum_t start_shiplist(GameObj &g, const std::string_view p) {
   // If a ship number is given, return that.
   auto s = string_to_shipnum(p);
   if (s) {

@@ -365,17 +365,16 @@ shipnum_t do_shiplist(Ship **s, shipnum_t *nextshipno) {
  */
 bool in_list(player_t Playernum, const char *list, Ship *s,
              shipnum_t *nextshipno) {
-  const char *p;
-  if (s->owner != Playernum || !s->alive) return 0;
-  const char q = Shipltrs[s->type];
-  p = list;
-  if (*p == '#' || isdigit(*p)) {
-    if (s->owner != Playernum || !s->alive) return 0;
+  if (s->owner != Playernum || !s->alive) return false;
+
+  if (list[0] == '#' || std::isdigit(list[0])) {
     *nextshipno = 0;
     return true;
   }
-  for (; *p; p++)
-    if (*p == q || *p == '*') return true; /* '*' is a wildcard */
+
+  // Match either the ship letter or * for wildcard.
+  for (const char *p = list; *p; p++)
+    if (*p == Shipltrs[s->type] || *p == '*') return true;
   return false;
 }
 

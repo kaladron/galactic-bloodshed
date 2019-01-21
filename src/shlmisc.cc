@@ -2,7 +2,8 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/*  miscellaneous stuff included in the shell */
+/// \file shlmisc.cc
+/// \brief Miscellaneous stuff included in the shell.
 
 #include "shlmisc.h"
 
@@ -305,6 +306,18 @@ int authorized(int Governor, Ship *ship) {
 
 /**
  * \brief Get start of ship lists from either a ship number or ScopeLevel
+ *
+ * start_shiplist and in_list work together so that a user can enter one of:
+ * * 1234 - a ship number
+ * * #1234 - a ship number prefixed by an octothorpe.
+ * * f - a letter representing the type of ship
+ * * frd - A sequence of letters representing the type of ship.  Processing stops
+ * after first match.
+ * * \* - An Asterisk as a wildcard for first match.
+ *
+ * When a letter or asterisk is given, the shiplist is taken from the current
+ * scope.
+ *
  * \param g Game object for scope
  * \param p String that might contain ship number
  * \return Ship number at the start of the ship list.
@@ -345,6 +358,11 @@ shipnum_t do_shiplist(Ship **s, shipnum_t *nextshipno) {
   return shipno;
 }
 
+/**
+ * \brief Check is the ship is in the given input string.
+ *
+ * See start_shiplist's comment for more details.
+ */
 int in_list(player_t Playernum, const char *list, Ship *s,
             shipnum_t *nextshipno) {
   const char *p;

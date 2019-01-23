@@ -54,21 +54,21 @@ placetype getplace(GameObj &g, const std::string &string,
           where.shipno = *shipnotmp;
         else
           where.shipno = -1;
-        if (!getship(&where.shipptr, where.shipno)) {
+
+        auto ship = getship(where.shipno);
+        if (!ship) {
           DontOwnErr(Playernum, Governor, where.shipno);
           where.err = 1;
           return where;
         }
-        if ((where.shipptr->owner == Playernum || ignoreexpl || God) &&
-            (where.shipptr->alive || God)) {
+        if ((ship->owner == Playernum || ignoreexpl || God) &&
+            (ship->alive || God)) {
           where.level = ScopeLevel::LEVEL_SHIP;
-          where.snum = where.shipptr->storbits;
-          where.pnum = where.shipptr->pnumorbits;
-          free(where.shipptr);
+          where.snum = ship->storbits;
+          where.pnum = ship->pnumorbits;
           return where;
         }
         where.err = 1;
-        free(where.shipptr);
         return where;
       }
       case '-':
@@ -107,12 +107,11 @@ static placetype getplace2(const int Playernum, const int Governor,
       return (*where);
     }
     if (where->level == ScopeLevel::LEVEL_SHIP) {
-      (void)getship(&where->shipptr, where->shipno);
-      where->level = where->shipptr->whatorbits;
+      auto ship = getship(where->shipno);
+      where->level = ship->whatorbits;
       /* Fix 'cs .' for ships within ships. Maarten */
       if (where->level == ScopeLevel::LEVEL_SHIP)
-        where->shipno = where->shipptr->destshipno;
-      free(where->shipptr);
+        where->shipno = ship->destshipno;
     } else if (where->level == ScopeLevel::LEVEL_STAR) {
       where->level = ScopeLevel::LEVEL_UNIV;
     } else if (where->level == ScopeLevel::LEVEL_PLAN) {

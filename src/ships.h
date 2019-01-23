@@ -299,7 +299,6 @@ struct place { /* used in function return for finding place */
   starnum_t snum;
   planetnum_t pnum;
   shipnum_t shipno;
-  Ship *shipptr = nullptr;
   ScopeLevel level;      /* .level */
   unsigned char err = 0; /* if error */
 };

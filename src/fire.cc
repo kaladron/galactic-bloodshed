@@ -31,6 +31,20 @@
 static void check_overload(Ship *, int, int *);
 static void check_retal_strength(Ship *, int *);
 
+namespace {
+// check to see if there are any planetary defense networks on the planet
+bool has_planet_defense(const shipnum_t shipno, const player_t Playernum) {
+  Shiplist shiplist(shipno);
+  for (auto &ship : shiplist) {
+    if (ship.alive && ship.type == ShipType::OTYPE_PLANDEF &&
+        ship.owner != Playernum) {
+      return true;
+    }
+  }
+  return false;
+}
+}  // namespace
+
 /*! Ship vs ship */
 void fire(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
@@ -294,14 +308,11 @@ void bombard(const command_t &argv, GameObj &g) {
   int APcount = 1;
   shipnum_t fromship;
   shipnum_t nextshipno;
-  shipnum_t sh;
   Ship *from;
-  Ship *ship;
   int strength;
   int maxstrength;
   int x;
   int y;
-  int ok;
   int numdest;
   int damage;
   int i;
@@ -391,23 +402,11 @@ void bombard(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      /* check to see if there are any planetary defense networks on the planet
-       */
-      ok = 1;
-      sh = p.ships;
-      while (sh && ok) {
-        (void)getship(&ship, sh);
-        ok = !(ship->alive && ship->type == ShipType::OTYPE_PLANDEF &&
-               ship->owner != Playernum);
-        sh = ship->nextship;
-        free(ship);
-      }
+      bool has_defense = has_planet_defense(p.ships, Playernum);
 
-      if (!ok && !landed(from)) {
-        notify(Playernum, Governor,
-               "Target has planetary defense "
-               "networks.\nThese have to be eliminated "
-               "before you can attack sectors.\n");
+      if (has_defense && !landed(from)) {
+        g.out << "Target has planetary defense networks.\n";
+        g.out << "These have to be eliminated before you can attack sectors.\n";
         free(from);
         continue;
       }
@@ -460,31 +459,27 @@ void bombard(const command_t &argv, GameObj &g) {
       /* protecting ships retaliate individually if damage was inflicted */
       /* AFVs are immune to this */
       if (numdest && from->alive && from->type != ShipType::OTYPE_AFV) {
-        sh = p.ships;
-        while (sh && from->alive) {
-          (void)getship(&ship, sh);
+        Shiplist shiplist(p.ships);
+        for (auto ship : shiplist) {
+          if (ship.protect.planet && ship.number != fromship && ship.alive &&
+              ship.active) {
+            if (laser_on(&ship)) check_overload(&ship, 0, &strength);
 
-          if (ship->protect.planet && sh != fromship && ship->alive &&
-              ship->active) {
-            if (laser_on(ship)) check_overload(ship, 0, &strength);
+            check_retal_strength(&ship, &strength);
 
-            check_retal_strength(ship, &strength);
-
-            if ((damage = shoot_ship_to_ship(ship, from, strength, 0, 0,
+            if ((damage = shoot_ship_to_ship(&ship, from, strength, 0, 0,
                                              long_buf, short_buf)) >= 0) {
-              if (laser_on(ship))
-                use_fuel(ship, 2.0 * (double)strength);
+              if (laser_on(&ship))
+                use_fuel(&ship, 2.0 * (double)strength);
               else
-                use_destruct(ship, strength);
+                use_destruct(&ship, strength);
               if (!from->alive) post(short_buf, COMBAT);
               notify_star(Playernum, Governor, from->storbits, short_buf);
-              warn(ship->owner, ship->governor, long_buf);
+              warn(ship.owner, ship.governor, long_buf);
               notify(Playernum, Governor, long_buf);
             }
-            putship(ship);
           }
-          sh = ship->nextship;
-          free(ship);
+          if (!from->alive) break;
         }
       }
 

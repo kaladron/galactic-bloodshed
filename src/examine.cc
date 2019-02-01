@@ -24,7 +24,7 @@ void examine(const command_t &argv, GameObj &g) {
   char ch;
 
   if (argv.size() < 2) {
-    notify(g.player, g.governor, "Examine what?\n");
+    g.out << "Examine what?\n";
     return;
   }
 
@@ -74,7 +74,7 @@ void examine(const command_t &argv, GameObj &g) {
     if (ship->whatorbits == ScopeLevel::LEVEL_UNIV)
       deductAPs(g.player, g.governor, APcount, 0, 1); /* ded from sdata */
     else
-      deductAPs(g.player, g.governor, APcount, (int)ship->storbits, 0);
+      deductAPs(g.player, g.governor, APcount, ship->storbits, 0);
 
     ship->examined = 1;
     putship(&*ship);
@@ -84,7 +84,7 @@ void examine(const command_t &argv, GameObj &g) {
     g.out << "This device has an on/off switch that can be set with order.\n";
   }
   if (!ship->active) {
-    g.out << "This device has been irradiated;\nit's crew is dying and it "
-             "cannot move for the time being.\n";
+    g.out << "This device has been irradiated;\n";
+    g.out << "Its crew is dying and it cannot move for the time being.\n";
   }
 }

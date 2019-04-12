@@ -84,14 +84,13 @@ void arm(const command_t &argv, GameObj &g) {
     if (argv.size() < 3)
       amount = max_allowed;
     else {
-      amount = std::stoi(argv[2]);
+      amount = std::stoul(argv[2]);
       if (amount <= 0) {
-        notify(Playernum, Governor,
-               "You must specify a positive number of civs to arm.\n");
+	g.out << "You must specify a positive number of civs to arm.\n";
         return;
       }
     }
-    amount = MIN(amount, max_allowed);
+    amount = std::min(amount, max_allowed);
     if (!amount) {
       g.out << "You can't arm any civilians now.\n";
       return;

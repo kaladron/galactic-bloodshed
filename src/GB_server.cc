@@ -865,7 +865,7 @@ static void welcome_user(DescriptorData &d) {
   FILE *f;
   char *p;
 
-  sprintf(buf, "***   Welcome to Galactic Bloodshed %s ***\n", VERS);
+  sprintf(buf, "***   Welcome to Galactic Bloodshed %s ***\nPlease enter your password:\n", VERS);
   queue_string(d, buf);
 
   if ((f = fopen(WELCOME_FILE, "r")) != nullptr) {

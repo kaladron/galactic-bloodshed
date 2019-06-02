@@ -30,10 +30,10 @@
 #include "vars.h"
 
 static void mech_defend(int, int, int *, int, const Planet &, int, int,
-                        const sector &);
+                        const Sector &);
 static void mech_attack_people(Ship *, int *, int *, Race *, Race *,
-                               const sector &, int, int, int, char *, char *);
-static void people_attack_mech(Ship *, int, int, Race *, Race *, const sector &,
+                               const Sector &, int, int, int, char *, char *);
+static void people_attack_mech(Ship *, int, int, Race *, Race *, const Sector &,
                                int, int, char *, char *);
 
 void arm(const command_t &argv, GameObj &g) {
@@ -678,7 +678,7 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
 }
 
 static void mech_defend(int Playernum, int Governor, int *people, int type,
-                        const Planet &p, int x2, int y2, const sector &s2) {
+                        const Planet &p, int x2, int y2, const Sector &s2) {
   int civ = 0;
   int mil = 0;
   int oldgov;
@@ -722,7 +722,7 @@ static void mech_defend(int Playernum, int Governor, int *people, int type,
 }
 
 static void mech_attack_people(Ship *ship, int *civ, int *mil, racetype *Race,
-                               racetype *alien, const sector &sect, int x,
+                               racetype *alien, const Sector &sect, int x,
                                int y, int ignore, char *long_msg,
                                char *short_msg) {
   int strength;
@@ -777,7 +777,7 @@ static void mech_attack_people(Ship *ship, int *civ, int *mil, racetype *Race,
 }
 
 static void people_attack_mech(Ship *ship, int civ, int mil, racetype *Race,
-                               racetype *alien, const sector &sect, int x,
+                               racetype *alien, const Sector &sect, int x,
                                int y, char *long_msg, char *short_msg) {
   int strength;
   double astrength;

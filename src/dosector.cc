@@ -14,11 +14,11 @@
 static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const int y_adj[] = {1, 1, 1, 0, 0, -1, -1, -1};
 
-static void Migrate2(const Planet &, int, int, sector &, int *, SectorMap &);
-static void plate(sector &);
+static void Migrate2(const Planet &, int, int, Sector &, int *, SectorMap &);
+static void plate(Sector &);
 
 //  produce() -- produce, stuff like that, on a sector.
-void produce(startype *star, const Planet &planet, sector &s) {
+void produce(startype *star, const Planet &planet, Sector &s) {
   int ss;
   int maxsup;
   int pfuel = 0;
@@ -105,7 +105,7 @@ void produce(startype *star, const Planet &planet, sector &s) {
 }
 
 // spread()  -- spread population around.
-void spread(const Planet &pl, sector &s, int x, int y, SectorMap &smap) {
+void spread(const Planet &pl, Sector &s, int x, int y, SectorMap &smap) {
   int people;
   int x2;
   int y2;
@@ -136,7 +136,7 @@ void spread(const Planet &pl, sector &s, int x, int y, SectorMap &smap) {
   }
 }
 
-static void Migrate2(const Planet &planet, int xd, int yd, sector &ps,
+static void Migrate2(const Planet &planet, int xd, int yd, Sector &ps,
                      int *people, SectorMap &smap) {
   int move;
 
@@ -167,7 +167,7 @@ static void Migrate2(const Planet &planet, int xd, int yd, sector &ps,
         on earthtype planets.  */
 
 //  explore() -- mark sector and surrounding sectors as having been explored.
-void explore(const Planet &planet, sector &s, int x, int y, int p) {
+void explore(const Planet &planet, Sector &s, int x, int y, int p) {
   int d;
 
   /* explore sectors surrounding sectors currently explored. */
@@ -186,7 +186,7 @@ void explore(const Planet &planet, sector &s, int x, int y, int p) {
     Sectinfo[x][y].explored = p;
 }
 
-static void plate(sector &s) {
+static void plate(Sector &s) {
   s.eff = 100;
   if (s.condition != SectorType::SEC_GAS) s.condition = SectorType::SEC_PLATED;
 }

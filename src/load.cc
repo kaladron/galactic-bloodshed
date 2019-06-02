@@ -31,7 +31,7 @@ static int jettison_check(GameObj &, int, int);
 static int landed_on(Ship *, shipnum_t);
 
 static void do_transporter(Race *, GameObj &, Ship *);
-static void unload_onto_alien_sector(GameObj &, Planet *, Ship *, sector &, int,
+static void unload_onto_alien_sector(GameObj &, Planet *, Ship *, Sector &, int,
                                      int);
 
 void load(const command_t &argv, GameObj &g) {
@@ -49,7 +49,7 @@ void load(const command_t &argv, GameObj &g) {
   Ship *s;
   Ship *s2;
   Planet p;
-  sector sect;
+  Sector sect;
   racetype *Race;
   shipnum_t shipno;
   shipnum_t nextshipno;
@@ -1029,7 +1029,7 @@ static int landed_on(Ship *s, shipnum_t shipno) {
 }
 
 static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
-                                     sector &sect, int what, int people) {
+                                     Sector &sect, int what, int people) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   double astrength;

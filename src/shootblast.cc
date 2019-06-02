@@ -38,7 +38,7 @@ static int Num_hits(double, int, int, double, int, int, int, int, int, int, int,
 static int cew_hit_odds(double, int);
 static void do_critical_hits(int, Ship *, int *, int *, int, char *);
 static double p_factor(double, double);
-static void mutate_sector(sector &);
+static void mutate_sector(Sector &);
 
 int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
                        char *long_msg, char *short_msg) {
@@ -644,6 +644,6 @@ int planet_guns(int points) {
   return std::min(20, points / 1000);
 }
 
-static void mutate_sector(sector &s) {
+static void mutate_sector(Sector &s) {
   if (int_rand(0, 6) >= Defensedata[s.condition]) s.condition = s.type;
 }

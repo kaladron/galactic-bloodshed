@@ -40,7 +40,7 @@ static void do_dome(Ship *, SectorMap &);
 static void do_quarry(Ship *, Planet *, SectorMap &);
 static void do_berserker(Ship *, Planet *);
 static void do_recover(Planet *, int, int);
-static double est_production(const sector &);
+static double est_production(const Sector &);
 static int moveship_onplanet(Ship *, Planet *);
 static void plow(Ship *, Planet *, SectorMap &);
 static void terraform(Ship *, Planet *, SectorMap &);
@@ -887,7 +887,7 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
   }
 }
 
-static double est_production(const sector &s) {
+static double est_production(const Sector &s) {
   return (races[s.owner - 1]->metabolism * (double)s.eff * (double)s.eff /
           200.0);
 }

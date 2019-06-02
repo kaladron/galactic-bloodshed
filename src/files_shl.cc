@@ -499,7 +499,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
   return p;
 }
 
-sector getsector(const Planet &p, const int x, const int y) {
+Sector getsector(const Planet &p, const int x, const int y) {
   const char *tail;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -518,7 +518,7 @@ sector getsector(const Planet &p, const int x, const int y) {
     throw std::runtime_error("Database unable to return the requested sector");
   }
 
-  sector s(sqlite3_column_int(stmt, 3),   // eff
+  Sector s(sqlite3_column_int(stmt, 3),   // eff
            sqlite3_column_int(stmt, 4),   // fert
            sqlite3_column_int(stmt, 5),   // mobilization
            sqlite3_column_int(stmt, 6),   // crystals
@@ -554,7 +554,7 @@ SectorMap getsmap(const Planet &p) {
   SectorMap smap(p);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
-    sector s(sqlite3_column_int(stmt, 3),   // eff
+    Sector s(sqlite3_column_int(stmt, 3),   // eff
              sqlite3_column_int(stmt, 4),   // fert
              sqlite3_column_int(stmt, 5),   // mobilization
              sqlite3_column_int(stmt, 6),   // crystals
@@ -1091,7 +1091,7 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
   end_bulk_insert();
 }
 
-void putsector(const sector &s, const Planet &p, const int x, const int y) {
+void putsector(const Sector &s, const Planet &p, const int x, const int y) {
   const char *tail = nullptr;
   sqlite3_stmt *stmt;
   const char *sql =

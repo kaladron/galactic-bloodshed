@@ -30,7 +30,7 @@
 #include "tweakables.h"
 #include "vars.h"
 
-static void autoload_at_planet(int, Ship *, Planet *, sector &, int *,
+static void autoload_at_planet(int, Ship *, Planet *, Sector &, int *,
                                double *);
 static void autoload_at_ship(Ship *, Ship *, int *, double *);
 static std::optional<ScopeLevel> build_at_ship(GameObj &, Ship *, int *, int *);
@@ -50,7 +50,7 @@ static void system_cost(double *, double *, int, int);
 
 namespace {
 bool can_build_on_sector(const int what, const racetype *Race,
-                         const Planet &planet, const sector &sector,
+                         const Planet &planet, const Sector &sector,
                          const int x, const int y, char *string) {
   auto shipc = Shipltrs[what];
   if (!sector.popn) {
@@ -695,7 +695,7 @@ void build(const command_t &argv, GameObj &g) {
   double tech;
 
   FILE *fd;
-  sector sector;
+  Sector sector;
   std::optional<Ship> builder;
   Ship newship;
 
@@ -1174,7 +1174,7 @@ static std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder,
 }
 
 static void autoload_at_planet(int Playernum, Ship *s, Planet *planet,
-                               sector &sector, int *crew, double *fuel) {
+                               Sector &sector, int *crew, double *fuel) {
   *crew = MIN(s->max_crew, sector.popn);
   *fuel = MIN((double)s->max_fuel, (double)planet->info[Playernum - 1].fuel);
   sector.popn -= *crew;

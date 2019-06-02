@@ -22,7 +22,7 @@
 
 void scrap(const command_t &argv, GameObj &g) {
   int APcount = 1;
-  sector sect;
+  Sector sect;
   Ship *s;
   shipnum_t shipno;
   shipnum_t nextshipno;

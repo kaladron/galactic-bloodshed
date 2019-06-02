@@ -146,9 +146,9 @@ class Planet {
   planetnum_t planet_id;
 };
 
-class sector {
+class Sector {
  public:
-  sector(int eff_, int fert_, int mobilization_, int crystals_, int resource_,
+  Sector(int eff_, int fert_, int mobilization_, int crystals_, int resource_,
          int popn_, int troops_, int owner_, int race_, int type_,
          int condition_)
       : eff(eff_),
@@ -163,11 +163,11 @@ class sector {
         type(type_),
         condition(condition_) {}
 
-  sector() = default;
-  sector(sector &) = delete;
-  void operator=(const sector &) = delete;
-  sector(sector &&) = default;
-  sector &operator=(sector &&) = default;
+  Sector() = default;
+  Sector(Sector &) = delete;
+  void operator=(const Sector &) = delete;
+  Sector(Sector &&) = default;
+  Sector &operator=(Sector &&) = default;
 
   unsigned int eff{0};          /* efficiency (0-100) */
   unsigned int fert{0};         /* max popn is proportional to this */
@@ -185,7 +185,7 @@ class sector {
                  you gain control of them! */
   unsigned int type{0};      /* underlying sector geology */
   unsigned int condition{0}; /* environmental effects */
-  friend std::ostream &operator<<(std::ostream &, const sector &);
+  friend std::ostream &operator<<(std::ostream &, const Sector &);
 };
 
 class SectorMap {
@@ -200,11 +200,11 @@ class SectorMap {
         maxy_(planet.Maxy),
         vec_(planet.Maxx * planet.Maxy) {}
 
-  sector &get(const int x, const int y) { return vec_.at((x) + (y)*maxx_); }
-  void put(sector &&s) { vec_.emplace_back(std::move(s)); }
+  Sector &get(const int x, const int y) { return vec_.at((x) + (y)*maxx_); }
+  void put(Sector &&s) { vec_.emplace_back(std::move(s)); }
   int get_maxx() { return maxx_; }
   int get_maxy() { return maxy_; }
-  sector &get_random();
+  Sector &get_random();
 
   SectorMap(SectorMap &) = delete;
   void operator=(const SectorMap &) = delete;
@@ -215,7 +215,7 @@ class SectorMap {
   SectorMap(const int maxx, const int maxy) : maxx_(maxx), maxy_(maxy) {}
   const int maxx_;
   const int maxy_;
-  std::vector<sector> vec_;
+  std::vector<Sector> vec_;
 };
 
 struct star {

@@ -23,7 +23,7 @@
 
 static char Dispshiporbits_buf[PLACENAMESIZE + 13];
 
-int maxsupport(const Race *r, const sector &s, const double c,
+int maxsupport(const Race *r, const Sector &s, const double c,
                const int toxic) {
   if (!r->likes[s.condition]) return 0.0;
   double a = ((double)s.eff + 1.0) * (double)s.fert;

@@ -11,6 +11,7 @@
 #include <ctime>
 
 #include "doturn.h"
+#include "map.h"
 #include "power.h"
 #include "races.h"
 #include "ships.h"

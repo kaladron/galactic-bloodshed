@@ -5,6 +5,7 @@
 #include "GB_racegen.h"
 
 #include <unistd.h>
+
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -14,6 +15,7 @@
 #include "buffers.h"
 #include "build.h"
 #include "files_shl.h"
+#include "globals.h"
 #include "map.h"
 #include "max.h"
 #include "perm.h"
@@ -24,8 +26,6 @@
 #include "ships.h"
 #include "tweakables.h"
 #include "vars.h"
-
-#include "globals.h"
 
 static const PlanetType planet_translate[N_HOME_PLANET_TYPES] = {
     PlanetType::EARTH,   PlanetType::FOREST, PlanetType::DESERT,

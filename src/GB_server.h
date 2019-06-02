@@ -6,6 +6,7 @@
 #define GB_SERVER_H
 
 #include <string>
+
 #include "races.h"
 #include "ships.h"
 #include "vars.h"

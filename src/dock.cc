@@ -6,12 +6,11 @@
 
 #include "dock.h"
 
+#include <boost/format.hpp>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-
-#include <boost/format.hpp>
 
 #include "GB_server.h"
 #include "buffers.h"

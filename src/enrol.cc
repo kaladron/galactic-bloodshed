@@ -6,6 +6,7 @@
 
 #include <curses.h>
 #include <unistd.h>
+
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -15,6 +16,7 @@
 #include "buffers.h"
 #include "build.h"
 #include "files_shl.h"
+#include "globals.h"
 #include "map.h"
 #include "max.h"
 #include "perm.h"
@@ -24,8 +26,6 @@
 #include "ships.h"
 #include "tweakables.h"
 #include "vars.h"
-
-#include "globals.h"
 
 struct stype {
   char here;

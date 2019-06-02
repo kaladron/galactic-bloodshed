@@ -13,6 +13,7 @@
 #include <sqlite3.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -518,7 +519,9 @@ Sector getsector(const Planet &p, const int x, const int y) {
     throw std::runtime_error("Database unable to return the requested sector");
   }
 
-  Sector s(sqlite3_column_int(stmt, 3),   // eff
+  Sector s(sqlite3_column_int(stmt, 1),   // xpos
+           sqlite3_column_int(stmt, 2),   // ypos
+           sqlite3_column_int(stmt, 3),   // eff
            sqlite3_column_int(stmt, 4),   // fert
            sqlite3_column_int(stmt, 5),   // mobilization
            sqlite3_column_int(stmt, 6),   // crystals
@@ -554,7 +557,9 @@ SectorMap getsmap(const Planet &p) {
   SectorMap smap(p);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
-    Sector s(sqlite3_column_int(stmt, 3),   // eff
+    Sector s(sqlite3_column_int(stmt, 1),   // xpos
+             sqlite3_column_int(stmt, 2),   // ypos
+             sqlite3_column_int(stmt, 3),   // eff
              sqlite3_column_int(stmt, 4),   // fert
              sqlite3_column_int(stmt, 5),   // mobilization
              sqlite3_column_int(stmt, 6),   // crystals

@@ -9,12 +9,14 @@
 
 #include <sys/file.h>
 #include <sys/types.h>
+
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
 #include <string>
 #include <vector>
+
 #include "config.h"
 #include "files.h"
 #include "tweakables.h"
@@ -148,10 +150,12 @@ class Planet {
 
 class Sector {
  public:
-  Sector(int eff_, int fert_, int mobilization_, int crystals_, int resource_,
-         int popn_, int troops_, int owner_, int race_, int type_,
-         int condition_)
-      : eff(eff_),
+  Sector(int x_, int y_, int eff_, int fert_, int mobilization_, int crystals_,
+         int resource_, int popn_, int troops_, int owner_, int race_,
+         int type_, int condition_)
+      : x(x_),
+        y(y_),
+        eff(eff_),
         fert(fert_),
         mobilization(mobilization_),
         crystals(crystals_),
@@ -169,6 +173,8 @@ class Sector {
   Sector(Sector &&) = default;
   Sector &operator=(Sector &&) = default;
 
+  unsigned int x{0};
+  unsigned int y{0};
   unsigned int eff{0};          /* efficiency (0-100) */
   unsigned int fert{0};         /* max popn is proportional to this */
   unsigned int mobilization{0}; /* percent popn is mobilized for war */

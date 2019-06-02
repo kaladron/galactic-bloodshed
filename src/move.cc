@@ -86,7 +86,7 @@ void arm(const command_t &argv, GameObj &g) {
     else {
       amount = std::stoul(argv[2]);
       if (amount <= 0) {
-	g.out << "You must specify a positive number of civs to arm.\n";
+        g.out << "You must specify a positive number of civs to arm.\n";
         return;
       }
     }

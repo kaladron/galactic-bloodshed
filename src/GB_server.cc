@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <cctype>
@@ -49,6 +50,7 @@
 #include "files_shl.h"
 #include "fire.h"
 #include "fuel.h"
+#include "globals.h"
 #include "land.h"
 #include "launch.h"
 #include "load.h"
@@ -77,8 +79,6 @@
 #include "vars.h"
 #include "victory.h"
 #include "zoom.h"
-
-#include "globals.h"
 
 static int shutdown_flag = 0;
 static int update_flag = 0;
@@ -865,7 +865,10 @@ static void welcome_user(DescriptorData &d) {
   FILE *f;
   char *p;
 
-  sprintf(buf, "***   Welcome to Galactic Bloodshed %s ***\nPlease enter your password:\n", VERS);
+  sprintf(buf,
+          "***   Welcome to Galactic Bloodshed %s ***\nPlease enter your "
+          "password:\n",
+          VERS);
   queue_string(d, buf);
 
   if ((f = fopen(WELCOME_FILE, "r")) != nullptr) {

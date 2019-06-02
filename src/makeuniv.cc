@@ -9,6 +9,7 @@
 
 #include <sys/stat.h>
 #include <unistd.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -18,6 +19,7 @@
 #include "build.h"
 #include "files.h"
 #include "files_shl.h"
+#include "globals.h"
 #include "makestar.h"
 #include "map.h"
 #include "power.h"
@@ -25,8 +27,6 @@
 #include "rand.h"
 #include "tweakables.h"
 #include "vars.h"
-
-#include "globals.h"
 
 static void InitFile(const char *, void *, int);
 static void EmptyFile(const char *);

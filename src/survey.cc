@@ -7,6 +7,7 @@
 #include "survey.h"
 
 #include <strings.h>
+
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>

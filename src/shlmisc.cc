@@ -7,6 +7,7 @@
 
 #include "shlmisc.h"
 
+#include <boost/format.hpp>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
@@ -25,8 +26,6 @@
 #include "ships.h"
 #include "tweakables.h"
 #include "vars.h"
-
-#include <boost/format.hpp>
 
 static void do_revoke(Race *, const governor_t, const governor_t);
 

@@ -22,7 +22,7 @@ void PermuteSects(const Planet &planet) {
     if (++x >= planet.Maxx) {
       x = 0;
       y++;
-    };
+    }
   }
   for (int i = 0; i < t; i++) {
     struct map sw = xymap[i];

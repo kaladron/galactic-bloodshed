@@ -219,8 +219,8 @@ class SectorMap {
 
  private:
   SectorMap(const int maxx, const int maxy) : maxx_(maxx), maxy_(maxy) {}
-  const int maxx_;
-  const int maxy_;
+  int maxx_;
+  int maxy_;
   std::vector<Sector> vec_;
 };
 

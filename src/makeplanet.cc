@@ -77,7 +77,7 @@ static const int cond[] = {SectorType::SEC_SEA,    SectorType::SEC_MOUNT,
                            SectorType::SEC_FOREST, SectorType::SEC_DESERT};
 
 static int neighbors(SectorMap &, int, int, int);
-static void MakeEarthAtmosphere(Planet *, int);
+static void MakeEarthAtmosphere(Planet &, int);
 static void Makesurface(const Planet &, SectorMap &);
 static short SectTemp(const Planet &, int);
 static void seed(SectorMap &, int, int);
@@ -196,7 +196,7 @@ Planet Makeplanet(double dist, short stemp, PlanetType type) {
       seed(smap, SectorType::SEC_MOUNT, int_rand(1, total_sects / 2));
       break;
     case PlanetType::EARTH:
-      MakeEarthAtmosphere(&planet, 33);
+      MakeEarthAtmosphere(planet, 33);
       seed(smap, SectorType::SEC_LAND,
            int_rand(total_sects / 30, total_sects / 20));
       grow(smap, SectorType::SEC_LAND, 1, 1);
@@ -205,7 +205,7 @@ Planet Makeplanet(double dist, short stemp, PlanetType type) {
       grow(smap, SectorType::SEC_SEA, 1, 4);
       break;
     case PlanetType::FOREST:
-      MakeEarthAtmosphere(&planet, 0);
+      MakeEarthAtmosphere(planet, 0);
       seed(smap, SectorType::SEC_SEA,
            int_rand(total_sects / 30, total_sects / 20));
       grow(smap, SectorType::SEC_SEA, 1, 1);
@@ -213,10 +213,10 @@ Planet Makeplanet(double dist, short stemp, PlanetType type) {
       grow(smap, SectorType::SEC_FOREST, 1, 3);
       break;
     case PlanetType::WATER:
-      MakeEarthAtmosphere(&planet, 25);
+      MakeEarthAtmosphere(planet, 25);
       break;
     case PlanetType::DESERT:
-      MakeEarthAtmosphere(&planet, 50);
+      MakeEarthAtmosphere(planet, 50);
       seed(smap, SectorType::SEC_MOUNT,
            int_rand(total_sects / 50, total_sects / 25));
       grow(smap, SectorType::SEC_MOUNT, 1, 1);
@@ -234,36 +234,33 @@ Planet Makeplanet(double dist, short stemp, PlanetType type) {
   return planet;
 }
 
-static void MakeEarthAtmosphere(Planet *pptr, int chance) {
+static void MakeEarthAtmosphere(Planet &planet, const int chance) {
   int atmos = 100;
 
   if (int_rand(0, 99) > chance) {
     /* oxygen-reducing atmosphere */
-    atmos -= pptr->conditions[OXYGEN] = int_rand(10, 25);
-    atmos -= pptr->conditions[NITROGEN] = int_rand(20, atmos - 20);
-    atmos -= pptr->conditions[CO2] = int_rand(10, atmos / 2);
-    atmos -= pptr->conditions[HELIUM] = int_rand(2, atmos / 8 + 1);
-    atmos -= pptr->conditions[METHANE] = random() & 01;
-    atmos -= pptr->conditions[SULFUR] = 0;
-    atmos -= pptr->conditions[HYDROGEN] = 0;
-    pptr->conditions[OTHER] = atmos;
+    atmos -= planet.conditions[OXYGEN] = int_rand(10, 25);
+    atmos -= planet.conditions[NITROGEN] = int_rand(20, atmos - 20);
+    atmos -= planet.conditions[CO2] = int_rand(10, atmos / 2);
+    atmos -= planet.conditions[HELIUM] = int_rand(2, atmos / 8 + 1);
+    atmos -= planet.conditions[METHANE] = random() & 01;
+    atmos -= planet.conditions[SULFUR] = 0;
+    atmos -= planet.conditions[HYDROGEN] = 0;
+    planet.conditions[OTHER] = atmos;
   } else {
     /* methane atmosphere */
-    atmos -= pptr->conditions[METHANE] = int_rand(70, 80);
-    atmos -= pptr->conditions[HYDROGEN] = int_rand(1, atmos / 2);
-    atmos -= pptr->conditions[HELIUM] = 1 + (random() & 01);
-    atmos -= pptr->conditions[OXYGEN] = 0;
-    atmos -= pptr->conditions[CO2] = 1 + (random() & 01);
-    atmos -= pptr->conditions[SULFUR] = (random() & 01);
-    atmos -= pptr->conditions[NITROGEN] = int_rand(1, atmos / 2);
-    pptr->conditions[OTHER] = atmos;
+    atmos -= planet.conditions[METHANE] = int_rand(70, 80);
+    atmos -= planet.conditions[HYDROGEN] = int_rand(1, atmos / 2);
+    atmos -= planet.conditions[HELIUM] = 1 + (random() & 01);
+    atmos -= planet.conditions[OXYGEN] = 0;
+    atmos -= planet.conditions[CO2] = 1 + (random() & 01);
+    atmos -= planet.conditions[SULFUR] = (random() & 01);
+    atmos -= planet.conditions[NITROGEN] = int_rand(1, atmos / 2);
+    planet.conditions[OTHER] = atmos;
   }
 }
 
-/*
-    Returns # of neighbors of a given designation that a sector has.
-*/
-
+//! Returns # of neighbors of a given designation that a sector has.
 static int neighbors(SectorMap &smap, int x, int y, int type) {
   int l = x - 1;
   int r = x + 1; /* Left and right columns. */

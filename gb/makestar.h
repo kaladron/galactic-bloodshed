@@ -5,7 +5,7 @@
 #ifndef MAKESTAR_H
 #define MAKESTAR_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 int Temperature(double dist, int stemp);
 void Makestar_init();

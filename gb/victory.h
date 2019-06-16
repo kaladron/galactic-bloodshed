@@ -5,7 +5,7 @@
 #ifndef VICTORY_H
 #define VICTORY_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void victory(const command_t &, GameObj &);
 void create_victory_list(struct vic[MAXPLAYERS]);

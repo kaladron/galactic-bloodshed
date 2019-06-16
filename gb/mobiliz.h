@@ -5,7 +5,7 @@
 #ifndef MOBILIZ_H
 #define MOBILIZ_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void mobilize(const command_t &, GameObj &);
 void tax(const command_t &, GameObj &);

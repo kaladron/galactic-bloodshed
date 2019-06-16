@@ -4,7 +4,7 @@
 
 /* makeplanet.c -- makes one planet. */
 
-#include "makeplanet.h"
+#include "gb/makeplanet.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -13,11 +13,11 @@
 #include <tuple>
 #include <vector>
 
-#include "files_shl.h"
-#include "makestar.h"
-#include "rand.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/files_shl.h"
+#include "gb/makestar.h"
+#include "gb/rand.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 /*             @   o   O   #   ~   .   (   -    */
 static const int xmin[] = {15, 2, 4, 4, 26, 12, 12, 12};

@@ -5,17 +5,17 @@
 /// \file autoreport.c
 /// \brief Tell server to generate a report for each planet.
 
-#include "autoreport.h"
+#include "gb/autoreport.h"
 
 #include <boost/format.hpp>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "getplace.h"
-#include "ships.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/getplace.h"
+#include "gb/ships.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 void autoreport(const command_t &argv, GameObj &g) {
   if (g.governor && Stars[g.snum]->governor[g.player - 1] != g.governor) {

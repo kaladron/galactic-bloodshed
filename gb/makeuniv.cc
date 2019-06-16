@@ -5,7 +5,7 @@
 /* makeuniv.c -- universe creation program.
  *   Makes various required data files; calls makestar for each star desired. */
 
-#include "makeuniv.h"
+#include "gb/makeuniv.h"
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -14,19 +14,19 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "build.h"
-#include "files.h"
-#include "files_shl.h"
-#include "globals.h"
-#include "makestar.h"
-#include "map.h"
-#include "power.h"
-#include "races.h"
-#include "rand.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/build.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/globals.h"
+#include "gb/makestar.h"
+#include "gb/map.h"
+#include "gb/power.h"
+#include "gb/races.h"
+#include "gb/rand.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static void InitFile(const char *, void *, int);
 static void EmptyFile(const char *);

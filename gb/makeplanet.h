@@ -5,7 +5,7 @@
 #ifndef MAKEPLANET_H
 #define MAKEPLANET_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 Planet Makeplanet(double, short, PlanetType);
 

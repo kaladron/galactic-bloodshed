@@ -5,7 +5,7 @@
 #ifndef RELATION_H
 #define RELATION_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void relation(const command_t &, GameObj &);
 

@@ -5,9 +5,9 @@
 #ifndef AUTOSHOOT_H
 #define AUTOSHOOT_H
 
-#include "races.h"
-#include "ships.h"
-#include "vars.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/vars.h"
 
 int Bombard(Ship *, Planet *, Race *);
 

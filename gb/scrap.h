@@ -5,7 +5,7 @@
 #ifndef SCRAP_H
 #define SCRAP_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void scrap(const command_t &argv, GameObj &g);
 

@@ -4,7 +4,7 @@
 
 /* VN.c -- assorted Von Neumann machine code */
 
-#include "VN.h"
+#include "gb/VN.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -12,19 +12,19 @@
 #include <cstring>
 #include <utility>
 
-#include "buffers.h"
-#include "build.h"
-#include "doturn.h"
-#include "fire.h"
-#include "load.h"
-#include "max.h"
-#include "perm.h"
-#include "rand.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "tele.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/buffers.h"
+#include "gb/build.h"
+#include "gb/doturn.h"
+#include "gb/fire.h"
+#include "gb/load.h"
+#include "gb/max.h"
+#include "gb/perm.h"
+#include "gb/rand.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/tele.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static void order_berserker(Ship *);
 static void order_VN(Ship *);

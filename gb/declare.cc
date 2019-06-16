@@ -4,21 +4,21 @@
 
 /* declare.c -- declare alliance, neutrality, war, the basic thing. */
 
-#include "declare.h"
+#include "gb/declare.h"
 
 #include <cstdio>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "config.h"
-#include "files.h"
-#include "files_shl.h"
-#include "races.h"
-#include "rand.h"
-#include "shlmisc.h"
-#include "tele.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/config.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/races.h"
+#include "gb/rand.h"
+#include "gb/shlmisc.h"
+#include "gb/tele.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static void show_votes(int, int);
 

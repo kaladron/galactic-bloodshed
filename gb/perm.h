@@ -5,7 +5,7 @@
 #ifndef PERM_H
 #define PERM_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void PermuteSects(const Planet &);
 int Getxysect(const Planet &, int *, int *, int);

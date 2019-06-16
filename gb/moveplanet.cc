@@ -4,14 +4,14 @@
 
 /* moveplanet.c -- move the planet in orbit around its star. */
 
-#include "moveplanet.h"
+#include "gb/moveplanet.h"
 
 #include <cmath>
 
-#include "doturn.h"
-#include "ships.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/doturn.h"
+#include "gb/ships.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 void moveplanet(int starnum, Planet *planet, int planetnum) {
   double dist;

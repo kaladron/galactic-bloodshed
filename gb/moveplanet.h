@@ -5,7 +5,7 @@
 #ifndef MOVEPLANET_H
 #define MOVEPLANET_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void moveplanet(int, Planet *, int);
 

@@ -4,22 +4,22 @@
 
 /* launch.c -- launch or undock a ship (also undock) */
 
-#include "launch.h"
+#include "gb/launch.h"
 
 #include <cstdio>
 #include <cstdlib>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "load.h"
-#include "max.h"
-#include "rand.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/load.h"
+#include "gb/max.h"
+#include "gb/rand.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 void launch(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

@@ -5,7 +5,7 @@
 #ifndef ENSLAVE_H
 #define ENSLAVE_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void enslave(const command_t &, GameObj &);
 

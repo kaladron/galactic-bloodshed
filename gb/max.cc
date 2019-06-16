@@ -9,17 +9,17 @@
  * prin_ship_orbits() -- prints place ship orbits
  */
 
-#include "max.h"
+#include "gb/max.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "files_shl.h"
-#include "races.h"
-#include "ships.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/files_shl.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static char Dispshiporbits_buf[PLACENAMESIZE + 13];
 

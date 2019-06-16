@@ -5,7 +5,7 @@
 #ifndef POWERCMD_H
 #define POWERCMD_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void block(const command_t &, GameObj &);
 void power(const command_t &, GameObj &);

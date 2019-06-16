@@ -2,24 +2,24 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "explore.h"
+#include "gb/explore.h"
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "getplace.h"
-#include "map.h"
-#include "max.h"
-#include "power.h"
-#include "races.h"
-#include "ships.h"
-#include "tech.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/getplace.h"
+#include "gb/map.h"
+#include "gb/max.h"
+#include "gb/power.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/tech.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 enum modes_t { COLONIES, PRODUCTION };
 

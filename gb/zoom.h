@@ -5,7 +5,7 @@
 #ifndef ZOOM_H
 #define ZOOM_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void zoom(const command_t &, GameObj &);
 

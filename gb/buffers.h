@@ -5,7 +5,7 @@
 #ifndef BUFFERS_H
 #define BUFFERS_H
 
-#include "tweakables.h"
+#include "gb/tweakables.h"
 
 extern char buf[2047];
 extern char long_buf[1024], short_buf[256];

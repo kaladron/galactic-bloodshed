@@ -7,9 +7,9 @@
 
 #include <string>
 
-#include "races.h"
-#include "ships.h"
-#include "vars.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/vars.h"
 
 void notify_race(const player_t, const std::string &);
 bool notify(const player_t, const governor_t, const std::string &);

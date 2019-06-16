@@ -5,13 +5,13 @@
 /// \file zoom.cc
 /// \brief Functions for implementing the 'zoom' command.
 
-#include "zoom.h"
+#include "gb/zoom.h"
 
 #include <boost/format.hpp>
 #include <string>
 
-#include "GB_server.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/vars.h"
 
 /// Zoom in or out for orbit display
 void zoom(const command_t &argv, GameObj &g) {

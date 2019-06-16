@@ -5,9 +5,9 @@
 #ifndef BUILD_H
 #define BUILD_H
 
-#include "races.h"
-#include "ships.h"
-#include "vars.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/vars.h"
 
 void upgrade(const command_t &, GameObj &);
 void make_mod(const command_t &, GameObj &);

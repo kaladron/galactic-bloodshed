@@ -5,7 +5,7 @@
 #ifndef DISSOLVE_H
 #define DISSOLVE_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void dissolve(const command_t &, GameObj &);
 int revolt(Planet *, int, int);

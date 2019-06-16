@@ -8,9 +8,9 @@
 #include <optional>
 #include <string>
 
-#include "races.h"
-#include "ships.h"
-#include "vars.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/vars.h"
 
 std::optional<shipnum_t> string_to_shipnum(std::string_view);
 std::string ship_to_string(const Ship &);

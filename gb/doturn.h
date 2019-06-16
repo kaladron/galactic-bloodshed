@@ -5,7 +5,7 @@
 #ifndef DOTURN_H
 #define DOTURN_H
 
-#include "tweakables.h"
+#include "gb/tweakables.h"
 
 struct stinfo {
   short temp_add; /* addition to temperature to each planet */

@@ -4,21 +4,21 @@
 
 /* scrap.c -- turn a ship to junk */
 
-#include "scrap.h"
+#include "gb/scrap.h"
 
 #include <cstdio>
 #include <cstdlib>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "land.h"
-#include "load.h"
-#include "races.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/land.h"
+#include "gb/load.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/vars.h"
 
 void scrap(const command_t &argv, GameObj &g) {
   int APcount = 1;

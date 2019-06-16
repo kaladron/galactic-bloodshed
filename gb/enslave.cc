@@ -4,21 +4,21 @@
 
 /* enslave.c -- ENSLAVE the planet below. */
 
-#include "enslave.h"
+#include "gb/enslave.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "getplace.h"
-#include "max.h"
-#include "races.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/getplace.h"
+#include "gb/max.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/vars.h"
 
 void enslave(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;

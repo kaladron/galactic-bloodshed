@@ -4,7 +4,7 @@
 
 /* fuel.c -- See estimations in fuel consumption and travel time. */
 
-#include "fuel.h"
+#include "gb/fuel.h"
 
 #include <cmath>
 #include <cstdio>
@@ -12,18 +12,18 @@
 #include <cstring>
 #include <ctime>
 
-#include "GB_server.h"
-#include "doship.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "getplace.h"
-#include "max.h"
-#include "moveship.h"
-#include "order.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/doship.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/getplace.h"
+#include "gb/max.h"
+#include "gb/moveship.h"
+#include "gb/order.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static char plan_buf[1024];
 

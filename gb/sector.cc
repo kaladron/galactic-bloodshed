@@ -4,8 +4,8 @@
 
 #include <iostream>
 
-#include "rand.h"
-#include "vars.h"
+#include "gb/rand.h"
+#include "gb/vars.h"
 
 std::ostream &operator<<(std::ostream &os, const Sector &s) {
   os << "Efficiency: " << s.eff << std::endl;

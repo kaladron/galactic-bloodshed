@@ -5,7 +5,7 @@
 #ifndef SURVEY_H
 #define SURVEY_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void survey(const command_t &, GameObj &);
 void repair(const command_t &, GameObj &);

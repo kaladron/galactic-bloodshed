@@ -5,8 +5,8 @@
 #ifndef RACES_H
 #define RACES_H
 
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 typedef struct {
   char invisible;

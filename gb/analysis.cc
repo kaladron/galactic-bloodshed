@@ -2,21 +2,21 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "analysis.h"
+#include "gb/analysis.h"
 
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "getplace.h"
-#include "max.h"
-#include "races.h"
-#include "ships.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/getplace.h"
+#include "gb/max.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 #define CARE 5
 struct anal_sect {

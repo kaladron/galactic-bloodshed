@@ -7,7 +7,7 @@
 #ifndef POWER_H
 #define POWER_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 struct power {
   unsigned long troops;   /* total troops */

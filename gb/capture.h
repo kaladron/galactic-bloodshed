@@ -5,8 +5,8 @@
 #ifndef CAPTURE_H
 #define CAPTURE_H
 
-#include "ships.h"
-#include "vars.h"
+#include "gb/ships.h"
+#include "gb/vars.h"
 
 void capture(const command_t &, GameObj &);
 void capture_stuff(const Ship &);

@@ -5,7 +5,7 @@
 #ifndef CS_H
 #define CS_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void center(const command_t &, GameObj &);
 void cs(const command_t &, GameObj &);

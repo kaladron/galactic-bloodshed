@@ -4,15 +4,15 @@
 
 /* relation.c -- state relations among players */
 
-#include "relation.h"
+#include "gb/relation.h"
 
 #include <cstdio>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "races.h"
-#include "shlmisc.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/races.h"
+#include "gb/shlmisc.h"
+#include "gb/vars.h"
 
 static auto allied(const Race &r, const player_t p) {
   if (isset(r.atwar, p)) return "WAR";

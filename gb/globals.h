@@ -10,12 +10,12 @@
 
 #include <ctime>
 
-#include "doturn.h"
-#include "map.h"
-#include "power.h"
-#include "races.h"
-#include "ships.h"
-#include "vars.h"
+#include "gb/doturn.h"
+#include "gb/map.h"
+#include "gb/power.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/vars.h"
 
 struct power Power[MAXPLAYERS];
 struct block Blocks[MAXPLAYERS];

@@ -4,19 +4,19 @@
 
 /* power.c -- display power report */
 
-#include "powercmd.h"
+#include "gb/powercmd.h"
 
 #include <cstdio>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "power.h"
-#include "prof.h"
-#include "races.h"
-#include "shlmisc.h"
-#include "vars.h"
-#include "victory.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/power.h"
+#include "gb/prof.h"
+#include "gb/races.h"
+#include "gb/shlmisc.h"
+#include "gb/vars.h"
+#include "gb/victory.h"
 
 static void prepare_output_line(Race *, Race *, int, int);
 

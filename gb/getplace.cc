@@ -8,7 +8,7 @@
  *  testship(ship) -- tests various things for the ship.
  */
 
-#include "getplace.h"
+#include "gb/getplace.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -16,14 +16,14 @@
 #include <sstream>
 #include <string>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "races.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static char Disps[PLACENAMESIZE];
 

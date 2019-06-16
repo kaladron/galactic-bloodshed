@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "tele.h"
+#include "gb/tele.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -13,13 +13,13 @@
 #include <cstring>
 #include <ctime>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files.h"
-#include "files_shl.h"
-#include "races.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/races.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static long tm;
 static FILE *teleg_read_fd;

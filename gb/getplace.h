@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include "ships.h"
+#include "gb/ships.h"
 
 placetype getplace(GameObj &, const std::string &, const int);
 char *Dispshiploc_brief(Ship *);

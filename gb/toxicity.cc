@@ -5,12 +5,12 @@
 /// \file toxicity.cc
 /// \brief Change threshold in toxicity to build a wc.
 
-#include "toxicity.h"
+#include "gb/toxicity.h"
 
-#include "GB_server.h"
-#include "files_shl.h"
-#include "shlmisc.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/files_shl.h"
+#include "gb/shlmisc.h"
+#include "gb/vars.h"
 
 void toxicity(const command_t &argv, GameObj &g) {
   int APcount = 1;

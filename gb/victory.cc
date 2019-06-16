@@ -2,16 +2,16 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "victory.h"
+#include "gb/victory.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "races.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/races.h"
+#include "gb/vars.h"
 
 static auto constexpr victory_sort(const void *A, const void *B) {
   const auto *a = (const struct vic *)A;

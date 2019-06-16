@@ -2,14 +2,14 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "dosector.h"
+#include "gb/dosector.h"
 
-#include "doturn.h"
-#include "max.h"
-#include "races.h"
-#include "rand.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/doturn.h"
+#include "gb/max.h"
+#include "gb/races.h"
+#include "gb/rand.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const int y_adj[] = {1, 1, 1, 0, 0, -1, -1, -1};

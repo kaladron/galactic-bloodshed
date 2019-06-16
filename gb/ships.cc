@@ -2,9 +2,9 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "ships.h"
+#include "gb/ships.h"
 
-#include "files_shl.h"
+#include "gb/files_shl.h"
 
 /* can takeoff & land, is mobile, etc. */
 unsigned short speed_rating(Ship *s) { return (s)->max_speed; }

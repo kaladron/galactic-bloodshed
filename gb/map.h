@@ -5,8 +5,8 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include "races.h"
-#include "vars.h"
+#include "gb/races.h"
+#include "gb/vars.h"
 
 extern const char Psymbol[];
 extern const char *Planet_types[];

@@ -5,7 +5,7 @@
 #ifndef MAKEUNIV_H
 #define MAKEUNIV_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void place_star(startype *);
 

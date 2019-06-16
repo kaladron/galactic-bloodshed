@@ -5,10 +5,10 @@
 #ifndef SHOOTBLAST_H
 #define SHOOTBLAST_H
 
-#include "config.h"
-#include "races.h"
-#include "ships.h"
-#include "vars.h"
+#include "gb/config.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/vars.h"
 
 int shoot_ship_to_ship(Ship *, Ship *, int, int, int, char *, char *);
 #ifdef DEFENSE

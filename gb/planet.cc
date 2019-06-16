@@ -4,37 +4,37 @@
 
 /*  planet.c -- do one turn on a planet. */
 
-#include "planet.h"
+#include "gb/planet.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "VN.h"
-#include "autoshoot.h"
-#include "buffers.h"
-#include "build.h"
-#include "dosector.h"
-#include "doship.h"
-#include "doturn.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "load.h"
-#include "max.h"
-#include "move.h"
-#include "moveship.h"
-#include "perm.h"
-#include "power.h"
-#include "races.h"
-#include "rand.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "shootblast.h"
-#include "tech.h"
-#include "tele.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/VN.h"
+#include "gb/autoshoot.h"
+#include "gb/buffers.h"
+#include "gb/build.h"
+#include "gb/dosector.h"
+#include "gb/doship.h"
+#include "gb/doturn.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/load.h"
+#include "gb/max.h"
+#include "gb/move.h"
+#include "gb/moveship.h"
+#include "gb/perm.h"
+#include "gb/power.h"
+#include "gb/races.h"
+#include "gb/rand.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/shootblast.h"
+#include "gb/tech.h"
+#include "gb/tele.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static void do_dome(Ship *, SectorMap &);
 static void do_quarry(Ship *, Planet *, SectorMap &);

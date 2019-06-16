@@ -4,14 +4,14 @@
 
 // enroll - racegen interface for Galactic Bloodshed race enrollment program.
 
-#include "enroll.h"
+#include "gb/enroll.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "game_info.h"
-#include "racegen.h"
+#include "gb/game_info.h"
+#include "gb/racegen.h"
 
 #define DEFAULT_ENROLLMENT_FILENAME "enroll.saves"
 #define DEFAULT_ENROLLMENT_FAILURE_FILENAME "failures.saves"

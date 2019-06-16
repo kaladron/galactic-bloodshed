@@ -5,8 +5,8 @@
 #ifndef VN_H
 #define VN_H
 
-#include "ships.h"
-#include "vars.h"
+#include "gb/ships.h"
+#include "gb/vars.h"
 
 void do_VN(Ship *);
 void planet_doVN(Ship *, Planet *, SectorMap &);

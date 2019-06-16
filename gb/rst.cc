@@ -8,7 +8,7 @@
  *  Command "factories" programmed by varneyml@gb.erc.clarkson.edu
  */
 
-#include "rst.h"
+#include "gb/rst.h"
 
 #include <cctype>
 #include <cmath>
@@ -16,19 +16,19 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "build.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "getplace.h"
-#include "order.h"
-#include "races.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "shootblast.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/build.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/getplace.h"
+#include "gb/order.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/shootblast.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 #define PLANET 1
 

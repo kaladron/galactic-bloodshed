@@ -5,7 +5,7 @@
 #ifndef RST_H
 #define RST_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void rst(const command_t &, GameObj &);
 

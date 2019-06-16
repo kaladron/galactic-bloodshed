@@ -11,17 +11,17 @@
  *    damage-resistant.
  */
 
-#include "mobiliz.h"
+#include "gb/mobiliz.h"
 
 #include <cstdio>
 #include <cstdlib>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "races.h"
-#include "shlmisc.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/races.h"
+#include "gb/shlmisc.h"
+#include "gb/vars.h"
 
 void mobilize(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

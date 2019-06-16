@@ -5,27 +5,27 @@
 /*  moveship -- moves specified ship according to its orders.
  *	also deducts fuel from the ship's stores. */
 
-#include "moveship.h"
+#include "gb/moveship.h"
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "load.h"
-#include "max.h"
-#include "misc.h"
-#include "order.h"
-#include "races.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "tele.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/load.h"
+#include "gb/max.h"
+#include "gb/misc.h"
+#include "gb/order.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/tele.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 /* amount to move for each dir level. I arrived on these #'s only after
         hours of dilligent tweaking */

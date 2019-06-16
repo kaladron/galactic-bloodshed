@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include "ships.h"
+#include "gb/ships.h"
 
 void order(const command_t &, GameObj &);
 std::string prin_ship_dest(const Ship &);

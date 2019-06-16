@@ -5,7 +5,7 @@
 #ifndef AUTOREPORT_H
 #define AUTOREPORT_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void autoreport(const command_t &, GameObj &);
 

@@ -9,20 +9,20 @@
 // G.O.D. [1] > ammonia melts at -78C
 // G.O.D. [1] > boils at -33
 
-#include "makestar.h"
+#include "gb/makestar.h"
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "files.h"
-#include "files_shl.h"
-#include "makeplanet.h"
-#include "makeuniv.h"
-#include "rand.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/makeplanet.h"
+#include "gb/makeuniv.h"
+#include "gb/rand.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static const double PLANET_DIST_MAX = 1900.0;
 static const double PLANET_DIST_MIN = 100.0;

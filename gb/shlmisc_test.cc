@@ -1,14 +1,14 @@
-#include "shlmisc.h"
+#include "gb/shlmisc.h"
 
 #include <cassert>
 #include <optional>
 #include <string>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "build.h"
-#include "globals.h"
-#include "map.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/build.h"
+#include "gb/globals.h"
+#include "gb/map.h"
 
 // TODO(jeffbailey): Puke.  Detangling the dependencies is too
 // big right now, so this code is duplicated.

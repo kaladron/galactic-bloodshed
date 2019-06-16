@@ -17,9 +17,9 @@
 #include <string>
 #include <vector>
 
-#include "config.h"
-#include "files.h"
-#include "tweakables.h"
+#include "gb/config.h"
+#include "gb/files.h"
+#include "gb/tweakables.h"
 
 /* number of movement segments (global variable) */
 extern unsigned long segments;
@@ -307,6 +307,6 @@ extern unsigned long newslength[4];
 #define isset(a, i) ((a)[(i) / 32] & ((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
 #define isclr(a, i) (!isset((a), (i)))
 
-#include "gameobj.h"
+#include "gb/gameobj.h"
 
 #endif  // VARS_H

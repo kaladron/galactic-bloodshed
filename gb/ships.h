@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-#include "vars.h"
+#include "gb/vars.h"
 
 #ifndef SHIPS_H
 #define SHIPS_H

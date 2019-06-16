@@ -5,28 +5,28 @@
 /// \file fire.c
 /// \brief Fire at ship or planet from ship or planet
 
-#include "fire.h"
+#include "gb/fire.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "config.h"
-#include "doship.h"
-#include "files.h"
-#include "files_shl.h"
-#include "getplace.h"
-#include "load.h"
-#include "races.h"
-#include "rand.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "shootblast.h"
-#include "tele.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/config.h"
+#include "gb/doship.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/getplace.h"
+#include "gb/load.h"
+#include "gb/races.h"
+#include "gb/rand.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/shootblast.h"
+#include "gb/tele.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static void check_overload(Ship *, int, int *);
 static void check_retal_strength(Ship *, int *);

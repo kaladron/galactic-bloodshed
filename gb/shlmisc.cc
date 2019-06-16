@@ -5,7 +5,7 @@
 /// \file shlmisc.cc
 /// \brief Miscellaneous stuff included in the shell.
 
-#include "shlmisc.h"
+#include "gb/shlmisc.h"
 
 #include <boost/format.hpp>
 #include <cctype>
@@ -17,15 +17,15 @@
 #include <sstream>
 #include <string>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files.h"
-#include "files_shl.h"
-#include "max.h"
-#include "races.h"
-#include "ships.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/max.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static void do_revoke(Race *, const governor_t, const governor_t);
 

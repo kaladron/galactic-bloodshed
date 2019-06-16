@@ -4,26 +4,26 @@
 
 /*  order.c -- give orders to ship */
 
-#include "order.h"
+#include "gb/order.h"
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "build.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "getplace.h"
-#include "load.h"
-#include "moveship.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "shootblast.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/build.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/getplace.h"
+#include "gb/load.h"
+#include "gb/moveship.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/shootblast.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static std::string prin_aimed_at(const Ship &);
 static void mk_expl_aimed_at(int, int, Ship *);

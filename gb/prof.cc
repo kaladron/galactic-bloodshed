@@ -4,19 +4,19 @@
 
 /* prof.c -- print out racial profile */
 
-#include "prof.h"
+#include "gb/prof.h"
 
 #include <cstdio>
 #include <cstdlib>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "races.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "shootblast.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/shootblast.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static int round_perc(int, Race *, int);
 static char *Estimate_f(double, Race *, int);

@@ -6,24 +6,24 @@
  * Bombard() -- ship bombards planet
  */
 
-#include "autoshoot.h"
+#include "gb/autoshoot.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files.h"
-#include "files_shl.h"
-#include "max.h"
-#include "perm.h"
-#include "races.h"
-#include "ships.h"
-#include "shootblast.h"
-#include "tele.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/max.h"
+#include "gb/perm.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/shootblast.h"
+#include "gb/tele.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */

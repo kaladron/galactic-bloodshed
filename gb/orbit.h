@@ -5,7 +5,7 @@
 #ifndef ORBIT_H
 #define ORBIT_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void orbit(const command_t &, GameObj &);
 

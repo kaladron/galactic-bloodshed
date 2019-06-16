@@ -4,19 +4,19 @@
 
 /* examine -- check out an object */
 
-#include "examine.h"
+#include "gb/examine.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files.h"
-#include "files_shl.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/vars.h"
 
 void examine(const command_t &argv, GameObj &g) {
   const int APcount = 0;

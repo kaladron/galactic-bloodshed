@@ -4,7 +4,7 @@
 
 /* survey.c -- print out survey for planets */
 
-#include "survey.h"
+#include "gb/survey.h"
 
 #include <strings.h>
 
@@ -12,19 +12,19 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "csp.h"
-#include "csp_types.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "getplace.h"
-#include "map.h"
-#include "max.h"
-#include "races.h"
-#include "ships.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/csp.h"
+#include "gb/csp_types.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/getplace.h"
+#include "gb/map.h"
+#include "gb/max.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 #define MAX_SHIPS_PER_SECTOR 10
 

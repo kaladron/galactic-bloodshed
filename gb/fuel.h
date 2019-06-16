@@ -5,7 +5,7 @@
 #ifndef FUEL_H
 #define FUEL_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void proj_fuel(const command_t &, GameObj &);
 

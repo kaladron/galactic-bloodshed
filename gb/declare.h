@@ -5,7 +5,7 @@
 #ifndef DECLARE_H
 #define DECLARE_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void invite(const command_t &, GameObj &);
 void declare(const command_t &, GameObj &);

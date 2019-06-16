@@ -4,7 +4,7 @@
 
 /* doturn -- does one turn. */
 
-#include "doturncmd.h"
+#include "gb/doturncmd.h"
 
 #include <cctype>
 #include <cmath>
@@ -12,23 +12,23 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "build.h"
-#include "doship.h"
-#include "doturn.h"
-#include "files.h"
-#include "files_shl.h"
-#include "moveplanet.h"
-#include "planet.h"
-#include "power.h"
-#include "races.h"
-#include "rand.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "tele.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/build.h"
+#include "gb/doship.h"
+#include "gb/doturn.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/moveplanet.h"
+#include "gb/planet.h"
+#include "gb/power.h"
+#include "gb/races.h"
+#include "gb/rand.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/tele.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 #ifdef MARKET
 static constexpr void maintain(Race &r, Race::gov &governor,

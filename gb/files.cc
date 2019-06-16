@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "files.h"
+#include "gb/files.h"
 
 const char *Files[] = {PKGSTATEDIR,       DOCDIR,           PATH(exam.dat),
                        DATA(enroll.dat),  DATA(star),       "",

@@ -4,20 +4,20 @@
 
 /* capital.c -- designate a capital */
 
-#include "capital.h"
+#include "gb/capital.h"
 
 #include <cstdio>
 #include <cstdlib>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "getplace.h"
-#include "races.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/getplace.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/vars.h"
 
 void capital(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

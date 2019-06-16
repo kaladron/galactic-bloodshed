@@ -4,30 +4,30 @@
 
 /*  move.c -- move population and assault aliens on target sector */
 
-#include "move.h"
+#include "gb/move.h"
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "defense.h"
-#include "files.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "getplace.h"
-#include "load.h"
-#include "mobiliz.h"
-#include "races.h"
-#include "rand.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "shootblast.h"
-#include "tele.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/defense.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/getplace.h"
+#include "gb/load.h"
+#include "gb/mobiliz.h"
+#include "gb/races.h"
+#include "gb/rand.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/shootblast.h"
+#include "gb/tele.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static void mech_defend(int, int, int *, int, const Planet &, int, int,
                         const Sector &);

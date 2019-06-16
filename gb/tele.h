@@ -5,7 +5,7 @@
 #ifndef TELE_H
 #define TELE_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void check_for_telegrams(GameObj &);
 void purge();

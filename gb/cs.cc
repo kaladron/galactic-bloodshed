@@ -2,17 +2,17 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "cs.h"
+#include "gb/cs.h"
 
 #include <cstdio>
 #include <cstdlib>
 
-#include "GB_server.h"
-#include "files_shl.h"
-#include "getplace.h"
-#include "races.h"
-#include "ships.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/files_shl.h"
+#include "gb/getplace.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/vars.h"
 
 void center(const command_t &argv, GameObj &g) {
   if (argv.size() != 2) {

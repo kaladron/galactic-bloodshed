@@ -5,7 +5,7 @@
 #ifndef EXAMINE_H
 #define EXAMINE_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void examine(const command_t &, GameObj &);
 

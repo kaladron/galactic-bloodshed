@@ -5,7 +5,7 @@
 #ifndef TOXICITY_H
 #define TOXICITY_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void toxicity(const command_t &, GameObj &);
 

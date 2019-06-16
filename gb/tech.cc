@@ -4,19 +4,19 @@
 
 /* tech.c -- increase investment in technological development. */
 
-#include "tech.h"
+#include "gb/tech.h"
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "mobiliz.h"
-#include "shlmisc.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/mobiliz.h"
+#include "gb/shlmisc.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 void technology(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

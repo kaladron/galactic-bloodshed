@@ -2,25 +2,25 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "map.h"
+#include "gb/map.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "getplace.h"
-#include "max.h"
-#include "orbit.h"
-#include "races.h"
-#include "rand.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/getplace.h"
+#include "gb/max.h"
+#include "gb/orbit.h"
+#include "gb/races.h"
+#include "gb/rand.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static void show_map(const player_t, const governor_t, const starnum_t,
                      const planetnum_t, const Planet &);

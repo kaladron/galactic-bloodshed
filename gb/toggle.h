@@ -5,7 +5,7 @@
 #ifndef TOGGLE_H
 #define TOGGLE_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void toggle(const command_t &, GameObj &);
 void highlight(const command_t &, GameObj &);

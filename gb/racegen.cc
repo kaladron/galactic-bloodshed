@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "racegen.h"
+#include "gb/racegen.h"
 
 #include <unistd.h>
 
@@ -12,8 +12,8 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "enroll.h"
-#include "game_info.h"
+#include "gb/enroll.h"
+#include "gb/game_info.h"
 
 static int do_racegen();
 

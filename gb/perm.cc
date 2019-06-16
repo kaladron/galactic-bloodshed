@@ -4,11 +4,11 @@
 
 /* perm.c -- randomly permute a sector list */
 
-#include "perm.h"
+#include "gb/perm.h"
 
-#include "rand.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/rand.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static struct map { char x, y; } xymap[(MAX_X + 1) * (MAX_Y + 1)];
 

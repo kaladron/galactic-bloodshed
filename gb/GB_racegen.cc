@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "GB_racegen.h"
+#include "gb/GB_racegen.h"
 
 #include <unistd.h>
 
@@ -11,21 +11,21 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "build.h"
-#include "files_shl.h"
-#include "globals.h"
-#include "map.h"
-#include "max.h"
-#include "perm.h"
-#include "racegen.h"
-#include "races.h"
-#include "rand.h"
-#include "shipdata.h"
-#include "ships.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/build.h"
+#include "gb/files_shl.h"
+#include "gb/globals.h"
+#include "gb/map.h"
+#include "gb/max.h"
+#include "gb/perm.h"
+#include "gb/racegen.h"
+#include "gb/races.h"
+#include "gb/rand.h"
+#include "gb/shipdata.h"
+#include "gb/ships.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static const PlanetType planet_translate[N_HOME_PLANET_TYPES] = {
     PlanetType::EARTH,   PlanetType::FOREST, PlanetType::DESERT,

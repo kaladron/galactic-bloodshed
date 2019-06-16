@@ -5,7 +5,7 @@
 #ifndef EXPLORE_H
 #define EXPLORE_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void colonies(const command_t &, GameObj &);
 void distance(const command_t &, GameObj &);

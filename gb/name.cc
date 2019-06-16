@@ -4,7 +4,7 @@
 
 /* name.c -- rename something to something else */
 
-#include "name.h"
+#include "gb/name.h"
 
 #include <cctype>
 #include <cmath>
@@ -14,22 +14,22 @@
 #include <iterator>
 #include <sstream>
 
-#include "GB_server.h"
-#include "buffers.h"
-#include "capture.h"
-#include "dissolve.h"
-#include "files.h"
-#include "files_shl.h"
-#include "getplace.h"
-#include "max.h"
-#include "mobiliz.h"
-#include "races.h"
-#include "rand.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "tele.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/buffers.h"
+#include "gb/capture.h"
+#include "gb/dissolve.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/getplace.h"
+#include "gb/max.h"
+#include "gb/mobiliz.h"
+#include "gb/races.h"
+#include "gb/rand.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/tele.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static char msg[1024];
 

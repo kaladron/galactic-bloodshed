@@ -7,7 +7,7 @@
  *    closed).  write routines close and thus unlock that area.
  */
 
-#include "files_shl.h"
+#include "gb/files_shl.h"
 
 #include <fcntl.h>
 #include <sqlite3.h>
@@ -22,13 +22,13 @@
 #include <memory>
 #include <stdexcept>
 
-#include "files.h"
-#include "files_rw.h"
-#include "power.h"
-#include "races.h"
-#include "ships.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/files.h"
+#include "gb/files_rw.h"
+#include "gb/power.h"
+#include "gb/races.h"
+#include "gb/ships.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static int commoddata, racedata, shdata, stdata;
 

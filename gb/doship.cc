@@ -4,34 +4,34 @@
 
 /* doship -- do one ship turn. */
 
-#include "doship.h"
+#include "gb/doship.h"
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "GB_server.h"
-#include "VN.h"
-#include "buffers.h"
-#include "build.h"
-#include "doturn.h"
-#include "files.h"
-#include "files_shl.h"
-#include "fire.h"
-#include "load.h"
-#include "max.h"
-#include "moveship.h"
-#include "perm.h"
-#include "power.h"
-#include "races.h"
-#include "rand.h"
-#include "ships.h"
-#include "shlmisc.h"
-#include "shootblast.h"
-#include "tele.h"
-#include "tweakables.h"
-#include "vars.h"
+#include "gb/GB_server.h"
+#include "gb/VN.h"
+#include "gb/buffers.h"
+#include "gb/build.h"
+#include "gb/doturn.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
+#include "gb/fire.h"
+#include "gb/load.h"
+#include "gb/max.h"
+#include "gb/moveship.h"
+#include "gb/perm.h"
+#include "gb/power.h"
+#include "gb/races.h"
+#include "gb/rand.h"
+#include "gb/ships.h"
+#include "gb/shlmisc.h"
+#include "gb/shootblast.h"
+#include "gb/tele.h"
+#include "gb/tweakables.h"
+#include "gb/vars.h"
 
 static double ap_planet_factor(Planet *);
 static double crew_factor(Ship *);

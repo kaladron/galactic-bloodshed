@@ -5,7 +5,7 @@
 #ifndef DOCK_H
 #define DOCK_H
 
-#include "vars.h"
+#include "gb/vars.h"
 
 void dock(const command_t &, GameObj &);
 

@@ -438,7 +438,7 @@ int main(int argc, char **argv) {
   struct stat stbuf;
   FILE *sfile;
 
-  open_data_files();
+  /* XXX auto db = */ open_data_files();
   printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
   time_t clk = time(nullptr);
   printf("      %s", ctime(&clk));

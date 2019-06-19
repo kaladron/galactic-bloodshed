@@ -236,7 +236,7 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
   }
 }
 
-void opensql() {
+Sql::Sql() {
   int err = sqlite3_open(PKGSTATEDIR "gb.db", &db);
   if (err) {
     fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
@@ -244,12 +244,13 @@ void opensql() {
   }
 }
 
-void open_data_files() {
-  opensql();
+Db open_data_files() {
+  Sql db1;  // TODO(jeffbailey): Fix this name
   opencommoddata(&commoddata);
   openracedata(&racedata);
   openshdata(&shdata);
   openstardata(&stdata);
+  return db1;
 }
 
 void close_data_files() {

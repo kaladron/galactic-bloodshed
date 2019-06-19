@@ -13,10 +13,15 @@
 #include "gb/ships.h"
 #include "gb/vars.h"
 
-void opensql();
+class Db {};
+
+class Sql : public Db {
+ public:
+  Sql();
+};
 
 void close_file(int);
-void open_data_files();
+Db open_data_files();
 void close_data_files();
 void openstardata(int *);
 void openshdata(int *);

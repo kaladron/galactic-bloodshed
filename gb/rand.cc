@@ -30,4 +30,4 @@ int round_rand(double x) {
   return ((double_rand() > (x - (double)((int)x))) ? (int)x : (int)(x + 1));
 }
 
-int success(int x) { return int_rand(1, 100) <= (x); }
+bool success(int x) { return int_rand(1, 100) <= (x); }

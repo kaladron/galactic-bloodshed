@@ -5,7 +5,7 @@
 #ifndef RAND_H
 #define RAND_H
 
-int success(int x);
+bool success(int x);
 
 double double_rand();
 int int_rand(int, int);

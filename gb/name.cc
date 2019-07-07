@@ -31,8 +31,6 @@
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
-static char msg[1024];
-
 void personal(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
 
@@ -634,6 +632,7 @@ void send_message(const command_t &argv, GameObj &g) {
   int to_star;
   int star;
   int start;
+  char msg[1000];
   placetype where;
   racetype *Race;
   racetype *alien;
@@ -1021,6 +1020,7 @@ void announce(const command_t &argv, GameObj &g) {
       symbol = '=';
       break;
   }
+  char msg[1000];
   sprintf(msg, "%s \"%s\" [%d,%d] %c %s\n", Race->name,
           Race->governor[Governor].name, Playernum, Governor, symbol,
           message.c_str());

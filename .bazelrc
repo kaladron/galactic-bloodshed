@@ -10,3 +10,8 @@ build:msan --copt -O1
 build:msan --copt -fno-omit-frame-pointer 
 build:msan --linkopt -fsanitize=memory 
 
+build:libc++ --action_env=CC
+build:libc++ --action_env=CXX
+build:libc++ --action_env=CXXFLAGS=--stdlib=libc++
+build:libc++ --action_env=PATH
+

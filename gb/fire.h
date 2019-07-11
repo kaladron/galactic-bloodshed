@@ -15,6 +15,6 @@ void detonate(const command_t &argv, GameObj &);
 int retal_strength(Ship *);
 int adjacent(int, int, int, int, const Planet &);
 bool landed(const Ship &);
-int laser_on(Ship *);
+bool laser_on(const Ship &);
 
 #endif  // FIRE_H

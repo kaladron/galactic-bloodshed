@@ -205,13 +205,13 @@ void fire(const command_t &argv, GameObj &g) {
         if (strength > maxstrength) {
           strength = maxstrength;
           sprintf(buf, "%s set to %d\n",
-                  laser_on(from) ? "Laser strength" : "Guns", strength);
+                  laser_on(*from) ? "Laser strength" : "Guns", strength);
           notify(Playernum, Governor, buf);
         }
       }
 
       /* check to see if there is crystal overloads */
-      if (laser_on(from) || cew) check_overload(from, cew, &strength);
+      if (laser_on(*from) || cew) check_overload(from, cew, &strength);
 
       if (strength <= 0) {
         sprintf(buf, "No attack.\n");
@@ -230,7 +230,7 @@ void fire(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      if (laser_on(from) || cew)
+      if (laser_on(*from) || cew)
         use_fuel(from, 2.0 * (double)strength);
       else
         use_destruct(from, strength);
@@ -244,11 +244,11 @@ void fire(const command_t &argv, GameObj &g) {
       strength = 0;
       if (retal && damage && to->protect.self) {
         strength = retal;
-        if (laser_on(&*to)) check_overload(&*to, 0, &strength);
+        if (laser_on(*to)) check_overload(&*to, 0, &strength);
 
         if ((damage = shoot_ship_to_ship(&dummy, from, strength, 0, 1, long_buf,
                                          short_buf)) >= 0) {
-          if (laser_on(&*to))
+          if (laser_on(*to))
             use_fuel(&*to, 2.0 * (double)strength);
           else
             use_destruct(&*to, strength);
@@ -274,11 +274,11 @@ void fire(const command_t &argv, GameObj &g) {
               (ship.protect.ship == toship) && ship.number != fromship &&
               ship.number != toship && ship.alive && ship.active) {
             check_retal_strength(&ship, &strength);
-            if (laser_on(&ship)) check_overload(&ship, 0, &strength);
+            if (laser_on(ship)) check_overload(&ship, 0, &strength);
 
             if ((damage = shoot_ship_to_ship(&ship, from, strength, 0, 0,
                                              long_buf, short_buf)) >= 0) {
-              if (laser_on(&ship))
+              if (laser_on(ship))
                 use_fuel(&ship, 2.0 * (double)strength);
               else
                 use_destruct(&ship, strength);
@@ -365,12 +365,12 @@ void bombard(const command_t &argv, GameObj &g) {
       if (strength > maxstrength) {
         strength = maxstrength;
         sprintf(buf, "%s set to %d\n",
-                laser_on(from) ? "Laser strength" : "Guns", strength);
+                laser_on(*from) ? "Laser strength" : "Guns", strength);
         notify(Playernum, Governor, buf);
       }
 
       /* check to see if there is crystal overload */
-      if (laser_on(from)) check_overload(from, 0, &strength);
+      if (laser_on(*from)) check_overload(from, 0, &strength);
 
       if (strength <= 0) {
         sprintf(buf, "No attack.\n");
@@ -421,7 +421,7 @@ void bombard(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      if (laser_on(from))
+      if (laser_on(*from))
         use_fuel(from, 2.0 * (double)strength);
       else
         use_destruct(from, strength);
@@ -462,13 +462,13 @@ void bombard(const command_t &argv, GameObj &g) {
         for (auto ship : shiplist) {
           if (ship.protect.planet && ship.number != fromship && ship.alive &&
               ship.active) {
-            if (laser_on(&ship)) check_overload(&ship, 0, &strength);
+            if (laser_on(ship)) check_overload(&ship, 0, &strength);
 
             check_retal_strength(&ship, &strength);
 
             if ((damage = shoot_ship_to_ship(&ship, from, strength, 0, 0,
                                              long_buf, short_buf)) >= 0) {
-              if (laser_on(&ship))
+              if (laser_on(ship))
                 use_fuel(&ship, 2.0 * (double)strength);
               else
                 use_destruct(&ship, strength);
@@ -630,12 +630,12 @@ void defend(const command_t &argv, GameObj &g) {
   strength = 0;
   if (retal && damage && to->protect.self) {
     strength = retal;
-    if (laser_on(&*to)) check_overload(&*to, 0, &strength);
+    if (laser_on(*to)) check_overload(&*to, 0, &strength);
 
     auto smap = getsmap(p);
     if ((numdest = shoot_ship_to_planet(&dummy, &p, strength, x, y, smap, 0, 0,
                                         long_buf, short_buf)) >= 0) {
-      if (laser_on(&*to))
+      if (laser_on(*to))
         use_fuel(&*to, 2.0 * (double)strength);
       else
         use_destruct(&*to, strength);
@@ -656,13 +656,13 @@ void defend(const command_t &argv, GameObj &g) {
       if (ship->protect.on && (ship->protect.ship == toship) &&
           (ship->protect.ship == toship) && sh != toship && ship->alive &&
           ship->active) {
-        if (laser_on(ship)) check_overload(ship, 0, &strength);
+        if (laser_on(*ship)) check_overload(ship, 0, &strength);
         check_retal_strength(ship, &strength);
 
         auto smap = getsmap(p);
         if ((numdest = shoot_ship_to_planet(ship, &p, strength, x, y, smap, 0,
                                             0, long_buf, short_buf)) >= 0) {
-          if (laser_on(ship))
+          if (laser_on(*ship))
             use_fuel(ship, 2.0 * (double)strength);
           else
             use_destruct(ship, strength);
@@ -797,11 +797,11 @@ static void check_overload(Ship *ship, int cew, int *strength) {
 static void check_retal_strength(Ship *ship, int *strength) {
   *strength = 0;
   if (ship->active && ship->alive) { /* irradiated ships dont retaliate */
-    if (laser_on(ship))
+    if (laser_on(*ship))
       *strength = MIN(ship->fire_laser, (int)ship->fuel / 2);
     else
       *strength = retal_strength(ship);
   }
 }
 
-int laser_on(Ship *ship) { return (ship->laser && ship->fire_laser); }
+bool laser_on(const Ship &ship) { return (ship.laser && ship.fire_laser); }

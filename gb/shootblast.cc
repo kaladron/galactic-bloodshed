@@ -98,7 +98,7 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
   ship_disposition(to, &tevade, &tspeed, &tbody);
   defense = getdefense(to);
 
-  if (laser_on(from) && from->focus)
+  if (laser_on(*from) && from->focus)
     focus = 1;
   else
     focus = 0;
@@ -122,7 +122,7 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
   } else {
     if (cew)
       sprintf(weapon, "strength CEW");
-    else if (laser_on(from)) {
+    else if (laser_on(*from)) {
       if (from->focus)
         sprintf(weapon, "strength focused laser");
       else

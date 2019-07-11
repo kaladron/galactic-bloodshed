@@ -468,7 +468,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 defense = getdefense(&rd[i].s);
                 prob = hit_odds(Dist, &factor, tech, fdam, fev, tev, fspeed,
                                 tspeed, body, caliber, defense);
-                if (rd[indx].type != PLANET && laser_on(&rd[indx].s) &&
+                if (rd[indx].type != PLANET && laser_on(rd[indx].s) &&
                     rd[indx].s.focus)
                   prob = prob * prob / 100;
                 sprintf(

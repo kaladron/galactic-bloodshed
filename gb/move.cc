@@ -484,7 +484,7 @@ void walk(const command_t &argv, GameObj &g) {
     free(ship);
     return;
   }
-  if (!landed(ship)) {
+  if (!landed(*ship)) {
     g.out << "This ship is not landed on a planet.\n";
     free(ship);
     return;
@@ -532,7 +532,7 @@ void walk(const command_t &argv, GameObj &g) {
   Shiplist shiplist{p.ships};
   for (auto ship2 : shiplist) {
     if (ship2.owner != Playernum && ship2.type == ShipType::OTYPE_AFV &&
-        landed(&ship2) && retal_strength(&ship2) && (ship2.land_x == x) &&
+        landed(ship2) && retal_strength(&ship2) && (ship2.land_x == x) &&
         (ship2.land_y == y)) {
       alien = races[ship2.owner - 1];
       if (!isset(Race->allied, (int)ship2.owner) ||
@@ -696,7 +696,7 @@ static void mech_defend(int Playernum, int Governor, int *people, int type,
   for (auto ship : shiplist) {
     if (civ + mil == 0) break;
     if (ship.owner != Playernum && ship.type == ShipType::OTYPE_AFV &&
-        landed(&ship) && retal_strength(&ship) && (ship.land_x == x2) &&
+        landed(ship) && retal_strength(&ship) && (ship.land_x == x2) &&
         (ship.land_y == y2)) {
       alien = races[ship.owner - 1];
       if (!isset(Race->allied, ship.owner) ||

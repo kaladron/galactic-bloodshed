@@ -491,7 +491,7 @@ void jettison(const command_t &argv, GameObj &g) {
         free(s);
         continue;
       }
-      if (landed(s)) {
+      if (landed(*s)) {
         g.out << "Ship is landed, cannot jettison.\n";
         free(s);
         continue;
@@ -918,7 +918,7 @@ static void do_transporter(racetype *Race, GameObj &g, Ship *s) {
 
   Playernum = Race->Playernum;
 
-  if (!landed(s)) {
+  if (!landed(*s)) {
     g.out << "Origin ship not landed.\n";
     return;
   }
@@ -942,7 +942,7 @@ static void do_transporter(racetype *Race, GameObj &g, Ship *s) {
     free(s2);
     return;
   }
-  if (!landed(s2)) {
+  if (!landed(*s2)) {
     g.out << "Target ship not landed.\n";
     free(s2);
     return;

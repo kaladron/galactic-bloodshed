@@ -626,7 +626,7 @@ void do_collateral(Ship *ship, int damage, int *casualties, int *casualties1,
 int getdefense(Ship *ship) {
   int defense = 0;
 
-  if (landed(ship)) {
+  if (landed(*ship)) {
     const auto p = getplanet(ship->storbits, ship->pnumorbits);
     auto sect = getsector(p, ship->land_x, ship->land_y);
     defense = 2 * Defensedata[sect.condition];

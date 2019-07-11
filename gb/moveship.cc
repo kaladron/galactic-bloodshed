@@ -404,7 +404,7 @@ static int do_merchant(Ship *s, Planet *p) {
     return 0;
   }
 
-  if (!landed(s)) { /* try to land the ship */
+  if (!landed(*s)) { /* try to land the ship */
     fuel = s->mass * gravity(*p) * LAND_GRAV_MASS_FACTOR;
     if (s->fuel < fuel) { /* ship can't land - cancel all orders */
       s->whatdest = ScopeLevel::LEVEL_UNIV;

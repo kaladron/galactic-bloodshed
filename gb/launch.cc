@@ -40,7 +40,7 @@ void launch(const command_t &argv, GameObj &g) {
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
         authorized(Governor, s)) {
-      if (!speed_rating(s) && landed(s)) {
+      if (!speed_rating(s) && landed(*s)) {
         sprintf(buf, "That ship is not designed to be launched.\n");
         notify(Playernum, Governor, buf);
         free(s);
@@ -54,8 +54,8 @@ void launch(const command_t &argv, GameObj &g) {
         free(s);
         continue;
       }
-      if (!landed(s)) APcount = 0;
-      if (landed(s) && s->resource > Max_resource(s)) {
+      if (!landed(*s)) APcount = 0;
+      if (landed(*s) && s->resource > Max_resource(s)) {
         sprintf(buf, "%s is too overloaded to launch.\n",
                 ship_to_string(*s).c_str());
         notify(Playernum, Governor, buf);
@@ -72,7 +72,7 @@ void launch(const command_t &argv, GameObj &g) {
           continue;
         }
         auto s2 = getship(s->destshipno);
-        if (landed(&*s2)) {
+        if (landed(*s2)) {
           remove_sh_ship(*s, *s2);
           auto p = getplanet(s2->storbits, s2->pnumorbits);
           insert_sh_plan(&p, s);

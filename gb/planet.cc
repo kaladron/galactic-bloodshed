@@ -111,7 +111,7 @@ int doplanet(int starnum, Planet *planet, int planetnum) {
             do_berserker(ship, planet);
           break;
         case ShipType::OTYPE_TERRA:
-          if ((ship->on && landed(ship) && ship->popn)) {
+          if ((ship->on && landed(*ship) && ship->popn)) {
             if (ship->fuel >= (double)FUEL_COST_TERRA)
               terraform(ship, planet, smap);
             else if (!ship->notified) {
@@ -121,7 +121,7 @@ int doplanet(int starnum, Planet *planet, int planetnum) {
           }
           break;
         case ShipType::OTYPE_PLOW:
-          if (ship->on && landed(ship)) {
+          if (ship->on && landed(*ship)) {
             if (ship->fuel >= (double)FUEL_COST_PLOW)
               plow(ship, planet, smap);
             else if (!ship->notified) {
@@ -137,7 +137,7 @@ int doplanet(int starnum, Planet *planet, int planetnum) {
           }
           break;
         case ShipType::OTYPE_DOME:
-          if (ship->on && landed(ship)) {
+          if (ship->on && landed(*ship)) {
             if (ship->resource >= RES_COST_DOME)
               do_dome(ship, smap);
             else {
@@ -154,7 +154,7 @@ int doplanet(int starnum, Planet *planet, int planetnum) {
           }
           break;
         case ShipType::OTYPE_WPLANT:
-          if (landed(ship))
+          if (landed(*ship))
             if (ship->resource >= RES_COST_WPLANT &&
                 ship->fuel >= FUEL_COST_WPLANT)
               prod_destruct[ship->owner - 1] += do_weapon_plant(ship);
@@ -174,7 +174,7 @@ int doplanet(int starnum, Planet *planet, int planetnum) {
           }
           break;
         case ShipType::OTYPE_QUARRY:
-          if ((ship->on && landed(ship) && ship->popn)) {
+          if ((ship->on && landed(*ship) && ship->popn)) {
             if (ship->fuel >= FUEL_COST_QUARRY)
               do_quarry(ship, planet, smap);
             else if (!ship->notified) {
@@ -185,7 +185,7 @@ int doplanet(int starnum, Planet *planet, int planetnum) {
             if (!ship->on) {
               sprintf(buf, "q%lu is not switched on.", ship->number);
             }
-            if (!landed(ship)) {
+            if (!landed(*ship)) {
               sprintf(buf, "q%lu is not landed.", ship->number);
             }
             if (!ship->popn) {
@@ -198,7 +198,7 @@ int doplanet(int starnum, Planet *planet, int planetnum) {
           break;
       }
       /* add fuel for ships orbiting a gas giant */
-      if (!landed(ship) && planet->type == PlanetType::GASGIANT) {
+      if (!landed(*ship) && planet->type == PlanetType::GASGIANT) {
         switch (ship->type) {
           case ShipType::STYPE_TANKER:
             fadd = FUEL_GAS_ADD_TANKER;
@@ -757,7 +757,7 @@ static void do_quarry(Ship *ship, Planet *planet, SectorMap &smap) {
 
 static void do_berserker(Ship *ship, Planet *planet) {
   if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
-      ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship) &&
+      ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
       ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {
     if (!Bombard(ship, planet, races[ship->owner - 1]))
       ship->destpnum = int_rand(0, Stars[ship->storbits]->numplanets - 1);

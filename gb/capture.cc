@@ -61,7 +61,7 @@ void capture(const command_t &argv, GameObj &g) {
   while ((shipno = do_shiplist(&ship, &nextshipno)))
     if (ship->owner != Playernum &&
         in_list(ship->owner, argv[1].c_str(), ship, &nextshipno)) {
-      if (!landed(ship)) {
+      if (!landed(*ship)) {
         sprintf(buf, "%s #%ld is not landed on a planet.\n",
                 Shipnames[ship->type], shipno);
         notify(Playernum, Governor, buf);

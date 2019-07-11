@@ -412,7 +412,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 Caliber[s.sectype], s.armor, s.size, s.destruct, s.fuel,
                 s.damage, fspeed, (fev ? "yes" : "   "), orb);
         notify(Playernum, Governor, buf);
-        if (landed(&s)) {
+        if (landed(s)) {
           sprintf(buf, " (%d,%d)", s.land_x, s.land_y);
           notify(Playernum, Governor, buf);
         }
@@ -489,7 +489,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                     ((enemies_only == 1) &&
                      (!isset(races[Playernum - 1]->allied, rd[i].s.owner)))) {
                   notify(Playernum, Governor, buf);
-                  if (landed(&rd[i].s)) {
+                  if (landed(rd[i].s)) {
                     sprintf(buf, " (%d,%d)", rd[i].s.land_x, rd[i].s.land_y);
                     notify(Playernum, Governor, buf);
                   } else {

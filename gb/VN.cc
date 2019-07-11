@@ -31,7 +31,7 @@ static void order_VN(Ship *);
 
 /*  do_VN() -- called by doship() */
 void do_VN(Ship *ship) {
-  if (!landed(ship)) {
+  if (!landed(*ship)) {
     // Doing other things
     if (!ship->special.mind.busy) return;
 
@@ -162,7 +162,7 @@ void planet_doVN(Ship *ship, Planet *planet, SectorMap &smap) {
   int dum;
   int prod;
 
-  if (landed(ship)) {
+  if (landed(*ship)) {
     if (ship->type == ShipType::OTYPE_VN && ship->special.mind.busy) {
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */

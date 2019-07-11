@@ -55,7 +55,7 @@ void capital(const command_t &argv, GameObj &g) {
       g.out << "You can't do that!\n";
       return;
     }
-    if (!landed(&*s)) {
+    if (!landed(*s)) {
       g.out << "Try landing this ship first!\n";
       return;
     }

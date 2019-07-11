@@ -385,7 +385,7 @@ void domine(int shipno, int detonate) {
         int y;
         int numdest;
         auto planet = getplanet((int)ship->storbits, (int)ship->pnumorbits);
-        if (landed(&*ship)) {
+        if (landed(*ship)) {
           x = ship->land_x;
           y = ship->land_y;
         } else {
@@ -423,7 +423,7 @@ void doabm(Ship *ship) {
   if (!ship->alive || !ship->owner) return;
   if (!ship->on || !ship->retaliate || !ship->destruct) return;
 
-  if (landed(ship)) {
+  if (landed(*ship)) {
     const auto &p = planets[ship->storbits][ship->pnumorbits];
     /* check to see if missiles/mines are present */
     sh2 = p->ships;
@@ -582,7 +582,7 @@ static void do_meta_infect(int who, Planet *p) {
 }
 
 static void do_canister(Ship *ship) {
-  if (ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
+  if (ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(*ship)) {
     if (++ship->special.timer.count < DISSIPATE) {
       if (Stinfo[ship->storbits][ship->pnumorbits].temp_add < -90)
         Stinfo[ship->storbits][ship->pnumorbits].temp_add = -100;
@@ -605,7 +605,7 @@ static void do_canister(Ship *ship) {
 }
 
 static void do_greenhouse(Ship *ship) {
-  if (ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
+  if (ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(*ship)) {
     if (++ship->special.timer.count < DISSIPATE) {
       if (Stinfo[ship->storbits][ship->pnumorbits].temp_add > 90)
         Stinfo[ship->storbits][ship->pnumorbits].temp_add = 100;
@@ -707,7 +707,7 @@ static void do_ap(Ship *ship) {
   racetype *Race;
 
   /* if landed on planet, change conditions to be like race */
-  if (landed(ship) && ship->on) {
+  if (landed(*ship) && ship->on) {
     int j;
     int d;
     // TODO(jeffbailey): Not obvious here how the modified planet is saved to

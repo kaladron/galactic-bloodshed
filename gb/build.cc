@@ -897,7 +897,7 @@ void build(const command_t &argv, GameObj &g) {
                 g.out << "Give a positive number of builds.\n";
                 return;
               }
-              if (!landed(&*builder)) {
+              if (!landed(*builder)) {
                 g.out << "Factories can only build when landed on a planet.\n";
                 return;
               }
@@ -906,7 +906,7 @@ void build(const command_t &argv, GameObj &g) {
               break;
             case ShipType::STYPE_SHUTTLE:
             case ShipType::STYPE_CARGO:
-              if (landed(&*builder)) {
+              if (landed(*builder)) {
                 g.out << "This ships cannot build when landed.\n";
                 return;
               }
@@ -1042,7 +1042,7 @@ finish:
       if (outside) switch (build_level) {
           case ScopeLevel::LEVEL_PLAN:
             putplanet(planet, Stars[snum], pnum);
-            if (landed(&*builder)) {
+            if (landed(*builder)) {
               putsector(sector, planet, x, y);
             }
             break;
@@ -1164,7 +1164,7 @@ static std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder,
     g.out << "This factory is not online.\n";
     return {};
   }
-  if (builder->type == ShipType::OTYPE_FACTORY && !landed(builder)) {
+  if (builder->type == ShipType::OTYPE_FACTORY && !landed(*builder)) {
     g.out << "Factories must be landed on a planet.\n";
     return {};
   }

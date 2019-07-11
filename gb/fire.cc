@@ -143,14 +143,14 @@ void fire(const command_t &argv, GameObj &g) {
       bcopy(&*to, &dummy, sizeof(Ship));
 
       if (from->type == ShipType::OTYPE_AFV) {
-        if (!landed(from)) {
+        if (!landed(*from)) {
           sprintf(buf, "%s isn't landed on a planet!\n",
                   ship_to_string(*from).c_str());
           notify(Playernum, Governor, buf);
           free(from);
           continue;
         }
-        if (!landed(&*to)) {
+        if (!landed(*to)) {
           sprintf(buf, "%s isn't landed on a planet!\n",
                   ship_to_string(*from).c_str());
           notify(Playernum, Governor, buf);
@@ -158,7 +158,7 @@ void fire(const command_t &argv, GameObj &g) {
           continue;
         }
       }
-      if (landed(from) && landed(&*to)) {
+      if (landed(*from) && landed(*to)) {
         if ((from->storbits != to->storbits) ||
             (from->pnumorbits != to->pnumorbits)) {
           notify(Playernum, Governor,
@@ -183,7 +183,7 @@ void fire(const command_t &argv, GameObj &g) {
           free(from);
           continue;
         }
-        if (landed(from) || landed(&*to)) {
+        if (landed(*from) || landed(*to)) {
           notify(Playernum, Governor,
                  "CEWs cannot originate from or targeted "
                  "to ships landed on planets.\n");
@@ -344,7 +344,7 @@ void bombard(const command_t &argv, GameObj &g) {
         free(from);
         continue;
       }
-      if (from->type == ShipType::OTYPE_AFV && !landed(from)) {
+      if (from->type == ShipType::OTYPE_AFV && !landed(*from)) {
         g.out << "This ship is not landed on the planet.\n";
         free(from);
         continue;
@@ -394,7 +394,7 @@ void bombard(const command_t &argv, GameObj &g) {
         x = int_rand(0, (int)p.Maxx - 1);
         y = int_rand(0, (int)p.Maxy - 1);
       }
-      if (landed(from) &&
+      if (landed(*from) &&
           !adjacent((int)from->land_x, (int)from->land_y, x, y, p)) {
         g.out << "You are not adjacent to that sector.\n";
         free(from);
@@ -403,7 +403,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
       bool has_defense = has_planet_defense(p.ships, Playernum);
 
-      if (has_defense && !landed(from)) {
+      if (has_defense && !landed(*from)) {
         g.out << "Target has planetary defense networks.\n";
         g.out << "These have to be eliminated before you can attack sectors.\n";
         free(from);
@@ -567,7 +567,7 @@ void defend(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (landed(&*to)) {
+  if (landed(*to)) {
     g.out << "Planet guns can't fire on landed ships.\n";
     return;
   }
@@ -732,7 +732,7 @@ int retal_strength(Ship *s) {
   int avail = 0;
 
   if (!s->alive) return 0;
-  if (!Shipdata[s->type][ABIL_SPEED] && !landed(s)) return 0;
+  if (!Shipdata[s->type][ABIL_SPEED] && !landed(*s)) return 0;
   /* land based ships */
   if (!s->popn && (s->type != ShipType::OTYPE_BERS)) return 0;
 
@@ -765,8 +765,8 @@ int adjacent(int fx, int fy, int tx, int ty, const Planet &p) {
   return 0;
 }
 
-int landed(Ship *ship) {
-  return (ship->whatdest == ScopeLevel::LEVEL_PLAN && ship->docked);
+bool landed(const Ship &ship) {
+  return (ship.whatdest == ScopeLevel::LEVEL_PLAN && ship.docked);
 }
 
 static void check_overload(Ship *ship, int cew, int *strength) {

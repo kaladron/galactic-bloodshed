@@ -72,7 +72,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     g.out << "You do not own this ship.\n";
     return;
   }
-  if (landed(&*ship) && (argv.size() == 2)) {
+  if (landed(*ship) && (argv.size() == 2)) {
     g.out << "You must specify a destination for landed or docked ships...\n";
     return;
   }
@@ -84,7 +84,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     g.out << "That ship does not have a speed rating...\n";
     return;
   }
-  if (landed(&*ship) && (ship->whatorbits == ScopeLevel::LEVEL_PLAN)) {
+  if (landed(*ship) && (ship->whatorbits == ScopeLevel::LEVEL_PLAN)) {
     const auto p = getplanet(ship->storbits, ship->pnumorbits);
     gravity_factor = gravity(p);
     sprintf(plan_buf, "/%s/%s", Stars[(int)ship->storbits]->name,

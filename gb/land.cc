@@ -118,8 +118,8 @@ void land(const command_t &argv, GameObj &g) {
           free(s);
           continue;
         }
-        if (landed(s)) {
-          if (!landed(&*s2)) {
+        if (landed(*s)) {
+          if (!landed(*s2)) {
             sprintf(buf, "%s is not landed on a planet.\n",
                     ship_to_string(*s2).c_str());
             notify(Playernum, Governor, buf);

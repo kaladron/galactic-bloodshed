@@ -176,7 +176,7 @@ void orbit(const command_t &argv, GameObj &g) {
       if (!DontDispShips) {
         for (auto &s : shiplist) {
           if (DontDispNum != s.number) {
-            if (!landed(&s)) {
+            if (!landed(s)) {
               if ((s.owner == g.player) || iq) {
                 DispShip(g, &where, &s, Race, buf, p);
                 strcat(output, buf);

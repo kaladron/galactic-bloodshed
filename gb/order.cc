@@ -565,7 +565,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           g.out << "The factory is currently being transported.\n";
           return;
         }
-      } else if (!landed(ship)) {
+      } else if (!landed(*ship)) {
         g.out << "You cannot activate the factory here.\n";
         return;
       } else {

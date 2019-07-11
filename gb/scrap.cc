@@ -74,7 +74,7 @@ void scrap(const command_t &argv, GameObj &g) {
       if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
         /* wc's release poison */
         const auto planet = getplanet(s->storbits, s->pnumorbits);
-        if (landed(s)) sect = getsector(planet, s->land_x, s->land_y);
+        if (landed(*s)) sect = getsector(planet, s->land_x, s->land_y);
       }
       std::optional<Ship> s2;
       if (docked(s)) {
@@ -215,7 +215,7 @@ void scrap(const command_t &argv, GameObj &g) {
 
       if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
         auto planet = getplanet(s->storbits, s->pnumorbits);
-        if (landed(s)) {
+        if (landed(*s)) {
           if (sect.owner == g.player) {
             sect.popn += troopval;
             sect.popn += crewval;
@@ -238,7 +238,7 @@ void scrap(const command_t &argv, GameObj &g) {
         }
         putplanet(planet, Stars[s->storbits], (int)s->pnumorbits);
       }
-      if (landed(s)) {
+      if (landed(*s)) {
         g.out << "\nScrapped.\n";
       } else {
         g.out << "\nDestroyed.\n";

@@ -52,7 +52,7 @@ void order(const command_t &argv, GameObj &g) {
     DispOrdersHeader(Playernum, Governor);
     nextshipno = start_shiplist(g, argv[1]);
     while ((shipno = do_shiplist(&ship, &nextshipno)))
-      if (in_list(Playernum, argv[1].c_str(), ship, &nextshipno) &&
+      if (in_list(Playernum, argv[1], *ship, &nextshipno) &&
           authorized(Governor, ship)) {
         if (argv.size() > 2) give_orders(g, argv, APcount, ship);
         DispOrders(Playernum, Governor, ship);

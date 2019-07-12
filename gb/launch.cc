@@ -38,7 +38,7 @@ void launch(const command_t &argv, GameObj &g) {
   nextshipno = start_shiplist(g, argv[1]);
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
+    if (in_list(Playernum, argv[1], *s, &nextshipno) &&
         authorized(Governor, s)) {
       if (!speed_rating(s) && landed(*s)) {
         sprintf(buf, "That ship is not designed to be launched.\n");

@@ -66,7 +66,7 @@ void load(const command_t &argv, GameObj &g) {
   nextshipno = start_shiplist(g, argv[1]);
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
+    if (in_list(Playernum, argv[1], *s, &nextshipno) &&
         authorized(Governor, s)) {
       if (s->owner != Playernum || !s->alive) {
         free(s);
@@ -485,7 +485,7 @@ void jettison(const command_t &argv, GameObj &g) {
   nextshipno = start_shiplist(g, argv[1]);
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
+    if (in_list(Playernum, argv[1], *s, &nextshipno) &&
         authorized(Governor, s)) {
       if (s->owner != Playernum || !s->alive) {
         free(s);
@@ -813,7 +813,7 @@ void mount(const command_t &argv, GameObj &g) {
 
   nextshipno = start_shiplist(g, argv[1]);
   while ((shipno = do_shiplist(&ship, &nextshipno)))
-    if (in_list(Playernum, argv[1].c_str(), ship, &nextshipno) &&
+    if (in_list(Playernum, argv[1], *ship, &nextshipno) &&
         authorized(Governor, ship)) {
       if (!ship->mount) {
         notify(Playernum, Governor,

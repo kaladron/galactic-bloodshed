@@ -93,7 +93,7 @@ void grant(const command_t &argv, GameObj &g) {
   } else if (argv[2] == "ship") {
     nextshipno = start_shiplist(g, argv[3]);
     while ((shipno = do_shiplist(&ship, &nextshipno)))
-      if (in_list(Playernum, argv[3].c_str(), ship, &nextshipno) &&
+      if (in_list(Playernum, argv[3], *ship, &nextshipno) &&
           authorized(Governor, ship)) {
         ship->governor = gov;
         sprintf(buf, "\"%s\" granted you %s at %s\n",
@@ -362,9 +362,11 @@ shipnum_t do_shiplist(Ship **s, shipnum_t *nextshipno) {
  *
  * See start_shiplist's comment for more details.
  */
-bool in_list(player_t Playernum, const char *list, Ship *s,
-             shipnum_t *nextshipno) {
-  if (s->owner != Playernum || !s->alive) return false;
+bool in_list(const player_t playernum, const std::string_view list,
+             const Ship &s, shipnum_t *nextshipno) {
+  if (s.owner != playernum || !s.alive) return false;
+
+  if (list.length() == 0) return false;
 
   if (list[0] == '#' || std::isdigit(list[0])) {
     *nextshipno = 0;
@@ -372,8 +374,8 @@ bool in_list(player_t Playernum, const char *list, Ship *s,
   }
 
   // Match either the ship letter or * for wildcard.
-  for (const char *p = list; *p; p++)
-    if (*p == Shipltrs[s->type] || *p == '*') return true;
+  for (const auto &p : list)
+    if (p == Shipltrs[s.type] || p == '*') return true;
   return false;
 }
 

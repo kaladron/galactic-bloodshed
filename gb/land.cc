@@ -71,7 +71,7 @@ void land(const command_t &argv, GameObj &g) {
   nextshipno = start_shiplist(g, argv[1]);
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
+    if (in_list(Playernum, argv[1], *s, &nextshipno) &&
         authorized(Governor, s)) {
       if (overloaded(s)) {
         sprintf(buf, "%s is too overloaded to land.\n",

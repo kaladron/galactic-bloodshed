@@ -88,7 +88,7 @@ void fire(const command_t &argv, GameObj &g) {
 
   nextshipno = start_shiplist(g, argv[1]);
   while ((fromship = do_shiplist(&from, &nextshipno)))
-    if (in_list(Playernum, argv[1].c_str(), from, &nextshipno) &&
+    if (in_list(Playernum, argv[1], *from, &nextshipno) &&
         authorized(Governor, from)) {
       if (!from->active) {
         sprintf(buf, "%s is irradiated and inactive.\n",
@@ -328,7 +328,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
   nextshipno = start_shiplist(g, argv[1]);
   while ((fromship = do_shiplist(&from, &nextshipno)))
-    if (in_list(Playernum, argv[1].c_str(), from, &nextshipno) &&
+    if (in_list(Playernum, argv[1], *from, &nextshipno) &&
         authorized(Governor, from)) {
       if (!from->active) {
         sprintf(buf, "%s is irradiated and inactive.\n",
@@ -704,7 +704,7 @@ void detonate(const command_t &argv, GameObj &g) {
   nextshipno = start_shiplist(g, argv[1]);
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, argv[1].c_str(), s, &nextshipno) &&
+    if (in_list(Playernum, argv[1], *s, &nextshipno) &&
         authorized(Governor, s)) {
       if (s->type != ShipType::STYPE_MINE) {
         g.out << "That is not a mine.\n";

@@ -83,8 +83,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
       if (s.owner == Playernum && authorized(Governor, &s) &&
           (s.popn || (s.type == ShipType::OTYPE_PROBE)))
         iq = 1;
-      if (s.alive && landed(s))
-        shiplocs[s.land_x][s.land_y] = Shipltrs[s.type];
+      if (s.alive && landed(s)) shiplocs[s.land_x][s.land_y] = Shipltrs[s.type];
     }
   }
   /* report that this is a planet map */

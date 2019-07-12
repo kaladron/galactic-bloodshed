@@ -34,7 +34,7 @@ static void check_retal_strength(Ship *, int *);
 namespace {
 // check to see if there are any planetary defense networks on the planet
 bool has_planet_defense(const shipnum_t shipno, const player_t Playernum) {
-  for (Shiplist shiplist(shipno); auto &ship : shiplist) {
+  for (Shiplist shiplist(shipno); const auto &ship : shiplist) {
     if (ship.alive && ship.type == ShipType::OTYPE_PLANDEF &&
         ship.owner != Playernum) {
       return true;

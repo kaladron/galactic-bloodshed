@@ -94,7 +94,7 @@ void grant(const command_t &argv, GameObj &g) {
     nextshipno = start_shiplist(g, argv[3]);
     while ((shipno = do_shiplist(&ship, &nextshipno)))
       if (in_list(Playernum, argv[3], *ship, &nextshipno) &&
-          authorized(Governor, ship)) {
+          authorized(Governor, *ship)) {
         ship->governor = gov;
         sprintf(buf, "\"%s\" granted you %s at %s\n",
                 Race->governor[Governor].name, ship_to_string(*ship).c_str(),
@@ -299,8 +299,8 @@ static void do_revoke(racetype *Race, const governor_t src_gov,
   system(rm_telegram_file.c_str()); /*  Remove the telegram file too....  */
 }
 
-int authorized(int Governor, Ship *ship) {
-  return (!Governor || ship->governor == Governor);
+bool authorized(const governor_t Governor, const Ship &ship) {
+  return (!Governor || ship.governor == Governor);
 }
 
 /**

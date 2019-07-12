@@ -214,7 +214,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
   /* launched canister, non-owned ships don't show up */
   if ((rd[indx].type == PLANET && p.info[Playernum - 1].numsectsowned) ||
       (rd[indx].type != PLANET && s.alive && s.owner == Playernum &&
-       authorized(Governor, &s) && rep_on[s.type] &&
+       authorized(Governor, s) && rep_on[s.type] &&
        !(s.type == ShipType::OTYPE_CANIST && !s.docked) &&
        !(s.type == ShipType::OTYPE_GREEN && !s.docked))) {
     if (rd[indx].type != PLANET && Stock) {
@@ -450,7 +450,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                        (who == 999 && listed((int)rd[i].s.type, shiplist))) {
               /* tac report at ship */
               if ((rd[i].s.owner != Playernum ||
-                   !authorized(Governor, &rd[i].s)) &&
+                   !authorized(Governor, rd[i].s)) &&
                   rd[i].s.alive && rd[i].s.type != ShipType::OTYPE_CANIST &&
                   rd[i].s.type != ShipType::OTYPE_GREEN) {
                 int tev = 0;

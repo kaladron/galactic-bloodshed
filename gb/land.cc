@@ -72,7 +72,7 @@ void land(const command_t &argv, GameObj &g) {
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, argv[1], *s, &nextshipno) &&
-        authorized(Governor, s)) {
+        authorized(Governor, *s)) {
       if (overloaded(s)) {
         sprintf(buf, "%s is too overloaded to land.\n",
                 ship_to_string(*s).c_str());
@@ -108,7 +108,7 @@ void land(const command_t &argv, GameObj &g) {
           continue;
         }
         auto ship2no = *ship2tmp;
-        if (testship(Playernum, Governor, &*s2)) {
+        if (testship(Playernum, Governor, *s2)) {
           g.out << "Illegal format.\n";
           free(s);
           continue;

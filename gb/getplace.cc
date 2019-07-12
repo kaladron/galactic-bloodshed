@@ -245,30 +245,25 @@ std::string Dispplace(const placetype &where) {
   }
 }
 
-int testship(int Playernum, int Governor, Ship *s) {
-  int r;
-
-  r = 0;
-
-  if (!s->alive) {
-    sprintf(buf, "%s has been destroyed.\n", ship_to_string(*s).c_str());
-    notify(Playernum, Governor, buf);
-    r = 1;
-  } else if (s->owner != Playernum || !authorized(Governor, s)) {
-    DontOwnErr(Playernum, Governor, s->number);
-    r = 1;
-  } else {
-    if (!s->active) {
-      sprintf(buf, "%s is irradiated %d%% and inactive.\n",
-              ship_to_string(*s).c_str(), s->rad);
-      notify(Playernum, Governor, buf);
-      r = 1;
-    }
-    /*   if (!s->popn && s->max_crew) {
-         sprintf(buf,"%s has no crew and is not a robotic ship.\n", Ship(s));
-         notify(Playernum, Governor, buf);
-         r = 1;
-         } */
+bool testship(const player_t playernum, const governor_t governor,
+              const Ship &s) {
+  if (!s.alive) {
+    sprintf(buf, "%s has been destroyed.\n", ship_to_string(s).c_str());
+    notify(playernum, governor, buf);
+    return true;
   }
-  return r;
+
+  if (s.owner != playernum || !authorized(governor, s)) {
+    DontOwnErr(playernum, governor, s.number);
+    return true;
+  }
+
+  if (!s.active) {
+    sprintf(buf, "%s is irradiated %d%% and inactive.\n",
+            ship_to_string(s).c_str(), s.rad);
+    notify(playernum, governor, buf);
+    return true;
+  }
+
+  return false;
 }

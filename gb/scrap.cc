@@ -43,7 +43,7 @@ void scrap(const command_t &argv, GameObj &g) {
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(g.player, argv[1], *s, &nextshipno) &&
-        authorized(g.governor, s)) {
+        authorized(g.governor, *s)) {
       if (s->max_crew && !s->popn) {
         notify(g.player, g.governor, "Can't scrap that ship - no crew.\n");
         free(s);

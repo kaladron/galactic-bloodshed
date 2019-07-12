@@ -43,7 +43,7 @@ void order(const command_t &argv, GameObj &g) {
     DispOrdersHeader(Playernum, Governor);
     nextshipno = start_shiplist(g, "");
     while ((shipno = do_shiplist(&ship, &nextshipno)))
-      if (ship->owner == Playernum && authorized(Governor, ship)) {
+      if (ship->owner == Playernum && authorized(Governor, *ship)) {
         DispOrders(Playernum, Governor, ship);
         free(ship);
       } else
@@ -53,7 +53,7 @@ void order(const command_t &argv, GameObj &g) {
     nextshipno = start_shiplist(g, argv[1]);
     while ((shipno = do_shiplist(&ship, &nextshipno)))
       if (in_list(Playernum, argv[1], *ship, &nextshipno) &&
-          authorized(Governor, ship)) {
+          authorized(Governor, *ship)) {
         if (argv.size() > 2) give_orders(g, argv, APcount, ship);
         DispOrders(Playernum, Governor, ship);
         free(ship);
@@ -689,7 +689,7 @@ static void DispOrdersHeader(int Playernum, int Governor) {
 static void DispOrders(int Playernum, int Governor, Ship *ship) {
   double distfac;
 
-  if (ship->owner != Playernum || !authorized(Governor, ship) || !ship->alive)
+  if (ship->owner != Playernum || !authorized(Governor, *ship) || !ship->alive)
     return;
 
   if (ship->docked)

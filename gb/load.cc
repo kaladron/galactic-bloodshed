@@ -67,7 +67,7 @@ void load(const command_t &argv, GameObj &g) {
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, argv[1], *s, &nextshipno) &&
-        authorized(Governor, s)) {
+        authorized(Governor, *s)) {
       if (s->owner != Playernum || !s->alive) {
         free(s);
         continue;
@@ -486,7 +486,7 @@ void jettison(const command_t &argv, GameObj &g) {
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, argv[1], *s, &nextshipno) &&
-        authorized(Governor, s)) {
+        authorized(Governor, *s)) {
       if (s->owner != Playernum || !s->alive) {
         free(s);
         continue;
@@ -814,7 +814,7 @@ void mount(const command_t &argv, GameObj &g) {
   nextshipno = start_shiplist(g, argv[1]);
   while ((shipno = do_shiplist(&ship, &nextshipno)))
     if (in_list(Playernum, argv[1], *ship, &nextshipno) &&
-        authorized(Governor, ship)) {
+        authorized(Governor, *ship)) {
       if (!ship->mount) {
         notify(Playernum, Governor,
                "This ship is not equipped with a crystal mount.\n");

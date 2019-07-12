@@ -13,6 +13,6 @@ placetype getplace(GameObj &, const std::string &, const int);
 char *Dispshiploc_brief(Ship *);
 char *Dispshiploc(Ship *);
 std::string Dispplace(const placetype &);
-int testship(int, int, Ship *);
+bool testship(const player_t, const governor_t, const Ship &);
 
 #endif  // GETPLACE_H

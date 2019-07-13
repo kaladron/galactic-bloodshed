@@ -177,8 +177,7 @@ void survey(const command_t &argv, GameObj &g) {
           if (!mode) {
             sprintf(buf, "%2d,%-2d ", lowx, lowy);
             notify(Playernum, Governor, buf);
-            if ((d = desshow(Playernum, Governor, lowx, lowy, Race, smap)) ==
-                CHAR_CLOAKED) {
+            if ((d = desshow(Playernum, Governor, Race, s)) == CHAR_CLOAKED) {
               sprintf(buf, "?  (    ?    )\n");
               notify(Playernum, Governor, buf);
             } else {
@@ -224,7 +223,7 @@ void survey(const command_t &argv, GameObj &g) {
             }
             sprintf(buf, "%c %d %d %d %c %c %d %u %u %u %u %d %lu %lu %lu %d",
                     CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
-                    desshow(Playernum, Governor, lowx, lowy, Race, smap),
+                    desshow(Playernum, Governor, Race, s),
                     ((s.condition == SectorType::SEC_WASTED) ? 1 : 0), s.owner,
                     s.eff, s.fert, s.mobilization,
                     ((s.crystals && (Race->discoveries[D_CRYSTAL] || Race->God))

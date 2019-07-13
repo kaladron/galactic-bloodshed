@@ -56,12 +56,8 @@ void map(const command_t &argv, GameObj &g) {
 static void show_map(const player_t Playernum, const governor_t Governor,
                      const starnum_t snum, const planetnum_t pnum,
                      const Planet &p) {
-  int x;
-  int y;
   int i;
   int f = 0;
-  int owner;
-  int owned1;
   int iq = 0;
   char shiplocs[MAX_X][MAX_Y] = {};
   hugestr output;
@@ -96,32 +92,31 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   strcat(output, buf);
 
   /* send map data */
-  for (y = 0; y < p.Maxy; y++)
-    for (x = 0; x < p.Maxx; x++) {
-      owner = smap.get(x, y).owner;
-      owned1 = (owner == Race->governor[Governor].toggle.highlight);
-      if (shiplocs[x][y] && iq) {
-        if (Race->governor[Governor].toggle.color)
-          sprintf(buf, "%c%c", (char)(owner + '?'), shiplocs[x][y]);
-        else {
-          if (owned1 && Race->governor[Governor].toggle.inverse)
-            sprintf(buf, "1%c", shiplocs[x][y]);
-          else
-            sprintf(buf, "0%c", shiplocs[x][y]);
-        }
-      } else {
-        if (Race->governor[Governor].toggle.color)
-          sprintf(buf, "%c%c", (char)(owner + '?'),
-                  desshow(Playernum, Governor, x, y, Race, smap));
-        else {
-          if (owned1 && Race->governor[Governor].toggle.inverse)
-            sprintf(buf, "1%c", desshow(Playernum, Governor, x, y, Race, smap));
-          else
-            sprintf(buf, "0%c", desshow(Playernum, Governor, x, y, Race, smap));
-        }
+  for (const auto &sector : smap) {
+    bool owned1 = (sector.owner == Race->governor[Governor].toggle.highlight);
+    if (shiplocs[sector.x][sector.y] && iq) {
+      if (Race->governor[Governor].toggle.color)
+        sprintf(buf, "%c%c", (char)(sector.owner + '?'),
+                shiplocs[sector.x][sector.y]);
+      else {
+        if (owned1 && Race->governor[Governor].toggle.inverse)
+          sprintf(buf, "1%c", shiplocs[sector.x][sector.y]);
+        else
+          sprintf(buf, "0%c", shiplocs[sector.x][sector.y]);
       }
-      strcat(output, buf);
+    } else {
+      if (Race->governor[Governor].toggle.color)
+        sprintf(buf, "%c%c", (char)(sector.owner + '?'),
+                desshow(Playernum, Governor, Race, sector));
+      else {
+        if (owned1 && Race->governor[Governor].toggle.inverse)
+          sprintf(buf, "1%c", desshow(Playernum, Governor, Race, sector));
+        else
+          sprintf(buf, "0%c", desshow(Playernum, Governor, Race, sector));
+      }
     }
+    strcat(output, buf);
+  }
   strcat(output, "\n");
   notify(Playernum, Governor, output);
 
@@ -181,10 +176,8 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   }
 }
 
-char desshow(const player_t Playernum, const governor_t Governor, const int x,
-             const int y, const Race *r, SectorMap &smap) {
-  auto &s = smap.get(x, y);
-
+char desshow(const player_t Playernum, const governor_t Governor, const Race *r,
+             const Sector &s) {
   if (s.troops && !r->governor[Governor].toggle.geography) {
     if (s.owner == Playernum) return CHAR_MY_TROOPS;
     if (isset(r->allied, s.owner)) return CHAR_ALLIED_TROOPS;
@@ -200,7 +193,7 @@ char desshow(const player_t Playernum, const governor_t Governor, const int x,
       if (!r->governor[Governor].toggle.double_digits)
         return s.owner % 10 + '0';
 
-      if (s.owner < 10 || x % 2) return s.owner % 10 + '0';
+      if (s.owner < 10 || s.x % 2) return s.owner % 10 + '0';
 
       return s.owner / 10 + '0';
     }

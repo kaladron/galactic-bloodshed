@@ -206,6 +206,11 @@ class SectorMap {
         maxy_(planet.Maxy),
         vec_(planet.Maxx * planet.Maxy) {}
 
+  // TODO(jeffbailey): Should wrap this in a subclass so the underlying
+  // vector isn't exposed to callers.
+  auto begin() { return vec_.begin(); }
+  auto end() { return vec_.end(); }
+
   Sector &get(const int x, const int y) { return vec_.at((x) + (y)*maxx_); }
   void put(Sector &&s) { vec_.emplace_back(std::move(s)); }
   int get_maxx() { return maxx_; }

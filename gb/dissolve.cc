@@ -30,7 +30,6 @@ void dissolve(const command_t &argv, GameObj &g) {
   return;
 #else
 
-  int n_ships;
   int i;
   int z;
   int x2;
@@ -80,7 +79,7 @@ void dissolve(const command_t &argv, GameObj &g) {
     return;
   }
 
-  n_ships = Numships();
+  auto n_ships = Numships();
   for (i = 1; i <= n_ships; i++) {
     auto sp = getship(i);
     if (sp->owner != Playernum) continue;

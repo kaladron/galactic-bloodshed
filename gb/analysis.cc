@@ -317,13 +317,10 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
 
 static void Insert(int mode, struct anal_sect arr[], int x, int y, int des,
                    int value) {
-  int i;
-  int j;
-
-  for (i = 0; i < CARE; i++)
+  for (int i = 0; i < CARE; i++)
     if ((mode && arr[i].value < value) ||
         (!mode && (arr[i].value > value || arr[i].value == -1))) {
-      for (j = CARE - 1; j > i; j--) arr[j] = arr[j - 1];
+      for (int j = CARE - 1; j > i; j--) arr[j] = arr[j - 1];
       arr[i].value = value;
       arr[i].x = x;
       arr[i].y = y;

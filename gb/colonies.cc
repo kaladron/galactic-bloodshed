@@ -64,7 +64,7 @@ void colonies_at_star(GameObj &g, racetype *Race, starnum_t star,
             }
           g.out << "\n";
           if (mode == 0) break;
-          [[clang::fallthrough]]; /* Fall through if (mode == -1) */
+          [[fallthrough]]; /* Fall through if (mode == -1) */
         case PRODUCTION:
           sprintf(
               buf,
@@ -90,7 +90,6 @@ void colonies_at_star(GameObj &g, racetype *Race, starnum_t star,
 void colonies(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  int i;
   racetype *Race;
   placetype where;
 
@@ -125,7 +124,7 @@ void colonies(const command_t &argv, GameObj &g) {
     for (starnum_t star = 0; star < Sdata.numstars; star++)
       colonies_at_star(g, Race, star, mode);
   else
-    for (i = 1; i < argv.size(); i++) {
+    for (int i = 1; i < argv.size(); i++) {
       where = getplace(g, argv[i], 0);
       if (where.err || (where.level == ScopeLevel::LEVEL_UNIV) ||
           (where.level == ScopeLevel::LEVEL_SHIP)) {

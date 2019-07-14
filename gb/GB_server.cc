@@ -36,6 +36,7 @@
 #include "gb/build.h"
 #include "gb/capital.h"
 #include "gb/capture.h"
+#include "gb/colonies.h"
 #include "gb/config.h"
 #include "gb/cs.h"
 #include "gb/declare.h"

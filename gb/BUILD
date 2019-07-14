@@ -163,6 +163,8 @@ cc_library(
             "capital.h",
             "capture.cc",
             "capture.h",
+	    "colonies.cc",
+	    "colonies.h",
             "config.h",
             "cs.cc",
             "cs.h",

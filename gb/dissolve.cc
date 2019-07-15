@@ -32,12 +32,6 @@ void dissolve(const command_t &argv, GameObj &g) {
 
   int i;
   int z;
-  int x2;
-  int y2;
-  int hix;
-  int hiy;
-  int lowx;
-  int lowy;
   racetype *Race;
   char racepass[100];
   char govpass[100];
@@ -112,22 +106,12 @@ void dissolve(const command_t &argv, GameObj &g) {
         }
 
         auto smap = getsmap(pl);
-
-        lowx = 0;
-        lowy = 0;
-        hix = pl.Maxx - 1;
-        hiy = pl.Maxy - 1;
-        for (y2 = lowy; y2 <= hiy; y2++) {
-          for (x2 = lowx; x2 <= hix; x2++) {
-            auto &s = smap.get(x2, y2);
-            if (s.owner == Playernum) {
-              s.owner = 0;
-              s.troops = 0;
-              s.popn = 0;
-              if (waste) /* code folded from here */
-                s.condition = SectorType::SEC_WASTED;
-              /* unfolding */
-            }
+        for (auto &s : smap) {
+          if (s.owner == Playernum) {
+            s.owner = 0;
+            s.troops = 0;
+            s.popn = 0;
+            if (waste) s.condition = SectorType::SEC_WASTED;
           }
         }
         putsmap(smap, pl);

@@ -42,8 +42,6 @@ void mobilize(const command_t &argv, GameObj &g) {
 
   auto p = getplanet(g.snum, g.pnum);
 
-  auto smap = getsmap(p);
-
   if (argv.size() < 2) {
     sprintf(buf, "Current mobilization: %d    Quota: %d\n",
             p.info[Playernum - 1].comread, p.info[Playernum - 1].mob_set);

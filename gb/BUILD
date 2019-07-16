@@ -123,7 +123,6 @@ cc_binary(
     linkopts =
         [
             "-lsqlite3",
-            "-lncurses",
         ],
 )
 

@@ -4,7 +4,6 @@
 
 /* enrol.c -- initializes to owner one sector and planet. */
 
-#include <curses.h>
 #include <unistd.h>
 
 #include <csignal>
@@ -201,7 +200,6 @@ int main() {
         found &= not_found[i];
       if (found) {
         printf("Looks like there aren't any free planets left.  bye..\n");
-        endwin();
         exit(-1);
       } else
         printf("  Try a different one...\n");

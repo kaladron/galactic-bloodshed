@@ -35,7 +35,7 @@ static void autoload_at_planet(int, Ship *, Planet *, Sector &, int *,
 static void autoload_at_ship(Ship *, Ship *, int *, double *);
 static std::optional<ScopeLevel> build_at_ship(GameObj &, Ship *, int *, int *);
 static int can_build_at_planet(GameObj &, startype *, const Planet &);
-static int can_build_this(int, Race *, char *);
+static bool can_build_this(const ShipType, const Race &, char *);
 static int can_build_on_ship(int, Race *, Ship *, char *);
 static void create_ship_by_planet(int, int, Race *, Ship *, Planet *, int, int,
                                   int, int);
@@ -828,7 +828,7 @@ void build(const command_t &argv, GameObj &g) {
             g.out << "No such ship type.\n";
             return;
           }
-          if (!can_build_this(*what, Race, buf) && !Race->God) {
+          if (!can_build_this(*what, *Race, buf) && !Race->God) {
             notify(Playernum, Governor, buf);
             return;
           }
@@ -1094,35 +1094,36 @@ static std::optional<ShipType> get_build_type(const char shipc) {
   return {};
 }
 
-static int can_build_this(int what, racetype *Race, char *string) {
-  if (what == ShipType::STYPE_POD && !Race->pods) {
+static bool can_build_this(const ShipType what, const Race &race,
+                           char *string) {
+  if (what == ShipType::STYPE_POD && !race.pods) {
     sprintf(string, "Only Metamorphic races can build Spore Pods.\n");
-    return (0);
+    return false;
   }
   if (!Shipdata[what][ABIL_PROGRAMMED]) {
     sprintf(string, "This ship type has not been programmed.\n");
-    return (0);
+    return false;
   }
-  if (Shipdata[what][ABIL_GOD] && !Race->God) {
+  if (Shipdata[what][ABIL_GOD] && !race.God) {
     sprintf(string, "Only Gods can build this type of ship.\n");
-    return (0);
+    return false;
   }
-  if (what == ShipType::OTYPE_VN && !Vn(Race)) {
+  if (what == ShipType::OTYPE_VN && !Vn(&race)) {
     sprintf(string, "You have not discovered VN technology.\n");
-    return (0);
+    return false;
   }
-  if (what == ShipType::OTYPE_TRANSDEV && !Avpm(Race)) {
+  if (what == ShipType::OTYPE_TRANSDEV && !Avpm(&race)) {
     sprintf(string, "You have not discovered AVPM technology.\n");
-    return (0);
+    return false;
   }
-  if (Shipdata[what][ABIL_TECH] > Race->tech && !Race->God) {
+  if (Shipdata[what][ABIL_TECH] > race.tech && !race.God) {
     sprintf(string,
             "You are not advanced enough to build this ship.\n%.1f "
             "enginering technology needed. You have %.1f.\n",
-            (double)Shipdata[what][ABIL_TECH], Race->tech);
-    return (0);
+            (double)Shipdata[what][ABIL_TECH], race.tech);
+    return false;
   }
-  return 1;
+  return true;
 }
 
 static int can_build_on_ship(int what, racetype *Race, Ship *builder,

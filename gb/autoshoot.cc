@@ -34,7 +34,6 @@ int Bombard(Ship *ship, Planet *planet, Race *r) {
   int y2;
   int oldown;
   int numdest = 0;
-  int found = 0;
 
   /* for telegramming */
   bzero((char *)Nuked, sizeof(Nuked));
@@ -55,13 +54,14 @@ int Bombard(Ship *ship, Planet *planet, Race *r) {
 
   /* look for someone to bombard-check for war */
   (void)Getxysect(*planet, nullptr, nullptr, 1); /* reset */
+  bool found = false;
   while (!found && Getxysect(*planet, &x, &y, 0)) {
     if (smap.get(x, y).owner && smap.get(x, y).owner != ship->owner &&
         (smap.get(x, y).condition != SectorType::SEC_WASTED)) {
       if (isset(r->atwar, smap.get(x, y).owner) ||
           (ship->type == ShipType::OTYPE_BERS &&
            smap.get(x, y).owner == ship->special.mind.target))
-        found = 1;
+        found = true;
       else {
         x2 = x;
         y2 = y;
@@ -71,7 +71,7 @@ int Bombard(Ship *ship, Planet *planet, Race *r) {
   if (x2 != -1) {
     x = x2; /* no one we're at war with; bomb someone else. */
     y = y2;
-    found = 1;
+    found = true;
   }
 
   if (found) {

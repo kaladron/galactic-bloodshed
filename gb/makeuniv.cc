@@ -30,9 +30,6 @@
 
 static void InitFile(const char *, void *, int);
 static void EmptyFile(const char *);
-static void produce_postscript(const char *);
-
-static const char *DEFAULT_POSTSCRIPT_MAP_FILENAME = "universe.ps";
 
 int autoname_star = -1;
 int autoname_plan = -1;
@@ -44,7 +41,6 @@ int printstarinfo = 0;
 static int nstars = -1;
 static int occupied[100][100];
 static int planetlesschance = 0;
-static int printpostscript = 0;
 
 int main(int argc, char *argv[]) {
   int c;
@@ -77,9 +73,6 @@ int main(int argc, char *argv[]) {
         case 'm':
           maxplanets = atoi(argv[++i]);
           break;
-        case 'p':
-          printpostscript = 1;
-          break;
         case 's':
           nstars = atoi(argv[++i]);
           break;
@@ -102,7 +95,6 @@ int main(int argc, char *argv[]) {
           printf("  -e E    Make E%% of stars have no planets.\n");
           printf("  -l MIN  Other systems will have at least MIN planets.\n");
           printf("  -m MAX  Other systems will have at most  MAX planets.\n");
-          printf("  -p      Create postscript map file of the universe.\n");
           printf("  -s S    The universe will have S stars.\n");
           printf("  -v      Print info and map of planets generated.\n");
           printf("  -w      Print info on stars generated.\n");
@@ -220,7 +212,6 @@ int main(int argc, char *argv[]) {
 
   PrintStatistics();
 
-  if (printpostscript) produce_postscript(DEFAULT_POSTSCRIPT_MAP_FILENAME);
   return 0;
 }
 
@@ -237,83 +228,6 @@ static void InitFile(const char *filename, void *ptr, int len) {
 }
 
 static void EmptyFile(const char *filename) { InitFile(filename, nullptr, 0); }
-
-/*
- * The procedure below was adapted from a program which is
- * Copyright: Andreas Girgensohn (andreasg@cs.colorado.edu)
- * produces a Postscript map of the universe. */
-static void produce_postscript(const char *filename) {
-  int min_x;
-  int max_x;
-  int min_y;
-  int max_y;
-  int i;
-  double scale;
-  double nscale;
-  FILE *f = fopen(filename, "w+");
-
-  if (f == nullptr) {
-    printf("Unable to open postscript file \"%s\".\n", filename);
-    return;
-  }
-  printf("Creating postscript file..");
-  fflush(stdout);
-  min_x = max_x = Stars[0]->xpos;
-  min_y = max_y = Stars[0]->ypos;
-  for (i = 1; i < nstars; i++) {
-    if (Stars[i]->xpos < min_x) min_x = Stars[i]->xpos;
-    if (Stars[i]->xpos > max_x) max_x = Stars[i]->xpos;
-    if (Stars[i]->ypos < min_y) min_y = Stars[i]->ypos;
-    if (Stars[i]->ypos > max_y) max_y = Stars[i]->ypos;
-  }
-  /* max map size: 8.5in x 11in sheet, 0.5in borders, */
-  /* 0.5in on the right for star names */
-  /* 72 points = 1in */
-  scale = 7.0 * 72 / (max_x - min_x);
-  nscale = 10.0 * 72 / (max_y - min_y);
-  if (nscale < scale) scale = nscale;
-  fprintf(f, "%%!PS-Adobe-2.0\n\n");
-  /* 0,0 is in the topleft corner */
-  fprintf(f, "0.5 72 mul 10.5 72 mul translate\n");
-  fprintf(f, "/drawcircle\n");
-  fprintf(f, "{\n");
-  fprintf(f, "  newpath 0 360 arc stroke\n");
-  fprintf(f, "}\n");
-  fprintf(f, "def\n\n");
-  fprintf(f, "/drawstar\n");
-  fprintf(f, "{\n");
-  fprintf(f, "  /starname exch def\n");
-  fprintf(f, "  /ypos exch def\n");
-  fprintf(f, "  /xpos exch def\n");
-  fprintf(f, "  xpos ypos 2 drawcircle\n");
-  fprintf(f, "  4 xpos add ypos moveto\n");
-  fprintf(f, "  starname show\n");
-  fprintf(f, "}\n");
-  fprintf(f, "def\n\n");
-  fprintf(f, "0 setlinewidth\n");
-  fprintf(f, "newpath -10 10 moveto 7.5 72 mul 10 add 10 lineto\n");
-  fprintf(f, "7.5 72 mul 10 add %d lineto -10 %d lineto closepath clip\n",
-          (int)((min_y - max_y) * scale) - 10,
-          (int)((min_y - max_y) * scale) - 10);
-#if 0
-  /*
-   * Print scale rings from center of universe (0,0): */
-  fprintf ("\n/Times-Bold findfont 9 scalefont setfont\n\n");
-  for (i = 1; i <= NRINGS; i++)
-    fprintf(f, "%d %d %d drawcircle\n",
-	    (int) ( - min_x * scale), (int) (min_y * scale),
-	    (int) (i * RING_SPACING * scale)) ;
-#endif
-  /*
-   * Print each star. */
-  fprintf(f, "\n/Times-Roman findfont 8 scalefont setfont\n\n");
-  for (i = 0; i < nstars; i++)
-    fprintf(f, "%d %d (%s) drawstar\n", (int)((Stars[i]->xpos - min_x) * scale),
-            (int)((min_y - Stars[i]->ypos) * scale), Stars[i]->name);
-  fprintf(f, "\nshowpage\n");
-  fclose(f);
-  printf("done\n");
-}
 
 void place_star(startype *star) {
   int found = 0;

@@ -63,6 +63,7 @@
 #include "gb/order.h"
 #include "gb/power.h"
 #include "gb/powercmd.h"
+#include "gb/production.h"
 #include "gb/prof.h"
 #include "gb/races.h"
 #include "gb/rand.h"
@@ -269,7 +270,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"power", power},
     {"profile", profile},
     {"post", send_message},
-    {"production", colonies},
+    {"production", production},
     {"relation", relation},
     {"read", read_messages},
     {"repair", repair},

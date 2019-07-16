@@ -235,6 +235,8 @@ cc_library(
             "power.h",
             "powercmd.cc",
             "powercmd.h",
+            "production.cc",
+            "production.h",
             "prof.cc",
             "prof.h",
             "races.h",

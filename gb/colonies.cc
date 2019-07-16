@@ -22,9 +22,7 @@
 #include "gb/vars.h"
 
 namespace {
-enum class Modes { COLONIES, PRODUCTION };
-
-void colonies_at_star(GameObj &g, Race *race, starnum_t star, Modes mode) {
+void colonies_at_star(GameObj &g, Race *race, starnum_t star) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
@@ -37,10 +35,7 @@ void colonies_at_star(GameObj &g, Race *race, starnum_t star, Modes mode) {
     if (pl.info[Playernum - 1].explored &&
         pl.info[Playernum - 1].numsectsowned &&
         (!Governor || Stars[star]->governor[Playernum - 1] == Governor)) {
-      switch (mode) {
-        case Modes::COLONIES:
-          sprintf(
-              buf,
+      sprintf(buf,
               " %c %4.4s/%-4.4s%c%4d%3d%5d%8ld%3d%6lu%5d%6d "
               "%3d/%-3d%3.0f/%-3d%3d/%-3d",
               Psymbol[pl.type], Stars[star]->name, Stars[star]->pnames[i],
@@ -53,31 +48,13 @@ void colonies_at_star(GameObj &g, Race *race, starnum_t star, Modes mode) {
               pl.info[Playernum - 1].tax, pl.info[Playernum - 1].newtax,
               compatibility(pl, race), pl.conditions[TOXIC],
               pl.info[Playernum - 1].comread, pl.info[Playernum - 1].mob_set);
+      notify(Playernum, Governor, buf);
+      for (auto j = 1; j <= Num_races; j++)
+        if ((j != Playernum) && (pl.info[j - 1].numsectsowned > 0)) {
+          sprintf(buf, " %d", j);
           notify(Playernum, Governor, buf);
-          for (auto j = 1; j <= Num_races; j++)
-            if ((j != Playernum) && (pl.info[j - 1].numsectsowned > 0)) {
-              sprintf(buf, " %d", j);
-              notify(Playernum, Governor, buf);
-            }
-          g.out << "\n";
-          break;
-        case Modes::PRODUCTION:
-          sprintf(
-              buf,
-              " %c %4.4s/%-4.4s%c%3d%8.4f%8ld%3d%6d%5d%6d %6ld   %3d%8.2f\n",
-              Psymbol[pl.type], Stars[star]->name, Stars[star]->pnames[i],
-              (pl.info[Playernum - 1].autorep ? '*' : ' '),
-              Stars[star]->governor[Playernum - 1],
-              pl.info[Playernum - 1].prod_tech, pl.total_resources,
-              pl.info[Playernum - 1].prod_crystals,
-              pl.info[Playernum - 1].prod_res, pl.info[Playernum - 1].prod_dest,
-              pl.info[Playernum - 1].prod_fuel,
-              pl.info[Playernum - 1].prod_money,
-              pl.info[Playernum - 1].tox_thresh,
-              pl.info[Playernum - 1].est_production);
-          notify(Playernum, Governor, buf);
-          break;
-      }
+        }
+      g.out << "\n";
     }
   }
 }
@@ -89,36 +66,18 @@ void colonies(const command_t &argv, GameObj &g) {
   Race *race;
   placetype where;
 
-  Modes mode;
-
-  if (argv[0] == "colonies")
-    mode = Modes::COLONIES;
-  else
-    mode = Modes::PRODUCTION;
-
-  switch (mode) {
-    case Modes::COLONIES:
-      notify(Playernum, Governor,
-             "          ========== Colonization Report ==========\n");
-      notify(Playernum, Governor,
-             "  Planet     gov sec tech    popn  x   res  "
-             "des  fuel  tax  cmpt/tox mob  Aliens\n");
-      break;
-    case Modes::PRODUCTION:
-      notify(Playernum, Governor,
-             "          ============ Production Report ==========\n");
-      notify(Playernum, Governor,
-             "  Planet     gov    tech deposit  x   res  "
-             "des  fuel    tax   tox  est prod\n");
-      break;
-  }
+  notify(Playernum, Governor,
+         "          ========== Colonization Report ==========\n");
+  notify(Playernum, Governor,
+         "  Planet     gov sec tech    popn  x   res  "
+         "des  fuel  tax  cmpt/tox mob  Aliens\n");
 
   race = races[Playernum - 1];
   getsdata(&Sdata);
 
   if (argv.size() < 2)
     for (starnum_t star = 0; star < Sdata.numstars; star++)
-      colonies_at_star(g, race, star, mode);
+      colonies_at_star(g, race, star);
   else
     for (int i = 1; i < argv.size(); i++) {
       where = getplace(g, argv[i], 0);
@@ -128,7 +87,7 @@ void colonies(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
         continue;
       } /* ok, a proper location */
-      colonies_at_star(g, race, where.snum, mode);
+      colonies_at_star(g, race, where.snum);
     }
   g.out << "\n";
 }

@@ -14,8 +14,6 @@
 
 std::optional<shipnum_t> string_to_shipnum(std::string_view);
 std::string ship_to_string(const Ship &);
-void grant(const command_t &, GameObj &);
-void governors(const command_t &, GameObj &);
 bool authorized(governor_t, const Ship &);
 shipnum_t start_shiplist(GameObj &, const std::string_view);
 shipnum_t do_shiplist(Ship **, shipnum_t *);

@@ -37,6 +37,7 @@
 #include "gb/capital.h"
 #include "gb/capture.h"
 #include "gb/commands/colonies.h"
+#include "gb/commands/fix.h"
 #include "gb/commands/governors.h"
 #include "gb/commands/grant.h"
 #include "gb/commands/production.h"

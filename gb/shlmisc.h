@@ -18,7 +18,6 @@ bool authorized(governor_t, const Ship &);
 shipnum_t start_shiplist(GameObj &, const std::string_view);
 shipnum_t do_shiplist(Ship **, shipnum_t *);
 bool in_list(const player_t, std::string_view, const Ship &, shipnum_t *);
-void fix(const command_t &, GameObj &);
 void DontOwnErr(int, int, shipnum_t);
 int enufAP(int, int, unsigned short, int);
 std::tuple<player_t, governor_t> getracenum(const std::string &,

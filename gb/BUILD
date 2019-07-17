@@ -197,6 +197,8 @@ cc_library(
             "files_shl.h",
             "fire.cc",
             "fire.h",
+	    "commands/fix.cc",
+	    "commands/fix.h",
             "fuel.cc",
             "fuel.h",
             "gameobj.h",

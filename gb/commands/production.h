@@ -2,11 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef COLONIES_H
-#define COLONIES_H
+#ifndef CMDS_PRODUCTION_H
+#define CMDS_PRODUCTION_H
 
 #include "gb/vars.h"
 
-void colonies(const command_t &, GameObj &);
+void production(const command_t &, GameObj &);
 
-#endif  // COLONIES_H
+#endif  // CMDS_PRODUCTION_H

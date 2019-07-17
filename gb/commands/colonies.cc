@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "gb/colonies.h"
+#include "gb/commands/colonies.h"
 
 #include <cmath>
 #include <cstdio>

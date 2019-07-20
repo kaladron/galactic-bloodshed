@@ -45,7 +45,7 @@ static int moveship_onplanet(Ship *, Planet *);
 static void plow(Ship *, Planet *, SectorMap &);
 static void terraform(Ship *, Planet *, SectorMap &);
 
-int doplanet(int starnum, Planet *planet, int planetnum) {
+int doplanet(const int starnum, Planet *planet, const int planetnum) {
   int shipno;
   int x;
   int y;

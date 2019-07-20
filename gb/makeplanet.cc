@@ -79,7 +79,7 @@ static const int cond[] = {SectorType::SEC_SEA,    SectorType::SEC_MOUNT,
 static int neighbors(SectorMap &, int, int, int);
 static void MakeEarthAtmosphere(Planet &, int);
 static void Makesurface(const Planet &, SectorMap &);
-static short SectTemp(const Planet &, int);
+static int SectTemp(const Planet &, const int);
 static void seed(SectorMap &, int, int);
 static void grow(SectorMap &, int, int, int);
 
@@ -350,15 +350,12 @@ static void Makesurface(const Planet &p, SectorMap &smap) {
   }
 }
 
-static short SectTemp(const Planet &p, int y) {
-  int dy;
-  int mid;
-  int temp;
+int SectTemp(const Planet &p, const int y) {
   const int TFAC = 10;
 
-  temp = p.conditions[TEMP];
-  mid = (p.Maxy + 1) / 2 - 1;
-  dy = abs(y - mid);
+  int temp = p.conditions[TEMP];
+  int mid = (p.Maxy + 1) / 2 - 1;
+  int dy = abs(y - mid);
 
   temp -= TFAC * dy * dy;
   return temp;

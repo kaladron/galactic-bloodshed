@@ -242,18 +242,13 @@ Sql::Sql() {
     fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
     exit(0);
   }
-}
-
-Db open_data_files() {
-  Sql db1;  // TODO(jeffbailey): Fix this name
   opencommoddata(&commoddata);
   openracedata(&racedata);
   openshdata(&shdata);
   openstardata(&stdata);
-  return db1;
 }
 
-void close_data_files() {
+Sql::~Sql() {
   close_file(commoddata);
   close_file(racedata);
   close_file(shdata);

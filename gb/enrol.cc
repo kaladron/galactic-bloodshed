@@ -90,7 +90,7 @@ int main() {
   unsigned char not_found[PlanetType::DESERT + 1];
   startype *star_arena;
 
-  open_data_files();
+  Sql db{};
 
   srandom(getpid());
 
@@ -452,7 +452,6 @@ int main() {
   setbit(Stars[star]->inhabited, Playernum);
   Stars[star]->AP[Playernum - 1] = 5;
   putstar(Stars[star], star);
-  close_data_files();
 
   sigprocmask(SIG_SETMASK, &mask, nullptr);
 

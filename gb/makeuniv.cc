@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   Makestar_init();
   Sdata.numstars = nstars;
 
-  open_data_files();
+  Sql db{};
   initsqldata();
 
   for (starnum_t star = 0; star < nstars; star++) {

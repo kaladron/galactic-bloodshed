@@ -64,16 +64,14 @@ int enroll_valid_race() {
       return 1 ;
       }
   */
-  open_data_files();
+  Sql db{};
   Playernum = Numraces() + 1;
   if ((Playernum == 1) && (race_info.priv_type != P_GOD)) {
-    close_data_files();
     sprintf(race_info.rejection,
             "The first race enrolled must have God privileges.\n");
     return 1;
   }
   if (Playernum >= MAXPLAYERS) {
-    close_data_files();
     sprintf(race_info.rejection,
             "There are already %d players; No more allowed.\n", MAXPLAYERS - 1);
     race_info.status = STATUS_UNENROLLABLE;
@@ -123,7 +121,6 @@ int enroll_valid_race() {
   sprintf(race_info.rejection,
           "Didn't find any free %s; choose another home planet type.\n",
           planet_print_name[race_info.home_planet_type]);
-  close_data_files();
   race_info.status = STATUS_UNENROLLABLE;
   return 1;
 
@@ -343,7 +340,6 @@ found_planet:
   setbit(Stars[star]->inhabited, Playernum);
   Stars[star]->AP[Playernum - 1] = 5;
   putstar(Stars[star], star);
-  close_data_files();
 
   sigprocmask(SIG_SETMASK, &mask, nullptr);
 

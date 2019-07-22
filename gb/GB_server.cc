@@ -160,7 +160,7 @@ static void queue_string(DescriptorData &, const std::string &);
 static void add_to_queue(std::deque<TextBlock> &, const std::string &);
 static void help(const command_t &, GameObj &);
 static void process_command(DescriptorData &, const command_t &argv);
-static int shovechars(int);
+static int shovechars(int, Db &);
 
 static void GB_time(const command_t &, GameObj &);
 static void GB_schedule(const command_t &, GameObj &);
@@ -443,7 +443,7 @@ int main(int argc, char **argv) {
   struct stat stbuf;
   FILE *sfile;
 
-  /* XXX auto db = */ open_data_files();
+  Sql db{};
   printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
   time_t clk = time(nullptr);
   printf("      %s", ctime(&clk));
@@ -532,9 +532,8 @@ int main(int argc, char **argv) {
   Putblock(Blocks);
   compute_power_blocks();
   set_signals();
-  int sock = shovechars(port);
+  int sock = shovechars(port, db);
   close_sockets(sock);
-  close_data_files();
   printf("Going down.\n");
   return (0);
 }
@@ -628,7 +627,7 @@ static struct timeval msec_add(struct timeval t, int x) {
   return t;
 }
 
-static int shovechars(int port) {  // __attribute__((no_sanitize_memory)) {
+static int shovechars(int port, Db & /* db */) {
   fd_set input_set;
   fd_set output_set;
   struct timeval last_slice;

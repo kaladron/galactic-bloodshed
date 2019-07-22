@@ -18,11 +18,10 @@ class Db {};
 class Sql : public Db {
  public:
   Sql();
+  ~Sql();
 };
 
 void close_file(int);
-Db open_data_files();
-void close_data_files();
 void openstardata(int *);
 void openshdata(int *);
 void opencommoddata(int *);

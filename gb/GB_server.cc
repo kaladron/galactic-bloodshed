@@ -41,6 +41,7 @@
 #include "gb/commands/governors.h"
 #include "gb/commands/grant.h"
 #include "gb/commands/production.h"
+#include "gb/commands/zoom.h"
 #include "gb/config.h"
 #include "gb/cs.h"
 #include "gb/declare.h"
@@ -83,7 +84,6 @@
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 #include "gb/victory.h"
-#include "gb/zoom.h"
 
 static int shutdown_flag = 0;
 static int update_flag = 0;

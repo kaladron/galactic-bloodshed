@@ -2,11 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef ZOOM_H
-#define ZOOM_H
+#ifndef CMDS_ZOOM_H
+#define CMDS_ZOOM_H
 
 #include "gb/vars.h"
 
 void zoom(const command_t &, GameObj &);
 
-#endif  // ZOOM_H
+#endif  // CMDS_ZOOM_H

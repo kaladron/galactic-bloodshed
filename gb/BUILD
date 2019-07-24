@@ -9,7 +9,6 @@ DOCDIR = PREFIX + "/share/galactic-bloodshed/"
 
 LLVM_COPTS_DEFAULT = [
     "-Werror",
-    "-Weverything",
     "-Wno-c++98-compat",  # Keep this one
     "-Wno-padded",  # Keep this one
     "-Wno-c++98-compat-pedantic",  # Keep

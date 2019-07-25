@@ -2,11 +2,15 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef ZOOM_H
-#define ZOOM_H
+#ifndef SQL_SQL_H
+#define SQL_SQL_H
 
-#include "gb/vars.h"
+#include "gb/files_shl.h"
 
-void zoom(const command_t &, GameObj &);
+class Sql : public Db {
+ public:
+  Sql();
+  virtual ~Sql();
+};
 
-#endif  // ZOOM_H
+#endif  // SQL_SQL_H

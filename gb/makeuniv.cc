@@ -25,6 +25,7 @@
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/rand.h"
+#include "gb/sql/sql.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 

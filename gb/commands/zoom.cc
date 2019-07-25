@@ -5,7 +5,7 @@
 /// \file zoom.cc
 /// \brief Functions for implementing the 'zoom' command.
 
-#include "gb/zoom.h"
+#include "gb/commands/zoom.h"
 
 #include <boost/format.hpp>
 #include <string>

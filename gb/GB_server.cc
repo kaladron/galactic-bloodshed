@@ -76,6 +76,7 @@
 #include "gb/scrap.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
+#include "gb/sql/sql.h"
 #include "gb/survey.h"
 #include "gb/tech.h"
 #include "gb/tele.h"

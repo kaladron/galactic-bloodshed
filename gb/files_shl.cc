@@ -32,7 +32,7 @@
 
 static int commoddata, racedata, shdata, stdata;
 
-static sqlite3 *db;
+sqlite3 *dbconn;
 
 static void start_bulk_insert();
 static void end_bulk_insert();
@@ -229,30 +229,11 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
       mount INT);
 )";
   char *err_msg = nullptr;
-  int err = sqlite3_exec(db, tbl_create, nullptr, nullptr, &err_msg);
+  int err = sqlite3_exec(dbconn, tbl_create, nullptr, nullptr, &err_msg);
   if (err != SQLITE_OK) {
     fprintf(stderr, "SQL error: %s\n", err_msg);
     sqlite3_free(err_msg);
   }
-}
-
-Sql::Sql() {
-  int err = sqlite3_open(PKGSTATEDIR "gb.db", &db);
-  if (err) {
-    fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-    exit(0);
-  }
-  opencommoddata(&commoddata);
-  openracedata(&racedata);
-  openshdata(&shdata);
-  openstardata(&stdata);
-}
-
-Sql::~Sql() {
-  close_file(commoddata);
-  close_file(racedata);
-  close_file(shdata);
-  close_file(stdata);
 }
 
 void openstardata(int *fd) {
@@ -314,7 +295,7 @@ void getstar(startype **s, int star) {
         "SELECT ships, name, xpos, ypos, "
         "numplanets, stability, nova_stage, temperature, gravity "
         "FROM tbl_star WHERE star_id=?1 LIMIT 1";
-    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
     sqlite3_bind_int(stmt, 1, star);
     sqlite3_step(stmt);
@@ -337,7 +318,7 @@ void getstar(startype **s, int star) {
     const char *sql =
         "SELECT player_id, governor_id FROM tbl_star_governor "
         "WHERE star_id=?1";
-    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
     sqlite3_bind_int(stmt, 1, star);
 
@@ -366,7 +347,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
       "condition_hydrogen, condition_nitrogen, condition_sulfur, "
       "condition_helium, condition_other, condition_toxic, "
       "explored FROM tbl_planet WHERE star_id=?1 AND planet_order=?2";
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
   sqlite3_bind_int(stmt, 1, star);
   sqlite3_bind_int(stmt, 2, pnum);
@@ -438,7 +419,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
       "mob_set, tox_thresh, explored, autorep, tax, "
       "newtax, guns, mob_points, est_production FROM tbl_plinfo "
       "WHERE planet_id=?1";
-  sqlite3_prepare_v2(db, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail);
+  sqlite3_prepare_v2(dbconn, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail);
   sqlite3_bind_int(plinfo_stmt, 1, p.planet_id);
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     int player_id = sqlite3_column_int(plinfo_stmt, 1);
@@ -472,7 +453,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
       "SELECT planet_id, player_id, routenum, order_set, dest_star, "
       "dest_planet, load, unload, x, y FROM tbl_plinfo_routes WHERE "
       "planet_id=1";
-  sqlite3_prepare_v2(db, plinfo_routes_sql, -1, &plinfo_routes_stmt,
+  sqlite3_prepare_v2(dbconn, plinfo_routes_sql, -1, &plinfo_routes_stmt,
                      &plinfo_routes_tail);
   sqlite3_bind_int(plinfo_routes_stmt, 1, p.planet_id);
   while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -504,7 +485,7 @@ Sector getsector(const Planet &p, const int x, const int y) {
       "mobilization, crystals, resource, popn, troops, owner, "
       "race, type, condition FROM tbl_sector "
       "WHERE planet_id=?1 AND xpos=?2 AND ypos=?3";
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
   sqlite3_bind_int(stmt, 1, p.planet_id);
   sqlite3_bind_int(stmt, 2, x);
@@ -532,7 +513,7 @@ Sector getsector(const Planet &p, const int x, const int y) {
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 
   return s;
@@ -546,7 +527,7 @@ SectorMap getsmap(const Planet &p) {
       "mobilization, crystals, resource, popn, troops, owner, "
       "race, type, condition FROM tbl_sector "
       "WHERE planet_id=?1 ORDER BY ypos, xpos";
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
   sqlite3_bind_int(stmt, 1, p.planet_id);
 
@@ -639,14 +620,14 @@ std::optional<Ship> getship(Ship **s, const shipnum_t shipnum) {
       "waste_toxic "
       "FROM tbl_ship WHERE ship_id=?1 LIMIT 1";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, shipnum);
 
   auto result = sqlite3_step(stmt);
   if (result != SQLITE_ROW) {
     int err = sqlite3_finalize(stmt);
     if (err != SQLITE_OK) {
-      fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+      fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
     }
     return {};
   }
@@ -740,7 +721,7 @@ std::optional<Ship> getship(Ship **s, const shipnum_t shipnum) {
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 
   return **s;
@@ -843,7 +824,7 @@ void putstar(startype *s, starnum_t snum) {
         "REPLACE INTO tbl_star (star_id, ships, name, xpos, ypos, "
         "numplanets, stability, nova_stage, temperature, gravity) "
         "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)";
-    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
     sqlite3_bind_int(stmt, 1, snum);
     sqlite3_bind_int(stmt, 2, s->ships);
@@ -868,7 +849,7 @@ void putstar(startype *s, starnum_t snum) {
         "REPLACE INTO tbl_star_governor (star_id, player_id, governor_id) "
         "VALUES (?1, ?2, ?3)";
 
-    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
     for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
@@ -887,7 +868,7 @@ void putstar(startype *s, starnum_t snum) {
         "REPLACE INTO tbl_star_playerap (star_id, player_id, ap) "
         "VALUES (?1, ?2, ?3)";
 
-    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
     for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
@@ -906,7 +887,7 @@ void putstar(startype *s, starnum_t snum) {
         "REPLACE INTO tbl_star_explored (star_id, player_id, explored) "
         "VALUES (?1, ?2, ?3)";
 
-    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
     for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
@@ -925,7 +906,7 @@ void putstar(startype *s, starnum_t snum) {
         "REPLACE INTO tbl_star_inhabited (star_id, player_id, explored) "
         "VALUES (?1, ?2, ?3)";
 
-    sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
     for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
@@ -942,12 +923,12 @@ void putstar(startype *s, starnum_t snum) {
 
 static void start_bulk_insert() {
   char *err_msg = nullptr;
-  sqlite3_exec(db, "BEGIN TRANSACTION", nullptr, nullptr, &err_msg);
+  sqlite3_exec(dbconn, "BEGIN TRANSACTION", nullptr, nullptr, &err_msg);
 }
 
 static void end_bulk_insert() {
   char *err_msg = nullptr;
-  sqlite3_exec(db, "END TRANSACTION", nullptr, nullptr, &err_msg);
+  sqlite3_exec(dbconn, "END TRANSACTION", nullptr, nullptr, &err_msg);
 }
 
 void putplanet(const Planet &p, startype *star, const int pnum) {
@@ -970,7 +951,7 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, "
       "?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, "
       "?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28)";
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
   const char *plinfo_sql =
       "REPLACE INTO tbl_plinfo (planet_id, player_id, fuel, destruct, "
@@ -982,9 +963,9 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
       "(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, "
       "?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, "
       "?21, ?22, ?23, ?24, ?25, ?26)";
-  if (sqlite3_prepare_v2(db, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail) !=
+  if (sqlite3_prepare_v2(dbconn, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail) !=
       SQLITE_OK) {
-    fprintf(stderr, "PLINFO %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "PLINFO %s\n", sqlite3_errmsg(dbconn));
   }
 
   const char *plinfo_route_sql =
@@ -992,7 +973,7 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
       "order_set, dest_star, dest_planet, "
       "load, unload, x, y) VALUES "
       "(?1, ?2, ?3, ?4, 5, ?6, ?7, ?8, ?9, ?10)";
-  sqlite3_prepare_v2(db, plinfo_route_sql, -1, &plinfo_route_stmt,
+  sqlite3_prepare_v2(dbconn, plinfo_route_sql, -1, &plinfo_route_stmt,
                      &plinfo_route_tail);
 
   sqlite3_bind_int(stmt, 1, p.planet_id);
@@ -1026,7 +1007,7 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
   sqlite3_bind_int(stmt, 28, p.explored);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
   }
 
   {
@@ -1059,7 +1040,7 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
       sqlite3_bind_double(plinfo_stmt, 26, p.info[i].est_production);
 
       if (sqlite3_step(plinfo_stmt) != SQLITE_DONE) {
-        fprintf(stderr, "YYY %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "YYY %s\n", sqlite3_errmsg(dbconn));
       }
       sqlite3_reset(plinfo_stmt);
 
@@ -1078,7 +1059,7 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
           sqlite3_bind_int(plinfo_route_stmt, 10, p.info[i].route[j].y);
 
           if (sqlite3_step(plinfo_route_stmt) != SQLITE_DONE) {
-            fprintf(stderr, "ZZZ %s\n", sqlite3_errmsg(db));
+            fprintf(stderr, "ZZZ %s\n", sqlite3_errmsg(dbconn));
           }
           sqlite3_reset(plinfo_route_stmt);
         }
@@ -1101,7 +1082,7 @@ void putsector(const Sector &s, const Planet &p, const int x, const int y) {
       "race, type, condition) "
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, p.planet_id);
   sqlite3_bind_int(stmt, 2, x);
   sqlite3_bind_int(stmt, 3, y);
@@ -1118,7 +1099,7 @@ void putsector(const Sector &s, const Planet &p, const int x, const int y) {
   sqlite3_bind_int(stmt, 14, s.condition);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "000 %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "000 %s\n", sqlite3_errmsg(dbconn));
   }
 
   sqlite3_reset(stmt);
@@ -1145,7 +1126,7 @@ static void putship_aimed(const Ship &s) {
       "aimed_intensity, aimed_pnum, aimed_level)"
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6);";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s.number);
   sqlite3_bind_int(stmt, 2, s.special.aimed_at.shipno);
   sqlite3_bind_int(stmt, 3, s.special.aimed_at.snum);
@@ -1154,12 +1135,12 @@ static void putship_aimed(const Ship &s) {
   sqlite3_bind_int(stmt, 6, s.special.aimed_at.level);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_mind(const Ship &s) {
@@ -1171,7 +1152,7 @@ static void putship_mind(const Ship &s) {
       "mind_who_killed)"
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7);";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s.number);
   sqlite3_bind_int(stmt, 2, s.special.mind.progenitor);
   sqlite3_bind_int(stmt, 3, s.special.mind.target);
@@ -1181,12 +1162,12 @@ static void putship_mind(const Ship &s) {
   sqlite3_bind_int(stmt, 7, s.special.mind.who_killed);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_pod(const Ship &s) {
@@ -1196,18 +1177,18 @@ static void putship_pod(const Ship &s) {
       "REPLACE INTO tbl_ship (ship_id, pod_decay, pod_temperature)"
       "VALUES (?1, ?2, ?3);";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s.number);
   sqlite3_bind_int(stmt, 2, s.special.pod.decay);
   sqlite3_bind_int(stmt, 3, s.special.pod.temperature);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_timer(const Ship &s) {
@@ -1217,17 +1198,17 @@ static void putship_timer(const Ship &s) {
       "REPLACE INTO tbl_ship (ship_id, timer_count)"
       "VALUES (?1, ?2);";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s.number);
   sqlite3_bind_int(stmt, 2, s.special.timer.count);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_impact(const Ship &s) {
@@ -1237,19 +1218,19 @@ static void putship_impact(const Ship &s) {
       "REPLACE INTO tbl_ship (ship_id, impact_x, impact_y, impact_scatter)"
       "VALUES (?1, ?2, ?3, ?4);";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s.number);
   sqlite3_bind_int(stmt, 2, s.special.impact.x);
   sqlite3_bind_int(stmt, 3, s.special.impact.y);
   sqlite3_bind_int(stmt, 4, s.special.impact.scatter);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_trigger(const Ship &s) {
@@ -1259,17 +1240,17 @@ static void putship_trigger(const Ship &s) {
       "REPLACE INTO tbl_ship (ship_id, trigger_radius)"
       "VALUES (?1, ?2);";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s.number);
   sqlite3_bind_int(stmt, 2, s.special.trigger.radius);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_terraform(const Ship &s) {
@@ -1279,17 +1260,17 @@ static void putship_terraform(const Ship &s) {
       "REPLACE INTO tbl_ship (ship_id, terraform_index)"
       "VALUES (?1, ?2);";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s.number);
   sqlite3_bind_int(stmt, 2, s.special.terraform.index);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_transport(const Ship &s) {
@@ -1299,17 +1280,17 @@ static void putship_transport(const Ship &s) {
       "REPLACE INTO tbl_ship (ship_id, transport_target)"
       "VALUES (?1, ?2);";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s.number);
   sqlite3_bind_int(stmt, 2, s.special.transport.target);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_waste(const Ship &s) {
@@ -1319,17 +1300,17 @@ static void putship_waste(const Ship &s) {
       "REPLACE INTO tbl_ship (ship_id, waste_toxic)"
       "VALUES (?1, ?2);";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s.number);
   sqlite3_bind_int(stmt, 2, s.special.waste.toxic);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
 
@@ -1383,7 +1364,7 @@ void putship(Ship *s) {
       "?80, ?81,"
       "?82, ?83, ?84);";
 
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s->number);
   sqlite3_bind_int(stmt, 2, s->owner);
   sqlite3_bind_int(stmt, 3, s->governor);
@@ -1471,12 +1452,12 @@ void putship(Ship *s) {
   sqlite3_bind_int(stmt, 84, s->mount);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 
   switch (s->type) {
@@ -1538,7 +1519,7 @@ shipnum_t Numships() /* return number of ships */
   sqlite3_stmt *stmt;
 
   const auto sql = "SELECT COUNT(*) FROM tbl_ship;";
-  sqlite3_prepare_v2(db, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
   auto result = sqlite3_step(stmt);
   if (result != SQLITE_ROW) {
@@ -1687,4 +1668,18 @@ void Getblock(struct block b[MAXPLAYERS]) {
   }
   read(block_fd, (char *)b, sizeof(*b) * MAXPLAYERS);
   close_file(block_fd);
+}
+
+Db::Db() {
+  opencommoddata(&commoddata);
+  openracedata(&racedata);
+  openshdata(&shdata);
+  openstardata(&stdata);
+}
+
+Db::~Db() {
+  close_file(commoddata);
+  close_file(racedata);
+  close_file(shdata);
+  close_file(stdata);
 }

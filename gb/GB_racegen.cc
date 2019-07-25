@@ -24,6 +24,7 @@
 #include "gb/rand.h"
 #include "gb/shipdata.h"
 #include "gb/ships.h"
+#include "gb/sql/sql.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 

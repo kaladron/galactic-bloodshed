@@ -11,14 +11,13 @@
 
 #include "gb/races.h"
 #include "gb/ships.h"
+#include "gb/sql/dbdecl.h"
 #include "gb/vars.h"
 
-class Db {};
-
-class Sql : public Db {
+class Db {
  public:
-  Sql();
-  ~Sql();
+  Db();
+  virtual ~Db();
 };
 
 void close_file(int);

@@ -36,7 +36,7 @@ GCC_COPTS = [
     "-Wno-unused-variable",
 ]
 
-COPTS = LLVM_COPTS + [
+COPTS = GCC_COPTS + [
     '-DPKGSTATEDIR=\\"' + PKGSTATEDIR + '\\"',
     '-DPKGDATADIR=\\"' + PKGDATADIR + '\\"',
     '-DDOCDIR=\\"' + DOCDIR + '\\"',

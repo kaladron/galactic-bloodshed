@@ -25,6 +25,7 @@ LLVM_COPTS_OPTIONAL = [
     "-Wno-switch-enum",
     "-Wno-exit-time-destructors",
     "-Wno-global-constructors",
+    "-Wno-writable-strings",
 ]
 
 LLVM_COPTS = LLVM_COPTS_DEFAULT + LLVM_COPTS_OPTIONAL
@@ -323,9 +324,7 @@ cc_binary(
             "tweakables.h",
             "vars.h",
         ],
-    copts = COPTS + [
-        "-Wno-writable-strings",
-    ],
+    copts = COPTS,
     linkopts = ["-lsqlite3"],
 )
 

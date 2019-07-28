@@ -1,6 +1,3 @@
-
-CXX=g++-9
-
 # PKGSTATEDIR = "$(prefix)/lib/galactic-bloodshed/"
 # PKGDATADIR = "$(prefix)/share/galactic-bloodshed/"
 # DOCDIR = "$(prefix)/share/galactic-bloodshed/"
@@ -10,10 +7,19 @@ PKGDATADIR=$(datarootdir)/
 DOCDIR=$(docdir)/
 
 GCC_OPTS = -Wno-sign-compare -Wno-maybe-uninitialized -Wno-return-type -Wno-unused-variable
-AM_CXXFLAGS = $(GCC_OPTS) -std=c++2a -O0 -g3 \
+CLANG_OPTS = -Werror -Wno-c++98-compat -Wno-padded -Wno-c++98-compat-pedantic -Wno-float-equal \
+    -Wno-old-style-cast -Wno-conversion -Wno-conditional-uninitialized -Wno-sign-compare \
+    -Wno-switch-enum -Wno-exit-time-destructors -Wno-global-constructors -Wno-writable-strings
+AM_CXXFLAGS = -std=c++2a -O0 -g3 \
 	      -DPKGSTATEDIR="\"$(PKGSTATEDIR)\"" \
 	      -DPKGDATADIR="\"$(PKGDATADIR)\"" \
 	      -DDOCDIR="\"$(DOCDIR)\""
+
+if CLANG
+AM_CXXFLAGS += $(CLANG_OPTS)
+else
+AM_CXXFLAGS += $(GCC_OPTS)
+endif
 
 
 bin_PROGRAMS = makeuniv enrol GB racegen

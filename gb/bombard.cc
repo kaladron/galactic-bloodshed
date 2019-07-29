@@ -2,11 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/* autoshoot() -- shoot <-> retaliate routine
- * Bombard() -- ship bombards planet
- */
-
-#include "gb/autoshoot.h"
+#include "gb/bombard.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -27,7 +23,7 @@
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */
-int Bombard(Ship *ship, Planet *planet, Race *r) {
+int bombard(Ship *ship, Planet *planet, Race *r) {
   int x;
   int y;
   int x2 = -1;

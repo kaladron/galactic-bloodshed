@@ -1,16 +1,9 @@
-# PKGSTATEDIR = "$(prefix)/lib/galactic-bloodshed/"
-# PKGDATADIR = "$(prefix)/share/galactic-bloodshed/"
-# DOCDIR = "$(prefix)/share/galactic-bloodshed/"
-#
-PKGSTATEDIR=$(libdir)/
-PKGDATADIR=$(datarootdir)/
-DOCDIR=$(docdir)/
-
 GCC_OPTS = -Wno-sign-compare -Wno-maybe-uninitialized -Wno-return-type -Wno-unused-variable
 CLANG_OPTS = -Werror -Wno-c++98-compat -Wno-padded -Wno-c++98-compat-pedantic -Wno-float-equal \
     -Wno-old-style-cast -Wno-conversion -Wno-conditional-uninitialized -Wno-sign-compare \
     -Wno-switch-enum -Wno-exit-time-destructors -Wno-global-constructors -Wno-writable-strings
 AM_CXXFLAGS = -std=c++2a -O0 -g3 \
+	      $(SQLLITE3_CFLAGS) \
 	      -DPKGSTATEDIR="\"$(PKGSTATEDIR)\"" \
 	      -DPKGDATADIR="\"$(PKGDATADIR)\"" \
 	      -DDOCDIR="\"$(DOCDIR)\""
@@ -23,17 +16,19 @@ endif
 
 AM_CPPFLAGS = -I$(top_srcdir)
 
+LIBS = $(SQLITE3_LIBS)
+
 
 bin_PROGRAMS = makeuniv enrol GB racegen
+
 noinst_LIBRARIES = libgblib.a
+
 makeuniv_SOURCES = files.cc files_rw.cc files_shl.cc makeplanet.cc makestar.cc makeuniv.cc perm.cc rand.cc sector.cc sql/sql.cc
-makeuniv_LDADD = -lsqlite3
 
 enrol_SOURCES = enrol.cc files.cc files_rw.cc files_shl.cc max.cc perm.cc rand.cc sector.cc shlmisc.cc sql/sql.cc
-enrol_LDADD = -lsqlite3
 
 GB_SOURCES = GB_server.cc
-GB_LDADD = libgblib.a -lsqlite3
+GB_LDADD = libgblib.a
 
 libgblib_a_SOURCES = VN.cc analysis.cc autoreport.cc autoshoot.cc build.cc capital.cc capture.cc commands/colonies.cc commands/fix.cc \
 		commands/governors.cc commands/grant.cc commands/production.cc commands/zoom.cc cs.cc declare.cc dissolve.cc \
@@ -44,7 +39,6 @@ libgblib_a_SOURCES = VN.cc analysis.cc autoreport.cc autoshoot.cc build.cc capit
 
 racegen_SOURCES = GB_racegen.cc enroll.cc files.cc files_rw.cc files_shl.cc  \
 		  max.cc perm.cc racegen.cc rand.cc sector.cc shlmisc.cc sql/sql.cc
-racegen_LDADD = -lsqlite3
 
 TESTS = shlmisc_test
 

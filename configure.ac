@@ -14,6 +14,8 @@ have_clang=yes
 AM_CONDITIONAL([CLANG], [test x$have_clang = xyes])
 AC_MSG_RESULT($have_clang)
 AC_PROG_RANLIB
+PKG_CHECK_MODULES(SQLITE3, sqlite3, ,
+		  AC_ERROR([Sqlite3 is required to build GB]))
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
  Makefile

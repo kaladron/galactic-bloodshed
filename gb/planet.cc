@@ -12,7 +12,7 @@
 
 #include "gb/GB_server.h"
 #include "gb/VN.h"
-#include "gb/autoshoot.h"
+#include "gb/bombard.h"
 #include "gb/buffers.h"
 #include "gb/build.h"
 #include "gb/dosector.h"
@@ -759,7 +759,7 @@ static void do_berserker(Ship *ship, Planet *planet) {
   if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
       ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
       ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {
-    if (!Bombard(ship, planet, races[ship->owner - 1]))
+    if (!bombard(ship, planet, races[ship->owner - 1]))
       ship->destpnum = int_rand(0, Stars[ship->storbits]->numplanets - 1);
     else if (Sdata.VN_hitlist[ship->special.mind.who_killed - 1] > 0)
       --Sdata.VN_hitlist[ship->special.mind.who_killed - 1];

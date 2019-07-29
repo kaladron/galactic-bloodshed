@@ -43,3 +43,8 @@ libgblib_a_SOURCES = VN.cc analysis.cc autoreport.cc autoshoot.cc build.cc capit
 racegen_SOURCES = GB_racegen.cc enroll.cc files.cc files_rw.cc files_shl.cc  \
 		  max.cc perm.cc racegen.cc rand.cc sector.cc shlmisc.cc sql/sql.cc
 racegen_LDADD = -lsqlite3
+
+TESTS = shlmisc_test
+
+check_PROGRAMS = shlmisc_test
+shlmisc_test_SOURCES = shlmisc_test.cc

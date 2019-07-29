@@ -1,3 +1,7 @@
+PKGSTATEDIR=$(libdir)/
+PKGDATADIR=$(datarootdir)/
+DOCDIR=$(docdir)/
+
 GCC_OPTS = -Wno-sign-compare -Wno-maybe-uninitialized -Wno-return-type -Wno-unused-variable
 CLANG_OPTS = -Werror -Wno-c++98-compat -Wno-padded -Wno-c++98-compat-pedantic -Wno-float-equal \
     -Wno-old-style-cast -Wno-conversion -Wno-conditional-uninitialized -Wno-sign-compare \

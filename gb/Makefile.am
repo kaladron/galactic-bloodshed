@@ -21,6 +21,8 @@ else
 AM_CXXFLAGS += $(GCC_OPTS)
 endif
 
+AM_CPPFLAGS = -I$(top_srcdir)
+
 
 bin_PROGRAMS = makeuniv enrol GB racegen
 noinst_LIBRARIES = libgblib.a

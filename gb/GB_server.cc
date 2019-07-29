@@ -31,11 +31,11 @@
 #include <vector>
 
 #include "gb/analysis.h"
-#include "gb/autoreport.h"
 #include "gb/buffers.h"
 #include "gb/build.h"
 #include "gb/capital.h"
 #include "gb/capture.h"
+#include "gb/commands/autoreport.h"
 #include "gb/commands/colonies.h"
 #include "gb/commands/fix.h"
 #include "gb/commands/governors.h"

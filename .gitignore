@@ -6,6 +6,7 @@ bazel*
 *.a
 *.h.in
 *.in
+*.in~
 *.m4
 *.m4
 Makefile

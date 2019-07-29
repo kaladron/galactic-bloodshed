@@ -34,7 +34,7 @@ enrol_SOURCES = enrol.cc files.cc files_rw.cc files_shl.cc max.cc perm.cc rand.c
 GB_SOURCES = GB_server.cc
 GB_LDADD = libgblib.a
 
-libgblib_a_SOURCES = VN.cc analysis.cc autoreport.cc bombard.cc build.cc capital.cc capture.cc commands/colonies.cc commands/fix.cc \
+libgblib_a_SOURCES = VN.cc analysis.cc commands/autoreport.cc bombard.cc build.cc capital.cc capture.cc commands/colonies.cc commands/fix.cc \
 		commands/governors.cc commands/grant.cc commands/production.cc commands/zoom.cc cs.cc declare.cc dissolve.cc \
 		dock.cc dosector.cc doship.cc doturncmd.cc enslave.cc examine.cc explore.cc files.cc files_rw.cc files_shl.cc \
 		fire.cc fuel.cc getplace.cc land.cc launch.cc load.cc map.cc max.cc mobiliz.cc move.cc moveplanet.cc moveship.cc \

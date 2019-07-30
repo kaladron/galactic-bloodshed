@@ -4,7 +4,7 @@
 
 /* enslave.c -- ENSLAVE the planet below. */
 
-#include "gb/enslave.h"
+#include "gb/commands/enslave.h"
 
 #include <cstdio>
 #include <cstdlib>

@@ -4,7 +4,7 @@
 
 /* makeplanet.c -- makes one planet. */
 
-#include "gb/makeplanet.h"
+#include "gb/creator/makeplanet.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "gb/files_shl.h"
-#include "gb/makestar.h"
+#include "gb/creator/makestar.h"
 #include "gb/rand.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"

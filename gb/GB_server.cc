@@ -71,7 +71,7 @@
 #include "gb/prof.h"
 #include "gb/races.h"
 #include "gb/rand.h"
-#include "gb/relation.h"
+#include "gb/commands/relation.h"
 #include "gb/rst.h"
 #include "gb/scrap.h"
 #include "gb/ships.h"

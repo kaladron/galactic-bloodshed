@@ -10,6 +10,7 @@ install-data-local:
 	mkdir -p $(PKGDATADIR)
 	mkdir -p $(DOCDIR)
 	chmod -R a+rwx $(DOCDIR) $(PKGDATADIR) $(PKGSTATEDIR)
+	cp $(top_srcdir)/data/* $(PKGDATADIR)/
 
 GCC_OPTS = -Wno-sign-compare -Wno-maybe-uninitialized -Wno-return-type -Wno-unused-variable
 CLANG_OPTS = -Werror -Wno-c++98-compat -Wno-padded -Wno-c++98-compat-pedantic -Wno-float-equal \

@@ -28,13 +28,6 @@
 #include "gb/utils/fileutils.h"
 #include "gb/vars.h"
 
-int autoname_star = -1;
-int autoname_plan = -1;
-int minplanets = -1;
-int maxplanets = -1;
-int printplaninfo = 0;
-int printstarinfo = 0;
-
 static int nstars = -1;
 static int occupied[100][100];
 static int planetlesschance = 0;
@@ -47,6 +40,9 @@ int main(int argc, char *argv[]) {
    * Initialize: */
   srandom(getpid());
   bzero(&Sdata, sizeof(Sdata));
+
+  NameGenerator *star_name_gen = nullptr;
+  NameGenerator *planet_name_gen = nullptr;
 
   /*
    * Read the arguments for values: */

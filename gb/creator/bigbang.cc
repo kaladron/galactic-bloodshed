@@ -2,7 +2,4 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef MAKEUNIV_H
-#define MAKEUNIV_H
-
-#endif  // MAKEUNIV_H
+#include "gb/creator/bigbang.h"

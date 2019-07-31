@@ -2,9 +2,9 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/*  planet.c -- do one turn on a planet. */
+/*  doplanet.c -- do one turn on a planet. */
 
-#include "gb/planet.h"
+#include "gb/doplanet.h"
 
 #include <cstdio>
 #include <cstdlib>

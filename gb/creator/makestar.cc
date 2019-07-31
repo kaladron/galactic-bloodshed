@@ -9,17 +9,17 @@
 // G.O.D. [1] > ammonia melts at -78C
 // G.O.D. [1] > boils at -33
 
-#include "gb/makestar.h"
+#include "gb/creator/makestar.h"
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
+#include "gb/creator/makeplanet.h"
+#include "gb/creator/makeuniv.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
-#include "gb/makeplanet.h"
-#include "gb/makeuniv.h"
 #include "gb/rand.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"

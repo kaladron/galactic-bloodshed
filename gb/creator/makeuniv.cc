@@ -11,21 +11,21 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "gb/creator/namegen.h"
-#include "gb/utils/fileutils.h"
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/build.h"
+#include "gb/creator/makestar.h"
+#include "gb/creator/namegen.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/globals.h"
-#include "gb/creator/makestar.h"
 #include "gb/map.h"
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/rand.h"
 #include "gb/sql/sql.h"
 #include "gb/tweakables.h"
+#include "gb/utils/fileutils.h"
 #include "gb/vars.h"
 
 int autoname_star = -1;
@@ -84,9 +84,9 @@ int main(int argc, char *argv[]) {
           autoname_plan = 1;
           printplaninfo = 1;
           printstarinfo = 1;
-	  nstars = 128;
-	  minplanets = 1;
-	  maxplanets = 10;
+          nstars = 128;
+          minplanets = 1;
+          maxplanets = 10;
           break;
         default:
           printf("\n");

@@ -16,10 +16,10 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "gb/files.h"
-#include "gb/files_shl.h"
 #include "gb/creator/makeplanet.h"
 #include "gb/creator/makeuniv.h"
+#include "gb/files.h"
+#include "gb/files_shl.h"
 #include "gb/rand.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"

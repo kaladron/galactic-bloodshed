@@ -13,8 +13,8 @@
 #include <tuple>
 #include <vector>
 
-#include "gb/files_shl.h"
 #include "gb/creator/makestar.h"
+#include "gb/files_shl.h"
 #include "gb/rand.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"

@@ -15,8 +15,7 @@
 /**
  * Helper utils and classes for making common operations with files eaiser.
  */
-void InitFile(const std::string &path,
-              void *buffer = nullptr,
+void InitFile(const std::string &path, void *buffer = nullptr,
               size_t length = 0);
 void EmptyFile(const std::string &path);
 

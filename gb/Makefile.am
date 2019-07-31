@@ -47,13 +47,13 @@ GB_SOURCES = GB_server.cc
 GB_LDADD = libgblib.a
 
 libgblib_a_SOURCES = $(COMMON_FILES) VN.cc analysis.cc commands/autoreport.cc bombard.cc build.cc capital.cc \
-		     capture.cc commands/colonies.cc commands/fix.cc commands/governors.cc commands/grant.cc \
-		     commands/production.cc commands/zoom.cc cs.cc declare.cc dissolve.cc dock.cc dosector.cc \
-		     doship.cc doturncmd.cc enslave.cc examine.cc explore.cc fire.cc fuel.cc getplace.cc \
-		     land.cc launch.cc load.cc map.cc max.cc mobiliz.cc move.cc moveplanet.cc moveship.cc \
-		     name.cc orbit.cc order.cc perm.cc planet.cc powercmd.cc prof.cc rand.cc relation.cc \
-		     rst.cc scrap.cc sector.cc ships.cc shlmisc.cc shootblast.cc survey.cc \
-		     tech.cc tele.cc toggle.cc toxicity.cc victory.cc
+			capture.cc commands/colonies.cc commands/fix.cc commands/governors.cc commands/grant.cc \
+		 	commands/production.cc commands/zoom.cc cs.cc declare.cc dissolve.cc dock.cc dosector.cc \
+			doship.cc doturncmd.cc commands/enslave.cc examine.cc explore.cc fire.cc fuel.cc getplace.cc \
+			land.cc launch.cc load.cc map.cc max.cc mobiliz.cc move.cc moveplanet.cc moveship.cc \
+			name.cc orbit.cc order.cc perm.cc planet.cc powercmd.cc prof.cc rand.cc commands/relation.cc \
+			rst.cc scrap.cc sector.cc ships.cc shlmisc.cc shootblast.cc survey.cc \
+			tech.cc tele.cc toggle.cc toxicity.cc victory.cc
 
 racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc rand.cc sector.cc shlmisc.cc
 

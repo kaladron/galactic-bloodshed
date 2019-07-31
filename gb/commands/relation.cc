@@ -4,7 +4,7 @@
 
 /* relation.c -- state relations among players */
 
-#include "gb/relation.h"
+#include "gb/commands/relation.h"
 
 #include <cstdio>
 

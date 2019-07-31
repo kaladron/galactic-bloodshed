@@ -51,7 +51,7 @@ libgblib_a_SOURCES = $(COMMON_FILES) VN.cc analysis.cc commands/autoreport.cc bo
 		 	commands/production.cc commands/zoom.cc cs.cc declare.cc dissolve.cc dock.cc dosector.cc \
 			doship.cc doturncmd.cc commands/enslave.cc examine.cc explore.cc fire.cc fuel.cc getplace.cc \
 			land.cc launch.cc load.cc map.cc max.cc mobiliz.cc move.cc moveplanet.cc moveship.cc \
-			name.cc orbit.cc order.cc perm.cc planet.cc powercmd.cc prof.cc rand.cc commands/relation.cc \
+			name.cc orbit.cc order.cc perm.cc doplanet.cc powercmd.cc prof.cc rand.cc commands/relation.cc \
 			rst.cc scrap.cc sector.cc ships.cc shlmisc.cc shootblast.cc survey.cc \
 			tech.cc tele.cc toggle.cc toxicity.cc victory.cc
 

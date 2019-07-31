@@ -7,14 +7,12 @@
 
 #include "gb/creator/makeuniv.h"
 
-#include <sys/stat.h>
-#include <unistd.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
 #include "gb/creator/namegen.h"
+#include "gb/utils/fileutils.h"
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/build.h"
@@ -29,9 +27,6 @@
 #include "gb/sql/sql.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
-
-static void InitFile(const char *, void *, int);
-static void EmptyFile(const char *);
 
 int autoname_star = -1;
 int autoname_plan = -1;
@@ -226,20 +221,6 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-static void InitFile(const char *filename, void *ptr, int len) {
-  FILE *f = fopen(filename, "w+");
-
-  if (f == nullptr) {
-    printf("Unable to open \"%s\".\n", filename);
-    exit(-1);
-  }
-  fwrite(ptr, len, 1, f);
-  chmod(filename, 00660);
-  fclose(f);
-}
-
-static void EmptyFile(const char *filename) { InitFile(filename, nullptr, 0); }
 
 void place_star(startype *star) {
   int found = 0;

@@ -36,7 +36,7 @@ bin_PROGRAMS = makeuniv enrol GB racegen
 
 noinst_LIBRARIES = libgblib.a
 
-COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc
+COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc utils/fileutils.cc
 
 makeuniv_SOURCES = $(COMMON_FILES) creator/makeplanet.cc creator/makestar.cc creator/makeuniv.cc creator/namegen.cc perm.cc rand.cc sector.cc
 

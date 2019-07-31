@@ -20,7 +20,7 @@
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/moveplanet.h"
-#include "gb/planet.h"
+#include "gb/doplanet.h"
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/rand.h"

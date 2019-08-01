@@ -35,7 +35,7 @@ LIBS = $(SQLITE3_LIBS)
 
 bin_PROGRAMS = makeuniv enrol GB racegen
 
-noinst_LIBRARIES = libgblib.a
+noinst_LIBRARIES = libgblib.a libcommands.a
 
 COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc utils/fileutils.cc
 
@@ -44,15 +44,9 @@ makeuniv_SOURCES = $(COMMON_FILES) creator/makeplanet.cc creator/makestar.cc cre
 enrol_SOURCES =  $(COMMON_FILES) enrol.cc max.cc perm.cc rand.cc sector.cc shlmisc.cc
 
 GB_SOURCES = GB_server.cc
-GB_LDADD = libgblib.a
+GB_LDADD = libgblib.a libcommands.a
 
-libgblib_a_SOURCES = $(COMMON_FILES) \
-		     VN.cc \
-		     analysis.cc \
-		     bombard.cc \
-		     build.cc \
-		     capital.cc \
-		     capture.cc \
+libcommands_a_SOURCES = \
 		     commands/autoreport.cc \
 		     commands/colonies.cc \
 		     commands/enslave.cc \
@@ -62,7 +56,15 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     commands/production.cc \
 		     commands/relation.cc \
 		     commands/toxicity.cc \
-		     commands/zoom.cc \
+		     commands/zoom.cc
+
+libgblib_a_SOURCES = $(COMMON_FILES) \
+		     VN.cc \
+		     analysis.cc \
+		     bombard.cc \
+		     build.cc \
+		     capital.cc \
+		     capture.cc \
 		     cs.cc \
 		     declare.cc \
 		     dissolve.cc \

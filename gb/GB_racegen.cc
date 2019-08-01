@@ -21,7 +21,7 @@
 #include "gb/perm.h"
 #include "gb/racegen.h"
 #include "gb/races.h"
-#include "gb/rand.h"
+#include "gb/utils/rand.h"
 #include "gb/shipdata.h"
 #include "gb/ships.h"
 #include "gb/sql/sql.h"

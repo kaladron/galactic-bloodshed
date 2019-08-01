@@ -35,27 +35,85 @@ LIBS = $(SQLITE3_LIBS)
 
 bin_PROGRAMS = makeuniv enrol GB racegen
 
-noinst_LIBRARIES = libgblib.a
+noinst_LIBRARIES = libgblib.a libcommands.a
 
-COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc utils/fileutils.cc
+UTILS_FILES = utils/rand.cc
+COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc $(UTILS_FILES)
 
-makeuniv_SOURCES = $(COMMON_FILES) creator/bigbang.cc creator/makeplanet.cc creator/makestar.cc creator/makeuniv.cc creator/namegen.cc perm.cc rand.cc sector.cc
+makeuniv_SOURCES = $(COMMON_FILES)  \
+					creator/makeplanet.cc \
+					creator/makestar.cc \
+					creator/makeuniv.cc \
+					creator/namegen.cc \
+					perm.cc \
+					sector.cc
 
-enrol_SOURCES =  $(COMMON_FILES) enrol.cc max.cc perm.cc rand.cc sector.cc shlmisc.cc
+enrol_SOURCES =  $(COMMON_FILES) enrol.cc max.cc perm.cc sector.cc shlmisc.cc
 
 GB_SOURCES = GB_server.cc
-GB_LDADD = libgblib.a
+GB_LDADD = libgblib.a libcommands.a
 
-libgblib_a_SOURCES = $(COMMON_FILES) VN.cc analysis.cc commands/autoreport.cc bombard.cc build.cc capital.cc \
-			capture.cc commands/colonies.cc commands/fix.cc commands/governors.cc commands/grant.cc \
-		 	commands/production.cc commands/zoom.cc cs.cc declare.cc dissolve.cc dock.cc dosector.cc \
-			doship.cc doturncmd.cc commands/enslave.cc examine.cc explore.cc fire.cc fuel.cc getplace.cc \
-			land.cc launch.cc load.cc map.cc max.cc mobiliz.cc move.cc moveplanet.cc moveship.cc \
-			name.cc orbit.cc order.cc perm.cc doplanet.cc powercmd.cc prof.cc rand.cc commands/relation.cc \
-			rst.cc scrap.cc sector.cc ships.cc shlmisc.cc shootblast.cc survey.cc \
-			tech.cc tele.cc toggle.cc toxicity.cc victory.cc
+libcommands_a_SOURCES = \
+		     commands/autoreport.cc \
+		     commands/colonies.cc \
+		     commands/enslave.cc \
+		     commands/fix.cc \
+		     commands/governors.cc \
+		     commands/grant.cc \
+		     commands/highlight.cc \
+		     commands/production.cc \
+		     commands/relation.cc \
+		     commands/toxicity.cc \
+		     commands/zoom.cc
 
-racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc rand.cc sector.cc shlmisc.cc
+libgblib_a_SOURCES = $(COMMON_FILES) \
+		     VN.cc \
+		     analysis.cc \
+		     bombard.cc \
+		     build.cc \
+		     capital.cc \
+		     capture.cc \
+		     cs.cc \
+		     declare.cc \
+		     dissolve.cc \
+		     dock.cc \
+		     dosector.cc \
+		     doship.cc \
+		     doturncmd.cc \
+		     examine.cc \
+		     explore.cc \
+		     fire.cc \
+		     fuel.cc \
+		     getplace.cc \
+		     land.cc \
+		     launch.cc \
+		     load.cc \
+		     map.cc \
+		     max.cc \
+		     mobiliz.cc \
+		     move.cc \
+		     moveplanet.cc \
+		     moveship.cc \
+		     name.cc \
+		     orbit.cc \
+		     order.cc \
+		     perm.cc \
+		     doplanet.cc \
+		     powercmd.cc \
+		     prof.cc \
+		     rst.cc \
+		     scrap.cc \
+		     sector.cc \
+		     ships.cc \
+		     shlmisc.cc \
+		     shootblast.cc \
+		     survey.cc \
+		     tech.cc \
+		     tele.cc \
+		     toggle.cc \
+		     victory.cc
+
+racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc sector.cc shlmisc.cc
 
 TESTS = shlmisc_test
 

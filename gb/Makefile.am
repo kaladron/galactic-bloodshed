@@ -63,6 +63,7 @@ libcommands_a_SOURCES = \
 		     commands/highlight.cc \
 		     commands/production.cc \
 		     commands/relation.cc \
+		     commands/tech_status.cc \
 		     commands/toggle.cc \
 		     commands/toxicity.cc \
 		     commands/zoom.cc

@@ -5,7 +5,7 @@
 /// \file highlight.cc
 /// \brief Toggle highlight option on a player.
 
-#include "gb/toggle.h"
+#include "gb/commands/highlight.h"
 
 #include <cstdio>
 

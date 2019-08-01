@@ -4,7 +4,7 @@
 
 /* Random number generator */
 
-#include "gb/rand.h"
+#include "gb/utils/rand.h"
 
 #include <cstdlib>
 

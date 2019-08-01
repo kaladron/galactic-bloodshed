@@ -22,7 +22,7 @@
 #include "gb/map.h"
 #include "gb/power.h"
 #include "gb/races.h"
-#include "gb/rand.h"
+#include "gb/utils/rand.h"
 #include "gb/sql/sql.h"
 #include "gb/tweakables.h"
 #include "gb/utils/fileutils.h"

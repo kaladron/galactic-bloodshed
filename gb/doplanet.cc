@@ -27,7 +27,7 @@
 #include "gb/perm.h"
 #include "gb/power.h"
 #include "gb/races.h"
-#include "gb/rand.h"
+#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/shootblast.h"

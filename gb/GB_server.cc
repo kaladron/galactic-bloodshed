@@ -41,6 +41,7 @@
 #include "gb/commands/fix.h"
 #include "gb/commands/governors.h"
 #include "gb/commands/grant.h"
+#include "gb/commands/highlight.h"
 #include "gb/commands/production.h"
 #include "gb/commands/relation.h"
 #include "gb/commands/toxicity.h"

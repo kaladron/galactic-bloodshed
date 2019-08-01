@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-#include "gb/rand.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 std::ostream &operator<<(std::ostream &os, const Sector &s) {

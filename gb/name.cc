@@ -24,7 +24,7 @@
 #include "gb/max.h"
 #include "gb/mobiliz.h"
 #include "gb/races.h"
-#include "gb/rand.h"
+#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tele.h"

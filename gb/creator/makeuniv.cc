@@ -28,6 +28,13 @@
 #include "gb/utils/fileutils.h"
 #include "gb/vars.h"
 
+int autoname_star = -1;
+int autoname_plan = -1;
+int minplanets = -1;
+int maxplanets = -1;
+int printplaninfo = 0;
+int printstarinfo = 0;
+
 static int nstars = -1;
 static int occupied[100][100];
 static int planetlesschance = 0;

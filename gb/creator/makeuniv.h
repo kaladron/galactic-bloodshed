@@ -5,4 +5,15 @@
 #ifndef MAKEUNIV_H
 #define MAKEUNIV_H
 
+#include "gb/vars.h"
+
+void place_star(startype *);
+
+extern int autoname_plan;
+extern int autoname_star;
+extern int minplanets;
+extern int maxplanets;
+extern int printplaninfo;
+extern int printstarinfo;
+
 #endif  // MAKEUNIV_H

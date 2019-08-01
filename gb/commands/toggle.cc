@@ -4,7 +4,7 @@
 
 /*  toggle.c -- toggles some options */
 
-#include "gb/toggle.h"
+#include "gb/commands/toggle.h"
 
 #include <cstdio>
 

@@ -56,6 +56,7 @@ libcommands_a_SOURCES = \
 		     commands/highlight.cc \
 		     commands/production.cc \
 		     commands/relation.cc \
+		     commands/toggle.cc \
 		     commands/toxicity.cc \
 		     commands/zoom.cc
 
@@ -104,7 +105,6 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     survey.cc \
 		     tech.cc \
 		     tele.cc \
-		     toggle.cc \
 		     victory.cc
 
 racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc rand.cc sector.cc shlmisc.cc

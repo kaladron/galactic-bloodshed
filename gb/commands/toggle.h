@@ -2,11 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef TOGGLE_H
-#define TOGGLE_H
+#ifndef CMDS_TOGGLE_H
+#define CMDS_TOGGLE_H
 
 #include "gb/vars.h"
 
 void toggle(const command_t &, GameObj &);
 
-#endif  // TOGGLE_H
+#endif  // CMDS_TOGGLE_H

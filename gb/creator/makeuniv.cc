@@ -5,10 +5,7 @@
 /* makeuniv.c -- universe creation program.
  *   Makes various required data files; calls makestar for each star desired. */
 
-#include "gb/makeuniv.h"
-
-#include <sys/stat.h>
-#include <unistd.h>
+#include "gb/creator/makeuniv.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -17,20 +14,19 @@
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/build.h"
+#include "gb/creator/makestar.h"
+#include "gb/creator/namegen.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/globals.h"
-#include "gb/makestar.h"
 #include "gb/map.h"
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/rand.h"
 #include "gb/sql/sql.h"
 #include "gb/tweakables.h"
+#include "gb/utils/fileutils.h"
 #include "gb/vars.h"
-
-static void InitFile(const char *, void *, int);
-static void EmptyFile(const char *);
 
 int autoname_star = -1;
 int autoname_plan = -1;
@@ -83,6 +79,15 @@ int main(int argc, char *argv[]) {
         case 'w':
           printstarinfo = 1;
           break;
+        case 'd':
+          autoname_star = 1;
+          autoname_plan = 1;
+          printplaninfo = 1;
+          printstarinfo = 1;
+          nstars = 128;
+          minplanets = 1;
+          maxplanets = 10;
+          break;
         default:
           printf("\n");
           printf("Unknown option \"%s\".\n", argv[i]);
@@ -93,6 +98,7 @@ int main(int argc, char *argv[]) {
               "[-w]\n");
           printf("  -a      Autoload star names.\n");
           printf("  -b      Autoload planet names.\n");
+          printf("  -d      Use all defauls and autoloaded names.\n");
           printf("  -e E    Make E%% of stars have no planets.\n");
           printf("  -l MIN  Other systems will have at least MIN planets.\n");
           printf("  -m MAX  Other systems will have at most  MAX planets.\n");
@@ -215,20 +221,6 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-static void InitFile(const char *filename, void *ptr, int len) {
-  FILE *f = fopen(filename, "w+");
-
-  if (f == nullptr) {
-    printf("Unable to open \"%s\".\n", filename);
-    exit(-1);
-  }
-  fwrite(ptr, len, 1, f);
-  chmod(filename, 00660);
-  fclose(f);
-}
-
-static void EmptyFile(const char *filename) { InitFile(filename, nullptr, 0); }
 
 void place_star(startype *star) {
   int found = 0;

@@ -7,7 +7,7 @@
 #include "gb/doturn.h"
 #include "gb/max.h"
 #include "gb/races.h"
-#include "gb/rand.h"
+#include "gb/utils/rand.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 

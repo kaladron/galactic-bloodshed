@@ -53,6 +53,7 @@ libcommands_a_SOURCES = \
 		     commands/fix.cc \
 		     commands/governors.cc \
 		     commands/grant.cc \
+		     commands/highlight.cc \
 		     commands/production.cc \
 		     commands/relation.cc \
 		     commands/toxicity.cc \

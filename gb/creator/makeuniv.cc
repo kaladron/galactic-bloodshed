@@ -22,7 +22,7 @@
 #include "gb/map.h"
 #include "gb/power.h"
 #include "gb/races.h"
-#include "gb/rand.h"
+#include "gb/utils/rand.h"
 #include "gb/sql/sql.h"
 #include "gb/tweakables.h"
 #include "gb/utils/fileutils.h"
@@ -47,6 +47,9 @@ int main(int argc, char *argv[]) {
    * Initialize: */
   srandom(getpid());
   bzero(&Sdata, sizeof(Sdata));
+
+  NameGenerator *star_name_gen = nullptr;
+  NameGenerator *planet_name_gen = nullptr;
 
   /*
    * Read the arguments for values: */

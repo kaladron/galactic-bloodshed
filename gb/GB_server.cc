@@ -73,7 +73,7 @@
 #include "gb/powercmd.h"
 #include "gb/prof.h"
 #include "gb/races.h"
-#include "gb/rand.h"
+#include "gb/utils/rand.h"
 #include "gb/rst.h"
 #include "gb/scrap.h"
 #include "gb/ships.h"

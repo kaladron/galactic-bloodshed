@@ -14,7 +14,7 @@
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/races.h"
-#include "gb/rand.h"
+#include "gb/utils/rand.h"
 #include "gb/shlmisc.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"

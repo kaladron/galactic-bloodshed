@@ -37,11 +37,18 @@ bin_PROGRAMS = makeuniv enrol GB racegen
 
 noinst_LIBRARIES = libgblib.a libcommands.a
 
-COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc utils/fileutils.cc
+UTILS_FILES = utils/rand.cc
+COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc $(UTILS_FILES)
 
-makeuniv_SOURCES = $(COMMON_FILES) creator/makeplanet.cc creator/makestar.cc creator/makeuniv.cc creator/namegen.cc perm.cc rand.cc sector.cc
+makeuniv_SOURCES = $(COMMON_FILES)  \
+					creator/makeplanet.cc \
+					creator/makestar.cc \
+					creator/makeuniv.cc \
+					creator/namegen.cc \
+					perm.cc \
+					sector.cc
 
-enrol_SOURCES =  $(COMMON_FILES) enrol.cc max.cc perm.cc rand.cc sector.cc shlmisc.cc
+enrol_SOURCES =  $(COMMON_FILES) enrol.cc max.cc perm.cc sector.cc shlmisc.cc
 
 GB_SOURCES = GB_server.cc
 GB_LDADD = libgblib.a libcommands.a
@@ -94,7 +101,6 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     doplanet.cc \
 		     powercmd.cc \
 		     prof.cc \
-		     rand.cc \
 		     rst.cc \
 		     scrap.cc \
 		     sector.cc \
@@ -107,7 +113,7 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     toggle.cc \
 		     victory.cc
 
-racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc rand.cc sector.cc shlmisc.cc
+racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc sector.cc shlmisc.cc
 
 TESTS = shlmisc_test
 

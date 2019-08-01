@@ -39,7 +39,7 @@ libgblib_a_SOURCES = VN.cc analysis.cc commands/autoreport.cc bombard.cc build.c
 		dock.cc dosector.cc doship.cc doturncmd.cc commands/enslave.cc examine.cc explore.cc files.cc files_rw.cc files_shl.cc \
 		fire.cc fuel.cc getplace.cc land.cc launch.cc load.cc map.cc max.cc mobiliz.cc move.cc moveplanet.cc moveship.cc \
 		name.cc orbit.cc order.cc perm.cc planet.cc powercmd.cc prof.cc rand.cc commands/relation.cc rst.cc scrap.cc sector.cc \
-		ships.cc shlmisc.cc shootblast.cc sql/sql.cc survey.cc tech.cc tele.cc toggle.cc toxicity.cc victory.cc
+		ships.cc shlmisc.cc shootblast.cc sql/sql.cc survey.cc tech.cc tele.cc toggle.cc commands/toxicity.cc victory.cc
 
 racegen_SOURCES = GB_racegen.cc enroll.cc files.cc files_rw.cc files_shl.cc  \
 		  max.cc perm.cc racegen.cc rand.cc sector.cc shlmisc.cc sql/sql.cc

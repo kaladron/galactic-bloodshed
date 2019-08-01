@@ -5,7 +5,7 @@
 /// \file toxicity.cc
 /// \brief Change threshold in toxicity to build a wc.
 
-#include "gb/toxicity.h"
+#include "gb/commands/toxicity.h"
 
 #include "gb/GB_server.h"
 #include "gb/files_shl.h"

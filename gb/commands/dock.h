@@ -2,11 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef DOCK_H
-#define DOCK_H
+#ifndef CMDS_DOCK_H
+#define CMDS_DOCK_H
 
 #include "gb/vars.h"
 
 void dock(const command_t &, GameObj &);
 
-#endif  // DOCK_H
+#endif  // CMDS_DOCK_H

@@ -8,7 +8,7 @@
  *  Command "factories" programmed by varneyml@gb.erc.clarkson.edu
  */
 
-#include "gb/rst.h"
+#include "gb/commands/rst.h"
 
 #include <cctype>
 #include <cmath>

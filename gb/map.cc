@@ -10,11 +10,11 @@
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
+#include "gb/commands/orbit.h"
 #include "gb/files_shl.h"
 #include "gb/fire.h"
 #include "gb/getplace.h"
 #include "gb/max.h"
-#include "gb/orbit.h"
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"

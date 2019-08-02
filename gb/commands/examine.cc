@@ -4,7 +4,7 @@
 
 /* examine -- check out an object */
 
-#include "gb/examine.h"
+#include "gb/commands/examine.h"
 
 #include <cstdio>
 #include <cstdlib>

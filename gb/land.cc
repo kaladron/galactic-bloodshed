@@ -23,12 +23,12 @@
 #include "gb/load.h"
 #include "gb/max.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/shootblast.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 /// Determine whether the ship crashed or not.
@@ -151,11 +151,11 @@ void land(const command_t &argv, GameObj &g) {
             free(s);
             continue;
           }
-          if (Size(s) > Hanger(&*s2)) {
+          if (size(*s) > hanger(*s2)) {
             sprintf(buf,
                     "Mothership does not have %d hanger space available "
                     "to load ship.\n",
-                    Size(s));
+                    size(*s));
             notify(Playernum, Governor, buf);
             free(s);
             continue;
@@ -168,7 +168,7 @@ void land(const command_t &argv, GameObj &g) {
           insert_sh_ship(s, &*s2);
           /* increase mass of mothership */
           s2->mass += s->mass;
-          s2->hanger += Size(s);
+          s2->hanger += size(*s);
           fuel = 0.0;
           sprintf(buf, "%s loaded onto %s using %.1f fuel.\n",
                   ship_to_string(*s).c_str(), ship_to_string(*s2).c_str(),
@@ -208,11 +208,11 @@ void land(const command_t &argv, GameObj &g) {
             free(s);
             continue;
           }
-          if (Size(s) > Hanger(&*s2)) {
+          if (size(*s) > hanger(*s2)) {
             sprintf(buf,
                     "Mothership does not have %d hanger space available "
                     "to load ship.\n",
-                    Size(s));
+                    size(*s));
             notify(Playernum, Governor, buf);
             free(s);
             continue;
@@ -235,7 +235,7 @@ void land(const command_t &argv, GameObj &g) {
           insert_sh_ship(s, &*s2);
           /* increase mass of mothership */
           s2->mass += s->mass;
-          s2->hanger += Size(s);
+          s2->hanger += size(*s);
           sprintf(buf, "%s landed on %s using %.1f fuel.\n",
                   ship_to_string(*s).c_str(), ship_to_string(*s2).c_str(),
                   fuel);
@@ -270,7 +270,7 @@ void land(const command_t &argv, GameObj &g) {
           free(s);
           continue;
         }
-        if (!speed_rating(s)) {
+        if (!speed_rating(*s)) {
           sprintf(buf, "This ship is not rated for maneuvering.\n");
           notify(Playernum, Governor, buf);
           free(s);
@@ -424,7 +424,7 @@ int docked(Ship *s) {
 }
 
 int overloaded(Ship *s) {
-  return ((s->resource > Max_resource(s)) || (s->fuel > Max_fuel(s)) ||
+  return ((s->resource > max_resource(*s)) || (s->fuel > max_fuel(*s)) ||
           (s->popn + s->troops > s->max_crew) ||
-          (s->destruct > Max_destruct(s)));
+          (s->destruct > max_destruct(*s)));
 }

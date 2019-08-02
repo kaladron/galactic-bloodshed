@@ -75,7 +75,6 @@
 #include "gb/powercmd.h"
 #include "gb/prof.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/rst.h"
 #include "gb/scrap.h"
 #include "gb/ships.h"
@@ -85,6 +84,7 @@
 #include "gb/tech.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 #include "gb/victory.h"
 
@@ -1413,7 +1413,7 @@ void kill_ship(int Playernum, Ship *ship) {
       killer = races[Playernum - 1];
       adjust_morale(killer, victim, (int)ship->build_cost);
       putrace(killer);
-    } else if (ship->owner == Playernum && !ship->docked && Max_crew(ship)) {
+    } else if (ship->owner == Playernum && !ship->docked && max_crew(*ship)) {
       victim->morale -= 2 * ship->build_cost; /* scuttle/scrap */
     }
     putrace(victim);

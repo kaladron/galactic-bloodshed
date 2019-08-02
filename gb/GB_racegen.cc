@@ -21,11 +21,11 @@
 #include "gb/perm.h"
 #include "gb/racegen.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/shipdata.h"
 #include "gb/ships.h"
 #include "gb/sql/sql.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static const PlanetType planet_translate[N_HOME_PLANET_TYPES] = {

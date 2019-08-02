@@ -18,10 +18,10 @@
 #include "gb/getplace.h"
 #include "gb/misc.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static int hit_probability;
@@ -73,7 +73,7 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
       to->whatorbits == ScopeLevel::LEVEL_UNIV)
     return -1;
   if (from->storbits != to->storbits) return -1;
-  if (has_switch(from) && !from->on) return -1;
+  if (has_switch(*from) && !from->on) return -1;
 
   xfrom = from->xpos;
   yfrom = from->ypos;
@@ -205,7 +205,7 @@ int shoot_ship_to_planet(Ship *ship, Planet *pl, int strength, int x, int y,
   numdest = 0;
   if (strength <= 0) return -1;
   if (!(ship->alive || ignore)) return -1;
-  if (has_switch(ship) && !ship->on) return -1;
+  if (has_switch(*ship) && !ship->on) return -1;
   if (ship->whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
 
   if (x < 0 || x > pl->Maxx - 1 || y < 0 || y > pl->Maxy - 1) return -1;
@@ -324,8 +324,8 @@ static int do_radiation(Ship *ship, double tech, int strength, int hits,
   fac =
       (2. / 3.14159265) * atan((double)(5 * (tech + 1.0) / (ship->tech + 1.0)));
 
-  arm = std::max(0UL, Armor(ship) - hits / 5);
-  body = Body(ship);
+  arm = std::max(0UL, armor(*ship) - hits / 5);
+  body = shipbody(*ship);
 
   penetrate = 0;
   r = 1.0;
@@ -385,8 +385,8 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
 
   fac = p_factor(tech, ship->tech);
   penetration_factor = fac;
-  arm = std::max(0UL, Armor(ship) + defense - hits / 5);
-  body = sqrt((double)(0.1 * Body(ship)));
+  arm = std::max(0UL, armor(*ship) + defense - hits / 5);
+  body = sqrt((double)(0.1 * shipbody(*ship)));
 
   critdam = 0;
   crithits = 0;
@@ -449,7 +449,7 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
 static void ship_disposition(Ship *ship, int *evade, int *speed, int *body) {
   *evade = 0;
   *speed = 0;
-  *body = Size(ship);
+  *body = size(*ship);
   if (ship->active && !ship->docked && (ship->whatdest || ship->navigate.on)) {
     *evade = ship->protect.evade;
     *speed = ship->speed;
@@ -562,7 +562,7 @@ static void do_critical_hits(int penetrate, Ship *ship, int *crithits,
   int dam;
   *critdam = 0;
   *crithits = 0;
-  eff_size = std::max(1, Body(ship) / caliber);
+  eff_size = std::max(1, shipbody(*ship) / caliber);
   for (i = 1; i <= penetrate; i++)
     if (!int_rand(0, eff_size - 1)) {
       *crithits += 1;

@@ -6,8 +6,8 @@
 
 #include "gb/perm.h"
 
-#include "gb/utils/rand.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static struct map { char x, y; } xymap[(MAX_X + 1) * (MAX_Y + 1)];

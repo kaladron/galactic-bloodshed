@@ -20,8 +20,8 @@
 #include "gb/creator/makeuniv.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
-#include "gb/utils/rand.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static const double PLANET_DIST_MAX = 1900.0;

@@ -229,8 +229,8 @@ static void ship_report(GameObj &g, shipnum_t indx,
               "%5lu %c "
               "%14.14s%3u%4u:%-3u%5lu:%-5ld%5u:%-5ld%7.1f:%-6ld%lu/%lu:%d\n",
               shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
-              s.crystals, s.hanger, s.max_hanger, s.resource, Max_resource(&s),
-              s.destruct, Max_destruct(&s), s.fuel, Max_fuel(&s), s.popn,
+              s.crystals, s.hanger, s.max_hanger, s.resource, max_resource(s),
+              s.destruct, max_destruct(s), s.fuel, max_fuel(s), s.popn,
               s.troops, s.max_crew);
       notify(Playernum, Governor, buf);
     }
@@ -248,8 +248,8 @@ static void ship_report(GameObj &g, shipnum_t indx,
               shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
               s.laser ? "yes " : "    ", s.cew ? "yes " : "    ",
               s.hyper_drive.has ? "yes " : "    ", s.primary,
-              Caliber[s.primtype], s.secondary, Caliber[s.sectype], Armor(&s),
-              s.tech, Max_speed(&s), Cost(&s), Mass(&s), Size(&s));
+              Caliber[s.primtype], s.secondary, Caliber[s.sectype], armor(s),
+              s.tech, max_speed(s), shipcost(s), mass(s), size(s));
       notify(Playernum, Governor, buf);
       if (s.type == ShipType::STYPE_POD) {
         sprintf(buf, " (%d)", s.special.pod.temperature);
@@ -427,7 +427,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
       sight = 0;
       if (rd[indx].type == PLANET)
         sight = 1;
-      else if (Sight(&s))
+      else if (shipsight(s))
         sight = 1;
 
       /* tactical display */
@@ -464,7 +464,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                   tspeed = rd[i].s.speed;
                   tev = rd[i].s.protect.evade;
                 }
-                body = Size(&rd[i].s);
+                body = size(rd[i].s);
                 defense = getdefense(&rd[i].s);
                 prob = hit_odds(Dist, &factor, tech, fdam, fev, tev, fspeed,
                                 tspeed, body, caliber, defense);

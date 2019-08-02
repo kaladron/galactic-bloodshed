@@ -72,8 +72,7 @@ void capital(const command_t &argv, GameObj &g) {
     putrace(Race);
   }
 
-  sprintf(
-      buf, "Efficiency of governmental center: %.0f%%.\n",
-      ((double)s->popn / (double)Max_crew(&*s)) * (100 - (double)s->damage));
+  sprintf(buf, "Efficiency of governmental center: %.0f%%.\n",
+          ((double)s->popn / (double)max_crew(*s)) * (100 - (double)s->damage));
   notify(Playernum, Governor, buf);
 }

@@ -27,13 +27,13 @@
 #include "gb/perm.h"
 #include "gb/power.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/shootblast.h"
 #include "gb/tech.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static void do_dome(Ship *, SectorMap &);
@@ -210,7 +210,7 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
             fadd = FUEL_GAS_ADD;
             break;
         }
-        fadd = std::min((double)Max_fuel(ship) - ship->fuel, fadd);
+        fadd = std::min((double)max_fuel(*ship) - ship->fuel, fadd);
         rcv_fuel(ship, fadd);
       }
     }

@@ -20,12 +20,12 @@
 #include "gb/getplace.h"
 #include "gb/load.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/shootblast.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static void check_overload(Ship *, int, int *);

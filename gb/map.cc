@@ -16,10 +16,10 @@
 #include "gb/max.h"
 #include "gb/orbit.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static void show_map(const player_t, const governor_t, const starnum_t,

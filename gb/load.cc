@@ -19,10 +19,10 @@
 #include "gb/land.h"
 #include "gb/move.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
@@ -170,51 +170,53 @@ void load(const command_t &argv, GameObj &g) {
         case 'x':
         case '&':
           if (sh) {
-            uplim = diff ? 0 : MIN(s2->crystals, Max_crystals(s) - s->crystals);
+            uplim =
+                diff ? 0 : MIN(s2->crystals, max_crystals(*s) - s->crystals);
             lolim =
-                diff ? 0 : -MIN(s->crystals, Max_crystals(s2) - s2->crystals);
+                diff ? 0 : -MIN(s->crystals, max_crystals(*s2) - s2->crystals);
           } else {
             uplim = MIN(p.info[Playernum - 1].crystals,
-                        Max_crystals(s) - s->crystals);
+                        max_crystals(*s) - s->crystals);
             lolim = -s->crystals;
           }
           break;
         case 'c':
           if (sh) {
-            uplim = diff ? 0 : MIN(s2->popn, Max_crew(s) - s->popn);
-            lolim = diff ? 0 : -MIN(s->popn, Max_crew(s2) - s2->popn);
+            uplim = diff ? 0 : MIN(s2->popn, max_crew(*s) - s->popn);
+            lolim = diff ? 0 : -MIN(s->popn, max_crew(*s2) - s2->popn);
           } else {
-            uplim = MIN(sect.popn, Max_crew(s) - s->popn);
+            uplim = MIN(sect.popn, max_crew(*s) - s->popn);
             lolim = -s->popn;
           }
           break;
         case 'm':
           if (sh) {
-            uplim = diff ? 0 : MIN(s2->troops, Max_mil(s) - s->troops);
-            lolim = diff ? 0 : -MIN(s->troops, Max_mil(s2) - s2->troops);
+            uplim = diff ? 0 : MIN(s2->troops, max_mil(*s) - s->troops);
+            lolim = diff ? 0 : -MIN(s->troops, max_mil(*s2) - s2->troops);
           } else {
-            uplim = MIN(sect.troops, Max_mil(s) - s->troops);
+            uplim = MIN(sect.troops, max_mil(*s) - s->troops);
             lolim = -s->troops;
           }
           break;
         case 'd':
           if (sh) {
-            uplim = diff ? 0 : MIN(s2->destruct, Max_destruct(s) - s->destruct);
-            lolim = -MIN(s->destruct, Max_destruct(s2) - s2->destruct);
+            uplim =
+                diff ? 0 : MIN(s2->destruct, max_destruct(*s) - s->destruct);
+            lolim = -MIN(s->destruct, max_destruct(*s2) - s2->destruct);
           } else {
             uplim = MIN(p.info[Playernum - 1].destruct,
-                        Max_destruct(s) - s->destruct);
+                        max_destruct(*s) - s->destruct);
             lolim = -s->destruct;
           }
           break;
         case 'f':
           if (sh) {
             uplim =
-                diff ? 0 : MIN((int)s2->fuel, (int)Max_fuel(s) - (int)s->fuel);
-            lolim = -MIN((int)s->fuel, (int)Max_fuel(s2) - (int)s2->fuel);
+                diff ? 0 : MIN((int)s2->fuel, (int)max_fuel(*s) - (int)s->fuel);
+            lolim = -MIN((int)s->fuel, (int)max_fuel(*s2) - (int)s2->fuel);
           } else {
             uplim = MIN((int)p.info[Playernum - 1].fuel,
-                        (int)Max_fuel(s) - (int)s->fuel);
+                        (int)max_fuel(*s) - (int)s->fuel);
             lolim = -(int)s->fuel;
           }
           break;
@@ -225,15 +227,15 @@ void load(const command_t &argv, GameObj &g) {
               uplim = diff ? 0 : s2->resource;
             else
               uplim =
-                  diff ? 0 : MIN(s2->resource, Max_resource(s) - s->resource);
+                  diff ? 0 : MIN(s2->resource, max_resource(*s) - s->resource);
             if (s2->type == ShipType::STYPE_SHUTTLE &&
                 s->whatorbits != ScopeLevel::LEVEL_SHIP)
               lolim = -s->resource;
             else
-              lolim = -MIN(s->resource, Max_resource(s2) - s2->resource);
+              lolim = -MIN(s->resource, max_resource(*s2) - s2->resource);
           } else {
             uplim = MIN(p.info[Playernum - 1].resource,
-                        Max_resource(s) - s->resource);
+                        max_resource(*s) - s->resource);
             lolim = -s->resource;
           }
           break;
@@ -357,7 +359,7 @@ void load(const command_t &argv, GameObj &g) {
           s->mass += amt * MASS_DESTRUCT;
           sprintf(buf, "%d destruct transferred.\n", amt);
           notify(Playernum, Governor, buf);
-          if (!Max_crew(s)) {
+          if (!max_crew(*s)) {
             sprintf(buf, "\n%s ", ship_to_string(*s).c_str());
             notify(Playernum, Governor, buf);
             if (s->destruct) {
@@ -563,7 +565,7 @@ void jettison(const command_t &argv, GameObj &g) {
             use_destruct(s, amt);
             sprintf(buf, "%d destruct jettisoned.\n", amt);
             notify(Playernum, Governor, buf);
-            if (!Max_crew(s)) {
+            if (!max_crew(*s)) {
               sprintf(buf, "\n%s ", ship_to_string(*s).c_str());
               notify(Playernum, Governor, buf);
               if (s->destruct) {
@@ -841,7 +843,7 @@ void mount(const command_t &argv, GameObj &g) {
         ship->crystals--;
         g.out << "Mounted.\n";
       } else if (ship->mounted && !mnt) {
-        if (ship->crystals == Max_crystals(ship)) {
+        if (ship->crystals == max_crystals(*ship)) {
           notify(Playernum, Governor,
                  "You can't dismount the crystal. Max "
                  "allowed already on board.\n");

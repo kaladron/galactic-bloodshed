@@ -304,37 +304,37 @@ struct place { /* used in function return for finding place */
 };
 
 /* can takeoff & land, is mobile, etc. */
-unsigned short speed_rating(Ship *s);
+unsigned short speed_rating(const Ship &s);
 
-bool has_switch(Ship *d);
+bool has_switch(const Ship &d);
 
 /* can bombard planets */
-bool can_bombard(Ship *s);
+bool can_bombard(const Ship &s);
 
 /* can navigate */
-bool can_navigate(Ship *s);
+bool can_navigate(const Ship &s);
 
 /* can aim at things. */
-bool can_aim(Ship *s);
+bool can_aim(const Ship &s);
 
 /* macros to get ship stats */
-unsigned long Armor(Ship *s);
-long Guns(Ship *s);
-population_t Max_crew(Ship *s);
-population_t Max_mil(Ship *s);
-long Max_resource(Ship *s);
-int Max_crystals(Ship *s);
-long Max_fuel(Ship *s);
-long Max_destruct(Ship *s);
-long Max_speed(Ship *s);
-long Cost(Ship *s);
-double Mass(Ship *s);
-long Sight(Ship *s);
-long Retaliate(Ship *s);
-int Size(Ship *s);
-int Body(Ship *s);
-long Hanger(Ship *s);
-long Repair(Ship *s);
+unsigned long armor(const Ship &s);
+long guns(const Ship &s);
+population_t max_crew(const Ship &s);
+population_t max_mil(const Ship &s);
+long max_resource(const Ship &s);
+int max_crystals(const Ship &s);
+long max_fuel(const Ship &s);
+long max_destruct(const Ship &s);
+long max_speed(const Ship &s);
+long shipcost(const Ship &s);
+double mass(const Ship &s);
+long shipsight(const Ship &s);
+long retaliate(const Ship &s);
+int size(const Ship &s);
+int shipbody(const Ship &s);
+long hanger(const Ship &s);
+long repair(const Ship &s);
 
 extern shipnum_t Num_ships;
 extern const unsigned long Shipdata[NUMSTYPES][NUMABILS];

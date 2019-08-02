@@ -14,10 +14,10 @@
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/shlmisc.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static void show_votes(int, int);

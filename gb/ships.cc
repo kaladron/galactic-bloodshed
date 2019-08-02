@@ -7,100 +7,93 @@
 #include "gb/files_shl.h"
 
 /* can takeoff & land, is mobile, etc. */
-unsigned short speed_rating(Ship *s) { return (s)->max_speed; }
+unsigned short speed_rating(const Ship &s) { return s.max_speed; }
 
 /* has an on/off switch */
-bool has_switch(Ship *s) { return Shipdata[(s)->type][ABIL_HASSWITCH]; }
+bool has_switch(const Ship &s) { return Shipdata[s.type][ABIL_HASSWITCH]; }
 
 /* can bombard planets */
-bool can_bombard(Ship *s) {
-  return Shipdata[(s)->type][ABIL_GUNS] && ((s)->type != ShipType::STYPE_MINE);
+bool can_bombard(const Ship &s) {
+  return Shipdata[s.type][ABIL_GUNS] && (s.type != ShipType::STYPE_MINE);
 }
 
 /* can navigate */
-bool can_navigate(Ship *s) {
-  return Shipdata[(s)->type][ABIL_SPEED] > 0 &&
-         (s)->type != ShipType::OTYPE_TERRA && (s)->type != ShipType::OTYPE_VN;
+bool can_navigate(const Ship &s) {
+  return Shipdata[s.type][ABIL_SPEED] > 0 && s.type != ShipType::OTYPE_TERRA &&
+         s.type != ShipType::OTYPE_VN;
 }
 
 /* can aim at things. */
-bool can_aim(Ship *s) {
-  return (s)->type >= ShipType::STYPE_MIRROR &&
-         (s)->type <= ShipType::OTYPE_TRACT;
+bool can_aim(const Ship &s) {
+  return s.type >= ShipType::STYPE_MIRROR && s.type <= ShipType::OTYPE_TRACT;
 }
 
 /* macros to get ship stats */
-unsigned long Armor(Ship *s) {
-  return ((s)->type == ShipType::OTYPE_FACTORY)
-             ? Shipdata[(s)->type][ABIL_ARMOR]
-             : (s)->armor * (100 - (s)->damage) / 100;
+unsigned long armor(const Ship &s) {
+  return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_ARMOR]
+                                             : s.armor * (100 - s.damage) / 100;
 }
 
-long Guns(Ship *s) {
-  return ((s)->guns == GTYPE_NONE)
-             ? 0
-             : ((s)->guns == PRIMARY ? (s)->primary : (s)->secondary);
+long guns(const Ship &s) {
+  return (s.guns == GTYPE_NONE) ? 0
+                                : (s.guns == PRIMARY ? s.primary : s.secondary);
 }
 
-population_t Max_crew(Ship *s) {
-  return ((s)->type == ShipType::OTYPE_FACTORY)
-             ? Shipdata[(s)->type][ABIL_MAXCREW] - (s)->troops
-             : (s)->max_crew - (s)->troops;
+population_t max_crew(const Ship &s) {
+  return (s.type == ShipType::OTYPE_FACTORY)
+             ? Shipdata[s.type][ABIL_MAXCREW] - s.troops
+             : s.max_crew - s.troops;
 }
 
-population_t Max_mil(Ship *s) {
-  return ((s)->type == ShipType::OTYPE_FACTORY)
-             ? Shipdata[(s)->type][ABIL_MAXCREW] - (s)->popn
-             : (s)->max_crew - (s)->popn;
+population_t max_mil(const Ship &s) {
+  return (s.type == ShipType::OTYPE_FACTORY)
+             ? Shipdata[s.type][ABIL_MAXCREW] - s.popn
+             : s.max_crew - s.popn;
 }
 
-long Max_resource(Ship *s) {
-  return ((s)->type == ShipType::OTYPE_FACTORY)
-             ? Shipdata[(s)->type][ABIL_CARGO]
-             : (s)->max_resource;
+long max_resource(const Ship &s) {
+  return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_CARGO]
+                                             : s.max_resource;
 }
-int Max_crystals(Ship *) { return 127; }
+int max_crystals(const Ship &) { return 127; }
 
-long Max_fuel(Ship *s) {
-  return ((s)->type == ShipType::OTYPE_FACTORY)
-             ? Shipdata[(s)->type][ABIL_FUELCAP]
-             : (s)->max_fuel;
+long max_fuel(const Ship &s) {
+  return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_FUELCAP]
+                                             : s.max_fuel;
 }
 
-long Max_destruct(Ship *s) {
-  return ((s)->type == ShipType::OTYPE_FACTORY)
-             ? Shipdata[(s)->type][ABIL_DESTCAP]
-             : (s)->max_destruct;
+long max_destruct(const Ship &s) {
+  return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_DESTCAP]
+                                             : s.max_destruct;
 }
 
-long Max_speed(Ship *s) {
-  return ((s)->type == ShipType::OTYPE_FACTORY)
-             ? Shipdata[(s)->type][ABIL_SPEED]
-             : (s)->max_speed;
+long max_speed(const Ship &s) {
+  return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_SPEED]
+                                             : s.max_speed;
 }
 
-long Cost(Ship *s) {
-  return ((s)->type == ShipType::OTYPE_FACTORY)
-             ? 2 * (s)->build_cost * (s)->on + Shipdata[(s)->type][ABIL_COST]
-             : (s)->build_cost;
+long shipcost(const Ship &s) {
+  return (s.type == ShipType::OTYPE_FACTORY)
+             ? 2 * s.build_cost * s.on + Shipdata[s.type][ABIL_COST]
+             : s.build_cost;
 }
 
-double Mass(Ship *s) { return (s)->mass; }
+double mass(const Ship &s) { return s.mass; }
 
-long Sight(Ship *s) {
-  return ((s)->type == ShipType::OTYPE_PROBE) || (s)->popn;
+long shipsight(const Ship &s) {
+  return (s.type == ShipType::OTYPE_PROBE) || s.popn;
 }
 
-long Retaliate(Ship *s) { return (s)->retaliate; }
+long retaliate(const Ship &s) { return s.retaliate; }
 
-int Size(Ship *s) { return (s)->size; }
+int size(const Ship &s) { return s.size; }
 
-int Body(Ship *s) { return (s)->size - (s)->max_hanger; }
+int shipbody(const Ship &s) { return s.size - s.max_hanger; }
 
-long Hanger(Ship *s) { return (s)->max_hanger - (s)->hanger; }
+long hanger(const Ship &s) { return s.max_hanger - s.hanger; }
 
-long Repair(Ship *s) {
-  return ((s)->type == ShipType::OTYPE_FACTORY) ? (s)->on : Max_crew(s);
+long repair(const Ship &s) {
+  return (s.type == ShipType::OTYPE_FACTORY) ? s.on : max_crew(s);
 }
 
 Shiplist::Iterator::Iterator(shipnum_t a) {

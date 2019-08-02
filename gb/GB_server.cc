@@ -1634,11 +1634,11 @@ static double GetComplexity(const ShipType ship) {
   s.laser = Shipdata[ship][ABIL_LASER];
   s.cew = 0;
   s.cew_range = 0;
-  s.size = ship_size(&s);
-  s.base_mass = getmass(&s);
-  s.mass = getmass(&s);
+  s.size = ship_size(s);
+  s.base_mass = getmass(s);
+  s.mass = getmass(s);
 
-  return complexity(&s);
+  return complexity(s);
 }
 
 static int ShipCompare(const void *S1, const void *S2) {

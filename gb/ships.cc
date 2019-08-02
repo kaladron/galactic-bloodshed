@@ -2,10 +2,14 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "gb/ships.h"
+#include <boost/format.hpp>
+
 #include "gb/defense.h"
+#include "gb/ships.h"
 
 #include "gb/files_shl.h"
+
+// Essentialy everything in this file can move into a Ship class.
 
 /* can takeoff & land, is mobile, etc. */
 unsigned short speed_rating(const Ship &s) { return s.max_speed; }
@@ -132,4 +136,20 @@ bool laser_on(const Ship &ship) { return (ship.laser && ship.fire_laser); }
 
 bool landed(const Ship &ship) {
   return (ship.whatdest == ScopeLevel::LEVEL_PLAN && ship.docked);
+}
+
+void capture_stuff(const Ship &ship, GameObj &g) {
+  Shiplist shiplist(ship.ships);
+  for (auto s : shiplist) {
+    capture_stuff(s, g);  /* recursive call */
+    s.owner = ship.owner; /* make sure he gets all of the ships landed on it */
+    s.governor = ship.governor;
+    putship(&s);
+    g.out << ship_to_string(s) << " CAPTURED!\n";
+  }
+}
+
+std::string ship_to_string(const Ship &s) {
+  return str(boost::format("%c%lu %s [%d]") % Shipltrs[s.type] % s.number %
+             s.name % s.owner);
 }

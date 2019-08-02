@@ -2,11 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef ANALYSIS_H
-#define ANALYSIS_H
+#ifndef CMDS_CAPITAL_H
+#define CMDS_CAPITAL_H
 
 #include "gb/vars.h"
 
-void analysis(const command_t &, GameObj &);
+void capital(const command_t &, GameObj &);
 
-#endif  // ANALYSIS_H
+#endif  // CMDS_CAPITAL_H

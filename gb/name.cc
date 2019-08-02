@@ -16,7 +16,6 @@
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/capture.h"
 #include "gb/dissolve.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
@@ -498,7 +497,7 @@ void give(const command_t &argv, GameObj &g) {
 
   ship->owner = who;
   ship->governor = 0; /* give to the leader */
-  capture_stuff(*ship);
+  capture_stuff(*ship, g);
 
   putship(&*ship);
 

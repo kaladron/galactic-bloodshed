@@ -54,7 +54,10 @@ GB_SOURCES = GB_server.cc
 GB_LDADD = libgblib.a libcommands.a
 
 libcommands_a_SOURCES = \
+		     commands/analysis.cc \
 		     commands/autoreport.cc \
+		     commands/capital.cc \
+		     commands/capture.cc \
 		     commands/colonies.cc \
 		     commands/enslave.cc \
 		     commands/fix.cc \
@@ -70,11 +73,8 @@ libcommands_a_SOURCES = \
 
 libgblib_a_SOURCES = $(COMMON_FILES) \
 		     VN.cc \
-		     analysis.cc \
 		     bombard.cc \
 		     build.cc \
-		     capital.cc \
-		     capture.cc \
 		     cs.cc \
 		     declare.cc \
 		     dissolve.cc \

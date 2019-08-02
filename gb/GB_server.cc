@@ -30,12 +30,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "gb/analysis.h"
 #include "gb/buffers.h"
 #include "gb/build.h"
-#include "gb/capital.h"
-#include "gb/capture.h"
+#include "gb/commands/analysis.h"
 #include "gb/commands/autoreport.h"
+#include "gb/commands/capital.h"
+#include "gb/commands/capture.h"
 #include "gb/commands/colonies.h"
 #include "gb/commands/enslave.h"
 #include "gb/commands/fix.h"

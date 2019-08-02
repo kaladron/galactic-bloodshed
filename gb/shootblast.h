@@ -21,7 +21,6 @@ double gun_range(Race *, Ship *, int);
 double tele_range(int, double);
 int current_caliber(Ship *);
 void do_collateral(Ship *, int, int *, int *, int *, int *);
-int getdefense(Ship *);
 int planet_guns(int);
 
 #endif  // SHOOTBLAST_H

@@ -3,6 +3,7 @@
 // found in the COPYING file.
 
 #include "gb/ships.h"
+#include "gb/defense.h"
 
 #include "gb/files_shl.h"
 
@@ -115,4 +116,20 @@ Shiplist::Iterator &Shiplist::Iterator::operator++() {
     elem.number = 0;
   }
   return *this;
+}
+
+int getdefense(const Ship &ship) {
+  if (landed(ship)) {
+    const auto p = getplanet(ship.storbits, ship.pnumorbits);
+    const auto sect = getsector(p, ship.land_x, ship.land_y);
+    return (2 * Defensedata[sect.condition]);
+  }
+  // No defense
+  return 0;
+}
+
+bool laser_on(const Ship &ship) { return (ship.laser && ship.fire_laser); }
+
+bool landed(const Ship &ship) {
+  return (ship.whatdest == ScopeLevel::LEVEL_PLAN && ship.docked);
 }

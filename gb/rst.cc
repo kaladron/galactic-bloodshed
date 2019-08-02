@@ -373,7 +373,6 @@ static void ship_report(GameObj &g, shipnum_t indx,
     if (Tactical) {
       int fev = 0;
       int fspeed = 0;
-      int defense;
       int fdam = 0;
       double tech;
 
@@ -465,7 +464,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                   tev = rd[i].s.protect.evade;
                 }
                 body = size(rd[i].s);
-                defense = getdefense(&rd[i].s);
+                auto defense = getdefense(rd[i].s);
                 prob = hit_odds(Dist, &factor, tech, fdam, fev, tev, fspeed,
                                 tspeed, body, caliber, defense);
                 if (rd[indx].type != PLANET && laser_on(rd[indx].s) &&

@@ -335,6 +335,9 @@ int size(const Ship &s);
 int shipbody(const Ship &s);
 long hanger(const Ship &s);
 long repair(const Ship &s);
+int getdefense(const Ship &);
+bool landed(const Ship &);
+bool laser_on(const Ship &);
 
 extern shipnum_t Num_ships;
 extern const unsigned long Shipdata[NUMSTYPES][NUMABILS];

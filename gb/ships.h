@@ -341,6 +341,10 @@ bool landed(const Ship &);
 bool laser_on(const Ship &);
 void capture_stuff(const Ship &, GameObj &);
 std::string ship_to_string(const Ship &);
+double cost(Ship *);
+double getmass(Ship *);
+unsigned int ship_size(Ship *);
+double complexity(Ship *);
 
 extern shipnum_t Num_ships;
 extern const unsigned long Shipdata[NUMSTYPES][NUMABILS];

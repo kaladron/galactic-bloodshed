@@ -250,7 +250,7 @@ void upgrade(const command_t &argv, GameObj &g) {
   }
 
   /* check to see whether this ship can actually be built by this player */
-  if ((complex = complexity(&ship)) > Race->tech) {
+  if ((complex = complexity(ship)) > Race->tech) {
     sprintf(buf, "This upgrade requires an engineering technology of %.1f.\n",
             complex);
     notify(Playernum, Governor, buf);
@@ -262,20 +262,20 @@ void upgrade(const command_t &argv, GameObj &g) {
   std::optional<Ship> s2;
   if (dirship->whatorbits == ScopeLevel::LEVEL_SHIP) {
     s2 = getship(dirship->destshipno);
-    if (s2->max_hanger - (s2->hanger - dirship->size) < ship_size(&ship)) {
+    if (s2->max_hanger - (s2->hanger - dirship->size) < ship_size(ship)) {
       sprintf(buf, "Not enough free hanger space on %c%ld.\n",
               Shipltrs[s2->type], dirship->destshipno);
       notify(Playernum, Governor, buf);
       sprintf(
           buf, "%d more needed.\n",
-          ship_size(&ship) - (s2->max_hanger - (s2->hanger - dirship->size)));
+          ship_size(ship) - (s2->max_hanger - (s2->hanger - dirship->size)));
       notify(Playernum, Governor, buf);
       return;
     }
   }
 
   /* compute new ship costs and see if the player can afford it */
-  newcost = Race->God ? 0 : (int)cost(&ship);
+  newcost = Race->God ? 0 : (int)cost(ship);
   oldcost = Race->God ? 0 : dirship->build_cost;
   netcost = Race->God ? 0 : 2 * (newcost - oldcost); /* upgrade is expensive */
   if (newcost < oldcost) {
@@ -300,14 +300,14 @@ void upgrade(const command_t &argv, GameObj &g) {
     dirship->resource -= netcost;
     if (dirship->whatorbits == ScopeLevel::LEVEL_SHIP) {
       s2->hanger -= dirship->size;
-      dirship->size = ship_size(&*dirship);
+      dirship->size = ship_size(*dirship);
       s2->hanger += dirship->size;
       putship(&*s2);
     }
-    dirship->size = ship_size(&*dirship);
-    dirship->base_mass = getmass(&*dirship);
-    dirship->build_cost = Race->God ? 0 : cost(&*dirship);
-    dirship->complexity = complexity(&*dirship);
+    dirship->size = ship_size(*dirship);
+    dirship->base_mass = getmass(*dirship);
+    dirship->build_cost = Race->God ? 0 : cost(*dirship);
+    dirship->complexity = complexity(*dirship);
 
     putship(&*dirship);
   } else
@@ -354,7 +354,7 @@ void make_mod(const command_t &argv, GameObj &g) {
   /* Save  size of the factory, and set it to the
      correct values for the design.  Maarten */
   size = dirship->size;
-  dirship->size = ship_size(&*dirship);
+  dirship->size = ship_size(*dirship);
 
   if (mode == 0) {
     if (argv.size() < 2) { /* list the current settings for the factory */
@@ -486,8 +486,8 @@ void make_mod(const command_t &argv, GameObj &g) {
     dirship->cew = 0;
     dirship->mode = 0;
 
-    dirship->size = ship_size(&*dirship);
-    dirship->complexity = complexity(&*dirship);
+    dirship->size = ship_size(*dirship);
+    dirship->complexity = complexity(*dirship);
 
     sprintf(dirship->shipclass, "mod %ld", g.shipno);
 
@@ -643,7 +643,7 @@ void make_mod(const command_t &argv, GameObj &g) {
   }
   /* compute how much it's going to cost to build the ship */
 
-  if ((cost0 = cost(&*dirship)) > 65535.0) {
+  if ((cost0 = cost(*dirship)) > 65535.0) {
     g.out << "Woah!! YOU CHEATER!!!  The max cost allowed "
              "is 65535!!! I'm Telllllllling!!!\n";
     return;
@@ -653,12 +653,12 @@ void make_mod(const command_t &argv, GameObj &g) {
   sprintf(buf, "The current cost of the ship is %d resources.\n",
           dirship->build_cost);
   notify(Playernum, Governor, buf);
-  dirship->size = ship_size(&*dirship);
-  dirship->base_mass = getmass(&*dirship);
+  dirship->size = ship_size(*dirship);
+  dirship->base_mass = getmass(*dirship);
   sprintf(buf, "The current base mass of the ship is %.1f - size is %d.\n",
           dirship->base_mass, dirship->size);
   notify(Playernum, Governor, buf);
-  dirship->complexity = complexity(&*dirship);
+  dirship->complexity = complexity(*dirship);
   sprintf(buf,
           "Ship complexity is %.1f (you have %.1f engineering technology).\n",
           dirship->complexity, Race->tech);
@@ -934,7 +934,7 @@ void build(const command_t &argv, GameObj &g) {
               break;
           }
           if ((tech = builder->type == ShipType::OTYPE_FACTORY
-                          ? complexity(&*builder)
+                          ? complexity(*builder)
                           : Shipdata[*what][ABIL_TECH]) > Race->tech &&
               !Race->God) {
             sprintf(buf,
@@ -1001,7 +1001,7 @@ void build(const command_t &argv, GameObj &g) {
             }
             break;
           default:
-            if (builder->hanger + ship_size(&newship) > builder->max_hanger) {
+            if (builder->hanger + ship_size(newship) > builder->max_hanger) {
               g.out << "Not enough hanger space.\n";
               goto finish;
             }
@@ -1408,10 +1408,10 @@ static void Getship(Ship *s, ShipType i, Race *r) {
   s->laser = r->God ? Shipdata[i][ABIL_LASER] : 0;
   s->cew = 0;
   s->cew_range = 0;
-  s->size = ship_size(s);
-  s->base_mass = getmass(s);
-  s->mass = getmass(s);
-  s->build_cost = r->God ? 0 : (int)cost(s);
+  s->size = ship_size(*s);
+  s->base_mass = getmass(*s);
+  s->mass = getmass(*s);
+  s->build_cost = r->God ? 0 : (int)cost(*s);
   if (s->type == ShipType::OTYPE_VN || s->type == ShipType::OTYPE_BERS)
     s->special.mind.progenitor = r->Playernum;
 }
@@ -1439,16 +1439,16 @@ static void Getfactship(Ship *s, Ship *b) {
   s->laser = b->laser;
   s->cew = b->cew;
   s->cew_range = b->cew_range;
-  s->size = ship_size(s);
-  s->base_mass = getmass(s);
-  s->mass = getmass(s);
+  s->size = ship_size(*s);
+  s->base_mass = getmass(*s);
+  s->mass = getmass(*s);
 }
 
 int Shipcost(ShipType i, Race *r) {
   Ship s;
 
   Getship(&s, i, r);
-  return ((int)cost(&s));
+  return ((int)cost(s));
 }
 
 #ifdef MARKET

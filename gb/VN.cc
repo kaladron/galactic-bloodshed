@@ -232,8 +232,8 @@ void planet_doVN(Ship *ship, Planet *planet, SectorMap &smap) {
           s2->max_fuel = Shipdata[shipbuild][ABIL_FUELCAP];
           s2->max_destruct = Shipdata[shipbuild][ABIL_DESTCAP];
           s2->max_speed = Shipdata[shipbuild][ABIL_SPEED];
-          s2->size = ship_size(s2);
-          s2->base_mass = getmass(s2);
+          s2->size = ship_size(*s2);
+          s2->base_mass = getmass(*s2);
           s2->mass = s2->base_mass;
           s2->alive = 1;
           if (shipbuild == ShipType::OTYPE_BERS) {

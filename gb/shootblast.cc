@@ -440,7 +440,7 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
   }
 
   if (ship->damage >= 100) kill_ship(who, ship);
-  ship->build_cost = (int)cost(ship);
+  ship->build_cost = (int)cost(*ship);
   return damage;
 }
 

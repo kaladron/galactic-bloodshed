@@ -327,7 +327,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 "%5lu %c%4d%6.1f%5.1f%3d%2d%4d%4d%4lu%4d%4d %s%1d %s/%s %s "
                 "%s %s %02d%%%s\n",
                 shipno, Shipltrs[s.build_type], s.build_cost, s.complexity,
-                s.base_mass, ship_size(&s), s.armor, s.max_crew, s.max_fuel,
+                s.base_mass, ship_size(s), s.armor, s.max_crew, s.max_fuel,
                 s.max_resource, s.max_hanger, s.max_destruct,
                 s.hyper_drive.has ? (s.mount ? "+" : "*") : " ", s.max_speed,
                 tmpbuf1, tmpbuf2, s.laser ? "yes" : " no", tmpbuf3, tmpbuf4,

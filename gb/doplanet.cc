@@ -567,7 +567,7 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
         s2->max_destruct = Shipdata[ShipType::OTYPE_TOXWC][ABIL_DESTCAP];
         s2->max_speed = Shipdata[ShipType::OTYPE_TOXWC][ABIL_SPEED];
         s2->build_cost = Shipcost(ShipType::OTYPE_TOXWC, races[i - 1]);
-        s2->size = ship_size(s2);
+        s2->size = ship_size(*s2);
         s2->base_mass = 1.0; /* a hack */
         s2->mass = s2->base_mass;
         s2->alive = 1;

@@ -547,7 +547,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
             notify(Playernum, Governor, buf);
             return;
           }
-          hangerneeded = (1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship))) -
+          hangerneeded = (1 + (int)(HAB_FACT_SIZE * (double)ship_size(*ship))) -
                          ((s2->max_hanger - s2->hanger) + ship->size);
           if (hangerneeded > 0) {
             sprintf(
@@ -559,7 +559,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           }
           s2->resource -= oncost;
           s2->hanger -= ship->size;
-          ship->size = 1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship));
+          ship->size = 1 + (int)(HAB_FACT_SIZE * (double)ship_size(*ship));
           s2->hanger += ship->size;
           putship(&*s2);
         } else {

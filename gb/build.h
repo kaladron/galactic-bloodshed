@@ -12,10 +12,6 @@
 void upgrade(const command_t &, GameObj &);
 void make_mod(const command_t &, GameObj &);
 void build(const command_t &, GameObj &);
-double cost(Ship *);
-double getmass(Ship *);
-unsigned int ship_size(Ship *);
-double complexity(Ship *);
 int Shipcost(ShipType, Race *);
 void sell(const command_t &, GameObj &);
 void bid(const command_t &argv, GameObj &);

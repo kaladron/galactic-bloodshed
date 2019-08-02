@@ -3,6 +3,7 @@
 // found in the COPYING file.
 
 #include <boost/format.hpp>
+#include <cmath>
 
 #include "gb/defense.h"
 #include "gb/ships.h"
@@ -152,4 +153,102 @@ void capture_stuff(const Ship &ship, GameObj &g) {
 std::string ship_to_string(const Ship &s) {
   return str(boost::format("%c%lu %s [%d]") % Shipltrs[s.type] % s.number %
              s.name % s.owner);
+}
+
+double getmass(Ship *s) {
+  return (1.0 + MASS_ARMOR * s->armor + MASS_SIZE * (s->size - s->max_hanger) +
+          MASS_HANGER * s->max_hanger + MASS_GUNS * s->primary * s->primtype +
+          MASS_GUNS * s->secondary * s->sectype);
+}
+
+unsigned int ship_size(Ship *s) {
+  double size;
+  size = 1.0 + SIZE_GUNS * s->primary + SIZE_GUNS * s->secondary +
+         SIZE_CREW * s->max_crew + SIZE_RESOURCE * s->max_resource +
+         SIZE_FUEL * s->max_fuel + SIZE_DESTRUCT * s->max_destruct +
+         s->max_hanger;
+  return (std::floor(size));
+}
+
+double cost(Ship *s) {
+  int i;
+  double factor = 0.0;
+  double advantage = 0.0;
+
+  i = s->build_type;
+  /* compute how much it costs to build this ship */
+  factor += (double)Shipdata[i][ABIL_COST];
+  factor += GUN_COST * (double)s->primary;
+  factor += GUN_COST * (double)s->secondary;
+  factor += CREW_COST * (double)s->max_crew;
+  factor += CARGO_COST * (double)s->max_resource;
+  factor += FUEL_COST * (double)s->max_fuel;
+  factor += AMMO_COST * (double)s->max_destruct;
+  factor +=
+      SPEED_COST * (double)s->max_speed * (double)sqrt((double)s->max_speed);
+  factor += HANGER_COST * (double)s->max_hanger;
+  factor += ARMOR_COST * (double)s->armor * (double)sqrt((double)s->armor);
+  factor += CEW_COST * (double)(s->cew * s->cew_range);
+  /* additional advantages/disadvantages */
+
+  advantage += 0.5 * !!s->hyper_drive.has;
+  advantage += 0.5 * !!s->laser;
+  advantage += 0.5 * !!s->cloak;
+  advantage += 0.5 * !!s->mount;
+
+  factor *= sqrt(1.0 + advantage);
+  return (factor);
+}
+
+namespace {
+void system_cost(double *advantage, double *disadvantage, int value, int base) {
+  double factor;
+
+  factor = (((double)value + 1.0) / (base + 1.0)) - 1.0;
+  if (factor >= 0.0)
+    *advantage += factor;
+  else
+    *disadvantage -= factor;
+}
+}  // namespace
+
+double complexity(Ship *s) {
+  int i;
+  double advantage;
+  double disadvantage;
+  double factor;
+  double tmp;
+
+  i = s->build_type;
+
+  advantage = 0.;
+  disadvantage = 0.;
+
+  system_cost(&advantage, &disadvantage, (int)(s->primary),
+              Shipdata[i][ABIL_GUNS]);
+  system_cost(&advantage, &disadvantage, (int)(s->secondary),
+              Shipdata[i][ABIL_GUNS]);
+  system_cost(&advantage, &disadvantage, (int)(s->max_crew),
+              Shipdata[i][ABIL_MAXCREW]);
+  system_cost(&advantage, &disadvantage, (int)(s->max_resource),
+              Shipdata[i][ABIL_CARGO]);
+  system_cost(&advantage, &disadvantage, (int)(s->max_fuel),
+              Shipdata[i][ABIL_FUELCAP]);
+  system_cost(&advantage, &disadvantage, (int)(s->max_destruct),
+              Shipdata[i][ABIL_DESTCAP]);
+  system_cost(&advantage, &disadvantage, (int)(s->max_speed),
+              Shipdata[i][ABIL_SPEED]);
+  system_cost(&advantage, &disadvantage, (int)(s->max_hanger),
+              Shipdata[i][ABIL_HANGER]);
+  system_cost(&advantage, &disadvantage, (int)(s->armor),
+              Shipdata[i][ABIL_ARMOR]);
+  /* additional advantages/disadvantages */
+
+  // TODO(jeffbailey): document this function in English.
+  factor = sqrt((1.0 + advantage) * exp(-(double)disadvantage / 10.0));
+  tmp = COMPLEXITY_FACTOR * (factor - 1.0) /
+            sqrt((double)(Shipdata[i][ABIL_TECH] + 1)) +
+        1.0;
+  factor = tmp * tmp;
+  return (factor * (double)Shipdata[i][ABIL_TECH]);
 }

@@ -4,7 +4,7 @@
 
 /*  dock.c -- dock a ship and..... assault -- a very un-PC version of dock */
 
-#include "gb/dock.h"
+#include "gb/commands/dock.h"
 
 #include <boost/format.hpp>
 #include <cmath>

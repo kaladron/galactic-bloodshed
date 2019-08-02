@@ -2,11 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef RST_H
-#define RST_H
+#ifndef CMDS_SCRAP_H
+#define CMDS_SCRAP_H
 
 #include "gb/vars.h"
 
-void rst(const command_t &, GameObj &);
+void scrap(const command_t &argv, GameObj &g);
 
-#endif  // RST_H
+#endif  // CMDS_SCRAP_H

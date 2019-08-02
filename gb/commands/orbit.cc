@@ -4,7 +4,7 @@
 
 /*  orbit.c -- display orbits of planets (graphic representation) */
 
-#include "gb/orbit.h"
+#include "gb/commands/orbit.h"
 
 #include <cstdio>
 #include <cstdlib>

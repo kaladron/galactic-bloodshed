@@ -2,13 +2,12 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef CAPTURE_H
-#define CAPTURE_H
+#ifndef CMDS_CAPTURE_H
+#define CMDS_CAPTURE_H
 
 #include "gb/ships.h"
 #include "gb/vars.h"
 
 void capture(const command_t &, GameObj &);
-void capture_stuff(const Ship &);
 
-#endif  // CAPTURE_H
+#endif  // CMDS_CAPTURE_H

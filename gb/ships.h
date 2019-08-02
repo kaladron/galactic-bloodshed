@@ -2,12 +2,13 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include <cstdint>
-
-#include "gb/vars.h"
-
 #ifndef SHIPS_H
 #define SHIPS_H
+
+#include <cstdint>
+#include <string>
+
+#include "gb/vars.h"
 
 enum guntype_t { GTYPE_NONE, GTYPE_LIGHT, GTYPE_MEDIUM, GTYPE_HEAVY };
 
@@ -338,6 +339,8 @@ long repair(const Ship &s);
 int getdefense(const Ship &);
 bool landed(const Ship &);
 bool laser_on(const Ship &);
+void capture_stuff(const Ship &, GameObj &);
+std::string ship_to_string(const Ship &);
 
 extern shipnum_t Num_ships;
 extern const unsigned long Shipdata[NUMSTYPES][NUMABILS];

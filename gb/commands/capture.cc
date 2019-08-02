@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "gb/capture.h"
+#include "gb/commands/capture.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -280,7 +280,7 @@ void capture(const command_t &argv, GameObj &g) {
           sprintf(buf, "%lu troops move in.\n",
                   std::min(boarders, ship->troops));
         notify(Playernum, Governor, buf);
-        capture_stuff(*ship);
+        capture_stuff(*ship, g);
         sprintf(short_buf, "%s: %s [%d] CAPTURED %s\n", Dispshiploc(ship),
                 Race->name, Playernum, ship_to_string(s).c_str());
       } else if (ship->popn + ship->troops) {
@@ -327,16 +327,4 @@ void capture(const command_t &argv, GameObj &g) {
       free(ship);
     } else
       free(ship);
-}
-
-void capture_stuff(const Ship &ship) {
-  Shiplist shiplist(ship.ships);
-  for (auto s : shiplist) {
-    capture_stuff(s);     /* recursive call */
-    s.owner = ship.owner; /* make sure he gets all of the ships landed on it */
-    s.governor = ship.governor;
-    putship(&s);
-    sprintf(buf, "%s CAPTURED!\n", ship_to_string(s).c_str());
-    notify(s.owner, s.governor, buf);
-  }
 }

@@ -25,12 +25,12 @@
 #include "gb/perm.h"
 #include "gb/power.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/shootblast.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static double ap_planet_factor(Planet *);
@@ -74,7 +74,7 @@ void doship(Ship *ship, int update) {
     } else
       ship->active = 1;
 
-    if (!ship->popn && Max_crew(ship) && !ship->docked)
+    if (!ship->popn && max_crew(*ship) && !ship->docked)
       ship->whatdest = ScopeLevel::LEVEL_UNIV;
 
     if (ship->whatorbits != ScopeLevel::LEVEL_UNIV &&
@@ -82,7 +82,7 @@ void doship(Ship *ship, int update) {
       /* damage ships from supernovae */
       /* Maarten: modified to take into account MOVES_PER_UPDATE */
       ship->damage += 5 * Stars[ship->storbits]->nova_stage /
-                      ((Armor(ship) + 1) * segments);
+                      ((armor(*ship) + 1) * segments);
       if (ship->damage >= 100) {
         kill_ship((int)(ship->owner), ship);
         return;
@@ -151,7 +151,7 @@ void doship(Ship *ship, int update) {
 
     if (ship->active) {
       /* bombard the planet */
-      if (can_bombard(ship) && ship->bombard &&
+      if (can_bombard(*ship) && ship->bombard &&
           ship->whatorbits == ScopeLevel::LEVEL_PLAN &&
           ship->whatdest == ScopeLevel::LEVEL_PLAN &&
           ship->deststar == ship->storbits &&
@@ -163,7 +163,7 @@ void doship(Ship *ship, int update) {
       /* repair ship by the amount of crew it has */
       /* industrial complexes can repair (robot ships
          and offline factories can't repair) */
-      if (ship->damage && Repair(ship)) do_repair(ship);
+      if (ship->damage && repair(*ship)) do_repair(ship);
 
       if (update) switch (ship->type) { /* do this stuff during updates only*/
           case ShipType::OTYPE_CANIST:
@@ -470,7 +470,7 @@ static void do_repair(Ship *ship) {
     cost = 0;
   else {
     maxrep *= (double)(ship->popn) / (double)ship->max_crew;
-    cost = (int)(0.005 * maxrep * Cost(ship));
+    cost = (int)(0.005 * maxrep * shipcost(*ship));
   }
   if (cost <= ship->resource) {
     use_resource(ship, cost);
@@ -508,7 +508,7 @@ static void do_habitat(Ship *ship) {
     }
   }
   add = round_rand((double)ship->popn * races[ship->owner - 1]->birthrate);
-  if (ship->popn + add > Max_crew(ship)) add = Max_crew(ship) - ship->popn;
+  if (ship->popn + add > max_crew(*ship)) add = max_crew(*ship) - ship->popn;
   rcv_popn(ship, add, races[ship->owner - 1]->mass);
 }
 
@@ -645,7 +645,7 @@ static void do_mirror(Ship *ship) {
         double range;
         s = ships[ship->special.aimed_at.shipno];
         range = sqrt(Distsq(ship->xpos, ship->ypos, s->xpos, s->ypos));
-        i = int_rand(0, round_rand((2. / ((double)(Body(s)))) *
+        i = int_rand(0, round_rand((2. / ((double)(shipbody(*s)))) *
                                    (double)(ship->special.aimed_at.intensity) /
                                    (range / PLORBITSIZE + 1.0)));
         sprintf(telegram_buf, "%s aimed at %s\n", ship_to_string(*ship).c_str(),
@@ -697,9 +697,9 @@ static void do_mirror(Ship *ship) {
 static void do_god(Ship *ship) {
   /* gods have infinite power.... heh heh heh */
   if (races[ship->owner - 1]->God) {
-    ship->fuel = Max_fuel(ship);
-    ship->destruct = Max_destruct(ship);
-    ship->resource = Max_resource(ship);
+    ship->fuel = max_fuel(*ship);
+    ship->destruct = max_destruct(*ship);
+    ship->resource = max_resource(*ship);
   }
 }
 

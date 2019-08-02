@@ -136,7 +136,7 @@ void orbit(const command_t &argv, GameObj &g) {
       else {
         Shiplist shiplist{Stars[where.snum]->ships};
         for (auto &s : shiplist) {
-          if (s.owner == g.player && Sight(&s)) {
+          if (s.owner == g.player && shipsight(s)) {
             iq = true; /* you are there to sight, need a crew */
             break;
           }
@@ -167,7 +167,7 @@ void orbit(const command_t &argv, GameObj &g) {
       bool iq = false;
       Shiplist shiplist{p.ships};
       for (auto &s : shiplist) {
-        if (s.owner == g.player && Sight(&s)) {
+        if (s.owner == g.player && shipsight(s)) {
           iq = true; /* you are there to sight, need a crew */
           break;
         }

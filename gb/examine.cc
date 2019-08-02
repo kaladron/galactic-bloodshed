@@ -80,7 +80,7 @@ void examine(const command_t &argv, GameObj &g) {
     putship(&*ship);
   }
 
-  if (has_switch(&*ship)) {
+  if (has_switch(*ship)) {
     g.out << "This device has an on/off switch that can be set with order.\n";
   }
   if (!ship->active) {

@@ -21,12 +21,12 @@
 #include "gb/load.h"
 #include "gb/mobiliz.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/shootblast.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static void mech_defend(int, int, int *, int, const Planet &, int, int,

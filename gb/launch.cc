@@ -15,10 +15,10 @@
 #include "gb/fire.h"
 #include "gb/load.h"
 #include "gb/max.h"
-#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 void launch(const command_t &argv, GameObj &g) {
@@ -40,7 +40,7 @@ void launch(const command_t &argv, GameObj &g) {
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, argv[1], *s, &nextshipno) &&
         authorized(Governor, *s)) {
-      if (!speed_rating(s) && landed(*s)) {
+      if (!speed_rating(*s) && landed(*s)) {
         sprintf(buf, "That ship is not designed to be launched.\n");
         notify(Playernum, Governor, buf);
         free(s);
@@ -55,7 +55,7 @@ void launch(const command_t &argv, GameObj &g) {
         continue;
       }
       if (!landed(*s)) APcount = 0;
-      if (landed(*s) && s->resource > Max_resource(s)) {
+      if (landed(*s) && s->resource > max_resource(*s)) {
         sprintf(buf, "%s is too overloaded to launch.\n",
                 ship_to_string(*s).c_str());
         notify(Playernum, Governor, buf);
@@ -88,7 +88,7 @@ void launch(const command_t &argv, GameObj &g) {
           s->docked = 1;
           s->whatdest = ScopeLevel::LEVEL_PLAN;
           s2->mass -= s->mass;
-          s2->hanger -= Size(s);
+          s2->hanger -= size(*s);
           sprintf(buf, "Landed on %s/%s.\n", Stars[s->storbits]->name,
                   Stars[s->storbits]->pnames[s->pnumorbits]);
           notify(Playernum, Governor, buf);
@@ -104,7 +104,7 @@ void launch(const command_t &argv, GameObj &g) {
           s->docked = 0;
           s->whatdest = ScopeLevel::LEVEL_UNIV;
           s2->mass -= s->mass;
-          s2->hanger -= Size(s);
+          s2->hanger -= size(*s);
           auto p = getplanet(s2->storbits, s2->pnumorbits);
           insert_sh_plan(&p, s);
           s->storbits = s2->storbits;
@@ -125,7 +125,7 @@ void launch(const command_t &argv, GameObj &g) {
           s->docked = 0;
           s->whatdest = ScopeLevel::LEVEL_UNIV;
           s2->mass -= s->mass;
-          s2->hanger -= Size(s);
+          s2->hanger -= size(*s);
           getstar(&(Stars[s2->storbits]), (int)s2->storbits);
           insert_sh_star(Stars[s2->storbits], s);
           s->storbits = s2->storbits;
@@ -144,7 +144,7 @@ void launch(const command_t &argv, GameObj &g) {
           s->docked = 0;
           s->whatdest = ScopeLevel::LEVEL_UNIV;
           s2->mass -= s->mass;
-          s2->hanger -= Size(s);
+          s2->hanger -= size(*s);
           getsdata(&Sdata);
           insert_sh_univ(&Sdata, s);
           g.out << "Universe level.\n";

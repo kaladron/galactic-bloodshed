@@ -16,11 +16,11 @@
 #include "gb/fire.h"
 #include "gb/getplace.h"
 #include "gb/races.h"
-#include "gb/utils/rand.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 void capture(const command_t &argv, GameObj &g) {
@@ -161,7 +161,7 @@ void capture(const command_t &argv, GameObj &g) {
                         morale_factor((double)(Race->morale - alien->morale)),
             dstrength = ((double)ship->popn + (double)ship->troops * 10.0 *
                                                   (double)alien->fighters) *
-                        .01 * alien->tech * ((double)(Armor(ship)) + 0.01) *
+                        .01 * alien->tech * ((double)(armor(*ship)) + 0.01) *
                         .01 * (100.0 - (double)ship->damage) *
                         morale_factor((double)(alien->morale - Race->morale)));
         notify(Playernum, Governor, buf);
@@ -212,11 +212,11 @@ void capture(const command_t &argv, GameObj &g) {
         ship->owner = Playernum;
         ship->governor = Governor;
         if (what == CIV) {
-          ship->popn = std::min(boarders, Max_crew(ship));
+          ship->popn = std::min(boarders, max_crew(*ship));
           sect.popn += boarders - ship->popn;
           ship->mass += ship->popn * Race->mass;
         } else if (what == MIL) {
-          ship->troops = std::min(boarders, Max_mil(ship));
+          ship->troops = std::min(boarders, max_mil(*ship));
           sect.troops += boarders - ship->troops;
           ship->mass += ship->troops * Race->mass;
         }

@@ -92,20 +92,20 @@ void scrap(const command_t &argv, GameObj &g) {
         }
       }
 
-      scrapval = Cost(s) / 2 + s->resource;
+      scrapval = shipcost(*s) / 2 + s->resource;
 
       if (s->docked) {
         sprintf(buf, "%s: original cost: %ld\n", ship_to_string(*s).c_str(),
-                Cost(s));
+                shipcost(*s));
         notify(g.player, g.governor, buf);
         sprintf(buf, "         scrap value%s: %d rp's.\n",
                 s->resource ? "(with stockpile) " : "", scrapval);
         notify(g.player, g.governor, buf);
 
         if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
-            s2->resource + scrapval > Max_resource(&*s2) &&
+            s2->resource + scrapval > max_resource(*s2) &&
             s2->type != ShipType::STYPE_SHUTTLE) {
-          scrapval = Max_resource(&*s2) - s2->resource;
+          scrapval = max_resource(*s2) - s2->resource;
           sprintf(buf, "(There is only room for %d resources.)\n", scrapval);
           notify(g.player, g.governor, buf);
         }
@@ -114,8 +114,8 @@ void scrap(const command_t &argv, GameObj &g) {
           notify(g.player, g.governor, buf);
           fuelval = s->fuel;
           if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
-              s2->fuel + fuelval > Max_fuel(&*s2)) {
-            fuelval = Max_fuel(&*s2) - s2->fuel;
+              s2->fuel + fuelval > max_fuel(*s2)) {
+            fuelval = max_fuel(*s2) - s2->fuel;
             sprintf(buf, "(There is only room for %.2f fuel.)\n", fuelval);
             notify(g.player, g.governor, buf);
           }
@@ -127,8 +127,8 @@ void scrap(const command_t &argv, GameObj &g) {
           notify(g.player, g.governor, buf);
           destval = s->destruct;
           if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
-              s2->destruct + destval > Max_destruct(&*s2)) {
-            destval = Max_destruct(&*s2) - s2->destruct;
+              s2->destruct + destval > max_destruct(*s2)) {
+            destval = max_destruct(*s2) - s2->destruct;
             sprintf(buf, "(There is only room for %d destruct.)\n", destval);
             notify(g.player, g.governor, buf);
           }
@@ -145,15 +145,15 @@ void scrap(const command_t &argv, GameObj &g) {
             notify(g.player, g.governor, buf);
             troopval = s->troops;
             if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
-                s2->troops + troopval > Max_mil(&*s2)) {
-              troopval = Max_mil(&*s2) - s2->troops;
+                s2->troops + troopval > max_mil(*s2)) {
+              troopval = max_mil(*s2) - s2->troops;
               sprintf(buf, "(There is only room for %d troops.)\n", troopval);
               notify(g.player, g.governor, buf);
             }
             crewval = s->popn;
             if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
-                s2->popn + crewval > Max_crew(&*s2)) {
-              crewval = Max_crew(&*s2) - s2->popn;
+                s2->popn + crewval > max_crew(*s2)) {
+              crewval = max_crew(*s2) - s2->popn;
               sprintf(buf, "(There is only room for %d crew.)\n", crewval);
               notify(g.player, g.governor, buf);
             }
@@ -171,8 +171,8 @@ void scrap(const command_t &argv, GameObj &g) {
           } else {
             xtalval = s->crystals + s->mounted;
             if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
-                s2->crystals + xtalval > Max_crystals(&*s2)) {
-              xtalval = Max_crystals(&*s2) - s2->crystals;
+                s2->crystals + xtalval > max_crystals(*s2)) {
+              xtalval = max_crystals(*s2) - s2->crystals;
               sprintf(buf, "(There is only room for %d crystals.)\n", xtalval);
               notify(g.player, g.governor, buf);
             }

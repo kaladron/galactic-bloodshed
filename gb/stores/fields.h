@@ -18,20 +18,17 @@ private:
 
 class ListField : public Field {
 public:
-    ListField(const FieldClass *const fclass, unique_ptr<Field> child) 
-        : Field(fclass), child_field(move(child)) { }
+    ListField(const string &name, unique_ptr<Field> child) 
+        : Field(name), child_field(move(child)) { }
 
 private:
     unique_ptr<Field> child_field;
 };
 
 template<typename ValueType>
-class LeafField : Field {
+class LeafField : public Field {
 public:
-    LeafField(const FieldClass *const fclass, unique_ptr<ValueType> v)
-        : Field(fclass), value(move(v)) { }
-private:
-    unique_ptr<ValueType> value;
+    LeafField(const string &name) : Field(name) { }
 };
 
 template <typename ... Ks>

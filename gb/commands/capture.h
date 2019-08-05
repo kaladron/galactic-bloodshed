@@ -2,11 +2,12 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef ANALYSIS_H
-#define ANALYSIS_H
+#ifndef CMDS_CAPTURE_H
+#define CMDS_CAPTURE_H
 
+#include "gb/ships.h"
 #include "gb/vars.h"
 
-void analysis(const command_t &, GameObj &);
+void capture(const command_t &, GameObj &);
 
-#endif  // ANALYSIS_H
+#endif  // CMDS_CAPTURE_H

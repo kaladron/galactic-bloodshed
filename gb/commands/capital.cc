@@ -4,7 +4,7 @@
 
 /* capital.c -- designate a capital */
 
-#include "gb/capital.h"
+#include "gb/commands/capital.h"
 
 #include <cstdio>
 #include <cstdlib>

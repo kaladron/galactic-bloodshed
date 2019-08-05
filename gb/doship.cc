@@ -96,7 +96,7 @@ void doship(Ship *ship, int update) {
 
     if (ship->active) moveship(ship, update, 1, 0);
 
-    ship->size = ship_size(ship); /* for debugging */
+    ship->size = ship_size(*ship); /* for debugging */
 
     if (ship->whatorbits == ScopeLevel::LEVEL_SHIP) {
       auto ship2 = getship(ship->destshipno);
@@ -216,7 +216,7 @@ void domass(Ship *ship) {
     ship->hanger += ships[sh]->size;
     sh = ships[sh]->nextship;
   }
-  ship->mass += getmass(ship);
+  ship->mass += getmass(*ship);
   ship->mass += (double)(ship->popn + ship->troops) * rmass;
   ship->mass += (double)ship->destruct * MASS_DESTRUCT;
   ship->mass += ship->fuel * MASS_FUEL;

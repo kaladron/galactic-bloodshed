@@ -44,7 +44,6 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
                        char *long_msg, char *short_msg) {
   int hits;
   int damage;
-  int defense;
   double dist;
   double xfrom;
   double yfrom;
@@ -62,7 +61,6 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
   char damage_msg[1024];
 
   hits = 0;
-  defense = 1;
   if (strength <= 0) return -1;
 
   if (!(from->alive || ignore) || !to->alive) return -1;
@@ -96,7 +94,7 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
   /* attack parameters */
   ship_disposition(from, &fevade, &fspeed, &fbody);
   ship_disposition(to, &tevade, &tspeed, &tbody);
-  defense = getdefense(to);
+  auto defense = getdefense(*to);
 
   if (laser_on(*from) && from->focus)
     focus = 1;
@@ -442,7 +440,7 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
   }
 
   if (ship->damage >= 100) kill_ship(who, ship);
-  ship->build_cost = (int)cost(ship);
+  ship->build_cost = (int)cost(*ship);
   return damage;
 }
 
@@ -621,17 +619,6 @@ void do_collateral(Ship *ship, int damage, int *casualties, int *casualties1,
   ship->secondary -= *secgundamage;
   if (!ship->primary) ship->primtype = GTYPE_NONE;
   if (!ship->secondary) ship->sectype = GTYPE_NONE;
-}
-
-int getdefense(Ship *ship) {
-  int defense = 0;
-
-  if (landed(*ship)) {
-    const auto p = getplanet(ship->storbits, ship->pnumorbits);
-    auto sect = getsector(p, ship->land_x, ship->land_y);
-    defense = 2 * Defensedata[sect.condition];
-  }
-  return defense;
 }
 
 static double p_factor(double attacker, double defender) {

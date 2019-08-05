@@ -4,7 +4,7 @@
 
 /*  dock.c -- dock a ship and..... assault -- a very un-PC version of dock */
 
-#include "gb/dock.h"
+#include "gb/commands/dock.h"
 
 #include <boost/format.hpp>
 #include <cmath>
@@ -14,7 +14,6 @@
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/capture.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/fire.h"
@@ -437,7 +436,7 @@ void dock(const command_t &argv, GameObj &g) {
               sprintf(buf, "%lu boarders move in.\n", boarders);
               notify(Playernum, Governor, buf);
             }
-            capture_stuff(*s2);
+            capture_stuff(*s2, g);
           } else if (s2->popn + s2->troops) {
             sprintf(buf, "The boarding was repulsed; try again.\n");
             notify(Playernum, Governor, buf);

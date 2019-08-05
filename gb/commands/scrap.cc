@@ -4,7 +4,7 @@
 
 /* scrap.c -- turn a ship to junk */
 
-#include "gb/scrap.h"
+#include "gb/commands/scrap.h"
 
 #include <cstdio>
 #include <cstdlib>

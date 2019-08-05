@@ -2,11 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef CAPITAL_H
-#define CAPITAL_H
+#ifndef CMDS_CAPITAL_H
+#define CMDS_CAPITAL_H
 
 #include "gb/vars.h"
 
 void capital(const command_t &, GameObj &);
 
-#endif  // CAPITAL_H
+#endif  // CMDS_CAPITAL_H

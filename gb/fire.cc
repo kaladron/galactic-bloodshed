@@ -766,10 +766,6 @@ int adjacent(int fx, int fy, int tx, int ty, const Planet &p) {
   return 0;
 }
 
-bool landed(const Ship &ship) {
-  return (ship.whatdest == ScopeLevel::LEVEL_PLAN && ship.docked);
-}
-
 static void check_overload(Ship *ship, int cew, int *strength) {
   if ((ship->laser && ship->fire_laser) || cew) {
     if (int_rand(0, *strength) >
@@ -804,5 +800,3 @@ static void check_retal_strength(Ship *ship, int *strength) {
       *strength = retal_strength(ship);
   }
 }
-
-bool laser_on(const Ship &ship) { return (ship.laser && ship.fire_laser); }

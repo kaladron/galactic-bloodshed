@@ -55,35 +55,38 @@ GB_SOURCES = GB_server.cc
 GB_LDADD = libgblib.a libcommands.a
 
 libcommands_a_SOURCES = \
+		     commands/analysis.cc \
 		     commands/autoreport.cc \
+		     commands/capital.cc \
+		     commands/capture.cc \
 		     commands/colonies.cc \
+		     commands/dock.cc \
 		     commands/enslave.cc \
+		     commands/examine.cc \
 		     commands/fix.cc \
 		     commands/governors.cc \
 		     commands/grant.cc \
 		     commands/highlight.cc \
+		     commands/orbit.cc \
 		     commands/production.cc \
 		     commands/relation.cc \
 		     commands/tech_status.cc \
+		     commands/rst.cc \
+		     commands/scrap.cc \
 		     commands/toggle.cc \
 		     commands/toxicity.cc \
 		     commands/zoom.cc
 
 libgblib_a_SOURCES = $(COMMON_FILES) \
 		     VN.cc \
-		     analysis.cc \
 		     bombard.cc \
 		     build.cc \
-		     capital.cc \
-		     capture.cc \
 		     cs.cc \
 		     declare.cc \
 		     dissolve.cc \
-		     dock.cc \
 		     dosector.cc \
 		     doship.cc \
 		     doturncmd.cc \
-		     examine.cc \
 		     explore.cc \
 		     fire.cc \
 		     fuel.cc \
@@ -98,14 +101,11 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     moveplanet.cc \
 		     moveship.cc \
 		     name.cc \
-		     orbit.cc \
 		     order.cc \
 		     perm.cc \
 		     doplanet.cc \
 		     powercmd.cc \
 		     prof.cc \
-		     rst.cc \
-		     scrap.cc \
 		     sector.cc \
 		     ships.cc \
 		     shlmisc.cc \

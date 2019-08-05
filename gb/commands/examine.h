@@ -2,11 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef RST_H
-#define RST_H
+#ifndef CMDS_EXAMINE_H
+#define CMDS_EXAMINE_H
 
 #include "gb/vars.h"
 
-void rst(const command_t &, GameObj &);
+void examine(const command_t &, GameObj &);
 
-#endif  // RST_H
+#endif  // CMDS_EXAMINE_H

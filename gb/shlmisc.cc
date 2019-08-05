@@ -7,7 +7,6 @@
 
 #include "gb/shlmisc.h"
 
-#include <boost/format.hpp>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
@@ -42,13 +41,6 @@ std::optional<shipnum_t> string_to_shipnum(std::string_view s) {
     return (std::stoi(std::string(s.begin(), s.end())));
   }
   return {};
-}
-
-// TODO(jeffbailey): Move this into the ship class when we stop using bzero to
-// initalize it.
-std::string ship_to_string(const Ship &s) {
-  return str(boost::format("%c%lu %s [%d]") % Shipltrs[s.type] % s.number %
-             s.name % s.owner);
 }
 
 bool authorized(const governor_t Governor, const Ship &ship) {

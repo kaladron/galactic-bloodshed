@@ -30,20 +30,25 @@
 #include <unordered_map>
 #include <vector>
 
-#include "gb/analysis.h"
 #include "gb/buffers.h"
 #include "gb/build.h"
-#include "gb/capital.h"
-#include "gb/capture.h"
+#include "gb/commands/analysis.h"
 #include "gb/commands/autoreport.h"
+#include "gb/commands/capital.h"
+#include "gb/commands/capture.h"
 #include "gb/commands/colonies.h"
+#include "gb/commands/dock.h"
 #include "gb/commands/enslave.h"
+#include "gb/commands/examine.h"
 #include "gb/commands/fix.h"
 #include "gb/commands/governors.h"
 #include "gb/commands/grant.h"
 #include "gb/commands/highlight.h"
+#include "gb/commands/orbit.h"
 #include "gb/commands/production.h"
 #include "gb/commands/relation.h"
+#include "gb/commands/rst.h"
+#include "gb/commands/scrap.h"
 #include "gb/commands/tech_status.h"
 #include "gb/commands/toggle.h"
 #include "gb/commands/toxicity.h"
@@ -53,9 +58,7 @@
 #include "gb/declare.h"
 #include "gb/defense.h"
 #include "gb/dissolve.h"
-#include "gb/dock.h"
 #include "gb/doturncmd.h"
-#include "gb/examine.h"
 #include "gb/explore.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
@@ -69,14 +72,11 @@
 #include "gb/mobiliz.h"
 #include "gb/move.h"
 #include "gb/name.h"
-#include "gb/orbit.h"
 #include "gb/order.h"
 #include "gb/power.h"
 #include "gb/powercmd.h"
 #include "gb/prof.h"
 #include "gb/races.h"
-#include "gb/rst.h"
-#include "gb/scrap.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/sql/sql.h"
@@ -1634,11 +1634,11 @@ static double GetComplexity(const ShipType ship) {
   s.laser = Shipdata[ship][ABIL_LASER];
   s.cew = 0;
   s.cew_range = 0;
-  s.size = ship_size(&s);
-  s.base_mass = getmass(&s);
-  s.mass = getmass(&s);
+  s.size = ship_size(s);
+  s.base_mass = getmass(s);
+  s.mass = getmass(s);
 
-  return complexity(&s);
+  return complexity(s);
 }
 
 static int ShipCompare(const void *S1, const void *S2) {

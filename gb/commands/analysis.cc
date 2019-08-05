@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "gb/analysis.h"
+#include "gb/commands/analysis.h"
 
 #include <cctype>
 #include <cstdio>

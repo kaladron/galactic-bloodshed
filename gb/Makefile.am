@@ -38,7 +38,7 @@ bin_PROGRAMS = makeuniv enrol GB racegen
 noinst_LIBRARIES = libgblib.a libcommands.a
 
 UTILS_FILES = utils/rand.cc utils/fileutils.cc
-STORE_FILES = stores/stores.cc
+STORE_FILES = stores/entities.cc stores/store.cc stores/types.cc stores/values.cc
 COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc $(UTILS_FILES) $(STORE_FILES)
 
 makeuniv_SOURCES = $(COMMON_FILES)  \

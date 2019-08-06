@@ -3,40 +3,24 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef MEMSTORE_H
-#define MEMSTORE_H
+#ifndef SQLSTORE_H
+#define SQLSTORE_H
 
-#include <map>
 #include "store.h"
 
 class SQLStore : public Store {
 public:
-    template <class E, typename ...Fs>
-    const Table<E, Fs...> &GetTable();
+    const Table *GetTable(Type *t);
 };
 
-template <class E, typename ...Fs>
-class SQLTable : public Table<E, Fs...> {
+class SQLTable : public Table {
 public:
-    using EntityType = Table<E, Fs...>::EntityType;
-    void Get(EntityType &entity, const Key<Fs...> &key);
-    void Put(EntityType &entity);
-    void Delete(const Key<Fs...> &key);
+    void Get(Entity &entity, const Value &key) { entity = entries[&key]; }
+    void Put(Entity &entity) { entries[entity.GetKey()] = entity; }
+    void Delete(const Value &key) { entries.erase(key); }
 
 private:
+    std::map<const Value *, Entity &> entries;
 };
 
-template <class E, typename ...Fs>
-void SQLTable<E, Fs...>::Get(EntityType &entity, const Key<Fs...> &key) {
-}
-
-template <class E, typename ...Fs>
-void SQLTable<E, Fs...>::Put(EntityType &entity) {
-}
-
-template <class E, typename ...Fs>
-void SQLTable<E, Fs...>::Delete(const Key<Fs...> &key) {
-}
-
 #endif
-

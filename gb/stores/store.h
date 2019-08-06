@@ -17,40 +17,38 @@ using namespace std;
 /**
  * The Table is our storage abstraction.  Table contains of a collection of entities of a given type.
  */
-template <class E, typename ...Fs>
 class Table {
 public:
-    using EntityType = Entity<enable_if_t<is_base_of<EntityClass, E>::value, void>>;
-    void Get(EntityType &entity, const Key<Fs...> &key);
-    void Put(EntityType &entity);
-    void Delete(const Key<Fs...> &key);
+    Entity *Get(const Value &key);
+    void Put(Entity &entity);
+    void Delete(const Value &key);
 
-    void Put(const list<EntityType> &entities) {
+    void Put(Entity *entity) { if (entity) Put(*entity); }
+    void Put(const list<Entity*> &entities) {
         for (auto entity : entities) {
             Put(entity);
         }
     }
 
-    void Delete(const EntityType &entity) {
-        Delete(entity.GetKey());
-    }
+    void Delete(const Value *key) { Delete(*key); }
+    void Delete(const Entity *entity) { Delete(entity->GetKey()); }
+    void Delete(const Entity &entity) { Delete(&entity); }
 
-    void Delete(const list<Key<EntityType>> &keys) {
+    void Delete(const list<const Value *> &keys) {
         for (auto key : keys) {
             Delete(key);
         }
     }
 
-    void Delete(const list<EntityType> &entities) {
+    void Delete(const list<Entity *> &entities) {
         for (auto entity : entities) {
-            Put(entity);
+            Delete(entity);
         }
     }
 };
 
 class Store {
-    template <typename E, typename ...Fs>
-    const Table<E, Fs...> &GetTable();
+    Table *GetTable(Type *t);
 };
 
 #endif

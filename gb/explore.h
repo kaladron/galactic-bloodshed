@@ -11,6 +11,5 @@ void colonies(const command_t &, GameObj &);
 void distance(const command_t &, GameObj &);
 void exploration(const command_t &, GameObj &);
 void star_locations(const command_t &, GameObj &);
-void tech_status(const command_t &, GameObj &);
 
 #endif  // EXPLORE_H

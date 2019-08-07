@@ -24,14 +24,20 @@
 
 using namespace std;
 
+class Value;
+
+using ValueMap = map<string, Value *>;
+using ValueList = list<Value *>;
+
 class Value {
 public:
     Value(Type *t) : type(t), exists(false) { }
     virtual bool matchesType(Type *type) { return false; }
     bool Exists() const { return exists; }
     void Erase() { exists = false; }
+    virtual int Compare(const Value &another) const { }
     virtual bool operator< (const Value& another) const {
-        return this < &another;
+        return Compare(another) < 0;
     }
 
 protected:
@@ -42,40 +48,41 @@ protected:
 class MapValue : public Value {
 public:
     MapValue(Type *t) : Value(t) { }
-    virtual bool operator< (const Value& another) const;
+    virtual int Compare(const Value &another) const;
 
 protected:
-    map<string, Value *> values;
+    ValueMap values;
 };
 
 class ListValue : public Value {
 public:
     ListValue(Type *t) : Value(t) { }
-    virtual bool operator< (const Value& another) const;
+    virtual int Compare(const Value &another) const;
 
 protected:
-    list<Value *> values;
+    ValueList values;
 };
 
 template <typename T>
 class LeafValue : public Value {
 public:
-    virtual bool operator< (const Value& another) const {
+    virtual int Compare(const T &another) const {
+        return value - another;
+    }
+    virtual int Compare(const Value &another) const {
         LeafValue *ourtype = dynamic_cast<LeafValue<T> *>(another);
-        if (ourtype) {
-            return value < ourtype->value;
+        if (!ourtype) {
+            return this - ourtype;
         }
-        return this < ourtype;
+        return Compare<T>(value, ourtype->value);
     }
 
 protected:
     T value;
 };
 
-class TupleValue : public Value {
-protected:
-    list<Value *> values;
-};
+extern int CompareValueList(const ValueList &first, const ValueList &second);
+extern int CompareValueMap(const ValueMap &first, const ValueMap &second);
 
 #endif
 

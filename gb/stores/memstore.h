@@ -10,7 +10,7 @@
 
 class MemTable : public Table {
 public:
-    MemTable() { }
+    MemTable(const Schema *t) { }
     Entity *Get(const Value &key);
     void Put(Entity &entity);
     void Delete(const Value &key);

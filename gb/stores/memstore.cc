@@ -6,7 +6,7 @@ MemStore::MemStore() {
 
 shared_ptr<MemTable> MemStore::GetTable(const Schema *schema) {
     if (tables.find(schema) == tables.end()) {
-        tables[schema] = make_shared<MemTable>();
+        tables[schema] = make_shared<MemTable>(schema);
     }
     return tables[schema];
 }

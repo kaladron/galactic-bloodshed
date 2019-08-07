@@ -11,13 +11,36 @@
 
 class SQLTable : public Table {
 public:
-    SQLTable(sqlite3 *dbhandle);
+    SQLTable(sqlite3 *dbhandle, const Schema *t);
     Entity *Get(const Value &key);
     void Put(Entity &entity);
     void Delete(const Value &key);
+    const string &LastError() { return last_error; }
+    const string &LastQuery() { return last_query; }
+
+protected:
+    /**
+     * Ensures that tables have been created.
+     */
+    bool ensureTable();
+
+    /**
+     * Helper to prepare an sql string and return a statement.
+     */
+    sqlite3_stmt *prepareSql(const string &sqlstr);
+
+    /**
+     * Closes and releases a prepared statement object.
+     */
+    void closeStatement(sqlite3_stmt *&stmt);
 
 protected:
     sqlite3 *dbhandle;
+    const Schema *schema;
+    bool table_created = false;
+    bool log_queries = true;
+    string last_error;
+    string last_query;
 };
 
 class SQLStore : public Store<SQLTable> {
@@ -26,9 +49,10 @@ public:
     virtual shared_ptr<SQLTable> GetTable(const Schema *t);
 
 private:
-    string dbpath;
-    sqlite3 *dbhandle;
     map<const Schema *, shared_ptr<SQLTable>> tables;
+    string dbpath;
+    int db_status;
+    sqlite3 *dbhandle;
 };
 
 #endif

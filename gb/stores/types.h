@@ -47,6 +47,7 @@ public:
     size_t ChildCount() const;
     Type *GetChild(const string &name) const;
     NameTypePair GetChild(size_t index) const;
+    const string &Name() const { return name; }
 
 protected:
     void Clear();

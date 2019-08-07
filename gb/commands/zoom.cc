@@ -7,7 +7,8 @@
 
 #include "gb/commands/zoom.h"
 
-#include <boost/format.hpp>
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 #include <string>
 
 #include "gb/GB_server.h"
@@ -32,6 +33,6 @@ void zoom(const command_t &argv, GameObj &g) {
     }
   }
 
-  g.out << boost::format("Zoom value %g, lastx = %g, lasty = %g.\n") %
-               g.zoom[i] % g.lastx[i] % g.lasty[i];
+  g.out << fmt::format("Zoom value {0}, lastx = {1}, lasty = {2}.\n", g.zoom[i],
+                       g.lastx[i], g.lasty[i]);
 }

@@ -8,19 +8,24 @@
 
 #include "store.h"
 
-class MemStore : public Store {
-public:
-    const Table *GetTable(Type *t);
-};
-
 class MemTable : public Table {
 public:
-    Entity *Get(const Value &key) { return entries[&key]; }
-    void Put(Entity &entity) { entries[entity.GetKey()] = &entity; }
-    void Delete(const Value &key) { entries.erase(&key); }
+    MemTable() { }
+    Entity *Get(const Value &key);
+    void Put(Entity &entity);
+    void Delete(const Value &key);
 
 private:
     std::map<const Value *, Entity *> entries;
+};
+
+class MemStore : public Store<MemTable> {
+public:
+    MemStore();
+    virtual shared_ptr<MemTable> GetTable(const Schema *t);
+
+private:
+    map<const Schema *, shared_ptr<MemTable>> tables;
 };
 
 #endif

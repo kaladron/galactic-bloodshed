@@ -5,8 +5,12 @@
 
 #include "gb/stores/entities.h"
 
-Entity::Entity(Type *t, Type *kt) : MapValue(t), key_type(kt) {
-    assert(t->Tag() == Type::RECORD && "Entities types can only be records.");
+Schema::Schema(const string &name_, Type *t, Type *kt) : 
+    name(name_), entity_type(t), key_type(kt) {
+    assert(t->Tag() == Type::RECORD && "Schemas can only be record types.");
+}
+
+Entity::Entity(Schema *s) : MapValue(s->EntityType()), schema(s) {
 }
 
 Entity::~Entity() {

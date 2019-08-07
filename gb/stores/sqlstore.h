@@ -7,20 +7,28 @@
 #define SQLSTORE_H
 
 #include "store.h"
-
-class SQLStore : public Store {
-public:
-    const Table *GetTable(Type *t);
-};
+#include <sqlite3.h>
 
 class SQLTable : public Table {
 public:
-    void Get(Entity &entity, const Value &key) { entity = entries[&key]; }
-    void Put(Entity &entity) { entries[entity.GetKey()] = entity; }
-    void Delete(const Value &key) { entries.erase(key); }
+    SQLTable(sqlite3 *dbhandle);
+    Entity *Get(const Value &key);
+    void Put(Entity &entity);
+    void Delete(const Value &key);
+
+protected:
+    sqlite3 *dbhandle;
+};
+
+class SQLStore : public Store<SQLTable> {
+public:
+    SQLStore(const string &dbpath);
+    virtual shared_ptr<SQLTable> GetTable(const Schema *t);
 
 private:
-    std::map<const Value *, Entity &> entries;
+    string dbpath;
+    sqlite3 *dbhandle;
+    map<const Schema *, shared_ptr<SQLTable>> tables;
 };
 
 #endif

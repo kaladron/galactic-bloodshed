@@ -5,6 +5,7 @@
 
 // #include "gb/stores/sqlstore.h"
 #include "gb/stores/memstore.h"
+#include "gb/stores/sqlstore.h"
 
 /*
 DECLARE_ENTITY(AddressEntity, "Address", 

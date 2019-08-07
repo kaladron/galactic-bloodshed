@@ -19,6 +19,8 @@ using namespace std;
  */
 class Table {
 public:
+    Table() { }
+    virtual ~Table() { }
     Entity *Get(const Value &key);
     void Put(Entity &entity);
     void Delete(const Value &key);
@@ -47,8 +49,10 @@ public:
     }
 };
 
+template <typename TableType>
 class Store {
-    Table *GetTable(Type *t);
+public:
+    virtual shared_ptr<TableType> GetTable(const Schema *t);
 };
 
 #endif

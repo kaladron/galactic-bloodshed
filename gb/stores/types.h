@@ -7,6 +7,7 @@
 #define TYPES_H
 
 #include <map>
+#include <functional>
 #include <vector>
 #include <string>
 #include <boost/preprocessor.hpp>
@@ -29,13 +30,16 @@ public:
         TYPE_FUN
     };
 
-    Type(const string &name, TypeVector *args = nullptr);
-    Type(const string &name, NameTypeVector *fields, bool is_product_type = true);
+    Type(const string &name);
+    Type(const string &name, const TypeVector &args);
+    Type(const string &name, const NameTypeVector &fields, bool is_product_type = true);
     ~Type();
 
+    int Compare(const Type &another) const;
+
     TypeTag Tag() const { return type_tag; }
-    void SetData(TypeVector *args = nullptr);
-    void SetData(NameTypeVector *fields, bool is_product_type = true);
+    void SetData(const TypeVector &args);
+    void SetData(const NameTypeVector &fields, bool is_product_type = true);
 
     // Access children
     void AddChild(Type *child);
@@ -62,8 +66,8 @@ private:
      * Children of this type.
      * For TYPE_FUN the name part of the pair will be empty!!!
      */
-    vector<string> *child_names;
-    TypeVector *child_types;
+    vector<string> child_names;
+    TypeVector child_types;
 };
 
 // SOME DEFAULT TYPES
@@ -73,6 +77,25 @@ extern const Type *IntType;
 extern const Type *FloatType;
 extern const Type *LongType;
 extern const Type *DoubleType;
+
+template <typename IteratorType, typename CmpType>
+int IterCompare(IteratorType fbegin, IteratorType fend,
+                IteratorType sbegin, IteratorType send,
+                const CmpType &comparator) {
+                // const function <int(const V&, const V&)> &comparator) {
+                // const int (*comparator)(const V &a, const V &b)) {
+    auto it1 = fbegin;
+    auto it2 = sbegin;
+    for (;it1 != fend && it2 != send; it1++, it2++) {
+        auto a = *it1;
+        auto b = *it2;
+        int cmp = comparator(*it1, *it2);
+        if (cmp != 0) return cmp;
+    }
+    if (it1 == fend && it2 == send) return 0;
+    else if (it1 == fend) return -1;
+    return 1;
+}
 
 // Some macros to make creation of types easier
 

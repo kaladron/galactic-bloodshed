@@ -26,13 +26,32 @@
 
 using namespace std;
 
-class Entity : public MapValue {
+class Schema {
 public:
-    Entity(Type *t, Type *kt);
-    virtual ~Entity();
+    Schema(const string &name, Type *t, Type *kt);
+    virtual ~Schema() { }
+
+    /** Returns the name of the schema. */
+    const string &Name() const { return name; }
 
     /** Returns the type of the key for this entity. */
-    Type *GetKeyType() const { return key_type; }
+    Type *KeyType() const { return key_type; }
+
+    /** Returns the type of the entity. */
+    Type *EntityType() const { return key_type; }
+
+protected:
+    string name;
+    Type *entity_type;
+    Type *key_type;
+};
+
+class Entity : public MapValue {
+public:
+    Entity(Schema *schema);
+    virtual ~Entity();
+
+    Schema *GetSchema() const { return schema; }
 
     /** Get the value of the key fields corresponding to this Entity. */
     virtual const Value *GetKey() const;
@@ -41,7 +60,7 @@ public:
     virtual void SetKey(const Value &value);
 
 protected:
-    Type *key_type;
+    Schema *schema;
 };
 
 #endif

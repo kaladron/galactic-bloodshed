@@ -20,31 +20,24 @@ int ListValue::Compare(const Value &another) const {
 }
 
 int CompareValueList(const ValueList &first, const ValueList &second) {
-    auto it1 = first.begin();
-    auto it2 = second.begin();
-    for (;it1 != first.end() && it2 != second.end(); it1++, it2++) {
-        int cmp = (*it1)->Compare(**it2);
-        if (cmp != 0) return cmp;
-    }
-    if (it1 == it2) return 0;
-    else if (it1 == first.end()) return -1;
-    return 1;
+    return IterCompare(
+            first.begin(), first.end(),
+            second.begin(), second.end(),
+            [](const Value *a, const Value *b) {
+                return a->Compare(*b);
+            });
 }
 
 int CompareValueMap(const ValueMap &first, const ValueMap &second) {
-    auto it1 = first.begin();
-    auto it2 = second.begin();
-    for (;it1 != first.end() && it2 != second.end(); it1++, it2++) {
-        auto a = *it1;
-        auto b = *it2;
-        int cmp = a.first.compare(b.first);
-        if (cmp != 0) return cmp;
+    return IterCompare(
+            first.begin(), first.end(),
+            second.begin(), second.end(),
+            [](const pair<string, Value *> &a, const pair<string, Value *> &b) {
+                int cmp = a.first.compare(b.first);
+                if (cmp != 0) return cmp;
 
-        // check value otherwise
-        cmp = a.second->Compare(*(b.second));
-        if (cmp != 0) return cmp;
-    }
-    if (it1 == it2) return 0;
-    else if (it1 == first.end()) return -1;
-    return 1;
+                // check value otherwise
+                cmp = a.second->Compare(*(b.second));
+                if (cmp != 0) return cmp;
+            });
 }

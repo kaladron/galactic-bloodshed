@@ -6,7 +6,8 @@
 
 #include "gb/commands/governors.h"
 
-#include <boost/format.hpp>
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
@@ -29,10 +30,9 @@
 namespace {
 void do_revoke(racetype *Race, const governor_t src_gov,
                const governor_t tgt_gov) {
-  std::string outmsg;
-  outmsg = str(
-      boost::format("*** Transferring [%d,%d]'s ownings to [%d,%d] ***\n\n") %
-      Race->Playernum % src_gov % Race->Playernum % tgt_gov);
+  std::string outmsg =
+      fmt::format("*** Transferring [{0},{1}]'s ownings to [{2},{3}] ***\n\n",
+                  Race->Playernum, src_gov, Race->Playernum, tgt_gov);
   notify(Race->Playernum, (governor_t)0, outmsg);
 
   /*  First do stars....  */
@@ -40,8 +40,7 @@ void do_revoke(racetype *Race, const governor_t src_gov,
   for (starnum_t i = 0; i < Sdata.numstars; i++)
     if (Stars[i]->governor[Race->Playernum - 1] == src_gov) {
       Stars[i]->governor[Race->Playernum - 1] = tgt_gov;
-      outmsg = str(boost::format("Changed juridiction of /%s...\n") %
-                   Stars[i]->name);
+      outmsg = fmt::format("Changed juridiction of /{0}...\n", Stars[i]->name);
       notify(Race->Playernum, 0, outmsg);
       putstar(Stars[i], i);
     }
@@ -54,8 +53,8 @@ void do_revoke(racetype *Race, const governor_t src_gov,
     if (ship->alive && (ship->owner == Race->Playernum) &&
         (ship->governor == src_gov)) {
       ship->governor = tgt_gov;
-      outmsg = str(boost::format("Changed ownership of %c%lu...\n") %
-                   Shipltrs[ship->type] % i);
+      outmsg = fmt::format("Changed ownership of {0}{1}...\n",
+                           Shipltrs[ship->type], i);
       notify(Race->Playernum, 0, outmsg);
       putship(&*ship);
     }
@@ -63,8 +62,8 @@ void do_revoke(racetype *Race, const governor_t src_gov,
 
   /*  And money too....  */
 
-  outmsg = str(boost::format("Transferring %ld money...\n") %
-               Race->governor[src_gov].money);
+  outmsg =
+      fmt::format("Transferring {0} money...\n", Race->governor[src_gov].money);
   notify(Race->Playernum, 0, outmsg);
   Race->governor[tgt_gov].money =
       Race->governor[tgt_gov].money + Race->governor[src_gov].money;
@@ -75,14 +74,14 @@ void do_revoke(racetype *Race, const governor_t src_gov,
   Race->governor[src_gov].active = 0;
   strcpy(Race->governor[src_gov].password, "");
   strcpy(Race->governor[src_gov].name, "");
-  outmsg = str(
-      boost::format("\n*** Governor [%d,%d]'s powers have been REVOKED ***\n") %
-      Race->Playernum % src_gov);
+  outmsg =
+      fmt::format("\n*** Governor [{0},{1}]'s powers have been REVOKED ***\n",
+                  Race->Playernum, src_gov);
   notify(Race->Playernum, 0, outmsg);
 
   // TODO(jeffbailey): Use C++17 Filesystem stuff when available
-  std::string rm_telegram_file = str(boost::format("rm %s.%d.%d") % TELEGRAMFL %
-                                     Race->Playernum % src_gov);
+  std::string rm_telegram_file =
+      fmt::format("rm {0}.{1}.{2}", TELEGRAMFL, Race->Playernum, src_gov);
   system(rm_telegram_file.c_str()); /*  Remove the telegram file too....  */
 }
 }  // namespace

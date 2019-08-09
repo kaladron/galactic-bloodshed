@@ -21,6 +21,8 @@ using NameTypePair = pair<const string, Type *>;
 using NameTypeVector = vector<NameTypePair>;
 using TypeVector = vector<Type *>;
 
+using FieldPath = vector<string>;
+
 class Type {
 public:
     enum TypeTag {

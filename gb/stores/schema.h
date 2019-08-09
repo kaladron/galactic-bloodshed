@@ -26,6 +26,60 @@
 
 using namespace std;
 
+/**
+ * Describes a constraint in a Schema.
+ */
+class Constraint {
+public:
+    enum Type {
+        UNIQUE,
+        OPTIONAL,
+        DEFAULT_VALUE,
+        FOREIGN_KEY,
+    };
+    Type tag;
+
+public:
+    // Constructor for creating a uniqueness constraint
+    Constraint(list<FieldPath> &field_paths);
+
+    // Optional field constructor
+    Constraint(const FieldPath &field_path);
+
+    // Default value constraints
+    Constraint(const FieldPath &field_path, Value *value, bool onread = true);
+
+    // Foreign key cardinality constraints
+    Constraint(const FieldPath &src, const FieldPath &dest, bool many2many = false);
+    Constraint *UniqueConstraint(string &field);
+
+protected:
+    union {
+        struct {
+            // A collection of fields that participate in uniqueness
+            // Upto the storage on how this is implementated (if it can be)
+            list<FieldPath> field_paths;
+        } uniqueness;
+
+        struct {
+            // A collection of fields that participate in uniqueness
+            FieldPath field_path;
+        } optionality;
+
+        struct {
+            FieldPath src_field_path;
+            FieldPath dst_field_path;
+            bool many2many;
+        } foreign_key;
+
+        struct {
+            FieldPath field_path;
+            Value *value;
+            bool onread;
+        } default_value;
+    };
+};
+
 class Schema {
 public:
     Schema(const string &name, Type *t, Type *kt);

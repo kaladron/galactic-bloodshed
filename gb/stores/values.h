@@ -35,6 +35,7 @@ public:
     virtual bool matchesType(Type *type) { return false; }
     bool Exists() const { return exists; }
     void Erase() { exists = false; }
+    virtual Value *ResolveFieldPath(FieldPath *path) { return nullptr; }
     virtual int Compare(const Value &another) const { }
     virtual bool operator< (const Value& another) const {
         return Compare(another) < 0;

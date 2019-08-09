@@ -10,12 +10,13 @@
 
 class MemTable : public Table {
 public:
-    MemTable(const Schema *t) { }
+    MemTable(const Schema *t);
     Entity *Get(const Value &key);
     void Put(Entity &entity);
     void Delete(const Value &key);
 
 private:
+    const Schema *schema;
     std::map<const Value *, Entity *> entries;
 };
 

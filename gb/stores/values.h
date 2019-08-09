@@ -36,10 +36,10 @@ public:
     bool Exists() const { return exists; }
     void Erase() { exists = false; }
     virtual Value *ResolveFieldPath(FieldPath *path) { return nullptr; }
+    virtual size_t HashCode() const { }
     virtual int Compare(const Value &another) const { }
-    virtual bool operator< (const Value& another) const {
-        return Compare(another) < 0;
-    }
+    virtual bool Equals(const Value &another) const { return Compare(another) == 0; }
+    virtual bool operator< (const Value& another) const { return Compare(another) < 0; }
 
 protected:
     Type *type;
@@ -50,6 +50,7 @@ class MapValue : public Value {
 public:
     MapValue(Type *t) : Value(t) { }
     virtual int Compare(const Value &another) const;
+    virtual size_t HashCode() const;
 
 protected:
     ValueMap values;
@@ -59,6 +60,7 @@ class ListValue : public Value {
 public:
     ListValue(Type *t) : Value(t) { }
     virtual int Compare(const Value &another) const;
+    virtual size_t HashCode() const;
 
 protected:
     ValueList values;
@@ -77,9 +79,11 @@ public:
         }
         return Compare<T>(value, ourtype->value);
     }
+    virtual size_t HashCode() const { return hasher(value); }
 
 protected:
     T value;
+    static std::hash<T> hasher;
 };
 
 extern int CompareValueList(const ValueList &first, const ValueList &second);

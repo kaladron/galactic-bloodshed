@@ -1,14 +1,30 @@
 
+#include <string>
 #include "values.h"
+
+size_t MapValue::HashCode() const {
+    int h = 0;
+    for (auto it : values) {
+        h += std::hash<string>{}(it.first);
+        h += (it.second)->HashCode();
+    }
+    return h;
+}
 
 int MapValue::Compare(const Value &another) const {
     const MapValue *that = dynamic_cast<const MapValue *>(&another);
     if (!that) {
         return this < that;
     }
-    // perform an element wise comparison stopping either when no more elements exist
-    // or the first key we have is not equal
     return CompareValueMap(values, that->values);
+}
+
+size_t ListValue::HashCode() const {
+    size_t hash = 0;
+    for (auto it : values) {
+        hash += it->HashCode();
+    }
+    return hash;
 }
 
 int ListValue::Compare(const Value &another) const {

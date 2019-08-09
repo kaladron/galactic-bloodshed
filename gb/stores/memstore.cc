@@ -22,3 +22,7 @@ void MemTable::Put(Entity &entity) {
 void MemTable::Delete(const Value &key) {
     entries.erase(&key);
 }
+
+MemTable::MemTable(const Schema *schema_) : schema(schema_) {
+    // TODO: Now create the necessary constraint structures so they can be honored in our CRUDs
+}

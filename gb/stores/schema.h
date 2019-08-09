@@ -50,8 +50,8 @@ public:
     Constraint(const FieldPath &field_path, Value *value, bool onread = true);
 
     // Foreign key cardinality constraints
-    Constraint(const FieldPath &src, const FieldPath &dest, bool many2many = false);
-    Constraint *UniqueConstraint(string &field);
+    Constraint(const FieldPath &src, const Type *dst_type,
+               const FieldPath &dst, bool many2many = false);
 
 protected:
     union {
@@ -68,6 +68,7 @@ protected:
 
         struct {
             FieldPath src_field_path;
+            const Type *dst_type;
             FieldPath dst_field_path;
             bool many2many;
         } foreign_key;
@@ -94,10 +95,15 @@ public:
     /** Returns the type of the entity. */
     Type *EntityType() const { return key_type; }
 
+    /** Add a new constraint into the Schema. */
+    void AddConstraint(const Constraint *c);
+    const list<const Constraint *> &GetConstraints() const;
+
 protected:
     string name;
     Type *entity_type;
     Type *key_type;
+    list <const Constraint *> constraints;
 };
 
 #endif

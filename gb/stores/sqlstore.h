@@ -6,53 +6,30 @@
 #ifndef SQLSTORE_H
 #define SQLSTORE_H
 
-#include "store.h"
-#include <sqlite3.h>
+#include "gb/stores/store.h"
+#include "gb/stores/sqldb.h"
 
-class SQLTable : public Table {
+class SQLCollection : public Collection {
 public:
-    SQLTable(sqlite3 *dbhandle, const Schema *t);
+    SQLCollection(shared_ptr<SQLDB> db_, const Schema *s) ;
     Entity *Get(const Value &key);
     void Put(Entity &entity);
     void Delete(const Value &key);
-    const string &LastError() { return last_error; }
-    const string &LastQuery() { return last_query; }
 
 protected:
-    /**
-     * Ensures that tables have been created.
-     */
-    bool ensureTable();
-
-    /**
-     * Helper to prepare an sql string and return a statement.
-     */
-    sqlite3_stmt *prepareSql(const string &sqlstr);
-
-    /**
-     * Closes and releases a prepared statement object.
-     */
-    void closeStatement(sqlite3_stmt *&stmt);
-
-protected:
-    sqlite3 *dbhandle;
     const Schema *schema;
-    bool table_created = false;
-    bool log_queries = true;
-    string last_error;
-    string last_query;
+    shared_ptr<SQLDB> db;
+    weak_ptr<SQLTable> base_table;
 };
 
-class SQLStore : public Store<SQLTable> {
+class SQLStore : public Store<SQLCollection> {
 public:
     SQLStore(const string &dbpath);
-    virtual shared_ptr<SQLTable> GetTable(const Schema *t);
+    virtual shared_ptr<SQLCollection> GetCollection(const Schema *t);
 
 private:
-    map<const Schema *, shared_ptr<SQLTable>> tables;
-    string dbpath;
-    int db_status;
-    sqlite3 *dbhandle;
+    map<const Schema *, shared_ptr<SQLCollection>> tables;
+    shared_ptr<SQLDB> db;
 };
 
 #endif

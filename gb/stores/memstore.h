@@ -8,9 +8,9 @@
 
 #include "store.h"
 
-class MemTable : public Table {
+class MemCollection : public Collection {
 public:
-    MemTable(const Schema *t);
+    MemCollection(const Schema *t);
     Entity *Get(const Value &key);
     void Put(Entity &entity);
     void Delete(const Value &key);
@@ -20,13 +20,13 @@ private:
     std::map<const Value *, Entity *> entries;
 };
 
-class MemStore : public Store<MemTable> {
+class MemStore : public Store<MemCollection> {
 public:
     MemStore();
-    virtual shared_ptr<MemTable> GetTable(const Schema *t);
+    virtual shared_ptr<MemCollection> GetCollection(const Schema *t);
 
 private:
-    map<const Schema *, shared_ptr<MemTable>> tables;
+    map<const Schema *, shared_ptr<MemCollection>> tables;
 };
 
 #endif

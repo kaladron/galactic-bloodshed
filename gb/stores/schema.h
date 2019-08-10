@@ -26,6 +26,8 @@
 
 using namespace std;
 
+class Schema;
+
 /**
  * Describes a constraint in a Schema.
  */
@@ -50,8 +52,9 @@ public:
     Constraint(const FieldPath &field_path, Value *value, bool onread = true);
 
     // Foreign key cardinality constraints
-    Constraint(const FieldPath &src, const Type *dst_type,
-               const FieldPath &dst, bool many2many = false);
+    Constraint(const list<FieldPath> &src,
+               const list<FieldPath> &dst, 
+               const Schema *dst_schema, bool many2many = false);
 
 protected:
     union {
@@ -67,9 +70,9 @@ protected:
         } optionality;
 
         struct {
-            FieldPath src_field_path;
-            const Type *dst_type;
-            FieldPath dst_field_path;
+            list<FieldPath> src_field_paths;
+            list<FieldPath> dst_field_paths;
+            const Schema *dst_schema;
             bool many2many;
         } foreign_key;
 

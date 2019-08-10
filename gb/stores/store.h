@@ -15,12 +15,12 @@
 using namespace std;
 
 /**
- * The Table is our storage abstraction.  Table contains of a collection of entities of a given type.
+ * The Collection is our storage abstraction.  Collection contains of a collection of entities of a given type.
  */
-class Table {
+class Collection {
 public:
-    Table() { }
-    virtual ~Table() { }
+    Collection() { }
+    virtual ~Collection() { }
     Entity *Get(const Value &key);
     void Put(Entity &entity);
     void Delete(const Value &key);
@@ -49,10 +49,10 @@ public:
     }
 };
 
-template <typename TableType>
+template <typename CollectionType>
 class Store {
 public:
-    virtual shared_ptr<TableType> GetTable(const Schema *t);
+    virtual shared_ptr<CollectionType> GetCollection(const Schema *t);
 };
 
 #endif

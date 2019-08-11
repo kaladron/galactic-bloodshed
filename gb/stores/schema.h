@@ -39,7 +39,30 @@ public:
         DEFAULT_VALUE,
         FOREIGN_KEY,
     };
-    Type tag;
+
+    struct Uniqueness {
+        // A collection of fields that participate in uniqueness
+        // Upto the storage on how this is implementated (if it can be)
+        list<FieldPath> field_paths;
+    };
+
+    struct Optionality {
+        // A collection of fields that participate in uniqueness
+        FieldPath field_path;
+    };
+
+    struct ForeignKey {
+        list<FieldPath> src_field_paths;
+        list<FieldPath> dst_field_paths;
+        const Schema *dst_schema;
+        bool many2many;
+    };
+
+    struct DefaultValue {
+        FieldPath field_path;
+        Value *value;
+        bool onread;
+    };
 
 public:
     // Constructor for creating a uniqueness constraint
@@ -56,31 +79,23 @@ public:
                const list<FieldPath> &dst, 
                const Schema *dst_schema, bool many2many = false);
 
+    bool IsUniqueness() const { return tag == UNIQUE; }
+    bool IsOptionality() const { return tag == OPTIONAL; }
+    bool IsDefaultValue() const { return tag == DEFAULT_VALUE; }
+    bool IsForeignKey() const { return tag == FOREIGN_KEY; }
+
+    const Uniqueness &AsUniqueness() const { return uniqueness; }
+    const Optionality &AsOptionality() const { return optionality; }
+    const ForeignKey &AsForeignKey() const { return foreign_key; }
+    const DefaultValue &AsDefaultValue() const { return default_value; }
+
 protected:
+    Type tag;
     union {
-        struct {
-            // A collection of fields that participate in uniqueness
-            // Upto the storage on how this is implementated (if it can be)
-            list<FieldPath> field_paths;
-        } uniqueness;
-
-        struct {
-            // A collection of fields that participate in uniqueness
-            FieldPath field_path;
-        } optionality;
-
-        struct {
-            list<FieldPath> src_field_paths;
-            list<FieldPath> dst_field_paths;
-            const Schema *dst_schema;
-            bool many2many;
-        } foreign_key;
-
-        struct {
-            FieldPath field_path;
-            Value *value;
-            bool onread;
-        } default_value;
+        Uniqueness uniqueness;
+        Optionality optionality;
+        ForeignKey foreign_key;
+        DefaultValue default_value;
     };
 };
 

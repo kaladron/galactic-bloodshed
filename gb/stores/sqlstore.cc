@@ -18,15 +18,16 @@ SQLCollection::SQLCollection(shared_ptr<SQLDB> db_, const Schema *s)
     : db(db_),
     schema(s),
     base_table(db->EnsureTable(schema)) {
+    // What other "tables" do we need?
 }
 
 Entity *SQLCollection::Get(const Value &key) {
+    // return base_table->Get(key);
 }
 
 void SQLCollection::Put(Entity &entity) {
+    // return base_table->Put(entity);
 }
 
 void SQLCollection::Delete(const Value &key) {
 }
-
-// Utility methods for SQLITE dbs and statements

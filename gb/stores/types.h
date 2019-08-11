@@ -9,6 +9,7 @@
 #include <map>
 #include <functional>
 #include <vector>
+#include <sstream>
 #include <string>
 #include <boost/preprocessor.hpp>
 #include <boost/preprocessor/cat.hpp>
@@ -21,7 +22,24 @@ using NameTypePair = pair<const string, Type *>;
 using NameTypeVector = vector<NameTypePair>;
 using TypeVector = vector<Type *>;
 
-using FieldPath = vector<string>;
+class FieldPath : public vector<string> {
+public:
+    FieldPath push(const string &subfield) {
+        FieldPath out(*this);
+        out.push_back(subfield);
+        return out;
+    }
+
+    string join(const string &delim = "/") const {
+        stringstream out;
+        int i = 0;
+        for (auto s : *this) {
+            if (i++ > 0) out << delim;
+            out << s;
+        }
+        return out.str();
+    }
+};
 
 class Type {
 public:
@@ -39,17 +57,19 @@ public:
 
     int Compare(const Type &another) const;
 
-    TypeTag Tag() const { return type_tag; }
     void SetData(const TypeVector &args);
     void SetData(const NameTypeVector &fields, bool is_product_type = true);
 
     // Access children
-    void AddChild(Type *child);
-    void AddChild(const string &name, Type *child);
+    void AddChild(Type *child, const string &name = "");
     size_t ChildCount() const;
     Type *GetChild(const string &name) const;
     NameTypePair GetChild(size_t index) const;
     const string &Name() const { return name; }
+
+    const bool IsTypeFun() const { return type_tag == TYPE_FUN; }
+    const bool IsRecord() const { return type_tag == RECORD; }
+    const bool IsUnion() const { return type_tag == UNION; }
 
 protected:
     void Clear();

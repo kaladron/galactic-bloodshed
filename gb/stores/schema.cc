@@ -54,7 +54,7 @@ Constraint::Constraint(const list<FieldPath> &src,
  */
 Schema::Schema(const string &name_, Type *t, Type *kt) : 
     name(name_), entity_type(t), key_type(kt) {
-    assert(t->Tag() == Type::RECORD && "Schemas can only be record types.");
+    assert(t->IsRecord() && "Schemas can only be record types.");
 }
 
 /**

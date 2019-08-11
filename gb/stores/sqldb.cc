@@ -2,6 +2,8 @@
 #include <iostream>
 #include <sstream>
 #include <fmt/ostream.h>
+#include <fmt/format.h>
+#include <queue>
 #include "gb/stores/sqldb.h"
 
 SQLDB::SQLDB(const string &path) : dbpath(path), dbhandle(nullptr) {
@@ -12,8 +14,64 @@ SQLDB::SQLDB(const string &path) : dbpath(path), dbhandle(nullptr) {
                                 nullptr);
 }
 
-weak_ptr<SQLTable> SQLDB::EnsureTable(const Schema *s) {
-    // return nullptr;
+shared_ptr<SQLTable> SQLDB::EnsureTable(const Schema *s) {
+    if (tables.find(s->Name()) == tables.end()) {
+        tables[s->Name()] = processSchema(s);
+    }
+    return tables[s->Name()];
+}
+
+shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
+    // Add all top level fields to the node
+    SQLTable *table = new SQLTable(this, s->Name(), s);
+    FieldPath fp;
+    processType(table, s->EntityType(), fp);
+
+    // Now process table constraints
+    for (auto constraint : s->GetConstraints()) {
+        if (constraint->IsOptionality()) {
+            const SQLTable::Column *col = table->ColumnFor(constraint->AsOptionality().field_path);
+            ((SQLTable::Column *)col)->optional = true;
+        }
+        else if (constraint->IsDefaultValue()) {
+            const Constraint::DefaultValue &cval = constraint->AsDefaultValue();
+            const SQLTable::Column *col = table->ColumnFor(cval.field_path);
+            if (cval.onread) {
+                ((SQLTable::Column *)col)->default_read_value = cval.value;
+            } else {
+                ((SQLTable::Column *)col)->default_write_value = cval.value;
+            }
+        }
+    }
+
+    // Kick off its creation
+    table->EnsureTable();
+    return shared_ptr<SQLTable>(table);
+}
+
+void SQLDB::processType(SQLTable *table, const Type *curr_type,
+                        FieldPath &field_path) {
+    bool hasChildren = !curr_type->IsTypeFun() || curr_type->Name() == "tuple";
+    bool namedChildren = !curr_type->IsTypeFun() && curr_type->Name() != "tuple";
+
+    // Process the node and add necessary columns
+    if (curr_type->IsUnion() || !hasChildren) {
+        // only a "tag" required if union
+        table->AddColumn(field_path, curr_type);
+    }
+
+    // Process children
+    if (hasChildren) {
+        for (int i = 0, s = curr_type->ChildCount(); i < s; i++) {
+            NameTypePair ntp = curr_type->GetChild(i);
+            string next_name = namedChildren ?
+                               ntp.first :
+                               string("_") + to_string(i);
+            field_path.push_back(next_name);
+            processType(table, ntp.second, field_path);
+            field_path.pop_back();
+        }
+    }
 }
 
 void SQLDB::CloseStatement(sqlite3_stmt *&stmt) {
@@ -42,7 +100,40 @@ sqlite3_stmt *SQLDB::PrepareSql(const string &sql_str) {
 /*                      All things SQLTable related.                */
 /********************************************************************/
 
-bool SQLTable::CreateTable() {
+bool SQLTable::HasColumn(const string &name) const {
+    return columns_by_name.find(name) != columns_by_name.end();
+}
+
+const SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, const Type *t) {
+    if (columns_by_fp.find(fp) != columns_by_fp.end()) {
+        // do our thing
+        shared_ptr<Column> column = make_shared<Column>();
+        column->index = columns.size();
+        column->name = fp.join("_");
+        column->field_path = fp;
+        column->coltype = t;
+        columns.push_back(column);
+        columns_by_fp[fp] = column;
+        columns_by_name[column->name] = column;
+    }
+    return columns_by_fp[fp].get();
+}
+
+const SQLTable::Column *SQLTable::ColumnAt(size_t index) const {
+    return columns[index].get();
+}
+
+const SQLTable::Column *SQLTable::ColumnFor(const string &name) {
+    if (columns_by_name.find(name) == columns_by_name.end()) return nullptr;
+    return columns_by_name[name].get();
+}
+
+const SQLTable::Column *SQLTable::ColumnFor(const FieldPath &fp) {
+    if (columns_by_fp.find(fp) == columns_by_fp.end()) return nullptr;
+    return columns_by_fp[fp].get();
+}
+
+bool SQLTable::EnsureTable() {
     string sql = CreationSQL();
     sqlite3_stmt *stmt = db->PrepareSql(sql);
     if (stmt == nullptr) return false;
@@ -63,24 +154,14 @@ bool SQLTable::CreateTable() {
 string SQLTable::CreationSQL() const {
     stringstream sql;
     sql << "CREATE TABLE IF NOT EXIST '" << table_name << "' (" << endl;
-
     for (auto column : columns) {
-    }
-    /*
-    Type *entity_type = schema->EntityType();
-    Type *key_type = schema->KeyType();
-    int nFields = entity_type->ChildCount();
-    int nKeyFields = key_type->ChildCount();
-
-    for (int i = 0;i < nFields;i++) {
-        NameTypePair field = entity_type->GetChild(i);
-        string fname = field.first;
-        Type *ftype = field.second;
-        if (i > 0) sql << ", ";
-        sql << fname << " " << endl;
+        const Type *ftype = column->coltype;
+        if (column->index > 0) sql << ", ";
+        sql << column->name << " " << endl;
         // TODO - See how to generically:
         // 1. pass constraints
         // 2. pass default values
+        // lgg
         if (ftype->Name() == "int") {
             sql << "INT" << " " << endl;
         } else if (ftype->Name() == "long") {
@@ -95,12 +176,25 @@ string SQLTable::CreationSQL() const {
             assert(false && "Invalid child type");
         }
 
-        // Get field constraints
-        for (auto constraint : schema->GetConstraints()) {
+        if (!column->optional) {
+            sql << "NOT NULL " << endl;
         }
+
+        // Get field constraints
+        // for (auto constraint : schema->GetConstraints()) { }
         sql << ";";
     }
-    */
+
+    // Now add table constraints
+    for (auto constraint : schema->GetConstraints()) {
+        if (constraint->IsUniqueness()) {
+            const Constraint::Uniqueness &cval = constraint->AsUniqueness();
+        }
+        else if (constraint->IsForeignKey ()) {
+            const Constraint::ForeignKey &cval = constraint->AsForeignKey();
+        }
+    }
+
     sql << ")" << endl;
     return sql.str();
 };

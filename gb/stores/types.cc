@@ -33,7 +33,7 @@ void Type::SetData(const NameTypeVector &fields, bool is_product_type) {
     Clear();
     type_tag = is_product_type ? RECORD : UNION;
     for (auto t : fields) {
-        AddChild(t.first, t.second);
+        AddChild(t.second, t.first);
     }
 }
 
@@ -42,7 +42,11 @@ size_t Type::ChildCount() const {
 }
 
 NameTypePair Type::GetChild(size_t index) const {
-    return NameTypePair(child_names.at(index), child_types.at(index));
+    if (type_tag == RECORD || type_tag == UNION) {
+        return NameTypePair(child_names.at(index), child_types.at(index));
+    } else {
+        return NameTypePair("", child_types.at(index));
+    }
 }
 
 Type *Type::GetChild(const string &name) const {
@@ -54,11 +58,7 @@ Type *Type::GetChild(const string &name) const {
     return child_types.at(index);
 }
 
-void Type::AddChild(Type *child) {
-    child_types.push_back(child);
-}
-
-void Type::AddChild(const string &name, Type *child) {
+void Type::AddChild(Type *child, const string &name) {
     // Only compound types can have names
     if (type_tag == RECORD || type_tag == UNION) {
         child_names.push_back(name);

@@ -21,11 +21,16 @@ public:
     SQLDB(const string &dbpath);
 
 public:
-    weak_ptr<SQLTable> EnsureTable(const Schema *s);
+    shared_ptr<SQLTable> EnsureTable(const Schema *s);
     void CloseStatement(sqlite3_stmt *&stmt);
     sqlite3_stmt *PrepareSql(const string &sql_str);
 
+protected:
+    shared_ptr<SQLTable> processSchema(const Schema *s);
+    void processType(SQLTable *table, const Type *t, FieldPath &fp);
+
 private:
+    map<string, shared_ptr<SQLTable>> tables;
     string dbpath;
     int db_status;
     sqlite3 *dbhandle;
@@ -38,23 +43,44 @@ private:
  */
 class SQLTable {
 public:
-    SQLTable(SQLDB *db_, const string &name) : db(db_), table_name(name) { }
-    void AddField(const FieldPath &fp, Type *starting);
-    void AddField(const string &fieldname, Type *starting);
-    bool CreateTable();
-    string CreationSQL() const;
-
-private: 
     struct Column {
+        int index;
         string name;
         FieldPath field_path;
         const Type *coltype;
+        bool optional = false;
+        Value *default_read_value;
+        Value *default_write_value;
     };
+
+public:
+    SQLTable(SQLDB *db_, const string &name, const Schema *s) 
+        : db(db_), table_name(name), schema(s) { }
+
+    /**
+     * Ensure the table has been created.
+     */
+    bool EnsureTable();
+
+    /**
+     * Returns true if we have a physical column with the given name
+     */
+    bool HasColumn(const string &name) const;
+    size_t ColCount() const { return columns.size(); } 
+    const Column *AddColumn(const FieldPath &fp, const Type *t);
+    const Column *ColumnAt(size_t index) const;
+    const Column *ColumnFor(const string &name);
+    const Column *ColumnFor(const FieldPath &fp);
+
+    string CreationSQL() const;
+
+private: 
     SQLDB *db;
+    const Schema *schema;
     string table_name;
-    map<FieldPath, const Column *> fp_to_column;
-    map<string, const Column *> name_to_column;
-    list <Column> columns;
+    map<FieldPath, shared_ptr<Column>> columns_by_fp;
+    map<string, shared_ptr<Column>> columns_by_name;
+    vector <shared_ptr<Column>> columns;
     bool table_created = false;
 };
 

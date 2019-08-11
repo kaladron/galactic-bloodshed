@@ -17,9 +17,36 @@ GB uses C++20, so a modern compiler and standard library are required.
 Bazel must be installed on the system.
 Two Boost libraries are required.
 
+Install the following dependancies (may vary based on platform).
+
+#### Ubuntu 19.04
+
+```
+sudo apt-get install pkg-config zip g++ zlib1g-dev unzip python
+sudo apt-get install g++-9 clang-tidy clang-format
+sudo apt-get install libsqlite3-dev
+sudo apt-get install libboost-all-dev
+
+# Not needed if building with autotools
+echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
+sudo apt-get update
+sudo apt-get install openjdk-8-jdk
+sudo apt-get install bazel
+```
+
 ### Installing
 
-TBD
+#### Using autotools
+
+```
+autoconf --install
+mkdir -p build
+cd build
+../configure
+make
+sudo make install
+```
 
 ## Running the tests
 
@@ -44,6 +71,7 @@ The version numbers in the doc still reflect the old version numbers.  Haven't f
 ## Authors
 
 * Jeff Bailey
+* Sriram (Sri) Panyam
 
 ## License
 

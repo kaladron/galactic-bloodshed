@@ -44,13 +44,16 @@ private:
 class SQLTable {
 public:
     struct Column {
-        int index;
+        const Type *coltype;
+        bool is_pkey = false;
+        bool required = false;
+        Value *default_read_value = nullptr;
+        Value *default_write_value = nullptr;
+    private:
         string name;
         FieldPath field_path;
-        const Type *coltype;
-        bool required = false;
-        Value *default_read_value;
-        Value *default_write_value;
+        int index;
+        friend SQLTable ;
     };
 
 public:

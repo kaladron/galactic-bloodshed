@@ -61,10 +61,6 @@ public:
         list<FieldPath> src_field_paths;
         list<FieldPath> dst_field_paths;
         const Schema *dst_schema;
-        bool many2many;
-        /** Name of the relationship tabe to use for this association. */
-        string assoc_name;
-        Type *assoc_type;
     };
 
 public:
@@ -80,10 +76,7 @@ public:
     // Foreign key cardinality constraints
     Constraint(const list<FieldPath> &src,
                const list<FieldPath> &dst, 
-               const Schema *dst_schema,
-               const string &assoc_name,
-               Type *assoc_type = nullptr,
-               bool many2many = false);
+               const Schema *dst_schema);
 
     bool IsUniqueness() const { return tag == UNIQUE; }
     bool IsRequired() const { return tag == REQUIRED; }

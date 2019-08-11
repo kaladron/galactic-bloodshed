@@ -35,18 +35,15 @@ Constraint::Constraint(const FieldPath &field_path, Value *value, bool onread) :
 /**
  * Creates a foreign key constraint between a field in the source
  * type to the field path in a destination type.
- * Additionaly many2many specifies the cardinality of this relationship.
  */
 Constraint::Constraint(const list<FieldPath> &src,
                       const list<FieldPath> &dst, 
-                      const Schema *dst_schema,
-                      bool many2many) : tag(FOREIGN_KEY) {
+                      const Schema *dst_schema) : tag(FOREIGN_KEY) {
     assert(src.size() > 0 && "Foreign key constraint must have at least one column");
     assert(src.size() == dst.size() && "Foreign key source and dest columns must be of same size.");
     foreign_key.src_field_paths = src;
     foreign_key.dst_field_paths = dst;
     foreign_key.dst_schema = dst_schema;
-    foreign_key.many2many = many2many;
 }
 
 /**

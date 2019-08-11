@@ -44,10 +44,6 @@ shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
         }
         else if (constraint->IsForeignKey()) {
             const Constraint::ForeignKey &cval = constraint->AsForeignKey();
-            if (cval.many2many || cval.assoc_type != nullptr) {
-                // We need a seperate table if many2many or our
-                // association is more than just a FK reference.
-            }
         }
     }
 
@@ -207,10 +203,6 @@ string SQLTable::CreationSQL() const {
         }
         else if (constraint->IsForeignKey()) {
             const Constraint::ForeignKey &cval = constraint->AsForeignKey();
-            if (!cval.many2many) {
-                // this is a "seperate" table
-            }
-            for (auto fp : 
         }
     }
 

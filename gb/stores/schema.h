@@ -35,7 +35,7 @@ class Constraint {
 public:
     enum Type {
         UNIQUE,
-        OPTIONAL,
+        REQUIRED,
         DEFAULT_VALUE,
         FOREIGN_KEY,
     };
@@ -46,9 +46,15 @@ public:
         list<FieldPath> field_paths;
     };
 
-    struct Optionality {
+    struct Required {
         // A collection of fields that participate in uniqueness
         FieldPath field_path;
+    };
+
+    struct DefaultValue {
+        FieldPath field_path;
+        Value *value;
+        bool onread;
     };
 
     struct ForeignKey {
@@ -56,12 +62,9 @@ public:
         list<FieldPath> dst_field_paths;
         const Schema *dst_schema;
         bool many2many;
-    };
-
-    struct DefaultValue {
-        FieldPath field_path;
-        Value *value;
-        bool onread;
+        /** Name of the relationship tabe to use for this association. */
+        string assoc_name;
+        Type *assoc_type;
     };
 
 public:
@@ -77,15 +80,18 @@ public:
     // Foreign key cardinality constraints
     Constraint(const list<FieldPath> &src,
                const list<FieldPath> &dst, 
-               const Schema *dst_schema, bool many2many = false);
+               const Schema *dst_schema,
+               const string &assoc_name,
+               Type *assoc_type = nullptr,
+               bool many2many = false);
 
     bool IsUniqueness() const { return tag == UNIQUE; }
-    bool IsOptionality() const { return tag == OPTIONAL; }
+    bool IsRequired() const { return tag == REQUIRED; }
     bool IsDefaultValue() const { return tag == DEFAULT_VALUE; }
     bool IsForeignKey() const { return tag == FOREIGN_KEY; }
 
     const Uniqueness &AsUniqueness() const { return uniqueness; }
-    const Optionality &AsOptionality() const { return optionality; }
+    const Required &AsRequired() const { return required; }
     const ForeignKey &AsForeignKey() const { return foreign_key; }
     const DefaultValue &AsDefaultValue() const { return default_value; }
 
@@ -93,7 +99,7 @@ protected:
     Type tag;
     union {
         Uniqueness uniqueness;
-        Optionality optionality;
+        Required required;
         ForeignKey foreign_key;
         DefaultValue default_value;
     };

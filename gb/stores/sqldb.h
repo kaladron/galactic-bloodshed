@@ -48,7 +48,7 @@ public:
         string name;
         FieldPath field_path;
         const Type *coltype;
-        bool optional = false;
+        bool required = false;
         Value *default_read_value;
         Value *default_write_value;
     };
@@ -69,8 +69,8 @@ public:
     size_t ColCount() const { return columns.size(); } 
     const Column *AddColumn(const FieldPath &fp, const Type *t);
     const Column *ColumnAt(size_t index) const;
-    const Column *ColumnFor(const string &name);
-    const Column *ColumnFor(const FieldPath &fp);
+    const Column *ColumnFor(const string &name) const;
+    const Column *ColumnFor(const FieldPath &fp) const;
 
     string CreationSQL() const;
 
@@ -78,8 +78,8 @@ private:
     SQLDB *db;
     const Schema *schema;
     string table_name;
-    map<FieldPath, shared_ptr<Column>> columns_by_fp;
-    map<string, shared_ptr<Column>> columns_by_name;
+    mutable map<FieldPath, shared_ptr<Column>> columns_by_fp;
+    mutable map<string, shared_ptr<Column>> columns_by_name;
     vector <shared_ptr<Column>> columns;
     bool table_created = false;
 };

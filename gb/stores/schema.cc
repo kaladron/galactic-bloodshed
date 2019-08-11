@@ -18,8 +18,8 @@ Constraint::Constraint(list<FieldPath> &field_paths) : tag(Type::UNIQUE) {
  * Create a new constraint declaring the required nature of a 
  * given field path.
  */
-Constraint::Constraint(const FieldPath &fields) : tag(Type::OPTIONAL) {
-    optionality.field_path = fields;
+Constraint::Constraint(const FieldPath &fields) : tag(Type::REQUIRED) {
+    required.field_path = fields;
 }
 
 /**

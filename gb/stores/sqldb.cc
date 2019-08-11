@@ -29,9 +29,9 @@ shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
 
     // Now process table constraints
     for (auto constraint : s->GetConstraints()) {
-        if (constraint->IsOptionality()) {
-            const SQLTable::Column *col = table->ColumnFor(constraint->AsOptionality().field_path);
-            ((SQLTable::Column *)col)->optional = true;
+        if (constraint->IsRequired()) {
+            const SQLTable::Column *col = table->ColumnFor(constraint->AsRequired().field_path);
+            ((SQLTable::Column *)col)->required = true;
         }
         else if (constraint->IsDefaultValue()) {
             const Constraint::DefaultValue &cval = constraint->AsDefaultValue();
@@ -40,6 +40,13 @@ shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
                 ((SQLTable::Column *)col)->default_read_value = cval.value;
             } else {
                 ((SQLTable::Column *)col)->default_write_value = cval.value;
+            }
+        }
+        else if (constraint->IsForeignKey()) {
+            const Constraint::ForeignKey &cval = constraint->AsForeignKey();
+            if (cval.many2many || cval.assoc_type != nullptr) {
+                // We need a seperate table if many2many or our
+                // association is more than just a FK reference.
             }
         }
     }
@@ -123,12 +130,12 @@ const SQLTable::Column *SQLTable::ColumnAt(size_t index) const {
     return columns[index].get();
 }
 
-const SQLTable::Column *SQLTable::ColumnFor(const string &name) {
+const SQLTable::Column *SQLTable::ColumnFor(const string &name) const {
     if (columns_by_name.find(name) == columns_by_name.end()) return nullptr;
     return columns_by_name[name].get();
 }
 
-const SQLTable::Column *SQLTable::ColumnFor(const FieldPath &fp) {
+const SQLTable::Column *SQLTable::ColumnFor(const FieldPath &fp) const {
     if (columns_by_fp.find(fp) == columns_by_fp.end()) return nullptr;
     return columns_by_fp[fp].get();
 }
@@ -176,22 +183,34 @@ string SQLTable::CreationSQL() const {
             assert(false && "Invalid child type");
         }
 
-        if (!column->optional) {
+        if (column->required) {
             sql << "NOT NULL " << endl;
         }
 
         // Get field constraints
         // for (auto constraint : schema->GetConstraints()) { }
-        sql << ";";
+        sql << "," << endl;
     }
 
     // Now add table constraints
     for (auto constraint : schema->GetConstraints()) {
         if (constraint->IsUniqueness()) {
             const Constraint::Uniqueness &cval = constraint->AsUniqueness();
+            sql << "UNIQUE (";
+            int i = 0;
+            for (auto fp : cval.field_paths) {
+                if (i++ > 0) sql << ", ";
+                const Column *col = ColumnFor(fp);
+                sql << col->name;
+            }
+            sql << ")";
         }
-        else if (constraint->IsForeignKey ()) {
+        else if (constraint->IsForeignKey()) {
             const Constraint::ForeignKey &cval = constraint->AsForeignKey();
+            if (!cval.many2many) {
+                // this is a "seperate" table
+            }
+            for (auto fp : 
         }
     }
 

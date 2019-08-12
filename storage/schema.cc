@@ -4,7 +4,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "gb/stores/schema.h"
+#include "storage/schema.h"
 
 /**
  * Create a new constraint identifying uniqueness across a set

@@ -6,8 +6,8 @@
 #ifndef SQLSTORE_H
 #define SQLSTORE_H
 
-#include "gb/stores/store.h"
-#include "gb/stores/sqldb.h"
+#include "storage/store.h"
+#include "storage/sqldb.h"
 
 class SQLCollection : public Collection {
 public:

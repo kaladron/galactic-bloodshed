@@ -3,9 +3,9 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-// #include "gb/stores/sqlstore.h"
-#include "gb/stores/memstore.h"
-#include "gb/stores/sqlstore.h"
+// #include "storage/sqlstore.h"
+#include "storage/memstore.h"
+#include "storage/sqlstore.h"
 
 /*
 DECLARE_ENTITY(AddressEntity, "Address", 

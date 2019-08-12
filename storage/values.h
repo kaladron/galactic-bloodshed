@@ -20,7 +20,7 @@
 #include <boost/preprocessor.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
-#include "gb/stores/types.h"
+#include "storage/types.h"
 
 using namespace std;
 

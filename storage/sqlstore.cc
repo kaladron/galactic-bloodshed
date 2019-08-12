@@ -2,7 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <fmt/ostream.h>
-#include "gb/stores/sqlstore.h"
+#include "storage/sqlstore.h"
 
 SQLStore::SQLStore(const string &path) : db(new SQLDB(path)) {
 }

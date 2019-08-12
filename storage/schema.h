@@ -22,7 +22,7 @@
 #include <boost/preprocessor.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
-#include "gb/stores/values.h"
+#include "storage/values.h"
 
 using namespace std;
 

@@ -7,7 +7,7 @@
 #define SQLDB_H
 
 #include <sqlite3.h>
-#include "gb/stores/schema.h"
+#include "storage/schema.h"
 
 class SQLTable;
 

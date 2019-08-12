@@ -5,7 +5,7 @@
 #include <fmt/format.h>
 #include <queue>
 #include <boost/range/combine.hpp>
-#include "gb/stores/sqldb.h"
+#include "storage/sqldb.h"
 
 SQLDB::SQLDB(const string &path) : dbpath(path), dbhandle(nullptr) {
     db_status = sqlite3_open_v2(dbpath.c_str(), &dbhandle,

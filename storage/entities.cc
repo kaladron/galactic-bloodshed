@@ -3,7 +3,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "gb/stores/entities.h"
+#include "storage/entities.h"
 
 Entity::Entity(Schema *s) : MapValue(s->EntityType()), schema(s) {
 }

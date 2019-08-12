@@ -1,5 +1,5 @@
 
-#include "gb/stores/types.h"
+#include "storage/types.h"
 
 Type::Type(const string &name_) : name(name_), type_tag(TYPE_FUN) {
 }

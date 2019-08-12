@@ -10,8 +10,8 @@
 #ifndef ENTITIES_H
 #define ENTITIES_H
 
-#include "gb/stores/schema.h"
-#include "gb/stores/values.h"
+#include "storage/schema.h"
+#include "storage/values.h"
 
 class Entity : public MapValue {
 public:

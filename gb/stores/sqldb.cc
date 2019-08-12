@@ -4,6 +4,7 @@
 #include <fmt/ostream.h>
 #include <fmt/format.h>
 #include <queue>
+#include <boost/range/combine.hpp>
 #include "gb/stores/sqldb.h"
 
 SQLDB::SQLDB(const string &path) : dbpath(path), dbhandle(nullptr) {
@@ -151,6 +152,17 @@ bool SQLTable::EnsureTable() {
     return true;
 }
 
+string SQLTable::joinedColNamesFor(const list <FieldPath> &field_paths) const {
+    stringstream out;
+    int i = 0;
+    for (auto fp : field_paths) {
+        if (i++ > 0) out << ", ";
+        const Column *col = ColumnFor(fp);
+        out << col->name;
+    }
+    return out.str();
+}
+
 /**
  * Returns the sql to create this table.
  */
@@ -189,20 +201,23 @@ string SQLTable::CreationSQL() const {
     }
 
     // Now add table constraints
+    int fkey_count = 0;
     for (auto constraint : schema->GetConstraints()) {
         if (constraint->IsUniqueness()) {
             const Constraint::Uniqueness &cval = constraint->AsUniqueness();
-            sql << "UNIQUE (";
-            int i = 0;
-            for (auto fp : cval.field_paths) {
-                if (i++ > 0) sql << ", ";
-                const Column *col = ColumnFor(fp);
-                sql << col->name;
-            }
-            sql << ")";
+            sql << ", UNIQUE (";
+            sql << joinedColNamesFor(cval.field_paths);
+            sql << ")" << endl;
         }
         else if (constraint->IsForeignKey()) {
             const Constraint::ForeignKey &cval = constraint->AsForeignKey();
+            sql << ", FOREIGN KEY " << " (";
+            sql << joinedColNamesFor(cval.src_field_paths);
+            sql << ")" << endl;
+
+            sql << " REFERENCES " << cval.dst_schema->Name() << " (" << endl;
+            sql << joinedColNamesFor(cval.dst_field_paths);
+            sql << ")" << endl;
         }
     }
 

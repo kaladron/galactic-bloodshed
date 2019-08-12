@@ -85,6 +85,8 @@ private:
     mutable map<string, shared_ptr<Column>> columns_by_name;
     vector <shared_ptr<Column>> columns;
     bool table_created = false;
+
+    string joinedColNamesFor(const list <FieldPath> &field_paths) const;
 };
 
 #endif

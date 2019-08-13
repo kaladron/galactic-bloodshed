@@ -51,7 +51,7 @@ Doxygen output from the source is at http://doxygen.galacticbloodshed.com/
 
 ```
 cd galactic-bloodshet/external/googletest
-cmake CMakeLists.txt
+cmake CMakeLists.txt -Dgtest_disable_pthreads=ON
 make
 ```
 

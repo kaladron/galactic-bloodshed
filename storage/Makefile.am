@@ -38,6 +38,7 @@ storage_test_SOURCES = tests/values.cc \
 					   tests/types.cc \
 					   tests/main.cc
 
+storage_test_CXXFLAGS = -lpthread
 storage_test_LDADD = $(top_srcdir)/external/googletest/lib/libgtest.a \
 					 $(top_srcdir)/external/googletest/lib/libgtest_main.a
 

@@ -17,7 +17,7 @@ endif
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/../GUnit/include
 
-LIBS = $(SQLITE3_LIBS)
+LIBS = $(SQLITE3_LIBS) $(GUNIT_LIBS)
 
 # bin_PROGRAMS = makeuniv enrol GB racegen
 noinst_LIBRARIES = libstorage.a
@@ -34,4 +34,9 @@ libstorage_a_SOURCES = entities.cc \
 TESTS = storage_test
 
 check_PROGRAMS = storage_test
-storage_test_SOURCES = tests/values.cc
+storage_test_SOURCES = tests/values.cc \
+					   tests/types.cc \
+					   tests/main.cc
+
+storage_test_LDADD = 
+

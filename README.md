@@ -26,6 +26,7 @@ sudo apt-get install pkg-config zip g++ zlib1g-dev unzip python
 sudo apt-get install g++-9 clang-tidy clang-format
 sudo apt-get install libsqlite3-dev
 sudo apt-get install libboost-all-dev
+# sudo apt-get install google-mock libgtest-dev libgmock-dev cmake
 
 # Not needed if building with autotools
 echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
@@ -40,7 +41,7 @@ sudo apt-get install bazel
 #### Using autotools
 
 ```
-autoconf --install
+autoreconf --install
 mkdir -p build
 cd build
 ../configure

@@ -11,6 +11,12 @@ size_t MapValue::HashCode() const {
     return h;
 }
 
+Value *MapValue::ValueForKey(const string &key) const {
+    auto it = values.find(key);
+    if (it == values.end()) return nullptr;
+    return it->second;
+}
+
 int MapValue::Compare(const Value &another) const {
     const MapValue *that = dynamic_cast<const MapValue *>(&another);
     if (!that) {
@@ -32,7 +38,16 @@ int ListValue::Compare(const Value &another) const {
     if (!that) {
         return this < that;
     }
-    return CompareValueList(values, that->values);
+    return CompareValueVector(values, that->values);
+}
+
+int CompareValueVector(const ValueVector &first, const ValueVector &second) {
+    return IterCompare(
+            first.begin(), first.end(),
+            second.begin(), second.end(),
+            [](const Value *a, const Value *b) {
+                return a->Compare(*b);
+            });
 }
 
 int CompareValueList(const ValueList &first, const ValueList &second) {

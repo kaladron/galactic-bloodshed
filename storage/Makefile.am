@@ -15,7 +15,7 @@ else
 AM_CXXFLAGS += $(GCC_OPTS)
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir)
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/../GUnit/include
 
 LIBS = $(SQLITE3_LIBS)
 
@@ -34,4 +34,4 @@ libstorage_a_SOURCES = entities.cc \
 TESTS = storage_test
 
 check_PROGRAMS = storage_test
-storage_test_SOURCES = storage_test.cc
+storage_test_SOURCES = tests/values.cc

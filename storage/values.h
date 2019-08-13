@@ -28,6 +28,7 @@ class Value;
 
 using ValueMap = map<string, Value *>;
 using ValueList = list<Value *>;
+using ValueVector = vector<Value *>;
 
 class Value {
 public:
@@ -51,9 +52,11 @@ public:
     MapValue(Type *t) : Value(t) { }
     virtual int Compare(const Value &another) const;
     virtual size_t HashCode() const;
+    virtual size_t Size() const { return values.size(); }
+    virtual Value *ValueForKey(const string &key) const;
 
 protected:
-    ValueMap values;
+    mutable ValueMap values;
 };
 
 class ListValue : public Value {
@@ -61,9 +64,11 @@ public:
     ListValue(Type *t) : Value(t) { }
     virtual int Compare(const Value &another) const;
     virtual size_t HashCode() const;
+    virtual size_t Size() const { return values.size(); }
+    virtual Value *At(size_t index) const { return values[index]; }
 
 protected:
-    ValueList values;
+    vector<Value *> values;
 };
 
 template <typename T>
@@ -86,6 +91,7 @@ protected:
     static std::hash<T> hasher;
 };
 
+extern int CompareValueVector(const ValueVector &first, const ValueVector &second);
 extern int CompareValueList(const ValueList &first, const ValueList &second);
 extern int CompareValueMap(const ValueMap &first, const ValueMap &second);
 

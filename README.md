@@ -2,15 +2,6 @@
 
 Galactic Bloodshed is one of the oldest games on the Internet and was one of the first 4-X games.
 
-## Getting Started
-
-GB is currently hosted on GitHub at https://github.com/kaladron/galactic-bloodshed.  It uses Bazel
-for building.
-
-Doxygen output from the source is at http://doxygen.galacticbloodshed.com/
-
-cd into the src directory and run '''bazel build ...'''
-
 ### Prerequisites
 
 GB uses C++20, so a modern compiler and standard library are required.
@@ -36,7 +27,39 @@ sudo apt-get install openjdk-8-jdk
 sudo apt-get install bazel
 ```
 
+## Getting Started
+
+GB is currently hosted on GitHub at https://github.com/kaladron/galactic-bloodshed.  It uses Bazel
+for building.
+
+### Checkout sources
+
+```
+git clone git@github.com:kaladron/galactic-bloodshed.git
+cd galactic-bloodshed
+git submodule init
+git submodule update
+```
+
+### Setup
+
+Doxygen output from the source is at http://doxygen.galacticbloodshed.com/
+
 ### Installing
+
+#### Build and Install GUnit and Googletest
+
+```
+cd galactic-bloodshet/external/googletest
+cmake CMakeLists.txt
+make
+```
+
+You should now see a "lib" folder in `galactic-bloodshet/external/googletest` with four .a files we can add to all test lib dependencies.
+
+#### Using Bazel
+
+cd into the gb directory and run '''bazel build ...'''
 
 #### Using autotools
 

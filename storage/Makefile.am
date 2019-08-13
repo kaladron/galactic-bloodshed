@@ -15,9 +15,9 @@ else
 AM_CXXFLAGS += $(GCC_OPTS)
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/../GUnit/include
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/external/GUnit/include
 
-LIBS = $(SQLITE3_LIBS) $(GUNIT_LIBS)
+LIBS = $(SQLITE3_LIBS) $(PTHREAD_LIBS)
 
 # bin_PROGRAMS = makeuniv enrol GB racegen
 noinst_LIBRARIES = libstorage.a
@@ -38,5 +38,6 @@ storage_test_SOURCES = tests/values.cc \
 					   tests/types.cc \
 					   tests/main.cc
 
-storage_test_LDADD = 
+storage_test_LDADD = $(top_srcdir)/external/googletest/lib/libgtest.a \
+					 $(top_srcdir)/external/googletest/lib/libgtest_main.a
 

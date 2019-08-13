@@ -11,6 +11,7 @@ AC_RUN_IFELSE([AC_LANG_PROGRAM([],[
 ])], [
 have_clang=yes
 ])
+AC_CHECK_LIB(pthread, pthread_create, [PTHREAD_LIBS+=-lpthread])
 AM_CONDITIONAL([CLANG], [test x$have_clang = xyes])
 AC_MSG_RESULT($have_clang)
 AC_PROG_RANLIB

@@ -1,6 +1,7 @@
 
-#include <string>
-#include "values.h"
+#include "storage/storage.h"
+
+START_NS
 
 size_t MapValue::HashCode() const {
     int h = 0;
@@ -72,3 +73,5 @@ int CompareValueMap(const ValueMap &first, const ValueMap &second) {
                 if (cmp != 0) return cmp;
             });
 }
+
+END_NS

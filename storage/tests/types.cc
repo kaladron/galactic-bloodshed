@@ -3,6 +3,8 @@
 #include <vector>
 #include "storage/types.h"
 
+using namespace Storage;
+
 GTEST("FieldPath Default") {
     SHOULD("Join should return empty string") {
         EXPECT_EQ("", FieldPath().join("/"));

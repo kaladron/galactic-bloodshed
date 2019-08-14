@@ -6,7 +6,9 @@
 #ifndef MEMSTORE_H
 #define MEMSTORE_H
 
-#include "store.h"
+#include "storage/store.h"
+
+START_NS
 
 class MemCollection : public Collection {
 public:
@@ -23,10 +25,12 @@ private:
 class MemStore : public Store<MemCollection> {
 public:
     MemStore();
-    virtual shared_ptr<MemCollection> GetCollection(const Schema *t);
+    virtual std::shared_ptr<MemCollection> GetCollection(const Schema *t);
 
 private:
-    map<const Schema *, shared_ptr<MemCollection>> tables;
+    std::map<const Schema *, std::shared_ptr<MemCollection>> tables;
 };
+
+END_NS
 
 #endif

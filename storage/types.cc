@@ -1,32 +1,8 @@
 
-#include "storage/types.h"
+#include "storage/storage.h"
+#include <sstream>
 
-string joinStrings(const vector<string> &input, const string &delim) {
-    stringstream out;
-    int i = 0;
-    for (auto s : input) {
-        if (i++ > 0) out << delim;
-        out << s;
-    }
-    return out.str();
-}
-
-void splitString(const string &str,
-                 const string &delim,
-                 vector<string> &tokens,
-                 bool ignore_empty) {
-    // GUILTY - https://stackoverflow.com/questions/14265581/parse-split-a-string-in-c-using-string-delimiter-standard-c
-    size_t prev = 0, pos = 0;
-    do
-    {
-        pos = str.find(delim, prev);
-        if (pos == string::npos) pos = str.length();
-        string token = str.substr(prev, pos-prev);
-        if (!ignore_empty || !token.empty()) tokens.push_back(token);
-        prev = pos + delim.length();
-    }
-    while (pos < str.length() && prev < str.length());
-}
+START_NS
 
 FieldPath::FieldPath(const string &input, const string &delim) {
     splitString(input, delim, *this);
@@ -137,3 +113,5 @@ const Type *IntType = new Type("int");
 const Type *FloatType = new Type("float");
 const Type *LongType = new Type("long");
 const Type *DoubleType = new Type("double");
+
+END_NS

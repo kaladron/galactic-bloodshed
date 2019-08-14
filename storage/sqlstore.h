@@ -9,6 +9,8 @@
 #include "storage/store.h"
 #include "storage/sqldb.h"
 
+START_NS
+
 class SQLCollection : public Collection {
 public:
     SQLCollection(shared_ptr<SQLDB> db_, const Schema *s) ;
@@ -31,5 +33,7 @@ private:
     map<const Schema *, shared_ptr<SQLCollection>> tables;
     shared_ptr<SQLDB> db;
 };
+
+END_NS
 
 #endif

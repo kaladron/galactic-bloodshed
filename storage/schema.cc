@@ -4,7 +4,9 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include "storage/schema.h"
+#include "storage/storage.h"
+
+START_NS
 
 /**
  * Create a new constraint identifying uniqueness across a set
@@ -67,3 +69,5 @@ void Schema::AddConstraint(const Constraint *c) {
 const list<const Constraint *> &Schema::GetConstraints() const {
     return constraints;
 }
+
+END_NS

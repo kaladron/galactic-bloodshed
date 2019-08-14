@@ -3,25 +3,20 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-// #include "storage/sqlstore.h"
-#include "storage/memstore.h"
-#include "storage/sqlstore.h"
+#include "storage/storage.h"
 
-/*
-DECLARE_ENTITY(AddressEntity, "Address", 
-        (( street_number, LeafField<int> ))
-        (( street_name, LeafField<string> ))
-        (( city, LeafField<string> ))
-        (( country, LeafField<string> ))
-        (( zipcode, LeafField<string> ))
-        (( created_timestamp, LeafField<long> ))
-        (( somepair_first, LeafField<int> ))
-        (( somepair_second, LeafField<float> ))
-)
+START_NS
 
-const Type* AddressType = new Type("Address",
-        new NameTypeVector() {
-            pair("street_number", IntType),
-            pair("street_name", StringType),
-        }, true);
-*/
+void Collection::Put(Entity *entity) {
+    if (entity) Put(*entity);
+}
+
+void Collection::Delete(const Value *key) {
+    Delete(*key);
+}
+
+void Collection::Delete(const Entity *entity) {
+    Delete(entity->GetKey());
+}
+
+END_NS

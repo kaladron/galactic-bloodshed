@@ -10,8 +10,9 @@
 #ifndef ENTITIES_H
 #define ENTITIES_H
 
-#include "storage/schema.h"
 #include "storage/values.h"
+
+START_NS
 
 class Entity : public MapValue {
 public:
@@ -29,6 +30,8 @@ public:
 protected:
     Schema *schema;
 };
+
+END_NS
 
 #endif
 

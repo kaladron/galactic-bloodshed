@@ -10,23 +10,9 @@
 #ifndef SCHEMA_H
 #define SCHEMA_H
 
-#include <cstdlib>
-#include <memory>
-#include <utility>
-#include <tuple>
-#include <list>
-#include <map>
-#include <vector>
-#include <string>
-#include <type_traits>
-#include <boost/preprocessor.hpp>
-#include <boost/preprocessor/cat.hpp>
-#include <boost/preprocessor/seq/for_each.hpp>
 #include "storage/values.h"
 
-using namespace std;
-
-class Schema;
+START_NS
 
 /**
  * Describes a constraint in a Schema.
@@ -43,7 +29,7 @@ public:
     struct Uniqueness {
         // A collection of fields that participate in uniqueness
         // Upto the storage on how this is implementated (if it can be)
-        list<FieldPath> field_paths;
+        std::list<FieldPath> field_paths;
     };
 
     struct Required {
@@ -58,14 +44,14 @@ public:
     };
 
     struct ForeignKey {
-        list<FieldPath> src_field_paths;
-        list<FieldPath> dst_field_paths;
+        std::list<FieldPath> src_field_paths;
+        std::list<FieldPath> dst_field_paths;
         const Schema *dst_schema;
     };
 
 public:
     // Constructor for creating a uniqueness constraint
-    Constraint(list<FieldPath> &field_paths);
+    Constraint(std::list<FieldPath> &field_paths);
 
     // Optional field constructor
     Constraint(const FieldPath &field_path);
@@ -74,8 +60,8 @@ public:
     Constraint(const FieldPath &field_path, Value *value, bool onread = true);
 
     // Foreign key cardinality constraints
-    Constraint(const list<FieldPath> &src,
-               const list<FieldPath> &dst, 
+    Constraint(const std::list<FieldPath> &src,
+               const std::list<FieldPath> &dst, 
                const Schema *dst_schema);
 
     bool IsUniqueness() const { return tag == UNIQUE; }
@@ -100,11 +86,11 @@ protected:
 
 class Schema {
 public:
-    Schema(const string &name, Type *t, Type *kt);
+    Schema(const std::string &name, Type *t, Type *kt);
     virtual ~Schema() { }
 
     /** Returns the name of the schema. */
-    const string &Name() const { return name; }
+    const std::string &Name() const { return name; }
 
     /** Returns the type of the key for this entity. */
     Type *KeyType() const { return key_type; }
@@ -114,14 +100,16 @@ public:
 
     /** Add a new constraint into the Schema. */
     void AddConstraint(const Constraint *c);
-    const list<const Constraint *> &GetConstraints() const;
+    const std::list<const Constraint *> &GetConstraints() const;
 
 protected:
-    string name;
+    std::string name;
     Type *entity_type;
     Type *key_type;
-    list <const Constraint *> constraints;
+    std::list <const Constraint *> constraints;
 };
+
+END_NS
 
 #endif
 

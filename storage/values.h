@@ -6,29 +6,13 @@
 #ifndef VALUES_H
 #define VALUES_H
 
-#include <assert.h>
-#include <cstdlib>
-#include <memory>
-#include <utility>
-#include <tuple>
-#include <list>
-#include <map>
-#include <unordered_map>
-#include <vector>
-#include <string>
-#include <type_traits>
-#include <boost/preprocessor.hpp>
-#include <boost/preprocessor/cat.hpp>
-#include <boost/preprocessor/seq/for_each.hpp>
 #include "storage/types.h"
 
-using namespace std;
+START_NS
 
-class Value;
-
-using ValueMap = map<string, Value *>;
-using ValueList = list<Value *>;
-using ValueVector = vector<Value *>;
+using ValueMap = std::map<std::string, Value *>;
+using ValueList = std::list<Value *>;
+using ValueVector = std::vector<Value *>;
 
 class Value {
 public:
@@ -53,7 +37,7 @@ public:
     virtual int Compare(const Value &another) const;
     virtual size_t HashCode() const;
     virtual size_t Size() const { return values.size(); }
-    virtual Value *ValueForKey(const string &key) const;
+    virtual Value *ValueForKey(const std::string &key) const;
 
 protected:
     mutable ValueMap values;
@@ -68,7 +52,7 @@ public:
     virtual Value *At(size_t index) const { return values[index]; }
 
 protected:
-    vector<Value *> values;
+    std::vector<Value *> values;
 };
 
 template <typename T>
@@ -94,6 +78,8 @@ protected:
 extern int CompareValueVector(const ValueVector &first, const ValueVector &second);
 extern int CompareValueList(const ValueList &first, const ValueList &second);
 extern int CompareValueMap(const ValueMap &first, const ValueMap &second);
+
+END_NS
 
 #endif
 

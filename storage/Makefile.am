@@ -31,6 +31,7 @@ libstorage_a_SOURCES = entities.cc \
 					   sqlstore.cc	\
 					   store.cc \
 					   types.cc \
+					   utils.cc \
 					   values.cc
 
 TESTS = storage_test

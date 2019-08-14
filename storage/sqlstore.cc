@@ -1,8 +1,7 @@
 
-#include <iostream>
-#include <sstream>
-#include <fmt/ostream.h>
-#include "storage/sqlstore.h"
+#include "storage/storage.h"
+
+START_NS
 
 SQLStore::SQLStore(const string &path) : db(new SQLDB(path)) {
 }
@@ -31,3 +30,5 @@ void SQLCollection::Put(Entity &entity) {
 
 void SQLCollection::Delete(const Value &key) {
 }
+
+END_NS

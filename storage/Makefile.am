@@ -21,7 +21,7 @@ LIBS = $(SQLITE3_LIBS)
 
 AUTOMAKE_OPTIONS = serial-tests
 
-# bin_PROGRAMS = makeuniv enrol GB racegen
+bin_PROGRAMS = storage_demos
 noinst_LIBRARIES = libstorage.a
 
 libstorage_a_SOURCES = entities.cc \
@@ -33,6 +33,10 @@ libstorage_a_SOURCES = entities.cc \
 					   types.cc \
 					   utils.cc \
 					   values.cc
+
+storage_demos_SOURCES = demos/main.cc
+
+storage_demos_LDADD = libstorage.a
 
 TESTS = storage_test
 
@@ -47,4 +51,5 @@ storage_test_LDADD = $(top_srcdir)/external/googletest/lib/libgtest.a \
 					 $(top_srcdir)/external/googletest/lib/libgmock.a \
 					 $(top_srcdir)/external/googletest/lib/libgmock_main.a \
 					 libstorage.a
+
 

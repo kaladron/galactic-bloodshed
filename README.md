@@ -68,13 +68,22 @@ autoreconf --install
 mkdir -p build
 cd build
 ../configure
-make
+make && make check
 sudo make install
 ```
 
 ## Running the tests
 
+### Using Bazel
+
 cd into the src directory and run '''bazel test ...'''
+
+### Using Make
+
+```
+cd build
+make check
+```
 
 ### And coding style tests
 

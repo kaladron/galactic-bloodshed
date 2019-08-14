@@ -22,23 +22,20 @@ using NameTypePair = pair<const string, Type *>;
 using NameTypeVector = vector<NameTypePair>;
 using TypeVector = vector<Type *>;
 
+extern "C" {
+    // HOW ARE THESE NOT STDLIB?
+    string joinStrings(const vector<string> &input, const string &delim);
+    // TODO: Make this an interator instead
+    void splitString(const string &input, const string &delim, vector<string> &out, bool ignore_empty = true);
+};
+
 class FieldPath : public vector<string> {
 public:
-    FieldPath push(const string &subfield) {
-        FieldPath out(*this);
-        out.push_back(subfield);
-        return out;
-    }
-
-    string join(const string &delim = "/") const {
-        stringstream out;
-        int i = 0;
-        for (auto s : *this) {
-            if (i++ > 0) out << delim;
-            out << s;
-        }
-        return out.str();
-    }
+    FieldPath() { }
+    FieldPath(const string &input, const string &delim = "/");
+    FieldPath(const vector<string> &another);
+    FieldPath push(const string &subfield);
+    string join(const string &delim = "/") const;
 };
 
 class Type {

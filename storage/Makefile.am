@@ -44,5 +44,6 @@ storage_test_SOURCES = tests/values.cc \
 storage_test_LDADD = $(top_srcdir)/external/googletest/lib/libgtest.a \
 					 $(top_srcdir)/external/googletest/lib/libgtest_main.a \
 					 $(top_srcdir)/external/googletest/lib/libgmock.a \
-					 $(top_srcdir)/external/googletest/lib/libgmock_main.a
+					 $(top_srcdir)/external/googletest/lib/libgmock_main.a \
+					 libstorage.a
 

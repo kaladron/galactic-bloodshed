@@ -6,28 +6,15 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#include <map>
-#include <functional>
-#include <vector>
-#include <sstream>
-#include <string>
-#include <boost/preprocessor.hpp>
-#include <boost/preprocessor/cat.hpp>
-#include <boost/preprocessor/seq/for_each.hpp>
+#include "storage/fwds.h"
 
 using namespace std;
 
-class Type;
+START_NS
+
 using NameTypePair = pair<const string, Type *>;
 using NameTypeVector = vector<NameTypePair>;
 using TypeVector = vector<Type *>;
-
-extern "C" {
-    // HOW ARE THESE NOT STDLIB?
-    string joinStrings(const vector<string> &input, const string &delim);
-    // TODO: Make this an interator instead
-    void splitString(const string &input, const string &delim, vector<string> &out, bool ignore_empty = true);
-};
 
 class FieldPath : public vector<string> {
 public:
@@ -98,24 +85,7 @@ extern const Type *FloatType;
 extern const Type *LongType;
 extern const Type *DoubleType;
 
-template <typename IteratorType, typename CmpType>
-int IterCompare(IteratorType fbegin, IteratorType fend,
-                IteratorType sbegin, IteratorType send,
-                const CmpType &comparator) {
-                // const function <int(const V&, const V&)> &comparator) {
-                // const int (*comparator)(const V &a, const V &b)) {
-    auto it1 = fbegin;
-    auto it2 = sbegin;
-    for (;it1 != fend && it2 != send; it1++, it2++) {
-        auto a = *it1;
-        auto b = *it2;
-        int cmp = comparator(*it1, *it2);
-        if (cmp != 0) return cmp;
-    }
-    if (it1 == fend && it2 == send) return 0;
-    else if (it1 == fend) return -1;
-    return 1;
-}
+END_NS
 
 // Some macros to make creation of types easier
 

@@ -1,11 +1,11 @@
 
 #include <iostream>
 #include <sstream>
-#include <fmt/ostream.h>
-#include <fmt/format.h>
-#include <queue>
 #include <boost/range/combine.hpp>
+#include "storage/storage.h"
 #include "storage/sqldb.h"
+
+START_NS
 
 SQLDB::SQLDB(const string &path) : dbpath(path), dbhandle(nullptr) {
     db_status = sqlite3_open_v2(dbpath.c_str(), &dbhandle,
@@ -224,3 +224,5 @@ string SQLTable::CreationSQL() const {
     sql << ")" << endl;
     return sql.str();
 };
+
+END_NS

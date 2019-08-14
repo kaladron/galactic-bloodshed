@@ -7,7 +7,9 @@
 #define SQLDB_H
 
 #include <sqlite3.h>
-#include "storage/schema.h"
+#include "storage/types.h"
+
+START_NS
 
 class SQLTable;
 
@@ -88,5 +90,7 @@ private:
 
     string joinedColNamesFor(const list <FieldPath> &field_paths) const;
 };
+
+END_NS
 
 #endif

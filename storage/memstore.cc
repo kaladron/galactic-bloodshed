@@ -1,12 +1,14 @@
 
-#include "memstore.h"
+#include "storage/storage.h"
+
+START_NS
 
 MemStore::MemStore() {
 }
 
-shared_ptr<MemCollection> MemStore::GetCollection(const Schema *schema) {
+std::shared_ptr<MemCollection> MemStore::GetCollection(const Schema *schema) {
     if (tables.find(schema) == tables.end()) {
-        tables[schema] = make_shared<MemCollection>(schema);
+        tables[schema] = std::make_shared<MemCollection>(schema);
     }
     return tables[schema];
 }
@@ -26,3 +28,5 @@ void MemCollection::Delete(const Value &key) {
 MemCollection::MemCollection(const Schema *schema_) : schema(schema_) {
     // TODO: Now create the necessary constraint structures so they can be honored in our CRUDs
 }
+
+END_NS

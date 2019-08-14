@@ -10,9 +10,9 @@
 #ifndef STORE_H
 #define STORE_H
 
-#include "entities.h"
+#include "storage/fwds.h"
 
-using namespace std;
+START_NS
 
 /**
  * The Collection is our storage abstraction.  Collection contains of a collection of entities of a given type.
@@ -25,24 +25,20 @@ public:
     void Put(Entity &entity);
     void Delete(const Value &key);
 
-    void Put(Entity *entity) { if (entity) Put(*entity); }
-    void Put(const list<Entity*> &entities) {
-        for (auto entity : entities) {
-            Put(entity);
-        }
-    }
+    void Put(Entity *entity);
+    void Put(const std::list<Entity*> &entities);
 
-    void Delete(const Value *key) { Delete(*key); }
-    void Delete(const Entity *entity) { Delete(entity->GetKey()); }
+    void Delete(const Value *key);
+    void Delete(const Entity *entity);
     void Delete(const Entity &entity) { Delete(&entity); }
 
-    void Delete(const list<const Value *> &keys) {
+    void Delete(const std::list<const Value *> &keys) {
         for (auto key : keys) {
             Delete(key);
         }
     }
 
-    void Delete(const list<Entity *> &entities) {
+    void Delete(const std::list<Entity *> &entities) {
         for (auto entity : entities) {
             Delete(entity);
         }
@@ -52,7 +48,9 @@ public:
 template <typename CollectionType>
 class Store {
 public:
-    virtual shared_ptr<CollectionType> GetCollection(const Schema *t);
+    virtual std::shared_ptr<CollectionType> GetCollection(const Schema *t);
 };
+
+END_NS
 
 #endif

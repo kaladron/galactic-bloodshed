@@ -18,9 +18,13 @@ AC_SUBST([GCC_OPTS], ["-Werror -Wall -Wno-sign-compare -Wno-maybe-uninitialized 
 	   -Wno-unused-but-set-variable -Wno-parentheses -Wno-write-strings \
 	   -Wno-unused-variable"])
 
-AC_SUBST([CLANG_OPTS], ["-Werror -Wno-c++98-compat -Wno-padded -Wno-c++98-compat-pedantic -Wno-float-equal \
-    -Wno-old-style-cast -Wno-conversion -Wno-conditional-uninitialized -Wno-sign-compare \
-    -Wno-switch-enum -Wno-exit-time-destructors -Wno-global-constructors -Wno-writable-strings"])
+AC_SUBST([CLANG_OPTS], ["\
+  -Werror -Weverything -Wno-c++98-compat -Wno-padded \
+  -Wno-c++98-compat-pedantic -Wno-float-equal -Wno-old-style-cast \
+  -Wno-conversion -Wno-conditional-uninitialized -Wno-sign-compare \
+  -Wno-switch-enum -Wno-exit-time-destructors -Wno-global-constructors \
+  -Wno-signed-enum-bitfield -Wno-writable-strings -Wno-documentation-unknown-command \
+  -Wno-weak-vtables"])
 
 AC_CHECK_LIB(pthread, pthread_create, [PTHREAD_LIBS+=-lpthread])
 AM_CONDITIONAL([CLANG], [test x$have_clang = xyes])

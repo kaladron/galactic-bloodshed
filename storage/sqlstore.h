@@ -19,8 +19,8 @@ public:
     void Delete(const Value &key);
 
 protected:
-    const Schema *schema;
     shared_ptr<SQLDB> db;
+    const Schema *schema;
     weak_ptr<SQLTable> base_table;
 };
 

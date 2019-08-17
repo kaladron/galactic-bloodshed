@@ -81,8 +81,8 @@ public:
 
 private: 
     SQLDB *db;
-    const Schema *schema;
     string table_name;
+    const Schema *schema;
     mutable map<FieldPath, shared_ptr<Column>> columns_by_fp;
     mutable map<string, shared_ptr<Column>> columns_by_name;
     vector <shared_ptr<Column>> columns;

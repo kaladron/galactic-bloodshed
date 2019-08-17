@@ -12,15 +12,6 @@ install-data-local:
 	chmod -R a+rwx $(DOCDIR) $(PKGDATADIR) $(PKGSTATEDIR)
 	cp $(top_srcdir)/data/* $(PKGDATADIR)/
 
-
-# Add -Wextra to GCC_OPTS
-GCC_OPTS = -Werror -Wall -Wno-sign-compare -Wno-maybe-uninitialized -Wno-return-type \
-	   -Wno-format-overflow -Wno-nonnull -Wno-stringop-truncation -Wno-restrict \
-	   -Wno-unused-but-set-variable -Wno-parentheses -Wno-write-strings \
-	   -Wno-unused-variable
-CLANG_OPTS = -Werror -Wno-c++98-compat -Wno-padded -Wno-c++98-compat-pedantic -Wno-float-equal \
-    -Wno-old-style-cast -Wno-conversion -Wno-conditional-uninitialized -Wno-sign-compare \
-    -Wno-switch-enum -Wno-exit-time-destructors -Wno-global-constructors -Wno-writable-strings
 AM_CXXFLAGS = -std=c++2a -O0 -g3 \
 	      $(SQLLITE3_CFLAGS) \
 	      -DPKGSTATEDIR="\"$(PKGSTATEDIR)\"" \

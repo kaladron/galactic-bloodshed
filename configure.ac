@@ -11,6 +11,17 @@ AC_RUN_IFELSE([AC_LANG_PROGRAM([],[
 ])], [
 have_clang=yes
 ])
+
+# Add -Wextra to GCC_OPTS
+AC_SUBST([GCC_OPTS], ["-Werror -Wall -Wno-sign-compare -Wno-maybe-uninitialized -Wno-return-type \
+	   -Wno-format-overflow -Wno-nonnull -Wno-stringop-truncation -Wno-restrict \
+	   -Wno-unused-but-set-variable -Wno-parentheses -Wno-write-strings \
+	   -Wno-unused-variable"])
+
+AC_SUBST([CLANG_OPTS], ["-Werror -Wno-c++98-compat -Wno-padded -Wno-c++98-compat-pedantic -Wno-float-equal \
+    -Wno-old-style-cast -Wno-conversion -Wno-conditional-uninitialized -Wno-sign-compare \
+    -Wno-switch-enum -Wno-exit-time-destructors -Wno-global-constructors -Wno-writable-strings"])
+
 AC_CHECK_LIB(pthread, pthread_create, [PTHREAD_LIBS+=-lpthread])
 AM_CONDITIONAL([CLANG], [test x$have_clang = xyes])
 AC_MSG_RESULT($have_clang)

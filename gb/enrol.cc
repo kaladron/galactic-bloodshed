@@ -101,7 +101,10 @@ int main() {
   }
 
   printf("Enter racial type to be created (1-%d):", RACIAL_TYPES);
-  scanf("%d", &idx);
+  if (scanf("%d", &idx) < 0) {
+    perror("Cannot read input");
+    exit(-1);
+  }
   getchr();
 
   if (idx <= 0 || idx > RACIAL_TYPES) {
@@ -232,10 +235,16 @@ int main() {
   race->governor[0].toggle.color = 0;
   race->governor[0].active = 1;
   printf("Enter the password for this race:");
-  scanf("%s", race->password);
+  if (scanf("%s", race->password) < 0) {
+    perror("Cannot read input");
+    exit(-1);
+  }
   getchr();
   printf("Enter the password for this leader:");
-  scanf("%s", race->governor[0].password);
+  if (scanf("%s", race->governor[0].password) < 0) {
+    perror("Cannot read input");
+    exit(-1);
+  }
   getchr();
 
   /* make conditions preferred by your people set to (more or less)
@@ -317,7 +326,10 @@ int main() {
   found = 0;
   do {
     printf("\nchoice (enter the number): ");
-    scanf("%d", &i);
+    if (scanf("%d", &i) < 0) {
+      perror("Cannot read input");
+      exit(-1);
+    }
     getchr();
     if (i < SectorType::SEC_SEA || i > SectorType::SEC_WASTED ||
         !secttypes[i].here) {
@@ -335,7 +347,10 @@ int main() {
   for (j = SectorType::SEC_SEA; j < SectorType::SEC_PLATED; j++)
     if (i != j) {
       printf("%6s (%3d sectors) :", Desnames[j], secttypes[j].count);
-      scanf("%d", &k);
+      if (scanf("%d", &k) < 0) {
+        perror("Cannot read input");
+        exit(-1);
+      }
       race->likes[j] = (double)k / 100.0;
     }
   printf("Numraces = %d\n", Numraces());

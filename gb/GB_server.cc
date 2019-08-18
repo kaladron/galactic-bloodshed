@@ -912,7 +912,10 @@ static void help_user(GameObj &g) {
 
 static void goodbye_user(DescriptorData &d) {
   if (d.connected) /* this can happen, especially after updates */
-    write(d.descriptor, LEAVE_MESSAGE, strlen(LEAVE_MESSAGE));
+    if (write(d.descriptor, LEAVE_MESSAGE, strlen(LEAVE_MESSAGE)) < 0) {
+      perror("write error");
+      exit(-1);
+    }
 }
 
 static void save_command(DescriptorData &d, const std::string &command) {
@@ -1220,7 +1223,10 @@ static void close_sockets(int sock) {
   post(shutdown_message, ANNOUNCE);
 
   for (auto &d : descriptor_list) {
-    write(d.descriptor, shutdown_message, strlen(shutdown_message));
+    if (write(d.descriptor, shutdown_message, strlen(shutdown_message)) < 0) {
+      perror("write error");
+      exit(-1);
+    }
     if (shutdown(d.descriptor, 2) < 0) perror("shutdown");
     close(d.descriptor);
   }

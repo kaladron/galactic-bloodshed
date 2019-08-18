@@ -14,6 +14,7 @@ Install the following dependancies (may vary based on platform).
 
 ```
 sudo apt-get install pkg-config zip g++ zlib1g-dev unzip python
+sudo apt-get install manpages-dev manpages-posix-dev
 sudo apt-get install g++-9 clang-tidy clang-format
 sudo apt-get install libsqlite3-dev
 sudo apt-get install libboost-all-dev

@@ -93,7 +93,10 @@ static int enroll_player_race(char *failure_filename) {
     printf("Sending critique to %s via %s...", race_info.address, MAILER);
     fflush(stdout);
     sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
-    system(c);
+    if (system(c) < 0) {
+        perror("gaaaaaah");
+        exit(-1);
+    }
     printf("done.\n");
 
     return 1;
@@ -129,7 +132,10 @@ static int enroll_player_race(char *failure_filename) {
   printf("Sending acceptance to %s via %s...", race_info.address, MAILER);
   fflush(stdout);
   sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
-  system(c);
+  if (system(c) < 0) {
+        perror("gaaaaaah");
+        exit(-1);
+  }
   printf("done.\n");
 
   return 0;

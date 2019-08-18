@@ -127,16 +127,25 @@ int main(int argc, char *argv[]) {
   }
   while ((nstars < 1) || (nstars >= NUMSTARS)) {
     printf("Number of stars [1-%d]:", NUMSTARS - 1);
-    scanf("%d", &nstars);
+    if (scanf("%d", &nstars) < 0) {
+      perror("Cannot read input");
+      exit(-1);
+    }
   }
   while ((minplanets <= 0) || (minplanets > MAXPLANETS)) {
     printf("Minimum number of planets per system [1-%d]: ", MAXPLANETS);
-    scanf("%d", &minplanets);
+    if (scanf("%d", &minplanets) < 0) {
+      perror("Cannot read input");
+      exit(-1);
+    }
   }
   while ((maxplanets < minplanets) || (maxplanets > MAXPLANETS)) {
     printf("Maximum number of planets per system [%d-%d]: ", minplanets,
            MAXPLANETS);
-    scanf("%d", &maxplanets);
+    if (scanf("%d", &maxplanets) < 0) {
+      perror("Cannot read input");
+      exit(-1);
+    }
   }
 
   Makeplanet_init();

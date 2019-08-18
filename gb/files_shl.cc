@@ -766,7 +766,10 @@ int getdeadship() {
     /* put topmost entry in fpos */
     Fileread(fd, (char *)&shnum, sizeof(short), buffer.st_size - sizeof(short));
     /* erase that entry, since it will now be filled */
-    ftruncate(fd, (long)(buffer.st_size - sizeof(short)));
+    if (ftruncate(fd, (long)(buffer.st_size - sizeof(short))) < 0) {
+      perror("ftruncate failed");
+      return -1;
+    }
     close_file(fd);
     return (int)shnum;
   }
@@ -793,7 +796,10 @@ int getdeadcommod() {
     Fileread(fd, (char *)&commodnum, sizeof(short),
              buffer.st_size - sizeof(short));
     /* erase that entry, since it will now be filled */
-    ftruncate(fd, (long)(buffer.st_size - sizeof(short)));
+    if (ftruncate(fd, (long)(buffer.st_size - sizeof(short))) < 0) {
+      perror("ftruncate failed");
+      return -1;
+    }
     close_file(fd);
     return (int)commodnum;
   }
@@ -1630,7 +1636,10 @@ void Putpower(struct power p[MAXPLAYERS]) {
     printf("unable to open %s\n", POWFL);
     return;
   }
-  write(power_fd, (char *)p, sizeof(*p) * MAXPLAYERS);
+  if (write(power_fd, (char *)p, sizeof(*p) * MAXPLAYERS) < 0) {
+    perror("write failed");
+    exit(-1);
+  }
   close_file(power_fd);
 }
 
@@ -1642,7 +1651,10 @@ void Getpower(struct power p[MAXPLAYERS]) {
     printf("unable to open %s\n", POWFL);
     return;
   }
-  read(power_fd, (char *)p, sizeof(*p) * MAXPLAYERS);
+  if (read(power_fd, (char *)p, sizeof(*p) * MAXPLAYERS) < 0) {
+    perror("read failed");
+    exit(-1);
+  }
   close_file(power_fd);
 }
 
@@ -1654,7 +1666,10 @@ void Putblock(struct block b[MAXPLAYERS]) {
     printf("unable to open %s\n", BLOCKDATAFL);
     return;
   }
-  write(block_fd, (char *)b, sizeof(*b) * MAXPLAYERS);
+  if (write(block_fd, (char *)b, sizeof(*b) * MAXPLAYERS) < 0) {
+    perror("write failed");
+    exit(-1);
+  }
   close_file(block_fd);
 }
 
@@ -1666,7 +1681,10 @@ void Getblock(struct block b[MAXPLAYERS]) {
     printf("unable to open %s\n", BLOCKDATAFL);
     return;
   }
-  read(block_fd, (char *)b, sizeof(*b) * MAXPLAYERS);
+  if (read(block_fd, (char *)b, sizeof(*b) * MAXPLAYERS) < 0) {
+    perror("read failed");
+    exit(-1);
+  }
   close_file(block_fd);
 }
 

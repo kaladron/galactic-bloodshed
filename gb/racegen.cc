@@ -1189,7 +1189,10 @@ static void send2(int, char **) {
   fflush(stdout);
   printf("Mailing race to %s : ", TO);
   sprintf(sys, "cat %s | %s %s", race_info.password, MAILER, TO);
-  system(sys);
+  if (system(sys) < 0) {
+      perror("gaaaaaaah");
+      exit(-1);
+  }
   printf("done.\n");
 
   f = fopen(race_info.password, "w");
@@ -1205,7 +1208,10 @@ static void send2(int, char **) {
   fflush(stdout);
   printf("Mailing race to %s : ", race_info.address);
   sprintf(sys, "cat %s | %s %s", race_info.password, MAILER, race_info.address);
-  system(sys);
+  if (system(sys) < 0) {
+      perror("gaaaaaaah");
+      exit(-1);
+  }
   printf("done.\n");
   unlink(race_info.password);
 }
@@ -1235,8 +1241,7 @@ int Dialogue(const char *prompt, ...) {
   if (argc) printf("]");
   printf("> ");
   fflush(stdout);
-  while (true) {
-    fgets(input, INPUTSIZE, stdin);
+  while (fgets(input, INPUTSIZE, stdin) != NULL) {
 
     if (argc == 0) return -1;
     len = strlen(input) - 1;

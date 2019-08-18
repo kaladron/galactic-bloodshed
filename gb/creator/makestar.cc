@@ -204,7 +204,10 @@ static char *NextStarName() {
   printf("Next star name:");
   for (i = 0; i < NAMESIZE - 4; i++) putchr('.');
   for (i = 0; i < NAMESIZE - 4; i++) putchr('\010'); /* ^H */
-  scanf("%14[^\n]", buf);
+  if (scanf("%14[^\n]", buf) < 0) {
+    perror("Cannot read input");
+    exit(-1);
+  }
   getchr();
 
   return buf;

@@ -6,9 +6,6 @@
 #define END_NS }
 
 #include <assert.h>
-#include <boost/preprocessor.hpp>
-#include <boost/preprocessor/cat.hpp>
-#include <boost/preprocessor/seq/for_each.hpp>
 #include <cstdlib>
 #include <functional>
 #include <list>
@@ -39,6 +36,7 @@ class MemStore;
 class SQLStore;
 class MemCollection;
 class SQLCollection;
+class DefaultTypes;
 
 END_NS
 

@@ -29,7 +29,6 @@ public:
 
 protected:
     shared_ptr<SQLTable> processSchema(const Schema *s);
-    void processType(SQLTable *table, const Type *t, FieldPath &fp);
 
 private:
     map<string, shared_ptr<SQLTable>> tables;
@@ -59,8 +58,7 @@ public:
     };
 
 public:
-    SQLTable(SQLDB *db_, const string &name, const Schema *s) 
-        : db(db_), table_name(name), schema(s) { }
+    SQLTable(SQLDB *db_, const string &name, const Schema *s);
 
     /**
      * Ensure the table has been created.
@@ -76,8 +74,12 @@ public:
     const Column *ColumnAt(size_t index) const;
     const Column *ColumnFor(const string &name) const;
     const Column *ColumnFor(const FieldPath &fp) const;
+    const string &Name() const { return table_name; }
 
     string CreationSQL() const;
+
+protected:
+    void processType(const Type *t, FieldPath &fp);
 
 private: 
     SQLDB *db;

@@ -16,8 +16,8 @@ using ValueVector = std::vector<Value *>;
 
 class Value {
 public:
-    Value(Type *t) : type(t), exists(false) { }
-    virtual bool matchesType(Type *type) { return false; }
+    Value(const Type *t) : type(t), exists(false) { }
+    virtual bool matchesType(const Type *type) { return false; }
     bool Exists() const { return exists; }
     void Erase() { exists = false; }
     virtual Value *ResolveFieldPath(FieldPath *path) { return nullptr; }
@@ -27,13 +27,13 @@ public:
     virtual bool operator< (const Value& another) const { return Compare(another) < 0; }
 
 protected:
-    Type *type;
+    const Type *type;
     bool exists;
 };
 
 class MapValue : public Value {
 public:
-    MapValue(Type *t) : Value(t) { }
+    MapValue(const Type *t) : Value(t) { }
     virtual int Compare(const Value &another) const;
     virtual size_t HashCode() const;
     virtual size_t Size() const { return values.size(); }
@@ -45,7 +45,7 @@ protected:
 
 class ListValue : public Value {
 public:
-    ListValue(Type *t) : Value(t) { }
+    ListValue(const Type *t) : Value(t) { }
     virtual int Compare(const Value &another) const;
     virtual size_t HashCode() const;
     virtual size_t Size() const { return values.size(); }

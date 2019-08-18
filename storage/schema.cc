@@ -49,11 +49,18 @@ Constraint::Constraint(const list<FieldPath> &src,
 }
 
 /**
- * Create a new schema with a given name and the underlying record type.
+ * Create a new schema with a given fqn and the underlying record type.
  */
-Schema::Schema(const string &name_, Type *t, Type *kt) : 
-    name(name_), entity_type(t), key_type(kt) {
+Schema::Schema(const string &fqn_, const Type *t, const vector<string> &kf) 
+    : fqn(fqn_), entity_type(t), key_fields(kf) {
     assert(t->IsRecord() && "Schemas can only be record types.");
+}
+
+const Type *Schema::KeyType() const {
+    if (key_type == nullptr) {
+        // evaluate it
+    }
+    return key_type;
 }
 
 /**

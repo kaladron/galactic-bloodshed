@@ -13,20 +13,19 @@ SQLDB::SQLDB(const string &path) : dbpath(path), dbhandle(nullptr) {
                                     SQLITE_OPEN_READWRITE | 
                                     SQLITE_OPEN_SHAREDCACHE,
                                 nullptr);
+    cout << "DB Status: " << db_status << endl;
 }
 
 shared_ptr<SQLTable> SQLDB::EnsureTable(const Schema *s) {
-    if (tables.find(s->Name()) == tables.end()) {
-        tables[s->Name()] = processSchema(s);
+    if (tables.find(s->FQN()) == tables.end()) {
+        tables[s->FQN()] = processSchema(s);
     }
-    return tables[s->Name()];
+    return tables[s->FQN()];
 }
 
 shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
     // Add all top level fields to the node
-    SQLTable *table = new SQLTable(this, s->Name(), s);
-    FieldPath fp;
-    processType(table, s->EntityType(), fp);
+    SQLTable *table = new SQLTable(this, s->FQN(), s);
 
     // Now process table constraints
     for (auto constraint : s->GetConstraints()) {
@@ -49,33 +48,10 @@ shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
     }
 
     // Kick off its creation
-    table->EnsureTable();
+    if (!table->EnsureTable()) {
+        cerr << "Could not create table (" << table->Name() << "): " << sqlite3_errmsg(dbhandle);
+    }
     return shared_ptr<SQLTable>(table);
-}
-
-void SQLDB::processType(SQLTable *table, const Type *curr_type,
-                        FieldPath &field_path) {
-    bool hasChildren = !curr_type->IsTypeFun() || curr_type->Name() == "tuple";
-    bool namedChildren = !curr_type->IsTypeFun() && curr_type->Name() != "tuple";
-
-    // Process the node and add necessary columns
-    if (curr_type->IsUnion() || !hasChildren) {
-        // only a "tag" required if union
-        table->AddColumn(field_path, curr_type);
-    }
-
-    // Process children
-    if (hasChildren) {
-        for (int i = 0, s = curr_type->ChildCount(); i < s; i++) {
-            NameTypePair ntp = curr_type->GetChild(i);
-            string next_name = namedChildren ?
-                               ntp.first :
-                               string("_") + to_string(i);
-            field_path.push_back(next_name);
-            processType(table, ntp.second, field_path);
-            field_path.pop_back();
-        }
-    }
 }
 
 void SQLDB::CloseStatement(sqlite3_stmt *&stmt) {
@@ -93,7 +69,7 @@ sqlite3_stmt *SQLDB::PrepareSql(const string &sql_str) {
     }
     if (result != SQLITE_OK)
     {
-        last_error = string("Could not prepare sql: ") + string(sqlite3_errmsg(dbhandle));
+        cerr << "Could not prepare sql: " << sqlite3_errmsg(dbhandle);
         return nullptr;
     }
     return stmt;
@@ -104,12 +80,43 @@ sqlite3_stmt *SQLDB::PrepareSql(const string &sql_str) {
 /*                      All things SQLTable related.                */
 /********************************************************************/
 
+SQLTable::SQLTable(SQLDB *db_, const string &name, const Schema *s) 
+        : db(db_), table_name(name), schema(s) {
+    FieldPath fp;
+    processType(schema->EntityType(), fp);
+}
+
+void SQLTable::processType(const Type *curr_type, FieldPath &field_path) {
+    const string &fqn = curr_type->FQN();
+    bool hasChildren = !curr_type->IsTypeFun() || fqn == "tuple";
+    bool namedChildren = !curr_type->IsTypeFun() && fqn != "tuple";
+
+    // Process the node and add necessary columns
+    if (curr_type->IsUnion() || !hasChildren) {
+        // only a "tag" required if union
+        AddColumn(field_path, curr_type);
+    }
+
+    // Process children
+    if (hasChildren) {
+        for (int i = 0, s = curr_type->ChildCount(); i < s; i++) {
+            NameTypePair ntp = curr_type->GetChild(i);
+            string next_name = namedChildren ?
+                               ntp.first :
+                               string("_") + to_string(i);
+            field_path.push_back(next_name);
+            processType(ntp.second, field_path);
+            field_path.pop_back();
+        }
+    }
+}
+
 bool SQLTable::HasColumn(const string &name) const {
     return columns_by_name.find(name) != columns_by_name.end();
 }
 
 const SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, const Type *t) {
-    if (columns_by_fp.find(fp) != columns_by_fp.end()) {
+    if (columns_by_fp.find(fp) == columns_by_fp.end()) {
         // do our thing
         shared_ptr<Column> column = make_shared<Column>();
         column->index = columns.size();
@@ -145,7 +152,6 @@ bool SQLTable::EnsureTable() {
     int result = sqlite3_step(stmt);
     if (result != SQLITE_DONE)
     {
-        // last_error = string("Could not create table (%@): ") + table_name + string(sqlite3_errmsg(dbhandle));
         return false;
     }
     db->CloseStatement(stmt);
@@ -177,15 +183,15 @@ string SQLTable::CreationSQL() const {
         // 1. pass constraints
         // 2. pass default values
         // lgg
-        if (ftype->Name() == "int") {
+        if (ftype->FQN() == "int") {
             sql << "INT" << " " << endl;
-        } else if (ftype->Name() == "long") {
+        } else if (ftype->FQN() == "long") {
             sql << "INT64" << " " << endl;
-        } else if (ftype->Name() == "double") {
+        } else if (ftype->FQN() == "double") {
             sql << "DOUBLE" << " " << endl;
-        } else if (ftype->Name() == "string") {
+        } else if (ftype->FQN() == "string") {
             sql << "TEXT" << " " << endl;
-        } else if (ftype->Name() == "datetime") {
+        } else if (ftype->FQN() == "datetime") {
             sql << "DATETIME" << " " << endl;
         } else {
             assert(false && "Invalid child type");
@@ -215,7 +221,7 @@ string SQLTable::CreationSQL() const {
             sql << joinedColNamesFor(cval.src_field_paths);
             sql << ")" << endl;
 
-            sql << " REFERENCES " << cval.dst_schema->Name() << " (" << endl;
+            sql << " REFERENCES " << cval.dst_schema->FQN() << " (" << endl;
             sql << joinedColNamesFor(cval.dst_field_paths);
             sql << ")" << endl;
         }

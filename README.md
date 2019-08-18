@@ -68,7 +68,10 @@ cd into the gb directory and run '''bazel build ...'''
 autoreconf --install
 mkdir -p build
 cd build
+
 ../configure
+# *or* the following to use claing instead of g++9
+# CXX=clang++-9 CC=clang-9 ../configure
 make && make check
 sudo make install
 ```

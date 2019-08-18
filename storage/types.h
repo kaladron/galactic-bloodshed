@@ -12,9 +12,9 @@ using namespace std;
 
 START_NS
 
-using NameTypePair = pair<const string, Type *>;
+using NameTypePair = pair<string, const Type *>;
 using NameTypeVector = vector<NameTypePair>;
-using TypeVector = vector<Type *>;
+using TypeVector = vector<const Type *>;
 
 class FieldPath : public vector<string> {
 public:
@@ -34,9 +34,9 @@ public:
         TYPE_FUN
     };
 
-    Type(const string &name);
-    Type(const string &name, const TypeVector &args);
-    Type(const string &name, const NameTypeVector &fields, bool is_product_type = true);
+    Type(const string &fqn);
+    Type(const string &fqn, const TypeVector &args);
+    Type(const string &fqn, const NameTypeVector &fields, bool is_product_type = true);
     ~Type();
 
     int Compare(const Type &another) const;
@@ -45,11 +45,11 @@ public:
     void SetData(const NameTypeVector &fields, bool is_product_type = true);
 
     // Access children
-    void AddChild(Type *child, const string &name = "");
+    void AddChild(const Type *child, const string &name = "");
     size_t ChildCount() const;
-    Type *GetChild(const string &name) const;
+    const Type *GetChild(const string &name) const;
     NameTypePair GetChild(size_t index) const;
-    const string &Name() const { return name; }
+    const string &FQN() const { return fqn; }
 
     const bool IsTypeFun() const { return type_tag == TYPE_FUN; }
     const bool IsRecord() const { return type_tag == RECORD; }
@@ -60,9 +60,9 @@ protected:
 
 private:
     /**
-     * Name of this type
+     * FQN of this type
      */
-    const string name;
+    const string fqn;
 
     /**
      * The tag of this type to identify the payload union.
@@ -77,18 +77,24 @@ private:
     TypeVector child_types;
 };
 
-// SOME DEFAULT TYPES
-extern const Type *CharType;
-extern const Type *BoolType;
-extern const Type *IntType;
-extern const Type *FloatType;
-extern const Type *LongType;
-extern const Type *DoubleType;
+class DefaultTypes {
+public:
+    static const Type *CharType();
+    static const Type *BoolType();
+    static const Type *IntType();
+    static const Type *FloatType();
+    static const Type *LongType();
+    static const Type *DoubleType();
+    static const Type *StringType();
+};
 
 END_NS
 
 // Some macros to make creation of types easier
 
+#include <boost/preprocessor.hpp>
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/seq/for_each.hpp>
 #define REGISTER_FIELD(field_name, field_type)           \
     RegisterField(#field_name, (Field *)field_name);
 

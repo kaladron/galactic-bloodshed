@@ -86,26 +86,28 @@ protected:
 
 class Schema {
 public:
-    Schema(const std::string &name, Type *t, Type *kt);
+    Schema(const std::string &fqn, const Type *t,
+           const vector<string> &key_fields);
     virtual ~Schema() { }
 
-    /** Returns the name of the schema. */
-    const std::string &Name() const { return name; }
+    /** Returns the fqn of the schema. */
+    const std::string &FQN() const { return fqn; }
 
     /** Returns the type of the key for this entity. */
-    Type *KeyType() const { return key_type; }
+    const Type *KeyType() const;
 
     /** Returns the type of the entity. */
-    Type *EntityType() const { return key_type; }
+    const Type *EntityType() const { return entity_type; }
 
     /** Add a new constraint into the Schema. */
     void AddConstraint(const Constraint *c);
     const std::list<const Constraint *> &GetConstraints() const;
 
 protected:
-    std::string name;
-    Type *entity_type;
-    Type *key_type;
+    std::string fqn;
+    const Type *entity_type;
+    vector<string> key_fields;
+    mutable Type *key_type = nullptr;
     std::list <const Constraint *> constraints;
 };
 

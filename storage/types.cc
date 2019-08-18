@@ -21,14 +21,14 @@ string FieldPath::join(const string &delim) const {
     return joinStrings(*this, delim);
 }
 
-Type::Type(const string &name_) : name(name_), type_tag(TYPE_FUN) {
+Type::Type(const string &fqn_) : fqn(fqn_), type_tag(TYPE_FUN) {
 }
 
-Type::Type(const string &name_, const TypeVector &args) : name(name_) {
+Type::Type(const string &fqn_, const TypeVector &args) : fqn(fqn_) {
     SetData(args);
 }
 
-Type::Type(const string &name_, const NameTypeVector &fields, bool is_product_type) : name(name_) {
+Type::Type(const string &fqn_, const NameTypeVector &fields, bool is_product_type) : fqn(fqn_) {
     SetData(fields, is_product_type);
 }
 
@@ -69,7 +69,7 @@ NameTypePair Type::GetChild(size_t index) const {
     }
 }
 
-Type *Type::GetChild(const string &name) const {
+const Type *Type::GetChild(const string &name) const {
     auto it = std::find(child_names.begin(), child_names.end(), name);
     if (it == child_names.end())
         return nullptr;
@@ -78,18 +78,20 @@ Type *Type::GetChild(const string &name) const {
     return child_types.at(index);
 }
 
-void Type::AddChild(Type *child, const string &name) {
+void Type::AddChild(const Type *child, const string &name) {
     // Only compound types can have names
-    if (type_tag == RECORD || type_tag == UNION) {
-        child_names.push_back(name);
+    if (child != nullptr) {
+        if (type_tag == RECORD || type_tag == UNION) {
+            child_names.push_back(name);
+        }
+        child_types.push_back(child);
     }
-    AddChild(child);
 }
 
 int Type::Compare(const Type &another) const {
     if (this == &another) return 0;
     if (type_tag != another.type_tag) return type_tag - another.type_tag;
-    int cmp = name.compare(another.name);
+    int cmp = fqn.compare(another.fqn);
     if (cmp != 0) return cmp;
 
     // compare names
@@ -107,11 +109,39 @@ int Type::Compare(const Type &another) const {
             [](const auto &a, const auto &b) { return a - b; });
 }
 
-const Type *CharType = new Type("char");
-const Type *BoolType = new Type("bool");
-const Type *IntType = new Type("int");
-const Type *FloatType = new Type("float");
-const Type *LongType = new Type("long");
-const Type *DoubleType = new Type("double");
+#define make_basic_type(T)          \
+    static Type *outtype = nullptr; \
+    if (outtype == nullptr) {       \
+        outtype = new Type(T);      \
+    }                               \
+    return outtype;
+
+const Type *DefaultTypes::CharType() {
+    make_basic_type("char");
+}
+
+const Type *DefaultTypes::BoolType() {
+    make_basic_type("bool");
+}
+
+const Type *DefaultTypes::IntType() {
+    make_basic_type("int");
+}
+
+const Type *DefaultTypes::FloatType() {
+    make_basic_type("float");
+}
+
+const Type *DefaultTypes::LongType() {
+    make_basic_type("long");
+}
+
+const Type *DefaultTypes::DoubleType() {
+    make_basic_type("double");
+}
+
+const Type *DefaultTypes::StringType() {
+    make_basic_type("string");
+}
 
 END_NS

@@ -48,9 +48,6 @@ int main(int argc, char *argv[]) {
   srandom(getpid());
   bzero(&Sdata, sizeof(Sdata));
 
-  NameGenerator *star_name_gen = nullptr;
-  NameGenerator *planet_name_gen = nullptr;
-
   /*
    * Read the arguments for values: */
   for (i = 1; i < argc; i++)

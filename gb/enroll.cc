@@ -94,8 +94,8 @@ static int enroll_player_race(char *failure_filename) {
     fflush(stdout);
     sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
     if (system(c) < 0) {
-        perror("gaaaaaah");
-        exit(-1);
+      perror("gaaaaaah");
+      exit(-1);
     }
     printf("done.\n");
 
@@ -133,8 +133,8 @@ static int enroll_player_race(char *failure_filename) {
   fflush(stdout);
   sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
   if (system(c) < 0) {
-        perror("gaaaaaah");
-        exit(-1);
+    perror("gaaaaaah");
+    exit(-1);
   }
   printf("done.\n");
 

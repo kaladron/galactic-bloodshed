@@ -767,7 +767,7 @@ void send_message(const command_t &argv, GameObj &g) {
     alien = races[who - 1];
     /* translation modifier increases */
     alien->translate[Playernum - 1] =
-        MIN(alien->translate[Playernum - 1] + 2, 100);
+        std::min(alien->translate[Playernum - 1] + 2, 100);
     putrace(alien);
   }
   g.out << "Message sent.\n";

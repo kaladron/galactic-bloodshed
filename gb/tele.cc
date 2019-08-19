@@ -98,8 +98,8 @@ void post(const char *origmsg, int type) {
   current_tm = localtime(&tm);
   char *outbuf;
   if (asprintf(&outbuf, "%2d/%2d %02d:%02d:%02d %s", current_tm->tm_mon + 1,
-           current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,
-           current_tm->tm_sec, fixmsg) < 0) {
+               current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,
+               current_tm->tm_sec, fixmsg) < 0) {
     perror("Gaaaaah");
     exit(-1);
   }

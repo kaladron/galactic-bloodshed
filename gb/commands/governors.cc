@@ -82,7 +82,8 @@ void do_revoke(racetype *Race, const governor_t src_gov,
   // TODO(jeffbailey): Use C++17 Filesystem stuff when available
   std::string rm_telegram_file =
       fmt::format("rm {0}.{1}.{2}", TELEGRAMFL, Race->Playernum, src_gov);
-  if (system(rm_telegram_file.c_str()) < 0) { /*  Remove the telegram file too....  */
+  if (system(rm_telegram_file.c_str()) <
+      0) { /*  Remove the telegram file too....  */
     perror("gaaaaaaaah");
     exit(-1);
   }

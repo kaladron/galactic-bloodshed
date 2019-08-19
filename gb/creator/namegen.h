@@ -9,7 +9,7 @@
 
 class NameGenerator {
  public:
-  virtual ~NameGenerator(){}
+  virtual ~NameGenerator() {}
   class Iterator {
    private:
     NameGenerator *namegen;

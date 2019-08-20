@@ -205,7 +205,7 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   putsdata(&Sdata);
   getstar(&Stars[g.snum], g.snum);
   Stars[g.snum]->AP[Playernum - 1] =
-      MIN(LIMIT_APs, Stars[g.snum]->AP[Playernum - 1] + alloc);
+      std::min(LIMIT_APs, Stars[g.snum]->AP[Playernum - 1] + alloc);
   putstar(Stars[g.snum], g.snum);
   sprintf(buf, "Allocated\n");
   notify(Playernum, Governor, buf);

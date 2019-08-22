@@ -7,16 +7,8 @@
 
 START_NS
 
-void Collection::Put(Entity *entity) {
-    if (entity) Put(*entity);
-}
-
-void Collection::Delete(const Value *key) {
-    Delete(*key);
-}
-
-void Collection::Delete(const Entity *entity) {
-    Delete(entity->GetKey());
+void Collection::Delete(const Value &value) {
+    DeleteByKey(*schema->GetKey(value));
 }
 
 END_NS

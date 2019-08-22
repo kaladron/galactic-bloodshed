@@ -20,8 +20,7 @@ AUTOMAKE_OPTIONS = serial-tests
 bin_PROGRAMS = storage_demos
 noinst_LIBRARIES = libstorage.a
 
-libstorage_a_SOURCES = entities.cc \
-					   memstore.cc \
+libstorage_a_SOURCES = memstore.cc \
 					   schema.cc \
 					   sqldb.cc	\
 					   sqlstore.cc	\

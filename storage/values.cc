@@ -12,10 +12,20 @@ size_t MapValue::HashCode() const {
     return h;
 }
 
-Value *MapValue::ValueForKey(const string &key) const {
+Value *MapValue::GetChild(const string &key) const {
     auto it = values.find(key);
     if (it == values.end()) return nullptr;
     return it->second;
+}
+
+Value *MapValue::SetChild(const std::string &key, Value *newvalue) {
+    Value *oldvalue = nullptr;
+    auto it = values.find(key);
+    if (it != values.end()) {
+        oldvalue = it->second;
+    }
+    values[key] = newvalue;
+    return oldvalue;
 }
 
 int MapValue::Compare(const Value &another) const {
@@ -40,6 +50,12 @@ int ListValue::Compare(const Value &another) const {
         return this < that;
     }
     return CompareValueVector(values, that->values);
+}
+
+Value *ListValue::SetChild(size_t index, Value *newvalue) {
+    Value *oldvalue = values[index];
+    values[index] = newvalue;
+    return oldvalue;
 }
 
 int CompareValueVector(const ValueVector &first, const ValueVector &second) {

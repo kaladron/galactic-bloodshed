@@ -7,7 +7,20 @@
 
 START_NS
 
-// HOW ARE THESE NOT STDLIB?
+// HOW ARE ALL THESE NOT STDLIB?
+template <typename T>
+struct Comparer {
+    int operator()(const T &first, const T &second) const;
+};
+
+template <>struct Comparer<std::string> {
+    int operator()(const std::string &first, const std::string &second) const;
+};
+
+template <>struct Comparer<int> {
+    int operator()(const int &first, const int &second) const;
+};
+
 extern std::string joinStrings(const std::vector<std::string> &input,
                                const std::string &delim);
 

@@ -19,29 +19,50 @@ START_NS
  */
 class Collection {
 public:
-    Collection() { }
+    Collection(const Schema *schema_) : schema(schema_) { }
     virtual ~Collection() { }
-    Entity *Get(const Value &key);
-    void Put(Entity &entity);
+    bool Get(const Value &key, Value &result);
+    void Put(Value &entity);
+    void DeleteByKey(const Value &key);
+
     void Delete(const Value &key);
-
-    void Put(Entity *entity);
-    void Put(const std::list<Entity*> &entities);
-
-    void Delete(const Value *key);
-    void Delete(const Entity *entity);
-    void Delete(const Entity &entity) { Delete(&entity); }
+    void Put(const std::list<Value *> &values);
 
     void Delete(const std::list<const Value *> &keys) {
         for (auto key : keys) {
-            Delete(key);
+            Delete(*key);
         }
     }
 
-    void Delete(const std::list<Entity *> &entities) {
-        for (auto entity : entities) {
-            Delete(entity);
-        }
+protected:
+    const Schema *schema;
+};
+
+template<class CollectionType, typename ValueType>
+class TypedCollection : protected CollectionType {
+public:
+    TypedCollection(const Schema *schema_) : CollectionType(schema_) { }
+    virtual ~TypedCollection() { }
+    bool Get(const ValueType &key, ValueType &result) {
+        return CollectionType::Get(key, result);
+    }
+    void Put(ValueType &entity) {
+        CollectionType::Put(entity);
+    }
+    void DeleteByKey(const ValueType &key) {
+        CollectionType::DeleteByKey(key);
+    }
+
+    void Delete(const ValueType &entity) {
+        CollectionType::Delete(entity);
+    }
+
+    void Put(const std::list<ValueType *> &values) {
+        CollectionType::Put(values);
+    }
+
+    void Delete(const std::list<const Value *> &keys) {
+        CollectionType::Delete(keys);
     }
 };
 

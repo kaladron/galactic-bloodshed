@@ -3,7 +3,6 @@
 #define STORAGE_H
 
 #include "storage/fwds.h"
-#include "storage/entities.h"
 #include "storage/memstore.h"
 #include "storage/schema.h"
 #include "storage/sqldb.h"

@@ -12,14 +12,13 @@ START_NS
 
 class MemCollection : public Collection {
 public:
-    MemCollection(const Schema *t);
-    Entity *Get(const Value &key);
-    void Put(Entity &entity);
-    void Delete(const Value &key);
+    MemCollection(const Schema *schema_);
+    bool Get(const Value &key, Value &result);
+    void Put(Value &entity);
+    void DeleteByKey(const Value &key);
 
 private:
-    const Schema *schema;
-    std::map<const Value *, Entity *> entries;
+    std::map<const Value *, Value *> entries;
 };
 
 class MemStore : public Store<MemCollection> {

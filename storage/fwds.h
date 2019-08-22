@@ -20,15 +20,14 @@
 START_NS
 
 class Constraint;
-class Entity;
 class Schema;
 class Type;
 class Value;
 class FieldPath;
 class MapValue;
 class ListValue;
-template <typename T>
-class LeafValue;
+template <typename T> class LeafValue;
+template <typename T> struct Comparer;
 class Collection;
 template <typename CollectionType>
 class Store;

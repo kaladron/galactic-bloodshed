@@ -13,10 +13,10 @@ START_NS
 
 class SQLCollection : public Collection {
 public:
-    SQLCollection(shared_ptr<SQLDB> db_, const Schema *s) ;
-    Entity *Get(const Value &key);
-    void Put(Entity &entity);
-    void Delete(const Value &key);
+    SQLCollection(const Schema *s, shared_ptr<SQLDB> db_);
+    bool Get(const Value &key, Value &result);
+    void Put(Value &entity);
+    void DeleteByKey(const Value &key);
 
 protected:
     shared_ptr<SQLDB> db;

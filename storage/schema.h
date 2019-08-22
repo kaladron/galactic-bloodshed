@@ -14,6 +14,43 @@
 
 START_NS
 
+class Schema {
+public:
+    Schema(const std::string &fqn, const Type *t,
+           const vector<string> &key_fields);
+    virtual ~Schema() { }
+
+    /** Returns the fqn of the schema. */
+    const std::string &FQN() const { return fqn; }
+
+    /** Returns the type of the key for this entity. */
+    const Type *KeyType() const;
+
+    /**
+     * Returns the value of a particular value.
+     */
+    Value *GetKey(const Value &value) const;
+
+    /**
+     * Sets the key fields of a particular value.
+     */
+    void SetKey(const Value &value, const Value &key);
+
+    /** Returns the type of the entity. */
+    const Type *EntityType() const { return entity_type; }
+
+    /** Add a new constraint into the Schema. */
+    void AddConstraint(const Constraint *c);
+    const std::list<const Constraint *> &GetConstraints() const;
+
+protected:
+    std::string fqn;
+    const Type *entity_type;
+    vector<string> key_fields;
+    mutable Type *key_type = nullptr;
+    std::list <const Constraint *> constraints;
+};
+
 /**
  * Describes a constraint in a Schema.
  */
@@ -82,33 +119,6 @@ protected:
         ForeignKey foreign_key;
         DefaultValue default_value;
     };
-};
-
-class Schema {
-public:
-    Schema(const std::string &fqn, const Type *t,
-           const vector<string> &key_fields);
-    virtual ~Schema() { }
-
-    /** Returns the fqn of the schema. */
-    const std::string &FQN() const { return fqn; }
-
-    /** Returns the type of the key for this entity. */
-    const Type *KeyType() const;
-
-    /** Returns the type of the entity. */
-    const Type *EntityType() const { return entity_type; }
-
-    /** Add a new constraint into the Schema. */
-    void AddConstraint(const Constraint *c);
-    const std::list<const Constraint *> &GetConstraints() const;
-
-protected:
-    std::string fqn;
-    const Type *entity_type;
-    vector<string> key_fields;
-    mutable Type *key_type = nullptr;
-    std::list <const Constraint *> constraints;
 };
 
 END_NS

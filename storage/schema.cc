@@ -77,4 +77,17 @@ const list<const Constraint *> &Schema::GetConstraints() const {
     return constraints;
 }
 
+/**
+ * Returns the value of a particular value.
+ */
+Value *Schema::GetKey(const Value &value) const {
+    return nullptr;
+}
+
+/**
+ * Sets the key fields of a particular value.
+ */
+void SetKey(const Value &value, const Value &key) {
+}
+
 END_NS

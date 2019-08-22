@@ -3,6 +3,15 @@
 
 START_NS
 
+int Comparer<std::string>::operator()(const std::string &first,
+                                      const std::string &second) const {
+    return first.compare(second);
+}
+
+int Comparer<int>::operator()(const int &first, const int &second) const {
+    return first - second;
+}
+
 std::string joinStrings(const std::vector<std::string> &input, const std::string &delim) {
     std::stringstream out;
     int i = 0;

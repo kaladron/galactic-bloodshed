@@ -66,6 +66,7 @@ libcommands_a_SOURCES = \
 		     commands/production.cc \
 		     commands/relation.cc \
 		     commands/tech_status.cc \
+		     commands/technology.cc \
 		     commands/rst.cc \
 		     commands/scrap.cc \
 		     commands/toggle.cc \

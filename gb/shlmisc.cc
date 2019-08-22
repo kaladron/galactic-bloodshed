@@ -194,8 +194,8 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   }
 
   getsdata(&Sdata);
-  maxalloc = MIN(Sdata.AP[Playernum - 1],
-                 LIMIT_APs - Stars[g.snum]->AP[Playernum - 1]);
+  maxalloc = std::min(Sdata.AP[Playernum - 1],
+                      LIMIT_APs - Stars[g.snum]->AP[Playernum - 1]);
   if (alloc > maxalloc) {
     sprintf(buf, "Illegal value (%d) - maximum = %d\n", alloc, maxalloc);
     notify(Playernum, Governor, buf);
@@ -205,7 +205,7 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   putsdata(&Sdata);
   getstar(&Stars[g.snum], g.snum);
   Stars[g.snum]->AP[Playernum - 1] =
-      MIN(LIMIT_APs, Stars[g.snum]->AP[Playernum - 1] + alloc);
+      std::min(LIMIT_APs, Stars[g.snum]->AP[Playernum - 1] + alloc);
   putstar(Stars[g.snum], g.snum);
   sprintf(buf, "Allocated\n");
   notify(Playernum, Governor, buf);

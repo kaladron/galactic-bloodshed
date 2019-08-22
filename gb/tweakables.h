@@ -160,7 +160,7 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 #define HYPER_DIST_FACTOR 200.0
 
 const double TECH_INVEST = 0.01; /* invest factor */
-#define TECH_SCALE 2.0   /* investment scale */
+#define TECH_SCALE 2.0           /* investment scale */
 
 #define MOB_COST 0.00     /* mobiliz.c, planet.c cost/mob points*/
 #undef RESOURCE_DEPLETION /*0.015 */
@@ -223,7 +223,7 @@ const double TECH_INVEST = 0.01; /* invest factor */
 
 /* number of AP's to add to each player in ea. system */
 /*   (look in doturn)  */
-#define LIMIT_APs 255 /* max # of APs you can have */
+static const unsigned int LIMIT_APs = 255; /* max # of APs you can have */
 
 enum PlanetType {
   EARTH = 0,

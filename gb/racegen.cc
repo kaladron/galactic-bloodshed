@@ -1190,8 +1190,8 @@ static void send2(int, char **) {
   printf("Mailing race to %s : ", TO);
   sprintf(sys, "cat %s | %s %s", race_info.password, MAILER, TO);
   if (system(sys) < 0) {
-      perror("gaaaaaaah");
-      exit(-1);
+    perror("gaaaaaaah");
+    exit(-1);
   }
   printf("done.\n");
 
@@ -1209,8 +1209,8 @@ static void send2(int, char **) {
   printf("Mailing race to %s : ", race_info.address);
   sprintf(sys, "cat %s | %s %s", race_info.password, MAILER, race_info.address);
   if (system(sys) < 0) {
-      perror("gaaaaaaah");
-      exit(-1);
+    perror("gaaaaaaah");
+    exit(-1);
   }
   printf("done.\n");
   unlink(race_info.password);
@@ -1241,8 +1241,7 @@ int Dialogue(const char *prompt, ...) {
   if (argc) printf("]");
   printf("> ");
   fflush(stdout);
-  while (fgets(input, INPUTSIZE, stdin) != NULL) {
-
+  while (fgets(input, INPUTSIZE, stdin) != nullptr) {
     if (argc == 0) return -1;
     len = strlen(input) - 1;
 
@@ -1256,6 +1255,7 @@ int Dialogue(const char *prompt, ...) {
     }
     printf("or \"%s\"> ", argv[i]);
   }
+  return 0;
 }
 
 static void quit(int, char **) {

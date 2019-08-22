@@ -2,11 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef TECH_H
-#define TECH_H
+#ifndef CMDS_TECHNOLOGY_H
+#define CMDS_TECHNOLOGY_H
 
 #include "gb/vars.h"
 
-double tech_prod(int, int);
+void technology(const command_t &, GameObj &);
 
-#endif  // TECH_H
+#endif  // CMDS_TECHNOLOGY_H

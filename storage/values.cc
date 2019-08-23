@@ -13,6 +13,7 @@ bool Value::operator< (const Value& another) const {
     return Compare(another) < 0;
 }
 
+bool Value::HasChildren() const { return ChildCount() == 0; }
 size_t Value::ChildCount() const { return 0; }
 bool Value::IsKeyed() const { return false; }
 vector<string> Value::Keys() const { return {}; }
@@ -23,8 +24,28 @@ Value *Value::Get(const std::string &key) const { return nullptr; }
 Value *Value::Set(size_t index, Value *newvalue) { }
 Value *Value::Set(const std::string &key, Value *newvalue) { }
 
-
-
+void ValueToJson(const Value *value, ostream &out, 
+                 bool newlines, int indent, int level) {
+    if (!value) {
+        out << "null";
+    } else if (value->IsKeyed()) {
+        out << "{";
+        int i = 0;
+        for (auto key : value->Keys()) {
+            if (i++ > 0) out << ", ";
+            ValueToJson(value->Get(key), out, newlines, indent, level + 1);
+        }
+        out << "}";
+    } else if (value->IsIndexed()) {
+        out << "[";
+        for (int i = 0, s = value->ChildCount();i < s;i++) {
+            if (i > 0) out << ", ";
+            ValueToJson(value->Get(i), out, newlines, indent, level + 1);
+        }
+        out << "]";
+    } else {
+    }
+}
 
 /////////////////  MapValue Implementation  /////////////////
 
@@ -35,6 +56,10 @@ size_t MapValue::HashCode() const {
         h += (it.second)->HashCode();
     }
     return h;
+}
+
+bool MapValue::HasChildren() const {
+    return !values.empty();
 }
 
 Value *MapValue::Get(const string &key) const {
@@ -61,6 +86,16 @@ int MapValue::Compare(const Value &another) const {
     return CompareValueMap(values, that->values);
 }
 
+vector<string> MapValue::Keys() const {
+    vector<string> out;
+    for (auto it : values) {
+        out.push_back(it.first);
+    }
+    return out;
+}
+
+/////////////////  ListValue Implementation  /////////////////
+
 size_t ListValue::HashCode() const {
     size_t hash = 0;
     for (auto it : values) {
@@ -75,6 +110,10 @@ int ListValue::Compare(const Value &another) const {
         return this < that;
     }
     return CompareValueVector(values, that->values);
+}
+
+bool ListValue::HasChildren() const {
+    return !values.empty();
 }
 
 Value *ListValue::Set(size_t index, Value *newvalue) {

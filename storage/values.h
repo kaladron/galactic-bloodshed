@@ -28,6 +28,7 @@ public:
     /**
      * Values can be containers.
      */
+    virtual bool HasChildren() const;
     virtual size_t ChildCount() const;
     virtual bool IsKeyed() const;
     virtual vector<string> Keys() const;
@@ -38,6 +39,15 @@ public:
     virtual Value *Set(size_t index, Value *newvalue);
     virtual Value *Set(const std::string &key, Value *newvalue);
 };
+
+/**
+ * Writes value to an output stream as JSON.
+ */
+void ValueToJson(const Value *value,
+                 ostream &out, 
+                 bool newlines = true,
+                 int indent = 2,
+                 int level = 0);
 
 template <typename T>
 class LeafValue : public Value {
@@ -63,9 +73,11 @@ public:
     MapValue() { }
     virtual int Compare(const Value &another) const;
     virtual size_t HashCode() const;
+    virtual bool HasChildren() const;
     virtual size_t ChildCount() const { return values.size(); }
     virtual Value *Get(const string &key) const;
     virtual Value *Set(const std::string &key, Value *newvalue);
+    virtual vector<string> Keys() const;
     virtual bool IsKeyed() const { return true; }
 
 protected:
@@ -77,6 +89,7 @@ public:
     ListValue() { }
     virtual int Compare(const Value &another) const;
     virtual size_t HashCode() const;
+    virtual bool HasChildren() const;
     virtual size_t ChildCount() const { return values.size(); }
     virtual Value *Get(size_t index) const { return values[index]; }
     virtual Value *Set(size_t index, Value *newvalue);

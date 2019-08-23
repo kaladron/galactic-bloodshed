@@ -3,6 +3,31 @@
 
 START_NS
 
+//////////////////  Value Implementation  //////////////////
+
+bool Value::Equals(const Value &another) const {
+    return Compare(another) == 0;
+}
+
+bool Value::operator< (const Value& another) const {
+    return Compare(another) < 0;
+}
+
+size_t Value::ChildCount() const { return 0; }
+bool Value::IsKeyed() const { return false; }
+vector<string> Value::Keys() const { return {}; }
+bool Value::IsIndexed() const { return false; }
+Value *Value::Get(size_t index) const { return nullptr; }
+Value *Value::Get(const std::string &key) const { return nullptr; }
+
+Value *Value::Set(size_t index, Value *newvalue) { }
+Value *Value::Set(const std::string &key, Value *newvalue) { }
+
+
+
+
+/////////////////  MapValue Implementation  /////////////////
+
 size_t MapValue::HashCode() const {
     int h = 0;
     for (auto it : values) {

@@ -22,21 +22,21 @@ public:
     Value() { }
     virtual size_t HashCode() const = 0;
     virtual int Compare(const Value &another) const = 0;
-    virtual bool Equals(const Value &another) const { return Compare(another) == 0; }
-    virtual bool operator< (const Value& another) const { return Compare(another) < 0; }
+    virtual bool Equals(const Value &another) const;
+    virtual bool operator< (const Value& another) const;
 
     /**
      * Values can be containers.
      */
-    virtual size_t ChildCount() const { return 0; }
-    virtual bool IsKeyed() const { return false; }
-    virtual string GetKey(size_t index) const { return ""; }
-    virtual bool IsIndexed() const { return false; }
-    virtual Value *Get(size_t index) const { return nullptr; }
-    virtual Value *Get(const std::string &key) const { return nullptr; }
+    virtual size_t ChildCount() const;
+    virtual bool IsKeyed() const;
+    virtual vector<string> Keys() const;
+    virtual bool IsIndexed() const;
+    virtual Value *Get(size_t index) const;
+    virtual Value *Get(const std::string &key) const;
     // Setters
-    virtual Value *Set(size_t index, Value *newvalue) { }
-    virtual Value *Set(const std::string &key, Value *newvalue) { }
+    virtual Value *Set(size_t index, Value *newvalue);
+    virtual Value *Set(const std::string &key, Value *newvalue);
 };
 
 template <typename T>

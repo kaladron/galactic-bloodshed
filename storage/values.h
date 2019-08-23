@@ -32,25 +32,26 @@ public:
     virtual bool IsKeyed() const { return false; }
     virtual string GetKey(size_t index) const { return ""; }
     virtual bool IsIndexed() const { return false; }
-    virtual Value *GetChild(size_t index) const { return nullptr; }
-    virtual Value *GetChild(const std::string &key) const { return nullptr; }
+    virtual Value *Get(size_t index) const { return nullptr; }
+    virtual Value *Get(const std::string &key) const { return nullptr; }
     // Setters
-    virtual Value *SetChild(size_t index, Value *newvalue) { }
-    virtual Value *SetChild(const std::string &key, Value *newvalue) { }
+    virtual Value *Set(size_t index, Value *newvalue) { }
+    virtual Value *Set(const std::string &key, Value *newvalue) { }
 };
 
 template <typename T>
 class LeafValue : public Value {
 public:
     LeafValue(const T &val) : value(val) { }
-    virtual int Compare(const Value &another) const {
+    int Compare(const Value &another) const {
         const LeafValue<T> *ourtype = dynamic_cast<const LeafValue<T> *>(&another);
         if (!ourtype) {
             return this - ourtype;
         }
         return Comparer<T>()(value, ourtype->value);
     }
-    virtual size_t HashCode() const { return hasher(value); }
+    size_t HashCode() const { return hasher(value); }
+    const T &Value() const { return value; }
 
 protected:
     T value;
@@ -63,8 +64,8 @@ public:
     virtual int Compare(const Value &another) const;
     virtual size_t HashCode() const;
     virtual size_t ChildCount() const { return values.size(); }
-    virtual Value *GetChild(const string &key) const;
-    virtual Value *SetChild(const std::string &key, Value *newvalue);
+    virtual Value *Get(const string &key) const;
+    virtual Value *Set(const std::string &key, Value *newvalue);
     virtual bool IsKeyed() const { return true; }
 
 protected:
@@ -77,20 +78,52 @@ public:
     virtual int Compare(const Value &another) const;
     virtual size_t HashCode() const;
     virtual size_t ChildCount() const { return values.size(); }
-    virtual Value *GetChild(size_t index) const { return values[index]; }
-    virtual Value *SetChild(size_t index, Value *newvalue);
+    virtual Value *Get(size_t index) const { return values[index]; }
+    virtual Value *Set(size_t index, Value *newvalue);
     virtual bool IsIndexed() const { return true; }
 
 protected:
     std::vector<Value *> values;
 };
 
-template <typename T>
-Value *MakeValue(const T &value) { return new LeafValue(value); }
-
 extern int CompareValueVector(const ValueVector &first, const ValueVector &second);
 extern int CompareValueList(const ValueList &first, const ValueList &second);
 extern int CompareValueMap(const ValueMap &first, const ValueMap &second);
+
+/// Helpers to box and unbox values of literal types
+
+template <typename T>
+struct Boxer {
+    Value *operator()(const T &value) const {
+        return new LeafValue(value);
+    }
+};
+
+template <typename T>
+struct Unboxer {
+    bool operator()(const Value *input, T &output) const {
+        const LeafValue<T> *ourtype = dynamic_cast<const LeafValue<T> *>(input);
+        if (!ourtype) {
+            return false;
+        }
+        output = ourtype->Value();
+        return true;
+    }
+};
+
+const auto CharBoxer = Boxer<char>();
+const auto IntBoxer = Boxer<int>();
+const auto UIntBoxer = Boxer<unsigned>();
+const auto LongBoxer = Boxer<long>();
+const auto ULongBoxer = Boxer<unsigned long>();
+const auto StringBoxer = Boxer<string>();
+
+const auto CharUnboxer = Unboxer<char>();
+const auto IntUnboxer = Unboxer<int>();
+const auto UIntUnboxer = Unboxer<unsigned>();
+const auto LongUnboxer = Unboxer<long>();
+const auto ULongUnboxer = Unboxer<unsigned long>();
+const auto StringUnboxer = Unboxer<string>();
 
 END_NS
 

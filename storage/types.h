@@ -51,9 +51,9 @@ public:
     NameTypePair GetChild(size_t index) const;
     const string &FQN() const { return fqn; }
 
-    const bool IsTypeFun() const { return type_tag == TYPE_FUN; }
-    const bool IsRecord() const { return type_tag == RECORD; }
-    const bool IsUnion() const { return type_tag == UNION; }
+    bool IsTypeFun() const { return type_tag == TYPE_FUN; }
+    bool IsRecord() const { return type_tag == RECORD; }
+    bool IsUnion() const { return type_tag == UNION; }
 
 protected:
     void Clear();
@@ -92,6 +92,7 @@ END_NS
 
 // Some macros to make creation of types easier
 
+#if 0
 #include <boost/preprocessor.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
@@ -111,6 +112,7 @@ END_NS
     new Type(record_name, new NameTypeVector() {                \
         BOOST_PP_SEQ_FOR_EACH(DEFINE_FIELD_MACRO, _, fields)    \
     }, true);
+#endif
 
 #endif
 

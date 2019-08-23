@@ -10,16 +10,16 @@ START_NS
 // HOW ARE ALL THESE NOT STDLIB?
 template <typename T>
 struct Comparer {
-    int operator()(const T &first, const T &second) const;
+    int operator()(const T &first, const T &second) const {
+        return first - second;
+    }
 };
 
-template <>struct Comparer<std::string> {
-    int operator()(const std::string &first, const std::string &second) const;
+#define COMPARER(T) template <>struct Comparer<T> { \
+    int operator()(const T &first, const T &second) const;  \
 };
 
-template <>struct Comparer<int> {
-    int operator()(const int &first, const int &second) const;
-};
+COMPARER(std::string)
 
 extern std::string joinStrings(const std::vector<std::string> &input,
                                const std::string &delim);

@@ -20,19 +20,16 @@ START_NS
 class Collection {
 public:
     Collection(const Schema *schema_) : schema(schema_) { }
-    virtual ~Collection() { }
-    bool Get(const Value &key, Value &result);
-    void Put(Value &entity);
-    void DeleteByKey(const Value &key);
+    virtual ~Collection();
+    virtual bool Get(const Value &key, Value &result) = 0;
+    virtual bool Put(Value &entity) = 0;
+    virtual bool DeleteByKey(const Value &key) = 0;
 
-    void Delete(const Value &key);
-    void Put(const std::list<Value *> &values);
-
-    void Delete(const std::list<const Value *> &keys) {
-        for (auto key : keys) {
-            Delete(*key);
-        }
-    }
+    virtual bool Get(const Value *key, Value &result);
+    virtual bool Put(Value *entity);
+    virtual bool Put(const std::list<Value *> &values);
+    virtual bool Delete(const Value &key);
+    virtual bool Delete(const std::list<const Value *> &keys);
 
 protected:
     const Schema *schema;
@@ -43,25 +40,25 @@ class TypedCollection : protected CollectionType {
 public:
     TypedCollection(const Schema *schema_) : CollectionType(schema_) { }
     virtual ~TypedCollection() { }
-    bool Get(const ValueType &key, ValueType &result) {
+    virtual bool Get(const ValueType &key, ValueType &result) {
         return CollectionType::Get(key, result);
     }
-    void Put(ValueType &entity) {
+    virtual void Put(ValueType &entity) {
         CollectionType::Put(entity);
     }
-    void DeleteByKey(const ValueType &key) {
+    virtual void DeleteByKey(const ValueType &key) {
         CollectionType::DeleteByKey(key);
     }
 
-    void Delete(const ValueType &entity) {
+    virtual void Delete(const ValueType &entity) {
         CollectionType::Delete(entity);
     }
 
-    void Put(const std::list<ValueType *> &values) {
+    virtual void Put(const std::list<ValueType *> &values) {
         CollectionType::Put(values);
     }
 
-    void Delete(const std::list<const Value *> &keys) {
+    virtual void Delete(const std::list<const Value *> &keys) {
         CollectionType::Delete(keys);
     }
 };
@@ -69,6 +66,7 @@ public:
 template <typename CollectionType>
 class Store {
 public:
+    virtual ~Store() { }
     virtual std::shared_ptr<CollectionType> GetCollection(const Schema *t);
 };
 

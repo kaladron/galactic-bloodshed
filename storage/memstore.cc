@@ -17,12 +17,14 @@ bool MemCollection::Get(const Value &key, Value &result) {
     return true;
 }
 
-void MemCollection::Put(Value &entity) {
+bool MemCollection::Put(Value &entity) {
     entries[schema->GetKey(entity)] = &entity;
+    return true;
 }
 
-void MemCollection::DeleteByKey(const Value &key) {
+bool MemCollection::DeleteByKey(const Value &key) {
     entries.erase(&key);
+    return true;
 }
 
 MemCollection::MemCollection(const Schema *schema_) : Collection(schema_) {

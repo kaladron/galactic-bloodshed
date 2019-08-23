@@ -7,8 +7,34 @@
 
 START_NS
 
-void Collection::Delete(const Value &value) {
-    DeleteByKey(*schema->GetKey(value));
+Collection::~Collection() {
+}
+
+bool Collection::Get(const Value *key, Value &result) {
+    return Get(*key, result);
+}
+
+bool Collection::Delete(const Value &value) {
+    return DeleteByKey(*schema->GetKey(value));
+}
+
+bool Collection::Delete(const std::list<const Value *> &keys) {
+    for (auto key : keys) {
+        Delete(*key);
+    }
+    return true;
+}
+
+bool Collection::Put(Value *entity) {
+    if (!entity) return false;
+    return Put(*entity);
+}
+
+bool Collection::Put(const std::list<Value *> &values) {
+    for (auto value : values) {
+        Put(value);
+    }
+    return true;
 }
 
 END_NS

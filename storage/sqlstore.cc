@@ -23,11 +23,13 @@ bool SQLCollection::Get(const Value &key, Value &result) {
     // return base_table->Get(key);
 }
 
-void SQLCollection::Put(Value &entity) {
+bool SQLCollection::Put(Value &entity) {
     // return base_table->Put(entity);
+    return false;
 }
 
-void SQLCollection::DeleteByKey(const Value &key) {
+bool SQLCollection::DeleteByKey(const Value &key) {
+    return false;
 }
 
 END_NS

@@ -14,8 +14,8 @@ class MemCollection : public Collection {
 public:
     MemCollection(const Schema *schema_);
     bool Get(const Value &key, Value &result);
-    void Put(Value &entity);
-    void DeleteByKey(const Value &key);
+    bool Put(Value &entity);
+    bool DeleteByKey(const Value &key);
 
 private:
     std::map<const Value *, Value *> entries;

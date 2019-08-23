@@ -13,10 +13,13 @@ START_NS
 
 class SQLCollection : public Collection {
 public:
+    using Collection::Get;
+    using Collection::Put;
+    using Collection::Delete;
     SQLCollection(const Schema *s, shared_ptr<SQLDB> db_);
-    bool Get(const Value &key, Value &result);
-    void Put(Value &entity);
-    void DeleteByKey(const Value &key);
+    virtual bool Get(const Value &key, Value &result);
+    virtual bool Put(Value &entity);
+    virtual bool DeleteByKey(const Value &key);
 
 protected:
     shared_ptr<SQLDB> db;

@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
 
     Address a1;
     Value *a1value = addressToValue(a1);
+    ValueToJson(a1value, cout);
     people->Put(*a1value);
 
     Person p1;

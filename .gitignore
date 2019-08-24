@@ -4,6 +4,7 @@ bazel*
 .dirstamp
 *.log
 *.a
+*.o
 *.h.in
 *.in
 *.in~

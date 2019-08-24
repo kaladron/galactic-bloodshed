@@ -2,12 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef MOBILIZ_H
-#define MOBILIZ_H
+#ifndef CMDS_TAX_H
+#define CMDS_TAX_H
 
 #include "gb/vars.h"
 
-void mobilize(const command_t &, GameObj &);
-int control(int, int, startype *);
+void tax(const command_t &, GameObj &);
 
-#endif  // MOBILIZ_H
+#endif  // CMDS_TAX_H

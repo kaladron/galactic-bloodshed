@@ -49,6 +49,7 @@
 #include "gb/commands/relation.h"
 #include "gb/commands/rst.h"
 #include "gb/commands/scrap.h"
+#include "gb/commands/tax.h"
 #include "gb/commands/tech_status.h"
 #include "gb/commands/technology.h"
 #include "gb/commands/toggle.h"

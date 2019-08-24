@@ -65,6 +65,7 @@ libcommands_a_SOURCES = \
 		     commands/orbit.cc \
 		     commands/production.cc \
 		     commands/relation.cc \
+		     commands/tax.cc \
 		     commands/tech_status.cc \
 		     commands/technology.cc \
 		     commands/rst.cc \

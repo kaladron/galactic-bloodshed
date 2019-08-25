@@ -10,6 +10,7 @@
 
 #include "gb/commands/rst.h"
 
+#include <array>
 #include <cctype>
 #include <cmath>
 #include <cstdio>

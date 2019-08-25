@@ -3,7 +3,7 @@
 set -e
 set -u
 
-TIDY=clang-tidy-8
+TIDY=clang-tidy-9
 
 show_info() {
   ${TIDY} -checks=* -list-checks

@@ -628,7 +628,7 @@ void dump(const command_t &argv, GameObj &g) {
   int j;
   racetype *Race;
   racetype *r;
-  placetype where;
+  Place where;
 
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;

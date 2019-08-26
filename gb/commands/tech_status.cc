@@ -57,7 +57,7 @@ void tech_status(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int k;
-  placetype where;
+  Place where;
   double total_gain = 0.0;
   double total_max_gain = 0.0;
   int total_invest = 0;

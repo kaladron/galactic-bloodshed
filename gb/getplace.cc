@@ -27,14 +27,13 @@
 
 static char Disps[PLACENAMESIZE];
 
-static placetype getplace2(int Playernum, int Governor, const char *string,
-                           placetype *where, int ignoreexpl, int God);
+static Place getplace2(int Playernum, int Governor, const char *string,
+                       Place *where, int ignoreexpl, int God);
 
-placetype getplace(GameObj &g, const std::string &string,
-                   const int ignoreexpl) {
+Place getplace(GameObj &g, const std::string &string, const int ignoreexpl) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  placetype where; /* return value */
+  Place where; /* return value */
 
   const auto God = races[Playernum - 1]->God;
 
@@ -89,9 +88,9 @@ placetype getplace(GameObj &g, const std::string &string,
                    God);
 }
 
-static placetype getplace2(const int Playernum, const int Governor,
-                           const char *string, placetype *where,
-                           const int ignoreexpl, const int God) {
+static Place getplace2(const int Playernum, const int Governor,
+                       const char *string, Place *where, const int ignoreexpl,
+                       const int God) {
   char substr[NAMESIZE];
   uint8_t i;
   size_t l;
@@ -226,7 +225,7 @@ char *Dispshiploc(Ship *ship) {
   }
 }
 
-std::string Dispplace(const placetype &where) {
+std::string Dispplace(const Place &where) {
   std::ostringstream out;
   switch (where.level) {
     case ScopeLevel::LEVEL_STAR:

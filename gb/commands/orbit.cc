@@ -29,7 +29,7 @@ static void DispStar(const GameObj &, const ScopeLevel, startype *, int, Race *,
                      char *);
 static void DispPlanet(const GameObj &, const ScopeLevel, const Planet &,
                        char *, int, Race *, char *);
-static void DispShip(const GameObj &, placetype *, Ship *, Race *, char *,
+static void DispShip(const GameObj &, Place *, Ship *, Race *, char *,
                      const Planet & = Planet());
 
 /* OPTIONS
@@ -44,7 +44,7 @@ static void DispShip(const GameObj &, placetype *, Ship *, Race *, char *,
  */
 void orbit(const command_t &argv, GameObj &g) {
   int DontDispNum = -1;
-  placetype where;
+  Place where;
   int DontDispPlanets;
   int DontDispShips;
   int DontDispStars;
@@ -277,7 +277,7 @@ static void DispPlanet(const GameObj &g, const ScopeLevel level,
   }
 }
 
-static void DispShip(const GameObj &g, placetype *where, Ship *ship, Race *r,
+static void DispShip(const GameObj &g, Place *where, Ship *ship, Race *r,
                      char *string, const Planet &pl) {
   int x;
   int y;

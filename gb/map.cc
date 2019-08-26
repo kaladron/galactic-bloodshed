@@ -28,7 +28,7 @@ static void show_map(const player_t, const governor_t, const starnum_t,
 void map(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  placetype where;
+  Place where;
 
   if (argv.size() > 1) {
     where = getplace(g, argv[1], 0);

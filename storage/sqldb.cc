@@ -174,11 +174,11 @@ string SQLTable::joinedColNamesFor(const list <FieldPath> &field_paths) const {
  */
 string SQLTable::CreationSQL() const {
     stringstream sql;
-    sql << "CREATE TABLE IF NOT EXIST '" << table_name << "' (" << endl;
+    sql << "CREATE TABLE IF NOT EXISTS '" << table_name << "' (" << endl;
     for (auto column : columns) {
         const Type *ftype = column->coltype;
-        if (column->index > 0) sql << ", ";
-        sql << column->name << " " << endl;
+        if (column->index > 0) sql << ",";
+        sql << column->name << " ";
         // TODO - See how to generically:
         // 1. pass constraints
         // 2. pass default values
@@ -203,7 +203,7 @@ string SQLTable::CreationSQL() const {
 
         // Get field constraints
         // for (auto constraint : schema->GetConstraints()) { }
-        sql << "," << endl;
+        // sql << "," << endl;
     }
 
     // Now add table constraints

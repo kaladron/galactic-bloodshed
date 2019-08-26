@@ -36,7 +36,7 @@ private:
     int db_status;
     sqlite3 *dbhandle;
     string last_error;
-    bool log_queries;
+    bool log_queries = true;
 };
 
 /**

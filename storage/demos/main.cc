@@ -125,7 +125,8 @@ int main(int argc, char *argv[]) {
 
     Person p2;
     MapValue p2value;
-    people->Get(*StringBoxer("1"), p2value);
+    auto key = StringBoxer("1");
+    people->Get(*key, p2value);
     valueToPerson(&p2value, p2);
 }
 

@@ -23,7 +23,6 @@ public:
 
 protected:
     shared_ptr<SQLDB> db;
-    const Schema *schema;
     weak_ptr<SQLTable> base_table;
 };
 

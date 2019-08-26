@@ -69,8 +69,8 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int j;
-  placetype where;
-  placetype pl;
+  Place where;
+  Place pl;
 
   if (!ship->active) {
     sprintf(buf, "%s is irradiated (%d); it cannot be given orders.\n",
@@ -601,7 +601,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
 }
 
 static std::string prin_aimed_at(const Ship &ship) {
-  placetype targ;
+  Place targ;
 
   targ.level = ship.special.aimed_at.level;
   targ.snum = ship.special.aimed_at.snum;
@@ -611,7 +611,7 @@ static std::string prin_aimed_at(const Ship &ship) {
 }
 
 std::string prin_ship_dest(const Ship &ship) {
-  placetype dest;
+  Place dest;
 
   dest.level = ship.whatdest;
   dest.snum = ship.deststar;
@@ -867,7 +867,7 @@ void route(const command_t &argv, GameObj &g) {
   unsigned char load;
   unsigned char unload;
   const char *c;
-  placetype where;
+  Place where;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor,

@@ -64,7 +64,7 @@ void colonies(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   Race *race;
-  placetype where;
+  Place where;
 
   notify(Playernum, Governor,
          "          ========== Colonization Report ==========\n");

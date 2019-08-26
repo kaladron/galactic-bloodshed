@@ -197,7 +197,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
   int i;
   int sight;
   int caliber;
-  placetype where;
+  Place where;
   char orb[PLACENAMESIZE];
   char strng[COMMANDSIZE];
   char locstrn[COMMANDSIZE];

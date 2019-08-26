@@ -55,7 +55,7 @@ void survey(const command_t &argv, GameObj &g) {
   char d;
   char sect_char;
   int tindex;
-  placetype where;
+  Place where;
   double compat;
   int avg_fert;
   int avg_resource;
@@ -389,7 +389,7 @@ void repair(const command_t &argv, GameObj &g) {
   int x2;
   int sectors;
   int cost;
-  placetype where;
+  Place where;
 
   /* general code -- jpd -- */
   if (argv.size() == 1) { /* no args */

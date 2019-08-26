@@ -101,8 +101,6 @@ enum abil_t {
 
 #define SHIP_NAMESIZE 18
 
-using placetype = struct place;
-
 class Ship {
  public:
   shipnum_t number;               ///< ship knows its own number
@@ -296,7 +294,8 @@ class Shiplist {
   shipnum_t first;
 };
 
-struct place { /* used in function return for finding place */
+class Place { /* used in function return for finding place */
+ public:
   starnum_t snum;
   planetnum_t pnum;
   shipnum_t shipno;

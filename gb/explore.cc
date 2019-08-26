@@ -24,8 +24,8 @@
 void distance(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  placetype from;
-  placetype to;
+  Place from;
+  Place to;
   double x0;
   double y0;
   double x1;
@@ -125,7 +125,7 @@ void exploration(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   int starq;
   int j;
-  placetype where;
+  Place where;
   racetype *Race;
 
   starq = -1;

@@ -31,7 +31,7 @@ static segments_t number_segments;
 static double x_0, y_0, x_1, y_1;
 static Ship *tmpship;
 
-static int do_trip(const placetype &, double fuel, double gravity_factor);
+static int do_trip(const Place &, double fuel, double gravity_factor);
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
                         double grav, double mass, segments_t segs);
 
@@ -48,7 +48,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   char buf[1024];
   double current_fuel = 0.0;
   double gravity_factor = 0.0;
-  placetype tmpdest;
+  Place tmpdest;
 
   if ((argv.size() < 2) || (argv.size() > 3)) {
     notify(Playernum, Governor,
@@ -242,8 +242,7 @@ static void fuel_output(int Playernum, int Governor, double dist, double fuel,
   }
 }
 
-static int do_trip(const placetype &tmpdest, double fuel,
-                   double gravity_factor) {
+static int do_trip(const Place &tmpdest, double fuel, double gravity_factor) {
   segments_t effective_segment_number;
   int trip_resolved;
   double gravity_fuel;

@@ -115,6 +115,12 @@ int main(int argc, char *argv[]) {
     auto companies = store.GetCollection(PersonSchema);
 
     Address a1;
+    a1.address_type = 101;
+    a1.number = "12345";
+    a1.street = "Tennis Court";
+    a1.city = "Wimbledon";
+    a1.region = "Brexitford";
+    a1.country = "Britain";
     Value *a1value = addressToValue(a1);
     ValueToJson(a1value, cout);
     people->Put(*a1value);

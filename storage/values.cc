@@ -3,6 +3,20 @@
 
 START_NS
 
+template<> const LeafType LeafValue<bool>::LEAF_TYPE = LeafType::BOOL;
+template<> const LeafType LeafValue<uint8_t>::LEAF_TYPE = LeafType::UINT8;
+template<> const LeafType LeafValue<uint16_t>::LEAF_TYPE = LeafType::UINT16;
+template<> const LeafType LeafValue<uint32_t>::LEAF_TYPE = LeafType::UINT32;
+template<> const LeafType LeafValue<uint64_t>::LEAF_TYPE = LeafType::UINT64;
+template<> const LeafType LeafValue<int8_t>::LEAF_TYPE = LeafType::INT8;
+template<> const LeafType LeafValue<int16_t>::LEAF_TYPE = LeafType::INT16;
+template<> const LeafType LeafValue<int32_t>::LEAF_TYPE = LeafType::INT32;
+template<> const LeafType LeafValue<int64_t>::LEAF_TYPE = LeafType::INT64;
+template<> const LeafType LeafValue<float>::LEAF_TYPE = LeafType::FLOAT;
+template<> const LeafType LeafValue<double>::LEAF_TYPE = LeafType::DOUBLE;
+template<> const LeafType LeafValue<string>::LEAF_TYPE = LeafType::STRING;
+template<> const LeafType LeafValue<stringbuf>::LEAF_TYPE = LeafType::BYTES;
+
 //////////////////  Value Implementation  //////////////////
 
 bool Value::Equals(const Value &another) const {
@@ -33,17 +47,28 @@ void ValueToJson(const Value *value, ostream &out,
         int i = 0;
         for (auto key : value->Keys()) {
             if (i++ > 0) out << ", ";
-            ValueToJson(value->Get(key), out, newlines, indent, level + 1);
+            out << '"' << key << '"' << ": ";
+            auto child = value->Get(key);
+            ValueToJson(child, out, newlines, indent, level + 1);
         }
         out << "}";
     } else if (value->IsIndexed()) {
         out << "[";
         for (int i = 0, s = value->ChildCount();i < s;i++) {
             if (i > 0) out << ", ";
-            ValueToJson(value->Get(i), out, newlines, indent, level + 1);
+            auto child = value->Get(i);
+            ValueToJson(child, out, newlines, indent, level + 1);
         }
         out << "]";
     } else {
+        const LeafValue<string> *leaf = dynamic_cast<const LeafValue<string> *>(value);
+        if (leaf) {
+            out << '"';
+            value->Write(out);
+            out << '"';
+        } else {
+            value->Write(out);
+        }
     }
 }
 

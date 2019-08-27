@@ -25,7 +25,6 @@ void block(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
   player_t p;
-  racetype *r;
   racetype *Race;
   int dummy_;
   int dummy[2];
@@ -37,7 +36,7 @@ void block(const command_t &argv, GameObj &g) {
       g.out << "No such player.\n";
       return;
     }
-    r = races[p - 1];
+    racetype *r = races[p - 1];
     dummy_ = 0; /* Used as flag for finding a block */
     sprintf(buf, "Race #%d [%s] is a member of ", p, r->name);
     notify(Playernum, Governor, buf);
@@ -87,7 +86,6 @@ void block(const command_t &argv, GameObj &g) {
       g.out << "No such player,\n";
       return;
     }
-    r = races[p - 1];
     /* list the players who are in this alliance block */
     dummy[0] = (Blocks[p - 1].invite[0] & Blocks[p - 1].pledge[0]);
     dummy[1] = (Blocks[p - 1].invite[1] & Blocks[p - 1].pledge[1]);
@@ -103,7 +101,7 @@ void block(const command_t &argv, GameObj &g) {
 
     for (int i = 1; i <= Num_races; i++)
       if (isset(dummy, i)) {
-        r = races[i - 1];
+        racetype *r = races[i - 1];
         if (!r->dissolved) {
           sprintf(buf, "%2d %-20.20s ", i, r->name);
           sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].troops, Race, i));

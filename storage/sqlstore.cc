@@ -13,10 +13,9 @@ shared_ptr<SQLCollection> SQLStore::GetCollection(const Schema *schema) {
     return tables[schema];
 }
 
-SQLCollection::SQLCollection(const Schema *s, shared_ptr<SQLDB> db_) 
-    : Collection(s), db(db_),
-    base_table(db->EnsureTable(schema)) {
+SQLCollection::SQLCollection(const Schema *s, shared_ptr<SQLDB> db_) : Collection(s), db(db_) {
     // What other "tables" do we need?
+    base_table = db->EnsureTable(schema);
 }
 
 bool SQLCollection::Get(const Value &key, Value &result) {

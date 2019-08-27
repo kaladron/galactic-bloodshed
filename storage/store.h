@@ -67,7 +67,7 @@ template <typename CollectionType>
 class Store {
 public:
     virtual ~Store() { }
-    virtual std::shared_ptr<CollectionType> GetCollection(const Schema *t);
+    virtual std::shared_ptr<CollectionType> GetCollection(const Schema *t) = 0;
 };
 
 END_NS

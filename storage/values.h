@@ -60,12 +60,14 @@ public:
         }
         return Comparer<T>()(value, ourtype->value);
     }
-    size_t HashCode() const { return hasher(value); }
+    size_t HashCode() const { 
+        std::hash<T> hasher;
+        return hasher(value); 
+    }
     const T &Value() const { return value; }
 
 protected:
     T value;
-    static std::hash<T> hasher;
 };
 
 class MapValue : public Value {

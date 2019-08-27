@@ -24,19 +24,24 @@ public:
     virtual int Compare(const Value &another) const = 0;
     virtual bool Equals(const Value &another) const;
     virtual bool operator< (const Value& another) const;
+    // Writes the value out to an output stream, possibly as a string if required
+    virtual bool Write(ostream &out, bool as_string = true) const { return false; }
 
     /**
      * Values can be containers.
      */
     virtual bool HasChildren() const;
     virtual size_t ChildCount() const;
-    virtual bool IsKeyed() const;
-    virtual vector<string> Keys() const;
+
+    // For values with children indexed via ints
     virtual bool IsIndexed() const;
     virtual Value *Get(size_t index) const;
-    virtual Value *Get(const std::string &key) const;
-    // Setters
     virtual Value *Set(size_t index, Value *newvalue);
+
+    // For values with children indexed via string keys
+    virtual bool IsKeyed() const;
+    virtual vector<string> Keys() const;
+    virtual Value *Get(const std::string &key) const;
     virtual Value *Set(const std::string &key, Value *newvalue);
 };
 
@@ -49,6 +54,22 @@ void ValueToJson(const Value *value,
                  int indent = 2,
                  int level = 0);
 
+enum class LeafType {
+    BOOL,
+    UINT8,
+    UINT16,
+    UINT32,
+    UINT64,
+    INT8,
+    INT16,
+    INT32,
+    INT64,
+    FLOAT,
+    DOUBLE,
+    STRING,
+    BYTES
+};
+
 template <typename T>
 class LeafValue : public Value {
 public:
@@ -60,12 +81,17 @@ public:
         }
         return Comparer<T>()(value, ourtype->value);
     }
-    size_t HashCode() const { return hasher(value); }
+    size_t HashCode() const { 
+        std::hash<T> hasher;
+        return hasher(value); 
+    }
     const T &Value() const { return value; }
+    virtual bool Write(ostream &out, bool as_string = true) const { out << value; return true; }
+    LeafType GetType() const { return LEAF_TYPE; }
 
 protected:
     T value;
-    static std::hash<T> hasher;
+    const static LeafType LEAF_TYPE;
 };
 
 class MapValue : public Value {

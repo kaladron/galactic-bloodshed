@@ -17,7 +17,7 @@ START_NS
 class Schema {
 public:
     Schema(const std::string &fqn, const Type *t,
-           const vector<string> &key_fields);
+           const vector<FieldPath> &key_fields);
     virtual ~Schema() { }
 
     /** Returns the fqn of the schema. */
@@ -39,6 +39,8 @@ public:
     /** Returns the type of the entity. */
     const Type *EntityType() const { return entity_type; }
 
+    const vector<FieldPath> &KeyFields() const { return key_fields; }
+
     /** Add a new constraint into the Schema. */
     void AddConstraint(const Constraint *c);
     const std::list<const Constraint *> &GetConstraints() const;
@@ -46,7 +48,7 @@ public:
 protected:
     std::string fqn;
     const Type *entity_type;
-    vector<string> key_fields;
+    vector<FieldPath> key_fields;
     mutable Type *key_type = nullptr;
     std::list <const Constraint *> constraints;
 };

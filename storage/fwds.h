@@ -26,7 +26,7 @@ class Value;
 class FieldPath;
 class MapValue;
 class ListValue;
-template <typename T> class LeafValue;
+template <typename T> class LiteralValue;
 template <typename T> struct Comparer;
 class Collection;
 template <typename CollectionType>

@@ -49,7 +49,7 @@ shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
 
     // Kick off its creation
     if (!table->EnsureTable()) {
-        cerr << "Could not create table (" << table->Name() << "): " << sqlite3_errmsg(dbhandle);
+        cerr << "Could not create table (" << table->Name() << "): " << sqlite3_errmsg(dbhandle) << endl;
     }
     return shared_ptr<SQLTable>(table);
 }
@@ -69,7 +69,7 @@ sqlite3_stmt *SQLDB::PrepareSql(const string &sql_str) {
     }
     if (result != SQLITE_OK)
     {
-        cerr << "Could not prepare sql: " << sqlite3_errmsg(dbhandle);
+        cerr << "Could not prepare sql: " << sqlite3_errmsg(dbhandle) << endl;
         return nullptr;
     }
     return stmt;
@@ -145,7 +145,7 @@ const SQLTable::Column *SQLTable::ColumnFor(const FieldPath &fp) const {
 }
 
 bool SQLTable::EnsureTable() {
-    string sql = CreationSQL();
+    string sql = TableCreationSQL();
     sqlite3_stmt *stmt = db->PrepareSql(sql);
     if (stmt == nullptr) return false;
 
@@ -172,7 +172,7 @@ string SQLTable::joinedColNamesFor(const list <FieldPath> &field_paths) const {
 /**
  * Returns the sql to create this table.
  */
-string SQLTable::CreationSQL() const {
+string SQLTable::TableCreationSQL() const {
     stringstream sql;
     sql << "CREATE TABLE IF NOT EXISTS '" << table_name << "' (" << endl;
     for (auto column : columns) {
@@ -230,5 +230,163 @@ string SQLTable::CreationSQL() const {
     sql << ")" << endl;
     return sql.str();
 };
+
+// Get the key from the entity
+bool SQLTable::Put(Value *entity) const {
+    const Value *key = schema->GetKey(*entity);
+    if (key == nullptr) {
+        // we need to generate a key - let the DB do it
+        string sql = InsertionSQL(entity);
+        sqlite3_stmt *stmt = db->PrepareSql(sql);
+        if (stmt == nullptr) return false;
+        int result = sqlite3_step(stmt);
+        if (result != SQLITE_DONE)
+        {
+            return false;
+        }
+        db->CloseStatement(stmt);
+    } else {
+        string sql = UpsertionSQL(key, entity);
+        sqlite3_stmt *stmt = db->PrepareSql(sql);
+        if (stmt == nullptr) return false;
+        int result = sqlite3_step(stmt);
+        if (result != SQLITE_DONE)
+        {
+            return false;
+        }
+        db->CloseStatement(stmt);
+    }
+    return true;
+}
+
+/**
+ * TODO - LOTS TO DO WRT ESCAPING AND QUOTING ETC.
+ */
+void WriteLiteral(const Literal *lit, ostream &out) {
+    assert(lit != nullptr && "Expected literal value");
+    if (lit->LitType() == LiteralType::String) {
+        out << '"' << lit->AsString() << '"';
+    } else {
+        out << lit->AsString();
+    }
+}
+
+string SQLTable::InsertionSQL(const Value *entity) const {
+    stringstream col_sql, val_sql;
+
+    int ncols = 0;
+    FieldPath fp;
+    DFSWalkValue(entity, fp, 
+    [this, ncols, &col_sql, &val_sql](int index, const string *key, const Value *value, FieldPath &fp) mutable {
+        const Column *col = ColumnFor(fp);
+        if (col == nullptr) return false;
+        if (ncols++ > 0) {
+            col_sql << ", ";
+            val_sql << ", ";
+        }
+        col_sql << col->Name();
+        WriteLiteral(Literal::From(value), val_sql);
+        return true;
+    });
+
+    stringstream sql;
+    sql << "INSERT OR REPLACE INTO '" << table_name << "' (" << col_sql.str() << ") VALUES (" << val_sql.str() << ")";
+    return sql.str();
+}
+
+string SQLTable::UpsertionSQL(const Value *key, const Value *entity) const {
+    stringstream sql;
+    int ncols = 0;
+    sql << "UPDATE '" << table_name << " SET ";
+    FieldPath fp;
+    DFSWalkValue(entity, fp, 
+    [this, ncols, &sql](int index, const string *key, const Value *value, FieldPath &fp) mutable {
+        const Column *col = ColumnFor(fp);
+        if (col == nullptr) return false;
+        if (ncols++ > 0) sql << ", ";
+        sql << col->Name() << " = ";
+        WriteLiteral(Literal::From(value), sql);
+        return true;
+    });
+
+    sql << " WHERE ";
+    // for each key field set it as a where clause
+    int ki = 0;
+    for (auto fp : schema->KeyFields()) {
+        auto keypart = Literal::From(key->Get(ki));
+        if (ki++ > 0) sql << " AND ";
+        sql << ColumnFor(fp) << " = ";
+        WriteLiteral(keypart, sql);
+    }
+    return sql.str();
+#if 0
+void upsertIntoTable(NSArray *columns,
+                     NSArray *values,
+                     NSString *where_clause)
+{
+    // do an update
+    for (NSInteger i = 0, first = -1, count = columns.count;i < count;i++)
+    {
+        id value = [values objectAtIndex:i];
+        if (value && value != [NSNull null])
+        {
+            if (first >= 0)
+                [sql_str appendString:@", "];
+            [sql_str appendFormat:@"%@=%@", [columns objectAtIndex:i], value];
+            first = i;
+        }
+    }
+    f (where_clause)
+        [sql_str appendFormat:@" WHERE %@", where_clause];
+    sqlite3_stmt *update_sql = prepare_sql(database, sql_str, NO);
+    int step_result = sqlite3_step(update_sql);
+    if (step_result != SQLITE_DONE)
+    {
+        NSLog(@"Row Update Error: %s", sqlite3_errmsg(database));
+        assert(NO && "Could not perform row insertion");
+    }
+    int numChanges = sqlite3_changes(database);
+    CLOSE_SQL(update_sql);
+    if (numChanges <= 0)    // no rows updated so insert
+    {
+        // do an insert
+        NSMutableString *columns_str = [NSMutableString string];
+        NSMutableString *values_str = [NSMutableString string];
+        for (NSInteger i = 0, first = -1, count = columns.count;i < count;i++)
+        {
+            id value = [values objectAtIndex:i];
+            if (value && value != [NSNull null])
+            {
+                if (first >= 0)
+                {
+                    [columns_str appendString:@", "];
+                    [values_str appendString:@", "];
+                }
+                [columns_str appendString:[columns objectAtIndex:i]];
+                [values_str appendFormat:@"%@", value];
+                first = i;
+            }
+        }
+        NSMutableString *sql_str = [NSMutableString stringWithFormat:@"INSERT OR REPLACE INTO '%@' (%@) VALUES (%@)",tableName, columns_str, values_str];
+        sqlite3_stmt *insert_sql = prepare_sql(database, sql_str, NO);
+        int step_result = sqlite3_step(insert_sql);
+        if (step_result != SQLITE_DONE)
+        {
+            NSLog(@"Row Insertion Error: %s", sqlite3_errmsg(database));
+            assert(NO && "Could not perform row insertion");
+        }
+        CLOSE_SQL(insert_sql);
+    }
+}
+#endif
+    return sql.str();
+
+}
+
+string SQLTable::DeletionSQL(const Value *key) const {
+    stringstream sql;
+    sql << "CREATE TABLE IF NOT EXISTS '" << table_name << "' (" << endl;
+    return sql.str();
+}
 
 END_NS

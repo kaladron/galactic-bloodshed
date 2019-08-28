@@ -3,19 +3,19 @@
 
 START_NS
 
-template<> const LeafType LeafValue<bool>::LEAF_TYPE = LeafType::BOOL;
-template<> const LeafType LeafValue<uint8_t>::LEAF_TYPE = LeafType::UINT8;
-template<> const LeafType LeafValue<uint16_t>::LEAF_TYPE = LeafType::UINT16;
-template<> const LeafType LeafValue<uint32_t>::LEAF_TYPE = LeafType::UINT32;
-template<> const LeafType LeafValue<uint64_t>::LEAF_TYPE = LeafType::UINT64;
-template<> const LeafType LeafValue<int8_t>::LEAF_TYPE = LeafType::INT8;
-template<> const LeafType LeafValue<int16_t>::LEAF_TYPE = LeafType::INT16;
-template<> const LeafType LeafValue<int32_t>::LEAF_TYPE = LeafType::INT32;
-template<> const LeafType LeafValue<int64_t>::LEAF_TYPE = LeafType::INT64;
-template<> const LeafType LeafValue<float>::LEAF_TYPE = LeafType::FLOAT;
-template<> const LeafType LeafValue<double>::LEAF_TYPE = LeafType::DOUBLE;
-template<> const LeafType LeafValue<string>::LEAF_TYPE = LeafType::STRING;
-template<> const LeafType LeafValue<stringbuf>::LEAF_TYPE = LeafType::BYTES;
+template<> const LiteralType TypedLiteral<bool>::LEAF_TYPE = LiteralType::Bool;
+template<> const LiteralType TypedLiteral<uint8_t>::LEAF_TYPE = LiteralType::UInt8;
+template<> const LiteralType TypedLiteral<uint16_t>::LEAF_TYPE = LiteralType::UInt16;
+template<> const LiteralType TypedLiteral<uint32_t>::LEAF_TYPE = LiteralType::UInt32;
+template<> const LiteralType TypedLiteral<uint64_t>::LEAF_TYPE = LiteralType::UInt64;
+template<> const LiteralType TypedLiteral<int8_t>::LEAF_TYPE = LiteralType::Int8;
+template<> const LiteralType TypedLiteral<int16_t>::LEAF_TYPE = LiteralType::Int16;
+template<> const LiteralType TypedLiteral<int32_t>::LEAF_TYPE = LiteralType::Int32;
+template<> const LiteralType TypedLiteral<int64_t>::LEAF_TYPE = LiteralType::Int64;
+template<> const LiteralType TypedLiteral<float>::LEAF_TYPE = LiteralType::Float;
+template<> const LiteralType TypedLiteral<double>::LEAF_TYPE = LiteralType::Double;
+template<> const LiteralType TypedLiteral<string>::LEAF_TYPE = LiteralType::String;
+template<> const LiteralType TypedLiteral<stringbuf>::LEAF_TYPE = LiteralType::Bytes;
 
 //////////////////  Value Implementation  //////////////////
 
@@ -37,6 +37,20 @@ Value *Value::Get(const std::string &key) const { return nullptr; }
 
 Value *Value::Set(size_t index, Value *newvalue) { }
 Value *Value::Set(const std::string &key, Value *newvalue) { }
+
+template <>
+string TypedLiteral<string>::AsString() const
+{
+    return value;
+}
+
+const Literal *Literal::From(const Value *v) {
+    return dynamic_cast<const Literal *>(v);
+}
+
+Literal *Literal::From(Value *v) {
+    return dynamic_cast<Literal *>(v);
+}
 
 void ValueToJson(const Value *value, ostream &out, 
                  bool newlines, int indent, int level) {
@@ -61,13 +75,12 @@ void ValueToJson(const Value *value, ostream &out,
         }
         out << "]";
     } else {
-        const LeafValue<string> *leaf = dynamic_cast<const LeafValue<string> *>(value);
-        if (leaf) {
-            out << '"';
-            value->Write(out);
-            out << '"';
+        const Literal *lit = Literal::From(value);
+        assert(lit != nullptr && "Non literal value found");
+        if (lit->LitType() == LiteralType::String) {
+            out << '"' << lit->AsString() << '"';
         } else {
-            value->Write(out);
+            lit->AsString();
         }
     }
 }
@@ -177,6 +190,35 @@ int CompareValueMap(const ValueMap &first, const ValueMap &second) {
                 cmp = a.second->Compare(*(b.second));
                 if (cmp != 0) return cmp;
             });
+}
+
+// bool (*callback)(int index, const string *key, const Value *value, FieldPath &fp)) {
+void DFSWalkValue(const Value *root, FieldPath &fp, 
+                  std::function<bool(int, const string *,
+                                     const Value*, FieldPath &)> callback) {
+    if (!root) {
+        return ;
+    } else if (root->IsKeyed()) {
+        int i = 0;
+        for (auto key : root->Keys()) {
+            auto child = root->Get(key);
+            fp.push_back(key);
+            if (callback(i++, &key, child, fp)) {
+                DFSWalkValue(child, fp, callback);
+            }
+            fp.pop_back();
+        }
+    } else if (root->IsIndexed()) {
+        for (int i = 0, s = root->ChildCount();i < s;i++) {
+            auto child = root->Get(i);
+            fp.push_back(to_string(i));
+            if (callback(i, nullptr, child, fp)) {
+                DFSWalkValue(child, fp, callback);
+            }
+            fp.pop_back();
+        }
+    } else {
+    }
 }
 
 END_NS

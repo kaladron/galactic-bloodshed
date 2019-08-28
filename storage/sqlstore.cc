@@ -23,8 +23,8 @@ bool SQLCollection::Get(const Value &key, Value &result) {
 }
 
 bool SQLCollection::Put(Value &entity) {
-    // return base_table->Put(entity);
-    return false;
+    auto table = base_table.lock();
+    return table->Put(&entity);
 }
 
 bool SQLCollection::DeleteByKey(const Value &key) {

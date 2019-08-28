@@ -101,8 +101,8 @@ void initTypes() {
 }
 
 void initSchemas() {
-    PersonSchema = new Schema("Person", PersonType, { "id" });
-    CompanySchema = new Schema("Company", CompanyType, { "id" });
+    PersonSchema = new Schema("Person", PersonType, { FieldPath("id") });
+    CompanySchema = new Schema("Company", CompanyType, { FieldPath("id") });
 }
 
 int main(int argc, char *argv[]) {

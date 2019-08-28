@@ -50,6 +50,7 @@ public:
         bool required = false;
         Value *default_read_value = nullptr;
         Value *default_write_value = nullptr;
+        const string &Name() const { return name; }
     private:
         string name;
         FieldPath field_path;
@@ -64,6 +65,8 @@ public:
      * Ensure the table has been created.
      */
     bool EnsureTable();
+    bool Put(Value *entity) const;
+    bool Delete(const Value *key) const;
 
     /**
      * Returns true if we have a physical column with the given name
@@ -76,7 +79,10 @@ public:
     const Column *ColumnFor(const FieldPath &fp) const;
     const string &Name() const { return table_name; }
 
-    string CreationSQL() const;
+    string TableCreationSQL() const;
+    string InsertionSQL(const Value *value) const;
+    string UpsertionSQL(const Value *key, const Value *value) const;
+    string DeletionSQL(const Value *key) const;
 
 protected:
     void processType(const Type *t, FieldPath &fp);

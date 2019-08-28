@@ -14,6 +14,23 @@ using ValueMap = std::map<std::string, Value *>;
 using ValueList = std::list<Value *>;
 using ValueVector = std::vector<Value *>;
 
+enum class LiteralType {
+    None,
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Float,
+    Double,
+    String,
+    Bytes
+};
+
 /**
  * Value is a super-interface for holding a hierarchy of typed values.
  */
@@ -24,11 +41,9 @@ public:
     virtual int Compare(const Value &another) const = 0;
     virtual bool Equals(const Value &another) const;
     virtual bool operator< (const Value& another) const;
-    // Writes the value out to an output stream, possibly as a string if required
-    virtual bool Write(ostream &out, bool as_string = true) const { return false; }
 
     /**
-     * Values can be containers.
+     * Values can be containers or literals (but not both).
      */
     virtual bool HasChildren() const;
     virtual size_t ChildCount() const;
@@ -45,37 +60,21 @@ public:
     virtual Value *Set(const std::string &key, Value *newvalue);
 };
 
-/**
- * Writes value to an output stream as JSON.
- */
-void ValueToJson(const Value *value,
-                 ostream &out, 
-                 bool newlines = true,
-                 int indent = 2,
-                 int level = 0);
-
-enum class LeafType {
-    BOOL,
-    UINT8,
-    UINT16,
-    UINT32,
-    UINT64,
-    INT8,
-    INT16,
-    INT32,
-    INT64,
-    FLOAT,
-    DOUBLE,
-    STRING,
-    BYTES
+class Literal : public Value {
+public:
+    virtual LiteralType LitType() const { return LiteralType::None; }
+    // Writes the value out to an output stream, possibly as a string if required
+    virtual string AsString() const = 0;
+    static const Literal *From(const Value *v);
+    static Literal *From(Value *v);
 };
 
 template <typename T>
-class LeafValue : public Value {
+class TypedLiteral : public Literal {
 public:
-    LeafValue(const T &val) : value(val) { }
+    TypedLiteral(const T &val) : value(val) { }
     int Compare(const Value &another) const {
-        const LeafValue<T> *ourtype = dynamic_cast<const LeafValue<T> *>(&another);
+        const TypedLiteral<T> *ourtype = dynamic_cast<const TypedLiteral<T> *>(&another);
         if (!ourtype) {
             return this - ourtype;
         }
@@ -85,14 +84,17 @@ public:
         std::hash<T> hasher;
         return hasher(value); 
     }
-    const T &Value() const { return value; }
-    virtual bool Write(ostream &out, bool as_string = true) const { out << value; return true; }
-    LeafType GetType() const { return LEAF_TYPE; }
+    const T &LitVal() const { return value; }
+    LiteralType LitType() const { return LEAF_TYPE; }
+    string AsString() const { return to_string(value); }
 
 protected:
     T value;
-    const static LeafType LEAF_TYPE;
+    const static LiteralType LEAF_TYPE;
 };
+
+// Strings dont need a conversion!
+template <> string TypedLiteral<string>::AsString() const;
 
 class MapValue : public Value {
 public:
@@ -125,27 +127,23 @@ protected:
     std::vector<Value *> values;
 };
 
-extern int CompareValueVector(const ValueVector &first, const ValueVector &second);
-extern int CompareValueList(const ValueList &first, const ValueList &second);
-extern int CompareValueMap(const ValueMap &first, const ValueMap &second);
-
 /// Helpers to box and unbox values of literal types
 
 template <typename T>
 struct Boxer {
     Value *operator()(const T &value) const {
-        return new LeafValue(value);
+        return new TypedLiteral(value);
     }
 };
 
 template <typename T>
 struct Unboxer {
     bool operator()(const Value *input, T &output) const {
-        const LeafValue<T> *ourtype = dynamic_cast<const LeafValue<T> *>(input);
+        const TypedLiteral<T> *ourtype = dynamic_cast<const TypedLiteral<T> *>(input);
         if (!ourtype) {
             return false;
         }
-        output = ourtype->Value();
+        output = ourtype->LitVal();
         return true;
     }
 };
@@ -163,6 +161,24 @@ const auto UIntUnboxer = Unboxer<unsigned>();
 const auto LongUnboxer = Unboxer<long>();
 const auto ULongUnboxer = Unboxer<unsigned long>();
 const auto StringUnboxer = Unboxer<string>();
+
+// Helper methods
+
+extern int CompareValueVector(const ValueVector &first, const ValueVector &second);
+extern int CompareValueList(const ValueList &first, const ValueList &second);
+extern int CompareValueMap(const ValueMap &first, const ValueMap &second);
+void DFSWalkValue(const Value *root, FieldPath &fp, 
+                  std::function<bool(int, const string *,
+                                     const Value*, FieldPath &)> callback);
+
+/**
+ * Writes value to an output stream as JSON.
+ */
+extern void ValueToJson(const Value *value,
+                        ostream &out, 
+                        bool newlines = true, 
+                        int indent = 2, 
+                        int level = 0);
 
 END_NS
 

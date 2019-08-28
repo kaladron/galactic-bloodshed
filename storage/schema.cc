@@ -51,7 +51,7 @@ Constraint::Constraint(const list<FieldPath> &src,
 /**
  * Create a new schema with a given fqn and the underlying record type.
  */
-Schema::Schema(const string &fqn_, const Type *t, const vector<string> &kf) 
+Schema::Schema(const string &fqn_, const Type *t, const vector<FieldPath> &kf) 
     : fqn(fqn_), entity_type(t), key_fields(kf) {
     assert(t->IsRecord() && "Schemas can only be record types.");
 }

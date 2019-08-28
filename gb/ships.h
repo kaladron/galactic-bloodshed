@@ -294,15 +294,6 @@ class Shiplist {
   shipnum_t first;
 };
 
-class Place { /* used in function return for finding place */
- public:
-  starnum_t snum;
-  planetnum_t pnum;
-  shipnum_t shipno;
-  ScopeLevel level;      /* .level */
-  unsigned char err = 0; /* if error */
-};
-
 /* can takeoff & land, is mobile, etc. */
 unsigned short speed_rating(const Ship &s);
 

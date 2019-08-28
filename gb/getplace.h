@@ -7,12 +7,12 @@
 
 #include <string>
 
+#include "gb/place.h"
 #include "gb/ships.h"
 
 Place getplace(GameObj &, const std::string &, const int);
 char *Dispshiploc_brief(Ship *);
 char *Dispshiploc(Ship *);
-std::string Dispplace(const Place &);
 bool testship(const player_t, const governor_t, const Ship &);
 
 #endif  // GETPLACE_H

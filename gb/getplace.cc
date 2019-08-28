@@ -225,25 +225,6 @@ char *Dispshiploc(Ship *ship) {
   }
 }
 
-std::string Dispplace(const Place &where) {
-  std::ostringstream out;
-  switch (where.level) {
-    case ScopeLevel::LEVEL_STAR:
-      out << "/" << Stars[where.snum]->name;
-      return out.str();
-    case ScopeLevel::LEVEL_PLAN:
-      out << "/" << Stars[where.snum]->name << "/"
-          << Stars[where.snum]->pnames[where.pnum];
-      return out.str();
-    case ScopeLevel::LEVEL_SHIP:
-      out << "#" << where.shipno;
-      return out.str();
-    case ScopeLevel::LEVEL_UNIV:
-      out << "/";
-      return out.str();
-  }
-}
-
 bool testship(const player_t playernum, const governor_t governor,
               const Ship &s) {
   if (!s.alive) {

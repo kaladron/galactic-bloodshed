@@ -101,6 +101,7 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     order.cc \
 		     perm.cc \
 		     doplanet.cc \
+		     place.cc \
 		     powercmd.cc \
 		     prof.cc \
 		     sector.cc \

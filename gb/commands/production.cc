@@ -54,7 +54,6 @@ void production_at_star(GameObj &g, starnum_t star) {
 void production(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  Race *race;
   Place where;
 
   notify(Playernum, Governor,
@@ -63,7 +62,6 @@ void production(const command_t &argv, GameObj &g) {
          "  Planet     gov    tech deposit  x   res  "
          "des  fuel    tax   tox  est prod\n");
 
-  race = races[Playernum - 1];
   getsdata(&Sdata);
 
   if (argv.size() < 2)

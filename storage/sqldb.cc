@@ -206,6 +206,21 @@ string SQLTable::TableCreationSQL() const {
         // sql << "," << endl;
     }
 
+    // Setup the primary key constraint
+    sql << ", PRIMARY KEY (";
+    int colindex = 0;
+    for (auto fp : schema->KeyFields()) {
+        if (colindex++ > 0) sql << ", ";
+        const Column *col = ColumnFor(fp);
+        if (!col) {
+            sql << "NULL";  // an error
+        } else {
+            sql << col->Name();
+        }
+    }
+    sql << ")" << endl;
+
+
     // Now add table constraints
     int fkey_count = 0;
     for (auto constraint : schema->GetConstraints()) {

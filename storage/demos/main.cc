@@ -101,15 +101,15 @@ void initTypes() {
 }
 
 void initSchemas() {
-    PersonSchema = new Schema("Person", PersonType, { FieldPath("id") });
     CompanySchema = new Schema("Company", CompanyType, { FieldPath("id") });
+    PersonSchema = new Schema("Person", PersonType, { FieldPath("id") });
 }
 
 int main(int argc, char *argv[]) {
     initTypes();
     initSchemas();
     cout << "Num args: " << argc << endl;
-    const char *filename = argc <= 1 ? "test.db" : argv[1];
+    const char *filename = argc <= 1 ? "/vagrant/test.db" : argv[1];
     SQLStore store(filename);
     auto people = store.GetCollection(PersonSchema);
     auto companies = store.GetCollection(PersonSchema);
@@ -122,8 +122,8 @@ int main(int argc, char *argv[]) {
     a1.region = "Brexitford";
     a1.country = "Britain";
     Value *a1value = addressToValue(a1);
-    ValueToJson(a1value, cout);
-    people->Put(*a1value);
+    ValueToJson(a1value, cout); cout << endl;
+    people->Put(*a1value);      // false ret val is an error - turn into exceptions
 
     Person p1;
     Value *p1value = personToValue(p1);

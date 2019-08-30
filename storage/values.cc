@@ -241,7 +241,6 @@ bool MatchTypeAndValue(const Type *type, const Value *root,
                        int currIndex, FieldPath &fp, MatchTypeAndValueCallback callback) {
     if (!type && !root) return true;
     if (!type || !root) return false;
-
     // Call with the current root and type first before descending
     if (!callback(type, root, currIndex, fp.empty() ? nullptr : &(fp.back()), fp)) return true;
 

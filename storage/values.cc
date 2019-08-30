@@ -19,11 +19,11 @@ template<> const LiteralType TypedLiteral<stringbuf>::LEAF_TYPE = LiteralType::B
 
 //////////////////  Value Implementation  //////////////////
 
-bool Value::Equals(const Value &another) const {
+bool Value::Equals(const Value *another) const {
     return Compare(another) == 0;
 }
 
-bool Value::operator< (const Value& another) const {
+bool Value::operator< (const Value *another) const {
     return Compare(another) < 0;
 }
 
@@ -87,6 +87,22 @@ void ValueToJson(const Value *value, ostream &out,
 
 /////////////////  MapValue Implementation  /////////////////
 
+UnionValue::UnionValue(int t, Value *d) : tag(t), data(d) {
+}
+
+size_t UnionValue::HashCode() const {
+    return tag + data->HashCode();
+}
+
+int UnionValue::Compare(const Value *another) const {
+    const UnionValue *uv = dynamic_cast<const UnionValue *>(another);
+    if (!uv) return (const Value *)this - another;
+    if (uv->tag != tag) return tag - uv->tag;
+    return data->Compare(uv->data);
+}
+
+/////////////////  MapValue Implementation  /////////////////
+
 size_t MapValue::HashCode() const {
     int h = 0;
     for (auto it : values) {
@@ -116,10 +132,10 @@ Value *MapValue::Set(const std::string &key, Value *newvalue) {
     return oldvalue;
 }
 
-int MapValue::Compare(const Value &another) const {
-    const MapValue *that = dynamic_cast<const MapValue *>(&another);
+int MapValue::Compare(const Value *another) const {
+    const MapValue *that = dynamic_cast<const MapValue *>(another);
     if (!that) {
-        return this < that;
+        return (const Value *)this - another;
     }
     return CompareValueMap(values, that->values);
 }
@@ -142,10 +158,10 @@ size_t ListValue::HashCode() const {
     return hash;
 }
 
-int ListValue::Compare(const Value &another) const {
-    const ListValue *that = dynamic_cast<const ListValue *>(&another);
+int ListValue::Compare(const Value *another) const {
+    const ListValue *that = dynamic_cast<const ListValue *>(another);
     if (!that) {
-        return this < that;
+        return (const Value *)this - another;
     }
     return CompareValueVector(values, that->values);
 }
@@ -165,7 +181,7 @@ int CompareValueVector(const ValueVector &first, const ValueVector &second) {
             first.begin(), first.end(),
             second.begin(), second.end(),
             [](const Value *a, const Value *b) {
-                return a->Compare(*b);
+                return a->Compare(b);
             });
 }
 
@@ -174,7 +190,7 @@ int CompareValueList(const ValueList &first, const ValueList &second) {
             first.begin(), first.end(),
             second.begin(), second.end(),
             [](const Value *a, const Value *b) {
-                return a->Compare(*b);
+                return a->Compare(b);
             });
 }
 
@@ -187,7 +203,7 @@ int CompareValueMap(const ValueMap &first, const ValueMap &second) {
                 if (cmp != 0) return cmp;
 
                 // check value otherwise
-                cmp = a.second->Compare(*(b.second));
+                cmp = a.second->Compare(b.second);
                 if (cmp != 0) return cmp;
             });
 }
@@ -219,6 +235,105 @@ void DFSWalkValue(const Value *root, FieldPath &fp,
         }
     } else {
     }
+}
+
+bool MatchTypeAndValue(const Type *type, const Value *root, 
+                       int currIndex, FieldPath &fp, 
+                       std::function<bool(const Type *, const Value*,
+                                          int, const string *, FieldPath &)> callback) {
+    if (!type && !root) return true;
+    if (!type || !root) return false;
+
+    // Call with the current root and type first before descending
+    if (!callback(type, root, currIndex, fp.empty() ? nullptr : &(fp.back()), fp)) return true;
+
+    if (type->IsRecord()) {
+        if (!root->IsKeyed()) return false;
+        // descend into children
+        for (int i = 0, c = type->ChildCount();i < c;i++) {
+            const auto &childtype = type->GetChild(i);
+            auto &key = childtype.first;
+            auto childvalue = root->Get(key);
+            fp.push_back(key);
+            if (!MatchTypeAndValue(childtype.second,
+                                   childvalue,
+                                   i, fp,
+                                   callback)) return false;
+            fp.pop_back();
+        }
+    }
+    else if (type->IsUnion()) {
+        const UnionValue *uv = dynamic_cast<const UnionValue *>(root);
+        assert(uv != nullptr && "Expected Union Value");
+        if (uv->Tag() <= type->ChildCount()) {
+            // Ensure value's tag is not in a forward version than type so ignore
+            const auto childtype = type->GetChild(uv->Tag());
+            const auto childvalue = uv->Data();
+            auto &key = childtype.first;
+            fp.push_back(key);
+            if (!MatchTypeAndValue(childtype.second,
+                                   childvalue,
+                                   uv->Tag(), fp,
+                                   callback)) return false;
+            fp.pop_back();
+        }
+    } else {    // type function
+        // TODO: make this pluggable instead of hard coded
+        if (type->FQN() == "list") {
+            if (!root->IsIndexed()) {
+                return false;
+            }
+            const auto &childtype = type->GetChild(0);
+            for (int i = 0, c = root->ChildCount();i < c;i++) {
+                auto childvalue = root->Get(i);
+                fp.push_back(to_string(i));
+                if (!MatchTypeAndValue(childtype.second,
+                                       childvalue,
+                                       i, fp,
+                                       callback)) return false;
+                fp.pop_back();
+            }
+        } else if (type->FQN() == "map") {
+            if (!root->IsKeyed()) {
+                return false;
+            }
+            const auto &childtype = type->GetChild(0);
+            int i = 0;
+            for (auto key : root->Keys()) {
+                auto childvalue = root->Get(key);
+                fp.push_back(key);
+                if (!MatchTypeAndValue(childtype.second,
+                                       childvalue,
+                                       i++, fp,
+                                       callback)) return false;
+                fp.pop_back();
+            }
+        } else {
+            // literal values
+            assert(false && "TBD");
+        }
+    /*
+    if (root->IsKeyed()) {
+    } else if (root->IsIndexed()) {
+        for (int i = 0, s = root->ChildCount();i < s;i++) {
+            auto child = root->Get(i);
+            fp.push_back(to_string(i));
+            if (callback(i, nullptr, child, fp)) {
+                DFSWalkValue(child, fp, callback);
+            }
+            fp.pop_back();
+        }
+    } else {
+    }
+    */
+    }
+}
+
+bool MatchTypeAndValue(const Type *type, const Value *value, 
+                       std::function<bool(const Type *, const Value*,
+                                          int, const string *, FieldPath &)> callback) {
+    FieldPath fp;
+    MatchTypeAndValue(type, value, 0, fp, callback);
 }
 
 END_NS

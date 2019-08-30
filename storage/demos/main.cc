@@ -97,6 +97,7 @@ void initTypes() {
                             NameTypePair("name", StringType),
                             NameTypePair("dob", DateType),
                             NameTypePair("gender", StringType), // need enums
+                            NameTypePair("address", AddressType), // need enums
                         });
 }
 

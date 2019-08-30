@@ -181,13 +181,13 @@ const auto StringUnboxer = Unboxer<string>();
 extern int CompareValueVector(const ValueVector &first, const ValueVector &second);
 extern int CompareValueList(const ValueList &first, const ValueList &second);
 extern int CompareValueMap(const ValueMap &first, const ValueMap &second);
-void DFSWalkValue(const Value *root, FieldPath &fp, 
-                  std::function<bool(int, const string *,
-                                     const Value*, FieldPath &)> callback);
 
-bool MatchTypeAndValue(const Type *type, const Value *value, 
-                       std::function<bool(const Type *, const Value*,
-                                          int, const string *, FieldPath &)> callback);
+using DFSWalkCallback = std::function<bool(const Value*, int, const string *, FieldPath &)>;
+void DFSWalkValue(const Value *root, DFSWalkCallback callback);
+
+using MatchTypeAndValueCallback = std::function<bool(const Type *, const Value*, int, const string *, FieldPath &)>;
+bool MatchTypeAndValue(const Type *type, const Value *value, MatchTypeAndValueCallback callback);
+
 /**
  * Writes value to an output stream as JSON.
  */

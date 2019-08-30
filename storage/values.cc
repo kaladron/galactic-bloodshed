@@ -208,39 +208,37 @@ int CompareValueMap(const ValueMap &first, const ValueMap &second) {
             });
 }
 
-// bool (*callback)(int index, const string *key, const Value *value, FieldPath &fp)) {
-void DFSWalkValue(const Value *root, FieldPath &fp, 
-                  std::function<bool(int, const string *,
-                                     const Value*, FieldPath &)> callback) {
-    if (!root) {
-        return ;
-    } else if (root->IsKeyed()) {
+void DFSWalkValue(const Value *root, int currIndex, FieldPath &fp, DFSWalkCallback callback) {
+    if (!root) return ;
+
+    if (!callback(root, currIndex, fp.empty() ? nullptr : &(fp.back()), fp)) return ;
+
+    if (root->IsKeyed()) {
         int i = 0;
         for (auto key : root->Keys()) {
             auto child = root->Get(key);
             fp.push_back(key);
-            if (callback(i++, &key, child, fp)) {
-                DFSWalkValue(child, fp, callback);
-            }
+            DFSWalkValue(child, i++, fp, callback);
             fp.pop_back();
         }
     } else if (root->IsIndexed()) {
         for (int i = 0, s = root->ChildCount();i < s;i++) {
             auto child = root->Get(i);
             fp.push_back(to_string(i));
-            if (callback(i, nullptr, child, fp)) {
-                DFSWalkValue(child, fp, callback);
-            }
+            DFSWalkValue(child, i, fp, callback);
             fp.pop_back();
         }
     } else {
     }
 }
 
+void DFSWalkValue(const Value *root, DFSWalkCallback callback) {
+    FieldPath fp;
+    DFSWalkValue(root, 0, fp, callback);
+}
+
 bool MatchTypeAndValue(const Type *type, const Value *root, 
-                       int currIndex, FieldPath &fp, 
-                       std::function<bool(const Type *, const Value*,
-                                          int, const string *, FieldPath &)> callback) {
+                       int currIndex, FieldPath &fp, MatchTypeAndValueCallback callback) {
     if (!type && !root) return true;
     if (!type || !root) return false;
 
@@ -278,7 +276,9 @@ bool MatchTypeAndValue(const Type *type, const Value *root,
             fp.pop_back();
         }
     } else {    // type function
-        // TODO: make this pluggable instead of hard coded
+        // Any matching will need to be applied by the caller
+        // as they know what to do with these types
+#if 0
         if (type->FQN() == "list") {
             if (!root->IsIndexed()) {
                 return false;
@@ -312,6 +312,7 @@ bool MatchTypeAndValue(const Type *type, const Value *root,
             // literal values
             assert(false && "TBD");
         }
+#endif
     /*
     if (root->IsKeyed()) {
     } else if (root->IsIndexed()) {
@@ -329,9 +330,7 @@ bool MatchTypeAndValue(const Type *type, const Value *root,
     }
 }
 
-bool MatchTypeAndValue(const Type *type, const Value *value, 
-                       std::function<bool(const Type *, const Value*,
-                                          int, const string *, FieldPath &)> callback) {
+bool MatchTypeAndValue(const Type *type, const Value *value, MatchTypeAndValueCallback callback) {
     FieldPath fp;
     MatchTypeAndValue(type, value, 0, fp, callback);
 }

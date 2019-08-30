@@ -38,9 +38,9 @@ class Value {
 public:
     Value() { }
     virtual size_t HashCode() const = 0;
-    virtual int Compare(const Value &another) const = 0;
-    virtual bool Equals(const Value &another) const;
-    virtual bool operator< (const Value& another) const;
+    virtual int Compare(const Value *another) const = 0;
+    virtual bool Equals(const Value *another) const;
+    virtual bool operator< (const Value* another) const;
 
     /**
      * Values can be containers or literals (but not both).
@@ -55,6 +55,7 @@ public:
 
     // For values with children indexed via string keys
     virtual bool IsKeyed() const;
+    // TODO: Need a better key or key/val iterator
     virtual vector<string> Keys() const;
     virtual Value *Get(const std::string &key) const;
     virtual Value *Set(const std::string &key, Value *newvalue);
@@ -73,8 +74,8 @@ template <typename T>
 class TypedLiteral : public Literal {
 public:
     TypedLiteral(const T &val) : value(val) { }
-    int Compare(const Value &another) const {
-        const TypedLiteral<T> *ourtype = dynamic_cast<const TypedLiteral<T> *>(&another);
+    int Compare(const Value *another) const {
+        const TypedLiteral<T> *ourtype = dynamic_cast<const TypedLiteral<T> *>(another);
         if (!ourtype) {
             return this - ourtype;
         }
@@ -99,7 +100,7 @@ template <> string TypedLiteral<string>::AsString() const;
 class MapValue : public Value {
 public:
     MapValue() { }
-    virtual int Compare(const Value &another) const;
+    virtual int Compare(const Value *another) const;
     virtual size_t HashCode() const;
     virtual bool HasChildren() const;
     virtual size_t ChildCount() const { return values.size(); }
@@ -115,7 +116,7 @@ protected:
 class ListValue : public Value {
 public:
     ListValue() { }
-    virtual int Compare(const Value &another) const;
+    virtual int Compare(const Value *another) const;
     virtual size_t HashCode() const;
     virtual bool HasChildren() const;
     virtual size_t ChildCount() const { return values.size(); }
@@ -125,6 +126,19 @@ public:
 
 protected:
     std::vector<Value *> values;
+};
+
+class UnionValue : public Value {
+public:
+    UnionValue(int t, Value *d);
+    virtual size_t HashCode() const;
+    virtual int Compare(const Value *another) const;
+    int Tag() const { return tag; }
+    Value *Data() const { return data; }
+
+private:
+    int tag;
+    Value *data;
 };
 
 /// Helpers to box and unbox values of literal types
@@ -171,6 +185,9 @@ void DFSWalkValue(const Value *root, FieldPath &fp,
                   std::function<bool(int, const string *,
                                      const Value*, FieldPath &)> callback);
 
+bool MatchTypeAndValue(const Type *type, const Value *value, 
+                       std::function<bool(const Type *, const Value*,
+                                          int, const string *, FieldPath &)> callback);
 /**
  * Writes value to an output stream as JSON.
  */

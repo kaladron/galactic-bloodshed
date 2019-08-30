@@ -91,11 +91,12 @@ void SQLTable::processType(const Type *curr_type, FieldPath &field_path) {
     bool hasChildren = !curr_type->IsTypeFun() || fqn == "tuple";
     bool namedChildren = !curr_type->IsTypeFun() && fqn != "tuple";
 
-    // Process the node and add necessary columns
-    if (curr_type->IsUnion() || !hasChildren) {
-        // only a "tag" required if union
-        AddColumn(field_path, curr_type);
-    }
+    // Add a column for the current FP.  
+    // Note: This is also required for non literal types because for:
+    //  Unions - this will be a tag into the sub type
+    //  Records - Will denote NULL or not
+    // The other way to model records/unions is to make these a 1:1 relationship
+    AddColumn(field_path, curr_type);
 
     // Process children
     if (hasChildren) {
@@ -183,7 +184,9 @@ string SQLTable::TableCreationSQL() const {
         // 1. pass constraints
         // 2. pass default values
         // lgg
-        if (ftype->FQN() == "int") {
+        if (ftype->FQN() == "bool") {
+            sql << "BOOLEAN" << " " << endl;
+        } else if (ftype->FQN() == "int") {
             sql << "INT" << " " << endl;
         } else if (ftype->FQN() == "long") {
             sql << "INT64" << " " << endl;
@@ -193,6 +196,10 @@ string SQLTable::TableCreationSQL() const {
             sql << "TEXT" << " " << endl;
         } else if (ftype->FQN() == "datetime") {
             sql << "DATETIME" << " " << endl;
+        } else if (ftype->IsRecord()) {
+            sql << "BOOLEAN" << " " << endl;
+        } else if (ftype->IsUnion()) {
+            sql << "INT8" << " " << endl;
         } else {
             assert(false && "Invalid child type");
         }
@@ -278,7 +285,9 @@ bool SQLTable::Put(Value *entity) const {
  * TODO - LOTS TO DO WRT ESCAPING AND QUOTING ETC.
  */
 void WriteLiteral(const Literal *lit, ostream &out) {
-    assert(lit != nullptr && "Expected literal value");
+    if (lit == nullptr) {
+        assert(false && "Expected literal value");
+    }
     if (lit->LitType() == LiteralType::String) {
         out << '"' << lit->AsString() << '"';
     } else {
@@ -290,9 +299,8 @@ string SQLTable::InsertionSQL(const Value *entity) const {
     stringstream col_sql, val_sql;
 
     int ncols = 0;
-    FieldPath fp;
-    DFSWalkValue(entity, fp, 
-    [this, ncols, &col_sql, &val_sql](int index, const string *key, const Value *value, FieldPath &fp) mutable {
+    MatchTypeAndValue(schema->EntityType(), entity, [this, &ncols, &col_sql, &val_sql]
+            (const Type *type, const Value *value, int index, const string *key, FieldPath &fp) {
         const Column *col = ColumnFor(fp);
         if (col == nullptr) return false;
         if (ncols++ > 0) {
@@ -300,7 +308,14 @@ string SQLTable::InsertionSQL(const Value *entity) const {
             val_sql << ", ";
         }
         col_sql << col->Name();
-        WriteLiteral(Literal::From(value), val_sql);
+        if (type->IsRecord()) {
+            // then write "exists/not exists" flag
+        } else if (type->IsUnion()) {
+            // write the tag - how do we know which "type" it is?
+        } else {
+            auto lit = Literal::From(value);
+            WriteLiteral(lit, val_sql);
+        }
         return true;
     });
 

@@ -14,8 +14,7 @@ class Place { /* used in function return for finding place */
   shipnum_t shipno;
   ScopeLevel level;      /* .level */
   unsigned char err = 0; /* if error */
+  std::string to_string();
 };
-
-std::string Dispplace(const Place &);
 
 #endif  // PLACE_H

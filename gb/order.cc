@@ -607,7 +607,7 @@ static std::string prin_aimed_at(const Ship &ship) {
   targ.snum = ship.special.aimed_at.snum;
   targ.pnum = ship.special.aimed_at.pnum;
   targ.shipno = ship.special.aimed_at.shipno;
-  return Dispplace(targ);
+  return targ.to_string();
 }
 
 std::string prin_ship_dest(const Ship &ship) {
@@ -617,7 +617,7 @@ std::string prin_ship_dest(const Ship &ship) {
   dest.snum = ship.deststar;
   dest.pnum = ship.destpnum;
   dest.shipno = ship.destshipno;
-  return Dispplace(dest);
+  return dest.to_string();
 }
 
 /*

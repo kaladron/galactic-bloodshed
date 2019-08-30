@@ -6,18 +6,17 @@
 
 #include <sstream>
 
-std::string Dispplace(const Place &where) {
+std::string Place::to_string() {
   std::ostringstream out;
-  switch (where.level) {
+  switch (level) {
     case ScopeLevel::LEVEL_STAR:
-      out << "/" << Stars[where.snum]->name;
+      out << "/" << Stars[snum]->name;
       return out.str();
     case ScopeLevel::LEVEL_PLAN:
-      out << "/" << Stars[where.snum]->name << "/"
-          << Stars[where.snum]->pnames[where.pnum];
+      out << "/" << Stars[snum]->name << "/" << Stars[snum]->pnames[pnum];
       return out.str();
     case ScopeLevel::LEVEL_SHIP:
-      out << "#" << where.shipno;
+      out << "#" << shipno;
       return out.str();
     case ScopeLevel::LEVEL_UNIV:
       out << "/";

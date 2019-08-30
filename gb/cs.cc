@@ -135,7 +135,7 @@ void cs(const command_t &argv, GameObj &g) {
       Race->governor[Governor].defplanetnum = where.pnum;
       putrace(Race);
 
-      g.out << "New home system is " << Dispplace(where) << "\n";
+      g.out << "New home system is " << where.to_string() << "\n";
     } else {
       g.out << "cs: bad home system.\n";
     }

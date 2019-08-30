@@ -5,39 +5,52 @@
 
 using namespace Storage;
 
-GTEST("FieldPath Default") {
-    SHOULD("Join should return empty string") {
-        EXPECT_EQ("", FieldPath().join("/"));
+auto StringType = DefaultTypes::StringType();
+auto LongType = DefaultTypes::LongType();
+auto IntType = DefaultTypes::IntType();
+auto DateType = LongType;
+
+GTEST("TypeFunctions") {
+    SHOULD("Work as TypeFunctions") {
+        EXPECT_EQ("int", Type("int").FQN());
+        EXPECT_EQ(true, Type("int").IsTypeFun());
+        EXPECT_EQ(0, Type("int").ChildCount());
     }
 }
 
-GTEST("FieldPath Constructor") {
-    SHOULD("FieldPath constructor") {
-        FieldPath fp("a/b/c/d/e", "/");
-        EXPECT_EQ("a--b--c--d--e", fp.join("--"));
-        EXPECT_EQ("a+b+c+d+e", fp.join("+"));
-
-        std::vector<string> inv = { "a", "b", "c" };
-        FieldPath fp2(inv);
-        EXPECT_EQ("a-b-c", fp2.join("-"));
-
-        FieldPath fp3(fp2);
-        fp3.push_back("d");
-        EXPECT_EQ("a-b-c", fp2.join("-"));
-        EXPECT_EQ("a-b-c-d", fp3.join("-"));
+GTEST("Record Types") {
+    SHOULD("Record type Tests") {
+        unique_ptr<Type> AddressType(new Type("Address", {
+                                NameTypePair("number", StringType),
+                                NameTypePair("street", StringType),
+                                NameTypePair("city", StringType),
+                                NameTypePair("zipcode", StringType),
+                                NameTypePair("region", StringType),
+                                NameTypePair("country", StringType)
+                            }));
+        EXPECT_EQ("Address", AddressType->FQN());
+        EXPECT_EQ(true, AddressType->IsRecord());
+        auto x = AddressType->GetChild(0);
+        EXPECT_EQ("number", x.first);
+        EXPECT_EQ(StringType, x.second);
     }
 }
 
-GTEST("FieldPath Push") {
-    SHOULD("Join should return string delimited") {
-        FieldPath fp;
-        EXPECT_EQ("", fp.join("/"));
-
-        FieldPath fp2 = fp.push("a");
-        EXPECT_EQ("a", fp2.join("/"));
-
-        fp = fp2.push("b");
-        EXPECT_EQ("a", fp2.join("."));
-        EXPECT_EQ("a.b", fp.join("."));
+GTEST("Union Types") {
+    SHOULD("Union type Tests") {
+        unique_ptr<Type> AddressType(new Type("Address", {
+                                NameTypePair("number", StringType),
+                                NameTypePair("street", StringType),
+                                NameTypePair("city", StringType),
+                                NameTypePair("zipcode", StringType),
+                                NameTypePair("region", StringType),
+                                NameTypePair("country", StringType)
+                            }));
+        EXPECT_EQ("Address", AddressType->FQN());
+        EXPECT_EQ(true, AddressType->IsRecord());
+        auto x = AddressType->GetChild(0);
+        EXPECT_EQ("number", x.first);
+        EXPECT_EQ(StringType, x.second);
     }
 }
+

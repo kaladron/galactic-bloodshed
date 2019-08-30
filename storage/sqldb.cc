@@ -301,6 +301,7 @@ string SQLTable::InsertionSQL(const Value *entity) const {
     int ncols = 0;
     MatchTypeAndValue(schema->EntityType(), entity, [this, &ncols, &col_sql, &val_sql]
             (const Type *type, const Value *value, int index, const string *key, FieldPath &fp) {
+        cout << "Found FP: " << fp.join() << endl;
         const Column *col = ColumnFor(fp);
         if (col == nullptr) return false;
         if (ncols++ > 0) {

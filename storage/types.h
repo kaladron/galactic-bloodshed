@@ -41,9 +41,6 @@ public:
 
     int Compare(const Type &another) const;
 
-    void SetData(const TypeVector &args);
-    void SetData(const NameTypeVector &fields, bool is_product_type = true);
-
     // Access children
     void AddChild(const Type *child, const string &name = "");
     size_t ChildCount() const;
@@ -57,6 +54,8 @@ public:
 
 protected:
     void Clear();
+    void SetData(const TypeVector &args);
+    void SetData(const NameTypeVector &fields, bool is_product_type = true);
 
 private:
     /**

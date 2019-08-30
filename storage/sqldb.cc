@@ -284,7 +284,7 @@ bool SQLTable::Put(Value *entity) const {
 /**
  * TODO - LOTS TO DO WRT ESCAPING AND QUOTING ETC.
  */
-void WriteLiteral(const Literal *lit, ostream &out) {
+void WriteLiteral(const Type *type, const Literal *lit, ostream &out) {
     if (lit == nullptr) {
         assert(false && "Expected literal value");
     }
@@ -307,14 +307,17 @@ string SQLTable::InsertionSQL(const Value *entity) const {
             col_sql << ", ";
             val_sql << ", ";
         }
+
         col_sql << col->Name();
         if (type->IsRecord()) {
             // then write "exists/not exists" flag
+            val_sql << (value != nullptr);
         } else if (type->IsUnion()) {
-            // write the tag - how do we know which "type" it is?
+            const UnionValue *uv = dynamic_cast<const UnionValue *>(value);
+            val_sql << (uv ? uv->Tag() : -1);
         } else {
             auto lit = Literal::From(value);
-            WriteLiteral(lit, val_sql);
+            WriteLiteral(type, lit, val_sql);
         }
         return true;
     });
@@ -328,9 +331,9 @@ string SQLTable::UpsertionSQL(const Value *key, const Value *entity) const {
     stringstream sql;
     int ncols = 0;
     sql << "UPDATE '" << table_name << " SET ";
-    FieldPath fp;
-    DFSWalkValue(entity, fp, 
-    [this, ncols, &sql](int index, const string *key, const Value *value, FieldPath &fp) mutable {
+    /*
+    DFSWalkValue(entity, [this, ncols, &sql]
+    (const Value *value,int index, const string *key, FieldPath &fp) mutable {
         const Column *col = ColumnFor(fp);
         if (col == nullptr) return false;
         if (ncols++ > 0) sql << ", ";
@@ -348,67 +351,7 @@ string SQLTable::UpsertionSQL(const Value *key, const Value *entity) const {
         sql << ColumnFor(fp) << " = ";
         WriteLiteral(keypart, sql);
     }
-    return sql.str();
-#if 0
-void upsertIntoTable(NSArray *columns,
-                     NSArray *values,
-                     NSString *where_clause)
-{
-    // do an update
-    for (NSInteger i = 0, first = -1, count = columns.count;i < count;i++)
-    {
-        id value = [values objectAtIndex:i];
-        if (value && value != [NSNull null])
-        {
-            if (first >= 0)
-                [sql_str appendString:@", "];
-            [sql_str appendFormat:@"%@=%@", [columns objectAtIndex:i], value];
-            first = i;
-        }
-    }
-    f (where_clause)
-        [sql_str appendFormat:@" WHERE %@", where_clause];
-    sqlite3_stmt *update_sql = prepare_sql(database, sql_str, NO);
-    int step_result = sqlite3_step(update_sql);
-    if (step_result != SQLITE_DONE)
-    {
-        NSLog(@"Row Update Error: %s", sqlite3_errmsg(database));
-        assert(NO && "Could not perform row insertion");
-    }
-    int numChanges = sqlite3_changes(database);
-    CLOSE_SQL(update_sql);
-    if (numChanges <= 0)    // no rows updated so insert
-    {
-        // do an insert
-        NSMutableString *columns_str = [NSMutableString string];
-        NSMutableString *values_str = [NSMutableString string];
-        for (NSInteger i = 0, first = -1, count = columns.count;i < count;i++)
-        {
-            id value = [values objectAtIndex:i];
-            if (value && value != [NSNull null])
-            {
-                if (first >= 0)
-                {
-                    [columns_str appendString:@", "];
-                    [values_str appendString:@", "];
-                }
-                [columns_str appendString:[columns objectAtIndex:i]];
-                [values_str appendFormat:@"%@", value];
-                first = i;
-            }
-        }
-        NSMutableString *sql_str = [NSMutableString stringWithFormat:@"INSERT OR REPLACE INTO '%@' (%@) VALUES (%@)",tableName, columns_str, values_str];
-        sqlite3_stmt *insert_sql = prepare_sql(database, sql_str, NO);
-        int step_result = sqlite3_step(insert_sql);
-        if (step_result != SQLITE_DONE)
-        {
-            NSLog(@"Row Insertion Error: %s", sqlite3_errmsg(database));
-            assert(NO && "Could not perform row insertion");
-        }
-        CLOSE_SQL(insert_sql);
-    }
-}
-#endif
+    */
     return sql.str();
 
 }

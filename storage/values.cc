@@ -190,6 +190,11 @@ size_t ListValue::HashCode() const {
     return hash;
 }
 
+Value *ListValue::Get(size_t index) const {
+    if (index >= values.size()) return nullptr;
+    return values[index];
+}
+
 int ListValue::Compare(const Value *another) const {
     const ListValue *that = dynamic_cast<const ListValue *>(another);
     if (!that) {

@@ -23,6 +23,8 @@ public:
     virtual size_t HashCode() const = 0;
     virtual int Compare(const Value *another) const = 0;
     virtual bool Equals(const Value *another) const;
+    // virtual int Compare(const Value &another) const { return Compare(&another); }
+    // virtual bool Equals(const Value &another) const { return Equals(&another); }
     virtual bool operator< (const Value* another) const;
 
     /**

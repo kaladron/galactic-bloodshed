@@ -67,7 +67,6 @@ GTEST("Literals") {
     SHOULD("Compare unequal literal types") {
         auto val1 = StringBoxer("Hello");
         auto val2 = Int8Boxer(42);
-        cout << val1 << ", " << val2 << endl;
         EXPECT_EQ(false, val1->Equals(val2));
         EXPECT_EQ(val1->LitType() - val2->LitType(), val1->Compare(val2));
     }
@@ -93,12 +92,34 @@ GTEST("List Values") {
         EXPECT_EQ(true, lv.HasChildren());
         EXPECT_EQ(true, lv.IsIndexed());
         EXPECT_EQ(false, lv.IsKeyed());
-        EXPECT_EQ(val1->HashCode() + val2->HashCode() + val3->HashCode(),
-                  lv.HashCode());
         EXPECT_EQ(val1, lv.Get(0));
         EXPECT_EQ(val2, lv.Get(1));
         EXPECT_EQ(val3, lv.Get(2));
         EXPECT_EQ(nullptr, lv.Get(3));
+    }
+
+    SHOULD("List HashCode should be sum of child value hash codes") {
+        auto val1 = StringBoxer("hello world");
+        auto val2 = Int8Boxer(42);
+        auto val3 = BoolBoxer(true);
+        vector<Value*> values = { val1, val2, val3 };
+        ListValue lv(values);
+        EXPECT_EQ(val1->HashCode() + val2->HashCode() + val3->HashCode(),
+                  lv.HashCode());
+    }
+
+    SHOULD("List comparison compares values") {
+        auto val1 = StringBoxer("hello world");
+        auto val2 = Int8Boxer(42);
+        auto val3 = BoolBoxer(true);
+        vector<Value*> values = { val1, val2, val3 };
+        ListValue lv1(values);
+        ListValue lv2(values);
+        EXPECT_EQ(0, lv1.Compare(&lv2));
+
+        vector<Value*> values2 = { val1, val3, val2 };
+        ListValue lv3(values2);
+        EXPECT_EQ(val2->Compare(val3), lv2.Compare(&lv3));
     }
 }
 

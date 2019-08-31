@@ -175,7 +175,7 @@ GTEST("Map Values") {
         EXPECT_EQ(h, lv.HashCode());
     }
 
-    SHOULD("List comparison compares values") {
+    SHOULD("Map comparison compares values") {
         auto val1 = StringBoxer("hello world");
         auto val2 = Int8Boxer(42);
         auto val3 = BoolBoxer(true);

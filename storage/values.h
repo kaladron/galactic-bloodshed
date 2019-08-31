@@ -63,11 +63,12 @@ protected:
 class ListValue : public Value {
 public:
     ListValue() { }
+    ListValue(std::vector<Value *> &vals) : values(vals) { }
     virtual int Compare(const Value *another) const;
     virtual size_t HashCode() const;
     virtual bool HasChildren() const;
     virtual size_t ChildCount() const { return values.size(); }
-    virtual Value *Get(size_t index) const { return values[index]; }
+    virtual Value *Get(size_t index) const;
     virtual Value *Set(size_t index, Value *newvalue);
     virtual bool IsIndexed() const { return true; }
 

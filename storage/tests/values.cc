@@ -73,3 +73,32 @@ GTEST("Literals") {
     }
 }
 
+GTEST("List Values") {
+    SHOULD("List value creation") {
+        ListValue lv;
+        EXPECT_EQ(0, lv.ChildCount());
+        EXPECT_EQ(false, lv.HasChildren());
+        EXPECT_EQ(true, lv.IsIndexed());
+        EXPECT_EQ(false, lv.IsKeyed());
+        EXPECT_EQ(0, lv.HashCode());
+    }
+
+    SHOULD("List value with values") {
+        auto val1 = StringBoxer("hello world");
+        auto val2 = Int8Boxer(42);
+        auto val3 = BoolBoxer(true);
+        vector<Value*> values = { val1, val2, val3 };
+        ListValue lv(values);
+        EXPECT_EQ(3, lv.ChildCount());
+        EXPECT_EQ(true, lv.HasChildren());
+        EXPECT_EQ(true, lv.IsIndexed());
+        EXPECT_EQ(false, lv.IsKeyed());
+        EXPECT_EQ(val1->HashCode() + val2->HashCode() + val3->HashCode(),
+                  lv.HashCode());
+        EXPECT_EQ(val1, lv.Get(0));
+        EXPECT_EQ(val2, lv.Get(1));
+        EXPECT_EQ(val3, lv.Get(2));
+        EXPECT_EQ(nullptr, lv.Get(3));
+    }
+}
+

@@ -90,7 +90,7 @@ private:
 
 /// Helpers to box and unbox values of literal types
 
-enum class LiteralType {
+enum LiteralType {
     None,
     Bool,
     UInt8,
@@ -123,7 +123,16 @@ public:
     int Compare(const Value *another) const {
         const TypedLiteral<T> *ourtype = dynamic_cast<const TypedLiteral<T> *>(another);
         if (!ourtype) {
-            return this - ourtype;
+            // see if it is atleast a literal
+            const Literal *littype = dynamic_cast<const Literal *>(another);
+            if (littype) {
+                int litcmp = LitType() - littype->LitType();
+                assert (litcmp != 0 && 
+                        "Literal types are same but classes are different."
+                        "Multiple Literal implementations found.");
+                return litcmp;
+            }
+            return (const Value *)this - another;
         }
         return Comparer<T>()(value, ourtype->value);
     }
@@ -132,12 +141,12 @@ public:
         return hasher(value); 
     }
     const T &LitVal() const { return value; }
-    LiteralType LitType() const { return LEAF_TYPE; }
+    LiteralType LitType() const { return LIT_TYPE; }
     string AsString() const { return to_string(value); }
 
 protected:
     T value;
-    const static LiteralType LEAF_TYPE;
+    const static LiteralType LIT_TYPE;
 };
 
 // Bools need custom conv

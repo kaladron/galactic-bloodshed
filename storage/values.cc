@@ -29,19 +29,19 @@ const Unboxer<float> FloatUnboxer = Unboxer<float>();
 const Unboxer<double> DoubleUnboxer = Unboxer<double>();
 const Unboxer<string> StringUnboxer = Unboxer<string>();
 
-template<> const LiteralType TypedLiteral<bool>::LEAF_TYPE = LiteralType::Bool;
-template<> const LiteralType TypedLiteral<uint8_t>::LEAF_TYPE = LiteralType::UInt8;
-template<> const LiteralType TypedLiteral<uint16_t>::LEAF_TYPE = LiteralType::UInt16;
-template<> const LiteralType TypedLiteral<uint32_t>::LEAF_TYPE = LiteralType::UInt32;
-template<> const LiteralType TypedLiteral<uint64_t>::LEAF_TYPE = LiteralType::UInt64;
-template<> const LiteralType TypedLiteral<int8_t>::LEAF_TYPE = LiteralType::Int8;
-template<> const LiteralType TypedLiteral<int16_t>::LEAF_TYPE = LiteralType::Int16;
-template<> const LiteralType TypedLiteral<int32_t>::LEAF_TYPE = LiteralType::Int32;
-template<> const LiteralType TypedLiteral<int64_t>::LEAF_TYPE = LiteralType::Int64;
-template<> const LiteralType TypedLiteral<float>::LEAF_TYPE = LiteralType::Float;
-template<> const LiteralType TypedLiteral<double>::LEAF_TYPE = LiteralType::Double;
-template<> const LiteralType TypedLiteral<string>::LEAF_TYPE = LiteralType::String;
-template<> const LiteralType TypedLiteral<stringbuf>::LEAF_TYPE = LiteralType::Bytes;
+template<> const LiteralType TypedLiteral<bool>::LIT_TYPE = LiteralType::Bool;
+template<> const LiteralType TypedLiteral<uint8_t>::LIT_TYPE = LiteralType::UInt8;
+template<> const LiteralType TypedLiteral<uint16_t>::LIT_TYPE = LiteralType::UInt16;
+template<> const LiteralType TypedLiteral<uint32_t>::LIT_TYPE = LiteralType::UInt32;
+template<> const LiteralType TypedLiteral<uint64_t>::LIT_TYPE = LiteralType::UInt64;
+template<> const LiteralType TypedLiteral<int8_t>::LIT_TYPE = LiteralType::Int8;
+template<> const LiteralType TypedLiteral<int16_t>::LIT_TYPE = LiteralType::Int16;
+template<> const LiteralType TypedLiteral<int32_t>::LIT_TYPE = LiteralType::Int32;
+template<> const LiteralType TypedLiteral<int64_t>::LIT_TYPE = LiteralType::Int64;
+template<> const LiteralType TypedLiteral<float>::LIT_TYPE = LiteralType::Float;
+template<> const LiteralType TypedLiteral<double>::LIT_TYPE = LiteralType::Double;
+template<> const LiteralType TypedLiteral<string>::LIT_TYPE = LiteralType::String;
+template<> const LiteralType TypedLiteral<stringbuf>::LIT_TYPE = LiteralType::Bytes;
 
 //////////////////  Value Implementation  //////////////////
 

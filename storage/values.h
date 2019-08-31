@@ -14,23 +14,6 @@ using ValueMap = std::map<std::string, Value *>;
 using ValueList = std::list<Value *>;
 using ValueVector = std::vector<Value *>;
 
-enum class LiteralType {
-    None,
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Float,
-    Double,
-    String,
-    Bytes
-};
-
 /**
  * Value is a super-interface for holding a hierarchy of typed values.
  */
@@ -60,42 +43,6 @@ public:
     virtual Value *Get(const std::string &key) const;
     virtual Value *Set(const std::string &key, Value *newvalue);
 };
-
-class Literal : public Value {
-public:
-    virtual LiteralType LitType() const { return LiteralType::None; }
-    // Writes the value out to an output stream, possibly as a string if required
-    virtual string AsString() const = 0;
-    static const Literal *From(const Value *v);
-    static Literal *From(Value *v);
-};
-
-template <typename T>
-class TypedLiteral : public Literal {
-public:
-    TypedLiteral(const T &val) : value(val) { }
-    int Compare(const Value *another) const {
-        const TypedLiteral<T> *ourtype = dynamic_cast<const TypedLiteral<T> *>(another);
-        if (!ourtype) {
-            return this - ourtype;
-        }
-        return Comparer<T>()(value, ourtype->value);
-    }
-    size_t HashCode() const { 
-        std::hash<T> hasher;
-        return hasher(value); 
-    }
-    const T &LitVal() const { return value; }
-    LiteralType LitType() const { return LEAF_TYPE; }
-    string AsString() const { return to_string(value); }
-
-protected:
-    T value;
-    const static LiteralType LEAF_TYPE;
-};
-
-// Strings dont need a conversion!
-template <> string TypedLiteral<string>::AsString() const;
 
 class MapValue : public Value {
 public:
@@ -143,9 +90,64 @@ private:
 
 /// Helpers to box and unbox values of literal types
 
+enum class LiteralType {
+    None,
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Float,
+    Double,
+    String,
+    Bytes
+};
+
+class Literal : public Value {
+public:
+    virtual LiteralType LitType() const { return LiteralType::None; }
+    // Writes the value out to an output stream, possibly as a string if required
+    virtual string AsString() const = 0;
+    static const Literal *From(const Value *v);
+    static Literal *From(Value *v);
+};
+
+template <typename T>
+class TypedLiteral : public Literal {
+public:
+    TypedLiteral(const T &val) : value(val) { }
+    int Compare(const Value *another) const {
+        const TypedLiteral<T> *ourtype = dynamic_cast<const TypedLiteral<T> *>(another);
+        if (!ourtype) {
+            return this - ourtype;
+        }
+        return Comparer<T>()(value, ourtype->value);
+    }
+    size_t HashCode() const { 
+        std::hash<T> hasher;
+        return hasher(value); 
+    }
+    const T &LitVal() const { return value; }
+    LiteralType LitType() const { return LEAF_TYPE; }
+    string AsString() const { return to_string(value); }
+
+protected:
+    T value;
+    const static LiteralType LEAF_TYPE;
+};
+
+// Bools need custom conv
+template <> string TypedLiteral<bool>::AsString() const;
+// Strings dont need a conversion!
+template <> string TypedLiteral<string>::AsString() const;
+
 template <typename T>
 struct Boxer {
-    Value *operator()(const T &value) const {
+    Literal *operator()(const T &value) const {
         return new TypedLiteral(value);
     }
 };
@@ -162,20 +164,28 @@ struct Unboxer {
     }
 };
 
-extern const Boxer<char> CharBoxer;
-extern const Boxer<int> IntBoxer;
-extern const Boxer<unsigned> UIntBoxer;
-extern const Boxer<long> LongBoxer;
-extern const Boxer<unsigned long> ULongBoxer;
+extern const Boxer<bool> BoolBoxer;
+extern const Boxer<int8_t> Int8Boxer;
+extern const Boxer<int16_t> Int16Boxer;
+extern const Boxer<int32_t> Int32Boxer;
+extern const Boxer<int64_t> Int64Boxer;
+extern const Boxer<uint8_t> UInt8Boxer;
+extern const Boxer<uint16_t> UInt16Boxer;
+extern const Boxer<uint32_t> UInt32Boxer;
+extern const Boxer<uint64_t> UInt64Boxer;
 extern const Boxer<float> FloatBoxer;
 extern const Boxer<double> DoubleBoxer;
 extern const Boxer<string> StringBoxer;
 
-extern const Unboxer<char> CharUnboxer;
-extern const Unboxer<int> IntUnboxer;
-extern const Unboxer<unsigned> UIntUnboxer;
-extern const Unboxer<long> LongUnboxer;
-extern const Unboxer<unsigned long> ULongUnboxer;
+extern const Unboxer<bool> BoolUnboxer;
+extern const Unboxer<int8_t> Int8Unboxer;
+extern const Unboxer<int16_t> Int16Unboxer;
+extern const Unboxer<int32_t> Int32Unboxer;
+extern const Unboxer<int64_t> Int64Unboxer;
+extern const Unboxer<uint8_t> UInt8Unboxer;
+extern const Unboxer<uint16_t> UInt16Unboxer;
+extern const Unboxer<uint32_t> UInt32Unboxer;
+extern const Unboxer<uint64_t> UInt64Unboxer;
 extern const Unboxer<float> FloatUnboxer;
 extern const Unboxer<double> DoubleUnboxer;
 extern const Unboxer<string> StringUnboxer;

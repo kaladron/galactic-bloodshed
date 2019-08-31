@@ -51,6 +51,7 @@ GB_LDADD = libgblib.a libcommands.a
 
 libcommands_a_SOURCES = \
 		     commands/analysis.cc \
+		     commands/announce.cc \
 		     commands/autoreport.cc \
 		     commands/capital.cc \
 		     commands/capture.cc \

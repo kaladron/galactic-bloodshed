@@ -33,6 +33,7 @@
 #include "gb/buffers.h"
 #include "gb/build.h"
 #include "gb/commands/analysis.h"
+#include "gb/commands/announce.h"
 #include "gb/commands/autoreport.h"
 #include "gb/commands/capital.h"
 #include "gb/commands/capture.h"

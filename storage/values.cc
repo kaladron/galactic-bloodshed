@@ -3,20 +3,28 @@
 
 START_NS
 
-const Boxer<char> CharBoxer = Boxer<char>();
-const Boxer<int> IntBoxer = Boxer<int>();
-const Boxer<unsigned> UIntBoxer = Boxer<unsigned>();
-const Boxer<long> LongBoxer = Boxer<long>();
-const Boxer<unsigned long> ULongBoxer = Boxer<unsigned long>();
+const Boxer<bool> BoolBoxer = Boxer<bool>();
+const Boxer<int8_t> Int8Boxer = Boxer<int8_t>();
+const Boxer<int16_t> Int16Boxer = Boxer<int16_t>();
+const Boxer<int32_t> Int32Boxer = Boxer<int32_t>();
+const Boxer<int64_t> Int64Boxer = Boxer<int64_t>();
+const Boxer<uint8_t> UInt8Boxer = Boxer<uint8_t>();
+const Boxer<uint16_t> UInt16Boxer = Boxer<uint16_t>();
+const Boxer<uint32_t> UInt32Boxer = Boxer<uint32_t>();
+const Boxer<uint64_t> UInt64Boxer = Boxer<uint64_t>();
 const Boxer<float> FloatBoxer = Boxer<float>();
 const Boxer<double> DoubleBoxer = Boxer<double>();
 const Boxer<string> StringBoxer = Boxer<string>();
 
-const Unboxer<char> CharUnboxer = Unboxer<char>();
-const Unboxer<int> IntUnboxer = Unboxer<int>();
-const Unboxer<unsigned> UIntUnboxer = Unboxer<unsigned>();
-const Unboxer<long> LongUnboxer = Unboxer<long>();
-const Unboxer<unsigned long> ULongUnboxer = Unboxer<unsigned long>();
+const Unboxer<bool> BoolUnboxer = Unboxer<bool>();
+const Unboxer<int8_t> Int8Unboxer = Unboxer<int8_t>();
+const Unboxer<int16_t> Int16Unboxer = Unboxer<int16_t>();
+const Unboxer<int32_t> Int32Unboxer = Unboxer<int32_t>();
+const Unboxer<int64_t> Int64Unboxer = Unboxer<int64_t>();
+const Unboxer<uint8_t> UInt8Unboxer = Unboxer<uint8_t>();
+const Unboxer<uint16_t> UInt16Unboxer = Unboxer<uint16_t>();
+const Unboxer<uint32_t> UInt32Unboxer = Unboxer<uint32_t>();
+const Unboxer<uint64_t> UInt64Unboxer = Unboxer<uint64_t>();
 const Unboxer<float> FloatUnboxer = Unboxer<float>();
 const Unboxer<double> DoubleUnboxer = Unboxer<double>();
 const Unboxer<string> StringUnboxer = Unboxer<string>();
@@ -55,6 +63,12 @@ Value *Value::Get(const std::string &key) const { return nullptr; }
 
 Value *Value::Set(size_t index, Value *newvalue) { }
 Value *Value::Set(const std::string &key, Value *newvalue) { }
+
+template <>
+string TypedLiteral<bool>::AsString() const
+{
+    return value ? "true" : "false";
+}
 
 template <>
 string TypedLiteral<string>::AsString() const

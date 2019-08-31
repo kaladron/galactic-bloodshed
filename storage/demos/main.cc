@@ -21,7 +21,7 @@ struct Address {
     string zipcode;
     string region;
     string country;
-    int address_type;
+    uint8_t address_type;
 };
 
 Value *addressToValue(const Address &address) {
@@ -31,7 +31,7 @@ Value *addressToValue(const Address &address) {
     out->Set("city", StringBoxer(address.city));
     out->Set("region", StringBoxer(address.region));
     out->Set("country", StringBoxer(address.country));
-    out->Set("address_type", IntBoxer(address.address_type));
+    out->Set("address_type", UInt8Boxer(address.address_type));
     return out;
 }
 
@@ -41,11 +41,11 @@ bool valueToAddress(const Value *const input, Address &address) {
            StringUnboxer(input->Get("city"), address.city) &&
            StringUnboxer(input->Get("region"), address.region) &&
            StringUnboxer(input->Get("country"), address.country) &&
-           IntUnboxer(input->Get("address_type"), address.address_type);
+           UInt8Unboxer(input->Get("address_type"), address.address_type);
 }
 
 struct Person {
-    int id;
+    uint32_t id;
     string name;
     long dob;
     string gender;
@@ -54,18 +54,18 @@ struct Person {
 
 Value *personToValue(const Person &person) {
     Value *out = new MapValue();
-    out->Set("id", IntBoxer(person.id));
+    out->Set("id", UInt32Boxer(person.id));
     out->Set("name", StringBoxer(person.name));
-    out->Set("dob", LongBoxer(person.dob));
+    out->Set("dob", Int64Boxer(person.dob));
     out->Set("gender", StringBoxer(person.gender));
     out->Set("address", addressToValue(person.address));
     return out;
 }
 
 bool valueToPerson(const Value *const input, Person &person) {
-    return IntUnboxer(input->Get("id"), person.id) &&
+    return UInt32Unboxer(input->Get("id"), person.id) &&
            StringUnboxer(input->Get("name"), person.name) &&
-           LongUnboxer(input->Get("dob"), person.dob) &&
+           Int64Unboxer(input->Get("dob"), person.dob) &&
            StringUnboxer(input->Get("gender"), person.gender) &&
            valueToAddress(input->Get("address"), person.address);
 }

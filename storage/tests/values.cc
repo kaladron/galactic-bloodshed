@@ -50,18 +50,26 @@ GTEST("Literals") {
         EXPECT_EQ(hash<float>()(42.5), value3->HashCode());
     }
 
-    SHOULD("Compare equal types") {
+    SHOULD("Compare equal values") {
         auto val1 = StringBoxer("Hello");
         auto val2 = StringBoxer("Hello");
         EXPECT_EQ(true, val1->Equals(val2));
         EXPECT_EQ(0, val1->Compare(val2));
     }
 
-    SHOULD("Compare unequal types") {
+    SHOULD("Compare unequal values") {
         auto val1 = StringBoxer("Hello");
         auto val2 = StringBoxer("World");
         EXPECT_EQ(false, val1->Equals(val2));
         EXPECT_EQ(-1, val1->Compare(val2));
+    }
+
+    SHOULD("Compare unequal literal types") {
+        auto val1 = StringBoxer("Hello");
+        auto val2 = Int8Boxer(42);
+        cout << val1 << ", " << val2 << endl;
+        EXPECT_EQ(false, val1->Equals(val2));
+        EXPECT_EQ(val1->LitType() - val2->LitType(), val1->Compare(val2));
     }
 }
 

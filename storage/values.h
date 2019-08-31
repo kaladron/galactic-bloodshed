@@ -162,19 +162,23 @@ struct Unboxer {
     }
 };
 
-const auto CharBoxer = Boxer<char>();
-const auto IntBoxer = Boxer<int>();
-const auto UIntBoxer = Boxer<unsigned>();
-const auto LongBoxer = Boxer<long>();
-const auto ULongBoxer = Boxer<unsigned long>();
-const auto StringBoxer = Boxer<string>();
+extern const Boxer<char> CharBoxer;
+extern const Boxer<int> IntBoxer;
+extern const Boxer<unsigned> UIntBoxer;
+extern const Boxer<long> LongBoxer;
+extern const Boxer<unsigned long> ULongBoxer;
+extern const Boxer<float> FloatBoxer;
+extern const Boxer<double> DoubleBoxer;
+extern const Boxer<string> StringBoxer;
 
-const auto CharUnboxer = Unboxer<char>();
-const auto IntUnboxer = Unboxer<int>();
-const auto UIntUnboxer = Unboxer<unsigned>();
-const auto LongUnboxer = Unboxer<long>();
-const auto ULongUnboxer = Unboxer<unsigned long>();
-const auto StringUnboxer = Unboxer<string>();
+extern const Unboxer<char> CharUnboxer;
+extern const Unboxer<int> IntUnboxer;
+extern const Unboxer<unsigned> UIntUnboxer;
+extern const Unboxer<long> LongUnboxer;
+extern const Unboxer<unsigned long> ULongUnboxer;
+extern const Unboxer<float> FloatUnboxer;
+extern const Unboxer<double> DoubleUnboxer;
+extern const Unboxer<string> StringUnboxer;
 
 // Helper methods
 

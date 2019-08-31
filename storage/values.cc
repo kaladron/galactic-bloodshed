@@ -3,6 +3,24 @@
 
 START_NS
 
+const Boxer<char> CharBoxer = Boxer<char>();
+const Boxer<int> IntBoxer = Boxer<int>();
+const Boxer<unsigned> UIntBoxer = Boxer<unsigned>();
+const Boxer<long> LongBoxer = Boxer<long>();
+const Boxer<unsigned long> ULongBoxer = Boxer<unsigned long>();
+const Boxer<float> FloatBoxer = Boxer<float>();
+const Boxer<double> DoubleBoxer = Boxer<double>();
+const Boxer<string> StringBoxer = Boxer<string>();
+
+const Unboxer<char> CharUnboxer = Unboxer<char>();
+const Unboxer<int> IntUnboxer = Unboxer<int>();
+const Unboxer<unsigned> UIntUnboxer = Unboxer<unsigned>();
+const Unboxer<long> LongUnboxer = Unboxer<long>();
+const Unboxer<unsigned long> ULongUnboxer = Unboxer<unsigned long>();
+const Unboxer<float> FloatUnboxer = Unboxer<float>();
+const Unboxer<double> DoubleUnboxer = Unboxer<double>();
+const Unboxer<string> StringUnboxer = Unboxer<string>();
+
 template<> const LiteralType TypedLiteral<bool>::LEAF_TYPE = LiteralType::Bool;
 template<> const LiteralType TypedLiteral<uint8_t>::LEAF_TYPE = LiteralType::UInt8;
 template<> const LiteralType TypedLiteral<uint16_t>::LEAF_TYPE = LiteralType::UInt16;

@@ -104,8 +104,11 @@ GTEST("List Values") {
         auto val3 = BoolBoxer(true);
         vector<Value*> values = { val1, val2, val3 };
         ListValue lv(values);
-        EXPECT_EQ(val1->HashCode() + val2->HashCode() + val3->HashCode(),
-                  lv.HashCode());
+        size_t h = 0;
+        for (int i = 0;i < lv.ChildCount();i++) {
+            h += lv.Get(i)->HashCode();
+        }
+        EXPECT_EQ(h, lv.HashCode());
     }
 
     SHOULD("List comparison compares values") {
@@ -119,6 +122,78 @@ GTEST("List Values") {
 
         vector<Value*> values2 = { val1, val3, val2 };
         ListValue lv3(values2);
+        EXPECT_EQ(val2->Compare(val3), lv2.Compare(&lv3));
+    }
+}
+
+GTEST("Map Values") {
+    SHOULD("Map value creation") {
+        MapValue lv;
+        EXPECT_EQ(0, lv.ChildCount());
+        EXPECT_EQ(false, lv.HasChildren());
+        EXPECT_EQ(false, lv.IsIndexed());
+        EXPECT_EQ(true, lv.IsKeyed());
+        EXPECT_EQ(0, lv.HashCode());
+    }
+
+    SHOULD("Map value with values") {
+        auto val1 = StringBoxer("hello world");
+        auto val2 = Int8Boxer(42);
+        auto val3 = BoolBoxer(true);
+        map<string, Value*> values = { 
+            {"1", val1},
+            {"2", val2},
+            {"3", val3}
+        };
+        MapValue lv(values);
+        EXPECT_EQ(3, lv.ChildCount());
+        EXPECT_EQ(true, lv.HasChildren());
+        EXPECT_EQ(false, lv.IsIndexed());
+        EXPECT_EQ(true, lv.IsKeyed());
+        EXPECT_EQ(val1, lv.Get("1"));
+        EXPECT_EQ(val2, lv.Get("2"));
+        EXPECT_EQ(val3, lv.Get("3"));
+        EXPECT_EQ(nullptr, lv.Get("4"));
+    }
+
+    SHOULD("Map HashCode should be sum of child key and value hash codes") {
+        auto val1 = StringBoxer("hello world");
+        auto val2 = Int8Boxer(42);
+        auto val3 = BoolBoxer(true);
+        map<string, Value*> values = { 
+            {"1", val1},
+            {"2", val2},
+            {"3", val3}
+        };
+        MapValue lv(values);
+        hash<string> hasher;
+        size_t h = 0;
+        for (auto key : lv.Keys()) {
+            h += hasher(key);
+            h += lv.Get(key)->HashCode();
+        }
+        EXPECT_EQ(h, lv.HashCode());
+    }
+
+    SHOULD("List comparison compares values") {
+        auto val1 = StringBoxer("hello world");
+        auto val2 = Int8Boxer(42);
+        auto val3 = BoolBoxer(true);
+        map<string, Value*> values = { 
+            {"1", val1},
+            {"2", val2},
+            {"3", val3}
+        };
+        MapValue lv1(values);
+        MapValue lv2(values);
+        EXPECT_EQ(0, lv1.Compare(&lv2));
+
+        map<string, Value*> values2 = { 
+            {"1", val1},
+            {"2", val3},    // -> order swapped here
+            {"3", val2}
+        };
+        MapValue lv3(values2);
         EXPECT_EQ(val2->Compare(val3), lv2.Compare(&lv3));
     }
 }

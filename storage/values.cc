@@ -1,5 +1,6 @@
 
 #include "storage/storage.h"
+#include <iostream>
 
 START_NS
 
@@ -136,9 +137,12 @@ int UnionValue::Compare(const Value *another) const {
 /////////////////  MapValue Implementation  /////////////////
 
 size_t MapValue::HashCode() const {
-    int h = 0;
+    std::hash<string> hasher;
+    size_t h = 0;
     for (auto it : values) {
-        h += std::hash<string>{}(it.first);
+        std::cout << "Key Hash: " << it.first << ", " << hasher(it.first) << endl;
+        std::cout << "Value Hash: " << it.second << ", " << (it.second)->HashCode() << endl;
+        h += hasher(it.first);
         h += (it.second)->HashCode();
     }
     return h;

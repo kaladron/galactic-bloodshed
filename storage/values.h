@@ -49,6 +49,7 @@ public:
 class MapValue : public Value {
 public:
     MapValue() { }
+    MapValue(ValueMap &vals) : values(vals) { }
     virtual int Compare(const Value *another) const;
     virtual size_t HashCode() const;
     virtual bool HasChildren() const;
@@ -65,7 +66,7 @@ protected:
 class ListValue : public Value {
 public:
     ListValue() { }
-    ListValue(std::vector<Value *> &vals) : values(vals) { }
+    ListValue(ValueVector &vals) : values(vals) { }
     virtual int Compare(const Value *another) const;
     virtual size_t HashCode() const;
     virtual bool HasChildren() const;

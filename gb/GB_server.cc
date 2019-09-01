@@ -165,7 +165,7 @@ static void set_signals();
 static void queue_string(DescriptorData &, const std::string &);
 static void add_to_queue(std::deque<TextBlock> &, const std::string &);
 static void help(const command_t &, GameObj &);
-static void process_command(DescriptorData &, const command_t &argv);
+static void process_command(GameObj &, const command_t &argv);
 static int shovechars(int, Db &);
 
 static void GB_time(const command_t &, GameObj &);
@@ -346,46 +346,46 @@ std::tuple<std::string, std::string> parse_connect(const std::string &message) {
 
 /**
  * \brief Create a prompt that shows the current AP and location of the player
- * \param d Game Object with player information
+ * \param g Game Object with player information
  * \return Prompt string for display to the user
  */
-std::string do_prompt(DescriptorData &d) {
-  player_t Playernum = d.player;
+std::string do_prompt(GameObj &g) {
+  player_t Playernum = g.player;
   std::stringstream prompt;
 
-  switch (d.level) {
+  switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << boost::format(" ( [%d] / )\n") % Sdata.AP[Playernum - 1];
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << boost::format(" ( [%d] /%s )\n") %
-                    Stars[d.snum]->AP[Playernum - 1] % Stars[d.snum]->name;
+                    Stars[g.snum]->AP[Playernum - 1] % Stars[g.snum]->name;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << boost::format(" ( [%d] /%s/%s )\n") %
-                    Stars[d.snum]->AP[Playernum - 1] % Stars[d.snum]->name %
-                    Stars[d.snum]->pnames[d.pnum];
+                    Stars[g.snum]->AP[Playernum - 1] % Stars[g.snum]->name %
+                    Stars[g.snum]->pnames[g.pnum];
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.
   }
 
-  auto s = getship(d.shipno);
+  auto s = getship(g.shipno);
   switch (s->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << boost::format(" ( [%d] /#%ld )\n") % Sdata.AP[Playernum - 1] %
-                    d.shipno;
+                    g.shipno;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << boost::format(" ( [%d] /%s/#%ld )\n") %
                     Stars[s->storbits]->AP[Playernum - 1] %
-                    Stars[s->storbits]->name % d.shipno;
+                    Stars[s->storbits]->name % g.shipno;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << boost::format(" ( [%d] /%s/%s/#%ld )\n") %
                     Stars[s->storbits]->AP[Playernum - 1] %
                     Stars[s->storbits]->name %
-                    Stars[s->storbits]->pnames[d.pnum] % d.shipno;
+                    Stars[s->storbits]->pnames[g.pnum] % g.shipno;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.  (Ship within a ship)
@@ -399,19 +399,19 @@ std::string do_prompt(DescriptorData &d) {
   switch (s2->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << boost::format(" ( [%d] /#%lu/#%lu )\n") %
-                    Sdata.AP[Playernum - 1] % s->destshipno % d.shipno;
+                    Sdata.AP[Playernum - 1] % s->destshipno % g.shipno;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << boost::format(" ( [%d] /%s/#%lu/#%lu )\n") %
                     Stars[s->storbits]->AP[Playernum - 1] %
-                    Stars[s->storbits]->name % s->destshipno % d.shipno;
+                    Stars[s->storbits]->name % s->destshipno % g.shipno;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << boost::format(" ( [%d] /%s/%s/#%ld/#%ld )\n") %
                     Stars[s->storbits]->AP[Playernum - 1] %
                     Stars[s->storbits]->name %
-                    Stars[s->storbits]->pnames[d.pnum] % s->destshipno %
-                    d.shipno;
+                    Stars[s->storbits]->pnames[g.pnum] % s->destshipno %
+                    g.shipno;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.  (Ship w/in ship w/in ship)
@@ -423,19 +423,19 @@ std::string do_prompt(DescriptorData &d) {
   switch (s2->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << boost::format(" ( [%d] / /../#%ld/#%ld )\n") %
-                    Sdata.AP[Playernum - 1] % s->destshipno % d.shipno;
+                    Sdata.AP[Playernum - 1] % s->destshipno % g.shipno;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << boost::format(" ( [%d] /%s/ /../#%ld/#%ld )\n") %
                     Stars[s->storbits]->AP[Playernum - 1] %
-                    Stars[s->storbits]->name % s->destshipno % d.shipno;
+                    Stars[s->storbits]->name % s->destshipno % g.shipno;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << boost::format(" ( [%d] /%s/%s/ /../#%ld/#%ld )\n") %
                     Stars[s->storbits]->AP[Playernum - 1] %
                     Stars[s->storbits]->name %
-                    Stars[s->storbits]->pnames[d.pnum] % s->destshipno %
-                    d.shipno;
+                    Stars[s->storbits]->pnames[g.pnum] % s->destshipno %
+                    g.shipno;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // (Ship w/in ship w/in ship w/in ship)
@@ -1279,27 +1279,27 @@ static void dump_users(DescriptorData &e) {
 
 //* Dispatch to the function to run the command based on the string input by the
 // user.
-static void process_command(DescriptorData &d, const command_t &argv) {
-  int God = races[d.player - 1]->God;
+static void process_command(GameObj &g, const command_t &argv) {
+  int God = races[g.player - 1]->God;
 
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
-    command->second(argv, d);
+    command->second(argv, g);
   } else if (argv[0] == "purge" && God)
     purge();
   else if (argv[0] == "@@shutdown" && God) {
     shutdown_flag = 1;
-    d.out << "Doing shutdown.\n";
+    g.out << "Doing shutdown.\n";
   } else if (argv[0] == "@@update" && God)
     do_update(true);
   else if (argv[0] == "@@segment" && God)
     do_segment(1, std::stoi(argv[1]));
   else {
-    d.out << "'" << argv[0] << "':illegal command error.\n";
+    g.out << "'" << argv[0] << "':illegal command error.\n";
   }
 
   /* compute the prompt and send to the player */
-  d.out << do_prompt(d);
+  g.out << do_prompt(g);
 }
 
 static void load_race_data() {

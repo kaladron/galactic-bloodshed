@@ -7,7 +7,6 @@
 
 #include "gb/vars.h"
 
-void mobilize(const command_t &, GameObj &);
 int control(int, int, startype *);
 
 #endif  // MOBILIZ_H

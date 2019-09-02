@@ -23,42 +23,6 @@
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
 
-void mobilize(const command_t &argv, GameObj &g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
-  int APcount = 1;
-
-  if (g.level != ScopeLevel::LEVEL_PLAN) {
-    g.out << "scope must be a planet.\n";
-    return;
-  }
-  if (!control(Playernum, Governor, Stars[g.snum])) {
-    g.out << "You are not authorized to do this here.\n";
-    return;
-  }
-  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount)) {
-    return;
-  }
-
-  auto p = getplanet(g.snum, g.pnum);
-
-  if (argv.size() < 2) {
-    sprintf(buf, "Current mobilization: %d    Quota: %d\n",
-            p.info[Playernum - 1].comread, p.info[Playernum - 1].mob_set);
-    notify(Playernum, Governor, buf);
-    return;
-  }
-  int sum_mob = std::stoi(argv[1]);
-
-  if (sum_mob > 100 || sum_mob < 0) {
-    g.out << "Illegal value.\n";
-    return;
-  }
-  p.info[Playernum - 1].mob_set = sum_mob;
-  putplanet(p, Stars[g.snum], g.pnum);
-  deductAPs(Playernum, Governor, APcount, g.snum, 0);
-}
-
 int control(int Playernum, int Governor, startype *star) {
   return (!Governor || star->governor[Playernum - 1] == Governor);
 }

@@ -45,6 +45,7 @@
 #include "gb/commands/governors.h"
 #include "gb/commands/grant.h"
 #include "gb/commands/highlight.h"
+#include "gb/commands/mobilize.h"
 #include "gb/commands/orbit.h"
 #include "gb/commands/production.h"
 #include "gb/commands/relation.h"

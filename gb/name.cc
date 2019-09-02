@@ -21,10 +21,10 @@
 #include "gb/files_shl.h"
 #include "gb/getplace.h"
 #include "gb/max.h"
-#include "gb/mobiliz.h"
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
+#include "gb/star.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
 #include "gb/utils/rand.h"
@@ -255,7 +255,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     g.out << "You must 'cs' to the planet you wish to try it on.\n";
     return;
   }
-  if (!control(Playernum, Governor, Stars[g.snum])) {
+  if (!control(*Stars[g.snum], Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }

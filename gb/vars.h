@@ -49,7 +49,7 @@ using command_t = std::vector<std::string>;
 typedef char hugestr[HUGESTRLEN];
 
 using planettype = class Planet;
-using startype = struct star;
+using startype = struct Star;
 using commodtype = struct commod;
 
 struct plinfo {            /* planetary stockpiles */
@@ -229,7 +229,7 @@ class SectorMap {
   std::vector<Sector> vec_;
 };
 
-struct star {
+struct Star {
   unsigned short ships;            /* 1st ship in orbit */
   char name[NAMESIZE];             /* name of star */
   governor_t governor[MAXPLAYERS]; /* which subordinate maintains the system */

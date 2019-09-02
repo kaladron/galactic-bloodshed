@@ -13,7 +13,6 @@
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/files_shl.h"
-#include "gb/mobiliz.h"
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"

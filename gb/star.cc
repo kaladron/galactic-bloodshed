@@ -1,9 +1,9 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
+// Copyright 2019 The Galactic Bloodshed Authors. All rights reserved.
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/// \file mobiliz.c
-/// \brief Persuade people to build military stuff.
+/// \file star.cc
+/// \brief Definition for Star Class.
 
 /*
  *    Sectors that are mobilized produce Destructive Potential in
@@ -11,7 +11,7 @@
  *    damage-resistant.
  */
 
-#include "gb/mobiliz.h"
+#include "gb/star.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -23,6 +23,6 @@
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
 
-int control(int Playernum, int Governor, startype *star) {
-  return (!Governor || star->governor[Playernum - 1] == Governor);
+int control(const Star& star, player_t Playernum, governor_t Governor) {
+  return (!Governor || star.governor[Playernum - 1] == Governor);
 }

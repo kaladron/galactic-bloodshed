@@ -13,8 +13,8 @@
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/files_shl.h"
-#include "gb/mobiliz.h"
 #include "gb/shlmisc.h"
+#include "gb/star.h"
 #include "gb/tech.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
@@ -29,7 +29,7 @@ void technology(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     return;
   }
-  if (!control(Playernum, Governor, Stars[g.snum])) {
+  if (!control(*Stars[g.snum], Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }

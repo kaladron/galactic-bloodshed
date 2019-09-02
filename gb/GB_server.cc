@@ -73,7 +73,6 @@
 #include "gb/launch.h"
 #include "gb/load.h"
 #include "gb/map.h"
-#include "gb/mobiliz.h"
 #include "gb/move.h"
 #include "gb/name.h"
 #include "gb/order.h"

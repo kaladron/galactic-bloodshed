@@ -95,7 +95,6 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     load.cc \
 		     map.cc \
 		     max.cc \
-		     mobiliz.cc \
 		     move.cc \
 		     moveplanet.cc \
 		     moveship.cc \
@@ -110,6 +109,7 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     ships.cc \
 		     shlmisc.cc \
 		     shootblast.cc \
+		     star.cc \
 		     survey.cc \
 		     tech.cc \
 		     tele.cc \

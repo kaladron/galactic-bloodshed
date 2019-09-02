@@ -63,6 +63,7 @@ libcommands_a_SOURCES = \
 		     commands/governors.cc \
 		     commands/grant.cc \
 		     commands/highlight.cc \
+		     commands/mobilize.cc \
 		     commands/orbit.cc \
 		     commands/production.cc \
 		     commands/relation.cc \

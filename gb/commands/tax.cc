@@ -12,9 +12,9 @@
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/files_shl.h"
-#include "gb/mobiliz.h"
 #include "gb/races.h"
 #include "gb/shlmisc.h"
+#include "gb/star.h"
 #include "gb/vars.h"
 
 void tax(const command_t &argv, GameObj &g) {
@@ -26,7 +26,7 @@ void tax(const command_t &argv, GameObj &g) {
     g.out << "scope must be a planet.\n";
     return;
   }
-  if (!control(Playernum, Governor, Stars[g.snum])) {
+  if (!control(*Stars[g.snum], Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }

@@ -21,7 +21,6 @@
 #include "gb/files_shl.h"
 #include "gb/getplace.h"
 #include "gb/max.h"
-#include "gb/mobiliz.h"
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"

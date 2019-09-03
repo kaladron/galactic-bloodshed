@@ -9,10 +9,14 @@
 
 class Place { /* used in function return for finding place */
  public:
+  Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_,
+        shipnum_t shipno_)
+      : level(level_), snum(snum_), pnum(pnum_), shipno(shipno_) {}
+  Place() {}
+  ScopeLevel level;
   starnum_t snum;
   planetnum_t pnum;
   shipnum_t shipno;
-  ScopeLevel level;      /* .level */
   unsigned char err = 0; /* if error */
   std::string to_string();
 };

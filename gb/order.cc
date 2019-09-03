@@ -601,13 +601,13 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
 }
 
 static std::string prin_aimed_at(const Ship &ship) {
-  Place targ(ship.special.aimed_at.level, ship.special.aimed_at.snum,
-             ship.special.aimed_at.pnum, ship.special.aimed_at.shipno);
+  Place targ{ship.special.aimed_at.level, ship.special.aimed_at.snum,
+             ship.special.aimed_at.pnum, ship.special.aimed_at.shipno};
   return targ.to_string();
 }
 
 std::string prin_ship_dest(const Ship &ship) {
-  Place dest(ship.whatdest, ship.deststar, ship.destpnum, ship.destshipno);
+  Place dest{ship.whatdest, ship.deststar, ship.destpnum, ship.destshipno};
   return dest.to_string();
 }
 

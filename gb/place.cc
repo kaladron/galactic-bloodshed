@@ -5,6 +5,7 @@
 #include "gb/place.h"
 
 #include <sstream>
+#include "gb/getplace.h"
 
 std::string Place::to_string() {
   std::ostringstream out;
@@ -22,4 +23,13 @@ std::string Place::to_string() {
       out << "/";
       return out.str();
   }
+}
+
+Place::Place(GameObj& g, const std::string& in, bool ignore_explore) {
+  auto tmp = getplace(g, in, ignore_explore);
+  level = tmp.level;
+  snum = tmp.snum;
+  pnum = tmp.pnum;
+  shipno = tmp.shipno;
+  err = tmp.err;
 }

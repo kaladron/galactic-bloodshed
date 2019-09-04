@@ -51,7 +51,7 @@ void capital(const command_t &argv, GameObj &g) {
 
   if (argv.size() == 2) {
     shipnum_t snum = s->storbits;
-    if (testship(Playernum, Governor, *s)) {
+    if (testship(*s, Playernum, Governor)) {
       g.out << "You can't do that!\n";
       return;
     }

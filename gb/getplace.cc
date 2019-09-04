@@ -224,26 +224,3 @@ char *Dispshiploc(Ship *ship) {
       return (Disps);
   }
 }
-
-bool testship(const player_t playernum, const governor_t governor,
-              const Ship &s) {
-  if (!s.alive) {
-    sprintf(buf, "%s has been destroyed.\n", ship_to_string(s).c_str());
-    notify(playernum, governor, buf);
-    return true;
-  }
-
-  if (s.owner != playernum || !authorized(governor, s)) {
-    DontOwnErr(playernum, governor, s.number);
-    return true;
-  }
-
-  if (!s.active) {
-    sprintf(buf, "%s is irradiated %d%% and inactive.\n",
-            ship_to_string(s).c_str(), s.rad);
-    notify(playernum, governor, buf);
-    return true;
-  }
-
-  return false;
-}

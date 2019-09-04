@@ -36,7 +36,7 @@ void enslave(const command_t &argv, GameObj &g) {
   if (!s) {
     return;
   }
-  if (testship(Playernum, Governor, *s)) {
+  if (testship(*s, Playernum, Governor)) {
     return;
   }
   if (s->type != ShipType::STYPE_OAP) {

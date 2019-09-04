@@ -335,6 +335,7 @@ double cost(const Ship &);
 double getmass(const Ship &);
 unsigned int ship_size(const Ship &);
 double complexity(const Ship &);
+bool testship(const Ship &, const player_t, const governor_t);
 
 extern shipnum_t Num_ships;
 extern const unsigned long Shipdata[NUMSTYPES][NUMABILS];

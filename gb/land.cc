@@ -108,7 +108,7 @@ void land(const command_t &argv, GameObj &g) {
           continue;
         }
         auto ship2no = *ship2tmp;
-        if (testship(Playernum, Governor, *s2)) {
+        if (testship(*s2, Playernum, Governor)) {
           g.out << "Illegal format.\n";
           free(s);
           continue;

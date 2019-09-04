@@ -5,8 +5,10 @@
 #include <boost/format.hpp>
 #include <cmath>
 
+#include "gb/GB_server.h"
 #include "gb/defense.h"
 #include "gb/ships.h"
+#include "gb/shlmisc.h"
 
 #include "gb/files_shl.h"
 
@@ -239,4 +241,28 @@ double complexity(const Ship &s) {
                1.0;
   factor = tmp * tmp;
   return (factor * (double)Shipdata[s.build_type][ABIL_TECH]);
+}
+
+bool testship(const Ship &s, const player_t playernum,
+              const governor_t governor) {
+  char buf[255];
+  if (!s.alive) {
+    sprintf(buf, "%s has been destroyed.\n", ship_to_string(s).c_str());
+    notify(playernum, governor, buf);
+    return true;
+  }
+
+  if (s.owner != playernum || !authorized(governor, s)) {
+    DontOwnErr(playernum, governor, s.number);
+    return true;
+  }
+
+  if (!s.active) {
+    sprintf(buf, "%s is irradiated %d%% and inactive.\n",
+            ship_to_string(s).c_str(), s.rad);
+    notify(playernum, governor, buf);
+    return true;
+  }
+
+  return false;
 }

@@ -106,7 +106,7 @@ void upgrade(const command_t &argv, GameObj &g) {
     g.out << "Illegal dir value.\n";
     return;
   }
-  if (testship(Playernum, Governor, *dirship)) {
+  if (testship(*dirship, Playernum, Governor)) {
     return;
   }
   if (dirship->damage) {
@@ -338,7 +338,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     g.out << "Illegal dir value.\n";
     return;
   }
-  if (testship(Playernum, Governor, *dirship)) {
+  if (testship(*dirship, Playernum, Governor)) {
     return;
   }
   if (dirship->type != ShipType::OTYPE_FACTORY) {
@@ -1143,7 +1143,7 @@ static std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder,
                                                int *snum, int *pnum) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  if (testship(Playernum, Governor, *builder)) return {};
+  if (testship(*builder, Playernum, Governor)) return {};
   if (!Shipdata[builder->type][ABIL_CONSTRUCT]) {
     g.out << "This ship cannot construct other ships.\n";
     return {};

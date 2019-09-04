@@ -91,9 +91,9 @@ private:
     SQLDB *db;
     string table_name;
     const Schema *schema;
-    mutable map<FieldPath, shared_ptr<Column>> columns_by_fp;
-    mutable map<string, shared_ptr<Column>> columns_by_name;
-    vector <shared_ptr<Column>> columns;
+    mutable map<FieldPath, Column *> columns_by_fp;
+    mutable map<string, Column *> columns_by_name;
+    vector <Column *> columns;
     bool table_created = false;
 
     string joinedColNamesFor(const list <FieldPath> &field_paths) const;

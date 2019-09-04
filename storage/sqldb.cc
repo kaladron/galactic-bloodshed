@@ -96,7 +96,8 @@ void SQLTable::processType(const Type *curr_type, FieldPath &field_path) {
     //  Unions - this will be a tag into the sub type
     //  Records - Will denote NULL or not
     // The other way to model records/unions is to make these a 1:1 relationship
-    AddColumn(field_path, curr_type);
+    if (field_path.size() > 0) 
+        AddColumn(field_path, curr_type);
 
     // Process children
     if (hasChildren) {
@@ -117,9 +118,11 @@ bool SQLTable::HasColumn(const string &name) const {
 }
 
 const SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, const Type *t) {
-    if (columns_by_fp.find(fp) == columns_by_fp.end()) {
+    auto it = columns_by_fp.find(fp);
+    cout << "Adding column: " << fp.join() << ", Found: " << (it == columns_by_fp.end()) << endl;
+    if (it == columns_by_fp.end()) {
         // do our thing
-        shared_ptr<Column> column = make_shared<Column>();
+        Column *column = new Column();
         column->index = columns.size();
         column->name = fp.join("_");
         column->field_path = fp;
@@ -128,21 +131,23 @@ const SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, const Type *t) 
         columns_by_fp[fp] = column;
         columns_by_name[column->name] = column;
     }
-    return columns_by_fp[fp].get();
+    return columns_by_fp[fp];
 }
 
 const SQLTable::Column *SQLTable::ColumnAt(size_t index) const {
-    return columns[index].get();
+    return columns[index];
 }
 
 const SQLTable::Column *SQLTable::ColumnFor(const string &name) const {
-    if (columns_by_name.find(name) == columns_by_name.end()) return nullptr;
-    return columns_by_name[name].get();
+    auto it = columns_by_name.find(name);
+    if (it == columns_by_name.end()) return nullptr;
+    return it->second;
 }
 
 const SQLTable::Column *SQLTable::ColumnFor(const FieldPath &fp) const {
-    if (columns_by_fp.find(fp) == columns_by_fp.end()) return nullptr;
-    return columns_by_fp[fp].get();
+    auto it = columns_by_fp.find(fp);
+    if (it == columns_by_fp.end()) return nullptr;
+    return it->second;
 }
 
 bool SQLTable::EnsureTable() {
@@ -301,24 +306,28 @@ string SQLTable::InsertionSQL(const Value *entity) const {
     int ncols = 0;
     MatchTypeAndValue(schema->EntityType(), entity, [this, &ncols, &col_sql, &val_sql]
             (const Type *type, const Value *value, int index, const string *key, FieldPath &fp) {
-        cout << "Found FP: " << fp.join() << endl;
-        const Column *col = ColumnFor(fp);
-        if (col == nullptr) return false;
-        if (ncols++ > 0) {
-            col_sql << ", ";
-            val_sql << ", ";
-        }
+        if (fp.size() > 0) {
+            const Column *col = ColumnFor(fp);
+            cout << "Found FP: '" << fp.join() << "'" << col << endl;
+            if (col == nullptr) return false;
+            if (ncols++ > 0) {
+                col_sql << ", ";
+                val_sql << ", ";
+            }
 
-        col_sql << col->Name();
-        if (type->IsRecord()) {
-            // then write "exists/not exists" flag
-            val_sql << (value != nullptr);
-        } else if (type->IsUnion()) {
-            const UnionValue *uv = dynamic_cast<const UnionValue *>(value);
-            val_sql << (uv ? uv->Tag() : -1);
-        } else {
-            auto lit = Literal::From(value);
-            WriteLiteral(type, lit, val_sql);
+            col_sql << col->Name();
+            if (type->IsRecord()) {
+                // then write "exists/not exists" flag
+                val_sql << (value != nullptr);
+            } else if (type->IsUnion()) {
+                const UnionValue *uv = dynamic_cast<const UnionValue *>(value);
+                val_sql << (uv ? uv->Tag() : -1);
+            } else if (value != nullptr) {
+                auto lit = Literal::From(value);
+                WriteLiteral(type, lit, val_sql);
+            } else {
+                val_sql << "NULL";
+            }
         }
         return true;
     });

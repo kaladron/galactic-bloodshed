@@ -9,7 +9,7 @@
 
 #include "gb/GB_server.h"
 #include "gb/files_shl.h"
-#include "gb/getplace.h"
+#include "gb/place.h"
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/vars.h"
@@ -18,7 +18,7 @@ void center(const command_t &argv, GameObj &g) {
   if (argv.size() != 2) {
     g.out << "center: which star?\n";
   }
-  auto where = getplace(g, argv[1], 1);
+  Place where{g, argv[1], true};
 
   if (where.err) {
     g.out << "center: bad scope.\n";
@@ -54,7 +54,7 @@ void cs(const command_t &argv, GameObj &g) {
   if (argv.size() == 2) {
     /* chdir to specified scope */
 
-    auto where = getplace(g, argv[1], 0);
+    Place where{g, argv[1]};
 
     if (where.err) {
       g.out << "cs: bad scope.\n";
@@ -127,7 +127,7 @@ void cs(const command_t &argv, GameObj &g) {
     g.shipno = where.shipno;
   } else if (argv.size() == 3 && argv[1][1] == 'd') {
     /* make new def scope */
-    auto where = getplace(g, argv[2], 0);
+    Place where{g, argv[2]};
 
     if (!where.err && where.level != ScopeLevel::LEVEL_SHIP) {
       Race->governor[Governor].deflevel = where.level;

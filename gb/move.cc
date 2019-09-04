@@ -474,7 +474,7 @@ void walk(const command_t &argv, GameObj &g) {
     g.out << "No such ship.\n";
     return;
   }
-  if (testship(Playernum, Governor, *ship)) {
+  if (testship(*ship, Playernum, Governor)) {
     g.out << "You do not control this ship.\n";
     free(ship);
     return;

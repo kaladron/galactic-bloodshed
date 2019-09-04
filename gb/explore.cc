@@ -11,9 +11,9 @@
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/files_shl.h"
-#include "gb/getplace.h"
 #include "gb/map.h"
 #include "gb/max.h"
+#include "gb/place.h"
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
@@ -24,8 +24,6 @@
 void distance(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  Place from;
-  Place to;
   double x0;
   double y0;
   double x1;
@@ -37,13 +35,13 @@ void distance(const command_t &argv, GameObj &g) {
     return;
   }
 
-  from = getplace(g, argv[1], 1);
+  Place from{g, argv[1], true};
   if (from.err) {
     sprintf(buf, "Bad scope '%s'.\n", argv[1].c_str());
     notify(Playernum, Governor, buf);
     return;
   }
-  to = getplace(g, argv[2], 1);
+  Place to{g, argv[2], true};
   if (to.err) {
     sprintf(buf, "Bad scope '%s'.\n", argv[2].c_str());
     notify(Playernum, Governor, buf);
@@ -125,13 +123,12 @@ void exploration(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   int starq;
   int j;
-  Place where;
   racetype *Race;
 
   starq = -1;
 
   if (argv.size() == 2) {
-    where = getplace(g, argv[1], 0);
+    Place where{g, argv[1]};
     if (where.err) {
       sprintf(buf, "explore: bad scope.\n");
       notify(Playernum, Governor, buf);

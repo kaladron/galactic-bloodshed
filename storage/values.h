@@ -213,7 +213,7 @@ using DFSWalkCallback = std::function<bool(const Value*, int, const string *, Fi
 void DFSWalkValue(const Value *root, DFSWalkCallback callback);
 
 using MatchTypeAndValueCallback = std::function<bool(const Type *, const Value*, int, const string *, FieldPath &)>;
-bool MatchTypeAndValue(const Type *type, const Value *value, MatchTypeAndValueCallback callback);
+void MatchTypeAndValue(const Type *type, const Value *value, MatchTypeAndValueCallback callback);
 
 /**
  * Writes value to an output stream as JSON.

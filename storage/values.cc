@@ -278,25 +278,24 @@ void DFSWalkValue(const Value *root, DFSWalkCallback callback) {
     DFSWalkValue(root, 0, fp, callback);
 }
 
-bool MatchTypeAndValue(const Type *type, const Value *root, 
-                       int currIndex, FieldPath &fp, MatchTypeAndValueCallback callback) {
-    if (!type && !root) return true;
-    if (!type || !root) return false;
+void MatchTypeAndValue(const Type *type, const Value *root, 
+                       FieldPath &fp, MatchTypeAndValueCallback callback) {
+    if (!type || !root) return ;
     // Call with the current root and type first before descending
-    if (!callback(type, root, currIndex, fp.empty() ? nullptr : &(fp.back()), fp)) return true;
-
     if (type->IsRecord()) {
-        if (!root->IsKeyed()) return false;
+        if (!root->IsKeyed()) return ;
         // descend into children
         for (int i = 0, c = type->ChildCount();i < c;i++) {
             const auto &childtype = type->GetChild(i);
             auto &key = childtype.first;
             auto childvalue = root->Get(key);
             fp.push_back(key);
-            if (!MatchTypeAndValue(childtype.second,
-                                   childvalue,
-                                   i, fp,
-                                   callback)) return false;
+            if (callback(childtype.second, childvalue, i, &key, fp)) {
+                MatchTypeAndValue(childtype.second, childvalue, fp, callback);
+            } else {
+                cout << "Aborting for i,key: " << i << ", " << key << endl;
+                return ;
+            }
             fp.pop_back();
         }
     }
@@ -309,10 +308,12 @@ bool MatchTypeAndValue(const Type *type, const Value *root,
             const auto childvalue = uv->Data();
             auto &key = childtype.first;
             fp.push_back(key);
-            if (!MatchTypeAndValue(childtype.second,
-                                   childvalue,
-                                   uv->Tag(), fp,
-                                   callback)) return false;
+            if (callback(childtype.second, childvalue, uv->Tag(), &key, fp)) {
+                MatchTypeAndValue(childtype.second, childvalue, fp, callback);
+            } else {
+                cout << "Aborting for tag,key: " << uv->Tag() << ", " << key << endl;
+                return ;
+            }
             fp.pop_back();
         }
     } else {    // type function
@@ -370,9 +371,9 @@ bool MatchTypeAndValue(const Type *type, const Value *root,
     }
 }
 
-bool MatchTypeAndValue(const Type *type, const Value *value, MatchTypeAndValueCallback callback) {
+void MatchTypeAndValue(const Type *type, const Value *value, MatchTypeAndValueCallback callback) {
     FieldPath fp;
-    MatchTypeAndValue(type, value, 0, fp, callback);
+    MatchTypeAndValue(type, value, fp, callback);
 }
 
 END_NS

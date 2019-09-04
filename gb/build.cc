@@ -19,7 +19,6 @@
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/fire.h"
-#include "gb/getplace.h"
 #include "gb/land.h"
 #include "gb/races.h"
 #include "gb/shipdata.h"

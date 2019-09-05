@@ -308,7 +308,6 @@ string SQLTable::InsertionSQL(const Value *entity) const {
             (const Type *type, const Value *value, int index, const string *key, FieldPath &fp) {
         if (fp.size() > 0) {
             const Column *col = ColumnFor(fp);
-            cout << "Found FP: '" << fp.join() << "'" << col << endl;
             if (col == nullptr) return false;
             if (ncols++ > 0) {
                 col_sql << ", ";
@@ -369,6 +368,53 @@ string SQLTable::UpsertionSQL(const Value *key, const Value *entity) const {
 string SQLTable::DeletionSQL(const Value *key) const {
     stringstream sql;
     sql << "CREATE TABLE IF NOT EXISTS '" << table_name << "' (" << endl;
+    return sql.str();
+}
+
+bool SQLTable::Get(const Value &key, Value &output) const {
+    string sql = GetSQL(key);
+    sqlite3_stmt *stmt = db->PrepareSql(sql);
+    if (stmt == nullptr) return false;
+
+    int result = sqlite3_step(stmt);
+    if (result != SQLITE_ROW)
+    {
+        return false;
+    }
+    // convert resultset into output result
+    db->CloseStatement(stmt);
+    return true;
+}
+
+string SQLTable::GetSQL(const Value &key) const {
+    stringstream sql;
+    sql << "SELECT * from '" << table_name << "' WHERE ";
+    const auto &keyfields = schema->KeyFields();
+    int nKeyFields = keyfields.size();
+    if (nKeyFields == 1) {
+    } else {
+        assert(key.IsIndexed() && "Key needs indexable children to match keyfields in schema");
+        assert(keyfields.size() == key.ChildCount() && "Number of key fields do not match provided key length");
+    }
+    for (int i = 0;i < nKeyFields;i++) {
+        const auto &keyfield = keyfields[i];
+        const Column *col = ColumnFor(keyfield);
+        sql << col->Name() << " = ";
+
+        const Value *key_value = &key;
+        if (key.IsIndexed()) {
+            // This allows us to pass a key as a "single" value
+            // if our key is not a composite key
+            key_value = key.Get(i);
+        }
+        // Write the value
+        auto litval = Literal::From(key_value);
+        if (litval) {
+            WriteLiteral(col->GetType(), litval, sql);
+        } else {
+            assert(false && "TBD");
+        }
+    }
     return sql.str();
 }
 

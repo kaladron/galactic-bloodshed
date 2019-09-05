@@ -130,9 +130,20 @@ int main(int argc, char *argv[]) {
     Value *p1value = personToValue(p1);
     people->Put(p1value);
 
+    p1.id = 666;
+    p1.name = "Hell Boy";
+    p1.name = "11111";
+    p1.gender = "N";
+    p1.address.number = "1";
+    p1.address.street = "Hell Lane";
+    p1.address.region = "Sulphur Zone";
+    p1.address.country = "Outworld";
+    p1value = personToValue(p1);
+    people->Put(p1value);
+
     Person p2;
     MapValue p2value;
-    auto key = StringBoxer("1");
+    auto key = Int32Boxer(666);
     people->Get(*key, p2value);
     valueToPerson(&p2value, p2);
 }

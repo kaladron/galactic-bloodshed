@@ -19,7 +19,8 @@ SQLCollection::SQLCollection(const Schema *s, shared_ptr<SQLDB> db_) : Collectio
 }
 
 bool SQLCollection::Get(const Value &key, Value &result) {
-    // return base_table->Get(key);
+    auto table = base_table.lock();
+    return table->Get(key, result);
 }
 
 bool SQLCollection::Put(Value &entity) {

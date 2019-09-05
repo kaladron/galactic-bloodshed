@@ -51,6 +51,7 @@ public:
         Value *default_read_value = nullptr;
         Value *default_write_value = nullptr;
         const string &Name() const { return name; }
+        const Type *GetType() const { return coltype; }
     private:
         string name;
         FieldPath field_path;
@@ -67,6 +68,7 @@ public:
     bool EnsureTable();
     bool Put(Value *entity) const;
     bool Delete(const Value *key) const;
+    bool Get(const Value &key, Value &result) const;
 
     /**
      * Returns true if we have a physical column with the given name
@@ -83,6 +85,7 @@ public:
     string InsertionSQL(const Value *value) const;
     string UpsertionSQL(const Value *key, const Value *value) const;
     string DeletionSQL(const Value *key) const;
+    string GetSQL(const Value &key) const;
 
 protected:
     void processType(const Type *t, FieldPath &fp);

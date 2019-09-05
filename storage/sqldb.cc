@@ -25,7 +25,7 @@ shared_ptr<SQLTable> SQLDB::EnsureTable(const Schema *s) {
 
 shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
     // Add all top level fields to the node
-    SQLTable *table = new SQLTable(this, s->FQN(), s);
+    auto table = make_shared<SQLTable>(this, s->FQN(), s);
 
     // Now process table constraints
     for (auto constraint : s->GetConstraints()) {
@@ -51,7 +51,7 @@ shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
     if (!table->EnsureTable()) {
         cerr << "Could not create table (" << table->Name() << "): " << sqlite3_errmsg(dbhandle) << endl;
     }
-    return shared_ptr<SQLTable>(table);
+    return table;
 }
 
 void SQLDB::CloseStatement(sqlite3_stmt *&stmt) {

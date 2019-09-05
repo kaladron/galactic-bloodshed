@@ -16,7 +16,7 @@ have_clang=yes
 AC_SUBST([GCC_OPTS], ["-Werror -Wall -Wno-sign-compare -Wno-maybe-uninitialized -Wno-return-type \
 	   -Wno-format-overflow -Wno-nonnull -Wno-stringop-truncation -Wno-restrict \
 	   -Wno-unused-but-set-variable -Wno-parentheses -Wno-write-strings \
-	   -Wno-unused-variable"])
+	   -Wno-unused-variable -Wextra -Wno-unused-parameter -Wno-error=extra"])
 
 AC_SUBST([CLANG_OPTS], ["\
   -Werror -Weverything -Wno-c++98-compat -Wno-padded \

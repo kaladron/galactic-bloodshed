@@ -48,7 +48,6 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   char buf[1024];
   double current_fuel = 0.0;
   double gravity_factor = 0.0;
-  Place tmpdest;
 
   if ((argv.size() < 2) || (argv.size() > 3)) {
     notify(Playernum, Governor,
@@ -96,7 +95,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   } else {
     deststr = argv[2];
   }
-  tmpdest = getplace(g, deststr, 1);
+  Place tmpdest{g, deststr, true};
   if (tmpdest.err) {
     g.out << "fuel:  bad scope.\n";
     return;

@@ -23,7 +23,7 @@ AC_SUBST([CLANG_OPTS], ["\
   -Wno-c++98-compat-pedantic -Wno-float-equal -Wno-old-style-cast \
   -Wno-conversion -Wno-conditional-uninitialized -Wno-sign-compare \
   -Wno-switch-enum -Wno-exit-time-destructors -Wno-global-constructors \
-  -Wno-signed-enum-bitfield -Wno-writable-strings -Wno-documentation-unknown-command \
+  -Wno-signed-enum-bitfield -Wno-documentation-unknown-command \
   -Wno-weak-vtables"])
 
 AC_CHECK_LIB(pthread, pthread_create, [PTHREAD_LIBS+=-lpthread])

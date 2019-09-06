@@ -632,7 +632,6 @@ void send_message(const command_t &argv, GameObj &g) {
   int star;
   int start;
   char msg[1000];
-  Place where;
   racetype *Race;
   racetype *alien;
 
@@ -670,7 +669,7 @@ void send_message(const command_t &argv, GameObj &g) {
   } else if (argv[1] == "star") {
     to_star = 1;
     g.out << "Sending message to star system.\n";
-    where = getplace(g, argv[2], 1);
+    Place where{g, argv[2], true};
     if (where.err || where.level != ScopeLevel::LEVEL_STAR) {
       g.out << "No such star.\n";
       return;

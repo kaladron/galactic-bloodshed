@@ -13,17 +13,15 @@
 #include "gb/game_info.h"
 #include "gb/racegen.h"
 
-#define DEFAULT_ENROLLMENT_FILENAME "enroll.saves"
-#define DEFAULT_ENROLLMENT_FAILURE_FILENAME "failures.saves"
+static const char *DEFAULT_ENROLLMENT_FILENAME = "enroll.saves";
+static const char *DEFAULT_ENROLLMENT_FAILURE_FILENAME = "failures.saves";
 
 extern int enroll_valid_race();
-
-static int enroll_player_race(char *failure_filename);
 
 /*
  * Returns: 0 if the race was successfully enrolled, or 1 if not.
  */
-static int enroll_player_race(char *failure_filename) {
+static int enroll_player_race(const char *failure_filename) {
   char c[128];
   FILE *g;
   int n;
@@ -141,7 +139,7 @@ static int enroll_player_race(char *failure_filename) {
   return 0;
 }
 
-int enroll(int argc, char *argv[]) {
+int enroll(int argc, const char *argv[]) {
   int ret;
   FILE *g;
 
@@ -170,7 +168,7 @@ int enroll(int argc, char *argv[]) {
 /**************
  * Iteratively loads races from a file, and enrolls them.
  */
-void process(int argc, char *argv[]) {
+void process(int argc, const char *argv[]) {
   FILE *f;
   FILE *g;
   int n;

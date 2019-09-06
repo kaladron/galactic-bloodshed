@@ -29,18 +29,18 @@ static int fd;
 static int isserver = 0;
 
 static int critique_modification();
-static void execute(int argc, char **argv);
+static void execute(int argc, const char **argv);
 static void fix_up_iq();
 static void initialize();
-static void help(int, char *[]);
-static void load(int, char *[]);
+static void help(int, const char *[]);
+static void load(int, const char *[]);
 static void metamorph();
-static int modify(int argc, char *argv[]);
+static int modify(int argc, const char *argv[]);
 static void normal();
-static void print(int argc, char *argv[]);
-static void save(int argc, char *argv[]);
-static void send2(int argc, char *argv[]);
-static void quit(int argc, char **argv);
+static void print(int argc, const char *argv[]);
+static void save(int argc, const char *argv[]);
+static void send2(int argc, const char *argv[]);
+static void quit(int argc, const char **argv);
 
 int main() {
 #ifdef PRIV
@@ -658,7 +658,7 @@ static void initialize() {
  * trying to tell you about them here, just run the program and diddle
  * with it to get the idea.
  */
-static void help(int argc, char *argv[]) {
+static void help(int argc, const char *argv[]) {
   int enroll;
   int process;
   int i;
@@ -897,7 +897,7 @@ static int load_from_filename(const char *filename) {
   return ret;
 }
 
-static void load(int argc, char *argv[]) {
+static void load(int argc, const char *argv[]) {
   char c[64];
   int i;
 
@@ -921,10 +921,10 @@ static void load(int argc, char *argv[]) {
   }
 }
 
-static int modify(int argc, char *argv[]) {
+static int modify(int argc, const char *argv[]) {
   int i;
   int j;
-  static char *help_strings[2] = {nullptr, "modify"};
+  static const char *help_strings[2] = {nullptr, "modify"};
   double f;
 
   if (argc < 3) {
@@ -1150,14 +1150,14 @@ static int print_to_filename(const char *filename, int verbose) {
   return 1;
 }
 
-static void print(int argc, char *argv[]) {
+static void print(int argc, const char *argv[]) {
   if (argc == 1)
     print_to_file(stdout, 1);
   else if (print_to_filename(argv[1], 1))
     printf("Printed race to file \"%s\".\n", argv[1]);
 }
 
-static void save(int argc, char *argv[]) {
+static void save(int argc, const char *argv[]) {
   if (argc > 1)
     strcpy(race_info.filename, argv[1]);
   else if (!race_info.filename[0])
@@ -1168,7 +1168,7 @@ static void save(int argc, char *argv[]) {
   }
 }
 
-static void send2(int, char **) {
+static void send2(int, const char **) {
   FILE *f;
   char sys[64];
 
@@ -1258,7 +1258,7 @@ int Dialogue(const char *prompt, ...) {
   return 0;
 }
 
-static void quit(int, char **) {
+static void quit(int, const char **) {
   int i;
 
   if (please_quit) { /* This could happen if ^c is hit while here. */
@@ -1284,7 +1284,7 @@ static void quit(int, char **) {
  * This function merely takes the space-parsed command line and executes
  * one of the commands above.
  */
-static void execute(int argc, char **argv) {
+static void execute(int argc, const char **argv) {
   int i;
 
 #if 0
@@ -1335,7 +1335,7 @@ void modify_print_loop(int) {
 #define BUFSIZE 512
   char buf[BUFSIZE];
   char *com;
-  char *args[4];
+  const char *args[4];
   int i;
 
   while (!please_quit) {

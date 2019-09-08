@@ -124,16 +124,40 @@ const Type *DefaultTypes::BoolType() {
     make_basic_type("bool");
 }
 
-const Type *DefaultTypes::IntType() {
-    make_basic_type("int");
+const Type *DefaultTypes::Int8Type() {
+    make_basic_type("int8");
+}
+
+const Type *DefaultTypes::Int16Type() {
+    make_basic_type("int16");
+}
+
+const Type *DefaultTypes::Int32Type() {
+    make_basic_type("int32");
+}
+
+const Type *DefaultTypes::Int64Type() {
+    make_basic_type("int64");
+}
+
+const Type *DefaultTypes::UInt8Type() {
+    make_basic_type("uint8");
+}
+
+const Type *DefaultTypes::UInt16Type() {
+    make_basic_type("uint16");
+}
+
+const Type *DefaultTypes::UInt32Type() {
+    make_basic_type("uint32");
+}
+
+const Type *DefaultTypes::UInt64Type() {
+    make_basic_type("uint64");
 }
 
 const Type *DefaultTypes::FloatType() {
     make_basic_type("float");
-}
-
-const Type *DefaultTypes::LongType() {
-    make_basic_type("long");
 }
 
 const Type *DefaultTypes::DoubleType() {

@@ -13,9 +13,9 @@ START_NS
 class MemCollection : public Collection {
 public:
     MemCollection(const Schema *schema_);
-    bool Get(const Value &key, Value &result);
-    bool Put(Value &entity);
-    bool DeleteByKey(const Value &key);
+    virtual Value *Get(const Value &key);
+    virtual bool Put(Value &entity);
+    virtual bool DeleteByKey(const Value &key);
 
 private:
     std::map<const Value *, Value *> entries;

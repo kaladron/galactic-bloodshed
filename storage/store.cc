@@ -10,10 +10,6 @@ START_NS
 Collection::~Collection() {
 }
 
-bool Collection::Get(const Value *key, Value &result) {
-    return Get(*key, result);
-}
-
 bool Collection::Delete(const Value &value) {
     return DeleteByKey(*schema->GetKey(value));
 }

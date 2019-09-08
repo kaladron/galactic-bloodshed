@@ -10,11 +10,10 @@ std::shared_ptr<MemCollection> MemStore::GetCollection(const Schema *schema) {
     return tables[schema];
 }
 
-bool MemCollection::Get(const Value &key, Value &result) {
+Value *MemCollection::Get(const Value &key) {
     auto it = entries.find(&key);
-    if (it == entries.end()) return false;
-    result = *(it->second);
-    return true;
+    if (it == entries.end()) return nullptr;
+    return it->second;
 }
 
 bool MemCollection::Put(Value &entity) {

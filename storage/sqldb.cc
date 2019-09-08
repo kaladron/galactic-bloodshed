@@ -96,8 +96,9 @@ void SQLTable::processType(const Type *curr_type, FieldPath &field_path) {
     //  Unions - this will be a tag into the sub type
     //  Records - Will denote NULL or not
     // The other way to model records/unions is to make these a 1:1 relationship
+    Column *newcolumn = nullptr;
     if (field_path.size() > 0) 
-        AddColumn(field_path, curr_type);
+        newcolumn = const_cast<Column *>(AddColumn(field_path, curr_type));
 
     // Process children
     if (hasChildren) {
@@ -111,6 +112,9 @@ void SQLTable::processType(const Type *curr_type, FieldPath &field_path) {
             field_path.pop_back();
         }
     }
+    if (newcolumn) {
+        newcolumn->endIndex = columns.size();
+    }
 }
 
 bool SQLTable::HasColumn(const string &name) const {
@@ -123,7 +127,7 @@ const SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, const Type *t) 
     if (it == columns_by_fp.end()) {
         // do our thing
         Column *column = new Column();
-        column->index = columns.size();
+        column->endIndex = column->index = columns.size();
         column->name = fp.join("_");
         column->field_path = fp;
         column->coltype = t;
@@ -189,18 +193,18 @@ string SQLTable::TableCreationSQL() const {
         // 1. pass constraints
         // 2. pass default values
         // lgg
-        if (ftype->FQN() == "bool") {
+        auto fqn = ftype->FQN();
+        if (fqn == "bool") {
             sql << "BOOLEAN" << " " << endl;
-        } else if (ftype->FQN() == "int") {
+        } else if (fqn == "int8" || fqn == "int16" || fqn == "int32" ||
+                   fqn == "uint8" || fqn == "uint16" || fqn == "uint32") {
             sql << "INT" << " " << endl;
-        } else if (ftype->FQN() == "long") {
+        } else if (fqn == "int64" || fqn == "uint64") {
             sql << "INT64" << " " << endl;
-        } else if (ftype->FQN() == "double") {
-            sql << "DOUBLE" << " " << endl;
-        } else if (ftype->FQN() == "string") {
+        } else if (fqn == "float" || fqn == "double") {
+            sql << "REAL" << " " << endl;
+        } else if (fqn == "string") {
             sql << "TEXT" << " " << endl;
-        } else if (ftype->FQN() == "datetime") {
-            sql << "DATETIME" << " " << endl;
         } else if (ftype->IsRecord()) {
             sql << "BOOLEAN" << " " << endl;
         } else if (ftype->IsUnion()) {
@@ -371,19 +375,107 @@ string SQLTable::DeletionSQL(const Value *key) const {
     return sql.str();
 }
 
-bool SQLTable::Get(const Value &key, Value &output) const {
+Value *SQLTable::Get(const Value &key) const {
     string sql = GetSQL(key);
     sqlite3_stmt *stmt = db->PrepareSql(sql);
-    if (stmt == nullptr) return false;
+    if (stmt == nullptr) return nullptr;
 
     int result = sqlite3_step(stmt);
-    if (result != SQLITE_ROW)
+    Value *output = nullptr;
+    if (result == SQLITE_ROW)
     {
-        return false;
+        // convert resultset into output result
+        auto colcount = sqlite3_column_count(stmt);
+        assert(columns.size() == colcount && "Number of columns returned does not match num columns in schema");
+        output = resultSetToValue(stmt, true, schema->EntityType(), 0, colcount - 1);
     }
-    // convert resultset into output result
     db->CloseStatement(stmt);
-    return true;
+    return output;
+}
+
+Value *SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const Type *currType,
+                                int startCol, int endCol) const {
+
+    if (is_root) {
+        assert(currType->IsRecord() && "Only record types allowed at the root level");
+    }
+    if (currType->IsRecord()) {
+        bool value = is_root || sqlite3_column_int(stmt, startCol) != 0;
+        Value *output = nullptr;
+        if (value) {
+            output = new MapValue();
+            for (int currCol = startCol+1;currCol <= endCol;) {
+                const Column *col = ColumnAt(currCol);
+                auto key = col->FP().back();
+                auto *childvalue = resultSetToValue(stmt, false, col->GetType(), currCol, col->endIndex - 1);
+                output->Set(key, childvalue);
+                currCol = col->endIndex;
+            }
+        }
+        return output;
+    } else if (currType->IsUnion()) {
+        int tag = sqlite3_column_int(stmt, startCol);
+        Value *output = nullptr;
+        if (tag >= 0) {
+            // find where child starts for this tag
+            int childStart = startCol + 1;
+            auto childtype = currType->GetChild(tag);
+            const Column *childCol = ColumnAt(childStart);
+            for (int i = 0;i < tag;i++) {
+                childStart = childCol->endIndex;
+                childCol = ColumnAt(childStart);
+            }
+            // create the corresponding tag
+            Value *data = resultSetToValue(stmt, false, childtype.second, childStart, childCol->endIndex - 1);
+            output = new UnionValue(tag, data);
+        }
+        return output;
+    } else {
+        // literal
+        auto fqn = currType->FQN();
+        if (fqn == "bool") {
+            auto value = sqlite3_column_int(stmt, startCol) != 0;
+            return BoolBoxer(value);
+        } else if (fqn == "int8") {
+            int8_t value = sqlite3_column_int(stmt, startCol);
+            return Int8Boxer(value);
+        } else if (fqn == "int16") {
+            int16_t value = sqlite3_column_int(stmt, startCol);
+            return Int16Boxer(value);
+        } else if (fqn == "int32") {
+            int32_t value = sqlite3_column_int(stmt, startCol);
+            return Int32Boxer(value);
+        } else if (fqn == "int64") {
+            int32_t value = sqlite3_column_int64(stmt, startCol);
+            return Int64Boxer(value);
+        } else if (fqn == "uint8") {
+            uint8_t value = sqlite3_column_int(stmt, startCol);
+            return UInt8Boxer(value);
+        } else if (fqn == "uint16") {
+            uint16_t value = sqlite3_column_int(stmt, startCol);
+            return UInt16Boxer(value);
+        } else if (fqn == "uint32") {
+            uint32_t value = sqlite3_column_int(stmt, startCol);
+            return UInt32Boxer(value);
+        } else if (fqn == "uint64") {
+            uint32_t value = sqlite3_column_int64(stmt, startCol);
+            return UInt64Boxer(value);
+        } else if (fqn == "float") {
+            float value = sqlite3_column_double(stmt, startCol);
+            return FloatBoxer(value);
+        } else if (fqn == "double") {
+            double value = sqlite3_column_double(stmt, startCol);
+            return DoubleBoxer(value);
+        } else if (fqn == "string") {
+            auto value = sqlite3_column_text(stmt, startCol);
+            if (value) {
+                string s((const char *)value);
+                return StringBoxer(s);
+            }
+        } else {
+            assert(false && "Invalid child type");
+        }
+    }
 }
 
 string SQLTable::GetSQL(const Value &key) const {

@@ -21,11 +21,10 @@ class Collection {
 public:
     Collection(const Schema *schema_) : schema(schema_) { }
     virtual ~Collection();
-    virtual bool Get(const Value &key, Value &result) = 0;
+    virtual Value *Get(const Value &key) = 0;
     virtual bool Put(Value &entity) = 0;
     virtual bool DeleteByKey(const Value &key) = 0;
 
-    virtual bool Get(const Value *key, Value &result);
     virtual bool Put(Value *entity);
     virtual bool Put(const std::list<Value *> &values);
     virtual bool Delete(const Value &key);

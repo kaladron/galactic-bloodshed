@@ -51,11 +51,13 @@ public:
         Value *default_read_value = nullptr;
         Value *default_write_value = nullptr;
         const string &Name() const { return name; }
+        const FieldPath &FP() const { return field_path; }
         const Type *GetType() const { return coltype; }
     private:
         string name;
         FieldPath field_path;
         int index;
+        int endIndex;
         friend SQLTable ;
     };
 
@@ -68,7 +70,7 @@ public:
     bool EnsureTable();
     bool Put(Value *entity) const;
     bool Delete(const Value *key) const;
-    bool Get(const Value &key, Value &result) const;
+    Value *Get(const Value &key) const;
 
     /**
      * Returns true if we have a physical column with the given name
@@ -89,6 +91,8 @@ public:
 
 protected:
     void processType(const Type *t, FieldPath &fp);
+    Value *resultSetToValue(sqlite3_stmt *stmt, bool is_root, const Type *currType,
+                            int startCol, int endCol) const;
 
 private: 
     SQLDB *db;

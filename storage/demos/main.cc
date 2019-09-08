@@ -142,9 +142,8 @@ int main(int argc, char *argv[]) {
     people->Put(p1value);
 
     Person p2;
-    MapValue p2value;
     auto key = Int32Boxer(666);
-    people->Get(*key, p2value);
-    valueToPerson(&p2value, p2);
+    Value *p2value = people->Get(*key);
+    valueToPerson(p2value, p2);
 }
 

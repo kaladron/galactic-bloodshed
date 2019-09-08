@@ -17,7 +17,7 @@ public:
     using Collection::Put;
     using Collection::Delete;
     SQLCollection(const Schema *s, shared_ptr<SQLDB> db_);
-    virtual bool Get(const Value &key, Value &result);
+    virtual Value *Get(const Value &key);
     virtual bool Put(Value &entity);
     virtual bool DeleteByKey(const Value &key);
 

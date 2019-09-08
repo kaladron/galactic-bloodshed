@@ -13,7 +13,6 @@ START_NS
 
 class SQLCollection : public Collection {
 public:
-    using Collection::Get;
     using Collection::Put;
     using Collection::Delete;
     SQLCollection(const Schema *s, shared_ptr<SQLDB> db_);

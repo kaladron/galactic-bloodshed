@@ -5,8 +5,7 @@
 using namespace Storage;
 
 const Type *StringType = nullptr;
-const Type *LongType = nullptr;
-const Type *IntType = nullptr;
+const Type *Int64Type = nullptr;
 const Type *DateType = nullptr;
 const Type *AddressType = nullptr;
 const Type *PersonType = nullptr;
@@ -72,9 +71,8 @@ bool valueToPerson(const Value *const input, Person &person) {
 
 void initTypes() {
     StringType = DefaultTypes::StringType();
-    LongType = DefaultTypes::LongType();
-    IntType = DefaultTypes::IntType();
-    DateType = LongType;
+    Int64Type = DefaultTypes::Int64Type();
+    DateType = Int64Type;
 
     AddressType = new Type("Address", {
                             NameTypePair("number", StringType),
@@ -86,14 +84,14 @@ void initTypes() {
                         });
 
     CompanyType = new Type("Company", {
-                            NameTypePair("id", IntType),
+                            NameTypePair("id", Int64Type),
                             NameTypePair("name", StringType),
                             NameTypePair("founded_on", DateType),
                             NameTypePair("hq", AddressType),
                         });
 
     PersonType = new Type("Person", {
-                            NameTypePair("id", IntType),
+                            NameTypePair("id", Int64Type),
                             NameTypePair("name", StringType),
                             NameTypePair("dob", DateType),
                             NameTypePair("gender", StringType), // need enums

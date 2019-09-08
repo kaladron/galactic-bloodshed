@@ -628,7 +628,6 @@ void dump(const command_t &argv, GameObj &g) {
   int j;
   racetype *Race;
   racetype *r;
-  Place where;
 
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
@@ -677,7 +676,7 @@ void dump(const command_t &argv, GameObj &g) {
     }
   } else { /* list of places given */
     for (size_t i = 2; i < argv.size(); i++) {
-      where = getplace(g, argv[i], 1);
+      Place where{g, argv[i], true};
       if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
           where.level != ScopeLevel::LEVEL_SHIP) {
         star = where.snum;

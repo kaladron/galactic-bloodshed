@@ -69,8 +69,6 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int j;
-  Place where;
-  Place pl;
 
   if (!ship->active) {
     sprintf(buf, "%s is irradiated (%d); it cannot be given orders.\n",
@@ -216,7 +214,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
                "That ship is docked; use undock or launch first.\n");
         return;
       }
-      where = getplace(g, argv[3], 1);
+      Place where{g, argv[3], true};
       if (!where.err) {
         if (where.level == ScopeLevel::LEVEL_SHIP) {
           auto tmpship = getship(where.shipno);
@@ -485,7 +483,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           notify(Playernum, Governor, buf);
           return;
         }
-        pl = getplace(g, argv[3], 1);
+        Place pl{g, argv[3], true};
         if (pl.err) {
           g.out << "Error in destination.\n";
           return;
@@ -858,7 +856,6 @@ void route(const command_t &argv, GameObj &g) {
   unsigned char load;
   unsigned char unload;
   const char *c;
-  Place where;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor,
@@ -966,7 +963,7 @@ void route(const command_t &argv, GameObj &g) {
     else if (argv[2] == "deactivate")
       p.info[Playernum - 1].route[i - 1].set = 0;
     else {
-      where = getplace(g, argv[2], 1);
+      Place where{g, argv[2], true};
       if (!where.err) {
         if (where.level != ScopeLevel::LEVEL_PLAN) {
           g.out << "You have to designate a planet.\n";

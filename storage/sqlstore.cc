@@ -18,9 +18,9 @@ SQLCollection::SQLCollection(const Schema *s, shared_ptr<SQLDB> db_) : Collectio
     base_table = db->EnsureTable(schema);
 }
 
-bool SQLCollection::Get(const Value &key, Value &result) {
+Value *SQLCollection::Get(const Value &key) {
     auto table = base_table.lock();
-    return table->Get(key, result);
+    return table->Get(key);
 }
 
 bool SQLCollection::Put(Value &entity) {

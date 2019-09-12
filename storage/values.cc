@@ -261,7 +261,7 @@ int CompareValueMap(const ValueMap &first, const ValueMap &second) {
                 if (cmp != 0) return cmp;
 
                 cmp = a.second->Compare(b.second);
-                if (cmp != 0) return cmp;
+                return cmp;
             });
     return result;
 }

@@ -18,17 +18,17 @@ SQLCollection::SQLCollection(const Schema *s, shared_ptr<SQLDB> db_) : Collectio
     base_table = db->EnsureTable(schema);
 }
 
-Value *SQLCollection::Get(const Value &key) {
+StrongValue SQLCollection::Get(StrongValue key) {
     auto table = base_table.lock();
     return table->Get(key);
 }
 
-bool SQLCollection::Put(Value &entity) {
+bool SQLCollection::Put(StrongValue entity) {
     auto table = base_table.lock();
-    return table->Put(&entity);
+    return table->Put(entity);
 }
 
-bool SQLCollection::DeleteByKey(const Value &key) {
+bool SQLCollection::Delete(StrongValue key) {
     return false;
 }
 

@@ -263,11 +263,11 @@ string SQLTable::TableCreationSQL() const {
 };
 
 // Get the key from the entity
-bool SQLTable::Put(Value *entity) const {
-    const Value *key = schema->GetKey(*entity);
-    if (key == nullptr) {
+bool SQLTable::Put(StrongValue entity) const {
+    StrongValue key = schema->GetKey(*entity);
+    if (!key) {
         // we need to generate a key - let the DB do it
-        string sql = InsertionSQL(entity);
+        string sql = InsertionSQL(entity.get());
         sqlite3_stmt *stmt = db->PrepareSql(sql);
         if (stmt == nullptr) return false;
         int result = sqlite3_step(stmt);
@@ -277,7 +277,7 @@ bool SQLTable::Put(Value *entity) const {
         }
         db->CloseStatement(stmt);
     } else {
-        string sql = UpsertionSQL(key, entity);
+        string sql = UpsertionSQL(key.get(), entity.get());
         sqlite3_stmt *stmt = db->PrepareSql(sql);
         if (stmt == nullptr) return false;
         int result = sqlite3_step(stmt);
@@ -375,13 +375,13 @@ string SQLTable::DeletionSQL(const Value *key) const {
     return sql.str();
 }
 
-Value *SQLTable::Get(const Value &key) const {
-    string sql = GetSQL(key);
+StrongValue SQLTable::Get(StrongValue key) const {
+    string sql = GetSQL(key.get());
     sqlite3_stmt *stmt = db->PrepareSql(sql);
     if (stmt == nullptr) return nullptr;
 
     int result = sqlite3_step(stmt);
-    Value *output = nullptr;
+    StrongValue output;
     if (result == SQLITE_ROW)
     {
         // convert resultset into output result
@@ -393,7 +393,7 @@ Value *SQLTable::Get(const Value &key) const {
     return output;
 }
 
-Value *SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const Type *currType,
+StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const Type *currType,
                                 int startCol, int endCol) const {
 
     if (is_root) {
@@ -401,13 +401,13 @@ Value *SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const Type *
     }
     if (currType->IsRecord()) {
         bool value = is_root || sqlite3_column_int(stmt, startCol) != 0;
-        Value *output = nullptr;
+        StrongValue output;
         if (value) {
-            output = new MapValue();
+            output = make_shared<MapValue>();
             for (int currCol = startCol+1;currCol <= endCol;) {
                 const Column *col = ColumnAt(currCol);
                 auto key = col->FP().back();
-                auto *childvalue = resultSetToValue(stmt, false, col->GetType(), currCol, col->endIndex - 1);
+                auto childvalue = resultSetToValue(stmt, false, col->GetType(), currCol, col->endIndex - 1);
                 output->Set(key, childvalue);
                 currCol = col->endIndex;
             }
@@ -415,7 +415,7 @@ Value *SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const Type *
         return output;
     } else if (currType->IsUnion()) {
         int tag = sqlite3_column_int(stmt, startCol);
-        Value *output = nullptr;
+        StrongValue output;
         if (tag >= 0) {
             // find where child starts for this tag
             int childStart = startCol + 1;
@@ -426,8 +426,8 @@ Value *SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const Type *
                 childCol = ColumnAt(childStart);
             }
             // create the corresponding tag
-            Value *data = resultSetToValue(stmt, false, childtype.second, childStart, childCol->endIndex - 1);
-            output = new UnionValue(tag, data);
+            StrongValue data = resultSetToValue(stmt, false, childtype.second, childStart, childCol->endIndex - 1);
+            output = make_shared<UnionValue>(tag, data);
         }
         return output;
     } else {
@@ -478,26 +478,26 @@ Value *SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const Type *
     }
 }
 
-string SQLTable::GetSQL(const Value &key) const {
+string SQLTable::GetSQL(const Value *key) const {
     stringstream sql;
     sql << "SELECT * from '" << table_name << "' WHERE ";
     const auto &keyfields = schema->KeyFields();
     int nKeyFields = keyfields.size();
     if (nKeyFields == 1) {
     } else {
-        assert(key.IsIndexed() && "Key needs indexable children to match keyfields in schema");
-        assert(keyfields.size() == key.ChildCount() && "Number of key fields do not match provided key length");
+        assert(key->IsIndexed() && "Key needs indexable children to match keyfields in schema");
+        assert(keyfields.size() == key->ChildCount() && "Number of key fields do not match provided key length");
     }
     for (int i = 0;i < nKeyFields;i++) {
         const auto &keyfield = keyfields[i];
         const Column *col = ColumnFor(keyfield);
         sql << col->Name() << " = ";
 
-        const Value *key_value = &key;
-        if (key.IsIndexed()) {
+        const Value *key_value = key;
+        if (key->IsIndexed()) {
             // This allows us to pass a key as a "single" value
             // if our key is not a composite key
-            key_value = key.Get(i);
+            key_value = key->Get(i).get();
         }
         // Write the value
         auto litval = Literal::From(key_value);

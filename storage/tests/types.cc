@@ -6,9 +6,8 @@
 using namespace Storage;
 
 auto StringType = DefaultTypes::StringType();
-auto LongType = DefaultTypes::LongType();
-auto IntType = DefaultTypes::IntType();
-auto DateType = LongType;
+auto Int64Type = DefaultTypes::Int64Type();
+auto Int32Type = DefaultTypes::Int32Type();
 
 GTEST("TypeFunctions") {
     SHOULD("Work as TypeFunctions") {
@@ -40,8 +39,8 @@ GTEST("Union Types") {
     SHOULD("Union type Tests") {
         unique_ptr<Type> MyUnion(new Type("MyUnion", {
                                 NameTypePair("a", StringType),
-                                NameTypePair("b", IntType),
-                                NameTypePair("c", LongType),
+                                NameTypePair("b", Int32Type),
+                                NameTypePair("c", Int64Type),
                             },false));
         EXPECT_EQ("MyUnion", MyUnion->FQN());
         EXPECT_EQ(true, MyUnion->IsUnion());
@@ -51,7 +50,7 @@ GTEST("Union Types") {
 
         x = MyUnion->GetChild(1);
         EXPECT_EQ("b", x.first);
-        EXPECT_EQ(IntType, x.second);
+        EXPECT_EQ(Int32Type, x.second);
     }
 }
 

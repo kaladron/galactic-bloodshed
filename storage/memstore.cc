@@ -10,19 +10,24 @@ std::shared_ptr<MemCollection> MemStore::GetCollection(const Schema *schema) {
     return tables[schema];
 }
 
-Value *MemCollection::Get(const Value &key) {
-    auto it = entries.find(&key);
+StrongValue MemCollection::Get(StrongValue key) {
+    auto it = entries.find(key);
     if (it == entries.end()) return nullptr;
     return it->second;
 }
 
-bool MemCollection::Put(Value &entity) {
-    entries[schema->GetKey(entity)] = &entity;
+bool MemCollection::Put(StrongValue entity) {
+    auto entityptr = entity.get();
+    if (!entityptr) {
+        return false;
+    }
+    auto key = schema->GetKey(*entityptr);
+    entries[key] = entity;
     return true;
 }
 
-bool MemCollection::DeleteByKey(const Value &key) {
-    entries.erase(&key);
+bool MemCollection::Delete(StrongValue key) {
+    entries.erase(key);
     return true;
 }
 

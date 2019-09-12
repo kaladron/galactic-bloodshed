@@ -21,45 +21,15 @@ class Collection {
 public:
     Collection(const Schema *schema_) : schema(schema_) { }
     virtual ~Collection();
-    virtual Value *Get(const Value &key) = 0;
-    virtual bool Put(Value &entity) = 0;
-    virtual bool DeleteByKey(const Value &key) = 0;
+    virtual StrongValue Get(StrongValue key) = 0;
+    virtual bool Put(StrongValue entity) = 0;
+    virtual bool Delete(StrongValue key) = 0;
 
-    virtual bool Put(Value *entity);
-    virtual bool Put(const std::list<Value *> &values);
-    virtual bool Delete(const Value &key);
-    virtual bool Delete(const std::list<const Value *> &keys);
+    virtual bool Put(const std::list<StrongValue> &values);
+    virtual bool Delete(const std::list<StrongValue> &keys);
 
 protected:
     const Schema *schema;
-};
-
-template<class CollectionType, typename ValueType>
-class TypedCollection : protected CollectionType {
-public:
-    TypedCollection(const Schema *schema_) : CollectionType(schema_) { }
-    virtual ~TypedCollection() { }
-    virtual bool Get(const ValueType &key, ValueType &result) {
-        return CollectionType::Get(key, result);
-    }
-    virtual void Put(ValueType &entity) {
-        CollectionType::Put(entity);
-    }
-    virtual void DeleteByKey(const ValueType &key) {
-        CollectionType::DeleteByKey(key);
-    }
-
-    virtual void Delete(const ValueType &entity) {
-        CollectionType::Delete(entity);
-    }
-
-    virtual void Put(const std::list<ValueType *> &values) {
-        CollectionType::Put(values);
-    }
-
-    virtual void Delete(const std::list<const Value *> &keys) {
-        CollectionType::Delete(keys);
-    }
 };
 
 template <typename CollectionType>

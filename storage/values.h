@@ -6,13 +6,14 @@
 #ifndef VALUES_H
 #define VALUES_H
 
+#include <iostream>
 #include "storage/types.h"
 
 START_NS
 
-using ValueMap = std::map<std::string, Value *>;
-using ValueList = std::list<Value *>;
-using ValueVector = std::vector<Value *>;
+using ValueMap = std::map<std::string, StrongValue>;
+using ValueList = std::list<StrongValue>;
+using ValueVector = std::vector<StrongValue>;
 
 /**
  * Value is a super-interface for holding a hierarchy of typed values.
@@ -20,9 +21,12 @@ using ValueVector = std::vector<Value *>;
 class Value {
 public:
     Value() { }
+    // virtual Value *Copy(const Value &another) = 0;
     virtual size_t HashCode() const = 0;
     virtual int Compare(const Value *another) const = 0;
     virtual bool Equals(const Value *another) const;
+    virtual int Compare(StrongValue another) const;
+    virtual bool Equals(StrongValue another) const;
     // virtual int Compare(const Value &another) const { return Compare(&another); }
     // virtual bool Equals(const Value &another) const { return Equals(&another); }
     virtual bool operator< (const Value* another) const;
@@ -35,27 +39,27 @@ public:
 
     // For values with children indexed via ints
     virtual bool IsIndexed() const;
-    virtual Value *Get(size_t index) const;
-    virtual Value *Set(size_t index, Value *newvalue);
+    virtual StrongValue Get(size_t index) const;
+    virtual StrongValue Set(size_t index, StrongValue newvalue);
 
     // For values with children indexed via string keys
     virtual bool IsKeyed() const;
     // TODO: Need a better key or key/val iterator
     virtual vector<string> Keys() const;
-    virtual Value *Get(const std::string &key) const;
-    virtual Value *Set(const std::string &key, Value *newvalue);
+    virtual StrongValue Get(const std::string &key) const;
+    virtual StrongValue Set(const std::string &key, StrongValue newvalue);
 };
 
 class MapValue : public Value {
 public:
     MapValue() { }
-    MapValue(ValueMap &vals) : values(vals) { }
+    MapValue(ValueMap &vals);
     virtual int Compare(const Value *another) const;
     virtual size_t HashCode() const;
     virtual bool HasChildren() const;
     virtual size_t ChildCount() const { return values.size(); }
-    virtual Value *Get(const string &key) const;
-    virtual Value *Set(const std::string &key, Value *newvalue);
+    virtual StrongValue Get(const string &key) const;
+    virtual StrongValue Set(const std::string &key, StrongValue newvalue);
     virtual vector<string> Keys() const;
     virtual bool IsKeyed() const { return true; }
 
@@ -71,25 +75,25 @@ public:
     virtual size_t HashCode() const;
     virtual bool HasChildren() const;
     virtual size_t ChildCount() const { return values.size(); }
-    virtual Value *Get(size_t index) const;
-    virtual Value *Set(size_t index, Value *newvalue);
+    virtual StrongValue Get(size_t index) const;
+    virtual StrongValue Set(size_t index, StrongValue newvalue);
     virtual bool IsIndexed() const { return true; }
 
 protected:
-    std::vector<Value *> values;
+    ValueVector values;
 };
 
 class UnionValue : public Value {
 public:
-    UnionValue(int t, Value *d);
+    UnionValue(int t, StrongValue d);
     virtual size_t HashCode() const;
     virtual int Compare(const Value *another) const;
     int Tag() const { return tag; }
-    Value *Data() const { return data; }
+    StrongValue Data() const { return data; }
 
 private:
     int tag;
-    Value *data;
+    StrongValue data;
 };
 
 /// Helpers to box and unbox values of literal types
@@ -118,6 +122,7 @@ public:
     virtual string AsString() const = 0;
     static const Literal *From(const Value *v);
     static Literal *From(Value *v);
+    virtual int Compare(const Value *another) const;
 };
 
 template <typename T>
@@ -126,17 +131,9 @@ public:
     TypedLiteral(const T &val) : value(val) { }
     int Compare(const Value *another) const {
         const TypedLiteral<T> *ourtype = dynamic_cast<const TypedLiteral<T> *>(another);
-        if (!ourtype) {
+        if (ourtype == nullptr) {
             // see if it is atleast a literal
-            const Literal *littype = dynamic_cast<const Literal *>(another);
-            if (littype) {
-                int litcmp = LitType() - littype->LitType();
-                assert (litcmp != 0 && 
-                        "Literal types are same but classes are different."
-                        "Multiple Literal implementations found.");
-                return litcmp;
-            }
-            return (const Value *)this - another;
+            return Literal::Compare(another);
         }
         return Comparer<T>()(value, ourtype->value);
     }
@@ -160,15 +157,15 @@ template <> string TypedLiteral<string>::AsString() const;
 
 template <typename T>
 struct Boxer {
-    Literal *operator()(const T &value) const {
-        return new TypedLiteral(value);
+    shared_ptr<Literal> operator()(const T &value) const {
+        return make_shared<TypedLiteral<T>>(value);
     }
 };
 
 template <typename T>
 struct Unboxer {
-    bool operator()(const Value *input, T &output) const {
-        const TypedLiteral<T> *ourtype = dynamic_cast<const TypedLiteral<T> *>(input);
+    bool operator()(StrongValue input, T &output) const {
+        const TypedLiteral<T> *ourtype = dynamic_cast<const TypedLiteral<T> *>(input.get());
         if (!ourtype) {
             return false;
         }

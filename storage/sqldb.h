@@ -48,8 +48,8 @@ public:
         const Type *coltype;
         bool is_pkey = false;
         bool required = false;
-        Value *default_read_value = nullptr;
-        Value *default_write_value = nullptr;
+        StrongValue default_read_value;
+        StrongValue default_write_value;
         const string &Name() const { return name; }
         const FieldPath &FP() const { return field_path; }
         const Type *GetType() const { return coltype; }
@@ -68,9 +68,9 @@ public:
      * Ensure the table has been created.
      */
     bool EnsureTable();
-    bool Put(Value *entity) const;
-    bool Delete(const Value *key) const;
-    Value *Get(const Value &key) const;
+    bool Put(StrongValue entity) const;
+    bool Delete(StrongValue key) const;
+    StrongValue Get(StrongValue key) const;
 
     /**
      * Returns true if we have a physical column with the given name
@@ -87,11 +87,11 @@ public:
     string InsertionSQL(const Value *value) const;
     string UpsertionSQL(const Value *key, const Value *value) const;
     string DeletionSQL(const Value *key) const;
-    string GetSQL(const Value &key) const;
+    string GetSQL(const Value *key) const;
 
 protected:
     void processType(const Type *t, FieldPath &fp);
-    Value *resultSetToValue(sqlite3_stmt *stmt, bool is_root, const Type *currType,
+    StrongValue resultSetToValue(sqlite3_stmt *stmt, bool is_root, const Type *currType,
                             int startCol, int endCol) const;
 
 private: 

@@ -41,7 +41,7 @@ int IterCompare(IteratorType fbegin, IteratorType fend,
     for (;it1 != fend && it2 != send; it1++, it2++) {
         auto a = *it1;
         auto b = *it2;
-        int cmp = comparator(*it1, *it2);
+        int cmp = comparator(a, b);
         if (cmp != 0) return cmp;
     }
     if (it1 == fend && it2 == send) return 0;

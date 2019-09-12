@@ -10,23 +10,14 @@ START_NS
 Collection::~Collection() {
 }
 
-bool Collection::Delete(const Value &value) {
-    return DeleteByKey(*schema->GetKey(value));
-}
-
-bool Collection::Delete(const std::list<const Value *> &keys) {
+bool Collection::Delete(const std::list<StrongValue> &keys) {
     for (auto key : keys) {
-        Delete(*key);
+        Delete(key);
     }
     return true;
 }
 
-bool Collection::Put(Value *entity) {
-    if (!entity) return false;
-    return Put(*entity);
-}
-
-bool Collection::Put(const std::list<Value *> &values) {
+bool Collection::Put(const std::list<StrongValue> &values) {
     for (auto value : values) {
         Put(value);
     }

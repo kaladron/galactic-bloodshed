@@ -28,7 +28,7 @@ Constraint::Constraint(const FieldPath &fields) : tag(Type::REQUIRED) {
  * Attach a default value to a field_path to be applied when empty
  * either on read or write depending on the "onread" paraemter.
  */
-Constraint::Constraint(const FieldPath &field_path, Value *value, bool onread) : tag(DEFAULT_VALUE) {
+Constraint::Constraint(const FieldPath &field_path, StrongValue value, bool onread) : tag(DEFAULT_VALUE) {
     default_value.field_path = field_path;
     default_value.value = value;
     default_value.onread = onread;
@@ -80,8 +80,8 @@ const list<const Constraint *> &Schema::GetConstraints() const {
 /**
  * Returns the value of a particular value.
  */
-Value *Schema::GetKey(const Value &value) const {
-    return nullptr;
+StrongValue Schema::GetKey(const Value &value) const {
+    return StrongValue();
 }
 
 /**

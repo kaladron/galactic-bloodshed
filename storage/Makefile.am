@@ -39,6 +39,7 @@ check_PROGRAMS = storage_test
 
 storage_test_SOURCES = tests/values.cc \
 					   tests/types.cc \
+					   tests/utils.cc \
 					   tests/fieldpaths.cc \
 					   tests/main.cc
 

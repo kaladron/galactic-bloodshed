@@ -49,6 +49,12 @@ template<> const LiteralType TypedLiteral<stringbuf>::LIT_TYPE = LiteralType::By
 bool Value::Equals(const Value *another) const {
     return Compare(another) == 0;
 }
+bool Value::Equals(StrongValue another) const {
+    return Compare(another.get()) == 0;
+}
+int Value::Compare(StrongValue another) const {
+    return Compare(another.get());
+}
 
 bool Value::operator< (const Value *another) const {
     return Compare(another) < 0;
@@ -59,11 +65,11 @@ size_t Value::ChildCount() const { return 0; }
 bool Value::IsKeyed() const { return false; }
 vector<string> Value::Keys() const { return {}; }
 bool Value::IsIndexed() const { return false; }
-Value *Value::Get(size_t index) const { return nullptr; }
-Value *Value::Get(const std::string &key) const { return nullptr; }
+StrongValue Value::Get(size_t index) const { return StrongValue(); }
+StrongValue Value::Get(const std::string &key) const { return StrongValue(); }
 
-Value *Value::Set(size_t index, Value *newvalue) { }
-Value *Value::Set(const std::string &key, Value *newvalue) { }
+StrongValue Value::Set(size_t index, StrongValue newvalue) { }
+StrongValue Value::Set(const std::string &key, StrongValue newvalue) { }
 
 template <>
 string TypedLiteral<bool>::AsString() const
@@ -75,6 +81,19 @@ template <>
 string TypedLiteral<string>::AsString() const
 {
     return value;
+}
+
+int Literal::Compare(const Value *another) const {
+    const Literal *littype = Literal::From(another);
+    if (littype) {
+        int litcmp = LitType() - littype->LitType();
+        assert (litcmp != 0 && 
+                "Literal types are same but classes are different."
+                "Multiple Literal implementations found.");
+        cout << "Returning lit cmp: " << LitType() << ", " << littype->LitType() << endl;
+        return litcmp;
+    }
+    return (const Value *)this - another;
 }
 
 const Literal *Literal::From(const Value *v) {
@@ -95,7 +114,7 @@ void ValueToJson(const Value *value, ostream &out,
         for (auto key : value->Keys()) {
             if (i++ > 0) out << ", ";
             out << '"' << key << '"' << ": ";
-            auto child = value->Get(key);
+            auto child = value->Get(key).get();
             ValueToJson(child, out, newlines, indent, level + 1);
         }
         out << "}";
@@ -103,7 +122,7 @@ void ValueToJson(const Value *value, ostream &out,
         out << "[";
         for (int i = 0, s = value->ChildCount();i < s;i++) {
             if (i > 0) out << ", ";
-            auto child = value->Get(i);
+            auto child = value->Get(i).get();
             ValueToJson(child, out, newlines, indent, level + 1);
         }
         out << "]";
@@ -113,14 +132,14 @@ void ValueToJson(const Value *value, ostream &out,
         if (lit->LitType() == LiteralType::String) {
             out << '"' << lit->AsString() << '"';
         } else {
-            lit->AsString();
+            out << lit->AsString();
         }
     }
 }
 
 /////////////////  MapValue Implementation  /////////////////
 
-UnionValue::UnionValue(int t, Value *d) : tag(t), data(d) {
+UnionValue::UnionValue(int t, StrongValue d) : tag(t), data(d) {
 }
 
 size_t UnionValue::HashCode() const {
@@ -131,17 +150,17 @@ int UnionValue::Compare(const Value *another) const {
     const UnionValue *uv = dynamic_cast<const UnionValue *>(another);
     if (!uv) return (const Value *)this - another;
     if (uv->tag != tag) return tag - uv->tag;
-    return data->Compare(uv->data);
+    return data->Compare(uv->data.get());
 }
 
 /////////////////  MapValue Implementation  /////////////////
+
+MapValue::MapValue(ValueMap &vals) : values(vals) { }
 
 size_t MapValue::HashCode() const {
     std::hash<string> hasher;
     size_t h = 0;
     for (auto it : values) {
-        std::cout << "Key Hash: " << it.first << ", " << hasher(it.first) << endl;
-        std::cout << "Value Hash: " << it.second << ", " << (it.second)->HashCode() << endl;
         h += hasher(it.first);
         h += (it.second)->HashCode();
     }
@@ -152,14 +171,14 @@ bool MapValue::HasChildren() const {
     return !values.empty();
 }
 
-Value *MapValue::Get(const string &key) const {
+StrongValue MapValue::Get(const string &key) const {
     auto it = values.find(key);
     if (it == values.end()) return nullptr;
     return it->second;
 }
 
-Value *MapValue::Set(const std::string &key, Value *newvalue) {
-    Value *oldvalue = nullptr;
+StrongValue MapValue::Set(const std::string &key, StrongValue newvalue) {
+    StrongValue oldvalue;
     auto it = values.find(key);
     if (it != values.end()) {
         oldvalue = it->second;
@@ -194,8 +213,8 @@ size_t ListValue::HashCode() const {
     return hash;
 }
 
-Value *ListValue::Get(size_t index) const {
-    if (index >= values.size()) return nullptr;
+StrongValue ListValue::Get(size_t index) const {
+    if (index >= values.size()) return StrongValue();
     return values[index];
 }
 
@@ -211,8 +230,8 @@ bool ListValue::HasChildren() const {
     return !values.empty();
 }
 
-Value *ListValue::Set(size_t index, Value *newvalue) {
-    Value *oldvalue = values[index];
+StrongValue ListValue::Set(size_t index, StrongValue newvalue) {
+    StrongValue oldvalue = values[index];
     values[index] = newvalue;
     return oldvalue;
 }
@@ -221,7 +240,7 @@ int CompareValueVector(const ValueVector &first, const ValueVector &second) {
     return IterCompare(
             first.begin(), first.end(),
             second.begin(), second.end(),
-            [](const Value *a, const Value *b) {
+            [](StrongValue a, StrongValue b) {
                 return a->Compare(b);
             });
 }
@@ -230,23 +249,24 @@ int CompareValueList(const ValueList &first, const ValueList &second) {
     return IterCompare(
             first.begin(), first.end(),
             second.begin(), second.end(),
-            [](const Value *a, const Value *b) {
+            [](StrongValue a, StrongValue b) {
                 return a->Compare(b);
             });
 }
 
 int CompareValueMap(const ValueMap &first, const ValueMap &second) {
-    return IterCompare(
-            first.begin(), first.end(),
-            second.begin(), second.end(),
-            [](const pair<string, Value *> &a, const pair<string, Value *> &b) {
+    for (auto it : first) { cout << "First Key " << it.first << endl; }
+    for (auto it : second) { cout << "Second Key " << it.first << endl; }
+    auto result = IterCompare(first.begin(), first.end(), second.begin(), second.end(),
+            [](const pair<string, StrongValue> &a, const pair<string, StrongValue> &b) {
                 int cmp = a.first.compare(b.first);
                 if (cmp != 0) return cmp;
 
-                // check value otherwise
                 cmp = a.second->Compare(b.second);
                 if (cmp != 0) return cmp;
             });
+    cout << "Cmp Result: " << result << endl;
+    return result;
 }
 
 void DFSWalkValue(const Value *root, int currIndex, FieldPath &fp, DFSWalkCallback callback) {
@@ -257,14 +277,14 @@ void DFSWalkValue(const Value *root, int currIndex, FieldPath &fp, DFSWalkCallba
     if (root->IsKeyed()) {
         int i = 0;
         for (auto key : root->Keys()) {
-            auto child = root->Get(key);
+            auto child = root->Get(key).get();
             fp.push_back(key);
             DFSWalkValue(child, i++, fp, callback);
             fp.pop_back();
         }
     } else if (root->IsIndexed()) {
         for (int i = 0, s = root->ChildCount();i < s;i++) {
-            auto child = root->Get(i);
+            auto child = root->Get(i).get();
             fp.push_back(to_string(i));
             DFSWalkValue(child, i, fp, callback);
             fp.pop_back();
@@ -288,7 +308,7 @@ void MatchTypeAndValue(const Type *type, const Value *root,
         for (int i = 0, c = type->ChildCount();i < c;i++) {
             const auto &childtype = type->GetChild(i);
             auto &key = childtype.first;
-            auto childvalue = root->Get(key);
+            auto childvalue = root->Get(key).get();
             fp.push_back(key);
             if (callback(childtype.second, childvalue, i, &key, fp)) {
                 MatchTypeAndValue(childtype.second, childvalue, fp, callback);
@@ -305,7 +325,7 @@ void MatchTypeAndValue(const Type *type, const Value *root,
         if (uv->Tag() <= type->ChildCount()) {
             // Ensure value's tag is not in a forward version than type so ignore
             const auto childtype = type->GetChild(uv->Tag());
-            const auto childvalue = uv->Data();
+            const auto childvalue = uv->Data().get();
             auto &key = childtype.first;
             fp.push_back(key);
             if (callback(childtype.second, childvalue, uv->Tag(), &key, fp)) {

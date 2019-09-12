@@ -26,7 +26,6 @@ class Value;
 class FieldPath;
 class MapValue;
 class ListValue;
-template <typename T> class LiteralValue;
 template <typename T> struct Comparer;
 class Collection;
 template <typename CollectionType>
@@ -36,6 +35,12 @@ class SQLStore;
 class MemCollection;
 class SQLCollection;
 class DefaultTypes;
+class Literal;
+template <typename T> class TypedLiteral;
+using StrongValue = std::shared_ptr<Value>;
+using WeakValue = std::weak_ptr<Value>;
+using StrongLiteral = std::shared_ptr<Literal>;
+using WeakLiteral = std::weak_ptr<Literal>;
 
 END_NS
 

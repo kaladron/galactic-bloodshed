@@ -29,7 +29,7 @@ public:
     /**
      * Returns the value of a particular value.
      */
-    Value *GetKey(const Value &value) const;
+    StrongValue GetKey(const Value &value) const;
 
     /**
      * Sets the key fields of a particular value.
@@ -78,7 +78,7 @@ public:
 
     struct DefaultValue {
         FieldPath field_path;
-        Value *value;
+        StrongValue value;
         bool onread;
     };
 
@@ -96,7 +96,7 @@ public:
     Constraint(const FieldPath &field_path);
 
     // Default value constraints
-    Constraint(const FieldPath &field_path, Value *value, bool onread = true);
+    Constraint(const FieldPath &field_path, StrongValue value, bool onread = true);
 
     // Foreign key cardinality constraints
     Constraint(const std::list<FieldPath> &src,

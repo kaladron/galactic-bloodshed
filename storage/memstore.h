@@ -13,18 +13,18 @@ START_NS
 class MemCollection : public Collection {
 public:
     MemCollection(const Schema *schema_);
-    virtual Value *Get(const Value &key);
-    virtual bool Put(Value &entity);
-    virtual bool DeleteByKey(const Value &key);
+    virtual StrongValue Get(StrongValue key);
+    virtual bool Put(StrongValue entity);
+    virtual bool Delete(StrongValue key);
 
 private:
-    std::map<const Value *, Value *> entries;
+    std::map<StrongValue, StrongValue> entries;
 };
 
 class MemStore : public Store<MemCollection> {
 public:
     MemStore();
-    virtual std::shared_ptr<MemCollection> GetCollection(const Schema *t);
+    virtual shared_ptr<MemCollection> GetCollection(const Schema *t);
 
 private:
     std::map<const Schema *, std::shared_ptr<MemCollection>> tables;

@@ -23,8 +23,8 @@ struct Address {
     uint8_t address_type;
 };
 
-Value *addressToValue(const Address &address) {
-    Value *out = new MapValue();
+StrongValue addressToValue(const Address &address) {
+    auto out = make_shared<MapValue>();
     out->Set("number", StringBoxer(address.number));
     out->Set("street", StringBoxer(address.street));
     out->Set("city", StringBoxer(address.city));
@@ -34,7 +34,7 @@ Value *addressToValue(const Address &address) {
     return out;
 }
 
-bool valueToAddress(const Value *const input, Address &address) {
+bool valueToAddress(StrongValue input, Address &address) {
     return StringUnboxer(input->Get("number"), address.number) &&
            StringUnboxer(input->Get("street"), address.street) &&
            StringUnboxer(input->Get("city"), address.city) &&
@@ -51,8 +51,8 @@ struct Person {
     Address address;
 };
 
-Value *personToValue(const Person &person) {
-    Value *out = new MapValue();
+StrongValue personToValue(const Person &person) {
+    auto out = make_shared<MapValue>();
     out->Set("id", UInt32Boxer(person.id));
     out->Set("name", StringBoxer(person.name));
     out->Set("dob", Int64Boxer(person.dob));
@@ -61,7 +61,7 @@ Value *personToValue(const Person &person) {
     return out;
 }
 
-bool valueToPerson(const Value *const input, Person &person) {
+bool valueToPerson(StrongValue input, Person &person) {
     return UInt32Unboxer(input->Get("id"), person.id) &&
            StringUnboxer(input->Get("name"), person.name) &&
            Int64Unboxer(input->Get("dob"), person.dob) &&
@@ -120,12 +120,12 @@ int main(int argc, char *argv[]) {
     a1.city = "Wimbledon";
     a1.region = "Brexitford";
     a1.country = "Britain";
-    Value *a1value = addressToValue(a1);
-    ValueToJson(a1value, cout); cout << endl;
-    people->Put(*a1value);      // false ret val is an error - turn into exceptions
+    StrongValue a1value(addressToValue(a1));
+    ValueToJson(a1value.get(), cout); cout << endl;
+    people->Put(a1value);      // false ret val is an error - turn into exceptions
 
     Person p1;
-    Value *p1value = personToValue(p1);
+    StrongValue p1value(personToValue(p1));
     people->Put(p1value);
 
     p1.id = 666;
@@ -136,12 +136,12 @@ int main(int argc, char *argv[]) {
     p1.address.street = "Hell Lane";
     p1.address.region = "Sulphur Zone";
     p1.address.country = "Outworld";
-    p1value = personToValue(p1);
-    people->Put(p1value);
+    StrongValue p2value(personToValue(p1));
+    people->Put(p2value);
 
     Person p2;
-    auto key = Int32Boxer(666);
-    Value *p2value = people->Get(*key);
-    valueToPerson(p2value, p2);
+    StrongValue key(Int32Boxer(666));
+    StrongValue p3value(people->Get(key));
+    valueToPerson(p3value, p2);
 }
 

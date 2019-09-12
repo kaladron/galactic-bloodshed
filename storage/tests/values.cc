@@ -5,9 +5,9 @@
 using namespace Storage;
 
 static auto StringType = DefaultTypes::StringType();
-static auto LongType = DefaultTypes::LongType();
-static auto IntType = DefaultTypes::IntType();
-static auto DateType = LongType;
+static auto Int32Type = DefaultTypes::Int32Type();
+static auto Int16Type = DefaultTypes::Int16Type();
+static auto BoolType = DefaultTypes::BoolType();
 
 GTEST("Literals") {
     SHOULD("Verify literal types") {
@@ -40,35 +40,35 @@ GTEST("Literals") {
     }
 
     SHOULD("Call standard hash method") {
-        auto value = StringBoxer("hello world");
+        StrongValue value = StringBoxer("hello world");
         EXPECT_EQ(hash<string>()("hello world"), value->HashCode());
 
-        auto value2 = Int8Boxer(42);
+        StrongValue value2 = Int8Boxer(42);
         EXPECT_EQ(hash<int>()(42), value2->HashCode());
 
-        auto value3 = FloatBoxer(42.5);
+        StrongValue value3 = FloatBoxer(42.5);
         EXPECT_EQ(hash<float>()(42.5), value3->HashCode());
     }
 
     SHOULD("Compare equal values") {
-        auto val1 = StringBoxer("Hello");
-        auto val2 = StringBoxer("Hello");
+        StrongValue val1 = StringBoxer("Hello");
+        StrongValue val2 = StringBoxer("Hello");
         EXPECT_EQ(true, val1->Equals(val2));
         EXPECT_EQ(0, val1->Compare(val2));
     }
 
     SHOULD("Compare unequal values") {
-        auto val1 = StringBoxer("Hello");
-        auto val2 = StringBoxer("World");
+        StrongValue val1 = StringBoxer("Hello");
+        StrongValue val2 = StringBoxer("World");
         EXPECT_EQ(false, val1->Equals(val2));
         EXPECT_EQ(-1, val1->Compare(val2));
     }
 
     SHOULD("Compare unequal literal types") {
-        auto val1 = StringBoxer("Hello");
-        auto val2 = Int8Boxer(42);
+        StrongLiteral val1 = StringBoxer("Hello");
+        StrongLiteral val2 = Int8Boxer(42);
         EXPECT_EQ(false, val1->Equals(val2));
-        EXPECT_EQ(val1->LitType() - val2->LitType(), val1->Compare(val2));
+        EXPECT_EQ(val1->LitType() - val2->LitType(), val1->Compare(val2.get()));
     }
 }
 
@@ -83,10 +83,10 @@ GTEST("List Values") {
     }
 
     SHOULD("List value with values") {
-        auto val1 = StringBoxer("hello world");
-        auto val2 = Int8Boxer(42);
-        auto val3 = BoolBoxer(true);
-        vector<Value*> values = { val1, val2, val3 };
+        StrongValue val1 = StringBoxer("hello world");
+        StrongValue val2 = Int8Boxer(42);
+        StrongValue val3 = BoolBoxer(true);
+        ValueVector values = { val1, val2, val3 };
         ListValue lv(values);
         EXPECT_EQ(3, lv.ChildCount());
         EXPECT_EQ(true, lv.HasChildren());
@@ -99,10 +99,10 @@ GTEST("List Values") {
     }
 
     SHOULD("List HashCode should be sum of child value hash codes") {
-        auto val1 = StringBoxer("hello world");
-        auto val2 = Int8Boxer(42);
-        auto val3 = BoolBoxer(true);
-        vector<Value*> values = { val1, val2, val3 };
+        StrongValue val1 = StringBoxer("hello world");
+        StrongValue val2 = Int8Boxer(42);
+        StrongValue val3 = BoolBoxer(true);
+        ValueVector values = { val1, val2, val3 };
         ListValue lv(values);
         size_t h = 0;
         for (int i = 0;i < lv.ChildCount();i++) {
@@ -112,15 +112,15 @@ GTEST("List Values") {
     }
 
     SHOULD("List comparison compares values") {
-        auto val1 = StringBoxer("hello world");
-        auto val2 = Int8Boxer(42);
-        auto val3 = BoolBoxer(true);
-        vector<Value*> values = { val1, val2, val3 };
+        StrongValue val1 = StringBoxer("hello world");
+        StrongValue val2 = Int8Boxer(42);
+        StrongValue val3 = BoolBoxer(true);
+        ValueVector values = { val1, val2, val3 };
         ListValue lv1(values);
         ListValue lv2(values);
         EXPECT_EQ(0, lv1.Compare(&lv2));
 
-        vector<Value*> values2 = { val1, val3, val2 };
+        ValueVector values2 = { val1, val3, val2 };
         ListValue lv3(values2);
         EXPECT_EQ(val2->Compare(val3), lv2.Compare(&lv3));
     }
@@ -137,10 +137,10 @@ GTEST("Map Values") {
     }
 
     SHOULD("Map value with values") {
-        auto val1 = StringBoxer("hello world");
-        auto val2 = Int8Boxer(42);
-        auto val3 = BoolBoxer(true);
-        map<string, Value*> values = { 
+        StrongValue val1 = StringBoxer("hello world");
+        StrongValue val2 = Int8Boxer(42);
+        StrongValue val3 = BoolBoxer(true);
+        ValueMap values = { 
             {"1", val1},
             {"2", val2},
             {"3", val3}
@@ -157,10 +157,10 @@ GTEST("Map Values") {
     }
 
     SHOULD("Map HashCode should be sum of child key and value hash codes") {
-        auto val1 = StringBoxer("hello world");
-        auto val2 = Int8Boxer(42);
-        auto val3 = BoolBoxer(true);
-        map<string, Value*> values = { 
+        StrongValue val1 = StringBoxer("hello world");
+        StrongValue val2 = Int8Boxer(42);
+        StrongValue val3 = BoolBoxer(true);
+        ValueMap values = { 
             {"1", val1},
             {"2", val2},
             {"3", val3}
@@ -176,24 +176,31 @@ GTEST("Map Values") {
     }
 
     SHOULD("Map comparison compares values") {
-        auto val1 = StringBoxer("hello world");
-        auto val2 = Int8Boxer(42);
-        auto val3 = BoolBoxer(true);
-        map<string, Value*> values = { 
+        StrongValue val1 = StringBoxer("hello world");
+        StrongValue val2 = Int8Boxer(42);
+        StrongValue val3 = BoolBoxer(true);
+        ValueMap values = { 
             {"1", val1},
-            {"2", val2},
+            {"22", val2},
             {"3", val3}
         };
         MapValue lv1(values);
         MapValue lv2(values);
         EXPECT_EQ(0, lv1.Compare(&lv2));
 
-        map<string, Value*> values2 = { 
+        ValueMap values2 = { 
             {"1", val1},
-            {"2", val3},    // -> order swapped here
+            {"22", val3},    // -> order swapped here
             {"3", val2}
         };
+        cout << "Creating LV3: " << endl;
         MapValue lv3(values2);
+
+        cout << "LV2: ";
+        ValueToJson(&lv2, cout); cout << endl;
+        cout << "LV3: ";
+        ValueToJson(&lv3, cout); cout << endl;
+
         EXPECT_EQ(val2->Compare(val3), lv2.Compare(&lv3));
     }
 }

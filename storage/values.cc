@@ -255,8 +255,6 @@ int CompareValueList(const ValueList &first, const ValueList &second) {
 }
 
 int CompareValueMap(const ValueMap &first, const ValueMap &second) {
-    for (auto it : first) { cout << "First Key " << it.first << endl; }
-    for (auto it : second) { cout << "Second Key " << it.first << endl; }
     auto result = IterCompare(first.begin(), first.end(), second.begin(), second.end(),
             [](const pair<string, StrongValue> &a, const pair<string, StrongValue> &b) {
                 int cmp = a.first.compare(b.first);
@@ -265,7 +263,6 @@ int CompareValueMap(const ValueMap &first, const ValueMap &second) {
                 cmp = a.second->Compare(b.second);
                 if (cmp != 0) return cmp;
             });
-    cout << "Cmp Result: " << result << endl;
     return result;
 }
 

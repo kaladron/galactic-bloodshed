@@ -4,6 +4,14 @@
 
 using namespace Storage;
 
+int StringPairCompare(pair<string, string> a, pair<string, string> b) {
+    auto cmp = a.first.compare(b.first);
+    if (cmp == 0) {
+        return a.second.compare(b.second);
+    }
+    return cmp;
+}
+
 GTEST("Comparer") {
     SHOULD("Compare Integers") {
         EXPECT_EQ(5, Comparer<int>()(10, 5));
@@ -63,5 +71,56 @@ GTEST("IterCompare") {
                             return a - b;
                         });
         EXPECT_EQ(true, result > 0);
+    }
+
+    SHOULD("Compare Equal Maps") {
+        map<string, string> m1 = { 
+            {"1", "a"},
+            {"2", "b"},
+            {"3", "c"}
+        };
+        map<string, string> m2 = { 
+            {"1", "a"},
+            {"2", "b"},
+            {"3", "c"}
+        };
+        auto result = IterCompare(
+                        m1.begin(), m1.end(), m2.begin(), m2.end(), StringPairCompare);
+        EXPECT_EQ(0, result);
+    }
+
+    SHOULD("Compare Maps - m1 < m2 should be -1") {
+        map<string, string> m1 = { 
+            {"1", "a"},
+            {"2", "b"},
+            {"3", "c"}
+        };
+        map<string, string> m2 = { 
+            {"1", "a"},
+            {"2", "b"},
+            {"3", "d"}  // <--- Diff here
+        };
+        auto result = IterCompare(
+                        m1.begin(), m1.end(), m2.begin(), m2.end(),
+                        StringPairCompare);
+        EXPECT_EQ(-1, result);
+    }
+
+    SHOULD("Compare Vectors - v1 > v2 should be >1") {
+        map<string, string> m1 = { 
+            {"1", "a"},
+            {"2", "b"},
+            {"3", "c"},
+            {"4", "d"}
+        };
+        map<string, string> m2 = { 
+            {"1", "a"},
+            {"2", "b"},
+            {"3", "c"}
+        };
+        auto result = IterCompare(
+                        m1.begin(), m1.end(), m2.begin(), m2.end(),
+                        StringPairCompare);
+        EXPECT_EQ(1, result);
     }
 }

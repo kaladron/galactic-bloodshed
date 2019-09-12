@@ -193,14 +193,7 @@ GTEST("Map Values") {
             {"22", val3},    // -> order swapped here
             {"3", val2}
         };
-        cout << "Creating LV3: " << endl;
         MapValue lv3(values2);
-
-        cout << "LV2: ";
-        ValueToJson(&lv2, cout); cout << endl;
-        cout << "LV3: ";
-        ValueToJson(&lv3, cout); cout << endl;
-
         EXPECT_EQ(val2->Compare(val3), lv2.Compare(&lv3));
     }
 }

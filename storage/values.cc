@@ -254,7 +254,7 @@ int CompareValueList(const ValueList &first, const ValueList &second) {
             });
 }
 
-return StringValuePairCompare(const pair<string, StrongValue> &a,
+int StringValuePairCompare(const pair<string, StrongValue> &a,
                               const pair<string, StrongValue> &b) {
     int cmp = a.first.compare(b.first);
     if (cmp == 0) {

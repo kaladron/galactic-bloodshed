@@ -254,15 +254,17 @@ int CompareValueList(const ValueList &first, const ValueList &second) {
             });
 }
 
+return StringValuePairCompare(const pair<string, StrongValue> &a,
+                              const pair<string, StrongValue> &b) {
+    int cmp = a.first.compare(b.first);
+    if (cmp == 0) {
+        cmp = a.second->Compare(b.second);
+    }
+    return cmp;
+};
+
 int CompareValueMap(const ValueMap &first, const ValueMap &second) {
-    auto result = IterCompare(first.begin(), first.end(), second.begin(), second.end(),
-            [](const pair<string, StrongValue> &a, const pair<string, StrongValue> &b) {
-                int cmp = a.first.compare(b.first);
-                if (cmp == 0) {
-                    cmp = a.second->Compare(b.second);
-                }
-                return cmp;
-            });
+    auto result = IterCompare(first.begin(), first.end(), second.begin(), second.end(), StringValuePairCompare);
     return result;
 }
 

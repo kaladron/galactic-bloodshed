@@ -8,7 +8,7 @@ SQLStore::SQLStore(const string &path) : db(new SQLDB(path)) {
 
 shared_ptr<SQLCollection> SQLStore::GetCollection(const Schema *schema) {
     if (tables.find(schema) == tables.end()) {
-        tables[schema] = make_shared<SQLCollection>(schema, db);
+        tables[schema] = std::make_shared<SQLCollection>(schema, db);
     }
     return tables[schema];
 }
@@ -28,7 +28,7 @@ bool SQLCollection::Put(StrongValue entity) {
     return table->Put(entity);
 }
 
-bool SQLCollection::Delete(StrongValue key) {
+bool SQLCollection::Delete(StrongValue /* key */) {
     return false;
 }
 

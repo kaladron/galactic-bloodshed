@@ -4,6 +4,10 @@
 
 START_NS
 
+static void DFSWalkValue(const Value *root, int currIndex, FieldPath &fp, DFSWalkCallback callback);
+static void MatchTypeAndValue(const Type *type, const Value *root, 
+                       FieldPath &fp, MatchTypeAndValueCallback callback);
+
 const Boxer<bool> BoolBoxer = Boxer<bool>();
 const Boxer<int8_t> Int8Boxer = Boxer<int8_t>();
 const Boxer<int16_t> Int16Boxer = Boxer<int16_t>();
@@ -44,6 +48,14 @@ template<> const LiteralType TypedLiteral<double>::LIT_TYPE = LiteralType::Doubl
 template<> const LiteralType TypedLiteral<string>::LIT_TYPE = LiteralType::String;
 template<> const LiteralType TypedLiteral<stringbuf>::LIT_TYPE = LiteralType::Bytes;
 
+int StringValuePairCompare(const pair<string, StrongValue> &a, const pair<string, StrongValue> &b) {
+    int cmp = a.first.compare(b.first);
+    if (cmp == 0) {
+        cmp = a.second->Compare(b.second);
+    }
+    return cmp;
+};
+
 //////////////////  Value Implementation  //////////////////
 
 bool Value::Equals(const Value *another) const {
@@ -65,11 +77,11 @@ size_t Value::ChildCount() const { return 0; }
 bool Value::IsKeyed() const { return false; }
 vector<string> Value::Keys() const { return {}; }
 bool Value::IsIndexed() const { return false; }
-StrongValue Value::Get(size_t index) const { return StrongValue(); }
-StrongValue Value::Get(const std::string &key) const { return StrongValue(); }
+StrongValue Value::Get(size_t /* index */) const { return StrongValue(); }
+StrongValue Value::Get(const std::string & /* key */) const { return StrongValue(); }
 
-StrongValue Value::Set(size_t index, StrongValue newvalue) { }
-StrongValue Value::Set(const std::string &key, StrongValue newvalue) { }
+StrongValue Value::Set(size_t /* index */, StrongValue /* newvalue */) { return StrongValue(); }
+StrongValue Value::Set(const std::string & /* key */, StrongValue /* newvalue */) { return StrongValue(); }
 
 template <>
 string TypedLiteral<bool>::AsString() const
@@ -90,7 +102,7 @@ int Literal::Compare(const Value *another) const {
         assert (litcmp != 0 && 
                 "Literal types are same but classes are different."
                 "Multiple Literal implementations found.");
-        cout << "Returning lit cmp: " << LitType() << ", " << littype->LitType() << endl;
+        std::cout << "Returning lit cmp: " << LitType() << ", " << littype->LitType() << std::endl;
         return litcmp;
     }
     return (const Value *)this - another;
@@ -254,15 +266,6 @@ int CompareValueList(const ValueList &first, const ValueList &second) {
             });
 }
 
-int StringValuePairCompare(const pair<string, StrongValue> &a,
-                              const pair<string, StrongValue> &b) {
-    int cmp = a.first.compare(b.first);
-    if (cmp == 0) {
-        cmp = a.second->Compare(b.second);
-    }
-    return cmp;
-};
-
 int CompareValueMap(const ValueMap &first, const ValueMap &second) {
     auto result = IterCompare(first.begin(), first.end(), second.begin(), second.end(), StringValuePairCompare);
     return result;
@@ -284,7 +287,7 @@ void DFSWalkValue(const Value *root, int currIndex, FieldPath &fp, DFSWalkCallba
     } else if (root->IsIndexed()) {
         for (int i = 0, s = root->ChildCount();i < s;i++) {
             auto child = root->Get(i).get();
-            fp.push_back(to_string(i));
+            fp.push_back(std::to_string(i));
             DFSWalkValue(child, i, fp, callback);
             fp.pop_back();
         }
@@ -312,7 +315,7 @@ void MatchTypeAndValue(const Type *type, const Value *root,
             if (callback(childtype.second, childvalue, i, &key, fp)) {
                 MatchTypeAndValue(childtype.second, childvalue, fp, callback);
             } else {
-                cout << "Aborting for i,key: " << i << ", " << key << endl;
+                std::cout << "Aborting for i,key: " << i << ", " << key << std::endl;
                 return ;
             }
             fp.pop_back();
@@ -330,7 +333,7 @@ void MatchTypeAndValue(const Type *type, const Value *root,
             if (callback(childtype.second, childvalue, uv->Tag(), &key, fp)) {
                 MatchTypeAndValue(childtype.second, childvalue, fp, callback);
             } else {
-                cout << "Aborting for tag,key: " << uv->Tag() << ", " << key << endl;
+                std::cout << "Aborting for tag,key: " << uv->Tag() << ", " << key << std::endl;
                 return ;
             }
             fp.pop_back();
@@ -346,7 +349,7 @@ void MatchTypeAndValue(const Type *type, const Value *root,
             const auto &childtype = type->GetChild(0);
             for (int i = 0, c = root->ChildCount();i < c;i++) {
                 auto childvalue = root->Get(i);
-                fp.push_back(to_string(i));
+                fp.push_back(std::to_string(i));
                 if (!MatchTypeAndValue(childtype.second,
                                        childvalue,
                                        i, fp,
@@ -378,7 +381,7 @@ void MatchTypeAndValue(const Type *type, const Value *root,
     } else if (root->IsIndexed()) {
         for (int i = 0, s = root->ChildCount();i < s;i++) {
             auto child = root->Get(i);
-            fp.push_back(to_string(i));
+            fp.push_back(std::to_string(i));
             if (callback(i, nullptr, child, fp)) {
                 DFSWalkValue(child, fp, callback);
             }

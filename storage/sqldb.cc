@@ -7,13 +7,15 @@
 
 START_NS
 
+static void WriteLiteral(const Type * /* type */, const Literal *lit, ostream &out);
+
 SQLDB::SQLDB(const string &path) : dbpath(path), dbhandle(nullptr) {
     db_status = sqlite3_open_v2(dbpath.c_str(), &dbhandle,
                                 SQLITE_OPEN_CREATE |
                                     SQLITE_OPEN_READWRITE | 
                                     SQLITE_OPEN_SHAREDCACHE,
                                 nullptr);
-    cout << "DB Status: " << db_status << endl;
+    std::cout << "DB Status: " << db_status << std::endl;
 }
 
 shared_ptr<SQLTable> SQLDB::EnsureTable(const Schema *s) {
@@ -25,31 +27,31 @@ shared_ptr<SQLTable> SQLDB::EnsureTable(const Schema *s) {
 
 shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
     // Add all top level fields to the node
-    auto table = make_shared<SQLTable>(this, s->FQN(), s);
+    auto table = std::make_shared<SQLTable>(this, s->FQN(), s);
 
     // Now process table constraints
     for (auto constraint : s->GetConstraints()) {
         if (constraint->IsRequired()) {
-            const SQLTable::Column *col = table->ColumnFor(constraint->AsRequired().field_path);
-            ((SQLTable::Column *)col)->required = true;
+            SQLTable::Column *col = const_cast<SQLTable::Column *>(table->ColumnFor(constraint->AsRequired().field_path));
+            col->required = true;
         }
         else if (constraint->IsDefaultValue()) {
             const Constraint::DefaultValue &cval = constraint->AsDefaultValue();
-            const SQLTable::Column *col = table->ColumnFor(cval.field_path);
+            SQLTable::Column *col = const_cast<SQLTable::Column *>(table->ColumnFor(cval.field_path));
             if (cval.onread) {
-                ((SQLTable::Column *)col)->default_read_value = cval.value;
+                col->default_read_value = cval.value;
             } else {
-                ((SQLTable::Column *)col)->default_write_value = cval.value;
+                col->default_write_value = cval.value;
             }
         }
         else if (constraint->IsForeignKey()) {
-            const Constraint::ForeignKey &cval = constraint->AsForeignKey();
+            // const Constraint::ForeignKey &cval = constraint->AsForeignKey();
         }
     }
 
     // Kick off its creation
     if (!table->EnsureTable()) {
-        cerr << "Could not create table (" << table->Name() << "): " << sqlite3_errmsg(dbhandle) << endl;
+        std::cerr << "Could not create table (" << table->Name() << "): " << sqlite3_errmsg(dbhandle) << std::endl;
     }
     return table;
 }
@@ -57,19 +59,19 @@ shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
 void SQLDB::CloseStatement(sqlite3_stmt *&stmt) {
     sqlite3_reset(stmt);
     sqlite3_finalize(stmt);
-    stmt=NULL;
+    stmt = nullptr;
 }
 
 sqlite3_stmt *SQLDB::PrepareSql(const string &sql_str) {
-    sqlite3_stmt *stmt = NULL;
-    int result = sqlite3_prepare_v2(dbhandle, sql_str.c_str(), -1, &stmt, NULL);
+    sqlite3_stmt *stmt = nullptr;
+    int result = sqlite3_prepare_v2(dbhandle, sql_str.c_str(), -1, &stmt, nullptr);
     // last_query = sql_str;
     if (log_queries) {
-        cout << "Prepared Sql: " << sql_str << endl;
+        std::cout << "Prepared Sql: " << sql_str << std::endl;
     }
     if (result != SQLITE_OK)
     {
-        cerr << "Could not prepare sql: " << sqlite3_errmsg(dbhandle) << endl;
+        std::cerr << "Could not prepare sql: " << sqlite3_errmsg(dbhandle) << std::endl;
         return nullptr;
     }
     return stmt;
@@ -106,7 +108,7 @@ void SQLTable::processType(const Type *curr_type, FieldPath &field_path) {
             NameTypePair ntp = curr_type->GetChild(i);
             string next_name = namedChildren ?
                                ntp.first :
-                               string("_") + to_string(i);
+                               string("_") + std::to_string(i);
             field_path.push_back(next_name);
             processType(ntp.second, field_path);
             field_path.pop_back();
@@ -123,7 +125,7 @@ bool SQLTable::HasColumn(const string &name) const {
 
 const SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, const Type *t) {
     auto it = columns_by_fp.find(fp);
-    cout << "Adding column: " << fp.join() << ", Found: " << (it == columns_by_fp.end()) << endl;
+    std::cout << "Adding column: " << fp.join() << ", Found: " << (it == columns_by_fp.end()) << std::endl;
     if (it == columns_by_fp.end()) {
         // do our thing
         Column *column = new Column();
@@ -184,7 +186,7 @@ string SQLTable::joinedColNamesFor(const list <FieldPath> &field_paths) const {
  */
 string SQLTable::TableCreationSQL() const {
     stringstream sql;
-    sql << "CREATE TABLE IF NOT EXISTS '" << table_name << "' (" << endl;
+    sql << "CREATE TABLE IF NOT EXISTS '" << table_name << "' (" << std::endl;
     for (auto column : columns) {
         const Type *ftype = column->coltype;
         if (column->index > 0) sql << ",";
@@ -195,31 +197,31 @@ string SQLTable::TableCreationSQL() const {
         // lgg
         auto fqn = ftype->FQN();
         if (fqn == "bool") {
-            sql << "BOOLEAN" << " " << endl;
+            sql << "BOOLEAN" << " " << std::endl;
         } else if (fqn == "int8" || fqn == "int16" || fqn == "int32" ||
                    fqn == "uint8" || fqn == "uint16" || fqn == "uint32") {
-            sql << "INT" << " " << endl;
+            sql << "INT" << " " << std::endl;
         } else if (fqn == "int64" || fqn == "uint64") {
-            sql << "INT64" << " " << endl;
+            sql << "INT64" << " " << std::endl;
         } else if (fqn == "float" || fqn == "double") {
-            sql << "REAL" << " " << endl;
+            sql << "REAL" << " " << std::endl;
         } else if (fqn == "string") {
-            sql << "TEXT" << " " << endl;
+            sql << "TEXT" << " " << std::endl;
         } else if (ftype->IsRecord()) {
-            sql << "BOOLEAN" << " " << endl;
+            sql << "BOOLEAN" << " " << std::endl;
         } else if (ftype->IsUnion()) {
-            sql << "INT8" << " " << endl;
+            sql << "INT8" << " " << std::endl;
         } else {
             assert(false && "Invalid child type");
         }
 
         if (column->required) {
-            sql << "NOT NULL " << endl;
+            sql << "NOT NULL " << std::endl;
         }
 
         // Get field constraints
         // for (auto constraint : schema->GetConstraints()) { }
-        // sql << "," << endl;
+        // sql << "," << std::endl;
     }
 
     // Setup the primary key constraint
@@ -234,31 +236,30 @@ string SQLTable::TableCreationSQL() const {
             sql << col->Name();
         }
     }
-    sql << ")" << endl;
+    sql << ")" << std::endl;
 
 
     // Now add table constraints
-    int fkey_count = 0;
     for (auto constraint : schema->GetConstraints()) {
         if (constraint->IsUniqueness()) {
             const Constraint::Uniqueness &cval = constraint->AsUniqueness();
             sql << ", UNIQUE (";
             sql << joinedColNamesFor(cval.field_paths);
-            sql << ")" << endl;
+            sql << ")" << std::endl;
         }
         else if (constraint->IsForeignKey()) {
             const Constraint::ForeignKey &cval = constraint->AsForeignKey();
             sql << ", FOREIGN KEY " << " (";
             sql << joinedColNamesFor(cval.src_field_paths);
-            sql << ")" << endl;
+            sql << ")" << std::endl;
 
-            sql << " REFERENCES " << cval.dst_schema->FQN() << " (" << endl;
+            sql << " REFERENCES " << cval.dst_schema->FQN() << " (" << std::endl;
             sql << joinedColNamesFor(cval.dst_field_paths);
-            sql << ")" << endl;
+            sql << ")" << std::endl;
         }
     }
 
-    sql << ")" << endl;
+    sql << ")" << std::endl;
     return sql.str();
 };
 
@@ -293,7 +294,7 @@ bool SQLTable::Put(StrongValue entity) const {
 /**
  * TODO - LOTS TO DO WRT ESCAPING AND QUOTING ETC.
  */
-void WriteLiteral(const Type *type, const Literal *lit, ostream &out) {
+void WriteLiteral(const Type * /* type */, const Literal *lit, ostream &out) {
     if (lit == nullptr) {
         assert(false && "Expected literal value");
     }
@@ -309,7 +310,7 @@ string SQLTable::InsertionSQL(const Value *entity) const {
 
     int ncols = 0;
     MatchTypeAndValue(schema->EntityType(), entity, [this, &ncols, &col_sql, &val_sql]
-            (const Type *type, const Value *value, int index, const string *key, FieldPath &fp) {
+            (const Type *type, const Value *value, int /* index */, const string * /* key */, FieldPath &fp) {
         if (fp.size() > 0) {
             const Column *col = ColumnFor(fp);
             if (col == nullptr) return false;
@@ -340,11 +341,11 @@ string SQLTable::InsertionSQL(const Value *entity) const {
     return sql.str();
 }
 
-string SQLTable::UpsertionSQL(const Value *key, const Value *entity) const {
+string SQLTable::UpsertionSQL(const Value * /*key*/, const Value * /*entity*/) const {
     stringstream sql;
-    int ncols = 0;
     sql << "UPDATE '" << table_name << " SET ";
     /*
+    int ncols = 0;
     DFSWalkValue(entity, [this, ncols, &sql]
     (const Value *value,int index, const string *key, FieldPath &fp) mutable {
         const Column *col = ColumnFor(fp);
@@ -369,9 +370,9 @@ string SQLTable::UpsertionSQL(const Value *key, const Value *entity) const {
 
 }
 
-string SQLTable::DeletionSQL(const Value *key) const {
+string SQLTable::DeletionSQL(const Value * /* key */) const {
     stringstream sql;
-    sql << "CREATE TABLE IF NOT EXISTS '" << table_name << "' (" << endl;
+    sql << "CREATE TABLE IF NOT EXISTS '" << table_name << "' (" << std::endl;
     return sql.str();
 }
 
@@ -403,7 +404,7 @@ StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const T
         bool value = is_root || sqlite3_column_int(stmt, startCol) != 0;
         StrongValue output;
         if (value) {
-            output = make_shared<MapValue>();
+            output = std::make_shared<MapValue>();
             for (int currCol = startCol+1;currCol <= endCol;) {
                 const Column *col = ColumnAt(currCol);
                 auto key = col->FP().back();
@@ -427,7 +428,7 @@ StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const T
             }
             // create the corresponding tag
             StrongValue data = resultSetToValue(stmt, false, childtype.second, childStart, childCol->endIndex - 1);
-            output = make_shared<UnionValue>(tag, data);
+            output = std::make_shared<UnionValue>(tag, data);
         }
         return output;
     } else {
@@ -476,6 +477,7 @@ StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const T
             assert(false && "Invalid child type");
         }
     }
+    return StrongValue();
 }
 
 string SQLTable::GetSQL(const Value *key) const {

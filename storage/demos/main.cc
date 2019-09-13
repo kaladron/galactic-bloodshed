@@ -4,14 +4,14 @@
 
 using namespace Storage;
 
-const Type *StringType = nullptr;
-const Type *Int64Type = nullptr;
-const Type *DateType = nullptr;
-const Type *AddressType = nullptr;
-const Type *PersonType = nullptr;
-const Type *CompanyType = nullptr;
-const Schema *PersonSchema = nullptr;
-const Schema *CompanySchema = nullptr;
+static const Type *StringType = nullptr;
+static const Type *Int64Type = nullptr;
+static const Type *DateType = nullptr;
+static const Type *AddressType = nullptr;
+static const Type *PersonType = nullptr;
+static const Type *CompanyType = nullptr;
+static const Schema *PersonSchema = nullptr;
+static const Schema *CompanySchema = nullptr;
 
 struct Address {
     string number;
@@ -23,15 +23,30 @@ struct Address {
     uint8_t address_type;
 };
 
+struct Person {
+    uint32_t id;
+    string name;
+    long dob;
+    string gender;
+    Address address;
+};
+
+void initTypes();
+void initSchemas();
+StrongValue addressToValue(const Address &address);
+bool valueToAddress(StrongValue input, Address &address);
+StrongValue personToValue(const Person &person);
+bool valueToPerson(StrongValue input, Person &person);
+
 StrongValue addressToValue(const Address &address) {
-    auto out = make_shared<MapValue>();
+    auto out = std::make_shared<MapValue>();
     out->Set("number", StringBoxer(address.number));
     out->Set("street", StringBoxer(address.street));
     out->Set("city", StringBoxer(address.city));
     out->Set("region", StringBoxer(address.region));
     out->Set("country", StringBoxer(address.country));
     out->Set("address_type", UInt8Boxer(address.address_type));
-    return out;
+    return std::move(out);
 }
 
 bool valueToAddress(StrongValue input, Address &address) {
@@ -43,22 +58,14 @@ bool valueToAddress(StrongValue input, Address &address) {
            UInt8Unboxer(input->Get("address_type"), address.address_type);
 }
 
-struct Person {
-    uint32_t id;
-    string name;
-    long dob;
-    string gender;
-    Address address;
-};
-
 StrongValue personToValue(const Person &person) {
-    auto out = make_shared<MapValue>();
+    auto out = std::make_shared<MapValue>();
     out->Set("id", UInt32Boxer(person.id));
     out->Set("name", StringBoxer(person.name));
     out->Set("dob", Int64Boxer(person.dob));
     out->Set("gender", StringBoxer(person.gender));
     out->Set("address", addressToValue(person.address));
-    return out;
+    return std::move(out);
 }
 
 bool valueToPerson(StrongValue input, Person &person) {
@@ -107,7 +114,7 @@ void initSchemas() {
 int main(int argc, char *argv[]) {
     initTypes();
     initSchemas();
-    cout << "Num args: " << argc << endl;
+    std::cout << "Num args: " << argc << std::endl;
     const char *filename = argc <= 1 ? "/vagrant/test.db" : argv[1];
     SQLStore store(filename);
     auto people = store.GetCollection(PersonSchema);
@@ -121,7 +128,7 @@ int main(int argc, char *argv[]) {
     a1.region = "Brexitford";
     a1.country = "Britain";
     StrongValue a1value(addressToValue(a1));
-    ValueToJson(a1value.get(), cout); cout << endl;
+    ValueToJson(a1value.get(), std::cout); std::cout << std::endl;
     people->Put(a1value);      // false ret val is an error - turn into exceptions
 
     Person p1;

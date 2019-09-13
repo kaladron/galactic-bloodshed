@@ -114,7 +114,7 @@ int Type::Compare(const Type &another) const {
     if (outtype == nullptr) {       \
         outtype = new Type(T);      \
     }                               \
-    return outtype;
+    return outtype
 
 const Type *DefaultTypes::CharType() {
     make_basic_type("char");

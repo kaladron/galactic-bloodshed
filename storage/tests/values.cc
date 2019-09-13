@@ -2,6 +2,9 @@
 #include <GUnit.h>
 #include "storage/storage.h"
 
+template <typename T>
+using hash = std::hash<T>;
+
 using namespace Storage;
 
 static auto StringType = DefaultTypes::StringType();

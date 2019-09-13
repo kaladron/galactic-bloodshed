@@ -5,9 +5,9 @@
 
 using namespace Storage;
 
-auto StringType = DefaultTypes::StringType();
-auto Int64Type = DefaultTypes::Int64Type();
-auto Int32Type = DefaultTypes::Int32Type();
+static auto StringType = DefaultTypes::StringType();
+static auto Int64Type = DefaultTypes::Int64Type();
+static auto Int32Type = DefaultTypes::Int32Type();
 
 GTEST("TypeFunctions") {
     SHOULD("Work as TypeFunctions") {

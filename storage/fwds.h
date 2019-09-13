@@ -44,6 +44,7 @@ using WeakLiteral = std::weak_ptr<Literal>;
 
 template <typename T> using shared_ptr = std::shared_ptr<T>;
 template <typename T> using weak_ptr = std::weak_ptr<T>;
+template <typename T> using unique_ptr = std::unique_ptr<T>;
 template <typename T> using vector = std::vector<T>;
 template <typename T> using list = std::list<T>;
 template <typename K, typename V> using map = std::map<K,V>;

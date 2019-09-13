@@ -21,6 +21,7 @@ using ValueVector = std::vector<StrongValue>;
 class Value {
 public:
     Value() { }
+    virtual ~Value() { }
     // virtual Value *Copy(const Value &another) = 0;
     virtual size_t HashCode() const = 0;
     virtual int Compare(const Value *another) const = 0;
@@ -143,7 +144,7 @@ public:
     }
     const T &LitVal() const { return value; }
     LiteralType LitType() const { return LIT_TYPE; }
-    string AsString() const { return to_string(value); }
+    string AsString() const { return std::to_string(value); }
 
 protected:
     T value;
@@ -158,7 +159,7 @@ template <> string TypedLiteral<string>::AsString() const;
 template <typename T>
 struct Boxer {
     shared_ptr<Literal> operator()(const T &value) const {
-        return make_shared<TypedLiteral<T>>(value);
+        return std::make_shared<TypedLiteral<T>>(value);
     }
 };
 
@@ -202,6 +203,7 @@ extern const Unboxer<string> StringUnboxer;
 
 // Helper methods
 
+extern int StringValuePairCompare(const pair<string, StrongValue> &a, const pair<string, StrongValue> &b);
 extern int CompareValueVector(const ValueVector &first, const ValueVector &second);
 extern int CompareValueList(const ValueList &first, const ValueList &second);
 extern int CompareValueMap(const ValueMap &first, const ValueMap &second);

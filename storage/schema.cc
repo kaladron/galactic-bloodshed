@@ -80,14 +80,14 @@ const list<const Constraint *> &Schema::GetConstraints() const {
 /**
  * Returns the value of a particular value.
  */
-StrongValue Schema::GetKey(const Value &value) const {
+StrongValue Schema::GetKey(const Value & /*value*/) const {
     return StrongValue();
 }
 
 /**
  * Sets the key fields of a particular value.
  */
-void SetKey(const Value &value, const Value &key) {
+void Schema::SetKey(const Value & /*value*/, const Value & /*key*/) {
 }
 
 END_NS

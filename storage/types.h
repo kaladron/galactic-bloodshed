@@ -8,8 +8,6 @@
 
 #include "storage/fwds.h"
 
-using namespace std;
-
 START_NS
 
 using NameTypePair = pair<string, const Type *>;

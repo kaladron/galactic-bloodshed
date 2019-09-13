@@ -42,6 +42,25 @@ using WeakValue = std::weak_ptr<Value>;
 using StrongLiteral = std::shared_ptr<Literal>;
 using WeakLiteral = std::weak_ptr<Literal>;
 
+template <typename T> using shared_ptr = std::shared_ptr<T>;
+template <typename T> using weak_ptr = std::weak_ptr<T>;
+template <typename T> using vector = std::vector<T>;
+template <typename T> using list = std::list<T>;
+template <typename K, typename V> using map = std::map<K,V>;
+template <typename A, typename B> using pair = std::pair<A,B>;
+
+using ostream = std::ostream;
+using stringbuf = std::stringbuf;
+using string = std::string;
+using stringstream = std::stringstream;
+using StringVector = vector<string>;
+using NameTypePair = pair<string, const Type *>;
+using NameTypeVector = vector<NameTypePair>;
+using TypeVector = vector<const Type *>;
+
+template <typename T>
+auto make_shared = std::make_shared<T>;
+
 END_NS
 
 #endif

@@ -37,7 +37,7 @@ TESTS = storage_test
 
 check_PROGRAMS = storage_test
 
-storage_test_CXXFLAGS = -Wno-deprecated-dynamic-exception-spec -Wno-comma -Wno-used-but-marked-unused -Wno-deprecated-this-capture -Wno-zero-as-null-pointer-constant -Wno-reserved-id-macro -Wno-keyword-macro $(AM_CXXFLAGS)
+storage_test_CXXFLAGS = -Wno-shadow-field-in-constructor -Wno-deprecated-dynamic-exception-spec -Wno-comma -Wno-used-but-marked-unused -Wno-deprecated-this-capture -Wno-zero-as-null-pointer-constant -Wno-reserved-id-macro -Wno-keyword-macro $(AM_CXXFLAGS)
 
 storage_test_SOURCES = tests/values.cc \
 					   tests/types.cc \

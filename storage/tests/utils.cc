@@ -4,6 +4,8 @@
 
 using namespace Storage;
 
+static int StringPairCompare(pair<string, string> a, pair<string, string> b);
+
 int StringPairCompare(pair<string, string> a, pair<string, string> b) {
     auto cmp = a.first.compare(b.first);
     if (cmp == 0) {

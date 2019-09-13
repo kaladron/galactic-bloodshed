@@ -6,6 +6,8 @@
 
 #include "gb/commands/toggle.h"
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 #include <cstdio>
 
 #include "gb/GB_server.h"
@@ -16,11 +18,9 @@
 #include "gb/vars.h"
 
 namespace {
-void tog(const player_t Playernum, const governor_t Governor, char *op,
-         const char *name) {
+void tog(GameObj &g, char *op, const char *name) {
   *op = !(*op);
-  sprintf(buf, "%s is now %s\n", name, *op ? "on" : "off");
-  notify(Playernum, Governor, buf);
+  g.out << fmt::format("{0} is now {1}\n", name, *op ? "on" : "off");
 }
 }  // namespace
 
@@ -34,29 +34,23 @@ void toggle(const command_t &argv, GameObj &g) {
 
   if (argv.size() > 1) {
     if (argv[1] == "inverse")
-      tog(Playernum, Governor, &Race->governor[Governor].toggle.inverse,
-          "inverse");
+      tog(g, &Race->governor[Governor].toggle.inverse, "inverse");
     else if (argv[1] == "double_digits")
-      tog(Playernum, Governor, &Race->governor[Governor].toggle.double_digits,
-          "double_digits");
+      tog(g, &Race->governor[Governor].toggle.double_digits, "double_digits");
     else if (argv[1] == "geography")
-      tog(Playernum, Governor, &Race->governor[Governor].toggle.geography,
-          "geography");
+      tog(g, &Race->governor[Governor].toggle.geography, "geography");
     else if (argv[1] == "gag")
-      tog(Playernum, Governor, &Race->governor[Governor].toggle.gag, "gag");
+      tog(g, &Race->governor[Governor].toggle.gag, "gag");
     else if (argv[1] == "autoload")
-      tog(Playernum, Governor, &Race->governor[Governor].toggle.autoload,
-          "autoload");
+      tog(g, &Race->governor[Governor].toggle.autoload, "autoload");
     else if (argv[1] == "color")
-      tog(Playernum, Governor, &Race->governor[Governor].toggle.color, "color");
+      tog(g, &Race->governor[Governor].toggle.color, "color");
     else if (argv[1] == "visible")
-      tog(Playernum, Governor, &Race->governor[Governor].toggle.invisible,
-          "invisible");
+      tog(g, &Race->governor[Governor].toggle.invisible, "invisible");
     else if (Race->God && argv[1] == "monitor")
-      tog(Playernum, Governor, &Race->monitor, "monitor");
+      tog(g, &Race->monitor, "monitor");
     else if (argv[1] == "compatibility")
-      tog(Playernum, Governor, &Race->governor[Governor].toggle.compat,
-          "compatibility");
+      tog(g, &Race->governor[Governor].toggle.compat, "compatibility");
     else {
       sprintf(buf, "No such option '%s'\n", argv[1].c_str());
       notify(Playernum, Governor, buf);

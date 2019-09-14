@@ -24,7 +24,7 @@ AC_SUBST([CLANG_OPTS], ["\
   -Wno-conversion -Wno-conditional-uninitialized -Wno-sign-compare \
   -Wno-switch-enum -Wno-exit-time-destructors -Wno-global-constructors \
   -Wno-signed-enum-bitfield -Wno-documentation-unknown-command \
-  -Wno-weak-vtables"])
+  -Wno-weak-vtables -Wno-return-std-move-in-c++11"])
 
 AC_CHECK_LIB(pthread, pthread_create, [PTHREAD_LIBS+=-lpthread])
 AM_CONDITIONAL([CLANG], [test x$have_clang = xyes])

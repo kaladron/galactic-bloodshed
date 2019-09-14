@@ -46,7 +46,7 @@ StrongValue addressToValue(const Address &address) {
     out->Set("region", StringBoxer(address.region));
     out->Set("country", StringBoxer(address.country));
     out->Set("address_type", UInt8Boxer(address.address_type));
-    return std::move(out);
+    return out;
 }
 
 bool valueToAddress(StrongValue input, Address &address) {
@@ -65,7 +65,7 @@ StrongValue personToValue(const Person &person) {
     out->Set("dob", Int64Boxer(person.dob));
     out->Set("gender", StringBoxer(person.gender));
     out->Set("address", addressToValue(person.address));
-    return std::move(out);
+    return out;
 }
 
 bool valueToPerson(StrongValue input, Person &person) {

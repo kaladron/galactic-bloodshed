@@ -1,5 +1,5 @@
 
-#include <GUnit.h>
+#include <gtest/gtest.h>
 #include "storage/storage.h"
 
 template <typename T>
@@ -12,37 +12,36 @@ static auto Int32Type = DefaultTypes::Int32Type();
 static auto Int16Type = DefaultTypes::Int16Type();
 static auto BoolType = DefaultTypes::BoolType();
 
-GTEST("Literals") {
-    SHOULD("Verify literal types") {
+TEST(Literals, VerifyLiteralTypes) {
         EXPECT_EQ(LiteralType::String, StringBoxer("test")->LitType());
         EXPECT_EQ(LiteralType::Int16, Int16Boxer(450)->LitType());
         EXPECT_EQ(LiteralType::Bool, BoolBoxer(0)->LitType());
-    }
+}
 
-    SHOULD("Stringify normally") {
+TEST(Literals, StringifyNormally) {
         EXPECT_EQ("hello world", StringBoxer("hello world")->AsString());
         EXPECT_EQ("42", Int8Boxer(42)->AsString());
         EXPECT_EQ("true", BoolBoxer(true)->AsString());
         EXPECT_EQ("false", BoolBoxer(0)->AsString());
-    }
+}
 
-    SHOULD("Unbox should match box") {
+TEST(Literals, UnboxShouldMatchBox) {
         auto input = "Hello World";
         auto boxed = StringBoxer(input);
         string output;
         EXPECT_EQ(LiteralType::String, boxed->LitType());
         EXPECT_EQ(true, StringUnboxer(boxed, output));
         EXPECT_EQ(input, output);
-    }
+}
 
-    SHOULD("Unbox should fail on wrong box") {
+TEST(Literals, UnboxShouldFailOnWrongBox) {
         auto input = "Hello World";
         auto boxed = StringBoxer(input);
         int8_t output;
         EXPECT_EQ(false, Int8Unboxer(boxed, output));
-    }
+}
 
-    SHOULD("Call standard hash method") {
+TEST(Literals, CallStandardHashMethod) {
         StrongValue value = StringBoxer("hello world");
         EXPECT_EQ(hash<string>()("hello world"), value->HashCode());
 
@@ -51,41 +50,39 @@ GTEST("Literals") {
 
         StrongValue value3 = FloatBoxer(42.5);
         EXPECT_EQ(hash<float>()(42.5), value3->HashCode());
-    }
+}
 
-    SHOULD("Compare equal values") {
+TEST(Literals, CompareEqualValues) {
         StrongValue val1 = StringBoxer("Hello");
         StrongValue val2 = StringBoxer("Hello");
         EXPECT_EQ(true, val1->Equals(val2));
         EXPECT_EQ(0, val1->Compare(val2));
-    }
+}
 
-    SHOULD("Compare unequal values") {
+TEST(Literals, CompareUnequalValues) {
         StrongValue val1 = StringBoxer("Hello");
         StrongValue val2 = StringBoxer("World");
         EXPECT_EQ(false, val1->Equals(val2));
         EXPECT_EQ(-1, val1->Compare(val2));
-    }
+}
 
-    SHOULD("Compare unequal literal types") {
+TEST(Literals, CompareUnequalLiteralTypes) {
         StrongLiteral val1 = StringBoxer("Hello");
         StrongLiteral val2 = Int8Boxer(42);
         EXPECT_EQ(false, val1->Equals(val2));
         EXPECT_EQ(val1->LitType() - val2->LitType(), val1->Compare(val2.get()));
-    }
 }
 
-GTEST("List Values") {
-    SHOULD("List value creation") {
+TEST(ListValues, ListValueCreation) {
         ListValue lv;
         EXPECT_EQ(0, lv.ChildCount());
         EXPECT_EQ(false, lv.HasChildren());
         EXPECT_EQ(true, lv.IsIndexed());
         EXPECT_EQ(false, lv.IsKeyed());
         EXPECT_EQ(0, lv.HashCode());
-    }
+}
 
-    SHOULD("List value with values") {
+TEST(ListValues, ListValueWithValues) {
         StrongValue val1 = StringBoxer("hello world");
         StrongValue val2 = Int8Boxer(42);
         StrongValue val3 = BoolBoxer(true);
@@ -99,9 +96,9 @@ GTEST("List Values") {
         EXPECT_EQ(val2, lv.Get(1));
         EXPECT_EQ(val3, lv.Get(2));
         EXPECT_EQ(nullptr, lv.Get(3));
-    }
+}
 
-    SHOULD("List HashCode should be sum of child value hash codes") {
+TEST(ListValues, ListHashCodeShouldBeSumOfChildValueHashCodes) {
         StrongValue val1 = StringBoxer("hello world");
         StrongValue val2 = Int8Boxer(42);
         StrongValue val3 = BoolBoxer(true);
@@ -112,9 +109,9 @@ GTEST("List Values") {
             h += lv.Get(i)->HashCode();
         }
         EXPECT_EQ(h, lv.HashCode());
-    }
+}
 
-    SHOULD("List comparison compares values") {
+TEST(ListValues, ListComparisonComparesValues) {
         StrongValue val1 = StringBoxer("hello world");
         StrongValue val2 = Int8Boxer(42);
         StrongValue val3 = BoolBoxer(true);
@@ -126,20 +123,18 @@ GTEST("List Values") {
         ValueVector values2 = { val1, val3, val2 };
         ListValue lv3(values2);
         EXPECT_EQ(val2->Compare(val3), lv2.Compare(&lv3));
-    }
 }
 
-GTEST("Map Values") {
-    SHOULD("Map value creation") {
+TEST(MapValues, MapValueCreation) {
         MapValue lv;
         EXPECT_EQ(0, lv.ChildCount());
         EXPECT_EQ(false, lv.HasChildren());
         EXPECT_EQ(false, lv.IsIndexed());
         EXPECT_EQ(true, lv.IsKeyed());
         EXPECT_EQ(0, lv.HashCode());
-    }
+}
 
-    SHOULD("Map value with values") {
+TEST(MapValues, MapValueWithValues) {
         StrongValue val1 = StringBoxer("hello world");
         StrongValue val2 = Int8Boxer(42);
         StrongValue val3 = BoolBoxer(true);
@@ -157,9 +152,9 @@ GTEST("Map Values") {
         EXPECT_EQ(val2, lv.Get("2"));
         EXPECT_EQ(val3, lv.Get("3"));
         EXPECT_EQ(nullptr, lv.Get("4"));
-    }
+}
 
-    SHOULD("Map HashCode should be sum of child key and value hash codes") {
+TEST(MapValues, MapHashCodeShouldBeSumOfChildKeyAndValueHashCodes) {
         StrongValue val1 = StringBoxer("hello world");
         StrongValue val2 = Int8Boxer(42);
         StrongValue val3 = BoolBoxer(true);
@@ -176,9 +171,9 @@ GTEST("Map Values") {
             h += lv.Get(key)->HashCode();
         }
         EXPECT_EQ(h, lv.HashCode());
-    }
+}
 
-    SHOULD("Map comparison compares values") {
+TEST(MapValues, MapComparisonComparesValues) {
         StrongValue val1 = StringBoxer("hello world");
         StrongValue val2 = Int8Boxer(42);
         StrongValue val3 = BoolBoxer(true);
@@ -198,6 +193,4 @@ GTEST("Map Values") {
         };
         MapValue lv3(values2);
         EXPECT_EQ(val2->Compare(val3), lv2.Compare(&lv3));
-    }
 }
-

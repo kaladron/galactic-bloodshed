@@ -1,18 +1,15 @@
 
-#include <GUnit.h>
+#include <gtest/gtest.h>
 #include <vector>
 #include "storage/types.h"
 
 using namespace Storage;
 
-GTEST("FieldPath Default") {
-    SHOULD("Join should return empty string") {
+TEST(FieldPathDefault, JoinShouldReturnEmptyString) {
         EXPECT_EQ("", FieldPath().join("/"));
-    }
 }
 
-GTEST("FieldPath Constructor") {
-    SHOULD("FieldPath constructor") {
+TEST(FieldPathConstructor, FieldPathConstructor) {
         FieldPath fp("a/b/c/d/e", "/");
         EXPECT_EQ("a--b--c--d--e", fp.join("--"));
         EXPECT_EQ("a+b+c+d+e", fp.join("+"));
@@ -25,11 +22,9 @@ GTEST("FieldPath Constructor") {
         fp3.push_back("d");
         EXPECT_EQ("a-b-c", fp2.join("-"));
         EXPECT_EQ("a-b-c-d", fp3.join("-"));
-    }
 }
 
-GTEST("FieldPath Push") {
-    SHOULD("Join should return string delimited") {
+TEST(FieldPathPush, JoinShouldReturnStringDelimited) {
         FieldPath fp;
         EXPECT_EQ("", fp.join("/"));
 
@@ -39,6 +34,5 @@ GTEST("FieldPath Push") {
         fp = fp2.push("b");
         EXPECT_EQ("a", fp2.join("."));
         EXPECT_EQ("a.b", fp.join("."));
-    }
 }
 

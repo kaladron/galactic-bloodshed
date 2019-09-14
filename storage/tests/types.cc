@@ -1,5 +1,5 @@
 
-#include <GUnit.h>
+#include <gtest/gtest.h>
 #include <vector>
 #include "storage/types.h"
 
@@ -9,16 +9,13 @@ static auto StringType = DefaultTypes::StringType();
 static auto Int64Type = DefaultTypes::Int64Type();
 static auto Int32Type = DefaultTypes::Int32Type();
 
-GTEST("TypeFunctions") {
-    SHOULD("Work as TypeFunctions") {
+TEST(TypeFunctions, WorkAsTypeFunctions) {
         EXPECT_EQ("int", Type("int").FQN());
         EXPECT_EQ(true, Type("int").IsTypeFun());
         EXPECT_EQ(0, Type("int").ChildCount());
-    }
 }
 
-GTEST("Record Types") {
-    SHOULD("Record type Tests") {
+TEST(RecordTypes, RecordTypeTests) {
         unique_ptr<Type> AddressType(new Type("Address", {
                                 NameTypePair("number", StringType),
                                 NameTypePair("street", StringType),
@@ -32,11 +29,9 @@ GTEST("Record Types") {
         auto x = AddressType->GetChild(0);
         EXPECT_EQ("number", x.first);
         EXPECT_EQ(StringType, x.second);
-    }
 }
 
-GTEST("Union Types") {
-    SHOULD("Union type Tests") {
+TEST(UnionTypes, UnionTypeTests) {
         unique_ptr<Type> MyUnion(new Type("MyUnion", {
                                 NameTypePair("a", StringType),
                                 NameTypePair("b", Int32Type),
@@ -51,6 +46,5 @@ GTEST("Union Types") {
         x = MyUnion->GetChild(1);
         EXPECT_EQ("b", x.first);
         EXPECT_EQ(Int32Type, x.second);
-    }
 }
 

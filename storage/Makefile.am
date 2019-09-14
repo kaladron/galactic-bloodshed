@@ -11,7 +11,7 @@ else
 AM_CXXFLAGS += $(GCC_OPTS)
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/external/GUnit/include
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/external/googletest/googletest/include
 
 LIBS = $(SQLITE3_LIBS)
 
@@ -32,12 +32,13 @@ libstorage_a_SOURCES = memstore.cc \
 storage_demos_SOURCES = demos/main.cc
 
 storage_demos_LDADD = libstorage.a
+storage_demos_CXXFLAGS = -Wno-return-std-move-in-c++11 $(AM_CXXFLAGS)
 
 TESTS = storage_test
 
 check_PROGRAMS = storage_test
 
-storage_test_CXXFLAGS = -Wno-shadow-field-in-constructor -Wno-deprecated-dynamic-exception-spec -Wno-comma -Wno-used-but-marked-unused -Wno-deprecated-this-capture -Wno-zero-as-null-pointer-constant -Wno-reserved-id-macro -Wno-keyword-macro $(AM_CXXFLAGS)
+storage_test_CXXFLAGS = -Wno-undef -Wno-shift-sign-overflow $(AM_CXXFLAGS)
 
 storage_test_SOURCES = tests/values.cc \
 					   tests/types.cc \

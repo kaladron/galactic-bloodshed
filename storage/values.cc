@@ -58,6 +58,15 @@ int StringValuePairCompare(const pair<string, StrongValue> &a, const pair<string
 
 //////////////////  Value Implementation  //////////////////
 
+ostream & operator << (ostream &out, const Value &v)
+{
+    return v.Write(out);
+}
+
+ostream &Value::Write(ostream &out) const {
+    return out;
+}
+
 bool Value::Equals(const Value *another) const {
     return Compare(another) == 0;
 }
@@ -102,7 +111,6 @@ int Literal::Compare(const Value *another) const {
         assert (litcmp != 0 && 
                 "Literal types are same but classes are different."
                 "Multiple Literal implementations found.");
-        std::cout << "Returning lit cmp: " << LitType() << ", " << littype->LitType() << std::endl;
         return litcmp;
     }
     return (const Value *)this - another;

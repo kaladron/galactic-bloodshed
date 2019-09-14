@@ -24,6 +24,7 @@ public:
     virtual ~Value() { }
     // virtual Value *Copy(const Value &another) = 0;
     virtual size_t HashCode() const = 0;
+    virtual ostream &Write(ostream &) const;
     virtual int Compare(const Value *another) const = 0;
     virtual bool Equals(const Value *another) const;
     virtual int Compare(StrongValue another) const;
@@ -31,6 +32,7 @@ public:
     // virtual int Compare(const Value &another) const { return Compare(&another); }
     // virtual bool Equals(const Value &another) const { return Equals(&another); }
     virtual bool operator< (const Value* another) const;
+    friend ostream & operator << (ostream &out, const Value &v);
 
     /**
      * Values can be containers or literals (but not both).

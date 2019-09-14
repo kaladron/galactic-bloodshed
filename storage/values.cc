@@ -102,7 +102,6 @@ int Literal::Compare(const Value *another) const {
         assert (litcmp != 0 && 
                 "Literal types are same but classes are different."
                 "Multiple Literal implementations found.");
-        std::cout << "Returning lit cmp: " << LitType() << ", " << littype->LitType() << std::endl;
         return litcmp;
     }
     return (const Value *)this - another;

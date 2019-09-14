@@ -147,6 +147,7 @@ public:
     const T &LitVal() const { return value; }
     LiteralType LitType() const { return LIT_TYPE; }
     string AsString() const { return std::to_string(value); }
+    ostream &Write(ostream &out) const { out << value; return out; }
 
 protected:
     T value;

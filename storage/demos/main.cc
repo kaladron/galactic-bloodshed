@@ -13,6 +13,9 @@ static const Type *CompanyType = nullptr;
 static const Schema *PersonSchema = nullptr;
 static const Schema *CompanySchema = nullptr;
 
+using std::cout;
+using std::endl;
+
 struct Address {
     string number;
     string street;
@@ -114,7 +117,7 @@ void initSchemas() {
 int main(int argc, char *argv[]) {
     initTypes();
     initSchemas();
-    std::cout << "Num args: " << argc << std::endl;
+    cout << "Num args: " << argc << endl;
     const char *filename = argc <= 1 ? "/vagrant/test.db" : argv[1];
     SQLStore store(filename);
     auto people = store.GetCollection(PersonSchema);

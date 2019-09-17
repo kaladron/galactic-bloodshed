@@ -54,7 +54,6 @@ void production_at_star(GameObj &g, starnum_t star) {
 void production(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  Place where;
 
   notify(Playernum, Governor,
          "          ============ Production Report ==========\n");
@@ -69,7 +68,7 @@ void production(const command_t &argv, GameObj &g) {
       production_at_star(g, star);
   else
     for (int i = 1; i < argv.size(); i++) {
-      where = getplace(g, argv[i], 0);
+      Place where{g, argv[i]};
       if (where.err || (where.level == ScopeLevel::LEVEL_UNIV) ||
           (where.level == ScopeLevel::LEVEL_SHIP)) {
         sprintf(buf, "Bad location `%s'.\n", argv[i].c_str());

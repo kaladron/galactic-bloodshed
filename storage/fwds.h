@@ -58,9 +58,6 @@ using NameTypePair = pair<string, const Type *>;
 using NameTypeVector = vector<NameTypePair>;
 using TypeVector = vector<const Type *>;
 
-template <typename T>
-auto make_shared = std::make_shared<T>;
-
 END_NS
 
 #endif

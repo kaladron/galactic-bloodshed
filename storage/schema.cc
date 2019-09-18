@@ -13,7 +13,7 @@ START_NS
  * of field paths.
  */
 Constraint::Constraint(list<FieldPath> &field_paths) : tag(Type::UNIQUE) {
-    uniqueness.field_paths = field_paths;
+	std::get<Uniqueness>(uniqueness).field_paths = field_paths;
 }
 
 /**
@@ -21,7 +21,7 @@ Constraint::Constraint(list<FieldPath> &field_paths) : tag(Type::UNIQUE) {
  * given field path.
  */
 Constraint::Constraint(const FieldPath &fields) : tag(Type::REQUIRED) {
-    required.field_path = fields;
+	std::get<Required>(required).field_path = fields;
 }
 
 /**
@@ -29,9 +29,9 @@ Constraint::Constraint(const FieldPath &fields) : tag(Type::REQUIRED) {
  * either on read or write depending on the "onread" paraemter.
  */
 Constraint::Constraint(const FieldPath &field_path, StrongValue value, bool onread) : tag(DEFAULT_VALUE) {
-    default_value.field_path = field_path;
-    default_value.value = value;
-    default_value.onread = onread;
+	std::get<DefaultValue>(default_value).field_path = field_path;
+	std::get<DefaultValue>(default_value).value = value;
+	std::get<DefaultValue>(default_value).onread = onread;
 }
 
 /**
@@ -43,9 +43,9 @@ Constraint::Constraint(const list<FieldPath> &src,
                       const Schema *dst_schema) : tag(FOREIGN_KEY) {
     assert(src.size() > 0 && "Foreign key constraint must have at least one column");
     assert(src.size() == dst.size() && "Foreign key source and dest columns must be of same size.");
-    foreign_key.src_field_paths = src;
-    foreign_key.dst_field_paths = dst;
-    foreign_key.dst_schema = dst_schema;
+    std::get<ForeignKey>(foreign_key).src_field_paths = src;
+    std::get<ForeignKey>(foreign_key).dst_field_paths = dst;
+    std::get<ForeignKey>(foreign_key).dst_schema = dst_schema;
 }
 
 /**

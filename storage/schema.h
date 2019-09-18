@@ -10,6 +10,7 @@
 #ifndef SCHEMA_H
 #define SCHEMA_H
 
+#include <variant>
 #include "storage/values.h"
 
 START_NS
@@ -108,19 +109,14 @@ public:
     bool IsDefaultValue() const { return tag == DEFAULT_VALUE; }
     bool IsForeignKey() const { return tag == FOREIGN_KEY; }
 
-    const Uniqueness &AsUniqueness() const { return uniqueness; }
-    const Required &AsRequired() const { return required; }
-    const ForeignKey &AsForeignKey() const { return foreign_key; }
-    const DefaultValue &AsDefaultValue() const { return default_value; }
+    const auto &AsUniqueness() const { return std::get<Uniqueness>(uniqueness); }
+    const auto &AsRequired() const { return std::get<Required>(required); }
+    const auto &AsForeignKey() const { return std::get<ForeignKey>(foreign_key); }
+    const auto &AsDefaultValue() const { return std::get<DefaultValue>(default_value); }
 
 protected:
     Type tag;
-    union {
-        Uniqueness uniqueness;
-        Required required;
-        ForeignKey foreign_key;
-        DefaultValue default_value;
-    };
+    std::variant<Uniqueness, Required, ForeignKey, DefaultValue> uniqueness, required, foreign_key, default_value;
 };
 
 END_NS

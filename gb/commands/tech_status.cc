@@ -57,7 +57,6 @@ void tech_status(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int k;
-  Place where;
   double total_gain = 0.0;
   double total_max_gain = 0.0;
   int total_invest = 0;
@@ -78,7 +77,7 @@ void tech_status(const command_t &argv, GameObj &g) {
     }
   } else { /* Several arguments */
     for (k = 1; k < argv.size(); k++) {
-      where = getplace(g, argv[k], 0);
+      Place where{g, argv[k]};
       if (where.err || where.level == ScopeLevel::LEVEL_UNIV ||
           where.level == ScopeLevel::LEVEL_SHIP) {
         sprintf(buf, "Bad location `%s'.\n", argv[k].c_str());

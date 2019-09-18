@@ -64,7 +64,6 @@ void colonies(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   Race *race;
-  Place where;
 
   notify(Playernum, Governor,
          "          ========== Colonization Report ==========\n");
@@ -80,7 +79,7 @@ void colonies(const command_t &argv, GameObj &g) {
       colonies_at_star(g, race, star);
   else
     for (int i = 1; i < argv.size(); i++) {
-      where = getplace(g, argv[i], 0);
+      Place where{g, argv[i]};
       if (where.err || (where.level == ScopeLevel::LEVEL_UNIV) ||
           (where.level == ScopeLevel::LEVEL_SHIP)) {
         sprintf(buf, "Bad location `%s'.\n", argv[i].c_str());

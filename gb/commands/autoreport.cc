@@ -36,7 +36,7 @@ void autoreport(const command_t &argv, GameObj &g) {
       pnum = g.pnum;
       break;
     case 2: {
-      auto place = getplace(g, argv[1], 0);
+      Place place{g, argv[1]};
       if (place.level != ScopeLevel::LEVEL_PLAN) {
         g.out << "Scope must be a planet.\n";
         return;

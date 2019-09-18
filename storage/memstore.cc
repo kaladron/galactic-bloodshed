@@ -3,7 +3,7 @@
 
 START_NS
 
-std::shared_ptr<MemCollection> MemStore::GetCollection(const Schema *schema) {
+std::shared_ptr<Collection> MemStore::GetCollection(const Schema *schema) {
     if (tables.find(schema) == tables.end()) {
         tables[schema] = std::make_shared<MemCollection>(schema);
     }

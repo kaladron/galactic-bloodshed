@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     a1.country = "Britain";
     StrongValue a1value(addressToValue(a1));
     ValueToJson(a1value.get(), std::cout); std::cout << std::endl;
-    people->Put(a1value);      // false ret val is an error - turn into exceptions
+    people->Put(a1value);      // false ret val is an error - TODO: turn into exceptions
 
     Person p1;
     StrongValue p1value(personToValue(p1));
@@ -153,5 +153,7 @@ int main(int argc, char *argv[]) {
     StrongValue key(Int32Boxer(666));
     StrongValue p3value(people->Get(key));
     valueToPerson(p3value, p2);
+
+    // test cases:
 }
 

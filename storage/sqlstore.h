@@ -24,10 +24,10 @@ protected:
     weak_ptr<SQLTable> base_table;
 };
 
-class SQLStore : public Store<SQLCollection> {
+class SQLStore : public Store {
 public:
     SQLStore(const string &dbpath);
-    virtual shared_ptr<SQLCollection> GetCollection(const Schema *t);
+    virtual shared_ptr<Collection> GetCollection(const Schema *t);
 
 private:
     map<const Schema *, shared_ptr<SQLCollection>> tables;

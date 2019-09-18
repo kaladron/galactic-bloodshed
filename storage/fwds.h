@@ -28,7 +28,6 @@ class MapValue;
 class ListValue;
 template <typename T> struct Comparer;
 class Collection;
-template <typename CollectionType>
 class Store;
 class MemStore;
 class SQLStore;

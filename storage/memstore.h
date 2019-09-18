@@ -21,10 +21,10 @@ private:
     std::map<StrongValue, StrongValue> entries;
 };
 
-class MemStore : public Store<MemCollection> {
+class MemStore : public Store {
 public:
     MemStore();
-    virtual shared_ptr<MemCollection> GetCollection(const Schema *t);
+    virtual shared_ptr<Collection> GetCollection(const Schema *t);
 
 private:
     std::map<const Schema *, std::shared_ptr<MemCollection>> tables;

@@ -87,7 +87,7 @@ void produce(startype *star, const Planet &planet, Sector &s) {
   if (s.condition == SectorType::SEC_WASTED && success(NATURAL_REPAIR))
     s.condition = s.type;
 
-  maxsup = maxsupport(Race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
+  maxsup = maxsupport(*Race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
   if ((diff = s.popn - maxsup) < 0) {
     if (s.popn >= Race->number_sexes)
       ss = round_rand(-(double)diff * Race->birthrate);

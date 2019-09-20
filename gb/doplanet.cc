@@ -431,7 +431,7 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
       planet->info[p.owner - 1].popn += p.popn;
       planet->popn += p.popn;
       planet->troops += p.troops;
-      planet->maxpopn += maxsupport(races[p.owner - 1], p, Compat[p.owner - 1],
+      planet->maxpopn += maxsupport(*races[p.owner - 1], p, Compat[p.owner - 1],
                                     planet->conditions[TOXIC]);
       Power[p.owner - 1].troops += p.troops;
       Power[p.owner - 1].popn += p.popn;

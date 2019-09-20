@@ -456,7 +456,7 @@ int main() {
   sect.eff = 10;
   sect.troops = planet.troops = 0;
   planet.maxpopn =
-      maxsupport(race, sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
+      maxsupport(*race, sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
   /* (approximate) */
 
   putsector(sect, planet, secttypes[i].x, secttypes[i].y);

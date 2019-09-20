@@ -182,10 +182,10 @@ void survey(const command_t &argv, GameObj &g) {
               notify(Playernum, Governor, buf);
             } else {
               sprintf(
-                  buf, " %c   %c   %6u%5u%4u%4u%4u%5lu%5lu%5lu%6d%s\n",
+                  buf, " %c   %c   %6u%5u%4u%4u%4u%5lu%5lu%5lu%6ld%s\n",
                   Dessymbols[s.condition], Dessymbols[s.type], s.owner, s.race,
                   s.eff, s.mobilization, s.fert, s.resource, s.troops, s.popn,
-                  maxsupport(Race, s, compat, p.conditions[TOXIC]),
+                  maxsupport(*Race, s, compat, p.conditions[TOXIC]),
                   ((s.crystals && (Race->discoveries[D_CRYSTAL] || Race->God))
                        ? " yes"
                        : " "));
@@ -221,7 +221,7 @@ void survey(const command_t &argv, GameObj &g) {
                 sect_char = '?';
                 break;
             }
-            sprintf(buf, "%c %d %d %d %c %c %d %u %u %u %u %d %lu %lu %lu %d",
+            sprintf(buf, "%c %d %d %d %c %c %d %u %u %u %u %d %lu %lu %lu %ld",
                     CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
                     desshow(Playernum, Governor, Race, s),
                     ((s.condition == SectorType::SEC_WASTED) ? 1 : 0), s.owner,
@@ -230,7 +230,7 @@ void survey(const command_t &argv, GameObj &g) {
                          ? 1
                          : 0),
                     s.resource, s.popn, s.troops,
-                    maxsupport(Race, s, compat, p.conditions[TOXIC]));
+                    maxsupport(*Race, s, compat, p.conditions[TOXIC]));
             notify(Playernum, Governor, buf);
 
             if (shiplocs[lowx][lowy].pos && inhere) {

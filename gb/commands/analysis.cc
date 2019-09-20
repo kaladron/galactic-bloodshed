@@ -217,8 +217,9 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
           Insert(mode, Frt, x, y, sect.condition, (int)sect.fert);
           Insert(mode, Popn, x, y, sect.condition, (int)sect.popn);
           Insert(mode, Troops, x, y, sect.condition, (int)sect.troops);
-          Insert(mode, mPopn, x, y, sect.condition,
-                 maxsupport(Race, sect, compat, (int)planet.conditions[TOXIC]));
+          Insert(
+              mode, mPopn, x, y, sect.condition,
+              maxsupport(*Race, sect, compat, (int)planet.conditions[TOXIC]));
         }
       }
     }

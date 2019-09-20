@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -28,24 +29,24 @@ static void show_map(const player_t, const governor_t, const starnum_t,
 void map(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  Place where;
+  std::unique_ptr<Place> where;
 
   if (argv.size() > 1) {
-    where = getplace(g, argv[1], 0);
+    where = std::make_unique<Place>(g, argv[1]);
   } else {
-    where = getplace(g, "", 0);
+    where = std::make_unique<Place>(g, "");
   }
 
-  if (where.err) return;
+  if (where->err) return;
 
-  switch (where.level) {
+  switch (where->level) {
     case ScopeLevel::LEVEL_SHIP:
       g.out << "Bad scope.\n";
       return;
     case ScopeLevel::LEVEL_PLAN: {
-      const auto p = getplanet(where.snum, where.pnum);
-      show_map(Playernum, Governor, where.snum, where.pnum, p);
-      if (Stars[where.snum]->stability > 50)
+      const auto p = getplanet(where->snum, where->pnum);
+      show_map(Playernum, Governor, where->snum, where->pnum, p);
+      if (Stars[where->snum]->stability > 50)
         g.out << "WARNING! This planet's primary is unstable.\n";
     } break;
     default:

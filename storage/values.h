@@ -55,7 +55,8 @@ public:
 
 class MapValue : public Value {
 public:
-    MapValue() { }
+    MapValue();
+    MapValue(std::initializer_list<std::pair<const string, StrongValue>> vals);
     MapValue(ValueMap &vals);
     virtual int Compare(const Value *another) const;
     virtual size_t HashCode() const;
@@ -72,8 +73,9 @@ protected:
 
 class ListValue : public Value {
 public:
-    ListValue() { }
-    ListValue(ValueVector &vals) : values(vals) { }
+    ListValue();
+    ListValue(std::initializer_list<StrongValue> values);
+    ListValue(ValueVector &vals);
     virtual int Compare(const Value *another) const;
     virtual size_t HashCode() const;
     virtual bool HasChildren() const;

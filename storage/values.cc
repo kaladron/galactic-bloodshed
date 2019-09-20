@@ -175,7 +175,14 @@ int UnionValue::Compare(const Value *another) const {
 
 /////////////////  MapValue Implementation  /////////////////
 
-MapValue::MapValue(ValueMap &vals) : values(vals) { }
+MapValue::MapValue() {
+}
+
+MapValue::MapValue(std::initializer_list<std::pair<const std::string, StrongValue>> vals) : values(vals) {
+}
+
+MapValue::MapValue(ValueMap &vals) : values(vals) {
+}
 
 size_t MapValue::HashCode() const {
     std::hash<string> hasher;
@@ -224,6 +231,15 @@ vector<string> MapValue::Keys() const {
 }
 
 /////////////////  ListValue Implementation  /////////////////
+
+ListValue::ListValue() {
+}
+
+ListValue::ListValue(std::initializer_list<StrongValue> vals) : values(vals) {
+}
+
+ListValue::ListValue(ValueVector &vals) : values(vals) {
+}
 
 size_t ListValue::HashCode() const {
     size_t hash = 0;

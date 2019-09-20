@@ -21,6 +21,7 @@ START_NS
 
 class Constraint;
 class Schema;
+class Registry;
 class Type;
 class Value;
 class FieldPath;

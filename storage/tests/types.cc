@@ -1,13 +1,15 @@
 
 #include <gtest/gtest.h>
-#include <vector>
-#include "storage/types.h"
+#include "storage/storage.h"
 
 using namespace Storage;
 
-static auto StringType = DefaultTypes::StringType();
-static auto Int64Type = DefaultTypes::Int64Type();
-static auto Int32Type = DefaultTypes::Int32Type();
+static shared_ptr<Registry> registry((new Registry())->Add(DefaultCTypes()));
+static const Type *StringType = registry->GetType("string");
+static const Type *Int64Type = registry->GetType("int64");
+static const Type *Int32Type = registry->GetType("int32");
+static const Type *Int16Type = registry->GetType("int16");
+static const Type *BoolType = registry->GetType("bool");
 
 TEST(TypeFunctions, WorkAsTypeFunctions) {
         EXPECT_EQ("int", Type("int").FQN());

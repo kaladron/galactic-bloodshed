@@ -74,23 +74,6 @@ private:
     TypeVector child_types;
 };
 
-class DefaultTypes {
-public:
-    static const Type *CharType();
-    static const Type *BoolType();
-    static const Type *Int8Type();
-    static const Type *Int16Type();
-    static const Type *Int32Type();
-    static const Type *Int64Type();
-    static const Type *UInt8Type();
-    static const Type *UInt16Type();
-    static const Type *UInt32Type();
-    static const Type *UInt64Type();
-    static const Type *FloatType();
-    static const Type *DoubleType();
-    static const Type *StringType();
-};
-
 END_NS
 
 // Some macros to make creation of types easier

@@ -21,6 +21,7 @@ bin_PROGRAMS = storage_demos
 noinst_LIBRARIES = libstorage.a
 
 libstorage_a_SOURCES = memstore.cc \
+					   registry.cc \
 					   schema.cc \
 					   sqldb.cc	\
 					   sqlstore.cc	\

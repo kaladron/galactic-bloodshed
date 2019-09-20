@@ -4,9 +4,11 @@
 
 using namespace Storage;
 
-static const Type *StringType = nullptr;
-static const Type *Int64Type = nullptr;
-static const Type *DateType = nullptr;
+static shared_ptr<Registry> registry((new Registry())->Add(DefaultCTypes()));
+static const Type *StringType = registry->GetType("string");
+static const Type *Int64Type = registry->GetType("int64");
+static const Type *DateType = Int64Type;
+
 static const Type *AddressType = nullptr;
 static const Type *PersonType = nullptr;
 static const Type *CompanyType = nullptr;
@@ -15,6 +17,7 @@ static const Schema *CompanySchema = nullptr;
 
 using std::cout;
 using std::endl;
+using std::make_shared;
 
 struct Address {
     string number;
@@ -42,7 +45,7 @@ StrongValue personToValue(const Person &person);
 bool valueToPerson(StrongValue input, Person &person);
 
 StrongValue addressToValue(const Address &address) {
-    auto out = std::make_shared<MapValue>();
+    auto out = make_shared<MapValue>();
     out->Set("number", StringBoxer(address.number));
     out->Set("street", StringBoxer(address.street));
     out->Set("city", StringBoxer(address.city));
@@ -62,7 +65,7 @@ bool valueToAddress(StrongValue input, Address &address) {
 }
 
 StrongValue personToValue(const Person &person) {
-    auto out = std::make_shared<MapValue>();
+    auto out = make_shared<MapValue>();
     out->Set("id", UInt32Boxer(person.id));
     out->Set("name", StringBoxer(person.name));
     out->Set("dob", Int64Boxer(person.dob));
@@ -80,10 +83,6 @@ bool valueToPerson(StrongValue input, Person &person) {
 }
 
 void initTypes() {
-    StringType = DefaultTypes::StringType();
-    Int64Type = DefaultTypes::Int64Type();
-    DateType = Int64Type;
-
     AddressType = new Type("Address", {
                             NameTypePair("number", StringType),
                             NameTypePair("street", StringType),

@@ -6,6 +6,7 @@
 #include "storage/types.h"
 #include "storage/values.h"
 #include "storage/schema.h"
+#include "storage/registry.h"
 #include "storage/store.h"
 #include "storage/memstore.h"
 #include "storage/sqldb.h"

@@ -5,13 +5,25 @@
 #ifndef MAX_H
 #define MAX_H
 
+#include <cmath>
+
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/vars.h"
 
-int maxsupport(const Race *r, const Sector &s, const double c, const int toxic);
 double compatibility(const Planet &, const Race *);
 double gravity(const Planet &);
 char *prin_ship_orbits(Ship *);
+
+constexpr auto maxsupport(const Race &r, const Sector &s, const double c,
+                          const int toxic) {
+  if (!r.likes[s.condition]) return 0L;
+  double a = ((double)s.eff + 1.0) * (double)s.fert;
+  double b = (.01 * c);
+
+  auto val = std::lround(a * b * .01 * (100.0 - (double)toxic));
+
+  return val;
+}
 
 #endif  // MAX_H

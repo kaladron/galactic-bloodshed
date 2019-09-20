@@ -315,7 +315,7 @@ found_planet:
   /*planet->info[Playernum-1].autorep = 1;*/
 
   planet.maxpopn =
-      maxsupport(race, sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
+      maxsupport(*race, sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
   /* (approximate) */
 
 #ifdef STARTING_INVENTORY

@@ -55,7 +55,6 @@ void survey(const command_t &argv, GameObj &g) {
   char d;
   char sect_char;
   int tindex;
-  Place where;
   double compat;
   int avg_fert;
   int avg_resource;
@@ -81,12 +80,9 @@ void survey(const command_t &argv, GameObj &g) {
   else
     mode = 1;
 
-  /* general code -- jpd -- */
-
+  std::unique_ptr<Place> where;
   if (argv.size() == 1) { /* no args */
-    where.level = g.level;
-    where.snum = g.snum;
-    where.pnum = g.pnum;
+    where = std::make_unique<Place>(g.level, g.snum, g.pnum);
   } else {
     /* they are surveying a sector */
     if ((isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) ||
@@ -95,20 +91,18 @@ void survey(const command_t &argv, GameObj &g) {
         g.out << "There are no sectors here.\n";
         return;
       }
-      where.level = ScopeLevel::LEVEL_PLAN;
-      where.snum = g.snum;
-      where.pnum = g.pnum;
+      where = std::make_unique<Place>(ScopeLevel::LEVEL_PLAN, g.snum, g.pnum);
 
     } else {
-      where = getplace(g, argv[1], 0);
-      if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;
+      where = std::make_unique<Place>(g, argv[1]);
+      if (where->err || where->level == ScopeLevel::LEVEL_SHIP) return;
     }
   }
 
   Race = races[Playernum - 1];
 
-  if (where.level == ScopeLevel::LEVEL_PLAN) {
-    const auto p = getplanet(where.snum, where.pnum);
+  if (where->level == ScopeLevel::LEVEL_PLAN) {
+    const auto p = getplanet(where->snum, where->pnum);
 
     compat = compatibility(p, Race);
 
@@ -138,8 +132,8 @@ void survey(const command_t &argv, GameObj &g) {
         if (all) {
           sprintf(buf, "%c %d %d %d %s %s %lu %d %d %ld %ld %d %.2f %d\n",
                   CSP_CLIENT, CSP_SURVEY_INTRO, p.Maxx, p.Maxy,
-                  Stars[where.snum]->name,
-                  Stars[where.snum]->pnames[where.pnum],
+                  Stars[where->snum]->name,
+                  Stars[where->snum]->pnames[where->pnum],
                   p.info[Playernum - 1].resource, p.info[Playernum - 1].fuel,
                   p.info[Playernum - 1].destruct, p.popn, p.maxpopn,
                   p.conditions[TOXIC], compatibility(p, Race), p.slaved_to);
@@ -252,14 +246,14 @@ void survey(const command_t &argv, GameObj &g) {
       }
     } else {
       /* survey of planet */
-      sprintf(buf, "%s:\n", Stars[where.snum]->pnames[where.pnum]);
+      sprintf(buf, "%s:\n", Stars[where->snum]->pnames[where->pnum]);
       notify(Playernum, Governor, buf);
       sprintf(buf, "gravity   x,y absolute     x,y relative to %s\n",
-              Stars[where.snum]->name);
+              Stars[where->snum]->name);
       notify(Playernum, Governor, buf);
       sprintf(buf, "%7.2f   %7.1f,%7.1f   %8.1f,%8.1f\n", gravity(p),
-              p.xpos + Stars[where.snum]->xpos,
-              p.ypos + Stars[where.snum]->ypos, p.xpos, p.ypos);
+              p.xpos + Stars[where->snum]->xpos,
+              p.ypos + Stars[where->snum]->ypos, p.xpos, p.ypos);
       notify(Playernum, Governor, buf);
       g.out << "======== Planetary conditions: ========\n";
       g.out << "atmosphere concentrations:\n";
@@ -330,30 +324,30 @@ void survey(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
       }
     }
-  } else if (where.level == ScopeLevel::LEVEL_STAR) {
-    sprintf(buf, "Star %s\n", Stars[where.snum]->name);
+  } else if (where->level == ScopeLevel::LEVEL_STAR) {
+    sprintf(buf, "Star %s\n", Stars[where->snum]->name);
     notify(Playernum, Governor, buf);
-    sprintf(buf, "locn: %f,%f\n", Stars[where.snum]->xpos,
-            Stars[where.snum]->ypos);
+    sprintf(buf, "locn: %f,%f\n", Stars[where->snum]->xpos,
+            Stars[where->snum]->ypos);
     notify(Playernum, Governor, buf);
     if (Race->God) {
-      for (i = 0; i < Stars[where.snum]->numplanets; i++) {
-        sprintf(buf, " \"%s\"\n", Stars[where.snum]->pnames[i]);
+      for (i = 0; i < Stars[where->snum]->numplanets; i++) {
+        sprintf(buf, " \"%s\"\n", Stars[where->snum]->pnames[i]);
         notify(Playernum, Governor, buf);
       }
     }
-    sprintf(buf, "Gravity: %.2f\tInstability: ", Stars[where.snum]->gravity);
+    sprintf(buf, "Gravity: %.2f\tInstability: ", Stars[where->snum]->gravity);
     notify(Playernum, Governor, buf);
 
     if (Race->tech >= TECH_SEE_STABILITY || Race->God) {
-      sprintf(buf, "%d%% (%s)\n", Stars[where.snum]->stability,
-              Stars[where.snum]->stability < 20
+      sprintf(buf, "%d%% (%s)\n", Stars[where->snum]->stability,
+              Stars[where->snum]->stability < 20
                   ? "stable"
-                  : Stars[where.snum]->stability < 40
+                  : Stars[where->snum]->stability < 40
                         ? "unstable"
-                        : Stars[where.snum]->stability < 60
+                        : Stars[where->snum]->stability < 60
                               ? "dangerous"
-                              : Stars[where.snum]->stability < 100
+                              : Stars[where->snum]->stability < 100
                                     ? "WARNING! Nova iminent!"
                                     : "undergoing nova");
       notify(Playernum, Governor, buf);
@@ -362,17 +356,17 @@ void survey(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, buf);
     }
     sprintf(buf, "temperature class (1->10) %d\n",
-            Stars[where.snum]->temperature);
+            Stars[where->snum]->temperature);
     notify(Playernum, Governor, buf);
-    sprintf(buf, "%d planets are ", Stars[where.snum]->numplanets);
+    sprintf(buf, "%d planets are ", Stars[where->snum]->numplanets);
     notify(Playernum, Governor, buf);
-    for (x2 = 0; x2 < Stars[where.snum]->numplanets; x2++) {
-      sprintf(buf, "%s ", Stars[where.snum]->pnames[x2]);
+    for (x2 = 0; x2 < Stars[where->snum]->numplanets; x2++) {
+      sprintf(buf, "%s ", Stars[where->snum]->pnames[x2]);
       notify(Playernum, Governor, buf);
     }
     sprintf(buf, "\n");
     notify(Playernum, Governor, buf);
-  } else if (where.level == ScopeLevel::LEVEL_UNIV) {
+  } else if (where->level == ScopeLevel::LEVEL_UNIV) {
     g.out << "It's just _there_, you know?\n";
   } else {
     g.out << "Illegal scope.\n";
@@ -389,13 +383,10 @@ void repair(const command_t &argv, GameObj &g) {
   int x2;
   int sectors;
   int cost;
-  Place where;
 
-  /* general code -- jpd -- */
+  std::unique_ptr<Place> where;
   if (argv.size() == 1) { /* no args */
-    where.level = g.level;
-    where.snum = g.snum;
-    where.pnum = g.pnum;
+    where = std::make_unique<Place>(g.level, g.snum, g.pnum);
   } else {
     /* repairing a sector */
     if (isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) {
@@ -404,18 +395,16 @@ void repair(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
         return;
       }
-      where.level = ScopeLevel::LEVEL_PLAN;
-      where.snum = g.snum;
-      where.pnum = g.pnum;
+      where = std::make_unique<Place>(ScopeLevel::LEVEL_PLAN, g.snum, g.pnum);
 
     } else {
-      where = getplace(g, argv[1], 0);
-      if (where.err || where.level == ScopeLevel::LEVEL_SHIP) return;
+      where = std::make_unique<Place>(g, argv[1]);
+      if (where->err || where->level == ScopeLevel::LEVEL_SHIP) return;
     }
   }
 
-  if (where.level == ScopeLevel::LEVEL_PLAN) {
-    auto p = getplanet((int)where.snum, (int)where.pnum);
+  if (where->level == ScopeLevel::LEVEL_PLAN) {
+    auto p = getplanet(where->snum, where->pnum);
     if (!p.info[Playernum - 1].numsectsowned) {
       notify(Playernum, Governor,
              "You don't own any sectors on this planet.\n");
@@ -454,7 +443,7 @@ void repair(const command_t &argv, GameObj &g) {
           }
         }
       }
-    putplanet(p, Stars[where.snum], (int)where.pnum);
+    putplanet(p, Stars[where->snum], where->pnum);
 
     sprintf(buf, "%d sectors repaired at a cost of %d resources.\n", sectors,
             cost);

@@ -7,6 +7,12 @@
 #include <sstream>
 #include "gb/getplace.h"
 
+Place::Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_)
+    : level(level_), snum(snum_), pnum(pnum_), shipno(0) {
+  if (level_ == ScopeLevel::LEVEL_SHIP)
+    throw std::runtime_error("Must give ship number when level is a ship");
+}
+
 std::string Place::to_string() {
   std::ostringstream out;
   switch (level) {

@@ -31,16 +31,13 @@ static void PrintTop(GameObj &, struct anal_sect[], const char *);
 
 void analysis(const command_t &argv, GameObj &g) {
   int sector_type = -1; /* -1 does analysis on all types */
-  Place where;          /* otherwise on specific type */
   int do_player = -1;
   const char *p;
   int mode = 1; /* does top five. 0 does low five */
 
   size_t i = 1;
   do {
-    where.level = g.level;
-    where.snum = g.snum;
-    where.pnum = g.pnum;
+    auto where = std::make_unique<Place>(g.level, g.snum, g.pnum);
 
     p = argv[1].c_str();
     if (*p == '-') /*  Must use 'd' to do an analysis on */
@@ -89,28 +86,27 @@ void analysis(const command_t &argv, GameObj &g) {
         g.out << "No such player #.\n";
         return;
       }
-      where.level = g.level;
-      where.snum = g.snum;
-      where.pnum = g.pnum;
+      where = std::make_unique<Place>(g.level, g.snum, g.pnum);
       i++;
     }
     p = argv[i].c_str();
     if (i < argv.size() && (isalpha(*p) || *p == '/')) {
-      where = getplace(g, argv[i], 0);
-      if (where.err) continue;
+      where = std::make_unique<Place>(g, argv[i]);
+      if (where->err) continue;
     }
 
-    switch (where.level) {
+    switch (where->level) {
       case ScopeLevel::LEVEL_UNIV:
       case ScopeLevel::LEVEL_SHIP:
         g.out << "You can only analyze planets.\n";
         break;
       case ScopeLevel::LEVEL_PLAN:
-        do_analysis(g, do_player, mode, sector_type, where.snum, where.pnum);
+        do_analysis(g, do_player, mode, sector_type, where->snum, where->pnum);
         break;
       case ScopeLevel::LEVEL_STAR:
-        for (planetnum_t pnum = 0; pnum < Stars[where.snum]->numplanets; pnum++)
-          do_analysis(g, do_player, mode, sector_type, where.snum, pnum);
+        for (planetnum_t pnum = 0; pnum < Stars[where->snum]->numplanets;
+             pnum++)
+          do_analysis(g, do_player, mode, sector_type, where->snum, pnum);
         break;
     }
   } while (false);

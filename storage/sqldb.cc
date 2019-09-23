@@ -32,12 +32,12 @@ shared_ptr<SQLTable> SQLDB::processSchema(const Schema *s) {
     // Now process table constraints
     for (auto constraint : s->GetConstraints()) {
         if (constraint->IsRequired()) {
-            SQLTable::Column *col = const_cast<SQLTable::Column *>(table->ColumnFor(constraint->AsRequired().field_path));
+            auto col = *table->ColumnFor(constraint->AsRequired().field_path);
             col->required = true;
         }
         else if (constraint->IsDefaultValue()) {
             const Constraint::DefaultValue &cval = constraint->AsDefaultValue();
-            SQLTable::Column *col = const_cast<SQLTable::Column *>(table->ColumnFor(cval.field_path));
+            auto col = *table->ColumnFor(cval.field_path);
             if (cval.onread) {
                 col->default_read_value = cval.value;
             } else {
@@ -123,7 +123,7 @@ bool SQLTable::HasColumn(const string &name) const {
     return columns_by_name.find(name) != columns_by_name.end();
 }
 
-const SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, const Type *t) {
+SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, const Type *t) {
     auto it = columns_by_fp.find(fp);
     std::cout << "Adding column: " << fp.join() << ", Found: " << (it == columns_by_fp.end()) << std::endl;
     if (it == columns_by_fp.end()) {
@@ -140,17 +140,17 @@ const SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, const Type *t) 
     return columns_by_fp[fp];
 }
 
-const SQLTable::Column *SQLTable::ColumnAt(size_t index) const {
+optional<SQLTable::Column *> SQLTable::ColumnAt(size_t index) const {
     return columns[index];
 }
 
-const SQLTable::Column *SQLTable::ColumnFor(const string &name) const {
+optional<SQLTable::Column *> SQLTable::ColumnFor(const string &name) const {
     auto it = columns_by_name.find(name);
     if (it == columns_by_name.end()) return nullptr;
     return it->second;
 }
 
-const SQLTable::Column *SQLTable::ColumnFor(const FieldPath &fp) const {
+optional<SQLTable::Column *> SQLTable::ColumnFor(const FieldPath &fp) const {
     auto it = columns_by_fp.find(fp);
     if (it == columns_by_fp.end()) return nullptr;
     return it->second;
@@ -175,7 +175,7 @@ string SQLTable::joinedColNamesFor(const list <FieldPath> &field_paths) const {
     int i = 0;
     for (auto fp : field_paths) {
         if (i++ > 0) out << ", ";
-        const Column *col = ColumnFor(fp);
+        auto col = *ColumnFor(fp);
         out << col->name;
     }
     return out.str();
@@ -229,7 +229,7 @@ string SQLTable::TableCreationSQL() const {
     int colindex = 0;
     for (auto fp : schema->KeyFields()) {
         if (colindex++ > 0) sql << ", ";
-        const Column *col = ColumnFor(fp);
+        auto col = *ColumnFor(fp);
         if (!col) {
             sql << "NULL";  // an error
         } else {
@@ -312,7 +312,7 @@ string SQLTable::InsertionSQL(const Value *entity) const {
     MatchTypeAndValue(schema->EntityType(), entity, [this, &ncols, &col_sql, &val_sql]
             (const Type *type, const Value *value, int /* index */, const string * /* key */, FieldPath &fp) {
         if (fp.size() > 0) {
-            const Column *col = ColumnFor(fp);
+            auto col = *ColumnFor(fp);
             if (col == nullptr) return false;
             if (ncols++ > 0) {
                 col_sql << ", ";
@@ -348,7 +348,7 @@ string SQLTable::UpsertionSQL(const Value * /*key*/, const Value * /*entity*/) c
     int ncols = 0;
     DFSWalkValue(entity, [this, ncols, &sql]
     (const Value *value,int index, const string *key, FieldPath &fp) mutable {
-        const Column *col = ColumnFor(fp);
+        auto col = *ColumnFor(fp);
         if (col == nullptr) return false;
         if (ncols++ > 0) sql << ", ";
         sql << col->Name() << " = ";
@@ -406,7 +406,7 @@ StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const T
         if (value) {
             output = std::make_shared<MapValue>();
             for (int currCol = startCol+1;currCol <= endCol;) {
-                const Column *col = ColumnAt(currCol);
+                auto col = *ColumnAt(currCol);
                 auto key = col->FP().back();
                 auto childvalue = resultSetToValue(stmt, false, col->GetType(), currCol, col->endIndex - 1);
                 output->Set(key, childvalue);
@@ -421,10 +421,10 @@ StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const T
             // find where child starts for this tag
             int childStart = startCol + 1;
             auto childtype = currType->GetChild(tag);
-            const Column *childCol = ColumnAt(childStart);
+            auto childCol = *ColumnAt(childStart);
             for (int i = 0;i < tag;i++) {
                 childStart = childCol->endIndex;
-                childCol = ColumnAt(childStart);
+                childCol = *ColumnAt(childStart);
             }
             // create the corresponding tag
             StrongValue data = resultSetToValue(stmt, false, childtype.second, childStart, childCol->endIndex - 1);
@@ -492,7 +492,7 @@ string SQLTable::GetSQL(const Value *key) const {
     }
     for (int i = 0;i < nKeyFields;i++) {
         const auto &keyfield = keyfields[i];
-        const Column *col = ColumnFor(keyfield);
+        auto col = *ColumnFor(keyfield);
         sql << col->Name() << " = ";
 
         const Value *key_value = key;

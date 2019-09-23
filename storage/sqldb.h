@@ -77,10 +77,10 @@ public:
      */
     bool HasColumn(const string &name) const;
     size_t ColCount() const { return columns.size(); } 
-    const Column *AddColumn(const FieldPath &fp, const Type *t);
-    const Column *ColumnAt(size_t index) const;
-    const Column *ColumnFor(const string &name) const;
-    const Column *ColumnFor(const FieldPath &fp) const;
+    Column *AddColumn(const FieldPath &fp, const Type *t);
+    optional<Column *> ColumnAt(size_t index) const;
+    optional<Column *> ColumnFor(const string &name) const;
+    optional<Column *> ColumnFor(const FieldPath &fp) const;
     const string &Name() const { return table_name; }
 
     string TableCreationSQL() const;

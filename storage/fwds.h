@@ -47,6 +47,7 @@ template <typename T> using weak_ptr = std::weak_ptr<T>;
 template <typename T> using unique_ptr = std::unique_ptr<T>;
 template <typename T> using vector = std::vector<T>;
 template <typename T> using list = std::list<T>;
+template <typename T> using optional = std::optional<T>;
 template <typename K, typename V> using map = std::map<K,V>;
 template <typename A, typename B> using pair = std::pair<A,B>;
 

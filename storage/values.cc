@@ -157,7 +157,7 @@ void ValueToJson(const Value *value, ostream &out,
     }
 }
 
-/////////////////  MapValue Implementation  /////////////////
+/////////////////  UnionValue Implementation  /////////////////
 
 UnionValue::UnionValue(int t, StrongValue d) : tag(t), data(d) {
 }
@@ -178,10 +178,13 @@ int UnionValue::Compare(const Value *another) const {
 MapValue::MapValue() {
 }
 
+// Copy constructor
+// MapValue::MapValue(const MapValue &) { }
+
 MapValue::MapValue(std::initializer_list<std::pair<const std::string, StrongValue>> vals) : values(vals) {
 }
 
-MapValue::MapValue(ValueMap &vals) : values(vals) {
+MapValue::MapValue(const ValueMap &vals) : values(vals) {
 }
 
 size_t MapValue::HashCode() const {

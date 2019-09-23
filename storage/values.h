@@ -57,7 +57,7 @@ class MapValue : public Value {
 public:
     MapValue();
     MapValue(std::initializer_list<std::pair<const string, StrongValue>> vals);
-    MapValue(ValueMap &vals);
+    MapValue(const ValueMap &vals);
     virtual int Compare(const Value *another) const;
     virtual size_t HashCode() const;
     virtual bool HasChildren() const;

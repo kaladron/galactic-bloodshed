@@ -27,7 +27,7 @@ TEST(Schemas, SimpleSchemas) {
     auto companies = store->GetCollection(registry->GetSchema("Company"));
 
     StrongValue address1(new MapValue({
-        { "address_type", UInt8Boxer(101) },
+        { "address_type", UInt8Boxer(101) },    // invalid field - should not be persisted
         { "number", StringBoxer("12345") },
         { "street", StringBoxer("Tennis Court") },
         { "city", StringBoxer("Wimbledon") },
@@ -47,13 +47,17 @@ TEST(Schemas, SimpleSchemas) {
     StrongValue key = Int64Boxer(666);
     StrongValue p3value = people->Get(key);
 
-    int64_t val;
-    auto idval = p3value->Get("id");
-    cout << p3value << ", " << idval << endl;
-    ValueToJson(p3value.get(), cout); cout << endl;
-    EXPECT_NE(nullptr, idval);
-    EXPECT_EQ(true, Int64Unboxer(idval, val));
-    EXPECT_EQ(666, val);
+    EXPECT_EQ(666, Int64Unboxer(p3value->Get("id")));
+    EXPECT_EQ("Hell Boy", StringUnboxer(p3value->Get("name")));
+    EXPECT_EQ("N", StringUnboxer(p3value->Get("gender")));
+    auto address2 = p3value->Get("address");
+    auto address_type = address2->Get("address_type");
+    EXPECT_EQ(nullptr, address_type);       // address type should not be persisted
+    EXPECT_EQ("12345", StringUnboxer(address2->Get("number")));
+    EXPECT_EQ("Tennis Court", StringUnboxer(address2->Get("street")));
+    EXPECT_EQ("Wimbledon", StringUnboxer(address2->Get("city")));
+    EXPECT_EQ("London", StringUnboxer(address2->Get("region")));
+    EXPECT_EQ("UK", StringUnboxer(address2->Get("country")));
 }
 
 //////////////////  Helper methods

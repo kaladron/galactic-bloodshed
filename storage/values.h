@@ -178,6 +178,14 @@ struct Unboxer {
         output = ourtype->LitVal();
         return true;
     }
+
+    T operator()(StrongValue input) const {
+        T output;
+        if (!(*this)(input, output)) {
+            throw std::invalid_argument("Could not unbox input");
+        }
+        return output;
+    }
 };
 
 extern const Boxer<bool> BoolBoxer;

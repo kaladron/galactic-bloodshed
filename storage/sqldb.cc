@@ -405,7 +405,7 @@ StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const T
         StrongValue output;
         if (value) {
             output = std::make_shared<MapValue>();
-            for (int currCol = startCol+1;currCol <= endCol;) {
+            for (int currCol = startCol + (is_root ? 0 : 1);currCol <= endCol;) {
                 auto col = *ColumnAt(currCol);
                 auto key = col->FP().back();
                 auto childvalue = resultSetToValue(stmt, false, col->GetType(), currCol, col->endIndex - 1);

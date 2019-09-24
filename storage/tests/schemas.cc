@@ -2,6 +2,8 @@
 #include <gtest/gtest.h>
 #include "storage/storage.h"
 
+using std::cout;
+using std::endl;
 using namespace Storage;
 
 static shared_ptr<Registry> registry((new Registry())->Add(DefaultCTypes()));
@@ -16,7 +18,7 @@ static const Type *DateType = Int64Type;
 // 1. Define a schema - say from a string or a file
 // 2. Do write/read/update/delete/get tests
 
-static shared_ptr<Store> setupTestDb(const char *dbpath = "/tmp/storage.tests.db");
+static shared_ptr<Store> setupTestDb(const char *dbpath = "/vagrant/storage.tests.db");
 static void RegisterSchemas();
 
 TEST(Schemas, SimpleSchemas) {
@@ -34,7 +36,7 @@ TEST(Schemas, SimpleSchemas) {
     }));
 
     StrongValue person1(new MapValue({
-        { "id", UInt32Boxer(666) },
+        { "id", Int64Boxer(666) },
         { "name", StringBoxer("Hell Boy") },
         { "gender", StringBoxer("N") },
         { "address", address1 }
@@ -42,10 +44,16 @@ TEST(Schemas, SimpleSchemas) {
     people->Put(person1);
 
     // Now read it back
-    StrongValue key = Int32Boxer(666);
+    StrongValue key = Int64Boxer(666);
     StrongValue p3value = people->Get(key);
 
-    std::cout << "Here we are " << std::endl;
+    int64_t val;
+    auto idval = p3value->Get("id");
+    cout << p3value << ", " << idval << endl;
+    ValueToJson(p3value.get(), cout); cout << endl;
+    EXPECT_NE(nullptr, idval);
+    EXPECT_EQ(true, Int64Unboxer(idval, val));
+    EXPECT_EQ(666, val);
 }
 
 //////////////////  Helper methods

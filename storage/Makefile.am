@@ -42,6 +42,7 @@ check_PROGRAMS = storage_test
 storage_test_CXXFLAGS = -Wno-undef -Wno-shift-sign-overflow $(AM_CXXFLAGS)
 
 storage_test_SOURCES = tests/values.cc \
+					   tests/gamedata.cc \
 					   tests/schemas.cc \
 					   tests/types.cc \
 					   tests/utils.cc \

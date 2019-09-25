@@ -33,6 +33,8 @@ public:
     };
 
     Type(const string &fqn);
+    Type(const string &fqn, std::initializer_list<const Type *> types);
+    Type(const string &fqn_, std::initializer_list<NameTypePair> fields, bool is_product_type = true);
     Type(const string &fqn, const TypeVector &args);
     Type(const string &fqn, const NameTypeVector &fields, bool is_product_type = true);
     ~Type();

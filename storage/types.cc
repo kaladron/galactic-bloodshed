@@ -32,6 +32,14 @@ Type::Type(const string &fqn_, const NameTypeVector &fields, bool is_product_typ
     SetData(fields, is_product_type);
 }
 
+Type::Type(const string &fqn_, std::initializer_list<const Type *> types) : fqn(fqn_) {
+    SetData(TypeVector(types));
+}
+
+Type::Type(const string &fqn_, std::initializer_list<NameTypePair> fields, bool is_product_type) : fqn(fqn_) {
+    SetData(fields, is_product_type);
+}
+
 Type::~Type() {
     Clear();
 }

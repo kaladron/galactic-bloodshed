@@ -43,15 +43,15 @@ public:
     const vector<FieldPath> &KeyFields() const { return key_fields; }
 
     /** Add a new constraint into the Schema. */
-    void AddConstraint(const Constraint *c);
-    const std::list<const Constraint *> &GetConstraints() const;
+    Schema *AddConstraint(Constraint *c);
+    const std::list<Constraint *> &GetConstraints() const;
 
 protected:
     std::string fqn;
     const Type *entity_type;
     vector<FieldPath> key_fields;
     mutable Type *key_type = nullptr;
-    std::list <const Constraint *> constraints;
+    std::list <Constraint *> constraints;
 };
 
 /**
@@ -70,39 +70,51 @@ public:
         // A collection of fields that participate in uniqueness
         // Upto the storage on how this is implementated (if it can be)
         std::list<FieldPath> field_paths;
+
+        Uniqueness() { }
+        Uniqueness(std::list<FieldPath> &field_paths);
     };
 
     struct Required {
         // A collection of fields that participate in uniqueness
         FieldPath field_path;
+
+        Required() { }
+        Required(const FieldPath &field_path);
     };
 
     struct DefaultValue {
         FieldPath field_path;
         StrongValue value;
         bool onread;
+
+        DefaultValue() { }
+        DefaultValue(const FieldPath &field_path, StrongValue value, bool onread = true);
     };
 
     struct ForeignKey {
         std::list<FieldPath> src_field_paths;
         std::list<FieldPath> dst_field_paths;
         const Schema *dst_schema;
+
+        ForeignKey() { }
+        ForeignKey(const std::list<FieldPath> &src,
+                   const std::list<FieldPath> &dst,
+                   const Schema *dst_schema);
     };
 
 public:
     // Constructor for creating a uniqueness constraint
-    Constraint(std::list<FieldPath> &field_paths);
+    Constraint(const Uniqueness &uniqueness);
 
     // Optional field constructor
-    Constraint(const FieldPath &field_path);
+    Constraint(const Required &required_);
 
     // Default value constraints
-    Constraint(const FieldPath &field_path, StrongValue value, bool onread = true);
+    Constraint(const DefaultValue &defval);
 
     // Foreign key cardinality constraints
-    Constraint(const std::list<FieldPath> &src,
-               const std::list<FieldPath> &dst, 
-               const Schema *dst_schema);
+    Constraint(const ForeignKey &fkey);
 
     bool IsUniqueness() const { return tag == UNIQUE; }
     bool IsRequired() const { return tag == REQUIRED; }

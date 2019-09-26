@@ -74,6 +74,6 @@ void RegisterSchemas() {
     registry->Add(PlanetConditionsType);
     registry->Add(PlanetType);
 
-    // registry->Add(new Schema("Company", CompanyType, { FieldPath("id") }));
+    // registry->Add(new Schema("Planet", PlanetType, { FieldPath("id") }) ->AddConstraint(null));
     // registry->Add(new Schema("Person", PersonType, { FieldPath("id") }));
 };

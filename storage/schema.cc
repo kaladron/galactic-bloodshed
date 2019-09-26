@@ -12,40 +12,67 @@ START_NS
  * Create a new constraint identifying uniqueness across a set
  * of field paths.
  */
-Constraint::Constraint(list<FieldPath> &field_paths) : tag(Type::UNIQUE) {
-	std::get<Uniqueness>(uniqueness).field_paths = field_paths;
+Constraint::Uniqueness::Uniqueness(list<FieldPath> &fps) : field_paths(fps) {
 }
 
 /**
  * Create a new constraint declaring the required nature of a 
  * given field path.
  */
-Constraint::Constraint(const FieldPath &fields) : tag(Type::REQUIRED) {
-	std::get<Required>(required).field_path = fields;
+Constraint::Required::Required(const FieldPath &fp) : field_path(fp) {
 }
 
 /**
  * Attach a default value to a field_path to be applied when empty
  * either on read or write depending on the "onread" paraemter.
  */
-Constraint::Constraint(const FieldPath &field_path, StrongValue value, bool onread) : tag(DEFAULT_VALUE) {
-	std::get<DefaultValue>(default_value).field_path = field_path;
-	std::get<DefaultValue>(default_value).value = value;
-	std::get<DefaultValue>(default_value).onread = onread;
+Constraint::DefaultValue::DefaultValue(const FieldPath &fp,
+                                       StrongValue val,
+                                       bool onread_) : field_path(fp), value(val), onread(onread_) {
 }
 
 /**
  * Creates a foreign key constraint between a field in the source
  * type to the field path in a destination type.
  */
-Constraint::Constraint(const list<FieldPath> &src,
-                      const list<FieldPath> &dst, 
-                      const Schema *dst_schema) : tag(FOREIGN_KEY) {
+Constraint::ForeignKey::ForeignKey(
+        const list<FieldPath> &src,
+        const list<FieldPath> &dst, 
+        const Schema *schema) {
     assert(src.size() > 0 && "Foreign key constraint must have at least one column");
     assert(src.size() == dst.size() && "Foreign key source and dest columns must be of same size.");
-    std::get<ForeignKey>(foreign_key).src_field_paths = src;
-    std::get<ForeignKey>(foreign_key).dst_field_paths = dst;
-    std::get<ForeignKey>(foreign_key).dst_schema = dst_schema;
+    src_field_paths = src;
+    dst_field_paths = dst;
+    dst_schema = schema;
+}
+
+/**
+ * Create a new constraint identifying uniqueness across a set
+ * of field paths.
+ */
+Constraint::Constraint(const Uniqueness &uniqueness_) : tag(Type::UNIQUE) {
+    uniqueness = uniqueness_;
+}
+
+/**
+ * Create a new constraint declaring the required nature of a 
+ * given field path.
+ */
+Constraint::Constraint(const Required &required_) : tag(Type::REQUIRED), required(required_) {
+}
+
+/**
+ * Attach a default value to a field_path to be applied when empty
+ * either on read or write depending on the "onread" paraemter.
+ */
+Constraint::Constraint(const DefaultValue &defval) : tag(DEFAULT_VALUE), default_value(defval) {
+}
+
+/**
+ * Creates a foreign key constraint between a field in the source
+ * type to the field path in a destination type.
+ */
+Constraint::Constraint(const ForeignKey &fkey) : tag(FOREIGN_KEY), foreign_key(fkey) {
 }
 
 /**
@@ -64,18 +91,18 @@ const Type *Schema::KeyType() const {
 }
 
 /**
- * Add a new (readonly) constraint to apply.
+ * Add a new constraint to apply.  Ownership of Constraint is transferred to
+ * the Schema.
  */
-void Schema::AddConstraint(const Constraint *c) {
+Schema *Schema::AddConstraint(Constraint *c) {
     constraints.push_back(c);
+    return this;
 }
 
 /**
  * Get the list of constraints applying to this schema.
  */
-const list<const Constraint *> &Schema::GetConstraints() const {
-    return constraints;
-}
+const list<Constraint *> &Schema::GetConstraints() const { return constraints; }
 
 /**
  * Returns the value of a particular value.

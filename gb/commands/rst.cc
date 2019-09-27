@@ -197,7 +197,6 @@ static void ship_report(GameObj &g, shipnum_t indx,
   int i;
   int sight;
   int caliber;
-  Place where;
   char orb[PLACENAMESIZE];
   char strng[COMMANDSIZE];
   char locstrn[COMMANDSIZE];
@@ -392,9 +391,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
         notify(Playernum, Governor, buf);
         caliber = GTYPE_MEDIUM;
       } else {
-        where.level = s.whatorbits;
-        where.snum = s.storbits;
-        where.pnum = s.pnumorbits;
+        Place where{s.whatorbits, s.storbits, s.pnumorbits};
         tech = s.tech;
         caliber = current_caliber(&s);
         if ((s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) &&

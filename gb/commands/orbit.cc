@@ -29,7 +29,7 @@ static void DispStar(const GameObj &, const ScopeLevel, startype *, int, Race *,
                      char *);
 static void DispPlanet(const GameObj &, const ScopeLevel, const Planet &,
                        char *, int, Race *, char *);
-static void DispShip(const GameObj &, Place *, Ship *, Race *, char *,
+static void DispShip(const GameObj &, const Place &, Ship *, Race *, char *,
                      const Planet & = Planet());
 
 /* OPTIONS
@@ -44,7 +44,6 @@ static void DispShip(const GameObj &, Place *, Ship *, Race *, char *,
  */
 void orbit(const command_t &argv, GameObj &g) {
   int DontDispNum = -1;
-  Place where;
   int DontDispPlanets;
   int DontDispShips;
   int DontDispStars;
@@ -76,19 +75,20 @@ void orbit(const command_t &argv, GameObj &g) {
         }
     }
 
+  std::unique_ptr<Place> where;
   if (argv.size() == 1) {
-    where = getplace(g, ":", 0);
+    where = std::make_unique<Place>(g, ":");
     int i = (g.level == ScopeLevel::LEVEL_UNIV);
     Lastx = g.lastx[i];
     Lasty = g.lasty[i];
     Zoom = g.zoom[i];
   } else {
-    where = getplace(g, argv[argv.size() - 1], 0);
+    where = std::make_unique<Place>(g, argv[argv.size() - 1]);
     Lastx = Lasty = 0.0;
     Zoom = 1.1;
   }
 
-  if (where.err) {
+  if (where->err) {
     notify(g.player, g.governor, "orbit: error in args.\n");
     return;
   }
@@ -98,7 +98,7 @@ void orbit(const command_t &argv, GameObj &g) {
 
   auto Race = races[g.player - 1];
 
-  switch (where.level) {
+  switch (where->level) {
     case ScopeLevel::LEVEL_UNIV:
       for (starnum_t i = 0; i < Sdata.numstars; i++)
         if (DontDispNum != i) {
@@ -110,22 +110,22 @@ void orbit(const command_t &argv, GameObj &g) {
         Shiplist shiplist{Sdata.ships};
         for (auto &s : shiplist) {
           if (DontDispNum != s.number) {
-            DispShip(g, &where, &s, Race, buf);
+            DispShip(g, *where, &s, Race, buf);
             strcat(output, buf);
           }
         }
       }
       break;
     case ScopeLevel::LEVEL_STAR: {
-      DispStar(g, ScopeLevel::LEVEL_STAR, Stars[where.snum], DontDispStars,
+      DispStar(g, ScopeLevel::LEVEL_STAR, Stars[where->snum], DontDispStars,
                Race, buf);
       strcat(output, buf);
 
-      for (planetnum_t i = 0; i < Stars[where.snum]->numplanets; i++)
+      for (planetnum_t i = 0; i < Stars[where->snum]->numplanets; i++)
         if (DontDispNum != i) {
-          const auto p = getplanet((int)where.snum, i);
-          DispPlanet(g, ScopeLevel::LEVEL_STAR, p, Stars[where.snum]->pnames[i],
-                     DontDispPlanets, Race, buf);
+          const auto p = getplanet(where->snum, i);
+          DispPlanet(g, ScopeLevel::LEVEL_STAR, p,
+                     Stars[where->snum]->pnames[i], DontDispPlanets, Race, buf);
           strcat(output, buf);
         }
       /* check to see if you have ships at orbiting the star, if so you can
@@ -134,7 +134,7 @@ void orbit(const command_t &argv, GameObj &g) {
       if (g.god)
         iq = true;
       else {
-        Shiplist shiplist{Stars[where.snum]->ships};
+        Shiplist shiplist{Stars[where->snum]->ships};
         for (auto &s : shiplist) {
           if (s.owner == g.player && shipsight(s)) {
             iq = true; /* you are there to sight, need a crew */
@@ -143,12 +143,12 @@ void orbit(const command_t &argv, GameObj &g) {
         }
       }
       if (!DontDispShips) {
-        Shiplist shiplist{Stars[where.snum]->ships};
+        Shiplist shiplist{Stars[where->snum]->ships};
         for (auto &s : shiplist) {
           if (DontDispNum != s.number &&
               !(s.owner != g.player && s.type == ShipType::STYPE_MINE)) {
             if ((s.owner == g.player) || iq) {
-              DispShip(g, &where, &s, Race, buf);
+              DispShip(g, *where, &s, Race, buf);
               strcat(output, buf);
             }
           }
@@ -156,9 +156,9 @@ void orbit(const command_t &argv, GameObj &g) {
       }
     } break;
     case ScopeLevel::LEVEL_PLAN: {
-      const auto p = getplanet(where.snum, where.pnum);
+      const auto p = getplanet(where->snum, where->pnum);
       DispPlanet(g, ScopeLevel::LEVEL_PLAN, p,
-                 Stars[where.snum]->pnames[where.pnum], DontDispPlanets, Race,
+                 Stars[where->snum]->pnames[where->pnum], DontDispPlanets, Race,
                  buf);
       strcat(output, buf);
 
@@ -178,7 +178,7 @@ void orbit(const command_t &argv, GameObj &g) {
           if (DontDispNum != s.number) {
             if (!landed(s)) {
               if ((s.owner == g.player) || iq) {
-                DispShip(g, &where, &s, Race, buf, p);
+                DispShip(g, *where, &s, Race, buf, p);
                 strcat(output, buf);
               }
             }
@@ -277,7 +277,7 @@ static void DispPlanet(const GameObj &g, const ScopeLevel level,
   }
 }
 
-static void DispShip(const GameObj &g, Place *where, Ship *ship, Race *r,
+static void DispShip(const GameObj &g, const Place &where, Ship *ship, Race *r,
                      char *string, const Planet &pl) {
   int x;
   int y;
@@ -291,23 +291,23 @@ static void DispShip(const GameObj &g, Place *where, Ship *ship, Race *r,
 
   *string = '\0';
 
-  switch (where->level) {
+  switch (where.level) {
     case ScopeLevel::LEVEL_PLAN:
       x = (int)(SCALE +
                 (SCALE *
-                 (ship->xpos - (Stars[where->snum]->xpos + pl.xpos) - Lastx)) /
+                 (ship->xpos - (Stars[where.snum]->xpos + pl.xpos) - Lastx)) /
                     (PLORBITSIZE * Zoom));
       y = (int)(SCALE +
                 (SCALE *
-                 (ship->ypos - (Stars[where->snum]->ypos + pl.ypos) - Lasty)) /
+                 (ship->ypos - (Stars[where.snum]->ypos + pl.ypos) - Lasty)) /
                     (PLORBITSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_STAR:
       x = (int)(SCALE +
-                (SCALE * (ship->xpos - Stars[where->snum]->xpos - Lastx)) /
+                (SCALE * (ship->xpos - Stars[where.snum]->xpos - Lastx)) /
                     (SYSTEMSIZE * Zoom));
       y = (int)(SCALE +
-                (SCALE * (ship->ypos - Stars[where->snum]->ypos - Lasty)) /
+                (SCALE * (ship->ypos - Stars[where.snum]->ypos - Lasty)) /
                     (SYSTEMSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_UNIV:
@@ -325,13 +325,13 @@ static void DispShip(const GameObj &g, Place *where, Ship *ship, Race *r,
         xt = Stars[ship->special.aimed_at.snum]->xpos;
         yt = Stars[ship->special.aimed_at.snum]->ypos;
       } else if (ship->special.aimed_at.level == ScopeLevel::LEVEL_PLAN) {
-        if (where->level == ScopeLevel::LEVEL_PLAN &&
-            ship->special.aimed_at.pnum == where->pnum) {
+        if (where.level == ScopeLevel::LEVEL_PLAN &&
+            ship->special.aimed_at.pnum == where.pnum) {
           /* same planet */
           xt = Stars[ship->special.aimed_at.snum]->xpos + pl.xpos;
           yt = Stars[ship->special.aimed_at.snum]->ypos + pl.ypos;
         } else { /* different planet */
-          const auto apl = getplanet(where->snum, where->pnum);
+          const auto apl = getplanet(where.snum, where.pnum);
           xt = Stars[ship->special.aimed_at.snum]->xpos + apl.xpos;
           yt = Stars[ship->special.aimed_at.snum]->ypos + apl.ypos;
         }

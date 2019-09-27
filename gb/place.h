@@ -16,7 +16,6 @@ class Place { /* used in function return for finding place */
   Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_);
 
   Place(GameObj&, const std::string&, bool ignore_explore = false);
-  Place() {}
   ScopeLevel level;
   starnum_t snum;
   planetnum_t pnum;

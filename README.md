@@ -53,6 +53,17 @@ Doxygen output from the source is at http://doxygen.galacticbloodshed.com/
 ```
 cd galactic-bloodshet/external/googletest
 cmake CMakeLists.txt -Dgtest_disable_pthreads=ON
+```
+
+After the cmake command, you may need to edit external/googletest/CMakeCache.txt:
+
+```
+CMAKE_CXX_FLAGS:STRING=-fmodules -stdlib=libc++
+```
+
+Then run make to build it
+
+```
 make
 ```
 

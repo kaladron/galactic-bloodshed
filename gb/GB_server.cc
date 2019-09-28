@@ -154,7 +154,7 @@ class DescriptorData : public GameObj {
   char *raw_input_at;
   time_t last_time;
   int quota;
-  bool operator==(const DescriptorData &rhs) noexcept {
+  bool operator==(const DescriptorData &rhs) const noexcept {
     return descriptor == rhs.descriptor && player == rhs.player &&
            governor == rhs.governor;
   }

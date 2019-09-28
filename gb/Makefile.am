@@ -12,7 +12,7 @@ install-data-local:
 	chmod -R a+rwx $(DOCDIR) $(PKGDATADIR) $(PKGSTATEDIR)
 	cp $(top_srcdir)/data/* $(PKGDATADIR)/
 
-AM_CXXFLAGS = -std=c++2a -O0 -g3 \
+AM_CXXFLAGS = -std=c++2a \
 	      $(SQLLITE3_CFLAGS) \
 	      -DPKGSTATEDIR="\"$(PKGSTATEDIR)\"" \
 	      -DPKGDATADIR="\"$(PKGDATADIR)\"" \

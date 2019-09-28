@@ -18,7 +18,10 @@ AC_SUBST([GCC_OPTS], ["-Werror -Wall -Wno-sign-compare -Wno-maybe-uninitialized 
 	   -Wno-unused-but-set-variable -Wno-parentheses -Wno-write-strings \
 	   -Wno-unused-variable -Wextra -Wno-unused-parameter -Wno-error=extra"])
 
-clang_opts="-Werror" # No stinkin' warnings allowed here!
+clang_opts="-fmodules"
+clang_opts="${clang_opts} -stdlib=libc++"
+
+clang_opts="${clang_opts} -Werror" # No stinkin' warnings allowed here!
 clang_opts="${clang_opts} -Weverything" # Turn on all warnings
 
 # Warnings we will probably never turn off
@@ -41,6 +44,7 @@ clang_opts="${clang_opts} -Wno-exit-time-destructors"
 clang_opts="${clang_opts} -Wno-global-constructors"
 clang_opts="${clang_opts} -Wno-signed-enum-bitfield"
 clang_opts="${clang_opts} -Wno-weak-vtables"
+clang_opts="${clang_opts} -Wno-auto-import"
 
 AC_SUBST([CLANG_OPTS], ["${clang_opts}"])
 

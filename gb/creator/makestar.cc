@@ -11,10 +11,7 @@
 
 #include "gb/creator/makestar.h"
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+import std;
 
 #include "gb/creator/makeplanet.h"
 #include "gb/creator/makeuniv.h"

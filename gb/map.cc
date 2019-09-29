@@ -4,10 +4,7 @@
 
 #include "gb/map.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <memory>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

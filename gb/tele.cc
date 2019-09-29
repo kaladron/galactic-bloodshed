@@ -8,10 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <climits>
-#include <cstdio>
-#include <cstring>
-#include <ctime>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

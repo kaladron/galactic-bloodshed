@@ -6,11 +6,7 @@
 
 #include "gb/VN.h"
 
-#include <algorithm>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <utility>
+import std;
 
 #include "gb/buffers.h"
 #include "gb/build.h"

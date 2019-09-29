@@ -6,7 +6,7 @@
 
 #include "gb/declare.h"
 
-#include <cstdio>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

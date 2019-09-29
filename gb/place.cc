@@ -4,8 +4,8 @@
 
 #include "gb/place.h"
 
-#include <cstring>
-#include <sstream>
+import std;
+
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/files_shl.h"

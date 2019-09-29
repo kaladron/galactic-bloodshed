@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include <iostream>
+import std;
 
 #include "gb/utils/rand.h"
 #include "gb/vars.h"

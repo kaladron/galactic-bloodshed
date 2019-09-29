@@ -14,13 +14,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cerrno>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <memory>
-#include <stdexcept>
+import std;
 
 #include "gb/files.h"
 #include "gb/power.h"

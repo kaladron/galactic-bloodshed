@@ -11,9 +11,7 @@
 
 #include "gb/max.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+import std;
 
 #include "gb/files_shl.h"
 #include "gb/races.h"

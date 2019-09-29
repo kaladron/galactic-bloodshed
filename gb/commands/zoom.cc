@@ -9,7 +9,8 @@
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
-#include <string>
+
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/vars.h"

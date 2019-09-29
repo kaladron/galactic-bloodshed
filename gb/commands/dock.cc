@@ -7,10 +7,8 @@
 #include "gb/commands/dock.h"
 
 #include <boost/format.hpp>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

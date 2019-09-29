@@ -3,7 +3,8 @@
 // found in the COPYING file.
 
 #include <boost/format.hpp>
-#include <cmath>
+
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/defense.h"

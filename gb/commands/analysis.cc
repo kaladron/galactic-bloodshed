@@ -4,9 +4,7 @@
 
 #include "gb/commands/analysis.h"
 
-#include <cctype>
-#include <cstdio>
-#include <cstdlib>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

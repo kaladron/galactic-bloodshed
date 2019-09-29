@@ -6,8 +6,7 @@
 
 #include "gb/powercmd.h"
 
-#include <cstdio>
-#include <cstring>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

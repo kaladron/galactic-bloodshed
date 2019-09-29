@@ -6,12 +6,7 @@
 
 #include "gb/build.h"
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctgmath>
-#include <optional>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

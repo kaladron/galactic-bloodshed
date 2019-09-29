@@ -6,9 +6,7 @@
 
 #include "gb/enroll.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+import std;
 
 #include "gb/game_info.h"
 #include "gb/racegen.h"

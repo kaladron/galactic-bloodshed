@@ -6,7 +6,7 @@
 
 #include "gb/moveplanet.h"
 
-#include <cmath>
+import std;
 
 #include "gb/doturn.h"
 #include "gb/ships.h"

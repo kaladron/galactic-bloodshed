@@ -7,14 +7,7 @@
 
 #include "gb/shlmisc.h"
 
-#include <cctype>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-#include <sstream>
-#include <string>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

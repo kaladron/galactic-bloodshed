@@ -6,13 +6,7 @@
 
 #include "gb/name.h"
 
-#include <cctype>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iterator>
-#include <sstream>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

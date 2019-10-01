@@ -4,6 +4,8 @@
 
 /* build -- build a ship */
 
+import gblib;
+
 #include "gb/build.h"
 
 import std;

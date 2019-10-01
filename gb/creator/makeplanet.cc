@@ -4,6 +4,8 @@
 
 /* makeplanet.c -- makes one planet. */
 
+import gblib;
+
 #include "gb/creator/makeplanet.h"
 
 import std;

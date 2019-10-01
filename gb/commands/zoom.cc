@@ -5,6 +5,8 @@
 /// \file zoom.cc
 /// \brief Functions for implementing the 'zoom' command.
 
+import gblib;
+
 #include "gb/commands/zoom.h"
 
 #define FMT_HEADER_ONLY

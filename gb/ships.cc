@@ -5,6 +5,7 @@
 #include <boost/format.hpp>
 
 import std;
+import gblib;
 
 #include "gb/GB_server.h"
 #include "gb/defense.h"

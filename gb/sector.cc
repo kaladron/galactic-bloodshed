@@ -3,6 +3,7 @@
 // found in the COPYING file.
 
 import std;
+import gblib;
 
 #include "gb/utils/rand.h"
 #include "gb/vars.h"

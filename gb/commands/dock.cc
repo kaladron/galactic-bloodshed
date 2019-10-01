@@ -4,6 +4,8 @@
 
 /*  dock.c -- dock a ship and..... assault -- a very un-PC version of dock */
 
+import gblib;
+
 #include "gb/commands/dock.h"
 
 #include <boost/format.hpp>

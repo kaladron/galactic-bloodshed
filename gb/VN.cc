@@ -4,6 +4,8 @@
 
 /* VN.c -- assorted Von Neumann machine code */
 
+import gblib;
+
 #include "gb/VN.h"
 
 import std;

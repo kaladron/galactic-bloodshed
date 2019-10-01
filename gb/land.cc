@@ -7,6 +7,8 @@
  *  and..... assault -- a very un-PC version of land/dock
  */
 
+import gblib;
+
 #include "gb/land.h"
 
 import std;

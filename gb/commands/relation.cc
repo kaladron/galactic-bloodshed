@@ -4,6 +4,8 @@
 
 /* relation.c -- state relations among players */
 
+import gblib;
+
 #include "gb/commands/relation.h"
 
 import std;

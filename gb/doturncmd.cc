@@ -4,6 +4,8 @@
 
 /* doturn -- does one turn. */
 
+import gblib;
+
 #include "gb/doturncmd.h"
 
 import std;

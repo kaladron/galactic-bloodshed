@@ -4,6 +4,8 @@
 
 /// \file tax.cc
 
+import gblib;
+
 #include "gb/commands/tax.h"
 
 import std;

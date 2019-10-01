@@ -5,6 +5,8 @@
 /// \file fire.c
 /// \brief Fire at ship or planet from ship or planet
 
+import gblib;
+
 #include "gb/fire.h"
 
 import std;

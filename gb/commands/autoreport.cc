@@ -5,6 +5,8 @@
 /// \file autoreport.c
 /// \brief Tell server to generate a report for each planet.
 
+import gblib;
+
 #include "gb/commands/autoreport.h"
 
 #include <boost/format.hpp>

@@ -18,6 +18,7 @@ sudo apt-get install manpages-dev manpages-posix-dev
 sudo apt-get install g++-9 clang-tidy clang-format
 sudo apt-get install libsqlite3-dev
 sudo apt-get install libboost-all-dev
+sudo apt install libc++-8-dev libc++abi1-8  libc++abi-8-dev
 # sudo apt-get install google-mock libgtest-dev libgmock-dev cmake
 
 # Not needed if building with autotools

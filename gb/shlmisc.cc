@@ -5,6 +5,8 @@
 /// \file shlmisc.cc
 /// \brief Miscellaneous stuff included in the shell.
 
+import gblib;
+
 #include "gb/shlmisc.h"
 
 import std;

@@ -4,6 +4,8 @@
 
 /*  order.c -- give orders to ship */
 
+import gblib;
+
 #include "gb/order.h"
 
 import std;

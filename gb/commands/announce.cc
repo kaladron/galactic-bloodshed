@@ -4,6 +4,8 @@
 
 /* name.c -- rename something to something else */
 
+import gblib;
+
 #include "gb/commands/announce.h"
 
 import std;

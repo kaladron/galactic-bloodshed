@@ -11,6 +11,8 @@
  *    damage-resistant.
  */
 
+import gblib;
+
 #include "gb/star.h"
 
 import std;

@@ -9,6 +9,8 @@
  * prin_ship_orbits() -- prints place ship orbits
  */
 
+import gblib;
+
 #include "gb/max.h"
 
 import std;

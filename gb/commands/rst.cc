@@ -8,6 +8,8 @@
  *  Command "factories" programmed by varneyml@gb.erc.clarkson.edu
  */
 
+import gblib;
+
 #include "gb/commands/rst.h"
 
 import std;

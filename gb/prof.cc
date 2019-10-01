@@ -4,6 +4,8 @@
 
 /* prof.c -- print out racial profile */
 
+import gblib;
+
 #include "gb/prof.h"
 
 import std;

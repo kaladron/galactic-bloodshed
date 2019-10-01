@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 import std;
+import gblib;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

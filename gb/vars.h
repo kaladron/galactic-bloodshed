@@ -27,19 +27,6 @@ extern unsigned long segments;
 /* Shipping routes - DON'T change this unless you know what you are doing */
 constexpr int MAX_ROUTES = 4;
 
-enum ScopeLevel { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
-
-using shipnum_t = uint64_t;
-using starnum_t = uint8_t;
-using planetnum_t = uint8_t;
-using player_t = uint8_t;
-using governor_t = uint8_t;
-using commodnum_t = uint64_t;
-using resource_t = unsigned long;
-
-using money_t = int64_t;
-using population_t = uint64_t;
-
 using command_t = std::vector<std::string>;
 
 #define MAXPLAYERS 64
@@ -311,7 +298,5 @@ extern unsigned long newslength[4];
 #define clrbit(a, i) ((a)[(i) / 32] &= ~((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
 #define isset(a, i) ((a)[(i) / 32] & ((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
 #define isclr(a, i) (!isset((a), (i)))
-
-#include "gb/gameobj.h"
 
 #endif  // VARS_H

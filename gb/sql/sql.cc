@@ -7,6 +7,8 @@
  *    closed).  write routines close and thus unlock that area.
  */
 
+import gblib;
+
 #include "gb/sql/sql.h"
 
 #include <fcntl.h>

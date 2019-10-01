@@ -4,6 +4,8 @@
 
 /* examine -- check out an object */
 
+import gblib;
+
 #include "gb/commands/examine.h"
 
 import std;

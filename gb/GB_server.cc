@@ -2,6 +2,8 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+import gblib;
+
 #include "gb/GB_server.h"
 
 #include <arpa/inet.h>

@@ -9,6 +9,8 @@
 // G.O.D. [1] > ammonia melts at -78C
 // G.O.D. [1] > boils at -33
 
+import gblib;
+
 #include "gb/creator/makestar.h"
 
 import std;

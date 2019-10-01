@@ -4,6 +4,8 @@
 
 /* capital.c -- designate a capital */
 
+import gblib;
+
 #include "gb/commands/capital.h"
 
 import std;

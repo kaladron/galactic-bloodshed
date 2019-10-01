@@ -4,6 +4,8 @@
 
 /*  move.c -- move population and assault aliens on target sector */
 
+import gblib;
+
 #include "gb/move.h"
 
 import std;

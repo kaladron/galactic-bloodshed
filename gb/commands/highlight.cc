@@ -5,6 +5,8 @@
 /// \file highlight.cc
 /// \brief Toggle highlight option on a player.
 
+import gblib;
+
 #include "gb/commands/highlight.h"
 
 import std;

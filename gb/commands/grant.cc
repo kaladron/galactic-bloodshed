@@ -4,6 +4,8 @@
 
 /// \file grant.cc
 
+import gblib;
+
 #include "gb/commands/grant.h"
 
 import std;

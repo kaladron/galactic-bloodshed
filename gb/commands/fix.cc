@@ -4,6 +4,8 @@
 
 /// \file fix.cc
 
+import gblib;
+
 #include "gb/commands/fix.h"
 
 import std;

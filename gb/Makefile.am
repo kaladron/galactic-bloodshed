@@ -36,6 +36,7 @@ noinst_LIBRARIES = libgblib.a libcommands.a
 UTILS_FILES = utils/rand.cc utils/fileutils.cc
 COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc $(UTILS_FILES)
 
+makeuniv_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 makeuniv_SOURCES = $(COMMON_FILES)  \
 					creator/makeplanet.cc \
 					creator/makestar.cc \
@@ -44,11 +45,14 @@ makeuniv_SOURCES = $(COMMON_FILES)  \
 					perm.cc \
 					sector.cc
 
+enrol_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 enrol_SOURCES =  $(COMMON_FILES) enrol.cc max.cc perm.cc sector.cc shlmisc.cc
 
 GB_SOURCES = GB_server.cc
+GB_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 GB_LDADD = libgblib.a libcommands.a
 
+libcommands_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 libcommands_a_SOURCES = \
 		     commands/analysis.cc \
 		     commands/announce.cc \
@@ -76,6 +80,7 @@ libcommands_a_SOURCES = \
 		     commands/toxicity.cc \
 		     commands/zoom.cc
 
+libgblib_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 libgblib_a_SOURCES = $(COMMON_FILES) \
 		     VN.cc \
 		     bombard.cc \
@@ -115,9 +120,20 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     tele.cc \
 		     victory.cc
 
+racegen_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc sector.cc shlmisc.cc
 
 TESTS = shlmisc_test
 
 check_PROGRAMS = shlmisc_test
+shkmisc_test_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 shlmisc_test_SOURCES = shlmisc_test.cc
+
+MOSTLYCLEANFILES = gblib.pcm
+BUILT_SOURCES = gblib.pcm
+
+.cppm.pcm:
+	$(CXX) $(AM_CPPFLAGS) $(AM_CXXFLAGS) --precompile $< -o $@
+
+.pcm.o: 
+	$(CXX) $(CPPFLAGS) -c $< -o $@

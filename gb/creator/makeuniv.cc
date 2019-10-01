@@ -5,6 +5,8 @@
 /* makeuniv.c -- universe creation program.
  *   Makes various required data files; calls makestar for each star desired. */
 
+import gblib;
+
 #include "gb/creator/makeuniv.h"
 
 import std;

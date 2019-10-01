@@ -4,6 +4,8 @@
 
 /*  toggle.c -- toggles some options */
 
+import gblib;
+
 #include "gb/commands/toggle.h"
 
 #define FMT_HEADER_ONLY

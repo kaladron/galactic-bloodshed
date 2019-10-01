@@ -4,6 +4,8 @@
 
 /* technology.c -- increase investment in technological development. */
 
+import gblib;
+
 #include "gb/commands/technology.h"
 
 import std;

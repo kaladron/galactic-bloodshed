@@ -4,6 +4,8 @@
 
 /// \file governors.cc
 
+import gblib;
+
 #include "gb/commands/governors.h"
 
 #define FMT_HEADER_ONLY

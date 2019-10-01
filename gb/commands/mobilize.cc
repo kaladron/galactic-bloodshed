@@ -11,6 +11,8 @@
  *    damage-resistant.
  */
 
+import gblib;
+
 #include "gb/commands/mobilize.h"
 
 import std;

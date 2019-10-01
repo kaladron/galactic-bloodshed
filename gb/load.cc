@@ -4,6 +4,8 @@
 
 /*  load.c -- load/unload stuff */
 
+import gblib;
+
 #include "gb/load.h"
 
 import std;

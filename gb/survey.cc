@@ -4,6 +4,8 @@
 
 /* survey.c -- print out survey for planets */
 
+import gblib;
+
 #include "gb/survey.h"
 
 import std;

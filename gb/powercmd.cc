@@ -4,6 +4,8 @@
 
 /* power.c -- display power report */
 
+import gblib;
+
 #include "gb/powercmd.h"
 
 import std;

@@ -4,6 +4,8 @@
 
 /* declare.c -- declare alliance, neutrality, war, the basic thing. */
 
+import gblib;
+
 #include "gb/declare.h"
 
 import std;

@@ -18,8 +18,10 @@ sudo apt-get install manpages-dev manpages-posix-dev
 sudo apt-get install g++-9 clang-tidy clang-format
 sudo apt-get install libsqlite3-dev
 sudo apt-get install libboost-all-dev
-sudo apt install libc++-8-dev libc++abi1-8  libc++abi-8-dev
-# sudo apt-get install google-mock libgtest-dev libgmock-dev cmake
+
+# Install clang-9
+sudo add-apt-repository 'deb http://apt.llvm.org/disco/ llvm-toolchain-disco-9 main'
+sudo apt install clang-9 libc++-9-dev libc++abi1-9  libc++abi-9-dev
 
 # Not needed if building with autotools
 echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
@@ -27,6 +29,12 @@ curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
 sudo apt-get update
 sudo apt-get install openjdk-8-jdk
 sudo apt-get install bazel
+```
+
+Add the following to .bashrc to make clang-9 the default:
+
+```
+export CXX=/usr/lib/llvm-9/bin/clang-9
 ```
 
 ## Getting Started
@@ -59,6 +67,7 @@ cmake CMakeLists.txt -Dgtest_disable_pthreads=ON
 After the cmake command, you may need to edit external/googletest/CMakeCache.txt:
 
 ```
+CMAKE_CXX_COMPILER:FILEPATH=/usr/lib/llvm-9/bin/clang-9
 CMAKE_CXX_FLAGS:STRING=-fmodules -stdlib=libc++
 ```
 

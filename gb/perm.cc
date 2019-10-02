@@ -4,6 +4,8 @@
 
 /* perm.c -- randomly permute a sector list */
 
+import gblib;
+
 #include "gb/perm.h"
 
 #include "gb/tweakables.h"

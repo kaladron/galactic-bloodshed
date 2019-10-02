@@ -2,14 +2,13 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+import gblib;
+
 #include "gb/GB_racegen.h"
 
 #include <unistd.h>
 
-#include <csignal>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

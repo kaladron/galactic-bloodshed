@@ -6,12 +6,7 @@
 
 #include <unistd.h>
 
-#include <algorithm>
-#include <cmath>
-#include <cstdarg>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+import std;
 
 #include "gb/enroll.h"
 #include "gb/game_info.h"

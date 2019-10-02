@@ -4,11 +4,11 @@
 
 /*  orbit.c -- display orbits of planets (graphic representation) */
 
+import gblib;
+
 #include "gb/commands/orbit.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

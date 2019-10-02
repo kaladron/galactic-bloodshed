@@ -7,7 +7,8 @@
  */
 
 #include "gb/creator/namegen.h"
-#include <sstream>
+
+import std;
 
 bool SequentialNameGenerator::next() {
   std::ostringstream out;

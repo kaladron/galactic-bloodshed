@@ -4,10 +4,11 @@
 
 /* launch.c -- launch or undock a ship (also undock) */
 
+import gblib;
+
 #include "gb/launch.h"
 
-#include <cstdio>
-#include <cstdlib>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

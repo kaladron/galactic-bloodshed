@@ -4,10 +4,11 @@
 
 /* power.c -- display power report */
 
+import gblib;
+
 #include "gb/powercmd.h"
 
-#include <cstdio>
-#include <cstring>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

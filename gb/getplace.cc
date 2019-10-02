@@ -8,13 +8,11 @@
  *  testship(ship) -- tests various things for the ship.
  */
 
+import gblib;
+
 #include "gb/getplace.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <sstream>
-#include <string>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

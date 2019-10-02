@@ -7,6 +7,8 @@
  *    closed).  write routines close and thus unlock that area.
  */
 
+import gblib;
+
 #include "gb/files_shl.h"
 
 #include <fcntl.h>
@@ -14,13 +16,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cerrno>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <memory>
-#include <stdexcept>
+import std;
 
 #include "gb/files.h"
 #include "gb/files_rw.h"

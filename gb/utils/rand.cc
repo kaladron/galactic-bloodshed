@@ -6,7 +6,7 @@
 
 #include "gb/utils/rand.h"
 
-#include <cstdlib>
+import std;
 
 /* double double_rand() this returns a random number between 0 and 1 */
 double double_rand() { return (double)random() / 2147483648.0; }

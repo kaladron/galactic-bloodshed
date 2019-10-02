@@ -2,16 +2,15 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+import gblib;
+
 #include "gb/tele.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <climits>
-#include <cstdio>
-#include <cstring>
-#include <ctime>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

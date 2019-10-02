@@ -5,11 +5,14 @@
 /// \file zoom.cc
 /// \brief Functions for implementing the 'zoom' command.
 
+import gblib;
+
 #include "gb/commands/zoom.h"
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
-#include <string>
+
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/vars.h"

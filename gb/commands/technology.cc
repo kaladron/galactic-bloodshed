@@ -4,11 +4,11 @@
 
 /* technology.c -- increase investment in technological development. */
 
+import gblib;
+
 #include "gb/commands/technology.h"
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

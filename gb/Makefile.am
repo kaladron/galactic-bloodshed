@@ -43,10 +43,11 @@ makeuniv_SOURCES = $(COMMON_FILES)  \
 					creator/makeuniv.cc \
 					creator/namegen.cc \
 					perm.cc \
-					sector.cc
+					sector.cc \
+					sectormap.cc
 
 enrol_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
-enrol_SOURCES =  $(COMMON_FILES) enrol.cc max.cc perm.cc sector.cc shlmisc.cc
+enrol_SOURCES =  $(COMMON_FILES) enrol.cc max.cc perm.cc sector.cc sectormap.cc shlmisc.cc
 
 GB_SOURCES = GB_server.cc
 GB_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
@@ -111,6 +112,7 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     powercmd.cc \
 		     prof.cc \
 		     sector.cc \
+		     sectormap.cc \
 		     ships.cc \
 		     shlmisc.cc \
 		     shootblast.cc \
@@ -121,7 +123,7 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     victory.cc
 
 racegen_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
-racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc sector.cc shlmisc.cc
+racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc sector.cc sectormap.cc shlmisc.cc
 
 TESTS = shlmisc_test
 

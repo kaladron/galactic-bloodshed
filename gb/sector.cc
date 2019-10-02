@@ -2,11 +2,9 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-import std;
-import gblib;
+module gblib;
 
-#include "gb/utils/rand.h"
-#include "gb/vars.h"
+import std;
 
 std::ostream &operator<<(std::ostream &os, const Sector &s) {
   os << "Efficiency: " << s.eff << std::endl;
@@ -21,8 +19,4 @@ std::ostream &operator<<(std::ostream &os, const Sector &s) {
   os << "Type: " << s.type << std::endl;
   os << "Condition: " << s.condition << std::endl;
   return os;
-}
-
-Sector &SectorMap::get_random() {
-  return get(int_rand(0, maxx_ - 1), int_rand(0, maxy_ - 1));
 }

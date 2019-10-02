@@ -37,19 +37,20 @@ UTILS_FILES = utils/rand.cc utils/fileutils.cc
 COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc $(UTILS_FILES)
 
 makeuniv_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
+makeuniv_LDADD = libgblib.a
 makeuniv_SOURCES = $(COMMON_FILES)  \
 					creator/makeplanet.cc \
 					creator/makestar.cc \
 					creator/makeuniv.cc \
 					creator/namegen.cc \
 					perm.cc \
-					sector.cc \
 					sectormap.cc
 
 enrol_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
-enrol_SOURCES =  $(COMMON_FILES) enrol.cc max.cc perm.cc sector.cc sectormap.cc shlmisc.cc
+enrol_SOURCES =  $(COMMON_FILES) enrol.cc max.cc perm.cc sectormap.cc shlmisc.cc
+enrol_LDADD = libgblib.a
 
-GB_SOURCES = GB_server.cc
+GB_SOURCES = GB_server.cc $(COMMON_FILES) $(OLD_LIBGBLIB_FILES)
 GB_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 GB_LDADD = libgblib.a libcommands.a
 
@@ -82,7 +83,10 @@ libcommands_a_SOURCES = \
 		     commands/zoom.cc
 
 libgblib_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
-libgblib_a_SOURCES = $(COMMON_FILES) \
+libgblib_a_SOURCES = sector.cc
+
+
+OLD_LIBGBLIB_FILES = \
 		     VN.cc \
 		     bombard.cc \
 		     build.cc \
@@ -111,7 +115,6 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     place.cc \
 		     powercmd.cc \
 		     prof.cc \
-		     sector.cc \
 		     sectormap.cc \
 		     ships.cc \
 		     shlmisc.cc \
@@ -123,13 +126,15 @@ libgblib_a_SOURCES = $(COMMON_FILES) \
 		     victory.cc
 
 racegen_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
-racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc sector.cc sectormap.cc shlmisc.cc
+racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc sectormap.cc shlmisc.cc
+racegen_LDADD = libgblib.a
 
 TESTS = shlmisc_test
 
 check_PROGRAMS = shlmisc_test
 shkmisc_test_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 shlmisc_test_SOURCES = shlmisc_test.cc
+shlmisc_test_LDADD = libgblib.a
 
 MOSTLYCLEANFILES = gblib.pcm
 BUILT_SOURCES = gblib.pcm

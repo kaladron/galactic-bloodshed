@@ -88,7 +88,7 @@ SQLTable::SQLTable(SQLDB *db_, const string &name, const Schema *s)
     processType(schema->EntityType(), fp);
 }
 
-void SQLTable::processType(const Type *curr_type, FieldPath &field_path) {
+void SQLTable::processType(shared_ptr<Type> curr_type, FieldPath &field_path) {
     const string &fqn = curr_type->FQN();
     bool hasChildren = !curr_type->IsTypeFun() || fqn == "tuple";
     bool namedChildren = !curr_type->IsTypeFun() && fqn != "tuple";
@@ -110,7 +110,7 @@ void SQLTable::processType(const Type *curr_type, FieldPath &field_path) {
                                ntp.first :
                                string("_") + std::to_string(i);
             field_path.push_back(next_name);
-            processType(ntp.second, field_path);
+            processType(ntp.second.lock(), field_path);
             field_path.pop_back();
         }
     }
@@ -123,7 +123,7 @@ bool SQLTable::HasColumn(const string &name) const {
     return columns_by_name.find(name) != columns_by_name.end();
 }
 
-SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, const Type *t) {
+SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, shared_ptr<Type> t) {
     auto it = columns_by_fp.find(fp);
     std::cout << "Adding column: " << fp.join() << ", Found: " << (it == columns_by_fp.end()) << std::endl;
     if (it == columns_by_fp.end()) {
@@ -188,7 +188,7 @@ string SQLTable::TableCreationSQL() const {
     stringstream sql;
     sql << "CREATE TABLE IF NOT EXISTS '" << table_name << "' (" << std::endl;
     for (auto column : columns) {
-        const Type *ftype = column->coltype;
+        shared_ptr<Type> ftype = column->coltype;
         if (column->index > 0) sql << ",";
         sql << column->name << " ";
         // TODO - See how to generically:
@@ -207,9 +207,9 @@ string SQLTable::TableCreationSQL() const {
             sql << "REAL" << " " << std::endl;
         } else if (fqn == "string") {
             sql << "TEXT" << " " << std::endl;
-        } else if (ftype->IsRecord()) {
+        } else if (ftype->IsProductType()) {
             sql << "BOOLEAN" << " " << std::endl;
-        } else if (ftype->IsUnion()) {
+        } else if (ftype->IsSumType()) {
             sql << "INT8" << " " << std::endl;
         } else {
             assert(false && "Invalid child type");
@@ -309,7 +309,7 @@ string SQLTable::InsertionSQL(const Value *entity) const {
     stringstream col_sql, val_sql;
 
     int ncols = 0;
-    MatchTypeAndValue(schema->EntityType(), entity, [this, &ncols, &col_sql, &val_sql]
+    MatchTypeAndValue(schema->EntityType().get(), entity, [this, &ncols, &col_sql, &val_sql]
             (const Type *type, const Value *value, int /* index */, const string * /* key */, FieldPath &fp) {
         if (fp.size() > 0) {
             auto col = *ColumnFor(fp);
@@ -320,10 +320,10 @@ string SQLTable::InsertionSQL(const Value *entity) const {
             }
 
             col_sql << col->Name();
-            if (type->IsRecord()) {
+            if (type->IsProductType()) {
                 // then write "exists/not exists" flag
                 val_sql << (value != nullptr);
-            } else if (type->IsUnion()) {
+            } else if (type->IsSumType()) {
                 const UnionValue *uv = dynamic_cast<const UnionValue *>(value);
                 val_sql << (uv ? uv->Tag() : -1);
             } else if (value != nullptr) {
@@ -394,13 +394,12 @@ StrongValue SQLTable::Get(StrongValue key) const {
     return output;
 }
 
-StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const Type *currType,
-                                int startCol, int endCol) const {
+StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, shared_ptr<Type> currType, int startCol, int endCol) const {
 
     if (is_root) {
-        assert(currType->IsRecord() && "Only record types allowed at the root level");
+        assert(currType->IsProductType() && "Only record types allowed at the root level");
     }
-    if (currType->IsRecord()) {
+    if (currType->IsProductType()) {
         bool value = is_root || sqlite3_column_int(stmt, startCol) != 0;
         StrongValue output;
         if (value) {
@@ -414,7 +413,7 @@ StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const T
             }
         }
         return output;
-    } else if (currType->IsUnion()) {
+    } else if (currType->IsSumType()) {
         int tag = sqlite3_column_int(stmt, startCol);
         StrongValue output;
         if (tag >= 0) {
@@ -427,11 +426,11 @@ StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const T
                 childCol = *ColumnAt(childStart);
             }
             // create the corresponding tag
-            StrongValue data = resultSetToValue(stmt, false, childtype.second, childStart, childCol->endIndex - 1);
+            StrongValue data = resultSetToValue(stmt, false, childtype.second.lock(), childStart, childCol->endIndex - 1);
             output = std::make_shared<UnionValue>(tag, data);
         }
         return output;
-    } else {
+    } else if (currType->IsTypeFun()) {
         // literal
         auto fqn = currType->FQN();
         if (fqn == "bool") {
@@ -476,6 +475,8 @@ StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, const T
         } else {
             assert(false && "Invalid child type");
         }
+    } else {
+        assert(false && "Unsupported type");
     }
     return StrongValue();
 }
@@ -504,7 +505,7 @@ string SQLTable::GetSQL(const Value *key) const {
         // Write the value
         auto litval = Literal::From(key_value);
         if (litval) {
-            WriteLiteral(col->GetType(), litval, sql);
+            WriteLiteral(col->GetType().get(), litval, sql);
         } else {
             assert(false && "TBD");
         }

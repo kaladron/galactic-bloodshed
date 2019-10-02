@@ -10,22 +10,24 @@
 #ifndef SCHEMA_H
 #define SCHEMA_H
 
-#include <variant>
 #include "storage/values.h"
 
 START_NS
 
 class Schema {
 public:
-    Schema(const std::string &fqn, const Type *t,
-           const vector<FieldPath> &key_fields);
+    Schema(const std::string &fqn, shared_ptr<Type> t, std::initializer_list<FieldPath> key_fields);
+    Schema(const std::string &fqn, shared_ptr<Type> t, const vector<FieldPath> &key_fields);
     virtual ~Schema() { }
 
     /** Returns the fqn of the schema. */
     const std::string &FQN() const { return fqn; }
 
     /** Returns the type of the key for this entity. */
-    const Type *KeyType() const;
+    shared_ptr<Type> KeyType() const;
+
+    /** Returns the type of the entity. */
+    shared_ptr<Type> EntityType() const { return entity_type; }
 
     /**
      * Returns the value of a particular value.
@@ -37,9 +39,6 @@ public:
      */
     void SetKey(const Value &value, const Value &key);
 
-    /** Returns the type of the entity. */
-    const Type *EntityType() const { return entity_type; }
-
     const vector<FieldPath> &KeyFields() const { return key_fields; }
 
     /** Add a new constraint into the Schema. */
@@ -48,9 +47,9 @@ public:
 
 protected:
     std::string fqn;
-    const Type *entity_type;
+    shared_ptr<Type> entity_type;
     vector<FieldPath> key_fields;
-    mutable Type *key_type = nullptr;
+    mutable shared_ptr<Type> key_type;
     std::list <Constraint *> constraints;
 };
 

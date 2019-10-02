@@ -8,7 +8,7 @@ FieldPath::FieldPath(const string &input, const string &delim) {
     splitString(input, delim, *this);
 }
 
-FieldPath::FieldPath(const vector<string> &another) : vector<string>(another) {
+FieldPath::FieldPath(const StringVector &another) : StringVector(another) {
 }
 
 FieldPath FieldPath::push(const string &subfield) {
@@ -21,89 +21,50 @@ string FieldPath::join(const string &delim) const {
     return joinStrings(*this, delim);
 }
 
-Type::Type(const string &fqn_) : fqn(fqn_), type_tag(TYPE_FUN) {
-}
-
-Type::Type(const string &fqn_, const TypeVector &args) : fqn(fqn_) {
+Type::TypeContainer::TypeContainer(const TypeVector &args) {
     SetData(args);
 }
 
-Type::Type(const string &fqn_, const NameTypeVector &fields, bool is_product_type) : fqn(fqn_) {
-    SetData(fields, is_product_type);
+Type::TypeContainer::TypeContainer(const NameTypeVector &fields) {
+    SetData(fields);
 }
 
-Type::Type(const string &fqn_, std::initializer_list<const Type *> types) : fqn(fqn_) {
+Type::TypeContainer::TypeContainer(std::initializer_list<weak_ptr<Type>> types) {
     SetData(TypeVector(types));
 }
 
-Type::Type(const string &fqn_, std::initializer_list<NameTypePair> fields, bool is_product_type) : fqn(fqn_) {
-    SetData(fields, is_product_type);
+Type::TypeContainer::TypeContainer(std::initializer_list<NameTypePair> fields) {
+    SetData(fields);
 }
 
-Type::~Type() {
+Type::TypeContainer::~TypeContainer() {
     Clear();
 }
 
-void Type::Clear() {
+void Type::TypeContainer::Clear() {
     child_names.clear();
     child_types.clear();
 }
 
-void Type::SetData(const TypeVector &args) {
+void Type::TypeContainer::SetData(const TypeVector &args) {
     Clear();
-    type_tag = TYPE_FUN;
+    is_named = false;
     for (auto t : args) {
         AddChild(t);
     }
 }
 
-void Type::SetData(const NameTypeVector &fields, bool is_product_type) {
+void Type::TypeContainer::SetData(const NameTypeVector &fields) {
     Clear();
-    type_tag = is_product_type ? RECORD : UNION;
+    is_named = true;
     for (auto t : fields) {
         AddChild(t.second, t.first);
     }
 }
 
-size_t Type::ChildCount() const {
-    return child_types.size();
-}
-
-NameTypePair Type::GetChild(size_t index) const {
-    if (type_tag == RECORD || type_tag == UNION) {
-        return NameTypePair(child_names.at(index), child_types.at(index));
-    } else {
-        return NameTypePair("", child_types.at(index));
-    }
-}
-
-const Type *Type::GetChild(const string &name) const {
-    auto it = std::find(child_names.begin(), child_names.end(), name);
-    if (it == child_names.end())
-        return nullptr;
-
-    size_t index = std::distance(child_names.begin(), it);
-    return child_types.at(index);
-}
-
-void Type::AddChild(const Type *child, const string &name) {
-    // Only compound types can have names
-    if (child != nullptr) {
-        if (type_tag == RECORD || type_tag == UNION) {
-            child_names.push_back(name);
-        }
-        child_types.push_back(child);
-    }
-}
-
-int Type::Compare(const Type &another) const {
-    if (this == &another) return 0;
-    if (type_tag != another.type_tag) return type_tag - another.type_tag;
-    int cmp = fqn.compare(another.fqn);
-    if (cmp != 0) return cmp;
-
+int Type::TypeContainer::Compare(const TypeContainer &another) const {
     // compare names
-    cmp = IterCompare(
+    int cmp = IterCompare(
             child_names.begin(), child_names.end(),
             another.child_names.begin(), another.child_names.end(),
             [](const auto &a, const auto &b) { return a.compare(b); });
@@ -114,7 +75,131 @@ int Type::Compare(const Type &another) const {
     return IterCompare(
             child_types.begin(), child_types.end(),
             another.child_types.begin(), another.child_types.end(),
-            [](const auto &a, const auto &b) { return a - b; });
+            [](const auto &a, const auto &b) {
+                return shared_ptr<Type>(a).get() - 
+                       shared_ptr<Type>(b).get();
+            });
+}
+
+size_t Type::TypeContainer::ChildCount() const {
+    return child_types.size();
+}
+
+NameTypePair Type::TypeContainer::GetChild(size_t index) const {
+    if (is_named) {
+        return NameTypePair(child_names.at(index), child_types.at(index));
+    } else {
+        return NameTypePair("", child_types.at(index));
+    }
+}
+
+weak_ptr<Type> Type::TypeContainer::GetChild(const string &name) const {
+    auto it = std::find(child_names.begin(), child_names.end(), name);
+    if (it == child_names.end())
+        return weak_ptr<Type>();
+
+    size_t index = std::distance(child_names.begin(), it);
+    return child_types.at(index);
+}
+
+void Type::TypeContainer::AddChild(weak_ptr<Type> child, const string &name) {
+    // Only compound types can have names
+    if (shared_ptr<Type>(child)) {
+        if (is_named) {
+            child_names.push_back(name);
+        }
+        child_types.push_back(child);
+    }
+}
+
+Type::RefType::RefType(weak_ptr<Type> t) : target_type(t) {
+}
+
+int Type::RefType::Compare(const RefType &another) const {
+    return target_type.lock()->Compare(*another.target_type.lock());
+}
+
+Type::Type(const string &fqn_, const ProductType &t) 
+    : tag(PRODUCT_TYPE), fqn(fqn_), product_type(t) {
+}
+
+Type::Type(const string &fqn_, const SumType &t) 
+    : tag(SUM_TYPE), fqn(fqn_), sum_type(t) {
+}
+
+Type::Type(const string &fqn_, const TypeFun &t)
+    : tag(TYPE_FUN), fqn(fqn_), type_fun(t) {
+}
+
+Type::Type(const string &fqn_, const RefType &t) 
+    : tag(REF_TYPE), fqn(fqn_), ref_type(t) {
+}
+
+Type::Type(const ProductType &t) 
+    : tag(PRODUCT_TYPE), product_type(t) {
+}
+
+Type::Type(const SumType &t) 
+    : tag(SUM_TYPE), sum_type(t) {
+}
+
+Type::Type(const TypeFun &t)
+    : tag(TYPE_FUN), type_fun(t) {
+}
+
+Type::Type(const RefType &t) 
+    : tag(REF_TYPE), ref_type(t) {
+}
+
+Type::Type(const string &fqn_) : tag(TYPE_FUN), fqn(fqn_), type_fun(TypeFun()) {
+}
+
+Type::~Type() {
+}
+
+size_t Type::ChildCount() const {
+    switch(tag) {
+        case PRODUCT_TYPE: return AsProductType().ChildCount();
+        case SUM_TYPE: return AsSumType().ChildCount();
+        case TYPE_FUN: return AsTypeFun().ChildCount();
+        case REF_TYPE: return 0;
+    }
+    return 0;
+}
+
+weak_ptr<Type> Type::GetChild(const string &name) const {
+    switch(tag) {
+        case PRODUCT_TYPE: return AsProductType().GetChild(name);
+        case SUM_TYPE: return AsSumType().GetChild(name);
+        case TYPE_FUN: return AsTypeFun().GetChild(name);
+        default: break;
+    }
+    return weak_ptr<Type>();
+}
+
+NameTypePair Type::GetChild(size_t index) const {
+    switch(tag) {
+        case PRODUCT_TYPE: return AsProductType().GetChild(index);
+        case SUM_TYPE: return AsSumType().GetChild(index);
+        case TYPE_FUN: return AsTypeFun().GetChild(index);
+        default: break;
+    }
+    return NameTypePair();
+}
+
+
+int Type::Compare(const Type &another) const {
+    if (this == &another) return 0;
+    if (tag != another.tag) return tag - another.tag;
+    int cmp = fqn.compare(another.fqn);
+    if (cmp != 0) return cmp;
+
+    switch(tag) {
+        case PRODUCT_TYPE: return AsProductType().Compare(another.AsProductType());
+        case SUM_TYPE: return AsSumType().Compare(another.AsSumType());
+        case TYPE_FUN: return AsTypeFun().Compare(another.AsTypeFun());
+        case REF_TYPE: return AsRefType().Compare(another.AsRefType());
+    }
 }
 
 END_NS

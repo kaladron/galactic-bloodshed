@@ -331,16 +331,17 @@ void MatchTypeAndValue(const Type *type, const Value *root,
                        FieldPath &fp, MatchTypeAndValueCallback callback) {
     if (!type || !root) return ;
     // Call with the current root and type first before descending
-    if (type->IsRecord()) {
+    if (type->IsProductType()) {
         if (!root->IsKeyed()) return ;
         // descend into children
         for (int i = 0, c = type->ChildCount();i < c;i++) {
-            const auto &childtype = type->GetChild(i);
-            auto &key = childtype.first;
+            const auto &childntp = type->GetChild(i);
+            auto &key = childntp.first;
+            auto childtype = childntp.second.lock().get();
             auto childvalue = root->Get(key).get();
             fp.push_back(key);
-            if (callback(childtype.second, childvalue, i, &key, fp)) {
-                MatchTypeAndValue(childtype.second, childvalue, fp, callback);
+            if (callback(childtype, childvalue, i, &key, fp)) {
+                MatchTypeAndValue(childtype, childvalue, fp, callback);
             } else {
                 std::cout << "Aborting for i,key: " << i << ", " << key << std::endl;
                 return ;
@@ -348,24 +349,25 @@ void MatchTypeAndValue(const Type *type, const Value *root,
             fp.pop_back();
         }
     }
-    else if (type->IsUnion()) {
+    else if (type->IsSumType()) {
         const UnionValue *uv = dynamic_cast<const UnionValue *>(root);
         assert(uv != nullptr && "Expected Union Value");
         if (uv->Tag() <= type->ChildCount()) {
             // Ensure value's tag is not in a forward version than type so ignore
-            const auto childtype = type->GetChild(uv->Tag());
+            const auto &childntp = type->GetChild(uv->Tag());
+            auto &key = childntp.first;
+            auto childtype = childntp.second.lock().get();
             const auto childvalue = uv->Data().get();
-            auto &key = childtype.first;
             fp.push_back(key);
-            if (callback(childtype.second, childvalue, uv->Tag(), &key, fp)) {
-                MatchTypeAndValue(childtype.second, childvalue, fp, callback);
+            if (callback(childtype, childvalue, uv->Tag(), &key, fp)) {
+                MatchTypeAndValue(childtype, childvalue, fp, callback);
             } else {
                 std::cout << "Aborting for tag,key: " << uv->Tag() << ", " << key << std::endl;
                 return ;
             }
             fp.pop_back();
         }
-    } else {    // type function
+    } else if (type->IsTypeFun()) {    // type function
         // Any matching will need to be applied by the caller
         // as they know what to do with these types
 #if 0
@@ -417,6 +419,8 @@ void MatchTypeAndValue(const Type *type, const Value *root,
     } else {
     }
     */
+    } else {
+        assert(false && "Unsupported type");
     }
 }
 

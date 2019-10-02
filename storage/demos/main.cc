@@ -5,15 +5,15 @@
 using namespace Storage;
 
 static shared_ptr<Registry> registry((new Registry())->Add(DefaultCTypes()));
-static const Type *StringType = registry->GetType("string");
-static const Type *Int64Type = registry->GetType("int64");
-static const Type *DateType = Int64Type;
+static auto StringType = registry->GetType("string");
+static auto Int64Type = registry->GetType("int64");
+static auto DateType = Int64Type;
 
-static const Type *AddressType = nullptr;
-static const Type *PersonType = nullptr;
-static const Type *CompanyType = nullptr;
-static const Schema *PersonSchema = nullptr;
-static const Schema *CompanySchema = nullptr;
+static shared_ptr<Type> AddressType = nullptr;
+static shared_ptr<Type> PersonType = nullptr;
+static shared_ptr<Type> CompanyType = nullptr;
+static shared_ptr<Schema> PersonSchema = nullptr;
+static shared_ptr<Schema> CompanySchema = nullptr;
 
 using std::cout;
 using std::endl;
@@ -83,34 +83,34 @@ bool valueToPerson(StrongValue input, Person &person) {
 }
 
 void initTypes() {
-    AddressType = new Type("Address", {
+    AddressType = make_shared<Type>("Address", Type::ProductType({
                             NameTypePair("number", StringType),
                             NameTypePair("street", StringType),
                             NameTypePair("city", StringType),
                             NameTypePair("zipcode", StringType),
                             NameTypePair("region", StringType),
                             NameTypePair("country", StringType)
-                        });
+                        }));
 
-    CompanyType = new Type("Company", {
+    CompanyType = make_shared<Type>("Company", Type::ProductType({
                             NameTypePair("id", Int64Type),
                             NameTypePair("name", StringType),
                             NameTypePair("founded_on", DateType),
                             NameTypePair("hq", AddressType),
-                        });
+                        }));
 
-    PersonType = new Type("Person", {
+    PersonType = make_shared<Type>("Person", Type::ProductType({
                             NameTypePair("id", Int64Type),
                             NameTypePair("name", StringType),
                             NameTypePair("dob", DateType),
                             NameTypePair("gender", StringType), // need enums
                             NameTypePair("address", AddressType), // need enums
-                        });
+                        }));
 }
 
 void initSchemas() {
-    CompanySchema = new Schema("Company", CompanyType, { FieldPath("id") });
-    PersonSchema = new Schema("Person", PersonType, { FieldPath("id") });
+    CompanySchema = make_shared<Schema>("Company", CompanyType, vector<FieldPath>({ FieldPath("id") }));
+    PersonSchema = make_shared<Schema>("Person", PersonType, vector<FieldPath>({ FieldPath("id") }));
 }
 
 int main(int argc, char *argv[]) {
@@ -119,8 +119,7 @@ int main(int argc, char *argv[]) {
     cout << "Num args: " << argc << endl;
     const char *filename = argc <= 1 ? "/vagrant/test.db" : argv[1];
     SQLStore store(filename);
-    auto people = store.GetCollection(PersonSchema);
-    auto companies = store.GetCollection(PersonSchema);
+    auto people = store.GetCollection(PersonSchema.get()).get();
 
     Address a1;
     a1.address_type = 101;

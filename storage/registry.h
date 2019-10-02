@@ -15,20 +15,20 @@ class Registry {
 public:
     virtual ~Registry();
 
-    Registry *Add(Type *t);
-    Registry *Add(Schema *t);
-    Registry *Add(std::list<Type *> types);
-    Registry *Add(std::list<Schema *> schemas);
+    Registry *Add(shared_ptr<Type> t);
+    Registry *Add(shared_ptr<Schema> t);
+    Registry *Add(const std::list<shared_ptr<Type>> &types);
+    Registry *Add(const std::list<shared_ptr<Schema>> &schemas);
 
-    const Type *GetType(const string &fqn) const;
-    const Schema *GetSchema(const string &fqn) const;
+    shared_ptr<Type> GetType(const string &fqn) const;
+    shared_ptr<Schema> GetSchema(const string &fqn) const;
 
 protected:
-    mutable map<string, unique_ptr<Type>> types;
-    mutable map<string, unique_ptr<Schema>> schemas;
+    mutable map<string, shared_ptr<Type>> types;
+    mutable map<string, shared_ptr<Schema>> schemas;
 };
 
-extern std::list<Type *> DefaultCTypes();
+extern std::list<shared_ptr<Type>> DefaultCTypes();
 
 END_NS
 

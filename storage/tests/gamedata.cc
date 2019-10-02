@@ -71,8 +71,26 @@ void RegisterSchemas() {
         { "explored", UInt8Type },
         { "conditions", PlanetConditionsType }
     });
+
+    auto SectorType = new Type("Sector", {
+        { "planet", Type(PlanetType) },
+        { "xpos", Int32Type },
+        { "ypos", Int32Type },
+        { "eff", Int32Type },
+        { "fert", Int32Type },
+        { "mobilization", Int32Type },
+        { "crystals", Int32Type },
+        { "resource", Int32Type },
+        { "popn", Int64Type },
+        { "troops", Int64Type },
+        { "owner", Int32Type },
+        { "race", Int32Type },
+        { "type", Int32Type },
+        { "condition", Int32Type },
+    });
     registry->Add(PlanetConditionsType);
     registry->Add(PlanetType);
+    registry->Add(SectorType);
 
     // registry->Add(new Schema("Planet", PlanetType, { FieldPath("id") }) ->AddConstraint(null));
     // registry->Add(new Schema("Person", PersonType, { FieldPath("id") }));

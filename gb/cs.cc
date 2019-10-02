@@ -2,10 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+import gblib;
+
 #include "gb/cs.h"
 
-#include <cstdio>
-#include <cstdlib>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/files_shl.h"

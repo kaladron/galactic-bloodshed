@@ -5,11 +5,11 @@
 /// \file fire.c
 /// \brief Fire at ship or planet from ship or planet
 
+import gblib;
+
 #include "gb/fire.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

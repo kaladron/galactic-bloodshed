@@ -4,14 +4,11 @@
 
 /* makeplanet.c -- makes one planet. */
 
+import gblib;
+
 #include "gb/creator/makeplanet.h"
 
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <tuple>
-#include <vector>
+import std;
 
 #include "gb/creator/makestar.h"
 #include "gb/files_shl.h"

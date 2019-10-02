@@ -15,7 +15,7 @@
 #include <sys/file.h>
 #include <unistd.h>
 
-#include <cstdio>
+import std;
 
 void Fileread(int fd, char *p, int num, int posn) {
   int n2;

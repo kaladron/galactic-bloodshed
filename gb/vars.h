@@ -27,19 +27,6 @@ extern unsigned long segments;
 /* Shipping routes - DON'T change this unless you know what you are doing */
 constexpr int MAX_ROUTES = 4;
 
-enum ScopeLevel { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
-
-using shipnum_t = uint64_t;
-using starnum_t = uint8_t;
-using planetnum_t = uint8_t;
-using player_t = uint8_t;
-using governor_t = uint8_t;
-using commodnum_t = uint64_t;
-using resource_t = unsigned long;
-
-using money_t = int64_t;
-using population_t = uint64_t;
-
 using command_t = std::vector<std::string>;
 
 #define MAXPLAYERS 64
@@ -146,52 +133,6 @@ class Planet {
   unsigned char explored;
 
   planetnum_t planet_id;
-};
-
-class Sector {
- public:
-  Sector(int x_, int y_, int eff_, int fert_, int mobilization_, int crystals_,
-         int resource_, int popn_, int troops_, int owner_, int race_,
-         int type_, int condition_)
-      : x(x_),
-        y(y_),
-        eff(eff_),
-        fert(fert_),
-        mobilization(mobilization_),
-        crystals(crystals_),
-        resource(resource_),
-        popn(popn_),
-        troops(troops_),
-        owner(owner_),
-        race(race_),
-        type(type_),
-        condition(condition_) {}
-
-  Sector() = default;
-  Sector(Sector &) = delete;
-  void operator=(const Sector &) = delete;
-  Sector(Sector &&) = default;
-  Sector &operator=(Sector &&) = default;
-
-  unsigned int x{0};
-  unsigned int y{0};
-  unsigned int eff{0};          /* efficiency (0-100) */
-  unsigned int fert{0};         /* max popn is proportional to this */
-  unsigned int mobilization{0}; /* percent popn is mobilized for war */
-  unsigned int crystals{0};
-  resource_t resource{0};
-
-  population_t popn{0};
-  population_t troops{0}; /* troops (additional combat value) */
-
-  player_t owner{0};         /* owner of place */
-  player_t race{0};          /* race type occupying sector
-                 (usually==owner) - makes things more
-                 realistic when alien races revolt and
-                 you gain control of them! */
-  unsigned int type{0};      /* underlying sector geology */
-  unsigned int condition{0}; /* environmental effects */
-  friend std::ostream &operator<<(std::ostream &, const Sector &);
 };
 
 class SectorMap {
@@ -311,7 +252,5 @@ extern unsigned long newslength[4];
 #define clrbit(a, i) ((a)[(i) / 32] &= ~((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
 #define isset(a, i) ((a)[(i) / 32] & ((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
 #define isclr(a, i) (!isset((a), (i)))
-
-#include "gb/gameobj.h"
 
 #endif  // VARS_H

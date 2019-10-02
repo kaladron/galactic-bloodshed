@@ -4,13 +4,11 @@
 
 /* fuel.c -- See estimations in fuel consumption and travel time. */
 
+import gblib;
+
 #include "gb/fuel.h"
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/doship.h"

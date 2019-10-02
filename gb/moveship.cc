@@ -5,12 +5,11 @@
 /*  moveship -- moves specified ship according to its orders.
  *	also deducts fuel from the ship's stores. */
 
+import gblib;
+
 #include "gb/moveship.h"
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

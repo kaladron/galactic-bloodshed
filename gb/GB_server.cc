@@ -2,6 +2,8 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+import gblib;
+
 #include "gb/GB_server.h"
 
 #include <arpa/inet.h>
@@ -15,20 +17,8 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
-#include <cctype>
-#include <cerrno>
-#include <csignal>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-#include <deque>
-#include <exception>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <unordered_map>
-#include <vector>
+
+import std;
 
 #include "gb/buffers.h"
 #include "gb/build.h"

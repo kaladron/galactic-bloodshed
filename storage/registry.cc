@@ -7,21 +7,23 @@
 
 START_NS
 
-list<Type *> DefaultCTypes() {
+using std::make_shared;
+
+list<shared_ptr<Type>> DefaultCTypes() {
     return {
-        new Type("char"),
-        new Type("bool"),
-        new Type("int8"),
-        new Type("int16"),
-        new Type("int32"),
-        new Type("int64"),
-        new Type("uint8"),
-        new Type("uint16"),
-        new Type("uint32"),
-        new Type("uint64"),
-        new Type("float"),
-        new Type("double"),
-        new Type("string"),
+        make_shared<Type>("char"),
+        make_shared<Type>("bool"),
+        make_shared<Type>("int8"),
+        make_shared<Type>("int16"),
+        make_shared<Type>("int32"),
+        make_shared<Type>("int64"),
+        make_shared<Type>("uint8"),
+        make_shared<Type>("uint16"),
+        make_shared<Type>("uint32"),
+        make_shared<Type>("uint64"),
+        make_shared<Type>("float"),
+        make_shared<Type>("double"),
+        make_shared<Type>("string"),
     };
 }
 
@@ -32,25 +34,10 @@ Registry::~Registry() {
  * Adds a type to the regitry.  Adding a type transfers ownership
  * and its lifecycle is now bound to the registry.
  */
-Registry *Registry::Add(Type *t) {
+Registry *Registry::Add(shared_ptr<Type> t) {
     auto fqn = t->FQN();
     assert (types.find(fqn) == types.end() && "Type already exists");
-    unique_ptr<Type> ut(t);
-    types.emplace(fqn, std::move(ut));
-    return this;
-}
-
-Registry *Registry::Add(std::list<Type *> newtypes) {
-    for (auto t : newtypes) {
-        Add(t);
-    }
-    return this;
-}
-
-Registry *Registry::Add(std::list<Schema *> newschemas) {
-    for (auto s : newschemas) {
-        Add(s);
-    }
+    types.emplace(fqn, t);
     return this;
 }
 
@@ -58,26 +45,39 @@ Registry *Registry::Add(std::list<Schema *> newschemas) {
  * Adds a schema to the regitry.  Adding a schema transfers ownership
  * and its lifecycle is now bound to the registry.
  */
-Registry *Registry::Add(Schema *s) {
+Registry *Registry::Add(shared_ptr<Schema> s) {
     auto fqn = s->FQN();
     assert (schemas.find(fqn) == schemas.end() && "Schema already exists");
-    unique_ptr<Schema> us(s);
-    schemas.emplace(fqn, std::move(us));
+    schemas.emplace(fqn, s);
     return this;
 }
 
-const Type *Registry::GetType(const string &fqn) const {
+Registry *Registry::Add(const std::list<shared_ptr<Type>> &newtypes) {
+    for (auto t : newtypes) {
+        Add(t);
+    }
+    return this;
+}
+
+Registry *Registry::Add(const std::list<shared_ptr<Schema>> &newschemas) {
+    for (auto s : newschemas) {
+        Add(s);
+    }
+    return this;
+}
+
+shared_ptr<Type> Registry::GetType(const string &fqn) const {
     auto it = types.find(fqn);
     if (it != types.end()) {
-        return it->second.get();
+        return it->second;
     }
     return nullptr;
 }
 
-const Schema *Registry::GetSchema(const string &fqn) const {
+shared_ptr<Schema> Registry::GetSchema(const string &fqn) const {
     auto it = schemas.find(fqn);
     if (it != schemas.end()) {
-        return it->second.get();
+        return it->second;
     }
     return nullptr;
 }

@@ -10,97 +10,115 @@
 
 START_NS
 
-using NameTypePair = pair<string, const Type *>;
-using NameTypeVector = vector<NameTypePair>;
-using TypeVector = vector<const Type *>;
-
-class FieldPath : public vector<string> {
+class FieldPath : public StringVector {
 public:
     FieldPath() { }
     FieldPath(const string &input, const string &delim = "/");
-    FieldPath(const vector<string> &another);
+    FieldPath(const StringVector &another);
     FieldPath push(const string &subfield);
     string join(const string &delim = "/") const;
 };
 
 class Type {
 public:
-    enum TypeTag {
+
+public:
+    enum Tag {
         // Functor types
-        RECORD,
-        UNION,
-        TYPE_FUN
+        PRODUCT_TYPE,
+        SUM_TYPE,
+        TYPE_FUN,
+        REF_TYPE
+    };
+    struct TypeContainer {
+        TypeContainer() { }
+        TypeContainer(const TypeContainer &) { }
+        TypeContainer(const TypeVector &args);
+        TypeContainer(const NameTypeVector &fields);
+        TypeContainer(std::initializer_list<weak_ptr<Type>> types);
+        TypeContainer(std::initializer_list<NameTypePair> fields);
+        virtual ~TypeContainer();
+
+        int Compare(const TypeContainer &another) const;
+        void Clear();
+        void SetData(const TypeVector &args);
+        void SetData(const NameTypeVector &fields);
+        void AddChild(weak_ptr<Type> child, const string &name = "");
+        size_t ChildCount() const;
+        weak_ptr<Type> GetChild(const string &name) const;
+        NameTypePair GetChild(size_t index) const;
+
+        bool is_named;
+        StringVector child_names;
+        TypeVector child_types;
+    };
+
+    struct ProductType : public TypeContainer {
+        using TypeContainer::TypeContainer;
+        ProductType() { }
+    };
+
+    struct SumType : public TypeContainer {
+        using TypeContainer::TypeContainer;
+        SumType() { }
+    };
+
+    struct TypeFun : public TypeContainer {
+        using TypeContainer::TypeContainer;
+        TypeFun() { }
+    };
+
+    struct RefType {
+        weak_ptr<Type> target_type;
+        RefType() { }
+        RefType(weak_ptr<Type> target_type);
+        int Compare(const RefType &another) const;
     };
 
     Type(const string &fqn);
-    Type(const string &fqn, std::initializer_list<const Type *> types);
-    Type(const string &fqn_, std::initializer_list<NameTypePair> fields, bool is_product_type = true);
-    Type(const string &fqn, const TypeVector &args);
-    Type(const string &fqn, const NameTypeVector &fields, bool is_product_type = true);
+    Type(const string &fqn, const ProductType &prod_type);
+    Type(const string &fqn, const SumType &sum_type);
+    Type(const string &fqn, const TypeFun &typefun);
+    Type(const string &fqn, const RefType &reftype);
     ~Type();
 
     int Compare(const Type &another) const;
-
-    // Access children
-    void AddChild(const Type *child, const string &name = "");
-    size_t ChildCount() const;
-    const Type *GetChild(const string &name) const;
-    NameTypePair GetChild(size_t index) const;
     const string &FQN() const { return fqn; }
+    size_t ChildCount() const;
+    weak_ptr<Type> GetChild(const string &name) const;
+    NameTypePair GetChild(size_t index) const;
 
-    bool IsTypeFun() const { return type_tag == TYPE_FUN; }
-    bool IsRecord() const { return type_tag == RECORD; }
-    bool IsUnion() const { return type_tag == UNION; }
+    bool IsProductType() const { return tag == PRODUCT_TYPE; }
+    bool IsSumType() const { return tag == SUM_TYPE; }
+    bool IsTypeFun() const { return tag == TYPE_FUN; }
+    bool IsRefType() const { return tag == REF_TYPE; }
 
-protected:
-    void Clear();
-    void SetData(const TypeVector &args);
-    void SetData(const NameTypeVector &fields, bool is_product_type = true);
+    const auto &AsTypeFun() const { return std::get<TypeFun>(type_fun); }
+    const auto &AsSumType() const { return std::get<SumType>(sum_type); }
+    const auto &AsProductType() const { return std::get<ProductType>(product_type); }
+    const auto &AsRefType() const { return std::get<RefType>(ref_type); }
 
 private:
+    /**
+     * The tag of this type to identify the payload union.
+     */
+    Tag tag;
+
     /**
      * FQN of this type
      */
     const string fqn;
 
-    /**
-     * The tag of this type to identify the payload union.
-     */
-    TypeTag type_tag;
+    std::variant<ProductType, SumType, TypeFun, RefType> product_type, sum_type, type_fun, ref_type;
 
-    /**
-     * Children of this type.
-     * For TYPE_FUN the name part of the pair will be empty!!!
-     */
-    vector<string> child_names;
-    TypeVector child_types;
+    // Limit no name types for now
+    Type(const ProductType &prod_type);
+    Type(const SumType &sum_type);
+    Type(const TypeFun &typefun);
+    Type(const RefType &reftype);
 };
 
 END_NS
-
-// Some macros to make creation of types easier
-
-#if 0
-#include <boost/preprocessor.hpp>
-#include <boost/preprocessor/cat.hpp>
-#include <boost/preprocessor/seq/for_each.hpp>
-#define REGISTER_FIELD(field_name, field_type)           \
-    RegisterField(#field_name, (Field *)field_name);
-
-#define REGISTER_FIELD_MACRO(r, data, elem)          \
-    REGISTER_FIELD(BOOST_PP_TUPLE_ELEM(0, elem), BOOST_PP_TUPLE_ELEM(1, elem))
-
-#define DEFINE_FIELD(field_name, field_type)           \
-    const field_type* field_name = RegisterField<field_type>(#field_name);
-
-#define DEFINE_FIELD_MACRO(r, data, elem)          \
-    DEFINE_FIELD(BOOST_PP_TUPLE_ELEM(0, elem), BOOST_PP_TUPLE_ELEM(1, elem))
-
-#define DEFINE_RECORD(record_name, fields)                      \
-    new Type(record_name, new NameTypeVector() {                \
-        BOOST_PP_SEQ_FOR_EACH(DEFINE_FIELD_MACRO, _, fields)    \
-    }, true);
-#endif
 
 #endif
 

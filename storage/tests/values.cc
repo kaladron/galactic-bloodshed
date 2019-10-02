@@ -8,10 +8,10 @@ using hash = std::hash<T>;
 using namespace Storage;
 
 static shared_ptr<Registry> registry((new Registry())->Add(DefaultCTypes()));
-static const Type *StringType = registry->GetType("string");
-static const Type *Int32Type = registry->GetType("int32");
-static const Type *Int16Type = registry->GetType("int16");
-static const Type *BoolType = registry->GetType("bool");
+static auto StringType = registry->GetType("string");
+static auto Int32Type = registry->GetType("int32");
+static auto Int16Type = registry->GetType("int16");
+static auto BoolType = registry->GetType("bool");
 
 TEST(Literals, VerifyLiteralTypes) {
     EXPECT_EQ(LiteralType::String, StringBoxer("test")->LitType());

@@ -12,6 +12,22 @@ AC_RUN_IFELSE([AC_LANG_PROGRAM([],[
 have_clang=yes
 ])
 
+AC_ARG_ENABLE(debug,
+AS_HELP_STRING([--enable-debug],
+               [turn on debug mode]),
+[case "${enableval}" in
+             yes) debug=true ;;
+             no)  debug=false ;;
+             *)   AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
+esac],
+[debug=false])
+
+AM_CONDITIONAL(DEBUG, test x"$debug" = x"true")
+
+if test x"$debug" = x"true"; then
+  AC_SUBST([CXXFLAGS], ["-g3 -O0 -fdebug-macro -fsanitize=undefined -fsanitize=address"])
+fi
+
 # Add -Wextra to GCC_OPTS
 AC_SUBST([GCC_OPTS], ["-Werror -Wall -Wno-sign-compare -Wno-maybe-uninitialized -Wno-return-type \
 	   -Wno-format-overflow -Wno-nonnull -Wno-stringop-truncation -Wno-restrict \

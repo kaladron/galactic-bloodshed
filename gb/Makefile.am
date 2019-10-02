@@ -132,7 +132,7 @@ racegen_LDADD = libgblib.a
 TESTS = shlmisc_test
 
 check_PROGRAMS = shlmisc_test
-shkmisc_test_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
+shlmisc_test_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 shlmisc_test_SOURCES = shlmisc_test.cc
 shlmisc_test_LDADD = libgblib.a
 

@@ -1,3 +1,5 @@
+import gblib;
+
 #include "gb/shlmisc.h"
 
 import std;

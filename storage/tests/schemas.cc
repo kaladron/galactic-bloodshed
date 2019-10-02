@@ -4,15 +4,16 @@
 
 using std::cout;
 using std::endl;
+using std::make_shared;
 using namespace Storage;
 
 static shared_ptr<Registry> registry((new Registry())->Add(DefaultCTypes()));
-static const Type *StringType = registry->GetType("string");
-static const Type *Int64Type = registry->GetType("int64");
-static const Type *Int32Type = registry->GetType("int32");
-static const Type *Int16Type = registry->GetType("int16");
-static const Type *BoolType = registry->GetType("bool");
-static const Type *DateType = Int64Type;
+static auto StringType = registry->GetType("string");
+static auto Int64Type = registry->GetType("int64");
+static auto Int32Type = registry->GetType("int32");
+static auto Int16Type = registry->GetType("int16");
+static auto BoolType = registry->GetType("bool");
+static auto DateType = Int64Type;
 
 // How do we want to test schemas?
 // 1. Define a schema - say from a string or a file
@@ -23,8 +24,8 @@ static void RegisterSchemas();
 
 TEST(Schemas, SimpleSchemas) {
     auto store = setupTestDb();
-    auto people = store->GetCollection(registry->GetSchema("Person"));
-    auto companies = store->GetCollection(registry->GetSchema("Company"));
+    auto people = store->GetCollection(registry->GetSchema("Person").get());
+    auto companies = store->GetCollection(registry->GetSchema("Company").get());
 
     StrongValue address1(new MapValue({
         { "address_type", UInt8Boxer(101) },    // invalid field - should not be persisted
@@ -69,32 +70,35 @@ shared_ptr<Store> setupTestDb(const char *dbpath) {
 }
 
 void RegisterSchemas() {
-    auto AddressType = new Type("Address", {
+    auto AddressType = make_shared<Type>("Address", Type::ProductType({
                         NameTypePair("number", StringType),
                         NameTypePair("street", StringType),
                         NameTypePair("city", StringType),
                         NameTypePair("zipcode", StringType),
                         NameTypePair("region", StringType),
                         NameTypePair("country", StringType)
-                    });
-    auto CompanyType = new Type("Company", {
+                    }));
+    auto CompanyType = make_shared<Type>("Company", Type::ProductType({
                             NameTypePair("id", Int64Type),
                             NameTypePair("name", StringType),
                             NameTypePair("founded_on", DateType),
                             NameTypePair("hq", AddressType)
-                        });
+                        }));
 
-    auto PersonType = new Type("Person", {
+    auto PersonType = make_shared<Type>("Person", Type::ProductType({
                         NameTypePair("id", Int64Type),
                         NameTypePair("name", StringType),
                         NameTypePair("dob", DateType),
                         NameTypePair("gender", StringType), // need enums
                         NameTypePair("address", AddressType)
-                    });
+                    }));
     registry->Add(AddressType);
     registry->Add(PersonType);
     registry->Add(CompanyType);
 
-    registry->Add(new Schema("Company", CompanyType, { FieldPath("id") }));
-    registry->Add(new Schema("Person", PersonType, { FieldPath("id") }));
+    auto company_schema = make_shared<Schema>("Company", CompanyType, vector<FieldPath>({ FieldPath("id") }));
+    registry->Add(company_schema);
+
+    auto person_schema = make_shared<Schema>("Person", PersonType, vector<FieldPath>({ FieldPath("id") }));
+    registry->Add(person_schema);
 };

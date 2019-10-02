@@ -6,6 +6,7 @@
 #define END_NS }
 
 #include <assert.h>
+#include <variant>
 #include <cstdlib>
 #include <functional>
 #include <list>
@@ -56,9 +57,9 @@ using stringbuf = std::stringbuf;
 using string = std::string;
 using stringstream = std::stringstream;
 using StringVector = vector<string>;
-using NameTypePair = pair<string, const Type *>;
+using NameTypePair = pair<string, weak_ptr<Type>>;
 using NameTypeVector = vector<NameTypePair>;
-using TypeVector = vector<const Type *>;
+using TypeVector = vector<weak_ptr<Type>>;
 
 END_NS
 

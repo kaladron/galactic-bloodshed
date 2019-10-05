@@ -179,7 +179,6 @@ void power(const command_t &argv, GameObj &g) {
   player_t p;
   racetype *r;
   racetype *Race;
-  struct vic vic[MAXPLAYERS];
 
   p = -1;
 
@@ -210,12 +209,14 @@ void power(const command_t &argv, GameObj &g) {
   notify(Playernum, Governor, buf);
 
   if (argv.size() < 2) {
-    create_victory_list(vic);
-    for (int i = 1; i <= Num_races; i++) {
-      p = vic[i - 1].racenum;
+    auto vicvec = create_victory_list();
+    int rank = 0;
+    for (const auto &vic : vicvec) {
+      rank++;
+      p = vic.racenum;
       r = races[p - 1];
       if (!r->dissolved && Race->translate[p - 1] >= 10) {
-        prepare_output_line(Race, r, p, i);
+        prepare_output_line(Race, r, p, rank);
         notify(Playernum, Governor, buf);
       }
     }
@@ -227,7 +228,7 @@ void power(const command_t &argv, GameObj &g) {
 }
 
 static void prepare_output_line(racetype *Race, racetype *r, int i, int rank) {
-  if (rank)
+  if (rank != 0)
     sprintf(buf, "%2d ", rank);
   else
     buf[0] = '\0';

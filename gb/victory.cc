@@ -7,10 +7,7 @@ import std;
 
 #include "gb/victory.h"
 
-#include "gb/GB_server.h"
-#include "gb/buffers.h"
 #include "gb/races.h"
-#include "gb/vars.h"
 
 namespace {
 bool constexpr victory_sort(const struct vic &a, const struct vic &b) {

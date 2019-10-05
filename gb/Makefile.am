@@ -80,6 +80,7 @@ libcommands_a_SOURCES = \
 		     commands/scrap.cc \
 		     commands/toggle.cc \
 		     commands/toxicity.cc \
+		     commands/victory.cc \
 		     commands/zoom.cc
 
 libgblib_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm

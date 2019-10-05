@@ -46,6 +46,7 @@ import std;
 #include "gb/commands/technology.h"
 #include "gb/commands/toggle.h"
 #include "gb/commands/toxicity.h"
+#include "gb/commands/victory.h"
 #include "gb/commands/zoom.h"
 #include "gb/config.h"
 #include "gb/cs.h"

@@ -79,3 +79,15 @@ export class Sector {
   friend std::ostream &operator<<(std::ostream &, const Sector &);
 };
 
+export struct vic {
+  unsigned char racenum;
+  std::string name;
+  bool no_count;
+  char sleep;
+  double tech;
+  int Thing;
+  int IQ;
+  long rawscore;
+  long login;
+};
+

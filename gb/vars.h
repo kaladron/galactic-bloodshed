@@ -209,18 +209,6 @@ extern struct stardata Sdata;
 
 struct directory {};
 
-struct vic {
-  unsigned char racenum;
-  char name[RNAMESIZE];
-  bool no_count;
-  char sleep;
-  double tech;
-  int Thing;
-  int IQ;
-  long rawscore;
-  long login;
-};
-
 extern unsigned char Nuked[MAXPLAYERS];
 extern unsigned long StarsInhab[NUMSTARS];
 extern unsigned long StarsExpl[NUMSTARS];

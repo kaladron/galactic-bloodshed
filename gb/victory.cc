@@ -23,14 +23,14 @@ bool constexpr victory_sort(const struct vic &a, const struct vic &b) {
   // Must be equal
   return true;
 }
-}
+}  // namespace
 
-std::vector<struct vic> create_victory_list() {
-  std::vector<struct vic> vicvec;
+std::vector<vic> create_victory_list() {
+  std::vector<vic> vicvec;
   for (player_t i = 1; i <= Num_races; i++) {
     struct vic vic;
     vic.racenum = i;
-    strcpy(vic.name, races[i - 1]->name);
+    vic.name = std::string(races[i - 1]->name);
     vic.rawscore = races[i - 1]->victory_score;
     vic.tech = races[i - 1]->tech;
     vic.Thing = races[i - 1]->Metamorph;

@@ -7,6 +7,6 @@
 
 #include "gb/vars.h"
 
-std::vector<struct vic> create_victory_list();
+std::vector<vic> create_victory_list();
 
 #endif  // VICTORY_H

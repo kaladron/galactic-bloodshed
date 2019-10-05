@@ -8,6 +8,6 @@
 #include "gb/vars.h"
 
 void victory(const command_t &, GameObj &);
-void create_victory_list(struct vic[MAXPLAYERS]);
+std::vector<struct vic> create_victory_list();
 
 #endif  // VICTORY_H

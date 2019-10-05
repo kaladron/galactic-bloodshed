@@ -13,22 +13,18 @@ import std;
 #include "gb/races.h"
 #include "gb/vars.h"
 
-static auto constexpr victory_sort(const void *A, const void *B) {
-  const auto *a = (const struct vic *)A;
-  const auto *b = (const struct vic *)B;
-  if (a->no_count) return 1;
-  if (b->no_count) return -1;
+static bool constexpr victory_sort(const struct vic &a, const struct vic &b) {
+  if (a.no_count) return true;
+  if (b.no_count) return false;
 
-  if (b->rawscore > a->rawscore) return 1;
-  if (b->rawscore < a->rawscore) return -1;
+  if (b.rawscore > a.rawscore) return true;
+  if (b.rawscore < a.rawscore) return false;
 
   // Must be equal
-  return 0;
+  return true;
 }
 
 void victory(const command_t &argv, GameObj &g) {
-  struct vic vic[MAXPLAYERS];
-
   /*
   #ifndef VICTORY
   g.out << "Victory conditions disabled.\n";
@@ -38,7 +34,7 @@ void victory(const command_t &argv, GameObj &g) {
   int count = (argv.size() > 1) ? std::stoi(argv[1]) : Num_races;
   if (count > Num_races) count = Num_races;
 
-  create_victory_list(vic);
+  auto vic = create_victory_list();
 
   g.out << "----==== PLAYER RANKINGS ====----\n";
   sprintf(buf, "%-4.4s %-15.15s %8s\n", "No.", "Name", (g.god ? "Score" : ""));
@@ -57,24 +53,22 @@ void victory(const command_t &argv, GameObj &g) {
   }
 }
 
-void create_victory_list(struct vic vic[MAXPLAYERS]) {
-  Race *vic_races[MAXPLAYERS];
-
+std::vector<struct vic> create_victory_list() {
+  std::vector<struct vic> vicvec;
   for (player_t i = 1; i <= Num_races; i++) {
-    vic_races[i - 1] = races[i - 1];
-    vic[i - 1].no_count = 0;
+    struct vic vic;
+    vic.racenum = i;
+    strcpy(vic.name, races[i - 1]->name);
+    vic.rawscore = races[i - 1]->victory_score;
+    vic.tech = races[i - 1]->tech;
+    vic.Thing = races[i - 1]->Metamorph;
+    vic.IQ = races[i - 1]->IQ;
+    if (races[i - 1]->God || races[i - 1]->Guest || races[i - 1]->dissolved)
+      vic.no_count = true;
+    else
+      vic.no_count = false;
+    vicvec.emplace_back(vic);
   }
-  for (player_t i = 1; i <= Num_races; i++) {
-    vic[i - 1].racenum = i;
-    strcpy(vic[i - 1].name, vic_races[i - 1]->name);
-    vic[i - 1].rawscore = vic_races[i - 1]->victory_score;
-    /*    vic[i-1].rawscore = vic_races[i-1]->morale; */
-    vic[i - 1].tech = vic_races[i - 1]->tech;
-    vic[i - 1].Thing = vic_races[i - 1]->Metamorph;
-    vic[i - 1].IQ = vic_races[i - 1]->IQ;
-    if (vic_races[i - 1]->God || vic_races[i - 1]->Guest ||
-        vic_races[i - 1]->dissolved)
-      vic[i - 1].no_count = 1;
-  }
-  qsort(vic, Num_races, sizeof(struct vic), victory_sort);
+  std::sort(vicvec.begin(), vicvec.end(), victory_sort);
+  return vicvec;
 }

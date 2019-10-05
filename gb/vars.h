@@ -212,7 +212,7 @@ struct directory {};
 struct vic {
   unsigned char racenum;
   char name[RNAMESIZE];
-  unsigned long no_count;
+  bool no_count;
   char sleep;
   double tech;
   int Thing;

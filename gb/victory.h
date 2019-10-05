@@ -7,7 +7,6 @@
 
 #include "gb/vars.h"
 
-void victory(const command_t &, GameObj &);
 std::vector<struct vic> create_victory_list();
 
 #endif  // VICTORY_H

@@ -12,16 +12,10 @@
  */
 
 import gblib;
+import std;
 
 #include "gb/star.h"
 
-import std;
-
-#include "gb/GB_server.h"
-#include "gb/buffers.h"
-#include "gb/files_shl.h"
-#include "gb/races.h"
-#include "gb/shlmisc.h"
 #include "gb/vars.h"
 
 int control(const Star& star, player_t Playernum, governor_t Governor) {

@@ -90,4 +90,3 @@ export struct vic {
   long rawscore;
   long login;
 };
-

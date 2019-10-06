@@ -27,8 +27,6 @@ extern unsigned long segments;
 /* Shipping routes - DON'T change this unless you know what you are doing */
 constexpr int MAX_ROUTES = 4;
 
-using command_t = std::vector<std::string>;
-
 #define MAXPLAYERS 64
 #define MAXSTRLEN 2047
 #define HUGESTRLEN (2 * MAXSTRLEN + 1)

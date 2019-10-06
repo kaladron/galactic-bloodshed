@@ -15,6 +15,8 @@ export using resource_t = unsigned long;
 export using money_t = int64_t;
 export using population_t = uint64_t;
 
+export using command_t = std::vector<std::string>;
+
 export class GameObj {
  public:
   player_t player;

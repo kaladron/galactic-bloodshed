@@ -9,8 +9,8 @@ START_NS
 
 using std::make_shared;
 
-list<shared_ptr<Type>> DefaultCTypes() {
-    return {
+list<StrongType> DefaultCTypes() {
+    return list({
         make_shared<Type>("char"),
         make_shared<Type>("bool"),
         make_shared<Type>("int8"),
@@ -24,7 +24,7 @@ list<shared_ptr<Type>> DefaultCTypes() {
         make_shared<Type>("float"),
         make_shared<Type>("double"),
         make_shared<Type>("string"),
-    };
+    });
 }
 
 Registry::~Registry() {
@@ -34,7 +34,7 @@ Registry::~Registry() {
  * Adds a type to the regitry.  Adding a type transfers ownership
  * and its lifecycle is now bound to the registry.
  */
-Registry *Registry::Add(shared_ptr<Type> t) {
+Registry *Registry::Add(StrongType t) {
     auto fqn = t->FQN();
     assert (types.find(fqn) == types.end() && "Type already exists");
     types.emplace(fqn, t);
@@ -52,7 +52,7 @@ Registry *Registry::Add(shared_ptr<Schema> s) {
     return this;
 }
 
-Registry *Registry::Add(const std::list<shared_ptr<Type>> &newtypes) {
+Registry *Registry::Add(const std::list<StrongType> &newtypes) {
     for (auto t : newtypes) {
         Add(t);
     }
@@ -66,7 +66,7 @@ Registry *Registry::Add(const std::list<shared_ptr<Schema>> &newschemas) {
     return this;
 }
 
-shared_ptr<Type> Registry::GetType(const string &fqn) const {
+StrongType Registry::GetType(const string &fqn) const {
     auto it = types.find(fqn);
     if (it != types.end()) {
         return it->second;

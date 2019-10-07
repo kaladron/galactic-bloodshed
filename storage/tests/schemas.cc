@@ -71,26 +71,26 @@ shared_ptr<Store> setupTestDb(const char *dbpath) {
 
 void RegisterSchemas() {
     auto AddressType = make_shared<Type>("Address", Type::ProductType({
-                        NameTypePair("number", StringType),
-                        NameTypePair("street", StringType),
-                        NameTypePair("city", StringType),
-                        NameTypePair("zipcode", StringType),
-                        NameTypePair("region", StringType),
-                        NameTypePair("country", StringType)
+                        pair("number", StringType),
+                        pair("street", StringType),
+                        pair("city", StringType),
+                        pair("zipcode", StringType),
+                        pair("region", StringType),
+                        pair("country", StringType)
                     }));
     auto CompanyType = make_shared<Type>("Company", Type::ProductType({
-                            NameTypePair("id", Int64Type),
-                            NameTypePair("name", StringType),
-                            NameTypePair("founded_on", DateType),
-                            NameTypePair("hq", AddressType)
+                            pair("id", Int64Type),
+                            pair("name", StringType),
+                            pair("founded_on", DateType),
+                            pair("hq", AddressType)
                         }));
 
     auto PersonType = make_shared<Type>("Person", Type::ProductType({
-                        NameTypePair("id", Int64Type),
-                        NameTypePair("name", StringType),
-                        NameTypePair("dob", DateType),
-                        NameTypePair("gender", StringType), // need enums
-                        NameTypePair("address", AddressType)
+                        pair("id", Int64Type),
+                        pair("name", StringType),
+                        pair("dob", DateType),
+                        pair("gender", StringType), // need enums
+                        pair("address", AddressType)
                     }));
     registry->Add(AddressType);
     registry->Add(PersonType);

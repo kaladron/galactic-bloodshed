@@ -16,18 +16,18 @@ START_NS
 
 class Schema {
 public:
-    Schema(const std::string &fqn, shared_ptr<Type> t, std::initializer_list<FieldPath> key_fields);
-    Schema(const std::string &fqn, shared_ptr<Type> t, const vector<FieldPath> &key_fields);
+    Schema(const std::string &fqn, StrongType t, std::initializer_list<FieldPath> key_fields);
+    Schema(const std::string &fqn, StrongType t, const vector<FieldPath> &key_fields);
     virtual ~Schema() { }
 
     /** Returns the fqn of the schema. */
     const std::string &FQN() const { return fqn; }
 
     /** Returns the type of the key for this entity. */
-    shared_ptr<Type> KeyType() const;
+    StrongType KeyType() const;
 
     /** Returns the type of the entity. */
-    shared_ptr<Type> EntityType() const { return entity_type; }
+    StrongType EntityType() const { return entity_type; }
 
     /**
      * Returns the value of a particular value.
@@ -47,9 +47,9 @@ public:
 
 protected:
     std::string fqn;
-    shared_ptr<Type> entity_type;
+    StrongType entity_type;
     vector<FieldPath> key_fields;
-    mutable shared_ptr<Type> key_type;
+    mutable StrongType key_type;
     std::list <Constraint *> constraints;
 };
 

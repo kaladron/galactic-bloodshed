@@ -25,7 +25,7 @@ esac],
 AM_CONDITIONAL(DEBUG, test x"$debug" = x"true")
 
 if test x"$debug" = x"true"; then
-  AC_SUBST([CXXFLAGS], ["-g3 -O0 -fdebug-macro -fsanitize=undefined -fsanitize=address"])
+  AC_SUBST([CXXFLAGS], ["-g3 -O0 -D_GLIBCXX_DEBUG -fsanitize=undefined -fdebug-macro -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls"])
 fi
 
 # Add -Wextra to GCC_OPTS

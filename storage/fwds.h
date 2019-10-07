@@ -42,24 +42,23 @@ using StrongValue = std::shared_ptr<Value>;
 using WeakValue = std::weak_ptr<Value>;
 using StrongLiteral = std::shared_ptr<Literal>;
 using WeakLiteral = std::weak_ptr<Literal>;
+using StrongType = std::shared_ptr<Type>;
+using WeakType = std::weak_ptr<Type>;
 
-template <typename T> using shared_ptr = std::shared_ptr<T>;
-template <typename T> using weak_ptr = std::weak_ptr<T>;
-template <typename T> using unique_ptr = std::unique_ptr<T>;
-template <typename T> using vector = std::vector<T>;
-template <typename T> using list = std::list<T>;
-template <typename T> using optional = std::optional<T>;
-template <typename K, typename V> using map = std::map<K,V>;
-template <typename A, typename B> using pair = std::pair<A,B>;
+using std::shared_ptr;
+using std::weak_ptr;
+using std::unique_ptr;
+using std::vector;
+using std::list;
+using std::optional;
+using std::map;
+using std::pair;
 
-using ostream = std::ostream;
-using stringbuf = std::stringbuf;
-using string = std::string;
-using stringstream = std::stringstream;
+using std::ostream;
+using std::stringbuf;
+using std::string;
+using std::stringstream;
 using StringVector = vector<string>;
-using NameTypePair = pair<string, weak_ptr<Type>>;
-using NameTypeVector = vector<NameTypePair>;
-using TypeVector = vector<weak_ptr<Type>>;
 
 END_NS
 

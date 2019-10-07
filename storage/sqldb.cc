@@ -88,7 +88,7 @@ SQLTable::SQLTable(SQLDB *db_, const string &name, const Schema *s)
     processType(schema->EntityType(), fp);
 }
 
-void SQLTable::processType(shared_ptr<Type> curr_type, FieldPath &field_path) {
+void SQLTable::processType(StrongType curr_type, FieldPath &field_path) {
     const string &fqn = curr_type->FQN();
     bool hasChildren = !curr_type->IsTypeFun() || fqn == "tuple";
     bool namedChildren = !curr_type->IsTypeFun() && fqn != "tuple";
@@ -105,12 +105,12 @@ void SQLTable::processType(shared_ptr<Type> curr_type, FieldPath &field_path) {
     // Process children
     if (hasChildren) {
         for (int i = 0, s = curr_type->ChildCount(); i < s; i++) {
-            NameTypePair ntp = curr_type->GetChild(i);
+            auto ntp = curr_type->GetChild(i);
             string next_name = namedChildren ?
                                ntp.first :
                                string("_") + std::to_string(i);
             field_path.push_back(next_name);
-            processType(ntp.second.lock(), field_path);
+            processType(ntp.second, field_path);
             field_path.pop_back();
         }
     }
@@ -123,7 +123,7 @@ bool SQLTable::HasColumn(const string &name) const {
     return columns_by_name.find(name) != columns_by_name.end();
 }
 
-SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, shared_ptr<Type> t) {
+SQLTable::Column *SQLTable::AddColumn(const FieldPath &fp, StrongType t) {
     auto it = columns_by_fp.find(fp);
     std::cout << "Adding column: " << fp.join() << ", Found: " << (it == columns_by_fp.end()) << std::endl;
     if (it == columns_by_fp.end()) {
@@ -188,7 +188,7 @@ string SQLTable::TableCreationSQL() const {
     stringstream sql;
     sql << "CREATE TABLE IF NOT EXISTS '" << table_name << "' (" << std::endl;
     for (auto column : columns) {
-        shared_ptr<Type> ftype = column->coltype;
+        StrongType ftype = column->coltype;
         if (column->index > 0) sql << ",";
         sql << column->name << " ";
         // TODO - See how to generically:
@@ -394,7 +394,7 @@ StrongValue SQLTable::Get(StrongValue key) const {
     return output;
 }
 
-StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, shared_ptr<Type> currType, int startCol, int endCol) const {
+StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, StrongType currType, int startCol, int endCol) const {
 
     if (is_root) {
         assert(currType->IsProductType() && "Only record types allowed at the root level");
@@ -426,7 +426,7 @@ StrongValue SQLTable::resultSetToValue(sqlite3_stmt *stmt, bool is_root, shared_
                 childCol = *ColumnAt(childStart);
             }
             // create the corresponding tag
-            StrongValue data = resultSetToValue(stmt, false, childtype.second.lock(), childStart, childCol->endIndex - 1);
+            StrongValue data = resultSetToValue(stmt, false, childtype.second, childStart, childCol->endIndex - 1);
             output = std::make_shared<UnionValue>(tag, data);
         }
         return output;

@@ -5,6 +5,8 @@
 template <typename T>
 using hash = std::hash<T>;
 
+using std::cout;
+using std::endl;
 using namespace Storage;
 
 static shared_ptr<Registry> registry((new Registry())->Add(DefaultCTypes()));
@@ -29,9 +31,8 @@ TEST(Literals, StringifyNormally) {
 TEST(Literals, UnboxShouldMatchBox) {
     auto input = "Hello World";
     auto boxed = StringBoxer(input);
-    string output;
+    string output = StringUnboxer(boxed);
     EXPECT_EQ(LiteralType::String, boxed->LitType());
-    EXPECT_EQ(true, StringUnboxer(boxed, output));
     EXPECT_EQ(input, output);
 }
 
@@ -195,3 +196,4 @@ TEST(MapValues, MapComparisonComparesValues) {
     MapValue lv3(values2);
     EXPECT_EQ(val2->Compare(val3), lv2.Compare(&lv3));
 }
+

@@ -41,13 +41,14 @@ check_PROGRAMS = storage_test
 
 storage_test_CXXFLAGS = -Wno-undef -Wno-shift-sign-overflow $(AM_CXXFLAGS)
 
-storage_test_SOURCES = tests/values.cc \
-					   tests/gamedata.cc \
-					   tests/schemas.cc \
-					   tests/types.cc \
-					   tests/utils.cc \
-					   tests/fieldpaths.cc \
+storage_test_SOURCES = tests/types.cc \
+					   tests/values.cc \
 					   tests/main.cc
+
+a = tests/gamedata.cc \
+					   tests/schemas.cc \
+					   tests/utils.cc \
+					   tests/fieldpaths.cc 
 
 storage_test_LDADD = $(top_srcdir)/external/googletest/lib/libgtest.a \
 					 $(top_srcdir)/external/googletest/lib/libgtest_main.a \

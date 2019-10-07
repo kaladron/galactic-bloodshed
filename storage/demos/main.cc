@@ -9,9 +9,9 @@ static auto StringType = registry->GetType("string");
 static auto Int64Type = registry->GetType("int64");
 static auto DateType = Int64Type;
 
-static shared_ptr<Type> AddressType = nullptr;
-static shared_ptr<Type> PersonType = nullptr;
-static shared_ptr<Type> CompanyType = nullptr;
+static StrongType AddressType = nullptr;
+static StrongType PersonType = nullptr;
+static StrongType CompanyType = nullptr;
 static shared_ptr<Schema> PersonSchema = nullptr;
 static shared_ptr<Schema> CompanySchema = nullptr;
 
@@ -84,27 +84,27 @@ bool valueToPerson(StrongValue input, Person &person) {
 
 void initTypes() {
     AddressType = make_shared<Type>("Address", Type::ProductType({
-                            NameTypePair("number", StringType),
-                            NameTypePair("street", StringType),
-                            NameTypePair("city", StringType),
-                            NameTypePair("zipcode", StringType),
-                            NameTypePair("region", StringType),
-                            NameTypePair("country", StringType)
+                            pair("number", StringType),
+                            pair("street", StringType),
+                            pair("city", StringType),
+                            pair("zipcode", StringType),
+                            pair("region", StringType),
+                            pair("country", StringType)
                         }));
 
     CompanyType = make_shared<Type>("Company", Type::ProductType({
-                            NameTypePair("id", Int64Type),
-                            NameTypePair("name", StringType),
-                            NameTypePair("founded_on", DateType),
-                            NameTypePair("hq", AddressType),
+                            pair("id", Int64Type),
+                            pair("name", StringType),
+                            pair("founded_on", DateType),
+                            pair("hq", AddressType),
                         }));
 
     PersonType = make_shared<Type>("Person", Type::ProductType({
-                            NameTypePair("id", Int64Type),
-                            NameTypePair("name", StringType),
-                            NameTypePair("dob", DateType),
-                            NameTypePair("gender", StringType), // need enums
-                            NameTypePair("address", AddressType), // need enums
+                            pair("id", Int64Type),
+                            pair("name", StringType),
+                            pair("dob", DateType),
+                            pair("gender", StringType), // need enums
+                            pair("address", AddressType), // need enums
                         }));
 }
 

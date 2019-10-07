@@ -78,16 +78,16 @@ Constraint::Constraint(const ForeignKey &fkey) : tag(FOREIGN_KEY), foreign_key(f
 /**
  * Create a new schema with a given fqn and the underlying record type.
  */
-Schema::Schema(const string &fqn_, shared_ptr<Type> t, const vector<FieldPath> &kf) 
+Schema::Schema(const string &fqn_, StrongType t, const vector<FieldPath> &kf) 
     : fqn(fqn_), entity_type(t), key_fields(kf) {
     assert(t->IsProductType() && "Schemas can only be named product types.");
 }
 
-Schema::Schema(const std::string &f, shared_ptr<Type> t, std::initializer_list<FieldPath> kf) 
+Schema::Schema(const std::string &f, StrongType t, std::initializer_list<FieldPath> kf) 
     : Schema(f, t, vector<FieldPath>(kf)) {
 }
 
-shared_ptr<Type> Schema::KeyType() const {
+StrongType Schema::KeyType() const {
     if (!key_type) {
         // evaluate it
     }

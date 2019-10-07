@@ -10,6 +10,10 @@
 
 START_NS
 
+using NameTypePair = pair<std::string, StrongType>;
+using NameTypeVector = vector<NameTypePair>;
+using TypeVector = vector<StrongType>;
+
 class FieldPath : public StringVector {
 public:
     FieldPath() { }
@@ -30,12 +34,17 @@ public:
         TYPE_FUN,
         REF_TYPE
     };
-    struct TypeContainer {
+    class TypeContainer {
+        bool is_named = false;
+        StringVector child_names;
+        vector<WeakType> child_types;
+
+    public:
         TypeContainer() { }
-        TypeContainer(const TypeContainer &) { }
+        TypeContainer(const TypeContainer &);
         TypeContainer(const TypeVector &args);
         TypeContainer(const NameTypeVector &fields);
-        TypeContainer(std::initializer_list<weak_ptr<Type>> types);
+        TypeContainer(std::initializer_list<StrongType> types);
         TypeContainer(std::initializer_list<NameTypePair> fields);
         virtual ~TypeContainer();
 
@@ -43,35 +52,27 @@ public:
         void Clear();
         void SetData(const TypeVector &args);
         void SetData(const NameTypeVector &fields);
-        void AddChild(weak_ptr<Type> child, const string &name = "");
+        void AddChild(StrongType child, const string &name = "");
         size_t ChildCount() const;
-        weak_ptr<Type> GetChild(const string &name) const;
+        WeakType GetChild(const string &name) const;
         NameTypePair GetChild(size_t index) const;
-
-        bool is_named;
-        StringVector child_names;
-        TypeVector child_types;
     };
 
     struct ProductType : public TypeContainer {
         using TypeContainer::TypeContainer;
-        ProductType() { }
     };
 
     struct SumType : public TypeContainer {
         using TypeContainer::TypeContainer;
-        SumType() { }
     };
 
     struct TypeFun : public TypeContainer {
         using TypeContainer::TypeContainer;
-        TypeFun() { }
     };
 
     struct RefType {
-        weak_ptr<Type> target_type;
-        RefType() { }
-        RefType(weak_ptr<Type> target_type);
+        WeakType target_type;
+        RefType(StrongType target_type);
         int Compare(const RefType &another) const;
     };
 
@@ -85,7 +86,7 @@ public:
     int Compare(const Type &another) const;
     const string &FQN() const { return fqn; }
     size_t ChildCount() const;
-    weak_ptr<Type> GetChild(const string &name) const;
+    WeakType GetChild(const string &name) const;
     NameTypePair GetChild(size_t index) const;
 
     bool IsProductType() const { return tag == PRODUCT_TYPE; }

@@ -337,7 +337,7 @@ void MatchTypeAndValue(const Type *type, const Value *root,
         for (int i = 0, c = type->ChildCount();i < c;i++) {
             const auto &childntp = type->GetChild(i);
             auto &key = childntp.first;
-            auto childtype = childntp.second.lock().get();
+            auto childtype = childntp.second.get();
             auto childvalue = root->Get(key).get();
             fp.push_back(key);
             if (callback(childtype, childvalue, i, &key, fp)) {
@@ -356,7 +356,7 @@ void MatchTypeAndValue(const Type *type, const Value *root,
             // Ensure value's tag is not in a forward version than type so ignore
             const auto &childntp = type->GetChild(uv->Tag());
             auto &key = childntp.first;
-            auto childtype = childntp.second.lock().get();
+            auto childtype = childntp.second.get();
             const auto childvalue = uv->Data().get();
             fp.push_back(key);
             if (callback(childtype, childvalue, uv->Tag(), &key, fp)) {

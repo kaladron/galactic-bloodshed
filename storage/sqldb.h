@@ -45,14 +45,14 @@ private:
 class SQLTable {
 public:
     struct Column {
-        shared_ptr<Type> coltype;
+        StrongType coltype;
         bool is_pkey = false;
         bool required = false;
         StrongValue default_read_value;
         StrongValue default_write_value;
         const string &Name() const { return name; }
         const FieldPath &FP() const { return field_path; }
-        shared_ptr<Type> GetType() const { return coltype; }
+        StrongType GetType() const { return coltype; }
     private:
         string name;
         FieldPath field_path;
@@ -77,7 +77,7 @@ public:
      */
     bool HasColumn(const string &name) const;
     size_t ColCount() const { return columns.size(); } 
-    Column *AddColumn(const FieldPath &fp, shared_ptr<Type> t);
+    Column *AddColumn(const FieldPath &fp, StrongType t);
     optional<Column *> ColumnAt(size_t index) const;
     optional<Column *> ColumnFor(const string &name) const;
     optional<Column *> ColumnFor(const FieldPath &fp) const;
@@ -90,8 +90,8 @@ public:
     string GetSQL(const Value *key) const;
 
 protected:
-    void processType(shared_ptr<Type> t, FieldPath &fp);
-    StrongValue resultSetToValue(sqlite3_stmt *stmt, bool is_root, shared_ptr<Type> currType, int startCol, int endCol) const;
+    void processType(StrongType t, FieldPath &fp);
+    StrongValue resultSetToValue(sqlite3_stmt *stmt, bool is_root, StrongType currType, int startCol, int endCol) const;
 
 private: 
     SQLDB *db;

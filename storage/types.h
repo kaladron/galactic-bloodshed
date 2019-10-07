@@ -36,8 +36,9 @@ public:
     };
     class TypeContainer {
         bool is_named = false;
-        StringVector child_names;
-        vector<WeakType> child_types;
+        std::vector<std::pair<string, WeakType>> children;
+        // StringVector child_names = {};
+        // vector<WeakType> child_types = {};
 
     public:
         TypeContainer() { }

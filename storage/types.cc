@@ -23,8 +23,7 @@ string FieldPath::join(const string &delim) const {
 
 Type::TypeContainer::TypeContainer(const TypeContainer &another)
     : is_named(another.is_named),
-      child_names(another.child_names),
-      child_types(another.child_types) {
+      children(another.children) {
 }
 
 Type::TypeContainer::TypeContainer(const TypeVector &args) {
@@ -47,8 +46,7 @@ Type::TypeContainer::~TypeContainer() {
 
 void Type::TypeContainer::Clear() {
     is_named = false;
-    child_names.clear();
-    child_types.clear();
+    children.clear();
 }
 
 void Type::TypeContainer::SetData(const TypeVector &args) {
@@ -70,51 +68,40 @@ void Type::TypeContainer::SetData(const NameTypeVector &fields) {
 int Type::TypeContainer::Compare(const TypeContainer &another) const {
     // compare names
     int cmp = IterCompare(
-            child_names.begin(), child_names.end(),
-            another.child_names.begin(), another.child_names.end(),
-            [](const auto &a, const auto &b) { return a.compare(b); });
-    if (cmp != 0) return cmp;
-
-    // Now compare child values - note we dont do a deep compare as
-    // types will often be created once and referenced everywhere!
-    return IterCompare(
-            child_types.begin(), child_types.end(),
-            another.child_types.begin(), another.child_types.end(),
+            children.begin(), children.end(),
+            another.children.begin(), another.children.end(),
             [](const auto &a, const auto &b) {
-                return StrongType(a).get() - 
-                       StrongType(b).get();
-            });
+        // compare names
+        long result = a.first.compare(b.first);
+        if (result != 0) return result;
+
+        return a.second.lock().get() - b.second.lock().get();
+    });
+    return cmp;
 }
 
 size_t Type::TypeContainer::ChildCount() const {
-    return child_types.size();
+    return children.size();
 }
 
 NameTypePair Type::TypeContainer::GetChild(size_t index) const {
-    auto child_type = child_types.at(index).lock();
-    if (is_named) {
-        return pair(child_names.at(index), child_type);
-    } else {
-        return pair("", child_type);
-    }
+    auto child = children.at(index);
+    return pair(child.first, child.second.lock());
 }
 
 WeakType Type::TypeContainer::GetChild(const std::string &name) const {
-    auto it = std::find(child_names.begin(), child_names.end(), name);
-    if (it == child_names.end())
-        return WeakType();
-
-    size_t index = std::distance(child_names.begin(), it);
-    return child_types.at(index);
+    for (auto it : children) {
+        if (it.first == name) {
+            return it.second;
+        }
+    }
+    return WeakType();
 }
 
 void Type::TypeContainer::AddChild(StrongType child, const std::string &name) {
     // Only compound types can have names
     if (child) {
-        if (is_named) {
-            child_names.push_back(name);
-        }
-        child_types.push_back(child);
+        children.push_back(pair(is_named ? name : "", child));
     }
 }
 

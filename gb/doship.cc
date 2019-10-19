@@ -184,7 +184,7 @@ void doship(Ship *ship, int update) {
           case ShipType::OTYPE_BERS:
             if (!ship->special.mind.progenitor)
               ship->special.mind.progenitor = 1;
-            do_VN(ship);
+            do_VN(*ship);
             break;
           case ShipType::STYPE_OAP:
             do_oap(ship);

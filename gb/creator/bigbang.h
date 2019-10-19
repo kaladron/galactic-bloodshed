@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <utility>
+
 #include "gb/creator/namegen.h"
 
 using namespace std;

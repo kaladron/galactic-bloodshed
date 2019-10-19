@@ -9,10 +9,9 @@ import gblib;
 
 #include "gb/GB_server.h"
 #include "gb/defense.h"
+#include "gb/files_shl.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
-
-#include "gb/files_shl.h"
 
 // Essentialy everything in this file can move into a Ship class.
 

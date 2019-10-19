@@ -8,7 +8,7 @@
 #include "gb/ships.h"
 #include "gb/vars.h"
 
-void do_VN(Ship *);
+void do_VN(Ship &);
 void planet_doVN(Ship *, Planet *, SectorMap &);
 
 #endif  // VN_H

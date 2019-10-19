@@ -24,36 +24,36 @@ import std;
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
 
-static void order_berserker(Ship *);
-static void order_VN(Ship *);
+static void order_berserker(Ship &);
+static void order_VN(Ship &);
 
 /*  do_VN() -- called by doship() */
-void do_VN(Ship *ship) {
-  if (!landed(*ship)) {
+void do_VN(Ship &ship) {
+  if (!landed(ship)) {
     // Doing other things
-    if (!ship->special.mind.busy) return;
+    if (!ship.special.mind.busy) return;
 
     // we were just built & launched
-    if (ship->type == ShipType::OTYPE_BERS)
+    if (ship.type == ShipType::OTYPE_BERS)
       order_berserker(ship);
     else
       order_VN(ship);
     return;
   }
 
-  Stinfo[ship->storbits][ship->pnumorbits].inhab = 1;
+  Stinfo[ship.storbits][ship.pnumorbits].inhab = 1;
 
   /* launch if no assignment */
-  if (!ship->special.mind.busy) {
-    if (ship->fuel >= (double)ship->max_fuel) {
-      ship->xpos = Stars[ship->storbits]->xpos +
-                   planets[ship->storbits][ship->pnumorbits]->xpos +
-                   int_rand(-10, 10);
-      ship->ypos = Stars[ship->storbits]->ypos +
-                   planets[ship->storbits][ship->pnumorbits]->ypos +
-                   int_rand(-10, 10);
-      ship->docked = 0;
-      ship->whatdest = ScopeLevel::LEVEL_UNIV;
+  if (!ship.special.mind.busy) {
+    if (ship.fuel >= (double)ship.max_fuel) {
+      ship.xpos = Stars[ship.storbits]->xpos +
+                  planets[ship.storbits][ship.pnumorbits]->xpos +
+                  int_rand(-10, 10);
+      ship.ypos = Stars[ship.storbits]->ypos +
+                  planets[ship.storbits][ship.pnumorbits]->ypos +
+                  int_rand(-10, 10);
+      ship.docked = 0;
+      ship.whatdest = ScopeLevel::LEVEL_UNIV;
     }
     return;
   }
@@ -68,7 +68,7 @@ void do_VN(Ship *ship) {
     int f = int_rand(1, Num_races);
     std::swap(nums[i], nums[f]);
   }
-  auto p = planets[ship->storbits][ship->pnumorbits];
+  auto p = planets[ship.storbits][ship.pnumorbits];
 
   int i;
   int f;
@@ -82,50 +82,49 @@ void do_VN(Ship *ship) {
                       Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
   p->info[f - 1].resource -= prod;
 
-  if (ship->type == ShipType::OTYPE_VN) {
-    rcv_resource(ship, prod);
+  if (ship.type == ShipType::OTYPE_VN) {
+    rcv_resource(&ship, prod);
     sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
-            Shipltrs[ShipType::OTYPE_VN], ship->number, prin_ship_orbits(ship));
-  } else if (ship->type == ShipType::OTYPE_BERS) {
-    rcv_destruct(ship, prod);
+            Shipltrs[ShipType::OTYPE_VN], ship.number, prin_ship_orbits(&ship));
+  } else if (ship.type == ShipType::OTYPE_BERS) {
+    rcv_destruct(&ship, prod);
     sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
-            Shipltrs[ShipType::OTYPE_BERS], ship->number,
-            prin_ship_orbits(ship));
+            Shipltrs[ShipType::OTYPE_BERS], ship.number,
+            prin_ship_orbits(&ship));
   }
 
   push_telegram_race(f, buf);
-  if (f != ship->owner) push_telegram(ship->owner, ship->governor, buf);
+  if (f != ship.owner) push_telegram(ship.owner, ship.governor, buf);
 }
 
-static void order_berserker(Ship *ship) {
+static void order_berserker(Ship &ship) {
   /* give berserkers a mission - send to planet of offending player and bombard
    * it */
-  ship->bombard = 1;
-  ship->special.mind.target = VN_brain.Most_mad; /* who to attack */
-  ship->whatdest = ScopeLevel::LEVEL_PLAN;
+  ship.bombard = 1;
+  ship.special.mind.target = VN_brain.Most_mad; /* who to attack */
+  ship.whatdest = ScopeLevel::LEVEL_PLAN;
   if (random() & 01)
-    ship->deststar = Sdata.VN_index1[ship->special.mind.target - 1];
+    ship.deststar = Sdata.VN_index1[ship.special.mind.target - 1];
   else
-    ship->deststar = Sdata.VN_index2[ship->special.mind.target - 1];
-  ship->destpnum = int_rand(0, (int)Stars[ship->deststar]->numplanets - 1);
-  if (ship->hyper_drive.has && ship->mounted) {
-    ship->hyper_drive.on = 1;
-    ship->hyper_drive.ready = 1;
-    ship->special.mind.busy = 1;
+    ship.deststar = Sdata.VN_index2[ship.special.mind.target - 1];
+  ship.destpnum = int_rand(0, (int)Stars[ship.deststar]->numplanets - 1);
+  if (ship.hyper_drive.has && ship.mounted) {
+    ship.hyper_drive.on = 1;
+    ship.hyper_drive.ready = 1;
+    ship.special.mind.busy = 1;
   }
 }
 
-static void order_VN(Ship *ship) {
+static void order_VN(Ship &ship) {
   int s;
   int min = 0;
   int min2 = 0;
 
   /* find closest star */
   for (s = 0; s < Sdata.numstars; s++)
-    if (s != ship->storbits &&
-        Distsq(Stars[s]->xpos, Stars[s]->ypos, ship->xpos, ship->ypos) <
-            Distsq(Stars[min]->xpos, Stars[min]->ypos, ship->xpos,
-                   ship->ypos)) {
+    if (s != ship.storbits &&
+        Distsq(Stars[s]->xpos, Stars[s]->ypos, ship.xpos, ship.ypos) <
+            Distsq(Stars[min]->xpos, Stars[min]->ypos, ship.xpos, ship.ypos)) {
       min2 = min;
       min = s;
     }
@@ -134,21 +133,21 @@ static void order_VN(Ship *ship) {
      and we have VN's there already */
   if (isset(Stars[min]->inhabited, 1))
     if (isset(Stars[min2]->inhabited, 1))
-      ship->deststar = int_rand(0, (int)Sdata.numstars - 1);
+      ship.deststar = int_rand(0, (int)Sdata.numstars - 1);
     else
-      ship->deststar = min2; /* 2nd closest star */
+      ship.deststar = min2; /* 2nd closest star */
   else
-    ship->deststar = min;
+    ship.deststar = min;
 
-  if (Stars[ship->deststar]->numplanets) {
-    ship->destpnum = int_rand(0, (int)Stars[ship->deststar]->numplanets - 1);
-    ship->whatdest = ScopeLevel::LEVEL_PLAN;
-    ship->special.mind.busy = 1;
+  if (Stars[ship.deststar]->numplanets) {
+    ship.destpnum = int_rand(0, (int)Stars[ship.deststar]->numplanets - 1);
+    ship.whatdest = ScopeLevel::LEVEL_PLAN;
+    ship.special.mind.busy = 1;
   } else {
     /* no good; find someplace else. */
-    ship->special.mind.busy = 0;
+    ship.special.mind.busy = 0;
   }
-  ship->speed = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
+  ship.speed = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
 }
 
 /*  planet_doVN() -- called by doplanet() */

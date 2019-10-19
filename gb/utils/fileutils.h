@@ -5,12 +5,12 @@
 #ifndef FILEUTILS_H
 #define FILEUTILS_H
 
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-
-#include <sys/stat.h>
-#include <unistd.h>
 
 /**
  * Helper utils and classes for making common operations with files eaiser.

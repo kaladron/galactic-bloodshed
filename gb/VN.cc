@@ -62,7 +62,7 @@ void do_VN(Ship &ship) {
      we are engaged in building up resources/fuel. */
   /* steal resources from other players */
   /* permute list of people to steal from */
-  int nums[MAXPLAYERS + 1];
+  std::array<int, MAXPLAYERS + 1> nums;
   for (int i = 1; i <= Num_races; i++) nums[i] = i;
   for (int i = 1; i <= Num_races; i++) {
     int f = int_rand(1, Num_races);

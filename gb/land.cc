@@ -31,16 +31,18 @@ import std;
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
 
+namespace {
 /// Determine whether the ship crashed or not.
-static std::tuple<bool, int> crash(const Ship *s, const double fuel) noexcept {
+std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept {
   // Crash from insufficient fuel.
-  if (s->fuel < fuel) return {true, 0};
+  if (s.fuel < fuel) return {true, 0};
 
   // Damaged ships stand of chance of crash landing.
-  if (auto roll = int_rand(1, 100); roll <= s->damage) return {true, roll};
+  if (auto roll = int_rand(1, 100); roll <= s.damage) return {true, roll};
 
   // No crash.
   return {false, 0};
+}
 }
 
 void land(const command_t &argv, GameObj &g) {
@@ -339,7 +341,7 @@ void land(const command_t &argv, GameObj &g) {
         }
 #endif
         /* check to see if the ship crashes from lack of fuel or damage */
-        if (auto [did_crash, roll] = crash(s, fuel); did_crash) {
+        if (auto [did_crash, roll] = crash(*s, fuel); did_crash) {
           /* damaged ships stand of chance of crash landing */
           auto smap = getsmap(p);
           numdest = shoot_ship_to_planet(

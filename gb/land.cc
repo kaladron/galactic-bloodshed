@@ -43,7 +43,7 @@ std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept {
   // No crash.
   return {false, 0};
 }
-}
+}  // namespace
 
 void land(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

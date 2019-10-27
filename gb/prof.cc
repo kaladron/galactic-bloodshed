@@ -26,20 +26,17 @@ void whois(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
-  int j;
-  int numraces;
-  racetype *Race;
 
   if (argv.size() <= 1) {
     whois({"whois", std::to_string(Playernum)}, g);
     return;
   }
-  numraces = Num_races;
+  auto numraces = Num_races;
 
   for (size_t i = 1; i <= argv.size() - 1; i++) {
-    j = std::stoi(argv[i]);
+    auto j = std::stoi(argv[i]);
     if (!(j < 1 || j > numraces)) {
-      Race = races[j - 1];
+      auto Race = races[j - 1];
       if (j == Playernum)
         sprintf(buf, "[%2d, %d] %s \"%s\"\n", j, Governor, Race->name,
                 Race->governor[Governor].name);

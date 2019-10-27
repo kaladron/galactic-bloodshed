@@ -10,7 +10,9 @@ import gblib;
 
 import std;
 
-#include "gb/buffers.h"
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+
 #include "gb/build.h"
 #include "gb/doturn.h"
 #include "gb/fire.h"
@@ -68,7 +70,14 @@ void do_VN(Ship &ship) {
     int f = int_rand(1, Num_races);
     std::swap(nums[i], nums[f]);
   }
+
+  // Make Vector of players
+  // Permute Vector
+
   auto p = planets[ship.storbits][ship.pnumorbits];
+
+  // Loop through permuted vector until someone has resources on
+  // this planet to steal
 
   int i;
   int f;
@@ -78,19 +87,24 @@ void do_VN(Ship &ship) {
   // No resources to steal
   if (!f) return;
 
-  int prod = std::min(p->info[f - 1].resource,
-                      Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
+  // Steal the resources
+
+  auto prod = std::min(p->info[f - 1].resource,
+                       Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
   p->info[f - 1].resource -= prod;
+
+  std::string buf;
 
   if (ship.type == ShipType::OTYPE_VN) {
     rcv_resource(&ship, prod);
-    sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
-            Shipltrs[ShipType::OTYPE_VN], ship.number, prin_ship_orbits(&ship));
+    buf = fmt::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
+                      f, Shipltrs[ShipType::OTYPE_VN], ship.number,
+                      prin_ship_orbits(&ship));
   } else if (ship.type == ShipType::OTYPE_BERS) {
     rcv_destruct(&ship, prod);
-    sprintf(buf, "%d resources stolen from [%d] by %c%lu at %s.", prod, f,
-            Shipltrs[ShipType::OTYPE_BERS], ship.number,
-            prin_ship_orbits(&ship));
+    buf = fmt::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
+                      f, Shipltrs[ShipType::OTYPE_BERS], ship.number,
+                      prin_ship_orbits(&ship));
   }
 
   push_telegram_race(f, buf);
@@ -256,9 +270,9 @@ void planet_doVN(Ship *ship, Planet *planet, SectorMap &smap) {
             s2->hyper_drive.ready = 1;
             s2->hyper_drive.charge = 0;
             s2->mounted = 1;
-            sprintf(buf, "%s constructed %s.", ship_to_string(*ship).c_str(),
-                    ship_to_string(*s2).c_str());
-            push_telegram((int)ship->owner, (int)ship->governor, buf);
+            auto buf = fmt::format("{0} constructed {1}.",
+                                   ship_to_string(*ship), ship_to_string(*s2));
+            push_telegram(ship->owner, ship->governor, buf);
             s2->special.mind.tampered = 0;
           } else {
             s2->tech = ship->tech + 20.0;

@@ -2,15 +2,17 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#include <boost/format.hpp>
-
 import std;
 import gblib;
+
+#define FMT_HEADER_ONLY
+#include "gb/ships.h"
+
+#include <fmt/format.h>
 
 #include "gb/GB_server.h"
 #include "gb/defense.h"
 #include "gb/files_shl.h"
-#include "gb/ships.h"
 #include "gb/shlmisc.h"
 
 // Essentialy everything in this file can move into a Ship class.
@@ -154,8 +156,8 @@ void capture_stuff(const Ship &ship, GameObj &g) {
 }
 
 std::string ship_to_string(const Ship &s) {
-  return str(boost::format("%c%lu %s [%d]") % Shipltrs[s.type] % s.number %
-             s.name % s.owner);
+  return fmt::format("{0}{1} {2} [{3}]", Shipltrs[s.type], s.number, s.name,
+                     s.owner);
 }
 
 double getmass(const Ship &s) {

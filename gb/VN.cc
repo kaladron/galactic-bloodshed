@@ -130,12 +130,11 @@ static void order_berserker(Ship &ship) {
 }
 
 static void order_VN(Ship &ship) {
-  int s;
   int min = 0;
   int min2 = 0;
 
   /* find closest star */
-  for (s = 0; s < Sdata.numstars; s++)
+  for (auto s = 0; s < Sdata.numstars; s++)
     if (s != ship.storbits &&
         Distsq(Stars[s]->xpos, Stars[s]->ypos, ship.xpos, ship.ypos) <
             Distsq(Stars[min]->xpos, Stars[min]->ypos, ship.xpos, ship.ypos)) {

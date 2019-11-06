@@ -31,12 +31,6 @@ void dissolve(const command_t &argv, GameObj &g) {
   return;
 #else
 
-  int i;
-  int z;
-  racetype *Race;
-  char racepass[100];
-  char govpass[100];
-
   if (Governor) {
     notify(Playernum, Governor,
            "Only the leader may dissolve the race. The "
@@ -59,8 +53,8 @@ void dissolve(const command_t &argv, GameObj &g) {
   g.out << "-------------------------------\n";
   g.out << "Entering self destruct sequence!\n";
 
-  sscanf(argv[1].c_str(), "%s", racepass);
-  sscanf(argv[2].c_str(), "%s", govpass);
+  std::string racepass(argv[1]);
+  std::string govpass(argv[2]);
 
   bool waste = false;
   if (argv.size() > 3) {
@@ -75,7 +69,7 @@ void dissolve(const command_t &argv, GameObj &g) {
   }
 
   auto n_ships = Numships();
-  for (i = 1; i <= n_ships; i++) {
+  for (auto i = 1; i <= n_ships; i++) {
     auto sp = getship(i);
     if (sp->owner != Playernum) continue;
     kill_ship(Playernum, &*sp);
@@ -85,10 +79,10 @@ void dissolve(const command_t &argv, GameObj &g) {
   }
 
   getsdata(&Sdata);
-  for (z = 0; z < Sdata.numstars; z++) {
+  for (auto z = 0; z < Sdata.numstars; z++) {
     getstar(&(Stars[z]), z);
     if (isset(Stars[z]->explored, Playernum)) {
-      for (i = 0; i < Stars[z]->numplanets; i++) {
+      for (auto i = 0; i < Stars[z]->numplanets; i++) {
         auto pl = getplanet(z, i);
 
         if (pl.info[Playernum - 1].explored &&
@@ -122,7 +116,7 @@ void dissolve(const command_t &argv, GameObj &g) {
     }
   }
 
-  Race = races[Playernum - 1];
+  auto Race = races[Playernum - 1];
   Race->dissolved = 1;
   putrace(Race);
 

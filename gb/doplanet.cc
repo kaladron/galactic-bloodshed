@@ -45,7 +45,7 @@ static void do_recover(Planet *, int, int);
 static double est_production(const Sector &);
 static bool moveship_onplanet(Ship &, const Planet &);
 static void plow(Ship *, Planet *, SectorMap &);
-static void terraform(Ship *, Planet *, SectorMap &);
+static void terraform(Ship &, Planet &, SectorMap &);
 
 int doplanet(const int starnum, Planet *planet, const int planetnum) {
   int shipno;
@@ -115,7 +115,7 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
         case ShipType::OTYPE_TERRA:
           if ((ship->on && landed(*ship) && ship->popn)) {
             if (ship->fuel >= (double)FUEL_COST_TERRA)
-              terraform(ship, planet, smap);
+              terraform(*ship, *planet, smap);
             else if (!ship->notified) {
               ship->notified = 1;
               msg_OOF(ship);
@@ -664,34 +664,38 @@ static bool moveship_onplanet(Ship &ship, const Planet &planet) {
   return true;
 }
 
-static void terraform(Ship *ship, Planet *planet, SectorMap &smap) {
-  /* move, and then terraform. */
-  if (!moveship_onplanet(*ship, *planet)) return;
-  auto &s = smap.get(ship->land_x, ship->land_y);
-  if ((s.condition != races[ship->owner - 1]->likesbest) &&
-      (s.condition != SectorType::SEC_GAS) &&
-      success((100 - (int)ship->damage) * ship->popn / ship->max_crew)) {
-    /* gas sectors can't be terraformed. */
+// move, and then terraform
+static void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
+  if (!moveship_onplanet(ship, planet)) return;
+  auto &s = smap.get(ship.land_x, ship.land_y);
+
+  if (s.condition == races[ship.owner - 1]->likesbest) {
+    sprintf(buf, " T%lu is full of zealots!!!", ship.number);
+    push_telegram(ship.owner, ship.governor, buf);
+    return;
+  }
+
+  if (s.condition == SectorType::SEC_GAS) {
+    sprintf(buf, " T%lu is trying to terraform gas.", ship.number);
+    push_telegram(ship.owner, ship.governor, buf);
+    return;
+  }
+
+  if (success((100 - (int)ship.damage) * ship.popn / ship.max_crew)) {
     /* only condition can be terraformed, type doesn't change */
-    s.condition = races[ship->owner - 1]->likesbest;
+    s.condition = races[ship.owner - 1]->likesbest;
     s.eff = 0;
     s.mobilization = 0;
-    s.popn = s.troops = 0;
+    s.popn = 0;
+    s.troops = 0;
     s.owner = 0;
-    use_fuel(ship, FUEL_COST_TERRA);
-    if ((random() & 01) && (planet->conditions[TOXIC] < 100))
-      planet->conditions[TOXIC] += 1;
-    if ((ship->fuel < (double)FUEL_COST_TERRA) && (!ship->notified)) {
-      ship->notified = 1;
-      msg_OOF(ship);
+    use_fuel(&ship, FUEL_COST_TERRA);
+    if ((random() & 01) && (planet.conditions[TOXIC] < 100))
+      planet.conditions[TOXIC] += 1;
+    if ((ship.fuel < (double)FUEL_COST_TERRA) && (!ship.notified)) {
+      ship.notified = 1;
+      msg_OOF(&ship);
     }
-  } else if (s.condition == races[ship->owner - 1]->likesbest) {
-    sprintf(buf, " T%lu is full of zealots!!!", ship->number);
-    push_telegram(ship->owner, ship->governor, buf);
-  }
-  if (s.condition == SectorType::SEC_GAS) {
-    sprintf(buf, " T%lu is trying to terraform gas.", ship->number);
-    push_telegram(ship->owner, ship->governor, buf);
   }
 }
 

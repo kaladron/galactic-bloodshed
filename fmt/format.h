@@ -28,6 +28,7 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
+#if 0 // C++20 modules compat
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -37,6 +38,7 @@
 #include <limits>
 #include <memory>
 #include <stdexcept>
+#endif
 
 #include "core.h"
 

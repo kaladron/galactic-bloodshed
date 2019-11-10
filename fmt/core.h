@@ -8,12 +8,14 @@
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
+#if 0 //C++20 modules compat
 #include <cassert>
 #include <cstdio>  // std::FILE
 #include <cstring>
 #include <iterator>
 #include <string>
 #include <type_traits>
+#endif
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 50301
@@ -177,6 +179,7 @@
 #  define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
 
+#if 0 // C++20 modules compat
 // libc++ supports string_view in pre-c++17.
 #if (FMT_HAS_INCLUDE(<string_view>) &&                       \
      (__cplusplus > 201402L || defined(_LIBCPP_VERSION))) || \
@@ -186,6 +189,7 @@
 #elif FMT_HAS_INCLUDE("experimental/string_view") && __cplusplus >= 201402L
 #  include <experimental/string_view>
 #  define FMT_USE_EXPERIMENTAL_STRING_VIEW
+#endif
 #endif
 
 FMT_BEGIN_NAMESPACE

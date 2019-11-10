@@ -5,8 +5,6 @@
 #ifndef RACEGEN_H
 #define RACEGEN_H
 
-#include <cstdio>
-
 #define GBVERSION "1.7.3"
 #ifdef VERSION
 #undef VERSION

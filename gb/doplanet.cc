@@ -5,10 +5,9 @@
 /*  doplanet.c -- do one turn on a planet. */
 
 import gblib;
+import std;
 
 #include "gb/doplanet.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/VN.h"

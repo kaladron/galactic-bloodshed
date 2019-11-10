@@ -5,10 +5,9 @@
 /*  order.c -- give orders to ship */
 
 import gblib;
+import std;
 
 #include "gb/order.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

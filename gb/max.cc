@@ -10,10 +10,9 @@
  */
 
 import gblib;
+import std;
 
 #include "gb/max.h"
-
-import std;
 
 #include "gb/files_shl.h"
 #include "gb/races.h"

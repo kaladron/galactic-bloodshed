@@ -5,10 +5,9 @@
 /* prof.c -- print out racial profile */
 
 import gblib;
+import std;
 
 #include "gb/prof.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

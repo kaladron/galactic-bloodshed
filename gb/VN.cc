@@ -5,10 +5,9 @@
 /* VN.c -- assorted Von Neumann machine code */
 
 import gblib;
+import std;
 
 #include "gb/VN.h"
-
-import std;
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>

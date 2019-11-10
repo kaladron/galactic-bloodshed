@@ -5,10 +5,9 @@
 /* power.c -- display power report */
 
 import gblib;
+import std;
 
 #include "gb/powercmd.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

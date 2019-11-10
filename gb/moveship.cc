@@ -6,10 +6,9 @@
  *	also deducts fuel from the ship's stores. */
 
 import gblib;
+import std;
 
 #include "gb/moveship.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

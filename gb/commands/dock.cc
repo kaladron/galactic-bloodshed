@@ -5,12 +5,11 @@
 /*  dock.c -- dock a ship and..... assault -- a very un-PC version of dock */
 
 import gblib;
+import std;
 
 #include "gb/commands/dock.h"
 
 #include <boost/format.hpp>
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

@@ -6,9 +6,9 @@
  * Different name generator implementations.
  */
 
-#include "gb/creator/namegen.h"
-
 import std;
+
+#include "gb/creator/namegen.h"
 
 bool SequentialNameGenerator::next() {
   std::ostringstream out;

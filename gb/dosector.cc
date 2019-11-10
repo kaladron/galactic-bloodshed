@@ -3,6 +3,7 @@
 // found in the COPYING file.
 
 import gblib;
+import std;
 
 #include "gb/dosector.h"
 

@@ -5,10 +5,6 @@
 #ifndef FILES_SHL_H
 #define FILES_SHL_H
 
-#include <cstdint>
-#include <memory>
-#include <optional>
-
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/sql/dbdecl.h"

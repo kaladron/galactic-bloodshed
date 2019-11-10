@@ -6,6 +6,7 @@
 /// \brief Tell server to generate a report for each planet.
 
 import gblib;
+import std;
 
 #include "gb/commands/autoreport.h"
 

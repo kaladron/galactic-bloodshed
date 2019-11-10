@@ -5,9 +5,6 @@
 #ifndef SHIPS_H
 #define SHIPS_H
 
-#include <cstdint>
-#include <string>
-
 #include "gb/vars.h"
 
 enum guntype_t { GTYPE_NONE, GTYPE_LIGHT, GTYPE_MEDIUM, GTYPE_HEAVY };

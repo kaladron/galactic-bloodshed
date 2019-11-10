@@ -5,13 +5,12 @@
 /*  toggle.c -- toggles some options */
 
 import gblib;
+import std;
 
 #include "gb/commands/toggle.h"
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

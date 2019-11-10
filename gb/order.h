@@ -5,8 +5,6 @@
 #ifndef ORDER_H
 #define ORDER_H
 
-#include <string>
-
 #include "gb/ships.h"
 
 void order(const command_t &, GameObj &);

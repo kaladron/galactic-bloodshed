@@ -5,10 +5,9 @@
 /* capital.c -- designate a capital */
 
 import gblib;
+import std;
 
 #include "gb/commands/capital.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

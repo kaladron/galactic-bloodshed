@@ -5,8 +5,6 @@
 #ifndef MAX_H
 #define MAX_H
 
-#include <cmath>
-
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/vars.h"

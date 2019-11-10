@@ -2,6 +2,8 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+import std;
+
 #include "gb/utils/fileutils.h"
 
 // TODO - Actually move implementation to c++ instead of fopens

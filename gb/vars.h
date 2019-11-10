@@ -10,13 +10,6 @@
 #include <sys/file.h>
 #include <sys/types.h>
 
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <sstream>
-#include <string>
-#include <vector>
-
 #include "gb/config.h"
 #include "gb/files.h"
 #include "gb/tweakables.h"

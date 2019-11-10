@@ -5,10 +5,9 @@
 /* tech.c -- increase investment in technological development. */
 
 import gblib;
+import std;
 
 #include "gb/tech.h"
-
-import std;
 
 namespace {
 const double TECH_INVEST = 0.01;  // invest factor

@@ -5,8 +5,6 @@
 #ifndef NAMEGEN_H
 #define NAMEGEN_H
 
-#include <string>
-
 class NameGenerator {
  public:
   virtual ~NameGenerator() {}

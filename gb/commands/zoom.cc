@@ -6,13 +6,12 @@
 /// \brief Functions for implementing the 'zoom' command.
 
 import gblib;
+import std;
 
 #include "gb/commands/zoom.h"
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/vars.h"

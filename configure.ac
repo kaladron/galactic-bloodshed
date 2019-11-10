@@ -60,7 +60,7 @@ clang_opts="${clang_opts} -Wno-exit-time-destructors"
 clang_opts="${clang_opts} -Wno-global-constructors"
 clang_opts="${clang_opts} -Wno-signed-enum-bitfield"
 clang_opts="${clang_opts} -Wno-weak-vtables"
-clang_opts="${clang_opts} -Wno-auto-import"
+dnlclang_opts="${clang_opts} -Wno-auto-import"
 
 AC_SUBST([CLANG_OPTS], ["${clang_opts}"])
 

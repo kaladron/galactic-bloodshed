@@ -11,7 +11,7 @@ else
 AM_CXXFLAGS += $(GCC_OPTS)
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/external/googletest/googletest/include
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/external/googletest/googletest/include -Wno-auto-import
 
 LIBS = $(SQLITE3_LIBS)
 

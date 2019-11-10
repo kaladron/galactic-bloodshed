@@ -10,14 +10,11 @@ import gblib;
 
 import std;
 
-#include "gb/GB_server.h"
-#include "gb/buffers.h"
-#include "gb/files_shl.h"
-#include "gb/shlmisc.h"
-#include "gb/tweakables.h"
-#include "gb/vars.h"
+namespace {
+const double TECH_INVEST = 0.01;  // invest factor
+}
 
-double tech_prod(int investment, int popn) {
+double tech_prod(int investment, population_t popn) {
   double scale = (double)popn / 10000.;
   return (TECH_INVEST * log10((double)investment * scale + 1.0));
 }

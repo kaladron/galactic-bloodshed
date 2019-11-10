@@ -7,6 +7,6 @@
 
 #include "gb/vars.h"
 
-double tech_prod(int, int);
+double tech_prod(int, population_t);
 
 #endif  // TECH_H

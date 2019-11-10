@@ -10,6 +10,7 @@
 
 #include "format.h"
 
+#if 0 // C++20 module compat
 #include <string.h>
 
 #include <cctype>
@@ -22,6 +23,7 @@
 #include <cwchar>
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
 #  include <locale>
+#endif
 #endif
 
 #if FMT_USE_WINDOWS_H

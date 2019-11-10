@@ -40,7 +40,7 @@ static void do_quarry(Ship *, Planet *, SectorMap &);
 static void do_berserker(Ship *, Planet *);
 static void do_recover(Planet *, int, int);
 static double est_production(const Sector &);
-static int moveship_onplanet(Ship *, Planet *);
+static bool moveship_onplanet(Ship &, const Planet &);
 static void plow(Ship *, Planet *, SectorMap &);
 static void terraform(Ship *, Planet *, SectorMap &);
 
@@ -621,47 +621,47 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
   return allmod;
 }
 
-static int moveship_onplanet(Ship *ship, Planet *planet) {
+static bool moveship_onplanet(Ship &ship, const Planet &planet) {
   int x;
   int y;
   int bounced = 0;
 
-  if (ship->shipclass[ship->special.terraform.index] == 's') {
-    ship->on = 0;
-    return 0;
+  if (ship.shipclass[ship.special.terraform.index] == 's') {
+    ship.on = 0;
+    return false;
   }
-  if (ship->shipclass[ship->special.terraform.index] == 'c')
-    ship->special.terraform.index = 0; /* reset the orders */
+  if (ship.shipclass[ship.special.terraform.index] == 'c')
+    ship.special.terraform.index = 0; /* reset the orders */
 
-  (void)get_move(ship->shipclass[ship->special.terraform.index], ship->land_x,
-                 ship->land_y, &x, &y, *planet);
-  if (y >= planet->Maxy) {
+  get_move(ship.shipclass[ship.special.terraform.index], ship.land_x,
+           ship.land_y, &x, &y, planet);
+  if (y >= planet.Maxy) {
     bounced = 1;
     y -= 2; /* bounce off of south pole! */
   } else if (y < 0)
     bounced = y = 1; /* bounce off of north pole! */
-  if (planet->Maxy == 1) y = 0;
-  if (ship->shipclass[ship->special.terraform.index + 1] != '\0') {
-    ++ship->special.terraform.index;
-    if ((ship->shipclass[ship->special.terraform.index + 1] == '\0') &&
-        (!ship->notified)) {
+  if (planet.Maxy == 1) y = 0;
+  if (ship.shipclass[ship.special.terraform.index + 1] != '\0') {
+    ++ship.special.terraform.index;
+    if ((ship.shipclass[ship.special.terraform.index + 1] == '\0') &&
+        (!ship.notified)) {
       char teleg_buf[1000];
-      ship->notified = 1;
+      ship.notified = 1;
       sprintf(teleg_buf, "%s is out of orders at %s.",
-              ship_to_string(*ship).c_str(), prin_ship_orbits(ship));
-      push_telegram((int)(ship->owner), (int)ship->governor, teleg_buf);
+              ship_to_string(ship).c_str(), prin_ship_orbits(&ship));
+      push_telegram((ship.owner), ship.governor, teleg_buf);
     }
   } else if (bounced)
-    ship->shipclass[ship->special.terraform.index] +=
-        ((ship->shipclass[ship->special.terraform.index] > '5') ? -6 : 6);
-  ship->land_x = x;
-  ship->land_y = y;
-  return 1;
+    ship.shipclass[ship.special.terraform.index] +=
+        ((ship.shipclass[ship.special.terraform.index] > '5') ? -6 : 6);
+  ship.land_x = x;
+  ship.land_y = y;
+  return true;
 }
 
 static void terraform(Ship *ship, Planet *planet, SectorMap &smap) {
   /* move, and then terraform. */
-  if (!moveship_onplanet(ship, planet)) return;
+  if (!moveship_onplanet(*ship, *planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
   if ((s.condition != races[ship->owner - 1]->likesbest) &&
       (s.condition != SectorType::SEC_GAS) &&
@@ -691,7 +691,7 @@ static void terraform(Ship *ship, Planet *planet, SectorMap &smap) {
 }
 
 static void plow(Ship *ship, Planet *planet, SectorMap &smap) {
-  if (!moveship_onplanet(ship, planet)) return;
+  if (!moveship_onplanet(*ship, *planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
   if ((races[ship->owner - 1]->likes[s.condition]) && (s.fert < 100)) {
     int adjust = round_rand(

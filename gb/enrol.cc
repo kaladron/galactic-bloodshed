@@ -67,7 +67,7 @@ static double db_Metabolism[RACIAL_TYPES] = {3.0,  2.7,  2.4, 1.0,  1.15,
 int main() {
   int x;
   int y;
-  int pnum;
+  int pnum = 0;
   int star = 0;
   int found = 0;
   int check;

@@ -308,6 +308,8 @@ startype *Makestar(int snum) {
         type = PlanetType::ICEBALL;
       else
         type = PlanetType::GASGIANT;
+    } else {
+      throw std::runtime_error("No PlanetType left, bailing");
     }
     auto planet = Makeplanet(dist, Star->temperature, type);
     auto smap = getsmap(planet);

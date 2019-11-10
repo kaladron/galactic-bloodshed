@@ -5,9 +5,6 @@
 #ifndef SHLMISC_H
 #define SHLMISC_H
 
-#include <optional>
-#include <string>
-
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/vars.h"

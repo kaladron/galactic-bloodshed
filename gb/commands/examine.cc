@@ -5,10 +5,9 @@
 /* examine -- check out an object */
 
 import gblib;
+import std;
 
 #include "gb/commands/examine.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

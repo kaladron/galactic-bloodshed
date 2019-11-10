@@ -3,6 +3,7 @@
 // found in the COPYING file.
 
 import gblib;
+import std;
 
 #include "gb/GB_server.h"
 
@@ -17,8 +18,6 @@ import gblib;
 
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
-
-import std;
 
 #include "gb/buffers.h"
 #include "gb/build.h"

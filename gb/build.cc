@@ -5,10 +5,9 @@
 /* build -- build a ship */
 
 import gblib;
+import std;
 
 #include "gb/build.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

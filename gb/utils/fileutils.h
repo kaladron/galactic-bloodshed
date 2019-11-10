@@ -8,10 +8,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cstdio>
-#include <cstdlib>
-#include <string>
-
 /**
  * Helper utils and classes for making common operations with files eaiser.
  */

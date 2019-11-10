@@ -10,10 +10,9 @@
 // G.O.D. [1] > boils at -33
 
 import gblib;
+import std;
 
 #include "gb/creator/makestar.h"
-
-import std;
 
 #include "gb/creator/makeplanet.h"
 #include "gb/creator/makeuniv.h"

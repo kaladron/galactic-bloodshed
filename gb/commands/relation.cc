@@ -5,10 +5,9 @@
 /* relation.c -- state relations among players */
 
 import gblib;
+import std;
 
 #include "gb/commands/relation.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

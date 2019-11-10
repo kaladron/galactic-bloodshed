@@ -5,8 +5,6 @@
 #ifndef GETPLACE_H
 #define GETPLACE_H
 
-#include <string>
-
 #include "gb/place.h"
 #include "gb/ships.h"
 

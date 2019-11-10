@@ -2,11 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+import std;
+
 #include "gb/racegen.h"
 
 #include <unistd.h>
-
-import std;
 
 #include "gb/enroll.h"
 #include "gb/game_info.h"

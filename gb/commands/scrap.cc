@@ -5,10 +5,9 @@
 /* scrap.c -- turn a ship to junk */
 
 import gblib;
+import std;
 
 #include "gb/commands/scrap.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

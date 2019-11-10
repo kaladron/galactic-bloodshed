@@ -8,6 +8,7 @@
  */
 
 import gblib;
+import std;
 
 #include "gb/sql/sql.h"
 
@@ -15,8 +16,6 @@ import gblib;
 #include <sqlite3.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-import std;
 
 #include "gb/files.h"
 #include "gb/power.h"

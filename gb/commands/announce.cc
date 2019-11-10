@@ -2,13 +2,10 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/* name.c -- rename something to something else */
-
 import gblib;
+import std;
 
 #include "gb/commands/announce.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

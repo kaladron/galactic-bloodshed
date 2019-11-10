@@ -8,8 +8,6 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include <ctime>
-
 #include "gb/doturn.h"
 #include "gb/map.h"
 #include "gb/power.h"

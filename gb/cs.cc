@@ -3,10 +3,9 @@
 // found in the COPYING file.
 
 import gblib;
+import std;
 
 #include "gb/cs.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/files_shl.h"

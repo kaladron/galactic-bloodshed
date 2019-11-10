@@ -5,10 +5,9 @@
 /* enslave.c -- ENSLAVE the planet below. */
 
 import gblib;
+import std;
 
 #include "gb/commands/enslave.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

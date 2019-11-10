@@ -12,10 +12,9 @@
  */
 
 import gblib;
+import std;
 
 #include "gb/commands/mobilize.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

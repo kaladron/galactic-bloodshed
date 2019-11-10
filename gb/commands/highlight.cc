@@ -6,10 +6,9 @@
 /// \brief Toggle highlight option on a player.
 
 import gblib;
+import std;
 
 #include "gb/commands/highlight.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

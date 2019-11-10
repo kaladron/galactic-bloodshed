@@ -3,14 +3,13 @@
 // found in the COPYING file.
 
 import gblib;
+import std;
 
 #include "gb/tele.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

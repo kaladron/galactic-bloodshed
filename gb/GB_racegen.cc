@@ -3,12 +3,11 @@
 // found in the COPYING file.
 
 import gblib;
+import std;
 
 #include "gb/GB_racegen.h"
 
 #include <unistd.h>
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

@@ -5,8 +5,6 @@
 #ifndef MISC_H
 #define MISC_H
 
-#include <cmath>
-
 /**
  * \brief Scales used in production efficiency etc.
  * \param x Integer from 0-100

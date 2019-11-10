@@ -5,6 +5,7 @@
 /* perm.c -- randomly permute a sector list */
 
 import gblib;
+import std;
 
 #include "gb/perm.h"
 

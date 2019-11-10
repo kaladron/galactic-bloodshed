@@ -7,7 +7,6 @@
 import gblib;
 import std;
 
-
 #include "gb/commands/governors.h"
 
 #define FMT_HEADER_ONLY

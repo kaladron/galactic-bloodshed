@@ -9,6 +9,9 @@ import std;
 
 #include "gb/doplanet.h"
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+
 #include "gb/GB_server.h"
 #include "gb/VN.h"
 #include "gb/bombard.h"
@@ -624,8 +627,6 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
 static bool moveship_onplanet(Ship &ship, const Planet &planet) {
   int x;
   int y;
-  int bounced = 0;
-
   if (ship.shipclass[ship.special.terraform.index] == 's') {
     ship.on = 0;
     return false;
@@ -635,21 +636,25 @@ static bool moveship_onplanet(Ship &ship, const Planet &planet) {
 
   get_move(ship.shipclass[ship.special.terraform.index], ship.land_x,
            ship.land_y, &x, &y, planet);
+
+  bool bounced = false;
+
   if (y >= planet.Maxy) {
-    bounced = 1;
+    bounced = true;
     y -= 2; /* bounce off of south pole! */
   } else if (y < 0)
-    bounced = y = 1; /* bounce off of north pole! */
+    y = 1;
+  bounced = true; /* bounce off of north pole! */
   if (planet.Maxy == 1) y = 0;
   if (ship.shipclass[ship.special.terraform.index + 1] != '\0') {
     ++ship.special.terraform.index;
     if ((ship.shipclass[ship.special.terraform.index + 1] == '\0') &&
         (!ship.notified)) {
-      char teleg_buf[1000];
       ship.notified = 1;
-      sprintf(teleg_buf, "%s is out of orders at %s.",
-              ship_to_string(ship).c_str(), prin_ship_orbits(&ship));
-      push_telegram((ship.owner), ship.governor, teleg_buf);
+      std::string teleg_buf =
+          fmt::format("%{0} is out of orders at %{1}.", ship_to_string(ship),
+                      prin_ship_orbits(&ship));
+      push_telegram(ship.owner, ship.governor, teleg_buf);
     }
   } else if (bounced)
     ship.shipclass[ship.special.terraform.index] +=

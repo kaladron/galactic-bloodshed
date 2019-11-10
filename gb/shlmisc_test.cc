@@ -1,8 +1,7 @@
 import gblib;
+import std;
 
 #include "gb/shlmisc.h"
-
-import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

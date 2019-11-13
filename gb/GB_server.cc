@@ -17,7 +17,9 @@ import std;
 #include <unistd.h>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/format.hpp>
+
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 
 #include "gb/buffers.h"
 #include "gb/build.h"
@@ -345,16 +347,17 @@ std::string do_prompt(GameObj &g) {
 
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << boost::format(" ( [%d] / )\n") % Sdata.AP[Playernum - 1];
+      prompt << fmt::format(" ( [{0}] / )\n", Sdata.AP[Playernum - 1]);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
-      prompt << boost::format(" ( [%d] /%s )\n") %
-                    Stars[g.snum]->AP[Playernum - 1] % Stars[g.snum]->name;
+      prompt << fmt::format(" ( [[{0}] {1}s )\n",
+                            Stars[g.snum]->AP[Playernum - 1],
+                            Stars[g.snum]->name);
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
-      prompt << boost::format(" ( [%d] /%s/%s )\n") %
-                    Stars[g.snum]->AP[Playernum - 1] % Stars[g.snum]->name %
-                    Stars[g.snum]->pnames[g.pnum];
+      prompt << fmt::format(" ( [{0}] /{1}/{2} )\n",
+                            Stars[g.snum]->AP[Playernum - 1],
+                            Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.
@@ -363,19 +366,19 @@ std::string do_prompt(GameObj &g) {
   auto s = getship(g.shipno);
   switch (s->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << boost::format(" ( [%d] /#%ld )\n") % Sdata.AP[Playernum - 1] %
-                    g.shipno;
+      prompt << fmt::format(" ( [[0]] /#{1} )\n", Sdata.AP[Playernum - 1],
+                            g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
-      prompt << boost::format(" ( [%d] /%s/#%ld )\n") %
-                    Stars[s->storbits]->AP[Playernum - 1] %
-                    Stars[s->storbits]->name % g.shipno;
+      prompt << fmt::format(" ( [{0}] /{1}/#{2} )\n",
+                            Stars[s->storbits]->AP[Playernum - 1],
+                            Stars[s->storbits]->name, g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
-      prompt << boost::format(" ( [%d] /%s/%s/#%ld )\n") %
-                    Stars[s->storbits]->AP[Playernum - 1] %
-                    Stars[s->storbits]->name %
-                    Stars[s->storbits]->pnames[g.pnum] % g.shipno;
+      prompt << fmt::format(" ( [{0}] /{1}/{2}/#{3} )\n",
+                            Stars[s->storbits]->AP[Playernum - 1],
+                            Stars[s->storbits]->name,
+                            Stars[s->storbits]->pnames[g.pnum], g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.  (Ship within a ship)
@@ -388,20 +391,19 @@ std::string do_prompt(GameObj &g) {
   auto s2 = getship(s->destshipno);
   switch (s2->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << boost::format(" ( [%d] /#%lu/#%lu )\n") %
-                    Sdata.AP[Playernum - 1] % s->destshipno % g.shipno;
+      prompt << fmt::format(" ( [{0}] /#{1}/#{2} )\n", Sdata.AP[Playernum - 1],
+                            s->destshipno, g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
-      prompt << boost::format(" ( [%d] /%s/#%lu/#%lu )\n") %
-                    Stars[s->storbits]->AP[Playernum - 1] %
-                    Stars[s->storbits]->name % s->destshipno % g.shipno;
+      prompt << fmt::format(" ( [{0}] /{1}/#{2}/#{3} )\n",
+                            Stars[s->storbits]->AP[Playernum - 1],
+                            Stars[s->storbits]->name, s->destshipno, g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
-      prompt << boost::format(" ( [%d] /%s/%s/#%ld/#%ld )\n") %
-                    Stars[s->storbits]->AP[Playernum - 1] %
-                    Stars[s->storbits]->name %
-                    Stars[s->storbits]->pnames[g.pnum] % s->destshipno %
-                    g.shipno;
+      prompt << fmt::format(
+          " ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
+          Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
+          Stars[s->storbits]->pnames[g.pnum], s->destshipno, g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.  (Ship w/in ship w/in ship)
@@ -412,20 +414,19 @@ std::string do_prompt(GameObj &g) {
   }
   switch (s2->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << boost::format(" ( [%d] / /../#%ld/#%ld )\n") %
-                    Sdata.AP[Playernum - 1] % s->destshipno % g.shipno;
+      prompt << fmt::format(" ( [{0}] / /../#{1}/#{2} )\n",
+                            Sdata.AP[Playernum - 1], s->destshipno, g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
-      prompt << boost::format(" ( [%d] /%s/ /../#%ld/#%ld )\n") %
-                    Stars[s->storbits]->AP[Playernum - 1] %
-                    Stars[s->storbits]->name % s->destshipno % g.shipno;
+      prompt << fmt::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
+                            Stars[s->storbits]->AP[Playernum - 1],
+                            Stars[s->storbits]->name, s->destshipno, g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
-      prompt << boost::format(" ( [%d] /%s/%s/ /../#%ld/#%ld )\n") %
-                    Stars[s->storbits]->AP[Playernum - 1] %
-                    Stars[s->storbits]->name %
-                    Stars[s->storbits]->pnames[g.pnum] % s->destshipno %
-                    g.shipno;
+      prompt << fmt::format(
+          " ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
+          Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
+          Stars[s->storbits]->pnames[g.pnum], s->destshipno, g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // (Ship w/in ship w/in ship w/in ship)

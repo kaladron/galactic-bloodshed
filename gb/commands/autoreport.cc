@@ -10,7 +10,8 @@ import std;
 
 #include "gb/commands/autoreport.h"
 
-#include <boost/format.hpp>
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -60,7 +61,7 @@ void autoreport(const command_t &argv, GameObj &g) {
   }
   putplanet(p, Stars[snum], pnum);
 
-  g.out << boost::format("Autoreport on %s has been %s.\n") %
-               Stars[snum]->pnames[pnum] %
-               (p.info[g.player - 1].autorep ? "set" : "unset");
+  g.out << fmt::format("Autoreport on %{0} has been %{1}.\n",
+                       Stars[snum]->pnames[pnum],
+                       (p.info[g.player - 1].autorep ? "set" : "unset"));
 }

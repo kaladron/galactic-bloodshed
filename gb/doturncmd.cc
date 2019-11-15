@@ -40,10 +40,10 @@ static constexpr void maintain(Race &r, Race::gov &governor,
 }
 #endif
 
-static int APadd(int, int, Race *);
+static int APadd(const int, const population_t, const Race &);
 static int attack_planet(Ship *);
 static void fix_stability(startype *);
-static int governed(Race *);
+static bool governed(const Race &);
 static void make_discoveries(Race *);
 static void output_ground_attacks();
 static int planet_points(const Planet &);
@@ -319,8 +319,8 @@ void do_turn(int update) {
           int APs;
 
           APs = Stars[star]->AP[i - 1] + APadd((int)starnumships[star][i - 1],
-                                               (int)starpopns[star][i - 1],
-                                               races[i - 1]);
+                                               starpopns[star][i - 1],
+                                               *races[i - 1]);
           if (APs < LIMIT_APs)
             Stars[star]->AP[i - 1] = APs;
           else
@@ -342,7 +342,7 @@ void do_turn(int update) {
   if (update)
     for (player_t i = 1; i <= Num_races; i++) {
       Blocks[i - 1].systems_owned = 0; /*recount systems owned*/
-      if (governed(races[i - 1])) {
+      if (governed(*races[i - 1])) {
         int APs;
 
         APs = Sdata.AP[i - 1] + races[i - 1]->planet_points;
@@ -472,7 +472,7 @@ void do_turn(int update) {
 /* routine for number of AP's to add to each player in ea. system,scaled
     by amount of crew in their palace */
 
-static int APadd(int sh, int popn, Race *race) {
+static int APadd(const int sh, const population_t popn, const Race &race) {
   int APs;
 
   APs = round_rand((double)sh / 10.0 + 5. * log10(1.0 + (double)popn));
@@ -482,17 +482,17 @@ static int APadd(int sh, int popn, Race *race) {
   return round_rand((double)APs / 20.);
 }
 
-int governed(Race *race) {
-  return (race->Gov_ship && race->Gov_ship <= Num_ships &&
-          ships[race->Gov_ship] != nullptr && ships[race->Gov_ship]->alive &&
-          ships[race->Gov_ship]->docked &&
-          (ships[race->Gov_ship]->whatdest == ScopeLevel::LEVEL_PLAN ||
-           (ships[race->Gov_ship]->whatorbits == ScopeLevel::LEVEL_SHIP &&
-            ships[ships[race->Gov_ship]->destshipno]->type ==
+bool governed(const Race &race) {
+  return (race.Gov_ship && race.Gov_ship <= Num_ships &&
+          ships[race.Gov_ship] != nullptr && ships[race.Gov_ship]->alive &&
+          ships[race.Gov_ship]->docked &&
+          (ships[race.Gov_ship]->whatdest == ScopeLevel::LEVEL_PLAN ||
+           (ships[race.Gov_ship]->whatorbits == ScopeLevel::LEVEL_SHIP &&
+            ships[ships[race.Gov_ship]->destshipno]->type ==
                 ShipType::STYPE_HABITAT &&
-            (ships[ships[race->Gov_ship]->destshipno]->whatorbits ==
+            (ships[ships[race.Gov_ship]->destshipno]->whatorbits ==
                  ScopeLevel::LEVEL_PLAN ||
-             ships[ships[race->Gov_ship]->destshipno]->whatorbits ==
+             ships[ships[race.Gov_ship]->destshipno]->whatorbits ==
                  ScopeLevel::LEVEL_STAR))));
 }
 

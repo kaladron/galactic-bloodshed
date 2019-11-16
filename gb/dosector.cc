@@ -28,7 +28,7 @@ void produce(startype *star, const Planet &planet, Sector &s) {
   int pdes = 0;
   int pres = 0;
   resource_t prod;
-  long diff;
+  population_t diff;
   racetype *Race;
 
   if (!s.owner) return;
@@ -97,7 +97,7 @@ void produce(startype *star, const Planet &planet, Sector &s) {
     else
       ss = 0;
   } else
-    ss = -int_rand(0, std::min(2 * static_cast<unsigned long>(diff), s.popn));
+    ss = -int_rand(0, std::min(2 * diff, s.popn));
   s.popn += ss;
 
   if (s.troops)

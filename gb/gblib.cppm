@@ -13,7 +13,7 @@ export using commodnum_t = uint64_t;
 export using resource_t = unsigned long;
 
 export using money_t = int64_t;
-export using population_t = uint64_t;
+export using population_t = int64_t;
 
 export using command_t = std::vector<std::string>;
 

@@ -301,9 +301,9 @@ void move_popn(const command_t &argv, GameObj &g) {
       old2owner = (int)(sect2.owner);
       old2gov = Stars[g.snum]->governor[sect2.owner - 1];
       if (what == CIV)
-        sect.popn = std::max(0UL, sect.popn - people);
+        sect.popn = std::max(0L, sect.popn - people);
       else if (what == MIL)
-        sect.troops = std::max(0UL, sect.troops - people);
+        sect.troops = std::max(0L, sect.troops - people);
 
       if (what == CIV)
         sprintf(buf, "%d civ assault %lu civ/%lu mil\n", people, sect2.popn,

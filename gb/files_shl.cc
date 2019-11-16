@@ -360,9 +360,9 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
   p.Maxx = sqlite3_column_int(stmt, 7);
   p.Maxy = sqlite3_column_int(stmt, 8);
   p.popn = sqlite3_column_int(stmt, 9);
-  p.troops = sqlite3_column_int(stmt, 10);
-  p.maxpopn = sqlite3_column_int(stmt, 11);
-  p.total_resources = sqlite3_column_int(stmt, 12);
+  p.troops = sqlite3_column_int64(stmt, 10);
+  p.maxpopn = sqlite3_column_int64(stmt, 11);
+  p.total_resources = sqlite3_column_int64(stmt, 12);
   p.slaved_to = sqlite3_column_int(stmt, 13);
   int p_type = sqlite3_column_int(stmt, 14);
   switch (p_type) {

@@ -37,9 +37,11 @@ export class GameObj {
 
 export class Sector {
  public:
-  Sector(int x_, int y_, int eff_, int fert_, int mobilization_, int crystals_,
-         int resource_, int popn_, int troops_, int owner_, int race_,
-         int type_, int condition_)
+  Sector(unsigned int x_, unsigned int y_, unsigned int eff_,
+         unsigned int fert_, unsigned int mobilization_, unsigned int crystals_,
+         resource_t resource_, population_t popn_, population_t troops_,
+         player_t owner_, player_t race_, unsigned int type_,
+         unsigned int condition_)
       : x(x_),
         y(y_),
         eff(eff_),

@@ -482,7 +482,7 @@ static int APadd(const int sh, const population_t popn, const Race &race) {
   return round_rand((double)APs / 20.);
 }
 
-bool governed(const Race &race) {
+static bool governed(const Race &race) {
   return (race.Gov_ship && race.Gov_ship <= Num_ships &&
           ships[race.Gov_ship] != nullptr && ships[race.Gov_ship]->alive &&
           ships[race.Gov_ship]->docked &&

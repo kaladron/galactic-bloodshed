@@ -143,7 +143,7 @@ class SectorMap {
   auto begin() { return vec_.begin(); }
   auto end() { return vec_.end(); }
 
-  Sector &get(const int x, const int y) { return vec_.at((x) + (y)*maxx_); }
+  Sector &get(const int x, const int y) { return vec_.at(static_cast<size_t>(x + (y*maxx_))); }
   void put(Sector &&s) { vec_.emplace_back(std::move(s)); }
   int get_maxx() { return maxx_; }
   int get_maxy() { return maxy_; }

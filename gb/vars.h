@@ -7,11 +7,7 @@
 #ifndef VARS_H
 #define VARS_H
 
-#include <sys/file.h>
-#include <sys/types.h>
-
 #include "gb/config.h"
-#include "gb/files.h"
 #include "gb/tweakables.h"
 
 /* number of movement segments (global variable) */

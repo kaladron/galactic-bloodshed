@@ -59,7 +59,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   int f = 0;
   int iq = 0;
   char shiplocs[MAX_X][MAX_Y] = {};
-  hugestr output;
+  std::strstream output;
 
   const int show = 1;  // TODO(jeffbailey): This was always set to on, but this
                        // fact is output to the client, which might affect the
@@ -82,13 +82,13 @@ static void show_map(const player_t Playernum, const governor_t Governor,
     }
   }
   /* report that this is a planet map */
-  sprintf(output, "$");
+  output << '$';
 
   sprintf(buf, "%s;", Stars[snum]->pnames[pnum]);
-  strcat(output, buf);
+  output << buf;
 
   sprintf(buf, "%d;%d;%d;", p.Maxx, p.Maxy, show);
-  strcat(output, buf);
+  output << buf;
 
   /* send map data */
   for (const auto &sector : smap) {
@@ -114,10 +114,10 @@ static void show_map(const player_t Playernum, const governor_t Governor,
           sprintf(buf, "0%c", desshow(Playernum, Governor, Race, sector));
       }
     }
-    strcat(output, buf);
+    output << buf;
   }
-  strcat(output, "\n");
-  notify(Playernum, Governor, output);
+  output << '\n';
+  notify(Playernum, Governor, output.str());
 
   if (show) {
     sprintf(temp, "Type: %8s   Sects %7s: %3u   Aliens:", Planet_types[p.type],

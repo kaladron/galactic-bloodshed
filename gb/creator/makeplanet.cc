@@ -76,7 +76,7 @@ static int neighbors(SectorMap &, int, int, int);
 static void MakeEarthAtmosphere(Planet &, int);
 static void Makesurface(const Planet &, SectorMap &);
 static int SectTemp(const Planet &, const int);
-static void seed(SectorMap &, int, int);
+static void seed(SectorMap &, SectorType, int);
 static void grow(SectorMap &, int, int, int);
 
 Planet Makeplanet(double dist, short stemp, PlanetType type) {
@@ -169,7 +169,7 @@ Planet Makeplanet(double dist, short stemp, PlanetType type) {
             auto &s = smap.get_random();
             s.type = s.condition = SectorType::SEC_LAND;
           }
-      seed(smap, DESERT, int_rand(1, total_sects));
+      seed(smap, SectorType::SEC_DESERT, int_rand(1, total_sects));
       break;
     case PlanetType::ICEBALL: /* ball of ice */
       /* no atmosphere */
@@ -280,7 +280,7 @@ static int neighbors(SectorMap &smap, int x, int y, int type) {
 }
 
 //! Randomly places n sectors of designation type on a planet.
-static void seed(SectorMap &smap, int type, int n) {
+static void seed(SectorMap &smap, SectorType type, int n) {
   while (n-- > 0) {
     auto &s = smap.get_random();
     s.type = s.condition = type;

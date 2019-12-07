@@ -335,7 +335,7 @@ double complexity(const Ship &);
 bool testship(const Ship &, const player_t, const governor_t);
 
 extern shipnum_t Num_ships;
-extern const unsigned long Shipdata[NUMSTYPES][NUMABILS];
+extern const long Shipdata[NUMSTYPES][NUMABILS];
 extern const char Shipltrs[];
 extern const char *Shipnames[];
 extern int ShipVector[NUMSTYPES];

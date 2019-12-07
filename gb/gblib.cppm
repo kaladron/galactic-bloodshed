@@ -5,13 +5,13 @@ import std;
 export enum ScopeLevel { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
 
 export using shipnum_t = uint64_t;
-export using starnum_t = uint8_t;
-export using planetnum_t = uint8_t;
-export using player_t = uint8_t;
-export using governor_t = uint8_t;
-export using commodnum_t = uint64_t;
-export using resource_t = unsigned long;
+export using starnum_t = uint32_t;
+export using planetnum_t = uint32_t;
+export using player_t = uint32_t;
+export using governor_t = uint32_t;
 
+export using commodnum_t = int64_t;
+export using resource_t = int64_t;
 export using money_t = int64_t;
 export using population_t = int64_t;
 

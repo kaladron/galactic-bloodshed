@@ -160,8 +160,8 @@ struct Star {
   char name[NAMESIZE];             /* name of star */
   governor_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
   unsigned int AP[MAXPLAYERS];     /* action pts alotted */
-  unsigned long explored[2];       /* who's been here 64 bits*/
-  unsigned long inhabited[2];      /* who lives here now 64 bits*/
+  uint64_t explored;               /* who's been here 64 bits*/
+  uint64_t inhabited;              /* who lives here now 64 bits*/
   double xpos, ypos;
 
   unsigned char numplanets;            /* # of planets in star system */
@@ -213,17 +213,11 @@ extern unsigned char Claims;
 
 extern planettype *planets[NUMSTARS][MAXPLANETS];
 extern unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
-extern unsigned long inhabited[NUMSTARS][2];
+extern uint64_t inhabited[NUMSTARS];
 extern double Compat[MAXPLAYERS];
 extern player_t Num_races;
 extern unsigned long Num_commods;
 extern planetnum_t Planet_count;
 extern unsigned long newslength[4];
-
-/* bit routines stolen from UNIX <sys/param.h> */
-#define setbit(a, i) ((a)[(i) / 32] |= ((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
-#define clrbit(a, i) ((a)[(i) / 32] &= ~((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
-#define isset(a, i) ((a)[(i) / 32] & ((i) < 32 ? 1 << (i) : 1 << ((i)-32)))
-#define isclr(a, i) (!isset((a), (i)))
 
 #endif  // VARS_H

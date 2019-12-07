@@ -98,8 +98,7 @@ int enroll_valid_race() {
     fflush(stdout);
     /*
      * Skip over inhabited stars and stars with few planets. */
-    if ((Stars[star]->numplanets < 2) || Stars[star]->inhabited[0] ||
-        Stars[star]->inhabited[1]) {
+    if ((Stars[star]->numplanets < 2) || Stars[star]->inhabited) {
     } else {
       /* look for uninhabited planets */
       for (pnum = 0; pnum < Stars[star]->numplanets; pnum++) {

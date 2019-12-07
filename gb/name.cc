@@ -548,7 +548,6 @@ void page(const command_t &argv, GameObj &g) {
   int who;
   int gov;
   int to_block;
-  int dummy[2];
   racetype *Race;
   racetype *alien;
 
@@ -589,10 +588,8 @@ void page(const command_t &argv, GameObj &g) {
               Race->name, Race->governor[Governor].name, Stars[g.snum]->name);
 
       if (to_block) {
-        dummy[0] =
-            Blocks[Playernum - 1].invite[0] & Blocks[Playernum - 1].pledge[0];
-        dummy[1] =
-            Blocks[Playernum - 1].invite[1] & Blocks[Playernum - 1].pledge[1];
+        uint64_t dummy =
+            Blocks[Playernum - 1].invite & Blocks[Playernum - 1].pledge;
         for (i = 1; i <= Num_races; i++)
           if (isset(dummy, i) && i != Playernum) notify_race(i, buf);
       } else {
@@ -622,7 +619,6 @@ void send_message(const command_t &argv, GameObj &g) {
   int i;
   int j;
   int to_block;
-  int dummy[2];
   int to_star;
   int star;
   int start;
@@ -728,8 +724,7 @@ void send_message(const command_t &argv, GameObj &g) {
           "%s \"%s\" [%d,%d] has sent you a telegram. Use `read' to read it.\n",
           Race->name, Race->governor[Governor].name, Playernum, Governor);
   if (to_block) {
-    dummy[0] = (Blocks[who - 1].invite[0] & Blocks[who - 1].pledge[0]);
-    dummy[1] = (Blocks[who - 1].invite[1] & Blocks[who - 1].pledge[1]);
+    uint64_t dummy = (Blocks[who - 1].invite & Blocks[who - 1].pledge);
     sprintf(buf,
             "%s \"%s\" [%d,%d] sends a message to %s [%d] alliance block.\n",
             Race->name, Race->governor[Governor].name, Playernum, Governor,

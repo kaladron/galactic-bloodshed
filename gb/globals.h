@@ -77,7 +77,7 @@ unsigned char Claims;
 
 planettype *planets[NUMSTARS][MAXPLANETS];
 unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
-unsigned long inhabited[NUMSTARS][2];
+uint64_t inhabited[NUMSTARS];
 double Compat[MAXPLAYERS];
 player_t Num_races;
 unsigned long Num_commods;

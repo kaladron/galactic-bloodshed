@@ -778,14 +778,13 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
   int owners = 0;
   int i;
   int j;
-  int ownerbits[2];
   int stolenres = 0;
   int stolendes = 0;
   int stolenfuel = 0;
   int stolencrystals = 0;
   int all_buddies_here = 1;
 
-  ownerbits[0] = ownerbits[1] = 0;
+  uint64_t ownerbits = 0;
 
   for (i = 1; i <= Num_races && all_buddies_here; i++) {
     if (planet->info[i - 1].numsectsowned > 0) {

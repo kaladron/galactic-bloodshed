@@ -27,7 +27,6 @@ void block(const command_t &argv, GameObj &g) {
   player_t p;
   racetype *Race;
   int dummy_;
-  int dummy[2];
 
   Race = races[Playernum - 1];
 
@@ -87,8 +86,7 @@ void block(const command_t &argv, GameObj &g) {
       return;
     }
     /* list the players who are in this alliance block */
-    dummy[0] = (Blocks[p - 1].invite[0] & Blocks[p - 1].pledge[0]);
-    dummy[1] = (Blocks[p - 1].invite[1] & Blocks[p - 1].pledge[1]);
+    uint64_t dummy = (Blocks[p - 1].invite & Blocks[p - 1].pledge);
     sprintf(buf, "         ========== %s Power Report ==========\n",
             Blocks[p - 1].name);
     notify(Playernum, Governor, buf);

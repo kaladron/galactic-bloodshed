@@ -50,7 +50,6 @@ static int planet_points(const Planet &);
 
 void do_turn(int update) {
   commodtype *c;
-  unsigned long dummy[2];
   double dist;
   struct victstruct {
     int numsects;
@@ -327,12 +326,9 @@ void do_turn(int update) {
             Stars[star]->AP[i - 1] = LIMIT_APs;
         }
         /* compute victory points for the block */
-        if (inhabited[star][0] + inhabited[star][1]) {
-          dummy[0] = (Blocks[i - 1].invite[0] & Blocks[i - 1].pledge[0]);
-          dummy[1] = (Blocks[i - 1].invite[1] & Blocks[i - 1].pledge[1]);
-          Blocks[i - 1].systems_owned +=
-              ((inhabited[star][0] | dummy[0]) == dummy[0]) &&
-              ((inhabited[star][1] | dummy[1]) == dummy[1]);
+        if (inhabited[star] != 0) {
+          uint64_t dummy = Blocks[i - 1].invite & Blocks[i - 1].pledge;
+          Blocks[i - 1].systems_owned += (inhabited[star] | dummy) == dummy;
         }
       }
     putstar(Stars[star], star);

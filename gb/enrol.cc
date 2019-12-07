@@ -164,9 +164,7 @@ int main() {
     for (star = 0; star < Sdata.numstars && !found && count < 100;) {
       check = 1;
       /* skip over inhabited stars - or stars with just one planet! */
-      if (Stars[star]->inhabited[0] + Stars[star]->inhabited[1] ||
-          Stars[star]->numplanets < 2)
-        check = 0;
+      if (Stars[star]->inhabited == 0 || Stars[star]->numplanets < 2) check = 0;
 
       /* look for uninhabited planets */
       if (check) {
@@ -265,8 +263,8 @@ int main() {
   race->tech = 0.0;
   race->morale = 0;
   race->turn = 0;
-  race->allied[0] = race->allied[1] = 0;
-  race->atwar[0] = race->atwar[1] = 0;
+  race->allied = 0;
+  race->atwar = 0;
   do {
     race->mass = RMass(idx);
     race->birthrate = Birthrate(idx);

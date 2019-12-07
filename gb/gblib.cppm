@@ -94,3 +94,30 @@ export struct vic {
   long rawscore;
   long login;
 };
+
+export template <typename T, class = typename std::enable_if<
+                                 std::is_unsigned<T>::value>::type>
+void setbit(T &target, const unsigned int pos) {
+  const size_t bitwidth = sizeof(T) * CHAR_BIT;
+  target |= pos < bitwidth ? 1 << pos : 1 << (pos % bitwidth);
+}
+
+export template <typename T, class = typename std::enable_if<
+                                 std::is_unsigned<T>::value>::type>
+void clrbit(T &target, const unsigned int pos) {
+  const size_t bitwidth = sizeof(T) * CHAR_BIT;
+  target &= ~(pos < bitwidth ? 1 << pos : 1 << (pos % bitwidth));
+}
+
+export template <typename T, class = typename std::enable_if<
+                                 std::is_unsigned<T>::value>::type>
+bool isset(const T target, const unsigned int pos) {
+  const size_t bitwidth = sizeof(T) * CHAR_BIT;
+  return target & (pos < bitwidth ? 1 << pos : 1 << (pos % bitwidth));
+}
+
+export template <typename T, class = typename std::enable_if<
+                                 std::is_unsigned<T>::value>::type>
+bool isclr(const T target, const unsigned int pos) {
+  return !isset(target, pos);
+}

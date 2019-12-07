@@ -1470,12 +1470,10 @@ void compute_power_blocks() {
   const time_t clk = time(nullptr);
   int i;
   int j;
-  int dummy[2];
   /* compute alliance block power */
   sprintf(Power_blocks.time, "%s", ctime(&clk));
   for (i = 1; i <= Num_races; i++) {
-    dummy[0] = (Blocks[i - 1].invite[0] & Blocks[i - 1].pledge[0]);
-    dummy[1] = (Blocks[i - 1].invite[1] & Blocks[i - 1].pledge[1]);
+    uint64_t dummy = Blocks[i - 1].invite & Blocks[i - 1].pledge;
     Power_blocks.members[i - 1] = 0;
     Power_blocks.sectors_owned[i - 1] = 0;
     Power_blocks.popn[i - 1] = 0;

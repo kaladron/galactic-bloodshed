@@ -54,8 +54,8 @@ class Race {
 
   char translate[MAXPLAYERS]; /* translation mod for each player */
 
-  unsigned long atwar[2];  /* war 64 bits*/
-  unsigned long allied[2]; /* allies 64 bits*/
+  uint64_t atwar;
+  uint64_t allied;
 
   shipnum_t Gov_ship;                /* Shipnumber of government ship. */
   long morale;                       /* race's morale level */
@@ -136,16 +136,14 @@ struct block {
   player_t Playernum;
   char name[RNAMESIZE];
   char motto[MOTTOSIZE];
-  unsigned long invite[2];
-  unsigned long pledge[2];
-  unsigned long atwar[2];
-  unsigned long allied[2];
+  uint64_t invite;
+  uint64_t pledge;
+  uint64_t atwar;
+  uint64_t allied;
   unsigned short next;
   unsigned short systems_owned;
   unsigned long VPs;
   unsigned long money;
-
-  unsigned long dummy[2];
 };
 
 struct power_blocks {

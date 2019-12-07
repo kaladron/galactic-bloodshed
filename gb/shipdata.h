@@ -48,7 +48,7 @@ const char Shipltrs[] = {'p', 's', 'X', 'D', 'B', 'I', 'C', 'd', 'f', 'e',
 //     Now 0 guns. Also removed the 100 destruct carrying capacity. Added 25
 //     cargo space so it can repair itself. */
 
-const unsigned long Shipdata[NUMSTYPES][NUMABILS] = {
+const long Shipdata[NUMSTYPES][NUMABILS] = {
     /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
        dm  bd   cn mod las cew clk god prg port rep pay */
     /*SPd*/ {0, 0, 0, 0, 0, 0, 0, 20, 1, 0, 1, 0, 0, 1,

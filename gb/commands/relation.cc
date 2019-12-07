@@ -43,7 +43,7 @@ void relation(const command_t &argv, GameObj &g) {
   g.out << " -       ----             ---------       -----        ------\n";
   for (auto r : races) {
     if (r->Playernum == Race->Playernum) continue;
-    sprintf(buf, "%2hhu %s (%3d%%) %20.20s : %10s   %10s\n", r->Playernum,
+    sprintf(buf, "%2u %s (%3d%%) %20.20s : %10s   %10s\n", r->Playernum,
             ((Race->God || (Race->translate[r->Playernum - 1] > 30)) &&
              r->Metamorph && (Playernum == q))
                 ? "Morph"

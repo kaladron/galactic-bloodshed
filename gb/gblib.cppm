@@ -98,22 +98,22 @@ export struct vic {
 export template <typename T, class = typename std::enable_if<
                                  std::is_unsigned<T>::value>::type>
 void setbit(T &target, const unsigned int pos) {
-  const size_t bitwidth = sizeof(T) * CHAR_BIT;
-  target |= pos < bitwidth ? 1 << pos : 1 << (pos % bitwidth);
+  T bit = 1;
+  target |= (bit << pos);
 }
 
 export template <typename T, class = typename std::enable_if<
                                  std::is_unsigned<T>::value>::type>
 void clrbit(T &target, const unsigned int pos) {
-  const size_t bitwidth = sizeof(T) * CHAR_BIT;
-  target &= ~(pos < bitwidth ? 1 << pos : 1 << (pos % bitwidth));
+  T bit = 1;
+  target &= ~(bit << pos);
 }
 
 export template <typename T, class = typename std::enable_if<
                                  std::is_unsigned<T>::value>::type>
 bool isset(const T target, const unsigned int pos) {
-  const size_t bitwidth = sizeof(T) * CHAR_BIT;
-  return target & (pos < bitwidth ? 1 << pos : 1 << (pos % bitwidth));
+  T bit = 1;
+  return target & (bit << pos);
 }
 
 export template <typename T, class = typename std::enable_if<

@@ -297,10 +297,10 @@ void vote(const command_t &argv, GameObj &g) {
     check = 0;
     if (argv[1] == "update") {
       if (argv[2] == "go") {
-        Race->votes |= VOTE_UPDATE_GO;
+        Race->votes = true;
         check = 1;
       } else if (argv[2] == "wait")
-        Race->votes &= ~VOTE_UPDATE_GO;
+        Race->votes = false;
       else {
         sprintf(buf, "No such update choice '%s'\n", argv[2].c_str());
         notify(Playernum, Governor, buf);
@@ -323,7 +323,7 @@ void vote(const command_t &argv, GameObj &g) {
         Race = races[pnum - 1];
         if (Race->God || Race->Guest) continue;
         nvotes++;
-        if (Race->votes & VOTE_UPDATE_GO)
+        if (Race->votes)
           yays++;
         else
           nays++;
@@ -335,8 +335,7 @@ void vote(const command_t &argv, GameObj &g) {
       }
     }
   } else {
-    sprintf(buf, "Your vote on updates is %s\n",
-            (Race->votes & VOTE_UPDATE_GO) ? "go" : "wait");
+    sprintf(buf, "Your vote on updates is %s\n", Race->votes ? "go" : "wait");
     notify(Playernum, Governor, buf);
     show_votes(Playernum, Governor);
   }
@@ -354,7 +353,7 @@ static void show_votes(int Playernum, int Governor) {
     Race = races[pnum - 1];
     if (Race->God || Race->Guest) continue;
     nvotes++;
-    if (Race->votes & VOTE_UPDATE_GO) {
+    if (Race->votes) {
       yays++;
       sprintf(buf, "  %s voted go.\n", Race->name);
     } else {

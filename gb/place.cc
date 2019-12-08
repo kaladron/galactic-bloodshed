@@ -124,15 +124,19 @@ std::string Place::to_string() {
   switch (level) {
     case ScopeLevel::LEVEL_STAR:
       out << "/" << Stars[snum]->name;
+      out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_PLAN:
       out << "/" << Stars[snum]->name << "/" << Stars[snum]->pnames[pnum];
+      out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_SHIP:
       out << "#" << shipno;
+      out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_UNIV:
       out << "/";
+      out << std::ends;
       return out.str();
   }
 }

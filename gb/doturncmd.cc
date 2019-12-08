@@ -125,7 +125,7 @@ void do_turn(int update) {
     }
 #ifdef VOTING
     /* Reset their vote for Update go. */
-    races[i - 1]->votes &= ~VOTE_UPDATE_GO;
+    races[i - 1]->votes = false;
 #endif
   }
   output_ground_attacks();

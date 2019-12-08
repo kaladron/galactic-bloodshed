@@ -69,7 +69,7 @@ class Race {
 #define NUM_DISCOVERIES 80
   unsigned char discoveries[NUM_DISCOVERIES]; /* Tech discoveries. */
   unsigned long victory_score;                /* Number of victory points. */
-  unsigned long votes;
+  bool votes;
   unsigned long planet_points; /* For the determination of global APs */
 
   char governors;
@@ -94,9 +94,6 @@ class Race {
     time_t login; /* last login for this governor */
   } governor[MAXGOVERNORS + 1];
 };
-
-/* vote bits: */
-#define VOTE_UPDATE_GO 0x01 /* On - Go, Off - Wait */
 
 /* special discoveries */
 #define D_HYPER_DRIVE 0  /* hyper-space capable */

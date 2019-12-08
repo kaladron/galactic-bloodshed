@@ -31,6 +31,7 @@ void personal(const command_t &argv, GameObj &g) {
   std::stringstream ss_message;
   std::copy(++argv.begin(), argv.end(),
             std::ostream_iterator<std::string>(ss_message, " "));
+  ss_message << std::ends;
   std::string message = ss_message.str();
 
   if (g.governor != 0) {
@@ -795,6 +796,7 @@ void motto(const command_t &argv, GameObj &g) {
   std::stringstream ss_message;
   std::copy(++argv.begin(), argv.end(),
             std::ostream_iterator<std::string>(ss_message, " "));
+  ss_message << std::ends;
   std::string message = ss_message.str();
 
   if (Governor) {

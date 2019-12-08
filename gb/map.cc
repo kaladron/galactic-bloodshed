@@ -117,6 +117,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
     output << buf;
   }
   output << '\n';
+  output << std::ends;
   notify(Playernum, Governor, output.str());
 
   if (show) {

@@ -624,9 +624,9 @@ static double p_factor(double attacker, double defender) {
           atan(5 * (double)((attacker + 1.0) / (defender + 1.0))));
 }
 
-int planet_guns(int points) {
+int planet_guns(long points) {
   if (points < 0) return 0; /* shouldn't happen */
-  return std::min(20, points / 1000);
+  return std::min(20L, points / 1000);
 }
 
 static void mutate_sector(Sector &s) {

@@ -10,15 +10,15 @@
 #include "gb/vars.h"
 
 struct power {
-  unsigned long troops;   /* total troops */
-  unsigned long popn;     /* total population */
-  unsigned long resource; /* total resource in stock */
+  population_t troops; /* total troops */
+  population_t popn;   /* total population */
+  resource_t resource; /* total resource in stock */
   unsigned long fuel;
   unsigned long destruct;     /* total dest in stock */
   unsigned short ships_owned; /* # of ships owned */
   unsigned short planets_owned;
   unsigned long sectors_owned;
-  unsigned long money;
+  money_t money;
   unsigned long sum_mob; /* total mobilization */
   unsigned long sum_eff; /* total efficiency */
 };

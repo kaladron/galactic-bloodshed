@@ -60,9 +60,8 @@ struct plinfo {            /* planetary stockpiles */
     unsigned char x, y;        /* location that ship has to land on */
   } route[MAX_ROUTES];         /* i am allowing up to four routes per planet */
 
-  unsigned long mob_points;
+  long mob_points;
   double est_production; /* estimated production */
-  unsigned long dummy[3];
 };
 
 #define M_FUEL 0x1

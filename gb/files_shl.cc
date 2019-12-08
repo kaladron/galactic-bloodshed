@@ -1017,15 +1017,15 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
       sqlite3_bind_int(plinfo_stmt, 2, i);
       sqlite3_bind_int(plinfo_stmt, 3, p.info[i].fuel);
       sqlite3_bind_int(plinfo_stmt, 4, p.info[i].destruct);
-      sqlite3_bind_int(plinfo_stmt, 5, p.info[i].resource);
-      sqlite3_bind_int(plinfo_stmt, 6, p.info[i].popn);
-      sqlite3_bind_int(plinfo_stmt, 7, p.info[i].troops);
+      sqlite3_bind_int64(plinfo_stmt, 5, p.info[i].resource);
+      sqlite3_bind_int64(plinfo_stmt, 6, p.info[i].popn);
+      sqlite3_bind_int64(plinfo_stmt, 7, p.info[i].troops);
       sqlite3_bind_int(plinfo_stmt, 8, p.info[i].crystals);
       sqlite3_bind_int(plinfo_stmt, 9, p.info[i].prod_res);
       sqlite3_bind_int(plinfo_stmt, 10, p.info[i].prod_fuel);
       sqlite3_bind_int(plinfo_stmt, 11, p.info[i].prod_dest);
       sqlite3_bind_int(plinfo_stmt, 12, p.info[i].prod_crystals);
-      sqlite3_bind_int(plinfo_stmt, 13, p.info[i].prod_money);
+      sqlite3_bind_int64(plinfo_stmt, 13, p.info[i].prod_money);
       sqlite3_bind_double(plinfo_stmt, 14, p.info[i].prod_tech);
       sqlite3_bind_int(plinfo_stmt, 15, p.info[i].tech_invest);
       sqlite3_bind_int(plinfo_stmt, 16, p.info[i].numsectsowned);
@@ -1037,7 +1037,7 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
       sqlite3_bind_int(plinfo_stmt, 22, p.info[i].tax);
       sqlite3_bind_int(plinfo_stmt, 23, p.info[i].newtax);
       sqlite3_bind_int(plinfo_stmt, 24, p.info[i].guns);
-      sqlite3_bind_int(plinfo_stmt, 25, p.info[i].mob_points);
+      sqlite3_bind_int64(plinfo_stmt, 25, p.info[i].mob_points);
       sqlite3_bind_double(plinfo_stmt, 26, p.info[i].est_production);
 
       if (sqlite3_step(plinfo_stmt) != SQLITE_DONE) {

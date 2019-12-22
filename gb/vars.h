@@ -18,7 +18,6 @@ constexpr int MAX_ROUTES = 4;
 
 #define MAXPLAYERS 64
 
-using planettype = class Planet;
 using startype = struct Star;
 using commodtype = struct commod;
 

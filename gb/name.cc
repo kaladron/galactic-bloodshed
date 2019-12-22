@@ -331,7 +331,7 @@ void insurgency(const command_t &argv, GameObj &g) {
   sprintf(buf, "Success chance is %d%%\n", chance);
   strcat(long_buf, buf);
   if (success(chance)) {
-    changed_hands = revolt(&p, who, Playernum);
+    changed_hands = revolt(p, who, Playernum);
     notify(Playernum, Governor, long_buf);
     sprintf(buf, "Success!  You liberate %d sector%s.\n", changed_hands,
             (changed_hands == 1) ? "" : "s");

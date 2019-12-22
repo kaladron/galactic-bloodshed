@@ -125,45 +125,31 @@ void dissolve(const command_t &argv, GameObj &g) {
 #endif
 }
 
-int revolt(Planet *pl, int victim, int agent) {
-  int x;
-  int y;
-  int hix;
-  int hiy;
-  int lowx;
-  int lowy;
-  racetype *Race;
-  int changed_hands = 0;
+int revolt(Planet &pl, const player_t victim, const player_t agent) {
+  int revolted_sectors = 0;
 
-  Race = races[victim - 1];
+  auto smap = getsmap(pl);
+  for (auto &s : smap) {
+    if (s.owner != victim || s.popn == 0) continue;
 
-  auto smap = getsmap(*pl);
-  /* do the revolt */
-  lowx = 0;
-  lowy = 0;
-  hix = pl->Maxx - 1;
-  hiy = pl->Maxy - 1;
-  for (y = lowy; y <= hiy; y++) {
-    for (x = lowx; x <= hix; x++) {
-      auto &s = smap.get(x, y);
-      if (s.owner == victim && s.popn) {
-        if (success(pl->info[victim - 1].tax)) {
-          if (static_cast<unsigned long>(long_rand(1, s.popn)) >
-              10 * Race->fighters * s.troops) {
-            s.owner = agent;                   /* enemy gets it */
-            s.popn = int_rand(1, (int)s.popn); /* some people killed */
-            s.troops = 0;                      /* all troops destroyed */
-            pl->info[victim - 1].numsectsowned -= 1;
-            pl->info[agent - 1].numsectsowned += 1;
-            pl->info[victim - 1].mob_points -= s.mobilization;
-            pl->info[agent - 1].mob_points += s.mobilization;
-            changed_hands++;
-          }
-        }
-      }
-    }
+    // Revolt rate is a function of tax rate.
+    if (!success(pl.info[victim - 1].tax)) continue;
+
+    if (static_cast<unsigned long>(long_rand(1, s.popn)) <=
+        10 * races[victim - 1]->fighters * s.troops)
+      continue;
+
+    // Revolt successful.
+    s.owner = agent;                   /* enemy gets it */
+    s.popn = int_rand(1, (int)s.popn); /* some people killed */
+    s.troops = 0;                      /* all troops destroyed */
+    pl.info[victim - 1].numsectsowned -= 1;
+    pl.info[agent - 1].numsectsowned += 1;
+    pl.info[victim - 1].mob_points -= s.mobilization;
+    pl.info[agent - 1].mob_points += s.mobilization;
+    revolted_sectors++;
   }
-  putsmap(smap, *pl);
+  putsmap(smap, pl);
 
-  return changed_hands;
+  return revolted_sectors;
 }

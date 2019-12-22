@@ -56,7 +56,6 @@ static void show_map(const player_t Playernum, const governor_t Governor,
                      const starnum_t snum, const planetnum_t pnum,
                      const Planet &p) {
   int i;
-  int f = 0;
   int iq = 0;
   char shiplocs[MAX_X][MAX_Y] = {};
   std::strstream output;
@@ -125,10 +124,10 @@ static void show_map(const player_t Playernum, const governor_t Governor,
             Race->Metamorph ? "covered" : "owned",
             p.info[Playernum - 1].numsectsowned);
     if (p.explored || Race->tech >= TECH_EXPLORE) {
-      f = 0;
+      bool f = false;
       for (i = 1; i < MAXPLAYERS; i++)
-        if (p.info[i - 1].numsectsowned && i != Playernum) {
-          f = 1;
+        if (p.info[i - 1].numsectsowned != 0 && i != Playernum) {
+          f = true;
           sprintf(buf, "%c%d", isset(Race->atwar, i) ? '*' : ' ', i);
           strcat(temp, buf);
         }

@@ -8,6 +8,6 @@
 #include "gb/vars.h"
 
 void dissolve(const command_t &, GameObj &);
-int revolt(Planet *, int, int);
+int revolt(Planet &, player_t, player_t);
 
 #endif  // DISSOLVE_H

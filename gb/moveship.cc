@@ -34,7 +34,7 @@ static const double SpeedConsts[] = {0.0,  0.61, 1.26, 1.50, 1.73,
                                      1.81, 1.90, 1.93, 1.96, 1.97};
 /* amount of fuel it costs to move at speed level */
 
-static int do_merchant(Ship *, Planet *);
+static int do_merchant(Ship *, Planet &);
 
 void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
   double stardist;
@@ -315,7 +315,7 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
           if (dist <= (double)DIST_TO_LAND) {
             sprintf(telegram_buf, "%s within landing distance of %s.",
                     ship_to_string(*s).c_str(), prin_ship_orbits(s));
-            if (checking_fuel || !do_merchant(s, dpl))
+            if (checking_fuel || !do_merchant(s, *dpl))
               if (s->whatdest == ScopeLevel::LEVEL_PLAN)
                 s->whatdest = ScopeLevel::LEVEL_UNIV;
           } else {
@@ -382,7 +382,7 @@ int followable(Ship *s1, Ship *s2) {
 /* this routine will do landing, launching, loading, unloading, etc
         for merchant ships. The ship is within landing distance of
         the target Planet */
-static int do_merchant(Ship *s, Planet *p) {
+static int do_merchant(Ship *s, Planet &p) {
   int i;
   int j;
   double fuel;
@@ -393,27 +393,27 @@ static int do_merchant(Ship *s, Planet *p) {
   i = s->owner - 1;
   j = s->merchant - 1; /* try to speed things up a bit */
 
-  if (!s->merchant || !p->info[i].route[j].set) /* not on shipping route */
+  if (!s->merchant || !p.info[i].route[j].set) /* not on shipping route */
     return 0;
   /* check to see if the sector is owned by the player */
-  auto sect = getsector(*p, p->info[i].route[j].x, p->info[i].route[j].y);
+  auto sect = getsector(p, p.info[i].route[j].x, p.info[i].route[j].y);
   if (sect.owner && (sect.owner != s->owner)) {
     return 0;
   }
 
   if (!landed(*s)) { /* try to land the ship */
-    fuel = s->mass * gravity(*p) * LAND_GRAV_MASS_FACTOR;
+    fuel = s->mass * gravity(p) * LAND_GRAV_MASS_FACTOR;
     if (s->fuel < fuel) { /* ship can't land - cancel all orders */
       s->whatdest = ScopeLevel::LEVEL_UNIV;
       strcat(telegram_buf, "\t\tNot enough fuel to land!\n");
       return 1;
     }
-    s->land_x = p->info[i].route[j].x;
-    s->land_y = p->info[i].route[j].y;
+    s->land_x = p.info[i].route[j].x;
+    s->land_y = p.info[i].route[j].y;
     sprintf(buf, "\t\tLanded on sector %d,%d\n", s->land_x, s->land_y);
     strcat(telegram_buf, buf);
-    s->xpos = p->xpos + Stars[s->storbits]->xpos;
-    s->ypos = p->ypos + Stars[s->storbits]->ypos;
+    s->xpos = p.xpos + Stars[s->storbits]->xpos;
+    s->ypos = p.ypos + Stars[s->storbits]->ypos;
     use_fuel(s, fuel);
     s->docked = 1;
     s->whatdest = ScopeLevel::LEVEL_PLAN;
@@ -421,37 +421,37 @@ static int do_merchant(Ship *s, Planet *p) {
     s->destpnum = s->pnumorbits;
   }
   /* load and unload supplies specified by the planet */
-  load = p->info[i].route[j].load;
-  unload = p->info[i].route[j].unload;
+  load = p.info[i].route[j].load;
+  unload = p.info[i].route[j].unload;
   if (load) {
     strcat(telegram_buf, "\t\t");
     if (Fuel(load)) {
       amount = (int)s->max_fuel - (int)s->fuel;
-      if (amount > p->info[i].fuel) amount = p->info[i].fuel;
-      p->info[i].fuel -= amount;
+      if (amount > p.info[i].fuel) amount = p.info[i].fuel;
+      p.info[i].fuel -= amount;
       rcv_fuel(s, (double)amount);
       sprintf(buf, "%df ", amount);
       strcat(telegram_buf, buf);
     }
     if (Resources(load)) {
       amount = (int)s->max_resource - (int)s->resource;
-      if (amount > p->info[i].resource) amount = p->info[i].resource;
-      p->info[i].resource -= amount;
+      if (amount > p.info[i].resource) amount = p.info[i].resource;
+      p.info[i].resource -= amount;
       rcv_resource(s, amount);
       sprintf(buf, "%dr ", amount);
       strcat(telegram_buf, buf);
     }
     if (Crystals(load)) {
-      amount = p->info[i].crystals;
-      p->info[i].crystals -= amount;
+      amount = p.info[i].crystals;
+      p.info[i].crystals -= amount;
       s->crystals += amount;
       sprintf(buf, "%dx ", amount);
       strcat(telegram_buf, buf);
     }
     if (Destruct(load)) {
       amount = (int)s->max_destruct - (int)s->destruct;
-      if (amount > p->info[i].destruct) amount = p->info[i].destruct;
-      p->info[i].destruct -= amount;
+      if (amount > p.info[i].destruct) amount = p.info[i].destruct;
+      p.info[i].destruct -= amount;
       rcv_destruct(s, amount);
       sprintf(buf, "%dd ", amount);
       strcat(telegram_buf, buf);
@@ -462,28 +462,28 @@ static int do_merchant(Ship *s, Planet *p) {
     strcat(telegram_buf, "\t\t");
     if (Fuel(unload)) {
       amount = (int)s->fuel;
-      p->info[i].fuel += amount;
+      p.info[i].fuel += amount;
       sprintf(buf, "%df ", amount);
       strcat(telegram_buf, buf);
       use_fuel(s, (double)amount);
     }
     if (Resources(unload)) {
       amount = s->resource;
-      p->info[i].resource += amount;
+      p.info[i].resource += amount;
       sprintf(buf, "%dr ", amount);
       strcat(telegram_buf, buf);
       use_resource(s, amount);
     }
     if (Crystals(unload)) {
       amount = s->crystals;
-      p->info[i].crystals += amount;
+      p.info[i].crystals += amount;
       sprintf(buf, "%dx ", amount);
       strcat(telegram_buf, buf);
       s->crystals -= amount;
     }
     if (Destruct(unload)) {
       amount = s->destruct;
-      p->info[i].destruct += amount;
+      p.info[i].destruct += amount;
       sprintf(buf, "%dd ", amount);
       strcat(telegram_buf, buf);
       use_destruct(s, amount);
@@ -492,15 +492,15 @@ static int do_merchant(Ship *s, Planet *p) {
   }
 
   /* launch the ship */
-  fuel = s->mass * gravity(*p) * LAUNCH_GRAV_MASS_FACTOR;
+  fuel = s->mass * gravity(p) * LAUNCH_GRAV_MASS_FACTOR;
   if (s->fuel < fuel) {
     strcat(telegram_buf, "\t\tNot enough fuel to launch!\n");
     return 1;
   }
   /* ship is ready to fly - order the ship to its next destination */
   s->whatdest = ScopeLevel::LEVEL_PLAN;
-  s->deststar = p->info[i].route[j].dest_star;
-  s->destpnum = p->info[i].route[j].dest_planet;
+  s->deststar = p.info[i].route[j].dest_star;
+  s->destpnum = p.info[i].route[j].dest_planet;
   s->docked = 0;
   use_fuel(s, fuel);
   sprintf(buf, "\t\tDestination set to %s\n", prin_ship_dest(*s).c_str());

@@ -88,9 +88,9 @@ void do_turn(int update) {
     if (update) fix_stability(Stars[star]); /* nova */
 
     for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
-      planets[star][i] = new Planet(getplanet(star, i));
+      planets[star][i] = std::make_unique<Planet>(getplanet(star, i));
       if (planets[star][i]->type != PlanetType::ASTEROID) Planet_count++;
-      if (update) moveplanet(star, planets[star][i], i);
+      if (update) moveplanet(star, *planets[star][i], i);
       if (Stars[star]->pnames[i] == nullptr)
         sprintf(Stars[star]->pnames[i], "NULL-%d", i);
     }
@@ -256,7 +256,7 @@ void do_turn(int update) {
           insert_sh_star(Stars[ships[i]->storbits], ships[i]);
           break;
         case ScopeLevel::LEVEL_PLAN:
-          insert_sh_plan(planets[ships[i]->storbits][ships[i]->pnumorbits],
+          insert_sh_plan(*planets[ships[i]->storbits][ships[i]->pnumorbits],
                          ships[i]);
           break;
         case ScopeLevel::LEVEL_SHIP:
@@ -296,7 +296,7 @@ void do_turn(int update) {
           races[j - 1]->planet_points += planet_points(*planets[star][i]);
       }
       if (update) {
-        if (doplanet(star, planets[star][i], i)) {
+        if (doplanet(star, *planets[star][i], i)) {
           /* save smap gotten & altered by doplanet
              only if the planet is expl*/
           // TODO(jeffbailey): Added this in doplanet, but need to audit other

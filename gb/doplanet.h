@@ -8,6 +8,6 @@
 #include "gb/ships.h"
 #include "gb/vars.h"
 
-int doplanet(const int, Planet *, const int);
+int doplanet(const int, Planet &, const int);
 
 #endif  // DOPLANET_H

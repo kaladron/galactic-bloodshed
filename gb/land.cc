@@ -344,7 +344,7 @@ void land(const command_t &argv, GameObj &g) {
           /* damaged ships stand of chance of crash landing */
           auto smap = getsmap(p);
           numdest = shoot_ship_to_planet(
-              s, &p, round_rand((double)(s->destruct) / 3.), x, y, smap, 0,
+              s, p, round_rand((double)(s->destruct) / 3.), x, y, smap, 0,
               GTYPE_HEAVY, long_buf, short_buf);
           putsmap(smap, p);
           sprintf(

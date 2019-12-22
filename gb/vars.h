@@ -210,7 +210,8 @@ extern unsigned long avg_mob[MAXPLAYERS];
 extern unsigned char sects_gained[MAXPLAYERS], sects_lost[MAXPLAYERS];
 extern unsigned char Claims;
 
-extern planettype *planets[NUMSTARS][MAXPLANETS];
+extern std::array<std::array<std::unique_ptr<Planet>, MAXPLANETS>, NUMSTARS>
+    planets;
 extern unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
 extern uint64_t inhabited[NUMSTARS];
 extern double Compat[MAXPLAYERS];

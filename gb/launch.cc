@@ -75,7 +75,7 @@ void launch(const command_t &argv, GameObj &g) {
         if (landed(*s2)) {
           remove_sh_ship(*s, *s2);
           auto p = getplanet(s2->storbits, s2->pnumorbits);
-          insert_sh_plan(&p, s);
+          insert_sh_plan(p, s);
           putplanet(p, Stars[s2->storbits], s2->pnumorbits);
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
@@ -106,7 +106,7 @@ void launch(const command_t &argv, GameObj &g) {
           s2->mass -= s->mass;
           s2->hanger -= size(*s);
           auto p = getplanet(s2->storbits, s2->pnumorbits);
-          insert_sh_plan(&p, s);
+          insert_sh_plan(p, s);
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
           putplanet(p, Stars[s2->storbits], s2->pnumorbits);

@@ -1296,7 +1296,7 @@ static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
   newship->owner = Playernum;
   newship->governor = Governor;
   newship->ships = 0;
-  insert_sh_plan(planet, newship);
+  insert_sh_plan(*planet, newship);
   if (newship->type == ShipType::OTYPE_TOXWC) {
     sprintf(buf, "Toxin concentration on planet was %d%%,",
             planet->conditions[TOXIC]);
@@ -1340,7 +1340,7 @@ static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
     newship->docked = 0;
     switch (builder->whatorbits) {
       case ScopeLevel::LEVEL_PLAN:
-        insert_sh_plan(planet, newship);
+        insert_sh_plan(*planet, newship);
         break;
       case ScopeLevel::LEVEL_STAR:
         insert_sh_star(Stars[builder->storbits], newship);

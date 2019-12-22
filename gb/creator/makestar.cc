@@ -310,7 +310,7 @@ startype *Makestar(int snum) {
     } else {
       throw std::runtime_error("No PlanetType left, bailing");
     }
-    auto planet = Makeplanet(dist, Star->temperature, type);
+    auto planet = makeplanet(dist, Star->temperature, type);
     auto smap = getsmap(planet);
     planet.xpos = xpos;
     planet.ypos = ypos;

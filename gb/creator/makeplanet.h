@@ -7,6 +7,6 @@
 
 #include "gb/vars.h"
 
-Planet Makeplanet(double, short, PlanetType);
+Planet makeplanet(double, short, PlanetType);
 
 #endif  // MAKEPLANET_H

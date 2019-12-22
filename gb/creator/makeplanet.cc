@@ -79,7 +79,7 @@ static int SectTemp(const Planet &, const int);
 static void seed(SectorMap &, SectorType, int);
 static void grow(SectorMap &, int, int, int);
 
-Planet Makeplanet(double dist, short stemp, PlanetType type) {
+Planet makeplanet(double dist, short stemp, PlanetType type) {
   static planetnum_t planet_id = 0;
   int x;
   int y;

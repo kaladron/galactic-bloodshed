@@ -16,7 +16,10 @@ AM_CXXFLAGS = -std=c++2a \
 	      $(SQLLITE3_CFLAGS) \
 	      -DPKGSTATEDIR="\"$(PKGSTATEDIR)\"" \
 	      -DPKGDATADIR="\"$(PKGDATADIR)\"" \
-	      -DDOCDIR="\"$(DOCDIR)\""
+	      -DDOCDIR="\"$(DOCDIR)\"" \
+	      -fsanitize=implicit-conversion 
+
+# -fsanitize-undefined-trap-on-error
 
 if CLANG
 AM_CXXFLAGS += $(CLANG_OPTS)

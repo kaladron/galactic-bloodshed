@@ -197,7 +197,7 @@ void launch(const command_t &argv, GameObj &g) {
         auto p = getplanet((int)s->storbits, (int)s->pnumorbits);
         sprintf(buf, "Planet /%s/%s has gravity field of %.2f\n",
                 Stars[s->storbits]->name,
-                Stars[s->storbits]->pnames[s->pnumorbits], gravity(p));
+                Stars[s->storbits]->pnames[s->pnumorbits], p.gravity());
         notify(Playernum, Governor, buf);
         s->xpos =
             Stars[s->storbits]->xpos + p.xpos +
@@ -207,7 +207,7 @@ void launch(const command_t &argv, GameObj &g) {
             (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
 
         /* subtract fuel from ship */
-        fuel = gravity(p) * s->mass * LAUNCH_GRAV_MASS_FACTOR;
+        fuel = p.gravity() * s->mass * LAUNCH_GRAV_MASS_FACTOR;
         if (s->fuel < fuel) {
           sprintf(buf, "%s does not have enough fuel! (%.1f)\n",
                   ship_to_string(*s).c_str(), fuel);

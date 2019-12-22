@@ -402,7 +402,7 @@ static int do_merchant(Ship *s, Planet &p) {
   }
 
   if (!landed(*s)) { /* try to land the ship */
-    fuel = s->mass * gravity(p) * LAND_GRAV_MASS_FACTOR;
+    fuel = s->mass * p.gravity() * LAND_GRAV_MASS_FACTOR;
     if (s->fuel < fuel) { /* ship can't land - cancel all orders */
       s->whatdest = ScopeLevel::LEVEL_UNIV;
       strcat(telegram_buf, "\t\tNot enough fuel to land!\n");
@@ -492,7 +492,7 @@ static int do_merchant(Ship *s, Planet &p) {
   }
 
   /* launch the ship */
-  fuel = s->mass * gravity(p) * LAUNCH_GRAV_MASS_FACTOR;
+  fuel = s->mass * p.gravity() * LAUNCH_GRAV_MASS_FACTOR;
   if (s->fuel < fuel) {
     strcat(telegram_buf, "\t\tNot enough fuel to launch!\n");
     return 1;

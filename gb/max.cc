@@ -5,7 +5,6 @@
 /*
  * maxsupport() -- return how many people one sector can support
  * compatibility() -- return how much race is compatible with planet
- * gravity() -- return gravity for planet
  * prin_ship_orbits() -- prints place ship orbits
  */
 
@@ -42,10 +41,6 @@ double compatibility(const Planet &planet, const Race *race) {
 
   if (sum < 0.0) return 0.0;
   return (sum);
-}
-
-double gravity(const Planet &p) {
-  return (double)(p.Maxx) * (double)(p.Maxy) * GRAV_FACTOR;
 }
 
 char *prin_ship_orbits(Ship *s) {

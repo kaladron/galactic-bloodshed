@@ -439,8 +439,6 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
     p.info[player_id].autorep = sqlite3_column_int(plinfo_stmt, 20);
     p.info[player_id].tax = sqlite3_column_int(plinfo_stmt, 21);
     p.info[player_id].newtax = sqlite3_column_int(plinfo_stmt, 22);
-    std::cerr << p.info[player_id].tax << ' ' << p.info[player_id].newtax
-              << std::endl;
     p.info[player_id].guns = sqlite3_column_int(plinfo_stmt, 23);
     p.info[player_id].mob_points = sqlite3_column_int(plinfo_stmt, 24);
     p.info[player_id].est_production = sqlite3_column_int(plinfo_stmt, 25);

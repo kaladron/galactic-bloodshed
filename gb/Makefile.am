@@ -116,6 +116,7 @@ OLD_LIBGBLIB_FILES = \
 		     order.cc \
 		     perm.cc \
 		     doplanet.cc \
+		     planet.cc \
 		     place.cc \
 		     powercmd.cc \
 		     prof.cc \

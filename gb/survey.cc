@@ -248,7 +248,7 @@ void survey(const command_t &argv, GameObj &g) {
       sprintf(buf, "gravity   x,y absolute     x,y relative to %s\n",
               Stars[where->snum]->name);
       notify(Playernum, Governor, buf);
-      sprintf(buf, "%7.2f   %7.1f,%7.1f   %8.1f,%8.1f\n", gravity(p),
+      sprintf(buf, "%7.2f   %7.1f,%7.1f   %8.1f,%8.1f\n", p.gravity(),
               p.xpos + Stars[where->snum]->xpos,
               p.ypos + Stars[where->snum]->ypos, p.xpos, p.ypos);
       notify(Playernum, Governor, buf);

@@ -287,7 +287,7 @@ void land(const command_t &argv, GameObj &g) {
 
         sprintf(buf, "Planet /%s/%s has gravity field of %.2f.\n",
                 Stars[s->storbits]->name,
-                Stars[s->storbits]->pnames[s->pnumorbits], gravity(p));
+                Stars[s->storbits]->pnames[s->pnumorbits], p.gravity());
         notify(Playernum, Governor, buf);
 
         sprintf(buf, "Distance to planet: %.2f.\n",
@@ -304,7 +304,7 @@ void land(const command_t &argv, GameObj &g) {
           continue;
         }
 
-        fuel = s->mass * gravity(p) * LAND_GRAV_MASS_FACTOR;
+        fuel = s->mass * p.gravity() * LAND_GRAV_MASS_FACTOR;
 
         if ((x < 0) || (y < 0) || (x > p.Maxx - 1) || (y > p.Maxy - 1)) {
           sprintf(buf, "Illegal coordinates.\n");

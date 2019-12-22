@@ -183,7 +183,7 @@ int shoot_planet_to_ship(racetype *Race, Ship *ship, int strength,
 }
 #endif
 
-int shoot_ship_to_planet(Ship *ship, Planet *pl, int strength, int x, int y,
+int shoot_ship_to_planet(Ship *ship, Planet &pl, int strength, int x, int y,
                          SectorMap &smap, int ignore, int caliber,
                          char *long_msg, char *short_msg) {
   int x2;
@@ -204,7 +204,7 @@ int shoot_ship_to_planet(Ship *ship, Planet *pl, int strength, int x, int y,
   if (has_switch(*ship) && !ship->on) return -1;
   if (ship->whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
 
-  if (x < 0 || x > pl->Maxx - 1 || y < 0 || y > pl->Maxy - 1) return -1;
+  if (x < 0 || x > pl.Maxx - 1 || y < 0 || y > pl.Maxy - 1) return -1;
 
   r = .4 * strength;
   if (!caliber) { /* figure out the appropriate gun caliber if not given*/
@@ -228,11 +228,11 @@ int shoot_ship_to_planet(Ship *ship, Planet *pl, int strength, int x, int y,
 
   for (i = 1; i <= Num_races; i++) sum_mob[i - 1] = 0;
 
-  for (y2 = 0; y2 < pl->Maxy; y2++) {
-    for (x2 = 0; x2 < pl->Maxx; x2++) {
+  for (y2 = 0; y2 < pl.Maxy; y2++) {
+    for (x2 = 0; x2 < pl.Maxx; x2++) {
       int dx;
       int dy;
-      dx = std::min(abs(x2 - x), abs(x + (pl->Maxx - 1) - x2));
+      dx = std::min(abs(x2 - x), abs(x + (pl.Maxx - 1) - x2));
       dy = abs(y2 - y);
       d = sqrt((double)(dx * dx + dy * dy));
       auto &s = smap.get(x2, y2);
@@ -286,16 +286,16 @@ int shoot_ship_to_planet(Ship *ship, Planet *pl, int strength, int x, int y,
       if (s.owner) sum_mob[s.owner - 1] += s.mobilization;
     }
   }
-  num_sectors = pl->Maxx * pl->Maxy;
+  num_sectors = pl.Maxx * pl.Maxy;
   for (i = 1; i <= Num_races; i++) {
-    pl->info[i - 1].mob_points = sum_mob[i - 1];
-    pl->info[i - 1].comread = sum_mob[i - 1] / num_sectors;
-    pl->info[i - 1].guns = planet_guns(sum_mob[i - 1]);
+    pl.info[i - 1].mob_points = sum_mob[i - 1];
+    pl.info[i - 1].comread = sum_mob[i - 1] / num_sectors;
+    pl.info[i - 1].guns = planet_guns(sum_mob[i - 1]);
   }
 
   /* planet toxicity goes up a bit */
-  pl->conditions[TOXIC] += (100 - pl->conditions[TOXIC]) *
-                           ((double)numdest / (double)(pl->Maxx * pl->Maxy));
+  pl.conditions[TOXIC] += (100 - pl.conditions[TOXIC]) *
+                          ((double)numdest / (double)(pl.Maxx * pl.Maxy));
 
   sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(*ship).c_str(),
           Dispshiploc(ship), oldowner);

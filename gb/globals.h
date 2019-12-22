@@ -75,7 +75,7 @@ unsigned long avg_mob[MAXPLAYERS];
 unsigned char sects_gained[MAXPLAYERS], sects_lost[MAXPLAYERS];
 unsigned char Claims;
 
-planettype *planets[NUMSTARS][MAXPLANETS];
+std::array<std::array<std::unique_ptr<Planet>, MAXPLANETS>, NUMSTARS> planets;
 unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
 uint64_t inhabited[NUMSTARS];
 double Compat[MAXPLAYERS];

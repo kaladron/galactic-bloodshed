@@ -31,14 +31,14 @@ import std;
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
 
-static double ap_planet_factor(Planet *);
+static constexpr double ap_planet_factor(const Planet &);
 static double crew_factor(Ship *);
 static void do_ap(Ship *);
 static void do_canister(Ship *);
 static void do_greenhouse(Ship *);
 static void do_god(Ship *);
 static void do_habitat(Ship *);
-static void do_meta_infect(int, Planet *);
+static void do_meta_infect(int, Planet &);
 static void do_mirror(Ship *);
 static void do_oap(Ship *);
 static void do_pod(Ship *);
@@ -248,7 +248,7 @@ void domissile(Ship *ship) {
   if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
       ship->whatorbits == ScopeLevel::LEVEL_PLAN &&
       ship->destpnum == ship->pnumorbits) {
-    auto p = planets[ship->storbits][ship->pnumorbits];
+    auto &p = planets[ship->storbits][ship->pnumorbits];
     /* check to see if PDNs are present */
     pdn = 0;
     sh2 = p->ships;
@@ -277,8 +277,9 @@ void domissile(Ship *ship) {
               prin_ship_orbits(ship));
 
       auto smap = getsmap(*p);
-      numdest = shoot_ship_to_planet(ship, p, (int)ship->destruct, bombx, bomby,
-                                     smap, 0, GTYPE_HEAVY, long_buf, short_buf);
+      numdest =
+          shoot_ship_to_planet(ship, *p, (int)ship->destruct, bombx, bomby,
+                               smap, 0, GTYPE_HEAVY, long_buf, short_buf);
       putsmap(smap, *p);
       push_telegram((int)ship->owner, (int)ship->governor, long_buf);
       kill_ship((int)ship->owner, ship);
@@ -392,7 +393,7 @@ void domine(int shipno, int detonate) {
         }
         auto smap = getsmap(planet);
         numdest =
-            shoot_ship_to_planet(&*ship, &planet, (int)(ship->destruct), x, y,
+            shoot_ship_to_planet(&*ship, planet, (int)(ship->destruct), x, y,
                                  smap, 0, GTYPE_LIGHT, long_buf, short_buf);
         putsmap(smap, planet);
         putplanet(planet, Stars[ship->storbits], (int)ship->pnumorbits);
@@ -543,22 +544,22 @@ static void do_pod(Ship *ship) {
 
 static int infect_planet(int who, int star, int p) {
   if (success(SPORE_SUCCESS_RATE)) {
-    do_meta_infect(who, planets[star][p]);
+    do_meta_infect(who, *planets[star][p]);
     return 1;
   }
   return 0;
 }
 
-static void do_meta_infect(int who, Planet *p) {
+static void do_meta_infect(int who, Planet &p) {
   int owner;
   int x;
   int y;
 
-  auto smap = getsmap(*p);
-  PermuteSects(*p);
+  auto smap = getsmap(p);
+  PermuteSects(p);
   bzero((char *)Sectinfo, sizeof(Sectinfo));
-  x = int_rand(0, p->Maxx - 1);
-  y = int_rand(0, p->Maxy - 1);
+  x = int_rand(0, p.Maxx - 1);
+  y = int_rand(0, p.Maxy - 1);
   owner = smap.get(x, y).owner;
   if (!owner ||
       (who != owner &&
@@ -566,8 +567,8 @@ static void do_meta_infect(int who, Planet *p) {
            100.0 *
                (1.0 - exp(-((double)(smap.get(x, y).troops *
                                      races[owner - 1]->fighters / 50.0)))))) {
-    p->info[who - 1].explored = 1;
-    p->info[who - 1].numsectsowned += 1;
+    p.info[who - 1].explored = 1;
+    p.info[who - 1].numsectsowned += 1;
     smap.get(x, y).troops = 0;
     smap.get(x, y).popn = races[who - 1]->number_sexes;
     smap.get(x, y).owner = who;
@@ -575,7 +576,7 @@ static void do_meta_infect(int who, Planet *p) {
 #ifdef POD_TERRAFORM
     smap.get(x, y).condition = races[who - 1]->likesbest;
 #endif
-    putsmap(smap, *p);
+    putsmap(smap, p);
   }
 }
 
@@ -710,12 +711,12 @@ static void do_ap(Ship *ship) {
     int d;
     // TODO(jeffbailey): Not obvious here how the modified planet is saved to
     // disk
-    auto p = planets[ship->storbits][ship->pnumorbits];
+    auto &p = planets[ship->storbits][ship->pnumorbits];
     Race = races[ship->owner - 1];
     if (ship->fuel >= 3.0) {
       use_fuel(ship, 3.0);
       for (j = RTEMP + 1; j <= OTHER; j++) {
-        d = round_rand(ap_planet_factor(p) * crew_factor(ship) *
+        d = round_rand(ap_planet_factor(*p) * crew_factor(ship) *
                        (double)(Race->conditions[j] - p->conditions[j]));
         if (d) p->conditions[j] += d;
       }
@@ -734,10 +735,8 @@ static double crew_factor(Ship *ship) {
   return ((double)ship->popn / (double)maxcrew);
 }
 
-static double ap_planet_factor(Planet *p) {
-  double x;
-
-  x = (double)p->Maxx * (double)p->Maxy;
+static constexpr double ap_planet_factor(const Planet &p) {
+  double x = p.Maxx * p.Maxy;
   return (AP_FACTOR / (AP_FACTOR + x));
 }
 

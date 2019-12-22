@@ -14,7 +14,7 @@ import std;
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
-void moveplanet(int starnum, Planet *planet, int planetnum) {
+void moveplanet(int starnum, Planet &planet, int planetnum) {
   double dist;
   double xadd;
   double yadd;
@@ -23,7 +23,7 @@ void moveplanet(int starnum, Planet *planet, int planetnum) {
   int sh;
   Ship *ship;
 
-  if (planet->popn || planet->ships) Stinfo[starnum][planetnum].inhab = 1;
+  if (planet.popn || planet.ships) Stinfo[starnum][planetnum].inhab = 1;
 
   StarsInhab[starnum] = !!(Stars[starnum]->inhabited);
   StarsExpl[starnum] = !!(Stars[starnum]->explored);
@@ -31,19 +31,19 @@ void moveplanet(int starnum, Planet *planet, int planetnum) {
   Stars[starnum]->inhabited = 0;
   if (!StarsExpl[starnum]) return; /* no one's explored the star yet */
 
-  dist = hypot((double)(planet->ypos), (double)(planet->xpos));
+  dist = hypot((double)(planet.ypos), (double)(planet.xpos));
 
-  phase = atan2((double)(planet->ypos), (double)(planet->xpos));
+  phase = atan2((double)(planet.ypos), (double)(planet.xpos));
   period =
       dist * sqrt((double)(dist / (SYSTEMGRAVCONST * Stars[starnum]->gravity)));
   /* keppler's law */
 
-  xadd = dist * cos((double)(-1. / period + phase)) - planet->xpos;
-  yadd = dist * sin((double)(-1. / period + phase)) - planet->ypos;
+  xadd = dist * cos((double)(-1. / period + phase)) - planet.xpos;
+  yadd = dist * sin((double)(-1. / period + phase)) - planet.ypos;
   /* one update time unit - planets orbit counter-clockwise */
 
   /* adjust ships in orbit around the planet */
-  sh = planet->ships;
+  sh = planet.ships;
   while (sh) {
     ship = ships[sh];
     ship->xpos += xadd;
@@ -51,6 +51,6 @@ void moveplanet(int starnum, Planet *planet, int planetnum) {
     sh = ship->nextship;
   }
 
-  planet->xpos += xadd;
-  planet->ypos += yadd;
+  planet.xpos += xadd;
+  planet.ypos += yadd;
 }

@@ -47,7 +47,7 @@ static bool moveship_onplanet(Ship &, const Planet &);
 static void plow(Ship *, Planet *, SectorMap &);
 static void terraform(Ship &, Planet &, SectorMap &);
 
-int doplanet(const int starnum, Planet *planet, const int planetnum) {
+int doplanet(const int starnum, Planet &planet, const int planetnum) {
   int shipno;
   int x;
   int y;
@@ -61,8 +61,8 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
   unsigned char allmod = 0;
   unsigned char allexp = 0;
 
-  auto smap = getsmap(*planet);
-  PermuteSects(*planet);
+  auto smap = getsmap(planet);
+  PermuteSects(planet);
   bzero((char *)Sectinfo, sizeof(Sectinfo));
 
   bzero((char *)avg_mob, sizeof(avg_mob));
@@ -76,19 +76,19 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
   tot_resdep = prod_eff = prod_mob = tot_captured = 0;
   Claims = 0;
 
-  planet->maxpopn = 0;
+  planet.maxpopn = 0;
 
-  planet->popn = 0; /* initialize population for recount */
-  planet->troops = 0;
-  planet->total_resources = 0;
+  planet.popn = 0; /* initialize population for recount */
+  planet.troops = 0;
+  planet.total_resources = 0;
 
   /* reset global variables */
   for (i = 1; i <= Num_races; i++) {
-    Compat[i - 1] = compatibility(*planet, races[i - 1]);
-    planet->info[i - 1].numsectsowned = 0;
-    planet->info[i - 1].troops = 0;
-    planet->info[i - 1].popn = 0;
-    planet->info[i - 1].est_production = 0.0;
+    Compat[i - 1] = compatibility(planet, races[i - 1]);
+    planet.info[i - 1].numsectsowned = 0;
+    planet.info[i - 1].troops = 0;
+    planet.info[i - 1].popn = 0;
+    planet.info[i - 1].est_production = 0.0;
     prod_crystals[i - 1] = 0;
     prod_fuel[i - 1] = 0;
     prod_destruct[i - 1] = 0;
@@ -96,7 +96,7 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
     avg_mob[i - 1] = 0;
   }
 
-  shipno = planet->ships;
+  shipno = planet.ships;
   while (shipno) {
     ship = ships[shipno];
     if (ship->alive && !ship->rad) {
@@ -104,18 +104,18 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
               or affect planet production */
       switch (ship->type) {
         case ShipType::OTYPE_VN:
-          planet_doVN(ship, planet, smap);
+          planet_doVN(ship, &planet, smap);
           break;
         case ShipType::OTYPE_BERS:
           if (!ship->destruct || !ship->bombard)
-            planet_doVN(ship, planet, smap);
+            planet_doVN(ship, &planet, smap);
           else
-            do_berserker(ship, planet);
+            do_berserker(ship, &planet);
           break;
         case ShipType::OTYPE_TERRA:
           if ((ship->on && landed(*ship) && ship->popn)) {
             if (ship->fuel >= (double)FUEL_COST_TERRA)
-              terraform(*ship, *planet, smap);
+              terraform(*ship, planet, smap);
             else if (!ship->notified) {
               ship->notified = 1;
               msg_OOF(ship);
@@ -125,7 +125,7 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
         case ShipType::OTYPE_PLOW:
           if (ship->on && landed(*ship)) {
             if (ship->fuel >= (double)FUEL_COST_PLOW)
-              plow(ship, planet, smap);
+              plow(ship, &planet, smap);
             else if (!ship->notified) {
               ship->notified = 1;
               msg_OOF(ship);
@@ -178,7 +178,7 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
         case ShipType::OTYPE_QUARRY:
           if ((ship->on && landed(*ship) && ship->popn)) {
             if (ship->fuel >= FUEL_COST_QUARRY)
-              do_quarry(ship, planet, smap);
+              do_quarry(ship, &planet, smap);
             else if (!ship->notified) {
               ship->on = 0;
               msg_OOF(ship);
@@ -200,7 +200,7 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
           break;
       }
       /* add fuel for ships orbiting a gas giant */
-      if (!landed(*ship) && planet->type == PlanetType::GASGIANT) {
+      if (!landed(*ship) && planet.type == PlanetType::GASGIANT) {
         switch (ship->type) {
           case ShipType::STYPE_TANKER:
             fadd = FUEL_GAS_ADD_TANKER;
@@ -221,22 +221,22 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
 
   /* check for space mirrors (among other things) warming the planet */
   /* if a change in any artificial warming/cooling trends */
-  planet->conditions[TEMP] = planet->conditions[RTEMP] +
-                             Stinfo[starnum][planetnum].temp_add +
-                             int_rand(-5, 5);
+  planet.conditions[TEMP] = planet.conditions[RTEMP] +
+                            Stinfo[starnum][planetnum].temp_add +
+                            int_rand(-5, 5);
 
-  (void)Getxysect(*planet, &x, &y, 1);
+  (void)Getxysect(planet, &x, &y, 1);
 
-  while (Getxysect(*planet, &x, &y, 0)) {
+  while (Getxysect(planet, &x, &y, 0)) {
     auto &p = smap.get(x, y);
 
     if (p.owner && (p.popn || p.troops)) {
       allmod = 1;
       if (!Stars[starnum]->nova_stage) {
-        produce(Stars[starnum], *planet, p);
+        produce(Stars[starnum], planet, p);
         if (p.owner)
-          planet->info[p.owner - 1].est_production += est_production(p);
-        spread(*planet, p, x, y, smap);
+          planet.info[p.owner - 1].est_production += est_production(p);
+        spread(planet, p, x, y, smap);
       } else {
         /* damage sector from supernova */
         p.resource++;
@@ -291,23 +291,23 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
                         */
   }
 
-  (void)Getxysect(*planet, &x, &y, 1);
-  while (Getxysect(*planet, &x, &y, 0)) {
+  (void)Getxysect(planet, &x, &y, 1);
+  while (Getxysect(planet, &x, &y, 0)) {
     auto &p = smap.get(x, y);
-    if (p.owner) planet->info[p.owner - 1].numsectsowned++;
+    if (p.owner) planet.info[p.owner - 1].numsectsowned++;
   }
 
-  if (planet->expltimer >= 1) planet->expltimer--;
-  if (!Stars[starnum]->nova_stage && !planet->expltimer) {
-    if (!planet->expltimer) planet->expltimer = 5;
+  if (planet.expltimer >= 1) planet.expltimer--;
+  if (!Stars[starnum]->nova_stage && !planet.expltimer) {
+    if (!planet.expltimer) planet.expltimer = 5;
     for (i = 1; !Claims && !allexp && i <= Num_races; i++) {
       /* sectors have been modified for this player*/
-      if (planet->info[i - 1].numsectsowned)
+      if (planet.info[i - 1].numsectsowned)
         while (!Claims && !allexp && timer > 0) {
           timer -= 1;
           o = 1;
-          (void)Getxysect(*planet, &x, &y, 1);
-          while (!Claims && Getxysect(*planet, &x, &y, 0)) {
+          (void)Getxysect(planet, &x, &y, 1);
+          while (!Claims && Getxysect(planet, &x, &y, 0)) {
             /* find out if all sectors have been explored */
             o &= Sectinfo[x][y].explored;
             auto &p = smap.get(x, y);
@@ -320,20 +320,20 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
               p.owner = i;
               tot_captured = 1;
             } else
-              explore(*planet, p, x, y, i);
+              explore(planet, p, x, y, i);
           }
           allexp |= o; /* all sectors explored for this player */
         }
     }
   }
 
-  if (allexp) planet->expltimer = 5;
+  if (allexp) planet.expltimer = 5;
 
   /* environment nukes a random sector */
-  if (planet->conditions[TOXIC] > ENVIR_DAMAGE_TOX) {
+  if (planet.conditions[TOXIC] > ENVIR_DAMAGE_TOX) {
     // TODO(jeffbailey): Replace this with getrandom.
-    nukex = int_rand(0, (int)planet->Maxx - 1);
-    nukey = int_rand(0, (int)planet->Maxy - 1);
+    nukex = int_rand(0, (int)planet.Maxx - 1);
+    nukey = int_rand(0, (int)planet.Maxy - 1);
     auto &p = smap.get(nukex, nukey);
     p.condition = SectorType::SEC_WASTED;
     p.popn = p.owner = p.troops = 0;
@@ -349,18 +349,18 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
       push_telegram(i, (int)Stars[starnum]->governor[i - 1], telegram_buf);
     }
   for (i = 1; i <= Num_races; i++) {
-    planet->info[i - 1].prod_crystals = prod_crystals[i - 1];
-    planet->info[i - 1].prod_res = prod_res[i - 1];
-    planet->info[i - 1].prod_fuel = prod_fuel[i - 1];
-    planet->info[i - 1].prod_dest = prod_destruct[i - 1];
-    if (planet->info[i - 1].autorep) {
-      planet->info[i - 1].autorep--;
+    planet.info[i - 1].prod_crystals = prod_crystals[i - 1];
+    planet.info[i - 1].prod_res = prod_res[i - 1];
+    planet.info[i - 1].prod_fuel = prod_fuel[i - 1];
+    planet.info[i - 1].prod_dest = prod_destruct[i - 1];
+    if (planet.info[i - 1].autorep) {
+      planet.info[i - 1].autorep--;
       sprintf(telegram_buf, "\nFrom /%s/%s\n", Stars[starnum]->name,
               Stars[starnum]->pnames[planetnum]);
 
       if (Stinfo[starnum][planetnum].temp_add) {
-        sprintf(buf, "Temp: %d to %d\n", planet->conditions[RTEMP],
-                planet->conditions[TEMP]);
+        sprintf(buf, "Temp: %d to %d\n", planet.conditions[RTEMP],
+                planet.conditions[TEMP]);
         strcat(telegram_buf, buf);
       }
       sprintf(buf, "Total      Prod: %ldr %ldf %ldd\n", prod_res[i - 1],
@@ -380,12 +380,12 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
         strcat(telegram_buf, buf);
       }
       /* remind the player that he should clean up the environment. */
-      if (planet->conditions[TOXIC] > ENVIR_DAMAGE_TOX) {
+      if (planet.conditions[TOXIC] > ENVIR_DAMAGE_TOX) {
         sprintf(buf, "Environmental damage on sector %d,%d\n", nukex, nukey);
         strcat(telegram_buf, buf);
       }
-      if (planet->slaved_to) {
-        sprintf(buf, "ENSLAVED to player %d\n", planet->slaved_to);
+      if (planet.slaved_to) {
+        sprintf(buf, "ENSLAVED to player %d\n", planet.slaved_to);
         strcat(telegram_buf, buf);
       }
       push_telegram(i, Stars[starnum]->governor[i - 1], telegram_buf);
@@ -398,43 +398,42 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
             Stars[starnum]->pnames[planetnum]);
     sprintf(buf, "\nStar %s is undergoing nova.\n", Stars[starnum]->name);
     strcat(telegram_buf, buf);
-    if (planet->type == PlanetType::EARTH ||
-        planet->type == PlanetType::WATER ||
-        planet->type == PlanetType::FOREST) {
+    if (planet.type == PlanetType::EARTH || planet.type == PlanetType::WATER ||
+        planet.type == PlanetType::FOREST) {
       sprintf(buf, "Seas and rivers are boiling!\n");
       strcat(telegram_buf, buf);
     }
     sprintf(buf, "This planet must be evacuated immediately!\n%c", TELEG_DELIM);
     strcat(telegram_buf, buf);
     for (i = 1; i <= Num_races; i++)
-      if (planet->info[i - 1].numsectsowned)
+      if (planet.info[i - 1].numsectsowned)
         push_telegram(i, Stars[starnum]->governor[i - 1], telegram_buf);
   }
 
-  do_recover(planet, starnum, planetnum);
+  do_recover(&planet, starnum, planetnum);
 
-  planet->popn = 0;
-  planet->troops = 0;
-  planet->maxpopn = 0;
-  planet->total_resources = 0;
+  planet.popn = 0;
+  planet.troops = 0;
+  planet.maxpopn = 0;
+  planet.total_resources = 0;
 
   for (i = 1; i <= Num_races; i++) {
-    planet->info[i - 1].numsectsowned = 0;
-    planet->info[i - 1].popn = 0;
-    planet->info[i - 1].troops = 0;
+    planet.info[i - 1].numsectsowned = 0;
+    planet.info[i - 1].popn = 0;
+    planet.info[i - 1].troops = 0;
   }
 
-  (void)Getxysect(*planet, &x, &y, 1);
-  while (Getxysect(*planet, &x, &y, 0)) {
+  (void)Getxysect(planet, &x, &y, 1);
+  while (Getxysect(planet, &x, &y, 0)) {
     auto &p = smap.get(x, y);
     if (p.owner) {
-      planet->info[p.owner - 1].numsectsowned++;
-      planet->info[p.owner - 1].troops += p.troops;
-      planet->info[p.owner - 1].popn += p.popn;
-      planet->popn += p.popn;
-      planet->troops += p.troops;
-      planet->maxpopn += maxsupport(*races[p.owner - 1], p, Compat[p.owner - 1],
-                                    planet->conditions[TOXIC]);
+      planet.info[p.owner - 1].numsectsowned++;
+      planet.info[p.owner - 1].troops += p.troops;
+      planet.info[p.owner - 1].popn += p.popn;
+      planet.popn += p.popn;
+      planet.troops += p.troops;
+      planet.maxpopn += maxsupport(*races[p.owner - 1], p, Compat[p.owner - 1],
+                                   planet.conditions[TOXIC]);
       Power[p.owner - 1].troops += p.troops;
       Power[p.owner - 1].popn += p.popn;
       Power[p.owner - 1].sum_eff += p.eff;
@@ -444,40 +443,40 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
       p.popn = 0;
       p.troops = 0;
     }
-    planet->total_resources += p.resource;
+    planet.total_resources += p.resource;
   }
 
   /* deal with enslaved planets */
-  if (planet->slaved_to) {
-    if (planet->info[planet->slaved_to - 1].popn > planet->popn / 1000) {
+  if (planet.slaved_to) {
+    if (planet.info[planet.slaved_to - 1].popn > planet.popn / 1000) {
       for (i = 1; i <= Num_races; i++)
         /* add production to slave holder of planet */
-        if (planet->info[i - 1].numsectsowned) {
-          planet->info[planet->slaved_to - 1].resource += prod_res[i - 1];
+        if (planet.info[i - 1].numsectsowned) {
+          planet.info[planet.slaved_to - 1].resource += prod_res[i - 1];
           prod_res[i - 1] = 0;
-          planet->info[planet->slaved_to - 1].fuel += prod_fuel[i - 1];
+          planet.info[planet.slaved_to - 1].fuel += prod_fuel[i - 1];
           prod_fuel[i - 1] = 0;
-          planet->info[planet->slaved_to - 1].destruct += prod_destruct[i - 1];
+          planet.info[planet.slaved_to - 1].destruct += prod_destruct[i - 1];
           prod_destruct[i - 1] = 0;
         }
     } else {
       /* slave revolt! */
       /* first nuke some random sectors from the revolt */
-      i = planet->popn / 1000 + 1;
+      i = planet.popn / 1000 + 1;
       while (--i) {
-        auto &p = smap.get(int_rand(0, (int)planet->Maxx - 1),
-                           int_rand(0, (int)planet->Maxy - 1));
+        auto &p = smap.get(int_rand(0, (int)planet.Maxx - 1),
+                           int_rand(0, (int)planet.Maxy - 1));
         if (p.popn + p.troops) {
           p.owner = p.popn = p.troops = 0;
           p.condition = SectorType::SEC_WASTED;
         }
       }
       /* now nuke all sectors belonging to former master */
-      (void)Getxysect(*planet, &x, &y, 1);
-      while (Getxysect(*planet, &x, &y, 0)) {
+      (void)Getxysect(planet, &x, &y, 1);
+      while (Getxysect(planet, &x, &y, 0)) {
         if (Stinfo[starnum][planetnum].intimidated && random() & 01) {
           auto &p = smap.get(x, y);
-          if (p.owner == planet->slaved_to) {
+          if (p.owner == planet.slaved_to) {
             p.owner = 0;
             p.popn = 0;
             p.troops = 0;
@@ -492,60 +491,60 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
       sprintf(buf,
               "All population belonging to player #%d on the planet have "
               "been killed!\n",
-              planet->slaved_to);
+              planet.slaved_to);
       strcat(telegram_buf, buf);
       sprintf(buf, "Productions now go to their rightful owners.\n");
       strcat(telegram_buf, buf);
       for (i = 1; i <= Num_races; i++)
-        if (planet->info[i - 1].numsectsowned)
+        if (planet.info[i - 1].numsectsowned)
           push_telegram(i, (int)Stars[starnum]->governor[i - 1], telegram_buf);
-      planet->slaved_to = 0;
+      planet.slaved_to = 0;
     }
   }
 
   /* add production to all people here */
   for (i = 1; i <= Num_races; i++)
-    if (planet->info[i - 1].numsectsowned) {
-      planet->info[i - 1].fuel += prod_fuel[i - 1];
-      planet->info[i - 1].resource += prod_res[i - 1];
-      planet->info[i - 1].destruct += prod_destruct[i - 1];
-      planet->info[i - 1].crystals += prod_crystals[i - 1];
+    if (planet.info[i - 1].numsectsowned) {
+      planet.info[i - 1].fuel += prod_fuel[i - 1];
+      planet.info[i - 1].resource += prod_res[i - 1];
+      planet.info[i - 1].destruct += prod_destruct[i - 1];
+      planet.info[i - 1].crystals += prod_crystals[i - 1];
 
       /* tax the population - set new tax rate when done */
       if (races[i - 1]->Gov_ship) {
-        planet->info[i - 1].prod_money =
-            round_rand(INCOME_FACTOR * (double)planet->info[i - 1].tax *
-                       (double)planet->info[i - 1].popn);
+        planet.info[i - 1].prod_money =
+            round_rand(INCOME_FACTOR * (double)planet.info[i - 1].tax *
+                       (double)planet.info[i - 1].popn);
         races[i - 1]->governor[Stars[starnum]->governor[i - 1]].money +=
-            planet->info[i - 1].prod_money;
-        planet->info[i - 1].tax += std::min(
-            (int)planet->info[i - 1].newtax - (int)planet->info[i - 1].tax, 5);
+            planet.info[i - 1].prod_money;
+        planet.info[i - 1].tax += std::min(
+            (int)planet.info[i - 1].newtax - (int)planet.info[i - 1].tax, 5);
       } else
-        planet->info[i - 1].prod_money = 0;
+        planet.info[i - 1].prod_money = 0;
       races[i - 1]->governor[Stars[starnum]->governor[i - 1]].income +=
-          planet->info[i - 1].prod_money;
+          planet.info[i - 1].prod_money;
 
       /* do tech investments */
       if (races[i - 1]->Gov_ship) {
         if (races[i - 1]->governor[Stars[starnum]->governor[i - 1]].money >=
-            planet->info[i - 1].tech_invest) {
-          planet->info[i - 1].prod_tech =
-              tech_prod((int)(planet->info[i - 1].tech_invest),
-                        (int)(planet->info[i - 1].popn));
+            planet.info[i - 1].tech_invest) {
+          planet.info[i - 1].prod_tech =
+              tech_prod((int)(planet.info[i - 1].tech_invest),
+                        (int)(planet.info[i - 1].popn));
           races[i - 1]->governor[Stars[starnum]->governor[i - 1]].money -=
-              planet->info[i - 1].tech_invest;
-          races[i - 1]->tech += planet->info[i - 1].prod_tech;
+              planet.info[i - 1].tech_invest;
+          races[i - 1]->tech += planet.info[i - 1].prod_tech;
           races[i - 1]->governor[Stars[starnum]->governor[i - 1]].cost_tech +=
-              planet->info[i - 1].tech_invest;
+              planet.info[i - 1].tech_invest;
         } else
-          planet->info[i - 1].prod_tech = 0;
+          planet.info[i - 1].prod_tech = 0;
       } else
-        planet->info[i - 1].prod_tech = 0;
+        planet.info[i - 1].prod_tech = 0;
 
       /* build wc's if it's been ordered */
-      if (planet->info[i - 1].tox_thresh > 0 &&
-          planet->conditions[TOXIC] >= planet->info[i - 1].tox_thresh &&
-          planet->info[i - 1].resource >=
+      if (planet.info[i - 1].tox_thresh > 0 &&
+          planet.conditions[TOXIC] >= planet.info[i - 1].tox_thresh &&
+          planet.info[i - 1].resource >=
               Shipcost(ShipType::OTYPE_TOXWC, races[i - 1])) {
         Ship *s2;
         int t;
@@ -582,45 +581,45 @@ int doplanet(const int starnum, Planet *planet, const int planetnum) {
         s2->storbits = starnum;
         s2->pnumorbits = planetnum;
         s2->docked = 1;
-        s2->xpos = Stars[starnum]->xpos + planet->xpos;
-        s2->ypos = Stars[starnum]->ypos + planet->ypos;
-        s2->land_x = int_rand(0, (int)planet->Maxx - 1);
-        s2->land_y = int_rand(0, (int)planet->Maxy - 1);
+        s2->xpos = Stars[starnum]->xpos + planet.xpos;
+        s2->ypos = Stars[starnum]->ypos + planet.ypos;
+        s2->land_x = int_rand(0, (int)planet.Maxx - 1);
+        s2->land_y = int_rand(0, (int)planet.Maxy - 1);
         s2->whatdest = ScopeLevel::LEVEL_PLAN;
         s2->deststar = starnum;
         s2->destpnum = planetnum;
         s2->owner = i;
         s2->governor = Stars[starnum]->governor[i - 1];
-        t = std::min(TOXMAX, planet->conditions[TOXIC]); /* amt of tox */
-        planet->conditions[TOXIC] -= t;
+        t = std::min(TOXMAX, planet.conditions[TOXIC]); /* amt of tox */
+        planet.conditions[TOXIC] -= t;
         s2->special.waste.toxic = t;
       }
     } /* (if numsectsowned[i]) */
 
-  if (planet->maxpopn > 0 && planet->conditions[TOXIC] < 100)
-    planet->conditions[TOXIC] += planet->popn / planet->maxpopn;
+  if (planet.maxpopn > 0 && planet.conditions[TOXIC] < 100)
+    planet.conditions[TOXIC] += planet.popn / planet.maxpopn;
 
-  if (planet->conditions[TOXIC] > 100)
-    planet->conditions[TOXIC] = 100;
-  else if (planet->conditions[TOXIC] < 0)
-    planet->conditions[TOXIC] = 0;
+  if (planet.conditions[TOXIC] > 100)
+    planet.conditions[TOXIC] = 100;
+  else if (planet.conditions[TOXIC] < 0)
+    planet.conditions[TOXIC] = 0;
 
   for (i = 1; i <= Num_races; i++) {
-    Power[i - 1].resource += planet->info[i - 1].resource;
-    Power[i - 1].destruct += planet->info[i - 1].destruct;
-    Power[i - 1].fuel += planet->info[i - 1].fuel;
-    Power[i - 1].sectors_owned += planet->info[i - 1].numsectsowned;
-    Power[i - 1].planets_owned += !!planet->info[i - 1].numsectsowned;
-    if (planet->info[i - 1].numsectsowned) {
+    Power[i - 1].resource += planet.info[i - 1].resource;
+    Power[i - 1].destruct += planet.info[i - 1].destruct;
+    Power[i - 1].fuel += planet.info[i - 1].fuel;
+    Power[i - 1].sectors_owned += planet.info[i - 1].numsectsowned;
+    Power[i - 1].planets_owned += !!planet.info[i - 1].numsectsowned;
+    if (planet.info[i - 1].numsectsowned) {
       /* combat readiness naturally moves towards the avg mobilization */
-      planet->info[i - 1].mob_points = avg_mob[i - 1];
-      avg_mob[i - 1] /= (int)planet->info[i - 1].numsectsowned;
-      planet->info[i - 1].comread = avg_mob[i - 1];
+      planet.info[i - 1].mob_points = avg_mob[i - 1];
+      avg_mob[i - 1] /= (int)planet.info[i - 1].numsectsowned;
+      planet.info[i - 1].comread = avg_mob[i - 1];
     } else
-      planet->info[i - 1].comread = 0;
-    planet->info[i - 1].guns = planet_guns(planet->info[i - 1].mob_points);
+      planet.info[i - 1].comread = 0;
+    planet.info[i - 1].guns = planet_guns(planet.info[i - 1].mob_points);
   }
-  putsmap(smap, *planet);
+  putsmap(smap, planet);
   return allmod;
 }
 

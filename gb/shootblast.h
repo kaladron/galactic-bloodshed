@@ -14,7 +14,7 @@ int shoot_ship_to_ship(Ship *, Ship *, int, int, int, char *, char *);
 #ifdef DEFENSE
 int shoot_planet_to_ship(Race *, Ship *, int, char *, char *);
 #endif
-int shoot_ship_to_planet(Ship *, Planet *, int, int, int, SectorMap &, int, int,
+int shoot_ship_to_planet(Ship *, Planet &, int, int, int, SectorMap &, int, int,
                          char *, char *);
 int hit_odds(double, int *, double, int, int, int, int, int, int, int, int);
 double gun_range(Race *, Ship *, int);

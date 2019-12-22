@@ -1338,14 +1338,9 @@ static void load_star_data() {
     pcount += Stars[s]->numplanets;
   }
 
-  auto planet_arena = (planettype *)malloc(pcount * sizeof(planettype));
-
   for (s = 0; s < Sdata.numstars; s++) {
     for (t = 0; t < Stars[s]->numplanets; t++) {
-      // TODO(jeffbailey): This is a leak - will fix as part of global planet
-      // array cleanup.
-      planets[s][t] = &planet_arena[--pcount];
-      planets[s][t] = new Planet(getplanet(s, t));
+      planets[s][t] = std::make_unique<Planet>(getplanet(s, t));
       if (planets[s][t]->type != PlanetType::ASTEROID) Planet_count++;
     }
   }
@@ -1524,9 +1519,9 @@ void insert_sh_star(startype *star, Ship *s) {
   s->whatorbits = ScopeLevel::LEVEL_STAR;
 }
 
-void insert_sh_plan(Planet *pl, Ship *s) {
-  s->nextship = pl->ships;
-  pl->ships = s->number;
+void insert_sh_plan(Planet &pl, Ship *s) {
+  s->nextship = pl.ships;
+  pl.ships = s->number;
   s->whatorbits = ScopeLevel::LEVEL_PLAN;
 }
 

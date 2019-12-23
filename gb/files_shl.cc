@@ -418,7 +418,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
       "WHERE planet_id=?1";
   sqlite3_prepare_v2(dbconn, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail);
   sqlite3_bind_int(plinfo_stmt, 1, p.planet_id);
-  while (sqlite3_step(stmt) == SQLITE_ROW) {
+  while (sqlite3_step(plinfo_stmt) == SQLITE_ROW) {
     int player_id = sqlite3_column_int(plinfo_stmt, 1);
     p.info[player_id].fuel = sqlite3_column_int(plinfo_stmt, 2);
     p.info[player_id].destruct = sqlite3_column_int(plinfo_stmt, 3);
@@ -453,7 +453,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
   sqlite3_prepare_v2(dbconn, plinfo_routes_sql, -1, &plinfo_routes_stmt,
                      &plinfo_routes_tail);
   sqlite3_bind_int(plinfo_routes_stmt, 1, p.planet_id);
-  while (sqlite3_step(stmt) == SQLITE_ROW) {
+  while (sqlite3_step(plinfo_routes_stmt) == SQLITE_ROW) {
     int player_id = sqlite3_column_int(plinfo_routes_stmt, 1);
     int routenum = sqlite3_column_int(plinfo_routes_stmt, 2);
     p.info[player_id].route[routenum].set =

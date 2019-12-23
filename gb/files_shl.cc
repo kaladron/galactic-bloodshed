@@ -56,17 +56,19 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
              condition INT, PRIMARY KEY(planet_id, xpos, ypos));
 
   CREATE TABLE tbl_plinfo(
-      planet_id INT PRIMARY KEY NOT NULL, player_id INT NOT NULL, fuel INT,
+      planet_id INT NOT NULL, player_id INT NOT NULL, fuel INT,
       destruct INT, resource INT, popn INT64, troops INT64, crystals INT,
       prod_res INT, prod_fuel INT, prod_dest INT, prod_crystals INT,
       prod_money INT64, prod_tech DOUBLE, tech_invest INT, numsectsowned INT,
       comread INT, mob_set INT, tox_thresh INT, explored INT, autorep INT,
-      tax INT, newtax INT, guns INT, mob_points INT64, est_production DOUBLE);
+      tax INT, newtax INT, guns INT, mob_points INT64, est_production DOUBLE,
+      PRIMARY KEY (planet_id, player_id));
 
-  CREATE TABLE tbl_plinfo_routes(planet_id INT PRIMARY KEY NOT NULL,
+  CREATE TABLE tbl_plinfo_routes(planet_id INT NOT NULL,
                                  player_id INT, routenum INT,
                                  order_set INT, dest_star INT, dest_planet INT,
-                                 load INT, unload INT, x INT, y INT);
+                                 load INT, unload INT, x INT, y INT,
+                                 PRIMARY KEY (planet_id, player_id, routenum));
 
   CREATE TABLE tbl_star(star_id INT NOT NULL PRIMARY KEY, ships INT, name TEXT,
                         xpos DOUBLE, ypos DOUBLE, numplanets INT, stability INT,

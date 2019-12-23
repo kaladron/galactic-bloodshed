@@ -65,8 +65,6 @@ static double db_Metabolism[RACIAL_TYPES] = {3.0,  2.7,  2.4, 1.0,  1.15,
 #define Metabolism(x) (db_Metabolism[(x)] + .01 * (double)int_rand(-15, 15))
 
 int main() {
-  int x;
-  int y;
   int pnum = 0;
   int star = 0;
   int found = 0;
@@ -300,14 +298,13 @@ int main() {
       "\nChoose a primary sector preference. This race will prefer to "
       "live\non this type of sector.\n");
 
-  PermuteSects(planet);
-  Getxysect(planet, nullptr, nullptr, 1);
-  while (Getxysect(planet, &x, &y, 0)) {
-    secttypes[smap.get(x, y).condition].count++;
-    if (!secttypes[smap.get(x, y).condition].here) {
-      secttypes[smap.get(x, y).condition].here = 1;
-      secttypes[smap.get(x, y).condition].x = x;
-      secttypes[smap.get(x, y).condition].y = y;
+  auto shuffled = smap.shuffle();
+  for (auto &sector : shuffled) {
+    secttypes[sector.get().condition].count++;
+    if (!secttypes[sector.get().condition].here) {
+      secttypes[sector.get().condition].here = 1;
+      secttypes[sector.get().condition].x = sector.get().x;
+      secttypes[sector.get().condition].y = sector.get().y;
     }
   }
   planet.explored = 1;

@@ -38,7 +38,7 @@ static void save(int argc, const char *argv[]);
 static void send2(int argc, const char *argv[]);
 static void quit(int argc, const char **argv);
 
-int main() {
+int main(int argc, char **argv) {
 #ifdef PRIV
   int port;
 
@@ -1346,8 +1346,7 @@ void modify_print_loop(int) {
     if (isserver)
       printf("Command [help/modify/print/send/quit]> ");
     else
-      printf("%s [enroll/help/load/modify/print/process/save/send/quit]> ",
-             level ? "Fix" : "Command");
+      printf("Command [enroll/help/load/modify/print/process/save/send/quit]> ");
 #else
     printf("Command [help/load/modify/print/save/send/quit]> ");
 #endif

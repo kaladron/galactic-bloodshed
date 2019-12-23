@@ -130,7 +130,7 @@ OLD_LIBGBLIB_FILES = \
 		     tele.cc \
 		     victory.cc
 
-racegen_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
+racegen_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm -DPRIV
 racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc sectormap.cc shlmisc.cc
 racegen_LDADD = libgblib.a
 

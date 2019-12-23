@@ -131,7 +131,7 @@ OLD_LIBGBLIB_FILES = \
 		     victory.cc
 
 racegen_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm -DPRIV
-racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc max.cc perm.cc racegen.cc sectormap.cc shlmisc.cc
+racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc racegen.cc perm.cc
 racegen_LDADD = libgblib.a
 
 TESTS = shlmisc_test

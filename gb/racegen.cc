@@ -1346,7 +1346,8 @@ void modify_print_loop(int) {
     if (isserver)
       printf("Command [help/modify/print/send/quit]> ");
     else
-      printf("Command [enroll/help/load/modify/print/process/save/send/quit]> ");
+      printf(
+          "Command [enroll/help/load/modify/print/process/save/send/quit]> ");
 #else
     printf("Command [help/load/modify/print/save/send/quit]> ");
 #endif

@@ -1076,6 +1076,8 @@ void putplanet(const Planet &p, startype *star, const int pnum) {
   end_bulk_insert();
 }
 
+void putsector(const Sector &s, const Planet &p) { putsector(s, p, s.x, s.y); }
+
 void putsector(const Sector &s, const Planet &p, const int x, const int y) {
   const char *tail = nullptr;
   sqlite3_stmt *stmt;

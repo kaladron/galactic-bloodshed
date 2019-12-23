@@ -38,6 +38,7 @@ void putsdata(struct stardata *);
 void putrace(Race *);
 void putstar(startype *, starnum_t);
 void putplanet(const Planet &, startype *, const int);
+void putsector(const Sector &, const Planet &);
 void putsector(const Sector &, const Planet &, const int x, const int y);
 void putsmap(SectorMap &map, Planet &p);
 void putship(Ship *);

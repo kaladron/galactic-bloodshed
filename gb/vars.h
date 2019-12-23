@@ -143,6 +143,9 @@ class SectorMap {
   int get_maxx() { return maxx_; }
   int get_maxy() { return maxy_; }
   Sector &get_random();
+  // TODO(jeffbailey): Don't expose the underlying vector.
+  std::vector<std::reference_wrapper<Sector>>
+  shuffle();  /// Randomizes the order of the SectorMap.
 
   SectorMap(SectorMap &) = delete;
   void operator=(const SectorMap &) = delete;

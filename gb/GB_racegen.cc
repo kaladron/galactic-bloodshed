@@ -155,7 +155,7 @@ found_planet:
 		 round_rand(planet->conditions[j]*2.0) ) ;
 #endif
 
-  for (i = 0; i < MAXPLAYERS; i++) {
+  for (i = 1; i <= MAXPLAYERS; i++) {
     /* messages from autoreport, player #1 are decodable */
     if ((i == Playernum) || (Playernum == 1) || race->God)
       race->translate[i - 1] = 100; /* you can talk to own race */

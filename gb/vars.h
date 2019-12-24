@@ -88,6 +88,8 @@ struct commod {
   planetnum_t planet_to;
 };
 
+class Race;
+
 class Planet {
  public:
   Planet() = default;
@@ -97,6 +99,7 @@ class Planet {
   Planet &operator=(Planet &&) = default;
 
   double gravity() const;
+  double compatibility(const Race &) const;
 
   double xpos, ypos;        /* x,y relative to orbit */
   shipnum_t ships;          /* first ship in orbit (to be changed) */

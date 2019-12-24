@@ -173,7 +173,7 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
   }
   auto smap = getsmap(planet);
 
-  compat = compatibility(planet, Race);
+  compat = planet.compatibility(*Race);
 
   TotalSect = planet.Maxx * planet.Maxy;
   for (x = planet.Maxx - 1; x >= 0; x--) {

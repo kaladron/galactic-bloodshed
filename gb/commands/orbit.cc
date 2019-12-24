@@ -269,7 +269,7 @@ static void DispPlanet(const GameObj &g, const ScopeLevel level,
     }
     if (r->governor[g.governor].toggle.compat &&
         p.info[g.player - 1].explored) {
-      sprintf(temp, "(%d)", (int)compatibility(p, r));
+      sprintf(temp, "(%d)", (int)p.compatibility(*r));
       strcat(string, temp);
     }
     strcat(string, ";");

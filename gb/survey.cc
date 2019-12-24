@@ -101,7 +101,7 @@ void survey(const command_t &argv, GameObj &g) {
   if (where->level == ScopeLevel::LEVEL_PLAN) {
     const auto p = getplanet(where->snum, where->pnum);
 
-    compat = compatibility(p, Race);
+    compat = p.compatibility(*Race);
 
     if ((isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) ||
         all) {
@@ -133,7 +133,7 @@ void survey(const command_t &argv, GameObj &g) {
                   Stars[where->snum]->pnames[where->pnum],
                   p.info[Playernum - 1].resource, p.info[Playernum - 1].fuel,
                   p.info[Playernum - 1].destruct, p.popn, p.maxpopn,
-                  p.conditions[TOXIC], compatibility(p, Race), p.slaved_to);
+                  p.conditions[TOXIC], p.compatibility(*Race), p.slaved_to);
           notify(Playernum, Governor, buf);
         }
         bzero((struct shipstuff *)shiplocs, sizeof(shiplocs));
@@ -284,7 +284,7 @@ void survey(const command_t &argv, GameObj &g) {
               p.conditions[TOXIC], Tox[tindex]);
       notify(Playernum, Governor, buf);
       sprintf(buf, "Total planetary compatibility: %.2f%%\n",
-              compatibility(p, Race));
+              p.compatibility(*Race));
       notify(Playernum, Governor, buf);
 
       auto smap = getsmap(p);

@@ -9,7 +9,6 @@
 #include "gb/ships.h"
 #include "gb/vars.h"
 
-double compatibility(const Planet &, const Race *);
 char *prin_ship_orbits(Ship *);
 
 constexpr auto maxsupport(const Race &r, const Sector &s, const double c,

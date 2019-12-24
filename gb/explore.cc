@@ -201,7 +201,7 @@ void exploration(const command_t &argv, GameObj &g) {
               notify(Playernum, Governor, buf);
             }
             sprintf(buf, "] %s %2.0f%%\n", Planet_types[pl.type],
-                    compatibility(pl, Race));
+                    pl.compatibility(*Race));
             notify(Playernum, Governor, buf);
           } else {
             sprintf(buf, "No Data ]\n");

@@ -141,7 +141,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
     notify(Playernum, Governor, temp);
     sprintf(temp, "      Mobilization : %3d (%3d)     Compatibility: %.2f%%",
             p.info[Playernum - 1].comread, p.info[Playernum - 1].mob_set,
-            compatibility(p, Race));
+            p.compatibility(*Race));
     if (p.conditions[TOXIC] > 50) {
       sprintf(buf, "    (%d%% TOXIC)", p.conditions[TOXIC]);
       strcat(temp, buf);

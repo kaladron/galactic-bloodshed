@@ -5,10 +5,30 @@
 import gblib;
 import std;
 
+#include "gb/races.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
 //* Return gravity for the Planet
 double Planet::gravity() const {
   return (double)Maxx * (double)Maxy * GRAV_FACTOR;
+}
+
+double Planet::compatibility(const Race &race) const {
+  double atmosphere = 1.0;
+
+  /* make an adjustment for planetary temperature */
+  int add = 0.1 * ((double)conditions[TEMP] - race.conditions[TEMP]);
+  double sum = 1.0 - (double)abs(add) / 100.0;
+
+  /* step through and report compatibility of each planetary gas */
+  for (int i = TEMP + 1; i <= OTHER; i++) {
+    add = (double)conditions[i] - race.conditions[i];
+    atmosphere *= 1.0 - (double)abs(add) / 100.0;
+  }
+  sum *= atmosphere;
+  sum *= 100.0 - conditions[TOXIC];
+
+  if (sum < 0.0) return 0.0;
+  return sum;
 }

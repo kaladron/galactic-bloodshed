@@ -21,28 +21,6 @@ import std;
 
 static char Dispshiporbits_buf[PLACENAMESIZE + 13];
 
-double compatibility(const Planet &planet, const Race *race) {
-  int i;
-  int add;
-  double sum;
-  double atmosphere = 1.0;
-
-  /* make an adjustment for planetary temperature */
-  add = 0.1 * ((double)planet.conditions[TEMP] - race->conditions[TEMP]);
-  sum = 1.0 - (double)abs(add) / 100.0;
-
-  /* step through and report compatibility of each planetary gas */
-  for (i = TEMP + 1; i <= OTHER; i++) {
-    add = (double)planet.conditions[i] - race->conditions[i];
-    atmosphere *= 1.0 - (double)abs(add) / 100.0;
-  }
-  sum *= atmosphere;
-  sum *= 100.0 - planet.conditions[TOXIC];
-
-  if (sum < 0.0) return 0.0;
-  return (sum);
-}
-
 char *prin_ship_orbits(Ship *s) {
   char *motherorbits;
 

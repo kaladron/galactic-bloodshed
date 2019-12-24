@@ -84,7 +84,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
 
   /* reset global variables */
   for (i = 1; i <= Num_races; i++) {
-    Compat[i - 1] = compatibility(planet, races[i - 1]);
+    Compat[i - 1] = planet.compatibility(*races[i - 1]);
     planet.info[i - 1].numsectsowned = 0;
     planet.info[i - 1].troops = 0;
     planet.info[i - 1].popn = 0;

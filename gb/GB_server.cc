@@ -1055,7 +1055,7 @@ static void check_connect(DescriptorData &d, const char *message) {
     return;
   }
 
-  auto r = races[Playernum - 1];
+  auto &race = *races[Playernum - 1];
   /* check to see if this player is already connected, if so, nuke the
    * descriptor */
   for (auto &d0 : descriptor_list) {
@@ -1065,36 +1065,37 @@ static void check_connect(DescriptorData &d, const char *message) {
     }
   }
 
-  fprintf(stderr, "CONNECTED %s \"%s\" [%d,%d] on descriptor %d\n", r->name,
-          r->governor[Governor].name, Playernum, Governor, d.descriptor);
+  fprintf(stderr, "CONNECTED %s \"%s\" [%d,%d] on descriptor %d\n", race.name,
+          race.governor[Governor].name, Playernum, Governor, d.descriptor);
   d.connected = true;
 
-  d.god = r->God;
+  d.god = race.God;
   d.player = Playernum;
   d.governor = Governor;
 
-  sprintf(buf, "\n%s \"%s\" [%d,%d] logged on.\n", r->name,
-          r->governor[Governor].name, Playernum, Governor);
+  sprintf(buf, "\n%s \"%s\" [%d,%d] logged on.\n", race.name,
+          race.governor[Governor].name, Playernum, Governor);
   notify_race(Playernum, buf);
   sprintf(buf, "You are %s.\n",
-          r->governor[Governor].toggle.invisible ? "invisible" : "visible");
+          race.governor[Governor].toggle.invisible ? "invisible" : "visible");
   notify(Playernum, Governor, buf);
 
   GB_time({}, d);
-  sprintf(buf, "\nLast login      : %s", ctime(&(r->governor[Governor].login)));
+  sprintf(buf, "\nLast login      : %s",
+          ctime(&(race.governor[Governor].login)));
   notify(Playernum, Governor, buf);
-  r->governor[Governor].login = time(nullptr);
-  putrace(r);
-  if (!r->Gov_ship) {
+  race.governor[Governor].login = time(nullptr);
+  putrace(&race);
+  if (!race.Gov_ship) {
     sprintf(buf,
             "You have no Governmental Center.  No action points will be "
             "produced\nuntil you build one and designate a capital.\n");
     notify(Playernum, Governor, buf);
   } else {
-    sprintf(buf, "Government Center #%lu is active.\n", r->Gov_ship);
+    sprintf(buf, "Government Center #%lu is active.\n", race.Gov_ship);
     notify(Playernum, Governor, buf);
   }
-  sprintf(buf, "     Morale: %ld\n", r->morale);
+  sprintf(buf, "     Morale: %ld\n", race.morale);
   notify(Playernum, Governor, buf);
   treasury({}, d);
 }

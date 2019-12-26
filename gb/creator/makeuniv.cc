@@ -198,6 +198,7 @@ int main(int argc, char *argv[]) {
     struct power p[MAXPLAYERS];
     bzero((char *)p, sizeof(p));
     InitFile(POWFL, p, sizeof(p));
+    Putpower(p);
   }
 
   {

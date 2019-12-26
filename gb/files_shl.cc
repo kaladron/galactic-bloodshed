@@ -224,6 +224,21 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
       hanger INT,
       max_hanger INT,
       mount INT);
+
+  CREATE TABLE tbl_power(
+      player_id INT PRIMARY KEY NOT NULL,
+      troops INT,
+      popn INT,
+      resource INT,
+      fuel INT,
+      destruct INT,
+      ships_owned INT,
+      planets_owned INT,
+      sectors_owned INT,
+      money INT,
+      sum_mob INT,
+      sum_eff INT);
+
 )";
   char *err_msg = nullptr;
   int err = sqlite3_exec(dbconn, tbl_create, nullptr, nullptr, &err_msg);

@@ -532,7 +532,7 @@ int main(int argc, char **argv) {
 
   load_race_data(); /* make sure you do this first */
   load_star_data(); /* get star data */
-  Getpower(Power);  /* get power report from disk */
+  getpower(Power);  /* get power report from database */
   Getblock(Blocks); /* get alliance block data */
   SortShips();      /* Sort the ship list by tech for "build ?" */
   for (int i = 1; i <= MAXPLAYERS; i++) {

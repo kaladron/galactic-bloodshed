@@ -453,7 +453,7 @@ void do_turn(int update) {
       for (auto &governor : races[i - 1]->governor)
         if (governor.active) Power[i - 1].money += governor.money;
     }
-    Putpower(Power);
+    putpower(Power);
     Putblock(Blocks);
   }
 

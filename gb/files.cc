@@ -4,12 +4,16 @@
 
 #include "gb/files.h"
 
-const char *Files[] = {PKGSTATEDIR,       DOCDIR,           PATH(exam.dat),
-                       DATA(enroll.dat),  DATA(star),       "",
-                       DATA(planet),      DATA(race),       DATA(block),
-                       DATA(ship),        DATA(shipfree),   DATA(dummy),
-                       DATA(players),     DATA(Tele),       TELE(tele),
-                       DATA(power),       DATA(News),       NEWS(declaration),
-                       NEWS(transfer),    NEWS(combat),     NEWS(announce),
-                       DATA(commod),      DATA(commodfree), DATA(Update.time),
+const char *Files[] = {PKGSTATEDIR,       DOCDIR,
+                       PATH(exam.dat),    DATA(enroll.dat),
+                       DATA(star),        "",
+                       DATA(planet),      DATA(race),
+                       DATA(block),       DATA(ship),
+                       DATA(shipfree),    DATA(dummy),
+                       DATA(players),     DATA(Tele),
+                       TELE(tele),        "",
+                       DATA(News),        NEWS(declaration),
+                       NEWS(transfer),    NEWS(combat),
+                       NEWS(announce),    DATA(commod),
+                       DATA(commodfree),  DATA(Update.time),
                        DATA(Segment.time)};

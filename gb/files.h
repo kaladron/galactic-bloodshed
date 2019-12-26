@@ -33,7 +33,6 @@
 #define PLAYERDATAFL Files[12]
 #define TELEGRAMDIR Files[13]
 #define TELEGRAMFL Files[14]
-#define POWFL Files[15]
 #define NEWSDIR Files[16]
 #define DECLARATIONFL Files[17]
 #define TRANSFERFL Files[18]

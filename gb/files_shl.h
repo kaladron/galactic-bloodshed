@@ -51,8 +51,8 @@ void clr_shipfree();
 void clr_commodfree();
 void makeshipdead(int);
 void makecommoddead(int);
-void Putpower(struct power[MAXPLAYERS]);
-void Getpower(struct power[MAXPLAYERS]);
+void putpower(struct power[MAXPLAYERS]);
+void getpower(struct power[MAXPLAYERS]);
 void Putblock(struct block[MAXPLAYERS]);
 void Getblock(struct block[MAXPLAYERS]);
 

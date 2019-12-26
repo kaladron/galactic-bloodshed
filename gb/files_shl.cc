@@ -1642,20 +1642,7 @@ void makecommoddead(int commodnum) {
   close_file(fd);
 }
 
-void Putpower(struct power p[MAXPLAYERS]) {
-  int power_fd;
-
-  if ((power_fd = open(POWFL, O_RDWR, 0777)) < 0) {
-    perror("open power data");
-    printf("unable to open %s\n", POWFL);
-    return;
-  }
-  if (write(power_fd, (char *)p, sizeof(*p) * MAXPLAYERS) < 0) {
-    perror("write failed");
-    exit(-1);
-  }
-  close_file(power_fd);
-
+void putpower(struct power p[MAXPLAYERS]) {
   sqlite3_stmt *stmt;
   const char *tail;
   const char *sql =
@@ -1693,20 +1680,7 @@ void Putpower(struct power p[MAXPLAYERS]) {
   }
 }
 
-void Getpower(struct power p[MAXPLAYERS]) {
-  int power_fd;
-
-  if ((power_fd = open(POWFL, O_RDONLY, 0777)) < 0) {
-    perror("open power data");
-    printf("unable to open %s\n", POWFL);
-    return;
-  }
-  if (read(power_fd, (char *)p, sizeof(*p) * MAXPLAYERS) < 0) {
-    perror("read failed");
-    exit(-1);
-  }
-  close_file(power_fd);
-
+void getpower(struct power p[MAXPLAYERS]) {
   const char *tail;
   sqlite3_stmt *stmt;
   const char *sql =

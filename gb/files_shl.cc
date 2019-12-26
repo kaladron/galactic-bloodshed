@@ -1655,6 +1655,42 @@ void Putpower(struct power p[MAXPLAYERS]) {
     exit(-1);
   }
   close_file(power_fd);
+
+  sqlite3_stmt *stmt;
+  const char *tail;
+  const char *sql =
+      "REPLACE INTO tbl_power (player_id, troops, popn, resource, fuel, "
+      "destruct, ships_owned, planets_owned, sectors_owned, money, sum_mob, "
+      "sum_eff)"
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12);";
+
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+
+  for (player_t i = 1; i <= MAXPLAYERS; i++) {
+    sqlite3_bind_int(stmt, 1, i);
+    sqlite3_bind_int(stmt, 2, p[i - 1].troops);
+    sqlite3_bind_int(stmt, 3, p[i - 1].popn);
+    sqlite3_bind_int(stmt, 4, p[i - 1].resource);
+    sqlite3_bind_int(stmt, 5, p[i - 1].fuel);
+    sqlite3_bind_int(stmt, 6, p[i - 1].destruct);
+    sqlite3_bind_int(stmt, 7, p[i - 1].ships_owned);
+    sqlite3_bind_int(stmt, 8, p[i - 1].planets_owned);
+    sqlite3_bind_int(stmt, 9, p[i - 1].sectors_owned);
+    sqlite3_bind_int(stmt, 10, p[i - 1].money);
+    sqlite3_bind_int(stmt, 11, p[i - 1].sum_mob);
+    sqlite3_bind_int(stmt, 12, p[i - 1].sum_eff);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+      fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    }
+
+    sqlite3_reset(stmt);
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+  }
 }
 
 void Getpower(struct power p[MAXPLAYERS]) {

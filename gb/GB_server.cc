@@ -112,8 +112,9 @@ class TextBlock {
 
 class DescriptorData : public GameObj {
  public:
-  DescriptorData(int sock)
-      : connected(false),
+  DescriptorData(int sock, Db &db_)
+      : GameObj{db_},
+        connected(false),
         output_size(0),
         raw_input(nullptr),
         raw_input_at(nullptr),
@@ -637,7 +638,7 @@ static struct timeval msec_add(struct timeval t, int x) {
   return t;
 }
 
-static int shovechars(int port, Db & /* db */) {
+static int shovechars(int port, Db &db) {
   fd_set input_set;
   fd_set output_set;
   struct timeval last_slice;
@@ -691,7 +692,7 @@ static int shovechars(int port, Db & /* db */) {
 
       if (FD_ISSET(sock, &input_set)) {
         try {
-          descriptor_list.emplace_back(sock);
+          descriptor_list.emplace_back(sock, db);
           auto &newd = descriptor_list.back();
           make_nonblocking(newd.descriptor);
           welcome_user(newd);

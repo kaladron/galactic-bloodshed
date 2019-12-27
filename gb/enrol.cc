@@ -91,7 +91,7 @@ int main() {
 
   srandom(getpid());
 
-  if ((Playernum = Numraces() + 1) >= MAXPLAYERS) {
+  if ((Playernum = db.Numraces() + 1) >= MAXPLAYERS) {
     printf("There are already %d players; No more allowed.\n", MAXPLAYERS - 1);
     exit(-1);
   }
@@ -109,12 +109,12 @@ int main() {
   }
   idx = idx - 1;
 
-  getsdata(&Sdata);
+  db.getsdata(&Sdata);
 
   star_arena = (startype *)malloc(Sdata.numstars * sizeof(startype));
   for (int s = 0; s < Sdata.numstars; s++) {
     Stars[s] = &star_arena[s];
-    getstar(&(Stars[s]), s);
+    db.getstar(&(Stars[s]), s);
   }
   printf("There is still space for player %d.\n", Playernum);
 
@@ -346,8 +346,8 @@ int main() {
       }
       race.likes[j] = (double)k / 100.0;
     }
-  printf("Numraces = %d\n", Numraces());
-  Playernum = race.Playernum = Numraces() + 1;
+  printf("Numraces = %d\n", db.Numraces());
+  Playernum = race.Playernum = db.Numraces() + 1;
 
   sigemptyset(&block);
   sigaddset(&block, SIGHUP);
@@ -430,12 +430,12 @@ int main() {
     s.number = shipno;
     printf("Created on sector %d,%d on /%s/%s\n", s.land_x, s.land_y,
            Stars[s.storbits]->name, Stars[s.storbits]->pnames[s.pnumorbits]);
-    putship(&s);
+    db.putship(&s);
   }
 
   for (j = 0; j < MAXPLAYERS; j++) race.points[j] = 0;
 
-  putrace(&race);
+  db.putrace(&race);
 
   planet.info[Playernum - 1].numsectsowned = 1;
   planet.explored = 0;
@@ -456,11 +456,11 @@ int main() {
   putplanet(planet, Stars[star], pnum);
 
   /* make star explored and stuff */
-  getstar(&Stars[star], star);
+  db.getstar(&Stars[star], star);
   setbit(Stars[star]->explored, Playernum);
   setbit(Stars[star]->inhabited, Playernum);
   Stars[star]->AP[Playernum - 1] = 5;
-  putstar(Stars[star], star);
+  db.putstar(Stars[star], star);
 
   sigprocmask(SIG_SETMASK, &mask, nullptr);
 

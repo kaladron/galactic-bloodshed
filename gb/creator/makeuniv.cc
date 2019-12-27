@@ -182,9 +182,9 @@ int main(int argc, char *argv[]) {
       }
 #endif
 
-  putsdata(&Sdata);
+  db.putsdata(&Sdata);
   for (starnum_t star = 0; star < Sdata.numstars; star++)
-    putstar(Stars[star], star);
+    db.putstar(Stars[star], star);
   chmod(STARDATAFL, 00660);
 
   EmptyFile(SHIPDATAFL);

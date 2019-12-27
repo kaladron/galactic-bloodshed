@@ -10,12 +10,6 @@
 #include "gb/sql/dbdecl.h"
 #include "gb/vars.h"
 
-class Db {
- public:
-  Db();
-  virtual ~Db();
-};
-
 void close_file(int);
 void openstardata(int *);
 void openshdata(int *);
@@ -55,5 +49,7 @@ void putpower(struct power[MAXPLAYERS]);
 void getpower(struct power[MAXPLAYERS]);
 void Putblock(struct block[MAXPLAYERS]);
 void Getblock(struct block[MAXPLAYERS]);
+void open_files();
+void close_files();
 
 #endif  // FILES_SHL_H

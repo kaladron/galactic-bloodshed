@@ -22,6 +22,7 @@ import std;
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
+#include "gb/sql/sql.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
@@ -281,15 +282,18 @@ void openracedata(int *fd) {
   }
 }
 
+void Sql::getsdata(struct stardata *S) { ::getsdata(S); }
 void getsdata(struct stardata *S) {
   Fileread(stdata, (char *)S, sizeof(struct stardata), 0);
 }
 
+void Sql::getrace(Race **r, int rnum) { ::getrace(r, rnum); };
 void getrace(Race **r, int rnum) {
   *r = (Race *)malloc(sizeof(Race));
   Fileread(racedata, (char *)*r, sizeof(Race), (rnum - 1) * sizeof(Race));
 }
 
+void Sql::getstar(startype **s, int star) { ::getstar(s, star); }
 void getstar(startype **s, int star) {
   if (s >= &Stars[0] && s < &Stars[NUMSTARS])
     ; /* Do nothing */
@@ -569,10 +573,16 @@ SectorMap getsmap(const Planet &p) {
   return smap;
 }
 
+std::optional<Ship> Sql::getship(const shipnum_t shipnum) {
+  return ::getship(shipnum);
+}
 std::optional<Ship> getship(const shipnum_t shipnum) {
   return getship(nullptr, shipnum);
 }
 
+std::optional<Ship> Sql::getship(Ship **s, const shipnum_t shipnum) {
+  return ::getship(s, shipnum);
+}
 std::optional<Ship> getship(Ship **s, const shipnum_t shipnum) {
   struct stat buffer;
 
@@ -739,6 +749,9 @@ std::optional<Ship> getship(Ship **s, const shipnum_t shipnum) {
   return **s;
 }
 
+int Sql::getcommod(commodtype **c, commodnum_t commodnum) {
+  return ::getcommod(c, commodnum);
+}
 int getcommod(commodtype **c, commodnum_t commodnum) {
   struct stat buffer;
 
@@ -819,15 +832,18 @@ int getdeadcommod() {
   return -1;
 }
 
+void Sql::putsdata(struct stardata *S) { ::putsdata(S); }
 void putsdata(struct stardata *S) {
   Filewrite(stdata, (char *)S, sizeof(struct stardata), 0);
 }
 
+void Sql::putrace(Race *r) { ::putrace(r); }
 void putrace(Race *r) {
   Filewrite(racedata, (char *)r, sizeof(Race),
             (r->Playernum - 1) * sizeof(Race));
 }
 
+void Sql::putstar(startype *s, starnum_t snum) { ::putstar(s, snum); }
 void putstar(startype *s, starnum_t snum) {
   Filewrite(stdata, (char *)s, sizeof(startype),
             (int)(sizeof(Sdata) + snum * sizeof(startype)));
@@ -1334,6 +1350,7 @@ static void putship_waste(const Ship &s) {
   }
 }
 
+void Sql::putship(Ship *s) { ::putship(s); }
 void putship(Ship *s) {
   const char *tail;
   Filewrite(shdata, (char *)s, sizeof(Ship), (s->number - 1) * sizeof(Ship));
@@ -1521,11 +1538,15 @@ void putship(Ship *s) {
   end_bulk_insert();
 }
 
+void Sql::putcommod(commodtype *c, int commodnum) {
+  return ::putcommod(c, commodnum);
+}
 void putcommod(commodtype *c, int commodnum) {
   Filewrite(commoddata, (char *)c, sizeof(commodtype),
             (commodnum - 1) * sizeof(commodtype));
 }
 
+int Sql::Numraces() { return ::Numraces(); }
 int Numraces() {
   struct stat buffer;
 
@@ -1550,6 +1571,7 @@ shipnum_t Numships() /* return number of ships */
   // TODO(jeffbailey): Pretty certain we have to free stmt
 }
 
+int Sql::Numcommods() { return ::Numcommods(); }
 int Numcommods() {
   struct stat buffer;
 
@@ -1738,14 +1760,14 @@ void Getblock(struct block b[MAXPLAYERS]) {
   close_file(block_fd);
 }
 
-Db::Db() {
+void open_files() {
   opencommoddata(&commoddata);
   openracedata(&racedata);
   openshdata(&shdata);
   openstardata(&stdata);
 }
 
-Db::~Db() {
+void close_files() {
   close_file(commoddata);
   close_file(racedata);
   close_file(shdata);

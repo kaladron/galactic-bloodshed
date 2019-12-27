@@ -17,6 +17,14 @@ export using population_t = int64_t;
 
 export using command_t = std::vector<std::string>;
 
+export class Db {
+ public:
+  virtual ~Db() {}
+
+ protected:
+  Db() {}
+};
+
 export class GameObj {
  public:
   player_t player;
@@ -30,7 +38,8 @@ export class GameObj {
   planetnum_t pnum;             ///< number of planet
   shipnum_t shipno;             ///< # of ship
   std::stringstream out;
-  GameObj() = default;
+  Db &db;
+  GameObj(Db &db_) : db(db_) {}
   GameObj(const GameObj &) = delete;
   GameObj &operator=(const GameObj &) = delete;
 };

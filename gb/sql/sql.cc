@@ -31,6 +31,8 @@ Sql::Sql() {
     fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(dbconn));
     exit(0);
   }
+
+  open_files();
 }
 
-Sql::~Sql() {}
+Sql::~Sql() { close_files(); }

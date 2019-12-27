@@ -16,7 +16,7 @@ void d_broadcast(const player_t, const governor_t, const std::string &);
 void d_shout(const player_t, const governor_t, const std::string &);
 void d_announce(const player_t, const governor_t, const starnum_t,
                 const std::string &);
-void do_next_thing();
+void do_next_thing(Db &);
 void kill_ship(int, Ship *);
 void compute_power_blocks();
 void insert_sh_univ(struct stardata *, Ship *);

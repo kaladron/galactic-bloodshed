@@ -5,7 +5,7 @@
 #ifndef DOTURNCMD_H
 #define DOTURNCMD_H
 
-void do_turn(int);
+void do_turn(Db&, int);
 void handle_victory();
 
 #endif  // DOTURNCMD_H

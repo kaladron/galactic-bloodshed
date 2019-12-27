@@ -1571,8 +1571,7 @@ shipnum_t Numships() /* return number of ships */
   // TODO(jeffbailey): Pretty certain we have to free stmt
 }
 
-int Sql::Numcommods() { return ::Numcommods(); }
-int Numcommods() {
+int Sql::Numcommods() {
   struct stat buffer;
 
   fstat(commoddata, &buffer);

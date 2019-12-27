@@ -1566,7 +1566,7 @@ void sell(const command_t &argv, GameObj &g) {
   while ((commodno = getdeadcommod()) == 0)
     ;
 
-  if (commodno == -1) commodno = Numcommods() + 1;
+  if (commodno == -1) commodno = g.db.Numcommods() + 1;
   sprintf(buf, "Lot #%d - %d units of %s.\n", commodno, amount, Commod[item]);
   notify(Playernum, Governor, buf);
   sprintf(buf, "Lot #%d - %d units of %s for sale by %s [%d].\n", commodno,
@@ -1601,7 +1601,7 @@ void bid(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor,
            "  Lot Stock      Type  Owner  Bidder  Amount "
            "Cost/Unit    Ship  Dest\n");
-    for (i = 1; i <= Numcommods(); i++) {
+    for (i = 1; i <= g.db.Numcommods(); i++) {
       getcommod(&c, i);
       if (c->owner && c->amount) {
         rate = (double)c->bid / (double)c->amount;
@@ -1643,7 +1643,7 @@ void bid(const command_t &argv, GameObj &g) {
     g.out << "+++ Galactic Bloodshed Commodities Market +++\n\n";
     g.out << "  Lot Stock      Type  Owner  Bidder  Amount "
              "Cost/Unit    Ship  Dest\n";
-    for (i = 1; i <= Numcommods(); i++) {
+    for (i = 1; i <= g.db.Numcommods(); i++) {
       getcommod(&c, i);
       if (c->owner && c->amount && (c->type == item)) {
         rate = (double)c->bid / (double)c->amount;
@@ -1698,7 +1698,7 @@ void bid(const command_t &argv, GameObj &g) {
 
     lot = std::stoi(argv[1]);
     money_t bid0 = std::stoi(argv[2]);
-    if ((lot <= 0) || lot > Numcommods()) {
+    if ((lot <= 0) || lot > g.db.Numcommods()) {
       g.out << "Illegal lot number.\n";
       return;
     }

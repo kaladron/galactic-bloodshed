@@ -163,8 +163,8 @@ static int shovechars(int, Db &);
 
 static void GB_time(const command_t &, GameObj &);
 static void GB_schedule(const command_t &, GameObj &);
-static void do_update(bool = false);
-static void do_segment(int, int);
+static void do_update(Db &, bool = false);
+static void do_segment(Db &, int, int);
 static int make_socket(int);
 static void shutdownsock(DescriptorData &);
 static void load_race_data();
@@ -726,18 +726,18 @@ static int shovechars(int port, Db &db) {
       }
     }
     if (go_time > 0 && now >= go_time) {
-      do_next_thing();
+      do_next_thing(db);
       go_time = 0;
     }
   }
   return sock;
 }
 
-void do_next_thing() {
+void do_next_thing(Db &db) {
   if (nsegments_done < segments)
-    do_segment(0, 1);
+    do_segment(db, 0, 1);
   else
-    do_update();
+    do_update(db);
 }
 
 static int make_socket(int port) {
@@ -1039,10 +1039,10 @@ static void check_connect(DescriptorData &d, const char *message) {
 
 #ifdef EXTERNAL_TRIGGER
   if (race_password == SEGMENT_PASSWORD) {
-    do_segment(1, 0);
+    do_segment(d.db, 1, 0);
     return;
   } else if (race_password == UPDATE_PASSWORD) {
-    do_update(true);
+    do_update(d.db, true);
     return;
   }
 #endif
@@ -1101,7 +1101,7 @@ static void check_connect(DescriptorData &d, const char *message) {
   treasury({}, d);
 }
 
-static void do_update(bool force) {
+static void do_update(Db &db, bool force) {
   time_t clk = time(nullptr);
   int i;
   FILE *sfile;
@@ -1162,7 +1162,7 @@ static void do_update(bool force) {
   }
 
   update_flag = 1;
-  if (!fakeit) do_turn(1);
+  if (!fakeit) do_turn(db, 1);
   update_flag = 0;
   clk = time(nullptr);
   sprintf(buf, "%sUpdate %d finished\n", ctime(&clk), nupdates_done);
@@ -1173,7 +1173,7 @@ static void do_update(bool force) {
   }
 }
 
-static void do_segment(int override, int segment) {
+static void do_segment(Db &db, int override, int segment) {
   time_t clk = time(nullptr);
   int i;
   FILE *sfile;
@@ -1204,7 +1204,7 @@ static void do_segment(int override, int segment) {
   }
 
   update_flag = 1;
-  if (!fakeit) do_turn(0);
+  if (!fakeit) do_turn(db, 0);
   update_flag = 0;
   unlink(SEGMENTFL);
   if ((sfile = fopen(SEGMENTFL, "w"))) {
@@ -1297,9 +1297,9 @@ static void process_command(GameObj &g, const command_t &argv) {
     shutdown_flag = 1;
     g.out << "Doing shutdown.\n";
   } else if (argv[0] == "@@update" && God)
-    do_update(true);
+    do_update(g.db, true);
   else if (argv[0] == "@@segment" && God)
-    do_segment(1, std::stoi(argv[1]));
+    do_segment(g.db, 1, std::stoi(argv[1]));
   else {
     g.out << "'" << argv[0] << "':illegal command error.\n";
   }

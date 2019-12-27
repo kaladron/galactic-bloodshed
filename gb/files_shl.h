@@ -39,7 +39,6 @@ void putship(Ship *);
 void putcommod(commodtype *, int);
 int Numraces();
 shipnum_t Numships();
-int Numcommods();
 int Newslength(int);
 void clr_shipfree();
 void clr_commodfree();

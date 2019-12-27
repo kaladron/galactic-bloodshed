@@ -331,7 +331,7 @@ void vote(const command_t &argv, GameObj &g) {
       /* Is Update/Movement vote unanimous now? */
       if (nvotes > 0 && nvotes == yays && nays == 0) {
         /* Do it... */
-        do_next_thing();
+        do_next_thing(g.db);
       }
     }
   } else {

@@ -1546,8 +1546,7 @@ void putcommod(commodtype *c, int commodnum) {
             (commodnum - 1) * sizeof(commodtype));
 }
 
-int Sql::Numraces() { return ::Numraces(); }
-int Numraces() {
+int Sql::Numraces() {
   struct stat buffer;
 
   fstat(racedata, &buffer);

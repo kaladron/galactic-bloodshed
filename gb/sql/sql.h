@@ -11,19 +11,19 @@ class Sql : public Db {
  public:
   Sql();
   virtual ~Sql();
-  int Numcommods();
-  int Numraces();
-  void putcommod(commodtype *, int);
-  void putship(Ship *);
-  void putstar(startype *, starnum_t);
-  void putrace(Race *);
-  void putsdata(struct stardata *);
-  void getsdata(struct stardata *);
-  void getrace(Race **, int);
-  void getstar(startype **, int);
-  std::optional<Ship> getship(const shipnum_t shipnum);
-  std::optional<Ship> getship(Ship **, const shipnum_t);
-  int getcommod(commodtype **, commodnum_t);
+  virtual int Numcommods();
+  virtual int Numraces();
+  virtual void putcommod(commodtype *, int);
+  virtual void putship(Ship *);
+  virtual void putstar(startype *, starnum_t);
+  virtual void putrace(Race *);
+  virtual void putsdata(struct stardata *);
+  virtual void getsdata(struct stardata *);
+  virtual void getrace(Race **, int);
+  virtual void getstar(startype **, int);
+  virtual std::optional<Ship> getship(const shipnum_t shipnum);
+  virtual std::optional<Ship> getship(Ship **, const shipnum_t);
+  virtual int getcommod(commodtype **, commodnum_t);
 };
 
 #endif  // SQL_SQL_H

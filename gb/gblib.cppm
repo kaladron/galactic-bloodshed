@@ -20,6 +20,8 @@ export using command_t = std::vector<std::string>;
 export class Db {
  public:
   virtual ~Db() {}
+  virtual int Numcommods() = 0;
+  virtual int Numraces() = 0;
 
  protected:
   Db() {}

@@ -48,7 +48,7 @@ static void make_discoveries(Race *);
 static void output_ground_attacks();
 static int planet_points(const Planet &);
 
-void do_turn(int update) {
+void do_turn(Db &db, int update) {
   commodtype *c;
   double dist;
   struct victstruct {
@@ -132,7 +132,7 @@ void do_turn(int update) {
 #ifdef MARKET
   if (update) {
     /* reset market */
-    Num_commods = Numcommods();
+    Num_commods = db.Numcommods();
     clr_commodfree();
     for (commodnum_t i = Num_commods; i >= 1; i--) {
       getcommod(&c, i);

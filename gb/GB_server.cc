@@ -167,7 +167,7 @@ static void do_update(Db &, bool = false);
 static void do_segment(Db &, int, int);
 static int make_socket(int);
 static void shutdownsock(DescriptorData &);
-static void load_race_data();
+static void load_race_data(Db &);
 static void load_star_data();
 static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
@@ -531,11 +531,11 @@ int main(int argc, char **argv) {
           ctime(&next_update_time));
   fprintf(stderr, "      Next Segment   : %s", ctime(&next_segment_time));
 
-  load_race_data(); /* make sure you do this first */
-  load_star_data(); /* get star data */
-  getpower(Power);  /* get power report from database */
-  Getblock(Blocks); /* get alliance block data */
-  SortShips();      /* Sort the ship list by tech for "build ?" */
+  load_race_data(db); /* make sure you do this first */
+  load_star_data();   /* get star data */
+  getpower(Power);    /* get power report from database */
+  Getblock(Blocks);   /* get alliance block data */
+  SortShips();        /* Sort the ship list by tech for "build ?" */
   for (int i = 1; i <= MAXPLAYERS; i++) {
     setbit(Blocks[i - 1].invite, i - 1);
     setbit(Blocks[i - 1].pledge, i - 1);
@@ -1308,8 +1308,8 @@ static void process_command(GameObj &g, const command_t &argv) {
   g.out << do_prompt(g);
 }
 
-static void load_race_data() {
-  Num_races = Numraces();
+static void load_race_data(Db &db) {
+  Num_races = db.Numraces();
   races.reserve(Num_races);
   for (int i = 1; i <= Num_races; i++) {
     Race *r;

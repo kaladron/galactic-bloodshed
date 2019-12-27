@@ -37,7 +37,6 @@ void putsector(const Sector &, const Planet &, const int x, const int y);
 void putsmap(SectorMap &map, Planet &p);
 void putship(Ship *);
 void putcommod(commodtype *, int);
-int Numraces();
 shipnum_t Numships();
 int Newslength(int);
 void clr_shipfree();

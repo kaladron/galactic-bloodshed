@@ -62,7 +62,7 @@ int enroll_valid_race() {
       }
   */
   Sql db{};
-  Playernum = Numraces() + 1;
+  Playernum = db.Numraces() + 1;
   if ((Playernum == 1) && (race_info.priv_type != P_GOD)) {
     sprintf(race_info.rejection,
             "The first race enrolled must have God privileges.\n");

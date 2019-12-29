@@ -49,7 +49,7 @@ static void output_ground_attacks();
 static int planet_points(const Planet &);
 
 void do_turn(Db &db, int update) {
-  commodtype *c;
+  Commod *c;
   double dist;
   struct victstruct {
     int numsects;

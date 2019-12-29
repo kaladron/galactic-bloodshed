@@ -752,24 +752,24 @@ std::optional<Ship> getship(Ship **s, const shipnum_t shipnum) {
   return **s;
 }
 
-int Sql::getcommod(commodtype **c, commodnum_t commodnum) {
+int Sql::getcommod(Commod **c, commodnum_t commodnum) {
   return ::getcommod(c, commodnum);
 }
-int getcommod(commodtype **c, commodnum_t commodnum) {
+int getcommod(Commod **c, commodnum_t commodnum) {
   struct stat buffer;
 
   if (commodnum <= 0) return 0;
 
   fstat(commoddata, &buffer);
-  if (buffer.st_size / sizeof(commodtype) < commodnum) return 0;
+  if (buffer.st_size / sizeof(Commod) < commodnum) return 0;
 
-  if ((*c = (commodtype *)malloc(sizeof(commodtype))) == nullptr) {
+  if ((*c = (Commod *)malloc(sizeof(Commod))) == nullptr) {
     printf("getcommod:malloc() error \n");
     exit(0);
   }
 
-  Fileread(commoddata, (char *)*c, sizeof(commodtype),
-           (commodnum - 1) * sizeof(commodtype));
+  Fileread(commoddata, (char *)*c, sizeof(Commod),
+           (commodnum - 1) * sizeof(Commod));
   return 1;
 }
 
@@ -1544,12 +1544,12 @@ void putship(Ship *s) {
   end_bulk_insert();
 }
 
-void Sql::putcommod(commodtype *c, int commodnum) {
+void Sql::putcommod(Commod *c, int commodnum) {
   return ::putcommod(c, commodnum);
 }
-void putcommod(commodtype *c, int commodnum) {
-  Filewrite(commoddata, (char *)c, sizeof(commodtype),
-            (commodnum - 1) * sizeof(commodtype));
+void putcommod(Commod *c, int commodnum) {
+  Filewrite(commoddata, (char *)c, sizeof(Commod),
+            (commodnum - 1) * sizeof(Commod));
 }
 
 int Sql::Numraces() {
@@ -1580,7 +1580,7 @@ int Sql::Numcommods() {
   struct stat buffer;
 
   fstat(commoddata, &buffer);
-  return ((int)(buffer.st_size / sizeof(commodtype)));
+  return ((int)(buffer.st_size / sizeof(Commod)));
 }
 
 int Newslength(int type) {

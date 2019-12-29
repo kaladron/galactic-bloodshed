@@ -1452,7 +1452,7 @@ void sell(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   int APcount = 20;
   racetype *Race;
-  commodtype c;
+  Commod c;
   int commodno;
   int amount;
   int item;
@@ -1584,7 +1584,7 @@ void bid(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   racetype *Race;
   Planet p;
-  commodtype *c;
+  Commod *c;
   char commod;
   int i;
   int item;

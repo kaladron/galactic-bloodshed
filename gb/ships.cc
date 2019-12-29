@@ -8,6 +8,7 @@ import gblib;
 #define FMT_HEADER_ONLY
 #include "gb/ships.h"
 
+#include <assert.h>
 #include <fmt/format.h>
 
 #include "gb/GB_server.h"

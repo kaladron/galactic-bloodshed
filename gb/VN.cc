@@ -10,8 +10,10 @@ import std;
 #include "gb/VN.h"
 
 #define FMT_HEADER_ONLY
+#include <assert.h>
 #include <fmt/format.h>
 
+#include "assert.h"
 #include "gb/build.h"
 #include "gb/doturn.h"
 #include "gb/fire.h"

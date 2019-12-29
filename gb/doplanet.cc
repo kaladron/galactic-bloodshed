@@ -10,6 +10,7 @@ import std;
 #include "gb/doplanet.h"
 
 #define FMT_HEADER_ONLY
+#include <assert.h>
 #include <fmt/format.h>
 
 #include "gb/GB_server.h"

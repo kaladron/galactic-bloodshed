@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void place_star(startype *star) {
+void place_star(Star *star) {
   int found = 0;
   int i;
   int j;

@@ -54,7 +54,7 @@ int enroll_valid_race() {
   sigset_t mask;
   sigset_t block;
   Planet planet;
-  startype *star_arena;
+  Star *star_arena;
   /*
     if (race.status == STATUS_ENROLLED) {
       sprintf(race.rejection, "This race has already been enrolled!\n") ;
@@ -76,7 +76,7 @@ int enroll_valid_race() {
   }
 
   getsdata(&Sdata);
-  star_arena = (startype *)malloc(Sdata.numstars * sizeof(startype));
+  star_arena = (Star *)malloc(Sdata.numstars * sizeof(Star));
   for (star = 0; star < Sdata.numstars; star++) {
     Stars[star] = &star_arena[star];
     getstar(&(Stars[star]), star);

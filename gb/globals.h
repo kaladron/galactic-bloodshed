@@ -61,7 +61,7 @@ struct stardata Sdata;
 unsigned char Nuked[MAXPLAYERS];
 unsigned long StarsInhab[NUMSTARS];
 unsigned long StarsExpl[NUMSTARS];
-startype *Stars[NUMSTARS];
+Star *Stars[NUMSTARS];
 unsigned short Sdatanumships[MAXPLAYERS];
 unsigned long Sdatapopns[MAXPLAYERS];
 unsigned short starnumships[NUMSTARS][MAXPLAYERS];

@@ -612,7 +612,7 @@ std::string prin_ship_dest(const Ship &ship) {
  */
 static void mk_expl_aimed_at(int Playernum, int Governor, Ship *s) {
   double dist;
-  startype *str;
+  Star *str;
   double xf;
   double yf;
 

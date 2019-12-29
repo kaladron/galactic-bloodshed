@@ -175,11 +175,11 @@ void do_turn(Db &db, int update) {
                 "Lot %lu purchased from %s [%d] at a cost of %ld.\n   %ld "
                 "%s arrived at /%s/%s\n",
                 i, races[c->owner - 1]->name, c->owner, c->bid, c->amount,
-                Commod[c->type], Stars[c->star_to]->name,
+                commod_name[c->type], Stars[c->star_to]->name,
                 Stars[c->star_to]->pnames[c->planet_to]);
         push_telegram((int)c->bidder, (int)c->bidder_gov, buf);
         sprintf(buf, "Lot %lu (%lu %s) sold to %s [%d] at a cost of %ld.\n", i,
-                c->amount, Commod[c->type], races[c->bidder - 1]->name,
+                c->amount, commod_name[c->type], races[c->bidder - 1]->name,
                 c->bidder, c->bid);
         push_telegram((int)c->owner, (int)c->governor, buf);
         c->owner = c->governor = 0;

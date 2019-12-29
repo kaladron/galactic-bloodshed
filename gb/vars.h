@@ -19,7 +19,6 @@ constexpr int MAX_ROUTES = 4;
 #define MAXPLAYERS 64
 
 using startype = struct Star;
-using commodtype = struct commod;
 
 struct plinfo {            /* planetary stockpiles */
   unsigned short fuel;     /* fuel for powering things */
@@ -72,7 +71,7 @@ struct plinfo {            /* planetary stockpiles */
 #define Resources(x) ((x)&M_RESOURCES)
 #define Crystals(x) ((x)&M_CRYSTALS)
 
-struct commod {
+struct Commod {
   player_t owner;
   governor_t governor;
   uint8_t type;

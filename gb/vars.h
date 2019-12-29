@@ -180,8 +180,6 @@ struct stardata {
 
 extern struct stardata Sdata;
 
-struct directory {};
-
 extern unsigned char Nuked[MAXPLAYERS];
 extern unsigned long StarsInhab[NUMSTARS];
 extern unsigned long StarsExpl[NUMSTARS];

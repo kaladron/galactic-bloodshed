@@ -79,8 +79,10 @@ libcommands_a_SOURCES = \
 		     commands/tax.cc \
 		     commands/tech_status.cc \
 		     commands/technology.cc \
+		     commands/repair.cc \
 		     commands/rst.cc \
 		     commands/scrap.cc \
+		     commands/survey.cc \
 		     commands/toggle.cc \
 		     commands/toxicity.cc \
 		     commands/victory.cc \
@@ -125,7 +127,6 @@ OLD_LIBGBLIB_FILES = \
 		     shlmisc.cc \
 		     shootblast.cc \
 		     star.cc \
-		     survey.cc \
 		     tech.cc \
 		     tele.cc \
 		     victory.cc

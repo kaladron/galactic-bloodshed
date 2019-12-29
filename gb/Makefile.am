@@ -54,7 +54,7 @@ enrol_SOURCES =  $(COMMON_FILES) enrol.cc max.cc perm.cc sectormap.cc shlmisc.cc
 enrol_LDADD = libgblib.a
 
 GB_SOURCES = GB_server.cc $(COMMON_FILES) $(OLD_LIBGBLIB_FILES)
-GB_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
+GB_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm -Wno-alloca
 GB_LDADD = libgblib.a libcommands.a
 
 libcommands_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm

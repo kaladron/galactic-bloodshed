@@ -24,7 +24,7 @@ import std;
 static double Lastx, Lasty, Zoom;
 static const int SCALE = 100;
 
-static void DispStar(const GameObj &, const ScopeLevel, startype *, int, Race *,
+static void DispStar(const GameObj &, const ScopeLevel, Star *, int, Race *,
                      char *);
 static void DispPlanet(const GameObj &, const ScopeLevel, const Planet &,
                        char *, int, Race *, char *);
@@ -195,7 +195,7 @@ void orbit(const command_t &argv, GameObj &g) {
 
 // TODO(jeffbailey) Remove DontDispStar parameter as unused, but it really looks
 // like we should be doing something here.
-static void DispStar(const GameObj &g, const ScopeLevel level, startype *star,
+static void DispStar(const GameObj &g, const ScopeLevel level, Star *star,
                      int /* DontDispStars */, Race *r, char *string) {
   int x = 0;  // TODO(jeffbailey): Inititalized x and y to 0.
   int y = 0;

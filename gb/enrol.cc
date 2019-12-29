@@ -85,7 +85,7 @@ int main() {
   struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
   Planet planet;
   unsigned char not_found[PlanetType::DESERT + 1];
-  startype *star_arena;
+  Star *star_arena;
 
   Sql db{};
 
@@ -111,7 +111,7 @@ int main() {
 
   db.getsdata(&Sdata);
 
-  star_arena = (startype *)malloc(Sdata.numstars * sizeof(startype));
+  star_arena = (Star *)malloc(Sdata.numstars * sizeof(Star));
   for (int s = 0; s < Sdata.numstars; s++) {
     Stars[s] = &star_arena[s];
     db.getstar(&(Stars[s]), s);

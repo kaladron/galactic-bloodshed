@@ -29,7 +29,7 @@ static void autoload_at_planet(int, Ship *, Planet *, Sector &, int *,
                                double *);
 static void autoload_at_ship(Ship *, Ship *, int *, double *);
 static std::optional<ScopeLevel> build_at_ship(GameObj &, Ship *, int *, int *);
-static int can_build_at_planet(GameObj &, startype *, const Planet &);
+static int can_build_at_planet(GameObj &, Star *, const Planet &);
 static bool can_build_this(const ShipType, const Race &, char *);
 static int can_build_on_ship(int, Race *, Ship *, char *);
 static void create_ship_by_planet(int, int, Race *, Ship *, Planet *, int, int,
@@ -1065,8 +1065,7 @@ static int getcount(const command_t &argv, const size_t elem) {
   return (count);
 }
 
-static int can_build_at_planet(GameObj &g, startype *star,
-                               const Planet &planet) {
+static int can_build_at_planet(GameObj &g, Star *star, const Planet &planet) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   if (planet.slaved_to && planet.slaved_to != Playernum) {

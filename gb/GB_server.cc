@@ -1325,13 +1325,13 @@ static void load_race_data(Db &db) {
 static void load_star_data() {
   int s;
   int t;
-  startype *star_arena;
+  Star *star_arena;
   int pcount = 0;
 
   /* get star database */
   Planet_count = 0;
   getsdata(&Sdata);
-  star_arena = (startype *)malloc(Sdata.numstars * sizeof(startype));
+  star_arena = (Star *)malloc(Sdata.numstars * sizeof(Star));
   for (s = 0; s < Sdata.numstars; s++) {
     Stars[s] = &star_arena[s]; /* Initialize star pointers */
   }
@@ -1515,7 +1515,7 @@ void insert_sh_univ(struct stardata *sdata, Ship *s) {
   s->whatorbits = ScopeLevel::LEVEL_UNIV;
 }
 
-void insert_sh_star(startype *star, Ship *s) {
+void insert_sh_star(Star *star, Ship *s) {
   s->nextship = star->ships;
   star->ships = s->number;
   s->whatorbits = ScopeLevel::LEVEL_STAR;

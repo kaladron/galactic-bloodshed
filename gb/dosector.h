@@ -7,7 +7,7 @@
 
 #include "gb/vars.h"
 
-void produce(startype *, const Planet &, Sector &);
+void produce(Star *, const Planet &, Sector &);
 void spread(const Planet &, Sector &, int, int, SectorMap &);
 void explore(const Planet &, Sector &, int, int, int);
 

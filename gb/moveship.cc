@@ -53,8 +53,8 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
   int deststar = 0;
   int destpnum = 0;
   Ship *dsh;
-  startype *ost;
-  startype *dst;
+  Star *ost;
+  Star *dst;
 
   if (s->hyper_drive.has && s->hyper_drive.on) { /* do a hyperspace jump */
     if (!mode) return; /* we're not ready to jump until the update */

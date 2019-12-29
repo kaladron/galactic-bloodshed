@@ -21,7 +21,7 @@ static void Migrate2(const Planet &, int, int, Sector &, int *, SectorMap &);
 static void plate(Sector &);
 
 //  produce() -- produce, stuff like that, on a sector.
-void produce(startype *star, const Planet &planet, Sector &s) {
+void produce(Star *star, const Planet &planet, Sector &s) {
   int ss;
   int maxsup;
   int pfuel = 0;

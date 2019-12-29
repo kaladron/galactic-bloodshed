@@ -20,7 +20,7 @@ class Universe {};
 class BigBang {
  public:
   Universe *go();
-  // void place_star(startype *);
+  // void place_star(Star *);
 
   void setPlanetNameGen(unique_ptr<NameGenerator> namegen);
   void setStarNameGen(unique_ptr<NameGenerator> namegen);

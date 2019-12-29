@@ -293,16 +293,16 @@ void getrace(Race **r, int rnum) {
   Fileread(racedata, (char *)*r, sizeof(Race), (rnum - 1) * sizeof(Race));
 }
 
-void Sql::getstar(startype **s, int star) { ::getstar(s, star); }
-void getstar(startype **s, int star) {
+void Sql::getstar(Star **s, int star) { ::getstar(s, star); }
+void getstar(Star **s, int star) {
   if (s >= &Stars[0] && s < &Stars[NUMSTARS])
     ; /* Do nothing */
   else {
-    *s = (startype *)malloc(sizeof(startype));
+    *s = (Star *)malloc(sizeof(Star));
   }
-  memset(*s, 0, sizeof(startype));
-  Fileread(stdata, (char *)*s, sizeof(startype),
-           (int)(sizeof(Sdata) + star * sizeof(startype)));
+  memset(*s, 0, sizeof(Star));
+  Fileread(stdata, (char *)*s, sizeof(Star),
+           (int)(sizeof(Sdata) + star * sizeof(Star)));
   const char *tail;
 
   {
@@ -846,10 +846,10 @@ void putrace(Race *r) {
             (r->Playernum - 1) * sizeof(Race));
 }
 
-void Sql::putstar(startype *s, starnum_t snum) { ::putstar(s, snum); }
-void putstar(startype *s, starnum_t snum) {
-  Filewrite(stdata, (char *)s, sizeof(startype),
-            (int)(sizeof(Sdata) + snum * sizeof(startype)));
+void Sql::putstar(Star *s, starnum_t snum) { ::putstar(s, snum); }
+void putstar(Star *s, starnum_t snum) {
+  Filewrite(stdata, (char *)s, sizeof(Star),
+            (int)(sizeof(Sdata) + snum * sizeof(Star)));
 
   start_bulk_insert();
 
@@ -968,10 +968,10 @@ static void end_bulk_insert() {
   sqlite3_exec(dbconn, "END TRANSACTION", nullptr, nullptr, &err_msg);
 }
 
-void Sql::putplanet(const Planet &p, startype *star, const int pnum) {
+void Sql::putplanet(const Planet &p, Star *star, const int pnum) {
   ::putplanet(p, star, pnum);
 }
-void putplanet(const Planet &p, startype *star, const int pnum) {
+void putplanet(const Planet &p, Star *star, const int pnum) {
   start_bulk_insert();
 
   const char *tail = nullptr;

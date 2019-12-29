@@ -42,7 +42,7 @@ static constexpr void maintain(Race &r, Race::gov &governor,
 
 static int APadd(const int, const population_t, const Race &);
 static int attack_planet(Ship *);
-static void fix_stability(startype *);
+static void fix_stability(Star *);
 static bool governed(const Race &);
 static void make_discoveries(Race *);
 static void output_ground_attacks();
@@ -493,7 +493,7 @@ static bool governed(const Race &race) {
 }
 
 /* fix stability for stars */
-void fix_stability(startype *s) {
+void fix_stability(Star *s) {
   int a;
   int i;
 

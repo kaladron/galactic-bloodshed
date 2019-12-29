@@ -18,8 +18,6 @@ constexpr int MAX_ROUTES = 4;
 
 #define MAXPLAYERS 64
 
-using startype = struct Star;
-
 struct plinfo {            /* planetary stockpiles */
   unsigned short fuel;     /* fuel for powering things */
   unsigned short destruct; /* destructive potential */
@@ -187,7 +185,7 @@ struct directory {};
 extern unsigned char Nuked[MAXPLAYERS];
 extern unsigned long StarsInhab[NUMSTARS];
 extern unsigned long StarsExpl[NUMSTARS];
-extern startype *Stars[NUMSTARS];
+extern Star *Stars[NUMSTARS];
 extern unsigned short Sdatanumships[MAXPLAYERS];
 extern unsigned long Sdatapopns[MAXPLAYERS];
 extern unsigned short starnumships[NUMSTARS][MAXPLAYERS];

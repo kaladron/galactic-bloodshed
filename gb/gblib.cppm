@@ -94,6 +94,22 @@ export class Sector {
   friend std::ostream &operator<<(std::ostream &, const Sector &);
 };
 
+export struct Commod {
+  player_t owner;
+  governor_t governor;
+  uint8_t type;
+  uint64_t amount;
+  unsigned char dummy;
+  unsigned char deliver; /* whether the lot is ready for shipping or not */
+  money_t bid;
+  player_t bidder;
+  governor_t bidder_gov;
+  starnum_t star_from; /* where the stuff originated from */
+  planetnum_t planet_from;
+  starnum_t star_to; /* where it goes to */
+  planetnum_t planet_to;
+};
+
 export struct vic {
   unsigned char racenum;
   std::string name;

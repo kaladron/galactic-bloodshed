@@ -1567,10 +1567,11 @@ void sell(const command_t &argv, GameObj &g) {
     ;
 
   if (commodno == -1) commodno = g.db.Numcommods() + 1;
-  sprintf(buf, "Lot #%d - %d units of %s.\n", commodno, amount, Commod[item]);
+  sprintf(buf, "Lot #%d - %d units of %s.\n", commodno, amount,
+          commod_name[item]);
   notify(Playernum, Governor, buf);
   sprintf(buf, "Lot #%d - %d units of %s for sale by %s [%d].\n", commodno,
-          amount, Commod[item], races[Playernum - 1]->name, Playernum);
+          amount, commod_name[item], races[Playernum - 1]->name, Playernum);
   post(buf, TRANSFER);
   for (player_t i = 1; i <= Num_races; i++) notify_race(i, buf);
   putcommod(&c, commodno);
@@ -1612,7 +1613,7 @@ void bid(const command_t &argv, GameObj &g) {
           temp[0] = '\0';
         sprintf(
             buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
-            c->deliver ? '*' : ' ', c->amount, Commod[c->type], c->owner,
+            c->deliver ? '*' : ' ', c->amount, commod_name[c->type], c->owner,
             c->bidder, c->bid, rate,
             shipping_cost((int)c->star_from, (int)g.snum, &dist, (int)c->bid),
             temp);
@@ -1654,7 +1655,7 @@ void bid(const command_t &argv, GameObj &g) {
           temp[0] = '\0';
         sprintf(
             buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
-            c->deliver ? '*' : ' ', c->amount, Commod[c->type], c->owner,
+            c->deliver ? '*' : ' ', c->amount, commod_name[c->type], c->owner,
             c->bidder, c->bid, rate,
             shipping_cost((int)c->star_from, (int)g.snum, &dist, (int)c->bid),
             temp);
@@ -1737,7 +1738,8 @@ void bid(const command_t &argv, GameObj &g) {
     if (c->bidder) {
       sprintf(buf,
               "The bid on lot #%d (%lu %s) has been upped to %ld by %s [%d].\n",
-              lot, c->amount, Commod[c->type], bid0, Race->name, Playernum);
+              lot, c->amount, commod_name[c->type], bid0, Race->name,
+              Playernum);
       notify((int)c->bidder, (int)c->bidder_gov, buf);
     }
     c->bid = bid0;

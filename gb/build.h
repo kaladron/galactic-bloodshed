@@ -17,6 +17,6 @@ void sell(const command_t &, GameObj &);
 void bid(const command_t &argv, GameObj &);
 int shipping_cost(int, int, double *, int);
 
-extern const char *Commod[4];
+extern const char *commod_name[4];
 
 #endif  // BUILD_H

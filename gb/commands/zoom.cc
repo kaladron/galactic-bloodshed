@@ -11,6 +11,7 @@ import std;
 #include "gb/commands/zoom.h"
 
 #define FMT_HEADER_ONLY
+#include <assert.h>
 #include <fmt/format.h>
 
 #include "gb/GB_server.h"

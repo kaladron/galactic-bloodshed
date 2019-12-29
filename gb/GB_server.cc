@@ -19,6 +19,7 @@ import std;
 #include <boost/algorithm/string.hpp>
 
 #define FMT_HEADER_ONLY
+#include <assert.h>
 #include <fmt/format.h>
 
 #include "gb/buffers.h"

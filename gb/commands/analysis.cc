@@ -17,7 +17,8 @@ import std;
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
-#define CARE 5
+static constexpr int CARE = 5;
+
 struct anal_sect {
   int x, y;
   int value;

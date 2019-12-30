@@ -5,8 +5,6 @@
 #ifndef CMDS_TECHNOLOGY_H
 #define CMDS_TECHNOLOGY_H
 
-#include "gb/vars.h"
-
 void technology(const command_t &, GameObj &);
 
 #endif  // CMDS_TECHNOLOGY_H

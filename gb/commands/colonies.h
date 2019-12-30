@@ -5,8 +5,6 @@
 #ifndef CMDS_COLONIES_H
 #define CMDS_COLONIES_H
 
-#include "gb/vars.h"
-
 void colonies(const command_t &, GameObj &);
 
 #endif  // CMDS_COLONIES_H

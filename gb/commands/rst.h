@@ -5,8 +5,6 @@
 #ifndef CMDS_RST_H
 #define CMDS_RST_H
 
-#include "gb/vars.h"
-
 void rst(const command_t &, GameObj &);
 
 #endif  // CMDS_RST_H

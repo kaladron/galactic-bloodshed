@@ -5,8 +5,6 @@
 #ifndef CMDS_TECH_STATUS_H
 #define CMDS_TECH_STATUS_H
 
-#include "gb/vars.h"
-
 void tech_status(const command_t &, GameObj &);
 
 #endif  // CMDS_TECH_STATUS_H

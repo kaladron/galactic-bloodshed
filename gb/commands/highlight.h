@@ -5,8 +5,6 @@
 #ifndef CMDS_HIGHLIGHT_H
 #define CMDS_HIGHLIGHT_H
 
-#include "gb/vars.h"
-
 void highlight(const command_t &, GameObj &);
 
 #endif  // CMDS_HIGHLIGHT_H

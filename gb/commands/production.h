@@ -5,8 +5,6 @@
 #ifndef CMDS_PRODUCTION_H
 #define CMDS_PRODUCTION_H
 
-#include "gb/vars.h"
-
 void production(const command_t &, GameObj &);
 
 #endif  // CMDS_PRODUCTION_H

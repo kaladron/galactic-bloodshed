@@ -5,9 +5,6 @@
 #ifndef CMDS_CAPTURE_H
 #define CMDS_CAPTURE_H
 
-#include "gb/ships.h"
-#include "gb/vars.h"
-
 void capture(const command_t &, GameObj &);
 
 #endif  // CMDS_CAPTURE_H

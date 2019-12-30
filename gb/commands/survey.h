@@ -5,8 +5,6 @@
 #ifndef CMDS_SURVEY_H
 #define CMDS_SURVEY_H
 
-#include "gb/vars.h"
-
 void survey(const command_t &, GameObj &);
 
 #endif  // SURVEY_H

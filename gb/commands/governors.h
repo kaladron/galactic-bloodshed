@@ -5,8 +5,6 @@
 #ifndef CMDS_GOVERNORS_H
 #define CMDS_GOVERNORS_H
 
-#include "gb/vars.h"
-
 void governors(const command_t &, GameObj &);
 
 #endif  // CMDS_GOVERNORS_H

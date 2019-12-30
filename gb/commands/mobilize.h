@@ -5,8 +5,6 @@
 #ifndef CMDS_MOBILIZE_H
 #define CMDS_MOBILIZE_H
 
-#include "gb/vars.h"
-
 void mobilize(const command_t &, GameObj &);
 
 #endif  // CMDS_MOBILIZ_EH

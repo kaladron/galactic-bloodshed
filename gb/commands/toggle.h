@@ -5,8 +5,6 @@
 #ifndef CMDS_TOGGLE_H
 #define CMDS_TOGGLE_H
 
-#include "gb/vars.h"
-
 void toggle(const command_t &, GameObj &);
 
 #endif  // CMDS_TOGGLE_H

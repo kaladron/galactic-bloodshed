@@ -2,11 +2,9 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef ENSLAVE_H
-#define ENSLAVE_H
-
-#include "gb/vars.h"
+#ifndef CMDS_ENSLAVE_H
+#define CMDS_ENSLAVE_H
 
 void enslave(const command_t &, GameObj &);
 
-#endif  // ENSLAVE_H
+#endif  // CMDS_ENSLAVE_H

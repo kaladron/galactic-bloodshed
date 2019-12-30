@@ -5,8 +5,6 @@
 #ifndef CMDS_ZOOM_H
 #define CMDS_ZOOM_H
 
-#include "gb/vars.h"
-
 void zoom(const command_t &, GameObj &);
 
 #endif  // CMDS_ZOOM_H

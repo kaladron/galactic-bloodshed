@@ -5,8 +5,6 @@
 #ifndef CMDS_POWER_H
 #define CMDS_POWER_H
 
-#include "gb/vars.h"
-
 void power(const command_t &, GameObj &);
 
 #endif  // CMDS_POWER_H

@@ -5,8 +5,6 @@
 #ifndef CMDS_EXAMINE_H
 #define CMDS_EXAMINE_H
 
-#include "gb/vars.h"
-
 void examine(const command_t &, GameObj &);
 
 #endif  // CMDS_EXAMINE_H

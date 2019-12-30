@@ -5,8 +5,6 @@
 #ifndef CMDS_VICTORY_H
 #define CMDS_VICTORY_H
 
-#include "gb/vars.h"
-
 void victory(const command_t &, GameObj &);
 
 #endif  // CMDS_VICTORY_H

@@ -173,7 +173,6 @@ FMT_FUNC void format_error_code(internal::buffer<char>& out, int error_code,
   }
   w.write(ERROR_STR);
   w.write(error_code);
-  assert(out.size() <= inline_buffer_size);
 }
 
 // A wrapper around fwrite that throws on error.
@@ -730,7 +729,6 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
     fp_value = fp_value * cached_pow;
     lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
     upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
-    assert(min_exp <= upper.e && upper.e <= -32);
     auto result = digits::result();
     int size = 0;
     if ((options & grisu_options::grisu3) != 0) {

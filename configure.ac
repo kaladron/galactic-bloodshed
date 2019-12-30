@@ -74,6 +74,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
  Makefile
  gb/Makefile
+ gb/commands/Makefile
  storage/Makefile
 ])
 AC_OUTPUT

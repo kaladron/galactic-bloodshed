@@ -5,13 +5,11 @@
 /// \file zoom.cc
 /// \brief Functions for implementing the 'zoom' command.
 
+module commands;
+
 import gblib;
 import std;
 
-#include "gb/commands/zoom.h"
-
-#define FMT_HEADER_ONLY
-#include <assert.h>
 #include <fmt/format.h>
 
 /// Zoom in or out for orbit display

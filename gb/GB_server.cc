@@ -2,6 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+import commands;
 import gblib;
 import std;
 
@@ -53,7 +54,6 @@ import std;
 #include "gb/commands/toggle.h"
 #include "gb/commands/toxicity.h"
 #include "gb/commands/victory.h"
-#include "gb/commands/zoom.h"
 #include "gb/config.h"
 #include "gb/cs.h"
 #include "gb/declare.h"

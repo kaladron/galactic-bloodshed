@@ -14,9 +14,6 @@ import std;
 #include <assert.h>
 #include <fmt/format.h>
 
-#include "gb/GB_server.h"
-#include "gb/vars.h"
-
 /// Zoom in or out for orbit display
 void zoom(const command_t &argv, GameObj &g) {
   int i = (g.level == ScopeLevel::LEVEL_UNIV);

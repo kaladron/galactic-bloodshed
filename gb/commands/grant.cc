@@ -11,7 +11,6 @@ import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/max.h"
 #include "gb/races.h"

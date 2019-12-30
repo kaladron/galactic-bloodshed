@@ -176,7 +176,8 @@
 #endif
 
 #ifndef FMT_ASSERT
-#  define FMT_ASSERT(condition, message) assert((condition) && message)
+//#  define FMT_ASSERT(condition, message) assert((condition) && message)
+#  define FMT_ASSERT(condition, message)
 #endif
 
 #if 0 // C++20 modules compat

@@ -20,6 +20,7 @@ import std;
 #include "gb/max.h"
 #include "gb/races.h"
 #include "gb/ships.h"
+#include "gb/shlmisc.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
@@ -38,33 +39,6 @@ static const char *Tox[] = {
     "Stage 9: WARNING: nearing 100% toxicity",
     "Stage 10: WARNING: COMPLETELY TOXIC!!!",
     "???"};
-
-namespace {
-void get4args(const char *s, int *xl, int *xh, int *yl, int *yh) {
-  char s1[17];
-  char s2[17];
-  const char *p = s;
-
-  sscanf(p, "%[^,]", s1);
-  while ((*p != ':') && (*p != ',')) p++;
-  if (*p == ':') {
-    sscanf(s1, "%d:%d", xl, xh);
-    while (*p != ',') p++;
-  } else if (*p == ',') {
-    sscanf(s1, "%d", xl);
-    *xh = (*xl);
-  }
-
-  sscanf(p, "%s", s2);
-  while ((*p != ':') && (*p != '\0')) p++;
-  if (*p == ':') {
-    sscanf(s2, ",%d:%d", yl, yh);
-  } else {
-    sscanf(s2, ",%d,", yl);
-    *yh = (*yl);
-  }
-}
-}  // namespace
 
 void survey(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;

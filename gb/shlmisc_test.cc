@@ -3,6 +3,8 @@ import std;
 
 #include "gb/shlmisc.h"
 
+#include <cassert>
+
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/build.h"

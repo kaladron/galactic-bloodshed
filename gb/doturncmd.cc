@@ -46,7 +46,6 @@ static void fix_stability(Star *);
 static bool governed(const Race &);
 static void make_discoveries(Race *);
 static void output_ground_attacks();
-static int planet_points(const Planet &);
 
 void do_turn(Db &db, int update) {
   Commod *c;
@@ -293,7 +292,7 @@ void do_turn(Db &db, int update) {
           races[j - 1]->controlled_planets++;
 
         if (planets[star][i]->info[j - 1].numsectsowned)
-          races[j - 1]->planet_points += planet_points(*planets[star][i]);
+          races[j - 1]->planet_points += planets[star][i]->get_points();
       }
       if (update) {
         if (doplanet(star, *planets[star][i], i)) {
@@ -654,25 +653,4 @@ static void output_ground_attacks() {
           post(buf, COMBAT);
           ground_assaults[i - 1][j - 1][star] = 0;
         }
-}
-
-static int planet_points(const Planet &p) {
-  switch (p.type) {
-    case PlanetType::ASTEROID:
-      return ASTEROID_POINTS;
-    case PlanetType::EARTH:
-      return EARTH_POINTS;
-    case PlanetType::MARS:
-      return MARS_POINTS;
-    case PlanetType::ICEBALL:
-      return ICEBALL_POINTS;
-    case PlanetType::GASGIANT:
-      return GASGIANT_POINTS;
-    case PlanetType::WATER:
-      return WATER_POINTS;
-    case PlanetType::FOREST:
-      return FOREST_POINTS;
-    case PlanetType::DESERT:
-      return DESERT_POINTS;
-  }
 }

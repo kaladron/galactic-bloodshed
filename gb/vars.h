@@ -81,6 +81,7 @@ class Planet {
 
   double gravity() const;
   double compatibility(const Race &) const;
+  int get_points() const;
 
   double xpos, ypos;        /* x,y relative to orbit */
   shipnum_t ships;          /* first ship in orbit (to be changed) */

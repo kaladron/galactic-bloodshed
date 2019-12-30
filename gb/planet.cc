@@ -7,6 +7,7 @@ import std;
 
 #include "gb/races.h"
 #include "gb/tweakables.h"
+#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 //* Return gravity for the Planet
@@ -31,4 +32,25 @@ double Planet::compatibility(const Race &race) const {
 
   if (sum < 0.0) return 0.0;
   return sum;
+}
+
+int Planet::get_points() const {
+  switch (type) {
+    case PlanetType::ASTEROID:
+      return ASTEROID_POINTS;
+    case PlanetType::EARTH:
+      return EARTH_POINTS;
+    case PlanetType::MARS:
+      return MARS_POINTS;
+    case PlanetType::ICEBALL:
+      return ICEBALL_POINTS;
+    case PlanetType::GASGIANT:
+      return GASGIANT_POINTS;
+    case PlanetType::WATER:
+      return WATER_POINTS;
+    case PlanetType::FOREST:
+      return FOREST_POINTS;
+    case PlanetType::DESERT:
+      return DESERT_POINTS;
+  }
 }

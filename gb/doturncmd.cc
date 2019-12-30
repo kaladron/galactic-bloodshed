@@ -41,7 +41,7 @@ static constexpr void maintain(Race &r, Race::gov &governor,
 #endif
 
 static int APadd(const int, const population_t, const Race &);
-static int attack_planet(Ship *);
+static bool attack_planet(const Ship &);
 static void fix_stability(Star *);
 static bool governed(const Race &);
 static void make_discoveries(Race *);
@@ -207,7 +207,7 @@ void do_turn(Db &db, int update) {
       if (ships[i]->alive && ships[i]->speed == j) {
         doship(ships[i], update);
         if ((ships[i]->type == ShipType::STYPE_MISSILE) &&
-            !attack_planet(ships[i]))
+            !attack_planet(*ships[i]))
           domissile(ships[i]);
       }
     }
@@ -273,7 +273,7 @@ void do_turn(Db &db, int update) {
 
   for (shipnum_t i = 1; i <= Num_ships; i++)
     if ((ships[i]->type == ShipType::STYPE_MISSILE) && ships[i]->alive &&
-        attack_planet(ships[i]))
+        attack_planet(*ships[i]))
       domissile(ships[i]);
 
   for (shipnum_t i = Num_ships; i >= 1; i--) putship(ships[i]);
@@ -632,10 +632,10 @@ static void make_discoveries(Race *r) {
   }
 }
 
-static int attack_planet(Ship *ship) {
-  if (ship->whatdest == ScopeLevel::LEVEL_PLAN) return 1;
+static bool attack_planet(const Ship &ship) {
+  if (ship.whatdest == ScopeLevel::LEVEL_PLAN) return true;
 
-  return 0;
+  return false;
 }
 
 static void output_ground_attacks() {

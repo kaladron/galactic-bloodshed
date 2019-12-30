@@ -10,7 +10,6 @@ import std;
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/dissolve.h"
-#include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/getplace.h"
 #include "gb/max.h"

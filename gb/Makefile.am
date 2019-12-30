@@ -62,6 +62,7 @@ libcommands_a_SOURCES = \
 		     commands/analysis.cc \
 		     commands/announce.cc \
 		     commands/autoreport.cc \
+		     commands/block.cc \
 		     commands/capital.cc \
 		     commands/capture.cc \
 		     commands/colonies.cc \
@@ -74,6 +75,7 @@ libcommands_a_SOURCES = \
 		     commands/highlight.cc \
 		     commands/mobilize.cc \
 		     commands/orbit.cc \
+		     commands/power.cc \
 		     commands/production.cc \
 		     commands/relation.cc \
 		     commands/tax.cc \
@@ -120,7 +122,6 @@ OLD_LIBGBLIB_FILES = \
 		     doplanet.cc \
 		     planet.cc \
 		     place.cc \
-		     powercmd.cc \
 		     prof.cc \
 		     sectormap.cc \
 		     ships.cc \

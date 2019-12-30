@@ -1,3 +1,5 @@
+SUBDIRS = commands
+
 PKGSTATEDIR=$(libdir)/galactic-bloodshed/
 PKGDATADIR=$(datarootdir)/galactic-bloodshed/
 DOCDIR=$(datarootdir)/galactic-bloodshed/
@@ -34,13 +36,14 @@ LIBS = $(SQLITE3_LIBS)
 
 bin_PROGRAMS = makeuniv enrol GB racegen
 
-noinst_LIBRARIES = libgblib.a libcommands.a
+noinst_LIBRARIES = libgblib.a
 
 UTILS_FILES = utils/rand.cc utils/fileutils.cc
 COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc $(UTILS_FILES)
 
 makeuniv_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 makeuniv_LDADD = libgblib.a
+EXTRA_makeuniv_DEPENDENCIES = gblib.pcm
 makeuniv_SOURCES = $(COMMON_FILES)  \
 					creator/makeplanet.cc \
 					creator/makestar.cc \
@@ -52,47 +55,16 @@ makeuniv_SOURCES = $(COMMON_FILES)  \
 enrol_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 enrol_SOURCES =  $(COMMON_FILES) enrol.cc sectormap.cc
 enrol_LDADD = libgblib.a
+EXTRA_enrol_DEPENDENCIES = gblib.pcm
 
 GB_SOURCES = GB_server.cc $(COMMON_FILES) $(OLD_LIBGBLIB_FILES)
-GB_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm -Wno-alloca
-GB_LDADD = libgblib.a libcommands.a
-
-libcommands_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
-libcommands_a_SOURCES = \
-		     commands/analysis.cc \
-		     commands/announce.cc \
-		     commands/autoreport.cc \
-		     commands/block.cc \
-		     commands/capital.cc \
-		     commands/capture.cc \
-		     commands/colonies.cc \
-		     commands/dock.cc \
-		     commands/enslave.cc \
-		     commands/examine.cc \
-		     commands/fix.cc \
-		     commands/governors.cc \
-		     commands/grant.cc \
-		     commands/highlight.cc \
-		     commands/mobilize.cc \
-		     commands/orbit.cc \
-		     commands/power.cc \
-		     commands/production.cc \
-		     commands/relation.cc \
-		     commands/tax.cc \
-		     commands/tech_status.cc \
-		     commands/technology.cc \
-		     commands/repair.cc \
-		     commands/rst.cc \
-		     commands/scrap.cc \
-		     commands/survey.cc \
-		     commands/toggle.cc \
-		     commands/toxicity.cc \
-		     commands/victory.cc \
-		     commands/zoom.cc
+GB_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm -fmodule-file=commands/commands.pcm -Wno-alloca
+GB_LDADD = libgblib.a commands/libcommands.a
+EXTRA_GB_DEPENDENCIES = gblib.pcm commands/commands.pcm
 
 libgblib_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 libgblib_a_SOURCES = sector.cc
-
+EXTRA_libgblib_a_DEPENDENCIES = gblib.pcm
 
 OLD_LIBGBLIB_FILES = \
 		     VN.cc \
@@ -135,6 +107,7 @@ OLD_LIBGBLIB_FILES = \
 racegen_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm -DPRIV
 racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc racegen.cc sectormap.cc
 racegen_LDADD = libgblib.a
+EXTRA_racegen_DEPENDENCIES = gblib.pcm
 
 TESTS = shlmisc_test
 
@@ -142,6 +115,7 @@ check_PROGRAMS = shlmisc_test
 shlmisc_test_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 shlmisc_test_SOURCES = shlmisc_test.cc
 shlmisc_test_LDADD = libgblib.a
+EXTRA_shlmisc_test_DEPENDENCIES = gblib.pcm
 
 MOSTLYCLEANFILES = gblib.pcm
 BUILT_SOURCES = gblib.pcm

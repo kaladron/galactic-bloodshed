@@ -5,8 +5,6 @@
 #ifndef CMDS_BLOCK_H
 #define CMDS_BLOCK_H
 
-#include "gb/vars.h"
-
 void block(const command_t &, GameObj &);
 
 #endif  // CMDS_BLOCK_H

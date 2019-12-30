@@ -2,11 +2,9 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef RELATION_H
-#define RELATION_H
-
-#include "gb/vars.h"
+#ifndef CMDS_RELATION_H
+#define CMDS_RELATION_H
 
 void relation(const command_t &, GameObj &);
 
-#endif  // RELATION_H
+#endif  // CMDS_RELATION_H

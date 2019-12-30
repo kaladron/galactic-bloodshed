@@ -5,8 +5,6 @@
 #ifndef CMDS_REPAIR_H
 #define CMDS_REPAIR_H
 
-#include "gb/vars.h"
-
 void repair(const command_t &, GameObj &);
 
 #endif  // CMDS_REPAIR_H

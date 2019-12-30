@@ -5,8 +5,6 @@
 #ifndef CMDS_DOCK_H
 #define CMDS_DOCK_H
 
-#include "gb/vars.h"
-
 void dock(const command_t &, GameObj &);
 
 #endif  // CMDS_DOCK_H

@@ -5,8 +5,6 @@
 #ifndef CMDS_ANNOUNCE_H
 #define CMDS_ANNOUNCE_H
 
-#include "gb/vars.h"
-
 void announce(const command_t &, GameObj &);
 
 #endif  // CMDS_ANNOUNCE_H

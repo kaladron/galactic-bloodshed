@@ -5,8 +5,6 @@
 #ifndef CMDS_ORBIT_H
 #define CMDS_ORBIT_H
 
-#include "gb/vars.h"
-
 void orbit(const command_t &, GameObj &);
 
 #endif  // CMDS_ORBIT_H

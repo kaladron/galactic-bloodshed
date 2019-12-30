@@ -2,11 +2,9 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef TOXICITY_H
-#define TOXICITY_H
-
-#include "gb/vars.h"
+#ifndef CMDS_TOXICITY_H
+#define CMDS_TOXICITY_H
 
 void toxicity(const command_t &, GameObj &);
 
-#endif  // TOXICITY_H
+#endif  // CMDS_TOXICITY_H

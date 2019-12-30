@@ -5,8 +5,6 @@
 #ifndef CMDS_FIX_H
 #define CMDS_FIX_H
 
-#include "gb/vars.h"
-
 void fix(const command_t &, GameObj &);
 
 #endif  // CMDS_GOVERNORS_H

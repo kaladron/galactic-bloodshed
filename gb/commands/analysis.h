@@ -5,8 +5,6 @@
 #ifndef CMDS_ANALYSIS_H
 #define CMDS_ANALYSIS_H
 
-#include "gb/vars.h"
-
 void analysis(const command_t &, GameObj &);
 
 #endif  // CMDS_ANALYSIS_H

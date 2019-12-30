@@ -5,8 +5,6 @@
 #ifndef CMDS_GRANT_H
 #define CMDS_GRANT_H
 
-#include "gb/vars.h"
-
 void grant(const command_t &, GameObj &);
 
 #endif  // CMDS_GRANT_H

@@ -5,8 +5,6 @@
 #ifndef CMDS_TAX_H
 #define CMDS_TAX_H
 
-#include "gb/vars.h"
-
 void tax(const command_t &, GameObj &);
 
 #endif  // CMDS_TAX_H

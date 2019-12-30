@@ -5,8 +5,6 @@
 #ifndef CMDS_CAPITAL_H
 #define CMDS_CAPITAL_H
 
-#include "gb/vars.h"
-
 void capital(const command_t &, GameObj &);
 
 #endif  // CMDS_CAPITAL_H

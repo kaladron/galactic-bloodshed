@@ -495,7 +495,6 @@ inline u8string_view operator"" _u(const char* s, std::size_t n) {
 enum { inline_buffer_size = 500 };
 
 /**
-  \rst
   A dynamically growing memory buffer for trivially copyable/constructible types
   with the first ``SIZE`` elements stored in the object itself.
 
@@ -521,7 +520,6 @@ enum { inline_buffer_size = 500 };
      The answer is 42.
 
   The output can be converted to an ``std::string`` with ``to_string(out)``.
-  \endrst
  */
 template <typename T, std::size_t SIZE = inline_buffer_size,
           typename Allocator = std::allocator<T>>
@@ -570,17 +568,13 @@ class basic_memory_buffer : private Allocator, public internal::buffer<T> {
 
  public:
   /**
-    \rst
     Constructs a :class:`fmt::basic_memory_buffer` object moving the content
     of the other object to it.
-    \endrst
    */
   basic_memory_buffer(basic_memory_buffer&& other) { move(other); }
 
   /**
-    \rst
     Moves the content of the other ``basic_memory_buffer`` object to this one.
-    \endrst
    */
   basic_memory_buffer& operator=(basic_memory_buffer&& other) {
     deallocate();
@@ -1627,10 +1621,8 @@ template <typename Range> class basic_writer {
   }
 
   /**
-    \rst
     Formats *value* using the general format for floating-point numbers
     (``'g'``) and writes it to the buffer.
-    \endrst
    */
   void write(long double value, const format_specs& specs = format_specs()) {
     write_double(value, specs);
@@ -1653,9 +1645,7 @@ template <typename Range> class basic_writer {
   }
 
   /**
-    \rst
     Writes *value* to the buffer.
-    \endrst
    */
   void write(string_view value) {
     auto&& it = reserve(value.size());
@@ -2606,11 +2596,9 @@ class arg_formatter : public internal::arg_formatter_base<Range> {
   using format_specs = typename base::format_specs;
 
   /**
-    \rst
     Constructs an argument formatter object.
     *ctx* is a reference to the formatting context,
     *specs* contains format specifier information for standard argument types.
-    \endrst
    */
   explicit arg_formatter(context_type& ctx,
                          basic_parse_context<char_type>* parse_ctx = nullptr,
@@ -2643,7 +2631,6 @@ class FMT_API system_error : public std::runtime_error {
 
  public:
   /**
-   \rst
    Constructs a :class:`fmt::system_error` object with a description
    formatted with `fmt::format_system_error`. *message* and additional
    arguments passed into the constructor are formatted similarly to
@@ -2658,7 +2645,6 @@ class FMT_API system_error : public std::runtime_error {
      std::FILE *file = std::fopen(filename, "r");
      if (!file)
        throw fmt::system_error(errno, "cannot open file '{}'", filename);
-   \endrst
   */
   template <typename... Args>
   system_error(int error_code, string_view message, const Args&... args)
@@ -2671,7 +2657,6 @@ class FMT_API system_error : public std::runtime_error {
 };
 
 /**
-  \rst
   Formats an error returned by an operating system or a language runtime,
   for example a file opening error, and writes it to *out* in the following
   form:
@@ -2684,7 +2669,6 @@ class FMT_API system_error : public std::runtime_error {
   *error_code* is a system error code as given by ``errno``.
   If *error_code* is not a valid error code such as -1, the system message
   may look like "Unknown error -1" and is platform-dependent.
-  \endrst
  */
 FMT_API void format_system_error(internal::buffer<char>& out, int error_code,
                                  fmt::string_view message) FMT_NOEXCEPT;
@@ -2822,7 +2806,6 @@ class windows_error : public system_error {
 
  public:
   /**
-   \rst
    Constructs a :class:`fmt::windows_error` object with the description
    of the form
 
@@ -2847,7 +2830,6 @@ class windows_error : public system_error {
        throw fmt::windows_error(GetLastError(),
                                 "cannot open file '{}'", filename);
      }
-   \endrst
   */
   template <typename... Args>
   windows_error(int error_code, string_view message, const Args&... args) {
@@ -2930,9 +2912,7 @@ class format_int {
   }
 
   /**
-    \rst
     Returns the content of the output buffer as an ``std::string``.
-    \endrst
    */
   std::string str() const { return std::string(str_, size()); }
 };
@@ -3259,7 +3239,6 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
 }
 
 /**
-  \rst
   Returns an object that formats `range` with elements separated by `sep`.
 
   **Example**::
@@ -3267,7 +3246,6 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
     std::vector<int> v = {1, 2, 3};
     fmt::print("{}", fmt::join(v, ", "));
     // Output: "1, 2, 3"
-  \endrst
  */
 template <typename Range>
 arg_join<internal::iterator_t<const Range>, char> join(const Range& range,
@@ -3282,7 +3260,6 @@ arg_join<internal::iterator_t<const Range>, wchar_t> join(const Range& range,
 }
 
 /**
-  \rst
   Converts *value* to ``std::string`` using the default format for type *T*.
   It doesn't support user-defined types with custom formatters.
 
@@ -3291,7 +3268,6 @@ arg_join<internal::iterator_t<const Range>, wchar_t> join(const Range& range,
     #include <fmt/format.h>
 
     std::string answer = fmt::to_string(42);
-  \endrst
  */
 template <typename T> inline std::string to_string(const T& value) {
   return format("{}", value);
@@ -3354,7 +3330,6 @@ inline OutputIt vformat_to(OutputIt out, const S& format_str,
 }
 
 /**
- \rst
  Formats arguments, writes the result to the output iterator ``out`` and returns
  the iterator past the end of the output range.
 
@@ -3362,7 +3337,6 @@ inline OutputIt vformat_to(OutputIt out, const S& format_str,
 
    std::vector<char> out;
    fmt::format_to(std::back_inserter(out), "{}", 42);
- \endrst
  */
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(
@@ -3408,11 +3382,9 @@ inline format_to_n_result<OutputIt> vformat_to_n(
 }
 
 /**
- \rst
  Formats arguments, writes up to ``n`` characters of the result to the output
  iterator ``out`` and returns the total output size and the iterator past the
  end of the output range.
- \endrst
  */
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(internal::is_string<S>::value&&
@@ -3495,14 +3467,12 @@ FMT_CONSTEXPR internal::udl_formatter<Char, CHARS...> operator""_format() {
 #    pragma GCC diagnostic pop
 #  else
 /**
-  \rst
   User-defined literal equivalent of :func:`fmt::format`.
 
   **Example**::
 
     using namespace fmt::literals;
     std::string message = "The answer is {}"_format(42);
-  \endrst
  */
 FMT_CONSTEXPR internal::udl_formatter<char> operator"" _format(const char* s,
                                                                std::size_t n) {
@@ -3515,14 +3485,12 @@ FMT_CONSTEXPR internal::udl_formatter<wchar_t> operator"" _format(
 #  endif  // FMT_USE_UDL_TEMPLATE
 
 /**
-  \rst
   User-defined literal equivalent of :func:`fmt::arg`.
 
   **Example**::
 
     using namespace fmt::literals;
     fmt::print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
-  \endrst
  */
 FMT_CONSTEXPR internal::udl_arg<char> operator"" _a(const char* s,
                                                     std::size_t n) {
@@ -3537,14 +3505,12 @@ FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
 FMT_END_NAMESPACE
 
 /**
-  \rst
   Constructs a compile-time format string.
 
   **Example**::
 
     // A compile-time error because 'd' is an invalid specifier for strings.
     std::string s = format(FMT_STRING("{:d}"), "foo");
-  \endrst
  */
 #define FMT_STRING(s)                                                    \
   [] {                                                                   \
@@ -3563,7 +3529,6 @@ FMT_END_NAMESPACE
 
 #if defined(FMT_STRING_ALIAS) && FMT_STRING_ALIAS
 /**
-  \rst
   Constructs a compile-time format string. This macro is disabled by default to
   prevent potential name collisions. To enable it define ``FMT_STRING_ALIAS`` to
   1 before including ``fmt/format.h``.
@@ -3574,7 +3539,6 @@ FMT_END_NAMESPACE
     #include <fmt/format.h>
     // A compile-time error because 'd' is an invalid specifier for strings.
     std::string s = format(fmt("{:d}"), "foo");
-  \endrst
  */
 #  define fmt(s) FMT_STRING(s)
 #endif

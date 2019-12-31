@@ -76,7 +76,6 @@ OLD_LIBGBLIB_FILES = \
 		     dosector.cc \
 		     doship.cc \
 		     doturncmd.cc \
-		     explore.cc \
 		     fire.cc \
 		     fuel.cc \
 		     getplace.cc \

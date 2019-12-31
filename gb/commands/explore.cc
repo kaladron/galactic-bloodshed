@@ -5,7 +5,7 @@
 import gblib;
 import std;
 
-#include "gb/commands/exploration.h"
+#include "gb/commands/explore.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -20,7 +20,7 @@ import std;
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
-void exploration(const command_t &argv, GameObj &g) {
+void explore(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int starq;

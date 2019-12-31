@@ -36,7 +36,7 @@ import std;
 #include "gb/commands/dock.h"
 #include "gb/commands/enslave.h"
 #include "gb/commands/examine.h"
-#include "gb/commands/exploration.h"
+#include "gb/commands/explore.h"
 #include "gb/commands/fix.h"
 #include "gb/commands/governors.h"
 #include "gb/commands/grant.h"
@@ -241,7 +241,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"dump", dump},
     {"enslave", enslave},
     {"examine", examine},
-    {"explore", exploration},
+    {"explore", explore},
     {"factories", rst},
     {"fire", fire},  // TODO(jeffbailey): !guest
     {"fix", fix},

@@ -5,6 +5,6 @@
 #ifndef CMDS_EXPLORATION_H
 #define CMDS_EXPLORATION_H
 
-void exploration(const command_t &, GameObj &);
+void explore(const command_t &, GameObj &);
 
 #endif  // CMDS_EXPLORATION_H

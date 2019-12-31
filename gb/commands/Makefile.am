@@ -24,9 +24,11 @@ libcommands_a_SOURCES = \
 		     capital.cc \
 		     capture.cc \
 		     colonies.cc \
+		     distance.cc \
 		     dock.cc \
 		     enslave.cc \
 		     examine.cc \
+		     exploration.cc \
 		     fix.cc \
 		     governors.cc \
 		     grant.cc \
@@ -36,6 +38,7 @@ libcommands_a_SOURCES = \
 		     power.cc \
 		     production.cc \
 		     relation.cc \
+		     star_locations.cc \
 		     tax.cc \
 		     tech_status.cc \
 		     technology.cc \

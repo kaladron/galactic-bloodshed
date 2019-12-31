@@ -28,7 +28,7 @@ libcommands_a_SOURCES = \
 		     dock.cc \
 		     enslave.cc \
 		     examine.cc \
-		     exploration.cc \
+		     explore.cc \
 		     fix.cc \
 		     governors.cc \
 		     grant.cc \

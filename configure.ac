@@ -46,9 +46,6 @@ clang_opts="${clang_opts} -Wno-c++98-compat-pedantic"
 clang_opts="${clang_opts} -Wno-padded"
 clang_opts="${clang_opts} -Wno-return-std-move-in-c++11"
 
-# Needed by fmt library
-clang_opts="${clang_opts} -Wno-documentation-unknown-command"
-
 # Things we should get rid of
 clang_opts="${clang_opts} -Wno-float-equal"
 clang_opts="${clang_opts} -Wno-old-style-cast"

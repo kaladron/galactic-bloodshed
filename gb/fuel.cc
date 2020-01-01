@@ -28,7 +28,7 @@ static segments_t number_segments;
 static double x_0, y_0, x_1, y_1;
 static Ship *tmpship;
 
-static int do_trip(const Place &, double fuel, double gravity_factor);
+static bool do_trip(const Place &, double fuel, double gravity_factor);
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
                         double grav, double mass, segments_t segs);
 
@@ -37,7 +37,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   int opt_settings;
   int current_settings;
-  int computing = 1;
+  bool computing = true;
   segments_t current_segs;
   double fuel_usage;
   double level;
@@ -175,7 +175,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
       opt_settings = 1;
       level -= tmpship->fuel;
     } else if (computing) {
-      computing = 0;
+      computing = false;
       fuel_usage = level;
     }
     free(tmpship);
@@ -238,7 +238,7 @@ static void fuel_output(int Playernum, int Governor, double dist, double fuel,
   }
 }
 
-static int do_trip(const Place &tmpdest, double fuel, double gravity_factor) {
+static bool do_trip(const Place &tmpdest, double fuel, double gravity_factor) {
   segments_t effective_segment_number;
   int trip_resolved;
   double gravity_fuel;
@@ -298,12 +298,12 @@ static int do_trip(const Place &tmpdest, double fuel, double gravity_factor) {
         for (shipnum_t i = 1; i <= Num_ships; i++) free(ships[i]);
         free(ships);
       }
-      return (0);
+      return false;
     }
   }
   if (tmpship->whatdest == ScopeLevel::LEVEL_SHIP || tmpship->ships) {
     for (shipnum_t i = 1; i <= Num_ships; i++) free(ships[i]);
     free(ships);
   }
-  return (1);
+  return true;
 }

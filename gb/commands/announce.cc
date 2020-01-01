@@ -8,17 +8,7 @@ import std;
 #include "gb/commands/announce.h"
 
 #include "gb/GB_server.h"
-#include "gb/buffers.h"
-#include "gb/dissolve.h"
-#include "gb/files_shl.h"
-#include "gb/getplace.h"
-#include "gb/max.h"
 #include "gb/races.h"
-#include "gb/ships.h"
-#include "gb/shlmisc.h"
-#include "gb/tele.h"
-#include "gb/tweakables.h"
-#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 void announce(const command_t &argv, GameObj &g) {
@@ -48,10 +38,7 @@ void announce(const command_t &argv, GameObj &g) {
     return;
   }
 
-  racetype *Race;
-  char symbol;
-
-  Race = races[Playernum - 1];
+  auto Race = races[Playernum - 1];
   if (mode == Communicate::SHOUT && !Race->God) {
     g.out << "You are not privileged to use this command.\n";
     return;
@@ -74,6 +61,7 @@ void announce(const command_t &argv, GameObj &g) {
       }
   }
 
+  char symbol;
   switch (mode) {
     case Communicate::ANN:
       symbol = ':';

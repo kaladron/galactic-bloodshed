@@ -136,7 +136,7 @@ void do_turn(Db &db, int update) {
     for (commodnum_t i = Num_commods; i >= 1; i--) {
       getcommod(&c, i);
       if (!c->deliver) {
-        c->deliver = 1;
+        c->deliver = true;
         putcommod(c, i);
         free(c);
         continue;

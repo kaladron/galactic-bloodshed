@@ -99,8 +99,7 @@ export struct Commod {
   governor_t governor;
   uint8_t type;
   uint64_t amount;
-  unsigned char dummy;
-  unsigned char deliver; /* whether the lot is ready for shipping or not */
+  bool deliver; /* whether the lot is ready for shipping or not */
   money_t bid;
   player_t bidder;
   governor_t bidder_gov;

@@ -14,7 +14,7 @@ AM_CPPFLAGS = -I$(top_srcdir)
 
 noinst_LIBRARIES = libcommands.a
 
-EXTRA_libcommands_a_DEPENDENCIES = commands.pcm
+EXTRA_libcommands_a_DEPENDENCIES = $(top_builddir)/gb/gblib.pcm commands.pcm
 libcommands_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=commands.pcm
 libcommands_a_SOURCES = \
 		     analysis.cc \
@@ -53,6 +53,8 @@ libcommands_a_SOURCES = \
 
 MOSTLYCLEANFILES = commands.pcm
 BUILT_SOURCES = commands.pcm
+
+commands.pcm: $(top_builddir)/gb/gblib.pcm
 
 .cppm.pcm:
 	$(CXX) $(AM_CPPFLAGS) $(AM_CXXFLAGS) --precompile $< -o $@

@@ -1556,7 +1556,7 @@ void sell(const command_t &argv, GameObj &g) {
   c.governor = Governor;
   c.type = item;
   c.amount = amount;
-  c.deliver = 0;
+  c.deliver = false;
   c.bid = 0;
   c.bidder = 0;
   c.star_from = snum;

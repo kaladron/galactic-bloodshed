@@ -10,16 +10,12 @@ import std;
 
 #include "gb/commands/autoreport.h"
 
-#define FMT_HEADER_ONLY
-#include <assert.h>
 #include <fmt/format.h>
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/files_shl.h"
 #include "gb/getplace.h"
-#include "gb/ships.h"
-#include "gb/tweakables.h"
 #include "gb/vars.h"
 
 void autoreport(const command_t &argv, GameObj &g) {

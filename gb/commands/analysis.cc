@@ -13,8 +13,6 @@ import std;
 #include "gb/getplace.h"
 #include "gb/max.h"
 #include "gb/races.h"
-#include "gb/ships.h"
-#include "gb/tweakables.h"
 #include "gb/vars.h"
 
 static constexpr int CARE = 5;

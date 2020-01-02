@@ -16,7 +16,6 @@ import gblib;
 #include "gb/globals.h"
 #include "gb/map.h"
 #include "gb/max.h"
-#include "gb/perm.h"
 #include "gb/races.h"
 #include "gb/shipdata.h"
 #include "gb/ships.h"

@@ -9,8 +9,6 @@ import std;
 
 #include "gb/doplanet.h"
 
-#define FMT_HEADER_ONLY
-#include <assert.h>
 #include <fmt/format.h>
 
 #include "gb/GB_server.h"
@@ -27,7 +25,6 @@ import std;
 #include "gb/max.h"
 #include "gb/move.h"
 #include "gb/moveship.h"
-#include "gb/perm.h"
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
@@ -50,8 +47,6 @@ static void terraform(Ship &, Planet &, SectorMap &);
 
 int doplanet(const int starnum, Planet &planet, const int planetnum) {
   int shipno;
-  int x;
-  int y;
   int nukex;
   int nukey;
   int o = 0;
@@ -62,8 +57,6 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
   unsigned char allmod = 0;
   unsigned char allexp = 0;
 
-  auto smap = getsmap(planet);
-  PermuteSects(planet);
   bzero((char *)Sectinfo, sizeof(Sectinfo));
 
   bzero((char *)avg_mob, sizeof(avg_mob));
@@ -97,6 +90,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
     avg_mob[i - 1] = 0;
   }
 
+  auto smap = getsmap(planet);
   shipno = planet.ships;
   while (shipno) {
     ship = ships[shipno];
@@ -226,18 +220,15 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
                             Stinfo[starnum][planetnum].temp_add +
                             int_rand(-5, 5);
 
-  (void)Getxysect(planet, &x, &y, 1);
-
-  while (Getxysect(planet, &x, &y, 0)) {
-    auto &p = smap.get(x, y);
-
+  for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
+    Sector &p = sector_wrap;
     if (p.owner && (p.popn || p.troops)) {
       allmod = 1;
       if (!Stars[starnum]->nova_stage) {
         produce(Stars[starnum], planet, p);
         if (p.owner)
           planet.info[p.owner - 1].est_production += est_production(p);
-        spread(planet, p, x, y, smap);
+        spread(planet, p, smap);
       } else {
         /* damage sector from supernova */
         p.resource++;
@@ -247,7 +238,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         else
           p.popn = round_rand((double)p.popn * .50);
       }
-      Sectinfo[x][y].done = 1;
+      Sectinfo[p.x][p.y].done = 1;
     }
 
     if ((!p.popn && !p.troops) || !p.owner) {
@@ -292,9 +283,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
                         */
   }
 
-  (void)Getxysect(planet, &x, &y, 1);
-  while (Getxysect(planet, &x, &y, 0)) {
-    auto &p = smap.get(x, y);
+  for (auto &p : smap) {
     if (p.owner) planet.info[p.owner - 1].numsectsowned++;
   }
 
@@ -303,16 +292,16 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
     if (!planet.expltimer) planet.expltimer = 5;
     for (i = 1; !Claims && !allexp && i <= Num_races; i++) {
       /* sectors have been modified for this player*/
-      if (planet.info[i - 1].numsectsowned)
+      if (planet.info[i - 1].numsectsowned > 0)
         while (!Claims && !allexp && timer > 0) {
           timer -= 1;
           o = 1;
-          (void)Getxysect(planet, &x, &y, 1);
-          while (!Claims && Getxysect(planet, &x, &y, 0)) {
+          for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
+            if (!Claims) break;
+            Sector &p = sector_wrap;
             /* find out if all sectors have been explored */
-            o &= Sectinfo[x][y].explored;
-            auto &p = smap.get(x, y);
-            if (((Sectinfo[x][y].explored == i) && !(random() & 02)) &&
+            o &= Sectinfo[p.x][p.y].explored;
+            if (((Sectinfo[p.x][p.y].explored == i) && !(random() & 02)) &&
                 (!p.owner && p.condition != SectorType::SEC_WASTED &&
                  p.condition == races[i - 1]->likesbest)) {
               /*  explorations have found an island */
@@ -321,7 +310,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
               p.owner = i;
               tot_captured = 1;
             } else
-              explore(planet, p, x, y, i);
+              explore(planet, p, p.x, p.y, i);
           }
           allexp |= o; /* all sectors explored for this player */
         }
@@ -424,9 +413,8 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
     planet.info[i - 1].troops = 0;
   }
 
-  (void)Getxysect(planet, &x, &y, 1);
-  while (Getxysect(planet, &x, &y, 0)) {
-    auto &p = smap.get(x, y);
+  for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
+    Sector &p = sector_wrap;
     if (p.owner) {
       planet.info[p.owner - 1].numsectsowned++;
       planet.info[p.owner - 1].troops += p.troops;
@@ -473,10 +461,9 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         }
       }
       /* now nuke all sectors belonging to former master */
-      (void)Getxysect(planet, &x, &y, 1);
-      while (Getxysect(planet, &x, &y, 0)) {
+      for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
+        Sector &p = sector_wrap;
         if (Stinfo[starnum][planetnum].intimidated && random() & 01) {
-          auto &p = smap.get(x, y);
           if (p.owner == planet.slaved_to) {
             p.owner = 0;
             p.popn = 0;

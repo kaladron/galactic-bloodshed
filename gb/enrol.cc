@@ -298,9 +298,8 @@ int main() {
       "\nChoose a primary sector preference. This race will prefer to "
       "live\non this type of sector.\n");
 
-  auto shuffled = smap.shuffle();
-  for (auto &sector_wrap : shuffled) {
-    Sector& sector = sector_wrap;
+  for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
+    Sector &sector = sector_wrap;
     secttypes[sector.condition].count++;
     if (!secttypes[sector.condition].here) {
       secttypes[sector.condition].here = 1;

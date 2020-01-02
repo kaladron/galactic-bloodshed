@@ -208,10 +208,9 @@ found_planet:
    * Find sector to build capital on, and populate it: */
   auto smap = getsmap(planet);
 
-  auto shuffled = smap.shuffle();
   Sector *sect;
   bool found_sector = false;
-  for (auto &sector_wrap : shuffled) {
+  for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
     sect = &sector_wrap.get();
     if (sect->condition != race->likesbest) continue;
     found_sector = true;

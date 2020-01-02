@@ -108,7 +108,7 @@ void produce(Star *star, const Planet &planet, Sector &s) {
 }
 
 // spread()  -- spread population around.
-void spread(const Planet &pl, Sector &s, int x, int y, SectorMap &smap) {
+void spread(const Planet &pl, Sector &s, SectorMap &smap) {
   int people;
   int x2;
   int y2;
@@ -134,7 +134,7 @@ void spread(const Planet &pl, Sector &s, int x, int y, SectorMap &smap) {
     j = int_rand(0, 7);
     x2 = x_adj[j];
     y2 = y_adj[j];
-    Migrate2(pl, x + x2, y + y2, s, &people, smap);
+    Migrate2(pl, s.x + x2, s.y + y2, s, &people, smap);
     check--;
   }
 }

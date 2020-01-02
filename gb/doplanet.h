@@ -5,7 +5,6 @@
 #ifndef DOPLANET_H
 #define DOPLANET_H
 
-#include "gb/ships.h"
 #include "gb/vars.h"
 
 int doplanet(const int, Planet &, const int);

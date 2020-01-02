@@ -20,7 +20,6 @@ import std;
 #include "gb/load.h"
 #include "gb/max.h"
 #include "gb/moveship.h"
-#include "gb/perm.h"
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
@@ -556,7 +555,9 @@ static void do_meta_infect(int who, Planet &p) {
   int y;
 
   auto smap = getsmap(p);
-  PermuteSects(p);
+  // TODO(jeffbailey): I'm pretty certain this bzero is unnecessary, but this is
+  // so far away from any other uses of Sectinfo that I'm having trouble proving
+  // it.
   bzero((char *)Sectinfo, sizeof(Sectinfo));
   x = int_rand(0, p.Maxx - 1);
   y = int_rand(0, p.Maxy - 1);

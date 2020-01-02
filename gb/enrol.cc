@@ -299,12 +299,13 @@ int main() {
       "live\non this type of sector.\n");
 
   auto shuffled = smap.shuffle();
-  for (auto &sector : shuffled) {
-    secttypes[sector.get().condition].count++;
-    if (!secttypes[sector.get().condition].here) {
-      secttypes[sector.get().condition].here = 1;
-      secttypes[sector.get().condition].x = sector.get().x;
-      secttypes[sector.get().condition].y = sector.get().y;
+  for (auto &sector_wrap : shuffled) {
+    Sector& sector = sector_wrap;
+    secttypes[sector.condition].count++;
+    if (!secttypes[sector.condition].here) {
+      secttypes[sector.condition].here = 1;
+      secttypes[sector.condition].x = sector.x;
+      secttypes[sector.condition].y = sector.y;
     }
   }
   planet.explored = 1;

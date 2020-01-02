@@ -12,7 +12,6 @@ import std;
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/max.h"
-#include "gb/perm.h"
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/shootblast.h"
@@ -48,18 +47,19 @@ int bombard(Ship *ship, Planet *planet, Race *r) {
   auto smap = getsmap(*planet);
 
   /* look for someone to bombard-check for war */
-  (void)Getxysect(*planet, nullptr, nullptr, 1); /* reset */
   bool found = false;
-  while (!found && Getxysect(*planet, &x, &y, 0)) {
-    if (smap.get(x, y).owner && smap.get(x, y).owner != ship->owner &&
-        (smap.get(x, y).condition != SectorType::SEC_WASTED)) {
-      if (isset(r->atwar, smap.get(x, y).owner) ||
+  for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
+    Sector &sect = sector_wrap;
+    if (sect.owner && sect.owner != ship->owner &&
+        (sect.condition != SectorType::SEC_WASTED)) {
+      if (isset(r->atwar, sect.owner) ||
           (ship->type == ShipType::OTYPE_BERS &&
-           smap.get(x, y).owner == ship->special.mind.target))
+           sect.owner == ship->special.mind.target)) {
         found = true;
-      else {
-        x2 = x;
-        y2 = y;
+        break;
+      } else {
+        x = x2 = sect.x;
+        y = y2 = sect.y;
       }
     }
   }

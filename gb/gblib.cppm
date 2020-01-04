@@ -17,6 +17,23 @@ export using population_t = int64_t;
 
 export using command_t = std::vector<std::string>;
 
+/**
+ * \brief Convert input string to a shipnum_t
+ * \param s User-provided input string
+ * \return If the user provided a valid number, return it.
+ */
+export inline std::optional<shipnum_t> string_to_shipnum(std::string_view s) {
+  if (s.size() > 1 && s[0] == '#') {
+    s.remove_prefix(1);
+    return string_to_shipnum(s);
+  }
+
+  if (s.size() > 0 && std::isdigit(s[0])) {
+    return (std::stoi(std::string(s.begin(), s.end())));
+  }
+  return {};
+}
+
 export class Db {
  public:
   virtual ~Db() {}
@@ -147,3 +164,5 @@ export template <typename T, class = typename std::enable_if<
 bool isclr(const T target, const unsigned int pos) {
   return !isset(target, pos);
 }
+
+

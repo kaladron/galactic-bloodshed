@@ -5,26 +5,6 @@ import std;
 
 #include <cassert>
 
-#include "gb/GB_server.h"
-#include "gb/buffers.h"
-#include "gb/build.h"
-#include "gb/globals.h"
-#include "gb/map.h"
-
-// TODO(jeffbailey): Puke.  Detangling the dependencies is too
-// big right now, so this code is duplicated.
-std::optional<shipnum_t> string_to_shipnum(std::string_view s) {
-  if (s.size() > 1 && s[0] == '#') {
-    s.remove_prefix(1);
-    return string_to_shipnum(s);
-  }
-
-  if (s.size() > 0 && std::isdigit(s[0])) {
-    return (std::stoi(std::string(s.begin(), s.end())));
-  }
-  return {};
-}
-
 int main() {
   auto a = string_to_shipnum("123");
   assert(*a == 123);

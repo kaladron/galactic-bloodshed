@@ -20,23 +20,6 @@ import std;
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
-/**
- * \brief Convert input string to a shipnum_t
- * \param s User-provided input string
- * \return If the user provided a valid number, return it.
- */
-std::optional<shipnum_t> string_to_shipnum(std::string_view s) {
-  if (s.size() > 1 && s[0] == '#') {
-    s.remove_prefix(1);
-    return string_to_shipnum(s);
-  }
-
-  if (s.size() > 0 && std::isdigit(s[0])) {
-    return (std::stoi(std::string(s.begin(), s.end())));
-  }
-  return {};
-}
-
 bool authorized(const governor_t Governor, const Ship &ship) {
   return (!Governor || ship.governor == Governor);
 }

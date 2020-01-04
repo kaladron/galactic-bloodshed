@@ -11,7 +11,6 @@ import std;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/dissolve.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/getplace.h"
@@ -54,7 +53,7 @@ int revolt(Planet &pl, const player_t victim, const player_t agent) {
 
   return revolted_sectors;
 }
-}
+}  // namespace
 
 void personal(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
@@ -973,4 +972,3 @@ void name(const command_t &argv, GameObj &g) {
     return;
   }
 }
-

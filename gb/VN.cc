@@ -298,11 +298,11 @@ void planet_doVN(Ship *ship, Planet *planet, SectorMap &smap) {
             ship->special.mind.busy = 0;
           else {
             /* find a place on the planet to land */
-	    bool found = false;
+            bool found = false;
             for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
-	      Sector &sect = sector_wrap;
-	      if (sect.resource == 0) continue;
-	      found = true;
+              Sector &sect = sector_wrap;
+              if (sect.resource == 0) continue;
+              found = true;
               ship->docked = 1;
               ship->whatdest = ScopeLevel::LEVEL_PLAN;
               ship->deststar = ship->storbits;
@@ -313,7 +313,7 @@ void planet_doVN(Ship *ship, Planet *planet, SectorMap &smap) {
               ship->land_y = sect.y;
               ship->special.mind.busy = 1;
             }
-	    if (!found) ship->special.mind.busy = 0;
+            if (!found) ship->special.mind.busy = 0;
           }
         }
       }

@@ -24,6 +24,7 @@ libcommands_a_SOURCES = \
 		     capital.cc \
 		     capture.cc \
 		     colonies.cc \
+		     dissolve.cc \
 		     distance.cc \
 		     dock.cc \
 		     enslave.cc \

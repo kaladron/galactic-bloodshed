@@ -7,7 +7,7 @@
 import gblib;
 import std;
 
-#include "gb/dissolve.h"
+#include "gb/commands/dissolve.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -124,4 +124,3 @@ void dissolve(const command_t &argv, GameObj &g) {
 
 #endif
 }
-

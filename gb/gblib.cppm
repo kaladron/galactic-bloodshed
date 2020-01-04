@@ -164,5 +164,3 @@ export template <typename T, class = typename std::enable_if<
 bool isclr(const T target, const unsigned int pos) {
   return !isset(target, pos);
 }
-
-

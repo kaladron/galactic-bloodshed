@@ -240,7 +240,22 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
       sum_mob INT,
       sum_eff INT);
 
+  CREATE TABLE tbl_commod(
+    commod_id INT PRIMARY KEY NOT NULL,
+    owner INT,
+    governor INT,
+    type INT,
+    amount INT,
+    deliver INT,
+    bid INT,
+    bidder INT,
+    bidder_gov INT,
+    star_from INT,
+    planet_from INT,
+    star_to INT,
+    planet_to INT);
 )";
+  // TODO(jeffbailey): tbl_commod could probably use more indeces.
   char *err_msg = nullptr;
   int err = sqlite3_exec(dbconn, tbl_create, nullptr, nullptr, &err_msg);
   if (err != SQLITE_OK) {

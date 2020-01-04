@@ -49,7 +49,6 @@ makeuniv_SOURCES = $(COMMON_FILES)  \
 					creator/makestar.cc \
 					creator/makeuniv.cc \
 					creator/namegen.cc \
-					perm.cc \
 					sectormap.cc
 
 enrol_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
@@ -89,7 +88,6 @@ OLD_LIBGBLIB_FILES = \
 		     moveship.cc \
 		     name.cc \
 		     order.cc \
-		     perm.cc \
 		     doplanet.cc \
 		     planet.cc \
 		     place.cc \

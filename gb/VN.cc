@@ -16,7 +16,6 @@ import std;
 #include "gb/fire.h"
 #include "gb/load.h"
 #include "gb/max.h"
-#include "gb/perm.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tele.h"
@@ -299,26 +298,22 @@ void planet_doVN(Ship *ship, Planet *planet, SectorMap &smap) {
             ship->special.mind.busy = 0;
           else {
             /* find a place on the planet to land */
-            int x;
-            int y;
-            int d; /* auto vars for & */
-
-            (void)Getxysect(*planet, &x, &y, 1);
-            while ((d = Getxysect(*planet, &x, &y, 0)) &&
-                   smap.get(x, y).resource == 0)
-              ;
-            if (d) {
+	    bool found = false;
+            for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
+	      Sector &sect = sector_wrap;
+	      if (sect.resource == 0) continue;
+	      found = true;
               ship->docked = 1;
               ship->whatdest = ScopeLevel::LEVEL_PLAN;
               ship->deststar = ship->storbits;
               ship->destpnum = ship->pnumorbits;
               ship->xpos = Stars[ship->storbits]->xpos + planet->xpos;
               ship->ypos = Stars[ship->storbits]->ypos + planet->ypos;
-              ship->land_x = x;
-              ship->land_y = y;
+              ship->land_x = sect.x;
+              ship->land_y = sect.y;
               ship->special.mind.busy = 1;
-            } else
-              ship->special.mind.busy = 0;
+            }
+	    if (!found) ship->special.mind.busy = 0;
           }
         }
       }

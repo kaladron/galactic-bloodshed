@@ -71,7 +71,6 @@ OLD_LIBGBLIB_FILES = \
 		     build.cc \
 		     cs.cc \
 		     declare.cc \
-		     dissolve.cc \
 		     dosector.cc \
 		     doship.cc \
 		     doturncmd.cc \

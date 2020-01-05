@@ -126,8 +126,9 @@ export struct Commod {
   planetnum_t planet_to;
 };
 
-export struct vic {
-  unsigned char racenum;
+export class Victory {
+public:
+  player_t racenum;
   std::string name;
   bool no_count;
   char sleep;

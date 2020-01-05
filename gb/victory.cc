@@ -10,7 +10,7 @@ import std;
 #include "gb/races.h"
 
 namespace {
-bool constexpr victory_sort(const struct vic &a, const struct vic &b) {
+bool constexpr victory_sort(const Victory &a, const Victory &b) {
   if (a.no_count) return true;
   if (b.no_count) return false;
 
@@ -22,10 +22,10 @@ bool constexpr victory_sort(const struct vic &a, const struct vic &b) {
 }
 }  // namespace
 
-std::vector<vic> create_victory_list() {
-  std::vector<vic> vicvec;
+std::vector<Victory> create_victory_list() {
+  std::vector<Victory> vicvec;
   for (player_t i = 1; i <= Num_races; i++) {
-    struct vic vic;
+    Victory vic;
     vic.racenum = i;
     vic.name = std::string(races[i - 1]->name);
     vic.rawscore = races[i - 1]->victory_score;

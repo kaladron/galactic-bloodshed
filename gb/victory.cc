@@ -9,19 +9,6 @@ import std;
 
 #include "gb/races.h"
 
-namespace {
-bool constexpr victory_sort(const Victory &a, const Victory &b) {
-  if (a.no_count) return true;
-  if (b.no_count) return false;
-
-  if (b.rawscore > a.rawscore) return true;
-  if (b.rawscore < a.rawscore) return false;
-
-  // Must be equal
-  return true;
-}
-}  // namespace
-
 std::vector<Victory> create_victory_list() {
   std::vector<Victory> vicvec;
   for (player_t i = 1; i <= Num_races; i++) {
@@ -38,6 +25,6 @@ std::vector<Victory> create_victory_list() {
       vic.no_count = false;
     vicvec.emplace_back(vic);
   }
-  std::sort(vicvec.begin(), vicvec.end(), victory_sort);
+  std::sort(vicvec.begin(), vicvec.end());
   return vicvec;
 }

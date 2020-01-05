@@ -127,7 +127,18 @@ export struct Commod {
 };
 
 export class Victory {
-public:
+ public:
+  std::weak_ordering operator<=>(const Victory &that) const {
+    // Ensure that folks who shouldn't count are always ranked last.
+    if (no_count && !that.no_count) return std::weak_ordering::greater;
+    if (that.no_count && !no_count) return std::weak_ordering::less;
+
+    if (that.rawscore > rawscore) return std::weak_ordering::greater;
+    if (that.rawscore < rawscore) return std::weak_ordering::less;
+
+    // Must be equal
+    return std::weak_ordering::equivalent;
+  }
   player_t racenum;
   std::string name;
   bool no_count;

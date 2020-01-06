@@ -12,13 +12,12 @@ import std;
 std::vector<Victory> create_victory_list() {
   std::vector<Victory> vicvec;
   for (player_t i = 1; i <= Num_races; i++) {
-    Victory vic;
-    vic.racenum = i;
-    vic.name = std::string(races[i - 1]->name);
-    vic.rawscore = races[i - 1]->victory_score;
-    vic.tech = races[i - 1]->tech;
-    vic.Thing = races[i - 1]->Metamorph;
-    vic.IQ = races[i - 1]->IQ;
+    Victory vic{.racenum = i,
+                .name = std::string(races[i - 1]->name),
+                .tech = races[i - 1]->tech,
+                .Thing = races[i - 1]->Metamorph,
+                .IQ = racess[i - 1]->IQ,
+                .rawscore = races[i - 1]->victory_score};
     if (races[i - 1]->God || races[i - 1]->Guest || races[i - 1]->dissolved)
       vic.no_count = true;
     else

@@ -126,8 +126,7 @@ export struct Commod {
   planetnum_t planet_to;
 };
 
-export class Victory {
- public:
+export struct Victory {
   std::weak_ordering operator<=>(const Victory &that) const {
     // Ensure that folks who shouldn't count are always ranked last.
     if (no_count && !that.no_count) return std::weak_ordering::greater;
@@ -142,12 +141,10 @@ export class Victory {
   player_t racenum;
   std::string name;
   bool no_count;
-  char sleep;
   double tech;
   int Thing;
   int IQ;
-  long rawscore;
-  long login;
+  unsigned long rawscore;
 };
 
 export template <typename T, class = typename std::enable_if<

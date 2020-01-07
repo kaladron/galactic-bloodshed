@@ -16,7 +16,7 @@ std::vector<Victory> create_victory_list() {
                 .name = std::string(races[i - 1]->name),
                 .tech = races[i - 1]->tech,
                 .Thing = races[i - 1]->Metamorph,
-                .IQ = racess[i - 1]->IQ,
+                .IQ = races[i - 1]->IQ,
                 .rawscore = races[i - 1]->victory_score};
     if (races[i - 1]->God || races[i - 1]->Guest || races[i - 1]->dissolved)
       vic.no_count = true;

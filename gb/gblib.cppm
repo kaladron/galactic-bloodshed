@@ -34,6 +34,15 @@ export inline std::optional<shipnum_t> string_to_shipnum(std::string_view s) {
   return {};
 }
 
+/**
+ * \brief Scales used in production efficiency etc.
+ * \param x Integer from 0-100
+ * \return Float 0.0 - 1.0 (logscaleOB 0.5 - .95)
+ */
+export inline double logscale(const int x) {
+  return log10((double)x + 1.0) / 2.0;
+}
+
 export class Db {
  public:
   virtual ~Db() {}

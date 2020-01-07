@@ -16,7 +16,6 @@ import std;
 #include "gb/fire.h"
 #include "gb/load.h"
 #include "gb/max.h"
-#include "gb/misc.h"
 #include "gb/order.h"
 #include "gb/races.h"
 #include "gb/ships.h"

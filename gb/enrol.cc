@@ -498,13 +498,3 @@ static char desshow(const int x, const int y,
       return ('!');
   }
 }
-
-// TODO(jeffbailey): We shouldn't need to be providing this function.
-/* this is a dummy routine */
-bool notify(const player_t, const governor_t, const std::string &) {
-  return false;
-}
-
-// TODO(jeffbailey): We shouldn't need to be providing this function.
-/* this is a dummy routine */
-void warn(const player_t, const governor_t, const std::string &){};

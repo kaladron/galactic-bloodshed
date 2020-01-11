@@ -149,7 +149,7 @@ export struct Victory {
   }
   player_t racenum;
   std::string name;
-  bool no_count;
+  bool no_count = false;
   double tech;
   int Thing;
   int IQ;

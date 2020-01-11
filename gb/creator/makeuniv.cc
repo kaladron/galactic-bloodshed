@@ -10,6 +10,9 @@ import std;
 
 #include "gb/creator/makeuniv.h"
 
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/build.h"
@@ -23,7 +26,6 @@ import std;
 #include "gb/races.h"
 #include "gb/sql/sql.h"
 #include "gb/tweakables.h"
-#include "gb/utils/fileutils.h"
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
 
@@ -37,6 +39,24 @@ int printstarinfo = 0;
 static int nstars = -1;
 static int occupied[100][100];
 static int planetlesschance = 0;
+
+namespace {
+void InitFile(const std::string &path, void *buffer = nullptr, size_t len = 0) {
+  const char *filename = path.c_str();
+  FILE *f = fopen(filename, "w+");
+  if (buffer != nullptr && len > 0) {
+    if (f == nullptr) {
+      printf("Unable to open \"%s\".\n", filename);
+      exit(-1);
+    }
+    fwrite(buffer, len, 1, f);
+  }
+  chmod(filename, 00660);
+  fclose(f);
+}
+
+void EmptyFile(const std::string &path) { InitFile(path); }
+};  // namespace
 
 int main(int argc, char *argv[]) {
   int c;

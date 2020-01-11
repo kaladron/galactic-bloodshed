@@ -38,7 +38,7 @@ bin_PROGRAMS = makeuniv enrol GB racegen
 
 noinst_LIBRARIES = libgblib.a
 
-UTILS_FILES = utils/rand.cc utils/fileutils.cc
+UTILS_FILES = utils/rand.cc
 COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc $(UTILS_FILES)
 
 makeuniv_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm

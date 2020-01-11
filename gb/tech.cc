@@ -14,6 +14,6 @@ const double TECH_INVEST = 0.01;  // invest factor
 }
 
 double tech_prod(int investment, population_t popn) {
-  double scale = (double)popn / 10000.;
-  return (TECH_INVEST * log10((double)investment * scale + 1.0));
+  double scale = static_cast<double>(popn) / 10000.;
+  return (TECH_INVEST * log10(static_cast<double>(investment) * scale + 1.0));
 }

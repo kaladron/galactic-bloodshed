@@ -10,20 +10,18 @@ import std;
 #include "gb/races.h"
 
 std::vector<Victory> create_victory_list() {
-  std::vector<Victory> vicvec;
-  for (player_t i = 1; i <= Num_races; i++) {
-    Victory vic{.racenum = i,
-                .name = std::string(races[i - 1]->name),
-                .tech = races[i - 1]->tech,
-                .Thing = races[i - 1]->Metamorph,
-                .IQ = races[i - 1]->IQ,
-                .rawscore = races[i - 1]->victory_score};
-    if (races[i - 1]->God || races[i - 1]->Guest || races[i - 1]->dissolved)
+  std::vector<Victory> victories;
+  for (const auto& race : races) {
+    Victory vic{.racenum = race->Playernum,
+                .name = std::string(race->name),
+                .tech = race->tech,
+                .Thing = race->Metamorph,
+                .IQ = race->IQ,
+                .rawscore = race->victory_score};
+    if (race->God || race->Guest || race->dissolved)
       vic.no_count = true;
-    else
-      vic.no_count = false;
-    vicvec.emplace_back(vic);
+    victories.emplace_back(vic);
   }
-  std::sort(vicvec.begin(), vicvec.end());
-  return vicvec;
+  std::sort(victories.begin(), victories.end());
+  return victories;
 }

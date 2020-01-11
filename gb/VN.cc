@@ -68,9 +68,6 @@ void do_VN(Ship &ship) {
     std::swap(nums[i], nums[f]);
   }
 
-  // Make Vector of players
-  // Permute Vector
-
   auto &p = planets[ship.storbits][ship.pnumorbits];
 
   // Loop through permuted vector until someone has resources on

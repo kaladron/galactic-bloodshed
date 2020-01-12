@@ -78,7 +78,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
 
   /* reset global variables */
   for (i = 1; i <= Num_races; i++) {
-    Compat[i - 1] = planet.compatibility(*races[i - 1]);
+    Compat[i - 1] = planet.compatibility(races[i - 1]);
     planet.info[i - 1].numsectsowned = 0;
     planet.info[i - 1].troops = 0;
     planet.info[i - 1].popn = 0;
@@ -303,10 +303,10 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
             o &= Sectinfo[p.x][p.y].explored;
             if (((Sectinfo[p.x][p.y].explored == i) && !(random() & 02)) &&
                 (!p.owner && p.condition != SectorType::SEC_WASTED &&
-                 p.condition == races[i - 1]->likesbest)) {
+                 p.condition == races[i - 1].likesbest)) {
               /*  explorations have found an island */
               Claims = i;
-              p.popn = races[i - 1]->number_sexes;
+              p.popn = races[i - 1].number_sexes;
               p.owner = i;
               tot_captured = 1;
             } else
@@ -421,7 +421,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
       planet.info[p.owner - 1].popn += p.popn;
       planet.popn += p.popn;
       planet.troops += p.troops;
-      planet.maxpopn += maxsupport(*races[p.owner - 1], p, Compat[p.owner - 1],
+      planet.maxpopn += maxsupport(races[p.owner - 1], p, Compat[p.owner - 1],
                                    planet.conditions[TOXIC]);
       Power[p.owner - 1].troops += p.troops;
       Power[p.owner - 1].popn += p.popn;
@@ -499,30 +499,30 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
       planet.info[i - 1].crystals += prod_crystals[i - 1];
 
       /* tax the population - set new tax rate when done */
-      if (races[i - 1]->Gov_ship) {
+      if (races[i - 1].Gov_ship) {
         planet.info[i - 1].prod_money =
             round_rand(INCOME_FACTOR * (double)planet.info[i - 1].tax *
                        (double)planet.info[i - 1].popn);
-        races[i - 1]->governor[Stars[starnum]->governor[i - 1]].money +=
+        races[i - 1].governor[Stars[starnum]->governor[i - 1]].money +=
             planet.info[i - 1].prod_money;
         planet.info[i - 1].tax += std::min(
             (int)planet.info[i - 1].newtax - (int)planet.info[i - 1].tax, 5);
       } else
         planet.info[i - 1].prod_money = 0;
-      races[i - 1]->governor[Stars[starnum]->governor[i - 1]].income +=
+      races[i - 1].governor[Stars[starnum]->governor[i - 1]].income +=
           planet.info[i - 1].prod_money;
 
       /* do tech investments */
-      if (races[i - 1]->Gov_ship) {
-        if (races[i - 1]->governor[Stars[starnum]->governor[i - 1]].money >=
+      if (races[i - 1].Gov_ship) {
+        if (races[i - 1].governor[Stars[starnum]->governor[i - 1]].money >=
             planet.info[i - 1].tech_invest) {
           planet.info[i - 1].prod_tech =
               tech_prod((int)(planet.info[i - 1].tech_invest),
                         (int)(planet.info[i - 1].popn));
-          races[i - 1]->governor[Stars[starnum]->governor[i - 1]].money -=
+          races[i - 1].governor[Stars[starnum]->governor[i - 1]].money -=
               planet.info[i - 1].tech_invest;
-          races[i - 1]->tech += planet.info[i - 1].prod_tech;
-          races[i - 1]->governor[Stars[starnum]->governor[i - 1]].cost_tech +=
+          races[i - 1].tech += planet.info[i - 1].prod_tech;
+          races[i - 1].governor[Stars[starnum]->governor[i - 1]].cost_tech +=
               planet.info[i - 1].tech_invest;
         } else
           planet.info[i - 1].prod_tech = 0;
@@ -656,7 +656,7 @@ static void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
   if (!moveship_onplanet(ship, planet)) return;
   auto &s = smap.get(ship.land_x, ship.land_y);
 
-  if (s.condition == races[ship.owner - 1]->likesbest) {
+  if (s.condition == races[ship.owner - 1].likesbest) {
     sprintf(buf, " T%lu is full of zealots!!!", ship.number);
     push_telegram(ship.owner, ship.governor, buf);
     return;
@@ -670,7 +670,7 @@ static void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
 
   if (success((100 - (int)ship.damage) * ship.popn / ship.max_crew)) {
     /* only condition can be terraformed, type doesn't change */
-    s.condition = races[ship.owner - 1]->likesbest;
+    s.condition = races[ship.owner - 1].likesbest;
     s.eff = 0;
     s.mobilization = 0;
     s.popn = 0;
@@ -689,7 +689,7 @@ static void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
 static void plow(Ship *ship, Planet *planet, SectorMap &smap) {
   if (!moveship_onplanet(*ship, *planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
-  if ((races[ship->owner - 1]->likes[s.condition]) && (s.fert < 100)) {
+  if ((races[ship->owner - 1].likes[s.condition]) && (s.fert < 100)) {
     int adjust = round_rand(
         10 * (0.01 * (100.0 - (double)ship->damage) * (double)ship->popn) /
         ship->max_crew);
@@ -738,7 +738,7 @@ static void do_quarry(Ship *ship, Planet *planet, SectorMap &smap) {
   }
   /* nuke the sector */
   s.condition = SectorType::SEC_WASTED;
-  prod = round_rand(races[ship->owner - 1]->metabolism * (double)ship->popn /
+  prod = round_rand(races[ship->owner - 1].metabolism * (double)ship->popn /
                     (double)ship->max_crew);
   ship->fuel -= FUEL_COST_QUARRY;
   prod_res[ship->owner - 1] += prod;
@@ -778,8 +778,8 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
       owners++;
       setbit(ownerbits, i);
       for (j = 1; j < i && all_buddies_here; j++)
-        if (isset(ownerbits, j) && (!isset(races[i - 1]->allied, j) ||
-                                    !isset(races[j - 1]->allied, i)))
+        if (isset(ownerbits, j) &&
+            (!isset(races[i - 1].allied, j) || !isset(races[j - 1].allied, i)))
           all_buddies_here = 0;
     } else {        /* Player i owns no sectors */
       if (i != 1) { /* Can't steal from God */
@@ -839,7 +839,7 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
         givencrystals += crystals;
 
         owners--;
-        sprintf(telegram_buf, "%-14.14s %5d %5d %5d %5d", races[i - 1]->name,
+        sprintf(telegram_buf, "%-14.14s %5d %5d %5d %5d", races[i - 1].name,
                 res, des, fuel, crystals);
         for (j = 1; j <= Num_races; j++)
           if (isset(ownerbits, j))
@@ -859,7 +859,7 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
       planet->info[i - 1].destruct += des;
       planet->info[i - 1].fuel += fuel;
       planet->info[i - 1].crystals += crystals;
-      sprintf(telegram_buf, "%-14.14s %5d %5d %5d %5d", races[i - 1]->name, res,
+      sprintf(telegram_buf, "%-14.14s %5d %5d %5d %5d", races[i - 1].name, res,
               des, fuel, crystals);
       sprintf(buf, "%-14.14s %5d %5d %5d %5d\n", "Total:", stolenres, stolendes,
               stolenfuel, stolencrystals);
@@ -882,6 +882,6 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
 }
 
 static double est_production(const Sector &s) {
-  return (races[s.owner - 1]->metabolism * (double)s.eff * (double)s.eff /
+  return (races[s.owner - 1].metabolism * (double)s.eff * (double)s.eff /
           200.0);
 }

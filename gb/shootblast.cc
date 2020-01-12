@@ -150,8 +150,8 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
 }
 
 #ifdef DEFENSE
-int shoot_planet_to_ship(racetype *Race, Ship *ship, int strength,
-                         char *long_msg, char *short_msg) {
+int shoot_planet_to_ship(Race &race, Ship *ship, int strength, char *long_msg,
+                         char *short_msg) {
   int hits;
   int evade;
   int speed;
@@ -167,12 +167,12 @@ int shoot_planet_to_ship(racetype *Race, Ship *ship, int strength,
 
   ship_disposition(ship, &evade, &speed, &body);
 
-  hits = Num_hits(0.0, 0, strength, Race->tech, 0, evade, 0, speed, 0, body,
+  hits = Num_hits(0.0, 0, strength, race.tech, 0, evade, 0, speed, 0, body,
                   GTYPE_MEDIUM, 1);
 
-  damage = do_damage(Race->Playernum, ship, Race->tech, strength, hits, 0,
+  damage = do_damage(race.Playernum, ship, race.tech, strength, hits, 0,
                      GTYPE_MEDIUM, 0.0, "medium guns", damage_msg);
-  sprintf(short_msg, "%s [%d] %s %s\n", Dispshiploc(ship), Race->Playernum,
+  sprintf(short_msg, "%s [%d] %s %s\n", Dispshiploc(ship), race.Playernum,
           ship->alive ? "attacked" : "DESTROYED",
           ship_to_string(*ship).c_str());
   strcpy(long_msg, short_msg);

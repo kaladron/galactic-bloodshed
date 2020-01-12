@@ -38,8 +38,8 @@ void announce(const command_t &argv, GameObj &g) {
     return;
   }
 
-  auto Race = races[Playernum - 1];
-  if (mode == Communicate::SHOUT && !Race->God) {
+  auto &race = races[Playernum - 1];
+  if (mode == Communicate::SHOUT && !race.God) {
     g.out << "You are not privileged to use this command.\n";
     return;
   }
@@ -55,7 +55,7 @@ void announce(const command_t &argv, GameObj &g) {
       break;
     default:
       if ((mode == Communicate::ANN) &&
-          !(!!isset(Stars[g.snum]->inhabited, Playernum) || Race->God)) {
+          !(!!isset(Stars[g.snum]->inhabited, Playernum) || race.God)) {
         g.out << "You do not inhabit this system or have diety privileges.\n";
         return;
       }
@@ -77,8 +77,8 @@ void announce(const command_t &argv, GameObj &g) {
       break;
   }
   char msg[1000];
-  sprintf(msg, "%s \"%s\" [%d,%d] %c %s\n", Race->name,
-          Race->governor[Governor].name, Playernum, Governor, symbol,
+  sprintf(msg, "%s \"%s\" [%d,%d] %c %s\n", race.name,
+          race.governor[Governor].name, Playernum, Governor, symbol,
           message.c_str());
 
   switch (mode) {

@@ -25,7 +25,6 @@ void explore(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   int starq;
   int j;
-  racetype *Race;
 
   starq = -1;
 
@@ -45,7 +44,7 @@ void explore(const command_t &argv, GameObj &g) {
     starq = where.snum;
   }
 
-  Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
 
   getsdata(&Sdata);
   sprintf(buf, "         ========== Exploration Report ==========\n");
@@ -63,7 +62,7 @@ void explore(const command_t &argv, GameObj &g) {
         for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
           const auto pl = getplanet(star, i);
           if (i == 0) {
-            if (Race->tech >= TECH_SEE_STABILITY) {
+            if (race.tech >= TECH_SEE_STABILITY) {
               sprintf(buf, "\n%13s (%2d)[%2d]\n", Stars[star]->name,
                       Stars[star]->stability, Stars[star]->AP[Playernum - 1]);
               notify(Playernum, Governor, buf);
@@ -104,7 +103,7 @@ void explore(const command_t &argv, GameObj &g) {
               notify(Playernum, Governor, buf);
             }
             sprintf(buf, "] %s %2.0f%%\n", Planet_types[pl.type],
-                    pl.compatibility(*Race));
+                    pl.compatibility(race));
             notify(Playernum, Governor, buf);
           } else {
             sprintf(buf, "No Data ]\n");

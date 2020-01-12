@@ -29,13 +29,12 @@ void produce(Star *star, const Planet &planet, Sector &s) {
   int pres = 0;
   resource_t prod;
   population_t diff;
-  racetype *Race;
 
   if (!s.owner) return;
-  Race = races[s.owner - 1];
+  auto &race = races[s.owner - 1];
 
   if (s.resource && success(s.eff)) {
-    prod = round_rand(Race->metabolism) * int_rand(1, s.eff);
+    prod = round_rand(race.metabolism) * int_rand(1, s.eff);
     prod = std::min(prod, s.resource);
     s.resource -= prod;
     pfuel = prod * (1 + (s.condition == SectorType::SEC_GAS));
@@ -50,7 +49,7 @@ void produce(Star *star, const Planet &planet, Sector &s) {
 
   /* try to find crystals */
   /* chance of digging out a crystal depends on efficiency */
-  if (s.crystals && Crystal(Race) && success(s.eff)) {
+  if (s.crystals && Crystal(race) && success(s.eff)) {
     prod_crystals[s.owner - 1]++;
     s.crystals--;
   }
@@ -74,26 +73,26 @@ void produce(Star *star, const Planet &planet, Sector &s) {
   if (s.eff < 100) {
     int chance;
     chance = round_rand((100.0 - (double)planet.info[s.owner - 1].tax) *
-                        Race->likes[s.condition]);
+                        race.likes[s.condition]);
     if (success(chance)) {
-      s.eff += round_rand(Race->metabolism);
+      s.eff += round_rand(race.metabolism);
       if (s.eff >= 100) plate(s);
     }
   } else
     plate(s);
 
-  if ((s.condition != SectorType::SEC_WASTED) && Race->fertilize &&
+  if ((s.condition != SectorType::SEC_WASTED) && race.fertilize &&
       (s.fert < 100))
-    s.fert += (int_rand(0, 100) < Race->fertilize);
+    s.fert += (int_rand(0, 100) < race.fertilize);
   if (s.fert > 100) s.fert = 100;
 
   if (s.condition == SectorType::SEC_WASTED && success(NATURAL_REPAIR))
     s.condition = s.type;
 
-  maxsup = maxsupport(*Race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
+  maxsup = maxsupport(race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
   if ((diff = s.popn - maxsup) < 0) {
-    if (s.popn >= Race->number_sexes)
-      ss = round_rand(-(double)diff * Race->birthrate);
+    if (s.popn >= race.number_sexes)
+      ss = round_rand(-(double)diff * race.birthrate);
     else
       ss = 0;
   } else
@@ -101,7 +100,7 @@ void produce(Star *star, const Planet &planet, Sector &s) {
   s.popn += ss;
 
   if (s.troops)
-    Race->governor[star->governor[s.owner - 1]].maintain +=
+    race.governor[star->governor[s.owner - 1]].maintain +=
         UPDATE_TROOP_COST * s.troops;
   else if (!s.popn)
     s.owner = 0;
@@ -114,21 +113,20 @@ void spread(const Planet &pl, Sector &s, SectorMap &smap) {
   int y2;
   int j;
   int check;
-  racetype *Race;
 
   if (!s.owner) return;
   if (pl.slaved_to && pl.slaved_to != s.owner)
     return; /* no one wants to go anywhere */
 
-  Race = races[s.owner - 1];
+  auto &race = races[s.owner - 1];
 
   /* the higher the fertility, the less people like to leave */
-  people = round_rand((double)Race->adventurism * (double)s.popn *
+  people = round_rand((double)race.adventurism * (double)s.popn *
                       (100. - (double)s.fert) / 100.) -
-           Race->number_sexes; /* how many people want to move -
+           race.number_sexes; /* how many people want to move -
                                                one family stays behind */
 
-  check = round_rand(6.0 * Race->adventurism); /* more rounds for
+  check = round_rand(6.0 * race.adventurism); /* more rounds for
                                                                high advent */
   while (people > 0 && check) {
     j = int_rand(0, 7);
@@ -155,7 +153,7 @@ static void Migrate2(const Planet &planet, int xd, int yd, Sector &ps,
 
   if (!pd.owner) {
     move = (int)((double)(*people) * Compat[ps.owner - 1] *
-                 races[ps.owner - 1]->likes[pd.condition] / 100.0);
+                 races[ps.owner - 1].likes[pd.condition] / 100.0);
     if (!move) return;
     *people -= move;
     pd.popn += move;

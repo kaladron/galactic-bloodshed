@@ -24,14 +24,12 @@ import std;
 static void show_votes(int, int);
 
 /* invite people to join your alliance block */
-void invite(const command_t &argv, GameObj &g) {
+void invite(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   bool mode = argv[0] == "invite";
 
   int n;
-  racetype *Race;
-  racetype *alien;
 
   if (Governor) {
     g.out << "Only leaders may invite.\n";
@@ -45,14 +43,14 @@ void invite(const command_t &argv, GameObj &g) {
     g.out << "Not needed, you are the leader.\n";
     return;
   }
-  Race = races[Playernum - 1];
-  alien = races[n - 1];
+  auto& race = races[Playernum - 1];
+  auto& alien = races[n - 1];
   if (mode) {
     setbit(Blocks[Playernum - 1].invite, n);
-    sprintf(buf, "%s [%d] has invited you to join %s\n", Race->name, Playernum,
+    sprintf(buf, "%s [%d] has invited you to join %s\n", race.name, Playernum,
             Blocks[Playernum - 1].name);
     warn_race(n, buf);
-    sprintf(buf, "%s [%d] has been invited to join %s [%d]\n", alien->name, n,
+    sprintf(buf, "%s [%d] has been invited to join %s [%d]\n", alien.name, n,
             Blocks[Playernum - 1].name, Playernum);
     warn_race(Playernum, buf);
   } else {
@@ -60,7 +58,7 @@ void invite(const command_t &argv, GameObj &g) {
     sprintf(buf, "You have been blackballed from %s [%d]\n",
             Blocks[Playernum - 1].name, Playernum);
     warn_race(n, buf);
-    sprintf(buf, "%s [%d] has been blackballed from %s [%d]\n", alien->name, n,
+    sprintf(buf, "%s [%d] has been blackballed from %s [%d]\n", alien.name, n,
             Blocks[Playernum - 1].name, Playernum);
     warn_race(Playernum, buf);
   }
@@ -70,12 +68,11 @@ void invite(const command_t &argv, GameObj &g) {
 }
 
 /* declare that you wish to be included in the alliance block */
-void pledge(const command_t &argv, GameObj &g) {
+void pledge(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   bool mode = argv[0] == "pledge";
   int n;
-  racetype *Race;
 
   if (Governor) {
     g.out << "Only leaders may pledge.\n";
@@ -89,10 +86,10 @@ void pledge(const command_t &argv, GameObj &g) {
     g.out << "Not needed, you are the leader.\n";
     return;
   }
-  Race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
   if (mode) {
     setbit(Blocks[n - 1].pledge, Playernum);
-    sprintf(buf, "%s [%d] has pledged %s.\n", Race->name, Playernum,
+    sprintf(buf, "%s [%d] has pledged %s.\n", race.name, Playernum,
             Blocks[n - 1].name);
     warn_race(n, buf);
     sprintf(buf, "You have pledged allegiance to %s.\n", Blocks[n - 1].name);
@@ -103,16 +100,16 @@ void pledge(const command_t &argv, GameObj &g) {
         sprintf(
             buf,
             "%s [%d] joins the band wagon and pledges allegiance to %s [%d]!\n",
-            Race->name, Playernum, Blocks[n - 1].name, n);
+            race.name, Playernum, Blocks[n - 1].name, n);
         break;
       default:
-        sprintf(buf, "%s [%d] pledges allegiance to %s [%d].\n", Race->name,
+        sprintf(buf, "%s [%d] pledges allegiance to %s [%d].\n", race.name,
                 Playernum, Blocks[n - 1].name, n);
         break;
     }
   } else {
     clrbit(Blocks[n - 1].pledge, Playernum);
-    sprintf(buf, "%s [%d] has quit %s [%d].\n", Race->name, Playernum,
+    sprintf(buf, "%s [%d] has quit %s [%d].\n", race.name, Playernum,
             Blocks[n - 1].name, n);
     warn_race(n, buf);
     sprintf(buf, "You have quit %s\n", Blocks[n - 1].name);
@@ -121,10 +118,10 @@ void pledge(const command_t &argv, GameObj &g) {
     switch (int_rand(1, 20)) {
       case 1:
         sprintf(buf, "%s [%d] calls %s [%d] a bunch of geeks and QUITS!\n",
-                Race->name, Playernum, Blocks[n - 1].name, n);
+                race.name, Playernum, Blocks[n - 1].name, n);
         break;
       default:
-        sprintf(buf, "%s [%d] has QUIT %s [%d]!\n", Race->name, Playernum,
+        sprintf(buf, "%s [%d] has QUIT %s [%d]!\n", race.name, Playernum,
                 Blocks[n - 1].name, n);
         break;
     }
@@ -136,14 +133,12 @@ void pledge(const command_t &argv, GameObj &g) {
   Putblock(Blocks);
 }
 
-void declare(const command_t &argv, GameObj &g) {
+void declare(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   const int APcount = 1;
   int n;
   int d_mod;
-  racetype *Race;
-  racetype *alien;
 
   if (Governor) {
     g.out << "Only leaders may declare.\n";
@@ -171,13 +166,13 @@ void declare(const command_t &argv, GameObj &g) {
     return;
   }
 
-  Race = races[Playernum - 1];
-  alien = races[n - 1];
+  auto& race = races[Playernum - 1];
+  auto& alien = races[n - 1];
 
   switch (*argv[2].c_str()) {
     case 'a':
-      setbit(Race->allied, n);
-      clrbit(Race->atwar, n);
+      setbit(race.allied, n);
+      clrbit(race.atwar, n);
       if (success(5)) {
         sprintf(buf, "But would you want your sister to marry one?\n");
         notify(Playernum, Governor, buf);
@@ -186,30 +181,30 @@ void declare(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
       }
       sprintf(buf, " Player #%d (%s) has declared an alliance with you!\n",
-              Playernum, Race->name);
+              Playernum, race.name);
       warn_race(n, buf);
-      sprintf(buf, "%s [%d] declares ALLIANCE with %s [%d].\n", Race->name,
-              Playernum, alien->name, n);
+      sprintf(buf, "%s [%d] declares ALLIANCE with %s [%d].\n", race.name,
+              Playernum, alien.name, n);
       d_mod = 30;
       if (argv.size() > 3) d_mod = std::stoi(argv[3]);
       d_mod = std::max(d_mod, 30);
       break;
     case 'n':
-      clrbit(Race->allied, n);
-      clrbit(Race->atwar, n);
+      clrbit(race.allied, n);
+      clrbit(race.atwar, n);
       sprintf(buf, "Done.\n");
       notify(Playernum, Governor, buf);
 
       sprintf(buf, " Player #%d (%s) has declared neutrality with you!\n",
-              Playernum, Race->name);
+              Playernum, race.name);
       warn_race(n, buf);
       sprintf(buf, "%s [%d] declares a state of neutrality with %s [%d].\n",
-              Race->name, Playernum, alien->name, n);
+              race.name, Playernum, alien.name, n);
       d_mod = 30;
       break;
     case 'w':
-      setbit(Race->atwar, n);
-      clrbit(Race->allied, n);
+      setbit(race.atwar, n);
+      clrbit(race.allied, n);
       if (success(4)) {
         sprintf(buf,
                 "Your enemies flaunt their secondary male reproductive "
@@ -220,32 +215,32 @@ void declare(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
       }
       sprintf(buf, " Player #%d (%s) has declared war against you!\n",
-              Playernum, Race->name);
+              Playernum, race.name);
       warn_race(n, buf);
       switch (int_rand(1, 5)) {
         case 1:
-          sprintf(buf, "%s [%d] declares WAR on %s [%d].\n", Race->name,
-                  Playernum, alien->name, n);
+          sprintf(buf, "%s [%d] declares WAR on %s [%d].\n", race.name,
+                  Playernum, alien.name, n);
           break;
         case 2:
           sprintf(buf, "%s [%d] has had enough of %s [%d] and declares WAR!\n",
-                  Race->name, Playernum, alien->name, n);
+                  race.name, Playernum, alien.name, n);
           break;
         case 3:
           sprintf(
               buf,
               "%s [%d] decided that it is time to declare WAR on %s [%d]!\n",
-              Race->name, Playernum, alien->name, n);
+              race.name, Playernum, alien.name, n);
           break;
         case 4:
           sprintf(buf,
                   "%s [%d] had no choice but to declare WAR against %s [%d]!\n",
-                  Race->name, Playernum, alien->name, n);
+                  race.name, Playernum, alien.name, n);
           break;
         case 5:
           sprintf(buf,
                   "%s [%d] says 'screw it!' and declares WAR on %s [%d]!\n",
-                  Race->name, Playernum, alien->name, n);
+                  race.name, Playernum, alien.name, n);
           break;
         default:
           break;
@@ -261,32 +256,31 @@ void declare(const command_t &argv, GameObj &g) {
   warn_race(Playernum, buf);
 
   /* They, of course, learn more about you */
-  alien->translate[Playernum - 1] =
-      MIN(alien->translate[Playernum - 1] + d_mod, 100);
+  alien.translate[Playernum - 1] =
+      MIN(alien.translate[Playernum - 1] + d_mod, 100);
 
   putrace(alien);
-  putrace(Race);
+  putrace(race);
 }
 
 #ifdef VOTING
-void vote(const command_t &argv, GameObj &g) {
+void vote(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  racetype *Race;
   int check;
   int nvotes;
   int nays;
   int yays;
 
-  Race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
 
-  if (Race->God) {
+  if (race.God) {
     sprintf(buf, "Your vote doesn't count, however, here is the count.\n");
     notify(Playernum, Governor, buf);
     show_votes(Playernum, Governor);
     return;
   }
-  if (Race->Guest) {
+  if (race.Guest) {
     sprintf(buf, "You are not allowed to vote, but, here is the count.\n");
     notify(Playernum, Governor, buf);
     show_votes(Playernum, Governor);
@@ -297,10 +291,10 @@ void vote(const command_t &argv, GameObj &g) {
     check = 0;
     if (argv[1] == "update") {
       if (argv[2] == "go") {
-        Race->votes = true;
+        race.votes = true;
         check = 1;
       } else if (argv[2] == "wait")
-        Race->votes = false;
+        race.votes = false;
       else {
         sprintf(buf, "No such update choice '%s'\n", argv[2].c_str());
         notify(Playernum, Governor, buf);
@@ -311,7 +305,7 @@ void vote(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, buf);
       return;
     }
-    putrace(Race);
+    putrace(race);
 
     if (check) {
       /* Ok...someone voted yes.  Tally them all up and see if */
@@ -320,10 +314,10 @@ void vote(const command_t &argv, GameObj &g) {
       yays = 0;
       nvotes = 0;
       for (player_t pnum = 1; pnum <= Num_races; pnum++) {
-        Race = races[pnum - 1];
-        if (Race->God || Race->Guest) continue;
+        auto& r = races[pnum - 1];
+        if (r.God || r.Guest) continue;
         nvotes++;
-        if (Race->votes)
+        if (r.votes)
           yays++;
         else
           nays++;
@@ -335,7 +329,7 @@ void vote(const command_t &argv, GameObj &g) {
       }
     }
   } else {
-    sprintf(buf, "Your vote on updates is %s\n", Race->votes ? "go" : "wait");
+    sprintf(buf, "Your vote on updates is %s\n", race.votes ? "go" : "wait");
     notify(Playernum, Governor, buf);
     show_votes(Playernum, Governor);
   }
@@ -346,21 +340,20 @@ static void show_votes(int Playernum, int Governor) {
   int nays;
   int yays;
   int pnum;
-  racetype *Race;
 
   nays = yays = nvotes = 0;
   for (pnum = 1; pnum <= Num_races; pnum++) {
-    Race = races[pnum - 1];
-    if (Race->God || Race->Guest) continue;
+    auto& race = races[pnum - 1];
+    if (race.God || race.Guest) continue;
     nvotes++;
-    if (Race->votes) {
+    if (race.votes) {
       yays++;
-      sprintf(buf, "  %s voted go.\n", Race->name);
+      sprintf(buf, "  %s voted go.\n", race.name);
     } else {
       nays++;
-      sprintf(buf, "  %s voted wait.\n", Race->name);
+      sprintf(buf, "  %s voted wait.\n", race.name);
     }
-    if (races[Playernum - 1]->God) notify(Playernum, Governor, buf);
+    if (races[Playernum - 1].God) notify(Playernum, Governor, buf);
   }
   sprintf(buf, "  Total votes = %d, Go = %d, Wait = %d.\n", nvotes, yays, nays);
   notify(Playernum, Governor, buf);

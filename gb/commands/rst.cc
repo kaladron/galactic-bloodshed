@@ -364,7 +364,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
       notify(Playernum, Governor, buf);
     }
 
-    auto Race = races[Playernum - 1];
+    auto &race = races[Playernum - 1];
 
     if (Tactical) {
       int fev = 0;
@@ -378,7 +378,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
       notify(Playernum, Governor, buf);
 
       if (rd[indx].type == PLANET) {
-        tech = Race->tech;
+        tech = race.tech;
         /* tac report from planet */
         sprintf(buf, "(planet)%15.15s%4.0f %4dM           %5u %6u\n",
                 Stars[rd[indx].star]->pnames[rd[indx].pnum], tech,
@@ -433,7 +433,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
         for (i = 0; i < Num_ships; i++) {
           if (i != indx &&
               (Dist = sqrt(Distsq(rd[indx].x, rd[indx].y, rd[i].x, rd[i].y))) <
-                  gun_range(Race, &rd[indx].s, (rd[indx].type == PLANET))) {
+                  gun_range(&race, &rd[indx].s, (rd[indx].type == PLANET))) {
             if (rd[i].type == PLANET) {
               /* tac report at planet */
               sprintf(buf, " %13s(planet)          %8.0f\n",
@@ -469,9 +469,9 @@ static void ship_report(GameObj &g, shipnum_t indx,
                     "%13lu %s%2d,%1d %c%14.14s %4.0f  %4d   %4d %d  %3s  "
                     "%3d%% %3u%%%s",
                     rd[i].n,
-                    (isset(races[Playernum - 1]->atwar, rd[i].s.owner))
+                    (isset(races[Playernum - 1].atwar, rd[i].s.owner))
                         ? "-"
-                        : (isset(races[Playernum - 1]->allied, rd[i].s.owner))
+                        : (isset(races[Playernum - 1].allied, rd[i].s.owner))
                               ? "+"
                               : " ",
                     rd[i].s.owner, rd[i].s.governor, Shipltrs[rd[i].s.type],
@@ -480,7 +480,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                     (rd[i].s.active ? "" : " INACTIVE"));
                 if ((enemies_only == 0) ||
                     ((enemies_only == 1) &&
-                     (!isset(races[Playernum - 1]->allied, rd[i].s.owner)))) {
+                     (!isset(races[Playernum - 1].allied, rd[i].s.owner)))) {
                   notify(Playernum, Governor, buf);
                   if (landed(rd[i].s)) {
                     sprintf(buf, " (%d,%d)", rd[i].s.land_x, rd[i].s.land_y);

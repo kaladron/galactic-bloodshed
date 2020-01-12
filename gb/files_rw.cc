@@ -29,7 +29,7 @@ void Fileread(int fd, char *p, size_t num, int posn) {
   }
 }
 
-void Filewrite(int fd, char *p, size_t num, int posn) {
+void Filewrite(int fd, const char *p, size_t num, int posn) {
   if (lseek(fd, posn, L_SET) < 0) {
     perror("Filewrite 1");
     return;

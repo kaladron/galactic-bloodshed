@@ -118,12 +118,11 @@ void post(const char *origmsg, int type) {
  *
  */
 void push_telegram_race(const player_t recipient, const std::string &msg) {
-  racetype *Race;
   int j;
 
-  Race = races[recipient - 1];
+  auto &race = races[recipient - 1];
   for (j = 0; j <= MAXGOVERNORS; j++)
-    if (Race->governor[j].active) push_telegram(recipient, j, msg);
+    if (race.governor[j].active) push_telegram(recipient, j, msg);
 }
 
 /*
@@ -219,7 +218,6 @@ void teleg_read(GameObj &g) {
  */
 void news_read(int Playernum, int Governor, int type) {
   char *p;
-  racetype *Race;
 
   bzero((char *)telegram_file, sizeof(telegram_file));
   switch (type) {
@@ -240,11 +238,11 @@ void news_read(int Playernum, int Governor, int type) {
   }
 
   if ((teleg_read_fd = fopen(telegram_file, "r")) != nullptr) {
-    Race = races[Playernum - 1];
-    if (Race->governor[Governor].newspos[type] > newslength[type])
-      Race->governor[Governor].newspos[type] = 0;
+    auto &race = races[Playernum - 1];
+    if (race.governor[Governor].newspos[type] > newslength[type])
+      race.governor[Governor].newspos[type] = 0;
 
-    fseek(teleg_read_fd, Race->governor[Governor].newspos[type] & LONG_MAX,
+    fseek(teleg_read_fd, race.governor[Governor].newspos[type] & LONG_MAX,
           SEEK_SET);
     while (fgets(buf, sizeof buf, teleg_read_fd)) {
       for (p = buf; *p; p++)
@@ -257,8 +255,8 @@ void news_read(int Playernum, int Governor, int type) {
     }
 
     fclose(teleg_read_fd);
-    Race->governor[Governor].newspos[type] = newslength[type];
-    putrace(Race);
+    race.governor[Governor].newspos[type] = newslength[type];
+    putrace(race);
   } else {
     sprintf(buf, "\nNews file %s non-existent.\n", telegram_file);
     notify(Playernum, Governor, buf);

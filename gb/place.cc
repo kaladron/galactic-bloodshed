@@ -145,7 +145,7 @@ Place::Place(GameObj& g, const std::string& string, const bool ignoreexpl) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
-  const auto God = races[Playernum - 1]->God;
+  const auto God = races[Playernum - 1].God;
 
   err = 0;
 

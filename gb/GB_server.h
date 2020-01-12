@@ -31,7 +31,7 @@ void warn(const player_t, const governor_t, const std::string &);
 void warn_star(const player_t, const starnum_t, const std::string &);
 void notify_star(const player_t, const governor_t, const starnum_t,
                  const std::string &);
-void adjust_morale(Race *, Race *, int);
+void adjust_morale(Race &, Race &, int);
 
 using segments_t = uint32_t;
 

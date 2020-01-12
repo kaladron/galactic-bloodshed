@@ -71,6 +71,7 @@ OLD_LIBGBLIB_FILES = \
 		     build.cc \
 		     cs.cc \
 		     declare.cc \
+		     doplanet.cc \
 		     dosector.cc \
 		     doship.cc \
 		     doturncmd.cc \
@@ -87,7 +88,6 @@ OLD_LIBGBLIB_FILES = \
 		     moveship.cc \
 		     name.cc \
 		     order.cc \
-		     doplanet.cc \
 		     planet.cc \
 		     place.cc \
 		     prof.cc \

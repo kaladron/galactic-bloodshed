@@ -29,7 +29,7 @@ static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
 static int jettison_check(GameObj &, int, int);
 static int landed_on(Ship *, shipnum_t);
 
-static void do_transporter(Race *, GameObj &, Ship *);
+static void do_transporter(const Race &, GameObj &, Ship *);
 static void unload_onto_alien_sector(GameObj &, Planet *, Ship *, Sector &, int,
                                      int);
 
@@ -49,7 +49,6 @@ void load(const command_t &argv, GameObj &g) {
   Ship *s2;
   Planet p;
   Sector sect;
-  racetype *Race;
   shipnum_t shipno;
   shipnum_t nextshipno;
 
@@ -255,7 +254,7 @@ void load(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      Race = races[Playernum - 1];
+      auto &race = races[Playernum - 1];
 
       if (amt == 0) amt = (mode ? lolim : uplim);
 
@@ -263,7 +262,7 @@ void load(const command_t &argv, GameObj &g) {
         case 'c':
           if (sh) {
             s2->popn -= amt;
-            if (!landed_on(s, sh)) s2->mass -= amt * Race->mass;
+            if (!landed_on(s, sh)) s2->mass -= amt * race.mass;
             transfercrew = 1;
           } else if (sect.owner && sect.owner != Playernum) {
             sprintf(buf,
@@ -298,7 +297,7 @@ void load(const command_t &argv, GameObj &g) {
           }
           if (transfercrew) {
             s->popn += amt;
-            s->mass += amt * Race->mass;
+            s->mass += amt * race.mass;
             sprintf(buf, "crew complement of %s is now %lu.\n",
                     ship_to_string(*s).c_str(), s->popn);
             notify(Playernum, Governor, buf);
@@ -307,7 +306,7 @@ void load(const command_t &argv, GameObj &g) {
         case 'm':
           if (sh) {
             s2->troops -= amt;
-            if (!landed_on(s, sh)) s2->mass -= amt * Race->mass;
+            if (!landed_on(s, sh)) s2->mass -= amt * race.mass;
             transfercrew = 1;
           } else if (sect.owner && sect.owner != Playernum) {
             sprintf(buf,
@@ -341,7 +340,7 @@ void load(const command_t &argv, GameObj &g) {
           }
           if (transfercrew) {
             s->troops += amt;
-            s->mass += amt * Race->mass;
+            s->mass += amt * race.mass;
             sprintf(buf, "troop complement of %s is now %lu.\n",
                     ship_to_string(*s).c_str(), s->troops);
             notify(Playernum, Governor, buf);
@@ -435,13 +434,13 @@ void load(const command_t &argv, GameObj &g) {
             sprintf(buf, "%d popn transferred.\n", amt);
             notify(Playernum, Governor, buf);
             sprintf(bufc, "%d %s\n", amt,
-                    Race->Metamorph ? "tons of biomass" : "population");
+                    race.Metamorph ? "tons of biomass" : "population");
             break;
           case 'm':
             sprintf(buf, "%d military transferred.\n", amt);
             notify(Playernum, Governor, buf);
             sprintf(bufm, "%d %s\n", amt,
-                    Race->Metamorph ? "tons of biomass" : "population");
+                    race.Metamorph ? "tons of biomass" : "population");
             break;
           default:
             break;
@@ -458,7 +457,7 @@ void load(const command_t &argv, GameObj &g) {
       /* do transporting here */
       if (s->type == ShipType::OTYPE_TRANSDEV && s->special.transport.target &&
           s->on)
-        do_transporter(Race, g, s);
+        do_transporter(race, g, s);
 
       putship(s);
       free(s);
@@ -476,7 +475,6 @@ void jettison(const command_t &argv, GameObj &g) {
   int amt;
   char commod;
   Ship *s;
-  racetype *Race;
 
   if (argv.size() < 2) {
     g.out << "Jettison what?\n";
@@ -520,7 +518,7 @@ void jettison(const command_t &argv, GameObj &g) {
       else
         amt = 0;
 
-      Race = races[Playernum - 1];
+      auto &race = races[Playernum - 1];
 
       commod = argv[2][0];
       switch (commod) {
@@ -536,7 +534,7 @@ void jettison(const command_t &argv, GameObj &g) {
         case 'c':
           if ((amt = jettison_check(g, amt, (int)(s->popn))) > 0) {
             s->popn -= amt;
-            s->mass -= amt * Race->mass;
+            s->mass -= amt * race.mass;
             sprintf(buf, "%d crew %s into deep space.\n", amt,
                     (amt == 1) ? "hurls itself" : "hurl themselves");
             notify(Playernum, Governor, buf);
@@ -555,7 +553,7 @@ void jettison(const command_t &argv, GameObj &g) {
                     s->troops - amt);
             notify(Playernum, Governor, buf);
             s->troops -= amt;
-            s->mass -= amt * Race->mass;
+            s->mass -= amt * race.mass;
             Mod = 1;
           }
           break;
@@ -625,8 +623,6 @@ void dump(const command_t &argv, GameObj &g) {
   int player;
   int star;
   int j;
-  racetype *Race;
-  racetype *r;
 
   if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
     return;
@@ -636,17 +632,11 @@ void dump(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     return;
   }
-  r = races[player - 1];
-
-  if (r->Guest) {
-    g.out << "Cheater!\n";
-    return;
-  }
 
   /* transfer all planet and star knowledge to the player */
   /* get all stars and planets */
-  Race = races[Playernum - 1];
-  if (Race->Guest) {
+  auto &race = races[Playernum - 1];
+  if (race.Guest) {
     g.out << "Cheater!\n";
     return;
   }
@@ -699,7 +689,7 @@ void dump(const command_t &argv, GameObj &g) {
 
   deductAPs(Playernum, Governor, APcount, g.snum, 0);
 
-  sprintf(buf, "%s [%d] has given you exploration data.\n", Race->name,
+  sprintf(buf, "%s [%d] has given you exploration data.\n", race.name,
           Playernum);
   warn_race(player, buf);
   g.out << "Exploration Data transferred.\n";
@@ -911,12 +901,12 @@ void rcv_troops(Ship *s, int amt, double mass) {
   s->mass += (double)amt * mass;
 }
 
-static void do_transporter(racetype *Race, GameObj &g, Ship *s) {
+static void do_transporter(const Race &race, GameObj &g, Ship *s) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   Ship *s2;
 
-  Playernum = Race->Playernum;
+  Playernum = race.Playernum;
 
   if (!landed(*s)) {
     g.out << "Origin ship not landed.\n";
@@ -983,14 +973,14 @@ static void do_transporter(racetype *Race, GameObj &g, Ship *s) {
     bufd[0] = '\0';
 
   if (s->popn) {
-    s2->mass += s->popn * Race->mass;
+    s2->mass += s->popn * race.mass;
     s2->popn += s->popn;
 
     sprintf(buf, "%lu population transferred.\n", s->popn);
     notify(Playernum, Governor, buf);
     sprintf(bufc, "%lu %s\n", s->popn,
-            Race->Metamorph ? "tons of biomass" : "population");
-    s->mass -= s->popn * Race->mass;
+            race.Metamorph ? "tons of biomass" : "population");
+    s->mass -= s->popn * race.mass;
     s->popn -= s->popn;
   } else
     bufc[0] = '\0';
@@ -1044,8 +1034,6 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
   int casualties3;
   int absorbed;
   int defense;
-  racetype *Race;
-  racetype *alien;
 
   if (people <= 0) {
     notify(Playernum, Governor,
@@ -1053,13 +1041,11 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
     return;
   }
   ground_assaults[Playernum - 1][sect.owner - 1][g.snum] += 1;
-  Race = races[Playernum - 1];
-  alien = races[sect.owner - 1];
+  auto &race = races[Playernum - 1];
+  auto &alien = races[sect.owner - 1];
   /* races find out about each other */
-  alien->translate[Playernum - 1] =
-      MIN(alien->translate[Playernum - 1] + 5, 100);
-  Race->translate[sect.owner - 1] =
-      MIN(Race->translate[sect.owner - 1] + 5, 100);
+  alien.translate[Playernum - 1] = MIN(alien.translate[Playernum - 1] + 5, 100);
+  race.translate[sect.owner - 1] = MIN(race.translate[sect.owner - 1] + 5, 100);
 
   oldowner = (int)sect.owner;
   oldgov = Stars[g.snum]->governor[sect.owner - 1];
@@ -1068,7 +1054,7 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
     ship->popn -= people;
   else
     ship->troops -= people;
-  ship->mass -= people * Race->mass;
+  ship->mass -= people * race.mass;
   sprintf(buf, "%d %s unloaded...\n", people, what == CIV ? "civ" : "mil");
   notify(Playernum, Governor, buf);
   sprintf(buf, "Crew compliment %lu civ  %lu mil\n", ship->popn, ship->troops);
@@ -1083,9 +1069,9 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
   old3popn = sect.troops;
 
   defense = Defensedata[sect.condition];
-  ground_attack(Race, alien, &people, what, &sect.popn, &sect.troops,
+  ground_attack(race, alien, &people, what, &sect.popn, &sect.troops,
                 (int)ship->armor, defense, 1.0 - (double)ship->damage / 100.0,
-                alien->likes[sect.condition], &astrength, &dstrength,
+                alien.likes[sect.condition], &astrength, &dstrength,
                 &casualties, &casualties2, &casualties3);
   sprintf(buf, "Attack: %.2f   Defense: %.2f.\n", astrength, dstrength);
   notify(Playernum, Governor, buf);
@@ -1093,7 +1079,7 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
   if (!(sect.popn + sect.troops)) { /* we got 'em */
     /* mesomorphs absorb the bodies of their victims */
     absorbed = 0;
-    if (Race->absorb) {
+    if (race.absorb) {
       absorbed = int_rand(0, old2popn + old3popn);
       sprintf(buf, "%d alien bodies absorbed.\n", absorbed);
       notify(Playernum, Governor, buf);
@@ -1107,10 +1093,10 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
       sect.troops = people;
     }
     sect.owner = Playernum;
-    adjust_morale(Race, alien, (int)alien->fighters);
+    adjust_morale(race, alien, (int)alien.fighters);
   } else { /* retreat */
     absorbed = 0;
-    if (alien->absorb) {
+    if (alien.absorb) {
       absorbed = int_rand(0, oldpopn - people);
       sprintf(buf, "%d alien bodies absorbed.\n", absorbed);
       notify(oldowner, oldgov, buf);
@@ -1125,14 +1111,14 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
       ship->popn += people;
     else
       ship->troops += people;
-    ship->mass -= people * Race->mass;
-    adjust_morale(alien, Race, (int)Race->fighters);
+    ship->mass -= people * race.mass;
+    adjust_morale(alien, race, (int)race.fighters);
   }
   sprintf(telegram_buf, "/%s/%s: %s [%d] %s assaults %s [%d] %c(%d,%d) %s\n",
-          Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], Race->name,
-          Playernum, ship_to_string(*ship).c_str(), alien->name,
-          alien->Playernum, Dessymbols[sect.condition], ship->land_x,
-          ship->land_y, (sect.owner == Playernum ? "VICTORY" : "DEFEAT"));
+          Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], race.name,
+          Playernum, ship_to_string(*ship).c_str(), alien.name, alien.Playernum,
+          Dessymbols[sect.condition], ship->land_x, ship->land_y,
+          (sect.owner == Playernum ? "VICTORY" : "DEFEAT"));
 
   if (sect.owner == Playernum) {
     sprintf(buf, "VICTORY! The sector is yours!\n");
@@ -1158,17 +1144,17 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
     sprintf(buf, "You killed all of them!\n");
     strcat(telegram_buf, buf);
     /* increase modifier */
-    Race->translate[oldowner - 1] = MIN(Race->translate[oldowner - 1] + 5, 100);
+    race.translate[oldowner - 1] = MIN(race.translate[oldowner - 1] + 5, 100);
   }
   if (!people) {
     sprintf(buf, "Oh no! They killed your party to the last man!\n");
     notify(Playernum, Governor, buf);
     /* increase modifier */
-    alien->translate[Playernum - 1] =
-        MIN(alien->translate[Playernum - 1] + 5, 100);
+    alien.translate[Playernum - 1] =
+        MIN(alien.translate[Playernum - 1] + 5, 100);
   }
   putrace(alien);
-  putrace(Race);
+  putrace(race);
 
   sprintf(buf, "Casualties: You: %d civ/%d mil, Them: %d %s\n", casualties2,
           casualties3, casualties, what == CIV ? "civ" : "mil");

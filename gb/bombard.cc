@@ -21,7 +21,7 @@ import std;
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */
-int bombard(Ship *ship, Planet *planet, Race *r) {
+int bombard(Ship *ship, Planet *planet, Race &r) {
   int x;
   int y;
   int x2 = -1;
@@ -52,7 +52,7 @@ int bombard(Ship *ship, Planet *planet, Race *r) {
     Sector &sect = sector_wrap;
     if (sect.owner && sect.owner != ship->owner &&
         (sect.condition != SectorType::SEC_WASTED)) {
-      if (isset(r->atwar, sect.owner) ||
+      if (isset(r.atwar, sect.owner) ||
           (ship->type == ShipType::OTYPE_BERS &&
            sect.owner == ship->special.mind.target)) {
         found = true;

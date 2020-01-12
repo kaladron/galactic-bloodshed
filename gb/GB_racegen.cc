@@ -329,7 +329,7 @@ found_planet:
 
 #endif
 
-  putrace(race);
+  putrace(*race);
   putsector(*sect, planet);
 
   getstar(&Stars[star], star);

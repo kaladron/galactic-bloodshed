@@ -21,19 +21,18 @@ void block(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
   player_t p;
-  racetype *Race;
   int dummy_;
 
-  Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
 
   if (argv.size() == 3 && argv[1] == "player") {
     if (!(p = get_player(argv[2]))) {
       g.out << "No such player.\n";
       return;
     }
-    racetype *r = races[p - 1];
+    auto &r = races[p - 1];
     dummy_ = 0; /* Used as flag for finding a block */
-    sprintf(buf, "Race #%d [%s] is a member of ", p, r->name);
+    sprintf(buf, "Race #%d [%s] is a member of ", p, r.name);
     notify(Playernum, Governor, buf);
     for (int i = 1; i <= Num_races; i++) {
       if (isset(Blocks[i - 1].pledge, p) && isset(Blocks[i - 1].invite, p)) {
@@ -48,7 +47,7 @@ void block(const command_t &argv, GameObj &g) {
       g.out << "\n";
 
     dummy_ = 0; /* Used as flag for finding a block */
-    sprintf(buf, "Race #%d [%s] has been invited to join ", p, r->name);
+    sprintf(buf, "Race #%d [%s] has been invited to join ", p, r.name);
     notify(Playernum, Governor, buf);
     for (int i = 1; i <= Num_races; i++) {
       if (!isset(Blocks[i - 1].pledge, p) && isset(Blocks[i - 1].invite, p)) {
@@ -63,7 +62,7 @@ void block(const command_t &argv, GameObj &g) {
       g.out << "\n";
 
     dummy_ = 0; /* Used as flag for finding a block */
-    sprintf(buf, "Race #%d [%s] has pledged ", p, r->name);
+    sprintf(buf, "Race #%d [%s] has pledged ", p, r.name);
     notify(Playernum, Governor, buf);
     for (int i = 1; i <= Num_races; i++) {
       if (isset(Blocks[i - 1].pledge, p) && !isset(Blocks[i - 1].invite, p)) {
@@ -95,28 +94,28 @@ void block(const command_t &argv, GameObj &g) {
 
     for (int i = 1; i <= Num_races; i++)
       if (isset(dummy, i)) {
-        racetype *r = races[i - 1];
-        if (!r->dissolved) {
-          sprintf(buf, "%2d %-20.20s ", i, r->name);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].troops, Race, i));
+        auto &r = races[i - 1];
+        if (!r.dissolved) {
+          sprintf(buf, "%2d %-20.20s ", i, r.name);
+          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].troops, race, i));
           strcat(buf, temp);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].popn, Race, i));
+          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].popn, race, i));
           strcat(buf, temp);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].money, Race, i));
-          strcat(buf, temp);
-          sprintf(temp, "%5s",
-                  Estimate_i((int)Power[i - 1].ships_owned, Race, i));
+          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].money, race, i));
           strcat(buf, temp);
           sprintf(temp, "%5s",
-                  Estimate_i((int)Power[i - 1].planets_owned, Race, i));
+                  Estimate_i((int)Power[i - 1].ships_owned, race, i));
           strcat(buf, temp);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].resource, Race, i));
+          sprintf(temp, "%5s",
+                  Estimate_i((int)Power[i - 1].planets_owned, race, i));
           strcat(buf, temp);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].fuel, Race, i));
+          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].resource, race, i));
           strcat(buf, temp);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].destruct, Race, i));
+          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].fuel, race, i));
           strcat(buf, temp);
-          sprintf(temp, " %3d%%\n", Race->translate[i - 1]);
+          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].destruct, race, i));
+          strcat(buf, temp);
+          sprintf(temp, " %3d%%\n", race.translate[i - 1]);
           strcat(buf, temp);
           notify(Playernum, Governor, buf);
         }
@@ -135,30 +134,30 @@ void block(const command_t &argv, GameObj &g) {
         sprintf(buf, "%2d %-19.19s%3ld", i, Blocks[i - 1].name,
                 Power_blocks.members[i - 1]);
         sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.money[i - 1]), Race, i));
+                Estimate_i((int)(Power_blocks.money[i - 1]), race, i));
         strcat(buf, temp);
         sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.popn[i - 1]), Race, i));
+                Estimate_i((int)(Power_blocks.popn[i - 1]), race, i));
         strcat(buf, temp);
         sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.ships_owned[i - 1]), Race, i));
+                Estimate_i((int)(Power_blocks.ships_owned[i - 1]), race, i));
         strcat(buf, temp);
         sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.systems_owned[i - 1]), Race, i));
+                Estimate_i((int)(Power_blocks.systems_owned[i - 1]), race, i));
         strcat(buf, temp);
         sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.resource[i - 1]), Race, i));
+                Estimate_i((int)(Power_blocks.resource[i - 1]), race, i));
         strcat(buf, temp);
         sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.fuel[i - 1]), Race, i));
+                Estimate_i((int)(Power_blocks.fuel[i - 1]), race, i));
         strcat(buf, temp);
         sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.destruct[i - 1]), Race, i));
+                Estimate_i((int)(Power_blocks.destruct[i - 1]), race, i));
         strcat(buf, temp);
         sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.VPs[i - 1]), Race, i));
+                Estimate_i((int)(Power_blocks.VPs[i - 1]), race, i));
         strcat(buf, temp);
-        sprintf(temp, " %3d%%\n", Race->translate[i - 1]);
+        sprintf(temp, " %3d%%\n", race.translate[i - 1]);
         strcat(buf, temp);
         notify(Playernum, Governor, buf);
       }

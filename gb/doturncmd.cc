@@ -44,7 +44,7 @@ static int APadd(const int, const population_t, const Race &);
 static bool attack_planet(const Ship &);
 static void fix_stability(Star *);
 static bool governed(const Race &);
-static void make_discoveries(Race *);
+static void make_discoveries(Race &);
 static void output_ground_attacks();
 
 void do_turn(Db &db, int update) {
@@ -103,9 +103,9 @@ void do_turn(Db &db, int update) {
     /* increase tech; change to something else */
     if (update) {
       /* Reset controlled planet count */
-      races[i - 1]->controlled_planets = 0;
-      races[i - 1]->planet_points = 0;
-      for (auto &governor : races[i - 1]->governor)
+      races[i - 1].controlled_planets = 0;
+      races[i - 1].planet_points = 0;
+      for (auto &governor : races[i - 1].governor)
         if (governor.active) {
 #ifdef MARKET
           governor.maintain = 0;
@@ -124,7 +124,7 @@ void do_turn(Db &db, int update) {
     }
 #ifdef VOTING
     /* Reset their vote for Update go. */
-    races[i - 1]->votes = false;
+    races[i - 1].votes = false;
 #endif
   }
   output_ground_attacks();
@@ -142,16 +142,16 @@ void do_turn(Db &db, int update) {
         continue;
       }
       if (c->owner && c->bidder &&
-          (races[c->bidder - 1]->governor[c->bidder_gov].money >= c->bid)) {
-        races[c->bidder - 1]->governor[c->bidder_gov].money -= c->bid;
-        races[c->owner - 1]->governor[c->governor].money += c->bid;
+          (races[c->bidder - 1].governor[c->bidder_gov].money >= c->bid)) {
+        races[c->bidder - 1].governor[c->bidder_gov].money -= c->bid;
+        races[c->owner - 1].governor[c->governor].money += c->bid;
         int cost = shipping_cost((int)c->star_to, (int)c->star_from, &dist,
                                  (int)c->bid);
-        races[c->bidder - 1]->governor[c->bidder_gov].cost_market +=
+        races[c->bidder - 1].governor[c->bidder_gov].cost_market +=
             c->bid + cost;
-        races[c->owner - 1]->governor[c->governor].profit_market += c->bid;
-        maintain(*races[c->bidder - 1],
-                 races[c->bidder - 1]->governor[c->bidder_gov], cost);
+        races[c->owner - 1].governor[c->governor].profit_market += c->bid;
+        maintain(races[c->bidder - 1],
+                 races[c->bidder - 1].governor[c->bidder_gov], cost);
         switch (c->type) {
           case RESOURCE:
             planets[c->star_to][c->planet_to]->info[c->bidder - 1].resource +=
@@ -173,12 +173,12 @@ void do_turn(Db &db, int update) {
         sprintf(buf,
                 "Lot %lu purchased from %s [%d] at a cost of %ld.\n   %ld "
                 "%s arrived at /%s/%s\n",
-                i, races[c->owner - 1]->name, c->owner, c->bid, c->amount,
+                i, races[c->owner - 1].name, c->owner, c->bid, c->amount,
                 commod_name[c->type], Stars[c->star_to]->name,
                 Stars[c->star_to]->pnames[c->planet_to]);
         push_telegram((int)c->bidder, (int)c->bidder_gov, buf);
         sprintf(buf, "Lot %lu (%lu %s) sold to %s [%d] at a cost of %ld.\n", i,
-                c->amount, commod_name[c->type], races[c->bidder - 1]->name,
+                c->amount, commod_name[c->type], races[c->bidder - 1].name,
                 c->bidder, c->bid);
         push_telegram((int)c->owner, (int)c->governor, buf);
         c->owner = c->governor = 0;
@@ -218,10 +218,10 @@ void do_turn(Db &db, int update) {
     for (shipnum_t i = 1; i <= Num_ships; i++)
       if (ships[i]->alive && Shipdata[ships[i]->type][ABIL_MAINTAIN]) {
         if (ships[i]->popn)
-          races[ships[i]->owner - 1]->governor[ships[i]->governor].maintain +=
+          races[ships[i]->owner - 1].governor[ships[i]->governor].maintain +=
               ships[i]->build_cost;
         if (ships[i]->troops)
-          races[ships[i]->owner - 1]->governor[ships[i]->governor].maintain +=
+          races[ships[i]->owner - 1].governor[ships[i]->governor].maintain +=
               UPDATE_TROOP_COST * ships[i]->troops;
       }
 #endif
@@ -289,10 +289,10 @@ void do_turn(Db &db, int update) {
         if (planets[star][i]->type != PlanetType::ASTEROID &&
             (planets[star][i]->info[j - 1].numsectsowned >
              planets[star][i]->Maxx * planets[star][i]->Maxy / 2))
-          races[j - 1]->controlled_planets++;
+          races[j - 1].controlled_planets++;
 
         if (planets[star][i]->info[j - 1].numsectsowned)
-          races[j - 1]->planet_points += planets[star][i]->get_points();
+          races[j - 1].planet_points += planets[star][i]->get_points();
       }
       if (update) {
         if (doplanet(star, *planets[star][i], i)) {
@@ -318,7 +318,7 @@ void do_turn(Db &db, int update) {
 
           APs = Stars[star]->AP[i - 1] + APadd((int)starnumships[star][i - 1],
                                                starpopns[star][i - 1],
-                                               *races[i - 1]);
+                                               races[i - 1]);
           if (APs < LIMIT_APs)
             Stars[star]->AP[i - 1] = APs;
           else
@@ -337,10 +337,10 @@ void do_turn(Db &db, int update) {
   if (update)
     for (player_t i = 1; i <= Num_races; i++) {
       Blocks[i - 1].systems_owned = 0; /*recount systems owned*/
-      if (governed(*races[i - 1])) {
+      if (governed(races[i - 1])) {
         int APs;
 
-        APs = Sdata.AP[i - 1] + races[i - 1]->planet_points;
+        APs = Sdata.AP[i - 1] + races[i - 1].planet_points;
         if (APs < LIMIT_APs)
           Sdata.AP[i - 1] = APs;
         else
@@ -358,12 +358,12 @@ void do_turn(Db &db, int update) {
       victory[i - 1].numsects = 0;
       victory[i - 1].shipcost = 0;
       victory[i - 1].shiptech = 0;
-      victory[i - 1].morale = races[i - 1]->morale;
+      victory[i - 1].morale = races[i - 1].morale;
       victory[i - 1].res = 0;
       victory[i - 1].des = 0;
       victory[i - 1].fuel = 0;
-      victory[i - 1].money = races[i - 1]->governor[0].money;
-      for (auto &governor : races[i - 1]->governor)
+      victory[i - 1].money = races[i - 1].governor[0].money;
+      for (auto &governor : races[i - 1].governor)
         if (governor.active) victory[i - 1].money += governor.money;
     }
 
@@ -391,16 +391,16 @@ void do_turn(Db &db, int update) {
     /* now that we have the info.. calculate the raw score */
 
     for (player_t i = 0; i < Num_races; i++) {
-      races[i]->victory_score =
+      races[i].victory_score =
           (VICT_SECT * (int)victory[i].numsects) +
           (VICT_SHIP * ((int)victory[i].shipcost +
                         (VICT_TECH * (int)victory[i].shiptech))) +
           (VICT_RES * ((int)victory[i].res + (int)victory[i].des)) +
           (VICT_FUEL * (int)victory[i].fuel) +
           (VICT_MONEY * (int)victory[i].money);
-      races[i]->victory_score /= VICT_DIVISOR;
-      races[i]->victory_score = (int)(morale_factor((double)victory[i].morale) *
-                                      races[i]->victory_score);
+      races[i].victory_score /= VICT_DIVISOR;
+      races[i].victory_score = (int)(morale_factor((double)victory[i].morale) *
+                                     races[i].victory_score);
     }
     free(victory);
   } /* end of if (update) */
@@ -413,31 +413,31 @@ void do_turn(Db &db, int update) {
   if (update) {
     for (player_t i = 1; i <= Num_races; i++) {
       /* collective intelligence */
-      if (races[i - 1]->collective_iq) {
+      if (races[i - 1].collective_iq) {
         double x = ((2. / 3.14159265) *
                     atan((double)Power[i - 1].popn / MESO_POP_SCALE));
-        races[i - 1]->IQ = races[i - 1]->IQ_limit * x * x;
+        races[i - 1].IQ = races[i - 1].IQ_limit * x * x;
       }
-      races[i - 1]->tech += (double)(races[i - 1]->IQ) / 100.0;
-      races[i - 1]->morale += Power[i - 1].planets_owned;
+      races[i - 1].tech += (double)(races[i - 1].IQ) / 100.0;
+      races[i - 1].morale += Power[i - 1].planets_owned;
       make_discoveries(races[i - 1]);
-      races[i - 1]->turn += 1;
-      if (races[i - 1]->controlled_planets >=
+      races[i - 1].turn += 1;
+      if (races[i - 1].controlled_planets >=
           Planet_count * VICTORY_PERCENT / 100)
-        races[i - 1]->victory_turns++;
+        races[i - 1].victory_turns++;
       else
-        races[i - 1]->victory_turns = 0;
+        races[i - 1].victory_turns = 0;
 
-      if (races[i - 1]->controlled_planets >=
+      if (races[i - 1].controlled_planets >=
           Planet_count * VICTORY_PERCENT / 200)
         for (player_t j = 1; j <= Num_races; j++)
-          races[j - 1]->translate[i - 1] = 100;
+          races[j - 1].translate[i - 1] = 100;
 
       Blocks[i - 1].VPs = 10 * Blocks[i - 1].systems_owned;
 #ifdef MARKET
-      for (auto &governor : races[i - 1]->governor)
+      for (auto &governor : races[i - 1].governor)
         if (governor.active)
-          maintain(*races[i - 1], governor, governor.maintain);
+          maintain(races[i - 1], governor, governor.maintain);
 #endif
     }
     for (player_t i = 1; i <= Num_races; i++) putrace(races[i - 1]);
@@ -449,7 +449,7 @@ void do_turn(Db &db, int update) {
     compute_power_blocks();
     for (player_t i = 1; i <= Num_races; i++) {
       Power[i - 1].money = 0;
-      for (auto &governor : races[i - 1]->governor)
+      for (auto &governor : races[i - 1].governor)
         if (governor.active) Power[i - 1].money += governor.money;
     }
     putpower(Power);
@@ -583,52 +583,52 @@ void handle_victory() {
 #endif
 }
 
-static void make_discoveries(Race *r) {
+static void make_discoveries(Race &r) {
   /* would be nicer to do this with a loop of course - but it's late */
-  if (!Hyper_drive(r) && r->tech >= TECH_HYPER_DRIVE) {
-    push_telegram_race(r->Playernum,
+  if (!Hyper_drive(r) && r.tech >= TECH_HYPER_DRIVE) {
+    push_telegram_race(r.Playernum,
                        "You have discovered HYPERDRIVE technology.\n");
-    r->discoveries[D_HYPER_DRIVE] = 1;
+    r.discoveries[D_HYPER_DRIVE] = 1;
   }
-  if (!Laser(r) && r->tech >= TECH_LASER) {
-    push_telegram_race(r->Playernum, "You have discovered LASER technology.\n");
-    r->discoveries[D_LASER] = 1;
+  if (!Laser(r) && r.tech >= TECH_LASER) {
+    push_telegram_race(r.Playernum, "You have discovered LASER technology.\n");
+    r.discoveries[D_LASER] = 1;
   }
-  if (!Cew(r) && r->tech >= TECH_CEW) {
-    push_telegram_race(r->Playernum, "You have discovered CEW technology.\n");
-    r->discoveries[D_CEW] = 1;
+  if (!Cew(r) && r.tech >= TECH_CEW) {
+    push_telegram_race(r.Playernum, "You have discovered CEW technology.\n");
+    r.discoveries[D_CEW] = 1;
   }
-  if (!Vn(r) && r->tech >= TECH_VN) {
-    push_telegram_race(r->Playernum, "You have discovered VN technology.\n");
-    r->discoveries[D_VN] = 1;
+  if (!Vn(r) && r.tech >= TECH_VN) {
+    push_telegram_race(r.Playernum, "You have discovered VN technology.\n");
+    r.discoveries[D_VN] = 1;
   }
-  if (!Tractor_beam(r) && r->tech >= TECH_TRACTOR_BEAM) {
-    push_telegram_race(r->Playernum,
+  if (!Tractor_beam(r) && r.tech >= TECH_TRACTOR_BEAM) {
+    push_telegram_race(r.Playernum,
                        "You have discovered TRACTOR BEAM technology.\n");
-    r->discoveries[D_TRACTOR_BEAM] = 1;
+    r.discoveries[D_TRACTOR_BEAM] = 1;
   }
-  if (!Transporter(r) && r->tech >= TECH_TRANSPORTER) {
-    push_telegram_race(r->Playernum,
+  if (!Transporter(r) && r.tech >= TECH_TRANSPORTER) {
+    push_telegram_race(r.Playernum,
                        "You have discovered TRANSPORTER technology.\n");
-    r->discoveries[D_TRANSPORTER] = 1;
+    r.discoveries[D_TRANSPORTER] = 1;
   }
-  if (!Avpm(r) && r->tech >= TECH_AVPM) {
-    push_telegram_race(r->Playernum, "You have discovered AVPM technology.\n");
-    r->discoveries[D_AVPM] = 1;
+  if (!Avpm(r) && r.tech >= TECH_AVPM) {
+    push_telegram_race(r.Playernum, "You have discovered AVPM technology.\n");
+    r.discoveries[D_AVPM] = 1;
   }
-  if (!Cloak(r) && r->tech >= TECH_CLOAK) {
-    push_telegram_race(r->Playernum, "You have discovered CLOAK technology.\n");
-    r->discoveries[D_CLOAK] = 1;
+  if (!Cloak(r) && r.tech >= TECH_CLOAK) {
+    push_telegram_race(r.Playernum, "You have discovered CLOAK technology.\n");
+    r.discoveries[D_CLOAK] = 1;
   }
-  if (!Wormhole(r) && r->tech >= TECH_WORMHOLE) {
-    push_telegram_race(r->Playernum,
+  if (!Wormhole(r) && r.tech >= TECH_WORMHOLE) {
+    push_telegram_race(r.Playernum,
                        "You have discovered WORMHOLE technology.\n");
-    r->discoveries[D_WORMHOLE] = 1;
+    r.discoveries[D_WORMHOLE] = 1;
   }
-  if (!Crystal(r) && r->tech >= TECH_CRYSTAL) {
-    push_telegram_race(r->Playernum,
+  if (!Crystal(r) && r.tech >= TECH_CRYSTAL) {
+    push_telegram_race(r.Playernum,
                        "You have discovered CRYSTAL technology.\n");
-    r->discoveries[D_CRYSTAL] = 1;
+    r.discoveries[D_CRYSTAL] = 1;
   }
 }
 
@@ -648,8 +648,8 @@ static void output_ground_attacks() {
       for (j = 1; j <= Num_races; j++)
         if (ground_assaults[i - 1][j - 1][star]) {
           sprintf(buf, "%s: %s [%d] assaults %s [%d] %d times.\n",
-                  Stars[star]->name, races[i - 1]->name, i, races[j - 1]->name,
-                  j, ground_assaults[i - 1][j - 1][star]);
+                  Stars[star]->name, races[i - 1].name, i, races[j - 1].name, j,
+                  ground_assaults[i - 1][j - 1][star]);
           post(buf, COMBAT);
           ground_assaults[i - 1][j - 1][star] = 0;
         }

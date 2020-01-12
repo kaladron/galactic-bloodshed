@@ -114,7 +114,6 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
                         starnum_t Starnum, planetnum_t Planetnum) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  racetype *Race;
   int x;
   int y;
   int p;
@@ -164,7 +163,7 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
 
   for (i = 0; i <= SectorType::SEC_WASTED; i++) Sect[i] = 0;
 
-  Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
   const auto planet = getplanet(Starnum, Planetnum);
 
   if (!planet.info[Playernum - 1].explored) {
@@ -172,7 +171,7 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
   }
   auto smap = getsmap(planet);
 
-  compat = planet.compatibility(*Race);
+  compat = planet.compatibility(race);
 
   TotalSect = planet.Maxx * planet.Maxy;
   for (x = planet.Maxx - 1; x >= 0; x--) {
@@ -198,7 +197,7 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
         WastedSect[p]++;
         TotalWasted++;
       }
-      if (sect.crystals && Race->tech >= TECH_CRYSTAL) {
+      if (sect.crystals && race.tech >= TECH_CRYSTAL) {
         PlayCrys[p]++;
         TotalCrys++;
       }
@@ -211,9 +210,8 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
           Insert(mode, Frt, x, y, sect.condition, (int)sect.fert);
           Insert(mode, Popn, x, y, sect.condition, (int)sect.popn);
           Insert(mode, Troops, x, y, sect.condition, (int)sect.troops);
-          Insert(
-              mode, mPopn, x, y, sect.condition,
-              maxsupport(*Race, sect, compat, (int)planet.conditions[TOXIC]));
+          Insert(mode, mPopn, x, y, sect.condition,
+                 maxsupport(race, sect, compat, (int)planet.conditions[TOXIC]));
         }
       }
     }

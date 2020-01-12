@@ -434,7 +434,7 @@ int main() {
 
   for (j = 0; j < MAXPLAYERS; j++) race.points[j] = 0;
 
-  db.putrace(&race);
+  db.putrace(race);
 
   planet.info[Playernum - 1].numsectsowned = 1;
   planet.explored = 0;

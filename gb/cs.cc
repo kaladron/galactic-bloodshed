@@ -35,14 +35,14 @@ void center(const command_t &argv, GameObj &g) {
 void cs(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  racetype *Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
 
   if (argv.size() == 1) {
     /* chdir to def scope */
-    g.level = Race->governor[Governor].deflevel;
-    if ((g.snum = Race->governor[Governor].defsystem) >= Sdata.numstars)
+    g.level = race.governor[Governor].deflevel;
+    if ((g.snum = race.governor[Governor].defsystem) >= Sdata.numstars)
       g.snum = Sdata.numstars - 1;
-    if ((g.pnum = Race->governor[Governor].defplanetnum) >=
+    if ((g.pnum = race.governor[Governor].defplanetnum) >=
         Stars[g.snum]->numplanets)
       g.pnum = Stars[g.snum]->numplanets - 1;
     g.shipno = 0;
@@ -130,10 +130,10 @@ void cs(const command_t &argv, GameObj &g) {
     Place where{g, argv[2]};
 
     if (!where.err && where.level != ScopeLevel::LEVEL_SHIP) {
-      Race->governor[Governor].deflevel = where.level;
-      Race->governor[Governor].defsystem = where.snum;
-      Race->governor[Governor].defplanetnum = where.pnum;
-      putrace(Race);
+      race.governor[Governor].deflevel = where.level;
+      race.governor[Governor].defsystem = where.snum;
+      race.governor[Governor].defplanetnum = where.pnum;
+      putrace(race);
 
       g.out << "New home system is " << where.to_string() << "\n";
     } else {

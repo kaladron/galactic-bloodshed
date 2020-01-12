@@ -359,7 +359,6 @@ void msg_OOF(Ship *s) {
 int followable(Ship *s1, Ship *s2) {
   double dx;
   double dy;
-  Race *r;
   double range;
   uint64_t allied;
 
@@ -371,8 +370,8 @@ int followable(Ship *s1, Ship *s2) {
 
   range = 4.0 * logscale((int)(s1->tech + 1.0)) * SYSTEMSIZE;
 
-  r = races[s2->owner - 1];
-  allied = r->allied;
+  auto &r = races[s2->owner - 1];
+  allied = r.allied;
   /* You can follow your own ships, your allies' ships, or nearby ships */
   return (s1->owner == s2->owner) || (isset(allied, (int)s1->owner)) ||
          (sqrt(dx * dx + dy * dy) <= range);

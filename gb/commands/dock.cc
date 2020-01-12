@@ -234,8 +234,8 @@ void dock(const command_t &argv, GameObj &g) {
       }
 
       if (Assault) {
-        alien = races[s2->owner - 1];
-        Race = races[Playernum - 1];
+        alien = &races[s2->owner - 1];
+        Race = &races[Playernum - 1];
         if (argv.size() >= 4) {
           sscanf(argv[3].c_str(), "%lu", &boarders);
           if ((what == MIL) && (boarders > s->troops))
@@ -361,7 +361,7 @@ void dock(const command_t &argv, GameObj &g) {
           s2->mass += boarders * Race->mass; /* our mass */
           if (casualties2 + casualties3) {
             /* You must kill to get morale */
-            adjust_morale(Race, alien, (int)s2->build_cost);
+            adjust_morale(*Race, *alien, (int)s2->build_cost);
           }
         } else { /* retreat */
           if (what == MIL)
@@ -369,7 +369,7 @@ void dock(const command_t &argv, GameObj &g) {
           else if (what == CIV)
             s->popn += boarders;
           s->mass += boarders * Race->mass;
-          adjust_morale(alien, Race, (int)Race->fighters);
+          adjust_morale(*alien, *Race, (int)Race->fighters);
         }
 
         /* races find out about each other */
@@ -384,8 +384,8 @@ void dock(const command_t &argv, GameObj &g) {
         if (s2->owner == Playernum) /* captured ship */
           Race->translate[old2owner - 1] =
               MIN(Race->translate[old2owner - 1] + 25, 100);
-        putrace(Race);
-        putrace(alien);
+        putrace(*Race);
+        putrace(*alien);
       } else {
         s->docked = 1;
         s->whatdest = ScopeLevel::LEVEL_SHIP;

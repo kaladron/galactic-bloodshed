@@ -45,8 +45,6 @@ static void do_repair(Ship *);
 static int infect_planet(int, int, int);
 
 void doship(Ship *ship, int update) {
-  racetype *Race;
-
   /*ship is active */
   ship->active = 1;
 
@@ -87,8 +85,8 @@ void doship(Ship *ship, int update) {
     }
 
     if (ship->type == ShipType::OTYPE_FACTORY && !ship->on) {
-      Race = races[ship->owner - 1];
-      ship->tech = Race->tech;
+      auto &race = races[ship->owner - 1];
+      ship->tech = race.tech;
     }
 
     if (ship->active) moveship(ship, update, 1, 0);
@@ -202,7 +200,7 @@ void domass(Ship *ship) {
   double rmass;
   int sh;
 
-  rmass = races[ship->owner - 1]->mass;
+  rmass = races[ship->owner - 1].mass;
 
   sh = ship->ships;
   ship->mass = 0.0;
@@ -314,7 +312,6 @@ void domissile(Ship *ship) {
 void domine(int shipno, int detonate) {
   int i;
   shipnum_t sh;
-  Race *r;
 
   auto ship = getship(shipno);
 
@@ -342,13 +339,13 @@ void domine(int shipno, int detonate) {
        are closer than the trigger radius... */
     bool rad = false;
     if (!detonate) {
-      r = races[ship->owner - 1];
+      auto &r = races[ship->owner - 1];
       Shiplist shiplist(sh);
       for (auto s : shiplist) {
         xd = s.xpos - ship->xpos;
         yd = s.ypos - ship->ypos;
         range = sqrt(xd * xd + yd * yd);
-        if (!isset(r->allied, s.owner) && (s.owner != ship->owner) &&
+        if (!isset(r.allied, s.owner) && (s.owner != ship->owner) &&
             ((int)range <= ship->special.trigger.radius)) {
           rad = true;
           break;
@@ -430,8 +427,8 @@ void doabm(Ship *ship) {
           ((ships[sh2]->type == ShipType::STYPE_MISSILE) ||
            (ships[sh2]->type == ShipType::STYPE_MINE)) &&
           (ships[sh2]->owner != ship->owner) &&
-          !(isset(races[ship->owner - 1]->allied, ships[sh2]->owner) &&
-            isset(races[ships[sh2]->owner - 1]->allied, ship->owner))) {
+          !(isset(races[ship->owner - 1].allied, ships[sh2]->owner) &&
+            isset(races[ships[sh2]->owner - 1].allied, ship->owner))) {
         /* added last two tests to prevent mutually allied missiles
            getting shot up. */
         /* attack the missile/mine */
@@ -505,9 +502,9 @@ static void do_habitat(Ship *ship) {
       sh = ships[sh]->nextship;
     }
   }
-  add = round_rand((double)ship->popn * races[ship->owner - 1]->birthrate);
+  add = round_rand((double)ship->popn * races[ship->owner - 1].birthrate);
   if (ship->popn + add > max_crew(*ship)) add = max_crew(*ship) - ship->popn;
-  rcv_popn(ship, add, races[ship->owner - 1]->mass);
+  rcv_popn(ship, add, races[ship->owner - 1].mass);
 }
 
 static void do_pod(Ship *ship) {
@@ -567,11 +564,11 @@ static void do_meta_infect(int who, Planet &p) {
        (double)int_rand(1, 100) >
            100.0 *
                (1.0 - exp(-((double)(smap.get(x, y).troops *
-                                     races[owner - 1]->fighters / 50.0)))))) {
+                                     races[owner - 1].fighters / 50.0)))))) {
     p.info[who - 1].explored = 1;
     p.info[who - 1].numsectsowned += 1;
     smap.get(x, y).troops = 0;
-    smap.get(x, y).popn = races[who - 1]->number_sexes;
+    smap.get(x, y).popn = races[who - 1].number_sexes;
     smap.get(x, y).owner = who;
     smap.get(x, y).condition = smap.get(x, y).type;
 #ifdef POD_TERRAFORM
@@ -696,7 +693,7 @@ static void do_mirror(Ship *ship) {
 
 static void do_god(Ship *ship) {
   /* gods have infinite power.... heh heh heh */
-  if (races[ship->owner - 1]->God) {
+  if (races[ship->owner - 1].God) {
     ship->fuel = max_fuel(*ship);
     ship->destruct = max_destruct(*ship);
     ship->resource = max_resource(*ship);
@@ -704,8 +701,6 @@ static void do_god(Ship *ship) {
 }
 
 static void do_ap(Ship *ship) {
-  racetype *Race;
-
   /* if landed on planet, change conditions to be like race */
   if (landed(*ship) && ship->on) {
     int j;
@@ -713,12 +708,12 @@ static void do_ap(Ship *ship) {
     // TODO(jeffbailey): Not obvious here how the modified planet is saved to
     // disk
     auto &p = planets[ship->storbits][ship->pnumorbits];
-    Race = races[ship->owner - 1];
+    auto &race = races[ship->owner - 1];
     if (ship->fuel >= 3.0) {
       use_fuel(ship, 3.0);
       for (j = RTEMP + 1; j <= OTHER; j++) {
         d = round_rand(ap_planet_factor(*p) * crew_factor(ship) *
-                       (double)(Race->conditions[j] - p->conditions[j]));
+                       (double)(race.conditions[j] - p->conditions[j]));
         if (d) p->conditions[j] += d;
       }
     } else if (!ship->notified) {
@@ -750,7 +745,7 @@ static void do_oap(Ship *ship) {
 int do_weapon_plant(Ship *ship) {
   int maxrate;
   int rate;
-  maxrate = (int)(races[ship->owner - 1]->tech / 2.0);
+  maxrate = (int)(races[ship->owner - 1].tech / 2.0);
 
   rate = round_rand(MIN((double)ship->resource / (double)RES_COST_WPLANT,
                         ship->fuel / FUEL_COST_WPLANT) *

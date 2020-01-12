@@ -12,7 +12,7 @@
 void upgrade(const command_t &, GameObj &);
 void make_mod(const command_t &, GameObj &);
 void build(const command_t &, GameObj &);
-int Shipcost(ShipType, Race *);
+int Shipcost(ShipType, const Race &);
 void sell(const command_t &, GameObj &);
 void bid(const command_t &argv, GameObj &);
 int shipping_cost(int, int, double *, int);

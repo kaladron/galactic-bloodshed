@@ -58,8 +58,6 @@ void land(const command_t &argv, GameObj &g) {
   int strength;
   double fuel;
   double Dist;
-  racetype *Race;
-  racetype *alien;
   shipnum_t nextshipno;
 
   numdest = 0;  // TODO(jeffbailey): Init to zero.
@@ -318,8 +316,8 @@ void land(const command_t &argv, GameObj &g) {
         for (i = 1; i <= Num_races; i++)
           if (s->alive && i != Playernum && p.info[i - 1].popn &&
               p.info[i - 1].guns && p.info[i - 1].destruct) {
-            alien = races[i - 1];
-            if (isset(alien->atwar, (int)s->owner)) {
+            auto &alien = races[i - 1];
+            if (isset(alien.atwar, (int)s->owner)) {
               /* attack the landing ship */
               strength =
                   MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);
@@ -380,16 +378,16 @@ void land(const command_t &argv, GameObj &g) {
           sprintf(buf, "Warning: That sector is a wasteland!\n");
           notify(Playernum, Governor, buf);
         } else if (sect.owner && sect.owner != Playernum) {
-          Race = races[Playernum - 1];
-          alien = races[sect.owner - 1];
-          if (!(isset(Race->allied, sect.owner) &&
-                isset(alien->allied, Playernum))) {
+          auto &race = races[Playernum - 1];
+          auto &alien = races[sect.owner - 1];
+          if (!(isset(race.allied, sect.owner) &&
+                isset(alien.allied, Playernum))) {
             sprintf(buf, "You have landed on an alien sector (%s).\n",
-                    alien->name);
+                    alien.name);
             notify(Playernum, Governor, buf);
           } else {
             sprintf(buf, "You have landed on allied sector (%s).\n",
-                    alien->name);
+                    alien.name);
             notify(Playernum, Governor, buf);
           }
         }

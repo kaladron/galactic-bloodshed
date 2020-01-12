@@ -32,7 +32,6 @@ void scrap(const command_t &argv, GameObj &g) {
   int xtalval = 0;
   int troopval = 0;
   double fuelval = 0.0;
-  racetype *Race;
 
   if (argv.size() < 2) {
     g.out << "Scrap what?\n";
@@ -191,7 +190,7 @@ void scrap(const command_t &argv, GameObj &g) {
       else
         deductAPs(g.player, g.governor, APcount, s->storbits, 0);
 
-      Race = races[g.player - 1];
+      auto &race = races[g.player - 1];
 
       // TODO(jeffbailey): kill_ship gets and saves the ship, which looks like
       // it'll be overwritten maybe here?
@@ -202,8 +201,8 @@ void scrap(const command_t &argv, GameObj &g) {
         rcv_fuel(&*s2, (double)fuelval);
         rcv_destruct(&*s2, destval);
         rcv_resource(&*s2, scrapval);
-        rcv_troops(&*s2, troopval, Race->mass);
-        rcv_popn(&*s2, crewval, Race->mass);
+        rcv_troops(&*s2, troopval, race.mass);
+        rcv_popn(&*s2, crewval, race.mass);
         /* check for docking status in case scrapped ship is landed. Maarten */
         if (!(s->whatorbits == ScopeLevel::LEVEL_SHIP)) {
           s2->docked = 0; /* undock the surviving ship */

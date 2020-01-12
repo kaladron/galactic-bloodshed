@@ -27,8 +27,8 @@ void victory(const command_t &argv, GameObj &g) {
       sprintf(buf, "%2d %c [%2d] %-15.15s %5ld  %6.2f %3d %s %s\n", i + 1,
               vic[i].Thing ? 'M' : ' ', vic[i].racenum, vic[i].name.c_str(),
               vic[i].rawscore, vic[i].tech, vic[i].IQ,
-              races[vic[i].racenum - 1]->password,
-              races[vic[i].racenum - 1]->governor[0].password);
+              races[vic[i].racenum - 1].password,
+              races[vic[i].racenum - 1].governor[0].password);
     else
       sprintf(buf, "%2d   [%2d] %-15.15s\n", i + 1, vic[i].racenum,
               vic[i].name.c_str());

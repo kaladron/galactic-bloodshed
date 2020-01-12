@@ -107,16 +107,16 @@ class Race {
 #define D_WORMHOLE 8     /* worm-hole */
 #define D_CRYSTAL 9      /* crystal power */
 
-#define Hyper_drive(r) ((r)->discoveries[D_HYPER_DRIVE])
-#define Laser(r) ((r)->discoveries[D_LASER])
-#define Cew(r) ((r)->discoveries[D_CEW])
-#define Vn(r) ((r)->discoveries[D_VN])
-#define Tractor_beam(r) ((r)->discoveries[D_TRACTOR_BEAM])
-#define Transporter(r) ((r)->discoveries[D_TRANSPORTER])
-#define Avpm(r) ((r)->discoveries[D_AVPM])
-#define Cloak(r) ((r)->discoveries[D_CLOAK])
-#define Wormhole(r) ((r)->discoveries[D_WORMHOLE])
-#define Crystal(r) ((r)->discoveries[D_CRYSTAL])
+#define Hyper_drive(r) ((r).discoveries[D_HYPER_DRIVE])
+#define Laser(r) ((r).discoveries[D_LASER])
+#define Cew(r) ((r).discoveries[D_CEW])
+#define Vn(r) ((r).discoveries[D_VN])
+#define Tractor_beam(r) ((r).discoveries[D_TRACTOR_BEAM])
+#define Transporter(r) ((r).discoveries[D_TRANSPORTER])
+#define Avpm(r) ((r).discoveries[D_AVPM])
+#define Cloak(r) ((r).discoveries[D_CLOAK])
+#define Wormhole(r) ((r).discoveries[D_WORMHOLE])
+#define Crystal(r) ((r).discoveries[D_CRYSTAL])
 
 #define TECH_HYPER_DRIVE 50.0
 #define TECH_LASER 100.0
@@ -164,6 +164,6 @@ using blocktype = struct block;
 extern struct block Blocks[MAXPLAYERS];
 extern struct power_blocks Power_blocks;
 
-extern std::vector<Race *> races;
+extern std::vector<Race> races;
 
 #endif  // RACES_H

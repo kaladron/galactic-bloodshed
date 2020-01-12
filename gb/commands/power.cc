@@ -19,40 +19,40 @@ import std;
 #include "gb/victory.h"
 
 namespace {
-void prepare_output_line(racetype *Race, racetype *r, int i, int rank) {
+void prepare_output_line(const Race &race, const Race &r, int i, int rank) {
   if (rank != 0)
     sprintf(buf, "%2d ", rank);
   else
     buf[0] = '\0';
   sprintf(temp, "[%2d]%s%s%-15.15s %5s", i,
-          isset(Race->allied, i) ? "+" : (isset(Race->atwar, i) ? "-" : " "),
-          isset(r->allied, Race->Playernum)
+          isset(race.allied, i) ? "+" : (isset(race.atwar, i) ? "-" : " "),
+          isset(r.allied, race.Playernum)
               ? "+"
-              : (isset(r->atwar, Race->Playernum) ? "-" : " "),
-          r->name, Estimate_i((int)r->victory_score, Race, i));
+              : (isset(r.atwar, race.Playernum) ? "-" : " "),
+          r.name, Estimate_i((int)r.victory_score, race, i));
   strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].troops, Race, i));
+  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].troops, race, i));
   strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].popn, Race, i));
+  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].popn, race, i));
   strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].money, Race, i));
+  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].money, race, i));
   strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].ships_owned, Race, i));
+  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].ships_owned, race, i));
   strcat(buf, temp);
-  sprintf(temp, "%3s", Estimate_i((int)Power[i - 1].planets_owned, Race, i));
+  sprintf(temp, "%3s", Estimate_i((int)Power[i - 1].planets_owned, race, i));
   strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].resource, Race, i));
+  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].resource, race, i));
   strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].fuel, Race, i));
+  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].fuel, race, i));
   strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].destruct, Race, i));
+  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].destruct, race, i));
   strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)r->morale, Race, i));
+  sprintf(temp, "%5s", Estimate_i((int)r.morale, race, i));
   strcat(buf, temp);
-  if (Race->God)
+  if (race.God)
     sprintf(temp, " %3d\n", Sdata.VN_hitlist[i - 1]);
   else
-    sprintf(temp, " %3d%%\n", Race->translate[i - 1]);
+    sprintf(temp, " %3d%%\n", race.translate[i - 1]);
   strcat(buf, temp);
 }
 }  // namespace
@@ -61,27 +61,22 @@ void power(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): int APcount = 0;
-  player_t p;
-  racetype *r;
-  racetype *Race;
-
-  p = -1;
+  player_t p = -1;
 
   if (argv.size() >= 2) {
     if (!(p = get_player(argv[1]))) {
       g.out << "No such player,\n";
       return;
     }
-    r = races[p - 1];
   }
 
-  Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
 
   sprintf(buf,
           "         ========== Galactic Bloodshed Power Report ==========\n");
   notify(Playernum, Governor, buf);
 
-  if (Race->God)
+  if (race.God)
     sprintf(buf,
             "%s  #  Name               VP  mil  civ cash ship pl  res "
             "fuel dest morl VNs\n",
@@ -99,15 +94,15 @@ void power(const command_t &argv, GameObj &g) {
     for (const auto &vic : vicvec) {
       rank++;
       p = vic.racenum;
-      r = races[p - 1];
-      if (!r->dissolved && Race->translate[p - 1] >= 10) {
-        prepare_output_line(Race, r, p, rank);
+      auto &r = races[p - 1];
+      if (!r.dissolved && race.translate[p - 1] >= 10) {
+        prepare_output_line(race, r, p, rank);
         notify(Playernum, Governor, buf);
       }
     }
   } else {
-    r = races[p - 1];
-    prepare_output_line(Race, r, p, 0);
+    auto &r = races[p - 1];
+    prepare_output_line(race, r, p, 0);
     notify(Playernum, Governor, buf);
   }
 }

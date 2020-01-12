@@ -115,11 +115,11 @@ void dissolve(const command_t &argv, GameObj &g) {
     }
   }
 
-  auto Race = races[Playernum - 1];
-  Race->dissolved = 1;
-  putrace(Race);
+  auto &race = races[Playernum - 1];
+  race.dissolved = 1;
+  putrace(race);
 
-  sprintf(buf, "%s [%d] has dissolved.\n", Race->name, Playernum);
+  sprintf(buf, "%s [%d] has dissolved.\n", race.name, Playernum);
   post(buf, DECLARATION);
 
 #endif

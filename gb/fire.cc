@@ -315,7 +315,6 @@ void bombard(const command_t &argv, GameObj &g) {
   int numdest;
   int damage;
   int i;
-  racetype *alien;
 
   /* for telegramming and retaliating */
   bzero((char *)Nuked, sizeof(Nuked));
@@ -440,7 +439,7 @@ void bombard(const command_t &argv, GameObj &g) {
         for (i = 1; i <= Num_races; i++)
           if (Nuked[i - 1] && !p.slaved_to) {
             /* add planet defense strength */
-            alien = races[i - 1];
+            auto &alien = races[i - 1];
             strength = MIN(p.info[i - 1].destruct, p.info[i - 1].guns);
 
             p.info[i - 1].destruct -= strength;
@@ -508,7 +507,6 @@ void defend(const command_t &argv, GameObj &g) {
   int x;
   int y;
   int numdest;
-  racetype *Race;
 
   /* for telegramming and retaliating */
   bzero((char *)Nuked, sizeof(Nuked));
@@ -604,9 +602,9 @@ void defend(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     return;
   }
-  Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
 
-  damage = shoot_planet_to_ship(Race, &*to, strength, long_buf, short_buf);
+  damage = shoot_planet_to_ship(race, &*to, strength, long_buf, short_buf);
 
   if (!to->alive && to->type == ShipType::OTYPE_TOXWC) {
     /* get planet again since toxicity probably has changed */

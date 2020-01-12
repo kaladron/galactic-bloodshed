@@ -16,10 +16,10 @@ class Sql : public Db {
   virtual void putcommod(Commod *, int);
   virtual void putship(Ship *);
   virtual void putstar(Star *, starnum_t);
-  virtual void putrace(Race *);
+  virtual void putrace(const Race &);
   virtual void putsdata(struct stardata *);
   virtual void getsdata(struct stardata *);
-  virtual void getrace(Race **, int);
+  virtual Race getrace(player_t);
   virtual void getstar(Star **, int);
   virtual std::optional<Ship> getship(const shipnum_t shipnum);
   virtual std::optional<Ship> getship(Ship **, const shipnum_t);

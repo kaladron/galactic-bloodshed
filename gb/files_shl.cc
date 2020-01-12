@@ -302,10 +302,11 @@ void getsdata(struct stardata *S) {
   Fileread(stdata, (char *)S, sizeof(struct stardata), 0);
 }
 
-void Sql::getrace(Race **r, int rnum) { ::getrace(r, rnum); };
-void getrace(Race **r, int rnum) {
-  *r = (Race *)malloc(sizeof(Race));
-  Fileread(racedata, (char *)*r, sizeof(Race), (rnum - 1) * sizeof(Race));
+Race Sql::getrace(player_t rnum) { return ::getrace(rnum); };
+Race getrace(player_t rnum) {
+  Race r;
+  Fileread(racedata, (char *)&r, sizeof(Race), (rnum - 1) * sizeof(Race));
+  return r;
 }
 
 void Sql::getstar(Star **s, int star) { ::getstar(s, star); }
@@ -855,10 +856,10 @@ void putsdata(struct stardata *S) {
   Filewrite(stdata, (char *)S, sizeof(struct stardata), 0);
 }
 
-void Sql::putrace(Race *r) { ::putrace(r); }
-void putrace(Race *r) {
-  Filewrite(racedata, (char *)r, sizeof(Race),
-            (r->Playernum - 1) * sizeof(Race));
+void Sql::putrace(const Race &r) { ::putrace(r); }
+void putrace(const Race &r) {
+  Filewrite(racedata, (const char *)&r, sizeof(Race),
+            (r.Playernum - 1) * sizeof(Race));
 }
 
 void Sql::putstar(Star *s, starnum_t snum) { ::putstar(s, snum); }

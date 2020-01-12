@@ -26,7 +26,6 @@ void enslave(const command_t &argv, GameObj &g) {
   int aliens = 0;
   int def = 0;
   int attack = 0;
-  racetype *Race;
 
   auto shipno = string_to_shipnum(argv[1]);
   if (!shipno) return;
@@ -72,7 +71,7 @@ void enslave(const command_t &argv, GameObj &g) {
     return;
   }
 
-  Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
 
   Shiplist shiplist(p.ships);
   for (auto s2 : shiplist) {
@@ -105,13 +104,13 @@ void enslave(const command_t &argv, GameObj &g) {
     sprintf(buf, "ENSLAVED by %s!!\n", ship_to_string(*s).c_str());
     strcat(telegram_buf, buf);
     sprintf(buf, "All material produced here will be\ndiverted to %s coffers.",
-            Race->name);
+            race.name);
     strcat(telegram_buf, buf);
 
     sprintf(buf,
             "\nEnslavement successful.  All material produced here will\n");
     notify(Playernum, Governor, buf);
-    sprintf(buf, "be diverted to %s.\n", Race->name);
+    sprintf(buf, "be diverted to %s.\n", race.name);
     notify(Playernum, Governor, buf);
     sprintf(buf,
             "You must maintain a garrison of 0.1%% the population of the\n");

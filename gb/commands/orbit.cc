@@ -24,12 +24,12 @@ import std;
 static double Lastx, Lasty, Zoom;
 static const int SCALE = 100;
 
-static void DispStar(const GameObj &, const ScopeLevel, Star *, int, Race *,
-                     char *);
+static void DispStar(const GameObj &, const ScopeLevel, Star *, int,
+                     const Race &, char *);
 static void DispPlanet(const GameObj &, const ScopeLevel, const Planet &,
-                       char *, int, Race *, char *);
-static void DispShip(const GameObj &, const Place &, Ship *, Race *, char *,
-                     const Planet & = Planet());
+                       char *, int, const Race &, char *);
+static void DispShip(const GameObj &, const Place &, Ship *, const Race &,
+                     char *, const Planet & = Planet());
 
 /* OPTIONS
  *  -p : If this option is set, ``orbit'' will not display planet names.
@@ -196,7 +196,7 @@ void orbit(const command_t &argv, GameObj &g) {
 // TODO(jeffbailey) Remove DontDispStar parameter as unused, but it really looks
 // like we should be doing something here.
 static void DispStar(const GameObj &g, const ScopeLevel level, Star *star,
-                     int /* DontDispStars */, Race *r, char *string) {
+                     int /* DontDispStars */, const Race &r, char *string) {
   int x = 0;  // TODO(jeffbailey): Inititalized x and y to 0.
   int y = 0;
   int stand;
@@ -213,7 +213,7 @@ static void DispStar(const GameObj &g, const ScopeLevel level, Star *star,
   /*if (star->nova_stage)
     DispArray(x, y, 11,7, Novae[star->nova_stage-1], fac); */
   if (y >= 0 && x >= 0) {
-    if (r->governor[g.governor].toggle.color) {
+    if (r.governor[g.governor].toggle.color) {
       stand = (isset(star->explored, g.player) ? g.player : 0) + '?';
       sprintf(temp, "%c %d %d 0 * ", (char)stand, x, y);
       strcat(string, temp);
@@ -235,7 +235,7 @@ static void DispStar(const GameObj &g, const ScopeLevel level, Star *star,
 // like we should be doing something here!
 static void DispPlanet(const GameObj &g, const ScopeLevel level,
                        const Planet &p, char *name, int /* DontDispPlanets */,
-                       Race *r, char *string) {
+                       const Race &r, char *string) {
   int x = 0;  // TODO(jeffbailey): Check if init to 0 is right.
   int y = 0;
   int stand;
@@ -250,7 +250,7 @@ static void DispPlanet(const GameObj &g, const ScopeLevel level,
     x = (int)(SCALE + (SCALE * (-Lastx)) / (PLORBITSIZE * Zoom));
   }
   if (x >= 0 && y >= 0) {
-    if (r->governor[g.governor].toggle.color) {
+    if (r.governor[g.governor].toggle.color) {
       stand = (p.info[g.player - 1].explored ? g.player : 0) + '?';
       sprintf(temp, "%c %d %d 0 %c ", (char)stand, x, y,
               (stand > '0' ? Psymbol[p.type] : '?'));
@@ -267,17 +267,16 @@ static void DispPlanet(const GameObj &g, const ScopeLevel level,
       sprintf(temp, "%d %s", stand, name);
       strcat(string, temp);
     }
-    if (r->governor[g.governor].toggle.compat &&
-        p.info[g.player - 1].explored) {
-      sprintf(temp, "(%d)", (int)p.compatibility(*r));
+    if (r.governor[g.governor].toggle.compat && p.info[g.player - 1].explored) {
+      sprintf(temp, "(%d)", (int)p.compatibility(r));
       strcat(string, temp);
     }
     strcat(string, ";");
   }
 }
 
-static void DispShip(const GameObj &g, const Place &where, Ship *ship, Race *r,
-                     char *string, const Planet &pl) {
+static void DispShip(const GameObj &g, const Place &where, Ship *ship,
+                     const Race &r, char *string, const Planet &pl) {
   int x;
   int y;
   int wm;
@@ -376,12 +375,12 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship, Race *r,
 
       /* (magnification) */
       if (x >= 0 && y >= 0) {
-        if (r->governor[g.governor].toggle.color) {
+        if (r.governor[g.governor].toggle.color) {
           sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'),
                   x, y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
                   ship->number);
         } else {
-          stand = (ship->owner == r->governor[g.governor].toggle.highlight);
+          stand = (ship->owner == r.governor[g.governor].toggle.highlight);
           sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
                   Shipltrs[ship->type], stand, ship->number);
         }
@@ -398,12 +397,12 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship, Race *r,
       if (ship->whatorbits != ScopeLevel::LEVEL_UNIV ||
           ((ship->owner == g.player) || g.god))
         if (x >= 0 && y >= 0) {
-          if (r->governor[g.governor].toggle.color) {
+          if (r.governor[g.governor].toggle.color) {
             sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'),
                     x, y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
                     ship->number);
           } else {
-            stand = (ship->owner == r->governor[g.governor].toggle.highlight);
+            stand = (ship->owner == r.governor[g.governor].toggle.highlight);
             sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
                     Shipltrs[ship->type], stand, ship->number);
           }

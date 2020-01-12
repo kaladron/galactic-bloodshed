@@ -6,6 +6,6 @@
 #define FILES_RW_H
 
 void Fileread(int, char *, size_t, int);
-void Filewrite(int, char *, size_t, int);
+void Filewrite(int, const char *, size_t, int);
 
 #endif  // FILES_RW_H

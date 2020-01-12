@@ -34,22 +34,21 @@ void relation(const command_t &argv, GameObj &g) {
     }
   }
 
-  auto Race = races[q - 1];
+  auto &race = races[q - 1];
 
-  sprintf(buf, "\n              Racial Relations Report for %s\n\n",
-          Race->name);
+  sprintf(buf, "\n              Racial Relations Report for %s\n\n", race.name);
   notify(Playernum, Governor, buf);
   g.out << " #       know             Race name       Yours        Theirs\n";
   g.out << " -       ----             ---------       -----        ------\n";
   for (auto r : races) {
-    if (r->Playernum == Race->Playernum) continue;
-    sprintf(buf, "%2u %s (%3d%%) %20.20s : %10s   %10s\n", r->Playernum,
-            ((Race->God || (Race->translate[r->Playernum - 1] > 30)) &&
-             r->Metamorph && (Playernum == q))
+    if (r.Playernum == race.Playernum) continue;
+    sprintf(buf, "%2u %s (%3d%%) %20.20s : %10s   %10s\n", r.Playernum,
+            ((race.God || (race.translate[r.Playernum - 1] > 30)) &&
+             r.Metamorph && (Playernum == q))
                 ? "Morph"
                 : "     ",
-            Race->translate[r->Playernum - 1], r->name,
-            allied(*Race, r->Playernum), allied(*r, q));
+            race.translate[r.Playernum - 1], r.name, allied(race, r.Playernum),
+            allied(r, q));
     notify(Playernum, Governor, buf);
   }
 }

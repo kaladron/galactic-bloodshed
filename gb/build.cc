@@ -31,21 +31,21 @@ static void autoload_at_ship(Ship *, Ship *, int *, double *);
 static std::optional<ScopeLevel> build_at_ship(GameObj &, Ship *, int *, int *);
 static int can_build_at_planet(GameObj &, Star *, const Planet &);
 static bool can_build_this(const ShipType, const Race &, char *);
-static int can_build_on_ship(int, Race *, Ship *, char *);
-static void create_ship_by_planet(int, int, Race *, Ship *, Planet *, int, int,
-                                  int, int);
-static void create_ship_by_ship(int, int, Race *, int, Planet *, Ship *,
+static bool can_build_on_ship(int, const Race &, Ship *, char *);
+static void create_ship_by_planet(int, int, const Race &, Ship *, Planet *, int,
+                                  int, int, int);
+static void create_ship_by_ship(int, int, const Race &, int, Planet *, Ship *,
                                 Ship *);
 static std::optional<ShipType> get_build_type(const char);
 static int getcount(const command_t &, const size_t);
 static void Getfactship(Ship *, Ship *);
-static void Getship(Ship *, ShipType, Race *);
-static void initialize_new_ship(GameObj &, Race *, Ship *, double, int);
+static void Getship(Ship *, ShipType, const Race &);
+static void initialize_new_ship(GameObj &, const Race &, Ship *, double, int);
 
 namespace {
-bool can_build_on_sector(const int what, const racetype *Race,
-                         const Planet &planet, const Sector &sector,
-                         const int x, const int y, char *string) {
+bool can_build_on_sector(const int what, const Race &race, const Planet &planet,
+                         const Sector &sector, const int x, const int y,
+                         char *string) {
   auto shipc = Shipltrs[what];
   if (!sector.popn) {
     sprintf(string, "You have no more civs in the sector!\n");
@@ -55,11 +55,11 @@ bool can_build_on_sector(const int what, const racetype *Race,
     sprintf(string, "You can't build on wasted sectors.\n");
     return false;
   }
-  if (sector.owner != Race->Playernum && !Race->God) {
+  if (sector.owner != race.Playernum && !race.God) {
     sprintf(string, "You don't own that sector.\n");
     return false;
   }
-  if ((!(Shipdata[what][ABIL_BUILD] & 1)) && !Race->God) {
+  if ((!(Shipdata[what][ABIL_BUILD] & 1)) && !race.God) {
     sprintf(string, "This ship type cannot be built on a planet.\n");
     sprintf(temp, "Use 'build ? %c' to find out where it can be built.\n",
             shipc);
@@ -90,7 +90,6 @@ void upgrade(const command_t &argv, GameObj &g) {
   int newcost;
   int netcost;
   double complex;
-  racetype *Race;
 
   if (g.level != ScopeLevel::LEVEL_SHIP) {
     g.out << "You have to change scope to the ship you wish to upgrade.\n";
@@ -113,7 +112,7 @@ void upgrade(const command_t &argv, GameObj &g) {
     return;
   }
 
-  Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
   auto ship = *dirship;
 
   if (argv.size() == 3)
@@ -144,7 +143,7 @@ void upgrade(const command_t &argv, GameObj &g) {
     ship.max_fuel = MAX(dirship->max_fuel, MIN(value, 10000));
   } else if (argv[1] == "mount" && Shipdata[dirship->build_type][ABIL_MOUNT] &&
              !dirship->mount) {
-    if (!Crystal(Race)) {
+    if (!Crystal(race)) {
       g.out << "Your race does not now how to utilize crystal power yet.\n";
       return;
     }
@@ -156,7 +155,7 @@ void upgrade(const command_t &argv, GameObj &g) {
     ship.max_speed = MAX(dirship->max_speed, MAX(1, MIN(value, 9)));
   } else if (argv[1] == "hyperdrive" &&
              Shipdata[dirship->build_type][ABIL_JUMP] &&
-             !dirship->hyper_drive.has && Hyper_drive(Race)) {
+             !dirship->hyper_drive.has && Hyper_drive(race)) {
     ship.hyper_drive.has = 1;
   } else if (argv[1] == "primary" &&
              Shipdata[dirship->build_type][ABIL_PRIMARY]) {
@@ -211,7 +210,7 @@ void upgrade(const command_t &argv, GameObj &g) {
       return;
     }
   } else if (argv[1] == "cew" && Shipdata[dirship->build_type][ABIL_CEW]) {
-    if (!Cew(Race)) {
+    if (!Cew(race)) {
       g.out << "Your race cannot build confined energy weapons.\n";
       return;
     }
@@ -229,7 +228,7 @@ void upgrade(const command_t &argv, GameObj &g) {
       return;
     }
   } else if (argv[1] == "laser" && Shipdata[dirship->build_type][ABIL_LASER]) {
-    if (!Laser(Race)) {
+    if (!Laser(race)) {
       g.out << "Your race cannot build lasers.\n";
       return;
     }
@@ -245,7 +244,7 @@ void upgrade(const command_t &argv, GameObj &g) {
   }
 
   /* check to see whether this ship can actually be built by this player */
-  if ((complex = complexity(ship)) > Race->tech) {
+  if ((complex = complexity(ship)) > race.tech) {
     sprintf(buf, "This upgrade requires an engineering technology of %.1f.\n",
             complex);
     notify(Playernum, Governor, buf);
@@ -270,14 +269,14 @@ void upgrade(const command_t &argv, GameObj &g) {
   }
 
   /* compute new ship costs and see if the player can afford it */
-  newcost = Race->God ? 0 : (int)cost(ship);
-  oldcost = Race->God ? 0 : dirship->build_cost;
-  netcost = Race->God ? 0 : 2 * (newcost - oldcost); /* upgrade is expensive */
+  newcost = race.God ? 0 : (int)cost(ship);
+  oldcost = race.God ? 0 : dirship->build_cost;
+  netcost = race.God ? 0 : 2 * (newcost - oldcost); /* upgrade is expensive */
   if (newcost < oldcost) {
     g.out << "You cannot downgrade ships!\n";
     return;
   }
-  if (!Race->God) netcost += !netcost;
+  if (!race.God) netcost += !netcost;
 
   if (netcost > dirship->resource) {
     sprintf(buf, "Old value %dr   New value %dr\n", oldcost, newcost);
@@ -285,7 +284,7 @@ void upgrade(const command_t &argv, GameObj &g) {
     sprintf(buf, "You need %d resources on board to make this modification.\n",
             netcost);
     notify(Playernum, Governor, buf);
-  } else if (netcost || Race->God) {
+  } else if (netcost || race.God) {
     sprintf(buf, "Old value %dr   New value %dr\n", oldcost, newcost);
     notify(Playernum, Governor, buf);
     sprintf(buf, "Characteristic modified at a cost of %d resources.\n",
@@ -301,7 +300,7 @@ void upgrade(const command_t &argv, GameObj &g) {
     }
     dirship->size = ship_size(*dirship);
     dirship->base_mass = getmass(*dirship);
-    dirship->build_cost = Race->God ? 0 : cost(*dirship);
+    dirship->build_cost = race.God ? 0 : cost(*dirship);
     dirship->complexity = complexity(*dirship);
 
     putship(&*dirship);
@@ -320,7 +319,6 @@ void make_mod(const command_t &argv, GameObj &g) {
   int value;
   unsigned short size;
   char shipc;
-  racetype *Race;
   double cost0;
 
   if (g.level != ScopeLevel::LEVEL_SHIP) {
@@ -344,7 +342,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     g.out << "This factory is already online.\n";
     return;
   }
-  Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
 
   /* Save  size of the factory, and set it to the
      correct values for the design.  Maarten */
@@ -426,7 +424,7 @@ void make_mod(const command_t &argv, GameObj &g) {
       } else
         g.out << "\n";
       sprintf(buf, "Tech:  %.1f (%.1f)\tSpeed:    %4d", dirship->complexity,
-              Race->tech, dirship->max_speed);
+              race.tech, dirship->max_speed);
       notify(Playernum, Governor, buf);
       if (Shipdata[dirship->build_type][ABIL_CEW] && dirship->cew) {
         sprintf(buf, "\t\t   Energy:    %4d\n", dirship->cew);
@@ -434,7 +432,7 @@ void make_mod(const command_t &argv, GameObj &g) {
       } else
         g.out << "\n";
 
-      if (Race->tech < dirship->complexity)
+      if (race.tech < dirship->complexity)
         notify(Playernum, Governor,
                "Your engineering capability is not "
                "advanced enough to produce this "
@@ -446,11 +444,11 @@ void make_mod(const command_t &argv, GameObj &g) {
 
     auto i = get_build_type(shipc);
 
-    if ((!i) || ((*i == ShipType::STYPE_POD) && (!Race->pods))) {
+    if ((!i) || ((*i == ShipType::STYPE_POD) && (!race.pods))) {
       g.out << "Illegal ship letter.\n";
       return;
     }
-    if (Shipdata[*i][ABIL_GOD] && !Race->God) {
+    if (Shipdata[*i][ABIL_GOD] && !race.God) {
       g.out << "Nice try!\n";
       return;
     }
@@ -474,10 +472,10 @@ void make_mod(const command_t &argv, GameObj &g) {
     dirship->max_destruct = Shipdata[*i][ABIL_DESTCAP];
     dirship->max_speed = Shipdata[*i][ABIL_SPEED];
 
-    dirship->mount = Shipdata[*i][ABIL_MOUNT] * Crystal(Race);
-    dirship->hyper_drive.has = Shipdata[*i][ABIL_JUMP] * Hyper_drive(Race);
-    dirship->cloak = Shipdata[*i][ABIL_CLOAK] * Cloak(Race);
-    dirship->laser = Shipdata[*i][ABIL_LASER] * Laser(Race);
+    dirship->mount = Shipdata[*i][ABIL_MOUNT] * Crystal(race);
+    dirship->hyper_drive.has = Shipdata[*i][ABIL_JUMP] * Hyper_drive(race);
+    dirship->cloak = Shipdata[*i][ABIL_CLOAK] * Cloak(race);
+    dirship->laser = Shipdata[*i][ABIL_LASER] * Laser(race);
     dirship->cew = 0;
     dirship->mode = 0;
 
@@ -489,9 +487,9 @@ void make_mod(const command_t &argv, GameObj &g) {
     sprintf(buf, "Factory designated to produce %ss.\n", Shipnames[*i]);
     notify(Playernum, Governor, buf);
     sprintf(buf, "Design complexity %.1f (%.1f).\n", dirship->complexity,
-            Race->tech);
+            race.tech);
     notify(Playernum, Governor, buf);
-    if (dirship->complexity > Race->tech)
+    if (dirship->complexity > race.tech)
       g.out << "You can't produce this design yet!\n";
 
   } else if (mode == 1) {
@@ -537,11 +535,11 @@ void make_mod(const command_t &argv, GameObj &g) {
                  Shipdata[dirship->build_type][ABIL_SPEED]) {
         dirship->max_speed = MAX(1, MIN(value, 9));
       } else if (argv[1] == "mount" &&
-                 Shipdata[dirship->build_type][ABIL_MOUNT] && Crystal(Race)) {
+                 Shipdata[dirship->build_type][ABIL_MOUNT] && Crystal(race)) {
         dirship->mount = !dirship->mount;
       } else if (argv[1] == "hyperdrive" &&
                  Shipdata[dirship->build_type][ABIL_JUMP] &&
-                 Hyper_drive(Race)) {
+                 Hyper_drive(race)) {
         dirship->hyper_drive.has = !dirship->hyper_drive.has;
       } else if (argv[1] == "primary" &&
                  Shipdata[dirship->build_type][ABIL_PRIMARY]) {
@@ -586,7 +584,7 @@ void make_mod(const command_t &argv, GameObj &g) {
           return;
         }
       } else if (argv[1] == "cew" && Shipdata[dirship->build_type][ABIL_CEW]) {
-        if (!Cew(Race)) {
+        if (!Cew(race)) {
           g.out << "Your race does not understand confined energy weapons.\n";
           return;
         }
@@ -605,7 +603,7 @@ void make_mod(const command_t &argv, GameObj &g) {
         }
       } else if (argv[1] == "laser" &&
                  Shipdata[dirship->build_type][ABIL_LASER]) {
-        if (!Laser(Race)) {
+        if (!Laser(race)) {
           g.out << "Your race does not understand lasers yet.\n";
           return;
         }
@@ -620,7 +618,7 @@ void make_mod(const command_t &argv, GameObj &g) {
                  "modified.\n";
         return;
       }
-    } else if (Hyper_drive(Race)) {
+    } else if (Hyper_drive(race)) {
       if (argv[1] == "hyperdrive") {
         dirship->hyper_drive.has = !dirship->hyper_drive.has;
       } else {
@@ -644,7 +642,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     return;
   }
 
-  dirship->build_cost = Race->God ? 0 : (int)cost0;
+  dirship->build_cost = race.God ? 0 : (int)cost0;
   sprintf(buf, "The current cost of the ship is %d resources.\n",
           dirship->build_cost);
   notify(Playernum, Governor, buf);
@@ -656,7 +654,7 @@ void make_mod(const command_t &argv, GameObj &g) {
   dirship->complexity = complexity(*dirship);
   sprintf(buf,
           "Ship complexity is %.1f (you have %.1f engineering technology).\n",
-          dirship->complexity, Race->tech);
+          dirship->complexity, race.tech);
   notify(Playernum, Governor, buf);
 
   /* Restore size to what it was before.  Maarten */
@@ -669,7 +667,6 @@ void build(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused int APcount = 1;
-  racetype *Race;
   Planet planet;
   char c;
   int j;
@@ -703,11 +700,11 @@ void build(const command_t &argv, GameObj &g) {
               "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
               "fuel", "crew", "sp", "tech", "cost");
       notify(Playernum, Governor, buf);
-      Race = races[Playernum - 1];
+      auto &race = races[Playernum - 1];
       for (j = 0; j < NUMSTYPES; j++) {
         ShipType i{ShipVector[j]};
-        if ((!Shipdata[i][ABIL_GOD]) || Race->God) {
-          if (Race->pods || (i != ShipType::STYPE_POD)) {
+        if ((!Shipdata[i][ABIL_GOD]) || race.God) {
+          if (race.pods || (i != ShipType::STYPE_POD)) {
             if (Shipdata[i][ABIL_PROGRAMMED]) {
               sprintf(buf,
                       "%1c %-15.15s %5ld %5ld %3ld %4ld %3ld %3ld %3ld "
@@ -718,7 +715,7 @@ void build(const command_t &argv, GameObj &g) {
                       Shipdata[i][ABIL_PRIMARY], Shipdata[i][ABIL_SECONDARY],
                       Shipdata[i][ABIL_FUELCAP], Shipdata[i][ABIL_MAXCREW],
                       Shipdata[i][ABIL_SPEED], (double)Shipdata[i][ABIL_TECH],
-                      Shipcost(i, Race));
+                      Shipcost(i, race));
               notify(Playernum, Governor, buf);
             }
           }
@@ -781,7 +778,7 @@ void build(const command_t &argv, GameObj &g) {
               "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
               "fuel", "crew", "sp", "tech", "cost");
       strcat(buf, temp);
-      Race = races[Playernum - 1];
+      auto &race = races[Playernum - 1];
       sprintf(temp,
               "%1c %-15.15s %5ld %5ld %3ld %4ld %3ld %3ld %3ld %4ld "
               "%4ld %2ld %4.0f %4d\n",
@@ -791,7 +788,7 @@ void build(const command_t &argv, GameObj &g) {
               Shipdata[*i][ABIL_PRIMARY], Shipdata[*i][ABIL_SECONDARY],
               Shipdata[*i][ABIL_FUELCAP], Shipdata[*i][ABIL_MAXCREW],
               Shipdata[*i][ABIL_SPEED], (double)Shipdata[*i][ABIL_TECH],
-              Shipcost(*i, Race));
+              Shipcost(*i, race));
       strcat(buf, temp);
       notify(Playernum, Governor, buf);
     }
@@ -806,7 +803,7 @@ void build(const command_t &argv, GameObj &g) {
   }
   snum = g.snum;
   pnum = g.pnum;
-  Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
   count = 0; /* this used used to reset count in the loop */
   std::optional<ShipType> what;
   do {
@@ -822,11 +819,11 @@ void build(const command_t &argv, GameObj &g) {
             g.out << "No such ship type.\n";
             return;
           }
-          if (!can_build_this(*what, *Race, buf) && !Race->God) {
+          if (!can_build_this(*what, race, buf) && !race.God) {
             notify(Playernum, Governor, buf);
             return;
           }
-          if (!(Shipdata[*what][ABIL_BUILD] & 1) && !Race->God) {
+          if (!(Shipdata[*what][ABIL_BUILD] & 1) && !race.God) {
             g.out << "This ship cannot be built by a planet.\n";
             return;
           }
@@ -835,7 +832,7 @@ void build(const command_t &argv, GameObj &g) {
             return;
           }
           planet = getplanet(snum, pnum);
-          if (!can_build_at_planet(g, Stars[snum], planet) && !Race->God) {
+          if (!can_build_at_planet(g, Stars[snum], planet) && !race.God) {
             g.out << "You can't build that here.\n";
             return;
           }
@@ -845,8 +842,8 @@ void build(const command_t &argv, GameObj &g) {
             return;
           }
           sector = getsector(planet, x, y);
-          if (!can_build_on_sector(*what, Race, planet, sector, x, y, buf) &&
-              !Race->God) {
+          if (!can_build_on_sector(*what, race, planet, sector, x, y, buf) &&
+              !race.God) {
             notify(Playernum, Governor, buf);
             return;
           }
@@ -854,7 +851,7 @@ void build(const command_t &argv, GameObj &g) {
             g.out << "Give a positive number of builds.\n";
             return;
           }
-          Getship(&newship, *what, Race);
+          Getship(&newship, *what, race);
         }
         if ((shipcost = newship.build_cost) >
             planet.info[Playernum - 1].resource) {
@@ -862,17 +859,17 @@ void build(const command_t &argv, GameObj &g) {
           notify(Playernum, Governor, buf);
           goto finish;
         }
-        create_ship_by_planet(Playernum, Governor, Race, &newship, &planet,
+        create_ship_by_planet(Playernum, Governor, race, &newship, &planet,
                               snum, pnum, x, y);
-        if (Race->governor[Governor].toggle.autoload &&
-            what != ShipType::OTYPE_TRANSDEV && !Race->God)
+        if (race.governor[Governor].toggle.autoload &&
+            what != ShipType::OTYPE_TRANSDEV && !race.God)
           autoload_at_planet(Playernum, &newship, &planet, sector, &load_crew,
                              &load_fuel);
         else {
           load_crew = 0;
           load_fuel = 0.0;
         }
-        initialize_new_ship(g, Race, &newship, load_fuel, load_crew);
+        initialize_new_ship(g, race, &newship, load_fuel, load_crew);
         putship(&newship);
         break;
       case ScopeLevel::LEVEL_SHIP:
@@ -917,7 +914,7 @@ void build(const command_t &argv, GameObj &g) {
                 g.out << "No such ship type.\n";
                 return;
               }
-              if (!can_build_on_ship(*what, Race, &*builder, buf)) {
+              if (!can_build_on_ship(*what, race, &*builder, buf)) {
                 notify(Playernum, Governor, buf);
                 return;
               }
@@ -925,17 +922,17 @@ void build(const command_t &argv, GameObj &g) {
                 g.out << "Give a positive number of builds.\n";
                 return;
               }
-              Getship(&newship, *what, Race);
+              Getship(&newship, *what, race);
               break;
           }
           if ((tech = builder->type == ShipType::OTYPE_FACTORY
                           ? complexity(*builder)
-                          : Shipdata[*what][ABIL_TECH]) > Race->tech &&
-              !Race->God) {
+                          : Shipdata[*what][ABIL_TECH]) > race.tech &&
+              !race.God) {
             sprintf(buf,
                     "You are not advanced enough to build this ship.\n%.1f "
                     "enginering technology needed. You have %.1f.\n",
-                    tech, Race->tech);
+                    tech, race.tech);
             notify(Playernum, Governor, buf);
             return;
           }
@@ -950,7 +947,7 @@ void build(const command_t &argv, GameObj &g) {
               y = builder->land_y;
               what = builder->build_type;
               sector = getsector(planet, x, y);
-              if (!can_build_on_sector(*what, Race, planet, sector, x, y,
+              if (!can_build_on_sector(*what, race, planet, sector, x, y,
                                        buf)) {
                 notify(Playernum, Governor, buf);
                 return;
@@ -967,10 +964,10 @@ void build(const command_t &argv, GameObj &g) {
               notify(Playernum, Governor, buf);
               goto finish;
             }
-            create_ship_by_planet(Playernum, Governor, Race, &newship, &planet,
+            create_ship_by_planet(Playernum, Governor, race, &newship, &planet,
                                   snum, pnum, x, y);
-            if (Race->governor[Governor].toggle.autoload &&
-                what != ShipType::OTYPE_TRANSDEV && !Race->God) {
+            if (race.governor[Governor].toggle.autoload &&
+                what != ShipType::OTYPE_TRANSDEV && !race.God) {
               autoload_at_planet(Playernum, &newship, &planet, sector,
                                  &load_crew, &load_fuel);
             } else {
@@ -985,10 +982,10 @@ void build(const command_t &argv, GameObj &g) {
               notify(Playernum, Governor, buf);
               goto finish;
             }
-            create_ship_by_ship(Playernum, Governor, Race, 1, &planet, &newship,
+            create_ship_by_ship(Playernum, Governor, race, 1, &planet, &newship,
                                 &*builder);
-            if (Race->governor[Governor].toggle.autoload &&
-                what != ShipType::OTYPE_TRANSDEV && !Race->God)
+            if (race.governor[Governor].toggle.autoload &&
+                what != ShipType::OTYPE_TRANSDEV && !race.God)
               autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
             else {
               load_crew = 0;
@@ -1005,10 +1002,10 @@ void build(const command_t &argv, GameObj &g) {
               notify(Playernum, Governor, buf);
               goto finish;
             }
-            create_ship_by_ship(Playernum, Governor, Race, 0, nullptr, &newship,
+            create_ship_by_ship(Playernum, Governor, race, 0, nullptr, &newship,
                                 &*builder);
-            if (Race->governor[Governor].toggle.autoload &&
-                what != ShipType::OTYPE_TRANSDEV && !Race->God)
+            if (race.governor[Governor].toggle.autoload &&
+                what != ShipType::OTYPE_TRANSDEV && !race.God)
               autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
             else {
               load_crew = 0;
@@ -1016,7 +1013,7 @@ void build(const command_t &argv, GameObj &g) {
             }
             break;
         }
-        initialize_new_ship(g, Race, &newship, load_fuel, load_crew);
+        initialize_new_ship(g, race, &newship, load_fuel, load_crew);
         putship(&newship);
         break;
       default:
@@ -1101,11 +1098,11 @@ static bool can_build_this(const ShipType what, const Race &race,
     sprintf(string, "Only Gods can build this type of ship.\n");
     return false;
   }
-  if (what == ShipType::OTYPE_VN && !Vn(&race)) {
+  if (what == ShipType::OTYPE_VN && !Vn(race)) {
     sprintf(string, "You have not discovered VN technology.\n");
     return false;
   }
-  if (what == ShipType::OTYPE_TRANSDEV && !Avpm(&race)) {
+  if (what == ShipType::OTYPE_TRANSDEV && !Avpm(race)) {
     sprintf(string, "You have not discovered AVPM technology.\n");
     return false;
   }
@@ -1119,18 +1116,18 @@ static bool can_build_this(const ShipType what, const Race &race,
   return true;
 }
 
-static int can_build_on_ship(int what, racetype *Race, Ship *builder,
-                             char *string) {
+static bool can_build_on_ship(int what, const Race &race, Ship *builder,
+                              char *string) {
   if (!(Shipdata[what][ABIL_BUILD] & Shipdata[builder->type][ABIL_CONSTRUCT]) &&
-      !Race->God) {
+      !race.God) {
     sprintf(string, "This ship type cannot be built by a %s.\n",
             Shipnames[builder->type]);
     sprintf(temp, "Use 'build ? %c' to find out where it can be built.\n",
             Shipltrs[what]);
     strcat(string, temp);
-    return (0);
+    return false;
   }
-  return (1);
+  return true;
 }
 
 static std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder,
@@ -1183,21 +1180,21 @@ static void autoload_at_ship(Ship *s, Ship *b, int *crew, double *fuel) {
   b->fuel -= *fuel;
 }
 
-static void initialize_new_ship(GameObj &g, racetype *Race, Ship *newship,
+static void initialize_new_ship(GameObj &g, const Race &race, Ship *newship,
                                 double load_fuel, int load_crew) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   newship->speed = newship->max_speed;
   newship->owner = Playernum;
   newship->governor = Governor;
-  newship->fuel = Race->God ? newship->max_fuel : load_fuel;
-  newship->popn = Race->God ? newship->max_crew : load_crew;
+  newship->fuel = race.God ? newship->max_fuel : load_fuel;
+  newship->popn = race.God ? newship->max_crew : load_crew;
   newship->troops = 0;
-  newship->resource = Race->God ? newship->max_resource : 0;
-  newship->destruct = Race->God ? newship->max_destruct : 0;
+  newship->resource = race.God ? newship->max_resource : 0;
+  newship->destruct = race.God ? newship->max_destruct : 0;
   newship->crystals = 0;
   newship->hanger = 0;
-  newship->mass = newship->base_mass + (double)newship->popn * Race->mass +
+  newship->mass = newship->base_mass + (double)newship->popn * race.mass +
                   (double)newship->fuel * MASS_FUEL +
                   (double)newship->resource * MASS_RESOURCE +
                   (double)newship->destruct * MASS_DESTRUCT;
@@ -1207,13 +1204,13 @@ static void initialize_new_ship(GameObj &g, racetype *Race, Ship *newship,
   newship->hyper_drive.on = 0;
   newship->hyper_drive.ready = 0;
   newship->hyper_drive.charge = 0;
-  newship->mounted = Race->God ? newship->mount : 0;
+  newship->mounted = race.God ? newship->mount : 0;
   newship->cloak = 0;
   newship->cloaked = 0;
   newship->fire_laser = 0;
   newship->mode = 0;
   newship->rad = 0;
-  newship->damage = Race->God ? 0 : Shipdata[newship->type][ABIL_DAMAGE];
+  newship->damage = race.God ? 0 : Shipdata[newship->type][ABIL_DAMAGE];
   newship->retaliate = newship->primary;
   newship->ships = 0;
   newship->on = 0;
@@ -1266,12 +1263,12 @@ static void initialize_new_ship(GameObj &g, racetype *Race, Ship *newship,
   notify(Playernum, Governor, buf);
 }
 
-static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
+static void create_ship_by_planet(int Playernum, int Governor, const Race &race,
                                   Ship *newship, Planet *planet, int snum,
                                   int pnum, int x, int y) {
   int shipno;
 
-  newship->tech = Race->tech;
+  newship->tech = race.tech;
   newship->xpos = Stars[snum]->xpos + planet->xpos;
   newship->ypos = Stars[snum]->ypos + planet->ypos;
   newship->land_x = x;
@@ -1318,7 +1315,7 @@ static void create_ship_by_planet(int Playernum, int Governor, racetype *Race,
   notify(Playernum, Governor, buf);
 }
 
-static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
+static void create_ship_by_ship(int Playernum, int Governor, const Race &race,
                                 int outside, Planet *planet, Ship *newship,
                                 Ship *builder) {
   int shipno;
@@ -1362,7 +1359,7 @@ static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
     newship->docked = 1;
     insert_sh_ship(newship, builder);
   }
-  newship->tech = Race->tech;
+  newship->tech = race.tech;
   newship->xpos = builder->xpos;
   newship->ypos = builder->ypos;
   newship->land_x = builder->land_x;
@@ -1380,7 +1377,7 @@ static void create_ship_by_ship(int Playernum, int Governor, racetype *Race,
   notify(Playernum, Governor, buf);
 }
 
-static void Getship(Ship *s, ShipType i, Race *r) {
+static void Getship(Ship *s, ShipType i, const Race &r) {
   bzero((char *)s, sizeof(Ship));
   s->type = i;
   s->armor = Shipdata[i][ABIL_ARMOR];
@@ -1396,18 +1393,18 @@ static void Getship(Ship *s, ShipType i, Race *r) {
   s->max_fuel = Shipdata[i][ABIL_FUELCAP];
   s->max_speed = Shipdata[i][ABIL_SPEED];
   s->build_type = i;
-  s->mount = r->God ? Shipdata[i][ABIL_MOUNT] : 0;
-  s->hyper_drive.has = r->God ? Shipdata[i][ABIL_JUMP] : 0;
+  s->mount = r.God ? Shipdata[i][ABIL_MOUNT] : 0;
+  s->hyper_drive.has = r.God ? Shipdata[i][ABIL_JUMP] : 0;
   s->cloak = 0;
-  s->laser = r->God ? Shipdata[i][ABIL_LASER] : 0;
+  s->laser = r.God ? Shipdata[i][ABIL_LASER] : 0;
   s->cew = 0;
   s->cew_range = 0;
   s->size = ship_size(*s);
   s->base_mass = getmass(*s);
   s->mass = getmass(*s);
-  s->build_cost = r->God ? 0 : (int)cost(*s);
+  s->build_cost = r.God ? 0 : (int)cost(*s);
   if (s->type == ShipType::OTYPE_VN || s->type == ShipType::OTYPE_BERS)
-    s->special.mind.progenitor = r->Playernum;
+    s->special.mind.progenitor = r.Playernum;
 }
 
 static void Getfactship(Ship *s, Ship *b) {
@@ -1438,7 +1435,7 @@ static void Getfactship(Ship *s, Ship *b) {
   s->mass = getmass(*s);
 }
 
-int Shipcost(ShipType i, Race *r) {
+int Shipcost(ShipType i, const Race &r) {
   Ship s;
 
   Getship(&s, i, r);
@@ -1450,7 +1447,6 @@ void sell(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int APcount = 20;
-  racetype *Race;
   Commod c;
   int commodno;
   int amount;
@@ -1473,8 +1469,8 @@ void sell(const command_t &argv, GameObj &g) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
-  Race = races[Playernum - 1];
-  if (Race->Guest) {
+  auto &race = races[Playernum - 1];
+  if (race.Guest) {
     g.out << "Guest races can't sell anything.\n";
     return;
   }
@@ -1570,7 +1566,7 @@ void sell(const command_t &argv, GameObj &g) {
           commod_name[item]);
   notify(Playernum, Governor, buf);
   sprintf(buf, "Lot #%d - %d units of %s for sale by %s [%d].\n", commodno,
-          amount, commod_name[item], races[Playernum - 1]->name, Playernum);
+          amount, commod_name[item], races[Playernum - 1].name, Playernum);
   post(buf, TRANSFER);
   for (player_t i = 1; i <= Num_races; i++) notify_race(i, buf);
   putcommod(&c, commodno);
@@ -1581,7 +1577,6 @@ void sell(const command_t &argv, GameObj &g) {
 void bid(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  racetype *Race;
   Planet p;
   Commod *c;
   char commod;
@@ -1722,13 +1717,13 @@ void bid(const command_t &argv, GameObj &g) {
       free(c);
       return;
     }
-    Race = races[Playernum - 1];
-    if (Race->Guest) {
+    auto &race = races[Playernum - 1];
+    if (race.Guest) {
       g.out << "Guest races cannot bid.\n";
       free(c);
       return;
     }
-    if (bid0 > Race->governor[Governor].money) {
+    if (bid0 > race.governor[Governor].money) {
       g.out << "Sorry, no buying on credit allowed.\n";
       free(c);
       return;
@@ -1737,8 +1732,7 @@ void bid(const command_t &argv, GameObj &g) {
     if (c->bidder) {
       sprintf(buf,
               "The bid on lot #%d (%lu %s) has been upped to %ld by %s [%d].\n",
-              lot, c->amount, commod_name[c->type], bid0, Race->name,
-              Playernum);
+              lot, c->amount, commod_name[c->type], bid0, race.name, Playernum);
       notify((int)c->bidder, (int)c->bidder_gov, buf);
     }
     c->bid = bid0;

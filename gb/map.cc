@@ -65,9 +65,9 @@ static void show_map(const player_t Playernum, const governor_t Governor,
                        // client interface.  Can remove the conditional as soon
                        // as we know that it's not client affecting.
 
-  auto Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
   auto smap = getsmap(p);
-  if (!Race->governor[Governor].toggle.geography) {
+  if (!race.governor[Governor].toggle.geography) {
     /* traverse ship list on planet; find out if we can look at
        ships here. */
     iq = !!p.info[Playernum - 1].numsectsowned;
@@ -91,26 +91,26 @@ static void show_map(const player_t Playernum, const governor_t Governor,
 
   /* send map data */
   for (const auto &sector : smap) {
-    bool owned1 = (sector.owner == Race->governor[Governor].toggle.highlight);
+    bool owned1 = (sector.owner == race.governor[Governor].toggle.highlight);
     if (shiplocs[sector.x][sector.y] && iq) {
-      if (Race->governor[Governor].toggle.color)
+      if (race.governor[Governor].toggle.color)
         sprintf(buf, "%c%c", (char)(sector.owner + '?'),
                 shiplocs[sector.x][sector.y]);
       else {
-        if (owned1 && Race->governor[Governor].toggle.inverse)
+        if (owned1 && race.governor[Governor].toggle.inverse)
           sprintf(buf, "1%c", shiplocs[sector.x][sector.y]);
         else
           sprintf(buf, "0%c", shiplocs[sector.x][sector.y]);
       }
     } else {
-      if (Race->governor[Governor].toggle.color)
+      if (race.governor[Governor].toggle.color)
         sprintf(buf, "%c%c", (char)(sector.owner + '?'),
-                desshow(Playernum, Governor, Race, sector));
+                desshow(Playernum, Governor, race, sector));
       else {
-        if (owned1 && Race->governor[Governor].toggle.inverse)
-          sprintf(buf, "1%c", desshow(Playernum, Governor, Race, sector));
+        if (owned1 && race.governor[Governor].toggle.inverse)
+          sprintf(buf, "1%c", desshow(Playernum, Governor, race, sector));
         else
-          sprintf(buf, "0%c", desshow(Playernum, Governor, Race, sector));
+          sprintf(buf, "0%c", desshow(Playernum, Governor, race, sector));
       }
     }
     output << buf;
@@ -121,14 +121,14 @@ static void show_map(const player_t Playernum, const governor_t Governor,
 
   if (show) {
     sprintf(temp, "Type: %8s   Sects %7s: %3u   Aliens:", Planet_types[p.type],
-            Race->Metamorph ? "covered" : "owned",
+            race.Metamorph ? "covered" : "owned",
             p.info[Playernum - 1].numsectsowned);
-    if (p.explored || Race->tech >= TECH_EXPLORE) {
+    if (p.explored || race.tech >= TECH_EXPLORE) {
       bool f = false;
       for (i = 1; i < MAXPLAYERS; i++)
         if (p.info[i - 1].numsectsowned != 0 && i != Playernum) {
           f = true;
-          sprintf(buf, "%c%d", isset(Race->atwar, i) ? '*' : ' ', i);
+          sprintf(buf, "%c%d", isset(race.atwar, i) ? '*' : ' ', i);
           strcat(temp, buf);
         }
       if (!f) strcat(temp, "(none)");
@@ -141,7 +141,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
     notify(Playernum, Governor, temp);
     sprintf(temp, "      Mobilization : %3d (%3d)     Compatibility: %.2f%%",
             p.info[Playernum - 1].comread, p.info[Playernum - 1].mob_set,
-            p.compatibility(*Race));
+            p.compatibility(race));
     if (p.conditions[TOXIC] > 50) {
       sprintf(buf, "    (%d%% TOXIC)", p.conditions[TOXIC]);
       strcat(temp, buf);
@@ -153,7 +153,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
     notify(Playernum, Governor, temp);
     sprintf(temp, "      Destruct cap : %-9u%18s: %-5lu (%lu/%u)\n",
             p.info[Playernum - 1].destruct,
-            Race->Metamorph ? "Tons of biomass" : "Total Population",
+            race.Metamorph ? "Tons of biomass" : "Total Population",
             p.info[Playernum - 1].popn, p.popn,
             round_rand(.01 * (100. - p.conditions[TOXIC]) * p.maxpopn));
     notify(Playernum, Governor, temp);
@@ -175,22 +175,21 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   }
 }
 
-char desshow(const player_t Playernum, const governor_t Governor, const Race *r,
+char desshow(const player_t Playernum, const governor_t Governor, const Race &r,
              const Sector &s) {
-  if (s.troops && !r->governor[Governor].toggle.geography) {
+  if (s.troops && !r.governor[Governor].toggle.geography) {
     if (s.owner == Playernum) return CHAR_MY_TROOPS;
-    if (isset(r->allied, s.owner)) return CHAR_ALLIED_TROOPS;
-    if (isset(r->atwar, s.owner)) return CHAR_ATWAR_TROOPS;
+    if (isset(r.allied, s.owner)) return CHAR_ALLIED_TROOPS;
+    if (isset(r.atwar, s.owner)) return CHAR_ATWAR_TROOPS;
 
     return CHAR_NEUTRAL_TROOPS;
   }
 
-  if (s.owner && !r->governor[Governor].toggle.geography &&
-      !r->governor[Governor].toggle.color) {
-    if (!r->governor[Governor].toggle.inverse ||
-        s.owner != r->governor[Governor].toggle.highlight) {
-      if (!r->governor[Governor].toggle.double_digits)
-        return s.owner % 10 + '0';
+  if (s.owner && !r.governor[Governor].toggle.geography &&
+      !r.governor[Governor].toggle.color) {
+    if (!r.governor[Governor].toggle.inverse ||
+        s.owner != r.governor[Governor].toggle.highlight) {
+      if (!r.governor[Governor].toggle.double_digits) return s.owner % 10 + '0';
 
       if (s.owner < 10 || s.x % 2) return s.owner % 10 + '0';
 
@@ -198,7 +197,7 @@ char desshow(const player_t Playernum, const governor_t Governor, const Race *r,
     }
   }
 
-  if (s.crystals && (r->discoveries[D_CRYSTAL] || r->God)) return CHAR_CRYSTAL;
+  if (s.crystals && (r.discoveries[D_CRYSTAL] || r.God)) return CHAR_CRYSTAL;
 
   switch (s.condition) {
     case SectorType::SEC_WASTED:

@@ -55,7 +55,6 @@ void survey(const command_t &argv, GameObj &g) {
   int avg_fert;
   int avg_resource;
   int crystal_count;
-  racetype *Race;
   int all = 0; /* full survey 1, specific 0 */
   struct numshipstuff {
     int pos;
@@ -95,12 +94,12 @@ void survey(const command_t &argv, GameObj &g) {
     }
   }
 
-  Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
 
   if (where->level == ScopeLevel::LEVEL_PLAN) {
     const auto p = getplanet(where->snum, where->pnum);
 
-    compat = p.compatibility(*Race);
+    compat = p.compatibility(race);
 
     if ((isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) ||
         all) {
@@ -132,7 +131,7 @@ void survey(const command_t &argv, GameObj &g) {
                   Stars[where->snum]->pnames[where->pnum],
                   p.info[Playernum - 1].resource, p.info[Playernum - 1].fuel,
                   p.info[Playernum - 1].destruct, p.popn, p.maxpopn,
-                  p.conditions[TOXIC], p.compatibility(*Race), p.slaved_to);
+                  p.conditions[TOXIC], p.compatibility(race), p.slaved_to);
           notify(Playernum, Governor, buf);
         }
         bzero((struct shipstuff *)shiplocs, sizeof(shiplocs));
@@ -167,18 +166,18 @@ void survey(const command_t &argv, GameObj &g) {
           if (!mode) {
             sprintf(buf, "%2d,%-2d ", lowx, lowy);
             notify(Playernum, Governor, buf);
-            if ((d = desshow(Playernum, Governor, Race, s)) == CHAR_CLOAKED) {
+            if ((d = desshow(Playernum, Governor, race, s)) == CHAR_CLOAKED) {
               sprintf(buf, "?  (    ?    )\n");
               notify(Playernum, Governor, buf);
             } else {
-              sprintf(
-                  buf, " %c   %c   %6u%5u%4u%4u%4u%5lu%5lu%5lu%6ld%s\n",
-                  Dessymbols[s.condition], Dessymbols[s.type], s.owner, s.race,
-                  s.eff, s.mobilization, s.fert, s.resource, s.troops, s.popn,
-                  maxsupport(*Race, s, compat, p.conditions[TOXIC]),
-                  ((s.crystals && (Race->discoveries[D_CRYSTAL] || Race->God))
-                       ? " yes"
-                       : " "));
+              sprintf(buf, " %c   %c   %6u%5u%4u%4u%4u%5lu%5lu%5lu%6ld%s\n",
+                      Dessymbols[s.condition], Dessymbols[s.type], s.owner,
+                      s.race, s.eff, s.mobilization, s.fert, s.resource,
+                      s.troops, s.popn,
+                      maxsupport(race, s, compat, p.conditions[TOXIC]),
+                      ((s.crystals && (race.discoveries[D_CRYSTAL] || race.God))
+                           ? " yes"
+                           : " "));
               notify(Playernum, Governor, buf);
             }
           } else { /* mode */
@@ -211,16 +210,16 @@ void survey(const command_t &argv, GameObj &g) {
                 sect_char = '?';
                 break;
             }
-            sprintf(buf, "%c %d %d %d %c %c %d %u %u %u %u %d %lu %lu %lu %ld",
-                    CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
-                    desshow(Playernum, Governor, Race, s),
-                    ((s.condition == SectorType::SEC_WASTED) ? 1 : 0), s.owner,
-                    s.eff, s.fert, s.mobilization,
-                    ((s.crystals && (Race->discoveries[D_CRYSTAL] || Race->God))
-                         ? 1
-                         : 0),
-                    s.resource, s.popn, s.troops,
-                    maxsupport(*Race, s, compat, p.conditions[TOXIC]));
+            sprintf(
+                buf, "%c %d %d %d %c %c %d %u %u %u %u %d %lu %lu %lu %ld",
+                CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
+                desshow(Playernum, Governor, race, s),
+                ((s.condition == SectorType::SEC_WASTED) ? 1 : 0), s.owner,
+                s.eff, s.fert, s.mobilization,
+                ((s.crystals && (race.discoveries[D_CRYSTAL] || race.God)) ? 1
+                                                                           : 0),
+                s.resource, s.popn, s.troops,
+                maxsupport(race, s, compat, p.conditions[TOXIC]));
             notify(Playernum, Governor, buf);
 
             if (shiplocs[lowx][lowy].pos && inhere) {
@@ -254,26 +253,26 @@ void survey(const command_t &argv, GameObj &g) {
       g.out << "======== Planetary conditions: ========\n";
       g.out << "atmosphere concentrations:\n";
       sprintf(buf, "     methane %02d%%(%02d%%)     oxygen %02d%%(%02d%%)\n",
-              p.conditions[METHANE], Race->conditions[METHANE],
-              p.conditions[OXYGEN], Race->conditions[OXYGEN]);
+              p.conditions[METHANE], race.conditions[METHANE],
+              p.conditions[OXYGEN], race.conditions[OXYGEN]);
       notify(Playernum, Governor, buf);
       sprintf(buf,
               "         CO2 %02d%%(%02d%%)   hydrogen %02d%%(%02d%%)      "
               "temperature: %3d (%3d)\n",
-              p.conditions[CO2], Race->conditions[CO2], p.conditions[HYDROGEN],
-              Race->conditions[HYDROGEN], p.conditions[TEMP],
-              Race->conditions[TEMP]);
+              p.conditions[CO2], race.conditions[CO2], p.conditions[HYDROGEN],
+              race.conditions[HYDROGEN], p.conditions[TEMP],
+              race.conditions[TEMP]);
       notify(Playernum, Governor, buf);
       sprintf(buf,
               "    nitrogen %02d%%(%02d%%)     sulfur %02d%%(%02d%%)      "
               "     normal: %3d\n",
-              p.conditions[NITROGEN], Race->conditions[NITROGEN],
-              p.conditions[SULFUR], Race->conditions[SULFUR],
+              p.conditions[NITROGEN], race.conditions[NITROGEN],
+              p.conditions[SULFUR], race.conditions[SULFUR],
               p.conditions[RTEMP]);
       notify(Playernum, Governor, buf);
       sprintf(buf, "      helium %02d%%(%02d%%)      other %02d%%(%02d%%)\n",
-              p.conditions[HELIUM], Race->conditions[HELIUM],
-              p.conditions[OTHER], Race->conditions[OTHER]);
+              p.conditions[HELIUM], race.conditions[HELIUM],
+              p.conditions[OTHER], race.conditions[OTHER]);
       notify(Playernum, Governor, buf);
       if ((tindex = p.conditions[TOXIC] / 10) < 0)
         tindex = 0;
@@ -283,7 +282,7 @@ void survey(const command_t &argv, GameObj &g) {
               p.conditions[TOXIC], Tox[tindex]);
       notify(Playernum, Governor, buf);
       sprintf(buf, "Total planetary compatibility: %.2f%%\n",
-              p.compatibility(*Race));
+              p.compatibility(race));
       notify(Playernum, Governor, buf);
 
       auto smap = getsmap(p);
@@ -294,7 +293,7 @@ void survey(const command_t &argv, GameObj &g) {
           auto &s = smap.get(lowx, lowy);
           avg_fert += s.fert;
           avg_resource += s.resource;
-          if (Race->discoveries[D_CRYSTAL] || Race->God)
+          if (race.discoveries[D_CRYSTAL] || race.God)
             crystal_count += !!s.crystals;
         }
       sprintf(buf, "%29s: %d\n%29s: %d\n%29s: %d\n", "Average fertility",
@@ -308,8 +307,8 @@ void survey(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
       }
       sprintf(buf, "fuel_stock  resource_stock dest_pot.   %s    ^%s\n",
-              Race->Metamorph ? "biomass" : "popltn",
-              Race->Metamorph ? "biomass" : "popltn");
+              race.Metamorph ? "biomass" : "popltn",
+              race.Metamorph ? "biomass" : "popltn");
       notify(Playernum, Governor, buf);
       sprintf(buf, "%10u  %14lu %9u  %7lu%11lu\n", p.info[Playernum - 1].fuel,
               p.info[Playernum - 1].resource, p.info[Playernum - 1].destruct,
@@ -326,7 +325,7 @@ void survey(const command_t &argv, GameObj &g) {
     sprintf(buf, "locn: %f,%f\n", Stars[where->snum]->xpos,
             Stars[where->snum]->ypos);
     notify(Playernum, Governor, buf);
-    if (Race->God) {
+    if (race.God) {
       for (i = 0; i < Stars[where->snum]->numplanets; i++) {
         sprintf(buf, " \"%s\"\n", Stars[where->snum]->pnames[i]);
         notify(Playernum, Governor, buf);
@@ -335,7 +334,7 @@ void survey(const command_t &argv, GameObj &g) {
     sprintf(buf, "Gravity: %.2f\tInstability: ", Stars[where->snum]->gravity);
     notify(Playernum, Governor, buf);
 
-    if (Race->tech >= TECH_SEE_STABILITY || Race->God) {
+    if (race.tech >= TECH_SEE_STABILITY || race.God) {
       sprintf(buf, "%d%% (%s)\n", Stars[where->snum]->stability,
               Stars[where->snum]->stability < 20
                   ? "stable"

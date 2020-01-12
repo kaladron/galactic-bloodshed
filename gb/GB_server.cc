@@ -581,7 +581,7 @@ void d_think(const player_t Playernum, const governor_t Governor,
              const std::string &message) {
   for (auto &d : descriptor_list) {
     if (d.connected && d.player == Playernum && d.governor != Governor &&
-        !races[d.player - 1]->governor[d.governor].toggle.gag) {
+        !races[d.player - 1].governor[d.governor].toggle.gag) {
       queue_string(d, message);
     }
   }
@@ -591,7 +591,7 @@ void d_broadcast(const player_t Playernum, const governor_t Governor,
                  const std::string &message) {
   for (auto &d : descriptor_list) {
     if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
-        !races[d.player - 1]->governor[d.governor].toggle.gag) {
+        !races[d.player - 1].governor[d.governor].toggle.gag) {
       queue_string(d, message);
     }
   }
@@ -610,9 +610,9 @@ void d_announce(const player_t Playernum, const governor_t Governor,
                 const starnum_t star, const std::string &message) {
   for (auto &d : descriptor_list) {
     if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
-        (isset(Stars[star]->inhabited, d.player) || races[d.player - 1]->God) &&
+        (isset(Stars[star]->inhabited, d.player) || races[d.player - 1].God) &&
         d.snum == star &&
-        !races[d.player - 1]->governor[d.governor].toggle.gag) {
+        !races[d.player - 1].governor[d.governor].toggle.gag) {
       queue_string(d, message);
     }
   }
@@ -1014,8 +1014,8 @@ static int do_command(DescriptorData &d, const char *comm) {
   } else if (d.connected && d.god && argv[0] == "emulate") {
     d.player = std::stoi(argv[1]);
     d.governor = std::stoi(argv[2]);
-    sprintf(buf, "Emulating %s \"%s\" [%d,%d]\n", races[d.player - 1]->name,
-            races[d.player - 1]->governor[d.governor].name, d.player,
+    sprintf(buf, "Emulating %s \"%s\" [%d,%d]\n", races[d.player - 1].name,
+            races[d.player - 1].governor[d.governor].name, d.player,
             d.governor);
     queue_string(d, buf);
   } else {
@@ -1061,7 +1061,7 @@ static void check_connect(DescriptorData &d, const char *message) {
     return;
   }
 
-  auto &race = *races[Playernum - 1];
+  auto &race = races[Playernum - 1];
   /* check to see if this player is already connected, if so, nuke the
    * descriptor */
   for (auto &d0 : descriptor_list) {
@@ -1091,7 +1091,7 @@ static void check_connect(DescriptorData &d, const char *message) {
           ctime(&(race.governor[Governor].login)));
   notify(Playernum, Governor, buf);
   race.governor[Governor].login = time(nullptr);
-  putrace(&race);
+  putrace(race);
   if (!race.Gov_ship) {
     sprintf(buf,
             "You have no Governmental Center.  No action points will be "
@@ -1249,7 +1249,6 @@ static void close_sockets(int sock) {
 
 static void dump_users(DescriptorData &e) {
   time_t now;
-  Race *r;
   int God = 0;
   int coward_count = 0;
 
@@ -1257,22 +1256,22 @@ static void dump_users(DescriptorData &e) {
   sprintf(buf, "Current Players: %s", ctime(&now));
   queue_string(e, buf);
   if (e.player) {
-    r = races[e.player - 1];
-    God = r->God;
+    auto &r = races[e.player - 1];
+    God = r.God;
   } else
     return;
 
   for (auto &d : descriptor_list) {
     if (d.connected && !d.god) {
-      r = races[d.player - 1];
-      if (!r->governor[d.governor].toggle.invisible || e.player == d.player ||
+      auto &r = races[d.player - 1];
+      if (!r.governor[d.governor].toggle.invisible || e.player == d.player ||
           God) {
-        sprintf(temp, "\"%s\"", r->governor[d.governor].name);
+        sprintf(temp, "\"%s\"", r.governor[d.governor].name);
         sprintf(buf, "%20.20s %20.20s [%2d,%2d] %4lds idle %-4.4s %s %s\n",
-                r->name, temp, d.player, d.governor, now - d.last_time,
+                r.name, temp, d.player, d.governor, now - d.last_time,
                 God ? Stars[d.snum]->name : "    ",
-                (r->governor[d.governor].toggle.gag ? "GAG" : "   "),
-                (r->governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
+                (r.governor[d.governor].toggle.gag ? "GAG" : "   "),
+                (r.governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, buf);
       } else if (!God) /* deity lurks around */
         coward_count++;
@@ -1291,7 +1290,7 @@ static void dump_users(DescriptorData &e) {
 //* Dispatch to the function to run the command based on the string input by the
 // user.
 static void process_command(GameObj &g, const command_t &argv) {
-  int God = races[g.player - 1]->God;
+  bool God = races[g.player - 1].God;
 
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
@@ -1313,14 +1312,14 @@ static void process_command(GameObj &g, const command_t &argv) {
   g.out << do_prompt(g);
 }
 
+// XXX
 static void load_race_data(Db &db) {
   Num_races = db.Numraces();
   races.reserve(Num_races);
   for (int i = 1; i <= Num_races; i++) {
-    Race *r;
-    getrace(&r, i); /* allocates into memory */
-    if (r->Playernum != i) {
-      r->Playernum = i;
+    Race r = getrace(i); /* allocates into memory */
+    if (r.Playernum != i) {
+      r.Playernum = i;
       putrace(r);
     }
     races.push_back(r);
@@ -1411,9 +1410,6 @@ static void help(const command_t &argv, GameObj &g) {
 }
 
 void kill_ship(int Playernum, Ship *ship) {
-  Race *killer;
-  Race *victim;
-
   ship->special.mind.who_killed = Playernum;
   ship->alive = 0;
   ship->notified = 0; /* prepare the ship for recycling */
@@ -1421,15 +1417,15 @@ void kill_ship(int Playernum, Ship *ship) {
   if (ship->type != ShipType::STYPE_POD &&
       ship->type != ShipType::OTYPE_FACTORY) {
     /* pods don't do things to morale, ditto for factories */
-    victim = races[ship->owner - 1];
-    if (victim->Gov_ship == ship->number) victim->Gov_ship = 0;
-    if (!victim->God && Playernum != ship->owner &&
+    auto &victim = races[ship->owner - 1];
+    if (victim.Gov_ship == ship->number) victim.Gov_ship = 0;
+    if (!victim.God && Playernum != ship->owner &&
         ship->type != ShipType::OTYPE_VN) {
-      killer = races[Playernum - 1];
+      auto &killer = races[Playernum - 1];
       adjust_morale(killer, victim, (int)ship->build_cost);
       putrace(killer);
     } else if (ship->owner == Playernum && !ship->docked && max_crew(*ship)) {
-      victim->morale -= 2 * ship->build_cost; /* scuttle/scrap */
+      victim.morale -= 2 * ship->build_cost; /* scuttle/scrap */
     }
     putrace(victim);
   }
@@ -1667,7 +1663,7 @@ static void SortShips() {
 
 void warn_race(const player_t who, const std::string &message) {
   for (int i = 0; i <= MAXGOVERNORS; i++)
-    if (races[who - 1]->governor[i].active) warn(who, i, message);
+    if (races[who - 1].governor[i].active) warn(who, i, message);
 }
 
 void warn(const player_t who, const governor_t governor,
@@ -1691,8 +1687,8 @@ void notify_star(const player_t a, const governor_t g, const starnum_t star,
     }
 }
 
-void adjust_morale(Race *winner, racetype *loser, int amount) {
-  winner->morale += amount;
-  loser->morale -= amount;
-  winner->points[loser->Playernum] += amount;
+void adjust_morale(Race &winner, Race &loser, int amount) {
+  winner.morale += amount;
+  loser.morale -= amount;
+  winner.points[loser.Playernum] += amount;
 }

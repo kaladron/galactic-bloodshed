@@ -21,7 +21,7 @@ import std;
 #include "gb/vars.h"
 
 namespace {
-void colonies_at_star(GameObj &g, Race *race, starnum_t star) {
+void colonies_at_star(GameObj &g, Race &race, starnum_t star) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
@@ -45,7 +45,7 @@ void colonies_at_star(GameObj &g, Race *race, starnum_t star) {
               pl.info[Playernum - 1].crystals, pl.info[Playernum - 1].resource,
               pl.info[Playernum - 1].destruct, pl.info[Playernum - 1].fuel,
               pl.info[Playernum - 1].tax, pl.info[Playernum - 1].newtax,
-              pl.compatibility(*race), pl.conditions[TOXIC],
+              pl.compatibility(race), pl.conditions[TOXIC],
               pl.info[Playernum - 1].comread, pl.info[Playernum - 1].mob_set);
       notify(Playernum, Governor, buf);
       for (auto j = 1; j <= Num_races; j++)
@@ -62,7 +62,6 @@ void colonies_at_star(GameObj &g, Race *race, starnum_t star) {
 void colonies(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  Race *race;
 
   notify(Playernum, Governor,
          "          ========== Colonization Report ==========\n");
@@ -70,7 +69,7 @@ void colonies(const command_t &argv, GameObj &g) {
          "  Planet     gov sec tech    popn  x   res  "
          "des  fuel  tax  cmpt/tox mob  Aliens\n");
 
-  race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
   getsdata(&Sdata);
 
   if (argv.size() < 2)

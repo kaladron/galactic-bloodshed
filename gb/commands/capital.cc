@@ -23,9 +23,8 @@ void capital(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int APcount = 50;
-  racetype *Race;
 
-  Race = races[Playernum - 1];
+  auto &race = races[Playernum - 1];
   if (Governor) {
     g.out << "Only the leader may designate the capital.\n";
     return;
@@ -33,7 +32,7 @@ void capital(const command_t &argv, GameObj &g) {
 
   shipnum_t shipno;
   if (argv.size() != 2)
-    shipno = Race->Gov_ship;
+    shipno = race.Gov_ship;
   else {
     auto shiptmp = string_to_shipnum(argv[1]);
     if (!shiptmp) {
@@ -68,8 +67,8 @@ void capital(const command_t &argv, GameObj &g) {
       return;
     }
     deductAPs(Playernum, Governor, APcount, snum, 0);
-    Race->Gov_ship = shipno;
-    putrace(Race);
+    race.Gov_ship = shipno;
+    putrace(race);
   }
 
   sprintf(buf, "Efficiency of governmental center: %.0f%%.\n",

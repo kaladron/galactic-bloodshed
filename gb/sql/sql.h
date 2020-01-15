@@ -13,7 +13,7 @@ class Sql : public Db {
   virtual ~Sql();
   virtual int Numcommods();
   virtual int Numraces();
-  virtual void putcommod(Commod *, int);
+  virtual void putcommod(const Commod &, int);
   virtual void putship(Ship *);
   virtual void putstar(Star *, starnum_t);
   virtual void putrace(const Race &);
@@ -23,7 +23,7 @@ class Sql : public Db {
   virtual void getstar(Star **, int);
   virtual std::optional<Ship> getship(const shipnum_t shipnum);
   virtual std::optional<Ship> getship(Ship **, const shipnum_t);
-  virtual int getcommod(Commod **, commodnum_t);
+  virtual Commod getcommod(commodnum_t);
   virtual Planet getplanet(const starnum_t, const planetnum_t);
   virtual void putplanet(const Planet &, Star *, const int);
 };

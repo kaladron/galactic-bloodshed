@@ -1569,7 +1569,7 @@ void sell(const command_t &argv, GameObj &g) {
           amount, commod_name[item], races[Playernum - 1].name, Playernum);
   post(buf, TRANSFER);
   for (player_t i = 1; i <= Num_races; i++) notify_race(i, buf);
-  putcommod(&c, commodno);
+  putcommod(c, commodno);
   putplanet(p, Stars[snum], pnum);
   deductAPs(Playernum, Governor, APcount, snum, 0);
 }
@@ -1578,7 +1578,6 @@ void bid(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   Planet p;
-  Commod *c;
   char commod;
   int i;
   int item;
@@ -1597,23 +1596,21 @@ void bid(const command_t &argv, GameObj &g) {
            "  Lot Stock      Type  Owner  Bidder  Amount "
            "Cost/Unit    Ship  Dest\n");
     for (i = 1; i <= g.db.Numcommods(); i++) {
-      getcommod(&c, i);
-      if (c->owner && c->amount) {
-        rate = (double)c->bid / (double)c->amount;
-        if (c->bidder == Playernum)
-          sprintf(temp, "%4.4s/%-4.4s", Stars[c->star_to]->name,
-                  Stars[c->star_to]->pnames[c->planet_to]);
+      auto c = getcommod(i);
+      if (c.owner && c.amount) {
+        rate = (double)c.bid / (double)c.amount;
+        if (c.bidder == Playernum)
+          sprintf(temp, "%4.4s/%-4.4s", Stars[c.star_to]->name,
+                  Stars[c.star_to]->pnames[c.planet_to]);
         else
           temp[0] = '\0';
-        sprintf(
-            buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
-            c->deliver ? '*' : ' ', c->amount, commod_name[c->type], c->owner,
-            c->bidder, c->bid, rate,
-            shipping_cost((int)c->star_from, (int)g.snum, &dist, (int)c->bid),
-            temp);
+        sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
+                c.deliver ? '*' : ' ', c.amount, commod_name[c.type], c.owner,
+                c.bidder, c.bid, rate,
+                shipping_cost((int)c.star_from, (int)g.snum, &dist, (int)c.bid),
+                temp);
         notify(Playernum, Governor, buf);
       }
-      free(c);
     }
   } else if (argv.size() == 2) {
     /* list all market blocks for sale of the requested type */
@@ -1639,23 +1636,21 @@ void bid(const command_t &argv, GameObj &g) {
     g.out << "  Lot Stock      Type  Owner  Bidder  Amount "
              "Cost/Unit    Ship  Dest\n";
     for (i = 1; i <= g.db.Numcommods(); i++) {
-      getcommod(&c, i);
-      if (c->owner && c->amount && (c->type == item)) {
-        rate = (double)c->bid / (double)c->amount;
-        if (c->bidder == Playernum)
-          sprintf(temp, "%4.4s/%-4.4s", Stars[c->star_to]->name,
-                  Stars[c->star_to]->pnames[c->planet_to]);
+      auto c = getcommod(i);
+      if (c.owner && c.amount && (c.type == item)) {
+        rate = (double)c.bid / (double)c.amount;
+        if (c.bidder == Playernum)
+          sprintf(temp, "%4.4s/%-4.4s", Stars[c.star_to]->name,
+                  Stars[c.star_to]->pnames[c.planet_to]);
         else
           temp[0] = '\0';
-        sprintf(
-            buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
-            c->deliver ? '*' : ' ', c->amount, commod_name[c->type], c->owner,
-            c->bidder, c->bid, rate,
-            shipping_cost((int)c->star_from, (int)g.snum, &dist, (int)c->bid),
-            temp);
+        sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
+                c.deliver ? '*' : ' ', c.amount, commod_name[c.type], c.owner,
+                c.bidder, c.bid, rate,
+                shipping_cost((int)c.star_from, (int)g.snum, &dist, (int)c.bid),
+                temp);
         notify(Playernum, Governor, buf);
       }
-      free(c);
     }
   } else {
     if (g.level != ScopeLevel::LEVEL_PLAN) {
@@ -1697,51 +1692,45 @@ void bid(const command_t &argv, GameObj &g) {
       g.out << "Illegal lot number.\n";
       return;
     }
-    getcommod(&c, lot);
-    if (!c->owner) {
+    auto c = getcommod(lot);
+    if (!c.owner) {
       g.out << "No such lot for sale.\n";
-      free(c);
       return;
     }
-    if (c->owner == g.player &&
-        (c->star_from != g.snum || c->planet_from != g.pnum)) {
+    if (c.owner == g.player &&
+        (c.star_from != g.snum || c.planet_from != g.pnum)) {
       g.out << "You can only set a minimum price for your "
                "lot from the location it was sold.\n";
-      free(c);
       return;
     }
-    money_t minbid = (int)((double)c->bid * (1.0 + UP_BID));
+    money_t minbid = (int)((double)c.bid * (1.0 + UP_BID));
     if (bid0 < minbid) {
       sprintf(buf, "You have to bid more than %ld.\n", minbid);
       notify(Playernum, Governor, buf);
-      free(c);
       return;
     }
     auto &race = races[Playernum - 1];
     if (race.Guest) {
       g.out << "Guest races cannot bid.\n";
-      free(c);
       return;
     }
     if (bid0 > race.governor[Governor].money) {
       g.out << "Sorry, no buying on credit allowed.\n";
-      free(c);
       return;
     }
     /* notify the previous bidder that he was just outbidded */
-    if (c->bidder) {
+    if (c.bidder) {
       sprintf(buf,
               "The bid on lot #%d (%lu %s) has been upped to %ld by %s [%d].\n",
-              lot, c->amount, commod_name[c->type], bid0, race.name, Playernum);
-      notify((int)c->bidder, (int)c->bidder_gov, buf);
+              lot, c.amount, commod_name[c.type], bid0, race.name, Playernum);
+      notify(c.bidder, c.bidder_gov, buf);
     }
-    c->bid = bid0;
-    c->bidder = Playernum;
-    c->bidder_gov = Governor;
-    c->star_to = snum;
-    c->planet_to = pnum;
-    shipping =
-        shipping_cost((int)c->star_to, (int)c->star_from, &dist, (int)c->bid);
+    c.bid = bid0;
+    c.bidder = Playernum;
+    c.bidder_gov = Governor;
+    c.star_to = snum;
+    c.planet_to = pnum;
+    shipping = shipping_cost(c.star_to, c.star_from, &dist, (int)c.bid);
 
     sprintf(
         buf,
@@ -1750,7 +1739,6 @@ void bid(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     putcommod(c, lot);
     g.out << "Bid accepted.\n";
-    free(c);
   }
 }
 

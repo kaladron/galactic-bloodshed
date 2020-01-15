@@ -768,25 +768,16 @@ std::optional<Ship> getship(Ship **s, const shipnum_t shipnum) {
   return **s;
 }
 
-int Sql::getcommod(Commod **c, commodnum_t commodnum) {
-  return ::getcommod(c, commodnum);
-}
-int getcommod(Commod **c, commodnum_t commodnum) {
-  struct stat buffer;
+Commod Sql::getcommod(commodnum_t commodnum) { return ::getcommod(commodnum); }
+Commod getcommod(commodnum_t commodnum) {
+  Commod commod;
 
-  if (commodnum <= 0) return 0;
+  // TODO(jeffbailey): Throw here
+  // if (commodnum <= 0) return 0;
 
-  fstat(commoddata, &buffer);
-  if (buffer.st_size / sizeof(Commod) < commodnum) return 0;
-
-  if ((*c = (Commod *)malloc(sizeof(Commod))) == nullptr) {
-    printf("getcommod:malloc() error \n");
-    exit(0);
-  }
-
-  Fileread(commoddata, (char *)*c, sizeof(Commod),
+  Fileread(commoddata, (char *)&commod, sizeof(Commod),
            (commodnum - 1) * sizeof(Commod));
-  return 1;
+  return commod;
 }
 
 /* gets the ship # listed in the top of the file SHIPFREEDATAFL. this
@@ -1560,11 +1551,11 @@ void putship(Ship *s) {
   end_bulk_insert();
 }
 
-void Sql::putcommod(Commod *c, int commodnum) {
+void Sql::putcommod(const Commod &c, int commodnum) {
   return ::putcommod(c, commodnum);
 }
-void putcommod(Commod *c, int commodnum) {
-  Filewrite(commoddata, (char *)c, sizeof(Commod),
+void putcommod(const Commod &c, int commodnum) {
+  Filewrite(commoddata, (const char *)&c, sizeof(Commod),
             (commodnum - 1) * sizeof(Commod));
 }
 

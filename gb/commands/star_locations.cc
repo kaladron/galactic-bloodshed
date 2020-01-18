@@ -19,10 +19,10 @@ void star_locations(const command_t &argv, GameObj &g) {
 
   for (auto i = 0; i < Sdata.numstars; i++) {
     auto dist =
-        sqrt(Distsq(Stars[i]->xpos, Stars[i]->ypos, g.lastx[1], g.lasty[1]));
+        sqrt(Distsq(stars[i].xpos, stars[i].ypos, g.lastx[1], g.lasty[1]));
     if (std::floor(dist) <= max) {
-      sprintf(buf, "(%2d) %20.20s (%8.0f,%8.0f) %7.0f\n", i, Stars[i]->name,
-              Stars[i]->xpos, Stars[i]->ypos, dist);
+      sprintf(buf, "(%2d) %20.20s (%8.0f,%8.0f) %7.0f\n", i, stars[i].name,
+              stars[i].xpos, stars[i].ypos, dist);
       notify(g.player, g.governor, buf);
     }
   }

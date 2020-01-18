@@ -21,19 +21,20 @@ import std;
 #include "gb/vars.h"
 
 namespace {
-void tech_report_star(int Playernum, int Governor, Star *star, starnum_t snum,
-                      int *t_invest, double *t_gain, double *t_max_gain) {
+void tech_report_star(int Playernum, int Governor, const Star &star,
+                      starnum_t snum, int *t_invest, double *t_gain,
+                      double *t_max_gain) {
   char str[200];
   double gain;
   double max_gain;
 
-  if (isset(star->explored, Playernum) &&
-      (!Governor || star->governor[Playernum - 1] == Governor)) {
-    for (planetnum_t i = 0; i < star->numplanets; i++) {
+  if (isset(star.explored, Playernum) &&
+      (!Governor || star.governor[Playernum - 1] == Governor)) {
+    for (planetnum_t i = 0; i < star.numplanets; i++) {
       const auto pl = getplanet(snum, i);
       if (pl.info[Playernum - 1].explored &&
           pl.info[Playernum - 1].numsectsowned) {
-        sprintf(str, "%s/%s%s", star->name, star->pnames[i],
+        sprintf(str, "%s/%s%s", star.name, star.pnames[i],
                 (pl.info[Playernum - 1].autorep ? "*" : ""));
         sprintf(buf, "%16.16s %10ld%10d%8.3lf%8.3lf\n", str,
                 pl.info[Playernum - 1].popn, pl.info[Playernum - 1].tech_invest,
@@ -69,8 +70,8 @@ void tech_status(const command_t &argv, GameObj &g) {
 
   if (argv.size() == 1) {
     for (starnum_t star = 0; star < Sdata.numstars; star++) {
-      getstar(&(Stars[star]), star);
-      tech_report_star(Playernum, Governor, Stars[star], star, &total_invest,
+      stars[star] = getstar(star);
+      tech_report_star(Playernum, Governor, stars[star], star, &total_invest,
                        &total_gain, &total_max_gain);
     }
   } else { /* Several arguments */
@@ -83,8 +84,8 @@ void tech_status(const command_t &argv, GameObj &g) {
         continue;
       } /* ok, a proper location */
       starnum_t star = where.snum;
-      getstar(&Stars[star], star);
-      tech_report_star(Playernum, Governor, Stars[star], star, &total_invest,
+      stars[star] = getstar(star);
+      tech_report_star(Playernum, Governor, stars[star], star, &total_invest,
                        &total_gain, &total_max_gain);
     }
   }

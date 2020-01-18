@@ -25,17 +25,17 @@ void moveplanet(int starnum, Planet &planet, int planetnum) {
 
   if (planet.popn || planet.ships) Stinfo[starnum][planetnum].inhab = 1;
 
-  StarsInhab[starnum] = !!(Stars[starnum]->inhabited);
-  StarsExpl[starnum] = !!(Stars[starnum]->explored);
+  StarsInhab[starnum] = !!(stars[starnum].inhabited);
+  StarsExpl[starnum] = !!(stars[starnum].explored);
 
-  Stars[starnum]->inhabited = 0;
+  stars[starnum].inhabited = 0;
   if (!StarsExpl[starnum]) return; /* no one's explored the star yet */
 
   dist = hypot((double)(planet.ypos), (double)(planet.xpos));
 
   phase = atan2((double)(planet.ypos), (double)(planet.xpos));
   period =
-      dist * sqrt((double)(dist / (SYSTEMGRAVCONST * Stars[starnum]->gravity)));
+      dist * sqrt((double)(dist / (SYSTEMGRAVCONST * stars[starnum].gravity)));
   /* keppler's law */
 
   xadd = dist * cos((double)(-1. / period + phase)) - planet.xpos;

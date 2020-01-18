@@ -50,11 +50,11 @@ void grant(const command_t &argv, GameObj &g) {
       return;
     }
     snum = g.snum;
-    Stars[snum]->governor[Playernum - 1] = gov;
+    stars[snum].governor[Playernum - 1] = gov;
     sprintf(buf, "\"%s\" has granted you control of the /%s star system.\n",
-            race.governor[Governor].name, Stars[snum]->name);
+            race.governor[Governor].name, stars[snum].name);
     warn(Playernum, gov, buf);
-    putstar(Stars[snum], snum);
+    putstar(stars[snum], snum);
   } else if (argv[2] == "ship") {
     nextshipno = start_shiplist(g, argv[3]);
     while ((shipno = do_shiplist(&ship, &nextshipno)))

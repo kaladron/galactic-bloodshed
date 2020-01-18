@@ -29,7 +29,7 @@ static void autoload_at_planet(int, Ship *, Planet *, Sector &, int *,
                                double *);
 static void autoload_at_ship(Ship *, Ship *, int *, double *);
 static std::optional<ScopeLevel> build_at_ship(GameObj &, Ship *, int *, int *);
-static int can_build_at_planet(GameObj &, Star *, const Planet &);
+static bool can_build_at_planet(GameObj &, const Star &, const Planet &);
 static bool can_build_this(const ShipType, const Race &, char *);
 static bool can_build_on_ship(int, const Race &, Ship *, char *);
 static void create_ship_by_planet(int, int, const Race &, Ship *, Planet *, int,
@@ -832,7 +832,7 @@ void build(const command_t &argv, GameObj &g) {
             return;
           }
           planet = getplanet(snum, pnum);
-          if (!can_build_at_planet(g, Stars[snum], planet) && !race.God) {
+          if (!can_build_at_planet(g, stars[snum], planet) && !race.God) {
             g.out << "You can't build that here.\n";
             return;
           }
@@ -939,7 +939,7 @@ void build(const command_t &argv, GameObj &g) {
           if (outside && build_level == ScopeLevel::LEVEL_PLAN) {
             planet = getplanet(snum, pnum);
             if (builder->type == ShipType::OTYPE_FACTORY) {
-              if (!can_build_at_planet(g, Stars[snum], planet)) {
+              if (!can_build_at_planet(g, stars[snum], planet)) {
                 g.out << "You can't build that here.\n";
                 return;
               }
@@ -1027,18 +1027,18 @@ finish:
   switch (level) {
     case ScopeLevel::LEVEL_PLAN:
       putsector(sector, planet, x, y);
-      putplanet(planet, Stars[snum], pnum);
+      putplanet(planet, stars[snum], pnum);
       break;
     case ScopeLevel::LEVEL_SHIP:
       if (outside) switch (build_level) {
           case ScopeLevel::LEVEL_PLAN:
-            putplanet(planet, Stars[snum], pnum);
+            putplanet(planet, stars[snum], pnum);
             if (landed(*builder)) {
               putsector(sector, planet, x, y);
             }
             break;
           case ScopeLevel::LEVEL_STAR:
-            putstar(Stars[snum], snum);
+            putstar(stars[snum], snum);
             break;
           case ScopeLevel::LEVEL_UNIV:
             putsdata(&Sdata);
@@ -1062,19 +1062,20 @@ static int getcount(const command_t &argv, const size_t elem) {
   return (count);
 }
 
-static int can_build_at_planet(GameObj &g, Star *star, const Planet &planet) {
+static bool can_build_at_planet(GameObj &g, const Star &star,
+                                const Planet &planet) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   if (planet.slaved_to && planet.slaved_to != Playernum) {
     sprintf(buf, "This planet is enslaved by player %d.\n", planet.slaved_to);
     notify(Playernum, Governor, buf);
-    return (0);
+    return false;
   }
-  if (Governor && star->governor[Playernum - 1] != Governor) {
+  if (Governor && star.governor[Playernum - 1] != Governor) {
     g.out << "You are not authorized in this system.\n";
-    return (0);
+    return false;
   }
-  return (1);
+  return true;
 }
 
 static std::optional<ShipType> get_build_type(const char shipc) {
@@ -1269,8 +1270,8 @@ static void create_ship_by_planet(int Playernum, int Governor, const Race &race,
   int shipno;
 
   newship->tech = race.tech;
-  newship->xpos = Stars[snum]->xpos + planet->xpos;
-  newship->ypos = Stars[snum]->ypos + planet->ypos;
+  newship->xpos = stars[snum].xpos + planet->xpos;
+  newship->ypos = stars[snum].ypos + planet->ypos;
   newship->land_x = x;
   newship->land_y = y;
   sprintf(newship->shipclass, (((newship->type == ShipType::OTYPE_TERRA) ||
@@ -1339,7 +1340,7 @@ static void create_ship_by_ship(int Playernum, int Governor, const Race &race,
         insert_sh_plan(*planet, newship);
         break;
       case ScopeLevel::LEVEL_STAR:
-        insert_sh_star(Stars[builder->storbits], newship);
+        insert_sh_star(stars[builder->storbits], newship);
         break;
       case ScopeLevel::LEVEL_UNIV:
         insert_sh_univ(&Sdata, newship);
@@ -1465,7 +1466,7 @@ void sell(const command_t &argv, GameObj &g) {
     g.out << "Syntax: sell <commodity> <amount>\n";
     return;
   }
-  if (Governor && Stars[snum]->governor[Playernum - 1] != Governor) {
+  if (Governor && stars[snum].governor[Playernum - 1] != Governor) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
@@ -1482,7 +1483,7 @@ void sell(const command_t &argv, GameObj &g) {
     return;
   }
   APcount = MIN(APcount, amount);
-  if (!enufAP(Playernum, Governor, Stars[snum]->AP[Playernum - 1], APcount))
+  if (!enufAP(Playernum, Governor, stars[snum].AP[Playernum - 1], APcount))
     return;
   auto p = getplanet(snum, pnum);
 
@@ -1570,7 +1571,7 @@ void sell(const command_t &argv, GameObj &g) {
   post(buf, TRANSFER);
   for (player_t i = 1; i <= Num_races; i++) notify_race(i, buf);
   putcommod(c, commodno);
-  putplanet(p, Stars[snum], pnum);
+  putplanet(p, stars[snum], pnum);
   deductAPs(Playernum, Governor, APcount, snum, 0);
 }
 
@@ -1600,8 +1601,8 @@ void bid(const command_t &argv, GameObj &g) {
       if (c.owner && c.amount) {
         rate = (double)c.bid / (double)c.amount;
         if (c.bidder == Playernum)
-          sprintf(temp, "%4.4s/%-4.4s", Stars[c.star_to]->name,
-                  Stars[c.star_to]->pnames[c.planet_to]);
+          sprintf(temp, "%4.4s/%-4.4s", stars[c.star_to].name,
+                  stars[c.star_to].pnames[c.planet_to]);
         else
           temp[0] = '\0';
         sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
@@ -1640,8 +1641,8 @@ void bid(const command_t &argv, GameObj &g) {
       if (c.owner && c.amount && (c.type == item)) {
         rate = (double)c.bid / (double)c.amount;
         if (c.bidder == Playernum)
-          sprintf(temp, "%4.4s/%-4.4s", Stars[c.star_to]->name,
-                  Stars[c.star_to]->pnames[c.planet_to]);
+          sprintf(temp, "%4.4s/%-4.4s", stars[c.star_to].name,
+                  stars[c.star_to].pnames[c.planet_to]);
         else
           temp[0] = '\0';
         sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
@@ -1659,7 +1660,7 @@ void bid(const command_t &argv, GameObj &g) {
     }
     snum = g.snum;
     pnum = g.pnum;
-    if (Governor && Stars[snum]->governor[Playernum - 1] != Governor) {
+    if (Governor && stars[snum].governor[Playernum - 1] != Governor) {
       g.out << "You are not authorized in this system.\n";
       return;
     }
@@ -1747,8 +1748,8 @@ int shipping_cost(int to, int from, double *dist, int value) {
   double fcost;
   int junk;
 
-  *dist = sqrt(Distsq(Stars[to]->xpos, Stars[to]->ypos, Stars[from]->xpos,
-                      Stars[from]->ypos));
+  *dist = sqrt(Distsq(stars[to].xpos, stars[to].ypos, stars[from].xpos,
+                      stars[from].ypos));
 
   junk = (int)(*dist / 10000.0);
   junk *= 10000;

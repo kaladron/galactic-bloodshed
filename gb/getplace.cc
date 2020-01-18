@@ -29,14 +29,14 @@ char *Dispshiploc_brief(Ship *ship) {
 
   switch (ship->whatorbits) {
     case ScopeLevel::LEVEL_STAR:
-      sprintf(Disps, "/%-4.4s", Stars[ship->storbits]->name);
+      sprintf(Disps, "/%-4.4s", stars[ship->storbits].name);
       return (Disps);
     case ScopeLevel::LEVEL_PLAN:
-      sprintf(Disps, "/%s", Stars[ship->storbits]->name);
+      sprintf(Disps, "/%s", stars[ship->storbits].name);
       for (i = 2; (Disps[i] && (i < 5)); i++)
         ;
       sprintf(Disps + i, "/%-4.4s",
-              Stars[ship->storbits]->pnames[ship->pnumorbits]);
+              stars[ship->storbits].pnames[ship->pnumorbits]);
       return (Disps);
     case ScopeLevel::LEVEL_SHIP:
       sprintf(Disps, "#%lu", ship->destshipno);
@@ -50,11 +50,11 @@ char *Dispshiploc_brief(Ship *ship) {
 char *Dispshiploc(Ship *ship) {
   switch (ship->whatorbits) {
     case ScopeLevel::LEVEL_STAR:
-      sprintf(Disps, "/%s", Stars[ship->storbits]->name);
+      sprintf(Disps, "/%s", stars[ship->storbits].name);
       return (Disps);
     case ScopeLevel::LEVEL_PLAN:
-      sprintf(Disps, "/%s/%s", Stars[ship->storbits]->name,
-              Stars[ship->storbits]->pnames[ship->pnumorbits]);
+      sprintf(Disps, "/%s/%s", stars[ship->storbits].name,
+              stars[ship->storbits].pnames[ship->pnumorbits]);
       return (Disps);
     case ScopeLevel::LEVEL_SHIP:
       sprintf(Disps, "#%lu", ship->destshipno);

@@ -103,7 +103,7 @@ void fire(const command_t &argv, GameObj &g) {
           continue;
         }
       } else if (!enufAP(Playernum, Governor,
-                         Stars[from->storbits]->AP[Playernum - 1], APcount)) {
+                         stars[from->storbits].AP[Playernum - 1], APcount)) {
         free(from);
         continue;
       }
@@ -262,7 +262,7 @@ void fire(const command_t &argv, GameObj &g) {
       /* AFVs immune to retaliation of this type */
       if (damage && from->alive && from->type != ShipType::OTYPE_AFV) {
         if (to->whatorbits == ScopeLevel::LEVEL_STAR) /* star level ships */
-          sh = Stars[to->storbits]->ships;
+          sh = stars[to->storbits].ships;
         if (to->whatorbits == ScopeLevel::LEVEL_PLAN) { /* planet level ships */
           const auto p = getplanet(to->storbits, to->pnumorbits);
           sh = p.ships;
@@ -348,7 +348,7 @@ void bombard(const command_t &argv, GameObj &g) {
         free(from);
         continue;
       }
-      if (!enufAP(Playernum, Governor, Stars[from->storbits]->AP[Playernum - 1],
+      if (!enufAP(Playernum, Governor, stars[from->storbits].AP[Playernum - 1],
                   APcount)) {
         free(from);
         continue;
@@ -429,7 +429,7 @@ void bombard(const command_t &argv, GameObj &g) {
       notify_star(Playernum, Governor, from->storbits, short_buf);
       for (i = 1; i <= Num_races; i++)
         if (Nuked[i - 1])
-          warn(i, Stars[from->storbits]->governor[i - 1], long_buf);
+          warn(i, stars[from->storbits].governor[i - 1], long_buf);
       notify(Playernum, Governor, long_buf);
 
 #ifdef DEFENSE
@@ -446,7 +446,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
             damage = shoot_planet_to_ship(alien, from, strength, long_buf,
                                           short_buf);
-            warn(i, Stars[from->storbits]->governor[i - 1], long_buf);
+            warn(i, stars[from->storbits].governor[i - 1], long_buf);
             notify(Playernum, Governor, long_buf);
             if (!from->alive) post(short_buf, COMBAT);
             notify_star(Playernum, Governor, from->storbits, short_buf);
@@ -483,7 +483,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
       /* write the stuff to disk */
       putship(from);
-      putplanet(p, Stars[from->storbits], (int)from->pnumorbits);
+      putplanet(p, stars[from->storbits], (int)from->pnumorbits);
       deductAPs(Playernum, Governor, APcount, (int)from->storbits, 0);
 
       free(from);
@@ -522,7 +522,7 @@ void defend(const command_t &argv, GameObj &g) {
            "Syntax: 'defend <ship> <sector> [<strength>]'.\n");
     return;
   }
-  if (Governor && Stars[g.snum]->governor[Playernum - 1] != Governor) {
+  if (Governor && stars[g.snum].governor[Playernum - 1] != Governor) {
     notify(Playernum, Governor,
            "You are not authorized to do that in this system.\n");
     return;
@@ -534,7 +534,7 @@ void defend(const command_t &argv, GameObj &g) {
   }
   toship = *toshiptmp;
 
-  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount)) {
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount)) {
     return;
   }
 
@@ -679,7 +679,7 @@ void defend(const command_t &argv, GameObj &g) {
 
   /* write the ship stuff out to disk */
   putship(&*to);
-  putplanet(p, Stars[g.snum], g.pnum);
+  putplanet(p, stars[g.snum], g.pnum);
 
   deductAPs(Playernum, Governor, APcount, g.snum, 0);
 }

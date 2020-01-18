@@ -21,7 +21,7 @@ static void Migrate2(const Planet &, int, int, Sector &, int *, SectorMap &);
 static void plate(Sector &);
 
 //  produce() -- produce, stuff like that, on a sector.
-void produce(Star *star, const Planet &planet, Sector &s) {
+void produce(const Star &star, const Planet &planet, Sector &s) {
   int ss;
   int maxsup;
   int pfuel = 0;
@@ -100,7 +100,7 @@ void produce(Star *star, const Planet &planet, Sector &s) {
   s.popn += ss;
 
   if (s.troops)
-    race.governor[star->governor[s.owner - 1]].maintain +=
+    race.governor[star.governor[s.owner - 1]].maintain +=
         UPDATE_TROOP_COST * s.troops;
   else if (!s.popn)
     s.owner = 0;

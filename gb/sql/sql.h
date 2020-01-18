@@ -15,17 +15,17 @@ class Sql : public Db {
   virtual int Numraces();
   virtual void putcommod(const Commod &, int);
   virtual void putship(Ship *);
-  virtual void putstar(Star *, starnum_t);
+  virtual void putstar(const Star &, starnum_t);
   virtual void putrace(const Race &);
   virtual void putsdata(struct stardata *);
   virtual void getsdata(struct stardata *);
   virtual Race getrace(player_t);
-  virtual void getstar(Star **, int);
+  virtual Star getstar(starnum_t);
   virtual std::optional<Ship> getship(const shipnum_t shipnum);
   virtual std::optional<Ship> getship(Ship **, const shipnum_t);
   virtual Commod getcommod(commodnum_t);
   virtual Planet getplanet(const starnum_t, const planetnum_t);
-  virtual void putplanet(const Planet &, Star *, const int);
+  virtual void putplanet(const Planet &, const Star &, const int);
 };
 
 #endif  // SQL_SQL_H

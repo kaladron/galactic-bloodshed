@@ -44,7 +44,7 @@ void examine(const command_t &argv, GameObj &g) {
     return;
   }
   if (ship->whatorbits == ScopeLevel::LEVEL_UNIV ||
-      isclr(Stars[ship->storbits]->inhabited, g.player)) {
+      isclr(stars[ship->storbits].inhabited, g.player)) {
     g.out << "That ship it not visible to you.\n";
     return;
   }

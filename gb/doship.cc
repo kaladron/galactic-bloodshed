@@ -73,10 +73,10 @@ void doship(Ship *ship, int update) {
       ship->whatdest = ScopeLevel::LEVEL_UNIV;
 
     if (ship->whatorbits != ScopeLevel::LEVEL_UNIV &&
-        Stars[ship->storbits]->nova_stage > 0) {
+        stars[ship->storbits].nova_stage > 0) {
       /* damage ships from supernovae */
       /* Maarten: modified to take into account MOVES_PER_UPDATE */
-      ship->damage += 5 * Stars[ship->storbits]->nova_stage /
+      ship->damage += 5 * stars[ship->storbits].nova_stage /
                       ((armor(*ship) + 1) * segments);
       if (ship->damage >= 100) {
         kill_ship((int)(ship->owner), ship);
@@ -109,8 +109,8 @@ void doship(Ship *ship, int update) {
        * ship, */
       /* or a probe, which is designed for this kind of work.  Maarten */
       StarsInhab[ship->storbits] = 1;
-      setbit(Stars[ship->storbits]->inhabited, ship->owner);
-      setbit(Stars[ship->storbits]->explored, ship->owner);
+      setbit(stars[ship->storbits].inhabited, ship->owner);
+      setbit(stars[ship->storbits].explored, ship->owner);
       if (ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
         planets[ship->storbits][ship->pnumorbits]
             ->info[ship->owner - 1]
@@ -139,8 +139,8 @@ void doship(Ship *ship, int update) {
       /* only if manned or probe.  Maarten */
       if (ship->popn || ship->type == ShipType::OTYPE_PROBE) {
         StarsInhab[ship->storbits] = 1;
-        setbit(Stars[ship->storbits]->inhabited, ship->owner);
-        setbit(Stars[ship->storbits]->explored, ship->owner);
+        setbit(stars[ship->storbits].inhabited, ship->owner);
+        setbit(stars[ship->storbits].explored, ship->owner);
       }
     }
 
@@ -284,7 +284,7 @@ void domissile(Ship *ship) {
               ship_to_string(*ship).c_str(), prin_ship_orbits(ship), numdest);
       for (i = 1; i <= Num_races; i++)
         if (p->info[i - 1].numsectsowned && i != ship->owner)
-          push_telegram(i, Stars[ship->storbits]->governor[i - 1], buf);
+          push_telegram(i, stars[ship->storbits].governor[i - 1], buf);
       if (numdest) {
         sprintf(buf, "%s dropped on %s.\n", ship_to_string(*ship).c_str(),
                 prin_ship_orbits(ship));
@@ -326,7 +326,7 @@ void domine(int shipno, int detonate) {
 
     switch (ship->whatorbits) {
       case ScopeLevel::LEVEL_STAR:
-        sh = Stars[ship->storbits]->ships;
+        sh = stars[ship->storbits].ships;
         break;
       case ScopeLevel::LEVEL_PLAN: {
         const auto planet = getplanet(ship->storbits, ship->pnumorbits);
@@ -392,7 +392,7 @@ void domine(int shipno, int detonate) {
             shoot_ship_to_planet(&*ship, planet, (int)(ship->destruct), x, y,
                                  smap, 0, GTYPE_LIGHT, long_buf, short_buf);
         putsmap(smap, planet);
-        putplanet(planet, Stars[ship->storbits], (int)ship->pnumorbits);
+        putplanet(planet, stars[ship->storbits], (int)ship->pnumorbits);
 
         sprintf(telegram_buf, "%s", buf);
         if (numdest > 0) {
@@ -402,7 +402,7 @@ void domine(int shipno, int detonate) {
         strcat(telegram_buf, "\n");
         for (i = 1; i <= Num_races; i++)
           if (Nuked[i - 1])
-            warn(i, Stars[ship->storbits]->governor[i - 1], telegram_buf);
+            warn(i, stars[ship->storbits].governor[i - 1], telegram_buf);
         notify((ship->owner), ship->governor, telegram_buf);
       }
       kill_ship((ship->owner), &*ship);
@@ -512,12 +512,12 @@ static void do_pod(Ship *ship) {
 
   if (ship->whatorbits == ScopeLevel::LEVEL_STAR) {
     if (ship->special.pod.temperature >= POD_THRESHOLD) {
-      i = int_rand(0, (int)Stars[ship->storbits]->numplanets - 1);
+      i = int_rand(0, stars[ship->storbits].numplanets - 1);
       sprintf(telegram_buf, "%s has warmed and exploded at %s\n",
               ship_to_string(*ship).c_str(), prin_ship_orbits(ship));
       if (infect_planet((int)ship->owner, (int)ship->storbits, i)) {
         sprintf(buf, "\tmeta-colony established on %s.",
-                Stars[ship->storbits]->pnames[i]);
+                stars[ship->storbits].pnames[i]);
       } else
         sprintf(buf, "\tno spores have survived.");
       strcat(telegram_buf, buf);
@@ -525,7 +525,7 @@ static void do_pod(Ship *ship) {
       kill_ship((int)(ship->owner), ship);
     } else
       ship->special.pod.temperature += round_rand(
-          (double)Stars[ship->storbits]->temperature / (double)segments);
+          (double)stars[ship->storbits].temperature / (double)segments);
   } else if (ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
     if (ship->special.pod.decay >= POD_DECAY) {
       sprintf(telegram_buf, "%s has decayed at %s\n",
@@ -595,8 +595,7 @@ static void do_canister(Ship *ship) {
         if (planets[ship->storbits][ship->pnumorbits]
                 ->info[j - 1]
                 .numsectsowned)
-          push_telegram(j, (int)Stars[ship->storbits]->governor[j - 1],
-                        telegram_buf);
+          push_telegram(j, stars[ship->storbits].governor[j - 1], telegram_buf);
     }
   }
 }
@@ -618,8 +617,7 @@ static void do_greenhouse(Ship *ship) {
         if (planets[ship->storbits][ship->pnumorbits]
                 ->info[j - 1]
                 .numsectsowned)
-          push_telegram(j, (int)Stars[ship->storbits]->governor[j - 1],
-                        telegram_buf);
+          push_telegram(j, stars[ship->storbits].governor[j - 1], telegram_buf);
     }
   }
 }
@@ -665,9 +663,9 @@ static void do_mirror(Ship *ship) {
       int i;
       double range;
       range = sqrt(Distsq(ship->xpos, ship->ypos,
-                          Stars[ship->storbits]->xpos +
+                          stars[ship->storbits].xpos +
                               planets[ship->storbits][ship->pnumorbits]->xpos,
-                          Stars[ship->storbits]->ypos +
+                          stars[ship->storbits].ypos +
                               planets[ship->storbits][ship->pnumorbits]->ypos));
       if (range > PLORBITSIZE)
         i = PLORBITSIZE * ship->special.aimed_at.intensity / range;
@@ -684,7 +682,7 @@ static void do_mirror(Ship *ship) {
           ship->special.aimed_at.snum < Sdata.numstars &&
           ship->whatorbits > ScopeLevel::LEVEL_UNIV &&
           ship->special.aimed_at.snum == ship->storbits)
-        Stars[ship->special.aimed_at.snum]->stability += random() & 01;
+        stars[ship->special.aimed_at.snum].stability += random() & 01;
     } break;
     case ScopeLevel::LEVEL_UNIV:
       break;

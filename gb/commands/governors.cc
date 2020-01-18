@@ -33,11 +33,11 @@ void do_revoke(Race race, const governor_t src_gov, const governor_t tgt_gov) {
   /*  First do stars....  */
 
   for (starnum_t i = 0; i < Sdata.numstars; i++)
-    if (Stars[i]->governor[race.Playernum - 1] == src_gov) {
-      Stars[i]->governor[race.Playernum - 1] = tgt_gov;
-      outmsg = fmt::format("Changed juridiction of /{0}...\n", Stars[i]->name);
+    if (stars[i].governor[race.Playernum - 1] == src_gov) {
+      stars[i].governor[race.Playernum - 1] = tgt_gov;
+      outmsg = fmt::format("Changed juridiction of /{0}...\n", stars[i].name);
       notify(race.Playernum, 0, outmsg);
-      putstar(Stars[i], i);
+      putstar(stars[i], i);
     }
 
   /*  Now do ships....  */

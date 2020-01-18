@@ -83,7 +83,7 @@ void load(const command_t &argv, GameObj &g) {
           continue;
         }
       } else if (!enufAP(Playernum, Governor,
-                         Stars[s->storbits]->AP[Playernum - 1], APcount))
+                         stars[s->storbits].AP[Playernum - 1], APcount))
         continue;
       if (!s->docked) {
         sprintf(buf, "%s is not landed or docked.\n",
@@ -272,7 +272,7 @@ void load(const command_t &argv, GameObj &g) {
             unload_onto_alien_sector(g, &p, s, sect, CIV, -amt);
             putship(s);
             putsector(sect, p, s->land_x, s->land_y);
-            putplanet(p, Stars[g.snum], g.pnum);
+            putplanet(p, stars[g.snum], g.pnum);
             free(s);
             return;
           } else {
@@ -315,7 +315,7 @@ void load(const command_t &argv, GameObj &g) {
             unload_onto_alien_sector(g, &p, s, sect, MIL, -amt);
             putship(s);
             putsector(sect, p, s->land_x, s->land_y);
-            putplanet(p, Stars[g.snum], g.pnum);
+            putplanet(p, stars[g.snum], g.pnum);
             free(s);
             return;
           } else {
@@ -451,7 +451,7 @@ void load(const command_t &argv, GameObj &g) {
         if (commod == 'c' || commod == 'm') {
           putsector(sect, p, s->land_x, s->land_y);
         }
-        putplanet(p, Stars[g.snum], g.pnum);
+        putplanet(p, stars[g.snum], g.pnum);
       }
 
       /* do transporting here */
@@ -508,7 +508,7 @@ void jettison(const command_t &argv, GameObj &g) {
           continue;
         }
       } else if (!enufAP(Playernum, Governor,
-                         Stars[s->storbits]->AP[Playernum - 1], APcount)) {
+                         stars[s->storbits].AP[Playernum - 1], APcount)) {
         free(s);
         continue;
       }
@@ -624,7 +624,7 @@ void dump(const command_t &argv, GameObj &g) {
   int star;
   int j;
 
-  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount))
     return;
 
   if (!(player = get_player(argv[1]))) {
@@ -648,19 +648,19 @@ void dump(const command_t &argv, GameObj &g) {
 
   if (argv.size() < 3) {
     for (star = 0; star < Sdata.numstars; star++) {
-      getstar(&Stars[star], star);
+      stars[star] = getstar(star);
 
-      if (isset(Stars[star]->explored, Playernum)) {
-        setbit(Stars[star]->explored, player);
+      if (isset(stars[star].explored, Playernum)) {
+        setbit(stars[star].explored, player);
 
-        for (size_t i = 0; i < Stars[star]->numplanets; i++) {
+        for (size_t i = 0; i < stars[star].numplanets; i++) {
           auto planet = getplanet(star, i);
           if (planet.info[Playernum - 1].explored) {
             planet.info[player - 1].explored = 1;
-            putplanet(planet, Stars[star], i);
+            putplanet(planet, stars[star], i);
           }
         }
-        putstar(Stars[star], star);
+        putstar(stars[star], star);
       }
     }
   } else { /* list of places given */
@@ -669,19 +669,19 @@ void dump(const command_t &argv, GameObj &g) {
       if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
           where.level != ScopeLevel::LEVEL_SHIP) {
         star = where.snum;
-        getstar(&Stars[star], star);
+        stars[star] = getstar(star);
 
-        if (isset(Stars[star]->explored, Playernum)) {
-          setbit(Stars[star]->explored, player);
+        if (isset(stars[star].explored, Playernum)) {
+          setbit(stars[star].explored, player);
 
-          for (j = 0; j < Stars[star]->numplanets; j++) {
+          for (j = 0; j < stars[star].numplanets; j++) {
             auto planet = getplanet(star, j);
             if (planet.info[Playernum - 1].explored) {
               planet.info[player - 1].explored = 1;
-              putplanet(planet, Stars[star], j);
+              putplanet(planet, stars[star], j);
             }
           }
-          putstar(Stars[star], star);
+          putstar(stars[star], star);
         }
       }
     }
@@ -708,7 +708,7 @@ void transfer(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount))
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount))
     return;
 
   if (!(player = get_player(argv[1]))) {
@@ -723,7 +723,7 @@ void transfer(const command_t &argv, GameObj &g) {
   // TODO(jeffbailey): May throw an exception on a negative number.
   resource_t give = std::stoul(argv[3]);
 
-  sprintf(temp, "%s/%s:", Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
+  sprintf(temp, "%s/%s:", stars[g.snum].name, stars[g.snum].pnames[g.pnum]);
   switch (commod) {
     case 'r':
       if (give > planet.info[Playernum - 1].resource) {
@@ -786,7 +786,7 @@ void transfer(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, buf);
   }
 
-  putplanet(planet, Stars[g.snum], g.pnum);
+  putplanet(planet, stars[g.snum], g.pnum);
 
   deductAPs(Playernum, Governor, APcount, g.snum, 0);
 }
@@ -1048,7 +1048,7 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
   race.translate[sect.owner - 1] = MIN(race.translate[sect.owner - 1] + 5, 100);
 
   oldowner = (int)sect.owner;
-  oldgov = Stars[g.snum]->governor[sect.owner - 1];
+  oldgov = stars[g.snum].governor[sect.owner - 1];
 
   if (what == CIV)
     ship->popn -= people;
@@ -1115,7 +1115,7 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
     adjust_morale(alien, race, (int)race.fighters);
   }
   sprintf(telegram_buf, "/%s/%s: %s [%d] %s assaults %s [%d] %c(%d,%d) %s\n",
-          Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum], race.name,
+          stars[g.snum].name, stars[g.snum].pnames[g.pnum], race.name,
           Playernum, ship_to_string(*ship).c_str(), alien.name, alien.Playernum,
           Dessymbols[sect.condition], ship->land_x, ship->land_y,
           (sect.owner == Playernum ? "VICTORY" : "DEFEAT"));

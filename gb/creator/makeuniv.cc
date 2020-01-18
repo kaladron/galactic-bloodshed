@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
   initsqldata();
 
   for (starnum_t star = 0; star < nstars; star++) {
-    Stars[star] = Makestar(star);
+    stars.emplace_back(Makestar(star));
   }
 
 #if 0
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
 
   db.putsdata(&Sdata);
   for (starnum_t star = 0; star < Sdata.numstars; star++)
-    db.putstar(Stars[star], star);
+    db.putstar(stars[star], star);
   chmod(STARDATAFL, 00660);
 
   EmptyFile(SHIPDATAFL);
@@ -250,16 +250,16 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void place_star(Star *star) {
+void place_star(Star &star) {
   int found = 0;
   int i;
   int j;
   while (!found) {
-    star->xpos = (double)int_rand(-UNIVSIZE, UNIVSIZE);
-    star->ypos = (double)int_rand(-UNIVSIZE, UNIVSIZE);
+    star.xpos = (double)int_rand(-UNIVSIZE, UNIVSIZE);
+    star.ypos = (double)int_rand(-UNIVSIZE, UNIVSIZE);
     /* check to see if another star is nearby */
-    i = 100 * ((int)star->xpos + UNIVSIZE) / (2 * UNIVSIZE);
-    j = 100 * ((int)star->xpos + UNIVSIZE) / (2 * UNIVSIZE);
+    i = 100 * ((int)star.xpos + UNIVSIZE) / (2 * UNIVSIZE);
+    j = 100 * ((int)star.xpos + UNIVSIZE) / (2 * UNIVSIZE);
     if (!occupied[i][j]) occupied[i][j] = found = 1;
   }
 }

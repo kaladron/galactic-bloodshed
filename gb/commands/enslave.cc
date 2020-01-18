@@ -47,7 +47,7 @@ void enslave(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     return;
   }
-  if (!enufAP(Playernum, Governor, Stars[s->storbits]->AP[Playernum - 1],
+  if (!enufAP(Playernum, Governor, stars[s->storbits].AP[Playernum - 1],
               APcount)) {
     return;
   }
@@ -93,12 +93,12 @@ void enslave(const command_t &argv, GameObj &g) {
           attack);
   notify(Playernum, Governor, buf);
 
-  sprintf(telegram_buf, "ALERT!!!\n\nPlanet /%s/%s ", Stars[s->storbits]->name,
-          Stars[s->storbits]->pnames[s->pnumorbits]);
+  sprintf(telegram_buf, "ALERT!!!\n\nPlanet /%s/%s ", stars[s->storbits].name,
+          stars[s->storbits].pnames[s->pnumorbits]);
 
   if (def <= 2 * attack) {
     p.slaved_to = Playernum;
-    putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
+    putplanet(p, stars[s->storbits], s->pnumorbits);
 
     /* send telegs to anyone there */
     sprintf(buf, "ENSLAVED by %s!!\n", ship_to_string(*s).c_str());
@@ -135,5 +135,5 @@ void enslave(const command_t &argv, GameObj &g) {
 
   for (auto i = 1; i < MAXPLAYERS; i++)
     if (p.info[i - 1].numsectsowned && i != Playernum)
-      warn(i, Stars[s->storbits]->governor[i - 1], telegram_buf);
+      warn(i, stars[s->storbits].governor[i - 1], telegram_buf);
 }

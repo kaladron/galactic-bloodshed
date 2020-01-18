@@ -25,24 +25,24 @@ void production_at_star(GameObj &g, starnum_t star) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
-  getstar(&(Stars[star]), star);
-  if (!isset(Stars[star]->explored, Playernum)) return;
+  stars[star] = getstar(star);
+  if (!isset(stars[star].explored, Playernum)) return;
 
-  for (auto i = 0; i < Stars[star]->numplanets; i++) {
+  for (auto i = 0; i < stars[star].numplanets; i++) {
     const auto pl = getplanet(star, i);
 
     if (pl.info[Playernum - 1].explored &&
         pl.info[Playernum - 1].numsectsowned &&
-        (!Governor || Stars[star]->governor[Playernum - 1] == Governor)) {
+        (!Governor || stars[star].governor[Playernum - 1] == Governor)) {
       sprintf(
           buf, " %c %4.4s/%-4.4s%c%3d%8.4f%8ld%3d%6d%5d%6d %6ld   %3d%8.2f\n",
-          Psymbol[pl.type], Stars[star]->name, Stars[star]->pnames[i],
+          Psymbol[pl.type], stars[star].name, stars[star].pnames[i],
           (pl.info[Playernum - 1].autorep ? '*' : ' '),
-          Stars[star]->governor[Playernum - 1],
-          pl.info[Playernum - 1].prod_tech, pl.total_resources,
-          pl.info[Playernum - 1].prod_crystals, pl.info[Playernum - 1].prod_res,
-          pl.info[Playernum - 1].prod_dest, pl.info[Playernum - 1].prod_fuel,
-          pl.info[Playernum - 1].prod_money, pl.info[Playernum - 1].tox_thresh,
+          stars[star].governor[Playernum - 1], pl.info[Playernum - 1].prod_tech,
+          pl.total_resources, pl.info[Playernum - 1].prod_crystals,
+          pl.info[Playernum - 1].prod_res, pl.info[Playernum - 1].prod_dest,
+          pl.info[Playernum - 1].prod_fuel, pl.info[Playernum - 1].prod_money,
+          pl.info[Playernum - 1].tox_thresh,
           pl.info[Playernum - 1].est_production);
       notify(Playernum, Governor, buf);
     }

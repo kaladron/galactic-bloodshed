@@ -84,7 +84,6 @@ int main() {
   struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
   Planet planet;
   unsigned char not_found[PlanetType::DESERT + 1];
-  Star *star_arena;
 
   Sql db{};
 
@@ -110,10 +109,11 @@ int main() {
 
   db.getsdata(&Sdata);
 
-  star_arena = (Star *)malloc(Sdata.numstars * sizeof(Star));
-  for (int s = 0; s < Sdata.numstars; s++) {
-    Stars[s] = &star_arena[s];
-    db.getstar(&(Stars[s]), s);
+  // TODO(jeffbailey): factor out routine for initialising this.
+  stars.reserve(Sdata.numstars);
+  for (i = 0; i < Sdata.numstars; i++) {
+    auto s = db.getstar(i);
+    stars.push_back(s);
   }
   printf("There is still space for player %d.\n", Playernum);
 
@@ -161,15 +161,15 @@ int main() {
     for (star = 0; star < Sdata.numstars && !found && count < 100;) {
       check = 1;
       /* skip over inhabited stars - or stars with just one planet! */
-      if (Stars[star]->inhabited != 0 || Stars[star]->numplanets < 2) check = 0;
+      if (stars[star].inhabited != 0 || stars[star].numplanets < 2) check = 0;
 
       /* look for uninhabited planets */
       if (check) {
         pnum = 0;
-        while (!found && pnum < Stars[star]->numplanets) {
+        while (!found && pnum < stars[star].numplanets) {
           planet = getplanet(star, pnum);
 
-          if (planet.type == ppref && Stars[star]->numplanets != 1) {
+          if (planet.type == ppref && stars[star].numplanets != 1) {
             vacant = 1;
             for (i = 1; i <= Playernum; i++)
               if (planet.info[i - 1].numsectsowned) vacant = 0;
@@ -369,8 +369,8 @@ int main() {
     s.nextship = 0;
 
     s.type = ShipType::OTYPE_GOV;
-    s.xpos = Stars[star]->xpos + planet.xpos;
-    s.ypos = Stars[star]->ypos + planet.ypos;
+    s.xpos = stars[star].xpos + planet.xpos;
+    s.ypos = stars[star].ypos + planet.ypos;
     s.land_x = (char)secttypes[i].x;
     s.land_y = (char)secttypes[i].y;
 
@@ -428,7 +428,7 @@ int main() {
     s.name[0] = '\0';
     s.number = shipno;
     printf("Created on sector %d,%d on /%s/%s\n", s.land_x, s.land_y,
-           Stars[s.storbits]->name, Stars[s.storbits]->pnames[s.pnumorbits]);
+           stars[s.storbits].name, stars[s.storbits].pnames[s.pnumorbits]);
     db.putship(&s);
   }
 
@@ -452,21 +452,21 @@ int main() {
   /* (approximate) */
 
   putsector(sect, planet, secttypes[i].x, secttypes[i].y);
-  putplanet(planet, Stars[star], pnum);
+  putplanet(planet, stars[star], pnum);
 
   /* make star explored and stuff */
-  db.getstar(&Stars[star], star);
-  setbit(Stars[star]->explored, Playernum);
-  setbit(Stars[star]->inhabited, Playernum);
-  Stars[star]->AP[Playernum - 1] = 5;
-  db.putstar(Stars[star], star);
+  stars[star] = db.getstar(star);
+  setbit(stars[star].explored, Playernum);
+  setbit(stars[star].inhabited, Playernum);
+  stars[star].AP[Playernum - 1] = 5;
+  db.putstar(stars[star], star);
 
   sigprocmask(SIG_SETMASK, &mask, nullptr);
 
   printf("\nYou are player %d.\n\n", Playernum);
   printf("Your race has been created on sector %d,%d on\n", secttypes[i].x,
          secttypes[i].y);
-  printf("%s/%s.\n\n", Stars[star]->name, Stars[star]->pnames[pnum]);
+  printf("%s/%s.\n\n", stars[star].name, stars[star].pnames[pnum]);
   return 0;
 }
 

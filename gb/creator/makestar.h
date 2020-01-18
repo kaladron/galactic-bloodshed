@@ -9,7 +9,7 @@
 
 int Temperature(double dist, int stemp);
 void Makestar_init();
-Star *Makestar(int);
+Star Makestar(starnum_t);
 void Makeplanet_init();
 void PrintStatistics();
 

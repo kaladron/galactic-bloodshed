@@ -83,8 +83,8 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   if (landed(*ship) && (ship->whatorbits == ScopeLevel::LEVEL_PLAN)) {
     const auto p = getplanet(ship->storbits, ship->pnumorbits);
     gravity_factor = p.gravity();
-    sprintf(plan_buf, "/%s/%s", Stars[(int)ship->storbits]->name,
-            Stars[(int)ship->storbits]->pnames[(int)ship->pnumorbits]);
+    sprintf(plan_buf, "/%s/%s", stars[ship->storbits].name,
+            stars[ship->storbits].pnames[ship->pnumorbits]);
   }
   std::string deststr;
   if (argv.size() == 2) {
@@ -110,7 +110,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
       tmpdest.level != ScopeLevel::LEVEL_SHIP &&
       ((ship->storbits != tmpdest.snum) &&
        tmpdest.level != ScopeLevel::LEVEL_STAR) &&
-      isclr(Stars[tmpdest.snum]->explored, ship->owner)) {
+      isclr(stars[tmpdest.snum].explored, ship->owner)) {
     g.out << "You haven't explored the destination system.\n";
     return;
   }
@@ -139,11 +139,11 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     free(tmpship);
   } else if (tmpdest.level == ScopeLevel::LEVEL_PLAN) {
     const auto p = getplanet(tmpdest.snum, tmpdest.pnum);
-    x_1 = p.xpos + Stars[tmpdest.snum]->xpos;
-    y_1 = p.ypos + Stars[tmpdest.snum]->ypos;
+    x_1 = p.xpos + stars[tmpdest.snum].xpos;
+    y_1 = p.ypos + stars[tmpdest.snum].ypos;
   } else if (tmpdest.level == ScopeLevel::LEVEL_STAR) {
-    x_1 = Stars[tmpdest.snum]->xpos;
-    y_1 = Stars[tmpdest.snum]->ypos;
+    x_1 = stars[tmpdest.snum].xpos;
+    y_1 = stars[tmpdest.snum].ypos;
   } else
     printf("ERROR 99\n");
 

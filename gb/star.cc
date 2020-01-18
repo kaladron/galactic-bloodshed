@@ -5,12 +5,6 @@
 /// \file star.cc
 /// \brief Definition for Star Class.
 
-/*
- *    Sectors that are mobilized produce Destructive Potential in
- *    proportion to the % they are mobilized.  they are also more
- *    damage-resistant.
- */
-
 import gblib;
 import std;
 

@@ -50,7 +50,7 @@ void capture(const command_t &argv, GameObj &g) {
     g.out << "Capture what?\n";
     return;
   }
-  if (Governor && Stars[g.snum]->governor[Playernum - 1] != Governor) {
+  if (Governor && stars[g.snum].governor[Playernum - 1] != Governor) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
@@ -70,7 +70,7 @@ void capture(const command_t &argv, GameObj &g) {
         free(ship);
         continue;
       }
-      if (!enufAP(Playernum, Governor, Stars[ship->storbits]->AP[Playernum - 1],
+      if (!enufAP(Playernum, Governor, stars[ship->storbits].AP[Playernum - 1],
                   APcount)) {
         free(ship);
         continue;
@@ -228,8 +228,8 @@ void capture(const command_t &argv, GameObj &g) {
 
       if (!(sect.popn + sect.troops)) sect.owner = 0;
 
-      sprintf(buf, "BULLETIN from %s/%s!!\n", Stars[ship->storbits]->name,
-              Stars[ship->storbits]->pnames[ship->pnumorbits]);
+      sprintf(buf, "BULLETIN from %s/%s!!\n", stars[ship->storbits].name,
+              stars[ship->storbits].pnames[ship->pnumorbits]);
       strcpy(telegram_buf, buf);
       sprintf(
           buf, "You are being attacked by%s Player #%d (%s)!!!\n",
@@ -316,7 +316,7 @@ void capture(const command_t &argv, GameObj &g) {
       notify_star(Playernum, Governor, ship->storbits, short_buf);
       putship(ship);
       putsector(sect, p, x, y);
-      putplanet(p, Stars[g.snum], g.pnum);
+      putplanet(p, stars[g.snum], g.pnum);
       putrace(race);
       putrace(alien);
       deductAPs(Playernum, Governor, APcount, ship->storbits, 0);

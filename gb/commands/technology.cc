@@ -28,11 +28,11 @@ void technology(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     return;
   }
-  if (!control(*Stars[g.snum], Playernum, Governor)) {
+  if (!control(stars[g.snum], Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount)) {
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount)) {
     return;
   }
 
@@ -56,7 +56,7 @@ void technology(const command_t &argv, GameObj &g) {
 
   p.info[Playernum - 1].tech_invest = invest;
 
-  putplanet(p, Stars[g.snum], g.pnum);
+  putplanet(p, stars[g.snum], g.pnum);
 
   deductAPs(Playernum, Governor, APcount, g.snum, 0);
 

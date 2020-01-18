@@ -211,7 +211,7 @@ static char *NextStarName() {
   return buf;
 }
 
-Star *Makestar(int snum) {
+Star Makestar(starnum_t snum) {
   PlanetType type;
   int roll;
   int temperature;
@@ -225,38 +225,37 @@ Star *Makestar(int snum) {
   double angle;
   double xpos;
   double ypos;
-  Star *star;
+  Star star;
 
   /* get names, positions of stars first */
-  star = (Star *)malloc(sizeof(Star));
-  bzero(star, sizeof(Star));
-  star->star_id = snum;
-  star->gravity = int_rand(0, int_rand(0, 300)) + int_rand(0, 300) +
-                  int_rand(100, 400) + int_rand(0, 9) / 10.0;
-  star->temperature = round_rand(star->gravity / 100.0);
+  bzero(&star, sizeof(Star));
+  star.star_id = snum;
+  star.gravity = int_rand(0, int_rand(0, 300)) + int_rand(0, 300) +
+                 int_rand(100, 400) + int_rand(0, 9) / 10.0;
+  star.temperature = round_rand(star.gravity / 100.0);
   /* + int_rand(0,2) - 1 ; */
-  strcpy(star->name, NextStarName());
+  strcpy(star.name, NextStarName());
   place_star(star);
   if (printstarinfo)
-    printf("Star %s: gravity %1.1f, temp %d\n", star->name, star->gravity,
-           (int)star->temperature);
+    printf("Star %s: gravity %1.1f, temp %d\n", star.name, star.gravity,
+           (int)star.temperature);
   /*
    * Generate planets for this star: */
-  star->numplanets = int_rand(minplanets, maxplanets);
+  star.numplanets = int_rand(minplanets, maxplanets);
 
   distmin = PLANET_DIST_MIN;
-  for (i = 0; i < star->numplanets; i++) {
-    distsep = (PLANET_DIST_MAX - distmin) / (double)(star->numplanets - i);
+  for (i = 0; i < star.numplanets; i++) {
+    distsep = (PLANET_DIST_MAX - distmin) / (double)(star.numplanets - i);
     distmax = distmin + distsep;
     dist = distmin + double_rand() * (distmax - distmin);
     distmin = dist;
 
-    temperature = Temperature(dist, star->temperature);
+    temperature = Temperature(dist, star.temperature);
     angle = 2.0 * M_PI * double_rand();
     xpos = dist * sin(angle);
     ypos = dist * cos(angle);
 
-    strcpy(star->pnames[i], NextPlanetName(i));
+    strcpy(star.pnames[i], NextPlanetName(i));
 
     roll = int_rand(1, 100);
     if ((int_rand(1, 100) <= 10) || (temperature > 400)) {
@@ -310,17 +309,17 @@ Star *Makestar(int snum) {
     } else {
       throw std::runtime_error("No PlanetType left, bailing");
     }
-    auto planet = makeplanet(dist, star->temperature, type);
+    auto planet = makeplanet(dist, star.temperature, type);
     auto smap = getsmap(planet);
     planet.xpos = xpos;
     planet.ypos = ypos;
     planet.total_resources = 0;
     Numtypes[type]++;
     if (printplaninfo) {
-      printf("Planet %s: temp %d, type %s (%u)\n", star->pnames[i],
+      printf("Planet %s: temp %d, type %s (%u)\n", star.pnames[i],
              planet.conditions[RTEMP], Nametypes[planet.type], planet.type);
       printf("Position is (%1.0f,%1.0f) relative to %s; distance %1.0f.\n",
-             planet.xpos, planet.ypos, star->name, dist);
+             planet.xpos, planet.ypos, star.name, dist);
       printf("sect map(%dx%d):\n", planet.Maxx, planet.Maxy);
       for (y = 0; y < planet.Maxy; y++) {
         for (x = 0; x < planet.Maxx; x++) {
@@ -365,7 +364,7 @@ Star *Makestar(int snum) {
         Numsects[type][d]++;
         Fertsects[type][d] += smap.get(x, y).fert;
       }
-    star->planetpos[i] = 0;  // old posn of file-last write
+    star.planetpos[i] = 0;  // old posn of file-last write
     putplanet(planet, star, i);
   }
   return star;

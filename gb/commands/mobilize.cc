@@ -33,11 +33,11 @@ void mobilize(const command_t &argv, GameObj &g) {
     g.out << "scope must be a planet.\n";
     return;
   }
-  if (!control(*Stars[g.snum], Playernum, Governor)) {
+  if (!control(stars[g.snum], Playernum, Governor)) {
     g.out << "You are not authorized to do this here.\n";
     return;
   }
-  if (!enufAP(Playernum, Governor, Stars[g.snum]->AP[Playernum - 1], APcount)) {
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount)) {
     return;
   }
 
@@ -56,6 +56,6 @@ void mobilize(const command_t &argv, GameObj &g) {
     return;
   }
   p.info[Playernum - 1].mob_set = sum_mob;
-  putplanet(p, Stars[g.snum], g.pnum);
+  putplanet(p, stars[g.snum], g.pnum);
   deductAPs(Playernum, Governor, APcount, g.snum, 0);
 }

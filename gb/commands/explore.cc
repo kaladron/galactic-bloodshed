@@ -57,18 +57,18 @@ void explore(const command_t &argv, GameObj &g) {
   notify(Playernum, Governor, buf);
   for (starnum_t star = 0; star < Sdata.numstars; star++)
     if ((starq == -1) || (starq == star)) {
-      getstar(&(Stars[star]), star);
-      if (isset(Stars[star]->explored, Playernum))
-        for (planetnum_t i = 0; i < Stars[star]->numplanets; i++) {
+      stars[star] = getstar(star);
+      if (isset(stars[star].explored, Playernum))
+        for (planetnum_t i = 0; i < stars[star].numplanets; i++) {
           const auto pl = getplanet(star, i);
           if (i == 0) {
             if (race.tech >= TECH_SEE_STABILITY) {
-              sprintf(buf, "\n%13s (%2d)[%2d]\n", Stars[star]->name,
-                      Stars[star]->stability, Stars[star]->AP[Playernum - 1]);
+              sprintf(buf, "\n%13s (%2d)[%2d]\n", stars[star].name,
+                      stars[star].stability, stars[star].AP[Playernum - 1]);
               notify(Playernum, Governor, buf);
             } else {
-              sprintf(buf, "\n%13s (/?/?)[%2d]\n", Stars[star]->name,
-                      Stars[star]->AP[Playernum - 1]);
+              sprintf(buf, "\n%13s (/?/?)[%2d]\n", stars[star].name,
+                      stars[star].AP[Playernum - 1]);
               notify(Playernum, Governor, buf);
             }
           }
@@ -76,7 +76,7 @@ void explore(const command_t &argv, GameObj &g) {
           sprintf(buf, "\t\t      ");
           notify(Playernum, Governor, buf);
 
-          sprintf(buf, "  #%d. %-15s [ ", i + 1, Stars[star]->pnames[i]);
+          sprintf(buf, "  #%d. %-15s [ ", i + 1, stars[star].pnames[i]);
           notify(Playernum, Governor, buf);
           if (pl.info[Playernum - 1].explored) {
             sprintf(buf, "Ex ");

@@ -227,7 +227,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           if (where.level != ScopeLevel::LEVEL_UNIV &&
               ((ship->storbits != where.snum) &&
                where.level != ScopeLevel::LEVEL_STAR) &&
-              isclr(Stars[where.snum]->explored, ship->owner)) {
+              isclr(stars[where.snum].explored, ship->owner)) {
             g.out << "You haven't explored this system.\n";
             return;
           }
@@ -577,7 +577,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           return;
         }
         planet.info[Playernum - 1].resource -= oncost;
-        putplanet(planet, Stars[ship->deststar], (int)ship->destpnum);
+        putplanet(planet, stars[ship->deststar], (int)ship->destpnum);
       }
       sprintf(buf, "Factory activated at a cost of %d resources.\n", oncost);
       notify(Playernum, Governor, buf);
@@ -612,11 +612,10 @@ std::string prin_ship_dest(const Ship &ship) {
  */
 static void mk_expl_aimed_at(int Playernum, int Governor, Ship *s) {
   double dist;
-  Star *str;
   double xf;
   double yf;
 
-  str = Stars[s->special.aimed_at.snum];
+  auto &str = stars[s->special.aimed_at.snum];
 
   xf = s->xpos;
   yf = s->ypos;
@@ -629,14 +628,13 @@ static void mk_expl_aimed_at(int Playernum, int Governor, Ship *s) {
     case ScopeLevel::LEVEL_STAR:
       sprintf(buf, "Star %s ", prin_aimed_at(*s).c_str());
       notify(Playernum, Governor, buf);
-      if ((dist = sqrt(Distsq(xf, yf, str->xpos, str->ypos))) <=
+      if ((dist = sqrt(Distsq(xf, yf, str.xpos, str.ypos))) <=
           tele_range((int)s->type, s->tech)) {
-        getstar(&str, (int)s->special.aimed_at.snum);
-        setbit(str->explored, Playernum);
-        putstar(str, (int)s->special.aimed_at.snum);
+        str = getstar(s->special.aimed_at.snum);
+        setbit(str.explored, Playernum);
+        putstar(str, s->special.aimed_at.snum);
         sprintf(buf, "Surveyed, distance %g.\n", dist);
         notify(Playernum, Governor, buf);
-        free(str);
       } else {
         sprintf(buf, "Too far to see (%g, max %g).\n", dist,
                 tele_range((int)s->type, s->tech));
@@ -647,13 +645,11 @@ static void mk_expl_aimed_at(int Playernum, int Governor, Ship *s) {
       sprintf(buf, "Planet %s ", prin_aimed_at(*s).c_str());
       notify(Playernum, Governor, buf);
       auto p = getplanet(s->special.aimed_at.snum, s->special.aimed_at.pnum);
-      if ((dist =
-               sqrt(Distsq(xf, yf, str->xpos + p.xpos, str->ypos + p.ypos))) <=
+      if ((dist = sqrt(Distsq(xf, yf, str.xpos + p.xpos, str.ypos + p.ypos))) <=
           tele_range((int)s->type, s->tech)) {
-        setbit(str->explored, Playernum);
+        setbit(str.explored, Playernum);
         p.info[Playernum - 1].explored = 1;
-        putplanet(p, Stars[s->special.aimed_at.snum],
-                  (int)s->special.aimed_at.pnum);
+        putplanet(p, stars[s->special.aimed_at.snum], s->special.aimed_at.pnum);
         sprintf(buf, "Surveyed, distance %g.\n", dist);
         notify(Playernum, Governor, buf);
       } else {
@@ -822,8 +818,8 @@ static void DispOrders(int Playernum, int Governor, Ship *ship) {
     double dist;
     double fuse;
 
-    dist = sqrt(Distsq(ship->xpos, ship->ypos, Stars[ship->deststar]->xpos,
-                       Stars[ship->deststar]->ypos));
+    dist = sqrt(Distsq(ship->xpos, ship->ypos, stars[ship->deststar].xpos,
+                       stars[ship->deststar].ypos));
     distfac = HYPER_DIST_FACTOR * (ship->tech + 100.0);
     if (ship->mounted && dist > distfac) {
       fuse = HYPER_DRIVE_FUEL_USE * sqrt(ship->mass) * (dist / distfac);
@@ -904,8 +900,8 @@ void route(const command_t &argv, GameObj &g) {
           strcat(buf, "x");
         else
           strcat(buf, " ");
-        sprintf(temp, "  -> %s/%s\n", Stars[star]->name,
-                Stars[star]->pnames[planet]);
+        sprintf(temp, "  -> %s/%s\n", stars[star].name,
+                stars[star].pnames[planet]);
         strcat(buf, temp);
         notify(Playernum, Governor, buf);
       }
@@ -942,8 +938,8 @@ void route(const command_t &argv, GameObj &g) {
         if (Resources(unload)) strcat(buf, "r");
         if (Crystals(unload)) strcat(buf, "x");
       }
-      sprintf(temp, "  ->  %s/%s\n", Stars[star]->name,
-              Stars[star]->pnames[planet]);
+      sprintf(temp, "  ->  %s/%s\n", stars[star].name,
+              stars[star].pnames[planet]);
       strcat(buf, temp);
       notify(Playernum, Governor, buf);
     }
@@ -1015,5 +1011,5 @@ void route(const command_t &argv, GameObj &g) {
     }
     g.out << "Set.\n";
   }
-  putplanet(p, Stars[g.snum], g.pnum);
+  putplanet(p, stars[g.snum], g.pnum);
 }

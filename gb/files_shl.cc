@@ -309,15 +309,11 @@ Race getrace(player_t rnum) {
   return r;
 }
 
-void Sql::getstar(Star **s, int star) { ::getstar(s, star); }
-void getstar(Star **s, int star) {
-  if (s >= &Stars[0] && s < &Stars[NUMSTARS])
-    ; /* Do nothing */
-  else {
-    *s = (Star *)malloc(sizeof(Star));
-  }
-  memset(*s, 0, sizeof(Star));
-  Fileread(stdata, (char *)*s, sizeof(Star),
+Star Sql::getstar(const starnum_t star) { return ::getstar(star); }
+Star getstar(const starnum_t star) {
+  Star s;
+
+  Fileread(stdata, (char *)&s, sizeof(Star),
            (int)(sizeof(Sdata) + star * sizeof(Star)));
   const char *tail;
 
@@ -331,16 +327,16 @@ void getstar(Star **s, int star) {
 
     sqlite3_bind_int(stmt, 1, star);
     sqlite3_step(stmt);
-    (*s)->ships = static_cast<short>(sqlite3_column_int(stmt, 0));
-    strcpy((*s)->name,
+    s.ships = static_cast<short>(sqlite3_column_int(stmt, 0));
+    strcpy(s.name,
            reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1)));
-    (*s)->xpos = sqlite3_column_double(stmt, 2);
-    (*s)->ypos = sqlite3_column_double(stmt, 3);
-    (*s)->numplanets = static_cast<short>(sqlite3_column_int(stmt, 4));
-    (*s)->stability = static_cast<short>(sqlite3_column_int(stmt, 5));
-    (*s)->nova_stage = static_cast<short>(sqlite3_column_int(stmt, 6));
-    (*s)->temperature = static_cast<short>(sqlite3_column_int(stmt, 7));
-    (*s)->gravity = sqlite3_column_double(stmt, 8);
+    s.xpos = sqlite3_column_double(stmt, 2);
+    s.ypos = sqlite3_column_double(stmt, 3);
+    s.numplanets = static_cast<short>(sqlite3_column_int(stmt, 4));
+    s.stability = static_cast<short>(sqlite3_column_int(stmt, 5));
+    s.nova_stage = static_cast<short>(sqlite3_column_int(stmt, 6));
+    s.temperature = static_cast<short>(sqlite3_column_int(stmt, 7));
+    s.gravity = sqlite3_column_double(stmt, 8);
 
     sqlite3_clear_bindings(stmt);
     sqlite3_reset(stmt);
@@ -356,12 +352,14 @@ void getstar(Star **s, int star) {
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
       player_t p = sqlite3_column_int(stmt, 0);
-      (*s)->governor[p - 1] = sqlite3_column_int(stmt, 1);
+      s.governor[p - 1] = sqlite3_column_int(stmt, 1);
     }
 
     sqlite3_clear_bindings(stmt);
     sqlite3_reset(stmt);
   }
+
+  return s;
 }
 
 Planet Sql::getplanet(const starnum_t star, const planetnum_t pnum) {
@@ -853,9 +851,9 @@ void putrace(const Race &r) {
             (r.Playernum - 1) * sizeof(Race));
 }
 
-void Sql::putstar(Star *s, starnum_t snum) { ::putstar(s, snum); }
-void putstar(Star *s, starnum_t snum) {
-  Filewrite(stdata, (char *)s, sizeof(Star),
+void Sql::putstar(const Star &s, starnum_t snum) { ::putstar(s, snum); }
+void putstar(const Star &s, starnum_t snum) {
+  Filewrite(stdata, (const char *)&s, sizeof(Star),
             (int)(sizeof(Sdata) + snum * sizeof(Star)));
 
   start_bulk_insert();
@@ -871,15 +869,15 @@ void putstar(Star *s, starnum_t snum) {
     sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
     sqlite3_bind_int(stmt, 1, snum);
-    sqlite3_bind_int(stmt, 2, s->ships);
-    sqlite3_bind_text(stmt, 3, s->name, -1, SQLITE_TRANSIENT);
-    sqlite3_bind_double(stmt, 4, s->xpos);
-    sqlite3_bind_double(stmt, 5, s->ypos);
-    sqlite3_bind_int(stmt, 6, s->numplanets);
-    sqlite3_bind_int(stmt, 7, s->stability);
-    sqlite3_bind_int(stmt, 8, s->nova_stage);
-    sqlite3_bind_int(stmt, 9, s->temperature);
-    sqlite3_bind_double(stmt, 10, s->gravity);
+    sqlite3_bind_int(stmt, 2, s.ships);
+    sqlite3_bind_text(stmt, 3, s.name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_double(stmt, 4, s.xpos);
+    sqlite3_bind_double(stmt, 5, s.ypos);
+    sqlite3_bind_int(stmt, 6, s.numplanets);
+    sqlite3_bind_int(stmt, 7, s.stability);
+    sqlite3_bind_int(stmt, 8, s.nova_stage);
+    sqlite3_bind_int(stmt, 9, s.temperature);
+    sqlite3_bind_double(stmt, 10, s.gravity);
 
     sqlite3_step(stmt);
 
@@ -897,7 +895,7 @@ void putstar(Star *s, starnum_t snum) {
     for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, s->governor[i - 1]);
+      sqlite3_bind_int(stmt, 3, s.governor[i - 1]);
 
       sqlite3_step(stmt);
 
@@ -916,7 +914,7 @@ void putstar(Star *s, starnum_t snum) {
     for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, s->AP[i - 1]);
+      sqlite3_bind_int(stmt, 3, s.AP[i - 1]);
 
       sqlite3_step(stmt);
 
@@ -935,7 +933,7 @@ void putstar(Star *s, starnum_t snum) {
     for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, isset(s->explored, i - 1) ? 1 : 0);
+      sqlite3_bind_int(stmt, 3, isset(s.explored, i - 1) ? 1 : 0);
 
       sqlite3_step(stmt);
 
@@ -954,7 +952,7 @@ void putstar(Star *s, starnum_t snum) {
     for (player_t i = 1; i <= MAXPLAYERS; i++) {
       sqlite3_bind_int(stmt, 1, snum);
       sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, isset(s->inhabited, i - 1) ? 1 : 0);
+      sqlite3_bind_int(stmt, 3, isset(s.inhabited, i - 1) ? 1 : 0);
 
       sqlite3_step(stmt);
 
@@ -975,10 +973,10 @@ static void end_bulk_insert() {
   sqlite3_exec(dbconn, "END TRANSACTION", nullptr, nullptr, &err_msg);
 }
 
-void Sql::putplanet(const Planet &p, Star *star, const int pnum) {
+void Sql::putplanet(const Planet &p, const Star &star, const int pnum) {
   ::putplanet(p, star, pnum);
 }
-void putplanet(const Planet &p, Star *star, const int pnum) {
+void putplanet(const Planet &p, const Star &star, const int pnum) {
   start_bulk_insert();
 
   const char *tail = nullptr;
@@ -1024,9 +1022,9 @@ void putplanet(const Planet &p, Star *star, const int pnum) {
                      &plinfo_route_tail);
 
   sqlite3_bind_int(stmt, 1, p.planet_id);
-  sqlite3_bind_int(stmt, 2, star->star_id);
+  sqlite3_bind_int(stmt, 2, star.star_id);
   sqlite3_bind_int(stmt, 3, pnum);
-  sqlite3_bind_text(stmt, 4, star->pnames[pnum], strlen(star->pnames[pnum]),
+  sqlite3_bind_text(stmt, 4, star.pnames[pnum], strlen(star.pnames[pnum]),
                     SQLITE_TRANSIENT);
   sqlite3_bind_double(stmt, 5, p.xpos);
   sqlite3_bind_double(stmt, 6, p.ypos);

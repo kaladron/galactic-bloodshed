@@ -44,7 +44,7 @@ void map(const command_t &argv, GameObj &g) {
     case ScopeLevel::LEVEL_PLAN: {
       const auto p = getplanet(where->snum, where->pnum);
       show_map(Playernum, Governor, where->snum, where->pnum, p);
-      if (Stars[where->snum]->stability > 50)
+      if (stars[where->snum].stability > 50)
         g.out << "WARNING! This planet's primary is unstable.\n";
     } break;
     default:
@@ -83,7 +83,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   /* report that this is a planet map */
   output << '$';
 
-  sprintf(buf, "%s;", Stars[snum]->pnames[pnum]);
+  sprintf(buf, "%s;", stars[snum].pnames[pnum]);
   output << buf;
 
   sprintf(buf, "%d;%d;%d;", p.Maxx, p.Maxy, show);

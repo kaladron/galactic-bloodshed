@@ -84,7 +84,7 @@ void repair(const command_t &argv, GameObj &g) {
       }
     }
   }
-  putplanet(p, Stars[where->snum], where->pnum);
+  putplanet(p, stars[where->snum], where->pnum);
 
   g.out << fmt::format("{0} sectors repaired at a cost of {1} resources.\n",
                        sectors, cost);

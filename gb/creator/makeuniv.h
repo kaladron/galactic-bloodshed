@@ -7,7 +7,7 @@
 
 #include "gb/vars.h"
 
-void place_star(Star *);
+void place_star(Star &);
 
 extern int autoname_plan;
 extern int autoname_star;

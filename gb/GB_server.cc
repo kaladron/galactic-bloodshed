@@ -358,14 +358,14 @@ std::string do_prompt(GameObj &g) {
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << fmt::format(" ( [[{0}] {1}s )\n",
-                            Stars[g.snum]->AP[Playernum - 1],
-                            Stars[g.snum]->name);
+                            stars[g.snum].AP[Playernum - 1],
+                            stars[g.snum].name);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << fmt::format(" ( [{0}] /{1}/{2} )\n",
-                            Stars[g.snum]->AP[Playernum - 1],
-                            Stars[g.snum]->name, Stars[g.snum]->pnames[g.pnum]);
+                            stars[g.snum].AP[Playernum - 1], stars[g.snum].name,
+                            stars[g.snum].pnames[g.pnum]);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
@@ -381,15 +381,14 @@ std::string do_prompt(GameObj &g) {
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << fmt::format(" ( [{0}] /{1}/#{2} )\n",
-                            Stars[s->storbits]->AP[Playernum - 1],
-                            Stars[s->storbits]->name, g.shipno);
+                            stars[s->storbits].AP[Playernum - 1],
+                            stars[s->storbits].name, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
-      prompt << fmt::format(" ( [{0}] /{1}/{2}/#{3} )\n",
-                            Stars[s->storbits]->AP[Playernum - 1],
-                            Stars[s->storbits]->name,
-                            Stars[s->storbits]->pnames[g.pnum], g.shipno);
+      prompt << fmt::format(
+          " ( [{0}] /{1}/{2}/#{3} )\n", stars[s->storbits].AP[Playernum - 1],
+          stars[s->storbits].name, stars[s->storbits].pnames[g.pnum], g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
@@ -409,15 +408,15 @@ std::string do_prompt(GameObj &g) {
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << fmt::format(" ( [{0}] /{1}/#{2}/#{3} )\n",
-                            Stars[s->storbits]->AP[Playernum - 1],
-                            Stars[s->storbits]->name, s->destshipno, g.shipno);
+                            stars[s->storbits].AP[Playernum - 1],
+                            stars[s->storbits].name, s->destshipno, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << fmt::format(
           " ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
-          Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
-          Stars[s->storbits]->pnames[g.pnum], s->destshipno, g.shipno);
+          stars[s->storbits].AP[Playernum - 1], stars[s->storbits].name,
+          stars[s->storbits].pnames[g.pnum], s->destshipno, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
@@ -435,15 +434,15 @@ std::string do_prompt(GameObj &g) {
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << fmt::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
-                            Stars[s->storbits]->AP[Playernum - 1],
-                            Stars[s->storbits]->name, s->destshipno, g.shipno);
+                            stars[s->storbits].AP[Playernum - 1],
+                            stars[s->storbits].name, s->destshipno, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << fmt::format(
           " ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
-          Stars[s->storbits]->AP[Playernum - 1], Stars[s->storbits]->name,
-          Stars[s->storbits]->pnames[g.pnum], s->destshipno, g.shipno);
+          stars[s->storbits].AP[Playernum - 1], stars[s->storbits].name,
+          stars[s->storbits].pnames[g.pnum], s->destshipno, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
@@ -610,7 +609,7 @@ void d_announce(const player_t Playernum, const governor_t Governor,
                 const starnum_t star, const std::string &message) {
   for (auto &d : descriptor_list) {
     if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
-        (isset(Stars[star]->inhabited, d.player) || races[d.player - 1].God) &&
+        (isset(stars[star].inhabited, d.player) || races[d.player - 1].God) &&
         d.snum == star &&
         !races[d.player - 1].governor[d.governor].toggle.gag) {
       queue_string(d, message);
@@ -1269,7 +1268,7 @@ static void dump_users(DescriptorData &e) {
         sprintf(temp, "\"%s\"", r.governor[d.governor].name);
         sprintf(buf, "%20.20s %20.20s [%2d,%2d] %4lds idle %-4.4s %s %s\n",
                 r.name, temp, d.player, d.governor, now - d.last_time,
-                God ? Stars[d.snum]->name : "    ",
+                God ? stars[d.snum].name : "    ",
                 (r.governor[d.governor].toggle.gag ? "GAG" : "   "),
                 (r.governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, buf);
@@ -1312,7 +1311,6 @@ static void process_command(GameObj &g, const command_t &argv) {
   g.out << do_prompt(g);
 }
 
-// XXX
 static void load_race_data(Db &db) {
   Num_races = db.Numraces();
   races.reserve(Num_races);
@@ -1326,26 +1324,22 @@ static void load_race_data(Db &db) {
   }
 }
 
+/**
+ * get star database
+ */
 static void load_star_data() {
-  int s;
-  int t;
-  Star *star_arena;
-  int pcount = 0;
-
-  /* get star database */
   Planet_count = 0;
   getsdata(&Sdata);
-  star_arena = (Star *)malloc(Sdata.numstars * sizeof(Star));
-  for (s = 0; s < Sdata.numstars; s++) {
-    Stars[s] = &star_arena[s]; /* Initialize star pointers */
-  }
-  for (s = 0; s < Sdata.numstars; s++) {
-    getstar(&(Stars[s]), s);
-    pcount += Stars[s]->numplanets;
+
+  stars.reserve(Sdata.numstars);
+  for (auto i = 0; i < Sdata.numstars; i++) {
+    auto s = getstar(i);
+    stars.push_back(s);
   }
 
-  for (s = 0; s < Sdata.numstars; s++) {
-    for (t = 0; t < Stars[s]->numplanets; t++) {
+  // TODO(jeffbailey): Convert this to be a range-based for loop.
+  for (int s = 0; s < Sdata.numstars; s++) {
+    for (int t = 0; t < stars[s].numplanets; t++) {
       planets[s][t] = std::make_unique<Planet>(getplanet(s, t));
       if (planets[s][t]->type != PlanetType::ASTEROID) Planet_count++;
     }
@@ -1458,7 +1452,7 @@ void kill_ship(int Playernum, Ship *ship) {
     auto planet = getplanet(ship->storbits, ship->pnumorbits);
     planet.conditions[TOXIC] =
         MIN(100, planet.conditions[TOXIC] + ship->special.waste.toxic);
-    putplanet(planet, Stars[ship->storbits], ship->pnumorbits);
+    putplanet(planet, stars[ship->storbits], ship->pnumorbits);
   }
 
   /* undock the stuff docked with it */
@@ -1516,9 +1510,9 @@ void insert_sh_univ(struct stardata *sdata, Ship *s) {
   s->whatorbits = ScopeLevel::LEVEL_UNIV;
 }
 
-void insert_sh_star(Star *star, Ship *s) {
-  s->nextship = star->ships;
-  star->ships = s->number;
+void insert_sh_star(Star &star, Ship *s) {
+  s->nextship = star.ships;
+  star.ships = s->number;
   s->whatorbits = ScopeLevel::LEVEL_STAR;
 }
 
@@ -1541,14 +1535,14 @@ void insert_sh_ship(Ship *s, Ship *s2) {
  * \arg s Ship to remove
  */
 void remove_sh_star(Ship &s) {
-  getstar(&Stars[s.storbits], s.storbits);
-  shipnum_t sh = Stars[s.storbits]->ships;
+  stars[s.storbits] = getstar(s.storbits);
+  shipnum_t sh = stars[s.storbits].ships;
 
   // If the ship is the first of the chain, point the star to the
   // next, which is zero if there are no other ships.
   if (sh == s.number) {
-    Stars[s.storbits]->ships = s.nextship;
-    putstar(Stars[s.storbits], s.storbits);
+    stars[s.storbits].ships = s.nextship;
+    putstar(stars[s.storbits], s.storbits);
   } else {
     Shiplist shiplist(sh);
     for (auto s2 : shiplist) {
@@ -1577,7 +1571,7 @@ void remove_sh_plan(Ship &s) {
   // next, which is zero if there are no other ships.
   if (sh == s.number) {
     host.ships = s.nextship;
-    putplanet(host, Stars[s.storbits], s.pnumorbits);
+    putplanet(host, stars[s.storbits], s.pnumorbits);
   } else {
     Shiplist shiplist(sh);
     for (auto s2 : shiplist) {
@@ -1675,14 +1669,14 @@ void warn(const player_t who, const governor_t governor,
 void warn_star(const player_t a, const starnum_t star,
                const std::string &message) {
   for (int i = 1; i <= Num_races; i++)
-    if (i != a && isset(Stars[star]->inhabited, i)) warn_race(i, message);
+    if (i != a && isset(stars[star].inhabited, i)) warn_race(i, message);
 }
 
 void notify_star(const player_t a, const governor_t g, const starnum_t star,
                  const std::string &message) {
   for (auto &d : descriptor_list)
     if (d.connected && (d.player != a || d.governor != g) &&
-        isset(Stars[star]->inhabited, d.player)) {
+        isset(stars[star].inhabited, d.player)) {
       queue_string(d, message);
     }
 }

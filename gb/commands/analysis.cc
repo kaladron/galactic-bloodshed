@@ -102,8 +102,7 @@ void analysis(const command_t &argv, GameObj &g) {
         do_analysis(g, do_player, mode, sector_type, where->snum, where->pnum);
         break;
       case ScopeLevel::LEVEL_STAR:
-        for (planetnum_t pnum = 0; pnum < Stars[where->snum]->numplanets;
-             pnum++)
+        for (planetnum_t pnum = 0; pnum < stars[where->snum].numplanets; pnum++)
           do_analysis(g, do_player, mode, sector_type, where->snum, pnum);
         break;
     }
@@ -217,8 +216,8 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
     }
   }
 
-  sprintf(buf, "\nAnalysis of /%s/%s:\n", Stars[Starnum]->name,
-          Stars[Starnum]->pnames[Planetnum]);
+  sprintf(buf, "\nAnalysis of /%s/%s:\n", stars[Starnum].name,
+          stars[Starnum].pnames[Planetnum]);
   notify(Playernum, Governor, buf);
   sprintf(buf, "%s %d", (mode ? "Highest" : "Lowest"), CARE);
   switch (sector_type) {

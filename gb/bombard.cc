@@ -95,18 +95,17 @@ int bombard(Ship *ship, Planet *planet, Race &r) {
 
       /* notify other player. */
       sprintf(telegram_buf, "ALERT from planet /%s/%s\n",
-              Stars[ship->storbits]->name,
-              Stars[ship->storbits]->pnames[ship->pnumorbits]);
+              stars[ship->storbits].name,
+              stars[ship->storbits].pnames[ship->pnumorbits]);
       sprintf(buf, "%c%lu%s bombarded sector %d,%d; %d sectors destroyed.\n",
               Shipltrs[ship->type], ship->number, ship->name, x, y, numdest);
       strcat(telegram_buf, buf);
       sprintf(buf, "%c%lu %s [%d] bombards %s/%s\n", Shipltrs[ship->type],
-              ship->number, ship->name, ship->owner,
-              Stars[ship->storbits]->name,
-              Stars[ship->storbits]->pnames[ship->pnumorbits]);
+              ship->number, ship->name, ship->owner, stars[ship->storbits].name,
+              stars[ship->storbits].pnames[ship->pnumorbits]);
       for (player_t i = 1; i <= Num_races; i++)
         if (Nuked[i - 1] && i != ship->owner)
-          warn(i, Stars[ship->storbits]->governor[i - 1], telegram_buf);
+          warn(i, stars[ship->storbits].governor[i - 1], telegram_buf);
       post(buf, COMBAT);
 
       /* enemy planet retaliates along with defending forces */
@@ -130,8 +129,8 @@ int bombard(Ship *ship, Planet *planet, Race &r) {
       sprintf(telegram_buf, "Report from %c%lu %s\n\n", Shipltrs[ship->type],
               ship->number, ship->name);
       sprintf(buf, "Planet /%s/%s has been saturation bombed.\n",
-              Stars[ship->storbits]->name,
-              Stars[ship->storbits]->pnames[ship->pnumorbits]);
+              stars[ship->storbits].name,
+              stars[ship->storbits].pnames[ship->pnumorbits]);
       strcat(telegram_buf, buf);
       notify(ship->owner, ship->governor, telegram_buf);
     }

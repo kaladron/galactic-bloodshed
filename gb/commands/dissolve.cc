@@ -79,9 +79,9 @@ void dissolve(const command_t &argv, GameObj &g) {
 
   getsdata(&Sdata);
   for (auto z = 0; z < Sdata.numstars; z++) {
-    getstar(&(Stars[z]), z);
-    if (isset(Stars[z]->explored, Playernum)) {
-      for (auto i = 0; i < Stars[z]->numplanets; i++) {
+    stars[z] = getstar(z);
+    if (isset(stars[z].explored, Playernum)) {
+      for (auto i = 0; i < stars[z].numplanets; i++) {
         auto pl = getplanet(z, i);
 
         if (pl.info[Playernum - 1].explored &&
@@ -109,8 +109,8 @@ void dissolve(const command_t &argv, GameObj &g) {
           }
         }
         putsmap(smap, pl);
-        putstar(Stars[z], z);
-        putplanet(pl, Stars[z], i);
+        putstar(stars[z], z);
+        putplanet(pl, stars[z], i);
       }
     }
   }

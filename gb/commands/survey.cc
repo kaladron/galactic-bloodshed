@@ -127,8 +127,8 @@ void survey(const command_t &argv, GameObj &g) {
         if (all) {
           sprintf(buf, "%c %d %d %d %s %s %lu %d %d %ld %ld %d %.2f %d\n",
                   CSP_CLIENT, CSP_SURVEY_INTRO, p.Maxx, p.Maxy,
-                  Stars[where->snum]->name,
-                  Stars[where->snum]->pnames[where->pnum],
+                  stars[where->snum].name,
+                  stars[where->snum].pnames[where->pnum],
                   p.info[Playernum - 1].resource, p.info[Playernum - 1].fuel,
                   p.info[Playernum - 1].destruct, p.popn, p.maxpopn,
                   p.conditions[TOXIC], p.compatibility(race), p.slaved_to);
@@ -241,14 +241,14 @@ void survey(const command_t &argv, GameObj &g) {
       }
     } else {
       /* survey of planet */
-      sprintf(buf, "%s:\n", Stars[where->snum]->pnames[where->pnum]);
+      sprintf(buf, "%s:\n", stars[where->snum].pnames[where->pnum]);
       notify(Playernum, Governor, buf);
       sprintf(buf, "gravity   x,y absolute     x,y relative to %s\n",
-              Stars[where->snum]->name);
+              stars[where->snum].name);
       notify(Playernum, Governor, buf);
       sprintf(buf, "%7.2f   %7.1f,%7.1f   %8.1f,%8.1f\n", p.gravity(),
-              p.xpos + Stars[where->snum]->xpos,
-              p.ypos + Stars[where->snum]->ypos, p.xpos, p.ypos);
+              p.xpos + stars[where->snum].xpos,
+              p.ypos + stars[where->snum].ypos, p.xpos, p.ypos);
       notify(Playernum, Governor, buf);
       g.out << "======== Planetary conditions: ========\n";
       g.out << "atmosphere concentrations:\n";
@@ -320,29 +320,29 @@ void survey(const command_t &argv, GameObj &g) {
       }
     }
   } else if (where->level == ScopeLevel::LEVEL_STAR) {
-    sprintf(buf, "Star %s\n", Stars[where->snum]->name);
+    sprintf(buf, "Star %s\n", stars[where->snum].name);
     notify(Playernum, Governor, buf);
-    sprintf(buf, "locn: %f,%f\n", Stars[where->snum]->xpos,
-            Stars[where->snum]->ypos);
+    sprintf(buf, "locn: %f,%f\n", stars[where->snum].xpos,
+            stars[where->snum].ypos);
     notify(Playernum, Governor, buf);
     if (race.God) {
-      for (i = 0; i < Stars[where->snum]->numplanets; i++) {
-        sprintf(buf, " \"%s\"\n", Stars[where->snum]->pnames[i]);
+      for (i = 0; i < stars[where->snum].numplanets; i++) {
+        sprintf(buf, " \"%s\"\n", stars[where->snum].pnames[i]);
         notify(Playernum, Governor, buf);
       }
     }
-    sprintf(buf, "Gravity: %.2f\tInstability: ", Stars[where->snum]->gravity);
+    sprintf(buf, "Gravity: %.2f\tInstability: ", stars[where->snum].gravity);
     notify(Playernum, Governor, buf);
 
     if (race.tech >= TECH_SEE_STABILITY || race.God) {
-      sprintf(buf, "%d%% (%s)\n", Stars[where->snum]->stability,
-              Stars[where->snum]->stability < 20
+      sprintf(buf, "%d%% (%s)\n", stars[where->snum].stability,
+              stars[where->snum].stability < 20
                   ? "stable"
-                  : Stars[where->snum]->stability < 40
+                  : stars[where->snum].stability < 40
                         ? "unstable"
-                        : Stars[where->snum]->stability < 60
+                        : stars[where->snum].stability < 60
                               ? "dangerous"
-                              : Stars[where->snum]->stability < 100
+                              : stars[where->snum].stability < 100
                                     ? "WARNING! Nova iminent!"
                                     : "undergoing nova");
       notify(Playernum, Governor, buf);
@@ -351,12 +351,12 @@ void survey(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, buf);
     }
     sprintf(buf, "temperature class (1->10) %d\n",
-            Stars[where->snum]->temperature);
+            stars[where->snum].temperature);
     notify(Playernum, Governor, buf);
-    sprintf(buf, "%d planets are ", Stars[where->snum]->numplanets);
+    sprintf(buf, "%d planets are ", stars[where->snum].numplanets);
     notify(Playernum, Governor, buf);
-    for (x2 = 0; x2 < Stars[where->snum]->numplanets; x2++) {
-      sprintf(buf, "%s ", Stars[where->snum]->pnames[x2]);
+    for (x2 = 0; x2 < stars[where->snum].numplanets; x2++) {
+      sprintf(buf, "%s ", stars[where->snum].pnames[x2]);
       notify(Playernum, Governor, buf);
     }
     sprintf(buf, "\n");

@@ -34,13 +34,13 @@ void toxicity(const command_t &argv, GameObj &g) {
     g.out << "scope must be a planet.\n";
     return;
   }
-  if (!enufAP(g.player, g.governor, Stars[g.snum]->AP[g.player - 1], APcount)) {
+  if (!enufAP(g.player, g.governor, stars[g.snum].AP[g.player - 1], APcount)) {
     return;
   }
 
   auto p = getplanet(g.snum, g.pnum);
   p.info[g.player - 1].tox_thresh = thresh;
-  putplanet(p, Stars[g.snum], g.pnum);
+  putplanet(p, stars[g.snum], g.pnum);
   deductAPs(g.player, g.governor, APcount, g.snum, 0);
 
   g.out << " New threshold is: " << p.info[g.player - 1].tox_thresh

@@ -224,8 +224,8 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
     Sector &p = sector_wrap;
     if (p.owner && (p.popn || p.troops)) {
       allmod = 1;
-      if (!Stars[starnum]->nova_stage) {
-        produce(Stars[starnum], planet, p);
+      if (!stars[starnum].nova_stage) {
+        produce(stars[starnum], planet, p);
         if (p.owner)
           planet.info[p.owner - 1].est_production += est_production(p);
         spread(planet, p, smap);
@@ -233,7 +233,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         /* damage sector from supernova */
         p.resource++;
         p.fert *= 0.8;
-        if (Stars[starnum]->nova_stage == 14)
+        if (stars[starnum].nova_stage == 14)
           p.popn = p.owner = p.troops = 0;
         else
           p.popn = round_rand((double)p.popn * .50);
@@ -263,7 +263,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         }
     */
     /*
-        if (Stars[starnum]->nova_stage) {
+        if (stars[starnum].nova_stage) {
             if (p->des==DES_ICE)
                 if(random()&01)
                     p->des = DES_LAND;
@@ -288,7 +288,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
   }
 
   if (planet.expltimer >= 1) planet.expltimer--;
-  if (!Stars[starnum]->nova_stage && !planet.expltimer) {
+  if (!stars[starnum].nova_stage && !planet.expltimer) {
     if (!planet.expltimer) planet.expltimer = 5;
     for (i = 1; !Claims && !allexp && i <= Num_races; i++) {
       /* sectors have been modified for this player*/
@@ -332,11 +332,11 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
   for (i = 1; i <= Num_races; i++)
     if (sects_gained[i - 1] || sects_lost[i - 1]) {
       sprintf(telegram_buf, "****** Report: Planet /%s/%s ******\n",
-              Stars[starnum]->name, Stars[starnum]->pnames[planetnum]);
+              stars[starnum].name, stars[starnum].pnames[planetnum]);
       sprintf(buf, " WAR STATUS: %d sectors gained, %d sectors lost.\n",
               sects_gained[i - 1], sects_lost[i - 1]);
       strcat(telegram_buf, buf);
-      push_telegram(i, (int)Stars[starnum]->governor[i - 1], telegram_buf);
+      push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
     }
   for (i = 1; i <= Num_races; i++) {
     planet.info[i - 1].prod_crystals = prod_crystals[i - 1];
@@ -345,8 +345,8 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
     planet.info[i - 1].prod_dest = prod_destruct[i - 1];
     if (planet.info[i - 1].autorep) {
       planet.info[i - 1].autorep--;
-      sprintf(telegram_buf, "\nFrom /%s/%s\n", Stars[starnum]->name,
-              Stars[starnum]->pnames[planetnum]);
+      sprintf(telegram_buf, "\nFrom /%s/%s\n", stars[starnum].name,
+              stars[starnum].pnames[planetnum]);
 
       if (Stinfo[starnum][planetnum].temp_add) {
         sprintf(buf, "Temp: %d to %d\n", planet.conditions[RTEMP],
@@ -364,9 +364,9 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         sprintf(buf, "%ld sectors captured\n", tot_captured);
         strcat(telegram_buf, buf);
       }
-      if (Stars[starnum]->nova_stage) {
+      if (stars[starnum].nova_stage) {
         sprintf(buf, "This planet's primary is in a Stage %d nova.\n",
-                Stars[starnum]->nova_stage);
+                stars[starnum].nova_stage);
         strcat(telegram_buf, buf);
       }
       /* remind the player that he should clean up the environment. */
@@ -378,15 +378,15 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         sprintf(buf, "ENSLAVED to player %d\n", planet.slaved_to);
         strcat(telegram_buf, buf);
       }
-      push_telegram(i, Stars[starnum]->governor[i - 1], telegram_buf);
+      push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
     }
   }
 
   /* find out who is on this planet, for nova notification */
-  if (Stars[starnum]->nova_stage == 1) {
-    sprintf(telegram_buf, "BULLETIN from /%s/%s\n", Stars[starnum]->name,
-            Stars[starnum]->pnames[planetnum]);
-    sprintf(buf, "\nStar %s is undergoing nova.\n", Stars[starnum]->name);
+  if (stars[starnum].nova_stage == 1) {
+    sprintf(telegram_buf, "BULLETIN from /%s/%s\n", stars[starnum].name,
+            stars[starnum].pnames[planetnum]);
+    sprintf(buf, "\nStar %s is undergoing nova.\n", stars[starnum].name);
     strcat(telegram_buf, buf);
     if (planet.type == PlanetType::EARTH || planet.type == PlanetType::WATER ||
         planet.type == PlanetType::FOREST) {
@@ -397,7 +397,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
     strcat(telegram_buf, buf);
     for (i = 1; i <= Num_races; i++)
       if (planet.info[i - 1].numsectsowned)
-        push_telegram(i, Stars[starnum]->governor[i - 1], telegram_buf);
+        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
   }
 
   do_recover(&planet, starnum, planetnum);
@@ -474,7 +474,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         /* also add up the populations while here */
       }
       sprintf(telegram_buf, "\nThere has been a SLAVE REVOLT on /%s/%s!\n",
-              Stars[starnum]->name, Stars[starnum]->pnames[planetnum]);
+              stars[starnum].name, stars[starnum].pnames[planetnum]);
       strcat(telegram_buf, buf);
       sprintf(buf,
               "All population belonging to player #%d on the planet have "
@@ -485,7 +485,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
       strcat(telegram_buf, buf);
       for (i = 1; i <= Num_races; i++)
         if (planet.info[i - 1].numsectsowned)
-          push_telegram(i, (int)Stars[starnum]->governor[i - 1], telegram_buf);
+          push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
       planet.slaved_to = 0;
     }
   }
@@ -503,26 +503,26 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         planet.info[i - 1].prod_money =
             round_rand(INCOME_FACTOR * (double)planet.info[i - 1].tax *
                        (double)planet.info[i - 1].popn);
-        races[i - 1].governor[Stars[starnum]->governor[i - 1]].money +=
+        races[i - 1].governor[stars[starnum].governor[i - 1]].money +=
             planet.info[i - 1].prod_money;
         planet.info[i - 1].tax += std::min(
             (int)planet.info[i - 1].newtax - (int)planet.info[i - 1].tax, 5);
       } else
         planet.info[i - 1].prod_money = 0;
-      races[i - 1].governor[Stars[starnum]->governor[i - 1]].income +=
+      races[i - 1].governor[stars[starnum].governor[i - 1]].income +=
           planet.info[i - 1].prod_money;
 
       /* do tech investments */
       if (races[i - 1].Gov_ship) {
-        if (races[i - 1].governor[Stars[starnum]->governor[i - 1]].money >=
+        if (races[i - 1].governor[stars[starnum].governor[i - 1]].money >=
             planet.info[i - 1].tech_invest) {
           planet.info[i - 1].prod_tech =
               tech_prod((int)(planet.info[i - 1].tech_invest),
                         (int)(planet.info[i - 1].popn));
-          races[i - 1].governor[Stars[starnum]->governor[i - 1]].money -=
+          races[i - 1].governor[stars[starnum].governor[i - 1]].money -=
               planet.info[i - 1].tech_invest;
           races[i - 1].tech += planet.info[i - 1].prod_tech;
-          races[i - 1].governor[Stars[starnum]->governor[i - 1]].cost_tech +=
+          races[i - 1].governor[stars[starnum].governor[i - 1]].cost_tech +=
               planet.info[i - 1].tech_invest;
         } else
           planet.info[i - 1].prod_tech = 0;
@@ -569,15 +569,15 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         s2->storbits = starnum;
         s2->pnumorbits = planetnum;
         s2->docked = 1;
-        s2->xpos = Stars[starnum]->xpos + planet.xpos;
-        s2->ypos = Stars[starnum]->ypos + planet.ypos;
+        s2->xpos = stars[starnum].xpos + planet.xpos;
+        s2->ypos = stars[starnum].ypos + planet.ypos;
         s2->land_x = int_rand(0, (int)planet.Maxx - 1);
         s2->land_y = int_rand(0, (int)planet.Maxy - 1);
         s2->whatdest = ScopeLevel::LEVEL_PLAN;
         s2->deststar = starnum;
         s2->destpnum = planetnum;
         s2->owner = i;
-        s2->governor = Stars[starnum]->governor[i - 1];
+        s2->governor = stars[starnum].governor[i - 1];
         t = std::min(TOXMAX, planet.conditions[TOXIC]); /* amt of tox */
         planet.conditions[TOXIC] -= t;
         s2->special.waste.toxic = t;
@@ -755,7 +755,7 @@ static void do_berserker(Ship *ship, Planet *planet) {
       ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
       ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {
     if (!bombard(ship, planet, races[ship->owner - 1]))
-      ship->destpnum = int_rand(0, Stars[ship->storbits]->numplanets - 1);
+      ship->destpnum = int_rand(0, stars[ship->storbits].numplanets - 1);
     else if (Sdata.VN_hitlist[ship->special.mind.who_killed - 1] > 0)
       --Sdata.VN_hitlist[ship->special.mind.who_killed - 1];
   }
@@ -807,11 +807,11 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
     for (i = 1; i <= Num_races; i++)
       if (isset(ownerbits, i)) {
         sprintf(telegram_buf, "Recovery Report: Planet /%s/%s\n",
-                Stars[starnum]->name, Stars[starnum]->pnames[planetnum]);
-        push_telegram(i, (int)Stars[starnum]->governor[i - 1], telegram_buf);
+                stars[starnum].name, stars[starnum].pnames[planetnum]);
+        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
         sprintf(telegram_buf, "%-14.14s %5s %5s %5s %5s\n", "", "res", "destr",
                 "fuel", "xtal");
-        push_telegram(i, (int)Stars[starnum]->governor[i - 1], telegram_buf);
+        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
       }
     /* First: give the loot the the conquerers */
     for (i = 1; i <= Num_races && owners > 1; i++)
@@ -843,8 +843,7 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
                 res, des, fuel, crystals);
         for (j = 1; j <= Num_races; j++)
           if (isset(ownerbits, j))
-            push_telegram(j, (int)Stars[starnum]->governor[j - 1],
-                          telegram_buf);
+            push_telegram(j, stars[starnum].governor[j - 1], telegram_buf);
       }
     /* Leftovers for last player */
     for (; i <= Num_races; i++)
@@ -865,8 +864,8 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
               stolenfuel, stolencrystals);
       for (j = 1; j <= Num_races; j++)
         if (isset(ownerbits, j)) {
-          push_telegram(j, (int)Stars[starnum]->governor[j - 1], telegram_buf);
-          push_telegram(j, (int)Stars[starnum]->governor[j - 1], buf);
+          push_telegram(j, stars[starnum].governor[j - 1], telegram_buf);
+          push_telegram(j, stars[starnum].governor[j - 1], buf);
         }
     } else
       push_telegram(1, 0, "Bug in stealing resources\n");

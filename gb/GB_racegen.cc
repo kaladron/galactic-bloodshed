@@ -53,7 +53,6 @@ int enroll_valid_race() {
   sigset_t mask;
   sigset_t block;
   Planet planet;
-  Star *star_arena;
   /*
     if (race.status == STATUS_ENROLLED) {
       sprintf(race.rejection, "This race has already been enrolled!\n") ;
@@ -75,10 +74,9 @@ int enroll_valid_race() {
   }
 
   getsdata(&Sdata);
-  star_arena = (Star *)malloc(Sdata.numstars * sizeof(Star));
-  for (star = 0; star < Sdata.numstars; star++) {
-    Stars[star] = &star_arena[star];
-    getstar(&(Stars[star]), star);
+  for (i = 0; i < Sdata.numstars; i++) {
+    auto s = db.getstar(i);
+    stars.push_back(s);
   }
 
   printf("Looking for %s..", planet_print_name[race_info.home_planet_type]);
@@ -95,10 +93,10 @@ int enroll_valid_race() {
     fflush(stdout);
     /*
      * Skip over inhabited stars and stars with few planets. */
-    if ((Stars[star]->numplanets < 2) || Stars[star]->inhabited) {
+    if ((stars[star].numplanets < 2) || stars[star].inhabited) {
     } else {
       /* look for uninhabited planets */
-      for (pnum = 0; pnum < Stars[star]->numplanets; pnum++) {
+      for (pnum = 0; pnum < stars[star].numplanets; pnum++) {
         planet = getplanet(star, pnum);
         if ((planet.type == ppref) && (planet.conditions[RTEMP] >= -200) &&
             (planet.conditions[RTEMP] <= 100))
@@ -247,8 +245,8 @@ found_planet:
     s.nextship = 0;
 
     s.type = ShipType::OTYPE_GOV;
-    s.xpos = Stars[star]->xpos + planet.xpos;
-    s.ypos = Stars[star]->ypos + planet.ypos;
+    s.xpos = stars[star].xpos + planet.xpos;
+    s.ypos = stars[star].ypos + planet.ypos;
     s.land_x = sect->x;
     s.land_y = sect->y;
 
@@ -332,20 +330,20 @@ found_planet:
   putrace(*race);
   putsector(*sect, planet);
 
-  getstar(&Stars[star], star);
-  putplanet(planet, Stars[star], pnum);
+  stars[star] = getstar(star);
+  putplanet(planet, stars[star], pnum);
 
   /* make star explored and stuff */
-  setbit(Stars[star]->explored, Playernum);
-  setbit(Stars[star]->inhabited, Playernum);
-  Stars[star]->AP[Playernum - 1] = 5;
-  putstar(Stars[star], star);
+  setbit(stars[star].explored, Playernum);
+  setbit(stars[star].inhabited, Playernum);
+  stars[star].AP[Playernum - 1] = 5;
+  putstar(stars[star], star);
 
   sigprocmask(SIG_SETMASK, &mask, nullptr);
 
   printf("Player %d (%s) created on sector %d,%d on %s/%s.\n", Playernum,
-         race_info.name, sect->x, sect->y, Stars[star]->name,
-         Stars[star]->pnames[pnum]);
+         race_info.name, sect->x, sect->y, stars[star].name,
+         stars[star].pnames[pnum]);
   race_info.status = STATUS_ENROLLED;
   return 0;
 }

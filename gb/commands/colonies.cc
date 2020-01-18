@@ -25,21 +25,21 @@ void colonies_at_star(GameObj &g, Race &race, starnum_t star) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
-  getstar(&(Stars[star]), star);
-  if (!isset(Stars[star]->explored, Playernum)) return;
+  stars[star] = getstar(star);
+  if (!isset(stars[star].explored, Playernum)) return;
 
-  for (auto i = 0; i < Stars[star]->numplanets; i++) {
+  for (auto i = 0; i < stars[star].numplanets; i++) {
     const auto pl = getplanet(star, i);
 
     if (pl.info[Playernum - 1].explored &&
         pl.info[Playernum - 1].numsectsowned &&
-        (!Governor || Stars[star]->governor[Playernum - 1] == Governor)) {
+        (!Governor || stars[star].governor[Playernum - 1] == Governor)) {
       sprintf(buf,
               " %c %4.4s/%-4.4s%c%4d%3d%5d%8ld%3d%6lu%5d%6d "
               "%3d/%-3d%3.0f/%-3d%3d/%-3d",
-              Psymbol[pl.type], Stars[star]->name, Stars[star]->pnames[i],
+              Psymbol[pl.type], stars[star].name, stars[star].pnames[i],
               (pl.info[Playernum - 1].autorep ? '*' : ' '),
-              Stars[star]->governor[Playernum - 1],
+              stars[star].governor[Playernum - 1],
               pl.info[Playernum - 1].numsectsowned,
               pl.info[Playernum - 1].tech_invest, pl.info[Playernum - 1].popn,
               pl.info[Playernum - 1].crystals, pl.info[Playernum - 1].resource,

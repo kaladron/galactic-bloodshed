@@ -51,7 +51,7 @@ void scrap(const command_t &argv, GameObj &g) {
       if (s->whatorbits == ScopeLevel::LEVEL_UNIV) {
         continue;
       }
-      if (!enufAP(g.player, g.governor, Stars[s->storbits]->AP[g.player - 1],
+      if (!enufAP(g.player, g.governor, stars[s->storbits].AP[g.player - 1],
                   APcount)) {
         free(s);
         continue;
@@ -235,7 +235,7 @@ void scrap(const command_t &argv, GameObj &g) {
           planet.info[g.player - 1].crystals += (int)xtalval;
           putsector(sect, planet, s->land_x, s->land_y);
         }
-        putplanet(planet, Stars[s->storbits], (int)s->pnumorbits);
+        putplanet(planet, stars[s->storbits], s->pnumorbits);
       }
       if (landed(*s)) {
         g.out << "\nScrapped.\n";

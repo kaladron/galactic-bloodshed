@@ -61,11 +61,11 @@ void distance(const command_t &argv, GameObj &g) {
     y0 = ship->ypos;
   } else if (from.level == ScopeLevel::LEVEL_PLAN) {
     const auto p = getplanet(from.snum, from.pnum);
-    x0 = p.xpos + Stars[from.snum]->xpos;
-    y0 = p.ypos + Stars[from.snum]->ypos;
+    x0 = p.xpos + stars[from.snum].xpos;
+    y0 = p.ypos + stars[from.snum].ypos;
   } else if (from.level == ScopeLevel::LEVEL_STAR) {
-    x0 = Stars[from.snum]->xpos;
-    y0 = Stars[from.snum]->ypos;
+    x0 = stars[from.snum].xpos;
+    y0 = stars[from.snum].ypos;
   }
 
   if (to.level == ScopeLevel::LEVEL_SHIP) {
@@ -78,11 +78,11 @@ void distance(const command_t &argv, GameObj &g) {
     y1 = ship->ypos;
   } else if (to.level == ScopeLevel::LEVEL_PLAN) {
     const auto p = getplanet(to.snum, to.pnum);
-    x1 = p.xpos + Stars[to.snum]->xpos;
-    y1 = p.ypos + Stars[to.snum]->ypos;
+    x1 = p.xpos + stars[to.snum].xpos;
+    y1 = p.ypos + stars[to.snum].ypos;
   } else if (to.level == ScopeLevel::LEVEL_STAR) {
-    x1 = Stars[to.snum]->xpos;
-    y1 = Stars[to.snum]->ypos;
+    x1 = stars[to.snum].xpos;
+    y1 = stars[to.snum].ypos;
   }
   /* compute the distance */
   dist = sqrt(Distsq(x0, y0, x1, y1));

@@ -88,7 +88,7 @@ void fix(const command_t &argv, GameObj &g) {
       return;
     }
     notify(Playernum, Governor, buf);
-    if (argv.size() > 3) putplanet(p, Stars[g.snum], g.pnum);
+    if (argv.size() > 3) putplanet(p, stars[g.snum], g.pnum);
     return;
   }
   if (argv[1] == "ship") {

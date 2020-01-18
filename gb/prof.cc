@@ -94,9 +94,9 @@ void profile(const command_t &argv, GameObj &g) {
     sprintf(buf, "Personal: %s\n", race.info);
     notify(Playernum, Governor, buf);
     sprintf(buf, "Default Scope: /%s/%s\n",
-            Stars[race.governor[Governor].homesystem]->name,
-            Stars[race.governor[Governor].homesystem]
-                ->pnames[race.governor[Governor].homeplanetnum]);
+            stars[race.governor[Governor].homesystem].name,
+            stars[race.governor[Governor].homesystem]
+                .pnames[race.governor[Governor].homeplanetnum]);
     notify(Playernum, Governor, buf);
     if (race.Gov_ship == 0)
       sprintf(buf, "NO DESIGNATED CAPITAL!!");

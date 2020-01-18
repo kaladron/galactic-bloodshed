@@ -55,8 +55,8 @@ shipnum_t start_shiplist(GameObj &g, const std::string_view p) {
       getsdata(&Sdata);
       return Sdata.ships;
     case ScopeLevel::LEVEL_STAR:
-      getstar(&Stars[g.snum], g.snum); /*Stars doesn't need to be freed */
-      return Stars[g.snum]->ships;
+      stars[g.snum] = getstar(g.snum);
+      return stars[g.snum].ships;
     case ScopeLevel::LEVEL_PLAN: {
       const auto planet = getplanet(g.snum, g.pnum);
       return planet.ships;
@@ -172,7 +172,7 @@ void allocateAPs(const command_t &argv, GameObj &g) {
 
   getsdata(&Sdata);
   maxalloc = std::min(Sdata.AP[Playernum - 1],
-                      LIMIT_APs - Stars[g.snum]->AP[Playernum - 1]);
+                      LIMIT_APs - stars[g.snum].AP[Playernum - 1]);
   if (alloc > maxalloc) {
     sprintf(buf, "Illegal value (%d) - maximum = %d\n", alloc, maxalloc);
     notify(Playernum, Governor, buf);
@@ -180,10 +180,10 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   }
   Sdata.AP[Playernum - 1] -= alloc;
   putsdata(&Sdata);
-  getstar(&Stars[g.snum], g.snum);
-  Stars[g.snum]->AP[Playernum - 1] =
-      std::min(LIMIT_APs, Stars[g.snum]->AP[Playernum - 1] + alloc);
-  putstar(Stars[g.snum], g.snum);
+  stars[g.snum] = getstar(g.snum);
+  stars[g.snum].AP[Playernum - 1] =
+      std::min(LIMIT_APs, stars[g.snum].AP[Playernum - 1] + alloc);
+  putstar(stars[g.snum], g.snum);
   sprintf(buf, "Allocated\n");
   notify(Playernum, Governor, buf);
 }
@@ -192,19 +192,19 @@ void deductAPs(const player_t Playernum, const governor_t Governor,
                unsigned int n, starnum_t snum, int sdata) {
   if (n) {
     if (!sdata) {
-      getstar(&Stars[snum], snum);
+      stars[snum] = getstar(snum);
 
-      if (Stars[snum]->AP[Playernum - 1] >= n)
-        Stars[snum]->AP[Playernum - 1] -= n;
+      if (stars[snum].AP[Playernum - 1] >= n)
+        stars[snum].AP[Playernum - 1] -= n;
       else {
-        Stars[snum]->AP[Playernum - 1] = 0;
+        stars[snum].AP[Playernum - 1] = 0;
         sprintf(buf,
                 "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
                 "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n");
         notify(Playernum, Governor, buf);
       }
 
-      putstar(Stars[snum], snum);
+      putstar(stars[snum], snum);
     } else {
       getsdata(&Sdata);
       Sdata.AP[Playernum - 1] = std::max(0u, Sdata.AP[Playernum - 1] - n);

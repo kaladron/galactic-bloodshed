@@ -29,11 +29,11 @@ char *prin_ship_orbits(Ship *s) {
       sprintf(Dispshiporbits_buf, "/(%.0f,%.0f)", s->xpos, s->ypos);
       break;
     case ScopeLevel::LEVEL_STAR:
-      sprintf(Dispshiporbits_buf, "/%s", Stars[s->storbits]->name);
+      sprintf(Dispshiporbits_buf, "/%s", stars[s->storbits].name);
       break;
     case ScopeLevel::LEVEL_PLAN:
-      sprintf(Dispshiporbits_buf, "/%s/%s", Stars[s->storbits]->name,
-              Stars[s->storbits]->pnames[s->pnumorbits]);
+      sprintf(Dispshiporbits_buf, "/%s/%s", stars[s->storbits].name,
+              stars[s->storbits].pnames[s->pnumorbits]);
       break;
     case ScopeLevel::LEVEL_SHIP:
       if (auto mothership = getship(s->destshipno); mothership) {

@@ -76,7 +76,7 @@ void launch(const command_t &argv, GameObj &g) {
           remove_sh_ship(*s, *s2);
           auto p = getplanet(s2->storbits, s2->pnumorbits);
           insert_sh_plan(p, s);
-          putplanet(p, Stars[s2->storbits], s2->pnumorbits);
+          putplanet(p, stars[s2->storbits], s2->pnumorbits);
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
           s->destpnum = s2->pnumorbits;
@@ -89,8 +89,8 @@ void launch(const command_t &argv, GameObj &g) {
           s->whatdest = ScopeLevel::LEVEL_PLAN;
           s2->mass -= s->mass;
           s2->hanger -= size(*s);
-          sprintf(buf, "Landed on %s/%s.\n", Stars[s->storbits]->name,
-                  Stars[s->storbits]->pnames[s->pnumorbits]);
+          sprintf(buf, "Landed on %s/%s.\n", stars[s->storbits].name,
+                  stars[s->storbits].pnames[s->pnumorbits]);
           notify(Playernum, Governor, buf);
           putship(s);
           putship(&*s2);
@@ -109,9 +109,9 @@ void launch(const command_t &argv, GameObj &g) {
           insert_sh_plan(p, s);
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
-          putplanet(p, Stars[s2->storbits], s2->pnumorbits);
-          sprintf(buf, "Orbiting %s/%s.\n", Stars[s->storbits]->name,
-                  Stars[s->storbits]->pnames[s->pnumorbits]);
+          putplanet(p, stars[s2->storbits], s2->pnumorbits);
+          sprintf(buf, "Orbiting %s/%s.\n", stars[s->storbits].name,
+                  stars[s->storbits].pnames[s->pnumorbits]);
           notify(Playernum, Governor, buf);
           putship(s);
           putship(&*s2);
@@ -126,11 +126,11 @@ void launch(const command_t &argv, GameObj &g) {
           s->whatdest = ScopeLevel::LEVEL_UNIV;
           s2->mass -= s->mass;
           s2->hanger -= size(*s);
-          getstar(&(Stars[s2->storbits]), (int)s2->storbits);
-          insert_sh_star(Stars[s2->storbits], s);
+          stars[s2->storbits] = getstar(s2->storbits);
+          insert_sh_star(stars[s2->storbits], s);
           s->storbits = s2->storbits;
-          putstar(Stars[s2->storbits], (int)s2->storbits);
-          sprintf(buf, "Orbiting %s.\n", Stars[s->storbits]->name);
+          putstar(stars[s2->storbits], s2->storbits);
+          sprintf(buf, "Orbiting %s.\n", stars[s->storbits].name);
           notify(Playernum, Governor, buf);
           putship(s);
           putship(&*s2);
@@ -166,8 +166,8 @@ void launch(const command_t &argv, GameObj &g) {
           }
           deductAPs(Playernum, Governor, APcount, 0, 1);
         } else {
-          if (!enufAP(Playernum, Governor,
-                      Stars[s->storbits]->AP[Playernum - 1], APcount)) {
+          if (!enufAP(Playernum, Governor, stars[s->storbits].AP[Playernum - 1],
+                      APcount)) {
             free(s);
             continue;
           }
@@ -186,7 +186,7 @@ void launch(const command_t &argv, GameObj &g) {
         putship(&*s2);
         free(s);
       } else {
-        if (!enufAP(Playernum, Governor, Stars[s->storbits]->AP[Playernum - 1],
+        if (!enufAP(Playernum, Governor, stars[s->storbits].AP[Playernum - 1],
                     APcount)) {
           free(s);
           return;
@@ -196,14 +196,14 @@ void launch(const command_t &argv, GameObj &g) {
         /* adjust x,ypos to absolute coords */
         auto p = getplanet((int)s->storbits, (int)s->pnumorbits);
         sprintf(buf, "Planet /%s/%s has gravity field of %.2f\n",
-                Stars[s->storbits]->name,
-                Stars[s->storbits]->pnames[s->pnumorbits], p.gravity());
+                stars[s->storbits].name,
+                stars[s->storbits].pnames[s->pnumorbits], p.gravity());
         notify(Playernum, Governor, buf);
         s->xpos =
-            Stars[s->storbits]->xpos + p.xpos +
+            stars[s->storbits].xpos + p.xpos +
             (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
         s->ypos =
-            Stars[s->storbits]->ypos + p.ypos +
+            stars[s->storbits].ypos + p.ypos +
             (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
 
         /* subtract fuel from ship */
@@ -232,14 +232,14 @@ void launch(const command_t &argv, GameObj &g) {
           /* not yet explored by owner; space exploration causes the
              player to see a whole map */
           p.explored = 1;
-          putplanet(p, Stars[s->storbits], (int)s->pnumorbits);
+          putplanet(p, stars[s->storbits], s->pnumorbits);
         }
         sprintf(buf, "%s observed launching from planet /%s/%s.\n",
-                ship_to_string(*s).c_str(), Stars[s->storbits]->name,
-                Stars[s->storbits]->pnames[s->pnumorbits]);
+                ship_to_string(*s).c_str(), stars[s->storbits].name,
+                stars[s->storbits].pnames[s->pnumorbits]);
         for (player_t i = 1; i <= Num_races; i++)
           if (p.info[i - 1].numsectsowned && i != Playernum)
-            notify(i, (int)Stars[s->storbits]->governor[i - 1], buf);
+            notify(i, stars[s->storbits].governor[i - 1], buf);
 
         sprintf(buf, "%s launched from planet,", ship_to_string(*s).c_str());
         notify(Playernum, Governor, buf);

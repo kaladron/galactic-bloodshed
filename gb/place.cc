@@ -58,17 +58,17 @@ Place getplace2(const int Playernum, const int Governor, const char* string,
   l = strlen(substr);
   if (where->level == ScopeLevel::LEVEL_UNIV) {
     for (i = 0; i < Sdata.numstars; i++)
-      if (!strncmp(substr, Stars[i]->name, l)) {
+      if (!strncmp(substr, stars[i].name, l)) {
         where->level = ScopeLevel::LEVEL_STAR;
         where->snum = i;
-        if (ignoreexpl || isset(Stars[where->snum]->explored, Playernum) ||
+        if (ignoreexpl || isset(stars[where->snum].explored, Playernum) ||
             God) {
           tick = (*string == '/');
           return (getplace2(Playernum, Governor, string + tick, where,
                             ignoreexpl, God));
         }
         sprintf(buf, "You have not explored %s yet.\n",
-                Stars[where->snum]->name);
+                stars[where->snum].name);
         notify(Playernum, Governor, buf);
         where->err = 1;
         return (*where);
@@ -80,8 +80,8 @@ Place getplace2(const int Playernum, const int Governor, const char* string,
       return (*where);
     }
   } else if (where->level == ScopeLevel::LEVEL_STAR) {
-    for (i = 0; i < Stars[where->snum]->numplanets; i++)
-      if (!strncmp(substr, Stars[where->snum]->pnames[i], l)) {
+    for (i = 0; i < stars[where->snum].numplanets; i++)
+      if (!strncmp(substr, stars[where->snum].pnames[i], l)) {
         where->level = ScopeLevel::LEVEL_PLAN;
         where->pnum = i;
         const auto p = getplanet(where->snum, i);
@@ -91,12 +91,12 @@ Place getplace2(const int Playernum, const int Governor, const char* string,
                             ignoreexpl, God));
         }
         sprintf(buf, "You have not explored %s yet.\n",
-                Stars[where->snum]->pnames[i]);
+                stars[where->snum].pnames[i]);
         notify(Playernum, Governor, buf);
         where->err = 1;
         return (*where);
       }
-    if (i >= Stars[where->snum]->numplanets) {
+    if (i >= stars[where->snum].numplanets) {
       sprintf(buf, "No such planet %s.\n", substr);
       notify(Playernum, Governor, buf);
       where->err = 1;
@@ -123,11 +123,11 @@ std::string Place::to_string() {
   std::ostringstream out;
   switch (level) {
     case ScopeLevel::LEVEL_STAR:
-      out << "/" << Stars[snum]->name;
+      out << "/" << stars[snum].name;
       out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_PLAN:
-      out << "/" << Stars[snum]->name << "/" << Stars[snum]->pnames[pnum];
+      out << "/" << stars[snum].name << "/" << stars[snum].pnames[pnum];
       out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_SHIP:

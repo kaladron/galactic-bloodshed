@@ -52,14 +52,12 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
   int deststar = 0;
   int destpnum = 0;
   Ship *dsh;
-  Star *ost;
-  Star *dst;
 
   if (s->hyper_drive.has && s->hyper_drive.on) { /* do a hyperspace jump */
     if (!mode) return; /* we're not ready to jump until the update */
     if (s->hyper_drive.ready) {
-      dist = sqrt(Distsq(s->xpos, s->ypos, Stars[s->deststar]->xpos,
-                         Stars[s->deststar]->ypos));
+      dist = sqrt(Distsq(s->xpos, s->ypos, stars[s->deststar].xpos,
+                         stars[s->deststar].ypos));
       distfac = HYPER_DIST_FACTOR * (s->tech + 100.0);
       if (s->mounted && dist > distfac)
         fuse = HYPER_DRIVE_FUEL_USE * sqrt(s->mass) * (dist / distfac);
@@ -77,12 +75,12 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
         return;
       }
       use_fuel(s, fuse);
-      heading = atan2(Stars[s->deststar]->xpos - s->xpos,
-                      Stars[s->deststar]->ypos - s->ypos);
+      heading = atan2(stars[s->deststar].xpos - s->xpos,
+                      stars[s->deststar].ypos - s->ypos);
       sn = sin(heading);
       cs = cos(heading);
-      s->xpos = Stars[s->deststar]->xpos - sn * 0.9 * SYSTEMSIZE;
-      s->ypos = Stars[s->deststar]->ypos - cs * 0.9 * SYSTEMSIZE;
+      s->xpos = stars[s->deststar].xpos - sn * 0.9 * SYSTEMSIZE;
+      s->ypos = stars[s->deststar].ypos - cs * 0.9 * SYSTEMSIZE;
       s->whatorbits = ScopeLevel::LEVEL_STAR;
       s->storbits = s->deststar;
       s->protect.planet = 0;
@@ -136,17 +134,17 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
       s->navigate.turns--;
       if (!s->navigate.turns) s->navigate.on = 0;
       /* check here for orbit breaking as well. Maarten */
-      ost = Stars[s->storbits];
+      auto &ost = stars[s->storbits];
       const auto &opl = planets[s->storbits][s->pnumorbits];
       if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
-        dist = sqrt(Distsq(s->xpos, s->ypos, ost->xpos + opl->xpos,
-                           ost->ypos + opl->ypos));
+        dist = sqrt(Distsq(s->xpos, s->ypos, ost.xpos + opl->xpos,
+                           ost.ypos + opl->ypos));
         if (dist > PLORBITSIZE) {
           s->whatorbits = ScopeLevel::LEVEL_STAR;
           s->protect.planet = 0;
         }
       } else if (s->whatorbits == ScopeLevel::LEVEL_STAR) {
-        dist = sqrt(Distsq(s->xpos, s->ypos, ost->xpos, ost->ypos));
+        dist = sqrt(Distsq(s->xpos, s->ypos, ost.xpos, ost.ypos));
         if (dist > SYSTEMSIZE) {
           s->whatorbits = ScopeLevel::LEVEL_UNIV;
           s->protect.evade = 0;
@@ -193,20 +191,20 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
             s->whatorbits == ScopeLevel::LEVEL_UNIV))) {
         destlevel = ScopeLevel::LEVEL_STAR;
         deststar = s->deststar;
-        xdest = Stars[deststar]->xpos;
-        ydest = Stars[deststar]->ypos;
+        xdest = stars[deststar].xpos;
+        ydest = stars[deststar].ypos;
       } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
                  s->storbits == s->deststar) {
         destlevel = ScopeLevel::LEVEL_PLAN;
         deststar = s->deststar;
         destpnum = s->destpnum;
-        xdest = Stars[deststar]->xpos + planets[deststar][destpnum]->xpos;
-        ydest = Stars[deststar]->ypos + planets[deststar][destpnum]->ypos;
+        xdest = stars[deststar].xpos + planets[deststar][destpnum]->xpos;
+        ydest = stars[deststar].ypos + planets[deststar][destpnum]->ypos;
         if (sqrt(Distsq(s->xpos, s->ypos, xdest, ydest)) <= DIST_TO_LAND)
           destlevel = ScopeLevel::LEVEL_UNIV;
       }
-      dst = Stars[deststar];
-      ost = Stars[s->storbits];
+      auto &dst = stars[deststar];
+      auto &ost = stars[s->storbits];
       const auto &dpl = planets[deststar][destpnum];
       const auto &opl = planets[s->storbits][s->pnumorbits];
       truedist = movedist = sqrt(Distsq(s->xpos, s->ypos, xdest, ydest));
@@ -256,14 +254,14 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
       /***** check if far enough away from object it's orbiting to break orbit
        * *****/
       if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
-        dist = sqrt(Distsq(s->xpos, s->ypos, ost->xpos + opl->xpos,
-                           ost->ypos + opl->ypos));
+        dist = sqrt(Distsq(s->xpos, s->ypos, ost.xpos + opl->xpos,
+                           ost.ypos + opl->ypos));
         if (dist > PLORBITSIZE) {
           s->whatorbits = ScopeLevel::LEVEL_STAR;
           s->protect.planet = 0;
         }
       } else if (s->whatorbits == ScopeLevel::LEVEL_STAR) {
-        dist = sqrt(Distsq(s->xpos, s->ypos, ost->xpos, ost->ypos));
+        dist = sqrt(Distsq(s->xpos, s->ypos, ost.xpos, ost.ypos));
         if (dist > SYSTEMSIZE) {
           s->whatorbits = ScopeLevel::LEVEL_UNIV;
           s->protect.evade = 0;
@@ -276,7 +274,7 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
           (destlevel == ScopeLevel::LEVEL_PLAN &&
            (s->storbits != deststar ||
             s->whatorbits == ScopeLevel::LEVEL_UNIV))) {
-        stardist = sqrt(Distsq(s->xpos, s->ypos, dst->xpos, dst->ypos));
+        stardist = sqrt(Distsq(s->xpos, s->ypos, dst.xpos, dst.ypos));
         if (stardist <= SYSTEMSIZE * 1.5) {
           s->whatorbits = ScopeLevel::LEVEL_STAR;
           s->protect.planet = 0;
@@ -284,10 +282,10 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
           /* if this system isn't inhabited by you, give it to the
              governor of the ship */
           if (!checking_fuel && (s->popn || s->type == ShipType::OTYPE_PROBE)) {
-            if (!isset(dst->inhabited, (int)s->owner))
-              dst->governor[s->owner - 1] = s->governor;
-            setbit(dst->explored, (int)s->owner);
-            setbit(dst->inhabited, (int)s->owner);
+            if (!isset(dst.inhabited, (int)s->owner))
+              dst.governor[s->owner - 1] = s->governor;
+            setbit(dst.explored, (int)s->owner);
+            setbit(dst.inhabited, (int)s->owner);
           }
           if (s->type != ShipType::OTYPE_VN) {
             sprintf(telegram_buf, "%s arrived at %s.",
@@ -301,13 +299,13 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
       } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
                  deststar == s->storbits) {
         /* headed for a planet in the same system, & not already there.. */
-        dist = sqrt(Distsq(s->xpos, s->ypos, dst->xpos + dpl->xpos,
-                           dst->ypos + dpl->ypos));
+        dist = sqrt(Distsq(s->xpos, s->ypos, dst.xpos + dpl->xpos,
+                           dst.ypos + dpl->ypos));
         if (dist <= PLORBITSIZE) {
           if (!checking_fuel && (s->popn || s->type == ShipType::OTYPE_PROBE)) {
             dpl->info[s->owner - 1].explored = 1;
-            setbit(dst->explored, (int)(s->owner));
-            setbit(dst->inhabited, (int)(s->owner));
+            setbit(dst.explored, (int)(s->owner));
+            setbit(dst.inhabited, (int)(s->owner));
           }
           s->whatorbits = ScopeLevel::LEVEL_PLAN;
           s->pnumorbits = destpnum;
@@ -410,8 +408,8 @@ static int do_merchant(Ship *s, Planet &p) {
     s->land_y = p.info[i].route[j].y;
     sprintf(buf, "\t\tLanded on sector %d,%d\n", s->land_x, s->land_y);
     strcat(telegram_buf, buf);
-    s->xpos = p.xpos + Stars[s->storbits]->xpos;
-    s->ypos = p.ypos + Stars[s->storbits]->ypos;
+    s->xpos = p.xpos + stars[s->storbits].xpos;
+    s->ypos = p.ypos + stars[s->storbits].ypos;
     use_fuel(s, fuel);
     s->docked = 1;
     s->whatdest = ScopeLevel::LEVEL_PLAN;

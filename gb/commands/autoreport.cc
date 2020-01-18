@@ -18,7 +18,7 @@ import std;
 #include "gb/vars.h"
 
 void autoreport(const command_t &argv, GameObj &g) {
-  if (g.governor && Stars[g.snum]->governor[g.player - 1] != g.governor) {
+  if (g.governor && stars[g.snum].governor[g.player - 1] != g.governor) {
     g.out << "You are not authorized to do this here.\n";
     return;
   }
@@ -55,9 +55,9 @@ void autoreport(const command_t &argv, GameObj &g) {
   } else {
     p.info[g.player - 1].autorep = TELEG_MAX_AUTO;
   }
-  putplanet(p, Stars[snum], pnum);
+  putplanet(p, stars[snum], pnum);
 
   g.out << fmt::format("Autoreport on %{0} has been %{1}.\n",
-                       Stars[snum]->pnames[pnum],
+                       stars[snum].pnames[pnum],
                        (p.info[g.player - 1].autorep ? "set" : "unset"));
 }

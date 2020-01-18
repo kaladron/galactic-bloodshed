@@ -184,7 +184,7 @@ extern struct stardata Sdata;
 extern unsigned char Nuked[MAXPLAYERS];
 extern unsigned long StarsInhab[NUMSTARS];
 extern unsigned long StarsExpl[NUMSTARS];
-extern Star *Stars[NUMSTARS];
+extern std::vector<Star> stars;
 extern unsigned short Sdatanumships[MAXPLAYERS];
 extern unsigned long Sdatapopns[MAXPLAYERS];
 extern unsigned short starnumships[NUMSTARS][MAXPLAYERS];

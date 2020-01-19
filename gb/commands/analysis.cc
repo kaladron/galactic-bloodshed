@@ -113,8 +113,6 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
                         starnum_t Starnum, planetnum_t Planetnum) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int x;
-  int y;
   int p;
   int i;
   double compat;
@@ -168,50 +166,46 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
   if (!planet.info[Playernum - 1].explored) {
     return;
   }
-  auto smap = getsmap(planet);
 
   compat = planet.compatibility(race);
-
   TotalSect = planet.Maxx * planet.Maxy;
-  for (x = planet.Maxx - 1; x >= 0; x--) {
-    for (y = planet.Maxy - 1; y >= 0; y--) {
-      auto &sect = smap.get(x, y);
-      p = sect.owner;
 
-      PlayEff[p] += sect.eff;
-      PlayMob[p] += sect.mobilization;
-      PlayRes[p] += sect.resource;
-      PlayPopn[p] += sect.popn;
-      PlayTroops[p] += sect.troops;
-      PlaySect[p][sect.condition]++;
-      PlayTSect[p]++;
-      TotalEff += sect.eff;
-      TotalMob += sect.mobilization;
-      TotalRes += sect.resource;
-      TotalPopn += sect.popn;
-      TotalTroops += sect.troops;
-      Sect[sect.condition]++;
+  for (auto smap = getsmap(planet); auto &sect : smap) {
+    p = sect.owner;
 
-      if (sect.condition == SectorType::SEC_WASTED) {
-        WastedSect[p]++;
-        TotalWasted++;
-      }
-      if (sect.crystals && race.tech >= TECH_CRYSTAL) {
-        PlayCrys[p]++;
-        TotalCrys++;
-      }
+    PlayEff[p] += sect.eff;
+    PlayMob[p] += sect.mobilization;
+    PlayRes[p] += sect.resource;
+    PlayPopn[p] += sect.popn;
+    PlayTroops[p] += sect.troops;
+    PlaySect[p][sect.condition]++;
+    PlayTSect[p]++;
+    TotalEff += sect.eff;
+    TotalMob += sect.mobilization;
+    TotalRes += sect.resource;
+    TotalPopn += sect.popn;
+    TotalTroops += sect.troops;
+    Sect[sect.condition]++;
 
-      if (sector_type == -1 || sector_type == sect.condition) {
-        if (ThisPlayer < 0 || ThisPlayer == p) {
-          Insert(mode, Res, x, y, sect.condition, (int)sect.resource);
-          Insert(mode, Eff, x, y, sect.condition, (int)sect.eff);
-          Insert(mode, Mob, x, y, sect.condition, (int)sect.mobilization);
-          Insert(mode, Frt, x, y, sect.condition, (int)sect.fert);
-          Insert(mode, Popn, x, y, sect.condition, (int)sect.popn);
-          Insert(mode, Troops, x, y, sect.condition, (int)sect.troops);
-          Insert(mode, mPopn, x, y, sect.condition,
-                 maxsupport(race, sect, compat, (int)planet.conditions[TOXIC]));
-        }
+    if (sect.condition == SectorType::SEC_WASTED) {
+      WastedSect[p]++;
+      TotalWasted++;
+    }
+    if (sect.crystals && race.tech >= TECH_CRYSTAL) {
+      PlayCrys[p]++;
+      TotalCrys++;
+    }
+
+    if (sector_type == -1 || sector_type == sect.condition) {
+      if (ThisPlayer < 0 || ThisPlayer == p) {
+        Insert(mode, Res, sect.x, sect.y, sect.condition, sect.resource);
+        Insert(mode, Eff, sect.x, sect.y, sect.condition, sect.eff);
+        Insert(mode, Mob, sect.x, sect.y, sect.condition, sect.mobilization);
+        Insert(mode, Frt, sect.x, sect.y, sect.condition, sect.fert);
+        Insert(mode, Popn, sect.x, sect.y, sect.condition, sect.popn);
+        Insert(mode, Troops, sect.x, sect.y, sect.condition, sect.troops);
+        Insert(mode, mPopn, sect.x, sect.y, sect.condition,
+               maxsupport(race, sect, compat, planet.conditions[TOXIC]));
       }
     }
   }

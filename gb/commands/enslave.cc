@@ -83,7 +83,7 @@ void enslave(const command_t &argv, GameObj &g) {
     }
   }
 
-  deductAPs(Playernum, Governor, APcount, (int)s->storbits, 0);
+  deductAPs(g, APcount, (int)s->storbits, 0);
 
   g.out << "\nFor successful enslavement this ship and the other ships here\n";
   g.out << "that are yours must have a weapons\n";

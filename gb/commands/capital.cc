@@ -66,7 +66,7 @@ void capital(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, buf);
       return;
     }
-    deductAPs(Playernum, Governor, APcount, snum, 0);
+    deductAPs(g, APcount, snum, 0);
     race.Gov_ship = shipno;
     putrace(race);
   }

@@ -61,6 +61,6 @@ void tax(const command_t &argv, GameObj &g) {
   p.info[Playernum - 1].newtax = sum_tax;
   putplanet(p, stars[g.snum], g.pnum);
 
-  deductAPs(Playernum, Governor, APcount, g.snum, 0);
+  deductAPs(g, APcount, g.snum, 0);
   g.out << "Set.\n";
 }

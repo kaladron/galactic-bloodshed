@@ -687,7 +687,7 @@ void dump(const command_t &argv, GameObj &g) {
     }
   }
 
-  deductAPs(Playernum, Governor, APcount, g.snum, 0);
+  deductAPs(g, APcount, g.snum, 0);
 
   sprintf(buf, "%s [%d] has given you exploration data.\n", race.name,
           Playernum);
@@ -788,7 +788,7 @@ void transfer(const command_t &argv, GameObj &g) {
 
   putplanet(planet, stars[g.snum], g.pnum);
 
-  deductAPs(Playernum, Governor, APcount, g.snum, 0);
+  deductAPs(g, APcount, g.snum, 0);
 }
 
 void mount(const command_t &argv, GameObj &g) {

@@ -188,28 +188,27 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   notify(Playernum, Governor, buf);
 }
 
-void deductAPs(const player_t Playernum, const governor_t Governor,
-               unsigned int n, starnum_t snum, int sdata) {
-  if (n) {
-    if (!sdata) {
-      stars[snum] = getstar(snum);
+void deductAPs(const GameObj &g, unsigned int APs, starnum_t snum, int sdata) {
+  if (APs == 0) return;
 
-      if (stars[snum].AP[Playernum - 1] >= n)
-        stars[snum].AP[Playernum - 1] -= n;
-      else {
-        stars[snum].AP[Playernum - 1] = 0;
-        sprintf(buf,
-                "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
-                "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n");
-        notify(Playernum, Governor, buf);
-      }
+  if (!sdata) {
+    stars[snum] = getstar(snum);
 
-      putstar(stars[snum], snum);
-    } else {
-      getsdata(&Sdata);
-      Sdata.AP[Playernum - 1] = std::max(0u, Sdata.AP[Playernum - 1] - n);
-      putsdata(&Sdata);
+    if (stars[snum].AP[g.player - 1] >= APs)
+      stars[snum].AP[g.player - 1] -= APs;
+    else {
+      stars[snum].AP[g.player - 1] = 0;
+      sprintf(buf,
+              "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
+              "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n");
+      notify(g.player, g.governor, buf);
     }
+
+    putstar(stars[snum], snum);
+  } else {
+    getsdata(&Sdata);
+    Sdata.AP[g.player - 1] = std::max(0u, Sdata.AP[g.player - 1] - APs);
+    putsdata(&Sdata);
   }
 }
 

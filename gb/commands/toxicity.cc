@@ -41,7 +41,7 @@ void toxicity(const command_t &argv, GameObj &g) {
   auto p = getplanet(g.snum, g.pnum);
   p.info[g.player - 1].tox_thresh = thresh;
   putplanet(p, stars[g.snum], g.pnum);
-  deductAPs(g.player, g.governor, APcount, g.snum, 0);
+  deductAPs(g, APcount, g.snum, 0);
 
   g.out << " New threshold is: " << p.info[g.player - 1].tox_thresh
         << std::endl;

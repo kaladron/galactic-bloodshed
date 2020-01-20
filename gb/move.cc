@@ -433,7 +433,7 @@ void move_popn(const command_t &argv, GameObj &g) {
     putsector(sect, planet, x, y);
     putsector(sect2, planet, x2, y2);
 
-    deductAPs(Playernum, Governor, APcost, g.snum, 0);
+    deductAPs(g, APcost, g.snum, 0);
     x = x2;
     y = y2; /* get ready for the next round */
   }
@@ -609,7 +609,7 @@ void walk(const command_t &argv, GameObj &g) {
         notify(i, stars[g.snum].governor[i - 1], buf);
   }
   putship(ship);
-  deductAPs(Playernum, Governor, APcount, (int)ship->storbits, 0);
+  deductAPs(g, APcount, (int)ship->storbits, 0);
   free(ship);
 }
 

@@ -1572,7 +1572,7 @@ void sell(const command_t &argv, GameObj &g) {
   for (player_t i = 1; i <= Num_races; i++) notify_race(i, buf);
   putcommod(c, commodno);
   putplanet(p, stars[snum], pnum);
-  deductAPs(g, APcount, snum, 0);
+  deductAPs(g, APcount, snum);
 }
 
 void bid(const command_t &argv, GameObj &g) {

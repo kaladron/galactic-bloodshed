@@ -389,7 +389,7 @@ void insurgency(const command_t &argv, GameObj &g) {
             Playernum, alien.name, who);
     post(buf, DECLARATION);
   }
-  deductAPs(g, APcount, g.snum, 0);
+  deductAPs(g, APcount, g.snum);
   race.governor[Governor].money -= amount;
   putrace(race);
 }
@@ -547,10 +547,10 @@ void give(const command_t &argv, GameObj &g) {
 
   switch (ship->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
-      deductAPs(g, APcount, 0, 1);
+      deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
       return;
     default:
-      deductAPs(g, APcount, g.snum, 0);
+      deductAPs(g, APcount, g.snum);
       break;
   }
   g.out << "Owner changed.\n";
@@ -625,7 +625,7 @@ void page(const command_t &argv, GameObj &g) {
       g.out << "Request sent.\n";
       break;
   }
-  deductAPs(g, APcount, g.snum, 0);
+  deductAPs(g, APcount, g.snum);
 }
 
 void send_message(const command_t &argv, GameObj &g) {
@@ -781,7 +781,7 @@ void send_message(const command_t &argv, GameObj &g) {
     putrace(alien);
   }
   g.out << "Message sent.\n";
-  deductAPs(g, APcount, g.snum, 0);
+  deductAPs(g, APcount, g.snum);
 }
 
 void read_messages(const command_t &argv, GameObj &g) {
@@ -935,7 +935,7 @@ void name(const command_t &argv, GameObj &g) {
       }
       strncpy(stars[g.snum].pnames[g.pnum], buf, NAMESIZE - 1);
       putstar(stars[g.snum], g.snum);
-      deductAPs(g, APcount, g.snum, 0);
+      deductAPs(g, APcount, g.snum);
     } else {
       g.out << "You have to 'cs' to a planet to name it.\n";
       return;

@@ -392,9 +392,9 @@ void land(const command_t &argv, GameObj &g) {
           }
         }
         if (s->whatorbits == ScopeLevel::LEVEL_UNIV)
-          deductAPs(g, APcount, 0, 1);
+          deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
         else
-          deductAPs(g, APcount, (int)s->storbits, 0);
+          deductAPs(g, APcount, s->storbits);
 
         putplanet(p, stars[s->storbits], s->pnumorbits);
 

@@ -58,7 +58,7 @@ void technology(const command_t &argv, GameObj &g) {
 
   putplanet(p, stars[g.snum], g.pnum);
 
-  deductAPs(Playernum, Governor, APcount, g.snum, 0);
+  deductAPs(g, APcount, g.snum, 0);
 
   sprintf(buf, "   New (ideal) tech production: %.3f (this planet)\n",
           tech_prod((int)(p.info[Playernum - 1].tech_invest),

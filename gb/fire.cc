@@ -293,7 +293,7 @@ void fire(const command_t &argv, GameObj &g) {
       }
       putship(from);
       putship(&*to);
-      deductAPs(Playernum, Governor, APcount, (int)from->storbits, 0);
+      deductAPs(g, APcount, (int)from->storbits, 0);
 
       free(from);
     } else
@@ -484,7 +484,7 @@ void bombard(const command_t &argv, GameObj &g) {
       /* write the stuff to disk */
       putship(from);
       putplanet(p, stars[from->storbits], (int)from->pnumorbits);
-      deductAPs(Playernum, Governor, APcount, (int)from->storbits, 0);
+      deductAPs(g, APcount, (int)from->storbits, 0);
 
       free(from);
     } else
@@ -681,7 +681,7 @@ void defend(const command_t &argv, GameObj &g) {
   putship(&*to);
   putplanet(p, stars[g.snum], g.pnum);
 
-  deductAPs(Playernum, Governor, APcount, g.snum, 0);
+  deductAPs(g, APcount, g.snum, 0);
 }
 #endif
 

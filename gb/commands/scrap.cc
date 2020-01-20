@@ -186,9 +186,9 @@ void scrap(const command_t &argv, GameObj &g) {
       if (s->whatorbits == ScopeLevel::LEVEL_SHIP) s2->hanger -= s->size;
 
       if (s->whatorbits == ScopeLevel::LEVEL_UNIV)
-        deductAPs(g.player, g.governor, APcount, 0, 1);
+        deductAPs(g, APcount, 0, 1);
       else
-        deductAPs(g.player, g.governor, APcount, s->storbits, 0);
+        deductAPs(g, APcount, s->storbits, 0);
 
       auto &race = races[g.player - 1];
 

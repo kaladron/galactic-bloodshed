@@ -488,9 +488,9 @@ void dock(const command_t &argv, GameObj &g) {
       }
 
       if (g.level == ScopeLevel::LEVEL_UNIV)
-        deductAPs(Playernum, Governor, APcount, 0, 1);
+        deductAPs(g, APcount, 0, 1);
       else
-        deductAPs(Playernum, Governor, APcount, g.snum, 0);
+        deductAPs(g, APcount, g.snum, 0);
 
       s->notified = s2->notified = 0;
       putship(s);

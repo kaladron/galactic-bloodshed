@@ -319,7 +319,7 @@ void capture(const command_t &argv, GameObj &g) {
       putplanet(p, stars[g.snum], g.pnum);
       putrace(race);
       putrace(alien);
-      deductAPs(g, APcount, ship->storbits, 0);
+      deductAPs(g, APcount, ship->storbits);
       free(ship);
     } else
       free(ship);

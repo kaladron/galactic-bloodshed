@@ -71,9 +71,9 @@ void examine(const command_t &argv, GameObj &g) {
 
   if (!ship->examined) {
     if (ship->whatorbits == ScopeLevel::LEVEL_UNIV)
-      deductAPs(g, APcount, 0, 1); /* ded from sdata */
+      deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
     else
-      deductAPs(g, APcount, ship->storbits, 0);
+      deductAPs(g, APcount, ship->storbits);
 
     ship->examined = 1;
     putship(&*ship);

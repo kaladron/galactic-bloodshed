@@ -188,28 +188,33 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   notify(Playernum, Governor, buf);
 }
 
-void deductAPs(const GameObj &g, unsigned int APs, starnum_t snum, int sdata) {
+void deductAPs(const GameObj &g, unsigned int APs, ScopeLevel level) {
   if (APs == 0) return;
 
-  if (!sdata) {
-    stars[snum] = getstar(snum);
-
-    if (stars[snum].AP[g.player - 1] >= APs)
-      stars[snum].AP[g.player - 1] -= APs;
-    else {
-      stars[snum].AP[g.player - 1] = 0;
-      sprintf(buf,
-              "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
-              "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n");
-      notify(g.player, g.governor, buf);
-    }
-
-    putstar(stars[snum], snum);
-  } else {
+  if (level == ScopeLevel::LEVEL_UNIV) {
     getsdata(&Sdata);
     Sdata.AP[g.player - 1] = std::max(0u, Sdata.AP[g.player - 1] - APs);
     putsdata(&Sdata);
+    return;
   }
+}
+
+void deductAPs(const GameObj &g, unsigned int APs, starnum_t snum) {
+  if (APs == 0) return;
+
+  stars[snum] = getstar(snum);
+
+  if (stars[snum].AP[g.player - 1] >= APs)
+    stars[snum].AP[g.player - 1] -= APs;
+  else {
+    stars[snum].AP[g.player - 1] = 0;
+    sprintf(buf,
+            "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
+            "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n");
+    notify(g.player, g.governor, buf);
+  }
+
+  putstar(stars[snum], snum);
 }
 
 double morale_factor(double x) {

@@ -22,6 +22,5 @@ player_t get_player(const std::string &);
 void allocateAPs(const command_t &, GameObj &);
 void deductAPs(const GameObj &, unsigned int, ScopeLevel);
 void deductAPs(const GameObj &, unsigned int, starnum_t);
-double morale_factor(double);
 
 #endif  // SHLMISC_H

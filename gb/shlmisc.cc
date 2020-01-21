@@ -217,10 +217,6 @@ void deductAPs(const GameObj &g, unsigned int APs, starnum_t snum) {
   putstar(stars[snum], snum);
 }
 
-double morale_factor(double x) {
-  return (atan((double)x / 10000.) / 3.14159565 + .5);
-}
-
 void get4args(const char *s, int *xl, int *xh, int *yl, int *yh) {
   char s1[17];
   char s2[17];

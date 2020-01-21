@@ -43,6 +43,9 @@ export inline double logscale(const int x) {
   return log10((double)x + 1.0) / 2.0;
 }
 
+export inline double morale_factor(const double x) {
+  return (atan((double)x / 10000.) / 3.14159565 + .5);
+}
 export class Db {
  public:
   virtual ~Db() {}

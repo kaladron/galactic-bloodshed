@@ -122,6 +122,7 @@ void do_turn(Db &db, int update) {
     }
 #ifdef VOTING
     /* Reset their vote for Update go. */
+    // TODO(jeffbailey): This doesn't seem to work.
     races[i - 1].votes = false;
 #endif
   }

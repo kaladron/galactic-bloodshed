@@ -21,8 +21,6 @@ import std;
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
 
-static void show_votes(int, int);
-
 /* invite people to join your alliance block */
 void invite(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
@@ -262,100 +260,3 @@ void declare(const command_t& argv, GameObj& g) {
   putrace(alien);
   putrace(race);
 }
-
-#ifdef VOTING
-void vote(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
-  int check;
-  int nvotes;
-  int nays;
-  int yays;
-
-  auto& race = races[Playernum - 1];
-
-  if (race.God) {
-    sprintf(buf, "Your vote doesn't count, however, here is the count.\n");
-    notify(Playernum, Governor, buf);
-    show_votes(Playernum, Governor);
-    return;
-  }
-  if (race.Guest) {
-    sprintf(buf, "You are not allowed to vote, but, here is the count.\n");
-    notify(Playernum, Governor, buf);
-    show_votes(Playernum, Governor);
-    return;
-  }
-
-  if (argv.size() > 2) {
-    check = 0;
-    if (argv[1] == "update") {
-      if (argv[2] == "go") {
-        race.votes = true;
-        check = 1;
-      } else if (argv[2] == "wait")
-        race.votes = false;
-      else {
-        sprintf(buf, "No such update choice '%s'\n", argv[2].c_str());
-        notify(Playernum, Governor, buf);
-        return;
-      }
-    } else {
-      sprintf(buf, "No such vote '%s'\n", argv[1].c_str());
-      notify(Playernum, Governor, buf);
-      return;
-    }
-    putrace(race);
-
-    if (check) {
-      /* Ok...someone voted yes.  Tally them all up and see if */
-      /* we should do something. */
-      nays = 0;
-      yays = 0;
-      nvotes = 0;
-      for (player_t pnum = 1; pnum <= Num_races; pnum++) {
-        auto& r = races[pnum - 1];
-        if (r.God || r.Guest) continue;
-        nvotes++;
-        if (r.votes)
-          yays++;
-        else
-          nays++;
-      }
-      /* Is Update/Movement vote unanimous now? */
-      if (nvotes > 0 && nvotes == yays && nays == 0) {
-        /* Do it... */
-        do_next_thing(g.db);
-      }
-    }
-  } else {
-    sprintf(buf, "Your vote on updates is %s\n", race.votes ? "go" : "wait");
-    notify(Playernum, Governor, buf);
-    show_votes(Playernum, Governor);
-  }
-}
-
-static void show_votes(int Playernum, int Governor) {
-  int nvotes;
-  int nays;
-  int yays;
-  int pnum;
-
-  nays = yays = nvotes = 0;
-  for (pnum = 1; pnum <= Num_races; pnum++) {
-    auto& race = races[pnum - 1];
-    if (race.God || race.Guest) continue;
-    nvotes++;
-    if (race.votes) {
-      yays++;
-      sprintf(buf, "  %s voted go.\n", race.name);
-    } else {
-      nays++;
-      sprintf(buf, "  %s voted wait.\n", race.name);
-    }
-    if (races[Playernum - 1].God) notify(Playernum, Governor, buf);
-  }
-  sprintf(buf, "  Total votes = %d, Go = %d, Wait = %d.\n", nvotes, yays, nays);
-  notify(Playernum, Governor, buf);
-}
-#endif

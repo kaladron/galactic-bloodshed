@@ -50,6 +50,7 @@ libcommands_a_SOURCES = \
 		     toggle.cc \
 		     toxicity.cc \
 		     victory.cc \
+		     vote.cc \
 		     zoom.cc
 
 MOSTLYCLEANFILES = commands.pcm

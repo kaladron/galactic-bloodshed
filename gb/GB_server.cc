@@ -58,6 +58,7 @@ import std;
 #include "gb/commands/toggle.h"
 #include "gb/commands/toxicity.h"
 #include "gb/commands/victory.h"
+#include "gb/commands/vote.h"
 #include "gb/config.h"
 #include "gb/cs.h"
 #include "gb/declare.h"

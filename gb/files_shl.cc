@@ -1555,6 +1555,39 @@ void Sql::putcommod(const Commod &c, int commodnum) {
 void putcommod(const Commod &c, int commodnum) {
   Filewrite(commoddata, (const char *)&c, sizeof(Commod),
             (commodnum - 1) * sizeof(Commod));
+
+  const char *tail;
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "REPLACE INTO tbl_commod (comod_id, owner, governor,"
+      "type, amount, deliver, bid, bidder, bidder_gov,"
+      "star_from, planet_from, star_to, planet_to)"
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10,"
+      "?11, ?12, ?13);";
+
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, commodnum);
+  sqlite3_bind_int(stmt, 2, c.owner);
+  sqlite3_bind_int(stmt, 3, c.governor);
+  sqlite3_bind_int(stmt, 4, c.type);
+  sqlite3_bind_int(stmt, 5, c.amount);
+  sqlite3_bind_int(stmt, 6, c.deliver);
+  sqlite3_bind_int(stmt, 7, c.bid);
+  sqlite3_bind_int(stmt, 8, c.bidder);
+  sqlite3_bind_int(stmt, 9, c.bidder_gov);
+  sqlite3_bind_int(stmt, 10, c.star_from);
+  sqlite3_bind_int(stmt, 11, c.planet_from);
+  sqlite3_bind_int(stmt, 12, c.star_to);
+  sqlite3_bind_int(stmt, 13, c.planet_to);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+  }
+
+  int err = sqlite3_finalize(stmt);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+  }
 }
 
 int Sql::Numraces() {

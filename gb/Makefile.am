@@ -70,7 +70,6 @@ OLD_LIBGBLIB_FILES = \
 		     bombard.cc \
 		     build.cc \
 		     cs.cc \
-		     declare.cc \
 		     doplanet.cc \
 		     dosector.cc \
 		     doship.cc \

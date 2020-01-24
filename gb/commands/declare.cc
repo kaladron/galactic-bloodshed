@@ -7,7 +7,7 @@
 import gblib;
 import std;
 
-#include "gb/declare.h"
+#include "gb/commands/declare.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -20,116 +20,6 @@ import std;
 #include "gb/tweakables.h"
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
-
-/* invite people to join your alliance block */
-void invite(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
-  bool mode = argv[0] == "invite";
-
-  int n;
-
-  if (Governor) {
-    g.out << "Only leaders may invite.\n";
-    return;
-  }
-  if (!(n = get_player(argv[1]))) {
-    g.out << "No such player.\n";
-    return;
-  }
-  if (n == Playernum) {
-    g.out << "Not needed, you are the leader.\n";
-    return;
-  }
-  auto& race = races[Playernum - 1];
-  auto& alien = races[n - 1];
-  if (mode) {
-    setbit(Blocks[Playernum - 1].invite, n);
-    sprintf(buf, "%s [%d] has invited you to join %s\n", race.name, Playernum,
-            Blocks[Playernum - 1].name);
-    warn_race(n, buf);
-    sprintf(buf, "%s [%d] has been invited to join %s [%d]\n", alien.name, n,
-            Blocks[Playernum - 1].name, Playernum);
-    warn_race(Playernum, buf);
-  } else {
-    clrbit(Blocks[Playernum - 1].invite, n);
-    sprintf(buf, "You have been blackballed from %s [%d]\n",
-            Blocks[Playernum - 1].name, Playernum);
-    warn_race(n, buf);
-    sprintf(buf, "%s [%d] has been blackballed from %s [%d]\n", alien.name, n,
-            Blocks[Playernum - 1].name, Playernum);
-    warn_race(Playernum, buf);
-  }
-  post(buf, DECLARATION);
-
-  Putblock(Blocks);
-}
-
-/* declare that you wish to be included in the alliance block */
-void pledge(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
-  bool mode = argv[0] == "pledge";
-  int n;
-
-  if (Governor) {
-    g.out << "Only leaders may pledge.\n";
-    return;
-  }
-  if (!(n = get_player(argv[1]))) {
-    g.out << "No such player.\n";
-    return;
-  }
-  if (n == Playernum) {
-    g.out << "Not needed, you are the leader.\n";
-    return;
-  }
-  auto& race = races[Playernum - 1];
-  if (mode) {
-    setbit(Blocks[n - 1].pledge, Playernum);
-    sprintf(buf, "%s [%d] has pledged %s.\n", race.name, Playernum,
-            Blocks[n - 1].name);
-    warn_race(n, buf);
-    sprintf(buf, "You have pledged allegiance to %s.\n", Blocks[n - 1].name);
-    warn_race(Playernum, buf);
-
-    switch (int_rand(1, 20)) {
-      case 1:
-        sprintf(
-            buf,
-            "%s [%d] joins the band wagon and pledges allegiance to %s [%d]!\n",
-            race.name, Playernum, Blocks[n - 1].name, n);
-        break;
-      default:
-        sprintf(buf, "%s [%d] pledges allegiance to %s [%d].\n", race.name,
-                Playernum, Blocks[n - 1].name, n);
-        break;
-    }
-  } else {
-    clrbit(Blocks[n - 1].pledge, Playernum);
-    sprintf(buf, "%s [%d] has quit %s [%d].\n", race.name, Playernum,
-            Blocks[n - 1].name, n);
-    warn_race(n, buf);
-    sprintf(buf, "You have quit %s\n", Blocks[n - 1].name);
-    warn_race(Playernum, buf);
-
-    switch (int_rand(1, 20)) {
-      case 1:
-        sprintf(buf, "%s [%d] calls %s [%d] a bunch of geeks and QUITS!\n",
-                race.name, Playernum, Blocks[n - 1].name, n);
-        break;
-      default:
-        sprintf(buf, "%s [%d] has QUIT %s [%d]!\n", race.name, Playernum,
-                Blocks[n - 1].name, n);
-        break;
-    }
-  }
-
-  post(buf, DECLARATION);
-
-  compute_power_blocks();
-  Putblock(Blocks);
-}
 
 void declare(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;

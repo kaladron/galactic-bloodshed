@@ -24,6 +24,7 @@ libcommands_a_SOURCES = \
 		     capital.cc \
 		     capture.cc \
 		     colonies.cc \
+		     declare.cc \
 		     dissolve.cc \
 		     distance.cc \
 		     dock.cc \
@@ -34,8 +35,10 @@ libcommands_a_SOURCES = \
 		     governors.cc \
 		     grant.cc \
 		     highlight.cc \
+		     invite.cc \
 		     mobilize.cc \
 		     orbit.cc \
+		     pledge.cc \
 		     power.cc \
 		     production.cc \
 		     relation.cc \
@@ -49,6 +52,7 @@ libcommands_a_SOURCES = \
 		     survey.cc \
 		     toggle.cc \
 		     toxicity.cc \
+		     unpledge.cc \
 		     victory.cc \
 		     vote.cc \
 		     zoom.cc

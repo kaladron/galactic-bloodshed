@@ -2,9 +2,9 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-#ifndef CMDS_VOTE_H
-#define CMDS_VOTE_H
+#ifndef CMDS_UNPLEDGE_H
+#define CMDS_UNPLEDGE_H
 
-void vote(const command_t &, GameObj &);
+void unpledge(const command_t &, GameObj &);
 
-#endif  // CMDS_VOTE_H
+#endif  // CMDS_UNPLEDGE_H

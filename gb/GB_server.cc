@@ -32,6 +32,7 @@ import std;
 #include "gb/commands/capital.h"
 #include "gb/commands/capture.h"
 #include "gb/commands/colonies.h"
+#include "gb/commands/declare.h"
 #include "gb/commands/dissolve.h"
 #include "gb/commands/distance.h"
 #include "gb/commands/dock.h"
@@ -42,8 +43,10 @@ import std;
 #include "gb/commands/governors.h"
 #include "gb/commands/grant.h"
 #include "gb/commands/highlight.h"
+#include "gb/commands/invite.h"
 #include "gb/commands/mobilize.h"
 #include "gb/commands/orbit.h"
+#include "gb/commands/pledge.h"
 #include "gb/commands/power.h"
 #include "gb/commands/production.h"
 #include "gb/commands/relation.h"
@@ -57,11 +60,11 @@ import std;
 #include "gb/commands/technology.h"
 #include "gb/commands/toggle.h"
 #include "gb/commands/toxicity.h"
+#include "gb/commands/unpledge.h"
 #include "gb/commands/victory.h"
 #include "gb/commands/vote.h"
 #include "gb/config.h"
 #include "gb/cs.h"
-#include "gb/declare.h"
 #include "gb/defense.h"
 #include "gb/doturncmd.h"
 #include "gb/files.h"
@@ -314,7 +317,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"undock", launch},
     {"uninvite", invite},
     {"unload", load},
-    {"unpledge", pledge},
+    {"unpledge", unpledge},
     {"upgrade", upgrade},
     {"victory", victory},
 #ifdef VOTING

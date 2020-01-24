@@ -24,8 +24,9 @@ struct anal_sect {
 };
 
 static void do_analysis(GameObj &, int, int, int, starnum_t, planetnum_t);
-static void Insert(int, struct anal_sect[], int, int, int, int);
-static void PrintTop(GameObj &, struct anal_sect[], const char *);
+static void Insert(int, std::array<anal_sect, CARE>, int, int, int, int);
+static void PrintTop(GameObj &, const std::array<anal_sect, CARE>,
+                     const std::string);
 
 void analysis(const command_t &argv, GameObj &g) {
   int sector_type = -1; /* -1 does analysis on all types */
@@ -116,13 +117,13 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
   int p;
   int i;
   double compat;
-  struct anal_sect Res[CARE];
-  struct anal_sect Eff[CARE];
-  struct anal_sect Frt[CARE];
-  struct anal_sect Mob[CARE];
-  struct anal_sect Troops[CARE];
-  struct anal_sect Popn[CARE];
-  struct anal_sect mPopn[CARE];
+  std::array<struct anal_sect, CARE> Res;
+  std::array<struct anal_sect, CARE> Eff;
+  std::array<struct anal_sect, CARE> Frt;
+  std::array<struct anal_sect, CARE> Mob;
+  std::array<struct anal_sect, CARE> Troops;
+  std::array<struct anal_sect, CARE> Popn;
+  std::array<struct anal_sect, CARE> mPopn;
   int TotalCrys;
   int PlayCrys[MAXPLAYERS + 1];
   int TotalTroops;
@@ -301,8 +302,8 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
   g.out << "\n";
 }
 
-static void Insert(int mode, struct anal_sect arr[], int x, int y, int des,
-                   int value) {
+static void Insert(int mode, std::array<struct anal_sect, CARE> arr, int x,
+                   int y, int des, int value) {
   for (int i = 0; i < CARE; i++)
     if ((mode && arr[i].value < value) ||
         (!mode && (arr[i].value > value || arr[i].value == -1))) {
@@ -315,11 +316,12 @@ static void Insert(int mode, struct anal_sect arr[], int x, int y, int des,
     }
 }
 
-static void PrintTop(GameObj &g, struct anal_sect arr[], const char *name) {
+static void PrintTop(GameObj &g, const std::array<struct anal_sect, CARE> arr,
+                     const std::string name) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
-  sprintf(buf, "%8s:", name);
+  sprintf(buf, "%8s:", name.c_str());
   notify(Playernum, Governor, buf);
   for (int i = 0; i < CARE && arr[i].value != -1; i++) {
     sprintf(buf, "%5d%c(%2d,%2d)", arr[i].value, Dessymbols[arr[i].des],

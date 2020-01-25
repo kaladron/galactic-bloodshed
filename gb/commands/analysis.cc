@@ -18,32 +18,56 @@ import std;
 static constexpr int CARE = 5;
 
 struct anal_sect {
-  int x, y;
-  int value;
-  int des;
+  unsigned int x, y;
+  unsigned int des;
+  resource_t value;
 };
 
-static void do_analysis(GameObj &, int, int, int, starnum_t, planetnum_t);
-static void Insert(int, std::array<anal_sect, CARE>, int, int, int, int);
-static void PrintTop(GameObj &, const std::array<anal_sect, CARE>,
-                     const std::string);
+namespace {
+enum class Mode { top_five, bottom_five };
+
+void insert(Mode mode, std::array<struct anal_sect, CARE> arr, anal_sect in) {
+  for (int i = 0; i < CARE; i++)
+    if ((mode == Mode::top_five && arr[i].value < in.value) ||
+        (mode == Mode::bottom_five &&
+         (arr[i].value > in.value || arr[i].value == -1))) {
+      for (int j = CARE - 1; j > i; j--) arr[j] = arr[j - 1];
+      arr[i] = in;
+      return;
+    }
+}
+
+void PrintTop(GameObj &g, const std::array<struct anal_sect, CARE> arr,
+              const std::string name) {
+  sprintf(buf, "%8s:", name.c_str());
+  notify(g.player, g.governor, buf);
+
+  for (const auto &as : arr) {
+    if (as.value == -1) continue;
+    sprintf(buf, "%5ld%c(%2d,%2d)", as.value, Dessymbols[as.des], as.x, as.y);
+    notify(g.player, g.governor, buf);
+  }
+  g.out << "\n";
+}
+}  // namespace
+
+static void do_analysis(GameObj &, int, Mode, int, starnum_t, planetnum_t);
 
 void analysis(const command_t &argv, GameObj &g) {
   int sector_type = -1; /* -1 does analysis on all types */
   int do_player = -1;
-  const char *p;
-  int mode = 1; /* does top five. 0 does low five */
+  auto mode = Mode::top_five;
 
   size_t i = 1;
   do {
     auto where = std::make_unique<Place>(g.level, g.snum, g.pnum);
 
-    p = argv[1].c_str();
+    const char *p = argv[1].c_str();
     if (*p == '-') /*  Must use 'd' to do an analysis on */
     {              /*  desert sectors to avoid confusion */
       p++;         /*  with the '-' for the mode type    */
       i++;
-      mode = 0;
+      mode = Mode::bottom_five;
     }
     switch (*p) {
       case CHAR_SEA:
@@ -74,7 +98,7 @@ void analysis(const command_t &argv, GameObj &g) {
         sector_type = SectorType::SEC_WASTED;
         break;
     }
-    if (sector_type != -1 && mode == 1) {
+    if (sector_type != -1 && mode == Mode::top_five) {
       i++;
     }
 
@@ -96,6 +120,7 @@ void analysis(const command_t &argv, GameObj &g) {
 
     switch (where->level) {
       case ScopeLevel::LEVEL_UNIV:
+        [[fallthrough]];
       case ScopeLevel::LEVEL_SHIP:
         g.out << "You can only analyze planets.\n";
         break;
@@ -110,13 +135,10 @@ void analysis(const command_t &argv, GameObj &g) {
   } while (false);
 }
 
-static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
+static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
                         starnum_t Starnum, planetnum_t Planetnum) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int p;
-  int i;
-  double compat;
   std::array<struct anal_sect, CARE> Res;
   std::array<struct anal_sect, CARE> Eff;
   std::array<struct anal_sect, CARE> Frt;
@@ -146,20 +168,20 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
                              CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
                              CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
 
-  for (i = 0; i < CARE; i++)
+  for (int i = 0; i < CARE; i++)
     Res[i].value = Eff[i].value = Frt[i].value = Mob[i].value =
         Troops[i].value = Popn[i].value = mPopn[i].value = -1;
 
   TotalWasted = TotalCrys = TotalPopn = TotalMob = TotalTroops = TotalEff =
       TotalRes = TotalSect = 0;
-  for (p = 0; p <= Num_races; p++) {
+  for (int p = 0; p <= Num_races; p++) {
     PlayTroops[p] = PlayPopn[p] = PlayMob[p] = PlayEff[p] = PlayCrys[p] =
         PlayRes[p] = PlayTSect[p] = 0;
     WastedSect[p] = 0;
-    for (i = 0; i <= SectorType::SEC_WASTED; i++) PlaySect[p][i] = 0;
+    for (int i = 0; i <= SectorType::SEC_WASTED; i++) PlaySect[p][i] = 0;
   }
 
-  for (i = 0; i <= SectorType::SEC_WASTED; i++) Sect[i] = 0;
+  for (int i = 0; i <= SectorType::SEC_WASTED; i++) Sect[i] = 0;
 
   auto &race = races[Playernum - 1];
   const auto planet = getplanet(Starnum, Planetnum);
@@ -168,11 +190,10 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
     return;
   }
 
-  compat = planet.compatibility(race);
   TotalSect = planet.Maxx * planet.Maxy;
 
   for (auto smap = getsmap(planet); auto &sect : smap) {
-    p = sect.owner;
+    auto p = sect.owner;
 
     PlayEff[p] += sect.eff;
     PlayMob[p] += sect.mobilization;
@@ -199,14 +220,42 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
 
     if (sector_type == -1 || sector_type == sect.condition) {
       if (ThisPlayer < 0 || ThisPlayer == p) {
-        Insert(mode, Res, sect.x, sect.y, sect.condition, sect.resource);
-        Insert(mode, Eff, sect.x, sect.y, sect.condition, sect.eff);
-        Insert(mode, Mob, sect.x, sect.y, sect.condition, sect.mobilization);
-        Insert(mode, Frt, sect.x, sect.y, sect.condition, sect.fert);
-        Insert(mode, Popn, sect.x, sect.y, sect.condition, sect.popn);
-        Insert(mode, Troops, sect.x, sect.y, sect.condition, sect.troops);
-        Insert(mode, mPopn, sect.x, sect.y, sect.condition,
-               maxsupport(race, sect, compat, planet.conditions[TOXIC]));
+        insert(mode, Res,
+               {.x = sect.x,
+                .y = sect.y,
+                .des = sect.condition,
+                .value = sect.resource});
+        insert(mode, Eff,
+               {.x = sect.x,
+                .y = sect.y,
+                .des = sect.condition,
+                .value = sect.eff});
+        insert(mode, Mob,
+               {.x = sect.x,
+                .y = sect.y,
+                .des = sect.condition,
+                .value = sect.mobilization});
+        insert(mode, Frt,
+               {.x = sect.x,
+                .y = sect.y,
+                .des = sect.condition,
+                .value = sect.fert});
+        insert(mode, Popn,
+               {.x = sect.x,
+                .y = sect.y,
+                .des = sect.condition,
+                .value = sect.popn});
+        insert(mode, Troops,
+               {.x = sect.x,
+                .y = sect.y,
+                .des = sect.condition,
+                .value = sect.troops});
+        insert(mode, mPopn,
+               {.x = sect.x,
+                .y = sect.y,
+                .des = sect.condition,
+                .value = maxsupport(race, sect, planet.compatibility(race),
+                                    planet.conditions[TOXIC])});
       }
     }
   }
@@ -214,7 +263,7 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
   sprintf(buf, "\nAnalysis of /%s/%s:\n", stars[Starnum].name,
           stars[Starnum].pnames[Planetnum]);
   notify(Playernum, Governor, buf);
-  sprintf(buf, "%s %d", (mode ? "Highest" : "Lowest"), CARE);
+  sprintf(buf, "%s %d", (mode == Mode::top_five ? "Highest" : "Lowest"), CARE);
   switch (sector_type) {
     case -1:
       sprintf(buf, "%s of all", buf);
@@ -269,20 +318,20 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
           "a.eff", "a.mob", "res", "x");
   notify(Playernum, Governor, buf);
 
-  for (i = 0; i <= SectorType::SEC_WASTED; i++) {
+  for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
     sprintf(buf, "%4c", SectTypes[i]);
     notify(Playernum, Governor, buf);
   }
   notify(Playernum, Governor,
          "\n----------------------------------------------"
          "---------------------------------\n");
-  for (p = 0; p <= Num_races; p++)
+  for (player_t p = 0; p <= Num_races; p++)
     if (PlayTSect[p] != 0) {
       sprintf(buf, "%2d %3d %7d %6d %5.1lf %5.1lf %5d %2d", p, PlayTSect[p],
               PlayPopn[p], PlayTroops[p], (double)PlayEff[p] / PlayTSect[p],
               (double)PlayMob[p] / PlayTSect[p], PlayRes[p], PlayCrys[p]);
       notify(Playernum, Governor, buf);
-      for (i = 0; i <= SectorType::SEC_WASTED; i++) {
+      for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
         sprintf(buf, "%4d", PlaySect[p][i]);
         notify(Playernum, Governor, buf);
       }
@@ -295,37 +344,8 @@ static void do_analysis(GameObj &g, int ThisPlayer, int mode, int sector_type,
           TotalPopn, TotalTroops, (double)TotalEff / TotalSect,
           (double)TotalMob / TotalSect, TotalRes, TotalCrys);
   notify(Playernum, Governor, buf);
-  for (i = 0; i <= SectorType::SEC_WASTED; i++) {
+  for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
     sprintf(buf, "%4d", Sect[i]);
-    notify(Playernum, Governor, buf);
-  }
-  g.out << "\n";
-}
-
-static void Insert(int mode, std::array<struct anal_sect, CARE> arr, int x,
-                   int y, int des, int value) {
-  for (int i = 0; i < CARE; i++)
-    if ((mode && arr[i].value < value) ||
-        (!mode && (arr[i].value > value || arr[i].value == -1))) {
-      for (int j = CARE - 1; j > i; j--) arr[j] = arr[j - 1];
-      arr[i].value = value;
-      arr[i].x = x;
-      arr[i].y = y;
-      arr[i].des = des;
-      return;
-    }
-}
-
-static void PrintTop(GameObj &g, const std::array<struct anal_sect, CARE> arr,
-                     const std::string name) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
-
-  sprintf(buf, "%8s:", name.c_str());
-  notify(Playernum, Governor, buf);
-  for (int i = 0; i < CARE && arr[i].value != -1; i++) {
-    sprintf(buf, "%5d%c(%2d,%2d)", arr[i].value, Dessymbols[arr[i].des],
-            arr[i].x, arr[i].y);
     notify(Playernum, Governor, buf);
   }
   g.out << "\n";

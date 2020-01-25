@@ -158,22 +158,22 @@ static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   std::array<struct anal_sect, CARE> Troops;
   std::array<struct anal_sect, CARE> Popn;
   std::array<struct anal_sect, CARE> mPopn;
-  int TotalCrys;
+  int TotalCrys = 0;
   int PlayCrys[MAXPLAYERS + 1];
-  int TotalTroops;
+  int TotalTroops = 0;
   int PlayTroops[MAXPLAYERS + 1];
-  int TotalPopn;
+  int TotalPopn = 0;
   int PlayPopn[MAXPLAYERS + 1];
-  int TotalMob;
+  int TotalMob = 0;
   int PlayMob[MAXPLAYERS + 1];
-  int TotalEff;
+  int TotalEff = 0;
   int PlayEff[MAXPLAYERS + 1];
-  int TotalRes;
+  int TotalRes = 0;
   int PlayRes[MAXPLAYERS + 1];
-  int TotalSect;
+  int TotalSect = 0;
   int PlaySect[MAXPLAYERS + 1][SectorType::SEC_WASTED + 1];
   int PlayTSect[MAXPLAYERS + 1];
-  int TotalWasted;
+  int TotalWasted = 0;
   int WastedSect[MAXPLAYERS + 1];
   int Sect[SectorType::SEC_WASTED + 1];
   static char SectTypes[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
@@ -184,8 +184,6 @@ static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
     Res[i].value = Eff[i].value = Frt[i].value = Mob[i].value =
         Troops[i].value = Popn[i].value = mPopn[i].value = -1;
 
-  TotalWasted = TotalCrys = TotalPopn = TotalMob = TotalTroops = TotalEff =
-      TotalRes = TotalSect = 0;
   for (int p = 0; p <= Num_races; p++) {
     PlayTroops[p] = PlayPopn[p] = PlayMob[p] = PlayEff[p] = PlayCrys[p] =
         PlayRes[p] = PlayTSect[p] = 0;

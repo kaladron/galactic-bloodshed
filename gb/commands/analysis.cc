@@ -58,81 +58,93 @@ void analysis(const command_t &argv, GameObj &g) {
   int do_player = -1;
   auto mode = Mode::top_five;
 
-  size_t i = 1;
-  do {
-    auto where = std::make_unique<Place>(g.level, g.snum, g.pnum);
+  // TODO(jeffbailey): If the scope is a ship, this throws.
+  auto where = Place{g.level, g.snum, g.pnum};
 
-    const char *p = argv[1].c_str();
-    if (*p == '-') /*  Must use 'd' to do an analysis on */
-    {              /*  desert sectors to avoid confusion */
-      p++;         /*  with the '-' for the mode type    */
-      i++;
+  bool skipped_first = false;
+
+  for (const auto &arg : argv) {
+    // Skip the name of the command
+    if (!skipped_first) {
+      skipped_first = true;
+      continue;
+    }
+
+    // Top or bottom five
+    if (arg == "-") {
       mode = Mode::bottom_five;
-    }
-    switch (*p) {
-      case CHAR_SEA:
-        sector_type = SectorType::SEC_SEA;
-        break;
-      case CHAR_LAND:
-        sector_type = SectorType::SEC_LAND;
-        break;
-      case CHAR_MOUNT:
-        sector_type = SectorType::SEC_MOUNT;
-        break;
-      case CHAR_GAS:
-        sector_type = SectorType::SEC_GAS;
-        break;
-      case CHAR_ICE:
-        sector_type = SectorType::SEC_ICE;
-        break;
-      case CHAR_FOREST:
-        sector_type = SectorType::SEC_FOREST;
-        break;
-      case 'd':
-        sector_type = SectorType::SEC_DESERT;
-        break;
-      case CHAR_PLATED:
-        sector_type = SectorType::SEC_PLATED;
-        break;
-      case CHAR_WASTED:
-        sector_type = SectorType::SEC_WASTED;
-        break;
-    }
-    if (sector_type != -1 && mode == Mode::top_five) {
-      i++;
+      continue;
     }
 
-    p = argv[i].c_str();
-    if (isdigit(*p)) {
-      do_player = atoi(p);
+    // Sector type
+    if (arg.length() == 1) {
+      switch (arg[0]) {
+        case CHAR_SEA:
+          sector_type = SectorType::SEC_SEA;
+          break;
+        case CHAR_LAND:
+          sector_type = SectorType::SEC_LAND;
+          break;
+        case CHAR_MOUNT:
+          sector_type = SectorType::SEC_MOUNT;
+          break;
+        case CHAR_GAS:
+          sector_type = SectorType::SEC_GAS;
+          break;
+        case CHAR_ICE:
+          sector_type = SectorType::SEC_ICE;
+          break;
+        case CHAR_FOREST:
+          sector_type = SectorType::SEC_FOREST;
+          break;
+          /*  Must use 'd' to do an analysis on */
+          /*  desert sectors to avoid confusion */
+        /*  with the '-' for the mode type    */
+        case 'd':
+          sector_type = SectorType::SEC_DESERT;
+          break;
+        case CHAR_PLATED:
+          sector_type = SectorType::SEC_PLATED;
+          break;
+        case CHAR_WASTED:
+          sector_type = SectorType::SEC_WASTED;
+          break;
+      }
+      if (sector_type != -1) {
+        continue;
+      }
+    }
+
+    // Player number
+    if (isdigit(arg[0])) {
+      do_player = std::stoi(arg);
       if (do_player > Num_races) {
         g.out << "No such player #.\n";
         return;
       }
-      where = std::make_unique<Place>(g.level, g.snum, g.pnum);
-      i++;
-    }
-    p = argv[i].c_str();
-    if (i < argv.size() && (isalpha(*p) || *p == '/')) {
-      where = std::make_unique<Place>(g, argv[i]);
-      if (where->err) continue;
     }
 
-    switch (where->level) {
-      case ScopeLevel::LEVEL_UNIV:
-        [[fallthrough]];
-      case ScopeLevel::LEVEL_SHIP:
-        g.out << "You can only analyze planets.\n";
-        break;
-      case ScopeLevel::LEVEL_PLAN:
-        do_analysis(g, do_player, mode, sector_type, where->snum, where->pnum);
-        break;
-      case ScopeLevel::LEVEL_STAR:
-        for (planetnum_t pnum = 0; pnum < stars[where->snum].numplanets; pnum++)
-          do_analysis(g, do_player, mode, sector_type, where->snum, pnum);
-        break;
+    // Scope
+    Place maybe_where{g, arg};
+    if (!maybe_where.err) {
+      where = maybe_where;
     }
-  } while (false);
+  }
+
+  switch (where.level) {
+    case ScopeLevel::LEVEL_UNIV:
+      [[fallthrough]];
+    case ScopeLevel::LEVEL_SHIP:
+      g.out << "You can only analyze planets.\n";
+      break;
+    case ScopeLevel::LEVEL_PLAN:
+      do_analysis(g, do_player, mode, sector_type, where.snum, where.pnum);
+      break;
+    case ScopeLevel::LEVEL_STAR:
+      for (planetnum_t pnum = 0; pnum < stars[where.snum].numplanets; pnum++)
+        do_analysis(g, do_player, mode, sector_type, where.snum, pnum);
+      break;
+  }
 }
 
 static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,

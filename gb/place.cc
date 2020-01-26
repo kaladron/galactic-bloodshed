@@ -30,7 +30,7 @@ Place getplace2(const int Playernum, const int Governor, const char* string,
     if (where->level == ScopeLevel::LEVEL_UNIV) {
       sprintf(buf, "Can't go higher.\n");
       notify(Playernum, Governor, buf);
-      where->err = 1;
+      where->err = true;
       return (*where);
     }
     if (where->level == ScopeLevel::LEVEL_SHIP) {
@@ -70,13 +70,13 @@ Place getplace2(const int Playernum, const int Governor, const char* string,
         sprintf(buf, "You have not explored %s yet.\n",
                 stars[where->snum].name);
         notify(Playernum, Governor, buf);
-        where->err = 1;
+        where->err = true;
         return (*where);
       }
     if (i >= Sdata.numstars) {
       sprintf(buf, "No such star %s.\n", substr);
       notify(Playernum, Governor, buf);
-      where->err = 1;
+      where->err = true;
       return (*where);
     }
   } else if (where->level == ScopeLevel::LEVEL_STAR) {
@@ -93,19 +93,19 @@ Place getplace2(const int Playernum, const int Governor, const char* string,
         sprintf(buf, "You have not explored %s yet.\n",
                 stars[where->snum].pnames[i]);
         notify(Playernum, Governor, buf);
-        where->err = 1;
+        where->err = true;
         return (*where);
       }
     if (i >= stars[where->snum].numplanets) {
       sprintf(buf, "No such planet %s.\n", substr);
       notify(Playernum, Governor, buf);
-      where->err = 1;
+      where->err = true;
       return (*where);
     }
   } else {
     sprintf(buf, "Can't descend to %s.\n", substr);
     notify(Playernum, Governor, buf);
-    where->err = 1;
+    where->err = true;
     return (*where);
   }
 
@@ -115,8 +115,7 @@ Place getplace2(const int Playernum, const int Governor, const char* string,
 
 Place::Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_)
     : level(level_), snum(snum_), pnum(pnum_), shipno(0) {
-  if (level_ == ScopeLevel::LEVEL_SHIP)
-    throw std::runtime_error("Must give ship number when level is a ship");
+  if (level_ == ScopeLevel::LEVEL_SHIP) err = true;
 }
 
 std::string Place::to_string() {

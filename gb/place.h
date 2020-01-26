@@ -5,8 +5,6 @@
 #ifndef PLACE_H
 #define PLACE_H
 
-#include "gb/vars.h"
-
 class Place { /* used in function return for finding place */
  public:
   Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_,
@@ -20,7 +18,7 @@ class Place { /* used in function return for finding place */
   starnum_t snum;
   planetnum_t pnum;
   shipnum_t shipno;
-  unsigned char err = 0; /* if error */
+  bool err = false;
   std::string to_string();
 };
 

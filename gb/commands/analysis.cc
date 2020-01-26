@@ -58,7 +58,6 @@ void analysis(const command_t &argv, GameObj &g) {
   int do_player = -1;
   auto mode = Mode::top_five;
 
-  // TODO(jeffbailey): If the scope is a ship, this throws.
   auto where = Place{g.level, g.snum, g.pnum};
 
   bool skipped_first = false;
@@ -129,6 +128,11 @@ void analysis(const command_t &argv, GameObj &g) {
     if (!maybe_where.err) {
       where = maybe_where;
     }
+  }
+
+  if (where.err) {
+    g.out << "Invalid scope.\n";
+    return;
   }
 
   switch (where.level) {

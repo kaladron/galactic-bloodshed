@@ -22,7 +22,7 @@ class Place { /* used in function return for finding place */
   std::string to_string();
 
  private:
-  void getplace2(GameObj& g, const char* string, const bool ignoreexpl);
+  void getplace2(GameObj& g, std::string_view string, const bool ignoreexpl);
 };
 
 #endif  // PLACE_H

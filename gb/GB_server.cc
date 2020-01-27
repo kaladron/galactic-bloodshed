@@ -361,7 +361,7 @@ std::string do_prompt(GameObj &g) {
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
-      prompt << fmt::format(" ( [[{0}] {1}s )\n",
+      prompt << fmt::format(" ( [{0}] /{1} )\n",
                             stars[g.snum].AP[Playernum - 1],
                             stars[g.snum].name);
       prompt << std::ends;

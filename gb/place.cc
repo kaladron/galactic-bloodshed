@@ -16,18 +16,14 @@ import std;
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
-void Place::getplace2(GameObj& g, const char* string, const bool ignoreexpl) {
+void Place::getplace2(GameObj& g, std::string_view string,
+                      const bool ignoreexpl) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
-  char substr[NAMESIZE];
-  uint8_t i;
-  size_t l;
-  int tick;
+  if (err || string.empty()) return;
 
-  if (err || string == nullptr || *string == '\0' || *string == '\n')
-    return; /* base cases */
-  if (*string == '.') {
+  if (string.starts_with('.')) {
     if (level == ScopeLevel::LEVEL_UNIV) {
       sprintf(buf, "Can't go higher.\n");
       notify(Playernum, Governor, buf);
@@ -44,67 +40,60 @@ void Place::getplace2(GameObj& g, const char* string, const bool ignoreexpl) {
     } else if (level == ScopeLevel::LEVEL_PLAN) {
       level = ScopeLevel::LEVEL_STAR;
     }
-    while (*string == '.') string++;
-    while (*string == '/') string++;
+    while (string.starts_with('.')) string.remove_prefix(1);
+    while (string.starts_with('/')) string.remove_prefix(1);
     return getplace2(g, string, ignoreexpl);
   }
   /* is a char string, name of something */
-  sscanf(string, "%[^/ \n]", substr);
+  std::string_view substr = string.substr(0, string.find_first_of("/ "));
+  //  sscanf(string, "%[^/ \n]", substr);
   do {
-    /*if (isupper(*string) )
-      (*string) = tolower(*string);*/
-    string++;
-  } while (*string != '/' && *string != '\n' && *string != '\0');
-  l = strlen(substr);
+    string.remove_prefix(1);
+  } while (!string.starts_with('/') && !string.empty());
+  auto l = substr.length();
   if (level == ScopeLevel::LEVEL_UNIV) {
-    for (i = 0; i < Sdata.numstars; i++)
-      if (!strncmp(substr, stars[i].name, l)) {
+    for (auto i = 0; i < Sdata.numstars; i++)
+      if (!strncmp(substr.data(), stars[i].name, l)) {
         level = ScopeLevel::LEVEL_STAR;
         snum = i;
         if (ignoreexpl || isset(stars[snum].explored, Playernum) || g.god) {
-          tick = (*string == '/');
-          return getplace2(g, string + tick, ignoreexpl);
+          if (string.starts_with('/')) string.remove_prefix(1);
+          return getplace2(g, string, ignoreexpl);
         }
         sprintf(buf, "You have not explored %s yet.\n", stars[snum].name);
         notify(Playernum, Governor, buf);
         err = true;
         return;
       }
-    if (i >= Sdata.numstars) {
-      sprintf(buf, "No such star %s.\n", substr);
-      notify(Playernum, Governor, buf);
-      err = true;
-      return;
-    }
+    sprintf(buf, "No such star %s.\n", substr.data());
+    notify(Playernum, Governor, buf);
+    err = true;
+    return;
   } else if (level == ScopeLevel::LEVEL_STAR) {
-    for (i = 0; i < stars[snum].numplanets; i++)
-      if (!strncmp(substr, stars[snum].pnames[i], l)) {
+    for (auto i = 0; i < stars[snum].numplanets; i++)
+      if (!strncmp(substr.data(), stars[snum].pnames[i], l)) {
         level = ScopeLevel::LEVEL_PLAN;
         pnum = i;
         const auto p = getplanet(snum, i);
         if (ignoreexpl || p.info[Playernum - 1].explored || g.god) {
-          tick = (*string == '/');
-          return getplace2(g, string + tick, ignoreexpl);
+          if (string.starts_with('/')) string.remove_prefix(1);
+          return getplace2(g, string, ignoreexpl);
         }
         sprintf(buf, "You have not explored %s yet.\n", stars[snum].pnames[i]);
         notify(Playernum, Governor, buf);
         err = true;
         return;
       }
-    if (i >= stars[snum].numplanets) {
-      sprintf(buf, "No such planet %s.\n", substr);
-      notify(Playernum, Governor, buf);
-      err = true;
-      return;
-    }
+    sprintf(buf, "No such planet %s.\n", substr.data());
+    notify(Playernum, Governor, buf);
+    err = true;
+    return;
   } else {
-    sprintf(buf, "Can't descend to %s.\n", substr);
+    sprintf(buf, "Can't descend to %s.\n", substr.data());
     notify(Playernum, Governor, buf);
     err = true;
     return;
   }
-
-  return;
 }
 
 Place::Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_)

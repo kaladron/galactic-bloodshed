@@ -16,37 +16,37 @@ import std;
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
-namespace {
-Place getplace2(const int Playernum, const int Governor, const char* string,
-                Place* where, const int ignoreexpl, const int God) {
+void Place::getplace2(GameObj& g, const char* string, const bool ignoreexpl) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+
   char substr[NAMESIZE];
   uint8_t i;
   size_t l;
   int tick;
 
-  if (where->err || string == nullptr || *string == '\0' || *string == '\n')
-    return (*where); /* base cases */
+  if (err || string == nullptr || *string == '\0' || *string == '\n')
+    return; /* base cases */
   if (*string == '.') {
-    if (where->level == ScopeLevel::LEVEL_UNIV) {
+    if (level == ScopeLevel::LEVEL_UNIV) {
       sprintf(buf, "Can't go higher.\n");
       notify(Playernum, Governor, buf);
-      where->err = true;
-      return (*where);
+      err = true;
+      return;
     }
-    if (where->level == ScopeLevel::LEVEL_SHIP) {
-      auto ship = getship(where->shipno);
-      where->level = ship->whatorbits;
+    if (level == ScopeLevel::LEVEL_SHIP) {
+      auto ship = getship(shipno);
+      level = ship->whatorbits;
       /* Fix 'cs .' for ships within ships. Maarten */
-      if (where->level == ScopeLevel::LEVEL_SHIP)
-        where->shipno = ship->destshipno;
-    } else if (where->level == ScopeLevel::LEVEL_STAR) {
-      where->level = ScopeLevel::LEVEL_UNIV;
-    } else if (where->level == ScopeLevel::LEVEL_PLAN) {
-      where->level = ScopeLevel::LEVEL_STAR;
+      if (level == ScopeLevel::LEVEL_SHIP) shipno = ship->destshipno;
+    } else if (level == ScopeLevel::LEVEL_STAR) {
+      level = ScopeLevel::LEVEL_UNIV;
+    } else if (level == ScopeLevel::LEVEL_PLAN) {
+      level = ScopeLevel::LEVEL_STAR;
     }
     while (*string == '.') string++;
     while (*string == '/') string++;
-    return (getplace2(Playernum, Governor, string, where, ignoreexpl, God));
+    return getplace2(g, string, ignoreexpl);
   }
   /* is a char string, name of something */
   sscanf(string, "%[^/ \n]", substr);
@@ -56,62 +56,56 @@ Place getplace2(const int Playernum, const int Governor, const char* string,
     string++;
   } while (*string != '/' && *string != '\n' && *string != '\0');
   l = strlen(substr);
-  if (where->level == ScopeLevel::LEVEL_UNIV) {
+  if (level == ScopeLevel::LEVEL_UNIV) {
     for (i = 0; i < Sdata.numstars; i++)
       if (!strncmp(substr, stars[i].name, l)) {
-        where->level = ScopeLevel::LEVEL_STAR;
-        where->snum = i;
-        if (ignoreexpl || isset(stars[where->snum].explored, Playernum) ||
-            God) {
+        level = ScopeLevel::LEVEL_STAR;
+        snum = i;
+        if (ignoreexpl || isset(stars[snum].explored, Playernum) || g.god) {
           tick = (*string == '/');
-          return (getplace2(Playernum, Governor, string + tick, where,
-                            ignoreexpl, God));
+          return getplace2(g, string + tick, ignoreexpl);
         }
-        sprintf(buf, "You have not explored %s yet.\n",
-                stars[where->snum].name);
+        sprintf(buf, "You have not explored %s yet.\n", stars[snum].name);
         notify(Playernum, Governor, buf);
-        where->err = true;
-        return (*where);
+        err = true;
+        return;
       }
     if (i >= Sdata.numstars) {
       sprintf(buf, "No such star %s.\n", substr);
       notify(Playernum, Governor, buf);
-      where->err = true;
-      return (*where);
+      err = true;
+      return;
     }
-  } else if (where->level == ScopeLevel::LEVEL_STAR) {
-    for (i = 0; i < stars[where->snum].numplanets; i++)
-      if (!strncmp(substr, stars[where->snum].pnames[i], l)) {
-        where->level = ScopeLevel::LEVEL_PLAN;
-        where->pnum = i;
-        const auto p = getplanet(where->snum, i);
-        if (ignoreexpl || p.info[Playernum - 1].explored || God) {
+  } else if (level == ScopeLevel::LEVEL_STAR) {
+    for (i = 0; i < stars[snum].numplanets; i++)
+      if (!strncmp(substr, stars[snum].pnames[i], l)) {
+        level = ScopeLevel::LEVEL_PLAN;
+        pnum = i;
+        const auto p = getplanet(snum, i);
+        if (ignoreexpl || p.info[Playernum - 1].explored || g.god) {
           tick = (*string == '/');
-          return (getplace2(Playernum, Governor, string + tick, where,
-                            ignoreexpl, God));
+          return getplace2(g, string + tick, ignoreexpl);
         }
-        sprintf(buf, "You have not explored %s yet.\n",
-                stars[where->snum].pnames[i]);
+        sprintf(buf, "You have not explored %s yet.\n", stars[snum].pnames[i]);
         notify(Playernum, Governor, buf);
-        where->err = true;
-        return (*where);
+        err = true;
+        return;
       }
-    if (i >= stars[where->snum].numplanets) {
+    if (i >= stars[snum].numplanets) {
       sprintf(buf, "No such planet %s.\n", substr);
       notify(Playernum, Governor, buf);
-      where->err = true;
-      return (*where);
+      err = true;
+      return;
     }
   } else {
     sprintf(buf, "Can't descend to %s.\n", substr);
     notify(Playernum, Governor, buf);
-    where->err = true;
-    return (*where);
+    err = true;
+    return;
   }
 
-  return (*where);
+  return;
 }
-}  // Namespace
 
 Place::Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_)
     : level(level_), snum(snum_), pnum(pnum_), shipno(0) {
@@ -144,8 +138,6 @@ Place::Place(GameObj& g, const std::string& string, const bool ignoreexpl) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
-  const auto God = races[Playernum - 1].God;
-
   err = 0;
 
   if (string.size() != 0) {
@@ -154,8 +146,7 @@ Place::Place(GameObj& g, const std::string& string, const bool ignoreexpl) {
         level = ScopeLevel::LEVEL_UNIV; /* scope = root (universe) */
         snum = 0;
         pnum = shipno = 0;
-        getplace2(Playernum, Governor, string.c_str() + 1, this, ignoreexpl,
-                  God);
+        getplace2(g, string.c_str() + 1, ignoreexpl);
         return;
       case '#': {
         auto shipnotmp = string_to_shipnum(string);
@@ -170,8 +161,8 @@ Place::Place(GameObj& g, const std::string& string, const bool ignoreexpl) {
           err = 1;
           return;
         }
-        if ((ship->owner == Playernum || ignoreexpl || God) &&
-            (ship->alive || God)) {
+        if ((ship->owner == Playernum || ignoreexpl || g.god) &&
+            (ship->alive || g.god)) {
           level = ScopeLevel::LEVEL_SHIP;
           snum = ship->storbits;
           pnum = ship->pnumorbits;
@@ -194,5 +185,5 @@ Place::Place(GameObj& g, const std::string& string, const bool ignoreexpl) {
   if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno;
   if (string.size() != 0 && string[0] == CHAR_CURR_SCOPE) return;
 
-  getplace2(Playernum, Governor, string.c_str(), this, ignoreexpl, God);
+  getplace2(g, string.c_str(), ignoreexpl);
 }

@@ -38,8 +38,6 @@
 #define OTHER 9
 #define TOXIC 10
 
-const char CHAR_CURR_SCOPE = ':'; /* for getplace */
-
 const char CHAR_LAND = '*';
 const char CHAR_SEA = '.';
 const char CHAR_MOUNT = '^';

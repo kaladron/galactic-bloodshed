@@ -13,7 +13,6 @@ import std;
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
-#include "gb/tweakables.h"
 #include "gb/vars.h"
 
 void Place::getplace2(GameObj& g, std::string_view string,
@@ -32,7 +31,7 @@ void Place::getplace2(GameObj& g, std::string_view string,
     if (level == ScopeLevel::LEVEL_SHIP) {
       auto ship = getship(shipno);
       level = ship->whatorbits;
-      /* Fix 'cs .' for ships within ships. Maarten */
+      // TODO(jeffbailey): Fix 'cs .' for ships within ships
       if (level == ScopeLevel::LEVEL_SHIP) shipno = ship->destshipno;
     } else if (level == ScopeLevel::LEVEL_STAR) {
       level = ScopeLevel::LEVEL_UNIV;
@@ -124,56 +123,62 @@ std::string Place::to_string() {
   }
 }
 
-Place::Place(GameObj& g, const std::string& string, const bool ignoreexpl) {
+Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
-  err = 0;
-
-  if (string.size() != 0) {
-    switch (string[0]) {
-      case '/':
-        level = ScopeLevel::LEVEL_UNIV; /* scope = root (universe) */
-        snum = 0;
-        pnum = shipno = 0;
-        getplace2(g, string.c_str() + 1, ignoreexpl);
-        return;
-      case '#': {
-        auto shipnotmp = string_to_shipnum(string);
-        if (shipnotmp)
-          shipno = *shipnotmp;
-        else
-          shipno = -1;
-
-        auto ship = getship(shipno);
-        if (!ship) {
-          DontOwnErr(Playernum, Governor, shipno);
-          err = 1;
-          return;
-        }
-        if ((ship->owner == Playernum || ignoreexpl || g.god) &&
-            (ship->alive || g.god)) {
-          level = ScopeLevel::LEVEL_SHIP;
-          snum = ship->storbits;
-          pnum = ship->pnumorbits;
-          return;
-        }
-        err = 1;
-        return;
-      }
-      case '-':
-        /* no destination */
-        level = ScopeLevel::LEVEL_UNIV;
-        return;
-    }
+  // Copy current scope to scope
+  if (string.empty()) {
+    level = g.level;
+    snum = g.snum;
+    pnum = g.pnum;
+    if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno;
+    return;
   }
 
-  /* copy current scope to scope */
-  level = g.level;
-  snum = g.snum;
-  pnum = g.pnum;
-  if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno;
-  if (string.size() != 0 && string[0] == CHAR_CURR_SCOPE) return;
+  switch (string.front()) {
+    case ':':
+      level = g.level;
+      snum = g.snum;
+      pnum = g.pnum;
+      if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno;
+      return;
+    case '/':
+      level = ScopeLevel::LEVEL_UNIV; /* scope = root (universe) */
+      snum = pnum = shipno = 0;
+      string.remove_prefix(1);
+      getplace2(g, string, ignoreexpl);
+      return;
+    case '#': {
+      auto shipnotmp = string_to_shipnum(string);
+      if (shipnotmp)
+        shipno = *shipnotmp;
+      else
+        shipno = -1;
 
-  getplace2(g, string.c_str(), ignoreexpl);
+      auto ship = getship(shipno);
+      if (!ship) {
+        DontOwnErr(Playernum, Governor, shipno);
+        err = true;
+        return;
+      }
+      if ((ship->owner == Playernum || ignoreexpl || g.god) &&
+          (ship->alive || g.god)) {
+        level = ScopeLevel::LEVEL_SHIP;
+        snum = ship->storbits;
+        pnum = ship->pnumorbits;
+        return;
+      }
+      err = true;
+      return;
+    }
+    case '-':
+      /* no destination */
+      level = ScopeLevel::LEVEL_UNIV;
+      snum = pnum = shipno = 0;
+      return;
+    default:
+      getplace2(g, string, ignoreexpl);
+      return;
+  }
 }

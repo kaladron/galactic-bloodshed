@@ -22,25 +22,30 @@ void Place::getplace2(GameObj& g, std::string_view string,
 
   if (err || string.empty()) return;
 
-  if (string.starts_with('.')) {
-    if (level == ScopeLevel::LEVEL_UNIV) {
-      g.out << "Can't go higher.\n";
-      err = true;
-      return;
-    }
-    if (level == ScopeLevel::LEVEL_SHIP) {
-      auto ship = getship(shipno);
-      level = ship->whatorbits;
-      // TODO(jeffbailey): Fix 'cs .' for ships within ships
-      if (level == ScopeLevel::LEVEL_SHIP) shipno = ship->destshipno;
-    } else if (level == ScopeLevel::LEVEL_STAR) {
-      level = ScopeLevel::LEVEL_UNIV;
-    } else if (level == ScopeLevel::LEVEL_PLAN) {
-      level = ScopeLevel::LEVEL_STAR;
+  if (string.front() == '.') {
+    switch (level) {
+      case ScopeLevel::LEVEL_UNIV:
+        g.out << "Can't go higher.\n";
+        err = true;
+        return;
+      case ScopeLevel::LEVEL_SHIP: {
+        auto ship = getship(shipno);
+        level = ship->whatorbits;
+        // TODO(jeffbailey): Fix 'cs .' for ships within ships
+        if (level == ScopeLevel::LEVEL_SHIP) shipno = ship->destshipno;
+        break;
+      }
+      case ScopeLevel::LEVEL_STAR:
+        level = ScopeLevel::LEVEL_UNIV;
+        break;
+      case ScopeLevel::LEVEL_PLAN:
+        level = ScopeLevel::LEVEL_STAR;
+        break;
     }
     while (string.starts_with('.')) string.remove_prefix(1);
     while (string.starts_with('/')) string.remove_prefix(1);
-    return getplace2(g, string, ignoreexpl);
+    getplace2(g, string, ignoreexpl);
+    return;
   }
 
   // It's the name of something
@@ -127,21 +132,18 @@ Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
-  // Copy current scope to scope
+  // Initialize with current
+  level = g.level;
+  snum = g.snum;
+  pnum = g.pnum;
+  if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno;
+
   if (string.empty()) {
-    level = g.level;
-    snum = g.snum;
-    pnum = g.pnum;
-    if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno;
     return;
   }
 
   switch (string.front()) {
     case ':':
-      level = g.level;
-      snum = g.snum;
-      pnum = g.pnum;
-      if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno;
       return;
     case '/':
       level = ScopeLevel::LEVEL_UNIV; /* scope = root (universe) */

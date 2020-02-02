@@ -144,7 +144,7 @@ struct block {
 };
 
 struct power_blocks {
-  char time[128];
+  time_t time;
   unsigned long members[MAXPLAYERS];
   unsigned long troops[MAXPLAYERS];   /* total troops */
   unsigned long popn[MAXPLAYERS];     /* total population */

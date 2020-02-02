@@ -4,3 +4,6 @@ enrol
 makeuniv
 racegen
 config.h
+failures.saves
+racegen.save
+

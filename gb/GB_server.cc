@@ -105,18 +105,15 @@ static char segment_buf[128];
 
 class TextBlock {
  public:
-  TextBlock(const std::string &in) {
-    nchars = in.size();
-    buf = strdup(in.c_str());
-    start = buf;
-  }
-
-  ~TextBlock() { free(buf); }
-  size_t nchars;
-  char *start;
-  char *buf;
+  TextBlock(const std::string &in) : str(in), view(str) {}
   TextBlock(const TextBlock &) = delete;
   TextBlock &operator=(const TextBlock &) = delete;
+
+ private:
+  std::string str;
+
+ public:
+  std::string_view view;
 };
 
 class DescriptorData : public GameObj {
@@ -180,11 +177,11 @@ static void load_race_data(Db &);
 static void load_star_data();
 static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
-static int process_output(DescriptorData &);
+static bool process_output(DescriptorData &);
 static void welcome_user(DescriptorData &);
 static int flush_queue(std::deque<TextBlock> &, int);
 static void process_commands();
-static int do_command(DescriptorData &, const char *);
+static bool do_command(DescriptorData &, const char *);
 static void goodbye_user(DescriptorData &);
 static void dump_users(DescriptorData &);
 static void close_sockets(int);
@@ -820,8 +817,8 @@ static int flush_queue(std::deque<TextBlock> &q, int n) {
 
   while (n > 0 && !q.empty()) {
     auto &p = q.front();
-    n -= p.nchars;
-    really_flushed += p.nchars;
+    n -= p.view.size();
+    really_flushed += p.view.size();
     q.pop_front();
   }
   q.emplace_back(flushed_message);
@@ -845,31 +842,28 @@ static void strstr_to_queue(DescriptorData &d) {
   d.out.str("");
 }
 
-static int process_output(DescriptorData &d) {
-  ssize_t cnt;
-
+static bool process_output(DescriptorData &d) {
   // Flush the stringstream buffer into the output queue.
   strstr_to_queue(d);
 
   while (!d.output.empty()) {
     auto &cur = d.output.front();
-    cnt = write(d.descriptor, cur.start, cur.nchars);
+    ssize_t cnt = write(d.descriptor, cur.view.data(), cur.view.size());
     if (cnt < 0) {
-      if (errno == EWOULDBLOCK) return 1;
+      if (errno == EWOULDBLOCK) return true;
       d.connected = false;
-      return 0;
+      return false;
     }
     d.output_size -= cnt;
-    if (cnt == cur.nchars) {  // We output the entire block
+    if (cnt == cur.view.size()) {  // We output the entire block
       d.output.pop_front();
       continue;
     }
     // We only output part of it, so we don't clear it out.
-    cur.nchars -= cnt;
-    cur.start += cnt;
+    cur.view.remove_prefix(cnt);
     break;
   }
-  return 1;
+  return true;
 }
 
 static void force_output() {
@@ -986,7 +980,7 @@ static void process_commands() {
         d.quota--;
         nprocessed++;
 
-        if (!do_command(d, t.start)) {
+        if (!do_command(d, t.view.data())) {
           shutdownsock(d);
           break;
         }
@@ -1002,7 +996,7 @@ static void process_commands() {
    they are processed here. Responses are sent back to the client via
    notify.
    */
-static int do_command(DescriptorData &d, const char *comm) {
+static bool do_command(DescriptorData &d, const char *comm) {
   /* check to see if there are a few words typed out, usually for the help
    * command */
   command_t argv;
@@ -1010,7 +1004,7 @@ static int do_command(DescriptorData &d, const char *comm) {
 
   if (argv[0] == "quit") {
     goodbye_user(d);
-    return 0;
+    return false;
   }
   if (d.connected && argv[0] == "who") {
     dump_users(d);
@@ -1039,7 +1033,7 @@ static int do_command(DescriptorData &d, const char *comm) {
       }
     }
   }
-  return 1;
+  return true;
 }
 
 static void check_connect(DescriptorData &d, const char *message) {

@@ -7,7 +7,6 @@ import std;
 
 #include "gb/cs.h"
 
-#include "gb/GB_server.h"
 #include "gb/files_shl.h"
 #include "gb/place.h"
 #include "gb/races.h"

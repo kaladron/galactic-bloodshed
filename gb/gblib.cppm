@@ -23,13 +23,12 @@ export using command_t = std::vector<std::string>;
  * \return If the user provided a valid number, return it.
  */
 export inline std::optional<shipnum_t> string_to_shipnum(std::string_view s) {
-  if (s.size() > 1 && s[0] == '#') {
+  while (s.size() > 1 && s.front() == '#') {
     s.remove_prefix(1);
-    return string_to_shipnum(s);
   }
 
-  if (s.size() > 0 && std::isdigit(s[0])) {
-    return (std::stoi(std::string(s.begin(), s.end())));
+  if (s.size() > 0 && std::isdigit(s.front())) {
+    return std::stoi(std::string(s.begin(), s.end()));
   }
   return {};
 }
@@ -46,6 +45,7 @@ export inline double logscale(const int x) {
 export inline double morale_factor(const double x) {
   return (atan((double)x / 10000.) / 3.14159565 + .5);
 }
+
 export class Db {
  public:
   virtual ~Db() {}

@@ -270,3 +270,71 @@ bool testship(const Ship &s, const player_t playernum,
 
   return false;
 }
+
+void kill_ship(int Playernum, Ship *ship) {
+  ship->special.mind.who_killed = Playernum;
+  ship->alive = 0;
+  ship->notified = 0; /* prepare the ship for recycling */
+
+  if (ship->type != ShipType::STYPE_POD &&
+      ship->type != ShipType::OTYPE_FACTORY) {
+    /* pods don't do things to morale, ditto for factories */
+    auto &victim = races[ship->owner - 1];
+    if (victim.Gov_ship == ship->number) victim.Gov_ship = 0;
+    if (!victim.God && Playernum != ship->owner &&
+        ship->type != ShipType::OTYPE_VN) {
+      auto &killer = races[Playernum - 1];
+      adjust_morale(killer, victim, (int)ship->build_cost);
+      putrace(killer);
+    } else if (ship->owner == Playernum && !ship->docked && max_crew(*ship)) {
+      victim.morale -= 2 * ship->build_cost; /* scuttle/scrap */
+    }
+    putrace(victim);
+  }
+
+  if (ship->type == ShipType::OTYPE_VN || ship->type == ShipType::OTYPE_BERS) {
+    getsdata(&Sdata);
+    /* add ship to VN shit list */
+    Sdata.VN_hitlist[ship->special.mind.who_killed - 1] += 1;
+
+    /* keep track of where these VN's were shot up */
+
+    if (Sdata.VN_index1[Playernum - 1] == -1)
+      /* there's no star in the first index */
+      Sdata.VN_index1[Playernum - 1] = ship->storbits;
+    else if (Sdata.VN_index2[Playernum - 1] == -1)
+      /* there's no star in the second index */
+      Sdata.VN_index2[Playernum - 1] = ship->storbits;
+    else {
+      /* pick an index to supplant */
+      if (random() & 01)
+        Sdata.VN_index1[Playernum - 1] = ship->storbits;
+      else
+        Sdata.VN_index2[Playernum - 1] = ship->storbits;
+    }
+    putsdata(&Sdata);
+  }
+
+  if (ship->type == ShipType::OTYPE_TOXWC &&
+      ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
+    auto planet = getplanet(ship->storbits, ship->pnumorbits);
+    planet.conditions[TOXIC] =
+        MIN(100, planet.conditions[TOXIC] + ship->special.waste.toxic);
+    putplanet(planet, stars[ship->storbits], ship->pnumorbits);
+  }
+
+  /* undock the stuff docked with it */
+  if (ship->docked && ship->whatorbits != ScopeLevel::LEVEL_SHIP &&
+      ship->whatdest == ScopeLevel::LEVEL_SHIP) {
+    auto s = getship(ship->destshipno);
+    s->docked = 0;
+    s->whatdest = ScopeLevel::LEVEL_UNIV;
+    putship(&*s);
+  }
+  /* landed ships are killed */
+  Shiplist shiplist(ship->ships);
+  for (auto s : shiplist) {
+    kill_ship(Playernum, &s);
+    putship(&s);
+  }
+}

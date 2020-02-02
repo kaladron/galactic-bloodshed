@@ -125,7 +125,7 @@ void cs(const command_t &argv, GameObj &g) {
     g.snum = where.snum;
     g.pnum = where.pnum;
     g.shipno = where.shipno;
-  } else if (argv.size() == 3 && argv[1][1] == 'd') {
+  } else if (argv.size() == 3 && argv[1] == "-d") {
     /* make new def scope */
     Place where{g, argv[2]};
 
@@ -135,7 +135,8 @@ void cs(const command_t &argv, GameObj &g) {
       race.governor[Governor].defplanetnum = where.pnum;
       putrace(race);
 
-      g.out << "New home system is " << where.to_string() << "\n";
+      std::string where_str = where.to_string();
+      g.out << "New home system is " << where_str << "\n";
     } else {
       g.out << "cs: bad home system.\n";
     }

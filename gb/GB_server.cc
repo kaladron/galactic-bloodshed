@@ -1136,7 +1136,7 @@ static void do_update(Db &db, bool force) {
 
   if (!fakeit) nupdates_done++;
 
-  sprintf(Power_blocks.time, "%s", ctime(&clk));
+  Power_blocks.time = clk;
   sprintf(update_buf, "Last Update %3d : %s", nupdates_done, ctime(&clk));
   fprintf(stderr, "%s", ctime(&clk));
   fprintf(stderr, "Next Update %3d : %s", nupdates_done + 1,
@@ -1402,11 +1402,10 @@ static void help(const command_t &argv, GameObj &g) {
 }
 
 void compute_power_blocks() {
-  const time_t clk = time(nullptr);
   int i;
   int j;
   /* compute alliance block power */
-  sprintf(Power_blocks.time, "%s", ctime(&clk));
+  Power_blocks.time = time(nullptr);
   for (i = 1; i <= Num_races; i++) {
     uint64_t dummy = Blocks[i - 1].invite & Blocks[i - 1].pledge;
     Power_blocks.members[i - 1] = 0;

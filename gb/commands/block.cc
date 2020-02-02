@@ -123,7 +123,7 @@ void block(const command_t &argv, GameObj &g) {
   } else { /* list power report for all the alliance blocks (as of the last
               update) */
     sprintf(buf, "         ========== Alliance Blocks as of %s ==========\n",
-            Power_blocks.time);
+            std::asctime(std::localtime(&Power_blocks.time)));
     notify(Playernum, Governor, buf);
     sprintf(buf,
             " #  Name             memb money popn ship  sys  res fuel "

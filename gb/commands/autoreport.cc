@@ -14,7 +14,7 @@ import std;
 
 #include "gb/GB_server.h"
 #include "gb/files_shl.h"
-#include "gb/getplace.h"
+#include "gb/place.h"
 #include "gb/vars.h"
 
 void autoreport(const command_t &argv, GameObj &g) {

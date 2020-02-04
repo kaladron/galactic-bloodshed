@@ -76,7 +76,6 @@ OLD_LIBGBLIB_FILES = \
 		     doturncmd.cc \
 		     fire.cc \
 		     fuel.cc \
-		     getplace.cc \
 		     land.cc \
 		     launch.cc \
 		     load.cc \

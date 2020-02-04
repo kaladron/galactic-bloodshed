@@ -343,4 +343,7 @@ extern int ShipVector[NUMSTYPES];
 
 extern Ship **ships;
 
+char *Dispshiploc_brief(Ship *);
+char *Dispshiploc(Ship *);
+
 #endif  // SHIPS_H

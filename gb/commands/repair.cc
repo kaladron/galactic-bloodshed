@@ -10,7 +10,7 @@ import std;
 #include <fmt/format.h>
 
 #include "gb/files_shl.h"
-#include "gb/getplace.h"
+#include "gb/place.h"
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"

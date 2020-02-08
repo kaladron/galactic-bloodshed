@@ -13,7 +13,7 @@ char *prin_ship_orbits(Ship *);
 
 constexpr auto maxsupport(const Race &r, const Sector &s, const double c,
                           const int toxic) {
-  if (!r.likes[s.condition]) return 0L;
+  if (r.likes[s.condition] == 0) return 0L;
   double a = ((double)s.eff + 1.0) * (double)s.fert;
   double b = (.01 * c);
 

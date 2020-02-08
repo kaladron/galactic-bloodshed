@@ -92,7 +92,7 @@ void block(const command_t &argv, GameObj &g) {
             "fuel dest know\n");
     notify(Playernum, Governor, buf);
 
-    for (int i = 1; i <= Num_races; i++)
+    for (auto i = 1; i <= Num_races; i++)
       if (isset(dummy, i)) {
         auto &r = races[i - 1];
         if (!r.dissolved) {
@@ -129,7 +129,7 @@ void block(const command_t &argv, GameObj &g) {
             " #  Name             memb money popn ship  sys  res fuel "
             "dest  VPs know\n");
     notify(Playernum, Governor, buf);
-    for (int i = 1; i <= Num_races; i++)
+    for (auto i = 1; i <= Num_races; i++)
       if (Blocks[i - 1].VPs) {
         sprintf(buf, "%2d %-19.19s%3ld", i, Blocks[i - 1].name,
                 Power_blocks.members[i - 1]);

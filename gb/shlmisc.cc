@@ -105,14 +105,13 @@ void DontOwnErr(int Playernum, int Governor, shipnum_t shipno) {
   notify(Playernum, Governor, buf);
 }
 
-int enufAP(int Playernum, int Governor, unsigned short AP, int x) {
-  int blah;
-
-  if ((blah = (AP < x))) {
-    sprintf(buf, "You don't have %d action points there.\n", x);
+bool enufAP(player_t Playernum, governor_t Governor, ap_t have, ap_t needed) {
+  if (have < needed) {
+    sprintf(buf, "You don't have %d action points there.\n", needed);
     notify(Playernum, Governor, buf);
+    return false;
   }
-  return (!blah);
+  return true;
 }
 
 /**

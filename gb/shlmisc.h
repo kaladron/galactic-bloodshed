@@ -14,7 +14,7 @@ shipnum_t start_shiplist(GameObj &, const std::string_view);
 shipnum_t do_shiplist(Ship **, shipnum_t *);
 bool in_list(const player_t, std::string_view, const Ship &, shipnum_t *);
 void DontOwnErr(int, int, shipnum_t);
-int enufAP(int, int, unsigned short, int);
+bool enufAP(player_t, governor_t, ap_t have, ap_t needed);
 std::tuple<player_t, governor_t> getracenum(const std::string &,
                                             const std::string &);
 void get4args(const char *s, int *xl, int *xh, int *yl, int *yh);

@@ -25,7 +25,7 @@ class Sql : public Db {
   virtual std::optional<Ship> getship(Ship **, const shipnum_t);
   virtual Commod getcommod(commodnum_t);
   virtual Planet getplanet(const starnum_t, const planetnum_t);
-  virtual void putplanet(const Planet &, const Star &, const int);
+  virtual void putplanet(const Planet &, const Star &, const planetnum_t);
 };
 
 #endif  // SQL_SQL_H

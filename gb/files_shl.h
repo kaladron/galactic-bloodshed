@@ -31,7 +31,7 @@ void initsqldata();
 void putsdata(struct stardata *);
 void putrace(const Race &);
 void putstar(const Star &, starnum_t);
-void putplanet(const Planet &, const Star &, const int);
+void putplanet(const Planet &, const Star &, const planetnum_t);
 void putsector(const Sector &, const Planet &);
 void putsector(const Sector &, const Planet &, const int x, const int y);
 void putsmap(SectorMap &map, Planet &p);

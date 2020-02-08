@@ -973,10 +973,10 @@ static void end_bulk_insert() {
   sqlite3_exec(dbconn, "END TRANSACTION", nullptr, nullptr, &err_msg);
 }
 
-void Sql::putplanet(const Planet &p, const Star &star, const int pnum) {
+void Sql::putplanet(const Planet &p, const Star &star, const planetnum_t pnum) {
   ::putplanet(p, star, pnum);
 }
-void putplanet(const Planet &p, const Star &star, const int pnum) {
+void putplanet(const Planet &p, const Star &star, const planetnum_t pnum) {
   start_bulk_insert();
 
   const char *tail = nullptr;

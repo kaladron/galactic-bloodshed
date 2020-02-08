@@ -47,7 +47,7 @@ bool has_planet_defense(const shipnum_t shipno, const player_t Playernum) {
 void fire(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount;
+  ap_t APcount;
   int cew;
   // This is called from dock.cc.
   if (argv[0] == "fire-from-dock") {
@@ -303,7 +303,7 @@ void fire(const command_t &argv, GameObj &g) {
 void bombard(const command_t &argv, GameObj &g) {
   int Playernum = g.player;
   int Governor = g.governor;
-  int APcount = 1;
+  ap_t APcount = 1;
   shipnum_t fromship;
   shipnum_t nextshipno;
   Ship *from;
@@ -495,7 +495,7 @@ void bombard(const command_t &argv, GameObj &g) {
 void defend(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = 1;
+  ap_t APcount = 1;
   int toship;
   int sh;
   Ship *ship;

@@ -84,7 +84,7 @@ bool can_build_on_sector(const int what, const Race &race, const Planet &planet,
 void upgrade(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  // TODO(jeffbailey): Fix unused int APcount = 1;
+  // TODO(jeffbailey): Fix unused ap_t APcount = 1;
   int value;
   int oldcost;
   int newcost;
@@ -666,7 +666,7 @@ void make_mod(const command_t &argv, GameObj &g) {
 void build(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  // TODO(jeffbailey): Fix unused int APcount = 1;
+  // TODO(jeffbailey): Fix unused ap_t APcount = 1;
   Planet planet;
   char c;
   int j;
@@ -1447,7 +1447,7 @@ int Shipcost(ShipType i, const Race &r) {
 void sell(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  int APcount = 20;
+  ap_t APcount = 20;
   Commod c;
   int commodno;
   int amount;

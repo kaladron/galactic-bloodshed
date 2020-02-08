@@ -24,7 +24,7 @@ import std;
 void declare(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  const int APcount = 1;
+  const ap_t APcount = 1;
   int n;
   int d_mod;
 

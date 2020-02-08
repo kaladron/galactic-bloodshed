@@ -218,7 +218,7 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 
 /* number of AP's to add to each player in ea. system */
 /*   (look in doturn)  */
-static const unsigned int LIMIT_APs = 255; /* max # of APs you can have */
+static const ap_t LIMIT_APs = 255; /* max # of APs you can have */
 
 enum PlanetType {
   EARTH = 0,
@@ -233,7 +233,7 @@ enum PlanetType {
 
 /* number of global APs each planet is worth */
 #define EARTH_POINTS int_rand(5, 8)
-#define ASTEROID_POINTS 1
+constexpr ap_t ASTEROID_POINTS = 1;
 #define MARS_POINTS int_rand(2, 3)
 #define ICEBALL_POINTS int_rand(2, 3)
 #define GASGIANT_POINTS int_rand(8, 20)

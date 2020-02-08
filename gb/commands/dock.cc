@@ -31,7 +31,7 @@ import std;
 void dock(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = (argv[0] == "dock") ? 0 : 1;
+  ap_t APcount = (argv[0] == "dock") ? 0 : 1;
   int Assault = (argv[0] == "assault") ? 1 : 0;
   Ship *s;
   Ship ship;

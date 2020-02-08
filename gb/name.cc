@@ -75,7 +75,7 @@ void personal(const command_t &argv, GameObj &g) {
 
 void bless(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
-  // TODO(jeffbailey): int APcount = 0;
+  // TODO(jeffbailey): ap_t APcount = 0;
   int amount;
   int Mod;
   char commod;
@@ -266,7 +266,7 @@ void bless(const command_t &argv, GameObj &g) {
 void insurgency(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = 10;
+  ap_t APcount = 10;
   int who;
   int eligible;
   int them = 0;
@@ -397,7 +397,7 @@ void insurgency(const command_t &argv, GameObj &g) {
 void pay(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  // TODO(jeffbailey): int APcount = 0;
+  // TODO(jeffbailey): ap_t APcount = 0;
   int who;
   int amount;
 
@@ -444,7 +444,7 @@ void pay(const command_t &argv, GameObj &g) {
 void give(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = 5;
+  ap_t APcount = 5;
   int who;
 
   if (!(who = get_player(argv[1]))) {
@@ -568,7 +568,7 @@ void give(const command_t &argv, GameObj &g) {
 void page(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = g.god ? 0 : 1;
+  ap_t APcount = g.god ? 0 : 1;
   int i;
   int who;
   int gov;
@@ -632,7 +632,7 @@ void send_message(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   bool postit = argv[0] == "post";
-  int APcount;
+  ap_t APcount;
   if (postit) {
     APcount = 0;
   } else {
@@ -785,7 +785,7 @@ void send_message(const command_t &argv, GameObj &g) {
 }
 
 void read_messages(const command_t &argv, GameObj &g) {
-  // TODO(jeffbailey): int APcount = 0;
+  // TODO(jeffbailey): ap_t APcount = 0;
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   if (argv.size() == 1 || argv[1] == "telegram")
@@ -809,7 +809,7 @@ void read_messages(const command_t &argv, GameObj &g) {
 }
 
 void motto(const command_t &argv, GameObj &g) {
-  // TODO(jeffbailey): int APcount = 0;
+  // TODO(jeffbailey): ap_t APcount = 0;
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
@@ -829,7 +829,7 @@ void motto(const command_t &argv, GameObj &g) {
 }
 
 void name(const command_t &argv, GameObj &g) {
-  int APcount = 0;
+  ap_t APcount = 0;
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   char *ch;

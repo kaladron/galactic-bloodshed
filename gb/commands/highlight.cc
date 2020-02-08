@@ -20,7 +20,7 @@ import std;
 void highlight(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  // TODO(jeffbailey): int APcount = 0;
+  // TODO(jeffbailey): ap_t APcount = 0;
   player_t n;
 
   if (!(n = get_player(argv[1]))) {

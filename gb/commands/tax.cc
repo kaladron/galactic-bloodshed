@@ -20,7 +20,7 @@ import std;
 void tax(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = 0;
+  ap_t APcount = 0;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
     g.out << "scope must be a planet.\n";

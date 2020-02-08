@@ -70,7 +70,7 @@ class Race {
   unsigned char discoveries[NUM_DISCOVERIES]; /* Tech discoveries. */
   unsigned long victory_score;                /* Number of victory points. */
   bool votes;
-  unsigned long planet_points; /* For the determination of global APs */
+  ap_t planet_points; /* For the determination of global APs */
 
   char governors;
   struct gov {

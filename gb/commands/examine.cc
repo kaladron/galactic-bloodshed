@@ -18,7 +18,7 @@ import std;
 #include "gb/vars.h"
 
 void examine(const command_t &argv, GameObj &g) {
-  const int APcount = 0;
+  const ap_t APcount = 0;
   FILE *fd;
   char ch;
 

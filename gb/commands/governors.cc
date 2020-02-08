@@ -88,7 +88,7 @@ void do_revoke(Race race, const governor_t src_gov, const governor_t tgt_gov) {
 void governors(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  // TODO(jeffbailey): int APcount = 0;
+  // TODO(jeffbailey): ap_t APcount = 0;
   governor_t gov;
 
   auto &race = races[Playernum - 1];

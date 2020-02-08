@@ -16,7 +16,7 @@ import std;
 #include "gb/vars.h"
 
 void toxicity(const command_t &argv, GameObj &g) {
-  int APcount = 1;
+  ap_t APcount = 1;
 
   if (argv.size() != 2) {
     g.out << "Provide exactly one value between 0 and 100.\n";

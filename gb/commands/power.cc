@@ -60,7 +60,7 @@ void prepare_output_line(const Race &race, const Race &r, int i, int rank) {
 void power(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  // TODO(jeffbailey): int APcount = 0;
+  // TODO(jeffbailey): ap_t APcount = 0;
   // TODO(jeffbailey): Need to stop using -1 here for UB
   player_t p = -1;
 

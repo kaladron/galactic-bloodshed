@@ -45,6 +45,7 @@ clang_opts="${clang_opts} -Wno-c++98-compat"
 clang_opts="${clang_opts} -Wno-c++98-compat-pedantic"
 clang_opts="${clang_opts} -Wno-padded"
 clang_opts="${clang_opts} -Wno-return-std-move-in-c++11"
+clang_opts="${clang_opts} -Wno-switch-enum"
 
 # Things we should get rid of
 clang_opts="${clang_opts} -Wno-float-equal"
@@ -52,12 +53,12 @@ clang_opts="${clang_opts} -Wno-old-style-cast"
 clang_opts="${clang_opts} -Wno-conversion"
 clang_opts="${clang_opts} -Wno-conditional-uninitialized"
 clang_opts="${clang_opts} -Wno-sign-compare"
-clang_opts="${clang_opts} -Wno-switch-enum"
 clang_opts="${clang_opts} -Wno-exit-time-destructors"
 clang_opts="${clang_opts} -Wno-global-constructors"
-clang_opts="${clang_opts} -Wno-signed-enum-bitfield"
 clang_opts="${clang_opts} -Wno-weak-vtables"
-dnlclang_opts="${clang_opts} -Wno-auto-import"
+
+dnl Needed to fmtlib
+clang_opts="${clang_opts} -Wno-signed-enum-bitfield"
 
 AC_SUBST([CLANG_OPTS], ["${clang_opts}"])
 

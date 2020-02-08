@@ -139,12 +139,15 @@ std::tuple<player_t, governor_t> getracenum(const std::string &racepass,
 player_t get_player(const std::string &name) {
   player_t rnum = 0;
 
+  if (name.empty()) return 0;
+
   if (isdigit(name[0])) {
     if ((rnum = std::stoi(name)) < 1 || rnum > Num_races) return 0;
     return rnum;
   }
-  for (player_t i = 1; i <= Num_races; i++)
-    if (name == races[i - 1].name) return i;
+  for (const auto &race : races) {
+    if (name == race.name) return race.Playernum;
+  }
   return 0;
 }
 

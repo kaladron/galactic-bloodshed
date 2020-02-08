@@ -289,7 +289,7 @@ static char *Estimate_f(double data, const Race &r, int p) {
   return est_buf;
 }
 
-char *Estimate_i(int data, const Race &r, int p) {
+char *Estimate_i(int data, const Race &r, unsigned int p) {
   int est;
 
   sprintf(est_buf, "?");

@@ -23,6 +23,7 @@ libcommands_a_SOURCES = \
 		     block.cc \
 		     capital.cc \
 		     capture.cc \
+		     center.cc \
 		     colonies.cc \
 		     declare.cc \
 		     dissolve.cc \

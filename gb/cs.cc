@@ -13,24 +13,6 @@ import std;
 #include "gb/ships.h"
 #include "gb/vars.h"
 
-void center(const command_t &argv, GameObj &g) {
-  if (argv.size() != 2) {
-    g.out << "center: which star?\n";
-  }
-  Place where{g, argv[1], true};
-
-  if (where.err) {
-    g.out << "center: bad scope.\n";
-    return;
-  }
-  if (where.level == ScopeLevel::LEVEL_SHIP) {
-    g.out << "CHEATER!!!\n";
-    return;
-  }
-  g.lastx[1] = stars[where.snum].xpos;
-  g.lasty[1] = stars[where.snum].ypos;
-}
-
 void cs(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;

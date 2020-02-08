@@ -31,6 +31,7 @@ import std;
 #include "gb/commands/block.h"
 #include "gb/commands/capital.h"
 #include "gb/commands/capture.h"
+#include "gb/commands/center.h"
 #include "gb/commands/colonies.h"
 #include "gb/commands/declare.h"
 #include "gb/commands/dissolve.h"

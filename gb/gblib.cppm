@@ -102,7 +102,7 @@ export class Sector {
   void operator=(const Sector &) = delete;
   Sector(Sector &&) = default;
   Sector &operator=(Sector &&) = default;
-  auto operator<=>(const Sector&) const = default;
+  auto operator<=>(const Sector &) const = default;
 
   unsigned int x{0};
   unsigned int y{0};

@@ -21,7 +21,7 @@ import std;
 void technology(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = 1;
+  ap_t APcount = 1;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
     sprintf(buf, "scope must be a planet (%d).\n", g.level);

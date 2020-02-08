@@ -24,7 +24,7 @@ static char *Estimate_f(double, const Race &, int);
 void whois(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  // TODO(jeffbailey): int APcount = 0;
+  // TODO(jeffbailey): ap_t APcount = 0;
 
   if (argv.size() <= 1) {
     whois({"whois", std::to_string(Playernum)}, g);
@@ -51,7 +51,7 @@ void whois(const command_t &argv, GameObj &g) {
 void treasury(const command_t &, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  // TODO(jeffbailey): int APcount = 0;
+  // TODO(jeffbailey): ap_t APcount = 0;
   auto &race = races[Playernum - 1];
 
   sprintf(
@@ -78,7 +78,7 @@ void treasury(const command_t &, GameObj &g) {
 void profile(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  // TODO(jeffbailey): int APcount = 0;
+  // TODO(jeffbailey): ap_t APcount = 0;
   int p;
 
   auto &race = races[Playernum - 1];

@@ -34,7 +34,7 @@ double Planet::compatibility(const Race &race) const {
   return sum;
 }
 
-int Planet::get_points() const {
+ap_t Planet::get_points() const {
   switch (type) {
     case PlanetType::ASTEROID:
       return ASTEROID_POINTS;

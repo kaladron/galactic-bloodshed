@@ -36,7 +36,7 @@ static void unload_onto_alien_sector(GameObj &, Planet *, Ship *, Sector &, int,
 void load(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = 0;
+  ap_t APcount = 0;
   int mode = argv[0] == "load" ? 0 : 1;  // load or unload
   char commod;
   unsigned char sh = 0;
@@ -468,7 +468,7 @@ void load(const command_t &argv, GameObj &g) {
 void jettison(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = 0;
+  ap_t APcount = 0;
   int Mod = 0;
   shipnum_t shipno;
   shipnum_t nextshipno;
@@ -619,7 +619,7 @@ static int jettison_check(GameObj &g, int amt, int max) {
 void dump(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = 10;
+  ap_t APcount = 10;
   int player;
   int star;
   int j;
@@ -698,7 +698,7 @@ void dump(const command_t &argv, GameObj &g) {
 void transfer(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = 1;
+  ap_t APcount = 1;
   player_t player;
   char commod = 0;
 

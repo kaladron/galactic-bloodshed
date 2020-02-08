@@ -21,7 +21,7 @@ import std;
 void capital(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = 50;
+  ap_t APcount = 50;
 
   auto &race = races[Playernum - 1];
   if (Governor) {

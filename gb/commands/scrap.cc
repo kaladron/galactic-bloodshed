@@ -21,7 +21,7 @@ import std;
 #include "gb/vars.h"
 
 void scrap(const command_t &argv, GameObj &g) {
-  int APcount = 1;
+  ap_t APcount = 1;
   Sector sect;
   Ship *s;
   shipnum_t shipno;

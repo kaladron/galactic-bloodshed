@@ -32,7 +32,7 @@ static void give_orders(GameObj &, const command_t &, int, Ship *);
 void order(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  int APcount = 1;
+  ap_t APcount = 1;
   shipnum_t shipno;
   shipnum_t nextshipno;
   Ship *ship;
@@ -841,7 +841,7 @@ void route(const command_t &argv, GameObj &g) {
   // TODO(jeffbailey): This seems to segfault with no args.
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  // TODO(jeffbailey): int APcount = 0;
+  // TODO(jeffbailey): ap_t APcount = 0;
   int i;
   int x;
   int y;

@@ -40,7 +40,7 @@ static constexpr void maintain(Race &r, Race::gov &governor,
 }
 #endif
 
-static int APadd(const int, const population_t, const Race &);
+static ap_t APadd(const int, const population_t, const Race &);
 static bool attack_planet(const Ship &);
 static void fix_stability(Star &);
 static bool governed(const Race &);
@@ -309,7 +309,7 @@ void do_turn(Db &db, int update) {
           clrbit(stars[star].inhabited, i);
 
         if (isset(stars[star].inhabited, i)) {
-          int APs;
+          ap_t APs;
 
           APs = stars[star].AP[i - 1] + APadd((int)starnumships[star][i - 1],
                                               starpopns[star][i - 1],
@@ -333,7 +333,7 @@ void do_turn(Db &db, int update) {
     for (player_t i = 1; i <= Num_races; i++) {
       Blocks[i - 1].systems_owned = 0; /*recount systems owned*/
       if (governed(races[i - 1])) {
-        int APs;
+        ap_t APs;
 
         APs = Sdata.AP[i - 1] + races[i - 1].planet_points;
         if (APs < LIMIT_APs)
@@ -462,8 +462,8 @@ void do_turn(Db &db, int update) {
 /* routine for number of AP's to add to each player in ea. system,scaled
     by amount of crew in their palace */
 
-static int APadd(const int sh, const population_t popn, const Race &race) {
-  int APs;
+static ap_t APadd(const int sh, const population_t popn, const Race &race) {
+  ap_t APs;
 
   APs = round_rand((double)sh / 10.0 + 5. * log10(1.0 + (double)popn));
 

@@ -151,9 +151,9 @@ player_t get_player(const std::string &name) {
 void allocateAPs(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  // TODO(jeffbailey): int APcount = 0;
-  int maxalloc;
-  int alloc;
+  // TODO(jeffbailey): ap_t APcount = 0;
+  ap_t maxalloc;
+  ap_t alloc;
 
   if (g.level == ScopeLevel::LEVEL_UNIV) {
     sprintf(
@@ -187,7 +187,7 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   notify(Playernum, Governor, buf);
 }
 
-void deductAPs(const GameObj &g, unsigned int APs, ScopeLevel level) {
+void deductAPs(const GameObj &g, ap_t APs, ScopeLevel level) {
   if (APs == 0) return;
 
   if (level == ScopeLevel::LEVEL_UNIV) {
@@ -198,7 +198,7 @@ void deductAPs(const GameObj &g, unsigned int APs, ScopeLevel level) {
   }
 }
 
-void deductAPs(const GameObj &g, unsigned int APs, starnum_t snum) {
+void deductAPs(const GameObj &g, ap_t APs, starnum_t snum) {
   if (APs == 0) return;
 
   stars[snum] = getstar(snum);

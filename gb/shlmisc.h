@@ -20,7 +20,7 @@ std::tuple<player_t, governor_t> getracenum(const std::string &,
 void get4args(const char *s, int *xl, int *xh, int *yl, int *yh);
 player_t get_player(const std::string &);
 void allocateAPs(const command_t &, GameObj &);
-void deductAPs(const GameObj &, unsigned int, ScopeLevel);
-void deductAPs(const GameObj &, unsigned int, starnum_t);
+void deductAPs(const GameObj &, ap_t, ScopeLevel);
+void deductAPs(const GameObj &, ap_t, starnum_t);
 
 #endif  // SHLMISC_H

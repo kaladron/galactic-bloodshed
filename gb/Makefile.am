@@ -103,13 +103,18 @@ racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc racegen.cc sectormap.c
 racegen_LDADD = libgblib.a
 EXTRA_racegen_DEPENDENCIES = gblib.pcm
 
-TESTS = shlmisc_test
+TESTS = shlmisc_test gblib_test
 
-check_PROGRAMS = shlmisc_test
+check_PROGRAMS = shlmisc_test gblib_test
 shlmisc_test_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
 shlmisc_test_SOURCES = shlmisc_test.cc
 shlmisc_test_LDADD = libgblib.a
 EXTRA_shlmisc_test_DEPENDENCIES = gblib.pcm
+
+gblib_test_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
+gblib_test_SOURCES = gblib_test.cc
+gblib_test_LDADD = libgblib.a
+EXTRA_gblib_test_DEPENDENCIES = gblib.pcm
 
 MOSTLYCLEANFILES = gblib.pcm
 BUILT_SOURCES = gblib.pcm

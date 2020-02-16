@@ -46,7 +46,7 @@ int enroll_valid_race() {
   int star;
   int pnum;
   int i;
-  int Playernum;
+  player_t Playernum;
   PlanetType ppref;
   int last_star_left;
   int indirect[NUMSTARS];

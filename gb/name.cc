@@ -445,7 +445,7 @@ void give(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 5;
-  int who;
+  player_t who;
 
   if (!(who = get_player(argv[1]))) {
     g.out << "No such player.\n";
@@ -569,7 +569,7 @@ void page(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = g.god ? 0 : 1;
-  int i;
+  player_t i;
   int who;
   int gov;
   int to_block;
@@ -639,7 +639,7 @@ void send_message(const command_t &argv, GameObj &g) {
     APcount = g.god ? 0 : 1;
   }
   int who;
-  int i;
+  player_t i;
   int j;
   int to_block;
   int to_star;

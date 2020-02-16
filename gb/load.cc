@@ -620,7 +620,7 @@ void dump(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 10;
-  int player;
+  player_t player;
   int star;
   int j;
 

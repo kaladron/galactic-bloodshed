@@ -55,7 +55,7 @@ void map(const command_t &argv, GameObj &g) {
 static void show_map(const player_t Playernum, const governor_t Governor,
                      const starnum_t snum, const planetnum_t pnum,
                      const Planet &p) {
-  int i;
+  player_t i;
   int iq = 0;
   char shiplocs[MAX_X][MAX_Y] = {};
   std::strstream output;

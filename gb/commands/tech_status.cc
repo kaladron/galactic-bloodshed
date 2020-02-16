@@ -21,7 +21,7 @@ import std;
 #include "gb/vars.h"
 
 namespace {
-void tech_report_star(int Playernum, int Governor, const Star &star,
+void tech_report_star(player_t Playernum, governor_t Governor, const Star &star,
                       starnum_t snum, int *t_invest, double *t_gain,
                       double *t_max_gain) {
   char str[200];

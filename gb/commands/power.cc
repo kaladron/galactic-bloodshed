@@ -19,7 +19,8 @@ import std;
 #include "gb/victory.h"
 
 namespace {
-void prepare_output_line(const Race &race, const Race &r, int i, int rank) {
+void prepare_output_line(const Race &race, const Race &r, player_t i,
+                         int rank) {
   if (rank != 0)
     sprintf(buf, "%2d ", rank);
   else

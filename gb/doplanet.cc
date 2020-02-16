@@ -763,8 +763,8 @@ static void do_berserker(Ship *ship, Planet *planet) {
 
 static void do_recover(Planet *planet, int starnum, int planetnum) {
   int owners = 0;
-  int i;
-  int j;
+  player_t i;
+  player_t j;
   int stolenres = 0;
   int stolendes = 0;
   int stolenfuel = 0;

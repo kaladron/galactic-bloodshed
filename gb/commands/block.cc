@@ -92,34 +92,41 @@ void block(const command_t &argv, GameObj &g) {
             "fuel dest know\n");
     notify(Playernum, Governor, buf);
 
-    for (auto i = 1; i <= Num_races; i++)
-      if (isset(dummy, i)) {
-        auto &r = races[i - 1];
-        if (!r.dissolved) {
-          sprintf(buf, "%2d %-20.20s ", i, r.name);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].troops, race, i));
-          strcat(buf, temp);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].popn, race, i));
-          strcat(buf, temp);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].money, race, i));
-          strcat(buf, temp);
-          sprintf(temp, "%5s",
-                  Estimate_i((int)Power[i - 1].ships_owned, race, i));
-          strcat(buf, temp);
-          sprintf(temp, "%5s",
-                  Estimate_i((int)Power[i - 1].planets_owned, race, i));
-          strcat(buf, temp);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].resource, race, i));
-          strcat(buf, temp);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].fuel, race, i));
-          strcat(buf, temp);
-          sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].destruct, race, i));
-          strcat(buf, temp);
-          sprintf(temp, " %3d%%\n", race.translate[i - 1]);
-          strcat(buf, temp);
-          notify(Playernum, Governor, buf);
-        }
+    for (const auto &r : races) {
+      if (isset(dummy, r.Playernum)) {
+        if (r.dissolved) continue;
+        sprintf(buf, "%2d %-20.20s ", r.Playernum, r.name);
+        sprintf(temp, "%5s",
+                Estimate_i(Power[r.Playernum - 1].troops, race, r.Playernum));
+        strcat(buf, temp);
+        sprintf(temp, "%5s",
+                Estimate_i(Power[r.Playernum - 1].popn, race, r.Playernum));
+        strcat(buf, temp);
+        sprintf(temp, "%5s",
+                Estimate_i(Power[r.Playernum - 1].money, race, r.Playernum));
+        strcat(buf, temp);
+        sprintf(
+            temp, "%5s",
+            Estimate_i(Power[r.Playernum - 1].ships_owned, race, r.Playernum));
+        strcat(buf, temp);
+        sprintf(temp, "%5s",
+                Estimate_i(Power[r.Playernum - 1].planets_owned, race,
+                           r.Playernum));
+        strcat(buf, temp);
+        sprintf(temp, "%5s",
+                Estimate_i(Power[r.Playernum - 1].resource, race, r.Playernum));
+        strcat(buf, temp);
+        sprintf(temp, "%5s",
+                Estimate_i(Power[r.Playernum - 1].fuel, race, r.Playernum));
+        strcat(buf, temp);
+        sprintf(temp, "%5s",
+                Estimate_i(Power[r.Playernum - 1].destruct, race, r.Playernum));
+        strcat(buf, temp);
+        sprintf(temp, " %3d%%\n", race.translate[r.Playernum - 1]);
+        strcat(buf, temp);
+        notify(Playernum, Governor, buf);
       }
+    }
   } else { /* list power report for all the alliance blocks (as of the last
               update) */
     sprintf(buf, "         ========== Alliance Blocks as of %s ==========\n",

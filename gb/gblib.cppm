@@ -161,29 +161,28 @@ export struct Victory {
   unsigned long rawscore;
 };
 
-export template <typename T, class = typename std::enable_if<
-                                 std::is_unsigned<T>::value>::type>
-void setbit(T &target, const unsigned int pos) {
+export template <typename T>
+concept Unsigned = std::is_unsigned<T>::value;
+
+export template <typename T>
+void setbit(T &target, const Unsigned auto pos) requires Unsigned<T> {
   T bit = 1;
   target |= (bit << pos);
 }
 
-export template <typename T, class = typename std::enable_if<
-                                 std::is_unsigned<T>::value>::type>
-void clrbit(T &target, const unsigned int pos) {
+export template <typename T>
+void clrbit(T &target, const Unsigned auto pos) requires Unsigned<T> {
   T bit = 1;
   target &= ~(bit << pos);
 }
 
-export template <typename T, class = typename std::enable_if<
-                                 std::is_unsigned<T>::value>::type>
-bool isset(const T target, const unsigned int pos) {
+export template <typename T>
+bool isset(const T target, const Unsigned auto pos) requires Unsigned<T> {
   T bit = 1;
   return target & (bit << pos);
 }
 
-export template <typename T, class = typename std::enable_if<
-                                 std::is_unsigned<T>::value>::type>
-bool isclr(const T target, const unsigned int pos) {
+export template <typename T>
+bool isclr(const T target, const Unsigned auto pos) requires Unsigned<T> {
   return !isset(target, pos);
 }

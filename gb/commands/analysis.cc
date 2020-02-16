@@ -163,23 +163,23 @@ static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   std::array<struct anal_sect, CARE> Popn;
   std::array<struct anal_sect, CARE> mPopn;
   int TotalCrys = 0;
-  int PlayCrys[MAXPLAYERS + 1];
+  std::array<int, MAXPLAYERS + 1> PlayCrys;
   int TotalTroops = 0;
-  int PlayTroops[MAXPLAYERS + 1];
+  std::array<int, MAXPLAYERS + 1> PlayTroops;
   int TotalPopn = 0;
-  int PlayPopn[MAXPLAYERS + 1];
+  std::array<int, MAXPLAYERS + 1> PlayPopn;
   int TotalMob = 0;
-  int PlayMob[MAXPLAYERS + 1];
+  std::array<int, MAXPLAYERS + 1> PlayMob;
   int TotalEff = 0;
-  int PlayEff[MAXPLAYERS + 1];
+  std::array<int, MAXPLAYERS + 1> PlayEff;
   int TotalRes = 0;
-  int PlayRes[MAXPLAYERS + 1];
+  std::array<int, MAXPLAYERS + 1> PlayRes;
   int TotalSect = 0;
   int PlaySect[MAXPLAYERS + 1][SectorType::SEC_WASTED + 1];
-  int PlayTSect[MAXPLAYERS + 1];
+  std::array<int, MAXPLAYERS + 1> PlayTSect;
   int TotalWasted = 0;
-  int WastedSect[MAXPLAYERS + 1];
-  int Sect[SectorType::SEC_WASTED + 1];
+  std::array<int, MAXPLAYERS + 1> WastedSect;
+  std::array<int, SectorType::SEC_WASTED + 1> Sect;
   static char SectTypes[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
                              CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
                              CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
@@ -188,14 +188,20 @@ static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
     Res[i].value = Eff[i].value = Frt[i].value = Mob[i].value =
         Troops[i].value = Popn[i].value = mPopn[i].value = -1;
 
+  PlayTroops.fill(0);
+  PlayPopn.fill(0);
+  PlayMob.fill(0);
+  PlayEff.fill(0);
+  PlayCrys.fill(0);
+  PlayRes.fill(0);
+  PlayTSect.fill(0);
+  WastedSect.fill(0);
+
   for (int p = 0; p <= Num_races; p++) {
-    PlayTroops[p] = PlayPopn[p] = PlayMob[p] = PlayEff[p] = PlayCrys[p] =
-        PlayRes[p] = PlayTSect[p] = 0;
-    WastedSect[p] = 0;
     for (int i = 0; i <= SectorType::SEC_WASTED; i++) PlaySect[p][i] = 0;
   }
 
-  for (int i = 0; i <= SectorType::SEC_WASTED; i++) Sect[i] = 0;
+  Sect.fill(0);
 
   auto &race = races[Playernum - 1];
   const auto planet = getplanet(Starnum, Planetnum);

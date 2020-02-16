@@ -282,10 +282,10 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
           /* if this system isn't inhabited by you, give it to the
              governor of the ship */
           if (!checking_fuel && (s->popn || s->type == ShipType::OTYPE_PROBE)) {
-            if (!isset(dst.inhabited, (int)s->owner))
+            if (!isset(dst.inhabited, s->owner))
               dst.governor[s->owner - 1] = s->governor;
-            setbit(dst.explored, (int)s->owner);
-            setbit(dst.inhabited, (int)s->owner);
+            setbit(dst.explored, s->owner);
+            setbit(dst.inhabited, s->owner);
           }
           if (s->type != ShipType::OTYPE_VN) {
             sprintf(telegram_buf, "%s arrived at %s.",
@@ -304,8 +304,8 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
         if (dist <= PLORBITSIZE) {
           if (!checking_fuel && (s->popn || s->type == ShipType::OTYPE_PROBE)) {
             dpl->info[s->owner - 1].explored = 1;
-            setbit(dst.explored, (int)(s->owner));
-            setbit(dst.inhabited, (int)(s->owner));
+            setbit(dst.explored, s->owner);
+            setbit(dst.inhabited, s->owner);
           }
           s->whatorbits = ScopeLevel::LEVEL_PLAN;
           s->pnumorbits = destpnum;
@@ -371,7 +371,7 @@ int followable(Ship *s1, Ship *s2) {
   auto &r = races[s2->owner - 1];
   allied = r.allied;
   /* You can follow your own ships, your allies' ships, or nearby ships */
-  return (s1->owner == s2->owner) || (isset(allied, (int)s1->owner)) ||
+  return (s1->owner == s2->owner) || (isset(allied, s1->owner)) ||
          (sqrt(dx * dx + dy * dy) <= range);
 }
 

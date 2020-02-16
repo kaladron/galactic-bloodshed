@@ -26,8 +26,8 @@ import std;
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
 
-static void mech_defend(int, int, int *, int, const Planet &, int, int,
-                        const Sector &);
+static void mech_defend(player_t, governor_t, int *, int, const Planet &, int,
+                        int, const Sector &);
 static void mech_attack_people(Ship *, int *, int *, Race &, Race &,
                                const Sector &, int, int, int, char *, char *);
 static void people_attack_mech(Ship *, int, int, Race &, Race &, const Sector &,
@@ -451,8 +451,8 @@ void walk(const command_t &argv, GameObj &g) {
   int succ = 0;
   int civ;
   int mil;
-  int oldowner;
-  int oldgov;
+  player_t oldowner;
+  governor_t oldgov;
   int strength;
   int strength1;
 
@@ -526,8 +526,7 @@ void walk(const command_t &argv, GameObj &g) {
         landed(ship2) && retal_strength(&ship2) && (ship2.land_x == x) &&
         (ship2.land_y == y)) {
       auto &alien = races[ship2.owner - 1];
-      if (!isset(race.allied, (int)ship2.owner) ||
-          !isset(alien.allied, Playernum)) {
+      if (!isset(race.allied, ship2.owner) || !isset(alien.allied, Playernum)) {
         while ((strength = retal_strength(&ship2)) &&
                (strength1 = retal_strength(ship))) {
           bcopy(ship, &dummy, sizeof(Ship));
@@ -591,7 +590,7 @@ void walk(const command_t &argv, GameObj &g) {
     putsector(sect, p, x, y);
   }
 
-  if ((sect.owner == Playernum || isset(race.allied, (int)sect.owner) ||
+  if ((sect.owner == Playernum || isset(race.allied, sect.owner) ||
        !sect.owner) &&
       ship->alive)
     succ = 1;
@@ -668,8 +667,9 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
   }
 }
 
-static void mech_defend(int Playernum, int Governor, int *people, int type,
-                        const Planet &p, int x2, int y2, const Sector &s2) {
+static void mech_defend(player_t Playernum, governor_t Governor, int *people,
+                        int type, const Planet &p, int x2, int y2,
+                        const Sector &s2) {
   int civ = 0;
   int mil = 0;
   int oldgov;

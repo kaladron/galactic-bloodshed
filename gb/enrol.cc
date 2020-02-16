@@ -72,7 +72,7 @@ int main() {
   int count;
   int i;
   int j;
-  int Playernum;
+  player_t Playernum;
   PlanetType ppref;
   sigset_t mask;
   sigset_t block;

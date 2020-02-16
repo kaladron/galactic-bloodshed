@@ -542,7 +542,7 @@ int main(int argc, char **argv) {
   getpower(Power);    /* get power report from database */
   Getblock(Blocks);   /* get alliance block data */
   SortShips();        /* Sort the ship list by tech for "build ?" */
-  for (int i = 1; i <= MAXPLAYERS; i++) {
+  for (player_t i = 1; i <= MAXPLAYERS; i++) {
     setbit(Blocks[i - 1].invite, i - 1);
     setbit(Blocks[i - 1].pledge, i - 1);
   }
@@ -1403,33 +1403,38 @@ static void help(const command_t &argv, GameObj &g) {
 }
 
 void compute_power_blocks() {
-  int i;
-  int j;
   /* compute alliance block power */
   Power_blocks.time = time(nullptr);
-  for (i = 1; i <= Num_races; i++) {
-    uint64_t dummy = Blocks[i - 1].invite & Blocks[i - 1].pledge;
-    Power_blocks.members[i - 1] = 0;
-    Power_blocks.sectors_owned[i - 1] = 0;
-    Power_blocks.popn[i - 1] = 0;
-    Power_blocks.ships_owned[i - 1] = 0;
-    Power_blocks.resource[i - 1] = 0;
-    Power_blocks.fuel[i - 1] = 0;
-    Power_blocks.destruct[i - 1] = 0;
-    Power_blocks.money[i - 1] = 0;
-    Power_blocks.systems_owned[i - 1] = Blocks[i - 1].systems_owned;
-    Power_blocks.VPs[i - 1] = Blocks[i - 1].VPs;
-    for (j = 1; j <= Num_races; j++)
-      if (isset(dummy, j)) {
-        Power_blocks.members[i - 1] += 1;
-        Power_blocks.sectors_owned[i - 1] += Power[j - 1].sectors_owned;
-        Power_blocks.money[i - 1] += Power[j - 1].money;
-        Power_blocks.popn[i - 1] += Power[j - 1].popn;
-        Power_blocks.ships_owned[i - 1] += Power[j - 1].ships_owned;
-        Power_blocks.resource[i - 1] += Power[j - 1].resource;
-        Power_blocks.fuel[i - 1] += Power[j - 1].fuel;
-        Power_blocks.destruct[i - 1] += Power[j - 1].destruct;
+  for (auto &i : races) {
+    uint64_t dummy =
+        Blocks[i.Playernum - 1].invite & Blocks[i.Playernum - 1].pledge;
+    Power_blocks.members[i.Playernum - 1] = 0;
+    Power_blocks.sectors_owned[i.Playernum - 1] = 0;
+    Power_blocks.popn[i.Playernum - 1] = 0;
+    Power_blocks.ships_owned[i.Playernum - 1] = 0;
+    Power_blocks.resource[i.Playernum - 1] = 0;
+    Power_blocks.fuel[i.Playernum - 1] = 0;
+    Power_blocks.destruct[i.Playernum - 1] = 0;
+    Power_blocks.money[i.Playernum - 1] = 0;
+    Power_blocks.systems_owned[i.Playernum - 1] =
+        Blocks[i.Playernum - 1].systems_owned;
+    Power_blocks.VPs[i.Playernum - 1] = Blocks[i.Playernum - 1].VPs;
+    for (auto &j : races) {
+      if (isset(dummy, j.Playernum)) {
+        Power_blocks.members[i.Playernum - 1] += 1;
+        Power_blocks.sectors_owned[i.Playernum - 1] +=
+            Power[j.Playernum - 1].sectors_owned;
+        Power_blocks.money[i.Playernum - 1] += Power[j.Playernum - 1].money;
+        Power_blocks.popn[i.Playernum - 1] += Power[j.Playernum - 1].popn;
+        Power_blocks.ships_owned[i.Playernum - 1] +=
+            Power[j.Playernum - 1].ships_owned;
+        Power_blocks.resource[i.Playernum - 1] +=
+            Power[j.Playernum - 1].resource;
+        Power_blocks.fuel[i.Playernum - 1] += Power[j.Playernum - 1].fuel;
+        Power_blocks.destruct[i.Playernum - 1] +=
+            Power[j.Playernum - 1].destruct;
       }
+    }
   }
 }
 
@@ -1598,8 +1603,10 @@ void warn(const player_t who, const governor_t governor,
 
 void warn_star(const player_t a, const starnum_t star,
                const std::string &message) {
-  for (int i = 1; i <= Num_races; i++)
-    if (i != a && isset(stars[star].inhabited, i)) warn_race(i, message);
+  for (auto &race : races) {
+    if (race.Playernum != a && isset(stars[star].inhabited, race.Playernum))
+      warn_race(race.Playernum, message);
+  }
 }
 
 void notify_star(const player_t a, const governor_t g, const starnum_t star,

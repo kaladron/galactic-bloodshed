@@ -316,7 +316,7 @@ void land(const command_t &argv, GameObj &g) {
           if (s->alive && i != Playernum && p.info[i - 1].popn &&
               p.info[i - 1].guns && p.info[i - 1].destruct) {
             auto &alien = races[i - 1];
-            if (isset(alien.atwar, (int)s->owner)) {
+            if (isset(alien.atwar, s->owner)) {
               /* attack the landing ship */
               strength =
                   MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);

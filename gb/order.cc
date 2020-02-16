@@ -24,7 +24,7 @@ import std;
 #include "gb/vars.h"
 
 static std::string prin_aimed_at(const Ship &);
-static void mk_expl_aimed_at(int, int, Ship *);
+static void mk_expl_aimed_at(player_t, governor_t, Ship *);
 static void DispOrdersHeader(int, int);
 static void DispOrders(int, int, Ship *);
 static void give_orders(GameObj &, const command_t &, int, Ship *);
@@ -610,7 +610,7 @@ std::string prin_ship_dest(const Ship &ship) {
 /*
  * mark wherever the ship is aimed at, as explored by the owning player.
  */
-static void mk_expl_aimed_at(int Playernum, int Governor, Ship *s) {
+static void mk_expl_aimed_at(player_t Playernum, governor_t Governor, Ship *s) {
   double dist;
   double xf;
   double yf;

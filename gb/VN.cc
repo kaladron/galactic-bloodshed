@@ -138,8 +138,8 @@ static void order_VN(Ship &ship) {
 
   /* don't go there if we have a choice,
      and we have VN's there already */
-  if (isset(stars[min].inhabited, 1))
-    if (isset(stars[min2].inhabited, 1))
+  if (isset(stars[min].inhabited, 1U))
+    if (isset(stars[min2].inhabited, 1U))
       ship.deststar = int_rand(0, (int)Sdata.numstars - 1);
     else
       ship.deststar = min2; /* 2nd closest star */

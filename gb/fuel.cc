@@ -26,9 +26,8 @@ static char plan_buf[1024];
 
 static segments_t number_segments;
 static double x_0, y_0, x_1, y_1;
-static Ship *tmpship;
 
-static bool do_trip(const Place &, double fuel, double gravity_factor);
+static bool do_trip(const Place &, Ship &, double fuel, double gravity_factor);
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
                         double grav, double mass, segments_t segs);
 
@@ -98,13 +97,11 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     return;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
-    (void)getship(&tmpship, tmpdest.shipno);
-    if (!followable(&*ship, tmpship)) {
+    auto tmpship = getship(tmpdest.shipno);
+    if (!followable(&*ship, &*tmpship)) {
       g.out << "The ship's destination is out of range.\n";
-      free(tmpship);
       return;
     }
-    free(tmpship);
   }
   if (tmpdest.level != ScopeLevel::LEVEL_UNIV &&
       tmpdest.level != ScopeLevel::LEVEL_SHIP &&
@@ -129,14 +126,13 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     return;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
-    (void)getship(&tmpship, tmpdest.shipno);
+    auto tmpship = getship(tmpdest.shipno);
     if (tmpship->owner != Playernum) {
       g.out << "Nice try.\n";
       return;
     }
     x_1 = tmpship->xpos;
     y_1 = tmpship->ypos;
-    free(tmpship);
   } else if (tmpdest.level == ScopeLevel::LEVEL_PLAN) {
     const auto p = getplanet(tmpdest.snum, tmpdest.pnum);
     x_1 = p.xpos + stars[tmpdest.snum].xpos;
@@ -157,19 +153,20 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   }
 
   /*  First get the results based on current fuel load.  */
-  (void)getship(&tmpship, *shipno);
-  level = tmpship->fuel;
-  current_settings = do_trip(tmpdest, tmpship->fuel, gravity_factor);
+  auto fuelcheckship = getship(*shipno);
+  level = fuelcheckship->fuel;
+  current_settings =
+      do_trip(tmpdest, *fuelcheckship, fuelcheckship->fuel, gravity_factor);
   current_segs = number_segments;
-  if (current_settings) current_fuel = level - tmpship->fuel;
-  free(tmpship);
+  if (current_settings) current_fuel = level - fuelcheckship->fuel;
+  level = fuelcheckship->max_fuel;
 
   /*  2nd loop to determine lowest fuel needed...  */
-  fuel_usage = level = tmpship->max_fuel;
+  fuel_usage = level;
   opt_settings = 0;
   while (computing) {
-    (void)getship(&tmpship, *shipno);
-    computing = do_trip(tmpdest, level, gravity_factor);
+    auto tmpship = getship(*shipno);
+    computing = do_trip(tmpdest, *tmpship, level, gravity_factor);
     if ((computing) && (tmpship->fuel >= 0.05)) {
       fuel_usage = level;
       opt_settings = 1;
@@ -178,15 +175,14 @@ void proj_fuel(const command_t &argv, GameObj &g) {
       computing = false;
       fuel_usage = level;
     }
-    free(tmpship);
   }
 
-  (void)getship(&tmpship, *shipno);
+  auto tmpship = getship(*shipno);
   sprintf(buf,
           "\n  ----- ===== FUEL ESTIMATES ===== ----\n\nAt Current Fuel "
           "Cargo (%.2ff):\n",
           tmpship->fuel);
-  domass(tmpship);
+  domass(&*tmpship);
   notify(Playernum, Governor, buf);
   if (!current_settings) {
     sprintf(buf, "The ship will not be able to complete the trip.\n");
@@ -201,11 +197,10 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
   } else {
     tmpship->fuel = fuel_usage;
-    domass(tmpship);
+    domass(&*tmpship);
     fuel_output(Playernum, Governor, dist, fuel_usage, gravity_factor,
                 tmpship->mass, number_segments);
   }
-  free(tmpship);
 }
 
 static void fuel_output(int Playernum, int Governor, double dist, double fuel,
@@ -238,22 +233,23 @@ static void fuel_output(int Playernum, int Governor, double dist, double fuel,
   }
 }
 
-static bool do_trip(const Place &tmpdest, double fuel, double gravity_factor) {
+static bool do_trip(const Place &tmpdest, Ship &tmpship, double fuel,
+                    double gravity_factor) {
   segments_t effective_segment_number;
   int trip_resolved;
   double gravity_fuel;
   double tmpdist;
   double fuel_level1;
 
-  tmpship->fuel = fuel; /* load up the pseudo-ship */
+  tmpship.fuel = fuel; /* load up the pseudo-ship */
   effective_segment_number = nsegments_done;
 
   /*  Set our temporary destination.... */
-  tmpship->destshipno = (unsigned short)tmpdest.shipno;
-  tmpship->whatdest = tmpdest.level;
-  tmpship->deststar = tmpdest.snum;
-  tmpship->destpnum = tmpdest.pnum;
-  if (tmpship->whatdest == ScopeLevel::LEVEL_SHIP || tmpship->ships) {
+  tmpship.destshipno = tmpdest.shipno;
+  tmpship.whatdest = tmpdest.level;
+  tmpship.deststar = tmpdest.snum;
+  tmpship.destpnum = tmpdest.pnum;
+  if (tmpship.whatdest == ScopeLevel::LEVEL_SHIP || tmpship.ships) {
     /* Bring in the other ships.  moveship() uses ships[]. */
     Num_ships = Numships();
     ships = (Ship **)malloc(sizeof(Ship *) * (Num_ships) + 1);
@@ -264,22 +260,22 @@ static bool do_trip(const Place &tmpdest, double fuel, double gravity_factor) {
   number_segments = 0; /* Reset counter.  */
 
   /*  Launch the ship if it's on a planet.  */
-  gravity_fuel = gravity_factor * tmpship->mass * LAUNCH_GRAV_MASS_FACTOR;
-  tmpship->fuel -= gravity_fuel;
-  tmpship->docked = 0;
+  gravity_fuel = gravity_factor * tmpship.mass * LAUNCH_GRAV_MASS_FACTOR;
+  tmpship.fuel -= gravity_fuel;
+  tmpship.docked = 0;
 
   while (trip_resolved == 0) {
-    domass(tmpship);
-    fuel_level1 = tmpship->fuel;
-    moveship(tmpship, (effective_segment_number == segments), 0, 1);
+    domass(&tmpship);
+    fuel_level1 = tmpship.fuel;
+    moveship(&tmpship, (effective_segment_number == segments), 0, 1);
     number_segments++;
     effective_segment_number++;
     if (effective_segment_number == (segments + 1))
       effective_segment_number = 1;
-    x_0 = (double)tmpship->xpos;
-    y_0 = (double)tmpship->ypos;
+    x_0 = (double)tmpship.xpos;
+    y_0 = (double)tmpship.ypos;
     tmpdist = sqrt(Distsq(x_0, y_0, x_1, y_1));
-    switch (tmpship->whatdest) {
+    switch (tmpship.whatdest) {
       case ScopeLevel::LEVEL_STAR:
         if (tmpdist <= (double)SYSTEMSIZE) trip_resolved = 1;
         break;
@@ -292,16 +288,16 @@ static bool do_trip(const Place &tmpdest, double fuel, double gravity_factor) {
       default:
         trip_resolved = 1;
     }
-    if (((tmpship->fuel == fuel_level1) && (!tmpship->hyper_drive.on)) &&
+    if (((tmpship.fuel == fuel_level1) && (!tmpship.hyper_drive.on)) &&
         (trip_resolved == 0)) {
-      if (tmpship->whatdest == ScopeLevel::LEVEL_SHIP) {
+      if (tmpship.whatdest == ScopeLevel::LEVEL_SHIP) {
         for (shipnum_t i = 1; i <= Num_ships; i++) free(ships[i]);
         free(ships);
       }
       return false;
     }
   }
-  if (tmpship->whatdest == ScopeLevel::LEVEL_SHIP || tmpship->ships) {
+  if (tmpship.whatdest == ScopeLevel::LEVEL_SHIP || tmpship.ships) {
     for (shipnum_t i = 1; i <= Num_ships; i++) free(ships[i]);
     free(ships);
   }

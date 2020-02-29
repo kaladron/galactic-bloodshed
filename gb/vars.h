@@ -13,9 +13,6 @@
 /* number of movement segments (global variable) */
 extern unsigned long segments;
 
-/* Shipping routes - DON'T change this unless you know what you are doing */
-constexpr int MAX_ROUTES = 4;
-
 #define MAXPLAYERS 64
 
 struct plinfo {            /* planetary stockpiles */

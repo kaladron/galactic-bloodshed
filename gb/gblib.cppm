@@ -18,6 +18,9 @@ export using population_t = int64_t;
 
 export using command_t = std::vector<std::string>;
 
+// Shipping routes - DON'T change this unless you know what you are doing
+export inline constexpr int MAX_ROUTES = 4;
+
 /**
  * \brief Convert input string to a shipnum_t
  * \param s User-provided input string

@@ -18,8 +18,8 @@ void cs(const command_t &argv, GameObj &g) {
   const governor_t Governor = g.governor;
   auto &race = races[Playernum - 1];
 
+  // Change to default scope
   if (argv.size() == 1) {
-    /* chdir to def scope */
     g.level = race.governor[Governor].deflevel;
     if ((g.snum = race.governor[Governor].defsystem) >= Sdata.numstars)
       g.snum = Sdata.numstars - 1;
@@ -32,9 +32,9 @@ void cs(const command_t &argv, GameObj &g) {
     g.lasty[1] = stars[g.snum].ypos;
     return;
   }
-  if (argv.size() == 2) {
-    /* chdir to specified scope */
 
+  // Change to specified scope
+  if (argv.size() == 2) {
     Place where{g, argv[1]};
 
     if (where.err) {
@@ -44,7 +44,6 @@ void cs(const command_t &argv, GameObj &g) {
     }
 
     /* fix lastx, lasty coordinates */
-
     switch (g.level) {
       case ScopeLevel::LEVEL_UNIV:
         g.lastx[0] = g.lasty[0] = 0.0;
@@ -106,20 +105,25 @@ void cs(const command_t &argv, GameObj &g) {
     g.snum = where.snum;
     g.pnum = where.pnum;
     g.shipno = where.shipno;
-  } else if (argv.size() == 3 && argv[1] == "-d") {
+    return;
+  }
+
+  if (argv.size() == 3 && argv[1] == "-d") {
     /* make new def scope */
     Place where{g, argv[2]};
 
-    if (!where.err && where.level != ScopeLevel::LEVEL_SHIP) {
-      race.governor[Governor].deflevel = where.level;
-      race.governor[Governor].defsystem = where.snum;
-      race.governor[Governor].defplanetnum = where.pnum;
-      putrace(race);
-
-      std::string where_str = where.to_string();
-      g.out << "New home system is " << where_str << "\n";
-    } else {
+    if (where.err || where.level == ScopeLevel::LEVEL_SHIP) {
       g.out << "cs: bad home system.\n";
+      return;
     }
+
+    race.governor[Governor].deflevel = where.level;
+    race.governor[Governor].defsystem = where.snum;
+    race.governor[Governor].defplanetnum = where.pnum;
+    putrace(race);
+
+    std::string where_str = where.to_string();
+    g.out << "New home system is " << where_str << "\n";
+    return;
   }
 }

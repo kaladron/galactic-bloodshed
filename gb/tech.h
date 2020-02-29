@@ -5,8 +5,6 @@
 #ifndef TECH_H
 #define TECH_H
 
-#include "gb/vars.h"
-
-double tech_prod(int, population_t);
+double tech_prod(money_t, population_t);
 
 #endif  // TECH_H

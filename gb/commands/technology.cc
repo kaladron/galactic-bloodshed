@@ -40,14 +40,14 @@ void technology(const command_t &argv, GameObj &g) {
 
   if (argv.size() < 2) {
     sprintf(buf,
-            "Current investment : %d    Technology production/update: %.3f\n",
+            "Current investment : %ld    Technology production/update: %.3f\n",
             p.info[Playernum - 1].tech_invest,
-            tech_prod((int)(p.info[Playernum - 1].tech_invest),
-                      (int)(p.info[Playernum - 1].popn)));
+            tech_prod(p.info[Playernum - 1].tech_invest,
+                      p.info[Playernum - 1].popn));
     notify(Playernum, Governor, buf);
     return;
   }
-  short invest = std::stoi(argv[1]);
+  money_t invest = std::stoi(argv[1]);
 
   if (invest < 0) {
     g.out << "Illegal value.\n";
@@ -60,8 +60,8 @@ void technology(const command_t &argv, GameObj &g) {
 
   deductAPs(g, APcount, g.snum);
 
-  sprintf(buf, "   New (ideal) tech production: %.3f (this planet)\n",
-          tech_prod((int)(p.info[Playernum - 1].tech_invest),
-                    (int)(p.info[Playernum - 1].popn)));
+  sprintf(
+      buf, "   New (ideal) tech production: %.3f (this planet)\n",
+      tech_prod(p.info[Playernum - 1].tech_invest, p.info[Playernum - 1].popn));
   notify(Playernum, Governor, buf);
 }

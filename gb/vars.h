@@ -33,7 +33,7 @@ struct plinfo {            /* planetary stockpiles */
   money_t prod_money;
   double prod_tech;
 
-  unsigned short tech_invest;
+  money_t tech_invest;
   unsigned short numsectsowned;
 
   unsigned char comread;    /* combat readiness (mobilization)*/

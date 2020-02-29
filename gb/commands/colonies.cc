@@ -34,7 +34,7 @@ void colonies_at_star(GameObj &g, const Race &race, const starnum_t star) {
         pl.info[Playernum - 1].numsectsowned &&
         (!Governor || stars[star].governor[Playernum - 1] == Governor)) {
       sprintf(buf,
-              " %c %4.4s/%-4.4s%c%4d%3d%5d%8ld%3d%6lu%5d%6d "
+              " %c %4.4s/%-4.4s%c%4d%3d%5ld%8ld%3d%6lu%5d%6d "
               "%3d/%-3d%3.0f/%-3d%3d/%-3d",
               Psymbol[pl.type], stars[star].name, stars[star].pnames[i],
               (pl.info[Playernum - 1].autorep ? '*' : ' '),

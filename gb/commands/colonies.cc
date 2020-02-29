@@ -16,7 +16,6 @@ import std;
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
-#include "gb/tech.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 

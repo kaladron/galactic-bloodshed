@@ -53,8 +53,8 @@ void dock(const command_t &argv, GameObj &g) {
   double bstrength;
   double b2strength;
   double Dist;
-  racetype *Race;
-  racetype *alien;
+  Race *race;
+  Race *alien;
 
   if (argv.size() < 3) {
     g.out << "Dock with what?\n";
@@ -234,7 +234,7 @@ void dock(const command_t &argv, GameObj &g) {
 
       if (Assault) {
         alien = &races[s2->owner - 1];
-        Race = &races[Playernum - 1];
+        race = &races[Playernum - 1];
         if (argv.size() >= 4) {
           sscanf(argv[3].c_str(), "%lu", &boarders);
           if ((what == MIL) && (boarders > s->troops))
@@ -262,15 +262,15 @@ void dock(const command_t &argv, GameObj &g) {
           s->troops -= boarders;
         else if (what == CIV)
           s->popn -= boarders;
-        s->mass -= boarders * Race->mass;
+        s->mass -= boarders * race->mass;
         sprintf(
             buf, "Boarding strength :%.2f       Defense strength: %.2f.\n",
-            bstrength = boarders * (what == MIL ? 10 * Race->fighters : 1) *
-                        .01 * Race->tech *
-                        morale_factor((double)(Race->morale - alien->morale)),
+            bstrength = boarders * (what == MIL ? 10 * race->fighters : 1) *
+                        .01 * race->tech *
+                        morale_factor((double)(race->morale - alien->morale)),
             b2strength = (s2->popn + 10 * s2->troops * alien->fighters) * .01 *
                          alien->tech *
-                         morale_factor((double)(alien->morale - Race->morale)));
+                         morale_factor((double)(alien->morale - race->morale)));
         notify(Playernum, Governor, buf);
       }
 
@@ -357,33 +357,33 @@ void dock(const command_t &argv, GameObj &g) {
             s2->troops = boarders;
           else
             s2->popn = boarders;
-          s2->mass += boarders * Race->mass; /* our mass */
+          s2->mass += boarders * race->mass; /* our mass */
           if (casualties2 + casualties3) {
             /* You must kill to get morale */
-            adjust_morale(*Race, *alien, (int)s2->build_cost);
+            adjust_morale(*race, *alien, (int)s2->build_cost);
           }
         } else { /* retreat */
           if (what == MIL)
             s->troops += boarders;
           else if (what == CIV)
             s->popn += boarders;
-          s->mass += boarders * Race->mass;
-          adjust_morale(*alien, *Race, (int)Race->fighters);
+          s->mass += boarders * race->mass;
+          adjust_morale(*alien, *race, (int)race->fighters);
         }
 
         /* races find out about each other */
         alien->translate[Playernum - 1] =
             MIN(alien->translate[Playernum - 1] + 5, 100);
-        Race->translate[old2owner - 1] =
-            MIN(Race->translate[old2owner - 1] + 5, 100);
+        race->translate[old2owner - 1] =
+            MIN(race->translate[old2owner - 1] + 5, 100);
 
         if (!boarders && (s2->popn + s2->troops)) /* boarding party killed */
           alien->translate[Playernum - 1] =
               MIN(alien->translate[Playernum - 1] + 25, 100);
         if (s2->owner == Playernum) /* captured ship */
-          Race->translate[old2owner - 1] =
-              MIN(Race->translate[old2owner - 1] + 25, 100);
-        putrace(*Race);
+          race->translate[old2owner - 1] =
+              MIN(race->translate[old2owner - 1] + 25, 100);
+        putrace(*race);
         putrace(*alien);
       } else {
         s->docked = 1;

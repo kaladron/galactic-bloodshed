@@ -158,9 +158,6 @@ struct power_blocks {
   unsigned short VPs[MAXPLAYERS];
 };
 
-using racetype = class Race;
-using blocktype = struct block;
-
 extern struct block Blocks[MAXPLAYERS];
 extern struct power_blocks Power_blocks;
 

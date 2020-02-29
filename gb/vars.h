@@ -15,48 +15,6 @@ extern unsigned long segments;
 
 #define MAXPLAYERS 64
 
-struct plinfo {            /* planetary stockpiles */
-  unsigned short fuel;     /* fuel for powering things */
-  unsigned short destruct; /* destructive potential */
-  resource_t resource;     /* resources in storage */
-  population_t popn;
-  population_t troops;
-  unsigned short crystals;
-
-  unsigned short prod_res; /* shows last update production */
-  unsigned short prod_fuel;
-  unsigned short prod_dest;
-  unsigned short prod_crystals;
-  money_t prod_money;
-  double prod_tech;
-
-  money_t tech_invest;
-  unsigned short numsectsowned;
-
-  unsigned char comread;    /* combat readiness (mobilization)*/
-  unsigned char mob_set;    /* mobilization target */
-  unsigned char tox_thresh; /* min to build a waste can */
-
-  unsigned char explored;
-  unsigned char autorep;
-  unsigned char tax;    /* tax rate */
-  unsigned char newtax; /* new tax rate (after update) */
-  unsigned char guns;   /* number of planet guns (mob/5) */
-
-  /* merchant shipping parameters */
-  struct {
-    unsigned char set;         /* does the planet have orders? */
-    unsigned char dest_star;   /* star that ship has to go to next */
-    unsigned char dest_planet; /* planet destination */
-    unsigned char load;        /* bit-field commodities to be loaded there */
-    unsigned char unload;      /* unloaded commodities */
-    unsigned char x, y;        /* location that ship has to land on */
-  } route[MAX_ROUTES];         /* i am allowing up to four routes per planet */
-
-  long mob_points;
-  double est_production; /* estimated production */
-};
-
 #define M_FUEL 0x1
 #define M_DESTRUCT 0x2
 #define M_RESOURCES 0x4
@@ -84,8 +42,8 @@ class Planet {
   shipnum_t ships;          /* first ship in orbit (to be changed) */
   unsigned char Maxx, Maxy; /* size of map */
 
-  struct plinfo info[MAXPLAYERS]; /* player info */
-  int conditions[TOXIC + 1];      /* atmospheric conditions for terraforming */
+  plinfo info[MAXPLAYERS];   /* player info */
+  int conditions[TOXIC + 1]; /* atmospheric conditions for terraforming */
 
   population_t popn;
   population_t troops;

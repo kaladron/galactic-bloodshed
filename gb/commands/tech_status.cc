@@ -36,12 +36,12 @@ void tech_report_star(player_t Playernum, governor_t Governor, const Star &star,
           pl.info[Playernum - 1].numsectsowned) {
         sprintf(str, "%s/%s%s", star.name, star.pnames[i],
                 (pl.info[Playernum - 1].autorep ? "*" : ""));
-        sprintf(buf, "%16.16s %10ld%10d%8.3lf%8.3lf\n", str,
+        sprintf(buf, "%16.16s %10ld%10ld%8.3lf%8.3lf\n", str,
                 pl.info[Playernum - 1].popn, pl.info[Playernum - 1].tech_invest,
-                gain = tech_prod((int)pl.info[Playernum - 1].tech_invest,
-                                 (int)pl.info[Playernum - 1].popn),
-                max_gain = tech_prod((int)pl.info[Playernum - 1].prod_res,
-                                     (int)pl.info[Playernum - 1].popn));
+                gain = tech_prod(pl.info[Playernum - 1].tech_invest,
+                                 pl.info[Playernum - 1].popn),
+                max_gain = tech_prod(pl.info[Playernum - 1].prod_res,
+                                     pl.info[Playernum - 1].popn));
         notify(Playernum, Governor, buf);
         *t_invest += pl.info[Playernum - 1].tech_invest;
         *t_gain += gain;

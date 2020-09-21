@@ -71,8 +71,8 @@ class SequentialNameGenerator : NameGenerator {
                           const std::string &suff = std::string(""),
                           const std::string &nf = std::string(""))
       : currval(startval), prefix(pref), suffix(suff), numberformat(nf) {}
-  virtual bool next();
-  virtual const std::string &current() { return current_value; }
+  virtual bool next() override;
+  virtual const std::string &current() override { return current_value; }
 
  private:
   std::string current_value;
@@ -86,8 +86,8 @@ class IterativeNameGenerator : NameGenerator {
  public:
   IterativeNameGenerator(std::string::iterator start, std::string::iterator end)
       : head(start), tail(end) {}
-  virtual bool next();
-  virtual const std::string &current() { return current_value; }
+  virtual bool next() override;
+  virtual const std::string &current() override { return current_value; }
 
  private:
   std::string::iterator head;

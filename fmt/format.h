@@ -544,7 +544,7 @@ class basic_memory_buffer : private Allocator, public internal::buffer<T> {
       : Allocator(alloc) {
     this->set(store_, SIZE);
   }
-  ~basic_memory_buffer() { deallocate(); }
+  ~basic_memory_buffer() override { deallocate(); }
 
  private:
   // Move data from other to this buffer.
@@ -615,7 +615,7 @@ class FMT_API format_error : public std::runtime_error {
   explicit format_error(const char* message) : std::runtime_error(message) {}
   explicit format_error(const std::string& message)
       : std::runtime_error(message) {}
-  ~format_error() FMT_NOEXCEPT;
+  ~format_error() FMT_NOEXCEPT override;
 };
 
 namespace internal {
@@ -2651,7 +2651,7 @@ class FMT_API system_error : public std::runtime_error {
       : std::runtime_error("") {
     init(error_code, message, make_format_args(args...));
   }
-  ~system_error() FMT_NOEXCEPT;
+  ~system_error() FMT_NOEXCEPT override;
 
   int error_code() const { return error_code_; }
 };

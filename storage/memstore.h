@@ -13,9 +13,9 @@ START_NS
 class MemCollection : public Collection {
 public:
     MemCollection(const Schema *schema_);
-    virtual StrongValue Get(StrongValue key);
-    virtual bool Put(StrongValue entity);
-    virtual bool Delete(StrongValue key);
+    virtual StrongValue Get(StrongValue key) override;
+    virtual bool Put(StrongValue entity) override;
+    virtual bool Delete(StrongValue key) override;
 
 private:
     std::map<StrongValue, StrongValue> entries;
@@ -24,7 +24,7 @@ private:
 class MemStore : public Store {
 public:
     MemStore();
-    virtual shared_ptr<Collection> GetCollection(const Schema *t);
+    virtual shared_ptr<Collection> GetCollection(const Schema *t) override;
 
 private:
     std::map<const Schema *, std::shared_ptr<MemCollection>> tables;

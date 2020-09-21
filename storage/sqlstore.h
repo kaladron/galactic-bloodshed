@@ -15,9 +15,9 @@ class SQLCollection : public Collection {
 public:
     using Collection::Delete;
     SQLCollection(const Schema *s, shared_ptr<SQLDB> db_);
-    virtual StrongValue Get(StrongValue key);
-    virtual bool Put(StrongValue entity);
-    virtual bool Delete(StrongValue key);
+    virtual StrongValue Get(StrongValue key) override;
+    virtual bool Put(StrongValue entity) override;
+    virtual bool Delete(StrongValue key) override;
 
 protected:
     shared_ptr<SQLDB> db;
@@ -27,7 +27,7 @@ protected:
 class SQLStore : public Store {
 public:
     SQLStore(const string &dbpath);
-    virtual shared_ptr<Collection> GetCollection(const Schema *t);
+    virtual shared_ptr<Collection> GetCollection(const Schema *t) override;
 
 private:
     map<const Schema *, shared_ptr<SQLCollection>> tables;

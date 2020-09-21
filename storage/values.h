@@ -58,14 +58,14 @@ public:
     MapValue();
     MapValue(std::initializer_list<std::pair<const string, StrongValue>> vals);
     MapValue(const ValueMap &vals);
-    virtual int Compare(const Value *another) const;
-    virtual size_t HashCode() const;
-    virtual bool HasChildren() const;
-    virtual size_t ChildCount() const { return values.size(); }
-    virtual StrongValue Get(const string &key) const;
-    virtual StrongValue Set(const std::string &key, StrongValue newvalue);
-    virtual vector<string> Keys() const;
-    virtual bool IsKeyed() const { return true; }
+    virtual int Compare(const Value *another) const override;
+    virtual size_t HashCode() const override;
+    virtual bool HasChildren() const override;
+    virtual size_t ChildCount() const override { return values.size(); }
+    virtual StrongValue Get(const string &key) const override;
+    virtual StrongValue Set(const std::string &key, StrongValue newvalue) override;
+    virtual vector<string> Keys() const override;
+    virtual bool IsKeyed() const override { return true; }
 
 protected:
     mutable ValueMap values;
@@ -76,13 +76,13 @@ public:
     ListValue();
     ListValue(std::initializer_list<StrongValue> values);
     ListValue(ValueVector &vals);
-    virtual int Compare(const Value *another) const;
-    virtual size_t HashCode() const;
-    virtual bool HasChildren() const;
-    virtual size_t ChildCount() const { return values.size(); }
-    virtual StrongValue Get(size_t index) const;
-    virtual StrongValue Set(size_t index, StrongValue newvalue);
-    virtual bool IsIndexed() const { return true; }
+    virtual int Compare(const Value *another) const override;
+    virtual size_t HashCode() const override;
+    virtual bool HasChildren() const override;
+    virtual size_t ChildCount() const override { return values.size(); }
+    virtual StrongValue Get(size_t index) const override;
+    virtual StrongValue Set(size_t index, StrongValue newvalue) override;
+    virtual bool IsIndexed() const override { return true; }
 
 protected:
     ValueVector values;
@@ -91,8 +91,8 @@ protected:
 class UnionValue : public Value {
 public:
     UnionValue(int t, StrongValue d);
-    virtual size_t HashCode() const;
-    virtual int Compare(const Value *another) const;
+    virtual size_t HashCode() const override;
+    virtual int Compare(const Value *another) const override;
     int Tag() const { return tag; }
     StrongValue Data() const { return data; }
 
@@ -127,14 +127,14 @@ public:
     virtual string AsString() const = 0;
     static const Literal *From(const Value *v);
     static Literal *From(Value *v);
-    virtual int Compare(const Value *another) const;
+    virtual int Compare(const Value *another) const override;
 };
 
 template <typename T>
 class TypedLiteral : public Literal {
 public:
     TypedLiteral(const T &val) : value(val) { }
-    int Compare(const Value *another) const {
+    int Compare(const Value *another) const override {
         const TypedLiteral<T> *ourtype = dynamic_cast<const TypedLiteral<T> *>(another);
         if (ourtype == nullptr) {
             // see if it is atleast a literal
@@ -142,14 +142,14 @@ public:
         }
         return Comparer<T>()(value, ourtype->value);
     }
-    size_t HashCode() const { 
+    size_t HashCode() const override {
         std::hash<T> hasher;
         return hasher(value); 
     }
     const T &LitVal() const { return value; }
-    LiteralType LitType() const { return LIT_TYPE; }
-    string AsString() const { return std::to_string(value); }
-    ostream &Write(ostream &out) const { out << value; return out; }
+    LiteralType LitType() const override { return LIT_TYPE; }
+    string AsString() const override { return std::to_string(value); }
+    ostream &Write(ostream &out) const override { out << value; return out; }
 
 protected:
     T value;

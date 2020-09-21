@@ -10,9 +10,9 @@
 class Sql : public Db {
  public:
   Sql();
-  virtual ~Sql();
-  virtual int Numcommods();
-  virtual int Numraces();
+  virtual ~Sql() override;
+  virtual int Numcommods() override;
+  virtual int Numraces() override;
   virtual void putcommod(const Commod &, int);
   virtual void putship(Ship *);
   virtual void putstar(const Star &, starnum_t);

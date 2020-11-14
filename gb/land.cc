@@ -280,7 +280,7 @@ void land(const command_t &argv, GameObj &g) {
           continue;
         }
 
-        auto p = getplanet((int)s->storbits, (int)s->pnumorbits);
+        auto p = getplanet(s->storbits, s->pnumorbits);
 
         sprintf(buf, "Planet /%s/%s has gravity field of %.2f.\n",
                 stars[s->storbits].name,

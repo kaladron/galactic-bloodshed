@@ -21,7 +21,7 @@ import std;
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */
-int bombard(Ship *ship, Planet *planet, Race &r) {
+int bombard(Ship *ship, Planet &planet, Race &r) {
   int x;
   int y;
   int x2 = -1;
@@ -33,7 +33,7 @@ int bombard(Ship *ship, Planet *planet, Race &r) {
   bzero((char *)Nuked, sizeof(Nuked));
 
   /* check to see if PDNs are present */
-  Shiplist shiplist(planet->ships);
+  Shiplist shiplist(planet.ships);
   for (auto s : shiplist) {
     if (s.alive && s.type == ShipType::OTYPE_PLANDEF &&
         s.owner != ship->owner) {
@@ -44,7 +44,7 @@ int bombard(Ship *ship, Planet *planet, Race &r) {
     }
   }
 
-  auto smap = getsmap(*planet);
+  auto smap = getsmap(planet);
 
   /* look for someone to bombard-check for war */
   bool found = false;
@@ -80,7 +80,7 @@ int bombard(Ship *ship, Planet *planet, Race &r) {
       ship->destruct -= str;
       ship->mass -= str * MASS_DESTRUCT;
 
-      numdest = shoot_ship_to_planet(ship, *planet, str, x, y, smap, 0, 0,
+      numdest = shoot_ship_to_planet(ship, planet, str, x, y, smap, 0, 0,
                                      long_buf, short_buf);
       /* (0=dont get smap) */
       if (numdest < 0) numdest = 0;
@@ -120,7 +120,7 @@ int bombard(Ship *ship, Planet *planet, Race &r) {
       }
     }
 
-    putsmap(smap, *planet);
+    putsmap(smap, planet);
 
   } else {
     /* there were no sectors worth bombing. */

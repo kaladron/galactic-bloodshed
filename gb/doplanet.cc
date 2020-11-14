@@ -37,12 +37,12 @@ import std;
 #include "gb/vars.h"
 
 static void do_dome(Ship *, SectorMap &);
-static void do_quarry(Ship *, Planet *, SectorMap &);
-static void do_berserker(Ship *, Planet *);
+static void do_quarry(Ship *, Planet &, SectorMap &);
+static void do_berserker(Ship *, Planet &);
 static void do_recover(Planet *, int, int);
 static double est_production(const Sector &);
 static bool moveship_onplanet(Ship &, const Planet &);
-static void plow(Ship *, Planet *, SectorMap &);
+static void plow(Ship *, Planet &, SectorMap &);
 static void terraform(Ship &, Planet &, SectorMap &);
 
 int doplanet(const int starnum, Planet &planet, const int planetnum) {
@@ -99,13 +99,13 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
               or affect planet production */
       switch (ship->type) {
         case ShipType::OTYPE_VN:
-          planet_doVN(ship, &planet, smap);
+          planet_doVN(ship, planet, smap);
           break;
         case ShipType::OTYPE_BERS:
           if (!ship->destruct || !ship->bombard)
-            planet_doVN(ship, &planet, smap);
+            planet_doVN(ship, planet, smap);
           else
-            do_berserker(ship, &planet);
+            do_berserker(ship, planet);
           break;
         case ShipType::OTYPE_TERRA:
           if ((ship->on && landed(*ship) && ship->popn)) {
@@ -120,7 +120,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         case ShipType::OTYPE_PLOW:
           if (ship->on && landed(*ship)) {
             if (ship->fuel >= (double)FUEL_COST_PLOW)
-              plow(ship, &planet, smap);
+              plow(ship, planet, smap);
             else if (!ship->notified) {
               ship->notified = 1;
               msg_OOF(ship);
@@ -173,7 +173,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         case ShipType::OTYPE_QUARRY:
           if ((ship->on && landed(*ship) && ship->popn)) {
             if (ship->fuel >= FUEL_COST_QUARRY)
-              do_quarry(ship, &planet, smap);
+              do_quarry(ship, planet, smap);
             else if (!ship->notified) {
               ship->on = 0;
               msg_OOF(ship);
@@ -686,8 +686,8 @@ static void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
   }
 }
 
-static void plow(Ship *ship, Planet *planet, SectorMap &smap) {
-  if (!moveship_onplanet(*ship, *planet)) return;
+static void plow(Ship *ship, Planet &planet, SectorMap &smap) {
+  if (!moveship_onplanet(*ship, planet)) return;
   auto &s = smap.get(ship->land_x, ship->land_y);
   if ((races[ship->owner - 1].likes[s.condition]) && (s.fert < 100)) {
     int adjust = round_rand(
@@ -704,8 +704,8 @@ static void plow(Ship *ship, Planet *planet, SectorMap &smap) {
       push_telegram(ship->owner, ship->governor, buf);
     }
     use_fuel(ship, FUEL_COST_PLOW);
-    if ((random() & 01) && (planet->conditions[TOXIC] < 100))
-      planet->conditions[TOXIC] += 1;
+    if ((random() & 01) && (planet.conditions[TOXIC] < 100))
+      planet.conditions[TOXIC] += 1;
   }
 }
 
@@ -725,7 +725,7 @@ static void do_dome(Ship *ship, SectorMap &smap) {
   use_resource(ship, RES_COST_DOME);
 }
 
-static void do_quarry(Ship *ship, Planet *planet, SectorMap &smap) {
+static void do_quarry(Ship *ship, Planet &planet, SectorMap &smap) {
   int prod;
   int tox;
 
@@ -743,14 +743,14 @@ static void do_quarry(Ship *ship, Planet *planet, SectorMap &smap) {
   ship->fuel -= FUEL_COST_QUARRY;
   prod_res[ship->owner - 1] += prod;
   tox = int_rand(0, int_rand(0, prod));
-  planet->conditions[TOXIC] = std::min(100, planet->conditions[TOXIC] + tox);
+  planet.conditions[TOXIC] = std::min(100, planet.conditions[TOXIC] + tox);
   if (s.fert >= prod)
     s.fert -= prod;
   else
     s.fert = 0;
 }
 
-static void do_berserker(Ship *ship, Planet *planet) {
+static void do_berserker(Ship *ship, Planet &planet) {
   if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
       ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
       ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {

@@ -158,7 +158,7 @@ static void order_VN(Ship &ship) {
 }
 
 /*  planet_doVN() -- called by doplanet() */
-void planet_doVN(Ship *ship, Planet *planet, SectorMap &smap) {
+void planet_doVN(Ship *ship, Planet &planet, SectorMap &smap) {
   int j;
   int oldres;
   int xa;
@@ -174,11 +174,11 @@ void planet_doVN(Ship *ship, Planet *planet, SectorMap &smap) {
       if (!(oldres = s.resource)) {
         /* move to another sector */
         xa = int_rand(-1, 1);
-        ship->land_x = mod((int)(ship->land_x) + xa, planet->Maxx, dum);
+        ship->land_x = mod((int)(ship->land_x) + xa, planet.Maxx, dum);
         ya =
             (ship->land_y == 0)
                 ? 1
-                : ((ship->land_y == (planet->Maxy - 1)) ? -1 : int_rand(-1, 1));
+                : ((ship->land_y == (planet.Maxy - 1)) ? -1 : int_rand(-1, 1));
         ship->land_y += ya;
       } else {
         /* mine the sector */
@@ -209,8 +209,8 @@ void planet_doVN(Ship *ship, Planet *planet, SectorMap &smap) {
           ships[Num_ships] = (Ship *)malloc(sizeof(Ship));
           s2 = ships[Num_ships];
           bzero((char *)s2, sizeof(Ship));
-          s2->nextship = planet->ships;
-          planet->ships = Num_ships;
+          s2->nextship = planet.ships;
+          planet.ships = Num_ships;
           s2->number = Num_ships;
           s2->whatorbits = ScopeLevel::LEVEL_PLAN;
           s2->storbits = ship->storbits;
@@ -291,7 +291,7 @@ void planet_doVN(Ship *ship, Planet *planet, SectorMap &smap) {
         if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
             ship->deststar == ship->storbits &&
             ship->destpnum == ship->pnumorbits) {
-          if (planet->type == PlanetType::GASGIANT)
+          if (planet.type == PlanetType::GASGIANT)
             ship->special.mind.busy = 0;
           else {
             /* find a place on the planet to land */
@@ -304,8 +304,8 @@ void planet_doVN(Ship *ship, Planet *planet, SectorMap &smap) {
               ship->whatdest = ScopeLevel::LEVEL_PLAN;
               ship->deststar = ship->storbits;
               ship->destpnum = ship->pnumorbits;
-              ship->xpos = stars[ship->storbits].xpos + planet->xpos;
-              ship->ypos = stars[ship->storbits].ypos + planet->ypos;
+              ship->xpos = stars[ship->storbits].xpos + planet.xpos;
+              ship->ypos = stars[ship->storbits].ypos + planet.ypos;
               ship->land_x = sect.x;
               ship->land_y = sect.y;
               ship->special.mind.busy = 1;

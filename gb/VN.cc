@@ -175,10 +175,9 @@ void planet_doVN(Ship *ship, Planet &planet, SectorMap &smap) {
         /* move to another sector */
         xa = int_rand(-1, 1);
         ship->land_x = mod((int)(ship->land_x) + xa, planet.Maxx, dum);
-        ya =
-            (ship->land_y == 0)
-                ? 1
-                : ((ship->land_y == (planet.Maxy - 1)) ? -1 : int_rand(-1, 1));
+        ya = (ship->land_y == 0)
+                 ? 1
+                 : ((ship->land_y == (planet.Maxy - 1)) ? -1 : int_rand(-1, 1));
         ship->land_y += ya;
       } else {
         /* mine the sector */

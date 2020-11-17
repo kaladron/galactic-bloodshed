@@ -363,21 +363,19 @@ void make_mod(const command_t &argv, GameObj &g) {
       if (Shipdata[dirship->build_type][ABIL_PRIMARY] &&
           dirship->primtype != GTYPE_NONE) {
         sprintf(buf, "%3lu%c", dirship->primary,
-                (dirship->primtype == GTYPE_LIGHT
-                     ? 'L'
-                     : dirship->primtype == GTYPE_MEDIUM
-                           ? 'M'
-                           : dirship->primtype == GTYPE_HEAVY ? 'H' : 'N'));
+                (dirship->primtype == GTYPE_LIGHT    ? 'L'
+                 : dirship->primtype == GTYPE_MEDIUM ? 'M'
+                 : dirship->primtype == GTYPE_HEAVY  ? 'H'
+                                                     : 'N'));
         notify(Playernum, Governor, buf);
       }
       if (Shipdata[dirship->build_type][ABIL_SECONDARY] &&
           dirship->sectype != GTYPE_NONE) {
         sprintf(buf, "/%lu%c", dirship->secondary,
-                (dirship->sectype == GTYPE_LIGHT
-                     ? 'L'
-                     : dirship->sectype == GTYPE_MEDIUM
-                           ? 'M'
-                           : dirship->sectype == GTYPE_HEAVY ? 'H' : 'N'));
+                (dirship->sectype == GTYPE_LIGHT    ? 'L'
+                 : dirship->sectype == GTYPE_MEDIUM ? 'M'
+                 : dirship->sectype == GTYPE_HEAVY  ? 'H'
+                                                    : 'N'));
         notify(Playernum, Governor, buf);
       }
       g.out << "\n";

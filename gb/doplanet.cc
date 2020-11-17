@@ -39,7 +39,7 @@ import std;
 static void do_dome(Ship *, SectorMap &);
 static void do_quarry(Ship *, Planet &, SectorMap &);
 static void do_berserker(Ship *, Planet &);
-static void do_recover(Planet *, int, int);
+static void do_recover(Planet &, int, int);
 static double est_production(const Sector &);
 static bool moveship_onplanet(Ship &, const Planet &);
 static void plow(Ship *, Planet &, SectorMap &);
@@ -400,7 +400,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
   }
 
-  do_recover(&planet, starnum, planetnum);
+  do_recover(planet, starnum, planetnum);
 
   planet.popn = 0;
   planet.troops = 0;
@@ -761,7 +761,7 @@ static void do_berserker(Ship *ship, Planet &planet) {
   }
 }
 
-static void do_recover(Planet *planet, int starnum, int planetnum) {
+static void do_recover(Planet &planet, int starnum, int planetnum) {
   int owners = 0;
   player_t i;
   player_t j;
@@ -774,7 +774,7 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
   uint64_t ownerbits = 0;
 
   for (i = 1; i <= Num_races && all_buddies_here; i++) {
-    if (planet->info[i - 1].numsectsowned > 0) {
+    if (planet.info[i - 1].numsectsowned > 0) {
       owners++;
       setbit(ownerbits, i);
       for (j = 1; j < i && all_buddies_here; j++)
@@ -783,10 +783,10 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
           all_buddies_here = 0;
     } else {        /* Player i owns no sectors */
       if (i != 1) { /* Can't steal from God */
-        stolenres += planet->info[i - 1].resource;
-        stolendes += planet->info[i - 1].destruct;
-        stolenfuel += planet->info[i - 1].fuel;
-        stolencrystals += planet->info[i - 1].crystals;
+        stolenres += planet.info[i - 1].resource;
+        stolendes += planet.info[i - 1].destruct;
+        stolenfuel += planet.info[i - 1].fuel;
+        stolencrystals += planet.info[i - 1].crystals;
       }
     }
   }
@@ -829,13 +829,13 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
                 givencrystals >
             stolencrystals)
           crystals = stolencrystals - givencrystals;
-        planet->info[i - 1].resource += res;
+        planet.info[i - 1].resource += res;
         givenres += res;
-        planet->info[i - 1].destruct += des;
+        planet.info[i - 1].destruct += des;
         givendes += des;
-        planet->info[i - 1].fuel += fuel;
+        planet.info[i - 1].fuel += fuel;
         givenfuel += fuel;
-        planet->info[i - 1].crystals += crystals;
+        planet.info[i - 1].crystals += crystals;
         givencrystals += crystals;
 
         owners--;
@@ -854,10 +854,10 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
       fuel = stolenfuel - givenfuel;
       crystals = stolencrystals - givencrystals;
 
-      planet->info[i - 1].resource += res;
-      planet->info[i - 1].destruct += des;
-      planet->info[i - 1].fuel += fuel;
-      planet->info[i - 1].crystals += crystals;
+      planet.info[i - 1].resource += res;
+      planet.info[i - 1].destruct += des;
+      planet.info[i - 1].fuel += fuel;
+      planet.info[i - 1].crystals += crystals;
       sprintf(telegram_buf, "%-14.14s %5d %5d %5d %5d", races[i - 1].name, res,
               des, fuel, crystals);
       sprintf(buf, "%-14.14s %5d %5d %5d %5d\n", "Total:", stolenres, stolendes,
@@ -872,10 +872,10 @@ static void do_recover(Planet *planet, int starnum, int planetnum) {
     /* Next: take all the loot away from the losers */
     for (i = 2; i <= Num_races; i++)
       if (!isset(ownerbits, i)) {
-        planet->info[i - 1].resource = 0;
-        planet->info[i - 1].destruct = 0;
-        planet->info[i - 1].fuel = 0;
-        planet->info[i - 1].crystals = 0;
+        planet.info[i - 1].resource = 0;
+        planet.info[i - 1].destruct = 0;
+        planet.info[i - 1].fuel = 0;
+        planet.info[i - 1].crystals = 0;
       }
   }
 }

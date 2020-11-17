@@ -30,7 +30,7 @@ static int jettison_check(GameObj &, int, int);
 static int landed_on(Ship *, shipnum_t);
 
 static void do_transporter(const Race &, GameObj &, Ship *);
-static void unload_onto_alien_sector(GameObj &, Planet *, Ship *, Sector &, int,
+static void unload_onto_alien_sector(GameObj &, Planet &, Ship *, Sector &, int,
                                      int);
 
 void load(const command_t &argv, GameObj &g) {
@@ -269,7 +269,7 @@ void load(const command_t &argv, GameObj &g) {
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
             /* fight a land battle */
-            unload_onto_alien_sector(g, &p, s, sect, CIV, -amt);
+            unload_onto_alien_sector(g, p, s, sect, CIV, -amt);
             putship(s);
             putsector(sect, p, s->land_x, s->land_y);
             putplanet(p, stars[g.snum], g.pnum);
@@ -312,7 +312,7 @@ void load(const command_t &argv, GameObj &g) {
             sprintf(buf,
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
-            unload_onto_alien_sector(g, &p, s, sect, MIL, -amt);
+            unload_onto_alien_sector(g, p, s, sect, MIL, -amt);
             putship(s);
             putsector(sect, p, s->land_x, s->land_y);
             putplanet(p, stars[g.snum], g.pnum);
@@ -1018,7 +1018,7 @@ static int landed_on(Ship *s, shipnum_t shipno) {
   return (s->whatorbits == ScopeLevel::LEVEL_SHIP && s->destshipno == shipno);
 }
 
-static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
+static void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
                                      Sector &sect, int what, int people) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -1130,10 +1130,10 @@ static void unload_onto_alien_sector(GameObj &g, Planet *planet, Ship *ship,
               what == CIV ? "civilians" : "troops");
       notify(Playernum, Governor, buf);
     }
-    planet->info[Playernum - 1].numsectsowned++;
-    planet->info[Playernum - 1].mob_points += sect.mobilization;
-    planet->info[oldowner - 1].numsectsowned--;
-    planet->info[oldowner - 1].mob_points -= sect.mobilization;
+    planet.info[Playernum - 1].numsectsowned++;
+    planet.info[Playernum - 1].mob_points += sect.mobilization;
+    planet.info[oldowner - 1].numsectsowned--;
+    planet.info[oldowner - 1].mob_points -= sect.mobilization;
   } else {
     sprintf(buf, "The invasion was repulsed; try again.\n");
     notify(Playernum, Governor, buf);

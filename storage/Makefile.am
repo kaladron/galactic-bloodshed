@@ -33,7 +33,6 @@ libstorage_a_SOURCES = memstore.cc \
 storage_demos_SOURCES = demos/main.cc
 
 storage_demos_LDADD = libstorage.a
-storage_demos_CXXFLAGS = -Wno-return-std-move-in-c++11 $(AM_CXXFLAGS)
 
 TESTS = storage_test
 

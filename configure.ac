@@ -44,7 +44,6 @@ clang_opts="${clang_opts} -Weverything" # Turn on all warnings
 clang_opts="${clang_opts} -Wno-c++98-compat"
 clang_opts="${clang_opts} -Wno-c++98-compat-pedantic"
 clang_opts="${clang_opts} -Wno-padded"
-clang_opts="${clang_opts} -Wno-return-std-move-in-c++11"
 clang_opts="${clang_opts} -Wno-switch-enum"
 
 # Things we should get rid of
@@ -59,6 +58,7 @@ clang_opts="${clang_opts} -Wno-weak-vtables"
 
 dnl Needed to fmtlib
 clang_opts="${clang_opts} -Wno-signed-enum-bitfield"
+clang_opts="${clang_opts} -Wno-reserved-identifier"
 
 AC_SUBST([CLANG_OPTS], ["${clang_opts}"])
 

@@ -10,8 +10,6 @@ module commands;
 import gblib;
 import std;
 
-#include <fmt/format.h>
-
 /// Zoom in or out for orbit display
 void zoom(const command_t &argv, GameObj &g) {
   int i = (g.level == ScopeLevel::LEVEL_UNIV);
@@ -31,6 +29,6 @@ void zoom(const command_t &argv, GameObj &g) {
     }
   }
 
-  g.out << fmt::format("Zoom value {0}, lastx = {1}, lasty = {2}.\n", g.zoom[i],
+  g.out << std::format("Zoom value {0}, lastx = {1}, lasty = {2}.\n", g.zoom[i],
                        g.lastx[i], g.lasty[i]);
 }

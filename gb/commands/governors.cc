@@ -9,10 +9,6 @@ import std;
 
 #include "gb/commands/governors.h"
 
-#define FMT_HEADER_ONLY
-#include <assert.h>
-#include <fmt/format.h>
-
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/files.h"
@@ -26,7 +22,7 @@ import std;
 namespace {
 void do_revoke(Race race, const governor_t src_gov, const governor_t tgt_gov) {
   std::string outmsg =
-      fmt::format("*** Transferring [{0},{1}]'s ownings to [{2},{3}] ***\n\n",
+      std::format("*** Transferring [{0},{1}]'s ownings to [{2},{3}] ***\n\n",
                   race.Playernum, src_gov, race.Playernum, tgt_gov);
   notify(race.Playernum, (governor_t)0, outmsg);
 
@@ -35,7 +31,7 @@ void do_revoke(Race race, const governor_t src_gov, const governor_t tgt_gov) {
   for (starnum_t i = 0; i < Sdata.numstars; i++)
     if (stars[i].governor[race.Playernum - 1] == src_gov) {
       stars[i].governor[race.Playernum - 1] = tgt_gov;
-      outmsg = fmt::format("Changed juridiction of /{0}...\n", stars[i].name);
+      outmsg = std::format("Changed juridiction of /{0}...\n", stars[i].name);
       notify(race.Playernum, 0, outmsg);
       putstar(stars[i], i);
     }
@@ -48,7 +44,7 @@ void do_revoke(Race race, const governor_t src_gov, const governor_t tgt_gov) {
     if (ship->alive && (ship->owner == race.Playernum) &&
         (ship->governor == src_gov)) {
       ship->governor = tgt_gov;
-      outmsg = fmt::format("Changed ownership of {0}{1}...\n",
+      outmsg = std::format("Changed ownership of {0}{1}...\n",
                            Shipltrs[ship->type], i);
       notify(race.Playernum, 0, outmsg);
       putship(&*ship);
@@ -58,7 +54,7 @@ void do_revoke(Race race, const governor_t src_gov, const governor_t tgt_gov) {
   /*  And money too....  */
 
   outmsg =
-      fmt::format("Transferring {0} money...\n", race.governor[src_gov].money);
+      std::format("Transferring {0} money...\n", race.governor[src_gov].money);
   notify(race.Playernum, 0, outmsg);
   race.governor[tgt_gov].money =
       race.governor[tgt_gov].money + race.governor[src_gov].money;
@@ -70,13 +66,13 @@ void do_revoke(Race race, const governor_t src_gov, const governor_t tgt_gov) {
   strcpy(race.governor[src_gov].password, "");
   strcpy(race.governor[src_gov].name, "");
   outmsg =
-      fmt::format("\n*** Governor [{0},{1}]'s powers have been REVOKED ***\n",
+      std::format("\n*** Governor [{0},{1}]'s powers have been REVOKED ***\n",
                   race.Playernum, src_gov);
   notify(race.Playernum, 0, outmsg);
 
   // TODO(jeffbailey): Use C++17 Filesystem stuff when available
   std::string rm_telegram_file =
-      fmt::format("rm {0}.{1}.{2}", TELEGRAMFL, race.Playernum, src_gov);
+      std::format("rm {0}.{1}.{2}", TELEGRAMFL, race.Playernum, src_gov);
   if (system(rm_telegram_file.c_str()) <
       0) { /*  Remove the telegram file too....  */
     perror("gaaaaaaaah");

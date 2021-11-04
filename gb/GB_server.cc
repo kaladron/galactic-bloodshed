@@ -19,10 +19,6 @@ import std;
 
 #include <boost/algorithm/string.hpp>
 
-#define FMT_HEADER_ONLY
-#include <assert.h>
-#include <fmt/format.h>
-
 #include "gb/buffers.h"
 #include "gb/build.h"
 #include "gb/commands/analysis.h"
@@ -355,17 +351,17 @@ std::string do_prompt(GameObj &g) {
 
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << fmt::format(" ( [{0}] / )\n", Sdata.AP[Playernum - 1]);
+      prompt << std::format(" ( [{0}] / )\n", Sdata.AP[Playernum - 1]);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
-      prompt << fmt::format(" ( [{0}] /{1} )\n",
+      prompt << std::format(" ( [{0}] /{1} )\n",
                             stars[g.snum].AP[Playernum - 1],
                             stars[g.snum].name);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
-      prompt << fmt::format(" ( [{0}] /{1}/{2} )\n",
+      prompt << std::format(" ( [{0}] /{1}/{2} )\n",
                             stars[g.snum].AP[Playernum - 1], stars[g.snum].name,
                             stars[g.snum].pnames[g.pnum]);
       prompt << std::ends;
@@ -377,18 +373,18 @@ std::string do_prompt(GameObj &g) {
   auto s = getship(g.shipno);
   switch (s->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << fmt::format(" ( [[0]] /#{1} )\n", Sdata.AP[Playernum - 1],
+      prompt << std::format(" ( [[0]] /#{1} )\n", Sdata.AP[Playernum - 1],
                             g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
-      prompt << fmt::format(" ( [{0}] /{1}/#{2} )\n",
+      prompt << std::format(" ( [{0}] /{1}/#{2} )\n",
                             stars[s->storbits].AP[Playernum - 1],
                             stars[s->storbits].name, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
-      prompt << fmt::format(
+      prompt << std::format(
           " ( [{0}] /{1}/{2}/#{3} )\n", stars[s->storbits].AP[Playernum - 1],
           stars[s->storbits].name, stars[s->storbits].pnames[g.pnum], g.shipno);
       prompt << std::ends;
@@ -404,18 +400,18 @@ std::string do_prompt(GameObj &g) {
   auto s2 = getship(s->destshipno);
   switch (s2->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << fmt::format(" ( [{0}] /#{1}/#{2} )\n", Sdata.AP[Playernum - 1],
+      prompt << std::format(" ( [{0}] /#{1}/#{2} )\n", Sdata.AP[Playernum - 1],
                             s->destshipno, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
-      prompt << fmt::format(" ( [{0}] /{1}/#{2}/#{3} )\n",
+      prompt << std::format(" ( [{0}] /{1}/#{2}/#{3} )\n",
                             stars[s->storbits].AP[Playernum - 1],
                             stars[s->storbits].name, s->destshipno, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
-      prompt << fmt::format(
+      prompt << std::format(
           " ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
           stars[s->storbits].AP[Playernum - 1], stars[s->storbits].name,
           stars[s->storbits].pnames[g.pnum], s->destshipno, g.shipno);
@@ -430,18 +426,18 @@ std::string do_prompt(GameObj &g) {
   }
   switch (s2->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << fmt::format(" ( [{0}] / /../#{1}/#{2} )\n",
+      prompt << std::format(" ( [{0}] / /../#{1}/#{2} )\n",
                             Sdata.AP[Playernum - 1], s->destshipno, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
-      prompt << fmt::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
+      prompt << std::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
                             stars[s->storbits].AP[Playernum - 1],
                             stars[s->storbits].name, s->destshipno, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
-      prompt << fmt::format(
+      prompt << std::format(
           " ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
           stars[s->storbits].AP[Playernum - 1], stars[s->storbits].name,
           stars[s->storbits].pnames[g.pnum], s->destshipno, g.shipno);

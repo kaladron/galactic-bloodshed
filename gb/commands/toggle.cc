@@ -9,10 +9,6 @@ import std;
 
 #include "gb/commands/toggle.h"
 
-#define FMT_HEADER_ONLY
-#include <assert.h>
-#include <fmt/format.h>
-
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/files_shl.h"
@@ -23,7 +19,7 @@ import std;
 namespace {
 void tog(GameObj &g, char *op, const char *name) {
   *op = !(*op);
-  g.out << fmt::format("{0} is now {1}\n", name, *op ? "on" : "off");
+  g.out << std::format("{0} is now {1}\n", name, *op ? "on" : "off");
 }
 }  // namespace
 

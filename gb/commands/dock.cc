@@ -9,10 +9,6 @@ import std;
 
 #include "gb/commands/dock.h"
 
-#define FMT_HEADER_ONLY
-#include <assert.h>
-#include <fmt/format.h>
-
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/files.h"
@@ -215,8 +211,8 @@ void dock(const command_t &argv, GameObj &g) {
       if (Assault) {
         // Set the command to be distinctive here.  In the target function,
         // APcount is set to 0 and cew is set to 3.
-        command_t fire_argv{"fire-from-dock", fmt::format("#{0}", ship2no),
-                            fmt::format("#{0}", shipno)};
+        command_t fire_argv{"fire-from-dock", std::format("#{0}", ship2no),
+                            std::format("#{0}", shipno)};
         fire(fire_argv, g);
         /* retrieve ships again, since battle may change ship stats */
         free(s);

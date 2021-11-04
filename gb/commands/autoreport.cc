@@ -10,8 +10,6 @@ import std;
 
 #include "gb/commands/autoreport.h"
 
-#include <fmt/format.h>
-
 #include "gb/GB_server.h"
 #include "gb/files_shl.h"
 #include "gb/place.h"
@@ -57,7 +55,7 @@ void autoreport(const command_t &argv, GameObj &g) {
   }
   putplanet(p, stars[snum], pnum);
 
-  g.out << fmt::format("Autoreport on %{0} has been %{1}.\n",
+  g.out << std::format("Autoreport on %{0} has been %{1}.\n",
                        stars[snum].pnames[pnum],
                        (p.info[g.player - 1].autorep ? "set" : "unset"));
 }

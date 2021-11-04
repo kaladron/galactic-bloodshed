@@ -7,8 +7,6 @@ import std;
 
 #include "gb/commands/vote.h"
 
-#include <fmt/format.h>
-
 #include "gb/GB_server.h"
 #include "gb/files_shl.h"
 #include "gb/races.h"
@@ -24,13 +22,13 @@ void show_votes(GameObj& g) {
     nvotes++;
     if (race.votes) {
       yays++;
-      if (g.god) g.out << fmt::format("  {0} voted go.\n", race.name);
+      if (g.god) g.out << std::format("  {0} voted go.\n", race.name);
     } else {
       nays++;
-      if (g.god) g.out << fmt::format("  {0} voted wait.\n", race.name);
+      if (g.god) g.out << std::format("  {0} voted wait.\n", race.name);
     }
   }
-  g.out << fmt::format("  Total votes = {0}, Go = {1}, Wait = {2}.\n", nvotes,
+  g.out << std::format("  Total votes = {0}, Go = {1}, Wait = {2}.\n", nvotes,
                        yays, nays);
 }
 }  // namespace
@@ -52,7 +50,7 @@ void vote(const command_t& argv, GameObj& g) {
   }
 
   if (argv.size() <= 2) {
-    g.out << fmt::format("Your vote on updates is {0}\n",
+    g.out << std::format("Your vote on updates is {0}\n",
                          race.votes ? "go" : "wait");
     show_votes(g);
     return;
@@ -66,11 +64,11 @@ void vote(const command_t& argv, GameObj& g) {
     } else if (argv[2] == "wait")
       race.votes = false;
     else {
-      g.out << fmt::format("No such update choice '{0}'\n", argv[2].c_str());
+      g.out << std::format("No such update choice '{0}'\n", argv[2].c_str());
       return;
     }
   } else {
-    g.out << fmt::format("No such vote '{0}'\n", argv[1].c_str());
+    g.out << std::format("No such vote '{0}'\n", argv[1].c_str());
     return;
   }
   putrace(race);

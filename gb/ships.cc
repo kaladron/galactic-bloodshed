@@ -5,11 +5,7 @@
 import std;
 import gblib;
 
-#define FMT_HEADER_ONLY
 #include "gb/ships.h"
-
-#include <assert.h>
-#include <fmt/format.h>
 
 #include "gb/GB_server.h"
 #include "gb/defense.h"
@@ -157,7 +153,7 @@ void capture_stuff(const Ship &ship, GameObj &g) {
 }
 
 std::string ship_to_string(const Ship &s) {
-  return fmt::format("{0}{1} {2} [{3}]", Shipltrs[s.type], s.number, s.name,
+  return std::format("{0}{1} {2} [{3}]", Shipltrs[s.type], s.number, s.name,
                      s.owner);
 }
 

@@ -7,8 +7,6 @@ import std;
 
 #include "gb/commands/repair.h"
 
-#include <fmt/format.h>
-
 #include "gb/files_shl.h"
 #include "gb/place.h"
 #include "gb/shlmisc.h"
@@ -86,6 +84,6 @@ void repair(const command_t &argv, GameObj &g) {
   }
   putplanet(p, stars[where->snum], where->pnum);
 
-  g.out << fmt::format("{0} sectors repaired at a cost of {1} resources.\n",
+  g.out << std::format("{0} sectors repaired at a cost of {1} resources.\n",
                        sectors, cost);
 }

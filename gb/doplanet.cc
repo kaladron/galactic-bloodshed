@@ -9,8 +9,6 @@ import std;
 
 #include "gb/doplanet.h"
 
-#include <fmt/format.h>
-
 #include "gb/GB_server.h"
 #include "gb/VN.h"
 #include "gb/bombard.h"
@@ -639,7 +637,7 @@ static bool moveship_onplanet(Ship &ship, const Planet &planet) {
         (!ship.notified)) {
       ship.notified = 1;
       std::string teleg_buf =
-          fmt::format("%{0} is out of orders at %{1}.", ship_to_string(ship),
+          std::format("%{0} is out of orders at %{1}.", ship_to_string(ship),
                       prin_ship_orbits(&ship));
       push_telegram(ship.owner, ship.governor, teleg_buf);
     }

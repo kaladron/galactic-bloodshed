@@ -9,8 +9,6 @@ import std;
 
 #include "gb/VN.h"
 
-#include <fmt/format.h>
-
 #include "gb/build.h"
 #include "gb/doturn.h"
 #include "gb/fire.h"
@@ -91,12 +89,12 @@ void do_VN(Ship &ship) {
 
   if (ship.type == ShipType::OTYPE_VN) {
     rcv_resource(&ship, prod);
-    buf = fmt::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
+    buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_VN], ship.number,
                       prin_ship_orbits(&ship));
   } else if (ship.type == ShipType::OTYPE_BERS) {
     rcv_destruct(&ship, prod);
-    buf = fmt::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
+    buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_BERS], ship.number,
                       prin_ship_orbits(&ship));
   }
@@ -262,7 +260,7 @@ void planet_doVN(Ship *ship, Planet &planet, SectorMap &smap) {
             s2->hyper_drive.ready = 1;
             s2->hyper_drive.charge = 0;
             s2->mounted = 1;
-            auto buf = fmt::format("{0} constructed {1}.",
+            auto buf = std::format("{0} constructed {1}.",
                                    ship_to_string(*ship), ship_to_string(*s2));
             push_telegram(ship->owner, ship->governor, buf);
             s2->special.mind.tampered = 0;

@@ -1,3 +1,3 @@
 #!/bin/bash
-scan-build-9 ./configure
-scan-build-9 --keep-cc make
+scan-build-14 ./configure
+scan-build-14 --keep-cc make

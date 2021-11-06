@@ -71,13 +71,12 @@ void do_VN(Ship &ship) {
   // Loop through permuted vector until someone has resources on
   // this planet to steal
 
-  int i;
-  int f;
-  for (f = 0, i = 1; i <= Num_races; i++)
+  player_t f = 0;
+  for (player_t i = 1; i <= Num_races; i++)
     if (p->info[nums[i] - 1].resource) f = nums[i];
 
   // No resources to steal
-  if (!f) return;
+  if (f == 0) return;
 
   // Steal the resources
 

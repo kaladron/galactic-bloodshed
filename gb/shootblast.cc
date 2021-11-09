@@ -181,12 +181,15 @@ int shoot_planet_to_ship(Race &race, Ship *ship, int strength, char *long_msg,
 }
 #endif
 
+/**
+ * @return Number of sectors destroyed.
+ */
 int shoot_ship_to_planet(Ship *ship, Planet &pl, int strength, int x, int y,
                          SectorMap &smap, int ignore, int caliber,
                          char *long_msg, char *short_msg) {
   int x2;
   int y2;
-  int numdest;
+  int numdest = 0;
   player_t oldowner;
   population_t kills;
   int i;
@@ -196,7 +199,6 @@ int shoot_ship_to_planet(Ship *ship, Planet &pl, int strength, int x, int y,
   double r;
   double fac;
 
-  numdest = 0;
   if (strength <= 0) return -1;
   if (!(ship->alive || ignore)) return -1;
   if (has_switch(*ship) && !ship->on) return -1;

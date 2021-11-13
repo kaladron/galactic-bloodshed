@@ -454,7 +454,6 @@ std::string do_prompt(GameObj &g) {
 
 int main(int argc, char **argv) {
   struct stat stbuf;
-  FILE *sfile;
 
   Sql db{};
   printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
@@ -495,7 +494,7 @@ int main(int argc, char **argv) {
 
   next_update_time = clk + (update_time * 60);
   if (stat(UPDATEFL, &stbuf) >= 0) {
-    if ((sfile = fopen(UPDATEFL, "r"))) {
+    if (FILE *sfile = fopen(UPDATEFL, "r"); sfile != nullptr) {
       char dum[32];
       if (fgets(dum, sizeof dum, sfile)) nupdates_done = atoi(dum);
       if (fgets(dum, sizeof dum, sfile)) last_update_time = atol(dum);
@@ -510,7 +509,7 @@ int main(int argc, char **argv) {
   else {
     next_segment_time = clk + (update_time * 60 / segments);
     if (stat(SEGMENTFL, &stbuf) >= 0) {
-      if ((sfile = fopen(SEGMENTFL, "r"))) {
+      if (FILE* sfile = fopen(SEGMENTFL, "r"); sfile != nullptr) {
         char dum[32];
         if (fgets(dum, sizeof dum, sfile)) nsegments_done = atoi(dum);
         if (fgets(dum, sizeof dum, sfile)) last_segment_time = atol(dum);
@@ -1103,7 +1102,6 @@ static void check_connect(DescriptorData &d, const char *message) {
 static void do_update(Db &db, bool force) {
   time_t clk = time(nullptr);
   int i;
-  FILE *sfile;
   struct stat stbuf;
   int fakeit;
 
@@ -1144,7 +1142,7 @@ static void do_update(Db &db, bool force) {
           nsegments_done == segments ? 1 : nsegments_done + 1,
           ctime(&next_segment_time));
   unlink(UPDATEFL);
-  if ((sfile = fopen(UPDATEFL, "w"))) {
+  if (FILE *sfile = fopen(UPDATEFL, "w"); sfile != nullptr) {
     fprintf(sfile, "%d\n", nupdates_done);
     fprintf(sfile, "%ld\n", clk);
     fprintf(sfile, "%ld\n", next_update_time);
@@ -1152,7 +1150,7 @@ static void do_update(Db &db, bool force) {
     fclose(sfile);
   }
   unlink(SEGMENTFL);
-  if ((sfile = fopen(SEGMENTFL, "w"))) {
+  if (FILE *sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
     fprintf(sfile, "%d\n", nsegments_done);
     fprintf(sfile, "%ld\n", clk);
     fprintf(sfile, "%ld\n", next_segment_time);
@@ -1175,7 +1173,6 @@ static void do_update(Db &db, bool force) {
 static void do_segment(Db &db, int override, int segment) {
   time_t clk = time(nullptr);
   int i;
-  FILE *sfile;
   struct stat stbuf;
   int fakeit;
 
@@ -1206,7 +1203,7 @@ static void do_segment(Db &db, int override, int segment) {
   if (!fakeit) do_turn(db, 0);
   update_flag = 0;
   unlink(SEGMENTFL);
-  if ((sfile = fopen(SEGMENTFL, "w"))) {
+  if (FILE *sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
     fprintf(sfile, "%d\n", nsegments_done);
     fprintf(sfile, "%ld\n", clk);
     fprintf(sfile, "%ld\n", next_segment_time);

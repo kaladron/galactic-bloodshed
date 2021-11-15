@@ -55,7 +55,6 @@ clang_opts="${clang_opts} -Wno-sign-compare"
 clang_opts="${clang_opts} -Wno-exit-time-destructors"
 clang_opts="${clang_opts} -Wno-global-constructors"
 clang_opts="${clang_opts} -Wno-weak-vtables"
-clang_opts="${clang_opts} -Wno-reserved-identifier"
 
 AC_SUBST([CLANG_OPTS], ["${clang_opts}"])
 

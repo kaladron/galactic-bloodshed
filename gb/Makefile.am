@@ -57,7 +57,7 @@ enrol_LDADD = libgblib.a
 EXTRA_enrol_DEPENDENCIES = gblib.pcm
 
 GB_SOURCES = GB_server.cc $(COMMON_FILES) $(OLD_LIBGBLIB_FILES)
-GB_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm -fmodule-file=commands/commands.pcm -Wno-alloca
+GB_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm -fmodule-file=commands/commands.pcm -Wno-reserved-identifier -Wno-alloca
 GB_LDADD = libgblib.a commands/libcommands.a
 EXTRA_GB_DEPENDENCIES = gblib.pcm commands/commands.pcm
 

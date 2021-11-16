@@ -9,7 +9,7 @@
 
 void check_for_telegrams(GameObj &);
 void purge();
-void post(const char *, int);
+void post(std::string, int);
 void push_telegram_race(const player_t, const std::string &);
 void push_telegram(const player_t, const governor_t, const std::string &);
 void teleg_read(GameObj &);

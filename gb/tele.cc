@@ -58,7 +58,7 @@ void purge() {
  * description: does the acutal posting of messages to the news files
  *
  */
-void post(const char *origmsg, int type) {
+void post(const std::string fixmsg, int type) {
   const char *telefl;
 
   switch (type) {
@@ -78,14 +78,16 @@ void post(const char *origmsg, int type) {
       return;
   }
 
-  char *fixmsg = strdupa(origmsg);
-  char *p;
-  /* look for special symbols */
-  for (p = fixmsg; *p; p++) {
-    if (*p == ';')
-      *p = '\n';
-    else if (*p == '|')
-      *p = '\t';
+  // look for special symbols
+  for (auto p : fixmsg) {
+    switch (p) {
+      case ';':
+        p = '\n';
+        break;
+      case '|':
+        p = '\t';
+        break;
+    }
   }
 
   FILE *news_fd;
@@ -97,7 +99,7 @@ void post(const char *origmsg, int type) {
   char *outbuf;
   if (asprintf(&outbuf, "%2d/%2d %02d:%02d:%02d %s", current_tm->tm_mon + 1,
                current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,
-               current_tm->tm_sec, fixmsg) < 0) {
+               current_tm->tm_sec, fixmsg.c_str()) < 0) {
     perror("Gaaaaah");
     exit(-1);
   }

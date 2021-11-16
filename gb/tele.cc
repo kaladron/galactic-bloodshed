@@ -2,6 +2,9 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+/// /file tele.cc
+/// \brief Telegram functions
+
 import gblib;
 import std;
 
@@ -19,15 +22,8 @@ import std;
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
-/*
- * purge:
- *
- * arguments: none
- *
- * called by: process_commands
- *
- * description:  Used to purge the News files.
- *
+/**
+ * \brief Purges the News files.
  */
 void purge() {
   fclose(fopen(DECLARATIONFL, "w+"));
@@ -40,16 +36,11 @@ void purge() {
   newslength[3] = 0;
 }
 
-/*
- * post:
+/**
+ * \brief Does the acutal posting of messages to the news files
  *
- * arguments: msg  The actual message type Type of message.  Valid types are
- * DECLARATION, TRANSFER, COMBAT and ANNOUNCE.
- *
- * called by:  fire, name, declare, dock, land, dissolve, doship, doturn
- *
- * description: does the acutal posting of messages to the news files
- *
+ * \param fixmsg Message to send
+ * \param type Type of message.  Valid types are DECLARATION, TRANSFER, COMBAT and ANNOUNCE.
  */
 void post(const std::string fixmsg, int type) {
   const char *telefl;
@@ -266,6 +257,7 @@ void news_read(int Playernum, int Governor, int type) {
 
 /**
  * \brief Check for telegrams and notify the player if there is any.
+ *
  * \arg g Game object
  */
 void check_for_telegrams(GameObj &g) {

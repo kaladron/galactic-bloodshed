@@ -509,7 +509,7 @@ int main(int argc, char **argv) {
   else {
     next_segment_time = clk + (update_time * 60 / segments);
     if (stat(SEGMENTFL, &stbuf) >= 0) {
-      if (FILE* sfile = fopen(SEGMENTFL, "r"); sfile != nullptr) {
+      if (FILE *sfile = fopen(SEGMENTFL, "r"); sfile != nullptr) {
         char dum[32];
         if (fgets(dum, sizeof dum, sfile)) nsegments_done = atoi(dum);
         if (fgets(dum, sizeof dum, sfile)) last_segment_time = atol(dum);

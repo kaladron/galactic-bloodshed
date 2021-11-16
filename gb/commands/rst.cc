@@ -295,20 +295,18 @@ static void ship_report(GameObj &g, shipnum_t indx,
       } else {
         if (s.primtype)
           sprintf(tmpbuf1, "%2lu%s", s.primary,
-                  s.primtype == GTYPE_LIGHT
-                      ? "L"
-                      : s.primtype == GTYPE_MEDIUM
-                            ? "M"
-                            : s.primtype == GTYPE_HEAVY ? "H" : "N");
+                  s.primtype == GTYPE_LIGHT    ? "L"
+                  : s.primtype == GTYPE_MEDIUM ? "M"
+                  : s.primtype == GTYPE_HEAVY  ? "H"
+                                               : "N");
         else
           strcpy(tmpbuf1, "---");
         if (s.sectype)
           sprintf(tmpbuf2, "%2lu%s", s.secondary,
-                  s.sectype == GTYPE_LIGHT
-                      ? "L"
-                      : s.sectype == GTYPE_MEDIUM
-                            ? "M"
-                            : s.sectype == GTYPE_HEAVY ? "H" : "N");
+                  s.sectype == GTYPE_LIGHT    ? "L"
+                  : s.sectype == GTYPE_MEDIUM ? "M"
+                  : s.sectype == GTYPE_HEAVY  ? "H"
+                                              : "N");
         else
           strcpy(tmpbuf2, "---");
         if (s.cew)
@@ -464,20 +462,18 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 if (rd[indx].type != PLANET && laser_on(rd[indx].s) &&
                     rd[indx].s.focus)
                   prob = prob * prob / 100;
-                sprintf(
-                    buf,
-                    "%13lu %s%2d,%1d %c%14.14s %4.0f  %4d   %4d %d  %3s  "
-                    "%3d%% %3u%%%s",
-                    rd[i].n,
-                    (isset(races[Playernum - 1].atwar, rd[i].s.owner))
-                        ? "-"
+                sprintf(buf,
+                        "%13lu %s%2d,%1d %c%14.14s %4.0f  %4d   %4d %d  %3s  "
+                        "%3d%% %3u%%%s",
+                        rd[i].n,
+                        (isset(races[Playernum - 1].atwar, rd[i].s.owner)) ? "-"
                         : (isset(races[Playernum - 1].allied, rd[i].s.owner))
-                              ? "+"
-                              : " ",
-                    rd[i].s.owner, rd[i].s.governor, Shipltrs[rd[i].s.type],
-                    rd[i].s.name, Dist, factor, body, tspeed,
-                    (tev ? "yes" : "   "), prob, rd[i].s.damage,
-                    (rd[i].s.active ? "" : " INACTIVE"));
+                            ? "+"
+                            : " ",
+                        rd[i].s.owner, rd[i].s.governor, Shipltrs[rd[i].s.type],
+                        rd[i].s.name, Dist, factor, body, tspeed,
+                        (tev ? "yes" : "   "), prob, rd[i].s.damage,
+                        (rd[i].s.active ? "" : " INACTIVE"));
                 if ((enemies_only == 0) ||
                     ((enemies_only == 1) &&
                      (!isset(races[Playernum - 1].allied, rd[i].s.owner)))) {

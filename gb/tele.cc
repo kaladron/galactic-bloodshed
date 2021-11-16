@@ -19,10 +19,6 @@ import std;
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
-static FILE *teleg_read_fd;
-static char telegram_file[PATHLEN];
-static struct stat telestat;
-
 /*
  * purge:
  *
@@ -177,11 +173,14 @@ void teleg_read(GameObj &g) {
   governor_t Governor = g.governor;
   char *p;
 
+  char telegram_file[PATHLEN];
   bzero((char *)telegram_file, sizeof(telegram_file));
   sprintf(telegram_file, "%s.%d.%d", TELEGRAMFL, Playernum, Governor);
 
+  FILE *teleg_read_fd;
   if ((teleg_read_fd = fopen(telegram_file, "r")) != nullptr) {
     g.out << "Telegrams:";
+    struct stat telestat;
     stat(telegram_file, &telestat);
     if (telestat.st_size > 0) {
       g.out << "\n";
@@ -218,6 +217,7 @@ void teleg_read(GameObj &g) {
 void news_read(int Playernum, int Governor, int type) {
   char *p;
 
+  char telegram_file[PATHLEN];
   bzero((char *)telegram_file, sizeof(telegram_file));
   switch (type) {
     case DECLARATION:
@@ -236,6 +236,7 @@ void news_read(int Playernum, int Governor, int type) {
       return;
   }
 
+  FILE *teleg_read_fd;
   if ((teleg_read_fd = fopen(telegram_file, "r")) != nullptr) {
     auto &race = races[Playernum - 1];
     if (race.governor[Governor].newspos[type] > newslength[type])

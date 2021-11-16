@@ -336,15 +336,11 @@ void survey(const command_t &argv, GameObj &g) {
 
     if (race.tech >= TECH_SEE_STABILITY || race.God) {
       sprintf(buf, "%d%% (%s)\n", stars[where->snum].stability,
-              stars[where->snum].stability < 20
-                  ? "stable"
-                  : stars[where->snum].stability < 40
-                        ? "unstable"
-                        : stars[where->snum].stability < 60
-                              ? "dangerous"
-                              : stars[where->snum].stability < 100
-                                    ? "WARNING! Nova iminent!"
-                                    : "undergoing nova");
+              stars[where->snum].stability < 20    ? "stable"
+              : stars[where->snum].stability < 40  ? "unstable"
+              : stars[where->snum].stability < 60  ? "dangerous"
+              : stars[where->snum].stability < 100 ? "WARNING! Nova iminent!"
+                                                   : "undergoing nova");
       notify(Playernum, Governor, buf);
     } else {
       sprintf(buf, "(cannot determine)\n");

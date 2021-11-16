@@ -40,7 +40,8 @@ void purge() {
  * \brief Does the acutal posting of messages to the news files
  *
  * \param fixmsg Message to send
- * \param type Type of message.  Valid types are DECLARATION, TRANSFER, COMBAT and ANNOUNCE.
+ * \param type Type of message.  Valid types are DECLARATION, TRANSFER, COMBAT
+ * and ANNOUNCE.
  */
 void post(const std::string fixmsg, int type) {
   const char *telefl;

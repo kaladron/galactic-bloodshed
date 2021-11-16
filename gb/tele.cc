@@ -19,12 +19,9 @@ import std;
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
-static long tm;
 static FILE *teleg_read_fd;
 static char telegram_file[PATHLEN];
 static struct stat telestat;
-
-static struct tm *current_tm; /* for watching for next update */
 
 /*
  * purge:
@@ -94,8 +91,8 @@ void post(const std::string fixmsg, int type) {
   if ((news_fd = fopen(telefl, "a")) == nullptr) {
     return;
   }
-  tm = time(nullptr);
-  current_tm = localtime(&tm);
+  time_t tm = time(nullptr);
+  struct tm *current_tm = localtime(&tm);
   char *outbuf;
   if (asprintf(&outbuf, "%2d/%2d %02d:%02d:%02d %s", current_tm->tm_mon + 1,
                current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,
@@ -150,8 +147,8 @@ void push_telegram(const player_t recipient, const governor_t gov,
       perror("tele");
       return;
     }
-  tm = time(nullptr);
-  current_tm = localtime(&tm);
+  time_t tm = time(nullptr);
+  struct tm *current_tm = localtime(&tm);
 
   fprintf(telegram_fd, "%2d/%2d %02d:%02d:%02d %s\n", current_tm->tm_mon + 1,
           current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,

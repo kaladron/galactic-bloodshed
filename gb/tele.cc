@@ -39,11 +39,12 @@ void purge() {
 /**
  * \brief Does the acutal posting of messages to the news files
  *
- * \param fixmsg Message to send
+ * \param msg Message to send
  * \param type Type of message.  Valid types are DECLARATION, TRANSFER, COMBAT
  * and ANNOUNCE.
  */
-void post(const std::string fixmsg, int type) {
+void post(const std::string msg, int type) {
+  // msg is intentionally a copy as we fix it up in here
   const char *telefl;
 
   switch (type) {
@@ -64,7 +65,7 @@ void post(const std::string fixmsg, int type) {
   }
 
   // look for special symbols
-  for (auto p : fixmsg) {
+  for (auto p : msg) {
     switch (p) {
       case ';':
         p = '\n';
@@ -84,7 +85,7 @@ void post(const std::string fixmsg, int type) {
   char *outbuf;
   if (asprintf(&outbuf, "%2d/%2d %02d:%02d:%02d %s", current_tm->tm_mon + 1,
                current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,
-               current_tm->tm_sec, fixmsg.c_str()) < 0) {
+               current_tm->tm_sec, msg.c_str()) < 0) {
     perror("Gaaaaah");
     exit(-1);
   }
@@ -94,21 +95,16 @@ void post(const std::string fixmsg, int type) {
   free(outbuf);
 }
 
-/*
+/**
+ * \brief Sends a message to everyone in the race
+ *
+ * \param recipient Race to receive
+ * \param msg Message they will receive
  * push_telegram_race:
- *
- * arguments: recpient msg
- *
- * called by:
- *
- * description:  Sends a message to everyone in the race
- *
  */
 void push_telegram_race(const player_t recipient, const std::string &msg) {
-  int j;
-
   auto &race = races[recipient - 1];
-  for (j = 0; j <= MAXGOVERNORS; j++)
+  for (governor_t j = 0; j <= MAXGOVERNORS; j++)
     if (race.governor[j].active) push_telegram(recipient, j, msg);
 }
 

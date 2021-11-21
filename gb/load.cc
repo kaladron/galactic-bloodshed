@@ -27,7 +27,7 @@ import std;
 static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
 
 static int jettison_check(GameObj &, int, int);
-static int landed_on(Ship *, shipnum_t);
+static int landed_on(const Ship &, shipnum_t);
 
 static void do_transporter(const Race &, GameObj &, Ship *);
 static void unload_onto_alien_sector(GameObj &, Planet &, Ship *, Sector &, int,
@@ -262,7 +262,7 @@ void load(const command_t &argv, GameObj &g) {
         case 'c':
           if (sh) {
             s2->popn -= amt;
-            if (!landed_on(s, sh)) s2->mass -= amt * race.mass;
+            if (!landed_on(*s, sh)) s2->mass -= amt * race.mass;
             transfercrew = 1;
           } else if (sect.owner && sect.owner != Playernum) {
             sprintf(buf,
@@ -306,7 +306,7 @@ void load(const command_t &argv, GameObj &g) {
         case 'm':
           if (sh) {
             s2->troops -= amt;
-            if (!landed_on(s, sh)) s2->mass -= amt * race.mass;
+            if (!landed_on(*s, sh)) s2->mass -= amt * race.mass;
             transfercrew = 1;
           } else if (sect.owner && sect.owner != Playernum) {
             sprintf(buf,
@@ -349,7 +349,7 @@ void load(const command_t &argv, GameObj &g) {
         case 'd':
           if (sh) {
             s2->destruct -= amt;
-            if (!landed_on(s, sh)) s2->mass -= amt * MASS_DESTRUCT;
+            if (!landed_on(*s, sh)) s2->mass -= amt * MASS_DESTRUCT;
           } else
             p.info[Playernum - 1].destruct -= amt;
 
@@ -380,20 +380,20 @@ void load(const command_t &argv, GameObj &g) {
         case 'f':
           if (sh) {
             s2->fuel -= (double)amt;
-            if (!landed_on(s, sh)) s2->mass -= (double)amt * MASS_FUEL;
+            if (!landed_on(*s, sh)) s2->mass -= (double)amt * MASS_FUEL;
           } else
             p.info[Playernum - 1].fuel -= amt;
-          rcv_fuel(s, (double)amt);
+          rcv_fuel(*s, (double)amt);
           sprintf(buf, "%d fuel transferred.\n", amt);
           notify(Playernum, Governor, buf);
           break;
         case 'r':
           if (sh) {
             s2->resource -= amt;
-            if (!landed_on(s, sh)) s2->mass -= amt * MASS_RESOURCE;
+            if (!landed_on(*s, sh)) s2->mass -= amt * MASS_RESOURCE;
           } else
             p.info[Playernum - 1].resource -= amt;
-          rcv_resource(s, amt);
+          rcv_resource(*s, amt);
           sprintf(buf, "%d resources transferred.\n", amt);
           notify(Playernum, Governor, buf);
           break;
@@ -559,7 +559,7 @@ void jettison(const command_t &argv, GameObj &g) {
           break;
         case 'd':
           if ((amt = jettison_check(g, amt, (int)(s->destruct))) > 0) {
-            use_destruct(s, amt);
+            use_destruct(*s, amt);
             sprintf(buf, "%d destruct jettisoned.\n", amt);
             notify(Playernum, Governor, buf);
             if (!max_crew(*s)) {
@@ -576,7 +576,7 @@ void jettison(const command_t &argv, GameObj &g) {
           break;
         case 'f':
           if ((amt = jettison_check(g, amt, (int)(s->fuel))) > 0) {
-            use_fuel(s, (double)amt);
+            use_fuel(*s, (double)amt);
             sprintf(buf, "%d fuel jettisoned.\n", amt);
             notify(Playernum, Governor, buf);
             Mod = 1;
@@ -584,7 +584,7 @@ void jettison(const command_t &argv, GameObj &g) {
           break;
         case 'r':
           if ((amt = jettison_check(g, amt, (int)(s->resource))) > 0) {
-            use_resource(s, amt);
+            use_resource(*s, amt);
             sprintf(buf, "%d resources jettisoned.\n", amt);
             notify(Playernum, Governor, buf);
             Mod = 1;
@@ -861,44 +861,44 @@ void mount(const command_t &argv, GameObj &g) {
       free(ship);
 }
 
-void use_fuel(Ship *s, double amt) {
-  s->fuel -= amt;
-  s->mass -= amt * MASS_FUEL;
+void use_fuel(Ship &s, const double amt) {
+  s.fuel -= amt;
+  s.mass -= amt * MASS_FUEL;
 }
 
-void use_destruct(Ship *s, int amt) {
-  s->destruct -= amt;
-  s->mass -= (double)amt * MASS_DESTRUCT;
+void use_destruct(Ship &s, const int amt) {
+  s.destruct -= amt;
+  s.mass -= (double)amt * MASS_DESTRUCT;
 }
 
-void use_resource(Ship *s, int amt) {
-  s->resource -= amt;
-  s->mass -= (double)amt * MASS_RESOURCE;
+void use_resource(Ship &s, const int amt) {
+  s.resource -= amt;
+  s.mass -= (double)amt * MASS_RESOURCE;
 }
 
-void rcv_fuel(Ship *s, double amt) {
-  s->fuel += amt;
-  s->mass += amt * MASS_FUEL;
+void rcv_fuel(Ship &s, const double amt) {
+  s.fuel += amt;
+  s.mass += amt * MASS_FUEL;
 }
 
-void rcv_resource(Ship *s, int amt) {
-  s->resource += amt;
-  s->mass += (double)amt * MASS_RESOURCE;
+void rcv_resource(Ship &s, const int amt) {
+  s.resource += amt;
+  s.mass += (double)amt * MASS_RESOURCE;
 }
 
-void rcv_destruct(Ship *s, int amt) {
-  s->destruct += amt;
-  s->mass += (double)amt * MASS_DESTRUCT;
+void rcv_destruct(Ship &s, const int amt) {
+  s.destruct += amt;
+  s.mass += (double)amt * MASS_DESTRUCT;
 }
 
-void rcv_popn(Ship *s, int amt, double mass) {
-  s->popn += amt;
-  s->mass += (double)amt * mass;
+void rcv_popn(Ship &s, const int amt, const double mass) {
+  s.popn += amt;
+  s.mass += (double)amt * mass;
 }
 
-void rcv_troops(Ship *s, int amt, double mass) {
-  s->troops += amt;
-  s->mass += (double)amt * mass;
+void rcv_troops(Ship &s, const int amt, const double mass) {
+  s.troops += amt;
+  s.mass += (double)amt * mass;
 }
 
 static void do_transporter(const Race &race, GameObj &g, Ship *s) {
@@ -947,28 +947,28 @@ static void do_transporter(const Race &race, GameObj &g, Ship *s) {
   notify(Playernum, Governor, buf);
   /* send stuff to other ship (could be transport device) */
   if (s->resource) {
-    rcv_resource(s2, (int)s->resource);
+    rcv_resource(*s2, (int)s->resource);
     sprintf(buf, "%lu resources transferred.\n", s->resource);
     notify(Playernum, Governor, buf);
     sprintf(bufr, "%lu Resources\n", s->resource);
-    use_resource(s, (int)s->resource);
+    use_resource(*s, (int)s->resource);
   } else
     bufr[0] = '\0';
   if (s->fuel) {
-    rcv_fuel(s2, s->fuel);
+    rcv_fuel(*s2, s->fuel);
     sprintf(buf, "%g fuel transferred.\n", s->fuel);
     notify(Playernum, Governor, buf);
     sprintf(buff, "%g Fuel\n", s->fuel);
-    use_fuel(s, s->fuel);
+    use_fuel(*s, s->fuel);
   } else
     buff[0] = '\0';
 
   if (s->destruct) {
-    rcv_destruct(s2, (int)s->destruct);
+    rcv_destruct(*s2, (int)s->destruct);
     sprintf(buf, "%d destruct transferred.\n", s->destruct);
     notify(Playernum, Governor, buf);
     sprintf(bufd, "%d Destruct\n", s->destruct);
-    use_destruct(s, (int)s->destruct);
+    use_destruct(*s, (int)s->destruct);
   } else
     bufd[0] = '\0';
 
@@ -1014,8 +1014,8 @@ static void do_transporter(const Race &race, GameObj &g, Ship *s) {
   free(s2);
 }
 
-static int landed_on(Ship *s, shipnum_t shipno) {
-  return (s->whatorbits == ScopeLevel::LEVEL_SHIP && s->destshipno == shipno);
+static int landed_on(const Ship &s, const shipnum_t shipno) {
+  return (s.whatorbits == ScopeLevel::LEVEL_SHIP && s.destshipno == shipno);
 }
 
 static void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,

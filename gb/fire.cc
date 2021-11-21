@@ -230,9 +230,9 @@ void fire(const command_t &argv, GameObj &g) {
       }
 
       if (laser_on(*from) || cew)
-        use_fuel(from, 2.0 * (double)strength);
+        use_fuel(*from, 2.0 * (double)strength);
       else
-        use_destruct(from, strength);
+        use_destruct(*from, strength);
 
       if (!to->alive) post(short_buf, COMBAT);
       notify_star(Playernum, Governor, from->storbits, short_buf);
@@ -248,9 +248,9 @@ void fire(const command_t &argv, GameObj &g) {
         if ((damage = shoot_ship_to_ship(&dummy, from, strength, 0, 1, long_buf,
                                          short_buf)) >= 0) {
           if (laser_on(*to))
-            use_fuel(&*to, 2.0 * (double)strength);
+            use_fuel(*to, 2.0 * (double)strength);
           else
-            use_destruct(&*to, strength);
+            use_destruct(*to, strength);
           if (!from->alive) post(short_buf, COMBAT);
           notify_star(Playernum, Governor, from->storbits, short_buf);
           notify(Playernum, Governor, long_buf);
@@ -278,9 +278,9 @@ void fire(const command_t &argv, GameObj &g) {
             if ((damage = shoot_ship_to_ship(&ship, from, strength, 0, 0,
                                              long_buf, short_buf)) >= 0) {
               if (laser_on(ship))
-                use_fuel(&ship, 2.0 * (double)strength);
+                use_fuel(ship, 2.0 * (double)strength);
               else
-                use_destruct(&ship, strength);
+                use_destruct(ship, strength);
               if (!from->alive) post(short_buf, COMBAT);
               notify_star(Playernum, Governor, from->storbits, short_buf);
               notify(Playernum, Governor, long_buf);
@@ -420,9 +420,9 @@ void bombard(const command_t &argv, GameObj &g) {
       }
 
       if (laser_on(*from))
-        use_fuel(from, 2.0 * (double)strength);
+        use_fuel(*from, 2.0 * (double)strength);
       else
-        use_destruct(from, strength);
+        use_destruct(*from, strength);
 
       post(short_buf, COMBAT);
       notify_star(Playernum, Governor, from->storbits, short_buf);
@@ -467,9 +467,9 @@ void bombard(const command_t &argv, GameObj &g) {
             if ((damage = shoot_ship_to_ship(&ship, from, strength, 0, 0,
                                              long_buf, short_buf)) >= 0) {
               if (laser_on(ship))
-                use_fuel(&ship, 2.0 * (double)strength);
+                use_fuel(ship, 2.0 * (double)strength);
               else
-                use_destruct(&ship, strength);
+                use_destruct(ship, strength);
               if (!from->alive) post(short_buf, COMBAT);
               notify_star(Playernum, Governor, from->storbits, short_buf);
               warn(ship.owner, ship.governor, long_buf);
@@ -633,9 +633,9 @@ void defend(const command_t &argv, GameObj &g) {
     if ((numdest = shoot_ship_to_planet(&dummy, p, strength, x, y, smap, 0, 0,
                                         long_buf, short_buf)) >= 0) {
       if (laser_on(*to))
-        use_fuel(&*to, 2.0 * (double)strength);
+        use_fuel(*to, 2.0 * (double)strength);
       else
-        use_destruct(&*to, strength);
+        use_destruct(*to, strength);
 
       post(short_buf, COMBAT);
       notify_star(Playernum, Governor, to->storbits, short_buf);
@@ -660,9 +660,9 @@ void defend(const command_t &argv, GameObj &g) {
         if ((numdest = shoot_ship_to_planet(ship, p, strength, x, y, smap, 0, 0,
                                             long_buf, short_buf)) >= 0) {
           if (laser_on(*ship))
-            use_fuel(ship, 2.0 * (double)strength);
+            use_fuel(*ship, 2.0 * (double)strength);
           else
-            use_destruct(ship, strength);
+            use_destruct(*ship, strength);
           post(short_buf, COMBAT);
           notify_star(Playernum, Governor, ship->storbits, short_buf);
           notify(Playernum, Governor, long_buf);

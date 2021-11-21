@@ -74,7 +74,7 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
         s->hyper_drive.on = 0;
         return;
       }
-      use_fuel(s, fuse);
+      use_fuel(*s, fuse);
       heading = atan2(stars[s->deststar].xpos - s->xpos,
                       stars[s->deststar].ypos - s->ypos);
       sn = sin(heading);
@@ -124,7 +124,7 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
       mfactor = SHIP_MOVE_SCALE * (1.0 - .01 * s->rad) *
                 (1.0 - .01 * s->damage) * SpeedConsts[s->speed] *
                 MoveConsts[s->whatorbits] / (double)segments;
-      use_fuel(s, (double)fuse);
+      use_fuel(*s, (double)fuse);
       sn = sin(heading);
       cs = cos(heading);
       xdest = sn * mfactor;
@@ -238,7 +238,7 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
         return;
       }
       if (truedist > DIST_TO_LAND) {
-        use_fuel(s, (double)fuse);
+        use_fuel(*s, (double)fuse);
         /* dont overshoot */
         sn = sin(heading);
         cs = cos(heading);
@@ -410,7 +410,7 @@ static int do_merchant(Ship *s, Planet &p) {
     strcat(telegram_buf, buf);
     s->xpos = p.xpos + stars[s->storbits].xpos;
     s->ypos = p.ypos + stars[s->storbits].ypos;
-    use_fuel(s, fuel);
+    use_fuel(*s, fuel);
     s->docked = 1;
     s->whatdest = ScopeLevel::LEVEL_PLAN;
     s->deststar = s->storbits;
@@ -425,7 +425,7 @@ static int do_merchant(Ship *s, Planet &p) {
       amount = (int)s->max_fuel - (int)s->fuel;
       if (amount > p.info[i].fuel) amount = p.info[i].fuel;
       p.info[i].fuel -= amount;
-      rcv_fuel(s, (double)amount);
+      rcv_fuel(*s, (double)amount);
       sprintf(buf, "%df ", amount);
       strcat(telegram_buf, buf);
     }
@@ -433,7 +433,7 @@ static int do_merchant(Ship *s, Planet &p) {
       amount = (int)s->max_resource - (int)s->resource;
       if (amount > p.info[i].resource) amount = p.info[i].resource;
       p.info[i].resource -= amount;
-      rcv_resource(s, amount);
+      rcv_resource(*s, amount);
       sprintf(buf, "%dr ", amount);
       strcat(telegram_buf, buf);
     }
@@ -448,7 +448,7 @@ static int do_merchant(Ship *s, Planet &p) {
       amount = (int)s->max_destruct - (int)s->destruct;
       if (amount > p.info[i].destruct) amount = p.info[i].destruct;
       p.info[i].destruct -= amount;
-      rcv_destruct(s, amount);
+      rcv_destruct(*s, amount);
       sprintf(buf, "%dd ", amount);
       strcat(telegram_buf, buf);
     }
@@ -461,14 +461,14 @@ static int do_merchant(Ship *s, Planet &p) {
       p.info[i].fuel += amount;
       sprintf(buf, "%df ", amount);
       strcat(telegram_buf, buf);
-      use_fuel(s, (double)amount);
+      use_fuel(*s, (double)amount);
     }
     if (Resources(unload)) {
       amount = s->resource;
       p.info[i].resource += amount;
       sprintf(buf, "%dr ", amount);
       strcat(telegram_buf, buf);
-      use_resource(s, amount);
+      use_resource(*s, amount);
     }
     if (Crystals(unload)) {
       amount = s->crystals;
@@ -482,7 +482,7 @@ static int do_merchant(Ship *s, Planet &p) {
       p.info[i].destruct += amount;
       sprintf(buf, "%dd ", amount);
       strcat(telegram_buf, buf);
-      use_destruct(s, amount);
+      use_destruct(*s, amount);
     }
     strcat(telegram_buf, "unloaded\n");
   }
@@ -498,7 +498,7 @@ static int do_merchant(Ship *s, Planet &p) {
   s->deststar = p.info[i].route[j].dest_star;
   s->destpnum = p.info[i].route[j].dest_planet;
   s->docked = 0;
-  use_fuel(s, fuel);
+  use_fuel(*s, fuel);
   sprintf(buf, "\t\tDestination set to %s\n", prin_ship_dest(*s).c_str());
   strcat(telegram_buf, buf);
   if (s->hyper_drive.has) { /* order the ship to jump if it can */

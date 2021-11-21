@@ -271,7 +271,7 @@ void dock(const command_t &argv, GameObj &g) {
       }
 
       /* the ship moves into position, regardless of success of attack */
-      use_fuel(s, fuel);
+      use_fuel(*s, fuel);
       s->xpos = s2->xpos + int_rand(-1, 1);
       s->ypos = s2->ypos + int_rand(-1, 1);
       if (s->hyper_drive.on) {

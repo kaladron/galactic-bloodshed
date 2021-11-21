@@ -206,7 +206,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
             break;
         }
         fadd = std::min((double)max_fuel(*ship) - ship->fuel, fadd);
-        rcv_fuel(ship, fadd);
+        rcv_fuel(*ship, fadd);
       }
     }
     shipno = ship->nextship;
@@ -674,7 +674,7 @@ static void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
     s.popn = 0;
     s.troops = 0;
     s.owner = 0;
-    use_fuel(&ship, FUEL_COST_TERRA);
+    use_fuel(ship, FUEL_COST_TERRA);
     if ((random() & 01) && (planet.conditions[TOXIC] < 100))
       planet.conditions[TOXIC] += 1;
     if ((ship.fuel < (double)FUEL_COST_TERRA) && (!ship.notified)) {
@@ -701,7 +701,7 @@ static void plow(Ship *ship, Planet &planet, SectorMap &smap) {
       sprintf(buf, " K%lu is full of zealots!!!", ship->number);
       push_telegram(ship->owner, ship->governor, buf);
     }
-    use_fuel(ship, FUEL_COST_PLOW);
+    use_fuel(*ship, FUEL_COST_PLOW);
     if ((random() & 01) && (planet.conditions[TOXIC] < 100))
       planet.conditions[TOXIC] += 1;
   }
@@ -720,7 +720,7 @@ static void do_dome(Ship *ship, SectorMap &smap) {
                       ship->max_crew);
   s.eff += adjust;
   if (s.eff > 100) s.eff = 100;
-  use_resource(ship, RES_COST_DOME);
+  use_resource(*ship, RES_COST_DOME);
 }
 
 static void do_quarry(Ship *ship, Planet &planet, SectorMap &smap) {

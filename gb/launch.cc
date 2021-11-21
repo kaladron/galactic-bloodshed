@@ -215,7 +215,7 @@ void launch(const command_t &argv, GameObj &g) {
           free(s);
           return;
         }
-        use_fuel(s, fuel);
+        use_fuel(*s, fuel);
         s->docked = 0;
         s->whatdest = ScopeLevel::LEVEL_UNIV; /* no destination */
         switch (s->type) {

@@ -9,6 +9,6 @@
 #include "gb/ships.h"
 #include "gb/vars.h"
 
-int bombard(Ship *, Planet &, Race &);
+int berserker_bombard(Ship *, Planet &, Race &);
 
 #endif  // AUTOSHOOT_H

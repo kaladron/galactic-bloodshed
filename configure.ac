@@ -12,6 +12,15 @@ AC_RUN_IFELSE([AC_LANG_PROGRAM([],[
 have_clang=yes
 ])
 
+AC_CHECK_PROG(CARGO, [cargo], [yes], [no])
+AS_IF(test x$CARGO = xno,
+    AC_MSG_ERROR([cargo is required.  Please install the Rust toolchain from https://www.rust-lang.org/])
+)
+AC_CHECK_PROG(RUSTC, [rustc], [yes], [no])
+AS_IF(test x$RUSTC = xno,
+    AC_MSG_ERROR([rustc is required.  Please install the Rust toolchain from https://www.rust-lang.org/])
+)
+
 AC_ARG_ENABLE(debug,
 AS_HELP_STRING([--enable-debug],
                [turn on debug mode]),
@@ -26,7 +35,12 @@ AM_CONDITIONAL(DEBUG, test x"$debug" = x"true")
 
 if test x"$debug" = x"true"; then
   AC_SUBST([CXXFLAGS], ["-g3 -O0 -D_GLIBCXX_DEBUG -fsanitize=undefined -fdebug-macro -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls"])
+  RUST_TARGET_SUBDIR=debug
+else
+  RUST_TARGET_SUBDIR=release
 fi
+AC_SUBST([RUST_TARGET_SUBDIR])
+
 
 # Add -Wextra to GCC_OPTS
 AC_SUBST([GCC_OPTS], ["-Werror -Wall -Wno-sign-compare -Wno-maybe-uninitialized -Wno-return-type \

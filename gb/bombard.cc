@@ -21,7 +21,7 @@ import std;
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */
-int bombard(Ship *ship, Planet &planet, Race &r) {
+int berserker_bombard(Ship *ship, Planet &planet, Race &r) {
   int x;
   int y;
   int x2 = -1;

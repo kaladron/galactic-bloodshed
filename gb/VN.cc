@@ -87,12 +87,12 @@ void do_VN(Ship &ship) {
   std::string buf;
 
   if (ship.type == ShipType::OTYPE_VN) {
-    rcv_resource(&ship, prod);
+    rcv_resource(ship, prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_VN], ship.number,
                       prin_ship_orbits(&ship));
   } else if (ship.type == ShipType::OTYPE_BERS) {
-    rcv_destruct(&ship, prod);
+    rcv_destruct(ship, prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_BERS], ship.number,
                       prin_ship_orbits(&ship));
@@ -182,10 +182,10 @@ void planet_doVN(Ship *ship, Planet &planet, SectorMap &smap) {
         prod =
             oldres - s.resource; /* poor way for a player to mine resources */
         if (ship->type == ShipType::OTYPE_VN)
-          rcv_resource(ship, prod);
+          rcv_resource(*ship, prod);
         else if (ship->type == ShipType::OTYPE_BERS)
-          rcv_destruct(ship, 5 * prod);
-        rcv_fuel(ship, (double)prod);
+          rcv_destruct(*ship, 5 * prod);
+        rcv_fuel(*ship, (double)prod);
       }
       /* now try to construct another machine */
       ShipType shipbuild = (VN_brain.Total_mad > 100 && random() & 01)
@@ -198,7 +198,7 @@ void planet_doVN(Ship *ship, Planet &planet, SectorMap &smap) {
         /* construct as many VNs as possible */
         numVNs = ship->resource / Shipdata[shipbuild][ABIL_COST];
         for (j = 1; j <= numVNs; j++) {
-          use_resource(ship, Shipdata[shipbuild][ABIL_COST]);
+          use_resource(*ship, Shipdata[shipbuild][ABIL_COST]);
           /* must change size of ships pointer */
           ++Num_ships;
           ships = (Ship **)realloc(ships, (Num_ships + 1) * sizeof(Ship *));

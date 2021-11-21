@@ -530,13 +530,13 @@ void walk(const command_t &argv, GameObj &g) {
         while ((strength = retal_strength(&ship2)) &&
                (strength1 = retal_strength(ship))) {
           bcopy(ship, &dummy, sizeof(Ship));
-          use_destruct(&ship2, strength);
+          use_destruct(ship2, strength);
           notify(Playernum, Governor, long_buf);
           warn(ship2.owner, ship2.governor, long_buf);
           if (!ship2.alive) post(short_buf, COMBAT);
           notify_star(Playernum, Governor, ship->storbits, short_buf);
           if (strength1) {
-            use_destruct(ship, strength1);
+            use_destruct(*ship, strength1);
             notify(Playernum, Governor, long_buf);
             warn(ship2.owner, ship2.governor, long_buf);
             if (!ship2.alive) post(short_buf, COMBAT);
@@ -601,7 +601,7 @@ void walk(const command_t &argv, GameObj &g) {
             x, y, Dispshiploc(ship));
     ship->land_x = x;
     ship->land_y = y;
-    use_fuel(ship, AFV_FUEL_COST);
+    use_fuel(*ship, AFV_FUEL_COST);
     for (i = 1; i <= Num_races; i++)
       if (i != Playernum && p.info[i - 1].numsectsowned)
         notify(i, stars[g.snum].governor[i - 1], buf);
@@ -739,9 +739,9 @@ static void mech_attack_people(Ship *ship, int *civ, int *mil, Race &race,
   if (ignore) {
     ammo = (int)log10((double)dstrength + 1.0) - 1;
     ammo = std::min(std::max(ammo, 0), strength);
-    use_destruct(ship, ammo);
+    use_destruct(*ship, ammo);
   } else
-    use_destruct(ship, strength);
+    use_destruct(*ship, strength);
 
   cas_civ = int_rand(0, round_rand((double)oldciv * astrength / dstrength));
   cas_civ = MIN(oldciv, cas_civ);
@@ -790,7 +790,7 @@ static void people_attack_mech(Ship *ship, int civ, int mil, Race &race,
               morale_factor((double)(race.morale - alien.morale));
   ammo = (int)log10((double)astrength + 1.0) - 1;
   ammo = std::min(strength, std::max(0, ammo));
-  use_destruct(ship, ammo);
+  use_destruct(*ship, ammo);
   damage = int_rand(0, round_rand(100.0 * astrength / dstrength));
   damage = std::min(100, damage);
   ship->damage += damage;

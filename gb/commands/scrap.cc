@@ -198,11 +198,11 @@ void scrap(const command_t &argv, GameObj &g) {
       putship(s);
       if (docked(s)) {
         s2->crystals += xtalval;
-        rcv_fuel(&*s2, (double)fuelval);
-        rcv_destruct(&*s2, destval);
-        rcv_resource(&*s2, scrapval);
-        rcv_troops(&*s2, troopval, race.mass);
-        rcv_popn(&*s2, crewval, race.mass);
+        rcv_fuel(*s2, (double)fuelval);
+        rcv_destruct(*s2, destval);
+        rcv_resource(*s2, scrapval);
+        rcv_troops(*s2, troopval, race.mass);
+        rcv_popn(*s2, crewval, race.mass);
         /* check for docking status in case scrapped ship is landed. Maarten */
         if (!(s->whatorbits == ScopeLevel::LEVEL_SHIP)) {
           s2->docked = 0; /* undock the surviving ship */

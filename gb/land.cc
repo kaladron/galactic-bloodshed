@@ -215,7 +215,7 @@ void land(const command_t &argv, GameObj &g) {
             free(s);
             continue;
           }
-          use_fuel(s, fuel);
+          use_fuel(*s, fuel);
 
           /* remove the ship from whatever scope it is currently in */
           if (s->whatorbits == ScopeLevel::LEVEL_PLAN)
@@ -364,7 +364,7 @@ void land(const command_t &argv, GameObj &g) {
           s->land_y = y;
           s->xpos = p.xpos + stars[s->storbits].xpos;
           s->ypos = p.ypos + stars[s->storbits].ypos;
-          use_fuel(s, fuel);
+          use_fuel(*s, fuel);
           s->docked = 1;
           s->whatdest = ScopeLevel::LEVEL_PLAN; /* no destination */
           s->deststar = s->storbits;

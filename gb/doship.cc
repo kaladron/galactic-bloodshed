@@ -468,13 +468,13 @@ static void do_repair(Ship *ship) {
     cost = (int)(0.005 * maxrep * shipcost(*ship));
   }
   if (cost <= ship->resource) {
-    use_resource(ship, cost);
+    use_resource(*ship, cost);
     drep = (int)maxrep;
     ship->damage = std::max(0, (int)(ship->damage) - drep);
   } else {
     /* use up all of the ships resources */
     drep = (int)(maxrep * ((double)ship->resource / (int)cost));
-    use_resource(ship, ship->resource);
+    use_resource(*ship, ship->resource);
     ship->damage = std::max(0, (int)(ship->damage) - drep);
   }
 }
@@ -492,19 +492,19 @@ static void do_habitat(Ship *ship) {
     if (ship->resource + add > ship->max_resource)
       add = ship->max_resource - ship->resource;
     fuse = 20.0 * (double)add;
-    rcv_resource(ship, add);
-    use_fuel(ship, fuse);
+    rcv_resource(*ship, add);
+    use_fuel(*ship, fuse);
 
     sh = ship->ships;
     while (sh) {
       if (ships[sh]->type == ShipType::OTYPE_WPLANT)
-        rcv_destruct(ship, do_weapon_plant(ships[sh]));
+        rcv_destruct(*ship, do_weapon_plant(ships[sh]));
       sh = ships[sh]->nextship;
     }
   }
   add = round_rand((double)ship->popn * races[ship->owner - 1].birthrate);
   if (ship->popn + add > max_crew(*ship)) add = max_crew(*ship) - ship->popn;
-  rcv_popn(ship, add, races[ship->owner - 1].mass);
+  rcv_popn(*ship, add, races[ship->owner - 1].mass);
 }
 
 static void do_pod(Ship *ship) {
@@ -708,7 +708,7 @@ static void do_ap(Ship *ship) {
     auto &p = planets[ship->storbits][ship->pnumorbits];
     auto &race = races[ship->owner - 1];
     if (ship->fuel >= 3.0) {
-      use_fuel(ship, 3.0);
+      use_fuel(*ship, 3.0);
       for (j = RTEMP + 1; j <= OTHER; j++) {
         d = round_rand(ap_planet_factor(*p) * crew_factor(ship) *
                        (double)(race.conditions[j] - p->conditions[j]));
@@ -750,7 +750,7 @@ int do_weapon_plant(Ship *ship) {
                     (1. - .01 * (double)ship->damage) * (double)ship->popn /
                     (double)ship->max_crew);
   rate = std::min(rate, maxrate);
-  use_resource(ship, (rate * RES_COST_WPLANT));
-  use_fuel(ship, ((double)rate * FUEL_COST_WPLANT));
+  use_resource(*ship, (rate * RES_COST_WPLANT));
+  use_fuel(*ship, ((double)rate * FUEL_COST_WPLANT));
   return rate;
 }

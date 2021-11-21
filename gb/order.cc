@@ -492,7 +492,7 @@ static void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
         ship->special.aimed_at.shipno = pl.shipno;
         if (ship->type != ShipType::OTYPE_TRACT &&
             ship->type != ShipType::OTYPE_GTELE)
-          use_fuel(ship, FUEL_MANEUVER);
+          use_fuel(*ship, FUEL_MANEUVER);
         if (ship->type == ShipType::OTYPE_GTELE ||
             ship->type == ShipType::OTYPE_STELE)
           mk_expl_aimed_at(Playernum, Governor, ship);

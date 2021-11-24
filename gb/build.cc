@@ -32,7 +32,7 @@ static std::optional<ScopeLevel> build_at_ship(GameObj &, Ship *, int *, int *);
 static bool can_build_at_planet(GameObj &, const Star &, const Planet &);
 static bool can_build_this(const ShipType, const Race &, char *);
 static bool can_build_on_ship(int, const Race &, Ship *, char *);
-static void create_ship_by_planet(int, int, const Race &, Ship *, Planet *, int,
+static void create_ship_by_planet(int, int, const Race &, Ship &, Planet &, int,
                                   int, int, int);
 static void create_ship_by_ship(int, int, const Race &, int, Planet *, Ship *,
                                 Ship *);
@@ -857,8 +857,8 @@ void build(const command_t &argv, GameObj &g) {
           notify(Playernum, Governor, buf);
           goto finish;
         }
-        create_ship_by_planet(Playernum, Governor, race, &newship, &planet,
-                              snum, pnum, x, y);
+        create_ship_by_planet(Playernum, Governor, race, newship, planet, snum,
+                              pnum, x, y);
         if (race.governor[Governor].toggle.autoload &&
             what != ShipType::OTYPE_TRANSDEV && !race.God)
           autoload_at_planet(Playernum, &newship, &planet, sector, &load_crew,
@@ -962,7 +962,7 @@ void build(const command_t &argv, GameObj &g) {
               notify(Playernum, Governor, buf);
               goto finish;
             }
-            create_ship_by_planet(Playernum, Governor, race, &newship, &planet,
+            create_ship_by_planet(Playernum, Governor, race, newship, planet,
                                   snum, pnum, x, y);
             if (race.governor[Governor].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God) {
@@ -1263,54 +1263,54 @@ static void initialize_new_ship(GameObj &g, const Race &race, Ship *newship,
 }
 
 static void create_ship_by_planet(int Playernum, int Governor, const Race &race,
-                                  Ship *newship, Planet *planet, int snum,
+                                  Ship &newship, Planet &planet, int snum,
                                   int pnum, int x, int y) {
   int shipno;
 
-  newship->tech = race.tech;
-  newship->xpos = stars[snum].xpos + planet->xpos;
-  newship->ypos = stars[snum].ypos + planet->ypos;
-  newship->land_x = x;
-  newship->land_y = y;
-  sprintf(newship->shipclass, (((newship->type == ShipType::OTYPE_TERRA) ||
-                                (newship->type == ShipType::OTYPE_PLOW))
-                                   ? "5"
-                                   : "Standard"));
-  newship->whatorbits = ScopeLevel::LEVEL_PLAN;
-  newship->whatdest = ScopeLevel::LEVEL_PLAN;
-  newship->deststar = snum;
-  newship->destpnum = pnum;
-  newship->storbits = snum;
-  newship->pnumorbits = pnum;
-  newship->docked = 1;
-  planet->info[Playernum - 1].resource -= newship->build_cost;
+  newship.tech = race.tech;
+  newship.xpos = stars[snum].xpos + planet.xpos;
+  newship.ypos = stars[snum].ypos + planet.ypos;
+  newship.land_x = x;
+  newship.land_y = y;
+  sprintf(newship.shipclass, (((newship.type == ShipType::OTYPE_TERRA) ||
+                               (newship.type == ShipType::OTYPE_PLOW))
+                                  ? "5"
+                                  : "Standard"));
+  newship.whatorbits = ScopeLevel::LEVEL_PLAN;
+  newship.whatdest = ScopeLevel::LEVEL_PLAN;
+  newship.deststar = snum;
+  newship.destpnum = pnum;
+  newship.storbits = snum;
+  newship.pnumorbits = pnum;
+  newship.docked = 1;
+  planet.info[Playernum - 1].resource -= newship.build_cost;
   while ((shipno = getdeadship()) == 0)
     ;
   if (shipno == -1) shipno = Numships() + 1;
-  newship->number = shipno;
-  newship->owner = Playernum;
-  newship->governor = Governor;
-  newship->ships = 0;
-  insert_sh_plan(*planet, newship);
-  if (newship->type == ShipType::OTYPE_TOXWC) {
+  newship.number = shipno;
+  newship.owner = Playernum;
+  newship.governor = Governor;
+  newship.ships = 0;
+  insert_sh_plan(planet, &newship);
+  if (newship.type == ShipType::OTYPE_TOXWC) {
     sprintf(buf, "Toxin concentration on planet was %d%%,",
-            planet->conditions[TOXIC]);
+            planet.conditions[TOXIC]);
     notify(Playernum, Governor, buf);
-    if (planet->conditions[TOXIC] > TOXMAX)
-      newship->special.waste.toxic = TOXMAX;
+    if (planet.conditions[TOXIC] > TOXMAX)
+      newship.special.waste.toxic = TOXMAX;
     else
-      newship->special.waste.toxic = planet->conditions[TOXIC];
-    planet->conditions[TOXIC] -= newship->special.waste.toxic;
-    sprintf(buf, " now %d%%.\n", planet->conditions[TOXIC]);
+      newship.special.waste.toxic = planet.conditions[TOXIC];
+    planet.conditions[TOXIC] -= newship.special.waste.toxic;
+    sprintf(buf, " now %d%%.\n", planet.conditions[TOXIC]);
     notify(Playernum, Governor, buf);
   }
   sprintf(buf, "%s built at a cost of %d resources.\n",
-          ship_to_string(*newship).c_str(), newship->build_cost);
+          ship_to_string(newship).c_str(), newship.build_cost);
   notify(Playernum, Governor, buf);
-  sprintf(buf, "Technology %.1f.\n", newship->tech);
+  sprintf(buf, "Technology %.1f.\n", newship.tech);
   notify(Playernum, Governor, buf);
-  sprintf(buf, "%s is on sector %d,%d.\n", ship_to_string(*newship).c_str(),
-          newship->land_x, newship->land_y);
+  sprintf(buf, "%s is on sector %d,%d.\n", ship_to_string(newship).c_str(),
+          newship.land_x, newship.land_y);
   notify(Playernum, Governor, buf);
 }
 

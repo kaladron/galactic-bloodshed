@@ -334,9 +334,8 @@ static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   PrintTop(g, mPopn, "^Popn");
 
   g.out << "\n";
-  sprintf(buf, "%2s %3s %7s %6s %5s %5s %5s %2s", "Pl", "sec", "popn", "troops",
+  g.out << std::format("{:>2} {:>3} {:>7} {:>6} {:>5} {:>5} {:>5} {:>2}", "Pl", "sec", "popn", "troops",
           "a.eff", "a.mob", "res", "x");
-  notify(Playernum, Governor, buf);
 
   for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
     sprintf(buf, "%4c", SectTypes[i]);

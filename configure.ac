@@ -1,4 +1,4 @@
-AC_INIT([gb], [1.0], [gb@testmail.org])
+AC_INIT([gb],[1.0],[gb@testmail.org])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AM_PROG_AR
 AC_PROG_CXX
@@ -11,15 +11,6 @@ AC_RUN_IFELSE([AC_LANG_PROGRAM([],[
 ])], [
 have_clang=yes
 ])
-
-AC_CHECK_PROG(CARGO, [cargo], [yes], [no])
-AS_IF(test x$CARGO = xno,
-    AC_MSG_ERROR([cargo is required.  Please install the Rust toolchain from https://www.rust-lang.org/])
-)
-AC_CHECK_PROG(RUSTC, [rustc], [yes], [no])
-AS_IF(test x$RUSTC = xno,
-    AC_MSG_ERROR([rustc is required.  Please install the Rust toolchain from https://www.rust-lang.org/])
-)
 
 AC_ARG_ENABLE(debug,
 AS_HELP_STRING([--enable-debug],
@@ -49,6 +40,7 @@ AC_SUBST([GCC_OPTS], ["-Werror -Wall -Wno-sign-compare -Wno-maybe-uninitialized 
 	   -Wno-unused-variable -Wextra -Wno-unused-parameter -Wno-error=extra"])
 
 clang_opts="-fmodules"
+clang_opts="${clang_opts} -fsafe-buffer-usage-suggestions"
 clang_opts="${clang_opts} -stdlib=libc++"
 
 clang_opts="${clang_opts} -Werror" # No stinkin' warnings allowed here!
@@ -61,6 +53,8 @@ clang_opts="${clang_opts} -Wno-padded"
 clang_opts="${clang_opts} -Wno-switch-enum"
 
 # Things we should get rid of
+clang_opts="${clang_opts} -Wno-unsafe-buffer-usage"
+clang_opts="${clang_opts} -Wno-unused-but-set-variable"
 clang_opts="${clang_opts} -Wno-float-equal"
 clang_opts="${clang_opts} -Wno-old-style-cast"
 clang_opts="${clang_opts} -Wno-conversion"
@@ -77,7 +71,7 @@ AM_CONDITIONAL([CLANG], [test x$have_clang = xyes])
 AC_MSG_RESULT($have_clang)
 AC_PROG_RANLIB
 PKG_CHECK_MODULES(SQLITE3, sqlite3, ,
-		  AC_ERROR([Sqlite3 is required to build GB]))
+		  AC_MSG_ERROR(Sqlite3 is required to build GB))
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
  Makefile

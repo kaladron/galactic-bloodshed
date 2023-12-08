@@ -1,6 +1,6 @@
-AM_CXXFLAGS = -std=c++2a \
-	      -fmodule-file=$(top_builddir)/gb/gblib.pcm \
-	      -fsanitize=implicit-conversion 
+AM_CXXFLAGS = -std=c++2c \
+	      -fmodule-file=gblib=$(top_builddir)/gb/gblib.pcm \
+	      -fsanitize=implicit-conversion
 
 # -fsanitize-undefined-trap-on-error
 
@@ -15,7 +15,7 @@ AM_CPPFLAGS = -I$(top_srcdir)
 noinst_LIBRARIES = libcommands.a
 
 EXTRA_libcommands_a_DEPENDENCIES = $(top_builddir)/gb/gblib.pcm commands.pcm
-libcommands_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=commands.pcm
+libcommands_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=commands=commands.pcm
 libcommands_a_SOURCES = \
 		     analysis.cc \
 		     announce.cc \
@@ -66,5 +66,5 @@ commands.pcm: $(top_builddir)/gb/gblib.pcm
 .cppm.pcm:
 	$(CXX) $(AM_CPPFLAGS) $(AM_CXXFLAGS) --precompile $< -o $@
 
-.pcm.o: 
+.pcm.o:
 	$(CXX) $(CPPFLAGS) -c $< -o $@

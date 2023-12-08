@@ -14,12 +14,12 @@ install-data-local:
 	chmod -R a+rwx $(DOCDIR) $(PKGDATADIR) $(PKGSTATEDIR)
 	cp $(top_srcdir)/data/* $(PKGDATADIR)/
 
-AM_CXXFLAGS = -std=c++20 \
+AM_CXXFLAGS = -std=c++2c \
 	      $(SQLLITE3_CFLAGS) \
 	      -DPKGSTATEDIR="\"$(PKGSTATEDIR)\"" \
 	      -DPKGDATADIR="\"$(PKGDATADIR)\"" \
 	      -DDOCDIR="\"$(DOCDIR)\"" \
-	      -fsanitize=implicit-conversion 
+	      -fsanitize=implicit-conversion
 
 # -fsanitize-undefined-trap-on-error
 
@@ -41,7 +41,7 @@ noinst_LIBRARIES = libgblib.a
 UTILS_FILES = utils/rand.cc
 COMMON_FILES = files.cc files_rw.cc files_shl.cc sql/sql.cc $(UTILS_FILES)
 
-makeuniv_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
+makeuniv_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib=gblib.pcm
 makeuniv_LDADD = libgblib.a
 EXTRA_makeuniv_DEPENDENCIES = gblib.pcm
 makeuniv_SOURCES = $(COMMON_FILES)  \
@@ -51,17 +51,17 @@ makeuniv_SOURCES = $(COMMON_FILES)  \
 					creator/namegen.cc \
 					sectormap.cc
 
-enrol_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
+enrol_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib=gblib.pcm
 enrol_SOURCES =  $(COMMON_FILES) enrol.cc sectormap.cc
 enrol_LDADD = libgblib.a
 EXTRA_enrol_DEPENDENCIES = gblib.pcm
 
 GB_SOURCES = GB_server.cc $(COMMON_FILES) $(OLD_LIBGBLIB_FILES)
-GB_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm -fmodule-file=commands/commands.pcm -Wno-reserved-identifier
+GB_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib=gblib.pcm -fmodule-file=commands=commands/commands.pcm -Wno-reserved-identifier
 GB_LDADD = libgblib.a commands/libcommands.a
 EXTRA_GB_DEPENDENCIES = gblib.pcm commands/commands.pcm
 
-libgblib_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
+libgblib_a_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib=gblib.pcm
 libgblib_a_SOURCES = sector.cc
 EXTRA_libgblib_a_DEPENDENCIES = gblib.pcm
 
@@ -98,7 +98,7 @@ OLD_LIBGBLIB_FILES = \
 		     tele.cc \
 		     victory.cc
 
-racegen_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm -DPRIV
+racegen_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib=blib.pcm -DPRIV
 racegen_SOURCES = $(COMMON_FILES) GB_racegen.cc enroll.cc racegen.cc sectormap.cc
 racegen_LDADD = libgblib.a
 EXTRA_racegen_DEPENDENCIES = gblib.pcm
@@ -106,12 +106,12 @@ EXTRA_racegen_DEPENDENCIES = gblib.pcm
 TESTS = shlmisc_test gblib_test
 
 check_PROGRAMS = shlmisc_test gblib_test
-shlmisc_test_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
+shlmisc_test_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib=gblib.pcm
 shlmisc_test_SOURCES = shlmisc_test.cc
 shlmisc_test_LDADD = libgblib.a
 EXTRA_shlmisc_test_DEPENDENCIES = gblib.pcm
 
-gblib_test_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib.pcm
+gblib_test_CXXFLAGS = $(AM_CXXFLAGS) -fmodule-file=gblib=gblib.pcm
 gblib_test_SOURCES = gblib_test.cc
 gblib_test_LDADD = libgblib.a
 EXTRA_gblib_test_DEPENDENCIES = gblib.pcm
@@ -122,5 +122,5 @@ BUILT_SOURCES = gblib.pcm
 .cppm.pcm:
 	$(CXX) $(AM_CPPFLAGS) $(AM_CXXFLAGS) --precompile $< -o $@
 
-.pcm.o: 
+.pcm.o:
 	$(CXX) $(CPPFLAGS) -c $< -o $@

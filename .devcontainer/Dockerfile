@@ -4,7 +4,7 @@ FROM debian:testing
 RUN apt update && apt upgrade -y
 
 # Install additional tools (optional)
-RUN apt install -y git build-essential python3 python3-pip adduser sudo cmake
+RUN apt install -y git build-essential python3 python3-pip adduser sudo cmake wget apt-utils vim
 
 # Create a new user (replace "codespaceuser" with your desired username)
 RUN adduser --disabled-password --gecos "" codespaceuser

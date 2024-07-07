@@ -1,10 +1,5 @@
 {
-    "name": "My Debian Testing Codespace",
-    "build": {
-        "dockerfile": "Dockerfile" // Path to your Dockerfile
-    },
-    "remoteUser": "codespaceuser", // Specify the username created in Dockerfile
-    "mounts": [
-        "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached"
-      ]
-}
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+    "features": {
+    }
+  }

@@ -1,6 +1,6 @@
 export module gblib;
 
-import std;
+import std.compat;
 
 export enum ScopeLevel { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
 

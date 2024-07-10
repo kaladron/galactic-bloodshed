@@ -10,7 +10,7 @@
  *
  */
 
-import std;
+import std.compat;
 
 #include "gb/files_rw.h"
 

@@ -10,7 +10,10 @@
 // G.O.D. [1] > boils at -33
 
 import gblib;
-import std;
+import std.compat;
+
+#include <stdio.h>
+#include <strings.h>
 
 #include "gb/creator/makestar.h"
 

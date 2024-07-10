@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-import std;
+import std.compat;
 import gblib;
 
 #include "gb/utils/rand.h"

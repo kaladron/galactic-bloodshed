@@ -8,7 +8,10 @@
  */
 
 import gblib;
-import std;
+import std.compat;
+
+#include <stdio.h>
+#include <errno.h>
 
 #include "gb/files_shl.h"
 

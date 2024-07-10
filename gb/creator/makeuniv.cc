@@ -6,7 +6,11 @@
  *   Makes various required data files; calls makestar for each star desired. */
 
 import gblib;
-import std;
+import std.compat;
+
+#include <stdlib.h>
+#include <strings.h>
+#include <stdio.h>
 
 #include "gb/creator/makeuniv.h"
 

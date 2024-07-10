@@ -5,7 +5,10 @@
 /* makeplanet.c -- makes one planet. */
 
 import gblib;
-import std;
+import std.compat;
+
+#include <stdlib.h>
+#include <strings.h>
 
 #include "gb/creator/makeplanet.h"
 

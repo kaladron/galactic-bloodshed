@@ -4,9 +4,11 @@
 
 /* Random number generator */
 
-#include "gb/utils/rand.h"
+import std.compat;
 
-import std;
+#include <stdlib.h>
+
+#include "gb/utils/rand.h"
 
 /* double double_rand() this returns a random number between 0 and 1 */
 double double_rand() { return (double)random() / 2147483648.0; }

@@ -8,7 +8,9 @@
  */
 
 import gblib;
-import std;
+import std.compat;
+
+#include <stdio.h>
 
 #include "gb/sql/sql.h"
 

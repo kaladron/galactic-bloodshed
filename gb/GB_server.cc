@@ -332,13 +332,18 @@ namespace {
 command_t make_command_t(std::string_view message) {
   command_t argv;
 
-  auto position = message.find(' ');
-  if (position != std::string_view::npos) {
+  size_t position;
+  while ((position = message.find(' ')) != std::string_view::npos) {
+    if (position == 0) {
+      message.remove_prefix(1);
+      continue;
+    }
     argv.emplace_back(message.substr(0, position));
     message.remove_prefix(position + 1);
-  } else {
-    argv.emplace_back(message);
   }
+
+  if (!message.empty()) argv.emplace_back(message);
+
   return argv;
 }
 

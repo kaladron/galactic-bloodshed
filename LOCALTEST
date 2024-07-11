@@ -1,3 +1,0 @@
-Here's a good command line for local testing:
-
-CXX=clang++-14 CC=clang-14 ./configure --prefix=/workspaces/galactic-bloodshed/workdir --enable-debug

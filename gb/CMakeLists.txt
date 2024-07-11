@@ -15,8 +15,7 @@ set(CMAKE_EXE_LINKER_FLAGS "-lc++abi")
 project("galactic-bloodshed" LANGUAGES CXX)
 
 # Require dot, treat the other components as optional
-find_package(Doxygen
-             REQUIRED dot)
+find_package(Doxygen REQUIRED dot)
 
 # Set language version used
 
@@ -54,11 +53,49 @@ target_link_libraries(makeuniv PRIVATE gblib ${SQLite3_LIBRARIES})
 add_executable(enrol enrol.cc sectormap.cc ${COMMON_FILES})
 target_link_libraries(enrol PRIVATE gblib ${SQLite3_LIBRARIES})
 
-add_executable(racegen GB_racegen.cc enroll.cc racegen.cc sectormap.cc ${COMMON_FILES})
+add_executable(racegen GB_racegen.cc enroll.cc racegen.cc sectormap.cc
+                       ${COMMON_FILES})
 target_link_libraries(racegen PRIVATE gblib ${SQLite3_LIBRARIES})
 
 add_library(gblib)
 target_sources(gblib PUBLIC FILE_SET CXX_MODULES FILES gblib.cppm)
+
+add_library(commands)
+target_sources(commands PUBLIC FILE_SET CXX_MODULES FILES commands/commands.cppm)
+target_link_libraries(commands PRIVATE gblib)
+
+set(OLD_LIBGBLIB_FILES
+    VN.cc
+    bombard.cc
+    build.cc
+    cs.cc
+    doplanet.cc
+    dosector.cc
+    doship.cc
+    doturncmd.cc
+    fire.cc
+    fuel.cc
+    land.cc
+    launch.cc
+    load.cc
+    map.cc
+    max.cc
+    move.cc
+    moveplanet.cc
+    moveship.cc
+    name.cc
+    order.cc
+    planet.cc
+    place.cc
+    prof.cc
+    sectormap.cc
+    ships.cc
+    shlmisc.cc
+    shootblast.cc
+    star.cc
+    tech.cc
+    tele.cc
+    victory.cc)
 
 # Configuration variable for PKGDATADIR
 set(PKGDATADIR

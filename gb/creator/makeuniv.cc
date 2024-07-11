@@ -8,12 +8,11 @@
 import gblib;
 import std.compat;
 
-#include <stdlib.h>
-#include <strings.h>
-#include <stdio.h>
-
 #include "gb/creator/makeuniv.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
 #include <sys/stat.h>
 #include <unistd.h>
 

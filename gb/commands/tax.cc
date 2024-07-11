@@ -5,7 +5,7 @@
 /// \file tax.cc
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/tax.h"
 

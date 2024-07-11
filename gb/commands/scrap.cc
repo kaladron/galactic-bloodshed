@@ -5,7 +5,7 @@
 /* scrap.c -- turn a ship to junk */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/scrap.h"
 

@@ -8,7 +8,7 @@
  */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/land.h"
 

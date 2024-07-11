@@ -5,7 +5,7 @@
 /* dissolve.c -- commit suicide, nuke all ships and sectors; */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/dissolve.h"
 

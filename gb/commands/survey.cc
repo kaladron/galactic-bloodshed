@@ -5,9 +5,11 @@
 /* survey.c -- print out survey for planets */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/survey.h"
+
+#include <strings.h>
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

@@ -3,7 +3,7 @@
 // found in the COPYING file.
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/production.h"
 

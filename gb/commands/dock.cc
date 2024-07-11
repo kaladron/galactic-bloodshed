@@ -5,9 +5,11 @@
 /*  dock.c -- dock a ship and..... assault -- a very un-PC version of dock */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/dock.h"
+
+#include <strings.h>
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

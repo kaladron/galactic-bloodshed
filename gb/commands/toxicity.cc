@@ -6,7 +6,7 @@
 /// \brief Change threshold in toxicity to build a wc.
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/toxicity.h"
 

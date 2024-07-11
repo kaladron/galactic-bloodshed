@@ -5,9 +5,12 @@
 /* doship -- do one ship turn. */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/doship.h"
+
+#include <stdlib.h>
+#include <strings.h>
 
 #include "gb/GB_server.h"
 #include "gb/VN.h"

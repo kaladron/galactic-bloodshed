@@ -6,7 +6,7 @@
  *	also deducts fuel from the ship's stores. */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/moveship.h"
 

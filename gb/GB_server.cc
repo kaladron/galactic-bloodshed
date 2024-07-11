@@ -4,20 +4,25 @@
 
 import commands;
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/GB_server.h"
 
 #include <arpa/inet.h>
+#include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
 
-#include <boost/algorithm/string.hpp>
+// include <boost/algorithm/string.hpp>
 
 #include "gb/buffers.h"
 #include "gb/build.h"
@@ -324,14 +329,26 @@ static const std::unordered_map<std::string, CommandFunction> commands{
 };
 
 namespace {
+command_t make_command_t(std::string_view message) {
+  command_t argv;
+
+  auto position = message.find(' ');
+  if (position != std::string_view::npos) {
+    argv.emplace_back(message.substr(0, position));
+    message.remove_prefix(position + 1);
+  } else {
+    argv.emplace_back(message);
+  }
+  return argv;
+}
+
 /**
  * \brief Parse input string for player and governor password
  * \param message Input string from the user
  * \return player and governor password or empty strings if invalid
  */
 std::tuple<std::string, std::string> parse_connect(const std::string &message) {
-  command_t argv;
-  boost::split(argv, message, boost::is_any_of(" "));
+  auto argv = make_command_t(message);
 
   if (argv.size() != 2) {
     return {"", ""};
@@ -995,9 +1012,9 @@ static void process_commands() {
 static bool do_command(DescriptorData &d, const char *comm) {
   /* check to see if there are a few words typed out, usually for the help
    * command */
-  command_t argv;
-  boost::split(argv, comm, boost::is_any_of(" "));
+  auto argv = make_command_t(comm);
 
+  
   if (argv[0] == "quit") {
     goodbye_user(d);
     return false;

@@ -5,9 +5,12 @@
 /* VN.c -- assorted Von Neumann machine code */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/VN.h"
+
+#include <stdlib.h>
+#include <strings.h>
 
 #include "gb/build.h"
 #include "gb/doturn.h"

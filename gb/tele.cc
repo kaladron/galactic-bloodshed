@@ -6,10 +6,13 @@
 /// \brief Telegram functions
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/tele.h"
 
+#include <limits.h>
+#include <stdio.h>
+#include <strings.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>

@@ -5,9 +5,11 @@
 /*  move.c -- move population and assault aliens on target sector */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/move.h"
+
+#include <strings.h>
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

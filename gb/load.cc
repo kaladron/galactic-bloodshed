@@ -5,7 +5,7 @@
 /*  load.c -- load/unload stuff */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/load.h"
 

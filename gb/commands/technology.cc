@@ -5,7 +5,7 @@
 /* technology.c -- increase investment in technological development. */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/technology.h"
 

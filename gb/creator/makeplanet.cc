@@ -80,7 +80,7 @@ static void MakeEarthAtmosphere(Planet &, int);
 static void Makesurface(const Planet &, SectorMap &);
 static int SectTemp(const Planet &, const int);
 static void seed(SectorMap &, SectorType, int);
-static void grow(SectorMap &, int, int, int);
+static void grow(SectorMap &, SectorType, int, int);
 
 Planet makeplanet(double dist, short stemp, PlanetType type) {
   static planetnum_t planet_id = 0;
@@ -294,7 +294,7 @@ static void seed(SectorMap &smap, SectorType type, int n) {
  *  of adjacent sectors of the same type that must be found for the sector to
  *  become type.
  */
-static void grow(SectorMap &smap, int type, int n, int rate) {
+static void grow(SectorMap &smap, SectorType type, int n, int rate) {
   std::vector<std::tuple<int, int, int>> worklist;  // x, y, type
 
   // We don't want to alter the current map, as this is iterative.

@@ -61,7 +61,10 @@ add_library(gblib)
 target_sources(gblib PUBLIC FILE_SET CXX_MODULES FILES gblib.cppm)
 
 add_library(commands)
-target_sources(commands PUBLIC FILE_SET CXX_MODULES FILES commands/commands.cppm)
+target_sources(
+  commands
+  PUBLIC FILE_SET CXX_MODULES FILES commands/commands.cppm
+  PRIVATE commands/zoom.cc)
 target_link_libraries(commands PRIVATE gblib)
 
 set(OLD_LIBGBLIB_FILES

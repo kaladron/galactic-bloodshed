@@ -5,10 +5,12 @@
 /// \file zoom.cc
 /// \brief Functions for implementing the 'zoom' command.
 
-module commands;
+module;
 
 import gblib;
-import std;
+import std.compat;
+
+module commands;
 
 /// Zoom in or out for orbit display
 void zoom(const command_t &argv, GameObj &g) {

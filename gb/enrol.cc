@@ -4,17 +4,18 @@
 
 /* enrol.c -- initializes to owner one sector and planet. */
 
-#include <unistd.h>
-
-import std;
+import std.compat;
 import gblib;
 
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <unistd.h>
+
 #include "gb/GB_server.h"
-#include "gb/buffers.h"
-#include "gb/build.h"
 #include "gb/files_shl.h"
 #include "gb/globals.h"
-#include "gb/map.h"
 #include "gb/max.h"
 #include "gb/races.h"
 #include "gb/shipdata.h"

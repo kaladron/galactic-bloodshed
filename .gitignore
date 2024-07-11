@@ -29,3 +29,4 @@ doxy
 *.pcm
 .vscode
 workdir
+.cache

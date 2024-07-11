@@ -9,16 +9,13 @@ import std.compat;
 
 #include "gb/VN.h"
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <strings.h>
 
-#include "gb/build.h"
 #include "gb/doturn.h"
-#include "gb/fire.h"
 #include "gb/load.h"
 #include "gb/max.h"
 #include "gb/ships.h"
-#include "gb/shlmisc.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
 #include "gb/utils/rand.h"

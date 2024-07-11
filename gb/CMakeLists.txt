@@ -12,6 +12,8 @@ set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 set(CMAKE_EXE_LINKER_FLAGS "-lc++abi")
 
+enable_testing()
+
 project("galactic-bloodshed" LANGUAGES CXX)
 
 # Require dot, treat the other components as optional
@@ -146,6 +148,15 @@ set(OLD_LIBGBLIB_FILES
 
 add_executable(GB GB_server.cc ${COMMON_FILES} ${OLD_LIBGBLIB_FILES})
 target_link_libraries(GB PRIVATE gblib commands old-commands ${SQLite3_LIBRARIES})
+
+# Test targets
+add_executable(shlmisc_test shlmisc_test.cc)
+target_link_libraries(shlmisc_test PRIVATE gblib)
+add_test(NAME GB_shlmisc_test COMMAND shlmisc_test)
+
+add_executable(gblib_test gblib_test.cc)
+target_link_libraries(gblib_test PRIVATE gblib)
+add_test(NAME GB_gblib_test COMMAND gblib_test)
 
 # Configuration variable for PKGDATADIR
 set(PKGDATADIR

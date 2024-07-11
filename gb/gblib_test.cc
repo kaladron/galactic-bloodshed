@@ -1,5 +1,5 @@
 import gblib;
-import std;
+import std.compat;
 
 #include <cassert>
 

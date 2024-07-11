@@ -14,6 +14,10 @@ set(CMAKE_EXE_LINKER_FLAGS "-lc++abi")
 
 project("galactic-bloodshed" LANGUAGES CXX)
 
+# Require dot, treat the other components as optional
+find_package(Doxygen
+             REQUIRED dot)
+
 # Set language version used
 
 set(CMAKE_CXX_STANDARD 23)
@@ -73,3 +77,5 @@ set(DOCDIR
     "${CMAKE_INSTALL_FULL_DOCDIR}/${PROJECT_NAME}/"
     CACHE STRING "Path to the package document directory")
 add_definitions(-DDOCDIR="${DOCDIR}")
+
+doxygen_add_docs(gb-docs)

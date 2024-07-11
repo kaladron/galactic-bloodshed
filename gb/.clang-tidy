@@ -1,1 +1,1 @@
-Checks: clang-analyzer-*,cppcoreguidelines-*
+Checks: clang-analyzer-*,bugprone-*,cert-*,modernize-*,-bugprone-easily-swappable-parameters,-bugprone-narrowing-conversions,-bugprone-assignment-in-if-condition,-cert-err33-c,-modernize-use-trailing-return-type

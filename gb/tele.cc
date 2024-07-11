@@ -10,8 +10,8 @@ import std.compat;
 
 #include "gb/tele.h"
 
-#include <limits.h>
-#include <stdio.h>
+#include <climits>
+#include <cstdio>
 #include <strings.h>
 #include <sys/stat.h>
 #include <sys/types.h>

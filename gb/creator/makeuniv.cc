@@ -17,14 +17,10 @@ import std.compat;
 #include <unistd.h>
 
 #include "gb/GB_server.h"
-#include "gb/buffers.h"
-#include "gb/build.h"
 #include "gb/creator/makestar.h"
-#include "gb/creator/namegen.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/globals.h"
-#include "gb/map.h"
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/sql/sql.h"

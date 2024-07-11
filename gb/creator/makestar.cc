@@ -144,15 +144,13 @@ out:
 static void rand_list(int n, int *list) /* mix up the numbers 0 thru n */
 {
   short nums[1000];
-  short i;
-  short j;
   short k;
   short kk;
   short ii;
 
-  for (i = 0; i <= n; i++) nums[i] = 0;
-  for (j = 0; j <= n; j++) {
-    i = k = int_rand(0, n);
+  for (int i = 0; i <= n; i++) nums[i] = 0;
+  for (int j = 0; j <= n; j++) {
+    int i = k = int_rand(0, n);
     while (nums[k] != 0) k += nums[k];
     list[j] = k;
     if (k == n) {

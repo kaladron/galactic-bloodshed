@@ -8,6 +8,10 @@
 
 import std;
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include "gb/game_info.h"
 #include "gb/racegen.h"
 

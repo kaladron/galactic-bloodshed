@@ -2,10 +2,13 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-import std;
+import std.compat;
 
 #include "gb/racegen.h"
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <strings.h>
 #include <unistd.h>
 
 #include "gb/enroll.h"

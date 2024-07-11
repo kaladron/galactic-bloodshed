@@ -5,7 +5,7 @@
 /* declare.c -- declare alliance, neutrality, war, the basic thing. */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/invite.h"
 

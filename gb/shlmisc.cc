@@ -6,7 +6,7 @@
 /// \brief Miscellaneous stuff included in the shell.
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/shlmisc.h"
 

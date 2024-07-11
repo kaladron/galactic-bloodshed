@@ -3,9 +3,11 @@
 // found in the COPYING file.
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/capture.h"
+
+#include <strings.h>
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

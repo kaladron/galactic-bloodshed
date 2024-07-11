@@ -5,7 +5,7 @@
 /// \file fix.cc
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/fix.h"
 

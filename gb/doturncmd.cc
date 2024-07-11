@@ -5,10 +5,11 @@
 /* doturn -- does one turn. */
 
 import gblib;
+import std.compat;
 
 #include "gb/doturncmd.h"
 
-import std;
+#include <strings.h>
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

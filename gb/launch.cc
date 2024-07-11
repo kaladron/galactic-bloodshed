@@ -5,7 +5,7 @@
 /* launch.c -- launch or undock a ship (also undock) */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/launch.h"
 

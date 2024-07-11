@@ -2,10 +2,12 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-import std;
+import std.compat;
 import gblib;
 
 #include "gb/ships.h"
+
+#include <stdlib.h>
 
 #include "gb/GB_server.h"
 #include "gb/defense.h"

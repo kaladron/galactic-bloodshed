@@ -5,7 +5,7 @@
 /* name.c -- rename something to something else */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/name.h"
 

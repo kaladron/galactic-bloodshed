@@ -5,9 +5,11 @@
 /* moveplanet.c -- move the planet in orbit around its star. */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/moveplanet.h"
+
+#include <strings.h>
 
 #include "gb/doturn.h"
 #include "gb/ships.h"

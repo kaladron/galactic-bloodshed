@@ -6,9 +6,11 @@
 /// \brief Fire at ship or planet from ship or planet
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/fire.h"
+
+#include <strings.h>
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"

@@ -5,7 +5,7 @@
 /* examine -- check out an object */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/examine.h"
 

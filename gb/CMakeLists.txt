@@ -67,6 +67,50 @@ target_sources(
   PRIVATE commands/zoom.cc)
 target_link_libraries(commands PRIVATE gblib)
 
+add_library(old-commands)
+target_link_libraries(old-commands PRIVATE gblib ${SQLite3_LIBRARIES})
+target_sources(
+  old-commands
+  PUBLIC commands/analysis.cc
+         commands/announce.cc
+         commands/autoreport.cc
+         commands/block.cc
+         commands/capital.cc
+         commands/capture.cc
+         commands/center.cc
+         commands/colonies.cc
+         commands/declare.cc
+         commands/dissolve.cc
+         commands/distance.cc
+         commands/dock.cc
+         commands/enslave.cc
+         commands/examine.cc
+         commands/explore.cc
+         commands/fix.cc
+         commands/governors.cc
+         commands/grant.cc
+         commands/highlight.cc
+         commands/invite.cc
+         commands/mobilize.cc
+         commands/orbit.cc
+         commands/pledge.cc
+         commands/power.cc
+         commands/production.cc
+         commands/relation.cc
+         commands/star_locations.cc
+         commands/tax.cc
+         commands/tech_status.cc
+         commands/technology.cc
+         commands/repair.cc
+         commands/rst.cc
+         commands/scrap.cc
+         commands/survey.cc
+         commands/toggle.cc
+         commands/toxicity.cc
+         commands/unpledge.cc
+         commands/victory.cc
+         commands/vote.cc)
+
 set(OLD_LIBGBLIB_FILES
     VN.cc
     bombard.cc
@@ -99,6 +143,9 @@ set(OLD_LIBGBLIB_FILES
     tech.cc
     tele.cc
     victory.cc)
+
+add_executable(GB GB_server.cc ${COMMON_FILES} ${OLD_LIBGBLIB_FILES})
+target_link_libraries(GB PRIVATE gblib commands old-commands ${SQLite3_LIBRARIES})
 
 # Configuration variable for PKGDATADIR
 set(PKGDATADIR

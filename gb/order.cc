@@ -5,7 +5,7 @@
 /*  order.c -- give orders to ship */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/order.h"
 

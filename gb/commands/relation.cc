@@ -5,7 +5,7 @@
 /* relation.c -- state relations among players */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/relation.h"
 

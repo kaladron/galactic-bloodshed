@@ -3,9 +3,11 @@
 // found in the COPYING file.
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/repair.h"
+
+#include <strings.h>
 
 #include "gb/files_shl.h"
 #include "gb/place.h"

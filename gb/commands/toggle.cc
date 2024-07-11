@@ -5,7 +5,7 @@
 /*  toggle.c -- toggles some options */
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/commands/toggle.h"
 

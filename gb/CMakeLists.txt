@@ -47,6 +47,9 @@ add_executable(
            creator/namegen.cc sectormap.cc ${COMMON_FILES})
 target_link_libraries(makeuniv PRIVATE gblib ${SQLite3_LIBRARIES})
 
+add_executable(enrol enrol.cc sectormap.cc ${COMMON_FILES})
+target_link_libraries(enrol PRIVATE gblib ${SQLite3_LIBRARIES})
+
 add_library(gblib)
 target_sources(gblib PUBLIC FILE_SET CXX_MODULES FILES gblib.cppm)
 

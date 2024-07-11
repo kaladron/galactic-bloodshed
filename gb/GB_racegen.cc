@@ -3,18 +3,19 @@
 // found in the COPYING file.
 
 import gblib;
-import std;
+import std.compat;
 
 #include "gb/GB_racegen.h"
 
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
 #include <unistd.h>
 
 #include "gb/GB_server.h"
-#include "gb/buffers.h"
-#include "gb/build.h"
 #include "gb/files_shl.h"
 #include "gb/globals.h"
-#include "gb/map.h"
 #include "gb/max.h"
 #include "gb/racegen.h"
 #include "gb/races.h"

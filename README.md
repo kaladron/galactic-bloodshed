@@ -23,3 +23,7 @@ referred to as the "server". To connect to a game, players use a program
 called a "client" that is run from their local computer.
 
 (From the Galactic Bloodshed FAQ)
+
+## Licensing
+
+I received permission from the authors of GB on December 9, 2021 to relicense the game to apache2.

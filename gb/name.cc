@@ -128,17 +128,17 @@ void bless(const command_t &argv, GameObj &g) {
     race.IQ_limit = std::stoi(argv[3]);
     sprintf(buf, "Deity gave you a maximum IQ of %d.\n", race.IQ_limit);
   } else if (argv[2] == "mass") {
-    race.mass = atof(argv[3].c_str());
+    race.mass = std::stof(argv[3]);
     sprintf(buf, "Deity gave you %.2f mass.\n", race.mass);
   } else if (argv[2] == "metabolism") {
-    race.metabolism = atof(argv[3].c_str());
+    race.metabolism = std::stof(argv[3]);
     sprintf(buf, "Deity gave you %.2f metabolism.\n", race.metabolism);
   } else if (argv[2] == "adventurism") {
-    race.adventurism = atof(argv[3].c_str());
+    race.adventurism = std::stof(argv[3]);
     sprintf(buf, "Deity gave you %-3.0f%% adventurism.\n",
             race.adventurism * 100.0);
   } else if (argv[2] == "birthrate") {
-    race.birthrate = atof(argv[3].c_str());
+    race.birthrate = std::stof(argv[3]);
     sprintf(buf, "Deity gave you %.2f birthrate.\n", race.birthrate);
   } else if (argv[2] == "fertility") {
     race.fertilize = amount;

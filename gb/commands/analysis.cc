@@ -279,9 +279,8 @@ static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
     }
   }
 
-  sprintf(buf, "\nAnalysis of /%s/%s:\n", stars[Starnum].name,
-          stars[Starnum].pnames[Planetnum]);
-  notify(Playernum, Governor, buf);
+  g.out << std::format("\nAnalysis of /{}/{}:\n", stars[Starnum].name,
+                                stars[Starnum].pnames[Planetnum]);
   sprintf(buf, "%s %d", (mode == Mode::top_five ? "Highest" : "Lowest"), CARE);
   switch (sector_type) {
     case -1:

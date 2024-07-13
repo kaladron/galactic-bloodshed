@@ -31,6 +31,6 @@ export void technology(const command_t &, GameObj &);
 export void tech_status(const command_t &, GameObj &);
 export void toggle(const command_t &, GameObj &);
 export void toxicity(const command_t &, GameObj &);
-export void victory(const command_t &, GameObj &);
 #endif
+export void victory(const command_t &, GameObj &);
 export void zoom(const command_t &, GameObj &);

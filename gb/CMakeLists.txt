@@ -66,7 +66,7 @@ add_library(commands)
 target_sources(
   commands
   PUBLIC FILE_SET CXX_MODULES FILES commands/commands.cppm
-  PRIVATE commands/zoom.cc)
+  PRIVATE commands/victory.cc commands/zoom.cc)
 target_link_libraries(commands PRIVATE gblib)
 
 add_library(old-commands)
@@ -110,7 +110,6 @@ target_sources(
          commands/toggle.cc
          commands/toxicity.cc
          commands/unpledge.cc
-         commands/victory.cc
          commands/vote.cc)
 
 set(OLD_LIBGBLIB_FILES
@@ -147,7 +146,8 @@ set(OLD_LIBGBLIB_FILES
     victory.cc)
 
 add_executable(GB GB_server.cc ${COMMON_FILES} ${OLD_LIBGBLIB_FILES})
-target_link_libraries(GB PRIVATE gblib commands old-commands ${SQLite3_LIBRARIES})
+target_link_libraries(GB PRIVATE gblib commands old-commands
+                                 ${SQLite3_LIBRARIES})
 
 # Test targets
 add_executable(shlmisc_test shlmisc_test.cc)

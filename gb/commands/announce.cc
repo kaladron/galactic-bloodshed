@@ -25,9 +25,7 @@ void announce(const command_t &argv, GameObj &g) {
   Communicate mode;
   if (argv[0] == "announce")
     mode = Communicate::ANN;
-  else if (argv[0] == "broadcast")
-    mode = Communicate::BROADCAST;
-  else if (argv[0] == "'")
+  else if (argv[0] == "broadcast" || argv[0] == "'")
     mode = Communicate::BROADCAST;
   else if (argv[0] == "shout")
     mode = Communicate::SHOUT;

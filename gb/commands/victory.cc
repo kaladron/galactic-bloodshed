@@ -2,16 +2,18 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/victory.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/races.h"
 #include "gb/vars.h"
 #include "gb/victory.h"
+
+module commands;
 
 void victory(const command_t &argv, GameObj &g) {
   int count = (argv.size() > 1) ? std::stoi(argv[1]) : Num_races;

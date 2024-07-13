@@ -1,1 +1,1 @@
-Checks: clang-analyzer-*,bugprone-*,cert-*,modernize-*,-bugprone-easily-swappable-parameters,-bugprone-narrowing-conversions,-bugprone-assignment-in-if-condition,-cert-err33-c,-modernize-use-trailing-return-type
+Checks: clang-analyzer-*,bugprone-*,cert-*,modernize-*,performance-*,readability,-bugprone-easily-swappable-parameters,-bugprone-narrowing-conversions,-bugprone-assignment-in-if-condition,-cert-err33-c,-modernize-use-trailing-return-type,-readability-identifier-length,-readbility-magic-numbers,-readability-named-parameter

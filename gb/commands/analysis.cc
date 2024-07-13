@@ -39,8 +39,7 @@ void insert(Mode mode, std::array<struct anal_sect, CARE> arr, anal_sect in) {
 
 void PrintTop(GameObj &g, const std::array<struct anal_sect, CARE> arr,
               const std::string name) {
-  sprintf(buf, "%8s:", name.c_str());
-  notify(g.player, g.governor, buf);
+  g.out << std::format("{:>8}:", name);
 
   for (const auto &as : arr) {
     if (as.value == -1) continue;

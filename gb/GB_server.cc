@@ -1262,7 +1262,6 @@ static void close_sockets(int sock) {
 static void dump_users(DescriptorData &e) {
   time_t now;
   int God = 0;
-  int coward_count = 0;
 
   (void)time(&now);
   sprintf(buf, "Current Players: %s", ctime(&now));
@@ -1285,9 +1284,8 @@ static void dump_users(DescriptorData &e) {
                 (r.governor[d.governor].toggle.gag ? "GAG" : "   "),
                 (r.governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, buf);
-      } else if (!God) /* deity lurks around */
-        coward_count++;
-
+      }
+      
       if ((now - d.last_time) > DISCONNECT_TIME) d.connected = false;
     }
   }

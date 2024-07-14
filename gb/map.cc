@@ -11,8 +11,6 @@ import std.compat;
 #include "gb/buffers.h"
 #include "gb/commands/orbit.h"
 #include "gb/files_shl.h"
-#include "gb/fire.h"
-#include "gb/max.h"
 #include "gb/place.h"
 #include "gb/races.h"
 #include "gb/ships.h"
@@ -58,7 +56,7 @@ static void show_map(const player_t Playernum, const governor_t Governor,
   player_t i;
   int iq = 0;
   char shiplocs[MAX_X][MAX_Y] = {};
-  std::strstream output;
+  std::ostringstream output;
 
   const int show = 1;  // TODO(jeffbailey): This was always set to on, but this
                        // fact is output to the client, which might affect the

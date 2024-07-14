@@ -19,6 +19,18 @@ project("galactic-bloodshed" LANGUAGES CXX)
 # Require dot, treat the other components as optional
 find_package(Doxygen REQUIRED dot)
 
+# Bring in 
+include(FetchContent)
+
+FetchContent_Declare(
+  glaze
+  GIT_REPOSITORY https://github.com/stephenberry/glaze.git
+  GIT_TAG main
+  GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(glaze)
+
 # Set language version used
 
 set(CMAKE_CXX_STANDARD 23)

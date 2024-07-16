@@ -29,9 +29,6 @@ char temp[2047];
 int ShipVector[NUMSTYPES];
 Ship **ships;
 
-/* defense 5 is inpenetrable */
-const int Defensedata[] = {1, 1, 3, 2, 2, 3, 2, 4, 0};
-
 #ifdef MARKET
 const char *commod_name[] = {"resources", "destruct", "fuel", "crystals"};
 #endif

@@ -202,7 +202,7 @@ static std::list<DescriptorData> descriptor_list;
 
 using CommandFunction = void (*)(const command_t &, GameObj &);
 
-static const std::unordered_map<std::string, CommandFunction> commands{
+static const std::unordered_map<std::string, CommandFunction> commands{ // NOLINT
     {"'", announce},
     {"allocate", allocateAPs},
     {"analysis", analysis},
@@ -484,19 +484,19 @@ int main(int argc, char **argv) {
   int port;
   switch (argc) {
     case 2:
-      port = atoi(argv[1]);
+      port = std::stoi(argv[1]);
       update_time = DEFAULT_UPDATE_TIME;
       segments = MOVES_PER_UPDATE;
       break;
     case 3:
-      port = atoi(argv[1]);
-      update_time = atoi(argv[2]);
+      port = std::stoi(argv[1]);
+      update_time = std::stoi(argv[2]);
       segments = MOVES_PER_UPDATE;
       break;
     case 4:
-      port = atoi(argv[1]);
-      update_time = atoi(argv[2]);
-      segments = atoi(argv[3]);
+      port = std::stoi(argv[1]);
+      update_time = std::stoi(argv[2]);
+      segments = std::stoi(argv[3]);
       break;
     default:
       port = GB_PORT;

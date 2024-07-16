@@ -66,7 +66,6 @@ import std.compat;
 #include "gb/commands/vote.h"
 #include "gb/config.h"
 #include "gb/cs.h"
-#include "gb/defense.h"
 #include "gb/doturncmd.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
@@ -86,12 +85,10 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/sql/sql.h"
-#include "gb/tech.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
-#include "gb/victory.h"
 
 static int shutdown_flag = 0;
 static int update_flag = 0;

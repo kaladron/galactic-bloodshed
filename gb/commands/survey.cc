@@ -4,10 +4,10 @@
 
 /* survey.c -- print out survey for planets */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/survey.h"
 
 #include <strings.h>
 
@@ -25,6 +25,8 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
+
+module commands;
 
 #define MAX_SHIPS_PER_SECTOR 10
 

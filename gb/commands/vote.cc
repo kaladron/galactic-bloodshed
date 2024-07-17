@@ -2,14 +2,16 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/vote.h"
 
 #include "gb/GB_server.h"
 #include "gb/files_shl.h"
 #include "gb/races.h"
+
+module commands;
 
 namespace {
 void show_votes(GameObj& g) {

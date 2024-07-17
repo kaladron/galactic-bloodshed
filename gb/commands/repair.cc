@@ -2,10 +2,10 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/repair.h"
 
 #include <strings.h>
 
@@ -14,6 +14,8 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
+
+module commands;
 
 void repair(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;

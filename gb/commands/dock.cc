@@ -4,10 +4,10 @@
 
 /*  dock.c -- dock a ship and..... assault -- a very un-PC version of dock */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/dock.h"
 
 #include <strings.h>
 
@@ -25,6 +25,8 @@ import std.compat;
 #include "gb/tweakables.h"
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
+
+module commands;
 
 void dock(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

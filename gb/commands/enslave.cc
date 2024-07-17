@@ -4,10 +4,10 @@
 
 /* enslave.c -- ENSLAVE the planet below. */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/enslave.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -17,6 +17,8 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
+
+module commands;
 
 void enslave(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;

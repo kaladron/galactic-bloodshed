@@ -4,10 +4,10 @@
 
 /// \file grant.cc
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/grant.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -18,6 +18,8 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
+
+module commands;
 
 void grant(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

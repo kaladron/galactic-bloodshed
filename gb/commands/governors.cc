@@ -4,10 +4,10 @@
 
 /// \file governors.cc
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/governors.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -18,6 +18,8 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
+
+module commands;
 
 namespace {
 void do_revoke(Race race, const governor_t src_gov, const governor_t tgt_gov) {

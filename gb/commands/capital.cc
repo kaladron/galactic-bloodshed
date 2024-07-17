@@ -4,10 +4,10 @@
 
 /* capital.c -- designate a capital */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/capital.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -16,6 +16,8 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
+
+module commands;
 
 void capital(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

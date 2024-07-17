@@ -2,14 +2,16 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/announce.h"
 
 #include "gb/GB_server.h"
 #include "gb/races.h"
 #include "gb/vars.h"
+
+module commands;
 
 void announce(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

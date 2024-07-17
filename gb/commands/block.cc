@@ -2,10 +2,10 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/block.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -15,6 +15,8 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
 #include "gb/victory.h"
+
+module commands;
 
 void block(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

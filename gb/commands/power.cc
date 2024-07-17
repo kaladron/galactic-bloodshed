@@ -4,10 +4,10 @@
 
 /* power.c -- display power report */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/power.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -17,6 +17,8 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
 #include "gb/victory.h"
+
+module commands;
 
 namespace {
 void prepare_output_line(const Race &race, const Race &r, player_t i,

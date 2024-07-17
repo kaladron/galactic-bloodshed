@@ -2,10 +2,10 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/production.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -18,6 +18,8 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
+
+module commands;
 
 namespace {
 void production_at_star(GameObj &g, starnum_t star) {

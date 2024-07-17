@@ -11,10 +11,10 @@
  *    damage-resistant.
  */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/mobilize.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -23,6 +23,8 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/star.h"
 #include "gb/vars.h"
+
+module commands;
 
 void mobilize(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

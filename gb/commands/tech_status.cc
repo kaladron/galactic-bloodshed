@@ -2,10 +2,10 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/tech_status.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -19,6 +19,8 @@ import std.compat;
 #include "gb/tech.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
+
+module commands;
 
 namespace {
 void tech_report_star(player_t Playernum, governor_t Governor, const Star &star,

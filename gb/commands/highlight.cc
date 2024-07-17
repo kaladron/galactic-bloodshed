@@ -5,10 +5,10 @@
 /// \file highlight.cc
 /// \brief Toggle highlight option on a player.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/highlight.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -16,6 +16,8 @@ import std.compat;
 #include "gb/races.h"
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
+
+module commands;
 
 void highlight(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

@@ -4,10 +4,10 @@
 
 /*  toggle.c -- toggles some options */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/toggle.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -15,6 +15,8 @@ import std.compat;
 #include "gb/races.h"
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
+
+module commands;
 
 namespace {
 void tog(GameObj &g, char *op, const char *name) {

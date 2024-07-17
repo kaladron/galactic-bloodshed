@@ -4,10 +4,10 @@
 
 /*  orbit.c -- display orbits of planets (graphic representation) */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/orbit.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -20,6 +20,8 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
+
+module commands;
 
 static double Lastx, Lasty, Zoom;
 static const int SCALE = 100;

@@ -4,10 +4,10 @@
 
 /* dissolve.c -- commit suicide, nuke all ships and sectors; */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/dissolve.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -20,6 +20,8 @@ import std.compat;
 #include "gb/tweakables.h"
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
+
+module commands;
 
 void dissolve(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

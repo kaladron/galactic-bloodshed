@@ -76,14 +76,7 @@ class TextBlock {
 
 class DescriptorData : public GameObj {
  public:
-  DescriptorData(int sock, Db &db_)
-      : GameObj{db_},
-        connected(false),
-        output_size(0),
-        raw_input(nullptr),
-        raw_input_at(nullptr),
-        last_time(0),
-        quota(COMMAND_BURST_SIZE) {
+  DescriptorData(int sock, Db &db_) : GameObj{db_} {
     // TODO(jeffbailey): Pull the fprintf stuff out of this constructor
     struct sockaddr_in6 addr;
     socklen_t addr_len = sizeof(addr);
@@ -103,14 +96,14 @@ class DescriptorData : public GameObj {
   }
 
   int descriptor;
-  bool connected;
-  ssize_t output_size;
+  bool connected{};
+  ssize_t output_size{};
   std::deque<TextBlock> output;
   std::deque<TextBlock> input;
-  char *raw_input;
-  char *raw_input_at;
-  time_t last_time;
-  int quota;
+  char *raw_input{};
+  char *raw_input_at{};
+  time_t last_time{};
+  int quota{};
   bool operator==(const DescriptorData &rhs) const noexcept {
     return descriptor == rhs.descriptor && player == rhs.player &&
            governor == rhs.governor;
@@ -975,7 +968,6 @@ static bool do_command(DescriptorData &d, const char *comm) {
    * command */
   auto argv = make_command_t(comm);
 
-  
   if (argv[0] == "quit") {
     goodbye_user(d);
     return false;
@@ -1242,7 +1234,7 @@ static void dump_users(DescriptorData &e) {
                 (r.governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, buf);
       }
-      
+
       if ((now - d.last_time) > DISCONNECT_TIME) d.connected = false;
     }
   }

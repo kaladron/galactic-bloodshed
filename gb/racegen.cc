@@ -6,12 +6,11 @@ import std.compat;
 
 #include "gb/racegen.h"
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 #include <strings.h>
 #include <unistd.h>
 
-#include "gb/enroll.h"
 #include "gb/game_info.h"
 
 static int do_racegen();
@@ -41,7 +40,7 @@ static void save(int argc, const char *argv[]);
 static void send2(int argc, const char *argv[]);
 static void quit(int argc, const char **argv);
 
-int main(int argc, char **argv) {
+int main(int, char **) {
 #ifdef PRIV
   int port;
 
@@ -658,8 +657,6 @@ static void initialize() {
  * with it to get the idea.
  */
 static void help(int argc, const char *argv[]) {
-  int enroll;
-  int process;
   int i;
   int j;
   int helpp;
@@ -671,14 +668,14 @@ static void help(int argc, const char *argv[]) {
   int quit;
 
   if (argc == 1) {
-    enroll = process = helpp = load = modify = print = save = send2 = quit = 1;
+    helpp = load = modify = print = save = send2 = quit = 1;
     printf("\n");
     printf(
         "To execute a command, type it at the command line.  All commands\n");
     printf("and command arguments maybe either upper or lower case, and/or\n");
     printf("abbreviated.  The available commands are:\n");
   } else {
-    enroll = process = helpp = load = modify = print = save = send2 = quit = 0;
+    helpp = load = modify = print = save = send2 = quit = 0;
     for (i = 1; i < argc; i++) {
       j = strlen(argv[i]);
 #ifdef PRIV

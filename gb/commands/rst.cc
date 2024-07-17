@@ -8,10 +8,10 @@
  *  Command "factories" programmed by varneyml@gb.erc.clarkson.edu
  */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/rst.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -26,6 +26,8 @@ import std.compat;
 #include "gb/shootblast.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
+
+module commands;
 
 #define PLANET 1
 

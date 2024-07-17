@@ -5,15 +5,17 @@
 /// \file toxicity.cc
 /// \brief Change threshold in toxicity to build a wc.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/toxicity.h"
 
 #include "gb/GB_server.h"
 #include "gb/files_shl.h"
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
+
+module commands;
 
 void toxicity(const command_t &argv, GameObj &g) {
   ap_t APcount = 1;

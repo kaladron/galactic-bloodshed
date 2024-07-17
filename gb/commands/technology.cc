@@ -4,10 +4,10 @@
 
 /* technology.c -- increase investment in technological development. */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/technology.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -17,6 +17,8 @@ import std.compat;
 #include "gb/tech.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
+
+module commands;
 
 void technology(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

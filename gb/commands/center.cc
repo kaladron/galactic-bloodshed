@@ -2,13 +2,15 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import gblib;
 import std.compat;
 
-#include "gb/commands/center.h"
-
 #include "gb/place.h"
 #include "gb/vars.h"
+
+module commands;
 
 void center(const command_t &argv, GameObj &g) {
   if (argv.size() != 2) {

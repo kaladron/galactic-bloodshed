@@ -2,10 +2,10 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/analysis.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -14,6 +14,8 @@ import std.compat;
 #include "gb/place.h"
 #include "gb/races.h"
 #include "gb/vars.h"
+
+module commands;
 
 static constexpr int CARE = 5;
 

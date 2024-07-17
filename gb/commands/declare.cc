@@ -4,10 +4,10 @@
 
 /* declare.c -- declare alliance, neutrality, war, the basic thing. */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/declare.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -20,6 +20,8 @@ import std.compat;
 #include "gb/tweakables.h"
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
+
+module commands;
 
 void declare(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;

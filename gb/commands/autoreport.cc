@@ -5,15 +5,17 @@
 /// \file autoreport.c
 /// \brief Tell server to generate a report for each planet.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/autoreport.h"
 
 #include "gb/GB_server.h"
 #include "gb/files_shl.h"
 #include "gb/place.h"
 #include "gb/vars.h"
+
+module commands;
 
 void autoreport(const command_t &argv, GameObj &g) {
   if (g.governor && stars[g.snum].governor[g.player - 1] != g.governor) {

@@ -4,10 +4,10 @@
 
 /* scrap.c -- turn a ship to junk */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/scrap.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -19,6 +19,8 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
+
+module commands;
 
 void scrap(const command_t &argv, GameObj &g) {
   ap_t APcount = 1;

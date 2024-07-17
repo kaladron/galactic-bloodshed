@@ -4,10 +4,10 @@
 
 /// \file fix.cc
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/fix.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
@@ -18,6 +18,8 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
+
+module commands;
 
 /** Deity fix-it utilities */
 void fix(const command_t &argv, GameObj &g) {

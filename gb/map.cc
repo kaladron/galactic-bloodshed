@@ -3,13 +3,13 @@
 // found in the COPYING file.
 
 import gblib;
+import commands;
 import std.compat;
 
 #include "gb/map.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/commands/orbit.h"
 #include "gb/files_shl.h"
 #include "gb/place.h"
 #include "gb/races.h"

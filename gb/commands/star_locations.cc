@@ -2,13 +2,15 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import gblib;
 import std.compat;
 
-#include "gb/commands/star_locations.h"
-
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
+
+module commands;
 
 void star_locations(const command_t &argv, GameObj &g) {
   int max;

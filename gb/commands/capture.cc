@@ -2,10 +2,10 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/commands/capture.h"
 
 #include <strings.h>
 
@@ -22,6 +22,8 @@ import std.compat;
 #include "gb/tweakables.h"
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
+
+module commands;
 
 void capture(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;

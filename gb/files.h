@@ -19,29 +19,29 @@
 #define COMBAT 2
 #define ANNOUNCE 3
 
-#define DATADIR Files[0]
-#define DOCSDIR Files[1]
-#define EXAM_FL Files[2]
-#define ENROLL_FL Files[3]
-#define STARDATAFL Files[4]
-#define PLANETDATAFL Files[6]
-#define RACEDATAFL Files[7]
-#define BLOCKDATAFL Files[8]
-#define SHIPDATAFL Files[9]
-#define SHIPFREEDATAFL Files[10]
-#define DUMMYFL Files[11]
-#define PLAYERDATAFL Files[12]
-#define TELEGRAMDIR Files[13]
-#define TELEGRAMFL Files[14]
-#define NEWSDIR Files[16]
-#define DECLARATIONFL Files[17]
-#define TRANSFERFL Files[18]
-#define COMBATFL Files[19]
-#define ANNOUNCEFL Files[20]
-#define COMMODDATAFL Files[21]
-#define COMMODFREEDATAFL Files[22]
-#define UPDATEFL Files[23]
-#define SEGMENTFL Files[24]
+inline constexpr auto DATADIR = PKGSTATEDIR;
+inline constexpr auto DOCSDIR = DOCDIR;
+inline constexpr auto EXAM_FL = PATH(exam.dat);
+inline constexpr auto ENROLL_FL = DATA(enroll.dat);
+inline constexpr auto STARDATAFL = DATA(star);
+inline constexpr auto PLANETDATAFL = DATA(planet);
+inline constexpr auto RACEDATAFL = DATA(race);
+inline constexpr auto BLOCKDATAFL = DATA(block);
+inline constexpr auto SHIPDATAFL = DATA(ship);
+inline constexpr auto SHIPFREEDATAFL = DATA(shipfree);
+inline constexpr auto DUMMYFL = DATA(dummy);
+inline constexpr auto PLAYERDATAFL = DATA(players);
+inline constexpr auto TELEGRAMDIR = DATA(Tele);
+inline constexpr auto TELEGRAMFL = DATA(tele);
+inline constexpr auto NEWSDIR = DATA(News);
+inline constexpr auto DECLARATIONFL = NEWS(declaration);
+inline constexpr auto TRANSFERFL = NEWS(transfer);
+inline constexpr auto COMBATFL = NEWS(combat);
+inline constexpr auto ANNOUNCEFL = NEWS(announce);
+inline constexpr auto COMMODDATAFL = DATA(commod);
+inline constexpr auto COMMODFREEDATAFL = DATA(commodfree);
+inline constexpr auto UPDATEFL = DATA(Update.time);
+inline constexpr auto SEGMENTFL = DATA(Segment.time);
 
 #define PLANETLIST PATH(planet.list)
 #define STARLIST PATH(star.list)

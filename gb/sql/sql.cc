@@ -10,7 +10,7 @@
 import gblib;
 import std.compat;
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "gb/sql/sql.h"
 
@@ -19,13 +19,8 @@ import std.compat;
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "gb/files.h"
-#include "gb/power.h"
-#include "gb/races.h"
-#include "gb/ships.h"
 #include "gb/sql/dbdecl.h"
-#include "gb/tweakables.h"
-#include "gb/vars.h"
+
 
 Sql::Sql() {
   int err = sqlite3_open(PKGSTATEDIR "gb.db", &dbconn);

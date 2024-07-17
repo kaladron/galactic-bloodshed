@@ -41,13 +41,13 @@ void purge() {
 }
 
 /**
- * \brief Does the acutal posting of messages to the news files
+ * \brief Does the actual posting of messages to the news files
  *
  * \param msg Message to send
  * \param type Type of message.  Valid types are DECLARATION, TRANSFER, COMBAT
  * and ANNOUNCE.
  */
-void post(const std::string msg, int type) {
+void post(std::string msg, int type) {
   // msg is intentionally a copy as we fix it up in here
   const char *telefl;
 
@@ -69,7 +69,7 @@ void post(const std::string msg, int type) {
   }
 
   // look for special symbols
-  for (auto p : msg) {
+  for (auto& p : msg) {
     switch (p) {
       case ';':
         p = '\n';

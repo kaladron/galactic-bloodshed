@@ -56,7 +56,7 @@ find_package(SQLite3 REQUIRED)
 # Executable targets
 
 set(UTILS_FILES utils/rand.cc)
-set(COMMON_FILES files.cc files_rw.cc files_shl.cc sql/sql.cc ${UTILS_FILES})
+set(COMMON_FILES files_rw.cc files_shl.cc sql/sql.cc ${UTILS_FILES})
 
 add_executable(
   makeuniv creator/makeplanet.cc creator/makestar.cc creator/makeuniv.cc

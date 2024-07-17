@@ -14,7 +14,6 @@ import std.compat;
 #include "gb/races.h"
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
-#include "gb/victory.h"
 
 module commands;
 

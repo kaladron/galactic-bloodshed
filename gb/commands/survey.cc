@@ -16,7 +16,6 @@ import std.compat;
 #include "gb/csp.h"
 #include "gb/csp_types.h"
 #include "gb/files_shl.h"
-#include "gb/fire.h"
 #include "gb/map.h"
 #include "gb/max.h"
 #include "gb/place.h"

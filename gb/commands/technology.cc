@@ -15,7 +15,6 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/star.h"
 #include "gb/tech.h"
-#include "gb/tweakables.h"
 #include "gb/vars.h"
 
 module commands;

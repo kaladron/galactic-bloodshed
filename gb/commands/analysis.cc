@@ -40,7 +40,7 @@ void insert(Mode mode, std::array<struct anal_sect, CARE> arr, anal_sect in) {
 }
 
 void PrintTop(GameObj &g, const std::array<struct anal_sect, CARE> arr,
-              const std::string name) {
+              const std::string &name) {
   g.out << std::format("{:>8}:", name);
 
   for (const auto &as : arr) {
@@ -178,7 +178,6 @@ static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   int TotalSect = 0;
   int PlaySect[MAXPLAYERS + 1][SectorType::SEC_WASTED + 1];
   std::array<int, MAXPLAYERS + 1> PlayTSect;
-  int TotalWasted = 0;
   std::array<int, MAXPLAYERS + 1> WastedSect;
   std::array<int, SectorType::SEC_WASTED + 1> Sect;
   static char SectTypes[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
@@ -232,7 +231,6 @@ static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
 
     if (sect.condition == SectorType::SEC_WASTED) {
       WastedSect[p]++;
-      TotalWasted++;
     }
     if (sect.crystals && race.tech >= TECH_CRYSTAL) {
       PlayCrys[p]++;

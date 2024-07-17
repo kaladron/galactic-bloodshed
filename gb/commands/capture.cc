@@ -14,7 +14,6 @@ import std.compat;
 #include "gb/defense.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
-#include "gb/fire.h"
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"

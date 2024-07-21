@@ -9,18 +9,19 @@ import std.compat;
 #include "gb/GB_server.h"
 
 #include <arpa/inet.h>
-#include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#include <cctype>
+#include <cerrno>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
 
 #include "gb/buffers.h"
 #include "gb/build.h"
@@ -57,9 +58,9 @@ static time_t last_update_time;
 static time_t last_segment_time;
 static unsigned int nupdates_done; /* number of updates so far */
 
-static char start_buf[128];
-static char update_buf[128];
-static char segment_buf[128];
+static std::string start_buf;
+static std::string update_buf;
+static std::string segment_buf;
 
 class TextBlock {
  public:
@@ -155,7 +156,9 @@ static std::list<DescriptorData> descriptor_list;
 
 using CommandFunction = void (*)(const command_t &, GameObj &);
 
-static const std::unordered_map<std::string, CommandFunction> commands{ // NOLINT
+// NOLINTBEGIN
+static const std::unordered_map<std::string, CommandFunction> commands{
+    // NOLINTEND
     {"'", announce},
     {"allocate", allocateAPs},
     {"analysis", analysis},
@@ -427,12 +430,13 @@ int main(int argc, char **argv) {
   struct stat stbuf;
 
   Sql db{};
-  printf("      ***   Galactic Bloodshed ver %s ***\n\n", VERS);
+  std::println("      ***   Galactic Bloodshed ver {0} ***", VERS);
+  std::println();
   time_t clk = time(nullptr);
-  printf("      %s", ctime(&clk));
+  std::print("      {0}", ctime(&clk));
 #ifdef EXTERNAL_TRIGGER
-  printf("      The update  password is '%s'.\n", UPDATE_PASSWORD);
-  printf("      The segment password is '%s'.\n", SEGMENT_PASSWORD);
+  std::println("      The update  password is '%s'.", UPDATE_PASSWORD);
+  std::println("      The segment password is '%s'.", SEGMENT_PASSWORD);
 #endif
   int port;
   switch (argc) {
@@ -461,7 +465,7 @@ int main(int argc, char **argv) {
   std::cerr << "      " << update_time << " minutes between updates"
             << std::endl;
   std::cerr << "      " << segments << " segments/update" << std::endl;
-  sprintf(start_buf, "Server started  : %s", ctime(&clk));
+  start_buf = std::format("Server started  : {0}", ctime(&clk));
 
   next_update_time = clk + (update_time * 60);
   if (stat(UPDATEFL, &stbuf) >= 0) {
@@ -472,8 +476,8 @@ int main(int argc, char **argv) {
       if (fgets(dum, sizeof dum, sfile)) next_update_time = atol(dum);
       fclose(sfile);
     }
-    sprintf(update_buf, "Last Update %3d : %s", nupdates_done,
-            ctime(&last_update_time));
+    update_buf = std::format("Last Update {:3d} : {}", nupdates_done,
+                             ctime(&last_update_time));
   }
   if (segments <= 1)
     next_segment_time += (144 * 3600);
@@ -493,15 +497,15 @@ int main(int argc, char **argv) {
       nsegments_done = segments;
     }
   }
-  sprintf(segment_buf, "Last Segment %2d : %s", nsegments_done,
-          ctime(&last_segment_time));
+  segment_buf = std::format("Last Segment %{0:2d} : {1}", nsegments_done,
+                            ctime(&last_segment_time));
 
-  fprintf(stderr, "%s", update_buf);
-  fprintf(stderr, "%s", segment_buf);
+  std::print(stderr, "{}", update_buf);
+  std::print(stderr, "{}", segment_buf);
   srandom(getpid());
-  fprintf(stderr, "      Next Update %d  : %s", nupdates_done + 1,
-          ctime(&next_update_time));
-  fprintf(stderr, "      Next Segment   : %s", ctime(&next_segment_time));
+  std::print(stderr, "      Next Update {0}  : {1}", nupdates_done + 1,
+             ctime(&next_update_time));
+  std::print(stderr, "      Next Segment   : {0}", ctime(&next_segment_time));
 
   load_race_data(db); /* make sure you do this first */
   load_star_data();   /* get star data */
@@ -517,8 +521,8 @@ int main(int argc, char **argv) {
   set_signals();
   int sock = shovechars(port, db);
   close_sockets(sock);
-  printf("Going down.\n");
-  return (0);
+  std::println("Going down.");
+  return 0;
 }
 
 static void set_signals() { signal(SIGPIPE, SIG_IGN); }
@@ -760,10 +764,10 @@ static struct timeval update_quotas(struct timeval last,
 
 static void shutdownsock(DescriptorData &d) {
   if (d.connected) {
-    fprintf(stderr, "DISCONNECT %d Race=%d Governor=%d\n", d.descriptor,
-            d.player, d.governor);
+    std::println(stderr, "DISCONNECT {0} Race={1} Governor={2}", d.descriptor,
+                 d.player, d.governor);
   } else {
-    fprintf(stderr, "DISCONNECT %d never connected\n", d.descriptor);
+    std::println(stderr, "DISCONNECT {0} never connected", d.descriptor);
   }
   shutdown(d.descriptor, 2);
   close(d.descriptor);
@@ -1019,8 +1023,8 @@ static void check_connect(DescriptorData &d, const char *message) {
 
   if (!Playernum) {
     queue_string(d, "Connection refused.\n");
-    fprintf(stderr, "FAILED CONNECT %s,%s on descriptor %d\n",
-            race_password.c_str(), gov_password.c_str(), d.descriptor);
+    std::println(stderr, "FAILED CONNECT {0},{1} on descriptor {2}\n",
+                 race_password.c_str(), gov_password.c_str(), d.descriptor);
     return;
   }
 
@@ -1034,8 +1038,9 @@ static void check_connect(DescriptorData &d, const char *message) {
     }
   }
 
-  fprintf(stderr, "CONNECTED %s \"%s\" [%d,%d] on descriptor %d\n", race.name,
-          race.governor[Governor].name, Playernum, Governor, d.descriptor);
+  std::print(stderr, "CONNECTED {0} \"{1}\" [{2},{3}] on descriptor {4}\n",
+             race.name, race.governor[Governor].name, Playernum, Governor,
+             d.descriptor);
   d.connected = true;
 
   d.god = race.God;
@@ -1102,28 +1107,29 @@ static void do_update(Db &db, bool force) {
   if (!fakeit) nupdates_done++;
 
   Power_blocks.time = clk;
-  sprintf(update_buf, "Last Update %3d : %s", nupdates_done, ctime(&clk));
-  fprintf(stderr, "%s", ctime(&clk));
-  fprintf(stderr, "Next Update %3d : %s", nupdates_done + 1,
-          ctime(&next_update_time));
-  sprintf(segment_buf, "Last Segment %2d : %s", nsegments_done, ctime(&clk));
-  fprintf(stderr, "%s", ctime(&clk));
-  fprintf(stderr, "Next Segment %2d : %s",
-          nsegments_done == segments ? 1 : nsegments_done + 1,
-          ctime(&next_segment_time));
+  update_buf =
+      std::format("Last Update {0:3d} : {1}", nupdates_done, ctime(&clk));
+  std::print(stderr, "{}", ctime(&clk));
+  std::print(stderr, "Next Update {0:3d} : {1}", nupdates_done + 1,
+             ctime(&next_update_time));
+  segment_buf =
+      std::format("Last Segment {0:2d} : {1}", nsegments_done, ctime(&clk));
+  std::print(stderr, "{}", ctime(&clk));
+  std::print(stderr, "Next Segment {0:2d} : {1}",
+             nsegments_done == segments ? 1 : nsegments_done + 1,
+             ctime(&next_segment_time));
   unlink(UPDATEFL);
   if (FILE *sfile = fopen(UPDATEFL, "w"); sfile != nullptr) {
-    fprintf(sfile, "%d\n", nupdates_done);
-    fprintf(sfile, "%ld\n", clk);
-    fprintf(sfile, "%ld\n", next_update_time);
-    fflush(sfile);
+    std::println(sfile, "{0}", nupdates_done);
+    std::println(sfile, "{0}", clk);
+    std::println(sfile, "{0}", next_update_time);
     fclose(sfile);
   }
   unlink(SEGMENTFL);
   if (FILE *sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
-    fprintf(sfile, "%d\n", nsegments_done);
-    fprintf(sfile, "%ld\n", clk);
-    fprintf(sfile, "%ld\n", next_segment_time);
+    std::println(sfile, "{0}", nsegments_done);
+    std::println(sfile, "{0}", clk);
+    std::println(sfile, "{0}", next_segment_time);
     fflush(sfile);
     fclose(sfile);
   }
@@ -1177,13 +1183,13 @@ static void do_segment(Db &db, int override, int segment) {
     fprintf(sfile, "%d\n", nsegments_done);
     fprintf(sfile, "%ld\n", clk);
     fprintf(sfile, "%ld\n", next_segment_time);
-    fflush(sfile);
     fclose(sfile);
   }
-  sprintf(segment_buf, "Last Segment %2d : %s", nsegments_done, ctime(&clk));
-  fprintf(stderr, "%s", ctime(&clk));
-  fprintf(stderr, "Next Segment %2d : %s", nsegments_done,
-          ctime(&next_segment_time));
+  segment_buf =
+      std::format("Last Segment {0:2d} : {1}", nsegments_done, ctime(&clk));
+  std::print(stderr, "{0}", ctime(&clk));
+  std::print(stderr, "Next Segment {0:2d} : {1}", nsegments_done,
+             ctime(&next_segment_time));
   clk = time(nullptr);
   sprintf(buf, "%sSegment finished\n", ctime(&clk));
   if (!fakeit) {
@@ -1308,33 +1314,23 @@ static void load_star_data() {
 
 /* report back the update status */
 static void GB_time(const command_t &, GameObj &g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
   time_t clk = time(nullptr);
-  notify(Playernum, Governor, start_buf);
-  notify(Playernum, Governor, update_buf);
-  notify(Playernum, Governor, segment_buf);
-  sprintf(buf, "Current time    : %s", ctime(&clk));
-  notify(Playernum, Governor, buf);
+  g.out << start_buf;
+  g.out << update_buf;
+  g.out << segment_buf;
+  g.out << std::format("Current time    : {0}", ctime(&clk));
 }
 
 static void GB_schedule(const command_t &, GameObj &g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
   time_t clk = time(nullptr);
-  sprintf(buf, "%d minute update intervals\n", update_time);
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "%ld movement segments per update\n", segments);
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "Current time    : %s", ctime(&clk));
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "Next Segment %2d : %s",
-          nsegments_done == segments ? 1 : nsegments_done + 1,
-          ctime(&next_segment_time));
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "Next Update %3d : %s", nupdates_done + 1,
-          ctime(&next_update_time));
-  notify(Playernum, Governor, buf);
+  g.out << std::format("{0} minute update intervals\n", update_time);
+  g.out << std::format("{0} movement segments per update\n", segments);
+  g.out << std::format("Current time    : {0}", ctime(&clk));
+  g.out << std::format("Next Segment {0:2d} : {1}",
+                       nsegments_done == segments ? 1 : nsegments_done + 1,
+                       ctime(&next_segment_time));
+  g.out << std::format("Next Update {0:3d} : {1}", nupdates_done + 1,
+                       ctime(&next_update_time));
 }
 
 static void help(const command_t &argv, GameObj &g) {

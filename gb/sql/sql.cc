@@ -10,22 +10,18 @@
 import gblib;
 import std.compat;
 
-#include <cstdio>
-
 #include "gb/sql/sql.h"
 
-#include <fcntl.h>
 #include <sqlite3.h>
-#include <sys/stat.h>
-#include <unistd.h>
+
+#include <cstdio>
 
 #include "gb/sql/dbdecl.h"
-
 
 Sql::Sql() {
   int err = sqlite3_open(PKGSTATEDIR "gb.db", &dbconn);
   if (err) {
-    fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "Can't open database: {0}", sqlite3_errmsg(dbconn));
     exit(0);
   }
 

@@ -61,14 +61,14 @@ set(COMMON_FILES files_rw.cc files_shl.cc sql/sql.cc ${UTILS_FILES})
 add_executable(
   makeuniv creator/makeplanet.cc creator/makestar.cc creator/makeuniv.cc
            creator/namegen.cc sectormap.cc ${COMMON_FILES})
-target_link_libraries(makeuniv PRIVATE gblib ${SQLite3_LIBRARIES})
+target_link_libraries(makeuniv PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
 add_executable(enrol enrol.cc sectormap.cc ${COMMON_FILES})
-target_link_libraries(enrol PRIVATE gblib ${SQLite3_LIBRARIES})
+target_link_libraries(enrol PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
 add_executable(racegen GB_racegen.cc enroll.cc racegen.cc sectormap.cc
                        ${COMMON_FILES})
-target_link_libraries(racegen PRIVATE gblib ${SQLite3_LIBRARIES})
+target_link_libraries(racegen PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
 add_library(gblib)
 target_sources(gblib PUBLIC FILE_SET CXX_MODULES FILES gblib.cppm)
@@ -117,7 +117,7 @@ target_sources(
           commands/victory.cc
           commands/vote.cc
           commands/zoom.cc)
-target_link_libraries(commands PRIVATE gblib ${SQLite3_LIBRARIES})
+target_link_libraries(commands PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
 set(OLD_LIBGBLIB_FILES
     VN.cc
@@ -153,7 +153,7 @@ set(OLD_LIBGBLIB_FILES
     victory.cc)
 
 add_executable(GB GB_server.cc ${COMMON_FILES} ${OLD_LIBGBLIB_FILES})
-target_link_libraries(GB PRIVATE gblib commands ${SQLite3_LIBRARIES})
+target_link_libraries(GB PRIVATE gblib commands ${SQLite3_LIBRARIES} glaze::glaze)
 
 # Test targets
 add_executable(shlmisc_test shlmisc_test.cc)

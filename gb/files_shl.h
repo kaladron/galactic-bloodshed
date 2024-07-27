@@ -20,6 +20,7 @@ void getsdata(struct stardata *S);
 Race getrace(player_t);
 Star getstar(starnum_t);
 Planet getplanet(const starnum_t, const planetnum_t);
+std::optional<Ship> getship(std::string_view shipstring);
 std::optional<Ship> getship(const shipnum_t);
 std::optional<Ship> getship(Ship **, const shipnum_t);
 Commod getcommod(commodnum_t);

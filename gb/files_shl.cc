@@ -10,15 +10,15 @@
 import gblib;
 import std.compat;
 
-#include <stdio.h>
-#include <errno.h>
-
 #include "gb/files_shl.h"
 
 #include <fcntl.h>
 #include <sqlite3.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include <cerrno>
+#include <cstdio>
 
 #include "gb/files.h"
 #include "gb/files_rw.h"
@@ -593,6 +593,11 @@ SectorMap getsmap(const Planet &p) {
   return smap;
 }
 
+std::optional<Ship> getship(std::string_view shipstring) {
+  auto shipnum = string_to_shipnum(shipstring);
+  if (!shipnum) return {};
+  return ::getship(*shipnum);
+}
 std::optional<Ship> Sql::getship(const shipnum_t shipnum) {
   return ::getship(shipnum);
 }

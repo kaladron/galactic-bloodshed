@@ -7,8 +7,6 @@ import std.compat;
 
 #include "gb/place.h"
 
-#include "gb/GB_server.h"
-#include "gb/buffers.h"
 #include "gb/files_shl.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
@@ -17,7 +15,6 @@ import std.compat;
 void Place::getplace2(GameObj& g, std::string_view string,
                       const bool ignoreexpl) {
   player_t Playernum = g.player;
-  governor_t Governor = g.governor;
 
   if (err || string.empty()) return;
 
@@ -48,7 +45,7 @@ void Place::getplace2(GameObj& g, std::string_view string,
   }
 
   // It's the name of something
-  std::string_view substr = string.substr(0, string.find_first_of("/"));
+  std::string_view substr = string.substr(0, string.find_first_of('/'));
   do {
     string.remove_prefix(1);
   } while (!string.starts_with('/') && !string.empty());
@@ -63,13 +60,12 @@ void Place::getplace2(GameObj& g, std::string_view string,
             if (string.starts_with('/')) string.remove_prefix(1);
             return getplace2(g, string, ignoreexpl);
           }
-          sprintf(buf, "You have not explored %s yet.\n", stars[snum].name);
-          notify(Playernum, Governor, buf);
+          g.out << std::format("You have not explored {0} yet.\n",
+                               stars[snum].name);
           err = true;
           return;
         }
-      sprintf(buf, "No such star %s.\n", substr.data());
-      notify(Playernum, Governor, buf);
+      g.out << std::format("No such star {0}.\n", substr.data());
       err = true;
       return;
     case ScopeLevel::LEVEL_STAR:
@@ -82,19 +78,16 @@ void Place::getplace2(GameObj& g, std::string_view string,
             if (string.starts_with('/')) string.remove_prefix(1);
             return getplace2(g, string, ignoreexpl);
           }
-          sprintf(buf, "You have not explored %s yet.\n",
-                  stars[snum].pnames[i]);
-          notify(Playernum, Governor, buf);
+          g.out << std::format("You have not explored {0} yet.\n",
+                               stars[snum].pnames[i]);
           err = true;
           return;
         }
-      sprintf(buf, "No such planet %s.\n", substr.data());
-      notify(Playernum, Governor, buf);
+      g.out << std::format("No such planet {0}.\n", substr.data());
       err = true;
       return;
     default:
-      sprintf(buf, "Can't descend to %s.\n", substr.data());
-      notify(Playernum, Governor, buf);
+      g.out << std::format("Can't descend to {0}.\n", substr.data());
       err = true;
       return;
   }

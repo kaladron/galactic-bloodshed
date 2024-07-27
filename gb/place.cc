@@ -144,13 +144,7 @@ Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl) {
       getplace2(g, string, ignoreexpl);
       return;
     case '#': {
-      auto shipnotmp = string_to_shipnum(string);
-      if (shipnotmp)
-        shipno = *shipnotmp;
-      else
-        shipno = -1;
-
-      auto ship = getship(shipno);
+      auto ship = getship(string);
       if (!ship) {
         DontOwnErr(Playernum, Governor, shipno);
         err = true;

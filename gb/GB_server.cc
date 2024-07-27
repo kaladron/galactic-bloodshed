@@ -62,19 +62,6 @@ static std::string start_buf;
 static std::string update_buf;
 static std::string segment_buf;
 
-class TextBlock {
- public:
-  TextBlock(const std::string &in) : str(in), view(str) {}
-  TextBlock(const TextBlock &) = delete;
-  TextBlock &operator=(const TextBlock &) = delete;
-
- private:
-  std::string str;
-
- public:
-  std::string_view view;
-};
-
 class DescriptorData : public GameObj {
  public:
   DescriptorData(int sock, Db &db_) : GameObj{db_} {
@@ -99,8 +86,8 @@ class DescriptorData : public GameObj {
   int descriptor;
   bool connected{};
   ssize_t output_size{};
-  std::deque<TextBlock> output;
-  std::deque<TextBlock> input;
+  std::deque<std::string> output;
+  std::deque<std::string> input;
   char *raw_input{};
   char *raw_input_at{};
   time_t last_time{};
@@ -114,7 +101,7 @@ class DescriptorData : public GameObj {
 static double GetComplexity(const ShipType);
 static void set_signals();
 static void queue_string(DescriptorData &, const std::string &);
-static void add_to_queue(std::deque<TextBlock> &, const std::string &);
+static void add_to_queue(std::deque<std::string> &, const std::string &);
 static void help(const command_t &, GameObj &);
 static void process_command(GameObj &, const command_t &argv);
 static int shovechars(int, Db &);
@@ -131,9 +118,9 @@ static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
 static bool process_output(DescriptorData &);
 static void welcome_user(DescriptorData &);
-static int flush_queue(std::deque<TextBlock> &, int);
+static int flush_queue(std::deque<std::string> &, int);
 static void process_commands();
-static bool do_command(DescriptorData &, const char *);
+static bool do_command(DescriptorData &, std::string_view);
 static void goodbye_user(DescriptorData &);
 static void dump_users(DescriptorData &);
 static void close_sockets(int);
@@ -147,7 +134,7 @@ static void strstr_to_queue(DescriptorData &);
 static int ShipCompare(const void *, const void *);
 static void SortShips();
 
-static void check_connect(DescriptorData &, const char *);
+static void check_connect(DescriptorData &, std::string_view);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 #define MAX_COMMAND_LEN 512
@@ -304,7 +291,8 @@ command_t make_command_t(std::string_view message) {
  * \param message Input string from the user
  * \return player and governor password or empty strings if invalid
  */
-std::tuple<std::string, std::string> parse_connect(const std::string &message) {
+std::tuple<std::string, std::string> parse_connect(
+    const std::string_view message) {
   auto argv = make_command_t(message);
 
   if (argv.size() != 2) {
@@ -774,13 +762,13 @@ static void shutdownsock(DescriptorData &d) {
   descriptor_list.remove(d);
 }
 
-static void add_to_queue(std::deque<TextBlock> &q, const std::string &b) {
+static void add_to_queue(std::deque<std::string> &q, const std::string &b) {
   if (b.empty()) return;
 
   q.emplace_back(b);
 }
 
-static int flush_queue(std::deque<TextBlock> &q, int n) {
+static int flush_queue(std::deque<std::string> &q, int n) {
   int really_flushed = 0;
 
   const std::string flushed_message = "<Output Flushed>\n";
@@ -788,8 +776,8 @@ static int flush_queue(std::deque<TextBlock> &q, int n) {
 
   while (n > 0 && !q.empty()) {
     auto &p = q.front();
-    n -= p.view.size();
-    really_flushed += p.view.size();
+    n -= p.size();
+    really_flushed += p.size();
     q.pop_front();
   }
   q.emplace_back(flushed_message);
@@ -819,19 +807,21 @@ static bool process_output(DescriptorData &d) {
 
   while (!d.output.empty()) {
     auto &cur = d.output.front();
-    ssize_t cnt = write(d.descriptor, cur.view.data(), cur.view.size());
+    ssize_t cnt = write(d.descriptor, cur.c_str(), cur.size());
     if (cnt < 0) {
       if (errno == EWOULDBLOCK) return true;
       d.connected = false;
       return false;
     }
     d.output_size -= cnt;
-    if (cnt == cur.view.size()) {  // We output the entire block
+    if (cnt == cur.size()) {  // We output the entire block
       d.output.pop_front();
       continue;
     }
     // We only output part of it, so we don't clear it out.
-    cur.view.remove_prefix(cnt);
+    cur.erase(cnt);
+    d.output.pop_front();
+    d.output.push_front(cur);
     break;
   }
   return true;
@@ -951,7 +941,7 @@ static void process_commands() {
         d.quota--;
         nprocessed++;
 
-        if (!do_command(d, t.view.data())) {
+        if (!do_command(d, t)) {
           shutdownsock(d);
           break;
         }
@@ -967,7 +957,7 @@ static void process_commands() {
    they are processed here. Responses are sent back to the client via
    notify.
    */
-static bool do_command(DescriptorData &d, const char *comm) {
+static bool do_command(DescriptorData &d, std::string_view comm) {
   /* check to see if there are a few words typed out, usually for the help
    * command */
   auto argv = make_command_t(comm);
@@ -1006,7 +996,7 @@ static bool do_command(DescriptorData &d, const char *comm) {
   return true;
 }
 
-static void check_connect(DescriptorData &d, const char *message) {
+static void check_connect(DescriptorData &d, std::string_view message) {
   auto [race_password, gov_password] = parse_connect(message);
 
 #ifdef EXTERNAL_TRIGGER

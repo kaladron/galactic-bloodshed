@@ -9,8 +9,8 @@
 
 enum guntype_t { GTYPE_NONE, GTYPE_LIGHT, GTYPE_MEDIUM, GTYPE_HEAVY };
 
-#define PRIMARY 1
-#define SECONDARY 2
+inline constexpr int PRIMARY = 1;
+inline constexpr int SECONDARY = 2;
 
 enum ShipType : int {
   STYPE_POD,
@@ -93,10 +93,10 @@ enum abil_t {
   ABIL_MAINTAIN
 };
 
-#define NUMSTYPES (ShipType::STYPE_LANDER + 1)
-#define NUMABILS (ABIL_MAINTAIN + 1)
+inline constexpr int NUMSTYPES = (ShipType::STYPE_LANDER + 1);
+inline constexpr int NUMABILS = (ABIL_MAINTAIN + 1);
 
-#define SHIP_NAMESIZE 18
+inline constexpr int SHIP_NAMESIZE = 18;
 
 class Ship {
  public:

@@ -726,30 +726,30 @@ void detonate(const command_t &argv, GameObj &g) {
       free(s);
 }
 
-int retal_strength(Ship *s) {
+int retal_strength(Ship &s) {
   int strength = 0;
   int avail = 0;
 
-  if (!s->alive) return 0;
-  if (!Shipdata[s->type][ABIL_SPEED] && !landed(*s)) return 0;
+  if (!s.alive) return 0;
+  if (!Shipdata[s.type][ABIL_SPEED] && !landed(s)) return 0;
   /* land based ships */
-  if (!s->popn && (s->type != ShipType::OTYPE_BERS)) return 0;
+  if (!s.popn && (s.type != ShipType::OTYPE_BERS)) return 0;
 
-  if (s->guns == PRIMARY)
-    avail = (s->type == ShipType::STYPE_FIGHTER ||
-             s->type == ShipType::OTYPE_AFV || s->type == ShipType::OTYPE_BERS)
-                ? s->primary
-                : MIN(s->popn, s->primary);
-  else if (s->guns == SECONDARY)
-    avail = (s->type == ShipType::STYPE_FIGHTER ||
-             s->type == ShipType::OTYPE_AFV || s->type == ShipType::OTYPE_BERS)
-                ? s->secondary
-                : MIN(s->popn, s->secondary);
+  if (s.guns == PRIMARY)
+    avail = (s.type == ShipType::STYPE_FIGHTER ||
+             s.type == ShipType::OTYPE_AFV || s.type == ShipType::OTYPE_BERS)
+                ? s.primary
+                : MIN(s.popn, s.primary);
+  else if (s.guns == SECONDARY)
+    avail = (s.type == ShipType::STYPE_FIGHTER ||
+             s.type == ShipType::OTYPE_AFV || s.type == ShipType::OTYPE_BERS)
+                ? s.secondary
+                : MIN(s.popn, s.secondary);
   else
     avail = 0;
 
-  avail = MIN(s->retaliate, avail);
-  strength = MIN(s->destruct, avail);
+  avail = MIN(s.retaliate, avail);
+  strength = MIN(s.destruct, avail);
   return strength;
 }
 
@@ -795,6 +795,6 @@ static void check_retal_strength(Ship *ship, int *strength) {
     if (laser_on(*ship))
       *strength = MIN(ship->fire_laser, (int)ship->fuel / 2);
     else
-      *strength = retal_strength(ship);
+      *strength = retal_strength(*ship);
   }
 }

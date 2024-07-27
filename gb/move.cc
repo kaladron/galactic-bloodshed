@@ -525,12 +525,12 @@ void walk(const command_t &argv, GameObj &g) {
   Shiplist shiplist{p.ships};
   for (auto ship2 : shiplist) {
     if (ship2.owner != Playernum && ship2.type == ShipType::OTYPE_AFV &&
-        landed(ship2) && retal_strength(&ship2) && (ship2.land_x == x) &&
+        landed(ship2) && retal_strength(ship2) && (ship2.land_x == x) &&
         (ship2.land_y == y)) {
       auto &alien = races[ship2.owner - 1];
       if (!isset(race.allied, ship2.owner) || !isset(alien.allied, Playernum)) {
-        while ((strength = retal_strength(&ship2)) &&
-               (strength1 = retal_strength(ship))) {
+        while ((strength = retal_strength(ship2)) &&
+               (strength1 = retal_strength(*ship))) {
           bcopy(ship, &dummy, sizeof(Ship));
           use_destruct(ship2, strength);
           notify(Playernum, Governor, long_buf);
@@ -556,12 +556,12 @@ void walk(const command_t &argv, GameObj &g) {
     oldgov = stars[ship->storbits].governor[sect.owner - 1];
     auto &alien = races[oldowner - 1];
     if (!isset(race.allied, oldowner) || !isset(alien.allied, Playernum)) {
-      if (!retal_strength(ship)) {
+      if (!retal_strength(*ship)) {
         g.out << "You have nothing to attack with!\n";
         free(ship);
         return;
       }
-      while ((sect.popn + sect.troops) && retal_strength(ship)) {
+      while ((sect.popn + sect.troops) && retal_strength(*ship)) {
         civ = (int)sect.popn;
         mil = (int)sect.troops;
         mech_attack_people(ship, &civ, &mil, race, alien, sect, x, y, 0,
@@ -687,11 +687,11 @@ static void mech_defend(player_t Playernum, governor_t Governor, int *people,
   for (auto ship : shiplist) {
     if (civ + mil == 0) break;
     if (ship.owner != Playernum && ship.type == ShipType::OTYPE_AFV &&
-        landed(ship) && retal_strength(&ship) && (ship.land_x == x2) &&
+        landed(ship) && retal_strength(ship) && (ship.land_x == x2) &&
         (ship.land_y == y2)) {
       auto &alien = races[ship.owner - 1];
       if (!isset(race.allied, ship.owner) || !isset(alien.allied, Playernum)) {
-        while ((civ + mil) > 0 && retal_strength(&ship)) {
+        while ((civ + mil) > 0 && retal_strength(ship)) {
           oldgov = stars[ship.storbits].governor[alien.Playernum - 1];
           mech_attack_people(&ship, &civ, &mil, alien, race, s2, x2, y2, 1,
                              long_buf, short_buf);
@@ -726,7 +726,7 @@ static void mech_attack_people(Ship *ship, int *civ, int *mil, Race &race,
   oldciv = *civ;
   oldmil = *mil;
 
-  strength = retal_strength(ship);
+  strength = retal_strength(*ship);
   astrength = MECH_ATTACK * ship->tech * (double)strength *
               ((double)ship->armor + 1.0) * .01 *
               (100.0 - (double)ship->damage) * .01 *
@@ -778,7 +778,7 @@ static void people_attack_mech(Ship *ship, int civ, int mil, Race &race,
   int damage;
   int ammo;
 
-  strength = retal_strength(ship);
+  strength = retal_strength(*ship);
 
   dstrength = MECH_ATTACK * ship->tech * (double)strength *
               ((double)ship->armor + 1.0) * .01 *

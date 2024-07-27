@@ -435,7 +435,7 @@ void doabm(Ship *ship) {
         /* added last two tests to prevent mutually allied missiles
            getting shot up. */
         /* attack the missile/mine */
-        numdest = retal_strength(ship);
+        numdest = retal_strength(*ship);
         numdest = MIN(numdest, ship->destruct);
         numdest = MIN(numdest, ship->retaliate);
         ship->destruct -= numdest;

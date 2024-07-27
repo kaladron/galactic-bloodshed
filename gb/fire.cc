@@ -58,7 +58,7 @@ void check_overload(Ship *ship, int cew, int *strength) {
       /* check to see if the ship blows up */
       sprintf(buf,
               "%s: Matter-antimatter EXPLOSION from overloaded crystal on %s\n",
-              Dispshiploc(ship), ship_to_string(*ship).c_str());
+              dispshiploc(*ship).c_str(), ship_to_string(*ship).c_str());
       kill_ship((int)(ship->owner), ship);
       *strength = 0;
       warn(ship->owner, ship->governor, buf);
@@ -67,7 +67,7 @@ void check_overload(Ship *ship, int cew, int *strength) {
     } else if (int_rand(0, *strength) >
                (int)((1.0 - .01 * ship->damage) * ship->tech / 4.0)) {
       sprintf(buf, "%s: Crystal damaged from overloading on %s.\n",
-              Dispshiploc(ship), ship_to_string(*ship).c_str());
+              dispshiploc(*ship).c_str(), ship_to_string(*ship).c_str());
       ship->fire_laser = 0;
       ship->mounted = 0;
       *strength = 0;
@@ -75,7 +75,6 @@ void check_overload(Ship *ship, int cew, int *strength) {
     }
   }
 }
-
 
 }  // namespace
 

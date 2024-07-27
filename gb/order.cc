@@ -685,7 +685,7 @@ static void DispOrders(int Playernum, int Governor, Ship *ship) {
   sprintf(buf, "%5lu %c %14.14s %c%1u %-10s %-10.10s ", ship->number,
           Shipltrs[ship->type], ship->name,
           ship->hyper_drive.has ? (ship->mounted ? '+' : '*') : ' ',
-          ship->speed, Dispshiploc_brief(ship), temp);
+          ship->speed, dispshiploc_brief(*ship).c_str(), temp);
 
   if (ship->hyper_drive.on) {
     sprintf(temp, "/jump %s %d",

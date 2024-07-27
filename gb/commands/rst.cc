@@ -135,8 +135,7 @@ void rst(const command_t &argv, GameObj &g) {
 
     for (const auto &c : argv[1]) {
       shipnum_t i = NUMSTYPES;
-      while (--i && Shipltrs[i] != c)
-        ;
+      while (--i && Shipltrs[i] != c);
       if (Shipltrs[i] != c) {
         sprintf(buf, "'%c' -- no such ship letter\n", c);
         notify(Playernum, Governor, buf);
@@ -358,7 +357,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
               Shipltrs[s.type], shipno, (s.active ? s.name : strng), s.governor,
               s.damage, s.popn, s.troops, s.destruct, s.fuel,
               s.hyper_drive.has ? (s.mounted ? '+' : '*') : ' ', s.speed,
-              Dispshiploc_brief(&s), locstrn);
+              dispshiploc_brief(s).c_str(), locstrn);
       notify(Playernum, Governor, buf);
     }
 

@@ -29,7 +29,7 @@ import std.compat;
 #include "gb/vars.h"
 
 static void check_overload(Ship *, int, int *);
-static void check_retal_strength(Ship *, int *);
+static int check_retal_strength(const Ship &);
 
 namespace {
 // check to see if there are any planetary defense networks on the planet
@@ -140,7 +140,7 @@ void fire(const command_t &argv, GameObj &g) {
       }
 
       /* save defense attack strength for retaliation */
-      check_retal_strength(&*to, &retal);
+      retal = check_retal_strength(*to);
       bcopy(&*to, &dummy, sizeof(Ship));
 
       if (from->type == ShipType::OTYPE_AFV) {
@@ -196,12 +196,12 @@ void fire(const command_t &argv, GameObj &g) {
         strength = from->cew / 2;
 
       } else {
-        check_retal_strength(from, &maxstrength);
+        maxstrength = check_retal_strength(*from);
 
         if (argv.size() >= 4)
           strength = std::stoi(argv[3]);
         else
-          check_retal_strength(from, &strength);
+          strength = check_retal_strength(*from);
 
         if (strength > maxstrength) {
           strength = maxstrength;
@@ -274,7 +274,7 @@ void fire(const command_t &argv, GameObj &g) {
           if (ship.protect.on && (ship.protect.ship == toship) &&
               (ship.protect.ship == toship) && ship.number != fromship &&
               ship.number != toship && ship.alive && ship.active) {
-            check_retal_strength(&ship, &strength);
+            strength = check_retal_strength(ship);
             if (laser_on(ship)) check_overload(&ship, 0, &strength);
 
             if ((damage = shoot_ship_to_ship(&ship, from, strength, 0, 0,
@@ -355,12 +355,12 @@ void bombard(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      check_retal_strength(from, &maxstrength);
+      maxstrength = check_retal_strength(*from);
 
       if (argv.size() > 3)
         strength = std::stoi(argv[3]);
       else
-        check_retal_strength(from, &strength);
+        strength = check_retal_strength(*from);
 
       if (strength > maxstrength) {
         strength = maxstrength;
@@ -464,7 +464,7 @@ void bombard(const command_t &argv, GameObj &g) {
               ship.active) {
             if (laser_on(ship)) check_overload(&ship, 0, &strength);
 
-            check_retal_strength(&ship, &strength);
+            strength = check_retal_strength(ship);
 
             if ((damage = shoot_ship_to_ship(&ship, from, strength, 0, 0,
                                              long_buf, short_buf)) >= 0) {
@@ -572,7 +572,7 @@ void defend(const command_t &argv, GameObj &g) {
   }
 
   /* save defense strength for retaliation */
-  check_retal_strength(&*to, &retal);
+  retal = check_retal_strength(*to);
   bcopy(&*to, &dummy, sizeof(Ship));
 
   sscanf(argv[2].c_str(), "%d,%d", &x, &y);
@@ -656,7 +656,7 @@ void defend(const command_t &argv, GameObj &g) {
           (ship->protect.ship == toship) && sh != toship && ship->alive &&
           ship->active) {
         if (laser_on(*ship)) check_overload(ship, 0, &strength);
-        check_retal_strength(ship, &strength);
+        strength = check_retal_strength(*ship);
 
         auto smap = getsmap(p);
         if ((numdest = shoot_ship_to_planet(ship, p, strength, x, y, smap, 0, 0,
@@ -726,7 +726,7 @@ void detonate(const command_t &argv, GameObj &g) {
       free(s);
 }
 
-int retal_strength(Ship &s) {
+int retal_strength(const Ship &s) {
   int strength = 0;
   int avail = 0;
 
@@ -789,12 +789,12 @@ static void check_overload(Ship *ship, int cew, int *strength) {
   }
 }
 
-static void check_retal_strength(Ship *ship, int *strength) {
-  *strength = 0;
-  if (ship->active && ship->alive) { /* irradiated ships dont retaliate */
-    if (laser_on(*ship))
-      *strength = MIN(ship->fire_laser, (int)ship->fuel / 2);
-    else
-      *strength = retal_strength(*ship);
-  }
+static int check_retal_strength(const Ship &ship) {
+  // irradiated ships dont retaliate
+  if (!ship.active || !ship.alive) return 0;
+
+  if (laser_on(ship))
+    return MIN(ship.fire_laser, (int)ship.fuel / 2);
+  else
+    return retal_strength(ship);
 }

@@ -28,9 +28,6 @@ import std.compat;
 #include "gb/utils/rand.h"
 #include "gb/vars.h"
 
-static void check_overload(Ship *, int, int *);
-static int check_retal_strength(const Ship &);
-
 namespace {
 // check to see if there are any planetary defense networks on the planet
 bool has_planet_defense(const shipnum_t shipno, const player_t Playernum) {
@@ -43,6 +40,43 @@ bool has_planet_defense(const shipnum_t shipno, const player_t Playernum) {
   }
   return false;
 }
+
+int check_retal_strength(const Ship &ship) {
+  // irradiated ships dont retaliate
+  if (!ship.active || !ship.alive) return 0;
+
+  if (laser_on(ship))
+    return MIN(ship.fire_laser, (int)ship.fuel / 2);
+  else
+    return retal_strength(ship);
+}
+
+void check_overload(Ship *ship, int cew, int *strength) {
+  if ((ship->laser && ship->fire_laser) || cew) {
+    if (int_rand(0, *strength) >
+        (int)((1.0 - .01 * ship->damage) * ship->tech / 2.0)) {
+      /* check to see if the ship blows up */
+      sprintf(buf,
+              "%s: Matter-antimatter EXPLOSION from overloaded crystal on %s\n",
+              Dispshiploc(ship), ship_to_string(*ship).c_str());
+      kill_ship((int)(ship->owner), ship);
+      *strength = 0;
+      warn(ship->owner, ship->governor, buf);
+      post(buf, COMBAT);
+      notify_star(ship->owner, ship->governor, ship->storbits, buf);
+    } else if (int_rand(0, *strength) >
+               (int)((1.0 - .01 * ship->damage) * ship->tech / 4.0)) {
+      sprintf(buf, "%s: Crystal damaged from overloading on %s.\n",
+              Dispshiploc(ship), ship_to_string(*ship).c_str());
+      ship->fire_laser = 0;
+      ship->mounted = 0;
+      *strength = 0;
+      warn(ship->owner, ship->governor, buf);
+    }
+  }
+}
+
+
 }  // namespace
 
 /*! Ship vs ship */
@@ -762,39 +796,4 @@ int adjacent(int fx, int fy, int tx, int ty, const Planet &p) {
     return 0;
   }
   return 0;
-}
-
-static void check_overload(Ship *ship, int cew, int *strength) {
-  if ((ship->laser && ship->fire_laser) || cew) {
-    if (int_rand(0, *strength) >
-        (int)((1.0 - .01 * ship->damage) * ship->tech / 2.0)) {
-      /* check to see if the ship blows up */
-      sprintf(buf,
-              "%s: Matter-antimatter EXPLOSION from overloaded crystal on %s\n",
-              Dispshiploc(ship), ship_to_string(*ship).c_str());
-      kill_ship((int)(ship->owner), ship);
-      *strength = 0;
-      warn(ship->owner, ship->governor, buf);
-      post(buf, COMBAT);
-      notify_star(ship->owner, ship->governor, ship->storbits, buf);
-    } else if (int_rand(0, *strength) >
-               (int)((1.0 - .01 * ship->damage) * ship->tech / 4.0)) {
-      sprintf(buf, "%s: Crystal damaged from overloading on %s.\n",
-              Dispshiploc(ship), ship_to_string(*ship).c_str());
-      ship->fire_laser = 0;
-      ship->mounted = 0;
-      *strength = 0;
-      warn(ship->owner, ship->governor, buf);
-    }
-  }
-}
-
-static int check_retal_strength(const Ship &ship) {
-  // irradiated ships dont retaliate
-  if (!ship.active || !ship.alive) return 0;
-
-  if (laser_on(ship))
-    return MIN(ship.fire_laser, (int)ship.fuel / 2);
-  else
-    return retal_strength(ship);
 }

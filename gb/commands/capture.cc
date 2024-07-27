@@ -262,8 +262,9 @@ void capture(const command_t &argv, GameObj &g) {
         sprintf(buf, "              YOUR SHIP WAS DESTROYED!!!\n");
         strcat(telegram_buf, buf);
         g.out << "              Their ship DESTROYED!!!\n";
-        sprintf(short_buf, "%s: %s [%d] DESTROYED %s\n", Dispshiploc(ship),
-                race.name, Playernum, ship_to_string(s).c_str());
+        sprintf(short_buf, "%s: %s [%d] DESTROYED %s\n",
+                dispshiploc(*ship).c_str(), race.name, Playernum,
+                ship_to_string(s).c_str());
       }
 
       if (ship->owner == Playernum) {
@@ -279,14 +280,16 @@ void capture(const command_t &argv, GameObj &g) {
                   std::min(boarders, ship->troops));
         notify(Playernum, Governor, buf);
         capture_stuff(*ship, g);
-        sprintf(short_buf, "%s: %s [%d] CAPTURED %s\n", Dispshiploc(ship),
-                race.name, Playernum, ship_to_string(s).c_str());
+        sprintf(short_buf, "%s: %s [%d] CAPTURED %s\n",
+                dispshiploc(*ship).c_str(), race.name, Playernum,
+                ship_to_string(s).c_str());
       } else if (ship->popn + ship->troops) {
         sprintf(buf, "You fought them off!\n");
         notify(oldowner, oldgov, buf);
         g.out << "The boarding was repulsed; try again.\n";
-        sprintf(short_buf, "%s: %s [%d] assaults %s\n", Dispshiploc(ship),
-                race.name, Playernum, ship_to_string(s).c_str());
+        sprintf(short_buf, "%s: %s [%d] assaults %s\n",
+                dispshiploc(*ship).c_str(), race.name, Playernum,
+                ship_to_string(s).c_str());
       }
       if (ship->alive) {
         if (sect.popn + sect.troops + boarders) {

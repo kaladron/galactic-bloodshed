@@ -108,7 +108,7 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
   if (from->mode) {
     damage =
         do_radiation(to, from->tech, strength, hits, "radiation", damage_msg);
-    sprintf(short_msg, "%s: %s %s %s\n", Dispshiploc(to),
+    sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(*to).c_str(),
             ship_to_string(*from).c_str(), to->alive ? "attacked" : "DESTROYED",
             ship_to_string(*to).c_str());
     strcpy(long_msg, short_msg);
@@ -139,7 +139,7 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
 
     damage = do_damage((int)from->owner, to, (double)from->tech, strength, hits,
                        defense, caliber, (double)dist, weapon, damage_msg);
-    sprintf(short_msg, "%s: %s %s %s\n", Dispshiploc(to),
+    sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(*to).c_str(),
             ship_to_string(*from).c_str(), to->alive ? "attacked" : "DESTROYED",
             ship_to_string(*to).c_str());
     strcpy(long_msg, short_msg);
@@ -171,8 +171,8 @@ int shoot_planet_to_ship(Race &race, Ship *ship, int strength, char *long_msg,
 
   damage = do_damage(race.Playernum, ship, race.tech, strength, hits, 0,
                      GTYPE_MEDIUM, 0.0, "medium guns", damage_msg);
-  sprintf(short_msg, "%s [%d] %s %s\n", Dispshiploc(ship), race.Playernum,
-          ship->alive ? "attacked" : "DESTROYED",
+  sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(*ship).c_str(),
+          race.Playernum, ship->alive ? "attacked" : "DESTROYED",
           ship_to_string(*ship).c_str());
   strcpy(long_msg, short_msg);
   strcat(long_msg, damage_msg);
@@ -298,7 +298,7 @@ int shoot_ship_to_planet(Ship *ship, Planet &pl, int strength, int x, int y,
                           ((double)numdest / (double)(pl.Maxx * pl.Maxy));
 
   sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(*ship).c_str(),
-          Dispshiploc(ship), oldowner);
+          dispshiploc(*ship).c_str(), oldowner);
   strcpy(long_msg, short_msg);
   sprintf(buf, "\t%d sectors destroyed\n", numdest);
   strcat(long_msg, buf);

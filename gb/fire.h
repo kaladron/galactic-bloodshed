@@ -12,7 +12,7 @@ void fire(const command_t &, GameObj &);
 void bombard(const command_t &, GameObj &);
 void defend(const command_t &, GameObj &);
 void detonate(const command_t &argv, GameObj &);
-int retal_strength(Ship &);
+int retal_strength(const Ship &);
 int adjacent(int, int, int, int, const Planet &);
 
 #endif  // FIRE_H

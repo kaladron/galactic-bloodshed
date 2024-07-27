@@ -7,7 +7,6 @@
 #ifndef VARS_H
 #define VARS_H
 
-#include "gb/config.h"
 #include "gb/tweakables.h"
 
 /* number of movement segments (global variable) */

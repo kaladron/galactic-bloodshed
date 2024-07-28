@@ -71,8 +71,15 @@ add_executable(racegen GB_racegen.cc enroll.cc racegen.cc sectormap.cc
 target_link_libraries(racegen PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
 add_library(gblib)
-target_sources(gblib PUBLIC FILE_SET CXX_MODULES FILES gblib.cppm
-                            gblib-types.cppm gblib-sector.cppm)
+target_sources(
+  gblib
+  PUBLIC FILE_SET
+         CXX_MODULES
+         FILES
+         gblib.cppm
+         gblib-types.cppm
+         gblib-race.cppm
+         gblib-sector.cppm)
 
 add_library(commands)
 target_sources(

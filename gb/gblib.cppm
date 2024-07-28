@@ -3,8 +3,7 @@
 export module gblib;
 export import :types;
 export import :sector;
-
-export enum ScopeLevel { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
+export import :race;
 
 // Shipping routes - DON'T change this unless you know what you are doing
 export inline constexpr int MAX_ROUTES = 4;

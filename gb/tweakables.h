@@ -38,23 +38,23 @@
 #define OTHER 9
 #define TOXIC 10
 
-const char CHAR_LAND = '*';
-const char CHAR_SEA = '.';
-const char CHAR_MOUNT = '^';
-const char CHAR_DIFFOWNED = '?';
-const char CHAR_PLATED = 'o';
-const char CHAR_WASTED = '%';
-const char CHAR_GAS = '~';
-const char CHAR_CLOAKED = ' ';
-const char CHAR_ICE = '#';
-const char CHAR_CRYSTAL = 'x';
-const char CHAR_DESERT = '-';
-const char CHAR_FOREST = ')';
+inline constexpr char CHAR_LAND = '*';
+inline constexpr char CHAR_SEA = '.';
+inline constexpr char CHAR_MOUNT = '^';
+inline constexpr char CHAR_DIFFOWNED = '?';
+inline constexpr char CHAR_PLATED = 'o';
+inline constexpr char CHAR_WASTED = '%';
+inline constexpr char CHAR_GAS = '~';
+inline constexpr char CHAR_CLOAKED = ' ';
+inline constexpr char CHAR_ICE = '#';
+inline constexpr char CHAR_CRYSTAL = 'x';
+inline constexpr char CHAR_DESERT = '-';
+inline constexpr char CHAR_FOREST = ')';
 
-const char CHAR_MY_TROOPS = 'X';
-const char CHAR_ALLIED_TROOPS = 'A';
-const char CHAR_ATWAR_TROOPS = 'E';
-const char CHAR_NEUTRAL_TROOPS = 'N';
+inline constexpr char CHAR_MY_TROOPS = 'X';
+inline constexpr char CHAR_ALLIED_TROOPS = 'A';
+inline constexpr char CHAR_ATWAR_TROOPS = 'E';
+inline constexpr char CHAR_NEUTRAL_TROOPS = 'N';
 
 /* 3.0 feature */
 #define LIMITED_RESOURCES                      \
@@ -220,17 +220,6 @@ const char CHAR_NEUTRAL_TROOPS = 'N';
 /*   (look in doturn)  */
 static const ap_t LIMIT_APs = 255; /* max # of APs you can have */
 
-enum PlanetType {
-  EARTH = 0,
-  ASTEROID = 1,
-  MARS = 2,
-  ICEBALL = 3,
-  GASGIANT = 4,
-  WATER = 5,
-  FOREST = 6,
-  DESERT = 7,
-};
-
 /* number of global APs each planet is worth */
 #define EARTH_POINTS int_rand(5, 8)
 constexpr ap_t ASTEROID_POINTS = 1;
@@ -240,18 +229,6 @@ constexpr ap_t ASTEROID_POINTS = 1;
 #define WATER_POINTS int_rand(2, 3)
 #define FOREST_POINTS int_rand(2, 3)
 #define DESERT_POINTS int_rand(2, 3)
-
-enum SectorType {
-  SEC_SEA = 0,
-  SEC_LAND = 1,
-  SEC_MOUNT = 2,
-  SEC_GAS = 3,
-  SEC_ICE = 4,
-  SEC_FOREST = 5,
-  SEC_DESERT = 6,
-  SEC_PLATED = 7,
-  SEC_WASTED = 8,
-};
 
 #define CIV 0
 #define MIL 1
@@ -310,5 +287,8 @@ enum SectorType {
 #define AP_FACTOR \
   50.0 /* how planet size affects the rate of atmosphere processing */
 #define DISSIPATE 80 /* updates to dissipate dust and gases */
+
+#define MAXPLAYERS 64
+#define NUM_DISCOVERIES 80
 
 #endif  // TWEAKABLES_H

@@ -71,7 +71,8 @@ add_executable(racegen GB_racegen.cc enroll.cc racegen.cc sectormap.cc
 target_link_libraries(racegen PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
 add_library(gblib)
-target_sources(gblib PUBLIC FILE_SET CXX_MODULES FILES gblib.cppm)
+target_sources(gblib PUBLIC FILE_SET CXX_MODULES FILES gblib.cppm
+                            gblib-types.cppm gblib-sector.cppm)
 
 add_library(commands)
 target_sources(
@@ -153,7 +154,8 @@ set(OLD_LIBGBLIB_FILES
     victory.cc)
 
 add_executable(GB GB_server.cc ${COMMON_FILES} ${OLD_LIBGBLIB_FILES})
-target_link_libraries(GB PRIVATE gblib commands ${SQLite3_LIBRARIES} glaze::glaze)
+target_link_libraries(GB PRIVATE gblib commands ${SQLite3_LIBRARIES}
+                                 glaze::glaze)
 
 # Test targets
 add_executable(shlmisc_test shlmisc_test.cc)

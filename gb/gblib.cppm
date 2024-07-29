@@ -177,3 +177,7 @@ bool isclr(const T target, const Unsigned auto pos)
 {
   return !isset(target, pos);
 }
+
+export std::vector<Victory> create_victory_list();
+
+export std::vector<Race> races;

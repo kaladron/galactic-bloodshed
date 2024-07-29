@@ -10,13 +10,13 @@ import std.compat;
 
 #include "gb/creator/makeuniv.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <strings.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "gb/GB_server.h"
+#include <cstdio>
+#include <cstdlib>
+
 #include "gb/creator/makestar.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"

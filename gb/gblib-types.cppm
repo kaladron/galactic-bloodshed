@@ -4,18 +4,18 @@ export module gblib:types;
 
 import std.compat;
 
-export using shipnum_t = uint64_t;
-export using starnum_t = uint32_t;
-export using planetnum_t = uint32_t;
-export using player_t = uint32_t;
-export using governor_t = uint32_t;
-export using segments_t = uint32_t;
+export using shipnum_t = std::uint64_t;
+export using starnum_t = std::uint32_t;
+export using planetnum_t = std::uint32_t;
+export using player_t = std::uint32_t;
+export using governor_t = std::uint32_t;
+export using segments_t = std::uint32_t;
 
-export using ap_t = uint32_t;
-export using commodnum_t = int64_t;
-export using resource_t = int64_t;
-export using money_t = int64_t;
-export using population_t = int64_t;
+export using ap_t = std::uint32_t;
+export using commodnum_t = std::int64_t;
+export using resource_t = std::int64_t;
+export using money_t = std::int64_t;
+export using population_t = std::int64_t;
 
 export using command_t = std::vector<std::string>;
 

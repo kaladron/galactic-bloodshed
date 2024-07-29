@@ -2,12 +2,6 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/*
- *  tweakable constants & other things -- changing the following may cause GB
- *	to freak if
- *	the functions using them are not recompiled so be careful.
- */
-
 #ifndef TWEAKABLES_H
 #define TWEAKABLES_H
 

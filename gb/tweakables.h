@@ -38,24 +38,6 @@
 #define OTHER 9
 #define TOXIC 10
 
-inline constexpr char CHAR_LAND = '*';
-inline constexpr char CHAR_SEA = '.';
-inline constexpr char CHAR_MOUNT = '^';
-inline constexpr char CHAR_DIFFOWNED = '?';
-inline constexpr char CHAR_PLATED = 'o';
-inline constexpr char CHAR_WASTED = '%';
-inline constexpr char CHAR_GAS = '~';
-inline constexpr char CHAR_CLOAKED = ' ';
-inline constexpr char CHAR_ICE = '#';
-inline constexpr char CHAR_CRYSTAL = 'x';
-inline constexpr char CHAR_DESERT = '-';
-inline constexpr char CHAR_FOREST = ')';
-
-inline constexpr char CHAR_MY_TROOPS = 'X';
-inline constexpr char CHAR_ALLIED_TROOPS = 'A';
-inline constexpr char CHAR_ATWAR_TROOPS = 'E';
-inline constexpr char CHAR_NEUTRAL_TROOPS = 'N';
-
 /* 3.0 feature */
 #define LIMITED_RESOURCES                      \
   1 /* set to 0 if you want unlimited resource \
@@ -216,13 +198,10 @@ inline constexpr char CHAR_NEUTRAL_TROOPS = 'N';
 /* adjust temperature to displayed */
 #define Temp(x) ((int)(x))
 
-/* number of AP's to add to each player in ea. system */
-/*   (look in doturn)  */
-static const ap_t LIMIT_APs = 255; /* max # of APs you can have */
-
 /* number of global APs each planet is worth */
 #define EARTH_POINTS int_rand(5, 8)
-constexpr ap_t ASTEROID_POINTS = 1;
+// Moved to module:
+// constexpr ap_t ASTEROID_POINTS = 1;
 #define MARS_POINTS int_rand(2, 3)
 #define ICEBALL_POINTS int_rand(2, 3)
 #define GASGIANT_POINTS int_rand(8, 20)

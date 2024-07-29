@@ -4,6 +4,7 @@ export module gblib;
 export import :types;
 export import :sector;
 export import :race;
+export import :tweakables;
 
 // Shipping routes - DON'T change this unless you know what you are doing
 export inline constexpr int MAX_ROUTES = 4;

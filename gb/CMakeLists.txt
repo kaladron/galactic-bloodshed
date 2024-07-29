@@ -80,6 +80,7 @@ target_sources(
          gblib-types.cppm
          gblib-race.cppm
          gblib-sector.cppm
+         gblib-tweakables.cppm
   PRIVATE victory.cc)
 
 add_library(commands)

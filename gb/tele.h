@@ -5,8 +5,6 @@
 #ifndef TELE_H
 #define TELE_H
 
-#include "gb/vars.h"
-
 void check_for_telegrams(GameObj &);
 void purge();
 void post(std::string, int);

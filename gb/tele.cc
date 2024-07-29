@@ -22,7 +22,6 @@ import std.compat;
 #include "gb/buffers.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
-#include "gb/races.h"
 #include "gb/tweakables.h"
 #include "gb/vars.h"
 
@@ -30,13 +29,13 @@ import std.compat;
  * \brief Purges the News files.
  */
 void purge() {
-  fclose(fopen(DECLARATIONFL, "w+"));
+  fclose(std::fopen(DECLARATIONFL, "w+"));
   newslength[0] = 0;
-  fclose(fopen(COMBATFL, "w+"));
+  fclose(std::fopen(COMBATFL, "w+"));
   newslength[1] = 0;
-  fclose(fopen(ANNOUNCEFL, "w+"));
+  fclose(std::fopen(ANNOUNCEFL, "w+"));
   newslength[2] = 0;
-  fclose(fopen(TRANSFERFL, "w+"));
+  fclose(std::fopen(TRANSFERFL, "w+"));
   newslength[3] = 0;
 }
 

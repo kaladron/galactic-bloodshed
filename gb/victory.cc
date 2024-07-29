@@ -2,12 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-import gblib;
+module;
+
 import std.compat;
 
-#include "gb/victory.h"
-
-#include "gb/races.h"
+module gblib;
 
 std::vector<Victory> create_victory_list() {
   std::vector<Victory> victories;

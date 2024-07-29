@@ -79,7 +79,8 @@ target_sources(
          gblib.cppm
          gblib-types.cppm
          gblib-race.cppm
-         gblib-sector.cppm)
+         gblib-sector.cppm
+  PRIVATE victory.cc)
 
 add_library(commands)
 target_sources(
@@ -157,8 +158,7 @@ set(OLD_LIBGBLIB_FILES
     shootblast.cc
     star.cc
     tech.cc
-    tele.cc
-    victory.cc)
+    tele.cc)
 
 add_executable(GB GB_server.cc ${COMMON_FILES} ${OLD_LIBGBLIB_FILES})
 target_link_libraries(GB PRIVATE gblib commands ${SQLite3_LIBRARIES}

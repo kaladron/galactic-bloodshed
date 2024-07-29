@@ -9,14 +9,14 @@ module;
 import gblib;
 import std.compat;
 
+#include "gb/power.h"
+
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/power.h"
 #include "gb/prof.h"
 #include "gb/races.h"
 #include "gb/shlmisc.h"
 #include "gb/vars.h"
-#include "gb/victory.h"
 
 module commands;
 

@@ -9,6 +9,7 @@ export using starnum_t = uint32_t;
 export using planetnum_t = uint32_t;
 export using player_t = uint32_t;
 export using governor_t = uint32_t;
+export using segments_t = uint32_t;
 
 export using ap_t = uint32_t;
 export using commodnum_t = int64_t;

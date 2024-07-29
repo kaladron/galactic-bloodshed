@@ -5,6 +5,7 @@ export import :types;
 export import :sector;
 export import :race;
 export import :tweakables;
+export import :globals;
 
 // Shipping routes - DON'T change this unless you know what you are doing
 export inline constexpr int MAX_ROUTES = 4;
@@ -180,5 +181,3 @@ bool isclr(const T target, const Unsigned auto pos)
 }
 
 export std::vector<Victory> create_victory_list();
-
-export std::vector<Race> races;

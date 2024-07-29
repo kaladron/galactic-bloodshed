@@ -77,10 +77,11 @@ target_sources(
          CXX_MODULES
          FILES
          gblib.cppm
-         gblib-types.cppm
+         gblib-globals.cppm
          gblib-race.cppm
          gblib-sector.cppm
          gblib-tweakables.cppm
+         gblib-types.cppm
   PRIVATE victory.cc)
 
 add_library(commands)

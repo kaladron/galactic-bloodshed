@@ -7,17 +7,16 @@
 import std.compat;
 import gblib;
 
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <strings.h>
 #include <unistd.h>
 
-#include "gb/GB_server.h"
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+
 #include "gb/files_shl.h"
 #include "gb/globals.h"
 #include "gb/max.h"
-#include "gb/races.h"
 #include "gb/shipdata.h"
 #include "gb/ships.h"
 #include "gb/sql/sql.h"

@@ -31,8 +31,6 @@ void notify_star(const player_t, const governor_t, const starnum_t,
                  const std::string &);
 void adjust_morale(Race &, Race &, int);
 
-using segments_t = uint32_t;
-
 extern time_t next_update_time; /* When will next update be... approximately */
 extern time_t
     next_segment_time; /* When will next segment be... approximately */

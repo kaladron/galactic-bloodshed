@@ -5,7 +5,6 @@
 #ifndef GB_SERVER_H
 #define GB_SERVER_H
 
-#include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/vars.h"
 

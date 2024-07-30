@@ -444,8 +444,6 @@ void walk(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   const ap_t APcount = 1;
-  Ship *ship;
-  Ship dummy;
   int x;
   int y;
   int i;
@@ -461,40 +459,34 @@ void walk(const command_t &argv, GameObj &g) {
     g.out << "Walk what?\n";
     return;
   }
-  auto shipno = string_to_shipnum(argv[1]);
-  if (!shipno || !getship(&ship, *shipno)) {
+  auto ship = getship(argv[1]);
+  if (!ship) {
     g.out << "No such ship.\n";
     return;
   }
   if (testship(*ship, Playernum, Governor)) {
     g.out << "You do not control this ship.\n";
-    free(ship);
     return;
   }
   if (ship->type != ShipType::OTYPE_AFV) {
     g.out << "This ship doesn't walk!\n";
-    free(ship);
     return;
   }
   if (!landed(*ship)) {
     g.out << "This ship is not landed on a planet.\n";
-    free(ship);
     return;
   }
   if (!ship->popn) {
     g.out << "No crew.\n";
-    free(ship);
     return;
   }
   if (ship->fuel < AFV_FUEL_COST) {
     sprintf(buf, "You don't have %.1f fuel to move it.\n", AFV_FUEL_COST);
     notify(Playernum, Governor, buf);
-    free(ship);
     return;
   }
   if (!enufAP(Playernum, Governor, stars[ship->storbits].AP[Playernum - 1],
               APcount)) {
-    free(ship);
     return;
   }
   auto p = getplanet((int)ship->storbits, (int)ship->pnumorbits);
@@ -502,13 +494,11 @@ void walk(const command_t &argv, GameObj &g) {
 
   if (!get_move(argv[2][0], (int)ship->land_x, (int)ship->land_y, &x, &y, p)) {
     g.out << "Illegal move.\n";
-    free(ship);
     return;
   }
   if (x < 0 || y < 0 || x > p.Maxx - 1 || y > p.Maxy - 1) {
     sprintf(buf, "Illegal coordinates %d,%d.\n", x, y);
     notify(Playernum, Governor, buf);
-    free(ship);
     putplanet(p, stars[g.snum], g.pnum);
     return;
   }
@@ -517,7 +507,6 @@ void walk(const command_t &argv, GameObj &g) {
   if (!race.likes[sect.condition]) {
     notify(Playernum, Governor,
            "Your ships cannot walk into that sector type!\n");
-    free(ship);
     return;
   }
   /* if the sector is occupied by non-aligned AFVs, each one will attack */
@@ -530,7 +519,6 @@ void walk(const command_t &argv, GameObj &g) {
       if (!isset(race.allied, ship2.owner) || !isset(alien.allied, Playernum)) {
         while ((strength = retal_strength(ship2)) &&
                (strength1 = retal_strength(*ship))) {
-          bcopy(ship, &dummy, sizeof(Ship));
           use_destruct(ship2, strength);
           notify(Playernum, Governor, long_buf);
           warn(ship2.owner, ship2.governor, long_buf);
@@ -557,20 +545,19 @@ void walk(const command_t &argv, GameObj &g) {
     if (!isset(race.allied, oldowner) || !isset(alien.allied, Playernum)) {
       if (!retal_strength(*ship)) {
         g.out << "You have nothing to attack with!\n";
-        free(ship);
         return;
       }
       while ((sect.popn + sect.troops) && retal_strength(*ship)) {
         civ = (int)sect.popn;
         mil = (int)sect.troops;
-        mech_attack_people(ship, &civ, &mil, race, alien, sect, x, y, 0,
+        mech_attack_people(&*ship, &civ, &mil, race, alien, sect, x, y, 0,
                            long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien.Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, ship->storbits, short_buf);
         post(short_buf, COMBAT);
 
-        people_attack_mech(ship, sect.popn, sect.troops, alien, race, sect, x,
+        people_attack_mech(&*ship, sect.popn, sect.troops, alien, race, sect, x,
                            y, long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien.Playernum, oldgov, long_buf);
@@ -607,9 +594,8 @@ void walk(const command_t &argv, GameObj &g) {
       if (i != Playernum && p.info[i - 1].numsectsowned)
         notify(i, stars[g.snum].governor[i - 1], buf);
   }
-  putship(ship);
+  putship(&*ship);
   deductAPs(g, APcount, ship->storbits);
-  free(ship);
 }
 
 int get_move(char direction, int x, int y, int *x2, int *y2,

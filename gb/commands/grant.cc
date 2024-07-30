@@ -65,7 +65,7 @@ void grant(const command_t &argv, GameObj &g) {
         ship->governor = gov;
         sprintf(buf, "\"%s\" granted you %s at %s\n",
                 race.governor[Governor].name, ship_to_string(*ship).c_str(),
-                prin_ship_orbits(ship));
+                prin_ship_orbits(*ship).c_str());
         warn(Playernum, gov, buf);
         putship(ship);
         sprintf(buf, "%s granted to \"%s\"\n", ship_to_string(*ship).c_str(),

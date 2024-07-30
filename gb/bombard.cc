@@ -40,7 +40,7 @@ int berserker_bombard(Ship *ship, Planet &planet, Race &r) {
     if (s.alive && s.type == ShipType::OTYPE_PLANDEF &&
         s.owner != ship->owner) {
       sprintf(buf, "Bombardment of %s cancelled, PDNs are present.\n",
-              prin_ship_orbits(ship));
+              prin_ship_orbits(*ship).c_str());
       warn(ship->owner, ship->governor, buf);
       return 0;
     }

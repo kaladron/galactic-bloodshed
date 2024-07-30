@@ -5,11 +5,9 @@
 #ifndef MAX_H
 #define MAX_H
 
-#include "gb/races.h"
 #include "gb/ships.h"
-#include "gb/vars.h"
 
-char *prin_ship_orbits(Ship *);
+std::string prin_ship_orbits(const Ship &);
 
 constexpr auto maxsupport(const Race &r, const Sector &s, const double c,
                           const int toxic) {

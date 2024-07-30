@@ -68,7 +68,7 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
       if (s->fuel < fuse) {
         sprintf(telegram_buf,
                 "%s at system %s does not have %.1ff to do hyperspace jump.",
-                ship_to_string(*s).c_str(), prin_ship_orbits(s), fuse);
+                ship_to_string(*s).c_str(), prin_ship_orbits(*s).c_str(), fuse);
         if (send_messages)
           push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
         s->hyper_drive.on = 0;
@@ -88,7 +88,7 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
       s->hyper_drive.ready = 0;
       s->hyper_drive.charge = 0;
       sprintf(telegram_buf, "%s arrived at %s.", ship_to_string(*s).c_str(),
-              prin_ship_orbits(s));
+              prin_ship_orbits(*s).c_str());
       if (send_messages)
         push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
     } else if (s->mounted) {
@@ -232,7 +232,8 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
         s->whatdest = ScopeLevel::LEVEL_UNIV;
         s->protect.evade = 0;
         sprintf(telegram_buf, "%s at %s lost sight of destination ship #%ld.",
-                ship_to_string(*s).c_str(), prin_ship_orbits(s), s->destshipno);
+                ship_to_string(*s).c_str(), prin_ship_orbits(*s).c_str(),
+                s->destshipno);
         if (send_messages)
           push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
         return;
@@ -289,7 +290,7 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
           }
           if (s->type != ShipType::OTYPE_VN) {
             sprintf(telegram_buf, "%s arrived at %s.",
-                    ship_to_string(*s).c_str(), prin_ship_orbits(s));
+                    ship_to_string(*s).c_str(), prin_ship_orbits(*s).c_str());
             if (send_messages)
               push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
           }
@@ -311,13 +312,13 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
           s->pnumorbits = destpnum;
           if (dist <= (double)DIST_TO_LAND) {
             sprintf(telegram_buf, "%s within landing distance of %s.",
-                    ship_to_string(*s).c_str(), prin_ship_orbits(s));
+                    ship_to_string(*s).c_str(), prin_ship_orbits(*s).c_str());
             if (checking_fuel || !do_merchant(s, *dpl))
               if (s->whatdest == ScopeLevel::LEVEL_PLAN)
                 s->whatdest = ScopeLevel::LEVEL_UNIV;
           } else {
             sprintf(telegram_buf, "%s arriving at %s.",
-                    ship_to_string(*s).c_str(), prin_ship_orbits(s));
+                    ship_to_string(*s).c_str(), prin_ship_orbits(*s).c_str());
           }
           if (s->type == ShipType::STYPE_OAP) {
             sprintf(buf, "\nEnslavement of the planet is now possible.");
@@ -341,7 +342,7 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
         }
       }
     } /* 'destination' orders */
-  }   /* if impulse drive */
+  } /* if impulse drive */
 }
 
 /* deliver an "out of fuel" message.  Used by a number of ship-updating
@@ -349,7 +350,7 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
  */
 void msg_OOF(Ship *s) {
   sprintf(buf, "%s is out of fuel at %s.", ship_to_string(*s).c_str(),
-          prin_ship_orbits(s));
+          prin_ship_orbits(*s).c_str());
   push_telegram((int)(s->owner), (int)s->governor, buf);
 }
 

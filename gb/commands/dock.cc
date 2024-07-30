@@ -397,7 +397,7 @@ void dock(const command_t &argv, GameObj &g) {
       if (Assault) {
         sprintf(telegram_buf, "%s ASSAULTED by %s at %s\n",
                 ship_to_string(ship).c_str(), ship_to_string(*s).c_str(),
-                prin_ship_orbits(&*s2));
+                prin_ship_orbits(*s2).c_str());
         sprintf(buf, "Your damage: %d%%, theirs: %d%%.\n", dam2, dam);
         strcat(telegram_buf, buf);
         if (!s2->max_crew && s2->destruct) {
@@ -476,7 +476,7 @@ void dock(const command_t &argv, GameObj &g) {
         sprintf(buf, "%s %s %s at %s.\n", ship_to_string(*s).c_str(),
                 s2->alive ? (s2->owner == Playernum ? "CAPTURED" : "assaulted")
                           : "DESTROYED",
-                ship_to_string(ship).c_str(), prin_ship_orbits(s));
+                ship_to_string(ship).c_str(), prin_ship_orbits(*s).c_str());
         if (s2->owner == Playernum || !s2->alive) post(buf, COMBAT);
         notify_star(Playernum, Governor, s->storbits, buf);
       } else {

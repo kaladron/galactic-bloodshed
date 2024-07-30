@@ -9,8 +9,9 @@ import std.compat;
 
 #include "gb/VN.h"
 
-#include <cstdlib>
 #include <strings.h>
+
+#include <cstdlib>
 
 #include "gb/doturn.h"
 #include "gb/load.h"
@@ -89,12 +90,12 @@ void do_VN(Ship &ship) {
     rcv_resource(ship, prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_VN], ship.number,
-                      prin_ship_orbits(&ship));
+                      prin_ship_orbits(ship).c_str());
   } else if (ship.type == ShipType::OTYPE_BERS) {
     rcv_destruct(ship, prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_BERS], ship.number,
-                      prin_ship_orbits(&ship));
+                      prin_ship_orbits(ship));
   }
 
   push_telegram_race(f, buf);

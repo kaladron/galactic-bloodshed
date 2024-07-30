@@ -14,34 +14,22 @@ import std.compat;
 #include "gb/max.h"
 
 #include "gb/files_shl.h"
-#include "gb/races.h"
 #include "gb/ships.h"
-#include "gb/tweakables.h"
-#include "gb/vars.h"
 
-static char Dispshiporbits_buf[PLACENAMESIZE + 13];
-
-char *prin_ship_orbits(Ship *s) {
-  char *motherorbits;
-
-  switch (s->whatorbits) {
+std::string prin_ship_orbits(const Ship &s) {
+  switch (s.whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
-      sprintf(Dispshiporbits_buf, "/(%.0f,%.0f)", s->xpos, s->ypos);
-      break;
+      return std::format("/({:0.0},{:1.0})", s.xpos, s.ypos);
     case ScopeLevel::LEVEL_STAR:
-      sprintf(Dispshiporbits_buf, "/%s", stars[s->storbits].name);
-      break;
+      return std::format("/{0}", stars[s.storbits].name);
     case ScopeLevel::LEVEL_PLAN:
-      sprintf(Dispshiporbits_buf, "/%s/%s", stars[s->storbits].name,
-              stars[s->storbits].pnames[s->pnumorbits]);
-      break;
+      return std::format("/{0}/{1}", stars[s.storbits].name,
+                         stars[s.storbits].pnames[s.pnumorbits]);
     case ScopeLevel::LEVEL_SHIP:
-      if (auto mothership = getship(s->destshipno); mothership) {
-        motherorbits = prin_ship_orbits(&*mothership);
-        strcpy(Dispshiporbits_buf, motherorbits);
-      } else
-        strcpy(Dispshiporbits_buf, "/");
-      break;
+      if (auto mothership = getship(s.destshipno); mothership) {
+        return prin_ship_orbits(*mothership);
+      } else {
+        return "/";
+      }
   }
-  return Dispshiporbits_buf;
 }

@@ -90,8 +90,8 @@ void enslave(const command_t &argv, GameObj &g) {
   g.out << "that are yours must have a weapons\n";
   g.out << "capacity greater than twice that the enemy can muster, including\n";
   g.out << "the planet and all ships orbiting it.\n";
-  sprintf(buf, "\nTotal forces bearing on %s:   %d\n", prin_ship_orbits(&*s),
-          attack);
+  sprintf(buf, "\nTotal forces bearing on %s:   %d\n",
+          prin_ship_orbits(*s).c_str(), attack);
   notify(Playernum, Governor, buf);
 
   sprintf(telegram_buf, "ALERT!!!\n\nPlanet /%s/%s ", stars[s->storbits].name,

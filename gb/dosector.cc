@@ -11,7 +11,6 @@ import std.compat;
 #include "gb/max.h"
 #include "gb/races.h"
 #include "gb/tweakables.h"
-#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};

@@ -21,7 +21,6 @@ import std.compat;
 #include "gb/star.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 namespace {

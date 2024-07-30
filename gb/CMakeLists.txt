@@ -55,8 +55,7 @@ find_package(SQLite3 REQUIRED)
 
 # Executable targets
 
-set(UTILS_FILES utils/rand.cc)
-set(COMMON_FILES files_rw.cc files_shl.cc sql/sql.cc ${UTILS_FILES})
+set(COMMON_FILES files_rw.cc files_shl.cc sql/sql.cc)
 
 add_executable(
   makeuniv creator/makeplanet.cc creator/makestar.cc creator/makeuniv.cc
@@ -78,11 +77,13 @@ target_sources(
          FILES
          gblib.cppm
          gblib-globals.cppm
+         gblib-planet.cppm
          gblib-race.cppm
+         utils/gblib-rand.cppm
          gblib-sector.cppm
          gblib-tweakables.cppm
          gblib-types.cppm
-  PRIVATE victory.cc)
+  PRIVATE utils/rand.cc victory.cc)
 
 add_library(commands)
 target_sources(
@@ -151,7 +152,6 @@ set(OLD_LIBGBLIB_FILES
     moveship.cc
     name.cc
     order.cc
-    planet.cc
     place.cc
     prof.cc
     sectormap.cc

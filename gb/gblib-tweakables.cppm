@@ -4,6 +4,9 @@ export module gblib:tweakables;
 
 import :types;
 
+// Shipping routes - DON'T change this unless you know what you are doing
+export inline constexpr int MAX_ROUTES = 4;
+
 // Number of AP's to add to each player in each system.
 export const ap_t LIMIT_APs = 255;  // max # of APs you can have
 

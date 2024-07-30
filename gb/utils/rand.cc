@@ -2,13 +2,16 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-/* Random number generator */
+/// \file rand.cc
+/// \brief Random number generators.
+
+module;
 
 import std.compat;
 
-#include <stdlib.h>
+#include <cstdlib>
 
-#include "gb/utils/rand.h"
+module gblib;
 
 /* double double_rand() this returns a random number between 0 and 1 */
 double double_rand() { return (double)random() / 2147483648.0; }

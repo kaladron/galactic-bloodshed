@@ -25,7 +25,6 @@ import std.compat;
 #include "gb/star.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static void mech_defend(player_t, governor_t, int *, int, const Planet &, int,

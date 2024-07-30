@@ -15,7 +15,6 @@ import std.compat;
 #include "gb/creator/makestar.h"
 #include "gb/files_shl.h"
 #include "gb/tweakables.h"
-#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 /*             @   o   O   #   ~   .   (   -    */

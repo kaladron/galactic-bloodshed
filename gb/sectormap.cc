@@ -5,7 +5,6 @@
 import std.compat;
 import gblib;
 
-#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 Sector &SectorMap::get_random() {

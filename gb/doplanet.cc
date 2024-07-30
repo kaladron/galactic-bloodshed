@@ -32,7 +32,6 @@ import std.compat;
 #include "gb/tech.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/utils/rand.h"
 #include "gb/vars.h"
 
 static void do_dome(Ship *, SectorMap &);

@@ -21,39 +21,6 @@ extern unsigned long segments;
 #define Resources(x) ((x) & M_RESOURCES)
 #define Crystals(x) ((x) & M_CRYSTALS)
 
-class Planet {
- public:
-  Planet() = default;
-  Planet(Planet &) = delete;
-  Planet &operator=(const Planet &) = delete;
-  Planet(Planet &&) = default;
-  Planet &operator=(Planet &&) = default;
-
-  double gravity() const;
-  double compatibility(const Race &) const;
-  ap_t get_points() const;
-
-  double xpos, ypos;        /* x,y relative to orbit */
-  shipnum_t ships;          /* first ship in orbit (to be changed) */
-  unsigned char Maxx, Maxy; /* size of map */
-
-  plinfo info[MAXPLAYERS];   /* player info */
-  int conditions[TOXIC + 1]; /* atmospheric conditions for terraforming */
-
-  population_t popn;
-  population_t troops;
-  population_t maxpopn; /* maximum population */
-  resource_t total_resources;
-
-  player_t slaved_to;
-  PlanetType type;         /* what type planet is */
-  unsigned char expltimer; /* timer for explorations */
-
-  unsigned char explored;
-
-  planetnum_t planet_id;
-};
-
 class SectorMap {
  public:
   SectorMap(const Planet &planet) : maxx_(planet.Maxx), maxy_(planet.Maxy) {

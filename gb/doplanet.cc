@@ -638,7 +638,7 @@ static bool moveship_onplanet(Ship &ship, const Planet &planet) {
       ship.notified = 1;
       std::string teleg_buf =
           std::format("%{0} is out of orders at %{1}.", ship_to_string(ship),
-                      prin_ship_orbits(&ship));
+                      prin_ship_orbits(ship));
       push_telegram(ship.owner, ship.governor, teleg_buf);
     }
   } else if (bounced)

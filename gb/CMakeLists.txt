@@ -84,7 +84,7 @@ target_sources(
          gblib-star.cppm
          gblib-tweakables.cppm
          gblib-types.cppm
-  PRIVATE utils/rand.cc star.cc victory.cc)
+  PRIVATE utils/rand.cc sectormap.cc star.cc victory.cc)
 
 add_library(commands)
 target_sources(
@@ -155,7 +155,6 @@ set(OLD_LIBGBLIB_FILES
     order.cc
     place.cc
     prof.cc
-    sectormap.cc
     ships.cc
     shlmisc.cc
     shootblast.cc

@@ -7,7 +7,7 @@
 #ifndef POWER_H
 #define POWER_H
 
-#include "gb/vars.h"
+#include "gb/tweakables.h"
 
 struct power {
   population_t troops; /* total troops */

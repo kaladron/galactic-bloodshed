@@ -9,9 +9,6 @@
 
 #include "gb/tweakables.h"
 
-/* number of movement segments (global variable) */
-extern unsigned long segments;
-
 #define M_FUEL 0x1
 #define M_DESTRUCT 0x2
 #define M_RESOURCES 0x4

@@ -53,6 +53,4 @@ const char Dessymbols[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
 
 shipnum_t Num_ships;
 
-unsigned long segments;
-
 #endif  // GLOBALS_H

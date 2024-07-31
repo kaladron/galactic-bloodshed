@@ -38,35 +38,6 @@ export inline double morale_factor(const double x) {
   return (atan((double)x / 10000.) / 3.14159565 + .5);
 }
 
-export class Db {
- public:
-  virtual ~Db() {}
-  virtual int Numcommods() = 0;
-  virtual int Numraces() = 0;
-
- protected:
-  Db() {}
-};
-
-export class GameObj {
- public:
-  player_t player;
-  governor_t governor;
-  bool god;
-  double lastx[2] = {0.0, 0.0};
-  double lasty[2] = {0.0, 0.0};
-  double zoom[2] = {1.0, 0.5};  ///< last coords for zoom
-  ScopeLevel level;             ///< what directory level
-  starnum_t snum;               ///< what star system obj # (level=0)
-  planetnum_t pnum;             ///< number of planet
-  shipnum_t shipno;             ///< # of ship
-  std::stringstream out;
-  Db &db;
-  GameObj(Db &db_) : db(db_) {}
-  GameObj(const GameObj &) = delete;
-  GameObj &operator=(const GameObj &) = delete;
-};
-
 export template <typename T>
 concept Unsigned = std::is_unsigned<T>::value;
 

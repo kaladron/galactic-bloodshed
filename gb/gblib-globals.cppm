@@ -39,3 +39,6 @@ export player_t Num_races;
 export unsigned long Num_commods;
 export planetnum_t Planet_count;
 export unsigned long newslength[4];
+
+/* number of movement segments (global variable) */
+export unsigned long segments;

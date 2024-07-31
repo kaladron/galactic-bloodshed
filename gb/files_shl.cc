@@ -300,8 +300,8 @@ void openracedata(int *fd) {
   }
 }
 
-void Sql::getsdata(struct stardata *S) { ::getsdata(S); }
-void getsdata(struct stardata *S) {
+void Sql::getsdata(stardata *S) { ::getsdata(S); }
+void getsdata(stardata *S) {
   Fileread(stdata, (char *)S, sizeof(struct stardata), 0);
 }
 
@@ -848,8 +848,8 @@ int getdeadcommod() {
   return -1;
 }
 
-void Sql::putsdata(struct stardata *S) { ::putsdata(S); }
-void putsdata(struct stardata *S) {
+void Sql::putsdata(stardata *S) { ::putsdata(S); }
+void putsdata(stardata *S) {
   Filewrite(stdata, (char *)S, sizeof(struct stardata), 0);
 }
 

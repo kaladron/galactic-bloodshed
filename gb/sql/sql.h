@@ -17,8 +17,8 @@ class Sql : public Db {
   virtual void putship(Ship *);
   virtual void putstar(const Star &, starnum_t);
   virtual void putrace(const Race &);
-  virtual void putsdata(struct stardata *);
-  virtual void getsdata(struct stardata *);
+  virtual void putsdata(stardata *);
+  virtual void getsdata(stardata *);
   virtual Race getrace(player_t);
   virtual Star getstar(starnum_t);
   virtual std::optional<Ship> getship(const shipnum_t shipnum);

@@ -22,10 +22,8 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/shootblast.h"
-#include "gb/star.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static void mech_defend(player_t, governor_t, int *, int, const Planet &, int,
                         int, const Sector &);

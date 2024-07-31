@@ -6,6 +6,7 @@ export import :types;
 export import :sector;
 export import :race;
 export import :rand;
+export import :star;
 export import :tweakables;
 export import :globals;
 

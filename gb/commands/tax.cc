@@ -14,8 +14,6 @@ import std.compat;
 #include "gb/files_shl.h"
 #include "gb/races.h"
 #include "gb/shlmisc.h"
-#include "gb/star.h"
-#include "gb/vars.h"
 
 module commands;
 

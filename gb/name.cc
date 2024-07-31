@@ -18,10 +18,8 @@ import std.compat;
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
-#include "gb/star.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 namespace {
 int revolt(Planet &pl, const player_t victim, const player_t agent) {

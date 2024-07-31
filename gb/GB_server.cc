@@ -1385,7 +1385,7 @@ void compute_power_blocks() {
 }
 
 /*utilities for dealing with ship lists */
-void insert_sh_univ(struct stardata *sdata, Ship *s) {
+void insert_sh_univ(stardata *sdata, Ship *s) {
   s->nextship = sdata->ships;
   sdata->ships = s->number;
   s->whatorbits = ScopeLevel::LEVEL_UNIV;

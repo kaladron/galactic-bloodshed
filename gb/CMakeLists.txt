@@ -81,9 +81,10 @@ target_sources(
          gblib-race.cppm
          utils/gblib-rand.cppm
          gblib-sector.cppm
+         gblib-star.cppm
          gblib-tweakables.cppm
          gblib-types.cppm
-  PRIVATE utils/rand.cc victory.cc)
+  PRIVATE utils/rand.cc star.cc victory.cc)
 
 add_library(commands)
 target_sources(
@@ -158,7 +159,6 @@ set(OLD_LIBGBLIB_FILES
     ships.cc
     shlmisc.cc
     shootblast.cc
-    star.cc
     tech.cc
     tele.cc)
 

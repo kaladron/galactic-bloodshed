@@ -51,34 +51,7 @@ const char Dessymbols[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
                            CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
                            CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
 
-struct stardata Sdata;
-
-unsigned char Nuked[MAXPLAYERS];
-unsigned long StarsInhab[NUMSTARS];
-unsigned long StarsExpl[NUMSTARS];
-std::vector<Star> stars;
-unsigned short Sdatanumships[MAXPLAYERS];
-unsigned long Sdatapopns[MAXPLAYERS];
-unsigned short starnumships[NUMSTARS][MAXPLAYERS];
-unsigned long starpopns[NUMSTARS][MAXPLAYERS];
-
-unsigned long tot_resdep, prod_eff, prod_res[MAXPLAYERS];
-unsigned long prod_fuel[MAXPLAYERS], prod_destruct[MAXPLAYERS];
-unsigned long prod_crystals[MAXPLAYERS], prod_money[MAXPLAYERS];
-unsigned long tot_captured, prod_mob;
-unsigned long avg_mob[MAXPLAYERS];
-unsigned char sects_gained[MAXPLAYERS], sects_lost[MAXPLAYERS];
-unsigned char Claims;
-
-std::array<std::array<std::unique_ptr<Planet>, MAXPLANETS>, NUMSTARS> planets;
-unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
-uint64_t inhabited[NUMSTARS];
-double Compat[MAXPLAYERS];
-player_t Num_races;
-unsigned long Num_commods;
 shipnum_t Num_ships;
-planetnum_t Planet_count;
-unsigned long newslength[4];
 
 unsigned long segments;
 

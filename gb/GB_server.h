@@ -17,7 +17,7 @@ void d_announce(const player_t, const governor_t, const starnum_t,
                 const std::string &);
 void do_next_thing(Db &);
 void compute_power_blocks();
-void insert_sh_univ(struct stardata *, Ship *);
+void insert_sh_univ(stardata *, Ship *);
 void insert_sh_star(Star &, Ship *);
 void insert_sh_plan(Planet &, Ship *);
 void insert_sh_ship(Ship *, Ship *);

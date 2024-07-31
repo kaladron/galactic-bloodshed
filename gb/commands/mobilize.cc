@@ -20,8 +20,6 @@ import std.compat;
 #include "gb/buffers.h"
 #include "gb/files_shl.h"
 #include "gb/shlmisc.h"
-#include "gb/star.h"
-#include "gb/vars.h"
 
 module commands;
 

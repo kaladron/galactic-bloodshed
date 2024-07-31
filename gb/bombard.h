@@ -7,7 +7,6 @@
 
 #include "gb/races.h"
 #include "gb/ships.h"
-#include "gb/vars.h"
 
 int berserker_bombard(Ship *, Planet &, Race &);
 

@@ -25,7 +25,6 @@ import std.compat;
 #include "gb/races.h"
 #include "gb/sql/sql.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 int autoname_star = -1;
 int autoname_plan = -1;

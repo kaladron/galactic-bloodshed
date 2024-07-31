@@ -8,7 +8,6 @@
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/sql/dbdecl.h"
-#include "gb/vars.h"
 
 void close_file(int);
 void openstardata(int *);

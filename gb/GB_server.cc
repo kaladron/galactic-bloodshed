@@ -48,7 +48,6 @@ import std.compat;
 #include "gb/sql/sql.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static int shutdown_flag = 0;
 static int update_flag = 0;

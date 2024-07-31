@@ -8,7 +8,6 @@
 #include "gb/config.h"
 #include "gb/races.h"
 #include "gb/ships.h"
-#include "gb/vars.h"
 
 int shoot_ship_to_ship(Ship *, Ship *, int, int, int, char *, char *);
 #ifdef DEFENSE

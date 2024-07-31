@@ -11,7 +11,6 @@ import std.compat;
 #include "gb/max.h"
 #include "gb/races.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const int y_adj[] = {1, 1, 1, 0, 0, -1, -1, -1};

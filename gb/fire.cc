@@ -25,7 +25,6 @@ import std.compat;
 #include "gb/shootblast.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 namespace {
 // check to see if there are any planetary defense networks on the planet

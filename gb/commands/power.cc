@@ -15,7 +15,6 @@ import std.compat;
 #include "gb/buffers.h"
 #include "gb/prof.h"
 #include "gb/shlmisc.h"
-#include "gb/vars.h"
 
 module commands;
 

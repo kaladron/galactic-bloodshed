@@ -9,7 +9,6 @@ import :tweakables;
 import std.compat;
 
 #include "gb/tweakables.h"
-//include "gb/vars.h"
 
 export struct plinfo {     /* planetary stockpiles */
   unsigned short fuel;     /* fuel for powering things */

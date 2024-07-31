@@ -13,7 +13,6 @@ import std.compat;
 #include "gb/max.h"
 #include "gb/place.h"
 #include "gb/races.h"
-#include "gb/vars.h"
 
 module commands;
 
@@ -280,7 +279,7 @@ static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   }
 
   g.out << std::format("\nAnalysis of /{}/{}:\n", stars[Starnum].name,
-                                stars[Starnum].pnames[Planetnum]);
+                       stars[Starnum].pnames[Planetnum]);
   sprintf(buf, "%s %d", (mode == Mode::top_five ? "Highest" : "Lowest"), CARE);
   switch (sector_type) {
     case -1:
@@ -332,8 +331,8 @@ static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   PrintTop(g, mPopn, "^Popn");
 
   g.out << "\n";
-  g.out << std::format("{:>2} {:>3} {:>7} {:>6} {:>5} {:>5} {:>5} {:>2}", "Pl", "sec", "popn", "troops",
-          "a.eff", "a.mob", "res", "x");
+  g.out << std::format("{:>2} {:>3} {:>7} {:>6} {:>5} {:>5} {:>5} {:>2}", "Pl",
+                       "sec", "popn", "troops", "a.eff", "a.mob", "res", "x");
 
   for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
     sprintf(buf, "%4c", SectTypes[i]);

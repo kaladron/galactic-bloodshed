@@ -10,7 +10,6 @@ import std.compat;
 #include "gb/files_shl.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
-#include "gb/vars.h"
 
 void Place::getplace2(GameObj& g, std::string_view string,
                       const bool ignoreexpl) {

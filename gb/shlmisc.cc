@@ -18,7 +18,6 @@ import std.compat;
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 bool authorized(const governor_t Governor, const Ship &ship) {
   return (!Governor || ship.governor == Governor);

@@ -20,7 +20,6 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static char buff[128], bufr[128], bufd[128], bufc[128], bufx[128], bufm[128];
 

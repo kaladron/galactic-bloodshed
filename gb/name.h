@@ -5,8 +5,6 @@
 #ifndef NAME_H
 #define NAME_H
 
-#include "gb/vars.h"
-
 void personal(const command_t &, GameObj &);
 void bless(const command_t &, GameObj &);
 void insurgency(const command_t &, GameObj &);

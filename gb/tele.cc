@@ -23,7 +23,6 @@ import std.compat;
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 /**
  * \brief Purges the News files.
@@ -68,7 +67,7 @@ void post(std::string msg, int type) {
   }
 
   // look for special symbols
-  for (auto& p : msg) {
+  for (auto &p : msg) {
     switch (p) {
       case ';':
         p = '\n';

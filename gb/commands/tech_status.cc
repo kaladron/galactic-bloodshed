@@ -13,7 +13,6 @@ import std.compat;
 #include "gb/place.h"
 #include "gb/power.h"
 #include "gb/tech.h"
-#include "gb/vars.h"
 
 module commands;
 

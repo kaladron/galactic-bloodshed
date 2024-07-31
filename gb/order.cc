@@ -19,7 +19,6 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/shootblast.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static std::string prin_aimed_at(const Ship &);
 static void mk_expl_aimed_at(player_t, governor_t, Ship *);

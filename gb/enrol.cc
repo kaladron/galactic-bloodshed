@@ -21,7 +21,6 @@ import gblib;
 #include "gb/ships.h"
 #include "gb/sql/sql.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 struct stype {
   char here;

@@ -7,15 +7,14 @@
 import gblib;
 import std.compat;
 
+#include "gb/creator/makeplanet.h"
+
 #include <stdlib.h>
 #include <strings.h>
-
-#include "gb/creator/makeplanet.h"
 
 #include "gb/creator/makestar.h"
 #include "gb/files_shl.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 /*             @   o   O   #   ~   .   (   -    */
 static const int xmin[] = {15, 2, 4, 4, 26, 12, 12, 12};

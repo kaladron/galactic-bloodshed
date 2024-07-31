@@ -15,7 +15,6 @@ import std.compat;
 #include "gb/files_shl.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
-#include "gb/vars.h"
 
 module commands;
 
@@ -58,8 +57,7 @@ void examine(const command_t &argv, GameObj &g) {
 
   /* look through ship data file */
   for (int t = 0; t <= ship->type; t++)
-    while (fgetc(fd) != '~')
-      ;
+    while (fgetc(fd) != '~');
 
   /* look through ship data file */
   sprintf(buf, "\n");

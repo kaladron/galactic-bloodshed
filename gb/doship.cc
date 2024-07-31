@@ -30,7 +30,6 @@ import std.compat;
 #include "gb/shootblast.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static constexpr double ap_planet_factor(const Planet &);
 static double crew_factor(Ship *);

@@ -25,7 +25,6 @@ import std.compat;
 #include "gb/shootblast.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static void autoload_at_planet(int, Ship *, Planet *, Sector &, int *,
                                double *);
@@ -737,8 +736,7 @@ void build(const command_t &argv, GameObj &g) {
       /* look through ship description file */
       sprintf(buf, "\n");
       for (j = 0; j <= i; j++)
-        while (fgetc(fd) != '~')
-          ;
+        while (fgetc(fd) != '~');
       /* Give description */
       while ((c = fgetc(fd)) != '~') {
         sprintf(temp, "%c", c);
@@ -1286,8 +1284,7 @@ static void create_ship_by_planet(int Playernum, int Governor, const Race &race,
   newship.pnumorbits = pnum;
   newship.docked = 1;
   planet.info[Playernum - 1].resource -= newship.build_cost;
-  while ((shipno = getdeadship()) == 0)
-    ;
+  while ((shipno = getdeadship()) == 0);
   if (shipno == -1) shipno = Numships() + 1;
   newship.number = shipno;
   newship.owner = Playernum;
@@ -1321,8 +1318,7 @@ static void create_ship_by_ship(int Playernum, int Governor, const Race &race,
                                 Ship *builder) {
   int shipno;
 
-  while ((shipno = getdeadship()) == 0)
-    ;
+  while ((shipno = getdeadship()) == 0);
   if (shipno == -1) shipno = Numships() + 1;
   newship->number = shipno;
   newship->owner = Playernum;
@@ -1559,8 +1555,7 @@ void sell(const command_t &argv, GameObj &g) {
   c.star_from = snum;
   c.planet_from = pnum;
 
-  while ((commodno = getdeadcommod()) == 0)
-    ;
+  while ((commodno = getdeadcommod()) == 0);
 
   if (commodno == -1) commodno = g.db.Numcommods() + 1;
   sprintf(buf, "Lot #%d - %d units of %s.\n", commodno, amount,

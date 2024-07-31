@@ -19,7 +19,6 @@ import std.compat;
 #include "gb/shootblast.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */

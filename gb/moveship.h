@@ -6,7 +6,6 @@
 #define MOVESHIP_H
 
 #include "gb/ships.h"
-#include "gb/vars.h"
 
 void moveship(Ship *, int, int, int);
 void msg_OOF(Ship *);

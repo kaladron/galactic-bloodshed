@@ -5,8 +5,6 @@
 #ifndef MAKEUNIV_H
 #define MAKEUNIV_H
 
-#include "gb/vars.h"
-
 void place_star(Star &);
 
 extern int autoname_plan;

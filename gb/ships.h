@@ -5,8 +5,6 @@
 #ifndef SHIPS_H
 #define SHIPS_H
 
-#include "gb/vars.h"
-
 enum guntype_t { GTYPE_NONE, GTYPE_LIGHT, GTYPE_MEDIUM, GTYPE_HEAVY };
 
 inline constexpr int PRIMARY = 1;

@@ -7,7 +7,6 @@
 
 #include "gb/races.h"
 #include "gb/ships.h"
-#include "gb/vars.h"
 
 bool authorized(governor_t, const Ship &);
 shipnum_t start_shiplist(GameObj &, const std::string_view);

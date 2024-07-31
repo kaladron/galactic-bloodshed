@@ -26,7 +26,6 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 #ifdef MARKET
 static constexpr void maintain(Race &r, Race::gov &governor,
@@ -58,7 +57,7 @@ void do_turn(Db &db, int update) {
     int des;
     int fuel;
     money_t money;
-  } * victory;
+  } *victory;
 
   /* make all 0 for first iteration of doplanet */
   if (update) {
@@ -373,7 +372,7 @@ void do_turn(Db &db, int update) {
           victory[j].fuel += (int)planets[star][i]->info[j].fuel;
         }
       } /* end of planet searchings */
-    }   /* end of star searchings */
+    } /* end of star searchings */
 
     for (shipnum_t i = 1; i <= Num_ships; i++) {
       if (!ships[i]->alive) continue;

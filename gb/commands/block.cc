@@ -13,7 +13,6 @@ import std.compat;
 #include "gb/prof.h"
 #include "gb/races.h"
 #include "gb/shlmisc.h"
-#include "gb/vars.h"
 
 module commands;
 

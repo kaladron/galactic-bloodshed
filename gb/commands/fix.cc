@@ -14,7 +14,6 @@ import std.compat;
 #include "gb/files_shl.h"
 #include "gb/ships.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 module commands;
 

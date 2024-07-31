@@ -22,7 +22,6 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 /* amount to move for each dir level. I arrived on these #'s only after
         hours of dilligent tweaking */

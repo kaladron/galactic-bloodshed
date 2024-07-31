@@ -12,17 +12,16 @@
 import gblib;
 import std.compat;
 
+#include "gb/creator/makestar.h"
+
 #include <stdio.h>
 #include <strings.h>
-
-#include "gb/creator/makestar.h"
 
 #include "gb/creator/makeplanet.h"
 #include "gb/creator/makeuniv.h"
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static const double PLANET_DIST_MAX = 1900.0;
 static const double PLANET_DIST_MIN = 100.0;

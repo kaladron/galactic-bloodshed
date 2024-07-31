@@ -16,7 +16,6 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/shootblast.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static int round_perc(int, const Race &, int);
 static char *Estimate_f(double, const Race &, int);

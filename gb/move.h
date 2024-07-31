@@ -6,7 +6,6 @@
 #define MOVE_H
 
 #include "gb/races.h"
-#include "gb/vars.h"
 
 void arm(const command_t &, GameObj &);
 void move_popn(const command_t &, GameObj &);

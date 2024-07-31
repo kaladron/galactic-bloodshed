@@ -6,7 +6,6 @@
 #define LOAD_H
 
 #include "gb/ships.h"
-#include "gb/vars.h"
 
 void load(const command_t &, GameObj &);
 void jettison(const command_t &, GameObj &);

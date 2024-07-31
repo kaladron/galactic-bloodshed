@@ -23,7 +23,6 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 module commands;
 

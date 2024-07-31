@@ -20,7 +20,6 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static char plan_buf[1024];
 

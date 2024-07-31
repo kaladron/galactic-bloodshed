@@ -19,7 +19,6 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static void order_berserker(Ship &);
 static void order_VN(Ship &);

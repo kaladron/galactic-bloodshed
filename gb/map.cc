@@ -16,7 +16,6 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static void show_map(const player_t, const governor_t, const starnum_t,
                      const planetnum_t, const Planet &);

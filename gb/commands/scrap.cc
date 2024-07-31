@@ -17,7 +17,6 @@ import std.compat;
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
-#include "gb/vars.h"
 
 module commands;
 

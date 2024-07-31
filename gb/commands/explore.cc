@@ -14,7 +14,6 @@ import std.compat;
 #include "gb/place.h"
 #include "gb/races.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 module commands;
 

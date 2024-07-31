@@ -5,8 +5,6 @@
 #ifndef DOSECTOR_H
 #define DOSECTOR_H
 
-#include "gb/vars.h"
-
 void produce(const Star &, const Planet &, Sector &);
 void spread(const Planet &, Sector &, SectorMap &);
 void explore(const Planet &, Sector &, int, int, int);

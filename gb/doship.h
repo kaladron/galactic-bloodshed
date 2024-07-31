@@ -6,7 +6,6 @@
 #define DOSHIP_H
 
 #include "gb/ships.h"
-#include "gb/vars.h"
 
 void doship(Ship *, int);
 void domass(Ship *);

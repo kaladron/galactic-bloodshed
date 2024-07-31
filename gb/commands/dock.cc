@@ -23,7 +23,6 @@ import std.compat;
 #include "gb/shlmisc.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 module commands;
 

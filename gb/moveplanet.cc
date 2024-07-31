@@ -14,7 +14,6 @@ import std.compat;
 #include "gb/doturn.h"
 #include "gb/ships.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 void moveplanet(int starnum, Planet &planet, int planetnum) {
   double dist;

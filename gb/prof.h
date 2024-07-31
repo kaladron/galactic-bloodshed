@@ -6,7 +6,6 @@
 #define PROF_H
 
 #include "gb/races.h"
-#include "gb/vars.h"
 
 void whois(const command_t &, GameObj &);
 void profile(const command_t &, GameObj &);

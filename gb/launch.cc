@@ -18,7 +18,6 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/shlmisc.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 void launch(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;

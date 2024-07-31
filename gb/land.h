@@ -6,7 +6,6 @@
 #define LAND_H
 
 #include "gb/ships.h"
-#include "gb/vars.h"
 
 void land(const command_t &, GameObj &);
 int docked(Ship *);

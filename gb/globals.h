@@ -13,7 +13,6 @@
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
-#include "gb/vars.h"
 
 struct power Power[MAXPLAYERS];
 struct block Blocks[MAXPLAYERS];

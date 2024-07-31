@@ -27,7 +27,6 @@ import std.compat;
 #include "gb/ships.h"
 #include "gb/sql/sql.h"
 #include "gb/tweakables.h"
-#include "gb/vars.h"
 
 static int commoddata, racedata, shdata, stdata;
 

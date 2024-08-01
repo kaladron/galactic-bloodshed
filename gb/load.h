@@ -7,11 +7,6 @@
 
 #include "gb/ships.h"
 
-void load(const command_t &, GameObj &);
-void jettison(const command_t &, GameObj &);
-void dump(const command_t &, GameObj &);
-void transfer(const command_t &, GameObj &);
-void mount(const command_t &, GameObj &);
 void use_fuel(Ship &, double);
 void use_destruct(Ship &, int);
 void use_resource(Ship &, int);

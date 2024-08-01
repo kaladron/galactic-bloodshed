@@ -102,6 +102,7 @@ target_sources(
           commands/dissolve.cc
           commands/distance.cc
           commands/dock.cc
+          commands/dump.cc
           commands/enslave.cc
           commands/examine.cc
           commands/explore.cc
@@ -110,7 +111,10 @@ target_sources(
           commands/grant.cc
           commands/highlight.cc
           commands/invite.cc
+          commands/load.cc
+          commands/jettison.cc
           commands/mobilize.cc
+          commands/mount.cc
           commands/orbit.cc
           commands/pledge.cc
           commands/power.cc
@@ -120,6 +124,7 @@ target_sources(
           commands/tax.cc
           commands/tech_status.cc
           commands/technology.cc
+          commands/transfer.cc
           commands/repair.cc
           commands/rst.cc
           commands/scrap.cc

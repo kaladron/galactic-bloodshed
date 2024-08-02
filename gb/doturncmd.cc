@@ -13,7 +13,6 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/build.h"
 #include "gb/doplanet.h"
 #include "gb/doship.h"
 #include "gb/doturn.h"
@@ -23,7 +22,6 @@ import std.compat;
 #include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
-#include "gb/shlmisc.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
 
@@ -47,7 +45,6 @@ static void make_discoveries(Race &);
 static void output_ground_attacks();
 
 void do_turn(Db &db, int update) {
-  double dist;
   struct victstruct {
     int numsects;
     int shipcost;

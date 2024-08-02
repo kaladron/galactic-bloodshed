@@ -25,7 +25,6 @@ import std.compat;
 
 #include "gb/buffers.h"
 #include "gb/build.h"
-#include "gb/config.h"
 #include "gb/cs.h"
 #include "gb/doturncmd.h"
 #include "gb/files.h"

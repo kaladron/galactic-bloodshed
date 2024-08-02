@@ -5,7 +5,6 @@
 #ifndef SHOOTBLAST_H
 #define SHOOTBLAST_H
 
-#include "gb/config.h"
 #include "gb/races.h"
 #include "gb/ships.h"
 

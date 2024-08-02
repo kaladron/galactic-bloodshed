@@ -13,6 +13,7 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
+#include "gb/build.h"
 #include "gb/doplanet.h"
 #include "gb/doship.h"
 #include "gb/doturn.h"
@@ -139,6 +140,7 @@ void do_turn(Db &db, int update) {
           (races[c.bidder - 1].governor[c.bidder_gov].money >= c.bid)) {
         races[c.bidder - 1].governor[c.bidder_gov].money -= c.bid;
         races[c.owner - 1].governor[c.governor].money += c.bid;
+        double dist;
         int cost = shipping_cost(c.star_to, c.star_from, &dist, c.bid);
         races[c.bidder - 1].governor[c.bidder_gov].cost_market += c.bid + cost;
         races[c.owner - 1].governor[c.governor].profit_market += c.bid;

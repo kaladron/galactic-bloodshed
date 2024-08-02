@@ -57,16 +57,14 @@ find_package(SQLite3 REQUIRED)
 
 set(COMMON_FILES files_rw.cc files_shl.cc sql/sql.cc)
 
-add_executable(
-  makeuniv creator/makeplanet.cc creator/makestar.cc creator/makeuniv.cc
-           creator/namegen.cc sectormap.cc ${COMMON_FILES})
+add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
+                        creator/makeuniv.cc creator/namegen.cc ${COMMON_FILES})
 target_link_libraries(makeuniv PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
-add_executable(enrol enrol.cc sectormap.cc ${COMMON_FILES})
+add_executable(enrol enrol.cc ${COMMON_FILES})
 target_link_libraries(enrol PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
-add_executable(racegen GB_racegen.cc enroll.cc racegen.cc sectormap.cc
-                       ${COMMON_FILES})
+add_executable(racegen GB_racegen.cc enroll.cc racegen.cc ${COMMON_FILES})
 target_link_libraries(racegen PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
 add_library(gblib)

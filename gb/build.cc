@@ -1577,8 +1577,6 @@ void bid(const command_t &argv, GameObj &g) {
   int i;
   int item;
   int lot;
-  int shipping;
-  double dist;
   double rate;
   int snum;
   int pnum;
@@ -1599,11 +1597,11 @@ void bid(const command_t &argv, GameObj &g) {
                   stars[c.star_to].pnames[c.planet_to]);
         else
           temp[0] = '\0';
-        sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
+
+        auto [cost, dist] = shipping_cost(c.star_from, g.snum, c.bid);
+        sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8ld %10s\n", i,
                 c.deliver ? '*' : ' ', c.amount, commod_name[c.type], c.owner,
-                c.bidder, c.bid, rate,
-                shipping_cost((int)c.star_from, (int)g.snum, &dist, (int)c.bid),
-                temp);
+                c.bidder, c.bid, rate, cost, temp);
         notify(Playernum, Governor, buf);
       }
     }
@@ -1639,11 +1637,10 @@ void bid(const command_t &argv, GameObj &g) {
                   stars[c.star_to].pnames[c.planet_to]);
         else
           temp[0] = '\0';
-        sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8d %10s\n", i,
+        auto [cost, dist] = shipping_cost(c.star_from, g.snum, c.bid);
+        sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8ld %10s\n", i,
                 c.deliver ? '*' : ' ', c.amount, commod_name[c.type], c.owner,
-                c.bidder, c.bid, rate,
-                shipping_cost((int)c.star_from, (int)g.snum, &dist, (int)c.bid),
-                temp);
+                c.bidder, c.bid, rate, cost, temp);
         notify(Playernum, Governor, buf);
       }
     }
@@ -1725,11 +1722,11 @@ void bid(const command_t &argv, GameObj &g) {
     c.bidder_gov = Governor;
     c.star_to = snum;
     c.planet_to = pnum;
-    shipping = shipping_cost(c.star_to, c.star_from, &dist, (int)c.bid);
+    auto [shipping, dist] = shipping_cost(c.star_to, c.star_from, c.bid);
 
     sprintf(
         buf,
-        "There will be an additional %d charged to you for shipping costs.\n",
+        "There will be an additional %ld charged to you for shipping costs.\n",
         shipping);
     notify(Playernum, Governor, buf);
     putcommod(c, lot);
@@ -1737,20 +1734,18 @@ void bid(const command_t &argv, GameObj &g) {
   }
 }
 
-int shipping_cost(int to, int from, double *dist, int value) {
-  double factor;
-  double fcost;
-  int junk;
+std::tuple<money_t, double> shipping_cost(const starnum_t to,
+                                          const starnum_t from,
+                                          const money_t value) {
+  double dist = sqrt(Distsq(stars[to].xpos, stars[to].ypos, stars[from].xpos,
+                            stars[from].ypos));
 
-  *dist = sqrt(Distsq(stars[to].xpos, stars[to].ypos, stars[from].xpos,
-                      stars[from].ypos));
-
-  junk = (int)(*dist / 10000.0);
+  int junk = (int)(dist / 10000.0);
   junk *= 10000;
 
-  factor = 1.0 - exp(-(double)junk / MERCHANT_LENGTH);
+  double factor = 1.0 - exp(-(double)junk / MERCHANT_LENGTH);
 
-  fcost = factor * (double)value;
-  return (int)fcost;
+  money_t fcost = std::round(factor * (double)value);
+  return {fcost, dist};
 }
 #endif

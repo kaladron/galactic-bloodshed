@@ -41,36 +41,4 @@
 #define TECH_WORMHOLE 999.0
 #define TECH_CRYSTAL 50.0
 
-struct block {
-  player_t Playernum;
-  char name[RNAMESIZE];
-  char motto[MOTTOSIZE];
-  uint64_t invite;
-  uint64_t pledge;
-  uint64_t atwar;
-  uint64_t allied;
-  unsigned short next;
-  unsigned short systems_owned;
-  unsigned long VPs;
-  unsigned long money;
-};
-
-struct power_blocks {
-  time_t time;
-  unsigned long members[MAXPLAYERS];
-  unsigned long troops[MAXPLAYERS];   /* total troops */
-  unsigned long popn[MAXPLAYERS];     /* total population */
-  unsigned long resource[MAXPLAYERS]; /* total resource in stock */
-  unsigned long fuel[MAXPLAYERS];
-  unsigned long destruct[MAXPLAYERS];     /* total dest in stock */
-  unsigned short ships_owned[MAXPLAYERS]; /* # of ships owned */
-  unsigned short systems_owned[MAXPLAYERS];
-  unsigned long sectors_owned[MAXPLAYERS];
-  unsigned long money[MAXPLAYERS];
-  unsigned short VPs[MAXPLAYERS];
-};
-
-extern struct block Blocks[MAXPLAYERS];
-extern struct power_blocks Power_blocks;
-
 #endif  // RACES_H

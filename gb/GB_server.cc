@@ -39,7 +39,6 @@ import std.compat;
 #include "gb/move.h"
 #include "gb/name.h"
 #include "gb/order.h"
-#include "gb/power.h"
 #include "gb/prof.h"
 #include "gb/races.h"
 #include "gb/ships.h"

@@ -20,7 +20,6 @@ import std.compat;
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/moveplanet.h"
-#include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/tele.h"

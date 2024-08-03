@@ -21,7 +21,6 @@ import std.compat;
 #include "gb/files.h"
 #include "gb/files_shl.h"
 #include "gb/globals.h"
-#include "gb/power.h"
 #include "gb/races.h"
 #include "gb/sql/sql.h"
 #include "gb/tweakables.h"

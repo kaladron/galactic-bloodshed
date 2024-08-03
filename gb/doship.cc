@@ -23,7 +23,6 @@ import std.compat;
 #include "gb/load.h"
 #include "gb/max.h"
 #include "gb/moveship.h"
-#include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/shlmisc.h"

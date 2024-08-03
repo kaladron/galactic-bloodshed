@@ -43,10 +43,10 @@ void clr_shipfree();
 void clr_commodfree();
 void makeshipdead(int);
 void makecommoddead(int);
-void putpower(struct power[MAXPLAYERS]);
-void getpower(struct power[MAXPLAYERS]);
-void Putblock(struct block[MAXPLAYERS]);
-void Getblock(struct block[MAXPLAYERS]);
+void putpower(power[MAXPLAYERS]);
+void getpower(power[MAXPLAYERS]);
+void Putblock(block[MAXPLAYERS]);
+void Getblock(block[MAXPLAYERS]);
 void open_files();
 void close_files();
 

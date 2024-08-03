@@ -25,7 +25,6 @@ import std.compat;
 #include "gb/max.h"
 #include "gb/move.h"
 #include "gb/moveship.h"
-#include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/shootblast.h"

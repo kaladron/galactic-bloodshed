@@ -42,3 +42,7 @@ export unsigned long newslength[4];
 
 /* number of movement segments (global variable) */
 export unsigned long segments;
+
+export power Power[MAXPLAYERS];
+export block Blocks[MAXPLAYERS];
+export power_blocks Power_blocks;

@@ -4,10 +4,11 @@ import gblib;
 
 namespace GB::commands {
 export void analysis(const command_t &, GameObj &);
-}
+export void block(const command_t &, GameObj &);
+export void power(const command_t &, GameObj &);
+}  // namespace GB::commands
 export void announce(const command_t &, GameObj &);
 export void autoreport(const command_t &, GameObj &);
-export void block(const command_t &, GameObj &);
 export void capital(const command_t &, GameObj &);
 export void capture(const command_t &, GameObj &);
 export void center(const command_t &, GameObj &);
@@ -31,7 +32,6 @@ export void mobilize(const command_t &, GameObj &);
 export void mount(const command_t &, GameObj &);
 export void orbit(const command_t &, GameObj &);
 export void pledge(const command_t &, GameObj &);
-export void power(const command_t &, GameObj &);
 export void production(const command_t &, GameObj &);
 export void relation(const command_t &, GameObj &);
 export void repair(const command_t &, GameObj &);

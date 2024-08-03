@@ -155,7 +155,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"bid", bid},
 #endif
     {"bless", bless},
-    {"block", block},
+    {"block", GB::commands::block},
     {"bombard", bombard},  // TODO(jeffbailey): !guest
     {"broadcast", announce},
     {"build", build},
@@ -213,7 +213,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"pay", pay},  // TODO(jeffbailey): !guest
     {"personal", personal},
     {"pledge", pledge},
-    {"power", power},
+    {"power", GB::commands::power},
     {"profile", profile},
     {"post", send_message},
     {"production", production},

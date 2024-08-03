@@ -145,7 +145,7 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     // NOLINTEND
     {"'", announce},
     {"allocate", allocateAPs},
-    {"analysis", analysis},
+    {"analysis", GB::commands::analysis},
     {"announce", announce},
     {"appoint", governors},
     {"assault", dock},

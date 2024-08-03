@@ -49,110 +49,9 @@ void PrintTop(GameObj &g, const std::array<struct anal_sect, CARE> arr,
   }
   g.out << "\n";
 }
-}  // namespace
 
-static void do_analysis(GameObj &, int, Mode, int, starnum_t, planetnum_t);
-
-void analysis(const command_t &argv, GameObj &g) {
-  int sector_type = -1; /* -1 does analysis on all types */
-  int do_player = -1;
-  auto mode = Mode::top_five;
-
-  auto where = Place{g.level, g.snum, g.pnum};
-
-  bool skipped_first = false;
-
-  for (const auto &arg : argv) {
-    // Skip the name of the command
-    if (!skipped_first) {
-      skipped_first = true;
-      continue;
-    }
-
-    // Top or bottom five
-    if (arg == "-") {
-      mode = Mode::bottom_five;
-      continue;
-    }
-
-    // Sector type
-    if (arg.length() == 1) {
-      switch (arg[0]) {
-        case CHAR_SEA:
-          sector_type = SectorType::SEC_SEA;
-          break;
-        case CHAR_LAND:
-          sector_type = SectorType::SEC_LAND;
-          break;
-        case CHAR_MOUNT:
-          sector_type = SectorType::SEC_MOUNT;
-          break;
-        case CHAR_GAS:
-          sector_type = SectorType::SEC_GAS;
-          break;
-        case CHAR_ICE:
-          sector_type = SectorType::SEC_ICE;
-          break;
-        case CHAR_FOREST:
-          sector_type = SectorType::SEC_FOREST;
-          break;
-          /*  Must use 'd' to do an analysis on */
-          /*  desert sectors to avoid confusion */
-        /*  with the '-' for the mode type    */
-        case 'd':
-          sector_type = SectorType::SEC_DESERT;
-          break;
-        case CHAR_PLATED:
-          sector_type = SectorType::SEC_PLATED;
-          break;
-        case CHAR_WASTED:
-          sector_type = SectorType::SEC_WASTED;
-          break;
-      }
-      if (sector_type != -1) {
-        continue;
-      }
-    }
-
-    // Player number
-    if (isdigit(arg[0])) {
-      do_player = std::stoi(arg);
-      if (do_player > Num_races) {
-        g.out << "No such player #.\n";
-        return;
-      }
-    }
-
-    // Scope
-    Place maybe_where{g, arg};
-    if (!maybe_where.err) {
-      where = maybe_where;
-    }
-  }
-
-  if (where.err) {
-    g.out << "Invalid scope.\n";
-    return;
-  }
-
-  switch (where.level) {
-    case ScopeLevel::LEVEL_UNIV:
-      [[fallthrough]];
-    case ScopeLevel::LEVEL_SHIP:
-      g.out << "You can only analyze planets.\n";
-      break;
-    case ScopeLevel::LEVEL_PLAN:
-      do_analysis(g, do_player, mode, sector_type, where.snum, where.pnum);
-      break;
-    case ScopeLevel::LEVEL_STAR:
-      for (planetnum_t pnum = 0; pnum < stars[where.snum].numplanets; pnum++)
-        do_analysis(g, do_player, mode, sector_type, where.snum, pnum);
-      break;
-  }
-}
-
-static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
-                        starnum_t Starnum, planetnum_t Planetnum) {
+void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
+                 starnum_t Starnum, planetnum_t Planetnum) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   std::array<struct anal_sect, CARE> Res;
@@ -366,3 +265,105 @@ static void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   }
   g.out << "\n";
 }
+
+}  // namespace
+
+namespace GB::commands {
+void analysis(const command_t &argv, GameObj &g) {
+  int sector_type = -1; /* -1 does analysis on all types */
+  int do_player = -1;
+  auto mode = Mode::top_five;
+
+  auto where = Place{g.level, g.snum, g.pnum};
+
+  bool skipped_first = false;
+
+  for (const auto &arg : argv) {
+    // Skip the name of the command
+    if (!skipped_first) {
+      skipped_first = true;
+      continue;
+    }
+
+    // Top or bottom five
+    if (arg == "-") {
+      mode = Mode::bottom_five;
+      continue;
+    }
+
+    // Sector type
+    if (arg.length() == 1) {
+      switch (arg[0]) {
+        case CHAR_SEA:
+          sector_type = SectorType::SEC_SEA;
+          break;
+        case CHAR_LAND:
+          sector_type = SectorType::SEC_LAND;
+          break;
+        case CHAR_MOUNT:
+          sector_type = SectorType::SEC_MOUNT;
+          break;
+        case CHAR_GAS:
+          sector_type = SectorType::SEC_GAS;
+          break;
+        case CHAR_ICE:
+          sector_type = SectorType::SEC_ICE;
+          break;
+        case CHAR_FOREST:
+          sector_type = SectorType::SEC_FOREST;
+          break;
+          /*  Must use 'd' to do an analysis on */
+          /*  desert sectors to avoid confusion */
+        /*  with the '-' for the mode type    */
+        case 'd':
+          sector_type = SectorType::SEC_DESERT;
+          break;
+        case CHAR_PLATED:
+          sector_type = SectorType::SEC_PLATED;
+          break;
+        case CHAR_WASTED:
+          sector_type = SectorType::SEC_WASTED;
+          break;
+      }
+      if (sector_type != -1) {
+        continue;
+      }
+    }
+
+    // Player number
+    if (isdigit(arg[0])) {
+      do_player = std::stoi(arg);
+      if (do_player > Num_races) {
+        g.out << "No such player #.\n";
+        return;
+      }
+    }
+
+    // Scope
+    Place maybe_where{g, arg};
+    if (!maybe_where.err) {
+      where = maybe_where;
+    }
+  }
+
+  if (where.err) {
+    g.out << "Invalid scope.\n";
+    return;
+  }
+
+  switch (where.level) {
+    case ScopeLevel::LEVEL_UNIV:
+      [[fallthrough]];
+    case ScopeLevel::LEVEL_SHIP:
+      g.out << "You can only analyze planets.\n";
+      break;
+    case ScopeLevel::LEVEL_PLAN:
+      do_analysis(g, do_player, mode, sector_type, where.snum, where.pnum);
+      break;
+    case ScopeLevel::LEVEL_STAR:
+      for (planetnum_t pnum = 0; pnum < stars[where.snum].numplanets; pnum++)
+        do_analysis(g, do_player, mode, sector_type, where.snum, pnum);
+      break;
+  }
+}
+}  // namespace GB::commands

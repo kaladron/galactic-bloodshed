@@ -2,7 +2,9 @@ export module commands;
 
 import gblib;
 
+namespace GB::commands {
 export void analysis(const command_t &, GameObj &);
+}
 export void announce(const command_t &, GameObj &);
 export void autoreport(const command_t &, GameObj &);
 export void block(const command_t &, GameObj &);

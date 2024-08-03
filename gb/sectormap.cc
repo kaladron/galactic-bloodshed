@@ -16,7 +16,7 @@ std::vector<std::reference_wrapper<Sector>> SectorMap::shuffle() {
 
   std::vector<std::reference_wrapper<Sector>> shuffled(vec_.begin(),
                                                        vec_.end());
-  std::shuffle(shuffled.begin(), shuffled.end(), g);
+  std::ranges::shuffle(shuffled, g);
 
   return shuffled;
 }

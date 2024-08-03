@@ -58,6 +58,7 @@ void prepare_output_line(const Race &race, const Race &r, player_t i,
 }
 }  // namespace
 
+namespace GB::commands {
 void power(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -108,3 +109,4 @@ void power(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
   }
 }
+}  // namespace GB::commands

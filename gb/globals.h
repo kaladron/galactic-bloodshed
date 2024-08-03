@@ -10,13 +10,8 @@
 
 #include "gb/doturn.h"
 #include "gb/map.h"
-#include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
-
-struct power Power[MAXPLAYERS];
-struct block Blocks[MAXPLAYERS];
-struct power_blocks Power_blocks;
 
 char buf[2047];
 char long_buf[1024], short_buf[256];

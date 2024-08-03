@@ -91,3 +91,48 @@ export class Race {
     time_t login; /* last login for this governor */
   } governor[MAXGOVERNORS + 1];
 };
+
+// TODO(jeffbailey): Should the items after this be in their own fragment?
+
+export struct power {
+  population_t troops; /* total troops */
+  population_t popn;   /* total population */
+  resource_t resource; /* total resource in stock */
+  unsigned long fuel;
+  unsigned long destruct;     /* total dest in stock */
+  unsigned short ships_owned; /* # of ships owned */
+  unsigned short planets_owned;
+  unsigned long sectors_owned;
+  money_t money;
+  unsigned long sum_mob; /* total mobilization */
+  unsigned long sum_eff; /* total efficiency */
+};
+
+export struct block {
+  player_t Playernum;
+  char name[RNAMESIZE];
+  char motto[MOTTOSIZE];
+  uint64_t invite;
+  uint64_t pledge;
+  uint64_t atwar;
+  uint64_t allied;
+  unsigned short next;
+  unsigned short systems_owned;
+  unsigned long VPs;
+  unsigned long money;
+};
+
+export struct power_blocks {
+  time_t time;
+  unsigned long members[MAXPLAYERS];
+  unsigned long troops[MAXPLAYERS];   /* total troops */
+  unsigned long popn[MAXPLAYERS];     /* total population */
+  unsigned long resource[MAXPLAYERS]; /* total resource in stock */
+  unsigned long fuel[MAXPLAYERS];
+  unsigned long destruct[MAXPLAYERS];     /* total dest in stock */
+  unsigned short ships_owned[MAXPLAYERS]; /* # of ships owned */
+  unsigned short systems_owned[MAXPLAYERS];
+  unsigned long sectors_owned[MAXPLAYERS];
+  unsigned long money[MAXPLAYERS];
+  unsigned short VPs[MAXPLAYERS];
+};

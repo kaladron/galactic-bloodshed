@@ -22,7 +22,6 @@ import std.compat;
 
 #include "gb/files.h"
 #include "gb/files_rw.h"
-#include "gb/power.h"
 #include "gb/races.h"
 #include "gb/ships.h"
 #include "gb/sql/sql.h"
@@ -1713,7 +1712,7 @@ void makecommoddead(int commodnum) {
   close_file(fd);
 }
 
-void putpower(struct power p[MAXPLAYERS]) {
+void putpower(power p[MAXPLAYERS]) {
   sqlite3_stmt *stmt;
   const char *tail;
   const char *sql =
@@ -1751,7 +1750,7 @@ void putpower(struct power p[MAXPLAYERS]) {
   }
 }
 
-void getpower(struct power p[MAXPLAYERS]) {
+void getpower(power p[MAXPLAYERS]) {
   const char *tail;
   sqlite3_stmt *stmt;
   const char *sql =
@@ -1779,7 +1778,7 @@ void getpower(struct power p[MAXPLAYERS]) {
   sqlite3_reset(stmt);
 }
 
-void Putblock(struct block b[MAXPLAYERS]) {
+void Putblock(block b[MAXPLAYERS]) {
   int block_fd;
 
   if ((block_fd = open(BLOCKDATAFL, O_RDWR, 0777)) < 0) {
@@ -1794,7 +1793,7 @@ void Putblock(struct block b[MAXPLAYERS]) {
   close_file(block_fd);
 }
 
-void Getblock(struct block b[MAXPLAYERS]) {
+void Getblock(block b[MAXPLAYERS]) {
   int block_fd;
 
   if ((block_fd = open(BLOCKDATAFL, O_RDONLY, 0777)) < 0) {

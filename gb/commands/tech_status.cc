@@ -11,7 +11,6 @@ import std.compat;
 #include "gb/buffers.h"
 #include "gb/files_shl.h"
 #include "gb/place.h"
-#include "gb/power.h"
 #include "gb/tech.h"
 
 module commands;

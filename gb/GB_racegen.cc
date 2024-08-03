@@ -29,14 +29,6 @@ static const PlanetType planet_translate[N_HOME_PLANET_TYPES] = {
     PlanetType::WATER,   PlanetType::MARS,   PlanetType::ICEBALL,
     PlanetType::GASGIANT};
 
-/* this is a dummy routine */
-bool notify(const player_t, const governor_t, const std::string &) {
-  return false;
-}
-
-/* this is a dummy routine */
-void warn(const player_t, const governor_t, const std::string &) {}
-
 void init_enroll() { srandom(getpid()); }
 
 /*

@@ -7,6 +7,7 @@ export import :sector;
 export import :race;
 export import :rand;
 export import :star;
+export import :tele;
 export import :tweakables;
 export import :globals;
 

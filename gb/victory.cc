@@ -4,7 +4,7 @@
 
 module;
 
-import std.compat;
+import std;
 
 module gblib;
 

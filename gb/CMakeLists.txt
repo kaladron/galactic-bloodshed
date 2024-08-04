@@ -75,6 +75,7 @@ target_sources(
          FILES
          gblib.cppm
          gblib-globals.cppm
+         gblib-misc.cppm
          gblib-planet.cppm
          gblib-race.cppm
          utils/gblib-rand.cppm
@@ -83,7 +84,7 @@ target_sources(
          gblib-tele.cppm
          gblib-tweakables.cppm
          gblib-types.cppm
-  PRIVATE utils/rand.cc sectormap.cc star.cc victory.cc)
+  PRIVATE misc.cc utils/rand.cc sectormap.cc star.cc victory.cc)
 
 add_library(commands)
 target_sources(

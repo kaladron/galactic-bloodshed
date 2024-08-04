@@ -7,13 +7,6 @@
 
 #include "gb/ships.h"
 
-void notify_race(const player_t, const std::string &);
-bool notify(const player_t, const governor_t, const std::string &);
-void d_think(const player_t, const governor_t, const std::string &);
-void d_broadcast(const player_t, const governor_t, const std::string &);
-void d_shout(const player_t, const governor_t, const std::string &);
-void d_announce(const player_t, const governor_t, const starnum_t,
-                const std::string &);
 void do_next_thing(Db &);
 void compute_power_blocks();
 void insert_sh_univ(stardata *, Ship *);
@@ -23,12 +16,6 @@ void insert_sh_ship(Ship *, Ship *);
 void remove_sh_star(Ship &);
 void remove_sh_plan(Ship &);
 void remove_sh_ship(Ship &, Ship &);
-void warn_race(const player_t, const std::string &);
-void warn(const player_t, const governor_t, const std::string &);
-void warn_star(const player_t, const starnum_t, const std::string &);
-void notify_star(const player_t, const governor_t, const starnum_t,
-                 const std::string &);
-void adjust_morale(Race &, Race &, int);
 
 extern time_t next_update_time; /* When will next update be... approximately */
 extern time_t

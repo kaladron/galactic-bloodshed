@@ -57,46 +57,8 @@ static std::string start_buf;
 static std::string update_buf;
 static std::string segment_buf;
 
-class DescriptorData : public GameObj {
- public:
-  DescriptorData(int sock, Db &db_) : GameObj{db_} {
-    // TODO(jeffbailey): Pull the fprintf stuff out of this constructor
-    struct sockaddr_in6 addr;
-    socklen_t addr_len = sizeof(addr);
-
-    descriptor = accept(sock, (struct sockaddr *)&addr, &addr_len);
-    // TODO(jeffbailey): The original code didn't error on EINTR or EMFILE, but
-    // also didn't halt processing on an invalid socket.  Need to evaluate the
-    // cases we should handle here properly.
-    if (descriptor <= 0) throw std::runtime_error(std::string{strerror(errno)});
-
-    char addrstr[INET6_ADDRSTRLEN];
-    inet_ntop(AF_INET6, &addr.sin6_addr, addrstr, sizeof(addrstr));
-    // TODO(jeffbailey): There used to be custom access check stuff here.
-    // It should be replaced with TCP wrappers or something similar
-    fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n", addrstr,
-            ntohs(addr.sin6_port), descriptor);
-  }
-
-  int descriptor;
-  bool connected{};
-  ssize_t output_size{};
-  std::deque<std::string> output;
-  std::deque<std::string> input;
-  char *raw_input{};
-  char *raw_input_at{};
-  time_t last_time{};
-  int quota{};
-  bool operator==(const DescriptorData &rhs) const noexcept {
-    return descriptor == rhs.descriptor && player == rhs.player &&
-           governor == rhs.governor;
-  }
-};
-
 static double GetComplexity(const ShipType);
 static void set_signals();
-static void queue_string(DescriptorData &, const std::string &);
-static void add_to_queue(std::deque<std::string> &, const std::string &);
 static void help(const command_t &, GameObj &);
 static void process_command(GameObj &, const command_t &argv);
 static int shovechars(int, Db &);
@@ -113,7 +75,6 @@ static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
 static bool process_output(DescriptorData &);
 static void welcome_user(DescriptorData &);
-static int flush_queue(std::deque<std::string> &, int);
 static void process_commands();
 static bool do_command(DescriptorData &, std::string_view);
 static void goodbye_user(DescriptorData &);
@@ -125,7 +86,6 @@ static void help_user(GameObj &);
 static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
 static void save_command(DescriptorData &, const std::string &);
-static void strstr_to_queue(DescriptorData &);
 static int ShipCompare(const void *, const void *);
 static void SortShips();
 
@@ -133,8 +93,6 @@ static void check_connect(DescriptorData &, std::string_view);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 #define MAX_COMMAND_LEN 512
-
-static std::list<DescriptorData> descriptor_list;
 
 using CommandFunction = void (*)(const command_t &, GameObj &);
 
@@ -510,68 +468,6 @@ int main(int argc, char **argv) {
 
 static void set_signals() { signal(SIGPIPE, SIG_IGN); }
 
-void notify_race(const player_t race, const std::string &message) {
-  if (update_flag) return;
-  for (auto &d : descriptor_list) {
-    if (d.connected && d.player == race) {
-      queue_string(d, message);
-    }
-  }
-}
-
-bool notify(const player_t race, const governor_t gov,
-            const std::string &message) {
-  if (update_flag) return false;
-  for (auto &d : descriptor_list)
-    if (d.connected && d.player == race && d.governor == gov) {
-      strstr_to_queue(d);  // Ensuring anything queued up is flushed out.
-      queue_string(d, message);
-      return true;
-    }
-  return false;
-}
-
-void d_think(const player_t Playernum, const governor_t Governor,
-             const std::string &message) {
-  for (auto &d : descriptor_list) {
-    if (d.connected && d.player == Playernum && d.governor != Governor &&
-        !races[d.player - 1].governor[d.governor].toggle.gag) {
-      queue_string(d, message);
-    }
-  }
-}
-
-void d_broadcast(const player_t Playernum, const governor_t Governor,
-                 const std::string &message) {
-  for (auto &d : descriptor_list) {
-    if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
-        !races[d.player - 1].governor[d.governor].toggle.gag) {
-      queue_string(d, message);
-    }
-  }
-}
-
-void d_shout(const player_t Playernum, const governor_t Governor,
-             const std::string &message) {
-  for (auto &d : descriptor_list) {
-    if (d.connected && !(d.player == Playernum && d.governor == Governor)) {
-      queue_string(d, message);
-    }
-  }
-}
-
-void d_announce(const player_t Playernum, const governor_t Governor,
-                const starnum_t star, const std::string &message) {
-  for (auto &d : descriptor_list) {
-    if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
-        (isset(stars[star].inhabited, d.player) || races[d.player - 1].God) &&
-        d.snum == star &&
-        !races[d.player - 1].governor[d.governor].toggle.gag) {
-      queue_string(d, message);
-    }
-  }
-}
-
 static struct timeval timeval_sub(struct timeval now, struct timeval then) {
   now.tv_sec -= then.tv_sec;
   now.tv_usec -= then.tv_usec;
@@ -755,45 +651,6 @@ static void shutdownsock(DescriptorData &d) {
   shutdown(d.descriptor, 2);
   close(d.descriptor);
   descriptor_list.remove(d);
-}
-
-static void add_to_queue(std::deque<std::string> &q, const std::string &b) {
-  if (b.empty()) return;
-
-  q.emplace_back(b);
-}
-
-static int flush_queue(std::deque<std::string> &q, int n) {
-  int really_flushed = 0;
-
-  const std::string flushed_message = "<Output Flushed>\n";
-  n += flushed_message.size();
-
-  while (n > 0 && !q.empty()) {
-    auto &p = q.front();
-    n -= p.size();
-    really_flushed += p.size();
-    q.pop_front();
-  }
-  q.emplace_back(flushed_message);
-  really_flushed -= flushed_message.size();
-  return really_flushed;
-}
-
-static void queue_string(DescriptorData &d, const std::string &b) {
-  if (b.empty()) return;
-  int space = MAX_OUTPUT - d.output_size - b.size();
-  if (space < 0) d.output_size -= flush_queue(d.output, -space);
-  add_to_queue(d.output, b);
-  d.output_size += b.size();
-}
-
-//* Push contents of the stream to the queues
-static void strstr_to_queue(DescriptorData &d) {
-  if (d.out.str().empty()) return;
-  queue_string(d, d.out.str());
-  d.out.clear();
-  d.out.str("");
 }
 
 static bool process_output(DescriptorData &d) {
@@ -1530,38 +1387,4 @@ static int ShipCompare(const void *S1, const void *S2) {
 static void SortShips() {
   for (int i = 0; i < NUMSTYPES; i++) ShipVector[i] = i;
   qsort(ShipVector, NUMSTYPES, sizeof(int), ShipCompare);
-}
-
-void warn_race(const player_t who, const std::string &message) {
-  for (int i = 0; i <= MAXGOVERNORS; i++)
-    if (races[who - 1].governor[i].active) warn(who, i, message);
-}
-
-void warn(const player_t who, const governor_t governor,
-          const std::string &message) {
-  if (!notify(who, governor, message) && !notify(who, 0, message))
-    push_telegram(who, governor, message);
-}
-
-void warn_star(const player_t a, const starnum_t star,
-               const std::string &message) {
-  for (auto &race : races) {
-    if (race.Playernum != a && isset(stars[star].inhabited, race.Playernum))
-      warn_race(race.Playernum, message);
-  }
-}
-
-void notify_star(const player_t a, const governor_t g, const starnum_t star,
-                 const std::string &message) {
-  for (auto &d : descriptor_list)
-    if (d.connected && (d.player != a || d.governor != g) &&
-        isset(stars[star].inhabited, d.player)) {
-      queue_string(d, message);
-    }
-}
-
-void adjust_morale(Race &winner, Race &loser, int amount) {
-  winner.morale += amount;
-  loser.morale -= amount;
-  winner.points[loser.Playernum] += amount;
 }

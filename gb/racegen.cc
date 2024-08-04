@@ -6,14 +6,17 @@ import std.compat;
 
 #include "gb/racegen.h"
 
-#include <cstdarg>
-#include <cstdio>
 #include <strings.h>
 #include <unistd.h>
+
+#include <cstdarg>
+#include <cstdio>
 
 #include "gb/game_info.h"
 
 static int do_racegen();
+
+char buf[2047];
 
 #ifdef PRIV /* Extra stuff for privileged racegen */
 

@@ -5,8 +5,6 @@
 #ifndef FIRE_H
 #define FIRE_H
 
-#include "gb/ships.h"
-
 void fire(const command_t &, GameObj &);
 void bombard(const command_t &, GameObj &);
 void defend(const command_t &, GameObj &);

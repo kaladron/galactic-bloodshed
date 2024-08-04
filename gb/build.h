@@ -5,8 +5,6 @@
 #ifndef BUILD_H
 #define BUILD_H
 
-#include "gb/ships.h"
-
 void upgrade(const command_t &, GameObj &);
 void make_mod(const command_t &, GameObj &);
 void build(const command_t &, GameObj &);

@@ -11,15 +11,11 @@
 #include "gb/doturn.h"
 #include "gb/map.h"
 #include "gb/races.h"
-#include "gb/ships.h"
 
 char buf[2047];
 char long_buf[1024], short_buf[256];
 char telegram_buf[AUTO_TELEG_SIZE];
 char temp[2047];
-
-int ShipVector[NUMSTYPES];
-Ship **ships;
 
 #ifdef MARKET
 const char *commod_name[] = {"resources", "destruct", "fuel", "crystals"};
@@ -44,7 +40,5 @@ const char *Desnames[] = {"ocean",  "land",   "mountainous", "gaseous", "ice",
 const char Dessymbols[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
                            CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
                            CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
-
-shipnum_t Num_ships;
 
 #endif  // GLOBALS_H

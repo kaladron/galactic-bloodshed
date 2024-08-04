@@ -5,8 +5,6 @@
 #ifndef LAND_H
 #define LAND_H
 
-#include "gb/ships.h"
-
 void land(const command_t &, GameObj &);
 int docked(Ship *);
 int overloaded(Ship *);

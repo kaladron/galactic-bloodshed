@@ -5,16 +5,17 @@
  *    closed).  write routines close and thus unlock that area.
  */
 
-import gblib;
-import std.compat;
-
-#include "gb/sql/sql.h"
+module;
 
 #include <sqlite3.h>
 
 #include <cstdio>
 
 #include "gb/sql/dbdecl.h"
+
+module gblib;
+
+import std.compat;
 
 Sql::Sql() {
   int err = sqlite3_open(PKGSTATEDIR "gb.db", &dbconn);

@@ -10,11 +10,8 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/files_shl.h"
 #include "gb/place.h"
 #include "gb/races.h"
-#include "gb/ships.h"
-#include "gb/shlmisc.h"
 #include "gb/tweakables.h"
 
 static void show_map(const player_t, const governor_t, const starnum_t,

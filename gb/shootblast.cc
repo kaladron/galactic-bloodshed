@@ -11,11 +11,8 @@ import std.compat;
 #include "gb/buffers.h"
 #include "gb/build.h"
 #include "gb/defense.h"
-#include "gb/files_shl.h"
 #include "gb/fire.h"
 #include "gb/races.h"
-#include "gb/ships.h"
-#include "gb/shlmisc.h"
 #include "gb/tweakables.h"
 
 static int hit_probability;

@@ -14,13 +14,13 @@ import std.compat;
 
 #include "gb/creator/makestar.h"
 
+#include <sqlite3.h>
 #include <stdio.h>
 #include <strings.h>
 
 #include "gb/creator/makeplanet.h"
 #include "gb/creator/makeuniv.h"
 #include "gb/files.h"
-#include "gb/files_shl.h"
 #include "gb/tweakables.h"
 
 static const double PLANET_DIST_MAX = 1900.0;

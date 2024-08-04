@@ -14,12 +14,8 @@ import std.compat;
 #include <cstdio>
 #include <cstdlib>
 
-#include "gb/files_shl.h"
 #include "gb/max.h"
 #include "gb/racegen.h"
-#include "gb/shipdata.h"
-#include "gb/ships.h"
-#include "gb/sql/sql.h"
 #include "gb/tweakables.h"
 
 static const PlanetType planet_translate[N_HOME_PLANET_TYPES] = {

@@ -10,9 +10,7 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/files_shl.h"
 #include "gb/races.h"
-#include "gb/shlmisc.h"
 
 module commands;
 

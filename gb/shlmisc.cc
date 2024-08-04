@@ -5,19 +5,14 @@
 /// \file shlmisc.cc
 /// \brief Miscellaneous stuff included in the shell.
 
-import gblib;
+module;
+
 import std.compat;
 
-#include "gb/shlmisc.h"
-
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/files.h"
-#include "gb/files_shl.h"
-#include "gb/max.h"
-#include "gb/races.h"
-#include "gb/ships.h"
 #include "gb/tweakables.h"
+
+module gblib;
 
 bool authorized(const governor_t Governor, const Ship &ship) {
   return (!Governor || ship.governor == Governor);

@@ -7,10 +7,7 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/files_shl.h"
 #include "gb/load.h"
-#include "gb/ships.h"
-#include "gb/shlmisc.h"
 
 module commands;
 

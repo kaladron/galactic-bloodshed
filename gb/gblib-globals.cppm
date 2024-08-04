@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+module;
+
+#include "gb/sql/dbdecl.h"
+
 export module gblib:globals;
 
 import :misc;
@@ -50,3 +54,5 @@ export power_blocks Power_blocks;
 
 export bool update_flag = false;
 export std::list<DescriptorData> descriptor_list;
+
+export sqlite3 *dbconn;

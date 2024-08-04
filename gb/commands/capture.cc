@@ -13,10 +13,7 @@ import std.compat;
 #include "gb/buffers.h"
 #include "gb/defense.h"
 #include "gb/files.h"
-#include "gb/files_shl.h"
 #include "gb/races.h"
-#include "gb/ships.h"
-#include "gb/shlmisc.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
 

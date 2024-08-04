@@ -3,6 +3,6 @@
 #ifndef GB_SQL_DBDECL_H
 #define GB_SQL_DBDECL_H
 
-extern sqlite3 *dbconn;
+// extern sqlite3 *dbconn;
 
 #endif  // GB_SQL_DBDECL_H

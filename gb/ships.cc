@@ -2,17 +2,17 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+module;
+
 import std.compat;
-import gblib;
 
-#include "gb/ships.h"
+#include <cstdlib>
 
-#include <stdlib.h>
-
-#include "gb/GB_server.h"
 #include "gb/defense.h"
-#include "gb/files_shl.h"
-#include "gb/shlmisc.h"
+
+module gblib;
+
+#include "gb/tweakables.h"
 
 // Essentialy everything in this file can move into a Ship class.
 

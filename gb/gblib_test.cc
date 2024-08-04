@@ -3,6 +3,8 @@ import std.compat;
 
 #include <cassert>
 
+#include "gb/globals.h"
+
 int main() {
   uint8_t test8 = 0;
   uint32_t test32 = 0;

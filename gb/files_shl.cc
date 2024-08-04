@@ -7,10 +7,9 @@
  *    closed).  write routines close and thus unlock that area.
  */
 
-import gblib;
-import std.compat;
+module;
 
-#include "gb/files_shl.h"
+import std.compat;
 
 #include <fcntl.h>
 #include <sqlite3.h>
@@ -23,13 +22,11 @@ import std.compat;
 #include "gb/files.h"
 #include "gb/files_rw.h"
 #include "gb/races.h"
-#include "gb/ships.h"
-#include "gb/sql/sql.h"
 #include "gb/tweakables.h"
 
-static int commoddata, racedata, shdata, stdata;
+module gblib;
 
-sqlite3 *dbconn;
+static int commoddata, racedata, shdata, stdata;
 
 static void start_bulk_insert();
 static void end_bulk_insert();

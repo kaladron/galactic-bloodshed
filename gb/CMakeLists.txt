@@ -80,6 +80,7 @@ target_sources(
          utils/gblib-rand.cppm
          gblib-sector.cppm
          gblib-star.cppm
+         gblib-tele.cppm
          gblib-tweakables.cppm
          gblib-types.cppm
   PRIVATE utils/rand.cc sectormap.cc star.cc victory.cc)

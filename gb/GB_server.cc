@@ -48,7 +48,6 @@ import std.compat;
 #include "gb/tweakables.h"
 
 static int shutdown_flag = 0;
-static int update_flag = 0;
 
 static time_t last_update_time;
 static time_t last_segment_time;
@@ -1120,9 +1119,9 @@ static void do_update(Db &db, bool force) {
     fclose(sfile);
   }
 
-  update_flag = 1;
+  update_flag = true;
   if (!fakeit) do_turn(db, 1);
-  update_flag = 0;
+  update_flag = false;
   clk = time(nullptr);
   sprintf(buf, "%sUpdate %d finished\n", ctime(&clk), nupdates_done);
   handle_victory();
@@ -1161,9 +1160,9 @@ static void do_segment(Db &db, int override, int segment) {
     nsegments_done++;
   }
 
-  update_flag = 1;
+  update_flag = true;
   if (!fakeit) do_turn(db, 0);
-  update_flag = 0;
+  update_flag = false;
   unlink(SEGMENTFL);
   if (FILE *sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
     fprintf(sfile, "%d\n", nsegments_done);

@@ -9,11 +9,11 @@ import std.compat;
 
 #include "gb/creator/makeplanet.h"
 
+#include <sqlite3.h>
 #include <stdlib.h>
 #include <strings.h>
 
 #include "gb/creator/makestar.h"
-#include "gb/files_shl.h"
 #include "gb/tweakables.h"
 
 /*             @   o   O   #   ~   .   (   -    */

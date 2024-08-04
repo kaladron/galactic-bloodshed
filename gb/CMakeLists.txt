@@ -55,7 +55,7 @@ find_package(SQLite3 REQUIRED)
 
 # Executable targets
 
-set(COMMON_FILES files_rw.cc files_shl.cc sql/sql.cc)
+set(COMMON_FILES files_rw.cc)
 
 add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
                         creator/makeuniv.cc creator/namegen.cc ${COMMON_FILES})
@@ -74,17 +74,29 @@ target_sources(
          CXX_MODULES
          FILES
          gblib.cppm
+         gblib-files_shl.cppm
          gblib-globals.cppm
          gblib-misc.cppm
          gblib-planet.cppm
          gblib-race.cppm
          utils/gblib-rand.cppm
+         gblib-ships.cppm
+         gblib-shlmisc.cppm
          gblib-sector.cppm
+         sql/gblib-sql.cppm
          gblib-star.cppm
          gblib-tele.cppm
          gblib-tweakables.cppm
          gblib-types.cppm
-  PRIVATE misc.cc utils/rand.cc sectormap.cc star.cc victory.cc)
+  PRIVATE files_shl.cc
+          misc.cc
+          utils/rand.cc
+          sectormap.cc
+          ships.cc
+          shlmisc.cc
+          sql/sql.cc
+          star.cc
+          victory.cc)
 
 add_library(commands)
 target_sources(
@@ -160,8 +172,6 @@ set(OLD_LIBGBLIB_FILES
     order.cc
     place.cc
     prof.cc
-    ships.cc
-    shlmisc.cc
     shootblast.cc
     tech.cc
     tele.cc)
@@ -171,12 +181,12 @@ target_link_libraries(GB PRIVATE gblib commands ${SQLite3_LIBRARIES}
                                  glaze::glaze)
 
 # Test targets
-add_executable(shlmisc_test shlmisc_test.cc)
-target_link_libraries(shlmisc_test PRIVATE gblib)
+add_executable(shlmisc_test shlmisc_test.cc ${COMMON_FILES})
+target_link_libraries(shlmisc_test PRIVATE gblib ${SQLite3_LIBRARIES})
 add_test(NAME GB_shlmisc_test COMMAND shlmisc_test)
 
-add_executable(gblib_test gblib_test.cc)
-target_link_libraries(gblib_test PRIVATE gblib)
+add_executable(gblib_test gblib_test.cc ${COMMON_FILES})
+target_link_libraries(gblib_test PRIVATE gblib ${SQLite3_LIBRARIES})
 add_test(NAME GB_gblib_test COMMAND gblib_test)
 
 # Configuration variable for PKGDATADIR

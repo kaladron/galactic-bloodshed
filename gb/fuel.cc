@@ -11,14 +11,11 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/doship.h"
-#include "gb/files_shl.h"
 #include "gb/fire.h"
 #include "gb/max.h"
 #include "gb/moveship.h"
 #include "gb/order.h"
 #include "gb/place.h"
-#include "gb/ships.h"
-#include "gb/shlmisc.h"
 #include "gb/tweakables.h"
 
 static char plan_buf[1024];

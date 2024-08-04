@@ -1,13 +1,11 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-#ifndef SQL_SQL_H
-#define SQL_SQL_H
+export module gblib:sql;
 
-#include "gb/files_shl.h"
+import :ships;
+import :star;
 
-class Sql : public Db {
+export class Sql : public Db {
  public:
   Sql();
   virtual ~Sql() override;
@@ -27,5 +25,3 @@ class Sql : public Db {
   virtual Planet getplanet(const starnum_t, const planetnum_t);
   virtual void putplanet(const Planet &, const Star &, const planetnum_t);
 };
-
-#endif  // SQL_SQL_H

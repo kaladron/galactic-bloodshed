@@ -7,6 +7,7 @@
 import std.compat;
 import gblib;
 
+#include <sqlite3.h>
 #include <strings.h>
 #include <unistd.h>
 
@@ -14,12 +15,8 @@ import gblib;
 #include <cstdio>
 #include <cstdlib>
 
-#include "gb/files_shl.h"
 #include "gb/globals.h"
 #include "gb/max.h"
-#include "gb/shipdata.h"
-#include "gb/ships.h"
-#include "gb/sql/sql.h"
 #include "gb/tweakables.h"
 
 struct stype {

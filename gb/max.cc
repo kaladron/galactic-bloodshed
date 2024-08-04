@@ -13,8 +13,6 @@ import std.compat;
 
 #include "gb/max.h"
 
-#include "gb/files_shl.h"
-#include "gb/ships.h"
 
 std::string prin_ship_orbits(const Ship &s) {
   switch (s.whatorbits) {

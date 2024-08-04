@@ -9,9 +9,7 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/files_shl.h"
 #include "gb/place.h"
-#include "gb/shlmisc.h"
 #include "gb/tweakables.h"
 
 module commands;

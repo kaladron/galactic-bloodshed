@@ -1,9 +1,9 @@
 import gblib;
 import std.compat;
 
-#include "gb/shlmisc.h"
-
 #include <cassert>
+
+#include "gb/globals.h"
 
 int main() {
   auto a = string_to_shipnum("123");

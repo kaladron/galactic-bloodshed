@@ -7,10 +7,8 @@ import std.compat;
 
 #include "gb/cs.h"
 
-#include "gb/files_shl.h"
 #include "gb/place.h"
 #include "gb/races.h"
-#include "gb/ships.h"
 
 void cs(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;

@@ -11,8 +11,6 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/files_shl.h"
-#include "gb/shlmisc.h"
 #include "gb/tech.h"
 
 module commands;

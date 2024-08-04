@@ -10,10 +10,11 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/files_shl.h"
 #include "gb/place.h"
 
 module commands;
+
+#include "gb/tweakables.h"
 
 void autoreport(const command_t &argv, GameObj &g) {
   if (g.governor && stars[g.snum].governor[g.player - 1] != g.governor) {

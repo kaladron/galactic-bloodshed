@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export module gblib;
+
+export import :files_shl;
 export import :misc;
 export import :planet;
 export import :types;
 export import :sector;
 export import :race;
 export import :rand;
+export import :ships;
+export import :shlmisc;
+export import :sql;
 export import :star;
 export import :tele;
 export import :tweakables;

@@ -6,7 +6,6 @@
 #define AUTOSHOOT_H
 
 #include "gb/races.h"
-#include "gb/ships.h"
 
 int berserker_bombard(Ship *, Planet &, Race &);
 

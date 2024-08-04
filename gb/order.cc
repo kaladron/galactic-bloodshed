@@ -11,12 +11,9 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/files_shl.h"
 #include "gb/load.h"
 #include "gb/moveship.h"
 #include "gb/place.h"
-#include "gb/ships.h"
-#include "gb/shlmisc.h"
 #include "gb/shootblast.h"
 #include "gb/tweakables.h"
 

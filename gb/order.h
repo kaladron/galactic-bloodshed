@@ -5,8 +5,6 @@
 #ifndef ORDER_H
 #define ORDER_H
 
-#include "gb/ships.h"
-
 void order(const command_t &, GameObj &);
 std::string prin_ship_dest(const Ship &);
 void route(const command_t &, GameObj &);

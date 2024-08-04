@@ -6,7 +6,6 @@
 #define SHOOTBLAST_H
 
 #include "gb/races.h"
-#include "gb/ships.h"
 
 int shoot_ship_to_ship(Ship *, Ship *, int, int, int, char *, char *);
 #ifdef DEFENSE

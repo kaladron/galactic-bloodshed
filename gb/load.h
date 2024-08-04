@@ -5,8 +5,6 @@
 #ifndef LOAD_H
 #define LOAD_H
 
-#include "gb/ships.h"
-
 void use_fuel(Ship &, double);
 void use_destruct(Ship &, int);
 void use_resource(Ship &, int);

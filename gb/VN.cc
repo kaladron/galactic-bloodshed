@@ -16,7 +16,6 @@ import std.compat;
 #include "gb/doturn.h"
 #include "gb/load.h"
 #include "gb/max.h"
-#include "gb/ships.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
 

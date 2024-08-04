@@ -5,8 +5,6 @@
 #ifndef GB_SERVER_H
 #define GB_SERVER_H
 
-#include "gb/ships.h"
-
 void do_next_thing(Db &);
 void compute_power_blocks();
 void insert_sh_univ(stardata *, Ship *);

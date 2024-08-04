@@ -9,7 +9,6 @@ import std.compat;
 
 #include "gb/load.h"
 
-#include "gb/ships.h"
 #include "gb/tweakables.h"
 
 void use_fuel(Ship &s, const double amt) {

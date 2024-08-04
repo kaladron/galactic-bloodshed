@@ -5,8 +5,6 @@
 #ifndef MOVESHIP_H
 #define MOVESHIP_H
 
-#include "gb/ships.h"
-
 void moveship(Ship *, int, int, int);
 void msg_OOF(Ship *);
 int followable(Ship *, Ship *);

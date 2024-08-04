@@ -11,11 +11,9 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/files_shl.h"
 #include "gb/map.h"
 #include "gb/place.h"
 #include "gb/races.h"
-#include "gb/ships.h"
 #include "gb/tweakables.h"
 
 module commands;

@@ -28,7 +28,6 @@ import std.compat;
 #include "gb/cs.h"
 #include "gb/doturncmd.h"
 #include "gb/files.h"
-#include "gb/files_shl.h"
 #include "gb/fire.h"
 #include "gb/fuel.h"
 #include "gb/globals.h"
@@ -41,9 +40,6 @@ import std.compat;
 #include "gb/order.h"
 #include "gb/prof.h"
 #include "gb/races.h"
-#include "gb/ships.h"
-#include "gb/shlmisc.h"
-#include "gb/sql/sql.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
 

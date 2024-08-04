@@ -1,0 +1,54 @@
+// SPDX-License-Identifier: Apache-2.0
+
+module;
+
+#include <sqlite3.h>
+
+#include "gb/races.h"
+#include "gb/sql/dbdecl.h"
+
+export module gblib:files_shl;
+
+import :ships;
+import :star;
+
+export void close_file(int);
+export void openstardata(int *);
+export void openshdata(int *);
+export void opencommoddata(int *);
+export void opensectdata(int *);
+export void openracedata(int *);
+export void getsdata(stardata *S);
+export Race getrace(player_t);
+export Star getstar(starnum_t);
+export Planet getplanet(const starnum_t, const planetnum_t);
+export std::optional<Ship> getship(std::string_view shipstring);
+export std::optional<Ship> getship(const shipnum_t);
+export std::optional<Ship> getship(Ship **, const shipnum_t);
+export Commod getcommod(commodnum_t);
+export Sector getsector(const Planet &, const int x, const int y);
+export SectorMap getsmap(const Planet &);
+export int getdeadship();
+export int getdeadcommod();
+export void initsqldata();
+export void putsdata(stardata *);
+export void putrace(const Race &);
+export void putstar(const Star &, starnum_t);
+export void putplanet(const Planet &, const Star &, const planetnum_t);
+export void putsector(const Sector &, const Planet &);
+export void putsector(const Sector &, const Planet &, const int x, const int y);
+export void putsmap(SectorMap &map, Planet &p);
+export void putship(Ship *);
+export void putcommod(const Commod &, int);
+export shipnum_t Numships();
+export int Newslength(int);
+export void clr_shipfree();
+export void clr_commodfree();
+export void makeshipdead(int);
+export void makecommoddead(int);
+export void putpower(power[MAXPLAYERS]);
+export void getpower(power[MAXPLAYERS]);
+export void Putblock(block[MAXPLAYERS]);
+export void Getblock(block[MAXPLAYERS]);
+export void open_files();
+export void close_files();

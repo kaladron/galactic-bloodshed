@@ -10,6 +10,7 @@ import std.compat;
 
 #include "gb/creator/makeuniv.h"
 
+#include <sqlite3.h>
 #include <strings.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -19,10 +20,8 @@ import std.compat;
 
 #include "gb/creator/makestar.h"
 #include "gb/files.h"
-#include "gb/files_shl.h"
 #include "gb/globals.h"
 #include "gb/races.h"
-#include "gb/sql/sql.h"
 #include "gb/tweakables.h"
 
 int autoname_star = -1;

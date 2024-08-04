@@ -33,13 +33,11 @@ import std.compat;
 #include "gb/globals.h"
 #include "gb/land.h"
 #include "gb/launch.h"
-#include "gb/load.h"
 #include "gb/map.h"
 #include "gb/move.h"
 #include "gb/name.h"
 #include "gb/order.h"
 #include "gb/prof.h"
-#include "gb/races.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
 

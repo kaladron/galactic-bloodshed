@@ -2,10 +2,6 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-module;
-
-import std.compat;
-
 module gblib;
 
 int control(const Star& star, player_t Playernum, governor_t Governor) {

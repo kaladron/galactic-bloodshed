@@ -2,7 +2,7 @@
 
 module;
 
-import std.compat;
+import std;
 
 #include "gb/tweakables.h"
 

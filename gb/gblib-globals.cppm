@@ -46,3 +46,5 @@ export unsigned long segments;
 export power Power[MAXPLAYERS];
 export block Blocks[MAXPLAYERS];
 export power_blocks Power_blocks;
+
+export bool update_flag = false;

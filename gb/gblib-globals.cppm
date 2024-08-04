@@ -2,6 +2,7 @@
 
 export module gblib:globals;
 
+import :misc;
 import :planet;
 import :race;
 import :star;
@@ -48,3 +49,4 @@ export block Blocks[MAXPLAYERS];
 export power_blocks Power_blocks;
 
 export bool update_flag = false;
+export std::list<DescriptorData> descriptor_list;

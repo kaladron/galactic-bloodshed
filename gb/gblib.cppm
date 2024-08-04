@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export module gblib;
+export import :misc;
 export import :planet;
 export import :types;
 export import :sector;

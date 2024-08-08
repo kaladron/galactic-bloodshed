@@ -5,15 +5,6 @@
 #ifndef NAME_H
 #define NAME_H
 
-void personal(const command_t &, GameObj &);
-void bless(const command_t &, GameObj &);
-void insurgency(const command_t &, GameObj &);
-void pay(const command_t &, GameObj &);
-void give(const command_t &, GameObj &);
-void page(const command_t &, GameObj &);
-void send_message(const command_t &, GameObj &);
-void read_messages(const command_t &, GameObj &);
-void motto(const command_t &, GameObj &);
-void name(const command_t &, GameObj &);
+int revolt(Planet &pl, const player_t victim, const player_t agent);
 
 #endif  // NAME_H

@@ -5,8 +5,9 @@
 #ifndef ORDER_H
 #define ORDER_H
 
-void order(const command_t &, GameObj &);
 std::string prin_ship_dest(const Ship &);
-void route(const command_t &, GameObj &);
+void DispOrders(int Playernum, int Governor, Ship *ship);
+void DispOrdersHeader(int Playernum, int Governor);
+void give_orders(GameObj &, const command_t &, int, Ship *);
 
 #endif  // ORDER_H

@@ -17,6 +17,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void grant(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -106,3 +107,4 @@ void grant(const command_t &argv, GameObj &g) {
   } else
     g.out << "You can't grant that.\n";
 }
+}  // namespace GB::commands

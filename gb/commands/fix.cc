@@ -15,6 +15,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 /** Deity fix-it utilities */
 void fix(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
@@ -127,3 +128,4 @@ void fix(const command_t &argv, GameObj &g) {
   }
   g.out << "Fix what?\n";
 }
+}  // namespace GB::commands

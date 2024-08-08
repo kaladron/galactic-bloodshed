@@ -11,6 +11,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void center(const command_t &argv, GameObj &g) {
   if (argv.size() != 2) {
     g.out << "center: which star?\n";
@@ -28,3 +29,4 @@ void center(const command_t &argv, GameObj &g) {
   g.lastx[1] = stars[where.snum].xpos;
   g.lasty[1] = stars[where.snum].ypos;
 }
+}  // namespace GB::commands

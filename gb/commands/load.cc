@@ -283,6 +283,7 @@ void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
 }
 }  // namespace
 
+namespace GB::commands {
 void load(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -714,3 +715,4 @@ void load(const command_t &argv, GameObj &g) {
     } else
       free(s); /* make sure you do this! */
 }
+}  // namespace GB::commands

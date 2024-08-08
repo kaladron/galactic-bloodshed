@@ -11,6 +11,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void dump(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -89,3 +90,4 @@ void dump(const command_t &argv, GameObj &g) {
   warn_race(player, buf);
   g.out << "Exploration Data transferred.\n";
 }
+}  // namespace GB::commands

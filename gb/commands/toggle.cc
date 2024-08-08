@@ -22,6 +22,7 @@ void tog(GameObj &g, char *op, const char *name) {
 }
 }  // namespace
 
+namespace GB::commands {
 void toggle(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -88,3 +89,4 @@ void toggle(const command_t &argv, GameObj &g) {
     }
   }
 }
+}  // namespace GB::commands

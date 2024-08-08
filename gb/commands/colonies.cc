@@ -55,6 +55,7 @@ void colonies_at_star(GameObj &g, const Race &race, const starnum_t star) {
 }
 }  // namespace
 
+namespace GB::commands {
 void colonies(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -84,3 +85,4 @@ void colonies(const command_t &argv, GameObj &g) {
     }
   g.out << "\n";
 }
+}  // namespace GB::commands

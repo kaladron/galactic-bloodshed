@@ -17,6 +17,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 /* declare that you wish to be included in the alliance block */
 void unpledge(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
@@ -59,3 +60,4 @@ void unpledge(const command_t& argv, GameObj& g) {
   compute_power_blocks();
   Putblock(Blocks);
 }
+}  // namespace GB::commands

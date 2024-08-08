@@ -17,6 +17,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 /* invite people to join your alliance block */
 void invite(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
@@ -60,3 +61,4 @@ void invite(const command_t& argv, GameObj& g) {
 
   Putblock(Blocks);
 }
+}  // namespace GB::commands

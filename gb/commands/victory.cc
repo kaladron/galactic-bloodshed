@@ -13,6 +13,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void victory(const command_t &argv, GameObj &g) {
   int count = (argv.size() > 1) ? std::stoi(argv[1]) : Num_races;
   if (count > Num_races) count = Num_races;
@@ -34,3 +35,4 @@ void victory(const command_t &argv, GameObj &g) {
     notify(g.player, g.governor, buf);
   }
 }
+}  // namespace GB::commands

@@ -5,12 +5,11 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include "gb/races.h"
-
 extern const char Psymbol[];
 extern const char *Planet_types[];
 
-void map(const command_t &, GameObj &);
 char desshow(const player_t, const governor_t, const Race &, const Sector &);
+void show_map(const player_t, const governor_t, const starnum_t,
+              const planetnum_t, const Planet &);
 
 #endif  // MAP_H

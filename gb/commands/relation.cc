@@ -21,6 +21,7 @@ static auto allied(const Race &r, const player_t p) {
   return "neutral";
 }
 
+namespace GB::commands {
 void relation(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -52,3 +53,4 @@ void relation(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
   }
 }
+}  // namespace GB::commands

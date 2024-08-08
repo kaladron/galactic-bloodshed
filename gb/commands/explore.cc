@@ -16,6 +16,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void explore(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -108,3 +109,4 @@ void explore(const command_t &argv, GameObj &g) {
         }
     }
 }
+}  // namespace GB::commands

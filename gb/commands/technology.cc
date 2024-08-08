@@ -15,6 +15,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void technology(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -62,3 +63,4 @@ void technology(const command_t &argv, GameObj &g) {
       tech_prod(p.info[Playernum - 1].tech_invest, p.info[Playernum - 1].popn));
   notify(Playernum, Governor, buf);
 }
+}  // namespace GB::commands

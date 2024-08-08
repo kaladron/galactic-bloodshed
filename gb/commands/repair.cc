@@ -14,6 +14,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void repair(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   int hix;
@@ -88,3 +89,4 @@ void repair(const command_t &argv, GameObj &g) {
   g.out << std::format("{0} sectors repaired at a cost of {1} resources.\n",
                        sectors, cost);
 }
+}  // namespace GB::commands

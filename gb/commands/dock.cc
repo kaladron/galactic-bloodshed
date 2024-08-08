@@ -23,6 +23,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void dock(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -212,7 +213,7 @@ void dock(const command_t &argv, GameObj &g) {
         // APcount is set to 0 and cew is set to 3.
         command_t fire_argv{"fire-from-dock", std::format("#{0}", ship2no),
                             std::format("#{0}", shipno)};
-        fire(fire_argv, g);
+        GB::commands::fire(fire_argv, g);
         /* retrieve ships again, since battle may change ship stats */
         free(s);
         (void)getship(&s, shipno);
@@ -493,3 +494,4 @@ void dock(const command_t &argv, GameObj &g) {
     } else
       free(s);
 }
+}  // namespace GB::commands

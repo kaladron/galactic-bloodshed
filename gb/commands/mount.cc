@@ -9,6 +9,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void mount(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -78,3 +79,4 @@ void mount(const command_t &argv, GameObj &g) {
     } else
       free(ship);
 }
+}  // namespace GB::commands

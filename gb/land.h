@@ -5,8 +5,8 @@
 #ifndef LAND_H
 #define LAND_H
 
-void land(const command_t &, GameObj &);
 int docked(Ship *);
 int overloaded(Ship *);
+std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept;
 
 #endif  // LAND_H

@@ -29,6 +29,7 @@ int jettison_check(GameObj &g, int amt, int max) {
 }
 }  // namespace
 
+namespace GB::commands {
 void jettison(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -163,3 +164,4 @@ void jettison(const command_t &argv, GameObj &g) {
     } else
       free(s);
 }
+}  // namespace GB::commands

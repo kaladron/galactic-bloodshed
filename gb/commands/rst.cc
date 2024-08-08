@@ -55,6 +55,7 @@ static void plan_getrships(player_t, governor_t, starnum_t, planetnum_t);
 static void ship_report(GameObj &, shipnum_t, const report_array &);
 static void star_getrships(player_t, governor_t, starnum_t);
 
+namespace GB::commands {
 void rst(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -180,6 +181,7 @@ void rst(const command_t &argv, GameObj &g) {
   }
   Free_rlist();
 }
+}  // namespace GB::commands
 
 static void ship_report(GameObj &g, shipnum_t indx,
                         const report_array &rep_on) {

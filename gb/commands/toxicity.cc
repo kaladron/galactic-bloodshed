@@ -10,9 +10,9 @@ module;
 import gblib;
 import std.compat;
 
-
 module commands;
 
+namespace GB::commands {
 void toxicity(const command_t &argv, GameObj &g) {
   ap_t APcount = 1;
 
@@ -44,3 +44,4 @@ void toxicity(const command_t &argv, GameObj &g) {
   g.out << " New threshold is: " << p.info[g.player - 1].tox_thresh
         << std::endl;
 }
+}  // namespace GB::commands

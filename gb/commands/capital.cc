@@ -15,6 +15,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void capital(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -71,3 +72,4 @@ void capital(const command_t &argv, GameObj &g) {
           ((double)s->popn / (double)max_crew(*s)) * (100 - (double)s->damage));
   notify(Playernum, Governor, buf);
 }
+}  // namespace GB::commands

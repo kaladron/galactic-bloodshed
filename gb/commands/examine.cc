@@ -15,6 +15,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void examine(const command_t &argv, GameObj &g) {
   const ap_t APcount = 0;
   FILE *fd;
@@ -84,3 +85,4 @@ void examine(const command_t &argv, GameObj &g) {
     g.out << "Its crew is dying and it cannot move for the time being.\n";
   }
 }
+}  // namespace GB::commands

@@ -104,13 +104,21 @@ target_sources(
   PUBLIC FILE_SET CXX_MODULES FILES commands/commands.cppm
   PRIVATE commands/analysis.cc
           commands/announce.cc
+          commands/arm.cc
           commands/autoreport.cc
+          commands/bid.cc
+          commands/bless.cc
           commands/block.cc
+          commands/bombard.cc
+          commands/build.cc
           commands/capital.cc
           commands/capture.cc
           commands/center.cc
           commands/colonies.cc
+          commands/cs.cc
           commands/declare.cc
+          commands/defend.cc
+          commands/detonate.cc
           commands/dissolve.cc
           commands/distance.cc
           commands/dock.cc
@@ -118,34 +126,58 @@ target_sources(
           commands/enslave.cc
           commands/examine.cc
           commands/explore.cc
+          commands/fire.cc
           commands/fix.cc
+          commands/give.cc
           commands/governors.cc
           commands/grant.cc
           commands/highlight.cc
+          commands/insurgency.cc
           commands/invite.cc
-          commands/load.cc
           commands/jettison.cc
+          commands/land.cc
+          commands/launch.cc
+          commands/load.cc
+          commands/make_mod.cc
+          commands/map.cc
           commands/mobilize.cc
+          commands/motto.cc
           commands/mount.cc
+          commands/move_popn.cc
+          commands/name.cc
           commands/orbit.cc
+          commands/order.cc
+          commands/page.cc
+          commands/pay.cc
+          commands/personal.cc
           commands/pledge.cc
           commands/power.cc
           commands/production.cc
+          commands/profile.cc
+          commands/proj_fuel.cc
+          commands/read_messages.cc
           commands/relation.cc
-          commands/star_locations.cc
-          commands/tax.cc
-          commands/tech_status.cc
-          commands/technology.cc
-          commands/transfer.cc
           commands/repair.cc
+          commands/route.cc
           commands/rst.cc
           commands/scrap.cc
+          commands/sell.cc
+          commands/send_message.cc
+          commands/star_locations.cc
           commands/survey.cc
+          commands/tax.cc
+          commands/technology.cc
+          commands/tech_status.cc
           commands/toggle.cc
           commands/toxicity.cc
+          commands/transfer.cc
+          commands/treasury.cc
           commands/unpledge.cc
+          commands/upgrade.cc
           commands/victory.cc
           commands/vote.cc
+          commands/walk.cc
+          commands/whois.cc
           commands/zoom.cc)
 target_link_libraries(commands PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
@@ -153,7 +185,6 @@ set(OLD_LIBGBLIB_FILES
     VN.cc
     bombard.cc
     build.cc
-    cs.cc
     doplanet.cc
     dosector.cc
     doship.cc
@@ -161,7 +192,6 @@ set(OLD_LIBGBLIB_FILES
     fire.cc
     fuel.cc
     land.cc
-    launch.cc
     load.cc
     map.cc
     max.cc

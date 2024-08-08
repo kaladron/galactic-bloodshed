@@ -17,6 +17,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void scrap(const command_t &argv, GameObj &g) {
   ap_t APcount = 1;
   Sector sect;
@@ -243,3 +244,4 @@ void scrap(const command_t &argv, GameObj &g) {
     } else
       free(s);
 }
+}  // namespace GB::commands

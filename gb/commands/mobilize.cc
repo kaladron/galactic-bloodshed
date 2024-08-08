@@ -21,6 +21,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void mobilize(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -56,3 +57,4 @@ void mobilize(const command_t &argv, GameObj &g) {
   putplanet(p, stars[g.snum], g.pnum);
   deductAPs(g, APcount, g.snum);
 }
+}  // namespace GB::commands

@@ -44,6 +44,7 @@ void production_at_star(GameObj &g, starnum_t star) {
 }
 }  // namespace
 
+namespace GB::commands {
 void production(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -72,3 +73,4 @@ void production(const command_t &argv, GameObj &g) {
     }
   g.out << "\n";
 }
+}  // namespace GB::commands

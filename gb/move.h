@@ -5,14 +5,15 @@
 #ifndef MOVE_H
 #define MOVE_H
 
-#include "gb/races.h"
-
-void arm(const command_t &, GameObj &);
-void move_popn(const command_t &, GameObj &);
-void walk(const command_t &, GameObj &);
 int get_move(char, int, int, int *, int *, const Planet &);
 void ground_attack(Race &, Race &, int *, int, population_t *, population_t *,
                    unsigned int, unsigned int, double, double, double *,
                    double *, int *, int *, int *);
+void mech_defend(player_t, governor_t, int *, int, const Planet &, int, int,
+                 const Sector &);
+void mech_attack_people(Ship *, int *, int *, Race &, Race &, const Sector &,
+                        int, int, int, char *, char *);
+void people_attack_mech(Ship *, int, int, Race &, Race &, const Sector &, int,
+                        int, char *, char *);
 
 #endif  // MOVE_H

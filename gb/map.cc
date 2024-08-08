@@ -14,40 +14,8 @@ import std.compat;
 #include "gb/races.h"
 #include "gb/tweakables.h"
 
-static void show_map(const player_t, const governor_t, const starnum_t,
-                     const planetnum_t, const Planet &);
-
-void map(const command_t &argv, GameObj &g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
-  std::unique_ptr<Place> where;
-
-  if (argv.size() > 1) {
-    where = std::make_unique<Place>(g, argv[1]);
-  } else {
-    where = std::make_unique<Place>(g, "");
-  }
-
-  if (where->err) return;
-
-  switch (where->level) {
-    case ScopeLevel::LEVEL_SHIP:
-      g.out << "Bad scope.\n";
-      return;
-    case ScopeLevel::LEVEL_PLAN: {
-      const auto p = getplanet(where->snum, where->pnum);
-      show_map(Playernum, Governor, where->snum, where->pnum, p);
-      if (stars[where->snum].stability > 50)
-        g.out << "WARNING! This planet's primary is unstable.\n";
-    } break;
-    default:
-      orbit(argv, g); /* make orbit map instead */
-  }
-}
-
-static void show_map(const player_t Playernum, const governor_t Governor,
-                     const starnum_t snum, const planetnum_t pnum,
-                     const Planet &p) {
+void show_map(const player_t Playernum, const governor_t Governor,
+              const starnum_t snum, const planetnum_t pnum, const Planet &p) {
   player_t i;
   int iq = 0;
   char shiplocs[MAX_X][MAX_Y] = {};

@@ -12,6 +12,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void star_locations(const command_t &argv, GameObj &g) {
   int max;
   if (argv.size() > 1)
@@ -29,3 +30,4 @@ void star_locations(const command_t &argv, GameObj &g) {
     }
   }
 }
+}  // namespace GB::commands

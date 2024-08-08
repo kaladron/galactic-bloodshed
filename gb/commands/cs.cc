@@ -1,15 +1,15 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
+
+module;
 
 import gblib;
 import std.compat;
 
-#include "gb/cs.h"
-
 #include "gb/place.h"
-#include "gb/races.h"
 
+module commands;
+
+namespace GB::commands {
 void cs(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -124,3 +124,4 @@ void cs(const command_t &argv, GameObj &g) {
     return;
   }
 }
+}  // namespace GB::commands

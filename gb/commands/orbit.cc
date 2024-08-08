@@ -28,6 +28,7 @@ static void DispPlanet(const GameObj &, const ScopeLevel, const Planet &,
 static void DispShip(const GameObj &, const Place &, Ship *, const Race &,
                      char *, const Planet & = Planet());
 
+namespace GB::commands {
 /* OPTIONS
  *  -p : If this option is set, ``orbit'' will not display planet names.
  *
@@ -189,6 +190,7 @@ void orbit(const command_t &argv, GameObj &g) {
   strcat(output, "\n");
   notify(g.player, g.governor, output);
 }
+}  // namespace GB::commands
 
 // TODO(jeffbailey) Remove DontDispStar parameter as unused, but it really looks
 // like we should be doing something here.

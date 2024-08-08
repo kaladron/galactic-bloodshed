@@ -18,6 +18,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void declare(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -147,3 +148,4 @@ void declare(const command_t& argv, GameObj& g) {
   putrace(alien);
   putrace(race);
 }
+}  // namespace GB::commands

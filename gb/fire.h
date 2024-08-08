@@ -5,11 +5,10 @@
 #ifndef FIRE_H
 #define FIRE_H
 
-void fire(const command_t &, GameObj &);
-void bombard(const command_t &, GameObj &);
-void defend(const command_t &, GameObj &);
-void detonate(const command_t &argv, GameObj &);
 int retal_strength(const Ship &);
 int adjacent(int, int, int, int, const Planet &);
+int check_retal_strength(const Ship &ship);
+bool has_planet_defense(const shipnum_t shipno, const player_t Playernum);
+void check_overload(Ship *ship, int cew, int *strength);
 
 #endif  // FIRE_H

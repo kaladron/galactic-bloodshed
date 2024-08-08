@@ -14,6 +14,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void highlight(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -28,3 +29,4 @@ void highlight(const command_t &argv, GameObj &g) {
   race.governor[Governor].toggle.highlight = n;
   putrace(race);
 }
+}  // namespace GB::commands

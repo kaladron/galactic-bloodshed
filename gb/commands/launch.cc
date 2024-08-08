@@ -1,21 +1,17 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* launch.c -- launch or undock a ship (also undock) */
+module;
 
 import gblib;
 import std.compat;
 
-#include "gb/launch.h"
-
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/fire.h"
 #include "gb/load.h"
-#include "gb/max.h"
-#include "gb/tweakables.h"
 
+module commands;
+
+namespace GB::commands {
 void launch(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -258,3 +254,4 @@ void launch(const command_t &argv, GameObj &g) {
     } else
       free(s);
 }
+}  // namespace GB::commands

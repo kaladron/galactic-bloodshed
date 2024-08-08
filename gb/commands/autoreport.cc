@@ -16,6 +16,7 @@ module commands;
 
 #include "gb/tweakables.h"
 
+namespace GB::commands {
 void autoreport(const command_t &argv, GameObj &g) {
   if (g.governor && stars[g.snum].governor[g.player - 1] != g.governor) {
     g.out << "You are not authorized to do this here.\n";
@@ -60,3 +61,4 @@ void autoreport(const command_t &argv, GameObj &g) {
                        stars[snum].pnames[pnum],
                        (p.info[g.player - 1].autorep ? "set" : "unset"));
 }
+}  // namespace GB::commands

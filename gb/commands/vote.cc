@@ -34,6 +34,7 @@ void show_votes(GameObj& g) {
 }
 }  // namespace
 
+namespace GB::commands {
 void vote(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
 
@@ -95,3 +96,4 @@ void vote(const command_t& argv, GameObj& g) {
     }
   }
 }
+}  // namespace GB::commands

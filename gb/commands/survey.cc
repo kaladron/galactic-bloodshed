@@ -39,6 +39,7 @@ static const char *Tox[] = {
     "Stage 10: WARNING: COMPLETELY TOXIC!!!",
     "???"};
 
+namespace GB::commands {
 void survey(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -362,3 +363,4 @@ void survey(const command_t &argv, GameObj &g) {
     g.out << "Illegal scope.\n";
   }
 } /* end survey */
+}  // namespace GB::commands

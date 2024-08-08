@@ -46,6 +46,7 @@ void tech_report_star(player_t Playernum, governor_t Governor, const Star &star,
 }
 }  // namespace
 
+namespace GB::commands {
 void tech_status(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -89,3 +90,4 @@ void tech_status(const command_t &argv, GameObj &g) {
           total_max_gain);
   notify(Playernum, Governor, buf);
 }
+}  // namespace GB::commands

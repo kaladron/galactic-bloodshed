@@ -56,3 +56,5 @@ export bool update_flag = false;
 export std::list<DescriptorData> descriptor_list;
 
 export sqlite3 *dbconn;
+
+export char plan_buf[1024];

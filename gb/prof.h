@@ -5,11 +5,7 @@
 #ifndef PROF_H
 #define PROF_H
 
-#include "gb/races.h"
-
-void whois(const command_t &, GameObj &);
-void profile(const command_t &, GameObj &);
 char *Estimate_i(int, const Race &, unsigned int);
-void treasury(const command_t &, GameObj &);
+char *Estimate_f(double, const Race &, int);
 
 #endif  // PROF_H

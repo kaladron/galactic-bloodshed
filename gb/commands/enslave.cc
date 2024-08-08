@@ -16,6 +16,7 @@ import std.compat;
 
 module commands;
 
+namespace GB::commands {
 void enslave(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -134,3 +135,4 @@ void enslave(const command_t &argv, GameObj &g) {
     if (p.info[i - 1].numsectsowned && i != Playernum)
       warn(i, stars[s->storbits].governor[i - 1], telegram_buf);
 }
+}  // namespace GB::commands

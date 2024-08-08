@@ -5,6 +5,13 @@
 #ifndef FUEL_H
 #define FUEL_H
 
-void proj_fuel(const command_t &, GameObj &);
+#include "gb/place.h"
+
+std::tuple<bool, segments_t> do_trip(const Place &, Ship &, double fuel,
+                                     double gravity_factor, double x_1,
+                                     double y_1);
+
+void fuel_output(int Playernum, int Governor, double dist, double fuel,
+                 double grav, double mass, segments_t segs);
 
 #endif  // FUEL_H

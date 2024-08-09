@@ -143,20 +143,6 @@ found_planet:
       race->translate[i - 1] = 1;
   }
 
-#if 0
-  /* All of the following zeros are not really needed, because the race
-     was bzero'ed out above. */
-  for (i=0; i<80; i++)
-    race->discoveries[i] = 0;
-  race->tech = 0.0;
-  race->morale = 0;
-  race->turn = 0;
-  race->allied[0] = race->allied[1] = 0;
-  race->atwar[0] = race->atwar[1] = 0;
-  for (i=0; i<MAXPLAYERS; i++) 
-    race->points[i]=0;
-#endif
-
   /*
    * Assign racial characteristics. */
   race->absorb = race_info.attr[ABSORB];

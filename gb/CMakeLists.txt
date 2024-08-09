@@ -30,6 +30,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(glaze)
 
+FetchContent_Declare(
+  scn
+  GIT_REPOSITORY https://github.com/eliaskosunen/scnlib.git
+  GIT_TAG v3.0.1
+  GIT_SHALLOW TRUE)
+
+FetchContent_MakeAvailable(scn)
+
 # Set language version used
 
 set(CMAKE_CXX_STANDARD 23)
@@ -179,7 +187,8 @@ target_sources(
           commands/walk.cc
           commands/whois.cc
           commands/zoom.cc)
-target_link_libraries(commands PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
+target_link_libraries(commands PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze
+                                       scn::scn)
 
 set(OLD_LIBGBLIB_FILES
     VN.cc

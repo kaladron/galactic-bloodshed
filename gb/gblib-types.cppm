@@ -32,6 +32,13 @@ export enum PlanetType {
   DESERT = 7,
 };
 
+export enum NewsType {
+  DECLARATION = 0,
+  TRANSFER = 1,
+  COMBAT = 2,
+  ANNOUNCE = 3,
+};
+
 export enum SectorType {
   SEC_SEA = 0,
   SEC_LAND = 1,
@@ -108,4 +115,3 @@ export class GameObj {
   GameObj(const GameObj &) = delete;
   GameObj &operator=(const GameObj &) = delete;
 };
-

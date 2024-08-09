@@ -37,7 +37,7 @@ void defend(const command_t &argv, GameObj &g) {
   int numdest;
 
   /* for telegramming and retaliating */
-  bzero((char *)Nuked, sizeof(Nuked));
+  Nuked.fill(0);
 
   /* get the planet from the players current scope */
   if (g.level != ScopeLevel::LEVEL_PLAN) {

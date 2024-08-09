@@ -8,7 +8,6 @@ import std.compat;
 #include <strings.h>
 
 #include "gb/buffers.h"
-#include "gb/build.h"
 #include "gb/files.h"
 #include "gb/fire.h"
 #include "gb/load.h"
@@ -35,7 +34,7 @@ void bombard(const command_t &argv, GameObj &g) {
   int i;
 
   /* for telegramming and retaliating */
-  bzero((char *)Nuked, sizeof(Nuked));
+  Nuked.fill(0);
 
   if (argv.size() < 2) {
     notify(Playernum, Governor,

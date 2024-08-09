@@ -51,7 +51,7 @@ void fire(const command_t &argv, GameObj &g) {
   sh = 0;  // TODO(jeffbailey): No idea what this is, init to 0.
 
   /* for telegramming and retaliating */
-  bzero((char *)Nuked, sizeof(Nuked));
+  Nuked.fill(0);
 
   if (argv.size() < 3) {
     std::string msg =

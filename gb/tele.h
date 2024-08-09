@@ -10,6 +10,6 @@ void purge();
 void post(std::string, int);
 void push_telegram_race(const player_t, const std::string &);
 void teleg_read(GameObj &);
-void news_read(int, int, int);
+void news_read(NewsType type, GameObj &g);
 
 #endif  // TELE_H

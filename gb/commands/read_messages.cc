@@ -20,16 +20,16 @@ void read_messages(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, CUTE_MESSAGE);
     notify(Playernum, Governor,
            "\n----------        Declarations        ----------\n");
-    news_read(Playernum, Governor, DECLARATION);
+    news_read(DECLARATION, g);
     notify(Playernum, Governor,
            "\n----------           Combat           ----------\n");
-    news_read(Playernum, Governor, COMBAT);
+    news_read(COMBAT, g);
     notify(Playernum, Governor,
            "\n----------          Business          ----------\n");
-    news_read(Playernum, Governor, TRANSFER);
+    news_read(TRANSFER, g);
     notify(Playernum, Governor,
            "\n----------          Bulletins         ----------\n");
-    news_read(Playernum, Governor, ANNOUNCE);
+    news_read(ANNOUNCE, g);
   } else
     g.out << "Read what?\n";
 }

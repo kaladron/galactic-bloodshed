@@ -14,10 +14,6 @@
 #define PATHLEN 200 /* length of file paths to the game.. */
 
 #define CUTE_MESSAGE "\nThe Galactic News\n\n"
-#define DECLARATION 0 /* news file index */
-#define TRANSFER 1
-#define COMBAT 2
-#define ANNOUNCE 3
 
 inline constexpr auto DATADIR = PKGSTATEDIR;
 inline constexpr auto DOCSDIR = DOCDIR;

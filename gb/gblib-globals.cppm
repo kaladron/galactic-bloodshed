@@ -18,7 +18,7 @@ export std::vector<Race> races;
 
 export struct stardata Sdata;
 
-export unsigned char Nuked[MAXPLAYERS];
+export std::array<char, MAXPLAYERS> Nuked;
 export unsigned long StarsInhab[NUMSTARS];
 export unsigned long StarsExpl[NUMSTARS];
 export std::vector<Star> stars;

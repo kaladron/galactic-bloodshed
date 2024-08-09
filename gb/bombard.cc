@@ -9,11 +9,9 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/files.h"
 #include "gb/max.h"
-#include "gb/races.h"
 #include "gb/shootblast.h"
 #include "gb/tele.h"
 #include "gb/tweakables.h"
@@ -29,7 +27,7 @@ int berserker_bombard(Ship *ship, Planet &planet, Race &r) {
   int numdest = 0;
 
   /* for telegramming */
-  bzero((char *)Nuked, sizeof(Nuked));
+  Nuked.fill(0);
 
   /* check to see if PDNs are present */
   Shiplist shiplist(planet.ships);
@@ -74,7 +72,7 @@ int berserker_bombard(Ship *ship, Planet &planet, Race &r) {
               ship->destruct);
     /* save owner of destroyed sector */
     if (str) {
-      bzero(Nuked, sizeof(Nuked));
+      Nuked.fill(0);
       oldown = smap.get(x, y).owner;
       ship->destruct -= str;
       ship->mass -= str * MASS_DESTRUCT;

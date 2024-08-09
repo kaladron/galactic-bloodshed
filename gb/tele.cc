@@ -131,15 +131,14 @@ void teleg_read(GameObj &g) {
   governor_t Governor = g.governor;
   char *p;
 
-  char telegram_file[PATHLEN];
-  bzero((char *)telegram_file, sizeof(telegram_file));
-  sprintf(telegram_file, "%s.%d.%d", TELEGRAMFL, Playernum, Governor);
+  std::string telegram_file =
+      std::format("{0}.{1}.{2}", TELEGRAMFL, Playernum, Governor);
 
   FILE *teleg_read_fd;
-  if ((teleg_read_fd = fopen(telegram_file, "r")) != nullptr) {
+  if ((teleg_read_fd = fopen(telegram_file.c_str(), "r")) != nullptr) {
     g.out << "Telegrams:";
     struct stat telestat;
-    stat(telegram_file, &telestat);
+    stat(telegram_file.c_str(), &telestat);
     if (telestat.st_size > 0) {
       g.out << "\n";
       while (fgets(buf, sizeof buf, teleg_read_fd)) {
@@ -156,11 +155,10 @@ void teleg_read(GameObj &g) {
     }
 
     fclose(teleg_read_fd);
-    teleg_read_fd = fopen(telegram_file, "w+"); /* trunc file */
+    teleg_read_fd = fopen(telegram_file.c_str(), "w+"); /* trunc file */
     fclose(teleg_read_fd);
   } else {
-    sprintf(buf, "\nTelegram file %s non-existent.\n", telegram_file);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("\nTelegram file {0} non-existent.\n", telegram_file);
     return;
   }
 }
@@ -172,30 +170,31 @@ void teleg_read(GameObj &g) {
  * description:  Read the news file
  *
  */
-void news_read(int Playernum, int Governor, int type) {
+void news_read(NewsType type, GameObj &g) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   char *p;
 
-  char telegram_file[PATHLEN];
-  bzero((char *)telegram_file, sizeof(telegram_file));
+  std::string telegram_file;
   switch (type) {
     case DECLARATION:
-      sprintf(telegram_file, "%s", DECLARATIONFL);
+      telegram_file = std::format("{0}", DECLARATIONFL);
       break;
     case TRANSFER:
-      sprintf(telegram_file, "%s", TRANSFERFL);
+      telegram_file = std::format("{0}", TRANSFERFL);
       break;
     case COMBAT:
-      sprintf(telegram_file, "%s", COMBATFL);
+      telegram_file = std::format("{0}", COMBATFL);
       break;
     case ANNOUNCE:
-      sprintf(telegram_file, "%s", ANNOUNCEFL);
+      telegram_file = std::format("{0}", ANNOUNCEFL);
       break;
     default:
       return;
   }
 
   FILE *teleg_read_fd;
-  if ((teleg_read_fd = fopen(telegram_file, "r")) != nullptr) {
+  if ((teleg_read_fd = fopen(telegram_file.c_str(), "r")) != nullptr) {
     auto &race = races[Playernum - 1];
     if (race.governor[Governor].newspos[type] > newslength[type])
       race.governor[Governor].newspos[type] = 0;
@@ -216,8 +215,7 @@ void news_read(int Playernum, int Governor, int type) {
     race.governor[Governor].newspos[type] = newslength[type];
     putrace(race);
   } else {
-    sprintf(buf, "\nNews file %s non-existent.\n", telegram_file);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("\nNews file {0} non-existent.\n", telegram_file);
     return;
   }
 }

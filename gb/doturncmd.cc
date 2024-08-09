@@ -17,7 +17,6 @@ import std.compat;
 #include "gb/doplanet.h"
 #include "gb/doship.h"
 #include "gb/doturn.h"
-#include "gb/files.h"
 #include "gb/moveplanet.h"
 #include "gb/races.h"
 #include "gb/tele.h"
@@ -43,17 +42,6 @@ static void make_discoveries(Race &);
 static void output_ground_attacks();
 
 void do_turn(Db &db, int update) {
-  struct victstruct {
-    int numsects;
-    int shipcost;
-    int shiptech;
-    int morale;
-    int res;
-    int des;
-    int fuel;
-    money_t money;
-  } *victory;
-
   /* make all 0 for first iteration of doplanet */
   if (update) {
     bzero((char *)starpopns, sizeof(starpopns));
@@ -341,16 +329,21 @@ void do_turn(Db &db, int update) {
 
   /* here is where we do victory calculations. */
   if (update) {
-    victory =
-        (struct victstruct *)malloc(Num_races * sizeof(struct victstruct));
+    struct victstruct {
+      int numsects{0};
+      int shipcost{0};
+      int shiptech{0};
+      int morale{0};
+      resource_t res{0};
+      int des{0};
+      int fuel{0};
+      money_t money{0};
+    };
+
+    std::array<victstruct, MAXPLAYERS> victory;
+
     for (player_t i = 1; i <= Num_races; i++) {
-      victory[i - 1].numsects = 0;
-      victory[i - 1].shipcost = 0;
-      victory[i - 1].shiptech = 0;
       victory[i - 1].morale = races[i - 1].morale;
-      victory[i - 1].res = 0;
-      victory[i - 1].des = 0;
-      victory[i - 1].fuel = 0;
       victory[i - 1].money = races[i - 1].governor[0].money;
       for (auto &governor : races[i - 1].governor)
         if (governor.active) victory[i - 1].money += governor.money;
@@ -362,7 +355,7 @@ void do_turn(Db &db, int update) {
         for (player_t j = 0; j < Num_races; j++) {
           if (!planets[star][i]->info[j].explored) continue;
           victory[j].numsects += (int)planets[star][i]->info[j].numsectsowned;
-          victory[j].res += (int)planets[star][i]->info[j].resource;
+          victory[j].res += planets[star][i]->info[j].resource;
           victory[j].des += (int)planets[star][i]->info[j].destruct;
           victory[j].fuel += (int)planets[star][i]->info[j].fuel;
         }
@@ -391,7 +384,6 @@ void do_turn(Db &db, int update) {
       races[i].victory_score = (int)(morale_factor((double)victory[i].morale) *
                                      races[i].victory_score);
     }
-    free(victory);
   } /* end of if (update) */
 
   for (shipnum_t i = 1; i <= Num_ships; i++) {
@@ -422,7 +414,7 @@ void do_turn(Db &db, int update) {
         for (player_t j = 1; j <= Num_races; j++)
           races[j - 1].translate[i - 1] = 100;
 
-      Blocks[i - 1].VPs = 10 * Blocks[i - 1].systems_owned;
+      Blocks[i - 1].VPs = 10L * Blocks[i - 1].systems_owned;
 #ifdef MARKET
       for (auto &governor : races[i - 1].governor)
         if (governor.active)

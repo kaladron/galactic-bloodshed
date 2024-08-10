@@ -77,8 +77,8 @@ void post(std::string msg, NewsType type) {
     }
   }
 
-  FILE *news_fd;
-  if ((news_fd = fopen(telefl, "a")) == nullptr) {
+  std::ofstream news_file(telefl, std::ios::app);
+  if (!news_file.is_open()) {
     return;
   }
   auto now = std::chrono::system_clock::now();
@@ -88,8 +88,8 @@ void post(std::string msg, NewsType type) {
                                    current_tm->tm_mon + 1, current_tm->tm_mday,
                                    current_tm->tm_hour, current_tm->tm_min,
                                    current_tm->tm_sec, msg);
-  fprintf(news_fd, "%s", outbuf.c_str());
-  fclose(news_fd);
+  news_file << outbuf;
+  news_file.close();
   newslength[type] += outbuf.length();
 }
 

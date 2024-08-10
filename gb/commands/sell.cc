@@ -139,7 +139,7 @@ void sell(const command_t &argv, GameObj &g) {
   notify(Playernum, Governor, buf);
   sprintf(buf, "Lot #%d - %d units of %s for sale by %s [%d].\n", commodno,
           amount, commod_name[item], races[Playernum - 1].name, Playernum);
-  post(buf, TRANSFER);
+  post(buf, NewsType::TRANSFER);
   for (player_t i = 1; i <= Num_races; i++) notify_race(i, buf);
   putcommod(c, commodno);
   putplanet(p, stars[snum], pnum);

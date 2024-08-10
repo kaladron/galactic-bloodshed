@@ -138,7 +138,7 @@ void declare(const command_t& argv, GameObj& g) {
       return;
   }
 
-  post(buf, DECLARATION);
+  post(buf, NewsType::DECLARATION);
   warn_race(Playernum, buf);
 
   /* They, of course, learn more about you */

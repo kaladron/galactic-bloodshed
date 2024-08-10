@@ -32,7 +32,7 @@ export enum PlanetType {
   DESERT = 7,
 };
 
-export enum NewsType {
+export enum class NewsType {
   DECLARATION = 0,
   TRANSFER = 1,
   COMBAT = 2,

@@ -3,6 +3,7 @@
 module;
 
 #include <sqlite3.h>
+#include <sys/types.h>
 
 #include "gb/races.h"
 #include "gb/sql/dbdecl.h"
@@ -41,7 +42,7 @@ export void putsmap(SectorMap &map, Planet &p);
 export void putship(Ship *);
 export void putcommod(const Commod &, int);
 export shipnum_t Numships();
-export int Newslength(int);
+export off_t getnewslength(NewsType);
 export void clr_shipfree();
 export void clr_commodfree();
 export void makeshipdead(int);

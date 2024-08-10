@@ -51,7 +51,7 @@ void send_message(const command_t &argv, GameObj &g) {
       strcat(msg, buf);
     }
     strcat(msg, "\n");
-    post(msg, ANNOUNCE);
+    post(msg, NewsType::ANNOUNCE);
     return;
   }
   if (argv[1] == "block") {

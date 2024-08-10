@@ -118,7 +118,7 @@ void dissolve(const command_t &argv, GameObj &g) {
   putrace(race);
 
   sprintf(buf, "%s [%d] has dissolved.\n", race.name, Playernum);
-  post(buf, DECLARATION);
+  post(buf, NewsType::DECLARATION);
 
 #endif
 }

@@ -133,7 +133,7 @@ void give(const command_t &argv, GameObj &g) {
   if (!race.God) {
     sprintf(buf, "%s [%d] gives %s [%d] a ship.\n", race.name, Playernum,
             alien.name, who);
-    post(buf, TRANSFER);
+    post(buf, NewsType::TRANSFER);
   }
 }
 }  // namespace GB::commands

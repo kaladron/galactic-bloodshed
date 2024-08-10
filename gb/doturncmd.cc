@@ -631,7 +631,7 @@ static void output_ground_attacks() {
           sprintf(buf, "%s: %s [%d] assaults %s [%d] %d times.\n",
                   stars[star].name, races[i - 1].name, i, races[j - 1].name, j,
                   ground_assaults[i - 1][j - 1][star]);
-          post(buf, COMBAT);
+          post(buf, NewsType::COMBAT);
           ground_assaults[i - 1][j - 1][star] = 0;
         }
 }

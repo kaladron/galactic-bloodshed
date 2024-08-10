@@ -284,7 +284,7 @@ void domissile(Ship *ship) {
       if (numdest) {
         sprintf(buf, "%s dropped on %s.\n", ship_to_string(*ship).c_str(),
                 prin_ship_orbits(*ship).c_str());
-        post(buf, COMBAT);
+        post(buf, NewsType::COMBAT);
       }
     }
   } else if (ship->whatdest == ScopeLevel::LEVEL_SHIP) {
@@ -300,7 +300,7 @@ void domissile(Ship *ship) {
       push_telegram((int)ships[sh2]->owner, (int)ships[sh2]->governor,
                     long_buf);
       kill_ship((int)ship->owner, ship);
-      post(short_buf, COMBAT);
+      post(short_buf, NewsType::COMBAT);
     }
   }
 }
@@ -353,7 +353,7 @@ void domine(int shipno, int detonate) {
     if (rad) {
       sprintf(buf, "%s detonated at %s\n", ship_to_string(*ship).c_str(),
               prin_ship_orbits(*ship).c_str());
-      post(buf, COMBAT);
+      post(buf, NewsType::COMBAT);
       notify_star(ship->owner, ship->governor, ship->storbits, buf);
       Shiplist shiplist(sh);
       for (auto s : shiplist) {
@@ -362,7 +362,7 @@ void domine(int shipno, int detonate) {
           auto damage = shoot_ship_to_ship(&*ship, &s, (int)(ship->destruct), 0,
                                            0, long_buf, short_buf);
           if (damage > 0) {
-            post(short_buf, COMBAT);
+            post(short_buf, NewsType::COMBAT);
             warn(s.owner, s.governor, long_buf);
             putship(&s);
           }
@@ -437,7 +437,7 @@ void doabm(Ship *ship) {
         push_telegram((int)(ship->owner), (int)ship->governor, long_buf);
         push_telegram((int)(ships[sh2]->owner), (int)ships[sh2]->governor,
                       long_buf);
-        post(short_buf, COMBAT);
+        post(short_buf, NewsType::COMBAT);
       }
       sh2 = ships[sh2]->nextship;
     }

@@ -99,13 +99,13 @@ void walk(const command_t &argv, GameObj &g) {
           use_destruct(ship2, strength);
           notify(Playernum, Governor, long_buf);
           warn(ship2.owner, ship2.governor, long_buf);
-          if (!ship2.alive) post(short_buf, COMBAT);
+          if (!ship2.alive) post(short_buf, NewsType::COMBAT);
           notify_star(Playernum, Governor, ship->storbits, short_buf);
           if (strength1) {
             use_destruct(*ship, strength1);
             notify(Playernum, Governor, long_buf);
             warn(ship2.owner, ship2.governor, long_buf);
-            if (!ship2.alive) post(short_buf, COMBAT);
+            if (!ship2.alive) post(short_buf, NewsType::COMBAT);
             notify_star(Playernum, Governor, ship->storbits, short_buf);
           }
         }
@@ -132,14 +132,14 @@ void walk(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, long_buf);
         warn(alien.Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, ship->storbits, short_buf);
-        post(short_buf, COMBAT);
+        post(short_buf, NewsType::COMBAT);
 
         people_attack_mech(&*ship, sect.popn, sect.troops, alien, race, sect, x,
                            y, long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien.Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, ship->storbits, short_buf);
-        if (!ship->alive) post(short_buf, COMBAT);
+        if (!ship->alive) post(short_buf, NewsType::COMBAT);
 
         sect.popn = civ;
         sect.troops = mil;

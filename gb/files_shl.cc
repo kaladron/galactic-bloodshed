@@ -1624,11 +1624,12 @@ int Sql::Numcommods() {
   return ((int)(buffer.st_size / sizeof(Commod)));
 }
 
-int Newslength(int type) {
+off_t getnewslength(NewsType type) {
   struct stat buffer;
   FILE *fp;
 
   switch (type) {
+    using enum NewsType;
     case DECLARATION:
       if ((fp = fopen(DECLARATIONFL, "r")) == nullptr)
         fp = fopen(DECLARATIONFL, "w+");
@@ -1650,7 +1651,7 @@ int Newslength(int type) {
   }
   fstat(fileno(fp), &buffer);
   fclose(fp);
-  return ((int)buffer.st_size);
+  return (buffer.st_size);
 }
 
 /* delete contents of dead ship file */

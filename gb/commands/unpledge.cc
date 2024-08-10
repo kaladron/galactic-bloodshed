@@ -55,7 +55,7 @@ void unpledge(const command_t& argv, GameObj& g) {
       break;
   }
 
-  post(buf, DECLARATION);
+  post(buf, NewsType::DECLARATION);
 
   compute_power_blocks();
   Putblock(Blocks);

@@ -40,7 +40,7 @@ void check_overload(Ship *ship, int cew, int *strength) {
       kill_ship((int)(ship->owner), ship);
       *strength = 0;
       warn(ship->owner, ship->governor, buf);
-      post(buf, COMBAT);
+      post(buf, NewsType::COMBAT);
       notify_star(ship->owner, ship->governor, ship->storbits, buf);
     } else if (int_rand(0, *strength) >
                (int)((1.0 - .01 * ship->damage) * ship->tech / 4.0)) {

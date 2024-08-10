@@ -127,7 +127,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     sprintf(buf, "/%s/%s: Successful insurgency by %s [%d] against %s [%d]\n",
             stars[g.snum].name, stars[g.snum].pnames[g.pnum], race.name,
             Playernum, alien.name, who);
-    post(buf, DECLARATION);
+    post(buf, NewsType::DECLARATION);
   } else {
     notify(Playernum, Governor, long_buf);
     g.out << "The insurgency failed!\n";
@@ -139,7 +139,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     sprintf(buf, "/%s/%s: Failed insurgency by %s [%d] against %s [%d]\n",
             stars[g.snum].name, stars[g.snum].pnames[g.pnum], race.name,
             Playernum, alien.name, who);
-    post(buf, DECLARATION);
+    post(buf, NewsType::DECLARATION);
   }
   deductAPs(g, APcount, g.snum);
   race.governor[Governor].money -= amount;

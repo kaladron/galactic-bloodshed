@@ -313,7 +313,8 @@ void capture(const command_t &argv, GameObj &g) {
         notify(Playernum, Governor, buf);
       }
       warn(oldowner, oldgov, telegram_buf);
-      if (ship->owner != oldowner || !ship->alive) post(short_buf, COMBAT);
+      if (ship->owner != oldowner || !ship->alive)
+        post(short_buf, NewsType::COMBAT);
       notify_star(Playernum, Governor, ship->storbits, short_buf);
       putship(ship);
       putsector(sect, p, x, y);

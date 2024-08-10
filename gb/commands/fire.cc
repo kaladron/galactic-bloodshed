@@ -209,7 +209,7 @@ void fire(const command_t &argv, GameObj &g) {
       else
         use_destruct(*from, strength);
 
-      if (!to->alive) post(short_buf, COMBAT);
+      if (!to->alive) post(short_buf, NewsType::COMBAT);
       notify_star(Playernum, Governor, from->storbits, short_buf);
       warn(to->owner, to->governor, long_buf);
       notify(Playernum, Governor, long_buf);
@@ -226,7 +226,7 @@ void fire(const command_t &argv, GameObj &g) {
             use_fuel(*to, 2.0 * (double)strength);
           else
             use_destruct(*to, strength);
-          if (!from->alive) post(short_buf, COMBAT);
+          if (!from->alive) post(short_buf, NewsType::COMBAT);
           notify_star(Playernum, Governor, from->storbits, short_buf);
           notify(Playernum, Governor, long_buf);
           warn(to->owner, to->governor, long_buf);
@@ -256,7 +256,7 @@ void fire(const command_t &argv, GameObj &g) {
                 use_fuel(ship, 2.0 * (double)strength);
               else
                 use_destruct(ship, strength);
-              if (!from->alive) post(short_buf, COMBAT);
+              if (!from->alive) post(short_buf, NewsType::COMBAT);
               notify_star(Playernum, Governor, from->storbits, short_buf);
               notify(Playernum, Governor, long_buf);
               warn(ship.owner, ship.governor, long_buf);

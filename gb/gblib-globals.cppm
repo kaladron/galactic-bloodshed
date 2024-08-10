@@ -43,7 +43,7 @@ export double Compat[MAXPLAYERS];
 export player_t Num_races;
 export unsigned long Num_commods;
 export planetnum_t Planet_count;
-export unsigned long newslength[4];
+export std::unordered_map<NewsType, unsigned long> newslength;
 
 /* number of movement segments (global variable) */
 export unsigned long segments;

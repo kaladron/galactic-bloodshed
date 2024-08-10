@@ -18,7 +18,6 @@ import std.compat;
 #include <climits>
 #include <cstdio>
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/files.h"
 #include "gb/tweakables.h"
@@ -28,13 +27,13 @@ import std.compat;
  */
 void purge() {
   fclose(std::fopen(DECLARATIONFL, "w+"));
-  newslength[0] = 0;
+  newslength[NewsType::DECLARATION] = 0;
   fclose(std::fopen(COMBATFL, "w+"));
-  newslength[1] = 0;
+  newslength[NewsType::COMBAT] = 0;
   fclose(std::fopen(ANNOUNCEFL, "w+"));
-  newslength[2] = 0;
+  newslength[NewsType::ANNOUNCE] = 0;
   fclose(std::fopen(TRANSFERFL, "w+"));
-  newslength[3] = 0;
+  newslength[NewsType::TRANSFER] = 0;
 }
 
 /**
@@ -44,11 +43,12 @@ void purge() {
  * \param type Type of message.  Valid types are DECLARATION, TRANSFER, COMBAT
  * and ANNOUNCE.
  */
-void post(std::string msg, int type) {
+void post(std::string msg, NewsType type) {
   // msg is intentionally a copy as we fix it up in here
   const char *telefl;
 
   switch (type) {
+    using enum NewsType;
     case DECLARATION:
       telefl = DECLARATIONFL;
       break;
@@ -177,6 +177,7 @@ void news_read(NewsType type, GameObj &g) {
 
   std::string telegram_file;
   switch (type) {
+    using enum NewsType;
     case DECLARATION:
       telegram_file = std::format("{0}", DECLARATIONFL);
       break;
@@ -196,10 +197,12 @@ void news_read(NewsType type, GameObj &g) {
   FILE *teleg_read_fd;
   if ((teleg_read_fd = fopen(telegram_file.c_str(), "r")) != nullptr) {
     auto &race = races[Playernum - 1];
-    if (race.governor[Governor].newspos[type] > newslength[type])
-      race.governor[Governor].newspos[type] = 0;
+    if (race.governor[Governor].newspos[std::to_underlying(type)] >
+        newslength[type])
+      race.governor[Governor].newspos[std::to_underlying(type)] = 0;
 
-    fseek(teleg_read_fd, race.governor[Governor].newspos[type] & LONG_MAX,
+    fseek(teleg_read_fd,
+          race.governor[Governor].newspos[std::to_underlying(type)] & LONG_MAX,
           SEEK_SET);
     while (fgets(buf, sizeof buf, teleg_read_fd)) {
       for (p = buf; *p; p++)
@@ -212,7 +215,8 @@ void news_read(NewsType type, GameObj &g) {
     }
 
     fclose(teleg_read_fd);
-    race.governor[Governor].newspos[type] = newslength[type];
+    race.governor[Governor].newspos[std::to_underlying(type)] =
+        newslength[type];
     putrace(race);
   } else {
     g.out << std::format("\nNews file {0} non-existent.\n", telegram_file);

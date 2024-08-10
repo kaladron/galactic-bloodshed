@@ -10,7 +10,6 @@ import std.compat;
 #include <strings.h>
 
 #include "gb/buffers.h"
-#include "gb/files.h"
 #include "gb/max.h"
 #include "gb/shootblast.h"
 #include "gb/tele.h"
@@ -103,7 +102,7 @@ int berserker_bombard(Ship *ship, Planet &planet, Race &r) {
       for (player_t i = 1; i <= Num_races; i++)
         if (Nuked[i - 1] && i != ship->owner)
           warn(i, stars[ship->storbits].governor[i - 1], telegram_buf);
-      post(buf, COMBAT);
+      post(buf, NewsType::COMBAT);
 
       /* enemy planet retaliates along with defending forces */
     } else {

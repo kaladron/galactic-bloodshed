@@ -498,8 +498,12 @@ static int shovechars(int port, Db &db) {
   int sock = make_socket(port);
   gettimeofday(&last_slice, nullptr);
 
-  if (!shutdown_flag) post("Server started\n", ANNOUNCE);
-  for (int i = 0; i <= ANNOUNCE; i++) newslength[i] = Newslength(i);
+  if (!shutdown_flag) post("Server started\n", NewsType::ANNOUNCE);
+
+  newslength[NewsType::DECLARATION] = getnewslength(NewsType::DECLARATION);
+  newslength[NewsType::TRANSFER] = getnewslength(NewsType::TRANSFER);
+  newslength[NewsType::COMBAT] = getnewslength(NewsType::COMBAT);
+  newslength[NewsType::ANNOUNCE] = getnewslength(NewsType::ANNOUNCE);
 
   while (!shutdown_flag) {
     fflush(stdout);
@@ -1034,7 +1038,7 @@ static void do_segment(Db &db, int override, int segment) {
 static void close_sockets(int sock) {
   /* post message into news file */
   const char *shutdown_message = "Shutdown ordered by deity - Bye\n";
-  post(shutdown_message, ANNOUNCE);
+  post(shutdown_message, NewsType::ANNOUNCE);
 
   for (auto &d : descriptor_list) {
     if (write(d.descriptor, shutdown_message, strlen(shutdown_message)) < 0) {

@@ -474,7 +474,7 @@ void dock(const command_t &argv, GameObj &g) {
                 s2->alive ? (s2->owner == Playernum ? "CAPTURED" : "assaulted")
                           : "DESTROYED",
                 ship_to_string(ship).c_str(), prin_ship_orbits(*s).c_str());
-        if (s2->owner == Playernum || !s2->alive) post(buf, COMBAT);
+        if (s2->owner == Playernum || !s2->alive) post(buf, NewsType::COMBAT);
         notify_star(Playernum, Governor, s->storbits, buf);
       } else {
         sprintf(buf, "%s docked with %s.\n", ship_to_string(*s).c_str(),

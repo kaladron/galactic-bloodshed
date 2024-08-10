@@ -53,7 +53,7 @@ void pay(const command_t &argv, GameObj &g) {
 
   sprintf(buf, "%s [%d] pays %s [%d].\n", race.name, Playernum, alien.name,
           who);
-  post(buf, TRANSFER);
+  post(buf, NewsType::TRANSFER);
 
   putrace(alien);
   putrace(race);

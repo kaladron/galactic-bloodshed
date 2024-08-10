@@ -57,7 +57,7 @@ void invite(const command_t& argv, GameObj& g) {
             Blocks[Playernum - 1].name, Playernum);
     warn_race(Playernum, buf);
   }
-  post(buf, DECLARATION);
+  post(buf, NewsType::DECLARATION);
 
   Putblock(Blocks);
 }

@@ -66,16 +66,8 @@ void post(std::string msg, NewsType type) {
   }
 
   // look for special symbols
-  for (auto &p : msg) {
-    switch (p) {
-      case ';':
-        p = '\n';
-        break;
-      case '|':
-        p = '\t';
-        break;
-    }
-  }
+  std::ranges::replace(msg, ';', '\n');
+  std::ranges::replace(msg, '|', '\t');
 
   std::ofstream news_file(telefl, std::ios::app);
   if (!news_file.is_open()) {

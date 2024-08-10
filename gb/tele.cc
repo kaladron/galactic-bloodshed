@@ -81,19 +81,16 @@ void post(std::string msg, NewsType type) {
   if ((news_fd = fopen(telefl, "a")) == nullptr) {
     return;
   }
-  time_t tm = time(nullptr);
-  struct tm *current_tm = localtime(&tm);
-  char *outbuf;
-  if (asprintf(&outbuf, "%2d/%2d %02d:%02d:%02d %s", current_tm->tm_mon + 1,
-               current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,
-               current_tm->tm_sec, msg.c_str()) < 0) {
-    perror("Gaaaaah");
-    exit(-1);
-  }
-  fprintf(news_fd, "%s", outbuf);
+  auto now = std::chrono::system_clock::now();
+  auto current_time = std::chrono::system_clock::to_time_t(now);
+  auto current_tm = std::localtime(&current_time);
+  std::string outbuf = std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
+                                   current_tm->tm_mon + 1, current_tm->tm_mday,
+                                   current_tm->tm_hour, current_tm->tm_min,
+                                   current_tm->tm_sec, msg);
+  fprintf(news_fd, "%s", outbuf.c_str());
   fclose(news_fd);
-  newslength[type] += strlen(outbuf);
-  free(outbuf);
+  newslength[type] += outbuf.length();
 }
 
 /**

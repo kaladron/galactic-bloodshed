@@ -9,14 +9,13 @@ import std.compat;
 
 #include "gb/doship.h"
 
-#include <stdlib.h>
 #include <strings.h>
 
-#include "gb/GB_server.h"
+#include <cstdlib>
+
 #include "gb/VN.h"
 #include "gb/buffers.h"
 #include "gb/doturn.h"
-#include "gb/files.h"
 #include "gb/fire.h"
 #include "gb/load.h"
 #include "gb/max.h"
@@ -71,7 +70,7 @@ void doship(Ship *ship, int update) {
         stars[ship->storbits].nova_stage > 0) {
       /* damage ships from supernovae */
       /* Maarten: modified to take into account MOVES_PER_UPDATE */
-      ship->damage += 5 * stars[ship->storbits].nova_stage /
+      ship->damage += 5L * stars[ship->storbits].nova_stage /
                       ((armor(*ship) + 1) * segments);
       if (ship->damage >= 100) {
         kill_ship((int)(ship->owner), ship);

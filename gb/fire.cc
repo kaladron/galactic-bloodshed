@@ -1,21 +1,21 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /// \file fire.c
 /// \brief Fire at ship or planet from ship or planet
 
-import gblib;
-import std.compat;
+module;
 
-#include "gb/fire.h"
+import std;
 
 #include <strings.h>
 
+#include <cstdio>
+#include <cstdlib>
+
 #include "gb/buffers.h"
-#include "gb/files.h"
-#include "gb/tele.h"
 #include "gb/tweakables.h"
+
+module gblib;
 
 // check to see if there are any planetary defense networks on the planet
 bool has_planet_defense(const shipnum_t shipno, const player_t Playernum) {

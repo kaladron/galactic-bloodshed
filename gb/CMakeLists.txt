@@ -83,6 +83,7 @@ target_sources(
          FILES
          gblib.cppm
          gblib-files_shl.cppm
+         gblib-fire.cppm
          gblib-globals.cppm
          gblib-misc.cppm
          gblib-planet.cppm
@@ -97,6 +98,7 @@ target_sources(
          gblib-tweakables.cppm
          gblib-types.cppm
   PRIVATE files_shl.cc
+          fire.cc
           misc.cc
           utils/rand.cc
           sectormap.cc
@@ -104,6 +106,7 @@ target_sources(
           shlmisc.cc
           sql/sql.cc
           star.cc
+          tele.cc
           victory.cc)
 
 add_library(commands)
@@ -198,7 +201,6 @@ set(OLD_LIBGBLIB_FILES
     dosector.cc
     doship.cc
     doturncmd.cc
-    fire.cc
     fuel.cc
     land.cc
     load.cc
@@ -212,8 +214,7 @@ set(OLD_LIBGBLIB_FILES
     place.cc
     prof.cc
     shootblast.cc
-    tech.cc
-    tele.cc)
+    tech.cc)
 
 add_executable(GB GB_server.cc ${COMMON_FILES} ${OLD_LIBGBLIB_FILES})
 target_link_libraries(GB PRIVATE gblib commands ${SQLite3_LIBRARIES}

@@ -13,12 +13,9 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/files.h"
-#include "gb/fire.h"
 #include "gb/land.h"
 #include "gb/races.h"
 #include "gb/shootblast.h"
-#include "gb/tele.h"
 #include "gb/tweakables.h"
 
 bool can_build_on_sector(const int what, const Race &race, const Planet &planet,

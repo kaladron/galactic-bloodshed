@@ -24,18 +24,9 @@ import std.compat;
 #include <cstdlib>
 
 #include "gb/buffers.h"
-#include "gb/build.h"
 #include "gb/doturncmd.h"
 #include "gb/files.h"
-#include "gb/fire.h"
-#include "gb/fuel.h"
 #include "gb/globals.h"
-#include "gb/land.h"
-#include "gb/map.h"
-#include "gb/move.h"
-#include "gb/order.h"
-#include "gb/prof.h"
-#include "gb/tele.h"
 #include "gb/tweakables.h"
 
 static int shutdown_flag = 0;

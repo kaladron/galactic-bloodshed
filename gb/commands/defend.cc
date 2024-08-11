@@ -8,11 +8,8 @@ import std.compat;
 #include <strings.h>
 
 #include "gb/buffers.h"
-#include "gb/files.h"
-#include "gb/fire.h"
 #include "gb/load.h"
 #include "gb/shootblast.h"
-#include "gb/tele.h"
 
 module commands;
 

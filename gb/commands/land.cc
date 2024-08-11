@@ -12,7 +12,6 @@ import std.compat;
 #include "gb/files.h"
 #include "gb/load.h"
 #include "gb/shootblast.h"
-#include "gb/tele.h"
 module commands;
 
 namespace GB::commands {

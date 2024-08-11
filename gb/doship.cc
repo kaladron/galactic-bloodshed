@@ -16,12 +16,10 @@ import std.compat;
 #include "gb/VN.h"
 #include "gb/buffers.h"
 #include "gb/doturn.h"
-#include "gb/fire.h"
 #include "gb/load.h"
 #include "gb/max.h"
 #include "gb/moveship.h"
 #include "gb/shootblast.h"
-#include "gb/tele.h"
 #include "gb/tweakables.h"
 
 static constexpr double ap_planet_factor(const Planet &);

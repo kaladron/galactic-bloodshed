@@ -6,7 +6,6 @@ import gblib;
 import std.compat;
 
 #include "gb/files.h"
-#include "gb/tele.h"
 module commands;
 
 namespace GB::commands {

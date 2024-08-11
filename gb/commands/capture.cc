@@ -14,7 +14,6 @@ import std.compat;
 #include "gb/defense.h"
 #include "gb/files.h"
 #include "gb/races.h"
-#include "gb/tele.h"
 #include "gb/tweakables.h"
 
 module commands;

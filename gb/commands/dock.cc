@@ -11,14 +11,10 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/files.h"
-#include "gb/fire.h"
 #include "gb/load.h"
 #include "gb/max.h"
 #include "gb/races.h"
-#include "gb/tele.h"
 #include "gb/tweakables.h"
 
 module commands;

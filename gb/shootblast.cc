@@ -7,11 +7,8 @@ import std.compat;
 
 #include "gb/shootblast.h"
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/build.h"
 #include "gb/defense.h"
-#include "gb/fire.h"
 #include "gb/races.h"
 #include "gb/tweakables.h"
 

@@ -27,7 +27,6 @@ import std.compat;
 #include "gb/races.h"
 #include "gb/shootblast.h"
 #include "gb/tech.h"
-#include "gb/tele.h"
 #include "gb/tweakables.h"
 
 static void do_dome(Ship *, SectorMap &);

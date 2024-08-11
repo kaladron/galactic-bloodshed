@@ -3,6 +3,7 @@
 export module gblib;
 
 export import :files_shl;
+export import :fire;
 export import :misc;
 export import :planet;
 export import :types;

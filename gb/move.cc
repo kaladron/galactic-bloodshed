@@ -14,12 +14,9 @@ import std.compat;
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/defense.h"
-#include "gb/files.h"
-#include "gb/fire.h"
 #include "gb/load.h"
 #include "gb/races.h"
 #include "gb/shootblast.h"
-#include "gb/tele.h"
 #include "gb/tweakables.h"
 
 int get_move(char direction, int x, int y, int *x2, int *y2,

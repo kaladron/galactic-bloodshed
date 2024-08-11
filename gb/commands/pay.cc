@@ -7,7 +7,6 @@ import std.compat;
 
 #include "gb/buffers.h"
 #include "gb/files.h"
-#include "gb/tele.h"
 
 module commands;
 

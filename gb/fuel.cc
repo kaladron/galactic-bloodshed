@@ -11,10 +11,7 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/doship.h"
-#include "gb/fire.h"
-#include "gb/max.h"
 #include "gb/moveship.h"
-#include "gb/order.h"
 #include "gb/place.h"
 #include "gb/tweakables.h"
 

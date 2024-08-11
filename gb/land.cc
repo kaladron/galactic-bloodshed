@@ -18,7 +18,6 @@ import std.compat;
 #include "gb/load.h"
 #include "gb/races.h"
 #include "gb/shootblast.h"
-#include "gb/tele.h"
 #include "gb/tweakables.h"
 
 /// Determine whether the ship crashed or not.

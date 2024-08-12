@@ -62,17 +62,14 @@ find_package(SQLite3 REQUIRED)
 # Libraries
 
 # Executable targets
-
-set(COMMON_FILES files_rw.cc)
-
 add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
-                        creator/makeuniv.cc ${COMMON_FILES})
+                        creator/makeuniv.cc)
 target_link_libraries(makeuniv PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
-add_executable(enrol enrol.cc ${COMMON_FILES})
+add_executable(enrol enrol.cc)
 target_link_libraries(enrol PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
-add_executable(racegen GB_racegen.cc enroll.cc racegen.cc ${COMMON_FILES})
+add_executable(racegen GB_racegen.cc enroll.cc racegen.cc)
 target_link_libraries(racegen PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
 add_library(gblib)
@@ -216,16 +213,16 @@ set(OLD_LIBGBLIB_FILES
     shootblast.cc
     tech.cc)
 
-add_executable(GB GB_server.cc ${COMMON_FILES} ${OLD_LIBGBLIB_FILES})
+add_executable(GB GB_server.cc ${OLD_LIBGBLIB_FILES})
 target_link_libraries(GB PRIVATE gblib commands ${SQLite3_LIBRARIES}
                                  glaze::glaze)
 
 # Test targets
-add_executable(shlmisc_test shlmisc_test.cc ${COMMON_FILES})
+add_executable(shlmisc_test shlmisc_test.cc)
 target_link_libraries(shlmisc_test PRIVATE gblib ${SQLite3_LIBRARIES})
 add_test(NAME GB_shlmisc_test COMMAND shlmisc_test)
 
-add_executable(gblib_test gblib_test.cc ${COMMON_FILES})
+add_executable(gblib_test gblib_test.cc)
 target_link_libraries(gblib_test PRIVATE gblib ${SQLite3_LIBRARIES})
 add_test(NAME GB_gblib_test COMMAND gblib_test)
 

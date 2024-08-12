@@ -6,6 +6,7 @@ module;
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include <cerrno>
 #include <cstdio>
@@ -15,6 +16,7 @@ export module gblib:misc;
 import :race;
 import :tweakables;
 import :types;
+
 import std.compat;
 
 #include "gb/tweakables.h"
@@ -71,3 +73,25 @@ export void adjust_morale(Race &, Race &, int);
 export void queue_string(DescriptorData &, const std::string &);
 export void add_to_queue(std::deque<std::string> &, const std::string &);
 export void strstr_to_queue(DescriptorData &);
+
+void Fileread(int fd, char *p, size_t num, int posn) {
+  if (lseek(fd, posn, L_SET) < 0) {
+    perror("Fileread 1");
+    return;
+  }
+  if ((read(fd, p, num)) != num) {
+    perror("Fileread 2");
+  }
+}
+
+void Filewrite(int fd, const char *p, size_t num, int posn) {
+  if (lseek(fd, posn, L_SET) < 0) {
+    perror("Filewrite 1");
+    return;
+  }
+
+  if ((write(fd, p, num)) != num) {
+    perror("Filewrite 2");
+    return;
+  }
+}

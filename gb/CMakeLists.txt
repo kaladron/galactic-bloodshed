@@ -66,7 +66,7 @@ find_package(SQLite3 REQUIRED)
 set(COMMON_FILES files_rw.cc)
 
 add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
-                        creator/makeuniv.cc creator/namegen.cc ${COMMON_FILES})
+                        creator/makeuniv.cc ${COMMON_FILES})
 target_link_libraries(makeuniv PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze)
 
 add_executable(enrol enrol.cc ${COMMON_FILES})

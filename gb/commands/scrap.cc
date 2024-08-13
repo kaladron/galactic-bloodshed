@@ -9,7 +9,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/land.h"
 #include "gb/load.h"
@@ -74,7 +73,7 @@ void scrap(const command_t &argv, GameObj &g) {
         if (landed(*s)) sect = getsector(planet, s->land_x, s->land_y);
       }
       std::optional<Ship> s2;
-      if (docked(s)) {
+      if (docked(*s)) {
         s2 = getship(s->destshipno);
         if (!s2) {
           continue;
@@ -194,7 +193,7 @@ void scrap(const command_t &argv, GameObj &g) {
       // it'll be overwritten maybe here?
       kill_ship(g.player, s);
       putship(s);
-      if (docked(s)) {
+      if (docked(*s)) {
         s2->crystals += xtalval;
         rcv_fuel(*s2, (double)fuelval);
         rcv_destruct(*s2, destval);

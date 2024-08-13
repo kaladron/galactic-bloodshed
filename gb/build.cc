@@ -142,7 +142,7 @@ std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder, int *snum,
     g.out << "This ship has no crew.\n";
     return {};
   }
-  if (docked(builder)) {
+  if (docked(*builder)) {
     g.out << "Undock this ship first.\n";
     return {};
   }

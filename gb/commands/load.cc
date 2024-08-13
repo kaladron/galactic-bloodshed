@@ -377,7 +377,7 @@ void load(const command_t &argv, GameObj &g) {
           free(s2);
           continue;
         }
-        if (overloaded(s2) && s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
+        if (overloaded(*s2) && s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
           sprintf(buf, "%s is overloaded!\n", ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
           free(s);

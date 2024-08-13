@@ -9,7 +9,6 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/files.h"
 #include "gb/load.h"
 #include "gb/shootblast.h"
 module commands;
@@ -43,7 +42,7 @@ void land(const command_t &argv, GameObj &g) {
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, argv[1], *s, &nextshipno) &&
         authorized(Governor, *s)) {
-      if (overloaded(s)) {
+      if (overloaded(*s)) {
         sprintf(buf, "%s is too overloaded to land.\n",
                 ship_to_string(*s).c_str());
         notify(Playernum, Governor, buf);
@@ -55,7 +54,7 @@ void land(const command_t &argv, GameObj &g) {
         free(s);
         continue;
       }
-      if (docked(s)) {
+      if (docked(*s)) {
         g.out << "That ship is docked to another ship.\n";
         free(s);
         continue;

@@ -199,7 +199,6 @@ set(OLD_LIBGBLIB_FILES
     doship.cc
     doturncmd.cc
     fuel.cc
-    land.cc
     load.cc
     map.cc
     max.cc

@@ -10,7 +10,6 @@ import gblib;
 import std.compat;
 
 #include "gb/buffers.h"
-#include "gb/land.h"
 #include "gb/load.h"
 #include "gb/races.h"
 

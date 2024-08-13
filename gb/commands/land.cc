@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/land.h"
-
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/load.h"

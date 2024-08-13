@@ -334,6 +334,9 @@ export unsigned int ship_size(const Ship &);
 export double complexity(const Ship &);
 export bool testship(const Ship &, const player_t, const governor_t);
 export void kill_ship(int, Ship *);
+export int docked(const Ship &);
+export int overloaded(const Ship &);
+export std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept;
 
 export shipnum_t Num_ships;
 export int ShipVector[NUMSTYPES];

@@ -5,8 +5,8 @@
 #ifndef LAND_H
 #define LAND_H
 
-int docked(Ship *);
-int overloaded(Ship *);
+int docked(const Ship &);
+int overloaded(const Ship &);
 std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept;
 
 #endif  // LAND_H

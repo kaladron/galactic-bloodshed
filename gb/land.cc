@@ -12,14 +12,6 @@ import std.compat;
 
 #include "gb/land.h"
 
-#include "gb/GB_server.h"
-#include "gb/buffers.h"
-#include "gb/files.h"
-#include "gb/load.h"
-#include "gb/races.h"
-#include "gb/shootblast.h"
-#include "gb/tweakables.h"
-
 /// Determine whether the ship crashed or not.
 std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept {
   // Crash from insufficient fuel.
@@ -32,12 +24,11 @@ std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept {
   return {false, 0};
 }
 
-int docked(Ship *s) {
-  return (s->docked && s->whatdest == ScopeLevel::LEVEL_SHIP);
+int docked(const Ship &s) {
+  return s.docked && s.whatdest == ScopeLevel::LEVEL_SHIP;
 }
 
-int overloaded(Ship *s) {
-  return ((s->resource > max_resource(*s)) || (s->fuel > max_fuel(*s)) ||
-          (s->popn + s->troops > s->max_crew) ||
-          (s->destruct > max_destruct(*s)));
+int overloaded(const Ship &s) {
+  return (s.resource > max_resource(s)) || (s.fuel > max_fuel(s)) ||
+         (s.popn + s.troops > s.max_crew) || (s.destruct > max_destruct(s));
 }

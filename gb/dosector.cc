@@ -8,7 +8,6 @@ import std.compat;
 #include "gb/dosector.h"
 
 #include "gb/doturn.h"
-#include "gb/max.h"
 #include "gb/races.h"
 #include "gb/tweakables.h"
 

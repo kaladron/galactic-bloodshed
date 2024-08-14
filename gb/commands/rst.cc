@@ -13,7 +13,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/order.h"
 #include "gb/place.h"

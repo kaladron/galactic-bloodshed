@@ -7,11 +7,9 @@
 import gblib;
 import std.compat;
 
-#include "gb/order.h"
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/load.h"
 #include "gb/moveship.h"
 #include "gb/place.h"
 #include "gb/shootblast.h"

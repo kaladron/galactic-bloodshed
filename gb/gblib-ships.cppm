@@ -337,6 +337,17 @@ export void kill_ship(int, Ship *);
 export int docked(const Ship &);
 export int overloaded(const Ship &);
 export std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept;
+export void do_VN(Ship &);
+export void planet_doVN(Ship &, Planet &, SectorMap &);
+export void use_fuel(Ship &, double);
+export void use_destruct(Ship &, int);
+export void use_resource(Ship &, int);
+export void rcv_fuel(Ship &, double);
+export void rcv_resource(Ship &, int);
+export void rcv_destruct(Ship &, int);
+export void rcv_popn(Ship &, int, double);
+export void rcv_troops(Ship &, int, double);
+export std::string prin_ship_orbits(const Ship &);
 
 export shipnum_t Num_ships;
 export int ShipVector[NUMSTYPES];

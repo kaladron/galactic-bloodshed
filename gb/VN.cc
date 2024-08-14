@@ -4,22 +4,72 @@
 
 /* VN.c -- assorted Von Neumann machine code */
 
-import gblib;
-import std.compat;
+module;
 
-#include "gb/VN.h"
+import std.compat;
 
 #include <strings.h>
 
 #include <cstdlib>
 
 #include "gb/doturn.h"
-#include "gb/load.h"
-#include "gb/max.h"
 #include "gb/tweakables.h"
 
-static void order_berserker(Ship &);
-static void order_VN(Ship &);
+module gblib;
+
+namespace {
+void order_berserker(Ship &ship) {
+  /* give berserkers a mission - send to planet of offending player and bombard
+   * it */
+  ship.bombard = 1;
+  ship.special.mind.target = VN_brain.Most_mad; /* who to attack */
+  ship.whatdest = ScopeLevel::LEVEL_PLAN;
+  if (random() & 01)
+    ship.deststar = Sdata.VN_index1[ship.special.mind.target - 1];
+  else
+    ship.deststar = Sdata.VN_index2[ship.special.mind.target - 1];
+  ship.destpnum = int_rand(0, stars[ship.deststar].numplanets - 1);
+  if (ship.hyper_drive.has && ship.mounted) {
+    ship.hyper_drive.on = 1;
+    ship.hyper_drive.ready = 1;
+    ship.special.mind.busy = 1;
+  }
+}
+
+void order_VN(Ship &ship) {
+  int min = 0;
+  int min2 = 0;
+
+  /* find closest star */
+  for (auto s = 0; s < Sdata.numstars; s++)
+    if (s != ship.storbits &&
+        Distsq(stars[s].xpos, stars[s].ypos, ship.xpos, ship.ypos) <
+            Distsq(stars[min].xpos, stars[min].ypos, ship.xpos, ship.ypos)) {
+      min2 = min;
+      min = s;
+    }
+
+  /* don't go there if we have a choice,
+     and we have VN's there already */
+  if (isset(stars[min].inhabited, 1U))
+    if (isset(stars[min2].inhabited, 1U))
+      ship.deststar = int_rand(0, (int)Sdata.numstars - 1);
+    else
+      ship.deststar = min2; /* 2nd closest star */
+  else
+    ship.deststar = min;
+
+  if (stars[ship.deststar].numplanets) {
+    ship.destpnum = int_rand(0, stars[ship.deststar].numplanets - 1);
+    ship.whatdest = ScopeLevel::LEVEL_PLAN;
+    ship.special.mind.busy = 1;
+  } else {
+    /* no good; find someplace else. */
+    ship.special.mind.busy = 0;
+  }
+  ship.speed = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
+}
+}  // namespace
 
 /*  do_VN() -- called by doship() */
 void do_VN(Ship &ship) {
@@ -97,58 +147,6 @@ void do_VN(Ship &ship) {
 
   push_telegram_race(f, buf);
   if (f != ship.owner) push_telegram(ship.owner, ship.governor, buf);
-}
-
-static void order_berserker(Ship &ship) {
-  /* give berserkers a mission - send to planet of offending player and bombard
-   * it */
-  ship.bombard = 1;
-  ship.special.mind.target = VN_brain.Most_mad; /* who to attack */
-  ship.whatdest = ScopeLevel::LEVEL_PLAN;
-  if (random() & 01)
-    ship.deststar = Sdata.VN_index1[ship.special.mind.target - 1];
-  else
-    ship.deststar = Sdata.VN_index2[ship.special.mind.target - 1];
-  ship.destpnum = int_rand(0, stars[ship.deststar].numplanets - 1);
-  if (ship.hyper_drive.has && ship.mounted) {
-    ship.hyper_drive.on = 1;
-    ship.hyper_drive.ready = 1;
-    ship.special.mind.busy = 1;
-  }
-}
-
-static void order_VN(Ship &ship) {
-  int min = 0;
-  int min2 = 0;
-
-  /* find closest star */
-  for (auto s = 0; s < Sdata.numstars; s++)
-    if (s != ship.storbits &&
-        Distsq(stars[s].xpos, stars[s].ypos, ship.xpos, ship.ypos) <
-            Distsq(stars[min].xpos, stars[min].ypos, ship.xpos, ship.ypos)) {
-      min2 = min;
-      min = s;
-    }
-
-  /* don't go there if we have a choice,
-     and we have VN's there already */
-  if (isset(stars[min].inhabited, 1U))
-    if (isset(stars[min2].inhabited, 1U))
-      ship.deststar = int_rand(0, (int)Sdata.numstars - 1);
-    else
-      ship.deststar = min2; /* 2nd closest star */
-  else
-    ship.deststar = min;
-
-  if (stars[ship.deststar].numplanets) {
-    ship.destpnum = int_rand(0, stars[ship.deststar].numplanets - 1);
-    ship.whatdest = ScopeLevel::LEVEL_PLAN;
-    ship.special.mind.busy = 1;
-  } else {
-    /* no good; find someplace else. */
-    ship.special.mind.busy = 0;
-  }
-  ship.speed = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
 }
 
 /*  planet_doVN() -- called by doplanet() */

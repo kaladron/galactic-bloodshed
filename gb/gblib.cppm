@@ -93,3 +93,14 @@ export bool Resources(int x) { return x & M_RESOURCES; };
 export bool Crystals(int x) { return x & M_CRYSTALS; };
 
 export std::vector<Victory> create_victory_list();
+
+export constexpr auto maxsupport(const Race &r, const Sector &s, const double c,
+                                 const int toxic) {
+  if (r.likes[s.condition] == 0) return 0L;
+  double a = ((double)s.eff + 1.0) * (double)s.fert;
+  double b = (.01 * c);
+
+  auto val = std::lround(a * b * .01 * (100.0 - (double)toxic));
+
+  return val;
+}

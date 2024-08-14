@@ -89,12 +89,12 @@ export struct Victory {
 
 export class Db {
  public:
-  virtual ~Db() {}
+  virtual ~Db() = default;
   virtual int Numcommods() = 0;
   virtual int Numraces() = 0;
 
  protected:
-  Db() {}
+  Db() = default;
 };
 
 export class GameObj {

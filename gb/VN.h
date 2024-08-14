@@ -6,6 +6,6 @@
 #define VN_H
 
 void do_VN(Ship &);
-void planet_doVN(Ship *, Planet &, SectorMap &);
+void planet_doVN(Ship &, Planet &, SectorMap &);
 
 #endif  // VN_H

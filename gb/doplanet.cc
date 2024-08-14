@@ -92,11 +92,11 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
               or affect planet production */
       switch (ship->type) {
         case ShipType::OTYPE_VN:
-          planet_doVN(ship, planet, smap);
+          planet_doVN(*ship, planet, smap);
           break;
         case ShipType::OTYPE_BERS:
           if (!ship->destruct || !ship->bombard)
-            planet_doVN(ship, planet, smap);
+            planet_doVN(*ship, planet, smap);
           else
             do_berserker(ship, planet);
           break;

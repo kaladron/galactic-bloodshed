@@ -38,7 +38,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(scn)
 
-if(0)
+if(1)
   find_program(CLANG_TIDY clang-tidy)
   if(CLANG_TIDY)
     set(CMAKE_CXX_CLANG_TIDY

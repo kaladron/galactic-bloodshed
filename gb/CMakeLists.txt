@@ -104,6 +104,7 @@ target_sources(
          gblib-types.cppm
   PRIVATE files_shl.cc
           fire.cc
+          load.cc
           misc.cc
           utils/rand.cc
           sectormap.cc
@@ -112,7 +113,8 @@ target_sources(
           sql/sql.cc
           star.cc
           tele.cc
-          victory.cc)
+          victory.cc
+          VN.cc)
 
 add_library(commands)
 target_sources(
@@ -199,7 +201,6 @@ target_link_libraries(commands PRIVATE gblib ${SQLite3_LIBRARIES} glaze::glaze
                                        scn::scn)
 
 set(OLD_LIBGBLIB_FILES
-    VN.cc
     bombard.cc
     build.cc
     doplanet.cc
@@ -207,9 +208,7 @@ set(OLD_LIBGBLIB_FILES
     doship.cc
     doturncmd.cc
     fuel.cc
-    load.cc
     map.cc
-    max.cc
     move.cc
     moveplanet.cc
     moveship.cc

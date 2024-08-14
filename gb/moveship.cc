@@ -11,8 +11,6 @@ import std.compat;
 #include "gb/moveship.h"
 
 #include "gb/buffers.h"
-#include "gb/load.h"
-#include "gb/max.h"
 #include "gb/order.h"
 #include "gb/races.h"
 #include "gb/tweakables.h"

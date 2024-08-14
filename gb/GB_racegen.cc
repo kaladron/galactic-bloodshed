@@ -14,7 +14,6 @@ import std.compat;
 #include <cstdio>
 #include <cstdlib>
 
-#include "gb/max.h"
 #include "gb/racegen.h"
 #include "gb/tweakables.h"
 

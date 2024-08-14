@@ -16,7 +16,6 @@ import gblib;
 #include <cstdlib>
 
 #include "gb/globals.h"
-#include "gb/max.h"
 #include "gb/tweakables.h"
 
 struct stype {

@@ -13,15 +13,12 @@ import std.compat;
 #include <strings.h>
 
 #include "gb/GB_server.h"
-#include "gb/VN.h"
 #include "gb/bombard.h"
 #include "gb/buffers.h"
 #include "gb/build.h"
 #include "gb/dosector.h"
 #include "gb/doship.h"
 #include "gb/doturn.h"
-#include "gb/load.h"
-#include "gb/max.h"
 #include "gb/move.h"
 #include "gb/moveship.h"
 #include "gb/races.h"

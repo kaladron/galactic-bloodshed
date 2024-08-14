@@ -385,3 +385,21 @@ int overloaded(const Ship &s) {
   return (s.resource > max_resource(s)) || (s.fuel > max_fuel(s)) ||
          (s.popn + s.troops > s.max_crew) || (s.destruct > max_destruct(s));
 }
+
+std::string prin_ship_orbits(const Ship &s) {
+  switch (s.whatorbits) {
+    case ScopeLevel::LEVEL_UNIV:
+      return std::format("/({:0.0},{:1.0})", s.xpos, s.ypos);
+    case ScopeLevel::LEVEL_STAR:
+      return std::format("/{0}", stars[s.storbits].name);
+    case ScopeLevel::LEVEL_PLAN:
+      return std::format("/{0}/{1}", stars[s.storbits].name,
+                         stars[s.storbits].pnames[s.pnumorbits]);
+    case ScopeLevel::LEVEL_SHIP:
+      if (auto mothership = getship(s.destshipno); mothership) {
+        return prin_ship_orbits(*mothership);
+      } else {
+        return "/";
+      }
+  }
+}

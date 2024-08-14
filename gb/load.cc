@@ -4,12 +4,13 @@
 
 /*  load.c -- load/unload stuff */
 
-import gblib;
+module;
+
 import std.compat;
 
-#include "gb/load.h"
-
 #include "gb/tweakables.h"
+
+module gblib;
 
 void use_fuel(Ship &s, const double amt) {
   s.fuel -= amt;

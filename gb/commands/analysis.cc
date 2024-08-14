@@ -9,7 +9,6 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/max.h"
 #include "gb/place.h"
 #include "gb/races.h"
 

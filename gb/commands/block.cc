@@ -9,7 +9,6 @@ import std.compat;
 
 #include "gb/buffers.h"
 #include "gb/prof.h"
-#include "gb/races.h"
 
 module commands;
 

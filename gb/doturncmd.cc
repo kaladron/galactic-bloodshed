@@ -18,7 +18,6 @@ import std.compat;
 #include "gb/doship.h"
 #include "gb/doturn.h"
 #include "gb/moveplanet.h"
-#include "gb/races.h"
 #include "gb/tweakables.h"
 
 #ifdef MARKET

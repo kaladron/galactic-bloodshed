@@ -5,8 +5,6 @@
 #ifndef SHOOTBLAST_H
 #define SHOOTBLAST_H
 
-#include "gb/races.h"
-
 int shoot_ship_to_ship(Ship *, Ship *, int, int, int, char *, char *);
 #ifdef DEFENSE
 int shoot_planet_to_ship(Race &, Ship *, int strength, char *long_msg,

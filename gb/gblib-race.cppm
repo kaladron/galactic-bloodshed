@@ -136,3 +136,58 @@ export struct power_blocks {
   unsigned long money[MAXPLAYERS];
   unsigned short VPs[MAXPLAYERS];
 };
+
+/* special discoveries */
+export enum Discover {
+  D_HYPER_DRIVE = 0,  /* hyper-space capable */
+  D_LASER = 1,        /* can construct/operate combat lasers */
+  D_CEW = 2,          /* can construct/operate cews */
+  D_VN = 3,           /* can construct von-neumann machines */
+  D_TRACTOR_BEAM = 4, /* tractor/repulsor beam */
+  D_TRANSPORTER = 5,  /* tractor beam (local) */
+  D_AVPM = 6,         /* AVPM transporter */
+  D_CLOAK = 7,        /* cloaking device */
+  D_WORMHOLE = 8,     /* worm-hole */
+  D_CRYSTAL = 9,      /* crystal power */
+};
+
+export constexpr bool Hyper_drive(const Race& r) {
+  return r.discoveries[D_HYPER_DRIVE];
+}
+
+export constexpr bool Laser(const Race& r) { return r.discoveries[D_LASER]; }
+
+export constexpr bool Cew(const Race& r) { return r.discoveries[D_CEW]; }
+
+export constexpr bool Vn(const Race& r) { return r.discoveries[D_VN]; }
+
+export constexpr bool Tractor_beam(const Race& r) {
+  return r.discoveries[D_TRACTOR_BEAM];
+}
+
+export constexpr bool Transporter(const Race& r) {
+  return r.discoveries[D_TRANSPORTER];
+}
+
+export constexpr bool Avpm(const Race& r) { return r.discoveries[D_AVPM]; }
+
+export constexpr bool Cloak(const Race& r) { return r.discoveries[D_CLOAK]; }
+
+export constexpr bool Wormhole(const Race& r) {
+  return r.discoveries[D_WORMHOLE];
+}
+
+export constexpr bool Crystal(const Race& r) {
+  return r.discoveries[D_CRYSTAL];
+}
+
+export constexpr double TECH_HYPER_DRIVE = 50.0;
+export constexpr double TECH_LASER = 100.0;
+export constexpr double TECH_CEW = 150.0;
+export constexpr double TECH_VN = 100.0;
+export constexpr double TECH_TRACTOR_BEAM = 999.0;
+export constexpr double TECH_TRANSPORTER = 999.0;
+export constexpr double TECH_AVPM = 250.0;
+export constexpr double TECH_CLOAK = 999.0;
+export constexpr double TECH_WORMHOLE = 999.0;
+export constexpr double TECH_CRYSTAL = 50.0;

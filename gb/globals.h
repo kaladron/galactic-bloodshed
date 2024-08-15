@@ -10,7 +10,6 @@
 
 #include "gb/doturn.h"
 #include "gb/map.h"
-#include "gb/races.h"
 
 char buf[2047];
 char long_buf[1024], short_buf[256];

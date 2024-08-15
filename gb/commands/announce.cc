@@ -7,9 +7,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/GB_server.h"
-#include "gb/races.h"
-
 module commands;
 
 namespace GB::commands {

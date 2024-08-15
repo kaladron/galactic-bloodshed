@@ -14,7 +14,6 @@ import std.compat;
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/defense.h"
-#include "gb/races.h"
 #include "gb/shootblast.h"
 #include "gb/tweakables.h"
 

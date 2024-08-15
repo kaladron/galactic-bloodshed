@@ -21,7 +21,6 @@ import std.compat;
 #include "gb/doturn.h"
 #include "gb/move.h"
 #include "gb/moveship.h"
-#include "gb/races.h"
 #include "gb/shootblast.h"
 #include "gb/tech.h"
 #include "gb/tweakables.h"

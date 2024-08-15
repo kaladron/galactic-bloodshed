@@ -8,7 +8,6 @@ import std.compat;
 #include "gb/dosector.h"
 
 #include "gb/doturn.h"
-#include "gb/races.h"
 #include "gb/tweakables.h"
 
 static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};

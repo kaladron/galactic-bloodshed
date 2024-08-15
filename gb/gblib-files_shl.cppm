@@ -5,8 +5,8 @@ module;
 #include <sqlite3.h>
 #include <sys/types.h>
 
-#include "gb/races.h"
 #include "gb/sql/dbdecl.h"
+#include "gb/tweakables.h"
 
 export module gblib:files_shl;
 

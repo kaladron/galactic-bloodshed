@@ -12,7 +12,6 @@ import std.compat;
 
 #include "gb/buffers.h"
 #include "gb/order.h"
-#include "gb/races.h"
 #include "gb/tweakables.h"
 
 /* amount to move for each dir level. I arrived on these #'s only after

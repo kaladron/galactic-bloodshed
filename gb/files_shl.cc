@@ -20,7 +20,6 @@ import std.compat;
 #include <cstdio>
 
 #include "gb/files.h"
-#include "gb/races.h"
 #include "gb/tweakables.h"
 
 module gblib;

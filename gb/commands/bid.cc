@@ -34,16 +34,16 @@ void bid(const command_t &argv, GameObj &g) {
       auto c = getcommod(i);
       if (c.owner && c.amount) {
         rate = (double)c.bid / (double)c.amount;
-        if (c.bidder == Playernum)
-          sprintf(temp, "%4.4s/%-4.4s", stars[c.star_to].name,
-                  stars[c.star_to].pnames[c.planet_to]);
-        else
-          temp[0] = '\0';
+        std::string player_details =
+            (c.bidder == Playernum)
+                ? std::format("{:4.4s}/{:<4.4s}", stars[c.star_to].name,
+                              stars[c.star_to].pnames[c.planet_to])
+                : "";
 
         auto [cost, dist] = shipping_cost(c.star_from, g.snum, c.bid);
         sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8ld %10s\n", i,
                 c.deliver ? '*' : ' ', c.amount, commod_name[c.type], c.owner,
-                c.bidder, c.bid, rate, cost, temp);
+                c.bidder, c.bid, rate, cost, player_details.c_str());
         notify(Playernum, Governor, buf);
       }
     }
@@ -74,15 +74,15 @@ void bid(const command_t &argv, GameObj &g) {
       auto c = getcommod(i);
       if (c.owner && c.amount && (c.type == item)) {
         rate = (double)c.bid / (double)c.amount;
-        if (c.bidder == Playernum)
-          sprintf(temp, "%4.4s/%-4.4s", stars[c.star_to].name,
-                  stars[c.star_to].pnames[c.planet_to]);
-        else
-          temp[0] = '\0';
+        std::string player_details =
+            (c.bidder == Playernum)
+                ? std::format("{:4.4s}/{:<4.4s}", stars[c.star_to].name,
+                              stars[c.star_to].pnames[c.planet_to])
+                : "";
         auto [cost, dist] = shipping_cost(c.star_from, g.snum, c.bid);
         sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8ld %10s\n", i,
                 c.deliver ? '*' : ' ', c.amount, commod_name[c.type], c.owner,
-                c.bidder, c.bid, rate, cost, temp);
+                c.bidder, c.bid, rate, cost, player_details.c_str());
         notify(Playernum, Governor, buf);
       }
     }

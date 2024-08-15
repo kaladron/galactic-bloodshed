@@ -89,46 +89,44 @@ void build(const command_t &argv, GameObj &g) {
       for (j = 0; j <= i; j++)
         while (fgetc(fd) != '~');
       /* Give description */
+      std::stringstream ss;
       while ((c = fgetc(fd)) != '~') {
-        sprintf(temp, "%c", c);
-        strcat(buf, temp);
+        ss << c;
       }
+      g.out << ss.str();
       fclose(fd);
       /* Built where? */
       if (Shipdata[*i][ABIL_BUILD] & 1) {
-        sprintf(temp, "\nCan be constructed on planet.");
-        strcat(buf, temp);
+        g.out << "\nCan be constructed on planet.";
       }
       n = 0;
-      sprintf(temp, "\nCan be built by ");
+      std::string header = "\nCan be built by ";
       for (j = 0; j < NUMSTYPES; j++)
         if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) n++;
       if (n) {
         m = 0;
-        strcat(buf, temp);
+        g.out << header;
         for (j = 0; j < NUMSTYPES; j++) {
           if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) {
             m++;
             if (n - m > 1)
-              sprintf(temp, "%c, ", Shipltrs[j]);
+              g.out << std::format("{}, ", Shipltrs[j]);
             else if (n - m > 0)
-              sprintf(temp, "%c and ", Shipltrs[j]);
+              g.out << std::format("{} and ", Shipltrs[j]);
             else
-              sprintf(temp, "%c ", Shipltrs[j]);
-            strcat(buf, temp);
+              g.out << std::format("{} ", Shipltrs[j]);
           }
         }
-        sprintf(temp, "type ships.\n");
-        strcat(buf, temp);
+        g.out << "type ships.\n";
       }
       /* default parameters */
-      sprintf(temp,
+      sprintf(buf,
               "\n%1s %-15s %5s %5s %3s %4s %3s %3s %3s %4s %4s %2s %4s %4s\n",
               "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
               "fuel", "crew", "sp", "tech", "cost");
-      strcat(buf, temp);
+      notify(Playernum, Governor, buf);
       auto &race = races[Playernum - 1];
-      sprintf(temp,
+      sprintf(buf,
               "%1c %-15.15s %5ld %5ld %3ld %4ld %3ld %3ld %3ld %4ld "
               "%4ld %2ld %4.0f %4d\n",
               Shipltrs[*i], Shipnames[*i], Shipdata[*i][ABIL_CARGO],
@@ -138,7 +136,6 @@ void build(const command_t &argv, GameObj &g) {
               Shipdata[*i][ABIL_FUELCAP], Shipdata[*i][ABIL_MAXCREW],
               Shipdata[*i][ABIL_SPEED], (double)Shipdata[*i][ABIL_TECH],
               Shipcost(*i, race));
-      strcat(buf, temp);
       notify(Playernum, Governor, buf);
     }
 

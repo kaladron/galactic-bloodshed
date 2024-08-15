@@ -9,49 +9,41 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/prof.h"
 
 module commands;
 
 namespace {
-void prepare_output_line(const Race &race, const Race &r, player_t i,
-                         int rank) {
-  if (rank != 0)
-    sprintf(buf, "%2d ", rank);
-  else
-    buf[0] = '\0';
-  sprintf(temp, "[%2d]%s%s%-15.15s %5s", i,
-          isset(race.allied, i) ? "+" : (isset(race.atwar, i) ? "-" : " "),
-          isset(r.allied, race.Playernum)
-              ? "+"
-              : (isset(r.atwar, race.Playernum) ? "-" : " "),
-          r.name, Estimate_i((int)r.victory_score, race, i));
-  strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].troops, race, i));
-  strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].popn, race, i));
-  strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].money, race, i));
-  strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].ships_owned, race, i));
-  strcat(buf, temp);
-  sprintf(temp, "%3s", Estimate_i((int)Power[i - 1].planets_owned, race, i));
-  strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].resource, race, i));
-  strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].fuel, race, i));
-  strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)Power[i - 1].destruct, race, i));
-  strcat(buf, temp);
-  sprintf(temp, "%5s", Estimate_i((int)r.morale, race, i));
-  strcat(buf, temp);
+std::string prepare_output_line(const Race &race, const Race &r, player_t i,
+                                int rank) {
+  std::stringstream ss;
+  if (rank != 0) ss << std::format("{:2d} ", rank);
+
+  ss << std::format(
+      "[{:2d}]{}{}{:<15.15s} {:5s}", i,
+      isset(race.allied, i) ? "+" : (isset(race.atwar, i) ? "-" : " "),
+      isset(r.allied, race.Playernum)
+          ? "+"
+          : (isset(r.atwar, race.Playernum) ? "-" : " "),
+      r.name, Estimate_i((int)r.victory_score, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].troops, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].popn, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].money, race, i));
+  ss << std::format("{:5s}",
+                    Estimate_i((int)Power[i - 1].ships_owned, race, i));
+  ss << std::format("{:3s}",
+                    Estimate_i((int)Power[i - 1].planets_owned, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].resource, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].fuel, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].destruct, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)r.morale, race, i));
   if (race.God)
-    sprintf(temp, " %3d\n", Sdata.VN_hitlist[i - 1]);
+    ss << std::format(" {:3d}\n", Sdata.VN_hitlist[i - 1]);
   else
-    sprintf(temp, " %3d%%\n", race.translate[i - 1]);
-  strcat(buf, temp);
+    ss << std::format(" {:3d}%\n", race.translate[i - 1]);
+
+  return ss.str();
 }
 }  // namespace
 
@@ -96,14 +88,12 @@ void power(const command_t &argv, GameObj &g) {
       p = vic.racenum;
       auto &r = races[p - 1];
       if (!r.dissolved && race.translate[p - 1] >= 10) {
-        prepare_output_line(race, r, p, rank);
-        notify(Playernum, Governor, buf);
+        g.out << prepare_output_line(race, r, p, rank);
       }
     }
   } else {
     auto &r = races[p - 1];
-    prepare_output_line(race, r, p, 0);
-    notify(Playernum, Governor, buf);
+    g.out << prepare_output_line(race, r, p, 0);
   }
 }
 }  // namespace GB::commands

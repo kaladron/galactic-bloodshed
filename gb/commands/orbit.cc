@@ -9,7 +9,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/map.h"
 #include "gb/place.h"
@@ -21,10 +20,10 @@ module commands;
 static double Lastx, Lasty, Zoom;
 static const int SCALE = 100;
 
-static void DispStar(const GameObj &, const ScopeLevel, const Star &, int,
-                     const Race &, char *);
-static void DispPlanet(const GameObj &, const ScopeLevel, const Planet &,
-                       char *, int, const Race &, char *);
+static std::string DispStar(const GameObj &, const ScopeLevel, const Star &,
+                            int, const Race &);
+static std::string DispPlanet(const GameObj &, const ScopeLevel, const Planet &,
+                              char *, int, const Race &);
 static void DispShip(const GameObj &, const Place &, Ship *, const Race &,
                      char *, const Planet & = Planet());
 
@@ -99,9 +98,9 @@ void orbit(const command_t &argv, GameObj &g) {
     case ScopeLevel::LEVEL_UNIV:
       for (starnum_t i = 0; i < Sdata.numstars; i++)
         if (DontDispNum != i) {
-          DispStar(g, ScopeLevel::LEVEL_UNIV, stars[i], DontDispStars, Race,
-                   buf);
-          strcat(output, buf);
+          std::string star = DispStar(g, ScopeLevel::LEVEL_UNIV, stars[i],
+                                      DontDispStars, Race);
+          strcat(output, star.c_str());
         }
       if (!DontDispShips) {
         Shiplist shiplist{Sdata.ships};
@@ -114,16 +113,17 @@ void orbit(const command_t &argv, GameObj &g) {
       }
       break;
     case ScopeLevel::LEVEL_STAR: {
-      DispStar(g, ScopeLevel::LEVEL_STAR, stars[where->snum], DontDispStars,
-               Race, buf);
-      strcat(output, buf);
+      std::string star = DispStar(g, ScopeLevel::LEVEL_STAR, stars[where->snum],
+                                  DontDispStars, Race);
+      strcat(output, star.c_str());
 
       for (planetnum_t i = 0; i < stars[where->snum].numplanets; i++)
         if (DontDispNum != i) {
           const auto p = getplanet(where->snum, i);
-          DispPlanet(g, ScopeLevel::LEVEL_STAR, p, stars[where->snum].pnames[i],
-                     DontDispPlanets, Race, buf);
-          strcat(output, buf);
+          std::string planet =
+              DispPlanet(g, ScopeLevel::LEVEL_STAR, p,
+                         stars[where->snum].pnames[i], DontDispPlanets, Race);
+          strcat(output, planet.c_str());
         }
       /* check to see if you have ships at orbiting the star, if so you can
          see enemy ships */
@@ -154,10 +154,10 @@ void orbit(const command_t &argv, GameObj &g) {
     } break;
     case ScopeLevel::LEVEL_PLAN: {
       const auto p = getplanet(where->snum, where->pnum);
-      DispPlanet(g, ScopeLevel::LEVEL_PLAN, p,
-                 stars[where->snum].pnames[where->pnum], DontDispPlanets, Race,
-                 buf);
-      strcat(output, buf);
+      std::string planet = DispPlanet(g, ScopeLevel::LEVEL_PLAN, p,
+                                      stars[where->snum].pnames[where->pnum],
+                                      DontDispPlanets, Race);
+      strcat(output, planet.c_str());
 
       /* check to see if you have ships at landed or
          orbiting the planet, if so you can see orbiting enemy ships */
@@ -194,84 +194,80 @@ void orbit(const command_t &argv, GameObj &g) {
 
 // TODO(jeffbailey) Remove DontDispStar parameter as unused, but it really looks
 // like we should be doing something here.
-static void DispStar(const GameObj &g, const ScopeLevel level, const Star &star,
-                     int /* DontDispStars */, const Race &r, char *string) {
-  int x = 0;  // TODO(jeffbailey): Inititalized x and y to 0.
-  int y = 0;
-  int stand;
+static std::string DispStar(const GameObj &g, const ScopeLevel level,
+                            const Star &star, int /* DontDispStars */,
+                            const Race &r) {
+  int x;
+  int y;
 
-  *string = '\0';
+  switch (level) {
+    case (ScopeLevel::LEVEL_UNIV):
+      x = (int)(SCALE + ((SCALE * (star.xpos - Lastx)) / (UNIVSIZE * Zoom)));
+      y = (int)(SCALE + ((SCALE * (star.ypos - Lasty)) / (UNIVSIZE * Zoom)));
+      break;
+    case (ScopeLevel::LEVEL_STAR):
+      x = (int)(SCALE + (SCALE * (-Lastx)) / (SYSTEMSIZE * Zoom));
+      y = (int)(SCALE + (SCALE * (-Lasty)) / (SYSTEMSIZE * Zoom));
+      break;
+    default:
+      return "";
+  }
 
-  if (level == ScopeLevel::LEVEL_UNIV) {
-    x = (int)(SCALE + ((SCALE * (star.xpos - Lastx)) / (UNIVSIZE * Zoom)));
-    y = (int)(SCALE + ((SCALE * (star.ypos - Lasty)) / (UNIVSIZE * Zoom)));
-  } else if (level == ScopeLevel::LEVEL_STAR) {
-    x = (int)(SCALE + (SCALE * (-Lastx)) / (SYSTEMSIZE * Zoom));
-    y = (int)(SCALE + (SCALE * (-Lasty)) / (SYSTEMSIZE * Zoom));
+  std::stringstream ss;
+  if (r.governor[g.governor].toggle.color) {
+    char stand = (isset(star.explored, g.player) ? g.player : 0) + '?';
+    ss << std::format("{} {} {} 0 * ", stand, x, y);
+    stand = (isset(star.inhabited, g.player) ? g.player : 0) + '?';
+    ss << std::format("{} {};", stand, star.name);
+  } else {
+    int stand = (isset(star.explored, g.player) ? 1 : 0);
+    ss << std::format("{} {} {} 0 * ", stand, x, y);
+    stand = (isset(star.inhabited, g.player) ? 1 : 0);
+    ss << std::format("{} {};", stand, star.name);
   }
-  /*if (star->nova_stage)
-    DispArray(x, y, 11,7, Novae[star->nova_stage-1], fac); */
-  if (y >= 0 && x >= 0) {
-    if (r.governor[g.governor].toggle.color) {
-      stand = (isset(star.explored, g.player) ? g.player : 0) + '?';
-      sprintf(temp, "%c %d %d 0 * ", (char)stand, x, y);
-      strcat(string, temp);
-      stand = (isset(star.inhabited, g.player) ? g.player : 0) + '?';
-      sprintf(temp, "%c %s;", (char)stand, star.name);
-      strcat(string, temp);
-    } else {
-      stand = (isset(star.explored, g.player) ? 1 : 0);
-      sprintf(temp, "%d %d %d 0 * ", stand, x, y);
-      strcat(string, temp);
-      stand = (isset(star.inhabited, g.player) ? 1 : 0);
-      sprintf(temp, "%d %s;", stand, star.name);
-      strcat(string, temp);
-    }
-  }
+
+  return ss.str();
 }
 
 // TODO(jeffbailey): We remove DontDispPlanets as unused, but it really seems
 // like we should be doing something here!
-static void DispPlanet(const GameObj &g, const ScopeLevel level,
-                       const Planet &p, char *name, int /* DontDispPlanets */,
-                       const Race &r, char *string) {
+static std::string DispPlanet(const GameObj &g, const ScopeLevel level,
+                              const Planet &p, char *name,
+                              int /* DontDispPlanets */, const Race &r) {
   int x = 0;  // TODO(jeffbailey): Check if init to 0 is right.
   int y = 0;
-  int stand;
 
-  *string = '\0';
+  switch (level) {
+    case ScopeLevel::LEVEL_STAR:
+      y = (int)(SCALE + (SCALE * (p.ypos - Lasty)) / (SYSTEMSIZE * Zoom));
+      x = (int)(SCALE + (SCALE * (p.xpos - Lastx)) / (SYSTEMSIZE * Zoom));
+    case ScopeLevel::LEVEL_PLAN:
+      y = (int)(SCALE + (SCALE * (-Lasty)) / (PLORBITSIZE * Zoom));
+      x = (int)(SCALE + (SCALE * (-Lastx)) / (PLORBITSIZE * Zoom));
+    default:
+      return "";
+  }
+  std::stringstream ss;
 
-  if (level == ScopeLevel::LEVEL_STAR) {
-    y = (int)(SCALE + (SCALE * (p.ypos - Lasty)) / (SYSTEMSIZE * Zoom));
-    x = (int)(SCALE + (SCALE * (p.xpos - Lastx)) / (SYSTEMSIZE * Zoom));
-  } else if (level == ScopeLevel::LEVEL_PLAN) {
-    y = (int)(SCALE + (SCALE * (-Lasty)) / (PLORBITSIZE * Zoom));
-    x = (int)(SCALE + (SCALE * (-Lastx)) / (PLORBITSIZE * Zoom));
+  if (r.governor[g.governor].toggle.color) {
+    char stand = (p.info[g.player - 1].explored ? g.player : 0) + '?';
+    ss << std::format("{} {} {} 0 {} ", stand, x, y,
+                      (stand > '0' ? Psymbol[p.type] : '?'));
+    stand = (p.info[g.player - 1].numsectsowned ? g.player : 0) + '?';
+    ss << std::format("{} {}", stand, name);
+  } else {
+    int stand = p.info[g.player - 1].explored ? 1 : 0;
+    ss << std::format("{} {} {} 0 {} ", stand, x, y,
+                      (stand ? Psymbol[p.type] : '?'));
+    stand = p.info[g.player - 1].numsectsowned ? 1 : 0;
+    ss << std::format("{} {}", stand, name);
   }
-  if (x >= 0 && y >= 0) {
-    if (r.governor[g.governor].toggle.color) {
-      stand = (p.info[g.player - 1].explored ? g.player : 0) + '?';
-      sprintf(temp, "%c %d %d 0 %c ", (char)stand, x, y,
-              (stand > '0' ? Psymbol[p.type] : '?'));
-      strcat(string, temp);
-      stand = (p.info[g.player - 1].numsectsowned ? g.player : 0) + '?';
-      sprintf(temp, "%c %s", (char)stand, name);
-      strcat(string, temp);
-    } else {
-      stand = p.info[g.player - 1].explored ? 1 : 0;
-      sprintf(temp, "%d %d %d 0 %c ", stand, x, y,
-              (stand ? Psymbol[p.type] : '?'));
-      strcat(string, temp);
-      stand = p.info[g.player - 1].numsectsowned ? 1 : 0;
-      sprintf(temp, "%d %s", stand, name);
-      strcat(string, temp);
-    }
-    if (r.governor[g.governor].toggle.compat && p.info[g.player - 1].explored) {
-      sprintf(temp, "(%d)", (int)p.compatibility(r));
-      strcat(string, temp);
-    }
-    strcat(string, ";");
+  if (r.governor[g.governor].toggle.compat && p.info[g.player - 1].explored) {
+    ss << std::format("({})", (int)p.compatibility(r));
   }
+  ss << ";";
+
+  return ss.str();
 }
 
 static void DispShip(const GameObj &g, const Place &where, Ship *ship,

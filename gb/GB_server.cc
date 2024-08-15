@@ -1060,9 +1060,9 @@ static void dump_users(DescriptorData &e) {
       auto &r = races[d.player - 1];
       if (!r.governor[d.governor].toggle.invisible || e.player == d.player ||
           God) {
-        sprintf(temp, "\"%s\"", r.governor[d.governor].name);
+        std::string temp = std::format("\"{}\"", r.governor[d.governor].name);
         sprintf(buf, "%20.20s %20.20s [%2d,%2d] %4lds idle %-4.4s %s %s\n",
-                r.name, temp, d.player, d.governor, now - d.last_time,
+                r.name, temp.c_str(), d.player, d.governor, now - d.last_time,
                 God ? stars[d.snum].name : "    ",
                 (r.governor[d.governor].toggle.gag ? "GAG" : "   "),
                 (r.governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));

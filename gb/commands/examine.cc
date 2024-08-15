@@ -9,8 +9,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/GB_server.h"
-#include "gb/buffers.h"
 #include "gb/files.h"
 
 module commands;
@@ -58,13 +56,13 @@ void examine(const command_t &argv, GameObj &g) {
     while (fgetc(fd) != '~');
 
   /* look through ship data file */
-  sprintf(buf, "\n");
+  g.out << "\n";
   /* give report */
+  std::stringstream ss;
   while ((ch = fgetc(fd)) != '~') {
-    sprintf(temp, "%c", ch);
-    strcat(buf, temp);
+    ss << ch;
   }
-  notify(g.player, g.governor, buf);
+  g.out << ss.str();
   fclose(fd);
 
   if (!ship->examined) {

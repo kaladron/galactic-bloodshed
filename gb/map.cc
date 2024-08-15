@@ -8,9 +8,7 @@ import std.compat;
 
 #include "gb/map.h"
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/place.h"
 #include "gb/races.h"
 #include "gb/tweakables.h"
 
@@ -81,6 +79,7 @@ void show_map(const player_t Playernum, const governor_t Governor,
   notify(Playernum, Governor, output.str());
 
   if (show) {
+    char temp[2047];
     sprintf(temp, "Type: %8s   Sects %7s: %3u   Aliens:", Planet_types[p.type],
             race.Metamorph ? "covered" : "owned",
             p.info[Playernum - 1].numsectsowned);

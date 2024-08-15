@@ -74,9 +74,9 @@ void route(const command_t &argv, GameObj &g) {
           strcat(buf, "x");
         else
           strcat(buf, " ");
-        sprintf(temp, "  -> %s/%s\n", stars[star].name,
-                stars[star].pnames[planet]);
-        strcat(buf, temp);
+        std::string temp = std::format("  -> {}/{}\n", stars[star].name,
+                                       stars[star].pnames[planet]);
+        strcat(buf, temp.c_str());
         notify(Playernum, Governor, buf);
       }
     g.out << "Done.\n";
@@ -97,24 +97,22 @@ void route(const command_t &argv, GameObj &g) {
               p.info[Playernum - 1].route[i - 1].x,
               p.info[Playernum - 1].route[i - 1].y);
       if (load) {
-        sprintf(temp, "load: ");
-        strcat(buf, temp);
+        strcat(buf, "load: ");
         if (Fuel(load)) strcat(buf, "f");
         if (Destruct(load)) strcat(buf, "d");
         if (Resources(load)) strcat(buf, "r");
         if (Crystals(load)) strcat(buf, "x");
       }
       if (unload) {
-        sprintf(temp, "  unload: ");
-        strcat(buf, temp);
+        strcat(buf, "  unload: ");
         if (Fuel(unload)) strcat(buf, "f");
         if (Destruct(unload)) strcat(buf, "d");
         if (Resources(unload)) strcat(buf, "r");
         if (Crystals(unload)) strcat(buf, "x");
       }
-      sprintf(temp, "  ->  %s/%s\n", stars[star].name,
-              stars[star].pnames[planet]);
-      strcat(buf, temp);
+      std::string temp = std::format("  -> {}/{}\n", stars[star].name,
+                                     stars[star].pnames[planet]);
+      strcat(buf, temp.c_str());
       notify(Playernum, Governor, buf);
     }
     g.out << "Done.\n";

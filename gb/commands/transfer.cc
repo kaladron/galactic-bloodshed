@@ -39,7 +39,8 @@ void transfer(const command_t &argv, GameObj &g) {
   // TODO(jeffbailey): May throw an exception on a negative number.
   resource_t give = std::stoul(argv[3]);
 
-  sprintf(temp, "%s/%s:", stars[g.snum].name, stars[g.snum].pnames[g.pnum]);
+  std::string starplanet =
+      std::format("{}/{}:", stars[g.snum].name, stars[g.snum].pnames[g.pnum]);
   switch (commod) {
     case 'r':
       if (give > planet.info[Playernum - 1].resource) {
@@ -50,7 +51,7 @@ void transfer(const command_t &argv, GameObj &g) {
         planet.info[player - 1].resource += give;
         sprintf(buf,
                 "%s %lu resources transferred from player %d to player #%d\n",
-                temp, give, Playernum, player);
+                starplanet.c_str(), give, Playernum, player);
         notify(Playernum, Governor, buf);
         warn_race(player, buf);
       }
@@ -65,7 +66,7 @@ void transfer(const command_t &argv, GameObj &g) {
         planet.info[player - 1].crystals += give;
         sprintf(buf,
                 "%s %lu crystal(s) transferred from player %d to player #%d\n",
-                temp, give, Playernum, player);
+                starplanet.c_str(), give, Playernum, player);
         notify(Playernum, Governor, buf);
         warn_race(player, buf);
       }
@@ -78,7 +79,7 @@ void transfer(const command_t &argv, GameObj &g) {
         planet.info[Playernum - 1].fuel -= give;
         planet.info[player - 1].fuel += give;
         sprintf(buf, "%s %lu fuel transferred from player %d to player #%d\n",
-                temp, give, Playernum, player);
+                starplanet.c_str(), give, Playernum, player);
         notify(Playernum, Governor, buf);
         warn_race(player, buf);
       }
@@ -92,7 +93,7 @@ void transfer(const command_t &argv, GameObj &g) {
         planet.info[player - 1].destruct += give;
         sprintf(buf,
                 "%s %lu destruct transferred from player %d to player #%d\n",
-                temp, give, Playernum, player);
+                starplanet.c_str(), give, Playernum, player);
         notify(Playernum, Governor, buf);
         warn_race(player, buf);
       }

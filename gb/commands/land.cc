@@ -23,6 +23,7 @@ void land(const command_t &argv, GameObj &g) {
   int i;
   int numdest;
   int strength;
+  int damage;
   double fuel;
   double Dist;
   shipnum_t nextshipno;
@@ -289,10 +290,12 @@ void land(const command_t &argv, GameObj &g) {
               strength =
                   MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);
               if (strength) {
-                post(temp, NewsType::COMBAT);
-                notify_star(0, 0, s->storbits, temp);
+                damage =
+                    shoot_planet_to_ship(alien, s, strength, buf, short_buf);
+                post(short_buf, NewsType::COMBAT);
+                notify_star(0, 0, s->storbits, short_buf);
                 warn(i, stars[s->storbits].governor[i - 1], buf);
-                notify((int)s->owner, (int)s->governor, buf);
+                notify(s->owner, s->governor, buf);
                 p.info[i - 1].destruct -= strength;
               }
             }

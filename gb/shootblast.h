@@ -9,7 +9,8 @@
 
 int shoot_ship_to_ship(Ship *, Ship *, int, int, int, char *, char *);
 #ifdef DEFENSE
-int shoot_planet_to_ship(Race &, Ship *, int, char *, char *);
+int shoot_planet_to_ship(Race &, Ship *, int strength, char *long_msg,
+                         char *short_msg);
 #endif
 int shoot_ship_to_planet(Ship *, Planet &, int, int, int, SectorMap &, int, int,
                          char *, char *);

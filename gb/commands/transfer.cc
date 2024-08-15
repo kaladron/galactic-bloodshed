@@ -5,9 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/GB_server.h"
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -19,8 +16,7 @@ void transfer(const command_t &argv, GameObj &g) {
   char commod = 0;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
-    sprintf(buf, "You need to be in planet scope to do this.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "You need to be in planet scope to do this.\n";
     return;
   }
 
@@ -28,8 +24,7 @@ void transfer(const command_t &argv, GameObj &g) {
     return;
 
   if (!(player = get_player(argv[1]))) {
-    sprintf(buf, "No such player.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "No such player.\n";
     return;
   }
 
@@ -44,63 +39,60 @@ void transfer(const command_t &argv, GameObj &g) {
   switch (commod) {
     case 'r':
       if (give > planet.info[Playernum - 1].resource) {
-        sprintf(buf, "You don't have %lu on this planet.\n", give);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("You don't have {} on this planet.\n", give);
       } else {
         planet.info[Playernum - 1].resource -= give;
         planet.info[player - 1].resource += give;
-        sprintf(buf,
-                "%s %lu resources transferred from player %d to player #%d\n",
-                starplanet.c_str(), give, Playernum, player);
-        notify(Playernum, Governor, buf);
-        warn_race(player, buf);
+        std::string message = std::format(
+            "{} {} resources transferred from player {} to player #{}\n",
+            starplanet, give, Playernum, player);
+        g.out << message;
+        warn_race(player, message);
       }
       break;
     case 'x':
     case '&':
       if (give > planet.info[Playernum - 1].crystals) {
-        sprintf(buf, "You don't have %lu on this planet.\n", give);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("You don't have {} on this planet.\n", give);
       } else {
         planet.info[Playernum - 1].crystals -= give;
         planet.info[player - 1].crystals += give;
-        sprintf(buf,
-                "%s %lu crystal(s) transferred from player %d to player #%d\n",
-                starplanet.c_str(), give, Playernum, player);
-        notify(Playernum, Governor, buf);
-        warn_race(player, buf);
+        std::string message = std::format(
+            "{} {} crystal(s) transferred from player {} to player #{}\n",
+            starplanet, give, Playernum, player);
+        g.out << message;
+        warn_race(player, message);
       }
       break;
     case 'f':
       if (give > planet.info[Playernum - 1].fuel) {
-        sprintf(buf, "You don't have %lu fuel on this planet.\n", give);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("You don't have {} fuel on this planet.\n", give);
       } else {
         planet.info[Playernum - 1].fuel -= give;
         planet.info[player - 1].fuel += give;
-        sprintf(buf, "%s %lu fuel transferred from player %d to player #%d\n",
-                starplanet.c_str(), give, Playernum, player);
-        notify(Playernum, Governor, buf);
-        warn_race(player, buf);
+        std::string message =
+            std::format("{} {} fuel transferred from player {} to player #{}\n",
+                        starplanet, give, Playernum, player);
+        g.out << message;
+        warn_race(player, message);
       }
       break;
     case 'd':
       if (give > planet.info[Playernum - 1].destruct) {
-        sprintf(buf, "You don't have %lu destruct on this planet.\n", give);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("You don't have {} destruct on this planet.\n",
+                             give);
       } else {
         planet.info[Playernum - 1].destruct -= give;
         planet.info[player - 1].destruct += give;
-        sprintf(buf,
-                "%s %lu destruct transferred from player %d to player #%d\n",
-                starplanet.c_str(), give, Playernum, player);
-        notify(Playernum, Governor, buf);
-        warn_race(player, buf);
+        std::string message = std::format(
+            "{} {} destruct transferred from player {} to player #{}\n",
+            starplanet, give, Playernum, player);
+        g.out << message;
+        warn_race(player, message);
       }
       break;
     default:
-      sprintf(buf, "What?\n");
-      notify(Playernum, Governor, buf);
+      g.out << "What?\n";
   }
 
   putplanet(planet, stars[g.snum], g.pnum);

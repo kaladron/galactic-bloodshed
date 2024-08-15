@@ -7,8 +7,6 @@
 import gblib;
 import std.compat;
 
-
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/moveship.h"
 #include "gb/place.h"
@@ -629,6 +627,7 @@ void DispOrdersHeader(int Playernum, int Governor) {
 
 void DispOrders(int Playernum, int Governor, Ship *ship) {
   double distfac;
+  char temp[2047];
 
   if (ship->owner != Playernum || !authorized(Governor, *ship) || !ship->alive)
     return;

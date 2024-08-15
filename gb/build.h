@@ -33,6 +33,4 @@ void create_ship_by_ship(int Playernum, int Governor, const Race &race,
                          int outside, Planet *planet, Ship *newship,
                          Ship *builder);
 
-extern const char *commod_name[4];
-
 #endif  // BUILD_H

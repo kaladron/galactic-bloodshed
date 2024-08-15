@@ -58,3 +58,23 @@ export std::list<DescriptorData> descriptor_list;
 export sqlite3 *dbconn;
 
 export char plan_buf[1024];
+
+#ifdef MARKET
+export const std::array<const char *, 4> commod_name = {"resources", "destruct",
+                                                        "fuel", "crystals"};
+#endif
+
+export const std::array<const char, 8> Psymbol = {'@', 'o', 'O', '#',
+                                                  '~', '.', ')', '-'};
+
+export const std::array<const char *, 8> Planet_types = {
+    "Class M", "Asteroid",  "Airless", "Iceball",
+    "Jovian",  "Waterball", "Forest",  "Desert"};
+
+export const std::array<const char *, 9> Desnames = {
+    "ocean",  "land",   "mountainous", "gaseous", "ice",
+    "forest", "desert", "plated",      "wasted"};
+
+export const std::array<const char, 9> Dessymbols = {
+    CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,  CHAR_GAS,   CHAR_ICE,
+    CHAR_FOREST, CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};

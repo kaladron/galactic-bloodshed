@@ -21,7 +21,4 @@ extern time_t
 extern unsigned int update_time;  /* Interval between updates in minutes */
 extern segments_t nsegments_done; /* How many movements have we done so far? */
 
-extern const char *Desnames[];
-extern const char Dessymbols[];
-
 #endif  // GB_SERVER_H

@@ -5,9 +5,6 @@
 #ifndef MAP_H
 #define MAP_H
 
-extern const char Psymbol[];
-extern const char *Planet_types[];
-
 char desshow(const player_t, const governor_t, const Race &, const Sector &);
 void show_map(const player_t, const governor_t, const starnum_t,
               const planetnum_t, const Planet &);

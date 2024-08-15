@@ -12,7 +12,6 @@ import std.compat;
 #include "gb/GB_server.h"
 #include "gb/doship.h"
 #include "gb/moveship.h"
-#include "gb/place.h"
 #include "gb/tweakables.h"
 
 void fuel_output(int Playernum, int Governor, double dist, double fuel,

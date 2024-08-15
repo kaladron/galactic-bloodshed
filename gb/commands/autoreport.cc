@@ -10,8 +10,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/place.h"
-
 module commands;
 
 #include "gb/tweakables.h"

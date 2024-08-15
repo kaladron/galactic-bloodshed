@@ -9,7 +9,6 @@ import std.compat;
 #include "gb/fuel.h"
 #include "gb/moveship.h"
 #include "gb/order.h"
-#include "gb/place.h"
 #include "gb/tweakables.h"
 
 module commands;

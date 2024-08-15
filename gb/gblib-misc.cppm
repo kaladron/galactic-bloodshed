@@ -95,3 +95,37 @@ void Filewrite(int fd, const char *p, size_t num, int posn) {
     return;
   }
 }
+
+export template <typename T>
+concept Unsigned = std::is_unsigned<T>::value;
+
+export template <typename T>
+void setbit(T &target, const Unsigned auto pos)
+  requires Unsigned<T>
+{
+  T bit = 1;
+  target |= (bit << pos);
+}
+
+export template <typename T>
+void clrbit(T &target, const Unsigned auto pos)
+  requires Unsigned<T>
+{
+  T bit = 1;
+  target &= ~(bit << pos);
+}
+
+export template <typename T>
+bool isset(const T target, const Unsigned auto pos)
+  requires Unsigned<T>
+{
+  T bit = 1;
+  return target & (bit << pos);
+}
+
+export template <typename T>
+bool isclr(const T target, const Unsigned auto pos)
+  requires Unsigned<T>
+{
+  return !isset(target, pos);
+}

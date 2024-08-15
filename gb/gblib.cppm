@@ -6,6 +6,7 @@ export import :files_shl;
 export import :fire;
 export import :misc;
 export import :planet;
+export import :place;
 export import :types;
 export import :sector;
 export import :race;
@@ -46,40 +47,6 @@ export constexpr double logscale(const int x) {
 
 export constexpr double morale_factor(const double x) {
   return (atan((double)x / 10000.) / 3.14159565 + .5);
-}
-
-export template <typename T>
-concept Unsigned = std::is_unsigned<T>::value;
-
-export template <typename T>
-void setbit(T &target, const Unsigned auto pos)
-  requires Unsigned<T>
-{
-  T bit = 1;
-  target |= (bit << pos);
-}
-
-export template <typename T>
-void clrbit(T &target, const Unsigned auto pos)
-  requires Unsigned<T>
-{
-  T bit = 1;
-  target &= ~(bit << pos);
-}
-
-export template <typename T>
-bool isset(const T target, const Unsigned auto pos)
-  requires Unsigned<T>
-{
-  T bit = 1;
-  return target & (bit << pos);
-}
-
-export template <typename T>
-bool isclr(const T target, const Unsigned auto pos)
-  requires Unsigned<T>
-{
-  return !isset(target, pos);
 }
 
 export constexpr int M_FUEL = 0x1;

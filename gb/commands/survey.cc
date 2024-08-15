@@ -16,7 +16,6 @@ import std.compat;
 #include "gb/csp.h"
 #include "gb/csp_types.h"
 #include "gb/map.h"
-#include "gb/place.h"
 #include "gb/races.h"
 #include "gb/tweakables.h"
 

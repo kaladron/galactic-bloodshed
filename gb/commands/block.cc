@@ -7,7 +7,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/prof.h"
 #include "gb/races.h"
@@ -94,36 +93,28 @@ void block(const command_t &argv, GameObj &g) {
     for (const auto &r : races) {
       if (isset(dummy, r.Playernum)) {
         if (r.dissolved) continue;
-        sprintf(buf, "%2d %-20.20s ", r.Playernum, r.name);
-        sprintf(temp, "%5s",
-                Estimate_i(Power[r.Playernum - 1].troops, race, r.Playernum));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i(Power[r.Playernum - 1].popn, race, r.Playernum));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i(Power[r.Playernum - 1].money, race, r.Playernum));
-        strcat(buf, temp);
-        sprintf(
-            temp, "%5s",
+        g.out << std::format("{:2d} {:<20.20s} ", r.Playernum, r.name);
+        g.out << std::format("{:5s}", Estimate_i(Power[r.Playernum - 1].troops,
+                                                 race, r.Playernum));
+        g.out << std::format("{:5s}", Estimate_i(Power[r.Playernum - 1].popn,
+                                                 race, r.Playernum));
+        g.out << std::format("{:5s}", Estimate_i(Power[r.Playernum - 1].money,
+                                                 race, r.Playernum));
+        g.out << std::format(
+            "{:5s}",
             Estimate_i(Power[r.Playernum - 1].ships_owned, race, r.Playernum));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i(Power[r.Playernum - 1].planets_owned, race,
-                           r.Playernum));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i(Power[r.Playernum - 1].resource, race, r.Playernum));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i(Power[r.Playernum - 1].fuel, race, r.Playernum));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i(Power[r.Playernum - 1].destruct, race, r.Playernum));
-        strcat(buf, temp);
-        sprintf(temp, " %3d%%\n", race.translate[r.Playernum - 1]);
-        strcat(buf, temp);
-        notify(Playernum, Governor, buf);
+        g.out << std::format(
+            "{:5s}", Estimate_i(Power[r.Playernum - 1].planets_owned, race,
+                                r.Playernum));
+        g.out << std::format(
+            "{:5s}",
+            Estimate_i(Power[r.Playernum - 1].resource, race, r.Playernum));
+        g.out << std::format("{:5s}", Estimate_i(Power[r.Playernum - 1].fuel,
+                                                 race, r.Playernum));
+        g.out << std::format(
+            "{:5s}",
+            Estimate_i(Power[r.Playernum - 1].destruct, race, r.Playernum));
+        g.out << std::format(" {:3d}%%\n", race.translate[r.Playernum - 1]);
       }
     }
   } else { /* list power report for all the alliance blocks (as of the last
@@ -137,35 +128,27 @@ void block(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     for (auto i = 1; i <= Num_races; i++)
       if (Blocks[i - 1].VPs) {
-        sprintf(buf, "%2d %-19.19s%3ld", i, Blocks[i - 1].name,
-                Power_blocks.members[i - 1]);
-        sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.money[i - 1]), race, i));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.popn[i - 1]), race, i));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.ships_owned[i - 1]), race, i));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.systems_owned[i - 1]), race, i));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.resource[i - 1]), race, i));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.fuel[i - 1]), race, i));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.destruct[i - 1]), race, i));
-        strcat(buf, temp);
-        sprintf(temp, "%5s",
-                Estimate_i((int)(Power_blocks.VPs[i - 1]), race, i));
-        strcat(buf, temp);
-        sprintf(temp, " %3d%%\n", race.translate[i - 1]);
-        strcat(buf, temp);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("{:2d} {:<19.19}{:3d}", i, Blocks[i - 1].name,
+                             Power_blocks.members[i - 1]);
+        g.out << std::format(
+            "{:5s}", Estimate_i((int)(Power_blocks.money[i - 1]), race, i));
+        g.out << std::format(
+            "{:5s}", Estimate_i((int)(Power_blocks.popn[i - 1]), race, i));
+        g.out << std::format(
+            "{:5s}",
+            Estimate_i((int)(Power_blocks.ships_owned[i - 1]), race, i));
+        g.out << std::format(
+            "{:5s}",
+            Estimate_i((int)(Power_blocks.systems_owned[i - 1]), race, i));
+        g.out << std::format(
+            "{:5s}", Estimate_i((int)(Power_blocks.resource[i - 1]), race, i));
+        g.out << std::format(
+            "{:5s}", Estimate_i((int)(Power_blocks.fuel[i - 1]), race, i));
+        g.out << std::format(
+            "{:5s}", Estimate_i((int)(Power_blocks.destruct[i - 1]), race, i));
+        g.out << std::format(
+            "{:5s}", Estimate_i((int)(Power_blocks.VPs[i - 1]), race, i));
+        g.out << std::format(" {:3d}%%\n", race.translate[i - 1]);
       }
   }
 }

@@ -35,9 +35,9 @@ bool can_build_on_sector(const int what, const Race &race, const Planet &planet,
   }
   if ((!(Shipdata[what][ABIL_BUILD] & 1)) && !race.God) {
     sprintf(string, "This ship type cannot be built on a planet.\n");
-    sprintf(temp, "Use 'build ? %c' to find out where it can be built.\n",
-            shipc);
-    strcat(string, temp);
+    std::string temp = std::format(
+        "Use 'build ? {}' to find out where it can be built.\n", shipc);
+    strcat(string, temp.c_str());
     return false;
   }
   if (what == ShipType::OTYPE_QUARRY) {
@@ -120,9 +120,11 @@ bool can_build_on_ship(int what, const Race &race, Ship *builder,
       !race.God) {
     sprintf(string, "This ship type cannot be built by a %s.\n",
             Shipnames[builder->type]);
-    sprintf(temp, "Use 'build ? %c' to find out where it can be built.\n",
-            Shipltrs[what]);
-    strcat(string, temp);
+    std::string temp =
+        std::format("Use 'build ? {}' to find out where it can be built.\n",
+                    Shipltrs[what]);
+
+    strcat(string, temp.c_str());
     return false;
   }
   return true;

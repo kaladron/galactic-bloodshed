@@ -15,7 +15,6 @@
 char buf[2047];
 char long_buf[1024], short_buf[256];
 char telegram_buf[AUTO_TELEG_SIZE];
-char temp[2047];
 
 #ifdef MARKET
 const char *commod_name[] = {"resources", "destruct", "fuel", "crystals"};

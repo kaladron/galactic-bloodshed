@@ -5,8 +5,6 @@
 #ifndef FUEL_H
 #define FUEL_H
 
-#include "gb/place.h"
-
 std::tuple<bool, segments_t> do_trip(const Place &, Ship &, double fuel,
                                      double gravity_factor, double x_1,
                                      double y_1);

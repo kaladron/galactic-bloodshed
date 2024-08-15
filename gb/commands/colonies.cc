@@ -7,10 +7,8 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/map.h"
-#include "gb/place.h"
 #include "gb/races.h"
 #include "gb/tweakables.h"
 

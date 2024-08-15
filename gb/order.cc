@@ -9,7 +9,6 @@ import std.compat;
 
 #include "gb/buffers.h"
 #include "gb/moveship.h"
-#include "gb/place.h"
 #include "gb/shootblast.h"
 #include "gb/tweakables.h"
 

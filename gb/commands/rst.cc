@@ -15,7 +15,6 @@ import std.compat;
 
 #include "gb/buffers.h"
 #include "gb/order.h"
-#include "gb/place.h"
 #include "gb/races.h"
 #include "gb/shootblast.h"
 #include "gb/tweakables.h"

@@ -91,6 +91,7 @@ target_sources(
          gblib-fire.cppm
          gblib-globals.cppm
          gblib-misc.cppm
+         gblib-place.cppm
          gblib-planet.cppm
          gblib-race.cppm
          utils/gblib-rand.cppm
@@ -214,7 +215,6 @@ set(OLD_LIBGBLIB_FILES
     moveship.cc
     name.cc
     order.cc
-    place.cc
     prof.cc
     shootblast.cc
     tech.cc)

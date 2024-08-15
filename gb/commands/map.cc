@@ -7,8 +7,6 @@ import std.compat;
 
 #include "gb/map.h"
 
-#include "gb/place.h"
-
 module commands;
 
 namespace GB::commands {

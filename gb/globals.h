@@ -18,9 +18,4 @@ struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
 struct vnbrain VN_brain;
 struct sectinfo Sectinfo[MAX_X][MAX_Y];
 
-time_t next_update_time;   /* When will next update be... approximately */
-time_t next_segment_time;  /* When will next segment be... approximately */
-unsigned int update_time;  /* Interval between updates in minutes */
-segments_t nsegments_done; /* How many movements have we done so far? */
-
 #endif  // GLOBALS_H

@@ -9,8 +9,6 @@ module;
 
 import std.compat;
 
-#include <climits>
-
 #include "gb/files.h"
 #include "gb/tweakables.h"
 

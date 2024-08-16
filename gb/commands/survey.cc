@@ -11,7 +11,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/csp.h"
 #include "gb/csp_types.h"

@@ -7,7 +7,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/defense.h"
 #include "gb/move.h"

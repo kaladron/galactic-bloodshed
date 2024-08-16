@@ -134,40 +134,37 @@ void push_telegram_race(const player_t recipient, std::string_view msg) {
  * terminated by TELEG_DELIM.
  */
 void teleg_read(GameObj &g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
-  char *p;
-
   std::string telegram_file =
-      std::format("{0}.{1}.{2}", TELEGRAMFL, Playernum, Governor);
+      std::format("{0}.{1}.{2}", TELEGRAMFL, g.player, g.governor);
 
-  FILE *teleg_read_fd;
-  if ((teleg_read_fd = fopen(telegram_file.c_str(), "r")) != nullptr) {
-    g.out << "Telegrams:";
-    struct stat telestat;
-    stat(telegram_file.c_str(), &telestat);
-    if (telestat.st_size > 0) {
-      g.out << "\n";
-      while (fgets(buf, sizeof buf, teleg_read_fd)) {
-        for (p = buf; *p; p++)
-          if (*p == '\n') {
-            *p = '\0';
-            break;
-          }
-        strcat(buf, "\n");
-        notify(Playernum, Governor, buf);
-      }
-    } else {
-      g.out << " None.\n";
-    }
+  g.out << "Telegrams:\n";
 
-    fclose(teleg_read_fd);
-    teleg_read_fd = fopen(telegram_file.c_str(), "w+"); /* trunc file */
-    fclose(teleg_read_fd);
-  } else {
-    g.out << std::format("\nTelegram file {0} non-existent.\n", telegram_file);
+  std::filesystem::path telegram_path(telegram_file);
+  if (!std::filesystem::exists(telegram_path)) {
+    g.out << std::format("Error: Telegram file {} non-existent.\n",
+                         telegram_file);
     return;
   }
+
+  if (std::filesystem::file_size(telegram_path) == 0) {
+    g.out << std::format(" None.\n", telegram_file);
+    return;
+  }
+
+  std::ifstream teleg_read_fd(telegram_file);
+  if (!teleg_read_fd.is_open()) {
+    g.out << std::format("Error: Failed to open telegram file {}.\n",
+                         telegram_file);
+    return;
+  }
+
+  std::string line;
+  while (std::getline(teleg_read_fd, line)) {
+    g.out << line << "\n";
+  }
+
+  teleg_read_fd.close();
+  std::ofstream truncate_file(telegram_file, std::ios::trunc);
 }
 
 /**

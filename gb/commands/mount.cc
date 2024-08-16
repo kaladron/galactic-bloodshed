@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/GB_server.h"
-
 module commands;
 
 namespace GB::commands {

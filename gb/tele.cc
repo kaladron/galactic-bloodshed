@@ -124,22 +124,14 @@ void push_telegram_race(const player_t recipient, std::string_view msg) {
     if (race.governor[j].active) push_telegram(recipient, j, msg);
 }
 
-/*
- * *	read_teleg.c -- (try to) read telegrams *	 the first byte in
- * each telegram is the sending player #, or 254 *	 to denote
- * autoreport.  then the time sent, then the message itself, *	 terminated
- * by TELEG_DELIM.
- */
-/*
- * teleg_read:
+/**
+ * \brief Read the telegrams for the player.
  *
- * arguments: Playernum Governor
+ * \param g Game object
  *
- * called by: process_commands
- *
- * description:  Read the telegrams for the player.  The first byte in each
- * telegram is the sending player number or 254 to denote an autoreport.
- * Then the time send, then the message, then terminated by TELEG_DELIM
+ * \description The first byte in each telegram is the sending player number or
+ * 254 to denote an autoreport. Then the time send, then the message, then
+ * terminated by TELEG_DELIM.
  */
 void teleg_read(GameObj &g) {
   player_t Playernum = g.player;
@@ -177,13 +169,16 @@ void teleg_read(GameObj &g) {
     return;
   }
 }
-/*
- * news_read:
+
+/**
+ * \brief Read the news file.
  *
- * arguments: Playernum Governor Type
+ * \param type Type of news. Valid types are DECLARATION, TRANSFER, COMBAT, and
+ * ANNOUNCE.
+ * \param g Game object
  *
- * description:  Read the news file
- *
+ * \description This function reads the news file based on the specified type
+ * and game object.
  */
 void news_read(NewsType type, GameObj &g) {
   player_t Playernum = g.player;

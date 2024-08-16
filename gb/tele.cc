@@ -9,15 +9,8 @@ module;
 
 import std.compat;
 
-#include <strings.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-
 #include <climits>
-#include <cstdio>
 
-#include "gb/buffers.h"
 #include "gb/files.h"
 #include "gb/tweakables.h"
 
@@ -178,57 +171,46 @@ void teleg_read(GameObj &g) {
  * and game object.
  */
 void news_read(NewsType type, GameObj &g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
-  char *p;
-
-  std::string telegram_file;
+  const char *telegram_file;
   switch (type) {
     using enum NewsType;
     case DECLARATION:
-      telegram_file = std::format("{0}", DECLARATIONFL);
+      telegram_file = DECLARATIONFL;
       break;
     case TRANSFER:
-      telegram_file = std::format("{0}", TRANSFERFL);
+      telegram_file = TRANSFERFL;
       break;
     case COMBAT:
-      telegram_file = std::format("{0}", COMBATFL);
+      telegram_file = COMBATFL;
       break;
     case ANNOUNCE:
-      telegram_file = std::format("{0}", ANNOUNCEFL);
+      telegram_file = ANNOUNCEFL;
       break;
-    default:
-      return;
   }
 
-  FILE *teleg_read_fd;
-  if ((teleg_read_fd = fopen(telegram_file.c_str(), "r")) != nullptr) {
-    auto &race = races[Playernum - 1];
-    if (race.governor[Governor].newspos[std::to_underlying(type)] >
-        newslength[type])
-      race.governor[Governor].newspos[std::to_underlying(type)] = 0;
-
-    fseek(teleg_read_fd,
-          race.governor[Governor].newspos[std::to_underlying(type)] & LONG_MAX,
-          SEEK_SET);
-    while (fgets(buf, sizeof buf, teleg_read_fd)) {
-      for (p = buf; *p; p++)
-        if (*p == '\n') {
-          *p = '\0';
-          break;
-        }
-      strcat(buf, "\n");
-      notify(Playernum, Governor, buf);
-    }
-
-    fclose(teleg_read_fd);
-    race.governor[Governor].newspos[std::to_underlying(type)] =
-        newslength[type];
-    putrace(race);
-  } else {
+  std::ifstream teleg_read_fd(telegram_file);
+  if (!teleg_read_fd.is_open()) {
     g.out << std::format("\nNews file {0} non-existent.\n", telegram_file);
     return;
   }
+
+  auto &race = races[g.player - 1];
+  if (race.governor[g.governor].newspos[std::to_underlying(type)] >
+      newslength[type]) {
+    race.governor[g.governor].newspos[std::to_underlying(type)] = 0;
+  }
+
+  teleg_read_fd.seekg(
+      race.governor[g.governor].newspos[std::to_underlying(type)]);
+
+  std::string line;
+  while (std::getline(teleg_read_fd, line)) {
+    g.out << line + "\n";
+  }
+
+  race.governor[g.governor].newspos[std::to_underlying(type)] =
+      newslength[type];
+  putrace(race);
 }
 
 /**
@@ -237,13 +219,11 @@ void news_read(NewsType type, GameObj &g) {
  * \arg g Game object
  */
 void check_for_telegrams(GameObj &g) {
-  std::string filename = std::string(TELEGRAMFL) + '.' +
-                         std::to_string(g.player) + '.' +
-                         std::to_string(g.governor);
-  struct stat sbuf;
-  std::memset(&sbuf, 0, sizeof(sbuf));
-  stat(filename.c_str(), &sbuf);
-  if (sbuf.st_size != 0) {
+  std::string filename =
+      std::format("{}.{}.{}", TELEGRAMFL, g.player, g.governor);
+
+  std::filesystem::path filePath(filename);
+  if (std::filesystem::file_size(filePath) != 0) {
     g.out << "You have telegram(s) waiting. Use 'read' to read them.\n";
   }
 }

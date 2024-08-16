@@ -9,12 +9,13 @@ import std.compat;
 
 #include "gb/doplanet.h"
 
-#include <stdlib.h>
 #include <strings.h>
+
+#include <cstdlib>
 
 #include "gb/GB_server.h"
 #include "gb/bombard.h"
-#include "gb/buffers.h"
+// include "gb/buffers.h"
 #include "gb/build.h"
 #include "gb/dosector.h"
 #include "gb/doship.h"
@@ -115,10 +116,11 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
               msg_OOF(ship);
             }
           } else if (ship->on) {
-            sprintf(buf, "K%lu is not landed.", ship->number);
+            std::string buf = std::format("K{} is not landed.", ship->number);
             push_telegram(ship->owner, ship->governor, buf);
           } else {
-            sprintf(buf, "K%lu is not switched on.", ship->number);
+            std::string buf =
+                std::format("K{} is not switched on.", ship->number);
             push_telegram(ship->owner, ship->governor, buf);
           }
           break;
@@ -127,15 +129,16 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
             if (ship->resource >= RES_COST_DOME)
               do_dome(ship, smap);
             else {
-              sprintf(buf, "Y%lu does not have enough resources.",
-                      ship->number);
+              std::string buf = std::format(
+                  "Y{} does not have enough resources.", ship->number);
               push_telegram(ship->owner, ship->governor, buf);
             }
           } else if (ship->on) {
-            sprintf(buf, "Y%lu is not landed.", ship->number);
+            std::string buf = std::format("Y{} is not landed.", ship->number);
             push_telegram(ship->owner, ship->governor, buf);
           } else {
-            sprintf(buf, "Y%lu is not switched on.", ship->number);
+            std::string buf =
+                std::format("Y{} is not switched on.", ship->number);
             push_telegram(ship->owner, ship->governor, buf);
           }
           break;
@@ -146,16 +149,17 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
               prod_destruct[ship->owner - 1] += do_weapon_plant(ship);
             else {
               if (ship->resource < RES_COST_WPLANT) {
-                sprintf(buf, "W%lu does not have enough resources.",
-                        ship->number);
+                std::string buf = std::format(
+                    "W{} does not have enough resources.", ship->number);
                 push_telegram(ship->owner, ship->governor, buf);
               } else {
-                sprintf(buf, "W%lu does not have enough fuel.", ship->number);
+                std::string buf =
+                    std::format("W{} does not have enough fuel.", ship->number);
                 push_telegram(ship->owner, ship->governor, buf);
               }
             }
           else {
-            sprintf(buf, "W%lu is not landed.", ship->number);
+            std::string buf = std::format("W{} is not landed.", ship->number);
             push_telegram(ship->owner, ship->governor, buf);
           }
           break;
@@ -168,14 +172,16 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
               msg_OOF(ship);
             }
           } else {
+            std::string buf;
             if (!ship->on) {
-              sprintf(buf, "q%lu is not switched on.", ship->number);
+              buf = std::format("q{} is not switched on.", ship->number);
             }
             if (!landed(*ship)) {
-              sprintf(buf, "q%lu is not landed.", ship->number);
+              buf = std::format("q{} is not landed.", ship->number);
             }
             if (!ship->popn) {
-              sprintf(buf, "q%lu does not have workers aboard.", ship->number);
+              buf = std::format("q{} does not have workers aboard.",
+                                ship->number);
             }
             push_telegram(ship->owner, ship->governor, buf);
           }
@@ -318,15 +324,19 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
     p.popn = p.owner = p.troops = 0;
   }
 
-  for (i = 1; i <= Num_races; i++)
+  for (int i = 1; i <= Num_races; i++) {
     if (sects_gained[i - 1] || sects_lost[i - 1]) {
-      sprintf(telegram_buf, "****** Report: Planet /%s/%s ******\n",
-              stars[starnum].name, stars[starnum].pnames[planetnum]);
-      sprintf(buf, " WAR STATUS: %d sectors gained, %d sectors lost.\n",
-              sects_gained[i - 1], sects_lost[i - 1]);
-      strcat(telegram_buf, buf);
-      push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
+      std::stringstream telegram_buf;
+
+      telegram_buf << std::format("****** Report: Planet /{}/{} ******\n",
+                                  stars[starnum].name,
+                                  stars[starnum].pnames[planetnum]);
+      telegram_buf << std::format(
+          " WAR STATUS: {} sectors gained, {} sectors lost.\n",
+          sects_gained[i - 1], sects_lost[i - 1]);
+      push_telegram(i, stars[starnum].governor[i - 1], telegram_buf.str());
     }
+  }
   for (i = 1; i <= Num_races; i++) {
     planet.info[i - 1].prod_crystals = prod_crystals[i - 1];
     planet.info[i - 1].prod_res = prod_res[i - 1];
@@ -334,59 +344,64 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
     planet.info[i - 1].prod_dest = prod_destruct[i - 1];
     if (planet.info[i - 1].autorep) {
       planet.info[i - 1].autorep--;
-      sprintf(telegram_buf, "\nFrom /%s/%s\n", stars[starnum].name,
-              stars[starnum].pnames[planetnum]);
+      std::stringstream telegram_buf;
+      telegram_buf << std::format("\nFrom /{}/{}\n", stars[starnum].name,
+                                  stars[starnum].pnames[planetnum]);
 
       if (Stinfo[starnum][planetnum].temp_add) {
-        sprintf(buf, "Temp: %d to %d\n", planet.conditions[RTEMP],
-                planet.conditions[TEMP]);
-        strcat(telegram_buf, buf);
+        telegram_buf << std::format("Temp: {} to {}\n",
+                                    planet.conditions[RTEMP],
+                                    planet.conditions[TEMP]);
       }
-      sprintf(buf, "Total      Prod: %ldr %ldf %ldd\n", prod_res[i - 1],
-              prod_fuel[i - 1], prod_destruct[i - 1]);
-      strcat(telegram_buf, buf);
+      telegram_buf << std::format("Total      Prod: {}r {}f {}d\n",
+                                  prod_res[i - 1], prod_fuel[i - 1],
+                                  prod_destruct[i - 1]);
       if (prod_crystals[i - 1]) {
-        sprintf(buf, "    %ld crystals found\n", prod_crystals[i - 1]);
-        strcat(telegram_buf, buf);
+        telegram_buf << std::format("    {} crystals found\n",
+                                    prod_crystals[i - 1]);
       }
       if (tot_captured) {
-        sprintf(buf, "%ld sectors captured\n", tot_captured);
-        strcat(telegram_buf, buf);
+        telegram_buf << std::format("{} sectors captured\n", tot_captured);
       }
       if (stars[starnum].nova_stage) {
-        sprintf(buf, "This planet's primary is in a Stage %d nova.\n",
-                stars[starnum].nova_stage);
-        strcat(telegram_buf, buf);
+        telegram_buf << std::format(
+            "This planet's primary is in a Stage {} nova.\n",
+            stars[starnum].nova_stage);
       }
       /* remind the player that he should clean up the environment. */
       if (planet.conditions[TOXIC] > ENVIR_DAMAGE_TOX) {
-        sprintf(buf, "Environmental damage on sector %d,%d\n", nukex, nukey);
-        strcat(telegram_buf, buf);
+        telegram_buf << std::format("Environmental damage on sector {},{}\n",
+                                    nukex, nukey);
       }
       if (planet.slaved_to) {
-        sprintf(buf, "ENSLAVED to player %d\n", planet.slaved_to);
-        strcat(telegram_buf, buf);
+        telegram_buf << std::format("ENSLAVED to player {}\n",
+                                    planet.slaved_to);
       }
-      push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
+      push_telegram(i, stars[starnum].governor[i - 1], telegram_buf.str());
     }
   }
 
   /* find out who is on this planet, for nova notification */
   if (stars[starnum].nova_stage == 1) {
-    sprintf(telegram_buf, "BULLETIN from /%s/%s\n", stars[starnum].name,
-            stars[starnum].pnames[planetnum]);
-    sprintf(buf, "\nStar %s is undergoing nova.\n", stars[starnum].name);
-    strcat(telegram_buf, buf);
-    if (planet.type == PlanetType::EARTH || planet.type == PlanetType::WATER ||
-        planet.type == PlanetType::FOREST) {
-      sprintf(buf, "Seas and rivers are boiling!\n");
-      strcat(telegram_buf, buf);
+    {
+      std::stringstream telegram_buf;
+      telegram_buf << std::format("BULLETIN from /{}/{}\n", stars[starnum].name,
+                                  stars[starnum].pnames[planetnum]);
+      telegram_buf << std::format("\nStar {} is undergoing nova.\n",
+                                  stars[starnum].name);
+      if (planet.type == PlanetType::EARTH ||
+          planet.type == PlanetType::WATER ||
+          planet.type == PlanetType::FOREST) {
+        telegram_buf << "Seas and rivers are boiling!\n";
+      }
+      telegram_buf << "This planet must be evacuated immediately!\n"
+                   << TELEG_DELIM;
+      for (i = 1; i <= Num_races; i++) {
+        if (planet.info[i - 1].numsectsowned) {
+          push_telegram(i, stars[starnum].governor[i - 1], telegram_buf.str());
+        }
+      }
     }
-    sprintf(buf, "This planet must be evacuated immediately!\n%c", TELEG_DELIM);
-    strcat(telegram_buf, buf);
-    for (i = 1; i <= Num_races; i++)
-      if (planet.info[i - 1].numsectsowned)
-        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
   }
 
   do_recover(planet, starnum, planetnum);
@@ -462,19 +477,23 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
         }
         /* also add up the populations while here */
       }
-      sprintf(telegram_buf, "\nThere has been a SLAVE REVOLT on /%s/%s!\n",
-              stars[starnum].name, stars[starnum].pnames[planetnum]);
-      strcat(telegram_buf, buf);
-      sprintf(buf,
-              "All population belonging to player #%d on the planet have "
-              "been killed!\n",
-              planet.slaved_to);
-      strcat(telegram_buf, buf);
-      sprintf(buf, "Productions now go to their rightful owners.\n");
-      strcat(telegram_buf, buf);
-      for (i = 1; i <= Num_races; i++)
-        if (planet.info[i - 1].numsectsowned)
-          push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
+      {
+        std::stringstream telegram_buf;
+        telegram_buf << std::format(
+            "\nThere has been a SLAVE REVOLT on /{}/{}!\n", stars[starnum].name,
+            stars[starnum].pnames[planetnum]);
+        telegram_buf << std::format(
+            "All population belonging to player #{} on the planet have been "
+            "killed!\n",
+            planet.slaved_to);
+        telegram_buf << "Productions now go to their rightful owners.\n";
+        for (i = 1; i <= Num_races; i++) {
+          if (planet.info[i - 1].numsectsowned) {
+            push_telegram(i, stars[starnum].governor[i - 1],
+                          telegram_buf.str());
+          }
+        }
+      }
       planet.slaved_to = 0;
     }
   }
@@ -646,13 +665,14 @@ static void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
   auto &s = smap.get(ship.land_x, ship.land_y);
 
   if (s.condition == races[ship.owner - 1].likesbest) {
-    sprintf(buf, " T%lu is full of zealots!!!", ship.number);
+    std::string buf = std::format(" T{} is full of zealots!!!", ship.number);
     push_telegram(ship.owner, ship.governor, buf);
     return;
   }
 
   if (s.condition == SectorType::SEC_GAS) {
-    sprintf(buf, " T%lu is trying to terraform gas.", ship.number);
+    std::string buf =
+        std::format(" T{} is trying to terraform gas.", ship.number);
     push_telegram(ship.owner, ship.governor, buf);
     return;
   }
@@ -689,7 +709,7 @@ static void plow(Ship *ship, Planet &planet, SectorMap &smap) {
     }
     s.fert = std::min(100u, s.fert + adjust);
     if (s.fert >= 100) {
-      sprintf(buf, " K%lu is full of zealots!!!", ship->number);
+      std::string buf = std::format(" K{} is full of zealots!!!", ship->number);
       push_telegram(ship->owner, ship->governor, buf);
     }
     use_fuel(*ship, FUEL_COST_PLOW);
@@ -703,7 +723,7 @@ static void do_dome(Ship *ship, SectorMap &smap) {
 
   auto &s = smap.get(ship->land_x, ship->land_y);
   if (s.eff >= 100) {
-    sprintf(buf, " Y%lu is full of zealots!!!", ship->number);
+    std::string buf = std::format(" Y{} is full of zealots!!!", ship->number);
     push_telegram(ship->owner, ship->governor, buf);
     return;
   }
@@ -795,12 +815,15 @@ static void do_recover(Planet &planet, int starnum, int planetnum) {
 
     for (i = 1; i <= Num_races; i++)
       if (isset(ownerbits, i)) {
-        sprintf(telegram_buf, "Recovery Report: Planet /%s/%s\n",
-                stars[starnum].name, stars[starnum].pnames[planetnum]);
-        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
-        sprintf(telegram_buf, "%-14.14s %5s %5s %5s %5s\n", "", "res", "destr",
-                "fuel", "xtal");
-        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf);
+        std::stringstream telegram_buf;
+        telegram_buf << std::format("Recovery Report: Planet /{}/{}\n",
+                                    stars[starnum].name,
+                                    stars[starnum].pnames[planetnum]);
+        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf.str());
+        telegram_buf.str("");
+        telegram_buf << std::format("{:<14} {:>5} {:>5} {:>5} {:>5}\n", "",
+                                    "res", "destr", "fuel", "xtal");
+        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf.str());
       }
     /* First: give the loot the the conquerers */
     for (i = 1; i <= Num_races && owners > 1; i++)
@@ -828,11 +851,18 @@ static void do_recover(Planet &planet, int starnum, int planetnum) {
         givencrystals += crystals;
 
         owners--;
-        sprintf(telegram_buf, "%-14.14s %5d %5d %5d %5d", races[i - 1].name,
-                res, des, fuel, crystals);
-        for (j = 1; j <= Num_races; j++)
-          if (isset(ownerbits, j))
-            push_telegram(j, stars[starnum].governor[j - 1], telegram_buf);
+        {
+          std::stringstream telegram_buf;
+          telegram_buf << std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}",
+                                      races[i - 1].name, res, des, fuel,
+                                      crystals);
+          for (j = 1; j <= Num_races; j++) {
+            if (isset(ownerbits, j)) {
+              push_telegram(j, stars[starnum].governor[j - 1],
+                            telegram_buf.str());
+            }
+          }
+        }
       }
     /* Leftovers for last player */
     for (; i <= Num_races; i++)
@@ -847,17 +877,27 @@ static void do_recover(Planet &planet, int starnum, int planetnum) {
       planet.info[i - 1].destruct += des;
       planet.info[i - 1].fuel += fuel;
       planet.info[i - 1].crystals += crystals;
-      sprintf(telegram_buf, "%-14.14s %5d %5d %5d %5d", races[i - 1].name, res,
-              des, fuel, crystals);
-      sprintf(buf, "%-14.14s %5d %5d %5d %5d\n", "Total:", stolenres, stolendes,
-              stolenfuel, stolencrystals);
-      for (j = 1; j <= Num_races; j++)
-        if (isset(ownerbits, j)) {
-          push_telegram(j, stars[starnum].governor[j - 1], telegram_buf);
-          push_telegram(j, stars[starnum].governor[j - 1], buf);
+      {
+        std::stringstream first_telegram;
+        first_telegram << std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}",
+                                      races[i - 1].name, res, des, fuel,
+                                      crystals);
+        std::stringstream second_telegram;
+        second_telegram << std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}\n",
+                                       "Total:", stolenres, stolendes,
+                                       stolenfuel, stolencrystals);
+        for (j = 1; j <= Num_races; j++) {
+          if (isset(ownerbits, j)) {
+            push_telegram(j, stars[starnum].governor[j - 1],
+                          first_telegram.str());
+            push_telegram(j, stars[starnum].governor[j - 1],
+                          second_telegram.str());
+          }
         }
-    } else
+      }
+    } else {
       push_telegram(1, 0, "Bug in stealing resources\n");
+    }
     /* Next: take all the loot away from the losers */
     for (i = 2; i <= Num_races; i++)
       if (!isset(ownerbits, i)) {

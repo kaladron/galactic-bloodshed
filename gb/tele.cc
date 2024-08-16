@@ -117,9 +117,8 @@ void post(std::string msg, NewsType type) {
  *
  * \param recipient Race to receive
  * \param msg Message they will receive
- * push_telegram_race:
  */
-void push_telegram_race(const player_t recipient, const std::string &msg) {
+void push_telegram_race(const player_t recipient, std::string_view msg) {
   auto &race = races[recipient - 1];
   for (governor_t j = 0; j <= MAXGOVERNORS; j++)
     if (race.governor[j].active) push_telegram(recipient, j, msg);

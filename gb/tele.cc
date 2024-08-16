@@ -9,7 +9,6 @@ module;
 
 import std.compat;
 
-
 #include <strings.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -24,36 +23,30 @@ import std.compat;
 
 module gblib;
 
-/*
- * push_telegram:
+/**
+ * \brief Sends a message to everyone from person to person
  *
- * arguments: recpient gov msg
- *
- * called by:
- *
- * description:  Sends a message to everyone from person to person
- *
+ * \param recipient The recipient player
+ * \param gov The governor of the recipient player
+ * \param msg The message to send
  */
 void push_telegram(const player_t recipient, const governor_t gov,
-                   const std::string &msg) {
-  char telefl[100];
-  FILE *telegram_fd;
+                   std::string_view msg) {
+  std::string telefl = std::format("{}.{}.{}", TELEGRAMFL, recipient, gov);
 
-  bzero((char *)telefl, sizeof(telefl));
-  sprintf(telefl, "%s.%d.%d", TELEGRAMFL, recipient, gov);
+  std::ofstream telegram_file(telefl, std::ios::app);
+  if (!telegram_file.is_open()) {
+    perror("tele");
+    return;
+  }
+  auto now = std::chrono::system_clock::now();
+  auto current_time = std::chrono::system_clock::to_time_t(now);
+  auto current_tm = std::localtime(&current_time);
 
-  if ((telegram_fd = fopen(telefl, "a")) == nullptr)
-    if ((telegram_fd = fopen(telefl, "w+")) == nullptr) {
-      perror("tele");
-      return;
-    }
-  time_t tm = time(nullptr);
-  struct tm *current_tm = localtime(&tm);
-
-  fprintf(telegram_fd, "%2d/%2d %02d:%02d:%02d %s\n", current_tm->tm_mon + 1,
-          current_tm->tm_mday, current_tm->tm_hour, current_tm->tm_min,
-          current_tm->tm_sec, msg.c_str());
-  fclose(telegram_fd);
+  telegram_file << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}\n",
+                               current_tm->tm_mon + 1, current_tm->tm_mday,
+                               current_tm->tm_hour, current_tm->tm_min,
+                               current_tm->tm_sec, msg);
 }
 
 /**

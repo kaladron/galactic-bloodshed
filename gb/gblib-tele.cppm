@@ -13,4 +13,4 @@ export void push_telegram_race(const player_t, const std::string &);
 export void teleg_read(GameObj &);
 export void news_read(NewsType type, GameObj &g);
 export void push_telegram(const player_t recipient, const governor_t gov,
-                          const std::string &msg);
+                          std::string_view msg);

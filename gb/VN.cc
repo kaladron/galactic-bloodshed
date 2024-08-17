@@ -12,7 +12,6 @@ import std.compat;
 
 #include <cstdlib>
 
-#include "gb/doturn.h"
 #include "gb/tweakables.h"
 
 module gblib;

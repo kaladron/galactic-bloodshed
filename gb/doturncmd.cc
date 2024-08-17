@@ -16,7 +16,6 @@ import std.compat;
 #include "gb/build.h"
 #include "gb/doplanet.h"
 #include "gb/doship.h"
-#include "gb/doturn.h"
 #include "gb/moveplanet.h"
 #include "gb/tweakables.h"
 

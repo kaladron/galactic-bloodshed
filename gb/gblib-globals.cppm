@@ -62,6 +62,10 @@ export sqlite3 *dbconn;
 
 export char plan_buf[1024];
 
+export struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
+export struct vnbrain VN_brain;
+export struct sectinfo Sectinfo[MAX_X][MAX_Y];
+
 #ifdef MARKET
 export const std::array<const char *, 4> commod_name = {"resources", "destruct",
                                                         "fuel", "crystals"};

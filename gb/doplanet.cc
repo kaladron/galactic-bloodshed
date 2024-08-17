@@ -18,7 +18,6 @@ import std.compat;
 #include "gb/build.h"
 #include "gb/dosector.h"
 #include "gb/doship.h"
-#include "gb/doturn.h"
 #include "gb/move.h"
 #include "gb/moveship.h"
 #include "gb/shootblast.h"

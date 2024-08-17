@@ -3,8 +3,7 @@
 export module gblib:star;
 
 import :types;
-
-#include "gb/tweakables.h"
+import :tweakables;
 
 export struct Star {
   unsigned short ships;            /* 1st ship in orbit */

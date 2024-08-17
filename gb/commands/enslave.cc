@@ -9,7 +9,7 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
+#include "gb/tweakables.h"
 
 module commands;
 
@@ -33,13 +33,12 @@ void enslave(const command_t &argv, GameObj &g) {
     return;
   }
   if (s->type != ShipType::STYPE_OAP) {
-    sprintf(buf, "This ship is not an %s.\n", Shipnames[ShipType::STYPE_OAP]);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("This ship is not an {}.\n",
+                         Shipnames[ShipType::STYPE_OAP]);
     return;
   }
   if (s->whatorbits != ScopeLevel::LEVEL_PLAN) {
-    sprintf(buf, "%s doesn't orbit a planet.\n", ship_to_string(*s).c_str());
-    notify(Playernum, Governor, buf);
+    g.out << std::format("{} doesn't orbit a planet.\n", ship_to_string(*s));
     return;
   }
   if (!enufAP(Playernum, Governor, stars[s->storbits].AP[Playernum - 1],
@@ -84,45 +83,38 @@ void enslave(const command_t &argv, GameObj &g) {
   g.out << "that are yours must have a weapons\n";
   g.out << "capacity greater than twice that the enemy can muster, including\n";
   g.out << "the planet and all ships orbiting it.\n";
-  sprintf(buf, "\nTotal forces bearing on %s:   %d\n",
-          prin_ship_orbits(*s).c_str(), attack);
-  notify(Playernum, Governor, buf);
+  g.out << std::format("\nTotal forces bearing on {}:   {}\n",
+                       prin_ship_orbits(*s), attack);
 
-  sprintf(telegram_buf, "ALERT!!!\n\nPlanet /%s/%s ", stars[s->storbits].name,
-          stars[s->storbits].pnames[s->pnumorbits]);
+  std::stringstream telegram;
+  telegram << std::format("ALERT!!!\n\nPlanet /{}/{}", stars[s->storbits].name,
+                          stars[s->storbits].pnames[s->pnumorbits]);
 
   if (def <= 2 * attack) {
     p.slaved_to = Playernum;
     putplanet(p, stars[s->storbits], s->pnumorbits);
 
     /* send telegs to anyone there */
-    sprintf(buf, "ENSLAVED by %s!!\n", ship_to_string(*s).c_str());
-    strcat(telegram_buf, buf);
-    sprintf(buf, "All material produced here will be\ndiverted to %s coffers.",
-            race.name);
-    strcat(telegram_buf, buf);
+    telegram << std::format("ENSLAVED by {}!!\n", ship_to_string(*s));
+    telegram << std::format(
+        "All material produced here will be\n"
+        "diverted to {} coffers.",
+        race.name);
 
-    sprintf(buf,
-            "\nEnslavement successful.  All material produced here will\n");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "be diverted to %s.\n", race.name);
-    notify(Playernum, Governor, buf);
-    sprintf(buf,
-            "You must maintain a garrison of 0.1%% the population of the\n");
-    notify(Playernum, Governor, buf);
-    sprintf(buf,
-            "planet (at least %.0f); otherwise there is a 50%% chance that\n",
-            p.popn * 0.001);
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "enslaved population will revolt.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "\nEnslavement successful.  All material produced here will\n";
+    g.out << std::format("be diverted to {}.\n", race.name);
+    g.out << std::format(
+        "You must maintain a garrison of 0.1%% the population of the\n");
+    g.out << std::format(
+        "planet (at least {:.0f}); otherwise there is a 50% chance that\n",
+        p.popn * 0.001);
+    g.out << std::format("enslaved population will revolt.\n");
   } else {
-    sprintf(buf, "repulsed attempt at enslavement by %s!!\n",
-            ship_to_string(*s).c_str());
-    strcat(telegram_buf, buf);
-    sprintf(buf, "Enslavement repulsed, defense/attack Ratio : %d to %d.\n",
-            def, attack);
-    strcat(telegram_buf, buf);
+    telegram << std::format("repulsed attempt at enslavement by {}!!\n",
+                            ship_to_string(*s));
+    telegram << std::format(
+        "Enslavement repulsed, defense/attack Ratio : {} to {}.\n", def,
+        attack);
 
     g.out << "Enslavement repulsed.\n";
     g.out << "You needed more weapons bearing on the planet...\n";
@@ -130,6 +122,6 @@ void enslave(const command_t &argv, GameObj &g) {
 
   for (auto i = 1; i < MAXPLAYERS; i++)
     if (p.info[i - 1].numsectsowned && i != Playernum)
-      warn(i, stars[s->storbits].governor[i - 1], telegram_buf);
+      warn(i, stars[s->storbits].governor[i - 1], telegram.str());
 }
 }  // namespace GB::commands

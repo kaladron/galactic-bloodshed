@@ -444,15 +444,13 @@ static void do_repair(Ship *ship) {
 
   maxrep = REPAIR_RATE / (double)segments;
   /* stations repair for free, and ships docked with them */
-  if (Shipdata[ship->type][ABIL_REPAIR])
+  if (Shipdata[ship->type][ABIL_REPAIR] ||
+      (ship->docked && ship->whatdest == ScopeLevel::LEVEL_SHIP &&
+       ships[ship->destshipno]->type == ShipType::STYPE_STATION) ||
+      (ship->docked && ship->whatorbits == ScopeLevel::LEVEL_SHIP &&
+       ships[ship->destshipno]->type == ShipType::STYPE_STATION)) {
     cost = 0;
-  else if (ship->docked && ship->whatdest == ScopeLevel::LEVEL_SHIP &&
-           ships[ship->destshipno]->type == ShipType::STYPE_STATION)
-    cost = 0;
-  else if (ship->docked && ship->whatorbits == ScopeLevel::LEVEL_SHIP &&
-           ships[ship->destshipno]->type == ShipType::STYPE_STATION)
-    cost = 0;
-  else {
+  } else {
     maxrep *= (double)(ship->popn) / (double)ship->max_crew;
     cost = (int)(0.005 * maxrep * shipcost(*ship));
   }

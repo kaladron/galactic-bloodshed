@@ -3,8 +3,7 @@
 export module gblib:race;
 
 import :types;
-
-#include "gb/tweakables.h"
+import :tweakables;
 
 using toggletype = struct {
   char invisible;

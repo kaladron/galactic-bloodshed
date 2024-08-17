@@ -14,7 +14,6 @@ import std.compat;
 #include <cstdlib>
 
 #include "gb/buffers.h"
-#include "gb/doturn.h"
 #include "gb/moveship.h"
 #include "gb/shootblast.h"
 #include "gb/tweakables.h"

@@ -11,7 +11,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/doturn.h"
 #include "gb/tweakables.h"
 
 void moveplanet(int starnum, Planet &planet, int planetnum) {

@@ -51,6 +51,39 @@ export enum SectorType {
   SEC_WASTED = 8,
 };
 
+export enum Conditions {
+  RTEMP = 0,   /* regular temp for planet */
+  TEMP = 1,    /* temperature */
+  METHANE = 2, /* %age of gases for terraforming */
+  OXYGEN = 3,
+  CO2 = 4,
+  HYDROGEN = 5,
+  NITROGEN = 6,
+  SULFUR = 7,
+  HELIUM = 8,
+  OTHER = 9,
+  TOXIC = 10,
+};
+
+export struct stinfo {
+  short temp_add; /* addition to temperature to each planet */
+  unsigned char Thing_add;
+  /* new Thing colony on this planet */
+  unsigned char inhab;       /* explored by anybody */
+  unsigned char intimidated; /* assault platform is here */
+};
+
+export struct vnbrain {
+  unsigned short Total_mad; /* total # of VN's destroyed so far */
+  unsigned char Most_mad;   /* player most mad at */
+};
+
+export struct sectinfo {
+  char explored;      /* sector has been explored */
+  unsigned char VN;   /* this sector has a VN */
+  unsigned char done; /* this sector has been updated */
+};
+
 export struct Commod {
   player_t owner;
   governor_t governor;

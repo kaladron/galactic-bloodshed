@@ -57,30 +57,10 @@
 #define COMMANDSIZE 42
 #define MAXARGS 256
 
-#define RTEMP 0   /* regular temp for planet */
-#define TEMP 1    /* temperature */
-#define METHANE 2 /* %age of gases for terraforming */
-#define OXYGEN 3
-#define CO2 4
-#define HYDROGEN 5
-#define NITROGEN 6
-#define SULFUR 7
-#define HELIUM 8
-#define OTHER 9
-#define TOXIC 10
-
 /* 3.0 feature */
 #define LIMITED_RESOURCES                      \
   1 /* set to 0 if you want unlimited resource \
        availability (pre 3.0)*/
-
-#define NAMESIZE 18
-#define RNAMESIZE 35
-#define MOTTOSIZE 64
-#define PERSONALSIZE 128
-#define PLACENAMESIZE (NAMESIZE + NAMESIZE + 13)
-#define NUMSTARS 256
-#define MAXPLANETS 10
 
 #define MAX_X 45 /* top range for planet */
 #define MAX_Y 19
@@ -290,14 +270,10 @@
 #define REPEAT_CHARACTER                              \
   ' ' /* this character makes the previous command to \
          repeat */
-#define MAXGOVERNORS 5u
 #define POD_THRESHOLD 18
 #define POD_DECAY 4
 #define AP_FACTOR \
   50.0 /* how planet size affects the rate of atmosphere processing */
 #define DISSIPATE 80 /* updates to dissipate dust and gases */
-
-#define MAXPLAYERS 64
-#define NUM_DISCOVERIES 80
 
 #endif  // TWEAKABLES_H

@@ -10,7 +10,6 @@ import std.compat;
 
 #include "gb/moveship.h"
 
-#include "gb/buffers.h"
 #include "gb/order.h"
 #include "gb/tweakables.h"
 
@@ -23,7 +22,7 @@ static const double SpeedConsts[] = {0.0,  0.61, 1.26, 1.50, 1.73,
                                      1.81, 1.90, 1.93, 1.96, 1.97};
 /* amount of fuel it costs to move at speed level */
 
-static int do_merchant(Ship *, Planet &);
+static int do_merchant(Ship *, Planet &, std::stringstream &telegram);
 
 void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
   double stardist;
@@ -56,11 +55,10 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
                (dist / distfac);
 
       if (s->fuel < fuse) {
-        sprintf(telegram_buf,
-                "%s at system %s does not have %.1ff to do hyperspace jump.",
-                ship_to_string(*s).c_str(), prin_ship_orbits(*s).c_str(), fuse);
-        if (send_messages)
-          push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
+        std::string telegram = std::format(
+            "{} at system {} does not have {:.1f}f to do hyperspace jump.",
+            ship_to_string(*s), prin_ship_orbits(*s), fuse);
+        if (send_messages) push_telegram(s->owner, s->governor, telegram);
         s->hyper_drive.on = 0;
         return;
       }
@@ -77,10 +75,9 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
       s->hyper_drive.on = 0;
       s->hyper_drive.ready = 0;
       s->hyper_drive.charge = 0;
-      sprintf(telegram_buf, "%s arrived at %s.", ship_to_string(*s).c_str(),
-              prin_ship_orbits(*s).c_str());
-      if (send_messages)
-        push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
+      std::string telegram = std::format(
+          "{} arrived at {}.", ship_to_string(*s), prin_ship_orbits(*s));
+      if (send_messages) push_telegram(s->owner, s->governor, telegram);
     } else if (s->mounted) {
       s->hyper_drive.ready = 1;
       s->hyper_drive.charge = HYPER_DRIVE_READY_CHARGE;
@@ -101,10 +98,9 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
       if (s->whatorbits == ScopeLevel::LEVEL_UNIV &&
           (s->build_cost <= 50 || s->type == ShipType::OTYPE_VN ||
            s->type == ShipType::OTYPE_BERS)) {
-        sprintf(telegram_buf, "%s has been lost in deep space.",
-                ship_to_string(*s).c_str());
-        if (send_messages)
-          push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
+        std::string telegram =
+            std::format("{} has been lost in deep space.", ship_to_string(*s));
+        if (send_messages) push_telegram(s->owner, s->governor, telegram);
         if (send_messages) kill_ship((int)(s->owner), s);
       }
       return;
@@ -221,11 +217,10 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
           !followable(s, ships[s->destshipno])) {
         s->whatdest = ScopeLevel::LEVEL_UNIV;
         s->protect.evade = 0;
-        sprintf(telegram_buf, "%s at %s lost sight of destination ship #%ld.",
-                ship_to_string(*s).c_str(), prin_ship_orbits(*s).c_str(),
-                s->destshipno);
-        if (send_messages)
-          push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
+        std::string telegram = std::format(
+            "{} at {} lost sight of destination ship #{}.", ship_to_string(*s),
+            prin_ship_orbits(*s), s->destshipno);
+        if (send_messages) push_telegram(s->owner, s->governor, telegram);
         return;
       }
       if (truedist > DIST_TO_LAND) {
@@ -279,10 +274,9 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
             setbit(dst.inhabited, s->owner);
           }
           if (s->type != ShipType::OTYPE_VN) {
-            sprintf(telegram_buf, "%s arrived at %s.",
-                    ship_to_string(*s).c_str(), prin_ship_orbits(*s).c_str());
-            if (send_messages)
-              push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
+            std::string telegram = std::format(
+                "{} arrived at {}.", ship_to_string(*s), prin_ship_orbits(*s));
+            if (send_messages) push_telegram(s->owner, s->governor, telegram);
           }
           if (s->whatdest == ScopeLevel::LEVEL_STAR)
             s->whatdest = ScopeLevel::LEVEL_UNIV;
@@ -300,22 +294,23 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
           }
           s->whatorbits = ScopeLevel::LEVEL_PLAN;
           s->pnumorbits = destpnum;
+          std::stringstream telegram;
           if (dist <= (double)DIST_TO_LAND) {
-            sprintf(telegram_buf, "%s within landing distance of %s.",
-                    ship_to_string(*s).c_str(), prin_ship_orbits(*s).c_str());
-            if (checking_fuel || !do_merchant(s, *dpl))
+            telegram << std::format("{} within landing distance of {}.",
+                                    ship_to_string(*s), prin_ship_orbits(*s));
+            if (checking_fuel || !do_merchant(s, *dpl, telegram))
               if (s->whatdest == ScopeLevel::LEVEL_PLAN)
                 s->whatdest = ScopeLevel::LEVEL_UNIV;
           } else {
-            sprintf(telegram_buf, "%s arriving at %s.",
-                    ship_to_string(*s).c_str(), prin_ship_orbits(*s).c_str());
+            telegram << std::format("{} arriving at {}.", ship_to_string(*s),
+                                    prin_ship_orbits(*s));
           }
           if (s->type == ShipType::STYPE_OAP) {
-            sprintf(buf, "\nEnslavement of the planet is now possible.");
-            strcat(telegram_buf, buf);
+            telegram << std::format(
+                "\nEnslavement of the planet is now possible.");
           }
           if (send_messages && s->type != ShipType::OTYPE_VN)
-            push_telegram((int)(s->owner), (int)s->governor, telegram_buf);
+            push_telegram(s->owner, s->governor, telegram.str());
         }
       } else if (destlevel == ScopeLevel::LEVEL_SHIP) {
         dist = sqrt(Distsq(s->xpos, s->ypos, dsh->xpos, dsh->ypos));
@@ -339,9 +334,9 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
  *  code segments; so that code isn't duplicated.
  */
 void msg_OOF(Ship *s) {
-  sprintf(buf, "%s is out of fuel at %s.", ship_to_string(*s).c_str(),
-          prin_ship_orbits(*s).c_str());
-  push_telegram((int)(s->owner), (int)s->governor, buf);
+  std::string telegram = std::format("{} is out of fuel at {}.",
+                                     ship_to_string(*s), prin_ship_orbits(*s));
+  push_telegram(s->owner, s->governor, telegram);
 }
 
 /* followable: returns 1 iff s1 can follow s2 */
@@ -369,7 +364,7 @@ int followable(Ship *s1, Ship *s2) {
 /* this routine will do landing, launching, loading, unloading, etc
         for merchant ships. The ship is within landing distance of
         the target Planet */
-static int do_merchant(Ship *s, Planet &p) {
+static int do_merchant(Ship *s, Planet &p, std::stringstream &telegram) {
   int i;
   int j;
   double fuel;
@@ -392,13 +387,13 @@ static int do_merchant(Ship *s, Planet &p) {
     fuel = s->mass * p.gravity() * LAND_GRAV_MASS_FACTOR;
     if (s->fuel < fuel) { /* ship can't land - cancel all orders */
       s->whatdest = ScopeLevel::LEVEL_UNIV;
-      strcat(telegram_buf, "\t\tNot enough fuel to land!\n");
+      telegram << "\t\tNot enough fuel to land!\n";
       return 1;
     }
     s->land_x = p.info[i].route[j].x;
     s->land_y = p.info[i].route[j].y;
-    sprintf(buf, "\t\tLanded on sector %d,%d\n", s->land_x, s->land_y);
-    strcat(telegram_buf, buf);
+    telegram << std::format("\t\tLanded on sector {},{}\n", s->land_x,
+                            s->land_y);
     s->xpos = p.xpos + stars[s->storbits].xpos;
     s->ypos = p.ypos + stars[s->storbits].ypos;
     use_fuel(*s, fuel);
@@ -411,77 +406,69 @@ static int do_merchant(Ship *s, Planet &p) {
   load = p.info[i].route[j].load;
   unload = p.info[i].route[j].unload;
   if (load) {
-    strcat(telegram_buf, "\t\t");
+    telegram << "\t\t";
     if (Fuel(load)) {
       amount = (int)s->max_fuel - (int)s->fuel;
       if (amount > p.info[i].fuel) amount = p.info[i].fuel;
       p.info[i].fuel -= amount;
       rcv_fuel(*s, (double)amount);
-      sprintf(buf, "%df ", amount);
-      strcat(telegram_buf, buf);
+      telegram << std::format("{}f ", amount);
     }
     if (Resources(load)) {
       amount = (int)s->max_resource - (int)s->resource;
       if (amount > p.info[i].resource) amount = p.info[i].resource;
       p.info[i].resource -= amount;
       rcv_resource(*s, amount);
-      sprintf(buf, "%dr ", amount);
-      strcat(telegram_buf, buf);
+      telegram << std::format("{}r ", amount);
     }
     if (Crystals(load)) {
       amount = p.info[i].crystals;
       p.info[i].crystals -= amount;
       s->crystals += amount;
-      sprintf(buf, "%dx ", amount);
-      strcat(telegram_buf, buf);
+      telegram << std::format("{}x ", amount);
     }
     if (Destruct(load)) {
       amount = (int)s->max_destruct - (int)s->destruct;
       if (amount > p.info[i].destruct) amount = p.info[i].destruct;
       p.info[i].destruct -= amount;
       rcv_destruct(*s, amount);
-      sprintf(buf, "%dd ", amount);
-      strcat(telegram_buf, buf);
+      telegram << std::format("{}d ", amount);
     }
-    strcat(telegram_buf, "loaded\n");
+    telegram << "loaded\n";
   }
   if (unload) {
-    strcat(telegram_buf, "\t\t");
+    telegram << "\t\t";
     if (Fuel(unload)) {
       amount = (int)s->fuel;
       p.info[i].fuel += amount;
-      sprintf(buf, "%df ", amount);
-      strcat(telegram_buf, buf);
+      telegram << std::format("{}f ", amount);
       use_fuel(*s, (double)amount);
     }
     if (Resources(unload)) {
       amount = s->resource;
       p.info[i].resource += amount;
-      sprintf(buf, "%dr ", amount);
-      strcat(telegram_buf, buf);
+      telegram << std::format("{}r ", amount);
       use_resource(*s, amount);
     }
     if (Crystals(unload)) {
       amount = s->crystals;
       p.info[i].crystals += amount;
-      sprintf(buf, "%dx ", amount);
-      strcat(telegram_buf, buf);
+      telegram << std::format("{}x ", amount);
       s->crystals -= amount;
     }
     if (Destruct(unload)) {
       amount = s->destruct;
       p.info[i].destruct += amount;
-      sprintf(buf, "%dd ", amount);
-      strcat(telegram_buf, buf);
+      telegram << std::format("{}d ", amount);
       use_destruct(*s, amount);
     }
-    strcat(telegram_buf, "unloaded\n");
+    telegram << "unloaded\n";
   }
 
   /* launch the ship */
   fuel = s->mass * p.gravity() * LAUNCH_GRAV_MASS_FACTOR;
   if (s->fuel < fuel) {
-    strcat(telegram_buf, "\t\tNot enough fuel to launch!\n");
+    telegram << "\t\tNot enough fuel to launch!\n";
     return 1;
   }
   /* ship is ready to fly - order the ship to its next destination */
@@ -490,8 +477,7 @@ static int do_merchant(Ship *s, Planet &p) {
   s->destpnum = p.info[i].route[j].dest_planet;
   s->docked = 0;
   use_fuel(*s, fuel);
-  sprintf(buf, "\t\tDestination set to %s\n", prin_ship_dest(*s).c_str());
-  strcat(telegram_buf, buf);
+  telegram << std::format("\t\tDestination set to {}\n", prin_ship_dest(*s));
   if (s->hyper_drive.has) { /* order the ship to jump if it can */
     if (s->storbits != s->deststar) {
       s->navigate.on = 0;
@@ -503,7 +489,7 @@ static int do_merchant(Ship *s, Planet &p) {
         s->hyper_drive.charge = 0;
         s->hyper_drive.ready = 0;
       }
-      strcat(telegram_buf, "\t\tJump orders set\n");
+      telegram << "\t\tJump orders set\n";
     }
   }
   return 1;

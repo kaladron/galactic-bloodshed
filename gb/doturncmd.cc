@@ -99,11 +99,11 @@ void do_turn(Db &db, int update) {
           Sdata.VN_hitlist[VN_brain.Most_mad - 1] <= Sdata.VN_hitlist[i - 1])
         VN_brain.Most_mad = i;
     }
-#ifdef VOTING
-    /* Reset their vote for Update go. */
-    // TODO(jeffbailey): This doesn't seem to work.
-    races[i - 1].votes = false;
-#endif
+    if (VOTING) {
+      /* Reset their vote for Update go. */
+      // TODO(jeffbailey): This doesn't seem to work.
+      races[i - 1].votes = false;
+    }
   }
   output_ground_attacks();
 #ifdef MARKET
@@ -512,8 +512,7 @@ void fix_stability(Star &s) {
 }
 
 void handle_victory() {
-#ifndef VICTORY
-#else
+  if (!VICTORY) return;
 
   int i, j;
   int game_over = 0;
@@ -524,11 +523,11 @@ void handle_victory() {
 
   for (i = 1; i <= Num_races; i++) {
     win_category[i - 1] = 0;
-    if (races[i - 1]->controlled_planets >=
+    if (races[i - 1].controlled_planets >=
         Planet_count * VICTORY_PERCENT / 100) {
       win_category[i - 1] = LITTLE_WINNER;
     }
-    if (races[i - 1]->victory_turns >= VICTORY_UPDATES) {
+    if (races[i - 1].victory_turns >= VICTORY_UPDATES) {
       game_over++;
       win_category[i - 1] = BIG_WINNER;
     }
@@ -544,21 +543,18 @@ void handle_victory() {
       push_telegram_race(i, telegram_buf);
       for (j = 1; j <= Num_races; j++)
         if (win_category[j - 1] == BIG_WINNER) {
-          sprintf(telegram_buf, "*** [%2d] %-30.30s ***", j,
-                  races[j - 1]->name);
+          sprintf(telegram_buf, "*** [%2d] %-30.30s ***", j, races[j - 1].name);
           push_telegram_race(i, telegram_buf);
         }
       sprintf(telegram_buf, "Lesser winners:");
       push_telegram_race(i, telegram_buf);
       for (j = 1; j <= Num_races; j++)
         if (win_category[j - 1] == LITTLE_WINNER) {
-          sprintf(telegram_buf, "+++ [%2d] %-30.30s +++", j,
-                  races[j - 1]->name);
+          sprintf(telegram_buf, "+++ [%2d] %-30.30s +++", j, races[j - 1].name);
           push_telegram_race(i, telegram_buf);
         }
     }
   }
-#endif
 }
 
 static void make_discoveries(Race &r) {

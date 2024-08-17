@@ -558,9 +558,9 @@ static void do_meta_infect(int who, Planet &p) {
     smap.get(x, y).popn = races[who - 1].number_sexes;
     smap.get(x, y).owner = who;
     smap.get(x, y).condition = smap.get(x, y).type;
-#ifdef POD_TERRAFORM
-    smap.get(x, y).condition = races[who - 1]->likesbest;
-#endif
+    if (POD_TERRAFORM) {
+      smap.get(x, y).condition = races[who - 1].likesbest;
+    }
     putsmap(smap, p);
   }
 }

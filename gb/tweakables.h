@@ -31,16 +31,8 @@
 #define SEGMENT_PASSWORD "put_your_segment_password_here"
 #endif
 
-#define MARKET       /* comment this out if you don't want to use the market */
-#undef VICTORY       /* if you want to use victory conditions */
-#define DISSOLVE     /* If you want to allow players to dissolve */
-#define DEFENSE      /* If you want to allow planetary guns */
-#define VOTING       /* If you want to allow player voting. */
-#undef NOMADS        /* If you want to allow min # sexes to always colonize \
- a sector safely */
-#undef SHOW_COWARDS  /* If you want the number of invisible players to be \
-   shown to other players */
-#undef POD_TERRAFORM /* If pods will terraform sectors they infect */
+#define MARKET  /* comment this out if you don't want to use the market */
+#define DEFENSE /* If you want to allow planetary guns */
 
 #define MOVE_FACTOR 1
 

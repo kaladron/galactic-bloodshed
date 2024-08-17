@@ -193,9 +193,6 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"unpledge", GB::commands::unpledge},
     {"upgrade", GB::commands::upgrade},
     {"victory", GB::commands::victory},
-#ifdef VOTING
-    {"vote", GB::commands::vote},
-#endif
     {"walk", GB::commands::walk},
     {"whois", GB::commands::whois},
     {"weapons", GB::commands::rst},
@@ -1045,6 +1042,7 @@ static void close_sockets(int sock) {
 static void dump_users(DescriptorData &e) {
   time_t now;
   int God = 0;
+  int coward_count = 0;
 
   (void)time(&now);
   sprintf(buf, "Current Players: %s", ctime(&now));
@@ -1067,20 +1065,23 @@ static void dump_users(DescriptorData &e) {
                 (r.governor[d.governor].toggle.gag ? "GAG" : "   "),
                 (r.governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, buf);
-      }
+      } else if (!God) /* deity lurks around */
+        coward_count++;
 
       if ((now - d.last_time) > DISCONNECT_TIME) d.connected = false;
     }
   }
-#ifdef SHOW_COWARDS
-  sprintf(buf, "And %d coward%s.\n", coward_count,
-          (coward_count == 1) ? "" : "s");
-  queue_string(e, buf);
-#endif
-  queue_string(e, "Finished.\n");
+  if (SHOW_COWARDS) {
+    sprintf(buf, "And %d coward%s.\n", coward_count,
+            (coward_count == 1) ? "" : "s");
+    queue_string(e, buf);
+  } else {
+    queue_string(e, "Finished.\n");
+  }
 }
 
-//* Dispatch to the function to run the command based on the string input by the
+//* Dispatch to the function to run the command based on the string input by
+// the
 // user.
 static void process_command(GameObj &g, const command_t &argv) {
   bool God = races[g.player - 1].God;
@@ -1088,6 +1089,8 @@ static void process_command(GameObj &g, const command_t &argv) {
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
     command->second(argv, g);
+  } else if (argv[0] == "vote" && VOTING) {
+    GB::commands::vote(argv, g);
   } else if (argv[0] == "purge" && God)
     purge();
   else if (argv[0] == "@@shutdown" && God) {

@@ -81,7 +81,6 @@
 #define PLACENAMESIZE (NAMESIZE + NAMESIZE + 13)
 #define NUMSTARS 256
 #define MAXPLANETS 10
-#undef MAXMOONS /*3*/
 
 #define MAX_X 45 /* top range for planet */
 #define MAX_Y 19

@@ -18,11 +18,11 @@ namespace GB::commands {
 void dissolve(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-#ifndef DISSOLVE
-  notify(Playernum, Governor,
-         "Dissolve has been disabled. Please notify diety.\n");
-  return;
-#else
+  if (DISSOLVE) {
+    notify(Playernum, Governor,
+           "Dissolve has been disabled. Please notify diety.\n");
+    return;
+  }
 
   if (Governor) {
     notify(Playernum, Governor,
@@ -115,7 +115,5 @@ void dissolve(const command_t &argv, GameObj &g) {
 
   sprintf(buf, "%s [%d] has dissolved.\n", race.name, Playernum);
   post(buf, NewsType::DECLARATION);
-
-#endif
 }
 }  // namespace GB::commands

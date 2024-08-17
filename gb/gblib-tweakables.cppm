@@ -4,8 +4,18 @@ export module gblib:tweakables;
 
 import :types;
 
+export constexpr bool VICTORY = false;  // if you want to use victory conditions
+export constexpr bool SHOW_COWARDS =
+    false; /* If you want the number of invisible players to be \
+  shown to other players */
+export constexpr bool POD_TERRAFORM =
+    false;  // If pods will terraform sectors they infect
+export constexpr bool VOTING = true;  // If you want to allow player voting
+export constexpr bool DISSOLVE =
+    true;  // If you want to allow players to dissolve
+
 // Shipping routes - DON'T change this unless you know what you are doing
-export inline constexpr int MAX_ROUTES = 4;
+export constexpr int MAX_ROUTES = 4;
 
 // Number of AP's to add to each player in each system.
 export const ap_t LIMIT_APs = 255;  // max # of APs you can have

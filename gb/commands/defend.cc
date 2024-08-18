@@ -15,7 +15,6 @@ module commands;
 #include "gb/tweakables.h"
 
 namespace GB::commands {
-#ifdef DEFENSE
 /*! Planet vs ship */
 void defend(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
@@ -31,6 +30,8 @@ void defend(const command_t &argv, GameObj &g) {
   int x;
   int y;
   int numdest;
+
+  if (!DEFENSE) return;
 
   /* for telegramming and retaliating */
   Nuked.fill(0);
@@ -207,5 +208,4 @@ void defend(const command_t &argv, GameObj &g) {
 
   deductAPs(g, APcount, g.snum);
 }
-#endif
 }  // namespace GB::commands

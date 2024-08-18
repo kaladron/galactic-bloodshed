@@ -105,9 +105,6 @@ static const std::unordered_map<std::string, CommandFunction> commands{
     {"colonies", GB::commands::colonies},
     {"cs", GB::commands::cs},
     {"declare", GB::commands::declare},
-#ifdef DEFENSE
-    {"defend", GB::commands::defend},
-#endif
     {"deploy", GB::commands::move_popn},
     {"detonate", GB::commands::detonate},  // TODO(jeffbailey): !guest
     {"disarm", GB::commands::arm},
@@ -1091,6 +1088,8 @@ static void process_command(GameObj &g, const command_t &argv) {
     command->second(argv, g);
   } else if (argv[0] == "vote" && VOTING) {
     GB::commands::vote(argv, g);
+  } else if (argv[0] == "defend" && DEFENSE) {
+    GB::commands::defend(argv, g);
   } else if (argv[0] == "purge" && God)
     purge();
   else if (argv[0] == "@@shutdown" && God) {

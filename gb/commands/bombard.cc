@@ -145,27 +145,27 @@ void bombard(const command_t &argv, GameObj &g) {
           warn(i, stars[from->storbits].governor[i - 1], long_buf);
       notify(Playernum, Governor, long_buf);
 
-#ifdef DEFENSE
-      /* planet retaliates - AFVs are immune to this */
-      if (numdest && from->type != ShipType::OTYPE_AFV) {
-        damage = 0;
-        for (i = 1; i <= Num_races; i++)
-          if (Nuked[i - 1] && !p.slaved_to) {
-            /* add planet defense strength */
-            auto &alien = races[i - 1];
-            strength = MIN(p.info[i - 1].destruct, p.info[i - 1].guns);
+      if (DEFENSE) {
+        /* planet retaliates - AFVs are immune to this */
+        if (numdest && from->type != ShipType::OTYPE_AFV) {
+          damage = 0;
+          for (i = 1; i <= Num_races; i++)
+            if (Nuked[i - 1] && !p.slaved_to) {
+              /* add planet defense strength */
+              auto &alien = races[i - 1];
+              strength = MIN(p.info[i - 1].destruct, p.info[i - 1].guns);
 
-            p.info[i - 1].destruct -= strength;
+              p.info[i - 1].destruct -= strength;
 
-            damage = shoot_planet_to_ship(alien, from, strength, long_buf,
-                                          short_buf);
-            warn(i, stars[from->storbits].governor[i - 1], long_buf);
-            notify(Playernum, Governor, long_buf);
-            if (!from->alive) post(short_buf, NewsType::COMBAT);
-            notify_star(Playernum, Governor, from->storbits, short_buf);
-          }
+              damage = shoot_planet_to_ship(alien, from, strength, long_buf,
+                                            short_buf);
+              warn(i, stars[from->storbits].governor[i - 1], long_buf);
+              notify(Playernum, Governor, long_buf);
+              if (!from->alive) post(short_buf, NewsType::COMBAT);
+              notify_star(Playernum, Governor, from->storbits, short_buf);
+            }
+        }
       }
-#endif
 
       /* protecting ships retaliate individually if damage was inflicted */
       /* AFVs are immune to this */

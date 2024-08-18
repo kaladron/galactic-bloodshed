@@ -10,6 +10,162 @@ import std.compat;
 #include "gb/shootblast.h"
 module commands;
 
+namespace {
+void land_friendly(const command_t &argv, GameObj &g, Ship *s) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  double fuel;
+  double Dist;
+
+  auto ship2tmp = string_to_shipnum(argv[2]);
+  if (!ship2tmp) {
+    sprintf(buf, "Ship %s wasn't found.\n", argv[2].c_str());
+    notify(Playernum, Governor, buf);
+    free(s);
+    return;
+  }
+  auto s2 = getship(*ship2tmp);
+  if (!s2) {
+    sprintf(buf, "Ship #%lu wasn't found.\n", *ship2tmp);
+    notify(Playernum, Governor, buf);
+    free(s);
+    return;
+  }
+  auto ship2no = *ship2tmp;
+  if (testship(*s2, Playernum, Governor)) {
+    g.out << "Illegal format.\n";
+    free(s);
+    return;
+  }
+  if (s2->type == ShipType::OTYPE_FACTORY) {
+    g.out << "Can't land on factories.\n";
+    free(s);
+    return;
+  }
+  if (landed(*s)) {
+    if (!landed(*s2)) {
+      sprintf(buf, "%s is not landed on a planet.\n",
+              ship_to_string(*s2).c_str());
+      notify(Playernum, Governor, buf);
+      free(s);
+      return;
+    }
+    if (s2->storbits != s->storbits) {
+      notify(Playernum, Governor,
+             "These ships are not in the same star system.\n");
+      free(s);
+      return;
+    }
+    if (s2->pnumorbits != s->pnumorbits) {
+      notify(Playernum, Governor,
+             "These ships are not landed on the same planet.\n");
+      free(s);
+      return;
+    }
+    if ((s2->land_x != s->land_x) || (s2->land_y != s->land_y)) {
+      notify(Playernum, Governor, "These ships are not in the same sector.\n");
+      free(s);
+      return;
+    }
+    if (s->on) {
+      sprintf(buf, "%s must be turned off before loading.\n",
+              ship_to_string(*s).c_str());
+      notify(Playernum, Governor, buf);
+      free(s);
+      return;
+    }
+    if (size(*s) > hanger(*s2)) {
+      sprintf(buf,
+              "Mothership does not have %d hanger space available "
+              "to load ship.\n",
+              size(*s));
+      notify(Playernum, Governor, buf);
+      free(s);
+      return;
+    }
+    /* ok, load 'em up */
+    remove_sh_plan(*s);
+    /* get the target ship again because it had a pointer changed (and put
+     * to disk) in the remove routines */
+    s2 = getship(ship2no);
+    insert_sh_ship(s, &*s2);
+    /* increase mass of mothership */
+    s2->mass += s->mass;
+    s2->hanger += size(*s);
+    fuel = 0.0;
+    sprintf(buf, "%s loaded onto %s using %.1f fuel.\n",
+            ship_to_string(*s).c_str(), ship_to_string(*s2).c_str(), fuel);
+    notify(Playernum, Governor, buf);
+    s->docked = 1;
+    putship(&*s2);
+  } else if (s->docked) {
+    sprintf(buf, "%s is already docked or landed.\n",
+            ship_to_string(*s).c_str());
+    notify(Playernum, Governor, buf);
+    free(s);
+    return;
+  } else {
+    /* Check if the ships are in the same scope level. Maarten */
+    if (s->whatorbits != s2->whatorbits) {
+      notify(Playernum, Governor, "Those ships are not in the same scope.\n");
+      free(s);
+      return;
+    }
+
+    /* check to see if close enough to land */
+    Dist = sqrt((double)Distsq(s2->xpos, s2->ypos, s->xpos, s->ypos));
+    if (Dist > DIST_TO_DOCK) {
+      sprintf(buf, "%s must be %.2f or closer to %s.\n",
+              ship_to_string(*s).c_str(), DIST_TO_DOCK,
+              ship_to_string(*s2).c_str());
+      notify(Playernum, Governor, buf);
+      free(s);
+      return;
+    }
+    fuel = 0.05 + Dist * 0.025 * sqrt(s->mass);
+    if (s->fuel < fuel) {
+      sprintf(buf, "Not enough fuel.\n");
+      notify(Playernum, Governor, buf);
+      free(s);
+      return;
+    }
+    if (size(*s) > hanger(*s2)) {
+      sprintf(buf,
+              "Mothership does not have %d hanger space available "
+              "to load ship.\n",
+              size(*s));
+      notify(Playernum, Governor, buf);
+      free(s);
+      return;
+    }
+    use_fuel(*s, fuel);
+
+    /* remove the ship from whatever scope it is currently in */
+    if (s->whatorbits == ScopeLevel::LEVEL_PLAN)
+      remove_sh_plan(*s);
+    else if (s->whatorbits == ScopeLevel::LEVEL_STAR)
+      remove_sh_star(*s);
+    else {
+      g.out << "Ship is not in planet or star scope.\n";
+      free(s);
+      return;
+    }
+    /* get the target ship again because it had a pointer changed (and put
+     * to disk) in the remove routines */
+    s2 = getship(ship2no);
+    insert_sh_ship(s, &*s2);
+    /* increase mass of mothership */
+    s2->mass += s->mass;
+    s2->hanger += size(*s);
+    sprintf(buf, "%s landed on %s using %.1f fuel.\n",
+            ship_to_string(*s).c_str(), ship_to_string(*s2).c_str(), fuel);
+    notify(Playernum, Governor, buf);
+    s->docked = 1;
+    putship(&*s2);
+  }
+}
+}  // namespace
+
 namespace GB::commands {
 void land(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
@@ -60,156 +216,8 @@ void land(const command_t &argv, GameObj &g) {
 
       /* attempting to land on a friendly ship (for carriers/stations/etc) */
       if (argv[2][0] == '#') {
-        auto ship2tmp = string_to_shipnum(argv[2]);
-        if (!ship2tmp) {
-          sprintf(buf, "Ship %s wasn't found.\n", argv[2].c_str());
-          notify(Playernum, Governor, buf);
-          free(s);
-          continue;
-        }
-        auto s2 = getship(*ship2tmp);
-        if (!s2) {
-          sprintf(buf, "Ship #%lu wasn't found.\n", *ship2tmp);
-          notify(Playernum, Governor, buf);
-          free(s);
-          continue;
-        }
-        auto ship2no = *ship2tmp;
-        if (testship(*s2, Playernum, Governor)) {
-          g.out << "Illegal format.\n";
-          free(s);
-          continue;
-        }
-        if (s2->type == ShipType::OTYPE_FACTORY) {
-          g.out << "Can't land on factories.\n";
-          free(s);
-          continue;
-        }
-        if (landed(*s)) {
-          if (!landed(*s2)) {
-            sprintf(buf, "%s is not landed on a planet.\n",
-                    ship_to_string(*s2).c_str());
-            notify(Playernum, Governor, buf);
-            free(s);
-            continue;
-          }
-          if (s2->storbits != s->storbits) {
-            notify(Playernum, Governor,
-                   "These ships are not in the same star system.\n");
-            free(s);
-            continue;
-          }
-          if (s2->pnumorbits != s->pnumorbits) {
-            notify(Playernum, Governor,
-                   "These ships are not landed on the same planet.\n");
-            free(s);
-            continue;
-          }
-          if ((s2->land_x != s->land_x) || (s2->land_y != s->land_y)) {
-            notify(Playernum, Governor,
-                   "These ships are not in the same sector.\n");
-            free(s);
-            continue;
-          }
-          if (s->on) {
-            sprintf(buf, "%s must be turned off before loading.\n",
-                    ship_to_string(*s).c_str());
-            notify(Playernum, Governor, buf);
-            free(s);
-            continue;
-          }
-          if (size(*s) > hanger(*s2)) {
-            sprintf(buf,
-                    "Mothership does not have %d hanger space available "
-                    "to load ship.\n",
-                    size(*s));
-            notify(Playernum, Governor, buf);
-            free(s);
-            continue;
-          }
-          /* ok, load 'em up */
-          remove_sh_plan(*s);
-          /* get the target ship again because it had a pointer changed (and put
-           * to disk) in the remove routines */
-          s2 = getship(ship2no);
-          insert_sh_ship(s, &*s2);
-          /* increase mass of mothership */
-          s2->mass += s->mass;
-          s2->hanger += size(*s);
-          fuel = 0.0;
-          sprintf(buf, "%s loaded onto %s using %.1f fuel.\n",
-                  ship_to_string(*s).c_str(), ship_to_string(*s2).c_str(),
-                  fuel);
-          notify(Playernum, Governor, buf);
-          s->docked = 1;
-          putship(&*s2);
-        } else if (s->docked) {
-          sprintf(buf, "%s is already docked or landed.\n",
-                  ship_to_string(*s).c_str());
-          notify(Playernum, Governor, buf);
-          free(s);
-          continue;
-        } else {
-          /* Check if the ships are in the same scope level. Maarten */
-          if (s->whatorbits != s2->whatorbits) {
-            notify(Playernum, Governor,
-                   "Those ships are not in the same scope.\n");
-            free(s);
-            continue;
-          }
-
-          /* check to see if close enough to land */
-          Dist = sqrt((double)Distsq(s2->xpos, s2->ypos, s->xpos, s->ypos));
-          if (Dist > DIST_TO_DOCK) {
-            sprintf(buf, "%s must be %.2f or closer to %s.\n",
-                    ship_to_string(*s).c_str(), DIST_TO_DOCK,
-                    ship_to_string(*s2).c_str());
-            notify(Playernum, Governor, buf);
-            free(s);
-            continue;
-          }
-          fuel = 0.05 + Dist * 0.025 * sqrt(s->mass);
-          if (s->fuel < fuel) {
-            sprintf(buf, "Not enough fuel.\n");
-            notify(Playernum, Governor, buf);
-            free(s);
-            continue;
-          }
-          if (size(*s) > hanger(*s2)) {
-            sprintf(buf,
-                    "Mothership does not have %d hanger space available "
-                    "to load ship.\n",
-                    size(*s));
-            notify(Playernum, Governor, buf);
-            free(s);
-            continue;
-          }
-          use_fuel(*s, fuel);
-
-          /* remove the ship from whatever scope it is currently in */
-          if (s->whatorbits == ScopeLevel::LEVEL_PLAN)
-            remove_sh_plan(*s);
-          else if (s->whatorbits == ScopeLevel::LEVEL_STAR)
-            remove_sh_star(*s);
-          else {
-            g.out << "Ship is not in planet or star scope.\n";
-            free(s);
-            continue;
-          }
-          /* get the target ship again because it had a pointer changed (and put
-           * to disk) in the remove routines */
-          s2 = getship(ship2no);
-          insert_sh_ship(s, &*s2);
-          /* increase mass of mothership */
-          s2->mass += s->mass;
-          s2->hanger += size(*s);
-          sprintf(buf, "%s landed on %s using %.1f fuel.\n",
-                  ship_to_string(*s).c_str(), ship_to_string(*s2).c_str(),
-                  fuel);
-          notify(Playernum, Governor, buf);
-          s->docked = 1;
-          putship(&*s2);
-        }
+        land_friendly(argv, g, s);
+        continue;
       } else { /* attempting to land on a planet */
         if (s->docked) {
           sprintf(buf, "%s is docked.\n", ship_to_string(*s).c_str());

@@ -5,10 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-#include "gb/build.h"
-#include "gb/files.h"
-
 module commands;
 
 #include "gb/tweakables.h"
@@ -60,8 +56,8 @@ void sell(const command_t &argv, GameObj &g) {
   auto p = getplanet(snum, pnum);
 
   if (p.slaved_to && p.slaved_to != Playernum) {
-    sprintf(buf, "This planet is enslaved to player %d.\n", p.slaved_to);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("This planet is enslaved to player {}.\n",
+                         p.slaved_to);
     return;
   }
   /* check to see if there is an undamage gov center or space port here */
@@ -134,11 +130,11 @@ void sell(const command_t &argv, GameObj &g) {
   while ((commodno = getdeadcommod()) == 0);
 
   if (commodno == -1) commodno = g.db.Numcommods() + 1;
-  sprintf(buf, "Lot #%d - %d units of %s.\n", commodno, amount,
-          commod_name[item]);
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "Lot #%d - %d units of %s for sale by %s [%d].\n", commodno,
-          amount, commod_name[item], races[Playernum - 1].name, Playernum);
+  g.out << std::format("Lot #{} - {} units of {}.\n", commodno, amount,
+                       commod_name[item]);
+  std::string buf = std::format(
+      "Lot #{} - {} units of {} for sale by {} [{}].\n", commodno, amount,
+      commod_name[item], races[Playernum - 1].name, Playernum);
   post(buf, NewsType::TRANSFER);
   for (player_t i = 1; i <= Num_races; i++) notify_race(i, buf);
   putcommod(c, commodno);

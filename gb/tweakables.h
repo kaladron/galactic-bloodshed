@@ -31,8 +31,6 @@
 #define SEGMENT_PASSWORD "put_your_segment_password_here"
 #endif
 
-#define MARKET /* comment this out if you don't want to use the market */
-
 #define MOVE_FACTOR 1
 
 #define DEFAULT_UPDATE_TIME (30 * 60)  /* update time (minutes!) */

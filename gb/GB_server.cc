@@ -78,123 +78,126 @@ static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 using CommandFunction = void (*)(const command_t &, GameObj &);
 
-// NOLINTBEGIN
-static const std::unordered_map<std::string, CommandFunction> commands{
-    // NOLINTEND
-    {"'", GB::commands::announce},
-    {"allocate", allocateAPs},
-    {"analysis", GB::commands::analysis},
-    {"announce", GB::commands::announce},
-    {"appoint", GB::commands::governors},
-    {"assault", GB::commands::dock},
-    {"arm", GB::commands::arm},
-    {"autoreport", GB::commands::autoreport},
-#ifdef MARKET
-    {"bid", GB::commands::bid},
-#endif
-    {"bless", GB::commands::bless},
-    {"block", GB::commands::block},
-    {"bombard", GB::commands::bombard},  // TODO(jeffbailey): !guest
-    {"broadcast", GB::commands::announce},
-    {"build", GB::commands::build},
-    {"capital", GB::commands::capital},
-    {"capture", GB::commands::capture},
-    {"center", GB::commands::center},
-    {"cew", GB::commands::fire},
-    {"client_survey", GB::commands::survey},
-    {"colonies", GB::commands::colonies},
-    {"cs", GB::commands::cs},
-    {"declare", GB::commands::declare},
-    {"deploy", GB::commands::move_popn},
-    {"detonate", GB::commands::detonate},  // TODO(jeffbailey): !guest
-    {"disarm", GB::commands::arm},
-    {"dismount", GB::commands::mount},
-    {"dissolve", GB::commands::dissolve},  // TODO(jeffbailey): !guest
-    {"distance", GB::commands::distance},
-    {"dock", GB::commands::dock},
-    {"dump", GB::commands::dump},
-    {"enslave", GB::commands::enslave},
-    {"examine", GB::commands::examine},
-    {"explore", GB::commands::explore},
-    {"factories", GB::commands::rst},
-    {"fire", GB::commands::fire},  // TODO(jeffbailey): !guest
-    {"fix", GB::commands::fix},
-    {"fuel", GB::commands::proj_fuel},
-    {"give", GB::commands::give},  // TODO(jeffbailey): !guest
-    {"governors", GB::commands::governors},
-    {"grant", GB::commands::grant},
-    {"help", help},
-    {"highlight", GB::commands::highlight},
-    {"identify", GB::commands::whois},
-#ifdef MARKET
-    {"insurgency", GB::commands::insurgency},
-#endif
-    {"invite", GB::commands::invite},
-    {"jettison", GB::commands::jettison},
-    {"land", GB::commands::land},
-    {"launch", GB::commands::launch},
-    {"load", GB::commands::load},
-    {"make", GB::commands::make_mod},
-    {"map", GB::commands::map},
-    {"mobilize", GB::commands::mobilize},
-    {"modify", GB::commands::make_mod},
-    {"move", GB::commands::move_popn},
-    {"mount", GB::commands::mount},
-    {"motto", GB::commands::motto},
-    {"name", GB::commands::name},
-    {"orbit", GB::commands::orbit},
-    {"order", GB::commands::order},
-    {"page", GB::commands::page},
-    {"pay", GB::commands::pay},  // TODO(jeffbailey): !guest
-    {"personal", GB::commands::personal},
-    {"pledge", GB::commands::pledge},
-    {"power", GB::commands::power},
-    {"profile", GB::commands::profile},
-    {"post", GB::commands::send_message},
-    {"production", GB::commands::production},
-    {"relation", GB::commands::relation},
-    {"read", GB::commands::read_messages},
-    {"repair", GB::commands::repair},
-    {"report", GB::commands::rst},
-    {"revoke", GB::commands::governors},
-    {"route", GB::commands::route},
-    {"schedule", GB_schedule},
-    {"scrap", GB::commands::scrap},
-#ifdef MARKET
-    {"sell", GB::commands::sell},
-#endif
-    {"send", GB::commands::send_message},
-    {"shout", GB::commands::announce},
-    {"survey", GB::commands::survey},
-    {"ship", GB::commands::rst},
-    {"stars", GB::commands::star_locations},
-    {"stats", GB::commands::rst},
-    {"status", GB::commands::tech_status},
-    {"stock", GB::commands::rst},
-    {"tactical", GB::commands::rst},
-    {"technology", GB::commands::technology},
-    {"think", GB::commands::announce},
-    {"time", GB_time},
-#ifdef MARKET
-    {"tax", GB::commands::tax},
-#endif
-    {"toggle", GB::commands::toggle},
-    {"toxicity", GB::commands::toxicity},
-    {"transfer", GB::commands::transfer},
-#ifdef MARKET
-    {"treasury", GB::commands::treasury},
-#endif
-    {"undock", GB::commands::launch},
-    {"uninvite", GB::commands::invite},
-    {"unload", GB::commands::load},
-    {"unpledge", GB::commands::unpledge},
-    {"upgrade", GB::commands::upgrade},
-    {"victory", GB::commands::victory},
-    {"walk", GB::commands::walk},
-    {"whois", GB::commands::whois},
-    {"weapons", GB::commands::rst},
-    {"zoom", GB::commands::zoom},
-};
+static const std::unordered_map<std::string, CommandFunction> &getCommands() {
+  static std::unordered_map<std::string, CommandFunction> commands{
+      {"'", GB::commands::announce},
+      {"allocate", allocateAPs},
+      {"analysis", GB::commands::analysis},
+      {"announce", GB::commands::announce},
+      {"appoint", GB::commands::governors},
+      {"assault", GB::commands::dock},
+      {"arm", GB::commands::arm},
+      {"autoreport", GB::commands::autoreport},
+      {"bless", GB::commands::bless},
+      {"block", GB::commands::block},
+      {"bombard", GB::commands::bombard},  // TODO(jeffbailey): !guest
+      {"broadcast", GB::commands::announce},
+      {"build", GB::commands::build},
+      {"capital", GB::commands::capital},
+      {"capture", GB::commands::capture},
+      {"center", GB::commands::center},
+      {"cew", GB::commands::fire},
+      {"client_survey", GB::commands::survey},
+      {"colonies", GB::commands::colonies},
+      {"cs", GB::commands::cs},
+      {"declare", GB::commands::declare},
+      {"deploy", GB::commands::move_popn},
+      {"detonate", GB::commands::detonate},  // TODO(jeffbailey): !guest
+      {"disarm", GB::commands::arm},
+      {"dismount", GB::commands::mount},
+      {"dissolve", GB::commands::dissolve},  // TODO(jeffbailey): !guest
+      {"distance", GB::commands::distance},
+      {"dock", GB::commands::dock},
+      {"dump", GB::commands::dump},
+      {"enslave", GB::commands::enslave},
+      {"examine", GB::commands::examine},
+      {"explore", GB::commands::explore},
+      {"factories", GB::commands::rst},
+      {"fire", GB::commands::fire},  // TODO(jeffbailey): !guest
+      {"fix", GB::commands::fix},
+      {"fuel", GB::commands::proj_fuel},
+      {"give", GB::commands::give},  // TODO(jeffbailey): !guest
+      {"governors", GB::commands::governors},
+      {"grant", GB::commands::grant},
+      {"help", help},
+      {"highlight", GB::commands::highlight},
+      {"identify", GB::commands::whois},
+      {"invite", GB::commands::invite},
+      {"jettison", GB::commands::jettison},
+      {"land", GB::commands::land},
+      {"launch", GB::commands::launch},
+      {"load", GB::commands::load},
+      {"make", GB::commands::make_mod},
+      {"map", GB::commands::map},
+      {"mobilize", GB::commands::mobilize},
+      {"modify", GB::commands::make_mod},
+      {"move", GB::commands::move_popn},
+      {"mount", GB::commands::mount},
+      {"motto", GB::commands::motto},
+      {"name", GB::commands::name},
+      {"orbit", GB::commands::orbit},
+      {"order", GB::commands::order},
+      {"page", GB::commands::page},
+      {"pay", GB::commands::pay},  // TODO(jeffbailey): !guest
+      {"personal", GB::commands::personal},
+      {"pledge", GB::commands::pledge},
+      {"power", GB::commands::power},
+      {"profile", GB::commands::profile},
+      {"post", GB::commands::send_message},
+      {"production", GB::commands::production},
+      {"relation", GB::commands::relation},
+      {"read", GB::commands::read_messages},
+      {"repair", GB::commands::repair},
+      {"report", GB::commands::rst},
+      {"revoke", GB::commands::governors},
+      {"route", GB::commands::route},
+      {"schedule", GB_schedule},
+      {"scrap", GB::commands::scrap},
+      {"send", GB::commands::send_message},
+      {"shout", GB::commands::announce},
+      {"survey", GB::commands::survey},
+      {"ship", GB::commands::rst},
+      {"stars", GB::commands::star_locations},
+      {"stats", GB::commands::rst},
+      {"status", GB::commands::tech_status},
+      {"stock", GB::commands::rst},
+      {"tactical", GB::commands::rst},
+      {"technology", GB::commands::technology},
+      {"think", GB::commands::announce},
+      {"time", GB_time},
+      {"toggle", GB::commands::toggle},
+      {"toxicity", GB::commands::toxicity},
+      {"transfer", GB::commands::transfer},
+      {"undock", GB::commands::launch},
+      {"uninvite", GB::commands::invite},
+      {"unload", GB::commands::load},
+      {"unpledge", GB::commands::unpledge},
+      {"upgrade", GB::commands::upgrade},
+      {"victory", GB::commands::victory},
+      {"walk", GB::commands::walk},
+      {"whois", GB::commands::whois},
+      {"weapons", GB::commands::rst},
+      {"zoom", GB::commands::zoom},
+  };
+
+  if (VOTING) {
+    commands["vote"] = GB::commands::vote;
+  }
+
+  if (DEFENSE) {
+    commands["defend"] = GB::commands::defend;
+  }
+
+  if (MARKET) {
+    commands["bid"] = GB::commands::bid;
+    commands["insurgency"] = GB::commands::insurgency;
+    commands["sell"] = GB::commands::sell;
+    commands["tax"] = GB::commands::tax;
+    commands["treasury"] = GB::commands::treasury;
+  }
+
+  return commands;
+}
 
 namespace {
 command_t make_command_t(std::string_view message) {
@@ -1083,13 +1086,10 @@ static void dump_users(DescriptorData &e) {
 static void process_command(GameObj &g, const command_t &argv) {
   bool God = races[g.player - 1].God;
 
+  const auto &commands = getCommands();
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
     command->second(argv, g);
-  } else if (argv[0] == "vote" && VOTING) {
-    GB::commands::vote(argv, g);
-  } else if (argv[0] == "defend" && DEFENSE) {
-    GB::commands::defend(argv, g);
   } else if (argv[0] == "purge" && God)
     purge();
   else if (argv[0] == "@@shutdown" && God) {

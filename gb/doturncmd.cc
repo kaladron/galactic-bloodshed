@@ -19,7 +19,6 @@ import std.compat;
 #include "gb/moveplanet.h"
 #include "gb/tweakables.h"
 
-#ifdef MARKET
 static constexpr void maintain(Race &r, Race::gov &governor,
                                const money_t amount) noexcept {
   if (governor.money >= amount)
@@ -29,7 +28,6 @@ static constexpr void maintain(Race &r, Race::gov &governor,
     governor.money = 0;
   }
 }
-#endif
 
 static ap_t APadd(const int, const population_t, const Race &);
 static bool attack_planet(const Ship &);
@@ -84,11 +82,9 @@ void do_turn(Db &db, int update) {
       races[i - 1].planet_points = 0;
       for (auto &governor : races[i - 1].governor)
         if (governor.active) {
-#ifdef MARKET
           governor.maintain = 0;
           governor.cost_market = 0;
           governor.profit_market = 0;
-#endif
           governor.cost_tech = 0;
           governor.income = 0;
         }
@@ -106,68 +102,68 @@ void do_turn(Db &db, int update) {
     }
   }
   output_ground_attacks();
-#ifdef MARKET
-  if (update) {
-    /* reset market */
-    Num_commods = db.Numcommods();
-    clr_commodfree();
-    for (commodnum_t i = Num_commods; i >= 1; i--) {
-      auto c = getcommod(i);
-      if (!c.deliver) {
-        c.deliver = true;
-        putcommod(c, i);
-        continue;
-      }
-      if (c.owner && c.bidder &&
-          (races[c.bidder - 1].governor[c.bidder_gov].money >= c.bid)) {
-        races[c.bidder - 1].governor[c.bidder_gov].money -= c.bid;
-        races[c.owner - 1].governor[c.governor].money += c.bid;
-        auto [cost, dist] = shipping_cost(c.star_to, c.star_from, c.bid);
-        races[c.bidder - 1].governor[c.bidder_gov].cost_market += c.bid + cost;
-        races[c.owner - 1].governor[c.governor].profit_market += c.bid;
-        maintain(races[c.bidder - 1],
-                 races[c.bidder - 1].governor[c.bidder_gov], cost);
-        switch (c.type) {
-          case RESOURCE:
-            planets[c.star_to][c.planet_to]->info[c.bidder - 1].resource +=
-                c.amount;
-            break;
-          case FUEL:
-            planets[c.star_to][c.planet_to]->info[c.bidder - 1].fuel +=
-                c.amount;
-            break;
-          case DESTRUCT:
-            planets[c.star_to][c.planet_to]->info[c.bidder - 1].destruct +=
-                c.amount;
-            break;
-          case CRYSTAL:
-            planets[c.star_to][c.planet_to]->info[c.bidder - 1].crystals +=
-                c.amount;
-            break;
+  if (MARKET) {
+    if (update) {
+      /* reset market */
+      Num_commods = db.Numcommods();
+      clr_commodfree();
+      for (commodnum_t i = Num_commods; i >= 1; i--) {
+        auto c = getcommod(i);
+        if (!c.deliver) {
+          c.deliver = true;
+          putcommod(c, i);
+          continue;
         }
-        sprintf(buf,
-                "Lot %lu purchased from %s [%d] at a cost of %ld.\n   %ld "
-                "%s arrived at /%s/%s\n",
-                i, races[c.owner - 1].name, c.owner, c.bid, c.amount,
-                commod_name[c.type], stars[c.star_to].name,
-                stars[c.star_to].pnames[c.planet_to]);
-        push_telegram((int)c.bidder, (int)c.bidder_gov, buf);
-        sprintf(buf, "Lot %lu (%lu %s) sold to %s [%d] at a cost of %ld.\n", i,
-                c.amount, commod_name[c.type], races[c.bidder - 1].name,
-                c.bidder, c.bid);
-        push_telegram(c.owner, c.governor, buf);
-        c.owner = c.governor = 0;
-        c.bidder = c.bidder_gov = 0;
-      } else {
-        c.bidder = c.bidder_gov = 0;
-        c.bid = 0;
+        if (c.owner && c.bidder &&
+            (races[c.bidder - 1].governor[c.bidder_gov].money >= c.bid)) {
+          races[c.bidder - 1].governor[c.bidder_gov].money -= c.bid;
+          races[c.owner - 1].governor[c.governor].money += c.bid;
+          auto [cost, dist] = shipping_cost(c.star_to, c.star_from, c.bid);
+          races[c.bidder - 1].governor[c.bidder_gov].cost_market +=
+              c.bid + cost;
+          races[c.owner - 1].governor[c.governor].profit_market += c.bid;
+          maintain(races[c.bidder - 1],
+                   races[c.bidder - 1].governor[c.bidder_gov], cost);
+          switch (c.type) {
+            case RESOURCE:
+              planets[c.star_to][c.planet_to]->info[c.bidder - 1].resource +=
+                  c.amount;
+              break;
+            case FUEL:
+              planets[c.star_to][c.planet_to]->info[c.bidder - 1].fuel +=
+                  c.amount;
+              break;
+            case DESTRUCT:
+              planets[c.star_to][c.planet_to]->info[c.bidder - 1].destruct +=
+                  c.amount;
+              break;
+            case CRYSTAL:
+              planets[c.star_to][c.planet_to]->info[c.bidder - 1].crystals +=
+                  c.amount;
+              break;
+          }
+          sprintf(buf,
+                  "Lot %lu purchased from %s [%d] at a cost of %ld.\n   %ld "
+                  "%s arrived at /%s/%s\n",
+                  i, races[c.owner - 1].name, c.owner, c.bid, c.amount,
+                  commod_name[c.type], stars[c.star_to].name,
+                  stars[c.star_to].pnames[c.planet_to]);
+          push_telegram((int)c.bidder, (int)c.bidder_gov, buf);
+          sprintf(buf, "Lot %lu (%lu %s) sold to %s [%d] at a cost of %ld.\n",
+                  i, c.amount, commod_name[c.type], races[c.bidder - 1].name,
+                  c.bidder, c.bid);
+          push_telegram(c.owner, c.governor, buf);
+          c.owner = c.governor = 0;
+          c.bidder = c.bidder_gov = 0;
+        } else {
+          c.bidder = c.bidder_gov = 0;
+          c.bid = 0;
+        }
+        if (!c.owner) makecommoddead(i);
+        putcommod(c, i);
       }
-      if (!c.owner) makecommoddead(i);
-      putcommod(c, i);
     }
   }
-#endif
-
   /* check ship masses - ownership */
   for (shipnum_t i = 1; i <= Num_ships; i++)
     if (ships[i]->alive) {
@@ -186,19 +182,19 @@ void do_turn(Db &db, int update) {
       }
     }
 
-#ifdef MARKET
-  /* do maintenance costs */
-  if (update)
-    for (shipnum_t i = 1; i <= Num_ships; i++)
-      if (ships[i]->alive && Shipdata[ships[i]->type][ABIL_MAINTAIN]) {
-        if (ships[i]->popn)
-          races[ships[i]->owner - 1].governor[ships[i]->governor].maintain +=
-              ships[i]->build_cost;
-        if (ships[i]->troops)
-          races[ships[i]->owner - 1].governor[ships[i]->governor].maintain +=
-              UPDATE_TROOP_COST * ships[i]->troops;
-      }
-#endif
+  if (MARKET) {
+    /* do maintenance costs */
+    if (update)
+      for (shipnum_t i = 1; i <= Num_ships; i++)
+        if (ships[i]->alive && Shipdata[ships[i]->type][ABIL_MAINTAIN]) {
+          if (ships[i]->popn)
+            races[ships[i]->owner - 1].governor[ships[i]->governor].maintain +=
+                ships[i]->build_cost;
+          if (ships[i]->troops)
+            races[ships[i]->owner - 1].governor[ships[i]->governor].maintain +=
+                UPDATE_TROOP_COST * ships[i]->troops;
+        }
+  }
 
   /* prepare dead ships for recycling */
   clr_shipfree();
@@ -412,11 +408,11 @@ void do_turn(Db &db, int update) {
           races[j - 1].translate[i - 1] = 100;
 
       Blocks[i - 1].VPs = 10L * Blocks[i - 1].systems_owned;
-#ifdef MARKET
-      for (auto &governor : races[i - 1].governor)
-        if (governor.active)
-          maintain(races[i - 1], governor, governor.maintain);
-#endif
+      if (MARKET) {
+        for (auto &governor : races[i - 1].governor)
+          if (governor.active)
+            maintain(races[i - 1], governor, governor.maintain);
+      }
     }
     for (player_t i = 1; i <= Num_races; i++) putrace(races[i - 1]);
   }

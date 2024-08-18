@@ -14,7 +14,6 @@ module commands;
 #include "gb/tweakables.h"
 
 namespace GB::commands {
-#ifdef MARKET
 void sell(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
@@ -26,6 +25,8 @@ void sell(const command_t &argv, GameObj &g) {
   char commod;
   int snum;
   int pnum;
+
+  if (!MARKET) return;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to be in a planet scope to sell.\n";
@@ -144,5 +145,4 @@ void sell(const command_t &argv, GameObj &g) {
   putplanet(p, stars[snum], pnum);
   deductAPs(g, APcount, snum);
 }
-#endif
 }  // namespace GB::commands

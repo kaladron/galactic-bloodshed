@@ -4,16 +4,14 @@ export module gblib:tweakables;
 
 import :types;
 
-export constexpr bool VICTORY = false;  // if you want to use victory conditions
-export constexpr bool SHOW_COWARDS =
-    false; /* If you want the number of invisible players to be \
-  shown to other players */
+export constexpr bool VICTORY = false;       // Use victory conditions
+export constexpr bool SHOW_COWARDS = false;  // Show number of invisible players
 export constexpr bool POD_TERRAFORM =
-    false;  // If pods will terraform sectors they infect
-export constexpr bool VOTING = true;  // If you want to allow player voting
-export constexpr bool DISSOLVE =
-    true;  // If you want to allow players to dissolve
-export constexpr bool DEFENSE = true;  // If you want to allow planetary guns
+    false;                              // Pods will terraform infected sectors
+export constexpr bool VOTING = true;    // Allow player voting
+export constexpr bool DISSOLVE = true;  // Allow players to dissolve
+export constexpr bool DEFENSE = true;   // Allow planetary guns
+export constexpr bool MARKET = true;    // Enable the market
 
 // Shipping routes - DON'T change this unless you know what you are doing
 export constexpr int MAX_ROUTES = 4;

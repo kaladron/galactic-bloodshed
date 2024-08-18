@@ -270,34 +270,35 @@ void land(const command_t &argv, GameObj &g) {
           continue;
         }
 
-#ifdef DEFENSE
-        /* people who have declared war on you will fire at your landing ship */
-        for (i = 1; i <= Num_races; i++)
-          if (s->alive && i != Playernum && p.info[i - 1].popn &&
-              p.info[i - 1].guns && p.info[i - 1].destruct) {
-            auto &alien = races[i - 1];
-            if (isset(alien.atwar, s->owner)) {
-              /* attack the landing ship */
-              strength =
-                  MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);
-              if (strength) {
-                damage =
-                    shoot_planet_to_ship(alien, s, strength, buf, short_buf);
-                post(short_buf, NewsType::COMBAT);
-                notify_star(0, 0, s->storbits, short_buf);
-                warn(i, stars[s->storbits].governor[i - 1], buf);
-                notify(s->owner, s->governor, buf);
-                p.info[i - 1].destruct -= strength;
+        if (DEFENSE) {
+          /* people who have declared war on you will fire at your landing ship
+           */
+          for (i = 1; i <= Num_races; i++)
+            if (s->alive && i != Playernum && p.info[i - 1].popn &&
+                p.info[i - 1].guns && p.info[i - 1].destruct) {
+              auto &alien = races[i - 1];
+              if (isset(alien.atwar, s->owner)) {
+                /* attack the landing ship */
+                strength =
+                    MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);
+                if (strength) {
+                  damage =
+                      shoot_planet_to_ship(alien, s, strength, buf, short_buf);
+                  post(short_buf, NewsType::COMBAT);
+                  notify_star(0, 0, s->storbits, short_buf);
+                  warn(i, stars[s->storbits].governor[i - 1], buf);
+                  notify(s->owner, s->governor, buf);
+                  p.info[i - 1].destruct -= strength;
+                }
               }
             }
+          if (!s->alive) {
+            putplanet(p, stars[s->storbits], s->pnumorbits);
+            putship(s);
+            free(s);
+            continue;
           }
-        if (!s->alive) {
-          putplanet(p, stars[s->storbits], s->pnumorbits);
-          putship(s);
-          free(s);
-          continue;
         }
-#endif
         /* check to see if the ship crashes from lack of fuel or damage */
         if (auto [did_crash, roll] = crash(*s, fuel); did_crash) {
           /* damaged ships stand of chance of crash landing */

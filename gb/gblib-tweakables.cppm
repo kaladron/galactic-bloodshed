@@ -13,6 +13,7 @@ export constexpr bool POD_TERRAFORM =
 export constexpr bool VOTING = true;  // If you want to allow player voting
 export constexpr bool DISSOLVE =
     true;  // If you want to allow players to dissolve
+export constexpr bool DEFENSE = true;  // If you want to allow planetary guns
 
 // Shipping routes - DON'T change this unless you know what you are doing
 export constexpr int MAX_ROUTES = 4;

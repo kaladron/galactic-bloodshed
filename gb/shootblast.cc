@@ -139,7 +139,6 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
   return damage;
 }
 
-#ifdef DEFENSE
 int shoot_planet_to_ship(Race &race, Ship *ship, int strength, char *long_msg,
                          char *short_msg) {
   int hits;
@@ -170,7 +169,6 @@ int shoot_planet_to_ship(Race &race, Ship *ship, int strength, char *long_msg,
 
   return damage;
 }
-#endif
 
 /**
  * @return Number of sectors destroyed.

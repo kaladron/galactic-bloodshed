@@ -31,8 +31,7 @@
 #define SEGMENT_PASSWORD "put_your_segment_password_here"
 #endif
 
-#define MARKET  /* comment this out if you don't want to use the market */
-#define DEFENSE /* If you want to allow planetary guns */
+#define MARKET /* comment this out if you don't want to use the market */
 
 #define MOVE_FACTOR 1
 

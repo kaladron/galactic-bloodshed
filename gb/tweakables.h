@@ -46,11 +46,6 @@
 #define COMMANDSIZE 42
 #define MAXARGS 256
 
-/* 3.0 feature */
-#define LIMITED_RESOURCES                      \
-  1 /* set to 0 if you want unlimited resource \
-       availability (pre 3.0)*/
-
 #define MAX_X 45 /* top range for planet */
 #define MAX_Y 19
 #define RATIOXY 3.70 /* map ratio between x and y */

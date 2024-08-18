@@ -297,11 +297,8 @@ void survey(const command_t &argv, GameObj &g) {
               avg_resource / (p.Maxx * p.Maxy), "Crystal sectors",
               crystal_count);
       notify(Playernum, Governor, buf);
-      if (LIMITED_RESOURCES) {
-        sprintf(buf, "%29s: %ld\n", "Total resource deposits",
-                p.total_resources);
-        notify(Playernum, Governor, buf);
-      }
+      sprintf(buf, "%29s: %ld\n", "Total resource deposits", p.total_resources);
+      notify(Playernum, Governor, buf);
       sprintf(buf, "fuel_stock  resource_stock dest_pot.   %s    ^%s\n",
               race.Metamorph ? "biomass" : "popltn",
               race.Metamorph ? "biomass" : "popltn");

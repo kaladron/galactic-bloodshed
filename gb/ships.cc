@@ -8,8 +8,6 @@ import std.compat;
 
 #include <cstdlib>
 
-#include "gb/defense.h"
-
 module gblib;
 
 #include "gb/tweakables.h"

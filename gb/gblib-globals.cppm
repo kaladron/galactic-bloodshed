@@ -85,3 +85,7 @@ export const std::array<const char *, 9> Desnames = {
 export const std::array<const char, 9> Dessymbols = {
     CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,  CHAR_GAS,   CHAR_ICE,
     CHAR_FOREST, CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
+
+// These map to SectorType and give the natural defenses for each type of
+// sector.
+export constexpr std::array<int, 9> Defensedata = {1, 1, 3, 2, 2, 3, 2, 4, 0};

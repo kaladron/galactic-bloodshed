@@ -6,7 +6,6 @@ import gblib;
 import std.compat;
 
 #include "gb/buffers.h"
-#include "gb/defense.h"
 #include "gb/move.h"
 
 module commands;

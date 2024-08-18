@@ -146,6 +146,182 @@ void land_friendly(const command_t &argv, GameObj &g, Ship &s) {
     putship(&*s2);
   }
 }
+
+void land_planet(const command_t &argv, GameObj &g, Ship *s, ap_t APcount) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
+  int x = -1;
+  int y = -1;
+  int i;
+  int numdest = 0;
+  int strength;
+  int damage;
+  double fuel;
+  double Dist;
+
+  if (s->docked) {
+    sprintf(buf, "%s is docked.\n", ship_to_string(*s).c_str());
+    notify(Playernum, Governor, buf);
+    free(s);
+    return;
+  }
+  sscanf(argv[2].c_str(), "%d,%d", &x, &y);
+  if (s->whatorbits != ScopeLevel::LEVEL_PLAN) {
+    sprintf(buf, "%s doesn't orbit a planet.\n", ship_to_string(*s).c_str());
+    notify(Playernum, Governor, buf);
+    free(s);
+    return;
+  }
+  if (!Shipdata[s->type][ABIL_CANLAND]) {
+    sprintf(buf, "This ship is not equipped to land.\n");
+    notify(Playernum, Governor, buf);
+    free(s);
+    return;
+  }
+  if ((s->storbits != g.snum) || (s->pnumorbits != g.pnum)) {
+    sprintf(buf, "You have to cs to the planet it orbits.\n");
+    notify(Playernum, Governor, buf);
+    free(s);
+    return;
+  }
+  if (!speed_rating(*s)) {
+    sprintf(buf, "This ship is not rated for maneuvering.\n");
+    notify(Playernum, Governor, buf);
+    free(s);
+    return;
+  }
+  if (!enufAP(Playernum, Governor, stars[s->storbits].AP[Playernum - 1],
+              APcount)) {
+    free(s);
+    return;
+  }
+
+  auto p = getplanet(s->storbits, s->pnumorbits);
+
+  sprintf(buf, "Planet /%s/%s has gravity field of %.2f.\n",
+          stars[s->storbits].name, stars[s->storbits].pnames[s->pnumorbits],
+          p.gravity());
+  notify(Playernum, Governor, buf);
+
+  sprintf(buf, "Distance to planet: %.2f.\n",
+          Dist = sqrt((double)Distsq(stars[s->storbits].xpos + p.xpos,
+                                     stars[s->storbits].ypos + p.ypos, s->xpos,
+                                     s->ypos)));
+  notify(Playernum, Governor, buf);
+
+  if (Dist > DIST_TO_LAND) {
+    sprintf(buf, "%s must be %.3g or closer to the planet (%.2f).\n",
+            ship_to_string(*s).c_str(), DIST_TO_LAND, Dist);
+    notify(Playernum, Governor, buf);
+    free(s);
+    return;
+  }
+
+  fuel = s->mass * p.gravity() * LAND_GRAV_MASS_FACTOR;
+
+  if ((x < 0) || (y < 0) || (x > p.Maxx - 1) || (y > p.Maxy - 1)) {
+    sprintf(buf, "Illegal coordinates.\n");
+    notify(Playernum, Governor, buf);
+    free(s);
+    return;
+  }
+
+  if (DEFENSE) {
+    /* people who have declared war on you will fire at your landing ship
+     */
+    for (i = 1; i <= Num_races; i++)
+      if (s->alive && i != Playernum && p.info[i - 1].popn &&
+          p.info[i - 1].guns && p.info[i - 1].destruct) {
+        auto &alien = races[i - 1];
+        if (isset(alien.atwar, s->owner)) {
+          /* attack the landing ship */
+          strength = MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);
+          if (strength) {
+            damage = shoot_planet_to_ship(alien, s, strength, buf, short_buf);
+            post(short_buf, NewsType::COMBAT);
+            notify_star(0, 0, s->storbits, short_buf);
+            warn(i, stars[s->storbits].governor[i - 1], buf);
+            notify(s->owner, s->governor, buf);
+            p.info[i - 1].destruct -= strength;
+          }
+        }
+      }
+    if (!s->alive) {
+      putplanet(p, stars[s->storbits], s->pnumorbits);
+      putship(s);
+      free(s);
+      return;
+    }
+  }
+  /* check to see if the ship crashes from lack of fuel or damage */
+  if (auto [did_crash, roll] = crash(*s, fuel); did_crash) {
+    /* damaged ships stand of chance of crash landing */
+    auto smap = getsmap(p);
+    numdest =
+        shoot_ship_to_planet(s, p, round_rand((double)(s->destruct) / 3.), x, y,
+                             smap, 0, GTYPE_HEAVY, long_buf, short_buf);
+    putsmap(smap, p);
+    sprintf(buf, "BOOM!! %s crashes on sector %d,%d with blast radius of %d.\n",
+            ship_to_string(*s).c_str(), x, y, numdest);
+    for (i = 1; i <= Num_races; i++)
+      if (p.info[i - 1].numsectsowned || i == Playernum)
+        warn(i, stars[s->storbits].governor[i - 1], buf);
+    if (roll)
+      sprintf(buf, "Ship damage %d%% (you rolled a %d)\n", (int)s->damage,
+              roll);
+    else
+      sprintf(buf, "You had %.1ff while the landing required %.1ff\n", s->fuel,
+              fuel);
+    notify(Playernum, Governor, buf);
+    kill_ship((int)s->owner, s);
+  } else {
+    s->land_x = x;
+    s->land_y = y;
+    s->xpos = p.xpos + stars[s->storbits].xpos;
+    s->ypos = p.ypos + stars[s->storbits].ypos;
+    use_fuel(*s, fuel);
+    s->docked = 1;
+    s->whatdest = ScopeLevel::LEVEL_PLAN; /* no destination */
+    s->deststar = s->storbits;
+    s->destpnum = s->pnumorbits;
+  }
+
+  auto sect = getsector(p, x, y);
+
+  if (sect.condition == SectorType::SEC_WASTED) {
+    sprintf(buf, "Warning: That sector is a wasteland!\n");
+    notify(Playernum, Governor, buf);
+  } else if (sect.owner && sect.owner != Playernum) {
+    auto &race = races[Playernum - 1];
+    auto &alien = races[sect.owner - 1];
+    if (!(isset(race.allied, sect.owner) && isset(alien.allied, Playernum))) {
+      sprintf(buf, "You have landed on an alien sector (%s).\n", alien.name);
+      notify(Playernum, Governor, buf);
+    } else {
+      sprintf(buf, "You have landed on allied sector (%s).\n", alien.name);
+      notify(Playernum, Governor, buf);
+    }
+  }
+  if (s->whatorbits == ScopeLevel::LEVEL_UNIV)
+    deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
+  else
+    deductAPs(g, APcount, s->storbits);
+
+  putplanet(p, stars[s->storbits], s->pnumorbits);
+
+  if (numdest) putsector(sect, p, x, y);
+
+  /* send messages to anyone there */
+  sprintf(buf, "%s observed landing on sector %d,%d,planet /%s/%s.\n",
+          ship_to_string(*s).c_str(), s->land_x, s->land_y,
+          stars[s->storbits].name, stars[s->storbits].pnames[s->pnumorbits]);
+  for (i = 1; i <= Num_races; i++)
+    if (p.info[i - 1].numsectsowned && i != Playernum)
+      notify(i, stars[s->storbits].governor[i - 1], buf);
+
+  sprintf(buf, "%s landed on planet.\n", ship_to_string(*s).c_str());
+  notify(Playernum, Governor, buf);
+}
 }  // namespace
 
 namespace GB::commands {
@@ -156,17 +332,8 @@ void land(const command_t &argv, GameObj &g) {
   Ship *s;
 
   shipnum_t shipno;
-  int x = -1;
-  int y = -1;
-  int i;
-  int numdest;
-  int strength;
-  int damage;
-  double fuel;
-  double Dist;
-  shipnum_t nextshipno;
 
-  numdest = 0;  // TODO(jeffbailey): Init to zero.
+  shipnum_t nextshipno;
 
   if (argv.size() < 2) {
     g.out << "Land what?\n";
@@ -199,184 +366,16 @@ void land(const command_t &argv, GameObj &g) {
       /* attempting to land on a friendly ship (for carriers/stations/etc) */
       if (argv[2][0] == '#') {
         land_friendly(argv, g, *s);
+        putship(s);
         free(s);
         continue;
       } else { /* attempting to land on a planet */
-        if (s->docked) {
-          sprintf(buf, "%s is docked.\n", ship_to_string(*s).c_str());
-          notify(Playernum, Governor, buf);
-          free(s);
-          continue;
-        }
-        sscanf(argv[2].c_str(), "%d,%d", &x, &y);
-        if (s->whatorbits != ScopeLevel::LEVEL_PLAN) {
-          sprintf(buf, "%s doesn't orbit a planet.\n",
-                  ship_to_string(*s).c_str());
-          notify(Playernum, Governor, buf);
-          free(s);
-          continue;
-        }
-        if (!Shipdata[s->type][ABIL_CANLAND]) {
-          sprintf(buf, "This ship is not equipped to land.\n");
-          notify(Playernum, Governor, buf);
-          free(s);
-          continue;
-        }
-        if ((s->storbits != g.snum) || (s->pnumorbits != g.pnum)) {
-          sprintf(buf, "You have to cs to the planet it orbits.\n");
-          notify(Playernum, Governor, buf);
-          free(s);
-          continue;
-        }
-        if (!speed_rating(*s)) {
-          sprintf(buf, "This ship is not rated for maneuvering.\n");
-          notify(Playernum, Governor, buf);
-          free(s);
-          continue;
-        }
-        if (!enufAP(Playernum, Governor, stars[s->storbits].AP[Playernum - 1],
-                    APcount)) {
-          free(s);
-          continue;
-        }
-
-        auto p = getplanet(s->storbits, s->pnumorbits);
-
-        sprintf(buf, "Planet /%s/%s has gravity field of %.2f.\n",
-                stars[s->storbits].name,
-                stars[s->storbits].pnames[s->pnumorbits], p.gravity());
-        notify(Playernum, Governor, buf);
-
-        sprintf(buf, "Distance to planet: %.2f.\n",
-                Dist = sqrt((double)Distsq(stars[s->storbits].xpos + p.xpos,
-                                           stars[s->storbits].ypos + p.ypos,
-                                           s->xpos, s->ypos)));
-        notify(Playernum, Governor, buf);
-
-        if (Dist > DIST_TO_LAND) {
-          sprintf(buf, "%s must be %.3g or closer to the planet (%.2f).\n",
-                  ship_to_string(*s).c_str(), DIST_TO_LAND, Dist);
-          notify(Playernum, Governor, buf);
-          free(s);
-          continue;
-        }
-
-        fuel = s->mass * p.gravity() * LAND_GRAV_MASS_FACTOR;
-
-        if ((x < 0) || (y < 0) || (x > p.Maxx - 1) || (y > p.Maxy - 1)) {
-          sprintf(buf, "Illegal coordinates.\n");
-          notify(Playernum, Governor, buf);
-          free(s);
-          continue;
-        }
-
-        if (DEFENSE) {
-          /* people who have declared war on you will fire at your landing ship
-           */
-          for (i = 1; i <= Num_races; i++)
-            if (s->alive && i != Playernum && p.info[i - 1].popn &&
-                p.info[i - 1].guns && p.info[i - 1].destruct) {
-              auto &alien = races[i - 1];
-              if (isset(alien.atwar, s->owner)) {
-                /* attack the landing ship */
-                strength =
-                    MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);
-                if (strength) {
-                  damage =
-                      shoot_planet_to_ship(alien, s, strength, buf, short_buf);
-                  post(short_buf, NewsType::COMBAT);
-                  notify_star(0, 0, s->storbits, short_buf);
-                  warn(i, stars[s->storbits].governor[i - 1], buf);
-                  notify(s->owner, s->governor, buf);
-                  p.info[i - 1].destruct -= strength;
-                }
-              }
-            }
-          if (!s->alive) {
-            putplanet(p, stars[s->storbits], s->pnumorbits);
-            putship(s);
-            free(s);
-            continue;
-          }
-        }
-        /* check to see if the ship crashes from lack of fuel or damage */
-        if (auto [did_crash, roll] = crash(*s, fuel); did_crash) {
-          /* damaged ships stand of chance of crash landing */
-          auto smap = getsmap(p);
-          numdest = shoot_ship_to_planet(
-              s, p, round_rand((double)(s->destruct) / 3.), x, y, smap, 0,
-              GTYPE_HEAVY, long_buf, short_buf);
-          putsmap(smap, p);
-          sprintf(
-              buf,
-              "BOOM!! %s crashes on sector %d,%d with blast radius of %d.\n",
-              ship_to_string(*s).c_str(), x, y, numdest);
-          for (i = 1; i <= Num_races; i++)
-            if (p.info[i - 1].numsectsowned || i == Playernum)
-              warn(i, stars[s->storbits].governor[i - 1], buf);
-          if (roll)
-            sprintf(buf, "Ship damage %d%% (you rolled a %d)\n", (int)s->damage,
-                    roll);
-          else
-            sprintf(buf, "You had %.1ff while the landing required %.1ff\n",
-                    s->fuel, fuel);
-          notify(Playernum, Governor, buf);
-          kill_ship((int)s->owner, s);
-        } else {
-          s->land_x = x;
-          s->land_y = y;
-          s->xpos = p.xpos + stars[s->storbits].xpos;
-          s->ypos = p.ypos + stars[s->storbits].ypos;
-          use_fuel(*s, fuel);
-          s->docked = 1;
-          s->whatdest = ScopeLevel::LEVEL_PLAN; /* no destination */
-          s->deststar = s->storbits;
-          s->destpnum = s->pnumorbits;
-        }
-
-        auto sect = getsector(p, x, y);
-
-        if (sect.condition == SectorType::SEC_WASTED) {
-          sprintf(buf, "Warning: That sector is a wasteland!\n");
-          notify(Playernum, Governor, buf);
-        } else if (sect.owner && sect.owner != Playernum) {
-          auto &race = races[Playernum - 1];
-          auto &alien = races[sect.owner - 1];
-          if (!(isset(race.allied, sect.owner) &&
-                isset(alien.allied, Playernum))) {
-            sprintf(buf, "You have landed on an alien sector (%s).\n",
-                    alien.name);
-            notify(Playernum, Governor, buf);
-          } else {
-            sprintf(buf, "You have landed on allied sector (%s).\n",
-                    alien.name);
-            notify(Playernum, Governor, buf);
-          }
-        }
-        if (s->whatorbits == ScopeLevel::LEVEL_UNIV)
-          deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
-        else
-          deductAPs(g, APcount, s->storbits);
-
-        putplanet(p, stars[s->storbits], s->pnumorbits);
-
-        if (numdest) putsector(sect, p, x, y);
-
-        /* send messages to anyone there */
-        sprintf(buf, "%s observed landing on sector %d,%d,planet /%s/%s.\n",
-                ship_to_string(*s).c_str(), s->land_x, s->land_y,
-                stars[s->storbits].name,
-                stars[s->storbits].pnames[s->pnumorbits]);
-        for (i = 1; i <= Num_races; i++)
-          if (p.info[i - 1].numsectsowned && i != Playernum)
-            notify(i, stars[s->storbits].governor[i - 1], buf);
-
-        sprintf(buf, "%s landed on planet.\n", ship_to_string(*s).c_str());
-        notify(Playernum, Governor, buf);
+        land_planet(argv, g, s, APcount);
+        putship(s);
+        free(s);
+        continue;
       }
-      putship(s);
       free(s);
-    } else
-      free(s);
+    }
 }
 }  // namespace GB::commands

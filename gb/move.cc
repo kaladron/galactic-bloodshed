@@ -13,7 +13,6 @@ import std.compat;
 
 #include "gb/buffers.h"
 #include "gb/shootblast.h"
-#include "gb/tweakables.h"
 
 int get_move(char direction, int x, int y, int *x2, int *y2,
              const Planet &planet) {

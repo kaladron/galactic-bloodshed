@@ -9,8 +9,6 @@ import std.compat;
 
 module commands;
 
-#include "gb/tweakables.h"
-
 namespace GB::commands {
 void name(const command_t &argv, GameObj &g) {
   ap_t APcount = 0;

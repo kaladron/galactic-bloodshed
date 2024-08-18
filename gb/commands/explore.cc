@@ -8,8 +8,6 @@ import gblib;
 import std.compat;
 
 #include "gb/buffers.h"
-#include "gb/map.h"
-#include "gb/tweakables.h"
 
 module commands;
 

@@ -6,7 +6,6 @@ module;
 #include <sys/types.h>
 
 #include "gb/sql/dbdecl.h"
-#include "gb/tweakables.h"
 
 export module gblib:files_shl;
 

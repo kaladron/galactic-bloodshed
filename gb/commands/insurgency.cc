@@ -6,12 +6,9 @@ import gblib;
 import std.compat;
 
 #include "gb/buffers.h"
-#include "gb/files.h"
 #include "gb/name.h"
 
 module commands;
-
-#include "gb/tweakables.h"
 
 namespace GB::commands {
 void insurgency(const command_t &argv, GameObj &g) {

@@ -10,7 +10,6 @@ import std.compat;
 #include "gb/buffers.h"
 #include "gb/moveship.h"
 #include "gb/shootblast.h"
-#include "gb/tweakables.h"
 
 static std::string prin_aimed_at(const Ship &);
 static void mk_expl_aimed_at(player_t, governor_t, Ship *);

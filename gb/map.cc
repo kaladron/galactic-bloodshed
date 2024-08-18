@@ -9,7 +9,6 @@ import std.compat;
 #include "gb/map.h"
 
 #include "gb/buffers.h"
-#include "gb/tweakables.h"
 
 void show_map(const player_t Playernum, const governor_t Governor,
               const starnum_t snum, const planetnum_t pnum, const Planet &p) {

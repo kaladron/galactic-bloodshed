@@ -17,7 +17,6 @@ import std.compat;
 #include "gb/doplanet.h"
 #include "gb/doship.h"
 #include "gb/moveplanet.h"
-#include "gb/tweakables.h"
 
 static constexpr void maintain(Race &r, Race::gov &governor,
                                const money_t amount) noexcept {

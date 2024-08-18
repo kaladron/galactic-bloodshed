@@ -7,8 +7,6 @@ import std.compat;
 
 module commands;
 
-#include "gb/tweakables.h"
-
 namespace GB::commands {
 void motto(const command_t &argv, GameObj &g) {
   // TODO(jeffbailey): ap_t APcount = 0;

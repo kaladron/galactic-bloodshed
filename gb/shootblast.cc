@@ -8,7 +8,6 @@ import std.compat;
 #include "gb/shootblast.h"
 
 #include "gb/buffers.h"
-#include "gb/defense.h"
 #include "gb/tweakables.h"
 
 static int hit_probability;

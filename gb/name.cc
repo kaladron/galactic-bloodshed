@@ -9,8 +9,6 @@ import std.compat;
 
 #include "gb/name.h"
 
-#include "gb/tweakables.h"
-
 int revolt(Planet &pl, const player_t victim, const player_t agent) {
   int revolted_sectors = 0;
 

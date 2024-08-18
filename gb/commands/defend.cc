@@ -12,8 +12,6 @@ import std.compat;
 
 module commands;
 
-#include "gb/tweakables.h"
-
 namespace GB::commands {
 /*! Planet vs ship */
 void defend(const command_t &argv, GameObj &g) {

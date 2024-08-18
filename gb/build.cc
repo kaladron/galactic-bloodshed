@@ -14,7 +14,6 @@ import std.compat;
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
 #include "gb/shootblast.h"
-#include "gb/tweakables.h"
 
 bool can_build_on_sector(const int what, const Race &race, const Planet &planet,
                          const Sector &sector, const int x, const int y,

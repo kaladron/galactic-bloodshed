@@ -15,7 +15,6 @@ import std.compat;
 #include "gb/csp.h"
 #include "gb/csp_types.h"
 #include "gb/map.h"
-#include "gb/tweakables.h"
 
 module commands;
 

@@ -15,7 +15,6 @@ import std.compat;
 #include <cstdlib>
 
 #include "gb/racegen.h"
-#include "gb/tweakables.h"
 
 static const PlanetType planet_translate[N_HOME_PLANET_TYPES] = {
     PlanetType::EARTH,   PlanetType::FOREST, PlanetType::DESERT,

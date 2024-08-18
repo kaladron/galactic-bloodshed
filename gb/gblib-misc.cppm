@@ -19,8 +19,6 @@ import :types;
 
 import std.compat;
 
-#include "gb/tweakables.h"
-
 export class DescriptorData : public GameObj {
  public:
   DescriptorData(int sock, Db &db_) : GameObj{db_} {

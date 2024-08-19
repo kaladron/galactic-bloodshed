@@ -1,28 +1,22 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* declare.c -- declare alliance, neutrality, war, the basic thing. */
+// declare.c -- declare alliance, neutrality, war, the basic thing.
 
 module;
 
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
 /* invite people to join your alliance block */
 void invite(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
-  bool mode = argv[0] == "invite";
+  bool mode = argv[0] == "invite" ? true : false;
 
   player_t n;
 
-  if (Governor) {
+  if (g.governor) {
     g.out << "Only leaders may invite.\n";
     return;
   }
@@ -30,28 +24,29 @@ void invite(const command_t& argv, GameObj& g) {
     g.out << "No such player.\n";
     return;
   }
-  if (n == Playernum) {
+  if (n == g.player) {
     g.out << "Not needed, you are the leader.\n";
     return;
   }
-  auto& race = races[Playernum - 1];
+  auto& race = races[g.player - 1];
   auto& alien = races[n - 1];
+  std::string buf;
   if (mode) {
-    setbit(Blocks[Playernum - 1].invite, n);
-    sprintf(buf, "%s [%d] has invited you to join %s\n", race.name, Playernum,
-            Blocks[Playernum - 1].name);
+    setbit(Blocks[g.player - 1].invite, n);
+    buf = std::format("{} [{}] has invited you to join {}\n", race.name,
+                      g.player, Blocks[g.player - 1].name);
     warn_race(n, buf);
-    sprintf(buf, "%s [%d] has been invited to join %s [%d]\n", alien.name, n,
-            Blocks[Playernum - 1].name, Playernum);
-    warn_race(Playernum, buf);
+    buf = std::format("{} [{}] has been invited to join {} [{}]\n", alien.name,
+                      n, Blocks[g.player - 1].name, g.player);
+    warn_race(g.player, buf);
   } else {
-    clrbit(Blocks[Playernum - 1].invite, n);
-    sprintf(buf, "You have been blackballed from %s [%d]\n",
-            Blocks[Playernum - 1].name, Playernum);
+    clrbit(Blocks[g.player - 1].invite, n);
+    buf = std::format("You have been blackballed from {} [{}]\n",
+                      Blocks[g.player - 1].name, g.player);
     warn_race(n, buf);
-    sprintf(buf, "%s [%d] has been blackballed from %s [%d]\n", alien.name, n,
-            Blocks[Playernum - 1].name, Playernum);
-    warn_race(Playernum, buf);
+    buf = std::format("{} [{}] has been blackballed from {} [{}]\n", alien.name,
+                      n, Blocks[g.player - 1].name, g.player);
+    warn_race(g.player, buf);
   }
   post(buf, NewsType::DECLARATION);
 

@@ -217,8 +217,7 @@ set(OLD_LIBGBLIB_FILES
     moveship.cc
     name.cc
     order.cc
-    prof.cc
-    tech.cc)
+    prof.cc)
 
 add_executable(GB GB_server.cc ${OLD_LIBGBLIB_FILES})
 target_link_libraries(GB PRIVATE gblib commands ${SQLite3_LIBRARIES}

@@ -100,7 +100,9 @@ void do_turn(Db &db, int update) {
       races[i - 1].votes = false;
     }
   }
+
   output_ground_attacks();
+
   if (MARKET) {
     if (update) {
       /* reset market */
@@ -163,6 +165,7 @@ void do_turn(Db &db, int update) {
       }
     }
   }
+
   /* check ship masses - ownership */
   for (shipnum_t i = 1; i <= Num_ships; i++)
     if (ships[i]->alive) {
@@ -205,6 +208,7 @@ void do_turn(Db &db, int update) {
     ships[i]->nextship = 0;
     ships[i]->ships = 0;
   }
+
   /* clear ship list for insertion */
   Sdata.ships = 0;
   for (starnum_t star = 0; star < Sdata.numstars; star++) {
@@ -274,6 +278,7 @@ void do_turn(Db &db, int update) {
       }
       putplanet(*planets[star][i], stars[star], i);
     }
+
     /* do AP's for ea. player  */
     if (update)
       for (player_t i = 1; i <= Num_races; i++) {
@@ -450,6 +455,20 @@ static ap_t APadd(const int sh, const population_t popn, const Race &race) {
   return round_rand((double)APs / 20.);
 }
 
+/**
+ * Checks if a given race is governed.
+ *
+ * This function determines whether a race is governed. A race is considered
+ * governed if the following conditions are met:
+ * - The race has a government ship assigned.
+ * - The government ship is a valid ship index.
+ * - The government ship is alive and docked.
+ * - The government ship is either orbiting a planet or orbiting another ship
+ * that is a habitat orbiting a planet or a star.
+ *
+ * @param race The race to check for governance.
+ * @return True if the race is governed, false otherwise.
+ */
 static bool governed(const Race &race) {
   return (race.Gov_ship && race.Gov_ship <= Num_ships &&
           ships[race.Gov_ship] != nullptr && ships[race.Gov_ship]->alive &&

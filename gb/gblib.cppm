@@ -13,6 +13,7 @@ export import :race;
 export import :rand;
 export import :ships;
 export import :shlmisc;
+export import :shootblast;
 export import :sql;
 export import :star;
 export import :tele;

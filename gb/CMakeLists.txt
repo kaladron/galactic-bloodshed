@@ -95,9 +95,10 @@ target_sources(
          gblib-planet.cppm
          gblib-race.cppm
          utils/gblib-rand.cppm
+         gblib-sector.cppm
          gblib-ships.cppm
          gblib-shlmisc.cppm
-         gblib-sector.cppm
+         gblib-shootblast.cppm
          sql/gblib-sql.cppm
          gblib-star.cppm
          gblib-tele.cppm
@@ -111,6 +112,7 @@ target_sources(
           sectormap.cc
           ships.cc
           shlmisc.cc
+          shootblast.cc
           sql/sql.cc
           star.cc
           tele.cc
@@ -216,7 +218,6 @@ set(OLD_LIBGBLIB_FILES
     name.cc
     order.cc
     prof.cc
-    shootblast.cc
     tech.cc)
 
 add_executable(GB GB_server.cc ${OLD_LIBGBLIB_FILES})

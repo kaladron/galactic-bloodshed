@@ -15,7 +15,6 @@ import std.compat;
 
 #include "gb/buffers.h"
 #include "gb/moveship.h"
-#include "gb/shootblast.h"
 
 static constexpr double ap_planet_factor(const Planet &);
 static double crew_factor(Ship *);

@@ -7,7 +7,6 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/shootblast.h"
 #include "gb/tweakables.h"
 
 module commands;

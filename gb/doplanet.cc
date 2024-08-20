@@ -20,7 +20,6 @@ import std.compat;
 #include "gb/doship.h"
 #include "gb/move.h"
 #include "gb/moveship.h"
-#include "gb/shootblast.h"
 #include "gb/tech.h"
 #include "gb/tweakables.h"
 

@@ -10,7 +10,6 @@ import std.compat;
 #include <strings.h>
 
 #include "gb/buffers.h"
-#include "gb/shootblast.h"
 
 /* ship #shipno bombards planet, then alert whom it may concern.
  */

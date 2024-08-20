@@ -1,29 +1,32 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-import gblib;
+module;
+
 import std.compat;
 
-#include "gb/shootblast.h"
-
 #include "gb/buffers.h"
+
+module gblib;
 
 static int hit_probability;
 static double penetration_factor;
 
-static int do_radiation(Ship *, double, int, int, const char *, char *);
-static int do_damage(int, Ship *, double, int, int, int, int, double,
-                     const char *, char *);
+static int do_radiation(Ship *ship, double tech, int strength, int hits,
+                        const char *weapon, char *msg);
+static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
+                     int defense, int caliber, double range, const char *weapon,
+                     char *msg);
 
-static void ship_disposition(Ship *, int *, int *, int *);
-static int CEW_hit(double, int);
-static int Num_hits(double, int, int, double, int, int, int, int, int, int, int,
-                    int);
-static int cew_hit_odds(double, int);
-static void do_critical_hits(int, Ship *, int *, int *, int, char *);
-static double p_factor(double, double);
-static void mutate_sector(Sector &);
+static void ship_disposition(Ship *ship, int *fevade, int *fspeed, int *fbody);
+static int CEW_hit(double dist, int cew_range);
+static int Num_hits(double dist, int focus, int strength, double tech,
+                    int damage, int fevade, int tevade, int fspeed, int tspeed,
+                    int tbody, int caliber, int defense);
+static int cew_hit_odds(double dist, int cew_range);
+static void do_critical_hits(int who, Ship *ship, int *hits, int *damage,
+                             int defense, char *msg);
+static double p_factor(double tech, double penetration_factor);
+static void mutate_sector(Sector &s);
 
 int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
                        char *long_msg, char *short_msg) {

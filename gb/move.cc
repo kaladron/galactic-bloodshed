@@ -12,7 +12,6 @@ import std.compat;
 #include <strings.h>
 
 #include "gb/buffers.h"
-#include "gb/shootblast.h"
 
 int get_move(char direction, int x, int y, int *x2, int *y2,
              const Planet &planet) {

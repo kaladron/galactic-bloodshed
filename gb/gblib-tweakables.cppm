@@ -51,3 +51,5 @@ export constexpr int PLACENAMESIZE = (NAMESIZE + NAMESIZE + 13);
 export constexpr int NUMSTARS = 256;
 export constexpr int MAXPLANETS = 10;
 export constexpr int MAXGOVERNORS = 5u;
+
+export constexpr double TECH_INVEST = 0.01;  // invest factor

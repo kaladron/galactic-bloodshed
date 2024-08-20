@@ -127,3 +127,9 @@ bool isclr(const T target, const Unsigned auto pos)
 {
   return !isset(target, pos);
 }
+
+export double tech_prod(const money_t investment, const population_t popn) {
+  double scale = static_cast<double>(popn) / 10000.;
+  return (TECH_INVEST *
+          std::log10(static_cast<double>(investment) * scale + 1.0));
+}

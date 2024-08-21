@@ -1,14 +1,25 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* name.c -- rename something to something else */
+module;
 
-import gblib;
 import std.compat;
 
-#include "gb/name.h"
+module gblib;
 
+/**
+ * @brief Performs a revolt on a planet.
+ *
+ * This function calculates the number of sectors that revolt on a planet owned
+ * by a victim player and assigns them to an agent player. The revolt rate is
+ * determined by the tax rate of the victim player. If the revolt is successful,
+ * the sectors are transferred to the agent player, some population is killed,
+ * and all troops are destroyed. The number of revolted sectors is returned.
+ *
+ * @param pl The planet on which the revolt is performed.
+ * @param victim The player who currently owns the planet.
+ * @param agent The player who will receive the revolted sectors.
+ * @return The number of sectors that revolted.
+ */
 int revolt(Planet &pl, const player_t victim, const player_t agent) {
   int revolted_sectors = 0;
 

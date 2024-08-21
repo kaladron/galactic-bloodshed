@@ -6,7 +6,6 @@ import gblib;
 import std.compat;
 
 #include "gb/buffers.h"
-#include "gb/name.h"
 
 module commands;
 

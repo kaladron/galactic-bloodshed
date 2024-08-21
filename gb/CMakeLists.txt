@@ -108,6 +108,7 @@ target_sources(
           fire.cc
           load.cc
           misc.cc
+          planet.cc
           utils/rand.cc
           sectormap.cc
           ships.cc
@@ -215,7 +216,6 @@ set(OLD_LIBGBLIB_FILES
     move.cc
     moveplanet.cc
     moveship.cc
-    name.cc
     order.cc
     prof.cc)
 

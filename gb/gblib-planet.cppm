@@ -129,3 +129,5 @@ ap_t Planet::get_points() const {
       return DESERT_POINTS;
   }
 }
+
+export int revolt(Planet &pl, const player_t victim, const player_t agent);

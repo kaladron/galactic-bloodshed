@@ -195,10 +195,18 @@ double cost(const Ship &s) {
 }
 
 namespace {
+/**
+ * Permute the system cost advantage and disadvantage based on the given
+ * value and base.
+ *
+ * @param advantage A pointer to a double variable representing the advantage.
+ * @param disadvantage A pointer to a double variable representing the
+ * disadvantage.
+ * @param value An integer value representing the value.
+ * @param base An integer value representing the base.
+ */
 void system_cost(double *advantage, double *disadvantage, int value, int base) {
-  double factor;
-
-  factor = (((double)value + 1.0) / (base + 1.0)) - 1.0;
+  double factor = (((double)value + 1.0) / (base + 1.0)) - 1.0;
   if (factor >= 0.0)
     *advantage += factor;
   else
@@ -206,30 +214,45 @@ void system_cost(double *advantage, double *disadvantage, int value, int base) {
 }
 }  // namespace
 
+/**
+ * Calculates the complexity of a ship.
+ *
+ * The complexity of a ship is used in two ways:
+ * 1) Determine whether a ship is too complex for the race to create, limited
+ * by race.tech.
+ * 2) Used in sorting the order of the ships for display.
+ *
+ * This is a custom algorithm to GB.
+ *
+ * @param s The Ship object for which the complexity is calculated.
+ * @return The complexity value of the ship.
+ */
 double complexity(const Ship &s) {
-  double advantage = 0.;
-  double disadvantage = 0.;
+  double advantage = 0;
+  double disadvantage = 0;
 
-  system_cost(&advantage, &disadvantage, (int)(s.primary),
+  system_cost(&advantage, &disadvantage, s.primary,
               Shipdata[s.build_type][ABIL_GUNS]);
-  system_cost(&advantage, &disadvantage, (int)(s.secondary),
-              Shipdata[s.build_type][ABIL_GUNS]);
-  system_cost(&advantage, &disadvantage, (int)(s.max_crew),
+  system_cost(
+      &advantage, &disadvantage, s.secondary, Shipdata[s.build_type][ABIL_GUNS]
+
+  );
+  system_cost(&advantage, &disadvantage, s.max_crew,
               Shipdata[s.build_type][ABIL_MAXCREW]);
-  system_cost(&advantage, &disadvantage, (int)(s.max_resource),
+  system_cost(&advantage, &disadvantage, s.max_resource,
               Shipdata[s.build_type][ABIL_CARGO]);
-  system_cost(&advantage, &disadvantage, (int)(s.max_fuel),
+  system_cost(&advantage, &disadvantage, s.max_fuel,
               Shipdata[s.build_type][ABIL_FUELCAP]);
-  system_cost(&advantage, &disadvantage, (int)(s.max_destruct),
+  system_cost(&advantage, &disadvantage, s.max_destruct,
               Shipdata[s.build_type][ABIL_DESTCAP]);
-  system_cost(&advantage, &disadvantage, (int)(s.max_speed),
+  system_cost(&advantage, &disadvantage, s.max_speed,
               Shipdata[s.build_type][ABIL_SPEED]);
-  system_cost(&advantage, &disadvantage, (int)(s.max_hanger),
+  system_cost(&advantage, &disadvantage, s.max_hanger,
               Shipdata[s.build_type][ABIL_HANGER]);
-  system_cost(&advantage, &disadvantage, (int)(s.armor),
+  system_cost(&advantage, &disadvantage, s.armor,
               Shipdata[s.build_type][ABIL_ARMOR]);
-  /* additional advantages/disadvantages */
 
+  // additional advantages/disadvantages
   // TODO(jeffbailey): document this function in English.
   double factor =
       std::sqrt((1.0 + advantage) * std::exp(-(double)disadvantage / 10.0));

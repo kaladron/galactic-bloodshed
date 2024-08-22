@@ -130,7 +130,7 @@ void dock(const command_t &argv, GameObj &g) {
         return;
       }
 
-      if (!Assault && testship(*s2, Playernum, Governor)) {
+      if (!Assault && testship(*s2, g)) {
         g.out << "You are not authorized to do this.\n";
         free(s);
         return;

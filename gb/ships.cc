@@ -4,9 +4,7 @@
 
 module;
 
-import std.compat;
-
-#include <cstdlib>
+import std;
 
 module gblib;
 
@@ -182,9 +180,9 @@ double cost(const Ship &s) {
   factor += FUEL_COST * (double)s.max_fuel;
   factor += AMMO_COST * (double)s.max_destruct;
   factor +=
-      SPEED_COST * (double)s.max_speed * (double)sqrt((double)s.max_speed);
+      SPEED_COST * (double)s.max_speed * (double)std::sqrt((double)s.max_speed);
   factor += HANGER_COST * (double)s.max_hanger;
-  factor += ARMOR_COST * (double)s.armor * (double)sqrt((double)s.armor);
+  factor += ARMOR_COST * (double)s.armor * (double)std::sqrt((double)s.armor);
   factor += CEW_COST * (double)(s.cew * s.cew_range);
   /* additional advantages/disadvantages */
 
@@ -194,7 +192,7 @@ double cost(const Ship &s) {
   advantage += 0.5 * !!s.cloak;
   advantage += 0.5 * !!s.mount;
 
-  factor *= sqrt(1.0 + advantage);
+  factor *= std::sqrt(1.0 + advantage);
   return factor;
 }
 
@@ -235,20 +233,20 @@ double complexity(const Ship &s) {
   /* additional advantages/disadvantages */
 
   // TODO(jeffbailey): document this function in English.
-  double factor = sqrt((1.0 + advantage) * exp(-(double)disadvantage / 10.0));
+  double factor =
+      std::sqrt((1.0 + advantage) * std::exp(-(double)disadvantage / 10.0));
   double tmp = COMPLEXITY_FACTOR * (factor - 1.0) /
-                   sqrt((double)(Shipdata[s.build_type][ABIL_TECH] + 1)) +
+                   std::sqrt((double)(Shipdata[s.build_type][ABIL_TECH] + 1)) +
                1.0;
   factor = tmp * tmp;
   return (factor * (double)Shipdata[s.build_type][ABIL_TECH]);
 }
 
-bool testship(const Ship &s, const player_t playernum,
-              const governor_t governor) {
-  char buf[255];
+bool testship(const Ship &s, GameObj &g) {
+  player_t playernum = g.player;
+  governor_t governor = g.governor;
   if (!s.alive) {
-    sprintf(buf, "%s has been destroyed.\n", ship_to_string(s).c_str());
-    notify(playernum, governor, buf);
+    g.out << std::format("{} has been destroyed.\n", ship_to_string(s));
     return true;
   }
 
@@ -258,9 +256,8 @@ bool testship(const Ship &s, const player_t playernum,
   }
 
   if (!s.active) {
-    sprintf(buf, "%s is irradiated %d%% and inactive.\n",
-            ship_to_string(s).c_str(), s.rad);
-    notify(playernum, governor, buf);
+    g.out << std::format("{} is irradiated {}% and inactive.\n",
+                         ship_to_string(s), s.rad);
     return true;
   }
 
@@ -303,7 +300,7 @@ void kill_ship(int Playernum, Ship *ship) {
       Sdata.VN_index2[Playernum - 1] = ship->storbits;
     else {
       /* pick an index to supplant */
-      if (random() & 01)
+      if (std::rand() & 1)
         Sdata.VN_index1[Playernum - 1] = ship->storbits;
       else
         Sdata.VN_index2[Playernum - 1] = ship->storbits;

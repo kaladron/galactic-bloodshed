@@ -129,9 +129,7 @@ bool can_build_on_ship(int what, const Race &race, Ship *builder,
 
 std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder, int *snum,
                                         int *pnum) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
-  if (testship(*builder, Playernum, Governor)) return {};
+  if (testship(*builder, g)) return {};
   if (!Shipdata[builder->type][ABIL_CONSTRUCT]) {
     g.out << "This ship cannot construct other ships.\n";
     return {};

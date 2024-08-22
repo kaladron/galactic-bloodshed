@@ -29,7 +29,7 @@ export class Place { /* used in function return for finding place */
 
 void Place::getplace2(GameObj& g, std::string_view string,
                       const bool ignoreexpl) {
-  player_t Playernum = g.player;
+  const player_t Playernum = g.player;
 
   if (err || string.empty()) return;
 
@@ -135,14 +135,11 @@ std::string Place::to_string() {
   }
 }
 
-Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
+    : level(g.level), snum(g.snum), pnum(g.pnum) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
 
-  // Initialize with current
-  level = g.level;
-  snum = g.snum;
-  pnum = g.pnum;
   if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno;
 
   if (string.empty()) {

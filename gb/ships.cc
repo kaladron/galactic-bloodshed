@@ -160,10 +160,10 @@ double getmass(const Ship &s) {
 }
 
 unsigned int ship_size(const Ship &s) {
-  double size = 1.0 + SIZE_GUNS * s.primary + SIZE_GUNS * s.secondary +
-                SIZE_CREW * s.max_crew + SIZE_RESOURCE * s.max_resource +
-                SIZE_FUEL * s.max_fuel + SIZE_DESTRUCT * s.max_destruct +
-                s.max_hanger;
+  const double size = 1.0 + SIZE_GUNS * s.primary + SIZE_GUNS * s.secondary +
+                      SIZE_CREW * s.max_crew + SIZE_RESOURCE * s.max_resource +
+                      SIZE_FUEL * s.max_fuel + SIZE_DESTRUCT * s.max_destruct +
+                      s.max_hanger;
   return (std::floor(size));
 }
 
@@ -206,7 +206,7 @@ namespace {
  * @param base An integer value representing the base.
  */
 void system_cost(double *advantage, double *disadvantage, int value, int base) {
-  double factor = (((double)value + 1.0) / (base + 1.0)) - 1.0;
+  const double factor = (((double)value + 1.0) / (base + 1.0)) - 1.0;
   if (factor >= 0.0)
     *advantage += factor;
   else
@@ -256,16 +256,17 @@ double complexity(const Ship &s) {
   // TODO(jeffbailey): document this function in English.
   double factor =
       std::sqrt((1.0 + advantage) * std::exp(-(double)disadvantage / 10.0));
-  double tmp = COMPLEXITY_FACTOR * (factor - 1.0) /
-                   std::sqrt((double)(Shipdata[s.build_type][ABIL_TECH] + 1)) +
-               1.0;
+  const double tmp =
+      COMPLEXITY_FACTOR * (factor - 1.0) /
+          std::sqrt((double)(Shipdata[s.build_type][ABIL_TECH] + 1)) +
+      1.0;
   factor = tmp * tmp;
   return (factor * (double)Shipdata[s.build_type][ABIL_TECH]);
 }
 
 bool testship(const Ship &s, GameObj &g) {
-  player_t playernum = g.player;
-  governor_t governor = g.governor;
+  const player_t playernum = g.player;
+  const governor_t governor = g.governor;
   if (!s.alive) {
     g.out << std::format("{} has been destroyed.\n", ship_to_string(s));
     return true;

@@ -426,3 +426,8 @@ std::string prin_ship_orbits(const Ship &s) {
       }
   }
 }
+
+std::string prin_ship_dest(const Ship &ship) {
+  Place dest{ship.whatdest, ship.deststar, ship.destpnum, ship.destshipno};
+  return dest.to_string();
+}

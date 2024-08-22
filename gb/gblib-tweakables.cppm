@@ -53,3 +53,5 @@ export constexpr int MAXPLANETS = 10;
 export constexpr int MAXGOVERNORS = 5u;
 
 export constexpr double TECH_INVEST = 0.01;  // invest factor
+
+export constexpr int MAX_CRYSTALS = 127;

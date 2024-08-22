@@ -34,7 +34,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     g.out << "Illegal dir value.\n";
     return;
   }
-  if (testship(*dirship, Playernum, Governor)) {
+  if (testship(*dirship, g)) {
     return;
   }
   if (dirship->type != ShipType::OTYPE_FACTORY) {

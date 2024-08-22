@@ -26,8 +26,6 @@ namespace {
  * @param s A Ship object representing the ship to be landed.
  */
 void land_friendly(const command_t &argv, GameObj &g, Ship &s) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
   double fuel;
   double Dist;
 
@@ -42,7 +40,7 @@ void land_friendly(const command_t &argv, GameObj &g, Ship &s) {
     return;
   }
   auto ship2no = *ship2tmp;
-  if (testship(*s2, Playernum, Governor)) {
+  if (testship(*s2, g)) {
     g.out << "Illegal format.\n";
     return;
   }

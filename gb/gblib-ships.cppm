@@ -332,7 +332,7 @@ export double cost(const Ship &);
 export double getmass(const Ship &);
 export unsigned int ship_size(const Ship &);
 export double complexity(const Ship &);
-export bool testship(const Ship &, const player_t, const governor_t);
+export bool testship(const Ship &, GameObj &);
 export void kill_ship(int, Ship *);
 export int docked(const Ship &);
 export int overloaded(const Ship &);

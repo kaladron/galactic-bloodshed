@@ -59,7 +59,7 @@ long max_resource(const Ship &s) {
   return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_CARGO]
                                              : s.max_resource;
 }
-int max_crystals(const Ship &) { return 127; }
+int max_crystals(const Ship &) { return MAX_CRYSTALS; }
 
 long max_fuel(const Ship &s) {
   return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_FUELCAP]

@@ -78,7 +78,7 @@ long max_speed(const Ship &s) {
 
 long shipcost(const Ship &s) {
   return (s.type == ShipType::OTYPE_FACTORY)
-             ? 2 * s.build_cost * s.on + Shipdata[s.type][ABIL_COST]
+             ? 2L * s.build_cost * s.on + Shipdata[s.type][ABIL_COST]
              : s.build_cost;
 }
 
@@ -278,7 +278,7 @@ void kill_ship(int Playernum, Ship *ship) {
       adjust_morale(killer, victim, (int)ship->build_cost);
       putrace(killer);
     } else if (ship->owner == Playernum && !ship->docked && max_crew(*ship)) {
-      victim.morale -= 2 * ship->build_cost; /* scuttle/scrap */
+      victim.morale -= 2L * ship->build_cost; /* scuttle/scrap */
     }
     putrace(victim);
   }
@@ -298,7 +298,10 @@ void kill_ship(int Playernum, Ship *ship) {
       Sdata.VN_index2[Playernum - 1] = ship->storbits;
     else {
       /* pick an index to supplant */
-      if (std::rand() & 1)
+      std::random_device rd;
+      std::mt19937 gen(rd());
+      std::uniform_int_distribution<int> dis(0, 1);
+      if (dis(gen))
         Sdata.VN_index1[Playernum - 1] = ship->storbits;
       else
         Sdata.VN_index2[Playernum - 1] = ship->storbits;
@@ -318,6 +321,10 @@ void kill_ship(int Playernum, Ship *ship) {
   if (ship->docked && ship->whatorbits != ScopeLevel::LEVEL_SHIP &&
       ship->whatdest == ScopeLevel::LEVEL_SHIP) {
     auto s = getship(ship->destshipno);
+    if (!s) {
+      std::cerr << "Database corruption, ship not found.";
+      std::abort();
+    }
     s->docked = 0;
     s->whatdest = ScopeLevel::LEVEL_UNIV;
     putship(&*s);

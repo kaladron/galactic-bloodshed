@@ -348,6 +348,7 @@ export void rcv_destruct(Ship &, int);
 export void rcv_popn(Ship &, int, double);
 export void rcv_troops(Ship &, int, double);
 export std::string prin_ship_orbits(const Ship &);
+export std::string prin_ship_dest(const Ship &);
 
 export shipnum_t Num_ships;
 export int ShipVector[NUMSTYPES];

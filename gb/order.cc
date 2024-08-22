@@ -554,11 +554,6 @@ static std::string prin_aimed_at(const Ship &ship) {
   return targ.to_string();
 }
 
-std::string prin_ship_dest(const Ship &ship) {
-  Place dest{ship.whatdest, ship.deststar, ship.destpnum, ship.destshipno};
-  return dest.to_string();
-}
-
 /*
  * mark wherever the ship is aimed at, as explored by the owning player.
  */

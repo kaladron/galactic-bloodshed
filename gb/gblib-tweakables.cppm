@@ -55,3 +55,7 @@ export constexpr int MAXGOVERNORS = 5u;
 export constexpr double TECH_INVEST = 0.01;  // invest factor
 
 export constexpr int MAX_CRYSTALS = 127;
+
+export constexpr double UNIVSIZE = 150000;
+export constexpr double SYSTEMSIZE = 2000;
+export constexpr double PLORBITSIZE = 50;

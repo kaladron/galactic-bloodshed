@@ -51,10 +51,6 @@
 #define RATIOXY 3.70 /* map ratio between x and y */
                      /* ranges of map sizes (x usually ) */
 
-#define UNIVSIZE 150000
-#define SYSTEMSIZE 2000
-#define PLORBITSIZE 50
-
 #define VICTORY_PERCENT 10
 #define VICTORY_UPDATES 5
 

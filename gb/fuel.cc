@@ -13,6 +13,22 @@ import std.compat;
 #include "gb/moveship.h"
 #include "gb/tweakables.h"
 
+/**
+ * @brief Outputs fuel information and estimated arrival time.
+ *
+ * This function outputs the total distance, number of segments, fuel amount,
+ * and estimated arrival time based on the given parameters. It also handles
+ * cases where the estimated arrival time is not available due to segment
+ * discrepancy.
+ *
+ * @param g The GameObj reference.
+ * @param dist The total distance.
+ * @param fuel The amount of fuel.
+ * @param grav The gravitational force.
+ * @param mass The mass.
+ * @param segs The number of segments.
+ * @param plan_buf The plan buffer.
+ */
 void fuel_output(GameObj &g, double dist, double fuel, double grav, double mass,
                  segments_t segs, std::string_view plan_buf) {
   std::string grav_buf =
@@ -41,6 +57,23 @@ void fuel_output(GameObj &g, double dist, double fuel, double grav, double mass,
   }
 }
 
+/**
+ * @brief Performs a trip for a ship to a destination.
+ *
+ * This function calculates the number of segments required for a ship to reach
+ * a destination. The ship's fuel, gravity factor, and starting coordinates are
+ * used to determine the trip details.
+ *
+ * @param tmpdest The temporary destination place.
+ * @param tmpship The ship to perform the trip.
+ * @param fuel The amount of fuel available for the trip.
+ * @param gravity_factor The gravity factor affecting the ship's movement.
+ * @param x_1 The x-coordinate of the destination.
+ * @param y_1 The y-coordinate of the destination.
+ *
+ * @return A tuple containing a boolean indicating if the trip was resolved
+ * successfully and the number of segments taken.
+ */
 std::tuple<bool, segments_t> do_trip(const Place &tmpdest, Ship &tmpship,
                                      double fuel, double gravity_factor,
                                      double x_1, double y_1) {

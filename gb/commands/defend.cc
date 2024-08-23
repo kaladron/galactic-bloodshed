@@ -134,7 +134,7 @@ void defend(const command_t &argv, GameObj &g) {
   }
 
   if (damage < 0) {
-    sprintf(buf, "Target out of range  %d!\n", SYSTEMSIZE);
+    sprintf(buf, "Target out of range  %f!\n", SYSTEMSIZE);
     notify(Playernum, Governor, buf);
     return;
   }

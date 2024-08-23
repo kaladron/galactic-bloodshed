@@ -44,17 +44,17 @@ void fuel_output(GameObj &g, double dist, double fuel, double grav, double mass,
   if (nsegments_done > segments) {
     g.out << "Estimated arrival time not available due to segment # "
              "discrepancy.\n";
-  } else {
-    time_t effective_time =
-        next_segment_time + ((segs - 1) * (update_time / segments) * 60);
-    if (segments == 1) {
-      effective_time = next_update_time +
-                       (static_cast<time_t>((segs - 1) * (update_time * 60)));
-    }
-    g.out << std::format("ESTIMATED Arrival Time: {}\n",
-                         std::ctime(&effective_time));
     return;
   }
+
+  time_t effective_time =
+      (segments == 1)
+          ? next_update_time +
+                (static_cast<time_t>((segs - 1) * (update_time * 60)))
+          : next_segment_time + ((segs - 1) * (update_time / segments) * 60);
+
+  g.out << std::format("ESTIMATED Arrival Time: {}\n",
+                       std::ctime(&effective_time));
 }
 
 /**

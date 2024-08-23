@@ -68,3 +68,28 @@ export constexpr double MoveConsts[] = {600.0, 300.0, 50.0};
 export constexpr double SpeedConsts[] = {0.0,  0.61, 1.26, 1.50, 1.73,
                                          1.81, 1.90, 1.93, 1.96, 1.97};
 // amount of fuel it costs to move at speed level
+
+export constexpr char HYPER_DRIVE_READY_CHARGE = 1;
+export constexpr double HYPER_DRIVE_FUEL_USE = 5.0;
+export constexpr double HYPER_DIST_FACTOR = 200.0;
+
+export constexpr double SHIP_MOVE_SCALE = 3.0;
+
+export constexpr double FUEL_MANEUVER = 0.3;  // Fuel it costs to change aim
+
+export constexpr double DIST_TO_LAND = 10.0;
+export constexpr double DIST_TO_DOCK = 10.0;
+
+export constexpr double LAUNCH_GRAV_MASS_FACTOR =
+    0.18;  // fuel use modifier for taking off
+export constexpr double LAND_GRAV_MASS_FACTOR = 0.0145;
+
+export constexpr double FUEL_GAS_ADD =
+    5.0;  // amt of fuel to add to ea ships tanks
+export constexpr double FUEL_GAS_ADD_TANKER = 100.0;
+export constexpr double FUEL_GAS_ADD_HABITAT = 200.0;
+export constexpr double FUEL_GAS_ADD_STATION = 100.0;
+export constexpr double FUEL_USE = 0.02; /* fuel use per ship mass pt. per speed
+                                            factor */
+export constexpr double HABITAT_PROD_RATE = 0.05;
+export constexpr double HABITAT_POP_RATE = 0.20;

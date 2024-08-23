@@ -10,8 +10,6 @@ import std.compat;
 
 #include "gb/moveship.h"
 
-#include "gb/tweakables.h"
-
 namespace {
 /* this routine will do landing, launching, loading, unloading, etc
         for merchant ships. The ship is within landing distance of

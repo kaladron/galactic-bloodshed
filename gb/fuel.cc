@@ -29,8 +29,9 @@ import std.compat;
  * @param segs The number of segments.
  * @param plan_buf The plan buffer.
  */
-void fuel_output(GameObj &g, double dist, double fuel, double grav, double mass,
-                 segments_t segs, std::string_view plan_buf) {
+void fuel_output(GameObj &g, const double dist, const double fuel,
+                 const double grav, const double mass, const segments_t segs,
+                 const std::string_view plan_buf) {
   std::string grav_buf =
       (grav > 0.00)
           ? std::format(" ({:.2f} used to launch from {})\n",
@@ -75,8 +76,9 @@ void fuel_output(GameObj &g, double dist, double fuel, double grav, double mass,
  * successfully and the number of segments taken.
  */
 std::tuple<bool, segments_t> do_trip(const Place &tmpdest, Ship &tmpship,
-                                     double fuel, double gravity_factor,
-                                     double x_1, double y_1) {
+                                     const double fuel,
+                                     const double gravity_factor, double x_1,
+                                     const double y_1) {
   tmpship.fuel = fuel; /* load up the pseudo-ship */
   segments_t effective_segment_number = nsegments_done;
 

@@ -92,19 +92,6 @@
 
 #define VN_RES_TAKE 0.5 /* amt of resource of a sector the VN's take */
 
-#define LAUNCH_GRAV_MASS_FACTOR 0.18 /* fuel use modifier for taking off */
-#define LAND_GRAV_MASS_FACTOR 0.0145
-
-#define FUEL_GAS_ADD 5.0 /* amt of fuel to add to ea ships tanks */
-#define FUEL_GAS_ADD_TANKER 100.0
-#define FUEL_GAS_ADD_HABITAT 200.0
-#define FUEL_GAS_ADD_STATION 100.0
-#define FUEL_USE                               \
-  0.02 /* fuel use per ship mass pt. per speed \
-          factor */
-#define HABITAT_PROD_RATE 0.05
-#define HABITAT_POP_RATE 0.20
-
 #define REPAIR_RATE 25.0 /* rate at which ships get repaired */
 #define SECTOR_REPAIR_COST \
   10 /* how much it costs to remove a wasted status from a sector */
@@ -124,10 +111,6 @@
 
 #define DEST_PRODUCTION 0.00008
 #define POPN_PROD 0.3
-
-#define HYPER_DRIVE_READY_CHARGE 1
-#define HYPER_DRIVE_FUEL_USE 5.0
-#define HYPER_DIST_FACTOR 200.0
 
 #define MOB_COST 0.00     /* mobiliz.c, planet.c cost/mob points*/
 #undef RESOURCE_DEPLETION /*0.015 */
@@ -157,21 +140,10 @@
 #define PLANETGRAVCONST 0.05
 #define SYSTEMGRAVCONST 150000.0
 
-#define FUEL_MANEUVER 0.3 /* order.c-- fuel it costs to change aim */
-#define DIST_TO_LAND 10.0 /* moveship.c,land.c -- */
-#define DIST_TO_DOCK 10.0 /* changed to fix a bug. Maarten */
 /* description: you could when you just entered planet scope assaault/dock
    with a ship in close orbit, and then immediately land. */
-
 #define FACTOR_DAMAGE 2.0
 #define FACTOR_DESTPLANET 0.35
-
-/* various compiler options that may save cpu time/disk space */
-#define NO_SLIDING_SCALE_AUTOMOVE 0 /* move to all four adjacent spots */
-#define POPN_MOVE_SCALE_1 400       /* limit at which popn moves to all */
-#define POPN_MOVE_SCALE_2 3000      /* " " " popn moves to 2 adj. spaces */
-                                    /* otherwise move to only 1 adj. space*/
-#define SHIP_MOVE_SCALE 3.0
 
 /* assorted macros */
 #define MIN(x, y) (((x) > (y)) ? (y) : (x))

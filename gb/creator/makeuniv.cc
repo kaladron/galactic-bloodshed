@@ -127,15 +127,15 @@ int main(int argc, char *argv[]) {
   if (autoname_star == -1) {
     printf("\nDo you wish to use the file \"%s\" for star names? [y/n]> ",
            STARLIST);
-    c = getchr();
-    if (c != '\n') getchr();
+    c = std::getchar();
+    if (c != '\n') std::getchar();
     autoname_star = (c == 'y');
   }
   if (autoname_plan == -1) {
     printf("\nDo you wish to use the file \"%s\" for planet names? [y/n]> ",
            PLANETLIST);
-    c = getchr();
-    if (c != '\n') getchr();
+    c = std::getchar();
+    if (c != '\n') std::getchar();
     autoname_plan = (c == 'y');
   }
   while ((nstars < 1) || (nstars >= NUMSTARS)) {

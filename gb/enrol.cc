@@ -93,7 +93,7 @@ int main() {
     perror("Cannot read input");
     exit(-1);
   }
-  getchr();
+  std::getchar();
 
   if (idx <= 0 || idx > RACIAL_TYPES) {
     printf("Bad racial index.\n");
@@ -116,8 +116,8 @@ int main() {
     printf(
         "\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
         "(i)ce, (w)ater, (d)esert, (f)orest? ");
-    c = getchr();
-    getchr();
+    c = std::getchar();
+    std::getchar();
 
     switch (c) {
       case 'w':
@@ -203,8 +203,8 @@ int main() {
   bzero(&race, sizeof(Race));
 
   printf("\n\tDeity/Guest/Normal (d/g/n) ?");
-  c = getchr();
-  getchr();
+  c = std::getchar();
+  std::getchar();
 
   race.God = (c == 'd');
   race.Guest = (c == 'g');
@@ -226,13 +226,13 @@ int main() {
     perror("Cannot read input");
     exit(-1);
   }
-  getchr();
+  std::getchar();
   printf("Enter the password for this leader:");
   if (scanf("%s", race.governor[0].password) < 0) {
     perror("Cannot read input");
     exit(-1);
   }
-  getchr();
+  std::getchar();
 
   /* make conditions preferred by your people set to (more or less)
      those of the planet : higher the concentration of gas, the higher
@@ -316,7 +316,7 @@ int main() {
       perror("Cannot read input");
       exit(-1);
     }
-    getchr();
+    std::getchar();
     if (i < SectorType::SEC_SEA || i > SectorType::SEC_WASTED ||
         !secttypes[i].here) {
       printf("There are none of that type here..\n");

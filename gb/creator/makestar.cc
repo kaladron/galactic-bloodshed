@@ -205,7 +205,7 @@ static char *NextStarName() {
     perror("Cannot read input");
     exit(-1);
   }
-  getchr();
+  std::getchar();
 
   return buf;
 }

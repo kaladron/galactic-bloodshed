@@ -174,7 +174,6 @@
 #define SHIP_MOVE_SCALE 3.0
 
 /* to save object code */
-#define getchr() fgetc(stdin)
 #define putchr(c) fputc((c), stdout)
 /* assorted macros */
 #define MIN(x, y) (((x) > (y)) ? (y) : (x))

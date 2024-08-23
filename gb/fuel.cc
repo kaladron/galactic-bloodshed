@@ -13,16 +13,20 @@ import std.compat;
 #include "gb/moveship.h"
 #include "gb/tweakables.h"
 
-void fuel_output(int Playernum, int Governor, double dist, double fuel,
-                 double grav, double mass, segments_t segs) {
+void fuel_output(GameObj &g, double dist, double fuel, double grav, double mass,
+                 segments_t segs, std::string_view plan_buf) {
+  const player_t Playernum = g.player;
+  const governor_t Governor = g.governor;
   char buf[1024];
-  char grav_buf[1024];
 
+  char grav_buf[1024];
   if (grav > 0.00)
     sprintf(grav_buf, " (%.2f used to launch from %s)\n",
-            (double)(grav * mass * (double)LAUNCH_GRAV_MASS_FACTOR), plan_buf);
+            (double)(grav * mass * (double)LAUNCH_GRAV_MASS_FACTOR),
+            plan_buf.data());
   else
     sprintf(grav_buf, " ");
+
   sprintf(buf,
           "Total Distance = %.2f   Number of Segments = %d\nFuel = %.2f%s  ",
           dist, segs, fuel, grav_buf);

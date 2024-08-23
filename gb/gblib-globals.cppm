@@ -60,8 +60,6 @@ export std::list<DescriptorData> descriptor_list;
 
 export sqlite3 *dbconn;
 
-export char plan_buf[1024];
-
 export struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
 export struct vnbrain VN_brain;
 export struct sectinfo Sectinfo[MAX_X][MAX_Y];

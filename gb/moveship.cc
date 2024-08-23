@@ -17,15 +17,8 @@ namespace {
         for merchant ships. The ship is within landing distance of
         the target Planet */
 static int do_merchant(Ship &s, Planet &p, std::stringstream &telegram) {
-  int i;
-  int j;
-  double fuel;
-  char load;
-  char unload;
-  int amount;
-
-  i = s.owner - 1;
-  j = s.merchant - 1; /* try to speed things up a bit */
+  int i = s.owner - 1;
+  int j = s.merchant - 1; /* try to speed things up a bit */
 
   if (!s.merchant || !p.info[i].route[j].set) /* not on shipping route */
     return 0;
@@ -36,7 +29,7 @@ static int do_merchant(Ship &s, Planet &p, std::stringstream &telegram) {
   }
 
   if (!landed(s)) { /* try to land the ship */
-    fuel = s.mass * p.gravity() * LAND_GRAV_MASS_FACTOR;
+    double fuel = s.mass * p.gravity() * LAND_GRAV_MASS_FACTOR;
     if (s.fuel < fuel) { /* ship can't land - cancel all orders */
       s.whatdest = ScopeLevel::LEVEL_UNIV;
       telegram << "\t\tNot enough fuel to land!\n";
@@ -54,32 +47,32 @@ static int do_merchant(Ship &s, Planet &p, std::stringstream &telegram) {
     s.destpnum = s.pnumorbits;
   }
   /* load and unload supplies specified by the planet */
-  load = p.info[i].route[j].load;
-  unload = p.info[i].route[j].unload;
+  char load = p.info[i].route[j].load;
+  char unload = p.info[i].route[j].unload;
   if (load) {
     telegram << "\t\t";
     if (Fuel(load)) {
-      amount = (int)s.max_fuel - (int)s.fuel;
+      int amount = (int)s.max_fuel - (int)s.fuel;
       if (amount > p.info[i].fuel) amount = p.info[i].fuel;
       p.info[i].fuel -= amount;
       rcv_fuel(s, (double)amount);
       telegram << std::format("{}f ", amount);
     }
     if (Resources(load)) {
-      amount = (int)s.max_resource - (int)s.resource;
+      int amount = (int)s.max_resource - (int)s.resource;
       if (amount > p.info[i].resource) amount = p.info[i].resource;
       p.info[i].resource -= amount;
       rcv_resource(s, amount);
       telegram << std::format("{}r ", amount);
     }
     if (Crystals(load)) {
-      amount = p.info[i].crystals;
+      int amount = p.info[i].crystals;
       p.info[i].crystals -= amount;
       s.crystals += amount;
       telegram << std::format("{}x ", amount);
     }
     if (Destruct(load)) {
-      amount = (int)s.max_destruct - (int)s.destruct;
+      int amount = (int)s.max_destruct - (int)s.destruct;
       if (amount > p.info[i].destruct) amount = p.info[i].destruct;
       p.info[i].destruct -= amount;
       rcv_destruct(s, amount);
@@ -90,25 +83,25 @@ static int do_merchant(Ship &s, Planet &p, std::stringstream &telegram) {
   if (unload) {
     telegram << "\t\t";
     if (Fuel(unload)) {
-      amount = (int)s.fuel;
+      int amount = (int)s.fuel;
       p.info[i].fuel += amount;
       telegram << std::format("{}f ", amount);
       use_fuel(s, (double)amount);
     }
     if (Resources(unload)) {
-      amount = s.resource;
+      int amount = s.resource;
       p.info[i].resource += amount;
       telegram << std::format("{}r ", amount);
       use_resource(s, amount);
     }
     if (Crystals(unload)) {
-      amount = s.crystals;
+      int amount = s.crystals;
       p.info[i].crystals += amount;
       telegram << std::format("{}x ", amount);
       s.crystals -= amount;
     }
     if (Destruct(unload)) {
-      amount = s.destruct;
+      int amount = s.destruct;
       p.info[i].destruct += amount;
       telegram << std::format("{}d ", amount);
       use_destruct(s, amount);
@@ -117,7 +110,7 @@ static int do_merchant(Ship &s, Planet &p, std::stringstream &telegram) {
   }
 
   /* launch the ship */
-  fuel = s.mass * p.gravity() * LAUNCH_GRAV_MASS_FACTOR;
+  double fuel = s.mass * p.gravity() * LAUNCH_GRAV_MASS_FACTOR;
   if (s.fuel < fuel) {
     telegram << "\t\tNot enough fuel to launch!\n";
     return 1;

@@ -133,3 +133,8 @@ export double tech_prod(const money_t investment, const population_t popn) {
   return (TECH_INVEST *
           std::log10(static_cast<double>(investment) * scale + 1.0));
 }
+
+/* euclidean distance */
+export double Distsq(double x1, double y1, double x2, double y2) {
+  return (((x1) - (x2)) * ((x1) - (x2)) + ((y1) - (y2)) * ((y1) - (y2)));
+}

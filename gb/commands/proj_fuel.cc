@@ -8,44 +8,37 @@ import std.compat;
 #include "gb/doship.h"
 #include "gb/fuel.h"
 #include "gb/moveship.h"
-#include "gb/order.h"
 #include "gb/tweakables.h"
 
 module commands;
 
 namespace GB::commands {
 void proj_fuel(const command_t &argv, GameObj &g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
   int opt_settings;
   bool computing = true;
   segments_t current_segs;
   double fuel_usage;
   double level;
   double dist;
-  char buf[1024];
   double current_fuel = 0.0;
   double gravity_factor = 0.0;
 
   if ((argv.size() < 2) || (argv.size() > 3)) {
-    notify(Playernum, Governor,
-           "Invalid number of options.\n\"fuel "
-           "#<shipnumber> [destination]\"...\n");
+    g.out << "Invalid number of options.\n\"fuel #<shipnumber> "
+             "[destination]\"...\n";
     return;
   }
   if (argv[1][0] != '#') {
-    notify(Playernum, Governor,
-           "Invalid first option.\n\"fuel #<shipnumber> [destination]\"...\n");
+    g.out << "Invalid first option.\n\"fuel #<shipnumber> [destination]\"...\n";
     return;
   }
   auto shipno = string_to_shipnum(argv[1]);
   if (!shipno || *shipno > Numships() || *shipno < 1) {
-    sprintf(buf, "rst: no such ship #%lu \n", *shipno);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("rst: no such ship #{}\n", *shipno);
     return;
   }
   auto ship = getship(*shipno);
-  if (ship->owner != Playernum) {
+  if (ship->owner != g.player) {
     g.out << "You do not own this ship.\n";
     return;
   }
@@ -61,11 +54,12 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     g.out << "That ship does not have a speed rating...\n";
     return;
   }
+  std::string plan_buf;
   if (landed(*ship) && (ship->whatorbits == ScopeLevel::LEVEL_PLAN)) {
     const auto p = getplanet(ship->storbits, ship->pnumorbits);
     gravity_factor = p.gravity();
-    sprintf(plan_buf, "/%s/%s", stars[ship->storbits].name,
-            stars[ship->storbits].pnames[ship->pnumorbits]);
+    plan_buf = std::format("/{}/{}", stars[ship->storbits].name,
+                           stars[ship->storbits].pnames[ship->pnumorbits]);
   }
   std::string deststr;
   if (argv.size() == 2) {
@@ -104,13 +98,12 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   double y_1;
 
   if (tmpdest.level == ScopeLevel::LEVEL_UNIV) {
-    notify(Playernum, Governor,
-           "That ship currently has no destination orders...\n");
+    g.out << "That ship currently has no destination orders...\n";
     return;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
     auto tmpship = getship(tmpdest.shipno);
-    if (tmpship->owner != Playernum) {
+    if (tmpship->owner != g.player) {
       g.out << "Nice try.\n";
       return;
     }
@@ -132,8 +125,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   dist = sqrt(Distsq(x_0, y_0, x_1, y_1));
 
   if (dist <= DIST_TO_LAND) {
-    notify(Playernum, Governor,
-           "That ship is within 10.0 units of the destination.\n");
+    g.out << "That ship is within 10.0 units of the destination.\n";
     return;
   }
 
@@ -164,28 +156,25 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   }
 
   auto tmpship = getship(*shipno);
-  sprintf(buf,
-          "\n  ----- ===== FUEL ESTIMATES ===== ----\n\nAt Current Fuel "
-          "Cargo (%.2ff):\n",
-          tmpship->fuel);
+  g.out << std::format(
+      "\n  ----- ===== FUEL ESTIMATES ===== ----\n\nAt Current Fuel "
+      "Cargo ({:.2f}f):\n",
+      tmpship->fuel);
   domass(&*tmpship);
-  notify(Playernum, Governor, buf);
   if (!current_settings) {
-    sprintf(buf, "The ship will not be able to complete the trip.\n");
-    notify(Playernum, Governor, buf);
-  } else
-    fuel_output(Playernum, Governor, dist, current_fuel, gravity_factor,
-                tmpship->mass, current_segs);
-  sprintf(buf, "At Optimum Fuel Level (%.2ff):\n", fuel_usage);
-  notify(Playernum, Governor, buf);
+    g.out << "The ship will not be able to complete the trip.\n";
+  } else {
+    fuel_output(g, dist, current_fuel, gravity_factor, tmpship->mass,
+                current_segs, plan_buf);
+  }
+  g.out << std::format("At Optimum Fuel Level ({:.2f}f):\n", fuel_usage);
   if (!opt_settings) {
-    sprintf(buf, "The ship will not be able to complete the trip.\n");
-    notify(Playernum, Governor, buf);
+    g.out << std::format("The ship will not be able to complete the trip.\n");
   } else {
     tmpship->fuel = fuel_usage;
     domass(&*tmpship);
-    fuel_output(Playernum, Governor, dist, fuel_usage, gravity_factor,
-                tmpship->mass, number_segments);
+    fuel_output(g, dist, fuel_usage, gravity_factor, tmpship->mass,
+                number_segments, plan_buf);
   }
 }
 }  // namespace GB::commands

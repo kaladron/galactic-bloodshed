@@ -15,34 +15,28 @@ import std.compat;
 
 void fuel_output(GameObj &g, double dist, double fuel, double grav, double mass,
                  segments_t segs, std::string_view plan_buf) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
-  char buf[1024];
+  std::string grav_buf =
+      (grav > 0.00)
+          ? std::format(" ({:.2f} used to launch from {})\n",
+                        grav * mass * LAUNCH_GRAV_MASS_FACTOR, plan_buf)
+          : " ";
 
-  char grav_buf[1024];
-  if (grav > 0.00)
-    sprintf(grav_buf, " (%.2f used to launch from %s)\n",
-            (double)(grav * mass * (double)LAUNCH_GRAV_MASS_FACTOR),
-            plan_buf.data());
-  else
-    sprintf(grav_buf, " ");
+  g.out << std::format(
+      "Total Distance = {:.2f}   Number of Segments = {}\nFuel = {:.2f}{}  ",
+      dist, segs, fuel, grav_buf);
 
-  sprintf(buf,
-          "Total Distance = %.2f   Number of Segments = %d\nFuel = %.2f%s  ",
-          dist, segs, fuel, grav_buf);
-  notify(Playernum, Governor, buf);
-  if (nsegments_done > segments)
-    notify(
-        Playernum, Governor,
-        "Estimated arrival time not available due to segment # discrepancy.\n");
-  else {
+  if (nsegments_done > segments) {
+    g.out << "Estimated arrival time not available due to segment # "
+             "discrepancy.\n";
+  } else {
     time_t effective_time =
         next_segment_time + ((segs - 1) * (update_time / segments) * 60);
-    if (segments == 1)
-      effective_time =
-          next_update_time + (long)((segs - 1) * (update_time * 60));
-    sprintf(buf, "ESTIMATED Arrival Time: %s\n", ctime(&effective_time));
-    notify(Playernum, Governor, buf);
+    if (segments == 1) {
+      effective_time = next_update_time +
+                       (static_cast<time_t>((segs - 1) * (update_time * 60)));
+    }
+    g.out << std::format("ESTIMATED Arrival Time: {}\n",
+                         std::ctime(&effective_time));
     return;
   }
 }

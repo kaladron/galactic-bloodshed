@@ -176,8 +176,6 @@
 /* assorted macros */
 #define MIN(x, y) (((x) > (y)) ? (y) : (x))
 #define MAX(x, y) (((x) < (y)) ? (y) : (x))
-/* positive modulus */
-#define mod(a, b, dum) ((dum) = (a) % (b), abs(dum))
 
 /* adjust temperature to displayed */
 #define Temp(x) ((int)(x))

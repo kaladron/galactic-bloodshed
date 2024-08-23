@@ -80,13 +80,13 @@ std::tuple<bool, segments_t> do_trip(const Place &tmpdest, Ship &tmpship,
     double tmpdist = sqrt(Distsq(x_0, y_0, x_1, y_1));
     switch (tmpship.whatdest) {
       case ScopeLevel::LEVEL_STAR:
-        if (tmpdist <= (double)SYSTEMSIZE) trip_resolved = true;
+        if (tmpdist <= SYSTEMSIZE) trip_resolved = true;
         break;
       case ScopeLevel::LEVEL_PLAN:
-        if (tmpdist <= (double)PLORBITSIZE) trip_resolved = true;
+        if (tmpdist <= PLORBITSIZE) trip_resolved = true;
         break;
       case ScopeLevel::LEVEL_SHIP:
-        if (tmpdist <= (double)DIST_TO_LAND) trip_resolved = true;
+        if (tmpdist <= DIST_TO_LAND) trip_resolved = true;
         break;
       default:
         trip_resolved = true;

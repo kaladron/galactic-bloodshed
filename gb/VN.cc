@@ -154,7 +154,6 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
   int oldres;
   int xa;
   int ya;
-  int dum;
   int prod;
 
   if (landed(ship)) {
@@ -165,7 +164,7 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
       if (!(oldres = s.resource)) {
         /* move to another sector */
         xa = int_rand(-1, 1);
-        ship.land_x = mod((int)(ship.land_x) + xa, planet.Maxx, dum);
+        ship.land_x = mod(ship.land_x + xa, planet.Maxx);
         ya = (ship.land_y == 0)
                  ? 1
                  : ((ship.land_y == (planet.Maxy - 1)) ? -1 : int_rand(-1, 1));

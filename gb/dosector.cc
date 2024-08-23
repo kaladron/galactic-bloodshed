@@ -164,12 +164,10 @@ static void Migrate2(const Planet &planet, int xd, int yd, Sector &ps,
 
 //  explore() -- mark sector and surrounding sectors as having been explored.
 void explore(const Planet &planet, Sector &s, int x, int y, int p) {
-  int d;
-
-  /* explore sectors surrounding sectors currently explored. */
+  // explore sectors surrounding sectors currently explored.
   if (Sectinfo[x][y].explored) {
-    Sectinfo[mod(x - 1, planet.Maxx, d)][y].explored = p;
-    Sectinfo[mod(x + 1, planet.Maxx, d)][y].explored = p;
+    Sectinfo[mod(x - 1, planet.Maxx)][y].explored = p;
+    Sectinfo[mod(x + 1, planet.Maxx)][y].explored = p;
     if (y == 0) {
       Sectinfo[x][1].explored = p;
     } else if (y == planet.Maxy - 1) {

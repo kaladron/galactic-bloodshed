@@ -54,7 +54,7 @@ void profile(const command_t &argv, GameObj &g) {
             race.Metamorph ? "Metamorphic Race\t" : "Normal Race\t\t");
     notify(Playernum, Governor, buf);
     sprintf(buf, "Fert:    %3d%%\t\t  Temp:\t%d\n", race.fertilize,
-            Temp(race.conditions[TEMP]));
+            race.conditions[TEMP]);
     notify(Playernum, Governor, buf);
     sprintf(
         buf, "Rate:    %3.1f\t\t  methane  %5d%%\t      %-8.8s %c %3.0f%%\n",

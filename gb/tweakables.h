@@ -177,9 +177,6 @@
 #define MIN(x, y) (((x) > (y)) ? (y) : (x))
 #define MAX(x, y) (((x) < (y)) ? (y) : (x))
 
-/* adjust temperature to displayed */
-#define Temp(x) ((int)(x))
-
 /* number of global APs each planet is worth */
 #define EARTH_POINTS int_rand(5, 8)
 // Moved to module:

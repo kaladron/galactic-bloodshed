@@ -46,14 +46,8 @@ void fuel_output(int Playernum, int Governor, double dist, double fuel,
 std::tuple<bool, segments_t> do_trip(const Place &tmpdest, Ship &tmpship,
                                      double fuel, double gravity_factor,
                                      double x_1, double y_1) {
-  segments_t effective_segment_number;
-  int trip_resolved;
-  double gravity_fuel;
-  double tmpdist;
-  double fuel_level1;
-
   tmpship.fuel = fuel; /* load up the pseudo-ship */
-  effective_segment_number = nsegments_done;
+  segments_t effective_segment_number = nsegments_done;
 
   /*  Set our temporary destination.... */
   tmpship.destshipno = tmpdest.shipno;
@@ -67,17 +61,17 @@ std::tuple<bool, segments_t> do_trip(const Place &tmpdest, Ship &tmpship,
     for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
   }
 
-  trip_resolved = 0;
+  bool trip_resolved = false;
   segments_t number_segments = 0; /* Reset counter.  */
 
   /*  Launch the ship if it's on a planet.  */
-  gravity_fuel = gravity_factor * tmpship.mass * LAUNCH_GRAV_MASS_FACTOR;
+  double gravity_fuel = gravity_factor * tmpship.mass * LAUNCH_GRAV_MASS_FACTOR;
   tmpship.fuel -= gravity_fuel;
   tmpship.docked = 0;
 
-  while (trip_resolved == 0) {
+  while (!trip_resolved) {
     domass(&tmpship);
-    fuel_level1 = tmpship.fuel;
+    double fuel_level1 = tmpship.fuel;
     moveship(&tmpship, (effective_segment_number == segments), 0, 1);
     number_segments++;
     effective_segment_number++;
@@ -85,19 +79,19 @@ std::tuple<bool, segments_t> do_trip(const Place &tmpdest, Ship &tmpship,
       effective_segment_number = 1;
     double x_0 = tmpship.xpos;
     double y_0 = tmpship.ypos;
-    tmpdist = sqrt(Distsq(x_0, y_0, x_1, y_1));
+    double tmpdist = sqrt(Distsq(x_0, y_0, x_1, y_1));
     switch (tmpship.whatdest) {
       case ScopeLevel::LEVEL_STAR:
-        if (tmpdist <= (double)SYSTEMSIZE) trip_resolved = 1;
+        if (tmpdist <= (double)SYSTEMSIZE) trip_resolved = true;
         break;
       case ScopeLevel::LEVEL_PLAN:
-        if (tmpdist <= (double)PLORBITSIZE) trip_resolved = 1;
+        if (tmpdist <= (double)PLORBITSIZE) trip_resolved = true;
         break;
       case ScopeLevel::LEVEL_SHIP:
-        if (tmpdist <= (double)DIST_TO_LAND) trip_resolved = 1;
+        if (tmpdist <= (double)DIST_TO_LAND) trip_resolved = true;
         break;
       default:
-        trip_resolved = 1;
+        trip_resolved = true;
     }
     if (((tmpship.fuel == fuel_level1) && (!tmpship.hyper_drive.on)) &&
         (trip_resolved == 0)) {

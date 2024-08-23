@@ -181,9 +181,6 @@
 #define MAX(x, y) (((x) < (y)) ? (y) : (x))
 /* positive modulus */
 #define mod(a, b, dum) ((dum) = (a) % (b), abs(dum))
-/* euclidean distance */
-#define Distsq(x1, y1, x2, y2) \
-  (((x1) - (x2)) * ((x1) - (x2)) + ((y1) - (y2)) * ((y1) - (y2)))
 
 /* adjust temperature to displayed */
 #define Temp(x) ((int)(x))

@@ -151,8 +151,8 @@
 
 #define TECH_EXPLORE 10 /* min tech to see your whole planet */
 
-#define ENVIR_DAMAGE_TOX 70
 /* min tox to damage planet */
+#define ENVIR_DAMAGE_TOX 70
 
 #define PLANETGRAVCONST 0.05
 #define SYSTEMGRAVCONST 150000.0

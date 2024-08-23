@@ -173,8 +173,6 @@
                                     /* otherwise move to only 1 adj. space*/
 #define SHIP_MOVE_SCALE 3.0
 
-/* to save object code */
-#define putchr(c) fputc((c), stdout)
 /* assorted macros */
 #define MIN(x, y) (((x) > (y)) ? (y) : (x))
 #define MAX(x, y) (((x) < (y)) ? (y) : (x))

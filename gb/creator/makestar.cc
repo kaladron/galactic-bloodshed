@@ -199,8 +199,8 @@ static char *NextStarName() {
     return SNames[star_list[namestcount++]];
 
   printf("Next star name:");
-  for (i = 0; i < NAMESIZE - 4; i++) putchr('.');
-  for (i = 0; i < NAMESIZE - 4; i++) putchr('\010'); /* ^H */
+  for (i = 0; i < NAMESIZE - 4; i++) std::putchar('.');
+  for (i = 0; i < NAMESIZE - 4; i++) std::putchar('\010'); /* ^H */
   if (scanf("%14[^\n]", buf) < 0) {
     perror("Cannot read input");
     exit(-1);
@@ -324,34 +324,34 @@ Star Makestar(starnum_t snum) {
         for (x = 0; x < planet.Maxx; x++) {
           switch (smap.get(x, y).condition) {
             case SectorType::SEC_LAND:
-              putchr(CHAR_LAND);
+              std::putchar(CHAR_LAND);
               break;
             case SectorType::SEC_SEA:
-              putchr(CHAR_SEA);
+              std::putchar(CHAR_SEA);
               break;
             case SectorType::SEC_MOUNT:
-              putchr(CHAR_MOUNT);
+              std::putchar(CHAR_MOUNT);
               break;
             case SectorType::SEC_ICE:
-              putchr(CHAR_ICE);
+              std::putchar(CHAR_ICE);
               break;
             case SectorType::SEC_GAS:
-              putchr(CHAR_GAS);
+              std::putchar(CHAR_GAS);
               break;
             case SectorType::SEC_DESERT:
-              putchr(CHAR_DESERT);
+              std::putchar(CHAR_DESERT);
               break;
             case SectorType::SEC_FOREST:
-              putchr(CHAR_FOREST);
+              std::putchar(CHAR_FOREST);
               break;
             default:
-              putchr('?');
+              std::putchar('?');
               break;
           }
         }
-        putchr('\n');
+        std::putchar('\n');
       }
-      putchr('\n');
+      std::putchar('\n');
     }
     /*
      * Tabulate statistics for this star's planets. */

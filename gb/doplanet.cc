@@ -19,7 +19,6 @@ import std.compat;
 #include "gb/dosector.h"
 #include "gb/doship.h"
 #include "gb/move.h"
-#include "gb/moveship.h"
 #include "gb/tweakables.h"
 
 static void do_dome(Ship *, SectorMap &);

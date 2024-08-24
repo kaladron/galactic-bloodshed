@@ -10,8 +10,6 @@ import std.compat;
 #include "gb/fuel.h"
 
 #include "gb/doship.h"
-#include "gb/moveship.h"
-#include "gb/tweakables.h"
 
 /**
  * @brief Outputs fuel information and estimated arrival time.

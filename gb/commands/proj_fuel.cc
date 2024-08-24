@@ -7,8 +7,6 @@ import std.compat;
 
 #include "gb/doship.h"
 #include "gb/fuel.h"
-#include "gb/moveship.h"
-#include "gb/tweakables.h"
 
 module commands;
 

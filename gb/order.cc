@@ -8,7 +8,6 @@ import gblib;
 import std.compat;
 
 #include "gb/buffers.h"
-#include "gb/moveship.h"
 
 static std::string prin_aimed_at(const Ship &);
 static void mk_expl_aimed_at(player_t, governor_t, Ship *);

@@ -349,6 +349,9 @@ export void rcv_popn(Ship &, int, double);
 export void rcv_troops(Ship &, int, double);
 export std::string prin_ship_orbits(const Ship &);
 export std::string prin_ship_dest(const Ship &);
+export void moveship(Ship &ship, int x, int y, int z);
+export void msg_OOF(const Ship &ship);
+export bool followable(const Ship &ship, Ship &target);
 
 export shipnum_t Num_ships;
 export int ShipVector[NUMSTYPES];

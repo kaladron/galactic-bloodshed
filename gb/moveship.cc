@@ -138,7 +138,7 @@ static int do_merchant(Ship &s, Planet &p, std::stringstream &telegram) {
 }
 }  // namespace
 
-void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
+void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
   double stardist;
   double movedist;
   double truedist;
@@ -156,189 +156,188 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
   int destpnum = 0;
   Ship *dsh;
 
-  if (s->hyper_drive.has && s->hyper_drive.on) { /* do a hyperspace jump */
+  if (s.hyper_drive.has && s.hyper_drive.on) { /* do a hyperspace jump */
     if (!mode) return; /* we're not ready to jump until the update */
-    if (s->hyper_drive.ready) {
-      dist = sqrt(Distsq(s->xpos, s->ypos, stars[s->deststar].xpos,
-                         stars[s->deststar].ypos));
-      distfac = HYPER_DIST_FACTOR * (s->tech + 100.0);
-      if (s->mounted && dist > distfac)
-        fuse = HYPER_DRIVE_FUEL_USE * sqrt(s->mass) * (dist / distfac);
+    if (s.hyper_drive.ready) {
+      dist = sqrt(Distsq(s.xpos, s.ypos, stars[s.deststar].xpos,
+                         stars[s.deststar].ypos));
+      distfac = HYPER_DIST_FACTOR * (s.tech + 100.0);
+      if (s.mounted && dist > distfac)
+        fuse = HYPER_DRIVE_FUEL_USE * sqrt(s.mass) * (dist / distfac);
       else
-        fuse = HYPER_DRIVE_FUEL_USE * sqrt(s->mass) * (dist / distfac) *
+        fuse = HYPER_DRIVE_FUEL_USE * sqrt(s.mass) * (dist / distfac) *
                (dist / distfac);
 
-      if (s->fuel < fuse) {
+      if (s.fuel < fuse) {
         std::string telegram = std::format(
             "{} at system {} does not have {:.1f}f to do hyperspace jump.",
-            ship_to_string(*s), prin_ship_orbits(*s), fuse);
-        if (send_messages) push_telegram(s->owner, s->governor, telegram);
-        s->hyper_drive.on = 0;
+            ship_to_string(s), prin_ship_orbits(s), fuse);
+        if (send_messages) push_telegram(s.owner, s.governor, telegram);
+        s.hyper_drive.on = 0;
         return;
       }
-      use_fuel(*s, fuse);
-      heading = atan2(stars[s->deststar].xpos - s->xpos,
-                      stars[s->deststar].ypos - s->ypos);
+      use_fuel(s, fuse);
+      heading = atan2(stars[s.deststar].xpos - s.xpos,
+                      stars[s.deststar].ypos - s.ypos);
       sn = sin(heading);
       cs = cos(heading);
-      s->xpos = stars[s->deststar].xpos - sn * 0.9 * SYSTEMSIZE;
-      s->ypos = stars[s->deststar].ypos - cs * 0.9 * SYSTEMSIZE;
-      s->whatorbits = ScopeLevel::LEVEL_STAR;
-      s->storbits = s->deststar;
-      s->protect.planet = 0;
-      s->hyper_drive.on = 0;
-      s->hyper_drive.ready = 0;
-      s->hyper_drive.charge = 0;
-      std::string telegram = std::format(
-          "{} arrived at {}.", ship_to_string(*s), prin_ship_orbits(*s));
-      if (send_messages) push_telegram(s->owner, s->governor, telegram);
-    } else if (s->mounted) {
-      s->hyper_drive.ready = 1;
-      s->hyper_drive.charge = HYPER_DRIVE_READY_CHARGE;
+      s.xpos = stars[s.deststar].xpos - sn * 0.9 * SYSTEMSIZE;
+      s.ypos = stars[s.deststar].ypos - cs * 0.9 * SYSTEMSIZE;
+      s.whatorbits = ScopeLevel::LEVEL_STAR;
+      s.storbits = s.deststar;
+      s.protect.planet = 0;
+      s.hyper_drive.on = 0;
+      s.hyper_drive.ready = 0;
+      s.hyper_drive.charge = 0;
+      std::string telegram = std::format("{} arrived at {}.", ship_to_string(s),
+                                         prin_ship_orbits(s));
+      if (send_messages) push_telegram(s.owner, s.governor, telegram);
+    } else if (s.mounted) {
+      s.hyper_drive.ready = 1;
+      s.hyper_drive.charge = HYPER_DRIVE_READY_CHARGE;
     } else {
-      if (s->hyper_drive.charge == HYPER_DRIVE_READY_CHARGE)
-        s->hyper_drive.ready = 1;
+      if (s.hyper_drive.charge == HYPER_DRIVE_READY_CHARGE)
+        s.hyper_drive.ready = 1;
       else
-        s->hyper_drive.charge += 1;
+        s.hyper_drive.charge += 1;
     }
     return;
   }
-  if (s->speed && !s->docked && s->alive &&
-      (s->whatdest != ScopeLevel::LEVEL_UNIV || s->navigate.on)) {
-    fuse = 0.5 * s->speed * (1 + s->protect.evade) * s->mass * FUEL_USE /
+  if (s.speed && !s.docked && s.alive &&
+      (s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on)) {
+    fuse = 0.5 * s.speed * (1 + s.protect.evade) * s.mass * FUEL_USE /
            (double)segments;
-    if (s->fuel < fuse) {
+    if (s.fuel < fuse) {
       if (send_messages) msg_OOF(s); /* send OOF notify */
-      if (s->whatorbits == ScopeLevel::LEVEL_UNIV &&
-          (s->build_cost <= 50 || s->type == ShipType::OTYPE_VN ||
-           s->type == ShipType::OTYPE_BERS)) {
+      if (s.whatorbits == ScopeLevel::LEVEL_UNIV &&
+          (s.build_cost <= 50 || s.type == ShipType::OTYPE_VN ||
+           s.type == ShipType::OTYPE_BERS)) {
         std::string telegram =
-            std::format("{} has been lost in deep space.", ship_to_string(*s));
-        if (send_messages) push_telegram(s->owner, s->governor, telegram);
-        if (send_messages) kill_ship((int)(s->owner), s);
+            std::format("{} has been lost in deep space.", ship_to_string(s));
+        if (send_messages) push_telegram(s.owner, s.governor, telegram);
+        if (send_messages) kill_ship((int)(s.owner), &s);
       }
       return;
     }
-    if (s->navigate.on) { /* follow navigational orders */
-      heading = .0174329252 * s->navigate.bearing;
-      mfactor = SHIP_MOVE_SCALE * (1.0 - .01 * s->rad) *
-                (1.0 - .01 * s->damage) * SpeedConsts[s->speed] *
-                MoveConsts[s->whatorbits] / (double)segments;
-      use_fuel(*s, (double)fuse);
+    if (s.navigate.on) { /* follow navigational orders */
+      heading = .0174329252 * s.navigate.bearing;
+      mfactor = SHIP_MOVE_SCALE * (1.0 - .01 * s.rad) * (1.0 - .01 * s.damage) *
+                SpeedConsts[s.speed] * MoveConsts[s.whatorbits] /
+                (double)segments;
+      use_fuel(s, (double)fuse);
       sn = sin(heading);
       cs = cos(heading);
       xdest = sn * mfactor;
       ydest = -cs * mfactor;
-      s->xpos += xdest;
-      s->ypos += ydest;
-      s->navigate.turns--;
-      if (!s->navigate.turns) s->navigate.on = 0;
+      s.xpos += xdest;
+      s.ypos += ydest;
+      s.navigate.turns--;
+      if (!s.navigate.turns) s.navigate.on = 0;
       /* check here for orbit breaking as well. Maarten */
-      auto &ost = stars[s->storbits];
-      const auto &opl = planets[s->storbits][s->pnumorbits];
-      if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
-        dist = sqrt(Distsq(s->xpos, s->ypos, ost.xpos + opl->xpos,
-                           ost.ypos + opl->ypos));
+      auto &ost = stars[s.storbits];
+      const auto &opl = planets[s.storbits][s.pnumorbits];
+      if (s.whatorbits == ScopeLevel::LEVEL_PLAN) {
+        dist = sqrt(
+            Distsq(s.xpos, s.ypos, ost.xpos + opl->xpos, ost.ypos + opl->ypos));
         if (dist > PLORBITSIZE) {
-          s->whatorbits = ScopeLevel::LEVEL_STAR;
-          s->protect.planet = 0;
+          s.whatorbits = ScopeLevel::LEVEL_STAR;
+          s.protect.planet = 0;
         }
-      } else if (s->whatorbits == ScopeLevel::LEVEL_STAR) {
-        dist = sqrt(Distsq(s->xpos, s->ypos, ost.xpos, ost.ypos));
+      } else if (s.whatorbits == ScopeLevel::LEVEL_STAR) {
+        dist = sqrt(Distsq(s.xpos, s.ypos, ost.xpos, ost.ypos));
         if (dist > SYSTEMSIZE) {
-          s->whatorbits = ScopeLevel::LEVEL_UNIV;
-          s->protect.evade = 0;
-          s->protect.planet = 0;
+          s.whatorbits = ScopeLevel::LEVEL_UNIV;
+          s.protect.evade = 0;
+          s.protect.planet = 0;
         }
       }
     } else { /*		navigate is off            */
-      destlevel = s->whatdest;
+      destlevel = s.whatdest;
       if (destlevel == ScopeLevel::LEVEL_SHIP) {
-        dsh = ships[s->destshipno];
-        s->deststar = dsh->storbits;
-        s->destpnum = dsh->pnumorbits;
+        dsh = ships[s.destshipno];
+        s.deststar = dsh->storbits;
+        s.destpnum = dsh->pnumorbits;
         xdest = dsh->xpos;
         ydest = dsh->ypos;
         switch (dsh->whatorbits) {
           case ScopeLevel::LEVEL_UNIV:
             break;
           case ScopeLevel::LEVEL_PLAN:
-            if (s->whatorbits != dsh->whatorbits ||
-                s->pnumorbits != dsh->pnumorbits)
+            if (s.whatorbits != dsh->whatorbits ||
+                s.pnumorbits != dsh->pnumorbits)
               destlevel = ScopeLevel::LEVEL_PLAN;
             break;
           case ScopeLevel::LEVEL_STAR:
-            if (s->whatorbits != dsh->whatorbits ||
-                s->storbits != dsh->storbits)
+            if (s.whatorbits != dsh->whatorbits || s.storbits != dsh->storbits)
               destlevel = ScopeLevel::LEVEL_STAR;
             break;
           case ScopeLevel::LEVEL_SHIP:
             // TODO(jeffbailey): Prove that this is impossible.
             break;
         }
-        /*			if (sqrt( (double)Distsq(s->xpos, s->ypos,
+        /*			if (sqrt( (double)Distsq(s.xpos, s.ypos,
            xdest,
            ydest))
                    <= DIST_TO_LAND || !(dsh->alive)) {
                            destlevel = ScopeLevel::LEVEL_UNIV;
-                                                   s->whatdest=ScopeLevel::LEVEL_UNIV;
+                                                   s.whatdest=ScopeLevel::LEVEL_UNIV;
                                    } */
       }
       /*		else */
       if (destlevel == ScopeLevel::LEVEL_STAR ||
           (destlevel == ScopeLevel::LEVEL_PLAN &&
-           (s->storbits != s->deststar ||
-            s->whatorbits == ScopeLevel::LEVEL_UNIV))) {
+           (s.storbits != s.deststar ||
+            s.whatorbits == ScopeLevel::LEVEL_UNIV))) {
         destlevel = ScopeLevel::LEVEL_STAR;
-        deststar = s->deststar;
+        deststar = s.deststar;
         xdest = stars[deststar].xpos;
         ydest = stars[deststar].ypos;
       } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
-                 s->storbits == s->deststar) {
+                 s.storbits == s.deststar) {
         destlevel = ScopeLevel::LEVEL_PLAN;
-        deststar = s->deststar;
-        destpnum = s->destpnum;
+        deststar = s.deststar;
+        destpnum = s.destpnum;
         xdest = stars[deststar].xpos + planets[deststar][destpnum]->xpos;
         ydest = stars[deststar].ypos + planets[deststar][destpnum]->ypos;
-        if (sqrt(Distsq(s->xpos, s->ypos, xdest, ydest)) <= DIST_TO_LAND)
+        if (sqrt(Distsq(s.xpos, s.ypos, xdest, ydest)) <= DIST_TO_LAND)
           destlevel = ScopeLevel::LEVEL_UNIV;
       }
       auto &dst = stars[deststar];
-      auto &ost = stars[s->storbits];
+      auto &ost = stars[s.storbits];
       const auto &dpl = planets[deststar][destpnum];
-      const auto &opl = planets[s->storbits][s->pnumorbits];
-      truedist = movedist = sqrt(Distsq(s->xpos, s->ypos, xdest, ydest));
+      const auto &opl = planets[s.storbits][s.pnumorbits];
+      truedist = movedist = sqrt(Distsq(s.xpos, s.ypos, xdest, ydest));
       /* Save some unneccesary calculation and domain errors for atan2
             Maarten */
-      if (truedist < DIST_TO_LAND && s->whatorbits == destlevel &&
-          s->storbits == deststar && s->pnumorbits == destpnum)
+      if (truedist < DIST_TO_LAND && s.whatorbits == destlevel &&
+          s.storbits == deststar && s.pnumorbits == destpnum)
         return;
-      heading = atan2((double)(xdest - s->xpos), (double)(-ydest + s->ypos));
-      mfactor = SHIP_MOVE_SCALE * (1. - .01 * (double)s->rad) *
-                (1. - .01 * (double)s->damage) * SpeedConsts[s->speed] *
-                MoveConsts[s->whatorbits] / (double)segments;
+      heading = atan2((double)(xdest - s.xpos), (double)(-ydest + s.ypos));
+      mfactor = SHIP_MOVE_SCALE * (1. - .01 * (double)s.rad) *
+                (1. - .01 * (double)s.damage) * SpeedConsts[s.speed] *
+                MoveConsts[s.whatorbits] / (double)segments;
 
       /* keep from ending up in the middle of the system. */
       if (destlevel == ScopeLevel::LEVEL_STAR &&
-          (s->storbits != deststar || s->whatorbits == ScopeLevel::LEVEL_UNIV))
+          (s.storbits != deststar || s.whatorbits == ScopeLevel::LEVEL_UNIV))
         movedist -= SYSTEMSIZE * 0.90;
       else if (destlevel == ScopeLevel::LEVEL_PLAN &&
-               s->whatorbits == ScopeLevel::LEVEL_STAR &&
-               s->storbits == deststar && truedist >= PLORBITSIZE)
+               s.whatorbits == ScopeLevel::LEVEL_STAR &&
+               s.storbits == deststar && truedist >= PLORBITSIZE)
         movedist -= PLORBITSIZE * 0.90;
 
-      if (s->whatdest == ScopeLevel::LEVEL_SHIP &&
-          !followable(s, ships[s->destshipno])) {
-        s->whatdest = ScopeLevel::LEVEL_UNIV;
-        s->protect.evade = 0;
-        std::string telegram = std::format(
-            "{} at {} lost sight of destination ship #{}.", ship_to_string(*s),
-            prin_ship_orbits(*s), s->destshipno);
-        if (send_messages) push_telegram(s->owner, s->governor, telegram);
+      if (s.whatdest == ScopeLevel::LEVEL_SHIP &&
+          !followable(s, *ships[s.destshipno])) {
+        s.whatdest = ScopeLevel::LEVEL_UNIV;
+        s.protect.evade = 0;
+        std::string telegram =
+            std::format("{} at {} lost sight of destination ship #{}.",
+                        ship_to_string(s), prin_ship_orbits(s), s.destshipno);
+        if (send_messages) push_telegram(s.owner, s.governor, telegram);
         return;
       }
       if (truedist > DIST_TO_LAND) {
-        use_fuel(*s, (double)fuse);
+        use_fuel(s, (double)fuse);
         /* dont overshoot */
         sn = sin(heading);
         cs = cos(heading);
@@ -348,95 +347,95 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
           xdest = sn * movedist;
           ydest = -cs * movedist;
         }
-        s->xpos += xdest;
-        s->ypos += ydest;
+        s.xpos += xdest;
+        s.ypos += ydest;
       }
       /***** check if far enough away from object it's orbiting to break orbit
        * *****/
-      if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {
-        dist = sqrt(Distsq(s->xpos, s->ypos, ost.xpos + opl->xpos,
-                           ost.ypos + opl->ypos));
+      if (s.whatorbits == ScopeLevel::LEVEL_PLAN) {
+        dist = sqrt(
+            Distsq(s.xpos, s.ypos, ost.xpos + opl->xpos, ost.ypos + opl->ypos));
         if (dist > PLORBITSIZE) {
-          s->whatorbits = ScopeLevel::LEVEL_STAR;
-          s->protect.planet = 0;
+          s.whatorbits = ScopeLevel::LEVEL_STAR;
+          s.protect.planet = 0;
         }
-      } else if (s->whatorbits == ScopeLevel::LEVEL_STAR) {
-        dist = sqrt(Distsq(s->xpos, s->ypos, ost.xpos, ost.ypos));
+      } else if (s.whatorbits == ScopeLevel::LEVEL_STAR) {
+        dist = sqrt(Distsq(s.xpos, s.ypos, ost.xpos, ost.ypos));
         if (dist > SYSTEMSIZE) {
-          s->whatorbits = ScopeLevel::LEVEL_UNIV;
-          s->protect.evade = 0;
-          s->protect.planet = 0;
+          s.whatorbits = ScopeLevel::LEVEL_UNIV;
+          s.protect.evade = 0;
+          s.protect.planet = 0;
         }
       }
 
       /*******   check for arriving at destination *******/
       if (destlevel == ScopeLevel::LEVEL_STAR ||
           (destlevel == ScopeLevel::LEVEL_PLAN &&
-           (s->storbits != deststar ||
-            s->whatorbits == ScopeLevel::LEVEL_UNIV))) {
-        stardist = sqrt(Distsq(s->xpos, s->ypos, dst.xpos, dst.ypos));
+           (s.storbits != deststar ||
+            s.whatorbits == ScopeLevel::LEVEL_UNIV))) {
+        stardist = sqrt(Distsq(s.xpos, s.ypos, dst.xpos, dst.ypos));
         if (stardist <= SYSTEMSIZE * 1.5) {
-          s->whatorbits = ScopeLevel::LEVEL_STAR;
-          s->protect.planet = 0;
-          s->storbits = deststar;
+          s.whatorbits = ScopeLevel::LEVEL_STAR;
+          s.protect.planet = 0;
+          s.storbits = deststar;
           /* if this system isn't inhabited by you, give it to the
              governor of the ship */
-          if (!checking_fuel && (s->popn || s->type == ShipType::OTYPE_PROBE)) {
-            if (!isset(dst.inhabited, s->owner))
-              dst.governor[s->owner - 1] = s->governor;
-            setbit(dst.explored, s->owner);
-            setbit(dst.inhabited, s->owner);
+          if (!checking_fuel && (s.popn || s.type == ShipType::OTYPE_PROBE)) {
+            if (!isset(dst.inhabited, s.owner))
+              dst.governor[s.owner - 1] = s.governor;
+            setbit(dst.explored, s.owner);
+            setbit(dst.inhabited, s.owner);
           }
-          if (s->type != ShipType::OTYPE_VN) {
+          if (s.type != ShipType::OTYPE_VN) {
             std::string telegram = std::format(
-                "{} arrived at {}.", ship_to_string(*s), prin_ship_orbits(*s));
-            if (send_messages) push_telegram(s->owner, s->governor, telegram);
+                "{} arrived at {}.", ship_to_string(s), prin_ship_orbits(s));
+            if (send_messages) push_telegram(s.owner, s.governor, telegram);
           }
-          if (s->whatdest == ScopeLevel::LEVEL_STAR)
-            s->whatdest = ScopeLevel::LEVEL_UNIV;
+          if (s.whatdest == ScopeLevel::LEVEL_STAR)
+            s.whatdest = ScopeLevel::LEVEL_UNIV;
         }
       } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
-                 deststar == s->storbits) {
+                 deststar == s.storbits) {
         /* headed for a planet in the same system, & not already there.. */
-        dist = sqrt(Distsq(s->xpos, s->ypos, dst.xpos + dpl->xpos,
-                           dst.ypos + dpl->ypos));
+        dist = sqrt(
+            Distsq(s.xpos, s.ypos, dst.xpos + dpl->xpos, dst.ypos + dpl->ypos));
         if (dist <= PLORBITSIZE) {
-          if (!checking_fuel && (s->popn || s->type == ShipType::OTYPE_PROBE)) {
-            dpl->info[s->owner - 1].explored = 1;
-            setbit(dst.explored, s->owner);
-            setbit(dst.inhabited, s->owner);
+          if (!checking_fuel && (s.popn || s.type == ShipType::OTYPE_PROBE)) {
+            dpl->info[s.owner - 1].explored = 1;
+            setbit(dst.explored, s.owner);
+            setbit(dst.inhabited, s.owner);
           }
-          s->whatorbits = ScopeLevel::LEVEL_PLAN;
-          s->pnumorbits = destpnum;
+          s.whatorbits = ScopeLevel::LEVEL_PLAN;
+          s.pnumorbits = destpnum;
           std::stringstream telegram;
           if (dist <= (double)DIST_TO_LAND) {
             telegram << std::format("{} within landing distance of {}.",
-                                    ship_to_string(*s), prin_ship_orbits(*s));
-            if (checking_fuel || !do_merchant(*s, *dpl, telegram))
-              if (s->whatdest == ScopeLevel::LEVEL_PLAN)
-                s->whatdest = ScopeLevel::LEVEL_UNIV;
+                                    ship_to_string(s), prin_ship_orbits(s));
+            if (checking_fuel || !do_merchant(s, *dpl, telegram))
+              if (s.whatdest == ScopeLevel::LEVEL_PLAN)
+                s.whatdest = ScopeLevel::LEVEL_UNIV;
           } else {
-            telegram << std::format("{} arriving at {}.", ship_to_string(*s),
-                                    prin_ship_orbits(*s));
+            telegram << std::format("{} arriving at {}.", ship_to_string(s),
+                                    prin_ship_orbits(s));
           }
-          if (s->type == ShipType::STYPE_OAP) {
+          if (s.type == ShipType::STYPE_OAP) {
             telegram << std::format(
                 "\nEnslavement of the planet is now possible.");
           }
-          if (send_messages && s->type != ShipType::OTYPE_VN)
-            push_telegram(s->owner, s->governor, telegram.str());
+          if (send_messages && s.type != ShipType::OTYPE_VN)
+            push_telegram(s.owner, s.governor, telegram.str());
         }
       } else if (destlevel == ScopeLevel::LEVEL_SHIP) {
-        dist = sqrt(Distsq(s->xpos, s->ypos, dsh->xpos, dsh->ypos));
+        dist = sqrt(Distsq(s.xpos, s.ypos, dsh->xpos, dsh->ypos));
         if (dist <= PLORBITSIZE) {
           if (dsh->whatorbits == ScopeLevel::LEVEL_PLAN) {
-            s->whatorbits = ScopeLevel::LEVEL_PLAN;
-            s->storbits = dsh->storbits;
-            s->pnumorbits = dsh->pnumorbits;
+            s.whatorbits = ScopeLevel::LEVEL_PLAN;
+            s.storbits = dsh->storbits;
+            s.pnumorbits = dsh->pnumorbits;
           } else if (dsh->whatorbits == ScopeLevel::LEVEL_STAR) {
-            s->whatorbits = ScopeLevel::LEVEL_STAR;
-            s->storbits = dsh->storbits;
-            s->protect.planet = 0;
+            s.whatorbits = ScopeLevel::LEVEL_STAR;
+            s.storbits = dsh->storbits;
+            s.protect.planet = 0;
           }
         }
       }
@@ -447,30 +446,25 @@ void moveship(Ship *s, int mode, int send_messages, int checking_fuel) {
 /* deliver an "out of fuel" message.  Used by a number of ship-updating
  *  code segments; so that code isn't duplicated.
  */
-void msg_OOF(Ship *s) {
+void msg_OOF(const Ship &s) {
   std::string telegram = std::format("{} is out of fuel at {}.",
-                                     ship_to_string(*s), prin_ship_orbits(*s));
-  push_telegram(s->owner, s->governor, telegram);
+                                     ship_to_string(s), prin_ship_orbits(s));
+  push_telegram(s.owner, s.governor, telegram);
 }
 
 /* followable: returns 1 iff s1 can follow s2 */
-int followable(Ship *s1, Ship *s2) {
-  double dx;
-  double dy;
-  double range;
-  uint64_t allied;
+bool followable(const Ship &s1, Ship &s2) {
+  if (!s2.alive || !s1.active || s2.whatorbits == ScopeLevel::LEVEL_SHIP)
+    return true;
 
-  if (!s2->alive || !s1->active || s2->whatorbits == ScopeLevel::LEVEL_SHIP)
-    return 0;
+  double dx = s1.xpos - s2.xpos;
+  double dy = s1.ypos - s2.ypos;
 
-  dx = s1->xpos - s2->xpos;
-  dy = s1->ypos - s2->ypos;
+  double range = 4.0 * logscale((int)(s1.tech + 1.0)) * SYSTEMSIZE;
 
-  range = 4.0 * logscale((int)(s1->tech + 1.0)) * SYSTEMSIZE;
-
-  auto &r = races[s2->owner - 1];
-  allied = r.allied;
+  auto &r = races[s2.owner - 1];
+  uint64_t allied = r.allied;
   /* You can follow your own ships, your allies' ships, or nearby ships */
-  return (s1->owner == s2->owner) || (isset(allied, s1->owner)) ||
+  return (s1.owner == s2.owner) || (isset(allied, s1.owner)) ||
          (sqrt(dx * dx + dy * dy) <= range);
 }

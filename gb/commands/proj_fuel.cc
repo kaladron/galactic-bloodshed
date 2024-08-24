@@ -74,7 +74,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   }
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
     auto tmpship = getship(tmpdest.shipno);
-    if (!followable(&*ship, &*tmpship)) {
+    if (!followable(*ship, *tmpship)) {
       g.out << "The ship's destination is out of range.\n";
       return;
     }

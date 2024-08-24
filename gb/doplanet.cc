@@ -99,7 +99,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
               terraform(*ship, planet, smap);
             else if (!ship->notified) {
               ship->notified = 1;
-              msg_OOF(ship);
+              msg_OOF(*ship);
             }
           }
           break;
@@ -109,7 +109,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
               plow(ship, planet, smap);
             else if (!ship->notified) {
               ship->notified = 1;
-              msg_OOF(ship);
+              msg_OOF(*ship);
             }
           } else if (ship->on) {
             std::string buf = std::format("K{} is not landed.", ship->number);
@@ -165,7 +165,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
               do_quarry(ship, planet, smap);
             else if (!ship->notified) {
               ship->on = 0;
-              msg_OOF(ship);
+              msg_OOF(*ship);
             }
           } else {
             std::string buf;
@@ -686,7 +686,7 @@ static void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
       planet.conditions[TOXIC] += 1;
     if ((ship.fuel < (double)FUEL_COST_TERRA) && (!ship.notified)) {
       ship.notified = 1;
-      msg_OOF(&ship);
+      msg_OOF(ship);
     }
   }
 }
@@ -700,7 +700,7 @@ static void plow(Ship *ship, Planet &planet, SectorMap &smap) {
         ship->max_crew);
     if ((ship->fuel < (double)FUEL_COST_PLOW) && (!ship->notified)) {
       ship->notified = 1;
-      msg_OOF(ship);
+      msg_OOF(*ship);
       return;
     }
     s.fert = std::min(100u, s.fert + adjust);
@@ -737,7 +737,7 @@ static void do_quarry(Ship *ship, Planet &planet, SectorMap &smap) {
   auto &s = smap.get(ship->land_x, ship->land_y);
 
   if ((ship->fuel < (double)FUEL_COST_QUARRY)) {
-    if (!ship->notified) msg_OOF(ship);
+    if (!ship->notified) msg_OOF(*ship);
     ship->notified = 1;
     return;
   }

@@ -5,8 +5,8 @@
 #ifndef MOVESHIP_H
 #define MOVESHIP_H
 
-void moveship(Ship *, int, int, int);
-void msg_OOF(Ship *);
-int followable(Ship *, Ship *);
+void moveship(Ship &ship, int x, int y, int z);
+void msg_OOF(const Ship &ship);
+bool followable(const Ship &ship, Ship &target);
 
 #endif  // MOVESHIP_H

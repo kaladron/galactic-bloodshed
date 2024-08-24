@@ -15,19 +15,293 @@ import std.compat;
 
 #include "gb/buffers.h"
 
-static constexpr double ap_planet_factor(const Planet &);
-static double crew_factor(Ship &);
-static void do_ap(Ship &);
-static void do_canister(Ship &);
-static void do_greenhouse(Ship &);
-static void do_god(Ship &);
-static void do_habitat(Ship &);
-static void do_meta_infect(int, Planet &);
-static void do_mirror(Ship &);
-static void do_oap(Ship &);
-static void do_pod(Ship &);
-static void do_repair(Ship &);
-static int infect_planet(int, int, int);
+namespace {
+void do_repair(Ship &ship) {
+  int drep;
+  int cost;
+  double maxrep;
+
+  maxrep = REPAIR_RATE / (double)segments;
+  /* stations repair for free, and ships docked with them */
+  if (Shipdata[ship.type][ABIL_REPAIR] ||
+      (ship.docked && ship.whatdest == ScopeLevel::LEVEL_SHIP &&
+       ships[ship.destshipno]->type == ShipType::STYPE_STATION) ||
+      (ship.docked && ship.whatorbits == ScopeLevel::LEVEL_SHIP &&
+       ships[ship.destshipno]->type == ShipType::STYPE_STATION)) {
+    cost = 0;
+  } else {
+    maxrep *= (double)(ship.popn) / (double)ship.max_crew;
+    cost = (int)(0.005 * maxrep * shipcost(ship));
+  }
+  if (cost <= ship.resource) {
+    use_resource(ship, cost);
+    drep = (int)maxrep;
+    ship.damage = std::max(0, (int)(ship.damage) - drep);
+  } else {
+    /* use up all of the ships resources */
+    drep = (int)(maxrep * ((double)ship.resource / (int)cost));
+    use_resource(ship, ship.resource);
+    ship.damage = std::max(0, (int)(ship.damage) - drep);
+  }
+}
+
+void do_habitat(Ship &ship) {
+  int sh;
+  int add;
+  double fuse;
+
+  /* In v5.0+ Habitats make resources out of fuel */
+  if (ship.on) {
+    fuse = ship.fuel * ((double)ship.popn / (double)ship.max_crew) *
+           (1.0 - .01 * (double)ship.damage);
+    add = (int)fuse / 20;
+    if (ship.resource + add > ship.max_resource)
+      add = ship.max_resource - ship.resource;
+    fuse = 20.0 * (double)add;
+    rcv_resource(ship, add);
+    use_fuel(ship, fuse);
+
+    sh = ship.ships;
+    while (sh) {
+      if (ships[sh]->type == ShipType::OTYPE_WPLANT)
+        rcv_destruct(ship, do_weapon_plant(*ships[sh]));
+      sh = ships[sh]->nextship;
+    }
+  }
+  add = round_rand((double)ship.popn * races[ship.owner - 1].birthrate);
+  if (ship.popn + add > max_crew(ship)) add = max_crew(ship) - ship.popn;
+  rcv_popn(ship, add, races[ship.owner - 1].mass);
+}
+
+void do_meta_infect(int who, Planet &p) {
+  int owner;
+  int x;
+  int y;
+
+  auto smap = getsmap(p);
+  // TODO(jeffbailey): I'm pretty certain this bzero is unnecessary, but this is
+  // so far away from any other uses of Sectinfo that I'm having trouble proving
+  // it.
+  bzero((char *)Sectinfo, sizeof(Sectinfo));
+  x = int_rand(0, p.Maxx - 1);
+  y = int_rand(0, p.Maxy - 1);
+  owner = smap.get(x, y).owner;
+  if (!owner ||
+      (who != owner &&
+       (double)int_rand(1, 100) >
+           100.0 *
+               (1.0 - exp(-((double)(smap.get(x, y).troops *
+                                     races[owner - 1].fighters / 50.0)))))) {
+    p.info[who - 1].explored = 1;
+    p.info[who - 1].numsectsowned += 1;
+    smap.get(x, y).troops = 0;
+    smap.get(x, y).popn = races[who - 1].number_sexes;
+    smap.get(x, y).owner = who;
+    smap.get(x, y).condition = smap.get(x, y).type;
+    if (POD_TERRAFORM) {
+      smap.get(x, y).condition = races[who - 1].likesbest;
+    }
+    putsmap(smap, p);
+  }
+}
+
+int infect_planet(int who, int star, int p) {
+  if (success(SPORE_SUCCESS_RATE)) {
+    do_meta_infect(who, *planets[star][p]);
+    return 1;
+  }
+  return 0;
+}
+
+void do_pod(Ship &ship) {
+  int i;
+
+  if (ship.whatorbits == ScopeLevel::LEVEL_STAR) {
+    if (ship.special.pod.temperature >= POD_THRESHOLD) {
+      i = int_rand(0, stars[ship.storbits].numplanets - 1);
+      sprintf(telegram_buf, "%s has warmed and exploded at %s\n",
+              ship_to_string(ship).c_str(), prin_ship_orbits(ship).c_str());
+      if (infect_planet((int)ship.owner, (int)ship.storbits, i)) {
+        sprintf(buf, "\tmeta-colony established on %s.",
+                stars[ship.storbits].pnames[i]);
+      } else
+        sprintf(buf, "\tno spores have survived.");
+      strcat(telegram_buf, buf);
+      push_telegram((ship.owner), ship.governor, telegram_buf);
+      kill_ship(ship.owner, &ship);
+    } else
+      ship.special.pod.temperature += round_rand(
+          (double)stars[ship.storbits].temperature / (double)segments);
+  } else if (ship.whatorbits == ScopeLevel::LEVEL_PLAN) {
+    if (ship.special.pod.decay >= POD_DECAY) {
+      sprintf(telegram_buf, "%s has decayed at %s\n",
+              ship_to_string(ship).c_str(), prin_ship_orbits(ship).c_str());
+      push_telegram(ship.owner, ship.governor, telegram_buf);
+      kill_ship(ship.owner, &ship);
+    } else {
+      ship.special.pod.decay += round_rand(1.0 / (double)segments);
+    }
+  }
+}
+
+void do_canister(Ship &ship) {
+  if (ship.whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
+    if (++ship.special.timer.count < DISSIPATE) {
+      if (Stinfo[ship.storbits][ship.pnumorbits].temp_add < -90)
+        Stinfo[ship.storbits][ship.pnumorbits].temp_add = -100;
+      else
+        Stinfo[ship.storbits][ship.pnumorbits].temp_add -= 10;
+    } else { /* timer expired; destroy canister */
+      int j = 0;
+      kill_ship(ship.owner, &ship);
+      sprintf(telegram_buf,
+              "Canister of dust previously covering %s has dissipated.\n",
+              prin_ship_orbits(ship).c_str());
+      for (j = 1; j <= Num_races; j++)
+        if (planets[ship.storbits][ship.pnumorbits]->info[j - 1].numsectsowned)
+          push_telegram(j, stars[ship.storbits].governor[j - 1], telegram_buf);
+    }
+  }
+}
+
+void do_greenhouse(Ship &ship) {
+  if (ship.whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
+    if (++ship.special.timer.count < DISSIPATE) {
+      if (Stinfo[ship.storbits][ship.pnumorbits].temp_add > 90)
+        Stinfo[ship.storbits][ship.pnumorbits].temp_add = 100;
+      else
+        Stinfo[ship.storbits][ship.pnumorbits].temp_add += 10;
+    } else { /* timer expired; destroy canister */
+      int j = 0;
+
+      kill_ship(ship.owner, &ship);
+      sprintf(telegram_buf, "Greenhouse gases at %s have dissipated.\n",
+              prin_ship_orbits(ship).c_str());
+      for (j = 1; j <= Num_races; j++)
+        if (planets[ship.storbits][ship.pnumorbits]->info[j - 1].numsectsowned)
+          push_telegram(j, stars[ship.storbits].governor[j - 1], telegram_buf);
+    }
+  }
+}
+
+void do_mirror(Ship &ship) {
+  switch (ship.special.aimed_at.level) {
+    case ScopeLevel::LEVEL_SHIP: /* ship aimed at is a legal ship now */
+      /* if in the same system */
+      if ((ship.whatorbits == ScopeLevel::LEVEL_STAR ||
+           ship.whatorbits == ScopeLevel::LEVEL_PLAN) &&
+          (ships[ship.special.aimed_at.shipno] != nullptr) &&
+          (ships[ship.special.aimed_at.shipno]->whatorbits ==
+               ScopeLevel::LEVEL_STAR ||
+           ships[ship.special.aimed_at.shipno]->whatorbits ==
+               ScopeLevel::LEVEL_PLAN) &&
+          ship.storbits == ships[ship.special.aimed_at.shipno]->storbits &&
+          ships[ship.special.aimed_at.shipno]->alive) {
+        Ship *s;
+        int i;
+        double range;
+        s = ships[ship.special.aimed_at.shipno];
+        range = sqrt(Distsq(ship.xpos, ship.ypos, s->xpos, s->ypos));
+        i = int_rand(0, round_rand((2. / ((double)(shipbody(*s)))) *
+                                   (double)(ship.special.aimed_at.intensity) /
+                                   (range / PLORBITSIZE + 1.0)));
+        sprintf(telegram_buf, "%s aimed at %s\n", ship_to_string(ship).c_str(),
+                ship_to_string(*s).c_str());
+        s->damage += i;
+        if (i) {
+          sprintf(buf, "%d%% damage done.\n", i);
+          strcat(telegram_buf, buf);
+        }
+        if (s->damage >= 100) {
+          sprintf(buf, "%s DESTROYED!!!\n", ship_to_string(*s).c_str());
+          strcat(telegram_buf, buf);
+          kill_ship(ship.owner, s);
+        }
+        push_telegram(s->owner, s->governor, telegram_buf);
+        push_telegram(ship.owner, ship.governor, telegram_buf);
+      }
+      break;
+    case ScopeLevel::LEVEL_PLAN: {
+      int i;
+      double range;
+      range = sqrt(Distsq(ship.xpos, ship.ypos,
+                          stars[ship.storbits].xpos +
+                              planets[ship.storbits][ship.pnumorbits]->xpos,
+                          stars[ship.storbits].ypos +
+                              planets[ship.storbits][ship.pnumorbits]->ypos));
+      if (range > PLORBITSIZE)
+        i = PLORBITSIZE * ship.special.aimed_at.intensity / range;
+      else
+        i = ship.special.aimed_at.intensity;
+
+      i = round_rand(.01 * (100.0 - (double)(ship.damage)) * (double)i);
+      Stinfo[ship.storbits][ship.special.aimed_at.pnum].temp_add += i;
+    } break;
+    case ScopeLevel::LEVEL_STAR: {
+      /* have to be in the same system as the star; otherwise
+         it's not too fair.. */
+      if (ship.special.aimed_at.snum > 0 &&
+          ship.special.aimed_at.snum < Sdata.numstars &&
+          ship.whatorbits > ScopeLevel::LEVEL_UNIV &&
+          ship.special.aimed_at.snum == ship.storbits)
+        stars[ship.special.aimed_at.snum].stability += random() & 01;
+    } break;
+    case ScopeLevel::LEVEL_UNIV:
+      break;
+  }
+}
+
+void do_god(Ship &ship) {
+  /* gods have infinite power.... heh heh heh */
+  if (races[ship.owner - 1].God) {
+    ship.fuel = max_fuel(ship);
+    ship.destruct = max_destruct(ship);
+    ship.resource = max_resource(ship);
+  }
+}
+
+constexpr double ap_planet_factor(const Planet &p) {
+  double x = p.Maxx * p.Maxy;
+  return (AP_FACTOR / (AP_FACTOR + x));
+}
+
+double crew_factor(const Ship &ship) {
+  int maxcrew = Shipdata[ship.type][ABIL_MAXCREW];
+
+  if (!maxcrew) return 0.0;
+  return ((double)ship.popn / (double)maxcrew);
+}
+
+void do_ap(Ship &ship) {
+  /* if landed on planet, change conditions to be like race */
+  if (landed(ship) && ship.on) {
+    int j;
+    int d;
+    // TODO(jeffbailey): Not obvious here how the modified planet is saved to
+    // disk
+    auto &p = planets[ship.storbits][ship.pnumorbits];
+    auto &race = races[ship.owner - 1];
+    if (ship.fuel >= 3.0) {
+      use_fuel(ship, 3.0);
+      for (j = RTEMP + 1; j <= OTHER; j++) {
+        d = round_rand(ap_planet_factor(*p) * crew_factor(ship) *
+                       (double)(race.conditions[j] - p->conditions[j]));
+        if (d) p->conditions[j] += d;
+      }
+    } else if (!ship.notified) {
+      ship.notified = 1;
+      ship.on = 0;
+      msg_OOF(ship);
+    }
+  }
+}
+
+void do_oap(Ship &ship) {
+  /* "indimidate" the planet below, for enslavement purposes. */
+  if (ship.whatorbits == ScopeLevel::LEVEL_PLAN)
+    Stinfo[ship.storbits][ship.pnumorbits].intimidated = 1;
+}
+}  // namespace
 
 void doship(Ship &ship, int update) {
   /*ship is active */
@@ -427,292 +701,6 @@ void doabm(Ship &ship) {
       sh2 = ships[sh2]->nextship;
     }
   }
-}
-
-static void do_repair(Ship &ship) {
-  int drep;
-  int cost;
-  double maxrep;
-
-  maxrep = REPAIR_RATE / (double)segments;
-  /* stations repair for free, and ships docked with them */
-  if (Shipdata[ship.type][ABIL_REPAIR] ||
-      (ship.docked && ship.whatdest == ScopeLevel::LEVEL_SHIP &&
-       ships[ship.destshipno]->type == ShipType::STYPE_STATION) ||
-      (ship.docked && ship.whatorbits == ScopeLevel::LEVEL_SHIP &&
-       ships[ship.destshipno]->type == ShipType::STYPE_STATION)) {
-    cost = 0;
-  } else {
-    maxrep *= (double)(ship.popn) / (double)ship.max_crew;
-    cost = (int)(0.005 * maxrep * shipcost(ship));
-  }
-  if (cost <= ship.resource) {
-    use_resource(ship, cost);
-    drep = (int)maxrep;
-    ship.damage = std::max(0, (int)(ship.damage) - drep);
-  } else {
-    /* use up all of the ships resources */
-    drep = (int)(maxrep * ((double)ship.resource / (int)cost));
-    use_resource(ship, ship.resource);
-    ship.damage = std::max(0, (int)(ship.damage) - drep);
-  }
-}
-
-static void do_habitat(Ship &ship) {
-  int sh;
-  int add;
-  double fuse;
-
-  /* In v5.0+ Habitats make resources out of fuel */
-  if (ship.on) {
-    fuse = ship.fuel * ((double)ship.popn / (double)ship.max_crew) *
-           (1.0 - .01 * (double)ship.damage);
-    add = (int)fuse / 20;
-    if (ship.resource + add > ship.max_resource)
-      add = ship.max_resource - ship.resource;
-    fuse = 20.0 * (double)add;
-    rcv_resource(ship, add);
-    use_fuel(ship, fuse);
-
-    sh = ship.ships;
-    while (sh) {
-      if (ships[sh]->type == ShipType::OTYPE_WPLANT)
-        rcv_destruct(ship, do_weapon_plant(*ships[sh]));
-      sh = ships[sh]->nextship;
-    }
-  }
-  add = round_rand((double)ship.popn * races[ship.owner - 1].birthrate);
-  if (ship.popn + add > max_crew(ship)) add = max_crew(ship) - ship.popn;
-  rcv_popn(ship, add, races[ship.owner - 1].mass);
-}
-
-static void do_pod(Ship &ship) {
-  int i;
-
-  if (ship.whatorbits == ScopeLevel::LEVEL_STAR) {
-    if (ship.special.pod.temperature >= POD_THRESHOLD) {
-      i = int_rand(0, stars[ship.storbits].numplanets - 1);
-      sprintf(telegram_buf, "%s has warmed and exploded at %s\n",
-              ship_to_string(ship).c_str(), prin_ship_orbits(ship).c_str());
-      if (infect_planet((int)ship.owner, (int)ship.storbits, i)) {
-        sprintf(buf, "\tmeta-colony established on %s.",
-                stars[ship.storbits].pnames[i]);
-      } else
-        sprintf(buf, "\tno spores have survived.");
-      strcat(telegram_buf, buf);
-      push_telegram((ship.owner), ship.governor, telegram_buf);
-      kill_ship(ship.owner, &ship);
-    } else
-      ship.special.pod.temperature += round_rand(
-          (double)stars[ship.storbits].temperature / (double)segments);
-  } else if (ship.whatorbits == ScopeLevel::LEVEL_PLAN) {
-    if (ship.special.pod.decay >= POD_DECAY) {
-      sprintf(telegram_buf, "%s has decayed at %s\n",
-              ship_to_string(ship).c_str(), prin_ship_orbits(ship).c_str());
-      push_telegram(ship.owner, ship.governor, telegram_buf);
-      kill_ship(ship.owner, &ship);
-    } else {
-      ship.special.pod.decay += round_rand(1.0 / (double)segments);
-    }
-  }
-}
-
-static int infect_planet(int who, int star, int p) {
-  if (success(SPORE_SUCCESS_RATE)) {
-    do_meta_infect(who, *planets[star][p]);
-    return 1;
-  }
-  return 0;
-}
-
-static void do_meta_infect(int who, Planet &p) {
-  int owner;
-  int x;
-  int y;
-
-  auto smap = getsmap(p);
-  // TODO(jeffbailey): I'm pretty certain this bzero is unnecessary, but this is
-  // so far away from any other uses of Sectinfo that I'm having trouble proving
-  // it.
-  bzero((char *)Sectinfo, sizeof(Sectinfo));
-  x = int_rand(0, p.Maxx - 1);
-  y = int_rand(0, p.Maxy - 1);
-  owner = smap.get(x, y).owner;
-  if (!owner ||
-      (who != owner &&
-       (double)int_rand(1, 100) >
-           100.0 *
-               (1.0 - exp(-((double)(smap.get(x, y).troops *
-                                     races[owner - 1].fighters / 50.0)))))) {
-    p.info[who - 1].explored = 1;
-    p.info[who - 1].numsectsowned += 1;
-    smap.get(x, y).troops = 0;
-    smap.get(x, y).popn = races[who - 1].number_sexes;
-    smap.get(x, y).owner = who;
-    smap.get(x, y).condition = smap.get(x, y).type;
-    if (POD_TERRAFORM) {
-      smap.get(x, y).condition = races[who - 1].likesbest;
-    }
-    putsmap(smap, p);
-  }
-}
-
-static void do_canister(Ship &ship) {
-  if (ship.whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
-    if (++ship.special.timer.count < DISSIPATE) {
-      if (Stinfo[ship.storbits][ship.pnumorbits].temp_add < -90)
-        Stinfo[ship.storbits][ship.pnumorbits].temp_add = -100;
-      else
-        Stinfo[ship.storbits][ship.pnumorbits].temp_add -= 10;
-    } else { /* timer expired; destroy canister */
-      int j = 0;
-      kill_ship(ship.owner, &ship);
-      sprintf(telegram_buf,
-              "Canister of dust previously covering %s has dissipated.\n",
-              prin_ship_orbits(ship).c_str());
-      for (j = 1; j <= Num_races; j++)
-        if (planets[ship.storbits][ship.pnumorbits]->info[j - 1].numsectsowned)
-          push_telegram(j, stars[ship.storbits].governor[j - 1], telegram_buf);
-    }
-  }
-}
-
-static void do_greenhouse(Ship &ship) {
-  if (ship.whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
-    if (++ship.special.timer.count < DISSIPATE) {
-      if (Stinfo[ship.storbits][ship.pnumorbits].temp_add > 90)
-        Stinfo[ship.storbits][ship.pnumorbits].temp_add = 100;
-      else
-        Stinfo[ship.storbits][ship.pnumorbits].temp_add += 10;
-    } else { /* timer expired; destroy canister */
-      int j = 0;
-
-      kill_ship(ship.owner, &ship);
-      sprintf(telegram_buf, "Greenhouse gases at %s have dissipated.\n",
-              prin_ship_orbits(ship).c_str());
-      for (j = 1; j <= Num_races; j++)
-        if (planets[ship.storbits][ship.pnumorbits]->info[j - 1].numsectsowned)
-          push_telegram(j, stars[ship.storbits].governor[j - 1], telegram_buf);
-    }
-  }
-}
-
-static void do_mirror(Ship &ship) {
-  switch (ship.special.aimed_at.level) {
-    case ScopeLevel::LEVEL_SHIP: /* ship aimed at is a legal ship now */
-      /* if in the same system */
-      if ((ship.whatorbits == ScopeLevel::LEVEL_STAR ||
-           ship.whatorbits == ScopeLevel::LEVEL_PLAN) &&
-          (ships[ship.special.aimed_at.shipno] != nullptr) &&
-          (ships[ship.special.aimed_at.shipno]->whatorbits ==
-               ScopeLevel::LEVEL_STAR ||
-           ships[ship.special.aimed_at.shipno]->whatorbits ==
-               ScopeLevel::LEVEL_PLAN) &&
-          ship.storbits == ships[ship.special.aimed_at.shipno]->storbits &&
-          ships[ship.special.aimed_at.shipno]->alive) {
-        Ship *s;
-        int i;
-        double range;
-        s = ships[ship.special.aimed_at.shipno];
-        range = sqrt(Distsq(ship.xpos, ship.ypos, s->xpos, s->ypos));
-        i = int_rand(0, round_rand((2. / ((double)(shipbody(*s)))) *
-                                   (double)(ship.special.aimed_at.intensity) /
-                                   (range / PLORBITSIZE + 1.0)));
-        sprintf(telegram_buf, "%s aimed at %s\n", ship_to_string(ship).c_str(),
-                ship_to_string(*s).c_str());
-        s->damage += i;
-        if (i) {
-          sprintf(buf, "%d%% damage done.\n", i);
-          strcat(telegram_buf, buf);
-        }
-        if (s->damage >= 100) {
-          sprintf(buf, "%s DESTROYED!!!\n", ship_to_string(*s).c_str());
-          strcat(telegram_buf, buf);
-          kill_ship(ship.owner, s);
-        }
-        push_telegram(s->owner, s->governor, telegram_buf);
-        push_telegram(ship.owner, ship.governor, telegram_buf);
-      }
-      break;
-    case ScopeLevel::LEVEL_PLAN: {
-      int i;
-      double range;
-      range = sqrt(Distsq(ship.xpos, ship.ypos,
-                          stars[ship.storbits].xpos +
-                              planets[ship.storbits][ship.pnumorbits]->xpos,
-                          stars[ship.storbits].ypos +
-                              planets[ship.storbits][ship.pnumorbits]->ypos));
-      if (range > PLORBITSIZE)
-        i = PLORBITSIZE * ship.special.aimed_at.intensity / range;
-      else
-        i = ship.special.aimed_at.intensity;
-
-      i = round_rand(.01 * (100.0 - (double)(ship.damage)) * (double)i);
-      Stinfo[ship.storbits][ship.special.aimed_at.pnum].temp_add += i;
-    } break;
-    case ScopeLevel::LEVEL_STAR: {
-      /* have to be in the same system as the star; otherwise
-         it's not too fair.. */
-      if (ship.special.aimed_at.snum > 0 &&
-          ship.special.aimed_at.snum < Sdata.numstars &&
-          ship.whatorbits > ScopeLevel::LEVEL_UNIV &&
-          ship.special.aimed_at.snum == ship.storbits)
-        stars[ship.special.aimed_at.snum].stability += random() & 01;
-    } break;
-    case ScopeLevel::LEVEL_UNIV:
-      break;
-  }
-}
-
-static void do_god(Ship &ship) {
-  /* gods have infinite power.... heh heh heh */
-  if (races[ship.owner - 1].God) {
-    ship.fuel = max_fuel(ship);
-    ship.destruct = max_destruct(ship);
-    ship.resource = max_resource(ship);
-  }
-}
-
-static void do_ap(Ship &ship) {
-  /* if landed on planet, change conditions to be like race */
-  if (landed(ship) && ship.on) {
-    int j;
-    int d;
-    // TODO(jeffbailey): Not obvious here how the modified planet is saved to
-    // disk
-    auto &p = planets[ship.storbits][ship.pnumorbits];
-    auto &race = races[ship.owner - 1];
-    if (ship.fuel >= 3.0) {
-      use_fuel(ship, 3.0);
-      for (j = RTEMP + 1; j <= OTHER; j++) {
-        d = round_rand(ap_planet_factor(*p) * crew_factor(ship) *
-                       (double)(race.conditions[j] - p->conditions[j]));
-        if (d) p->conditions[j] += d;
-      }
-    } else if (!ship.notified) {
-      ship.notified = 1;
-      ship.on = 0;
-      msg_OOF(ship);
-    }
-  }
-}
-
-static double crew_factor(Ship &ship) {
-  int maxcrew;
-
-  if (!(maxcrew = Shipdata[ship.type][ABIL_MAXCREW])) return 0.0;
-  return ((double)ship.popn / (double)maxcrew);
-}
-
-static constexpr double ap_planet_factor(const Planet &p) {
-  double x = p.Maxx * p.Maxy;
-  return (AP_FACTOR / (AP_FACTOR + x));
-}
-
-static void do_oap(Ship &ship) {
-  /* "indimidate" the planet below, for enslavement purposes. */
-  if (ship.whatorbits == ScopeLevel::LEVEL_PLAN)
-    Stinfo[ship.storbits][ship.pnumorbits].intimidated = 1;
 }
 
 int do_weapon_plant(Ship &ship) {

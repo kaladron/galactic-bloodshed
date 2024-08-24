@@ -158,7 +158,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
       "\n  ----- ===== FUEL ESTIMATES ===== ----\n\nAt Current Fuel "
       "Cargo ({:.2f}f):\n",
       tmpship->fuel);
-  domass(&*tmpship);
+  domass(*tmpship);
   if (!current_settings) {
     g.out << "The ship will not be able to complete the trip.\n";
   } else {
@@ -170,7 +170,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     g.out << std::format("The ship will not be able to complete the trip.\n");
   } else {
     tmpship->fuel = fuel_usage;
-    domass(&*tmpship);
+    domass(*tmpship);
     fuel_output(g, dist, fuel_usage, gravity_factor, tmpship->mass,
                 number_segments, plan_buf);
   }

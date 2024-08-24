@@ -5,12 +5,12 @@
 #ifndef DOSHIP_H
 #define DOSHIP_H
 
-void doship(Ship *, int);
-void domass(Ship *);
-void doown(Ship *);
-void domissile(Ship *);
+void doship(Ship &, int);
+void domass(Ship &);
+void doown(Ship &);
+void domissile(Ship &);
 void domine(int, int);
-void doabm(Ship *);
-int do_weapon_plant(Ship *);
+void doabm(Ship &);
+int do_weapon_plant(Ship &);
 
 #endif  // DOSHIP_H

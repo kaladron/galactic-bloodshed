@@ -6,7 +6,7 @@
  *	also deducts fuel from the ship's stores. */
 
 import gblib;
-import std.compat;
+import std;
 
 #include "gb/moveship.h"
 
@@ -159,13 +159,13 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
   if (s.hyper_drive.has && s.hyper_drive.on) { /* do a hyperspace jump */
     if (!mode) return; /* we're not ready to jump until the update */
     if (s.hyper_drive.ready) {
-      dist = sqrt(Distsq(s.xpos, s.ypos, stars[s.deststar].xpos,
-                         stars[s.deststar].ypos));
+      dist = std::sqrt(Distsq(s.xpos, s.ypos, stars[s.deststar].xpos,
+                              stars[s.deststar].ypos));
       distfac = HYPER_DIST_FACTOR * (s.tech + 100.0);
       if (s.mounted && dist > distfac)
-        fuse = HYPER_DRIVE_FUEL_USE * sqrt(s.mass) * (dist / distfac);
+        fuse = HYPER_DRIVE_FUEL_USE * std::sqrt(s.mass) * (dist / distfac);
       else
-        fuse = HYPER_DRIVE_FUEL_USE * sqrt(s.mass) * (dist / distfac) *
+        fuse = HYPER_DRIVE_FUEL_USE * std::sqrt(s.mass) * (dist / distfac) *
                (dist / distfac);
 
       if (s.fuel < fuse) {
@@ -177,10 +177,10 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
         return;
       }
       use_fuel(s, fuse);
-      heading = atan2(stars[s.deststar].xpos - s.xpos,
-                      stars[s.deststar].ypos - s.ypos);
-      sn = sin(heading);
-      cs = cos(heading);
+      heading = std::atan2(stars[s.deststar].xpos - s.xpos,
+                           stars[s.deststar].ypos - s.ypos);
+      sn = std::sin(heading);
+      cs = std::cos(heading);
       s.xpos = stars[s.deststar].xpos - sn * 0.9 * SYSTEMSIZE;
       s.ypos = stars[s.deststar].ypos - cs * 0.9 * SYSTEMSIZE;
       s.whatorbits = ScopeLevel::LEVEL_STAR;
@@ -225,8 +225,8 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
                 SpeedConsts[s.speed] * MoveConsts[s.whatorbits] /
                 (double)segments;
       use_fuel(s, (double)fuse);
-      sn = sin(heading);
-      cs = cos(heading);
+      sn = std::sin(heading);
+      cs = std::cos(heading);
       xdest = sn * mfactor;
       ydest = -cs * mfactor;
       s.xpos += xdest;
@@ -237,14 +237,14 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
       auto &ost = stars[s.storbits];
       const auto &opl = planets[s.storbits][s.pnumorbits];
       if (s.whatorbits == ScopeLevel::LEVEL_PLAN) {
-        dist = sqrt(
+        dist = std::sqrt(
             Distsq(s.xpos, s.ypos, ost.xpos + opl->xpos, ost.ypos + opl->ypos));
         if (dist > PLORBITSIZE) {
           s.whatorbits = ScopeLevel::LEVEL_STAR;
           s.protect.planet = 0;
         }
       } else if (s.whatorbits == ScopeLevel::LEVEL_STAR) {
-        dist = sqrt(Distsq(s.xpos, s.ypos, ost.xpos, ost.ypos));
+        dist = std::sqrt(Distsq(s.xpos, s.ypos, ost.xpos, ost.ypos));
         if (dist > SYSTEMSIZE) {
           s.whatorbits = ScopeLevel::LEVEL_UNIV;
           s.protect.evade = 0;
@@ -275,7 +275,7 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
             // TODO(jeffbailey): Prove that this is impossible.
             break;
         }
-        /*			if (sqrt( (double)Distsq(s.xpos, s.ypos,
+        /*			if (std::sqrt( (double)Distsq(s.xpos, s.ypos,
            xdest,
            ydest))
                    <= DIST_TO_LAND || !(dsh->alive)) {
@@ -299,20 +299,20 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
         destpnum = s.destpnum;
         xdest = stars[deststar].xpos + planets[deststar][destpnum]->xpos;
         ydest = stars[deststar].ypos + planets[deststar][destpnum]->ypos;
-        if (sqrt(Distsq(s.xpos, s.ypos, xdest, ydest)) <= DIST_TO_LAND)
+        if (std::sqrt(Distsq(s.xpos, s.ypos, xdest, ydest)) <= DIST_TO_LAND)
           destlevel = ScopeLevel::LEVEL_UNIV;
       }
       auto &dst = stars[deststar];
       auto &ost = stars[s.storbits];
       const auto &dpl = planets[deststar][destpnum];
       const auto &opl = planets[s.storbits][s.pnumorbits];
-      truedist = movedist = sqrt(Distsq(s.xpos, s.ypos, xdest, ydest));
+      truedist = movedist = std::sqrt(Distsq(s.xpos, s.ypos, xdest, ydest));
       /* Save some unneccesary calculation and domain errors for atan2
             Maarten */
       if (truedist < DIST_TO_LAND && s.whatorbits == destlevel &&
           s.storbits == deststar && s.pnumorbits == destpnum)
         return;
-      heading = atan2((double)(xdest - s.xpos), (double)(-ydest + s.ypos));
+      heading = std::atan2((double)(xdest - s.xpos), (double)(-ydest + s.ypos));
       mfactor = SHIP_MOVE_SCALE * (1. - .01 * (double)s.rad) *
                 (1. - .01 * (double)s.damage) * SpeedConsts[s.speed] *
                 MoveConsts[s.whatorbits] / (double)segments;
@@ -339,11 +339,11 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
       if (truedist > DIST_TO_LAND) {
         use_fuel(s, (double)fuse);
         /* dont overshoot */
-        sn = sin(heading);
-        cs = cos(heading);
+        sn = std::sin(heading);
+        cs = std::cos(heading);
         xdest = sn * mfactor;
         ydest = -cs * mfactor;
-        if (hypot(xdest, ydest) > movedist) {
+        if (std::hypot(xdest, ydest) > movedist) {
           xdest = sn * movedist;
           ydest = -cs * movedist;
         }
@@ -353,14 +353,14 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
       /***** check if far enough away from object it's orbiting to break orbit
        * *****/
       if (s.whatorbits == ScopeLevel::LEVEL_PLAN) {
-        dist = sqrt(
+        dist = std::sqrt(
             Distsq(s.xpos, s.ypos, ost.xpos + opl->xpos, ost.ypos + opl->ypos));
         if (dist > PLORBITSIZE) {
           s.whatorbits = ScopeLevel::LEVEL_STAR;
           s.protect.planet = 0;
         }
       } else if (s.whatorbits == ScopeLevel::LEVEL_STAR) {
-        dist = sqrt(Distsq(s.xpos, s.ypos, ost.xpos, ost.ypos));
+        dist = std::sqrt(Distsq(s.xpos, s.ypos, ost.xpos, ost.ypos));
         if (dist > SYSTEMSIZE) {
           s.whatorbits = ScopeLevel::LEVEL_UNIV;
           s.protect.evade = 0;
@@ -373,7 +373,7 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
           (destlevel == ScopeLevel::LEVEL_PLAN &&
            (s.storbits != deststar ||
             s.whatorbits == ScopeLevel::LEVEL_UNIV))) {
-        stardist = sqrt(Distsq(s.xpos, s.ypos, dst.xpos, dst.ypos));
+        stardist = std::sqrt(Distsq(s.xpos, s.ypos, dst.xpos, dst.ypos));
         if (stardist <= SYSTEMSIZE * 1.5) {
           s.whatorbits = ScopeLevel::LEVEL_STAR;
           s.protect.planet = 0;
@@ -397,7 +397,7 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
       } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
                  deststar == s.storbits) {
         /* headed for a planet in the same system, & not already there.. */
-        dist = sqrt(
+        dist = std::sqrt(
             Distsq(s.xpos, s.ypos, dst.xpos + dpl->xpos, dst.ypos + dpl->ypos));
         if (dist <= PLORBITSIZE) {
           if (!checking_fuel && (s.popn || s.type == ShipType::OTYPE_PROBE)) {
@@ -426,7 +426,7 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
             push_telegram(s.owner, s.governor, telegram.str());
         }
       } else if (destlevel == ScopeLevel::LEVEL_SHIP) {
-        dist = sqrt(Distsq(s.xpos, s.ypos, dsh->xpos, dsh->ypos));
+        dist = std::sqrt(Distsq(s.xpos, s.ypos, dsh->xpos, dsh->ypos));
         if (dist <= PLORBITSIZE) {
           if (dsh->whatorbits == ScopeLevel::LEVEL_PLAN) {
             s.whatorbits = ScopeLevel::LEVEL_PLAN;
@@ -463,8 +463,8 @@ bool followable(const Ship &s1, Ship &s2) {
   double range = 4.0 * logscale((int)(s1.tech + 1.0)) * SYSTEMSIZE;
 
   auto &r = races[s2.owner - 1];
-  uint64_t allied = r.allied;
+  auto allied = r.allied;
   /* You can follow your own ships, your allies' ships, or nearby ships */
   return (s1.owner == s2.owner) || (isset(allied, s1.owner)) ||
-         (sqrt(dx * dx + dy * dy) <= range);
+         (std::sqrt(dx * dx + dy * dy) <= range);
 }

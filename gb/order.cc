@@ -168,7 +168,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       if (!where.err) {
         if (where.level == ScopeLevel::LEVEL_SHIP) {
           auto tmpship = getship(where.shipno);
-          if (!followable(ship, &*tmpship)) {
+          if (!followable(*ship, *tmpship)) {
             g.out << "Warning: that ship is out of range.\n";
             return;
           }

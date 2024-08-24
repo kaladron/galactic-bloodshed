@@ -105,7 +105,7 @@ std::tuple<bool, segments_t> do_trip(const Place &tmpdest, Ship &tmpship,
   while (!trip_resolved) {
     domass(&tmpship);
     double fuel_level1 = tmpship.fuel;
-    moveship(&tmpship, (effective_segment_number == segments), 0, 1);
+    moveship(tmpship, (effective_segment_number == segments), 0, 1);
     number_segments++;
     effective_segment_number++;
     if (effective_segment_number == (segments + 1))

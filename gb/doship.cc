@@ -75,7 +75,7 @@ void doship(Ship *ship, int update) {
       ship->tech = race.tech;
     }
 
-    if (ship->active) moveship(ship, update, 1, 0);
+    if (ship->active) moveship(*ship, update, 1, 0);
 
     ship->size = ship_size(*ship); /* for debugging */
 
@@ -702,7 +702,7 @@ static void do_ap(Ship *ship) {
     } else if (!ship->notified) {
       ship->notified = 1;
       ship->on = 0;
-      msg_OOF(ship);
+      msg_OOF(*ship);
     }
   }
 }

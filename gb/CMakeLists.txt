@@ -215,7 +215,6 @@ set(OLD_LIBGBLIB_FILES
     map.cc
     move.cc
     moveplanet.cc
-    moveship.cc
     order.cc
     prof.cc)
 

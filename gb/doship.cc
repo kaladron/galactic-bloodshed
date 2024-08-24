@@ -17,29 +17,29 @@ import std.compat;
 
 namespace {
 void do_repair(Ship &ship) {
-  int drep;
-  int cost;
-  double maxrep;
+  double maxrep = REPAIR_RATE / (double)segments;
 
-  maxrep = REPAIR_RATE / (double)segments;
   /* stations repair for free, and ships docked with them */
-  if (Shipdata[ship.type][ABIL_REPAIR] ||
-      (ship.docked && ship.whatdest == ScopeLevel::LEVEL_SHIP &&
-       ships[ship.destshipno]->type == ShipType::STYPE_STATION) ||
-      (ship.docked && ship.whatorbits == ScopeLevel::LEVEL_SHIP &&
-       ships[ship.destshipno]->type == ShipType::STYPE_STATION)) {
-    cost = 0;
-  } else {
-    maxrep *= (double)(ship.popn) / (double)ship.max_crew;
-    cost = (int)(0.005 * maxrep * shipcost(ship));
-  }
+  int cost = [&ship, &maxrep]() {
+    if (Shipdata[ship.type][ABIL_REPAIR] ||
+        (ship.docked && ship.whatdest == ScopeLevel::LEVEL_SHIP &&
+         ships[ship.destshipno]->type == ShipType::STYPE_STATION) ||
+        (ship.docked && ship.whatorbits == ScopeLevel::LEVEL_SHIP &&
+         ships[ship.destshipno]->type == ShipType::STYPE_STATION)) {
+      return 0;
+    } else {
+      maxrep *= (double)(ship.popn) / (double)ship.max_crew;
+      return (int)(0.005 * maxrep * shipcost(ship));
+    }
+  }();
+
   if (cost <= ship.resource) {
     use_resource(ship, cost);
-    drep = (int)maxrep;
+    int drep = (int)maxrep;
     ship.damage = std::max(0, (int)(ship.damage) - drep);
   } else {
     /* use up all of the ships resources */
-    drep = (int)(maxrep * ((double)ship.resource / (int)cost));
+    int drep = (int)(maxrep * ((double)ship.resource / (int)cost));
     use_resource(ship, ship.resource);
     ship.damage = std::max(0, (int)(ship.damage) - drep);
   }

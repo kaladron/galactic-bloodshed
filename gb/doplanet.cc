@@ -141,7 +141,7 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
           if (landed(*ship))
             if (ship->resource >= RES_COST_WPLANT &&
                 ship->fuel >= FUEL_COST_WPLANT)
-              prod_destruct[ship->owner - 1] += do_weapon_plant(ship);
+              prod_destruct[ship->owner - 1] += do_weapon_plant(*ship);
             else {
               if (ship->resource < RES_COST_WPLANT) {
                 std::string buf = std::format(

@@ -63,10 +63,10 @@ export constexpr double PLORBITSIZE = 50;
 /* amount to move for each dir level. I arrived on these #'s only after
         hours of dilligent tweaking */
 // amount to move for each directory level
-export constexpr double MoveConsts[] = {600.0, 300.0, 50.0};
+export constexpr std::array<double, 3> MoveConsts = {600.0, 300.0, 50.0};
 // amnt to move for each ship speed level (ordered)
-export constexpr double SpeedConsts[] = {0.0,  0.61, 1.26, 1.50, 1.73,
-                                         1.81, 1.90, 1.93, 1.96, 1.97};
+export constexpr std::array<double, 10> SpeedConsts = {
+    0.0, 0.61, 1.26, 1.50, 1.73, 1.81, 1.90, 1.93, 1.96, 1.97};
 // amount of fuel it costs to move at speed level
 
 export constexpr char HYPER_DRIVE_READY_CHARGE = 1;
@@ -93,3 +93,85 @@ export constexpr double FUEL_USE = 0.02; /* fuel use per ship mass pt. per speed
                                             factor */
 export constexpr double HABITAT_PROD_RATE = 0.05;
 export constexpr double HABITAT_POP_RATE = 0.20;
+
+export constexpr double MASS_FUEL = 0.05;
+export constexpr double MASS_RESOURCE = 0.1;
+export constexpr double MASS_DESTRUCT = 0.15;
+export constexpr double MASS_ARMOR = 1.0;
+export constexpr double MASS_SIZE = 0.2;
+export constexpr double MASS_HANGER = 0.1;
+export constexpr double MASS_GUNS = 0.2;
+
+export constexpr double SIZE_GUNS = 0.1;
+export constexpr double SIZE_CREW = 0.01;
+export constexpr double SIZE_RESOURCE = 0.02;
+export constexpr double SIZE_FUEL = 0.01;
+export constexpr double SIZE_DESTRUCT = 0.02;
+export constexpr double SIZE_HANGER = 0.1;
+
+// Constants for Factory mass and size
+export constexpr double HAB_FACT_SIZE = 0.2;
+
+// Cost factors for factory activation cost
+export constexpr int HAB_FACT_ON_COST = 4;
+export constexpr int PLAN_FACT_ON_COST = 2;
+
+export constexpr double SECTOR_DAMAGE = 0.3;
+export constexpr double SHIP_DAMAGE = 2.0;
+
+export constexpr double VN_RES_TAKE =
+    0.5;  // amt of resource of a sector the VN's take
+
+export constexpr double REPAIR_RATE = 25.0;  // rate at which ships get repaired
+export constexpr int SECTOR_REPAIR_COST =
+    10;  // how much it costs to remove a wasted status from a sector
+export constexpr int NATURAL_REPAIR =
+    5;  // chance of the wasted status being removed/update
+
+export constexpr double CREAT_UNIV_ITERAT = 10;  // iterations for star movement
+
+export constexpr double GRAV_FACTOR =
+    0.0025;  // not sure as to what this should be
+
+export constexpr int FACTOR_FERT_SUPPORT =
+    1;                                    // # of people/fert pt sector supports
+export constexpr double EFF_PROD = 0.20;  // production of effcncy/pop
+export constexpr double RESOURCE_PRODUCTION =
+    0.00008;  // adjust these to change prod
+export constexpr double FUEL_PRODUCTION = 0.00008;
+
+export constexpr double DEST_PRODUCTION = 0.00008;
+export constexpr double POPN_PROD = 0.3;
+
+export constexpr double MOB_COST = 0.00;  // mobiliz.c, planet.c cost/mob points
+export constexpr double RESOURCE_DEPLETION = 0.0;
+export constexpr double FACTOR_MOBPROD =
+    0.06;  // mobilization production/person
+export constexpr double MESO_POP_SCALE = 20000.0;
+
+export constexpr double FUEL_COST_TERRA = 3.0;   // cost to terraform
+export constexpr double FUEL_COST_QUARRY = 2.0;  // cost to mine resources
+export constexpr double FUEL_COST_PLOW = 2.0;
+export constexpr int RES_COST_DOME = 1;
+export constexpr int RES_COST_WPLANT = 1;
+export constexpr double FUEL_COST_WPLANT = 1.0;
+
+export constexpr int ENLIST_TROOP_COST = 5;  // money it costs to pay a trooper
+export constexpr int UPDATE_TROOP_COST = 1;
+
+export constexpr int PLAN_FIRE_LIM = 20;  // max fire strength from planets
+
+export constexpr int TECH_SEE_STABILITY = 15;  // min tech to see star stability
+
+export constexpr int TECH_EXPLORE = 10;  // min tech to see your whole planet
+
+// min tox to damage planet
+export constexpr int ENVIR_DAMAGE_TOX = 70;
+
+export constexpr double PLANETGRAVCONST = 0.05;
+export constexpr double SYSTEMGRAVCONST = 150000.0;
+
+/* description: you could when you just entered planet scope assaault/dock
+   with a ship in close orbit, and then immediately land. */
+export constexpr double FACTOR_DAMAGE = 2.0;
+export constexpr double FACTOR_DESTPLANET = 0.35;

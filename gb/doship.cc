@@ -11,8 +11,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include <cstdlib>
-
 #include "gb/buffers.h"
 
 namespace {
@@ -46,29 +44,26 @@ void do_repair(Ship &ship) {
 }
 
 void do_habitat(Ship &ship) {
-  int sh;
-  int add;
-  double fuse;
-
   /* In v5.0+ Habitats make resources out of fuel */
   if (ship.on) {
-    fuse = ship.fuel * ((double)ship.popn / (double)ship.max_crew) *
-           (1.0 - .01 * (double)ship.damage);
-    add = (int)fuse / 20;
+    double fuse = ship.fuel * ((double)ship.popn / (double)ship.max_crew) *
+                  (1.0 - .01 * (double)ship.damage);
+    auto add = (int)fuse / 20;
     if (ship.resource + add > ship.max_resource)
       add = ship.max_resource - ship.resource;
     fuse = 20.0 * (double)add;
     rcv_resource(ship, add);
     use_fuel(ship, fuse);
 
-    sh = ship.ships;
+    auto sh = ship.ships;
     while (sh) {
       if (ships[sh]->type == ShipType::OTYPE_WPLANT)
         rcv_destruct(ship, do_weapon_plant(*ships[sh]));
       sh = ships[sh]->nextship;
     }
   }
-  add = round_rand((double)ship.popn * races[ship.owner - 1].birthrate);
+
+  auto add = round_rand((double)ship.popn * races[ship.owner - 1].birthrate);
   if (ship.popn + add > max_crew(ship)) add = max_crew(ship) - ship.popn;
   rcv_popn(ship, add, races[ship.owner - 1].mass);
 }
@@ -222,30 +217,33 @@ void do_mirror(Ship &ship) {
       }
       break;
     case ScopeLevel::LEVEL_PLAN: {
-      int i;
-      double range;
-      range = sqrt(Distsq(ship.xpos, ship.ypos,
-                          stars[ship.storbits].xpos +
-                              planets[ship.storbits][ship.pnumorbits]->xpos,
-                          stars[ship.storbits].ypos +
-                              planets[ship.storbits][ship.pnumorbits]->ypos));
-      if (range > PLORBITSIZE)
-        i = PLORBITSIZE * ship.special.aimed_at.intensity / range;
-      else
-        i = ship.special.aimed_at.intensity;
+      double range =
+          sqrt(Distsq(ship.xpos, ship.ypos,
+                      stars[ship.storbits].xpos +
+                          planets[ship.storbits][ship.pnumorbits]->xpos,
+                      stars[ship.storbits].ypos +
+                          planets[ship.storbits][ship.pnumorbits]->ypos));
+
+      int i = range > PLORBITSIZE
+                  ? PLORBITSIZE * ship.special.aimed_at.intensity / range
+                  : ship.special.aimed_at.intensity;
 
       i = round_rand(.01 * (100.0 - (double)(ship.damage)) * (double)i);
       Stinfo[ship.storbits][ship.special.aimed_at.pnum].temp_add += i;
     } break;
-    case ScopeLevel::LEVEL_STAR: {
+    case ScopeLevel::LEVEL_STAR:
       /* have to be in the same system as the star; otherwise
          it's not too fair.. */
       if (ship.special.aimed_at.snum > 0 &&
           ship.special.aimed_at.snum < Sdata.numstars &&
           ship.whatorbits > ScopeLevel::LEVEL_UNIV &&
-          ship.special.aimed_at.snum == ship.storbits)
-        stars[ship.special.aimed_at.snum].stability += random() & 01;
-    } break;
+          ship.special.aimed_at.snum == ship.storbits) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(0, 1);
+        stars[ship.special.aimed_at.snum].stability += dis(gen);
+      }
+      break;
     case ScopeLevel::LEVEL_UNIV:
       break;
   }

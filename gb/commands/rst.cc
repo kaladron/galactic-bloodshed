@@ -18,7 +18,10 @@ import std.compat;
 
 module commands;
 
-#define PLANET 1
+enum ReportType {
+  SHIP = 0,
+  PLANET = 1,
+};
 
 static const char Caliber[] = {' ', 'L', 'M', 'H'};
 static char shiplist[256];
@@ -28,7 +31,7 @@ static unsigned char Status, SHip, Stock, Report, Weapons, Factories, first;
 static bool Tactical;
 
 struct reportdata {
-  unsigned char type; /* ship or planet */
+  ReportType type; /* ship or planet */
   Ship s;
   Planet p;
   shipnum_t n;
@@ -524,7 +527,7 @@ static int Getrship(player_t Playernum, governor_t Governor, shipnum_t shipno) {
   auto shiptmp = getship(shipno);
   if (shiptmp) {
     rd[Num_ships].s = *shiptmp;
-    rd[Num_ships].type = 0;
+    rd[Num_ships].type = SHIP;
     rd[Num_ships].n = shipno;
     rd[Num_ships].x = rd[Num_ships].s.xpos;
     rd[Num_ships].y = rd[Num_ships].s.ypos;

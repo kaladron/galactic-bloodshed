@@ -110,36 +110,41 @@ int infect_planet(int who, int star, int p) {
 
 void do_pod(Ship &ship) {
   switch (ship.whatorbits) {
-    case ScopeLevel::LEVEL_STAR:
-      if (ship.special.pod.temperature >= POD_THRESHOLD) {
-        auto i = int_rand(0, stars[ship.storbits].numplanets - 1);
-        std::stringstream telegram_buf;
-        telegram_buf << std::format("{} has warmed and exploded at {}\n",
-                                    ship_to_string(ship),
-                                    prin_ship_orbits(ship));
-        if (infect_planet(ship.owner, ship.storbits, i)) {
-          telegram_buf << std::format("\tmeta-colony established on {}.",
-                                      stars[ship.storbits].pnames[i]);
-        } else {
-          telegram_buf << std::format("\tno spores have survived.");
-        }
-        push_telegram(ship.owner, ship.governor, telegram_buf.str());
-        kill_ship(ship.owner, &ship);
-      } else {
+    case ScopeLevel::LEVEL_STAR: {
+      if (ship.special.pod.temperature < POD_THRESHOLD) {
         ship.special.pod.temperature += round_rand(
             (double)stars[ship.storbits].temperature / (double)segments);
+        return;
       }
 
-    case ScopeLevel::LEVEL_PLAN:
-      if (ship.special.pod.decay >= POD_DECAY) {
-        std::string telegram =
-            std::format("{} has decayed at {}\n", ship_to_string(ship),
-                        prin_ship_orbits(ship));
-        push_telegram(ship.owner, ship.governor, telegram);
-        kill_ship(ship.owner, &ship);
+      auto i = int_rand(0, stars[ship.storbits].numplanets - 1);
+      std::stringstream telegram_buf;
+      telegram_buf << std::format("{} has warmed and exploded at {}\n",
+                                  ship_to_string(ship), prin_ship_orbits(ship));
+      if (infect_planet(ship.owner, ship.storbits, i)) {
+        telegram_buf << std::format("\tmeta-colony established on {}.",
+                                    stars[ship.storbits].pnames[i]);
       } else {
-        ship.special.pod.decay += round_rand(1.0 / (double)segments);
+        telegram_buf << std::format("\tno spores have survived.");
       }
+      push_telegram(ship.owner, ship.governor, telegram_buf.str());
+      kill_ship(ship.owner, &ship);
+      return;
+    }
+
+    case ScopeLevel::LEVEL_PLAN: {
+      if (ship.special.pod.decay < POD_DECAY) {
+        ship.special.pod.decay += round_rand(1.0 / (double)segments);
+        return;
+      }
+
+      std::string telegram =
+          std::format("{} has decayed at {}\n", ship_to_string(ship),
+                      prin_ship_orbits(ship));
+      push_telegram(ship.owner, ship.governor, telegram);
+      kill_ship(ship.owner, &ship);
+      return;
+    }
 
     default:
       // Doesn't apply at Universe or Ship

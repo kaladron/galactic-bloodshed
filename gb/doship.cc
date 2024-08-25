@@ -109,33 +109,41 @@ int infect_planet(int who, int star, int p) {
 }
 
 void do_pod(Ship &ship) {
-  int i;
+  switch (ship.whatorbits) {
+    case ScopeLevel::LEVEL_STAR:
+      if (ship.special.pod.temperature >= POD_THRESHOLD) {
+        auto i = int_rand(0, stars[ship.storbits].numplanets - 1);
+        std::stringstream telegram_buf;
+        telegram_buf << std::format("{} has warmed and exploded at {}\n",
+                                    ship_to_string(ship),
+                                    prin_ship_orbits(ship));
+        if (infect_planet(ship.owner, ship.storbits, i)) {
+          telegram_buf << std::format("\tmeta-colony established on {}.",
+                                      stars[ship.storbits].pnames[i]);
+        } else {
+          telegram_buf << std::format("\tno spores have survived.");
+        }
+        push_telegram(ship.owner, ship.governor, telegram_buf.str());
+        kill_ship(ship.owner, &ship);
+      } else {
+        ship.special.pod.temperature += round_rand(
+            (double)stars[ship.storbits].temperature / (double)segments);
+      }
 
-  if (ship.whatorbits == ScopeLevel::LEVEL_STAR) {
-    if (ship.special.pod.temperature >= POD_THRESHOLD) {
-      i = int_rand(0, stars[ship.storbits].numplanets - 1);
-      sprintf(telegram_buf, "%s has warmed and exploded at %s\n",
-              ship_to_string(ship).c_str(), prin_ship_orbits(ship).c_str());
-      if (infect_planet((int)ship.owner, (int)ship.storbits, i)) {
-        sprintf(buf, "\tmeta-colony established on %s.",
-                stars[ship.storbits].pnames[i]);
-      } else
-        sprintf(buf, "\tno spores have survived.");
-      strcat(telegram_buf, buf);
-      push_telegram((ship.owner), ship.governor, telegram_buf);
-      kill_ship(ship.owner, &ship);
-    } else
-      ship.special.pod.temperature += round_rand(
-          (double)stars[ship.storbits].temperature / (double)segments);
-  } else if (ship.whatorbits == ScopeLevel::LEVEL_PLAN) {
-    if (ship.special.pod.decay >= POD_DECAY) {
-      sprintf(telegram_buf, "%s has decayed at %s\n",
-              ship_to_string(ship).c_str(), prin_ship_orbits(ship).c_str());
-      push_telegram(ship.owner, ship.governor, telegram_buf);
-      kill_ship(ship.owner, &ship);
-    } else {
-      ship.special.pod.decay += round_rand(1.0 / (double)segments);
-    }
+    case ScopeLevel::LEVEL_PLAN:
+      if (ship.special.pod.decay >= POD_DECAY) {
+        std::string telegram =
+            std::format("{} has decayed at {}\n", ship_to_string(ship),
+                        prin_ship_orbits(ship));
+        push_telegram(ship.owner, ship.governor, telegram);
+        kill_ship(ship.owner, &ship);
+      } else {
+        ship.special.pod.decay += round_rand(1.0 / (double)segments);
+      }
+
+    default:
+      // Doesn't apply at Universe or Ship
+      return;
   }
 }
 
@@ -275,8 +283,8 @@ void do_ap(Ship &ship) {
   if (landed(ship) && ship.on) {
     int j;
     int d;
-    // TODO(jeffbailey): Not obvious here how the modified planet is saved to
-    // disk
+    // TODO(jeffbailey): Not obvious here how the modified planet is saved
+    // to disk
     auto &p = planets[ship.storbits][ship.pnumorbits];
     auto &race = races[ship.owner - 1];
     if (ship.fuel >= 3.0) {
@@ -360,7 +368,8 @@ void doship(Ship &ship, int update) {
       /* just making sure */
     } else if (ship.whatorbits != ScopeLevel::LEVEL_UNIV &&
                (ship.popn || ship.type == ShipType::OTYPE_PROBE)) {
-      /* Though I have often used TWCs for exploring, I don't think it is right
+      /* Though I have often used TWCs for exploring, I don't think it is
+       * right
        */
       /* to be able to map out worlds with this type of junk. Either a manned
        * ship, */
@@ -586,7 +595,8 @@ void domine(Ship &ship, int detonate) {
       return;
   }
 
-  // traverse the list, look for ships that are closer than the trigger radius.
+  // traverse the list, look for ships that are closer than the trigger
+  // radius.
   bool rad = false;
   if (!detonate) {
     auto &r = races[ship.owner - 1];

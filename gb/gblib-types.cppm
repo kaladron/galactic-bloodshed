@@ -51,6 +51,18 @@ export enum SectorType {
   SEC_WASTED = 8,
 };
 
+export enum PopulationType {
+  CIV = 0,
+  MIL = 1,
+};
+
+export enum CommodType {
+  RESOURCE = 0,
+  DESTRUCT = 1,
+  FUEL = 2,
+  CRYSTAL = 3,
+};
+
 export enum Conditions {
   RTEMP = 0,   /* regular temp for planet */
   TEMP = 1,    /* temperature */

@@ -4,6 +4,15 @@ export module gblib:tweakables;
 
 import :types;
 
+export constexpr int MAX_X = 45;  // top range for planet
+export constexpr int MAX_Y = 19;
+export constexpr double RATIOXY =
+    3.70;  // map ratio between x and y. ranges of map sizes (x usually )
+
+export constexpr int MAX_SECT_POPN = 32767;
+
+export constexpr int TOXMAX = 20;  // max a toxwc can hold
+
 export constexpr bool VICTORY = false;       // Use victory conditions
 export constexpr bool SHOW_COWARDS = false;  // Show number of invisible players
 export constexpr bool POD_TERRAFORM =
@@ -12,6 +21,9 @@ export constexpr bool VOTING = true;    // Allow player voting
 export constexpr bool DISSOLVE = true;  // Allow players to dissolve
 export constexpr bool DEFENSE = true;   // Allow planetary guns
 export constexpr bool MARKET = true;    // Enable the market
+
+export constexpr int VICTORY_PERCENT = 10;
+export constexpr int VICTORY_UPDATES = 5;
 
 // Shipping routes - DON'T change this unless you know what you are doing
 export constexpr int MAX_ROUTES = 4;
@@ -175,3 +187,49 @@ export constexpr double SYSTEMGRAVCONST = 150000.0;
    with a ship in close orbit, and then immediately land. */
 export constexpr double FACTOR_DAMAGE = 2.0;
 export constexpr double FACTOR_DESTPLANET = 0.35;
+
+export constexpr double MERCHANT_LENGTH = 200000.0;
+export constexpr double INCOME_FACTOR = 0.002;
+export constexpr int INSURG_FACTOR = 1;
+export constexpr double UP_BID = 0.10;
+
+export constexpr double GUN_COST = 1.00;
+export constexpr double CREW_COST = 0.05;
+export constexpr double CARGO_COST = 0.05;
+export constexpr double FUEL_COST = 0.05;
+export constexpr double AMMO_COST = 0.05;
+export constexpr double SPEED_COST = 0.50;
+export constexpr double CEW_COST = 0.003;
+export constexpr double ARMOR_COST = 3.50;
+export constexpr double HANGER_COST = 0.50;
+
+export constexpr double AFV_FUEL_COST = 1.0;
+
+export constexpr double MECH_ATTACK = 3.0;
+
+export constexpr double SPORE_SUCCESS_RATE = 25;
+
+export constexpr char CLIENT_CHAR = '|';
+
+export constexpr int VICT_SECT = 1000;
+export constexpr int VICT_SHIP = 333;
+export constexpr double VICT_TECH = .10;
+export constexpr int VICT_MORALE = 200;
+export constexpr int VICT_RES = 100;
+export constexpr int VICT_FUEL = 15;
+export constexpr int VICT_MONEY = 5;
+export constexpr int VICT_DIVISOR = 10000;
+
+export constexpr double STRIKE_DISTANCE_FACTOR = 5.5;
+export constexpr double COMPLEXITY_FACTOR =
+    10.0;  // determines steepness of design complexity function
+
+export constexpr char REPEAT_CHARACTER =
+    ' ';  // this character makes the previous command repeat
+export constexpr int POD_THRESHOLD = 18;
+export constexpr int POD_DECAY = 4;
+export constexpr double AP_FACTOR =
+    50.0;  // how planet size affects the rate of atmosphere processing
+export constexpr int DISSIPATE = 80;  // updates to dissipate dust and gases
+
+export constexpr int MOVE_FACTOR = 1;

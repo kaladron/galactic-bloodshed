@@ -128,6 +128,16 @@ bool isclr(const T target, const Unsigned auto pos)
   return !isset(target, pos);
 }
 
+export template <typename T, typename U>
+constexpr auto MIN(const T &x, const U &y) {
+  return (x < y) ? x : y;
+}
+
+export template <typename T, typename U>
+constexpr auto MAX(const T &x, const U &y) {
+  return (x > y) ? x : y;
+}
+
 export double tech_prod(const money_t investment, const population_t popn) {
   double scale = static_cast<double>(popn) / 10000.;
   return (TECH_INVEST *

@@ -5,11 +5,9 @@
 /* doship -- do one ship turn. */
 
 import gblib;
-import std.compat;
+import std;
 
 #include "gb/doship.h"
-
-#include <strings.h>
 
 #include "gb/buffers.h"
 
@@ -74,19 +72,19 @@ void do_meta_infect(int who, Planet &p) {
   int y;
 
   auto smap = getsmap(p);
-  // TODO(jeffbailey): I'm pretty certain this bzero is unnecessary, but this is
-  // so far away from any other uses of Sectinfo that I'm having trouble proving
-  // it.
-  bzero((char *)Sectinfo, sizeof(Sectinfo));
+  // TODO(jeffbailey): I'm pretty certain this memset is unnecessary, but this
+  // is so far away from any other uses of Sectinfo that I'm having trouble
+  // proving it.
+  std::memset(Sectinfo, 0, sizeof(Sectinfo));
   x = int_rand(0, p.Maxx - 1);
   y = int_rand(0, p.Maxy - 1);
   owner = smap.get(x, y).owner;
   if (!owner ||
       (who != owner &&
        (double)int_rand(1, 100) >
-           100.0 *
-               (1.0 - exp(-((double)(smap.get(x, y).troops *
-                                     races[owner - 1].fighters / 50.0)))))) {
+           100.0 * (1.0 -
+                    std::exp(-((double)(smap.get(x, y).troops *
+                                        races[owner - 1].fighters / 50.0)))))) {
     p.info[who - 1].explored = 1;
     p.info[who - 1].numsectsowned += 1;
     smap.get(x, y).troops = 0;
@@ -162,12 +160,14 @@ void do_canister(Ship &ship) {
     } else { /* timer expired; destroy canister */
       int j = 0;
       kill_ship(ship.owner, &ship);
-      sprintf(telegram_buf,
-              "Canister of dust previously covering %s has dissipated.\n",
-              prin_ship_orbits(ship).c_str());
+
+      std::string telegram = std::format(
+          "Canister of dust previously covering {} has dissipated.\n",
+          prin_ship_orbits(ship));
+
       for (j = 1; j <= Num_races; j++)
         if (planets[ship.storbits][ship.pnumorbits]->info[j - 1].numsectsowned)
-          push_telegram(j, stars[ship.storbits].governor[j - 1], telegram_buf);
+          push_telegram(j, stars[ship.storbits].governor[j - 1], telegram);
     }
   }
 }
@@ -183,11 +183,11 @@ void do_greenhouse(Ship &ship) {
       int j = 0;
 
       kill_ship(ship.owner, &ship);
-      sprintf(telegram_buf, "Greenhouse gases at %s have dissipated.\n",
-              prin_ship_orbits(ship).c_str());
+      std::string telegram = std::format(
+          "Greenhouse gases at {} have dissipated.\n", prin_ship_orbits(ship));
       for (j = 1; j <= Num_races; j++)
         if (planets[ship.storbits][ship.pnumorbits]->info[j - 1].numsectsowned)
-          push_telegram(j, stars[ship.storbits].governor[j - 1], telegram_buf);
+          push_telegram(j, stars[ship.storbits].governor[j - 1], telegram);
     }
   }
 }
@@ -209,33 +209,32 @@ void do_mirror(Ship &ship) {
         int i;
         double range;
         s = ships[ship.special.aimed_at.shipno];
-        range = sqrt(Distsq(ship.xpos, ship.ypos, s->xpos, s->ypos));
+        range = std::sqrt(Distsq(ship.xpos, ship.ypos, s->xpos, s->ypos));
         i = int_rand(0, round_rand((2. / ((double)(shipbody(*s)))) *
                                    (double)(ship.special.aimed_at.intensity) /
                                    (range / PLORBITSIZE + 1.0)));
-        sprintf(telegram_buf, "%s aimed at %s\n", ship_to_string(ship).c_str(),
-                ship_to_string(*s).c_str());
+        std::stringstream telegram_buf;
+        telegram_buf << std::format("{} aimed at {}\n", ship_to_string(ship),
+                                    ship_to_string(*s));
         s->damage += i;
         if (i) {
-          sprintf(buf, "%d%% damage done.\n", i);
-          strcat(telegram_buf, buf);
+          telegram_buf << std::format("{}% damage done.\n", i);
         }
         if (s->damage >= 100) {
-          sprintf(buf, "%s DESTROYED!!!\n", ship_to_string(*s).c_str());
-          strcat(telegram_buf, buf);
+          telegram_buf << std::format("{} DESTROYED!!!\n", ship_to_string(*s));
           kill_ship(ship.owner, s);
         }
-        push_telegram(s->owner, s->governor, telegram_buf);
-        push_telegram(ship.owner, ship.governor, telegram_buf);
+        push_telegram(s->owner, s->governor, telegram_buf.str());
+        push_telegram(ship.owner, ship.governor, telegram_buf.str());
       }
       break;
     case ScopeLevel::LEVEL_PLAN: {
       double range =
-          sqrt(Distsq(ship.xpos, ship.ypos,
-                      stars[ship.storbits].xpos +
-                          planets[ship.storbits][ship.pnumorbits]->xpos,
-                      stars[ship.storbits].ypos +
-                          planets[ship.storbits][ship.pnumorbits]->ypos));
+          std::sqrt(Distsq(ship.xpos, ship.ypos,
+                           stars[ship.storbits].xpos +
+                               planets[ship.storbits][ship.pnumorbits]->xpos,
+                           stars[ship.storbits].ypos +
+                               planets[ship.storbits][ship.pnumorbits]->ypos));
 
       int i = range > PLORBITSIZE
                   ? PLORBITSIZE * ship.special.aimed_at.intensity / range
@@ -537,33 +536,39 @@ void domissile(Ship &ship) {
         bombx = ship.special.impact.x % p->Maxx;
         bomby = ship.special.impact.y % p->Maxy;
       }
-      sprintf(buf, "%s dropped on sector %d,%d at planet %s.\n",
-              ship_to_string(ship).c_str(), bombx, bomby,
-              prin_ship_orbits(ship).c_str());
+
+      // TODO(jeffbailey): This doesn't actually notify anyone and should.
+      std::string bombdropmsg = std::format(
+          "{} dropped on sector {},{} at planet {}.\n", ship_to_string(ship),
+          bombx, bomby, prin_ship_orbits(ship));
 
       auto smap = getsmap(*p);
       numdest =
           shoot_ship_to_planet(&ship, *p, (int)ship.destruct, bombx, bomby,
                                smap, 0, GTYPE_HEAVY, long_buf, short_buf);
       putsmap(smap, *p);
-      push_telegram((int)ship.owner, (int)ship.governor, long_buf);
+      push_telegram(ship.owner, ship.governor, long_buf);
       kill_ship(ship.owner, &ship);
-      sprintf(buf, "%s dropped on %s.\n\t%d sectors destroyed.\n",
-              ship_to_string(ship).c_str(), prin_ship_orbits(ship).c_str(),
-              numdest);
-      for (i = 1; i <= Num_races; i++)
-        if (p->info[i - 1].numsectsowned && i != ship.owner)
-          push_telegram(i, stars[ship.storbits].governor[i - 1], buf);
+      std::string sectors_destroyed_msg =
+          std::format("{} dropped on {}.\n\t{} sectors destroyed.\n",
+                      ship_to_string(ship), prin_ship_orbits(ship), numdest);
+      for (i = 1; i <= Num_races; i++) {
+        if (p->info[i - 1].numsectsowned && i != ship.owner) {
+          push_telegram(i, stars[ship.storbits].governor[i - 1],
+                        sectors_destroyed_msg);
+        }
+      }
       if (numdest) {
-        sprintf(buf, "%s dropped on %s.\n", ship_to_string(ship).c_str(),
-                prin_ship_orbits(ship).c_str());
-        post(buf, NewsType::COMBAT);
+        std::string dropmsg =
+            std::format("{} dropped on {}.\n", ship_to_string(ship),
+                        prin_ship_orbits(ship));
+        post(dropmsg, NewsType::COMBAT);
       }
     }
   } else if (ship.whatdest == ScopeLevel::LEVEL_SHIP) {
     sh2 = ship.destshipno;
-    dist =
-        sqrt(Distsq(ship.xpos, ship.ypos, ships[sh2]->xpos, ships[sh2]->ypos));
+    dist = std::sqrt(
+        Distsq(ship.xpos, ship.ypos, ships[sh2]->xpos, ships[sh2]->ypos));
     if (dist <= ((double)ship.speed * STRIKE_DISTANCE_FACTOR *
                  (100.0 - (double)ship.damage) / 100.0)) {
       /* do the attack */
@@ -609,7 +614,7 @@ void domine(Ship &ship, int detonate) {
     for (auto s : shiplist) {
       double xd = s.xpos - ship.xpos;
       double yd = s.ypos - ship.ypos;
-      double range = sqrt(xd * xd + yd * yd);
+      double range = std::sqrt(xd * xd + yd * yd);
       if (!isset(r.allied, s.owner) && (s.owner != ship.owner) &&
           ((int)range <= ship.special.trigger.radius)) {
         rad = true;

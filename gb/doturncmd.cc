@@ -38,13 +38,13 @@ static void output_ground_attacks();
 void do_turn(Db &db, int update) {
   /* make all 0 for first iteration of doplanet */
   if (update) {
-    bzero((char *)starpopns, sizeof(starpopns));
-    bzero((char *)starnumships, sizeof(starnumships));
-    bzero((char *)Sdatanumships, sizeof(Sdatanumships));
-    bzero((char *)Stinfo, sizeof(Stinfo));
-    bzero((char *)StarsInhab, sizeof(StarsInhab));
-    bzero((char *)Power, sizeof(Power));
-    bzero((char *)inhabited, sizeof(inhabited));
+    std::memset(starpopns, 0, sizeof(starpopns));
+    std::memset(starnumships, 0, sizeof(starnumships));
+    std::memset(Sdatanumships, 0, sizeof(Sdatanumships));
+    std::memset(Stinfo, 0, sizeof(Stinfo));
+    std::memset(StarsInhab, 0, sizeof(StarsInhab));
+    std::memset(Power, 0, sizeof(Power));
+    std::memset(inhabited, 0, sizeof(inhabited));
   }
 
   Num_ships = Numships();

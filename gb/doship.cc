@@ -566,9 +566,6 @@ void domissile(Ship &ship) {
 }
 
 void domine(Ship &ship, int detonate) {
-  int i;
-  shipnum_t sh;
-
   if (ship.type != ShipType::STYPE_MINE || !ship.alive || !ship.owner) {
     return;
   }
@@ -578,10 +575,7 @@ void domine(Ship &ship, int detonate) {
     return;
   }
 
-  double xd;
-  double yd;
-  double range;
-
+  shipnum_t sh;
   switch (ship.whatorbits) {
     case ScopeLevel::LEVEL_STAR:
       sh = stars[ship.storbits].ships;
@@ -600,9 +594,9 @@ void domine(Ship &ship, int detonate) {
     auto &r = races[ship.owner - 1];
     Shiplist shiplist(sh);
     for (auto s : shiplist) {
-      xd = s.xpos - ship.xpos;
-      yd = s.ypos - ship.ypos;
-      range = sqrt(xd * xd + yd * yd);
+      double xd = s.xpos - ship.xpos;
+      double yd = s.ypos - ship.ypos;
+      double range = sqrt(xd * xd + yd * yd);
       if (!isset(r.allied, s.owner) && (s.owner != ship.owner) &&
           ((int)range <= ship.special.trigger.radius)) {
         rad = true;
@@ -663,7 +657,7 @@ void domine(Ship &ship, int detonate) {
       telegram << std::format(" - {} sectors destroyed.", numdest);
     }
     telegram << "\n";
-    for (i = 1; i <= Num_races; i++) {
+    for (auto i = 1; i <= Num_races; i++) {
       if (Nuked[i - 1]) {
         warn(i, stars[ship.storbits].governor[i - 1], telegram.str());
       }

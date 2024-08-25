@@ -587,8 +587,8 @@ void domine(Ship &ship, int detonate) {
     default:
       return;
   }
-  /* traverse the list, look for ships that
-     are closer than the trigger radius... */
+
+  // traverse the list, look for ships that are closer than the trigger radius.
   bool rad = false;
   if (!detonate) {
     auto &r = races[ship.owner - 1];

@@ -44,8 +44,8 @@ void detonate(const command_t &argv, GameObj &g) {
         free(s);
         continue;
       }
+      domine(*s, 1);
       free(s);
-      domine(shipno, 1);
     } else
       free(s);
 }

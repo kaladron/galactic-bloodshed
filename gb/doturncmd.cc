@@ -49,9 +49,15 @@ void do_turn(Db &db, int update) {
 
   Num_ships = Numships();
 
-  for (shipnum_t i = 1; i <= Num_ships; i++) domine(i, 0);
+  // TODO(jeffbailey): We loop through the ships twice here because that's what
+  // the code did before.  It's probably not necessary.
 
   ships = (Ship **)malloc(sizeof(Ship *) * (Num_ships + 1));
+  for (shipnum_t i = 1; i <= Num_ships; i++) {
+    (void)getship(&ships[i], i);
+    domine(*ships[i], 0);
+  }
+
   for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
 
   /* get all stars and planets */

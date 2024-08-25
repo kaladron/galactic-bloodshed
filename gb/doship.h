@@ -9,7 +9,7 @@ void doship(Ship &, int);
 void domass(Ship &);
 void doown(Ship &);
 void domissile(Ship &);
-void domine(int, int);
+void domine(Ship &, int);
 void doabm(Ship &);
 int do_weapon_plant(Ship &);
 

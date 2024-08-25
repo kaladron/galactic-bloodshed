@@ -638,38 +638,40 @@ void domine(Ship &ship, int detonate) {
   /* if the mine is in orbit around a planet, nuke the planet too! */
   if (ship.whatorbits == ScopeLevel::LEVEL_PLAN) {
     /* pick a random sector to nuke */
-    int x;
-    int y;
-    int numdest;
     auto planet = getplanet(ship.storbits, ship.pnumorbits);
 
-    if (landed(ship)) {
-      x = ship.land_x;
-      y = ship.land_y;
-    } else {
-      x = int_rand(0, (int)planet.Maxx - 1);
-      y = int_rand(0, (int)planet.Maxy - 1);
-    }
+    auto [x, y] = [&ship, &planet]() -> std::pair<int, int> {
+      if (landed(ship)) {
+        return {ship.land_x, ship.land_y};
+      } else {
+        int x = int_rand(0, (int)planet.Maxx - 1);
+        int y = int_rand(0, (int)planet.Maxy - 1);
+        return {x, y};
+      }
+    }();
 
     auto smap = getsmap(planet);
-    numdest = shoot_ship_to_planet(&ship, planet, (int)(ship.destruct), x, y,
-                                   smap, 0, GTYPE_LIGHT, long_buf, short_buf);
+    auto numdest =
+        shoot_ship_to_planet(&ship, planet, (int)(ship.destruct), x, y, smap, 0,
+                             GTYPE_LIGHT, long_buf, short_buf);
     putsmap(smap, planet);
     putplanet(planet, stars[ship.storbits], (int)ship.pnumorbits);
 
-    sprintf(telegram_buf, "%s", buf);
+    std::stringstream telegram;
+    telegram << postmsg;
     if (numdest > 0) {
-      sprintf(buf, " - %d sectors destroyed.", numdest);
-      strcat(telegram_buf, buf);
+      telegram << std::format(" - {} sectors destroyed.", numdest);
     }
-    strcat(telegram_buf, "\n");
-    for (i = 1; i <= Num_races; i++)
-      if (Nuked[i - 1])
-        warn(i, stars[ship.storbits].governor[i - 1], telegram_buf);
-    notify((ship.owner), ship.governor, telegram_buf);
+    telegram << "\n";
+    for (i = 1; i <= Num_races; i++) {
+      if (Nuked[i - 1]) {
+        warn(i, stars[ship.storbits].governor[i - 1], telegram.str());
+      }
+    }
+    notify(ship.owner, ship.governor, telegram.str());
   }
 
-  kill_ship((ship.owner), &ship);
+  kill_ship(ship.owner, &ship);
   putship(&ship);
 }
 

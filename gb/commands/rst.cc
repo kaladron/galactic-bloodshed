@@ -14,7 +14,7 @@ import gblib;
 import std.compat;
 
 #include "gb/buffers.h"
-#include "gb/order.h"
+#include "gb/tweakables.h"
 
 module commands;
 

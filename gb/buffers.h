@@ -5,7 +5,7 @@
 #ifndef BUFFERS_H
 #define BUFFERS_H
 
-#include "gb/tweakables.h"
+#define AUTO_TELEG_SIZE 2000
 
 extern char buf[2047];
 extern char long_buf[1024], short_buf[256];

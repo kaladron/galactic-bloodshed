@@ -8,7 +8,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include "gb/tweakables.h"
+#include "gb/buffers.h"
 
 char buf[2047];
 char long_buf[1024], short_buf[256];

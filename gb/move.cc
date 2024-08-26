@@ -170,10 +170,6 @@ void people_attack_mech(Ship *ship, int civ, int mil, Race &race, Race &alien,
   int strength;
   double astrength;
   double dstrength;
-  int cas_civ;
-  int cas_mil;
-  int pdam;
-  int sdam;
   int damage;
   int ammo;
 
@@ -199,7 +195,7 @@ void people_attack_mech(Ship *ship, int civ, int mil, Race &race, Race &alien,
     ship->damage = 100;
     kill_ship(race.Playernum, ship);
   }
-  do_collateral(ship, damage, &cas_civ, &cas_mil, &pdam, &sdam);
+  auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(*ship, damage);
   sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(*ship).c_str(),
           race.name, race.Playernum, ship->alive ? "attacked" : "DESTROYED",
           ship_to_string(*ship).c_str());

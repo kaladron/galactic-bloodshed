@@ -22,9 +22,7 @@ export int hit_odds(double attacker_strength, int *attacker_guns,
                     int target_mass);
 export double tele_range(int tech_level, double base_range);
 export int current_caliber(const Ship &ship);
-export void do_collateral(Ship *ship, int damage, int *crew_killed,
-                          int *hull_damaged, int *engine_damaged,
-                          int *fuel_lost);
+export std::tuple<int, int, int, int> do_collateral(Ship &ship, int damage);
 export int planet_guns(long planet_id);
 
 /*

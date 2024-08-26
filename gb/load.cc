@@ -8,8 +8,6 @@ module;
 
 import std.compat;
 
-#include "gb/tweakables.h"
-
 module gblib;
 
 void use_fuel(Ship &s, const double amt) {

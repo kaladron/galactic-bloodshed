@@ -11,8 +11,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/tweakables.h"
-
 void moveplanet(int starnum, Planet &planet, int planetnum) {
   double dist;
   double xadd;

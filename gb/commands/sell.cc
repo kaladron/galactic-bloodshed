@@ -7,8 +7,6 @@ import std.compat;
 
 module commands;
 
-#include "gb/tweakables.h"
-
 namespace GB::commands {
 void sell(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;

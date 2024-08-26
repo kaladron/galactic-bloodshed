@@ -18,7 +18,6 @@
   250                        /* commands allowed per user \
                                 in a burst */
 #define DISCONNECT_TIME 7200 /* maximum idle time */
-#define MAX_OUTPUT 32768     /* don't change this */
 
 #define WELCOME_FILE "welcome.txt"
 #define HELP_FILE DOCDIR "help.txt"
@@ -43,16 +42,6 @@
 
 #define COMMANDSIZE 42
 #define MAXARGS 256
-
-#define UNTRANS_MSG "[ ? ]"
-#undef TELEG_TRANS_APCOST /*1*/
-#define TELEG_TRANS_RPCOST 5
-#define TELEG_TRANS_AMT 0.45
-#define TELEG_LETTERS 7
-#define TELEG_PLAYER_AUTO (-2)
-#define TELEG_MAX_AUTO 7 /* when changing, alter field in plinfo */
-#define TELEG_DELIM '~'
-#define TELEG_NDELIM "%[^~]"
 
 /* assorted macros */
 // define MIN(x, y) (((x) > (y)) ? (y) : (x))

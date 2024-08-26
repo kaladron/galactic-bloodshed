@@ -9,8 +9,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/tweakables.h"
-
 module commands;
 
 namespace GB::commands {

@@ -233,3 +233,7 @@ export constexpr double AP_FACTOR =
 export constexpr int DISSIPATE = 80;  // updates to dissipate dust and gases
 
 export constexpr int MOVE_FACTOR = 1;
+
+export constexpr int TELEG_MAX_AUTO =
+    7;  // when changing, alter field in plinfo
+export constexpr char TELEG_DELIM = '~';

@@ -17,8 +17,7 @@ static int do_damage(player_t who, Ship &ship, double tech, int strength,
                      int hits, int defense, int caliber, double range,
                      const std::string_view weapon, char *msg);
 
-static void ship_disposition(const Ship &ship, int *fevade, int *fspeed,
-                             int *fbody);
+static std::tuple<int, int, int> ship_disposition(const Ship &ship);
 static int CEW_hit(double dist, int cew_range);
 static int Num_hits(double dist, bool focus, int strength, double tech,
                     int damage, int fevade, int tevade, int fspeed, int tspeed,
@@ -31,12 +30,6 @@ static void mutate_sector(Sector &s);
 
 int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
                        bool ignore, char *long_msg, char *short_msg) {
-  int fevade;
-  int fspeed;
-  int fbody;
-  int tevade;
-  int tspeed;
-  int tbody;
   char weapon[32];
   char damage_msg[1024];
 
@@ -76,8 +69,8 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
   if ((double)dist > gun_range(from)) return -1;
 
   /* attack parameters */
-  ship_disposition(from, &fevade, &fspeed, &fbody);
-  ship_disposition(to, &tevade, &tspeed, &tbody);
+  auto [fevade, fspeed, fbody] = ship_disposition(from);
+  auto [tevade, tspeed, tbody] = ship_disposition(to);
   auto defense = getdefense(to);
 
   bool focus = (laser_on(from) && from.focus) ? true : false;
@@ -134,9 +127,6 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
 
 int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,
                          char *short_msg) {
-  int evade;
-  int speed;
-  int body;
   char damage_msg[1024];
 
   int hits = 0;
@@ -145,7 +135,7 @@ int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,
 
   if (ship.whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
 
-  ship_disposition(ship, &evade, &speed, &body);
+  auto [evade, speed, body] = ship_disposition(ship);
 
   hits = Num_hits(0.0, false, strength, race.tech, 0, evade, 0, speed, 0, body,
                   GTYPE_MEDIUM, 1);
@@ -351,12 +341,8 @@ static int do_damage(player_t who, Ship &ship, double tech, int strength,
   damage = std::min(100, damage);
   ship.damage = std::min(100, (int)(ship.damage) + damage);
 
-  int casualties;
-  int casualties1;
-  int primgundamage;
-  int secgundamage;
-  do_collateral(&ship, damage, &casualties, &casualties1, &primgundamage,
-                &secgundamage);
+  auto [casualties, casualties1, primgundamage, secgundamage] =
+      do_collateral(ship, damage);
   /* set laser strength for ships to maximum safe limit */
   if (ship.fire_laser) {
     int safe = (int)((1.0 - .01 * ship.damage) * ship.tech / 4.0);
@@ -394,15 +380,29 @@ static int do_damage(player_t who, Ship &ship, double tech, int strength,
   return damage;
 }
 
-static void ship_disposition(const Ship &ship, int *evade, int *speed,
-                             int *body) {
-  *evade = 0;
-  *speed = 0;
-  *body = size(ship);
+/**
+ * @brief Determines the disposition of a ship.
+ *
+ * This function calculates the values of evade, speed, and body based on the
+ * given ship.
+ *
+ * @param ship The ship for which the disposition is being determined.
+ * @param evade Pointer to an integer variable to store the calculated evade
+ * value.
+ * @param speed Pointer to an integer variable to store the calculated speed
+ * value.
+ * @param body Pointer to an integer variable to store the calculated body
+ * value.
+ */
+static std::tuple<int, int, int> ship_disposition(const Ship &ship) {
+  int evade = 0;
+  int speed = 0;
+  int body = size(ship);
   if (ship.active && !ship.docked && (ship.whatdest || ship.navigate.on)) {
-    *evade = ship.protect.evade;
-    *speed = ship.speed;
+    evade = ship.protect.evade;
+    speed = ship.speed;
   }
+  return {evade, speed, body};
 }
 
 // TODO(jeffbailey): return bool.
@@ -528,24 +528,24 @@ static void do_critical_hits(int penetrate, Ship &ship, int *crithits,
   strcat(critmsg, "\n");
 }
 
-void do_collateral(Ship *ship, int damage, int *casualties, int *casualties1,
-                   int *primgundamage, int *secgundamage) {
+std::tuple<int, int, int, int> do_collateral(Ship &ship, int damage) {
   /* compute crew/troop casualties */
-  *casualties = 0;
-  *casualties1 = 0;
-  *primgundamage = 0;
-  *secgundamage = 0;
+  int casualties = 0;
+  int casualties1 = 0;
+  int primgundamage = 0;
+  int secgundamage = 0;
 
-  for (auto i = 1; i <= ship->popn; i++) *casualties += success(damage);
-  ship->popn -= *casualties;
-  for (auto i = 1; i <= ship->troops; i++) *casualties1 += success(damage);
-  ship->troops -= *casualties1;
-  for (auto i = 1; i <= ship->primary; i++) *primgundamage += success(damage);
-  ship->primary -= *primgundamage;
-  for (auto i = 1; i <= ship->secondary; i++) *secgundamage += success(damage);
-  ship->secondary -= *secgundamage;
-  if (!ship->primary) ship->primtype = GTYPE_NONE;
-  if (!ship->secondary) ship->sectype = GTYPE_NONE;
+  for (auto i = 1; i <= ship.popn; i++) casualties += success(damage);
+  ship.popn -= casualties;
+  for (auto i = 1; i <= ship.troops; i++) casualties1 += success(damage);
+  ship.troops -= casualties1;
+  for (auto i = 1; i <= ship.primary; i++) primgundamage += success(damage);
+  ship.primary -= primgundamage;
+  for (auto i = 1; i <= ship.secondary; i++) secgundamage += success(damage);
+  ship.secondary -= secgundamage;
+  if (!ship.primary) ship.primtype = GTYPE_NONE;
+  if (!ship.secondary) ship.sectype = GTYPE_NONE;
+  return {casualties, casualties1, primgundamage, secgundamage};
 }
 
 static double p_factor(double attacker, double defender) {

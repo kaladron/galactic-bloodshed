@@ -5,6 +5,7 @@ export module gblib;
 export import :doship;
 export import :files_shl;
 export import :fire;
+export import :fuel;
 export import :misc;
 export import :planet;
 export import :place;

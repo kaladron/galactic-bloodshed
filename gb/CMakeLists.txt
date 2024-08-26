@@ -90,6 +90,7 @@ target_sources(
          gblib-doship.cppm
          gblib-files_shl.cppm
          gblib-fire.cppm
+         gblib-fuel.cppm
          gblib-globals.cppm
          gblib-misc.cppm
          gblib-place.cppm
@@ -108,6 +109,7 @@ target_sources(
   PRIVATE doship.cc
           files_shl.cc
           fire.cc
+          fuel.cc
           load.cc
           misc.cc
           planet.cc
@@ -212,7 +214,6 @@ set(OLD_LIBGBLIB_FILES
     doplanet.cc
     dosector.cc
     doturncmd.cc
-    fuel.cc
     map.cc
     move.cc
     moveplanet.cc

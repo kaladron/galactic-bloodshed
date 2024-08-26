@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/doship.h"
-
 module commands;
 
 namespace GB::commands {

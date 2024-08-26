@@ -87,6 +87,7 @@ target_sources(
          CXX_MODULES
          FILES
          gblib.cppm
+         gblib-doship.cppm
          gblib-files_shl.cppm
          gblib-fire.cppm
          gblib-globals.cppm
@@ -104,7 +105,8 @@ target_sources(
          gblib-tele.cppm
          gblib-tweakables.cppm
          gblib-types.cppm
-  PRIVATE files_shl.cc
+  PRIVATE doship.cc
+          files_shl.cc
           fire.cc
           load.cc
           misc.cc
@@ -209,7 +211,6 @@ set(OLD_LIBGBLIB_FILES
     build.cc
     doplanet.cc
     dosector.cc
-    doship.cc
     doturncmd.cc
     fuel.cc
     map.cc

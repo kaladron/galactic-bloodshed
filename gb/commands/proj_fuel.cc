@@ -5,7 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/doship.h"
 #include "gb/fuel.h"
 
 module commands;

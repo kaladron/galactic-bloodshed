@@ -2,6 +2,7 @@
 
 export module gblib;
 
+export import :doship;
 export import :files_shl;
 export import :fire;
 export import :misc;

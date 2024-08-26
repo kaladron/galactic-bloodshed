@@ -73,7 +73,7 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, bool ignore,
     }
   }();
 
-  if ((double)dist > gun_range((Race *)nullptr, from, 0)) return -1;
+  if ((double)dist > gun_range(*from)) return -1;
 
   /* attack parameters */
   ship_disposition(from, &fevade, &fspeed, &fbody);
@@ -503,15 +503,6 @@ static int cew_hit_odds(double range, int cew_range) {
   factor = (range + 1.0) / ((double)cew_range + 1.0); /* maximum chance */
   odds = (int)(100.0 * exp((double)(-50.0 * (factor - 1.0) * (factor - 1.0))));
   return odds;
-}
-
-/*
- * gun range of given ship, given race and ship
- */
-double gun_range(Race *r, Ship *s, int mode) {
-  if (mode) return (logscale((int)(r->tech + 1.0)) * SYSTEMSIZE);
-
-  return (logscale((int)(s->tech + 1.0)) * SYSTEMSIZE);
 }
 
 /*

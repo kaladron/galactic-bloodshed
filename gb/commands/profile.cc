@@ -41,8 +41,7 @@ void profile(const command_t &argv, GameObj &g) {
     else
       sprintf(buf, "Designated Capital: #%-8lu", race.Gov_ship);
     notify(Playernum, Governor, buf);
-    sprintf(buf, "\t\tRanges:     guns:   %5.0f\n",
-            gun_range(&race, (Ship *)nullptr, 1));
+    sprintf(buf, "\t\tRanges:     guns:   %5.0f\n", gun_range(race));
     notify(Playernum, Governor, buf);
     sprintf(buf, "Morale: %5ld\t\t\t\t\t    space:  %5.0f\n", race.morale,
             tele_range(ShipType::OTYPE_STELE, race.tech));
@@ -159,8 +158,7 @@ void profile(const command_t &argv, GameObj &g) {
     sprintf(buf, "\t\t  oxygen   %4s%%",
             Estimate_i((int)(r.conditions[OXYGEN]), race, p));
     notify(Playernum, Governor, buf);
-    sprintf(buf, "\t\t  guns:   %6s\n",
-            Estimate_f(gun_range(&r, (Ship *)nullptr, 1), race, p));
+    sprintf(buf, "\t\t  guns:   %6s\n", Estimate_f(gun_range(r), race, p));
     notify(Playernum, Governor, buf);
     sprintf(buf, "Fight:   %s", Estimate_i((int)(r.fighters), race, p));
     notify(Playernum, Governor, buf);

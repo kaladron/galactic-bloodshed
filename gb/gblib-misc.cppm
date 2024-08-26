@@ -174,3 +174,12 @@ export int mod(int a, int b) {
   int dum = a % b;
   return std::abs(dum);
 }
+
+/**
+ * \brief Scales used in production efficiency etc.
+ * \param x Integer from 0-100
+ * \return Float 0.0 - 1.0 (logscaleOB 0.5 - .95)
+ */
+export constexpr double logscale(const int x) {
+  return log10((double)x + 1.0) / 2.0;
+}

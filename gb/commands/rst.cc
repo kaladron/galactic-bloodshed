@@ -424,9 +424,10 @@ static void ship_report(GameObj &g, shipnum_t indx,
 
       if (sight)
         for (i = 0; i < Num_ships; i++) {
-          if (i != indx &&
-              (Dist = sqrt(Distsq(rd[indx].x, rd[indx].y, rd[i].x, rd[i].y))) <
-                  gun_range(&race, &rd[indx].s, (rd[indx].type == PLANET))) {
+          double range =
+              rd[indx].type == PLANET ? gun_range(race) : gun_range(rd[indx].s);
+          if (i != indx && (Dist = sqrt(Distsq(rd[indx].x, rd[indx].y, rd[i].x,
+                                               rd[i].y))) < range) {
             if (rd[i].type == PLANET) {
               /* tac report at planet */
               sprintf(buf, " %13s(planet)          %8.0f\n",

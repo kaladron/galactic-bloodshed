@@ -2,6 +2,7 @@
 
 export module gblib:shootblast;
 
+import :misc;
 import :race;
 import :ships;
 
@@ -19,10 +20,23 @@ export int hit_odds(double attacker_strength, int *attacker_guns,
                     int target_defense, int target_damage, int target_crew,
                     int target_hull, int target_engine, int target_fuel,
                     int target_mass);
-export double gun_range(Race *race, Ship *ship, int caliber);
 export double tele_range(int tech_level, double base_range);
 export int current_caliber(Ship *ship);
 export void do_collateral(Ship *ship, int damage, int *crew_killed,
                           int *hull_damaged, int *engine_damaged,
                           int *fuel_lost);
 export int planet_guns(long planet_id);
+
+/*
+ * gun range of given ship, given race and ship
+ */
+export constexpr double gun_range(const Race &r) {
+  return logscale((int)(r.tech + 1.0)) * SYSTEMSIZE;
+}
+
+/*
+ * gun range of given ship, given race and ship
+ */
+export constexpr double gun_range(const Ship &s) {
+  return logscale((int)(s.tech + 1.0)) * SYSTEMSIZE;
+}

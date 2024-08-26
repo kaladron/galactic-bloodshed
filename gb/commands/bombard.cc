@@ -156,7 +156,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
               p.info[i - 1].destruct -= strength;
 
-              damage = shoot_planet_to_ship(alien, from, strength, long_buf,
+              damage = shoot_planet_to_ship(alien, *from, strength, long_buf,
                                             short_buf);
               warn(i, stars[from->storbits].governor[i - 1], long_buf);
               notify(Playernum, Governor, long_buf);

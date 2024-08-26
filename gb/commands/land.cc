@@ -236,7 +236,7 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
           /* attack the landing ship */
           strength = MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);
           if (strength) {
-            damage = shoot_planet_to_ship(alien, &s, strength, buf, short_buf);
+            damage = shoot_planet_to_ship(alien, s, strength, buf, short_buf);
             post(short_buf, NewsType::COMBAT);
             notify_star(0, 0, s.storbits, short_buf);
             warn(i, stars[s.storbits].governor[i - 1], buf);

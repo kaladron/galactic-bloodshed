@@ -12,8 +12,6 @@ import std.compat;
 
 module commands;
 
-#include "gb/tweakables.h"
-
 namespace GB::commands {
 void autoreport(const command_t &argv, GameObj &g) {
   if (g.governor && stars[g.snum].governor[g.player - 1] != g.governor) {

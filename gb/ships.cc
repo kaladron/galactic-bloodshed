@@ -6,8 +6,6 @@ import std;
 
 module gblib;
 
-#include "gb/tweakables.h"
-
 // Essentialy everything in this file can move into a Ship class.
 
 /* can takeoff & land, is mobile, etc. */

@@ -12,8 +12,6 @@ import std.compat;
 
 #include <cstdlib>
 
-#include "gb/tweakables.h"
-
 module gblib;
 
 namespace {

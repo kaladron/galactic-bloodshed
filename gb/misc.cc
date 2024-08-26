@@ -4,9 +4,11 @@ module;
 
 import std;
 
-#include "gb/tweakables.h"
-
 module gblib;
+
+namespace {
+constexpr int MAX_OUTPUT = 32768;  // don't change this
+}
 
 void notify_race(const player_t race, const std::string &message) {
   if (update_flag) return;

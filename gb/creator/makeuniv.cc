@@ -21,7 +21,6 @@ import std.compat;
 #include "gb/creator/makestar.h"
 #include "gb/files.h"
 #include "gb/globals.h"
-#include "gb/tweakables.h"
 
 int autoname_star = -1;
 int autoname_plan = -1;

@@ -21,7 +21,6 @@ import std.compat;
 #include "gb/creator/makeplanet.h"
 #include "gb/creator/makeuniv.h"
 #include "gb/files.h"
-#include "gb/tweakables.h"
 
 static const double PLANET_DIST_MAX = 1900.0;
 static const double PLANET_DIST_MIN = 100.0;

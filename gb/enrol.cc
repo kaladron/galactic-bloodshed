@@ -16,7 +16,6 @@ import gblib;
 #include <cstdlib>
 
 #include "gb/globals.h"
-#include "gb/tweakables.h"
 
 struct stype {
   char here;

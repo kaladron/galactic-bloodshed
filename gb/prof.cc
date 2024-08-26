@@ -9,8 +9,6 @@ import std.compat;
 
 #include "gb/prof.h"
 
-#include "gb/tweakables.h"
-
 static int round_perc(int, const Race &, int);
 
 static char est_buf[20];

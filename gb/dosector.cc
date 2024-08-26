@@ -7,8 +7,6 @@ import std.compat;
 
 #include "gb/dosector.h"
 
-#include "gb/tweakables.h"
-
 static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const int y_adj[] = {1, 1, 1, 0, 0, -1, -1, -1};
 

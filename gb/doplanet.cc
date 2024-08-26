@@ -18,7 +18,6 @@ import std.compat;
 #include "gb/build.h"
 #include "gb/dosector.h"
 #include "gb/move.h"
-#include "gb/tweakables.h"
 
 static void do_dome(Ship *, SectorMap &);
 static void do_quarry(Ship *, Planet &, SectorMap &);

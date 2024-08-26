@@ -14,7 +14,6 @@ import std.compat;
 #include <strings.h>
 
 #include "gb/creator/makestar.h"
-#include "gb/tweakables.h"
 
 /*             @   o   O   #   ~   .   (   -    */
 static const int xmin[] = {15, 2, 4, 4, 26, 12, 12, 12};

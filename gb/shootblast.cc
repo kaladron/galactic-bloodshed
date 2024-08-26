@@ -11,10 +11,10 @@ module gblib;
 static int hit_probability;
 static double penetration_factor;
 
-static int do_radiation(Ship *ship, double tech, int strength, int hits,
+static int do_radiation(Ship &ship, double tech, int strength, int hits,
                         const char *weapon, char *msg);
-static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
-                     int defense, int caliber, double range,
+static int do_damage(player_t who, Ship &ship, double tech, int strength,
+                     int hits, int defense, int caliber, double range,
                      const std::string_view weapon, char *msg);
 
 static void ship_disposition(const Ship &ship, int *fevade, int *fspeed,
@@ -24,13 +24,13 @@ static int Num_hits(double dist, bool focus, int strength, double tech,
                     int damage, int fevade, int tevade, int fspeed, int tspeed,
                     int tbody, int caliber, int defense);
 static int cew_hit_odds(double dist, int cew_range);
-static void do_critical_hits(int who, Ship *ship, int *hits, int *damage,
+static void do_critical_hits(int penetrate, Ship &ship, int *hits, int *damage,
                              int defense, char *msg);
 static double p_factor(double tech, double penetration_factor);
 static void mutate_sector(Sector &s);
 
-int shoot_ship_to_ship(Ship &from, Ship &to, int strength, int cew, bool ignore,
-                       char *long_msg, char *short_msg) {
+int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
+                       bool ignore, char *long_msg, char *short_msg) {
   int fevade;
   int fspeed;
   int fbody;
@@ -91,7 +91,7 @@ int shoot_ship_to_ship(Ship &from, Ship &to, int strength, int cew, bool ignore,
   int damage = 0;
   if (from.mode) {
     damage =
-        do_radiation(&to, from.tech, strength, hits, "radiation", damage_msg);
+        do_radiation(to, from.tech, strength, hits, "radiation", damage_msg);
     sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(to).c_str(),
             ship_to_string(from).c_str(), to.alive ? "attacked" : "DESTROYED",
             ship_to_string(to).c_str());
@@ -121,7 +121,7 @@ int shoot_ship_to_ship(Ship &from, Ship &to, int strength, int cew, bool ignore,
           return -1;
       }
 
-    damage = do_damage(from.owner, &to, (double)from.tech, strength, hits,
+    damage = do_damage(from.owner, to, (double)from.tech, strength, hits,
                        defense, caliber, (double)dist, weapon, damage_msg);
     sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(to).c_str(),
             ship_to_string(from).c_str(), to.alive ? "attacked" : "DESTROYED",
@@ -150,7 +150,7 @@ int shoot_planet_to_ship(Race &race, Ship *ship, int strength, char *long_msg,
   hits = Num_hits(0.0, 0, strength, race.tech, 0, evade, 0, speed, 0, body,
                   GTYPE_MEDIUM, 1);
 
-  int damage = do_damage(race.Playernum, ship, race.tech, strength, hits, 0,
+  int damage = do_damage(race.Playernum, *ship, race.tech, strength, hits, 0,
                          GTYPE_MEDIUM, 0.0, "medium guns", damage_msg);
   sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(*ship).c_str(),
           race.Playernum, ship->alive ? "attacked" : "DESTROYED",
@@ -275,13 +275,13 @@ int shoot_ship_to_planet(Ship *ship, Planet &pl, int strength, int x, int y,
   return numdest;
 }
 
-static int do_radiation(Ship *ship, double tech, int strength, int hits,
+static int do_radiation(Ship &ship, double tech, int strength, int hits,
                         const char *weapon, char *msg) {
   double fac =
-      (2. / 3.14159265) * atan((double)(5 * (tech + 1.0) / (ship->tech + 1.0)));
+      (2. / 3.14159265) * atan((double)(5 * (tech + 1.0) / (ship.tech + 1.0)));
 
-  int arm = std::max(0UL, armor(*ship) - hits / 5);
-  int body = shipbody(*ship);
+  int arm = std::max(0UL, armor(ship) - hits / 5);
+  int body = shipbody(ship);
 
   int penetrate = 0;
   double r = 1.0;
@@ -293,14 +293,14 @@ static int do_radiation(Ship *ship, double tech, int strength, int hits,
   int dosage = round_rand(40. * (double)penetrate / (double)body);
   dosage = std::min(100, dosage);
 
-  if (dosage > ship->rad) ship->rad = std::max(ship->rad, dosage);
-  if (success(ship->rad)) ship->active = 0;
+  if (dosage > ship.rad) ship.rad = std::max(ship.rad, dosage);
+  if (success(ship.rad)) ship.active = 0;
 
   int casualties = 0;
   int casualties1 = 0;
   sprintf(buf, "\tAttack: %d %s\n\t  Hits: %d\n", strength, weapon, hits);
   strcat(msg, buf);
-  sprintf(buf, "\t   Rad: %d%% for a total of %d%%\n", dosage, ship->rad);
+  sprintf(buf, "\t   Rad: %d%% for a total of %d%%\n", dosage, ship.rad);
   strcat(msg, buf);
   if (casualties || casualties1) {
     sprintf(buf, "\tKilled: %d civ + %d mil\n", casualties, casualties1);
@@ -309,8 +309,8 @@ static int do_radiation(Ship *ship, double tech, int strength, int hits,
   return dosage;
 }
 
-static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
-                     int defense, int caliber, double range,
+static int do_damage(player_t who, Ship &ship, double tech, int strength,
+                     int hits, int defense, int caliber, double range,
                      const std::string_view weapon, char *msg) {
   char critmsg[1024];
 
@@ -320,17 +320,17 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
   sprintf(buf, "\t  Hits: %d  %d%% probability\n", hits, hit_probability);
   strcat(msg, buf);
   /* ship may lose some armor */
-  if (ship->armor)
+  if (ship.armor)
     if (success(hits * caliber)) {
-      ship->armor--;
-      sprintf(buf, "\t\tArmor reduced to %d\n", ship->armor);
+      ship.armor--;
+      sprintf(buf, "\t\tArmor reduced to %d\n", ship.armor);
       strcat(msg, buf);
     }
 
-  double fac = p_factor(tech, ship->tech);
+  double fac = p_factor(tech, ship.tech);
   penetration_factor = fac;
-  int arm = std::max(0UL, armor(*ship) + defense - hits / 5);
-  double body = sqrt((double)(0.1 * shipbody(*ship)));
+  int arm = std::max(0UL, armor(ship) + defense - hits / 5);
+  double body = sqrt((double)(0.1 * shipbody(ship)));
 
   int critdam = 0;
   int crithits = 0;
@@ -349,18 +349,18 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
   if (crithits) damage += critdam;
 
   damage = std::min(100, damage);
-  ship->damage = std::min(100, (int)(ship->damage) + damage);
+  ship.damage = std::min(100, (int)(ship.damage) + damage);
 
   int casualties;
   int casualties1;
   int primgundamage;
   int secgundamage;
-  do_collateral(ship, damage, &casualties, &casualties1, &primgundamage,
+  do_collateral(&ship, damage, &casualties, &casualties1, &primgundamage,
                 &secgundamage);
   /* set laser strength for ships to maximum safe limit */
-  if (ship->fire_laser) {
-    int safe = (int)((1.0 - .01 * ship->damage) * ship->tech / 4.0);
-    if (ship->fire_laser > safe) ship->fire_laser = safe;
+  if (ship.fire_laser) {
+    int safe = (int)((1.0 - .01 * ship.damage) * ship.tech / 4.0);
+    if (ship.fire_laser > safe) ship.fire_laser = safe;
   }
 
   if (penetrate) {
@@ -375,7 +375,7 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
   }
   if (damage) {
     sprintf(buf, "\tDamage: %d%% damage for a total of %d%%\n", damage,
-            ship->damage);
+            ship.damage);
     strcat(msg, buf);
   }
   if (primgundamage || secgundamage) {
@@ -389,8 +389,8 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
     strcat(msg, buf);
   }
 
-  if (ship->damage >= 100) kill_ship(who, ship);
-  ship->build_cost = (int)cost(*ship);
+  if (ship.damage >= 100) kill_ship(who, &ship);
+  ship.build_cost = (int)cost(ship);
   return damage;
 }
 
@@ -484,11 +484,11 @@ int current_caliber(const Ship &ship) {
   return GTYPE_NONE;
 }
 
-static void do_critical_hits(int penetrate, Ship *ship, int *crithits,
+static void do_critical_hits(int penetrate, Ship &ship, int *crithits,
                              int *critdam, int caliber, char *critmsg) {
   *critdam = 0;
   *crithits = 0;
-  int eff_size = std::max(1, shipbody(*ship) / caliber);
+  int eff_size = std::max(1, shipbody(ship) / caliber);
   for (auto i = 1; i <= penetrate; i++)
     if (!int_rand(0, eff_size - 1)) {
       *crithits += 1;
@@ -498,31 +498,31 @@ static void do_critical_hits(int penetrate, Ship *ship, int *crithits,
   *critdam = std::min(100, *critdam);
   /* check for special systems damage */
   strcpy(critmsg, "\t\tSpecial systems damage: ");
-  if (ship->cew && success(*critdam)) {
+  if (ship.cew && success(*critdam)) {
     strcat(critmsg, "CEW ");
-    ship->cew = 0;
+    ship.cew = 0;
   }
-  if (ship->laser && success(*critdam)) {
+  if (ship.laser && success(*critdam)) {
     strcat(critmsg, "Laser ");
-    ship->laser = 0;
+    ship.laser = 0;
   }
-  if (ship->cloak && success(*critdam)) {
+  if (ship.cloak && success(*critdam)) {
     strcat(critmsg, "Cloak ");
-    ship->cloak = 0;
+    ship.cloak = 0;
   }
-  if (ship->hyper_drive.has && success(*critdam)) {
+  if (ship.hyper_drive.has && success(*critdam)) {
     strcat(critmsg, "Hyper-drive ");
-    ship->hyper_drive.has = 0;
+    ship.hyper_drive.has = 0;
   }
-  if (ship->max_speed && success(*critdam)) {
-    ship->speed = 0;
-    ship->max_speed = int_rand(0, (int)ship->max_speed - 1);
-    sprintf(buf, "Speed=%d ", ship->max_speed);
+  if (ship.max_speed && success(*critdam)) {
+    ship.speed = 0;
+    ship.max_speed = int_rand(0, (int)ship.max_speed - 1);
+    sprintf(buf, "Speed=%d ", ship.max_speed);
     strcat(critmsg, buf);
   }
-  if (ship->armor && success(*critdam)) {
-    ship->armor = int_rand(0, (int)ship->armor - 1);
-    sprintf(buf, "Armor=%d ", ship->armor);
+  if (ship.armor && success(*critdam)) {
+    ship.armor = int_rand(0, (int)ship.armor - 1);
+    sprintf(buf, "Armor=%d ", ship.armor);
     strcat(critmsg, buf);
   }
   strcat(critmsg, "\n");

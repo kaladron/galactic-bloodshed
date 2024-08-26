@@ -12,8 +12,6 @@ import :race;
 import :star;
 import :types;
 
-#include "gb/tweakables.h"
-
 export std::vector<Race> races;
 
 export struct stardata Sdata;

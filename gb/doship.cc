@@ -67,18 +67,14 @@ void do_habitat(Ship &ship) {
 }
 
 void do_meta_infect(int who, Planet &p) {
-  int owner;
-  int x;
-  int y;
-
   auto smap = getsmap(p);
   // TODO(jeffbailey): I'm pretty certain this memset is unnecessary, but this
   // is so far away from any other uses of Sectinfo that I'm having trouble
   // proving it.
   std::memset(Sectinfo, 0, sizeof(Sectinfo));
-  x = int_rand(0, p.Maxx - 1);
-  y = int_rand(0, p.Maxy - 1);
-  owner = smap.get(x, y).owner;
+  auto x = int_rand(0, p.Maxx - 1);
+  auto y = int_rand(0, p.Maxy - 1);
+  auto owner = smap.get(x, y).owner;
   if (!owner ||
       (who != owner &&
        (double)int_rand(1, 100) >
@@ -205,12 +201,10 @@ void do_mirror(Ship &ship) {
                ScopeLevel::LEVEL_PLAN) &&
           ship.storbits == ships[ship.special.aimed_at.shipno]->storbits &&
           ships[ship.special.aimed_at.shipno]->alive) {
-        Ship *s;
-        int i;
-        double range;
-        s = ships[ship.special.aimed_at.shipno];
-        range = std::sqrt(Distsq(ship.xpos, ship.ypos, s->xpos, s->ypos));
-        i = int_rand(0, round_rand((2. / ((double)(shipbody(*s)))) *
+        auto s = ships[ship.special.aimed_at.shipno];
+        auto range = std::sqrt(Distsq(ship.xpos, ship.ypos, s->xpos, s->ypos));
+        auto i =
+            int_rand(0, round_rand((2. / ((double)(shipbody(*s)))) *
                                    (double)(ship.special.aimed_at.intensity) /
                                    (range / PLORBITSIZE + 1.0)));
         std::stringstream telegram_buf;
@@ -285,17 +279,15 @@ double crew_factor(const Ship &ship) {
 void do_ap(Ship &ship) {
   /* if landed on planet, change conditions to be like race */
   if (landed(ship) && ship.on) {
-    int j;
-    int d;
     // TODO(jeffbailey): Not obvious here how the modified planet is saved
     // to disk
     auto &p = planets[ship.storbits][ship.pnumorbits];
     auto &race = races[ship.owner - 1];
     if (ship.fuel >= 3.0) {
       use_fuel(ship, 3.0);
-      for (j = RTEMP + 1; j <= OTHER; j++) {
-        d = round_rand(ap_planet_factor(*p) * crew_factor(ship) *
-                       (double)(race.conditions[j] - p->conditions[j]));
+      for (auto j = RTEMP + 1; j <= OTHER; j++) {
+        auto d = round_rand(ap_planet_factor(*p) * crew_factor(ship) *
+                            (double)(race.conditions[j] - p->conditions[j]));
         if (d) p->conditions[j] += d;
       }
     } else if (!ship.notified) {
@@ -464,12 +456,9 @@ void doship(Ship &ship, int update) {
 }
 
 void domass(Ship &ship) {
-  double rmass;
-  int sh;
+  auto rmass = races[ship.owner - 1].mass;
 
-  rmass = races[ship.owner - 1].mass;
-
-  sh = ship.ships;
+  auto sh = ship.ships;
   ship.mass = 0.0;
   ship.hanger = 0;
   while (sh) {
@@ -486,8 +475,7 @@ void domass(Ship &ship) {
 }
 
 void doown(Ship &ship) {
-  int sh;
-  sh = ship.ships;
+  auto sh = ship.ships;
   while (sh) {
     doown(*ships[sh]); /* recursive call */
     ships[sh]->owner = ship.owner;
@@ -497,14 +485,6 @@ void doown(Ship &ship) {
 }
 
 void domissile(Ship &ship) {
-  int sh2;
-  int bombx;
-  int bomby;
-  int numdest;
-  int pdn;
-  int i;
-  double dist;
-
   if (!ship.alive || !ship.owner) return;
   if (!ship.on || ship.docked) return;
 
@@ -514,8 +494,8 @@ void domissile(Ship &ship) {
       ship.destpnum == ship.pnumorbits) {
     auto &p = planets[ship.storbits][ship.pnumorbits];
     /* check to see if PDNs are present */
-    pdn = 0;
-    sh2 = p->ships;
+    auto pdn = 0;
+    auto sh2 = p->ships;
     while (sh2 && !pdn) {
       if (ships[sh2]->alive && ships[sh2]->type == ShipType::OTYPE_PLANDEF) {
         /* attack the PDN instead */
@@ -529,13 +509,17 @@ void domissile(Ship &ship) {
       sh2 = ships[sh2]->nextship;
     }
     if (!pdn) {
-      if (ship.special.impact.scatter) {
-        bombx = int_rand(1, (int)p->Maxx) - 1;
-        bomby = int_rand(1, (int)p->Maxy) - 1;
-      } else {
-        bombx = ship.special.impact.x % p->Maxx;
-        bomby = ship.special.impact.y % p->Maxy;
-      }
+      auto [bombx, bomby] = [&p, &ship] -> std::tuple<int, int> {
+        if (ship.special.impact.scatter) {
+          auto bombx = int_rand(1, (int)p->Maxx) - 1;
+          auto bomby = int_rand(1, (int)p->Maxy) - 1;
+          return {bombx, bomby};
+        } else {
+          auto bombx = ship.special.impact.x % p->Maxx;
+          auto bomby = ship.special.impact.y % p->Maxy;
+          return {bombx, bomby};
+        }
+      }();
 
       // TODO(jeffbailey): This doesn't actually notify anyone and should.
       std::string bombdropmsg = std::format(
@@ -543,7 +527,7 @@ void domissile(Ship &ship) {
           bombx, bomby, prin_ship_orbits(ship));
 
       auto smap = getsmap(*p);
-      numdest =
+      auto numdest =
           shoot_ship_to_planet(&ship, *p, (int)ship.destruct, bombx, bomby,
                                smap, 0, GTYPE_HEAVY, long_buf, short_buf);
       putsmap(smap, *p);
@@ -552,7 +536,7 @@ void domissile(Ship &ship) {
       std::string sectors_destroyed_msg =
           std::format("{} dropped on {}.\n\t{} sectors destroyed.\n",
                       ship_to_string(ship), prin_ship_orbits(ship), numdest);
-      for (i = 1; i <= Num_races; i++) {
+      for (auto i = 1; i <= Num_races; i++) {
         if (p->info[i - 1].numsectsowned && i != ship.owner) {
           push_telegram(i, stars[ship.storbits].governor[i - 1],
                         sectors_destroyed_msg);
@@ -566,8 +550,8 @@ void domissile(Ship &ship) {
       }
     }
   } else if (ship.whatdest == ScopeLevel::LEVEL_SHIP) {
-    sh2 = ship.destshipno;
-    dist = std::sqrt(
+    auto sh2 = ship.destshipno;
+    auto dist = std::sqrt(
         Distsq(ship.xpos, ship.ypos, ships[sh2]->xpos, ships[sh2]->ypos));
     if (dist <= ((double)ship.speed * STRIKE_DISTANCE_FACTOR *
                  (100.0 - (double)ship.damage) / 100.0)) {
@@ -592,18 +576,18 @@ void domine(Ship &ship, int detonate) {
     return;
   }
 
-  shipnum_t sh;
-  switch (ship.whatorbits) {
-    case ScopeLevel::LEVEL_STAR:
-      sh = stars[ship.storbits].ships;
-      break;
-    case ScopeLevel::LEVEL_PLAN: {
+  if (ship.whatorbits == ScopeLevel::LEVEL_UNIV ||
+      ship.whatorbits == ScopeLevel::LEVEL_SHIP)
+    return;
+
+  auto sh = [&ship] -> shipnum_t {
+    if (ship.whatorbits == ScopeLevel::LEVEL_STAR) {
+      return stars[ship.storbits].ships;
+    } else {  // ScopeLevel::LEVEL_PLAN
       const auto planet = getplanet(ship.storbits, ship.pnumorbits);
-      sh = planet.ships;
-    } break;
-    default:
-      return;
-  }
+      return planet.ships;
+    }
+  }();
 
   // traverse the list, look for ships that are closer than the trigger
   // radius.
@@ -688,16 +672,13 @@ void domine(Ship &ship, int detonate) {
 }
 
 void doabm(Ship &ship) {
-  int sh2;
-  int numdest;
-
   if (!ship.alive || !ship.owner) return;
   if (!ship.on || !ship.retaliate || !ship.destruct) return;
 
   if (landed(ship)) {
     const auto &p = planets[ship.storbits][ship.pnumorbits];
     /* check to see if missiles/mines are present */
-    sh2 = p->ships;
+    auto sh2 = p->ships;
     while (sh2 && ship.destruct) {
       if (ships[sh2]->alive &&
           ((ships[sh2]->type == ShipType::STYPE_MISSILE) ||
@@ -708,7 +689,7 @@ void doabm(Ship &ship) {
         /* added last two tests to prevent mutually allied missiles
            getting shot up. */
         /* attack the missile/mine */
-        numdest = retal_strength(ship);
+        auto numdest = retal_strength(ship);
         numdest = MIN(numdest, ship.destruct);
         numdest = MIN(numdest, ship.retaliate);
         ship.destruct -= numdest;
@@ -724,14 +705,12 @@ void doabm(Ship &ship) {
 }
 
 int do_weapon_plant(Ship &ship) {
-  int maxrate;
-  int rate;
-  maxrate = (int)(races[ship.owner - 1].tech / 2.0);
+  auto maxrate = (int)(races[ship.owner - 1].tech / 2.0);
 
-  rate = round_rand(MIN((double)ship.resource / (double)RES_COST_WPLANT,
-                        ship.fuel / FUEL_COST_WPLANT) *
-                    (1. - .01 * (double)ship.damage) * (double)ship.popn /
-                    (double)ship.max_crew);
+  auto rate = round_rand(MIN((double)ship.resource / (double)RES_COST_WPLANT,
+                             ship.fuel / FUEL_COST_WPLANT) *
+                         (1. - .01 * (double)ship.damage) * (double)ship.popn /
+                         (double)ship.max_crew);
   rate = std::min(rate, maxrate);
   use_resource(ship, (rate * RES_COST_WPLANT));
   use_fuel(ship, ((double)rate * FUEL_COST_WPLANT));

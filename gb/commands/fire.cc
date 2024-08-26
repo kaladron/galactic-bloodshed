@@ -190,7 +190,7 @@ void fire(const command_t &argv, GameObj &g) {
       }
 
       damage =
-          shoot_ship_to_ship(from, &*to, strength, cew, 0, long_buf, short_buf);
+          shoot_ship_to_ship(*from, *to, strength, cew, 0, long_buf, short_buf);
 
       if (damage < 0) {
         g.out << "Illegal attack.\n";
@@ -214,7 +214,7 @@ void fire(const command_t &argv, GameObj &g) {
         strength = retal;
         if (laser_on(*to)) check_overload(&*to, 0, &strength);
 
-        if ((damage = shoot_ship_to_ship(&dummy, from, strength, 0, 1, long_buf,
+        if ((damage = shoot_ship_to_ship(dummy, *from, strength, 0, 1, long_buf,
                                          short_buf)) >= 0) {
           if (laser_on(*to))
             use_fuel(*to, 2.0 * (double)strength);
@@ -244,7 +244,7 @@ void fire(const command_t &argv, GameObj &g) {
             strength = check_retal_strength(ship);
             if (laser_on(ship)) check_overload(&ship, 0, &strength);
 
-            if ((damage = shoot_ship_to_ship(&ship, from, strength, 0, 0,
+            if ((damage = shoot_ship_to_ship(ship, *from, strength, 0, 0,
                                              long_buf, short_buf)) >= 0) {
               if (laser_on(ship))
                 use_fuel(ship, 2.0 * (double)strength);

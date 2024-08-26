@@ -14,12 +14,12 @@ static double penetration_factor;
 static int do_radiation(Ship *ship, double tech, int strength, int hits,
                         const char *weapon, char *msg);
 static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
-                     int defense, int caliber, double range, const char *weapon,
-                     char *msg);
+                     int defense, int caliber, double range,
+                     const std::string_view weapon, char *msg);
 
 static void ship_disposition(Ship *ship, int *fevade, int *fspeed, int *fbody);
 static int CEW_hit(double dist, int cew_range);
-static int Num_hits(double dist, int focus, int strength, double tech,
+static int Num_hits(double dist, bool focus, int strength, double tech,
                     int damage, int fevade, int tevade, int fspeed, int tspeed,
                     int tbody, int caliber, int defense);
 static int cew_hit_odds(double dist, int cew_range);
@@ -28,27 +28,17 @@ static void do_critical_hits(int who, Ship *ship, int *hits, int *damage,
 static double p_factor(double tech, double penetration_factor);
 static void mutate_sector(Sector &s);
 
-int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
+int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, bool ignore,
                        char *long_msg, char *short_msg) {
-  int hits;
-  int damage;
-  double dist;
-  double xfrom;
-  double yfrom;
-  double xto;
-  double yto;
-  int focus;
   int fevade;
   int fspeed;
   int fbody;
   int tevade;
   int tspeed;
   int tbody;
-  int caliber;
   char weapon[32];
   char damage_msg[1024];
 
-  hits = 0;
   if (strength <= 0) return -1;
 
   if (!(from->alive || ignore) || !to->alive) return -1;
@@ -61,42 +51,44 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, int ignore,
   if (from->storbits != to->storbits) return -1;
   if (has_switch(*from) && !from->on) return -1;
 
-  xfrom = from->xpos;
-  yfrom = from->ypos;
+  double xfrom = from->xpos;
+  double yfrom = from->ypos;
 
-  xto = to->xpos;
-  yto = to->ypos;
+  double xto = to->xpos;
+  double yto = to->ypos;
   /* compute caliber */
-  caliber = current_caliber(from);
+  int caliber = current_caliber(from);
 
-  if (from->type ==
-      ShipType::STYPE_MISSILE) /* missiles hit at point blank range */
-    dist = 0.0;
-  else {
-    dist = sqrt((double)Distsq(xfrom, yfrom, xto, yto));
-    if (from->type == ShipType::STYPE_MINE) { /* compute the effective range */
-      dist *= dist / 200.0; /* mines are very effective inside 200 */
+  double dist = [from, xfrom, yfrom, xto, yto] -> double {
+    if (from->type ==
+        ShipType::STYPE_MISSILE) /* missiles hit at point blank range */
+      return 0.0;
+    else {
+      double dist = sqrt((double)Distsq(xfrom, yfrom, xto, yto));
+      if (from->type ==
+          ShipType::STYPE_MINE) { /* compute the effective range */
+        dist *= dist / 200.0;     /* mines are very effective inside 200 */
+      }
+      return dist;
     }
-  }
+  }();
+
   if ((double)dist > gun_range((Race *)nullptr, from, 0)) return -1;
+
   /* attack parameters */
   ship_disposition(from, &fevade, &fspeed, &fbody);
   ship_disposition(to, &tevade, &tspeed, &tbody);
   auto defense = getdefense(*to);
 
-  if (laser_on(*from) && from->focus)
-    focus = 1;
-  else
-    focus = 0;
+  bool focus = (laser_on(*from) && from->focus) ? true : false;
 
-  if (cew)
-    hits = strength * CEW_hit((double)dist, (int)from->cew_range);
-  else
-    hits =
-        Num_hits((double)dist, focus, strength, from->tech, (int)from->damage,
-                 fevade, tevade, fspeed, tspeed, tbody, caliber, defense);
+  int hits = cew != 0 ? strength * CEW_hit((double)dist, (int)from->cew_range)
+                      : Num_hits((double)dist, focus, strength, from->tech,
+                                 (int)from->damage, fevade, tevade, fspeed,
+                                 tspeed, tbody, caliber, defense);
+
   /* CEW, destruct, lasers */
-  damage = 0;
+  int damage = 0;
   if (from->mode) {
     damage =
         do_radiation(to, from->tech, strength, hits, "radiation", damage_msg);
@@ -340,8 +332,8 @@ static int do_radiation(Ship *ship, double tech, int strength, int hits,
 }
 
 static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
-                     int defense, int caliber, double range, const char *weapon,
-                     char *msg) {
+                     int defense, int caliber, double range,
+                     const std::string_view weapon, char *msg) {
   double body;
   int i;
   int arm;
@@ -357,7 +349,8 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
   double r;
   char critmsg[1024];
 
-  sprintf(buf, "\tAttack: %d %s at a range of %.0f\n", strength, weapon, range);
+  sprintf(buf, "\tAttack: %d %s at a range of %.0f\n", strength, weapon.data(),
+          range);
   strcpy(msg, buf);
   sprintf(buf, "\t  Hits: %d  %d%% probability\n", hits, hit_probability);
   strcat(msg, buf);
@@ -454,7 +447,7 @@ static int CEW_hit(double dist, int cew_range) {
   return hits;
 }
 
-static int Num_hits(double dist, int focus, int guns, double tech, int fdam,
+static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
                     int fev, int tev, int fspeed, int tspeed, int body,
                     int caliber, int defense) {
   int factor;

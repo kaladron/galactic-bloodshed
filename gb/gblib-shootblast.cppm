@@ -6,7 +6,7 @@ import :race;
 import :ships;
 
 export int shoot_ship_to_ship(Ship *attacker, Ship *target, int strength,
-                              int range, int accuracy, char *long_msg,
+                              int range, bool ignore, char *long_msg,
                               char *short_msg);
 export int shoot_planet_to_ship(Race &race, Ship *target, int strength,
                                 char *long_msg, char *short_msg);

@@ -132,7 +132,7 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
   return damage;
 }
 
-int shoot_planet_to_ship(Race &race, Ship *ship, int strength, char *long_msg,
+int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,
                          char *short_msg) {
   int evade;
   int speed;
@@ -141,20 +141,20 @@ int shoot_planet_to_ship(Race &race, Ship *ship, int strength, char *long_msg,
 
   int hits = 0;
   if (strength <= 0) return -1;
-  if (!ship->alive) return -1;
+  if (!ship.alive) return -1;
 
-  if (ship->whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
+  if (ship.whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
 
-  ship_disposition(*ship, &evade, &speed, &body);
+  ship_disposition(ship, &evade, &speed, &body);
 
-  hits = Num_hits(0.0, 0, strength, race.tech, 0, evade, 0, speed, 0, body,
+  hits = Num_hits(0.0, false, strength, race.tech, 0, evade, 0, speed, 0, body,
                   GTYPE_MEDIUM, 1);
 
-  int damage = do_damage(race.Playernum, *ship, race.tech, strength, hits, 0,
+  int damage = do_damage(race.Playernum, ship, race.tech, strength, hits, 0,
                          GTYPE_MEDIUM, 0.0, "medium guns", damage_msg);
-  sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(*ship).c_str(),
-          race.Playernum, ship->alive ? "attacked" : "DESTROYED",
-          ship_to_string(*ship).c_str());
+  sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(ship).c_str(),
+          race.Playernum, ship.alive ? "attacked" : "DESTROYED",
+          ship_to_string(ship).c_str());
   strcpy(long_msg, short_msg);
   strcat(long_msg, damage_msg);
 

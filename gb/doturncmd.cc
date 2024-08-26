@@ -15,7 +15,6 @@ import std.compat;
 #include "gb/buffers.h"
 #include "gb/build.h"
 #include "gb/doplanet.h"
-#include "gb/doship.h"
 #include "gb/moveplanet.h"
 
 static constexpr void maintain(Race &r, Race::gov &governor,

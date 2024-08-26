@@ -17,7 +17,8 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
                      int defense, int caliber, double range,
                      const std::string_view weapon, char *msg);
 
-static void ship_disposition(Ship *ship, int *fevade, int *fspeed, int *fbody);
+static void ship_disposition(const Ship &ship, int *fevade, int *fspeed,
+                             int *fbody);
 static int CEW_hit(double dist, int cew_range);
 static int Num_hits(double dist, bool focus, int strength, double tech,
                     int damage, int fevade, int tevade, int fspeed, int tspeed,
@@ -28,7 +29,7 @@ static void do_critical_hits(int who, Ship *ship, int *hits, int *damage,
 static double p_factor(double tech, double penetration_factor);
 static void mutate_sector(Sector &s);
 
-int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, bool ignore,
+int shoot_ship_to_ship(Ship &from, Ship &to, int strength, int cew, bool ignore,
                        char *long_msg, char *short_msg) {
   int fevade;
   int fspeed;
@@ -41,67 +42,66 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, bool ignore,
 
   if (strength <= 0) return -1;
 
-  if (!(from->alive || ignore) || !to->alive) return -1;
-  if (from->whatorbits == ScopeLevel::LEVEL_SHIP ||
-      from->whatorbits == ScopeLevel::LEVEL_UNIV)
+  if (!(from.alive || ignore) || !to.alive) return -1;
+  if (from.whatorbits == ScopeLevel::LEVEL_SHIP ||
+      from.whatorbits == ScopeLevel::LEVEL_UNIV)
     return -1;
-  if (to->whatorbits == ScopeLevel::LEVEL_SHIP ||
-      to->whatorbits == ScopeLevel::LEVEL_UNIV)
+  if (to.whatorbits == ScopeLevel::LEVEL_SHIP ||
+      to.whatorbits == ScopeLevel::LEVEL_UNIV)
     return -1;
-  if (from->storbits != to->storbits) return -1;
-  if (has_switch(*from) && !from->on) return -1;
+  if (from.storbits != to.storbits) return -1;
+  if (has_switch(from) && !from.on) return -1;
 
-  double xfrom = from->xpos;
-  double yfrom = from->ypos;
+  double xfrom = from.xpos;
+  double yfrom = from.ypos;
 
-  double xto = to->xpos;
-  double yto = to->ypos;
+  double xto = to.xpos;
+  double yto = to.ypos;
   /* compute caliber */
   int caliber = current_caliber(from);
 
-  double dist = [from, xfrom, yfrom, xto, yto] -> double {
-    if (from->type ==
+  double dist = [xfrom, yfrom, xto, yto, &from]() -> double {
+    if (from.type ==
         ShipType::STYPE_MISSILE) /* missiles hit at point blank range */
       return 0.0;
     else {
       double dist = sqrt((double)Distsq(xfrom, yfrom, xto, yto));
-      if (from->type ==
-          ShipType::STYPE_MINE) { /* compute the effective range */
-        dist *= dist / 200.0;     /* mines are very effective inside 200 */
+      if (from.type == ShipType::STYPE_MINE) { /* compute the effective range */
+        dist *= dist / 200.0; /* mines are very effective inside 200 */
       }
       return dist;
     }
   }();
 
-  if ((double)dist > gun_range(*from)) return -1;
+  if ((double)dist > gun_range(from)) return -1;
 
   /* attack parameters */
   ship_disposition(from, &fevade, &fspeed, &fbody);
   ship_disposition(to, &tevade, &tspeed, &tbody);
-  auto defense = getdefense(*to);
+  auto defense = getdefense(to);
 
-  bool focus = (laser_on(*from) && from->focus) ? true : false;
+  bool focus = (laser_on(from) && from.focus) ? true : false;
 
-  int hits = cew != 0 ? strength * CEW_hit((double)dist, (int)from->cew_range)
-                      : Num_hits((double)dist, focus, strength, from->tech,
-                                 (int)from->damage, fevade, tevade, fspeed,
+  int hits = cew != 0 ? strength * CEW_hit((double)dist, (int)from.cew_range)
+                      : Num_hits((double)dist, focus, strength, from.tech,
+                                 (int)from.damage, fevade, tevade, fspeed,
                                  tspeed, tbody, caliber, defense);
 
   /* CEW, destruct, lasers */
   int damage = 0;
-  if (from->mode) {
+  if (from.mode) {
     damage =
-        do_radiation(to, from->tech, strength, hits, "radiation", damage_msg);
-    sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(*to).c_str(),
-            ship_to_string(*from).c_str(), to->alive ? "attacked" : "DESTROYED",
-            ship_to_string(*to).c_str());
+        do_radiation(&to, from.tech, strength, hits, "radiation", damage_msg);
+    sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(to).c_str(),
+            ship_to_string(from).c_str(), to.alive ? "attacked" : "DESTROYED",
+            ship_to_string(to).c_str());
     strcpy(long_msg, short_msg);
     strcat(long_msg, damage_msg);
   } else {
     if (cew)
       sprintf(weapon, "strength CEW");
-    else if (laser_on(*from)) {
-      if (from->focus)
+    else if (laser_on(from)) {
+      if (from.focus)
         sprintf(weapon, "strength focused laser");
       else
         sprintf(weapon, "strength laser");
@@ -121,11 +121,11 @@ int shoot_ship_to_ship(Ship *from, Ship *to, int strength, int cew, bool ignore,
           return -1;
       }
 
-    damage = do_damage((int)from->owner, to, (double)from->tech, strength, hits,
+    damage = do_damage(from.owner, &to, (double)from.tech, strength, hits,
                        defense, caliber, (double)dist, weapon, damage_msg);
-    sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(*to).c_str(),
-            ship_to_string(*from).c_str(), to->alive ? "attacked" : "DESTROYED",
-            ship_to_string(*to).c_str());
+    sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(to).c_str(),
+            ship_to_string(from).c_str(), to.alive ? "attacked" : "DESTROYED",
+            ship_to_string(to).c_str());
     strcpy(long_msg, short_msg);
     strcat(long_msg, damage_msg);
   }
@@ -145,7 +145,7 @@ int shoot_planet_to_ship(Race &race, Ship *ship, int strength, char *long_msg,
 
   if (ship->whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
 
-  ship_disposition(ship, &evade, &speed, &body);
+  ship_disposition(*ship, &evade, &speed, &body);
 
   hits = Num_hits(0.0, 0, strength, race.tech, 0, evade, 0, speed, 0, body,
                   GTYPE_MEDIUM, 1);
@@ -394,13 +394,14 @@ static int do_damage(int who, Ship *ship, double tech, int strength, int hits,
   return damage;
 }
 
-static void ship_disposition(Ship *ship, int *evade, int *speed, int *body) {
+static void ship_disposition(const Ship &ship, int *evade, int *speed,
+                             int *body) {
   *evade = 0;
   *speed = 0;
-  *body = size(*ship);
-  if (ship->active && !ship->docked && (ship->whatdest || ship->navigate.on)) {
-    *evade = ship->protect.evade;
-    *speed = ship->speed;
+  *body = size(ship);
+  if (ship.active && !ship.docked && (ship.whatdest || ship.navigate.on)) {
+    *evade = ship.protect.evade;
+    *speed = ship.speed;
   }
 }
 
@@ -473,12 +474,12 @@ double tele_range(int type, double tech) {
   return log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
 }
 
-int current_caliber(Ship *ship) {
-  if (ship->laser && ship->fire_laser) return GTYPE_LIGHT;
-  if (ship->type == ShipType::STYPE_MINE) return GTYPE_LIGHT;
-  if (ship->type == ShipType::STYPE_MISSILE) return GTYPE_HEAVY;
-  if (ship->guns == PRIMARY) return ship->primtype;
-  if (ship->guns == SECONDARY) return ship->sectype;
+int current_caliber(const Ship &ship) {
+  if (ship.laser && ship.fire_laser) return GTYPE_LIGHT;
+  if (ship.type == ShipType::STYPE_MINE) return GTYPE_LIGHT;
+  if (ship.type == ShipType::STYPE_MISSILE) return GTYPE_HEAVY;
+  if (ship.guns == PRIMARY) return ship.primtype;
+  if (ship.guns == SECONDARY) return ship.sectype;
 
   return GTYPE_NONE;
 }

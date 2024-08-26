@@ -6,7 +6,7 @@ import :misc;
 import :race;
 import :ships;
 
-export int shoot_ship_to_ship(Ship *attacker, Ship *target, int strength,
+export int shoot_ship_to_ship(Ship &attacker, Ship &target, int strength,
                               int range, bool ignore, char *long_msg,
                               char *short_msg);
 export int shoot_planet_to_ship(Race &race, Ship *target, int strength,
@@ -21,7 +21,7 @@ export int hit_odds(double attacker_strength, int *attacker_guns,
                     int target_hull, int target_engine, int target_fuel,
                     int target_mass);
 export double tele_range(int tech_level, double base_range);
-export int current_caliber(Ship *ship);
+export int current_caliber(const Ship &ship);
 export void do_collateral(Ship *ship, int damage, int *crew_killed,
                           int *hull_damaged, int *engine_damaged,
                           int *fuel_lost);

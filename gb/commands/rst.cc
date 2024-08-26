@@ -382,7 +382,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
       } else {
         Place where{s.whatorbits, s.storbits, s.pnumorbits};
         tech = s.tech;
-        caliber = current_caliber(&s);
+        caliber = current_caliber(s);
         if ((s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) &&
             !s.docked && s.active) {
           fspeed = s.speed;

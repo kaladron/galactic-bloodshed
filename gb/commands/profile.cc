@@ -5,18 +5,11 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/prof.h"
-
 module commands;
 
 namespace GB::commands {
 void profile(const command_t &argv, GameObj &g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
-  // TODO(jeffbailey): ap_t APcount = 0;
-  player_t p;
-
-  auto &race = races[Playernum - 1];
+  auto &race = races[g.player - 1];
 
   // Get information about ourselves
   if (argv.size() == 1) {
@@ -27,9 +20,9 @@ void profile(const command_t &argv, GameObj &g) {
     }
     g.out << std::format("Personal: {}\n", race.info);
     g.out << std::format("Default Scope: /{}/{}\n",
-                         stars[race.governor[Governor].homesystem].name,
-                         stars[race.governor[Governor].homesystem]
-                             .pnames[race.governor[Governor].homeplanetnum]);
+                         stars[race.governor[g.governor].homesystem].name,
+                         stars[race.governor[g.governor].homesystem]
+                             .pnames[race.governor[g.governor].homeplanetnum]);
     if (race.Gov_ship == 0)
       g.out << "NO DESIGNATED CAPITAL!!";
     else
@@ -94,7 +87,8 @@ void profile(const command_t &argv, GameObj &g) {
   }
 
   // Get information about another player.
-  if (!(p = get_player(argv[1]))) {
+  player_t p = get_player(argv[1]);
+  if (p == 0) {
     g.out << "Player does not exist.\n";
     return;
   }

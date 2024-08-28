@@ -183,3 +183,41 @@ export int mod(int a, int b) {
 export constexpr double logscale(const int x) {
   return log10((double)x + 1.0) / 2.0;
 }
+
+namespace {
+int round_perc(const int data, const Race &r, const player_t p) {
+  int k = 101 - MIN(r.translate[p - 1], 100);
+  return (data / k) * k;
+}
+}  // namespace
+
+export std::string Estimate_f(const double data, const Race &r,
+                              const player_t p) {
+  if (r.translate[p - 1] > 10) {
+    int est = round_perc((int)data, r, p);
+    if (est < 1000)
+      return std::format("{}", est);
+    else if (est < 10000)
+      return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
+    else if (est < 1000000)
+      return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
+    else
+      return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
+  }
+  return "?";
+}
+
+export std::string Estimate_i(const int data, const Race &r, const player_t p) {
+  if (r.translate[p - 1] > 10) {
+    int est = round_perc((int)data, r, p);
+    if (std::abs(est) < 1000)
+      return std::format("{}", est);
+    else if (std::abs(est) < 10000)
+      return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
+    else if (std::abs(est) < 1000000)
+      return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
+    else
+      return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
+  }
+  return "?";
+}

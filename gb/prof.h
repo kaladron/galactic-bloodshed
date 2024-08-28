@@ -5,7 +5,7 @@
 #ifndef PROF_H
 #define PROF_H
 
-char *Estimate_i(int, const Race &, unsigned int);
-char *Estimate_f(double, const Race &, int);
+std::string Estimate_i(int, const Race &, player_t);
+std::string Estimate_f(double, const Race &, player_t);
 
 #endif  // PROF_H

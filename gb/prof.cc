@@ -5,53 +5,43 @@
 /* prof.c -- print out racial profile */
 
 import gblib;
-import std.compat;
+import std;
 
 #include "gb/prof.h"
 
-static int round_perc(int, const Race &, int);
-
-static char est_buf[20];
-
-char *Estimate_f(double data, const Race &r, int p) {
-  int est;
-
-  sprintf(est_buf, "?");
-
-  if (r.translate[p - 1] > 10) {
-    est = round_perc((int)data, r, p);
-    if (est < 1000)
-      sprintf(est_buf, "%d", est);
-    else if (est < 10000)
-      sprintf(est_buf, "%.1fK", (double)est / 1000.);
-    else if (est < 1000000)
-      sprintf(est_buf, "%.0fK", (double)est / 1000.);
-    else
-      sprintf(est_buf, "%.1fM", (double)est / 1000000.);
-  }
-  return est_buf;
-}
-
-char *Estimate_i(int data, const Race &r, unsigned int p) {
-  int est;
-
-  sprintf(est_buf, "?");
-
-  if (r.translate[p - 1] > 10) {
-    est = round_perc((int)data, r, p);
-    if ((int)abs(est) < 1000)
-      sprintf(est_buf, "%d", est);
-    else if ((int)abs(est) < 10000)
-      sprintf(est_buf, "%.1fK", (double)est / 1000.);
-    else if ((int)abs(est) < 1000000)
-      sprintf(est_buf, "%.0fK", (double)est / 1000.);
-    else
-      sprintf(est_buf, "%.1fM", (double)est / 1000000.);
-  }
-  return est_buf;
-}
-
+namespace {
 static int round_perc(const int data, const Race &r, int p) {
   int k = 101 - MIN(r.translate[p - 1], 100);
   return ((data / k) * k);
+}
+}  // namespace
+
+std::string Estimate_f(const double data, const Race &r, const player_t p) {
+  if (r.translate[p - 1] > 10) {
+    int est = round_perc((int)data, r, p);
+    if (est < 1000)
+      return std::format("{}", est);
+    else if (est < 10000)
+      return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
+    else if (est < 1000000)
+      return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
+    else
+      return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
+  }
+  return "?";
+}
+
+std::string Estimate_i(const int data, const Race &r, const player_t p) {
+  if (r.translate[p - 1] > 10) {
+    int est = round_perc((int)data, r, p);
+    if (std::abs(est) < 1000)
+      return std::format("{}", est);
+    else if (std::abs(est) < 10000)
+      return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
+    else if (std::abs(est) < 1000000)
+      return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
+    else
+      return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
+  }
+  return "?";
 }

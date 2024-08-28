@@ -17,7 +17,7 @@ void profile(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): ap_t APcount = 0;
-  int p;
+  player_t p;
 
   auto &race = races[Playernum - 1];
 
@@ -132,71 +132,80 @@ void profile(const command_t &argv, GameObj &g) {
       sprintf(buf, "%s\t  Planet Conditions\n",
               r.Metamorph ? "Metamorphic Race" : "Normal Race\t");
       notify(Playernum, Governor, buf);
-      sprintf(buf, "Fert:    %s", Estimate_i((int)(r.fertilize), race, p));
+      sprintf(buf, "Fert:    %s",
+              Estimate_i((int)(r.fertilize), race, p).c_str());
       notify(Playernum, Governor, buf);
       sprintf(buf, "\t\t  Temp:\t%s\n",
-              Estimate_i((int)(r.conditions[TEMP]), race, p));
+              Estimate_i((int)(r.conditions[TEMP]), race, p).c_str());
       notify(Playernum, Governor, buf);
-      sprintf(buf, "Rate:    %s%%", Estimate_f(r.birthrate * 100.0, race, p));
+      sprintf(buf, "Rate:    %s%%",
+              Estimate_f(r.birthrate * 100.0, race, p).c_str());
       notify(Playernum, Governor, buf);
     } else {
       sprintf(buf, "Unknown Race\t\t  Planet Conditions\n");
       notify(Playernum, Governor, buf);
-      sprintf(buf, "Fert:    %s", Estimate_i((int)(r.fertilize), race, p));
+      sprintf(buf, "Fert:    %s",
+              Estimate_i((int)(r.fertilize), race, p).c_str());
       notify(Playernum, Governor, buf);
       sprintf(buf, "\t\t  Temp:\t%s\n",
-              Estimate_i((int)(r.conditions[TEMP]), race, p));
+              Estimate_i((int)(r.conditions[TEMP]), race, p).c_str());
       notify(Playernum, Governor, buf);
-      sprintf(buf, "Rate:    %s", Estimate_f(r.birthrate, race, p));
+      sprintf(buf, "Rate:    %s", Estimate_f(r.birthrate, race, p).c_str());
       notify(Playernum, Governor, buf);
     }
     sprintf(buf, "\t\t  methane  %4s%%\t\tRanges:\n",
-            Estimate_i((int)(r.conditions[METHANE]), race, p));
+            Estimate_i((int)(r.conditions[METHANE]), race, p).c_str());
     notify(Playernum, Governor, buf);
-    sprintf(buf, "Mass:    %s", Estimate_f(r.mass, race, p));
+    sprintf(buf, "Mass:    %s", Estimate_f(r.mass, race, p).c_str());
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\t  oxygen   %4s%%",
-            Estimate_i((int)(r.conditions[OXYGEN]), race, p));
+            Estimate_i((int)(r.conditions[OXYGEN]), race, p).c_str());
     notify(Playernum, Governor, buf);
-    sprintf(buf, "\t\t  guns:   %6s\n", Estimate_f(gun_range(r), race, p));
+    sprintf(buf, "\t\t  guns:   %6s\n",
+            Estimate_f(gun_range(r), race, p).c_str());
     notify(Playernum, Governor, buf);
-    sprintf(buf, "Fight:   %s", Estimate_i((int)(r.fighters), race, p));
+    sprintf(buf, "Fight:   %s", Estimate_i((int)(r.fighters), race, p).c_str());
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\t  helium   %4s%%",
-            Estimate_i((int)(r.conditions[HELIUM]), race, p));
+            Estimate_i((int)(r.conditions[HELIUM]), race, p).c_str());
     notify(Playernum, Governor, buf);
-    sprintf(buf, "\t\t  space:  %6s\n",
-            Estimate_f(tele_range(ShipType::OTYPE_STELE, r.tech), race, p));
+    sprintf(
+        buf, "\t\t  space:  %6s\n",
+        Estimate_f(tele_range(ShipType::OTYPE_STELE, r.tech), race, p).c_str());
     notify(Playernum, Governor, buf);
-    sprintf(buf, "Metab:   %s", Estimate_f(r.metabolism, race, p));
+    sprintf(buf, "Metab:   %s", Estimate_f(r.metabolism, race, p).c_str());
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\t  nitrogen %4s%%",
-            Estimate_i((int)(r.conditions[NITROGEN]), race, p));
+            Estimate_i((int)(r.conditions[NITROGEN]), race, p).c_str());
     notify(Playernum, Governor, buf);
-    sprintf(buf, "\t\t  ground: %6s\n",
-            Estimate_f(tele_range(ShipType::OTYPE_GTELE, r.tech), race, p));
+    sprintf(
+        buf, "\t\t  ground: %6s\n",
+        Estimate_f(tele_range(ShipType::OTYPE_GTELE, r.tech), race, p).c_str());
     notify(Playernum, Governor, buf);
-    sprintf(buf, "Sexes:   %s", Estimate_i((int)(r.number_sexes), race, p));
+    sprintf(buf, "Sexes:   %s",
+            Estimate_i((int)(r.number_sexes), race, p).c_str());
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\t  CO2      %4s%%\n",
-            Estimate_i((int)(r.conditions[CO2]), race, p));
+            Estimate_i((int)(r.conditions[CO2]), race, p).c_str());
     notify(Playernum, Governor, buf);
-    sprintf(buf, "Explore: %s%%", Estimate_f(r.adventurism * 100.0, race, p));
+    sprintf(buf, "Explore: %s%%",
+            Estimate_f(r.adventurism * 100.0, race, p).c_str());
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\t  hydrogen %4s%%\n",
-            Estimate_i((int)(r.conditions[HYDROGEN]), race, p));
+            Estimate_i((int)(r.conditions[HYDROGEN]), race, p).c_str());
     notify(Playernum, Governor, buf);
-    sprintf(buf, "Avg Int: %s", Estimate_i((int)(r.IQ), race, p));
+    sprintf(buf, "Avg Int: %s", Estimate_i((int)(r.IQ), race, p).c_str());
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\t  sulfer   %4s%%\n",
-            Estimate_i((int)(r.conditions[SULFUR]), race, p));
+            Estimate_i((int)(r.conditions[SULFUR]), race, p).c_str());
     notify(Playernum, Governor, buf);
-    sprintf(buf, "Tech:    %s", Estimate_f(r.tech, race, p));
+    sprintf(buf, "Tech:    %s", Estimate_f(r.tech, race, p).c_str());
     notify(Playernum, Governor, buf);
     sprintf(buf, "\t\t  other    %4s%%",
-            Estimate_i((int)(r.conditions[OTHER]), race, p));
+            Estimate_i((int)(r.conditions[OTHER]), race, p).c_str());
     notify(Playernum, Governor, buf);
-    sprintf(buf, "\t\tMorale:   %6s\n", Estimate_i((int)(r.morale), race, p));
+    sprintf(buf, "\t\tMorale:   %6s\n",
+            Estimate_i((int)(r.morale), race, p).c_str());
     notify(Playernum, Governor, buf);
     sprintf(buf, "Sector type preference : %s\n",
             race.translate[p - 1] > 80 ? Desnames[r.likesbest] : " ? ");

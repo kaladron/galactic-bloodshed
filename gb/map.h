@@ -6,7 +6,6 @@
 #define MAP_H
 
 char desshow(const player_t, const governor_t, const Race &, const Sector &);
-void show_map(const player_t, const governor_t, const starnum_t,
-              const planetnum_t, const Planet &);
+void show_map(GameObj &g, const starnum_t, const planetnum_t, const Planet &);
 
 #endif  // MAP_H

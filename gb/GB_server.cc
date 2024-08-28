@@ -26,6 +26,7 @@ import std.compat;
 #include "gb/buffers.h"
 #include "gb/doturncmd.h"
 #include "gb/files.h"
+#include "gb/game_info.h"
 #include "gb/globals.h"
 #include "gb/tweakables.h"
 
@@ -350,7 +351,7 @@ int main(int argc, char **argv) {
   struct stat stbuf;
 
   Sql db{};
-  std::println("      ***   Galactic Bloodshed ver {0} ***", VERS);
+  std::println("      ***   Galactic Bloodshed ver {0} ***", GB_VERSION);
   std::println();
   time_t clk = time(nullptr);
   std::print("      {0}", ctime(&clk));
@@ -681,7 +682,7 @@ static void welcome_user(DescriptorData &d) {
   sprintf(buf,
           "***   Welcome to Galactic Bloodshed %s ***\nPlease enter your "
           "password:\n",
-          VERS);
+          GB_VERSION);
   queue_string(d, buf);
 
   if ((f = fopen(WELCOME_FILE, "r")) != nullptr) {

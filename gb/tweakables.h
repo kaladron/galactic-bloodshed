@@ -5,8 +5,6 @@
 #ifndef TWEAKABLES_H
 #define TWEAKABLES_H
 
-#define VERS "v5.2 10/9/92" /* don't change this */
-
 #define GB_HOST "solana.mps.ohio-state.edu" /* change this for your machine */
 #define GB_PORT 2010 /* change this for your port selection */
 
@@ -42,10 +40,6 @@
 
 #define COMMANDSIZE 42
 #define MAXARGS 256
-
-/* assorted macros */
-// define MIN(x, y) (((x) > (y)) ? (y) : (x))
-// define MAX(x, y) (((x) < (y)) ? (y) : (x))
 
 /* number of global APs each planet is worth */
 #define EARTH_POINTS int_rand(5, 8)

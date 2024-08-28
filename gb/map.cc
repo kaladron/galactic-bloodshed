@@ -10,8 +10,10 @@ import std.compat;
 
 #include "gb/buffers.h"
 
-void show_map(const player_t Playernum, const governor_t Governor,
-              const starnum_t snum, const planetnum_t pnum, const Planet &p) {
+void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
+              const Planet &p) {
+  player_t Playernum = g.player;
+  governor_t Governor = g.governor;
   player_t i;
   int iq = 0;
   char shiplocs[MAX_X][MAX_Y] = {};
@@ -39,12 +41,8 @@ void show_map(const player_t Playernum, const governor_t Governor,
   }
   /* report that this is a planet map */
   output << '$';
-
-  sprintf(buf, "%s;", stars[snum].pnames[pnum]);
-  output << buf;
-
-  sprintf(buf, "%d;%d;%d;", p.Maxx, p.Maxy, show);
-  output << buf;
+  output << std::format("{};", stars[snum].pnames[pnum]);
+  output << std::format("{};{};{};", p.Maxx, p.Maxy, show);
 
   /* send map data */
   for (const auto &sector : smap) {

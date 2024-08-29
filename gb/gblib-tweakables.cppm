@@ -4,6 +4,46 @@ export module gblib:tweakables;
 
 import :types;
 
+export constexpr const char* GB_HOST =
+    "solana.mps.ohio-state.edu";      // change this for your machine
+export constexpr int GB_PORT = 2010;  // change this for your port selection
+
+export constexpr int COMMAND_TIME_MSEC =
+    250;  // time slice length in milliseconds
+export constexpr int COMMANDS_PER_TIME =
+    1;  // commands per time slice after burst
+export constexpr int COMMAND_BURST_SIZE =
+    250;  // commands allowed per user in a burst
+export constexpr int DISCONNECT_TIME = 7200;  // maximum idle time
+
+export constexpr const char* WELCOME_FILE = "welcome.txt";
+export constexpr const char* HELP_FILE = DOCDIR "help.txt";
+export constexpr const char* LEAVE_MESSAGE =
+    "\n*** Thank you for playing Galactic Bloodshed ***\n";
+
+export constexpr bool EXTERNAL_TRIGGER =
+    false;  // if you wish to allow the below passwords to
+            // trigger updates and movement segments
+export constexpr const char* UPDATE_PASSWORD = "put_your_update_password_here";
+export constexpr const char* SEGMENT_PASSWORD =
+    "put_your_segment_password_here";
+
+export constexpr int DEFAULT_UPDATE_TIME = (30 * 60);  // update time (minutes!)
+export constexpr int DEFAULT_RANDOM_UPDATE_RANGE = 0;  // again, in minutes.
+export constexpr int DEFAULT_RANDOM_SEGMENT_RANGE = 0;  // again, in minutes.
+
+/**
+ * @brief If MOVES_PER_UPDATE is set to 1, there will be no movement segments
+ * between updates; the move is counted as part of the update.
+ * Set this to something higher to have evenly spaced movement segments.
+ */
+export constexpr int MOVES_PER_UPDATE = 3;
+
+export constexpr int LOGIN_NAME_SIZE = 64;
+
+export constexpr int COMMANDSIZE = 42;
+export constexpr int MAXARGS = 256;
+
 export constexpr int MAX_X = 45;  // top range for planet
 export constexpr int MAX_Y = 19;
 export constexpr double RATIOXY =

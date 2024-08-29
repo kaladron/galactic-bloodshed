@@ -5,8 +5,6 @@
 import gblib;
 import std.compat;
 
-#include "gb/GB_racegen.h"
-
 #include <strings.h>
 #include <unistd.h>
 
@@ -15,6 +13,9 @@ import std.compat;
 #include <cstdlib>
 
 #include "gb/racegen.h"
+
+int enroll_valid_race();
+void init_enroll();
 
 static const PlanetType planet_translate[N_HOME_PLANET_TYPES] = {
     PlanetType::EARTH,   PlanetType::FOREST, PlanetType::DESERT,

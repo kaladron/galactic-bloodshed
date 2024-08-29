@@ -28,7 +28,6 @@ import std.compat;
 #include "gb/files.h"
 #include "gb/game_info.h"
 #include "gb/globals.h"
-#include "gb/tweakables.h"
 
 static int shutdown_flag = 0;
 
@@ -355,10 +354,10 @@ int main(int argc, char **argv) {
   std::println();
   time_t clk = time(nullptr);
   std::print("      {0}", ctime(&clk));
-#ifdef EXTERNAL_TRIGGER
-  std::println("      The update  password is '%s'.", UPDATE_PASSWORD);
-  std::println("      The segment password is '%s'.", SEGMENT_PASSWORD);
-#endif
+  if (EXTERNAL_TRIGGER) {
+    std::println("      The update  password is '%s'.", UPDATE_PASSWORD);
+    std::println("      The segment password is '%s'.", SEGMENT_PASSWORD);
+  }
   int port;
   switch (argc) {
     case 2:
@@ -835,15 +834,15 @@ static bool do_command(DescriptorData &d, std::string_view comm) {
 static void check_connect(DescriptorData &d, std::string_view message) {
   auto [race_password, gov_password] = parse_connect(message);
 
-#ifdef EXTERNAL_TRIGGER
-  if (race_password == SEGMENT_PASSWORD) {
-    do_segment(d.db, 1, 0);
-    return;
-  } else if (race_password == UPDATE_PASSWORD) {
-    do_update(d.db, true);
-    return;
+  if (EXTERNAL_TRIGGER) {
+    if (race_password == SEGMENT_PASSWORD) {
+      do_segment(d.db, 1, 0);
+      return;
+    } else if (race_password == UPDATE_PASSWORD) {
+      do_update(d.db, true);
+      return;
+    }
   }
-#endif
 
   auto [Playernum, Governor] = getracenum(race_password, gov_password);
 
@@ -1081,9 +1080,19 @@ static void dump_users(DescriptorData &e) {
   }
 }
 
-//* Dispatch to the function to run the command based on the string input by
-// the
-// user.
+/**
+ * @brief Process a command in the game.
+ *
+ * This function processes a command in the game based on the given arguments.
+ * It checks if the command exists in the list of available commands and
+ * executes it. If the command is not found, it checks for specific commands
+ * that can only be executed by a God player. If the command is not found and
+ * the player is not a God, it displays an error message. After processing the
+ * command, it computes the prompt and sends it to the player.
+ *
+ * @param g The GameObj representing the game state.
+ * @param argv The command arguments.
+ */
 static void process_command(GameObj &g, const command_t &argv) {
   bool God = races[g.player - 1].God;
 

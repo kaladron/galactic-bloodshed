@@ -44,9 +44,9 @@ export planetnum_t Planet_count;
 export std::unordered_map<NewsType, unsigned long> newslength;
 
 export unsigned long segments;  // number of movement segments (global variable)
-export time_t next_update_time;    // When will next update be... approximately
-export time_t next_segment_time;   // When will next segment be... approximately
-export unsigned int update_time;   // Interval between updates in minutes
+export time_t next_update_time;   // When will next update be... approximately
+export time_t next_segment_time;  // When will next segment be... approximately
+export std::chrono::minutes update_time;  // Interval between updates
 export segments_t nsegments_done;  // How many movements have we done so far?
 
 export power Power[MAXPLAYERS];

@@ -46,8 +46,9 @@ void fuel_output(GameObj &g, const double dist, const double fuel,
   time_t effective_time =
       (segments == 1)
           ? next_update_time +
-                (static_cast<time_t>((segs - 1) * (update_time * 60)))
-          : next_segment_time + ((segs - 1) * (update_time / segments) * 60);
+                (static_cast<time_t>((segs - 1) * (update_time.count() * 60)))
+          : next_segment_time +
+                ((segs - 1) * (update_time.count() / segments) * 60);
 
   g.out << std::format("ESTIMATED Arrival Time: {}\n",
                        std::ctime(&effective_time));

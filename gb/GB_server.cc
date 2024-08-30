@@ -362,17 +362,17 @@ int main(int argc, char **argv) {
   switch (argc) {
     case 2:
       port = std::stoi(argv[1]);
-      update_time = DEFAULT_UPDATE_TIME;
+      update_time = std::chrono::minutes(DEFAULT_UPDATE_TIME);
       segments = MOVES_PER_UPDATE;
       break;
     case 3:
       port = std::stoi(argv[1]);
-      update_time = std::stoi(argv[2]);
+      update_time = std::chrono::minutes(std::stoi(argv[2]));
       segments = MOVES_PER_UPDATE;
       break;
     case 4:
       port = std::stoi(argv[1]);
-      update_time = std::stoi(argv[2]);
+      update_time = std::chrono::minutes(std::stoi(argv[2]));
       segments = std::stoi(argv[3]);
       break;
     default:
@@ -387,7 +387,7 @@ int main(int argc, char **argv) {
   std::cerr << "      " << segments << " segments/update" << std::endl;
   start_buf = std::format("Server started  : {0}", ctime(&clk));
 
-  next_update_time = clk + (update_time * 60);
+  next_update_time = clk + (update_time.count() * 60);
   if (stat(UPDATEFL, &stbuf) >= 0) {
     if (FILE *sfile = fopen(UPDATEFL, "r"); sfile != nullptr) {
       char dum[32];
@@ -402,7 +402,7 @@ int main(int argc, char **argv) {
   if (segments <= 1)
     next_segment_time += (144 * 3600);
   else {
-    next_segment_time = clk + (update_time * 60 / segments);
+    next_segment_time = clk + (update_time.count() * 60 / segments);
     if (stat(SEGMENTFL, &stbuf) >= 0) {
       if (FILE *sfile = fopen(SEGMENTFL, "r"); sfile != nullptr) {
         char dum[32];
@@ -557,10 +557,11 @@ static int shovechars(int port, Db &db) {
     }
     if (go_time == 0) {
       if (now >= next_update_time) {
-        go_time = now + (int_rand(0, DEFAULT_RANDOM_UPDATE_RANGE) * 60);
+        go_time = now + (int_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
       }
       if (now >= next_segment_time && nsegments_done < segments) {
-        go_time = now + (int_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE) * 60);
+        go_time =
+            now + (int_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
       }
     }
     if (go_time > 0 && now >= go_time) {
@@ -919,15 +920,16 @@ static void do_update(Db &db, bool force) {
     nsegments_done = segments;
   } else {
     if (force)
-      next_segment_time = clk + update_time * 60 / segments;
+      next_segment_time = clk + update_time.count() * 60 / segments;
     else
-      next_segment_time = next_update_time + update_time * 60 / segments;
+      next_segment_time =
+          next_update_time + update_time.count() * 60 / segments;
     nsegments_done = 1;
   }
   if (force)
-    next_update_time = clk + update_time * 60;
+    next_update_time = clk + update_time.count() * 60;
   else
-    next_update_time += update_time * 60;
+    next_update_time += update_time.count() * 60;
 
   if (!fakeit) nupdates_done++;
 
@@ -987,16 +989,16 @@ static void do_segment(Db &db, int override, int segment) {
     force_output();
   }
   if (override) {
-    next_segment_time = clk + update_time * 60 / segments;
+    next_segment_time = clk + update_time.count() * 60 / segments;
     if (segment) {
       nsegments_done = segment;
       next_update_time =
-          clk + update_time * 60 * (segments - segment + 1) / segments;
+          clk + update_time.count() * 60 * (segments - segment + 1) / segments;
     } else {
       nsegments_done++;
     }
   } else {
-    next_segment_time += update_time * 60 / segments;
+    next_segment_time += update_time.count() * 60 / segments;
     nsegments_done++;
   }
 

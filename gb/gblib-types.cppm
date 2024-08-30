@@ -136,7 +136,7 @@ export class Db {
  public:
   virtual ~Db() = default;
   virtual int Numcommods() = 0;
-  virtual int Numraces() = 0;
+  virtual player_t Numraces() = 0;
 
  protected:
   Db() = default;

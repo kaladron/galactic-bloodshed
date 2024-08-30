@@ -10,7 +10,7 @@ export class Sql : public Db {
   Sql();
   virtual ~Sql() override;
   virtual int Numcommods() override;
-  virtual int Numraces() override;
+  virtual player_t Numraces() override;
   virtual void putcommod(const Commod &, int);
   virtual void putship(Ship *);
   virtual void putstar(const Star &, starnum_t);

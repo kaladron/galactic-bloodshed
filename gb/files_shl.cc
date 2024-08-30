@@ -1590,7 +1590,7 @@ void putcommod(const Commod &c, int commodnum) {
   }
 }
 
-int Sql::Numraces() {
+player_t Sql::Numraces() {
   struct stat buffer;
 
   fstat(racedata, &buffer);

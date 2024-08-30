@@ -28,9 +28,11 @@ export constexpr const char* UPDATE_PASSWORD = "put_your_update_password_here";
 export constexpr const char* SEGMENT_PASSWORD =
     "put_your_segment_password_here";
 
-export constexpr int DEFAULT_UPDATE_TIME = (30 * 60);  // update time (minutes!)
-export constexpr int DEFAULT_RANDOM_UPDATE_RANGE = 0;  // again, in minutes.
-export constexpr int DEFAULT_RANDOM_SEGMENT_RANGE = 0;  // again, in minutes.
+using namespace std::chrono_literals;
+export constexpr auto DEFAULT_UPDATE_TIME = 30min;  // update time (minutes!)
+export constexpr auto DEFAULT_RANDOM_UPDATE_RANGE = 0min;  // again, in minutes.
+export constexpr auto DEFAULT_RANDOM_SEGMENT_RANGE =
+    0min;  // again, in minutes.
 
 /**
  * @brief If MOVES_PER_UPDATE is set to 1, there will be no movement segments

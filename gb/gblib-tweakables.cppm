@@ -4,6 +4,26 @@ export module gblib:tweakables;
 
 import :types;
 
+// Game dependencies.  These will likely change for each game.
+export constexpr const char* DEADLINE = "June 22 23:00 GMT";
+export constexpr const char* GAME = "The Return of Galactic Bloodshed II";
+export constexpr const char* GB_VERSION = "Standard GB 5.0";
+export constexpr const char* LOCATION = "courses.cstudies.ubc.ca 2010";
+export constexpr const char* MODERATOR = "Chris Brougham";
+export constexpr const char* PLAYERS = "25";
+export constexpr const char* STARS = "100";
+export constexpr const char* STARTS = "June 22 23:30 GMT";
+export constexpr const char* TO = "chris@courses.cstudies.ubc.ca";
+export constexpr const char* UPDATE_SCH =
+    "1st 10 updates hourly. Thereafter every 30 hours.";
+export constexpr const char* OTHER_STUFF =
+    "\nRacegen points are increased to 1400. Moderator will play (Zargoons).\n";
+
+// Racegen options.
+export constexpr int STARTING_POINTS = 1400;
+export constexpr int MIN_PASSWORD_LENGTH = 4;
+export constexpr int DEFAULT_MESO_IQ_LIMIT = 180;
+
 export constexpr const char* GB_HOST =
     "solana.mps.ohio-state.edu";      // change this for your machine
 export constexpr int GB_PORT = 2010;  // change this for your port selection

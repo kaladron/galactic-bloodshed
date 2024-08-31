@@ -154,29 +154,29 @@ int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,
 /**
  * @return Number of sectors destroyed.
  */
-int shoot_ship_to_planet(Ship *ship, Planet &pl, int strength, int x, int y,
+int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
                          SectorMap &smap, int ignore, int caliber,
                          char *long_msg, char *short_msg) {
   int numdest = 0;
 
   if (strength <= 0) return -1;
-  if (!(ship->alive || ignore)) return -1;
-  if (has_switch(*ship) && !ship->on) return -1;
-  if (ship->whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
+  if (!(ship.alive || ignore)) return -1;
+  if (has_switch(ship) && !ship.on) return -1;
+  if (ship.whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
 
   if (x < 0 || x > pl.Maxx - 1 || y < 0 || y > pl.Maxy - 1) return -1;
 
   double r = .4 * strength;
   if (!caliber) { /* figure out the appropriate gun caliber if not given*/
-    if (ship->fire_laser)
+    if (ship.fire_laser)
       caliber = GTYPE_LIGHT;
     else
-      switch (ship->guns) {
+      switch (ship.guns) {
         case PRIMARY:
-          caliber = ship->primtype;
+          caliber = ship.primtype;
           break;
         case SECONDARY:
-          caliber = ship->sectype;
+          caliber = ship.sectype;
           break;
         default:
           caliber = GTYPE_LIGHT;
@@ -257,8 +257,8 @@ int shoot_ship_to_planet(Ship *ship, Planet &pl, int strength, int x, int y,
   pl.conditions[TOXIC] += (100 - pl.conditions[TOXIC]) *
                           ((double)numdest / (double)(pl.Maxx * pl.Maxy));
 
-  sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(*ship).c_str(),
-          dispshiploc(*ship).c_str(), oldowner);
+  sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(ship).c_str(),
+          dispshiploc(ship).c_str(), oldowner);
   strcpy(long_msg, short_msg);
   sprintf(buf, "\t%d sectors destroyed\n", numdest);
   strcat(long_msg, buf);

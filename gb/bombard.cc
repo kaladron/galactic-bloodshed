@@ -72,7 +72,7 @@ int berserker_bombard(Ship *ship, Planet &planet, Race &r) {
       ship->destruct -= str;
       ship->mass -= str * MASS_DESTRUCT;
 
-      numdest = shoot_ship_to_planet(ship, planet, str, x, y, smap, 0, 0,
+      numdest = shoot_ship_to_planet(*ship, planet, str, x, y, smap, 0, 0,
                                      long_buf, short_buf);
       /* (0=dont get smap) */
       if (numdest < 0) numdest = 0;

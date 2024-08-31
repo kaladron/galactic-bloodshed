@@ -153,7 +153,7 @@ void defend(const command_t &argv, GameObj &g) {
     if (laser_on(*to)) check_overload(&*to, 0, &strength);
 
     auto smap = getsmap(p);
-    if ((numdest = shoot_ship_to_planet(&dummy, p, strength, x, y, smap, 0, 0,
+    if ((numdest = shoot_ship_to_planet(dummy, p, strength, x, y, smap, 0, 0,
                                         long_buf, short_buf)) >= 0) {
       if (laser_on(*to))
         use_fuel(*to, 2.0 * (double)strength);
@@ -180,8 +180,8 @@ void defend(const command_t &argv, GameObj &g) {
         strength = check_retal_strength(*ship);
 
         auto smap = getsmap(p);
-        if ((numdest = shoot_ship_to_planet(ship, p, strength, x, y, smap, 0, 0,
-                                            long_buf, short_buf)) >= 0) {
+        if ((numdest = shoot_ship_to_planet(*ship, p, strength, x, y, smap, 0,
+                                            0, long_buf, short_buf)) >= 0) {
           if (laser_on(*ship))
             use_fuel(*ship, 2.0 * (double)strength);
           else

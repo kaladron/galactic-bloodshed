@@ -255,7 +255,7 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
     /* damaged ships stand of chance of crash landing */
     auto smap = getsmap(p);
     numdest =
-        shoot_ship_to_planet(&s, p, round_rand((double)(s.destruct) / 3.), x, y,
+        shoot_ship_to_planet(s, p, round_rand((double)(s.destruct) / 3.), x, y,
                              smap, 0, GTYPE_HEAVY, long_buf, short_buf);
     putsmap(smap, p);
     sprintf(buf, "BOOM!! %s crashes on sector %d,%d with blast radius of %d.\n",

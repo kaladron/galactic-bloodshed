@@ -527,8 +527,8 @@ void domissile(Ship &ship) {
 
       auto smap = getsmap(*p);
       auto numdest =
-          shoot_ship_to_planet(&ship, *p, (int)ship.destruct, bombx, bomby,
-                               smap, 0, GTYPE_HEAVY, long_buf, short_buf);
+          shoot_ship_to_planet(ship, *p, (int)ship.destruct, bombx, bomby, smap,
+                               0, GTYPE_HEAVY, long_buf, short_buf);
       putsmap(smap, *p);
       push_telegram(ship.owner, ship.governor, long_buf);
       kill_ship(ship.owner, &ship);
@@ -647,7 +647,7 @@ void domine(Ship &ship, int detonate) {
 
     auto smap = getsmap(planet);
     auto numdest =
-        shoot_ship_to_planet(&ship, planet, (int)(ship.destruct), x, y, smap, 0,
+        shoot_ship_to_planet(ship, planet, (int)(ship.destruct), x, y, smap, 0,
                              GTYPE_LIGHT, long_buf, short_buf);
     putsmap(smap, planet);
     putplanet(planet, stars[ship.storbits], (int)ship.pnumorbits);

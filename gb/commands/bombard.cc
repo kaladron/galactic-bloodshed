@@ -122,7 +122,7 @@ void bombard(const command_t &argv, GameObj &g) {
       }
 
       auto smap = getsmap(p);
-      numdest = shoot_ship_to_planet(from, p, strength, x, y, smap, 0, 0,
+      numdest = shoot_ship_to_planet(*from, p, strength, x, y, smap, 0, 0,
                                      long_buf, short_buf);
       putsmap(smap, p);
 

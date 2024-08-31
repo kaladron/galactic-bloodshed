@@ -7,12 +7,12 @@
 #include "gb/enroll.h"
 
 import std;
+import gblib;
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "gb/game_info.h"
 #include "gb/racegen.h"
 
 static const char *DEFAULT_ENROLLMENT_FILENAME = "enroll.saves";

@@ -3,6 +3,7 @@
 // found in the COPYING file.
 
 import std.compat;
+import gblib;
 
 #include "gb/racegen.h"
 
@@ -11,8 +12,6 @@ import std.compat;
 
 #include <cstdarg>
 #include <cstdio>
-
-#include "gb/game_info.h"
 
 static int do_racegen();
 

@@ -26,7 +26,6 @@ import std.compat;
 #include "gb/buffers.h"
 #include "gb/doturncmd.h"
 #include "gb/files.h"
-#include "gb/game_info.h"
 #include "gb/globals.h"
 
 static int shutdown_flag = 0;

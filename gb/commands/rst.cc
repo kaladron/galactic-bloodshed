@@ -442,8 +442,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 int tev = 0;
                 int tspeed = 0;
                 int body = 0;
-                int prob = 0;
-                int factor = 0;
+
                 if ((rd[i].s.whatdest != ScopeLevel::LEVEL_UNIV ||
                      rd[i].s.navigate.on) &&
                     !rd[i].s.docked && rd[i].s.active) {
@@ -452,8 +451,9 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 }
                 body = size(rd[i].s);
                 auto defense = getdefense(rd[i].s);
-                prob = hit_odds(Dist, &factor, tech, fdam, fev, tev, fspeed,
-                                tspeed, body, caliber, defense);
+                auto [prob, factor] =
+                    hit_odds(Dist, tech, fdam, fev, tev, fspeed, tspeed, body,
+                             caliber, defense);
                 if (rd[indx].type != PLANET && laser_on(rd[indx].s) &&
                     rd[indx].s.focus)
                   prob = prob * prob / 100;

@@ -410,10 +410,8 @@ static int CEW_hit(double dist, int cew_range) {
 static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
                     int fev, int tev, int fspeed, int tspeed, int body,
                     guntype_t caliber, int defense) {
-  int factor;
-
-  int prob = hit_odds(dist, &factor, tech, fdam, fev, tev, fspeed, tspeed, body,
-                      caliber, defense);
+  auto [prob, factor] = hit_odds(dist, tech, fdam, fev, tev, fspeed, tspeed,
+                                 body, caliber, defense);
 
   int hits = 0;
   if (focus) {
@@ -428,24 +426,23 @@ static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
   return hits;
 }
 
-int hit_odds(double range, int *factor, double tech, int fdam, int fev, int tev,
-             int fspeed, int tspeed, int body, guntype_t caliber, int defense) {
+std::pair<int, int> hit_odds(double range, double tech, int fdam, int fev,
+                             int tev, int fspeed, int tspeed, int body,
+                             guntype_t caliber, int defense) {
   if (caliber == GTYPE_NONE) {
-    *factor = 0;
-    return 0;
+    return {0, 0};
   }
 
   double a = log10(1.0 + (double)tech) * 80.0 * pow((double)body, 0.33333);
   double b = 72.0 / ((2.0 + (double)tev) * (2.0 + (double)fev) *
                      (18.0 + (double)tspeed + (double)fspeed));
   double c = a * b / (double)caliber;
-  *factor = (int)(c * (1.0 - (double)fdam / 100.)); /* 50% hit range */
+  int factor = (int)(c * (1.0 - (double)fdam / 100.)); /* 50% hit range */
   int odds = 0;
-  if (*factor > 0)
-    odds =
-        (int)((double)((*factor) * 100) / ((double)((*factor) + (int)range)));
+  if (factor > 0)
+    odds = (int)((double)((factor) * 100) / ((double)((factor) + (int)range)));
   odds = (int)((double)odds * (1.0 - 0.1 * (double)defense));
-  return odds;
+  return {odds, factor};
 }
 
 static int cew_hit_odds(double range, int cew_range) {

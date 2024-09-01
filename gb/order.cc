@@ -618,145 +618,133 @@ void DispOrdersHeader(int Playernum, int Governor) {
 
 void DispOrders(int Playernum, int Governor, const Ship &ship) {
   double distfac;
-  char temp[2047];
+  std::stringstream buffer;
 
   if (ship.owner != Playernum || !authorized(Governor, ship) || !ship.alive)
     return;
 
   if (ship.docked)
     if (ship.whatdest == ScopeLevel::LEVEL_SHIP)
-      sprintf(temp, "D#%lu", ship.destshipno);
+      buffer << "D#" << ship.destshipno;
     else
-      sprintf(temp, "L%2d,%-2d", ship.land_x, ship.land_y);
+      buffer << std::format("L{:2d},{:2d}", ship.land_x, ship.land_y);
   else
-    strcpy(temp, prin_ship_dest(ship).c_str());
+    buffer << prin_ship_dest(ship);
 
-  sprintf(buf, "%5lu %c %14.14s %c%1u %-10s %-10.10s ", ship.number,
-          Shipltrs[ship.type], ship.name,
-          ship.hyper_drive.has ? (ship.mounted ? '+' : '*') : ' ', ship.speed,
-          dispshiploc_brief(ship).c_str(), temp);
+  buffer << std::format("{:5} {} {:14.14} {}{} {:10.10} {}", ship.number,
+                        Shipltrs[ship.type], ship.name,
+                        ship.hyper_drive.has ? (ship.mounted ? '+' : '*') : ' ',
+                        ship.speed, dispshiploc_brief(ship), buffer.str());
 
   if (ship.hyper_drive.on) {
-    sprintf(temp, "/jump %s %d",
-            (ship.hyper_drive.ready ? "ready" : "charging"),
-            ship.hyper_drive.charge);
-    strcat(buf, temp);
+    buffer << std::format("/jump {} {}",
+                          (ship.hyper_drive.ready ? "ready" : "charging"),
+                          ship.hyper_drive.charge);
   }
   if (ship.protect.self) {
-    sprintf(temp, "/retal");
-    strcat(buf, temp);
+    buffer << "/retal";
   }
 
   if (ship.guns == PRIMARY) {
     switch (ship.primtype) {
       case GTYPE_LIGHT:
-        sprintf(temp, "/lgt primary");
+        buffer << "/lgt primary";
         break;
       case GTYPE_MEDIUM:
-        sprintf(temp, "/med primary");
+        buffer << "/med primary";
         break;
       case GTYPE_HEAVY:
-        sprintf(temp, "/hvy primary");
+        buffer << "/hvy primary";
         break;
       case GTYPE_NONE:
-        sprintf(temp, "/none");
+        buffer << "/none";
         break;
     }
-    strcat(buf, temp);
   } else if (ship.guns == SECONDARY) {
     switch (ship.sectype) {
       case GTYPE_LIGHT:
-        sprintf(temp, "/lgt secondary");
+        buffer << "/lgt secondary";
         break;
       case GTYPE_MEDIUM:
-        sprintf(temp, "/med secndry");
+        buffer << "/med secndry";
         break;
       case GTYPE_HEAVY:
-        sprintf(temp, "/hvy secndry");
+        buffer << "/hvy secndry";
         break;
       case GTYPE_NONE:
-        sprintf(temp, "/none");
+        buffer << "/none";
         break;
     }
-    strcat(buf, temp);
   }
 
   if (ship.fire_laser) {
-    sprintf(temp, "/laser %d", ship.fire_laser);
-    strcat(buf, temp);
+    buffer << std::format("/laser {}", ship.fire_laser);
   }
-  if (ship.focus) strcat(buf, "/focus");
+  if (ship.focus) buffer << "/focus";
 
   if (ship.retaliate) {
-    sprintf(temp, "/salvo %d", ship.retaliate);
-    strcat(buf, temp);
+    buffer << std::format("/salvo {}", ship.retaliate);
   }
-  if (ship.protect.planet) strcat(buf, "/defense");
+  if (ship.protect.planet) buffer << "/defense";
   if (ship.protect.on) {
-    sprintf(temp, "/prot %d", ship.protect.ship);
-    strcat(buf, temp);
+    buffer << std::format("/prot {}", ship.protect.ship);
   }
   if (ship.navigate.on) {
-    sprintf(temp, "/nav %d (%d)", ship.navigate.bearing, ship.navigate.turns);
-    strcat(buf, temp);
+    buffer << std::format("/nav {} ({})", ship.navigate.bearing,
+                          ship.navigate.turns);
   }
   if (ship.merchant) {
-    sprintf(temp, "/merchant %d", ship.merchant);
-    strcat(buf, temp);
+    buffer << std::format("/merchant {}", ship.merchant);
   }
   if (has_switch(ship)) {
     if (ship.on)
-      strcat(buf, "/on");
+      buffer << "/on";
     else
-      strcat(buf, "/off");
+      buffer << "/off";
   }
-  if (ship.protect.evade) strcat(buf, "/evade");
-  if (ship.bombard) strcat(buf, "/bomb");
+  if (ship.protect.evade) buffer << "/evade";
+  if (ship.bombard) buffer << "/bomb";
   if (ship.type == ShipType::STYPE_MINE || ship.type == ShipType::OTYPE_GR) {
     if (ship.mode)
-      strcat(buf, "/radiate");
+      buffer << "/radiate";
     else
-      strcat(buf, "/explode");
+      buffer << "/explode";
   }
   if (ship.type == ShipType::OTYPE_TERRA || ship.type == ShipType::OTYPE_PLOW) {
     int i;
-    sprintf(temp, "/move %s", &(ship.shipclass[ship.special.terraform.index]));
+    std::string temp = &(ship.shipclass[ship.special.terraform.index]);
+    buffer << std::format("/move {}", temp);
 
-    if (temp[i = (strlen(temp) - 1)] == 'c') {
-      std::string hidden = ship.shipclass;
+    if (temp[i = (temp.length() - 1)] == 'c') {
+      std::string hidden = temp;
       hidden = hidden.substr(0, ship.special.terraform.index);
-      sprintf(temp + i, "%sc", hidden.c_str());
+      buffer << std::format("{}c", hidden);
     }
-    strcat(buf, temp);
   }
 
   if (ship.type == ShipType::STYPE_MISSILE &&
       ship.whatdest == ScopeLevel::LEVEL_PLAN) {
     if (ship.special.impact.scatter)
-      strcat(buf, "/scatter");
+      buffer << "/scatter";
     else {
-      sprintf(temp, "/impact %d,%d", ship.special.impact.x,
-              ship.special.impact.y);
-      strcat(buf, temp);
+      buffer << std::format("/impact {},{}", ship.special.impact.x,
+                            ship.special.impact.y);
     }
   }
 
   if (ship.type == ShipType::STYPE_MINE) {
-    sprintf(temp, "/trigger %d", ship.special.trigger.radius);
-    strcat(buf, temp);
+    buffer << std::format("/trigger {}", ship.special.trigger.radius);
   }
   if (ship.type == ShipType::OTYPE_TRANSDEV) {
-    sprintf(temp, "/target %d", ship.special.transport.target);
-    strcat(buf, temp);
+    buffer << std::format("/target {}", ship.special.transport.target);
   }
   if (ship.type == ShipType::STYPE_MIRROR) {
-    sprintf(temp, "/aim %s/int %d", prin_aimed_at(ship).c_str(),
-            ship.special.aimed_at.intensity);
-    strcat(buf, temp);
+    buffer << std::format("/aim {}/int {}", prin_aimed_at(ship),
+                          ship.special.aimed_at.intensity);
   }
 
-  strcat(buf, "\n");
-  notify(Playernum, Governor, buf);
+  buffer << "\n";
+  notify(Playernum, Governor, buffer.str());
   /* if hyper space is on estimate how much fuel it will cost to get to the
    * destination */
   if (ship.hyper_drive.on) {
@@ -773,9 +761,9 @@ void DispOrders(int Playernum, int Governor, const Ship &ship) {
              (dist / distfac);
     }
 
-    sprintf(buf, "  *** distance %.0f - jump will cost %.1ff ***\n", dist,
-            fuse);
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format("  *** distance {:.0f} - jump will cost {:.1f}f ***\n",
+                       dist, fuse));
     if (ship.max_fuel < fuse)
       notify(Playernum, Governor,
              "Your ship cannot carry enough fuel to do this jump.\n");

@@ -6,21 +6,21 @@ import std.compat;
 
 module gblib;
 
-static int hit_probability;
-
 static std::pair<int, std::string> do_radiation(Ship &ship, double tech,
                                                 int strength, int hits);
 static std::pair<int, std::string> do_damage(player_t who, Ship &ship,
                                              double tech, int strength,
                                              int hits, int defense, int caliber,
                                              double range,
-                                             const std::string_view weapon);
+                                             const std::string_view weapon,
+                                             int hit_probability);
 
 static std::tuple<int, int, int> ship_disposition(const Ship &ship);
 static int CEW_hit(double dist, int cew_range);
 static int Num_hits(double dist, bool focus, int strength, double tech,
                     int damage, int fevade, int tevade, int fspeed, int tspeed,
-                    int tbody, guntype_t caliber, int defense);
+                    int tbody, guntype_t caliber, int defense,
+                    int *hit_probability);
 static int cew_hit_odds(double dist, int cew_range);
 static std::string do_critical_hits(int penetrate, Ship &ship, int *hits,
                                     int *damage, int defense);
@@ -71,10 +71,12 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
 
   bool focus = (laser_on(from) && from.focus) ? true : false;
 
-  int hits = cew != 0 ? strength * CEW_hit((double)dist, (int)from.cew_range)
-                      : Num_hits((double)dist, focus, strength, from.tech,
-                                 (int)from.damage, fevade, tevade, fspeed,
-                                 tspeed, tbody, caliber, defense);
+  int hit_probability;
+  int hits = cew != 0
+                 ? strength * CEW_hit((double)dist, (int)from.cew_range)
+                 : Num_hits((double)dist, focus, strength, from.tech,
+                            (int)from.damage, fevade, tevade, fspeed, tspeed,
+                            tbody, caliber, defense, &hit_probability);
 
   // mode is whether a ship has been set to radiative with the orders command.
   if (from.mode) {
@@ -113,7 +115,7 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
 
   auto [damage, damage_msg] =
       do_damage(from.owner, to, (double)from.tech, strength, hits, defense,
-                caliber, (double)dist, weapon);
+                caliber, (double)dist, weapon, hit_probability);
   sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(to).c_str(),
           ship_to_string(from).c_str(), to.alive ? "attacked" : "DESTROYED",
           ship_to_string(to).c_str());
@@ -131,12 +133,13 @@ int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,
 
   auto [evade, speed, body] = ship_disposition(ship);
 
+  int hit_probability;
   int hits = Num_hits(0.0, false, strength, race.tech, 0, evade, 0, speed, 0,
-                      body, GTYPE_MEDIUM, 1);
+                      body, GTYPE_MEDIUM, 1, &hit_probability);
 
   auto [damage, damage_msg] =
       do_damage(race.Playernum, ship, race.tech, strength, hits, 0,
-                GTYPE_MEDIUM, 0.0, "medium guns");
+                GTYPE_MEDIUM, 0.0, "medium guns", hit_probability);
   sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(ship).c_str(),
           race.Playernum, ship.alive ? "attacked" : "DESTROYED",
           ship_to_string(ship).c_str());
@@ -296,7 +299,8 @@ static std::pair<int, std::string> do_damage(player_t who, Ship &ship,
                                              double tech, int strength,
                                              int hits, int defense, int caliber,
                                              double range,
-                                             const std::string_view weapon) {
+                                             const std::string_view weapon,
+                                             int hit_probability) {
   std::stringstream msg;
 
   msg << std::format("\tAttack: {} {} at a range of {:.0f}\n", strength, weapon,
@@ -406,18 +410,18 @@ static int CEW_hit(double dist, int cew_range) {
 
 static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
                     int fev, int tev, int fspeed, int tspeed, int body,
-                    guntype_t caliber, int defense) {
+                    guntype_t caliber, int defense, int *hit_probability) {
   auto [prob, factor] = hit_odds(dist, tech, fdam, fev, tev, fspeed, tspeed,
                                  body, caliber, defense);
 
   int hits = 0;
   if (focus) {
     if (success(prob * prob / 100)) hits = guns;
-    hit_probability = prob * prob / 100;
+    *hit_probability = prob * prob / 100;
   } else {
     for (auto i = 1; i <= guns; i++)
       if (success(prob)) hits++;
-    hit_probability = prob; /* global variable */
+    *hit_probability = prob;
   }
 
   return hits;

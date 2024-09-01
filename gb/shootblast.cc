@@ -24,7 +24,7 @@ static std::tuple<int, int, int> ship_disposition(const Ship &ship);
 static int CEW_hit(double dist, int cew_range);
 static int Num_hits(double dist, bool focus, int strength, double tech,
                     int damage, int fevade, int tevade, int fspeed, int tspeed,
-                    int tbody, int caliber, int defense);
+                    int tbody, guntype_t caliber, int defense);
 static int cew_hit_odds(double dist, int cew_range);
 static std::string do_critical_hits(int penetrate, Ship &ship, int *hits,
                                     int *damage, int defense);
@@ -33,8 +33,6 @@ static void mutate_sector(Sector &s);
 
 int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
                        bool ignore, char *long_msg, char *short_msg) {
-  char weapon[32];
-
   if (strength <= 0) return -1;
 
   if (!(from.alive || ignore) || !to.alive) return -1;
@@ -53,7 +51,7 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
   double xto = to.xpos;
   double yto = to.ypos;
   /* compute caliber */
-  int caliber = current_caliber(from);
+  const auto caliber = current_caliber(from);
 
   double dist = [xfrom, yfrom, xto, yto, &from]() -> double {
     if (from.type ==
@@ -94,28 +92,27 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
     return damage;
   }
 
-  if (cew)
-    sprintf(weapon, "strength CEW");
-  else if (laser_on(from)) {
-    if (from.focus)
-      sprintf(weapon, "strength focused laser");
-    else
-      sprintf(weapon, "strength laser");
-  } else
+  auto weapon = [cew, from, caliber] -> std::string {
+    if (cew) return "strength CEW";
+
+    if (laser_on(from)) {
+      if (from.focus) return "strength focused laser";
+      return "strength laser";
+    }
+
     switch (caliber) {
       case GTYPE_LIGHT:
-        sprintf(weapon, "light guns");
-        break;
+        return "light guns";
       case GTYPE_MEDIUM:
-        sprintf(weapon, "medium guns");
-        break;
+        return "medium guns";
       case GTYPE_HEAVY:
-        sprintf(weapon, "heavy guns");
-        break;
+        return "heavy guns";
       case GTYPE_NONE:
-        sprintf(weapon, "pea-shooter");
-        return -1;
+        return "pea-shooter";
     }
+  }();
+
+  if (caliber == GTYPE_NONE) return -1;
 
   auto [damage, damage_msg] =
       do_damage(from.owner, to, (double)from.tech, strength, hits, defense,
@@ -415,7 +412,7 @@ static int CEW_hit(double dist, int cew_range) {
 
 static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
                     int fev, int tev, int fspeed, int tspeed, int body,
-                    int caliber, int defense) {
+                    guntype_t caliber, int defense) {
   int factor;
 
   int prob = hit_odds(dist, &factor, tech, fdam, fev, tev, fspeed, tspeed, body,
@@ -435,7 +432,7 @@ static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
 }
 
 int hit_odds(double range, int *factor, double tech, int fdam, int fev, int tev,
-             int fspeed, int tspeed, int body, int caliber, int defense) {
+             int fspeed, int tspeed, int body, guntype_t caliber, int defense) {
   if (caliber == GTYPE_NONE) {
     *factor = 0;
     return 0;
@@ -472,12 +469,12 @@ double tele_range(int type, double tech) {
   return log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
 }
 
-int current_caliber(const Ship &ship) {
+guntype_t current_caliber(const Ship &ship) {
   if (ship.laser && ship.fire_laser) return GTYPE_LIGHT;
   if (ship.type == ShipType::STYPE_MINE) return GTYPE_LIGHT;
   if (ship.type == ShipType::STYPE_MISSILE) return GTYPE_HEAVY;
-  if (ship.guns == PRIMARY) return ship.primtype;
-  if (ship.guns == SECONDARY) return ship.sectype;
+  if (ship.guns == PRIMARY) return static_cast<guntype_t>(ship.primtype);
+  if (ship.guns == SECONDARY) return static_cast<guntype_t>(ship.sectype);
 
   return GTYPE_NONE;
 }

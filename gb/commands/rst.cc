@@ -186,7 +186,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
   governor_t Governor = g.governor;
   int i;
   int sight;
-  int caliber;
+  guntype_t caliber;
   char orb[PLACENAMESIZE];
   char strng[COMMANDSIZE];
   char locstrn[COMMANDSIZE];

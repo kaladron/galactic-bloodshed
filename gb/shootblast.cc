@@ -27,7 +27,7 @@ static int Num_hits(double dist, bool focus, int strength, double tech,
 static int cew_hit_odds(double dist, int cew_range);
 static std::string do_critical_hits(int penetrate, Ship &ship, int *hits,
                                     int *damage, int defense);
-static double p_factor(double tech, double penetration_factor);
+static double p_factor(double attacker, double defender);
 static void mutate_sector(Sector &s);
 
 int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,

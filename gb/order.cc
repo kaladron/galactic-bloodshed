@@ -616,7 +616,7 @@ void DispOrdersHeader(int Playernum, int Governor) {
          "    #       name       sp orbits     destin     options\n");
 }
 
-void DispOrders(int Playernum, int Governor, Ship &ship) {
+void DispOrders(int Playernum, int Governor, const Ship &ship) {
   double distfac;
   char temp[2047];
 
@@ -721,11 +721,11 @@ void DispOrders(int Playernum, int Governor, Ship &ship) {
   if (ship.type == ShipType::OTYPE_TERRA || ship.type == ShipType::OTYPE_PLOW) {
     int i;
     sprintf(temp, "/move %s", &(ship.shipclass[ship.special.terraform.index]));
+
     if (temp[i = (strlen(temp) - 1)] == 'c') {
-      char c = ship.shipclass[ship.special.terraform.index];
-      ship.shipclass[ship.special.terraform.index] = '\0';
-      sprintf(temp + i, "%sc", ship.shipclass);
-      ship.shipclass[ship.special.terraform.index] = c;
+      std::string hidden = ship.shipclass;
+      hidden = hidden.substr(0, ship.special.terraform.index);
+      sprintf(temp + i, "%sc", hidden.c_str());
     }
     strcat(buf, temp);
   }

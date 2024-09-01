@@ -616,39 +616,39 @@ void DispOrdersHeader(int Playernum, int Governor) {
          "    #       name       sp orbits     destin     options\n");
 }
 
-void DispOrders(int Playernum, int Governor, Ship *ship) {
+void DispOrders(int Playernum, int Governor, Ship &ship) {
   double distfac;
   char temp[2047];
 
-  if (ship->owner != Playernum || !authorized(Governor, *ship) || !ship->alive)
+  if (ship.owner != Playernum || !authorized(Governor, ship) || !ship.alive)
     return;
 
-  if (ship->docked)
-    if (ship->whatdest == ScopeLevel::LEVEL_SHIP)
-      sprintf(temp, "D#%lu", ship->destshipno);
+  if (ship.docked)
+    if (ship.whatdest == ScopeLevel::LEVEL_SHIP)
+      sprintf(temp, "D#%lu", ship.destshipno);
     else
-      sprintf(temp, "L%2d,%-2d", ship->land_x, ship->land_y);
+      sprintf(temp, "L%2d,%-2d", ship.land_x, ship.land_y);
   else
-    strcpy(temp, prin_ship_dest(*ship).c_str());
+    strcpy(temp, prin_ship_dest(ship).c_str());
 
-  sprintf(buf, "%5lu %c %14.14s %c%1u %-10s %-10.10s ", ship->number,
-          Shipltrs[ship->type], ship->name,
-          ship->hyper_drive.has ? (ship->mounted ? '+' : '*') : ' ',
-          ship->speed, dispshiploc_brief(*ship).c_str(), temp);
+  sprintf(buf, "%5lu %c %14.14s %c%1u %-10s %-10.10s ", ship.number,
+          Shipltrs[ship.type], ship.name,
+          ship.hyper_drive.has ? (ship.mounted ? '+' : '*') : ' ', ship.speed,
+          dispshiploc_brief(ship).c_str(), temp);
 
-  if (ship->hyper_drive.on) {
+  if (ship.hyper_drive.on) {
     sprintf(temp, "/jump %s %d",
-            (ship->hyper_drive.ready ? "ready" : "charging"),
-            ship->hyper_drive.charge);
+            (ship.hyper_drive.ready ? "ready" : "charging"),
+            ship.hyper_drive.charge);
     strcat(buf, temp);
   }
-  if (ship->protect.self) {
+  if (ship.protect.self) {
     sprintf(temp, "/retal");
     strcat(buf, temp);
   }
 
-  if (ship->guns == PRIMARY) {
-    switch (ship->primtype) {
+  if (ship.guns == PRIMARY) {
+    switch (ship.primtype) {
       case GTYPE_LIGHT:
         sprintf(temp, "/lgt primary");
         break;
@@ -663,8 +663,8 @@ void DispOrders(int Playernum, int Governor, Ship *ship) {
         break;
     }
     strcat(buf, temp);
-  } else if (ship->guns == SECONDARY) {
-    switch (ship->sectype) {
+  } else if (ship.guns == SECONDARY) {
+    switch (ship.sectype) {
       case GTYPE_LIGHT:
         sprintf(temp, "/lgt secondary");
         break;
@@ -681,79 +681,77 @@ void DispOrders(int Playernum, int Governor, Ship *ship) {
     strcat(buf, temp);
   }
 
-  if (ship->fire_laser) {
-    sprintf(temp, "/laser %d", ship->fire_laser);
+  if (ship.fire_laser) {
+    sprintf(temp, "/laser %d", ship.fire_laser);
     strcat(buf, temp);
   }
-  if (ship->focus) strcat(buf, "/focus");
+  if (ship.focus) strcat(buf, "/focus");
 
-  if (ship->retaliate) {
-    sprintf(temp, "/salvo %d", ship->retaliate);
+  if (ship.retaliate) {
+    sprintf(temp, "/salvo %d", ship.retaliate);
     strcat(buf, temp);
   }
-  if (ship->protect.planet) strcat(buf, "/defense");
-  if (ship->protect.on) {
-    sprintf(temp, "/prot %d", ship->protect.ship);
+  if (ship.protect.planet) strcat(buf, "/defense");
+  if (ship.protect.on) {
+    sprintf(temp, "/prot %d", ship.protect.ship);
     strcat(buf, temp);
   }
-  if (ship->navigate.on) {
-    sprintf(temp, "/nav %d (%d)", ship->navigate.bearing, ship->navigate.turns);
+  if (ship.navigate.on) {
+    sprintf(temp, "/nav %d (%d)", ship.navigate.bearing, ship.navigate.turns);
     strcat(buf, temp);
   }
-  if (ship->merchant) {
-    sprintf(temp, "/merchant %d", ship->merchant);
+  if (ship.merchant) {
+    sprintf(temp, "/merchant %d", ship.merchant);
     strcat(buf, temp);
   }
-  if (has_switch(*ship)) {
-    if (ship->on)
+  if (has_switch(ship)) {
+    if (ship.on)
       strcat(buf, "/on");
     else
       strcat(buf, "/off");
   }
-  if (ship->protect.evade) strcat(buf, "/evade");
-  if (ship->bombard) strcat(buf, "/bomb");
-  if (ship->type == ShipType::STYPE_MINE || ship->type == ShipType::OTYPE_GR) {
-    if (ship->mode)
+  if (ship.protect.evade) strcat(buf, "/evade");
+  if (ship.bombard) strcat(buf, "/bomb");
+  if (ship.type == ShipType::STYPE_MINE || ship.type == ShipType::OTYPE_GR) {
+    if (ship.mode)
       strcat(buf, "/radiate");
     else
       strcat(buf, "/explode");
   }
-  if (ship->type == ShipType::OTYPE_TERRA ||
-      ship->type == ShipType::OTYPE_PLOW) {
+  if (ship.type == ShipType::OTYPE_TERRA || ship.type == ShipType::OTYPE_PLOW) {
     int i;
-    sprintf(temp, "/move %s",
-            &(ship->shipclass[ship->special.terraform.index]));
+    sprintf(temp, "/move %s", &(ship.shipclass[ship.special.terraform.index]));
     if (temp[i = (strlen(temp) - 1)] == 'c') {
-      char c = ship->shipclass[ship->special.terraform.index];
-      ship->shipclass[ship->special.terraform.index] = '\0';
-      sprintf(temp + i, "%sc", ship->shipclass);
-      ship->shipclass[ship->special.terraform.index] = c;
+      char c = ship.shipclass[ship.special.terraform.index];
+      ship.shipclass[ship.special.terraform.index] = '\0';
+      sprintf(temp + i, "%sc", ship.shipclass);
+      ship.shipclass[ship.special.terraform.index] = c;
     }
     strcat(buf, temp);
   }
 
-  if (ship->type == ShipType::STYPE_MISSILE &&
-      ship->whatdest == ScopeLevel::LEVEL_PLAN) {
-    if (ship->special.impact.scatter)
+  if (ship.type == ShipType::STYPE_MISSILE &&
+      ship.whatdest == ScopeLevel::LEVEL_PLAN) {
+    if (ship.special.impact.scatter)
       strcat(buf, "/scatter");
     else {
-      sprintf(temp, "/impact %d,%d", ship->special.impact.x,
-              ship->special.impact.y);
+      sprintf(temp, "/impact %d,%d", ship.special.impact.x,
+              ship.special.impact.y);
       strcat(buf, temp);
     }
   }
 
-  if (ship->type == ShipType::STYPE_MINE) {
-    sprintf(temp, "/trigger %d", ship->special.trigger.radius);
+  if (ship.type == ShipType::STYPE_MINE) {
+    sprintf(temp, "/trigger %d", ship.special.trigger.radius);
     strcat(buf, temp);
   }
-  if (ship->type == ShipType::OTYPE_TRANSDEV) {
-    sprintf(temp, "/target %d", ship->special.transport.target);
+  if (ship.type == ShipType::OTYPE_TRANSDEV) {
+    sprintf(temp, "/target %d", ship.special.transport.target);
     strcat(buf, temp);
   }
-  if (ship->type == ShipType::STYPE_MIRROR) {
-    sprintf(temp, "/aim %s/int %d", prin_aimed_at(*ship).c_str(),
-            ship->special.aimed_at.intensity);
+  if (ship.type == ShipType::STYPE_MIRROR) {
+    sprintf(temp, "/aim %s/int %d", prin_aimed_at(ship).c_str(),
+            ship.special.aimed_at.intensity);
     strcat(buf, temp);
   }
 
@@ -761,24 +759,24 @@ void DispOrders(int Playernum, int Governor, Ship *ship) {
   notify(Playernum, Governor, buf);
   /* if hyper space is on estimate how much fuel it will cost to get to the
    * destination */
-  if (ship->hyper_drive.on) {
+  if (ship.hyper_drive.on) {
     double dist;
     double fuse;
 
-    dist = sqrt(Distsq(ship->xpos, ship->ypos, stars[ship->deststar].xpos,
-                       stars[ship->deststar].ypos));
-    distfac = HYPER_DIST_FACTOR * (ship->tech + 100.0);
-    if (ship->mounted && dist > distfac) {
-      fuse = HYPER_DRIVE_FUEL_USE * sqrt(ship->mass) * (dist / distfac);
+    dist = sqrt(Distsq(ship.xpos, ship.ypos, stars[ship.deststar].xpos,
+                       stars[ship.deststar].ypos));
+    distfac = HYPER_DIST_FACTOR * (ship.tech + 100.0);
+    if (ship.mounted && dist > distfac) {
+      fuse = HYPER_DRIVE_FUEL_USE * sqrt(ship.mass) * (dist / distfac);
     } else {
-      fuse = HYPER_DRIVE_FUEL_USE * sqrt(ship->mass) * (dist / distfac) *
+      fuse = HYPER_DRIVE_FUEL_USE * sqrt(ship.mass) * (dist / distfac) *
              (dist / distfac);
     }
 
     sprintf(buf, "  *** distance %.0f - jump will cost %.1ff ***\n", dist,
             fuse);
     notify(Playernum, Governor, buf);
-    if (ship->max_fuel < fuse)
+    if (ship.max_fuel < fuse)
       notify(Playernum, Governor,
              "Your ship cannot carry enough fuel to do this jump.\n");
   }

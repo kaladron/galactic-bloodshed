@@ -9,7 +9,6 @@ import std.compat;
 module gblib;
 
 static int hit_probability;
-static double penetration_factor;
 
 static std::pair<int, std::string> do_radiation(Ship &ship, double tech,
                                                 int strength, int hits);
@@ -312,7 +311,6 @@ static std::pair<int, std::string> do_damage(player_t who, Ship &ship,
     }
 
   double fac = p_factor(tech, ship.tech);
-  penetration_factor = fac;
   int arm = std::max(0UL, armor(ship) + defense - hits / 5);
   double body = sqrt((double)(0.1 * shipbody(ship)));
 

@@ -12,8 +12,7 @@ static int hit_probability;
 static double penetration_factor;
 
 static std::pair<int, std::string> do_radiation(Ship &ship, double tech,
-                                                int strength, int hits,
-                                                const char *weapon);
+                                                int strength, int hits);
 static std::pair<int, std::string> do_damage(player_t who, Ship &ship,
                                              double tech, int strength,
                                              int hits, int defense, int caliber,
@@ -82,8 +81,7 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
 
   /* CEW, destruct, lasers */
   if (from.mode) {
-    auto [damage, damage_msg] =
-        do_radiation(to, from.tech, strength, hits, "radiation");
+    auto [damage, damage_msg] = do_radiation(to, from.tech, strength, hits);
     sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(to).c_str(),
             ship_to_string(from).c_str(), to.alive ? "attacked" : "DESTROYED",
             ship_to_string(to).c_str());
@@ -265,8 +263,7 @@ int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
 }
 
 static std::pair<int, std::string> do_radiation(Ship &ship, double tech,
-                                                int strength, int hits,
-                                                const char *weapon) {
+                                                int strength, int hits) {
   std::stringstream msg;
   double fac =
       (2. / 3.14159265) * atan((double)(5 * (tech + 1.0) / (ship.tech + 1.0)));
@@ -289,7 +286,7 @@ static std::pair<int, std::string> do_radiation(Ship &ship, double tech,
 
   int casualties = 0;
   int casualties1 = 0;
-  msg << std::format("\tAttack: {} {}\n\t  Hits: {}\n", strength, weapon, hits);
+  msg << std::format("\tAttack: {} radiation\n\t  Hits: {}\n", strength, hits);
   msg << std::format("\t   Rad: {}% for a total of {}%\n", dosage, ship.rad);
   if (casualties || casualties1) {
     msg << std::format("\tKilled: {} civ + {} mil\n", casualties, casualties1);

@@ -54,7 +54,7 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
         ShipType::STYPE_MISSILE) /* missiles hit at point blank range */
       return 0.0;
     else {
-      double dist = sqrt((double)Distsq(xfrom, yfrom, xto, yto));
+      double dist = std::sqrt((double)Distsq(xfrom, yfrom, xto, yto));
       if (from.type == ShipType::STYPE_MINE) { /* compute the effective range */
         dist *= dist / 200.0; /* mines are very effective inside 200 */
       }
@@ -185,9 +185,9 @@ int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
 
   for (auto y2 = 0; y2 < pl.Maxy; y2++) {
     for (auto x2 = 0; x2 < pl.Maxx; x2++) {
-      int dx = std::min(abs(x2 - x), abs(x + (pl.Maxx - 1) - x2));
-      int dy = abs(y2 - y);
-      double d = sqrt((double)(dx * dx + dy * dy));
+      int dx = std::min(std::abs(x2 - x), std::abs(x + (pl.Maxx - 1) - x2));
+      int dy = std::abs(y2 - y);
+      double d = std::sqrt((double)(dx * dx + dy * dy));
       auto &s = smap.get(x2, y2);
 
       if (d <= r) {
@@ -263,8 +263,8 @@ int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
 static std::pair<int, std::string> do_radiation(Ship &ship, double tech,
                                                 int strength, int hits) {
   std::stringstream msg;
-  double fac =
-      (2. / 3.14159265) * atan((double)(5 * (tech + 1.0) / (ship.tech + 1.0)));
+  double fac = (2. / 3.14159265) *
+               std::atan((double)(5 * (tech + 1.0) / (ship.tech + 1.0)));
 
   int arm = std::max(0UL, armor(ship) - hits / 5);
   int body = shipbody(ship);
@@ -311,7 +311,7 @@ static std::pair<int, std::string> do_damage(player_t who, Ship &ship,
 
   double fac = p_factor(tech, ship.tech);
   int arm = std::max(0UL, armor(ship) + defense - hits / 5);
-  double body = sqrt((double)(0.1 * shipbody(ship)));
+  double body = std::sqrt((double)(0.1 * shipbody(ship)));
 
   int critdam = 0;
   int crithits = 0;
@@ -430,7 +430,8 @@ std::pair<int, int> hit_odds(double range, double tech, int fdam, int fev,
     return {0, 0};
   }
 
-  double a = log10(1.0 + (double)tech) * 80.0 * pow((double)body, 0.33333);
+  double a =
+      std::log10(1.0 + (double)tech) * 80.0 * std::pow((double)body, 0.33333);
   double b = 72.0 / ((2.0 + (double)tev) * (2.0 + (double)fev) *
                      (18.0 + (double)tspeed + (double)fspeed));
   double c = a * b / (double)caliber;
@@ -445,8 +446,8 @@ std::pair<int, int> hit_odds(double range, double tech, int fdam, int fev,
 static int cew_hit_odds(double range, int cew_range) {
   double factor =
       (range + 1.0) / ((double)cew_range + 1.0); /* maximum chance */
-  int odds =
-      (int)(100.0 * exp((double)(-50.0 * (factor - 1.0) * (factor - 1.0))));
+  int odds = (int)(100.0 *
+                   std::exp((double)(-50.0 * (factor - 1.0) * (factor - 1.0))));
   return odds;
 }
 
@@ -455,9 +456,9 @@ static int cew_hit_odds(double range, int cew_range) {
  */
 double tele_range(int type, double tech) {
   if (type == ShipType::OTYPE_GTELE)
-    return log1p((double)tech) * 400 + SYSTEMSIZE / 8;
+    return std::log1p((double)tech) * 400 + SYSTEMSIZE / 8;
 
-  return log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
+  return std::log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
 }
 
 guntype_t current_caliber(const Ship &ship) {
@@ -536,7 +537,7 @@ std::tuple<int, int, int, int> do_collateral(Ship &ship, int damage) {
 
 static double p_factor(double attacker, double defender) {
   return ((2. / 3.141592) *
-          atan(5 * (double)((attacker + 1.0) / (defender + 1.0))));
+          std::atan(5 * (double)((attacker + 1.0) / (defender + 1.0))));
 }
 
 int planet_guns(long points) {

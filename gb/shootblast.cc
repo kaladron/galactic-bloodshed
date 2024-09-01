@@ -4,8 +4,6 @@ module;
 
 import std.compat;
 
-#include "gb/buffers.h"
-
 module gblib;
 
 static int hit_probability;
@@ -257,8 +255,8 @@ int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
   sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(ship).c_str(),
           dispshiploc(ship).c_str(), oldowner);
   strcpy(long_msg, short_msg);
-  sprintf(buf, "\t%d sectors destroyed\n", numdest);
-  strcat(long_msg, buf);
+  std::string msg = std::format("\t{} sectors destroyed\n", numdest);
+  strcat(long_msg, msg.c_str());
   return numdest;
 }
 

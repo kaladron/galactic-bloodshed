@@ -5,7 +5,7 @@
 #ifndef ORDER_H
 #define ORDER_H
 
-void DispOrders(int Playernum, int Governor, Ship &ship);
+void DispOrders(int Playernum, int Governor, const Ship &ship);
 void DispOrdersHeader(int Playernum, int Governor);
 void give_orders(GameObj &, const command_t &, int, Ship *);
 

@@ -78,7 +78,7 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
                                  (int)from.damage, fevade, tevade, fspeed,
                                  tspeed, tbody, caliber, defense);
 
-  /* CEW, destruct, lasers */
+  // mode is whether a ship has been set to radiative with the orders command.
   if (from.mode) {
     auto [damage, damage_msg] = do_radiation(to, from.tech, strength, hits);
     sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(to).c_str(),
@@ -88,6 +88,8 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
     strcat(long_msg, damage_msg.c_str());
     return damage;
   }
+
+  // CEW, destruct, lasers
 
   auto weapon = [cew, from, caliber] -> std::string {
     if (cew) return "strength CEW";
@@ -124,7 +126,6 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
 
 int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,
                          char *short_msg) {
-  int hits = 0;
   if (strength <= 0) return -1;
   if (!ship.alive) return -1;
 
@@ -132,8 +133,8 @@ int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,
 
   auto [evade, speed, body] = ship_disposition(ship);
 
-  hits = Num_hits(0.0, false, strength, race.tech, 0, evade, 0, speed, 0, body,
-                  GTYPE_MEDIUM, 1);
+  int hits = Num_hits(0.0, false, strength, race.tech, 0, evade, 0, speed, 0,
+                      body, GTYPE_MEDIUM, 1);
 
   auto [damage, damage_msg] =
       do_damage(race.Playernum, ship, race.tech, strength, hits, 0,

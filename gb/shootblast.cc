@@ -41,20 +41,16 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
   if (from.storbits != to.storbits) return -1;
   if (has_switch(from) && !from.on) return -1;
 
-  double xfrom = from.xpos;
-  double yfrom = from.ypos;
-
-  double xto = to.xpos;
-  double yto = to.ypos;
   /* compute caliber */
   const auto caliber = current_caliber(from);
 
-  double dist = [xfrom, yfrom, xto, yto, &from]() -> double {
+  double dist = [&from, &to]() -> double {
     if (from.type ==
         ShipType::STYPE_MISSILE) /* missiles hit at point blank range */
       return 0.0;
     else {
-      double dist = std::sqrt((double)Distsq(xfrom, yfrom, xto, yto));
+      double dist =
+          std::sqrt((double)Distsq(from.xpos, from.ypos, to.xpos, to.ypos));
       if (from.type == ShipType::STYPE_MINE) { /* compute the effective range */
         dist *= dist / 200.0; /* mines are very effective inside 200 */
       }

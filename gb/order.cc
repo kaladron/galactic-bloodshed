@@ -617,12 +617,10 @@ void DispOrdersHeader(int Playernum, int Governor) {
 }
 
 void DispOrders(int Playernum, int Governor, const Ship &ship) {
-  double distfac;
-  std::stringstream buffer;
-
   if (ship.owner != Playernum || !authorized(Governor, ship) || !ship.alive)
     return;
 
+  std::stringstream buffer;
   if (ship.docked)
     if (ship.whatdest == ScopeLevel::LEVEL_SHIP)
       buffer << "D#" << ship.destshipno;
@@ -711,11 +709,10 @@ void DispOrders(int Playernum, int Governor, const Ship &ship) {
       buffer << "/explode";
   }
   if (ship.type == ShipType::OTYPE_TERRA || ship.type == ShipType::OTYPE_PLOW) {
-    int i;
     std::string temp = &(ship.shipclass[ship.special.terraform.index]);
     buffer << std::format("/move {}", temp);
 
-    if (temp[i = (temp.length() - 1)] == 'c') {
+    if (temp[temp.length() - 1] == 'c') {
       std::string hidden = temp;
       hidden = hidden.substr(0, ship.special.terraform.index);
       buffer << std::format("{}c", hidden);
@@ -748,18 +745,15 @@ void DispOrders(int Playernum, int Governor, const Ship &ship) {
   /* if hyper space is on estimate how much fuel it will cost to get to the
    * destination */
   if (ship.hyper_drive.on) {
-    double dist;
-    double fuse;
+    double dist = sqrt(Distsq(ship.xpos, ship.ypos, stars[ship.deststar].xpos,
+                              stars[ship.deststar].ypos));
+    auto distfac = HYPER_DIST_FACTOR * (ship.tech + 100.0);
 
-    dist = sqrt(Distsq(ship.xpos, ship.ypos, stars[ship.deststar].xpos,
-                       stars[ship.deststar].ypos));
-    distfac = HYPER_DIST_FACTOR * (ship.tech + 100.0);
-    if (ship.mounted && dist > distfac) {
-      fuse = HYPER_DRIVE_FUEL_USE * sqrt(ship.mass) * (dist / distfac);
-    } else {
-      fuse = HYPER_DRIVE_FUEL_USE * sqrt(ship.mass) * (dist / distfac) *
-             (dist / distfac);
-    }
+    double fuse =
+        ship.mounted && dist > distfac
+            ? HYPER_DRIVE_FUEL_USE * sqrt(ship.mass) * (dist / distfac)
+            : HYPER_DRIVE_FUEL_USE * sqrt(ship.mass) * (dist / distfac) *
+                  (dist / distfac);
 
     notify(Playernum, Governor,
            std::format("  *** distance {:.0f} - jump will cost {:.1f}f ***\n",

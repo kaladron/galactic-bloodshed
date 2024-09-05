@@ -73,7 +73,7 @@ static void SortShips();
 static void check_connect(DescriptorData &, std::string_view);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
-#define MAX_COMMAND_LEN 512
+constexpr int MAX_COMMAND_LEN = 512;
 
 using CommandFunction = void (*)(const command_t &, GameObj &);
 
@@ -904,15 +904,13 @@ static void check_connect(DescriptorData &d, std::string_view message) {
 
 static void do_update(Db &db, bool force) {
   time_t clk = time(nullptr);
-  int i;
   struct stat stbuf;
-  int fakeit;
 
-  fakeit = (!force && stat(NOGOFL, &stbuf) >= 0);
+  bool fakeit = (!force && stat(NOGOFL, &stbuf) >= 0);
 
   sprintf(buf, "%sDOING UPDATE...\n", ctime(&clk));
   if (!fakeit) {
-    for (i = 1; i <= Num_races; i++) notify_race(i, buf);
+    for (auto i = 1; i <= Num_races; i++) notify_race(i, buf);
     force_output();
   }
 
@@ -970,24 +968,22 @@ static void do_update(Db &db, bool force) {
   sprintf(buf, "%sUpdate %d finished\n", ctime(&clk), nupdates_done);
   handle_victory();
   if (!fakeit) {
-    for (i = 1; i <= Num_races; i++) notify_race(i, buf);
+    for (auto i = 1; i <= Num_races; i++) notify_race(i, buf);
     force_output();
   }
 }
 
 static void do_segment(Db &db, int override, int segment) {
   time_t clk = time(nullptr);
-  int i;
   struct stat stbuf;
-  int fakeit;
 
-  fakeit = (!override && stat(NOGOFL, &stbuf) >= 0);
+  bool fakeit = (!override && stat(NOGOFL, &stbuf) >= 0);
 
   if (!override && segments <= 1) return;
 
   sprintf(buf, "%sDOING MOVEMENT...\n", ctime(&clk));
   if (!fakeit) {
-    for (i = 1; i <= Num_races; i++) notify_race(i, buf);
+    for (auto i = 1; i <= Num_races; i++) notify_race(i, buf);
     force_output();
   }
   if (override) {
@@ -1022,7 +1018,7 @@ static void do_segment(Db &db, int override, int segment) {
   clk = time(nullptr);
   sprintf(buf, "%sSegment finished\n", ctime(&clk));
   if (!fakeit) {
-    for (i = 1; i <= Num_races; i++) notify_race(i, buf);
+    for (auto i = 1; i <= Num_races; i++) notify_race(i, buf);
     force_output();
   }
 }

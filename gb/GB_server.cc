@@ -217,13 +217,16 @@ command_t make_command_t(std::string_view message) {
   return argv;
 }
 
+struct connection_password {
+  std::string player;
+  std::string governor;
+};
 /**
  * \brief Parse input string for player and governor password
  * \param message Input string from the user
  * \return player and governor password or empty strings if invalid
  */
-std::tuple<std::string, std::string> parse_connect(
-    const std::string_view message) {
+connection_password parse_connect(const std::string_view message) {
   auto argv = make_command_t(message);
 
   if (argv.size() != 2) {

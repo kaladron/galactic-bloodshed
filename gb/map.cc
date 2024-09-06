@@ -4,7 +4,7 @@
 
 import gblib;
 import commands;
-import std.compat;
+import std;
 
 #include "gb/map.h"
 

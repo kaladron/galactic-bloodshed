@@ -6,6 +6,7 @@ export import :doship;
 export import :files_shl;
 export import :fire;
 export import :fuel;
+export import :map;
 export import :misc;
 export import :planet;
 export import :place;

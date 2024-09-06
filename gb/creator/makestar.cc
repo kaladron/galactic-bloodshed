@@ -25,10 +25,6 @@ import std.compat;
 static const double PLANET_DIST_MAX = 1900.0;
 static const double PLANET_DIST_MIN = 100.0;
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
 static char *NextStarName();
 static const char *NextPlanetName(int);
 
@@ -249,7 +245,7 @@ Star Makestar(starnum_t snum) {
     distmin = dist;
 
     temperature = Temperature(dist, star.temperature);
-    angle = 2.0 * M_PI * double_rand();
+    angle = 2.0 * std::numbers::pi * double_rand();
     xpos = dist * sin(angle);
     ypos = dist * cos(angle);
 

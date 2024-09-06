@@ -17,7 +17,7 @@ import std.compat;
 
 module commands;
 
-#define MAX_SHIPS_PER_SECTOR 10
+constexpr int MAX_SHIPS_PER_SECTOR = 10;
 
 static const char *Tox[] = {
     "Stage 0, mild",

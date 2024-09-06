@@ -92,6 +92,7 @@ target_sources(
          gblib-fire.cppm
          gblib-fuel.cppm
          gblib-globals.cppm
+         gblib-map.cppm
          gblib-misc.cppm
          gblib-place.cppm
          gblib-planet.cppm
@@ -111,6 +112,7 @@ target_sources(
           fire.cc
           fuel.cc
           load.cc
+          map.cc
           misc.cc
           planet.cc
           utils/rand.cc
@@ -214,7 +216,6 @@ set(OLD_LIBGBLIB_FILES
     doplanet.cc
     dosector.cc
     doturncmd.cc
-    map.cc
     move.cc
     moveplanet.cc
     order.cc)

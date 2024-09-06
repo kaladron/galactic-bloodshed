@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/map.h"
-
 module commands;
 
 namespace GB::commands {

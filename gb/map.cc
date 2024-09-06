@@ -1,12 +1,11 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
+
+module;
 
 import gblib;
-import commands;
 import std;
 
-#include "gb/map.h"
+module gblib;
 
 void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
               const Planet &p) {

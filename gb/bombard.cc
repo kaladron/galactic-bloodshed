@@ -76,12 +76,13 @@ int berserker_bombard(Ship *ship, Planet &planet, Race &r) {
       if (numdest < 0) numdest = 0;
 
       /* tell the bombarding player about it.. */
-      sprintf(telegram_buf, "REPORT from ship #%lu\n\n", ship->number);
-      strcat(telegram_buf, short_buf);
-      sprintf(buf, "sector %d,%d (owner %d).  %d sectors destroyed.\n", x, y,
-              oldown, numdest);
-      strcat(telegram_buf, buf);
-      notify(ship->owner, ship->governor, telegram_buf);
+      std::stringstream telegram_report;
+      telegram_report << std::format("REPORT from ship #{}\n\n", ship->number);
+      telegram_report << short_buf;
+      telegram_report << std::format(
+          "sector {},{} (owner {}). {} sectors destroyed.\n", x, y, oldown,
+          numdest);
+      notify(ship->owner, ship->governor, telegram_report.str());
 
       /* notify other player. */
       sprintf(telegram_buf, "ALERT from planet /%s/%s\n",

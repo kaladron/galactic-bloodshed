@@ -1152,7 +1152,7 @@ void putsector(const Sector &s, const Planet &p, const int x, const int y) {
   sqlite3_reset(stmt);
 }
 
-void putsmap(SectorMap &map, Planet &p) {
+void putsmap(const SectorMap &map, const Planet &p) {
   start_bulk_insert();
 
   for (int y = 0; y < p.Maxy; y++) {

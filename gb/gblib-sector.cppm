@@ -74,6 +74,10 @@ export class SectorMap {
   Sector &get(const int x, const int y) {
     return vec_.at(static_cast<size_t>(x + (y * maxx_)));
   }
+
+  [[nodiscard]] const Sector &get(const int x, const int y) const {
+    return vec_.at(static_cast<size_t>(x + (y * maxx_)));
+  }
   void put(Sector &&s) { vec_.emplace_back(std::move(s)); }
   int get_maxx() { return maxx_; }
   int get_maxy() { return maxy_; }

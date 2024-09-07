@@ -37,7 +37,7 @@ export void putstar(const Star &, starnum_t);
 export void putplanet(const Planet &, const Star &, const planetnum_t);
 export void putsector(const Sector &, const Planet &);
 export void putsector(const Sector &, const Planet &, const int x, const int y);
-export void putsmap(SectorMap &map, Planet &p);
+export void putsmap(const SectorMap &map, const Planet &p);
 export void putship(Ship *);
 export void putcommod(const Commod &, int);
 export shipnum_t Numships();

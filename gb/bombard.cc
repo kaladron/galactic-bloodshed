@@ -3,11 +3,9 @@
 // found in the COPYING file.
 
 import gblib;
-import std.compat;
+import std;
 
 #include "gb/bombard.h"
-
-#include <strings.h>
 
 #include "gb/buffers.h"
 
@@ -48,9 +46,10 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
   Shiplist shiplist(planet.ships);
   for (auto s : shiplist) {
     if (s.alive && s.type == ShipType::OTYPE_PLANDEF && s.owner != ship.owner) {
-      sprintf(buf, "Bombardment of %s cancelled, PDNs are present.\n",
-              prin_ship_orbits(ship).c_str());
-      warn(ship.owner, ship.governor, buf);
+      std::string notice =
+          std::format("Bombardment of {} cancelled, PDNs are present.\n",
+                      prin_ship_orbits(ship));
+      warn(ship.owner, ship.governor, notice);
       return 0;
     }
   }
@@ -84,13 +83,13 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
     /* there were no sectors worth bombing. */
     if (!ship.notified) {
       ship.notified = 1;
-      sprintf(telegram_buf, "Report from %c%lu %s\n\n", Shipltrs[ship.type],
-              ship.number, ship.name);
-      sprintf(buf, "Planet /%s/%s has been saturation bombed.\n",
-              stars[ship.storbits].name,
-              stars[ship.storbits].pnames[ship.pnumorbits]);
-      strcat(telegram_buf, buf);
-      notify(ship.owner, ship.governor, telegram_buf);
+      std::stringstream telegram;
+      telegram << std::format("Report from {}{} {}\n\n", Shipltrs[ship.type],
+                              ship.number, ship.name);
+      telegram << std::format("Planet /{}/{} has been saturation bombed.\n",
+                              stars[ship.storbits].name,
+                              stars[ship.storbits].pnames[ship.pnumorbits]);
+      notify(ship.owner, ship.governor, telegram.str());
     }
     return 0;
   }
@@ -101,10 +100,10 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
     /* no weapons! */
     if (!ship.notified) {
       ship.notified = 1;
-      sprintf(telegram_buf,
-              "Bulletin\n\n %c%lu %s has no weapons to bombard with.\n",
-              Shipltrs[ship.type], ship.number, ship.name);
-      warn(ship.owner, ship.governor, telegram_buf);
+      std::string telegram =
+          std::format("Bulletin\n\n {}{} {} has no weapons to bombard with.\n",
+                      Shipltrs[ship.type], ship.number, ship.name);
+      warn(ship.owner, ship.governor, telegram);
     }
     return 0;
   }
@@ -132,18 +131,23 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
   notify(ship.owner, ship.governor, telegram_report.str());
 
   /* notify other player. */
-  sprintf(telegram_buf, "ALERT from planet /%s/%s\n", stars[ship.storbits].name,
-          stars[ship.storbits].pnames[ship.pnumorbits]);
-  sprintf(buf, "%c%lu%s bombarded sector %d,%d; %d sectors destroyed.\n",
-          Shipltrs[ship.type], ship.number, ship.name, x, y, numdest);
-  strcat(telegram_buf, buf);
-  sprintf(buf, "%c%lu %s [%d] bombards %s/%s\n", Shipltrs[ship.type],
-          ship.number, ship.name, ship.owner, stars[ship.storbits].name,
-          stars[ship.storbits].pnames[ship.pnumorbits]);
+  std::stringstream telegram_alert;
+  telegram_alert << std::format("ALERT from planet /{}/{}\n",
+                                stars[ship.storbits].name,
+                                stars[ship.storbits].pnames[ship.pnumorbits]);
+  telegram_alert << std::format(
+      "{}{} {} bombarded sector {},{}; {} sectors destroyed.\n",
+      Shipltrs[ship.type], ship.number, ship.name, x, y, numdest);
+
   for (player_t i = 1; i <= Num_races; i++)
     if (Nuked[i - 1] && i != ship.owner)
-      warn(i, stars[ship.storbits].governor[i - 1], telegram_buf);
-  post(buf, NewsType::COMBAT);
+      warn(i, stars[ship.storbits].governor[i - 1], telegram_alert.str());
+
+  std::string combatpost =
+      std::format("{}{} {} [{}] bombards {}/{}\n", Shipltrs[ship.type],
+                  ship.number, ship.name, ship.owner, stars[ship.storbits].name,
+                  stars[ship.storbits].pnames[ship.pnumorbits]);
+  post(combatpost, NewsType::COMBAT);
 
   putsmap(smap, planet);
 

@@ -7,8 +7,6 @@ import std;
 
 #include "gb/bombard.h"
 
-#include "gb/buffers.h"
-
 /**
  * Performs a bombardment action by a berserker ship on a planet.
  *
@@ -116,6 +114,7 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
   ship.destruct -= str;
   ship.mass -= str * MASS_DESTRUCT;
 
+  char long_buf[1024], short_buf[256];
   auto numdest = shoot_ship_to_planet(ship, planet, str, x, y, smap, 0, 0,
                                       long_buf, short_buf);
   /* (0=dont get smap) */

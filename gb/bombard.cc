@@ -18,7 +18,6 @@ int berserker_bombard(Ship *ship, Planet &planet, Race &r) {
   int y;
   int x2 = -1;
   int y2;
-  int oldown;
   int numdest = 0;
 
   /* for telegramming */
@@ -62,13 +61,12 @@ int berserker_bombard(Ship *ship, Planet &planet, Race &r) {
   }
 
   if (found) {
-    int str;
-    str = MIN(Shipdata[ship->type][ABIL_GUNS] * (100 - ship->damage) / 100.,
-              ship->destruct);
+    int str = MIN(Shipdata[ship->type][ABIL_GUNS] * (100 - ship->damage) / 100.,
+                  ship->destruct);
     /* save owner of destroyed sector */
     if (str) {
       Nuked.fill(0);
-      oldown = smap.get(x, y).owner;
+      auto oldown = smap.get(x, y).owner;
       ship->destruct -= str;
       ship->mass -= str * MASS_DESTRUCT;
 

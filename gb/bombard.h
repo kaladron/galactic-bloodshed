@@ -5,6 +5,6 @@
 #ifndef AUTOSHOOT_H
 #define AUTOSHOOT_H
 
-int berserker_bombard(Ship *, Planet &, Race &);
+int berserker_bombard(Ship &, Planet &, const Race &);
 
 #endif  // AUTOSHOOT_H

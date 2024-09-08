@@ -91,7 +91,7 @@ void insurgency(const command_t &argv, GameObj &g) {
   sprintf(buf, "x = %f\n", x);
   notify(Playernum, Governor, buf);
   chance = round_rand(200.0 * atan((double)x) / 3.14159265);
-  char long_buf[1024], short_buf[256];
+  char long_buf[1024];
   sprintf(long_buf, "%s/%s: %s [%d] tries insurgency vs %s [%d]\n",
           stars[g.snum].name, stars[g.snum].pnames[g.pnum], race.name,
           Playernum, alien.name, who);

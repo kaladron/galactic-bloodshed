@@ -235,6 +235,7 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
           /* attack the landing ship */
           strength = MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);
           if (strength) {
+            char long_buf[1024], short_buf[256];
             damage = shoot_planet_to_ship(alien, s, strength, buf, short_buf);
             post(short_buf, NewsType::COMBAT);
             notify_star(0, 0, s.storbits, short_buf);
@@ -254,6 +255,7 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
   if (auto [did_crash, roll] = crash(s, fuel); did_crash) {
     /* damaged ships stand of chance of crash landing */
     auto smap = getsmap(p);
+    char long_buf[1024], short_buf[256];
     numdest =
         shoot_ship_to_planet(s, p, round_rand((double)(s.destruct) / 3.), x, y,
                              smap, 0, GTYPE_HEAVY, long_buf, short_buf);

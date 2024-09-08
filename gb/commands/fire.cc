@@ -189,6 +189,7 @@ void fire(const command_t &argv, GameObj &g) {
         continue;
       }
 
+      char long_buf[1024], short_buf[256];
       damage =
           shoot_ship_to_ship(*from, *to, strength, cew, 0, long_buf, short_buf);
 
@@ -214,6 +215,7 @@ void fire(const command_t &argv, GameObj &g) {
         strength = retal;
         if (laser_on(*to)) check_overload(&*to, 0, &strength);
 
+        char long_buf[1024], short_buf[256];
         if ((damage = shoot_ship_to_ship(dummy, *from, strength, 0, 1, long_buf,
                                          short_buf)) >= 0) {
           if (laser_on(*to))
@@ -244,6 +246,7 @@ void fire(const command_t &argv, GameObj &g) {
             strength = check_retal_strength(ship);
             if (laser_on(ship)) check_overload(&ship, 0, &strength);
 
+            char long_buf[1024], short_buf[256];
             if ((damage = shoot_ship_to_ship(ship, *from, strength, 0, 0,
                                              long_buf, short_buf)) >= 0) {
               if (laser_on(ship))

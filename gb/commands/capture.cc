@@ -13,6 +13,8 @@ import std.compat;
 
 module commands;
 
+static char short_buf[256];
+
 namespace GB::commands {
 void capture(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;

@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -109,6 +107,7 @@ void bombard(const command_t &argv, GameObj &g) {
       }
 
       auto smap = getsmap(p);
+      char long_buf[1024], short_buf[256];
       auto numdest = shoot_ship_to_planet(*from, p, strength, x, y, smap, 0, 0,
                                           long_buf, short_buf);
       putsmap(smap, p);

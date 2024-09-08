@@ -299,3 +299,5 @@ export constexpr int MOVE_FACTOR = 1;
 export constexpr int TELEG_MAX_AUTO =
     7;  // when changing, alter field in plinfo
 export constexpr char TELEG_DELIM = '~';
+
+export constexpr const char* CUTE_MESSAGE = "\nThe Galactic News\n\n";

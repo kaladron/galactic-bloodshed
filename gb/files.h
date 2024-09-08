@@ -11,9 +11,7 @@
 #define NEWS(file) DIRPATH("News/", file)
 #define TELE(file) DIRPATH("Tele/", file)
 
-#define PATHLEN 200 /* length of file paths to the game.. */
-
-#define CUTE_MESSAGE "\nThe Galactic News\n\n"
+inline constexpr int PATHLEN = 200;  // length of file paths to the game..
 
 inline constexpr auto DATADIR = PKGSTATEDIR;
 inline constexpr auto DOCSDIR = DOCDIR;

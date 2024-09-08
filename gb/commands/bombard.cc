@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include <strings.h>
-
 #include "gb/buffers.h"
 
 module commands;
@@ -42,16 +40,14 @@ void bombard(const command_t &argv, GameObj &g) {
     if (in_list(Playernum, argv[1], *from, &nextshipno) &&
         authorized(Governor, *from)) {
       if (!from->active) {
-        sprintf(buf, "%s is irradiated and inactive.\n",
-                ship_to_string(*from).c_str());
-        notify(Playernum, Governor, buf);
+        g.out << std::format("{} is irradiated and inactive.\n",
+                             ship_to_string(*from));
         free(from);
         continue;
       }
 
       if (from->whatorbits != ScopeLevel::LEVEL_PLAN) {
-        notify(Playernum, Governor,
-               "You must be in orbit around a planet to bombard.\n");
+        g.out << "You must be in orbit around a planet to bombard.\n";
         free(from);
         continue;
       }
@@ -75,24 +71,23 @@ void bombard(const command_t &argv, GameObj &g) {
 
       if (strength > maxstrength) {
         strength = maxstrength;
-        sprintf(buf, "%s set to %d\n",
-                laser_on(*from) ? "Laser strength" : "Guns", strength);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("{} set to {}\n",
+                             laser_on(*from) ? "Laser strength" : "Guns",
+                             strength);
       }
 
       /* check to see if there is crystal overload */
       if (laser_on(*from)) check_overload(from, 0, &strength);
 
       if (strength <= 0) {
-        sprintf(buf, "No attack.\n");
-        notify(Playernum, Governor, buf);
+        g.out << "No attack.\n";
         putship(from);
         free(from);
         continue;
       }
 
       /* get planet */
-      auto p = getplanet((int)from->storbits, (int)from->pnumorbits);
+      auto p = getplanet(from->storbits, from->pnumorbits);
 
       if (argv.size() > 2) {
         sscanf(argv[2].c_str(), "%d,%d", &x, &y);

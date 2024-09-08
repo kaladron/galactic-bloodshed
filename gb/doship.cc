@@ -6,8 +6,6 @@ module;
 
 import std;
 
-#include "gb/buffers.h"
-
 module gblib;
 
 namespace {
@@ -526,6 +524,7 @@ void domissile(Ship &ship) {
           bombx, bomby, prin_ship_orbits(ship));
 
       auto smap = getsmap(*p);
+      char long_buf[1024], short_buf[256];
       auto numdest =
           shoot_ship_to_planet(ship, *p, (int)ship.destruct, bombx, bomby, smap,
                                0, GTYPE_HEAVY, long_buf, short_buf);
@@ -555,6 +554,7 @@ void domissile(Ship &ship) {
     if (dist <= ((double)ship.speed * STRIKE_DISTANCE_FACTOR *
                  (100.0 - (double)ship.damage) / 100.0)) {
       /* do the attack */
+      char long_buf[1024], short_buf[256];
       (void)shoot_ship_to_ship(ship, *ships[sh2], (int)ship.destruct, 0, 0,
                                long_buf, short_buf);
       push_telegram(ship.owner, ship.governor, long_buf);
@@ -620,6 +620,7 @@ void domine(Ship &ship, int detonate) {
   for (auto s : shiplist) {
     if (sh != ship.number && s.alive && (s.type != ShipType::OTYPE_CANIST) &&
         (s.type != ShipType::OTYPE_GREEN)) {
+      char long_buf[1024], short_buf[256];
       auto damage = shoot_ship_to_ship(ship, s, (int)(ship.destruct), 0, 0,
                                        long_buf, short_buf);
       if (damage > 0) {
@@ -646,6 +647,7 @@ void domine(Ship &ship, int detonate) {
     }();
 
     auto smap = getsmap(planet);
+    char long_buf[1024], short_buf[256];
     auto numdest =
         shoot_ship_to_planet(ship, planet, (int)(ship.destruct), x, y, smap, 0,
                              GTYPE_LIGHT, long_buf, short_buf);
@@ -692,6 +694,7 @@ void doabm(Ship &ship) {
         numdest = MIN(numdest, ship.destruct);
         numdest = MIN(numdest, ship.retaliate);
         ship.destruct -= numdest;
+        char long_buf[1024], short_buf[256];
         (void)shoot_ship_to_ship(ship, *ships[sh2], numdest, 0, 0, long_buf,
                                  short_buf);
         push_telegram(ship.owner, ship.governor, long_buf);

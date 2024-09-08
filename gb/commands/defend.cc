@@ -126,6 +126,7 @@ void defend(const command_t &argv, GameObj &g) {
   }
   auto &race = races[Playernum - 1];
 
+  char long_buf[1024], short_buf[256];
   damage = shoot_planet_to_ship(race, *to, strength, long_buf, short_buf);
 
   if (!to->alive && to->type == ShipType::OTYPE_TOXWC) {

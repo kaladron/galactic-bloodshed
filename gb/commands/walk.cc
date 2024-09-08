@@ -12,6 +12,8 @@ import std.compat;
 
 module commands;
 
+static char long_buf[1024], short_buf[256];
+
 namespace GB::commands {
 void walk(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;

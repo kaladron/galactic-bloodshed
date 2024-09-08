@@ -18,20 +18,14 @@ void bombard(const command_t &argv, GameObj &g) {
   shipnum_t fromship;
   shipnum_t nextshipno;
   Ship *from;
-  int strength;
-  int maxstrength;
   int x;
   int y;
-  int numdest;
-  int damage;
-  int i;
 
   /* for telegramming and retaliating */
   Nuked.fill(0);
 
   if (argv.size() < 2) {
-    notify(Playernum, Governor,
-           "Syntax: 'bombard <ship> [<x,y> [<strength>]]'.\n");
+    g.out << "Syntax: 'bombard <ship> [<x,y> [<strength>]]'.\n";
     return;
   }
 
@@ -62,12 +56,10 @@ void bombard(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      maxstrength = check_retal_strength(*from);
+      auto maxstrength = check_retal_strength(*from);
 
-      if (argv.size() > 3)
-        strength = std::stoi(argv[3]);
-      else
-        strength = check_retal_strength(*from);
+      int strength =
+          (argv.size() > 3) ? std::stoi(argv[3]) : check_retal_strength(*from);
 
       if (strength > maxstrength) {
         strength = maxstrength;
@@ -117,8 +109,8 @@ void bombard(const command_t &argv, GameObj &g) {
       }
 
       auto smap = getsmap(p);
-      numdest = shoot_ship_to_planet(*from, p, strength, x, y, smap, 0, 0,
-                                     long_buf, short_buf);
+      auto numdest = shoot_ship_to_planet(*from, p, strength, x, y, smap, 0, 0,
+                                          long_buf, short_buf);
       putsmap(smap, p);
 
       if (numdest < 0) {
@@ -134,7 +126,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
       post(short_buf, NewsType::COMBAT);
       notify_star(Playernum, Governor, from->storbits, short_buf);
-      for (i = 1; i <= Num_races; i++)
+      for (auto i = 1; i <= Num_races; i++)
         if (Nuked[i - 1])
           warn(i, stars[from->storbits].governor[i - 1], long_buf);
       notify(Playernum, Governor, long_buf);
@@ -142,8 +134,7 @@ void bombard(const command_t &argv, GameObj &g) {
       if (DEFENSE) {
         /* planet retaliates - AFVs are immune to this */
         if (numdest && from->type != ShipType::OTYPE_AFV) {
-          damage = 0;
-          for (i = 1; i <= Num_races; i++)
+          for (auto i = 1; i <= Num_races; i++)
             if (Nuked[i - 1] && !p.slaved_to) {
               /* add planet defense strength */
               auto &alien = races[i - 1];
@@ -151,8 +142,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
               p.info[i - 1].destruct -= strength;
 
-              damage = shoot_planet_to_ship(alien, *from, strength, long_buf,
-                                            short_buf);
+              shoot_planet_to_ship(alien, *from, strength, long_buf, short_buf);
               warn(i, stars[from->storbits].governor[i - 1], long_buf);
               notify(Playernum, Governor, long_buf);
               if (!from->alive) post(short_buf, NewsType::COMBAT);
@@ -172,8 +162,8 @@ void bombard(const command_t &argv, GameObj &g) {
 
             strength = check_retal_strength(ship);
 
-            if ((damage = shoot_ship_to_ship(ship, *from, strength, 0, 0,
-                                             long_buf, short_buf)) >= 0) {
+            if (shoot_ship_to_ship(ship, *from, strength, 0, 0, long_buf,
+                                   short_buf) >= 0) {
               if (laser_on(ship))
                 use_fuel(ship, 2.0 * (double)strength);
               else

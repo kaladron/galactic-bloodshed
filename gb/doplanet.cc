@@ -15,7 +15,6 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/bombard.h"
-#include "gb/build.h"
 #include "gb/dosector.h"
 #include "gb/move.h"
 

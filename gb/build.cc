@@ -1,18 +1,14 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* build -- build a ship */
+module;
 
-import gblib;
 import std.compat;
-
-#include "gb/build.h"
 
 #include <strings.h>
 
-#include "gb/GB_server.h"
 #include "gb/buffers.h"
+
+module gblib;
 
 bool can_build_on_sector(const int what, const Race &race, const Planet &planet,
                          const Sector &sector, const int x, const int y,

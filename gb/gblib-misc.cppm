@@ -13,7 +13,10 @@ module;
 
 export module gblib:misc;
 
+import :planet;
 import :race;
+import :ships;
+import :star;
 import :tweakables;
 import :types;
 
@@ -221,3 +224,11 @@ export std::string Estimate_i(const int data, const Race &r, const player_t p) {
   }
   return "?";
 }
+
+export void insert_sh_univ(stardata *, Ship *);
+export void insert_sh_star(Star &, Ship *);
+export void insert_sh_plan(Planet &, Ship *);
+export void insert_sh_ship(Ship *, Ship *);
+export void remove_sh_star(Ship &);
+export void remove_sh_plan(Ship &);
+export void remove_sh_ship(Ship &, Ship &);

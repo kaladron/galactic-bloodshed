@@ -13,7 +13,6 @@ import std.compat;
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
-#include "gb/build.h"
 #include "gb/doplanet.h"
 
 static constexpr void maintain(Race &r, Race::gov &governor,

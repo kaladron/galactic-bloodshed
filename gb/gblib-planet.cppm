@@ -131,3 +131,6 @@ ap_t Planet::get_points() const {
 }
 
 export int revolt(Planet &pl, const player_t victim, const player_t agent);
+
+export void moveplanet(const starnum_t starnum, Planet &planet,
+                       const planetnum_t planetnum);

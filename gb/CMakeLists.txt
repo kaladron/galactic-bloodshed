@@ -217,7 +217,6 @@ set(OLD_LIBGBLIB_FILES
     dosector.cc
     doturncmd.cc
     move.cc
-    moveplanet.cc
     order.cc)
 
 add_executable(GB GB_server.cc ${OLD_LIBGBLIB_FILES})

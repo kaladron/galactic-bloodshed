@@ -71,8 +71,8 @@ int get_move(char direction, int x, int y, int *x2, int *y2,
 
 void mech_defend(player_t Playernum, governor_t Governor, int *people, int type,
                  const Planet &p, int x2, int y2, const Sector &s2) {
-  int civ = 0;
-  int mil = 0;
+  population_t civ = 0;
+  population_t mil = 0;
   int oldgov;
 
   if (type == CIV)
@@ -111,9 +111,9 @@ void mech_defend(player_t Playernum, governor_t Governor, int *people, int type,
   *people = civ + mil;
 }
 
-void mech_attack_people(Ship *ship, int *civ, int *mil, Race &race, Race &alien,
-                        const Sector &sect, int x, int y, int ignore,
-                        char *long_msg, char *short_msg) {
+void mech_attack_people(Ship *ship, population_t *civ, population_t *mil,
+                        Race &race, Race &alien, const Sector &sect, int x,
+                        int y, int ignore, char *long_msg, char *short_msg) {
   int strength;
   int oldciv;
   int oldmil;

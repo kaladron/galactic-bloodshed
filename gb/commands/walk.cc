@@ -5,14 +5,9 @@ module;
 import gblib;
 import std.compat;
 
-#include <strings.h>
-
-#include "gb/buffers.h"
 #include "gb/move.h"
 
 module commands;
-
-static char long_buf[1024], short_buf[256];
 
 namespace GB::commands {
 void walk(const command_t &argv, GameObj &g) {
@@ -21,14 +16,8 @@ void walk(const command_t &argv, GameObj &g) {
   const ap_t APcount = 1;
   int x;
   int y;
-  int i;
-  int succ = 0;
-  int civ;
-  int mil;
-  player_t oldowner;
-  governor_t oldgov;
-  int strength;
-  int strength1;
+
+  char long_buf[1024], short_buf[256];
 
   if (argv.size() < 2) {
     g.out << "Walk what?\n";
@@ -56,8 +45,8 @@ void walk(const command_t &argv, GameObj &g) {
     return;
   }
   if (ship->fuel < AFV_FUEL_COST) {
-    sprintf(buf, "You don't have %.1f fuel to move it.\n", AFV_FUEL_COST);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("You don't have {:.1f} fuel to move it.\n",
+                         AFV_FUEL_COST);
     return;
   }
   if (!enufAP(Playernum, Governor, stars[ship->storbits].AP[Playernum - 1],
@@ -72,16 +61,14 @@ void walk(const command_t &argv, GameObj &g) {
     return;
   }
   if (x < 0 || y < 0 || x > p.Maxx - 1 || y > p.Maxy - 1) {
-    sprintf(buf, "Illegal coordinates %d,%d.\n", x, y);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("Illegal coordinates {},{}.\n", x, y);
     putplanet(p, stars[g.snum], g.pnum);
     return;
   }
   /* check to see if player is permited on the sector type */
   auto sect = getsector(p, x, y);
   if (!race.likes[sect.condition]) {
-    notify(Playernum, Governor,
-           "Your ships cannot walk into that sector type!\n");
+    g.out << "Your ships cannot walk into that sector type!\n";
     return;
   }
   /* if the sector is occupied by non-aligned AFVs, each one will attack */
@@ -92,6 +79,8 @@ void walk(const command_t &argv, GameObj &g) {
         (ship2.land_y == y)) {
       auto &alien = races[ship2.owner - 1];
       if (!isset(race.allied, ship2.owner) || !isset(alien.allied, Playernum)) {
+        int strength;
+        int strength1;
         while ((strength = retal_strength(ship2)) &&
                (strength1 = retal_strength(*ship))) {
           use_destruct(ship2, strength);
@@ -114,8 +103,8 @@ void walk(const command_t &argv, GameObj &g) {
   }
   /* if the sector is occupied by non-aligned player, attack them first */
   if (ship->popn && ship->alive && sect.owner && sect.owner != Playernum) {
-    oldowner = sect.owner;
-    oldgov = stars[ship->storbits].governor[sect.owner - 1];
+    auto oldowner = sect.owner;
+    auto oldgov = stars[ship->storbits].governor[sect.owner - 1];
     auto &alien = races[oldowner - 1];
     if (!isset(race.allied, oldowner) || !isset(alien.allied, Playernum)) {
       if (!retal_strength(*ship)) {
@@ -123,8 +112,8 @@ void walk(const command_t &argv, GameObj &g) {
         return;
       }
       while ((sect.popn + sect.troops) && retal_strength(*ship)) {
-        civ = (int)sect.popn;
-        mil = (int)sect.troops;
+        auto civ = sect.popn;
+        auto mil = sect.troops;
         mech_attack_people(&*ship, &civ, &mil, race, alien, sect, x, y, 0,
                            long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
@@ -153,21 +142,22 @@ void walk(const command_t &argv, GameObj &g) {
     putsector(sect, p, x, y);
   }
 
+  int succ = 0;
   if ((sect.owner == Playernum || isset(race.allied, sect.owner) ||
        !sect.owner) &&
       ship->alive)
     succ = 1;
 
   if (ship->alive && ship->popn && succ) {
-    sprintf(buf, "%s moving from %d,%d to %d,%d on %s.\n",
-            ship_to_string(*ship).c_str(), (int)ship->land_x, (int)ship->land_y,
-            x, y, dispshiploc(*ship).c_str());
+    std::string moving = std::format("{} moving from {},{} to {},{} on {}.\n",
+                                     ship_to_string(*ship), ship->land_x,
+                                     ship->land_y, x, y, dispshiploc(*ship));
     ship->land_x = x;
     ship->land_y = y;
     use_fuel(*ship, AFV_FUEL_COST);
-    for (i = 1; i <= Num_races; i++)
+    for (auto i = 1; i <= Num_races; i++)
       if (i != Playernum && p.info[i - 1].numsectsowned)
-        notify(i, stars[g.snum].governor[i - 1], buf);
+        notify(i, stars[g.snum].governor[i - 1], moving);
   }
   putship(&*ship);
   deductAPs(g, APcount, ship->storbits);

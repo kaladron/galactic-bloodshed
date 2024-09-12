@@ -499,7 +499,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           return;
         }
         planet.info[Playernum - 1].resource -= oncost;
-        putplanet(planet, stars[ship->deststar], (int)ship->destpnum);
+        putplanet(planet, stars[ship->deststar], ship->destpnum);
       }
       g.out << std::format("Factory activated at a cost of {} resources.\n",
                            oncost);
@@ -543,28 +543,28 @@ static void mk_expl_aimed_at(GameObj &g, Ship *s) {
     case ScopeLevel::LEVEL_STAR:
       g.out << std::format("Star {}\n", prin_aimed_at(*s));
       if ((dist = sqrt(Distsq(xf, yf, str.xpos, str.ypos))) <=
-          tele_range((int)s->type, s->tech)) {
+          tele_range(s->type, s->tech)) {
         str = getstar(s->special.aimed_at.snum);
         setbit(str.explored, g.player);
         putstar(str, s->special.aimed_at.snum);
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
-                             tele_range((int)s->type, s->tech));
+                             tele_range(s->type, s->tech));
       }
       break;
     case ScopeLevel::LEVEL_PLAN: {
       g.out << std::format("Planet {}\n", prin_aimed_at(*s));
       auto p = getplanet(s->special.aimed_at.snum, s->special.aimed_at.pnum);
       if ((dist = sqrt(Distsq(xf, yf, str.xpos + p.xpos, str.ypos + p.ypos))) <=
-          tele_range((int)s->type, s->tech)) {
+          tele_range(s->type, s->tech)) {
         setbit(str.explored, g.player);
         p.info[g.player - 1].explored = 1;
         putplanet(p, stars[s->special.aimed_at.snum], s->special.aimed_at.pnum);
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
-                             tele_range((int)s->type, s->tech));
+                             tele_range(s->type, s->tech));
       }
     } break;
     case ScopeLevel::LEVEL_SHIP:

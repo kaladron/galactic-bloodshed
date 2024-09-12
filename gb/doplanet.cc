@@ -13,7 +13,6 @@ import std.compat;
 
 #include <cstdlib>
 
-#include "gb/GB_server.h"
 #include "gb/bombard.h"
 #include "gb/dosector.h"
 #include "gb/move.h"

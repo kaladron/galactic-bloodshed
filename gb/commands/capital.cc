@@ -7,9 +7,7 @@
 module;
 
 import gblib;
-import std.compat;
-
-#include "gb/buffers.h"
+import std;
 
 module commands;
 
@@ -57,8 +55,8 @@ void capital(const command_t &argv, GameObj &g) {
       return;
     }
     if (s->type != ShipType::OTYPE_GOV) {
-      sprintf(buf, "That ship is not a %s.\n", Shipnames[ShipType::OTYPE_GOV]);
-      notify(Playernum, Governor, buf);
+      g.out << std::format("That ship is not a {}.\n",
+                           Shipnames[ShipType::OTYPE_GOV]);
       return;
     }
     deductAPs(g, APcount, snum);
@@ -66,8 +64,8 @@ void capital(const command_t &argv, GameObj &g) {
     putrace(race);
   }
 
-  sprintf(buf, "Efficiency of governmental center: %.0f%%.\n",
-          ((double)s->popn / (double)max_crew(*s)) * (100 - (double)s->damage));
-  notify(Playernum, Governor, buf);
+  g.out << std::format(
+      "Efficiency of governmental center: {:.0f}%.\n",
+      ((double)s->popn / (double)max_crew(*s)) * (100 - (double)s->damage));
 }
 }  // namespace GB::commands

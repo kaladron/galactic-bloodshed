@@ -454,7 +454,7 @@ static int cew_hit_odds(double range, int cew_range) {
 /*
  * range of telescopes, ground or space, given race and ship
  */
-double tele_range(int type, double tech) {
+double tele_range(ShipType type, double tech) {
   if (type == ShipType::OTYPE_GTELE)
     return std::log1p((double)tech) * 400 + SYSTEMSIZE / 8;
 

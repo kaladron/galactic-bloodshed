@@ -61,21 +61,21 @@ export struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
 export struct vnbrain VN_brain;
 export struct sectinfo Sectinfo[MAX_X][MAX_Y];
 
-export const std::array<const char *, 4> commod_name = {"resources", "destruct",
-                                                        "fuel", "crystals"};
+export constexpr std::array<const char *, 4> commod_name = {
+    "resources", "destruct", "fuel", "crystals"};
 
-export const std::array<const char, 8> Psymbol = {'@', 'o', 'O', '#',
-                                                  '~', '.', ')', '-'};
+export constexpr std::array<const char, 8> Psymbol = {'@', 'o', 'O', '#',
+                                                      '~', '.', ')', '-'};
 
-export const std::array<const char *, 8> Planet_types = {
+export constexpr std::array<const char *, 8> Planet_types = {
     "Class M", "Asteroid",  "Airless", "Iceball",
     "Jovian",  "Waterball", "Forest",  "Desert"};
 
-export const std::array<const char *, 9> Desnames = {
+export constexpr std::array<const char *, 9> Desnames = {
     "ocean",  "land",   "mountainous", "gaseous", "ice",
     "forest", "desert", "plated",      "wasted"};
 
-export const std::array<const char, 9> Dessymbols = {
+export constexpr std::array<const char, 9> Dessymbols = {
     CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,  CHAR_GAS,   CHAR_ICE,
     CHAR_FOREST, CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
 

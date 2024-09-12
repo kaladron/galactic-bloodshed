@@ -7,10 +7,8 @@
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 static std::string prin_aimed_at(const Ship &);
-static void mk_expl_aimed_at(player_t, governor_t, Ship *);
+static void mk_expl_aimed_at(GameObj &g, Ship *);
 
 // TODO(jeffbailey): We take in a non-zero APcount, and do nothing with it!
 void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
@@ -20,16 +18,14 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
   int j;
 
   if (!ship->active) {
-    sprintf(buf, "%s is irradiated (%d); it cannot be given orders.\n",
-            ship_to_string(*ship).c_str(), ship->rad);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("{} is irradiated ({}); it cannot be given orders.\n",
+                         ship_to_string(*ship), ship->rad);
     return;
   }
   if (ship->type != ShipType::OTYPE_TRANSDEV && !ship->popn &&
       max_crew(*ship)) {
-    sprintf(buf, "%s has no crew and is not a robotic ship.\n",
-            ship_to_string(*ship).c_str());
-    notify(Playernum, Governor, buf);
+    g.out << std::format("{} has no crew and is not a robotic ship.\n",
+                         ship_to_string(*ship));
     return;
   }
 
@@ -85,8 +81,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
         }
       }
     } else {
-      notify(Playernum, Governor,
-             "This ship does not have hyper drive capability.\n");
+      g.out << "This ship does not have hyper drive capability.\n";
       return;
     }
   } else if (argv[2] == "protect") {
@@ -129,8 +124,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       }
       ship->on = !ship->on;
     } else {
-      sprintf(buf, "That ship does not have an on/off setting.\n");
-      notify(Playernum, Governor, buf);
+      g.out << "That ship does not have an on/off setting.\n";
       return;
     }
     if (ship->on) {
@@ -365,9 +359,8 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     for (auto i = 0; i < moveseq.size(); ++i) {
       /* Make sure the list of moves is short enough. */
       if (i == SHIP_NAMESIZE - 1) {
-        sprintf(buf, "Warning: that is more than %d moves.\n",
-                SHIP_NAMESIZE - 1);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("Warning: that is more than {} moves.\n",
+                             SHIP_NAMESIZE - 1);
         g.out << "These move orders have been truncated.\n";
         moveseq.resize(i);
         break;
@@ -379,18 +372,16 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           return;
         }
         if (moveseq[i + 1]) {
-          sprintf(buf,
-                  "Warning: '%c' should be the last character in the "
-                  "move order.\n",
-                  moveseq[i]);
-          notify(Playernum, Governor, buf);
+          g.out << std::format(
+              "Warning: '{}' should be the last character in the move order.\n",
+              moveseq[i]);
           g.out << "These move orders have been truncated.\n";
           moveseq.resize(i + 1);
           break;
         }
       } else if ((moveseq[i] < '1') || ('9' < moveseq[i])) {
-        sprintf(buf, "'%c' is not a valid move direction.\n", moveseq[i]);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("'{}' is not a valid move direction.\n",
+                             moveseq[i]);
         return;
       }
     }
@@ -416,8 +407,8 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
                "A transporter cannot transport to itself.");
         ship->special.transport.target = 0;
       } else {
-        sprintf(buf, "Target ship is %d.\n", ship->special.transport.target);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("Target ship is {}.\n",
+                             ship->special.transport.target);
       }
     } else {
       g.out << "This ship is not a transporter.\n";
@@ -428,8 +419,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       if (ship->type == ShipType::OTYPE_GTELE ||
           ship->type == ShipType::OTYPE_TRACT || ship->fuel >= FUEL_MANEUVER) {
         if (ship->type == ShipType::STYPE_MIRROR && ship->docked) {
-          sprintf(buf, "docked; use undock or launch first.\n");
-          notify(Playernum, Governor, buf);
+          g.out << "docked; use undock or launch first.\n";
           return;
         }
         Place pl{g, argv[3], true};
@@ -446,13 +436,12 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           use_fuel(*ship, FUEL_MANEUVER);
         if (ship->type == ShipType::OTYPE_GTELE ||
             ship->type == ShipType::OTYPE_STELE)
-          mk_expl_aimed_at(Playernum, Governor, ship);
-        sprintf(buf, "Aimed at %s\n", prin_aimed_at(*ship).c_str());
-        notify(Playernum, Governor, buf);
+          mk_expl_aimed_at(g, ship);
+        g.out << std::format("Aimed at {}\n", prin_aimed_at(*ship));
 
       } else {
-        sprintf(buf, "Not enough maneuvering fuel (%.2f).\n", FUEL_MANEUVER);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("Not enough maneuvering fuel ({:.2f}).\n",
+                             FUEL_MANEUVER);
         return;
       }
     } else {
@@ -487,21 +476,18 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
         if (s2->type == ShipType::STYPE_HABITAT) {
           oncost = HAB_FACT_ON_COST * ship->build_cost;
           if (s2->resource < oncost) {
-            sprintf(buf,
-                    "You don't have %d resources on Habitat #%lu to "
-                    "activate this factory.\n",
-                    oncost, ship->destshipno);
-            notify(Playernum, Governor, buf);
+            g.out << std::format(
+                "You don't have {} resources on Habitat #{} to activate this "
+                "factory.\n",
+                oncost, ship->destshipno);
             return;
           }
           hangerneeded = (1 + (int)(HAB_FACT_SIZE * (double)ship_size(*ship))) -
                          ((s2->max_hanger - s2->hanger) + ship->size);
           if (hangerneeded > 0) {
-            sprintf(
-                buf,
-                "Not enough hanger space free on Habitat #%lu. Need %d more.\n",
+            g.out << std::format(
+                "Not enough hanger space free on Habitat #{}. Need {} more.\n",
                 ship->destshipno, hangerneeded);
-            notify(Playernum, Governor, buf);
             return;
           }
           s2->resource -= oncost;
@@ -520,18 +506,17 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
         auto planet = getplanet(ship->deststar, ship->destpnum);
         oncost = 2 * ship->build_cost;
         if (planet.info[Playernum - 1].resource < oncost) {
-          sprintf(buf,
-                  "You don't have %d resources on the planet to activate "
-                  "this factory.\n",
-                  oncost);
-          notify(Playernum, Governor, buf);
+          g.out << std::format(
+              "You don't have {} resources on the planet to activate this "
+              "factory.\n",
+              oncost);
           return;
         }
         planet.info[Playernum - 1].resource -= oncost;
         putplanet(planet, stars[ship->deststar], (int)ship->destpnum);
       }
-      sprintf(buf, "Factory activated at a cost of %d resources.\n", oncost);
-      notify(Playernum, Governor, buf);
+      g.out << std::format("Factory activated at a cost of {} resources.\n",
+                           oncost);
     }
     ship->on = 1;
   } else if (argv[2] == "off") {
@@ -556,7 +541,7 @@ static std::string prin_aimed_at(const Ship &ship) {
 /*
  * mark wherever the ship is aimed at, as explored by the owning player.
  */
-static void mk_expl_aimed_at(player_t Playernum, governor_t Governor, Ship *s) {
+static void mk_expl_aimed_at(GameObj &g, Ship *s) {
   double dist;
   double xf;
   double yf;
@@ -568,45 +553,37 @@ static void mk_expl_aimed_at(player_t Playernum, governor_t Governor, Ship *s) {
 
   switch (s->special.aimed_at.level) {
     case ScopeLevel::LEVEL_UNIV:
-      sprintf(buf, "There is nothing out here to aim at.");
-      notify(Playernum, Governor, buf);
+      g.out << "There is nothing out here to aim at.\n";
       break;
     case ScopeLevel::LEVEL_STAR:
-      sprintf(buf, "Star %s ", prin_aimed_at(*s).c_str());
-      notify(Playernum, Governor, buf);
+      g.out << std::format("Star {}\n", prin_aimed_at(*s));
       if ((dist = sqrt(Distsq(xf, yf, str.xpos, str.ypos))) <=
           tele_range((int)s->type, s->tech)) {
         str = getstar(s->special.aimed_at.snum);
-        setbit(str.explored, Playernum);
+        setbit(str.explored, g.player);
         putstar(str, s->special.aimed_at.snum);
-        sprintf(buf, "Surveyed, distance %g.\n", dist);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
-        sprintf(buf, "Too far to see (%g, max %g).\n", dist,
-                tele_range((int)s->type, s->tech));
-        notify(Playernum, Governor, buf);
+        g.out << std::format("Too far to see ({}, max {}).\n", dist,
+                             tele_range((int)s->type, s->tech));
       }
       break;
     case ScopeLevel::LEVEL_PLAN: {
-      sprintf(buf, "Planet %s ", prin_aimed_at(*s).c_str());
-      notify(Playernum, Governor, buf);
+      g.out << std::format("Planet {}\n", prin_aimed_at(*s));
       auto p = getplanet(s->special.aimed_at.snum, s->special.aimed_at.pnum);
       if ((dist = sqrt(Distsq(xf, yf, str.xpos + p.xpos, str.ypos + p.ypos))) <=
           tele_range((int)s->type, s->tech)) {
-        setbit(str.explored, Playernum);
-        p.info[Playernum - 1].explored = 1;
+        setbit(str.explored, g.player);
+        p.info[g.player - 1].explored = 1;
         putplanet(p, stars[s->special.aimed_at.snum], s->special.aimed_at.pnum);
-        sprintf(buf, "Surveyed, distance %g.\n", dist);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
-        sprintf(buf, "Too far to see (%g, max %g).\n", dist,
-                tele_range((int)s->type, s->tech));
-        notify(Playernum, Governor, buf);
+        g.out << std::format("Too far to see ({}, max {}).\n", dist,
+                             tele_range((int)s->type, s->tech));
       }
     } break;
     case ScopeLevel::LEVEL_SHIP:
-      sprintf(buf, "You can't see anything of use there.\n");
-      notify(Playernum, Governor, buf);
+      g.out << std::format("You can't see anything of use there.\n");
       break;
   }
 }

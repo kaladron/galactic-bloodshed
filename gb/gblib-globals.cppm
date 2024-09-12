@@ -30,7 +30,6 @@ export unsigned long prod_fuel[MAXPLAYERS], prod_destruct[MAXPLAYERS];
 export unsigned long prod_crystals[MAXPLAYERS], prod_money[MAXPLAYERS];
 export unsigned long tot_captured, prod_mob;
 export unsigned long avg_mob[MAXPLAYERS];
-export unsigned char sects_gained[MAXPLAYERS], sects_lost[MAXPLAYERS];
 export unsigned char Claims;
 
 export std::array<std::array<std::unique_ptr<Planet>, MAXPLANETS>, NUMSTARS>

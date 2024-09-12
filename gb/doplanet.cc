@@ -41,8 +41,6 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
   bzero((char *)Sectinfo, sizeof(Sectinfo));
 
   bzero((char *)avg_mob, sizeof(avg_mob));
-  bzero((char *)sects_gained, sizeof(sects_gained));
-  bzero((char *)sects_lost, sizeof(sects_lost));
   bzero((char *)prod_res, sizeof(prod_res));
   bzero((char *)prod_fuel, sizeof(prod_fuel));
   bzero((char *)prod_destruct, sizeof(prod_destruct));
@@ -315,19 +313,6 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
     p.popn = p.owner = p.troops = 0;
   }
 
-  for (int i = 1; i <= Num_races; i++) {
-    if (sects_gained[i - 1] || sects_lost[i - 1]) {
-      std::stringstream telegram_buf;
-
-      telegram_buf << std::format("****** Report: Planet /{}/{} ******\n",
-                                  stars[starnum].name,
-                                  stars[starnum].pnames[planetnum]);
-      telegram_buf << std::format(
-          " WAR STATUS: {} sectors gained, {} sectors lost.\n",
-          sects_gained[i - 1], sects_lost[i - 1]);
-      push_telegram(i, stars[starnum].governor[i - 1], telegram_buf.str());
-    }
-  }
   for (i = 1; i <= Num_races; i++) {
     planet.info[i - 1].prod_crystals = prod_crystals[i - 1];
     planet.info[i - 1].prod_res = prod_res[i - 1];

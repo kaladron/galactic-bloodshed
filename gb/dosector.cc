@@ -1,11 +1,10 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-import gblib;
+module;
+
 import std.compat;
 
-#include "gb/dosector.h"
+module gblib;
 
 static const std::array<int, 8> x_adj = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const std::array<int, 8> y_adj = {1, 1, 1, 0, 0, -1, -1, -1};

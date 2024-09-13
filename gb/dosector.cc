@@ -7,30 +7,27 @@ import std.compat;
 
 #include "gb/dosector.h"
 
-static const int x_adj[] = {-1, 0, 1, -1, 1, -1, 0, 1};
-static const int y_adj[] = {1, 1, 1, 0, 0, -1, -1, -1};
+static const std::array<int, 8> x_adj = {-1, 0, 1, -1, 1, -1, 0, 1};
+static const std::array<int, 8> y_adj = {1, 1, 1, 0, 0, -1, -1, -1};
 
-static void Migrate2(const Planet &, int, int, Sector &, int *, SectorMap &);
+static void Migrate2(const Planet &planet, int xd, int yd, Sector &ps,
+                     population_t *people, SectorMap &smap);
 static void plate(Sector &);
 
 //  produce() -- produce, stuff like that, on a sector.
 void produce(const Star &star, const Planet &planet, Sector &s) {
   int ss;
-  int maxsup;
-  int pfuel = 0;
   int pdes = 0;
   int pres = 0;
-  resource_t prod;
-  population_t diff;
 
   if (!s.owner) return;
   auto &race = races[s.owner - 1];
 
   if (s.resource && success(s.eff)) {
-    prod = round_rand(race.metabolism) * int_rand(1, s.eff);
+    resource_t prod = round_rand(race.metabolism) * int_rand(1, s.eff);
     prod = std::min(prod, s.resource);
     s.resource -= prod;
-    pfuel = prod * (1 + (s.condition == SectorType::SEC_GAS));
+    auto pfuel = prod * (1 + (s.condition == SectorType::SEC_GAS));
     if (success(s.mobilization))
       pdes = prod;
     else
@@ -64,9 +61,8 @@ void produce(const Star &star, const Planet &planet, Sector &s) {
 
   /* do efficiency */
   if (s.eff < 100) {
-    int chance;
-    chance = round_rand((100.0 - (double)planet.info[s.owner - 1].tax) *
-                        race.likes[s.condition]);
+    int chance = round_rand((100.0 - (double)planet.info[s.owner - 1].tax) *
+                            race.likes[s.condition]);
     if (success(chance)) {
       s.eff += round_rand(race.metabolism);
       if (s.eff >= 100) plate(s);
@@ -82,8 +78,11 @@ void produce(const Star &star, const Planet &planet, Sector &s) {
   if (s.condition == SectorType::SEC_WASTED && success(NATURAL_REPAIR))
     s.condition = s.type;
 
-  maxsup = maxsupport(race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
-  if ((diff = s.popn - maxsup) < 0) {
+  auto maxsup =
+      maxsupport(race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
+  population_t diff = s.popn - maxsup;
+
+  if (diff < 0) {
     if (s.popn >= race.number_sexes)
       ss = round_rand(-(double)diff * race.birthrate);
     else
@@ -101,12 +100,6 @@ void produce(const Star &star, const Planet &planet, Sector &s) {
 
 // spread()  -- spread population around.
 void spread(const Planet &pl, Sector &s, SectorMap &smap) {
-  int people;
-  int x2;
-  int y2;
-  int j;
-  int check;
-
   if (!s.owner) return;
   if (pl.slaved_to && pl.slaved_to != s.owner)
     return; /* no one wants to go anywhere */
@@ -114,26 +107,25 @@ void spread(const Planet &pl, Sector &s, SectorMap &smap) {
   auto &race = races[s.owner - 1];
 
   /* the higher the fertility, the less people like to leave */
-  people = round_rand((double)race.adventurism * (double)s.popn *
-                      (100. - (double)s.fert) / 100.) -
-           race.number_sexes; /* how many people want to move -
-                                               one family stays behind */
+  population_t people =
+      round_rand((double)race.adventurism * (double)s.popn *
+                 (100. - (double)s.fert) / 100.) -
+      race.number_sexes; /* how many people want to move -
+                                          one family stays behind */
 
-  check = round_rand(6.0 * race.adventurism); /* more rounds for
+  int check = round_rand(6.0 * race.adventurism); /* more rounds for
                                                                high advent */
   while (people > 0 && check) {
-    j = int_rand(0, 7);
-    x2 = x_adj[j];
-    y2 = y_adj[j];
+    int j = int_rand(0, 7);
+    int x2 = x_adj[j];
+    int y2 = y_adj[j];
     Migrate2(pl, s.x + x2, s.y + y2, s, &people, smap);
     check--;
   }
 }
 
 static void Migrate2(const Planet &planet, int xd, int yd, Sector &ps,
-                     int *people, SectorMap &smap) {
-  int move;
-
+                     population_t *people, SectorMap &smap) {
   /* attempt to migrate beyond screen, or too many people */
   if (yd > planet.Maxy - 1 || yd < 0) return;
 
@@ -145,8 +137,8 @@ static void Migrate2(const Planet &planet, int xd, int yd, Sector &ps,
   auto &pd = smap.get(xd, yd);
 
   if (!pd.owner) {
-    move = (int)((double)(*people) * Compat[ps.owner - 1] *
-                 races[ps.owner - 1].likes[pd.condition] / 100.0);
+    int move = (int)((double)(*people) * Compat[ps.owner - 1] *
+                     races[ps.owner - 1].likes[pd.condition] / 100.0);
     if (!move) return;
     *people -= move;
     pd.popn += move;

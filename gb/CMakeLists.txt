@@ -88,6 +88,7 @@ target_sources(
          FILES
          gblib.cppm
          gblib-build.cppm
+         gblib-dosector.cppm
          gblib-doship.cppm
          gblib-files_shl.cppm
          gblib-fire.cppm

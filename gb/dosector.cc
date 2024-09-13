@@ -2,7 +2,7 @@
 
 module;
 
-import std.compat;
+import std;
 
 module gblib;
 
@@ -11,8 +11,11 @@ static const std::array<int, 8> y_adj = {1, 1, 1, 0, 0, -1, -1, -1};
 
 static void Migrate2(const Planet &planet, int xd, int yd, Sector &ps,
                      population_t *people, SectorMap &smap);
-static void plate(Sector &);
 
+static void plate(Sector &s) {
+  s.eff = 100;
+  if (s.condition != SectorType::SEC_GAS) s.condition = SectorType::SEC_PLATED;
+}
 //  produce() -- produce, stuff like that, on a sector.
 void produce(const Star &star, const Planet &planet, Sector &s) {
   int ss;
@@ -164,12 +167,7 @@ void explore(const Planet &planet, Sector &s, int x, int y, int p) {
     } else {
       Sectinfo[x][y - 1].explored = Sectinfo[x][y + 1].explored = p;
     }
-
-  } else if (s.owner == p)
+  } else if (s.owner == p) {
     Sectinfo[x][y].explored = p;
-}
-
-static void plate(Sector &s) {
-  s.eff = 100;
-  if (s.condition != SectorType::SEC_GAS) s.condition = SectorType::SEC_PLATED;
+  }
 }

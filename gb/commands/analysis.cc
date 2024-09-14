@@ -39,8 +39,8 @@ void PrintTop(GameObj &g, const std::array<struct anal_sect, CARE> arr,
 
   for (const auto &as : arr) {
     if (as.value == -1) continue;
-    sprintf(buf, "%5ld%c(%2d,%2d)", as.value, Dessymbols[as.des], as.x, as.y);
-    notify(g.player, g.governor, buf);
+    g.out << std::format("{:>5}{}({:>2},{:>2})", as.value, Dessymbols[as.des],
+                         as.x, as.y);
   }
   g.out << "\n";
 }
@@ -57,35 +57,26 @@ void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   std::array<struct anal_sect, CARE> Popn;
   std::array<struct anal_sect, CARE> mPopn;
   int TotalCrys = 0;
-  std::array<int, MAXPLAYERS + 1> PlayCrys;
+  std::array<int, MAXPLAYERS + 1> PlayCrys{};
   int TotalTroops = 0;
-  std::array<int, MAXPLAYERS + 1> PlayTroops;
+  std::array<int, MAXPLAYERS + 1> PlayTroops{};
   int TotalPopn = 0;
-  std::array<int, MAXPLAYERS + 1> PlayPopn;
+  std::array<int, MAXPLAYERS + 1> PlayPopn{};
   int TotalMob = 0;
-  std::array<int, MAXPLAYERS + 1> PlayMob;
+  std::array<int, MAXPLAYERS + 1> PlayMob{};
   int TotalEff = 0;
-  std::array<int, MAXPLAYERS + 1> PlayEff;
+  std::array<int, MAXPLAYERS + 1> PlayEff{};
   int TotalRes = 0;
-  std::array<int, MAXPLAYERS + 1> PlayRes;
+  std::array<int, MAXPLAYERS + 1> PlayRes{};
   int TotalSect = 0;
   int PlaySect[MAXPLAYERS + 1][SectorType::SEC_WASTED + 1];
-  std::array<int, MAXPLAYERS + 1> PlayTSect;
-  std::array<int, MAXPLAYERS + 1> WastedSect;
+  std::array<int, MAXPLAYERS + 1> PlayTSect{};
+  std::array<int, MAXPLAYERS + 1> WastedSect{};
   std::array<int, SectorType::SEC_WASTED + 1> Sect;
 
   for (int i = 0; i < CARE; i++)
     Res[i].value = Eff[i].value = Frt[i].value = Mob[i].value =
         Troops[i].value = Popn[i].value = mPopn[i].value = -1;
-
-  PlayTroops.fill(0);
-  PlayPopn.fill(0);
-  PlayMob.fill(0);
-  PlayEff.fill(0);
-  PlayCrys.fill(0);
-  PlayRes.fill(0);
-  PlayTSect.fill(0);
-  WastedSect.fill(0);
 
   for (int p = 0; p <= Num_races; p++) {
     for (int i = 0; i <= SectorType::SEC_WASTED; i++) PlaySect[p][i] = 0;

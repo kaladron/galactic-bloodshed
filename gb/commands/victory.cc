@@ -19,8 +19,8 @@ void victory(const command_t &argv, GameObj &g) {
   auto viclist = create_victory_list();
 
   g.out << "----==== PLAYER RANKINGS ====----\n";
-  sprintf(buf, "%-4.4s %-15.15s %8s\n", "No.", "Name", (g.god ? "Score" : ""));
-  notify(g.player, g.governor, buf);
+  g.out << std::format("{:<4} {:<15} {:>8}\n", "No.", "Name",
+                       (g.god ? "Score" : ""));
   for (int i = 0; auto &vic : viclist) {
     i++;
     if (g.god)

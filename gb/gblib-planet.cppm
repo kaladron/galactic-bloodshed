@@ -6,9 +6,7 @@ import :race;
 import :rand;
 import :types;
 import :tweakables;
-import std.compat;
-
-#include "gb/tweakables.h"
+import std;
 
 export struct plinfo {     /* planetary stockpiles */
   unsigned short fuel;     /* fuel for powering things */
@@ -59,6 +57,7 @@ export class Planet {
   Planet &operator=(const Planet &) = delete;
   Planet(Planet &&) = default;
   Planet &operator=(Planet &&) = default;
+  ~Planet() {};
 
   double gravity() const;
   double compatibility(const Race &) const;
@@ -114,19 +113,19 @@ ap_t Planet::get_points() const {
     case PlanetType::ASTEROID:
       return ASTEROID_POINTS;
     case PlanetType::EARTH:
-      return EARTH_POINTS;
+      return int_rand(EARTH_POINTS_LOW, EARTH_POINTS_HIGH);
     case PlanetType::MARS:
-      return MARS_POINTS;
+      return int_rand(MARS_POINTS_LOW, MARS_POINTS_HIGH);
     case PlanetType::ICEBALL:
-      return ICEBALL_POINTS;
+      return int_rand(ICEBALL_POINTS_LOW, ICEBALL_POINTS_HIGH);
     case PlanetType::GASGIANT:
-      return GASGIANT_POINTS;
+      return int_rand(GASGIANT_POINTS_LOW, GASGIANT_POINTS_HIGH);
     case PlanetType::WATER:
-      return WATER_POINTS;
+      return int_rand(WATER_POINTS_LOW, WATER_POINTS_HIGH);
     case PlanetType::FOREST:
-      return FOREST_POINTS;
+      return int_rand(FOREST_POINTS_LOW, FOREST_POINTS_HIGH);
     case PlanetType::DESERT:
-      return DESERT_POINTS;
+      return int_rand(DESERT_POINTS_LOW, DESERT_POINTS_HIGH);
   }
 }
 

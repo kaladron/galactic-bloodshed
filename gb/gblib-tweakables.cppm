@@ -113,6 +113,20 @@ export constexpr char CHAR_NEUTRAL_TROOPS = 'N';
 
 // Number of global APs each planet is worth
 export constexpr ap_t ASTEROID_POINTS = 1;
+export constexpr ap_t EARTH_POINTS_LOW = 5;
+export constexpr ap_t EARTH_POINTS_HIGH = 8;
+export constexpr ap_t MARS_POINTS_LOW = 2;
+export constexpr ap_t MARS_POINTS_HIGH = 3;
+export constexpr ap_t ICEBALL_POINTS_LOW = 2;
+export constexpr ap_t ICEBALL_POINTS_HIGH = 3;
+export constexpr ap_t GASGIANT_POINTS_LOW = 8;
+export constexpr ap_t GASGIANT_POINTS_HIGH = 20;
+export constexpr ap_t WATER_POINTS_LOW = 2;
+export constexpr ap_t WATER_POINTS_HIGH = 3;
+export constexpr ap_t FOREST_POINTS_LOW = 2;
+export constexpr ap_t FOREST_POINTS_HIGH = 3;
+export constexpr ap_t DESERT_POINTS_LOW = 2;
+export constexpr ap_t DESERT_POINTS_HIGH = 3;
 
 export constexpr int MAXPLAYERS = 64;
 export constexpr int NUM_DISCOVERIES = 80;

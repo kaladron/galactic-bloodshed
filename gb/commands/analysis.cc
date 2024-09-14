@@ -73,9 +73,6 @@ void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   std::array<int, MAXPLAYERS + 1> PlayTSect;
   std::array<int, MAXPLAYERS + 1> WastedSect;
   std::array<int, SectorType::SEC_WASTED + 1> Sect;
-  static char SectTypes[] = {CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,
-                             CHAR_GAS,    CHAR_ICE,    CHAR_FOREST,
-                             CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
 
   for (int i = 0; i < CARE; i++)
     Res[i].value = Eff[i].value = Frt[i].value = Mob[i].value =
@@ -229,7 +226,7 @@ void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
                        "sec", "popn", "troops", "a.eff", "a.mob", "res", "x");
 
   for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    sprintf(buf, "%4c", SectTypes[i]);
+    sprintf(buf, "%4c", Dessymbols[i]);
     notify(Playernum, Governor, buf);
   }
   notify(Playernum, Governor,

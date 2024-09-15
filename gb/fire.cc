@@ -7,13 +7,6 @@ module;
 
 import std;
 
-#include <strings.h>
-
-#include <cstdio>
-#include <cstdlib>
-
-#include "gb/buffers.h"
-
 module gblib;
 
 // check to see if there are any planetary defense networks on the planet
@@ -33,22 +26,23 @@ void check_overload(Ship *ship, int cew, int *strength) {
     if (int_rand(0, *strength) >
         (int)((1.0 - .01 * ship->damage) * ship->tech / 2.0)) {
       /* check to see if the ship blows up */
-      sprintf(buf,
-              "%s: Matter-antimatter EXPLOSION from overloaded crystal on %s\n",
-              dispshiploc(*ship).c_str(), ship_to_string(*ship).c_str());
-      kill_ship((int)(ship->owner), ship);
+      std::string message = std::format(
+          "{}: Matter-antimatter EXPLOSION from overloaded crystal on {}\n",
+          dispshiploc(*ship), ship_to_string(*ship));
+      kill_ship(ship->owner, ship);
       *strength = 0;
-      warn(ship->owner, ship->governor, buf);
-      post(buf, NewsType::COMBAT);
-      notify_star(ship->owner, ship->governor, ship->storbits, buf);
+      warn(ship->owner, ship->governor, message);
+      post(message, NewsType::COMBAT);
+      notify_star(ship->owner, ship->governor, ship->storbits, message);
     } else if (int_rand(0, *strength) >
                (int)((1.0 - .01 * ship->damage) * ship->tech / 4.0)) {
-      sprintf(buf, "%s: Crystal damaged from overloading on %s.\n",
-              dispshiploc(*ship).c_str(), ship_to_string(*ship).c_str());
+      std::string message =
+          std::format("{}: Crystal damaged from overloading on {}.\n",
+                      dispshiploc(*ship), ship_to_string(*ship));
       ship->fire_laser = 0;
       ship->mounted = 0;
       *strength = 0;
-      warn(ship->owner, ship->governor, buf);
+      warn(ship->owner, ship->governor, message);
     }
   }
 }
@@ -91,8 +85,8 @@ int retal_strength(const Ship &s) {
 }
 
 int adjacent(int fx, int fy, int tx, int ty, const Planet &p) {
-  if (abs(fy - ty) <= 1) {
-    if (abs(fx - tx) <= 1) return 1;
+  if (std::abs(fy - ty) <= 1) {
+    if (std::abs(fx - tx) <= 1) return 1;
     if (fx == p.Maxx - 1 && tx == 0) return 1;
     if (fx == 0 && tx == p.Maxx - 1) return 1;
 

@@ -89,7 +89,7 @@ void move_popn(const command_t &argv, GameObj &g) {
       return;
     }
 
-    if (!adjacent(x, y, x2, y2, planet)) {
+    if (!adjacent(planet, x, y, x2, y2)) {
       sprintf(buf, "Illegal move - to adjacent sectors only!\n");
       notify(Playernum, Governor, buf);
       return;

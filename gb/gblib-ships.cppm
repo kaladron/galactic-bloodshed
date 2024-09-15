@@ -333,7 +333,7 @@ export double getmass(const Ship &);
 export unsigned int ship_size(const Ship &);
 export double complexity(const Ship &);
 export bool testship(const Ship &, GameObj &);
-export void kill_ship(int, Ship *);
+export void kill_ship(player_t, Ship *);
 export int docked(const Ship &);
 export int overloaded(const Ship &);
 export std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept;

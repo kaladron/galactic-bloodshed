@@ -411,7 +411,7 @@ bool testship(const Ship &s, GameObj &g) {
   return false;
 }
 
-void kill_ship(int Playernum, Ship *ship) {
+void kill_ship(player_t Playernum, Ship *ship) {
   ship->special.mind.who_killed = Playernum;
   ship->alive = 0;
   ship->notified = 0; /* prepare the ship for recycling */

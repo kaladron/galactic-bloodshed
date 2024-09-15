@@ -83,13 +83,13 @@ void moveplanet(const starnum_t starnum, Planet &planet,
   planet.ypos += yadd;
 }
 
-int adjacent(const Planet &p, int fx, int fy, int tx, int ty) {
+bool adjacent(const Planet &p, int fx, int fy, int tx, int ty) {
   if (std::abs(fy - ty) <= 1) {
-    if (std::abs(fx - tx) <= 1) return 1;
-    if (fx == p.Maxx - 1 && tx == 0) return 1;
-    if (fx == 0 && tx == p.Maxx - 1) return 1;
+    if (std::abs(fx - tx) <= 1) return true;
+    if (fx == p.Maxx - 1 && tx == 0) return true;
+    if (fx == 0 && tx == p.Maxx - 1) return true;
 
-    return 0;
+    return false;
   }
-  return 0;
+  return false;
 }

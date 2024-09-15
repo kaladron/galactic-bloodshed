@@ -179,7 +179,7 @@ void fire(const command_t &argv, GameObj &g) {
       }
 
       /* check to see if there is crystal overloads */
-      if (laser_on(*from) || cew) check_overload(from, cew, &strength);
+      if (laser_on(*from) || cew) check_overload(*from, cew, &strength);
 
       if (strength <= 0) {
         sprintf(buf, "No attack.\n");
@@ -213,7 +213,7 @@ void fire(const command_t &argv, GameObj &g) {
       strength = 0;
       if (retal && damage && to->protect.self) {
         strength = retal;
-        if (laser_on(*to)) check_overload(&*to, 0, &strength);
+        if (laser_on(*to)) check_overload(*to, 0, &strength);
 
         char long_buf[1024], short_buf[256];
         if ((damage = shoot_ship_to_ship(dummy, *from, strength, 0, 1, long_buf,
@@ -244,7 +244,7 @@ void fire(const command_t &argv, GameObj &g) {
               (ship.protect.ship == toship) && ship.number != fromship &&
               ship.number != toship && ship.alive && ship.active) {
             strength = check_retal_strength(ship);
-            if (laser_on(ship)) check_overload(&ship, 0, &strength);
+            if (laser_on(ship)) check_overload(ship, 0, &strength);
 
             char long_buf[1024], short_buf[256];
             if ((damage = shoot_ship_to_ship(ship, *from, strength, 0, 0,

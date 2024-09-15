@@ -67,7 +67,7 @@ void bombard(const command_t &argv, GameObj &g) {
       }
 
       /* check to see if there is crystal overload */
-      if (laser_on(*from)) check_overload(from, 0, &strength);
+      if (laser_on(*from)) check_overload(*from, 0, &strength);
 
       if (strength <= 0) {
         g.out << "No attack.\n";
@@ -157,7 +157,7 @@ void bombard(const command_t &argv, GameObj &g) {
         for (auto ship : shiplist) {
           if (ship.protect.planet && ship.number != fromship && ship.alive &&
               ship.active) {
-            if (laser_on(ship)) check_overload(&ship, 0, &strength);
+            if (laser_on(ship)) check_overload(ship, 0, &strength);
 
             strength = check_retal_strength(ship);
 

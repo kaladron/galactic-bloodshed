@@ -151,7 +151,7 @@ void defend(const command_t &argv, GameObj &g) {
   strength = 0;
   if (retal && damage && to->protect.self) {
     strength = retal;
-    if (laser_on(*to)) check_overload(&*to, 0, &strength);
+    if (laser_on(*to)) check_overload(*to, 0, &strength);
 
     auto smap = getsmap(p);
     if ((numdest = shoot_ship_to_planet(dummy, p, strength, x, y, smap, 0, 0,
@@ -177,7 +177,7 @@ void defend(const command_t &argv, GameObj &g) {
       if (ship->protect.on && (ship->protect.ship == toship) &&
           (ship->protect.ship == toship) && sh != toship && ship->alive &&
           ship->active) {
-        if (laser_on(*ship)) check_overload(ship, 0, &strength);
+        if (laser_on(*ship)) check_overload(*ship, 0, &strength);
         strength = check_retal_strength(*ship);
 
         auto smap = getsmap(p);

@@ -20,29 +20,28 @@ bool has_planet_defense(const shipnum_t shipno, const player_t Playernum) {
   }
   return false;
 }
-
-void check_overload(Ship *ship, int cew, int *strength) {
-  if ((ship->laser && ship->fire_laser) || cew) {
+void check_overload(Ship &ship, int cew, int *strength) {
+  if ((ship.laser && ship.fire_laser) || cew) {
     if (int_rand(0, *strength) >
-        (int)((1.0 - .01 * ship->damage) * ship->tech / 2.0)) {
+        (int)((1.0 - .01 * ship.damage) * ship.tech / 2.0)) {
       /* check to see if the ship blows up */
       std::string message = std::format(
           "{}: Matter-antimatter EXPLOSION from overloaded crystal on {}\n",
-          dispshiploc(*ship), ship_to_string(*ship));
-      kill_ship(ship->owner, ship);
+          dispshiploc(ship), ship_to_string(ship));
+      kill_ship(ship.owner, &ship);
       *strength = 0;
-      warn(ship->owner, ship->governor, message);
+      warn(ship.owner, ship.governor, message);
       post(message, NewsType::COMBAT);
-      notify_star(ship->owner, ship->governor, ship->storbits, message);
+      notify_star(ship.owner, ship.governor, ship.storbits, message);
     } else if (int_rand(0, *strength) >
-               (int)((1.0 - .01 * ship->damage) * ship->tech / 4.0)) {
+               (int)((1.0 - .01 * ship.damage) * ship.tech / 4.0)) {
       std::string message =
           std::format("{}: Crystal damaged from overloading on {}.\n",
-                      dispshiploc(*ship), ship_to_string(*ship));
-      ship->fire_laser = 0;
-      ship->mounted = 0;
+                      dispshiploc(ship), ship_to_string(ship));
+      ship.fire_laser = 0;
+      ship.mounted = 0;
       *strength = 0;
-      warn(ship->owner, ship->governor, message);
+      warn(ship.owner, ship.governor, message);
     }
   }
 }

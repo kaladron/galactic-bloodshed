@@ -75,28 +75,27 @@ int check_retal_strength(const Ship &ship) {
 }
 
 int retal_strength(const Ship &s) {
-  int strength = 0;
-  int avail = 0;
-
   if (!s.alive) return 0;
   if (!Shipdata[s.type][ABIL_SPEED] && !landed(s)) return 0;
   /* land based ships */
   if (!s.popn && (s.type != ShipType::OTYPE_BERS)) return 0;
 
-  if (s.guns == PRIMARY)
-    avail = (s.type == ShipType::STYPE_FIGHTER ||
-             s.type == ShipType::OTYPE_AFV || s.type == ShipType::OTYPE_BERS)
-                ? s.primary
-                : MIN(s.popn, s.primary);
-  else if (s.guns == SECONDARY)
-    avail = (s.type == ShipType::STYPE_FIGHTER ||
-             s.type == ShipType::OTYPE_AFV || s.type == ShipType::OTYPE_BERS)
-                ? s.secondary
-                : MIN(s.popn, s.secondary);
-  else
-    avail = 0;
+  auto avail = [&]() {
+    if (s.guns == PRIMARY)
+      return (s.type == ShipType::STYPE_FIGHTER ||
+              s.type == ShipType::OTYPE_AFV || s.type == ShipType::OTYPE_BERS)
+                 ? s.primary
+                 : MIN(s.popn, s.primary);
+    else if (s.guns == SECONDARY)
+      return (s.type == ShipType::STYPE_FIGHTER ||
+              s.type == ShipType::OTYPE_AFV || s.type == ShipType::OTYPE_BERS)
+                 ? s.secondary
+                 : MIN(s.popn, s.secondary);
+    else
+      return 0UL;
+  }();
 
   avail = MIN(s.retaliate, avail);
-  strength = MIN(s.destruct, avail);
+  int strength = MIN(s.destruct, avail);
   return strength;
 }

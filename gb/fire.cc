@@ -9,7 +9,14 @@ import std;
 
 module gblib;
 
-// check to see if there are any planetary defense networks on the planet
+/**
+ * @brief Checks to see if there are any planetary defense networks on the
+ * planet.
+ *
+ * @param shipno The ship number.
+ * @param Playernum The player number.
+ * @return True if there are planetary defense networks, false otherwise.
+ */
 bool has_planet_defense(const shipnum_t shipno, const player_t Playernum) {
   Shiplist shiplist(shipno);
   for (const auto &ship : shiplist) {

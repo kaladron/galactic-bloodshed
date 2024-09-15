@@ -92,16 +92,14 @@ void moveplanet(const starnum_t starnum, Planet &planet,
  * coordinates wrap around the planet's boundaries.
  *
  * @param p The planet object.
- * @param fx The x-coordinate of the first point.
- * @param fy The y-coordinate of the first point.
- * @param tx The x-coordinate of the second point.
- * @param ty The y-coordinate of the second point.
+ * @param from The starting coordinates.
+ * @param to The target coordinates.
  * @return True if the coordinates are adjacent, false otherwise.
  */
-bool adjacent(const Planet &p, int fx, int fy, int tx, int ty) {
-  if (std::abs(fy - ty) > 1) return false;
-  if (std::abs(fx - tx) <= 1) return true;
-  if (fx == p.Maxx - 1 && tx == 0) return true;
-  if (fx == 0 && tx == p.Maxx - 1) return true;
+bool adjacent(const Planet &p, const Coordinates from, const Coordinates to) {
+  if (std::abs(from.y - to.y) > 1) return false;
+  if (std::abs(from.x - to.x) <= 1) return true;
+  if (from.x == p.Maxx - 1 && to.x == 0) return true;
+  if (from.x == 0 && to.x == p.Maxx - 1) return true;
   return false;
 }

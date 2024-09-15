@@ -137,7 +137,8 @@ void fire(const command_t &argv, GameObj &g) {
           continue;
         }
         const auto p = getplanet(from->storbits, from->pnumorbits);
-        if (!adjacent(p, from->land_x, from->land_y, to->land_x, to->land_y)) {
+        if (!adjacent(p, {from->land_x, from->land_y},
+                      {to->land_x, to->land_y})) {
           g.out << "You are not adjacent to your target!\n";
           free(from);
           continue;

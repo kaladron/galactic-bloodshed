@@ -5,6 +5,13 @@ export module gblib:sector;
 import :types;
 import :planet;
 
+export struct Coordinate {
+  int x;
+  int y;
+
+  Coordinate(int x_, int y_) : x(x_), y(y_) {}
+};
+
 export class Sector {
  public:
   Sector(unsigned int x_, unsigned int y_, unsigned int eff_,
@@ -27,6 +34,7 @@ export class Sector {
         condition(condition_) {}
 
   Sector() = default;
+  ~Sector() = default;
   Sector(Sector &) = delete;
   void operator=(const Sector &) = delete;
   Sector(Sector &&) = default;
@@ -87,6 +95,7 @@ export class SectorMap {
   shuffle();  /// Randomizes the order of the SectorMap.
 
   SectorMap(SectorMap &) = delete;
+  ~SectorMap() = default;
   void operator=(const SectorMap &) = delete;
   SectorMap(SectorMap &&) = default;
   SectorMap &operator=(SectorMap &&) = default;

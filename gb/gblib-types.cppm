@@ -160,3 +160,10 @@ export class GameObj {
   GameObj(const GameObj &) = delete;
   GameObj &operator=(const GameObj &) = delete;
 };
+
+export struct Coordinate {
+  int x;
+  int y;
+
+  Coordinate(int x_, int y_) : x(x_), y(y_) {}
+};

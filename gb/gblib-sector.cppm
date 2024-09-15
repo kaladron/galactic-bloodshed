@@ -5,13 +5,6 @@ export module gblib:sector;
 import :types;
 import :planet;
 
-export struct Coordinate {
-  int x;
-  int y;
-
-  Coordinate(int x_, int y_) : x(x_), y(y_) {}
-};
-
 export class Sector {
  public:
   Sector(unsigned int x_, unsigned int y_, unsigned int eff_,

@@ -100,14 +100,3 @@ int retal_strength(const Ship &s) {
   strength = MIN(s.destruct, avail);
   return strength;
 }
-
-int adjacent(int fx, int fy, int tx, int ty, const Planet &p) {
-  if (std::abs(fy - ty) <= 1) {
-    if (std::abs(fx - tx) <= 1) return 1;
-    if (fx == p.Maxx - 1 && tx == 0) return 1;
-    if (fx == 0 && tx == p.Maxx - 1) return 1;
-
-    return 0;
-  }
-  return 0;
-}

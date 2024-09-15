@@ -83,13 +83,25 @@ void moveplanet(const starnum_t starnum, Planet &planet,
   planet.ypos += yadd;
 }
 
+/**
+ * @brief Determines if two coordinates are adjacent on a planet.
+ *
+ * This function checks if two coordinates on a planet are adjacent to each
+ * other. Adjacency is defined as having a maximum difference of 1 in both the x
+ * and y coordinates. Additionally, the function handles the case where the
+ * coordinates wrap around the planet's boundaries.
+ *
+ * @param p The planet object.
+ * @param fx The x-coordinate of the first point.
+ * @param fy The y-coordinate of the first point.
+ * @param tx The x-coordinate of the second point.
+ * @param ty The y-coordinate of the second point.
+ * @return True if the coordinates are adjacent, false otherwise.
+ */
 bool adjacent(const Planet &p, int fx, int fy, int tx, int ty) {
-  if (std::abs(fy - ty) <= 1) {
-    if (std::abs(fx - tx) <= 1) return true;
-    if (fx == p.Maxx - 1 && tx == 0) return true;
-    if (fx == 0 && tx == p.Maxx - 1) return true;
-
-    return false;
-  }
+  if (std::abs(fy - ty) > 1) return false;
+  if (std::abs(fx - tx) <= 1) return true;
+  if (fx == p.Maxx - 1 && tx == 0) return true;
+  if (fx == 0 && tx == p.Maxx - 1) return true;
   return false;
 }

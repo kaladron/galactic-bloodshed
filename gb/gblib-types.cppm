@@ -161,9 +161,9 @@ export class GameObj {
   GameObj &operator=(const GameObj &) = delete;
 };
 
-export struct Coordinate {
+export struct Coordinates {
   int x;
   int y;
 
-  Coordinate(int x_, int y_) : x(x_), y(y_) {}
+  Coordinates(int x_, int y_) : x(x_), y(y_) {}
 };

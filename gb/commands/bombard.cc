@@ -90,7 +90,7 @@ void bombard(const command_t &argv, GameObj &g) {
         x = int_rand(0, (int)p.Maxx - 1);
         y = int_rand(0, (int)p.Maxy - 1);
       }
-      if (landed(*from) && !adjacent(p, from->land_x, from->land_y, x, y)) {
+      if (landed(*from) && !adjacent(p, {from->land_x, from->land_y}, {x, y})) {
         g.out << "You are not adjacent to that sector.\n";
         free(from);
         continue;

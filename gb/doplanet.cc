@@ -595,8 +595,6 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
 }
 
 static bool moveship_onplanet(Ship &ship, const Planet &planet) {
-  int x;
-  int y;
   if (ship.shipclass[ship.special.terraform.index] == 's') {
     ship.on = 0;
     return false;
@@ -604,8 +602,8 @@ static bool moveship_onplanet(Ship &ship, const Planet &planet) {
   if (ship.shipclass[ship.special.terraform.index] == 'c')
     ship.special.terraform.index = 0; /* reset the orders */
 
-  get_move(ship.shipclass[ship.special.terraform.index], ship.land_x,
-           ship.land_y, &x, &y, planet);
+  auto [x, y] = get_move(planet, ship.shipclass[ship.special.terraform.index],
+                         {ship.land_x, ship.land_y});
 
   bool bounced = false;
 

@@ -14,8 +14,6 @@ void walk(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   const ap_t APcount = 1;
-  int x;
-  int y;
 
   char long_buf[1024], short_buf[256];
 
@@ -53,10 +51,11 @@ void walk(const command_t &argv, GameObj &g) {
               APcount)) {
     return;
   }
-  auto p = getplanet((int)ship->storbits, (int)ship->pnumorbits);
+  auto p = getplanet(ship->storbits, ship->pnumorbits);
   auto &race = races[Playernum - 1];
 
-  if (!get_move(argv[2][0], (int)ship->land_x, (int)ship->land_y, &x, &y, p)) {
+  auto [x, y] = get_move(p, argv[2][0], {ship->land_x, ship->land_y});
+  if (ship->land_x == x && ship->land_y == y) {
     g.out << "Illegal move.\n";
     return;
   }

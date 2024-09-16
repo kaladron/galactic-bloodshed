@@ -13,59 +13,66 @@ import std.compat;
 
 #include "gb/buffers.h"
 
-int get_move(char direction, int x, int y, int *x2, int *y2,
-             const Planet &planet) {
+/**
+ * @brief Calculates the new coordinates based on the given direction.
+ *
+ * This function takes a Planet object, a direction character, and the current
+ * coordinates as input. It calculates and returns the new coordinates based on
+ * the given direction.
+ *
+ * @param planet The Planet object representing the game world.
+ * @param direction The direction character indicating the movement direction.
+ * @param from The current coordinates.
+ * @return The new coordinates after the movement.
+ */
+Coordinates get_move(const Planet &planet, char direction, Coordinates from) {
   switch (direction) {
     case '1':
-    case 'b':
-      *x2 = x - 1;
-      *y2 = y + 1;
-      if (*x2 == -1) *x2 = planet.Maxx - 1;
-      return 1;
+    case 'b': {
+      Coordinates to{from.x - 1, from.y + 1};
+      if (to.x == -1) to.x = planet.Maxx - 1;
+      return to;
+    }
     case '2':
     case 'k':
-      *x2 = x;
-      *y2 = y + 1;
-      return 1;
+      return Coordinates{from.x, from.y + 1};
     case '3':
-    case 'n':
-      *x2 = x + 1;
-      *y2 = y + 1;
-      if (*x2 == planet.Maxx) *x2 = 0;
-      return 1;
+    case 'n': {
+      Coordinates to{from.x + 1, from.y + 1};
+      if (to.x == planet.Maxx) to.x = 0;
+      return to;
+    }
     case '4':
-    case 'h':
-      *x2 = x - 1;
-      *y2 = y;
-      if (*x2 == -1) *x2 = planet.Maxx - 1;
-      return 1;
+    case 'h': {
+      Coordinates to{from.x - 1, from.y};
+      if (to.x == -1) to.x = planet.Maxx - 1;
+      return to;
+    }
     case '6':
-    case 'l':
-      *x2 = x + 1;
-      *y2 = y;
-      if (*x2 == planet.Maxx) *x2 = 0;
-      return 1;
+    case 'l': {
+      Coordinates to{from.x + 1, from.y};
+      if (to.x == planet.Maxx) to.x = 0;
+      return to;
+    }
     case '7':
-    case 'y':
-      *x2 = x - 1;
-      *y2 = y - 1;
-      if (*x2 == -1) *x2 = planet.Maxx - 1;
-      return 1;
+    case 'y': {
+      Coordinates to{from.x - 1, from.y - 1};
+      if (to.x == -1) to.x = planet.Maxx - 1;
+      return to;
+    }
     case '8':
-    case 'j':
-      *x2 = x;
-      *y2 = y - 1;
-      return 1;
+    case 'j': {
+      Coordinates to{from.x, from.y - 1};
+      return to;
+    }
     case '9':
-    case 'u':
-      *x2 = x + 1;
-      *y2 = y - 1;
-      if (*x2 == planet.Maxx) *x2 = 0;
-      return 1;
+    case 'u': {
+      Coordinates to{from.x + 1, from.y - 1};
+      if (to.x == planet.Maxx) to.x = 0;
+      return to;
+    }
     default:
-      *x2 = x;
-      *y2 = y;
-      return 0;
+      return {from.x, from.y};
   }
 }
 

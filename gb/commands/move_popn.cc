@@ -76,7 +76,8 @@ void move_popn(const command_t &argv, GameObj &g) {
       notify(Playernum, Governor, buf);
       return;
     }
-    if (!get_move(argv[2][n++], x, y, &x2, &y2, planet)) {
+    auto [x2, y2] = get_move(planet, argv[2][n++], {x, y});
+    if (x == x2 && y == y2) {
       g.out << "Finished.\n";
       putplanet(planet, stars[g.snum], g.pnum);
       return;

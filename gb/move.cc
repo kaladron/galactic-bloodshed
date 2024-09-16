@@ -9,8 +9,6 @@ import std.compat;
 
 #include "gb/move.h"
 
-#include <strings.h>
-
 #include "gb/buffers.h"
 
 /**

@@ -25,7 +25,8 @@ import std.compat;
  * @param from The current coordinates.
  * @return The new coordinates after the movement.
  */
-Coordinates get_move(const Planet &planet, char direction, Coordinates from) {
+Coordinates get_move(const Planet &planet, const char direction,
+                     const Coordinates from) {
   switch (direction) {
     case '1':
     case 'b': {

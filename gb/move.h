@@ -5,7 +5,7 @@
 #ifndef MOVE_H
 #define MOVE_H
 
-int get_move(char, int, int, int *, int *, const Planet &);
+Coordinates get_move(const Planet &planet, char direction, Coordinates from);
 void ground_attack(Race &, Race &, int *, int, population_t *, population_t *,
                    unsigned int, unsigned int, double, double, double *,
                    double *, int *, int *, int *);

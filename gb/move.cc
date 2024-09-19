@@ -99,8 +99,8 @@ void mech_defend(player_t Playernum, governor_t Governor, int *people, int type,
         while ((civ + mil) > 0 && retal_strength(ship)) {
           oldgov = stars[ship.storbits].governor[alien.Playernum - 1];
           char long_buf[1024], short_buf[256];
-          mech_attack_people(&ship, &civ, &mil, alien, race, s2, x2, y2, 1,
-                             long_buf, short_buf);
+          mech_attack_people(ship, &civ, &mil, alien, race, s2, true, long_buf,
+                             short_buf);
           notify(Playernum, Governor, long_buf);
           warn(alien.Playernum, oldgov, long_buf);
           if (civ + mil) {
@@ -117,53 +117,47 @@ void mech_defend(player_t Playernum, governor_t Governor, int *people, int type,
   *people = civ + mil;
 }
 
-void mech_attack_people(Ship *ship, population_t *civ, population_t *mil,
-                        Race &race, Race &alien, const Sector &sect, int x,
-                        int y, int ignore, char *long_msg, char *short_msg) {
-  int strength;
-  int oldciv;
-  int oldmil;
-  double astrength;
-  double dstrength;
-  int cas_civ;
-  int cas_mil;
-  int ammo;
+void mech_attack_people(Ship &ship, population_t *civ, population_t *mil,
+                        Race &race, Race &alien, const Sector &sect,
+                        bool ignore, char *long_msg, char *short_msg) {
+  auto oldciv = *civ;
+  auto oldmil = *mil;
 
-  oldciv = *civ;
-  oldmil = *mil;
+  auto strength = retal_strength(ship);
+  auto astrength = MECH_ATTACK * ship.tech * (double)strength *
+                   ((double)ship.armor + 1.0) * .01 *
+                   (100.0 - (double)ship.damage) * .01 *
+                   (race.likes[sect.condition] + 1.0) *
+                   morale_factor((double)(race.morale - alien.morale));
 
-  strength = retal_strength(*ship);
-  astrength = MECH_ATTACK * ship->tech * (double)strength *
-              ((double)ship->armor + 1.0) * .01 *
-              (100.0 - (double)ship->damage) * .01 *
-              (race.likes[sect.condition] + 1.0) *
-              morale_factor((double)(race.morale - alien.morale));
-
-  dstrength = (double)(10 * oldmil * alien.fighters + oldciv) * 0.01 *
-              alien.tech * .01 * (alien.likes[sect.condition] + 1.0) *
-              ((double)Defensedata[sect.condition] + 1.0) *
-              morale_factor((double)(alien.morale - race.morale));
+  auto dstrength = (double)(10 * oldmil * alien.fighters + oldciv) * 0.01 *
+                   alien.tech * .01 * (alien.likes[sect.condition] + 1.0) *
+                   ((double)Defensedata[sect.condition] + 1.0) *
+                   morale_factor((double)(alien.morale - race.morale));
 
   if (ignore) {
-    ammo = (int)log10((double)dstrength + 1.0) - 1;
+    auto ammo = static_cast<int>(log10(dstrength + 1.0)) - 1;
     ammo = std::min(std::max(ammo, 0), strength);
-    use_destruct(*ship, ammo);
-  } else
-    use_destruct(*ship, strength);
+    use_destruct(ship, ammo);
+  } else {
+    use_destruct(ship, strength);
+  }
 
-  cas_civ = int_rand(0, round_rand((double)oldciv * astrength / dstrength));
+  auto cas_civ =
+      int_rand(0, round_rand((double)oldciv * astrength / dstrength));
   cas_civ = MIN(oldciv, cas_civ);
-  cas_mil = int_rand(0, round_rand((double)oldmil * astrength / dstrength));
+  auto cas_mil =
+      int_rand(0, round_rand((double)oldmil * astrength / dstrength));
   cas_mil = MIN(oldmil, cas_mil);
   *civ -= cas_civ;
   *mil -= cas_mil;
-  sprintf(short_msg, "%s: %s %s %s [%d]\n", dispshiploc(*ship).c_str(),
-          ship_to_string(*ship).c_str(),
+  sprintf(short_msg, "%s: %s %s %s [%d]\n", dispshiploc(ship).c_str(),
+          ship_to_string(ship).c_str(),
           (*civ + *mil) ? "attacked" : "slaughtered", alien.name,
           alien.Playernum);
   strcpy(long_msg, short_msg);
-  sprintf(buf, "\tBattle at %d,%d %s: %d guns fired on %d civ/%d mil\n", x, y,
-          Desnames[sect.condition], strength, oldciv, oldmil);
+  sprintf(buf, "\tBattle at %d,%d %s: %d guns fired on %ld civ/%ld mil\n",
+          sect.x, sect.y, Desnames[sect.condition], strength, oldciv, oldmil);
   strcat(long_msg, buf);
   sprintf(buf, "\tAttack: %.3f   Defense: %.3f.\n", astrength, dstrength);
   strcat(long_msg, buf);

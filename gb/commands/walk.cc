@@ -113,7 +113,7 @@ void walk(const command_t &argv, GameObj &g) {
       while ((sect.popn + sect.troops) && retal_strength(*ship)) {
         auto civ = sect.popn;
         auto mil = sect.troops;
-        mech_attack_people(&*ship, &civ, &mil, race, alien, sect, x, y, 0,
+        mech_attack_people(*ship, &civ, &mil, race, alien, sect, false,
                            long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien.Playernum, oldgov, long_buf);

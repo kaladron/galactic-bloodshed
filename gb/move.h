@@ -11,8 +11,9 @@ void ground_attack(Race &, Race &, int *, int, population_t *, population_t *,
                    double *, int *, int *, int *);
 void mech_defend(player_t, governor_t, int *, int, const Planet &, int, int,
                  const Sector &);
-void mech_attack_people(Ship *, population_t *, population_t *, Race &, Race &,
-                        const Sector &, int, int, int, char *, char *);
+void mech_attack_people(Ship &ship, population_t *civ, population_t *mil,
+                        Race &race, Race &alien, const Sector &sect,
+                        bool ignore, char *long_msg, char *short_msg);
 void people_attack_mech(Ship *, int, int, Race &, Race &, const Sector &, int,
                         int, char *, char *);
 

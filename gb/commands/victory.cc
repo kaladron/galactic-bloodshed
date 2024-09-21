@@ -1,13 +1,9 @@
-// Copyright 2019 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 module;
 
 import gblib;
-import std.compat;
-
-#include "gb/buffers.h"
+import std;
 
 module commands;
 
@@ -23,14 +19,16 @@ void victory(const command_t &argv, GameObj &g) {
                        (g.god ? "Score" : ""));
   for (int i = 0; auto &vic : viclist) {
     i++;
-    if (g.god)
-      sprintf(buf, "%2d %c [%2d] %-15.15s %5ld  %6.2f %3d %s %s\n", i,
-              vic.Thing ? 'M' : ' ', vic.racenum, vic.name.c_str(),
-              vic.rawscore, vic.tech, vic.IQ, races[vic.racenum - 1].password,
-              races[vic.racenum - 1].governor[0].password);
-    else
-      sprintf(buf, "%2d   [%2d] %-15.15s\n", i, vic.racenum, vic.name.c_str());
-    notify(g.player, g.governor, buf);
+    if (g.god) {
+      g.out << std::format("{:2} {} [{:2}] {:<15} {:5} {:6.2} {:3} {} {}\n", i,
+                           vic.Thing ? 'M' : ' ', vic.racenum, vic.name,
+                           vic.rawscore, vic.tech, vic.IQ,
+                           races[vic.racenum - 1].password,
+                           races[vic.racenum - 1].governor[0].password);
+    } else {
+      g.out << std::format("{:2}   [{:2}] {:<15.15}\n", i, vic.racenum,
+                           vic.name);
+    }
   }
 }
 }  // namespace GB::commands

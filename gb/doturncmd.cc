@@ -623,9 +623,7 @@ static void make_discoveries(Race &r) {
 }
 
 static bool attack_planet(const Ship &ship) {
-  if (ship.whatdest == ScopeLevel::LEVEL_PLAN) return true;
-
-  return false;
+  return ship.whatdest == ScopeLevel::LEVEL_PLAN;
 }
 
 static void output_ground_attacks() {

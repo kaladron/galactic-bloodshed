@@ -3,7 +3,7 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 module commands;
 
@@ -12,13 +12,6 @@ void sell(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   ap_t APcount = 20;
-  Commod c;
-  int commodno;
-  int amount;
-  CommodType item;
-  char commod;
-  int snum;
-  int pnum;
 
   if (!MARKET) return;
 
@@ -26,8 +19,8 @@ void sell(const command_t &argv, GameObj &g) {
     g.out << "You have to be in a planet scope to sell.\n";
     return;
   }
-  snum = g.snum;
-  pnum = g.pnum;
+  auto snum = g.snum;
+  auto pnum = g.pnum;
   if (argv.size() < 3) {
     g.out << "Syntax: sell <commodity> <amount>\n";
     return;
@@ -42,8 +35,8 @@ void sell(const command_t &argv, GameObj &g) {
     return;
   }
   /* get information on sale */
-  commod = argv[1][0];
-  amount = std::stoi(argv[2]);
+  auto commod = argv[1][0];
+  auto amount = std::stoi(argv[2]);
   if (amount <= 0) {
     g.out << "Try using positive values.\n";
     return;
@@ -73,6 +66,7 @@ void sell(const command_t &argv, GameObj &g) {
              "here.\n";
     return;
   }
+  CommodType item;
   switch (commod) {
     case 'r':
       if (!p.info[Playernum - 1].resource) {
@@ -115,6 +109,7 @@ void sell(const command_t &argv, GameObj &g) {
       return;
   }
 
+  Commod c;
   c.owner = Playernum;
   c.governor = Governor;
   c.type = item;
@@ -125,6 +120,7 @@ void sell(const command_t &argv, GameObj &g) {
   c.star_from = snum;
   c.planet_from = pnum;
 
+  int commodno;
   while ((commodno = getdeadcommod()) == 0);
 
   if (commodno == -1) commodno = g.db.Numcommods() + 1;

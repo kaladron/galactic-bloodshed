@@ -75,8 +75,9 @@ Coordinates get_move(const Planet &planet, const char direction,
   }
 }
 
-void mech_defend(player_t Playernum, governor_t Governor, int *people, int type,
-                 const Planet &p, int x2, int y2, const Sector &s2) {
+void mech_defend(player_t Playernum, governor_t Governor, int *people,
+                 PopulationType type, const Planet &p, int x2, int y2,
+                 const Sector &s2) {
   population_t civ = 0;
   population_t mil = 0;
   int oldgov;

@@ -57,7 +57,7 @@ export enum class PopulationType {
 };
 
 // These values are persisted to SQL
-export enum CommodType {
+export enum class CommodType {
   RESOURCE = 0,
   DESTRUCT = 1,
   FUEL = 2,

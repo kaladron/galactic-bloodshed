@@ -129,19 +129,19 @@ void do_turn(Db &db, int update) {
           maintain(races[c.bidder - 1],
                    races[c.bidder - 1].governor[c.bidder_gov], cost);
           switch (c.type) {
-            case RESOURCE:
+            case CommodType::RESOURCE:
               planets[c.star_to][c.planet_to]->info[c.bidder - 1].resource +=
                   c.amount;
               break;
-            case FUEL:
+            case CommodType::FUEL:
               planets[c.star_to][c.planet_to]->info[c.bidder - 1].fuel +=
                   c.amount;
               break;
-            case DESTRUCT:
+            case CommodType::DESTRUCT:
               planets[c.star_to][c.planet_to]->info[c.bidder - 1].destruct +=
                   c.amount;
               break;
-            case CRYSTAL:
+            case CommodType::CRYSTAL:
               planets[c.star_to][c.planet_to]->info[c.bidder - 1].crystals +=
                   c.amount;
               break;

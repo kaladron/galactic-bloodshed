@@ -75,7 +75,7 @@ void sell(const command_t &argv, GameObj &g) {
       }
       amount = MIN(amount, p.info[Playernum - 1].resource);
       p.info[Playernum - 1].resource -= amount;
-      item = RESOURCE;
+      item = CommodType::RESOURCE;
       break;
     case 'd':
       if (!p.info[Playernum - 1].destruct) {
@@ -84,7 +84,7 @@ void sell(const command_t &argv, GameObj &g) {
       }
       amount = MIN(amount, p.info[Playernum - 1].destruct);
       p.info[Playernum - 1].destruct -= amount;
-      item = DESTRUCT;
+      item = CommodType::DESTRUCT;
       break;
     case 'f':
       if (!p.info[Playernum - 1].fuel) {
@@ -93,7 +93,7 @@ void sell(const command_t &argv, GameObj &g) {
       }
       amount = MIN(amount, p.info[Playernum - 1].fuel);
       p.info[Playernum - 1].fuel -= amount;
-      item = FUEL;
+      item = CommodType::FUEL;
       break;
     case 'x':
       if (!p.info[Playernum - 1].crystals) {
@@ -102,7 +102,7 @@ void sell(const command_t &argv, GameObj &g) {
       }
       amount = MIN(amount, p.info[Playernum - 1].crystals);
       p.info[Playernum - 1].crystals -= amount;
-      item = CRYSTAL;
+      item = CommodType::CRYSTAL;
       break;
     default:
       g.out << "Permitted commodities are r, d, f, and x.\n";

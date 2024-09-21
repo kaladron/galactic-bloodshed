@@ -136,7 +136,7 @@ void mech_attack_people(Ship &ship, population_t *civ, population_t *mil,
                    morale_factor((double)(alien.morale - race.morale));
 
   if (ignore) {
-    auto ammo = static_cast<int>(log10(dstrength + 1.0)) - 1;
+    auto ammo = static_cast<int>(std::log10(dstrength + 1.0)) - 1;
     ammo = std::min(std::max(ammo, 0), strength);
     use_destruct(ship, ammo);
   } else {

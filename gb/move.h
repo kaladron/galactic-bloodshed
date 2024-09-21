@@ -6,9 +6,9 @@
 #define MOVE_H
 
 Coordinates get_move(const Planet &planet, char direction, Coordinates from);
-void ground_attack(Race &, Race &, int *, int, population_t *, population_t *,
-                   unsigned int, unsigned int, double, double, double *,
-                   double *, int *, int *, int *);
+void ground_attack(Race &, Race &, int *, PopulationType, population_t *,
+                   population_t *, unsigned int, unsigned int, double, double,
+                   double *, double *, int *, int *, int *);
 
 void mech_defend(player_t Playernum, governor_t Governor, int *people,
                  PopulationType type, const Planet &p, int x2, int y2,

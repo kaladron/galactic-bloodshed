@@ -27,7 +27,7 @@ void dock(const command_t &argv, GameObj &g) {
   int dam = 0;
   int dam2 = 0;
   int booby = 0;
-  int what;
+  PopulationType what;
   shipnum_t ship2no;
   shipnum_t shipno;
   shipnum_t nextshipno;
@@ -49,12 +49,12 @@ void dock(const command_t &argv, GameObj &g) {
     return;
   }
   if (argv.size() < 5)
-    what = MIL;
+    what = PopulationType::MIL;
   else if (Assault) {
     if (argv[4] == "civilians")
-      what = CIV;
+      what = PopulationType::CIV;
     else if (argv[4] == "military")
-      what = MIL;
+      what = PopulationType::MIL;
     else {
       g.out << "Assault with what?\n";
       return;
@@ -98,13 +98,13 @@ void dock(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      if (Assault && (what == CIV) && !s->popn) {
+      if (Assault && (what == PopulationType::CIV) && !s->popn) {
         notify(Playernum, Governor,
                "You have no crew on this ship to assault with.\n");
         free(s);
         continue;
       }
-      if (Assault && (what == MIL) && !s->troops) {
+      if (Assault && (what == PopulationType::MIL) && !s->troops) {
         notify(Playernum, Governor,
                "You have no troops on this ship to assault with.\n");
         free(s);
@@ -225,14 +225,14 @@ void dock(const command_t &argv, GameObj &g) {
         race = &races[Playernum - 1];
         if (argv.size() >= 4) {
           sscanf(argv[3].c_str(), "%lu", &boarders);
-          if ((what == MIL) && (boarders > s->troops))
+          if ((what == PopulationType::MIL) && (boarders > s->troops))
             boarders = s->troops;
-          else if ((what == CIV) && (boarders > s->popn))
+          else if ((what == PopulationType::CIV) && (boarders > s->popn))
             boarders = s->popn;
         } else {
-          if (what == CIV)
+          if (what == PopulationType::CIV)
             boarders = s->popn;
-          else if (what == MIL)
+          else if (what == PopulationType::MIL)
             boarders = s->troops;
         }
         if (boarders > s2->max_crew) boarders = s2->max_crew;
@@ -246,16 +246,18 @@ void dock(const command_t &argv, GameObj &g) {
         }
         old2owner = s2->owner;
         old2gov = s2->governor;
-        if (what == MIL)
+        if (what == PopulationType::MIL)
           s->troops -= boarders;
-        else if (what == CIV)
+        else if (what == PopulationType::CIV)
           s->popn -= boarders;
         s->mass -= boarders * race->mass;
         sprintf(
             buf, "Boarding strength :%.2f       Defense strength: %.2f.\n",
-            bstrength = boarders * (what == MIL ? 10 * race->fighters : 1) *
-                        .01 * race->tech *
-                        morale_factor((double)(race->morale - alien->morale)),
+            bstrength =
+                boarders *
+                (what == PopulationType::MIL ? 10 * race->fighters : 1) * .01 *
+                race->tech *
+                morale_factor((double)(race->morale - alien->morale)),
             b2strength = (s2->popn + 10 * s2->troops * alien->fighters) * .01 *
                          alien->tech *
                          morale_factor((double)(alien->morale - race->morale)));
@@ -341,7 +343,7 @@ void dock(const command_t &argv, GameObj &g) {
           old2gov = s2->governor;
           s2->owner = s->owner;
           s2->governor = s->governor;
-          if (what == MIL)
+          if (what == PopulationType::MIL)
             s2->troops = boarders;
           else
             s2->popn = boarders;
@@ -351,9 +353,9 @@ void dock(const command_t &argv, GameObj &g) {
             adjust_morale(*race, *alien, (int)s2->build_cost);
           }
         } else { /* retreat */
-          if (what == MIL)
+          if (what == PopulationType::MIL)
             s->troops += boarders;
-          else if (what == CIV)
+          else if (what == PopulationType::CIV)
             s->popn += boarders;
           s->mass += boarders * race->mass;
           adjust_morale(*alien, *race, (int)race->fighters);
@@ -455,11 +457,12 @@ void dock(const command_t &argv, GameObj &g) {
         }
         sprintf(buf, "Casualties: Yours: %lu mil/%lu civ    Theirs: %lu %s\n",
                 casualties3, casualties2, casualties,
-                what == MIL ? "mil" : "civ");
+                what == PopulationType::MIL ? "mil" : "civ");
         strcat(telegram_buf, buf);
-        sprintf(
-            buf, "Crew casualties: Yours: %lu %s    Theirs: %lu mil/%lu civ\n",
-            casualties, what == MIL ? "mil" : "civ", casualties3, casualties2);
+        sprintf(buf,
+                "Crew casualties: Yours: %lu %s    Theirs: %lu mil/%lu civ\n",
+                casualties, what == PopulationType::MIL ? "mil" : "civ",
+                casualties3, casualties2);
         notify(Playernum, Governor, buf);
         warn(old2owner, old2gov, telegram_buf);
         sprintf(buf, "%s %s %s at %s.\n", ship_to_string(*s).c_str(),

@@ -16,7 +16,8 @@ namespace GB::commands {
 void move_popn(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  PopulationType what = (argv[0] == "move") ? CIV : MIL;
+  PopulationType what =
+      (argv[0] == "move") ? PopulationType::CIV : PopulationType::MIL;
   int Assault;
   int APcost; /* unfriendly movement */
   int casualties;
@@ -96,23 +97,24 @@ void move_popn(const command_t &argv, GameObj &g) {
     if (argv.size() >= 4) {
       people = std::stoi(argv[3]);
       if (people < 0) {
-        if (what == CIV)
+        if (what == PopulationType::CIV)
           people = sect.popn + people;
-        else if (what == MIL)
+        else if (what == PopulationType::MIL)
           people = sect.troops + people;
       }
     } else {
-      if (what == CIV)
+      if (what == PopulationType::CIV)
         people = sect.popn;
-      else if (what == MIL)
+      else if (what == PopulationType::MIL)
         people = sect.troops;
     }
 
-    if ((what == CIV && (abs(people) > sect.popn)) ||
-        (what == MIL && (abs(people) > sect.troops)) || people <= 0) {
-      if (what == CIV)
+    if ((what == PopulationType::CIV && (abs(people) > sect.popn)) ||
+        (what == PopulationType::MIL && (abs(people) > sect.troops)) ||
+        people <= 0) {
+      if (what == PopulationType::CIV)
         sprintf(buf, "Bad value - %lu civilians in [%d,%d]\n", sect.popn, x, y);
-      else if (what == MIL)
+      else if (what == PopulationType::MIL)
         sprintf(buf, "Bad value - %lu troops in [%d,%d]\n", sect.troops, x, y);
       notify(Playernum, Governor, buf);
       putplanet(planet, stars[g.snum], g.pnum);
@@ -120,7 +122,7 @@ void move_popn(const command_t &argv, GameObj &g) {
     }
 
     sprintf(buf, "%d %s moved.\n", people,
-            what == CIV ? "population" : "troops");
+            what == PopulationType::CIV ? "population" : "troops");
     notify(Playernum, Governor, buf);
 
     /* check for defending mechs */
@@ -139,9 +141,9 @@ void move_popn(const command_t &argv, GameObj &g) {
       Assault = 0;
 
     /* action point cost depends on the size of the group being moved */
-    if (what == CIV)
+    if (what == PopulationType::CIV)
       APcost = MOVE_FACTOR * ((int)log(1.0 + (double)people) + Assault) + 1;
-    else if (what == MIL)
+    else if (what == PopulationType::MIL)
       APcost = MOVE_FACTOR * ((int)log10(1.0 + (double)people) + Assault) + 1;
 
     if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcost)) {
@@ -161,15 +163,15 @@ void move_popn(const command_t &argv, GameObj &g) {
 
       old2owner = (int)(sect2.owner);
       old2gov = stars[g.snum].governor[sect2.owner - 1];
-      if (what == CIV)
+      if (what == PopulationType::CIV)
         sect.popn = std::max(0L, sect.popn - people);
-      else if (what == MIL)
+      else if (what == PopulationType::MIL)
         sect.troops = std::max(0L, sect.troops - people);
 
-      if (what == CIV)
+      if (what == PopulationType::CIV)
         sprintf(buf, "%d civ assault %lu civ/%lu mil\n", people, sect2.popn,
                 sect2.troops);
-      else if (what == MIL)
+      else if (what == PopulationType::MIL)
         sprintf(buf, "%d mil assault %lu civ/%lu mil\n", people, sect2.popn,
                 sect2.troops);
       notify(Playernum, Governor, buf);
@@ -197,9 +199,9 @@ void move_popn(const command_t &argv, GameObj &g) {
           sprintf(buf, "Metamorphs have absorbed %d bodies!!!\n", absorbed);
           notify(old2owner, old2gov, buf);
         }
-        if (what == CIV)
+        if (what == PopulationType::CIV)
           sect2.popn = people + absorbed;
-        else if (what == MIL) {
+        else if (what == PopulationType::MIL) {
           sect2.popn = absorbed;
           sect2.troops = people;
         }
@@ -214,9 +216,9 @@ void move_popn(const command_t &argv, GameObj &g) {
           notify(Playernum, Governor, buf);
           sect2.popn += absorbed;
         }
-        if (what == CIV)
+        if (what == PopulationType::CIV)
           sect.popn += people;
-        else if (what == MIL)
+        else if (what == PopulationType::MIL)
           sect.troops += people;
         adjust_morale(alien, race, (int)race.fighters);
       }
@@ -235,7 +237,7 @@ void move_popn(const command_t &argv, GameObj &g) {
         strcat(telegram_buf, buf);
         if (people) {
           sprintf(buf, "%d %s move in.\n", people,
-                  what == CIV ? "civilians" : "troops");
+                  what == PopulationType::CIV ? "civilians" : "troops");
           notify(Playernum, Governor, buf);
         }
         planet.info[Playernum - 1].mob_points += (int)sect2.mobilization;
@@ -266,17 +268,19 @@ void move_popn(const command_t &argv, GameObj &g) {
       putrace(race);
 
       sprintf(buf, "Casualties: You: %d civ/%d mil, Them: %d %s\n", casualties2,
-              casualties3, casualties, what == CIV ? "civ" : "mil");
+              casualties3, casualties,
+              what == PopulationType::CIV ? "civ" : "mil");
       strcat(telegram_buf, buf);
       warn(old2owner, old2gov, telegram_buf);
       sprintf(buf, "Casualties: You: %d %s, Them: %d civ/%d mil\n", casualties,
-              what == CIV ? "civ" : "mil", casualties2, casualties3);
+              what == PopulationType::CIV ? "civ" : "mil", casualties2,
+              casualties3);
       notify(Playernum, Governor, buf);
     } else {
-      if (what == CIV) {
+      if (what == PopulationType::CIV) {
         sect.popn -= people;
         sect2.popn += people;
-      } else if (what == MIL) {
+      } else if (what == PopulationType::MIL) {
         sect.troops -= people;
         sect2.troops += people;
       }

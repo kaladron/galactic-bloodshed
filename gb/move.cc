@@ -105,7 +105,7 @@ void mech_defend(player_t Playernum, governor_t Governor, int *people,
           notify(Playernum, Governor, long_buf);
           warn(alien.Playernum, oldgov, long_buf);
           if (civ + mil) {
-            people_attack_mech(&ship, civ, mil, race, alien, s2, x2, y2,
+            people_attack_mech(ship, civ, mil, race, alien, s2, x2, y2,
                                long_buf, short_buf);
             notify(Playernum, Governor, long_buf);
             warn(alien.Playernum, oldgov, long_buf);
@@ -166,7 +166,7 @@ void mech_attack_people(Ship &ship, population_t *civ, population_t *mil,
   strcat(long_msg, buf);
 }
 
-void people_attack_mech(Ship *ship, int civ, int mil, Race &race, Race &alien,
+void people_attack_mech(Ship &ship, int civ, int mil, Race &race, Race &alien,
                         const Sector &sect, int x, int y, char *long_msg,
                         char *short_msg) {
   int strength;
@@ -175,12 +175,11 @@ void people_attack_mech(Ship *ship, int civ, int mil, Race &race, Race &alien,
   int damage;
   int ammo;
 
-  strength = retal_strength(*ship);
+  strength = retal_strength(ship);
 
-  dstrength = MECH_ATTACK * ship->tech * (double)strength *
-              ((double)ship->armor + 1.0) * .01 *
-              (100.0 - (double)ship->damage) * .01 *
-              (alien.likes[sect.condition] + 1.0) *
+  dstrength = MECH_ATTACK * ship.tech * (double)strength *
+              ((double)ship.armor + 1.0) * .01 * (100.0 - (double)ship.damage) *
+              .01 * (alien.likes[sect.condition] + 1.0) *
               morale_factor((double)(alien.morale - race.morale));
 
   astrength = (double)(10 * mil * race.fighters + civ) * .01 * race.tech * .01 *
@@ -189,26 +188,26 @@ void people_attack_mech(Ship *ship, int civ, int mil, Race &race, Race &alien,
               morale_factor((double)(race.morale - alien.morale));
   ammo = (int)log10((double)astrength + 1.0) - 1;
   ammo = std::min(strength, std::max(0, ammo));
-  use_destruct(*ship, ammo);
+  use_destruct(ship, ammo);
   damage = int_rand(0, round_rand(100.0 * astrength / dstrength));
   damage = std::min(100, damage);
-  ship->damage += damage;
-  if (ship->damage >= 100) {
-    ship->damage = 100;
-    kill_ship(race.Playernum, ship);
+  ship.damage += damage;
+  if (ship.damage >= 100) {
+    ship.damage = 100;
+    kill_ship(race.Playernum, &ship);
   }
-  auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(*ship, damage);
-  sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(*ship).c_str(),
-          race.name, race.Playernum, ship->alive ? "attacked" : "DESTROYED",
-          ship_to_string(*ship).c_str());
+  auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage);
+  sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(ship).c_str(),
+          race.name, race.Playernum, ship.alive ? "attacked" : "DESTROYED",
+          ship_to_string(ship).c_str());
   strcpy(long_msg, short_msg);
   sprintf(buf, "\tBattle at %d,%d %s: %d civ/%d mil assault %s\n", x, y,
-          Desnames[sect.condition], civ, mil, Shipnames[ship->type]);
+          Desnames[sect.condition], civ, mil, Shipnames[ship.type]);
   strcat(long_msg, buf);
   sprintf(buf, "\tAttack: %.3f   Defense: %.3f.\n", astrength, dstrength);
   strcat(long_msg, buf);
   sprintf(buf, "\t%d%% damage inflicted for a total of %d%%\n", damage,
-          ship->damage);
+          ship.damage);
   strcat(long_msg, buf);
   sprintf(buf, "\t%d civ/%d mil killed   %d prim/%d sec guns knocked out\n",
           cas_civ, cas_mil, pdam, sdam);

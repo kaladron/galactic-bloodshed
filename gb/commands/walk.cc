@@ -120,7 +120,7 @@ void walk(const command_t &argv, GameObj &g) {
         notify_star(Playernum, Governor, ship->storbits, short_buf);
         post(short_buf, NewsType::COMBAT);
 
-        people_attack_mech(&*ship, sect.popn, sect.troops, alien, race, sect, x,
+        people_attack_mech(*ship, sect.popn, sect.troops, alien, race, sect, x,
                            y, long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien.Playernum, oldgov, long_buf);

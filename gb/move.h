@@ -13,10 +13,13 @@ void ground_attack(Race &, Race &, int *, PopulationType, population_t *,
 void mech_defend(player_t Playernum, governor_t Governor, int *people,
                  PopulationType type, const Planet &p, int x2, int y2,
                  const Sector &s2);
+
 void mech_attack_people(Ship &ship, population_t *civ, population_t *mil,
                         Race &race, Race &alien, const Sector &sect,
                         bool ignore, char *long_msg, char *short_msg);
-void people_attack_mech(Ship *, int, int, Race &, Race &, const Sector &, int,
-                        int, char *, char *);
+
+void people_attack_mech(Ship &ship, int civ, int mil, Race &race, Race &alien,
+                        const Sector &sect, int x, int y, char *long_msg,
+                        char *short_msg);
 
 #endif  // MOVE_H

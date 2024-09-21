@@ -16,12 +16,7 @@ namespace GB::commands {
 void move_popn(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  int what;
-  if (argv[0] == "move") {
-    what = CIV;
-  } else {
-    what = MIL;  // deploy
-  }
+  PopulationType what = (argv[0] == "move") ? CIV : MIL;
   int Assault;
   int APcost; /* unfriendly movement */
   int casualties;

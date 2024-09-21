@@ -2,6 +2,8 @@
 
 module;
 
+import std;
+
 #include "gb/sql/dbdecl.h"
 
 export module gblib:globals;
@@ -60,9 +62,6 @@ export sqlite3 *dbconn;
 export struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
 export struct vnbrain VN_brain;
 export struct sectinfo Sectinfo[MAX_X][MAX_Y];
-
-export constexpr std::array<const char *, 4> commod_name = {
-    "resources", "destruct", "fuel", "crystals"};
 
 export constexpr std::array<const char, 8> Psymbol = {'@', 'o', 'O', '#',
                                                       '~', '.', ')', '-'};

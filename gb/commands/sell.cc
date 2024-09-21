@@ -15,7 +15,7 @@ void sell(const command_t &argv, GameObj &g) {
   Commod c;
   int commodno;
   int amount;
-  int item;
+  CommodType item;
   char commod;
   int snum;
   int pnum;
@@ -128,11 +128,10 @@ void sell(const command_t &argv, GameObj &g) {
   while ((commodno = getdeadcommod()) == 0);
 
   if (commodno == -1) commodno = g.db.Numcommods() + 1;
-  g.out << std::format("Lot #{} - {} units of {}.\n", commodno, amount,
-                       commod_name[item]);
-  std::string buf = std::format(
-      "Lot #{} - {} units of {} for sale by {} [{}].\n", commodno, amount,
-      commod_name[item], races[Playernum - 1].name, Playernum);
+  g.out << std::format("Lot #{} - {} units of {}.\n", commodno, amount, item);
+  std::string buf =
+      std::format("Lot #{} - {} units of {} for sale by {} [{}].\n", commodno,
+                  amount, item, races[Playernum - 1].name, Playernum);
   post(buf, NewsType::TRANSFER);
   for (player_t i = 1; i <= Num_races; i++) notify_race(i, buf);
   putcommod(c, commodno);

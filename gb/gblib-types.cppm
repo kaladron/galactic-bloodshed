@@ -56,11 +56,27 @@ export enum class PopulationType {
   MIL,
 };
 
+// These values are persisted to SQL
 export enum CommodType {
   RESOURCE = 0,
   DESTRUCT = 1,
   FUEL = 2,
   CRYSTAL = 3,
+};
+export template <>
+struct std::formatter<CommodType> : std::formatter<std::string_view> {
+  auto format(CommodType type, format_context &ctx) const {
+    switch (type) {
+      case CommodType::RESOURCE:
+        return formatter<std::string_view>::format("resources", ctx);
+      case CommodType::DESTRUCT:
+        return formatter<std::string_view>::format("destruct", ctx);
+      case CommodType::FUEL:
+        return formatter<std::string_view>::format("fuel", ctx);
+      case CommodType::CRYSTAL:
+        return formatter<std::string_view>::format("crystals", ctx);
+    }
+  }
 };
 
 export enum Conditions {

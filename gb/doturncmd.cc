@@ -146,17 +146,16 @@ void do_turn(Db &db, int update) {
                   c.amount;
               break;
           }
-          sprintf(buf,
-                  "Lot %lu purchased from %s [%d] at a cost of %ld.\n   %ld "
-                  "%s arrived at /%s/%s\n",
-                  i, races[c.owner - 1].name, c.owner, c.bid, c.amount,
-                  commod_name[c.type], stars[c.star_to].name,
-                  stars[c.star_to].pnames[c.planet_to]);
-          push_telegram((int)c.bidder, (int)c.bidder_gov, buf);
-          sprintf(buf, "Lot %lu (%lu %s) sold to %s [%d] at a cost of %ld.\n",
-                  i, c.amount, commod_name[c.type], races[c.bidder - 1].name,
-                  c.bidder, c.bid);
-          push_telegram(c.owner, c.governor, buf);
+          std::string purchased_msg = std::format(
+              "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
+              "arrived at /{}/{}\n",
+              i, races[c.owner - 1].name, c.owner, c.bid, c.amount, c.type,
+              stars[c.star_to].name, stars[c.star_to].pnames[c.planet_to]);
+          push_telegram(c.bidder, c.bidder_gov, purchased_msg);
+          std::string sold_msg = std::format(
+              "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", i, c.amount,
+              c.type, races[c.bidder - 1].name, c.bidder, c.bid);
+          push_telegram(c.owner, c.governor, sold_msg);
           c.owner = c.governor = 0;
           c.bidder = c.bidder_gov = 0;
         } else {

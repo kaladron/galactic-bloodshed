@@ -1,6 +1,5 @@
 Checks: clang-analyzer-*, 
     bugprone-*, 
-    -bugprone-easily-swappable-parameters, 
     -bugprone-narrowing-conversions,
     -bugprone-assignment-in-if-condition,
     cert-*, 

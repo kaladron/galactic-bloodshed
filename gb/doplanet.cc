@@ -15,14 +15,300 @@ import std.compat;
 
 #include "gb/bombard.h"
 
-static void do_dome(Ship *, SectorMap &);
-static void do_quarry(Ship *, Planet &, SectorMap &);
-static void do_berserker(Ship *, Planet &);
-static void do_recover(Planet &, int, int);
-static double est_production(const Sector &);
-static bool moveship_onplanet(Ship &, const Planet &);
-static void plow(Ship *, Planet &, SectorMap &);
-static void terraform(Ship &, Planet &, SectorMap &);
+namespace {
+bool moveship_onplanet(Ship &ship, const Planet &planet) {
+  if (ship.shipclass[ship.special.terraform.index] == 's') {
+    ship.on = 0;
+    return false;
+  }
+  if (ship.shipclass[ship.special.terraform.index] == 'c')
+    ship.special.terraform.index = 0; /* reset the orders */
+
+  auto [x, y] = get_move(planet, ship.shipclass[ship.special.terraform.index],
+                         {ship.land_x, ship.land_y});
+
+  bool bounced = false;
+
+  if (y >= planet.Maxy) {
+    bounced = true;
+    y -= 2; /* bounce off of south pole! */
+  } else if (y < 0)
+    y = 1;
+  bounced = true; /* bounce off of north pole! */
+  if (planet.Maxy == 1) y = 0;
+  if (ship.shipclass[ship.special.terraform.index + 1] != '\0') {
+    ++ship.special.terraform.index;
+    if ((ship.shipclass[ship.special.terraform.index + 1] == '\0') &&
+        (!ship.notified)) {
+      ship.notified = 1;
+      std::string teleg_buf =
+          std::format("%{0} is out of orders at %{1}.", ship_to_string(ship),
+                      prin_ship_orbits(ship));
+      push_telegram(ship.owner, ship.governor, teleg_buf);
+    }
+  } else if (bounced)
+    ship.shipclass[ship.special.terraform.index] +=
+        ((ship.shipclass[ship.special.terraform.index] > '5') ? -6 : 6);
+  ship.land_x = x;
+  ship.land_y = y;
+  return true;
+}
+
+// move, and then terraform
+void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
+  if (!moveship_onplanet(ship, planet)) return;
+  auto &s = smap.get(ship.land_x, ship.land_y);
+
+  if (s.condition == races[ship.owner - 1].likesbest) {
+    std::string buf = std::format(" T{} is full of zealots!!!", ship.number);
+    push_telegram(ship.owner, ship.governor, buf);
+    return;
+  }
+
+  if (s.condition == SectorType::SEC_GAS) {
+    std::string buf =
+        std::format(" T{} is trying to terraform gas.", ship.number);
+    push_telegram(ship.owner, ship.governor, buf);
+    return;
+  }
+
+  if (success((100 - (int)ship.damage) * ship.popn / ship.max_crew)) {
+    /* only condition can be terraformed, type doesn't change */
+    s.condition = races[ship.owner - 1].likesbest;
+    s.eff = 0;
+    s.mobilization = 0;
+    s.popn = 0;
+    s.troops = 0;
+    s.owner = 0;
+    use_fuel(ship, FUEL_COST_TERRA);
+    if ((random() & 01) && (planet.conditions[TOXIC] < 100))
+      planet.conditions[TOXIC] += 1;
+    if ((ship.fuel < (double)FUEL_COST_TERRA) && (!ship.notified)) {
+      ship.notified = 1;
+      msg_OOF(ship);
+    }
+  }
+}
+
+void plow(Ship *ship, Planet &planet, SectorMap &smap) {
+  if (!moveship_onplanet(*ship, planet)) return;
+  auto &s = smap.get(ship->land_x, ship->land_y);
+  if ((races[ship->owner - 1].likes[s.condition]) && (s.fert < 100)) {
+    int adjust = round_rand(
+        10 * (0.01 * (100.0 - (double)ship->damage) * (double)ship->popn) /
+        ship->max_crew);
+    if ((ship->fuel < (double)FUEL_COST_PLOW) && (!ship->notified)) {
+      ship->notified = 1;
+      msg_OOF(*ship);
+      return;
+    }
+    s.fert = std::min(100U, s.fert + adjust);
+    if (s.fert >= 100) {
+      std::string buf = std::format(" K{} is full of zealots!!!", ship->number);
+      push_telegram(ship->owner, ship->governor, buf);
+    }
+    use_fuel(*ship, FUEL_COST_PLOW);
+    if ((random() & 01) && (planet.conditions[TOXIC] < 100))
+      planet.conditions[TOXIC] += 1;
+  }
+}
+
+void do_dome(Ship *ship, SectorMap &smap) {
+  int adjust;
+
+  auto &s = smap.get(ship->land_x, ship->land_y);
+  if (s.eff >= 100) {
+    std::string buf = std::format(" Y{} is full of zealots!!!", ship->number);
+    push_telegram(ship->owner, ship->governor, buf);
+    return;
+  }
+  adjust = round_rand(.05 * (100. - (double)ship->damage) * (double)ship->popn /
+                      ship->max_crew);
+  s.eff += adjust;
+  s.eff = std::min<unsigned int>(s.eff, 100);
+  use_resource(*ship, RES_COST_DOME);
+}
+
+void do_quarry(Ship *ship, Planet &planet, SectorMap &smap) {
+  int prod;
+  int tox;
+
+  auto &s = smap.get(ship->land_x, ship->land_y);
+
+  if ((ship->fuel < (double)FUEL_COST_QUARRY)) {
+    if (!ship->notified) msg_OOF(*ship);
+    ship->notified = 1;
+    return;
+  }
+  /* nuke the sector */
+  s.condition = SectorType::SEC_WASTED;
+  prod = round_rand(races[ship->owner - 1].metabolism * (double)ship->popn /
+                    (double)ship->max_crew);
+  ship->fuel -= FUEL_COST_QUARRY;
+  prod_res[ship->owner - 1] += prod;
+  tox = int_rand(0, int_rand(0, prod));
+  planet.conditions[TOXIC] = std::min(100, planet.conditions[TOXIC] + tox);
+  if (s.fert >= prod)
+    s.fert -= prod;
+  else
+    s.fert = 0;
+}
+
+void do_berserker(Ship *ship, Planet &planet) {
+  if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
+      ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
+      ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {
+    if (!berserker_bombard(*ship, planet, races[ship->owner - 1]))
+      ship->destpnum = int_rand(0, stars[ship->storbits].numplanets - 1);
+    else if (Sdata.VN_hitlist[ship->special.mind.who_killed - 1] > 0)
+      --Sdata.VN_hitlist[ship->special.mind.who_killed - 1];
+  }
+}
+
+void do_recover(Planet &planet, int starnum, int planetnum) {
+  int owners = 0;
+  player_t i;
+  player_t j;
+  int stolenres = 0;
+  int stolendes = 0;
+  int stolenfuel = 0;
+  int stolencrystals = 0;
+  int all_buddies_here = 1;
+
+  uint64_t ownerbits = 0;
+
+  for (i = 1; i <= Num_races && all_buddies_here; i++) {
+    if (planet.info[i - 1].numsectsowned > 0) {
+      owners++;
+      setbit(ownerbits, i);
+      for (j = 1; j < i && all_buddies_here; j++)
+        if (isset(ownerbits, j) &&
+            (!isset(races[i - 1].allied, j) || !isset(races[j - 1].allied, i)))
+          all_buddies_here = 0;
+    } else {        /* Player i owns no sectors */
+      if (i != 1) { /* Can't steal from God */
+        stolenres += planet.info[i - 1].resource;
+        stolendes += planet.info[i - 1].destruct;
+        stolenfuel += planet.info[i - 1].fuel;
+        stolencrystals += planet.info[i - 1].crystals;
+      }
+    }
+  }
+  if (all_buddies_here && owners != 0 &&
+      (stolenres > 0 || stolendes > 0 || stolenfuel > 0 ||
+       stolencrystals > 0)) {
+    /* Okay, we've got some loot to divvy up */
+    int shares = owners;
+    int res;
+    int des;
+    int fuel;
+    int crystals;
+    int givenres = 0;
+    int givendes = 0;
+    int givenfuel = 0;
+    int givencrystals = 0;
+
+    for (i = 1; i <= Num_races; i++)
+      if (isset(ownerbits, i)) {
+        std::stringstream telegram_buf;
+        telegram_buf << std::format("Recovery Report: Planet /{}/{}\n",
+                                    stars[starnum].name,
+                                    stars[starnum].pnames[planetnum]);
+        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf.str());
+        telegram_buf.str("");
+        telegram_buf << std::format("{:<14} {:>5} {:>5} {:>5} {:>5}\n", "",
+                                    "res", "destr", "fuel", "xtal");
+        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf.str());
+      }
+    /* First: give the loot the the conquerers */
+    for (i = 1; i <= Num_races && owners > 1; i++)
+      if (isset(ownerbits, i)) { /* We have a winnah! */
+        if ((res = round_rand((double)stolenres / shares)) + givenres >
+            stolenres)
+          res = stolenres - givenres;
+        if ((des = round_rand((double)stolendes / shares)) + givendes >
+            stolendes)
+          des = stolendes - givendes;
+        if ((fuel = round_rand((double)stolenfuel / shares)) + givenfuel >
+            stolenfuel)
+          fuel = stolenfuel - givenfuel;
+        if ((crystals = round_rand((double)stolencrystals / shares)) +
+                givencrystals >
+            stolencrystals)
+          crystals = stolencrystals - givencrystals;
+        planet.info[i - 1].resource += res;
+        givenres += res;
+        planet.info[i - 1].destruct += des;
+        givendes += des;
+        planet.info[i - 1].fuel += fuel;
+        givenfuel += fuel;
+        planet.info[i - 1].crystals += crystals;
+        givencrystals += crystals;
+
+        owners--;
+        {
+          std::stringstream telegram_buf;
+          telegram_buf << std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}",
+                                      races[i - 1].name, res, des, fuel,
+                                      crystals);
+          for (j = 1; j <= Num_races; j++) {
+            if (isset(ownerbits, j)) {
+              push_telegram(j, stars[starnum].governor[j - 1],
+                            telegram_buf.str());
+            }
+          }
+        }
+      }
+    /* Leftovers for last player */
+    for (; i <= Num_races; i++)
+      if (isset(ownerbits, i)) break;
+    if (i <= Num_races) { /* It should be */
+      res = stolenres - givenres;
+      des = stolendes - givendes;
+      fuel = stolenfuel - givenfuel;
+      crystals = stolencrystals - givencrystals;
+
+      planet.info[i - 1].resource += res;
+      planet.info[i - 1].destruct += des;
+      planet.info[i - 1].fuel += fuel;
+      planet.info[i - 1].crystals += crystals;
+      {
+        std::stringstream first_telegram;
+        first_telegram << std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}",
+                                      races[i - 1].name, res, des, fuel,
+                                      crystals);
+        std::stringstream second_telegram;
+        second_telegram << std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}\n",
+                                       "Total:", stolenres, stolendes,
+                                       stolenfuel, stolencrystals);
+        for (j = 1; j <= Num_races; j++) {
+          if (isset(ownerbits, j)) {
+            push_telegram(j, stars[starnum].governor[j - 1],
+                          first_telegram.str());
+            push_telegram(j, stars[starnum].governor[j - 1],
+                          second_telegram.str());
+          }
+        }
+      }
+    } else {
+      push_telegram(1, 0, "Bug in stealing resources\n");
+    }
+    /* Next: take all the loot away from the losers */
+    for (i = 2; i <= Num_races; i++)
+      if (!isset(ownerbits, i)) {
+        planet.info[i - 1].resource = 0;
+        planet.info[i - 1].destruct = 0;
+        planet.info[i - 1].fuel = 0;
+        planet.info[i - 1].crystals = 0;
+      }
+  }
+}
+
+double est_production(const Sector &s) {
+  return (races[s.owner - 1].metabolism * (double)s.eff * (double)s.eff /
+          200.0);
+}
+}  // namespace
 
 int doplanet(const int starnum, Planet &planet, const int planetnum) {
   int shipno;
@@ -591,297 +877,4 @@ int doplanet(const int starnum, Planet &planet, const int planetnum) {
   }
   putsmap(smap, planet);
   return allmod;
-}
-
-static bool moveship_onplanet(Ship &ship, const Planet &planet) {
-  if (ship.shipclass[ship.special.terraform.index] == 's') {
-    ship.on = 0;
-    return false;
-  }
-  if (ship.shipclass[ship.special.terraform.index] == 'c')
-    ship.special.terraform.index = 0; /* reset the orders */
-
-  auto [x, y] = get_move(planet, ship.shipclass[ship.special.terraform.index],
-                         {ship.land_x, ship.land_y});
-
-  bool bounced = false;
-
-  if (y >= planet.Maxy) {
-    bounced = true;
-    y -= 2; /* bounce off of south pole! */
-  } else if (y < 0)
-    y = 1;
-  bounced = true; /* bounce off of north pole! */
-  if (planet.Maxy == 1) y = 0;
-  if (ship.shipclass[ship.special.terraform.index + 1] != '\0') {
-    ++ship.special.terraform.index;
-    if ((ship.shipclass[ship.special.terraform.index + 1] == '\0') &&
-        (!ship.notified)) {
-      ship.notified = 1;
-      std::string teleg_buf =
-          std::format("%{0} is out of orders at %{1}.", ship_to_string(ship),
-                      prin_ship_orbits(ship));
-      push_telegram(ship.owner, ship.governor, teleg_buf);
-    }
-  } else if (bounced)
-    ship.shipclass[ship.special.terraform.index] +=
-        ((ship.shipclass[ship.special.terraform.index] > '5') ? -6 : 6);
-  ship.land_x = x;
-  ship.land_y = y;
-  return true;
-}
-
-// move, and then terraform
-static void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
-  if (!moveship_onplanet(ship, planet)) return;
-  auto &s = smap.get(ship.land_x, ship.land_y);
-
-  if (s.condition == races[ship.owner - 1].likesbest) {
-    std::string buf = std::format(" T{} is full of zealots!!!", ship.number);
-    push_telegram(ship.owner, ship.governor, buf);
-    return;
-  }
-
-  if (s.condition == SectorType::SEC_GAS) {
-    std::string buf =
-        std::format(" T{} is trying to terraform gas.", ship.number);
-    push_telegram(ship.owner, ship.governor, buf);
-    return;
-  }
-
-  if (success((100 - (int)ship.damage) * ship.popn / ship.max_crew)) {
-    /* only condition can be terraformed, type doesn't change */
-    s.condition = races[ship.owner - 1].likesbest;
-    s.eff = 0;
-    s.mobilization = 0;
-    s.popn = 0;
-    s.troops = 0;
-    s.owner = 0;
-    use_fuel(ship, FUEL_COST_TERRA);
-    if ((random() & 01) && (planet.conditions[TOXIC] < 100))
-      planet.conditions[TOXIC] += 1;
-    if ((ship.fuel < (double)FUEL_COST_TERRA) && (!ship.notified)) {
-      ship.notified = 1;
-      msg_OOF(ship);
-    }
-  }
-}
-
-static void plow(Ship *ship, Planet &planet, SectorMap &smap) {
-  if (!moveship_onplanet(*ship, planet)) return;
-  auto &s = smap.get(ship->land_x, ship->land_y);
-  if ((races[ship->owner - 1].likes[s.condition]) && (s.fert < 100)) {
-    int adjust = round_rand(
-        10 * (0.01 * (100.0 - (double)ship->damage) * (double)ship->popn) /
-        ship->max_crew);
-    if ((ship->fuel < (double)FUEL_COST_PLOW) && (!ship->notified)) {
-      ship->notified = 1;
-      msg_OOF(*ship);
-      return;
-    }
-    s.fert = std::min(100u, s.fert + adjust);
-    if (s.fert >= 100) {
-      std::string buf = std::format(" K{} is full of zealots!!!", ship->number);
-      push_telegram(ship->owner, ship->governor, buf);
-    }
-    use_fuel(*ship, FUEL_COST_PLOW);
-    if ((random() & 01) && (planet.conditions[TOXIC] < 100))
-      planet.conditions[TOXIC] += 1;
-  }
-}
-
-static void do_dome(Ship *ship, SectorMap &smap) {
-  int adjust;
-
-  auto &s = smap.get(ship->land_x, ship->land_y);
-  if (s.eff >= 100) {
-    std::string buf = std::format(" Y{} is full of zealots!!!", ship->number);
-    push_telegram(ship->owner, ship->governor, buf);
-    return;
-  }
-  adjust = round_rand(.05 * (100. - (double)ship->damage) * (double)ship->popn /
-                      ship->max_crew);
-  s.eff += adjust;
-  if (s.eff > 100) s.eff = 100;
-  use_resource(*ship, RES_COST_DOME);
-}
-
-static void do_quarry(Ship *ship, Planet &planet, SectorMap &smap) {
-  int prod;
-  int tox;
-
-  auto &s = smap.get(ship->land_x, ship->land_y);
-
-  if ((ship->fuel < (double)FUEL_COST_QUARRY)) {
-    if (!ship->notified) msg_OOF(*ship);
-    ship->notified = 1;
-    return;
-  }
-  /* nuke the sector */
-  s.condition = SectorType::SEC_WASTED;
-  prod = round_rand(races[ship->owner - 1].metabolism * (double)ship->popn /
-                    (double)ship->max_crew);
-  ship->fuel -= FUEL_COST_QUARRY;
-  prod_res[ship->owner - 1] += prod;
-  tox = int_rand(0, int_rand(0, prod));
-  planet.conditions[TOXIC] = std::min(100, planet.conditions[TOXIC] + tox);
-  if (s.fert >= prod)
-    s.fert -= prod;
-  else
-    s.fert = 0;
-}
-
-static void do_berserker(Ship *ship, Planet &planet) {
-  if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
-      ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
-      ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {
-    if (!berserker_bombard(*ship, planet, races[ship->owner - 1]))
-      ship->destpnum = int_rand(0, stars[ship->storbits].numplanets - 1);
-    else if (Sdata.VN_hitlist[ship->special.mind.who_killed - 1] > 0)
-      --Sdata.VN_hitlist[ship->special.mind.who_killed - 1];
-  }
-}
-
-static void do_recover(Planet &planet, int starnum, int planetnum) {
-  int owners = 0;
-  player_t i;
-  player_t j;
-  int stolenres = 0;
-  int stolendes = 0;
-  int stolenfuel = 0;
-  int stolencrystals = 0;
-  int all_buddies_here = 1;
-
-  uint64_t ownerbits = 0;
-
-  for (i = 1; i <= Num_races && all_buddies_here; i++) {
-    if (planet.info[i - 1].numsectsowned > 0) {
-      owners++;
-      setbit(ownerbits, i);
-      for (j = 1; j < i && all_buddies_here; j++)
-        if (isset(ownerbits, j) &&
-            (!isset(races[i - 1].allied, j) || !isset(races[j - 1].allied, i)))
-          all_buddies_here = 0;
-    } else {        /* Player i owns no sectors */
-      if (i != 1) { /* Can't steal from God */
-        stolenres += planet.info[i - 1].resource;
-        stolendes += planet.info[i - 1].destruct;
-        stolenfuel += planet.info[i - 1].fuel;
-        stolencrystals += planet.info[i - 1].crystals;
-      }
-    }
-  }
-  if (all_buddies_here && owners != 0 &&
-      (stolenres > 0 || stolendes > 0 || stolenfuel > 0 ||
-       stolencrystals > 0)) {
-    /* Okay, we've got some loot to divvy up */
-    int shares = owners;
-    int res;
-    int des;
-    int fuel;
-    int crystals;
-    int givenres = 0;
-    int givendes = 0;
-    int givenfuel = 0;
-    int givencrystals = 0;
-
-    for (i = 1; i <= Num_races; i++)
-      if (isset(ownerbits, i)) {
-        std::stringstream telegram_buf;
-        telegram_buf << std::format("Recovery Report: Planet /{}/{}\n",
-                                    stars[starnum].name,
-                                    stars[starnum].pnames[planetnum]);
-        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf.str());
-        telegram_buf.str("");
-        telegram_buf << std::format("{:<14} {:>5} {:>5} {:>5} {:>5}\n", "",
-                                    "res", "destr", "fuel", "xtal");
-        push_telegram(i, stars[starnum].governor[i - 1], telegram_buf.str());
-      }
-    /* First: give the loot the the conquerers */
-    for (i = 1; i <= Num_races && owners > 1; i++)
-      if (isset(ownerbits, i)) { /* We have a winnah! */
-        if ((res = round_rand((double)stolenres / shares)) + givenres >
-            stolenres)
-          res = stolenres - givenres;
-        if ((des = round_rand((double)stolendes / shares)) + givendes >
-            stolendes)
-          des = stolendes - givendes;
-        if ((fuel = round_rand((double)stolenfuel / shares)) + givenfuel >
-            stolenfuel)
-          fuel = stolenfuel - givenfuel;
-        if ((crystals = round_rand((double)stolencrystals / shares)) +
-                givencrystals >
-            stolencrystals)
-          crystals = stolencrystals - givencrystals;
-        planet.info[i - 1].resource += res;
-        givenres += res;
-        planet.info[i - 1].destruct += des;
-        givendes += des;
-        planet.info[i - 1].fuel += fuel;
-        givenfuel += fuel;
-        planet.info[i - 1].crystals += crystals;
-        givencrystals += crystals;
-
-        owners--;
-        {
-          std::stringstream telegram_buf;
-          telegram_buf << std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}",
-                                      races[i - 1].name, res, des, fuel,
-                                      crystals);
-          for (j = 1; j <= Num_races; j++) {
-            if (isset(ownerbits, j)) {
-              push_telegram(j, stars[starnum].governor[j - 1],
-                            telegram_buf.str());
-            }
-          }
-        }
-      }
-    /* Leftovers for last player */
-    for (; i <= Num_races; i++)
-      if (isset(ownerbits, i)) break;
-    if (i <= Num_races) { /* It should be */
-      res = stolenres - givenres;
-      des = stolendes - givendes;
-      fuel = stolenfuel - givenfuel;
-      crystals = stolencrystals - givencrystals;
-
-      planet.info[i - 1].resource += res;
-      planet.info[i - 1].destruct += des;
-      planet.info[i - 1].fuel += fuel;
-      planet.info[i - 1].crystals += crystals;
-      {
-        std::stringstream first_telegram;
-        first_telegram << std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}",
-                                      races[i - 1].name, res, des, fuel,
-                                      crystals);
-        std::stringstream second_telegram;
-        second_telegram << std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}\n",
-                                       "Total:", stolenres, stolendes,
-                                       stolenfuel, stolencrystals);
-        for (j = 1; j <= Num_races; j++) {
-          if (isset(ownerbits, j)) {
-            push_telegram(j, stars[starnum].governor[j - 1],
-                          first_telegram.str());
-            push_telegram(j, stars[starnum].governor[j - 1],
-                          second_telegram.str());
-          }
-        }
-      }
-    } else {
-      push_telegram(1, 0, "Bug in stealing resources\n");
-    }
-    /* Next: take all the loot away from the losers */
-    for (i = 2; i <= Num_races; i++)
-      if (!isset(ownerbits, i)) {
-        planet.info[i - 1].resource = 0;
-        planet.info[i - 1].destruct = 0;
-        planet.info[i - 1].fuel = 0;
-        planet.info[i - 1].crystals = 0;
-      }
-  }
-}
-
-static double est_production(const Sector &s) {
-  return (races[s.owner - 1].metabolism * (double)s.eff * (double)s.eff /
-          200.0);
 }

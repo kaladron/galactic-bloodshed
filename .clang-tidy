@@ -22,6 +22,12 @@ Checks: clang-analyzer-*,
     performance-*,
     -performance-enum-size,
     readability-*,
+    -readability-braces-around-statements,
     -readability-identifier-length,
+    -readability-implicit-bool-conversion,
     -readability-magic-numbers,
     -readability-named-parameter,
+
+CheckOptions:
+  - key: readability-function-cognitive-complexity.Threshold
+    value: 15

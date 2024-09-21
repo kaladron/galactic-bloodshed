@@ -10,6 +10,7 @@ export import :fire;
 export import :fuel;
 export import :map;
 export import :misc;
+export import :move;
 export import :planet;
 export import :place;
 export import :types;

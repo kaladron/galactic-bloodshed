@@ -14,7 +14,6 @@ import std.compat;
 #include <cstdlib>
 
 #include "gb/bombard.h"
-#include "gb/move.h"
 
 static void do_dome(Ship *, SectorMap &);
 static void do_quarry(Ship *, Planet &, SectorMap &);

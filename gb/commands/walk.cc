@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/move.h"
-
 module commands;
 
 namespace GB::commands {

@@ -3,9 +3,7 @@
 module;
 
 import gblib;
-import std.compat;
-
-#include "gb/buffers.h"
+import std;
 
 module commands;
 
@@ -13,14 +11,6 @@ namespace GB::commands {
 void bid(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  Planet p;
-  char commod;
-  int i;
-  int item;
-  int lot;
-  double rate;
-  int snum;
-  int pnum;
 
   if (argv.size() == 1) {
     /* list all market blocks for sale */
@@ -29,10 +19,10 @@ void bid(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor,
            "  Lot Stock      Type  Owner  Bidder  Amount "
            "Cost/Unit    Ship  Dest\n");
-    for (i = 1; i <= g.db.Numcommods(); i++) {
+    for (auto i = 1; i <= g.db.Numcommods(); i++) {
       auto c = getcommod(i);
       if (c.owner && c.amount) {
-        rate = (double)c.bid / (double)c.amount;
+        auto rate = (double)c.bid / (double)c.amount;
         std::string player_details =
             (c.bidder == Playernum)
                 ? std::format("{:4.4s}/{:<4.4s}", stars[c.star_to].name,
@@ -48,7 +38,8 @@ void bid(const command_t &argv, GameObj &g) {
     }
   } else if (argv.size() == 2) {
     /* list all market blocks for sale of the requested type */
-    commod = argv[1][0];
+    auto commod = argv[1][0];
+    CommodType item;
     switch (commod) {
       case 'r':
         item = RESOURCE;
@@ -69,10 +60,10 @@ void bid(const command_t &argv, GameObj &g) {
     g.out << "+++ Galactic Bloodshed Commodities Market +++\n\n";
     g.out << "  Lot Stock      Type  Owner  Bidder  Amount "
              "Cost/Unit    Ship  Dest\n";
-    for (i = 1; i <= g.db.Numcommods(); i++) {
+    for (auto i = 1; i <= g.db.Numcommods(); i++) {
       auto c = getcommod(i);
       if (c.owner && c.amount && (c.type == item)) {
-        rate = (double)c.bid / (double)c.amount;
+        auto rate = (double)c.bid / (double)c.amount;
         std::string player_details =
             (c.bidder == Playernum)
                 ? std::format("{:4.4s}/{:<4.4s}", stars[c.star_to].name,
@@ -90,17 +81,17 @@ void bid(const command_t &argv, GameObj &g) {
       g.out << "You have to be in a planet scope to buy.\n";
       return;
     }
-    snum = g.snum;
-    pnum = g.pnum;
+    auto snum = g.snum;
+    auto pnum = g.pnum;
     if (Governor && stars[snum].governor[Playernum - 1] != Governor) {
       g.out << "You are not authorized in this system.\n";
       return;
     }
-    p = getplanet(snum, pnum);
+    auto p = getplanet(snum, pnum);
 
     if (p.slaved_to && p.slaved_to != Playernum) {
-      sprintf(buf, "This planet is enslaved to player %d.\n", p.slaved_to);
-      notify(Playernum, Governor, buf);
+      g.out << std::format("This planet is enslaved to player {}.\n",
+                           p.slaved_to);
       return;
     }
     /* check to see if there is an undamaged gov center or space port here */
@@ -119,7 +110,7 @@ void bid(const command_t &argv, GameObj &g) {
       return;
     }
 
-    lot = std::stoi(argv[1]);
+    auto lot = std::stoi(argv[1]);
     money_t bid0 = std::stoi(argv[2]);
     if ((lot <= 0) || lot > g.db.Numcommods()) {
       g.out << "Illegal lot number.\n";
@@ -138,8 +129,7 @@ void bid(const command_t &argv, GameObj &g) {
     }
     money_t minbid = (int)((double)c.bid * (1.0 + UP_BID));
     if (bid0 < minbid) {
-      sprintf(buf, "You have to bid more than %ld.\n", minbid);
-      notify(Playernum, Governor, buf);
+      g.out << std::format("You have to bid more than {}.\n", minbid);
       return;
     }
     auto &race = races[Playernum - 1];
@@ -165,11 +155,9 @@ void bid(const command_t &argv, GameObj &g) {
     c.planet_to = pnum;
     auto [shipping, dist] = shipping_cost(c.star_to, c.star_from, c.bid);
 
-    sprintf(
-        buf,
-        "There will be an additional %ld charged to you for shipping costs.\n",
+    g.out << std::format(
+        "There will be an additional {} charged to you for shipping costs.\n",
         shipping);
-    notify(Playernum, Governor, buf);
     putcommod(c, lot);
     g.out << "Bid accepted.\n";
   }

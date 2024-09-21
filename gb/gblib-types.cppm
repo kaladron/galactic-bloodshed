@@ -33,10 +33,10 @@ export enum PlanetType {
 };
 
 export enum class NewsType {
-  DECLARATION = 0,
-  TRANSFER = 1,
-  COMBAT = 2,
-  ANNOUNCE = 3,
+  ANNOUNCE,
+  COMBAT,
+  DECLARATION,
+  TRANSFER,
 };
 
 export enum SectorType {

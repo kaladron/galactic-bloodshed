@@ -40,10 +40,10 @@ void bid(const command_t &argv, GameObj &g) {
                 : "";
 
         auto [cost, dist] = shipping_cost(c.star_from, g.snum, c.bid);
-        sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8ld %10s\n", i,
-                c.deliver ? '*' : ' ', c.amount, commod_name[c.type], c.owner,
-                c.bidder, c.bid, rate, cost, player_details.c_str());
-        notify(Playernum, Governor, buf);
+        g.out << std::format(" {:4}{}{:5}{:10}{:7}{:8}{:8}{:10.2}{:8} {:10}\n",
+                             i, c.deliver ? '*' : ' ', c.amount, c.type,
+                             c.owner, c.bidder, c.bid, rate, cost,
+                             player_details);
       }
     }
   } else if (argv.size() == 2) {
@@ -79,10 +79,10 @@ void bid(const command_t &argv, GameObj &g) {
                               stars[c.star_to].pnames[c.planet_to])
                 : "";
         auto [cost, dist] = shipping_cost(c.star_from, g.snum, c.bid);
-        sprintf(buf, " %4d%c%5lu%10s%7d%8d%8ld%10.2f%8ld %10s\n", i,
-                c.deliver ? '*' : ' ', c.amount, commod_name[c.type], c.owner,
-                c.bidder, c.bid, rate, cost, player_details.c_str());
-        notify(Playernum, Governor, buf);
+        g.out << std::format(" {:4}{}{:5}{:10}{:7}{:8}{:8}{:10.2}{:8} {:10}\n",
+                             i, c.deliver ? '*' : ' ', c.amount, c.type,
+                             c.owner, c.bidder, c.bid, rate, cost,
+                             player_details);
       }
     }
   } else {
@@ -153,10 +153,10 @@ void bid(const command_t &argv, GameObj &g) {
     }
     /* notify the previous bidder that he was just outbidded */
     if (c.bidder) {
-      sprintf(buf,
-              "The bid on lot #%d (%lu %s) has been upped to %ld by %s [%d].\n",
-              lot, c.amount, commod_name[c.type], bid0, race.name, Playernum);
-      notify(c.bidder, c.bidder_gov, buf);
+      std::string bid_message = std::format(
+          "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
+          c.amount, c.type, bid0, race.name, Playernum);
+      notify(c.bidder, c.bidder_gov, bid_message);
     }
     c.bid = bid0;
     c.bidder = Playernum;

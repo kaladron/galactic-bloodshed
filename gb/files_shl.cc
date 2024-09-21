@@ -1569,7 +1569,7 @@ void putcommod(const Commod &c, int commodnum) {
   sqlite3_bind_int(stmt, 1, commodnum);
   sqlite3_bind_int(stmt, 2, c.owner);
   sqlite3_bind_int(stmt, 3, c.governor);
-  sqlite3_bind_int(stmt, 4, c.type);
+  sqlite3_bind_int(stmt, 4, std::to_underlying(c.type));
   sqlite3_bind_int(stmt, 5, c.amount);
   sqlite3_bind_int(stmt, 6, c.deliver);
   sqlite3_bind_int(stmt, 7, c.bid);

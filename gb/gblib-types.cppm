@@ -99,7 +99,7 @@ export struct sectinfo {
 export struct Commod {
   player_t owner;
   governor_t governor;
-  uint8_t type;
+  CommodType type;
   uint64_t amount;
   bool deliver; /* whether the lot is ready for shipping or not */
   money_t bid;

@@ -42,16 +42,16 @@ void bid(const command_t &argv, GameObj &g) {
     CommodType item;
     switch (commod) {
       case 'r':
-        item = RESOURCE;
+        item = CommodType::RESOURCE;
         break;
       case 'd':
-        item = DESTRUCT;
+        item = CommodType::DESTRUCT;
         break;
       case 'f':
-        item = FUEL;
+        item = CommodType::FUEL;
         break;
       case 'x':
-        item = CRYSTAL;
+        item = CommodType::CRYSTAL;
         break;
       default:
         g.out << "No such type of commodity.\n";

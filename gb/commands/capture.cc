@@ -30,7 +30,7 @@ void capture(const command_t &argv, GameObj &g) {
   shipnum_t nextshipno;
   int x = -1;
   int y = -1;
-  int what;
+  PopulationType what;
   population_t olddpopn;
   population_t olddtroops;
   population_t casualties = 0;
@@ -86,11 +86,11 @@ void capture(const command_t &argv, GameObj &g) {
       }
 
       if (argv.size() < 4)
-        what = CIV;
+        what = PopulationType::CIV;
       else if (argv[3] == "civilians")
-        what = CIV;
+        what = PopulationType::CIV;
       else if (argv[3] == "military")
-        what = MIL;
+        what = PopulationType::MIL;
       else {
         g.out << "Capture with what?\n";
         free(ship);
@@ -99,9 +99,9 @@ void capture(const command_t &argv, GameObj &g) {
 
       population_t boarders;
       if (argv.size() < 3) {
-        if (what == CIV)
+        if (what == PopulationType::CIV)
           boarders = sect.popn;
-        else  // MIL
+        else  // PopulationType::MIL
           boarders = sect.troops;
       } else
         boarders = std::stoul(argv[2]);
@@ -112,9 +112,9 @@ void capture(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      if ((boarders > sect.popn) && what == CIV)
+      if ((boarders > sect.popn) && what == PopulationType::CIV)
         boarders = sect.popn;
-      else if ((boarders > sect.troops) && what == MIL)
+      else if ((boarders > sect.troops) && what == PopulationType::MIL)
         boarders = sect.troops;
 
       auto &race = races[Playernum - 1];
@@ -136,19 +136,21 @@ void capture(const command_t &argv, GameObj &g) {
       casualties1 = 0;
       casualties2 = 0;
 
-      if (what == CIV)
+      if (what == PopulationType::CIV)
         sect.popn -= boarders;
-      else if (what == MIL)
+      else if (what == PopulationType::MIL)
         sect.troops -= boarders;
 
       if (olddpopn + olddtroops) {
         sprintf(
             buf, "Attack strength: %.2f     Defense strength: %.2f\n",
-            astrength = (double)boarders *
-                        (what == MIL ? (double)race.fighters * 10.0 : 1.0) *
-                        .01 * race.tech * (race.likes[sect.condition] + 0.01) *
-                        ((double)Defensedata[sect.condition] + 1.0) *
-                        morale_factor((double)(race.morale - alien.morale)),
+            astrength =
+                (double)boarders *
+                (what == PopulationType::MIL ? (double)race.fighters * 10.0
+                                             : 1.0) *
+                .01 * race.tech * (race.likes[sect.condition] + 0.01) *
+                ((double)Defensedata[sect.condition] + 1.0) *
+                morale_factor((double)(race.morale - alien.morale)),
             dstrength = ((double)ship->popn +
                          (double)ship->troops * 10.0 * (double)alien.fighters) *
                         .01 * alien.tech * ((double)(armor(*ship)) + 0.01) *
@@ -201,11 +203,11 @@ void capture(const command_t &argv, GameObj &g) {
         /* we got 'em */
         ship->owner = Playernum;
         ship->governor = Governor;
-        if (what == CIV) {
+        if (what == PopulationType::CIV) {
           ship->popn = std::min(boarders, max_crew(*ship));
           sect.popn += boarders - ship->popn;
           ship->mass += ship->popn * race.mass;
-        } else if (what == MIL) {
+        } else if (what == PopulationType::MIL) {
           ship->troops = std::min(boarders, max_mil(*ship));
           sect.troops += boarders - ship->troops;
           ship->mass += ship->troops * race.mass;
@@ -214,9 +216,9 @@ void capture(const command_t &argv, GameObj &g) {
           adjust_morale(race, alien, ship->build_cost);
         /* unoccupied ships and factories don't count */
       } else { /* retreat */
-        if (what == CIV)
+        if (what == PopulationType::CIV)
           sect.popn += boarders;
-        else if (what == MIL)
+        else if (what == PopulationType::MIL)
           sect.troops += boarders;
       }
 
@@ -264,10 +266,10 @@ void capture(const command_t &argv, GameObj &g) {
         notify(oldowner, oldgov, buf);
         sprintf(buf, "VICTORY! The ship is yours!\n");
         notify(Playernum, Governor, buf);
-        if (what == CIV)
+        if (what == PopulationType::CIV)
           sprintf(buf, "%lu boarders move in.\n",
                   std::min(boarders, ship->popn));
-        else if (what == MIL)
+        else if (what == PopulationType::MIL)
           sprintf(buf, "%lu troops move in.\n",
                   std::min(boarders, ship->troops));
         notify(Playernum, Governor, buf);
@@ -301,11 +303,11 @@ void capture(const command_t &argv, GameObj &g) {
       if (casualties || casualties1 || casualties2) {
         sprintf(buf, "Casualties: Yours: %ld civ/%ld mil, Theirs: %ld %s\n",
                 casualties1, casualties2, casualties,
-                what == CIV ? "civ" : "mil");
+                what == PopulationType::CIV ? "civ" : "mil");
         strcat(telegram_buf, buf);
         sprintf(buf, "Casualties: Yours: %ld %s, Theirs: %ld civ/%ld mil\n",
-                casualties, what == CIV ? "civ" : "mil", casualties1,
-                casualties2);
+                casualties, what == PopulationType::CIV ? "civ" : "mil",
+                casualties1, casualties2);
         notify(Playernum, Governor, buf);
       }
       warn(oldowner, oldgov, telegram_buf);

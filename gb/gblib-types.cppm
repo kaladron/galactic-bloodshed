@@ -51,9 +51,9 @@ export enum SectorType {
   SEC_WASTED = 8,
 };
 
-export enum PopulationType {
-  CIV = 0,
-  MIL = 1,
+export enum class PopulationType {
+  CIV,
+  MIL,
 };
 
 export enum CommodType {

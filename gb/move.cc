@@ -82,7 +82,7 @@ void mech_defend(player_t Playernum, governor_t Governor, int *people,
   population_t mil = 0;
   int oldgov;
 
-  if (type == CIV)
+  if (type == PopulationType::CIV)
     civ = *people;
   else
     mil = *people;
@@ -215,26 +215,29 @@ void people_attack_mech(Ship *ship, int civ, int mil, Race &race, Race &alien,
   strcat(long_msg, buf);
 }
 
-void ground_attack(Race &race, Race &alien, int *people, int what,
+void ground_attack(Race &race, Race &alien, int *people, PopulationType what,
                    population_t *civ, population_t *mil, unsigned int def1,
                    unsigned int def2, double alikes, double dlikes,
                    double *astrength, double *dstrength, int *casualties,
                    int *casualties2, int *casualties3) {
   int casualty_scale;
 
-  *astrength = (double)(*people * race.fighters * (what == MIL ? 10 : 1)) *
+  *astrength = (double)(*people * race.fighters *
+                        (what == PopulationType::MIL ? 10 : 1)) *
                (alikes + 1.0) * ((double)def1 + 1.0) *
                morale_factor((double)(race.morale - alien.morale));
   *dstrength = (double)((*civ + *mil * 10) * alien.fighters) * (dlikes + 1.0) *
                ((double)def2 + 1.0) *
                morale_factor((double)(alien.morale - race.morale));
   /* nuke both populations */
-  casualty_scale = MIN(*people * (what == MIL ? 10 : 1) * race.fighters,
-                       (*civ + *mil * 10) * alien.fighters);
+  casualty_scale =
+      MIN(*people * (what == PopulationType::MIL ? 10 : 1) * race.fighters,
+          (*civ + *mil * 10) * alien.fighters);
 
-  *casualties = int_rand(
-      0, round_rand((double)((casualty_scale / (what == MIL ? 10 : 1)) *
-                             *dstrength / *astrength)));
+  *casualties =
+      int_rand(0, round_rand((double)((casualty_scale /
+                                       (what == PopulationType::MIL ? 10 : 1)) *
+                                      *dstrength / *astrength)));
   *casualties = std::min(*people, *casualties);
   *people -= *casualties;
 

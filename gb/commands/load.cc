@@ -131,7 +131,7 @@ void do_transporter(const Race &race, GameObj &g, Ship *s) {
 }
 
 void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
-                              Sector &sect, int what, int people) {
+                              Sector &sect, PopulationType what, int people) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   double astrength;
@@ -162,18 +162,19 @@ void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
   oldowner = (int)sect.owner;
   oldgov = stars[g.snum].governor[sect.owner - 1];
 
-  if (what == CIV)
+  if (what == PopulationType::CIV)
     ship->popn -= people;
   else
     ship->troops -= people;
   ship->mass -= people * race.mass;
-  sprintf(buf, "%d %s unloaded...\n", people, what == CIV ? "civ" : "mil");
+  sprintf(buf, "%d %s unloaded...\n", people,
+          what == PopulationType::CIV ? "civ" : "mil");
   notify(Playernum, Governor, buf);
   sprintf(buf, "Crew compliment %lu civ  %lu mil\n", ship->popn, ship->troops);
   notify(Playernum, Governor, buf);
 
   sprintf(buf, "%d %s assault %lu civ/%lu mil\n", people,
-          what == CIV ? "civ" : "mil", sect.popn, sect.troops);
+          what == PopulationType::CIV ? "civ" : "mil", sect.popn, sect.troops);
 
   notify(Playernum, Governor, buf);
   oldpopn = people;
@@ -198,9 +199,9 @@ void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
       sprintf(buf, "Metamorphs have absorbed %d bodies!!!\n", absorbed);
       notify(oldowner, oldgov, buf);
     }
-    if (what == CIV)
+    if (what == PopulationType::CIV)
       sect.popn = people + absorbed;
-    else if (what == MIL) {
+    else if (what == PopulationType::MIL) {
       sect.popn = absorbed;
       sect.troops = people;
     }
@@ -217,9 +218,10 @@ void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
       sect.popn += absorbed;
     }
     /* load them back up */
-    sprintf(buf, "Loading %d %s\n", people, what == CIV ? "civ" : "mil");
+    sprintf(buf, "Loading %d %s\n", people,
+            what == PopulationType::CIV ? "civ" : "mil");
     notify(Playernum, Governor, buf);
-    if (what == CIV)
+    if (what == PopulationType::CIV)
       ship->popn += people;
     else
       ship->troops += people;
@@ -239,7 +241,7 @@ void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
     strcat(telegram_buf, buf);
     if (people) {
       sprintf(buf, "%d %s move in.\n", people,
-              what == CIV ? "civilians" : "troops");
+              what == PopulationType::CIV ? "civilians" : "troops");
       notify(Playernum, Governor, buf);
     }
     planet.info[Playernum - 1].numsectsowned++;
@@ -269,11 +271,12 @@ void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
   putrace(race);
 
   sprintf(buf, "Casualties: You: %d civ/%d mil, Them: %d %s\n", casualties2,
-          casualties3, casualties, what == CIV ? "civ" : "mil");
+          casualties3, casualties, what == PopulationType::CIV ? "civ" : "mil");
   strcat(telegram_buf, buf);
   warn(oldowner, oldgov, telegram_buf);
   sprintf(buf, "Casualties: You: %d %s, Them: %d civ/%d mil\n", casualties,
-          what == CIV ? "civ" : "mil", casualties2, casualties3);
+          what == PopulationType::CIV ? "civ" : "mil", casualties2,
+          casualties3);
   notify(Playernum, Governor, buf);
 }
 }  // namespace
@@ -515,7 +518,7 @@ void load(const command_t &argv, GameObj &g) {
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
             /* fight a land battle */
-            unload_onto_alien_sector(g, p, s, sect, CIV, -amt);
+            unload_onto_alien_sector(g, p, s, sect, PopulationType::CIV, -amt);
             putship(s);
             putsector(sect, p, s->land_x, s->land_y);
             putplanet(p, stars[g.snum], g.pnum);
@@ -558,7 +561,7 @@ void load(const command_t &argv, GameObj &g) {
             sprintf(buf,
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
-            unload_onto_alien_sector(g, p, s, sect, MIL, -amt);
+            unload_onto_alien_sector(g, p, s, sect, PopulationType::MIL, -amt);
             putship(s);
             putsector(sect, p, s->land_x, s->land_y);
             putplanet(p, stars[g.snum], g.pnum);

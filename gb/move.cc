@@ -1,15 +1,14 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
+
+module;
 
 /*  move.c -- move population and assault aliens on target sector */
 
-import gblib;
 import std.compat;
 
-#include "gb/move.h"
-
 #include "gb/buffers.h"
+
+module gblib;
 
 /**
  * @brief Calculates the new coordinates based on the given direction.

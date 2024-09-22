@@ -1,11 +1,9 @@
-// Copyright 2020 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 #include "gb/GB_server.h"
 
@@ -31,6 +29,37 @@ void show_votes(GameObj& g) {
   g.out << std::format("  Total votes = {0}, Go = {1}, Wait = {2}.\n", nvotes,
                        yays, nays);
 }
+
+/**
+ * @brief Tally votes and determine if the update or moveseg should be taken.
+ *
+ * This function iterates through all races and counts the number of "yes" and
+ * "no" votes, excluding votes from God and Guest races. If all votes are "yes"
+ * and there are no "no" votes, it triggers the next action.
+ *
+ * @param g Reference to the GameObj which contains the game state and database.
+ */
+void check_votes(GameObj& g) {
+  // Ok...someone voted yes.  Tally them all up and see if we should do
+  // something.
+  int nays = 0;
+  int yays = 0;
+  int nvotes = 0;
+  for (const auto& r : races) {
+    if (r.God || r.Guest) continue;
+    nvotes++;
+    if (r.votes) {
+      yays++;
+    } else {
+      nays++;
+    }
+  }
+  /* Is Update/Movement vote unanimous now? */
+  if (nvotes > 0 && nvotes == yays && nays == 0) {
+    /* Do it... */
+    do_next_thing(g.db);
+  }
+}
 }  // namespace
 
 namespace GB::commands {
@@ -44,6 +73,7 @@ void vote(const command_t& argv, GameObj& g) {
     show_votes(g);
     return;
   }
+
   if (race.Guest) {
     g.out << "You are not allowed to vote, but, here is the count.\n";
     show_votes(g);
@@ -58,41 +88,23 @@ void vote(const command_t& argv, GameObj& g) {
   }
 
   bool check = false;
-  if (argv[1] == "update") {
-    if (argv[2] == "go") {
-      race.votes = true;
-      check = true;
-    } else if (argv[2] == "wait")
-      race.votes = false;
-    else {
-      g.out << std::format("No such update choice '{0}'\n", argv[2].c_str());
-      return;
-    }
-  } else {
+  if (argv[1] != "update") {
     g.out << std::format("No such vote '{0}'\n", argv[1].c_str());
     return;
   }
+
+  if (argv[2] == "go") {
+    race.votes = true;
+    check = true;
+  } else if (argv[2] == "wait")
+    race.votes = false;
+  else {
+    g.out << std::format("No such update choice '{0}'\n", argv[2].c_str());
+    return;
+  }
+
   putrace(race);
 
-  if (check) {
-    /* Ok...someone voted yes.  Tally them all up and see if */
-    /* we should do something. */
-    int nays = 0;
-    int yays = 0;
-    int nvotes = 0;
-    for (const auto& r : races) {
-      if (r.God || r.Guest) continue;
-      nvotes++;
-      if (r.votes)
-        yays++;
-      else
-        nays++;
-    }
-    /* Is Update/Movement vote unanimous now? */
-    if (nvotes > 0 && nvotes == yays && nays == 0) {
-      /* Do it... */
-      do_next_thing(g.db);
-    }
-  }
+  if (check) check_votes(g);
 }
 }  // namespace GB::commands

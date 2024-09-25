@@ -438,6 +438,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
   p.conditions[HELIUM] = sqlite3_column_int(stmt, 24);
   p.conditions[OTHER] = sqlite3_column_int(stmt, 25);
   p.conditions[TOXIC] = sqlite3_column_int(stmt, 26);
+  p.explored = sqlite3_column_int(stmt, 27);
 
   const char *plinfo_sql =
       "SELECT planet_id, player_id, fuel, destruct, "

@@ -1,15 +1,12 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/*  toggle.c -- toggles some options */
+/// \file toggle.cc
+/// \brief toggles some options
 
 module;
 
 import gblib;
-import std.compat;
-
-#include "gb/buffers.h"
+import std;
 
 module commands;
 
@@ -17,6 +14,27 @@ namespace {
 void tog(GameObj &g, char *op, const char *name) {
   *op = !(*op);
   g.out << std::format("{0} is now {1}\n", name, *op ? "on" : "off");
+}
+
+void display_toggles(GameObj &g, const Race::gov &governor, const Race &race) {
+  g.out << std::format("gag is {}\n", governor.toggle.gag ? "ON" : "OFF");
+  g.out << std::format("inverse is {}\n",
+                       governor.toggle.inverse ? "ON" : "OFF");
+  g.out << std::format("double_digits is {}\n",
+                       governor.toggle.double_digits ? "ON" : "OFF");
+  g.out << std::format("geography is {}\n",
+                       governor.toggle.geography ? "ON" : "OFF");
+  g.out << std::format("autoload is {}\n",
+                       governor.toggle.autoload ? "ON" : "OFF");
+  g.out << std::format("color is {}\n", governor.toggle.color ? "ON" : "OFF");
+  g.out << std::format("compatibility is {}\n",
+                       governor.toggle.compat ? "ON" : "OFF");
+  g.out << std::format("{}\n",
+                       governor.toggle.invisible ? "INVISIBLE" : "VISIBLE");
+  g.out << std::format("highlight player {}\n", governor.toggle.highlight);
+  if (race.God) {
+    g.out << std::format("monitor is {}\n", race.monitor ? "ON" : "OFF");
+  }
 }
 }  // namespace
 
@@ -28,63 +46,33 @@ void toggle(const command_t &argv, GameObj &g) {
 
   auto &race = races[Playernum - 1];
 
-  if (argv.size() > 1) {
-    if (argv[1] == "inverse")
-      tog(g, &race.governor[Governor].toggle.inverse, "inverse");
-    else if (argv[1] == "double_digits")
-      tog(g, &race.governor[Governor].toggle.double_digits, "double_digits");
-    else if (argv[1] == "geography")
-      tog(g, &race.governor[Governor].toggle.geography, "geography");
-    else if (argv[1] == "gag")
-      tog(g, &race.governor[Governor].toggle.gag, "gag");
-    else if (argv[1] == "autoload")
-      tog(g, &race.governor[Governor].toggle.autoload, "autoload");
-    else if (argv[1] == "color")
-      tog(g, &race.governor[Governor].toggle.color, "color");
-    else if (argv[1] == "visible")
-      tog(g, &race.governor[Governor].toggle.invisible, "invisible");
-    else if (race.God && argv[1] == "monitor")
-      tog(g, &race.monitor, "monitor");
-    else if (argv[1] == "compatibility")
-      tog(g, &race.governor[Governor].toggle.compat, "compatibility");
-    else {
-      sprintf(buf, "No such option '%s'\n", argv[1].c_str());
-      notify(Playernum, Governor, buf);
-      return;
-    }
-    putrace(race);
-  } else {
-    sprintf(buf, "gag is %s\n",
-            race.governor[Governor].toggle.gag ? "ON" : "OFF");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "inverse is %s\n",
-            race.governor[Governor].toggle.inverse ? "ON" : "OFF");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "double_digits is %s\n",
-            race.governor[Governor].toggle.double_digits ? "ON" : "OFF");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "geography is %s\n",
-            race.governor[Governor].toggle.geography ? "ON" : "OFF");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "autoload is %s\n",
-            race.governor[Governor].toggle.autoload ? "ON" : "OFF");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "color is %s\n",
-            race.governor[Governor].toggle.color ? "ON" : "OFF");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "compatibility is %s\n",
-            race.governor[Governor].toggle.compat ? "ON" : "OFF");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "%s\n",
-            race.governor[Governor].toggle.invisible ? "INVISIBLE" : "VISIBLE");
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "highlight player %d\n",
-            race.governor[Governor].toggle.highlight);
-    notify(Playernum, Governor, buf);
-    if (race.God) {
-      sprintf(buf, "monitor is %s\n", race.monitor ? "ON" : "OFF");
-      notify(Playernum, Governor, buf);
-    }
+  if (argv.size() != 1) {
+    display_toggles(g, race.governor[Governor], race);
+    return;
   }
+
+  if (argv[1] == "inverse")
+    tog(g, &race.governor[Governor].toggle.inverse, "inverse");
+  else if (argv[1] == "double_digits")
+    tog(g, &race.governor[Governor].toggle.double_digits, "double_digits");
+  else if (argv[1] == "geography")
+    tog(g, &race.governor[Governor].toggle.geography, "geography");
+  else if (argv[1] == "gag")
+    tog(g, &race.governor[Governor].toggle.gag, "gag");
+  else if (argv[1] == "autoload")
+    tog(g, &race.governor[Governor].toggle.autoload, "autoload");
+  else if (argv[1] == "color")
+    tog(g, &race.governor[Governor].toggle.color, "color");
+  else if (argv[1] == "visible")
+    tog(g, &race.governor[Governor].toggle.invisible, "invisible");
+  else if (race.God && argv[1] == "monitor")
+    tog(g, &race.monitor, "monitor");
+  else if (argv[1] == "compatibility")
+    tog(g, &race.governor[Governor].toggle.compat, "compatibility");
+  else {
+    g.out << std::format("No such option '{}'\n", argv[1]);
+    return;
+  }
+  putrace(race);
 }
 }  // namespace GB::commands

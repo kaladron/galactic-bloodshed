@@ -1,20 +1,18 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /// \file toxicity.cc
-/// \brief Change threshold in toxicity to build a wc.
+/// \brief Change threshold in toxicity to build a waste cannister.
 
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 module commands;
 
 namespace GB::commands {
 void toxicity(const command_t &argv, GameObj &g) {
-  ap_t APcount = 1;
+  constexpr ap_t APcount = 1;
 
   if (argv.size() != 2) {
     g.out << "Provide exactly one value between 0 and 100.\n";
@@ -41,7 +39,7 @@ void toxicity(const command_t &argv, GameObj &g) {
   putplanet(p, stars[g.snum], g.pnum);
   deductAPs(g, APcount, g.snum);
 
-  g.out << " New threshold is: " << p.info[g.player - 1].tox_thresh
-        << std::endl;
+  g.out << std::format(" New threshold is: {}\n",
+                       p.info[g.player - 1].tox_thresh);
 }
 }  // namespace GB::commands

@@ -1,15 +1,12 @@
-// Copyright 2019 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* technology.c -- increase investment in technological development. */
+/// \file technology.cc
+/// \brief increase investment in technological development
 
 module;
 
 import gblib;
-import std.compat;
-
-#include "gb/buffers.h"
+import std;
 
 module commands;
 
@@ -20,8 +17,8 @@ void technology(const command_t &argv, GameObj &g) {
   ap_t APcount = 1;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
-    sprintf(buf, "scope must be a planet (%d).\n", g.level);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("scope must be a planet ({}).\n",
+                         static_cast<int>(g.level));
     return;
   }
   if (!control(stars[g.snum], Playernum, Governor)) {
@@ -35,12 +32,11 @@ void technology(const command_t &argv, GameObj &g) {
   auto p = getplanet(g.snum, g.pnum);
 
   if (argv.size() < 2) {
-    sprintf(buf,
-            "Current investment : %ld    Technology production/update: %.3f\n",
-            p.info[Playernum - 1].tech_invest,
-            tech_prod(p.info[Playernum - 1].tech_invest,
-                      p.info[Playernum - 1].popn));
-    notify(Playernum, Governor, buf);
+    g.out << std::format(
+        "Current investment : {}    Technology production/update: {:.3f}\n",
+        p.info[Playernum - 1].tech_invest,
+        tech_prod(p.info[Playernum - 1].tech_invest,
+                  p.info[Playernum - 1].popn));
     return;
   }
   money_t invest = std::stoi(argv[1]);
@@ -56,9 +52,8 @@ void technology(const command_t &argv, GameObj &g) {
 
   deductAPs(g, APcount, g.snum);
 
-  sprintf(
-      buf, "   New (ideal) tech production: %.3f (this planet)\n",
+  g.out << std::format(
+      "   New (ideal) tech production: {:.3f} (this planet)\n",
       tech_prod(p.info[Playernum - 1].tech_invest, p.info[Playernum - 1].popn));
-  notify(Playernum, Governor, buf);
 }
 }  // namespace GB::commands

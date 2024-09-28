@@ -1,15 +1,11 @@
-// Copyright 2019 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /// \file tax.cc
 
 module;
 
 import gblib;
-import std.compat;
-
-#include "gb/buffers.h"
+import std;
 
 module commands;
 
@@ -43,9 +39,9 @@ void tax(const command_t &argv, GameObj &g) {
   auto p = getplanet(g.snum, g.pnum);
 
   if (argv.size() < 2) {
-    sprintf(buf, "Current tax rate: %d%%    Target: %d%%\n",
-            p.info[Playernum - 1].tax, p.info[Playernum - 1].newtax);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("Current tax rate: {}%    Target: {}%\n",
+                         p.info[Playernum - 1].tax,
+                         p.info[Playernum - 1].newtax);
     return;
   }
 

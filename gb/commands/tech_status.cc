@@ -19,32 +19,34 @@ returns tech_report_star(GameObj &g, const Star &star, starnum_t snum) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
 
+  if (!isset(star.explored, Playernum) ||
+      (Governor && star.governor[Playernum - 1] != Governor)) {
+    return {};
+  };
+
   returns totals{};
-
-  if (isset(star.explored, Playernum) &&
-      (!Governor || star.governor[Playernum - 1] == Governor)) {
-    for (planetnum_t i = 0; i < star.numplanets; i++) {
-      const auto pl = getplanet(snum, i);
-      if (pl.info[Playernum - 1].explored &&
-          pl.info[Playernum - 1].numsectsowned) {
-        std::string location =
-            std::format("{}/{}/{}", star.name, star.pnames[i],
-                        (pl.info[Playernum - 1].autorep ? "*" : ""));
-
-        auto gain = tech_prod(pl.info[Playernum - 1].tech_invest,
-                              pl.info[Playernum - 1].popn);
-        auto max_gain = tech_prod(pl.info[Playernum - 1].prod_res,
-                                  pl.info[Playernum - 1].popn);
-
-        g.out << std::format("{:16.16} {:10} {:10} {:8.3f} {:8.3f}\n", location,
-                             pl.info[Playernum - 1].popn,
-                             pl.info[Playernum - 1].tech_invest, gain,
-                             max_gain);
-        totals.invest += pl.info[Playernum - 1].tech_invest;
-        totals.gain += gain;
-        totals.max_gain += max_gain;
-      }
+  for (planetnum_t i = 0; i < star.numplanets; i++) {
+    const auto pl = getplanet(snum, i);
+    if (!pl.info[Playernum - 1].explored ||
+        !pl.info[Playernum - 1].numsectsowned) {
+      continue;
     }
+
+    std::string location =
+        std::format("{}/{}/{}", star.name, star.pnames[i],
+                    (pl.info[Playernum - 1].autorep ? "*" : ""));
+
+    auto gain = tech_prod(pl.info[Playernum - 1].tech_invest,
+                          pl.info[Playernum - 1].popn);
+    auto max_gain =
+        tech_prod(pl.info[Playernum - 1].prod_res, pl.info[Playernum - 1].popn);
+
+    g.out << std::format("{:16.16} {:10} {:10} {:8.3f} {:8.3f}\n", location,
+                         pl.info[Playernum - 1].popn,
+                         pl.info[Playernum - 1].tech_invest, gain, max_gain);
+    totals.invest += pl.info[Playernum - 1].tech_invest;
+    totals.gain += gain;
+    totals.max_gain += max_gain;
   }
   return totals;
 }

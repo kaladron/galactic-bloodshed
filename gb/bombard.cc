@@ -65,10 +65,9 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
            sect.owner == ship.special.mind.target)) {
         found = true;
         break;
-      } else {
-        x = x2 = sect.x;
-        y = y2 = sect.y;
       }
+      x = x2 = sect.x;
+      y = y2 = sect.y;
     }
   }
   if (x2 != -1) {
@@ -118,7 +117,7 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
   auto numdest = shoot_ship_to_planet(ship, planet, str, x, y, smap, 0, 0,
                                       long_buf, short_buf);
   /* (0=dont get smap) */
-  if (numdest < 0) numdest = 0;
+  numdest = std::max(numdest, 0);
 
   /* tell the bombarding player about it.. */
   std::stringstream telegram_report;

@@ -38,7 +38,7 @@ void move_popn(const command_t &argv, GameObj &g) {
   double dstrength;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
-    sprintf(buf, "Wrong scope\n");
+    g.out << "Wrong scope\n";
     return;
   }
   if (!control(stars[g.snum], Playernum, Governor)) {
@@ -48,14 +48,12 @@ void move_popn(const command_t &argv, GameObj &g) {
   auto planet = getplanet(g.snum, g.pnum);
 
   if (planet.slaved_to > 0 && planet.slaved_to != Playernum) {
-    sprintf(buf, "That planet has been enslaved!\n");
-    notify(Playernum, Governor, buf);
+    g.out << "That planet has been enslaved!\n";
     return;
   }
   sscanf(argv[1].c_str(), "%d,%d", &x, &y);
   if (x < 0 || y < 0 || x > planet.Maxx - 1 || y > planet.Maxy - 1) {
-    sprintf(buf, "Origin coordinates illegal.\n");
-    notify(Playernum, Governor, buf);
+    g.out << "Origin coordinates illegal.\n";
     return;
   }
 
@@ -65,8 +63,7 @@ void move_popn(const command_t &argv, GameObj &g) {
   while (!done) {
     auto sect = getsector(planet, x, y);
     if (sect.owner != Playernum) {
-      sprintf(buf, "You don't own sector %d,%d!\n", x, y);
-      notify(Playernum, Governor, buf);
+      g.out << std::format("You don't own sector {},{}!\n", x, y);
       return;
     }
     auto [x2, y2] = get_move(planet, argv[2][n++], {x, y});
@@ -77,15 +74,13 @@ void move_popn(const command_t &argv, GameObj &g) {
     }
 
     if (x2 < 0 || y2 < 0 || x2 > planet.Maxx - 1 || y2 > planet.Maxy - 1) {
-      sprintf(buf, "Illegal coordinates %d,%d.\n", x2, y2);
-      notify(Playernum, Governor, buf);
+      g.out << std::format("Illegal coordinates {},{}.\n", x2, y2);
       putplanet(planet, stars[g.snum], g.pnum);
       return;
     }
 
     if (!adjacent(planet, {x, y}, {x2, y2})) {
-      sprintf(buf, "Illegal move - to adjacent sectors only!\n");
-      notify(Playernum, Governor, buf);
+      g.out << "Illegal move - to adjacent sectors only!\n";
       return;
     }
 
@@ -110,17 +105,17 @@ void move_popn(const command_t &argv, GameObj &g) {
         (what == PopulationType::MIL && (abs(people) > sect.troops)) ||
         people <= 0) {
       if (what == PopulationType::CIV)
-        sprintf(buf, "Bad value - %lu civilians in [%d,%d]\n", sect.popn, x, y);
+        g.out << std::format("Bad value - {} civilians in [{},{}]\n", sect.popn,
+                             x, y);
       else if (what == PopulationType::MIL)
-        sprintf(buf, "Bad value - %lu troops in [%d,%d]\n", sect.troops, x, y);
-      notify(Playernum, Governor, buf);
+        g.out << std::format("Bad value - {} troops in [{},{}]\n", sect.troops,
+                             x, y);
       putplanet(planet, stars[g.snum], g.pnum);
       return;
     }
 
-    sprintf(buf, "%d %s moved.\n", people,
-            what == PopulationType::CIV ? "population" : "troops");
-    notify(Playernum, Governor, buf);
+    g.out << std::format("{} {} moved.\n", people,
+                         what == PopulationType::CIV ? "population" : "troops");
 
     /* check for defending mechs */
     mech_defend(Playernum, Governor, &people, what, planet, x2, y2, sect2);
@@ -166,12 +161,11 @@ void move_popn(const command_t &argv, GameObj &g) {
         sect.troops = std::max(0L, sect.troops - people);
 
       if (what == PopulationType::CIV)
-        sprintf(buf, "%d civ assault %lu civ/%lu mil\n", people, sect2.popn,
-                sect2.troops);
+        g.out << std::format("{} civ assault {} civ/{} mil\n", people,
+                             sect2.popn, sect2.troops);
       else if (what == PopulationType::MIL)
-        sprintf(buf, "%d mil assault %lu civ/%lu mil\n", people, sect2.popn,
-                sect2.troops);
-      notify(Playernum, Governor, buf);
+        g.out << std::format("{} mil assault {} civ/{} mil\n", people,
+                             sect2.popn, sect2.troops);
       oldpopn = people;
       old2popn = sect2.popn;
       old3popn = sect2.troops;
@@ -182,8 +176,8 @@ void move_popn(const command_t &argv, GameObj &g) {
                     &astrength, &dstrength, &casualties, &casualties2,
                     &casualties3);
 
-      sprintf(buf, "Attack: %.2f   Defense: %.2f.\n", astrength, dstrength);
-      notify(Playernum, Governor, buf);
+      g.out << std::format("Attack: {:.2f}   Defense: {:.2f}.\n", astrength,
+                           dstrength);
 
       if (!(sect2.popn + sect2.troops)) { /* we got 'em */
         sect2.owner = Playernum;
@@ -191,10 +185,10 @@ void move_popn(const command_t &argv, GameObj &g) {
         absorbed = 0;
         if (race.absorb) {
           absorbed = int_rand(0, old2popn + old3popn);
-          sprintf(buf, "%d alien bodies absorbed.\n", absorbed);
-          notify(Playernum, Governor, buf);
-          sprintf(buf, "Metamorphs have absorbed %d bodies!!!\n", absorbed);
-          notify(old2owner, old2gov, buf);
+          g.out << std::format("{} alien bodies absorbed.\n", absorbed);
+          notify(
+              old2owner, old2gov,
+              std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
         }
         if (what == PopulationType::CIV)
           sect2.popn = people + absorbed;
@@ -228,20 +222,18 @@ void move_popn(const command_t &argv, GameObj &g) {
               (sect2.owner == Playernum ? "VICTORY" : "DEFEAT"));
 
       if (sect2.owner == Playernum) {
-        sprintf(buf, "VICTORY! The sector is yours!\n");
-        notify(Playernum, Governor, buf);
+        g.out << std::format("VICTORY! The sector is yours!\n");
         sprintf(buf, "Sector CAPTURED!\n");
         strcat(telegram_buf, buf);
         if (people) {
-          sprintf(buf, "%d %s move in.\n", people,
-                  what == PopulationType::CIV ? "civilians" : "troops");
-          notify(Playernum, Governor, buf);
+          g.out << std::format(
+              "{} {} move in.\n", people,
+              what == PopulationType::CIV ? "civilians" : "troops");
         }
         planet.info[Playernum - 1].mob_points += (int)sect2.mobilization;
         planet.info[old2owner - 1].mob_points -= (int)sect2.mobilization;
       } else {
-        sprintf(buf, "The invasion was repulsed; try again.\n");
-        notify(Playernum, Governor, buf);
+        g.out << std::format("The invasion was repulsed; try again.\n");
         sprintf(buf, "You fought them off!\n");
         strcat(telegram_buf, buf);
         done = 1; /* end loop */
@@ -255,8 +247,8 @@ void move_popn(const command_t &argv, GameObj &g) {
             MIN(race.translate[old2owner - 1] + 5, 100);
       }
       if (!people) {
-        sprintf(buf, "Oh no! They killed your party to the last man!\n");
-        notify(Playernum, Governor, buf);
+        g.out << std::format(
+            "Oh no! They killed your party to the last man!\n");
         /* increase modifier */
         alien.translate[Playernum - 1] =
             MIN(alien.translate[Playernum - 1] + 5, 100);

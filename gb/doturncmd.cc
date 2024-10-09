@@ -142,65 +142,62 @@ static void process_races(int update) {
 }
 
 static void process_market(Db &db, int update) {
-  if (MARKET) {
-    if (update) {
-      /* reset market */
-      Num_commods = db.Numcommods();
-      clr_commodfree();
-      for (commodnum_t i = Num_commods; i >= 1; i--) {
-        auto c = getcommod(i);
-        if (!c.deliver) {
-          c.deliver = true;
-          putcommod(c, i);
-          continue;
-        }
-        if (c.owner && c.bidder &&
-            (races[c.bidder - 1].governor[c.bidder_gov].money >= c.bid)) {
-          races[c.bidder - 1].governor[c.bidder_gov].money -= c.bid;
-          races[c.owner - 1].governor[c.governor].money += c.bid;
-          auto [cost, dist] = shipping_cost(c.star_to, c.star_from, c.bid);
-          races[c.bidder - 1].governor[c.bidder_gov].cost_market +=
-              c.bid + cost;
-          races[c.owner - 1].governor[c.governor].profit_market += c.bid;
-          maintain(races[c.bidder - 1],
-                   races[c.bidder - 1].governor[c.bidder_gov], cost);
-          switch (c.type) {
-            case CommodType::RESOURCE:
-              planets[c.star_to][c.planet_to]->info[c.bidder - 1].resource +=
-                  c.amount;
-              break;
-            case CommodType::FUEL:
-              planets[c.star_to][c.planet_to]->info[c.bidder - 1].fuel +=
-                  c.amount;
-              break;
-            case CommodType::DESTRUCT:
-              planets[c.star_to][c.planet_to]->info[c.bidder - 1].destruct +=
-                  c.amount;
-              break;
-            case CommodType::CRYSTAL:
-              planets[c.star_to][c.planet_to]->info[c.bidder - 1].crystals +=
-                  c.amount;
-              break;
-          }
-          std::string purchased_msg = std::format(
-              "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
-              "arrived at /{}/{}\n",
-              i, races[c.owner - 1].name, c.owner, c.bid, c.amount, c.type,
-              stars[c.star_to].name, stars[c.star_to].pnames[c.planet_to]);
-          push_telegram(c.bidder, c.bidder_gov, purchased_msg);
-          std::string sold_msg = std::format(
-              "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", i, c.amount,
-              c.type, races[c.bidder - 1].name, c.bidder, c.bid);
-          push_telegram(c.owner, c.governor, sold_msg);
-          c.owner = c.governor = 0;
-          c.bidder = c.bidder_gov = 0;
-        } else {
-          c.bidder = c.bidder_gov = 0;
-          c.bid = 0;
-        }
-        if (!c.owner) makecommoddead(i);
+  if (MARKET && update) {
+    /* reset market */
+    Num_commods = db.Numcommods();
+    clr_commodfree();
+    for (commodnum_t i = Num_commods; i >= 1; i--) {
+      auto c = getcommod(i);
+      if (!c.deliver) {
+        c.deliver = true;
         putcommod(c, i);
+        continue;
       }
+      if (c.owner && c.bidder &&
+          (races[c.bidder - 1].governor[c.bidder_gov].money >= c.bid)) {
+        races[c.bidder - 1].governor[c.bidder_gov].money -= c.bid;
+        races[c.owner - 1].governor[c.governor].money += c.bid;
+        auto [cost, dist] = shipping_cost(c.star_to, c.star_from, c.bid);
+        races[c.bidder - 1].governor[c.bidder_gov].cost_market += c.bid + cost;
+        races[c.owner - 1].governor[c.governor].profit_market += c.bid;
+        maintain(races[c.bidder - 1],
+                 races[c.bidder - 1].governor[c.bidder_gov], cost);
+        switch (c.type) {
+          case CommodType::RESOURCE:
+            planets[c.star_to][c.planet_to]->info[c.bidder - 1].resource +=
+                c.amount;
+            break;
+          case CommodType::FUEL:
+            planets[c.star_to][c.planet_to]->info[c.bidder - 1].fuel +=
+                c.amount;
+            break;
+          case CommodType::DESTRUCT:
+            planets[c.star_to][c.planet_to]->info[c.bidder - 1].destruct +=
+                c.amount;
+            break;
+          case CommodType::CRYSTAL:
+            planets[c.star_to][c.planet_to]->info[c.bidder - 1].crystals +=
+                c.amount;
+            break;
+        }
+        std::string purchased_msg = std::format(
+            "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
+            "arrived at /{}/{}\n",
+            i, races[c.owner - 1].name, c.owner, c.bid, c.amount, c.type,
+            stars[c.star_to].name, stars[c.star_to].pnames[c.planet_to]);
+        push_telegram(c.bidder, c.bidder_gov, purchased_msg);
+        std::string sold_msg = std::format(
+            "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", i, c.amount,
+            c.type, races[c.bidder - 1].name, c.bidder, c.bid);
+        push_telegram(c.owner, c.governor, sold_msg);
+        c.owner = c.governor = 0;
+        c.bidder = c.bidder_gov = 0;
+      } else {
+        c.bidder = c.bidder_gov = 0;
+        c.bid = 0;
+      }
+      if (!c.owner) makecommoddead(i);
+      putcommod(c, i);
     }
   }
 }

@@ -7,8 +7,63 @@
 import gblib;
 import std.compat;
 
-static std::string prin_aimed_at(const Ship &);
-static void mk_expl_aimed_at(GameObj &g, Ship *);
+namespace {
+std::string prin_aimed_at(const Ship &ship) {
+  Place targ{ship.special.aimed_at.level, ship.special.aimed_at.snum,
+             ship.special.aimed_at.pnum, ship.special.aimed_at.shipno};
+  return targ.to_string();
+}
+
+/*
+ * mark wherever the ship is aimed at, as explored by the owning player.
+ */
+void mk_expl_aimed_at(GameObj &g, const Ship &s) {
+  double dist;
+  double xf;
+  double yf;
+
+  auto &str = stars[s.special.aimed_at.snum];
+
+  xf = s.xpos;
+  yf = s.ypos;
+
+  switch (s.special.aimed_at.level) {
+    case ScopeLevel::LEVEL_UNIV:
+      g.out << "There is nothing out here to aim at.\n";
+      break;
+    case ScopeLevel::LEVEL_STAR:
+      g.out << std::format("Star {}\n", prin_aimed_at(s));
+      if ((dist = sqrt(Distsq(xf, yf, str.xpos, str.ypos))) <=
+          tele_range(s.type, s.tech)) {
+        str = getstar(s.special.aimed_at.snum);
+        setbit(str.explored, g.player);
+        putstar(str, s.special.aimed_at.snum);
+        g.out << std::format("Surveyed, distance {}.\n", dist);
+      } else {
+        g.out << std::format("Too far to see ({}, max {}).\n", dist,
+                             tele_range(s.type, s.tech));
+      }
+      break;
+    case ScopeLevel::LEVEL_PLAN: {
+      g.out << std::format("Planet {}\n", prin_aimed_at(s));
+      auto p = getplanet(s.special.aimed_at.snum, s.special.aimed_at.pnum);
+      if ((dist = sqrt(Distsq(xf, yf, str.xpos + p.xpos, str.ypos + p.ypos))) <=
+          tele_range(s.type, s.tech)) {
+        setbit(str.explored, g.player);
+        p.info[g.player - 1].explored = 1;
+        putplanet(p, stars[s.special.aimed_at.snum], s.special.aimed_at.pnum);
+        g.out << std::format("Surveyed, distance {}.\n", dist);
+      } else {
+        g.out << std::format("Too far to see ({}, max {}).\n", dist,
+                             tele_range(s.type, s.tech));
+      }
+    } break;
+    case ScopeLevel::LEVEL_SHIP:
+      g.out << std::format("You can't see anything of use there.\n");
+      break;
+  }
+}
+}  // namespace
 
 // TODO(jeffbailey): We take in a non-zero APcount, and do nothing with it!
 void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
@@ -423,7 +478,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           use_fuel(*ship, FUEL_MANEUVER);
         if (ship->type == ShipType::OTYPE_GTELE ||
             ship->type == ShipType::OTYPE_STELE)
-          mk_expl_aimed_at(g, ship);
+          mk_expl_aimed_at(g, *ship);
         g.out << std::format("Aimed at {}\n", prin_aimed_at(*ship));
 
       } else {
@@ -515,62 +570,6 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
   }
   ship->notified = 0;
   putship(ship);
-}
-
-static std::string prin_aimed_at(const Ship &ship) {
-  Place targ{ship.special.aimed_at.level, ship.special.aimed_at.snum,
-             ship.special.aimed_at.pnum, ship.special.aimed_at.shipno};
-  return targ.to_string();
-}
-
-/*
- * mark wherever the ship is aimed at, as explored by the owning player.
- */
-static void mk_expl_aimed_at(GameObj &g, Ship *s) {
-  double dist;
-  double xf;
-  double yf;
-
-  auto &str = stars[s->special.aimed_at.snum];
-
-  xf = s->xpos;
-  yf = s->ypos;
-
-  switch (s->special.aimed_at.level) {
-    case ScopeLevel::LEVEL_UNIV:
-      g.out << "There is nothing out here to aim at.\n";
-      break;
-    case ScopeLevel::LEVEL_STAR:
-      g.out << std::format("Star {}\n", prin_aimed_at(*s));
-      if ((dist = sqrt(Distsq(xf, yf, str.xpos, str.ypos))) <=
-          tele_range(s->type, s->tech)) {
-        str = getstar(s->special.aimed_at.snum);
-        setbit(str.explored, g.player);
-        putstar(str, s->special.aimed_at.snum);
-        g.out << std::format("Surveyed, distance {}.\n", dist);
-      } else {
-        g.out << std::format("Too far to see ({}, max {}).\n", dist,
-                             tele_range(s->type, s->tech));
-      }
-      break;
-    case ScopeLevel::LEVEL_PLAN: {
-      g.out << std::format("Planet {}\n", prin_aimed_at(*s));
-      auto p = getplanet(s->special.aimed_at.snum, s->special.aimed_at.pnum);
-      if ((dist = sqrt(Distsq(xf, yf, str.xpos + p.xpos, str.ypos + p.ypos))) <=
-          tele_range(s->type, s->tech)) {
-        setbit(str.explored, g.player);
-        p.info[g.player - 1].explored = 1;
-        putplanet(p, stars[s->special.aimed_at.snum], s->special.aimed_at.pnum);
-        g.out << std::format("Surveyed, distance {}.\n", dist);
-      } else {
-        g.out << std::format("Too far to see ({}, max {}).\n", dist,
-                             tele_range(s->type, s->tech));
-      }
-    } break;
-    case ScopeLevel::LEVEL_SHIP:
-      g.out << std::format("You can't see anything of use there.\n");
-      break;
-  }
 }
 
 void DispOrdersHeader(int Playernum, int Governor) {

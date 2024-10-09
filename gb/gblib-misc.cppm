@@ -98,7 +98,7 @@ void Filewrite(int fd, const char *p, size_t num, int posn) {
 }
 
 export template <typename T>
-concept Unsigned = std::is_unsigned<T>::value;
+concept Unsigned = std::is_unsigned_v<T>;
 
 export template <typename T>
 void setbit(T &target, const Unsigned auto pos)

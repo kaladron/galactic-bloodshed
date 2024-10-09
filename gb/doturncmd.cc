@@ -31,8 +31,36 @@ static void fix_stability(Star &);
 static bool governed(const Race &);
 static void make_discoveries(Race &);
 static void output_ground_attacks();
+static void initialize_data(int update);
+static void process_ships();
+static void process_stars_and_planets(int update);
+static void process_races(int update);
+static void process_market(Db &db, int update);
+static void process_ship_masses_and_ownership();
+static void process_ship_turns(int update);
+static void prepare_dead_ships();
+static void insert_ships_into_lists();
+static void process_abms_and_missiles(int update);
+static void update_victory_scores(int update);
+static void finalize_turn(int update);
 
 void do_turn(Db &db, int update) {
+  initialize_data(update);
+  process_ships();
+  process_stars_and_planets(update);
+  process_races(update);
+  output_ground_attacks();
+  process_market(db, update);
+  process_ship_masses_and_ownership();
+  process_ship_turns(update);
+  prepare_dead_ships();
+  insert_ships_into_lists();
+  process_abms_and_missiles(update);
+  update_victory_scores(update);
+  finalize_turn(update);
+}
+
+static void initialize_data(int update) {
   /* make all 0 for first iteration of doplanet */
   if (update) {
     std::memset(starpopns, 0, sizeof(starpopns));
@@ -45,7 +73,9 @@ void do_turn(Db &db, int update) {
   }
 
   Num_ships = Numships();
+}
 
+static void process_ships() {
   // TODO(jeffbailey): We loop through the ships twice here because that's what
   // the code did before.  It's probably not necessary.
 
@@ -56,7 +86,9 @@ void do_turn(Db &db, int update) {
   }
 
   for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
+}
 
+static void process_stars_and_planets(int update) {
   /* get all stars and planets */
   getsdata(&Sdata);
   Planet_count = 0;
@@ -73,7 +105,9 @@ void do_turn(Db &db, int update) {
     }
     if (stars[star].name[0] == '\0') sprintf(stars[star].name, "NULL-%d", star);
   }
+}
 
+static void process_races(int update) {
   VN_brain.Most_mad = 0; /* not mad at anyone for starts */
 
   for (player_t i = 1; i <= Num_races; i++) {
@@ -105,7 +139,9 @@ void do_turn(Db &db, int update) {
   }
 
   output_ground_attacks();
+}
 
+static void process_market(Db &db, int update) {
   if (MARKET) {
     if (update) {
       /* reset market */
@@ -167,14 +203,18 @@ void do_turn(Db &db, int update) {
       }
     }
   }
+}
 
+static void process_ship_masses_and_ownership() {
   /* check ship masses - ownership */
   for (shipnum_t i = 1; i <= Num_ships; i++)
     if (ships[i]->alive) {
       domass(*ships[i]);
       doown(*ships[i]);
     }
+}
 
+static void process_ship_turns(int update) {
   /* do all ships one turn - do slower ships first */
   for (int j = 0; j <= 9; j++)
     for (shipnum_t i = 1; i <= Num_ships; i++) {
@@ -199,12 +239,16 @@ void do_turn(Db &db, int update) {
                 UPDATE_TROOP_COST * ships[i]->troops;
         }
   }
+}
 
+static void prepare_dead_ships() {
   /* prepare dead ships for recycling */
   clr_shipfree();
   for (shipnum_t i = 1; i <= Num_ships; i++)
     if (!ships[i]->alive) makeshipdead(i);
+}
 
+static void insert_ships_into_lists() {
   /* erase next ship pointers - reset in insert_sh_... */
   for (shipnum_t i = 1; i <= Num_ships; i++) {
     ships[i]->nextship = 0;
@@ -239,7 +283,9 @@ void do_turn(Db &db, int update) {
       }
     }
   }
+}
 
+static void process_abms_and_missiles(int update) {
   /* put ABMs and surviving missiles here because ABMs need to have the missile
      in the shiplist of the target planet  Maarten */
   for (shipnum_t i = 1; i <= Num_ships; i++) /* ABMs defend planet */
@@ -327,6 +373,9 @@ void do_turn(Db &db, int update) {
   putsdata(&Sdata);
 
   /* here is where we do victory calculations. */
+}
+
+static void update_victory_scores(int update) {
   if (update) {
     struct victstruct {
       int numsects{0};
@@ -384,7 +433,9 @@ void do_turn(Db &db, int update) {
                                      races[i].victory_score);
     }
   } /* end of if (update) */
+}
 
+static void finalize_turn(int update) {
   for (shipnum_t i = 1; i <= Num_ships; i++) {
     putship(ships[i]);
     free(ships[i]);

@@ -1,11 +1,13 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /*  order.c -- give orders to ship */
 
+module;
+
 import gblib;
 import std.compat;
+
+module gblib;
 
 namespace {
 std::string prin_aimed_at(const Ship &ship) {

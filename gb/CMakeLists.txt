@@ -89,6 +89,7 @@ target_sources(
          gblib-map.cppm
          gblib-misc.cppm
          gblib-move.cppm
+         gblib-order.cppm
          gblib-place.cppm
          gblib-planet.cppm
          gblib-race.cppm
@@ -111,6 +112,7 @@ target_sources(
           map.cc
           misc.cc
           move.cc
+          order.cc
           planet.cc
           utils/rand.cc
           sectormap.cc
@@ -207,7 +209,7 @@ target_sources(
 target_link_libraries(commands PRIVATE gblib SQLite::SQLite3 glaze::glaze
                                        scn::scn)
 
-set(OLD_LIBGBLIB_FILES bombard.cc doplanet.cc dosector.cc doturncmd.cc order.cc)
+set(OLD_LIBGBLIB_FILES bombard.cc doplanet.cc dosector.cc doturncmd.cc)
 
 add_executable(GB GB_server.cc ${OLD_LIBGBLIB_FILES})
 target_link_libraries(GB PRIVATE gblib commands SQLite::SQLite3 glaze::glaze)

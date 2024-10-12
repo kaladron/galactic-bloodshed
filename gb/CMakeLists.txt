@@ -16,6 +16,13 @@ enable_testing()
 
 project("galactic-bloodshed" LANGUAGES CXX)
 
+# Set compiler flags for different build types
+set(CMAKE_CXX_FLAGS_DEBUG
+    "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined,address -fno-omit-frame-pointer"
+)
+set(CMAKE_LINKER_FLAGS_DEBUG
+    "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=undefined,address")
+
 # Require dot, treat the other components as optional
 find_package(Doxygen REQUIRED dot)
 

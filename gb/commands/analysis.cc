@@ -1,11 +1,9 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 module commands;
 
@@ -312,7 +310,7 @@ void analysis(const command_t &argv, GameObj &g) {
     }
 
     // Player number
-    if (isdigit(arg[0])) {
+    if (std::isdigit(arg[0])) {
       do_player = std::stoi(arg);
       if (do_player > Num_races) {
         g.out << "No such player #.\n";

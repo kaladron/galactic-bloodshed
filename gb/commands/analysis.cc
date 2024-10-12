@@ -7,8 +7,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 static constexpr int CARE = 5;
@@ -160,49 +158,50 @@ void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
     }
   }
 
-  g.out << std::format("\nAnalysis of /{}/{}:\n", stars[Starnum].name,
-                       stars[Starnum].pnames[Planetnum]);
-  sprintf(buf, "%s %d", (mode == Mode::top_five ? "Highest" : "Lowest"), CARE);
+  std::stringstream header;
+  header << std::format("\nAnalysis of /{}/{}:\n", stars[Starnum].name,
+                        stars[Starnum].pnames[Planetnum]);
+  header << std::format("{} {}",
+                        (mode == Mode::top_five ? "Highest" : "Lowest"), CARE);
   switch (sector_type) {
     case -1:
-      sprintf(buf, "%s of all", buf);
+      header << " of all";
       break;
     case SectorType::SEC_SEA:
-      sprintf(buf, "%s Ocean", buf);
+      header << " Ocean";
       break;
     case SectorType::SEC_LAND:
-      sprintf(buf, "%s Land", buf);
+      header << " Land";
       break;
     case SectorType::SEC_MOUNT:
-      sprintf(buf, "%s Mountain", buf);
+      header << " Mountain";
       break;
     case SectorType::SEC_GAS:
-      sprintf(buf, "%s Gas", buf);
+      header << " Gas";
       break;
     case SectorType::SEC_ICE:
-      sprintf(buf, "%s Ice", buf);
+      header << " Ice";
       break;
     case SectorType::SEC_FOREST:
-      sprintf(buf, "%s Forest", buf);
+      header << " Forest";
       break;
     case SectorType::SEC_DESERT:
-      sprintf(buf, "%s Desert", buf);
+      header << " Desert";
       break;
     case SectorType::SEC_PLATED:
-      sprintf(buf, "%s Plated", buf);
+      header << " Plated";
       break;
     case SectorType::SEC_WASTED:
-      sprintf(buf, "%s Wasted", buf);
+      header << " Wasted";
       break;
   }
-  notify(Playernum, Governor, buf);
   if (ThisPlayer < 0)
-    sprintf(buf, " sectors.\n");
+    header << " sectors.\n";
   else if (ThisPlayer == 0)
-    sprintf(buf, " sectors that are unoccupied.\n");
+    header << " sectors that are unoccupied.\n";
   else
-    sprintf(buf, " sectors owned by %d.\n", ThisPlayer);
-  notify(Playernum, Governor, buf);
+    header << std::format(" sectors owned by {}.\n", ThisPlayer);
+  g.out << header.str();
 
   PrintTop(g, Troops, "Troops");
   PrintTop(g, Res, "Res");
@@ -217,34 +216,33 @@ void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
                        "sec", "popn", "troops", "a.eff", "a.mob", "res", "x");
 
   for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    sprintf(buf, "%4c", Dessymbols[i]);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("{:>4}", Dessymbols[i]);
   }
   notify(Playernum, Governor,
          "\n----------------------------------------------"
          "---------------------------------\n");
   for (player_t p = 0; p <= Num_races; p++)
     if (PlayTSect[p] != 0) {
-      sprintf(buf, "%2d %3d %7d %6d %5.1lf %5.1lf %5d %2d", p, PlayTSect[p],
-              PlayPopn[p], PlayTroops[p], (double)PlayEff[p] / PlayTSect[p],
-              (double)PlayMob[p] / PlayTSect[p], PlayRes[p], PlayCrys[p]);
-      notify(Playernum, Governor, buf);
+      g.out << std::format(
+          "{:>2} {:>3} {:>7} {:>6} {:>5.1f} {:>5.1f} {:>5} {:>2}", p,
+          PlayTSect[p], PlayPopn[p], PlayTroops[p],
+          static_cast<double>(PlayEff[p]) / PlayTSect[p],
+          static_cast<double>(PlayMob[p]) / PlayTSect[p], PlayRes[p],
+          PlayCrys[p]);
       for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-        sprintf(buf, "%4d", PlaySect[p][i]);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("{:>4}", PlaySect[p][i]);
       }
       g.out << "\n";
     }
   notify(Playernum, Governor,
          "------------------------------------------------"
          "-------------------------------\n");
-  sprintf(buf, "%2s %3d %7d %6d %5.1lf %5.1lf %5d %2d", "Tl", TotalSect,
-          TotalPopn, TotalTroops, (double)TotalEff / TotalSect,
-          (double)TotalMob / TotalSect, TotalRes, TotalCrys);
-  notify(Playernum, Governor, buf);
+  g.out << std::format(
+      "{:>2} {:>3} {:>7} {:>6} {:>5.1f} {:>5.1f} {:>5} {:>2}", "Tl", TotalSect,
+      TotalPopn, TotalTroops, static_cast<double>(TotalEff) / TotalSect,
+      static_cast<double>(TotalMob) / TotalSect, TotalRes, TotalCrys);
   for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    sprintf(buf, "%4d", Sect[i]);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("{:>4}", Sect[i]);
   }
   g.out << "\n";
 }

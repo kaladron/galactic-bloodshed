@@ -7,8 +7,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -119,9 +117,9 @@ void defend(const command_t &argv, GameObj &g) {
   strength = MIN(strength, p.info[Playernum - 1].guns);
 
   if (strength <= 0) {
-    sprintf(buf, "No attack - %d guns, %dd\n", p.info[Playernum - 1].guns,
-            p.info[Playernum - 1].destruct);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("No attack - {} guns, {}d\n",
+                         p.info[Playernum - 1].guns,
+                         p.info[Playernum - 1].destruct);
     return;
   }
   auto &race = races[Playernum - 1];
@@ -135,8 +133,7 @@ void defend(const command_t &argv, GameObj &g) {
   }
 
   if (damage < 0) {
-    sprintf(buf, "Target out of range  %f!\n", SYSTEMSIZE);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("Target out of range  {}!\n", SYSTEMSIZE);
     return;
   }
 

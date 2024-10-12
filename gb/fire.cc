@@ -68,10 +68,9 @@ int check_retal_strength(const Ship &ship) {
   // irradiated ships dont retaliate
   if (!ship.active || !ship.alive) return 0;
 
-  if (laser_on(ship))
-    return MIN(ship.fire_laser, (int)ship.fuel / 2);
-  else
-    return retal_strength(ship);
+  if (laser_on(ship)) return MIN(ship.fire_laser, (int)ship.fuel / 2);
+
+  return retal_strength(ship);
 }
 
 int retal_strength(const Ship &s) {
@@ -86,13 +85,13 @@ int retal_strength(const Ship &s) {
               s.type == ShipType::OTYPE_AFV || s.type == ShipType::OTYPE_BERS)
                  ? s.primary
                  : MIN(s.popn, s.primary);
-    else if (s.guns == SECONDARY)
+    if (s.guns == SECONDARY)
       return (s.type == ShipType::STYPE_FIGHTER ||
               s.type == ShipType::OTYPE_AFV || s.type == ShipType::OTYPE_BERS)
                  ? s.secondary
                  : MIN(s.popn, s.secondary);
-    else
-      return 0UL;
+
+    return 0UL;
   }();
 
   avail = MIN(s.retaliate, avail);

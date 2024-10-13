@@ -5,9 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/GB_server.h"
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -31,24 +28,21 @@ void launch(const command_t &argv, GameObj &g) {
     if (in_list(Playernum, argv[1], *s, &nextshipno) &&
         authorized(Governor, *s)) {
       if (!speed_rating(*s) && landed(*s)) {
-        sprintf(buf, "That ship is not designed to be launched.\n");
-        notify(Playernum, Governor, buf);
+        g.out << "That ship is not designed to be launched.\n";
         free(s);
         continue;
       }
 
       if (!(s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP)) {
-        sprintf(buf, "%s is not landed or docked.\n",
-                ship_to_string(*s).c_str());
-        notify(Playernum, Governor, buf);
+        g.out << std::format("{} is not landed or docked.\n",
+                             ship_to_string(*s));
         free(s);
         continue;
       }
       if (!landed(*s)) APcount = 0;
       if (landed(*s) && s->resource > max_resource(*s)) {
-        sprintf(buf, "%s is too overloaded to launch.\n",
-                ship_to_string(*s).c_str());
-        notify(Playernum, Governor, buf);
+        g.out << std::format("{} is too overloaded to launch.\n",
+                             ship_to_string(*s));
         free(s);
         continue;
       }
@@ -79,16 +73,14 @@ void launch(const command_t &argv, GameObj &g) {
           s->whatdest = ScopeLevel::LEVEL_PLAN;
           s2->mass -= s->mass;
           s2->hanger -= size(*s);
-          sprintf(buf, "Landed on %s/%s.\n", stars[s->storbits].name,
-                  stars[s->storbits].pnames[s->pnumorbits]);
-          notify(Playernum, Governor, buf);
+          g.out << std::format("Landed on {}/{}.\n", stars[s->storbits].name,
+                               stars[s->storbits].pnames[s->pnumorbits]);
           putship(s);
           putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_PLAN) {
           remove_sh_ship(*s, *s2);
-          sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
-                  ship_to_string(*s2).c_str());
-          notify(Playernum, Governor, buf);
+          g.out << std::format("{} launched from {}.\n", ship_to_string(*s),
+                               ship_to_string(*s2));
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
           s->docked = 0;
@@ -100,16 +92,14 @@ void launch(const command_t &argv, GameObj &g) {
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
           putplanet(p, stars[s2->storbits], s2->pnumorbits);
-          sprintf(buf, "Orbiting %s/%s.\n", stars[s->storbits].name,
-                  stars[s->storbits].pnames[s->pnumorbits]);
-          notify(Playernum, Governor, buf);
+          g.out << std::format("Orbiting {}/{}.\n", stars[s->storbits].name,
+                               stars[s->storbits].pnames[s->pnumorbits]);
           putship(s);
           putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_STAR) {
           remove_sh_ship(*s, *s2);
-          sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
-                  ship_to_string(*s2).c_str());
-          notify(Playernum, Governor, buf);
+          g.out << std::format("{} launched from {}.\n", ship_to_string(*s),
+                               ship_to_string(*s2));
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
           s->docked = 0;
@@ -120,15 +110,13 @@ void launch(const command_t &argv, GameObj &g) {
           insert_sh_star(stars[s2->storbits], s);
           s->storbits = s2->storbits;
           putstar(stars[s2->storbits], s2->storbits);
-          sprintf(buf, "Orbiting %s.\n", stars[s->storbits].name);
-          notify(Playernum, Governor, buf);
+          g.out << std::format("Orbiting {}.\n", stars[s->storbits].name);
           putship(s);
           putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_UNIV) {
           remove_sh_ship(*s, *s2);
-          sprintf(buf, "%s launched from %s.\n", ship_to_string(*s).c_str(),
-                  ship_to_string(*s2).c_str());
-          notify(Playernum, Governor, buf);
+          g.out << std::format("{} launched from {}.\n", ship_to_string(*s),
+                               ship_to_string(*s2));
           s->xpos = s2->xpos;
           s->ypos = s2->ypos;
           s->docked = 0;
@@ -169,9 +157,8 @@ void launch(const command_t &argv, GameObj &g) {
         s2->docked = 0;
         s2->whatdest = ScopeLevel::LEVEL_UNIV;
         s2->destshipno = 0;
-        sprintf(buf, "%s undocked from %s.\n", ship_to_string(*s).c_str(),
-                ship_to_string(*s2).c_str());
-        notify(Playernum, Governor, buf);
+        g.out << std::format("{} undocked from {}.\n", ship_to_string(*s),
+                             ship_to_string(*s2));
         putship(s);
         putship(&*s2);
         free(s);
@@ -185,10 +172,10 @@ void launch(const command_t &argv, GameObj &g) {
 
         /* adjust x,ypos to absolute coords */
         auto p = getplanet((int)s->storbits, (int)s->pnumorbits);
-        sprintf(buf, "Planet /%s/%s has gravity field of %.2f\n",
-                stars[s->storbits].name,
-                stars[s->storbits].pnames[s->pnumorbits], p.gravity());
-        notify(Playernum, Governor, buf);
+        g.out << std::format("Planet /{}/{} has gravity field of {:.2f}\n",
+                             stars[s->storbits].name,
+                             stars[s->storbits].pnames[s->pnumorbits],
+                             p.gravity());
         s->xpos =
             stars[s->storbits].xpos + p.xpos +
             (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
@@ -199,9 +186,8 @@ void launch(const command_t &argv, GameObj &g) {
         /* subtract fuel from ship */
         fuel = p.gravity() * s->mass * LAUNCH_GRAV_MASS_FACTOR;
         if (s->fuel < fuel) {
-          sprintf(buf, "%s does not have enough fuel! (%.1f)\n",
-                  ship_to_string(*s).c_str(), fuel);
-          notify(Playernum, Governor, buf);
+          g.out << std::format("{} does not have enough fuel! ({:.1f})\n",
+                               ship_to_string(*s), fuel);
           free(s);
           return;
         }
@@ -224,17 +210,15 @@ void launch(const command_t &argv, GameObj &g) {
           p.explored = 1;
           putplanet(p, stars[s->storbits], s->pnumorbits);
         }
-        sprintf(buf, "%s observed launching from planet /%s/%s.\n",
-                ship_to_string(*s).c_str(), stars[s->storbits].name,
-                stars[s->storbits].pnames[s->pnumorbits]);
+        std::string observed = std::format(
+            "{} observed launching from planet /{}/{}.\n", ship_to_string(*s),
+            stars[s->storbits].name, stars[s->storbits].pnames[s->pnumorbits]);
         for (player_t i = 1; i <= Num_races; i++)
           if (p.info[i - 1].numsectsowned && i != Playernum)
-            notify(i, stars[s->storbits].governor[i - 1], buf);
+            notify(i, stars[s->storbits].governor[i - 1], observed);
 
-        sprintf(buf, "%s launched from planet,", ship_to_string(*s).c_str());
-        notify(Playernum, Governor, buf);
-        sprintf(buf, " using %.1f fuel.\n", fuel);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("{} launched from planet,", ship_to_string(*s));
+        g.out << std::format(" using {:.1f} fuel.\n", fuel);
 
         switch (s->type) {
           case ShipType::OTYPE_CANIST:

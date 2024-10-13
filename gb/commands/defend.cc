@@ -15,7 +15,6 @@ void defend(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 1;
-  int toship;
   int sh;
   Ship *ship;
   Ship dummy;
@@ -52,7 +51,7 @@ void defend(const command_t &argv, GameObj &g) {
     g.out << "Bad ship number.\n";
     return;
   }
-  toship = *toshiptmp;
+  auto toship = *toshiptmp;
 
   if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount)) {
     return;

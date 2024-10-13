@@ -243,7 +243,7 @@ void launch(const command_t &argv, GameObj &g) {
             break;
           case ShipType::OTYPE_GREEN:
             notify(Playernum, Governor,
-                   "Green house gases surround the planet.\n");
+                   "Greenhouse gases surround the planet.\n");
             break;
           default:
             break;

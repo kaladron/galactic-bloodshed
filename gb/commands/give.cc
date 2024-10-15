@@ -5,9 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-#include "gb/files.h"
-
 module commands;
 
 namespace GB::commands {
@@ -124,14 +121,15 @@ void give(const command_t &argv, GameObj &g) {
       break;
   }
   g.out << "Owner changed.\n";
-  sprintf(buf, "%s [%d] gave you %s at %s.\n", race.name, Playernum,
-          ship_to_string(*ship).c_str(), prin_ship_orbits(*ship).c_str());
-  warn(who, 0, buf);
+  std::string givemsg =
+      std::format("{} [{}] gave you {} at {}.\n", race.name, Playernum,
+                  ship_to_string(*ship), prin_ship_orbits(*ship));
+  warn(who, 0, givemsg);
 
   if (!race.God) {
-    sprintf(buf, "%s [%d] gives %s [%d] a ship.\n", race.name, Playernum,
-            alien.name, who);
-    post(buf, NewsType::TRANSFER);
+    std::string postmsg = std::format("{} [{}] gives {} [{}] a ship.\n",
+                                      race.name, Playernum, alien.name, who);
+    post(postmsg, NewsType::TRANSFER);
   }
 }
 }  // namespace GB::commands

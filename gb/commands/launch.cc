@@ -14,15 +14,13 @@ void launch(const command_t &argv, GameObj &g) {
   ap_t APcount = 1;
   Ship *s;
   shipnum_t shipno;
-  shipnum_t nextshipno;
-  double fuel;
 
   if (argv.size() < 2) {
     g.out << "Launch what?\n";
     return;
   }
 
-  nextshipno = start_shiplist(g, argv[1]);
+  auto nextshipno = start_shiplist(g, argv[1]);
 
   while ((shipno = do_shiplist(&s, &nextshipno)))
     if (in_list(Playernum, argv[1], *s, &nextshipno) &&
@@ -33,7 +31,7 @@ void launch(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      if (!(s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP)) {
+      if (!s->docked && s->whatorbits != ScopeLevel::LEVEL_SHIP) {
         g.out << std::format("{} is not landed or docked.\n",
                              ship_to_string(*s));
         free(s);
@@ -49,8 +47,7 @@ void launch(const command_t &argv, GameObj &g) {
       if (s->whatorbits == ScopeLevel::LEVEL_SHIP) {
         /* Factories cannot be launched once turned on. Maarten */
         if (s->type == ShipType::OTYPE_FACTORY && s->on) {
-          notify(Playernum, Governor,
-                 "Factories cannot be launched once turned on.\n");
+          g.out << "Factories cannot be launched once turned on.\n";
           g.out << "Consider using 'scrap'.\n";
           free(s);
           continue;
@@ -184,7 +181,7 @@ void launch(const command_t &argv, GameObj &g) {
             (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
 
         /* subtract fuel from ship */
-        fuel = p.gravity() * s->mass * LAUNCH_GRAV_MASS_FACTOR;
+        auto fuel = p.gravity() * s->mass * LAUNCH_GRAV_MASS_FACTOR;
         if (s->fuel < fuel) {
           g.out << std::format("{} does not have enough fuel! ({:.1f})\n",
                                ship_to_string(*s), fuel);
@@ -222,12 +219,10 @@ void launch(const command_t &argv, GameObj &g) {
 
         switch (s->type) {
           case ShipType::OTYPE_CANIST:
-            notify(Playernum, Governor,
-                   "A cloud of dust envelopes your planet.\n");
+            g.out << "A cloud of dust envelopes your planet.\n";
             break;
           case ShipType::OTYPE_GREEN:
-            notify(Playernum, Governor,
-                   "Greenhouse gases surround the planet.\n");
+            g.out << "Greenhouse gases surround the planet.\n";
             break;
           default:
             break;

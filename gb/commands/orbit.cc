@@ -19,7 +19,7 @@ static const int SCALE = 100;
 static std::string DispStar(const GameObj &, const ScopeLevel, const Star &,
                             int, const Race &);
 static std::string DispPlanet(const GameObj &, const ScopeLevel, const Planet &,
-                              char *, int, const Race &);
+                              std::string_view, int, const Race &);
 static void DispShip(const GameObj &, const Place &, Ship *, const Race &,
                      char *, const Planet & = Planet());
 
@@ -113,12 +113,13 @@ void orbit(const command_t &argv, GameObj &g) {
                                   DontDispStars, Race);
       strcat(output, star.c_str());
 
-      for (planetnum_t i = 0; i < stars[where->snum].numplanets; i++)
+      for (planetnum_t i = 0; i < stars[where->snum].numplanets(); i++)
         if (DontDispNum != i) {
           const auto p = getplanet(where->snum, i);
           std::string planet =
               DispPlanet(g, ScopeLevel::LEVEL_STAR, p,
-                         stars[where->snum].pnames[i], DontDispPlanets, Race);
+                         stars[where->snum].get_planet_name(i).c_str(),
+                         DontDispPlanets, Race);
           strcat(output, planet.c_str());
         }
       /* check to see if you have ships at orbiting the star, if so you can
@@ -127,7 +128,7 @@ void orbit(const command_t &argv, GameObj &g) {
       if (g.god)
         iq = true;
       else {
-        Shiplist shiplist{stars[where->snum].ships};
+        Shiplist shiplist{stars[where->snum].ships()};
         for (auto &s : shiplist) {
           if (s.owner == g.player && shipsight(s)) {
             iq = true; /* you are there to sight, need a crew */
@@ -136,7 +137,7 @@ void orbit(const command_t &argv, GameObj &g) {
         }
       }
       if (!DontDispShips) {
-        Shiplist shiplist{stars[where->snum].ships};
+        Shiplist shiplist{stars[where->snum].ships()};
         for (auto &s : shiplist) {
           if (DontDispNum != s.number &&
               !(s.owner != g.player && s.type == ShipType::STYPE_MINE)) {
@@ -150,9 +151,10 @@ void orbit(const command_t &argv, GameObj &g) {
     } break;
     case ScopeLevel::LEVEL_PLAN: {
       const auto p = getplanet(where->snum, where->pnum);
-      std::string planet = DispPlanet(g, ScopeLevel::LEVEL_PLAN, p,
-                                      stars[where->snum].pnames[where->pnum],
-                                      DontDispPlanets, Race);
+      std::string planet =
+          DispPlanet(g, ScopeLevel::LEVEL_PLAN, p,
+                     stars[where->snum].get_planet_name(where->pnum),
+                     DontDispPlanets, Race);
       strcat(output, planet.c_str());
 
       /* check to see if you have ships at landed or
@@ -198,8 +200,8 @@ static std::string DispStar(const GameObj &g, const ScopeLevel level,
 
   switch (level) {
     case (ScopeLevel::LEVEL_UNIV):
-      x = (int)(SCALE + ((SCALE * (star.xpos - Lastx)) / (UNIVSIZE * Zoom)));
-      y = (int)(SCALE + ((SCALE * (star.ypos - Lasty)) / (UNIVSIZE * Zoom)));
+      x = (int)(SCALE + ((SCALE * (star.xpos() - Lastx)) / (UNIVSIZE * Zoom)));
+      y = (int)(SCALE + ((SCALE * (star.ypos() - Lasty)) / (UNIVSIZE * Zoom)));
       break;
     case (ScopeLevel::LEVEL_STAR):
       x = (int)(SCALE + (SCALE * (-Lastx)) / (SYSTEMSIZE * Zoom));
@@ -211,15 +213,15 @@ static std::string DispStar(const GameObj &g, const ScopeLevel level,
 
   std::stringstream ss;
   if (r.governor[g.governor].toggle.color) {
-    char stand = (isset(star.explored, g.player) ? g.player : 0) + '?';
+    char stand = (isset(star.explored(), g.player) ? g.player : 0) + '?';
     ss << std::format("{} {} {} 0 * ", stand, x, y);
-    stand = (isset(star.inhabited, g.player) ? g.player : 0) + '?';
-    ss << std::format("{} {};", stand, star.name);
+    stand = (isset(star.inhabited(), g.player) ? g.player : 0) + '?';
+    ss << std::format("{} {};", stand, star.get_name());
   } else {
-    int stand = (isset(star.explored, g.player) ? 1 : 0);
+    int stand = (isset(star.explored(), g.player) ? 1 : 0);
     ss << std::format("{} {} {} 0 * ", stand, x, y);
-    stand = (isset(star.inhabited, g.player) ? 1 : 0);
-    ss << std::format("{} {};", stand, star.name);
+    stand = (isset(star.inhabited(), g.player) ? 1 : 0);
+    ss << std::format("{} {};", stand, star.get_name());
   }
 
   return ss.str();
@@ -228,7 +230,7 @@ static std::string DispStar(const GameObj &g, const ScopeLevel level,
 // TODO(jeffbailey): We remove DontDispPlanets as unused, but it really seems
 // like we should be doing something here!
 static std::string DispPlanet(const GameObj &g, const ScopeLevel level,
-                              const Planet &p, char *name,
+                              const Planet &p, std::string_view name,
                               int /* DontDispPlanets */, const Race &r) {
   int x = 0;  // TODO(jeffbailey): Check if init to 0 is right.
   int y = 0;
@@ -282,19 +284,21 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship,
 
   switch (where.level) {
     case ScopeLevel::LEVEL_PLAN:
-      x = (int)(SCALE + (SCALE * (ship->xpos -
-                                  (stars[where.snum].xpos + pl.xpos) - Lastx)) /
-                            (PLORBITSIZE * Zoom));
-      y = (int)(SCALE + (SCALE * (ship->ypos -
-                                  (stars[where.snum].ypos + pl.ypos) - Lasty)) /
-                            (PLORBITSIZE * Zoom));
+      x = (int)(SCALE +
+                (SCALE *
+                 (ship->xpos - (stars[where.snum].xpos() + pl.xpos) - Lastx)) /
+                    (PLORBITSIZE * Zoom));
+      y = (int)(SCALE +
+                (SCALE *
+                 (ship->ypos - (stars[where.snum].ypos() + pl.ypos) - Lasty)) /
+                    (PLORBITSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_STAR:
       x = (int)(SCALE +
-                (SCALE * (ship->xpos - stars[where.snum].xpos - Lastx)) /
+                (SCALE * (ship->xpos - stars[where.snum].xpos() - Lastx)) /
                     (SYSTEMSIZE * Zoom));
       y = (int)(SCALE +
-                (SCALE * (ship->ypos - stars[where.snum].ypos - Lasty)) /
+                (SCALE * (ship->ypos - stars[where.snum].ypos() - Lasty)) /
                     (SYSTEMSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_UNIV:
@@ -309,18 +313,18 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship,
   switch (ship->type) {
     case ShipType::STYPE_MIRROR:
       if (ship->special.aimed_at.level == ScopeLevel::LEVEL_STAR) {
-        xt = stars[ship->special.aimed_at.snum].xpos;
-        yt = stars[ship->special.aimed_at.snum].ypos;
+        xt = stars[ship->special.aimed_at.snum].xpos();
+        yt = stars[ship->special.aimed_at.snum].ypos();
       } else if (ship->special.aimed_at.level == ScopeLevel::LEVEL_PLAN) {
         if (where.level == ScopeLevel::LEVEL_PLAN &&
             ship->special.aimed_at.pnum == where.pnum) {
           /* same planet */
-          xt = stars[ship->special.aimed_at.snum].xpos + pl.xpos;
-          yt = stars[ship->special.aimed_at.snum].ypos + pl.ypos;
+          xt = stars[ship->special.aimed_at.snum].xpos() + pl.xpos;
+          yt = stars[ship->special.aimed_at.snum].ypos() + pl.ypos;
         } else { /* different planet */
           const auto apl = getplanet(where.snum, where.pnum);
-          xt = stars[ship->special.aimed_at.snum].xpos + apl.xpos;
-          yt = stars[ship->special.aimed_at.snum].ypos + apl.ypos;
+          xt = stars[ship->special.aimed_at.snum].xpos() + apl.xpos;
+          yt = stars[ship->special.aimed_at.snum].ypos() + apl.ypos;
         }
       } else if (ship->special.aimed_at.level == ScopeLevel::LEVEL_SHIP) {
         auto aship = getship(ship->special.aimed_at.shipno);

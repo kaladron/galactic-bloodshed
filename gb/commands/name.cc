@@ -101,7 +101,7 @@ void name(const command_t &argv, GameObj &g) {
         g.out << "Only dieties may name a star.\n";
         return;
       }
-      strncpy(stars[g.snum].name, buf, NAMESIZE - 1);
+      stars[g.snum].set_name(buf);
       putstar(stars[g.snum], g.snum);
     } else {
       g.out << "You have to 'cs' to a star to name it.\n";
@@ -115,7 +115,7 @@ void name(const command_t &argv, GameObj &g) {
         g.out << "Only deity can rename planets.\n";
         return;
       }
-      strncpy(stars[g.snum].pnames[g.pnum], buf, NAMESIZE - 1);
+      stars[g.snum].set_planet_name(g.pnum, buf);
       putstar(stars[g.snum], g.snum);
       deductAPs(g, APcount, g.snum);
     } else {

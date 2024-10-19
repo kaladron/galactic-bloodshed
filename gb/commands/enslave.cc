@@ -39,7 +39,7 @@ void enslave(const command_t &argv, GameObj &g) {
     g.out << std::format("{} doesn't orbit a planet.\n", ship_to_string(*s));
     return;
   }
-  if (!enufAP(Playernum, Governor, stars[s->storbits].AP[Playernum - 1],
+  if (!enufAP(Playernum, Governor, stars[s->storbits].AP(Playernum - 1),
               APcount)) {
     return;
   }
@@ -85,8 +85,9 @@ void enslave(const command_t &argv, GameObj &g) {
                        prin_ship_orbits(*s), attack);
 
   std::stringstream telegram;
-  telegram << std::format("ALERT!!!\n\nPlanet /{}/{}", stars[s->storbits].name,
-                          stars[s->storbits].pnames[s->pnumorbits]);
+  telegram << std::format("ALERT!!!\n\nPlanet /{}/{}",
+                          stars[s->storbits].get_name(),
+                          stars[s->storbits].get_planet_name(s->pnumorbits));
 
   if (def <= 2 * attack) {
     p.slaved_to = Playernum;
@@ -120,6 +121,6 @@ void enslave(const command_t &argv, GameObj &g) {
 
   for (auto i = 1; i < MAXPLAYERS; i++)
     if (p.info[i - 1].numsectsowned && i != Playernum)
-      warn(i, stars[s->storbits].governor[i - 1], telegram.str());
+      warn(i, stars[s->storbits].governor(i - 1), telegram.str());
 }
 }  // namespace GB::commands

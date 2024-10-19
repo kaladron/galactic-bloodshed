@@ -29,7 +29,7 @@ void arm(const command_t &argv, GameObj &g) {
     g.out << "Change scope to planet level first.\n";
     return;
   }
-  if (!control(stars[g.snum], Playernum, Governor)) {
+  if (!stars[g.snum].control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }

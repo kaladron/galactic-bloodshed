@@ -18,7 +18,7 @@ void dump(const command_t &argv, GameObj &g) {
   int star;
   int j;
 
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount))
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount))
     return;
 
   if (!(player = get_player(argv[1]))) {
@@ -44,10 +44,10 @@ void dump(const command_t &argv, GameObj &g) {
     for (star = 0; star < Sdata.numstars; star++) {
       stars[star] = getstar(star);
 
-      if (isset(stars[star].explored, Playernum)) {
-        setbit(stars[star].explored, player);
+      if (isset(stars[star].explored(), Playernum)) {
+        setbit(stars[star].explored(), player);
 
-        for (size_t i = 0; i < stars[star].numplanets; i++) {
+        for (size_t i = 0; i < stars[star].numplanets(); i++) {
           auto planet = getplanet(star, i);
           if (planet.info[Playernum - 1].explored) {
             planet.info[player - 1].explored = 1;
@@ -65,10 +65,10 @@ void dump(const command_t &argv, GameObj &g) {
         star = where.snum;
         stars[star] = getstar(star);
 
-        if (isset(stars[star].explored, Playernum)) {
-          setbit(stars[star].explored, player);
+        if (isset(stars[star].explored(), Playernum)) {
+          setbit(stars[star].explored(), player);
 
-          for (j = 0; j < stars[star].numplanets; j++) {
+          for (j = 0; j < stars[star].numplanets(); j++) {
             auto planet = getplanet(star, j);
             if (planet.info[Playernum - 1].explored) {
               planet.info[player - 1].explored = 1;

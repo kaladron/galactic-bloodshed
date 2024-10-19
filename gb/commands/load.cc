@@ -159,7 +159,7 @@ void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
   race.translate[sect.owner - 1] = MIN(race.translate[sect.owner - 1] + 5, 100);
 
   oldowner = (int)sect.owner;
-  oldgov = stars[g.snum].governor[sect.owner - 1];
+  oldgov = stars[g.snum].governor(sect.owner - 1);
 
   if (what == PopulationType::CIV)
     ship->popn -= people;
@@ -228,8 +228,9 @@ void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
     adjust_morale(alien, race, (int)race.fighters);
   }
   sprintf(telegram_buf, "/%s/%s: %s [%d] %s assaults %s [%d] %c(%d,%d) %s\n",
-          stars[g.snum].name, stars[g.snum].pnames[g.pnum], race.name,
-          Playernum, ship_to_string(*ship).c_str(), alien.name, alien.Playernum,
+          stars[g.snum].get_name().c_str(),
+          stars[g.snum].get_planet_name(g.pnum).c_str(), race.name, Playernum,
+          ship_to_string(*ship).c_str(), alien.name, alien.Playernum,
           Dessymbols[sect.condition], ship->land_x, ship->land_y,
           (sect.owner == Playernum ? "VICTORY" : "DEFEAT"));
 
@@ -331,7 +332,7 @@ void load(const command_t &argv, GameObj &g) {
           continue;
         }
       } else if (!enufAP(Playernum, Governor,
-                         stars[s->storbits].AP[Playernum - 1], APcount))
+                         stars[s->storbits].AP(Playernum - 1), APcount))
         continue;
       if (!s->docked) {
         sprintf(buf, "%s is not landed or docked.\n",

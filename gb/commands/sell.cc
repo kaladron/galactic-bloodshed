@@ -25,7 +25,7 @@ void sell(const command_t &argv, GameObj &g) {
     g.out << "Syntax: sell <commodity> <amount>\n";
     return;
   }
-  if (Governor && stars[snum].governor[Playernum - 1] != Governor) {
+  if (Governor && stars[snum].governor(Playernum - 1) != Governor) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
@@ -42,7 +42,7 @@ void sell(const command_t &argv, GameObj &g) {
     return;
   }
   APcount = MIN(APcount, amount);
-  if (!enufAP(Playernum, Governor, stars[snum].AP[Playernum - 1], APcount))
+  if (!enufAP(Playernum, Governor, stars[snum].AP(Playernum - 1), APcount))
     return;
   auto p = getplanet(snum, pnum);
 

@@ -25,8 +25,8 @@ void bid(const command_t &argv, GameObj &g) {
         auto rate = (double)c.bid / (double)c.amount;
         std::string player_details =
             (c.bidder == Playernum)
-                ? std::format("{:4.4s}/{:<4.4s}", stars[c.star_to].name,
-                              stars[c.star_to].pnames[c.planet_to])
+                ? std::format("{:4.4s}/{:<4.4s}", stars[c.star_to].get_name(),
+                              stars[c.star_to].get_planet_name(c.planet_to))
                 : "";
 
         auto [cost, dist] = shipping_cost(c.star_from, g.snum, c.bid);
@@ -66,8 +66,8 @@ void bid(const command_t &argv, GameObj &g) {
         auto rate = (double)c.bid / (double)c.amount;
         std::string player_details =
             (c.bidder == Playernum)
-                ? std::format("{:4.4s}/{:<4.4s}", stars[c.star_to].name,
-                              stars[c.star_to].pnames[c.planet_to])
+                ? std::format("{:4.4s}/{:<4.4s}", stars[c.star_to].get_name(),
+                              stars[c.star_to].get_planet_name(c.planet_to))
                 : "";
         auto [cost, dist] = shipping_cost(c.star_from, g.snum, c.bid);
         g.out << std::format(" {:4}{}{:5}{:10}{:7}{:8}{:8}{:10.2}{:8} {:10}\n",
@@ -83,7 +83,7 @@ void bid(const command_t &argv, GameObj &g) {
     }
     auto snum = g.snum;
     auto pnum = g.pnum;
-    if (Governor && stars[snum].governor[Playernum - 1] != Governor) {
+    if (Governor && stars[snum].governor(Playernum - 1) != Governor) {
       g.out << "You are not authorized in this system.\n";
       return;
     }

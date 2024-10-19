@@ -68,15 +68,15 @@ void Place::getplace2(GameObj& g, std::string_view string,
   switch (level) {
     case ScopeLevel::LEVEL_UNIV:
       for (auto i = 0; i < Sdata.numstars; i++)
-        if (substr == stars[i].name) {
+        if (substr == stars[i].get_name()) {
           level = ScopeLevel::LEVEL_STAR;
           snum = i;
-          if (ignoreexpl || isset(stars[snum].explored, Playernum) || g.god) {
+          if (ignoreexpl || isset(stars[snum].explored(), Playernum) || g.god) {
             if (string.starts_with('/')) string.remove_prefix(1);
             return getplace2(g, string, ignoreexpl);
           }
           g.out << std::format("You have not explored {0} yet.\n",
-                               stars[snum].name);
+                               stars[snum].get_name());
           err = true;
           return;
         }
@@ -84,8 +84,8 @@ void Place::getplace2(GameObj& g, std::string_view string,
       err = true;
       return;
     case ScopeLevel::LEVEL_STAR:
-      for (auto i = 0; i < stars[snum].numplanets; i++)
-        if (substr == stars[snum].pnames[i]) {
+      for (auto i = 0; i < stars[snum].numplanets(); i++)
+        if (substr == stars[snum].get_planet_name(i)) {
           level = ScopeLevel::LEVEL_PLAN;
           pnum = i;
           const auto p = getplanet(snum, i);
@@ -94,7 +94,7 @@ void Place::getplace2(GameObj& g, std::string_view string,
             return getplace2(g, string, ignoreexpl);
           }
           g.out << std::format("You have not explored {0} yet.\n",
-                               stars[snum].pnames[i]);
+                               stars[snum].get_planet_name(i));
           err = true;
           return;
         }
@@ -117,11 +117,12 @@ std::string Place::to_string() {
   std::ostringstream out;
   switch (level) {
     case ScopeLevel::LEVEL_STAR:
-      out << "/" << stars[snum].name;
+      out << "/" << stars[snum].get_name();
       out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_PLAN:
-      out << "/" << stars[snum].name << "/" << stars[snum].pnames[pnum];
+      out << "/" << stars[snum].get_name() << "/"
+          << stars[snum].get_planet_name(pnum);
       out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_SHIP:

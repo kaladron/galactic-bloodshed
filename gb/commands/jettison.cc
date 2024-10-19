@@ -71,7 +71,7 @@ void jettison(const command_t &argv, GameObj &g) {
           continue;
         }
       } else if (!enufAP(Playernum, Governor,
-                         stars[s->storbits].AP[Playernum - 1], APcount)) {
+                         stars[s->storbits].AP(Playernum - 1), APcount)) {
         free(s);
         continue;
       }

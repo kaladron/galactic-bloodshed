@@ -19,12 +19,12 @@ void cs(const command_t &argv, GameObj &g) {
     if ((g.snum = race.governor[Governor].defsystem) >= Sdata.numstars)
       g.snum = Sdata.numstars - 1;
     if ((g.pnum = race.governor[Governor].defplanetnum) >=
-        stars[g.snum].numplanets)
-      g.pnum = stars[g.snum].numplanets - 1;
+        stars[g.snum].numplanets())
+      g.pnum = stars[g.snum].numplanets() - 1;
     g.shipno = 0;
     g.lastx[0] = g.lasty[0] = 0.0;
-    g.lastx[1] = stars[g.snum].xpos;
-    g.lasty[1] = stars[g.snum].ypos;
+    g.lastx[1] = stars[g.snum].xpos();
+    g.lasty[1] = stars[g.snum].ypos();
     return;
   }
 
@@ -45,8 +45,8 @@ void cs(const command_t &argv, GameObj &g) {
         break;
       case ScopeLevel::LEVEL_STAR:
         if (where.level == ScopeLevel::LEVEL_UNIV) {
-          g.lastx[1] = stars[g.snum].xpos;
-          g.lasty[1] = stars[g.snum].ypos;
+          g.lastx[1] = stars[g.snum].xpos();
+          g.lasty[1] = stars[g.snum].ypos();
         } else
           g.lastx[0] = g.lasty[0] = 0.0;
         break;
@@ -56,8 +56,8 @@ void cs(const command_t &argv, GameObj &g) {
           g.lastx[0] = planet.xpos;
           g.lasty[0] = planet.ypos;
         } else if (where.level == ScopeLevel::LEVEL_UNIV) {
-          g.lastx[1] = stars[g.snum].xpos + planet.xpos;
-          g.lasty[1] = stars[g.snum].ypos + planet.ypos;
+          g.lastx[1] = stars[g.snum].xpos() + planet.xpos;
+          g.lasty[1] = stars[g.snum].ypos() + planet.ypos;
         } else
           g.lastx[0] = g.lasty[0] = 0.0;
       } break;
@@ -73,8 +73,8 @@ void cs(const command_t &argv, GameObj &g) {
               if (s->whatorbits >= ScopeLevel::LEVEL_STAR &&
                   s->storbits == where.snum) {
                 /* we are going UP from the ship.. change last*/
-                g.lastx[0] = s->xpos - stars[s->storbits].xpos;
-                g.lasty[0] = s->ypos - stars[s->storbits].ypos;
+                g.lastx[0] = s->xpos - stars[s->storbits].xpos();
+                g.lasty[0] = s->ypos - stars[s->storbits].ypos();
               } else
                 g.lastx[0] = g.lasty[0] = 0.0;
               break;
@@ -83,8 +83,8 @@ void cs(const command_t &argv, GameObj &g) {
                   s->storbits == where.snum && s->pnumorbits == where.pnum) {
                 /* same */
                 const auto planet = getplanet(s->storbits, s->pnumorbits);
-                g.lastx[0] = s->xpos - stars[s->storbits].xpos - planet.xpos;
-                g.lasty[0] = s->ypos - stars[s->storbits].ypos - planet.ypos;
+                g.lastx[0] = s->xpos - stars[s->storbits].xpos() - planet.xpos;
+                g.lasty[0] = s->ypos - stars[s->storbits].ypos() - planet.ypos;
               } else
                 g.lastx[0] = g.lasty[0] = 0.0;
               break;

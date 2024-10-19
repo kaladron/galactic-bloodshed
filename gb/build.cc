@@ -62,7 +62,7 @@ bool can_build_at_planet(GameObj &g, const Star &star, const Planet &planet) {
     notify(Playernum, Governor, buf);
     return false;
   }
-  if (Governor && star.governor[Playernum - 1] != Governor) {
+  if (Governor && star.governor(Playernum - 1) != Governor) {
     g.out << "You are not authorized in this system.\n";
     return false;
   }
@@ -260,8 +260,8 @@ void create_ship_by_planet(int Playernum, int Governor, const Race &race,
   int shipno;
 
   newship.tech = race.tech;
-  newship.xpos = stars[snum].xpos + planet.xpos;
-  newship.ypos = stars[snum].ypos + planet.ypos;
+  newship.xpos = stars[snum].xpos() + planet.xpos;
+  newship.ypos = stars[snum].ypos() + planet.ypos;
   newship.land_x = x;
   newship.land_y = y;
   sprintf(newship.shipclass, (((newship.type == ShipType::OTYPE_TERRA) ||
@@ -434,8 +434,8 @@ int Shipcost(ShipType i, const Race &r) {
 std::tuple<money_t, double> shipping_cost(const starnum_t to,
                                           const starnum_t from,
                                           const money_t value) {
-  double dist = sqrt(Distsq(stars[to].xpos, stars[to].ypos, stars[from].xpos,
-                            stars[from].ypos));
+  double dist = sqrt(Distsq(stars[to].xpos(), stars[to].ypos(),
+                            stars[from].xpos(), stars[from].ypos()));
 
   int junk = (int)(dist / 10000.0);
   junk *= 10000;

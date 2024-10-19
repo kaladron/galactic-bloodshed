@@ -83,9 +83,10 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
       std::stringstream telegram;
       telegram << std::format("Report from {}{} {}\n\n", Shipltrs[ship.type],
                               ship.number, ship.name);
-      telegram << std::format("Planet /{}/{} has been saturation bombed.\n",
-                              stars[ship.storbits].name,
-                              stars[ship.storbits].pnames[ship.pnumorbits]);
+      telegram << std::format(
+          "Planet /{}/{} has been saturation bombed.\n",
+          stars[ship.storbits].get_name(),
+          stars[ship.storbits].get_planet_name(ship.pnumorbits));
       notify(ship.owner, ship.governor, telegram.str());
     }
     return 0;
@@ -130,21 +131,21 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
 
   /* notify other player. */
   std::stringstream telegram_alert;
-  telegram_alert << std::format("ALERT from planet /{}/{}\n",
-                                stars[ship.storbits].name,
-                                stars[ship.storbits].pnames[ship.pnumorbits]);
+  telegram_alert << std::format(
+      "ALERT from planet /{}/{}\n", stars[ship.storbits].get_name(),
+      stars[ship.storbits].get_planet_name(ship.pnumorbits));
   telegram_alert << std::format(
       "{}{} {} bombarded sector {},{}; {} sectors destroyed.\n",
       Shipltrs[ship.type], ship.number, ship.name, x, y, numdest);
 
   for (player_t i = 1; i <= Num_races; i++)
     if (Nuked[i - 1] && i != ship.owner)
-      warn(i, stars[ship.storbits].governor[i - 1], telegram_alert.str());
+      warn(i, stars[ship.storbits].governor(i - 1), telegram_alert.str());
 
-  std::string combatpost =
-      std::format("{}{} {} [{}] bombards {}/{}\n", Shipltrs[ship.type],
-                  ship.number, ship.name, ship.owner, stars[ship.storbits].name,
-                  stars[ship.storbits].pnames[ship.pnumorbits]);
+  std::string combatpost = std::format(
+      "{}{} {} [{}] bombards {}/{}\n", Shipltrs[ship.type], ship.number,
+      ship.name, ship.owner, stars[ship.storbits].get_name(),
+      stars[ship.storbits].get_planet_name(ship.pnumorbits));
   post(combatpost, NewsType::COMBAT);
 
   putsmap(smap, planet);

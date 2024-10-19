@@ -154,15 +154,16 @@ int main() {
     for (star = 0; star < Sdata.numstars && !found && count < 100;) {
       check = 1;
       /* skip over inhabited stars - or stars with just one planet! */
-      if (stars[star].inhabited != 0 || stars[star].numplanets < 2) check = 0;
+      if (stars[star].inhabited() != 0 || stars[star].numplanets() < 2)
+        check = 0;
 
       /* look for uninhabited planets */
       if (check) {
         pnum = 0;
-        while (!found && pnum < stars[star].numplanets) {
+        while (!found && pnum < stars[star].numplanets()) {
           planet = getplanet(star, pnum);
 
-          if (planet.type == ppref && stars[star].numplanets != 1) {
+          if (planet.type == ppref && stars[star].numplanets() != 1) {
             vacant = 1;
             for (i = 1; i <= Playernum; i++)
               if (planet.info[i - 1].numsectsowned) vacant = 0;
@@ -362,8 +363,8 @@ int main() {
     s.nextship = 0;
 
     s.type = ShipType::OTYPE_GOV;
-    s.xpos = stars[star].xpos + planet.xpos;
-    s.ypos = stars[star].ypos + planet.ypos;
+    s.xpos = stars[star].xpos() + planet.xpos;
+    s.ypos = stars[star].ypos() + planet.ypos;
     s.land_x = (char)secttypes[i].x;
     s.land_y = (char)secttypes[i].y;
 
@@ -420,8 +421,9 @@ int main() {
 
     s.name[0] = '\0';
     s.number = shipno;
-    printf("Created on sector %d,%d on /%s/%s\n", s.land_x, s.land_y,
-           stars[s.storbits].name, stars[s.storbits].pnames[s.pnumorbits]);
+    std::cout << std::format("Created on sector {},{} on /{}/{}\n", s.land_x,
+                             s.land_y, stars[s.storbits].get_name(),
+                             stars[s.storbits].get_planet_name(s.pnumorbits));
     db.putship(&s);
   }
 
@@ -449,9 +451,9 @@ int main() {
 
   /* make star explored and stuff */
   stars[star] = db.getstar(star);
-  setbit(stars[star].explored, Playernum);
-  setbit(stars[star].inhabited, Playernum);
-  stars[star].AP[Playernum - 1] = 5;
+  setbit(stars[star].explored(), Playernum);
+  setbit(stars[star].inhabited(), Playernum);
+  stars[star].AP(Playernum - 1) = 5;
   db.putstar(stars[star], star);
 
   sigprocmask(SIG_SETMASK, &mask, nullptr);
@@ -459,7 +461,8 @@ int main() {
   printf("\nYou are player %d.\n\n", Playernum);
   printf("Your race has been created on sector %d,%d on\n", secttypes[i].x,
          secttypes[i].y);
-  printf("%s/%s.\n\n", stars[star].name, stars[star].pnames[pnum]);
+  std::cout << std::format("{}/{}.\n\n", stars[star].get_name(),
+                           stars[star].get_planet_name(pnum));
   return 0;
 }
 

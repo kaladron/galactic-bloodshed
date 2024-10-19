@@ -219,10 +219,9 @@ Star Makestar(starnum_t snum) {
   double angle;
   double xpos;
   double ypos;
-  Star star;
+  star_struct star{};
 
   /* get names, positions of stars first */
-  bzero(&star, sizeof(Star));
   star.star_id = snum;
   star.gravity = int_rand(0, int_rand(0, 300)) + int_rand(0, 300) +
                  int_rand(100, 400) + int_rand(0, 9) / 10.0;

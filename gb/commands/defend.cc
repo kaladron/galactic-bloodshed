@@ -41,7 +41,7 @@ void defend(const command_t &argv, GameObj &g) {
            "Syntax: 'defend <ship> <sector> [<strength>]'.\n");
     return;
   }
-  if (Governor && stars[g.snum].governor[Playernum - 1] != Governor) {
+  if (Governor && stars[g.snum].governor(Playernum - 1) != Governor) {
     notify(Playernum, Governor,
            "You are not authorized to do that in this system.\n");
     return;
@@ -53,7 +53,7 @@ void defend(const command_t &argv, GameObj &g) {
   }
   auto toship = *toshiptmp;
 
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount)) {
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount)) {
     return;
   }
 

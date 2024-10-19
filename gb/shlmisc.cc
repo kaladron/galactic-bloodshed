@@ -49,7 +49,7 @@ shipnum_t start_shiplist(GameObj &g, const std::string_view p) {
       return Sdata.ships;
     case ScopeLevel::LEVEL_STAR:
       stars[g.snum] = getstar(g.snum);
-      return stars[g.snum].ships;
+      return stars[g.snum].ships();
     case ScopeLevel::LEVEL_PLAN: {
       const auto planet = getplanet(g.snum, g.pnum);
       return planet.ships;
@@ -167,7 +167,7 @@ void allocateAPs(const command_t &argv, GameObj &g) {
 
   getsdata(&Sdata);
   maxalloc = std::min(Sdata.AP[Playernum - 1],
-                      LIMIT_APs - stars[g.snum].AP[Playernum - 1]);
+                      LIMIT_APs - stars[g.snum].AP(Playernum - 1));
   if (alloc > maxalloc) {
     sprintf(buf, "Illegal value (%d) - maximum = %d\n", alloc, maxalloc);
     notify(Playernum, Governor, buf);
@@ -176,8 +176,8 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   Sdata.AP[Playernum - 1] -= alloc;
   putsdata(&Sdata);
   stars[g.snum] = getstar(g.snum);
-  stars[g.snum].AP[Playernum - 1] =
-      std::min(LIMIT_APs, stars[g.snum].AP[Playernum - 1] + alloc);
+  stars[g.snum].AP(Playernum - 1) =
+      std::min(LIMIT_APs, stars[g.snum].AP(Playernum - 1) + alloc);
   putstar(stars[g.snum], g.snum);
   sprintf(buf, "Allocated\n");
   notify(Playernum, Governor, buf);
@@ -199,10 +199,10 @@ void deductAPs(const GameObj &g, ap_t APs, starnum_t snum) {
 
   stars[snum] = getstar(snum);
 
-  if (stars[snum].AP[g.player - 1] >= APs)
-    stars[snum].AP[g.player - 1] -= APs;
+  if (stars[snum].AP(g.player - 1) >= APs)
+    stars[snum].AP(g.player - 1) -= APs;
   else {
-    stars[snum].AP[g.player - 1] = 0;
+    stars[snum].AP(g.player - 1) = 0;
     sprintf(buf,
             "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
             "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n");

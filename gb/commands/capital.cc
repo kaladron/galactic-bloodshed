@@ -51,7 +51,7 @@ void capital(const command_t &argv, GameObj &g) {
       g.out << "Try landing this ship first!\n";
       return;
     }
-    if (!enufAP(Playernum, Governor, stars[snum].AP[Playernum - 1], APcount)) {
+    if (!enufAP(Playernum, Governor, stars[snum].AP(Playernum - 1), APcount)) {
       return;
     }
     if (s->type != ShipType::OTYPE_GOV) {

@@ -75,7 +75,7 @@ void give(const command_t &argv, GameObj &g) {
       }
       break;
     default:
-      if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1],
+      if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1),
                   APcount)) {
         return;
       }
@@ -94,12 +94,12 @@ void give(const command_t &argv, GameObj &g) {
       break;
     case ScopeLevel::LEVEL_STAR:
       stars[ship->storbits] = getstar(ship->storbits);
-      setbit(stars[ship->storbits].explored, who);
+      setbit(stars[ship->storbits].explored(), who);
       putstar(stars[ship->storbits], ship->storbits);
       break;
     case ScopeLevel::LEVEL_PLAN: {
       stars[ship->storbits] = getstar(ship->storbits);
-      setbit(stars[ship->storbits].explored, who);
+      setbit(stars[ship->storbits].explored(), who);
       putstar(stars[ship->storbits], ship->storbits);
 
       auto planet = getplanet((int)ship->storbits, (int)ship->pnumorbits);

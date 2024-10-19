@@ -35,10 +35,10 @@ void mk_expl_aimed_at(GameObj &g, const Ship &s) {
       break;
     case ScopeLevel::LEVEL_STAR:
       g.out << std::format("Star {}\n", prin_aimed_at(s));
-      if ((dist = sqrt(Distsq(xf, yf, str.xpos, str.ypos))) <=
+      if ((dist = sqrt(Distsq(xf, yf, str.xpos(), str.ypos()))) <=
           tele_range(s.type, s.tech)) {
         str = getstar(s.special.aimed_at.snum);
-        setbit(str.explored, g.player);
+        setbit(str.explored(), g.player);
         putstar(str, s.special.aimed_at.snum);
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
@@ -49,9 +49,10 @@ void mk_expl_aimed_at(GameObj &g, const Ship &s) {
     case ScopeLevel::LEVEL_PLAN: {
       g.out << std::format("Planet {}\n", prin_aimed_at(s));
       auto p = getplanet(s.special.aimed_at.snum, s.special.aimed_at.pnum);
-      if ((dist = sqrt(Distsq(xf, yf, str.xpos + p.xpos, str.ypos + p.ypos))) <=
+      if ((dist = sqrt(
+               Distsq(xf, yf, str.xpos() + p.xpos, str.ypos() + p.ypos))) <=
           tele_range(s.type, s.tech)) {
-        setbit(str.explored, g.player);
+        setbit(str.explored(), g.player);
         p.info[g.player - 1].explored = 1;
         putplanet(p, stars[s.special.aimed_at.snum], s.special.aimed_at.pnum);
         g.out << std::format("Surveyed, distance {}.\n", dist);
@@ -224,7 +225,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           if (where.level != ScopeLevel::LEVEL_UNIV &&
               ((ship->storbits != where.snum) &&
                where.level != ScopeLevel::LEVEL_STAR) &&
-              isclr(stars[where.snum].explored, ship->owner)) {
+              isclr(stars[where.snum].explored(), ship->owner)) {
             g.out << "You haven't explored this system.\n";
             return;
           }
@@ -708,8 +709,8 @@ void DispOrders(int Playernum, int Governor, const Ship &ship) {
   /* if hyper space is on estimate how much fuel it will cost to get to the
    * destination */
   if (ship.hyper_drive.on) {
-    double dist = sqrt(Distsq(ship.xpos, ship.ypos, stars[ship.deststar].xpos,
-                              stars[ship.deststar].ypos));
+    double dist = sqrt(Distsq(ship.xpos, ship.ypos, stars[ship.deststar].xpos(),
+                              stars[ship.deststar].ypos()));
     auto distfac = HYPER_DIST_FACTOR * (ship.tech + 100.0);
 
     double fuse =

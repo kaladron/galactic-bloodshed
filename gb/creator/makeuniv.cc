@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void place_star(Star &star) {
+void place_star(star_struct &star) {
   int found = 0;
   int i;
   int j;

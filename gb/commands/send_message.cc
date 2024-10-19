@@ -90,7 +90,7 @@ void send_message(const command_t &argv, GameObj &g) {
 
     default:
       stars[g.snum] = getstar(g.snum);
-      if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1],
+      if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1),
                   APcount))
         return;
       break;
@@ -106,7 +106,7 @@ void send_message(const command_t &argv, GameObj &g) {
   else if (to_star)
     sprintf(msg, "%s \"%s\" [%d,%d] to inhabitants of %s: ", race.name,
             race.governor[Governor].name, Playernum, Governor,
-            stars[star].name);
+            stars[star].get_name().c_str());
   else
     sprintf(msg, "%s \"%s\" [%d,%d]: ", race.name, race.governor[Governor].name,
             Playernum, Governor);
@@ -141,7 +141,7 @@ void send_message(const command_t &argv, GameObj &g) {
   } else if (to_star) {
     sprintf(buf, "%s \"%s\" [%d,%d] sends a stargram to %s.\n", race.name,
             race.governor[Governor].name, Playernum, Governor,
-            stars[star].name);
+            stars[star].get_name().c_str());
     notify_star(Playernum, Governor, star, buf);
     warn_star(Playernum, star, msg);
   } else {

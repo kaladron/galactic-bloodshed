@@ -152,7 +152,6 @@ void insert_sh_univ(stardata *sdata, Ship *s) {
   s->whatorbits = ScopeLevel::LEVEL_UNIV;
 }
 
-// XXX - Move this
 void insert_sh_star(Star &star, Ship *s) {
   s->nextship = star.ships();
   star.ships() = s->number;
@@ -178,7 +177,6 @@ void insert_sh_ship(Ship *s, Ship *s2) {
  * \arg s Ship to remove
  */
 void remove_sh_star(Ship &s) {
-  // XXX Move this
   stars[s.storbits] = getstar(s.storbits);
   shipnum_t sh = stars[s.storbits].ships();
 

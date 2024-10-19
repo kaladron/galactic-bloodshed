@@ -3,9 +3,7 @@
 module;
 
 import gblib;
-import std.compat;
-
-#include "gb/buffers.h"
+import std;
 
 module commands;
 
@@ -40,7 +38,7 @@ void arm(const command_t &argv, GameObj &g) {
     return;
   }
 
-  sscanf(argv[1].c_str(), "%d,%d", &x, &y);
+  std::sscanf(argv[1].c_str(), "%d,%d", &x, &y);
   if (x < 0 || y < 0 || x > planet.Maxx - 1 || y > planet.Maxy - 1) {
     g.out << "Illegal coordinates.\n";
     return;
@@ -72,9 +70,8 @@ void arm(const command_t &argv, GameObj &g) {
     /*    enlist_cost = ENLIST_TROOP_COST * amount; */
     money_t enlist_cost = race.fighters * amount;
     if (enlist_cost > race.governor[Governor].money) {
-      sprintf(buf, "You need %ld money to enlist %d troops.\n", enlist_cost,
-              amount);
-      notify(Playernum, Governor, buf);
+      g.out << std::format("You need {} money to enlist {} troops.\n",
+                           enlist_cost, amount);
       return;
     }
     race.governor[Governor].money -= enlist_cost;
@@ -88,13 +85,10 @@ void arm(const command_t &argv, GameObj &g) {
     planet.troops += amount;
     planet.info[Playernum - 1].troops += amount;
     planet.info[Playernum - 1].destruct -= cost;
-    sprintf(buf,
-            "%d population armed at a cost of %ldd (now %lu civilians, %lu "
-            "military)\n",
-            amount, cost, sect.popn, sect.troops);
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "This mobilization cost %ld money.\n", enlist_cost);
-    notify(Playernum, Governor, buf);
+    g.out << std::format(
+        "{} population armed at a cost of {} (now {} civilians, {} military)\n",
+        amount, cost, sect.popn, sect.troops);
+    g.out << std::format("This mobilization cost {} money.\n", enlist_cost);
   } else {
     if (argv.size() < 3)
       amount = sect.troops;
@@ -112,9 +106,8 @@ void arm(const command_t &argv, GameObj &g) {
     planet.troops -= amount;
     planet.info[Playernum - 1].popn += amount;
     planet.info[Playernum - 1].troops -= amount;
-    sprintf(buf, "%d troops disarmed (now %lu civilians, %lu military)\n",
-            amount, sect.popn, sect.troops);
-    notify(Playernum, Governor, buf);
+    g.out << std::format("{} troops disarmed (now {} civilians, {} military)\n",
+                         amount, sect.popn, sect.troops);
   }
   putsector(sect, planet, x, y);
   putplanet(planet, stars[g.snum], g.pnum);

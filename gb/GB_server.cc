@@ -421,7 +421,7 @@ int main(int argc, char **argv) {
       nsegments_done = segments;
     }
   }
-  segment_buf = std::format("Last Segment %{0:2d} : {1}", nsegments_done,
+  segment_buf = std::format("Last Segment {0:2d} : {1}", nsegments_done,
                             ctime(&last_segment_time));
 
   std::print(stderr, "{}", update_buf);

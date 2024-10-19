@@ -99,7 +99,7 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
       p.info[Playernum - 1].comread, p.info[Playernum - 1].mob_set,
       p.compatibility(race));
   if (p.conditions[TOXIC] > 50) {
-    g.out << std::format("    ({}%% TOXIC)\n", p.conditions[TOXIC]);
+    g.out << std::format("    ({}% TOXIC)\n", p.conditions[TOXIC]);
   }
   g.out << "\n";
   g.out << std::format("Resource stockpile : {:<9}    Fuel stockpile: {}\n",
@@ -114,10 +114,9 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
   g.out << std::format("          Crystals : {:<9} {:>18}: {:<5} ({:<5})\n",
                        p.info[Playernum - 1].crystals, "Ground forces",
                        p.info[Playernum - 1].troops, p.troops);
-  g.out << std::format(
-      "{} Total Resource Deposits     Tax rate {}%%  New {}%%\n",
-      p.total_resources, p.info[Playernum - 1].tax,
-      p.info[Playernum - 1].newtax);
+  g.out << std::format("{} Total Resource Deposits     Tax rate {}%  New {}%\n",
+                       p.total_resources, p.info[Playernum - 1].tax,
+                       p.info[Playernum - 1].newtax);
   g.out << std::format("Estimated Production Next Update : {:.2f}\n",
                        p.info[Playernum - 1].est_production);
   if (p.slaved_to) {

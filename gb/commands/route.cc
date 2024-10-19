@@ -73,8 +73,8 @@ void route(const command_t &argv, GameObj &g) {
           strcat(buf, "x");
         else
           strcat(buf, " ");
-        std::string temp = std::format("  -> {}/{}\n", stars[star].name,
-                                       stars[star].pnames[planet]);
+        std::string temp = std::format("  -> {}/{}\n", stars[star].get_name(),
+                                       stars[star].get_planet_name(planet));
         strcat(buf, temp.c_str());
         notify(Playernum, Governor, buf);
       }
@@ -109,8 +109,8 @@ void route(const command_t &argv, GameObj &g) {
         if (Resources(unload)) strcat(buf, "r");
         if (Crystals(unload)) strcat(buf, "x");
       }
-      std::string temp = std::format("  -> {}/{}\n", stars[star].name,
-                                     stars[star].pnames[planet]);
+      std::string temp = std::format("  -> {}/{}\n", stars[star].get_name(),
+                                     stars[star].get_planet_name(planet));
       strcat(buf, temp.c_str());
       notify(Playernum, Governor, buf);
     }

@@ -25,7 +25,7 @@ void order_berserker(Ship &ship) {
     ship.deststar = Sdata.VN_index1[ship.special.mind.target - 1];
   else
     ship.deststar = Sdata.VN_index2[ship.special.mind.target - 1];
-  ship.destpnum = int_rand(0, stars[ship.deststar].numplanets - 1);
+  ship.destpnum = int_rand(0, stars[ship.deststar].numplanets() - 1);
   if (ship.hyper_drive.has && ship.mounted) {
     ship.hyper_drive.on = 1;
     ship.hyper_drive.ready = 1;
@@ -40,24 +40,25 @@ void order_VN(Ship &ship) {
   /* find closest star */
   for (auto s = 0; s < Sdata.numstars; s++)
     if (s != ship.storbits &&
-        Distsq(stars[s].xpos, stars[s].ypos, ship.xpos, ship.ypos) <
-            Distsq(stars[min].xpos, stars[min].ypos, ship.xpos, ship.ypos)) {
+        Distsq(stars[s].xpos(), stars[s].ypos(), ship.xpos, ship.ypos) <
+            Distsq(stars[min].xpos(), stars[min].ypos(), ship.xpos,
+                   ship.ypos)) {
       min2 = min;
       min = s;
     }
 
   /* don't go there if we have a choice,
      and we have VN's there already */
-  if (isset(stars[min].inhabited, 1U))
-    if (isset(stars[min2].inhabited, 1U))
+  if (isset(stars[min].inhabited(), 1U))
+    if (isset(stars[min2].inhabited(), 1U))
       ship.deststar = int_rand(0, (int)Sdata.numstars - 1);
     else
       ship.deststar = min2; /* 2nd closest star */
   else
     ship.deststar = min;
 
-  if (stars[ship.deststar].numplanets) {
-    ship.destpnum = int_rand(0, stars[ship.deststar].numplanets - 1);
+  if (stars[ship.deststar].numplanets()) {
+    ship.destpnum = int_rand(0, stars[ship.deststar].numplanets() - 1);
     ship.whatdest = ScopeLevel::LEVEL_PLAN;
     ship.special.mind.busy = 1;
   } else {
@@ -87,10 +88,10 @@ void do_VN(Ship &ship) {
   /* launch if no assignment */
   if (!ship.special.mind.busy) {
     if (ship.fuel >= (double)ship.max_fuel) {
-      ship.xpos = stars[ship.storbits].xpos +
+      ship.xpos = stars[ship.storbits].xpos() +
                   planets[ship.storbits][ship.pnumorbits]->xpos +
                   int_rand(-10, 10);
-      ship.ypos = stars[ship.storbits].ypos +
+      ship.ypos = stars[ship.storbits].ypos() +
                   planets[ship.storbits][ship.pnumorbits]->ypos +
                   int_rand(-10, 10);
       ship.docked = 0;
@@ -291,8 +292,8 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
               ship.whatdest = ScopeLevel::LEVEL_PLAN;
               ship.deststar = ship.storbits;
               ship.destpnum = ship.pnumorbits;
-              ship.xpos = stars[ship.storbits].xpos + planet.xpos;
-              ship.ypos = stars[ship.storbits].ypos + planet.ypos;
+              ship.xpos = stars[ship.storbits].xpos() + planet.xpos;
+              ship.ypos = stars[ship.storbits].ypos() + planet.ypos;
               ship.land_x = sect.x;
               ship.land_y = sect.y;
               ship.special.mind.busy = 1;

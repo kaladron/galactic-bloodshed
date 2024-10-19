@@ -52,10 +52,10 @@ void moveplanet(const starnum_t starnum, Planet &planet,
                 const planetnum_t planetnum) {
   if (planet.popn || planet.ships) Stinfo[starnum][planetnum].inhab = 1;
 
-  StarsInhab[starnum] = !!(stars[starnum].inhabited);
-  StarsExpl[starnum] = !!(stars[starnum].explored);
+  StarsInhab[starnum] = !!(stars[starnum].inhabited());
+  StarsExpl[starnum] = !!(stars[starnum].explored());
 
-  stars[starnum].inhabited = 0;
+  stars[starnum].inhabited() = 0;
   if (!StarsExpl[starnum]) return; /* no one's explored the star yet */
 
   double dist = std::hypot((double)(planet.ypos), (double)(planet.xpos));
@@ -63,7 +63,7 @@ void moveplanet(const starnum_t starnum, Planet &planet,
   double phase = std::atan2((double)(planet.ypos), (double)(planet.xpos));
   double period =
       dist *
-      std::sqrt((double)(dist / (SYSTEMGRAVCONST * stars[starnum].gravity)));
+      std::sqrt((double)(dist / (SYSTEMGRAVCONST * stars[starnum].gravity())));
   /* keppler's law */
 
   double xadd = dist * std::cos((double)(-1. / period + phase)) - planet.xpos;

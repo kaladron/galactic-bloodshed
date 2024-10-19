@@ -137,59 +137,67 @@ void bless(const command_t &argv, GameObj &g) {
   if (argv[2] == "explorebit") {
     planet.info[who - 1].explored = 1;
     stars[g.snum] = getstar(g.snum);
-    setbit(stars[g.snum].explored, who);
+    setbit(stars[g.snum].explored(), who);
     putstar(stars[g.snum], g.snum);
-    sprintf(buf, "Deity set your explored bit at /%s/%s.\n", stars[g.snum].name,
-            stars[g.snum].pnames[g.pnum]);
+    sprintf(buf, "Deity set your explored bit at /%s/%s.\n",
+            stars[g.snum].get_name().c_str(),
+            stars[g.snum].get_planet_name(g.pnum).c_str());
   } else if (argv[2] == "noexplorebit") {
     planet.info[who - 1].explored = 0;
     sprintf(buf, "Deity reset your explored bit at /%s/%s.\n",
-            stars[g.snum].name, stars[g.snum].pnames[g.pnum]);
+            stars[g.snum].get_name().c_str(),
+            stars[g.snum].get_planet_name(g.pnum).c_str());
   } else if (argv[2] == "planetpopulation") {
     planet.info[who - 1].popn = std::stoi(argv[3]);
     planet.popn++;
     sprintf(buf, "Deity set your population variable to %ld at /%s/%s.\n",
-            planet.info[who - 1].popn, stars[g.snum].name,
-            stars[g.snum].pnames[g.pnum]);
+            planet.info[who - 1].popn, stars[g.snum].get_name().c_str(),
+            stars[g.snum].get_planet_name(g.pnum).c_str());
   } else if (argv[2] == "inhabited") {
     stars[g.snum] = getstar(g.snum);
-    setbit(stars[g.snum].inhabited, Playernum);
+    setbit(stars[g.snum].inhabited(), Playernum);
     putstar(stars[g.snum], g.snum);
     sprintf(buf, "Deity has set your inhabited bit for /%s/%s.\n",
-            stars[g.snum].name, stars[g.snum].pnames[g.pnum]);
+            stars[g.snum].get_name().c_str(),
+            stars[g.snum].get_planet_name(g.pnum).c_str());
   } else if (argv[2] == "numsectsowned") {
     planet.info[who - 1].numsectsowned = std::stoi(argv[3]);
     sprintf(buf, "Deity set your \"numsectsowned\" variable at /%s/%s to %d.\n",
-            stars[g.snum].name, stars[g.snum].pnames[g.pnum],
+            stars[g.snum].get_name().c_str(),
+            stars[g.snum].get_planet_name(g.pnum).c_str(),
             planet.info[who - 1].numsectsowned);
   } else {
     switch (commod) {
       case 'r':
         planet.info[who - 1].resource += amount;
         sprintf(buf, "Deity gave you %d resources at %s/%s.\n", amount,
-                stars[g.snum].name, stars[g.snum].pnames[g.pnum]);
+                stars[g.snum].get_name().c_str(),
+                stars[g.snum].get_planet_name(g.pnum).c_str());
         break;
       case 'd':
         planet.info[who - 1].destruct += amount;
         sprintf(buf, "Deity gave you %d destruct at %s/%s.\n", amount,
-                stars[g.snum].name, stars[g.snum].pnames[g.pnum]);
+                stars[g.snum].get_name().c_str(),
+                stars[g.snum].get_planet_name(g.pnum).c_str());
         break;
       case 'f':
         planet.info[who - 1].fuel += amount;
         sprintf(buf, "Deity gave you %d fuel at %s/%s.\n", amount,
-                stars[g.snum].name, stars[g.snum].pnames[g.pnum]);
+                stars[g.snum].get_name().c_str(),
+                stars[g.snum].get_planet_name(g.pnum).c_str());
         break;
       case 'x':
         planet.info[who - 1].crystals += amount;
         sprintf(buf, "Deity gave you %d crystals at %s/%s.\n", amount,
-                stars[g.snum].name, stars[g.snum].pnames[g.pnum]);
+                stars[g.snum].get_name().c_str(),
+                stars[g.snum].get_planet_name(g.pnum).c_str());
         break;
       case 'a':
         stars[g.snum] = getstar(g.snum);
-        stars[g.snum].AP[who - 1] += amount;
+        stars[g.snum].AP(who - 1) += amount;
         putstar(stars[g.snum], g.snum);
         sprintf(buf, "Deity gave you %d action points at %s.\n", amount,
-                stars[g.snum].name);
+                stars[g.snum].get_name().c_str());
         break;
       default:
         g.out << "No such commodity.\n";

@@ -4,6 +4,6 @@
 
 module gblib;
 
-int control(const Star& star, player_t Playernum, governor_t Governor) {
-  return (!Governor || star.governor[Playernum - 1] == Governor);
+int Star::control(player_t Playernum, governor_t Governor) {
+  return (!Governor || star_struct.governor[Playernum - 1] == Governor);
 }

@@ -73,8 +73,8 @@ void dissolve(const command_t &argv, GameObj &g) {
   getsdata(&Sdata);
   for (auto z = 0; z < Sdata.numstars; z++) {
     stars[z] = getstar(z);
-    if (isset(stars[z].explored, Playernum)) {
-      for (auto i = 0; i < stars[z].numplanets; i++) {
+    if (isset(stars[z].explored(), Playernum)) {
+      for (auto i = 0; i < stars[z].numplanets(); i++) {
         auto pl = getplanet(z, i);
 
         if (pl.info[Playernum - 1].explored &&

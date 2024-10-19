@@ -70,8 +70,9 @@ void launch(const command_t &argv, GameObj &g) {
           s->whatdest = ScopeLevel::LEVEL_PLAN;
           s2->mass -= s->mass;
           s2->hanger -= size(*s);
-          g.out << std::format("Landed on {}/{}.\n", stars[s->storbits].name,
-                               stars[s->storbits].pnames[s->pnumorbits]);
+          g.out << std::format(
+              "Landed on {}/{}.\n", stars[s->storbits].get_name(),
+              stars[s->storbits].get_planet_name(s->pnumorbits));
           putship(s);
           putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_PLAN) {
@@ -89,8 +90,9 @@ void launch(const command_t &argv, GameObj &g) {
           s->storbits = s2->storbits;
           s->pnumorbits = s2->pnumorbits;
           putplanet(p, stars[s2->storbits], s2->pnumorbits);
-          g.out << std::format("Orbiting {}/{}.\n", stars[s->storbits].name,
-                               stars[s->storbits].pnames[s->pnumorbits]);
+          g.out << std::format(
+              "Orbiting {}/{}.\n", stars[s->storbits].get_name(),
+              stars[s->storbits].get_planet_name(s->pnumorbits));
           putship(s);
           putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_STAR) {
@@ -107,7 +109,7 @@ void launch(const command_t &argv, GameObj &g) {
           insert_sh_star(stars[s2->storbits], s);
           s->storbits = s2->storbits;
           putstar(stars[s2->storbits], s2->storbits);
-          g.out << std::format("Orbiting {}.\n", stars[s->storbits].name);
+          g.out << std::format("Orbiting {}.\n", stars[s->storbits].get_name());
           putship(s);
           putship(&*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_UNIV) {
@@ -141,7 +143,7 @@ void launch(const command_t &argv, GameObj &g) {
           }
           deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
         } else {
-          if (!enufAP(Playernum, Governor, stars[s->storbits].AP[Playernum - 1],
+          if (!enufAP(Playernum, Governor, stars[s->storbits].AP(Playernum - 1),
                       APcount)) {
             free(s);
             continue;
@@ -160,7 +162,7 @@ void launch(const command_t &argv, GameObj &g) {
         putship(&*s2);
         free(s);
       } else {
-        if (!enufAP(Playernum, Governor, stars[s->storbits].AP[Playernum - 1],
+        if (!enufAP(Playernum, Governor, stars[s->storbits].AP(Playernum - 1),
                     APcount)) {
           free(s);
           return;
@@ -170,14 +172,14 @@ void launch(const command_t &argv, GameObj &g) {
         /* adjust x,ypos to absolute coords */
         auto p = getplanet((int)s->storbits, (int)s->pnumorbits);
         g.out << std::format("Planet /{}/{} has gravity field of {:.2f}\n",
-                             stars[s->storbits].name,
-                             stars[s->storbits].pnames[s->pnumorbits],
+                             stars[s->storbits].get_name(),
+                             stars[s->storbits].get_planet_name(s->pnumorbits),
                              p.gravity());
         s->xpos =
-            stars[s->storbits].xpos + p.xpos +
+            stars[s->storbits].xpos() + p.xpos +
             (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
         s->ypos =
-            stars[s->storbits].ypos + p.ypos +
+            stars[s->storbits].ypos() + p.ypos +
             (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
 
         /* subtract fuel from ship */
@@ -207,12 +209,13 @@ void launch(const command_t &argv, GameObj &g) {
           p.explored = 1;
           putplanet(p, stars[s->storbits], s->pnumorbits);
         }
-        std::string observed = std::format(
-            "{} observed launching from planet /{}/{}.\n", ship_to_string(*s),
-            stars[s->storbits].name, stars[s->storbits].pnames[s->pnumorbits]);
+        std::string observed =
+            std::format("{} observed launching from planet /{}/{}.\n",
+                        ship_to_string(*s), stars[s->storbits].get_name(),
+                        stars[s->storbits].get_planet_name(s->pnumorbits));
         for (player_t i = 1; i <= Num_races; i++)
           if (p.info[i - 1].numsectsowned && i != Playernum)
-            notify(i, stars[s->storbits].governor[i - 1], observed);
+            notify(i, stars[s->storbits].governor(i - 1), observed);
 
         g.out << std::format("{} launched from planet,", ship_to_string(*s));
         g.out << std::format(" using {:.1f} fuel.\n", fuel);

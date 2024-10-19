@@ -45,9 +45,9 @@ void grant(const command_t &argv, GameObj &g) {
       return;
     }
     snum = g.snum;
-    stars[snum].governor[Playernum - 1] = gov;
+    stars[snum].governor(Playernum - 1) = gov;
     sprintf(buf, "\"%s\" has granted you control of the /%s star system.\n",
-            race.governor[Governor].name, stars[snum].name);
+            race.governor[Governor].name, stars[snum].get_name().c_str());
     warn(Playernum, gov, buf);
     putstar(stars[snum], snum);
   } else if (argv[2] == "ship") {

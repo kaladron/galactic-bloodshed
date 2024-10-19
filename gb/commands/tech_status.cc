@@ -19,13 +19,13 @@ returns tech_report_star(GameObj &g, const Star &star, starnum_t snum) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
 
-  if (!isset(star.explored, Playernum) ||
-      (Governor && star.governor[Playernum - 1] != Governor)) {
+  if (!isset(star.explored(), Playernum) ||
+      (Governor && star.governor(Playernum - 1) != Governor)) {
     return {};
   };
 
   returns totals{};
-  for (planetnum_t i = 0; i < star.numplanets; i++) {
+  for (planetnum_t i = 0; i < star.numplanets(); i++) {
     const auto pl = getplanet(snum, i);
     if (!pl.info[Playernum - 1].explored ||
         !pl.info[Playernum - 1].numsectsowned) {
@@ -33,7 +33,7 @@ returns tech_report_star(GameObj &g, const Star &star, starnum_t snum) {
     }
 
     std::string location =
-        std::format("{}/{}/{}", star.name, star.pnames[i],
+        std::format("{}/{}/{}", star.get_name(), star.get_planet_name(i),
                     (pl.info[Playernum - 1].autorep ? "*" : ""));
 
     auto gain = tech_prod(pl.info[Playernum - 1].tech_invest,

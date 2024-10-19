@@ -373,9 +373,9 @@ static void ship_report(GameObj &g, shipnum_t indx,
         tech = race.tech;
         /* tac report from planet */
         sprintf(buf, "(planet)%15.15s%4.0f %4dM           %5u %6u\n",
-                stars[rd[indx].star].pnames[rd[indx].pnum], tech,
-                p.info[Playernum - 1].guns, p.info[Playernum - 1].destruct,
-                p.info[Playernum - 1].fuel);
+                stars[rd[indx].star].get_planet_name(rd[indx].pnum).c_str(),
+                tech, p.info[Playernum - 1].guns,
+                p.info[Playernum - 1].destruct, p.info[Playernum - 1].fuel);
         notify(Playernum, Governor, buf);
         caliber = GTYPE_MEDIUM;
       } else {
@@ -430,7 +430,8 @@ static void ship_report(GameObj &g, shipnum_t indx,
             if (rd[i].type == PLANET) {
               /* tac report at planet */
               sprintf(buf, " %13s(planet)          %8.0f\n",
-                      stars[rd[i].star].pnames[rd[i].pnum], Dist);
+                      stars[rd[i].star].get_planet_name(rd[i].pnum).c_str(),
+                      Dist);
               notify(Playernum, Governor, buf);
             } else if (!who || who == rd[i].s.owner ||
                        (who == 999 && listed((int)rd[i].s.type, shiplist))) {
@@ -500,8 +501,8 @@ static void plan_getrships(player_t Playernum, governor_t Governor,
   rd[Num_ships].pnum = pnum;
   rd[Num_ships].type = PLANET;
   rd[Num_ships].n = 0;
-  rd[Num_ships].x = stars[snum].xpos + p.xpos;
-  rd[Num_ships].y = stars[snum].ypos + p.ypos;
+  rd[Num_ships].x = stars[snum].xpos() + p.xpos;
+  rd[Num_ships].y = stars[snum].ypos() + p.ypos;
   Num_ships++;
 
   if (p.info[Playernum - 1].explored) {
@@ -513,11 +514,11 @@ static void plan_getrships(player_t Playernum, governor_t Governor,
 
 static void star_getrships(player_t Playernum, governor_t Governor,
                            starnum_t snum) {
-  if (isset(stars[snum].explored, Playernum)) {
-    shipnum_t shn = stars[snum].ships;
+  if (isset(stars[snum].explored(), Playernum)) {
+    shipnum_t shn = stars[snum].ships();
     while (shn && Getrship(Playernum, Governor, shn))
       shn = rd[Num_ships - 1].s.nextship;
-    for (planetnum_t i = 0; i < stars[snum].numplanets; i++)
+    for (planetnum_t i = 0; i < stars[snum].numplanets(); i++)
       plan_getrships(Playernum, Governor, snum, i);
   }
 }

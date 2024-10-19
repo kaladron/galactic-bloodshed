@@ -48,7 +48,7 @@ void bombard(const command_t &argv, GameObj &g) {
         free(from);
         continue;
       }
-      if (!enufAP(Playernum, Governor, stars[from->storbits].AP[Playernum - 1],
+      if (!enufAP(Playernum, Governor, stars[from->storbits].AP(Playernum - 1),
                   APcount)) {
         free(from);
         continue;
@@ -126,7 +126,7 @@ void bombard(const command_t &argv, GameObj &g) {
       notify_star(Playernum, Governor, from->storbits, short_buf);
       for (auto i = 1; i <= Num_races; i++)
         if (Nuked[i - 1])
-          warn(i, stars[from->storbits].governor[i - 1], long_buf);
+          warn(i, stars[from->storbits].governor(i - 1), long_buf);
       notify(Playernum, Governor, long_buf);
 
       if (DEFENSE) {
@@ -141,7 +141,7 @@ void bombard(const command_t &argv, GameObj &g) {
               p.info[i - 1].destruct -= strength;
 
               shoot_planet_to_ship(alien, *from, strength, long_buf, short_buf);
-              warn(i, stars[from->storbits].governor[i - 1], long_buf);
+              warn(i, stars[from->storbits].governor(i - 1), long_buf);
               notify(Playernum, Governor, long_buf);
               if (!from->alive) post(short_buf, NewsType::COMBAT);
               notify_star(Playernum, Governor, from->storbits, short_buf);

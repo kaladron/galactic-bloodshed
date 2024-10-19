@@ -66,10 +66,10 @@ int enroll_valid_race() {
     std::cout << ".";
 
     // Skip over inhabited stars and stars with few planets. */
-    if ((stars[star].numplanets < 2) || stars[star].inhabited) {
+    if ((stars[star].numplanets() < 2) || stars[star].inhabited()) {
     } else {
       /* look for uninhabited planets */
-      for (pnum = 0; pnum < stars[star].numplanets; pnum++) {
+      for (pnum = 0; pnum < stars[star].numplanets(); pnum++) {
         planet = getplanet(star, pnum);
         if ((planet.type == ppref) && (planet.conditions[RTEMP] >= -200) &&
             (planet.conditions[RTEMP] <= 100))
@@ -183,8 +183,8 @@ found_planet:
     s.nextship = 0;
 
     s.type = ShipType::OTYPE_GOV;
-    s.xpos = stars[star].xpos + planet.xpos;
-    s.ypos = stars[star].ypos + planet.ypos;
+    s.xpos = stars[star].xpos() + planet.xpos;
+    s.ypos = stars[star].ypos() + planet.ypos;
     s.land_x = sect->x;
     s.land_y = sect->y;
 
@@ -259,14 +259,15 @@ found_planet:
   putplanet(planet, stars[star], pnum);
 
   /* make star explored and stuff */
-  setbit(stars[star].explored, Playernum);
-  setbit(stars[star].inhabited, Playernum);
-  stars[star].AP[Playernum - 1] = 5;
+  setbit(stars[star].explored(), Playernum);
+  setbit(stars[star].inhabited(), Playernum);
+  stars[star].AP(Playernum - 1) = 5;
   putstar(stars[star], star);
 
   std::cout << std::format("Player {} ({}) created on sector {},{} on {}/{}.\n",
                            Playernum, race_info.name, sect->x, sect->y,
-                           stars[star].name, stars[star].pnames[pnum]);
+                           stars[star].get_name(),
+                           stars[star].get_planet_name(pnum));
   race_info.status = STATUS_ENROLLED;
   return 0;
 }

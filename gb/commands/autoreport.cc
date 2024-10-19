@@ -14,7 +14,7 @@ module commands;
 
 namespace GB::commands {
 void autoreport(const command_t &argv, GameObj &g) {
-  if (g.governor && stars[g.snum].governor[g.player - 1] != g.governor) {
+  if (g.governor && stars[g.snum].governor(g.player - 1) != g.governor) {
     g.out << "You are not authorized to do this here.\n";
     return;
   }
@@ -54,7 +54,7 @@ void autoreport(const command_t &argv, GameObj &g) {
   putplanet(p, stars[snum], pnum);
 
   g.out << std::format("Autoreport on %{0} has been %{1}.\n",
-                       stars[snum].pnames[pnum],
+                       stars[snum].get_planet_name(pnum),
                        (p.info[g.player - 1].autorep ? "set" : "unset"));
 }
 }  // namespace GB::commands

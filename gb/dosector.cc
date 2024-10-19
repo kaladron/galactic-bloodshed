@@ -94,7 +94,7 @@ void produce(const Star &star, const Planet &planet, Sector &s) {
   s.popn += ss;
 
   if (s.troops)
-    race.governor[star.governor[s.owner - 1]].maintain +=
+    race.governor[star.governor(s.owner - 1)].maintain +=
         UPDATE_TROOP_COST * s.troops;
   else if (!s.popn)
     s.owner = 0;

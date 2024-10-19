@@ -252,14 +252,14 @@ std::string do_prompt(GameObj &g) {
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << std::format(" ( [{0}] /{1} )\n",
-                            stars[g.snum].AP[Playernum - 1],
-                            stars[g.snum].name);
+                            stars[g.snum].AP(Playernum - 1),
+                            stars[g.snum].get_name());
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
-      prompt << std::format(" ( [{0}] /{1}/{2} )\n",
-                            stars[g.snum].AP[Playernum - 1], stars[g.snum].name,
-                            stars[g.snum].pnames[g.pnum]);
+      prompt << std::format(
+          " ( [{0}] /{1}/{2} )\n", stars[g.snum].AP(Playernum - 1),
+          stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum));
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
@@ -275,14 +275,15 @@ std::string do_prompt(GameObj &g) {
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << std::format(" ( [{0}] /{1}/#{2} )\n",
-                            stars[s->storbits].AP[Playernum - 1],
-                            stars[s->storbits].name, g.shipno);
+                            stars[s->storbits].AP(Playernum - 1),
+                            stars[s->storbits].get_name(), g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << std::format(
-          " ( [{0}] /{1}/{2}/#{3} )\n", stars[s->storbits].AP[Playernum - 1],
-          stars[s->storbits].name, stars[s->storbits].pnames[g.pnum], g.shipno);
+          " ( [{0}] /{1}/{2}/#{3} )\n", stars[s->storbits].AP(Playernum - 1),
+          stars[s->storbits].get_name(),
+          stars[s->storbits].get_planet_name(g.pnum), g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
@@ -301,16 +302,16 @@ std::string do_prompt(GameObj &g) {
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
-      prompt << std::format(" ( [{0}] /{1}/#{2}/#{3} )\n",
-                            stars[s->storbits].AP[Playernum - 1],
-                            stars[s->storbits].name, s->destshipno, g.shipno);
+      prompt << std::format(
+          " ( [{0}] /{1}/#{2}/#{3} )\n", stars[s->storbits].AP(Playernum - 1),
+          stars[s->storbits].get_name(), s->destshipno, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << std::format(
           " ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
-          stars[s->storbits].AP[Playernum - 1], stars[s->storbits].name,
-          stars[s->storbits].pnames[g.pnum], s->destshipno, g.shipno);
+          stars[s->storbits].AP(Playernum - 1), stars[s->storbits].get_name(),
+          stars[s->storbits].get_planet_name(g.pnum), s->destshipno, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
@@ -328,15 +329,16 @@ std::string do_prompt(GameObj &g) {
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << std::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
-                            stars[s->storbits].AP[Playernum - 1],
-                            stars[s->storbits].name, s->destshipno, g.shipno);
+                            stars[s->storbits].AP(Playernum - 1),
+                            stars[s->storbits].get_name(), s->destshipno,
+                            g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << std::format(
           " ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
-          stars[s->storbits].AP[Playernum - 1], stars[s->storbits].name,
-          stars[s->storbits].pnames[g.pnum], s->destshipno, g.shipno);
+          stars[s->storbits].AP(Playernum - 1), stars[s->storbits].get_name(),
+          stars[s->storbits].get_planet_name(g.pnum), s->destshipno, g.shipno);
       prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
@@ -1061,7 +1063,7 @@ static void dump_users(DescriptorData &e) {
         std::string temp = std::format("\"{}\"", r.governor[d.governor].name);
         sprintf(buf, "%20.20s %20.20s [%2d,%2d] %4lds idle %-4.4s %s %s\n",
                 r.name, temp.c_str(), d.player, d.governor, now - d.last_time,
-                God ? stars[d.snum].name : "    ",
+                God ? stars[d.snum].get_name().c_str() : "    ",
                 (r.governor[d.governor].toggle.gag ? "GAG" : "   "),
                 (r.governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, buf);
@@ -1145,7 +1147,7 @@ static void load_star_data() {
 
   // TODO(jeffbailey): Convert this to be a range-based for loop.
   for (int s = 0; s < Sdata.numstars; s++) {
-    for (int t = 0; t < stars[s].numplanets; t++) {
+    for (int t = 0; t < stars[s].numplanets(); t++) {
       planets[s][t] = std::make_unique<Planet>(getplanet(s, t));
       if (planets[s][t]->type != PlanetType::ASTEROID) Planet_count++;
     }

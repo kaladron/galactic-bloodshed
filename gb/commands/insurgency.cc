@@ -26,7 +26,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     g.out << "You must 'cs' to the planet you wish to try it on.\n";
     return;
   }
-  if (!control(stars[g.snum], Playernum, Governor)) {
+  if (!stars[g.snum].control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
@@ -35,7 +35,7 @@ void insurgency(const command_t &argv, GameObj &g) {
     <money>'\n");
         return;
     }*/
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount))
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount))
     return;
   if (!(who = get_player(argv[1]))) {
     g.out << "No such player.\n";
@@ -53,7 +53,7 @@ void insurgency(const command_t &argv, GameObj &g) {
   }
   eligible = 0;
   them = 0;
-  for (i = 0; i < stars[g.snum].numplanets; i++) {
+  for (i = 0; i < stars[g.snum].numplanets(); i++) {
     auto p = getplanet(g.snum, i);
     eligible += p.info[Playernum - 1].popn;
     them += p.info[who - 1].popn;
@@ -93,10 +93,11 @@ void insurgency(const command_t &argv, GameObj &g) {
   chance = round_rand(200.0 * atan((double)x) / 3.14159265);
   char long_buf[1024];
   sprintf(long_buf, "%s/%s: %s [%d] tries insurgency vs %s [%d]\n",
-          stars[g.snum].name, stars[g.snum].pnames[g.pnum], race.name,
-          Playernum, alien.name, who);
+          stars[g.snum].get_name().c_str(),
+          stars[g.snum].get_planet_name(g.pnum).c_str(), race.name, Playernum,
+          alien.name, who);
   sprintf(buf, "\t%s: %d total civs [%d]  opposing %d total civs [%d]\n",
-          stars[g.snum].name, eligible, Playernum, them, who);
+          stars[g.snum].get_name().c_str(), eligible, Playernum, them, who);
   strcat(long_buf, buf);
   sprintf(buf, "\t\t %ld morale [%d] vs %ld morale [%d]\n", race.morale,
           Playernum, alien.morale, who);
@@ -114,27 +115,31 @@ void insurgency(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor, buf);
     sprintf(buf,
             "A revolt on /%s/%s instigated by %s [%d] costs you %d sector%s\n",
-            stars[g.snum].name, stars[g.snum].pnames[g.pnum], race.name,
-            Playernum, changed_hands, (changed_hands == 1) ? "" : "s");
+            stars[g.snum].get_name().c_str(),
+            stars[g.snum].get_planet_name(g.pnum).c_str(), race.name, Playernum,
+            changed_hands, (changed_hands == 1) ? "" : "s");
     strcat(long_buf, buf);
-    warn(who, stars[g.snum].governor[who - 1], long_buf);
+    warn(who, stars[g.snum].governor(who - 1), long_buf);
     p.info[Playernum - 1].tax = p.info[who - 1].tax;
     /* you inherit their tax rate (insurgency wars he he ) */
     sprintf(buf, "/%s/%s: Successful insurgency by %s [%d] against %s [%d]\n",
-            stars[g.snum].name, stars[g.snum].pnames[g.pnum], race.name,
-            Playernum, alien.name, who);
+            stars[g.snum].get_name().c_str(),
+            stars[g.snum].get_planet_name(g.pnum).c_str(), race.name, Playernum,
+            alien.name, who);
     post(buf, NewsType::DECLARATION);
   } else {
     notify(Playernum, Governor, long_buf);
     g.out << "The insurgency failed!\n";
     sprintf(buf, "A revolt on /%s/%s instigated by %s [%d] fails\n",
-            stars[g.snum].name, stars[g.snum].pnames[g.pnum], race.name,
+            stars[g.snum].get_name().c_str(),
+            stars[g.snum].get_planet_name(g.pnum).c_str(), race.name,
             Playernum);
     strcat(long_buf, buf);
-    warn(who, stars[g.snum].governor[who - 1], long_buf);
+    warn(who, stars[g.snum].governor(who - 1), long_buf);
     sprintf(buf, "/%s/%s: Failed insurgency by %s [%d] against %s [%d]\n",
-            stars[g.snum].name, stars[g.snum].pnames[g.pnum], race.name,
-            Playernum, alien.name, who);
+            stars[g.snum].get_name().c_str(),
+            stars[g.snum].get_planet_name(g.pnum).c_str(), race.name, Playernum,
+            alien.name, who);
     post(buf, NewsType::DECLARATION);
   }
   deductAPs(g, APcount, g.snum);

@@ -194,7 +194,7 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
     g.out << "This ship is not rated for maneuvering.\n";
     return;
   }
-  if (!enufAP(Playernum, Governor, stars[s.storbits].AP[Playernum - 1],
+  if (!enufAP(Playernum, Governor, stars[s.storbits].AP(Playernum - 1),
               APcount)) {
     return;
   }
@@ -202,11 +202,13 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
   auto p = getplanet(s.storbits, s.pnumorbits);
 
   g.out << std::format("Planet /{}/{} has gravity field of {:.2f}.\n",
-                       stars[s.storbits].name,
-                       stars[s.storbits].pnames[s.pnumorbits], p.gravity());
+                       stars[s.storbits].get_name(),
+                       stars[s.storbits].get_planet_name(s.pnumorbits),
+                       p.gravity());
 
-  Dist = sqrt((double)Distsq(stars[s.storbits].xpos + p.xpos,
-                             stars[s.storbits].ypos + p.ypos, s.xpos, s.ypos));
+  Dist =
+      sqrt((double)Distsq(stars[s.storbits].xpos() + p.xpos,
+                          stars[s.storbits].ypos() + p.ypos, s.xpos, s.ypos));
   g.out << std::format("Distance to planet: {:.2f}.\n", Dist);
 
   if (Dist > DIST_TO_LAND) {
@@ -238,7 +240,7 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
             shoot_planet_to_ship(alien, s, strength, buf, short_buf);
             post(short_buf, NewsType::COMBAT);
             notify_star(0, 0, s.storbits, short_buf);
-            warn(i, stars[s.storbits].governor[i - 1], buf);
+            warn(i, stars[s.storbits].governor(i - 1), buf);
             notify(s.owner, s.governor, buf);
             p.info[i - 1].destruct -= strength;
           }
@@ -263,7 +265,7 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
             ship_to_string(s).c_str(), x, y, numdest);
     for (i = 1; i <= Num_races; i++)
       if (p.info[i - 1].numsectsowned || i == Playernum)
-        warn(i, stars[s.storbits].governor[i - 1], buf);
+        warn(i, stars[s.storbits].governor(i - 1), buf);
     if (roll)
       sprintf(buf, "Ship damage %d%% (you rolled a %d)\n", (int)s.damage, roll);
     else
@@ -274,8 +276,8 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
   } else {
     s.land_x = x;
     s.land_y = y;
-    s.xpos = p.xpos + stars[s.storbits].xpos;
-    s.ypos = p.ypos + stars[s.storbits].ypos;
+    s.xpos = p.xpos + stars[s.storbits].xpos();
+    s.ypos = p.ypos + stars[s.storbits].ypos();
     use_fuel(s, fuel);
     s.docked = 1;
     s.whatdest = ScopeLevel::LEVEL_PLAN; /* no destination */
@@ -310,11 +312,12 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
 
   /* send messages to anyone there */
   sprintf(buf, "%s observed landing on sector %d,%d,planet /%s/%s.\n",
-          ship_to_string(s).c_str(), s.land_x, s.land_y, stars[s.storbits].name,
-          stars[s.storbits].pnames[s.pnumorbits]);
+          ship_to_string(s).c_str(), s.land_x, s.land_y,
+          stars[s.storbits].get_name().c_str(),
+          stars[s.storbits].get_planet_name(s.pnumorbits).c_str());
   for (i = 1; i <= Num_races; i++)
     if (p.info[i - 1].numsectsowned && i != Playernum)
-      notify(i, stars[s.storbits].governor[i - 1], buf);
+      notify(i, stars[s.storbits].governor(i - 1), buf);
 
   sprintf(buf, "%s landed on planet.\n", ship_to_string(s).c_str());
   notify(Playernum, Governor, buf);

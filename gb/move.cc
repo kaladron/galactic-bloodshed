@@ -97,7 +97,7 @@ void mech_defend(player_t Playernum, governor_t Governor, int *people,
       auto &alien = races[ship.owner - 1];
       if (!isset(race.allied, ship.owner) || !isset(alien.allied, Playernum)) {
         while ((civ + mil) > 0 && retal_strength(ship)) {
-          oldgov = stars[ship.storbits].governor[alien.Playernum - 1];
+          oldgov = stars[ship.storbits].governor(alien.Playernum - 1);
           char long_buf[1024], short_buf[256];
           mech_attack_people(ship, &civ, &mil, alien, race, s2, true, long_buf,
                              short_buf);

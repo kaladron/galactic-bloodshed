@@ -41,7 +41,7 @@ void move_popn(const command_t &argv, GameObj &g) {
     g.out << "Wrong scope\n";
     return;
   }
-  if (!control(stars[g.snum], Playernum, Governor)) {
+  if (!stars[g.snum].control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
@@ -138,7 +138,7 @@ void move_popn(const command_t &argv, GameObj &g) {
     else if (what == PopulationType::MIL)
       APcost = MOVE_FACTOR * ((int)log10(1.0 + (double)people) + Assault) + 1;
 
-    if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcost)) {
+    if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcost)) {
       putplanet(planet, stars[g.snum], g.pnum);
       return;
     }
@@ -154,7 +154,7 @@ void move_popn(const command_t &argv, GameObj &g) {
           MIN(race.translate[sect2.owner - 1] + 5, 100);
 
       old2owner = (int)(sect2.owner);
-      old2gov = stars[g.snum].governor[sect2.owner - 1];
+      old2gov = stars[g.snum].governor(sect2.owner - 1);
       if (what == PopulationType::CIV)
         sect.popn = std::max(0L, sect.popn - people);
       else if (what == PopulationType::MIL)
@@ -216,7 +216,8 @@ void move_popn(const command_t &argv, GameObj &g) {
 
       sprintf(telegram_buf,
               "/%s/%s: %s [%d] %c(%d,%d) assaults %s [%d] %c(%d,%d) %s\n",
-              stars[g.snum].name, stars[g.snum].pnames[g.pnum], race.name,
+              stars[g.snum].get_name().c_str(),
+              stars[g.snum].get_planet_name(g.pnum).c_str(), race.name,
               Playernum, Dessymbols[sect.condition], x, y, alien.name,
               alien.Playernum, Dessymbols[sect2.condition], x2, y2,
               (sect2.owner == Playernum ? "VICTORY" : "DEFEAT"));

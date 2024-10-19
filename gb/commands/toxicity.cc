@@ -30,7 +30,7 @@ void toxicity(const command_t &argv, GameObj &g) {
     g.out << "scope must be a planet.\n";
     return;
   }
-  if (!enufAP(g.player, g.governor, stars[g.snum].AP[g.player - 1], APcount)) {
+  if (!enufAP(g.player, g.governor, stars[g.snum].AP(g.player - 1), APcount)) {
     return;
   }
 

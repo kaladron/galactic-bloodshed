@@ -52,7 +52,7 @@ void announce(const command_t &argv, GameObj &g) {
       break;
     default:
       if ((mode == Communicate::ANN) &&
-          !(!!isset(stars[g.snum].inhabited, Playernum) || race.God)) {
+          !(!!isset(stars[g.snum].inhabited(), Playernum) || race.God)) {
         g.out << "You do not inhabit this system or have diety privileges.\n";
         return;
       }

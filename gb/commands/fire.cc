@@ -71,7 +71,7 @@ void fire(const command_t &argv, GameObj &g) {
           continue;
         }
       } else if (!enufAP(Playernum, Governor,
-                         stars[from->storbits].AP[Playernum - 1], APcount)) {
+                         stars[from->storbits].AP(Playernum - 1), APcount)) {
         free(from);
         continue;
       }
@@ -232,7 +232,7 @@ void fire(const command_t &argv, GameObj &g) {
       /* AFVs immune to retaliation of this type */
       if (damage && from->alive && from->type != ShipType::OTYPE_AFV) {
         if (to->whatorbits == ScopeLevel::LEVEL_STAR) /* star level ships */
-          sh = stars[to->storbits].ships;
+          sh = stars[to->storbits].ships();
         if (to->whatorbits == ScopeLevel::LEVEL_PLAN) { /* planet level ships */
           const auto p = getplanet(to->storbits, to->pnumorbits);
           sh = p.ships;

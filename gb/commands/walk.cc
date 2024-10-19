@@ -45,7 +45,7 @@ void walk(const command_t &argv, GameObj &g) {
                          AFV_FUEL_COST);
     return;
   }
-  if (!enufAP(Playernum, Governor, stars[ship->storbits].AP[Playernum - 1],
+  if (!enufAP(Playernum, Governor, stars[ship->storbits].AP(Playernum - 1),
               APcount)) {
     return;
   }
@@ -101,7 +101,7 @@ void walk(const command_t &argv, GameObj &g) {
   /* if the sector is occupied by non-aligned player, attack them first */
   if (ship->popn && ship->alive && sect.owner && sect.owner != Playernum) {
     auto oldowner = sect.owner;
-    auto oldgov = stars[ship->storbits].governor[sect.owner - 1];
+    auto oldgov = stars[ship->storbits].governor(sect.owner - 1);
     auto &alien = races[oldowner - 1];
     if (!isset(race.allied, oldowner) || !isset(alien.allied, Playernum)) {
       if (!retal_strength(*ship)) {
@@ -154,7 +154,7 @@ void walk(const command_t &argv, GameObj &g) {
     use_fuel(*ship, AFV_FUEL_COST);
     for (auto i = 1; i <= Num_races; i++)
       if (i != Playernum && p.info[i - 1].numsectsowned)
-        notify(i, stars[g.snum].governor[i - 1], moving);
+        notify(i, stars[g.snum].governor(i - 1), moving);
   }
   putship(&*ship);
   deductAPs(g, APcount, ship->storbits);

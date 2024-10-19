@@ -19,7 +19,7 @@ void tax(const command_t &argv, GameObj &g) {
     g.out << "scope must be a planet.\n";
     return;
   }
-  if (!control(stars[g.snum], Playernum, Governor)) {
+  if (!stars[g.snum].control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
@@ -32,7 +32,7 @@ void tax(const command_t &argv, GameObj &g) {
     g.out << "Sorry, but you can't do this when you are a guest.\n";
     return;
   }
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount)) {
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount)) {
     return;
   }
 

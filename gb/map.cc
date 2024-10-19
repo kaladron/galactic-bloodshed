@@ -36,7 +36,7 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
   }
   /* report that this is a planet map */
   g.out << '$';
-  g.out << std::format("{};", stars[snum].pnames[pnum]);
+  g.out << std::format("{};", stars[snum].get_planet_name(pnum));
   g.out << std::format("{};{};{};", p.Maxx, p.Maxy, show);
 
   /* send map data */

@@ -157,8 +157,8 @@ void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   }
 
   std::stringstream header;
-  header << std::format("\nAnalysis of /{}/{}:\n", stars[Starnum].name,
-                        stars[Starnum].pnames[Planetnum]);
+  header << std::format("\nAnalysis of /{}/{}:\n", stars[Starnum].get_name(),
+                        stars[Starnum].get_planet_name(Planetnum));
   header << std::format("{} {}",
                         (mode == Mode::top_five ? "Highest" : "Lowest"), CARE);
   switch (sector_type) {
@@ -340,7 +340,7 @@ void analysis(const command_t &argv, GameObj &g) {
       do_analysis(g, do_player, mode, sector_type, where.snum, where.pnum);
       break;
     case ScopeLevel::LEVEL_STAR:
-      for (planetnum_t pnum = 0; pnum < stars[where.snum].numplanets; pnum++)
+      for (planetnum_t pnum = 0; pnum < stars[where.snum].numplanets(); pnum++)
         do_analysis(g, do_player, mode, sector_type, where.snum, pnum);
       break;
   }

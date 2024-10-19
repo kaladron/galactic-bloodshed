@@ -26,7 +26,7 @@ void map(const command_t &argv, GameObj &g) {
     case ScopeLevel::LEVEL_PLAN: {
       const auto p = getplanet(where->snum, where->pnum);
       show_map(g, where->snum, where->pnum, p);
-      if (stars[where->snum].stability > 50)
+      if (stars[where->snum].stability() > 50)
         g.out << "WARNING! This planet's primary is unstable.\n";
     } break;
     default:

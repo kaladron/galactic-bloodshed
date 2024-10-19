@@ -64,7 +64,7 @@ void d_announce(const player_t Playernum, const governor_t Governor,
                 const starnum_t star, const std::string &message) {
   for (auto &d : descriptor_list) {
     if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
-        (isset(stars[star].inhabited, d.player) || races[d.player - 1].God) &&
+        (isset(stars[star].inhabited(), d.player) || races[d.player - 1].God) &&
         d.snum == star &&
         !races[d.player - 1].governor[d.governor].toggle.gag) {
       queue_string(d, message);
@@ -86,7 +86,7 @@ void warn(const player_t who, const governor_t governor,
 void warn_star(const player_t a, const starnum_t star,
                const std::string &message) {
   for (auto &race : races) {
-    if (race.Playernum != a && isset(stars[star].inhabited, race.Playernum))
+    if (race.Playernum != a && isset(stars[star].inhabited(), race.Playernum))
       warn_race(race.Playernum, message);
   }
 }
@@ -95,7 +95,7 @@ void notify_star(const player_t a, const governor_t g, const starnum_t star,
                  const std::string &message) {
   for (auto &d : descriptor_list)
     if (d.connected && (d.player != a || d.governor != g) &&
-        isset(stars[star].inhabited, d.player)) {
+        isset(stars[star].inhabited(), d.player)) {
       queue_string(d, message);
     }
 }
@@ -152,9 +152,10 @@ void insert_sh_univ(stardata *sdata, Ship *s) {
   s->whatorbits = ScopeLevel::LEVEL_UNIV;
 }
 
+// XXX - Move this
 void insert_sh_star(Star &star, Ship *s) {
-  s->nextship = star.ships;
-  star.ships = s->number;
+  s->nextship = star.ships();
+  star.ships() = s->number;
   s->whatorbits = ScopeLevel::LEVEL_STAR;
 }
 
@@ -177,13 +178,14 @@ void insert_sh_ship(Ship *s, Ship *s2) {
  * \arg s Ship to remove
  */
 void remove_sh_star(Ship &s) {
+  // XXX Move this
   stars[s.storbits] = getstar(s.storbits);
-  shipnum_t sh = stars[s.storbits].ships;
+  shipnum_t sh = stars[s.storbits].ships();
 
   // If the ship is the first of the chain, point the star to the
   // next, which is zero if there are no other ships.
   if (sh == s.number) {
-    stars[s.storbits].ships = s.nextship;
+    stars[s.storbits].ships() = s.nextship;
     putstar(stars[s.storbits], s.storbits);
   } else {
     Shiplist shiplist(sh);

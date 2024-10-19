@@ -24,7 +24,7 @@ void center(const command_t &argv, GameObj &g) {
     g.out << "CHEATER!!!\n";
     return;
   }
-  g.lastx[1] = stars[where.snum].xpos;
-  g.lasty[1] = stars[where.snum].ypos;
+  g.lastx[1] = stars[where.snum].xpos();
+  g.lasty[1] = stars[where.snum].ypos();
 }
 }  // namespace GB::commands

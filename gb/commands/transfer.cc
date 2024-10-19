@@ -19,7 +19,7 @@ void transfer(const command_t &argv, GameObj &g) {
     return;
   }
 
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount))
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount))
     return;
 
   auto player = get_player(argv[1]);
@@ -34,8 +34,8 @@ void transfer(const command_t &argv, GameObj &g) {
   // TODO(jeffbailey): May throw an exception on a negative number.
   resource_t give = std::stoul(argv[3]);
 
-  std::string starplanet =
-      std::format("{}/{}:", stars[g.snum].name, stars[g.snum].pnames[g.pnum]);
+  std::string starplanet = std::format("{}/{}:", stars[g.snum].get_name(),
+                                       stars[g.snum].get_planet_name(g.pnum));
   switch (commod) {
     case 'r': {
       if (give > planet.info[Playernum - 1].resource) {

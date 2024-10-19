@@ -19,7 +19,7 @@ void page(const command_t &argv, GameObj &g) {
   int gov;
   int to_block;
 
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount))
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount))
     return;
 
   gov = 0;  // TODO(jeffbailey): Init to zero.
@@ -45,7 +45,7 @@ void page(const command_t &argv, GameObj &g) {
       break;
     default:
       stars[g.snum] = getstar(g.snum);
-      if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1],
+      if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1),
                   APcount)) {
         return;
       }
@@ -53,7 +53,8 @@ void page(const command_t &argv, GameObj &g) {
       auto &race = races[Playernum - 1];
 
       sprintf(buf, "%s \"%s\" page(s) you from the %s star system.\n",
-              race.name, race.governor[Governor].name, stars[g.snum].name);
+              race.name, race.governor[Governor].name,
+              stars[g.snum].get_name().c_str());
 
       if (to_block) {
         uint64_t dummy =

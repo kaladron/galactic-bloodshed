@@ -21,11 +21,11 @@ void technology(const command_t &argv, GameObj &g) {
                          static_cast<int>(g.level));
     return;
   }
-  if (!control(stars[g.snum], Playernum, Governor)) {
+  if (!stars[g.snum].control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP[Playernum - 1], APcount)) {
+  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount)) {
     return;
   }
 

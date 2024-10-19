@@ -306,10 +306,10 @@ Race getrace(player_t rnum) {
 
 Star Sql::getstar(const starnum_t star) { return ::getstar(star); }
 Star getstar(const starnum_t star) {
-  Star s;
+  star_struct s;
 
-  Fileread(stdata, (char *)&s, sizeof(Star),
-           (int)(sizeof(Sdata) + star * sizeof(Star)));
+  Fileread(stdata, (char *)&s, sizeof(star_struct),
+           (int)(sizeof(Sdata) + star * sizeof(star_struct)));
   const char *tail;
 
   {
@@ -852,10 +852,12 @@ void putrace(const Race &r) {
             (r.Playernum - 1) * sizeof(Race));
 }
 
-void Sql::putstar(const Star &s, starnum_t snum) { ::putstar(s, snum); }
-void putstar(const Star &s, starnum_t snum) {
-  Filewrite(stdata, (const char *)&s, sizeof(Star),
-            (int)(sizeof(Sdata) + snum * sizeof(Star)));
+void Sql::putstar(const Star &star, starnum_t snum) { ::putstar(star, snum); }
+void putstar(const Star &star, starnum_t snum) {
+  star_struct s = star.get_struct();
+
+  Filewrite(stdata, (const char *)&s, sizeof(star_struct),
+            (int)(sizeof(Sdata) + snum * sizeof(star_struct)));
 
   start_bulk_insert();
 
@@ -977,7 +979,8 @@ static void end_bulk_insert() {
 void Sql::putplanet(const Planet &p, const Star &star, const planetnum_t pnum) {
   ::putplanet(p, star, pnum);
 }
-void putplanet(const Planet &p, const Star &star, const planetnum_t pnum) {
+void putplanet(const Planet &p, const Star &s, const planetnum_t pnum) {
+  auto star = s.get_struct();
   start_bulk_insert();
 
   const char *tail = nullptr;

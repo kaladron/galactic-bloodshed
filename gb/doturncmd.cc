@@ -96,14 +96,15 @@ static void process_stars_and_planets(int update) {
     stars[star] = getstar(star);
     if (update) fix_stability(stars[star]); /* nova */
 
-    for (planetnum_t i = 0; i < stars[star].numplanets; i++) {
+    for (planetnum_t i = 0; i < stars[star].numplanets(); i++) {
       planets[star][i] = std::make_unique<Planet>(getplanet(star, i));
       if (planets[star][i]->type != PlanetType::ASTEROID) Planet_count++;
       if (update) moveplanet(star, *planets[star][i], i);
-      if (stars[star].pnames[i] == nullptr)
-        sprintf(stars[star].pnames[i], "NULL-%d", i);
+      if (!stars[star].planet_name_isset(i))
+        stars[star].set_planet_name(i, std::format("NULL-{}", i));
     }
-    if (stars[star].name[0] == '\0') sprintf(stars[star].name, "NULL-%d", star);
+    if (stars[star].get_name()[0] == '\0')
+      stars[star].set_name(std::format("NULL-{}", star));
   }
 }
 
@@ -184,7 +185,8 @@ static void process_market(Db &db, int update) {
             "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
             "arrived at /{}/{}\n",
             i, races[c.owner - 1].name, c.owner, c.bid, c.amount, c.type,
-            stars[c.star_to].name, stars[c.star_to].pnames[c.planet_to]);
+            stars[c.star_to].get_name(),
+            stars[c.star_to].get_planet_name(c.planet_to));
         push_telegram(c.bidder, c.bidder_gov, purchased_msg);
         std::string sold_msg = std::format(
             "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", i, c.amount,
@@ -255,8 +257,8 @@ static void insert_ships_into_lists() {
   /* clear ship list for insertion */
   Sdata.ships = 0;
   for (starnum_t star = 0; star < Sdata.numstars; star++) {
-    stars[star].ships = 0;
-    for (planetnum_t i = 0; i < stars[star].numplanets; i++)
+    stars[star].ships() = 0;
+    for (planetnum_t i = 0; i < stars[star].numplanets(); i++)
       planets[star][i]->ships = 0;
   }
 
@@ -297,12 +299,12 @@ static void process_abms_and_missiles(int update) {
   for (shipnum_t i = Num_ships; i >= 1; i--) putship(ships[i]);
 
   for (starnum_t star = 0; star < Sdata.numstars; star++) {
-    for (planetnum_t i = 0; i < stars[star].numplanets; i++) {
+    for (planetnum_t i = 0; i < stars[star].numplanets(); i++) {
       /* store occupation for VPs */
       for (player_t j = 1; j <= Num_races; j++) {
         if (planets[star][i]->info[j - 1].numsectsowned) {
           setbit(inhabited[star], j);
-          setbit(stars[star].inhabited, j);
+          setbit(stars[star].inhabited(), j);
         }
         if (planets[star][i]->type != PlanetType::ASTEROID &&
             (planets[star][i]->info[j - 1].numsectsowned >
@@ -328,20 +330,20 @@ static void process_abms_and_missiles(int update) {
     if (update)
       for (player_t i = 1; i <= Num_races; i++) {
         if (starpopns[star][i - 1])
-          setbit(stars[star].inhabited, i);
+          setbit(stars[star].inhabited(), i);
         else
-          clrbit(stars[star].inhabited, i);
+          clrbit(stars[star].inhabited(), i);
 
-        if (isset(stars[star].inhabited, i)) {
+        if (isset(stars[star].inhabited(), i)) {
           ap_t APs;
 
-          APs = stars[star].AP[i - 1] + APadd((int)starnumships[star][i - 1],
+          APs = stars[star].AP(i - 1) + APadd((int)starnumships[star][i - 1],
                                               starpopns[star][i - 1],
                                               races[i - 1]);
           if (APs < LIMIT_APs)
-            stars[star].AP[i - 1] = APs;
+            stars[star].AP(i - 1) = APs;
           else
-            stars[star].AP[i - 1] = LIMIT_APs;
+            stars[star].AP(i - 1) = LIMIT_APs;
         }
         /* compute victory points for the block */
         if (inhabited[star] != 0) {
@@ -396,7 +398,7 @@ static void update_victory_scores(int update) {
 
     for (starnum_t star = 0; star < Sdata.numstars; star++) {
       /* do planets in the star next */
-      for (planetnum_t i = 0; i < stars[star].numplanets; i++) {
+      for (planetnum_t i = 0; i < stars[star].numplanets(); i++) {
         for (player_t j = 0; j < Num_races; j++) {
           if (!planets[star][i]->info[j].explored) continue;
           victory[j].numsects += (int)planets[star][i]->info[j].numsectsowned;
@@ -538,12 +540,13 @@ void fix_stability(Star &s) {
   int a;
   int i;
 
-  if (s.nova_stage > 0) {
-    if (s.nova_stage > 14) {
-      s.stability = 20;
-      s.nova_stage = 0;
+  if (s.nova_stage() > 0) {
+    if (s.nova_stage() > 14) {
+      s.stability() = 20;
+      s.nova_stage() = 0;
       sprintf(telegram_buf, "Notice\n");
-      sprintf(buf, "\n  Scientists report that star %s\n", s.name);
+      sprintf(buf, "\n  Scientists report that star %s\n",
+              s.get_name().c_str());
       strcat(telegram_buf, buf);
       sprintf(buf, "is no longer undergoing nova.\n");
       strcat(telegram_buf, buf);
@@ -551,27 +554,28 @@ void fix_stability(Star &s) {
 
       /* telegram everyone when nova over? */
     } else
-      s.nova_stage++;
-  } else if (s.stability > 20) {
+      s.nova_stage()++;
+  } else if (s.stability() > 20) {
     a = int_rand(-1, 3);
     /* nova just starting; notify everyone */
-    if ((s.stability + a) > 100) {
-      s.stability = 100;
-      s.nova_stage = 1;
+    if ((s.stability() + a) > 100) {
+      s.stability() = 100;
+      s.nova_stage() = 1;
       sprintf(telegram_buf, "***** BULLETIN! ******\n");
-      sprintf(buf, "\n  Scientists report that star %s\n", s.name);
+      sprintf(buf, "\n  Scientists report that star %s\n",
+              s.get_name().c_str());
       strcat(telegram_buf, buf);
       sprintf(buf, "is undergoing nova.\n");
       strcat(telegram_buf, buf);
       for (i = 1; i <= Num_races; i++) push_telegram_race(i, telegram_buf);
     } else
-      s.stability += a;
+      s.stability() += a;
   } else {
     a = int_rand(-1, 1);
-    if (((int)s.stability + a) < 0)
-      s.stability = 0;
+    if (((int)s.stability() + a) < 0)
+      s.stability() = 0;
     else
-      s.stability += a;
+      s.stability() += a;
   }
 }
 
@@ -684,8 +688,8 @@ static void output_ground_attacks() {
       for (j = 1; j <= Num_races; j++)
         if (ground_assaults[i - 1][j - 1][star]) {
           sprintf(buf, "%s: %s [%d] assaults %s [%d] %d times.\n",
-                  stars[star].name, races[i - 1].name, i, races[j - 1].name, j,
-                  ground_assaults[i - 1][j - 1][star]);
+                  stars[star].get_name().c_str(), races[i - 1].name, i,
+                  races[j - 1].name, j, ground_assaults[i - 1][j - 1][star]);
           post(buf, NewsType::COMBAT);
           ground_assaults[i - 1][j - 1][star] = 0;
         }

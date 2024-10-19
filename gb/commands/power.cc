@@ -1,15 +1,11 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* power.c -- display power report */
+// \file power.c display power report
 
 module;
 
 import gblib;
-import std.compat;
-
-#include "gb/buffers.h"
+import std;
 
 module commands;
 
@@ -49,7 +45,6 @@ std::string prepare_output_line(const Race &race, const Race &r, player_t i,
 namespace GB::commands {
 void power(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
-  governor_t Governor = g.governor;
   // TODO(jeffbailey): ap_t APcount = 0;
   // TODO(jeffbailey): Need to stop using -1 here for UB
   player_t p = -1;
@@ -63,21 +58,19 @@ void power(const command_t &argv, GameObj &g) {
 
   auto &race = races[Playernum - 1];
 
-  sprintf(buf,
-          "         ========== Galactic Bloodshed Power Report ==========\n");
-  notify(Playernum, Governor, buf);
+  g.out << std::format(
+      "         ========== Galactic Bloodshed Power Report ==========\n");
 
   if (race.God)
-    sprintf(buf,
-            "%s  #  Name               VP  mil  civ cash ship pl  res "
-            "fuel dest morl VNs\n",
-            argv.size() < 2 ? "rank" : "");
+    g.out << std::format(
+        "{}  #  Name               VP  mil  civ cash ship pl  res fuel dest "
+        "morl VNs\n",
+        argv.size() < 2 ? "rank" : "");
   else
-    sprintf(buf,
-            "%s  #  Name               VP  mil  civ cash ship pl  res "
-            "fuel dest morl know\n",
-            argv.size() < 2 ? "rank" : "");
-  notify(Playernum, Governor, buf);
+    g.out << std::format(
+        "{}  #  Name               VP  mil  civ cash ship pl  res fuel dest "
+        "morl know\n",
+        argv.size() < 2 ? "rank" : "");
 
   if (argv.size() < 2) {
     auto vicvec = create_victory_list();

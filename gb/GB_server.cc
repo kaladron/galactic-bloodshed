@@ -385,10 +385,9 @@ int main(int argc, char **argv) {
       segments = MOVES_PER_UPDATE;
       break;
   }
-  std::cerr << "      Port " << port << std::endl;
-  std::cerr << "      " << update_time << " minutes between updates"
-            << std::endl;
-  std::cerr << "      " << segments << " segments/update" << std::endl;
+  std::cerr << "      Port " << port << '\n';
+  std::cerr << "      " << update_time << " minutes between updates" << '\n';
+  std::cerr << "      " << segments << " segments/update" << '\n';
   start_buf = std::format("Server started  : {0}", ctime(&clk));
 
   next_update_time = clk + (update_time.count() * 60);

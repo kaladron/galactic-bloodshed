@@ -1,9 +1,6 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* makeuniv.c -- universe creation program.
- *   Makes various required data files; calls makestar for each star desired. */
+// \file makeuniv.cc Universe creation program.
 
 import gblib;
 import std.compat;
@@ -39,7 +36,7 @@ void InitFile(const std::string &path, void *buffer = nullptr, size_t len = 0) {
   FILE *f = fopen(filename, "w+");
   if (buffer != nullptr && len > 0) {
     if (f == nullptr) {
-      printf("Unable to open \"%s\".\n", filename);
+      std::println("Unable to open \"{}\".", filename);
       exit(-1);
     }
     fwrite(buffer, len, 1, f);
@@ -101,59 +98,62 @@ int main(int argc, char *argv[]) {
           maxplanets = 10;
           break;
         default:
-          printf("\n");
-          printf("Unknown option \"%s\".\n", argv[i]);
+          std::println("");
+          std::println("Unknown option \"{}\".", argv[i]);
         usage:
-          printf("\n");
-          printf(
+          std::println("");
+          std::println(
               "Usage: makeuniv [-a] [-b] [-e E] [-l MIN] [-m MAX] [-s N] [-v] "
-              "[-w]\n");
-          printf("  -a      Autoload star names.\n");
-          printf("  -b      Autoload planet names.\n");
-          printf("  -d      Use all defauls and autoloaded names.\n");
-          printf("  -e E    Make E%% of stars have no planets.\n");
-          printf("  -l MIN  Other systems will have at least MIN planets.\n");
-          printf("  -m MAX  Other systems will have at most  MAX planets.\n");
-          printf("  -s S    The universe will have S stars.\n");
-          printf("  -v      Print info and map of planets generated.\n");
-          printf("  -w      Print info on stars generated.\n");
-          printf("\n");
+              "[-w]");
+          std::println("  -a      Autoload star names.");
+          std::println("  -b      Autoload planet names.");
+          std::println("  -d      Use all defauls and autoloaded names.");
+          std::println("  -e E    Make E% of stars have no planets.");
+          std::println(
+              "  -l MIN  Other systems will have at least MIN planets.");
+          std::println(
+              "  -m MAX  Other systems will have at most  MAX planets.");
+          std::println("  -s S    The universe will have S stars.");
+          std::println("  -v      Print info and map of planets generated.");
+          std::println("  -w      Print info on stars generated.");
+          std::println("");
           exit(0);
       }
 
   /*
    * Get values for all the switches that still don't have good values. */
   if (autoname_star == -1) {
-    printf("\nDo you wish to use the file \"%s\" for star names? [y/n]> ",
-           STARLIST);
+    std::println("\nDo you wish to use the file \"{}\" for star names? [y/n]> ",
+                 STARLIST);
     c = std::getchar();
     if (c != '\n') std::getchar();
     autoname_star = (c == 'y');
   }
   if (autoname_plan == -1) {
-    printf("\nDo you wish to use the file \"%s\" for planet names? [y/n]> ",
-           PLANETLIST);
+    std::println(
+        "\nDo you wish to use the file \"{}\" for planet names? [y/n]> ",
+        PLANETLIST);
     c = std::getchar();
     if (c != '\n') std::getchar();
     autoname_plan = (c == 'y');
   }
   while ((nstars < 1) || (nstars >= NUMSTARS)) {
-    printf("Number of stars [1-%d]:", NUMSTARS - 1);
+    std::println("Number of stars [1-{}]:", NUMSTARS - 1);
     if (scanf("%d", &nstars) < 0) {
       perror("Cannot read input");
       exit(-1);
     }
   }
   while ((minplanets <= 0) || (minplanets > MAXPLANETS)) {
-    printf("Minimum number of planets per system [1-%d]: ", MAXPLANETS);
+    std::println("Minimum number of planets per system [1-{}]: ", MAXPLANETS);
     if (scanf("%d", &minplanets) < 0) {
       perror("Cannot read input");
       exit(-1);
     }
   }
   while ((maxplanets < minplanets) || (maxplanets > MAXPLANETS)) {
-    printf("Maximum number of planets per system [%d-%d]: ", minplanets,
-           MAXPLANETS);
+    std::println("Maximum number of planets per system [{}-{}]: ", minplanets,
+                 MAXPLANETS);
     if (scanf("%d", &maxplanets) < 0) {
       perror("Cannot read input");
       exit(-1);

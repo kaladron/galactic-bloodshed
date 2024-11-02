@@ -10,6 +10,7 @@
   "customizations": {
     "vscode": {
        "settings": {
+        "editor.formatOnSave": true,
         "C_Cpp.intelliSenseEngine": "disabled",
         "C_Cpp.autocomplete": "disabled",
         "C_Cpp.errorSquiggles": "disabled",

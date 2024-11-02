@@ -10,7 +10,8 @@ FetchContent_Declare(
   glaze
   GIT_REPOSITORY https://github.com/stephenberry/glaze.git
   GIT_TAG main
-  GIT_SHALLOW TRUE)
+  GIT_SHALLOW TRUE
+  EXCLUDE_FROM_ALL)
 
 FetchContent_MakeAvailable(glaze)
 
@@ -18,7 +19,8 @@ FetchContent_Declare(
   scn
   GIT_REPOSITORY https://github.com/eliaskosunen/scnlib.git
   GIT_TAG v3.0.1
-  GIT_SHALLOW TRUE)
+  GIT_SHALLOW TRUE
+  EXCLUDE_FROM_ALL)
 
 FetchContent_MakeAvailable(scn)
 
@@ -182,6 +184,7 @@ set(OLD_LIBGBLIB_FILES bombard.cc doplanet.cc dosector.cc doturncmd.cc)
 
 add_executable(GB GB_server.cc ${OLD_LIBGBLIB_FILES})
 target_link_libraries(GB PRIVATE gblib commands SQLite::SQLite3 glaze::glaze)
+install(TARGETS GB)
 
 # Test targets
 add_executable(shlmisc_test shlmisc_test.cc)

@@ -155,7 +155,20 @@ void grow(SectorMap &smap, SectorType type, int n, int rate) {
   }
 }
 
+/**
+ * @brief Calculates the temperature of a sector on a planet based on its
+ * latitude.
+ *
+ * This function computes the temperature for a specific sector at the
+ * y-coordinate `y` on the planet `p`. The temperature decreases quadratically
+ * with the distance from the planet's equator.
+ *
+ * @param p The planet object containing planetary conditions and dimensions.
+ * @param y The y-coordinate (latitude index) of the sector.
+ * @return The calculated temperature of the sector.
+ */
 int SectTemp(const Planet &p, const int y) {
+  // Temperature factor.
   const int TFAC = 10;
 
   int temp = p.conditions[TEMP];
@@ -166,35 +179,46 @@ int SectTemp(const Planet &p, const int y) {
   return temp;
 }
 
+/**
+ * @brief Generates the surface of a planet by initializing each sector's
+ * properties.
+ *
+ * This function iterates over all sectors in the given `SectorMap` and assigns
+ * initial values to each sector's type, resources, fertility, and crystals. It
+ * also applies special conditions to polar sectors, potentially converting them
+ * to ice based on temperature and planet type.
+ *
+ * @param p The planet for which the surface is being generated.
+ * @param smap The sector map representing the planet's surface.
+ */
 void Makesurface(const Planet &p, SectorMap &smap) {
-  for (int x = 0; x < smap.get_maxx(); x++) {
-    for (int y = 0; y < smap.get_maxy(); y++) {
-      auto &s = smap.get(x, y);
-      int temp = SectTemp(p, y);
-      switch (s.type) {
-        case SectorType::SEC_SEA:
-          if (success(-temp) && ((y == 0) || (y == smap.get_maxy() - 1)))
-            s.condition = SectorType::SEC_ICE;
+  for (auto &s : smap) {
+    s.type = s.condition;
+    s.resource = int_rand(rmin[p.type][s.type], rmax[p.type][s.type]);
+    s.fert = int_rand(Fmin[p.type][s.type], Fmax[p.type][s.type]);
+
+    if (int_rand(0, 1000) < x_chance[s.type]) s.crystals = int_rand(4, 8);
+
+    // We ice up the poles.
+    if ((s.y != 0) && (s.y != smap.get_maxy() - 1)) continue;
+
+    int temp = SectTemp(p, s.y);
+    switch (s.type) {
+      case SectorType::SEC_SEA:
+        if (success(-temp)) s.condition = SectorType::SEC_ICE;
+        break;
+      case SectorType::SEC_LAND:
+        if (p.type == PlanetType::EARTH) {
+          if (success(-temp)) s.condition = SectorType::SEC_ICE;
+        }
+        break;
+      case SectorType::SEC_FOREST:
+        if (p.type == PlanetType::FOREST) {
+          if (success(-temp)) s.condition = SectorType::SEC_ICE;
           break;
-        case SectorType::SEC_LAND:
-          if (p.type == PlanetType::EARTH) {
-            if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
-              s.condition = SectorType::SEC_ICE;
-          }
-          break;
-        case SectorType::SEC_FOREST:
-          if (p.type == PlanetType::FOREST) {
-            if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
-              s.condition = SectorType::SEC_ICE;
-          }
-      }
-      s.type = s.condition;
-      s.resource = int_rand(rmin[p.type][s.type], rmax[p.type][s.type]);
-      s.fert = int_rand(Fmin[p.type][s.type], Fmax[p.type][s.type]);
-      if (int_rand(0, 1000) < x_chance[s.type])
-        s.crystals = int_rand(4, 8);
-      else
-        s.crystals = 0;
+        }
+      default:
+        break;
     }
   }
 }

@@ -385,7 +385,31 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
     throw std::runtime_error("Database unable to return the requested planet");
   }
 
-  Planet p;
+  int p_type_num = sqlite3_column_int(stmt, 14);
+  PlanetType ptype = [p_type_num]() -> PlanetType {
+    switch (p_type_num) {
+      case 0:
+        return PlanetType::EARTH;
+      case 1:
+        return PlanetType::ASTEROID;
+      case 2:
+        return PlanetType::MARS;
+      case 3:
+        return PlanetType::ICEBALL;
+      case 4:
+        return PlanetType::GASGIANT;
+      case 5:
+        return PlanetType::WATER;
+      case 6:
+        return PlanetType::FOREST;
+      case 7:
+        return PlanetType::DESERT;
+      default:
+        throw std::runtime_error("Bad data in type field");
+    }
+  }();
+
+  Planet p(ptype);
   p.planet_id = sqlite3_column_int(stmt, 0);
   p.xpos = sqlite3_column_double(stmt, 4);
   p.ypos = sqlite3_column_double(stmt, 5);
@@ -397,35 +421,6 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
   p.maxpopn = sqlite3_column_int64(stmt, 11);
   p.total_resources = sqlite3_column_int64(stmt, 12);
   p.slaved_to = sqlite3_column_int(stmt, 13);
-  int p_type = sqlite3_column_int(stmt, 14);
-  switch (p_type) {
-    case 0:
-      p.type = PlanetType::EARTH;
-      break;
-    case 1:
-      p.type = PlanetType::ASTEROID;
-      break;
-    case 2:
-      p.type = PlanetType::MARS;
-      break;
-    case 3:
-      p.type = PlanetType::ICEBALL;
-      break;
-    case 4:
-      p.type = PlanetType::GASGIANT;
-      break;
-    case 5:
-      p.type = PlanetType::WATER;
-      break;
-    case 6:
-      p.type = PlanetType::FOREST;
-      break;
-    case 7:
-      p.type = PlanetType::DESERT;
-      break;
-    default:
-      throw std::runtime_error("Bad data in type field");
-  }
   p.expltimer = sqlite3_column_int(stmt, 15);
   p.conditions[RTEMP] = sqlite3_column_int(stmt, 16);
   p.conditions[TEMP] = sqlite3_column_int(stmt, 17);

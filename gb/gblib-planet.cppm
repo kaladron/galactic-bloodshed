@@ -53,7 +53,8 @@ export struct plinfo {          // planetary stockpiles
 
 export class Planet {
  public:
-  Planet() = default;
+  Planet() : type(PlanetType::EARTH) {};
+  Planet(PlanetType type) : type(type) {};
   Planet(Planet &) = delete;
   Planet &operator=(const Planet &) = delete;
   Planet(Planet &&) = default;

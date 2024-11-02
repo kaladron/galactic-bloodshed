@@ -1,5 +1,27 @@
 {
-    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
-    "features": {
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers-community/features/llvm": {
+      "version": "20"
+    },
+    "ghcr.io/warrenbuckley/codespace-features/sqlite:1": {},
+    "ghcr.io/devcontainers-extra/features/ninja-asdf:2": {}
+  },
+  "customizations": {
+    "vscode": {
+       "settings": {
+        "C_Cpp.intelliSenseEngine": "disabled",
+        "C_Cpp.autocomplete": "disabled",
+        "C_Cpp.errorSquiggles": "disabled",
+        "C_Cpp.formatting": "clangFormat"
+      },
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-themes",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake",
+        "llvm-vs-code-extensions.vscode-clangd"
+      ]
     }
   }
+}

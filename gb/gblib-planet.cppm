@@ -8,46 +8,47 @@ import :types;
 import :tweakables;
 import std;
 
-export struct plinfo {     /* planetary stockpiles */
-  unsigned short fuel;     /* fuel for powering things */
-  unsigned short destruct; /* destructive potential */
-  resource_t resource;     /* resources in storage */
-  population_t popn;
-  population_t troops;
-  unsigned short crystals;
+export struct plinfo {          // planetary stockpiles
+  unsigned short fuel = 0;      // fuel for powering things
+  unsigned short destruct = 0;  // destructive potential
+  resource_t resource = 0;      // resources in storage
+  population_t popn = 0;
+  population_t troops = 0;
+  unsigned short crystals = 0;
 
-  unsigned short prod_res; /* shows last update production */
-  unsigned short prod_fuel;
-  unsigned short prod_dest;
-  unsigned short prod_crystals;
-  money_t prod_money;
-  double prod_tech;
+  unsigned short prod_res = 0;  // shows last update production
+  unsigned short prod_fuel = 0;
+  unsigned short prod_dest = 0;
+  unsigned short prod_crystals = 0;
+  money_t prod_money = 0;
+  double prod_tech = 0;
 
-  money_t tech_invest;
-  unsigned short numsectsowned;
+  money_t tech_invest = 0;
+  unsigned short numsectsowned = 0;
 
-  unsigned char comread;    /* combat readiness (mobilization)*/
-  unsigned char mob_set;    /* mobilization target */
-  unsigned char tox_thresh; /* min to build a waste can */
+  unsigned char comread = 0;     // combat readiness (mobilization)
+  unsigned char mob_set = 0;     // mobilization target
+  unsigned char tox_thresh = 0;  // min to build a waste can
 
-  unsigned char explored;
-  unsigned char autorep;
-  unsigned char tax;    /* tax rate */
-  unsigned char newtax; /* new tax rate (after update) */
-  unsigned char guns;   /* number of planet guns (mob/5) */
+  unsigned char explored = 0;
+  unsigned char autorep = 0;
+  unsigned char tax = 0;     // tax rate
+  unsigned char newtax = 0;  // new tax rate (after update)
+  unsigned char guns = 0;    // number of planet guns (mob/5)
 
   /* merchant shipping parameters */
   struct {
-    unsigned char set;         /* does the planet have orders? */
-    unsigned char dest_star;   /* star that ship has to go to next */
-    unsigned char dest_planet; /* planet destination */
-    unsigned char load;        /* bit-field commodities to be loaded there */
-    unsigned char unload;      /* unloaded commodities */
-    unsigned char x, y;        /* location that ship has to land on */
-  } route[MAX_ROUTES];         /* i am allowing up to four routes per planet */
+    unsigned char set = 0;          // does the planet have orders?
+    unsigned char dest_star = 0;    // star that ship has to go to next
+    unsigned char dest_planet = 0;  // planet destination
+    unsigned char load = 0;         // bit-field commodities to be loaded there
+    unsigned char unload = 0;       // unloaded commodities
+    unsigned char x = 0;            // location that ship has to land on
+    unsigned char y = 0;
+  } route[MAX_ROUTES];
 
-  long mob_points;
-  double est_production; /* estimated production */
+  long mob_points = 0;
+  double est_production = 0;  // estimated production
 };
 
 export class Planet {
@@ -63,25 +64,28 @@ export class Planet {
   [[nodiscard]] double compatibility(const Race &) const;
   [[nodiscard]] ap_t get_points() const;
 
-  double xpos, ypos;        /* x,y relative to orbit */
-  shipnum_t ships;          /* first ship in orbit (to be changed) */
-  unsigned char Maxx, Maxy; /* size of map */
+  double xpos = 0;  // x,y relative to orbit */
+  double ypos = 0;
+  shipnum_t ships = 0;     // first ship in orbit (to be changed)
+  unsigned char Maxx = 0;  // size of map
+  unsigned char Maxy = 0;
 
-  plinfo info[MAXPLAYERS];   /* player info */
-  int conditions[TOXIC + 1]; /* atmospheric conditions for terraforming */
+  std::array<plinfo, MAXPLAYERS> info{};  // player info
+  std::array<int, TOXIC + 1>
+      conditions{};  // atmospheric conditions for terraforming
 
-  population_t popn;
-  population_t troops;
-  population_t maxpopn; /* maximum population */
-  resource_t total_resources;
+  population_t popn = 0;
+  population_t troops = 0;
+  population_t maxpopn = 0; /* maximum population */
+  resource_t total_resources = 0;
 
-  player_t slaved_to;
-  PlanetType type;         /* what type planet is */
-  unsigned char expltimer; /* timer for explorations */
+  player_t slaved_to = 0;
+  PlanetType type;             /* what type planet is */
+  unsigned char expltimer = 0; /* timer for explorations */
 
-  unsigned char explored;
+  unsigned char explored = 0;
 
-  planetnum_t planet_id;
+  planetnum_t planet_id = 0;
 };
 
 //* Return gravity for the Planet
@@ -94,7 +98,7 @@ double Planet::compatibility(const Race &race) const {
 
   /* make an adjustment for planetary temperature */
   int add = 0.1 * ((double)conditions[TEMP] - race.conditions[TEMP]);
-  double sum = 1.0 - (double)abs(add) / 100.0;
+  double sum = 1.0 - ((double)abs(add) / 100.0);
 
   /* step through and report compatibility of each planetary gas */
   for (int i = TEMP + 1; i <= OTHER; i++) {
@@ -129,8 +133,8 @@ ap_t Planet::get_points() const {
   }
 }
 
-export int revolt(Planet &pl, const player_t victim, const player_t agent);
+export int revolt(Planet &pl, player_t victim, player_t agent);
 
-export void moveplanet(const starnum_t starnum, Planet &planet,
-                       const planetnum_t planetnum);
+export void moveplanet(starnum_t starnum, Planet &planet,
+                       planetnum_t planetnum);
 export bool adjacent(const Planet &, Coordinates from, Coordinates to);

@@ -1,17 +1,16 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* makeplanet.c -- makes one planet. */
+// \file makeplanet.cc makes one planet
 
 import gblib;
-import std.compat;
+import std;
 
 #include "gb/creator/makeplanet.h"
 
 #include <sqlite3.h>
-#include <stdlib.h>
 #include <strings.h>
+
+#include <cstdlib>
 
 #include "gb/creator/makestar.h"
 
@@ -203,12 +202,10 @@ void Makesurface(const Planet &p, SectorMap &smap) {
 
 Planet makeplanet(double dist, short stemp, PlanetType type) {
   static planetnum_t planet_id = 0;
-  Planet planet;
+  Planet planet{type};
 
-  bzero(&planet, sizeof(planet));
   planet.planet_id = planet_id;
   planet_id++;
-  planet.type = type;
   planet.expltimer = 5;
   planet.conditions[TEMP] = planet.conditions[RTEMP] = Temperature(dist, stemp);
 

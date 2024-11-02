@@ -81,7 +81,7 @@ void MakeEarthAtmosphere(Planet &planet, const int chance) {
     atmos -= planet.conditions[OXYGEN] = int_rand(10, 25);
     atmos -= planet.conditions[NITROGEN] = int_rand(20, atmos - 20);
     atmos -= planet.conditions[CO2] = int_rand(10, atmos / 2);
-    atmos -= planet.conditions[HELIUM] = int_rand(2, atmos / 8 + 1);
+    atmos -= planet.conditions[HELIUM] = int_rand(2, (atmos / 8) + 1);
     atmos -= planet.conditions[METHANE] = random() & 01;
     atmos -= planet.conditions[SULFUR] = 0;
     atmos -= planet.conditions[HYDROGEN] = 0;
@@ -160,7 +160,7 @@ int SectTemp(const Planet &p, const int y) {
   const int TFAC = 10;
 
   int temp = p.conditions[TEMP];
-  int mid = (p.Maxy + 1) / 2 - 1;
+  int mid = ((p.Maxy + 1) / 2) - 1;
   int dy = abs(y - mid);
 
   temp -= TFAC * dy * dy;
@@ -203,14 +203,7 @@ void Makesurface(const Planet &p, SectorMap &smap) {
 
 Planet makeplanet(double dist, short stemp, PlanetType type) {
   static planetnum_t planet_id = 0;
-  int x;
-  int y;
   Planet planet;
-  int atmos;
-  int total_sects;
-  char c;
-  char t;
-  double f;
 
   bzero(&planet, sizeof(planet));
   planet.planet_id = planet_id;
@@ -220,31 +213,31 @@ Planet makeplanet(double dist, short stemp, PlanetType type) {
   planet.conditions[TEMP] = planet.conditions[RTEMP] = Temperature(dist, stemp);
 
   planet.Maxx = int_rand(xmin[type], xmax[type]);
-  f = (double)planet.Maxx / RATIOXY;
+  auto f = (double)planet.Maxx / RATIOXY;
   planet.Maxy = round_rand(f) + 1;
   if (!(planet.Maxy % 2)) planet.Maxy++; /* make odd number of latitude bands */
 
   if (type == PlanetType::ASTEROID)
     planet.Maxy = int_rand(1, 3); /* Asteroids have funny shapes. */
 
-  t = c = cond[type];
+  auto t = cond[type];
 
   // Initialize with the correct number of sectors.
   SectorMap smap(planet, true);
-  for (y = 0; y < planet.Maxy; y++) {
-    for (x = 0; x < planet.Maxx; x++) {
+  for (auto y = 0; y < planet.Maxy; y++) {
+    for (auto x = 0; x < planet.Maxx; x++) {
       auto &s = smap.get(x, y);
       s.type = s.condition = t;
     }
   }
 
-  total_sects = (planet.Maxy - 1) * (planet.Maxx - 1);
+  auto total_sects = (planet.Maxy - 1) * (planet.Maxx - 1);
 
   switch (type) {
     case PlanetType::GASGIANT: /* gas giant Planet */
       /* either lots of meth or not too much */
       if (int_rand(0, 1)) { /* methane planet */
-        atmos = 100 - (planet.conditions[METHANE] = int_rand(70, 80));
+        auto atmos = 100 - (planet.conditions[METHANE] = int_rand(70, 80));
         atmos -= planet.conditions[HYDROGEN] = int_rand(1, atmos / 2);
         atmos -= planet.conditions[HELIUM] = 1;
         atmos -= planet.conditions[OXYGEN] = 0;
@@ -253,7 +246,7 @@ Planet makeplanet(double dist, short stemp, PlanetType type) {
         atmos -= planet.conditions[SULFUR] = 0;
         planet.conditions[OTHER] = atmos;
       } else {
-        atmos = 100 - (planet.conditions[HYDROGEN] = int_rand(30, 75));
+        auto atmos = 100 - (planet.conditions[HYDROGEN] = int_rand(30, 75));
         atmos -= planet.conditions[HELIUM] = int_rand(20, atmos / 2);
         atmos -= planet.conditions[METHANE] = random() & 01;
         atmos -= planet.conditions[OXYGEN] = 0;
@@ -269,11 +262,11 @@ Planet makeplanet(double dist, short stemp, PlanetType type) {
       planet.conditions[METHANE] = 0;
       planet.conditions[OXYGEN] = 0;
       if (random() & 01) { /* some have an atmosphere, some don't */
-        atmos = 100 - (planet.conditions[CO2] = int_rand(30, 45));
+        auto atmos = 100 - (planet.conditions[CO2] = int_rand(30, 45));
         atmos -= planet.conditions[NITROGEN] = int_rand(10, atmos / 2);
         atmos -= planet.conditions[SULFUR] =
             (random() & 01) ? 0 : int_rand(20, atmos / 2);
-        atmos -= planet.conditions[OTHER] = atmos;
+        planet.conditions[OTHER] = atmos;
       } else {
         planet.conditions[CO2] = 0;
         planet.conditions[NITROGEN] = 0;
@@ -285,8 +278,8 @@ Planet makeplanet(double dist, short stemp, PlanetType type) {
       break;
     case PlanetType::ASTEROID: /* asteroid */
       /* no atmosphere */
-      for (y = 0; y < planet.Maxy; y++)
-        for (x = 0; x < planet.Maxx; x++)
+      for (auto y = 0; y < planet.Maxy; y++)
+        for (auto x = 0; x < planet.Maxx; x++)
           if (!int_rand(0, 3)) {
             auto &s = smap.get_random();
             s.type = s.condition = SectorType::SEC_LAND;
@@ -300,11 +293,11 @@ Planet makeplanet(double dist, short stemp, PlanetType type) {
       planet.conditions[METHANE] = 0;
       planet.conditions[OXYGEN] = 0;
       if (planet.Maxx * planet.Maxy > int_rand(0, 20)) {
-        atmos = 100 - (planet.conditions[CO2] = int_rand(30, 45));
+        auto atmos = 100 - (planet.conditions[CO2] = int_rand(30, 45));
         atmos -= planet.conditions[NITROGEN] = int_rand(10, atmos / 2);
         atmos -= planet.conditions[SULFUR] =
             (random() & 01) ? 0 : int_rand(20, atmos / 2);
-        atmos -= planet.conditions[OTHER] = atmos;
+        planet.conditions[OTHER] = atmos;
       } else {
         planet.conditions[CO2] = 0;
         planet.conditions[NITROGEN] = 0;

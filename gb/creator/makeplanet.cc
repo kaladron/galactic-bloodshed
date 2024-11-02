@@ -72,12 +72,134 @@ static const int cond[] = {SectorType::SEC_SEA,    SectorType::SEC_MOUNT,
                            SectorType::SEC_GAS,    SectorType::SEC_SEA,
                            SectorType::SEC_FOREST, SectorType::SEC_DESERT};
 
-static int neighbors(SectorMap &, int, int, int);
-static void MakeEarthAtmosphere(Planet &, int);
-static void Makesurface(const Planet &, SectorMap &);
-static int SectTemp(const Planet &, const int);
-static void seed(SectorMap &, SectorType, int);
-static void grow(SectorMap &, SectorType, int, int);
+namespace {
+void MakeEarthAtmosphere(Planet &planet, const int chance) {
+  int atmos = 100;
+
+  if (int_rand(0, 99) > chance) {
+    /* oxygen-reducing atmosphere */
+    atmos -= planet.conditions[OXYGEN] = int_rand(10, 25);
+    atmos -= planet.conditions[NITROGEN] = int_rand(20, atmos - 20);
+    atmos -= planet.conditions[CO2] = int_rand(10, atmos / 2);
+    atmos -= planet.conditions[HELIUM] = int_rand(2, atmos / 8 + 1);
+    atmos -= planet.conditions[METHANE] = random() & 01;
+    atmos -= planet.conditions[SULFUR] = 0;
+    atmos -= planet.conditions[HYDROGEN] = 0;
+    planet.conditions[OTHER] = atmos;
+  } else {
+    /* methane atmosphere */
+    atmos -= planet.conditions[METHANE] = int_rand(70, 80);
+    atmos -= planet.conditions[HYDROGEN] = int_rand(1, atmos / 2);
+    atmos -= planet.conditions[HELIUM] = 1 + (random() & 01);
+    atmos -= planet.conditions[OXYGEN] = 0;
+    atmos -= planet.conditions[CO2] = 1 + (random() & 01);
+    atmos -= planet.conditions[SULFUR] = (random() & 01);
+    atmos -= planet.conditions[NITROGEN] = int_rand(1, atmos / 2);
+    planet.conditions[OTHER] = atmos;
+  }
+}
+
+//! Returns # of neighbors of a given designation that a sector has.
+int neighbors(SectorMap &smap, int x, int y, int type) {
+  int l = x - 1;
+  int r = x + 1; /* Left and right columns. */
+  int n = 0;     /* Number of neighbors so far. */
+
+  if (x == 0)
+    l = smap.get_maxx() - 1;
+  else if (r == smap.get_maxx())
+    r = 0;
+  if (y > 0)
+    n += (smap.get(x, y - 1).type == type) + (smap.get(l, y - 1).type == type) +
+         (smap.get(r, y - 1).type == type);
+
+  n += (smap.get(l, y).type == type) + (smap.get(r, y).type == type);
+
+  if (y < smap.get_maxy() - 1)
+    n += (smap.get(x, y + 1).type == type) + (smap.get(l, y + 1).type == type) +
+         (smap.get(r, y + 1).type == type);
+
+  return (n);
+}
+
+//! Randomly places n sectors of designation type on a planet.
+void seed(SectorMap &smap, SectorType type, int n) {
+  while (n-- > 0) {
+    auto &s = smap.get_random();
+    s.type = s.condition = type;
+  }
+}
+
+/*! Spread out a sector of a certain type over the planet.  Rate is the number
+ *  of adjacent sectors of the same type that must be found for the sector to
+ *  become type.
+ */
+void grow(SectorMap &smap, SectorType type, int n, int rate) {
+  std::vector<std::tuple<int, int, int>> worklist;  // x, y, type
+
+  // We don't want to alter the current map, as this is iterative.
+  // So we store a worklist and apply it after we've done a scan of
+  // the map.
+  while (n-- > 0) {
+    for (int x = 0; x < smap.get_maxx(); x++) {
+      for (int y = 0; y < smap.get_maxy(); y++) {
+        if (neighbors(smap, x, y, type) >= rate) {
+          worklist.emplace_back(std::make_tuple(x, y, type));
+        }
+      }
+    }
+  }
+
+  for (auto &[x, y, sector_type] : worklist) {
+    auto &s = smap.get(x, y);
+    s.condition = s.type = sector_type;
+  }
+}
+
+int SectTemp(const Planet &p, const int y) {
+  const int TFAC = 10;
+
+  int temp = p.conditions[TEMP];
+  int mid = (p.Maxy + 1) / 2 - 1;
+  int dy = abs(y - mid);
+
+  temp -= TFAC * dy * dy;
+  return temp;
+}
+
+void Makesurface(const Planet &p, SectorMap &smap) {
+  for (int x = 0; x < smap.get_maxx(); x++) {
+    for (int y = 0; y < smap.get_maxy(); y++) {
+      auto &s = smap.get(x, y);
+      int temp = SectTemp(p, y);
+      switch (s.type) {
+        case SectorType::SEC_SEA:
+          if (success(-temp) && ((y == 0) || (y == smap.get_maxy() - 1)))
+            s.condition = SectorType::SEC_ICE;
+          break;
+        case SectorType::SEC_LAND:
+          if (p.type == PlanetType::EARTH) {
+            if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
+              s.condition = SectorType::SEC_ICE;
+          }
+          break;
+        case SectorType::SEC_FOREST:
+          if (p.type == PlanetType::FOREST) {
+            if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
+              s.condition = SectorType::SEC_ICE;
+          }
+      }
+      s.type = s.condition;
+      s.resource = int_rand(rmin[p.type][s.type], rmax[p.type][s.type]);
+      s.fert = int_rand(Fmin[p.type][s.type], Fmax[p.type][s.type]);
+      if (int_rand(0, 1000) < x_chance[s.type])
+        s.crystals = int_rand(4, 8);
+      else
+        s.crystals = 0;
+    }
+  }
+}
+}  // namespace
 
 Planet makeplanet(double dist, short stemp, PlanetType type) {
   static planetnum_t planet_id = 0;
@@ -228,131 +350,4 @@ Planet makeplanet(double dist, short stemp, PlanetType type) {
               smap); /* determine surface geology based on environment */
   putsmap(smap, planet);
   return planet;
-}
-
-static void MakeEarthAtmosphere(Planet &planet, const int chance) {
-  int atmos = 100;
-
-  if (int_rand(0, 99) > chance) {
-    /* oxygen-reducing atmosphere */
-    atmos -= planet.conditions[OXYGEN] = int_rand(10, 25);
-    atmos -= planet.conditions[NITROGEN] = int_rand(20, atmos - 20);
-    atmos -= planet.conditions[CO2] = int_rand(10, atmos / 2);
-    atmos -= planet.conditions[HELIUM] = int_rand(2, atmos / 8 + 1);
-    atmos -= planet.conditions[METHANE] = random() & 01;
-    atmos -= planet.conditions[SULFUR] = 0;
-    atmos -= planet.conditions[HYDROGEN] = 0;
-    planet.conditions[OTHER] = atmos;
-  } else {
-    /* methane atmosphere */
-    atmos -= planet.conditions[METHANE] = int_rand(70, 80);
-    atmos -= planet.conditions[HYDROGEN] = int_rand(1, atmos / 2);
-    atmos -= planet.conditions[HELIUM] = 1 + (random() & 01);
-    atmos -= planet.conditions[OXYGEN] = 0;
-    atmos -= planet.conditions[CO2] = 1 + (random() & 01);
-    atmos -= planet.conditions[SULFUR] = (random() & 01);
-    atmos -= planet.conditions[NITROGEN] = int_rand(1, atmos / 2);
-    planet.conditions[OTHER] = atmos;
-  }
-}
-
-//! Returns # of neighbors of a given designation that a sector has.
-static int neighbors(SectorMap &smap, int x, int y, int type) {
-  int l = x - 1;
-  int r = x + 1; /* Left and right columns. */
-  int n = 0;     /* Number of neighbors so far. */
-
-  if (x == 0)
-    l = smap.get_maxx() - 1;
-  else if (r == smap.get_maxx())
-    r = 0;
-  if (y > 0)
-    n += (smap.get(x, y - 1).type == type) + (smap.get(l, y - 1).type == type) +
-         (smap.get(r, y - 1).type == type);
-
-  n += (smap.get(l, y).type == type) + (smap.get(r, y).type == type);
-
-  if (y < smap.get_maxy() - 1)
-    n += (smap.get(x, y + 1).type == type) + (smap.get(l, y + 1).type == type) +
-         (smap.get(r, y + 1).type == type);
-
-  return (n);
-}
-
-//! Randomly places n sectors of designation type on a planet.
-static void seed(SectorMap &smap, SectorType type, int n) {
-  while (n-- > 0) {
-    auto &s = smap.get_random();
-    s.type = s.condition = type;
-  }
-}
-
-/*! Spread out a sector of a certain type over the planet.  Rate is the number
- *  of adjacent sectors of the same type that must be found for the sector to
- *  become type.
- */
-static void grow(SectorMap &smap, SectorType type, int n, int rate) {
-  std::vector<std::tuple<int, int, int>> worklist;  // x, y, type
-
-  // We don't want to alter the current map, as this is iterative.
-  // So we store a worklist and apply it after we've done a scan of
-  // the map.
-  while (n-- > 0) {
-    for (int x = 0; x < smap.get_maxx(); x++) {
-      for (int y = 0; y < smap.get_maxy(); y++) {
-        if (neighbors(smap, x, y, type) >= rate) {
-          worklist.emplace_back(std::make_tuple(x, y, type));
-        }
-      }
-    }
-  }
-
-  for (auto &[x, y, sector_type] : worklist) {
-    auto &s = smap.get(x, y);
-    s.condition = s.type = sector_type;
-  }
-}
-
-static void Makesurface(const Planet &p, SectorMap &smap) {
-  for (int x = 0; x < smap.get_maxx(); x++) {
-    for (int y = 0; y < smap.get_maxy(); y++) {
-      auto &s = smap.get(x, y);
-      int temp = SectTemp(p, y);
-      switch (s.type) {
-        case SectorType::SEC_SEA:
-          if (success(-temp) && ((y == 0) || (y == smap.get_maxy() - 1)))
-            s.condition = SectorType::SEC_ICE;
-          break;
-        case SectorType::SEC_LAND:
-          if (p.type == PlanetType::EARTH) {
-            if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
-              s.condition = SectorType::SEC_ICE;
-          }
-          break;
-        case SectorType::SEC_FOREST:
-          if (p.type == PlanetType::FOREST) {
-            if (success(-temp) && (y == 0 || y == smap.get_maxy() - 1))
-              s.condition = SectorType::SEC_ICE;
-          }
-      }
-      s.type = s.condition;
-      s.resource = int_rand(rmin[p.type][s.type], rmax[p.type][s.type]);
-      s.fert = int_rand(Fmin[p.type][s.type], Fmax[p.type][s.type]);
-      if (int_rand(0, 1000) < x_chance[s.type])
-        s.crystals = int_rand(4, 8);
-      else
-        s.crystals = 0;
-    }
-  }
-}
-
-int SectTemp(const Planet &p, const int y) {
-  const int TFAC = 10;
-
-  int temp = p.conditions[TEMP];
-  int mid = (p.Maxy + 1) / 2 - 1;
-  int dy = abs(y - mid);
-
-  temp -= TFAC * dy * dy;
-  return temp;
 }

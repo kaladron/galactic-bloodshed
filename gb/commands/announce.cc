@@ -1,36 +1,38 @@
-// Copyright 2019 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 module commands;
+
+namespace {
+enum class Communicate {
+  ANN = ':',
+  BROADCAST = '>',
+  SHOUT = '!',
+  THINK = '=',
+  UNKNOWN = ' ',
+};
+
+Communicate get_mode(const std::string &mode) {
+  if (mode == "announce") return Communicate::ANN;
+  if (mode == "broadcast" || mode == "'") return Communicate::BROADCAST;
+  if (mode == "shout") return Communicate::SHOUT;
+  if (mode == "think") return Communicate::THINK;
+
+  return Communicate::UNKNOWN;
+}
+}  // namespace
 
 namespace GB::commands {
 void announce(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
-  enum class Communicate {
-    ANN,
-    BROADCAST,
-    SHOUT,
-    THINK,
-  };
-
-  Communicate mode;
-  if (argv[0] == "announce")
-    mode = Communicate::ANN;
-  else if (argv[0] == "broadcast" || argv[0] == "'")
-    mode = Communicate::BROADCAST;
-  else if (argv[0] == "shout")
-    mode = Communicate::SHOUT;
-  else if (argv[0] == "think")
-    mode = Communicate::THINK;
-  else {
+  Communicate mode = get_mode(argv[0]);
+  if (mode == Communicate::UNKNOWN) {
     g.out << "Not sure how you got here.\n";
     return;
   }
@@ -58,25 +60,9 @@ void announce(const command_t &argv, GameObj &g) {
       }
   }
 
-  char symbol;
-  switch (mode) {
-    case Communicate::ANN:
-      symbol = ':';
-      break;
-    case Communicate::BROADCAST:
-      symbol = '>';
-      break;
-    case Communicate::SHOUT:
-      symbol = '!';
-      break;
-    case Communicate::THINK:
-      symbol = '=';
-      break;
-  }
-  char msg[1000];
-  sprintf(msg, "%s \"%s\" [%d,%d] %c %s\n", race.name,
-          race.governor[Governor].name, Playernum, Governor, symbol,
-          message.c_str());
+  std::string msg = std::format("{} \"{}\" [{},{}] {} {}\n", race.name,
+                                race.governor[Governor].name, Playernum,
+                                Governor, std::to_underlying(mode), message);
 
   switch (mode) {
     case Communicate::ANN:
@@ -90,6 +76,8 @@ void announce(const command_t &argv, GameObj &g) {
       break;
     case Communicate::THINK:
       d_think(Playernum, Governor, msg);
+      break;
+    case Communicate::UNKNOWN:  // Impossible
       break;
   }
 }

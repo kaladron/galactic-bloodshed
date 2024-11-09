@@ -44,9 +44,16 @@ void announce(const command_t &argv, GameObj &g) {
   }
 
   std::stringstream ss_message;
-  std::copy(++argv.begin(), argv.end(),
-            std::ostream_iterator<std::string>(ss_message, " "));
+
+  std::ranges::copy(argv | std::views::drop(1),
+                    std::ostream_iterator<std::string>(ss_message, " "));
   std::string message = ss_message.str();
+
+  // TODO(jeffbailey):
+  // When LLVM libc++ supports join_with, we can use this instead of the above
+  //  std::string message;
+  //  message.assign_range(argv | std::views::drop(1) | std::views::join_with('
+  //  '));
 
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:

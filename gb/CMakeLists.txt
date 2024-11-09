@@ -1,5 +1,24 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Configuration variable for PKGDATADIR
+set(PKGDATADIR
+    "${CMAKE_INSTALL_FULL_DATAROOTDIR}/${CMAKE_PROJECT_NAME}/"
+    CACHE STRING "Path to the package data directory")
+add_definitions(-DPKGDATADIR="${PKGDATADIR}")
+
+# Set PKGSTATEDIR using CMAKE_INSTALL_LOCALSTATEDIR for local state files
+set(PKGSTATEDIR
+    "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/${CMAKE_PROJECT_NAME}/"
+    CACHE STRING "Path to the package state directory")
+add_definitions(-DPKGSTATEDIR="${PKGSTATEDIR}")
+install(DIRECTORY DESTINATION ${PKGSTATEDIR})
+
+# Set DOCDIR using CMAKE_INSTALL_DOCDIR for documentation files
+set(DOCDIR
+    "${CMAKE_INSTALL_FULL_DOCDIR}/"
+    CACHE STRING "Path to the package document directory")
+add_definitions(-DDOCDIR="${DOCDIR}")
+
 # Require dot, treat the other components as optional
 find_package(Doxygen REQUIRED dot)
 

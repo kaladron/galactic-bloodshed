@@ -28,7 +28,7 @@ import std.compat;
 #include "gb/files.h"
 #include "gb/globals.h"
 
-static int shutdown_flag = 0;
+static bool shutdown_flag = false;
 
 static time_t last_update_time;
 static time_t last_segment_time;
@@ -1104,7 +1104,7 @@ static void process_command(GameObj &g, const command_t &argv) {
   } else if (argv[0] == "purge" && God)
     purge();
   else if (argv[0] == "@@shutdown" && God) {
-    shutdown_flag = 1;
+    shutdown_flag = true;
     g.out << "Doing shutdown.\n";
   } else if (argv[0] == "@@update" && God)
     do_update(g.db, true);

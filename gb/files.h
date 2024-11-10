@@ -34,6 +34,6 @@ inline constexpr auto SEGMENTFL = DATA(Segment.time);
 #define PLANETLIST PATH(planet.list)
 #define STARLIST PATH(star.list)
 
-#define NOGOFL DATA(nogo)
+inline constexpr std::string_view nogofl = PKGSTATEDIR "nogo";
 
 #endif  // FILES_H

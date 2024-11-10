@@ -11,19 +11,13 @@
 #define NEWS(file) DIRPATH("News/", file)
 #define TELE(file) DIRPATH("Tele/", file)
 
-inline constexpr int PATHLEN = 200;  // length of file paths to the game..
-
-inline constexpr auto DATADIR = PKGSTATEDIR;
-inline constexpr auto DOCSDIR = DOCDIR;
 inline constexpr auto EXAM_FL = PATH(exam.dat);
-inline constexpr auto ENROLL_FL = DATA(enroll.dat);
 inline constexpr auto STARDATAFL = DATA(star);
 inline constexpr auto PLANETDATAFL = DATA(planet);
 inline constexpr auto RACEDATAFL = DATA(race);
 inline constexpr auto BLOCKDATAFL = DATA(block);
 inline constexpr auto SHIPDATAFL = DATA(ship);
 inline constexpr auto SHIPFREEDATAFL = DATA(shipfree);
-inline constexpr auto DUMMYFL = DATA(dummy);
 inline constexpr auto PLAYERDATAFL = DATA(players);
 inline constexpr auto TELEGRAMDIR = DATA(Tele);
 inline constexpr auto TELEGRAMFL = DATA(tele);
@@ -41,8 +35,5 @@ inline constexpr auto SEGMENTFL = DATA(Segment.time);
 #define STARLIST PATH(star.list)
 
 #define NOGOFL DATA(nogo)
-#define ADDRESSFL DATA(Addresses)
-
-extern const char *Files[];
 
 #endif  // FILES_H

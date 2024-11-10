@@ -1,17 +1,31 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /// /file tele.cc
 /// \brief Telegram functions
 
 module;
 
-import std.compat;
+import std;
 
 #include "gb/files.h"
 
 module gblib;
+
+namespace {
+const char *get_news_file(NewsType type) {
+  switch (type) {
+    using enum NewsType;
+    case DECLARATION:
+      return DECLARATIONFL;
+    case TRANSFER:
+      return TRANSFERFL;
+    case COMBAT:
+      return COMBATFL;
+    case ANNOUNCE:
+      return ANNOUNCEFL;
+  }
+}
+}  // namespace
 
 /**
  * \brief Sends a message to everyone from person to person
@@ -26,12 +40,12 @@ void push_telegram(const player_t recipient, const governor_t gov,
 
   std::ofstream telegram_file(telefl, std::ios::app);
   if (!telegram_file.is_open()) {
-    perror("tele");
+    std::cerr << std::format("Failed to open telegram file {} \n", telefl);
     return;
   }
   auto now = std::chrono::system_clock::now();
   auto current_time = std::chrono::system_clock::to_time_t(now);
-  auto current_tm = std::localtime(&current_time);
+  auto *current_tm = std::localtime(&current_time);
 
   telegram_file << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}\n",
                                current_tm->tm_mon + 1, current_tm->tm_mday,
@@ -43,13 +57,17 @@ void push_telegram(const player_t recipient, const governor_t gov,
  * \brief Purges the News files.
  */
 void purge() {
-  fclose(std::fopen(DECLARATIONFL, "w+"));
+  std::error_code ec;
+  std::filesystem::resize_file(DECLARATIONFL, 0, ec);
   newslength[NewsType::DECLARATION] = 0;
-  fclose(std::fopen(COMBATFL, "w+"));
+
+  std::filesystem::resize_file(COMBATFL, 0, ec);
   newslength[NewsType::COMBAT] = 0;
-  fclose(std::fopen(ANNOUNCEFL, "w+"));
+
+  std::filesystem::resize_file(ANNOUNCEFL, 0, ec);
   newslength[NewsType::ANNOUNCE] = 0;
-  fclose(std::fopen(TRANSFERFL, "w+"));
+
+  std::filesystem::resize_file(TRANSFERFL, 0, ec);
   newslength[NewsType::TRANSFER] = 0;
 }
 
@@ -62,25 +80,7 @@ void purge() {
  */
 void post(std::string msg, NewsType type) {
   // msg is intentionally a copy as we fix it up in here
-  const char *telefl;
-
-  switch (type) {
-    using enum NewsType;
-    case DECLARATION:
-      telefl = DECLARATIONFL;
-      break;
-    case TRANSFER:
-      telefl = TRANSFERFL;
-      break;
-    case COMBAT:
-      telefl = COMBATFL;
-      break;
-    case ANNOUNCE:
-      telefl = ANNOUNCEFL;
-      break;
-    default:
-      return;
-  }
+  const char *telefl = get_news_file(type);
 
   // look for special symbols
   std::ranges::replace(msg, ';', '\n');
@@ -92,7 +92,7 @@ void post(std::string msg, NewsType type) {
   }
   auto now = std::chrono::system_clock::now();
   auto current_time = std::chrono::system_clock::to_time_t(now);
-  auto current_tm = std::localtime(&current_time);
+  auto *current_tm = std::localtime(&current_time);
   std::string outbuf = std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
                                    current_tm->tm_mon + 1, current_tm->tm_mday,
                                    current_tm->tm_hour, current_tm->tm_min,
@@ -131,8 +131,7 @@ void teleg_read(GameObj &g) {
 
   std::filesystem::path telegram_path(telegram_file);
   if (!std::filesystem::exists(telegram_path)) {
-    g.out << std::format("Error: Telegram file {} non-existent.\n",
-                         telegram_file);
+    g.out << std::format(" None.\n", telegram_file);
     return;
   }
 
@@ -168,22 +167,7 @@ void teleg_read(GameObj &g) {
  * and game object.
  */
 void news_read(NewsType type, GameObj &g) {
-  const char *telegram_file;
-  switch (type) {
-    using enum NewsType;
-    case DECLARATION:
-      telegram_file = DECLARATIONFL;
-      break;
-    case TRANSFER:
-      telegram_file = TRANSFERFL;
-      break;
-    case COMBAT:
-      telegram_file = COMBATFL;
-      break;
-    case ANNOUNCE:
-      telegram_file = ANNOUNCEFL;
-      break;
-  }
+  const char *telegram_file = get_news_file(type);
 
   std::ifstream teleg_read_fd(telegram_file);
   if (!teleg_read_fd.is_open()) {
@@ -220,7 +204,8 @@ void check_for_telegrams(GameObj &g) {
       std::format("{}.{}.{}", TELEGRAMFL, g.player, g.governor);
 
   std::filesystem::path filePath(filename);
-  if (std::filesystem::file_size(filePath) != 0) {
+  std::error_code ec;
+  if (std::filesystem::file_size(filePath, ec) != 0 && !ec) {
     g.out << "You have telegram(s) waiting. Use 'read' to read them.\n";
   }
 }

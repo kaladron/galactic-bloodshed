@@ -907,7 +907,7 @@ static void do_update(Db &db, bool force) {
   time_t clk = time(nullptr);
   struct stat stbuf;
 
-  bool fakeit = (!force && stat(NOGOFL, &stbuf) >= 0);
+  bool fakeit = (!force && stat(nogofl.data(), &stbuf) >= 0);
 
   sprintf(buf, "%sDOING UPDATE...\n", ctime(&clk));
   if (!fakeit) {
@@ -978,7 +978,7 @@ static void do_segment(Db &db, int override, int segment) {
   time_t clk = time(nullptr);
   struct stat stbuf;
 
-  bool fakeit = (!override && stat(NOGOFL, &stbuf) >= 0);
+  bool fakeit = (!override && stat(nogofl.data(), &stbuf) >= 0);
 
   if (!override && segments <= 1) return;
 

@@ -306,7 +306,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
         g.out << "Specify a positive speed.\n";
         return;
       }
-      if (j > speed_rating(ship)) j = speed_rating(ship);
+      j = std::min<int>(j, speed_rating(ship));
       ship.speed = j;
 
     } else {
@@ -337,14 +337,14 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     if (ship.primary) {
       if (argv.size() < 4) {
         ship.guns = PRIMARY;
-        if (ship.retaliate > ship.primary) ship.retaliate = ship.primary;
+        ship.retaliate = std::min<unsigned long>(ship.retaliate, ship.primary);
       } else {
         j = std::stoi(argv[3]);
         if (j < 0) {
           g.out << "Specify a nonnegative number of guns.\n";
           return;
         }
-        if (j > ship.primary) j = ship.primary;
+        j = std::min<unsigned long>(j, ship.primary);
         ship.retaliate = j;
         ship.guns = PRIMARY;
       }
@@ -356,14 +356,15 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     if (ship.secondary) {
       if (argv.size() < 4) {
         ship.guns = SECONDARY;
-        if (ship.retaliate > ship.secondary) ship.retaliate = ship.secondary;
+        ship.retaliate =
+            std::min<unsigned long>(ship.retaliate, ship.secondary);
       } else {
         j = std::stoi(argv[3]);
         if (j < 0) {
           g.out << "Specify a nonnegative number of guns.\n";
           return;
         }
-        if (j > ship.secondary) j = ship.secondary;
+        j = std::min<unsigned long>(j, ship.secondary);
         ship.retaliate = j;
         ship.guns = SECONDARY;
       }

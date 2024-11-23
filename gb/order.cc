@@ -20,14 +20,10 @@ std::string prin_aimed_at(const Ship &ship) {
  * mark wherever the ship is aimed at, as explored by the owning player.
  */
 void mk_expl_aimed_at(GameObj &g, const Ship &s) {
-  double dist;
-  double xf;
-  double yf;
-
   auto &str = stars[s.special.aimed_at.snum];
 
-  xf = s.xpos;
-  yf = s.ypos;
+  auto xf = s.xpos;
+  auto yf = s.ypos;
 
   switch (s.special.aimed_at.level) {
     case ScopeLevel::LEVEL_UNIV:
@@ -35,8 +31,8 @@ void mk_expl_aimed_at(GameObj &g, const Ship &s) {
       break;
     case ScopeLevel::LEVEL_STAR:
       g.out << std::format("Star {}\n", prin_aimed_at(s));
-      if ((dist = sqrt(Distsq(xf, yf, str.xpos(), str.ypos()))) <=
-          tele_range(s.type, s.tech)) {
+      if (auto dist = sqrt(Distsq(xf, yf, str.xpos(), str.ypos()));
+          dist <= tele_range(s.type, s.tech)) {
         str = getstar(s.special.aimed_at.snum);
         setbit(str.explored(), g.player);
         putstar(str, s.special.aimed_at.snum);
@@ -49,9 +45,9 @@ void mk_expl_aimed_at(GameObj &g, const Ship &s) {
     case ScopeLevel::LEVEL_PLAN: {
       g.out << std::format("Planet {}\n", prin_aimed_at(s));
       auto p = getplanet(s.special.aimed_at.snum, s.special.aimed_at.pnum);
-      if ((dist = sqrt(
-               Distsq(xf, yf, str.xpos() + p.xpos, str.ypos() + p.ypos))) <=
-          tele_range(s.type, s.tech)) {
+      if (auto dist =
+              sqrt(Distsq(xf, yf, str.xpos() + p.xpos, str.ypos() + p.ypos));
+          dist <= tele_range(s.type, s.tech)) {
         setbit(str.explored(), g.player);
         p.info[g.player - 1].explored = 1;
         putplanet(p, stars[s.special.aimed_at.snum], s.special.aimed_at.pnum);
@@ -511,10 +507,8 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       return;
     }
     if (ship.type == ShipType::OTYPE_FACTORY) {
-      unsigned int oncost;
+      unsigned int oncost = 0;
       if (ship.whatorbits == ScopeLevel::LEVEL_SHIP) {
-        int hangerneeded;
-
         auto s2 = getship(ship.destshipno);
         if (s2->type == ShipType::STYPE_HABITAT) {
           oncost = HAB_FACT_ON_COST * ship.build_cost;
@@ -525,8 +519,9 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
                 oncost, ship.destshipno);
             return;
           }
-          hangerneeded = (1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship))) -
-                         ((s2->max_hanger - s2->hanger) + ship.size);
+          int hangerneeded =
+              (1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship))) -
+              ((s2->max_hanger - s2->hanger) + ship.size);
           if (hangerneeded > 0) {
             g.out << std::format(
                 "Not enough hanger space free on Habitat #{}. Need {} more.\n",

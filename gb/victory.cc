@@ -18,6 +18,7 @@ std::vector<Victory> create_victory_list() {
     if (race.God || race.Guest || race.dissolved) vic.no_count = true;
     victories.emplace_back(vic);
   }
-  std::sort(victories.begin(), victories.end());
+  std::ranges::sort(victories, std::less());
+
   return victories;
 }

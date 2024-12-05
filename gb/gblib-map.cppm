@@ -7,7 +7,5 @@ import :race;
 import :sector;
 import :types;
 
-export char desshow(const player_t, const governor_t, const Race &,
-                    const Sector &);
-export void show_map(GameObj &g, const starnum_t, const planetnum_t,
-                     const Planet &);
+export char desshow(player_t, governor_t, const Race &, const Sector &);
+export void show_map(GameObj &g, starnum_t, planetnum_t, const Planet &);

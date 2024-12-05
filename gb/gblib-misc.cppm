@@ -57,18 +57,16 @@ export class DescriptorData : public GameObj {
   }
 };
 
-export void notify_race(const player_t, const std::string &);
-export bool notify(const player_t, const governor_t, const std::string &);
-export void d_think(const player_t, const governor_t, const std::string &);
-export void d_broadcast(const player_t, const governor_t, const std::string &);
-export void d_shout(const player_t, const governor_t, const std::string &);
-export void d_announce(const player_t, const governor_t, const starnum_t,
-                       const std::string &);
-export void warn_race(const player_t, const std::string &);
-export void warn(const player_t, const governor_t, const std::string &);
-export void warn_star(const player_t, const starnum_t, const std::string &);
-export void notify_star(const player_t, const governor_t, const starnum_t,
-                        const std::string &);
+export void notify_race(player_t, const std::string &);
+export bool notify(player_t, governor_t, const std::string &);
+export void d_think(player_t, governor_t, const std::string &);
+export void d_broadcast(player_t, governor_t, const std::string &);
+export void d_shout(player_t, governor_t, const std::string &);
+export void d_announce(player_t, governor_t, starnum_t, const std::string &);
+export void warn_race(player_t, const std::string &);
+export void warn(player_t, governor_t, const std::string &);
+export void warn_star(player_t, starnum_t, const std::string &);
+export void notify_star(player_t, governor_t, starnum_t, const std::string &);
 export void adjust_morale(Race &, Race &, int);
 
 export void queue_string(DescriptorData &, const std::string &);
@@ -198,14 +196,13 @@ export std::string Estimate_f(const double data, const Race &r,
                               const player_t p) {
   if (r.translate[p - 1] > 10) {
     int est = round_perc((int)data, r, p);
-    if (est < 1000)
-      return std::format("{}", est);
-    else if (est < 10000)
+    if (est < 1000) return std::format("{}", est);
+    if (est < 10000)
       return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
-    else if (est < 1000000)
+    if (est < 1000000)
       return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
-    else
-      return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
+
+    return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
   }
   return "?";
 }
@@ -213,14 +210,13 @@ export std::string Estimate_f(const double data, const Race &r,
 export std::string Estimate_i(const int data, const Race &r, const player_t p) {
   if (r.translate[p - 1] > 10) {
     int est = round_perc((int)data, r, p);
-    if (std::abs(est) < 1000)
-      return std::format("{}", est);
-    else if (std::abs(est) < 10000)
+    if (std::abs(est) < 1000) return std::format("{}", est);
+    if (std::abs(est) < 10000)
       return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
-    else if (std::abs(est) < 1000000)
+    if (std::abs(est) < 1000000)
       return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
-    else
-      return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
+
+    return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
   }
   return "?";
 }

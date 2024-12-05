@@ -144,24 +144,25 @@ void do_pod(Ship &ship) {
 }
 
 void do_canister(Ship &ship) {
-  if (ship.whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
-    if (++ship.special.timer.count < DISSIPATE) {
-      if (Stinfo[ship.storbits][ship.pnumorbits].temp_add < -90)
-        Stinfo[ship.storbits][ship.pnumorbits].temp_add = -100;
-      else
-        Stinfo[ship.storbits][ship.pnumorbits].temp_add -= 10;
-    } else { /* timer expired; destroy canister */
-      int j = 0;
-      kill_ship(ship.owner, &ship);
+  if (ship.whatorbits != ScopeLevel::LEVEL_PLAN || landed(ship)) {
+    return;
+  }
 
-      std::string telegram = std::format(
-          "Canister of dust previously covering {} has dissipated.\n",
-          prin_ship_orbits(ship));
+  if (++ship.special.timer.count < DISSIPATE) {
+    if (Stinfo[ship.storbits][ship.pnumorbits].temp_add < -90)
+      Stinfo[ship.storbits][ship.pnumorbits].temp_add = -100;
+    else
+      Stinfo[ship.storbits][ship.pnumorbits].temp_add -= 10;
+  } else { /* timer expired; destroy canister */
+    kill_ship(ship.owner, &ship);
 
-      for (j = 1; j <= Num_races; j++)
-        if (planets[ship.storbits][ship.pnumorbits]->info[j - 1].numsectsowned)
-          push_telegram(j, stars[ship.storbits].governor(j - 1), telegram);
-    }
+    std::string telegram =
+        std::format("Canister of dust previously covering {} has dissipated.\n",
+                    prin_ship_orbits(ship));
+
+    for (int j = 1; j <= Num_races; j++)
+      if (planets[ship.storbits][ship.pnumorbits]->info[j - 1].numsectsowned)
+        push_telegram(j, stars[ship.storbits].governor(j - 1), telegram);
   }
 }
 

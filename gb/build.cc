@@ -107,71 +107,65 @@ bool can_build_this(const ShipType what, const Race &race, char *string) {
   return true;
 }
 
-bool can_build_on_ship(int what, const Race &race, Ship *builder,
-                       char *string) {
-  if (!(Shipdata[what][ABIL_BUILD] & Shipdata[builder->type][ABIL_CONSTRUCT]) &&
+bool can_build_on_ship(int what, const Race &race, Ship &builder, std::string &string) {
+  if (!(Shipdata[what][ABIL_BUILD] & Shipdata[builder.type][ABIL_CONSTRUCT]) &&
       !race.God) {
-    sprintf(string, "This ship type cannot be built by a %s.\n",
-            Shipnames[builder->type]);
-    std::string temp =
-        std::format("Use 'build ? {}' to find out where it can be built.\n",
-                    Shipltrs[what]);
+    string = std::format("This ship type cannot be built by a %s.\n", Shipnames[builder.type]);
+    string += std::format("Use 'build ? {}' to find out where it can be built.\n", Shipltrs[what]);
 
-    strcat(string, temp.c_str());
     return false;
   }
   return true;
 }
 
-std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder, int *snum,
-                                        int *pnum) {
-  if (testship(*builder, g)) return {};
+std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder, int &snum, int &pnum) {
+  if (testship(*builder, g)) return std::nullopt;
   if (!Shipdata[builder->type][ABIL_CONSTRUCT]) {
     g.out << "This ship cannot construct other ships.\n";
-    return {};
+    return std::nullopt;
   }
   if (!builder->popn) {
     g.out << "This ship has no crew.\n";
-    return {};
+    return std::nullopt;
   }
   if (docked(*builder)) {
     g.out << "Undock this ship first.\n";
-    return {};
+    return std::nullopt;
   }
   if (builder->damage) {
     g.out << "This ship is damaged and cannot build.\n";
-    return {};
+    return std::nullopt;
   }
   if (builder->type == ShipType::OTYPE_FACTORY && !builder->on) {
     g.out << "This factory is not online.\n";
-    return {};
+    return std::nullopt;
   }
   if (builder->type == ShipType::OTYPE_FACTORY && !landed(*builder)) {
     g.out << "Factories must be landed on a planet.\n";
-    return {};
+    return std::nullopt;
   }
-  *snum = builder->storbits;
-  *pnum = builder->pnumorbits;
-  return (builder->whatorbits);
+  snum = builder->storbits;
+  pnum = builder->pnumorbits;
+  return builder->whatorbits;
 }
 
-void autoload_at_planet(int Playernum, Ship *s, Planet *planet, Sector &sector,
-                        int *crew, double *fuel) {
-  *crew = MIN(s->max_crew, sector.popn);
-  *fuel = MIN((double)s->max_fuel, (double)planet->info[Playernum - 1].fuel);
-  sector.popn -= *crew;
+void autoload_at_planet(int Playernum, Ship &s, Planet &planet, Sector &sector,
+                        int &crew, double &fuel) {
+  crew = MIN(s.max_crew, sector.popn);
+  fuel = MIN((double)s.max_fuel, (double)planet.info[Playernum - 1].fuel);
+  sector.popn -= crew;
   if (!sector.popn && !sector.troops) sector.owner = 0;
-  planet->info[Playernum - 1].fuel -= (int)(*fuel);
+  planet.info[Playernum - 1].fuel -= (int)fuel;
 }
 
-void autoload_at_ship(Ship *s, Ship *b, int *crew, double *fuel) {
-  *crew = MIN(s->max_crew, b->popn);
-  *fuel = MIN((double)s->max_fuel, (double)b->fuel);
-  b->popn -= *crew;
-  b->fuel -= *fuel;
+void autoload_at_ship(Ship &s, Ship &b, int &crew, double &fuel) {
+  crew = MIN(s.max_crew, b.popn);
+  fuel = MIN((double)s.max_fuel, (double)b.fuel);
+  b.popn -= crew;
+  b.fuel -= fuel;
 }
 
-void initialize_new_ship(GameObj &g, const Race &race, Ship *newship,
+void initialize_new_ship(GameObj &g, const Race &race, Ship &newship,
                          double load_fuel, int load_crew) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -306,8 +300,8 @@ void create_ship_by_planet(int Playernum, int Governor, const Race &race,
 }
 
 void create_ship_by_ship(int Playernum, int Governor, const Race &race,
-                         int outside, Planet *planet, Ship *newship,
-                         Ship *builder) {
+                         int outside, Planet &planet, Ship &newship,
+                         Ship &builder) {
   int shipno;
 
   while ((shipno = getdeadship()) == 0);
@@ -366,7 +360,7 @@ void create_ship_by_ship(int Playernum, int Governor, const Race &race,
   notify(Playernum, Governor, buf);
 }
 
-void Getship(Ship *s, ShipType i, const Race &r) {
+void Getship(Ship &s, ShipType i, const Race &r) {
   bzero((char *)s, sizeof(Ship));
   s->type = i;
   s->armor = Shipdata[i][ABIL_ARMOR];
@@ -396,7 +390,7 @@ void Getship(Ship *s, ShipType i, const Race &r) {
     s->special.mind.progenitor = r.Playernum;
 }
 
-void Getfactship(Ship *s, Ship *b) {
+void Getfactship(Ship &s, Ship &b) {
   bzero((char *)s, sizeof(Ship));
   s->type = b->build_type;
   s->armor = b->armor;

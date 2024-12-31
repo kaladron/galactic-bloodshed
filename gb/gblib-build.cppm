@@ -20,9 +20,9 @@ export void create_ship_by_planet(int, int, const Race &, Ship &, Planet &, int,
 export bool can_build_at_planet(GameObj &g, const Star &star,
                                 const Planet &planet);
 export bool can_build_this(ShipType what, const Race &race, char *string);
-export bool can_build_on_sector(int what, const Race &race, Planet &planet,
-                                const Sector &sector, int x, int y,
-                                char *string);
+export bool can_build_on_sector(int what, const Race &race,
+                                const Planet &planet, const Sector &sector,
+                                int x, int y, char *string);
 export int getcount(const command_t &argv, size_t elem);
 export void autoload_at_planet(int Playernum, Ship *s, Planet *planet,
                                Sector &sector, int *crew, double *fuel);

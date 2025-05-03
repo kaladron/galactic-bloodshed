@@ -10,40 +10,53 @@ import std.compat;
 
 module gblib;
 
-bool can_build_on_sector(const int what, const Race &race, const Planet &planet,
-                         const Sector &sector, const int x, const int y,
-                         char *string) {
+/**
+ * @brief Determines if a ship can be built on a specific sector of a planet.
+ *
+ * This function checks various conditions to determine whether a ship of the
+ * specified type can be built on the given sector of a planet. If the sector
+ * is not suitable for building, it returns an error message explaining the
+ * reason. Otherwise, it returns success.
+ *
+ * @param what The type of ship to be built, represented as an integer.
+ * @param race The race attempting to build the ship.
+ * @param planet The planet on which the sector is located.
+ * @param sector The sector where the ship is to be built.
+ * @param c The x and y coordinates of the sector.
+ * @return std::expected<void, std::string> Success or an error message string.
+ */
+std::expected<void, std::string> can_build_on_sector(const int what,
+                                                     const Race &race,
+                                                     const Planet &planet,
+                                                     const Sector &sector,
+                                                     const Coordinates &c) {
   auto shipc = Shipltrs[what];
   if (!sector.popn) {
-    sprintf(string, "You have no more civs in the sector!\n");
-    return false;
+    return std::unexpected("You have no more civs in the sector!\n");
   }
   if (sector.condition == SectorType::SEC_WASTED) {
-    sprintf(string, "You can't build on wasted sectors.\n");
-    return false;
+    return std::unexpected("You can't build on wasted sectors.\n");
   }
   if (sector.owner != race.Playernum && !race.God) {
-    sprintf(string, "You don't own that sector.\n");
-    return false;
+    return std::unexpected("You don't own that sector.\n");
   }
   if ((!(Shipdata[what][ABIL_BUILD] & 1)) && !race.God) {
-    sprintf(string, "This ship type cannot be built on a planet.\n");
     std::string temp = std::format(
-        "Use 'build ? {}' to find out where it can be built.\n", shipc);
-    strcat(string, temp.c_str());
-    return false;
+        "This ship type cannot be built on a planet.\nUse 'build ? {}' to find "
+        "out where it can be built.\n",
+        shipc);
+    return std::unexpected(temp);
   }
   if (what == ShipType::OTYPE_QUARRY) {
     Shiplist shiplist(planet.ships);
     for (auto s : shiplist) {
-      if (s.alive && s.type == ShipType::OTYPE_QUARRY && s.land_x == x &&
-          s.land_y == y) {
-        sprintf(string, "There already is a quarry here.\n");
-        return false;
+      if (s.alive && s.type == ShipType::OTYPE_QUARRY && s.land_x == c.x &&
+          s.land_y == c.y) {
+        return std::unexpected("There already is a quarry here.\n");
       }
     }
   }
-  return true;
+  return {};
 }
 
 // Used for optional parameters.  If the element requested exists, use

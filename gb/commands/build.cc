@@ -186,9 +186,10 @@ void build(const command_t &argv, GameObj &g) {
             return;
           }
           sector = getsector(planet, x, y);
-          if (!can_build_on_sector(*what, race, planet, sector, x, y, buf) &&
-              !race.God) {
-            notify(Playernum, Governor, buf);
+          auto result =
+              can_build_on_sector(*what, race, planet, sector, {x, y});
+          if (!result && !race.God) {
+            g.out << result.error();
             return;
           }
           if (!(count = getcount(argv, 4))) {
@@ -291,9 +292,10 @@ void build(const command_t &argv, GameObj &g) {
               y = builder->land_y;
               what = builder->build_type;
               sector = getsector(planet, x, y);
-              if (!can_build_on_sector(*what, race, planet, sector, x, y,
-                                       buf)) {
-                notify(Playernum, Governor, buf);
+              auto result =
+                  can_build_on_sector(*what, race, planet, sector, {x, y});
+              if (!result) {
+                g.out << result.error();
                 return;
               }
             }

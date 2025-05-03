@@ -43,28 +43,27 @@ void build(const command_t &argv, GameObj &g) {
     if (argv.size() == 2) {
       /* Ship parameter list */
       g.out << "     - Default ship parameters -\n";
-      sprintf(buf,
-              "%1s %-15s %5s %5s %3s %4s %3s %3s %3s %4s %4s %2s %4s %4s\n",
-              "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
-              "fuel", "crew", "sp", "tech", "cost");
-      notify(Playernum, Governor, buf);
+      g.out << std::format(
+          "{} {:<15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} {:>4} {:>4} "
+          "{:>2} {:>4} {:>4}\n",
+          "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
+          "fuel", "crew", "sp", "tech", "cost");
       auto &race = races[Playernum - 1];
       for (j = 0; j < NUMSTYPES; j++) {
         ShipType i{ShipVector[j]};
         if ((!Shipdata[i][ABIL_GOD]) || race.God) {
           if (race.pods || (i != ShipType::STYPE_POD)) {
             if (Shipdata[i][ABIL_PROGRAMMED]) {
-              sprintf(buf,
-                      "%1c %-15.15s %5ld %5ld %3ld %4ld %3ld %3ld %3ld "
-                      "%4ld %4ld %2ld %4.0f %4d\n",
-                      Shipltrs[i], Shipnames[i], Shipdata[i][ABIL_CARGO],
-                      Shipdata[i][ABIL_HANGER], Shipdata[i][ABIL_ARMOR],
-                      Shipdata[i][ABIL_DESTCAP], Shipdata[i][ABIL_GUNS],
-                      Shipdata[i][ABIL_PRIMARY], Shipdata[i][ABIL_SECONDARY],
-                      Shipdata[i][ABIL_FUELCAP], Shipdata[i][ABIL_MAXCREW],
-                      Shipdata[i][ABIL_SPEED], (double)Shipdata[i][ABIL_TECH],
-                      Shipcost(i, race));
-              notify(Playernum, Governor, buf);
+              g.out << std::format(
+                  "{} {:<15.15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} "
+                  "{:>4} {:>4} {:>2} {:.0f} {:>4}\n",
+                  Shipltrs[i], Shipnames[i], Shipdata[i][ABIL_CARGO],
+                  Shipdata[i][ABIL_HANGER], Shipdata[i][ABIL_ARMOR],
+                  Shipdata[i][ABIL_DESTCAP], Shipdata[i][ABIL_GUNS],
+                  Shipdata[i][ABIL_PRIMARY], Shipdata[i][ABIL_SECONDARY],
+                  Shipdata[i][ABIL_FUELCAP], Shipdata[i][ABIL_MAXCREW],
+                  Shipdata[i][ABIL_SPEED], (double)Shipdata[i][ABIL_TECH],
+                  Shipcost(i, race));
             }
           }
         }
@@ -118,23 +117,22 @@ void build(const command_t &argv, GameObj &g) {
         g.out << "type ships.\n";
       }
       /* default parameters */
-      sprintf(buf,
-              "\n%1s %-15s %5s %5s %3s %4s %3s %3s %3s %4s %4s %2s %4s %4s\n",
-              "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
-              "fuel", "crew", "sp", "tech", "cost");
-      notify(Playernum, Governor, buf);
+      g.out << std::format(
+          "\n{} {:<15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} {:>4} {:>4} "
+          "{:>2} {:>4} {:>4}\n",
+          "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
+          "fuel", "crew", "sp", "tech", "cost");
       auto &race = races[Playernum - 1];
-      sprintf(buf,
-              "%1c %-15.15s %5ld %5ld %3ld %4ld %3ld %3ld %3ld %4ld "
-              "%4ld %2ld %4.0f %4d\n",
-              Shipltrs[*i], Shipnames[*i], Shipdata[*i][ABIL_CARGO],
-              Shipdata[*i][ABIL_HANGER], Shipdata[*i][ABIL_ARMOR],
-              Shipdata[*i][ABIL_DESTCAP], Shipdata[*i][ABIL_GUNS],
-              Shipdata[*i][ABIL_PRIMARY], Shipdata[*i][ABIL_SECONDARY],
-              Shipdata[*i][ABIL_FUELCAP], Shipdata[*i][ABIL_MAXCREW],
-              Shipdata[*i][ABIL_SPEED], (double)Shipdata[*i][ABIL_TECH],
-              Shipcost(*i, race));
-      notify(Playernum, Governor, buf);
+      g.out << std::format(
+          "{} {:<15.15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} {:>4} {:>4} "
+          "{:>2} {:.0f} {:>4}\n",
+          Shipltrs[*i], Shipnames[*i], Shipdata[*i][ABIL_CARGO],
+          Shipdata[*i][ABIL_HANGER], Shipdata[*i][ABIL_ARMOR],
+          Shipdata[*i][ABIL_DESTCAP], Shipdata[*i][ABIL_GUNS],
+          Shipdata[*i][ABIL_PRIMARY], Shipdata[*i][ABIL_SECONDARY],
+          Shipdata[*i][ABIL_FUELCAP], Shipdata[*i][ABIL_MAXCREW],
+          Shipdata[*i][ABIL_SPEED], (double)Shipdata[*i][ABIL_TECH],
+          Shipcost(*i, race));
     }
 
     return;
@@ -201,8 +199,8 @@ void build(const command_t &argv, GameObj &g) {
         }
         if ((shipcost = newship.build_cost) >
             planet.info[Playernum - 1].resource) {
-          sprintf(buf, "You need %dr to construct this ship.\n", shipcost);
-          notify(Playernum, Governor, buf);
+          g.out << std::format("You need {}r to construct this ship.\n",
+                               shipcost);
           goto finish;
         }
         create_ship_by_planet(Playernum, Governor, race, newship, planet, snum,
@@ -275,11 +273,10 @@ void build(const command_t &argv, GameObj &g) {
                           ? complexity(*builder)
                           : Shipdata[*what][ABIL_TECH]) > race.tech &&
               !race.God) {
-            sprintf(buf,
-                    "You are not advanced enough to build this ship.\n%.1f "
-                    "enginering technology needed. You have %.1f.\n",
-                    tech, race.tech);
-            notify(Playernum, Governor, buf);
+            g.out << std::format(
+                "You are not advanced enough to build this ship.\n"
+                "{:.1f} engineering technology needed. You have {:.1f}.\n",
+                tech, race.tech);
             return;
           }
           if (outside && build_level == ScopeLevel::LEVEL_PLAN) {
@@ -307,8 +304,8 @@ void build(const command_t &argv, GameObj &g) {
           case ShipType::OTYPE_FACTORY:
             if ((shipcost = newship.build_cost) >
                 planet.info[Playernum - 1].resource) {
-              sprintf(buf, "You need %dr to construct this ship.\n", shipcost);
-              notify(Playernum, Governor, buf);
+              g.out << std::format("You need {}r to construct this ship.\n",
+                                   shipcost);
               goto finish;
             }
             create_ship_by_planet(Playernum, Governor, race, newship, planet,
@@ -325,8 +322,8 @@ void build(const command_t &argv, GameObj &g) {
           case ShipType::STYPE_SHUTTLE:
           case ShipType::STYPE_CARGO:
             if (builder->resource < (shipcost = newship.build_cost)) {
-              sprintf(buf, "You need %dr to construct the ship.\n", shipcost);
-              notify(Playernum, Governor, buf);
+              g.out << std::format("You need {}r to construct the ship.\n",
+                                   shipcost);
               goto finish;
             }
             create_ship_by_ship(Playernum, Governor, race, 1, &planet, &newship,
@@ -345,8 +342,8 @@ void build(const command_t &argv, GameObj &g) {
               goto finish;
             }
             if (builder->resource < (shipcost = newship.build_cost)) {
-              sprintf(buf, "You need %dr to construct the ship.\n", shipcost);
-              notify(Playernum, Governor, buf);
+              g.out << std::format("You need {}r to construct the ship.\n",
+                                   shipcost);
               goto finish;
             }
             create_ship_by_ship(Playernum, Governor, race, 0, nullptr, &newship,

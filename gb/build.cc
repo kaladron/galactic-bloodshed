@@ -63,7 +63,7 @@ std::expected<void, std::string> can_build_on_sector(const int what,
 // it.  If the number is negative, return zero instead.
 int getcount(const command_t &argv, const size_t elem) {
   int count = argv.size() > elem ? std::stoi(argv[elem]) : 1;
-  if (count <= 0) count = 0;
+  count = std::max(count, 0);
   return (count);
 }
 

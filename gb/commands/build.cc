@@ -82,7 +82,7 @@ void build(const command_t &argv, GameObj &g) {
         return;
       }
       /* look through ship description file */
-      sprintf(buf, "\n");
+      g.out << "\n";
       for (j = 0; j <= i; j++)
         while (fgetc(fd) != '~');
       /* Give description */

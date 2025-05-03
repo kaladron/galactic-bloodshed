@@ -6,8 +6,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/buffers.h"
-
 module gblib;
 
 /**
@@ -70,8 +68,9 @@ bool can_build_at_planet(GameObj &g, const Star &star, const Planet &planet) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   if (planet.slaved_to && planet.slaved_to != Playernum) {
-    sprintf(buf, "This planet is enslaved by player %d.\n", planet.slaved_to);
-    notify(Playernum, Governor, buf);
+    std::string message = std::format("This planet is enslaved by player {}.\n",
+                                      planet.slaved_to);
+    notify(Playernum, Governor, message);
     return false;
   }
   if (Governor && star.governor(Playernum - 1) != Governor) {
@@ -232,19 +231,20 @@ void initialize_new_ship(GameObj &g, const Race &race, Ship *newship,
       g.out << "Processor OFF.\n";
       break;
     case ShipType::OTYPE_STELE:
-    case ShipType::OTYPE_GTELE:
-      sprintf(buf, "Telescope range is %.2f.\n",
-              tele_range(newship->type, newship->tech));
-      notify(Playernum, Governor, buf);
-      break;
+    case ShipType::OTYPE_GTELE: {
+      std::string message =
+          std::format("Telescope range is {:.2f}.\n",
+                      tele_range(newship->type, newship->tech));
+      notify(Playernum, Governor, message);
+    } break;
     default:
       break;
   }
   if (newship->damage) {
-    sprintf(buf,
-            "Warning: This ship is constructed with a %d%% damage level.\n",
-            newship->damage);
-    notify(Playernum, Governor, buf);
+    std::string message = std::format(
+        "Warning: This ship is constructed with a {}% damage level.\n",
+        newship->damage);
+    notify(Playernum, Governor, message);
     if (!Shipdata[newship->type][ABIL_REPAIR] && newship->max_crew)
       notify(Playernum, Governor,
              "It will need resources to become fully operational.\n");
@@ -256,8 +256,10 @@ void initialize_new_ship(GameObj &g, const Race &race, Ship *newship,
         << "This factory may not begin repairs until it has been activated.\n";
   if (!newship->max_crew)
     g.out << "This ship is robotic, and may not repair itself.\n";
-  sprintf(buf, "Loaded with %d crew and %.1f fuel.\n", load_crew, load_fuel);
-  notify(Playernum, Governor, buf);
+
+  std::string message = std::format("Loaded with {} crew and {:.1f} fuel.\n",
+                                    load_crew, load_fuel);
+  notify(Playernum, Governor, message);
 }
 
 void create_ship_by_planet(int Playernum, int Governor, const Race &race,
@@ -290,25 +292,29 @@ void create_ship_by_planet(int Playernum, int Governor, const Race &race,
   newship.ships = 0;
   insert_sh_plan(planet, &newship);
   if (newship.type == ShipType::OTYPE_TOXWC) {
-    sprintf(buf, "Toxin concentration on planet was %d%%,",
-            planet.conditions[TOXIC]);
-    notify(Playernum, Governor, buf);
+    std::string message = std::format("Toxin concentration on planet was {}%,",
+                                      planet.conditions[TOXIC]);
+    notify(Playernum, Governor, message);
     if (planet.conditions[TOXIC] > TOXMAX)
       newship.special.waste.toxic = TOXMAX;
     else
       newship.special.waste.toxic = planet.conditions[TOXIC];
     planet.conditions[TOXIC] -= newship.special.waste.toxic;
-    sprintf(buf, " now %d%%.\n", planet.conditions[TOXIC]);
-    notify(Playernum, Governor, buf);
+    std::string toxMsg = std::format(" now {}%.\n", planet.conditions[TOXIC]);
+    notify(Playernum, Governor, toxMsg);
   }
-  sprintf(buf, "%s built at a cost of %d resources.\n",
-          ship_to_string(newship).c_str(), newship.build_cost);
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "Technology %.1f.\n", newship.tech);
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "%s is on sector %d,%d.\n", ship_to_string(newship).c_str(),
-          newship.land_x, newship.land_y);
-  notify(Playernum, Governor, buf);
+  std::string message =
+      std::format("{} built at a cost of {} resources.\n",
+                  ship_to_string(newship).c_str(), newship.build_cost);
+  notify(Playernum, Governor, message);
+
+  std::string techMsg = std::format("Technology {:.1f}.\n", newship.tech);
+  notify(Playernum, Governor, techMsg);
+
+  std::string locMsg =
+      std::format("{} is on sector {},{}.\n", ship_to_string(newship).c_str(),
+                  newship.land_x, newship.land_y);
+  notify(Playernum, Governor, locMsg);
 }
 
 void create_ship_by_ship(int Playernum, int Governor, const Race &race,
@@ -365,11 +371,13 @@ void create_ship_by_ship(int Playernum, int Governor, const Race &race,
                                    : "Standard"));
   builder->resource -= newship->build_cost;
 
-  sprintf(buf, "%s built at a cost of %d resources.\n",
-          ship_to_string(*newship).c_str(), newship->build_cost);
-  notify(Playernum, Governor, buf);
-  sprintf(buf, "Technology %.1f.\n", newship->tech);
-  notify(Playernum, Governor, buf);
+  std::string message =
+      std::format("{} built at a cost of {} resources.\n",
+                  ship_to_string(*newship).c_str(), newship->build_cost);
+  notify(Playernum, Governor, message);
+
+  std::string techMsg = std::format("Technology {:.1f}.\n", newship->tech);
+  notify(Playernum, Governor, techMsg);
 }
 
 void Getship(Ship *s, ShipType i, const Race &r) {

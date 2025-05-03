@@ -115,20 +115,18 @@ std::expected<void, std::string> can_build_this(const ShipType what,
   return {};
 }
 
-bool can_build_on_ship(int what, const Race &race, Ship *builder,
-                       char *string) {
-  if (!(Shipdata[what][ABIL_BUILD] & Shipdata[builder->type][ABIL_CONSTRUCT]) &&
+std::expected<void, std::string> can_build_on_ship(ShipType what,
+                                                   const Race &race,
+                                                   const Ship &builder) {
+  if (!(Shipdata[what][ABIL_BUILD] & Shipdata[builder.type][ABIL_CONSTRUCT]) &&
       !race.God) {
-    sprintf(string, "This ship type cannot be built by a %s.\n",
-            Shipnames[builder->type]);
-    std::string temp =
-        std::format("Use 'build ? {}' to find out where it can be built.\n",
-                    Shipltrs[what]);
-
-    strcat(string, temp.c_str());
-    return false;
+    std::string error = std::format(
+        "This ship type cannot be built by a {}.\nUse 'build ? {}' to find out "
+        "where it can be built.\n",
+        Shipnames[builder.type], Shipltrs[what]);
+    return std::unexpected(error);
   }
-  return true;
+  return {};
 }
 
 std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder, int *snum,

@@ -10,7 +10,9 @@ import :types;
 export int Shipcost(ShipType, const Race &);
 export std::tuple<money_t, double> shipping_cost(starnum_t to, starnum_t from,
                                                  money_t value);
-export bool can_build_on_ship(int, const Race &, Ship *, char *);
+export std::expected<void, std::string> can_build_on_ship(ShipType,
+                                                          const Race &,
+                                                          const Ship &);
 export std::optional<ShipType> get_build_type(char);
 export void Getship(Ship *, ShipType, const Race &);
 export std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder,

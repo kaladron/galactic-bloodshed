@@ -163,8 +163,9 @@ void build(const command_t &argv, GameObj &g) {
             g.out << "No such ship type.\n";
             return;
           }
-          if (!can_build_this(*what, race, buf) && !race.God) {
-            notify(Playernum, Governor, buf);
+          auto buildresult = can_build_this(*what, race);
+          if (!buildresult && !race.God) {
+            g.out << buildresult.error();
             return;
           }
           if (!(Shipdata[*what][ABIL_BUILD] & 1) && !race.God) {

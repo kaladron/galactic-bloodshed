@@ -88,35 +88,31 @@ std::optional<ShipType> get_build_type(const char shipc) {
   return {};
 }
 
-bool can_build_this(const ShipType what, const Race &race, char *string) {
+std::expected<void, std::string> can_build_this(const ShipType what,
+                                                const Race &race) {
   if (what == ShipType::STYPE_POD && !race.pods) {
-    sprintf(string, "Only Metamorphic races can build Spore Pods.\n");
-    return false;
+    return std::unexpected("Only Metamorphic races can build Spore Pods.\n");
   }
   if (!Shipdata[what][ABIL_PROGRAMMED]) {
-    sprintf(string, "This ship type has not been programmed.\n");
-    return false;
+    return std::unexpected("This ship type has not been programmed.\n");
   }
   if (Shipdata[what][ABIL_GOD] && !race.God) {
-    sprintf(string, "Only Gods can build this type of ship.\n");
-    return false;
+    return std::unexpected("Only Gods can build this type of ship.\n");
   }
   if (what == ShipType::OTYPE_VN && !Vn(race)) {
-    sprintf(string, "You have not discovered VN technology.\n");
-    return false;
+    return std::unexpected("You have not discovered VN technology.\n");
   }
   if (what == ShipType::OTYPE_TRANSDEV && !Avpm(race)) {
-    sprintf(string, "You have not discovered AVPM technology.\n");
-    return false;
+    return std::unexpected("You have not discovered AVPM technology.\n");
   }
   if (Shipdata[what][ABIL_TECH] > race.tech && !race.God) {
-    sprintf(string,
-            "You are not advanced enough to build this ship.\n%.1f "
-            "enginering technology needed. You have %.1f.\n",
-            (double)Shipdata[what][ABIL_TECH], race.tech);
-    return false;
+    std::string error = std::format(
+        "You are not advanced enough to build this ship.\n%.1f engineering "
+        "technology needed. You have %.1f.\n",
+        (double)Shipdata[what][ABIL_TECH], race.tech);
+    return std::unexpected(error);
   }
-  return true;
+  return {};
 }
 
 bool can_build_on_ship(int what, const Race &race, Ship *builder,

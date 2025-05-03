@@ -19,7 +19,8 @@ export void create_ship_by_planet(int, int, const Race &, Ship &, Planet &, int,
                                   int, int, int);
 export bool can_build_at_planet(GameObj &g, const Star &star,
                                 const Planet &planet);
-export bool can_build_this(ShipType what, const Race &race, char *string);
+export std::expected<void, std::string> can_build_this(ShipType what,
+                                                       const Race &race);
 export std::expected<void, std::string> can_build_on_sector(
     int what, const Race &race, const Planet &planet, const Sector &sector,
     const Coordinates &c);

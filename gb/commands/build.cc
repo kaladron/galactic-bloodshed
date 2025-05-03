@@ -258,8 +258,10 @@ void build(const command_t &argv, GameObj &g) {
                 g.out << "No such ship type.\n";
                 return;
               }
-              if (!can_build_on_ship(*what, race, &*builder, buf)) {
-                notify(Playernum, Governor, buf);
+              auto build_on_ship_result =
+                  can_build_on_ship(*what, race, *builder);
+              if (!build_on_ship_result) {
+                g.out << build_on_ship_result.error();
                 return;
               }
               if (!(count = getcount(argv, 3))) {

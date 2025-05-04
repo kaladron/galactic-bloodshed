@@ -5,7 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
 #include "gb/files.h"
 
 module commands;

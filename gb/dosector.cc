@@ -9,13 +9,38 @@ module gblib;
 static const std::array<int, 8> x_adj = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const std::array<int, 8> y_adj = {1, 1, 1, 0, 0, -1, -1, -1};
 
-static void Migrate2(const Planet &planet, int xd, int yd, Sector &ps,
-                     population_t *people, SectorMap &smap);
+namespace {
+void Migrate2(const Planet &planet, int xd, int yd, Sector &ps,
+              population_t *people, SectorMap &smap) {
+  /* attempt to migrate beyond screen, or too many people */
+  if (yd > planet.Maxy - 1 || yd < 0) return;
 
-static void plate(Sector &s) {
+  if (xd < 0)
+    xd = planet.Maxx - 1;
+  else if (xd > planet.Maxx - 1)
+    xd = 0;
+
+  auto &pd = smap.get(xd, yd);
+
+  if (!pd.owner) {
+    int move = (int)((double)(*people) * Compat[ps.owner - 1] *
+                     races[ps.owner - 1].likes[pd.condition] / 100.0);
+    if (!move) return;
+    *people -= move;
+    pd.popn += move;
+    ps.popn -= move;
+    pd.owner = ps.owner;
+    tot_captured++;
+    Claims = 1;
+  }
+}
+
+void plate(Sector &s) {
   s.eff = 100;
   if (s.condition != SectorType::SEC_GAS) s.condition = SectorType::SEC_PLATED;
 }
+}  // anonymous namespace
+
 //  produce() -- produce, stuff like that, on a sector.
 void produce(const Star &star, const Planet &planet, Sector &s) {
   int ss;
@@ -123,31 +148,6 @@ void spread(const Planet &pl, Sector &s, SectorMap &smap) {
     int y2 = y_adj[j];
     Migrate2(pl, s.x + x2, s.y + y2, s, &people, smap);
     check--;
-  }
-}
-
-static void Migrate2(const Planet &planet, int xd, int yd, Sector &ps,
-                     population_t *people, SectorMap &smap) {
-  /* attempt to migrate beyond screen, or too many people */
-  if (yd > planet.Maxy - 1 || yd < 0) return;
-
-  if (xd < 0)
-    xd = planet.Maxx - 1;
-  else if (xd > planet.Maxx - 1)
-    xd = 0;
-
-  auto &pd = smap.get(xd, yd);
-
-  if (!pd.owner) {
-    int move = (int)((double)(*people) * Compat[ps.owner - 1] *
-                     races[ps.owner - 1].likes[pd.condition] / 100.0);
-    if (!move) return;
-    *people -= move;
-    pd.popn += move;
-    ps.popn -= move;
-    pd.owner = ps.owner;
-    tot_captured++;
-    Claims = 1;
   }
 }
 

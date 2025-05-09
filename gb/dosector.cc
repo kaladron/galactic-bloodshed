@@ -43,7 +43,6 @@ void plate(Sector &s) {
 
 //  produce() -- produce, stuff like that, on a sector.
 void produce(const Star &star, const Planet &planet, Sector &s) {
-  int ss;
   int pdes = 0;
   int pres = 0;
 
@@ -109,14 +108,17 @@ void produce(const Star &star, const Planet &planet, Sector &s) {
       maxsupport(race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
   population_t diff = s.popn - maxsup;
 
-  if (diff < 0) {
-    if (s.popn >= race.number_sexes)
-      ss = round_rand(-(double)diff * race.birthrate);
-    else
-      ss = 0;
-  } else
-    ss = -int_rand(0, std::min(2 * diff, s.popn));
-  s.popn += ss;
+  auto calculate_population_change = [&race, &diff, &s]() -> population_t {
+    if (diff < 0) {
+      if (s.popn >= race.number_sexes) {
+        return round_rand(-(double)diff * race.birthrate);
+      }
+      return 0;
+    }
+    return -int_rand(0, std::min(2 * diff, s.popn));
+  };
+
+  s.popn += calculate_population_change();
 
   if (s.troops)
     race.governor[star.governor(s.owner - 1)].maintain +=

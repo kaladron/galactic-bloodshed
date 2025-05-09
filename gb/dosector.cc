@@ -39,53 +39,56 @@ void plate(Sector &s) {
   s.eff = 100;
   if (s.condition != SectorType::SEC_GAS) s.condition = SectorType::SEC_PLATED;
 }
-}  // anonymous namespace
 
-//  produce() -- produce, stuff like that, on a sector.
-void produce(const Star &star, const Planet &planet, Sector &s) {
-  int pdes = 0;
-  int pres = 0;
+// Process resource production from a sector
+void processResourceProduction(const Race &race, Sector &s) {
+  if (!s.resource || !success(s.eff)) return;
 
-  if (!s.owner) return;
-  auto &race = races[s.owner - 1];
+  resource_t prod = static_cast<resource_t>(round_rand(race.metabolism)) *
+                    static_cast<resource_t>(int_rand(1, s.eff));
+  prod = std::min(prod, s.resource);
+  s.resource -= prod;
 
-  if (s.resource && success(s.eff)) {
-    resource_t prod = round_rand(race.metabolism) * int_rand(1, s.eff);
-    prod = std::min(prod, s.resource);
-    s.resource -= prod;
-    auto pfuel = prod * (1 + (s.condition == SectorType::SEC_GAS));
-    if (success(s.mobilization))
-      pdes = prod;
-    else
-      pres = prod;
-    prod_fuel[s.owner - 1] += pfuel;
-    prod_res[s.owner - 1] += pres;
-    prod_destruct[s.owner - 1] += pdes;
+  auto pfuel = prod * (1 + (s.condition == SectorType::SEC_GAS));
+  int owner_idx = s.owner - 1;
+
+  if (success(s.mobilization)) {
+    prod_destruct[owner_idx] += prod;
+  } else {
+    prod_res[owner_idx] += prod;
   }
 
-  /* try to find crystals */
-  /* chance of digging out a crystal depends on efficiency */
+  prod_fuel[owner_idx] += pfuel;
+}
+
+// Process crystal mining in a sector
+void processCrystalMining(const Race &race, Sector &s) {
   if (s.crystals && Crystal(race) && success(s.eff)) {
     prod_crystals[s.owner - 1]++;
     s.crystals--;
   }
-  const auto pinf = &planet.info[s.owner - 1];
+}
 
-  /* increase mobilization to planetary quota */
-  if (s.mobilization < pinf->mob_set) {
-    if (pinf->resource + prod_res[s.owner - 1] > 0) {
+// Update sector mobilization based on planetary settings
+void updateMobilization(Sector &s, const plinfo &pinf) {
+  int owner_idx = s.owner - 1;
+
+  if (s.mobilization < pinf.mob_set) {
+    if (pinf.resource + prod_res[owner_idx] > 0) {
       s.mobilization++;
-      prod_res[s.owner - 1] -= round_rand(MOB_COST);
+      prod_res[owner_idx] -= round_rand(MOB_COST);
       prod_mob++;
     }
-  } else if (s.mobilization > pinf->mob_set) {
+  } else if (s.mobilization > pinf.mob_set) {
     s.mobilization--;
     prod_mob--;
   }
 
-  avg_mob[s.owner - 1] += s.mobilization;
+  avg_mob[owner_idx] += s.mobilization;
+}
 
-  /* do efficiency */
+// Update sector efficiency and plating
+void updateEfficiency(Sector &s, const Race &race, const Planet &planet) {
   if (s.eff < 100) {
     int chance = round_rand((100.0 - (double)planet.info[s.owner - 1].tax) *
                             race.likes[s.condition]);
@@ -93,38 +96,79 @@ void produce(const Star &star, const Planet &planet, Sector &s) {
       s.eff += round_rand(race.metabolism);
       if (s.eff >= 100) plate(s);
     }
-  } else
+  } else {
     plate(s);
+  }
+}
 
+// Update sector fertility and condition
+void updateFertilityAndCondition(Sector &s, const Race &race) {
   if ((s.condition != SectorType::SEC_WASTED) && race.fertilize &&
-      (s.fert < 100))
+      (s.fert < 100)) {
     s.fert += (int_rand(0, 100) < race.fertilize);
-  if (s.fert > 100) s.fert = 100;
+  }
 
-  if (s.condition == SectorType::SEC_WASTED && success(NATURAL_REPAIR))
+  s.fert = std::min<int>(s.fert, 100);
+
+  if (s.condition == SectorType::SEC_WASTED && success(NATURAL_REPAIR)) {
     s.condition = s.type;
+  }
+}
 
-  auto maxsup =
-      maxsupport(race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
+// Calculate population change based on sector conditions
+population_t calculatePopulationChange(const Race &race, const Sector &s,
+                                       population_t maxsup) {
   population_t diff = s.popn - maxsup;
 
-  auto calculate_population_change = [&race, &diff, &s]() -> population_t {
-    if (diff < 0) {
-      if (s.popn >= race.number_sexes) {
-        return round_rand(-(double)diff * race.birthrate);
-      }
-      return 0;
+  if (diff < 0) {
+    if (s.popn >= race.number_sexes) {
+      return round_rand(-static_cast<double>(diff) * race.birthrate);
     }
-    return -int_rand(0, std::min(2 * diff, s.popn));
-  };
+    return 0;
+  }
+  return -int_rand(0, std::min(2 * diff, s.popn));
+}
 
-  s.popn += calculate_population_change();
+// Handle population changes and owner updates
+void updatePopulationAndOwner(Sector &s, const Race &race, const Star &star,
+                              const Planet &planet) {
+  auto maxsup =
+      maxsupport(race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
+  s.popn += calculatePopulationChange(race, s, maxsup);
 
-  if (s.troops)
-    race.governor[star.governor(s.owner - 1)].maintain +=
+  // Handle troops maintenance costs - we have to modify global state here
+  if (s.troops &&
+      races[s.owner - 1].governor[star.governor(s.owner - 1)].maintain) {
+    races[s.owner - 1].governor[star.governor(s.owner - 1)].maintain +=
         UPDATE_TROOP_COST * s.troops;
-  else if (!s.popn)
+  }
+
+  // Update ownership if no population remains
+  if (!s.popn && !s.troops) {
     s.owner = 0;
+  }
+}
+}  // anonymous namespace
+
+//  produce() -- produce, stuff like that, on a sector.
+void produce(const Star &star, const Planet &planet, Sector &s) {
+  if (!s.owner) return;
+  auto &race = races[s.owner - 1];
+
+  // Process production and resources
+  processResourceProduction(race, s);
+  processCrystalMining(race, s);
+
+  // Handle mobilization
+  const auto &pinf = planet.info[s.owner - 1];
+  updateMobilization(s, pinf);
+
+  // Update efficiency, fertility and sector condition
+  updateEfficiency(s, race, planet);
+  updateFertilityAndCondition(s, race);
+
+  // Handle population changes and ownership
+  updatePopulationAndOwner(s, race, star, planet);
 }
 
 // spread()  -- spread population around.
@@ -137,8 +181,8 @@ void spread(const Planet &pl, Sector &s, SectorMap &smap) {
 
   /* the higher the fertility, the less people like to leave */
   population_t people =
-      round_rand((double)race.adventurism * (double)s.popn *
-                 (100. - (double)s.fert) / 100.) -
+      round_rand(race.adventurism * static_cast<double>(s.popn) *
+                 (100. - s.fert) / 100.) -
       race.number_sexes; /* how many people want to move -
                                           one family stays behind */
 

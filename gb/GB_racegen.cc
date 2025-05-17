@@ -55,7 +55,7 @@ int enroll_valid_race() {
 
   auto ppref = planet_translate[race_info.home_planet_type];
   std::array<int, NUMSTARS> indirect;
-  for (auto i = 0; i < Sdata.numstars; i++) indirect[i] = i;
+  std::ranges::iota(indirect, 0);
   auto last_star_left = Sdata.numstars - 1;
   while (last_star_left >= 0) {
     auto i = int_rand(0, last_star_left);

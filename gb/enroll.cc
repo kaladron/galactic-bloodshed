@@ -18,8 +18,6 @@ import gblib;
 static const char *DEFAULT_ENROLLMENT_FILENAME = "enroll.saves";
 static const char *DEFAULT_ENROLLMENT_FAILURE_FILENAME = "failures.saves";
 
-extern int enroll_valid_race();
-
 /*
  * Returns: 0 if the race was successfully enrolled, or 1 if not.
  */

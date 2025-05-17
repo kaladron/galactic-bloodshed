@@ -11,8 +11,6 @@ import std.compat;
 
 #include "gb/racegen.h"
 
-int enroll_valid_race();
-
 namespace {
 constexpr std::array<PlanetType, N_HOME_PLANET_TYPES> planet_translate = {
     PlanetType::EARTH,   PlanetType::FOREST, PlanetType::DESERT,

@@ -151,22 +151,23 @@ found_planet:
   // Find sector to build capital on, and populate it
   auto smap = getsmap(planet);
 
-  Sector *sect;
-  bool found_sector = false;
-  for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
-    sect = &sector_wrap.get();
-    if (sect->condition != race->likesbest) continue;
-    found_sector = true;
-    break;
-  }
-  // We default to putting the capital at 0,0 if we don't have a better choice
-  if (!found_sector) sect = &smap.get(0, 0);
-  sect->owner = Playernum;
-  sect->race = Playernum;
-  sect->popn = planet.popn = race->number_sexes;
-  sect->fert = 100;
-  sect->eff = 10;
-  sect->troops = planet.troops = 0;
+  Sector &sect = [&]() -> Sector & {
+    for (auto shuffled = smap.shuffle(); const auto &sector_wrap : shuffled) {
+      Sector &current_sect = sector_wrap.get();
+      if (current_sect.condition == race->likesbest) {
+        return current_sect;
+      }
+    }
+    // We default to putting the capital at 0,0 if we don't have a better choice
+    return smap.get(0, 0);
+  }();
+
+  sect.owner = Playernum;
+  sect.race = Playernum;
+  sect.popn = planet.popn = race->number_sexes;
+  sect.fert = 100;
+  sect.eff = 10;
+  sect.troops = planet.troops = 0;
 
   race->governors = 0;
 
@@ -183,8 +184,8 @@ found_planet:
     s.type = ShipType::OTYPE_GOV;
     s.xpos = stars[star].xpos() + planet.xpos;
     s.ypos = stars[star].ypos() + planet.ypos;
-    s.land_x = sect->x;
-    s.land_y = sect->y;
+    s.land_x = sect.x;
+    s.land_y = sect.y;
 
     s.speed = 0;
     s.owner = Playernum;
@@ -248,10 +249,10 @@ found_planet:
 
   // (approximate)
   planet.maxpopn =
-      maxsupport(*race, *sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
+      maxsupport(*race, sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
 
   putrace(*race);
-  putsector(*sect, planet);
+  putsector(sect, planet);
 
   stars[star] = getstar(star);
   putplanet(planet, stars[star], pnum);
@@ -262,10 +263,10 @@ found_planet:
   stars[star].AP(Playernum - 1) = 5;
   putstar(stars[star], star);
 
-  std::cout << std::format("Player {} ({}) created on sector {},{} on {}/{}.\n",
-                           Playernum, race_info.name, sect->x, sect->y,
-                           stars[star].get_name(),
-                           stars[star].get_planet_name(pnum));
+  std::cout << std::format(
+      "Player {} ({}) created on sector {},{} on {}/{}.\\n", Playernum,
+      race_info.name, sect.x, sect.y, stars[star].get_name(),
+      stars[star].get_planet_name(pnum));
   race_info.status = STATUS_ENROLLED;
   return 0;
 }

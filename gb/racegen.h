@@ -203,4 +203,6 @@ int load_from_file(FILE *g);
 int cost_of_race();
 void modify_print_loop(int level);
 
+int enroll_valid_race();
+
 #endif  // RACEGEN_H

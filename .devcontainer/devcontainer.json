@@ -1,11 +1,12 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
     "ghcr.io/devcontainers-community/features/llvm": {
-      "version": "20"
+      "version": "21"
     },
     "ghcr.io/warrenbuckley/codespace-features/sqlite:1": {},
-    "ghcr.io/devcontainers-extra/features/ninja-asdf:2": {}
+    "ghcr.io/devcontainers-extra/features/ninja-asdf:2": {},
+    "ghcr.io/devcontainers-extra/features/cmake:1": {}
   },
   "customizations": {
     "vscode": {
@@ -20,7 +21,6 @@
         "ms-vscode.cpptools",
         "ms-vscode.cpptools-themes",
         "ms-vscode.cmake-tools",
-        "twxs.cmake",
         "llvm-vs-code-extensions.vscode-clangd"
       ]
     }

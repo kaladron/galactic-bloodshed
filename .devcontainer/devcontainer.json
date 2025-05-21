@@ -7,7 +7,7 @@
     "ghcr.io/devcontainers-extra/features/ninja-asdf:2": {},
     "ghcr.io/devcontainers-extra/features/cmake:1": {},
     "ghcr.io/devcontainers-extra/features/apt-packages:1": {
-      "packages": "doxygen, libsqlite3-dev"
+      "packages": "doxygen, libsqlite3-dev, graphviz"
     }
   },
   "customizations": {

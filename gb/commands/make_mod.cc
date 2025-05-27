@@ -360,6 +360,6 @@ void make_mod(const command_t &argv, GameObj &g) {
   /* Restore size to what it was before.  Maarten */
   dirship->size = size;
 
-  putship(&*dirship);
+  putship(*dirship);
 }
 }  // namespace GB::commands

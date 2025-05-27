@@ -125,7 +125,7 @@ void do_transporter(const Race &race, GameObj &g, Ship *s) {
     warn(s2->owner, s2->governor, telegram_buf);
   }
 
-  putship(s2);
+  putship(*s2);
   free(s2);
 }
 
@@ -368,7 +368,7 @@ void load(const command_t &argv, GameObj &g) {
              undocked with it or something. */
           s->docked = 0;
           s->whatdest = ScopeLevel::LEVEL_UNIV;
-          putship(s);
+          putship(*s);
           sprintf(buf, "%s is not docked.\n", ship_to_string(*s2).c_str());
           notify(Playernum, Governor, buf);
           free(s);
@@ -519,7 +519,7 @@ void load(const command_t &argv, GameObj &g) {
             notify(Playernum, Governor, buf);
             /* fight a land battle */
             unload_onto_alien_sector(g, p, s, sect, PopulationType::CIV, -amt);
-            putship(s);
+            putship(*s);
             putsector(sect, p, s->land_x, s->land_y);
             putplanet(p, stars[g.snum], g.pnum);
             free(s);
@@ -562,7 +562,7 @@ void load(const command_t &argv, GameObj &g) {
                     "That sector is already occupied by another player!\n");
             notify(Playernum, Governor, buf);
             unload_onto_alien_sector(g, p, s, sect, PopulationType::MIL, -amt);
-            putship(s);
+            putship(*s);
             putsector(sect, p, s->land_x, s->land_y);
             putplanet(p, stars[g.snum], g.pnum);
             free(s);
@@ -694,7 +694,7 @@ void load(const command_t &argv, GameObj &g) {
           default:
             break;
         }
-        putship(s2);
+        putship(*s2);
         free(s2);
       } else {
         if (commod == 'c' || commod == 'm') {
@@ -708,7 +708,7 @@ void load(const command_t &argv, GameObj &g) {
           s->on)
         do_transporter(race, g, s);
 
-      putship(s);
+      putship(*s);
       free(s);
     } else
       free(s); /* make sure you do this! */

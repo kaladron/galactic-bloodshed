@@ -121,7 +121,7 @@ void fix(const command_t &argv, GameObj &g) {
       return;
     }
     notify(Playernum, Governor, buf);
-    putship(&*s);
+    putship(*s);
     return;
   }
   g.out << "Fix what?\n";

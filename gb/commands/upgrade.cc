@@ -228,14 +228,14 @@ void upgrade(const command_t &argv, GameObj &g) {
       s2->hanger -= dirship->size;
       dirship->size = ship_size(*dirship);
       s2->hanger += dirship->size;
-      putship(&*s2);
+      putship(*s2);
     }
     dirship->size = ship_size(*dirship);
     dirship->base_mass = getmass(*dirship);
     dirship->build_cost = race.God ? 0 : cost(*dirship);
     dirship->complexity = complexity(*dirship);
 
-    putship(&*dirship);
+    putship(*dirship);
   } else
     g.out << "You can not make this modification.\n";
 }

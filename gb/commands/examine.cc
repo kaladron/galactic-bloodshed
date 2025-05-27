@@ -72,7 +72,7 @@ void examine(const command_t &argv, GameObj &g) {
       deductAPs(g, APcount, ship->storbits);
 
     ship->examined = 1;
-    putship(&*ship);
+    putship(*ship);
   }
 
   if (has_switch(*ship)) {

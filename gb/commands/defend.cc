@@ -189,7 +189,7 @@ void defend(const command_t &argv, GameObj &g) {
           warn(ship->owner, ship->governor, long_buf);
         }
         putsmap(smap, p);
-        putship(ship);
+        putship(*ship);
       }
       sh = ship->nextship;
       free(ship);
@@ -197,7 +197,7 @@ void defend(const command_t &argv, GameObj &g) {
   }
 
   /* write the ship stuff out to disk */
-  putship(&*to);
+  putship(*to);
   putplanet(p, stars[g.snum], g.pnum);
 
   deductAPs(g, APcount, g.snum);

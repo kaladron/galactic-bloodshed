@@ -35,7 +35,7 @@ void finish_build(ScopeLevel level, const Sector &sector, const Planet &planet,
           default:
             break;
         }
-      putship(&*builder);
+      putship(*builder);
       break;
     default:
       // Shouldn't be possible.
@@ -248,7 +248,7 @@ void build(const command_t &argv, GameObj &g) {
           load_fuel = 0.0;
         }
         initialize_new_ship(g, race, &newship, load_fuel, load_crew);
-        putship(&newship);
+        putship(newship);
         break;
       case ScopeLevel::LEVEL_SHIP:
         if (!count) { /* initialize loop variables */
@@ -402,7 +402,7 @@ void build(const command_t &argv, GameObj &g) {
             break;
         }
         initialize_new_ship(g, race, &newship, load_fuel, load_crew);
-        putship(&newship);
+        putship(newship);
         break;
       default:
         // Shouldn't be possible.

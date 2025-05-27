@@ -141,7 +141,7 @@ void capture_stuff(const Ship &ship, GameObj &g) {
     capture_stuff(s, g);  /* recursive call */
     s.owner = ship.owner; /* make sure he gets all of the ships landed on it */
     s.governor = ship.governor;
-    putship(&s);
+    putship(s);
     g.out << ship_to_string(s) << " CAPTURED!\n";
   }
 }
@@ -476,13 +476,13 @@ void kill_ship(player_t Playernum, Ship *ship) {
     }
     s->docked = 0;
     s->whatdest = ScopeLevel::LEVEL_UNIV;
-    putship(&*s);
+    putship(*s);
   }
   /* landed ships are killed */
   Shiplist shiplist(ship->ships);
   for (auto s : shiplist) {
     kill_ship(Playernum, &s);
-    putship(&s);
+    putship(s);
   }
 }
 

@@ -315,7 +315,7 @@ void capture(const command_t &argv, GameObj &g) {
       if (ship->owner != oldowner || !ship->alive)
         post(short_buf, NewsType::COMBAT);
       notify_star(Playernum, Governor, ship->storbits, short_buf);
-      putship(ship);
+      putship(*ship);
       putsector(sect, p, x, y);
       putplanet(p, stars[g.snum], g.pnum);
       putrace(race);

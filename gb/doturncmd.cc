@@ -296,7 +296,7 @@ static void process_abms_and_missiles(int update) {
         attack_planet(*ships[i]))
       domissile(*ships[i]);
 
-  for (shipnum_t i = Num_ships; i >= 1; i--) putship(ships[i]);
+  for (shipnum_t i = Num_ships; i >= 1; i--) putship(*ships[i]);
 
   for (starnum_t star = 0; star < Sdata.numstars; star++) {
     for (planetnum_t i = 0; i < stars[star].numplanets(); i++) {
@@ -436,7 +436,7 @@ static void update_victory_scores(int update) {
 
 static void finalize_turn(int update) {
   for (shipnum_t i = 1; i <= Num_ships; i++) {
-    putship(ships[i]);
+    putship(*ships[i]);
     free(ships[i]);
   }
 

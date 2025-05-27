@@ -73,8 +73,8 @@ void launch(const command_t &argv, GameObj &g) {
           g.out << std::format(
               "Landed on {}/{}.\n", stars[s->storbits].get_name(),
               stars[s->storbits].get_planet_name(s->pnumorbits));
-          putship(s);
-          putship(&*s2);
+          putship(*s);
+          putship(*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_PLAN) {
           remove_sh_ship(*s, *s2);
           g.out << std::format("{} launched from {}.\n", ship_to_string(*s),
@@ -93,8 +93,8 @@ void launch(const command_t &argv, GameObj &g) {
           g.out << std::format(
               "Orbiting {}/{}.\n", stars[s->storbits].get_name(),
               stars[s->storbits].get_planet_name(s->pnumorbits));
-          putship(s);
-          putship(&*s2);
+          putship(*s);
+          putship(*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_STAR) {
           remove_sh_ship(*s, *s2);
           g.out << std::format("{} launched from {}.\n", ship_to_string(*s),
@@ -110,8 +110,8 @@ void launch(const command_t &argv, GameObj &g) {
           s->storbits = s2->storbits;
           putstar(stars[s2->storbits], s2->storbits);
           g.out << std::format("Orbiting {}.\n", stars[s->storbits].get_name());
-          putship(s);
-          putship(&*s2);
+          putship(*s);
+          putship(*s2);
         } else if (s2->whatorbits == ScopeLevel::LEVEL_UNIV) {
           remove_sh_ship(*s, *s2);
           g.out << std::format("{} launched from {}.\n", ship_to_string(*s),
@@ -126,8 +126,8 @@ void launch(const command_t &argv, GameObj &g) {
           insert_sh_univ(&Sdata, s);
           g.out << "Universe level.\n";
           putsdata(&Sdata);
-          putship(s);
-          putship(&*s2);
+          putship(*s);
+          putship(*s2);
         } else {
           g.out << "You can't launch that ship.\n";
           free(s);
@@ -158,8 +158,8 @@ void launch(const command_t &argv, GameObj &g) {
         s2->destshipno = 0;
         g.out << std::format("{} undocked from {}.\n", ship_to_string(*s),
                              ship_to_string(*s2));
-        putship(s);
-        putship(&*s2);
+        putship(*s);
+        putship(*s2);
         free(s);
       } else {
         if (!enufAP(Playernum, Governor, stars[s->storbits].AP(Playernum - 1),
@@ -202,7 +202,7 @@ void launch(const command_t &argv, GameObj &g) {
             break;
         }
         s->notified = 0;
-        putship(s);
+        putship(*s);
         if (!p.explored) {
           /* not yet explored by owner; space exploration causes the
              player to see a whole map */

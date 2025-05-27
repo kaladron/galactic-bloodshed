@@ -89,7 +89,7 @@ void land_friendly(const command_t &argv, GameObj &g, Ship &s) {
     g.out << std::format("{} loaded onto {} using {} fuel.\n",
                          ship_to_string(s), ship_to_string(*s2), fuel);
     s.docked = 1;
-    putship(&*s2);
+    putship(*s2);
   } else if (s.docked) {
     g.out << std::format("{} is already docked or landed.\n",
                          ship_to_string(s));
@@ -141,7 +141,7 @@ void land_friendly(const command_t &argv, GameObj &g, Ship &s) {
     g.out << std::format("{} landed on {} using {} fuel.\n", ship_to_string(s),
                          ship_to_string(*s2), fuel);
     s.docked = 1;
-    putship(&*s2);
+    putship(*s2);
   }
 }
 
@@ -248,7 +248,7 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
       }
     if (!s.alive) {
       putplanet(p, stars[s.storbits], s.pnumorbits);
-      putship(&s);
+      putship(s);
       return;
     }
   }
@@ -366,12 +366,12 @@ void land(const command_t &argv, GameObj &g) {
       /* attempting to land on a friendly ship (for carriers/stations/etc) */
       if (argv[2][0] == '#') {
         land_friendly(argv, g, *s);
-        putship(s);
+        putship(*s);
         free(s);
         continue;
       } else { /* attempting to land on a planet */
         land_planet(argv, g, *s, APcount);
-        putship(s);
+        putship(*s);
         free(s);
         continue;
       }

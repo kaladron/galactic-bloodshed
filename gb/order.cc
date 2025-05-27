@@ -532,7 +532,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           s2->hanger -= ship.size;
           ship.size = 1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship));
           s2->hanger += ship.size;
-          putship(&*s2);
+          putship(*s2);
         } else {
           g.out << "The factory is currently being transported.\n";
           return;
@@ -566,7 +566,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     ship.on = 0;
   }
   ship.notified = 0;
-  putship(&ship);
+  putship(ship);
 }
 
 void DispOrdersHeader(int Playernum, int Governor) {

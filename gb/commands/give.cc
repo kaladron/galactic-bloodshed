@@ -86,7 +86,7 @@ void give(const command_t &argv, GameObj &g) {
   ship->governor = 0; /* give to the leader */
   capture_stuff(*ship, g);
 
-  putship(&*ship);
+  putship(*ship);
 
   /* set inhabited/explored bits */
   switch (ship->whatorbits) {

@@ -72,7 +72,7 @@ void mount(const command_t &argv, GameObj &g) {
         free(ship);
         continue;
       }
-      putship(ship);
+      putship(*ship);
       free(ship);
     } else
       free(ship);

@@ -36,5 +36,5 @@ export void initialize_new_ship(GameObj &g, const Race &race, Ship *newship,
 export void Getfactship(Ship *s, Ship *b);
 
 export void create_ship_by_ship(int Playernum, int Governor, const Race &race,
-                                int outside, Planet *planet, Ship *newship,
+                                bool outside, Planet *planet, Ship *newship,
                                 Ship *builder);

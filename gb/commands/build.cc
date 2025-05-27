@@ -12,7 +12,7 @@ module commands;
 namespace {
 void finish_build(ScopeLevel level, const Sector &sector, const Planet &planet,
                   int x, int y, starnum_t snum, planetnum_t pnum, int outside,
-                  ScopeLevel build_level, std::optional<Ship> &builder) {
+                  ScopeLevel build_level, const std::optional<Ship> &builder) {
   switch (level) {
     case ScopeLevel::LEVEL_PLAN:
       putsector(sector, planet, x, y);

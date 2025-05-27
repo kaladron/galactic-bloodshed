@@ -318,7 +318,7 @@ void create_ship_by_planet(int Playernum, int Governor, const Race &race,
 }
 
 void create_ship_by_ship(int Playernum, int Governor, const Race &race,
-                         int outside, Planet *planet, Ship *newship,
+                         bool outside, Planet *planet, Ship *newship,
                          Ship *builder) {
   int shipno;
 

@@ -11,7 +11,7 @@ module commands;
 
 namespace {
 void finish_build(ScopeLevel level, const Sector &sector, const Planet &planet,
-                  int x, int y, starnum_t snum, planetnum_t pnum, int outside,
+                  int x, int y, starnum_t snum, planetnum_t pnum, bool outside,
                   ScopeLevel build_level, const std::optional<Ship> &builder) {
   switch (level) {
     case ScopeLevel::LEVEL_PLAN:
@@ -57,7 +57,7 @@ void build(const command_t &argv, GameObj &g) {
   int x;
   int y;
   int count;
-  int outside;
+  bool outside;
   ScopeLevel level;
   ScopeLevel build_level;
   int shipcost;
@@ -253,7 +253,7 @@ void build(const command_t &argv, GameObj &g) {
       case ScopeLevel::LEVEL_SHIP:
         if (!count) { /* initialize loop variables */
           builder = getship(g.shipno);
-          outside = 0;
+          outside = false;
           auto test_build_level = build_at_ship(g, &*builder, &snum, &pnum);
           if (!test_build_level) {
             g.out << "You can't build here.\n";
@@ -271,7 +271,7 @@ void build(const command_t &argv, GameObj &g) {
                 return;
               }
               Getfactship(&newship, &*builder);
-              outside = 1;
+              outside = true;
               break;
             case ShipType::STYPE_SHUTTLE:
             case ShipType::STYPE_CARGO:
@@ -279,7 +279,7 @@ void build(const command_t &argv, GameObj &g) {
                 g.out << "This ships cannot build when landed.\n";
                 return;
               }
-              outside = 1;
+              outside = true;
               [[clang::fallthrough]];  // TODO(jeffbailey): Added this to
                                        // silence
                                        // warning, check it.
@@ -366,8 +366,8 @@ void build(const command_t &argv, GameObj &g) {
                            build_level, builder);
               return;
             }
-            create_ship_by_ship(Playernum, Governor, race, 1, &planet, &newship,
-                                &*builder);
+            create_ship_by_ship(Playernum, Governor, race, true, &planet,
+                                &newship, &*builder);
             if (race.governor[Governor].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God)
               autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
@@ -390,8 +390,8 @@ void build(const command_t &argv, GameObj &g) {
                            build_level, builder);
               return;
             }
-            create_ship_by_ship(Playernum, Governor, race, 0, nullptr, &newship,
-                                &*builder);
+            create_ship_by_ship(Playernum, Governor, race, false, nullptr,
+                                &newship, &*builder);
             if (race.governor[Governor].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God)
               autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);

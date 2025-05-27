@@ -10,37 +10,33 @@ import std.compat;
 module commands;
 
 namespace {
-void finish_build(ScopeLevel level, const Sector &sector, const Planet &planet,
-                  int x, int y, starnum_t snum, planetnum_t pnum, bool outside,
-                  ScopeLevel build_level, const std::optional<Ship> &builder) {
-  switch (level) {
-    case ScopeLevel::LEVEL_PLAN:
-      putsector(sector, planet, x, y);
-      putplanet(planet, stars[snum], pnum);
-      break;
-    case ScopeLevel::LEVEL_SHIP:
-      if (outside) switch (build_level) {
-          case ScopeLevel::LEVEL_PLAN:
-            putplanet(planet, stars[snum], pnum);
-            if (landed(*builder)) {
-              putsector(sector, planet, x, y);
-            }
-            break;
-          case ScopeLevel::LEVEL_STAR:
-            putstar(stars[snum], snum);
-            break;
-          case ScopeLevel::LEVEL_UNIV:
-            putsdata(&Sdata);
-            break;
-          default:
-            break;
+void finish_build_plan(const Sector &sector, int x, int y, const Planet &planet,
+                       starnum_t snum, planetnum_t pnum) {
+  putsector(sector, planet, x, y);
+  putplanet(planet, stars[snum], pnum);
+}
+
+void finish_build_ship(const Sector &sector, int x, int y, const Planet &planet,
+                       starnum_t snum, planetnum_t pnum, bool outside,
+                       ScopeLevel build_level,
+                       const std::optional<Ship> &builder) {
+  if (outside) switch (build_level) {
+      case ScopeLevel::LEVEL_PLAN:
+        putplanet(planet, stars[snum], pnum);
+        if (landed(*builder)) {
+          putsector(sector, planet, x, y);
         }
-      putship(*builder);
-      break;
-    default:
-      // Shouldn't be possible.
-      break;
-  }
+        break;
+      case ScopeLevel::LEVEL_STAR:
+        putstar(stars[snum], snum);
+        break;
+      case ScopeLevel::LEVEL_UNIV:
+        putsdata(&Sdata);
+        break;
+      default:
+        break;
+    }
+  putship(*builder);
 }
 }  // namespace
 
@@ -233,8 +229,7 @@ void build(const command_t &argv, GameObj &g) {
             planet.info[Playernum - 1].resource) {
           g.out << std::format("You need {}r to construct this ship.\n",
                                shipcost);
-          finish_build(level, sector, planet, x, y, snum, pnum, outside,
-                       build_level, builder);
+          finish_build_plan(sector, x, y, planet, snum, pnum);
           return;
         }
         create_ship_by_planet(Playernum, Governor, race, newship, planet, snum,
@@ -342,8 +337,8 @@ void build(const command_t &argv, GameObj &g) {
                 planet.info[Playernum - 1].resource) {
               g.out << std::format("You need {}r to construct this ship.\n",
                                    shipcost);
-              finish_build(level, sector, planet, x, y, snum, pnum, outside,
-                           build_level, builder);
+              finish_build_ship(sector, x, y, planet, snum, pnum, outside,
+                                build_level, builder);
               return;
             }
             create_ship_by_planet(Playernum, Governor, race, newship, planet,
@@ -362,8 +357,8 @@ void build(const command_t &argv, GameObj &g) {
             if (builder->resource < (shipcost = newship.build_cost)) {
               g.out << std::format("You need {}r to construct the ship.\n",
                                    shipcost);
-              finish_build(level, sector, planet, x, y, snum, pnum, outside,
-                           build_level, builder);
+              finish_build_ship(sector, x, y, planet, snum, pnum, outside,
+                                build_level, builder);
               return;
             }
             create_ship_by_ship(Playernum, Governor, race, true, &planet,
@@ -379,15 +374,15 @@ void build(const command_t &argv, GameObj &g) {
           default:
             if (builder->hanger + ship_size(newship) > builder->max_hanger) {
               g.out << "Not enough hanger space.\n";
-              finish_build(level, sector, planet, x, y, snum, pnum, outside,
-                           build_level, builder);
+              finish_build_ship(sector, x, y, planet, snum, pnum, outside,
+                                build_level, builder);
               return;
             }
             if (builder->resource < (shipcost = newship.build_cost)) {
               g.out << std::format("You need {}r to construct the ship.\n",
                                    shipcost);
-              finish_build(level, sector, planet, x, y, snum, pnum, outside,
-                           build_level, builder);
+              finish_build_ship(sector, x, y, planet, snum, pnum, outside,
+                                build_level, builder);
               return;
             }
             create_ship_by_ship(Playernum, Governor, race, false, nullptr,
@@ -411,7 +406,16 @@ void build(const command_t &argv, GameObj &g) {
     count--;
   } while (count);
   /* free stuff */
-  finish_build(level, sector, planet, x, y, snum, pnum, outside, build_level,
-               builder);
+  switch (level) {
+    case ScopeLevel::LEVEL_PLAN:
+      finish_build_plan(sector, x, y, planet, snum, pnum);
+      break;
+    case ScopeLevel::LEVEL_SHIP:
+      finish_build_ship(sector, x, y, planet, snum, pnum, outside, build_level,
+                        builder);
+      break;
+    default:
+      break;
+  }
 }
 }  // namespace GB::commands

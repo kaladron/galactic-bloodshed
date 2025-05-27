@@ -67,7 +67,7 @@ void dissolve(const command_t &argv, GameObj &g) {
     kill_ship(Playernum, &*sp);
     sprintf(buf, "Ship #%d, self-destruct enabled\n", i);
     notify(Playernum, Governor, buf);
-    putship(&*sp);
+    putship(*sp);
   }
 
   getsdata(&Sdata);

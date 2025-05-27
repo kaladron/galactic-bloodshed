@@ -59,7 +59,7 @@ void name(const command_t &argv, GameObj &g) {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
       auto ship = getship(g.shipno);
       strncpy(ship->name, buf, SHIP_NAMESIZE);
-      putship(&*ship);
+      putship(*ship);
       g.out << "Name set.\n";
       return;
     }
@@ -78,7 +78,7 @@ void name(const command_t &argv, GameObj &g) {
         return;
       }
       strncpy(ship->shipclass, buf, SHIP_NAMESIZE - 1);
-      putship(&*ship);
+      putship(*ship);
       g.out << "Class set.\n";
       return;
     }

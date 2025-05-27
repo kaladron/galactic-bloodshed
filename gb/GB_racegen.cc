@@ -240,7 +240,7 @@ found_planet:
 
     s.name[0] = '\0';
     s.number = shipno;
-    putship(&s);
+    putship(s);
   }
 
   planet.info[Playernum - 1].numsectsowned = 1;

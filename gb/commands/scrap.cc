@@ -189,7 +189,7 @@ void scrap(const command_t &argv, GameObj &g) {
       // TODO(jeffbailey): kill_ship gets and saves the ship, which looks like
       // it'll be overwritten maybe here?
       kill_ship(g.player, s);
-      putship(s);
+      putship(*s);
       if (docked(*s)) {
         s2->crystals += xtalval;
         rcv_fuel(*s2, (double)fuelval);
@@ -203,7 +203,7 @@ void scrap(const command_t &argv, GameObj &g) {
           s2->whatdest = ScopeLevel::LEVEL_UNIV;
           s2->destshipno = 0;
         }
-        putship(&*s2);
+        putship(*s2);
       }
 
       if (s->whatorbits == ScopeLevel::LEVEL_PLAN) {

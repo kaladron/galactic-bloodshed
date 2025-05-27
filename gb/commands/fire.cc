@@ -184,7 +184,7 @@ void fire(const command_t &argv, GameObj &g) {
       if (strength <= 0) {
         sprintf(buf, "No attack.\n");
         notify(Playernum, Governor, buf);
-        putship(from);
+        putship(*from);
         free(from);
         continue;
       }
@@ -258,12 +258,12 @@ void fire(const command_t &argv, GameObj &g) {
               notify(Playernum, Governor, long_buf);
               warn(ship.owner, ship.governor, long_buf);
             }
-            putship(&ship);
+            putship(ship);
           }
         }
       }
-      putship(from);
-      putship(&*to);
+      putship(*from);
+      putship(*to);
       deductAPs(g, APcount, from->storbits);
 
       free(from);

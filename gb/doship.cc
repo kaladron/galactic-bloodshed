@@ -357,7 +357,7 @@ void doship(Ship &ship, int update) {
       if (ship2->owner != ship.owner) {
         ship2->owner = ship.owner;
         ship2->governor = ship.governor;
-        putship(&*ship2);
+        putship(*ship2);
       }
       /* just making sure */
     } else if (ship.whatorbits != ScopeLevel::LEVEL_UNIV &&
@@ -627,7 +627,7 @@ void domine(Ship &ship, int detonate) {
       if (damage > 0) {
         post(short_buf, NewsType::COMBAT);
         warn(s.owner, s.governor, long_buf);
-        putship(&s);
+        putship(s);
       }
     }
   }
@@ -670,7 +670,7 @@ void domine(Ship &ship, int detonate) {
   }
 
   kill_ship(ship.owner, &ship);
-  putship(&ship);
+  putship(ship);
 }
 
 void doabm(Ship &ship) {

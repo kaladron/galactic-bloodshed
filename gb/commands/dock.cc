@@ -176,7 +176,7 @@ void dock(const command_t &argv, GameObj &g) {
         auto s3 = getship(s->destshipno);
         s3->docked = 0;
         s3->whatdest = ScopeLevel::LEVEL_UNIV;
-        putship(&*s3);
+        putship(*s3);
       }
 
       if (fuel > s->fuel) {
@@ -279,7 +279,7 @@ void dock(const command_t &argv, GameObj &g) {
           s3->docked = 0;
           s3->whatdest = ScopeLevel::LEVEL_UNIV;
           s3->destshipno = 0;
-          putship(&*s3);
+          putship(*s3);
 
           s2->docked = 0;
           s2->whatdest = ScopeLevel::LEVEL_UNIV;
@@ -483,8 +483,8 @@ void dock(const command_t &argv, GameObj &g) {
         deductAPs(g, APcount, g.snum);
 
       s->notified = s2->notified = 0;
-      putship(s);
-      putship(&*s2);
+      putship(*s);
+      putship(*s2);
       free(s);
     } else
       free(s);

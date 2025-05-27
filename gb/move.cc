@@ -111,7 +111,7 @@ void mech_defend(player_t Playernum, governor_t Governor, int *people,
           }
         }
       }
-      putship(&ship);
+      putship(ship);
     }
   }
   *people = civ + mil;

@@ -38,7 +38,7 @@ export void putplanet(const Planet &, const Star &, planetnum_t);
 export void putsector(const Sector &, const Planet &);
 export void putsector(const Sector &, const Planet &, int x, int y);
 export void putsmap(const SectorMap &map, const Planet &p);
-export void putship(Ship *);
+export void putship(const Ship &);
 export void putcommod(const Commod &, int);
 export shipnum_t Numships();
 export off_t getnewslength(NewsType);

@@ -71,7 +71,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
       if (strength <= 0) {
         g.out << "No attack.\n";
-        putship(from);
+        putship(*from);
         free(from);
         continue;
       }
@@ -177,7 +177,7 @@ void bombard(const command_t &argv, GameObj &g) {
       }
 
       /* write the stuff to disk */
-      putship(from);
+      putship(*from);
       putplanet(p, stars[from->storbits], (int)from->pnumorbits);
       deductAPs(g, APcount, from->storbits);
 

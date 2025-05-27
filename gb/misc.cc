@@ -190,7 +190,7 @@ void remove_sh_star(Ship &s) {
     for (auto s2 : shiplist) {
       if (s2.nextship == s.number) {
         s2.nextship = s.nextship;
-        putship(&s2);
+        putship(s2);
         break;
       }
     }
@@ -219,7 +219,7 @@ void remove_sh_plan(Ship &s) {
     for (auto s2 : shiplist) {
       if (s2.nextship == s.number) {
         s2.nextship = s.nextship;
-        putship(&s2);
+        putship(s2);
         break;
       }
     }
@@ -246,7 +246,7 @@ void remove_sh_ship(Ship &s, Ship &host) {
     for (auto s2 : shiplist) {
       if (s2.nextship == s.number) {
         s2.nextship = s.nextship;
-        putship(&s2);
+        putship(s2);
         break;
       }
     }

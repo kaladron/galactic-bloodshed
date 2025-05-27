@@ -43,7 +43,7 @@ void do_revoke(Race race, const governor_t src_gov, const governor_t tgt_gov) {
       outmsg = std::format("Changed ownership of {0}{1}...\n",
                            Shipltrs[ship->type], i);
       notify(race.Playernum, 0, outmsg);
-      putship(&*ship);
+      putship(*ship);
     }
   }
 

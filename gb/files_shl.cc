@@ -1360,10 +1360,10 @@ static void putship_waste(const Ship &s) {
   }
 }
 
-void Sql::putship(Ship *s) { ::putship(s); }
-void putship(Ship *s) {
+void Sql::putship(Ship *s) { ::putship(*s); }
+void putship(const Ship &s) {
   const char *tail;
-  Filewrite(shdata, (char *)s, sizeof(Ship), (s->number - 1) * sizeof(Ship));
+  Filewrite(shdata, (char *)&s, sizeof(Ship), (s.number - 1) * sizeof(Ship));
   start_bulk_insert();
 
   sqlite3_stmt *stmt;
@@ -1412,91 +1412,91 @@ void putship(Ship *s) {
       "?82, ?83, ?84);";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-  sqlite3_bind_int(stmt, 1, s->number);
-  sqlite3_bind_int(stmt, 2, s->owner);
-  sqlite3_bind_int(stmt, 3, s->governor);
-  sqlite3_bind_text(stmt, 4, s->name, strlen(s->name), SQLITE_TRANSIENT);
-  sqlite3_bind_text(stmt, 5, s->shipclass, strlen(s->shipclass),
+  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_int(stmt, 2, s.owner);
+  sqlite3_bind_int(stmt, 3, s.governor);
+  sqlite3_bind_text(stmt, 4, s.name, strlen(s.name), SQLITE_TRANSIENT);
+  sqlite3_bind_text(stmt, 5, s.shipclass, strlen(s.shipclass),
                     SQLITE_TRANSIENT);
-  sqlite3_bind_int(stmt, 6, s->race);
-  sqlite3_bind_double(stmt, 7, s->xpos);
-  sqlite3_bind_double(stmt, 8, s->ypos);
-  sqlite3_bind_double(stmt, 9, s->mass);
-  sqlite3_bind_int(stmt, 10, s->land_x);
-  sqlite3_bind_int(stmt, 11, s->land_y);
-  sqlite3_bind_int(stmt, 12, s->destshipno);
-  sqlite3_bind_int(stmt, 13, s->nextship);
-  sqlite3_bind_int(stmt, 14, s->ships);
-  sqlite3_bind_int(stmt, 15, s->armor);
-  sqlite3_bind_int(stmt, 16, s->size);
-  sqlite3_bind_int(stmt, 17, s->max_crew);
-  sqlite3_bind_int(stmt, 18, s->max_resource);
-  sqlite3_bind_int(stmt, 19, s->max_destruct);
-  sqlite3_bind_int(stmt, 20, s->max_fuel);
-  sqlite3_bind_int(stmt, 21, s->max_speed);
-  sqlite3_bind_int(stmt, 22, s->build_type);
-  sqlite3_bind_int(stmt, 23, s->build_cost);
-  sqlite3_bind_double(stmt, 24, s->base_mass);
-  sqlite3_bind_double(stmt, 25, s->tech);
-  sqlite3_bind_double(stmt, 26, s->complexity);
-  sqlite3_bind_int(stmt, 27, s->destruct);
-  sqlite3_bind_int(stmt, 28, s->resource);
-  sqlite3_bind_int(stmt, 29, s->popn);
-  sqlite3_bind_int(stmt, 30, s->troops);
-  sqlite3_bind_int(stmt, 31, s->crystals);
-  sqlite3_bind_int(stmt, 32, s->who_killed);
-  sqlite3_bind_int(stmt, 33, s->navigate.on);
-  sqlite3_bind_int(stmt, 34, s->navigate.speed);
-  sqlite3_bind_int(stmt, 35, s->navigate.turns);
-  sqlite3_bind_int(stmt, 36, s->navigate.bearing);
-  sqlite3_bind_double(stmt, 37, s->protect.maxrng);
-  sqlite3_bind_int(stmt, 38, s->protect.on);
-  sqlite3_bind_int(stmt, 39, s->protect.planet);
-  sqlite3_bind_int(stmt, 40, s->protect.self);
-  sqlite3_bind_int(stmt, 41, s->protect.evade);
-  sqlite3_bind_int(stmt, 42, s->protect.ship);
-  sqlite3_bind_int(stmt, 43, s->hyper_drive.charge);
-  sqlite3_bind_int(stmt, 44, s->hyper_drive.ready);
-  sqlite3_bind_int(stmt, 45, s->hyper_drive.on);
-  sqlite3_bind_int(stmt, 46, s->hyper_drive.has);
-  sqlite3_bind_int(stmt, 47, s->cew);
-  sqlite3_bind_int(stmt, 48, s->cew_range);
-  sqlite3_bind_int(stmt, 49, s->cloak);
-  sqlite3_bind_int(stmt, 50, s->laser);
-  sqlite3_bind_int(stmt, 51, s->focus);
-  sqlite3_bind_int(stmt, 52, s->fire_laser);
-  sqlite3_bind_int(stmt, 53, s->storbits);
-  sqlite3_bind_int(stmt, 54, s->deststar);
-  sqlite3_bind_int(stmt, 55, s->destpnum);
-  sqlite3_bind_int(stmt, 56, s->pnumorbits);
-  sqlite3_bind_int(stmt, 57, s->whatdest);
-  sqlite3_bind_int(stmt, 58, s->whatorbits);
-  sqlite3_bind_int(stmt, 59, s->damage);
-  sqlite3_bind_int(stmt, 60, s->rad);
-  sqlite3_bind_int(stmt, 61, s->retaliate);
-  sqlite3_bind_int(stmt, 62, s->target);
-  sqlite3_bind_int(stmt, 63, s->type);
-  sqlite3_bind_int(stmt, 64, s->speed);
-  sqlite3_bind_int(stmt, 65, s->active);
-  sqlite3_bind_int(stmt, 66, s->alive);
-  sqlite3_bind_int(stmt, 67, s->mode);
-  sqlite3_bind_int(stmt, 68, s->bombard);
-  sqlite3_bind_int(stmt, 69, s->mounted);
-  sqlite3_bind_int(stmt, 70, s->cloaked);
-  sqlite3_bind_int(stmt, 71, s->sheep);
-  sqlite3_bind_int(stmt, 72, s->docked);
-  sqlite3_bind_int(stmt, 73, s->notified);
-  sqlite3_bind_int(stmt, 74, s->examined);
-  sqlite3_bind_int(stmt, 75, s->on);
-  sqlite3_bind_int(stmt, 76, s->merchant);
-  sqlite3_bind_int(stmt, 77, s->guns);
-  sqlite3_bind_int(stmt, 78, s->primary);
-  sqlite3_bind_int(stmt, 79, s->primtype);
-  sqlite3_bind_int(stmt, 80, s->secondary);
-  sqlite3_bind_int(stmt, 81, s->sectype);
-  sqlite3_bind_int(stmt, 82, s->hanger);
-  sqlite3_bind_int(stmt, 83, s->max_hanger);
-  sqlite3_bind_int(stmt, 84, s->mount);
+  sqlite3_bind_int(stmt, 6, s.race);
+  sqlite3_bind_double(stmt, 7, s.xpos);
+  sqlite3_bind_double(stmt, 8, s.ypos);
+  sqlite3_bind_double(stmt, 9, s.mass);
+  sqlite3_bind_int(stmt, 10, s.land_x);
+  sqlite3_bind_int(stmt, 11, s.land_y);
+  sqlite3_bind_int(stmt, 12, s.destshipno);
+  sqlite3_bind_int(stmt, 13, s.nextship);
+  sqlite3_bind_int(stmt, 14, s.ships);
+  sqlite3_bind_int(stmt, 15, s.armor);
+  sqlite3_bind_int(stmt, 16, s.size);
+  sqlite3_bind_int(stmt, 17, s.max_crew);
+  sqlite3_bind_int(stmt, 18, s.max_resource);
+  sqlite3_bind_int(stmt, 19, s.max_destruct);
+  sqlite3_bind_int(stmt, 20, s.max_fuel);
+  sqlite3_bind_int(stmt, 21, s.max_speed);
+  sqlite3_bind_int(stmt, 22, s.build_type);
+  sqlite3_bind_int(stmt, 23, s.build_cost);
+  sqlite3_bind_double(stmt, 24, s.base_mass);
+  sqlite3_bind_double(stmt, 25, s.tech);
+  sqlite3_bind_double(stmt, 26, s.complexity);
+  sqlite3_bind_int(stmt, 27, s.destruct);
+  sqlite3_bind_int(stmt, 28, s.resource);
+  sqlite3_bind_int(stmt, 29, s.popn);
+  sqlite3_bind_int(stmt, 30, s.troops);
+  sqlite3_bind_int(stmt, 31, s.crystals);
+  sqlite3_bind_int(stmt, 32, s.who_killed);
+  sqlite3_bind_int(stmt, 33, s.navigate.on);
+  sqlite3_bind_int(stmt, 34, s.navigate.speed);
+  sqlite3_bind_int(stmt, 35, s.navigate.turns);
+  sqlite3_bind_int(stmt, 36, s.navigate.bearing);
+  sqlite3_bind_double(stmt, 37, s.protect.maxrng);
+  sqlite3_bind_int(stmt, 38, s.protect.on);
+  sqlite3_bind_int(stmt, 39, s.protect.planet);
+  sqlite3_bind_int(stmt, 40, s.protect.self);
+  sqlite3_bind_int(stmt, 41, s.protect.evade);
+  sqlite3_bind_int(stmt, 42, s.protect.ship);
+  sqlite3_bind_int(stmt, 43, s.hyper_drive.charge);
+  sqlite3_bind_int(stmt, 44, s.hyper_drive.ready);
+  sqlite3_bind_int(stmt, 45, s.hyper_drive.on);
+  sqlite3_bind_int(stmt, 46, s.hyper_drive.has);
+  sqlite3_bind_int(stmt, 47, s.cew);
+  sqlite3_bind_int(stmt, 48, s.cew_range);
+  sqlite3_bind_int(stmt, 49, s.cloak);
+  sqlite3_bind_int(stmt, 50, s.laser);
+  sqlite3_bind_int(stmt, 51, s.focus);
+  sqlite3_bind_int(stmt, 52, s.fire_laser);
+  sqlite3_bind_int(stmt, 53, s.storbits);
+  sqlite3_bind_int(stmt, 54, s.deststar);
+  sqlite3_bind_int(stmt, 55, s.destpnum);
+  sqlite3_bind_int(stmt, 56, s.pnumorbits);
+  sqlite3_bind_int(stmt, 57, s.whatdest);
+  sqlite3_bind_int(stmt, 58, s.whatorbits);
+  sqlite3_bind_int(stmt, 59, s.damage);
+  sqlite3_bind_int(stmt, 60, s.rad);
+  sqlite3_bind_int(stmt, 61, s.retaliate);
+  sqlite3_bind_int(stmt, 62, s.target);
+  sqlite3_bind_int(stmt, 63, s.type);
+  sqlite3_bind_int(stmt, 64, s.speed);
+  sqlite3_bind_int(stmt, 65, s.active);
+  sqlite3_bind_int(stmt, 66, s.alive);
+  sqlite3_bind_int(stmt, 67, s.mode);
+  sqlite3_bind_int(stmt, 68, s.bombard);
+  sqlite3_bind_int(stmt, 69, s.mounted);
+  sqlite3_bind_int(stmt, 70, s.cloaked);
+  sqlite3_bind_int(stmt, 71, s.sheep);
+  sqlite3_bind_int(stmt, 72, s.docked);
+  sqlite3_bind_int(stmt, 73, s.notified);
+  sqlite3_bind_int(stmt, 74, s.examined);
+  sqlite3_bind_int(stmt, 75, s.on);
+  sqlite3_bind_int(stmt, 76, s.merchant);
+  sqlite3_bind_int(stmt, 77, s.guns);
+  sqlite3_bind_int(stmt, 78, s.primary);
+  sqlite3_bind_int(stmt, 79, s.primtype);
+  sqlite3_bind_int(stmt, 80, s.secondary);
+  sqlite3_bind_int(stmt, 81, s.sectype);
+  sqlite3_bind_int(stmt, 82, s.hanger);
+  sqlite3_bind_int(stmt, 83, s.max_hanger);
+  sqlite3_bind_int(stmt, 84, s.mount);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
@@ -1507,39 +1507,39 @@ void putship(Ship *s) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 
-  switch (s->type) {
+  switch (s.type) {
     case ShipType::STYPE_MIRROR:
-      putship_aimed(*s);
+      putship_aimed(s);
       break;
     case ShipType::OTYPE_BERS:
       [[fallthrough]];
     case ShipType::OTYPE_VN:
-      putship_mind(*s);
+      putship_mind(s);
       break;
     case ShipType::STYPE_POD:
-      putship_pod(*s);
+      putship_pod(s);
       break;
     case ShipType::OTYPE_CANIST:
       [[fallthrough]];
     case ShipType::OTYPE_GREEN:
-      putship_timer(*s);
+      putship_timer(s);
       break;
     case ShipType::STYPE_MISSILE:
-      putship_impact(*s);
+      putship_impact(s);
       break;
     case ShipType::STYPE_MINE:
-      putship_trigger(*s);
+      putship_trigger(s);
       break;
     case ShipType::OTYPE_TERRA:
       [[fallthrough]];
     case ShipType::OTYPE_PLOW:
-      putship_terraform(*s);
+      putship_terraform(s);
       break;
     case ShipType::OTYPE_TRANSDEV:
-      putship_transport(*s);
+      putship_transport(s);
       break;
     case ShipType::OTYPE_TOXWC:
-      putship_waste(*s);
+      putship_waste(s);
       break;
     default:
       break;

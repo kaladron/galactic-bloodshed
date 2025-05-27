@@ -157,7 +157,7 @@ void jettison(const command_t &argv, GameObj &g) {
           g.out << "No such commodity valid.\n";
           return;
       }
-      if (Mod) putship(s);
+      if (Mod) putship(*s);
       free(s);
     } else
       free(s);

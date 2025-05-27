@@ -93,7 +93,7 @@ void walk(const command_t &argv, GameObj &g) {
             notify_star(Playernum, Governor, ship->storbits, short_buf);
           }
         }
-        putship(&ship2);
+        putship(ship2);
       }
     }
     if (!ship->alive) break;
@@ -156,7 +156,7 @@ void walk(const command_t &argv, GameObj &g) {
       if (i != Playernum && p.info[i - 1].numsectsowned)
         notify(i, stars[g.snum].governor(i - 1), moving);
   }
-  putship(&*ship);
+  putship(*ship);
   deductAPs(g, APcount, ship->storbits);
 }
 }  // namespace GB::commands

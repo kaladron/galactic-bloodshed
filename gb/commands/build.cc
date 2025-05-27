@@ -27,8 +27,6 @@ void build(const command_t &argv, GameObj &g) {
   ScopeLevel build_level;
   int shipcost;
   int load_crew;
-  int snum;
-  int pnum;
   double load_fuel;
   double tech;
 
@@ -142,8 +140,8 @@ void build(const command_t &argv, GameObj &g) {
     g.out << "You must change scope to a ship or planet to build.\n";
     return;
   }
-  snum = g.snum;
-  pnum = g.pnum;
+  starnum_t snum = g.snum;
+  planetnum_t pnum = g.pnum;
   auto &race = races[Playernum - 1];
   count = 0; /* this used used to reset count in the loop */
   std::optional<ShipType> what;

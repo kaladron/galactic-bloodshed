@@ -128,8 +128,8 @@ std::expected<void, std::string> can_build_on_ship(ShipType what,
   return {};
 }
 
-std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder, int *snum,
-                                        int *pnum) {
+std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder,
+                                        starnum_t *snum, planetnum_t *pnum) {
   if (testship(*builder, g)) return {};
   if (!Shipdata[builder->type][ABIL_CONSTRUCT]) {
     g.out << "This ship cannot construct other ships.\n";

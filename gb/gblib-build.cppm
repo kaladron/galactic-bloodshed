@@ -16,7 +16,8 @@ export std::expected<void, std::string> can_build_on_ship(ShipType,
 export std::optional<ShipType> get_build_type(char);
 export void Getship(Ship *, ShipType, const Race &);
 export std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder,
-                                               int *snum, int *pnum);
+                                               starnum_t *snum,
+                                               planetnum_t *pnum);
 export void create_ship_by_planet(int, int, const Race &, Ship &, Planet &, int,
                                   int, int, int);
 export bool can_build_at_planet(GameObj &g, const Star &star,

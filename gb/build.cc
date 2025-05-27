@@ -171,7 +171,7 @@ void autoload_at_planet(int Playernum, Ship *s, Planet *planet, Sector &sector,
 
 void autoload_at_ship(Ship *s, Ship *b, int *crew, double *fuel) {
   *crew = MIN(s->max_crew, b->popn);
-  *fuel = MIN((double)s->max_fuel, (double)b->fuel);
+  *fuel = MIN((double)s->max_fuel, b->fuel);
   b->popn -= *crew;
   b->fuel -= *fuel;
 }
@@ -191,7 +191,7 @@ void initialize_new_ship(GameObj &g, const Race &race, Ship *newship,
   newship->crystals = 0;
   newship->hanger = 0;
   newship->mass = newship->base_mass + (double)newship->popn * race.mass +
-                  (double)newship->fuel * MASS_FUEL +
+                  newship->fuel * MASS_FUEL +
                   (double)newship->resource * MASS_RESOURCE +
                   (double)newship->destruct * MASS_DESTRUCT;
   newship->alive = 1;

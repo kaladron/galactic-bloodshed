@@ -5,9 +5,7 @@
 module;
 
 import gblib;
-import std.compat;
-
-#include "gb/buffers.h"
+import std;
 
 module commands;
 
@@ -25,25 +23,25 @@ void colonies_at_star(GameObj &g, const Race &race, const starnum_t star) {
     if (pl.info[Playernum - 1].explored &&
         pl.info[Playernum - 1].numsectsowned &&
         (!Governor || stars[star].governor(Playernum - 1) == Governor)) {
-      sprintf(buf,
-              " %c %4.4s/%-4.4s%c%4d%3d%5ld%8ld%3d%6lu%5d%6d "
-              "%3d/%-3d%3.0f/%-3d%3d/%-3d",
-              Psymbol[pl.type], stars[star].get_name().c_str(),
-              stars[star].get_planet_name(i).c_str(),
-              (pl.info[Playernum - 1].autorep ? '*' : ' '),
-              stars[star].governor(Playernum - 1),
-              pl.info[Playernum - 1].numsectsowned,
-              pl.info[Playernum - 1].tech_invest, pl.info[Playernum - 1].popn,
-              pl.info[Playernum - 1].crystals, pl.info[Playernum - 1].resource,
-              pl.info[Playernum - 1].destruct, pl.info[Playernum - 1].fuel,
-              pl.info[Playernum - 1].tax, pl.info[Playernum - 1].newtax,
-              pl.compatibility(race), pl.conditions[TOXIC],
-              pl.info[Playernum - 1].comread, pl.info[Playernum - 1].mob_set);
-      notify(Playernum, Governor, buf);
+      auto formatted = std::format(
+          " {:c} {:4.4}/{:<4.4}{:c}{:4d}{:3d}{:5d}{:8d}{:3d}{:6d}{:5d}{:6d} "
+          "{:3d}/{:<3d}{:3.0f}/{:<3d}{:3d}/{:<3d}",
+          Psymbol[pl.type], stars[star].get_name(),
+          stars[star].get_planet_name(i),
+          (pl.info[Playernum - 1].autorep ? '*' : ' '),
+          stars[star].governor(Playernum - 1),
+          pl.info[Playernum - 1].numsectsowned,
+          pl.info[Playernum - 1].tech_invest, pl.info[Playernum - 1].popn,
+          pl.info[Playernum - 1].crystals, pl.info[Playernum - 1].resource,
+          pl.info[Playernum - 1].destruct, pl.info[Playernum - 1].fuel,
+          pl.info[Playernum - 1].tax, pl.info[Playernum - 1].newtax,
+          pl.compatibility(race), pl.conditions[TOXIC],
+          pl.info[Playernum - 1].comread, pl.info[Playernum - 1].mob_set);
+      g.out << formatted;
       for (auto j = 1; j <= Num_races; j++)
         if ((j != Playernum) && (pl.info[j - 1].numsectsowned > 0)) {
-          sprintf(buf, " %d", j);
-          notify(Playernum, Governor, buf);
+          auto race_str = std::format(" {}", j);
+          g.out << race_str;
         }
       g.out << "\n";
     }
@@ -54,13 +52,10 @@ void colonies_at_star(GameObj &g, const Race &race, const starnum_t star) {
 namespace GB::commands {
 void colonies(const command_t &argv, GameObj &g) {
   const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
 
-  notify(Playernum, Governor,
-         "          ========== Colonization Report ==========\n");
-  notify(Playernum, Governor,
-         "  Planet     gov sec tech    popn  x   res  "
-         "des  fuel  tax  cmpt/tox mob  Aliens\n");
+  g.out << "          ========== Colonization Report ==========\n";
+  g.out << "  Planet     gov sec tech    popn  x   res  "
+           "des  fuel  tax  cmpt/tox mob  Aliens\n";
 
   auto &race = races[Playernum - 1];
   getsdata(&Sdata);
@@ -73,8 +68,8 @@ void colonies(const command_t &argv, GameObj &g) {
       Place where{g, argv[i]};
       if (where.err || (where.level == ScopeLevel::LEVEL_UNIV) ||
           (where.level == ScopeLevel::LEVEL_SHIP)) {
-        sprintf(buf, "Bad location `%s'.\n", argv[i].c_str());
-        notify(Playernum, Governor, buf);
+        auto error_msg = std::format("Bad location `{}'.\n", argv[i]);
+        g.out << error_msg;
         continue;
       } /* ok, a proper location */
       colonies_at_star(g, race, where.snum);

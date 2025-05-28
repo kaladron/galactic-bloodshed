@@ -12,7 +12,7 @@ static constexpr int CARE = 5;
 struct anal_sect {
   unsigned int x, y;
   unsigned int des;
-  resource_t value;
+  resource_t value = -1;  // -1 means not set
 };
 
 namespace {
@@ -41,10 +41,10 @@ void PrintTop(GameObj &g, const std::array<struct anal_sect, CARE> arr,
   g.out << "\n";
 }
 
-void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
+void do_analysis(GameObj &g, player_t ThisPlayer, Mode mode, int sector_type,
                  starnum_t Starnum, planetnum_t Planetnum) {
   player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+
   std::array<struct anal_sect, CARE> Res;
   std::array<struct anal_sect, CARE> Eff;
   std::array<struct anal_sect, CARE> Frt;
@@ -52,6 +52,7 @@ void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   std::array<struct anal_sect, CARE> Troops;
   std::array<struct anal_sect, CARE> Popn;
   std::array<struct anal_sect, CARE> mPopn;
+
   int TotalCrys = 0;
   std::array<int, MAXPLAYERS + 1> PlayCrys{};
   int TotalTroops = 0;
@@ -64,21 +65,14 @@ void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   std::array<int, MAXPLAYERS + 1> PlayEff{};
   int TotalRes = 0;
   std::array<int, MAXPLAYERS + 1> PlayRes{};
-  int TotalSect = 0;
   int PlaySect[MAXPLAYERS + 1][SectorType::SEC_WASTED + 1];
   std::array<int, MAXPLAYERS + 1> PlayTSect{};
   std::array<int, MAXPLAYERS + 1> WastedSect{};
-  std::array<int, SectorType::SEC_WASTED + 1> Sect;
-
-  for (int i = 0; i < CARE; i++)
-    Res[i].value = Eff[i].value = Frt[i].value = Mob[i].value =
-        Troops[i].value = Popn[i].value = mPopn[i].value = -1;
+  std::array<int, SectorType::SEC_WASTED + 1> Sect{};
 
   for (int p = 0; p <= Num_races; p++) {
     for (int i = 0; i <= SectorType::SEC_WASTED; i++) PlaySect[p][i] = 0;
   }
-
-  Sect.fill(0);
 
   auto &race = races[Playernum - 1];
   const auto planet = getplanet(Starnum, Planetnum);
@@ -87,7 +81,7 @@ void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
     return;
   }
 
-  TotalSect = planet.Maxx * planet.Maxy;
+  auto TotalSect = planet.Maxx * planet.Maxy;
 
   for (auto smap = getsmap(planet); auto &sect : smap) {
     auto p = sect.owner;
@@ -216,9 +210,8 @@ void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
   for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
     g.out << std::format("{:>4}", Dessymbols[i]);
   }
-  notify(Playernum, Governor,
-         "\n----------------------------------------------"
-         "---------------------------------\n");
+  g.out << "\n----------------------------------------------"
+           "---------------------------------\n";
   for (player_t p = 0; p <= Num_races; p++)
     if (PlayTSect[p] != 0) {
       g.out << std::format(
@@ -232,9 +225,8 @@ void do_analysis(GameObj &g, int ThisPlayer, Mode mode, int sector_type,
       }
       g.out << "\n";
     }
-  notify(Playernum, Governor,
-         "------------------------------------------------"
-         "-------------------------------\n");
+  g.out << "------------------------------------------------"
+           "-------------------------------\n";
   g.out << std::format(
       "{:>2} {:>3} {:>7} {:>6} {:>5.1f} {:>5.1f} {:>5} {:>2}", "Tl", TotalSect,
       TotalPopn, TotalTroops, static_cast<double>(TotalEff) / TotalSect,

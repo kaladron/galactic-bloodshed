@@ -17,7 +17,18 @@
         "C_Cpp.intelliSenseEngine": "disabled",
         "C_Cpp.autocomplete": "disabled",
         "C_Cpp.errorSquiggles": "disabled",
-        "C_Cpp.formatting": "clangFormat"
+        "C_Cpp.formatting": "clangFormat",
+        "cmake.options.statusBarVisibility": "visible",
+        "cmake.options.advanced": {
+          "build": {
+            "statusBarVisibility": "visible",
+            "projectStatusVisibility": "visible"
+          },
+          "ctest": {
+            "statusBarVisibility": "visible",
+            "projectStatusVisibility": "visible"
+          }
+        }
       },
       "extensions": [
         "ms-vscode.cpptools",

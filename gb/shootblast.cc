@@ -27,19 +27,19 @@ static std::string do_critical_hits(int penetrate, Ship &ship, int *hits,
 static double p_factor(double attacker, double defender);
 static void mutate_sector(Sector &s);
 
-int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
-                       bool ignore, char *long_msg, char *short_msg) {
-  if (strength <= 0) return -1;
+std::tuple<int, std::string, std::string> shoot_ship_to_ship(
+    const Ship &from, Ship &to, int strength, int cew, bool ignore) {
+  if (strength <= 0) return {-1, "", ""};
 
-  if (!(from.alive || ignore) || !to.alive) return -1;
+  if (!(from.alive || ignore) || !to.alive) return {-1, "", ""};
   if (from.whatorbits == ScopeLevel::LEVEL_SHIP ||
       from.whatorbits == ScopeLevel::LEVEL_UNIV)
-    return -1;
+    return {-1, "", ""};
   if (to.whatorbits == ScopeLevel::LEVEL_SHIP ||
       to.whatorbits == ScopeLevel::LEVEL_UNIV)
-    return -1;
-  if (from.storbits != to.storbits) return -1;
-  if (has_switch(from) && !from.on) return -1;
+    return {-1, "", ""};
+  if (from.storbits != to.storbits) return {-1, "", ""};
+  if (has_switch(from) && !from.on) return {-1, "", ""};
 
   /* compute caliber */
   const auto caliber = current_caliber(from);
@@ -58,7 +58,7 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
     }
   }();
 
-  if ((double)dist > gun_range(from)) return -1;
+  if ((double)dist > gun_range(from)) return {-1, "", ""};
 
   /* attack parameters */
   auto [fevade, fspeed, fbody] = ship_disposition(from);
@@ -77,12 +77,13 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
   // mode is whether a ship has been set to radiative with the orders command.
   if (from.mode) {
     auto [damage, damage_msg] = do_radiation(to, from.tech, strength, hits);
-    sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(to).c_str(),
-            ship_to_string(from).c_str(), to.alive ? "attacked" : "DESTROYED",
-            ship_to_string(to).c_str());
-    strcpy(long_msg, short_msg);
-    strcat(long_msg, damage_msg.c_str());
-    return damage;
+    std::string short_msg =
+        std::format("{}: {} {} {}\n", dispshiploc(to), ship_to_string(from),
+                    to.alive ? "attacked" : "DESTROYED", ship_to_string(to));
+    std::string long_msg = short_msg;
+    long_msg += damage_msg;
+    return {damage, short_msg, long_msg};
+    ;
   }
 
   // CEW, destruct, lasers
@@ -107,17 +108,17 @@ int shoot_ship_to_ship(const Ship &from, Ship &to, int strength, int cew,
     }
   }();
 
-  if (caliber == GTYPE_NONE) return -1;
+  if (caliber == GTYPE_NONE) return {-1, "", ""};
 
   auto [damage, damage_msg] =
       do_damage(from.owner, to, (double)from.tech, strength, hits, defense,
                 caliber, (double)dist, weapon, hit_probability);
-  sprintf(short_msg, "%s: %s %s %s\n", dispshiploc(to).c_str(),
-          ship_to_string(from).c_str(), to.alive ? "attacked" : "DESTROYED",
-          ship_to_string(to).c_str());
-  strcpy(long_msg, short_msg);
-  strcat(long_msg, damage_msg.c_str());
-  return damage;
+  std::string short_msg =
+      std::format("{}: {} {} {}\n", dispshiploc(to), ship_to_string(from),
+                  to.alive ? "attacked" : "DESTROYED", ship_to_string(to));
+  std::string long_msg = short_msg;
+  long_msg += damage_msg;
+  return {damage, short_msg, long_msg};
 }
 
 int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,

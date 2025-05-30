@@ -218,4 +218,8 @@ add_executable(move_test move_test.cc)
 target_link_libraries(move_test PRIVATE gblib SQLite::SQLite3)
 add_test(NAME GB_move_test COMMAND move_test)
 
+add_executable(dosector_simple_test dosector_simple_test.cc)
+target_link_libraries(dosector_simple_test PRIVATE gblib SQLite::SQLite3)
+add_test(NAME GB_dosector_simple_test COMMAND dosector_simple_test)
+
 doxygen_add_docs(gb-docs)

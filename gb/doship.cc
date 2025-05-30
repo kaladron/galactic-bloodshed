@@ -555,9 +555,8 @@ void domissile(Ship &ship) {
     if (dist <= ((double)ship.speed * STRIKE_DISTANCE_FACTOR *
                  (100.0 - (double)ship.damage) / 100.0)) {
       /* do the attack */
-      char long_buf[1024], short_buf[256];
-      (void)shoot_ship_to_ship(ship, *ships[sh2], (int)ship.destruct, 0, 0,
-                               long_buf, short_buf);
+      auto [damage, short_buf, long_buf] =
+          shoot_ship_to_ship(ship, *ships[sh2], (int)ship.destruct, 0, 0);
       push_telegram(ship.owner, ship.governor, long_buf);
       push_telegram(ships[sh2]->owner, ships[sh2]->governor, long_buf);
       kill_ship(ship.owner, &ship);
@@ -621,9 +620,7 @@ void domine(Ship &ship, int detonate) {
   for (auto s : shiplist) {
     if (sh != ship.number && s.alive && (s.type != ShipType::OTYPE_CANIST) &&
         (s.type != ShipType::OTYPE_GREEN)) {
-      char long_buf[1024], short_buf[256];
-      auto damage = shoot_ship_to_ship(ship, s, (int)(ship.destruct), 0, 0,
-                                       long_buf, short_buf);
+      auto [damage, short_buf, long_buf] = shoot_ship_to_ship(ship, s, (int)(ship.destruct), 0, 0);
       if (damage > 0) {
         post(short_buf, NewsType::COMBAT);
         warn(s.owner, s.governor, long_buf);
@@ -695,9 +692,7 @@ void doabm(Ship &ship) {
         numdest = MIN(numdest, ship.destruct);
         numdest = MIN(numdest, ship.retaliate);
         ship.destruct -= numdest;
-        char long_buf[1024], short_buf[256];
-        (void)shoot_ship_to_ship(ship, *ships[sh2], numdest, 0, 0, long_buf,
-                                 short_buf);
+        auto [damange, short_buf, long_buf] = shoot_ship_to_ship(ship, *ships[sh2], numdest, 0, 0);
         push_telegram(ship.owner, ship.governor, long_buf);
         push_telegram(ships[sh2]->owner, ships[sh2]->governor, long_buf);
         post(short_buf, NewsType::COMBAT);

@@ -7,8 +7,9 @@ import :race;
 import :ships;
 
 // Damage, Short, Long
-export std::tuple<int, std::string, std::string> shoot_ship_to_ship(
-    const Ship &attacker, Ship &target, int strength, int range, bool ignore);
+export std::optional<std::tuple<int, std::string, std::string>>
+shoot_ship_to_ship(const Ship &attacker, Ship &target, int strength, int range,
+                   bool ignore);
 export int shoot_planet_to_ship(Race &race, Ship &target, int strength,
                                 char *long_msg, char *short_msg);
 export int shoot_ship_to_planet(Ship &attacker, Planet &target, int strength,

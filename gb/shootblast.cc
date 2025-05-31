@@ -425,6 +425,27 @@ static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
   return hits;
 }
 
+/**
+ * @brief Calculates the odds of hitting a target and a range factor based on
+ * combat parameters.
+ *
+ * This function computes the probability (odds) of a successful hit and a range
+ * factor for a shot, given various parameters such as weapon technology,
+ * damage, speeds, body size, gun caliber, and target defense.
+ *
+ * @param range     The distance to the target.
+ * @param tech      The technology level of the shooter.
+ * @param fdam      The damage factor of the firing entity (percentage, 0-100).
+ * @param fev       The experience value of the firing entity.
+ * @param tev       The experience value of the target entity.
+ * @param fspeed    The speed of the firing entity.
+ * @param tspeed    The speed of the target entity.
+ * @param body      The body size of the target.
+ * @param caliber   The caliber of the gun (guntype_t).
+ * @param defense   The defense factor of the target (percentage, 0-100).
+ * @return std::pair<int, int> A pair where the first element is the hit odds
+ * (percentage), and the second element is the computed range factor.
+ */
 std::pair<int, int> hit_odds(double range, double tech, int fdam, int fev,
                              int tev, int fspeed, int tspeed, int body,
                              guntype_t caliber, int defense) {

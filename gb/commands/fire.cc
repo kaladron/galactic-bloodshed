@@ -40,7 +40,6 @@ void fire(const command_t &argv, GameObj &g) {
   int strength;
   int maxstrength;
   int retal;
-  int damage;
 
   sh = 0;  // TODO(jeffbailey): No idea what this is, init to 0.
 

@@ -556,7 +556,7 @@ void domissile(Ship &ship) {
                  (100.0 - (double)ship.damage) / 100.0)) {
       /* do the attack */
       auto s2sresult =
-          shoot_ship_to_ship(ship, *ships[sh2], (int)ship.destruct, 0, 0);
+          shoot_ship_to_ship(ship, *ships[sh2], (int)ship.destruct, 0);
       auto const &[damage, short_buf, long_buf] = *s2sresult;
       push_telegram(ship.owner, ship.governor, long_buf);
       push_telegram(ships[sh2]->owner, ships[sh2]->governor, long_buf);
@@ -621,7 +621,7 @@ void domine(Ship &ship, int detonate) {
   for (auto s : shiplist) {
     if (sh != ship.number && s.alive && (s.type != ShipType::OTYPE_CANIST) &&
         (s.type != ShipType::OTYPE_GREEN)) {
-      auto s2sresult = shoot_ship_to_ship(ship, s, (int)(ship.destruct), 0, 0);
+      auto s2sresult = shoot_ship_to_ship(ship, s, (int)(ship.destruct), 0, false);
       if (s2sresult) {
         auto const &[damage, short_buf, long_buf] = *s2sresult;
         post(short_buf, NewsType::COMBAT);
@@ -695,7 +695,7 @@ void doabm(Ship &ship) {
         numdest = MIN(numdest, ship.retaliate);
         ship.destruct -= numdest;
         auto const &s2sresult =
-            shoot_ship_to_ship(ship, *ships[sh2], numdest, 0, 0);
+            shoot_ship_to_ship(ship, *ships[sh2], numdest, 0);
         auto [damange, short_buf, long_buf] = *s2sresult;
         push_telegram(ship.owner, ship.governor, long_buf);
         push_telegram(ships[sh2]->owner, ships[sh2]->governor, long_buf);

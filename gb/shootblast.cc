@@ -28,58 +28,60 @@ static double p_factor(double attacker, double defender);
 static void mutate_sector(Sector &s);
 
 std::optional<std::tuple<int, std::string, std::string>> shoot_ship_to_ship(
-    const Ship &from, Ship &to, int strength, int cew, bool ignore) {
-  if (strength <= 0) return std::nullopt;
+    const Ship &attacker, Ship &target, const int cew_strength, const int range,
+    const bool ignore) {
+  if (cew_strength <= 0) return std::nullopt;
 
-  if (!(from.alive || ignore) || !to.alive) return std::nullopt;
-  if (from.whatorbits == ScopeLevel::LEVEL_SHIP ||
-      from.whatorbits == ScopeLevel::LEVEL_UNIV)
+  if (!(attacker.alive || ignore) || !target.alive) return std::nullopt;
+  if (attacker.whatorbits == ScopeLevel::LEVEL_SHIP ||
+      target.whatorbits == ScopeLevel::LEVEL_UNIV)
     return std::nullopt;
-  if (to.whatorbits == ScopeLevel::LEVEL_SHIP ||
-      to.whatorbits == ScopeLevel::LEVEL_UNIV)
+  if (target.whatorbits == ScopeLevel::LEVEL_SHIP ||
+      target.whatorbits == ScopeLevel::LEVEL_UNIV)
     return std::nullopt;
-  if (from.storbits != to.storbits) return std::nullopt;
-  if (has_switch(from) && !from.on) return std::nullopt;
+  if (attacker.storbits != target.storbits) return std::nullopt;
+  if (has_switch(attacker) && !attacker.on) return std::nullopt;
 
   /* compute caliber */
-  const auto caliber = current_caliber(from);
+  const auto caliber = current_caliber(attacker);
 
-  double dist = [&from, &to]() -> double {
-    if (from.type ==
+  double dist = [&attacker, &target]() -> double {
+    if (attacker.type ==
         ShipType::STYPE_MISSILE) /* missiles hit at point blank range */
       return 0.0;
-    else {
-      double dist =
-          std::sqrt((double)Distsq(from.xpos, from.ypos, to.xpos, to.ypos));
-      if (from.type == ShipType::STYPE_MINE) { /* compute the effective range */
-        dist *= dist / 200.0; /* mines are very effective inside 200 */
-      }
-      return dist;
+
+    double dist = std::sqrt(
+        Distsq(attacker.xpos, attacker.ypos, target.xpos, target.ypos));
+    if (attacker.type ==
+        ShipType::STYPE_MINE) { /* compute the effective range */
+      dist *= dist / 200.0;     /* mines are very effective inside 200 */
     }
+    return dist;
   }();
 
-  if ((double)dist > gun_range(from)) return std::nullopt;
+  if (dist > gun_range(attacker)) return std::nullopt;
 
   /* attack parameters */
-  auto [fevade, fspeed, fbody] = ship_disposition(from);
-  auto [tevade, tspeed, tbody] = ship_disposition(to);
-  auto defense = getdefense(to);
+  auto [fevade, fspeed, fbody] = ship_disposition(attacker);
+  auto [tevade, tspeed, tbody] = ship_disposition(target);
+  auto defense = getdefense(target);
 
-  bool focus = (laser_on(from) && from.focus) ? true : false;
+  bool focus = laser_on(attacker) && attacker.focus;
 
   int hit_probability;
-  int hits = cew != 0
-                 ? strength * CEW_hit((double)dist, (int)from.cew_range)
-                 : Num_hits((double)dist, focus, strength, from.tech,
-                            (int)from.damage, fevade, tevade, fspeed, tspeed,
-                            tbody, caliber, defense, &hit_probability);
+  int hits = (range != 0)
+                 ? cew_strength * CEW_hit(dist, (int)attacker.cew_range)
+                 : Num_hits(dist, focus, cew_strength, attacker.tech,
+                            (int)attacker.damage, fevade, tevade, fspeed,
+                            tspeed, tbody, caliber, defense, &hit_probability);
 
   // mode is whether a ship has been set to radiative with the orders command.
-  if (from.mode) {
-    auto [damage, damage_msg] = do_radiation(to, from.tech, strength, hits);
-    std::string short_msg =
-        std::format("{}: {} {} {}\n", dispshiploc(to), ship_to_string(from),
-                    to.alive ? "attacked" : "DESTROYED", ship_to_string(to));
+  if (attacker.mode) {
+    auto [damage, damage_msg] =
+        do_radiation(target, attacker.tech, cew_strength, hits);
+    std::string short_msg = std::format(
+        "{}: {} {} {}\n", dispshiploc(target), ship_to_string(attacker),
+        target.alive ? "attacked" : "DESTROYED", ship_to_string(target));
     std::string long_msg = short_msg;
     long_msg += damage_msg;
     return std::make_tuple(damage, short_msg, long_msg);
@@ -87,12 +89,11 @@ std::optional<std::tuple<int, std::string, std::string>> shoot_ship_to_ship(
   }
 
   // CEW, destruct, lasers
+  auto weapon = [range, attacker, caliber] -> std::string {
+    if (range != 0) return "strength CEW";
 
-  auto weapon = [cew, from, caliber] -> std::string {
-    if (cew) return "strength CEW";
-
-    if (laser_on(from)) {
-      if (from.focus) return "strength focused laser";
+    if (laser_on(attacker)) {
+      if (attacker.focus) return "strength focused laser";
       return "strength laser";
     }
 
@@ -111,11 +112,11 @@ std::optional<std::tuple<int, std::string, std::string>> shoot_ship_to_ship(
   if (caliber == GTYPE_NONE) return std::nullopt;
 
   auto [damage, damage_msg] =
-      do_damage(from.owner, to, (double)from.tech, strength, hits, defense,
-                caliber, (double)dist, weapon, hit_probability);
-  std::string short_msg =
-      std::format("{}: {} {} {}\n", dispshiploc(to), ship_to_string(from),
-                  to.alive ? "attacked" : "DESTROYED", ship_to_string(to));
+      do_damage(attacker.owner, target, (double)attacker.tech, cew_strength,
+                hits, defense, caliber, dist, weapon, hit_probability);
+  std::string short_msg = std::format(
+      "{}: {} {} {}\n", dispshiploc(target), ship_to_string(attacker),
+      target.alive ? "attacked" : "DESTROYED", ship_to_string(target));
   std::string long_msg = short_msg;
   long_msg += damage_msg;
   return std::make_tuple(damage, short_msg, long_msg);

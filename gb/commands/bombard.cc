@@ -161,7 +161,7 @@ void bombard(const command_t &argv, GameObj &g) {
             strength = check_retal_strength(ship);
 
             auto const &s2sresult =
-                shoot_ship_to_ship(ship, *from, strength, 0, 0);
+                shoot_ship_to_ship(ship, *from, strength, 0);
             if (s2sresult) {
               auto [damage, short_buf, long_buf] = *s2sresult;
 

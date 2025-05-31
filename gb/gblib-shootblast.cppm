@@ -8,8 +8,8 @@ import :ships;
 
 // Damage, Short, Long
 export std::optional<std::tuple<int, std::string, std::string>>
-shoot_ship_to_ship(const Ship &attacker, Ship &target, int cew_strength, int range,
-                   bool ignore = false);
+shoot_ship_to_ship(const Ship &attacker, Ship &target, int cew_strength,
+                   int range, bool ignore = false);
 export int shoot_planet_to_ship(Race &race, Ship &target, int strength,
                                 char *long_msg, char *short_msg);
 export int shoot_ship_to_planet(Ship &attacker, Planet &target, int strength,
@@ -24,15 +24,23 @@ export guntype_t current_caliber(const Ship &ship);
 export std::tuple<int, int, int, int> do_collateral(Ship &ship, int damage);
 export int planet_guns(long planet_id);
 
-/*
- * gun range of given ship, given race and ship
+/**
+ * @brief Calculates the gun range for a given race based on its technology
+ * level.
+ *
+ * @param r The race whose gun range is to be calculated.
+ * @return The computed gun range as a double.
  */
 export constexpr double gun_range(const Race &r) {
   return logscale((int)(r.tech + 1.0)) * SYSTEMSIZE;
 }
 
-/*
- * gun range of given ship, given race and ship
+/**
+ * @brief Calculates the gun range for a given ship based on its technology
+ * level.
+ *
+ * @param s The ship whose gun range is to be calculated.
+ * @return The computed gun range as a double.
  */
 export constexpr double gun_range(const Ship &s) {
   return logscale((int)(s.tech + 1.0)) * SYSTEMSIZE;

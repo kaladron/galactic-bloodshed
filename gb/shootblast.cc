@@ -378,12 +378,7 @@ static std::pair<int, std::string> do_damage(player_t who, Ship &ship,
  * given ship.
  *
  * @param ship The ship for which the disposition is being determined.
- * @param evade Pointer to an integer variable to store the calculated evade
- * value.
- * @param speed Pointer to an integer variable to store the calculated speed
- * value.
- * @param body Pointer to an integer variable to store the calculated body
- * value.
+ * @return A tuple containing the evade value, speed, and body size of the ship.
  */
 static std::tuple<int, int, int> ship_disposition(const Ship &ship) {
   int evade = 0;

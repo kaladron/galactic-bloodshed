@@ -160,8 +160,11 @@ void bombard(const command_t &argv, GameObj &g) {
 
             strength = check_retal_strength(ship);
 
-            auto [damage, short_buf, long_buf] = shoot_ship_to_ship(ship, *from, strength, 0, 0);
-            if (damage >= 0) {
+            auto const &s2sresult =
+                shoot_ship_to_ship(ship, *from, strength, 0, 0);
+            if (s2sresult) {
+              auto [damage, short_buf, long_buf] = *s2sresult;
+
               if (laser_on(ship))
                 use_fuel(ship, 2.0 * (double)strength);
               else

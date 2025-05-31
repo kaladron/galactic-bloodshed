@@ -27,19 +27,19 @@ static std::string do_critical_hits(int penetrate, Ship &ship, int *hits,
 static double p_factor(double attacker, double defender);
 static void mutate_sector(Sector &s);
 
-std::tuple<int, std::string, std::string> shoot_ship_to_ship(
+std::optional<std::tuple<int, std::string, std::string>> shoot_ship_to_ship(
     const Ship &from, Ship &to, int strength, int cew, bool ignore) {
-  if (strength <= 0) return {-1, "", ""};
+  if (strength <= 0) return std::nullopt;
 
-  if (!(from.alive || ignore) || !to.alive) return {-1, "", ""};
+  if (!(from.alive || ignore) || !to.alive) return std::nullopt;
   if (from.whatorbits == ScopeLevel::LEVEL_SHIP ||
       from.whatorbits == ScopeLevel::LEVEL_UNIV)
-    return {-1, "", ""};
+    return std::nullopt;
   if (to.whatorbits == ScopeLevel::LEVEL_SHIP ||
       to.whatorbits == ScopeLevel::LEVEL_UNIV)
-    return {-1, "", ""};
-  if (from.storbits != to.storbits) return {-1, "", ""};
-  if (has_switch(from) && !from.on) return {-1, "", ""};
+    return std::nullopt;
+  if (from.storbits != to.storbits) return std::nullopt;
+  if (has_switch(from) && !from.on) return std::nullopt;
 
   /* compute caliber */
   const auto caliber = current_caliber(from);
@@ -58,7 +58,7 @@ std::tuple<int, std::string, std::string> shoot_ship_to_ship(
     }
   }();
 
-  if ((double)dist > gun_range(from)) return {-1, "", ""};
+  if ((double)dist > gun_range(from)) return std::nullopt;
 
   /* attack parameters */
   auto [fevade, fspeed, fbody] = ship_disposition(from);
@@ -82,7 +82,7 @@ std::tuple<int, std::string, std::string> shoot_ship_to_ship(
                     to.alive ? "attacked" : "DESTROYED", ship_to_string(to));
     std::string long_msg = short_msg;
     long_msg += damage_msg;
-    return {damage, short_msg, long_msg};
+    return std::make_tuple(damage, short_msg, long_msg);
     ;
   }
 
@@ -108,7 +108,7 @@ std::tuple<int, std::string, std::string> shoot_ship_to_ship(
     }
   }();
 
-  if (caliber == GTYPE_NONE) return {-1, "", ""};
+  if (caliber == GTYPE_NONE) return std::nullopt;
 
   auto [damage, damage_msg] =
       do_damage(from.owner, to, (double)from.tech, strength, hits, defense,
@@ -118,7 +118,7 @@ std::tuple<int, std::string, std::string> shoot_ship_to_ship(
                   to.alive ? "attacked" : "DESTROYED", ship_to_string(to));
   std::string long_msg = short_msg;
   long_msg += damage_msg;
-  return {damage, short_msg, long_msg};
+  return std::make_tuple(damage, short_msg, long_msg);
 }
 
 int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,

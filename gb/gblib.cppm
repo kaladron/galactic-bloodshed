@@ -3,6 +3,7 @@
 export module gblib;
 
 export import :build;
+export import :doplanet;
 export import :dosector;
 export import :doship;
 export import :files_shl;

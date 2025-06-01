@@ -1,19 +1,19 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /*  doplanet.c -- do one turn on a planet. */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/doplanet.h"
 
 #include <strings.h>
 
 #include <cstdlib>
 
 #include "gb/bombard.h"
+
+module gblib;
 
 namespace {
 bool moveship_onplanet(Ship &ship, const Planet &planet) {
@@ -310,7 +310,8 @@ double est_production(const Sector &s) {
 }
 }  // namespace
 
-int doplanet(const int starnum, Planet &planet, const int planetnum) {
+int doplanet(const starnum_t starnum, Planet &planet,
+             const planetnum_t planetnum) {
   int shipno;
   int nukex;
   int nukey;

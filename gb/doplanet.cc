@@ -114,25 +114,20 @@ void plow(Ship *ship, Planet &planet, SectorMap &smap) {
 }
 
 void do_dome(Ship *ship, SectorMap &smap) {
-  int adjust;
-
   auto &s = smap.get(ship->land_x, ship->land_y);
   if (s.eff >= 100) {
     std::string buf = std::format(" Y{} is full of zealots!!!", ship->number);
     push_telegram(ship->owner, ship->governor, buf);
     return;
   }
-  adjust = round_rand(.05 * (100. - (double)ship->damage) * (double)ship->popn /
-                      ship->max_crew);
+  int adjust = round_rand(.05 * (100. - (double)ship->damage) *
+                          (double)ship->popn / ship->max_crew);
   s.eff += adjust;
   s.eff = std::min<unsigned int>(s.eff, 100);
   use_resource(*ship, RES_COST_DOME);
 }
 
 void do_quarry(Ship *ship, Planet &planet, SectorMap &smap) {
-  int prod;
-  int tox;
-
   auto &s = smap.get(ship->land_x, ship->land_y);
 
   if ((ship->fuel < (double)FUEL_COST_QUARRY)) {
@@ -142,11 +137,11 @@ void do_quarry(Ship *ship, Planet &planet, SectorMap &smap) {
   }
   /* nuke the sector */
   s.condition = SectorType::SEC_WASTED;
-  prod = round_rand(races[ship->owner - 1].metabolism * (double)ship->popn /
-                    (double)ship->max_crew);
+  int prod = round_rand(races[ship->owner - 1].metabolism * (double)ship->popn /
+                        (double)ship->max_crew);
   ship->fuel -= FUEL_COST_QUARRY;
   prod_res[ship->owner - 1] += prod;
-  tox = int_rand(0, int_rand(0, prod));
+  int tox = int_rand(0, int_rand(0, prod));
   planet.conditions[TOXIC] = std::min(100, planet.conditions[TOXIC] + tox);
   if (s.fert >= prod)
     s.fert -= prod;

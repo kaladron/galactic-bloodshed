@@ -1,18 +1,18 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /* doturn -- does one turn. */
 
+module;
+
 import gblib;
 import std.compat;
-
-#include "gb/doturncmd.h"
 
 #include <strings.h>
 
 #include "gb/GB_server.h"
 #include "gb/buffers.h"
+
+module gblib;
 
 static constexpr void maintain(Race &r, Race::gov &governor,
                                const money_t amount) noexcept {

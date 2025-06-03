@@ -74,6 +74,7 @@ target_sources(
          gblib-doplanet.cppm
          gblib-dosector.cppm
          gblib-doship.cppm
+         gblib-doturncmd.cppm
          gblib-files_shl.cppm
          gblib-fire.cppm
          gblib-fuel.cppm
@@ -100,6 +101,7 @@ target_sources(
           doplanet.cc
           dosector.cc
           doship.cc
+          doturncmd.cc
           files_shl.cc
           fire.cc
           fuel.cc
@@ -204,7 +206,7 @@ target_sources(
 target_link_libraries(commands PRIVATE gblib SQLite::SQLite3 glaze::glaze
                                        scn::scn)
 
-set(OLD_LIBGBLIB_FILES doturncmd.cc)
+set(OLD_LIBGBLIB_FILES )
 
 add_executable(GB GB_server.cc ${OLD_LIBGBLIB_FILES})
 target_link_libraries(GB PRIVATE gblib commands SQLite::SQLite3 glaze::glaze)

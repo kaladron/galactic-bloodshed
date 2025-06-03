@@ -2,6 +2,7 @@
 
 export module gblib;
 
+export import :bombard;
 export import :build;
 export import :doplanet;
 export import :dosector;

@@ -98,6 +98,7 @@ target_sources(
   PRIVATE bombard.cc
           build.cc
           doplanet.cc
+          dosector.cc
           doship.cc
           files_shl.cc
           fire.cc
@@ -203,7 +204,7 @@ target_sources(
 target_link_libraries(commands PRIVATE gblib SQLite::SQLite3 glaze::glaze
                                        scn::scn)
 
-set(OLD_LIBGBLIB_FILES dosector.cc doturncmd.cc)
+set(OLD_LIBGBLIB_FILES doturncmd.cc)
 
 add_executable(GB GB_server.cc ${OLD_LIBGBLIB_FILES})
 target_link_libraries(GB PRIVATE gblib commands SQLite::SQLite3 glaze::glaze)

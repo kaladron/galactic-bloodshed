@@ -11,8 +11,6 @@ import std.compat;
 
 #include <cstdlib>
 
-#include "gb/bombard.h"
-
 module gblib;
 
 namespace {

@@ -69,6 +69,7 @@ target_sources(
          CXX_MODULES
          FILES
          gblib.cppm
+         gblib-bombard.cppm
          gblib-build.cppm
          gblib-doplanet.cppm
          gblib-dosector.cppm
@@ -94,7 +95,8 @@ target_sources(
          gblib-tele.cppm
          gblib-tweakables.cppm
          gblib-types.cppm
-  PRIVATE build.cc
+  PRIVATE bombard.cc
+          build.cc
           doplanet.cc
           doship.cc
           files_shl.cc
@@ -201,7 +203,7 @@ target_sources(
 target_link_libraries(commands PRIVATE gblib SQLite::SQLite3 glaze::glaze
                                        scn::scn)
 
-set(OLD_LIBGBLIB_FILES bombard.cc  dosector.cc doturncmd.cc)
+set(OLD_LIBGBLIB_FILES dosector.cc doturncmd.cc)
 
 add_executable(GB GB_server.cc ${OLD_LIBGBLIB_FILES})
 target_link_libraries(GB PRIVATE gblib commands SQLite::SQLite3 glaze::glaze)

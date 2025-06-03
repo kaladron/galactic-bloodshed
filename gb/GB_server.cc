@@ -24,7 +24,6 @@ import std.compat;
 #include <cstdlib>
 
 #include "gb/buffers.h"
-#include "gb/doturncmd.h"
 #include "gb/files.h"
 #include "gb/globals.h"
 

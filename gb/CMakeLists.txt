@@ -206,9 +206,7 @@ target_sources(
 target_link_libraries(commands PRIVATE gblib SQLite::SQLite3 glaze::glaze
                                        scn::scn)
 
-set(OLD_LIBGBLIB_FILES )
-
-add_executable(GB GB_server.cc ${OLD_LIBGBLIB_FILES})
+add_executable(GB GB_server.cc)
 target_link_libraries(GB PRIVATE gblib commands SQLite::SQLite3 glaze::glaze)
 install(TARGETS GB)
 

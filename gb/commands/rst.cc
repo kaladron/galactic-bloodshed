@@ -13,8 +13,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 enum ReportType {
@@ -54,6 +52,7 @@ static void star_getrships(player_t, governor_t, starnum_t);
 
 namespace GB::commands {
 void rst(const command_t &argv, GameObj &g) {
+  char buf[2048];
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   shipnum_t shipno;
@@ -182,6 +181,7 @@ void rst(const command_t &argv, GameObj &g) {
 
 static void ship_report(GameObj &g, shipnum_t indx,
                         const report_array &rep_on) {
+  char buf[2048];
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int i;
@@ -535,6 +535,7 @@ static int Getrship(player_t Playernum, governor_t Governor, shipnum_t shipno) {
     Num_ships++;
     return 1;
   }
+  char buf[256];
   sprintf(buf, "Getrship: error on ship get (%lu).\n", shipno);
   notify(Playernum, Governor, buf);
   return 0;

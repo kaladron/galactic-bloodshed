@@ -6,7 +6,6 @@ import gblib;
 import std.compat;
 
 #include "gb/GB_server.h"
-#include "gb/buffers.h"
 
 module commands;
 
@@ -165,6 +164,7 @@ void land_friendly(const command_t &argv, GameObj &g, Ship &s) {
 void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
+  char buf[2048];
   int x = -1;
   int y = -1;
   int i;
@@ -236,12 +236,12 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
           /* attack the landing ship */
           strength = MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);
           if (strength) {
-            char short_buf[256];
-            shoot_planet_to_ship(alien, s, strength, buf, short_buf);
+            char long_buf[1024], short_buf[256];
+            shoot_planet_to_ship(alien, s, strength, long_buf, short_buf);
             post(short_buf, NewsType::COMBAT);
             notify_star(0, 0, s.storbits, short_buf);
-            warn(i, stars[s.storbits].governor(i - 1), buf);
-            notify(s.owner, s.governor, buf);
+            warn(i, stars[s.storbits].governor(i - 1), long_buf);
+            notify(s.owner, s.governor, long_buf);
             p.info[i - 1].destruct -= strength;
           }
         }
@@ -288,8 +288,7 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
   auto sect = getsector(p, x, y);
 
   if (sect.condition == SectorType::SEC_WASTED) {
-    sprintf(buf, "Warning: That sector is a wasteland!\n");
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor, "Warning: That sector is a wasteland!\n");
   } else if (sect.owner && sect.owner != Playernum) {
     auto &race = races[Playernum - 1];
     auto &alien = races[sect.owner - 1];
@@ -330,6 +329,7 @@ void land(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   ap_t APcount = 1;
   Ship *s;
+  char buf[2048];
 
   shipnum_t shipno;
 

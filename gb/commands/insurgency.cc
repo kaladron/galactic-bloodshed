@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -88,59 +86,48 @@ void insurgency(const command_t &argv, GameObj &g) {
                      (double)(race.fighters * p.info[Playernum - 1].troops -
                               alien.fighters * p.info[who - 1].troops)) /
        50.0;
-  sprintf(buf, "x = %f\n", x);
-  notify(Playernum, Governor, buf);
+  notify(Playernum, Governor, std::format("x = {}\n", x));
   chance = round_rand(200.0 * atan((double)x) / 3.14159265);
-  char long_buf[1024];
-  sprintf(long_buf, "%s/%s: %s [%d] tries insurgency vs %s [%d]\n",
-          stars[g.snum].get_name().c_str(),
-          stars[g.snum].get_planet_name(g.pnum).c_str(), race.name, Playernum,
-          alien.name, who);
-  sprintf(buf, "\t%s: %d total civs [%d]  opposing %d total civs [%d]\n",
-          stars[g.snum].get_name().c_str(), eligible, Playernum, them, who);
-  strcat(long_buf, buf);
-  sprintf(buf, "\t\t %ld morale [%d] vs %ld morale [%d]\n", race.morale,
-          Playernum, alien.morale, who);
-  strcat(long_buf, buf);
-  sprintf(buf, "\t\t %d money against %ld population at tax rate %d%%\n",
-          amount, p.info[who - 1].popn, p.info[who - 1].tax);
-  strcat(long_buf, buf);
-  sprintf(buf, "Success chance is %d%%\n", chance);
-  strcat(long_buf, buf);
+  std::string long_msg = std::format(
+      "{}/{}: {} [{}] tries insurgency vs {} [{}]\n\t{}: {} total civs [{}]  "
+      "opposing {} total civs [{}]\n\t\t {} morale [{}] vs {} morale "
+      "[{}]\n\t\t {} money against {} population at tax rate {}%\nSuccess "
+      "chance is {}%\n",
+      stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum),
+      race.name, Playernum, alien.name, who, stars[g.snum].get_name(), eligible,
+      Playernum, them, who, race.morale, Playernum, alien.morale, who, amount,
+      p.info[who - 1].popn, p.info[who - 1].tax, chance);
   if (success(chance)) {
     changed_hands = revolt(p, who, Playernum);
-    notify(Playernum, Governor, long_buf);
-    sprintf(buf, "Success!  You liberate %d sector%s.\n", changed_hands,
-            (changed_hands == 1) ? "" : "s");
-    notify(Playernum, Governor, buf);
-    sprintf(buf,
-            "A revolt on /%s/%s instigated by %s [%d] costs you %d sector%s\n",
-            stars[g.snum].get_name().c_str(),
-            stars[g.snum].get_planet_name(g.pnum).c_str(), race.name, Playernum,
-            changed_hands, (changed_hands == 1) ? "" : "s");
-    strcat(long_buf, buf);
-    warn(who, stars[g.snum].governor(who - 1), long_buf);
+    notify(Playernum, Governor, long_msg);
+    notify(Playernum, Governor,
+           std::format("Success!  You liberate {} sector{}.\n", changed_hands,
+                       (changed_hands == 1) ? "" : "s"));
+    long_msg += std::format(
+        "A revolt on /{}/{} instigated by {} [{}] costs you {} sector{}\n",
+        stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum),
+        race.name, Playernum, changed_hands, (changed_hands == 1) ? "" : "s");
+    warn(who, stars[g.snum].governor(who - 1), long_msg);
     p.info[Playernum - 1].tax = p.info[who - 1].tax;
     /* you inherit their tax rate (insurgency wars he he ) */
-    sprintf(buf, "/%s/%s: Successful insurgency by %s [%d] against %s [%d]\n",
-            stars[g.snum].get_name().c_str(),
-            stars[g.snum].get_planet_name(g.pnum).c_str(), race.name, Playernum,
-            alien.name, who);
-    post(buf, NewsType::DECLARATION);
+    post(std::format(
+             "/{}/{}: Successful insurgency by {} [{}] against {} [{}]\n",
+             stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum),
+             race.name, Playernum, alien.name, who),
+         NewsType::DECLARATION);
   } else {
-    notify(Playernum, Governor, long_buf);
+    notify(Playernum, Governor, long_msg);
     g.out << "The insurgency failed!\n";
-    sprintf(buf, "A revolt on /%s/%s instigated by %s [%d] fails\n",
-            stars[g.snum].get_name().c_str(),
-            stars[g.snum].get_planet_name(g.pnum).c_str(), race.name,
-            Playernum);
-    strcat(long_buf, buf);
-    warn(who, stars[g.snum].governor(who - 1), long_buf);
-    sprintf(buf, "/%s/%s: Failed insurgency by %s [%d] against %s [%d]\n",
-            stars[g.snum].get_name().c_str(),
-            stars[g.snum].get_planet_name(g.pnum).c_str(), race.name, Playernum,
-            alien.name, who);
-    post(buf, NewsType::DECLARATION);
+    long_msg += std::format("A revolt on /{}/{} instigated by {} [{}] fails\n",
+                            stars[g.snum].get_name(),
+                            stars[g.snum].get_planet_name(g.pnum), race.name,
+                            Playernum);
+    warn(who, stars[g.snum].governor(who - 1), long_msg);
+    post(std::format("/{}/{}: Failed insurgency by {} [{}] against {} [{}]\n",
+                     stars[g.snum].get_name(),
+                     stars[g.snum].get_planet_name(g.pnum), race.name,
+                     Playernum, alien.name, who),
+         NewsType::DECLARATION);
   }
   deductAPs(g, APcount, g.snum);
   race.governor[Governor].money -= amount;

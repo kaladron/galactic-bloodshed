@@ -1,8 +1,8 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "image": "mcr.microsoft.com/devcontainers/cpp:ubuntu",
   "features": {
     "ghcr.io/devcontainers-community/features/llvm": {
-      "version": "21"
+      "version": "22"
     },
     "ghcr.io/devcontainers-extra/features/ninja-asdf:2": {},
     "ghcr.io/devcontainers-extra/features/cmake:1": {},

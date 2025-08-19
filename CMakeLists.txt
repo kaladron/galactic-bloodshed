@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 4.0.0)
 
 # Enables the Standard module support. This needs to be done before selecting
 # the languages.
-set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "a9e1cf81-9932-4810-974b-6eccaf14e457")
+set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
 set(CMAKE_CXX_MODULE_STD ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 

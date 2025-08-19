@@ -7,8 +7,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -23,14 +21,12 @@ void explore(const command_t &argv, GameObj &g) {
   if (argv.size() == 2) {
     Place where{g, argv[1]};
     if (where.err) {
-      sprintf(buf, "explore: bad scope.\n");
-      notify(Playernum, Governor, buf);
+      notify(Playernum, Governor, "explore: bad scope.\n");
       return;
     }
     if (where.level == ScopeLevel::LEVEL_SHIP ||
         where.level == ScopeLevel::LEVEL_UNIV) {
-      sprintf(buf, "Bad scope '%s'.\n", argv[1].c_str());
-      notify(Playernum, Governor, buf);
+      notify(Playernum, Governor, std::format("Bad scope '{}'\n", argv[1]));
       return;
     }
     starq = where.snum;
@@ -39,14 +35,14 @@ void explore(const command_t &argv, GameObj &g) {
   auto &race = races[Playernum - 1];
 
   getsdata(&Sdata);
-  sprintf(buf, "         ========== Exploration Report ==========\n");
-  notify(Playernum, Governor, buf);
-  sprintf(buf, " Global action points : [%2d]\n", Sdata.AP[Playernum - 1]);
-  notify(Playernum, Governor, buf);
-  sprintf(
-      buf,
+  notify(Playernum, Governor,
+         "         ========== Exploration Report ==========\n");
+  notify(
+      Playernum, Governor,
+      std::format(" Global action points : [{:2}]\n", Sdata.AP[Playernum - 1]));
+  notify(
+      Playernum, Governor,
       " Star  (stability)[AP]   #  Planet [Attributes] Type (Compatibility)\n");
-  notify(Playernum, Governor, buf);
   for (starnum_t star = 0; star < Sdata.numstars; star++)
     if ((starq == -1) || (starq == star)) {
       stars[star] = getstar(star);
@@ -55,54 +51,47 @@ void explore(const command_t &argv, GameObj &g) {
           const auto pl = getplanet(star, i);
           if (i == 0) {
             if (race.tech >= TECH_SEE_STABILITY) {
-              sprintf(buf, "\n%13s (%2d)[%2d]\n",
-                      stars[star].get_name().c_str(), stars[star].stability(),
-                      stars[star].AP(Playernum - 1));
-              notify(Playernum, Governor, buf);
+              notify(
+                  Playernum, Governor,
+                  std::format("\n{:13} ({:2})[{:2}]\n", stars[star].get_name(),
+                              stars[star].stability(),
+                              stars[star].AP(Playernum - 1)));
             } else {
-              sprintf(buf, "\n%13s (/?/?)[%2d]\n",
-                      stars[star].get_name().c_str(),
-                      stars[star].AP(Playernum - 1));
-              notify(Playernum, Governor, buf);
+              notify(
+                  Playernum, Governor,
+                  std::format("\n{:13} (/?/?)[{:2}]\n", stars[star].get_name(),
+                              stars[star].AP(Playernum - 1)));
             }
           }
 
-          sprintf(buf, "\t\t      ");
-          notify(Playernum, Governor, buf);
+          notify(Playernum, Governor, "\t\t      ");
 
-          sprintf(buf, "  #%d. %-15s [ ", i + 1,
-                  stars[star].get_planet_name(i).c_str());
-          notify(Playernum, Governor, buf);
+          notify(Playernum, Governor,
+                 std::format("  #{}. {:<15} [ ", i + 1,
+                             stars[star].get_planet_name(i)));
           if (pl.info[Playernum - 1].explored) {
-            sprintf(buf, "Ex ");
-            notify(Playernum, Governor, buf);
+            notify(Playernum, Governor, "Ex ");
             if (pl.info[Playernum - 1].autorep) {
-              sprintf(buf, "Rep ");
-              notify(Playernum, Governor, buf);
+              notify(Playernum, Governor, "Rep ");
             }
             if (pl.info[Playernum - 1].numsectsowned) {
-              sprintf(buf, "Inhab ");
-              notify(Playernum, Governor, buf);
+              notify(Playernum, Governor, "Inhab ");
             }
             if (pl.slaved_to) {
-              sprintf(buf, "SLAVED ");
-              notify(Playernum, Governor, buf);
+              notify(Playernum, Governor, "SLAVED ");
             }
             for (j = 1; j <= Num_races; j++)
               if (j != Playernum && pl.info[j - 1].numsectsowned) {
-                sprintf(buf, "%d ", j);
-                notify(Playernum, Governor, buf);
+                notify(Playernum, Governor, std::format("{} ", j));
               }
             if (pl.conditions[TOXIC] > 70) {
-              sprintf(buf, "TOXIC ");
-              notify(Playernum, Governor, buf);
+              notify(Playernum, Governor, "TOXIC ");
             }
-            sprintf(buf, "] %s %2.0f%%\n", Planet_types[pl.type],
-                    pl.compatibility(race));
-            notify(Playernum, Governor, buf);
+            notify(Playernum, Governor,
+                   std::format("] {} {:2.0f}%\n", Planet_types[pl.type],
+                               pl.compatibility(race)));
           } else {
-            sprintf(buf, "No Data ]\n");
-            notify(Playernum, Governor, buf);
+            notify(Playernum, Governor, "No Data ]\n");
           }
         }
     }

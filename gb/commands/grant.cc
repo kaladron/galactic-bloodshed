@@ -9,8 +9,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -46,9 +44,9 @@ void grant(const command_t &argv, GameObj &g) {
     }
     snum = g.snum;
     stars[snum].governor(Playernum - 1) = gov;
-    sprintf(buf, "\"%s\" has granted you control of the /%s star system.\n",
-            race.governor[Governor].name, stars[snum].get_name().c_str());
-    warn(Playernum, gov, buf);
+    warn(Playernum, gov,
+         std::format("\"{}\" has granted you control of the /{} star system.\n",
+                     race.governor[Governor].name, stars[snum].get_name()));
     putstar(stars[snum], snum);
   } else if (argv[2] == "ship") {
     nextshipno = start_shiplist(g, argv[3]);
@@ -56,19 +54,19 @@ void grant(const command_t &argv, GameObj &g) {
       if (in_list(Playernum, argv[3], *ship, &nextshipno) &&
           authorized(Governor, *ship)) {
         ship->governor = gov;
-        sprintf(buf, "\"%s\" granted you %s at %s\n",
-                race.governor[Governor].name, ship_to_string(*ship).c_str(),
-                prin_ship_orbits(*ship).c_str());
-        warn(Playernum, gov, buf);
+        warn(Playernum, gov,
+             std::format("\"{}\" granted you {} at {}\n",
+                         race.governor[Governor].name, ship_to_string(*ship),
+                         prin_ship_orbits(*ship)));
         putship(*ship);
-        sprintf(buf, "%s granted to \"%s\"\n", ship_to_string(*ship).c_str(),
-                race.governor[gov].name);
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("{} granted to \"{}\"\n", ship_to_string(*ship),
+                           race.governor[gov].name));
         free(ship);
       } else
         free(ship);
   } else if (argv[2] == "money") {
-    long amount;
+    long amount = 0;
     if (argv.size() < 4) {
       g.out << "Indicate the amount of money.\n";
       return;
@@ -83,19 +81,21 @@ void grant(const command_t &argv, GameObj &g) {
     else if (-amount > race.governor[gov].money)
       amount = -race.governor[gov].money;
     if (amount >= 0)
-      sprintf(buf, "%ld money granted to \"%s\".\n", amount,
-              race.governor[gov].name);
+      notify(Playernum, Governor,
+             std::format("{} money granted to \"{}\".\n", amount,
+                         race.governor[gov].name));
     else
-      sprintf(buf, "%ld money deducted from \"%s\".\n", -amount,
-              race.governor[gov].name);
-    notify(Playernum, Governor, buf);
+      notify(Playernum, Governor,
+             std::format("{} money deducted from \"{}\".\n", -amount,
+                         race.governor[gov].name));
     if (amount >= 0)
-      sprintf(buf, "\"%s\" granted you %ld money.\n",
-              race.governor[Governor].name, amount);
+      warn(Playernum, gov,
+           std::format("\"{}\" granted you {} money.\n",
+                       race.governor[Governor].name, amount));
     else
-      sprintf(buf, "\"%s\" docked you %ld money.\n",
-              race.governor[Governor].name, -amount);
-    warn(Playernum, gov, buf);
+      warn(Playernum, gov,
+           std::format("\"{}\" docked you {} money.\n",
+                       race.governor[Governor].name, -amount));
     race.governor[Governor].money -= amount;
     race.governor[gov].money += amount;
     putrace(race);

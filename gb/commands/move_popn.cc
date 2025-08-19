@@ -7,8 +7,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -201,10 +199,11 @@ void move_popn(const command_t &argv, GameObj &g) {
         absorbed = 0;
         if (alien.absorb) {
           absorbed = int_rand(0, oldpopn - people);
-          sprintf(buf, "%d alien bodies absorbed.\n", absorbed);
-          notify(old2owner, old2gov, buf);
-          sprintf(buf, "Metamorphs have absorbed %d bodies!!!\n", absorbed);
-          notify(Playernum, Governor, buf);
+          notify(old2owner, old2gov,
+                 std::format("{} alien bodies absorbed.\n", absorbed));
+          notify(
+              Playernum, Governor,
+              std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
           sect2.popn += absorbed;
         }
         if (what == PopulationType::CIV)
@@ -214,18 +213,16 @@ void move_popn(const command_t &argv, GameObj &g) {
         adjust_morale(alien, race, (int)race.fighters);
       }
 
-      sprintf(telegram_buf,
-              "/%s/%s: %s [%d] %c(%d,%d) assaults %s [%d] %c(%d,%d) %s\n",
-              stars[g.snum].get_name().c_str(),
-              stars[g.snum].get_planet_name(g.pnum).c_str(), race.name,
-              Playernum, Dessymbols[sect.condition], x, y, alien.name,
-              alien.Playernum, Dessymbols[sect2.condition], x2, y2,
-              (sect2.owner == Playernum ? "VICTORY" : "DEFEAT"));
+      std::string telegram = std::format(
+          "/{}/{}: {} [{}] {}({},{}) assaults {} [{}] {}({},{}) {}\n",
+          stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum),
+          race.name, Playernum, Dessymbols[sect.condition], x, y, alien.name,
+          alien.Playernum, Dessymbols[sect2.condition], x2, y2,
+          (sect2.owner == Playernum ? "VICTORY" : "DEFEAT"));
 
       if (sect2.owner == Playernum) {
         g.out << std::format("VICTORY! The sector is yours!\n");
-        sprintf(buf, "Sector CAPTURED!\n");
-        strcat(telegram_buf, buf);
+        telegram += "Sector CAPTURED!\n";
         if (people) {
           g.out << std::format(
               "{} {} move in.\n", people,
@@ -235,14 +232,12 @@ void move_popn(const command_t &argv, GameObj &g) {
         planet.info[old2owner - 1].mob_points -= (int)sect2.mobilization;
       } else {
         g.out << std::format("The invasion was repulsed; try again.\n");
-        sprintf(buf, "You fought them off!\n");
-        strcat(telegram_buf, buf);
+        telegram += "You fought them off!\n";
         done = 1; /* end loop */
       }
 
       if (!(sect.popn + sect.troops + people)) {
-        sprintf(buf, "You killed all of them!\n");
-        strcat(telegram_buf, buf);
+        telegram += "You killed all of them!\n";
         /* increase modifier */
         race.translate[old2owner - 1] =
             MIN(race.translate[old2owner - 1] + 5, 100);
@@ -257,15 +252,15 @@ void move_popn(const command_t &argv, GameObj &g) {
       putrace(alien);
       putrace(race);
 
-      sprintf(buf, "Casualties: You: %d civ/%d mil, Them: %d %s\n", casualties2,
-              casualties3, casualties,
-              what == PopulationType::CIV ? "civ" : "mil");
-      strcat(telegram_buf, buf);
-      warn(old2owner, old2gov, telegram_buf);
-      sprintf(buf, "Casualties: You: %d %s, Them: %d civ/%d mil\n", casualties,
-              what == PopulationType::CIV ? "civ" : "mil", casualties2,
-              casualties3);
-      notify(Playernum, Governor, buf);
+      telegram += std::format("Casualties: You: {} civ/{} mil, Them: {} {}\n",
+                              casualties2, casualties3, casualties,
+                              what == PopulationType::CIV ? "civ" : "mil");
+      warn(old2owner, old2gov, telegram);
+      notify(
+          Playernum, Governor,
+          std::format("Casualties: You: {} {}, Them: {} civ/{} mil\n",
+                      casualties, what == PopulationType::CIV ? "civ" : "mil",
+                      casualties2, casualties3));
     } else {
       if (what == PopulationType::CIV) {
         sect.popn -= people;

@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -37,46 +35,23 @@ void route(const command_t &argv, GameObj &g) {
         planet = p.info[Playernum - 1].route[i - 1].dest_planet;
         load = p.info[Playernum - 1].route[i - 1].load;
         unload = p.info[Playernum - 1].route[i - 1].unload;
-        sprintf(buf, "%2d  land %2d,%2d   ", i,
-                p.info[Playernum - 1].route[i - 1].x,
-                p.info[Playernum - 1].route[i - 1].y);
-        strcat(buf, "load: ");
-        if (Fuel(load))
-          strcat(buf, "f");
-        else
-          strcat(buf, " ");
-        if (Destruct(load))
-          strcat(buf, "d");
-        else
-          strcat(buf, " ");
-        if (Resources(load))
-          strcat(buf, "r");
-        else
-          strcat(buf, " ");
-        if (Crystals(load)) strcat(buf, "x");
-        strcat(buf, " ");
+        std::string load_flags;
+        load_flags += Fuel(load) ? 'f' : ' ';
+        load_flags += Destruct(load) ? 'd' : ' ';
+        load_flags += Resources(load) ? 'r' : ' ';
+        load_flags += Crystals(load) ? 'x' : ' ';
 
-        strcat(buf, "  unload: ");
-        if (Fuel(unload))
-          strcat(buf, "f");
-        else
-          strcat(buf, " ");
-        if (Destruct(unload))
-          strcat(buf, "d");
-        else
-          strcat(buf, " ");
-        if (Resources(unload))
-          strcat(buf, "r");
-        else
-          strcat(buf, " ");
-        if (Crystals(unload))
-          strcat(buf, "x");
-        else
-          strcat(buf, " ");
-        std::string temp = std::format("  -> {}/{}\n", stars[star].get_name(),
-                                       stars[star].get_planet_name(planet));
-        strcat(buf, temp.c_str());
-        notify(Playernum, Governor, buf);
+        std::string unload_flags;
+        unload_flags += Fuel(unload) ? 'f' : ' ';
+        unload_flags += Destruct(unload) ? 'd' : ' ';
+        unload_flags += Resources(unload) ? 'r' : ' ';
+        unload_flags += Crystals(unload) ? 'x' : ' ';
+
+        g.out << std::format(
+            "{:2}  land {:2},{:2}   load: {}  unload: {}  -> {}/{}\n", i,
+            p.info[Playernum - 1].route[i - 1].x,
+            p.info[Playernum - 1].route[i - 1].y, load_flags, unload_flags,
+            stars[star].get_name(), stars[star].get_planet_name(planet));
       }
     g.out << "Done.\n";
     return;
@@ -92,27 +67,27 @@ void route(const command_t &argv, GameObj &g) {
       planet = p.info[Playernum - 1].route[i - 1].dest_planet;
       load = p.info[Playernum - 1].route[i - 1].load;
       unload = p.info[Playernum - 1].route[i - 1].unload;
-      sprintf(buf, "%2d  land %2d,%2d   ", i,
-              p.info[Playernum - 1].route[i - 1].x,
-              p.info[Playernum - 1].route[i - 1].y);
+      std::string load_flags;
       if (load) {
-        strcat(buf, "load: ");
-        if (Fuel(load)) strcat(buf, "f");
-        if (Destruct(load)) strcat(buf, "d");
-        if (Resources(load)) strcat(buf, "r");
-        if (Crystals(load)) strcat(buf, "x");
+        if (Fuel(load)) load_flags += 'f';
+        if (Destruct(load)) load_flags += 'd';
+        if (Resources(load)) load_flags += 'r';
+        if (Crystals(load)) load_flags += 'x';
       }
+      std::string unload_flags;
       if (unload) {
-        strcat(buf, "  unload: ");
-        if (Fuel(unload)) strcat(buf, "f");
-        if (Destruct(unload)) strcat(buf, "d");
-        if (Resources(unload)) strcat(buf, "r");
-        if (Crystals(unload)) strcat(buf, "x");
+        if (Fuel(unload)) unload_flags += 'f';
+        if (Destruct(unload)) unload_flags += 'd';
+        if (Resources(unload)) unload_flags += 'r';
+        if (Crystals(unload)) unload_flags += 'x';
       }
-      std::string temp = std::format("  -> {}/{}\n", stars[star].get_name(),
-                                     stars[star].get_planet_name(planet));
-      strcat(buf, temp.c_str());
-      notify(Playernum, Governor, buf);
+      g.out << std::format(
+          "{:2}  land {:2},{:2}   {}{}  -> {}/{}\n", i,
+          p.info[Playernum - 1].route[i - 1].x,
+          p.info[Playernum - 1].route[i - 1].y,
+          (load ? std::format("load: {}", load_flags) : std::string{}),
+          (unload ? std::format("  unload: {}", unload_flags) : std::string{}),
+          stars[star].get_name(), stars[star].get_planet_name(planet));
     }
     g.out << "Done.\n";
     return;

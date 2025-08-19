@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -52,20 +50,20 @@ void page(const command_t &argv, GameObj &g) {
 
       auto &race = races[Playernum - 1];
 
-      sprintf(buf, "%s \"%s\" page(s) you from the %s star system.\n",
-              race.name, race.governor[Governor].name,
-              stars[g.snum].get_name().c_str());
+      auto msg = std::format("{} \"{}\" page(s) you from the {} star system.\n",
+                             race.name, race.governor[Governor].name,
+                             stars[g.snum].get_name());
 
       if (to_block) {
         uint64_t dummy =
             Blocks[Playernum - 1].invite & Blocks[Playernum - 1].pledge;
         for (i = 1; i <= Num_races; i++)
-          if (isset(dummy, i) && i != Playernum) notify_race(i, buf);
+          if (isset(dummy, i) && i != Playernum) notify_race(i, msg);
       } else {
         if (argv.size() > 1)
-          notify(who, gov, buf);
+          notify(who, gov, msg);
         else
-          notify_race(who, buf);
+          notify_race(who, msg);
       }
 
       g.out << "Request sent.\n";

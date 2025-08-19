@@ -9,8 +9,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -28,9 +26,9 @@ void dissolve(const command_t &argv, GameObj &g) {
            "Only the leader may dissolve the race. The "
            "leader has been notified of your "
            "attempt!!!\n");
-    sprintf(buf, "Governor #%d has attempted to dissolve this race.\n",
-            Governor);
-    notify(Playernum, 0, buf);
+    notify(Playernum, 0,
+           std::format("Governor #{} has attempted to dissolve this race.\n",
+                       Governor));
     return;
   }
 
@@ -65,8 +63,8 @@ void dissolve(const command_t &argv, GameObj &g) {
     auto sp = getship(i);
     if (sp->owner != Playernum) continue;
     kill_ship(Playernum, &*sp);
-    sprintf(buf, "Ship #%d, self-destruct enabled\n", i);
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format("Ship #{}, self-destruct enabled\n", i));
     putship(*sp);
   }
 
@@ -112,7 +110,7 @@ void dissolve(const command_t &argv, GameObj &g) {
   race.dissolved = 1;
   putrace(race);
 
-  sprintf(buf, "%s [%d] has dissolved.\n", race.name, Playernum);
-  post(buf, NewsType::DECLARATION);
+  post(std::format("{} [{}] has dissolved.\n", race.name, Playernum),
+       NewsType::DECLARATION);
 }
 }  // namespace GB::commands

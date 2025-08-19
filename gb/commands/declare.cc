@@ -9,8 +9,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -20,6 +18,7 @@ void declare(const command_t& argv, GameObj& g) {
   const ap_t APcount = 1;
   player_t n;
   int d_mod;
+  std::string news_msg;
 
   if (Governor) {
     g.out << "Only leaders may declare.\n";
@@ -42,8 +41,8 @@ void declare(const command_t& argv, GameObj& g) {
                     APcount)) {
     deductAPs(g, APcount, g.snum);
   } else {
-    sprintf(buf, "You don't have enough AP's (%d)\n", APcount);
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format("You don't have enough AP's ({})\n", APcount));
     return;
   }
 
@@ -55,17 +54,16 @@ void declare(const command_t& argv, GameObj& g) {
       setbit(race.allied, n);
       clrbit(race.atwar, n);
       if (success(5)) {
-        sprintf(buf, "But would you want your sister to marry one?\n");
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               "But would you want your sister to marry one?\n");
       } else {
-        sprintf(buf, "Good for you.\n");
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor, "Good for you.\n");
       }
-      sprintf(buf, " Player #%d (%s) has declared an alliance with you!\n",
-              Playernum, race.name);
-      warn_race(n, buf);
-      sprintf(buf, "%s [%d] declares ALLIANCE with %s [%d].\n", race.name,
-              Playernum, alien.name, n);
+      warn_race(n, std::format(
+                       " Player #{} ({}) has declared an alliance with you!\n",
+                       Playernum, race.name));
+      news_msg = std::format("{} [{}] declares ALLIANCE with {} [{}].\n",
+                             race.name, Playernum, alien.name, n);
       d_mod = 30;
       if (argv.size() > 3) d_mod = std::stoi(argv[3]);
       d_mod = std::max(d_mod, 30);
@@ -73,55 +71,53 @@ void declare(const command_t& argv, GameObj& g) {
     case 'n':
       clrbit(race.allied, n);
       clrbit(race.atwar, n);
-      sprintf(buf, "Done.\n");
-      notify(Playernum, Governor, buf);
+      notify(Playernum, Governor, "Done.\n");
 
-      sprintf(buf, " Player #%d (%s) has declared neutrality with you!\n",
-              Playernum, race.name);
-      warn_race(n, buf);
-      sprintf(buf, "%s [%d] declares a state of neutrality with %s [%d].\n",
-              race.name, Playernum, alien.name, n);
+      warn_race(
+          n, std::format(" Player #{} ({}) has declared neutrality with you!\n",
+                         Playernum, race.name));
+      news_msg =
+          std::format("{} [{}] declares a state of neutrality with {} [{}].\n",
+                      race.name, Playernum, alien.name, n);
       d_mod = 30;
       break;
     case 'w':
       setbit(race.atwar, n);
       clrbit(race.allied, n);
       if (success(4)) {
-        sprintf(buf,
-                "Your enemies flaunt their secondary male reproductive "
-                "glands in your\ngeneral direction.\n");
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               "Your enemies flaunt their secondary male reproductive glands "
+               "in your\ngeneral direction.\n");
       } else {
-        sprintf(buf, "Give 'em hell!\n");
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor, "Give 'em hell!\n");
       }
-      sprintf(buf, " Player #%d (%s) has declared war against you!\n",
-              Playernum, race.name);
-      warn_race(n, buf);
+      warn_race(n,
+                std::format(" Player #{} ({}) has declared war against you!\n",
+                            Playernum, race.name));
       switch (int_rand(1, 5)) {
         case 1:
-          sprintf(buf, "%s [%d] declares WAR on %s [%d].\n", race.name,
-                  Playernum, alien.name, n);
+          news_msg = std::format("{} [{}] declares WAR on {} [{}].\n",
+                                 race.name, Playernum, alien.name, n);
           break;
         case 2:
-          sprintf(buf, "%s [%d] has had enough of %s [%d] and declares WAR!\n",
-                  race.name, Playernum, alien.name, n);
+          news_msg = std::format(
+              "{} [{}] has had enough of {} [{}] and declares WAR!\n",
+              race.name, Playernum, alien.name, n);
           break;
         case 3:
-          sprintf(
-              buf,
-              "%s [%d] decided that it is time to declare WAR on %s [%d]!\n",
+          news_msg = std::format(
+              "{} [{}] decided that it is time to declare WAR on {} [{}]!\n",
               race.name, Playernum, alien.name, n);
           break;
         case 4:
-          sprintf(buf,
-                  "%s [%d] had no choice but to declare WAR against %s [%d]!\n",
-                  race.name, Playernum, alien.name, n);
+          news_msg = std::format(
+              "{} [{}] had no choice but to declare WAR against {} [{}]!\n",
+              race.name, Playernum, alien.name, n);
           break;
         case 5:
-          sprintf(buf,
-                  "%s [%d] says 'screw it!' and declares WAR on %s [%d]!\n",
-                  race.name, Playernum, alien.name, n);
+          news_msg = std::format(
+              "{} [{}] says 'screw it!' and declares WAR on {} [{}]!\n",
+              race.name, Playernum, alien.name, n);
           break;
         default:
           break;
@@ -133,8 +129,8 @@ void declare(const command_t& argv, GameObj& g) {
       return;
   }
 
-  post(buf, NewsType::DECLARATION);
-  warn_race(Playernum, buf);
+  post(news_msg, NewsType::DECLARATION);
+  warn_race(Playernum, news_msg);
 
   /* They, of course, learn more about you */
   alien.translate[Playernum - 1] =

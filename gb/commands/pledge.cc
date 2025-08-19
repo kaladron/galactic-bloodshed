@@ -10,7 +10,6 @@ import gblib;
 import std.compat;
 
 #include "gb/GB_server.h"
-#include "gb/buffers.h"
 
 module commands;
 
@@ -35,26 +34,25 @@ void pledge(const command_t& argv, GameObj& g) {
   }
   auto& race = races[Playernum - 1];
   setbit(Blocks[n - 1].pledge, Playernum);
-  sprintf(buf, "%s [%d] has pledged %s.\n", race.name, Playernum,
-          Blocks[n - 1].name);
-  warn_race(n, buf);
-  sprintf(buf, "You have pledged allegiance to %s.\n", Blocks[n - 1].name);
-  warn_race(Playernum, buf);
+  warn_race(n, std::format("{} [{}] has pledged {}.\n", race.name, Playernum,
+                           Blocks[n - 1].name));
+  warn_race(Playernum, std::format("You have pledged allegiance to {}.\n",
+                                   Blocks[n - 1].name));
 
+  std::string msg;
   switch (int_rand(1, 20)) {
     case 1:
-      sprintf(
-          buf,
-          "%s [%d] joins the band wagon and pledges allegiance to %s [%d]!\n",
+      msg = std::format(
+          "{} [{}] joins the band wagon and pledges allegiance to {} [{}]!\n",
           race.name, Playernum, Blocks[n - 1].name, n);
       break;
     default:
-      sprintf(buf, "%s [%d] pledges allegiance to %s [%d].\n", race.name,
-              Playernum, Blocks[n - 1].name, n);
+      msg = std::format("{} [{}] pledges allegiance to {} [{}].\n", race.name,
+                        Playernum, Blocks[n - 1].name, n);
       break;
   }
 
-  post(buf, NewsType::DECLARATION);
+  post(msg, NewsType::DECLARATION);
 
   compute_power_blocks();
   Putblock(Blocks);

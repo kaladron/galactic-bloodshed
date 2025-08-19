@@ -8,8 +8,6 @@ module;
 
 import gblib;
 import std.compat;
-
-#include "gb/buffers.h"
 #include "gb/files.h"
 
 module commands;
@@ -88,16 +86,19 @@ void governors(const command_t &argv, GameObj &g) {
   if (Governor ||
       argv.size() < 3) { /* the only thing governors can do with this */
     for (governor_t i = 0; i <= MAXGOVERNORS; i++) {
-      if (Governor)
-        sprintf(buf, "%d %-15.15s %8s %10ld %s", i, race.governor[i].name,
-                race.governor[i].active ? "ACTIVE" : "INACTIVE",
-                race.governor[i].money, ctime(&race.governor[i].login));
-      else
-        sprintf(buf, "%d %-15.15s %-10.10s %8s %10ld %s", i,
-                race.governor[i].name, race.governor[i].password,
-                race.governor[i].active ? "ACTIVE" : "INACTIVE",
-                race.governor[i].money, ctime(&race.governor[i].login));
-      notify(Playernum, Governor, buf);
+      auto line =
+          Governor
+              ? std::format("{0:>2} {1:<15.15} {2:>8} {3:>10} {4}", i,
+                            race.governor[i].name,
+                            race.governor[i].active ? "ACTIVE" : "INACTIVE",
+                            race.governor[i].money,
+                            ctime(&race.governor[i].login))
+              : std::format("{0:>2} {1:<15.15} {2:<10.10} {3:>8} {4:>10} {5}",
+                            i, race.governor[i].name, race.governor[i].password,
+                            race.governor[i].active ? "ACTIVE" : "INACTIVE",
+                            race.governor[i].money,
+                            ctime(&race.governor[i].login));
+      notify(Playernum, Governor, line);
     }
   } else if ((gov = std::stoi(argv[1])) > MAXGOVERNORS) {
     g.out << "No such governor.\n";

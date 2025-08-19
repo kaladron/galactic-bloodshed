@@ -7,8 +7,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -28,14 +26,12 @@ void distance(const command_t &argv, GameObj &g) {
 
   Place from{g, argv[1], true};
   if (from.err) {
-    sprintf(buf, "Bad scope '%s'.\n", argv[1].c_str());
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor, std::format("Bad scope '{}'\n", argv[1]));
     return;
   }
   Place to{g, argv[2], true};
   if (to.err) {
-    sprintf(buf, "Bad scope '%s'.\n", argv[2].c_str());
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor, std::format("Bad scope '{}'\n", argv[2]));
   }
 
   x0 = 0.0;
@@ -78,7 +74,6 @@ void distance(const command_t &argv, GameObj &g) {
   }
   /* compute the distance */
   dist = sqrt(Distsq(x0, y0, x1, y1));
-  sprintf(buf, "Distance = %f\n", dist);
-  notify(Playernum, Governor, buf);
+  notify(Playernum, Governor, std::format("Distance = {}\n", dist));
 }
 }  // namespace GB::commands

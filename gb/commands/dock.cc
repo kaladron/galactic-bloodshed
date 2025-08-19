@@ -11,8 +11,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -72,8 +70,8 @@ void dock(const command_t &argv, GameObj &g) {
       }
       if (!Assault) {
         if (s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP) {
-          sprintf(buf, "%s is already docked.\n", ship_to_string(*s).c_str());
-          notify(Playernum, Governor, buf);
+          notify(Playernum, Governor,
+                 std::format("{} is already docked.\n", ship_to_string(*s)));
           free(s);
           continue;
         }
@@ -151,8 +149,8 @@ void dock(const command_t &argv, GameObj &g) {
       }
 
       if (s2->docked || (s->whatorbits == ScopeLevel::LEVEL_SHIP)) {
-        sprintf(buf, "%s is already docked.\n", ship_to_string(*s2).c_str());
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("{} is already docked.\n", ship_to_string(*s2)));
         free(s);
         return;
       }
@@ -162,10 +160,10 @@ void dock(const command_t &argv, GameObj &g) {
           0.05 + Dist * 0.025 * (Assault ? 2.0 : 1.0) * sqrt((double)s->mass);
 
       if (Dist > DIST_TO_DOCK) {
-        sprintf(buf, "%s must be %.2f or closer to %s.\n",
-                ship_to_string(*s).c_str(), DIST_TO_DOCK,
-                ship_to_string(*s2).c_str());
-        notify(Playernum, Governor, buf);
+        notify(
+            Playernum, Governor,
+            std::format("{} must be {:.2f} or closer to {}.\n",
+                        ship_to_string(*s), DIST_TO_DOCK, ship_to_string(*s2)));
         free(s);
         continue;
       }
@@ -180,21 +178,20 @@ void dock(const command_t &argv, GameObj &g) {
       }
 
       if (fuel > s->fuel) {
-        sprintf(buf, "Not enough fuel.\n");
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor, "Not enough fuel.\n");
         free(s);
         continue;
       }
-      sprintf(buf, "Distance to %s: %.2f.\n", ship_to_string(*s2).c_str(),
-              Dist);
-      notify(Playernum, Governor, buf);
-      sprintf(buf, "This maneuver will take %.2f fuel (of %.2f.)\n\n", fuel,
-              s->fuel);
-      notify(Playernum, Governor, buf);
+      notify(
+          Playernum, Governor,
+          std::format("Distance to {}: {:.2f}.\n", ship_to_string(*s2), Dist));
+      notify(Playernum, Governor,
+             std::format("This maneuver will take {:.2f} fuel (of {:.2f}.)\n\n",
+                         fuel, s->fuel));
 
       if (s2->docked && !Assault) {
-        sprintf(buf, "%s is already docked.\n", ship_to_string(*s2).c_str());
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("{} is already docked.\n", ship_to_string(*s2)));
         free(s);
         return;
       }
@@ -239,8 +236,8 @@ void dock(const command_t &argv, GameObj &g) {
 
         /* Allow assault of crewless ships. */
         if (s2->max_crew && boarders <= 0) {
-          sprintf(buf, "Illegal number of boarders (%lu).\n", boarders);
-          notify(Playernum, Governor, buf);
+          notify(Playernum, Governor,
+                 std::format("Illegal number of boarders ({}).\n", boarders));
           free(s);
           continue;
         }
@@ -251,17 +248,19 @@ void dock(const command_t &argv, GameObj &g) {
         else if (what == PopulationType::CIV)
           s->popn -= boarders;
         s->mass -= boarders * race->mass;
-        sprintf(
-            buf, "Boarding strength :%.2f       Defense strength: %.2f.\n",
-            bstrength =
-                boarders *
-                (what == PopulationType::MIL ? 10 * race->fighters : 1) * .01 *
-                race->tech *
-                morale_factor((double)(race->morale - alien->morale)),
-            b2strength = (s2->popn + 10 * s2->troops * alien->fighters) * .01 *
-                         alien->tech *
-                         morale_factor((double)(alien->morale - race->morale)));
-        notify(Playernum, Governor, buf);
+        notify(
+            Playernum, Governor,
+            std::format(
+                "Boarding strength :{:.2f}       Defense strength: {:.2f}.\n",
+                bstrength =
+                    boarders *
+                    (what == PopulationType::MIL ? 10 * race->fighters : 1) *
+                    .01 * race->tech *
+                    morale_factor((double)(race->morale - alien->morale)),
+                b2strength =
+                    (s2->popn + 10 * s2->troops * alien->fighters) * .01 *
+                    alien->tech *
+                    morale_factor((double)(alien->morale - race->morale))));
       }
 
       /* the ship moves into position, regardless of success of attack */
@@ -386,95 +385,85 @@ void dock(const command_t &argv, GameObj &g) {
       }
 
       if (Assault) {
-        sprintf(telegram_buf, "%s ASSAULTED by %s at %s\n",
-                ship_to_string(ship).c_str(), ship_to_string(*s).c_str(),
-                prin_ship_orbits(*s2).c_str());
-        sprintf(buf, "Your damage: %d%%, theirs: %d%%.\n", dam2, dam);
-        strcat(telegram_buf, buf);
+        std::string telegram =
+            std::format("{} ASSAULTED by {} at {}\n", ship_to_string(ship),
+                        ship_to_string(*s), prin_ship_orbits(*s2));
+        telegram += std::format("Your damage: {}%, theirs: {}%.\n", dam2, dam);
         if (!s2->max_crew && s2->destruct) {
-          sprintf(buf, "(Your boobytrap gave them %d%% damage.)\n", booby);
-          strcat(telegram_buf, buf);
-          sprintf(buf, "Their boobytrap gave you %d%% damage!)\n", booby);
-          notify(Playernum, Governor, buf);
+          telegram +=
+              std::format("(Your boobytrap gave them {}% damage.)\n", booby);
+          notify(Playernum, Governor,
+                 std::format("Their boobytrap gave you {}% damage!)\n", booby));
         }
-        sprintf(buf, "Damage taken:  You: %d%% (now %d%%)\n", dam, s->damage);
-        notify(Playernum, Governor, buf);
+        notify(
+            Playernum, Governor,
+            std::format("Damage taken:  You: {}% (now {}%)\n", dam, s->damage));
         if (!s->alive) {
-          sprintf(buf, "              YOUR SHIP WAS DESTROYED!!!\n");
-          notify(Playernum, Governor, buf);
-          sprintf(buf, "              Their ship DESTROYED!!!\n");
-          strcat(telegram_buf, buf);
+          notify(Playernum, Governor,
+                 "              YOUR SHIP WAS DESTROYED!!!\n");
+          telegram += "              Their ship DESTROYED!!!\n";
         }
-        sprintf(buf, "              Them: %d%% (now %d%%)\n", dam2, s2->damage);
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("              Them: {}% (now {}%)\n", dam2,
+                           s2->damage));
         if (!s2->alive) {
-          sprintf(
-              buf,
-              "              Their ship DESTROYED!!!  Boarders are dead.\n");
-          notify(Playernum, Governor, buf);
-          sprintf(buf, "              YOUR SHIP WAS DESTROYED!!!\n");
-          strcat(telegram_buf, buf);
+          notify(Playernum, Governor,
+                 "              Their ship DESTROYED!!!  Boarders are dead.\n");
+          telegram += "              YOUR SHIP WAS DESTROYED!!!\n";
         }
         if (s->alive) {
           if (s2->owner == Playernum) {
-            sprintf(buf, "CAPTURED!\n");
-            strcat(telegram_buf, buf);
-            sprintf(buf, "VICTORY! the ship is yours!\n");
-            notify(Playernum, Governor, buf);
+            telegram += "CAPTURED!\n";
+            notify(Playernum, Governor, "VICTORY! the ship is yours!\n");
             if (boarders) {
-              sprintf(buf, "%lu boarders move in.\n", boarders);
-              notify(Playernum, Governor, buf);
+              notify(Playernum, Governor,
+                     std::format("{} boarders move in.\n", boarders));
             }
             capture_stuff(*s2, g);
           } else if (s2->popn + s2->troops) {
-            sprintf(buf, "The boarding was repulsed; try again.\n");
-            notify(Playernum, Governor, buf);
-            sprintf(buf, "You fought them off!\n");
-            strcat(telegram_buf, buf);
+            notify(Playernum, Governor,
+                   "The boarding was repulsed; try again.\n");
+            telegram += "You fought them off!\n";
           }
         } else {
-          sprintf(buf, "The assault was too much for your bucket of bolts.\n");
-          notify(Playernum, Governor, buf);
-          sprintf(buf, "The assault was too much for their ship..\n");
-          strcat(telegram_buf, buf);
+          notify(Playernum, Governor,
+                 "The assault was too much for your bucket of bolts.\n");
+          telegram += "The assault was too much for their ship..\n";
         }
         if (s2->alive) {
           if (s2->max_crew && !boarders) {
-            sprintf(
-                buf,
-                "Oh no! They killed your boarding party to the last man!\n");
-            notify(Playernum, Governor, buf);
+            notify(Playernum, Governor,
+                   "Oh no! They killed your boarding party to the last man!\n");
           }
           if (!s->popn && !s->troops) {
-            sprintf(buf, "You killed all their crew!\n");
-            strcat(telegram_buf, buf);
+            telegram += "You killed all their crew!\n";
           }
         } else {
-          sprintf(buf, "The assault weakened their ship too much!\n");
-          notify(Playernum, Governor, buf);
-          sprintf(buf, "Your ship was weakened too much!\n");
-          strcat(telegram_buf, buf);
+          notify(Playernum, Governor,
+                 "The assault weakened their ship too much!\n");
+          telegram += "Your ship was weakened too much!\n";
         }
-        sprintf(buf, "Casualties: Yours: %lu mil/%lu civ    Theirs: %lu %s\n",
-                casualties3, casualties2, casualties,
-                what == PopulationType::MIL ? "mil" : "civ");
-        strcat(telegram_buf, buf);
-        sprintf(buf,
-                "Crew casualties: Yours: %lu %s    Theirs: %lu mil/%lu civ\n",
-                casualties, what == PopulationType::MIL ? "mil" : "civ",
-                casualties3, casualties2);
-        notify(Playernum, Governor, buf);
-        warn(old2owner, old2gov, telegram_buf);
-        sprintf(buf, "%s %s %s at %s.\n", ship_to_string(*s).c_str(),
-                s2->alive ? (s2->owner == Playernum ? "CAPTURED" : "assaulted")
-                          : "DESTROYED",
-                ship_to_string(ship).c_str(), prin_ship_orbits(*s).c_str());
-        if (s2->owner == Playernum || !s2->alive) post(buf, NewsType::COMBAT);
-        notify_star(Playernum, Governor, s->storbits, buf);
+        telegram +=
+            std::format("Casualties: Yours: {} mil/{} civ    Theirs: {} {}\n",
+                        casualties3, casualties2, casualties,
+                        what == PopulationType::MIL ? "mil" : "civ");
+        notify(Playernum, Governor,
+               std::format(
+                   "Crew casualties: Yours: {} {}    Theirs: {} mil/{} civ\n",
+                   casualties, what == PopulationType::MIL ? "mil" : "civ",
+                   casualties3, casualties2));
+        warn(old2owner, old2gov, telegram);
+        auto news = std::format(
+            "{} {} {} at {}.\n", ship_to_string(*s),
+            s2->alive ? (s2->owner == Playernum ? "CAPTURED" : "assaulted")
+                      : "DESTROYED",
+            ship_to_string(ship), prin_ship_orbits(*s));
+        if (s2->owner == Playernum || !s2->alive) post(news, NewsType::COMBAT);
+        notify_star(Playernum, Governor, s->storbits, news);
       } else {
-        sprintf(buf, "%s docked with %s.\n", ship_to_string(*s).c_str(),
-                ship_to_string(*s2).c_str());
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("{} docked with {}.\n", ship_to_string(*s),
+                           ship_to_string(*s2)));
       }
 
       if (g.level == ScopeLevel::LEVEL_UNIV)

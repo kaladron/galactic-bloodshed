@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -22,8 +20,7 @@ void dump(const command_t &argv, GameObj &g) {
     return;
 
   if (!(player = get_player(argv[1]))) {
-    sprintf(buf, "No such player.\n");
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor, "No such player.\n");
     return;
   }
 
@@ -83,9 +80,8 @@ void dump(const command_t &argv, GameObj &g) {
 
   deductAPs(g, APcount, g.snum);
 
-  sprintf(buf, "%s [%d] has given you exploration data.\n", race.name,
-          Playernum);
-  warn_race(player, buf);
+  warn_race(player, std::format("{} [{}] has given you exploration data.\n",
+                                race.name, Playernum));
   g.out << "Exploration Data transferred.\n";
 }
 }  // namespace GB::commands

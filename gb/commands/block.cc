@@ -7,8 +7,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -28,12 +26,12 @@ void block(const command_t &argv, GameObj &g) {
     }
     auto &r = races[p - 1];
     dummy_ = 0; /* Used as flag for finding a block */
-    sprintf(buf, "Race #%d [%s] is a member of ", p, r.name);
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format("Race #{} [{}] is a member of ", p, r.name));
     for (int i = 1; i <= Num_races; i++) {
       if (isset(Blocks[i - 1].pledge, p) && isset(Blocks[i - 1].invite, p)) {
-        sprintf(buf, "%s%d", (dummy_ == 0) ? " " : ", ", i);
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("{}{}", (dummy_ == 0) ? " " : ", ", i));
         dummy_ = 1;
       }
     }
@@ -43,12 +41,12 @@ void block(const command_t &argv, GameObj &g) {
       g.out << "\n";
 
     dummy_ = 0; /* Used as flag for finding a block */
-    sprintf(buf, "Race #%d [%s] has been invited to join ", p, r.name);
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format("Race #{} [{}] has been invited to join ", p, r.name));
     for (int i = 1; i <= Num_races; i++) {
       if (!isset(Blocks[i - 1].pledge, p) && isset(Blocks[i - 1].invite, p)) {
-        sprintf(buf, "%s%d", (dummy_ == 0) ? " " : ", ", i);
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("{}{}", (dummy_ == 0) ? " " : ", ", i));
         dummy_ = 1;
       }
     }
@@ -58,12 +56,12 @@ void block(const command_t &argv, GameObj &g) {
       g.out << "\n";
 
     dummy_ = 0; /* Used as flag for finding a block */
-    sprintf(buf, "Race #%d [%s] has pledged ", p, r.name);
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format("Race #{} [{}] has pledged ", p, r.name));
     for (int i = 1; i <= Num_races; i++) {
       if (isset(Blocks[i - 1].pledge, p) && !isset(Blocks[i - 1].invite, p)) {
-        sprintf(buf, "%s%d", (dummy_ == 0) ? " " : ", ", i);
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("{}{}", (dummy_ == 0) ? " " : ", ", i));
         dummy_ = 1;
       }
     }
@@ -78,15 +76,14 @@ void block(const command_t &argv, GameObj &g) {
     }
     /* list the players who are in this alliance block */
     uint64_t dummy = (Blocks[p - 1].invite & Blocks[p - 1].pledge);
-    sprintf(buf, "         ========== %s Power Report ==========\n",
-            Blocks[p - 1].name);
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "         	       %-64.64s\n", Blocks[p - 1].motto);
-    notify(Playernum, Governor, buf);
-    sprintf(buf,
-            "  #  Name              troops  pop  money ship  plan  res "
-            "fuel dest know\n");
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format("         ========== {} Power Report ==========\n",
+                       Blocks[p - 1].name));
+    notify(Playernum, Governor,
+           std::format("                 {:<64.64}\n", Blocks[p - 1].motto));
+    notify(Playernum, Governor,
+           "  #  Name              troops  pop  money ship  plan  res fuel "
+           "dest know\n");
 
     for (const auto &r : races) {
       if (isset(dummy, r.Playernum)) {
@@ -117,13 +114,13 @@ void block(const command_t &argv, GameObj &g) {
     }
   } else { /* list power report for all the alliance blocks (as of the last
               update) */
-    sprintf(buf, "         ========== Alliance Blocks as of %s ==========\n",
-            std::asctime(std::localtime(&Power_blocks.time)));
-    notify(Playernum, Governor, buf);
-    sprintf(buf,
-            " #  Name             memb money popn ship  sys  res fuel "
-            "dest  VPs know\n");
-    notify(Playernum, Governor, buf);
+    notify(
+        Playernum, Governor,
+        std::format("         ========== Alliance Blocks as of {} ==========\n",
+                    std::asctime(std::localtime(&Power_blocks.time))));
+    notify(Playernum, Governor,
+           " #  Name             memb money popn ship  sys  res fuel dest  VPs "
+           "know\n");
     for (auto i = 1; i <= Num_races; i++)
       if (Blocks[i - 1].VPs) {
         g.out << std::format("{:2d} {:<19.19}{:3d}", i, Blocks[i - 1].name,

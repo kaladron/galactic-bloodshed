@@ -9,11 +9,7 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/buffers.h"
-
 module commands;
-
-static char short_buf[256];
 
 namespace GB::commands {
 void capture(const command_t &argv, GameObj &g) {
@@ -53,9 +49,9 @@ void capture(const command_t &argv, GameObj &g) {
     if (ship->owner != Playernum &&
         in_list(ship->owner, argv[1], *ship, &nextshipno)) {
       if (!landed(*ship)) {
-        sprintf(buf, "%s #%ld is not landed on a planet.\n",
-                Shipnames[ship->type], shipno);
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("{} #{} is not landed on a planet.\n",
+                           Shipnames[ship->type], shipno));
         free(ship);
         continue;
       }
@@ -77,10 +73,10 @@ void capture(const command_t &argv, GameObj &g) {
       auto sect = getsector(p, x, y);
 
       if (sect.owner != Playernum) {
-        sprintf(buf,
-                "You don't own the sector where the ship is landed [%d].\n",
-                sect.owner);
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format(
+                   "You don't own the sector where the ship is landed [{}].\n",
+                   sect.owner));
         free(ship);
         continue;
       }
@@ -121,8 +117,8 @@ void capture(const command_t &argv, GameObj &g) {
       auto &alien = races[ship->owner - 1];
 
       if (isset(race.allied, (ship->owner))) {
-        sprintf(buf, "Boarding the ship of your ally, %s\n", alien.name);
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("Boarding the ship of your ally, {}\n", alien.name));
       }
 
       olddpopn = ship->popn;
@@ -142,21 +138,23 @@ void capture(const command_t &argv, GameObj &g) {
         sect.troops -= boarders;
 
       if (olddpopn + olddtroops) {
-        sprintf(
-            buf, "Attack strength: %.2f     Defense strength: %.2f\n",
-            astrength =
-                (double)boarders *
-                (what == PopulationType::MIL ? (double)race.fighters * 10.0
-                                             : 1.0) *
-                .01 * race.tech * (race.likes[sect.condition] + 0.01) *
-                ((double)Defensedata[sect.condition] + 1.0) *
-                morale_factor((double)(race.morale - alien.morale)),
-            dstrength = ((double)ship->popn +
-                         (double)ship->troops * 10.0 * (double)alien.fighters) *
-                        .01 * alien.tech * ((double)(armor(*ship)) + 0.01) *
-                        .01 * (100.0 - (double)ship->damage) *
-                        morale_factor((double)(alien.morale - race.morale)));
-        notify(Playernum, Governor, buf);
+        notify(
+            Playernum, Governor,
+            std::format(
+                "Attack strength: {:.2f}     Defense strength: {:.2f}\n",
+                astrength =
+                    (double)boarders *
+                    (what == PopulationType::MIL ? (double)race.fighters * 10.0
+                                                 : 1.0) *
+                    .01 * race.tech * (race.likes[sect.condition] + 0.01) *
+                    ((double)Defensedata[sect.condition] + 1.0) *
+                    morale_factor((double)(race.morale - alien.morale)),
+                dstrength =
+                    ((double)ship->popn +
+                     (double)ship->troops * 10.0 * (double)alien.fighters) *
+                    .01 * alien.tech * ((double)(armor(*ship)) + 0.01) * .01 *
+                    (100.0 - (double)ship->damage) *
+                    morale_factor((double)(alien.morale - race.morale))));
         casualty_scale = std::min(boarders, ship->popn + ship->troops);
         if (astrength > 0.0)
           casualties =
@@ -224,97 +222,97 @@ void capture(const command_t &argv, GameObj &g) {
 
       if (!(sect.popn + sect.troops)) sect.owner = 0;
 
-      sprintf(buf, "BULLETIN from %s/%s!!\n",
-              stars[ship->storbits].get_name().c_str(),
-              stars[ship->storbits].get_planet_name(ship->pnumorbits).c_str());
-      strcpy(telegram_buf, buf);
-      sprintf(
-          buf, "You are being attacked by%s Player #%d (%s)!!!\n",
+      std::string telegram = std::format(
+          "BULLETIN from {}/{}!!\n", stars[ship->storbits].get_name(),
+          stars[ship->storbits].get_planet_name(ship->pnumorbits));
+      telegram += std::format(
+          "You are being attacked by{} Player #{} ({})!!!\n",
           (isset(alien.allied, Playernum)
                ? " your ally"
                : (isset(alien.atwar, Playernum) ? " your enemy" : " neutral")),
           Playernum, race.name);
-      strcat(telegram_buf, buf);
-      sprintf(buf, "%s at sector %d,%d [owner %d] !\n",
-              ship_to_string(*ship).c_str(), x, y, sect.owner);
-      strcat(telegram_buf, buf);
+      telegram += std::format("{} at sector {},{} [owner {}] !\n",
+                              ship_to_string(*ship), x, y, sect.owner);
 
       if (booby) {
-        sprintf(buf, "Booby trap triggered causing %d%% damage.\n", booby);
-        strcat(telegram_buf, buf);
-        notify(Playernum, Governor, buf);
+        telegram +=
+            std::format("Booby trap triggered causing {}% damage.\n", booby);
+        notify(
+            Playernum, Governor,
+            std::format("Booby trap triggered causing {}% damage.\n", booby));
       }
 
       if (shipdam) {
-        sprintf(buf, "Total damage: %d%% (now %d%%)\n", shipdam, ship->damage);
-        strcat(telegram_buf, buf);
-        sprintf(buf, "Damage inflicted:  Them: %d%% (now %d%%)\n", shipdam,
-                ship->damage);
-        notify(Playernum, Governor, buf);
+        telegram +=
+            std::format("Total damage: {}% (now {}%)\n", shipdam, ship->damage);
+        notify(Playernum, Governor,
+               std::format("Damage inflicted:  Them: {}% (now {}%)\n", shipdam,
+                           ship->damage));
       }
 
       if (!ship->alive) {
-        sprintf(buf, "              YOUR SHIP WAS DESTROYED!!!\n");
-        strcat(telegram_buf, buf);
+        telegram += "              YOUR SHIP WAS DESTROYED!!!\n";
         g.out << "              Their ship DESTROYED!!!\n";
-        sprintf(short_buf, "%s: %s [%d] DESTROYED %s\n",
-                dispshiploc(*ship).c_str(), race.name, Playernum,
-                ship_to_string(s).c_str());
+        auto short_buf =
+            std::format("{}: {} [{}] DESTROYED {}\n", dispshiploc(*ship),
+                        race.name, Playernum, ship_to_string(s));
       }
 
       if (ship->owner == Playernum) {
-        sprintf(buf, "%s CAPTURED!\n", ship_to_string(s).c_str());
-        notify(oldowner, oldgov, buf);
-        sprintf(buf, "VICTORY! The ship is yours!\n");
-        notify(Playernum, Governor, buf);
+        notify(oldowner, oldgov,
+               std::format("{} CAPTURED!\n", ship_to_string(s)));
+        notify(Playernum, Governor, "VICTORY! The ship is yours!\n");
         if (what == PopulationType::CIV)
-          sprintf(buf, "%lu boarders move in.\n",
-                  std::min(boarders, ship->popn));
+          notify(Playernum, Governor,
+                 std::format("{} boarders move in.\n",
+                             std::min(boarders, ship->popn)));
         else if (what == PopulationType::MIL)
-          sprintf(buf, "%lu troops move in.\n",
-                  std::min(boarders, ship->troops));
-        notify(Playernum, Governor, buf);
+          notify(Playernum, Governor,
+                 std::format("{} troops move in.\n",
+                             std::min(boarders, ship->troops)));
         capture_stuff(*ship, g);
-        sprintf(short_buf, "%s: %s [%d] CAPTURED %s\n",
-                dispshiploc(*ship).c_str(), race.name, Playernum,
-                ship_to_string(s).c_str());
+        auto short_buf =
+            std::format("{}: {} [{}] CAPTURED {}\n", dispshiploc(*ship),
+                        race.name, Playernum, ship_to_string(s));
       } else if (ship->popn + ship->troops) {
-        sprintf(buf, "You fought them off!\n");
-        notify(oldowner, oldgov, buf);
+        notify(oldowner, oldgov, "You fought them off!\n");
         g.out << "The boarding was repulsed; try again.\n";
-        sprintf(short_buf, "%s: %s [%d] assaults %s\n",
-                dispshiploc(*ship).c_str(), race.name, Playernum,
-                ship_to_string(s).c_str());
+        auto short_buf =
+            std::format("{}: {} [{}] assaults {}\n", dispshiploc(*ship),
+                        race.name, Playernum, ship_to_string(s));
       }
       if (ship->alive) {
         if (sect.popn + sect.troops + boarders) {
-          sprintf(buf, "You killed all the aliens in this sector!\n");
-          strcat(telegram_buf, buf);
+          telegram += "You killed all the aliens in this sector!\n";
           p.info[Playernum - 1].mob_points -= sect.mobilization;
         }
         if (!boarders) {
           g.out << "Oh no! They killed your party to the last man!\n";
         }
       } else {
-        sprintf(buf, "Your ship was weakened too much!\n");
-        strcat(telegram_buf, buf);
+        telegram += "Your ship was weakened too much!\n";
         g.out << "The assault weakened their ship too much!\n";
       }
 
       if (casualties || casualties1 || casualties2) {
-        sprintf(buf, "Casualties: Yours: %ld civ/%ld mil, Theirs: %ld %s\n",
-                casualties1, casualties2, casualties,
-                what == PopulationType::CIV ? "civ" : "mil");
-        strcat(telegram_buf, buf);
-        sprintf(buf, "Casualties: Yours: %ld %s, Theirs: %ld civ/%ld mil\n",
-                casualties, what == PopulationType::CIV ? "civ" : "mil",
-                casualties1, casualties2);
-        notify(Playernum, Governor, buf);
+        telegram +=
+            std::format("Casualties: Yours: {} civ/{} mil, Theirs: {} {}\n",
+                        casualties1, casualties2, casualties,
+                        what == PopulationType::CIV ? "civ" : "mil");
+        notify(
+            Playernum, Governor,
+            std::format("Casualties: Yours: {} {}, Theirs: {} civ/{} mil\n",
+                        casualties, what == PopulationType::CIV ? "civ" : "mil",
+                        casualties1, casualties2));
       }
-      warn(oldowner, oldgov, telegram_buf);
-      if (ship->owner != oldowner || !ship->alive)
-        post(short_buf, NewsType::COMBAT);
-      notify_star(Playernum, Governor, ship->storbits, short_buf);
+      warn(oldowner, oldgov, telegram);
+      if (ship->owner != oldowner || !ship->alive) {
+        auto short_msg = std::format(
+            "{}: {} [{}] {} {}\n", dispshiploc(*ship), race.name, Playernum,
+            (ship->alive ? "assaults" : "DESTROYED"), ship_to_string(s));
+        post(short_msg, NewsType::COMBAT);
+        notify_star(Playernum, Governor, ship->storbits, short_msg);
+      }
       putship(*ship);
       putsector(sect, p, x, y);
       putplanet(p, stars[g.snum], g.pnum);

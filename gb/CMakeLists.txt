@@ -121,6 +121,7 @@ target_sources(
           tele.cc
           victory.cc
           VN.cc)
+target_link_libraries(gblib PUBLIC glaze::glaze)
 
 add_library(commands)
 target_sources(

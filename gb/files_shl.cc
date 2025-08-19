@@ -9,6 +9,10 @@
 
 module;
 
+// Include Glaze first to avoid mixing libc++ header modules with textual
+// includes
+#include <glaze/glaze.hpp>
+
 import std.compat;
 
 #include <fcntl.h>
@@ -31,7 +35,7 @@ static void end_bulk_insert();
 void close_file(int fd) { close(fd); }
 
 void initsqldata() {  // __attribute__((no_sanitize_memory)) {
-  const char *tbl_create = R"(
+  const char* tbl_create = R"(
       CREATE TABLE tbl_planet(
           planet_id INT PRIMARY KEY NOT NULL, star_id INT NOT NULL,
           planet_order INT NOT NULL, name TEXT NOT NULL, xpos DOUBLE,
@@ -251,7 +255,7 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
     planet_to INT);
 )";
   // TODO(jeffbailey): tbl_commod could probably use more indeces.
-  char *err_msg = nullptr;
+  char* err_msg = nullptr;
   int err = sqlite3_exec(dbconn, tbl_create, nullptr, nullptr, &err_msg);
   if (err != SQLITE_OK) {
     fprintf(stderr, "SQL error: %s\n", err_msg);
@@ -259,7 +263,7 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
   }
 }
 
-void openstardata(int *fd) {
+void openstardata(int* fd) {
   /*printf(" openstardata\n");*/
   if ((*fd = open(STARDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("openstardata");
@@ -268,7 +272,7 @@ void openstardata(int *fd) {
   }
 }
 
-void openshdata(int *fd) {
+void openshdata(int* fd) {
   if ((*fd = open(SHIPDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("openshdata");
     printf("unable to open %s\n", SHIPDATAFL);
@@ -276,7 +280,7 @@ void openshdata(int *fd) {
   }
 }
 
-void opencommoddata(int *fd) {
+void opencommoddata(int* fd) {
   if ((*fd = open(COMMODDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("opencommoddata");
     printf("unable to open %s\n", COMMODDATAFL);
@@ -284,7 +288,7 @@ void opencommoddata(int *fd) {
   }
 }
 
-void openracedata(int *fd) {
+void openracedata(int* fd) {
   if ((*fd = open(RACEDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
     perror("openrdata");
     printf("unable to open %s\n", RACEDATAFL);
@@ -292,15 +296,15 @@ void openracedata(int *fd) {
   }
 }
 
-void Sql::getsdata(stardata *S) { ::getsdata(S); }
-void getsdata(stardata *S) {
-  Fileread(stdata, (char *)S, sizeof(struct stardata), 0);
+void Sql::getsdata(stardata* S) { ::getsdata(S); }
+void getsdata(stardata* S) {
+  Fileread(stdata, (char*)S, sizeof(struct stardata), 0);
 }
 
 Race Sql::getrace(player_t rnum) { return ::getrace(rnum); };
 Race getrace(player_t rnum) {
   Race r;
-  Fileread(racedata, (char *)&r, sizeof(Race), (rnum - 1) * sizeof(Race));
+  Fileread(racedata, (char*)&r, sizeof(Race), (rnum - 1) * sizeof(Race));
   return r;
 }
 
@@ -308,13 +312,13 @@ Star Sql::getstar(const starnum_t star) { return ::getstar(star); }
 Star getstar(const starnum_t star) {
   star_struct s;
 
-  Fileread(stdata, (char *)&s, sizeof(star_struct),
+  Fileread(stdata, (char*)&s, sizeof(star_struct),
            (int)(sizeof(Sdata) + star * sizeof(star_struct)));
-  const char *tail;
+  const char* tail;
 
   {
-    sqlite3_stmt *stmt;
-    const char *sql =
+    sqlite3_stmt* stmt;
+    const char* sql =
         "SELECT ships, name, xpos, ypos, "
         "numplanets, stability, nova_stage, temperature, gravity "
         "FROM tbl_star WHERE star_id=?1 LIMIT 1";
@@ -323,8 +327,7 @@ Star getstar(const starnum_t star) {
     sqlite3_bind_int(stmt, 1, star);
     sqlite3_step(stmt);
     s.ships = static_cast<short>(sqlite3_column_int(stmt, 0));
-    strcpy(s.name,
-           reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1)));
+    strcpy(s.name, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
     s.xpos = sqlite3_column_double(stmt, 2);
     s.ypos = sqlite3_column_double(stmt, 3);
     s.numplanets = static_cast<short>(sqlite3_column_int(stmt, 4));
@@ -337,8 +340,8 @@ Star getstar(const starnum_t star) {
     sqlite3_reset(stmt);
   }
   {
-    sqlite3_stmt *stmt;
-    const char *sql =
+    sqlite3_stmt* stmt;
+    const char* sql =
         "SELECT player_id, governor_id FROM tbl_star_governor "
         "WHERE star_id=?1";
     sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
@@ -361,13 +364,13 @@ Planet Sql::getplanet(const starnum_t star, const planetnum_t pnum) {
   return ::getplanet(star, pnum);
 }
 Planet getplanet(const starnum_t star, const planetnum_t pnum) {
-  const char *tail;
-  const char *plinfo_tail;
-  const char *plinfo_routes_tail;
-  sqlite3_stmt *stmt;
-  sqlite3_stmt *plinfo_stmt;
-  sqlite3_stmt *plinfo_routes_stmt;
-  const char *sql =
+  const char* tail;
+  const char* plinfo_tail;
+  const char* plinfo_routes_tail;
+  sqlite3_stmt* stmt;
+  sqlite3_stmt* plinfo_stmt;
+  sqlite3_stmt* plinfo_routes_stmt;
+  const char* sql =
       "SELECT planet_id, star_id, planet_order, name, "
       "xpos, ypos, ships, maxx, maxy, popn, troops, maxpopn, total_resources, "
       "slaved_to, type, expltimer, condition_rtemp, condition_temp, "
@@ -435,7 +438,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
   p.conditions[TOXIC] = sqlite3_column_int(stmt, 26);
   p.explored = sqlite3_column_int(stmt, 27);
 
-  const char *plinfo_sql =
+  const char* plinfo_sql =
       "SELECT planet_id, player_id, fuel, destruct, "
       "resource, popn, troops, crystals, prod_res, "
       "prod_fuel, prod_dest, prod_crystals, prod_money, "
@@ -473,7 +476,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
     p.info[player_id].est_production = sqlite3_column_int(plinfo_stmt, 25);
   }
 
-  const char *plinfo_routes_sql =
+  const char* plinfo_routes_sql =
       "SELECT planet_id, player_id, routenum, order_set, dest_star, "
       "dest_planet, load, unload, x, y FROM tbl_plinfo_routes WHERE "
       "planet_id=1";
@@ -501,10 +504,10 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
   return p;
 }
 
-Sector getsector(const Planet &p, const int x, const int y) {
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+Sector getsector(const Planet& p, const int x, const int y) {
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "SELECT planet_id, xpos, ypos, eff, fert, "
       "mobilization, crystals, resource, popn, troops, owner, "
       "race, type, condition FROM tbl_sector "
@@ -543,10 +546,10 @@ Sector getsector(const Planet &p, const int x, const int y) {
   return s;
 }
 
-SectorMap getsmap(const Planet &p) {
-  const char *tail = nullptr;
-  sqlite3_stmt *stmt;
-  const char *sql =
+SectorMap getsmap(const Planet& p) {
+  const char* tail = nullptr;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "SELECT planet_id, xpos, ypos, eff, fert, "
       "mobilization, crystals, resource, popn, troops, owner, "
       "race, type, condition FROM tbl_sector "
@@ -593,10 +596,10 @@ std::optional<Ship> getship(const shipnum_t shipnum) {
   return getship(nullptr, shipnum);
 }
 
-std::optional<Ship> Sql::getship(Ship **s, const shipnum_t shipnum) {
+std::optional<Ship> Sql::getship(Ship** s, const shipnum_t shipnum) {
   return ::getship(s, shipnum);
 }
-std::optional<Ship> getship(Ship **s, const shipnum_t shipnum) {
+std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
   struct stat buffer;
 
   if (shipnum <= 0) return {};
@@ -605,20 +608,20 @@ std::optional<Ship> getship(Ship **s, const shipnum_t shipnum) {
   if (buffer.st_size / sizeof(Ship) < shipnum) return {};
 
   Ship tmpship;
-  Ship *tmpship1;
+  Ship* tmpship1;
   if (s == nullptr) {
     tmpship1 = &tmpship;
     s = &tmpship1;
-  } else if ((*s = (Ship *)malloc(sizeof(Ship))) == nullptr) {
+  } else if ((*s = (Ship*)malloc(sizeof(Ship))) == nullptr) {
     printf("getship:malloc() error \n");
     exit(0);
   }
 
-  Fileread(shdata, (char *)*s, sizeof(Ship), (shipnum - 1) * sizeof(Ship));
+  Fileread(shdata, (char*)*s, sizeof(Ship), (shipnum - 1) * sizeof(Ship));
 
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "SELECT ship_id, player_id, governor_id, name, "
       "shipclass, race, xpos, ypos, mass,"
       "land_x, land_y, destshipno, nextship, ships, armor, size,"
@@ -671,9 +674,9 @@ std::optional<Ship> getship(Ship **s, const shipnum_t shipnum) {
   (*s)->owner = sqlite3_column_int(stmt, 1);
   (*s)->governor = sqlite3_column_int(stmt, 2);
   strcpy((*s)->name,
-         reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3)));
+         reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)));
   strcpy((*s)->shipclass,
-         reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4)));
+         reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4)));
   (*s)->race = sqlite3_column_int(stmt, 5);
   (*s)->xpos = sqlite3_column_double(stmt, 6);
   (*s)->ypos = sqlite3_column_double(stmt, 7);
@@ -769,7 +772,7 @@ Commod getcommod(commodnum_t commodnum) {
   // TODO(jeffbailey): Throw here
   // if (commodnum <= 0) return 0;
 
-  Fileread(commoddata, (char *)&commod, sizeof(Commod),
+  Fileread(commoddata, (char*)&commod, sizeof(Commod),
            (commodnum - 1) * sizeof(Commod));
   return commod;
 }
@@ -793,7 +796,7 @@ int getdeadship() {
 
   if (buffer.st_size && (abort == 1)) {
     /* put topmost entry in fpos */
-    Fileread(fd, (char *)&shnum, sizeof(short), buffer.st_size - sizeof(short));
+    Fileread(fd, (char*)&shnum, sizeof(short), buffer.st_size - sizeof(short));
     /* erase that entry, since it will now be filled */
     if (ftruncate(fd, (long)(buffer.st_size - sizeof(short))) < 0) {
       perror("ftruncate failed");
@@ -822,7 +825,7 @@ int getdeadcommod() {
 
   if (buffer.st_size && (abort == 1)) {
     /* put topmost entry in fpos */
-    Fileread(fd, (char *)&commodnum, sizeof(short),
+    Fileread(fd, (char*)&commodnum, sizeof(short),
              buffer.st_size - sizeof(short));
     /* erase that entry, since it will now be filled */
     if (ftruncate(fd, (long)(buffer.st_size - sizeof(short))) < 0) {
@@ -836,31 +839,31 @@ int getdeadcommod() {
   return -1;
 }
 
-void Sql::putsdata(stardata *S) { ::putsdata(S); }
-void putsdata(stardata *S) {
-  Filewrite(stdata, (char *)S, sizeof(struct stardata), 0);
+void Sql::putsdata(stardata* S) { ::putsdata(S); }
+void putsdata(stardata* S) {
+  Filewrite(stdata, (char*)S, sizeof(struct stardata), 0);
 }
 
-void Sql::putrace(const Race &r) { ::putrace(r); }
-void putrace(const Race &r) {
-  Filewrite(racedata, (const char *)&r, sizeof(Race),
+void Sql::putrace(const Race& r) { ::putrace(r); }
+void putrace(const Race& r) {
+  Filewrite(racedata, (const char*)&r, sizeof(Race),
             (r.Playernum - 1) * sizeof(Race));
 }
 
-void Sql::putstar(const Star &star, starnum_t snum) { ::putstar(star, snum); }
-void putstar(const Star &star, starnum_t snum) {
+void Sql::putstar(const Star& star, starnum_t snum) { ::putstar(star, snum); }
+void putstar(const Star& star, starnum_t snum) {
   star_struct s = star.get_struct();
 
-  Filewrite(stdata, (const char *)&s, sizeof(star_struct),
+  Filewrite(stdata, (const char*)&s, sizeof(star_struct),
             (int)(sizeof(Sdata) + snum * sizeof(star_struct)));
 
   start_bulk_insert();
 
   {
-    const char *tail = nullptr;
-    sqlite3_stmt *stmt;
+    const char* tail = nullptr;
+    sqlite3_stmt* stmt;
 
-    const char *sql =
+    const char* sql =
         "REPLACE INTO tbl_star (star_id, ships, name, xpos, ypos, "
         "numplanets, stability, nova_stage, temperature, gravity) "
         "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)";
@@ -883,9 +886,9 @@ void putstar(const Star &star, starnum_t snum) {
   }
 
   {
-    const char *tail = nullptr;
-    sqlite3_stmt *stmt;
-    const char *sql =
+    const char* tail = nullptr;
+    sqlite3_stmt* stmt;
+    const char* sql =
         "REPLACE INTO tbl_star_governor (star_id, player_id, governor_id) "
         "VALUES (?1, ?2, ?3)";
 
@@ -902,9 +905,9 @@ void putstar(const Star &star, starnum_t snum) {
   }
 
   {
-    const char *tail = nullptr;
-    sqlite3_stmt *stmt;
-    const char *sql =
+    const char* tail = nullptr;
+    sqlite3_stmt* stmt;
+    const char* sql =
         "REPLACE INTO tbl_star_playerap (star_id, player_id, ap) "
         "VALUES (?1, ?2, ?3)";
 
@@ -921,9 +924,9 @@ void putstar(const Star &star, starnum_t snum) {
   }
 
   {
-    const char *tail = nullptr;
-    sqlite3_stmt *stmt;
-    const char *sql =
+    const char* tail = nullptr;
+    sqlite3_stmt* stmt;
+    const char* sql =
         "REPLACE INTO tbl_star_explored (star_id, player_id, explored) "
         "VALUES (?1, ?2, ?3)";
 
@@ -940,9 +943,9 @@ void putstar(const Star &star, starnum_t snum) {
   }
 
   {
-    const char *tail = nullptr;
-    sqlite3_stmt *stmt;
-    const char *sql =
+    const char* tail = nullptr;
+    sqlite3_stmt* stmt;
+    const char* sql =
         "REPLACE INTO tbl_star_inhabited (star_id, player_id, explored) "
         "VALUES (?1, ?2, ?3)";
 
@@ -962,29 +965,29 @@ void putstar(const Star &star, starnum_t snum) {
 }
 
 static void start_bulk_insert() {
-  char *err_msg = nullptr;
+  char* err_msg = nullptr;
   sqlite3_exec(dbconn, "BEGIN TRANSACTION", nullptr, nullptr, &err_msg);
 }
 
 static void end_bulk_insert() {
-  char *err_msg = nullptr;
+  char* err_msg = nullptr;
   sqlite3_exec(dbconn, "END TRANSACTION", nullptr, nullptr, &err_msg);
 }
 
-void Sql::putplanet(const Planet &p, const Star &star, const planetnum_t pnum) {
+void Sql::putplanet(const Planet& p, const Star& star, const planetnum_t pnum) {
   ::putplanet(p, star, pnum);
 }
-void putplanet(const Planet &p, const Star &s, const planetnum_t pnum) {
+void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
   auto star = s.get_struct();
   start_bulk_insert();
 
-  const char *tail = nullptr;
-  const char *plinfo_tail = nullptr;
-  const char *plinfo_route_tail = nullptr;
-  sqlite3_stmt *stmt;
-  sqlite3_stmt *plinfo_stmt;
-  sqlite3_stmt *plinfo_route_stmt;
-  const char *sql =
+  const char* tail = nullptr;
+  const char* plinfo_tail = nullptr;
+  const char* plinfo_route_tail = nullptr;
+  sqlite3_stmt* stmt;
+  sqlite3_stmt* plinfo_stmt;
+  sqlite3_stmt* plinfo_route_stmt;
+  const char* sql =
       "REPLACE INTO tbl_planet (planet_id, star_id, planet_order, name, "
       "xpos, ypos, ships, maxx, maxy, popn, troops, maxpopn, total_resources, "
       "slaved_to, type, expltimer, condition_rtemp, condition_temp, "
@@ -997,7 +1000,7 @@ void putplanet(const Planet &p, const Star &s, const planetnum_t pnum) {
       "?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28)";
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
-  const char *plinfo_sql =
+  const char* plinfo_sql =
       "REPLACE INTO tbl_plinfo (planet_id, player_id, fuel, destruct, "
       "resource, popn, troops, crystals, prod_res, "
       "prod_fuel, prod_dest, prod_crystals, prod_money, "
@@ -1012,7 +1015,7 @@ void putplanet(const Planet &p, const Star &s, const planetnum_t pnum) {
     fprintf(stderr, "PLINFO %s\n", sqlite3_errmsg(dbconn));
   }
 
-  const char *plinfo_route_sql =
+  const char* plinfo_route_sql =
       "REPLACE INTO tbl_plinfo_routes (planet_id, player_id, routenum, "
       "order_set, dest_star, dest_planet, "
       "load, unload, x, y) VALUES "
@@ -1117,12 +1120,12 @@ void putplanet(const Planet &p, const Star &s, const planetnum_t pnum) {
   end_bulk_insert();
 }
 
-void putsector(const Sector &s, const Planet &p) { putsector(s, p, s.x, s.y); }
+void putsector(const Sector& s, const Planet& p) { putsector(s, p, s.x, s.y); }
 
-void putsector(const Sector &s, const Planet &p, const int x, const int y) {
-  const char *tail = nullptr;
-  sqlite3_stmt *stmt;
-  const char *sql =
+void putsector(const Sector& s, const Planet& p, const int x, const int y) {
+  const char* tail = nullptr;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_sector (planet_id, xpos, ypos, eff, fert, "
       "mobilization, crystals, resource, popn, troops, owner, "
       "race, type, condition) "
@@ -1151,12 +1154,12 @@ void putsector(const Sector &s, const Planet &p, const int x, const int y) {
   sqlite3_reset(stmt);
 }
 
-void putsmap(const SectorMap &map, const Planet &p) {
+void putsmap(const SectorMap& map, const Planet& p) {
   start_bulk_insert();
 
   for (int y = 0; y < p.Maxy; y++) {
     for (int x = 0; x < p.Maxx; x++) {
-      auto &sec = map.get(x, y);
+      auto& sec = map.get(x, y);
       putsector(sec, p, x, y);
     }
   }
@@ -1164,10 +1167,10 @@ void putsmap(const SectorMap &map, const Planet &p) {
   end_bulk_insert();
 }
 
-static void putship_aimed(const Ship &s) {
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+static void putship_aimed(const Ship& s) {
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_ship (ship_id, aimed_shipno, aimed_snum, "
       "aimed_intensity, aimed_pnum, aimed_level)"
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6);";
@@ -1189,10 +1192,10 @@ static void putship_aimed(const Ship &s) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
-static void putship_mind(const Ship &s) {
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+static void putship_mind(const Ship& s) {
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_ship (ship_id, mind_progenitor, mind_target, "
       "mind_generation, mind_busy, mind_tampered,"
       "mind_who_killed)"
@@ -1216,10 +1219,10 @@ static void putship_mind(const Ship &s) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
-static void putship_pod(const Ship &s) {
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+static void putship_pod(const Ship& s) {
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_ship (ship_id, pod_decay, pod_temperature)"
       "VALUES (?1, ?2, ?3);";
 
@@ -1237,10 +1240,10 @@ static void putship_pod(const Ship &s) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
-static void putship_timer(const Ship &s) {
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+static void putship_timer(const Ship& s) {
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_ship (ship_id, timer_count)"
       "VALUES (?1, ?2);";
 
@@ -1257,10 +1260,10 @@ static void putship_timer(const Ship &s) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
-static void putship_impact(const Ship &s) {
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+static void putship_impact(const Ship& s) {
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_ship (ship_id, impact_x, impact_y, impact_scatter)"
       "VALUES (?1, ?2, ?3, ?4);";
 
@@ -1279,10 +1282,10 @@ static void putship_impact(const Ship &s) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
-static void putship_trigger(const Ship &s) {
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+static void putship_trigger(const Ship& s) {
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_ship (ship_id, trigger_radius)"
       "VALUES (?1, ?2);";
 
@@ -1299,10 +1302,10 @@ static void putship_trigger(const Ship &s) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
-static void putship_terraform(const Ship &s) {
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+static void putship_terraform(const Ship& s) {
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_ship (ship_id, terraform_index)"
       "VALUES (?1, ?2);";
 
@@ -1319,10 +1322,10 @@ static void putship_terraform(const Ship &s) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
-static void putship_transport(const Ship &s) {
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+static void putship_transport(const Ship& s) {
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_ship (ship_id, transport_target)"
       "VALUES (?1, ?2);";
 
@@ -1339,10 +1342,10 @@ static void putship_transport(const Ship &s) {
     fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
   }
 }
-static void putship_waste(const Ship &s) {
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+static void putship_waste(const Ship& s) {
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_ship (ship_id, waste_toxic)"
       "VALUES (?1, ?2);";
 
@@ -1360,14 +1363,14 @@ static void putship_waste(const Ship &s) {
   }
 }
 
-void Sql::putship(Ship *s) { ::putship(*s); }
-void putship(const Ship &s) {
-  const char *tail;
-  Filewrite(shdata, (char *)&s, sizeof(Ship), (s.number - 1) * sizeof(Ship));
+void Sql::putship(Ship* s) { ::putship(*s); }
+void putship(const Ship& s) {
+  const char* tail;
+  Filewrite(shdata, (char*)&s, sizeof(Ship), (s.number - 1) * sizeof(Ship));
   start_bulk_insert();
 
-  sqlite3_stmt *stmt;
-  const char *sql =
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_ship (ship_id, player_id, governor_id, name, "
       "shipclass, race, xpos, ypos, mass,"
       "land_x, land_y, destshipno, nextship, ships, armor, size,"
@@ -1548,16 +1551,16 @@ void putship(const Ship &s) {
   end_bulk_insert();
 }
 
-void Sql::putcommod(const Commod &c, int commodnum) {
+void Sql::putcommod(const Commod& c, int commodnum) {
   return ::putcommod(c, commodnum);
 }
-void putcommod(const Commod &c, int commodnum) {
-  Filewrite(commoddata, (const char *)&c, sizeof(Commod),
+void putcommod(const Commod& c, int commodnum) {
+  Filewrite(commoddata, (const char*)&c, sizeof(Commod),
             (commodnum - 1) * sizeof(Commod));
 
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "REPLACE INTO tbl_commod (comod_id, owner, governor,"
       "type, amount, deliver, bid, bidder, bidder_gov,"
       "star_from, planet_from, star_to, planet_to)"
@@ -1598,8 +1601,8 @@ player_t Sql::Numraces() {
 
 shipnum_t Numships() /* return number of ships */
 {
-  const char *tail = nullptr;
-  sqlite3_stmt *stmt;
+  const char* tail = nullptr;
+  sqlite3_stmt* stmt;
 
   const auto sql = "SELECT COUNT(*) FROM tbl_ship;";
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
@@ -1622,7 +1625,7 @@ int Sql::Numcommods() {
 
 off_t getnewslength(NewsType type) {
   struct stat buffer;
-  FILE *fp;
+  FILE* fp;
 
   switch (type) {
     using enum NewsType;
@@ -1678,7 +1681,7 @@ void makeshipdead(int shipnum) {
   /* write the ship # at the very end of SHIPFREEDATAFL */
   fstat(fd, &buffer);
 
-  Filewrite(fd, (char *)&shipno, sizeof(shipno), buffer.st_size);
+  Filewrite(fd, (char*)&shipno, sizeof(shipno), buffer.st_size);
   close_file(fd);
 }
 
@@ -1702,14 +1705,14 @@ void makecommoddead(int commodnum) {
   /* write the commod # at the very end of COMMODFREEDATAFL */
   fstat(fd, &buffer);
 
-  Filewrite(fd, (char *)&commodno, sizeof(commodno), buffer.st_size);
+  Filewrite(fd, (char*)&commodno, sizeof(commodno), buffer.st_size);
   close_file(fd);
 }
 
 void putpower(power p[MAXPLAYERS]) {
-  sqlite3_stmt *stmt;
-  const char *tail;
-  const char *sql =
+  sqlite3_stmt* stmt;
+  const char* tail;
+  const char* sql =
       "REPLACE INTO tbl_power (player_id, troops, popn, resource, fuel, "
       "destruct, ships_owned, planets_owned, sectors_owned, money, sum_mob, "
       "sum_eff)"
@@ -1745,9 +1748,9 @@ void putpower(power p[MAXPLAYERS]) {
 }
 
 void getpower(power p[MAXPLAYERS]) {
-  const char *tail;
-  sqlite3_stmt *stmt;
-  const char *sql =
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
       "SELECT player_id, troops, popn, resource, fuel, "
       "destruct, ships_owned, planets_owned, sectors_owned, money, sum_mob, "
       "sum_eff FROM tbl_power";
@@ -1780,7 +1783,7 @@ void Putblock(block b[MAXPLAYERS]) {
     printf("unable to open %s\n", BLOCKDATAFL);
     return;
   }
-  if (write(block_fd, (char *)b, sizeof(*b) * MAXPLAYERS) < 0) {
+  if (write(block_fd, (char*)b, sizeof(*b) * MAXPLAYERS) < 0) {
     perror("write failed");
     exit(-1);
   }
@@ -1795,7 +1798,7 @@ void Getblock(block b[MAXPLAYERS]) {
     printf("unable to open %s\n", BLOCKDATAFL);
     return;
   }
-  if (read(block_fd, (char *)b, sizeof(*b) * MAXPLAYERS) < 0) {
+  if (read(block_fd, (char*)b, sizeof(*b) * MAXPLAYERS) < 0) {
     perror("read failed");
     exit(-1);
   }

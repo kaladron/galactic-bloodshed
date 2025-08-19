@@ -7,8 +7,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -58,9 +56,9 @@ void fire(const command_t &argv, GameObj &g) {
     if (in_list(Playernum, argv[1], *from, &nextshipno) &&
         authorized(Governor, *from)) {
       if (!from->active) {
-        sprintf(buf, "%s is irradiated and inactive.\n",
-                ship_to_string(*from).c_str());
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("{} is irradiated and inactive.\n",
+                           ship_to_string(*from)));
         free(from);
         continue;
       }
@@ -111,16 +109,16 @@ void fire(const command_t &argv, GameObj &g) {
 
       if (from->type == ShipType::OTYPE_AFV) {
         if (!landed(*from)) {
-          sprintf(buf, "%s isn't landed on a planet!\n",
-                  ship_to_string(*from).c_str());
-          notify(Playernum, Governor, buf);
+          notify(Playernum, Governor,
+                 std::format("{} isn't landed on a planet!\n",
+                             ship_to_string(*from)));
           free(from);
           continue;
         }
         if (!landed(*to)) {
-          sprintf(buf, "%s isn't landed on a planet!\n",
-                  ship_to_string(*from).c_str());
-          notify(Playernum, Governor, buf);
+          notify(Playernum, Governor,
+                 std::format("{} isn't landed on a planet!\n",
+                             ship_to_string(*from)));
           free(from);
           continue;
         }
@@ -145,8 +143,8 @@ void fire(const command_t &argv, GameObj &g) {
       }
       if (cew) {
         if (from->fuel < (double)from->cew) {
-          sprintf(buf, "You need %d fuel to fire CEWs.\n", from->cew);
-          notify(Playernum, Governor, buf);
+          notify(Playernum, Governor,
+                 std::format("You need {} fuel to fire CEWs.\n", from->cew));
           free(from);
           continue;
         }
@@ -157,8 +155,8 @@ void fire(const command_t &argv, GameObj &g) {
           free(from);
           continue;
         }
-        sprintf(buf, "CEW strength %d.\n", from->cew);
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("CEW strength {}.\n", from->cew));
         strength = from->cew / 2;
 
       } else {
@@ -171,9 +169,10 @@ void fire(const command_t &argv, GameObj &g) {
 
         if (strength > maxstrength) {
           strength = maxstrength;
-          sprintf(buf, "%s set to %d\n",
-                  laser_on(*from) ? "Laser strength" : "Guns", strength);
-          notify(Playernum, Governor, buf);
+          notify(Playernum, Governor,
+                 std::format("{} set to {}\n",
+                             (laser_on(*from) ? "Laser strength" : "Guns"),
+                             strength));
         }
       }
 
@@ -181,8 +180,7 @@ void fire(const command_t &argv, GameObj &g) {
       if (laser_on(*from) || cew) check_overload(*from, cew, &strength);
 
       if (strength <= 0) {
-        sprintf(buf, "No attack.\n");
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor, "No attack.\n");
         putship(*from);
         free(from);
         continue;

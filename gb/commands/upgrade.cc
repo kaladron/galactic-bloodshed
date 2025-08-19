@@ -7,8 +7,6 @@ import std.compat;
 
 #include <strings.h>
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -177,9 +175,10 @@ void upgrade(const command_t &argv, GameObj &g) {
 
   /* check to see whether this ship can actually be built by this player */
   if ((complex = complexity(ship)) > race.tech) {
-    sprintf(buf, "This upgrade requires an engineering technology of %.1f.\n",
-            complex);
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format(
+               "This upgrade requires an engineering technology of {:.1f}.\n",
+               complex));
     return;
   }
 
@@ -189,13 +188,13 @@ void upgrade(const command_t &argv, GameObj &g) {
   if (dirship->whatorbits == ScopeLevel::LEVEL_SHIP) {
     s2 = getship(dirship->destshipno);
     if (s2->max_hanger - (s2->hanger - dirship->size) < ship_size(ship)) {
-      sprintf(buf, "Not enough free hanger space on %c%ld.\n",
-              Shipltrs[s2->type], dirship->destshipno);
-      notify(Playernum, Governor, buf);
-      sprintf(
-          buf, "%d more needed.\n",
-          ship_size(ship) - (s2->max_hanger - (s2->hanger - dirship->size)));
-      notify(Playernum, Governor, buf);
+      notify(Playernum, Governor,
+             std::format("Not enough free hanger space on {}{}.\n",
+                         Shipltrs[s2->type], dirship->destshipno));
+      notify(Playernum, Governor,
+             std::format("{} more needed.\n",
+                         ship_size(ship) -
+                             (s2->max_hanger - (s2->hanger - dirship->size))));
       return;
     }
   }
@@ -211,17 +210,18 @@ void upgrade(const command_t &argv, GameObj &g) {
   if (!race.God) netcost += !netcost;
 
   if (netcost > dirship->resource) {
-    sprintf(buf, "Old value %dr   New value %dr\n", oldcost, newcost);
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "You need %d resources on board to make this modification.\n",
-            netcost);
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format("Old value {}r   New value {}r\n", oldcost, newcost));
+    notify(Playernum, Governor,
+           std::format(
+               "You need {} resources on board to make this modification.\n",
+               netcost));
   } else if (netcost || race.God) {
-    sprintf(buf, "Old value %dr   New value %dr\n", oldcost, newcost);
-    notify(Playernum, Governor, buf);
-    sprintf(buf, "Characteristic modified at a cost of %d resources.\n",
-            netcost);
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format("Old value {}r   New value {}r\n", oldcost, newcost));
+    notify(Playernum, Governor,
+           std::format("Characteristic modified at a cost of {} resources.\n",
+                       netcost));
     bcopy(&ship, &*dirship, sizeof(Ship));
     dirship->resource -= netcost;
     if (dirship->whatorbits == ScopeLevel::LEVEL_SHIP) {

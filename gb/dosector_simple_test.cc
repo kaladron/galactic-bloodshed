@@ -352,40 +352,40 @@ void test_data_consistency() {
 int main() noexcept {
   try {
     std::cout << "Running dosector simplified unit tests...\n";
-    
+
     // Run all tests
     std::cout << "  Testing sector creation... ";
     test_sector_creation();
     std::cout << "PASS\n";
-    
+
     std::cout << "  Testing race creation... ";
     test_race_creation();
     std::cout << "PASS\n";
-    
+
     std::cout << "  Testing planet creation... ";
     test_planet_creation();
     std::cout << "PASS\n";
-    
+
     std::cout << "  Testing star creation... ";
     test_star_creation();
     std::cout << "PASS\n";
-    
+
     std::cout << "  Testing sectormap functionality... ";
     test_sectormap_functionality();
     std::cout << "PASS\n";
-    
+
     std::cout << "  Testing sector calculations... ";
     test_sector_calculations();
     std::cout << "PASS\n";
-    
+
     std::cout << "  Testing edge cases... ";
     test_edge_cases();
     std::cout << "PASS\n";
-    
+
     std::cout << "  Testing data consistency... ";
     test_data_consistency();
     std::cout << "PASS\n";
-    
+
     std::cout << "All dosector tests passed!\n";
     return 0;
   } catch (...) {

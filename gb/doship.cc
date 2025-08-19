@@ -621,7 +621,8 @@ void domine(Ship &ship, int detonate) {
   for (auto s : shiplist) {
     if (sh != ship.number && s.alive && (s.type != ShipType::OTYPE_CANIST) &&
         (s.type != ShipType::OTYPE_GREEN)) {
-      auto s2sresult = shoot_ship_to_ship(ship, s, (int)(ship.destruct), 0, false);
+      auto s2sresult =
+          shoot_ship_to_ship(ship, s, (int)(ship.destruct), 0, false);
       if (s2sresult) {
         auto const &[damage, short_buf, long_buf] = *s2sresult;
         post(short_buf, NewsType::COMBAT);

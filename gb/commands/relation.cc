@@ -9,8 +9,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 static auto allied(const Race &r, const player_t p) {
@@ -35,20 +33,22 @@ void relation(const command_t &argv, GameObj &g) {
 
   auto &race = races[q - 1];
 
-  sprintf(buf, "\n              Racial Relations Report for %s\n\n", race.name);
-  notify(Playernum, Governor, buf);
+  notify(Playernum, Governor,
+         std::format("\n              Racial Relations Report for {}\n\n",
+                     race.name));
   g.out << " #       know             Race name       Yours        Theirs\n";
   g.out << " -       ----             ---------       -----        ------\n";
   for (auto r : races) {
     if (r.Playernum == race.Playernum) continue;
-    sprintf(buf, "%2u %s (%3d%%) %20.20s : %10s   %10s\n", r.Playernum,
-            ((race.God || (race.translate[r.Playernum - 1] > 30)) &&
-             r.Metamorph && (Playernum == q))
-                ? "Morph"
-                : "     ",
-            race.translate[r.Playernum - 1], r.name, allied(race, r.Playernum),
-            allied(r, q));
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format("{:2} {:5} ({:3d}%) {:>20.20} : {:>10}   {:>10}\n",
+                       r.Playernum,
+                       ((race.God || (race.translate[r.Playernum - 1] > 30)) &&
+                        r.Metamorph && (Playernum == q))
+                           ? "Morph"
+                           : "     ",
+                       race.translate[r.Playernum - 1], r.name,
+                       allied(race, r.Playernum), allied(r, q)));
   }
 }
 }  // namespace GB::commands

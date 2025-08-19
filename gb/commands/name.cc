@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -25,13 +23,12 @@ void name(const command_t &argv, GameObj &g) {
     return;
   }
 
-  sprintf(buf, "%s", argv[2].c_str());
+  std::string namebuf = argv[2];
   for (int i = 3; i < argv.size(); i++) {
     sprintf(tmp, " %s", argv[i].c_str());
-    strcat(buf, tmp);
+    namebuf += tmp;
   }
-
-  sprintf(string, "%s", buf);
+  sprintf(string, "%s", namebuf.c_str());
 
   /* make sure there are no ^'s or '/' in name,
     also make sure the name has at least 1 character in it */
@@ -44,21 +41,21 @@ void name(const command_t &argv, GameObj &g) {
     if (*ch == ' ') spaces++;
   }
 
-  if (spaces == strlen(buf)) {
+  if (spaces == namebuf.size()) {
     g.out << "Illegal name.\n";
     return;
   }
 
-  if (strlen(buf) < 1 || check) {
-    sprintf(buf, "Illegal name %s.\n", check ? "form" : "length");
-    notify(Playernum, Governor, buf);
+  if (namebuf.size() < 1 || check) {
+    notify(Playernum, Governor,
+           std::format("Illegal name {}.\n", check ? "form" : "length"));
     return;
   }
 
   if (argv[1] == "ship") {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
       auto ship = getship(g.shipno);
-      strncpy(ship->name, buf, SHIP_NAMESIZE);
+      strncpy(ship->name, namebuf.c_str(), SHIP_NAMESIZE);
       putship(*ship);
       g.out << "Name set.\n";
       return;
@@ -77,7 +74,7 @@ void name(const command_t &argv, GameObj &g) {
         g.out << "This factory is already on line.\n";
         return;
       }
-      strncpy(ship->shipclass, buf, SHIP_NAMESIZE - 1);
+      strncpy(ship->shipclass, namebuf.c_str(), SHIP_NAMESIZE - 1);
       putship(*ship);
       g.out << "Class set.\n";
       return;
@@ -91,7 +88,7 @@ void name(const command_t &argv, GameObj &g) {
       g.out << "You are not authorized to do this.\n";
       return;
     }
-    strncpy(Blocks[Playernum - 1].name, buf, RNAMESIZE - 1);
+    strncpy(Blocks[Playernum - 1].name, namebuf.c_str(), RNAMESIZE - 1);
     Putblock(Blocks);
     g.out << "Done.\n";
   } else if (argv[1] == "star") {
@@ -101,7 +98,7 @@ void name(const command_t &argv, GameObj &g) {
         g.out << "Only dieties may name a star.\n";
         return;
       }
-      stars[g.snum].set_name(buf);
+      stars[g.snum].set_name(namebuf);
       putstar(stars[g.snum], g.snum);
     } else {
       g.out << "You have to 'cs' to a star to name it.\n";
@@ -115,7 +112,7 @@ void name(const command_t &argv, GameObj &g) {
         g.out << "Only deity can rename planets.\n";
         return;
       }
-      stars[g.snum].set_planet_name(g.pnum, buf);
+      stars[g.snum].set_planet_name(g.pnum, namebuf);
       putstar(stars[g.snum], g.snum);
       deductAPs(g, APcount, g.snum);
     } else {
@@ -128,15 +125,16 @@ void name(const command_t &argv, GameObj &g) {
       g.out << "You are not authorized to do this.\n";
       return;
     }
-    strncpy(race.name, buf, RNAMESIZE - 1);
-    sprintf(buf, "Name changed to `%s'.\n", race.name);
-    notify(Playernum, Governor, buf);
+    strncpy(race.name, namebuf.c_str(), RNAMESIZE - 1);
+    notify(Playernum, Governor,
+           std::format("Name changed to `{}'.\n", race.name));
     putrace(race);
   } else if (argv[1] == "governor") {
     auto &race = races[Playernum - 1];
-    strncpy(race.governor[Governor].name, buf, RNAMESIZE - 1);
-    sprintf(buf, "Name changed to `%s'.\n", race.governor[Governor].name);
-    notify(Playernum, Governor, buf);
+    strncpy(race.governor[Governor].name, namebuf.c_str(), RNAMESIZE - 1);
+    notify(
+        Playernum, Governor,
+        std::format("Name changed to `{}'.\n", race.governor[Governor].name));
     putrace(race);
   } else {
     g.out << "I don't know what you mean.\n";

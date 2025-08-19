@@ -9,8 +9,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 static double Lastx, Lasty, Zoom;
@@ -58,8 +56,9 @@ void orbit(const command_t &argv, GameObj &g) {
             break;
           default:
             if (sscanf(argv[flag].c_str() + 1, "%d", &DontDispNum) != 1) {
-              sprintf(buf, "Bad number %s.\n", argv[flag].c_str() + 1);
-              notify(g.player, g.governor, buf);
+              notify(g.player, g.governor,
+                     std::format("Bad number {}.\n",
+                                 std::string_view(argv[flag]).substr(1)));
               DontDispNum = -1;
             }
             if (DontDispNum) DontDispNum--; /* make a '1' into a '0' */
@@ -100,10 +99,12 @@ void orbit(const command_t &argv, GameObj &g) {
         }
       if (!DontDispShips) {
         Shiplist shiplist{Sdata.ships};
+        char shipbuf[256];
         for (auto &s : shiplist) {
           if (DontDispNum != s.number) {
-            DispShip(g, *where, &s, Race, buf);
-            strcat(output, buf);
+            shipbuf[0] = '\0';
+            DispShip(g, *where, &s, Race, shipbuf);
+            strcat(output, shipbuf);
           }
         }
       }
@@ -138,12 +139,14 @@ void orbit(const command_t &argv, GameObj &g) {
       }
       if (!DontDispShips) {
         Shiplist shiplist{stars[where->snum].ships()};
+        char shipbuf[256];
         for (auto &s : shiplist) {
           if (DontDispNum != s.number &&
               !(s.owner != g.player && s.type == ShipType::STYPE_MINE)) {
             if ((s.owner == g.player) || iq) {
-              DispShip(g, *where, &s, Race, buf);
-              strcat(output, buf);
+              shipbuf[0] = '\0';
+              DispShip(g, *where, &s, Race, shipbuf);
+              strcat(output, shipbuf);
             }
           }
         }
@@ -169,12 +172,14 @@ void orbit(const command_t &argv, GameObj &g) {
       }
       /* end check */
       if (!DontDispShips) {
+        char shipbuf[256];
         for (auto &s : shiplist) {
           if (DontDispNum != s.number) {
             if (!landed(s)) {
               if ((s.owner == g.player) || iq) {
-                DispShip(g, *where, &s, Race, buf, p);
-                strcat(output, buf);
+                shipbuf[0] = '\0';
+                DispShip(g, *where, &s, Race, shipbuf, p);
+                strcat(output, shipbuf);
               }
             }
           }

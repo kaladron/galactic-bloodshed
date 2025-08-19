@@ -16,8 +16,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -41,9 +39,10 @@ void mobilize(const command_t &argv, GameObj &g) {
   auto p = getplanet(g.snum, g.pnum);
 
   if (argv.size() < 2) {
-    sprintf(buf, "Current mobilization: %d    Quota: %d\n",
-            p.info[Playernum - 1].comread, p.info[Playernum - 1].mob_set);
-    notify(Playernum, Governor, buf);
+    notify(Playernum, Governor,
+           std::format("Current mobilization: {}    Quota: {}\n",
+                       p.info[Playernum - 1].comread,
+                       p.info[Playernum - 1].mob_set));
     return;
   }
   int sum_mob = std::stoi(argv[1]);

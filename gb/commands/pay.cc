@@ -5,9 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-#include "gb/files.h"
-
 module commands;
 
 namespace GB::commands {
@@ -45,14 +42,14 @@ void pay(const command_t &argv, GameObj &g) {
 
   race.governor[Governor].money -= amount;
   alien.governor[0].money += amount;
-  sprintf(buf, "%s [%d] payed you %d.\n", race.name, Playernum, amount);
-  warn(who, 0, buf);
-  sprintf(buf, "%d payed to %s [%d].\n", amount, alien.name, who);
-  notify(Playernum, Governor, buf);
+  warn(who, 0,
+       std::format("{} [{}] payed you {}.\n", race.name, Playernum, amount));
+  notify(Playernum, Governor,
+         std::format("{} payed to {} [{}].\n", amount, alien.name, who));
 
-  sprintf(buf, "%s [%d] pays %s [%d].\n", race.name, Playernum, alien.name,
-          who);
-  post(buf, NewsType::TRANSFER);
+  post(std::format("{} [{}] pays {} [{}].\n", race.name, Playernum, alien.name,
+                   who),
+       NewsType::TRANSFER);
 
   putrace(alien);
   putrace(race);

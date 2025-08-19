@@ -7,8 +7,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace {
@@ -25,18 +23,23 @@ void production_at_star(GameObj &g, starnum_t star) {
     if (pl.info[Playernum - 1].explored &&
         pl.info[Playernum - 1].numsectsowned &&
         (!Governor || stars[star].governor(Playernum - 1) == Governor)) {
-      sprintf(
-          buf, " %c %4.4s/%-4.4s%c%3d%8.4f%8ld%3d%6d%5d%6d %6ld   %3d%8.2f\n",
-          Psymbol[pl.type], stars[star].get_name().c_str(),
-          stars[star].get_planet_name(i).c_str(),
-          (pl.info[Playernum - 1].autorep ? '*' : ' '),
-          stars[star].governor(Playernum - 1), pl.info[Playernum - 1].prod_tech,
-          pl.total_resources, pl.info[Playernum - 1].prod_crystals,
-          pl.info[Playernum - 1].prod_res, pl.info[Playernum - 1].prod_dest,
-          pl.info[Playernum - 1].prod_fuel, pl.info[Playernum - 1].prod_money,
-          pl.info[Playernum - 1].tox_thresh,
-          pl.info[Playernum - 1].est_production);
-      notify(Playernum, Governor, buf);
+      const auto star4 = stars[star].get_name().substr(0, 4);
+      const auto planet4 = stars[star].get_planet_name(i).substr(0, 4);
+      notify(
+          Playernum, Governor,
+          std::format(" {} {:>4}/{:<4}{}{:>3}{:>8.4f}{:>8}{:>3}{:>6}{:>5}{:>6} "
+                      "{:>6}   {:>3}{:>8.2f}\n",
+                      Psymbol[pl.type], star4, planet4,
+                      (pl.info[Playernum - 1].autorep ? '*' : ' '),
+                      stars[star].governor(Playernum - 1),
+                      pl.info[Playernum - 1].prod_tech, pl.total_resources,
+                      pl.info[Playernum - 1].prod_crystals,
+                      pl.info[Playernum - 1].prod_res,
+                      pl.info[Playernum - 1].prod_dest,
+                      pl.info[Playernum - 1].prod_fuel,
+                      pl.info[Playernum - 1].prod_money,
+                      pl.info[Playernum - 1].tox_thresh,
+                      pl.info[Playernum - 1].est_production));
     }
   }
 }
@@ -63,8 +66,8 @@ void production(const command_t &argv, GameObj &g) {
       Place where{g, argv[i]};
       if (where.err || (where.level == ScopeLevel::LEVEL_UNIV) ||
           (where.level == ScopeLevel::LEVEL_SHIP)) {
-        sprintf(buf, "Bad location `%s'.\n", argv[i].c_str());
-        notify(Playernum, Governor, buf);
+        notify(Playernum, Governor,
+               std::format("Bad location `{}`.\n", argv[i]));
         continue;
       } /* ok, a proper location */
       production_at_star(g, where.snum);

@@ -5,8 +5,6 @@ module;
 import gblib;
 import std.compat;
 
-#include "gb/buffers.h"
-
 module commands;
 
 namespace GB::commands {
@@ -27,7 +25,7 @@ void send_message(const command_t &argv, GameObj &g) {
   int to_star;
   int star;
   int start;
-  char msg[1000];
+  std::string msg;
 
   star = 0;  // TODO(jeffbailey): Init to zero.
   who = 0;   // TODO(jeffbailey): Init to zero.
@@ -39,15 +37,11 @@ void send_message(const command_t &argv, GameObj &g) {
     return;
   }
   if (postit) {
-    auto &race = races[Playernum - 1];
-    sprintf(msg, "%s \"%s\" [%d,%d]: ", race.name, race.governor[Governor].name,
-            Playernum, Governor);
-    /* put the message together */
-    for (j = 1; j < argv.size(); j++) {
-      sprintf(buf, "%s ", argv[j].c_str());
-      strcat(msg, buf);
-    }
-    strcat(msg, "\n");
+    const auto &race = races[Playernum - 1];
+    msg = std::format("{} \"{}\" [{},{}]: ", race.name,
+                      race.governor[Governor].name, Playernum, Governor);
+    for (j = 1; j < argv.size(); j++) msg += argv[j] + " ";
+    msg += "\n";
     post(msg, NewsType::ANNOUNCE);
     return;
   }
@@ -96,20 +90,20 @@ void send_message(const command_t &argv, GameObj &g) {
       break;
   }
 
-  auto &race = races[Playernum - 1];
+  const auto &race = races[Playernum - 1];
 
   /* send the message */
   if (to_block)
-    sprintf(msg, "%s \"%s\" [%d,%d] to %s [%d]: ", race.name,
-            race.governor[Governor].name, Playernum, Governor,
-            Blocks[who - 1].name, who);
+    msg = std::format("{} \"{}\" [{},{}] to {} [{}]: ", race.name,
+                      race.governor[Governor].name, Playernum, Governor,
+                      Blocks[who - 1].name, who);
   else if (to_star)
-    sprintf(msg, "%s \"%s\" [%d,%d] to inhabitants of %s: ", race.name,
-            race.governor[Governor].name, Playernum, Governor,
-            stars[star].get_name().c_str());
+    msg = std::format("{} \"{}\" [{},{}] to inhabitants of {}: ", race.name,
+                      race.governor[Governor].name, Playernum, Governor,
+                      stars[star].get_name());
   else
-    sprintf(msg, "%s \"%s\" [%d,%d]: ", race.name, race.governor[Governor].name,
-            Playernum, Governor);
+    msg = std::format("{} \"{}\" [{},{}]: ", race.name,
+                      race.governor[Governor].name, Playernum, Governor);
 
   if (to_star || to_block || isdigit(*argv[2].c_str()))
     start = 3;
@@ -118,31 +112,29 @@ void send_message(const command_t &argv, GameObj &g) {
   else
     start = 2;
   /* put the message together */
-  for (j = start; j < argv.size(); j++) {
-    sprintf(buf, "%s ", argv[j].c_str());
-    strcat(msg, buf);
-  }
+  for (j = start; j < argv.size(); j++) msg += argv[j] + " ";
   /* post it */
-  sprintf(buf,
-          "%s \"%s\" [%d,%d] has sent you a telegram. Use `read' to read it.\n",
-          race.name, race.governor[Governor].name, Playernum, Governor);
+  const auto notice = std::format(
+      "{} \"{}\" [{},{}] has sent you a telegram. Use `read' to read it.\n",
+      race.name, race.governor[Governor].name, Playernum, Governor);
   if (to_block) {
     uint64_t dummy = (Blocks[who - 1].invite & Blocks[who - 1].pledge);
-    sprintf(buf,
-            "%s \"%s\" [%d,%d] sends a message to %s [%d] alliance block.\n",
-            race.name, race.governor[Governor].name, Playernum, Governor,
-            Blocks[who - 1].name, who);
+    const auto block_msg = std::format(
+        "{} \"{}\" [{},{}] sends a message to {} [{}] alliance block.\n",
+        race.name, race.governor[Governor].name, Playernum, Governor,
+        Blocks[who - 1].name, who);
     for (i = 1; i <= Num_races; i++) {
       if (isset(dummy, i)) {
-        notify_race(i, buf);
+        notify_race(i, block_msg);
         push_telegram_race(i, msg);
       }
     }
   } else if (to_star) {
-    sprintf(buf, "%s \"%s\" [%d,%d] sends a stargram to %s.\n", race.name,
-            race.governor[Governor].name, Playernum, Governor,
-            stars[star].get_name().c_str());
-    notify_star(Playernum, Governor, star, buf);
+    const auto star_msg =
+        std::format("{} \"{}\" [{},{}] sends a stargram to {}.\n", race.name,
+                    race.governor[Governor].name, Playernum, Governor,
+                    stars[star].get_name());
+    notify_star(Playernum, Governor, star, star_msg);
     warn_star(Playernum, star, msg);
   } else {
     int gov;
@@ -150,10 +142,10 @@ void send_message(const command_t &argv, GameObj &g) {
     if (isdigit(*argv[2].c_str()) && (gov = std::stoi(argv[2])) >= 0 &&
         gov <= MAXGOVERNORS) {
       push_telegram(who, gov, msg);
-      notify(who, gov, buf);
+      notify(who, gov, notice);
     } else {
       push_telegram_race(who, msg);
-      notify_race(who, buf);
+      notify_race(who, notice);
     }
 
     auto &alien = races[who - 1];

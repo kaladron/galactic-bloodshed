@@ -27,6 +27,29 @@ import std.compat;
 
 module gblib;
 
+// Glaze reflection for Commod so we can serialize to JSON
+namespace glz {
+template <>
+struct meta<Commod> {
+  using T = Commod;
+  static constexpr auto value = object(
+      "owner", &T::owner, "governor", &T::governor, "type", &T::type, "amount",
+      &T::amount, "deliver", &T::deliver, "bid", &T::bid, "bidder", &T::bidder,
+      "bidder_gov", &T::bidder_gov, "star_from", &T::star_from, "planet_from",
+      &T::planet_from, "star_to", &T::star_to, "planet_to", &T::planet_to);
+};
+
+// Minimal Ship reflection for JSON serialization
+template <>
+struct meta<Ship> {
+  using T = Ship;
+  static constexpr auto value =
+      object("number", &T::number, "owner", &T::owner, "governor", &T::governor,
+             "race", &T::race, "xpos", &T::xpos, "ypos", &T::ypos, "mass",
+             &T::mass, "type", &T::type, "speed", &T::speed);
+};
+}  // namespace glz
+
 static int commoddata, racedata, shdata, stdata;
 
 static void start_bulk_insert();
@@ -1365,6 +1388,10 @@ static void putship_waste(const Ship& s) {
 
 void Sql::putship(Ship* s) { ::putship(*s); }
 void putship(const Ship& s) {
+  // Create a JSON string of the Ship using Glaze (demo / no behavior change)
+  [[maybe_unused]] std::basic_string<char> _glz_ship_json;
+  [[maybe_unused]] auto _glz_ship_ec = glz::write_json(s, _glz_ship_json);
+
   const char* tail;
   Filewrite(shdata, (char*)&s, sizeof(Ship), (s.number - 1) * sizeof(Ship));
   start_bulk_insert();
@@ -1555,6 +1582,11 @@ void Sql::putcommod(const Commod& c, int commodnum) {
   return ::putcommod(c, commodnum);
 }
 void putcommod(const Commod& c, int commodnum) {
+  // Create a JSON string of a Commod struct using Glaze (demonstration only)
+  // This does not affect behavior; it's to verify Glaze works with Commod.
+  [[maybe_unused]] std::string _glz_commod_json;
+  [[maybe_unused]] auto _glz_ec = glz::write_json(c, _glz_commod_json);
+
   Filewrite(commoddata, (const char*)&c, sizeof(Commod),
             (commodnum - 1) * sizeof(Commod));
 

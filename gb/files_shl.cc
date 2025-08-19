@@ -1389,8 +1389,7 @@ static void putship_waste(const Ship& s) {
 void Sql::putship(Ship* s) { ::putship(*s); }
 void putship(const Ship& s) {
   // Create a JSON string of the Ship using Glaze (demo / no behavior change)
-  [[maybe_unused]] std::basic_string<char> _glz_ship_json;
-  [[maybe_unused]] auto _glz_ship_ec = glz::write_json(s, _glz_ship_json);
+  [[maybe_unused]] auto _glz_ship_ec = glz::write_json(s);
 
   const char* tail;
   Filewrite(shdata, (char*)&s, sizeof(Ship), (s.number - 1) * sizeof(Ship));
@@ -1584,8 +1583,7 @@ void Sql::putcommod(const Commod& c, int commodnum) {
 void putcommod(const Commod& c, int commodnum) {
   // Create a JSON string of a Commod struct using Glaze (demonstration only)
   // This does not affect behavior; it's to verify Glaze works with Commod.
-  [[maybe_unused]] std::string _glz_commod_json;
-  [[maybe_unused]] auto _glz_ec = glz::write_json(c, _glz_commod_json);
+  [[maybe_unused]] auto _glz_ec = glz::write_json(c);
 
   Filewrite(commoddata, (const char*)&c, sizeof(Commod),
             (commodnum - 1) * sizeof(Commod));

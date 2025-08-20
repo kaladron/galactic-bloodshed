@@ -142,13 +142,12 @@ export class Ship {
 
   /* special ship functions (10 bytes) */
   union {
-    struct {                  /* if the ship is a Space Mirror */
-      shipnum_t shipno;       /* aimed at what ship */
-      starnum_t snum;         /* aimed at what star */
-      char intensity;         /* intensity of aiming */
-      planetnum_t pnum;       /* aimed at what planet */
-      ScopeLevel level;       /* aimed at what level */
-      unsigned char dummy[4]; /* unused bytes */
+    struct {            /* if the ship is a Space Mirror */
+      shipnum_t shipno; /* aimed at what ship */
+      starnum_t snum;   /* aimed at what star */
+      char intensity;   /* intensity of aiming */
+      planetnum_t pnum; /* aimed at what planet */
+      ScopeLevel level; /* aimed at what level */
     } aimed_at;
     struct {                    /* VNs and berserkers */
       unsigned char progenitor; /* the originator of the strain */
@@ -157,69 +156,58 @@ export class Ship {
       unsigned char busy;     /* currently occupied */
       unsigned char tampered; /* recently tampered with? */
       unsigned char who_killed;
-      unsigned char dummy[4];
     } mind;
     struct { /* spore pods */
       unsigned char decay;
       unsigned char temperature;
-      unsigned char dummy[8];
     } pod;
     struct { /* dust canisters, greenhouse gases */
       unsigned char count;
-      unsigned char dummy[9];
     } timer;
     struct { /* missiles */
       unsigned char x;
       unsigned char y;
       unsigned char scatter;
-      unsigned char dummy[7];
     } impact;
     struct { /* mines */
       unsigned short radius;
-      unsigned char dummy[8];
     } trigger;
     struct { /* terraformers */
       unsigned char index;
-      unsigned char dummy[9];
     } terraform;
     struct { /* AVPM */
       unsigned short target;
-      unsigned char dummy[8];
     } transport;
     struct { /* toxic waste containers */
       unsigned char toxic;
-      unsigned char dummy[9];
     } waste;
   } special;
 
   short who_killed; /* who killed the ship */
 
   struct {
-    unsigned on : 1;      /* toggles navigate mode */
-    unsigned speed : 4;   /* speed for navigate command */
-    unsigned turns : 15;  /* number turns left in maneuver */
-    unsigned bearing : 9; /* course */
-    unsigned dummy : 3;
+    unsigned char on;       /* toggles navigate mode */
+    unsigned char speed;    /* speed for navigate command */
+    unsigned short turns;   /* number turns left in maneuver */
+    unsigned short bearing; /* course */
   } navigate;
 
   struct {
-    double maxrng;       /* maximum range for autoshoot */
-    unsigned on : 1;     /* toggle on/off */
-    unsigned planet : 1; /* planet defender */
-    unsigned self : 1;   /* retaliate if attacked */
-    unsigned evade : 1;  /* evasive action */
-    unsigned ship : 14;  /* ship it is protecting */
-    unsigned dummy : 6;
+    double maxrng;        /* maximum range for autoshoot */
+    unsigned char on;     /* toggle on/off */
+    unsigned char planet; /* planet defender */
+    unsigned char self;   /* retaliate if attacked */
+    unsigned char evade;  /* evasive action */
+    shipnum_t ship;       /* ship it is protecting */
   } protect;
 
   /* special systems */
   unsigned char mount; /* has a crystal mount */
   struct {
     unsigned char charge;
-    unsigned ready : 1;
-    unsigned on : 1;
-    unsigned has : 1;
-    unsigned dummy : 5;
+    unsigned char ready;
+    unsigned char on;
+    unsigned char has;
   } hyper_drive;
   unsigned char cew;        /* CEW strength */
   unsigned short cew_range; /* CEW (confined-energy-weapon) range */
@@ -243,18 +231,17 @@ export class Ship {
   ShipType type;       /* what type ship is */
   unsigned char speed; /* what speed to travel at 0-9 */
 
-  unsigned active : 1; /* tells whether the ship is active */
-  unsigned alive : 1;  /* ship is alive */
-  unsigned mode : 1;
-  unsigned bombard : 1;  /* bombard planet we're orbiting */
-  unsigned mounted : 1;  /* has a crystal mounted */
-  unsigned cloaked : 1;  /* is cloaked ship */
-  unsigned sheep : 1;    /* is under influence of mind control */
-  unsigned docked : 1;   /* is landed on a planet or docked */
-  unsigned notified : 1; /* has been notified of something */
-  unsigned examined : 1; /* has been examined */
-  unsigned on : 1;       /* on or off */
-  unsigned dummy4 : 5;
+  unsigned char active; /* tells whether the ship is active */
+  unsigned char alive;  /* ship is alive */
+  unsigned char mode;
+  unsigned char bombard;  /* bombard planet we're orbiting */
+  unsigned char mounted;  /* has a crystal mounted */
+  unsigned char cloaked;  /* is cloaked ship */
+  unsigned char sheep;    /* is under influence of mind control */
+  unsigned char docked;   /* is landed on a planet or docked */
+  unsigned char notified; /* has been notified of something */
+  unsigned char examined; /* has been examined */
+  unsigned char on;       /* on or off */
 
   unsigned char merchant; /* this contains the route number */
   unsigned char guns;     /* current gun system which is active */
@@ -274,9 +261,9 @@ export class Shiplist {
   class Iterator {
    public:
     Iterator(shipnum_t a);
-    auto &operator*() { return elem; }
-    Iterator &operator++();
-    bool operator!=(const Iterator &rhs) {
+    auto& operator*() { return elem; }
+    Iterator& operator++();
+    bool operator!=(const Iterator& rhs) {
       return elem.number != rhs.elem.number;
     }
 
@@ -292,74 +279,74 @@ export class Shiplist {
 };
 
 /* can takeoff & land, is mobile, etc. */
-export unsigned short speed_rating(const Ship &s);
+export unsigned short speed_rating(const Ship& s);
 
-export bool has_switch(const Ship &d);
+export bool has_switch(const Ship& d);
 
 /* can bombard planets */
-export bool can_bombard(const Ship &s);
+export bool can_bombard(const Ship& s);
 
 /* can navigate */
-export bool can_navigate(const Ship &s);
+export bool can_navigate(const Ship& s);
 
 /* can aim at things. */
-export bool can_aim(const Ship &s);
+export bool can_aim(const Ship& s);
 
 /* macros to get ship stats */
-export unsigned long armor(const Ship &s);
-export long guns(const Ship &s);
-export population_t max_crew(const Ship &s);
-export population_t max_mil(const Ship &s);
-export long max_resource(const Ship &s);
-export int max_crystals(const Ship &s);
-export long max_fuel(const Ship &s);
-export long max_destruct(const Ship &s);
-export long max_speed(const Ship &s);
-export long shipcost(const Ship &s);
-export double mass(const Ship &s);
-export long shipsight(const Ship &s);
-export long retaliate(const Ship &s);
-export int size(const Ship &s);
-export int shipbody(const Ship &s);
-export long hanger(const Ship &s);
-export long repair(const Ship &s);
-export int getdefense(const Ship &);
-export bool landed(const Ship &);
-export bool laser_on(const Ship &);
-export void capture_stuff(const Ship &, GameObj &);
-export std::string ship_to_string(const Ship &);
-export double cost(const Ship &);
-export double getmass(const Ship &);
-export unsigned int ship_size(const Ship &);
-export double complexity(const Ship &);
-export bool testship(const Ship &, GameObj &);
-export void kill_ship(player_t, Ship *);
-export int docked(const Ship &);
-export int overloaded(const Ship &);
-export std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept;
-export void do_VN(Ship &);
-export void planet_doVN(Ship &, Planet &, SectorMap &);
-export void use_fuel(Ship &, double);
-export void use_destruct(Ship &, int);
-export void use_resource(Ship &, int);
-export void rcv_fuel(Ship &, double);
-export void rcv_resource(Ship &, int);
-export void rcv_destruct(Ship &, int);
-export void rcv_popn(Ship &, int, double);
-export void rcv_troops(Ship &, int, double);
-export std::string prin_ship_orbits(const Ship &);
-export std::string prin_ship_dest(const Ship &);
-export void moveship(Ship &ship, int x, int y, int z);
-export void msg_OOF(const Ship &ship);
-export bool followable(const Ship &ship, Ship &target);
+export unsigned long armor(const Ship& s);
+export long guns(const Ship& s);
+export population_t max_crew(const Ship& s);
+export population_t max_mil(const Ship& s);
+export long max_resource(const Ship& s);
+export int max_crystals(const Ship& s);
+export long max_fuel(const Ship& s);
+export long max_destruct(const Ship& s);
+export long max_speed(const Ship& s);
+export long shipcost(const Ship& s);
+export double mass(const Ship& s);
+export long shipsight(const Ship& s);
+export long retaliate(const Ship& s);
+export int size(const Ship& s);
+export int shipbody(const Ship& s);
+export long hanger(const Ship& s);
+export long repair(const Ship& s);
+export int getdefense(const Ship&);
+export bool landed(const Ship&);
+export bool laser_on(const Ship&);
+export void capture_stuff(const Ship&, GameObj&);
+export std::string ship_to_string(const Ship&);
+export double cost(const Ship&);
+export double getmass(const Ship&);
+export unsigned int ship_size(const Ship&);
+export double complexity(const Ship&);
+export bool testship(const Ship&, GameObj&);
+export void kill_ship(player_t, Ship*);
+export int docked(const Ship&);
+export int overloaded(const Ship&);
+export std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept;
+export void do_VN(Ship&);
+export void planet_doVN(Ship&, Planet&, SectorMap&);
+export void use_fuel(Ship&, double);
+export void use_destruct(Ship&, int);
+export void use_resource(Ship&, int);
+export void rcv_fuel(Ship&, double);
+export void rcv_resource(Ship&, int);
+export void rcv_destruct(Ship&, int);
+export void rcv_popn(Ship&, int, double);
+export void rcv_troops(Ship&, int, double);
+export std::string prin_ship_orbits(const Ship&);
+export std::string prin_ship_dest(const Ship&);
+export void moveship(Ship& ship, int x, int y, int z);
+export void msg_OOF(const Ship& ship);
+export bool followable(const Ship& ship, Ship& target);
 
 export shipnum_t Num_ships;
 export int ShipVector[NUMSTYPES];
 
-export Ship **ships;
+export Ship** ships;
 
-export std::string dispshiploc_brief(const Ship &);
-export std::string dispshiploc(const Ship &);
+export std::string dispshiploc_brief(const Ship&);
+export std::string dispshiploc(const Ship&);
 
 export const char Shipltrs[] = {
     'p', 's', 'X', 'D', 'B', 'I', 'C', 'd',  'f', 'e', 'H', 'S',
@@ -511,7 +498,7 @@ export const long Shipdata[NUMSTYPES][NUMABILS] = {
     /*Lnd*/ {150, 100, 10, 200, 10, 3, 0, 100, 500, 7, 50, 1, 1, 1,
              0,   2,   50, 8,   0,  1, 0, 0,   0,   0, 1,  0, 1, 1}};
 
-export const char *Shipnames[NUMSTYPES] = {"Spore pod",
+export const char* Shipnames[NUMSTYPES] = {"Spore pod",
                                            "Shuttle",
                                            "Carrier",
                                            "Dreadnaught",

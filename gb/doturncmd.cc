@@ -14,7 +14,7 @@ import std.compat;
 
 module gblib;
 
-static constexpr void maintain(Race &r, Race::gov &governor,
+static constexpr void maintain(Race& r, Race::gov& governor,
                                const money_t amount) noexcept {
   if (governor.money >= amount)
     governor.money -= amount;
@@ -24,17 +24,17 @@ static constexpr void maintain(Race &r, Race::gov &governor,
   }
 }
 
-static ap_t APadd(const int, const population_t, const Race &);
-static bool attack_planet(const Ship &);
-static void fix_stability(Star &);
-static bool governed(const Race &);
-static void make_discoveries(Race &);
+static ap_t APadd(const int, const population_t, const Race&);
+static bool attack_planet(const Ship&);
+static void fix_stability(Star&);
+static bool governed(const Race&);
+static void make_discoveries(Race&);
 static void output_ground_attacks();
 static void initialize_data(int update);
 static void process_ships();
 static void process_stars_and_planets(int update);
 static void process_races(int update);
-static void process_market(Db &db, int update);
+static void process_market(Db& db, int update);
 static void process_ship_masses_and_ownership();
 static void process_ship_turns(int update);
 static void prepare_dead_ships();
@@ -43,7 +43,7 @@ static void process_abms_and_missiles(int update);
 static void update_victory_scores(int update);
 static void finalize_turn(int update);
 
-void do_turn(Db &db, int update) {
+void do_turn(Db& db, int update) {
   initialize_data(update);
   process_ships();
   process_stars_and_planets(update);
@@ -78,7 +78,7 @@ static void process_ships() {
   // TODO(jeffbailey): We loop through the ships twice here because that's what
   // the code did before.  It's probably not necessary.
 
-  ships = (Ship **)malloc(sizeof(Ship *) * (Num_ships + 1));
+  ships = (Ship**)malloc(sizeof(Ship*) * (Num_ships + 1));
   for (shipnum_t i = 1; i <= Num_ships; i++) {
     (void)getship(&ships[i], i);
     domine(*ships[i], 0);
@@ -116,7 +116,7 @@ static void process_races(int update) {
       /* Reset controlled planet count */
       races[i - 1].controlled_planets = 0;
       races[i - 1].planet_points = 0;
-      for (auto &governor : races[i - 1].governor)
+      for (auto& governor : races[i - 1].governor)
         if (governor.active) {
           governor.maintain = 0;
           governor.cost_market = 0;
@@ -141,7 +141,7 @@ static void process_races(int update) {
   output_ground_attacks();
 }
 
-static void process_market(Db &db, int update) {
+static void process_market(Db& db, int update) {
   if (MARKET && update) {
     /* reset market */
     Num_commods = db.Numcommods();
@@ -391,7 +391,7 @@ static void update_victory_scores(int update) {
     for (player_t i = 1; i <= Num_races; i++) {
       victory[i - 1].morale = races[i - 1].morale;
       victory[i - 1].money = races[i - 1].governor[0].money;
-      for (auto &governor : races[i - 1].governor)
+      for (auto& governor : races[i - 1].governor)
         if (governor.active) victory[i - 1].money += governor.money;
     }
 
@@ -464,7 +464,7 @@ static void finalize_turn(int update) {
 
       Blocks[i - 1].VPs = 10L * Blocks[i - 1].systems_owned;
       if (MARKET) {
-        for (auto &governor : races[i - 1].governor)
+        for (auto& governor : races[i - 1].governor)
           if (governor.active)
             maintain(races[i - 1], governor, governor.maintain);
       }
@@ -478,7 +478,7 @@ static void finalize_turn(int update) {
     compute_power_blocks();
     for (player_t i = 1; i <= Num_races; i++) {
       Power[i - 1].money = 0;
-      for (auto &governor : races[i - 1].governor)
+      for (auto& governor : races[i - 1].governor)
         if (governor.active) Power[i - 1].money += governor.money;
     }
     putpower(Power);
@@ -496,7 +496,7 @@ static void finalize_turn(int update) {
 /* routine for number of AP's to add to each player in ea. system,scaled
     by amount of crew in their palace */
 
-static ap_t APadd(const int sh, const population_t popn, const Race &race) {
+static ap_t APadd(const int sh, const population_t popn, const Race& race) {
   ap_t APs;
 
   APs = round_rand((double)sh / 10.0 + 5. * log10(1.0 + (double)popn));
@@ -520,7 +520,7 @@ static ap_t APadd(const int sh, const population_t popn, const Race &race) {
  * @param race The race to check for governance.
  * @return True if the race is governed, false otherwise.
  */
-static bool governed(const Race &race) {
+static bool governed(const Race& race) {
   return (race.Gov_ship && race.Gov_ship <= Num_ships &&
           ships[race.Gov_ship] != nullptr && ships[race.Gov_ship]->alive &&
           ships[race.Gov_ship]->docked &&
@@ -535,7 +535,7 @@ static bool governed(const Race &race) {
 }
 
 /* fix stability for stars */
-void fix_stability(Star &s) {
+void fix_stability(Star& s) {
   int a;
   int i;
 
@@ -543,13 +543,11 @@ void fix_stability(Star &s) {
     if (s.nova_stage() > 14) {
       s.stability() = 20;
       s.nova_stage() = 0;
-      sprintf(telegram_buf, "Notice\n");
-      sprintf(buf, "\n  Scientists report that star %s\n",
-              s.get_name().c_str());
-      strcat(telegram_buf, buf);
-      sprintf(buf, "is no longer undergoing nova.\n");
-      strcat(telegram_buf, buf);
-      for (i = 1; i <= Num_races; i++) push_telegram_race(i, telegram_buf);
+      std::string telegram_msg = std::format(
+          "Notice\n\n  Scientists report that star {}\nis no longer undergoing "
+          "nova.\n",
+          s.get_name());
+      for (i = 1; i <= Num_races; i++) push_telegram_race(i, telegram_msg);
 
       /* telegram everyone when nova over? */
     } else
@@ -560,13 +558,11 @@ void fix_stability(Star &s) {
     if ((s.stability() + a) > 100) {
       s.stability() = 100;
       s.nova_stage() = 1;
-      sprintf(telegram_buf, "***** BULLETIN! ******\n");
-      sprintf(buf, "\n  Scientists report that star %s\n",
-              s.get_name().c_str());
-      strcat(telegram_buf, buf);
-      sprintf(buf, "is undergoing nova.\n");
-      strcat(telegram_buf, buf);
-      for (i = 1; i <= Num_races; i++) push_telegram_race(i, telegram_buf);
+      std::string telegram_msg = std::format(
+          "***** BULLETIN! ******\n\n  Scientists report that star {}\nis "
+          "undergoing nova.\n",
+          s.get_name());
+      for (i = 1; i <= Num_races; i++) push_telegram_race(i, telegram_msg);
     } else
       s.stability() += a;
   } else {
@@ -601,30 +597,29 @@ void handle_victory() {
   }
   if (game_over) {
     for (i = 1; i <= Num_races; i++) {
-      sprintf(telegram_buf, "*** Attention ***");
-      push_telegram_race(i, telegram_buf);
-      sprintf(telegram_buf, "This game of Galactic Bloodshed is now *over*");
-      push_telegram_race(i, telegram_buf);
-      sprintf(telegram_buf, "The big winner%s",
-              (game_over == 1) ? " is" : "s are");
-      push_telegram_race(i, telegram_buf);
+      push_telegram_race(i, "*** Attention ***");
+      push_telegram_race(i, "This game of Galactic Bloodshed is now *over*");
+      std::string winner_msg =
+          std::format("The big winner{}", (game_over == 1) ? " is" : "s are");
+      push_telegram_race(i, winner_msg);
       for (j = 1; j <= Num_races; j++)
         if (win_category[j - 1] == BIG_WINNER) {
-          sprintf(telegram_buf, "*** [%2d] %-30.30s ***", j, races[j - 1].name);
-          push_telegram_race(i, telegram_buf);
+          std::string big_winner_msg =
+              std::format("*** [{:2d}] {:<30.30s} ***", j, races[j - 1].name);
+          push_telegram_race(i, big_winner_msg);
         }
-      sprintf(telegram_buf, "Lesser winners:");
-      push_telegram_race(i, telegram_buf);
+      push_telegram_race(i, "Lesser winners:");
       for (j = 1; j <= Num_races; j++)
         if (win_category[j - 1] == LITTLE_WINNER) {
-          sprintf(telegram_buf, "+++ [%2d] %-30.30s +++", j, races[j - 1].name);
-          push_telegram_race(i, telegram_buf);
+          std::string little_winner_msg =
+              std::format("+++ [{:2d}] {:<30.30s} +++", j, races[j - 1].name);
+          push_telegram_race(i, little_winner_msg);
         }
     }
   }
 }
 
-static void make_discoveries(Race &r) {
+static void make_discoveries(Race& r) {
   /* would be nicer to do this with a loop of course - but it's late */
   if (!Hyper_drive(r) && r.tech >= TECH_HYPER_DRIVE) {
     push_telegram_race(r.Playernum,
@@ -673,7 +668,7 @@ static void make_discoveries(Race &r) {
   }
 }
 
-static bool attack_planet(const Ship &ship) {
+static bool attack_planet(const Ship& ship) {
   return ship.whatdest == ScopeLevel::LEVEL_PLAN;
 }
 

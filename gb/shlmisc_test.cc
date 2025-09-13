@@ -3,8 +3,6 @@ import std.compat;
 
 #include <cassert>
 
-#include "gb/globals.h"
-
 int main() {
   auto a = string_to_shipnum("123");
   assert(*a == 123);

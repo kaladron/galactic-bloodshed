@@ -5,8 +5,6 @@ import std;
 
 #include <cassert>
 
-#include "gb/globals.h"
-
 int main() {
   // Create a test planet with known dimensions
   Planet planet(PlanetType::EARTH);

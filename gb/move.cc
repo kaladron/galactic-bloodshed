@@ -6,8 +6,6 @@ module;
 
 import std.compat;
 
-#include "gb/buffers.h"
-
 module gblib;
 
 /**
@@ -22,7 +20,7 @@ module gblib;
  * @param from The current coordinates.
  * @return The new coordinates after the movement.
  */
-Coordinates get_move(const Planet &planet, const char direction,
+Coordinates get_move(const Planet& planet, const char direction,
                      const Coordinates from) {
   switch (direction) {
     case '1':
@@ -74,9 +72,9 @@ Coordinates get_move(const Planet &planet, const char direction,
   }
 }
 
-void mech_defend(player_t Playernum, governor_t Governor, int *people,
-                 PopulationType type, const Planet &p, int x2, int y2,
-                 const Sector &s2) {
+void mech_defend(player_t Playernum, governor_t Governor, int* people,
+                 PopulationType type, const Planet& p, int x2, int y2,
+                 const Sector& s2) {
   population_t civ = 0;
   population_t mil = 0;
   int oldgov;
@@ -86,7 +84,7 @@ void mech_defend(player_t Playernum, governor_t Governor, int *people,
   else
     mil = *people;
 
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
 
   Shiplist shiplist{p.ships};
   for (auto ship : shiplist) {
@@ -94,7 +92,7 @@ void mech_defend(player_t Playernum, governor_t Governor, int *people,
     if (ship.owner != Playernum && ship.type == ShipType::OTYPE_AFV &&
         landed(ship) && retal_strength(ship) && (ship.land_x == x2) &&
         (ship.land_y == y2)) {
-      auto &alien = races[ship.owner - 1];
+      auto& alien = races[ship.owner - 1];
       if (!isset(race.allied, ship.owner) || !isset(alien.allied, Playernum)) {
         while ((civ + mil) > 0 && retal_strength(ship)) {
           oldgov = stars[ship.storbits].governor(alien.Playernum - 1);
@@ -117,9 +115,9 @@ void mech_defend(player_t Playernum, governor_t Governor, int *people,
   *people = civ + mil;
 }
 
-void mech_attack_people(Ship &ship, population_t *civ, population_t *mil,
-                        Race &race, Race &alien, const Sector &sect,
-                        bool ignore, char *long_msg, char *short_msg) {
+void mech_attack_people(Ship& ship, population_t* civ, population_t* mil,
+                        Race& race, Race& alien, const Sector& sect,
+                        bool ignore, char* long_msg, char* short_msg) {
   auto oldciv = *civ;
   auto oldmil = *mil;
 
@@ -156,18 +154,21 @@ void mech_attack_people(Ship &ship, population_t *civ, population_t *mil,
           (*civ + *mil) ? "attacked" : "slaughtered", alien.name,
           alien.Playernum);
   strcpy(long_msg, short_msg);
-  sprintf(buf, "\tBattle at %d,%d %s: %d guns fired on %ld civ/%ld mil\n",
-          sect.x, sect.y, Desnames[sect.condition], strength, oldciv, oldmil);
-  strcat(long_msg, buf);
-  sprintf(buf, "\tAttack: %.3f   Defense: %.3f.\n", astrength, dstrength);
-  strcat(long_msg, buf);
-  sprintf(buf, "\t%d civ/%d mil killed.\n", cas_civ, cas_mil);
-  strcat(long_msg, buf);
+  std::string battle_msg = std::format(
+      "\tBattle at {},{} {}: {} guns fired on {} civ/{} mil\n", sect.x, sect.y,
+      Desnames[sect.condition], strength, oldciv, oldmil);
+  strcat(long_msg, battle_msg.c_str());
+  std::string attack_msg = std::format("\tAttack: {:.3f}   Defense: {:.3f}.\n",
+                                       astrength, dstrength);
+  strcat(long_msg, attack_msg.c_str());
+  std::string casualties_msg =
+      std::format("\t{} civ/{} mil killed.\n", cas_civ, cas_mil);
+  strcat(long_msg, casualties_msg.c_str());
 }
 
-void people_attack_mech(Ship &ship, int civ, int mil, Race &race, Race &alien,
-                        const Sector &sect, int x, int y, char *long_msg,
-                        char *short_msg) {
+void people_attack_mech(Ship& ship, int civ, int mil, Race& race, Race& alien,
+                        const Sector& sect, int x, int y, char* long_msg,
+                        char* short_msg) {
   int strength;
   double astrength;
   double dstrength;
@@ -200,24 +201,27 @@ void people_attack_mech(Ship &ship, int civ, int mil, Race &race, Race &alien,
           race.name, race.Playernum, ship.alive ? "attacked" : "DESTROYED",
           ship_to_string(ship).c_str());
   strcpy(long_msg, short_msg);
-  sprintf(buf, "\tBattle at %d,%d %s: %d civ/%d mil assault %s\n", x, y,
-          Desnames[sect.condition], civ, mil, Shipnames[ship.type]);
-  strcat(long_msg, buf);
-  sprintf(buf, "\tAttack: %.3f   Defense: %.3f.\n", astrength, dstrength);
-  strcat(long_msg, buf);
-  sprintf(buf, "\t%d%% damage inflicted for a total of %d%%\n", damage,
-          ship.damage);
-  strcat(long_msg, buf);
-  sprintf(buf, "\t%d civ/%d mil killed   %d prim/%d sec guns knocked out\n",
-          cas_civ, cas_mil, pdam, sdam);
-  strcat(long_msg, buf);
+  std::string assault_msg =
+      std::format("\tBattle at {},{} {}: {} civ/{} mil assault {}\n", x, y,
+                  Desnames[sect.condition], civ, mil, Shipnames[ship.type]);
+  strcat(long_msg, assault_msg.c_str());
+  std::string attack_msg = std::format("\tAttack: {:.3f}   Defense: {:.3f}.\n",
+                                       astrength, dstrength);
+  strcat(long_msg, attack_msg.c_str());
+  std::string damage_msg = std::format(
+      "\t{}% damage inflicted for a total of {}%\n", damage, ship.damage);
+  strcat(long_msg, damage_msg.c_str());
+  std::string casualties_msg =
+      std::format("\t{} civ/{} mil killed   {} prim/{} sec guns knocked out\n",
+                  cas_civ, cas_mil, pdam, sdam);
+  strcat(long_msg, casualties_msg.c_str());
 }
 
-void ground_attack(Race &race, Race &alien, int *people, PopulationType what,
-                   population_t *civ, population_t *mil, unsigned int def1,
+void ground_attack(Race& race, Race& alien, int* people, PopulationType what,
+                   population_t* civ, population_t* mil, unsigned int def1,
                    unsigned int def2, double alikes, double dlikes,
-                   double *astrength, double *dstrength, int *casualties,
-                   int *casualties2, int *casualties3) {
+                   double* astrength, double* dstrength, int* casualties,
+                   int* casualties2, int* casualties3) {
   int casualty_scale;
 
   *astrength = (double)(*people * race.fighters *

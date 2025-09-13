@@ -23,9 +23,7 @@ import std.compat;
 #include <cstdio>
 #include <cstdlib>
 
-#include "gb/buffers.h"
 #include "gb/files.h"
-#include "gb/globals.h"
 
 static bool shutdown_flag = false;
 
@@ -39,44 +37,44 @@ static std::string segment_buf;
 
 static double GetComplexity(const ShipType);
 static void set_signals();
-static void help(const command_t &, GameObj &);
-static void process_command(GameObj &, const command_t &argv);
-static int shovechars(int, Db &);
+static void help(const command_t&, GameObj&);
+static void process_command(GameObj&, const command_t& argv);
+static int shovechars(int, Db&);
 
-static void GB_time(const command_t &, GameObj &);
-static void GB_schedule(const command_t &, GameObj &);
-static void do_update(Db &, bool = false);
-static void do_segment(Db &, int, int);
+static void GB_time(const command_t&, GameObj&);
+static void GB_schedule(const command_t&, GameObj&);
+static void do_update(Db&, bool = false);
+static void do_segment(Db&, int, int);
 static int make_socket(int);
-static void shutdownsock(DescriptorData &);
-static void load_race_data(Db &);
+static void shutdownsock(DescriptorData&);
+static void load_race_data(Db&);
 static void load_star_data();
 static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
-static bool process_output(DescriptorData &);
-static void welcome_user(DescriptorData &);
+static bool process_output(DescriptorData&);
+static void welcome_user(DescriptorData&);
 static void process_commands();
-static bool do_command(DescriptorData &, std::string_view);
-static void goodbye_user(DescriptorData &);
-static void dump_users(DescriptorData &);
+static bool do_command(DescriptorData&, std::string_view);
+static void goodbye_user(DescriptorData&);
+static void dump_users(DescriptorData&);
 static void close_sockets(int);
-static int process_input(DescriptorData &);
+static int process_input(DescriptorData&);
 static void force_output();
-static void help_user(GameObj &);
+static void help_user(GameObj&);
 static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
-static void save_command(DescriptorData &, const std::string &);
-static int ShipCompare(const void *, const void *);
+static void save_command(DescriptorData&, const std::string&);
+static int ShipCompare(const void*, const void*);
 static void SortShips();
 
-static void check_connect(DescriptorData &, std::string_view);
+static void check_connect(DescriptorData&, std::string_view);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 constexpr int MAX_COMMAND_LEN = 512;
 
-using CommandFunction = void (*)(const command_t &, GameObj &);
+using CommandFunction = void (*)(const command_t&, GameObj&);
 
-static const std::unordered_map<std::string, CommandFunction> &getCommands() {
+static const std::unordered_map<std::string, CommandFunction>& getCommands() {
   static std::unordered_map<std::string, CommandFunction> commands{
       {"'", GB::commands::announce},
       {"allocate", allocateAPs},
@@ -240,7 +238,7 @@ connection_password parse_connect(const std::string_view message) {
  * \param g Game Object with player information
  * \return Prompt string for display to the user
  */
-std::string do_prompt(GameObj &g) {
+std::string do_prompt(GameObj& g) {
   player_t Playernum = g.player;
   std::stringstream prompt;
 
@@ -349,7 +347,7 @@ std::string do_prompt(GameObj &g) {
 }
 }  // namespace
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   struct stat stbuf;
 
   Sql db{};
@@ -391,7 +389,7 @@ int main(int argc, char **argv) {
 
   next_update_time = clk + (update_time.count() * 60);
   if (stat(UPDATEFL, &stbuf) >= 0) {
-    if (FILE *sfile = fopen(UPDATEFL, "r"); sfile != nullptr) {
+    if (FILE* sfile = fopen(UPDATEFL, "r"); sfile != nullptr) {
       char dum[32];
       if (fgets(dum, sizeof dum, sfile)) nupdates_done = atoi(dum);
       if (fgets(dum, sizeof dum, sfile)) last_update_time = atol(dum);
@@ -406,7 +404,7 @@ int main(int argc, char **argv) {
   else {
     next_segment_time = clk + (update_time.count() * 60 / segments);
     if (stat(SEGMENTFL, &stbuf) >= 0) {
-      if (FILE *sfile = fopen(SEGMENTFL, "r"); sfile != nullptr) {
+      if (FILE* sfile = fopen(SEGMENTFL, "r"); sfile != nullptr) {
         char dum[32];
         if (fgets(dum, sizeof dum, sfile)) nsegments_done = atoi(dum);
         if (fgets(dum, sizeof dum, sfile)) last_segment_time = atol(dum);
@@ -474,7 +472,7 @@ static struct timeval msec_add(struct timeval t, int x) {
   return t;
 }
 
-static int shovechars(int port, Db &db) {
+static int shovechars(int port, Db& db) {
   fd_set input_set;
   fd_set output_set;
   struct timeval last_slice;
@@ -511,7 +509,7 @@ static int shovechars(int port, Db &db) {
     FD_ZERO(&input_set);
     FD_ZERO(&output_set);
     FD_SET(sock, &input_set);
-    for (auto &d : descriptor_list) {
+    for (auto& d : descriptor_list) {
       if (!d.input.empty())
         timeout = slice_timeout;
       else
@@ -533,16 +531,16 @@ static int shovechars(int port, Db &db) {
       if (FD_ISSET(sock, &input_set)) {
         try {
           descriptor_list.emplace_back(sock, db);
-          auto &newd = descriptor_list.back();
+          auto& newd = descriptor_list.back();
           make_nonblocking(newd.descriptor);
           welcome_user(newd);
-        } catch (const std::runtime_error &) {
+        } catch (const std::runtime_error&) {
           perror("new_connection");
           return sock;
         }
       }
 
-      for (auto &d : descriptor_list) {
+      for (auto& d : descriptor_list) {
         if (FD_ISSET(d.descriptor, &input_set)) {
           /*      d->last_time = now; */
           if (!process_input(d)) {
@@ -574,7 +572,7 @@ static int shovechars(int port, Db &db) {
   return sock;
 }
 
-void do_next_thing(Db &db) {
+void do_next_thing(Db& db) {
   if (nsegments_done < segments)
     do_segment(db, 0, 1);
   else
@@ -592,12 +590,12 @@ static int make_socket(int port) {
     exit(3);
   }
   opt = 1;
-  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0) {
+  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)) < 0) {
     perror("setsockopt");
     exit(1);
   }
   if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, /* GVC */
-                 (char *)&opt, sizeof(opt)) < 0) {
+                 (char*)&opt, sizeof(opt)) < 0) {
     perror("setsockopt");
     exit(1);
   }
@@ -605,7 +603,7 @@ static int make_socket(int port) {
   server.sin6_family = AF_INET6;
   server.sin6_addr = in6addr_any;
   server.sin6_port = htons(port);
-  if (bind(s, (struct sockaddr *)&server, sizeof(server))) {
+  if (bind(s, (struct sockaddr*)&server, sizeof(server))) {
     perror("binding stream socket");
     close(s);
     exit(4);
@@ -619,7 +617,7 @@ static struct timeval update_quotas(struct timeval last,
   int nslices = msec_diff(current, last) / COMMAND_TIME_MSEC;
 
   if (nslices > 0) {
-    for (auto &d : descriptor_list) {
+    for (auto& d : descriptor_list) {
       d.quota += COMMANDS_PER_TIME * nslices;
       if (d.quota > COMMAND_BURST_SIZE) d.quota = COMMAND_BURST_SIZE;
     }
@@ -627,7 +625,7 @@ static struct timeval update_quotas(struct timeval last,
   return msec_add(last, nslices * COMMAND_TIME_MSEC);
 }
 
-static void shutdownsock(DescriptorData &d) {
+static void shutdownsock(DescriptorData& d) {
   if (d.connected) {
     std::println(stderr, "DISCONNECT {0} Race={1} Governor={2}", d.descriptor,
                  d.player, d.governor);
@@ -639,12 +637,12 @@ static void shutdownsock(DescriptorData &d) {
   descriptor_list.remove(d);
 }
 
-static bool process_output(DescriptorData &d) {
+static bool process_output(DescriptorData& d) {
   // Flush the stringstream buffer into the output queue.
   strstr_to_queue(d);
 
   while (!d.output.empty()) {
-    auto &cur = d.output.front();
+    auto& cur = d.output.front();
     ssize_t cnt = write(d.descriptor, cur.c_str(), cur.size());
     if (cnt < 0) {
       if (errno == EWOULDBLOCK) return true;
@@ -666,7 +664,7 @@ static bool process_output(DescriptorData &d) {
 }
 
 static void force_output() {
-  for (auto &d : descriptor_list)
+  for (auto& d : descriptor_list)
     if (d.connected) (void)process_output(d);
 }
 
@@ -677,49 +675,51 @@ static void make_nonblocking(int s) {
   }
 }
 
-static void welcome_user(DescriptorData &d) {
-  FILE *f;
-  char *p;
+static void welcome_user(DescriptorData& d) {
+  FILE* f;
+  char* p;
 
-  sprintf(buf,
-          "***   Welcome to Galactic Bloodshed %s ***\nPlease enter your "
-          "password:\n",
-          GB_VERSION);
-  queue_string(d, buf);
+  std::string welcome_msg = std::format(
+      "***   Welcome to Galactic Bloodshed {} ***\nPlease enter your "
+      "password:\n",
+      GB_VERSION);
+  queue_string(d, welcome_msg);
 
   if ((f = fopen(WELCOME_FILE, "r")) != nullptr) {
-    while (fgets(buf, sizeof buf, f)) {
-      for (p = buf; *p; p++)
+    char line_buf[2047];
+    while (fgets(line_buf, sizeof line_buf, f)) {
+      for (p = line_buf; *p; p++)
         if (*p == '\n') {
           *p = '\0';
           break;
         }
-      queue_string(d, buf);
+      queue_string(d, line_buf);
       queue_string(d, "\n");
     }
     fclose(f);
   }
 }
 
-static void help_user(GameObj &g) {
-  FILE *f;
-  char *p;
+static void help_user(GameObj& g) {
+  FILE* f;
+  char* p;
 
   if ((f = fopen(HELP_FILE, "r")) != nullptr) {
-    while (fgets(buf, sizeof buf, f)) {
-      for (p = buf; *p; p++)
+    char line_buf[2047];
+    while (fgets(line_buf, sizeof line_buf, f)) {
+      for (p = line_buf; *p; p++)
         if (*p == '\n') {
           *p = '\0';
           break;
         }
-      notify(g.player, g.governor, buf);
+      notify(g.player, g.governor, line_buf);
       notify(g.player, g.governor, "\n");
     }
     fclose(f);
   }
 }
 
-static void goodbye_user(DescriptorData &d) {
+static void goodbye_user(DescriptorData& d) {
   if (d.connected) /* this can happen, especially after updates */
     if (write(d.descriptor, LEAVE_MESSAGE, strlen(LEAVE_MESSAGE)) < 0) {
       perror("write error");
@@ -727,26 +727,27 @@ static void goodbye_user(DescriptorData &d) {
     }
 }
 
-static void save_command(DescriptorData &d, const std::string &command) {
+static void save_command(DescriptorData& d, const std::string& command) {
   add_to_queue(d.input, command);
 }
 
-static int process_input(DescriptorData &d) {
+static int process_input(DescriptorData& d) {
   int got;
-  char *p;
-  char *pend;
-  char *q;
-  char *qend;
+  char* p;
+  char* pend;
+  char* q;
+  char* qend;
+  char input_buf[2047];
 
-  got = read(d.descriptor, buf, sizeof buf);
+  got = read(d.descriptor, input_buf, sizeof input_buf);
   if (got <= 0) return 0;
   if (!d.raw_input) {
-    d.raw_input = (char *)malloc(MAX_COMMAND_LEN * sizeof(char));
+    d.raw_input = (char*)malloc(MAX_COMMAND_LEN * sizeof(char));
     d.raw_input_at = d.raw_input;
   }
   p = d.raw_input_at;
   pend = d.raw_input + MAX_COMMAND_LEN - 1;
-  for (q = buf, qend = buf + got; q < qend; q++) {
+  for (q = input_buf, qend = input_buf + got; q < qend; q++) {
     if (*q == '\n') {
       *p = '\0';
       if (p > d.raw_input) save_command(d, d.raw_input);
@@ -773,9 +774,9 @@ static void process_commands() {
 
   do {
     nprocessed = 0;
-    for (auto &d : descriptor_list) {
+    for (auto& d : descriptor_list) {
       if (d.quota > 0 && !d.input.empty()) {
-        auto &t = d.input.front();
+        auto& t = d.input.front();
         d.quota--;
         nprocessed++;
 
@@ -795,7 +796,7 @@ static void process_commands() {
    they are processed here. Responses are sent back to the client via
    notify.
    */
-static bool do_command(DescriptorData &d, std::string_view comm) {
+static bool do_command(DescriptorData& d, std::string_view comm) {
   /* check to see if there are a few words typed out, usually for the help
    * command */
   auto argv = make_command_t(comm);
@@ -809,10 +810,10 @@ static bool do_command(DescriptorData &d, std::string_view comm) {
   } else if (d.connected && d.god && argv[0] == "emulate") {
     d.player = std::stoi(argv[1]);
     d.governor = std::stoi(argv[2]);
-    sprintf(buf, "Emulating %s \"%s\" [%d,%d]\n", races[d.player - 1].name,
-            races[d.player - 1].governor[d.governor].name, d.player,
-            d.governor);
-    queue_string(d, buf);
+    std::string emulate_msg = std::format(
+        "Emulating {} \"{}\" [{},{}]\n", races[d.player - 1].name,
+        races[d.player - 1].governor[d.governor].name, d.player, d.governor);
+    queue_string(d, emulate_msg);
   } else {
     if (d.connected) {
       /* GB command parser */
@@ -834,7 +835,7 @@ static bool do_command(DescriptorData &d, std::string_view comm) {
   return true;
 }
 
-static void check_connect(DescriptorData &d, std::string_view message) {
+static void check_connect(DescriptorData& d, std::string_view message) {
   auto [race_password, gov_password] = parse_connect(message);
 
   if (EXTERNAL_TRIGGER) {
@@ -856,10 +857,10 @@ static void check_connect(DescriptorData &d, std::string_view message) {
     return;
   }
 
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
   /* check to see if this player is already connected, if so, nuke the
    * descriptor */
-  for (auto &d0 : descriptor_list) {
+  for (auto& d0 : descriptor_list) {
     if (d0.connected && d0.player == Playernum && d0.governor == Governor) {
       queue_string(d, "Connection refused.\n");
       return;
@@ -875,42 +876,45 @@ static void check_connect(DescriptorData &d, std::string_view message) {
   d.player = Playernum;
   d.governor = Governor;
 
-  sprintf(buf, "\n%s \"%s\" [%d,%d] logged on.\n", race.name,
-          race.governor[Governor].name, Playernum, Governor);
-  notify_race(Playernum, buf);
-  sprintf(buf, "You are %s.\n",
-          race.governor[Governor].toggle.invisible ? "invisible" : "visible");
-  notify(Playernum, Governor, buf);
+  std::string login_msg =
+      std::format("\n{} \"{}\" [{},{}] logged on.\n", race.name,
+                  race.governor[Governor].name, Playernum, Governor);
+  notify_race(Playernum, login_msg);
+  std::string visibility_msg = std::format(
+      "You are {}.\n",
+      race.governor[Governor].toggle.invisible ? "invisible" : "visible");
+  notify(Playernum, Governor, visibility_msg);
 
   GB_time({}, d);
-  sprintf(buf, "\nLast login      : %s",
-          ctime(&(race.governor[Governor].login)));
-  notify(Playernum, Governor, buf);
+  std::string last_login_msg = std::format(
+      "\nLast login      : {}", ctime(&(race.governor[Governor].login)));
+  notify(Playernum, Governor, last_login_msg);
   race.governor[Governor].login = time(nullptr);
   putrace(race);
   if (!race.Gov_ship) {
-    sprintf(buf,
-            "You have no Governmental Center.  No action points will be "
-            "produced\nuntil you build one and designate a capital.\n");
-    notify(Playernum, Governor, buf);
+    std::string no_gov_msg =
+        "You have no Governmental Center.  No action points will be "
+        "produced\nuntil you build one and designate a capital.\n";
+    notify(Playernum, Governor, no_gov_msg);
   } else {
-    sprintf(buf, "Government Center #%lu is active.\n", race.Gov_ship);
-    notify(Playernum, Governor, buf);
+    std::string gov_msg =
+        std::format("Government Center #{} is active.\n", race.Gov_ship);
+    notify(Playernum, Governor, gov_msg);
   }
-  sprintf(buf, "     Morale: %ld\n", race.morale);
-  notify(Playernum, Governor, buf);
+  std::string morale_msg = std::format("     Morale: {}\n", race.morale);
+  notify(Playernum, Governor, morale_msg);
   GB::commands::treasury({}, d);
 }
 
-static void do_update(Db &db, bool force) {
+static void do_update(Db& db, bool force) {
   time_t clk = time(nullptr);
   struct stat stbuf;
 
   bool fakeit = (!force && stat(nogofl.data(), &stbuf) >= 0);
 
-  sprintf(buf, "%sDOING UPDATE...\n", ctime(&clk));
+  std::string update_msg = std::format("{}DOING UPDATE...\n", ctime(&clk));
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++) notify_race(i, buf);
+    for (auto i = 1; i <= Num_races; i++) notify_race(i, update_msg);
     force_output();
   }
 
@@ -946,14 +950,14 @@ static void do_update(Db &db, bool force) {
              nsegments_done == segments ? 1 : nsegments_done + 1,
              ctime(&next_segment_time));
   unlink(UPDATEFL);
-  if (FILE *sfile = fopen(UPDATEFL, "w"); sfile != nullptr) {
+  if (FILE* sfile = fopen(UPDATEFL, "w"); sfile != nullptr) {
     std::println(sfile, "{0}", nupdates_done);
     std::println(sfile, "{0}", clk);
     std::println(sfile, "{0}", next_update_time);
     fclose(sfile);
   }
   unlink(SEGMENTFL);
-  if (FILE *sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
+  if (FILE* sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
     std::println(sfile, "{0}", nsegments_done);
     std::println(sfile, "{0}", clk);
     std::println(sfile, "{0}", next_segment_time);
@@ -965,15 +969,16 @@ static void do_update(Db &db, bool force) {
   if (!fakeit) do_turn(db, 1);
   update_flag = false;
   clk = time(nullptr);
-  sprintf(buf, "%sUpdate %d finished\n", ctime(&clk), nupdates_done);
+  std::string finish_msg =
+      std::format("{}Update {} finished\n", ctime(&clk), nupdates_done);
   handle_victory();
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++) notify_race(i, buf);
+    for (auto i = 1; i <= Num_races; i++) notify_race(i, finish_msg);
     force_output();
   }
 }
 
-static void do_segment(Db &db, int override, int segment) {
+static void do_segment(Db& db, int override, int segment) {
   time_t clk = time(nullptr);
   struct stat stbuf;
 
@@ -981,9 +986,9 @@ static void do_segment(Db &db, int override, int segment) {
 
   if (!override && segments <= 1) return;
 
-  sprintf(buf, "%sDOING MOVEMENT...\n", ctime(&clk));
+  std::string movement_msg = std::format("{}DOING MOVEMENT...\n", ctime(&clk));
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++) notify_race(i, buf);
+    for (auto i = 1; i <= Num_races; i++) notify_race(i, movement_msg);
     force_output();
   }
   if (override) {
@@ -1004,7 +1009,7 @@ static void do_segment(Db &db, int override, int segment) {
   if (!fakeit) do_turn(db, 0);
   update_flag = false;
   unlink(SEGMENTFL);
-  if (FILE *sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
+  if (FILE* sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
     fprintf(sfile, "%d\n", nsegments_done);
     fprintf(sfile, "%ld\n", clk);
     fprintf(sfile, "%ld\n", next_segment_time);
@@ -1016,19 +1021,19 @@ static void do_segment(Db &db, int override, int segment) {
   std::print(stderr, "Next Segment {0:2d} : {1}", nsegments_done,
              ctime(&next_segment_time));
   clk = time(nullptr);
-  sprintf(buf, "%sSegment finished\n", ctime(&clk));
+  std::string segment_msg = std::format("{}Segment finished\n", ctime(&clk));
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++) notify_race(i, buf);
+    for (auto i = 1; i <= Num_races; i++) notify_race(i, segment_msg);
     force_output();
   }
 }
 
 static void close_sockets(int sock) {
   /* post message into news file */
-  const char *shutdown_message = "Shutdown ordered by deity - Bye\n";
+  const char* shutdown_message = "Shutdown ordered by deity - Bye\n";
   post(shutdown_message, NewsType::ANNOUNCE);
 
-  for (auto &d : descriptor_list) {
+  for (auto& d : descriptor_list) {
     if (write(d.descriptor, shutdown_message, strlen(shutdown_message)) < 0) {
       perror("write error");
       exit(-1);
@@ -1039,32 +1044,33 @@ static void close_sockets(int sock) {
   close(sock);
 }
 
-static void dump_users(DescriptorData &e) {
+static void dump_users(DescriptorData& e) {
   time_t now;
   int God = 0;
   int coward_count = 0;
 
   (void)time(&now);
-  sprintf(buf, "Current Players: %s", ctime(&now));
-  queue_string(e, buf);
+  std::string players_msg = std::format("Current Players: {}", ctime(&now));
+  queue_string(e, players_msg);
   if (e.player) {
-    auto &r = races[e.player - 1];
+    auto& r = races[e.player - 1];
     God = r.God;
   } else
     return;
 
-  for (auto &d : descriptor_list) {
+  for (auto& d : descriptor_list) {
     if (d.connected && !d.god) {
-      auto &r = races[d.player - 1];
+      auto& r = races[d.player - 1];
       if (!r.governor[d.governor].toggle.invisible || e.player == d.player ||
           God) {
         std::string temp = std::format("\"{}\"", r.governor[d.governor].name);
-        sprintf(buf, "%20.20s %20.20s [%2d,%2d] %4lds idle %-4.4s %s %s\n",
-                r.name, temp.c_str(), d.player, d.governor, now - d.last_time,
-                God ? stars[d.snum].get_name().c_str() : "    ",
-                (r.governor[d.governor].toggle.gag ? "GAG" : "   "),
-                (r.governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
-        queue_string(e, buf);
+        std::string user_info = std::format(
+            "{:20.20s} {:20.20s} [{:2d},{:2d}] {:4d}s idle {:4.4s} {} {}\n",
+            r.name, temp, d.player, d.governor, now - d.last_time,
+            God ? stars[d.snum].get_name().c_str() : "    ",
+            (r.governor[d.governor].toggle.gag ? "GAG" : "   "),
+            (r.governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
+        queue_string(e, user_info);
       } else if (!God) /* deity lurks around */
         coward_count++;
 
@@ -1072,9 +1078,9 @@ static void dump_users(DescriptorData &e) {
     }
   }
   if (SHOW_COWARDS) {
-    sprintf(buf, "And %d coward%s.\n", coward_count,
-            (coward_count == 1) ? "" : "s");
-    queue_string(e, buf);
+    std::string coward_msg = std::format("And {} coward{}.\n", coward_count,
+                                         (coward_count == 1) ? "" : "s");
+    queue_string(e, coward_msg);
   } else {
     queue_string(e, "Finished.\n");
   }
@@ -1093,10 +1099,10 @@ static void dump_users(DescriptorData &e) {
  * @param g The GameObj representing the game state.
  * @param argv The command arguments.
  */
-static void process_command(GameObj &g, const command_t &argv) {
+static void process_command(GameObj& g, const command_t& argv) {
   bool God = races[g.player - 1].God;
 
-  const auto &commands = getCommands();
+  const auto& commands = getCommands();
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
     command->second(argv, g);
@@ -1117,7 +1123,7 @@ static void process_command(GameObj &g, const command_t &argv) {
   g.out << do_prompt(g);
 }
 
-static void load_race_data(Db &db) {
+static void load_race_data(Db& db) {
   Num_races = db.Numraces();
   races.reserve(Num_races);
   for (int i = 1; i <= Num_races; i++) {
@@ -1153,7 +1159,7 @@ static void load_star_data() {
 }
 
 /* report back the update status */
-static void GB_time(const command_t &, GameObj &g) {
+static void GB_time(const command_t&, GameObj& g) {
   time_t clk = time(nullptr);
   g.out << start_buf;
   g.out << update_buf;
@@ -1161,7 +1167,7 @@ static void GB_time(const command_t &, GameObj &g) {
   g.out << std::format("Current time    : {0}", ctime(&clk));
 }
 
-static void GB_schedule(const command_t &, GameObj &g) {
+static void GB_schedule(const command_t&, GameObj& g) {
   time_t clk = time(nullptr);
   g.out << std::format("{0} minute update intervals\n", update_time);
   g.out << std::format("{0} movement segments per update\n", segments);
@@ -1173,24 +1179,25 @@ static void GB_schedule(const command_t &, GameObj &g) {
                        ctime(&next_update_time));
 }
 
-static void help(const command_t &argv, GameObj &g) {
-  FILE *f;
+static void help(const command_t& argv, GameObj& g) {
+  FILE* f;
   char file[1024];
-  char *p;
+  char* p;
 
   if (argv.size() == 1) {
     help_user(g);
   } else {
     sprintf(file, "%s/%s.doc", DOCDIR, argv[1].c_str());
     if ((f = fopen(file, "r")) != nullptr) {
-      while (fgets(buf, sizeof buf, f)) {
-        for (p = buf; *p; p++)
+      char help_buf[2047];
+      while (fgets(help_buf, sizeof help_buf, f)) {
+        for (p = help_buf; *p; p++)
           if (*p == '\n') {
             *p = '\0';
             break;
           }
-        strcat(buf, "\n");
-        notify(g.player, g.governor, buf);
+        strcat(help_buf, "\n");
+        notify(g.player, g.governor, help_buf);
       }
       fclose(f);
       notify(g.player, g.governor, "----\nFinished.\n");
@@ -1202,7 +1209,7 @@ static void help(const command_t &argv, GameObj &g) {
 void compute_power_blocks() {
   /* compute alliance block power */
   Power_blocks.time = time(nullptr);
-  for (auto &i : races) {
+  for (auto& i : races) {
     uint64_t dummy =
         Blocks[i.Playernum - 1].invite & Blocks[i.Playernum - 1].pledge;
     Power_blocks.members[i.Playernum - 1] = 0;
@@ -1216,7 +1223,7 @@ void compute_power_blocks() {
     Power_blocks.systems_owned[i.Playernum - 1] =
         Blocks[i.Playernum - 1].systems_owned;
     Power_blocks.VPs[i.Playernum - 1] = Blocks[i.Playernum - 1].VPs;
-    for (auto &j : races) {
+    for (auto& j : races) {
       if (isset(dummy, j.Playernum)) {
         Power_blocks.members[i.Playernum - 1] += 1;
         Power_blocks.sectors_owned[i.Playernum - 1] +=
@@ -1264,9 +1271,9 @@ static double GetComplexity(const ShipType ship) {
   return complexity(s);
 }
 
-static int ShipCompare(const void *S1, const void *S2) {
-  const auto *s1 = (const ShipType *)S1;
-  const auto *s2 = (const ShipType *)S2;
+static int ShipCompare(const void* S1, const void* S2) {
+  const auto* s1 = (const ShipType*)S1;
+  const auto* s2 = (const ShipType*)S2;
   return (int)(GetComplexity(*s1) - GetComplexity(*s2));
 }
 

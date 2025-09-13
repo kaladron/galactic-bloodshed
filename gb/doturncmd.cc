@@ -10,7 +10,6 @@ import std.compat;
 #include <strings.h>
 
 #include "gb/GB_server.h"
-#include "gb/buffers.h"
 
 module gblib;
 
@@ -681,10 +680,11 @@ static void output_ground_attacks() {
     for (i = 1; i <= Num_races; i++)
       for (j = 1; j <= Num_races; j++)
         if (ground_assaults[i - 1][j - 1][star]) {
-          sprintf(buf, "%s: %s [%d] assaults %s [%d] %d times.\n",
-                  stars[star].get_name().c_str(), races[i - 1].name, i,
-                  races[j - 1].name, j, ground_assaults[i - 1][j - 1][star]);
-          post(buf, NewsType::COMBAT);
+          std::string assault_news = std::format(
+              "{}: {} [{}] assaults {} [{}] {} times.\n",
+              stars[star].get_name(), races[i - 1].name, i, races[j - 1].name,
+              j, ground_assaults[i - 1][j - 1][star]);
+          post(assault_news, NewsType::COMBAT);
           ground_assaults[i - 1][j - 1][star] = 0;
         }
 }

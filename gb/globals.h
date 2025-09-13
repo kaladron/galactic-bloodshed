@@ -11,6 +11,5 @@
 #include "gb/buffers.h"
 
 char buf[2047];
-char long_buf[1024], short_buf[256];
 
 #endif  // GLOBALS_H

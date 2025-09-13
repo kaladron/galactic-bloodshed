@@ -96,6 +96,38 @@ struct meta<Race> {
 };
 }  // namespace glz
 
+// Demonstration function for Race serialization (not called in normal operation)
+// This can be used to test that Race serialization/deserialization works
+[[maybe_unused]] static bool test_race_serialization() {
+  Race test_race{};
+  
+  // Initialize basic fields for testing
+  test_race.Playernum = 1;
+  strcpy(test_race.name, "TestRace");
+  test_race.IQ = 150;
+  test_race.tech = 100.0;
+  test_race.governors = 1;
+  
+  // Initialize one governor
+  strcpy(test_race.governor[0].name, "Governor1");
+  test_race.governor[0].money = 10000;
+  test_race.governor[0].toggle.color = 1;
+  
+  // Test round-trip serialization
+  auto json_result = glz::write_json(test_race);
+  if (!json_result.has_value()) return false;
+  
+  Race deserialized_race{};
+  auto read_result = glz::read_json(deserialized_race, json_result.value());
+  if (read_result) return false;
+  
+  // Verify key fields
+  return (deserialized_race.Playernum == test_race.Playernum &&
+          strcmp(deserialized_race.name, test_race.name) == 0 &&
+          deserialized_race.IQ == test_race.IQ &&
+          deserialized_race.tech == test_race.tech);
+}
+
 static int commoddata, racedata, shdata, stdata;
 
 static void start_bulk_insert();
@@ -1896,4 +1928,22 @@ void close_files() {
   close_file(racedata);
   close_file(shdata);
   close_file(stdata);
+}
+
+// JSON serialization functions for Race (for SQLite migration)
+std::optional<std::string> race_to_json(const Race& race) {
+  auto result = glz::write_json(race);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<Race> race_from_json(const std::string& json_str) {
+  Race race{};
+  auto result = glz::read_json(race, json_str);
+  if (!result) {
+    return race;
+  }
+  return std::nullopt;
 }

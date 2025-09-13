@@ -52,3 +52,7 @@ export void Putblock(block[MAXPLAYERS]);
 export void Getblock(block[MAXPLAYERS]);
 export void open_files();
 export void close_files();
+
+// JSON serialization functions for Race (for SQLite migration)
+export std::optional<std::string> race_to_json(const Race&);
+export std::optional<Race> race_from_json(const std::string&);

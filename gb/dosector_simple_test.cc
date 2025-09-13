@@ -6,8 +6,6 @@ import std.compat;
 #include <cassert>
 #include <cstring>
 
-#include "gb/globals.h"
-
 namespace {
 
 // Helper function to create a test sector

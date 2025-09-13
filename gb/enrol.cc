@@ -15,8 +15,6 @@ import gblib;
 #include <cstdio>
 #include <cstdlib>
 
-#include "gb/globals.h"
-
 struct stype {
   char here;
   char x, y;
@@ -26,7 +24,7 @@ struct stype {
 #define RACIAL_TYPES 10
 
 // TODO(jeffbailey): Copied from map.c, but they've diverged
-static char desshow(const int x, const int y, SectorMap &);
+static char desshow(const int x, const int y, SectorMap&);
 
 /* racial types (10 racial types ) */
 static int Thing[RACIAL_TYPES] = {1, 1, 1, 0, 0, 0, 0, 0, 0, 0};
@@ -110,7 +108,7 @@ int main() {
   }
   printf("There is still space for player %d.\n", Playernum);
 
-  bzero((char *)not_found, sizeof(not_found));
+  bzero((char*)not_found, sizeof(not_found));
   do {
     printf(
         "\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
@@ -291,8 +289,8 @@ int main() {
       "\nChoose a primary sector preference. This race will prefer to "
       "live\non this type of sector.\n");
 
-  for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
-    Sector &sector = sector_wrap;
+  for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
+    Sector& sector = sector_wrap;
     secttypes[sector.condition].count++;
     if (!secttypes[sector.condition].here) {
       secttypes[sector.condition].here = 1;
@@ -324,7 +322,7 @@ int main() {
       found = 1;
   } while (!found);
 
-  auto &sect = smap.get(secttypes[i].x, secttypes[i].y);
+  auto& sect = smap.get(secttypes[i].x, secttypes[i].y);
   race.likesbest = i;
   race.likes[i] = 1.0;
   race.likes[SectorType::SEC_PLATED] = 1.0;
@@ -467,9 +465,9 @@ int main() {
 }
 
 static char desshow(const int x, const int y,
-                    SectorMap &smap) /* copied from map.c */
+                    SectorMap& smap) /* copied from map.c */
 {
-  const auto &s = smap.get(x, y);
+  const auto& s = smap.get(x, y);
 
   switch (s.condition) {
     case SectorType::SEC_WASTED:

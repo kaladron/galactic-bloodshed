@@ -17,7 +17,6 @@ import std.compat;
 
 #include "gb/creator/makestar.h"
 #include "gb/files.h"
-#include "gb/globals.h"
 
 int autoname_star = -1;
 int autoname_plan = -1;
@@ -31,9 +30,9 @@ static int occupied[100][100];
 static int planetlesschance = 0;
 
 namespace {
-void InitFile(const std::string &path, void *buffer = nullptr, size_t len = 0) {
-  const char *filename = path.c_str();
-  FILE *f = fopen(filename, "w+");
+void InitFile(const std::string& path, void* buffer = nullptr, size_t len = 0) {
+  const char* filename = path.c_str();
+  FILE* f = fopen(filename, "w+");
   if (buffer != nullptr && len > 0) {
     if (f == nullptr) {
       std::println("Unable to open \"{}\".", filename);
@@ -45,10 +44,10 @@ void InitFile(const std::string &path, void *buffer = nullptr, size_t len = 0) {
   fclose(f);
 }
 
-void EmptyFile(const std::string &path) { InitFile(path); }
+void EmptyFile(const std::string& path) { InitFile(path); }
 };  // namespace
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   int c;
   int i;
 
@@ -209,13 +208,13 @@ int main(int argc, char *argv[]) {
 
   {
     struct power p[MAXPLAYERS];
-    bzero((char *)p, sizeof(p));
+    bzero((char*)p, sizeof(p));
     putpower(p);
   }
 
   {
     struct block p[MAXPLAYERS];
-    bzero((char *)p, sizeof(p));
+    bzero((char*)p, sizeof(p));
     InitFile(BLOCKDATAFL, p, sizeof(p));
   }
 
@@ -243,7 +242,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void place_star(star_struct &star) {
+void place_star(star_struct& star) {
   int found = 0;
   int i;
   int j;

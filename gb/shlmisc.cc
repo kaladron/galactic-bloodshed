@@ -9,11 +9,9 @@ module;
 
 import std.compat;
 
-#include "gb/buffers.h"
-
 module gblib;
 
-bool authorized(const governor_t Governor, const Ship &ship) {
+bool authorized(const governor_t Governor, const Ship& ship) {
   return (!Governor || ship.governor == Governor);
 }
 
@@ -35,7 +33,7 @@ bool authorized(const governor_t Governor, const Ship &ship) {
  * \param p String that might contain ship number
  * \return Ship number at the start of the ship list.
  */
-shipnum_t start_shiplist(GameObj &g, const std::string_view p) {
+shipnum_t start_shiplist(GameObj& g, const std::string_view p) {
   // If a ship number is given, return that.
   auto s = string_to_shipnum(p);
   if (s) {
@@ -61,7 +59,7 @@ shipnum_t start_shiplist(GameObj &g, const std::string_view p) {
 }
 
 /* Step through linked list at current player scope */
-shipnum_t do_shiplist(Ship **s, shipnum_t *nextshipno) {
+shipnum_t do_shiplist(Ship** s, shipnum_t* nextshipno) {
   shipnum_t shipno;
   if (!(shipno = *nextshipno)) return 0;
 
@@ -77,7 +75,7 @@ shipnum_t do_shiplist(Ship **s, shipnum_t *nextshipno) {
  * See start_shiplist's comment for more details.
  */
 bool in_list(const player_t playernum, const std::string_view list,
-             const Ship &s, shipnum_t *nextshipno) {
+             const Ship& s, shipnum_t* nextshipno) {
   if (s.owner != playernum || !s.alive) return false;
 
   if (list.length() == 0) return false;
@@ -88,20 +86,21 @@ bool in_list(const player_t playernum, const std::string_view list,
   }
 
   // Match either the ship letter or * for wildcard.
-  for (const auto &p : list)
+  for (const auto& p : list)
     if (p == Shipltrs[s.type] || p == '*') return true;
   return false;
 }
 
 void DontOwnErr(int Playernum, int Governor, shipnum_t shipno) {
-  sprintf(buf, "You don't own ship #%lu.\n", shipno);
-  notify(Playernum, Governor, buf);
+  std::string error_msg = std::format("You don't own ship #{}.\n", shipno);
+  notify(Playernum, Governor, error_msg);
 }
 
 bool enufAP(player_t Playernum, governor_t Governor, ap_t have, ap_t needed) {
   if (have < needed) {
-    sprintf(buf, "You don't have %d action points there.\n", needed);
-    notify(Playernum, Governor, buf);
+    std::string ap_msg =
+        std::format("You don't have {} action points there.\n", needed);
+    notify(Playernum, Governor, ap_msg);
     return false;
   }
   return true;
@@ -113,8 +112,8 @@ bool enufAP(player_t Playernum, governor_t Governor, ap_t have, ap_t needed) {
  * \param govpass Password for the governor
  * \return player and governor numbers, or 0 and 0 if not found
  */
-std::tuple<player_t, governor_t> getracenum(const std::string &racepass,
-                                            const std::string &govpass) {
+std::tuple<player_t, governor_t> getracenum(const std::string& racepass,
+                                            const std::string& govpass) {
   for (auto race : races) {
     if (racepass == race.password) {
       for (governor_t j = 0; j <= MAXGOVERNORS; j++) {
@@ -129,7 +128,7 @@ std::tuple<player_t, governor_t> getracenum(const std::string &racepass,
 }
 
 /* returns player # from string containing that players name or #. */
-player_t get_player(const std::string &name) {
+player_t get_player(const std::string& name) {
   player_t rnum = 0;
 
   if (name.empty()) return 0;
@@ -138,13 +137,13 @@ player_t get_player(const std::string &name) {
     if ((rnum = std::stoi(name)) < 1 || rnum > Num_races) return 0;
     return rnum;
   }
-  for (const auto &race : races) {
+  for (const auto& race : races) {
     if (name == race.name) return race.Playernum;
   }
   return 0;
 }
 
-void allocateAPs(const command_t &argv, GameObj &g) {
+void allocateAPs(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): ap_t APcount = 0;
@@ -152,10 +151,9 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   ap_t alloc;
 
   if (g.level == ScopeLevel::LEVEL_UNIV) {
-    sprintf(
-        buf,
-        "Change scope to the system you which to transfer global APs to.\n");
-    notify(Playernum, Governor, buf);
+    std::string scope_msg =
+        "Change scope to the system you which to transfer global APs to.\n";
+    notify(Playernum, Governor, scope_msg);
     return;
   }
   alloc = std::stoi(argv[1]);
@@ -169,8 +167,9 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   maxalloc = std::min(Sdata.AP[Playernum - 1],
                       LIMIT_APs - stars[g.snum].AP(Playernum - 1));
   if (alloc > maxalloc) {
-    sprintf(buf, "Illegal value (%d) - maximum = %d\n", alloc, maxalloc);
-    notify(Playernum, Governor, buf);
+    std::string max_msg =
+        std::format("Illegal value ({}) - maximum = {}\n", alloc, maxalloc);
+    notify(Playernum, Governor, max_msg);
     return;
   }
   Sdata.AP[Playernum - 1] -= alloc;
@@ -179,11 +178,11 @@ void allocateAPs(const command_t &argv, GameObj &g) {
   stars[g.snum].AP(Playernum - 1) =
       std::min(LIMIT_APs, stars[g.snum].AP(Playernum - 1) + alloc);
   putstar(stars[g.snum], g.snum);
-  sprintf(buf, "Allocated\n");
-  notify(Playernum, Governor, buf);
+  std::string allocated_msg = "Allocated\n";
+  notify(Playernum, Governor, allocated_msg);
 }
 
-void deductAPs(const GameObj &g, ap_t APs, ScopeLevel level) {
+void deductAPs(const GameObj& g, ap_t APs, ScopeLevel level) {
   if (APs == 0) return;
 
   if (level == ScopeLevel::LEVEL_UNIV) {
@@ -194,7 +193,7 @@ void deductAPs(const GameObj &g, ap_t APs, ScopeLevel level) {
   }
 }
 
-void deductAPs(const GameObj &g, ap_t APs, starnum_t snum) {
+void deductAPs(const GameObj& g, ap_t APs, starnum_t snum) {
   if (APs == 0) return;
 
   stars[snum] = getstar(snum);
@@ -203,19 +202,19 @@ void deductAPs(const GameObj &g, ap_t APs, starnum_t snum) {
     stars[snum].AP(g.player - 1) -= APs;
   else {
     stars[snum].AP(g.player - 1) = 0;
-    sprintf(buf,
-            "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
-            "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n");
-    notify(g.player, g.governor, buf);
+    std::string cheater_msg =
+        "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
+        "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n";
+    notify(g.player, g.governor, cheater_msg);
   }
 
   putstar(stars[snum], snum);
 }
 
-void get4args(const char *s, int *xl, int *xh, int *yl, int *yh) {
+void get4args(const char* s, int* xl, int* xh, int* yl, int* yh) {
   char s1[17];
   char s2[17];
-  const char *p = s;
+  const char* p = s;
 
   sscanf(p, "%[^,]", s1);
   while ((*p != ':') && (*p != ',')) p++;

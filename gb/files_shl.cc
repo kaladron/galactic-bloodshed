@@ -48,6 +48,52 @@ struct meta<Ship> {
              "race", &T::race, "xpos", &T::xpos, "ypos", &T::ypos, "mass",
              &T::mass, "type", &T::type, "speed", &T::speed);
 };
+
+// Glaze reflection for toggletype struct
+template <>
+struct meta<toggletype> {
+  using T = toggletype;
+  static constexpr auto value = object(
+      "invisible", &T::invisible, "standby", &T::standby, "color", &T::color,
+      "gag", &T::gag, "double_digits", &T::double_digits, "inverse", &T::inverse,
+      "geography", &T::geography, "autoload", &T::autoload, "highlight", &T::highlight,
+      "compat", &T::compat);
+};
+
+// Glaze reflection for Race::gov struct
+template <>
+struct meta<Race::gov> {
+  using T = Race::gov;
+  static constexpr auto value = object(
+      "name", &T::name, "password", &T::password, "active", &T::active,
+      "deflevel", &T::deflevel, "defsystem", &T::defsystem, "defplanetnum", &T::defplanetnum,
+      "homelevel", &T::homelevel, "homesystem", &T::homesystem, "homeplanetnum", &T::homeplanetnum,
+      "newspos", &T::newspos, "toggle", &T::toggle, "money", &T::money,
+      "income", &T::income, "maintain", &T::maintain, "cost_tech", &T::cost_tech,
+      "cost_market", &T::cost_market, "profit_market", &T::profit_market, "login", &T::login);
+};
+
+// Glaze reflection for Race class
+template <>
+struct meta<Race> {
+  using T = Race;
+  static constexpr auto value = object(
+      "Playernum", &T::Playernum, "name", &T::name, "password", &T::password,
+      "info", &T::info, "motto", &T::motto, "absorb", &T::absorb,
+      "collective_iq", &T::collective_iq, "pods", &T::pods, "fighters", &T::fighters,
+      "IQ", &T::IQ, "IQ_limit", &T::IQ_limit, "number_sexes", &T::number_sexes,
+      "fertilize", &T::fertilize, "adventurism", &T::adventurism, "birthrate", &T::birthrate,
+      "mass", &T::mass, "metabolism", &T::metabolism, "conditions", &T::conditions,
+      "likes", &T::likes, "likesbest", &T::likesbest, "dissolved", &T::dissolved,
+      "God", &T::God, "Guest", &T::Guest, "Metamorph", &T::Metamorph,
+      "monitor", &T::monitor, "translate", &T::translate, "atwar", &T::atwar,
+      "allied", &T::allied, "Gov_ship", &T::Gov_ship, "morale", &T::morale,
+      "points", &T::points, "controlled_planets", &T::controlled_planets,
+      "victory_turns", &T::victory_turns, "turn", &T::turn, "tech", &T::tech,
+      "discoveries", &T::discoveries, "victory_score", &T::victory_score,
+      "votes", &T::votes, "planet_points", &T::planet_points, "governors", &T::governors,
+      "governor", &T::governor);
+};
 }  // namespace glz
 
 static int commoddata, racedata, shdata, stdata;
@@ -869,6 +915,9 @@ void putsdata(stardata* S) {
 
 void Sql::putrace(const Race& r) { ::putrace(r); }
 void putrace(const Race& r) {
+  // Create a JSON string of the Race using Glaze (demo / no behavior change)
+  [[maybe_unused]] auto _glz_race_ec = glz::write_json(r);
+
   Filewrite(racedata, (const char*)&r, sizeof(Race),
             (r.Playernum - 1) * sizeof(Race));
 }

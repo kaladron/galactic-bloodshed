@@ -5,7 +5,7 @@ export module gblib:race;
 import :types;
 import :tweakables;
 
-using toggletype = struct {
+export using toggletype = struct {
   char invisible;
   char standby;
   char color; /* 1 if you are using a color client */

@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-module;
-
-#include <glaze/glaze.hpp>
-
 import gblib;
 import std.compat;
 
@@ -116,13 +112,14 @@ int main() {
   test_race.governor[0].login = std::time(nullptr);
   
   // Test serialization to JSON
-  auto json_result = glz::write_json(test_race);
+  auto json_result = race_to_json(test_race);
   assert(json_result.has_value());
   
   // Test deserialization from JSON
-  Race deserialized_race{};
-  auto read_result = glz::read_json(deserialized_race, json_result.value());
-  assert(!read_result);
+  auto deserialized_race_opt = race_from_json(json_result.value());
+  assert(deserialized_race_opt.has_value());
+  
+  Race deserialized_race = deserialized_race_opt.value();
   
   // Verify key fields
   assert(deserialized_race.Playernum == test_race.Playernum);

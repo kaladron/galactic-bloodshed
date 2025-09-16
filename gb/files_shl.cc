@@ -408,7 +408,7 @@ void getsdata(stardata* S) {
 
 Race Sql::getrace(player_t rnum) { return ::getrace(rnum); };
 Race getrace(player_t rnum) {
-  // Try to read from SQLite database first
+  // Read from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
   const char* sql = "SELECT race_data FROM tbl_race WHERE player_id = ?1";
@@ -436,9 +436,8 @@ Race getrace(player_t rnum) {
     sqlite3_finalize(stmt);
   }
   
-  // Fallback to file-based storage for backward compatibility
-  Race r;
-  Fileread(racedata, (char*)&r, sizeof(Race), (rnum - 1) * sizeof(Race));
+  // Return empty race if not found
+  Race r{};
   return r;
 }
 
@@ -1001,10 +1000,6 @@ void putrace(const Race& r) {
   }
   
   sqlite3_finalize(stmt);
-  
-  // Also maintain backward compatibility by writing to file for now
-  Filewrite(racedata, (const char*)&r, sizeof(Race),
-            (r.Playernum - 1) * sizeof(Race));
 }
 
 void Sql::putstar(const Star& star, starnum_t snum) { ::putstar(star, snum); }

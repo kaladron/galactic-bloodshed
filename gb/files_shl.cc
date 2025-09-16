@@ -354,6 +354,10 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
     planet_from INT,
     star_to INT,
     planet_to INT);
+
+  CREATE TABLE tbl_race(
+    player_id INT PRIMARY KEY NOT NULL,
+    race_data TEXT NOT NULL);
 )";
   // TODO(jeffbailey): tbl_commod could probably use more indeces.
   char* err_msg = nullptr;
@@ -404,6 +408,31 @@ void getsdata(stardata* S) {
 
 Race Sql::getrace(player_t rnum) { return ::getrace(rnum); };
 Race getrace(player_t rnum) {
+  // Try to read from SQLite database first
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql = "SELECT race_data FROM tbl_race WHERE player_id = ?1";
+  
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, rnum);
+  
+  int result = sqlite3_step(stmt);
+  if (result == SQLITE_ROW) {
+    // Data found in SQLite, deserialize from JSON
+    const char* json_data = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+    sqlite3_finalize(stmt);
+    
+    auto race_opt = race_from_json(std::string(json_data));
+    if (race_opt.has_value()) {
+      return race_opt.value();
+    } else {
+      fprintf(stderr, "Error: Failed to deserialize Race from JSON for player %d\n", rnum);
+    }
+  } else {
+    sqlite3_finalize(stmt);
+  }
+  
+  // Fallback to file-based storage for backward compatibility
   Race r;
   Fileread(racedata, (char*)&r, sizeof(Race), (rnum - 1) * sizeof(Race));
   return r;
@@ -947,9 +976,29 @@ void putsdata(stardata* S) {
 
 void Sql::putrace(const Race& r) { ::putrace(r); }
 void putrace(const Race& r) {
-  // Create a JSON string of the Race using Glaze (demo / no behavior change)
-  [[maybe_unused]] auto _glz_race_ec = glz::write_json(r);
+  // Serialize Race to JSON using existing function
+  auto json_result = race_to_json(r);
+  if (!json_result.has_value()) {
+    fprintf(stderr, "Error: Failed to serialize Race to JSON\n");
+    return;
+  }
 
+  // Store in SQLite database as JSON
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql = "REPLACE INTO tbl_race (player_id, race_data) VALUES (?1, ?2)";
+  
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, r.Playernum);
+  sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
+  
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "SQLite error in putrace: %s\n", sqlite3_errmsg(dbconn));
+  }
+  
+  sqlite3_finalize(stmt);
+  
+  // Also maintain backward compatibility by writing to file for now
   Filewrite(racedata, (const char*)&r, sizeof(Race),
             (r.Playernum - 1) * sizeof(Race));
 }

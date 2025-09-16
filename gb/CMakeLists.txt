@@ -232,4 +232,8 @@ add_executable(race_serialization_test race_serialization_test.cc)
 target_link_libraries(race_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_race_serialization_test COMMAND race_serialization_test)
 
+add_executable(race_sqlite_test race_sqlite_test.cc)
+target_link_libraries(race_sqlite_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_race_sqlite_test COMMAND race_sqlite_test)
+
 doxygen_add_docs(gb-docs)

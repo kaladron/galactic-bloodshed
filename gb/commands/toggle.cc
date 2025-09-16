@@ -11,7 +11,7 @@ import std;
 module commands;
 
 namespace {
-void tog(GameObj &g, char *op, const char *name) {
+void tog(GameObj &g, bool *op, const char *name) {
   *op = !(*op);
   g.out << std::format("{0} is now {1}\n", name, *op ? "on" : "off");
 }

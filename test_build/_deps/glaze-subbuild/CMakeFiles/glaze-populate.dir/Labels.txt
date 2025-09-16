@@ -1,0 +1,14 @@
+# Target labels
+ glaze-populate
+# Source files and their labels
+/home/runner/work/galactic-bloodshed/galactic-bloodshed/test_build/_deps/glaze-subbuild/CMakeFiles/glaze-populate
+/home/runner/work/galactic-bloodshed/galactic-bloodshed/test_build/_deps/glaze-subbuild/CMakeFiles/glaze-populate.rule
+/home/runner/work/galactic-bloodshed/galactic-bloodshed/test_build/_deps/glaze-subbuild/CMakeFiles/glaze-populate-complete.rule
+/home/runner/work/galactic-bloodshed/galactic-bloodshed/test_build/_deps/glaze-subbuild/glaze-populate-prefix/src/glaze-populate-stamp/glaze-populate-build.rule
+/home/runner/work/galactic-bloodshed/galactic-bloodshed/test_build/_deps/glaze-subbuild/glaze-populate-prefix/src/glaze-populate-stamp/glaze-populate-configure.rule
+/home/runner/work/galactic-bloodshed/galactic-bloodshed/test_build/_deps/glaze-subbuild/glaze-populate-prefix/src/glaze-populate-stamp/glaze-populate-download.rule
+/home/runner/work/galactic-bloodshed/galactic-bloodshed/test_build/_deps/glaze-subbuild/glaze-populate-prefix/src/glaze-populate-stamp/glaze-populate-install.rule
+/home/runner/work/galactic-bloodshed/galactic-bloodshed/test_build/_deps/glaze-subbuild/glaze-populate-prefix/src/glaze-populate-stamp/glaze-populate-mkdir.rule
+/home/runner/work/galactic-bloodshed/galactic-bloodshed/test_build/_deps/glaze-subbuild/glaze-populate-prefix/src/glaze-populate-stamp/glaze-populate-patch.rule
+/home/runner/work/galactic-bloodshed/galactic-bloodshed/test_build/_deps/glaze-subbuild/glaze-populate-prefix/src/glaze-populate-stamp/glaze-populate-test.rule
+/home/runner/work/galactic-bloodshed/galactic-bloodshed/test_build/_deps/glaze-subbuild/glaze-populate-prefix/src/glaze-populate-stamp/glaze-populate-update.rule

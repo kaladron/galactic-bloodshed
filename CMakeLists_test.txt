@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+# 
+# Simple CMakeLists.txt for building the glaze char bug test
+# This is designed to be standalone and use C++23 as requested
+
+cmake_minimum_required(VERSION 3.25)
+
+project(glaze_char_bug_test LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
+
+# Fetch glaze library
+include(FetchContent)
+FetchContent_Declare(
+  glaze
+  GIT_REPOSITORY https://github.com/stephenberry/glaze.git
+  GIT_TAG main
+)
+FetchContent_MakeAvailable(glaze)
+
+# Create test executable
+add_executable(glaze_char_bug_test glaze_char_bug_test.cpp)
+target_link_libraries(glaze_char_bug_test PRIVATE glaze::glaze)
+
+# Optional: make it runnable with 'make test'
+enable_testing()
+add_test(NAME glaze_char_test COMMAND glaze_char_bug_test)

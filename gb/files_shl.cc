@@ -422,11 +422,15 @@ Race getrace(player_t rnum) {
     const char* json_data = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
     sqlite3_finalize(stmt);
     
-    auto race_opt = race_from_json(std::string(json_data));
-    if (race_opt.has_value()) {
-      return race_opt.value();
+    if (json_data != nullptr) {
+      auto race_opt = race_from_json(std::string(json_data));
+      if (race_opt.has_value()) {
+        return race_opt.value();
+      } else {
+        fprintf(stderr, "Error: Failed to deserialize Race from JSON for player %d\n", rnum);
+      }
     } else {
-      fprintf(stderr, "Error: Failed to deserialize Race from JSON for player %d\n", rnum);
+      fprintf(stderr, "Error: NULL JSON data retrieved for player %d\n", rnum);
     }
   } else {
     sqlite3_finalize(stmt);

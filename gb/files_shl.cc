@@ -111,7 +111,7 @@ struct meta<Race> {
   // Initialize one governor
   strcpy(test_race.governor[0].name, "Governor1");
   test_race.governor[0].money = 10000;
-  test_race.governor[0].toggle.color = 1;
+  test_race.governor[0].toggle.color = true;
   
   // Test round-trip serialization
   auto json_result = glz::write_json(test_race);

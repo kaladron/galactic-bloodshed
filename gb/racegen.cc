@@ -320,9 +320,9 @@ struct x race_info, cost_info, last;
 
 int npoints = STARTING_POINTS;
 int last_npoints = STARTING_POINTS;
-int altered = 0;     /* 1 iff race has been altered since last saved */
-int changed = 1;     /* 1 iff race has been changed since last printed */
-int please_quit = 0; /* 1 iff you want to exit ASAP. */
+bool altered = false;     /* true iff race has been altered since last saved */
+bool changed = true;     /* true iff race has been changed since last printed */
+bool please_quit = false; /* true iff you want to exit ASAP. */
 
 /**************
  * Price function for racegen.  Finds the cost of `race', and returns it.
@@ -619,7 +619,7 @@ static int critique_modification() {
   if (nerrors)
     bcopy(&last, &race_info, sizeof(struct x));
   else
-    changed = altered = 1;
+    changed = altered = true;
   race_info.status = (nerrors == 0) ? STATUS_BALANCED : STATUS_UNBALANCED;
   return nerrors;
 }
@@ -914,8 +914,8 @@ static void load(int argc, const char *argv[]) {
   } else {
     printf("Loaded race from file \"%s\".\n", c);
     strcpy(race_info.filename, c);
-    altered = 0;
-    changed = 1;
+    altered = false;
+    changed = true;
   }
 }
 
@@ -1162,7 +1162,7 @@ static void save(int argc, const char *argv[]) {
     strcpy(race_info.filename, SAVETO);
   if (print_to_filename(race_info.filename, 0)) {
     printf("Saved race to file \"%s\".\n", race_info.filename);
-    altered = 0;
+    altered = false;
   }
 }
 
@@ -1263,17 +1263,17 @@ static void quit(int, const char **) {
     if (isserver) close(fd);
     exit(0);
   }
-  please_quit = 1;
+  please_quit = true;
   if (altered) {
     if (!isserver) {
       i = Dialogue("Save this race before quitting?", "yes", "no", "abort", 0);
       if (i == 0)
         save(1, nullptr);
       else if (i == 2)
-        please_quit = 0;
+        please_quit = false;
     } else {
       i = Dialogue("Are you sure?", "yes", "no", "abort", 0);
-      if (i == 1) please_quit = 0;
+      if (i == 1) please_quit = false;
     }
   }
 }
@@ -1342,7 +1342,7 @@ void modify_print_loop(int) {
 
     if (changed) {
       print_to_file(stdout, 1);
-      changed = 0;
+      changed = false;
     }
 #ifdef PRIV
     if (isserver)

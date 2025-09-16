@@ -29,3 +29,6 @@ doxy
 .vscode
 workdir
 .cache
+test_build/
+CMakeCache.txt
+CMakeFiles/

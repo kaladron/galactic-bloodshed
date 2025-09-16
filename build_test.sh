@@ -8,13 +8,15 @@ set -e
 
 echo "Building glaze char bug test..."
 
-# Create build directory
-mkdir -p test_build
-cd test_build
+# Create temporary build directory
+TEMP_DIR=$(mktemp -d)
+cd "$TEMP_DIR"
 
-# Copy CMakeLists.txt for the test
-cp ../CMakeLists_test.txt CMakeLists.txt
-cp ../glaze_char_bug_test.cpp .
+echo "Building in temporary directory: $TEMP_DIR"
+
+# Copy test files
+cp "$OLDPWD/CMakeLists_test.txt" CMakeLists.txt
+cp "$OLDPWD/glaze_char_bug_test.cpp" .
 
 # Configure and build
 cmake .
@@ -28,3 +30,4 @@ echo "=================================="
 
 echo "=================================="
 echo "Test execution complete."
+echo "Temporary build directory: $TEMP_DIR"

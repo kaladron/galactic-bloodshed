@@ -19,15 +19,17 @@ When using glaze's reflection-based JSON serialization, fields of type `char` an
 ```bash
 ./build_test.sh
 ```
+This will create a temporary build directory, build the test, run it, and show you the temporary directory location.
 
-### Option 2: Manual build
+### Option 2: Manual build in temporary directory
 ```bash
-# Create build directory
-mkdir test_build && cd test_build
+# Create temporary build directory
+TEMP_DIR=$(mktemp -d)
+cd "$TEMP_DIR"
 
 # Copy files
-cp ../CMakeLists_test.txt CMakeLists.txt
-cp ../glaze_char_bug_test.cpp .
+cp /path/to/CMakeLists_test.txt CMakeLists.txt
+cp /path/to/glaze_char_bug_test.cpp .
 
 # Build
 cmake .

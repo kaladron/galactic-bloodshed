@@ -121,10 +121,10 @@ found_planet:
   }
 
   // Assign racial characteristics
-  race->absorb = race_info.attr[ABSORB];
-  race->collective_iq = race_info.attr[COL_IQ];
+  race->absorb = (race_info.attr[ABSORB] != 0.0);
+  race->collective_iq = (race_info.attr[COL_IQ] != 0.0);
   race->Metamorph = (race_info.race_type == R_METAMORPH);
-  race->pods = race_info.attr[PODS];
+  race->pods = (race_info.attr[PODS] != 0.0);
 
   race->fighters = race_info.attr[FIGHT];
   if (race_info.attr[COL_IQ] == 1.0)

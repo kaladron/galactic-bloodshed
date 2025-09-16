@@ -10,7 +10,7 @@ std::vector<Victory> create_victory_list() {
   std::vector<Victory> victories;
   for (const auto& race : races) {
     Victory vic{.racenum = race.Playernum,
-                .name = std::string(race.name),
+                .name = race.name,
                 .tech = race.tech,
                 .Thing = race.Metamorph,
                 .IQ = race.IQ,

@@ -117,7 +117,7 @@ std::tuple<player_t, governor_t> getracenum(const std::string& racepass,
   for (auto race : races) {
     if (racepass == race.password) {
       for (governor_t j = 0; j <= MAXGOVERNORS; j++) {
-        if (*race.governor[j].password &&
+        if (!race.governor[j].password.empty() &&
             govpass == race.governor[j].password) {
           return {race.Playernum, j};
         }

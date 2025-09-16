@@ -90,14 +90,13 @@ int enroll_valid_race() {
 
 found_planet:
   std::cout << " found!\n";
-  auto race = new Race;
-  bzero(race, sizeof(Race));
+  auto race = new Race{};
 
   race->Playernum = Playernum;
   race->God = (race_info.priv_type == P_GOD);
   race->Guest = (race_info.priv_type == P_GUEST);
-  strcpy(race->name, race_info.name);
-  strcpy(race->password, race_info.password);
+  race->name = race_info.name;
+  race->password = race_info.password;
 
   strcpy(race->governor[0].password, "0");
   race->governor[0].homelevel = race->governor[0].deflevel =

@@ -260,10 +260,10 @@ int main() {
     race.fighters = Fighters(idx);
     if (Thing[idx]) {
       race.IQ = 0;
-      race.Metamorph = race.absorb = race.collective_iq = race.pods = 1;
+      race.Metamorph = race.absorb = race.collective_iq = race.pods = true;
     } else {
       race.IQ = Intelligence(idx);
-      race.Metamorph = race.absorb = race.collective_iq = race.pods = 0;
+      race.Metamorph = race.absorb = race.collective_iq = race.pods = false;
     }
     race.adventurism = Adventurism(idx);
     race.number_sexes = Sexes(idx);

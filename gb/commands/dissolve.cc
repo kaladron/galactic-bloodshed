@@ -107,7 +107,7 @@ void dissolve(const command_t &argv, GameObj &g) {
   }
 
   auto &race = races[Playernum - 1];
-  race.dissolved = 1;
+  race.dissolved = true;
   putrace(race);
 
   post(std::format("{} [{}] has dissolved.\n", race.name, Playernum),

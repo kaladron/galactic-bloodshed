@@ -56,7 +56,7 @@ void do_revoke(Race race, const governor_t src_gov, const governor_t tgt_gov) {
 
   /* And last but not least, flag the governor as inactive.... */
 
-  race.governor[src_gov].active = 0;
+  race.governor[src_gov].active = false;
   strcpy(race.governor[src_gov].password, "");
   strcpy(race.governor[src_gov].name, "");
   outmsg =
@@ -109,7 +109,7 @@ void governors(const command_t &argv, GameObj &g) {
       g.out << "That governor is already appointed.\n";
       return;
     }
-    race.governor[gov].active = 1;
+    race.governor[gov].active = true;
     race.governor[gov].homelevel = race.governor[gov].deflevel =
         race.governor[0].deflevel;
     race.governor[gov].homesystem = race.governor[gov].defsystem =

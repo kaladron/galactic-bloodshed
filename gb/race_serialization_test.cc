@@ -15,9 +15,9 @@ int main() {
   strcpy(test_race.info, "Test race information");
   strcpy(test_race.motto, "Test motto");
   
-  test_race.absorb = 1;
-  test_race.collective_iq = 0;
-  test_race.pods = 1;
+  test_race.absorb = true;
+  test_race.collective_iq = false;
+  test_race.pods = true;
   test_race.fighters = 100;
   test_race.IQ = 150;
   test_race.IQ_limit = 200;
@@ -40,11 +40,11 @@ int main() {
   }
   
   test_race.likesbest = SectorType::SEC_LAND;
-  test_race.dissolved = 0;
-  test_race.God = 0;
-  test_race.Guest = 0;
-  test_race.Metamorph = 0;
-  test_race.monitor = 0;
+  test_race.dissolved = false;
+  test_race.God = false;
+  test_race.Guest = false;
+  test_race.Metamorph = false;
+  test_race.monitor = false;
   
   // Initialize translate array
   for (int i = 0; i < MAXPLAYERS; i++) {
@@ -79,7 +79,7 @@ int main() {
   // Initialize one governor for testing
   strcpy(test_race.governor[0].name, "Governor1");
   strcpy(test_race.governor[0].password, "govpass1");
-  test_race.governor[0].active = 1;
+  test_race.governor[0].active = true;
   test_race.governor[0].deflevel = ScopeLevel::LEVEL_UNIV;
   test_race.governor[0].defsystem = 0;
   test_race.governor[0].defplanetnum = 0;
@@ -92,16 +92,16 @@ int main() {
   }
   
   // Initialize toggle structure
-  test_race.governor[0].toggle.invisible = 0;
-  test_race.governor[0].toggle.standby = 0;
-  test_race.governor[0].toggle.color = 1;
-  test_race.governor[0].toggle.gag = 0;
-  test_race.governor[0].toggle.double_digits = 1;
-  test_race.governor[0].toggle.inverse = 0;
-  test_race.governor[0].toggle.geography = 1;
-  test_race.governor[0].toggle.autoload = 1;
+  test_race.governor[0].toggle.invisible = false;
+  test_race.governor[0].toggle.standby = false;
+  test_race.governor[0].toggle.color = true;
+  test_race.governor[0].toggle.gag = false;
+  test_race.governor[0].toggle.double_digits = true;
+  test_race.governor[0].toggle.inverse = false;
+  test_race.governor[0].toggle.geography = true;
+  test_race.governor[0].toggle.autoload = true;
   test_race.governor[0].toggle.highlight = 0;
-  test_race.governor[0].toggle.compat = 1;
+  test_race.governor[0].toggle.compat = true;
   
   test_race.governor[0].money = 10000;
   test_race.governor[0].income = 500;

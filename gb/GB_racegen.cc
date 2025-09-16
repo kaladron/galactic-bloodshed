@@ -106,9 +106,9 @@ found_planet:
   race->governor[0].homeplanetnum = race->governor[0].defplanetnum = pnum;
   /* display options */
   race->governor[0].toggle.highlight = Playernum;
-  race->governor[0].toggle.inverse = 1;
-  race->governor[0].toggle.color = 0;
-  race->governor[0].active = 1;
+  race->governor[0].toggle.inverse = true;
+  race->governor[0].toggle.color = false;
+  race->governor[0].active = true;
 
   for (auto i = 0; i <= OTHER; i++) race->conditions[i] = planet.conditions[i];
 

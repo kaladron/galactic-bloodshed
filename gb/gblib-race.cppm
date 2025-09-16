@@ -6,16 +6,16 @@ import :types;
 import :tweakables;
 
 export using toggletype = struct {
-  char invisible;
-  char standby;
-  char color; /* 1 if you are using a color client */
-  char gag;
-  char double_digits;
-  char inverse;
-  char geography;
-  char autoload;
+  bool invisible;
+  bool standby;
+  bool color; /* true if you are using a color client */
+  bool gag;
+  bool double_digits;
+  bool inverse;
+  bool geography;
+  bool autoload;
   player_t highlight; /* which race to highlight */
-  char compat;
+  bool compat;
 };
 
 export class Race {
@@ -25,9 +25,9 @@ export class Race {
   char password[RNAMESIZE];
   char info[PERSONALSIZE];     /* personal information */
   char motto[MOTTOSIZE];       /* for a cute message */
-  unsigned char absorb;        /* Does this race absorb enemies in combat? */
-  unsigned char collective_iq; /* Does this race have collective IQ? */
-  unsigned char pods;          /* Can this race use pods? */
+  bool absorb;        /* Does this race absorb enemies in combat? */
+  bool collective_iq; /* Does this race have collective IQ? */
+  bool pods;          /* Can this race use pods? */
   unsigned char fighters;      /* Fight rating of this race. */
   unsigned char IQ;
   unsigned char IQ_limit; /* Asymtotic IQ for collective IQ races. */
@@ -42,11 +42,11 @@ export class Race {
   double likes[SectorType::SEC_WASTED + 1]; /* Sector condition compats. */
   unsigned char likesbest; /* 100% compat sector condition for this race. */
 
-  char dissolved; /* Player has quit. */
-  char God;       /* Player is a God race. */
-  char Guest;     /* Player is a guest race. */
-  char Metamorph; /* Player is a morph; (for printing). */
-  char monitor;
+  bool dissolved; /* Player has quit. */
+  bool God;       /* Player is a God race. */
+  bool Guest;     /* Player is a guest race. */
+  bool Metamorph; /* Player is a morph; (for printing). */
+  bool monitor;
   /* God is monitering this race. */  // TODO(jeffbailey): Remove this.
 
   char translate[MAXPLAYERS]; /* translation mod for each player */
@@ -72,7 +72,7 @@ export class Race {
   struct gov {
     char name[RNAMESIZE];
     char password[RNAMESIZE];
-    unsigned char active;
+    bool active;
     ScopeLevel deflevel;
     unsigned char defsystem;
     unsigned char defplanetnum; /* current default */

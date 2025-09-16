@@ -49,16 +49,16 @@ void bless(const command_t &argv, GameObj &g) {
     race.morale += amount;
     warn(who, 0, std::format("Deity gave you {} morale.\n", amount));
   } else if (argv[2] == "pods") {
-    race.pods = 1;
+    race.pods = true;
     warn(who, 0, "Deity gave you pod ability.\n");
   } else if (argv[2] == "nopods") {
-    race.pods = 0;
+    race.pods = false;
     warn(who, 0, "Deity took away pod ability.\n");
   } else if (argv[2] == "collectiveiq") {
-    race.collective_iq = 1;
+    race.collective_iq = true;
     warn(who, 0, "Deity gave you collective intelligence.\n");
   } else if (argv[2] == "nocollectiveiq") {
-    race.collective_iq = 0;
+    race.collective_iq = false;
     warn(who, 0, "Deity took away collective intelligence.\n");
   } else if (argv[2] == "maxiq") {
     race.IQ_limit = std::stoi(argv[3]);
@@ -95,14 +95,14 @@ void bless(const command_t &argv, GameObj &g) {
     race.tech += (double)amount;
     warn(who, 0, std::format("Deity gave you {} technology.\n", amount));
   } else if (argv[2] == "guest") {
-    race.Guest = 1;
+    race.Guest = true;
     warn(who, 0, "Deity turned you into a guest race.\n");
   } else if (argv[2] == "god") {
-    race.God = 1;
+    race.God = true;
     warn(who, 0, "Deity turned you into a deity race.\n");
   } else if (argv[2] == "mortal") {
-    race.God = 0;
-    race.Guest = 0;
+    race.God = false;
+    race.Guest = false;
     warn(who, 0, "Deity turned you into a mortal race.\n");
     /* sector preferences */
   } else if (argv[2] == "water") {

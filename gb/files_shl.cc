@@ -420,10 +420,13 @@ Race getrace(player_t rnum) {
   if (result == SQLITE_ROW) {
     // Data found in SQLite, deserialize from JSON
     const char* json_data = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-    sqlite3_finalize(stmt);
     
     if (json_data != nullptr) {
-      auto race_opt = race_from_json(std::string(json_data));
+      // Copy the JSON data before finalizing the statement
+      std::string json_string(json_data);
+      sqlite3_finalize(stmt);
+      
+      auto race_opt = race_from_json(json_string);
       if (race_opt.has_value()) {
         return race_opt.value();
       } else {
@@ -431,6 +434,7 @@ Race getrace(player_t rnum) {
       }
     } else {
       fprintf(stderr, "Error: NULL JSON data retrieved for player %d\n", rnum);
+      sqlite3_finalize(stmt);
     }
   } else {
     sqlite3_finalize(stmt);

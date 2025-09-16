@@ -69,7 +69,6 @@ int main() {
     
     if (!json_result) {
         std::cout << "ERROR: Failed to serialize to JSON\n";
-        std::cout << "Error: " << glz::format_error(json_result.error(), json_result.error()) << "\n";
         return 1;
     }
 
@@ -83,7 +82,6 @@ int main() {
     
     if (read_result) {
         std::cout << "ERROR: Failed to deserialize from JSON\n";
-        std::cout << "Error: " << glz::format_error(read_result, json_str) << "\n";
         return 1;
     }
 

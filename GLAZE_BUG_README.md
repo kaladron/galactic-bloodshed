@@ -23,7 +23,7 @@ This will create a temporary build directory, build the test, run it, and show y
 
 ### Option 2: Manual build in temporary directory
 ```bash
-# Create temporary build directory
+# Create temporary directory for source files
 TEMP_DIR=$(mktemp -d)
 cd "$TEMP_DIR"
 
@@ -31,8 +31,9 @@ cd "$TEMP_DIR"
 cp /path/to/CMakeLists_test.txt CMakeLists.txt
 cp /path/to/glaze_char_bug_test.cpp .
 
-# Build
-cmake .
+# Create build directory and configure
+mkdir build && cd build
+cmake ..
 make
 
 # Run

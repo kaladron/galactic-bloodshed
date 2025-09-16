@@ -197,8 +197,7 @@ int main() {
 
   } while (!found);
 
-  Race race;
-  bzero(&race, sizeof(Race));
+  Race race{};
 
   printf("\n\tDeity/Guest/Normal (d/g/n) ?");
   c = std::getchar();

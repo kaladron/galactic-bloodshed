@@ -236,4 +236,7 @@ add_executable(race_sqlite_test race_sqlite_test.cc)
 target_link_libraries(race_sqlite_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_race_sqlite_test COMMAND race_sqlite_test)
 
+add_executable(race_integration_demo race_integration_demo.cc)
+target_link_libraries(race_integration_demo PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+
 doxygen_add_docs(gb-docs)

@@ -17,9 +17,6 @@ int main() {
   // Initialize database tables - this will create the tbl_race table
   initsqldata();
   
-  // Also call open_files to initialize file descriptors for fallback
-  open_files();
-  
   Race test_race{};
   
   // Initialize some basic fields for testing
@@ -31,10 +28,10 @@ int main() {
   test_race.tech = 100.0;
   test_race.governors = 1;
   
-  // Test putrace - this should store in SQLite as JSON
+  // Test putrace - stores in SQLite as JSON
   putrace(test_race);
   
-  // Test getrace - this should read from SQLite
+  // Test getrace - reads from SQLite
   Race retrieved_race = getrace(42);
   
   // Verify key fields
@@ -45,7 +42,6 @@ int main() {
   assert(retrieved_race.governors == test_race.governors);
   
   // Clean up
-  close_files();
   sqlite3_close(dbconn);
   
   std::printf("Race SQLite storage test passed!\n");

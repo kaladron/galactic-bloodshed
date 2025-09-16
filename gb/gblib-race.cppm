@@ -4,6 +4,7 @@ export module gblib:race;
 
 import :types;
 import :tweakables;
+import std;
 
 export using toggletype = struct {
   bool invisible;
@@ -21,10 +22,10 @@ export using toggletype = struct {
 export class Race {
  public:
   player_t Playernum;
-  char name[RNAMESIZE]; /* Racial name. */
-  char password[RNAMESIZE];
-  char info[PERSONALSIZE];     /* personal information */
-  char motto[MOTTOSIZE];       /* for a cute message */
+  std::string name; /* Racial name. */
+  std::string password;
+  std::string info;     /* personal information */
+  std::string motto;       /* for a cute message */
   bool absorb;        /* Does this race absorb enemies in combat? */
   bool collective_iq; /* Does this race have collective IQ? */
   bool pods;          /* Can this race use pods? */
@@ -70,8 +71,8 @@ export class Race {
 
   char governors;
   struct gov {
-    char name[RNAMESIZE];
-    char password[RNAMESIZE];
+    std::string name;
+    std::string password;
     bool active;
     ScopeLevel deflevel;
     unsigned char defsystem;

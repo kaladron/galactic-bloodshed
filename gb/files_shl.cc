@@ -123,7 +123,7 @@ struct meta<Race> {
   
   // Verify key fields
   return (deserialized_race.Playernum == test_race.Playernum &&
-          strcmp(deserialized_race.name, test_race.name) == 0 &&
+          deserialized_race.name == test_race.name &&
           deserialized_race.IQ == test_race.IQ &&
           deserialized_race.tech == test_race.tech);
 }

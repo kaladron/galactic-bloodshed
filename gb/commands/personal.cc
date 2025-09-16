@@ -22,7 +22,7 @@ void personal(const command_t &argv, GameObj &g) {
     return;
   }
   auto race = races[Playernum - 1];
-  strncpy(race.info, message.c_str(), PERSONALSIZE - 1);
+  race.info = message;
   putrace(race);
 }
 }  // namespace GB::commands

@@ -28,47 +28,75 @@ struct glz::meta<TestData> {
 };
 
 int main() {
-    TestData original{65, 200, 42};  // char=65('A'), uchar=200, int=42
+    // Test case 1: Normal values
+    std::cout << "=== Test 1: Normal values ===" << std::endl;
+    TestData test1{65, 200, 42};  // char=65('A'), uchar=200, int=42
     
-    std::cout << "Original: char=" << (int)original.char_val 
-              << " uchar=" << (int)original.uchar_val 
-              << " int=" << original.int_val << std::endl;
+    std::cout << "Original: char=" << (int)test1.char_val 
+              << " uchar=" << (int)test1.uchar_val 
+              << " int=" << test1.int_val << std::endl;
     
-    // Serialize to JSON
-    auto json = glz::write_json(original);
-    if (!json) {
+    auto json1 = glz::write_json(test1);
+    if (!json1) {
         std::cout << "Serialization failed!" << std::endl;
         return 1;
     }
+    std::cout << "JSON: " << json1.value() << std::endl;
     
-    std::cout << "JSON: " << json.value() << std::endl;
-    
-    // Deserialize from JSON
-    TestData deserialized{};
-    auto error = glz::read_json(deserialized, json.value());
-    if (error) {
+    TestData deserialized1{};
+    auto error1 = glz::read_json(deserialized1, json1.value());
+    if (error1) {
         std::cout << "Deserialization failed!" << std::endl;
         return 1;
     }
     
-    std::cout << "Deserialized: char=" << (int)deserialized.char_val 
-              << " uchar=" << (int)deserialized.uchar_val 
-              << " int=" << deserialized.int_val << std::endl;
+    std::cout << "Deserialized: char=" << (int)deserialized1.char_val 
+              << " uchar=" << (int)deserialized1.uchar_val 
+              << " int=" << deserialized1.int_val << std::endl;
     
-    // Check if values match
-    bool char_ok = (deserialized.char_val == original.char_val);
-    bool uchar_ok = (deserialized.uchar_val == original.uchar_val);
-    bool int_ok = (deserialized.int_val == original.int_val);
+    bool test1_ok = (deserialized1.char_val == test1.char_val && 
+                     deserialized1.uchar_val == test1.uchar_val &&
+                     deserialized1.int_val == test1.int_val);
+    std::cout << "Test 1 result: " << (test1_ok ? "PASS" : "FAIL") << std::endl << std::endl;
     
-    std::cout << "Results: char=" << (char_ok ? "OK" : "FAIL")
-              << " uchar=" << (uchar_ok ? "OK" : "FAIL") 
-              << " int=" << (int_ok ? "OK" : "FAIL") << std::endl;
+    // Test case 2: Zero values (potential special case)
+    std::cout << "=== Test 2: Zero values ===" << std::endl;
+    TestData test2{0, 0, 0};  // char=0, uchar=0, int=0
     
-    if (!char_ok || !uchar_ok) {
-        std::cout << "BUG CONFIRMED: char/unsigned char fields failed!" << std::endl;
+    std::cout << "Original: char=" << (int)test2.char_val 
+              << " uchar=" << (int)test2.uchar_val 
+              << " int=" << test2.int_val << std::endl;
+    
+    auto json2 = glz::write_json(test2);
+    if (!json2) {
+        std::cout << "Serialization failed!" << std::endl;
+        return 1;
+    }
+    std::cout << "JSON: " << json2.value() << std::endl;
+    
+    TestData deserialized2{};
+    auto error2 = glz::read_json(deserialized2, json2.value());
+    if (error2) {
+        std::cout << "Deserialization failed!" << std::endl;
         return 1;
     }
     
-    std::cout << "All tests passed - bug may be fixed!" << std::endl;
-    return 0;
+    std::cout << "Deserialized: char=" << (int)deserialized2.char_val 
+              << " uchar=" << (int)deserialized2.uchar_val 
+              << " int=" << deserialized2.int_val << std::endl;
+    
+    bool test2_ok = (deserialized2.char_val == test2.char_val && 
+                     deserialized2.uchar_val == test2.uchar_val &&
+                     deserialized2.int_val == test2.int_val);
+    std::cout << "Test 2 result: " << (test2_ok ? "PASS" : "FAIL") << std::endl << std::endl;
+    
+    // Overall results
+    std::cout << "=== Overall Results ===" << std::endl;
+    if (test1_ok && test2_ok) {
+        std::cout << "All tests passed - bug may be fixed!" << std::endl;
+        return 0;
+    } else {
+        std::cout << "BUG CONFIRMED: char/unsigned char serialization issues detected!" << std::endl;
+        return 1;
+    }
 }

@@ -48,93 +48,189 @@ int main() {
     std::cout << "Testing glaze serialization with char and unsigned char fields\n";
     std::cout << "=============================================================\n\n";
 
-    // Create test object with known values
-    TestStruct original;
-    original.id = 42;
-    original.char_field = 65;  // Should serialize as 65 (ASCII 'A')
-    original.uchar_field = 200; // Should serialize as 200
-    original.bool_field = true;
-    original.int_field = 12345;
+    bool all_tests_passed = true;
+
+    // Test 1: Normal values
+    std::cout << "=== TEST 1: Normal values ===\n";
+    TestStruct test1;
+    test1.id = 42;
+    test1.char_field = 65;  // Should serialize as 65 (ASCII 'A')
+    test1.uchar_field = 200; // Should serialize as 200
+    test1.bool_field = true;
+    test1.int_field = 12345;
 
     std::cout << "Original values:\n";
-    std::cout << "  id: " << original.id << "\n";
-    std::cout << "  char_field: " << static_cast<int>(original.char_field) << " (should be 65)\n";
-    std::cout << "  uchar_field: " << static_cast<int>(original.uchar_field) << " (should be 200)\n";
-    std::cout << "  bool_field: " << original.bool_field << "\n";
-    std::cout << "  int_field: " << original.int_field << "\n\n";
+    std::cout << "  id: " << test1.id << "\n";
+    std::cout << "  char_field: " << static_cast<int>(test1.char_field) << " (should be 65)\n";
+    std::cout << "  uchar_field: " << static_cast<int>(test1.uchar_field) << " (should be 200)\n";
+    std::cout << "  bool_field: " << test1.bool_field << "\n";
+    std::cout << "  int_field: " << test1.int_field << "\n\n";
 
     // Test serialization to JSON
     std::cout << "Attempting to serialize to JSON...\n";
-    auto json_result = glz::write_json(original);
+    auto json_result1 = glz::write_json(test1);
     
-    if (!json_result) {
+    if (!json_result1) {
         std::cout << "ERROR: Failed to serialize to JSON\n";
         return 1;
     }
 
-    std::string json_str = json_result.value();
-    std::cout << "JSON output: " << json_str << "\n\n";
+    std::string json_str1 = json_result1.value();
+    std::cout << "JSON output: " << json_str1 << "\n\n";
 
     // Test deserialization from JSON
     std::cout << "Attempting to deserialize from JSON...\n";
-    TestStruct deserialized{};
-    auto read_result = glz::read_json(deserialized, json_str);
+    TestStruct deserialized1{};
+    auto read_result1 = glz::read_json(deserialized1, json_str1);
     
-    if (read_result) {
+    if (read_result1) {
         std::cout << "ERROR: Failed to deserialize from JSON\n";
         return 1;
     }
 
     std::cout << "Deserialized values:\n";
-    std::cout << "  id: " << deserialized.id << "\n";
-    std::cout << "  char_field: " << static_cast<int>(deserialized.char_field) << " (expected 65)\n";
-    std::cout << "  uchar_field: " << static_cast<int>(deserialized.uchar_field) << " (expected 200)\n";
-    std::cout << "  bool_field: " << deserialized.bool_field << "\n";
-    std::cout << "  int_field: " << deserialized.int_field << "\n\n";
+    std::cout << "  id: " << deserialized1.id << "\n";
+    std::cout << "  char_field: " << static_cast<int>(deserialized1.char_field) << " (expected 65)\n";
+    std::cout << "  uchar_field: " << static_cast<int>(deserialized1.uchar_field) << " (expected 200)\n";
+    std::cout << "  bool_field: " << deserialized1.bool_field << "\n";
+    std::cout << "  int_field: " << deserialized1.int_field << "\n\n";
 
-    // Verify round-trip accuracy
-    std::cout << "Checking round-trip accuracy...\n";
-    bool success = true;
+    // Verify round-trip accuracy for test 1
+    std::cout << "Checking round-trip accuracy for test 1...\n";
+    bool test1_success = true;
 
-    if (deserialized.id != original.id) {
+    if (deserialized1.id != test1.id) {
         std::cout << "FAIL: id mismatch\n";
-        success = false;
+        test1_success = false;
     }
 
-    if (deserialized.char_field != original.char_field) {
+    if (deserialized1.char_field != test1.char_field) {
         std::cout << "FAIL: char_field mismatch - expected " 
-                  << static_cast<int>(original.char_field) 
-                  << ", got " << static_cast<int>(deserialized.char_field) << "\n";
-        success = false;
+                  << static_cast<int>(test1.char_field) 
+                  << ", got " << static_cast<int>(deserialized1.char_field) << "\n";
+        test1_success = false;
     }
 
-    if (deserialized.uchar_field != original.uchar_field) {
+    if (deserialized1.uchar_field != test1.uchar_field) {
         std::cout << "FAIL: uchar_field mismatch - expected " 
-                  << static_cast<int>(original.uchar_field)
-                  << ", got " << static_cast<int>(deserialized.uchar_field) << "\n";
-        success = false;
+                  << static_cast<int>(test1.uchar_field)
+                  << ", got " << static_cast<int>(deserialized1.uchar_field) << "\n";
+        test1_success = false;
     }
 
-    if (deserialized.bool_field != original.bool_field) {
+    if (deserialized1.bool_field != test1.bool_field) {
         std::cout << "FAIL: bool_field mismatch\n";
-        success = false;
+        test1_success = false;
     }
 
-    if (deserialized.int_field != original.int_field) {
+    if (deserialized1.int_field != test1.int_field) {
         std::cout << "FAIL: int_field mismatch\n";
-        success = false;
+        test1_success = false;
     }
 
-    if (success) {
-        std::cout << "SUCCESS: All fields serialized and deserialized correctly!\n";
-        std::cout << "\nNote: If you see this success message, the bug may have been fixed\n";
+    if (test1_success) {
+        std::cout << "Test 1 PASSED: All fields serialized and deserialized correctly!\n\n";
+    } else {
+        std::cout << "Test 1 FAILED: Some fields failed round-trip serialization\n\n";
+        all_tests_passed = false;
+    }
+
+    // Test 2: Zero values (potential special case)
+    std::cout << "=== TEST 2: Zero values ===\n";
+    TestStruct test2;
+    test2.id = 0;
+    test2.char_field = 0;   // Zero char value
+    test2.uchar_field = 0;  // Zero unsigned char value
+    test2.bool_field = false;
+    test2.int_field = 0;
+
+    std::cout << "Original values:\n";
+    std::cout << "  id: " << test2.id << "\n";
+    std::cout << "  char_field: " << static_cast<int>(test2.char_field) << " (should be 0)\n";
+    std::cout << "  uchar_field: " << static_cast<int>(test2.uchar_field) << " (should be 0)\n";
+    std::cout << "  bool_field: " << test2.bool_field << "\n";
+    std::cout << "  int_field: " << test2.int_field << "\n\n";
+
+    // Test serialization to JSON
+    std::cout << "Attempting to serialize to JSON...\n";
+    auto json_result2 = glz::write_json(test2);
+    
+    if (!json_result2) {
+        std::cout << "ERROR: Failed to serialize to JSON\n";
+        return 1;
+    }
+
+    std::string json_str2 = json_result2.value();
+    std::cout << "JSON output: " << json_str2 << "\n\n";
+
+    // Test deserialization from JSON
+    std::cout << "Attempting to deserialize from JSON...\n";
+    TestStruct deserialized2{};
+    auto read_result2 = glz::read_json(deserialized2, json_str2);
+    
+    if (read_result2) {
+        std::cout << "ERROR: Failed to deserialize from JSON\n";
+        return 1;
+    }
+
+    std::cout << "Deserialized values:\n";
+    std::cout << "  id: " << deserialized2.id << "\n";
+    std::cout << "  char_field: " << static_cast<int>(deserialized2.char_field) << " (expected 0)\n";
+    std::cout << "  uchar_field: " << static_cast<int>(deserialized2.uchar_field) << " (expected 0)\n";
+    std::cout << "  bool_field: " << deserialized2.bool_field << "\n";
+    std::cout << "  int_field: " << deserialized2.int_field << "\n\n";
+
+    // Verify round-trip accuracy for test 2
+    std::cout << "Checking round-trip accuracy for test 2...\n";
+    bool test2_success = true;
+
+    if (deserialized2.id != test2.id) {
+        std::cout << "FAIL: id mismatch\n";
+        test2_success = false;
+    }
+
+    if (deserialized2.char_field != test2.char_field) {
+        std::cout << "FAIL: char_field mismatch - expected " 
+                  << static_cast<int>(test2.char_field) 
+                  << ", got " << static_cast<int>(deserialized2.char_field) << "\n";
+        test2_success = false;
+    }
+
+    if (deserialized2.uchar_field != test2.uchar_field) {
+        std::cout << "FAIL: uchar_field mismatch - expected " 
+                  << static_cast<int>(test2.uchar_field)
+                  << ", got " << static_cast<int>(deserialized2.uchar_field) << "\n";
+        test2_success = false;
+    }
+
+    if (deserialized2.bool_field != test2.bool_field) {
+        std::cout << "FAIL: bool_field mismatch\n";
+        test2_success = false;
+    }
+
+    if (deserialized2.int_field != test2.int_field) {
+        std::cout << "FAIL: int_field mismatch\n";
+        test2_success = false;
+    }
+
+    if (test2_success) {
+        std::cout << "Test 2 PASSED: All fields serialized and deserialized correctly!\n\n";
+    } else {
+        std::cout << "Test 2 FAILED: Some fields failed round-trip serialization\n\n";
+        all_tests_passed = false;
+    }
+
+    // Final results
+    std::cout << "=============================================================\n";
+    if (all_tests_passed) {
+        std::cout << "SUCCESS: All tests passed! The bug may have been fixed\n";
         std::cout << "in your version of glaze, or the bug may manifest differently.\n";
     } else {
         std::cout << "BUG REPRODUCED: char and/or unsigned char fields failed round-trip serialization\n";
+        std::cout << "in at least one test case. Use this code to report the bug to glaze maintainers.\n";
     }
 
-    std::cout << "\n=============================================================\n";
-    std::cout << "Test complete. Use this code to report the bug to glaze maintainers.\n";
+    std::cout << "\nTest complete. Use this code to report the bug to glaze maintainers.\n";
 
-    return success ? 0 : 1;
+    return all_tests_passed ? 0 : 1;
 }

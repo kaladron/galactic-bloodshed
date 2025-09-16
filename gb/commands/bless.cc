@@ -42,7 +42,7 @@ void bless(const command_t &argv, GameObj &g) {
     race.governor[0].money += amount;
     warn(who, 0, std::format("Deity gave you {} money.\n", amount));
   } else if (argv[2] == "password") {
-    strcpy(race.password, argv[3].c_str());
+    race.password = argv[3];
     warn(who, 0,
          std::format("Deity changed your race password to `{}`\n", argv[3]));
   } else if (argv[2] == "morale") {

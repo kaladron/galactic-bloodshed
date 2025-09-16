@@ -125,13 +125,13 @@ void name(const command_t &argv, GameObj &g) {
       g.out << "You are not authorized to do this.\n";
       return;
     }
-    strncpy(race.name, namebuf.c_str(), RNAMESIZE - 1);
+    race.name = namebuf;
     notify(Playernum, Governor,
            std::format("Name changed to `{}'.\n", race.name));
     putrace(race);
   } else if (argv[1] == "governor") {
     auto &race = races[Playernum - 1];
-    strncpy(race.governor[Governor].name, namebuf.c_str(), RNAMESIZE - 1);
+    race.governor[Governor].name = namebuf;
     notify(
         Playernum, Governor,
         std::format("Name changed to `{}'.\n", race.governor[Governor].name));

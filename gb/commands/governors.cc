@@ -57,8 +57,8 @@ void do_revoke(Race race, const governor_t src_gov, const governor_t tgt_gov) {
   /* And last but not least, flag the governor as inactive.... */
 
   race.governor[src_gov].active = false;
-  strcpy(race.governor[src_gov].password, "");
-  strcpy(race.governor[src_gov].name, "");
+  race.governor[src_gov].password = "";
+  race.governor[src_gov].name = "";
   outmsg =
       std::format("\n*** Governor [{0},{1}]'s powers have been REVOKED ***\n",
                   race.Playernum, src_gov);
@@ -119,7 +119,7 @@ void governors(const command_t &argv, GameObj &g) {
     race.governor[gov].money = 0;
     race.governor[gov].toggle.highlight = Playernum;
     race.governor[gov].toggle.inverse = 1;
-    strncpy(race.governor[gov].password, argv[2].c_str(), RNAMESIZE - 1);
+    race.governor[gov].password = argv[2];
     putrace(race);
     g.out << "Governor activated.\n";
     return;
@@ -141,7 +141,7 @@ void governors(const command_t &argv, GameObj &g) {
       g.out << "You can't give stuff to that governor!\n";
       return;
     }
-    if (!strcmp(race.governor[gov].password, argv[2].c_str())) {
+    if (race.governor[gov].password != argv[2]) {
       g.out << "Incorrect password.\n";
       return;
     }
@@ -166,7 +166,7 @@ void governors(const command_t &argv, GameObj &g) {
       g.out << "That governor is inactive.\n";
       return;
     }
-    strncpy(race.governor[gov].password, argv[3].c_str(), RNAMESIZE - 1);
+    race.governor[gov].password = argv[3];
     putrace(race);
     g.out << "Password changed.\n";
     return;

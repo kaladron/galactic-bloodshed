@@ -10,10 +10,10 @@ int main() {
   
   // Initialize some basic fields for testing
   test_race.Playernum = 1;
-  strcpy(test_race.name, "TestRace");
-  strcpy(test_race.password, "testpass");
-  strcpy(test_race.info, "Test race information");
-  strcpy(test_race.motto, "Test motto");
+  test_race.name = "TestRace";
+  test_race.password = "testpass";
+  test_race.info = "Test race information";
+  test_race.motto = "Test motto";
   
   test_race.absorb = true;
   test_race.collective_iq = false;
@@ -77,8 +77,8 @@ int main() {
   test_race.governors = 2;
   
   // Initialize one governor for testing
-  strcpy(test_race.governor[0].name, "Governor1");
-  strcpy(test_race.governor[0].password, "govpass1");
+  test_race.governor[0].name = "Governor1";
+  test_race.governor[0].password = "govpass1";
   test_race.governor[0].active = true;
   test_race.governor[0].deflevel = ScopeLevel::LEVEL_UNIV;
   test_race.governor[0].defsystem = 0;
@@ -123,7 +123,7 @@ int main() {
   
   // Verify key fields
   assert(deserialized_race.Playernum == test_race.Playernum);
-  assert(strcmp(deserialized_race.name, test_race.name) == 0);
+  assert(deserialized_race.name == test_race.name);
   assert(deserialized_race.IQ == test_race.IQ);
   assert(deserialized_race.tech == test_race.tech);
   assert(deserialized_race.governors == test_race.governors);
@@ -135,7 +135,7 @@ int main() {
   assert(deserialized_race.discoveries[0] == test_race.discoveries[0]);
   
   // Verify governor field
-  assert(strcmp(deserialized_race.governor[0].name, test_race.governor[0].name) == 0);
+  assert(deserialized_race.governor[0].name == test_race.governor[0].name);
   assert(deserialized_race.governor[0].money == test_race.governor[0].money);
   assert(deserialized_race.governor[0].toggle.color == test_race.governor[0].toggle.color);
   

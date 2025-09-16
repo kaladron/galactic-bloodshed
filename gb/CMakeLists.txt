@@ -20,7 +20,7 @@ set(DOCDIR
 add_definitions(-DDOCDIR="${DOCDIR}")
 
 # Require dot, treat the other components as optional
-find_package(Doxygen REQUIRED dot)
+find_package(Doxygen OPTIONAL_COMPONENTS dot)
 
 # Bring in
 include(FetchContent)
@@ -236,4 +236,7 @@ add_executable(race_sqlite_test race_sqlite_test.cc)
 target_link_libraries(race_sqlite_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_race_sqlite_test COMMAND race_sqlite_test)
 
-doxygen_add_docs(gb-docs)
+# Only add docs if Doxygen is found
+if(DOXYGEN_FOUND)
+  doxygen_add_docs(gb-docs)
+endif()

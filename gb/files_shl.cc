@@ -1756,10 +1756,24 @@ void putcommod(const Commod& c, int commodnum) {
 }
 
 player_t Sql::Numraces() {
-  struct stat buffer;
-
-  fstat(racedata, &buffer);
-  return ((int)(buffer.st_size / sizeof(Race)));
+  const char* tail = nullptr;
+  sqlite3_stmt* stmt;
+  
+  const auto sql = "SELECT COUNT(*) FROM tbl_race;";
+  
+  int err = sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  if (err != SQLITE_OK) {
+    fprintf(stderr, "SQLite error in Numraces prepare: %s\n", sqlite3_errmsg(dbconn));
+    return 0;
+  }
+  
+  player_t count = 0;
+  if (sqlite3_step(stmt) == SQLITE_ROW) {
+    count = sqlite3_column_int(stmt, 0);
+  }
+  
+  sqlite3_finalize(stmt);
+  return count;
 }
 
 shipnum_t Numships() /* return number of ships */

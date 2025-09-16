@@ -205,7 +205,7 @@ int main() {
 
   race.God = (c == 'd');
   race.Guest = (c == 'g');
-  strcpy(race.name, "Unknown");
+  race.name = "Unknown";
 
   // TODO(jeffbailey): What initializes the rest of the governors?
   race.governor[0].money = 0;
@@ -219,16 +219,20 @@ int main() {
   race.governor[0].toggle.color = 0;
   race.governor[0].active = 1;
   printf("Enter the password for this race:");
-  if (scanf("%s", race.password) < 0) {
+  char temp_password[256];
+  if (scanf("%255s", temp_password) < 0) {
     perror("Cannot read input");
     exit(-1);
   }
+  race.password = temp_password;
   std::getchar();
   printf("Enter the password for this leader:");
-  if (scanf("%s", race.governor[0].password) < 0) {
+  char temp_gov_password[256];
+  if (scanf("%255s", temp_gov_password) < 0) {
     perror("Cannot read input");
     exit(-1);
   }
+  race.governor[0].password = temp_gov_password;
   std::getchar();
 
   /* make conditions preferred by your people set to (more or less)

@@ -98,7 +98,7 @@ found_planet:
   race->name = race_info.name;
   race->password = race_info.password;
 
-  strcpy(race->governor[0].password, "0");
+  race->governor[0].password = "0";
   race->governor[0].homelevel = race->governor[0].deflevel =
       ScopeLevel::LEVEL_PLAN;
   race->governor[0].homesystem = race->governor[0].defsystem = star;

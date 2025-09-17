@@ -53,24 +53,26 @@ struct meta<Ship> {
 template <>
 struct meta<toggletype> {
   using T = toggletype;
-  static constexpr auto value = object(
-      "invisible", &T::invisible, "standby", &T::standby, "color", &T::color,
-      "gag", &T::gag, "double_digits", &T::double_digits, "inverse", &T::inverse,
-      "geography", &T::geography, "autoload", &T::autoload, "highlight", &T::highlight,
-      "compat", &T::compat);
+  static constexpr auto value =
+      object("invisible", &T::invisible, "standby", &T::standby, "color",
+             &T::color, "gag", &T::gag, "double_digits", &T::double_digits,
+             "inverse", &T::inverse, "geography", &T::geography, "autoload",
+             &T::autoload, "highlight", &T::highlight, "compat", &T::compat);
 };
 
 // Glaze reflection for Race::gov struct
 template <>
 struct meta<Race::gov> {
   using T = Race::gov;
-  static constexpr auto value = object(
-      "name", &T::name, "password", &T::password, "active", &T::active,
-      "deflevel", &T::deflevel, "defsystem", &T::defsystem, "defplanetnum", &T::defplanetnum,
-      "homelevel", &T::homelevel, "homesystem", &T::homesystem, "homeplanetnum", &T::homeplanetnum,
-      "newspos", &T::newspos, "toggle", &T::toggle, "money", &T::money,
-      "income", &T::income, "maintain", &T::maintain, "cost_tech", &T::cost_tech,
-      "cost_market", &T::cost_market, "profit_market", &T::profit_market, "login", &T::login);
+  static constexpr auto value =
+      object("name", &T::name, "password", &T::password, "active", &T::active,
+             "deflevel", &T::deflevel, "defsystem", &T::defsystem,
+             "defplanetnum", &T::defplanetnum, "homelevel", &T::homelevel,
+             "homesystem", &T::homesystem, "homeplanetnum", &T::homeplanetnum,
+             "newspos", &T::newspos, "toggle", &T::toggle, "money", &T::money,
+             "income", &T::income, "maintain", &T::maintain, "cost_tech",
+             &T::cost_tech, "cost_market", &T::cost_market, "profit_market",
+             &T::profit_market, "login", &T::login);
 };
 
 // Glaze reflection for Race class
@@ -80,47 +82,49 @@ struct meta<Race> {
   static constexpr auto value = object(
       "Playernum", &T::Playernum, "name", &T::name, "password", &T::password,
       "info", &T::info, "motto", &T::motto, "absorb", &T::absorb,
-      "collective_iq", &T::collective_iq, "pods", &T::pods, "fighters", &T::fighters,
-      "IQ", &T::IQ, "IQ_limit", &T::IQ_limit, "number_sexes", &T::number_sexes,
-      "fertilize", &T::fertilize, "adventurism", &T::adventurism, "birthrate", &T::birthrate,
-      "mass", &T::mass, "metabolism", &T::metabolism, "conditions", &T::conditions,
-      "likes", &T::likes, "likesbest", &T::likesbest, "dissolved", &T::dissolved,
-      "God", &T::God, "Guest", &T::Guest, "Metamorph", &T::Metamorph,
-      "monitor", &T::monitor, "translate", &T::translate, "atwar", &T::atwar,
-      "allied", &T::allied, "Gov_ship", &T::Gov_ship, "morale", &T::morale,
-      "points", &T::points, "controlled_planets", &T::controlled_planets,
-      "victory_turns", &T::victory_turns, "turn", &T::turn, "tech", &T::tech,
-      "discoveries", &T::discoveries, "victory_score", &T::victory_score,
-      "votes", &T::votes, "planet_points", &T::planet_points, "governors", &T::governors,
+      "collective_iq", &T::collective_iq, "pods", &T::pods, "fighters",
+      &T::fighters, "IQ", &T::IQ, "IQ_limit", &T::IQ_limit, "number_sexes",
+      &T::number_sexes, "fertilize", &T::fertilize, "adventurism",
+      &T::adventurism, "birthrate", &T::birthrate, "mass", &T::mass,
+      "metabolism", &T::metabolism, "conditions", &T::conditions, "likes",
+      &T::likes, "likesbest", &T::likesbest, "dissolved", &T::dissolved, "God",
+      &T::God, "Guest", &T::Guest, "Metamorph", &T::Metamorph, "monitor",
+      &T::monitor, "translate", &T::translate, "atwar", &T::atwar, "allied",
+      &T::allied, "Gov_ship", &T::Gov_ship, "morale", &T::morale, "points",
+      &T::points, "controlled_planets", &T::controlled_planets, "victory_turns",
+      &T::victory_turns, "turn", &T::turn, "tech", &T::tech, "discoveries",
+      &T::discoveries, "victory_score", &T::victory_score, "votes", &T::votes,
+      "planet_points", &T::planet_points, "governors", &T::governors,
       "governor", &T::governor);
 };
 }  // namespace glz
 
-// Demonstration function for Race serialization (not called in normal operation)
-// This can be used to test that Race serialization/deserialization works
+// Demonstration function for Race serialization (not called in normal
+// operation) This can be used to test that Race serialization/deserialization
+// works
 [[maybe_unused]] static bool test_race_serialization() {
   Race test_race{};
-  
+
   // Initialize basic fields for testing
   test_race.Playernum = 1;
   strcpy(test_race.name, "TestRace");
   test_race.IQ = 150;
   test_race.tech = 100.0;
   test_race.governors = 1;
-  
+
   // Initialize one governor
   strcpy(test_race.governor[0].name, "Governor1");
   test_race.governor[0].money = 10000;
   test_race.governor[0].toggle.color = true;
-  
+
   // Test round-trip serialization
   auto json_result = glz::write_json(test_race);
   if (!json_result.has_value()) return false;
-  
+
   Race deserialized_race{};
   auto read_result = glz::read_json(deserialized_race, json_result.value());
   if (read_result) return false;
-  
+
   // Verify key fields
   return (deserialized_race.Playernum == test_race.Playernum &&
           deserialized_race.name == test_race.name &&
@@ -412,25 +416,28 @@ Race getrace(player_t rnum) {
   const char* tail;
   sqlite3_stmt* stmt;
   const char* sql = "SELECT race_data FROM tbl_race WHERE player_id = ?1";
-  
+
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, rnum);
-  
+
   int result = sqlite3_step(stmt);
   if (result == SQLITE_ROW) {
     // Data found in SQLite, deserialize from JSON
-    const char* json_data = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-    
+    const char* json_data =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+
     if (json_data != nullptr) {
       // Copy the JSON data before finalizing the statement
       std::string json_string(json_data);
       sqlite3_finalize(stmt);
-      
+
       auto race_opt = race_from_json(json_string);
       if (race_opt.has_value()) {
         return race_opt.value();
       } else {
-        fprintf(stderr, "Error: Failed to deserialize Race from JSON for player %d\n", rnum);
+        fprintf(stderr,
+                "Error: Failed to deserialize Race from JSON for player %d\n",
+                rnum);
       }
     } else {
       fprintf(stderr, "Error: NULL JSON data retrieved for player %d\n", rnum);
@@ -439,7 +446,7 @@ Race getrace(player_t rnum) {
   } else {
     sqlite3_finalize(stmt);
   }
-  
+
   // Return empty race if not found
   Race r{};
   return r;
@@ -993,16 +1000,17 @@ void putrace(const Race& r) {
   // Store in SQLite database as JSON
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "REPLACE INTO tbl_race (player_id, race_data) VALUES (?1, ?2)";
-  
+  const char* sql =
+      "REPLACE INTO tbl_race (player_id, race_data) VALUES (?1, ?2)";
+
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, r.Playernum);
   sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
-  
+
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     fprintf(stderr, "SQLite error in putrace: %s\n", sqlite3_errmsg(dbconn));
   }
-  
+
   sqlite3_finalize(stmt);
 }
 
@@ -1758,20 +1766,21 @@ void putcommod(const Commod& c, int commodnum) {
 player_t Sql::Numraces() {
   const char* tail = nullptr;
   sqlite3_stmt* stmt;
-  
+
   const auto sql = "SELECT COUNT(*) FROM tbl_race;";
-  
+
   int err = sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite error in Numraces prepare: %s\n", sqlite3_errmsg(dbconn));
+    fprintf(stderr, "SQLite error in Numraces prepare: %s\n",
+            sqlite3_errmsg(dbconn));
     return 0;
   }
-  
+
   player_t count = 0;
   if (sqlite3_step(stmt) == SQLITE_ROW) {
     count = sqlite3_column_int(stmt, 0);
   }
-  
+
   sqlite3_finalize(stmt);
   return count;
 }

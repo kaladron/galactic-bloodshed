@@ -107,13 +107,13 @@ struct meta<Race> {
 
   // Initialize basic fields for testing
   test_race.Playernum = 1;
-  strcpy(test_race.name, "TestRace");
+  test_race.name = "TestRace";
   test_race.IQ = 150;
   test_race.tech = 100.0;
   test_race.governors = 1;
 
   // Initialize one governor
-  strcpy(test_race.governor[0].name, "Governor1");
+  test_race.governor[0].name = "Governor1";
   test_race.governor[0].money = 10000;
   test_race.governor[0].toggle.color = true;
 

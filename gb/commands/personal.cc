@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void personal(const command_t &argv, GameObj &g) {
+void personal(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
 
   std::stringstream ss_message;

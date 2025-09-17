@@ -24,12 +24,12 @@ export class Race {
   player_t Playernum;
   std::string name; /* Racial name. */
   std::string password;
-  std::string info;     /* personal information */
-  std::string motto;       /* for a cute message */
-  bool absorb;        /* Does this race absorb enemies in combat? */
-  bool collective_iq; /* Does this race have collective IQ? */
-  bool pods;          /* Can this race use pods? */
-  unsigned char fighters;      /* Fight rating of this race. */
+  std::string info;       /* personal information */
+  std::string motto;      /* for a cute message */
+  bool absorb;            /* Does this race absorb enemies in combat? */
+  bool collective_iq;     /* Does this race have collective IQ? */
+  bool pods;              /* Can this race use pods? */
+  unsigned char fighters; /* Fight rating of this race. */
   unsigned char IQ;
   unsigned char IQ_limit; /* Asymtotic IQ for collective IQ races. */
   unsigned char number_sexes;

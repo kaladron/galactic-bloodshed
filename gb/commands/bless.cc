@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void bless(const command_t &argv, GameObj &g) {
+void bless(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   // TODO(jeffbailey): ap_t APcount = 0;
   int amount;
@@ -34,7 +34,7 @@ void bless(const command_t &argv, GameObj &g) {
   }
   amount = std::stoi(argv[3]);
 
-  auto &race = races[who - 1];
+  auto& race = races[who - 1];
   /* race characteristics? */
   Mod = 1;
 

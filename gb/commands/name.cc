@@ -8,11 +8,11 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void name(const command_t &argv, GameObj &g) {
+void name(const command_t& argv, GameObj& g) {
   ap_t APcount = 0;
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  char *ch;
+  char* ch;
   int spaces;
   unsigned char check = 0;
   char string[1024];
@@ -93,7 +93,7 @@ void name(const command_t &argv, GameObj &g) {
     g.out << "Done.\n";
   } else if (argv[1] == "star") {
     if (g.level == ScopeLevel::LEVEL_STAR) {
-      auto &race = races[Playernum - 1];
+      auto& race = races[Playernum - 1];
       if (!race.God) {
         g.out << "Only dieties may name a star.\n";
         return;
@@ -107,7 +107,7 @@ void name(const command_t &argv, GameObj &g) {
   } else if (argv[1] == "planet") {
     if (g.level == ScopeLevel::LEVEL_PLAN) {
       stars[g.snum] = getstar(g.snum);
-      auto &race = races[Playernum - 1];
+      auto& race = races[Playernum - 1];
       if (!race.God) {
         g.out << "Only deity can rename planets.\n";
         return;
@@ -120,7 +120,7 @@ void name(const command_t &argv, GameObj &g) {
       return;
     }
   } else if (argv[1] == "race") {
-    auto &race = races[Playernum - 1];
+    auto& race = races[Playernum - 1];
     if (Governor) {
       g.out << "You are not authorized to do this.\n";
       return;
@@ -130,7 +130,7 @@ void name(const command_t &argv, GameObj &g) {
            std::format("Name changed to `{}'.\n", race.name));
     putrace(race);
   } else if (argv[1] == "governor") {
-    auto &race = races[Playernum - 1];
+    auto& race = races[Playernum - 1];
     race.governor[Governor].name = namebuf;
     notify(
         Playernum, Governor,

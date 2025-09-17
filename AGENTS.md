@@ -10,6 +10,7 @@
 - **Compiler**: LLVM/Clang with libc++
 - **Architecture**: Command-based server with player actions as free functions
 - **Database**: SQLite3 for persistent storage
+- **Default DB path**: The code opens the DB with `sqlite3_open(PKGSTATEDIR "gb.db", ...)`. By default (CMake define) `PKGSTATEDIR` is `/usr/local/var/galactic-bloodshed/`, so the DB file is `/usr/local/var/galactic-bloodshed/gb.db` unless reconfigured.
 - **Dependencies**: Minimal - SQLite3, glaze (JSON), scnlib (parsing)
 - **License**: Apache-2.0
 

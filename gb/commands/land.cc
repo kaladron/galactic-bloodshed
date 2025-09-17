@@ -23,7 +23,7 @@ namespace {
  * @param g The GameObj representing the game state.
  * @param s A Ship object representing the ship to be landed.
  */
-void land_friendly(const command_t &argv, GameObj &g, Ship &s) {
+void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
   double fuel;
   double Dist;
 
@@ -161,7 +161,7 @@ void land_friendly(const command_t &argv, GameObj &g, Ship &s) {
  * @param s The Ship object representing the ship to be landed.
  * @param APcount The number of action points available for the player.
  */
-void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
+void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   char buf[2048];
@@ -231,7 +231,7 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
     for (i = 1; i <= Num_races; i++)
       if (s.alive && i != Playernum && p.info[i - 1].popn &&
           p.info[i - 1].guns && p.info[i - 1].destruct) {
-        auto &alien = races[i - 1];
+        auto& alien = races[i - 1];
         if (isset(alien.atwar, s.owner)) {
           /* attack the landing ship */
           strength = MIN((int)p.info[i - 1].guns, (int)p.info[i - 1].destruct);
@@ -290,13 +290,15 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
   if (sect.condition == SectorType::SEC_WASTED) {
     notify(Playernum, Governor, "Warning: That sector is a wasteland!\n");
   } else if (sect.owner && sect.owner != Playernum) {
-    auto &race = races[Playernum - 1];
-    auto &alien = races[sect.owner - 1];
+    auto& race = races[Playernum - 1];
+    auto& alien = races[sect.owner - 1];
     if (!(isset(race.allied, sect.owner) && isset(alien.allied, Playernum))) {
-      sprintf(buf, "You have landed on an alien sector (%s).\n", alien.name);
+      sprintf(buf, "You have landed on an alien sector (%s).\n",
+              alien.name.c_str());
       notify(Playernum, Governor, buf);
     } else {
-      sprintf(buf, "You have landed on allied sector (%s).\n", alien.name);
+      sprintf(buf, "You have landed on allied sector (%s).\n",
+              alien.name.c_str());
       notify(Playernum, Governor, buf);
     }
   }
@@ -324,11 +326,11 @@ void land_planet(const command_t &argv, GameObj &g, Ship &s, ap_t APcount) {
 }  // namespace
 
 namespace GB::commands {
-void land(const command_t &argv, GameObj &g) {
+void land(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 1;
-  Ship *s;
+  Ship* s;
   char buf[2048];
 
   shipnum_t shipno;

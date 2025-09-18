@@ -488,8 +488,10 @@ Race getrace(player_t rnum) {
 
 Star Sql::getstar(const starnum_t star) { return ::getstar(star); }
 Star getstar(const starnum_t star) {
-  star_struct s{};  // Initialize struct to zero
+  star_struct s;
 
+  Fileread(stdata, (char*)&s, sizeof(star_struct),
+           (int)(sizeof(Sdata) + star * sizeof(star_struct)));
   const char* tail;
 
   {
@@ -501,17 +503,16 @@ Star getstar(const starnum_t star) {
     sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
     sqlite3_bind_int(stmt, 1, star);
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
-      s.ships = static_cast<short>(sqlite3_column_int(stmt, 0));
-      strcpy(s.name, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
-      s.xpos = sqlite3_column_double(stmt, 2);
-      s.ypos = sqlite3_column_double(stmt, 3);
-      s.numplanets = static_cast<short>(sqlite3_column_int(stmt, 4));
-      s.stability = static_cast<short>(sqlite3_column_int(stmt, 5));
-      s.nova_stage = static_cast<short>(sqlite3_column_int(stmt, 6));
-      s.temperature = static_cast<short>(sqlite3_column_int(stmt, 7));
-      s.gravity = sqlite3_column_double(stmt, 8);
-    }
+    sqlite3_step(stmt);
+    s.ships = static_cast<short>(sqlite3_column_int(stmt, 0));
+    strcpy(s.name, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+    s.xpos = sqlite3_column_double(stmt, 2);
+    s.ypos = sqlite3_column_double(stmt, 3);
+    s.numplanets = static_cast<short>(sqlite3_column_int(stmt, 4));
+    s.stability = static_cast<short>(sqlite3_column_int(stmt, 5));
+    s.nova_stage = static_cast<short>(sqlite3_column_int(stmt, 6));
+    s.temperature = static_cast<short>(sqlite3_column_int(stmt, 7));
+    s.gravity = sqlite3_column_double(stmt, 8);
 
     sqlite3_clear_bindings(stmt);
     sqlite3_reset(stmt);
@@ -777,7 +778,12 @@ std::optional<Ship> Sql::getship(Ship** s, const shipnum_t shipnum) {
   return ::getship(s, shipnum);
 }
 std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
+  struct stat buffer;
+
   if (shipnum <= 0) return {};
+
+  fstat(shdata, &buffer);
+  if (buffer.st_size / sizeof(Ship) < shipnum) return {};
 
   Ship tmpship;
   Ship* tmpship1;
@@ -789,8 +795,7 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
     exit(0);
   }
 
-  // Initialize ship to zero
-  memset(*s, 0, sizeof(Ship));
+  Fileread(shdata, (char*)*s, sizeof(Ship), (shipnum - 1) * sizeof(Ship));
 
   const char* tail;
   sqlite3_stmt* stmt;
@@ -940,34 +945,13 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
 
 Commod Sql::getcommod(commodnum_t commodnum) { return ::getcommod(commodnum); }
 Commod getcommod(commodnum_t commodnum) {
-  Commod commod{};  // Initialize to zero
+  Commod commod;
 
   // TODO(jeffbailey): Throw here
   // if (commodnum <= 0) return 0;
 
-  const char* sql = "SELECT owner, governor, type, amount, deliver, bid, bidder, bidder_gov, star_from, planet_from, star_to, planet_to FROM tbl_commod WHERE comod_id = ?1";
-  sqlite3_stmt* stmt;
-  const char* tail;
-
-  if (sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail) == SQLITE_OK) {
-    sqlite3_bind_int(stmt, 1, commodnum);
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
-      commod.owner = sqlite3_column_int(stmt, 0);
-      commod.governor = sqlite3_column_int(stmt, 1);
-      commod.type = static_cast<CommodityType>(sqlite3_column_int(stmt, 2));
-      commod.amount = sqlite3_column_int(stmt, 3);
-      commod.deliver = sqlite3_column_int(stmt, 4);
-      commod.bid = sqlite3_column_int(stmt, 5);
-      commod.bidder = sqlite3_column_int(stmt, 6);
-      commod.bidder_gov = sqlite3_column_int(stmt, 7);
-      commod.star_from = sqlite3_column_int(stmt, 8);
-      commod.planet_from = sqlite3_column_int(stmt, 9);
-      commod.star_to = sqlite3_column_int(stmt, 10);
-      commod.planet_to = sqlite3_column_int(stmt, 11);
-    }
-    sqlite3_finalize(stmt);
-  }
-  
+  Fileread(commoddata, (char*)&commod, sizeof(Commod),
+           (commodnum - 1) * sizeof(Commod));
   return commod;
 }
 
@@ -1090,6 +1074,9 @@ void putrace(const Race& r) {
 void Sql::putstar(const Star& star, starnum_t snum) { ::putstar(star, snum); }
 void putstar(const Star& star, starnum_t snum) {
   star_struct s = star.get_struct();
+
+  Filewrite(stdata, (const char*)&s, sizeof(star_struct),
+            (int)(sizeof(Sdata) + snum * sizeof(star_struct)));
 
   start_bulk_insert();
 
@@ -1603,6 +1590,7 @@ void putship(const Ship& s) {
   [[maybe_unused]] auto _glz_ship_ec = glz::write_json(s);
 
   const char* tail;
+  Filewrite(shdata, (char*)&s, sizeof(Ship), (s.number - 1) * sizeof(Ship));
   start_bulk_insert();
 
   sqlite3_stmt* stmt;
@@ -1794,6 +1782,9 @@ void putcommod(const Commod& c, int commodnum) {
   // Create a JSON string of a Commod struct using Glaze (demonstration only)
   // This does not affect behavior; it's to verify Glaze works with Commod.
   [[maybe_unused]] auto _glz_ec = glz::write_json(c);
+
+  Filewrite(commoddata, (const char*)&c, sizeof(Commod),
+            (commodnum - 1) * sizeof(Commod));
 
   const char* tail;
   sqlite3_stmt* stmt;

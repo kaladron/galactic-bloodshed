@@ -1,14 +1,13 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/cpp:ubuntu",
-  "features": {
-    "ghcr.io/devcontainers-community/features/llvm": {
-      "version": "22"
-    },
-    "ghcr.io/devcontainers-extra/features/ninja-asdf:2": {},
-    "ghcr.io/devcontainers-extra/features/cmake:1": {},
-    "ghcr.io/devcontainers-extra/features/apt-packages:1": {
-      "packages": "doxygen, libsqlite3-dev, graphviz, sqlite3"
-    }
+  "name": "Galactic Bloodshed C++26 Development",
+  // Option 1: Use pre-built image from GitHub Container Registry (faster startup)
+  // Uncomment the line below and comment out the "build" section to use pre-built image:
+  // "image": "ghcr.io/kaladron/galactic-bloodshed/devcontainer:latest",
+  
+  // Option 2: Build image locally (slower startup, but always uses latest Dockerfile)
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
   },
   "customizations": {
     "vscode": {

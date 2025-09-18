@@ -27,3 +27,34 @@ called a "client" that is run from their local computer.
 ## Licensing
 
 I received permission from the authors of GB on December 9, 2021 to relicense the game to apache2.
+
+## 🛠️ Development
+
+This project uses **C++26 with C++ Modules** and requires **CMake 4.0+** and **LLVM/Clang 19** with libc++.
+
+### Quick Start Options
+
+**🐳 Development Container (Recommended)**
+```bash
+# Open in VS Code with Dev Containers extension
+# The container includes all required tools pre-installed
+```
+
+**🚀 Automated Setup Script**
+```bash
+# For Ubuntu/Debian systems
+./setup-dev-env.sh
+```
+
+**📖 Manual Setup**
+See [AGENTS.md](AGENTS.md) for detailed development instructions.
+
+### Building
+```bash
+mkdir -p build && cd build
+cmake ..
+cmake --build .
+```
+
+### For GitHub Copilot Agent
+This repository includes a custom development environment configuration in `.devcontainer/` that provides the exact tool versions needed. See [.devcontainer/README.md](.devcontainer/README.md) for details.

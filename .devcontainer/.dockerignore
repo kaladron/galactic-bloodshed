@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+
+# Git
+.git/
+.gitignore
+
+# Documentation build artifacts  
+docs/_build/
+docs/html/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp

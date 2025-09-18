@@ -22,6 +22,63 @@
 - SQLite3 development libraries
 - Git (for dependency fetching)
 
+### 🐳 Development Environment Setup
+
+This project requires **CMake 4.0+** and latest **LLVM/Clang** with C++26 module support. GitHub Copilot Agent and other development environments can use the provided custom development image.
+
+#### Using Custom Development Container
+
+The repository includes a custom development container with the exact tool versions needed:
+
+**Option 1: Pre-built Image (Recommended for GitHub Copilot Agent)**
+```json
+// In .devcontainer/devcontainer.json
+{
+  "image": "ghcr.io/kaladron/galactic-bloodshed/devcontainer:latest"
+}
+```
+
+**Option 2: Build Locally**
+```json
+// In .devcontainer/devcontainer.json  
+{
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  }
+}
+```
+
+#### For GitHub Copilot Agent Configuration
+
+To ensure GitHub Copilot Agent uses the correct development environment:
+
+1. **Use the pre-built image**: Modify `.devcontainer/devcontainer.json` to use `"image": "ghcr.io/kaladron/galactic-bloodshed/devcontainer:latest"`
+2. **Verify tool versions**: The custom image includes:
+   - CMake 4.x (latest from Kitware)
+   - LLVM/Clang 19 with libc++
+   - Ninja build system
+   - SQLite3 development libraries
+   - All project dependencies
+
+#### Manual Installation (Alternative)
+
+If not using containers, install:
+```bash
+# Install LLVM 19
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 19 all
+
+# Install latest CMake from Kitware
+wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+sudo apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
+sudo apt update && sudo apt install cmake
+
+# Install project dependencies
+sudo apt install libsqlite3-dev sqlite3 ninja-build
+```
+
 ### Build Commands
 This project uses **CMake**, not make. The build directory is typically `build/`.
 
@@ -320,6 +377,8 @@ Use these from `gb/files.h`:
 
 1. **Build Issues**: 
    - Ensure you're using LLVM/Clang with libc++
+   - **Verify CMake version**: This project requires CMake 4.0+. Use `cmake --version` to check.
+   - **Use the custom dev container**: See "Development Environment Setup" section for pre-configured environment
    - Always use `cmake --build .` from the `build/` directory
    - **Never use `make`** - this project uses CMake exclusively
 2. **Module Errors**: Check module import order and partition syntax

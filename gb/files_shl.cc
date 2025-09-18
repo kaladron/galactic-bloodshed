@@ -362,6 +362,12 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
   CREATE TABLE tbl_race(
     player_id INT PRIMARY KEY NOT NULL,
     race_data TEXT NOT NULL);
+
+  CREATE TABLE tbl_free_ships(
+    ship_id INT PRIMARY KEY NOT NULL);
+
+  CREATE TABLE tbl_free_commods(
+    commod_id INT PRIMARY KEY NOT NULL);
 )";
   // TODO(jeffbailey): tbl_commod could probably use more indeces.
   char* err_msg = nullptr;
@@ -407,7 +413,35 @@ void openracedata(int* fd) {
 
 void Sql::getsdata(stardata* S) { ::getsdata(S); }
 void getsdata(stardata* S) {
-  Fileread(stdata, (char*)S, sizeof(struct stardata), 0);
+  // Initialize to zero
+  memset(S, 0, sizeof(struct stardata));
+  
+  // Get main stardata from tbl_stardata (indexnum = 0 is the main record)
+  const char* sql = "SELECT ships FROM tbl_stardata WHERE indexnum = 0";
+  sqlite3_stmt* stmt;
+  const char* tail;
+  
+  if (sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail) == SQLITE_OK) {
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+      S->ships = sqlite3_column_int(stmt, 0);
+    }
+    sqlite3_finalize(stmt);
+  }
+  
+  // Get per-player data from tbl_stardata_perplayer
+  sql = "SELECT player_id, ap, VN_hitlist, VN_index1, VN_index2 FROM tbl_stardata_perplayer";
+  if (sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail) == SQLITE_OK) {
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+      int player_id = sqlite3_column_int(stmt, 0);
+      if (player_id >= 0 && player_id < MAXPLAYERS) {
+        S->AP[player_id] = sqlite3_column_int(stmt, 1);
+        S->VN_hitlist[player_id] = sqlite3_column_int(stmt, 2);
+        S->VN_index1[player_id] = sqlite3_column_int(stmt, 3);
+        S->VN_index2[player_id] = sqlite3_column_int(stmt, 4);
+      }
+    }
+    sqlite3_finalize(stmt);
+  }
 }
 
 Race Sql::getrace(player_t rnum) { return ::getrace(rnum); };
@@ -454,10 +488,8 @@ Race getrace(player_t rnum) {
 
 Star Sql::getstar(const starnum_t star) { return ::getstar(star); }
 Star getstar(const starnum_t star) {
-  star_struct s;
+  star_struct s{};  // Initialize struct to zero
 
-  Fileread(stdata, (char*)&s, sizeof(star_struct),
-           (int)(sizeof(Sdata) + star * sizeof(star_struct)));
   const char* tail;
 
   {
@@ -469,16 +501,17 @@ Star getstar(const starnum_t star) {
     sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
     sqlite3_bind_int(stmt, 1, star);
-    sqlite3_step(stmt);
-    s.ships = static_cast<short>(sqlite3_column_int(stmt, 0));
-    strcpy(s.name, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
-    s.xpos = sqlite3_column_double(stmt, 2);
-    s.ypos = sqlite3_column_double(stmt, 3);
-    s.numplanets = static_cast<short>(sqlite3_column_int(stmt, 4));
-    s.stability = static_cast<short>(sqlite3_column_int(stmt, 5));
-    s.nova_stage = static_cast<short>(sqlite3_column_int(stmt, 6));
-    s.temperature = static_cast<short>(sqlite3_column_int(stmt, 7));
-    s.gravity = sqlite3_column_double(stmt, 8);
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+      s.ships = static_cast<short>(sqlite3_column_int(stmt, 0));
+      strcpy(s.name, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+      s.xpos = sqlite3_column_double(stmt, 2);
+      s.ypos = sqlite3_column_double(stmt, 3);
+      s.numplanets = static_cast<short>(sqlite3_column_int(stmt, 4));
+      s.stability = static_cast<short>(sqlite3_column_int(stmt, 5));
+      s.nova_stage = static_cast<short>(sqlite3_column_int(stmt, 6));
+      s.temperature = static_cast<short>(sqlite3_column_int(stmt, 7));
+      s.gravity = sqlite3_column_double(stmt, 8);
+    }
 
     sqlite3_clear_bindings(stmt);
     sqlite3_reset(stmt);
@@ -744,12 +777,7 @@ std::optional<Ship> Sql::getship(Ship** s, const shipnum_t shipnum) {
   return ::getship(s, shipnum);
 }
 std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
-  struct stat buffer;
-
   if (shipnum <= 0) return {};
-
-  fstat(shdata, &buffer);
-  if (buffer.st_size / sizeof(Ship) < shipnum) return {};
 
   Ship tmpship;
   Ship* tmpship1;
@@ -761,7 +789,8 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
     exit(0);
   }
 
-  Fileread(shdata, (char*)*s, sizeof(Ship), (shipnum - 1) * sizeof(Ship));
+  // Initialize ship to zero
+  memset(*s, 0, sizeof(Ship));
 
   const char* tail;
   sqlite3_stmt* stmt;
@@ -911,81 +940,125 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
 
 Commod Sql::getcommod(commodnum_t commodnum) { return ::getcommod(commodnum); }
 Commod getcommod(commodnum_t commodnum) {
-  Commod commod;
+  Commod commod{};  // Initialize to zero
 
   // TODO(jeffbailey): Throw here
   // if (commodnum <= 0) return 0;
 
-  Fileread(commoddata, (char*)&commod, sizeof(Commod),
-           (commodnum - 1) * sizeof(Commod));
+  const char* sql = "SELECT owner, governor, type, amount, deliver, bid, bidder, bidder_gov, star_from, planet_from, star_to, planet_to FROM tbl_commod WHERE comod_id = ?1";
+  sqlite3_stmt* stmt;
+  const char* tail;
+
+  if (sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail) == SQLITE_OK) {
+    sqlite3_bind_int(stmt, 1, commodnum);
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+      commod.owner = sqlite3_column_int(stmt, 0);
+      commod.governor = sqlite3_column_int(stmt, 1);
+      commod.type = static_cast<CommodityType>(sqlite3_column_int(stmt, 2));
+      commod.amount = sqlite3_column_int(stmt, 3);
+      commod.deliver = sqlite3_column_int(stmt, 4);
+      commod.bid = sqlite3_column_int(stmt, 5);
+      commod.bidder = sqlite3_column_int(stmt, 6);
+      commod.bidder_gov = sqlite3_column_int(stmt, 7);
+      commod.star_from = sqlite3_column_int(stmt, 8);
+      commod.planet_from = sqlite3_column_int(stmt, 9);
+      commod.star_to = sqlite3_column_int(stmt, 10);
+      commod.planet_to = sqlite3_column_int(stmt, 11);
+    }
+    sqlite3_finalize(stmt);
+  }
+  
   return commod;
 }
 
-/* gets the ship # listed in the top of the file SHIPFREEDATAFL. this
+/* gets the ship # listed in the SQL free ships table. this
 ** might have no other uses besides build().
 */
 int getdeadship() {
-  struct stat buffer;
-  short shnum;
-  int fd;
-  int abort;
+  const char* sql = "SELECT ship_id FROM tbl_free_ships ORDER BY ship_id LIMIT 1";
+  sqlite3_stmt* stmt;
+  const char* tail;
+  int ship_id = -1;
 
-  if ((fd = open(SHIPFREEDATAFL, O_RDWR, 0777)) < 0) {
-    perror("getdeadship");
-    printf("unable to open %s\n", SHIPFREEDATAFL);
-    exit(-1);
-  }
-  abort = 1;
-  fstat(fd, &buffer);
-
-  if (buffer.st_size && (abort == 1)) {
-    /* put topmost entry in fpos */
-    Fileread(fd, (char*)&shnum, sizeof(short), buffer.st_size - sizeof(short));
-    /* erase that entry, since it will now be filled */
-    if (ftruncate(fd, (long)(buffer.st_size - sizeof(short))) < 0) {
-      perror("ftruncate failed");
-      return -1;
+  if (sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail) == SQLITE_OK) {
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+      ship_id = sqlite3_column_int(stmt, 0);
+      
+      // Remove this ID from the free list
+      sqlite3_finalize(stmt);
+      
+      const char* delete_sql = "DELETE FROM tbl_free_ships WHERE ship_id = ?1";
+      sqlite3_stmt* delete_stmt;
+      if (sqlite3_prepare_v2(dbconn, delete_sql, -1, &delete_stmt, &tail) == SQLITE_OK) {
+        sqlite3_bind_int(delete_stmt, 1, ship_id);
+        sqlite3_step(delete_stmt);
+        sqlite3_finalize(delete_stmt);
+      }
+      return ship_id;
     }
-    close_file(fd);
-    return (int)shnum;
+    sqlite3_finalize(stmt);
   }
-  close_file(fd);
+  
   return -1;
 }
 
 int getdeadcommod() {
-  struct stat buffer;
-  short commodnum;
-  int fd;
-  int abort;
+  const char* sql = "SELECT commod_id FROM tbl_free_commods ORDER BY commod_id LIMIT 1";
+  sqlite3_stmt* stmt;
+  const char* tail;
+  int commod_id = -1;
 
-  if ((fd = open(COMMODFREEDATAFL, O_RDWR, 0777)) < 0) {
-    perror("getdeadcommod");
-    printf("unable to open %s\n", COMMODFREEDATAFL);
-    exit(-1);
-  }
-  abort = 1;
-  fstat(fd, &buffer);
-
-  if (buffer.st_size && (abort == 1)) {
-    /* put topmost entry in fpos */
-    Fileread(fd, (char*)&commodnum, sizeof(short),
-             buffer.st_size - sizeof(short));
-    /* erase that entry, since it will now be filled */
-    if (ftruncate(fd, (long)(buffer.st_size - sizeof(short))) < 0) {
-      perror("ftruncate failed");
-      return -1;
+  if (sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail) == SQLITE_OK) {
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+      commod_id = sqlite3_column_int(stmt, 0);
+      
+      // Remove this ID from the free list
+      sqlite3_finalize(stmt);
+      
+      const char* delete_sql = "DELETE FROM tbl_free_commods WHERE commod_id = ?1";
+      sqlite3_stmt* delete_stmt;
+      if (sqlite3_prepare_v2(dbconn, delete_sql, -1, &delete_stmt, &tail) == SQLITE_OK) {
+        sqlite3_bind_int(delete_stmt, 1, commod_id);
+        sqlite3_step(delete_stmt);
+        sqlite3_finalize(delete_stmt);
+      }
+      return commod_id;
     }
-    close_file(fd);
-    return (int)commodnum;
+    sqlite3_finalize(stmt);
   }
-  close_file(fd);
+  
   return -1;
 }
 
 void Sql::putsdata(stardata* S) { ::putsdata(S); }
 void putsdata(stardata* S) {
-  Filewrite(stdata, (char*)S, sizeof(struct stardata), 0);
+  // Insert/update main stardata record (indexnum = 0)
+  const char* sql = "REPLACE INTO tbl_stardata (indexnum, ships) VALUES (0, ?1)";
+  sqlite3_stmt* stmt;
+  const char* tail;
+  
+  if (sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail) == SQLITE_OK) {
+    sqlite3_bind_int(stmt, 1, S->ships);
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+  }
+  
+  // Insert/update per-player data
+  sql = "REPLACE INTO tbl_stardata_perplayer (player_id, ap, VN_hitlist, VN_index1, VN_index2) VALUES (?1, ?2, ?3, ?4, ?5)";
+  for (int i = 0; i < MAXPLAYERS; i++) {
+    // Only store records that have non-zero data
+    if (S->AP[i] != 0 || S->VN_hitlist[i] != 0 || S->VN_index1[i] != 0 || S->VN_index2[i] != 0) {
+      if (sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail) == SQLITE_OK) {
+        sqlite3_bind_int(stmt, 1, i);
+        sqlite3_bind_int(stmt, 2, S->AP[i]);
+        sqlite3_bind_int(stmt, 3, S->VN_hitlist[i]);
+        sqlite3_bind_int(stmt, 4, S->VN_index1[i]);
+        sqlite3_bind_int(stmt, 5, S->VN_index2[i]);
+        sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+      }
+    }
+  }
 }
 
 void Sql::putrace(const Race& r) { ::putrace(r); }
@@ -1017,9 +1090,6 @@ void putrace(const Race& r) {
 void Sql::putstar(const Star& star, starnum_t snum) { ::putstar(star, snum); }
 void putstar(const Star& star, starnum_t snum) {
   star_struct s = star.get_struct();
-
-  Filewrite(stdata, (const char*)&s, sizeof(star_struct),
-            (int)(sizeof(Sdata) + snum * sizeof(star_struct)));
 
   start_bulk_insert();
 
@@ -1533,7 +1603,6 @@ void putship(const Ship& s) {
   [[maybe_unused]] auto _glz_ship_ec = glz::write_json(s);
 
   const char* tail;
-  Filewrite(shdata, (char*)&s, sizeof(Ship), (s.number - 1) * sizeof(Ship));
   start_bulk_insert();
 
   sqlite3_stmt* stmt;
@@ -1726,9 +1795,6 @@ void putcommod(const Commod& c, int commodnum) {
   // This does not affect behavior; it's to verify Glaze works with Commod.
   [[maybe_unused]] auto _glz_ec = glz::write_json(c);
 
-  Filewrite(commoddata, (const char*)&c, sizeof(Commod),
-            (commodnum - 1) * sizeof(Commod));
-
   const char* tail;
   sqlite3_stmt* stmt;
   const char* sql =
@@ -1845,54 +1911,34 @@ void clr_shipfree() { fclose(fopen(SHIPFREEDATAFL, "w+")); }
 void clr_commodfree() { fclose(fopen(COMMODFREEDATAFL, "w+")); }
 
 /*
-** writes the ship to the dead ship file at its end.
+** writes the ship to the dead ship SQL table.
 */
 void makeshipdead(int shipnum) {
-  int fd;
-  unsigned short shipno;
-  struct stat buffer;
+  if (shipnum == 0) return;
 
-  shipno = shipnum; /* conv to u_short */
+  const char* sql = "INSERT INTO tbl_free_ships (ship_id) VALUES (?1)";
+  sqlite3_stmt* stmt;
+  const char* tail;
 
-  if (shipno == 0) return;
-
-  if ((fd = open(SHIPFREEDATAFL, O_WRONLY, 0777)) < 0) {
-    printf("fd = %d \n", fd);
-    printf("errno = %d \n", errno);
-    perror("openshfdata");
-    printf("unable to open %s\n", SHIPFREEDATAFL);
-    exit(-1);
+  if (sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail) == SQLITE_OK) {
+    sqlite3_bind_int(stmt, 1, shipnum);
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
   }
-
-  /* write the ship # at the very end of SHIPFREEDATAFL */
-  fstat(fd, &buffer);
-
-  Filewrite(fd, (char*)&shipno, sizeof(shipno), buffer.st_size);
-  close_file(fd);
 }
 
 void makecommoddead(int commodnum) {
-  int fd;
-  unsigned short commodno;
-  struct stat buffer;
+  if (commodnum == 0) return;
 
-  commodno = commodnum; /* conv to u_short */
+  const char* sql = "INSERT INTO tbl_free_commods (commod_id) VALUES (?1)";
+  sqlite3_stmt* stmt;
+  const char* tail;
 
-  if (commodno == 0) return;
-
-  if ((fd = open(COMMODFREEDATAFL, O_WRONLY, 0777)) < 0) {
-    printf("fd = %d \n", fd);
-    printf("errno = %d \n", errno);
-    perror("opencommodfdata");
-    printf("unable to open %s\n", COMMODFREEDATAFL);
-    exit(-1);
+  if (sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail) == SQLITE_OK) {
+    sqlite3_bind_int(stmt, 1, commodnum);
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
   }
-
-  /* write the commod # at the very end of COMMODFREEDATAFL */
-  fstat(fd, &buffer);
-
-  Filewrite(fd, (char*)&commodno, sizeof(commodno), buffer.st_size);
-  close_file(fd);
 }
 
 void putpower(power p[MAXPLAYERS]) {

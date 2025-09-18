@@ -181,7 +181,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     dirship->size = ship_size(*dirship);
     dirship->complexity = complexity(*dirship);
 
-    sprintf(dirship->shipclass, "mod %ld", g.shipno);
+    strcpy(dirship->shipclass, std::format("mod {}", g.shipno).c_str());
 
     notify(Playernum, Governor,
            std::format("Factory designated to produce {}s.\n", Shipnames[*i]));

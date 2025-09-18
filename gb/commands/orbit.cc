@@ -85,7 +85,7 @@ void orbit(const command_t &argv, GameObj &g) {
   }
 
   /* orbit type of map */
-  sprintf(output, "#");
+  strcpy(output, "#");
 
   auto Race = races[g.player - 1];
 
@@ -374,13 +374,13 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship,
       /* (magnification) */
       if (x >= 0 && y >= 0) {
         if (r.governor[g.governor].toggle.color) {
-          sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'),
+          strcpy(string, std::format("{} {} {} {} {} {} {};", (char)(ship->owner + '?'),
                   x, y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
-                  ship->number);
+                  ship->number).c_str());
         } else {
           stand = (ship->owner == r.governor[g.governor].toggle.highlight);
-          sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
-                  Shipltrs[ship->type], stand, ship->number);
+          strcpy(string, std::format("{} {} {} {} {} {} {};", stand, x, y, wm,
+                  Shipltrs[ship->type], stand, ship->number).c_str());
         }
       }
       break;
@@ -396,13 +396,13 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship,
           ((ship->owner == g.player) || g.god))
         if (x >= 0 && y >= 0) {
           if (r.governor[g.governor].toggle.color) {
-            sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'),
+            strcpy(string, std::format("{} {} {} {} {} {} {};", (char)(ship->owner + '?'),
                     x, y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
-                    ship->number);
+                    ship->number).c_str());
           } else {
             stand = (ship->owner == r.governor[g.governor].toggle.highlight);
-            sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
-                    Shipltrs[ship->type], stand, ship->number);
+            strcpy(string, std::format("{} {} {} {} {} {} {};", stand, x, y, wm,
+                    Shipltrs[ship->type], stand, ship->number).c_str());
           }
         }
       break;

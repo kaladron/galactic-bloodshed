@@ -224,8 +224,8 @@ int main(int argc, char* argv[]) {
 #if 0  
   /* Why is this not needed any more? */
   for (i=1; i<MAXPLAYERS; i++) {
-    sprintf(str, "%s.%d", TELEGRAMFL, i );
-    EmptyFile(str) ;
+    std::string str = std::format("{}.{}", TELEGRAMFL, i);
+    EmptyFile(str.c_str()) ;
     }
 #endif
 

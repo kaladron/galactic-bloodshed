@@ -68,41 +68,41 @@ void PrintStatistics() {
   int j;
   int y;
 
-  printf("\nPlanet/Sector distribution -\n");
-  printf(
+  std::cout << std::format("\nPlanet/Sector distribution -\n");
+  std::cout << std::format(
       "Type NP     .    *    ^    ~    #    (    -    NS   Avg     Res    "
       "Avg  A/Sec\n");
   for (i = 0; i <= PlanetType::DESERT + 1; i++) {
-    printf("%3.3s%4d ", Nametypes[i], Numtypes[i]);
+    std::cout << std::format("{:3.3s}{:4d} ", Nametypes[i], Numtypes[i]);
     if (i < PlanetType::DESERT + 1)
       Numtypes[PlanetType::DESERT + 1] += Numtypes[i];
     for (j = 0; j < SectorType::SEC_PLATED; j++) {
-      printf("%5d", Numsects[i][j]);
+      std::cout << std::format("{:5d}", Numsects[i][j]);
       Numsects[i][SectorType::SEC_PLATED] += Numsects[i][j];
       if (i <= PlanetType::DESERT)
         Numsects[PlanetType::DESERT + 1][j] += Numsects[i][j];
     }
-    printf("%6d %5.1f", Numsects[i][SectorType::SEC_PLATED],
+    std::cout << std::format("{:6d} {:5.1f}", Numsects[i][SectorType::SEC_PLATED],
            (1.0 * Numsects[i][SectorType::SEC_PLATED]) / Numtypes[i]);
-    printf("%8d %7.1f %5.1f\n", Resource[i],
+    std::cout << std::format("{:8d} {:7.1f} {:5.1f}\n", Resource[i],
            ((double)Resource[i]) / Numtypes[i],
            ((double)Resource[i]) / Numsects[i][SectorType::SEC_PLATED]);
     Resource[PlanetType::DESERT + 1] += Resource[i];
   }
-  printf("Average Sector Fertility -\n");
-  printf("Type NP     .    *    ^    ~    #    (    -    Fert  /Plan  /Sect\n");
+  std::cout << std::format("Average Sector Fertility -\n");
+  std::cout << std::format("Type NP     .    *    ^    ~    #    (    -    Fert  /Plan  /Sect\n");
   for (i = 0; i <= PlanetType::DESERT + 1; i++) {
-    printf("%3.3s%4d ", Nametypes[i], Numtypes[i]);
+    std::cout << std::format("{:3.3s}{:4d} ", Nametypes[i], Numtypes[i]);
     y = 0;
     for (j = 0; j < SectorType::SEC_PLATED; j++) {
       if (Numsects[i][j])
-        printf("%5.1f", ((double)Fertsects[i][j]) / Numsects[i][j]);
+        std::cout << std::format("{:5.1f}", ((double)Fertsects[i][j]) / Numsects[i][j]);
       else
-        printf("    -");
+        std::cout << std::format("    -");
       y += Fertsects[i][j];
       Fertsects[PlanetType::DESERT + 1][j] += Fertsects[i][j];
     }
-    printf("%8d %7.1f %5.1f\n", y, (1.0 * y) / Numtypes[i],
+    std::cout << std::format("{:8d} {:7.1f} {:5.1f}\n", y, (1.0 * y) / Numtypes[i],
            (1.0 * y) / Numsects[i][SectorType::SEC_PLATED]);
   }
 }
@@ -113,7 +113,7 @@ static int ReadNameList(char ss[1000][20], int n, int m, const char *filename) {
   FILE *f = fopen(filename, "r");
 
   if (f == nullptr) {
-    printf("Unable to open \"%s\".\n", filename);
+    std::cout << std::format("Unable to open \"{}\".\n", filename);
     return -1;
   }
   for (i = 0; i < n; i++) {
@@ -130,7 +130,7 @@ static int ReadNameList(char ss[1000][20], int n, int m, const char *filename) {
   }
 out:
   fclose(f);
-  printf("%d names listed in %s\n", i, filename);
+  std::cout << std::format("{} names listed in {}\n", i, filename);
   return i;
 }
 
@@ -193,7 +193,7 @@ static char *NextStarName() {
   if (autoname_star && (namestcount <= numslist))
     return SNames[star_list[namestcount++]];
 
-  printf("Next star name:");
+  std::cout << std::format("Next star name:");
   for (i = 0; i < NAMESIZE - 4; i++) std::putchar('.');
   for (i = 0; i < NAMESIZE - 4; i++) std::putchar('\010'); /* ^H */
   if (scanf("%14[^\n]", buf) < 0) {
@@ -230,7 +230,7 @@ Star Makestar(starnum_t snum) {
   strcpy(star.name, NextStarName());
   place_star(star);
   if (printstarinfo)
-    printf("Star %s: gravity %1.1f, temp %d\n", star.name, star.gravity,
+    std::cout << std::format("Star {}: gravity {:.1f}, temp {}\n", star.name, star.gravity,
            (int)star.temperature);
   /*
    * Generate planets for this star: */
@@ -309,11 +309,11 @@ Star Makestar(starnum_t snum) {
     planet.total_resources = 0;
     Numtypes[type]++;
     if (printplaninfo) {
-      printf("Planet %s: temp %d, type %s (%u)\n", star.pnames[i],
+      std::cout << std::format("Planet {}: temp {}, type {} ({})\n", star.pnames[i],
              planet.conditions[RTEMP], Nametypes[planet.type], planet.type);
-      printf("Position is (%1.0f,%1.0f) relative to %s; distance %1.0f.\n",
+      std::cout << std::format("Position is ({:.0f},{:.0f}) relative to {}; distance {:.0f}.\n",
              planet.xpos, planet.ypos, star.name, dist);
-      printf("sect map(%dx%d):\n", planet.Maxx, planet.Maxy);
+      std::cout << std::format("sect map({}x{}):\n", planet.Maxx, planet.Maxy);
       for (y = 0; y < planet.Maxy; y++) {
         for (x = 0; x < planet.Maxx; x++) {
           switch (smap.get(x, y).condition) {

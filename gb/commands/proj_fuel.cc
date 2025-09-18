@@ -113,7 +113,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     x_1 = stars[tmpdest.snum].xpos();
     y_1 = stars[tmpdest.snum].ypos();
   } else {
-    printf("ERROR 99\n");
+    g.out << std::format("Error: Invalid destination level\n");
     return;
   }
 

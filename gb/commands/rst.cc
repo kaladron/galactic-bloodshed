@@ -243,15 +243,13 @@ static void ship_report(GameObj &g, shipnum_t indx,
 
     if (rd[indx].type != PLANET && Weapons) {
       if (first) {
-        sprintf(buf,
+        g.out << std::format(
                 "    #       name      laser   cew     safe     guns    "
                 "damage   class\n");
-        notify(Playernum, Governor, buf);
         if (!SHip) first = 0;
       }
-      sprintf(
-          buf,
-          "%5lu %c %14.14s %s  %3d/%-4d  %4d  %3lu%c/%3lu%c    %3d%%  %c %s\n",
+      g.out << std::format(
+          "{:5} {} {:14.14s} {}  {:3}/{:<4}  {:4}  {:3}{}/{:3}{}    {:3}%  {} {}\n",
           shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
           s.laser ? "yes " : "    ", s.cew, s.cew_range,
           (int)((1.0 - .01 * s.damage) * s.tech / 4.0), s.primary,
@@ -261,59 +259,55 @@ static void ship_report(GameObj &g, shipnum_t indx,
            (s.type == ShipType::OTYPE_PLOW))
               ? "Standard"
               : s.shipclass);
-      notify(Playernum, Governor, buf);
     }
 
     if (rd[indx].type != PLANET && Factories &&
         (s.type == ShipType::OTYPE_FACTORY)) {
       if (first) {
-        sprintf(buf,
+        g.out << std::format(
                 "   #    Cost Tech Mass Sz A Crw Ful Crg Hng Dst Sp "
                 "Weapons Lsr CEWs Range Dmg\n");
-        notify(Playernum, Governor, buf);
         if (!SHip) first = 0;
       }
       if ((s.build_type == 0) || (s.build_type == ShipType::OTYPE_FACTORY)) {
-        sprintf(buf,
-                "%5lu               (No ship type specified yet)           "
-                "           75%% (OFF)",
+        g.out << std::format(
+                "{:5}               (No ship type specified yet)           "
+                "           75% (OFF)",
                 shipno);
-        notify(Playernum, Governor, buf);
       } else {
         if (s.primtype)
-          sprintf(tmpbuf1, "%2lu%s", s.primary,
+          strcpy(tmpbuf1, std::format("{:2}{}", s.primary,
                   s.primtype == GTYPE_LIGHT    ? "L"
                   : s.primtype == GTYPE_MEDIUM ? "M"
                   : s.primtype == GTYPE_HEAVY  ? "H"
-                                               : "N");
+                                               : "N").c_str());
         else
           strcpy(tmpbuf1, "---");
         if (s.sectype)
-          sprintf(tmpbuf2, "%2lu%s", s.secondary,
+          strcpy(tmpbuf2, std::format("{:2}{}", s.secondary,
                   s.sectype == GTYPE_LIGHT    ? "L"
                   : s.sectype == GTYPE_MEDIUM ? "M"
                   : s.sectype == GTYPE_HEAVY  ? "H"
-                                              : "N");
+                                              : "N").c_str());
         else
           strcpy(tmpbuf2, "---");
         if (s.cew)
-          sprintf(tmpbuf3, "%4d", s.cew);
+          strcpy(tmpbuf3, std::format("{:4d}", s.cew).c_str());
         else
           strcpy(tmpbuf3, "----");
         if (s.cew)
-          sprintf(tmpbuf4, "%5d", s.cew_range);
+          strcpy(tmpbuf4, std::format("{:5d}", s.cew_range).c_str());
         else
           strcpy(tmpbuf4, "-----");
-        sprintf(buf,
-                "%5lu %c%4d%6.1f%5.1f%3d%2d%4d%4d%4lu%4d%4d %s%1d %s/%s %s "
-                "%s %s %02d%%%s\n",
+        g.out << std::format(
+                "{:5} {}{:4d}{:6.1f}{:5.1f}{:3d}{:2d}{:4d}{:4d}{:4}{:4d}{:4d} {}{:1d} {}/{} {} "
+                "{} {} {:02d}%{}\n",
                 shipno, Shipltrs[s.build_type], s.build_cost, s.complexity,
                 s.base_mass, ship_size(s), s.armor, s.max_crew, s.max_fuel,
                 s.max_resource, s.max_hanger, s.max_destruct,
                 s.hyper_drive.has ? (s.mount ? "+" : "*") : " ", s.max_speed,
                 tmpbuf1, tmpbuf2, s.laser ? "yes" : " no", tmpbuf3, tmpbuf4,
                 s.damage, s.damage ? (s.on ? "" : "*") : "");
-        notify(Playernum, Governor, buf);
       }
     }
 

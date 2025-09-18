@@ -14,6 +14,49 @@
 - **Dependencies**: Minimal - SQLite3, glaze (JSON), scnlib (parsing)
 - **License**: Apache-2.0
 
+## 🔨 Building the Project
+
+### Prerequisites
+- LLVM/Clang with libc++ support
+- CMake 4.0+
+- SQLite3 development libraries
+- Git (for dependency fetching)
+
+### Build Commands
+This project uses **CMake**, not make. The build directory is typically `build/`.
+
+```bash
+# Configure (first time only)
+cd /workspaces/galactic-bloodshed
+mkdir -p build
+cd build
+cmake ..
+
+# Build everything
+cmake --build .
+
+# Build specific targets
+cmake --build . --target GB           # Main game server
+cmake --build . --target makeuniv     # Universe generator
+cmake --build . --target enrol        # Player enrollment
+cmake --build . --target race_sqlite_test  # Database test
+
+# Clean build
+cmake --build . --clean-first
+```
+
+### Common Build Commands for AI Agents
+- **Full build**: `cd /workspaces/galactic-bloodshed/build && cmake --build .`
+- **Incremental build**: `cd /workspaces/galactic-bloodshed/build && cmake --build .`
+- **Test specific component**: `cd /workspaces/galactic-bloodshed/build && cmake --build . --target [target_name]`
+- **Run tests**: `cd /workspaces/galactic-bloodshed/build && ./gb/race_sqlite_test`
+
+### ⚠️ Important Notes
+- **DO NOT use `make`** - This project uses CMake, not traditional makefiles
+- Always build from the `build/` directory
+- Use `cmake --build .` instead of raw `make` commands
+- The build system handles C++ modules automatically
+
 ## 🏗️ Architecture & Code Organization
 
 ### Directory Structure
@@ -275,11 +318,15 @@ Use these from `gb/files.h`:
 
 ## 🐛 Debugging Tips
 
-1. **Build Issues**: Ensure you're using LLVM/Clang with libc++
+1. **Build Issues**: 
+   - Ensure you're using LLVM/Clang with libc++
+   - Always use `cmake --build .` from the `build/` directory
+   - **Never use `make`** - this project uses CMake exclusively
 2. **Module Errors**: Check module import order and partition syntax
 3. **Runtime Errors**: Look for unchecked `std::optional` access
 4. **Output Issues**: Verify all output goes through `g.out`
 5. **Persistence Issues**: Ensure proper `put*` calls after modifications
+6. **Test Failures**: Run `./gb/race_sqlite_test` and other test executables from `build/` directory
 
 ## 📚 Additional Resources
 

@@ -313,34 +313,31 @@ static void ship_report(GameObj &g, shipnum_t indx,
 
     if (rd[indx].type != PLANET && Report) {
       if (first) {
-        sprintf(buf,
+        g.out << std::format(
                 " #      name       gov dam crew mil  des fuel sp orbits  "
                 "   destination\n");
-        notify(Playernum, Governor, buf);
         if (!SHip) first = 0;
       }
       if (s.docked)
         if (s.whatdest == ScopeLevel::LEVEL_SHIP)
-          sprintf(locstrn, "D#%ld", s.destshipno);
+          strcpy(locstrn, std::format("D#{}", s.destshipno).c_str());
         else
-          sprintf(locstrn, "L%2d,%-2d", s.land_x, s.land_y);
+          strcpy(locstrn, std::format("L{:2d},{:<2d}", s.land_x, s.land_y).c_str());
       else if (s.navigate.on)
-        sprintf(locstrn, "nav:%d (%d)", s.navigate.bearing, s.navigate.turns);
+        strcpy(locstrn, std::format("nav:{} ({})", s.navigate.bearing, s.navigate.turns).c_str());
       else
         strcpy(locstrn, prin_ship_dest(s).c_str());
 
       if (!s.active) {
-        sprintf(strng, "INACTIVE(%d)", s.rad);
-        notify(Playernum, Governor, buf);
+        strcpy(strng, std::format("INACTIVE({})", s.rad).c_str());
       }
 
-      sprintf(buf,
-              "%c%-5lu %12.12s %2d %3u%5lu%4lu%5u%5.0f %c%1u %-10s %-18s\n",
+      g.out << std::format(
+              "{}{:<5} {:12.12s} {:2d} {:3}{:5}{:4}{:5}{:5.0f} {}{:1} {:<10} {:<18}\n",
               Shipltrs[s.type], shipno, (s.active ? s.name : strng), s.governor,
               s.damage, s.popn, s.troops, s.destruct, s.fuel,
               s.hyper_drive.has ? (s.mounted ? '+' : '*') : ' ', s.speed,
               dispshiploc_brief(s).c_str(), locstrn);
-      notify(Playernum, Governor, buf);
     }
 
     auto &race = races[Playernum - 1];

@@ -8,12 +8,8 @@ import std.compat;
 #include <cassert>
 
 int main() {
-  // Initialize database connection manually for testing
-  int err = sqlite3_open(":memory:", &dbconn);
-  if (err) {
-    std::printf("Can't open database: %s\n", sqlite3_errmsg(dbconn));
-    return 1;
-  }
+  // Initialize database using common Sql class (in-memory for testing)
+  Sql db(":memory:");
 
   // Initialize database tables - this will create the tbl_race table
   initsqldata();
@@ -42,9 +38,8 @@ int main() {
   assert(retrieved_race.tech == test_race.tech);
   assert(retrieved_race.governors == test_race.governors);
 
-  // Clean up
-  sqlite3_close(dbconn);
+  // Database connection will be cleaned up automatically by Sql destructor
 
-  std::printf("Race SQLite storage test passed!\n");
+  std::println("Race SQLite storage test passed!");
   return 0;
 }

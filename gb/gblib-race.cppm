@@ -24,16 +24,16 @@ export class Race {
   player_t Playernum;
   std::string name; /* Racial name. */
   std::string password;
-  std::string info;       /* personal information */
-  std::string motto;      /* for a cute message */
-  bool absorb;            /* Does this race absorb enemies in combat? */
-  bool collective_iq;     /* Does this race have collective IQ? */
-  bool pods;              /* Can this race use pods? */
-  unsigned char fighters; /* Fight rating of this race. */
-  unsigned char IQ;
-  unsigned char IQ_limit; /* Asymtotic IQ for collective IQ races. */
-  unsigned char number_sexes;
-  unsigned char fertilize; /* Chance that this race will increase the
+  std::string info;      /* personal information */
+  std::string motto;     /* for a cute message */
+  bool absorb;           /* Does this race absorb enemies in combat? */
+  bool collective_iq;    /* Does this race have collective IQ? */
+  bool pods;             /* Can this race use pods? */
+  unsigned int fighters; /* Fight rating of this race. */
+  int IQ;
+  int IQ_limit; /* Asymtotic IQ for collective IQ races. */
+  unsigned int number_sexes;
+  unsigned int fertilize; /* Chance that this race will increase the
                               fertility of its sectors by 1 each update */
   double adventurism;
   double birthrate;
@@ -41,7 +41,7 @@ export class Race {
   double metabolism;
   short conditions[OTHER + 1]; /* Atmosphere/temperature this race likes. */
   double likes[SectorType::SEC_WASTED + 1]; /* Sector condition compats. */
-  unsigned char likesbest; /* 100% compat sector condition for this race. */
+  unsigned int likesbest; /* 100% compat sector condition for this race. */
 
   bool dissolved; /* Player has quit. */
   bool God;       /* Player is a God race. */
@@ -50,7 +50,7 @@ export class Race {
   bool monitor;
   /* God is monitering this race. */  // TODO(jeffbailey): Remove this.
 
-  char translate[MAXPLAYERS]; /* translation mod for each player */
+  int translate[MAXPLAYERS]; /* translation mod for each player */
 
   uint64_t atwar;
   uint64_t allied;
@@ -64,23 +64,23 @@ export class Race {
   unsigned short turn;
 
   double tech;
-  unsigned char discoveries[NUM_DISCOVERIES]; /* Tech discoveries. */
-  unsigned long victory_score;                /* Number of victory points. */
+  unsigned int discoveries[NUM_DISCOVERIES]; /* Tech discoveries. */
+  unsigned long victory_score;               /* Number of victory points. */
   bool votes;
   ap_t planet_points; /* For the determination of global APs */
 
-  char governors;
+  int governors;
   struct gov {
     std::string name;
     std::string password;
     bool active;
     ScopeLevel deflevel;
-    unsigned char defsystem;
-    unsigned char defplanetnum; /* current default */
+    unsigned int defsystem;
+    unsigned int defplanetnum; /* current default */
     ScopeLevel homelevel;
-    unsigned char homesystem;
-    unsigned char homeplanetnum; /* home place */
-    unsigned long newspos[4];    /* news file pointers */
+    unsigned int homesystem;
+    unsigned int homeplanetnum; /* home place */
+    unsigned long newspos[4];   /* news file pointers */
     toggletype toggle;
     money_t money;
     unsigned long income;

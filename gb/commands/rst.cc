@@ -108,8 +108,7 @@ void rst(const command_t &argv, GameObj &g) {
       while (l < MAXARGS && *argv[l].c_str() != '\0') {
         sscanf(argv[l].c_str() + (*argv[l].c_str() == '#'), "%lu", &shipno);
         if (shipno > n_ships || shipno < 1) {
-          sprintf(buf, "rst: no such ship #%lu \n", shipno);
-          notify(Playernum, Governor, buf);
+          g.out << std::format("rst: no such ship #{} \n", shipno);
           free(rd);
           return;
         }
@@ -130,8 +129,7 @@ void rst(const command_t &argv, GameObj &g) {
       shipnum_t i = NUMSTYPES;
       while (--i && Shipltrs[i] != c);
       if (Shipltrs[i] != c) {
-        sprintf(buf, "'%c' -- no such ship letter\n", c);
-        notify(Playernum, Governor, buf);
+        g.out << std::format("'{}' -- no such ship letter\n", c);
       } else
         Report_types[i] = 1;
     }

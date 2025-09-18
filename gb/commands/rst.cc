@@ -207,41 +207,36 @@ static void ship_report(GameObj &g, shipnum_t indx,
        !(s.type == ShipType::OTYPE_GREEN && !s.docked))) {
     if (rd[indx].type != PLANET && Stock) {
       if (first) {
-        sprintf(buf,
+        g.out << std::format(
                 "    #       name        x  hanger   res        des       "
                 "  fuel      crew/mil\n");
-        notify(Playernum, Governor, buf);
         if (!SHip) first = 0;
       }
-      sprintf(buf,
-              "%5lu %c "
-              "%14.14s%3u%4u:%-3u%5lu:%-5ld%5u:%-5ld%7.1f:%-6ld%lu/%lu:%d\n",
+      g.out << std::format(
+              "{:5} {} "
+              "{:14.14s}{:3}{:4}:{:<3}{:5}:{:<5}{:5}:{:<5}{:7.1f}:{:<6}{}/{}:{}\n",
               shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
               s.crystals, s.hanger, s.max_hanger, s.resource, max_resource(s),
               s.destruct, max_destruct(s), s.fuel, max_fuel(s), s.popn,
               s.troops, s.max_crew);
-      notify(Playernum, Governor, buf);
     }
 
     if (rd[indx].type != PLANET && Status) {
       if (first) {
-        sprintf(buf,
+        g.out << std::format(
                 "    #       name       las cew hyp    guns   arm tech "
                 "spd cost  mass size\n");
-        notify(Playernum, Governor, buf);
         if (!SHip) first = 0;
       }
-      sprintf(buf,
-              "%5lu %c %14.14s %s%s%s%3lu%c/%3lu%c%4lu%5.0f%4lu%5lu%7.1f%4u",
+      g.out << std::format(
+              "{:5} {} {:14.14s} {}{}{}{:3}{}/{:3}{}{:4}{:5.0f}{:4}{:5}{:7.1f}{:4}",
               shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
               s.laser ? "yes " : "    ", s.cew ? "yes " : "    ",
               s.hyper_drive.has ? "yes " : "    ", s.primary,
               Caliber[s.primtype], s.secondary, Caliber[s.sectype], armor(s),
               s.tech, max_speed(s), shipcost(s), mass(s), size(s));
-      notify(Playernum, Governor, buf);
       if (s.type == ShipType::STYPE_POD) {
-        sprintf(buf, " (%d)", s.special.pod.temperature);
-        notify(Playernum, Governor, buf);
+        g.out << std::format(" ({})", s.special.pod.temperature);
       }
       g.out << "\n";
     }

@@ -231,7 +231,7 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
           if (shipbuild == ShipType::OTYPE_BERS) {
             /* special.mind.target = person killed the most VN's */
             s2->special.mind.target = VN_brain.Most_mad;
-            sprintf(s2->name, "%x", s2->special.mind.target);
+            strcpy(s2->name, std::format("{:x}", s2->special.mind.target).c_str());
             s2->speed = Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED];
             s2->tech = ship.tech + 100.0;
             s2->bombard = 1;

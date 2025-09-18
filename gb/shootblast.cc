@@ -138,9 +138,10 @@ int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,
   auto [damage, damage_msg] =
       do_damage(race.Playernum, ship, race.tech, strength, hits, 0,
                 GTYPE_MEDIUM, 0.0, "medium guns", hit_probability);
-  sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(ship).c_str(),
+  auto short_msg_str = std::format("{} [{}] {} {}\n", dispshiploc(ship).c_str(),
           race.Playernum, ship.alive ? "attacked" : "DESTROYED",
           ship_to_string(ship).c_str());
+  strcpy(short_msg, short_msg_str.c_str());
   strcpy(long_msg, short_msg);
   strcat(long_msg, damage_msg.c_str());
 
@@ -253,8 +254,9 @@ int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
   pl.conditions[TOXIC] += (100 - pl.conditions[TOXIC]) *
                           ((double)numdest / (double)(pl.Maxx * pl.Maxy));
 
-  sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(ship).c_str(),
+  auto short_msg_str2 = std::format("{} bombards {} [{}]\n", ship_to_string(ship).c_str(),
           dispshiploc(ship).c_str(), oldowner);
+  strcpy(short_msg, short_msg_str2.c_str());
   strcpy(long_msg, short_msg);
   std::string msg = std::format("\t{} sectors destroyed\n", numdest);
   strcat(long_msg, msg.c_str());

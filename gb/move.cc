@@ -149,10 +149,11 @@ void mech_attack_people(Ship& ship, population_t* civ, population_t* mil,
   cas_mil = MIN(oldmil, cas_mil);
   *civ -= cas_civ;
   *mil -= cas_mil;
-  sprintf(short_msg, "%s: %s %s %s [%d]\n", dispshiploc(ship).c_str(),
+  auto short_msg_str = std::format("{}: {} {} {} [{}]\n", dispshiploc(ship).c_str(),
           ship_to_string(ship).c_str(),
           (*civ + *mil) ? "attacked" : "slaughtered", alien.name.c_str(),
           alien.Playernum);
+  strcpy(short_msg, short_msg_str.c_str());
   strcpy(long_msg, short_msg);
   std::string battle_msg = std::format(
       "\tBattle at {},{} {}: {} guns fired on {} civ/{} mil\n", sect.x, sect.y,
@@ -197,9 +198,10 @@ void people_attack_mech(Ship& ship, int civ, int mil, Race& race, Race& alien,
     kill_ship(race.Playernum, &ship);
   }
   auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage);
-  sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(ship).c_str(),
+  auto short_msg_str2 = std::format("{}: {} [{}] {} {}\n", dispshiploc(ship).c_str(),
           race.name.c_str(), race.Playernum,
           ship.alive ? "attacked" : "DESTROYED", ship_to_string(ship).c_str());
+  strcpy(short_msg, short_msg_str2.c_str());
   strcpy(long_msg, short_msg);
   std::string assault_msg =
       std::format("\tBattle at {},{} {}: {} civ/{} mil assault {}\n", x, y,

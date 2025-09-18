@@ -261,17 +261,16 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
         shoot_ship_to_planet(s, p, round_rand((double)(s.destruct) / 3.), x, y,
                              smap, 0, GTYPE_HEAVY, long_buf, short_buf);
     putsmap(smap, p);
-    sprintf(buf, "BOOM!! %s crashes on sector %d,%d with blast radius of %d.\n",
+    auto crash_msg = std::format("BOOM!! {} crashes on sector {},{} with blast radius of {}.\n",
             ship_to_string(s).c_str(), x, y, numdest);
     for (i = 1; i <= Num_races; i++)
       if (p.info[i - 1].numsectsowned || i == Playernum)
-        warn(i, stars[s.storbits].governor(i - 1), buf);
+        warn(i, stars[s.storbits].governor(i - 1), crash_msg.c_str());
     if (roll)
-      sprintf(buf, "Ship damage %d%% (you rolled a %d)\n", (int)s.damage, roll);
+      g.out << std::format("Ship damage {}% (you rolled a {})\n", (int)s.damage, roll);
     else
-      sprintf(buf, "You had %.1ff while the landing required %.1ff\n", s.fuel,
+      g.out << std::format("You had {:.1f}f while the landing required {:.1f}f\n", s.fuel,
               fuel);
-    notify(Playernum, Governor, buf);
     kill_ship(s.owner, &s);
   } else {
     s.land_x = x;
@@ -293,13 +292,11 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     auto& race = races[Playernum - 1];
     auto& alien = races[sect.owner - 1];
     if (!(isset(race.allied, sect.owner) && isset(alien.allied, Playernum))) {
-      sprintf(buf, "You have landed on an alien sector (%s).\n",
+      g.out << std::format("You have landed on an alien sector ({}).\n",
               alien.name.c_str());
-      notify(Playernum, Governor, buf);
     } else {
-      sprintf(buf, "You have landed on allied sector (%s).\n",
+      g.out << std::format("You have landed on allied sector ({}).\n",
               alien.name.c_str());
-      notify(Playernum, Governor, buf);
     }
   }
   if (s.whatorbits == ScopeLevel::LEVEL_UNIV)
@@ -312,16 +309,15 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
   if (numdest) putsector(sect, p, x, y);
 
   /* send messages to anyone there */
-  sprintf(buf, "%s observed landing on sector %d,%d,planet /%s/%s.\n",
+  auto landing_msg = std::format("{} observed landing on sector {},{},planet /{}/{}.\n",
           ship_to_string(s).c_str(), s.land_x, s.land_y,
           stars[s.storbits].get_name().c_str(),
           stars[s.storbits].get_planet_name(s.pnumorbits).c_str());
   for (i = 1; i <= Num_races; i++)
     if (p.info[i - 1].numsectsowned && i != Playernum)
-      notify(i, stars[s.storbits].governor(i - 1), buf);
+      notify(i, stars[s.storbits].governor(i - 1), landing_msg.c_str());
 
-  sprintf(buf, "%s landed on planet.\n", ship_to_string(s).c_str());
-  notify(Playernum, Governor, buf);
+  g.out << std::format("{} landed on planet.\n", ship_to_string(s).c_str());
 }
 }  // namespace
 
@@ -348,9 +344,8 @@ void land(const command_t& argv, GameObj& g) {
     if (in_list(Playernum, argv[1], *s, &nextshipno) &&
         authorized(Governor, *s)) {
       if (overloaded(*s)) {
-        sprintf(buf, "%s is too overloaded to land.\n",
+        g.out << std::format("{} is too overloaded to land.\n",
                 ship_to_string(*s).c_str());
-        notify(Playernum, Governor, buf);
         free(s);
         continue;
       }

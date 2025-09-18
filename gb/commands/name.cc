@@ -25,10 +25,9 @@ void name(const command_t& argv, GameObj& g) {
 
   std::string namebuf = argv[2];
   for (int i = 3; i < argv.size(); i++) {
-    sprintf(tmp, " %s", argv[i].c_str());
-    namebuf += tmp;
+    namebuf += std::format(" {}", argv[i].c_str());
   }
-  sprintf(string, "%s", namebuf.c_str());
+  strcpy(string, namebuf.c_str());
 
   /* make sure there are no ^'s or '/' in name,
     also make sure the name has at least 1 character in it */

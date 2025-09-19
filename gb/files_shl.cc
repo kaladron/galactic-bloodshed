@@ -75,6 +75,27 @@ struct meta<Race::gov> {
              &T::profit_market, "login", &T::login);
 };
 
+// Glaze reflection for stardata so we can serialize to JSON
+template <>
+struct meta<stardata> {
+  using T = stardata;
+  static constexpr auto value = object(
+      "numstars", &T::numstars, "ships", &T::ships, "AP", &T::AP,
+      "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
+      "VN_index2", &T::VN_index2, "dummy", &T::dummy);
+};
+
+// Glaze reflection for block so we can serialize to JSON
+template <>
+struct meta<block> {
+  using T = block;
+  static constexpr auto value = object(
+      "Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
+      "invite", &T::invite, "pledge", &T::pledge, "atwar", &T::atwar,
+      "allied", &T::allied, "next", &T::next, "systems_owned", &T::systems_owned,
+      "VPs", &T::VPs, "money", &T::money);
+};
+
 // Glaze reflection for Race class
 template <>
 struct meta<Race> {
@@ -362,6 +383,22 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
   CREATE TABLE tbl_race(
     player_id INT PRIMARY KEY NOT NULL,
     race_data TEXT NOT NULL);
+
+  CREATE TABLE tbl_stardata(
+    id INT PRIMARY KEY NOT NULL DEFAULT 1,
+    stardata_json TEXT NOT NULL);
+
+  CREATE TABLE tbl_block(
+    player_id INT PRIMARY KEY NOT NULL,
+    block_data TEXT NOT NULL);
+
+  CREATE TABLE tbl_commod_json(
+    commod_id INT PRIMARY KEY NOT NULL,
+    commod_data TEXT NOT NULL);
+
+  CREATE TABLE tbl_ship_json(
+    ship_id INT PRIMARY KEY NOT NULL,
+    ship_data TEXT NOT NULL);
 )";
   // TODO(jeffbailey): tbl_commod could probably use more indeces.
   char* err_msg = nullptr;
@@ -407,7 +444,41 @@ void openracedata(int* fd) {
 
 void Sql::getsdata(stardata* S) { ::getsdata(S); }
 void getsdata(stardata* S) {
-  Fileread(stdata, (char*)S, sizeof(struct stardata), 0);
+  // Read from SQLite database
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql = "SELECT stardata_json FROM tbl_stardata WHERE id = 1";
+
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+
+  int result = sqlite3_step(stmt);
+  if (result == SQLITE_ROW) {
+    // Data found in SQLite, deserialize from JSON
+    const char* json_data =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+
+    if (json_data != nullptr) {
+      // Copy the JSON data before finalizing the statement
+      std::string json_string(json_data);
+      sqlite3_finalize(stmt);
+
+      auto stardata_opt = stardata_from_json(json_string);
+      if (stardata_opt.has_value()) {
+        *S = stardata_opt.value();
+        return;
+      } else {
+        fprintf(stderr, "Error: Failed to deserialize stardata from JSON\n");
+      }
+    } else {
+      fprintf(stderr, "Error: NULL JSON data retrieved for stardata\n");
+      sqlite3_finalize(stmt);
+    }
+  } else {
+    sqlite3_finalize(stmt);
+  }
+
+  // Return empty stardata if not found or error
+  *S = stardata{};
 }
 
 Race Sql::getrace(player_t rnum) { return ::getrace(rnum); };
@@ -911,13 +982,43 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
 
 Commod Sql::getcommod(commodnum_t commodnum) { return ::getcommod(commodnum); }
 Commod getcommod(commodnum_t commodnum) {
-  Commod commod;
+  // Read from SQLite database
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql = "SELECT commod_data FROM tbl_commod_json WHERE commod_id = ?1";
 
-  // TODO(jeffbailey): Throw here
-  // if (commodnum <= 0) return 0;
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, commodnum);
 
-  Fileread(commoddata, (char*)&commod, sizeof(Commod),
-           (commodnum - 1) * sizeof(Commod));
+  int result = sqlite3_step(stmt);
+  if (result == SQLITE_ROW) {
+    // Data found in SQLite, deserialize from JSON
+    const char* json_data =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+
+    if (json_data != nullptr) {
+      // Copy the JSON data before finalizing the statement
+      std::string json_string(json_data);
+      sqlite3_finalize(stmt);
+
+      auto commod_opt = commod_from_json(json_string);
+      if (commod_opt.has_value()) {
+        return commod_opt.value();
+      } else {
+        fprintf(stderr,
+                "Error: Failed to deserialize Commod from JSON for commod %d\n",
+                commodnum);
+      }
+    } else {
+      fprintf(stderr, "Error: NULL JSON data retrieved for commod %d\n", commodnum);
+      sqlite3_finalize(stmt);
+    }
+  } else {
+    sqlite3_finalize(stmt);
+  }
+
+  // Return empty commod if not found
+  Commod commod{};
   return commod;
 }
 
@@ -985,7 +1086,27 @@ int getdeadcommod() {
 
 void Sql::putsdata(stardata* S) { ::putsdata(S); }
 void putsdata(stardata* S) {
-  Filewrite(stdata, (char*)S, sizeof(struct stardata), 0);
+  // Serialize stardata to JSON using existing function
+  auto json_result = stardata_to_json(*S);
+  if (!json_result.has_value()) {
+    fprintf(stderr, "Error: Failed to serialize stardata to JSON\n");
+    return;
+  }
+
+  // Store in SQLite database as JSON
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
+      "REPLACE INTO tbl_stardata (id, stardata_json) VALUES (1, ?1)";
+
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  sqlite3_bind_text(stmt, 1, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    fprintf(stderr, "SQLite error in putsdata: %s\n", sqlite3_errmsg(dbconn));
+  }
+
+  sqlite3_finalize(stmt);
 }
 
 void Sql::putrace(const Race& r) { ::putrace(r); }
@@ -1722,45 +1843,28 @@ void Sql::putcommod(const Commod& c, int commodnum) {
   return ::putcommod(c, commodnum);
 }
 void putcommod(const Commod& c, int commodnum) {
-  // Create a JSON string of a Commod struct using Glaze (demonstration only)
-  // This does not affect behavior; it's to verify Glaze works with Commod.
-  [[maybe_unused]] auto _glz_ec = glz::write_json(c);
+  // Serialize Commod to JSON using existing function
+  auto json_result = commod_to_json(c);
+  if (!json_result.has_value()) {
+    fprintf(stderr, "Error: Failed to serialize Commod to JSON\n");
+    return;
+  }
 
-  Filewrite(commoddata, (const char*)&c, sizeof(Commod),
-            (commodnum - 1) * sizeof(Commod));
-
+  // Store in SQLite database as JSON
   const char* tail;
   sqlite3_stmt* stmt;
   const char* sql =
-      "REPLACE INTO tbl_commod (comod_id, owner, governor,"
-      "type, amount, deliver, bid, bidder, bidder_gov,"
-      "star_from, planet_from, star_to, planet_to)"
-      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10,"
-      "?11, ?12, ?13);";
+      "REPLACE INTO tbl_commod_json (commod_id, commod_data) VALUES (?1, ?2)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, commodnum);
-  sqlite3_bind_int(stmt, 2, c.owner);
-  sqlite3_bind_int(stmt, 3, c.governor);
-  sqlite3_bind_int(stmt, 4, std::to_underlying(c.type));
-  sqlite3_bind_int(stmt, 5, c.amount);
-  sqlite3_bind_int(stmt, 6, c.deliver);
-  sqlite3_bind_int(stmt, 7, c.bid);
-  sqlite3_bind_int(stmt, 8, c.bidder);
-  sqlite3_bind_int(stmt, 9, c.bidder_gov);
-  sqlite3_bind_int(stmt, 10, c.star_from);
-  sqlite3_bind_int(stmt, 11, c.planet_from);
-  sqlite3_bind_int(stmt, 12, c.star_to);
-  sqlite3_bind_int(stmt, 13, c.planet_to);
+  sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    fprintf(stderr, "SQLite error in putcommod: %s\n", sqlite3_errmsg(dbconn));
   }
 
-  int err = sqlite3_finalize(stmt);
-  if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
-  }
+  sqlite3_finalize(stmt);
 }
 
 player_t Sql::Numraces() {
@@ -1962,33 +2066,65 @@ void getpower(power p[MAXPLAYERS]) {
 }
 
 void Putblock(block b[MAXPLAYERS]) {
-  int block_fd;
+  // Store each block in SQLite database as JSON
+  for (player_t i = 1; i <= MAXPLAYERS; i++) {
+    auto json_result = block_to_json(b[i - 1]);
+    if (!json_result.has_value()) {
+      fprintf(stderr, "Error: Failed to serialize block %d to JSON\n", i);
+      continue;
+    }
 
-  if ((block_fd = open(BLOCKDATAFL, O_RDWR, 0777)) < 0) {
-    perror("open block data");
-    printf("unable to open %s\n", BLOCKDATAFL);
-    return;
+    const char* tail;
+    sqlite3_stmt* stmt;
+    const char* sql =
+        "REPLACE INTO tbl_block (player_id, block_data) VALUES (?1, ?2)";
+
+    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+    sqlite3_bind_int(stmt, 1, i);
+    sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+      fprintf(stderr, "SQLite error in Putblock for player %d: %s\n", i, sqlite3_errmsg(dbconn));
+    }
+
+    sqlite3_finalize(stmt);
   }
-  if (write(block_fd, (char*)b, sizeof(*b) * MAXPLAYERS) < 0) {
-    perror("write failed");
-    exit(-1);
-  }
-  close_file(block_fd);
 }
 
 void Getblock(block b[MAXPLAYERS]) {
-  int block_fd;
+  // Read each block from SQLite database
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql = "SELECT player_id, block_data FROM tbl_block ORDER BY player_id";
 
-  if ((block_fd = open(BLOCKDATAFL, O_RDONLY, 0777)) < 0) {
-    perror("open block data");
-    printf("unable to open %s\n", BLOCKDATAFL);
-    return;
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+
+  // Initialize array to empty blocks
+  for (player_t i = 0; i < MAXPLAYERS; i++) {
+    b[i] = block{};
   }
-  if (read(block_fd, (char*)b, sizeof(*b) * MAXPLAYERS) < 0) {
-    perror("read failed");
-    exit(-1);
+
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    player_t player_id = sqlite3_column_int(stmt, 0);
+    const char* json_data =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+
+    if (json_data != nullptr && player_id >= 1 && player_id <= MAXPLAYERS) {
+      std::string json_string(json_data);
+      auto block_opt = block_from_json(json_string);
+      if (block_opt.has_value()) {
+        b[player_id - 1] = block_opt.value();
+      } else {
+        fprintf(stderr,
+                "Error: Failed to deserialize block from JSON for player %d\n",
+                player_id);
+      }
+    } else {
+      fprintf(stderr, "Error: Invalid data for block player %d\n", player_id);
+    }
   }
-  close_file(block_fd);
+
+  sqlite3_finalize(stmt);
 }
 
 void open_files() {
@@ -2019,6 +2155,78 @@ std::optional<Race> race_from_json(const std::string& json_str) {
   auto result = glz::read_json(race, json_str);
   if (!result) {
     return race;
+  }
+  return std::nullopt;
+}
+
+// JSON serialization functions for stardata
+std::optional<std::string> stardata_to_json(const stardata& sdata) {
+  auto result = glz::write_json(sdata);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<stardata> stardata_from_json(const std::string& json_str) {
+  stardata sdata{};
+  auto result = glz::read_json(sdata, json_str);
+  if (!result) {
+    return sdata;
+  }
+  return std::nullopt;
+}
+
+// JSON serialization functions for block
+std::optional<std::string> block_to_json(const block& b) {
+  auto result = glz::write_json(b);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<block> block_from_json(const std::string& json_str) {
+  block b{};
+  auto result = glz::read_json(b, json_str);
+  if (!result) {
+    return b;
+  }
+  return std::nullopt;
+}
+
+// JSON serialization functions for Commod
+std::optional<std::string> commod_to_json(const Commod& commod) {
+  auto result = glz::write_json(commod);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<Commod> commod_from_json(const std::string& json_str) {
+  Commod commod{};
+  auto result = glz::read_json(commod, json_str);
+  if (!result) {
+    return commod;
+  }
+  return std::nullopt;
+}
+
+// JSON serialization functions for Ship
+std::optional<std::string> ship_to_json(const Ship& ship) {
+  auto result = glz::write_json(ship);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<Ship> ship_from_json(const std::string& json_str) {
+  Ship ship{};
+  auto result = glz::read_json(ship, json_str);
+  if (!result) {
+    return ship;
   }
   return std::nullopt;
 }

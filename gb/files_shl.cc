@@ -1,6 +1,4 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /*  disk input/output routines & msc stuff
  *    all read routines lock the data they just accessed (the file is not
@@ -39,65 +37,36 @@ struct meta<Commod> {
       &T::planet_from, "star_to", &T::star_to, "planet_to", &T::planet_to);
 };
 
-// Extended Ship Glaze reflection for JSON serialization
-template <>
-struct meta<Ship::navigate> {
-  using T = Ship::navigate;
-  static constexpr auto value = object(
-      "on", &T::on, "speed", &T::speed, "turns", &T::turns, "bearing", &T::bearing);
-};
-
-template <>
-struct meta<Ship::protect> {
-  using T = Ship::protect;
-  static constexpr auto value = object(
-      "maxrng", &T::maxrng, "on", &T::on, "planet", &T::planet, 
-      "self", &T::self, "evade", &T::evade, "ship", &T::ship);
-};
-
-template <>
-struct meta<Ship::hyper_drive> {
-  using T = Ship::hyper_drive;
-  static constexpr auto value = object(
-      "charge", &T::charge, "ready", &T::ready, "on", &T::on, "has", &T::has);
-};
-
-// Complete Ship reflection for JSON serialization
+// Ship Glaze reflection for JSON serialization
 template <>
 struct meta<Ship> {
   using T = Ship;
   static constexpr auto value = object(
       "number", &T::number, "owner", &T::owner, "governor", &T::governor,
-      "name", &T::name, "shipclass", &T::shipclass,
-      "race", &T::race, "xpos", &T::xpos, "ypos", &T::ypos, "fuel", &T::fuel,
-      "mass", &T::mass, "land_x", &T::land_x, "land_y", &T::land_y,
-      "destshipno", &T::destshipno, "nextship", &T::nextship, "ships", &T::ships,
-      "armor", &T::armor, "size", &T::size, "max_crew", &T::max_crew,
-      "max_resource", &T::max_resource, "max_destruct", &T::max_destruct,
-      "max_fuel", &T::max_fuel, "max_speed", &T::max_speed,
-      "build_type", &T::build_type, "build_cost", &T::build_cost,
-      "base_mass", &T::base_mass, "tech", &T::tech, "complexity", &T::complexity,
-      "destruct", &T::destruct, "resource", &T::resource, "popn", &T::popn,
-      "troops", &T::troops, "crystals", &T::crystals,
-      "who_killed", &T::who_killed, "navigate", &T::navigate, "protect", &T::protect,
-      "mount", &T::mount, "hyper_drive", &T::hyper_drive, "cew", &T::cew,
-      "cew_range", &T::cew_range, "cloak", &T::cloak, "laser", &T::laser,
-      "focus", &T::focus, "fire_laser", &T::fire_laser, "storbits", &T::storbits,
-      "deststar", &T::deststar, "destpnum", &T::destpnum, "pnumorbits", &T::pnumorbits,
-      "whatdest", &T::whatdest, "whatorbits", &T::whatorbits, "damage", &T::damage,
-      "rad", &T::rad, "retaliate", &T::retaliate, "target", &T::target,
-      "type", &T::type, "speed", &T::speed, "active", &T::active, "alive", &T::alive,
-      "mode", &T::mode, "bombard", &T::bombard, "mounted", &T::mounted,
-      "cloaked", &T::cloaked, "sheep", &T::sheep, "docked", &T::docked,
-      "notified", &T::notified, "examined", &T::examined, "on", &T::on,
-      "merchant", &T::merchant, "guns", &T::guns, "primary", &T::primary,
-      "primtype", &T::primtype, "secondary", &T::secondary);
-};
-  using T = Ship;
-  static constexpr auto value =
-      object("number", &T::number, "owner", &T::owner, "governor", &T::governor,
-             "race", &T::race, "xpos", &T::xpos, "ypos", &T::ypos, "mass",
-             &T::mass, "type", &T::type, "speed", &T::speed);
+      "name", &T::name, "shipclass", &T::shipclass, "race", &T::race, "xpos",
+      &T::xpos, "ypos", &T::ypos, "fuel", &T::fuel, "mass", &T::mass, "land_x",
+      &T::land_x, "land_y", &T::land_y, "destshipno", &T::destshipno,
+      "nextship", &T::nextship, "ships", &T::ships, "armor", &T::armor, "size",
+      &T::size, "max_crew", &T::max_crew, "max_resource", &T::max_resource,
+      "max_destruct", &T::max_destruct, "max_fuel", &T::max_fuel, "max_speed",
+      &T::max_speed, "build_type", &T::build_type, "build_cost", &T::build_cost,
+      "base_mass", &T::base_mass, "tech", &T::tech, "complexity",
+      &T::complexity, "destruct", &T::destruct, "resource", &T::resource,
+      "popn", &T::popn, "troops", &T::troops, "crystals", &T::crystals,
+      "who_killed", &T::who_killed, "navigate", &T::navigate, "protect",
+      &T::protect, "mount", &T::mount, "hyper_drive", &T::hyper_drive, "cew",
+      &T::cew, "cew_range", &T::cew_range, "cloak", &T::cloak, "laser",
+      &T::laser, "focus", &T::focus, "fire_laser", &T::fire_laser, "storbits",
+      &T::storbits, "deststar", &T::deststar, "destpnum", &T::destpnum,
+      "pnumorbits", &T::pnumorbits, "whatdest", &T::whatdest, "whatorbits",
+      &T::whatorbits, "damage", &T::damage, "rad", &T::rad, "retaliate",
+      &T::retaliate, "target", &T::target, "type", &T::type, "speed", &T::speed,
+      "active", &T::active, "alive", &T::alive, "mode", &T::mode, "bombard",
+      &T::bombard, "mounted", &T::mounted, "cloaked", &T::cloaked, "sheep",
+      &T::sheep, "docked", &T::docked, "notified", &T::notified, "examined",
+      &T::examined, "on", &T::on, "merchant", &T::merchant, "guns", &T::guns,
+      "primary", &T::primary, "primtype", &T::primtype, "secondary",
+      &T::secondary);
 };
 
 // Glaze reflection for toggletype struct
@@ -130,21 +99,21 @@ struct meta<Race::gov> {
 template <>
 struct meta<stardata> {
   using T = stardata;
-  static constexpr auto value = object(
-      "numstars", &T::numstars, "ships", &T::ships, "AP", &T::AP,
-      "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
-      "VN_index2", &T::VN_index2, "dummy", &T::dummy);
+  static constexpr auto value =
+      object("numstars", &T::numstars, "ships", &T::ships, "AP", &T::AP,
+             "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
+             "VN_index2", &T::VN_index2, "dummy", &T::dummy);
 };
 
 // Glaze reflection for block so we can serialize to JSON
 template <>
 struct meta<block> {
   using T = block;
-  static constexpr auto value = object(
-      "Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
-      "invite", &T::invite, "pledge", &T::pledge, "atwar", &T::atwar,
-      "allied", &T::allied, "next", &T::next, "systems_owned", &T::systems_owned,
-      "VPs", &T::VPs, "money", &T::money);
+  static constexpr auto value =
+      object("Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
+             "invite", &T::invite, "pledge", &T::pledge, "atwar", &T::atwar,
+             "allied", &T::allied, "next", &T::next, "systems_owned",
+             &T::systems_owned, "VPs", &T::VPs, "money", &T::money);
 };
 
 // Glaze reflection for Race class
@@ -204,7 +173,7 @@ struct meta<Race> {
           deserialized_race.tech == test_race.tech);
 }
 
-static int commoddata, racedata, shdata, stdata;
+static int commoddata, shdata, stdata;
 
 static void start_bulk_insert();
 static void end_bulk_insert();
@@ -267,141 +236,6 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
                                  ap INT NOT NULL,
                                  PRIMARY KEY(star_id, player_id));
 
-  CREATE TABLE tbl_stardata(indexnum INT PRIMARY KEY NOT NULL, ships INT);
-
-  CREATE TABLE tbl_stardata_perplayer(
-      player_id INT PRIMARY KEY NOT NULL, ap INT NOT NULL,
-      VN_hitlist INT NOT NULL, VN_index1 INT NOT NULL, VN_index2 INT NOT NULL);
-
-  CREATE TABLE tbl_ship(
-      ship_id INT PRIMARY KEY NOT NULL,
-      player_id INT NOT NULL,
-      governor_id INT NOT NULL,
-      name TEXT NOT NULL,
-      shipclass TEXT NOT NULL,
-      race INT NOT NULL,
-      xpos DOUBLE NOT NULL,
-      ypos DOUBLE NOT NULL,
-      mass DOUBLE NOT NULL,
-      land_x INT,
-      land_y INT,
-      destshipno INT,
-      nextship INT,
-      ships INT,
-      armor INT,
-      size INT,
-
-      max_crew INT,
-      max_resource INT,
-      max_destruct INT,
-      max_fuel INT,
-      max_speed INT,
-      build_type INT,
-      build_cost INT,
-
-      base_mass DOUBLE,
-      tech DOUBLE,
-      complexity DOUBLE,
-
-      destruct INT,
-      resource INT,
-      population INT64,
-      troops INT64,
-      crystals INT,
-
-      aimed_shipno INT,
-      aimed_snum INT,
-      aimed_intensity INT,
-      aimed_pnum INT,
-      aimed_level INT,
-
-      mind_progenitor INT,
-      mind_target INT,
-      mind_generation INT,
-      mind_busy INT,
-      mind_tampered INT,
-      mind_who_killed INT,
-
-      pod_decay INT,
-      pod_temperature INT,
-
-      timer_count INT,
-
-      impact_x INT,
-      impact_y INT,
-      impact_scatter INT,
-
-      trigger_radius INT,
-
-      terraform_index INT,
-
-      transport_target INT,
-
-      waste_toxic INT,
-
-      who_killed INT,
-
-      navigate_on INT,
-      navigate_speed INT,
-      navigate_turns INT,
-      navigate_bearing INT,
-
-      protect_maxrng DOUBLE,
-      protect_on INT,
-      protect_planet INT,
-      protect_self INT,
-      protect_evade INT,
-      protect_ship INT,
-
-      hyper_drive_charge INT,
-      hyper_drive_ready INT,
-      hyper_drive_on INT,
-      hyper_drive_has INT,
-
-      cew INT,
-      cew_range INT,
-      cloak INT,
-      laser INT,
-      focus INT,
-      fire_laser INT,
-      storbits INT,
-      deststar INT,
-      destpnum INT,
-      pnumorbits INT,
-      whatdest INT,
-      whatorbits INT,
-
-      damage INT,
-      rad INT,
-      retaliate INT,
-      target INT,
-
-      type INT,
-      speed INT,
-
-      active INT,
-      alive INT,
-      mode INT,
-      bombard INT,
-      mounted INT,
-      cloaked INT,
-      sheep INT,
-      docked INT,
-      notified INT,
-      examined INT,
-      on_off INT,
-
-      merchant INT,
-      guns INT,
-      primary_gun INT,
-      primtype INT,
-      secondary_gun INT,
-      sectype INT,
-
-      hanger INT,
-      max_hanger INT,
-      mount INT);
-
   CREATE TABLE tbl_power(
       player_id INT PRIMARY KEY NOT NULL,
       troops INT,
@@ -455,7 +289,7 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
   char* err_msg = nullptr;
   int err = sqlite3_exec(dbconn, tbl_create, nullptr, nullptr, &err_msg);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", err_msg);
+    std::println(stderr, "SQL error: {}", err_msg);
     sqlite3_free(err_msg);
   }
 }
@@ -510,7 +344,7 @@ void getsdata(stardata* S) {
 
     if (json_data != nullptr) {
       // Copy the JSON data before finalizing the statement
-      std::string json_string(json_data);
+      auto json_string = std::basic_string<char>(json_data);
       sqlite3_finalize(stmt);
 
       auto stardata_opt = stardata_from_json(json_string);
@@ -518,10 +352,10 @@ void getsdata(stardata* S) {
         *S = stardata_opt.value();
         return;
       } else {
-        fprintf(stderr, "Error: Failed to deserialize stardata from JSON\n");
+        std::println(stderr, "Error: Failed to deserialize stardata from JSON");
       }
     } else {
-      fprintf(stderr, "Error: NULL JSON data retrieved for stardata\n");
+      std::println(stderr, "Error: NULL JSON data retrieved for stardata");
       sqlite3_finalize(stmt);
     }
   } else {
@@ -557,12 +391,13 @@ Race getrace(player_t rnum) {
       if (race_opt.has_value()) {
         return race_opt.value();
       } else {
-        fprintf(stderr,
-                "Error: Failed to deserialize Race from JSON for player %d\n",
-                rnum);
+        std::println(
+            stderr, "Error: Failed to deserialize Race from JSON for player {}",
+            rnum);
       }
     } else {
-      fprintf(stderr, "Error: NULL JSON data retrieved for player %d\n", rnum);
+      std::println(stderr, "Error: NULL JSON data retrieved for player {}",
+                   rnum);
       sqlite3_finalize(stmt);
     }
   } else {
@@ -806,7 +641,7 @@ Sector getsector(const Planet& p, const int x, const int y) {
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 
   return s;
@@ -901,12 +736,13 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
         **s = ship_opt.value();
         return **s;
       } else {
-        fprintf(stderr,
-                "Error: Failed to deserialize Ship from JSON for ship %d\n",
-                shipnum);
+        std::println(stderr,
+                     "Error: Failed to deserialize Ship from JSON for ship {}",
+                     shipnum);
       }
     } else {
-      fprintf(stderr, "Error: NULL JSON data retrieved for ship %d\n", shipnum);
+      std::println(stderr, "Error: NULL JSON data retrieved for ship {}",
+                   shipnum);
       sqlite3_finalize(stmt);
     }
   } else {
@@ -922,7 +758,8 @@ Commod getcommod(commodnum_t commodnum) {
   // Read from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT commod_data FROM tbl_commod_json WHERE commod_id = ?1";
+  const char* sql =
+      "SELECT commod_data FROM tbl_commod_json WHERE commod_id = ?1";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, commodnum);
@@ -942,12 +779,14 @@ Commod getcommod(commodnum_t commodnum) {
       if (commod_opt.has_value()) {
         return commod_opt.value();
       } else {
-        fprintf(stderr,
-                "Error: Failed to deserialize Commod from JSON for commod %d\n",
-                commodnum);
+        std::println(
+            stderr,
+            "Error: Failed to deserialize Commod from JSON for commod {}",
+            commodnum);
       }
     } else {
-      fprintf(stderr, "Error: NULL JSON data retrieved for commod %d\n", commodnum);
+      std::println(stderr, "Error: NULL JSON data retrieved for commod {}",
+                   commodnum);
       sqlite3_finalize(stmt);
     }
   } else {
@@ -1026,7 +865,7 @@ void putsdata(stardata* S) {
   // Serialize stardata to JSON using existing function
   auto json_result = stardata_to_json(*S);
   if (!json_result.has_value()) {
-    fprintf(stderr, "Error: Failed to serialize stardata to JSON\n");
+    std::println(stderr, "Error: Failed to serialize stardata to JSON");
     return;
   }
 
@@ -1040,7 +879,8 @@ void putsdata(stardata* S) {
   sqlite3_bind_text(stmt, 1, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "SQLite error in putsdata: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite error in putsdata: {}",
+                 sqlite3_errmsg(dbconn));
   }
 
   sqlite3_finalize(stmt);
@@ -1051,7 +891,7 @@ void putrace(const Race& r) {
   // Serialize Race to JSON using existing function
   auto json_result = race_to_json(r);
   if (!json_result.has_value()) {
-    fprintf(stderr, "Error: Failed to serialize Race to JSON\n");
+    std::println(stderr, "Error: Failed to serialize Race to JSON");
     return;
   }
 
@@ -1066,7 +906,7 @@ void putrace(const Race& r) {
   sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "SQLite error in putrace: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite error in putrace: {}", sqlite3_errmsg(dbconn));
   }
 
   sqlite3_finalize(stmt);
@@ -1234,7 +1074,7 @@ void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
       "?21, ?22, ?23, ?24, ?25, ?26)";
   if (sqlite3_prepare_v2(dbconn, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail) !=
       SQLITE_OK) {
-    fprintf(stderr, "PLINFO %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "PLINFO {}", sqlite3_errmsg(dbconn));
   }
 
   const char* plinfo_route_sql =
@@ -1276,7 +1116,7 @@ void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
   sqlite3_bind_int(stmt, 28, p.explored);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
   }
 
   {
@@ -1309,7 +1149,7 @@ void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
       sqlite3_bind_double(plinfo_stmt, 26, p.info[i].est_production);
 
       if (sqlite3_step(plinfo_stmt) != SQLITE_DONE) {
-        fprintf(stderr, "YYY %s\n", sqlite3_errmsg(dbconn));
+        std::println(stderr, "YYY {}", sqlite3_errmsg(dbconn));
       }
       sqlite3_reset(plinfo_stmt);
 
@@ -1328,7 +1168,7 @@ void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
           sqlite3_bind_int(plinfo_route_stmt, 10, p.info[i].route[j].y);
 
           if (sqlite3_step(plinfo_route_stmt) != SQLITE_DONE) {
-            fprintf(stderr, "ZZZ %s\n", sqlite3_errmsg(dbconn));
+            std::println(stderr, "ZZZ {}", sqlite3_errmsg(dbconn));
           }
           sqlite3_reset(plinfo_route_stmt);
         }
@@ -1370,7 +1210,7 @@ void putsector(const Sector& s, const Planet& p, const int x, const int y) {
   sqlite3_bind_int(stmt, 14, s.condition);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "000 %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "000 {}", sqlite3_errmsg(dbconn));
   }
 
   sqlite3_reset(stmt);
@@ -1406,12 +1246,12 @@ static void putship_aimed(const Ship& s) {
   sqlite3_bind_int(stmt, 6, s.special.aimed_at.level);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_mind(const Ship& s) {
@@ -1433,12 +1273,12 @@ static void putship_mind(const Ship& s) {
   sqlite3_bind_int(stmt, 7, s.special.mind.who_killed);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_pod(const Ship& s) {
@@ -1454,12 +1294,12 @@ static void putship_pod(const Ship& s) {
   sqlite3_bind_int(stmt, 3, s.special.pod.temperature);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_timer(const Ship& s) {
@@ -1474,12 +1314,12 @@ static void putship_timer(const Ship& s) {
   sqlite3_bind_int(stmt, 2, s.special.timer.count);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_impact(const Ship& s) {
@@ -1496,12 +1336,12 @@ static void putship_impact(const Ship& s) {
   sqlite3_bind_int(stmt, 4, s.special.impact.scatter);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_trigger(const Ship& s) {
@@ -1516,12 +1356,12 @@ static void putship_trigger(const Ship& s) {
   sqlite3_bind_int(stmt, 2, s.special.trigger.radius);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_terraform(const Ship& s) {
@@ -1536,12 +1376,12 @@ static void putship_terraform(const Ship& s) {
   sqlite3_bind_int(stmt, 2, s.special.terraform.index);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_transport(const Ship& s) {
@@ -1556,12 +1396,12 @@ static void putship_transport(const Ship& s) {
   sqlite3_bind_int(stmt, 2, s.special.transport.target);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 }
 static void putship_waste(const Ship& s) {
@@ -1576,12 +1416,12 @@ static void putship_waste(const Ship& s) {
   sqlite3_bind_int(stmt, 2, s.special.waste.toxic);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 }
 
@@ -1597,14 +1437,16 @@ void putship(const Ship& s) {
 
     sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
     sqlite3_bind_int(stmt, 1, s.number);
-    sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1,
+                      SQLITE_TRANSIENT);
 
     if (sqlite3_step(stmt) != SQLITE_DONE) {
-      fprintf(stderr, "SQLite error in putship JSON: %s\n", sqlite3_errmsg(dbconn));
+      std::println(stderr, "SQLite error in putship JSON: {}",
+                   sqlite3_errmsg(dbconn));
     }
     sqlite3_finalize(stmt);
   } else {
-    fprintf(stderr, "Error: Failed to serialize Ship to JSON\n");
+    std::println(stderr, "Error: Failed to serialize Ship to JSON");
   }
 
   // Also maintain backward compatibility with existing SQL table structure
@@ -1744,12 +1586,12 @@ void putship(const Ship& s) {
   sqlite3_bind_int(stmt, 84, s.mount);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
   }
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 
   switch (s.type) {
@@ -1800,7 +1642,7 @@ void putcommod(const Commod& c, int commodnum) {
   // Serialize Commod to JSON using existing function
   auto json_result = commod_to_json(c);
   if (!json_result.has_value()) {
-    fprintf(stderr, "Error: Failed to serialize Commod to JSON\n");
+    std::println(stderr, "Error: Failed to serialize Commod to JSON");
     return;
   }
 
@@ -1815,7 +1657,8 @@ void putcommod(const Commod& c, int commodnum) {
   sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    fprintf(stderr, "SQLite error in putcommod: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite error in putcommod: {}",
+                 sqlite3_errmsg(dbconn));
   }
 
   sqlite3_finalize(stmt);
@@ -1829,8 +1672,8 @@ player_t Sql::Numraces() {
 
   int err = sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite error in Numraces prepare: %s\n",
-            sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite error in Numraces prepare: {}",
+                 sqlite3_errmsg(dbconn));
     return 0;
   }
 
@@ -1979,7 +1822,7 @@ void putpower(power p[MAXPLAYERS]) {
     sqlite3_bind_int(stmt, 12, p[i - 1].sum_eff);
 
     if (sqlite3_step(stmt) != SQLITE_DONE) {
-      fprintf(stderr, "XXX %s\n", sqlite3_errmsg(dbconn));
+      std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
     }
 
     sqlite3_reset(stmt);
@@ -1987,7 +1830,7 @@ void putpower(power p[MAXPLAYERS]) {
 
   int err = sqlite3_finalize(stmt);
   if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
   }
 }
 
@@ -2024,7 +1867,7 @@ void Putblock(block b[MAXPLAYERS]) {
   for (player_t i = 1; i <= MAXPLAYERS; i++) {
     auto json_result = block_to_json(b[i - 1]);
     if (!json_result.has_value()) {
-      fprintf(stderr, "Error: Failed to serialize block %d to JSON\n", i);
+      std::println(stderr, "Error: Failed to serialize block {} to JSON", i);
       continue;
     }
 
@@ -2035,10 +1878,12 @@ void Putblock(block b[MAXPLAYERS]) {
 
     sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
     sqlite3_bind_int(stmt, 1, i);
-    sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1,
+                      SQLITE_TRANSIENT);
 
     if (sqlite3_step(stmt) != SQLITE_DONE) {
-      fprintf(stderr, "SQLite error in Putblock for player %d: %s\n", i, sqlite3_errmsg(dbconn));
+      std::println(stderr, "SQLite error in Putblock for player {}: {}", i,
+                   sqlite3_errmsg(dbconn));
     }
 
     sqlite3_finalize(stmt);
@@ -2049,7 +1894,8 @@ void Getblock(block b[MAXPLAYERS]) {
   // Read each block from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT player_id, block_data FROM tbl_block ORDER BY player_id";
+  const char* sql =
+      "SELECT player_id, block_data FROM tbl_block ORDER BY player_id";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
@@ -2069,12 +1915,14 @@ void Getblock(block b[MAXPLAYERS]) {
       if (block_opt.has_value()) {
         b[player_id - 1] = block_opt.value();
       } else {
-        fprintf(stderr,
-                "Error: Failed to deserialize block from JSON for player %d\n",
-                player_id);
+        std::println(
+            stderr,
+            "Error: Failed to deserialize block from JSON for player {}",
+            player_id);
       }
     } else {
-      fprintf(stderr, "Error: Invalid data for block player %d\n", player_id);
+      std::println(stderr, "Error: Invalid data for block player {}",
+                   player_id);
     }
   }
 

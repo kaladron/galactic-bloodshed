@@ -6,7 +6,7 @@ import std.compat;
 #include <sqlite3.h>
 
 #include <cassert>
-#include <cstring>
+#include <cstdio>
 
 int main() {
   // Initialize database using common Sql class (in-memory for testing)
@@ -40,7 +40,7 @@ int main() {
   test_ship.max_destruct = 200;
   test_ship.max_fuel = 2000;
   test_ship.max_speed = 9;
-  test_ship.build_type = ShipType::STYPE_BATTLESHIP;
+  test_ship.build_type = ShipType::STYPE_BATTLE;
   test_ship.build_cost = 5000;
   test_ship.base_mass = 4500.0;
   test_ship.tech = 10.0;
@@ -82,7 +82,7 @@ int main() {
   test_ship.rad = 0;
   test_ship.retaliate = 1;
   test_ship.target = 0;
-  test_ship.type = ShipType::STYPE_BATTLESHIP;
+  test_ship.type = ShipType::STYPE_BATTLE;
   test_ship.speed = 7;
   test_ship.active = 1;
   test_ship.alive = 1;
@@ -134,7 +134,7 @@ int main() {
 
     std::println("Ship SQLite JSON storage test passed!");
   } else {
-    fprintf(stderr, "Failed to retrieve ship from database\n");
+    std::println(::stderr, "Failed to retrieve ship from database");
     return 1;
   }
 

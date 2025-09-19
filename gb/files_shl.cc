@@ -39,9 +39,60 @@ struct meta<Commod> {
       &T::planet_from, "star_to", &T::star_to, "planet_to", &T::planet_to);
 };
 
-// Minimal Ship reflection for JSON serialization
+// Extended Ship Glaze reflection for JSON serialization
+template <>
+struct meta<Ship::navigate> {
+  using T = Ship::navigate;
+  static constexpr auto value = object(
+      "on", &T::on, "speed", &T::speed, "turns", &T::turns, "bearing", &T::bearing);
+};
+
+template <>
+struct meta<Ship::protect> {
+  using T = Ship::protect;
+  static constexpr auto value = object(
+      "maxrng", &T::maxrng, "on", &T::on, "planet", &T::planet, 
+      "self", &T::self, "evade", &T::evade, "ship", &T::ship);
+};
+
+template <>
+struct meta<Ship::hyper_drive> {
+  using T = Ship::hyper_drive;
+  static constexpr auto value = object(
+      "charge", &T::charge, "ready", &T::ready, "on", &T::on, "has", &T::has);
+};
+
+// Complete Ship reflection for JSON serialization
 template <>
 struct meta<Ship> {
+  using T = Ship;
+  static constexpr auto value = object(
+      "number", &T::number, "owner", &T::owner, "governor", &T::governor,
+      "name", &T::name, "shipclass", &T::shipclass,
+      "race", &T::race, "xpos", &T::xpos, "ypos", &T::ypos, "fuel", &T::fuel,
+      "mass", &T::mass, "land_x", &T::land_x, "land_y", &T::land_y,
+      "destshipno", &T::destshipno, "nextship", &T::nextship, "ships", &T::ships,
+      "armor", &T::armor, "size", &T::size, "max_crew", &T::max_crew,
+      "max_resource", &T::max_resource, "max_destruct", &T::max_destruct,
+      "max_fuel", &T::max_fuel, "max_speed", &T::max_speed,
+      "build_type", &T::build_type, "build_cost", &T::build_cost,
+      "base_mass", &T::base_mass, "tech", &T::tech, "complexity", &T::complexity,
+      "destruct", &T::destruct, "resource", &T::resource, "popn", &T::popn,
+      "troops", &T::troops, "crystals", &T::crystals,
+      "who_killed", &T::who_killed, "navigate", &T::navigate, "protect", &T::protect,
+      "mount", &T::mount, "hyper_drive", &T::hyper_drive, "cew", &T::cew,
+      "cew_range", &T::cew_range, "cloak", &T::cloak, "laser", &T::laser,
+      "focus", &T::focus, "fire_laser", &T::fire_laser, "storbits", &T::storbits,
+      "deststar", &T::deststar, "destpnum", &T::destpnum, "pnumorbits", &T::pnumorbits,
+      "whatdest", &T::whatdest, "whatorbits", &T::whatorbits, "damage", &T::damage,
+      "rad", &T::rad, "retaliate", &T::retaliate, "target", &T::target,
+      "type", &T::type, "speed", &T::speed, "active", &T::active, "alive", &T::alive,
+      "mode", &T::mode, "bombard", &T::bombard, "mounted", &T::mounted,
+      "cloaked", &T::cloaked, "sheep", &T::sheep, "docked", &T::docked,
+      "notified", &T::notified, "examined", &T::examined, "on", &T::on,
+      "merchant", &T::merchant, "guns", &T::guns, "primary", &T::primary,
+      "primtype", &T::primtype, "secondary", &T::secondary);
+};
   using T = Ship;
   static constexpr auto value =
       object("number", &T::number, "owner", &T::owner, "governor", &T::governor,
@@ -815,169 +866,55 @@ std::optional<Ship> Sql::getship(Ship** s, const shipnum_t shipnum) {
   return ::getship(s, shipnum);
 }
 std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
-  struct stat buffer;
-
   if (shipnum <= 0) return {};
 
-  fstat(shdata, &buffer);
-  if (buffer.st_size / sizeof(Ship) < shipnum) return {};
-
-  Ship tmpship;
-  Ship* tmpship1;
-  if (s == nullptr) {
-    tmpship1 = &tmpship;
-    s = &tmpship1;
-  } else if ((*s = (Ship*)malloc(sizeof(Ship))) == nullptr) {
-    printf("getship:malloc() error \n");
-    exit(0);
-  }
-
-  Fileread(shdata, (char*)*s, sizeof(Ship), (shipnum - 1) * sizeof(Ship));
-
+  // Read from SQLite database using JSON storage
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql =
-      "SELECT ship_id, player_id, governor_id, name, "
-      "shipclass, race, xpos, ypos, mass,"
-      "land_x, land_y, destshipno, nextship, ships, armor, size,"
-      "max_crew, max_resource, max_destruct, max_fuel, max_speed, build_type,"
-      "build_cost, base_mass, tech, complexity,"
-      "destruct, resource, population, troops, crystals,"
-      "who_killed,"
-      "navigate_on, navigate_speed, navigate_turns, navigate_bearing,"
-      "protect_maxrng, protect_on, protect_planet, protect_self,"
-      "protect_evade, protect_ship,"
-      "hyper_drive_charge, hyper_drive_ready, hyper_drive_on,"
-      "hyper_drive_has,"
-      "cew, cew_range, cloak, laser, focus, fire_laser,"
-      "storbits, deststar, destpnum, pnumorbits, whatdest,"
-      "whatorbits,"
-      "damage, rad, retaliate, target,"
-      "type, speed,"
-      "active, alive, mode, bombard, mounted, cloaked,"
-      "sheep, docked, notified, examined, on_off,"
-      "merchant, guns, primary_gun, primtype,"
-      "secondary_gun, sectype,"
-      "hanger, max_hanger, mount,"
-      "aimed_shipno, aimed_snum,"
-      "aimed_intensity, aimed_pnum, aimed_level,"
-      "mind_progenitor, mind_target,"
-      "mind_generation, mind_busy, mind_tampered,"
-      "mind_who_killed,"
-      "pod_decay, pod_temperature,"
-      "timer_count,"
-      "impact_x, impact_y, impact_scatter,"
-      "trigger_radius,"
-      "terraform_index,"
-      "transport_target,"
-      "waste_toxic "
-      "FROM tbl_ship WHERE ship_id=?1 LIMIT 1";
+  const char* sql = "SELECT ship_data FROM tbl_ship_json WHERE ship_id = ?1";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, shipnum);
 
-  auto result = sqlite3_step(stmt);
-  if (result != SQLITE_ROW) {
-    int err = sqlite3_finalize(stmt);
-    if (err != SQLITE_OK) {
-      fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
+  int result = sqlite3_step(stmt);
+  if (result == SQLITE_ROW) {
+    // Data found in SQLite, deserialize from JSON
+    const char* json_data =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+
+    if (json_data != nullptr) {
+      // Copy the JSON data before finalizing the statement
+      std::string json_string(json_data);
+      sqlite3_finalize(stmt);
+
+      auto ship_opt = ship_from_json(json_string);
+      if (ship_opt.has_value()) {
+        Ship tmpship;
+        Ship* tmpship1;
+        if (s == nullptr) {
+          tmpship1 = &tmpship;
+          s = &tmpship1;
+        } else if ((*s = (Ship*)malloc(sizeof(Ship))) == nullptr) {
+          printf("getship:malloc() error \n");
+          exit(0);
+        }
+        **s = ship_opt.value();
+        return **s;
+      } else {
+        fprintf(stderr,
+                "Error: Failed to deserialize Ship from JSON for ship %d\n",
+                shipnum);
+      }
+    } else {
+      fprintf(stderr, "Error: NULL JSON data retrieved for ship %d\n", shipnum);
+      sqlite3_finalize(stmt);
     }
-    return {};
+  } else {
+    sqlite3_finalize(stmt);
   }
 
-  (*s)->number = sqlite3_column_int(stmt, 0);
-  (*s)->owner = sqlite3_column_int(stmt, 1);
-  (*s)->governor = sqlite3_column_int(stmt, 2);
-  strcpy((*s)->name,
-         reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)));
-  strcpy((*s)->shipclass,
-         reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4)));
-  (*s)->race = sqlite3_column_int(stmt, 5);
-  (*s)->xpos = sqlite3_column_double(stmt, 6);
-  (*s)->ypos = sqlite3_column_double(stmt, 7);
-  (*s)->mass = sqlite3_column_double(stmt, 8);
-  (*s)->land_x = sqlite3_column_int(stmt, 9);
-  (*s)->land_y = sqlite3_column_int(stmt, 10);
-  (*s)->destshipno = sqlite3_column_int(stmt, 11);
-  (*s)->nextship = sqlite3_column_int(stmt, 12);
-  (*s)->ships = sqlite3_column_int(stmt, 13);
-  (*s)->armor = sqlite3_column_int(stmt, 14);
-  (*s)->size = sqlite3_column_int(stmt, 15);
-  (*s)->max_crew = sqlite3_column_int(stmt, 16);
-  (*s)->max_resource = sqlite3_column_int(stmt, 17);
-  (*s)->max_destruct = sqlite3_column_int(stmt, 18);
-  (*s)->max_fuel = sqlite3_column_int(stmt, 19);
-  (*s)->max_speed = sqlite3_column_int(stmt, 20);
-  (*s)->build_type = static_cast<ShipType>(sqlite3_column_int(stmt, 21));
-  (*s)->build_cost = sqlite3_column_int(stmt, 22);
-  (*s)->base_mass = sqlite3_column_int(stmt, 23);
-  (*s)->tech = sqlite3_column_int(stmt, 24);
-  (*s)->complexity = sqlite3_column_int(stmt, 25);
-  (*s)->destruct = sqlite3_column_int(stmt, 26);
-  (*s)->resource = sqlite3_column_int(stmt, 27);
-  (*s)->popn = sqlite3_column_int(stmt, 28);
-  (*s)->troops = sqlite3_column_int(stmt, 29);
-  (*s)->crystals = sqlite3_column_int(stmt, 30);
-  (*s)->who_killed = sqlite3_column_int(stmt, 31);
-  (*s)->navigate.on = sqlite3_column_int(stmt, 32);
-  (*s)->navigate.speed = sqlite3_column_int(stmt, 33);
-  (*s)->navigate.turns = sqlite3_column_int(stmt, 34);
-  (*s)->navigate.bearing = sqlite3_column_int(stmt, 35);
-  (*s)->protect.maxrng = sqlite3_column_int(stmt, 36);
-  (*s)->protect.on = sqlite3_column_int(stmt, 37);
-  (*s)->protect.planet = sqlite3_column_int(stmt, 38);
-  (*s)->protect.self = sqlite3_column_int(stmt, 39);
-  (*s)->protect.evade = sqlite3_column_int(stmt, 40);
-  (*s)->protect.ship = sqlite3_column_int(stmt, 41);
-  (*s)->hyper_drive.charge = sqlite3_column_int(stmt, 42);
-  (*s)->hyper_drive.ready = sqlite3_column_int(stmt, 43);
-  (*s)->hyper_drive.on = sqlite3_column_int(stmt, 44);
-  (*s)->hyper_drive.has = sqlite3_column_int(stmt, 45);
-  (*s)->cew = sqlite3_column_int(stmt, 46);
-  (*s)->cew_range = sqlite3_column_int(stmt, 47);
-  (*s)->cloak = sqlite3_column_int(stmt, 48);
-  (*s)->laser = sqlite3_column_int(stmt, 49);
-  (*s)->focus = sqlite3_column_int(stmt, 50);
-  (*s)->fire_laser = sqlite3_column_int(stmt, 51);
-  (*s)->storbits = sqlite3_column_int(stmt, 52);
-  (*s)->deststar = sqlite3_column_int(stmt, 53);
-  (*s)->destpnum = sqlite3_column_int(stmt, 54);
-  (*s)->pnumorbits = sqlite3_column_int(stmt, 55);
-  (*s)->whatdest = static_cast<ScopeLevel>(sqlite3_column_int(stmt, 56));
-  (*s)->whatorbits = static_cast<ScopeLevel>(sqlite3_column_int(stmt, 57));
-  (*s)->damage = sqlite3_column_int(stmt, 58);
-  (*s)->rad = sqlite3_column_int(stmt, 59);
-  (*s)->retaliate = sqlite3_column_int(stmt, 60);
-  (*s)->target = sqlite3_column_int(stmt, 61);
-  (*s)->type = static_cast<ShipType>(sqlite3_column_int(stmt, 62));
-  (*s)->speed = sqlite3_column_int(stmt, 63);
-  (*s)->active = sqlite3_column_int(stmt, 64);
-  (*s)->alive = sqlite3_column_int(stmt, 65);
-  (*s)->mode = sqlite3_column_int(stmt, 66);
-  (*s)->bombard = sqlite3_column_int(stmt, 67);
-  (*s)->mounted = sqlite3_column_int(stmt, 68);
-  (*s)->cloaked = sqlite3_column_int(stmt, 69);
-  (*s)->sheep = sqlite3_column_int(stmt, 70);
-  (*s)->docked = sqlite3_column_int(stmt, 71);
-  (*s)->notified = sqlite3_column_int(stmt, 72);
-  (*s)->examined = sqlite3_column_int(stmt, 73);
-  (*s)->on = sqlite3_column_int(stmt, 74);
-  (*s)->merchant = sqlite3_column_int(stmt, 75);
-  (*s)->guns = sqlite3_column_int(stmt, 76);
-  (*s)->primary = sqlite3_column_int(stmt, 77);
-  (*s)->primtype = sqlite3_column_int(stmt, 78);
-  (*s)->secondary = sqlite3_column_int(stmt, 79);
-  (*s)->sectype = sqlite3_column_int(stmt, 80);
-  (*s)->hanger = sqlite3_column_int(stmt, 81);
-  (*s)->max_hanger = sqlite3_column_int(stmt, 82);
-  (*s)->mount = sqlite3_column_int(stmt, 83);
-
-  int err = sqlite3_finalize(stmt);
-  if (err != SQLITE_OK) {
-    fprintf(stderr, "SQLite Error: %s\n", sqlite3_errmsg(dbconn));
-  }
-
-  return **s;
+  // Return empty if not found
+  return {};
 }
 
 Commod Sql::getcommod(commodnum_t commodnum) { return ::getcommod(commodnum); }
@@ -2128,15 +2065,15 @@ void Getblock(block b[MAXPLAYERS]) {
 }
 
 void open_files() {
-  opencommoddata(&commoddata);
-  openracedata(&racedata);
+  // Note: Most data now stored as JSON in SQLite
+  // Only keeping file descriptors for systems still using binary format
   openshdata(&shdata);
   openstardata(&stdata);
 }
 
 void close_files() {
-  close_file(commoddata);
-  close_file(racedata);
+  // Note: Most data now stored as JSON in SQLite
+  // Only closing file descriptors for systems still using binary format
   close_file(shdata);
   close_file(stdata);
 }

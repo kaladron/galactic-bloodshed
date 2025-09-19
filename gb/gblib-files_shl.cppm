@@ -56,3 +56,13 @@ export void close_files();
 // JSON serialization functions for Race (for SQLite migration)
 export std::optional<std::string> race_to_json(const Race&);
 export std::optional<Race> race_from_json(const std::string&);
+
+// JSON serialization functions for other data types
+export std::optional<std::string> stardata_to_json(const stardata&);
+export std::optional<stardata> stardata_from_json(const std::string&);
+export std::optional<std::string> block_to_json(const block&);
+export std::optional<block> block_from_json(const std::string&);
+export std::optional<std::string> commod_to_json(const Commod&);
+export std::optional<Commod> commod_from_json(const std::string&);
+export std::optional<std::string> ship_to_json(const Ship&);
+export std::optional<Ship> ship_from_json(const std::string&);

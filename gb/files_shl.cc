@@ -1587,11 +1587,28 @@ static void putship_waste(const Ship& s) {
 
 void Sql::putship(Ship* s) { ::putship(*s); }
 void putship(const Ship& s) {
-  // Create a JSON string of the Ship using Glaze (demo / no behavior change)
-  [[maybe_unused]] auto _glz_ship_ec = glz::write_json(s);
+  // Serialize Ship to JSON and store in tbl_ship_json
+  auto json_result = ship_to_json(s);
+  if (json_result.has_value()) {
+    const char* tail;
+    sqlite3_stmt* stmt;
+    const char* sql =
+        "REPLACE INTO tbl_ship_json (ship_id, ship_data) VALUES (?1, ?2)";
 
+    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+    sqlite3_bind_int(stmt, 1, s.number);
+    sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+      fprintf(stderr, "SQLite error in putship JSON: %s\n", sqlite3_errmsg(dbconn));
+    }
+    sqlite3_finalize(stmt);
+  } else {
+    fprintf(stderr, "Error: Failed to serialize Ship to JSON\n");
+  }
+
+  // Also maintain backward compatibility with existing SQL table structure
   const char* tail;
-  Filewrite(shdata, (char*)&s, sizeof(Ship), (s.number - 1) * sizeof(Ship));
   start_bulk_insert();
 
   sqlite3_stmt* stmt;

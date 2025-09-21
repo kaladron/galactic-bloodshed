@@ -109,6 +109,69 @@ struct meta<Race> {
       "governor", &T::governor);
 };
 
+// Custom serialization approach for the Ship special union
+// We'll serialize the union as raw bytes with a type indicator based on ship type
+namespace {
+  // Helper to determine which union member is active based on ship type
+  std::string serialize_special_union(const Ship& ship) {
+    // We'll encode the union as hex bytes for now
+    // A more sophisticated approach would be based on ship.type to determine active member
+    const char* bytes = reinterpret_cast<const char*>(&ship.special);
+    std::string hex_str;
+    for (size_t i = 0; i < sizeof(ship.special); ++i) {
+      char hex[3];
+      snprintf(hex, sizeof(hex), "%02x", static_cast<unsigned char>(bytes[i]));
+      hex_str += hex;
+    }
+    return hex_str;
+  }
+  
+  void deserialize_special_union(Ship& ship, const std::string& hex_str) {
+    if (hex_str.length() != sizeof(ship.special) * 2) {
+      return; // Invalid length
+    }
+    
+    char* bytes = reinterpret_cast<char*>(&ship.special);
+    for (size_t i = 0; i < sizeof(ship.special); ++i) {
+      if (i * 2 + 1 < hex_str.length()) {
+        std::string byte_str = hex_str.substr(i * 2, 2);
+        bytes[i] = static_cast<char>(std::stoul(byte_str, nullptr, 16));
+      }
+    }
+  }
+}
+template <>
+struct meta<decltype(Ship::navigate)> {
+  using T = decltype(Ship::navigate);
+  static constexpr auto value = object(
+      "on", &T::on,
+      "speed", &T::speed,
+      "turns", &T::turns,
+      "bearing", &T::bearing);
+};
+
+template <>
+struct meta<decltype(Ship::protect)> {
+  using T = decltype(Ship::protect);
+  static constexpr auto value = object(
+      "maxrng", &T::maxrng,
+      "on", &T::on,
+      "planet", &T::planet,
+      "self", &T::self,
+      "evade", &T::evade,
+      "ship", &T::ship);
+};
+
+template <>
+struct meta<decltype(Ship::hyper_drive)> {
+  using T = decltype(Ship::hyper_drive);
+  static constexpr auto value = object(
+      "charge", &T::charge,
+      "ready", &T::ready,
+      "on", &T::on,
+      "has", &T::has);
+};
+
 // Glaze reflection for Ship class  
 template <>
 struct meta<Ship> {
@@ -146,7 +209,8 @@ struct meta<Ship> {
       "popn", &T::popn,
       "troops", &T::troops,
       "crystals", &T::crystals,
-      // Note: excluding 'special' union for now - it's complex to serialize
+      // Note: 'special' union is handled separately via custom serialization
+      // to work around Glaze's lack of direct union support
       "who_killed", &T::who_killed,
       "navigate", &T::navigate,
       "protect", &T::protect,
@@ -1671,18 +1735,78 @@ std::optional<Commod> commod_from_json(const std::string& json_str) {
   return std::nullopt;
 }
 
-// JSON serialization functions for Ship - simplified approach
+// JSON serialization functions for Ship - with proper union handling
 std::optional<std::string> ship_to_json(const Ship& ship) {
-  // Use Glaze to serialize the ship without the union
-  auto result = glz::write_json(ship);
-  return result;
+  // First serialize most fields using Glaze
+  auto base_result = glz::write_json(ship);
+  if (!base_result.has_value()) {
+    return std::nullopt;
+  }
+  
+  // Parse the JSON to add the union data
+  try {
+    auto doc = glz::read_json<glz::json_value>(base_result.value());
+    if (!doc.has_value()) {
+      return std::nullopt;
+    }
+    
+    // Add the special union as hex-encoded bytes
+    auto& json_obj = std::get<std::unordered_map<std::string, glz::json_value>>(doc.value());
+    json_obj["special_union_hex"] = serialize_special_union(ship);
+    
+    // Serialize back to JSON
+    auto final_result = glz::write_json(doc.value());
+    return final_result;
+  } catch (...) {
+    // Fall back to base serialization without union
+    return base_result;
+  }
 }
 
 std::optional<Ship> ship_from_json(const std::string& json_str) {
   Ship ship{};
-  auto result = glz::read_json(ship, json_str);
-  if (!result) {
+  
+  try {
+    // First parse as JSON object to extract union data
+    auto doc = glz::read_json<glz::json_value>(json_str);
+    if (!doc.has_value()) {
+      return std::nullopt;
+    }
+    
+    auto& json_obj = std::get<std::unordered_map<std::string, glz::json_value>>(doc.value());
+    
+    // Extract and deserialize union data if present
+    auto union_it = json_obj.find("special_union_hex");
+    std::string union_hex;
+    if (union_it != json_obj.end()) {
+      union_hex = std::get<std::string>(union_it->second);
+      json_obj.erase(union_it); // Remove from JSON before regular deserialization
+    }
+    
+    // Convert back to JSON for regular Glaze deserialization
+    auto cleaned_json_result = glz::write_json(json_obj);
+    if (!cleaned_json_result.has_value()) {
+      return std::nullopt;
+    }
+    
+    // Deserialize the regular fields
+    auto result = glz::read_json(ship, cleaned_json_result.value());
+    if (result) {
+      return std::nullopt;
+    }
+    
+    // Restore union data
+    if (!union_hex.empty()) {
+      deserialize_special_union(ship, union_hex);
+    }
+    
     return ship;
+  } catch (...) {
+    // Fall back to simple deserialization without union handling
+    auto result = glz::read_json(ship, json_str);
+    if (!result) {
+      return ship;
+    }
+    return std::nullopt;
   }
-  return std::nullopt;
 }

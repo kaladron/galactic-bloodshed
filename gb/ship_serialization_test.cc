@@ -47,7 +47,7 @@ int main() {
   test_ship.troops = 10;
   test_ship.crystals = 5;
   
-  // Initialize the special union with aimed_at data (note: may not serialize correctly)
+  // Initialize the special union with aimed_at data - now properly serialized
   test_ship.special.aimed_at.shipno = 100;
   test_ship.special.aimed_at.snum = 1;
   test_ship.special.aimed_at.intensity = 50;
@@ -171,38 +171,37 @@ int main() {
   assert(deserialized_ship.troops == test_ship.troops);
   assert(deserialized_ship.crystals == test_ship.crystals);
   
-  // Verify union data (skip for now due to union serialization complexity)
-  // Note: The union data may not serialize/deserialize correctly with Glaze
-  // assert(deserialized_ship.special.aimed_at.shipno == test_ship.special.aimed_at.shipno);
-  // assert(deserialized_ship.special.aimed_at.snum == test_ship.special.aimed_at.snum);
-  // assert(deserialized_ship.special.aimed_at.intensity == test_ship.special.aimed_at.intensity);
-  // assert(deserialized_ship.special.aimed_at.pnum == test_ship.special.aimed_at.pnum);
-  // assert(deserialized_ship.special.aimed_at.level == test_ship.special.aimed_at.level);
+  // Verify union data - now handled via custom serialization
+  // Note: We verify by checking that the union bytes are preserved
+  assert(deserialized_ship.special.aimed_at.shipno == test_ship.special.aimed_at.shipno);
+  assert(deserialized_ship.special.aimed_at.snum == test_ship.special.aimed_at.snum);
+  assert(deserialized_ship.special.aimed_at.intensity == test_ship.special.aimed_at.intensity);
+  assert(deserialized_ship.special.aimed_at.pnum == test_ship.special.aimed_at.pnum);
+  assert(deserialized_ship.special.aimed_at.level == test_ship.special.aimed_at.level);
   
   assert(deserialized_ship.who_killed == test_ship.who_killed);
   
-  // Verify navigate struct (skip for now due to anonymous struct complexity)
-  // Note: Anonymous structs may not serialize/deserialize correctly
-  // assert(deserialized_ship.navigate.on == test_ship.navigate.on);
-  // assert(deserialized_ship.navigate.speed == test_ship.navigate.speed);
-  // assert(deserialized_ship.navigate.turns == test_ship.navigate.turns);
-  // assert(deserialized_ship.navigate.bearing == test_ship.navigate.bearing);
+  // Verify navigate struct - now should work with explicit meta specialization
+  assert(deserialized_ship.navigate.on == test_ship.navigate.on);
+  assert(deserialized_ship.navigate.speed == test_ship.navigate.speed);
+  assert(deserialized_ship.navigate.turns == test_ship.navigate.turns);
+  assert(deserialized_ship.navigate.bearing == test_ship.navigate.bearing);
   
-  // Verify protect struct (skip for now due to anonymous struct complexity)
-  // assert(deserialized_ship.protect.maxrng == test_ship.protect.maxrng);
-  // assert(deserialized_ship.protect.on == test_ship.protect.on);
-  // assert(deserialized_ship.protect.planet == test_ship.protect.planet);
-  // assert(deserialized_ship.protect.self == test_ship.protect.self);
-  // assert(deserialized_ship.protect.evade == test_ship.protect.evade);
-  // assert(deserialized_ship.protect.ship == test_ship.protect.ship);
+  // Verify protect struct - now should work with explicit meta specialization
+  assert(deserialized_ship.protect.maxrng == test_ship.protect.maxrng);
+  assert(deserialized_ship.protect.on == test_ship.protect.on);
+  assert(deserialized_ship.protect.planet == test_ship.protect.planet);
+  assert(deserialized_ship.protect.self == test_ship.protect.self);
+  assert(deserialized_ship.protect.evade == test_ship.protect.evade);
+  assert(deserialized_ship.protect.ship == test_ship.protect.ship);
   
   assert(deserialized_ship.mount == test_ship.mount);
   
-  // Verify hyper_drive struct (skip for now due to anonymous struct complexity)
-  // assert(deserialized_ship.hyper_drive.charge == test_ship.hyper_drive.charge);
-  // assert(deserialized_ship.hyper_drive.ready == test_ship.hyper_drive.ready);
-  // assert(deserialized_ship.hyper_drive.on == test_ship.hyper_drive.on);
-  // assert(deserialized_ship.hyper_drive.has == test_ship.hyper_drive.has);
+  // Verify hyper_drive struct - now should work with explicit meta specialization
+  assert(deserialized_ship.hyper_drive.charge == test_ship.hyper_drive.charge);
+  assert(deserialized_ship.hyper_drive.ready == test_ship.hyper_drive.ready);
+  assert(deserialized_ship.hyper_drive.on == test_ship.hyper_drive.on);
+  assert(deserialized_ship.hyper_drive.has == test_ship.hyper_drive.has);
   
   assert(deserialized_ship.type == test_ship.type);
   assert(deserialized_ship.speed == test_ship.speed);

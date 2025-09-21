@@ -69,21 +69,21 @@ struct meta<Race::gov> {
 template <>
 struct meta<stardata> {
   using T = stardata;
-  static constexpr auto value = object(
-      "numstars", &T::numstars, "ships", &T::ships, "AP", &T::AP,
-      "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
-      "VN_index2", &T::VN_index2, "dummy", &T::dummy);
+  static constexpr auto value =
+      object("numstars", &T::numstars, "ships", &T::ships, "AP", &T::AP,
+             "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
+             "VN_index2", &T::VN_index2, "dummy", &T::dummy);
 };
 
 // Glaze reflection for block so we can serialize to JSON
 template <>
 struct meta<block> {
   using T = block;
-  static constexpr auto value = object(
-      "Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
-      "invite", &T::invite, "pledge", &T::pledge, "atwar", &T::atwar,
-      "allied", &T::allied, "next", &T::next, "systems_owned", &T::systems_owned,
-      "VPs", &T::VPs, "money", &T::money);
+  static constexpr auto value =
+      object("Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
+             "invite", &T::invite, "pledge", &T::pledge, "atwar", &T::atwar,
+             "allied", &T::allied, "next", &T::next, "systems_owned",
+             &T::systems_owned, "VPs", &T::VPs, "money", &T::money);
 };
 
 // Glaze reflection for Race class
@@ -205,12 +205,6 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
   CREATE TABLE tbl_star_playerap(star_id INT NOT NULL, player_id INT NOT NULL,
                                  ap INT NOT NULL,
                                  PRIMARY KEY(star_id, player_id));
-
-  CREATE TABLE tbl_stardata(indexnum INT PRIMARY KEY NOT NULL, ships INT);
-
-  CREATE TABLE tbl_stardata_perplayer(
-      player_id INT PRIMARY KEY NOT NULL, ap INT NOT NULL,
-      VN_hitlist INT NOT NULL, VN_index1 INT NOT NULL, VN_index2 INT NOT NULL);
 
   CREATE TABLE tbl_ship(
       ship_id INT PRIMARY KEY NOT NULL,
@@ -355,21 +349,6 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
       sum_mob INT,
       sum_eff INT);
 
-  CREATE TABLE tbl_commod(
-    commod_id INT PRIMARY KEY NOT NULL,
-    owner INT,
-    governor INT,
-    type INT,
-    amount INT,
-    deliver INT,
-    bid INT,
-    bidder INT,
-    bidder_gov INT,
-    star_from INT,
-    planet_from INT,
-    star_to INT,
-    planet_to INT);
-
   CREATE TABLE tbl_race(
     player_id INT PRIMARY KEY NOT NULL,
     race_data TEXT NOT NULL);
@@ -382,11 +361,10 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
     player_id INT PRIMARY KEY NOT NULL,
     block_data TEXT NOT NULL);
 
-  CREATE TABLE tbl_commod_json(
+  CREATE TABLE tbl_commod(
     commod_id INT PRIMARY KEY NOT NULL,
     commod_data TEXT NOT NULL);
 )";
-  // TODO(jeffbailey): tbl_commod could probably use more indeces.
   char* err_msg = nullptr;
   int err = sqlite3_exec(dbconn, tbl_create, nullptr, nullptr, &err_msg);
   if (err != SQLITE_OK) {
@@ -971,7 +949,7 @@ Commod getcommod(commodnum_t commodnum) {
   // Read from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT commod_data FROM tbl_commod_json WHERE commod_id = ?1";
+  const char* sql = "SELECT commod_data FROM tbl_commod WHERE commod_id = ?1";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, commodnum);
@@ -996,7 +974,8 @@ Commod getcommod(commodnum_t commodnum) {
                 commodnum);
       }
     } else {
-      fprintf(stderr, "Error: NULL JSON data retrieved for commod %d\n", commodnum);
+      fprintf(stderr, "Error: NULL JSON data retrieved for commod %d\n",
+              commodnum);
       sqlite3_finalize(stmt);
     }
   } else {
@@ -1837,7 +1816,7 @@ void putcommod(const Commod& c, int commodnum) {
   const char* tail;
   sqlite3_stmt* stmt;
   const char* sql =
-      "REPLACE INTO tbl_commod_json (commod_id, commod_data) VALUES (?1, ?2)";
+      "REPLACE INTO tbl_commod (commod_id, commod_data) VALUES (?1, ?2)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, commodnum);
@@ -2064,10 +2043,12 @@ void Putblock(block b[MAXPLAYERS]) {
 
     sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
     sqlite3_bind_int(stmt, 1, i);
-    sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1,
+                      SQLITE_TRANSIENT);
 
     if (sqlite3_step(stmt) != SQLITE_DONE) {
-      fprintf(stderr, "SQLite error in Putblock for player %d: %s\n", i, sqlite3_errmsg(dbconn));
+      fprintf(stderr, "SQLite error in Putblock for player %d: %s\n", i,
+              sqlite3_errmsg(dbconn));
     }
 
     sqlite3_finalize(stmt);
@@ -2078,7 +2059,8 @@ void Getblock(block b[MAXPLAYERS]) {
   // Read each block from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT player_id, block_data FROM tbl_block ORDER BY player_id";
+  const char* sql =
+      "SELECT player_id, block_data FROM tbl_block ORDER BY player_id";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 

@@ -250,21 +250,6 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
       sum_mob INT,
       sum_eff INT);
 
-  CREATE TABLE tbl_commod(
-    commod_id INT PRIMARY KEY NOT NULL,
-    owner INT,
-    governor INT,
-    type INT,
-    amount INT,
-    deliver INT,
-    bid INT,
-    bidder INT,
-    bidder_gov INT,
-    star_from INT,
-    planet_from INT,
-    star_to INT,
-    planet_to INT);
-
   CREATE TABLE tbl_race(
     player_id INT PRIMARY KEY NOT NULL,
     race_data TEXT NOT NULL);
@@ -277,15 +262,14 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
     player_id INT PRIMARY KEY NOT NULL,
     block_data TEXT NOT NULL);
 
-  CREATE TABLE tbl_commod_json(
+  CREATE TABLE tbl_commod(
     commod_id INT PRIMARY KEY NOT NULL,
     commod_data TEXT NOT NULL);
 
-  CREATE TABLE tbl_ship_json(
+  CREATE TABLE tbl_ship(
     ship_id INT PRIMARY KEY NOT NULL,
     ship_data TEXT NOT NULL);
 )";
-  // TODO(jeffbailey): tbl_commod could probably use more indeces.
   char* err_msg = nullptr;
   int err = sqlite3_exec(dbconn, tbl_create, nullptr, nullptr, &err_msg);
   if (err != SQLITE_OK) {
@@ -706,7 +690,7 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
   // Read from SQLite database using JSON storage
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT ship_data FROM tbl_ship_json WHERE ship_id = ?1";
+  const char* sql = "SELECT ship_data FROM tbl_ship WHERE ship_id = ?1";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, shipnum);
@@ -758,8 +742,7 @@ Commod getcommod(commodnum_t commodnum) {
   // Read from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql =
-      "SELECT commod_data FROM tbl_commod_json WHERE commod_id = ?1";
+  const char* sql = "SELECT commod_data FROM tbl_commod WHERE commod_id = ?1";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, commodnum);
@@ -1650,7 +1633,7 @@ void putcommod(const Commod& c, int commodnum) {
   const char* tail;
   sqlite3_stmt* stmt;
   const char* sql =
-      "REPLACE INTO tbl_commod_json (commod_id, commod_data) VALUES (?1, ?2)";
+      "REPLACE INTO tbl_commod (commod_id, commod_data) VALUES (?1, ?2)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, commodnum);

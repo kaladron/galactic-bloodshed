@@ -7,6 +7,8 @@ import std.compat;
 import :planet;
 import :sector;
 
+import std.compat; // For std::variant
+
 export enum guntype_t { GTYPE_NONE, GTYPE_LIGHT, GTYPE_MEDIUM, GTYPE_HEAVY };
 
 export inline constexpr int PRIMARY = 1;
@@ -98,6 +100,68 @@ export inline constexpr int NUMABILS = (ABIL_MAINTAIN + 1);
 
 export inline constexpr int SHIP_NAMESIZE = 18;
 
+// Special ship function data structures (converted from union members)
+export struct AimedAtData {
+  shipnum_t shipno; /* aimed at what ship */
+  starnum_t snum;   /* aimed at what star */
+  char intensity;   /* intensity of aiming */
+  planetnum_t pnum; /* aimed at what planet */
+  ScopeLevel level; /* aimed at what level */
+};
+
+export struct MindData {
+  unsigned char progenitor; /* the originator of the strain */
+  unsigned char target;     /* who to kill (for Berserkers) */
+  unsigned char generation;
+  unsigned char busy;     /* currently occupied */
+  unsigned char tampered; /* recently tampered with? */
+  unsigned char who_killed;
+};
+
+export struct PodData {
+  unsigned char decay;
+  unsigned char temperature;
+};
+
+export struct TimerData {
+  unsigned char count;
+};
+
+export struct ImpactData {
+  unsigned char x;
+  unsigned char y;
+  unsigned char scatter;
+};
+
+export struct TriggerData {
+  unsigned short radius;
+};
+
+export struct TerraformData {
+  unsigned char index;
+};
+
+export struct TransportData {
+  unsigned short target;
+};
+
+export struct WasteData {
+  unsigned char toxic;
+};
+
+// Variant type for special ship functions
+export using SpecialData = std::variant<
+  AimedAtData,    // Space Mirror
+  MindData,       /* VNs and berserkers */
+  PodData,        /* spore pods */
+  TimerData,      /* dust canisters, greenhouse gases */
+  ImpactData,     /* missiles */
+  TriggerData,    /* mines */
+  TerraformData,  /* terraformers */
+  TransportData,  /* AVPM */
+  WasteData       /* toxic waste containers */
+>;
+
 export class Ship {
  public:
   shipnum_t number;               ///< ship knows its own number
@@ -140,48 +204,8 @@ export class Ship {
   population_t troops; /* marines */
   unsigned short crystals;
 
-  /* special ship functions (10 bytes) */
-  union {
-    struct {            /* if the ship is a Space Mirror */
-      shipnum_t shipno; /* aimed at what ship */
-      starnum_t snum;   /* aimed at what star */
-      char intensity;   /* intensity of aiming */
-      planetnum_t pnum; /* aimed at what planet */
-      ScopeLevel level; /* aimed at what level */
-    } aimed_at;
-    struct {                    /* VNs and berserkers */
-      unsigned char progenitor; /* the originator of the strain */
-      unsigned char target;     /* who to kill (for Berserkers) */
-      unsigned char generation;
-      unsigned char busy;     /* currently occupied */
-      unsigned char tampered; /* recently tampered with? */
-      unsigned char who_killed;
-    } mind;
-    struct { /* spore pods */
-      unsigned char decay;
-      unsigned char temperature;
-    } pod;
-    struct { /* dust canisters, greenhouse gases */
-      unsigned char count;
-    } timer;
-    struct { /* missiles */
-      unsigned char x;
-      unsigned char y;
-      unsigned char scatter;
-    } impact;
-    struct { /* mines */
-      unsigned short radius;
-    } trigger;
-    struct { /* terraformers */
-      unsigned char index;
-    } terraform;
-    struct { /* AVPM */
-      unsigned short target;
-    } transport;
-    struct { /* toxic waste containers */
-      unsigned char toxic;
-    } waste;
-  } special;
+  /* special ship functions - now using std::variant for type safety */
+  SpecialData special;
 
   short who_killed; /* who killed the ship */
 

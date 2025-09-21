@@ -47,12 +47,14 @@ int main() {
   test_ship.troops = 10;
   test_ship.crystals = 5;
   
-  // Initialize the special union with aimed_at data - now properly serialized
-  test_ship.special.aimed_at.shipno = 100;
-  test_ship.special.aimed_at.snum = 1;
-  test_ship.special.aimed_at.intensity = 50;
-  test_ship.special.aimed_at.pnum = 2;
-  test_ship.special.aimed_at.level = ScopeLevel::LEVEL_PLAN;
+  // Initialize the special variant with aimed_at data - now type-safe with std::variant
+  test_ship.special = AimedAtData{
+    .shipno = 100,
+    .snum = 1,
+    .intensity = 50,
+    .pnum = 2,
+    .level = ScopeLevel::LEVEL_PLAN
+  };
   
   test_ship.who_killed = -1;
   
@@ -171,13 +173,15 @@ int main() {
   assert(deserialized_ship.troops == test_ship.troops);
   assert(deserialized_ship.crystals == test_ship.crystals);
   
-  // Verify union data - now handled via custom serialization
-  // Note: We verify by checking that the union bytes are preserved
-  assert(deserialized_ship.special.aimed_at.shipno == test_ship.special.aimed_at.shipno);
-  assert(deserialized_ship.special.aimed_at.snum == test_ship.special.aimed_at.snum);
-  assert(deserialized_ship.special.aimed_at.intensity == test_ship.special.aimed_at.intensity);
-  assert(deserialized_ship.special.aimed_at.pnum == test_ship.special.aimed_at.pnum);
-  assert(deserialized_ship.special.aimed_at.level == test_ship.special.aimed_at.level);
+  // Verify variant data - now handled via native std::variant serialization
+  assert(std::holds_alternative<AimedAtData>(deserialized_ship.special));
+  const auto& aimed_at = std::get<AimedAtData>(deserialized_ship.special);
+  const auto& original_aimed_at = std::get<AimedAtData>(test_ship.special);
+  assert(aimed_at.shipno == original_aimed_at.shipno);
+  assert(aimed_at.snum == original_aimed_at.snum);
+  assert(aimed_at.intensity == original_aimed_at.intensity);
+  assert(aimed_at.pnum == original_aimed_at.pnum);
+  assert(aimed_at.level == original_aimed_at.level);
   
   assert(deserialized_ship.who_killed == test_ship.who_killed);
   
@@ -217,6 +221,6 @@ int main() {
   assert(deserialized_ship.hanger == test_ship.hanger);
   assert(deserialized_ship.max_hanger == test_ship.max_hanger);
 
-  std::printf("Ship serialization test passed!\n");
+  std::printf("Ship serialization test with std::variant passed!\n");
   return 0;
 }

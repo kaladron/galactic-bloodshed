@@ -109,7 +109,7 @@ struct meta<Race> {
       "governor", &T::governor);
 };
 
-// Glaze reflection for Ship class
+// Glaze reflection for Ship class  
 template <>
 struct meta<Ship> {
   using T = Ship;
@@ -146,7 +146,7 @@ struct meta<Ship> {
       "popn", &T::popn,
       "troops", &T::troops,
       "crystals", &T::crystals,
-      "special", &T::special,
+      // Note: excluding 'special' union for now - it's complex to serialize
       "who_killed", &T::who_killed,
       "navigate", &T::navigate,
       "protect", &T::protect,
@@ -1671,13 +1671,11 @@ std::optional<Commod> commod_from_json(const std::string& json_str) {
   return std::nullopt;
 }
 
-// JSON serialization functions for Ship
+// JSON serialization functions for Ship - simplified approach
 std::optional<std::string> ship_to_json(const Ship& ship) {
+  // Use Glaze to serialize the ship without the union
   auto result = glz::write_json(ship);
-  if (result.has_value()) {
-    return result.value();
-  }
-  return std::nullopt;
+  return result;
 }
 
 std::optional<Ship> ship_from_json(const std::string& json_str) {

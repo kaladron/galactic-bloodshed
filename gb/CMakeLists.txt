@@ -236,6 +236,18 @@ add_executable(race_sqlite_test race_sqlite_test.cc)
 target_link_libraries(race_sqlite_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_race_sqlite_test COMMAND race_sqlite_test)
 
+add_executable(stardata_json_test stardata_json_test.cc)
+target_link_libraries(stardata_json_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_stardata_json_test COMMAND stardata_json_test)
+
+add_executable(commod_json_test commod_json_test.cc)
+target_link_libraries(commod_json_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_commod_json_test COMMAND commod_json_test)
+
+add_executable(block_json_test block_json_test.cc)
+target_link_libraries(block_json_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_block_json_test COMMAND block_json_test)
+
 # Only add docs if Doxygen is found
 if(DOXYGEN_FOUND)
   doxygen_add_docs(gb-docs)

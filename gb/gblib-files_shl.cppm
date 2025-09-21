@@ -64,3 +64,5 @@ export std::optional<std::string> block_to_json(const block&);
 export std::optional<block> block_from_json(const std::string&);
 export std::optional<std::string> commod_to_json(const Commod&);
 export std::optional<Commod> commod_from_json(const std::string&);
+export std::optional<std::string> ship_to_json(const Ship&);
+export std::optional<Ship> ship_from_json(const std::string&);

@@ -29,3 +29,4 @@ doxy
 .vscode
 workdir
 .cache
+compile_commands.json

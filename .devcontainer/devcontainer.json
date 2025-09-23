@@ -1,23 +1,47 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/cpp:ubuntu",
-  "features": {
-    "ghcr.io/devcontainers-community/features/llvm": {
-      "version": "22"
-    },
-    "ghcr.io/devcontainers-extra/features/ninja-asdf:2": {},
-    "ghcr.io/devcontainers-extra/features/cmake:1": {},
-    "ghcr.io/devcontainers-extra/features/apt-packages:1": {
-      "packages": "doxygen, libsqlite3-dev, graphviz, sqlite3"
+  "name": "C++",
+  "build": {
+    "dockerfile": "Dockerfile",
+    // Update 'VARIANT' to pick an Ubuntu OS version. Options: [bionic, focal, jammy, noble]. Default: noble
+    // Update 'GCC_VER' to pick a gcc and g++ version.
+    // Update 'LLVM_VER' to pick clang version.
+    // Update 'USE_CLANG' to set clang as the default C and C++ compiler. Options: [1, null]. Default null
+    "args": {
+      "VARIANT": "noble",
+      "GCC_VER": "14",
+      "LLVM_VER": "21",
+      "USE_CLANG": "1"
     }
   },
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "configureZshAsDefaultShell": false
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  // Use 'postCreateCommand' to run commands after the container is created.
+  "postCreateCommand": "id && git --version && gcc --version && clang --version && cmake --version && echo $CXX && openssl version && pkg-config --modversion openssl",
+  // Configure tool-specific properties.
   "customizations": {
+    // Configure properties specific to VS Code.
     "vscode": {
+      // Set *default* container specific settings.json values on container create.
       "settings": {
-        "editor.formatOnSave": true,
+        // Disable cpptool intellisense since we are using clangd
         "C_Cpp.intelliSenseEngine": "disabled",
         "C_Cpp.autocomplete": "disabled",
         "C_Cpp.errorSquiggles": "disabled",
         "C_Cpp.formatting": "clangFormat",
+        // Make sure we are writing a compile_commands.json to the root for tools to use
+        "cmake.exportCompileCommandsFile": true, // this doesn't work with CMakePresets.json use CMAKE_EXPORT_COMPILE_COMMANDS "ON" instead
+        "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
+        "cmake.configureOnOpen": true,
+        // cSpell Can clutter up the problems with false positives
+        "cSpell.diagnosticLevel": "Hint",
+        // Format only the modified code to not clutter the merge requests
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "modifications",
+        "terminal.integrated.shell.linux": "/bin/bash",
         "cmake.options.statusBarVisibility": "visible",
         "cmake.options.advanced": {
           "build": {
@@ -30,11 +54,19 @@
           }
         }
       },
+      // Add the IDs of extensions you want installed when the container is created.
+      // Note that some extensions may not work in Alpine Linux. See https://aka.ms/vscode-remote/linux.
       "extensions": [
         "ms-vscode.cpptools",
         "ms-vscode.cpptools-themes",
         "ms-vscode.cmake-tools",
-        "llvm-vs-code-extensions.vscode-clangd"
+        "llvm-vs-code-extensions.vscode-clangd",
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+        "cschlosser.doxdocgen",
+        "streetsidesoftware.code-spell-checker",
+        "mutantdino.resourcemonitor",
+        "alexcvzz.vscode-sqlite"
       ]
     }
   }

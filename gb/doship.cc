@@ -460,7 +460,15 @@ void doship(Ship &ship, int update) {
             break;
           case ShipType::OTYPE_VN: /* Von Neumann machine */
           case ShipType::OTYPE_BERS:
-            if (!ship.special.mind.progenitor) ship.special.mind.progenitor = 1;
+            if (std::holds_alternative<MindData>(ship.special)) {
+              auto mind = std::get<MindData>(ship.special);
+              if (!mind.progenitor) {
+                mind.progenitor = 1;
+                ship.special = mind;
+              }
+            } else {
+              ship.special = MindData{.progenitor = 1};
+            }
             do_VN(ship);
             break;
           case ShipType::STYPE_OAP:
@@ -632,7 +640,8 @@ void domine(Ship &ship, int detonate) {
       double yd = s.ypos - ship.ypos;
       double range = std::sqrt(xd * xd + yd * yd);
       if (!isset(r.allied, s.owner) && (s.owner != ship.owner) &&
-          ((int)range <= ship.special.trigger.radius)) {
+          std::holds_alternative<TriggerData>(ship.special) &&
+          ((int)range <= std::get<TriggerData>(ship.special).radius)) {
         rad = true;
         break;
       }

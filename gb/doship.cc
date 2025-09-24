@@ -181,7 +181,13 @@ void do_canister(Ship &ship) {
 
 void do_greenhouse(Ship &ship) {
   if (ship.whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
-    if (++ship.special.timer.count < DISSIPATE) {
+    if (!std::holds_alternative<TimerData>(ship.special)) {
+      return;
+    }
+    auto timer = std::get<TimerData>(ship.special);
+    
+    if (++timer.count < DISSIPATE) {
+      ship.special = timer;
       if (Stinfo[ship.storbits][ship.pnumorbits].temp_add > 90)
         Stinfo[ship.storbits][ship.pnumorbits].temp_add = 100;
       else
@@ -200,23 +206,28 @@ void do_greenhouse(Ship &ship) {
 }
 
 void do_mirror(Ship &ship) {
-  switch (ship.special.aimed_at.level) {
+  if (!std::holds_alternative<AimedAtData>(ship.special)) {
+    return;
+  }
+  auto aimed_at = std::get<AimedAtData>(ship.special);
+  
+  switch (aimed_at.level) {
     case ScopeLevel::LEVEL_SHIP: /* ship aimed at is a legal ship now */
       /* if in the same system */
       if ((ship.whatorbits == ScopeLevel::LEVEL_STAR ||
            ship.whatorbits == ScopeLevel::LEVEL_PLAN) &&
-          (ships[ship.special.aimed_at.shipno] != nullptr) &&
-          (ships[ship.special.aimed_at.shipno]->whatorbits ==
+          (ships[aimed_at.shipno] != nullptr) &&
+          (ships[aimed_at.shipno]->whatorbits ==
                ScopeLevel::LEVEL_STAR ||
-           ships[ship.special.aimed_at.shipno]->whatorbits ==
+           ships[aimed_at.shipno]->whatorbits ==
                ScopeLevel::LEVEL_PLAN) &&
-          ship.storbits == ships[ship.special.aimed_at.shipno]->storbits &&
-          ships[ship.special.aimed_at.shipno]->alive) {
-        auto s = ships[ship.special.aimed_at.shipno];
+          ship.storbits == ships[aimed_at.shipno]->storbits &&
+          ships[aimed_at.shipno]->alive) {
+        auto s = ships[aimed_at.shipno];
         auto range = std::sqrt(Distsq(ship.xpos, ship.ypos, s->xpos, s->ypos));
         auto i =
             int_rand(0, round_rand((2. / ((double)(shipbody(*s)))) *
-                                   (double)(ship.special.aimed_at.intensity) /
+                                   (double)(aimed_at.intensity) /
                                    (range / PLORBITSIZE + 1.0)));
         std::stringstream telegram_buf;
         telegram_buf << std::format("{} aimed at {}\n", ship_to_string(ship),
@@ -242,23 +253,23 @@ void do_mirror(Ship &ship) {
                                planets[ship.storbits][ship.pnumorbits]->ypos));
 
       int i = range > PLORBITSIZE
-                  ? PLORBITSIZE * ship.special.aimed_at.intensity / range
-                  : ship.special.aimed_at.intensity;
+                  ? PLORBITSIZE * aimed_at.intensity / range
+                  : aimed_at.intensity;
 
       i = round_rand(.01 * (100.0 - (double)(ship.damage)) * (double)i);
-      Stinfo[ship.storbits][ship.special.aimed_at.pnum].temp_add += i;
+      Stinfo[ship.storbits][aimed_at.pnum].temp_add += i;
     } break;
     case ScopeLevel::LEVEL_STAR:
       /* have to be in the same system as the star; otherwise
          it's not too fair.. */
-      if (ship.special.aimed_at.snum > 0 &&
-          ship.special.aimed_at.snum < Sdata.numstars &&
+      if (aimed_at.snum > 0 &&
+          aimed_at.snum < Sdata.numstars &&
           ship.whatorbits > ScopeLevel::LEVEL_UNIV &&
-          ship.special.aimed_at.snum == ship.storbits) {
+          aimed_at.snum == ship.storbits) {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> dis(0, 1);
-        stars[ship.special.aimed_at.snum].stability() += dis(gen);
+        stars[aimed_at.snum].stability() += dis(gen);
       }
       break;
     case ScopeLevel::LEVEL_UNIV:

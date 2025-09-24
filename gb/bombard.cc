@@ -62,7 +62,8 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
         (sect.condition != SectorType::SEC_WASTED)) {
       if (isset(r.atwar, sect.owner) ||
           (ship.type == ShipType::OTYPE_BERS &&
-           sect.owner == ship.special.mind.target)) {
+           std::holds_alternative<MindData>(ship.special) &&
+           sect.owner == std::get<MindData>(ship.special).target)) {
         found = true;
         break;
       }

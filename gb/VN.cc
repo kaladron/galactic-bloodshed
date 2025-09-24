@@ -19,18 +19,19 @@ void order_berserker(Ship &ship) {
   /* give berserkers a mission - send to planet of offending player and bombard
    * it */
   ship.bombard = 1;
-  ship.special.mind.target = VN_brain.Most_mad; /* who to attack */
+  MindData mind{.target = VN_brain.Most_mad}; /* who to attack */
   ship.whatdest = ScopeLevel::LEVEL_PLAN;
   if (random() & 01)
-    ship.deststar = Sdata.VN_index1[ship.special.mind.target - 1];
+    ship.deststar = Sdata.VN_index1[mind.target - 1];
   else
-    ship.deststar = Sdata.VN_index2[ship.special.mind.target - 1];
+    ship.deststar = Sdata.VN_index2[mind.target - 1];
   ship.destpnum = int_rand(0, stars[ship.deststar].numplanets() - 1);
   if (ship.hyper_drive.has && ship.mounted) {
     ship.hyper_drive.on = 1;
     ship.hyper_drive.ready = 1;
-    ship.special.mind.busy = 1;
+    mind.busy = 1;
   }
+  ship.special = mind;
 }
 
 void order_VN(Ship &ship) {
@@ -60,10 +61,18 @@ void order_VN(Ship &ship) {
   if (stars[ship.deststar].numplanets()) {
     ship.destpnum = int_rand(0, stars[ship.deststar].numplanets() - 1);
     ship.whatdest = ScopeLevel::LEVEL_PLAN;
-    ship.special.mind.busy = 1;
+    if (std::holds_alternative<MindData>(ship.special)) {
+      auto mind = std::get<MindData>(ship.special);
+      mind.busy = 1;
+      ship.special = mind;
+    }
   } else {
     /* no good; find someplace else. */
-    ship.special.mind.busy = 0;
+    if (std::holds_alternative<MindData>(ship.special)) {
+      auto mind = std::get<MindData>(ship.special);
+      mind.busy = 0;
+      ship.special = mind;
+    }
   }
   ship.speed = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
 }
@@ -73,7 +82,8 @@ void order_VN(Ship &ship) {
 void do_VN(Ship &ship) {
   if (!landed(ship)) {
     // Doing other things
-    if (!ship.special.mind.busy) return;
+    if (!std::holds_alternative<MindData>(ship.special) || 
+        !std::get<MindData>(ship.special).busy) return;
 
     // we were just built & launched
     if (ship.type == ShipType::OTYPE_BERS)
@@ -86,7 +96,8 @@ void do_VN(Ship &ship) {
   Stinfo[ship.storbits][ship.pnumorbits].inhab = 1;
 
   /* launch if no assignment */
-  if (!ship.special.mind.busy) {
+  if (!std::holds_alternative<MindData>(ship.special) || 
+      !std::get<MindData>(ship.special).busy) {
     if (ship.fuel >= (double)ship.max_fuel) {
       ship.xpos = stars[ship.storbits].xpos() +
                   planets[ship.storbits][ship.pnumorbits]->xpos +

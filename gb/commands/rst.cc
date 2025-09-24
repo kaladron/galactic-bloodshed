@@ -242,8 +242,11 @@ static void ship_report(GameObj &g, shipnum_t indx,
               s.tech, max_speed(s), shipcost(s), mass(s), size(s));
       notify(Playernum, Governor, buf);
       if (s.type == ShipType::STYPE_POD) {
-        sprintf(buf, " (%d)", s.special.pod.temperature);
-        notify(Playernum, Governor, buf);
+        if (std::holds_alternative<PodData>(s.special)) {
+          auto pod = std::get<PodData>(s.special);
+          sprintf(buf, " (%d)", pod.temperature);
+          notify(Playernum, Governor, buf);
+        }
       }
       g.out << "\n";
     }

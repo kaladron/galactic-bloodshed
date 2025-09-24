@@ -100,11 +100,17 @@ int infect_planet(int who, int star, int p) {
 }
 
 void do_pod(Ship &ship) {
+  if (!std::holds_alternative<PodData>(ship.special)) {
+    return;
+  }
+  auto pod = std::get<PodData>(ship.special);
+  
   switch (ship.whatorbits) {
     case ScopeLevel::LEVEL_STAR: {
-      if (ship.special.pod.temperature < POD_THRESHOLD) {
-        ship.special.pod.temperature += round_rand(
+      if (pod.temperature < POD_THRESHOLD) {
+        pod.temperature += round_rand(
             (double)stars[ship.storbits].temperature() / (double)segments);
+        ship.special = pod;
         return;
       }
 
@@ -124,8 +130,9 @@ void do_pod(Ship &ship) {
     }
 
     case ScopeLevel::LEVEL_PLAN: {
-      if (ship.special.pod.decay < POD_DECAY) {
-        ship.special.pod.decay += round_rand(1.0 / (double)segments);
+      if (pod.decay < POD_DECAY) {
+        pod.decay += round_rand(1.0 / (double)segments);
+        ship.special = pod;
         return;
       }
 
@@ -147,8 +154,14 @@ void do_canister(Ship &ship) {
   if (ship.whatorbits != ScopeLevel::LEVEL_PLAN || landed(ship)) {
     return;
   }
-
-  if (++ship.special.timer.count < DISSIPATE) {
+  
+  if (!std::holds_alternative<TimerData>(ship.special)) {
+    return;
+  }
+  auto timer = std::get<TimerData>(ship.special);
+  
+  if (++timer.count < DISSIPATE) {
+    ship.special = timer;
     if (Stinfo[ship.storbits][ship.pnumorbits].temp_add < -90)
       Stinfo[ship.storbits][ship.pnumorbits].temp_add = -100;
     else
@@ -508,13 +521,21 @@ void domissile(Ship &ship) {
     }
     if (!pdn) {
       auto [bombx, bomby] = [&p, &ship] -> std::tuple<int, int> {
-        if (ship.special.impact.scatter) {
+        if (std::holds_alternative<ImpactData>(ship.special)) {
+          auto impact = std::get<ImpactData>(ship.special);
+          if (impact.scatter) {
+            auto bombx = int_rand(1, (int)p->Maxx) - 1;
+            auto bomby = int_rand(1, (int)p->Maxy) - 1;
+            return {bombx, bomby};
+          } else {
+            auto bombx = impact.x % p->Maxx;
+            auto bomby = impact.y % p->Maxy;
+            return {bombx, bomby};
+          }
+        } else {
+          // Default to random if no impact data
           auto bombx = int_rand(1, (int)p->Maxx) - 1;
           auto bomby = int_rand(1, (int)p->Maxy) - 1;
-          return {bombx, bomby};
-        } else {
-          auto bombx = ship.special.impact.x % p->Maxx;
-          auto bomby = ship.special.impact.y % p->Maxy;
           return {bombx, bomby};
         }
       }();

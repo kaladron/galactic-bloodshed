@@ -212,18 +212,20 @@ void initialize_new_ship(GameObj &g, const Race &race, Ship *newship,
   newship->on = 0;
   switch (newship->type) {
     case ShipType::OTYPE_VN:
-      newship->special.mind.busy = 1;
-      newship->special.mind.progenitor = Playernum;
-      newship->special.mind.generation = 1;
-      newship->special.mind.target = 0;
-      newship->special.mind.tampered = 0;
+      newship->special = MindData{
+        .busy = 1,
+        .progenitor = static_cast<unsigned char>(Playernum),
+        .generation = 1,
+        .target = 0,
+        .tampered = 0
+      };
       break;
     case ShipType::STYPE_MINE:
-      newship->special.trigger.radius = 100; /* trigger radius */
+      newship->special = TriggerData{.radius = 100}; /* trigger radius */
       g.out << "Mine disarmed.\nTrigger radius set at 100.\n";
       break;
     case ShipType::OTYPE_TRANSDEV:
-      newship->special.transport.target = 0;
+      newship->special = TransportData{.target = 0};
       newship->on = 0;
       g.out << "Receive OFF.  Change with order.\n";
       break;
@@ -295,11 +297,13 @@ void create_ship_by_planet(int Playernum, int Governor, const Race &race,
     std::string message = std::format("Toxin concentration on planet was {}%,",
                                       planet.conditions[TOXIC]);
     notify(Playernum, Governor, message);
+    unsigned char toxic_amount;
     if (planet.conditions[TOXIC] > TOXMAX)
-      newship.special.waste.toxic = TOXMAX;
+      toxic_amount = TOXMAX;
     else
-      newship.special.waste.toxic = planet.conditions[TOXIC];
-    planet.conditions[TOXIC] -= newship.special.waste.toxic;
+      toxic_amount = planet.conditions[TOXIC];
+    newship.special = WasteData{.toxic = toxic_amount};
+    planet.conditions[TOXIC] -= toxic_amount;
     std::string toxMsg = std::format(" now {}%.\n", planet.conditions[TOXIC]);
     notify(Playernum, Governor, toxMsg);
   }
@@ -406,8 +410,9 @@ void Getship(Ship *s, ShipType i, const Race &r) {
   s->base_mass = getmass(*s);
   s->mass = getmass(*s);
   s->build_cost = r.God ? 0 : (int)cost(*s);
-  if (s->type == ShipType::OTYPE_VN || s->type == ShipType::OTYPE_BERS)
-    s->special.mind.progenitor = r.Playernum;
+  if (s->type == ShipType::OTYPE_VN || s->type == ShipType::OTYPE_BERS) {
+    s->special = MindData{.progenitor = static_cast<unsigned char>(r.Playernum)};
+  }
 }
 
 void Getfactship(Ship *s, Ship *b) {

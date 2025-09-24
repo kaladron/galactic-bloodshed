@@ -167,7 +167,9 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
   int prod;
 
   if (landed(ship)) {
-    if (ship.type == ShipType::OTYPE_VN && ship.special.mind.busy) {
+    if (ship.type == ShipType::OTYPE_VN && 
+        std::holds_alternative<MindData>(ship.special) && 
+        std::get<MindData>(ship.special).busy) {
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */
       auto &s = smap.get(ship.land_x, ship.land_y);
@@ -241,8 +243,12 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
           s2->alive = 1;
           if (shipbuild == ShipType::OTYPE_BERS) {
             /* special.mind.target = person killed the most VN's */
-            s2->special.mind.target = VN_brain.Most_mad;
-            sprintf(s2->name, "%x", s2->special.mind.target);
+            auto ship_mind = std::holds_alternative<MindData>(ship.special) ? 
+                             std::get<MindData>(ship.special) : MindData{};
+            s2->special = MindData{
+              .target = VN_brain.Most_mad,
+              .progenitor = ship_mind.progenitor
+            };
             s2->speed = Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED];
             s2->tech = ship.tech + 100.0;
             s2->bombard = 1;
@@ -252,7 +258,6 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
             s2->active = 1;
             s2->owner = 1;
             s2->governor = 0;
-            s2->special.mind.progenitor = ship.special.mind.progenitor;
             s2->fuel = 5 * ship.fuel; /* give 'em some fuel */
             s2->retaliate = s2->primary;
             s2->destruct = 500;

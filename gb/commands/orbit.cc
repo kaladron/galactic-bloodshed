@@ -316,7 +316,7 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship,
   }
 
   switch (ship->type) {
-    case ShipType::STYPE_MIRROR:
+    case ShipType::STYPE_MIRROR: {
       if (std::holds_alternative<AimedAtData>(ship->special)) {
         auto aimed_at = std::get<AimedAtData>(ship->special);
         if (aimed_at.level == ScopeLevel::LEVEL_STAR) {
@@ -335,13 +335,16 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship,
           }
         } else if (aimed_at.level == ScopeLevel::LEVEL_SHIP) {
           auto aship = getship(aimed_at.shipno);
-        if (aship) {
-          xt = aship->xpos;
-          yt = aship->ypos;
-        } else
-          xt = yt = 0.0;
-      } else
+          if (aship) {
+            xt = aship->xpos;
+            yt = aship->ypos;
+          } else {
+            xt = yt = 0.0;
+          }
+        }
+      } else {
         xt = yt = 0.0;
+      }
       wm = 0;
 
       if (xt == ship->xpos) {
@@ -386,6 +389,7 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship,
         }
       }
       break;
+    }
 
     case ShipType::OTYPE_CANIST:
     case ShipType::OTYPE_GREEN:

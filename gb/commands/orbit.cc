@@ -341,6 +341,8 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship,
           } else {
             xt = yt = 0.0;
           }
+        } else {
+          xt = yt = 0.0;
         }
       } else {
         xt = yt = 0.0;

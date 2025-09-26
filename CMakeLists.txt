@@ -28,6 +28,13 @@ project("galactic-bloodshed" LANGUAGES CXX)
 # Include GNUInstallDirs to get canonical paths
 include(GNUInstallDirs)
 
+# Set default build type to Debug for development if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
+endif()
+
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 
 include(cmake/compiler_setup.cmake)
 

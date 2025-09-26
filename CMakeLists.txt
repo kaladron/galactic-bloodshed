@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 4.0.0)
 
 # list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -10,7 +10,7 @@ set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
 set(CMAKE_CXX_MODULE_STD ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 # Currently CMake requires extensions enabled when using import std.
 # https://gitlab.kitware.com/cmake/cmake/-/issues/25916
@@ -27,6 +27,13 @@ project("galactic-bloodshed" LANGUAGES CXX)
 
 # Include GNUInstallDirs to get canonical paths
 include(GNUInstallDirs)
+
+# Set default build type to Debug for development if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
+endif()
+
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 
 include(cmake/compiler_setup.cmake)

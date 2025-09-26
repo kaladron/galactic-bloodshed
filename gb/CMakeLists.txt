@@ -1,22 +1,58 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Configuration variable for PKGDATADIR
-set(PKGDATADIR
-    "${CMAKE_INSTALL_FULL_DATAROOTDIR}/${CMAKE_PROJECT_NAME}/"
-    CACHE STRING "Path to the package data directory")
+# In Debug mode, use source directories for development
+# In Release mode, use install directories for production
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Development mode: use source data directory
+    set(PKGDATADIR
+        "${CMAKE_SOURCE_DIR}/data/"
+        CACHE STRING "Path to the package data directory")
+    message(STATUS "Debug build: Using source data directory: ${PKGDATADIR}")
+else()
+    # Production mode: use install directory  
+    set(PKGDATADIR
+        "${CMAKE_INSTALL_FULL_DATAROOTDIR}/${CMAKE_PROJECT_NAME}/"
+        CACHE STRING "Path to the package data directory")
+    message(STATUS "Release build: Using install data directory: ${PKGDATADIR}")
+endif()
 add_definitions(-DPKGDATADIR="${PKGDATADIR}")
 
 # Set PKGSTATEDIR using CMAKE_INSTALL_LOCALSTATEDIR for local state files
-set(PKGSTATEDIR
-    "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/${CMAKE_PROJECT_NAME}/"
-    CACHE STRING "Path to the package state directory")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Development mode: use build directory for database and state files
+    set(PKGSTATEDIR
+        "${CMAKE_BINARY_DIR}/gamedata/"
+        CACHE STRING "Path to the package state directory")
+    # Create the development state directory and subdirectories
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/gamedata")
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/gamedata/News")
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/gamedata/Tele")
+    message(STATUS "Debug build: Using build state directory: ${PKGSTATEDIR}")
+else()
+    # Production mode: use install directory
+    set(PKGSTATEDIR
+        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/${CMAKE_PROJECT_NAME}/"
+        CACHE STRING "Path to the package state directory")
+    message(STATUS "Release build: Using install state directory: ${PKGSTATEDIR}")
+endif()
 add_definitions(-DPKGSTATEDIR="${PKGSTATEDIR}")
 install(DIRECTORY DESTINATION ${PKGSTATEDIR})
 
 # Set DOCDIR using CMAKE_INSTALL_DOCDIR for documentation files
-set(DOCDIR
-    "${CMAKE_INSTALL_FULL_DOCDIR}/"
-    CACHE STRING "Path to the package document directory")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Development mode: use source docs directory
+    set(DOCDIR
+        "${CMAKE_SOURCE_DIR}/docs/"
+        CACHE STRING "Path to the package document directory")
+    message(STATUS "Debug build: Using source docs directory: ${DOCDIR}")
+else()
+    # Production mode: use install directory
+    set(DOCDIR
+        "${CMAKE_INSTALL_FULL_DOCDIR}/"
+        CACHE STRING "Path to the package document directory")
+    message(STATUS "Release build: Using install docs directory: ${DOCDIR}")
+endif()
 add_definitions(-DDOCDIR="${DOCDIR}")
 
 # Require dot, treat the other components as optional

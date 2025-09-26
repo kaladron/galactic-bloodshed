@@ -15,14 +15,22 @@ module gblib;
 
 namespace {
 bool moveship_onplanet(Ship &ship, const Planet &planet) {
-  if (ship.shipclass[ship.special.terraform.index] == 's') {
+  if (!std::holds_alternative<TerraformData>(ship.special)) {
     ship.on = 0;
     return false;
   }
-  if (ship.shipclass[ship.special.terraform.index] == 'c')
-    ship.special.terraform.index = 0; /* reset the orders */
+  
+  auto terraform = std::get<TerraformData>(ship.special);
+  if (ship.shipclass[terraform.index] == 's') {
+    ship.on = 0;
+    return false;
+  }
+  if (ship.shipclass[terraform.index] == 'c') {
+    terraform.index = 0; /* reset the orders */
+    ship.special = terraform;
+  }
 
-  auto [x, y] = get_move(planet, ship.shipclass[ship.special.terraform.index],
+  auto [x, y] = get_move(planet, ship.shipclass[terraform.index],
                          {ship.land_x, ship.land_y});
 
   bool bounced = false;
@@ -34,9 +42,9 @@ bool moveship_onplanet(Ship &ship, const Planet &planet) {
     y = 1;
   bounced = true; /* bounce off of north pole! */
   if (planet.Maxy == 1) y = 0;
-  if (ship.shipclass[ship.special.terraform.index + 1] != '\0') {
-    ++ship.special.terraform.index;
-    if ((ship.shipclass[ship.special.terraform.index + 1] == '\0') &&
+  if (ship.shipclass[terraform.index + 1] != '\0') {
+    ++terraform.index;
+    if ((ship.shipclass[terraform.index + 1] == '\0') &&
         (!ship.notified)) {
       ship.notified = 1;
       std::string teleg_buf =
@@ -44,9 +52,11 @@ bool moveship_onplanet(Ship &ship, const Planet &planet) {
                       prin_ship_orbits(ship));
       push_telegram(ship.owner, ship.governor, teleg_buf);
     }
-  } else if (bounced)
-    ship.shipclass[ship.special.terraform.index] +=
-        ((ship.shipclass[ship.special.terraform.index] > '5') ? -6 : 6);
+    ship.special = terraform;
+  } else if (bounced) {
+    ship.shipclass[terraform.index] +=
+        ((ship.shipclass[terraform.index] > '5') ? -6 : 6);
+  }
   ship.land_x = x;
   ship.land_y = y;
   return true;
@@ -153,8 +163,11 @@ void do_berserker(Ship *ship, Planet &planet) {
       ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {
     if (!berserker_bombard(*ship, planet, races[ship->owner - 1]))
       ship->destpnum = int_rand(0, stars[ship->storbits].numplanets() - 1);
-    else if (Sdata.VN_hitlist[ship->special.mind.who_killed - 1] > 0)
-      --Sdata.VN_hitlist[ship->special.mind.who_killed - 1];
+    else if (std::holds_alternative<MindData>(ship->special)) {
+      auto mind = std::get<MindData>(ship->special);
+      if (Sdata.VN_hitlist[mind.who_killed - 1] > 0)
+        --Sdata.VN_hitlist[mind.who_killed - 1];
+    }
   }
 }
 
@@ -844,7 +857,7 @@ int doplanet(const starnum_t starnum, Planet &planet,
         s2->governor = stars[starnum].governor(i - 1);
         t = std::min(TOXMAX, planet.conditions[TOXIC]); /* amt of tox */
         planet.conditions[TOXIC] -= t;
-        s2->special.waste.toxic = t;
+        s2->special = WasteData{.toxic = static_cast<unsigned char>(t)};
       }
     } /* (if numsectsowned[i]) */
 

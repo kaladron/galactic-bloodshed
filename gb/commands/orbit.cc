@@ -316,30 +316,37 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship,
   }
 
   switch (ship->type) {
-    case ShipType::STYPE_MIRROR:
-      if (ship->special.aimed_at.level == ScopeLevel::LEVEL_STAR) {
-        xt = stars[ship->special.aimed_at.snum].xpos();
-        yt = stars[ship->special.aimed_at.snum].ypos();
-      } else if (ship->special.aimed_at.level == ScopeLevel::LEVEL_PLAN) {
-        if (where.level == ScopeLevel::LEVEL_PLAN &&
-            ship->special.aimed_at.pnum == where.pnum) {
-          /* same planet */
-          xt = stars[ship->special.aimed_at.snum].xpos() + pl.xpos;
-          yt = stars[ship->special.aimed_at.snum].ypos() + pl.ypos;
-        } else { /* different planet */
-          const auto apl = getplanet(where.snum, where.pnum);
-          xt = stars[ship->special.aimed_at.snum].xpos() + apl.xpos;
-          yt = stars[ship->special.aimed_at.snum].ypos() + apl.ypos;
-        }
-      } else if (ship->special.aimed_at.level == ScopeLevel::LEVEL_SHIP) {
-        auto aship = getship(ship->special.aimed_at.shipno);
-        if (aship) {
-          xt = aship->xpos;
-          yt = aship->ypos;
-        } else
+    case ShipType::STYPE_MIRROR: {
+      if (std::holds_alternative<AimedAtData>(ship->special)) {
+        auto aimed_at = std::get<AimedAtData>(ship->special);
+        if (aimed_at.level == ScopeLevel::LEVEL_STAR) {
+          xt = stars[aimed_at.snum].xpos();
+          yt = stars[aimed_at.snum].ypos();
+        } else if (aimed_at.level == ScopeLevel::LEVEL_PLAN) {
+          if (where.level == ScopeLevel::LEVEL_PLAN &&
+              aimed_at.pnum == where.pnum) {
+            /* same planet */
+            xt = stars[aimed_at.snum].xpos() + pl.xpos;
+            yt = stars[aimed_at.snum].ypos() + pl.ypos;
+          } else { /* different planet */
+            const auto apl = getplanet(where.snum, where.pnum);
+            xt = stars[aimed_at.snum].xpos() + apl.xpos;
+            yt = stars[aimed_at.snum].ypos() + apl.ypos;
+          }
+        } else if (aimed_at.level == ScopeLevel::LEVEL_SHIP) {
+          auto aship = getship(aimed_at.shipno);
+          if (aship) {
+            xt = aship->xpos;
+            yt = aship->ypos;
+          } else {
+            xt = yt = 0.0;
+          }
+        } else {
           xt = yt = 0.0;
-      } else
+        }
+      } else {
         xt = yt = 0.0;
+      }
       wm = 0;
 
       if (xt == ship->xpos) {
@@ -384,6 +391,7 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship,
         }
       }
       break;
+    }
 
     case ShipType::OTYPE_CANIST:
     case ShipType::OTYPE_GREEN:

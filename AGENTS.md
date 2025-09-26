@@ -43,19 +43,27 @@ cmake --build . --target race_sqlite_test  # Database test
 
 # Clean build
 cmake --build . --clean-first
+
+# Run tests
+ctest                          # Run all tests
+ctest -R [test_name]          # Run specific test
+ctest --verbose               # Run tests with verbose output
 ```
 
 ### Common Build Commands for AI Agents
 - **Full build**: `cd /workspaces/galactic-bloodshed/build && cmake --build .`
 - **Incremental build**: `cd /workspaces/galactic-bloodshed/build && cmake --build .`
 - **Test specific component**: `cd /workspaces/galactic-bloodshed/build && cmake --build . --target [target_name]`
-- **Run tests**: `cd /workspaces/galactic-bloodshed/build && ./gb/race_sqlite_test`
+- **Run all tests**: `cd /workspaces/galactic-bloodshed/build && ctest`
+- **Run specific test**: `cd /workspaces/galactic-bloodshed/build && ctest -R [test_name]`
+- **Run tests with verbose output**: `cd /workspaces/galactic-bloodshed/build && ctest --verbose`
 
 ### ⚠️ Important Notes
 - **DO NOT use `make`** - This project uses CMake, not traditional makefiles
 - Always build from the `build/` directory
 - Use `cmake --build .` instead of raw `make` commands
 - The build system handles C++ modules automatically
+- **Prefer `ctest`** over directly running test executables for consistency and better output
 
 ## 🏗️ Architecture & Code Organization
 
@@ -227,6 +235,39 @@ The `GameObj& g` parameter provides:
 - `g.shipno` - Current ship number
 - `g.out` - Output stream to player
 
+### Writing Tests
+
+When creating new test files, follow this essential pattern for database initialization:
+
+```cpp
+// SPDX-License-Identifier: Apache-2.0
+
+import gblib;
+import std.compat;
+
+#include <cassert>
+
+int main() {
+  // CRITICAL: Always create in-memory database BEFORE calling initsqldata()
+  Sql db(":memory:");
+
+  // Initialize database tables - this creates all required tables
+  initsqldata();
+
+  // Your test logic here...
+  
+  std::println("Test passed!");
+  return 0;
+}
+```
+
+**⚠️ Critical Database Initialization Rules for Tests:**
+- **ALWAYS** create `Sql db(":memory:");` before calling `initsqldata()`
+- This creates all required tables including `tbl_ship`, `tbl_race`, `tbl_commod`, etc.
+- Without this, tests will segfault when trying to access non-existent database files
+- The `initsqldata()` function creates the database schema but requires an active connection
+- All working tests follow this pattern - never deviate from it
+
 ## ⚠️ Critical Rules & Anti-patterns
 
 ### DO NOT:
@@ -326,7 +367,10 @@ Use these from `gb/files.h`:
 3. **Runtime Errors**: Look for unchecked `std::optional` access
 4. **Output Issues**: Verify all output goes through `g.out`
 5. **Persistence Issues**: Ensure proper `put*` calls after modifications
-6. **Test Failures**: Run `./gb/race_sqlite_test` and other test executables from `build/` directory
+6. **Test Failures**: 
+   - Use `ctest` or `ctest --verbose` to run tests from `build/` directory
+   - Individual test executables can be run directly: `./gb/race_sqlite_test`
+   - Always ensure tests use `Sql db(":memory:");` before `initsqldata()`
 
 ## 📚 Additional Resources
 

@@ -19,18 +19,19 @@ void order_berserker(Ship &ship) {
   /* give berserkers a mission - send to planet of offending player and bombard
    * it */
   ship.bombard = 1;
-  ship.special.mind.target = VN_brain.Most_mad; /* who to attack */
+  MindData mind{.target = VN_brain.Most_mad}; /* who to attack */
   ship.whatdest = ScopeLevel::LEVEL_PLAN;
   if (random() & 01)
-    ship.deststar = Sdata.VN_index1[ship.special.mind.target - 1];
+    ship.deststar = Sdata.VN_index1[mind.target - 1];
   else
-    ship.deststar = Sdata.VN_index2[ship.special.mind.target - 1];
+    ship.deststar = Sdata.VN_index2[mind.target - 1];
   ship.destpnum = int_rand(0, stars[ship.deststar].numplanets() - 1);
   if (ship.hyper_drive.has && ship.mounted) {
     ship.hyper_drive.on = 1;
     ship.hyper_drive.ready = 1;
-    ship.special.mind.busy = 1;
+    mind.busy = 1;
   }
+  ship.special = mind;
 }
 
 void order_VN(Ship &ship) {
@@ -60,10 +61,18 @@ void order_VN(Ship &ship) {
   if (stars[ship.deststar].numplanets()) {
     ship.destpnum = int_rand(0, stars[ship.deststar].numplanets() - 1);
     ship.whatdest = ScopeLevel::LEVEL_PLAN;
-    ship.special.mind.busy = 1;
+    if (std::holds_alternative<MindData>(ship.special)) {
+      auto mind = std::get<MindData>(ship.special);
+      mind.busy = 1;
+      ship.special = mind;
+    }
   } else {
     /* no good; find someplace else. */
-    ship.special.mind.busy = 0;
+    if (std::holds_alternative<MindData>(ship.special)) {
+      auto mind = std::get<MindData>(ship.special);
+      mind.busy = 0;
+      ship.special = mind;
+    }
   }
   ship.speed = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
 }
@@ -73,7 +82,8 @@ void order_VN(Ship &ship) {
 void do_VN(Ship &ship) {
   if (!landed(ship)) {
     // Doing other things
-    if (!ship.special.mind.busy) return;
+    if (!std::holds_alternative<MindData>(ship.special) || 
+        !std::get<MindData>(ship.special).busy) return;
 
     // we were just built & launched
     if (ship.type == ShipType::OTYPE_BERS)
@@ -86,7 +96,8 @@ void do_VN(Ship &ship) {
   Stinfo[ship.storbits][ship.pnumorbits].inhab = 1;
 
   /* launch if no assignment */
-  if (!ship.special.mind.busy) {
+  if (!std::holds_alternative<MindData>(ship.special) || 
+      !std::get<MindData>(ship.special).busy) {
     if (ship.fuel >= (double)ship.max_fuel) {
       ship.xpos = stars[ship.storbits].xpos() +
                   planets[ship.storbits][ship.pnumorbits]->xpos +
@@ -156,7 +167,9 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
   int prod;
 
   if (landed(ship)) {
-    if (ship.type == ShipType::OTYPE_VN && ship.special.mind.busy) {
+    if (ship.type == ShipType::OTYPE_VN && 
+        std::holds_alternative<MindData>(ship.special) && 
+        std::get<MindData>(ship.special).busy) {
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */
       auto &s = smap.get(ship.land_x, ship.land_y);
@@ -229,9 +242,13 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
           s2->mass = s2->base_mass;
           s2->alive = 1;
           if (shipbuild == ShipType::OTYPE_BERS) {
-            /* special.mind.target = person killed the most VN's */
-            s2->special.mind.target = VN_brain.Most_mad;
-            sprintf(s2->name, "%x", s2->special.mind.target);
+            /* target = person killed the most VN's */
+            auto ship_mind = std::holds_alternative<MindData>(ship.special) ? 
+                             std::get<MindData>(ship.special) : MindData{};
+            s2->special = MindData{
+              .target = VN_brain.Most_mad,
+              .progenitor = ship_mind.progenitor
+            };
             s2->speed = Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED];
             s2->tech = ship.tech + 100.0;
             s2->bombard = 1;
@@ -241,7 +258,6 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
             s2->active = 1;
             s2->owner = 1;
             s2->governor = 0;
-            s2->special.mind.progenitor = ship.special.mind.progenitor;
             s2->fuel = 5 * ship.fuel; /* give 'em some fuel */
             s2->retaliate = s2->primary;
             s2->destruct = 500;
@@ -254,7 +270,11 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
             auto buf = std::format("{0} constructed {1}.", ship_to_string(ship),
                                    ship_to_string(*s2));
             push_telegram(ship.owner, ship.governor, buf);
-            s2->special.mind.tampered = 0;
+            if (std::holds_alternative<MindData>(s2->special)) {
+              auto mind = std::get<MindData>(s2->special);
+              mind.tampered = 0;
+              s2->special = mind;
+            }
           } else {
             s2->tech = ship.tech + 20.0;
             n = int_rand(3, std::min(10, SHIP_NAMESIZE)); /* for name */
@@ -268,19 +288,38 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
             s2->fuel = 0.5 * ship.fuel;
             ship.fuel *= 0.5;
           }
-          s2->special.mind.busy = 0;
-          s2->special.mind.progenitor = ship.special.mind.progenitor;
-          s2->special.mind.generation = ship.special.mind.generation + 1;
-          ship.special.mind.busy = random() & 01;
+          // Handle mind data for new ship and current ship
+          if (std::holds_alternative<MindData>(ship.special)) {
+            auto ship_mind = std::get<MindData>(ship.special);
+            s2->special = MindData{
+              .busy = 0,
+              .progenitor = ship_mind.progenitor,
+              .generation = static_cast<unsigned char>(ship_mind.generation + 1)
+            };
+            ship.special = MindData{
+              .busy = static_cast<unsigned char>(random() & 01),
+              .progenitor = ship_mind.progenitor,
+              .generation = ship_mind.generation,
+              .target = ship_mind.target,
+              .tampered = ship_mind.tampered,
+              .who_killed = ship_mind.who_killed
+            };
+          }
         }
       }
     } else { /* orbiting a planet */
-      if (ship.special.mind.busy) {
+      if (std::holds_alternative<MindData>(ship.special) && 
+          std::get<MindData>(ship.special).busy) {
         if (ship.whatdest == ScopeLevel::LEVEL_PLAN &&
             ship.deststar == ship.storbits &&
             ship.destpnum == ship.pnumorbits) {
-          if (planet.type == PlanetType::GASGIANT)
-            ship.special.mind.busy = 0;
+          if (planet.type == PlanetType::GASGIANT) {
+            if (std::holds_alternative<MindData>(ship.special)) {
+              auto mind = std::get<MindData>(ship.special);
+              mind.busy = 0;
+              ship.special = mind;
+            }
+          }
           else {
             /* find a place on the planet to land */
             bool found = false;
@@ -296,9 +335,17 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
               ship.ypos = stars[ship.storbits].ypos() + planet.ypos;
               ship.land_x = sect.x;
               ship.land_y = sect.y;
-              ship.special.mind.busy = 1;
+              if (std::holds_alternative<MindData>(ship.special)) {
+                auto mind = std::get<MindData>(ship.special);
+                mind.busy = 1;
+                ship.special = mind;
+              }
             }
-            if (!found) ship.special.mind.busy = 0;
+            if (!found && std::holds_alternative<MindData>(ship.special)) {
+              auto mind = std::get<MindData>(ship.special);
+              mind.busy = 0;
+              ship.special = mind;
+            }
           }
         }
       }

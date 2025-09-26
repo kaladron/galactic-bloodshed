@@ -11,8 +11,11 @@ module gblib;
 
 namespace {
 std::string prin_aimed_at(const Ship &ship) {
-  Place targ{ship.special.aimed_at.level, ship.special.aimed_at.snum,
-             ship.special.aimed_at.pnum, ship.special.aimed_at.shipno};
+  if (!std::holds_alternative<AimedAtData>(ship.special)) {
+    return "Not aimed";
+  }
+  const auto& aimed_at = std::get<AimedAtData>(ship.special);
+  Place targ{aimed_at.level, aimed_at.snum, aimed_at.pnum, aimed_at.shipno};
   return targ.to_string();
 }
 
@@ -20,12 +23,17 @@ std::string prin_aimed_at(const Ship &ship) {
  * mark wherever the ship is aimed at, as explored by the owning player.
  */
 void mk_expl_aimed_at(GameObj &g, const Ship &s) {
-  auto &str = stars[s.special.aimed_at.snum];
+  if (!std::holds_alternative<AimedAtData>(s.special)) {
+    g.out << "Ship is not aimed.\n";
+    return;
+  }
+  const auto& aimed_at = std::get<AimedAtData>(s.special);
+  auto &str = stars[aimed_at.snum];
 
   auto xf = s.xpos;
   auto yf = s.ypos;
 
-  switch (s.special.aimed_at.level) {
+  switch (aimed_at.level) {
     case ScopeLevel::LEVEL_UNIV:
       g.out << "There is nothing out here to aim at.\n";
       break;
@@ -33,9 +41,9 @@ void mk_expl_aimed_at(GameObj &g, const Ship &s) {
       g.out << std::format("Star {}\n", prin_aimed_at(s));
       if (auto dist = sqrt(Distsq(xf, yf, str.xpos(), str.ypos()));
           dist <= tele_range(s.type, s.tech)) {
-        str = getstar(s.special.aimed_at.snum);
+        str = getstar(aimed_at.snum);
         setbit(str.explored(), g.player);
-        putstar(str, s.special.aimed_at.snum);
+        putstar(str, aimed_at.snum);
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
@@ -44,13 +52,13 @@ void mk_expl_aimed_at(GameObj &g, const Ship &s) {
       break;
     case ScopeLevel::LEVEL_PLAN: {
       g.out << std::format("Planet {}\n", prin_aimed_at(s));
-      auto p = getplanet(s.special.aimed_at.snum, s.special.aimed_at.pnum);
+      auto p = getplanet(aimed_at.snum, aimed_at.pnum);
       if (auto dist =
               sqrt(Distsq(xf, yf, str.xpos() + p.xpos, str.ypos() + p.ypos));
           dist <= tele_range(s.type, s.tech)) {
         setbit(str.explored(), g.player);
         p.info[g.player - 1].explored = 1;
-        putplanet(p, stars[s.special.aimed_at.snum], s.special.aimed_at.pnum);
+        putplanet(p, stars[aimed_at.snum], aimed_at.pnum);
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
@@ -96,7 +104,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       g.out << "Only missiles can be given this order.\n";
       return;
     }
-    ship.special.impact.scatter = 1;
+    ship.special = ImpactData{.scatter = 1};
   } else if (argv[2] == "impact") {
     int x;
     int y;
@@ -105,9 +113,11 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       return;
     }
     sscanf(argv[3].c_str(), "%d,%d", &x, &y);
-    ship.special.impact.x = x;
-    ship.special.impact.y = y;
-    ship.special.impact.scatter = 0;
+    ship.special = ImpactData{
+      .x = static_cast<unsigned char>(x),
+      .y = static_cast<unsigned char>(y),
+      .scatter = 0
+    };
   } else if (argv[2] == "jump") {
     if (ship.docked) {
       g.out << "That ship is docked. Use 'launch' or 'undock' first.\n";
@@ -429,27 +439,29 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
     strcpy(ship.shipclass, moveseq.c_str());
     /* This is the index keeping track of which order in shipclass is next. */
-    ship.special.terraform.index = 0;
+    ship.special = TerraformData{.index = 0};
   } else if (argv[2] == "trigger") {
     if (ship.type == ShipType::STYPE_MINE) {
+      unsigned short radius;
       if (std::stoi(argv[3]) < 0)
-        ship.special.trigger.radius = 0;
+        radius = 0;
       else
-        ship.special.trigger.radius = std::stoi(argv[3]);
+        radius = std::stoi(argv[3]);
+      ship.special = TriggerData{.radius = radius};
     } else {
       g.out << "This ship cannot be assigned a trigger radius.\n";
       return;
     }
   } else if (argv[2] == "transport") {
     if (ship.type == ShipType::OTYPE_TRANSDEV) {
-      ship.special.transport.target = std::stoi(argv[3]);
-      if (ship.special.transport.target == ship.number) {
+      unsigned short target = std::stoi(argv[3]);
+      if (target == ship.number) {
         g.out << "A transporter cannot transport to itself.";
-        ship.special.transport.target = 0;
+        target = 0;
       } else {
-        g.out << std::format("Target ship is {}.\n",
-                             ship.special.transport.target);
+        g.out << std::format("Target ship is {}.\n", target);
       }
+      ship.special = TransportData{.target = target};
     } else {
       g.out << "This ship is not a transporter.\n";
       return;
@@ -467,10 +479,12 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           g.out << "Error in destination.\n";
           return;
         }
-        ship.special.aimed_at.level = pl.level;
-        ship.special.aimed_at.pnum = pl.pnum;
-        ship.special.aimed_at.snum = pl.snum;
-        ship.special.aimed_at.shipno = pl.shipno;
+        ship.special = AimedAtData{
+          .level = pl.level,
+          .pnum = pl.pnum,
+          .snum = pl.snum,
+          .shipno = pl.shipno
+        };
         if (ship.type != ShipType::OTYPE_TRACT &&
             ship.type != ShipType::OTYPE_GTELE)
           use_fuel(ship, FUEL_MANEUVER);
@@ -490,8 +504,11 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
     }
   } else if (argv[2] == "intensity") {
     if (ship.type == ShipType::STYPE_MIRROR) {
-      ship.special.aimed_at.intensity =
-          std::max(0, std::min(100, std::stoi(argv[3])));
+      if (std::holds_alternative<AimedAtData>(ship.special)) {
+        auto aimed_at = std::get<AimedAtData>(ship.special);
+        aimed_at.intensity = std::max(0, std::min(100, std::stoi(argv[3])));
+        ship.special = aimed_at;
+      }
     }
   } else if (argv[2] == "on") {
     if (!has_switch(ship)) {
@@ -667,35 +684,47 @@ void DispOrders(int Playernum, int Governor, const Ship &ship) {
       buffer << "/explode";
   }
   if (ship.type == ShipType::OTYPE_TERRA || ship.type == ShipType::OTYPE_PLOW) {
-    std::string temp = &(ship.shipclass[ship.special.terraform.index]);
-    buffer << std::format("/move {}", temp);
+    if (std::holds_alternative<TerraformData>(ship.special)) {
+      auto terraform = std::get<TerraformData>(ship.special);
+      std::string temp = &(ship.shipclass[terraform.index]);
+      buffer << std::format("/move {}", temp);
 
-    if (temp[temp.length() - 1] == 'c') {
-      std::string hidden = temp;
-      hidden = hidden.substr(0, ship.special.terraform.index);
-      buffer << std::format("{}c", hidden);
+      if (temp[temp.length() - 1] == 'c') {
+        std::string hidden = temp;
+        hidden = hidden.substr(0, terraform.index);
+        buffer << std::format("{}c", hidden);
+      }
     }
   }
 
   if (ship.type == ShipType::STYPE_MISSILE &&
       ship.whatdest == ScopeLevel::LEVEL_PLAN) {
-    if (ship.special.impact.scatter)
-      buffer << "/scatter";
-    else {
-      buffer << std::format("/impact {},{}", ship.special.impact.x,
-                            ship.special.impact.y);
+    if (std::holds_alternative<ImpactData>(ship.special)) {
+      auto impact = std::get<ImpactData>(ship.special);
+      if (impact.scatter)
+        buffer << "/scatter";
+      else {
+        buffer << std::format("/impact {},{}", impact.x, impact.y);
+      }
     }
   }
 
   if (ship.type == ShipType::STYPE_MINE) {
-    buffer << std::format("/trigger {}", ship.special.trigger.radius);
+    if (std::holds_alternative<TriggerData>(ship.special)) {
+      buffer << std::format("/trigger {}", std::get<TriggerData>(ship.special).radius);
+    }
   }
   if (ship.type == ShipType::OTYPE_TRANSDEV) {
-    buffer << std::format("/target {}", ship.special.transport.target);
+    if (std::holds_alternative<TransportData>(ship.special)) {
+      buffer << std::format("/target {}", std::get<TransportData>(ship.special).target);
+    }
   }
   if (ship.type == ShipType::STYPE_MIRROR) {
-    buffer << std::format("/aim {}/int {}", prin_aimed_at(ship),
-                          ship.special.aimed_at.intensity);
+    std::string intensity_str = "0";
+    if (std::holds_alternative<AimedAtData>(ship.special)) {
+      intensity_str = std::to_string(std::get<AimedAtData>(ship.special).intensity);
+    }
+    buffer << std::format("/aim {}/int {}", prin_aimed_at(ship), intensity_str);
   }
 
   buffer << "\n";

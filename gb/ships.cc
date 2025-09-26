@@ -412,7 +412,11 @@ bool testship(const Ship &s, GameObj &g) {
 }
 
 void kill_ship(player_t Playernum, Ship *ship) {
-  ship->special.mind.who_killed = Playernum;
+  if (std::holds_alternative<MindData>(ship->special)) {
+    auto mind = std::get<MindData>(ship->special);
+    mind.who_killed = Playernum;
+    ship->special = mind;
+  }
   ship->alive = 0;
   ship->notified = 0; /* prepare the ship for recycling */
 
@@ -435,7 +439,10 @@ void kill_ship(player_t Playernum, Ship *ship) {
   if (ship->type == ShipType::OTYPE_VN || ship->type == ShipType::OTYPE_BERS) {
     getsdata(&Sdata);
     /* add ship to VN shit list */
-    Sdata.VN_hitlist[ship->special.mind.who_killed - 1] += 1;
+    if (std::holds_alternative<MindData>(ship->special)) {
+      auto mind = std::get<MindData>(ship->special);
+      Sdata.VN_hitlist[mind.who_killed - 1] += 1;
+    }
 
     /* keep track of where these VN's were shot up */
 
@@ -461,8 +468,11 @@ void kill_ship(player_t Playernum, Ship *ship) {
   if (ship->type == ShipType::OTYPE_TOXWC &&
       ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
     auto planet = getplanet(ship->storbits, ship->pnumorbits);
-    planet.conditions[TOXIC] =
-        MIN(100, planet.conditions[TOXIC] + ship->special.waste.toxic);
+    if (std::holds_alternative<WasteData>(ship->special)) {
+      auto waste = std::get<WasteData>(ship->special);
+      planet.conditions[TOXIC] =
+          MIN(100, planet.conditions[TOXIC] + waste.toxic);
+    }
     putplanet(planet, stars[ship->storbits], ship->pnumorbits);
   }
 

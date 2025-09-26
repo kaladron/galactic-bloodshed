@@ -212,13 +212,13 @@ void initialize_new_ship(GameObj &g, const Race &race, Ship *newship,
   newship->on = 0;
   switch (newship->type) {
     case ShipType::OTYPE_VN:
-      newship->special = MindData{
-        .busy = 1,
-        .progenitor = static_cast<unsigned char>(Playernum),
-        .generation = 1,
-        .target = 0,
-        .tampered = 0
-      };
+      newship->special =
+          MindData{.progenitor = static_cast<unsigned char>(Playernum),
+                   .target = 0,
+                   .generation = 1,
+                   .busy = 1,
+                   .tampered = 0,
+                   .who_killed = 0};
       break;
     case ShipType::STYPE_MINE:
       newship->special = TriggerData{.radius = 100}; /* trigger radius */
@@ -411,7 +411,12 @@ void Getship(Ship *s, ShipType i, const Race &r) {
   s->mass = getmass(*s);
   s->build_cost = r.God ? 0 : (int)cost(*s);
   if (s->type == ShipType::OTYPE_VN || s->type == ShipType::OTYPE_BERS) {
-    s->special = MindData{.progenitor = static_cast<unsigned char>(r.Playernum)};
+    s->special = MindData{.progenitor = static_cast<unsigned char>(r.Playernum),
+                          .target = 0,
+                          .generation = 0,
+                          .busy = 0,
+                          .tampered = 0,
+                          .who_killed = 0};
   }
 }
 

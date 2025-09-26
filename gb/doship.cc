@@ -467,7 +467,12 @@ void doship(Ship &ship, int update) {
                 ship.special = mind;
               }
             } else {
-              ship.special = MindData{.progenitor = 1};
+              ship.special = MindData{.progenitor = 1,
+                                      .target = 0,
+                                      .generation = 0,
+                                      .busy = 0,
+                                      .tampered = 0,
+                                      .who_killed = 0};
             }
             do_VN(ship);
             break;

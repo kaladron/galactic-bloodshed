@@ -19,7 +19,8 @@ void order_berserker(Ship &ship) {
   /* give berserkers a mission - send to planet of offending player and bombard
    * it */
   ship.bombard = 1;
-  MindData mind{.target = VN_brain.Most_mad}; /* who to attack */
+  MindData mind{}; /* who to attack */
+  mind.target = VN_brain.Most_mad;
   ship.whatdest = ScopeLevel::LEVEL_PLAN;
   if (random() & 01)
     ship.deststar = Sdata.VN_index1[mind.target - 1];
@@ -245,10 +246,12 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
             /* target = person killed the most VN's */
             auto ship_mind = std::holds_alternative<MindData>(ship.special) ? 
                              std::get<MindData>(ship.special) : MindData{};
-            s2->special = MindData{
-              .target = VN_brain.Most_mad,
-              .progenitor = ship_mind.progenitor
-            };
+            s2->special = MindData{.progenitor = ship_mind.progenitor,
+                                   .target = VN_brain.Most_mad,
+                                   .generation = ship_mind.generation,
+                                   .busy = 0,
+                                   .tampered = ship_mind.tampered,
+                                   .who_killed = ship_mind.who_killed};
             s2->speed = Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED];
             s2->tech = ship.tech + 100.0;
             s2->bombard = 1;
@@ -291,19 +294,20 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
           // Handle mind data for new ship and current ship
           if (std::holds_alternative<MindData>(ship.special)) {
             auto ship_mind = std::get<MindData>(ship.special);
-            s2->special = MindData{
-              .busy = 0,
-              .progenitor = ship_mind.progenitor,
-              .generation = static_cast<unsigned char>(ship_mind.generation + 1)
-            };
-            ship.special = MindData{
-              .busy = static_cast<unsigned char>(random() & 01),
-              .progenitor = ship_mind.progenitor,
-              .generation = ship_mind.generation,
-              .target = ship_mind.target,
-              .tampered = ship_mind.tampered,
-              .who_killed = ship_mind.who_killed
-            };
+            s2->special = MindData{.progenitor = ship_mind.progenitor,
+                                   .target = ship_mind.target,
+                                   .generation = static_cast<unsigned char>(
+                                       ship_mind.generation + 1),
+                                   .busy = 0,
+                                   .tampered = ship_mind.tampered,
+                                   .who_killed = ship_mind.who_killed};
+            ship.special =
+                MindData{.progenitor = ship_mind.progenitor,
+                         .target = ship_mind.target,
+                         .generation = ship_mind.generation,
+                         .busy = static_cast<unsigned char>(random() & 01),
+                         .tampered = ship_mind.tampered,
+                         .who_killed = ship_mind.who_killed};
           }
         }
       }

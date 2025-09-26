@@ -108,6 +108,193 @@ struct meta<Race> {
       "planet_points", &T::planet_points, "governors", &T::governors,
       "governor", &T::governor);
 };
+
+// Glaze reflection for special ship function data structures
+template <>
+struct meta<AimedAtData> {
+  using T = AimedAtData;
+  static constexpr auto value = object(
+      "shipno", &T::shipno,
+      "snum", &T::snum,
+      "intensity", &T::intensity,
+      "pnum", &T::pnum,
+      "level", &T::level);
+};
+
+template <>
+struct meta<MindData> {
+  using T = MindData;
+  static constexpr auto value = object(
+      "progenitor", &T::progenitor,
+      "target", &T::target,
+      "generation", &T::generation,
+      "busy", &T::busy,
+      "tampered", &T::tampered,
+      "who_killed", &T::who_killed);
+};
+
+template <>
+struct meta<PodData> {
+  using T = PodData;
+  static constexpr auto value = object(
+      "decay", &T::decay,
+      "temperature", &T::temperature);
+};
+
+template <>
+struct meta<TimerData> {
+  using T = TimerData;
+  static constexpr auto value = object("count", &T::count);
+};
+
+template <>
+struct meta<ImpactData> {
+  using T = ImpactData;
+  static constexpr auto value = object(
+      "x", &T::x,
+      "y", &T::y,
+      "scatter", &T::scatter);
+};
+
+template <>
+struct meta<TriggerData> {
+  using T = TriggerData;
+  static constexpr auto value = object("radius", &T::radius);
+};
+
+template <>
+struct meta<TerraformData> {
+  using T = TerraformData;
+  static constexpr auto value = object("index", &T::index);
+};
+
+template <>
+struct meta<TransportData> {
+  using T = TransportData;
+  static constexpr auto value = object("target", &T::target);
+};
+
+template <>
+struct meta<WasteData> {
+  using T = WasteData;
+  static constexpr auto value = object("toxic", &T::toxic);
+};
+
+// Glaze reflection for anonymous structs in Ship class
+template <>
+struct meta<decltype(Ship::navigate)> {
+  using T = decltype(Ship::navigate);
+  static constexpr auto value = object(
+      "on", &T::on,
+      "speed", &T::speed,
+      "turns", &T::turns,
+      "bearing", &T::bearing);
+};
+
+template <>
+struct meta<decltype(Ship::protect)> {
+  using T = decltype(Ship::protect);
+  static constexpr auto value = object(
+      "maxrng", &T::maxrng,
+      "on", &T::on,
+      "planet", &T::planet,
+      "self", &T::self,
+      "evade", &T::evade,
+      "ship", &T::ship);
+};
+
+template <>
+struct meta<decltype(Ship::hyper_drive)> {
+  using T = decltype(Ship::hyper_drive);
+  static constexpr auto value = object(
+      "charge", &T::charge,
+      "ready", &T::ready,
+      "on", &T::on,
+      "has", &T::has);
+};
+
+// Glaze reflection for Ship class  
+template <>
+struct meta<Ship> {
+  using T = Ship;
+  static constexpr auto value = object(
+      "number", &T::number,
+      "owner", &T::owner,
+      "governor", &T::governor,
+      "name", &T::name,
+      "shipclass", &T::shipclass,
+      "race", &T::race,
+      "xpos", &T::xpos,
+      "ypos", &T::ypos,
+      "fuel", &T::fuel,
+      "mass", &T::mass,
+      "land_x", &T::land_x,
+      "land_y", &T::land_y,
+      "destshipno", &T::destshipno,
+      "nextship", &T::nextship,
+      "ships", &T::ships,
+      "armor", &T::armor,
+      "size", &T::size,
+      "max_crew", &T::max_crew,
+      "max_resource", &T::max_resource,
+      "max_destruct", &T::max_destruct,
+      "max_fuel", &T::max_fuel,
+      "max_speed", &T::max_speed,
+      "build_type", &T::build_type,
+      "build_cost", &T::build_cost,
+      "base_mass", &T::base_mass,
+      "tech", &T::tech,
+      "complexity", &T::complexity,
+      "destruct", &T::destruct,
+      "resource", &T::resource,
+      "popn", &T::popn,
+      "troops", &T::troops,
+      "crystals", &T::crystals,
+      // Note: 'special' is now a std::variant with native Glaze support
+      "special", &T::special,
+      "who_killed", &T::who_killed,
+      "navigate", &T::navigate,
+      "protect", &T::protect,
+      "mount", &T::mount,
+      "hyper_drive", &T::hyper_drive,
+      "cew", &T::cew,
+      "cew_range", &T::cew_range,
+      "cloak", &T::cloak,
+      "laser", &T::laser,
+      "focus", &T::focus,
+      "fire_laser", &T::fire_laser,
+      "storbits", &T::storbits,
+      "deststar", &T::deststar,
+      "destpnum", &T::destpnum,
+      "pnumorbits", &T::pnumorbits,
+      "whatdest", &T::whatdest,
+      "whatorbits", &T::whatorbits,
+      "damage", &T::damage,
+      "rad", &T::rad,
+      "retaliate", &T::retaliate,
+      "target", &T::target,
+      "type", &T::type,
+      "speed", &T::speed,
+      "active", &T::active,
+      "alive", &T::alive,
+      "mode", &T::mode,
+      "bombard", &T::bombard,
+      "mounted", &T::mounted,
+      "cloaked", &T::cloaked,
+      "sheep", &T::sheep,
+      "docked", &T::docked,
+      "notified", &T::notified,
+      "examined", &T::examined,
+      "on", &T::on,
+      "merchant", &T::merchant,
+      "guns", &T::guns,
+      "primary", &T::primary,
+      "primtype", &T::primtype,
+      "secondary", &T::secondary,
+      "sectype", &T::sectype,
+      "hanger", &T::hanger,
+      "max_hanger", &T::max_hanger);
+};
 }  // namespace glz
 
 // Demonstration function for Race serialization (not called in normal
@@ -235,6 +422,10 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
   CREATE TABLE tbl_commod(
     commod_id INT PRIMARY KEY NOT NULL,
     commod_data TEXT NOT NULL);
+
+  CREATE TABLE tbl_ship(
+    ship_id INT PRIMARY KEY NOT NULL,
+    ship_data TEXT NOT NULL);
 )";
   char* err_msg = nullptr;
   int err = sqlite3_exec(dbconn, tbl_create, nullptr, nullptr, &err_msg);
@@ -651,26 +842,58 @@ std::optional<Ship> Sql::getship(Ship** s, const shipnum_t shipnum) {
   return ::getship(s, shipnum);
 }
 std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
-  struct stat buffer;
-
   if (shipnum <= 0) return {};
 
-  fstat(shdata, &buffer);
-  if (buffer.st_size / sizeof(Ship) < shipnum) return {};
+  // Read from SQLite database
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql = "SELECT ship_data FROM tbl_ship WHERE ship_id = ?1";
 
-  Ship tmpship;
-  Ship* tmpship1;
-  if (s == nullptr) {
-    tmpship1 = &tmpship;
-    s = &tmpship1;
-  } else if ((*s = (Ship*)malloc(sizeof(Ship))) == nullptr) {
-    printf("getship:malloc() error \n");
-    exit(0);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, shipnum);
+
+  int result = sqlite3_step(stmt);
+  if (result == SQLITE_ROW) {
+    // Data found in SQLite, deserialize from JSON
+    const char* json_data =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+
+    if (json_data != nullptr) {
+      // Copy the JSON data before finalizing the statement
+      std::string json_string(json_data);
+      sqlite3_finalize(stmt);
+
+      auto ship_opt = ship_from_json(json_string);
+      if (ship_opt.has_value()) {
+        Ship ship = ship_opt.value();
+        
+        // Handle the optional Ship** parameter for compatibility
+        if (s != nullptr) {
+          if ((*s = (Ship*)malloc(sizeof(Ship))) == nullptr) {
+            printf("getship:malloc() error \n");
+            exit(0);
+          }
+          **s = ship;
+        }
+        
+        return ship;
+      } else {
+        std::println(
+            stderr,
+            "Error: Failed to deserialize Ship from JSON for ship {}",
+            shipnum);
+      }
+    } else {
+      std::println(stderr, "Error: NULL JSON data retrieved for ship {}",
+                   shipnum);
+      sqlite3_finalize(stmt);
+    }
+  } else {
+    sqlite3_finalize(stmt);
   }
 
-  Fileread(shdata, (char*)*s, sizeof(Ship), (shipnum - 1) * sizeof(Ship));
-
-  return **s;
+  // Return empty optional if not found
+  return {};
 }
 
 Commod Sql::getcommod(commodnum_t commodnum) { return ::getcommod(commodnum); }
@@ -1150,8 +1373,29 @@ void putsmap(const SectorMap& map, const Planet& p) {
 
 void Sql::putship(Ship* s) { ::putship(*s); }
 void putship(const Ship& s) {
+  // Serialize Ship to JSON using existing function
+  auto json_result = ship_to_json(s);
+  if (!json_result.has_value()) {
+    std::println(stderr, "Error: Failed to serialize Ship to JSON");
+    return;
+  }
+
+  // Store in SQLite database as JSON
   const char* tail;
-  Filewrite(shdata, (char*)&s, sizeof(Ship), (s.number - 1) * sizeof(Ship));
+  sqlite3_stmt* stmt;
+  const char* sql =
+      "REPLACE INTO tbl_ship (ship_id, ship_data) VALUES (?1, ?2)";
+
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
+
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    std::println(stderr, "SQLite error in putship: {}",
+                 sqlite3_errmsg(dbconn));
+  }
+
+  sqlite3_finalize(stmt);
 }
 
 void Sql::putcommod(const Commod& c, int commodnum) {
@@ -1215,11 +1459,13 @@ shipnum_t Numships() /* return number of ships */
 
   auto result = sqlite3_step(stmt);
   if (result != SQLITE_ROW) {
+    sqlite3_finalize(stmt);
     throw std::runtime_error("Database unable to return the number of ships");
   }
 
-  return sqlite3_column_int(stmt, 0);
-  // TODO(jeffbailey): Pretty certain we have to free stmt
+  shipnum_t count = sqlite3_column_int(stmt, 0);
+  sqlite3_finalize(stmt);
+  return count;
 }
 
 int Sql::Numcommods() {
@@ -1530,6 +1776,24 @@ std::optional<Commod> commod_from_json(const std::string& json_str) {
   auto result = glz::read_json(commod, json_str);
   if (!result) {
     return commod;
+  }
+  return std::nullopt;
+}
+
+// JSON serialization functions for Ship - now with native std::variant support
+std::optional<std::string> ship_to_json(const Ship& ship) {
+  auto result = glz::write_json(ship);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<Ship> ship_from_json(const std::string& json_str) {
+  Ship ship{};
+  auto result = glz::read_json(ship, json_str);
+  if (!result) {
+    return ship;
   }
   return std::nullopt;
 }

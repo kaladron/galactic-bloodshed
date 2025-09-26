@@ -196,7 +196,7 @@ void launch(const command_t &argv, GameObj &g) {
         switch (s->type) {
           case ShipType::OTYPE_CANIST:
           case ShipType::OTYPE_GREEN:
-            s->special.timer.count = 0;
+            s->special = TimerData{.count = 0};
             break;
           default:
             break;

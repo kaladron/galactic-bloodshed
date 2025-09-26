@@ -284,6 +284,14 @@ add_executable(block_json_test block_json_test.cc)
 target_link_libraries(block_json_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_block_json_test COMMAND block_json_test)
 
+add_executable(ship_serialization_test ship_serialization_test.cc)
+target_link_libraries(ship_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_ship_serialization_test COMMAND ship_serialization_test)
+
+add_executable(numships_test numships_test.cc)
+target_link_libraries(numships_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_numships_test COMMAND numships_test)
+
 # Only add docs if Doxygen is found
 if(DOXYGEN_FOUND)
   doxygen_add_docs(gb-docs)

@@ -32,7 +32,12 @@ void do_transporter(const Race &race, GameObj &g, Ship *s) {
     g.out << "Origin device is damaged.\n";
     return;
   }
-  if (!getship(&s2, (int)s->special.transport.target)) {
+  if (!std::holds_alternative<TransportData>(s->special)) {
+    notify(Playernum, Governor, "Transport device not configured.\n");
+    return;
+  }
+  auto transport = std::get<TransportData>(s->special);
+  if (!getship(&s2, (int)transport.target)) {
     notify(Playernum, Governor, "The hopper seems to be blocked.\n");
     return;
   }
@@ -697,8 +702,9 @@ void load(const command_t &argv, GameObj &g) {
       }
 
       /* do transporting here */
-      if (s->type == ShipType::OTYPE_TRANSDEV && s->special.transport.target &&
-          s->on)
+      if (s->type == ShipType::OTYPE_TRANSDEV && s->on &&
+          std::holds_alternative<TransportData>(s->special) &&
+          std::get<TransportData>(s->special).target)
         do_transporter(race, g, s);
 
       putship(*s);

@@ -50,10 +50,14 @@ void scrap(const command_t &argv, GameObj &g) {
       }
       if (s->whatorbits == ScopeLevel::LEVEL_PLAN &&
           s->type == ShipType::OTYPE_TOXWC) {
+        std::string toxin_amount = "0";
+        if (std::holds_alternative<WasteData>(s->special)) {
+          auto waste = std::get<WasteData>(s->special);
+          toxin_amount = std::to_string(waste.toxic);
+        }
         notify(g.player, g.governor,
                std::format("WARNING: This will release {} toxin points back "
-                           "into the atmosphere!!\n",
-                           s->special.waste.toxic));
+                           "into the atmosphere!!\n", toxin_amount));
       }
       if (!s->docked) {
         notify(

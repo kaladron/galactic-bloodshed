@@ -422,6 +422,10 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
   CREATE TABLE tbl_commod(
     commod_id INT PRIMARY KEY NOT NULL,
     commod_data TEXT NOT NULL);
+
+  CREATE TABLE tbl_ship(
+    ship_id INT PRIMARY KEY NOT NULL,
+    ship_data TEXT NOT NULL);
 )";
   char* err_msg = nullptr;
   int err = sqlite3_exec(dbconn, tbl_create, nullptr, nullptr, &err_msg);

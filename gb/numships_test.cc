@@ -6,7 +6,10 @@ import std.compat;
 #include <cassert>
 
 int main() {
-  // Initialize the database connection
+  // Initialize database using common Sql class (in-memory for testing)
+  Sql db(":memory:");
+
+  // Initialize database tables - this will create the ship tables
   initsqldata();
 
   // Test initial state - should have 0 ships
@@ -79,7 +82,8 @@ int main() {
   auto negative_ship = getship(-1);
   assert(!negative_ship.has_value());
 
-  std::printf("Numships and ship storage test passed!\n");
-  std::printf("Initial count: %d, Final count: %d\n", initial_count, count_after_inserts);
+  std::println("Numships and ship storage test passed!");
+  std::println("Initial count: {}, Final count: {}", initial_count,
+               count_after_inserts);
   return 0;
 }

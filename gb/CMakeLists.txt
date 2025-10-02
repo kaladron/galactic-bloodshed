@@ -292,6 +292,10 @@ add_executable(numships_test numships_test.cc)
 target_link_libraries(numships_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_numships_test COMMAND numships_test)
 
+add_executable(order_handlers_test order_handlers_test.cc)
+target_link_libraries(order_handlers_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_order_handlers_test COMMAND order_handlers_test)
+
 # Only add docs if Doxygen is found
 if(DOXYGEN_FOUND)
   doxygen_add_docs(gb-docs)

@@ -104,7 +104,7 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
       g.out << "Only missiles can be given this order.\n";
       return;
     }
-    ship.special = ImpactData{.scatter = 1};
+    ship.special = ImpactData{.x = 0, .y = 0, .scatter = 1};
   } else if (argv[2] == "impact") {
     int x;
     int y;
@@ -479,12 +479,11 @@ void give_orders(GameObj &g, const command_t &argv, int /* APcount */,
           g.out << "Error in destination.\n";
           return;
         }
-        ship.special = AimedAtData{
-          .level = pl.level,
-          .pnum = pl.pnum,
-          .snum = pl.snum,
-          .shipno = pl.shipno
-        };
+        ship.special = AimedAtData{.shipno = pl.shipno,
+                                   .snum = pl.snum,
+                                   .intensity = 0,
+                                   .pnum = pl.pnum,
+                                   .level = pl.level};
         if (ship.type != ShipType::OTYPE_TRACT &&
             ship.type != ShipType::OTYPE_GTELE)
           use_fuel(ship, FUEL_MANEUVER);

@@ -1,6 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/*  order.c -- give orders to ship */
+/*  order.c -- give orders to ship
+ *
+ *  This module contains functions for processing ship orders.
+ *  The main entry point is give_orders(), which dispatches to
+ *  specialized handler functions for each order type.
+ *
+ *  Each order handler (handle_order_*) is responsible for:
+ *  - Validating the order can be applied to the ship
+ *  - Updating the ship state appropriately
+ *  - Providing user feedback via g.out
+ *  - Returning true on success, false on failure
+ */
 
 module;
 

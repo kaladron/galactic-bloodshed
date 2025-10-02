@@ -6,7 +6,6 @@ import std.compat;
 #include <sqlite3.h>
 
 #include <cassert>
-#include <sstream>
 
 namespace {
 
@@ -15,17 +14,8 @@ std::string captureOutput(GameObj& g) {
   return g.out.str();
 }
 
-// Helper to create a test GameObj with output stream
-GameObj createTestGameObj() {
-  GameObj g{};
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_UNIV;
-  return g;
-}
-
 // Helper to create a basic test ship
-Ship createTestShip(ShipType type = ShipType::OTYPE_CARGO) {
+Ship createTestShip(ShipType type = ShipType::STYPE_CARGO) {
   Ship ship{};
   ship.owner = 1;
   ship.number = 100;
@@ -39,8 +29,11 @@ Ship createTestShip(ShipType type = ShipType::OTYPE_CARGO) {
 }
 
 // Test speed order handler via give_orders
-void test_order_speed() {
-  auto g = createTestGameObj();
+void test_order_speed(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.max_speed = 9;
   ship.speed = 3;
@@ -56,8 +49,11 @@ void test_order_speed() {
 }
 
 // Test speed order with invalid (too high) speed
-void test_order_speed_clamped() {
-  auto g = createTestGameObj();
+void test_order_speed_clamped(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.max_speed = 5;
   ship.speed = 0;
@@ -72,8 +68,11 @@ void test_order_speed_clamped() {
 }
 
 // Test speed order rejects negative speed
-void test_order_speed_negative() {
-  auto g = createTestGameObj();
+void test_order_speed_negative(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.max_speed = 5;
   ship.speed = 3;
@@ -90,8 +89,11 @@ void test_order_speed_negative() {
 }
 
 // Test merchant order
-void test_order_merchant() {
-  auto g = createTestGameObj();
+void test_order_merchant(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.merchant = 0;
   
@@ -104,8 +106,11 @@ void test_order_merchant() {
 }
 
 // Test merchant order off
-void test_order_merchant_off() {
-  auto g = createTestGameObj();
+void test_order_merchant_off(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.merchant = 5;
   
@@ -118,8 +123,11 @@ void test_order_merchant_off() {
 }
 
 // Test scatter order for missiles
-void test_order_scatter() {
-  auto g = createTestGameObj();
+void test_order_scatter(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip(ShipType::STYPE_MISSILE);
   
   command_t argv = {"order", "100", "scatter"};
@@ -134,10 +142,13 @@ void test_order_scatter() {
 }
 
 // Test scatter order rejects non-missiles
-void test_order_scatter_wrong_type() {
-  auto g = createTestGameObj();
-  auto ship = createTestShip(ShipType::OTYPE_BATTLESHIP);
-  
+void test_order_scatter_wrong_type(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
+  auto ship = createTestShip(ShipType::STYPE_BATTLE);
+
   command_t argv = {"order", "100", "scatter"};
   
   give_orders(g, argv, 1, ship);
@@ -148,8 +159,11 @@ void test_order_scatter_wrong_type() {
 }
 
 // Test impact order for missiles
-void test_order_impact() {
-  auto g = createTestGameObj();
+void test_order_impact(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip(ShipType::STYPE_MISSILE);
   
   command_t argv = {"order", "100", "impact", "15,25"};
@@ -165,8 +179,11 @@ void test_order_impact() {
 }
 
 // Test explosive mode for mines
-void test_order_explosive() {
-  auto g = createTestGameObj();
+void test_order_explosive(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip(ShipType::STYPE_MINE);
   ship.mode = 1;
   
@@ -179,8 +196,11 @@ void test_order_explosive() {
 }
 
 // Test radiative mode for mines
-void test_order_radiative() {
-  auto g = createTestGameObj();
+void test_order_radiative(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip(ShipType::STYPE_MINE);
   ship.mode = 0;
   
@@ -193,8 +213,11 @@ void test_order_radiative() {
 }
 
 // Test trigger radius for mines
-void test_order_trigger() {
-  auto g = createTestGameObj();
+void test_order_trigger(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip(ShipType::STYPE_MINE);
   
   command_t argv = {"order", "100", "trigger", "50"};
@@ -208,8 +231,11 @@ void test_order_trigger() {
 }
 
 // Test navigate order
-void test_order_navigate() {
-  auto g = createTestGameObj();
+void test_order_navigate(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.navigate.on = 0;
   
@@ -224,8 +250,11 @@ void test_order_navigate() {
 }
 
 // Test navigate off
-void test_order_navigate_off() {
-  auto g = createTestGameObj();
+void test_order_navigate_off(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.navigate.on = 1;
   ship.navigate.bearing = 90;
@@ -239,8 +268,11 @@ void test_order_navigate_off() {
 }
 
 // Test focus on
-void test_order_focus() {
-  auto g = createTestGameObj();
+void test_order_focus(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.laser = 1;
   ship.focus = 0;
@@ -254,8 +286,11 @@ void test_order_focus() {
 }
 
 // Test focus off
-void test_order_focus_off() {
-  auto g = createTestGameObj();
+void test_order_focus_off(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.laser = 1;
   ship.focus = 1;
@@ -269,8 +304,11 @@ void test_order_focus_off() {
 }
 
 // Test evade on
-void test_order_evade() {
-  auto g = createTestGameObj();
+void test_order_evade(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.max_crew = 100;
   ship.max_speed = 5;
@@ -285,9 +323,12 @@ void test_order_evade() {
 }
 
 // Test bombard on
-void test_order_bombard() {
-  auto g = createTestGameObj();
-  auto ship = createTestShip(ShipType::OTYPE_BATTLESHIP);
+void test_order_bombard(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
+  auto ship = createTestShip(ShipType::STYPE_BATTLE);
   ship.guns = PRIMARY;
   ship.primary = 10;
   ship.bombard = 0;
@@ -301,9 +342,12 @@ void test_order_bombard() {
 }
 
 // Test retaliate on
-void test_order_retaliate() {
-  auto g = createTestGameObj();
-  auto ship = createTestShip(ShipType::OTYPE_BATTLESHIP);
+void test_order_retaliate(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
+  auto ship = createTestShip(ShipType::STYPE_BATTLE);
   ship.guns = PRIMARY;
   ship.primary = 10;
   ship.protect.self = 0;
@@ -317,9 +361,12 @@ void test_order_retaliate() {
 }
 
 // Test primary gun selection
-void test_order_primary() {
-  auto g = createTestGameObj();
-  auto ship = createTestShip(ShipType::OTYPE_BATTLESHIP);
+void test_order_primary(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
+  auto ship = createTestShip(ShipType::STYPE_BATTLE);
   ship.primary = 10;
   ship.guns = SECONDARY;
   
@@ -332,9 +379,12 @@ void test_order_primary() {
 }
 
 // Test secondary gun selection
-void test_order_secondary() {
-  auto g = createTestGameObj();
-  auto ship = createTestShip(ShipType::OTYPE_BATTLESHIP);
+void test_order_secondary(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
+  auto ship = createTestShip(ShipType::STYPE_BATTLE);
   ship.secondary = 5;
   ship.guns = PRIMARY;
   
@@ -347,9 +397,12 @@ void test_order_secondary() {
 }
 
 // Test salvo setting
-void test_order_salvo() {
-  auto g = createTestGameObj();
-  auto ship = createTestShip(ShipType::OTYPE_BATTLESHIP);
+void test_order_salvo(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
+  auto ship = createTestShip(ShipType::STYPE_BATTLE);
   ship.guns = PRIMARY;
   ship.primary = 10;
   ship.retaliate = 0;
@@ -363,8 +416,11 @@ void test_order_salvo() {
 }
 
 // Test inactive ship rejection
-void test_inactive_ship() {
-  auto g = createTestGameObj();
+void test_inactive_ship(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.active = 0;
   ship.rad = 50;
@@ -382,8 +438,11 @@ void test_inactive_ship() {
 }
 
 // Test ship with no crew rejection
-void test_no_crew_ship() {
-  auto g = createTestGameObj();
+void test_no_crew_ship(Db& db) {
+  GameObj g{db};
+  g.player = 1;
+  g.governor = 0;
+  g.level = ScopeLevel::LEVEL_UNIV;
   auto ship = createTestShip();
   ship.popn = 0;
   ship.max_crew = 100;  // Requires crew
@@ -410,42 +469,42 @@ int main() {
     std::cout << "Running order handler tests...\n\n";
     
     // Speed tests
-    test_order_speed();
-    test_order_speed_clamped();
-    test_order_speed_negative();
-    
+    test_order_speed(db);
+    test_order_speed_clamped(db);
+    test_order_speed_negative(db);
+
     // Merchant tests
-    test_order_merchant();
-    test_order_merchant_off();
-    
+    test_order_merchant(db);
+    test_order_merchant_off(db);
+
     // Missile tests
-    test_order_scatter();
-    test_order_scatter_wrong_type();
-    test_order_impact();
-    
+    test_order_scatter(db);
+    test_order_scatter_wrong_type(db);
+    test_order_impact(db);
+
     // Mine tests
-    test_order_explosive();
-    test_order_radiative();
-    test_order_trigger();
-    
+    test_order_explosive(db);
+    test_order_radiative(db);
+    test_order_trigger(db);
+
     // Navigation tests
-    test_order_navigate();
-    test_order_navigate_off();
-    
+    test_order_navigate(db);
+    test_order_navigate_off(db);
+
     // Combat tests
-    test_order_focus();
-    test_order_focus_off();
-    test_order_evade();
-    test_order_bombard();
-    test_order_retaliate();
-    test_order_primary();
-    test_order_secondary();
-    test_order_salvo();
-    
+    test_order_focus(db);
+    test_order_focus_off(db);
+    test_order_evade(db);
+    test_order_bombard(db);
+    test_order_retaliate(db);
+    test_order_primary(db);
+    test_order_secondary(db);
+    test_order_salvo(db);
+
     // Validation tests
-    test_inactive_ship();
-    test_no_crew_ship();
-    
+    test_inactive_ship(db);
+    test_no_crew_ship(db);
+
     std::cout << "\n✅ All order handler tests passed!\n";
     std::cout << "Tested 24 different order types and validation cases.\n";
     

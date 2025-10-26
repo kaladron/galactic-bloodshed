@@ -98,6 +98,20 @@ struct meta<power> {
              &T::sum_mob, "sum_eff", &T::sum_eff);
 };
 
+// Glaze reflection for star_struct so we can serialize to JSON
+template <>
+struct meta<star_struct> {
+  using T = star_struct;
+  static constexpr auto value =
+      object("ships", &T::ships, "name", &T::name, "governor", &T::governor,
+             "AP", &T::AP, "explored", &T::explored, "inhabited", &T::inhabited,
+             "xpos", &T::xpos, "ypos", &T::ypos, "numplanets", &T::numplanets,
+             "pnames", &T::pnames, "planetpos", &T::planetpos, "stability",
+             &T::stability, "nova_stage", &T::nova_stage, "temperature",
+             &T::temperature, "gravity", &T::gravity, "star_id", &T::star_id,
+             "dummy", &T::dummy);
+};
+
 // Glaze reflection for Race class
 template <>
 struct meta<Race> {
@@ -361,25 +375,9 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
                                  load INT, unload INT, x INT, y INT,
                                  PRIMARY KEY (planet_id, player_id, routenum));
 
-  CREATE TABLE tbl_star(star_id INT NOT NULL PRIMARY KEY, ships INT, name TEXT,
-                        xpos DOUBLE, ypos DOUBLE, numplanets INT, stability INT,
-                        nova_stage INT, temperature INT, gravity DOUBLE);
-
-  CREATE TABLE tbl_star_governor(star_id INT NOT NULL, player_id INT NOT NULL,
-                                 governor_id INT NOT NULL,
-                                 PRIMARY KEY(star_id, player_id));
-
-  CREATE TABLE
-  tbl_star_explored(star_id INT NOT NULL, player_id INT NOT NULL, explored INT,
-                    PRIMARY KEY(star_id, player_id));
-
-  CREATE TABLE
-  tbl_star_inhabited(star_id INT NOT NULL, player_id INT NOT NULL, explored INT,
-                     PRIMARY KEY(star_id, player_id));
-
-  CREATE TABLE tbl_star_playerap(star_id INT NOT NULL, player_id INT NOT NULL,
-                                 ap INT NOT NULL,
-                                 PRIMARY KEY(star_id, player_id));
+  CREATE TABLE tbl_star(
+    star_id INT PRIMARY KEY NOT NULL,
+    star_data TEXT NOT NULL);
 
   CREATE TABLE tbl_power(
       player_id INT PRIMARY KEY NOT NULL,
@@ -530,54 +528,43 @@ Race getrace(player_t rnum) {
 
 Star Sql::getstar(const starnum_t star) { return ::getstar(star); }
 Star getstar(const starnum_t star) {
-  star_struct s;
-
-  Fileread(stdata, (char*)&s, sizeof(star_struct),
-           (int)(sizeof(Sdata) + star * sizeof(star_struct)));
+  // Read from SQLite database
   const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql = "SELECT star_data FROM tbl_star WHERE star_id = ?1";
 
-  {
-    sqlite3_stmt* stmt;
-    const char* sql =
-        "SELECT ships, name, xpos, ypos, "
-        "numplanets, stability, nova_stage, temperature, gravity "
-        "FROM tbl_star WHERE star_id=?1 LIMIT 1";
-    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, star);
 
-    sqlite3_bind_int(stmt, 1, star);
-    sqlite3_step(stmt);
-    s.ships = static_cast<short>(sqlite3_column_int(stmt, 0));
-    strcpy(s.name, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
-    s.xpos = sqlite3_column_double(stmt, 2);
-    s.ypos = sqlite3_column_double(stmt, 3);
-    s.numplanets = static_cast<short>(sqlite3_column_int(stmt, 4));
-    s.stability = static_cast<short>(sqlite3_column_int(stmt, 5));
-    s.nova_stage = static_cast<short>(sqlite3_column_int(stmt, 6));
-    s.temperature = static_cast<short>(sqlite3_column_int(stmt, 7));
-    s.gravity = sqlite3_column_double(stmt, 8);
+  int result = sqlite3_step(stmt);
+  if (result == SQLITE_ROW) {
+    // Data found in SQLite, deserialize from JSON
+    const char* json_data =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
 
-    sqlite3_clear_bindings(stmt);
-    sqlite3_reset(stmt);
-  }
-  {
-    sqlite3_stmt* stmt;
-    const char* sql =
-        "SELECT player_id, governor_id FROM tbl_star_governor "
-        "WHERE star_id=?1";
-    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+    if (json_data != nullptr) {
+      // Copy the JSON data before finalizing the statement
+      std::string json_string(json_data);
+      sqlite3_finalize(stmt);
 
-    sqlite3_bind_int(stmt, 1, star);
-
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-      player_t p = sqlite3_column_int(stmt, 0);
-      s.governor[p - 1] = sqlite3_column_int(stmt, 1);
+      auto star_opt = star_from_json(json_string);
+      if (star_opt.has_value()) {
+        return Star(star_opt.value());
+      } else {
+        std::println(stderr,
+                     "Error: Failed to deserialize Star from JSON for star {}",
+                     star);
+      }
+    } else {
+      std::println(stderr, "Error: NULL JSON data retrieved for star {}", star);
+      sqlite3_finalize(stmt);
     }
-
-    sqlite3_clear_bindings(stmt);
-    sqlite3_reset(stmt);
+  } else {
+    sqlite3_finalize(stmt);
   }
 
-  return s;
+  // Return empty star if not found
+  return Star(star_struct{});
 }
 
 Planet Sql::getplanet(const starnum_t star, const planetnum_t pnum) {
@@ -1035,114 +1022,28 @@ void Sql::putstar(const Star& star, starnum_t snum) { ::putstar(star, snum); }
 void putstar(const Star& star, starnum_t snum) {
   star_struct s = star.get_struct();
 
-  Filewrite(stdata, (const char*)&s, sizeof(star_struct),
-            (int)(sizeof(Sdata) + snum * sizeof(star_struct)));
-
-  start_bulk_insert();
-
-  {
-    const char* tail = nullptr;
-    sqlite3_stmt* stmt;
-
-    const char* sql =
-        "REPLACE INTO tbl_star (star_id, ships, name, xpos, ypos, "
-        "numplanets, stability, nova_stage, temperature, gravity) "
-        "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)";
-    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-
-    sqlite3_bind_int(stmt, 1, snum);
-    sqlite3_bind_int(stmt, 2, s.ships);
-    sqlite3_bind_text(stmt, 3, s.name, -1, SQLITE_TRANSIENT);
-    sqlite3_bind_double(stmt, 4, s.xpos);
-    sqlite3_bind_double(stmt, 5, s.ypos);
-    sqlite3_bind_int(stmt, 6, s.numplanets);
-    sqlite3_bind_int(stmt, 7, s.stability);
-    sqlite3_bind_int(stmt, 8, s.nova_stage);
-    sqlite3_bind_int(stmt, 9, s.temperature);
-    sqlite3_bind_double(stmt, 10, s.gravity);
-
-    sqlite3_step(stmt);
-
-    sqlite3_reset(stmt);
+  // Serialize Star to JSON
+  auto json_result = star_to_json(s);
+  if (!json_result.has_value()) {
+    std::println(stderr, "Error: Failed to serialize Star {} to JSON", snum);
+    return;
   }
 
-  {
-    const char* tail = nullptr;
-    sqlite3_stmt* stmt;
-    const char* sql =
-        "REPLACE INTO tbl_star_governor (star_id, player_id, governor_id) "
-        "VALUES (?1, ?2, ?3)";
+  // Write to SQLite database
+  const char* tail;
+  sqlite3_stmt* stmt;
+  const char* sql =
+      "REPLACE INTO tbl_star (star_id, star_data) VALUES (?1, ?2)";
 
-    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-    for (player_t i = 1; i <= MAXPLAYERS; i++) {
-      sqlite3_bind_int(stmt, 1, snum);
-      sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, s.governor[i - 1]);
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  sqlite3_bind_int(stmt, 1, snum);
+  sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
-      sqlite3_step(stmt);
-
-      sqlite3_reset(stmt);
-    }
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    std::println(stderr, "SQLite error in putstar: {}", sqlite3_errmsg(dbconn));
   }
 
-  {
-    const char* tail = nullptr;
-    sqlite3_stmt* stmt;
-    const char* sql =
-        "REPLACE INTO tbl_star_playerap (star_id, player_id, ap) "
-        "VALUES (?1, ?2, ?3)";
-
-    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-    for (player_t i = 1; i <= MAXPLAYERS; i++) {
-      sqlite3_bind_int(stmt, 1, snum);
-      sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, s.AP[i - 1]);
-
-      sqlite3_step(stmt);
-
-      sqlite3_reset(stmt);
-    }
-  }
-
-  {
-    const char* tail = nullptr;
-    sqlite3_stmt* stmt;
-    const char* sql =
-        "REPLACE INTO tbl_star_explored (star_id, player_id, explored) "
-        "VALUES (?1, ?2, ?3)";
-
-    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-    for (player_t i = 1; i <= MAXPLAYERS; i++) {
-      sqlite3_bind_int(stmt, 1, snum);
-      sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, isset(s.explored, i - 1) ? 1 : 0);
-
-      sqlite3_step(stmt);
-
-      sqlite3_reset(stmt);
-    }
-  }
-
-  {
-    const char* tail = nullptr;
-    sqlite3_stmt* stmt;
-    const char* sql =
-        "REPLACE INTO tbl_star_inhabited (star_id, player_id, explored) "
-        "VALUES (?1, ?2, ?3)";
-
-    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-    for (player_t i = 1; i <= MAXPLAYERS; i++) {
-      sqlite3_bind_int(stmt, 1, snum);
-      sqlite3_bind_int(stmt, 2, i);
-      sqlite3_bind_int(stmt, 3, isset(s.inhabited, i - 1) ? 1 : 0);
-
-      sqlite3_step(stmt);
-
-      sqlite3_reset(stmt);
-    }
-  }
-
-  end_bulk_insert();
+  sqlite3_finalize(stmt);
 }
 
 static void start_bulk_insert() {
@@ -1768,6 +1669,24 @@ std::optional<Sector> sector_from_json(const std::string& json_str) {
   auto result = glz::read_json(sector, json_str);
   if (!result) {
     return sector;
+  }
+  return std::nullopt;
+}
+
+// JSON serialization functions for star_struct
+std::optional<std::string> star_to_json(const star_struct& star) {
+  auto result = glz::write_json(star);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<star_struct> star_from_json(const std::string& json_str) {
+  star_struct star{};
+  auto result = glz::read_json(star, json_str);
+  if (!result) {
+    return star;
   }
   return std::nullopt;
 }

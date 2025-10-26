@@ -296,6 +296,14 @@ add_executable(power_json_test power_json_test.cc)
 target_link_libraries(power_json_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_power_json_test COMMAND power_json_test)
 
+add_executable(star_serialization_test star_serialization_test.cc)
+target_link_libraries(star_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_star_serialization_test COMMAND star_serialization_test)
+
+add_executable(star_sqlite_test star_sqlite_test.cc)
+target_link_libraries(star_sqlite_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_star_sqlite_test COMMAND star_sqlite_test)
+
 add_executable(ship_serialization_test ship_serialization_test.cc)
 target_link_libraries(ship_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_ship_serialization_test COMMAND ship_serialization_test)

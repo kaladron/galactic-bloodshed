@@ -70,3 +70,5 @@ export std::optional<std::string> ship_to_json(const Ship&);
 export std::optional<Ship> ship_from_json(const std::string&);
 export std::optional<std::string> sector_to_json(const Sector&);
 export std::optional<Sector> sector_from_json(const std::string&);
+export std::optional<std::string> star_to_json(const star_struct&);
+export std::optional<star_struct> star_from_json(const std::string&);

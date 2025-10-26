@@ -30,3 +30,20 @@ doxy
 workdir
 .cache
 compile_commands.json
+
+# Ignore all .md files
+*.md
+
+# But do NOT ignore README.md
+!README.md
+!AGENTS.md
+!CONTRIBUTING.md
+!LICENSE.md
+!NEWS.md
+!OVERVIEW.md
+!SETUP.md
+!TODO.md
+!USERGUIDE.md
+!WHATSNEW.md
+!DEVELOPERGUIDE.md
+!ARCHITECTURE.md

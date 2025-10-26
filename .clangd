@@ -1,0 +1,20 @@
+CompileFlags:
+  Add:
+    - -Wno-module-import-in-extern-c
+    - -ferror-limit=0  # Disable error limit to prevent "too many errors" message
+  Remove:
+    - -fsanitize=*
+    - -fno-omit-frame-pointer
+
+Diagnostics:
+  # Suppress false positives related to C++ modules
+  Suppress:
+    - module_decl_not_at_start
+    - ambiguous_reference  # std::string ambiguity between module imports
+    - typecheck_nonviable_condition  # std::string type conversion issues with modules
+  UnusedIncludes: None
+  MissingIncludes: None
+
+# Enable module support
+Index:
+  StandardLibrary: Yes

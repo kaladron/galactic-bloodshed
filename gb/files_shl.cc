@@ -320,39 +320,6 @@ struct meta<Ship> {
 };
 }  // namespace glz
 
-// Demonstration function for Race serialization (not called in normal
-// operation) This can be used to test that Race serialization/deserialization
-// works
-[[maybe_unused]] static bool test_race_serialization() {
-  Race test_race{};
-
-  // Initialize basic fields for testing
-  test_race.Playernum = 1;
-  test_race.name = "TestRace";
-  test_race.IQ = 150;
-  test_race.tech = 100.0;
-  test_race.governors = 1;
-
-  // Initialize one governor
-  test_race.governor[0].name = "Governor1";
-  test_race.governor[0].money = 10000;
-  test_race.governor[0].toggle.color = true;
-
-  // Test round-trip serialization
-  auto json_result = glz::write_json(test_race);
-  if (!json_result.has_value()) return false;
-
-  Race deserialized_race{};
-  auto read_result = glz::read_json(deserialized_race, json_result.value());
-  if (read_result) return false;
-
-  // Verify key fields
-  return (deserialized_race.Playernum == test_race.Playernum &&
-          deserialized_race.name == test_race.name &&
-          deserialized_race.IQ == test_race.IQ &&
-          deserialized_race.tech == test_race.tech);
-}
-
 static int commoddata, racedata, shdata, stdata;
 
 static void start_bulk_insert();

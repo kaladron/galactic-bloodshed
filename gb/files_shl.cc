@@ -959,62 +959,57 @@ Commod getcommod(commodnum_t commodnum) {
 ** might have no other uses besides build().
 */
 int getdeadship() {
-  struct stat buffer;
-  short shnum;
-  int fd;
-  int abort;
+  // Find the first gap in ship IDs, or return 1 if no ships exist
+  const char* sql = R"(
+    WITH RECURSIVE cnt(x) AS (
+      SELECT 1
+      UNION ALL
+      SELECT x+1 FROM cnt
+      LIMIT (SELECT IFNULL(MAX(ship_id), 0) + 1 FROM tbl_ship)
+    )
+    SELECT x FROM cnt
+    WHERE x NOT IN (SELECT ship_id FROM tbl_ship)
+    ORDER BY x
+    LIMIT 1
+  )";
 
-  if ((fd = open(SHIPFREEDATAFL, O_RDWR, 0777)) < 0) {
-    perror("getdeadship");
-    printf("unable to open %s\n", SHIPFREEDATAFL);
-    exit(-1);
-  }
-  abort = 1;
-  fstat(fd, &buffer);
+  sqlite3_stmt* stmt;
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, nullptr);
 
-  if (buffer.st_size && (abort == 1)) {
-    /* put topmost entry in fpos */
-    Fileread(fd, (char*)&shnum, sizeof(short), buffer.st_size - sizeof(short));
-    /* erase that entry, since it will now be filled */
-    if (ftruncate(fd, (long)(buffer.st_size - sizeof(short))) < 0) {
-      perror("ftruncate failed");
-      return -1;
-    }
-    close_file(fd);
-    return (int)shnum;
+  int result = 1;  // Default if no ships exist
+  if (sqlite3_step(stmt) == SQLITE_ROW) {
+    result = sqlite3_column_int(stmt, 0);
   }
-  close_file(fd);
-  return -1;
+
+  sqlite3_finalize(stmt);
+  return result;
 }
 
 int getdeadcommod() {
-  struct stat buffer;
-  short commodnum;
-  int fd;
-  int abort;
+  // Find the first gap in commod IDs, or return 1 if no commods exist
+  const char* sql = R"(
+    WITH RECURSIVE cnt(x) AS (
+      SELECT 1
+      UNION ALL
+      SELECT x+1 FROM cnt
+      LIMIT (SELECT IFNULL(MAX(commod_id), 0) + 1 FROM tbl_commod)
+    )
+    SELECT x FROM cnt
+    WHERE x NOT IN (SELECT commod_id FROM tbl_commod)
+    ORDER BY x
+    LIMIT 1
+  )";
 
-  if ((fd = open(COMMODFREEDATAFL, O_RDWR, 0777)) < 0) {
-    perror("getdeadcommod");
-    printf("unable to open %s\n", COMMODFREEDATAFL);
-    exit(-1);
-  }
-  abort = 1;
-  fstat(fd, &buffer);
+  sqlite3_stmt* stmt;
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, nullptr);
 
-  if (buffer.st_size && (abort == 1)) {
-    /* put topmost entry in fpos */
-    Fileread(fd, (char*)&commodnum, sizeof(short),
-             buffer.st_size - sizeof(short));
-    /* erase that entry, since it will now be filled */
-    if (ftruncate(fd, (long)(buffer.st_size - sizeof(short))) < 0) {
-      perror("ftruncate failed");
-      return -1;
-    }
-    close_file(fd);
-    return (int)commodnum;
+  int result = 1;  // Default if no commods exist
+  if (sqlite3_step(stmt) == SQLITE_ROW) {
+    result = sqlite3_column_int(stmt, 0);
   }
-  close_file(fd);
-  return -1;
+
+  sqlite3_finalize(stmt);
+  return result;
 }
 
 void Sql::putsdata(stardata* S) { ::putsdata(S); }
@@ -1525,51 +1520,25 @@ void clr_commodfree() { fclose(fopen(COMMODFREEDATAFL, "w+")); }
 ** writes the ship to the dead ship file at its end.
 */
 void makeshipdead(int shipnum) {
-  int fd;
-  unsigned short shipno;
-  struct stat buffer;
+  if (shipnum == 0) return;
 
-  shipno = shipnum; /* conv to u_short */
-
-  if (shipno == 0) return;
-
-  if ((fd = open(SHIPFREEDATAFL, O_WRONLY, 0777)) < 0) {
-    printf("fd = %d \n", fd);
-    printf("errno = %d \n", errno);
-    perror("openshfdata");
-    printf("unable to open %s\n", SHIPFREEDATAFL);
-    exit(-1);
-  }
-
-  /* write the ship # at the very end of SHIPFREEDATAFL */
-  fstat(fd, &buffer);
-
-  Filewrite(fd, (char*)&shipno, sizeof(shipno), buffer.st_size);
-  close_file(fd);
+  const char* sql = "DELETE FROM tbl_ship WHERE ship_id = ?";
+  sqlite3_stmt* stmt;
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, nullptr);
+  sqlite3_bind_int(stmt, 1, shipnum);
+  sqlite3_step(stmt);
+  sqlite3_finalize(stmt);
 }
 
 void makecommoddead(int commodnum) {
-  int fd;
-  unsigned short commodno;
-  struct stat buffer;
+  if (commodnum == 0) return;
 
-  commodno = commodnum; /* conv to u_short */
-
-  if (commodno == 0) return;
-
-  if ((fd = open(COMMODFREEDATAFL, O_WRONLY, 0777)) < 0) {
-    printf("fd = %d \n", fd);
-    printf("errno = %d \n", errno);
-    perror("opencommodfdata");
-    printf("unable to open %s\n", COMMODFREEDATAFL);
-    exit(-1);
-  }
-
-  /* write the commod # at the very end of COMMODFREEDATAFL */
-  fstat(fd, &buffer);
-
-  Filewrite(fd, (char*)&commodno, sizeof(commodno), buffer.st_size);
-  close_file(fd);
+  const char* sql = "DELETE FROM tbl_commod WHERE commod_id = ?";
+  sqlite3_stmt* stmt;
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, nullptr);
+  sqlite3_bind_int(stmt, 1, commodnum);
+  sqlite3_step(stmt);
+  sqlite3_finalize(stmt);
 }
 
 void putpower(power p[MAXPLAYERS]) {

@@ -8,6 +8,17 @@ import :types;
 import :tweakables;
 import std;
 
+// Merchant shipping route parameters
+export struct plroute {
+  unsigned char set = 0;          // does the planet have orders?
+  unsigned char dest_star = 0;    // star that ship has to go to next
+  unsigned char dest_planet = 0;  // planet destination
+  unsigned char load = 0;         // bit-field commodities to be loaded there
+  unsigned char unload = 0;       // unloaded commodities
+  unsigned char x = 0;            // location that ship has to land on
+  unsigned char y = 0;
+};
+
 export struct plinfo {          // planetary stockpiles
   unsigned short fuel = 0;      // fuel for powering things
   unsigned short destruct = 0;  // destructive potential
@@ -37,15 +48,7 @@ export struct plinfo {          // planetary stockpiles
   unsigned char guns = 0;    // number of planet guns (mob/5)
 
   /* merchant shipping parameters */
-  struct {
-    unsigned char set = 0;          // does the planet have orders?
-    unsigned char dest_star = 0;    // star that ship has to go to next
-    unsigned char dest_planet = 0;  // planet destination
-    unsigned char load = 0;         // bit-field commodities to be loaded there
-    unsigned char unload = 0;       // unloaded commodities
-    unsigned char x = 0;            // location that ship has to land on
-    unsigned char y = 0;
-  } route[MAX_ROUTES];
+  plroute route[MAX_ROUTES];
 
   long mob_points = 0;
   double est_production = 0;  // estimated production

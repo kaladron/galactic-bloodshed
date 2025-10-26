@@ -86,6 +86,18 @@ struct meta<block> {
              &T::systems_owned, "VPs", &T::VPs, "money", &T::money);
 };
 
+// Glaze reflection for power so we can serialize to JSON
+template <>
+struct meta<power> {
+  using T = power;
+  static constexpr auto value =
+      object("troops", &T::troops, "popn", &T::popn, "resource", &T::resource,
+             "fuel", &T::fuel, "destruct", &T::destruct, "ships_owned",
+             &T::ships_owned, "planets_owned", &T::planets_owned,
+             "sectors_owned", &T::sectors_owned, "money", &T::money, "sum_mob",
+             &T::sum_mob, "sum_eff", &T::sum_eff);
+};
+
 // Glaze reflection for Race class
 template <>
 struct meta<Race> {
@@ -404,17 +416,7 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
 
   CREATE TABLE tbl_power(
       player_id INT PRIMARY KEY NOT NULL,
-      troops INT,
-      popn INT,
-      resource INT,
-      fuel INT,
-      destruct INT,
-      ships_owned INT,
-      planets_owned INT,
-      sectors_owned INT,
-      money INT,
-      sum_mob INT,
-      sum_eff INT);
+      power_data TEXT NOT NULL);
 
   CREATE TABLE tbl_race(
     player_id INT PRIMARY KEY NOT NULL,
@@ -1571,69 +1573,60 @@ void makecommoddead(int commodnum) {
 }
 
 void putpower(power p[MAXPLAYERS]) {
-  sqlite3_stmt* stmt;
-  const char* tail;
-  const char* sql =
-      "REPLACE INTO tbl_power (player_id, troops, popn, resource, fuel, "
-      "destruct, ships_owned, planets_owned, sectors_owned, money, sum_mob, "
-      "sum_eff)"
-      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12);";
-
-  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-
+  // Store each power struct in SQLite database as JSON
   for (player_t i = 1; i <= MAXPLAYERS; i++) {
-    sqlite3_bind_int(stmt, 1, i);
-    sqlite3_bind_int(stmt, 2, p[i - 1].troops);
-    sqlite3_bind_int(stmt, 3, p[i - 1].popn);
-    sqlite3_bind_int(stmt, 4, p[i - 1].resource);
-    sqlite3_bind_int(stmt, 5, p[i - 1].fuel);
-    sqlite3_bind_int(stmt, 6, p[i - 1].destruct);
-    sqlite3_bind_int(stmt, 7, p[i - 1].ships_owned);
-    sqlite3_bind_int(stmt, 8, p[i - 1].planets_owned);
-    sqlite3_bind_int(stmt, 9, p[i - 1].sectors_owned);
-    sqlite3_bind_int(stmt, 10, p[i - 1].money);
-    sqlite3_bind_int(stmt, 11, p[i - 1].sum_mob);
-    sqlite3_bind_int(stmt, 12, p[i - 1].sum_eff);
-
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-      std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
+    auto json_result = power_to_json(p[i - 1]);
+    if (!json_result.has_value()) {
+      std::println(stderr, "Error: Failed to serialize power {} to JSON", i);
+      continue;
     }
 
-    sqlite3_reset(stmt);
-  }
+    const char* tail;
+    sqlite3_stmt* stmt;
+    const char* sql =
+        "REPLACE INTO tbl_power (player_id, power_data) VALUES (?1, ?2);";
+    sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+    sqlite3_bind_int(stmt, 1, i);
+    sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1,
+                      SQLITE_TRANSIENT);
 
-  int err = sqlite3_finalize(stmt);
-  if (err != SQLITE_OK) {
-    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+      std::println(stderr, "Error storing power {}: {}", i,
+                   sqlite3_errmsg(dbconn));
+    }
+
+    sqlite3_finalize(stmt);
   }
 }
 
 void getpower(power p[MAXPLAYERS]) {
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql =
-      "SELECT player_id, troops, popn, resource, fuel, "
-      "destruct, ships_owned, planets_owned, sectors_owned, money, sum_mob, "
-      "sum_eff FROM tbl_power";
+  const char* sql = "SELECT player_id, power_data FROM tbl_power";
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     player_t i = sqlite3_column_int(stmt, 0);
-    p[i - 1].troops = sqlite3_column_int(stmt, 1);
-    p[i - 1].popn = sqlite3_column_int(stmt, 2);
-    p[i - 1].resource = sqlite3_column_int(stmt, 3);
-    p[i - 1].fuel = sqlite3_column_int(stmt, 4);
-    p[i - 1].destruct = sqlite3_column_int(stmt, 5);
-    p[i - 1].ships_owned = sqlite3_column_int(stmt, 6);
-    p[i - 1].planets_owned = sqlite3_column_int(stmt, 7);
-    p[i - 1].sectors_owned = sqlite3_column_int(stmt, 8);
-    p[i - 1].money = sqlite3_column_int(stmt, 9);
-    p[i - 1].sum_mob = sqlite3_column_int(stmt, 10);
-    p[i - 1].sum_eff = sqlite3_column_int(stmt, 11);
+    if (i < 1 || i > MAXPLAYERS) {
+      std::println(stderr, "Invalid player_id {} in tbl_power", i);
+      continue;
+    }
+
+    const char* json_data =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+    if (json_data) {
+      std::string json_string(json_data);
+      auto power_opt = power_from_json(json_string);
+      if (power_opt.has_value()) {
+        p[i - 1] = power_opt.value();
+      } else {
+        std::println(stderr, "Error: Failed to deserialize power {} from JSON",
+                     i);
+      }
+    }
   }
 
-  sqlite3_clear_bindings(stmt);
-  sqlite3_reset(stmt);
+  sqlite3_finalize(stmt);
 }
 
 void Putblock(block b[MAXPLAYERS]) {
@@ -1767,6 +1760,24 @@ std::optional<block> block_from_json(const std::string& json_str) {
   auto result = glz::read_json(b, json_str);
   if (!result) {
     return b;
+  }
+  return std::nullopt;
+}
+
+// JSON serialization functions for power
+std::optional<std::string> power_to_json(const power& p) {
+  auto result = glz::write_json(p);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<power> power_from_json(const std::string& json_str) {
+  power p{};
+  auto result = glz::read_json(p, json_str);
+  if (!result) {
+    return p;
   }
   return std::nullopt;
 }

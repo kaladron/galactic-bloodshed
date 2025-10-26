@@ -66,3 +66,5 @@ export std::optional<std::string> commod_to_json(const Commod&);
 export std::optional<Commod> commod_from_json(const std::string&);
 export std::optional<std::string> ship_to_json(const Ship&);
 export std::optional<Ship> ship_from_json(const std::string&);
+export std::optional<std::string> sector_to_json(const Sector&);
+export std::optional<Sector> sector_from_json(const std::string&);

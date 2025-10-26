@@ -272,6 +272,14 @@ add_executable(race_sqlite_test race_sqlite_test.cc)
 target_link_libraries(race_sqlite_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_race_sqlite_test COMMAND race_sqlite_test)
 
+add_executable(sector_serialization_test sector_serialization_test.cc)
+target_link_libraries(sector_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_sector_serialization_test COMMAND sector_serialization_test)
+
+add_executable(sector_sqlite_test sector_sqlite_test.cc)
+target_link_libraries(sector_sqlite_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_sector_sqlite_test COMMAND sector_sqlite_test)
+
 add_executable(stardata_json_test stardata_json_test.cc)
 target_link_libraries(stardata_json_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_stardata_json_test COMMAND stardata_json_test)

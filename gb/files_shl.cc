@@ -109,6 +109,17 @@ struct meta<Race> {
       "governor", &T::governor);
 };
 
+// Glaze reflection for Sector so we can serialize to JSON
+template <>
+struct meta<Sector> {
+  using T = Sector;
+  static constexpr auto value = object(
+      "x", &T::x, "y", &T::y, "eff", &T::eff, "fert", &T::fert,
+      "mobilization", &T::mobilization, "crystals", &T::crystals, "resource",
+      &T::resource, "popn", &T::popn, "troops", &T::troops, "owner", &T::owner,
+      "race", &T::race, "type", &T::type, "condition", &T::condition);
+};
+
 // Glaze reflection for special ship function data structures
 template <>
 struct meta<AimedAtData> {
@@ -354,9 +365,7 @@ void initsqldata() {  // __attribute__((no_sanitize_memory)) {
 
   CREATE TABLE
   tbl_sector(planet_id INT NOT NULL, xpos INT NOT NULL, ypos INT NOT NULL,
-             eff INT, fert INT, mobilization INT, crystals INT, resource INT,
-             popn INT64, troops INT64, owner INT, race INT, type INT,
-             condition INT, PRIMARY KEY(planet_id, xpos, ypos));
+             sector_data TEXT, PRIMARY KEY(planet_id, xpos, ypos));
 
   CREATE TABLE tbl_plinfo(
       planet_id INT NOT NULL, player_id INT NOT NULL, fuel INT,
@@ -750,9 +759,7 @@ Sector getsector(const Planet& p, const int x, const int y) {
   const char* tail;
   sqlite3_stmt* stmt;
   const char* sql =
-      "SELECT planet_id, xpos, ypos, eff, fert, "
-      "mobilization, crystals, resource, popn, troops, owner, "
-      "race, type, condition FROM tbl_sector "
+      "SELECT sector_data FROM tbl_sector "
       "WHERE planet_id=?1 AND xpos=?2 AND ypos=?3";
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
@@ -761,30 +768,36 @@ Sector getsector(const Planet& p, const int x, const int y) {
   sqlite3_bind_int(stmt, 3, y);
 
   auto result = sqlite3_step(stmt);
-  if (result != SQLITE_ROW) {
+  if (result == SQLITE_ROW) {
+    // Data found in SQLite, deserialize from JSON
+    const char* json_data =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+
+    if (json_data != nullptr) {
+      // Copy the JSON data before finalizing the statement
+      std::string json_string(json_data);
+      sqlite3_finalize(stmt);
+
+      auto sector_opt = sector_from_json(json_string);
+      if (sector_opt.has_value()) {
+        return std::move(sector_opt.value());
+      } else {
+        std::println(
+            stderr, "Error: Failed to deserialize Sector from JSON for planet {} at ({}, {})",
+            p.planet_id, x, y);
+      }
+    } else {
+      std::println(stderr, "Error: NULL JSON data retrieved for sector at planet {} ({}, {})",
+                   p.planet_id, x, y);
+      sqlite3_finalize(stmt);
+    }
+  } else {
+    sqlite3_finalize(stmt);
     throw std::runtime_error("Database unable to return the requested sector");
   }
 
-  Sector s(sqlite3_column_int(stmt, 1),   // xpos
-           sqlite3_column_int(stmt, 2),   // ypos
-           sqlite3_column_int(stmt, 3),   // eff
-           sqlite3_column_int(stmt, 4),   // fert
-           sqlite3_column_int(stmt, 5),   // mobilization
-           sqlite3_column_int(stmt, 6),   // crystals
-           sqlite3_column_int(stmt, 7),   // resource
-           sqlite3_column_int(stmt, 8),   // popn
-           sqlite3_column_int(stmt, 9),   // troops
-           sqlite3_column_int(stmt, 10),  // owner
-           sqlite3_column_int(stmt, 11),  // race
-           sqlite3_column_int(stmt, 12),  // type
-           sqlite3_column_int(stmt, 13)   // condition
-  );
-
-  int err = sqlite3_finalize(stmt);
-  if (err != SQLITE_OK) {
-    std::println(stderr, "SQLite Error: {}", sqlite3_errmsg(dbconn));
-  }
-
+  // Return empty sector if deserialization failed
+  Sector s{};
   return s;
 }
 
@@ -1327,35 +1340,31 @@ void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
 void putsector(const Sector& s, const Planet& p) { putsector(s, p, s.x, s.y); }
 
 void putsector(const Sector& s, const Planet& p, const int x, const int y) {
+  // Serialize Sector to JSON using existing function
+  auto json_result = sector_to_json(s);
+  if (!json_result.has_value()) {
+    std::println(stderr, "Error: Failed to serialize Sector to JSON");
+    return;
+  }
+
+  // Store in SQLite database as JSON
   const char* tail = nullptr;
   sqlite3_stmt* stmt;
   const char* sql =
-      "REPLACE INTO tbl_sector (planet_id, xpos, ypos, eff, fert, "
-      "mobilization, crystals, resource, popn, troops, owner, "
-      "race, type, condition) "
-      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)";
+      "REPLACE INTO tbl_sector (planet_id, xpos, ypos, sector_data) "
+      "VALUES (?1, ?2, ?3, ?4)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, p.planet_id);
   sqlite3_bind_int(stmt, 2, x);
   sqlite3_bind_int(stmt, 3, y);
-  sqlite3_bind_int(stmt, 4, s.eff);
-  sqlite3_bind_int(stmt, 5, s.fert);
-  sqlite3_bind_int(stmt, 6, s.mobilization);
-  sqlite3_bind_int(stmt, 7, s.crystals);
-  sqlite3_bind_int(stmt, 8, s.resource);
-  sqlite3_bind_int(stmt, 9, s.popn);
-  sqlite3_bind_int(stmt, 10, s.troops);
-  sqlite3_bind_int(stmt, 11, s.owner);
-  sqlite3_bind_int(stmt, 12, s.race);
-  sqlite3_bind_int(stmt, 13, s.type);
-  sqlite3_bind_int(stmt, 14, s.condition);
+  sqlite3_bind_text(stmt, 4, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    std::println(stderr, "000 {}", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite error in putsector: {}", sqlite3_errmsg(dbconn));
   }
 
-  sqlite3_reset(stmt);
+  sqlite3_finalize(stmt);
 }
 
 void putsmap(const SectorMap& map, const Planet& p) {
@@ -1794,6 +1803,24 @@ std::optional<Ship> ship_from_json(const std::string& json_str) {
   auto result = glz::read_json(ship, json_str);
   if (!result) {
     return ship;
+  }
+  return std::nullopt;
+}
+
+// JSON serialization functions for Sector
+std::optional<std::string> sector_to_json(const Sector& sector) {
+  auto result = glz::write_json(sector);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<Sector> sector_from_json(const std::string& json_str) {
+  Sector sector{};
+  auto result = glz::read_json(sector, json_str);
+  if (!result) {
+    return sector;
   }
   return std::nullopt;
 }

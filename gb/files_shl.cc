@@ -667,38 +667,48 @@ Sector getsector(const Planet& p, const int x, const int y) {
 
 SectorMap getsmap(const Planet& p) {
   const char* tail = nullptr;
-  sqlite3_stmt* stmt;
+  sqlite3_stmt* stmt = nullptr;
   const char* sql =
-      "SELECT planet_id, xpos, ypos, eff, fert, "
-      "mobilization, crystals, resource, popn, troops, owner, "
-      "race, type, condition FROM tbl_sector "
+      "SELECT sector_data FROM tbl_sector "
       "WHERE planet_id=?1 ORDER BY ypos, xpos";
-  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  
+  if (dbconn == nullptr) {
+    std::println(stderr, "FATAL: getsmap called with NULL database connection");
+    exit(-1);
+  }
+  
+  int rc = sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+  if (rc != SQLITE_OK) {
+    std::println(stderr, "FATAL: sqlite3_prepare_v2 failed in getsmap: {}",
+                 sqlite3_errmsg(dbconn));
+    exit(-1);
+  }
 
   sqlite3_bind_int(stmt, 1, p.planet_id);
 
   SectorMap smap(p);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
-    Sector s(sqlite3_column_int(stmt, 1),   // xpos
-             sqlite3_column_int(stmt, 2),   // ypos
-             sqlite3_column_int(stmt, 3),   // eff
-             sqlite3_column_int(stmt, 4),   // fert
-             sqlite3_column_int(stmt, 5),   // mobilization
-             sqlite3_column_int(stmt, 6),   // crystals
-             sqlite3_column_int(stmt, 7),   // resource
-             sqlite3_column_int(stmt, 8),   // popn
-             sqlite3_column_int(stmt, 9),   // troops
-             sqlite3_column_int(stmt, 10),  // owner
-             sqlite3_column_int(stmt, 11),  // race
-             sqlite3_column_int(stmt, 12),  // type
-             sqlite3_column_int(stmt, 13)   // condition
-    );
-    smap.put(std::move(s));
+    const char* json_data =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+    
+    if (json_data != nullptr) {
+      std::string json_string(json_data);
+      auto sector_opt = sector_from_json(json_string);
+      if (sector_opt.has_value()) {
+        smap.put(std::move(sector_opt.value()));
+      } else {
+        std::println(stderr, 
+                     "FATAL: Failed to deserialize Sector from JSON for planet {}", 
+                     p.planet_id);
+        exit(-1);
+      }
+    }
   }
 
   sqlite3_clear_bindings(stmt);
   sqlite3_reset(stmt);
+  sqlite3_finalize(stmt);
 
   return smap;
 }

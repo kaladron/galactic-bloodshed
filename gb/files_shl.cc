@@ -106,10 +106,9 @@ struct meta<star_struct> {
       object("ships", &T::ships, "name", &T::name, "governor", &T::governor,
              "AP", &T::AP, "explored", &T::explored, "inhabited", &T::inhabited,
              "xpos", &T::xpos, "ypos", &T::ypos, "numplanets", &T::numplanets,
-             "pnames", &T::pnames, "planetpos", &T::planetpos, "stability",
-             &T::stability, "nova_stage", &T::nova_stage, "temperature",
-             &T::temperature, "gravity", &T::gravity, "star_id", &T::star_id,
-             "dummy", &T::dummy);
+             "pnames", &T::pnames, "stability", &T::stability, "nova_stage",
+             &T::nova_stage, "temperature", &T::temperature, "gravity",
+             &T::gravity, "star_id", &T::star_id, "dummy", &T::dummy);
 };
 
 // Glaze reflection for Race class

@@ -48,11 +48,6 @@ int main() {
     std::snprintf(test_star.pnames[i], NAMESIZE, "Planet%d", i);
   }
 
-  // Initialize planet positions
-  for (int i = 0; i < MAXPLANETS; i++) {
-    test_star.planetpos[i] = i * 1000;
-  }
-
   // Create Star object from star_struct
   Star test_star_obj(test_star);
 
@@ -91,11 +86,6 @@ int main() {
   // Verify planet names
   for (int i = 0; i < MAXPLANETS; i++) {
     assert(std::strcmp(retrieved.pnames[i], test_star.pnames[i]) == 0);
-  }
-
-  // Verify planet positions
-  for (int i = 0; i < MAXPLANETS; i++) {
-    assert(retrieved.planetpos[i] == test_star.planetpos[i]);
   }
 
   // Database connection will be cleaned up automatically by Sql destructor

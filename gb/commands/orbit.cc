@@ -244,9 +244,11 @@ static std::string DispPlanet(const GameObj &g, const ScopeLevel level,
     case ScopeLevel::LEVEL_STAR:
       y = (int)(SCALE + (SCALE * (p.ypos - Lasty)) / (SYSTEMSIZE * Zoom));
       x = (int)(SCALE + (SCALE * (p.xpos - Lastx)) / (SYSTEMSIZE * Zoom));
+      break;
     case ScopeLevel::LEVEL_PLAN:
       y = (int)(SCALE + (SCALE * (-Lasty)) / (PLORBITSIZE * Zoom));
       x = (int)(SCALE + (SCALE * (-Lastx)) / (PLORBITSIZE * Zoom));
+      break;
     default:
       return "";
   }

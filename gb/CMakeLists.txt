@@ -312,6 +312,10 @@ add_executable(planet_serialization_test planet_serialization_test.cc)
 target_link_libraries(planet_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_planet_serialization_test COMMAND planet_serialization_test)
 
+add_executable(planet_sqlite_test planet_sqlite_test.cc)
+target_link_libraries(planet_sqlite_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_planet_sqlite_test COMMAND planet_sqlite_test)
+
 add_executable(freeid_test freeid_test.cc)
 target_link_libraries(freeid_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_freeid_test COMMAND freeid_test)

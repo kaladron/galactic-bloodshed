@@ -384,36 +384,16 @@ void close_file(int fd) { close(fd); }
 void initsqldata() {  // __attribute__((no_sanitize_memory)) {
   const char* tbl_create = R"(
       CREATE TABLE tbl_planet(
-          planet_id INT PRIMARY KEY NOT NULL, star_id INT NOT NULL,
-          planet_order INT NOT NULL, name TEXT NOT NULL, xpos DOUBLE,
-          ypos DOUBLE, ships INT64, Maxx INT, Maxy INT, popn INT64,
-          troops INT64, maxpopn INT64, total_resources INT64, slaved_to INT,
-          type INT, expltimer INT, condition_rtemp INT, condition_temp INT,
-          condition_methane INT, condition_oxygen INT, condition_co2 INT,
-          condition_hydrogen INT, condition_nitrogen INT, condition_sulfur INT,
-          condition_helium INT, condition_other INT, condition_toxic INT,
-          explored INT);
+          planet_id INT PRIMARY KEY NOT NULL,
+          star_id INT NOT NULL,
+          planet_order INT NOT NULL,
+          planet_data TEXT NOT NULL);
 
   CREATE INDEX star_planet ON tbl_planet (star_id, planet_order);
 
   CREATE TABLE
   tbl_sector(planet_id INT NOT NULL, xpos INT NOT NULL, ypos INT NOT NULL,
              sector_data TEXT, PRIMARY KEY(planet_id, xpos, ypos));
-
-  CREATE TABLE tbl_plinfo(
-      planet_id INT NOT NULL, player_id INT NOT NULL, fuel INT,
-      destruct INT, resource INT, popn INT64, troops INT64, crystals INT,
-      prod_res INT, prod_fuel INT, prod_dest INT, prod_crystals INT,
-      prod_money INT64, prod_tech DOUBLE, tech_invest INT, numsectsowned INT,
-      comread INT, mob_set INT, tox_thresh INT, explored INT, autorep INT,
-      tax INT, newtax INT, guns INT, mob_points INT64, est_production DOUBLE,
-      PRIMARY KEY (planet_id, player_id));
-
-  CREATE TABLE tbl_plinfo_routes(planet_id INT NOT NULL,
-                                 player_id INT, routenum INT,
-                                 order_set INT, dest_star INT, dest_planet INT,
-                                 load INT, unload INT, x INT, y INT,
-                                 PRIMARY KEY (planet_id, player_id, routenum));
 
   CREATE TABLE tbl_star(
     star_id INT PRIMARY KEY NOT NULL,
@@ -612,19 +592,9 @@ Planet Sql::getplanet(const starnum_t star, const planetnum_t pnum) {
 }
 Planet getplanet(const starnum_t star, const planetnum_t pnum) {
   const char* tail;
-  const char* plinfo_tail;
-  const char* plinfo_routes_tail;
   sqlite3_stmt* stmt;
-  sqlite3_stmt* plinfo_stmt;
-  sqlite3_stmt* plinfo_routes_stmt;
   const char* sql =
-      "SELECT planet_id, star_id, planet_order, name, "
-      "xpos, ypos, ships, maxx, maxy, popn, troops, maxpopn, total_resources, "
-      "slaved_to, type, expltimer, condition_rtemp, condition_temp, "
-      "condition_methane, condition_oxygen, condition_co2, "
-      "condition_hydrogen, condition_nitrogen, condition_sulfur, "
-      "condition_helium, condition_other, condition_toxic, "
-      "explored FROM tbl_planet WHERE star_id=?1 AND planet_order=?2";
+      "SELECT planet_data FROM tbl_planet WHERE star_id=?1 AND planet_order=?2";
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
   sqlite3_bind_int(stmt, 1, star);
@@ -632,123 +602,21 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
 
   auto result = sqlite3_step(stmt);
   if (result != SQLITE_ROW) {
+    sqlite3_finalize(stmt);
     throw std::runtime_error("Database unable to return the requested planet");
   }
 
-  int p_type_num = sqlite3_column_int(stmt, 14);
-  PlanetType ptype = [p_type_num]() -> PlanetType {
-    switch (p_type_num) {
-      case 0:
-        return PlanetType::EARTH;
-      case 1:
-        return PlanetType::ASTEROID;
-      case 2:
-        return PlanetType::MARS;
-      case 3:
-        return PlanetType::ICEBALL;
-      case 4:
-        return PlanetType::GASGIANT;
-      case 5:
-        return PlanetType::WATER;
-      case 6:
-        return PlanetType::FOREST;
-      case 7:
-        return PlanetType::DESERT;
-      default:
-        throw std::runtime_error("Bad data in type field");
-    }
-  }();
+  // Deserialize Planet from JSON
+  const char* json_data =
+      reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+  auto planet_result = planet_from_json(json_data);
+  sqlite3_finalize(stmt);
 
-  Planet p(ptype);
-  p.planet_id = sqlite3_column_int(stmt, 0);
-  p.xpos = sqlite3_column_double(stmt, 4);
-  p.ypos = sqlite3_column_double(stmt, 5);
-  p.ships = sqlite3_column_int(stmt, 6);
-  p.Maxx = sqlite3_column_int(stmt, 7);
-  p.Maxy = sqlite3_column_int(stmt, 8);
-  p.popn = sqlite3_column_int(stmt, 9);
-  p.troops = sqlite3_column_int64(stmt, 10);
-  p.maxpopn = sqlite3_column_int64(stmt, 11);
-  p.total_resources = sqlite3_column_int64(stmt, 12);
-  p.slaved_to = sqlite3_column_int(stmt, 13);
-  p.expltimer = sqlite3_column_int(stmt, 15);
-  p.conditions[RTEMP] = sqlite3_column_int(stmt, 16);
-  p.conditions[TEMP] = sqlite3_column_int(stmt, 17);
-  p.conditions[METHANE] = sqlite3_column_int(stmt, 18);
-  p.conditions[OXYGEN] = sqlite3_column_int(stmt, 19);
-  p.conditions[CO2] = sqlite3_column_int(stmt, 20);
-  p.conditions[HYDROGEN] = sqlite3_column_int(stmt, 21);
-  p.conditions[NITROGEN] = sqlite3_column_int(stmt, 22);
-  p.conditions[SULFUR] = sqlite3_column_int(stmt, 23);
-  p.conditions[HELIUM] = sqlite3_column_int(stmt, 24);
-  p.conditions[OTHER] = sqlite3_column_int(stmt, 25);
-  p.conditions[TOXIC] = sqlite3_column_int(stmt, 26);
-  p.explored = sqlite3_column_int(stmt, 27);
-
-  const char* plinfo_sql =
-      "SELECT planet_id, player_id, fuel, destruct, "
-      "resource, popn, troops, crystals, prod_res, "
-      "prod_fuel, prod_dest, prod_crystals, prod_money, "
-      "prod_tech, tech_invest, numsectsowned, comread, "
-      "mob_set, tox_thresh, explored, autorep, tax, "
-      "newtax, guns, mob_points, est_production FROM tbl_plinfo "
-      "WHERE planet_id=?1";
-  sqlite3_prepare_v2(dbconn, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail);
-  sqlite3_bind_int(plinfo_stmt, 1, p.planet_id);
-  while (sqlite3_step(plinfo_stmt) == SQLITE_ROW) {
-    int player_id = sqlite3_column_int(plinfo_stmt, 1);
-    p.info[player_id].fuel = sqlite3_column_int(plinfo_stmt, 2);
-    p.info[player_id].destruct = sqlite3_column_int(plinfo_stmt, 3);
-    p.info[player_id].resource = sqlite3_column_int(plinfo_stmt, 4);
-    p.info[player_id].popn = sqlite3_column_int(plinfo_stmt, 5);
-    p.info[player_id].troops = sqlite3_column_int(plinfo_stmt, 6);
-    p.info[player_id].crystals = sqlite3_column_int(plinfo_stmt, 7);
-    p.info[player_id].prod_res = sqlite3_column_int(plinfo_stmt, 8);
-    p.info[player_id].prod_fuel = sqlite3_column_int(plinfo_stmt, 9);
-    p.info[player_id].prod_dest = sqlite3_column_int(plinfo_stmt, 10);
-    p.info[player_id].prod_crystals = sqlite3_column_int(plinfo_stmt, 11);
-    p.info[player_id].prod_money = sqlite3_column_int(plinfo_stmt, 12);
-    p.info[player_id].prod_tech = sqlite3_column_int(plinfo_stmt, 13);
-    p.info[player_id].tech_invest = sqlite3_column_int(plinfo_stmt, 14);
-    p.info[player_id].numsectsowned = sqlite3_column_int(plinfo_stmt, 15);
-    p.info[player_id].comread = sqlite3_column_int(plinfo_stmt, 16);
-    p.info[player_id].mob_set = sqlite3_column_int(plinfo_stmt, 17);
-    p.info[player_id].tox_thresh = sqlite3_column_int(plinfo_stmt, 18);
-    p.info[player_id].explored = sqlite3_column_int(plinfo_stmt, 19);
-    p.info[player_id].autorep = sqlite3_column_int(plinfo_stmt, 20);
-    p.info[player_id].tax = sqlite3_column_int(plinfo_stmt, 21);
-    p.info[player_id].newtax = sqlite3_column_int(plinfo_stmt, 22);
-    p.info[player_id].guns = sqlite3_column_int(plinfo_stmt, 23);
-    p.info[player_id].mob_points = sqlite3_column_int(plinfo_stmt, 24);
-    p.info[player_id].est_production = sqlite3_column_int(plinfo_stmt, 25);
+  if (!planet_result.has_value()) {
+    throw std::runtime_error("Failed to deserialize planet from JSON");
   }
 
-  const char* plinfo_routes_sql =
-      "SELECT planet_id, player_id, routenum, order_set, dest_star, "
-      "dest_planet, load, unload, x, y FROM tbl_plinfo_routes WHERE "
-      "planet_id=1";
-  sqlite3_prepare_v2(dbconn, plinfo_routes_sql, -1, &plinfo_routes_stmt,
-                     &plinfo_routes_tail);
-  sqlite3_bind_int(plinfo_routes_stmt, 1, p.planet_id);
-  while (sqlite3_step(plinfo_routes_stmt) == SQLITE_ROW) {
-    int player_id = sqlite3_column_int(plinfo_routes_stmt, 1);
-    int routenum = sqlite3_column_int(plinfo_routes_stmt, 2);
-    p.info[player_id].route[routenum].set =
-        sqlite3_column_int(plinfo_routes_stmt, 3);
-    p.info[player_id].route[routenum].dest_star =
-        sqlite3_column_int(plinfo_routes_stmt, 4);
-    p.info[player_id].route[routenum].dest_planet =
-        sqlite3_column_int(plinfo_routes_stmt, 5);
-    p.info[player_id].route[routenum].load =
-        sqlite3_column_int(plinfo_routes_stmt, 6);
-    p.info[player_id].route[routenum].unload =
-        sqlite3_column_int(plinfo_routes_stmt, 7);
-    p.info[player_id].route[routenum].x =
-        sqlite3_column_int(plinfo_routes_stmt, 8);
-    p.info[player_id].route[routenum].y =
-        sqlite3_column_int(plinfo_routes_stmt, 9);
-  }
-  return p;
+  return std::move(planet_result.value());
 }
 
 Sector getsector(const Planet& p, const int x, const int y) {
@@ -1100,146 +968,34 @@ void Sql::putplanet(const Planet& p, const Star& star, const planetnum_t pnum) {
   ::putplanet(p, star, pnum);
 }
 void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
-  auto star = s.get_struct();
-  start_bulk_insert();
-
-  const char* tail = nullptr;
-  const char* plinfo_tail = nullptr;
-  const char* plinfo_route_tail = nullptr;
-  sqlite3_stmt* stmt;
-  sqlite3_stmt* plinfo_stmt;
-  sqlite3_stmt* plinfo_route_stmt;
-  const char* sql =
-      "REPLACE INTO tbl_planet (planet_id, star_id, planet_order, name, "
-      "xpos, ypos, ships, maxx, maxy, popn, troops, maxpopn, total_resources, "
-      "slaved_to, type, expltimer, condition_rtemp, condition_temp, "
-      "condition_methane, condition_oxygen, condition_co2, "
-      "condition_hydrogen, condition_nitrogen, condition_sulfur, "
-      "condition_helium, condition_other, condition_toxic, "
-      "explored) "
-      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, "
-      "?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, "
-      "?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28)";
-  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-
-  const char* plinfo_sql =
-      "REPLACE INTO tbl_plinfo (planet_id, player_id, fuel, destruct, "
-      "resource, popn, troops, crystals, prod_res, "
-      "prod_fuel, prod_dest, prod_crystals, prod_money, "
-      "prod_tech, tech_invest, numsectsowned, comread, "
-      "mob_set, tox_thresh, explored, autorep, tax, "
-      "newtax, guns, mob_points, est_production) VALUES "
-      "(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, "
-      "?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, "
-      "?21, ?22, ?23, ?24, ?25, ?26)";
-  if (sqlite3_prepare_v2(dbconn, plinfo_sql, -1, &plinfo_stmt, &plinfo_tail) !=
-      SQLITE_OK) {
-    std::println(stderr, "PLINFO {}", sqlite3_errmsg(dbconn));
+  // Serialize Planet to JSON
+  auto json_result = planet_to_json(p);
+  if (!json_result.has_value()) {
+    std::println(stderr, "Error: Failed to serialize Planet to JSON");
+    return;
   }
 
-  const char* plinfo_route_sql =
-      "REPLACE INTO tbl_plinfo_routes (planet_id, player_id, routenum, "
-      "order_set, dest_star, dest_planet, "
-      "load, unload, x, y) VALUES "
-      "(?1, ?2, ?3, ?4, 5, ?6, ?7, ?8, ?9, ?10)";
-  sqlite3_prepare_v2(dbconn, plinfo_route_sql, -1, &plinfo_route_stmt,
-                     &plinfo_route_tail);
+  // Store in SQLite database as JSON
+  const char* tail = nullptr;
+  sqlite3_stmt* stmt;
+  const char* sql =
+      "REPLACE INTO tbl_planet (planet_id, star_id, planet_order, planet_data) "
+      "VALUES (?1, ?2, ?3, ?4)";
 
+  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
+
+  auto star = s.get_struct();
   sqlite3_bind_int(stmt, 1, p.planet_id);
   sqlite3_bind_int(stmt, 2, star.star_id);
   sqlite3_bind_int(stmt, 3, pnum);
-  sqlite3_bind_text(stmt, 4, star.pnames[pnum], strlen(star.pnames[pnum]),
-                    SQLITE_TRANSIENT);
-  sqlite3_bind_double(stmt, 5, p.xpos);
-  sqlite3_bind_double(stmt, 6, p.ypos);
-  sqlite3_bind_int(stmt, 7, p.ships);
-  sqlite3_bind_int(stmt, 8, p.Maxx);
-  sqlite3_bind_int(stmt, 9, p.Maxy);
-  sqlite3_bind_int(stmt, 10, p.popn);
-  sqlite3_bind_int(stmt, 11, p.troops);
-  sqlite3_bind_int(stmt, 12, p.maxpopn);
-  sqlite3_bind_int(stmt, 13, p.total_resources);
-  sqlite3_bind_int(stmt, 14, p.slaved_to);
-  sqlite3_bind_int(stmt, 15, p.type);
-  sqlite3_bind_int(stmt, 16, p.expltimer);
-  sqlite3_bind_int(stmt, 17, p.conditions[RTEMP]);
-  sqlite3_bind_int(stmt, 18, p.conditions[TEMP]);
-  sqlite3_bind_int(stmt, 19, p.conditions[METHANE]);
-  sqlite3_bind_int(stmt, 20, p.conditions[OXYGEN]);
-  sqlite3_bind_int(stmt, 21, p.conditions[CO2]);
-  sqlite3_bind_int(stmt, 22, p.conditions[HYDROGEN]);
-  sqlite3_bind_int(stmt, 23, p.conditions[NITROGEN]);
-  sqlite3_bind_int(stmt, 24, p.conditions[SULFUR]);
-  sqlite3_bind_int(stmt, 25, p.conditions[HELIUM]);
-  sqlite3_bind_int(stmt, 26, p.conditions[OTHER]);
-  sqlite3_bind_int(stmt, 27, p.conditions[TOXIC]);
-  sqlite3_bind_int(stmt, 28, p.explored);
+  sqlite3_bind_text(stmt, 4, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    std::println(stderr, "XXX {}", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite error in putplanet: {}",
+                 sqlite3_errmsg(dbconn));
   }
 
-  {
-    for (player_t i = 0; i < MAXPLAYERS; i++) {
-      sqlite3_bind_int(plinfo_stmt, 1, p.planet_id);
-      sqlite3_bind_int(plinfo_stmt, 2, i);
-      sqlite3_bind_int(plinfo_stmt, 3, p.info[i].fuel);
-      sqlite3_bind_int(plinfo_stmt, 4, p.info[i].destruct);
-      sqlite3_bind_int64(plinfo_stmt, 5, p.info[i].resource);
-      sqlite3_bind_int64(plinfo_stmt, 6, p.info[i].popn);
-      sqlite3_bind_int64(plinfo_stmt, 7, p.info[i].troops);
-      sqlite3_bind_int(plinfo_stmt, 8, p.info[i].crystals);
-      sqlite3_bind_int(plinfo_stmt, 9, p.info[i].prod_res);
-      sqlite3_bind_int(plinfo_stmt, 10, p.info[i].prod_fuel);
-      sqlite3_bind_int(plinfo_stmt, 11, p.info[i].prod_dest);
-      sqlite3_bind_int(plinfo_stmt, 12, p.info[i].prod_crystals);
-      sqlite3_bind_int64(plinfo_stmt, 13, p.info[i].prod_money);
-      sqlite3_bind_double(plinfo_stmt, 14, p.info[i].prod_tech);
-      sqlite3_bind_int(plinfo_stmt, 15, p.info[i].tech_invest);
-      sqlite3_bind_int(plinfo_stmt, 16, p.info[i].numsectsowned);
-      sqlite3_bind_int(plinfo_stmt, 17, p.info[i].comread);
-      sqlite3_bind_int(plinfo_stmt, 18, p.info[i].mob_set);
-      sqlite3_bind_int(plinfo_stmt, 19, p.info[i].tox_thresh);
-      sqlite3_bind_int(plinfo_stmt, 20, p.info[i].explored);
-      sqlite3_bind_int(plinfo_stmt, 21, p.info[i].autorep);
-      sqlite3_bind_int(plinfo_stmt, 22, p.info[i].tax);
-      sqlite3_bind_int(plinfo_stmt, 23, p.info[i].newtax);
-      sqlite3_bind_int(plinfo_stmt, 24, p.info[i].guns);
-      sqlite3_bind_int64(plinfo_stmt, 25, p.info[i].mob_points);
-      sqlite3_bind_double(plinfo_stmt, 26, p.info[i].est_production);
-
-      if (sqlite3_step(plinfo_stmt) != SQLITE_DONE) {
-        std::println(stderr, "YYY {}", sqlite3_errmsg(dbconn));
-      }
-      sqlite3_reset(plinfo_stmt);
-
-      {
-        for (int j = 0; j < MAX_ROUTES; j++) {
-          sqlite3_bind_int(plinfo_route_stmt, 1, p.planet_id);
-          sqlite3_bind_int(plinfo_route_stmt, 2, i);
-          sqlite3_bind_int(plinfo_route_stmt, 3, j);
-          sqlite3_bind_int(plinfo_route_stmt, 4, p.info[i].route[j].set);
-          sqlite3_bind_int(plinfo_route_stmt, 5, p.info[i].route[j].dest_star);
-          sqlite3_bind_int(plinfo_route_stmt, 6,
-                           p.info[i].route[j].dest_planet);
-          sqlite3_bind_int(plinfo_route_stmt, 7, p.info[i].route[j].load);
-          sqlite3_bind_int(plinfo_route_stmt, 8, p.info[i].route[j].unload);
-          sqlite3_bind_int(plinfo_route_stmt, 9, p.info[i].route[j].x);
-          sqlite3_bind_int(plinfo_route_stmt, 10, p.info[i].route[j].y);
-
-          if (sqlite3_step(plinfo_route_stmt) != SQLITE_DONE) {
-            std::println(stderr, "ZZZ {}", sqlite3_errmsg(dbconn));
-          }
-          sqlite3_reset(plinfo_route_stmt);
-        }
-      }
-    }
-  }
   sqlite3_finalize(stmt);
-  sqlite3_finalize(plinfo_stmt);
-  sqlite3_finalize(plinfo_route_stmt);
-
-  end_bulk_insert();
 }
 
 void putsector(const Sector& s, const Planet& p) { putsector(s, p, s.x, s.y); }

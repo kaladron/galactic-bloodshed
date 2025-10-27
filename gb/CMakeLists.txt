@@ -280,6 +280,10 @@ add_executable(sector_sqlite_test sector_sqlite_test.cc)
 target_link_libraries(sector_sqlite_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_sector_sqlite_test COMMAND sector_sqlite_test)
 
+add_executable(sectormap_sqlite_test sectormap_sqlite_test.cc)
+target_link_libraries(sectormap_sqlite_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_sectormap_sqlite_test COMMAND sectormap_sqlite_test)
+
 add_executable(stardata_json_test stardata_json_test.cc)
 target_link_libraries(stardata_json_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_stardata_json_test COMMAND stardata_json_test)

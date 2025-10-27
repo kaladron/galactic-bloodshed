@@ -328,6 +328,17 @@ add_executable(numships_test numships_test.cc)
 target_link_libraries(numships_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_numships_test COMMAND numships_test)
 
+# Custom target to run GB with AddressSanitizer options for detailed leak detection
+add_custom_target(run-gb-debug
+    COMMAND ${CMAKE_COMMAND} -E env 
+        "ASAN_OPTIONS=symbolize=1:detect_leaks=1:verbosity=1:log_to_syslog=0"
+        $<TARGET_FILE:GB>
+    DEPENDS GB
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/gb
+    COMMENT "Running GB with AddressSanitizer options for detailed leak detection"
+    USES_TERMINAL
+)
+
 # Only add docs if Doxygen is found
 if(DOXYGEN_FOUND)
   doxygen_add_docs(gb-docs)

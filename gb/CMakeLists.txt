@@ -308,7 +308,7 @@ add_executable(ship_serialization_test ship_serialization_test.cc)
 target_link_libraries(ship_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_ship_serialization_test COMMAND ship_serialization_test)
 
-# TODO: Re-enable once Planet serialization is fully implemented (Subtask 4.2+)
+# Planet serialization test (will be re-enabled in Subtask 4.4 after getplanet/putplanet are updated)
 # add_executable(planet_serialization_test planet_serialization_test.cc)
 # target_link_libraries(planet_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 # add_test(NAME GB_planet_serialization_test COMMAND planet_serialization_test)

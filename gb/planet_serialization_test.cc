@@ -96,8 +96,8 @@ int main() {
   test_planet.info[1].route[0].set = 1;
   test_planet.info[1].route[0].dest_star = 3;
 
-  // Serialize Planet to JSON - use const reference
-  auto planet_json_result = glz::write_json<const Planet&>(test_planet);
+  // Serialize Planet to JSON using planet_to_json()
+  auto planet_json_result = planet_to_json(test_planet);
   assert(planet_json_result.has_value());
   std::println("\nPlanet JSON length: {} bytes", planet_json_result.value().size());
   
@@ -105,10 +105,10 @@ int main() {
   std::string snippet = planet_json_result.value().substr(0, std::min(200ul, planet_json_result.value().size()));
   std::println("Planet JSON snippet: {}...", snippet);
 
-  // Deserialize back
-  Planet recovered_planet(PlanetType::EARTH);
-  auto planet_parse_result = glz::read_json(recovered_planet, planet_json_result.value());
-  assert(!planet_parse_result);
+  // Deserialize back using planet_from_json()
+  auto recovered_planet_opt = planet_from_json(planet_json_result.value());
+  assert(recovered_planet_opt.has_value());
+  Planet recovered_planet = std::move(recovered_planet_opt.value());
 
   // Verify data
   assert(recovered_planet.planet_id == 42);

@@ -1730,3 +1730,21 @@ std::optional<star_struct> star_from_json(const std::string& json_str) {
   }
   return std::nullopt;
 }
+
+// JSON serialization functions for Planet
+std::optional<std::string> planet_to_json(const Planet& planet) {
+  auto result = glz::write_json(planet);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<Planet> planet_from_json(const std::string& json_str) {
+  Planet planet{};
+  auto result = glz::read_json(planet, json_str);
+  if (!result) {
+    return planet;
+  }
+  return std::nullopt;
+}

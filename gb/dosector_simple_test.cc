@@ -83,7 +83,6 @@ Star createTestStar() {
 
   for (int i = 0; i < MAXPLANETS; i++) {
     strcpy(star_data.pnames[i], "TestPlanet");
-    star_data.planetpos[i] = 0;
   }
 
   return Star(star_data);

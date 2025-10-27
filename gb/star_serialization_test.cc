@@ -40,11 +40,6 @@ int main() {
     std::snprintf(test_star.pnames[i], NAMESIZE, "Planet%d", i);
   }
 
-  // Initialize planet positions
-  for (int i = 0; i < MAXPLANETS; i++) {
-    test_star.planetpos[i] = i * 1000;
-  }
-
   // Initialize dummy array
   for (int i = 0; i < 1; i++) {
     test_star.dummy[i] = 0;
@@ -91,11 +86,6 @@ int main() {
   // Verify planet names
   for (int i = 0; i < MAXPLANETS; i++) {
     assert(std::strcmp(deserialized_star.pnames[i], test_star.pnames[i]) == 0);
-  }
-
-  // Verify planet positions
-  for (int i = 0; i < MAXPLANETS; i++) {
-    assert(deserialized_star.planetpos[i] == test_star.planetpos[i]);
   }
 
   std::println("Star serialization test passed!");

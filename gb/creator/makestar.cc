@@ -357,7 +357,6 @@ Star Makestar(starnum_t snum) {
         Numsects[type][d]++;
         Fertsects[type][d] += smap.get(x, y).fert;
       }
-    star.planetpos[i] = 0;  // old posn of file-last write
     putplanet(planet, star, i);
   }
   return star;

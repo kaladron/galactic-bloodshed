@@ -16,7 +16,6 @@ export struct star_struct {
 
   unsigned char numplanets;            /* # of planets in star system */
   char pnames[MAXPLANETS][NAMESIZE];   /* names of planets */
-  unsigned long planetpos[MAXPLANETS]; /* file posns of planets */
 
   unsigned char stability;   /* how close to nova it is */
   unsigned char nova_stage;  /* stage of nova */

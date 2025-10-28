@@ -83,7 +83,10 @@ static void process_ships() {
     domine(*ships[i], 0);
   }
 
-  for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
+  for (shipnum_t i = 1; i <= Num_ships; i++) {
+    free(ships[i]);  // Free the old ship before re-fetching
+    (void)getship(&ships[i], i);
+  }
 }
 
 static void process_stars_and_planets(int update) {

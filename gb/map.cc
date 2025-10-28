@@ -62,7 +62,7 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
       } else {
         if (owned1 && race.governor[Governor].toggle.inverse) {
           g.out << std::format("1{}{}", (char)(sector.owner + '?'),
-                               shiplocs[sector.x][sector.y]);
+                               desshow(Playernum, Governor, race, sector));
         } else {
           g.out << std::format("0{}{}", (char)(sector.owner + '?'),
                                desshow(Playernum, Governor, race, sector));

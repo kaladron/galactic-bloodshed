@@ -248,6 +248,8 @@ Planet makeplanet(double dist, short stemp, PlanetType type) {
   for (auto y = 0; y < planet.Maxy; y++) {
     for (auto x = 0; x < planet.Maxx; x++) {
       auto &s = smap.get(x, y);
+      s.x = x;
+      s.y = y;
       s.type = s.condition = t;
     }
   }

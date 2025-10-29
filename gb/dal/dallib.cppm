@@ -37,3 +37,27 @@ public:
   // Note: This should only be used by DAL components
   sqlite3* connection() { return conn; }
 };
+
+export class JsonStore {
+  Database& db;
+
+public:
+  explicit JsonStore(Database& database);
+
+  // Generic CRUD operations
+  bool store(const std::string& table, int id, const std::string& json);
+  std::optional<std::string> retrieve(const std::string& table, int id);
+  bool remove(const std::string& table, int id);
+
+  // ID management
+  std::vector<int> list_ids(const std::string& table);
+  int find_next_available_id(const std::string& table);
+
+  // Multi-key operations (for Sector, Planet with composite keys)
+  bool store_multi(const std::string& table,
+                   const std::vector<std::pair<std::string, int>>& keys,
+                   const std::string& json);
+  std::optional<std::string> retrieve_multi(
+      const std::string& table,
+      const std::vector<std::pair<std::string, int>>& keys);
+};

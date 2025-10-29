@@ -103,7 +103,7 @@ add_library(dallib)
 target_sources(
   dallib
   PUBLIC FILE_SET CXX_MODULES FILES dal/dallib.cppm
-  PRIVATE dal/database.cc)
+  PRIVATE dal/database.cc dal/json_store.cc)
 target_link_libraries(dallib PUBLIC SQLite::SQLite3)
 
 add_library(gblib)
@@ -339,6 +339,10 @@ add_test(NAME GB_numships_test COMMAND numships_test)
 add_executable(database_test dal/database_test.cc)
 target_link_libraries(database_test PRIVATE dallib)
 add_test(NAME GB_database_test COMMAND database_test)
+
+add_executable(json_store_test dal/json_store_test.cc)
+target_link_libraries(json_store_test PRIVATE dallib)
+add_test(NAME GB_json_store_test COMMAND json_store_test)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

@@ -47,3 +47,5 @@ compile_commands.json
 !WHATSNEW.md
 !DEVELOPERGUIDE.md
 !ARCHITECTURE.md
+client/__pycache__
+

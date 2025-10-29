@@ -98,6 +98,14 @@ target_link_libraries(enrol PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_executable(racegen GB_racegen.cc enroll.cc racegen.cc)
 target_link_libraries(racegen PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 
+# Create dallib as a separate library for Data Access Layer
+add_library(dallib)
+target_sources(
+  dallib
+  PUBLIC FILE_SET CXX_MODULES FILES dal/dallib.cppm
+  PRIVATE dal/database.cc)
+target_link_libraries(dallib PUBLIC SQLite::SQLite3)
+
 add_library(gblib)
 target_sources(
   gblib
@@ -157,7 +165,7 @@ target_sources(
           tele.cc
           victory.cc
           VN.cc)
-target_link_libraries(gblib PUBLIC glaze::glaze)
+target_link_libraries(gblib PUBLIC glaze::glaze dallib)
 
 add_library(commands)
 target_sources(
@@ -327,6 +335,10 @@ add_test(NAME GB_freeid_test COMMAND freeid_test)
 add_executable(numships_test numships_test.cc)
 target_link_libraries(numships_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_numships_test COMMAND numships_test)
+
+add_executable(database_test dal/database_test.cc)
+target_link_libraries(database_test PRIVATE dallib)
+add_test(NAME GB_database_test COMMAND database_test)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

@@ -245,19 +245,16 @@ std::string do_prompt(GameObj& g) {
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] / )\n", Sdata.AP[Playernum - 1]);
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << std::format(" ( [{0}] /{1} )\n",
                             stars[g.snum].AP(Playernum - 1),
                             stars[g.snum].get_name());
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << std::format(
           " ( [{0}] /{1}/{2} )\n", stars[g.snum].AP(Playernum - 1),
           stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum));
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.
@@ -268,20 +265,17 @@ std::string do_prompt(GameObj& g) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [[0]] /#{1} )\n", Sdata.AP[Playernum - 1],
                             g.shipno);
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << std::format(" ( [{0}] /{1}/#{2} )\n",
                             stars[s->storbits].AP(Playernum - 1),
                             stars[s->storbits].get_name(), g.shipno);
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << std::format(
           " ( [{0}] /{1}/{2}/#{3} )\n", stars[s->storbits].AP(Playernum - 1),
           stars[s->storbits].get_name(),
           stars[s->storbits].get_planet_name(g.pnum), g.shipno);
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.  (Ship within a ship)
@@ -296,20 +290,17 @@ std::string do_prompt(GameObj& g) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] /#{1}/#{2} )\n", Sdata.AP[Playernum - 1],
                             s->destshipno, g.shipno);
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << std::format(
           " ( [{0}] /{1}/#{2}/#{3} )\n", stars[s->storbits].AP(Playernum - 1),
           stars[s->storbits].get_name(), s->destshipno, g.shipno);
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << std::format(
           " ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
           stars[s->storbits].AP(Playernum - 1), stars[s->storbits].get_name(),
           stars[s->storbits].get_planet_name(g.pnum), s->destshipno, g.shipno);
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.  (Ship w/in ship w/in ship)
@@ -322,27 +313,23 @@ std::string do_prompt(GameObj& g) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] / /../#{1}/#{2} )\n",
                             Sdata.AP[Playernum - 1], s->destshipno, g.shipno);
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_STAR:
       prompt << std::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
                             stars[s->storbits].AP(Playernum - 1),
                             stars[s->storbits].get_name(), s->destshipno,
                             g.shipno);
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_PLAN:
       prompt << std::format(
           " ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
           stars[s->storbits].AP(Playernum - 1), stars[s->storbits].get_name(),
           stars[s->storbits].get_planet_name(g.pnum), s->destshipno, g.shipno);
-      prompt << std::ends;
       return prompt.str();
     case ScopeLevel::LEVEL_SHIP:
       break;  // (Ship w/in ship w/in ship w/in ship)
   }
   // Kidding!  All done. =)
-  prompt << std::ends;
   return prompt.str();
 }
 }  // namespace
@@ -540,18 +527,31 @@ static int shovechars(int port, Db& db) {
         }
       }
 
-      for (auto& d : descriptor_list) {
+      // Use iterator loop to handle removal during iteration
+      for (auto it = descriptor_list.begin(); it != descriptor_list.end();) {
+        auto& d = *it;
+        bool should_remove = false;
+
         if (FD_ISSET(d.descriptor, &input_set)) {
           /*      d->last_time = now; */
           if (!process_input(d)) {
-            shutdownsock(d);
-            continue;
+            should_remove = true;
           }
         }
-        if (FD_ISSET(d.descriptor, &output_set)) {
+
+        if (!should_remove && FD_ISSET(d.descriptor, &output_set)) {
           if (!process_output(d)) {
-            shutdownsock(d);
+            should_remove = true;
           }
+        }
+
+        if (should_remove) {
+          shutdownsock(d);
+          // shutdownsock removes the element, so iterator is invalidated
+          // Restart from beginning since list structure changed
+          it = descriptor_list.begin();
+        } else {
+          ++it;
         }
       }
     }

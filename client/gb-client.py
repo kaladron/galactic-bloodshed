@@ -102,12 +102,14 @@ class TerminalUI:
         self.use_curses = use_curses
         self.stdscr = None
         self.output_win = None
+        self.status_win = None
         self.input_win = None
         self.output_buffer: deque = deque(maxlen=10000)
         self.input_buffer: str = ""
         self.input_pos: int = 0
         self.height: int = 0
         self.width: int = 0
+        self.status_text: str = ""
         
     def init(self, stdscr=None):
         """Initialize the terminal UI"""
@@ -120,13 +122,18 @@ class TerminalUI:
             self.height, self.width = stdscr.getmaxyx()
             
             # Create output window (all but last 2 lines)
+            # The status bar will replace the separator line
             self.output_win = curses.newwin(self.height - 2, self.width, 0, 0)
             self.output_win.scrollok(True)
             self.output_win.idlok(True)
             
-            # Create input window (last 2 lines)
-            self.input_win = curses.newwin(2, self.width, self.height - 2, 0)
+            # Create status window (same line as the old separator, line height-2)
+            self.status_win = curses.newwin(1, self.width, self.height - 2, 0)
             
+            # Create input window (last line only, for prompt)
+            self.input_win = curses.newwin(1, self.width, self.height - 1, 0)
+            
+            self.refresh_status()
             self.refresh_input()
     
     def cleanup(self):
@@ -141,6 +148,7 @@ class TerminalUI:
             # Mark as cleaned up so we don't try to use curses anymore
             self.stdscr = None
             self.output_win = None
+            self.status_win = None
             self.input_win = None
     
     def display(self, text: str):
@@ -180,16 +188,70 @@ class TerminalUI:
         
         try:
             self.input_win.clear()
-            self.input_win.addstr(0, 0, "-" * (self.width - 1))
             prompt = "> "
-            self.input_win.addstr(1, 0, prompt + self.input_buffer)
+            self.input_win.addstr(0, 0, prompt + self.input_buffer)
             # Position cursor at input position
             cursor_x = len(prompt) + self.input_pos
             if cursor_x < self.width:
-                self.input_win.move(1, cursor_x)
+                self.input_win.move(0, cursor_x)
             self.input_win.refresh()
         except curses.error:
             pass
+    
+    def refresh_status(self):
+        """Refresh the status bar display"""
+        if not self.use_curses or not self.status_win:
+            return
+        
+        try:
+            self.status_win.clear()
+            # Use reverse video for status bar
+            attr = curses.A_REVERSE
+            # Pad or truncate status text to fit width
+            status_display = self.status_text[:self.width-1].ljust(self.width-1)
+            self.status_win.addstr(0, 0, status_display, attr)
+            self.status_win.refresh()
+        except curses.error:
+            pass
+    
+    def update_status(self, profile: 'Profile'):
+        """Update status bar with current game state"""
+        # Build status string: scope path | APs: N
+        scope = profile.scope
+        
+        # Check if logged in (have race_id or race_name)
+        logged_in = profile.race_id > 0 or profile.race_name
+        
+        if not logged_in:
+            # Not logged in yet
+            self.status_text = "Not logged in"
+            self.refresh_status()
+            return
+        
+        # Format scope part - just show the path like the prompt
+        if scope.level == ScopeLevel.UNIVERSE:
+            scope_str = "/"
+        elif scope.level == ScopeLevel.STAR:
+            scope_str = f"/{scope.star}" if scope.star else "/"
+        elif scope.level == ScopeLevel.PLANET:
+            scope_str = f"/{scope.star}/{scope.planet}" if scope.star and scope.planet else "/"
+        elif scope.level == ScopeLevel.SHIP:
+            # Show full path with ship
+            if scope.planet:
+                scope_str = f"/{scope.star}/{scope.planet}/{scope.ship}"
+            elif scope.star:
+                scope_str = f"/{scope.star}/{scope.ship}"
+            else:
+                scope_str = f"/{scope.ship}"
+        else:
+            scope_str = "/"
+        
+        # Format APs
+        aps_str = f"APs: {scope.aps}"
+        
+        # Combine into status string (no race/gov info needed)
+        self.status_text = f"{scope_str} | {aps_str}"
+        self.refresh_status()
     
     def get_input_char(self) -> Optional[int]:
         """Get a single character from input (non-blocking)"""
@@ -561,6 +623,85 @@ class GBClient:
             command, args = CSPProtocol.parse_csp(line)
             await self.handle_csp_command(command, args)
         else:
+            # Log lines that might contain race/gov info for debugging
+            if 'logged on' in line.lower() or ('"' in line and '[' in line):
+                logging.info(f"LOGIN INFO: {line!r}")
+            
+            # Check for scope prompt line to extract APs and scope
+            # Format: ( [APs] /scope/path )
+            # Examples:
+            #   ( [0] / )                  - Universe, 0 APs
+            #   ( [5] /Hadar )             - Star Hadar, 5 APs
+            #   ( [3] /Hadar/Radha )       - Planet Radha in Hadar, 3 APs
+            #   ( [2] /Hadar/Radha/#123 )  - Ship #123 at planet, 2 APs
+            prompt_match = re.match(r'\s*\(\s*\[(\d+)\]\s*/([^)]*)\s*\)', line)
+            if prompt_match:
+                # Extract APs
+                aps = int(prompt_match.group(1))
+                self.state.profile.scope.aps = aps
+                
+                # Extract scope from the path
+                path = prompt_match.group(2).strip()
+                if not path:
+                    # Just "/" means universe level
+                    self.state.profile.scope.level = ScopeLevel.UNIVERSE
+                    self.state.profile.scope.star = ""
+                    self.state.profile.scope.planet = ""
+                    self.state.profile.scope.ship = ""
+                else:
+                    # Parse path: StarName or StarName/PlanetName or with #ShipNum
+                    parts = path.split('/')
+                    if len(parts) == 1:
+                        if parts[0].startswith('#'):
+                            # Ship at universe level: /#123
+                            self.state.profile.scope.level = ScopeLevel.SHIP
+                            self.state.profile.scope.star = ""
+                            self.state.profile.scope.planet = ""
+                            self.state.profile.scope.ship = parts[0]
+                        else:
+                            # Star level: /Hadar
+                            self.state.profile.scope.level = ScopeLevel.STAR
+                            self.state.profile.scope.star = parts[0]
+                            self.state.profile.scope.planet = ""
+                            self.state.profile.scope.ship = ""
+                    elif len(parts) == 2:
+                        if parts[1].startswith('#'):
+                            # Star with ship: /Star/#123
+                            self.state.profile.scope.level = ScopeLevel.SHIP
+                            self.state.profile.scope.star = parts[0]
+                            self.state.profile.scope.planet = ""
+                            self.state.profile.scope.ship = parts[1]
+                        else:
+                            # Planet level: /Hadar/Radha
+                            self.state.profile.scope.level = ScopeLevel.PLANET
+                            self.state.profile.scope.star = parts[0]
+                            self.state.profile.scope.planet = parts[1]
+                            self.state.profile.scope.ship = ""
+                    elif len(parts) >= 3:
+                        # Planet with ship: /Hadar/Radha/#123
+                        self.state.profile.scope.level = ScopeLevel.SHIP
+                        self.state.profile.scope.star = parts[0]
+                        self.state.profile.scope.planet = parts[1] if not parts[1].startswith('#') else ""
+                        self.state.profile.scope.ship = parts[-1]  # Last part is the ship
+                
+                # Update status bar
+                self.ui.update_status(self.state.profile)
+            
+            # Check for login message to extract race/gov names
+            # Format: RaceName "GovName" [race_id,gov_id] logged on.
+            # May have leading newline or whitespace
+            # GovName may be empty: ""
+            login_match = re.search(r'(\S+)\s+"([^"]*)"\s+\[(\d+),(\d+)\]\s+logged on', line)
+            if login_match:
+                self.state.profile.race_name = login_match.group(1)
+                gov_name = login_match.group(2)
+                self.state.profile.gov_name = gov_name if gov_name else f"Gov{login_match.group(4)}"
+                self.state.profile.race_id = int(login_match.group(3))
+                self.state.profile.gov_id = int(login_match.group(4))
+                logging.info(f"Detected login: {self.state.profile.race_name}/{self.state.profile.gov_name}")
+                # Update status bar with new names
+                self.ui.update_status(self.state.profile)
+            
             # Regular game output
             self.display_output(line)
     
@@ -572,6 +713,13 @@ class GBClient:
         if command == "PROMPT":
             # Server is ready for input
             pass
+        elif command == "1011":
+            # CSP_CLIENT_ON - login notification with race/gov IDs
+            if len(args) >= 2:
+                self.state.profile.race_id = int(args[0])
+                self.state.profile.gov_id = int(args[1])
+                # Update status bar
+                self.ui.update_status(self.state.profile)
         elif command == "SCOPE":
             # Scope change notification
             if args:
@@ -580,6 +728,8 @@ class GBClient:
             # Action points update
             if args:
                 self.state.profile.scope.aps = int(args[0])
+                # Update status bar
+                self.ui.update_status(self.state.profile)
     
     def update_scope(self, scope_parts: List[str]):
         """Update current scope from server"""
@@ -596,6 +746,9 @@ class GBClient:
         elif level_str == "PLANET":
             self.state.profile.scope.level = ScopeLevel.PLANET
             self.state.profile.scope.planet = scope_parts[1] if len(scope_parts) > 1 else ""
+        
+        # Update status bar
+        self.ui.update_status(self.state.profile)
     
     async def input_loop(self):
         """Handle user input"""
@@ -650,6 +803,9 @@ class GBClient:
         """Main client loop"""
         self.display_output(f"Galactic Bloodshed II Client v{__version__}")
         self.display_output(f"Connecting to {self.connection.host}:{self.connection.port}...")
+        
+        # Initialize status bar
+        self.ui.update_status(self.state.profile)
         
         if not await self.connection.connect():
             self.display_output("Connection failed")

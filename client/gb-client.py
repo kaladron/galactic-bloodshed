@@ -87,6 +87,171 @@ class GameState:
 
 
 # ============================================================================
+# Terminal UI
+# ============================================================================
+
+class TerminalUI:
+    """Basic curses-based terminal UI
+    
+    Provides a split screen with:
+    - Main output area (scrolling)
+    - Input line at bottom
+    """
+    
+    def __init__(self, use_curses: bool = True):
+        self.use_curses = use_curses
+        self.stdscr = None
+        self.output_win = None
+        self.input_win = None
+        self.output_buffer: deque = deque(maxlen=10000)
+        self.input_buffer: str = ""
+        self.input_pos: int = 0
+        self.height: int = 0
+        self.width: int = 0
+        
+    def init(self, stdscr=None):
+        """Initialize the terminal UI"""
+        if not self.use_curses:
+            return
+            
+        self.stdscr = stdscr
+        if stdscr:
+            curses.curs_set(1)  # Show cursor
+            self.height, self.width = stdscr.getmaxyx()
+            
+            # Create output window (all but last 2 lines)
+            self.output_win = curses.newwin(self.height - 2, self.width, 0, 0)
+            self.output_win.scrollok(True)
+            self.output_win.idlok(True)
+            
+            # Create input window (last 2 lines)
+            self.input_win = curses.newwin(2, self.width, self.height - 2, 0)
+            
+            self.refresh_input()
+    
+    def cleanup(self):
+        """Cleanup terminal state"""
+        if self.use_curses and self.stdscr:
+            try:
+                curses.curs_set(1)
+            except:
+                pass  # Ignore errors during cleanup
+            try:
+                curses.endwin()
+            except:
+                pass  # Ignore errors during cleanup
+    
+    def display(self, text: str):
+        """Display text in output area"""
+        # Check for null characters and log them for debugging
+        if '\0' in text:
+            # Log the problematic text with context
+            logging.warning(f"Received text with null character(s): {text!r}")
+            # Also log hex representation for clarity
+            hex_repr = ' '.join(f'{ord(c):02x}' for c in text[:100])  # First 100 chars
+            logging.warning(f"Hex representation (first 100 chars): {hex_repr}")
+        
+        # Sanitize text: remove null characters and other control chars that curses can't handle
+        sanitized = text.replace('\0', '').replace('\r', '')
+        self.output_buffer.append(sanitized)
+        
+        if not self.use_curses or not self.output_win:
+            # Fallback to simple print
+            print(sanitized)
+            return
+        
+        try:
+            # Add to output window
+            self.output_win.addstr(sanitized + "\n")
+            self.output_win.refresh()
+            self.refresh_input()
+        except (curses.error, ValueError) as e:
+            # Ignore curses errors (e.g., writing to last line)
+            # Also catch ValueError for any remaining problematic characters
+            logging.debug(f"Display error (ignored): {e}")
+            pass
+    
+    def refresh_input(self):
+        """Refresh the input line display"""
+        if not self.use_curses or not self.input_win:
+            return
+        
+        try:
+            self.input_win.clear()
+            self.input_win.addstr(0, 0, "-" * (self.width - 1))
+            prompt = "> "
+            self.input_win.addstr(1, 0, prompt + self.input_buffer)
+            # Position cursor at input position
+            cursor_x = len(prompt) + self.input_pos
+            if cursor_x < self.width:
+                self.input_win.move(1, cursor_x)
+            self.input_win.refresh()
+        except curses.error:
+            pass
+    
+    def get_input_char(self) -> Optional[int]:
+        """Get a single character from input (non-blocking)"""
+        if not self.use_curses or not self.input_win:
+            return None
+        
+        try:
+            self.input_win.nodelay(True)
+            ch = self.input_win.getch()
+            self.input_win.nodelay(False)
+            return ch if ch != -1 else None
+        except curses.error:
+            return None
+    
+    def handle_input_char(self, ch: int) -> Optional[str]:
+        """Handle input character, return complete line if Enter pressed"""
+        if ch == ord('\n'):  # Enter
+            line = self.input_buffer
+            self.input_buffer = ""
+            self.input_pos = 0
+            self.refresh_input()
+            return line
+        elif ch == curses.KEY_BACKSPACE or ch == 127 or ch == 8:  # Backspace
+            if self.input_pos > 0:
+                self.input_buffer = (
+                    self.input_buffer[:self.input_pos-1] + 
+                    self.input_buffer[self.input_pos:]
+                )
+                self.input_pos -= 1
+                self.refresh_input()
+        elif ch == curses.KEY_DC:  # Delete
+            if self.input_pos < len(self.input_buffer):
+                self.input_buffer = (
+                    self.input_buffer[:self.input_pos] + 
+                    self.input_buffer[self.input_pos+1:]
+                )
+                self.refresh_input()
+        elif ch == curses.KEY_LEFT:
+            if self.input_pos > 0:
+                self.input_pos -= 1
+                self.refresh_input()
+        elif ch == curses.KEY_RIGHT:
+            if self.input_pos < len(self.input_buffer):
+                self.input_pos += 1
+                self.refresh_input()
+        elif ch == curses.KEY_HOME or ch == 1:  # Home or Ctrl-A
+            self.input_pos = 0
+            self.refresh_input()
+        elif ch == curses.KEY_END or ch == 5:  # End or Ctrl-E
+            self.input_pos = len(self.input_buffer)
+            self.refresh_input()
+        elif 32 <= ch <= 126:  # Printable character
+            self.input_buffer = (
+                self.input_buffer[:self.input_pos] + 
+                chr(ch) + 
+                self.input_buffer[self.input_pos:]
+            )
+            self.input_pos += 1
+            self.refresh_input()
+        
+        return None
+
+
+# ============================================================================
 # Network Communication
 # ============================================================================
 
@@ -372,19 +537,18 @@ class CommandProcessor:
 class GBClient:
     """Main Galactic Bloodshed client"""
     
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, use_curses: bool = True):
         self.connection = GameConnection(host, port)
         self.state = GameState()
         self.state.server_host = host
         self.state.server_port = port
         self.command_processor = CommandProcessor(self)
         self.running = False
-        self.output_buffer: deque[str] = deque(maxlen=10000)
+        self.ui = TerminalUI(use_curses=use_curses)
     
     def display_output(self, text: str):
         """Display output to user"""
-        print(text)
-        self.output_buffer.append(text)
+        self.ui.display(text)
     
     async def process_server_message(self, line: str):
         """Process a line received from server"""
@@ -435,9 +599,18 @@ class GBClient:
         
         while self.running:
             try:
-                # Read input asynchronously
-                line = await loop.run_in_executor(None, input, "> ")
-                await self.command_processor.process_command(line)
+                if self.ui.use_curses:
+                    # Curses-based input with character-by-character handling
+                    await asyncio.sleep(0.05)  # Small delay to prevent busy loop
+                    ch = self.ui.get_input_char()
+                    if ch is not None:
+                        line = self.ui.handle_input_char(ch)
+                        if line is not None:
+                            await self.command_processor.process_command(line)
+                else:
+                    # Fallback to line-based input
+                    line = await loop.run_in_executor(None, input, "> ")
+                    await self.command_processor.process_command(line)
             except EOFError:
                 break
             except Exception as e:
@@ -516,6 +689,11 @@ def main():
         help='Enable verbose logging'
     )
     parser.add_argument(
+        '--no-curses',
+        action='store_true',
+        help='Disable curses UI (use simple line mode)'
+    )
+    parser.add_argument(
         '--version',
         action='version',
         version=f'%(prog)s {__version__}'
@@ -525,14 +703,44 @@ def main():
     
     setup_logging(args.verbose)
     
-    client = GBClient(args.host, args.port)
+    use_curses = not args.no_curses
     
-    try:
-        asyncio.run(client.run())
-    except Exception as e:
-        logging.exception("Fatal error")
-        print(f"Error: {e}", file=sys.stderr)
-        return 1
+    if use_curses:
+        # Run with curses wrapper
+        def curses_main(stdscr):
+            client = GBClient(args.host, args.port, use_curses=True)
+            client.ui.init(stdscr)
+            try:
+                asyncio.run(client.run())
+            except Exception as e:
+                logging.exception("Error in client")
+                # Try to display error before cleanup
+                try:
+                    client.ui.display(f"\nError: {e}")
+                except:
+                    pass
+                raise
+            finally:
+                client.ui.cleanup()
+        
+        try:
+            curses.wrapper(curses_main)
+        except KeyboardInterrupt:
+            # Normal exit on Ctrl-C
+            pass
+        except Exception as e:
+            logging.exception("Fatal error")
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+    else:
+        # Run without curses
+        client = GBClient(args.host, args.port, use_curses=False)
+        try:
+            asyncio.run(client.run())
+        except Exception as e:
+            logging.exception("Fatal error")
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
     
     return 0
 

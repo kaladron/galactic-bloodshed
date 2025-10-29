@@ -75,6 +75,22 @@ class Sector:
 
 
 @dataclass
+class PlanetMap:
+    """Parsed planet map data"""
+    planet_name: str = ""
+    width: int = 0
+    height: int = 0
+    show: int = 1
+    sectors: List[List[Sector]] = field(default_factory=list)
+    
+    def get_sector(self, x: int, y: int) -> Optional[Sector]:
+        """Get sector at coordinates"""
+        if 0 <= y < len(self.sectors) and 0 <= x < len(self.sectors[y]):
+            return self.sectors[y][x]
+        return None
+
+
+@dataclass
 class GameState:
     """Overall game state"""
     profile: Profile = field(default_factory=Profile)
@@ -84,6 +100,7 @@ class GameState:
     variables: Dict[str, str] = field(default_factory=dict)
     last_ship: str = ""
     last_lot: str = ""
+    current_map: Optional[PlanetMap] = None
 
 
 # ============================================================================
@@ -349,6 +366,167 @@ class CSPProtocol:
         return command, args
 
 
+class MapParser:
+    """Parser for planet map data from server
+    
+    Map format from server:
+    $PlanetName;width;height;show;sector_data
+    
+    Each sector is 3 chars:
+    - First char: display flag ('0'=normal, '1'=inverse) OR color code (owner + '?')
+    - Second char: owner code (owner + '?')
+    - Third char: sector type or ship letter
+    
+    Example:
+    $Radha;15;5;1;0?*0?.0?.0?...
+    where 0?* = normal display, owner='?'-'?'=0, terrain='*'
+    """
+    
+    # Sector type characters (from gb/map.cc desshow function)
+    CHAR_WASTED = '%'
+    CHAR_SEA = '.'
+    CHAR_LAND = '-'
+    CHAR_MOUNT = '^'
+    CHAR_GAS = '~'
+    CHAR_PLATED = '#'
+    CHAR_ICE = '*'
+    CHAR_DESERT = '"'
+    CHAR_FOREST = ')'
+    CHAR_CRYSTAL = 'x'
+    CHAR_MY_TROOPS = 'X'
+    CHAR_ALLIED_TROOPS = 'A'
+    CHAR_ATWAR_TROOPS = 'E'
+    CHAR_NEUTRAL_TROOPS = 'N'
+    
+    @staticmethod
+    def is_map_line(line: str) -> bool:
+        """Check if line is a map data line"""
+        return line.startswith('$')
+    
+    @staticmethod
+    def parse_map(line: str) -> Optional[PlanetMap]:
+        """Parse a map line into PlanetMap structure
+        
+        Args:
+            line: Map data line starting with '$'
+            
+        Returns:
+            PlanetMap object or None if parsing fails
+        """
+        if not MapParser.is_map_line(line):
+            return None
+        
+        try:
+            # Strip leading $ and split by semicolons
+            parts = line[1:].split(';')
+            if len(parts) < 5:
+                logging.warning(f"Map line has too few parts: {len(parts)}")
+                return None
+            
+            planet_name = parts[0]
+            width = int(parts[1])
+            height = int(parts[2])
+            show = int(parts[3])
+            sector_data = parts[4] if len(parts) > 4 else ""
+            
+            logging.info(f"Parsing map for {planet_name}: {width}x{height}, show={show}")
+            
+            # Create the map structure
+            planet_map = PlanetMap(
+                planet_name=planet_name,
+                width=width,
+                height=height,
+                show=show,
+                sectors=[]
+            )
+            
+            # Parse sector data - each sector is 3 characters
+            # Data is row-major: y=0 all x, then y=1 all x, etc.
+            idx = 0
+            for y in range(height):
+                row = []
+                for x in range(width):
+                    if idx + 2 >= len(sector_data):
+                        # Not enough data, fill with empty sector
+                        row.append(Sector(x=x, y=y, owner=0, type='?'))
+                        continue
+                    
+                    # Get the three-character sector code
+                    flag_char = sector_data[idx]
+                    owner_char = sector_data[idx + 1]
+                    terrain_char = sector_data[idx + 2]
+                    idx += 3
+                    
+                    # Parse first character - display flag
+                    # '0' = normal, '1' = inverse, or color code
+                    inverse = False
+                    if flag_char == '1':
+                        inverse = True
+                    # Note: if flag_char > '?', it's a color code, but we don't use it yet
+                    
+                    # Parse second character - owner encoded as char - '?'
+                    owner = ord(owner_char) - ord('?')
+                    
+                    # Third character is the sector type or ship letter
+                    sector_type = terrain_char
+                    
+                    # Create sector
+                    sector = Sector(
+                        x=x,
+                        y=y,
+                        owner=owner,
+                        type=sector_type
+                    )
+                    row.append(sector)
+                
+                planet_map.sectors.append(row)
+            
+            logging.info(f"Successfully parsed map: {width}x{height} = {len(planet_map.sectors[0]) if planet_map.sectors else 0}x{len(planet_map.sectors)}")
+            return planet_map
+            
+        except Exception as e:
+            logging.error(f"Error parsing map line: {e}", exc_info=True)
+            logging.error(f"Map line was: {line[:100]}...")
+            return None
+    
+    @staticmethod
+    def format_map_display(planet_map: PlanetMap, show_coords: bool = True) -> str:
+        """Format map for display in terminal
+        
+        Args:
+            planet_map: The parsed map data
+            show_coords: Whether to show coordinate labels
+            
+        Returns:
+            Formatted string ready for display
+        """
+        lines = []
+        
+        # Header with planet name
+        lines.append(f"=== {planet_map.planet_name} ({planet_map.width}x{planet_map.height}) ===")
+        
+        if show_coords:
+            # X coordinate header
+            header = "   "
+            for x in range(planet_map.width):
+                header += str(x % 10)
+            lines.append(header)
+        
+        # Map rows
+        for y, row in enumerate(planet_map.sectors):
+            if show_coords:
+                line = f"{y:2d} "
+            else:
+                line = ""
+            
+            for sector in row:
+                line += sector.type
+            
+            lines.append(line)
+        
+        return "\n".join(lines)
+
+
 class NetworkBuffer:
     """Buffer for handling partial lines from network"""
     
@@ -498,6 +676,14 @@ class CommandProcessor:
             cmd_type=CommandType.CLIENT,
             help_text="Define a macro: macro <name> <commands>"
         ))
+        
+        self.register_command(Command(
+            name="showmap",
+            handler=self._cmd_showmap,
+            cmd_type=CommandType.CLIENT,
+            aliases=["sm"],
+            help_text="Show the current parsed map"
+        ))
     
     def register_command(self, command: Command):
         """Register a command and its aliases"""
@@ -594,6 +780,15 @@ class CommandProcessor:
         macro_name, macro_text = parts
         self.macros[macro_name] = macro_text
         self.client.display_output(f"Macro '{macro_name}' defined")
+    
+    async def _cmd_showmap(self, args: str):
+        """Display the currently parsed map"""
+        if not self.client.state.current_map:
+            self.client.display_output("No map data available. Use the 'map' command first.")
+            return
+        
+        formatted = MapParser.format_map_display(self.client.state.current_map)
+        self.client.display_output(formatted)
 
 
 # ============================================================================
@@ -618,6 +813,17 @@ class GBClient:
     
     async def process_server_message(self, line: str):
         """Process a line received from server"""
+        # Check if it's a map line (starts with $)
+        if MapParser.is_map_line(line):
+            planet_map = MapParser.parse_map(line)
+            if planet_map:
+                self.state.current_map = planet_map
+                logging.info(f"Parsed map for {planet_map.planet_name}: {planet_map.width}x{planet_map.height}")
+                # Display formatted map
+                formatted = MapParser.format_map_display(planet_map)
+                self.display_output(formatted)
+            return  # Don't display the raw map line
+        
         # Check if it's a CSP message
         if CSPProtocol.is_csp_message(line):
             command, args = CSPProtocol.parse_csp(line)

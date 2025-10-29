@@ -72,6 +72,7 @@ class Sector:
     troops: int = 0
     resources: int = 0
     efficiency: int = 0
+    inverse: bool = False  # Inverse video display flag
 
 
 @dataclass
@@ -180,6 +181,13 @@ class TerminalUI:
         
         # Sanitize text: remove null characters and other control chars that curses can't handle
         sanitized = text.replace('\0', '').replace('\r', '')
+        
+        # Strip ANSI escape codes if using curses (curses doesn't interpret them)
+        if self.use_curses:
+            # Remove ANSI escape sequences like \033[7m and \033[0m
+            import re
+            sanitized = re.sub(r'\033\[[0-9;]*m', '', sanitized)
+        
         self.output_buffer.append(sanitized)
         
         if not self.use_curses or not self.output_win:
@@ -196,6 +204,46 @@ class TerminalUI:
             # Ignore curses errors (e.g., writing to last line)
             # Also catch ValueError for any remaining problematic characters
             logging.debug(f"Display error (ignored): {e}")
+            pass
+    
+    def display_map(self, planet_map: 'PlanetMap', show_coords: bool = True):
+        """Display a planet map with proper inverse video support
+        
+        This uses curses attributes directly instead of ANSI codes
+        """
+        if not self.use_curses or not self.output_win:
+            # Fallback to text display with ANSI codes
+            formatted = MapParser.format_map_display(planet_map, show_coords, use_ansi=True)
+            self.display(formatted)
+            return
+        
+        try:
+            # Header
+            header = f"=== {planet_map.planet_name} ({planet_map.width}x{planet_map.height}) ==="
+            self.output_win.addstr(header + "\n")
+            
+            # Column headers if requested
+            if show_coords:
+                coord_header = "   " + "".join(str(x % 10) for x in range(planet_map.width))
+                self.output_win.addstr(coord_header + "\n")
+            
+            # Display each row
+            for y, row in enumerate(planet_map.sectors):
+                # Row label
+                if show_coords:
+                    self.output_win.addstr(f"{y:2d} ")
+                
+                # Display sectors with proper attributes
+                for sector in row:
+                    attr = curses.A_REVERSE if sector.inverse else curses.A_NORMAL
+                    self.output_win.addstr(sector.type, attr)
+                
+                self.output_win.addstr("\n")
+            
+            self.output_win.refresh()
+            self.refresh_input()
+        except curses.error as e:
+            logging.debug(f"Map display error (ignored): {e}")
             pass
     
     def refresh_input(self):
@@ -475,7 +523,8 @@ class MapParser:
                         x=x,
                         y=y,
                         owner=owner,
-                        type=sector_type
+                        type=sector_type,
+                        inverse=inverse
                     )
                     row.append(sector)
                 
@@ -490,12 +539,13 @@ class MapParser:
             return None
     
     @staticmethod
-    def format_map_display(planet_map: PlanetMap, show_coords: bool = True) -> str:
+    def format_map_display(planet_map: PlanetMap, show_coords: bool = True, use_ansi: bool = True) -> str:
         """Format map for display in terminal
         
         Args:
             planet_map: The parsed map data
             show_coords: Whether to show coordinate labels
+            use_ansi: Whether to use ANSI codes for inverse video
             
         Returns:
             Formatted string ready for display
@@ -512,6 +562,10 @@ class MapParser:
                 header += str(x % 10)
             lines.append(header)
         
+        # ANSI codes for inverse video
+        INVERSE_START = "\033[7m" if use_ansi else ""
+        INVERSE_END = "\033[0m" if use_ansi else ""
+        
         # Map rows
         for y, row in enumerate(planet_map.sectors):
             if show_coords:
@@ -519,8 +573,29 @@ class MapParser:
             else:
                 line = ""
             
+            # Track whether we're currently in inverse mode to minimize escapes
+            in_inverse = False
+            
             for sector in row:
-                line += sector.type
+                if use_ansi:
+                    # Use ANSI escape codes for inverse video
+                    if sector.inverse and not in_inverse:
+                        line += INVERSE_START
+                        in_inverse = True
+                    elif not sector.inverse and in_inverse:
+                        line += INVERSE_END
+                        in_inverse = False
+                    line += sector.type
+                else:
+                    # Fallback: show inverse sectors in brackets
+                    if sector.inverse:
+                        line += f"[{sector.type}]"
+                    else:
+                        line += sector.type
+            
+            # Close inverse if we ended in that mode
+            if in_inverse and use_ansi:
+                line += INVERSE_END
             
             lines.append(line)
         
@@ -787,8 +862,8 @@ class CommandProcessor:
             self.client.display_output("No map data available. Use the 'map' command first.")
             return
         
-        formatted = MapParser.format_map_display(self.client.state.current_map)
-        self.client.display_output(formatted)
+        # Use the UI's map display method for proper inverse video
+        self.client.ui.display_map(self.client.state.current_map)
 
 
 # ============================================================================
@@ -819,9 +894,8 @@ class GBClient:
             if planet_map:
                 self.state.current_map = planet_map
                 logging.info(f"Parsed map for {planet_map.planet_name}: {planet_map.width}x{planet_map.height}")
-                # Display formatted map
-                formatted = MapParser.format_map_display(planet_map)
-                self.display_output(formatted)
+                # Display map using UI method for proper inverse video
+                self.ui.display_map(planet_map)
             return  # Don't display the raw map line
         
         # Check if it's a CSP message

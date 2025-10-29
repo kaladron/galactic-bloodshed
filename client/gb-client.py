@@ -92,6 +92,36 @@ class PlanetMap:
 
 
 @dataclass
+class OrbitObject:
+    """Object in an orbit map (star, planet, or ship)"""
+    x: int = 0
+    y: int = 0
+    symbol: str = "?"
+    name: str = ""
+    explored: int = 0  # 0 or 1 (or player number in color mode)
+    inhabited: int = 0  # 0 or 1 (or player number in color mode)
+    obj_type: str = "unknown"  # "star", "planet", "ship"
+
+
+@dataclass
+class OrbitMap:
+    """Parsed orbit/system map data"""
+    objects: List[OrbitObject] = field(default_factory=list)
+    
+    def get_stars(self) -> List[OrbitObject]:
+        """Get all star objects"""
+        return [obj for obj in self.objects if obj.obj_type == "star"]
+    
+    def get_planets(self) -> List[OrbitObject]:
+        """Get all planet objects"""
+        return [obj for obj in self.objects if obj.obj_type == "planet"]
+    
+    def get_ships(self) -> List[OrbitObject]:
+        """Get all ship objects"""
+        return [obj for obj in self.objects if obj.obj_type == "ship"]
+
+
+@dataclass
 class GameState:
     """Overall game state"""
     profile: Profile = field(default_factory=Profile)
@@ -102,6 +132,7 @@ class GameState:
     last_ship: str = ""
     last_lot: str = ""
     current_map: Optional[PlanetMap] = None
+    current_orbit_map: Optional[OrbitMap] = None
 
 
 # ============================================================================
@@ -602,6 +633,168 @@ class MapParser:
         return "\n".join(lines)
 
 
+class OrbitMapParser:
+    """Parser for orbit/system map data from server
+    
+    Map format from server (starts with '#'):
+    #explored x y 0 symbol inhabited Name;explored x y 0 symbol inhabited Name;...
+    
+    Each object (star/planet/ship) is semicolon-separated:
+    - explored: 0/1 (or player+'?' for color mode) - whether player has explored it
+    - x, y: coordinates (0-200 scale, 100=center)
+    - 0: unused field
+    - symbol: '*' for star, planet type char for planets, ship letter for ships
+    - inhabited: 0/1 (or player+'?') - whether player inhabits/owns it
+    - Name: object name
+    
+    Example:
+    #1 129 84 0 * 1 Hadar;0 141 102 0 ? 0 Yang;1 100 100 0 @ 1 Radha;
+    """
+    
+    @staticmethod
+    def is_orbit_line(line: str) -> bool:
+        """Check if line is an orbit map data line"""
+        return line.startswith('#') and ' ' in line
+    
+    @staticmethod
+    def parse_orbit_map(line: str) -> Optional[OrbitMap]:
+        """Parse an orbit map line into OrbitMap structure
+        
+        Args:
+            line: Orbit data line starting with '#'
+            
+        Returns:
+            OrbitMap object or None if parsing fails
+        """
+        if not OrbitMapParser.is_orbit_line(line):
+            return None
+        
+        try:
+            # Strip leading # and split by semicolons
+            line = line[1:].strip()
+            if not line:
+                return None
+            
+            orbit_map = OrbitMap(objects=[])
+            
+            # Split into object entries
+            entries = [e.strip() for e in line.split(';') if e.strip()]
+            
+            logging.info(f"Parsing orbit map with {len(entries)} objects")
+            
+            for entry in entries:
+                # Parse each entry: explored x y 0 symbol inhabited Name
+                parts = entry.split(None, 6)  # Split on whitespace, max 7 parts
+                if len(parts) < 7:
+                    logging.warning(f"Orbit entry has too few parts: {len(parts)} - {entry}")
+                    continue
+                
+                explored_str = parts[0]
+                x = int(parts[1])
+                y = int(parts[2])
+                # parts[3] is always 0, skip it
+                symbol = parts[4]
+                inhabited_str = parts[5]
+                name = parts[6] if len(parts) > 6 else ""
+                
+                # Parse explored status (0/1 or player+'?')
+                if explored_str.isdigit():
+                    explored = int(explored_str)
+                else:
+                    # Color mode: char - '?'
+                    explored = ord(explored_str) - ord('?')
+                
+                # Parse inhabited status
+                if inhabited_str.isdigit():
+                    inhabited = int(inhabited_str)
+                else:
+                    # Color mode: char - '?'
+                    inhabited = ord(inhabited_str) - ord('?')
+                
+                # Determine object type from symbol
+                if symbol == '*':
+                    obj_type = "star"
+                elif symbol in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+                    # Ship letters (assuming uppercase = ships)
+                    obj_type = "ship"
+                else:
+                    # Planet symbols: @, ?, etc.
+                    obj_type = "planet"
+                
+                orbit_obj = OrbitObject(
+                    x=x,
+                    y=y,
+                    symbol=symbol,
+                    name=name,
+                    explored=explored,
+                    inhabited=inhabited,
+                    obj_type=obj_type
+                )
+                orbit_map.objects.append(orbit_obj)
+            
+            logging.info(f"Successfully parsed orbit map with {len(orbit_map.objects)} objects")
+            return orbit_map
+            
+        except Exception as e:
+            logging.error(f"Error parsing orbit map line: {e}", exc_info=True)
+            logging.error(f"Orbit line was: {line[:100]}...")
+            return None
+    
+    @staticmethod
+    def format_orbit_display(orbit_map: OrbitMap, width: int = 60, height: int = 20) -> str:
+        """Format orbit map for display in terminal
+        
+        Args:
+            orbit_map: The parsed orbit map data
+            width: Display width in characters
+            height: Display height in characters
+            
+        Returns:
+            Formatted string ready for display
+        """
+        lines = []
+        
+        # Create a 2D grid
+        grid = [[' ' for _ in range(width)] for _ in range(height)]
+        labels = []
+        
+        # Scale from 0-200 coordinate space to display grid
+        scale_x = (width - 1) / 200.0
+        scale_y = (height - 1) / 200.0
+        
+        # Place objects on grid
+        for obj in orbit_map.objects:
+            display_x = int(obj.x * scale_x)
+            display_y = int(obj.y * scale_y)
+            
+            # Clamp to grid bounds
+            display_x = max(0, min(width - 1, display_x))
+            display_y = max(0, min(height - 1, display_y))
+            
+            # Place symbol on grid
+            grid[display_y][display_x] = obj.symbol
+            
+            # Add label for named objects
+            if obj.name:
+                labels.append(f"  {obj.symbol} = {obj.name}" +
+                            (f" (inhabited)" if obj.inhabited else ""))
+        
+        # Header
+        lines.append("=== Orbit Map ===")
+        
+        # Display grid
+        for row in grid:
+            lines.append(''.join(row))
+        
+        # Legend
+        if labels:
+            lines.append("")
+            lines.append("Objects:")
+            lines.extend(labels)
+        
+        return "\n".join(lines)
+
+
 class NetworkBuffer:
     """Buffer for handling partial lines from network"""
     
@@ -759,6 +952,14 @@ class CommandProcessor:
             aliases=["sm"],
             help_text="Show the current parsed map"
         ))
+        
+        self.register_command(Command(
+            name="showorbit",
+            handler=self._cmd_showorbit,
+            cmd_type=CommandType.CLIENT,
+            aliases=["so"],
+            help_text="Show the current parsed orbit/system map"
+        ))
     
     def register_command(self, command: Command):
         """Register a command and its aliases"""
@@ -864,6 +1065,15 @@ class CommandProcessor:
         
         # Use the UI's map display method for proper inverse video
         self.client.ui.display_map(self.client.state.current_map)
+    
+    async def _cmd_showorbit(self, args: str):
+        """Display the currently parsed orbit map"""
+        if not self.client.state.current_orbit_map:
+            self.client.display_output("No orbit map data available. Use the 'orbit' command first.")
+            return
+        
+        formatted = OrbitMapParser.format_orbit_display(self.client.state.current_orbit_map)
+        self.client.display_output(formatted)
 
 
 # ============================================================================
@@ -888,7 +1098,7 @@ class GBClient:
     
     async def process_server_message(self, line: str):
         """Process a line received from server"""
-        # Check if it's a map line (starts with $)
+        # Check if it's a planet sector map line (starts with $)
         if MapParser.is_map_line(line):
             planet_map = MapParser.parse_map(line)
             if planet_map:
@@ -897,6 +1107,17 @@ class GBClient:
                 # Display map using UI method for proper inverse video
                 self.ui.display_map(planet_map)
             return  # Don't display the raw map line
+        
+        # Check if it's an orbit/system map line (starts with #)
+        if OrbitMapParser.is_orbit_line(line):
+            orbit_map = OrbitMapParser.parse_orbit_map(line)
+            if orbit_map:
+                self.state.current_orbit_map = orbit_map
+                logging.info(f"Parsed orbit map with {len(orbit_map.objects)} objects")
+                # Display orbit map
+                formatted = OrbitMapParser.format_orbit_display(orbit_map)
+                self.display_output(formatted)
+            return  # Don't display the raw orbit line
         
         # Check if it's a CSP message
         if CSPProtocol.is_csp_message(line):

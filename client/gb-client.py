@@ -133,13 +133,15 @@ class TerminalUI:
         """Cleanup terminal state"""
         if self.use_curses and self.stdscr:
             try:
+                # Just reset cursor visibility, don't call endwin()
+                # The curses.wrapper() will handle endwin() for us
                 curses.curs_set(1)
             except:
                 pass  # Ignore errors during cleanup
-            try:
-                curses.endwin()
-            except:
-                pass  # Ignore errors during cleanup
+            # Mark as cleaned up so we don't try to use curses anymore
+            self.stdscr = None
+            self.output_win = None
+            self.input_win = None
     
     def display(self, text: str):
         """Display text in output area"""
@@ -498,7 +500,9 @@ class CommandProcessor:
     
     async def _cmd_quit(self, args: str):
         """Quit the client"""
+        logging.info("Quit command received, setting running=False")
         self.client.running = False
+        self.client.display_output("Exiting...")
     
     async def _cmd_help(self, args: str):
         """Show help"""
@@ -619,16 +623,28 @@ class GBClient:
     async def receive_loop(self):
         """Handle receiving data from server"""
         while self.running:
-            data = await self.connection.receive()
-            if data is None:
-                self.display_output("Connection closed by server")
+            try:
+                # Add timeout so we can check running flag periodically
+                data = await asyncio.wait_for(
+                    self.connection.receive(), 
+                    timeout=0.5
+                )
+                if data is None:
+                    self.display_output("Connection closed by server")
+                    self.running = False
+                    break
+                
+                # Add to buffer and process complete lines
+                lines = self.connection.buffer.add_data(data)
+                for line in lines:
+                    await self.process_server_message(line)
+            except asyncio.TimeoutError:
+                # Timeout is normal, just continue to check running flag
+                continue
+            except Exception as e:
+                logging.error(f"Receive error: {e}")
                 self.running = False
                 break
-            
-            # Add to buffer and process complete lines
-            lines = self.connection.buffer.add_data(data)
-            for line in lines:
-                await self.process_server_message(line)
     
     async def run(self):
         """Main client loop"""
@@ -642,14 +658,30 @@ class GBClient:
         self.state.connected = True
         self.running = True
         
-        # Run input and receive loops concurrently
+        # Create tasks for input and receive loops
+        input_task = asyncio.create_task(self.input_loop())
+        receive_task = asyncio.create_task(self.receive_loop())
+        
+        # Run loops concurrently, but stop both when one finishes
         try:
-            await asyncio.gather(
-                self.input_loop(),
-                self.receive_loop()
+            # Wait for either task to complete (e.g., when running becomes False)
+            done, pending = await asyncio.wait(
+                [input_task, receive_task],
+                return_when=asyncio.FIRST_COMPLETED
             )
+            
+            # Cancel any pending tasks
+            for task in pending:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+                    
         except KeyboardInterrupt:
             self.display_output("\nInterrupted")
+            input_task.cancel()
+            receive_task.cancel()
         finally:
             self.connection.close()
             self.display_output("Disconnected")
@@ -728,6 +760,12 @@ def main():
         except KeyboardInterrupt:
             # Normal exit on Ctrl-C
             pass
+        except curses.error as e:
+            # Ignore curses cleanup errors (endwin() issues)
+            if "endwin" not in str(e).lower():
+                logging.exception("Curses error")
+                print(f"Error: {e}", file=sys.stderr)
+                return 1
         except Exception as e:
             logging.exception("Fatal error")
             print(f"Error: {e}", file=sys.stderr)

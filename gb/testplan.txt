@@ -1,7 +1,0 @@
-Testplan:
-  relation
-  relation 1
-  map
-  map /
-  map -
-

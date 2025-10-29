@@ -372,7 +372,53 @@ Use these from `gb/files.h`:
    - Individual test executables can be run directly: `./gb/race_sqlite_test`
    - Always ensure tests use `Sql db(":memory:");` before `initsqldata()`
 
-## 📚 Additional Resources
+## � Python Client Development
+
+The project includes a Python client (`client/gb-client.py`) for connecting to the game server.
+
+### Key Technologies
+- **Python 3.12+** with asyncio for concurrent I/O
+- **curses library** for terminal UI (split screen with output/input)
+- **Client-Server Protocol (CSP)** - messages prefixed with `|`
+
+### Phase 1 Complete (October 2025)
+Phase 1 implementation achieved:
+- ✅ Curses-based terminal UI with split screen
+- ✅ Character-by-character input with editing (backspace, arrows, etc.)
+- ✅ Async I/O with proper timeout handling
+- ✅ Graceful quit/exit functionality
+- ✅ ~780 lines of working Python code
+
+### Running the Client
+```bash
+# Terminal 1: Start server
+cd /workspaces/galactic-bloodshed/build
+ninja run-gb-debug
+
+# Terminal 2: Run client
+cd /workspaces/galactic-bloodshed/client
+./gb-client.py localhost 2010
+
+# Optional: Run without curses for debugging
+./gb-client.py localhost 2010 --no-curses
+```
+
+### Critical Asyncio Patterns for Client Work
+
+1. **Use `asyncio.wait()` not `gather()` for concurrent loops**:
+   - `gather()` waits for ALL tasks - wrong for input/receive loops
+   - `wait(FIRST_COMPLETED)` exits when ANY task completes - correct
+
+2. **Always add timeouts to receive loops**:
+   - Use `asyncio.wait_for(reader.read(4096), timeout=0.5)`
+   - Allows checking exit flags every 0.5s
+   - Prevents hanging on quit/exit
+
+3. **Let `curses.wrapper()` handle cleanup**:
+   - Don't call `endwin()` manually - causes "endwin() returned ERR"
+   - Wrapper automatically restores terminal on exit
+
+## �📚 Additional Resources
 
 - [`docs/COPILOT_TASKS.md`](docs/COPILOT_TASKS.md) - Task playbooks
 - [`.github/copilot-instructions.md`](.github/copilot-instructions.md) - Copilot-specific guidance

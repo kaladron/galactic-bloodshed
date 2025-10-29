@@ -31,10 +31,13 @@ workdir
 .cache
 compile_commands.json
 
+# Ignore all Python Cache files
+**/__pycache__
+
 # Ignore all .md files
 *.md
 
-# But do NOT ignore README.md
+# Except these:
 !README.md
 !AGENTS.md
 !CONTRIBUTING.md
@@ -47,5 +50,4 @@ compile_commands.json
 !WHATSNEW.md
 !DEVELOPERGUIDE.md
 !ARCHITECTURE.md
-client/__pycache__
 

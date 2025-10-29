@@ -159,6 +159,8 @@ class TerminalUI:
         self.height: int = 0
         self.width: int = 0
         self.status_text: str = ""
+        self.last_displayed_map: Optional['PlanetMap'] = None  # Track last map for redraw
+        self.last_displayed_orbit: Optional['OrbitMap'] = None  # Track last orbit map for redraw
         
     def init(self, stdscr=None):
         """Initialize the terminal UI"""
@@ -184,6 +186,74 @@ class TerminalUI:
             
             self.refresh_status()
             self.refresh_input()
+    
+    def handle_resize(self):
+        """Handle terminal window resize event
+        
+        This is called when curses.KEY_RESIZE is detected.
+        Recreates windows with new dimensions.
+        """
+        if not self.use_curses or not self.stdscr:
+            return
+        
+        try:
+            # Get new terminal dimensions
+            self.height, self.width = self.stdscr.getmaxyx()
+            
+            # Clear and refresh the main screen
+            self.stdscr.clear()
+            self.stdscr.refresh()
+            
+            # Recreate windows with new dimensions
+            self.output_win = curses.newwin(self.height - 2, self.width, 0, 0)
+            self.output_win.scrollok(True)
+            self.output_win.idlok(True)
+            
+            self.status_win = curses.newwin(1, self.width, self.height - 2, 0)
+            self.input_win = curses.newwin(1, self.width, self.height - 1, 0)
+            
+            # Redraw the status bar and input line
+            self.refresh_status()
+            self.refresh_input()
+            
+            # If a planet map was displayed, redraw it instead of text buffer
+            if self.last_displayed_map:
+                try:
+                    # Redraw the planet sector map
+                    self._draw_map_internal(self.last_displayed_map, show_coords=True)
+                    self.output_win.refresh()
+                except Exception as e:
+                    logging.error(f"Error redrawing map on resize: {e}")
+                    # Fall back to text buffer if map redraw fails
+                    self.last_displayed_map = None
+            # If an orbit map was displayed, redraw it
+            elif self.last_displayed_orbit:
+                try:
+                    # Redraw the orbit map
+                    formatted = OrbitMapParser.format_orbit_display(self.last_displayed_orbit, 
+                                                                     width=self.width, 
+                                                                     height=self.height - 5)
+                    for line in formatted.split('\n'):
+                        self.output_win.addstr(line + "\n")
+                    self.output_win.refresh()
+                except Exception as e:
+                    logging.error(f"Error redrawing orbit map on resize: {e}")
+                    # Fall back to text buffer if orbit redraw fails
+                    self.last_displayed_orbit = None
+            
+            # If no special map, redraw recent output (last 10 lines from buffer)
+            if not self.last_displayed_map and not self.last_displayed_orbit:
+                recent_lines = list(self.output_buffer)[-min(10, self.height - 3):]
+                for line in recent_lines:
+                    try:
+                        self.output_win.addstr(line + "\n")
+                    except curses.error:
+                        pass
+                self.output_win.refresh()
+            
+            logging.info(f"Terminal resized to {self.width}x{self.height}")
+        except Exception as e:
+            logging.error(f"Error handling resize: {e}")
     
     def cleanup(self):
         """Cleanup terminal state"""
@@ -221,6 +291,10 @@ class TerminalUI:
         
         self.output_buffer.append(sanitized)
         
+        # Note: We don't clear last_displayed_map here because text output
+        # often follows a map display (planet stats, etc.)
+        # Maps are cleared when a new map is displayed or when we detect non-map content
+        
         if not self.use_curses or not self.output_win:
             # Fallback to simple print
             print(sanitized)
@@ -242,6 +316,9 @@ class TerminalUI:
         
         This uses curses attributes directly instead of ANSI codes
         """
+        # Track the last displayed map for redrawing on resize
+        self.last_displayed_map = planet_map
+        
         if not self.use_curses or not self.output_win:
             # Fallback to text display with ANSI codes
             formatted = MapParser.format_map_display(planet_map, show_coords, use_ansi=True)
@@ -275,6 +352,40 @@ class TerminalUI:
             self.refresh_input()
         except curses.error as e:
             logging.debug(f"Map display error (ignored): {e}")
+            pass
+    
+    def _draw_map_internal(self, planet_map: 'PlanetMap', show_coords: bool = True):
+        """Internal method to draw a map without tracking it
+        
+        Used by handle_resize to avoid overwriting last_displayed_map.
+        """
+        if not self.use_curses or not self.output_win:
+            return
+        
+        try:
+            # Header
+            header = f"=== {planet_map.planet_name} ({planet_map.width}x{planet_map.height}) ==="
+            self.output_win.addstr(header + "\n")
+            
+            # Column headers if requested
+            if show_coords:
+                coord_header = "   " + "".join(str(x % 10) for x in range(planet_map.width))
+                self.output_win.addstr(coord_header + "\n")
+            
+            # Display each row
+            for y, row in enumerate(planet_map.sectors):
+                # Row label
+                if show_coords:
+                    self.output_win.addstr(f"{y:2d} ")
+                
+                # Display sectors with proper attributes
+                for sector in row:
+                    attr = curses.A_REVERSE if sector.inverse else curses.A_NORMAL
+                    self.output_win.addstr(sector.type, attr)
+                
+                self.output_win.addstr("\n")
+        except curses.error as e:
+            logging.debug(f"Internal map draw error (ignored): {e}")
             pass
     
     def refresh_input(self):
@@ -364,7 +475,10 @@ class TerminalUI:
     
     def handle_input_char(self, ch: int) -> Optional[str]:
         """Handle input character, return complete line if Enter pressed"""
-        if ch == ord('\n'):  # Enter
+        if ch == curses.KEY_RESIZE:  # Terminal resize
+            self.handle_resize()
+            return None
+        elif ch == ord('\n'):  # Enter
             line = self.input_buffer
             self.input_buffer = ""
             self.input_pos = 0
@@ -1114,8 +1228,9 @@ class GBClient:
             if orbit_map:
                 self.state.current_orbit_map = orbit_map
                 logging.info(f"Parsed orbit map with {len(orbit_map.objects)} objects")
-                # Display orbit map
+                # Display orbit map and track it for redraw
                 formatted = OrbitMapParser.format_orbit_display(orbit_map)
+                self.ui.last_displayed_orbit = orbit_map
                 self.display_output(formatted)
             return  # Don't display the raw orbit line
         
@@ -1137,6 +1252,10 @@ class GBClient:
             #   ( [2] /Hadar/Radha/#123 )  - Ship #123 at planet, 2 APs
             prompt_match = re.match(r'\s*\(\s*\[(\d+)\]\s*/([^)]*)\s*\)', line)
             if prompt_match:
+                # Clear any displayed maps when we see a new prompt - indicates end of output
+                self.ui.last_displayed_map = None
+                self.ui.last_displayed_orbit = None
+                
                 # Extract APs
                 aps = int(prompt_match.group(1))
                 self.state.profile.scope.aps = aps

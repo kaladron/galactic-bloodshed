@@ -349,6 +349,10 @@ add_executable(ship_repository_test repositories/ship_repository_test.cc)
 target_link_libraries(ship_repository_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_ship_repository_test COMMAND ship_repository_test)
 
+add_executable(planet_repository_test repositories/planet_repository_test.cc)
+target_link_libraries(planet_repository_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_planet_repository_test COMMAND planet_repository_test)
+
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug
     COMMAND ${CMAKE_COMMAND} -E env 

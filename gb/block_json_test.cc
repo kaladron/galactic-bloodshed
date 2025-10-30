@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
+import dallib;
 import gblib;
 import std.compat;
 
@@ -9,11 +10,11 @@ import std.compat;
 #include <cstring>
 
 int main() {
-  // Initialize database using common Sql class (in-memory for testing)
-  Sql db(":memory:");
+  // Initialize database using Database class (in-memory for testing)
+  Database db(":memory:");
 
   // Initialize database tables - this will create the tbl_block table
-  initsqldata();
+  initialize_schema(db);
 
   block test_blocks[MAXPLAYERS];
 

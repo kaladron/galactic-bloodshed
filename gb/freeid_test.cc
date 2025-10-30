@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
+import dallib;
 import gblib;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // CRITICAL: Always create in-memory database BEFORE calling initsqldata()
-  Sql db(":memory:");
+  // CRITICAL: Always create in-memory database BEFORE calling
+  // initialize_schema()
+  Database db(":memory:");
 
   // Initialize database tables - this creates all required tables
-  initsqldata();
+  initialize_schema(db);
 
   std::println("Testing gap-finding free ID management...");
 

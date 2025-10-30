@@ -2,6 +2,10 @@
 
 export module gblib;
 
+// TEMPORARY: Import dallib to get access to global dbconn during transition
+// TODO: Remove this in Phase 4 when all code uses Database class
+export import dallib;
+
 export import :bombard;
 export import :build;
 export import :doplanet;

@@ -96,45 +96,8 @@ struct meta<Sector> {
       "race", &T::race, "type", &T::type, "condition", &T::condition);
 };
 
-// Glaze reflection for plroute struct
-template <>
-struct meta<plroute> {
-  using T = plroute;
-  static constexpr auto value =
-      object("set", &T::set, "dest_star", &T::dest_star, "dest_planet",
-             &T::dest_planet, "load", &T::load, "unload", &T::unload, "x",
-             &T::x, "y", &T::y);
-};
-
-// Glaze reflection for plinfo so we can serialize to JSON
-template <>
-struct meta<plinfo> {
-  using T = plinfo;
-  static constexpr auto value = object(
-      "fuel", &T::fuel, "destruct", &T::destruct, "resource", &T::resource,
-      "popn", &T::popn, "troops", &T::troops, "crystals", &T::crystals,
-      "prod_res", &T::prod_res, "prod_fuel", &T::prod_fuel, "prod_dest",
-      &T::prod_dest, "prod_crystals", &T::prod_crystals, "prod_money",
-      &T::prod_money, "prod_tech", &T::prod_tech, "tech_invest",
-      &T::tech_invest, "numsectsowned", &T::numsectsowned, "comread",
-      &T::comread, "mob_set", &T::mob_set, "tox_thresh", &T::tox_thresh,
-      "explored", &T::explored, "autorep", &T::autorep, "tax", &T::tax,
-      "newtax", &T::newtax, "guns", &T::guns, "route", &T::route, "mob_points",
-      &T::mob_points, "est_production", &T::est_production);
-};
-
-// Glaze reflection for Planet class so we can serialize to JSON
-template <>
-struct meta<Planet> {
-  using T = Planet;
-  static constexpr auto value =
-      object("xpos", &T::xpos, "ypos", &T::ypos, "ships", &T::ships, "Maxx",
-             &T::Maxx, "Maxy", &T::Maxy, "info", &T::info, "conditions",
-             &T::conditions, "popn", &T::popn, "troops", &T::troops, "maxpopn",
-             &T::maxpopn, "total_resources", &T::total_resources, "slaved_to",
-             &T::slaved_to, "type", &T::type, "expltimer", &T::expltimer,
-             "explored", &T::explored, "planet_id", &T::planet_id);
-};
+// Note: Glaze reflections for plroute, plinfo, and Planet have been moved to
+// gb/repositories/gblib-repositories.cppm as part of PlanetRepository
 }  // namespace glz
 
 static int commoddata, racedata, shdata, stdata;

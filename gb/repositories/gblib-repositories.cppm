@@ -332,3 +332,104 @@ shipnum_t ShipRepository::next_ship_number() { return next_available_id(); }
 shipnum_t ShipRepository::count_all_ships() {
   return static_cast<shipnum_t>(list_ids().size());
 }
+
+// Glaze reflection for Planet and related types
+namespace glz {
+template <>
+struct meta<plroute> {
+  using T = plroute;
+  static constexpr auto value =
+      object("set", &T::set, "dest_star", &T::dest_star, "dest_planet",
+             &T::dest_planet, "load", &T::load, "unload", &T::unload, "x",
+             &T::x, "y", &T::y);
+};
+
+template <>
+struct meta<plinfo> {
+  using T = plinfo;
+  static constexpr auto value = object(
+      "fuel", &T::fuel, "destruct", &T::destruct, "resource", &T::resource,
+      "popn", &T::popn, "troops", &T::troops, "crystals", &T::crystals,
+      "prod_res", &T::prod_res, "prod_fuel", &T::prod_fuel, "prod_dest",
+      &T::prod_dest, "prod_crystals", &T::prod_crystals, "prod_money",
+      &T::prod_money, "prod_tech", &T::prod_tech, "tech_invest",
+      &T::tech_invest, "numsectsowned", &T::numsectsowned, "comread",
+      &T::comread, "mob_set", &T::mob_set, "tox_thresh", &T::tox_thresh,
+      "explored", &T::explored, "autorep", &T::autorep, "tax", &T::tax,
+      "newtax", &T::newtax, "guns", &T::guns, "route", &T::route, "mob_points",
+      &T::mob_points, "est_production", &T::est_production);
+};
+
+template <>
+struct meta<Planet> {
+  using T = Planet;
+  static constexpr auto value =
+      object("xpos", &T::xpos, "ypos", &T::ypos, "ships", &T::ships, "Maxx",
+             &T::Maxx, "Maxy", &T::Maxy, "info", &T::info, "conditions",
+             &T::conditions, "popn", &T::popn, "troops", &T::troops, "maxpopn",
+             &T::maxpopn, "total_resources", &T::total_resources, "slaved_to",
+             &T::slaved_to, "type", &T::type, "expltimer", &T::expltimer,
+             "explored", &T::explored, "planet_id", &T::planet_id);
+};
+}  // namespace glz
+
+// PlanetRepository - provides type-safe access to Planet entities
+// Planets are stored with composite key (star_id, planet_order)
+export class PlanetRepository : public Repository<Planet> {
+ public:
+  PlanetRepository(JsonStore& store);
+
+  // Domain-specific methods
+  // Note: Planets use composite keys (star_id, planet_order) in database
+  std::optional<Planet> find_by_location(starnum_t star, planetnum_t pnum);
+  bool save_at_location(const Planet& planet, starnum_t star, planetnum_t pnum);
+
+ protected:
+  std::optional<std::string> serialize(const Planet& planet) const override;
+  std::optional<Planet> deserialize(const std::string& json_str) const override;
+};
+
+// PlanetRepository implementation
+PlanetRepository::PlanetRepository(JsonStore& store)
+    : Repository<Planet>(store, "tbl_planet") {}
+
+std::optional<std::string> PlanetRepository::serialize(
+    const Planet& planet) const {
+  auto result = glz::write_json(planet);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<Planet> PlanetRepository::deserialize(
+    const std::string& json_str) const {
+  Planet planet{};
+  auto result = glz::read_json(planet, json_str);
+  if (!result) {
+    return planet;
+  }
+  return std::nullopt;
+}
+
+std::optional<Planet> PlanetRepository::find_by_location(starnum_t star,
+                                                         planetnum_t pnum) {
+  // Use multi-key retrieval: WHERE star_id=? AND planet_order=?
+  std::vector<std::pair<std::string, int>> keys = {{"star_id", star},
+                                                   {"planet_order", pnum}};
+  auto json = store.retrieve_multi(table_name, keys);
+  if (!json) return std::nullopt;
+  return deserialize(*json);
+}
+
+bool PlanetRepository::save_at_location(const Planet& planet, starnum_t star,
+                                        planetnum_t pnum) {
+  auto json = serialize(planet);
+  if (!json) return false;
+
+  // Use multi-key storage: id, star_id, planet_order
+  // The table has id as primary key + star_id/planet_order for lookups
+  std::vector<std::pair<std::string, int>> keys = {
+      {"id", planet.planet_id}, {"star_id", star}, {"planet_order", pnum}};
+  return store.store_multi(table_name, keys, *json);
+}

@@ -72,18 +72,8 @@ struct meta<power> {
              &T::sum_mob, "sum_eff", &T::sum_eff);
 };
 
-// Glaze reflection for star_struct so we can serialize to JSON
-template <>
-struct meta<star_struct> {
-  using T = star_struct;
-  static constexpr auto value =
-      object("ships", &T::ships, "name", &T::name, "governor", &T::governor,
-             "AP", &T::AP, "explored", &T::explored, "inhabited", &T::inhabited,
-             "xpos", &T::xpos, "ypos", &T::ypos, "numplanets", &T::numplanets,
-             "pnames", &T::pnames, "stability", &T::stability, "nova_stage",
-             &T::nova_stage, "temperature", &T::temperature, "gravity",
-             &T::gravity, "star_id", &T::star_id, "dummy", &T::dummy);
-};
+// Note: Glaze reflection for star_struct has been moved to
+// gb/repositories/gblib-repositories.cppm as part of StarRepository
 
 // Glaze reflection for Sector so we can serialize to JSON
 template <>

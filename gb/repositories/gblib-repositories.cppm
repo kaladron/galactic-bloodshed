@@ -433,3 +433,65 @@ bool PlanetRepository::save_at_location(const Planet& planet, starnum_t star,
       {"id", planet.planet_id}, {"star_id", star}, {"planet_order", pnum}};
   return store.store_multi(table_name, keys, *json);
 }
+
+// Glaze reflection for star_struct
+namespace glz {
+template <>
+struct meta<star_struct> {
+  using T = star_struct;
+  static constexpr auto value =
+      object("ships", &T::ships, "name", &T::name, "governor", &T::governor,
+             "AP", &T::AP, "explored", &T::explored, "inhabited", &T::inhabited,
+             "xpos", &T::xpos, "ypos", &T::ypos, "numplanets", &T::numplanets,
+             "pnames", &T::pnames, "stability", &T::stability, "nova_stage",
+             &T::nova_stage, "temperature", &T::temperature, "gravity",
+             &T::gravity, "star_id", &T::star_id, "dummy", &T::dummy);
+};
+}  // namespace glz
+
+// StarRepository - provides type-safe access to Star entities
+export class StarRepository : public Repository<star_struct> {
+ public:
+  StarRepository(JsonStore& store);
+
+  // Domain-specific methods
+  std::optional<star_struct> find_by_number(starnum_t num);
+  bool save_star(const star_struct& star, starnum_t num);
+
+ protected:
+  std::optional<std::string> serialize(
+      const star_struct& star) const override;
+  std::optional<star_struct> deserialize(
+      const std::string& json_str) const override;
+};
+
+// StarRepository implementation
+StarRepository::StarRepository(JsonStore& store)
+    : Repository<star_struct>(store, "tbl_star") {}
+
+std::optional<std::string> StarRepository::serialize(
+    const star_struct& star) const {
+  auto result = glz::write_json(star);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<star_struct> StarRepository::deserialize(
+    const std::string& json_str) const {
+  star_struct star{};
+  auto result = glz::read_json(star, json_str);
+  if (!result) {
+    return star;
+  }
+  return std::nullopt;
+}
+
+std::optional<star_struct> StarRepository::find_by_number(starnum_t num) {
+  return find(num);
+}
+
+bool StarRepository::save_star(const star_struct& star, starnum_t num) {
+  return save(num, star);
+}

@@ -61,3 +61,10 @@ public:
       const std::string& table,
       const std::vector<std::pair<std::string, int>>& keys);
 };
+
+// Schema initialization
+export void initialize_schema(Database& db);
+
+// TEMPORARY: Global dbconn for backward compatibility during transition
+// This will be removed in Phase 4 when all code uses Database class
+export extern sqlite3* dbconn;

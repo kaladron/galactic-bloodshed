@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
+import dallib;
 import gblib;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Initialize database using common Sql class (in-memory for testing)
-  Sql db(":memory:");
+  // Initialize database using Database class (in-memory for testing)
+  Database db(":memory:");
 
   // Initialize database tables - this will create the ship tables
-  initsqldata();
+  initialize_schema(db);
 
   // Test initial state - should have 0 ships
   shipnum_t initial_count = Numships();

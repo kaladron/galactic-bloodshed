@@ -495,3 +495,111 @@ std::optional<star_struct> StarRepository::find_by_number(starnum_t num) {
 bool StarRepository::save_star(const star_struct& star, starnum_t num) {
   return save(num, star);
 }
+
+// Glaze reflection for Sector
+namespace glz {
+template <>
+struct meta<Sector> {
+  using T = Sector;
+  static constexpr auto value = object(
+      "x", &T::x, "y", &T::y, "eff", &T::eff, "fert", &T::fert, "mobilization",
+      &T::mobilization, "crystals", &T::crystals, "resource", &T::resource,
+      "popn", &T::popn, "troops", &T::troops, "owner", &T::owner, "race",
+      &T::race, "type", &T::type, "condition", &T::condition);
+};
+}  // namespace glz
+
+// SectorRepository - provides type-safe access to Sector entities
+// Note: Sectors use composite keys (planet_id, xpos, ypos) in database
+export class SectorRepository : public Repository<Sector> {
+ public:
+  SectorRepository(JsonStore& store);
+
+  // Domain-specific methods for individual sectors
+  std::optional<Sector> find_sector(int planet_id, int x, int y);
+  bool save_sector(const Sector& sector, int planet_id, int x, int y);
+
+  // Bulk operations for sector maps
+  SectorMap load_map(const Planet& planet);
+  bool save_map(const SectorMap& map, const Planet& planet);
+
+ protected:
+  std::optional<std::string> serialize(const Sector& sector) const override;
+  std::optional<Sector> deserialize(const std::string& json_str) const override;
+};
+
+// SectorRepository implementation
+SectorRepository::SectorRepository(JsonStore& store)
+    : Repository<Sector>(store, "tbl_sector") {}
+
+std::optional<std::string> SectorRepository::serialize(
+    const Sector& sector) const {
+  auto result = glz::write_json(sector);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<Sector> SectorRepository::deserialize(
+    const std::string& json_str) const {
+  Sector sector{};
+  auto result = glz::read_json(sector, json_str);
+  if (!result) {
+    return sector;
+  }
+  return std::nullopt;
+}
+
+std::optional<Sector> SectorRepository::find_sector(int planet_id, int x,
+                                                    int y) {
+  // Use multi-key retrieval: WHERE planet_id=? AND xpos=? AND ypos=?
+  std::vector<std::pair<std::string, int>> keys = {
+      {"planet_id", planet_id}, {"xpos", x}, {"ypos", y}};
+  auto json = store.retrieve_multi(table_name, keys);
+  if (!json) return std::nullopt;
+  return deserialize(*json);
+}
+
+bool SectorRepository::save_sector(const Sector& sector, int planet_id, int x,
+                                   int y) {
+  auto json = serialize(sector);
+  if (!json) return false;
+
+  // Use multi-key storage: planet_id, xpos, ypos
+  std::vector<std::pair<std::string, int>> keys = {
+      {"planet_id", planet_id}, {"xpos", x}, {"ypos", y}};
+  return store.store_multi(table_name, keys, *json);
+}
+
+SectorMap SectorRepository::load_map(const Planet& planet) {
+  SectorMap smap(planet);
+
+  // Retrieve all sectors for this planet, ordered by position
+  // This requires a custom SQL query, so we'll use the store's underlying
+  // database For now, we'll load sectors individually
+  for (int y = 0; y < planet.Maxy; y++) {
+    for (int x = 0; x < planet.Maxx; x++) {
+      auto sector = find_sector(planet.planet_id, x, y);
+      if (sector.has_value()) {
+        smap.put(std::move(*sector));
+      }
+    }
+  }
+
+  return smap;
+}
+
+bool SectorRepository::save_map(const SectorMap& map, const Planet& planet) {
+  // Save all sectors in the map
+  bool all_saved = true;
+  for (int y = 0; y < planet.Maxy; y++) {
+    for (int x = 0; x < planet.Maxx; x++) {
+      const auto& sector = map.get(x, y);
+      if (!save_sector(sector, planet.planet_id, x, y)) {
+        all_saved = false;
+      }
+    }
+  }
+  return all_saved;
+}

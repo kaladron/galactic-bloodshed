@@ -75,16 +75,8 @@ struct meta<power> {
 // Note: Glaze reflection for star_struct has been moved to
 // gb/repositories/gblib-repositories.cppm as part of StarRepository
 
-// Glaze reflection for Sector so we can serialize to JSON
-template <>
-struct meta<Sector> {
-  using T = Sector;
-  static constexpr auto value = object(
-      "x", &T::x, "y", &T::y, "eff", &T::eff, "fert", &T::fert,
-      "mobilization", &T::mobilization, "crystals", &T::crystals, "resource",
-      &T::resource, "popn", &T::popn, "troops", &T::troops, "owner", &T::owner,
-      "race", &T::race, "type", &T::type, "condition", &T::condition);
-};
+// Note: Glaze reflection for Sector has been moved to
+// gb/repositories/gblib-repositories.cppm as part of SectorRepository
 
 // Note: Glaze reflections for plroute, plinfo, and Planet have been moved to
 // gb/repositories/gblib-repositories.cppm as part of PlanetRepository

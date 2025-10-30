@@ -25,6 +25,7 @@ export import :types;
 export import :sector;
 export import :race;
 export import :rand;
+export import :repositories;
 export import :ships;
 export import :shlmisc;
 export import :shootblast;

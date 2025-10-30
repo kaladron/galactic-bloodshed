@@ -39,32 +39,6 @@ struct meta<Commod> {
       &T::planet_from, "star_to", &T::star_to, "planet_to", &T::planet_to);
 };
 
-// Glaze reflection for toggletype struct
-template <>
-struct meta<toggletype> {
-  using T = toggletype;
-  static constexpr auto value =
-      object("invisible", &T::invisible, "standby", &T::standby, "color",
-             &T::color, "gag", &T::gag, "double_digits", &T::double_digits,
-             "inverse", &T::inverse, "geography", &T::geography, "autoload",
-             &T::autoload, "highlight", &T::highlight, "compat", &T::compat);
-};
-
-// Glaze reflection for Race::gov struct
-template <>
-struct meta<Race::gov> {
-  using T = Race::gov;
-  static constexpr auto value =
-      object("name", &T::name, "password", &T::password, "active", &T::active,
-             "deflevel", &T::deflevel, "defsystem", &T::defsystem,
-             "defplanetnum", &T::defplanetnum, "homelevel", &T::homelevel,
-             "homesystem", &T::homesystem, "homeplanetnum", &T::homeplanetnum,
-             "newspos", &T::newspos, "toggle", &T::toggle, "money", &T::money,
-             "income", &T::income, "maintain", &T::maintain, "cost_tech",
-             &T::cost_tech, "cost_market", &T::cost_market, "profit_market",
-             &T::profit_market, "login", &T::login);
-};
-
 // Glaze reflection for stardata so we can serialize to JSON
 template <>
 struct meta<stardata> {
@@ -109,29 +83,6 @@ struct meta<star_struct> {
              "pnames", &T::pnames, "stability", &T::stability, "nova_stage",
              &T::nova_stage, "temperature", &T::temperature, "gravity",
              &T::gravity, "star_id", &T::star_id, "dummy", &T::dummy);
-};
-
-// Glaze reflection for Race class
-template <>
-struct meta<Race> {
-  using T = Race;
-  static constexpr auto value = object(
-      "Playernum", &T::Playernum, "name", &T::name, "password", &T::password,
-      "info", &T::info, "motto", &T::motto, "absorb", &T::absorb,
-      "collective_iq", &T::collective_iq, "pods", &T::pods, "fighters",
-      &T::fighters, "IQ", &T::IQ, "IQ_limit", &T::IQ_limit, "number_sexes",
-      &T::number_sexes, "fertilize", &T::fertilize, "adventurism",
-      &T::adventurism, "birthrate", &T::birthrate, "mass", &T::mass,
-      "metabolism", &T::metabolism, "conditions", &T::conditions, "likes",
-      &T::likes, "likesbest", &T::likesbest, "dissolved", &T::dissolved, "God",
-      &T::God, "Guest", &T::Guest, "Metamorph", &T::Metamorph, "monitor",
-      &T::monitor, "translate", &T::translate, "atwar", &T::atwar, "allied",
-      &T::allied, "Gov_ship", &T::Gov_ship, "morale", &T::morale, "points",
-      &T::points, "controlled_planets", &T::controlled_planets, "victory_turns",
-      &T::victory_turns, "turn", &T::turn, "tech", &T::tech, "discoveries",
-      &T::discoveries, "victory_score", &T::victory_score, "votes", &T::votes,
-      "planet_points", &T::planet_points, "governors", &T::governors,
-      "governor", &T::governor);
 };
 
 // Glaze reflection for Sector so we can serialize to JSON
@@ -380,56 +331,6 @@ static void end_bulk_insert();
 
 void close_file(int fd) { close(fd); }
 
-void initsqldata() {  // __attribute__((no_sanitize_memory)) {
-  const char* tbl_create = R"(
-      CREATE TABLE tbl_planet(
-          planet_id INT PRIMARY KEY NOT NULL,
-          star_id INT NOT NULL,
-          planet_order INT NOT NULL,
-          planet_data TEXT NOT NULL);
-
-  CREATE INDEX star_planet ON tbl_planet (star_id, planet_order);
-
-  CREATE TABLE
-  tbl_sector(planet_id INT NOT NULL, xpos INT NOT NULL, ypos INT NOT NULL,
-             sector_data TEXT, PRIMARY KEY(planet_id, xpos, ypos));
-
-  CREATE TABLE tbl_star(
-    star_id INT PRIMARY KEY NOT NULL,
-    star_data TEXT NOT NULL);
-
-  CREATE TABLE tbl_power(
-      player_id INT PRIMARY KEY NOT NULL,
-      power_data TEXT NOT NULL);
-
-  CREATE TABLE tbl_race(
-    player_id INT PRIMARY KEY NOT NULL,
-    race_data TEXT NOT NULL);
-
-  CREATE TABLE tbl_stardata(
-    id INT PRIMARY KEY NOT NULL DEFAULT 1,
-    stardata_json TEXT NOT NULL);
-
-  CREATE TABLE tbl_block(
-    player_id INT PRIMARY KEY NOT NULL,
-    block_data TEXT NOT NULL);
-
-  CREATE TABLE tbl_commod(
-    commod_id INT PRIMARY KEY NOT NULL,
-    commod_data TEXT NOT NULL);
-
-  CREATE TABLE tbl_ship(
-    ship_id INT PRIMARY KEY NOT NULL,
-    ship_data TEXT NOT NULL);
-)";
-  char* err_msg = nullptr;
-  int err = sqlite3_exec(dbconn, tbl_create, nullptr, nullptr, &err_msg);
-  if (err != SQLITE_OK) {
-    std::println(stderr, "SQL error: {}", err_msg);
-    sqlite3_free(err_msg);
-  }
-}
-
 void openstardata(int* fd) {
   /*printf(" openstardata\n");*/
   if ((*fd = open(STARDATAFL, O_RDWR | O_CREAT, 0777)) < 0) {
@@ -468,7 +369,7 @@ void getsdata(stardata* S) {
   // Read from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT stardata_json FROM tbl_stardata WHERE id = 1";
+  const char* sql = "SELECT data FROM tbl_stardata WHERE id = 1";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
@@ -507,7 +408,7 @@ Race getrace(player_t rnum) {
   // Read from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT race_data FROM tbl_race WHERE player_id = ?1";
+  const char* sql = "SELECT data FROM tbl_race WHERE id = ?1";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, rnum);
@@ -550,7 +451,7 @@ Star getstar(const starnum_t star) {
   // Read from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT star_data FROM tbl_star WHERE star_id = ?1";
+  const char* sql = "SELECT data FROM tbl_star WHERE id = ?1";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, star);
@@ -593,7 +494,7 @@ Planet getplanet(const starnum_t star, const planetnum_t pnum) {
   const char* tail;
   sqlite3_stmt* stmt;
   const char* sql =
-      "SELECT planet_data FROM tbl_planet WHERE star_id=?1 AND planet_order=?2";
+      "SELECT data FROM tbl_planet WHERE star_id=?1 AND planet_order=?2";
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
   sqlite3_bind_int(stmt, 1, star);
@@ -622,7 +523,7 @@ Sector getsector(const Planet& p, const int x, const int y) {
   const char* tail;
   sqlite3_stmt* stmt;
   const char* sql =
-      "SELECT sector_data FROM tbl_sector "
+      "SELECT data FROM tbl_sector "
       "WHERE planet_id=?1 AND xpos=?2 AND ypos=?3";
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
@@ -668,9 +569,9 @@ SectorMap getsmap(const Planet& p) {
   const char* tail = nullptr;
   sqlite3_stmt* stmt = nullptr;
   const char* sql =
-      "SELECT sector_data FROM tbl_sector "
+      "SELECT data FROM tbl_sector "
       "WHERE planet_id=?1 ORDER BY ypos, xpos";
-  
+
   if (dbconn == nullptr) {
     std::println(stderr, "FATAL: getsmap called with NULL database connection");
     exit(-1);
@@ -733,7 +634,7 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
   // Read from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT ship_data FROM tbl_ship WHERE ship_id = ?1";
+  const char* sql = "SELECT data FROM tbl_ship WHERE id = ?1";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, shipnum);
@@ -787,7 +688,7 @@ Commod getcommod(commodnum_t commodnum) {
   // Read from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT commod_data FROM tbl_commod WHERE commod_id = ?1";
+  const char* sql = "SELECT data FROM tbl_commod WHERE id = ?1";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, commodnum);
@@ -836,10 +737,10 @@ int getdeadship() {
       SELECT 1
       UNION ALL
       SELECT x+1 FROM cnt
-      LIMIT (SELECT IFNULL(MAX(ship_id), 0) + 1 FROM tbl_ship)
+      LIMIT (SELECT IFNULL(MAX(id), 0) + 1 FROM tbl_ship)
     )
     SELECT x FROM cnt
-    WHERE x NOT IN (SELECT ship_id FROM tbl_ship)
+    WHERE x NOT IN (SELECT id FROM tbl_ship)
     ORDER BY x
     LIMIT 1
   )";
@@ -863,10 +764,10 @@ int getdeadcommod() {
       SELECT 1
       UNION ALL
       SELECT x+1 FROM cnt
-      LIMIT (SELECT IFNULL(MAX(commod_id), 0) + 1 FROM tbl_commod)
+      LIMIT (SELECT IFNULL(MAX(id), 0) + 1 FROM tbl_commod)
     )
     SELECT x FROM cnt
-    WHERE x NOT IN (SELECT commod_id FROM tbl_commod)
+    WHERE x NOT IN (SELECT id FROM tbl_commod)
     ORDER BY x
     LIMIT 1
   )";
@@ -895,8 +796,7 @@ void putsdata(stardata* S) {
   // Store in SQLite database as JSON
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql =
-      "REPLACE INTO tbl_stardata (id, stardata_json) VALUES (1, ?1)";
+  const char* sql = "REPLACE INTO tbl_stardata (id, data) VALUES (1, ?1)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_text(stmt, 1, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
@@ -921,8 +821,7 @@ void putrace(const Race& r) {
   // Store in SQLite database as JSON
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql =
-      "REPLACE INTO tbl_race (player_id, race_data) VALUES (?1, ?2)";
+  const char* sql = "REPLACE INTO tbl_race (id, data) VALUES (?1, ?2)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, r.Playernum);
@@ -949,8 +848,7 @@ void putstar(const Star& star, starnum_t snum) {
   // Write to SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql =
-      "REPLACE INTO tbl_star (star_id, star_data) VALUES (?1, ?2)";
+  const char* sql = "REPLACE INTO tbl_star (id, data) VALUES (?1, ?2)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, snum);
@@ -988,7 +886,7 @@ void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
   const char* tail = nullptr;
   sqlite3_stmt* stmt;
   const char* sql =
-      "REPLACE INTO tbl_planet (planet_id, star_id, planet_order, planet_data) "
+      "REPLACE INTO tbl_planet (id, star_id, planet_order, data) "
       "VALUES (?1, ?2, ?3, ?4)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
@@ -1021,7 +919,7 @@ void putsector(const Sector& s, const Planet& p, const int x, const int y) {
   const char* tail = nullptr;
   sqlite3_stmt* stmt;
   const char* sql =
-      "REPLACE INTO tbl_sector (planet_id, xpos, ypos, sector_data) "
+      "REPLACE INTO tbl_sector (planet_id, xpos, ypos, data) "
       "VALUES (?1, ?2, ?3, ?4)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
@@ -1062,8 +960,7 @@ void putship(const Ship& s) {
   // Store in SQLite database as JSON
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql =
-      "REPLACE INTO tbl_ship (ship_id, ship_data) VALUES (?1, ?2)";
+  const char* sql = "REPLACE INTO tbl_ship (id, data) VALUES (?1, ?2)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, s.number);
@@ -1091,8 +988,7 @@ void putcommod(const Commod& c, int commodnum) {
   // Store in SQLite database as JSON
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql =
-      "REPLACE INTO tbl_commod (commod_id, commod_data) VALUES (?1, ?2)";
+  const char* sql = "REPLACE INTO tbl_commod (id, data) VALUES (?1, ?2)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, commodnum);
@@ -1195,7 +1091,7 @@ void clr_commodfree() { fclose(fopen(COMMODFREEDATAFL, "w+")); }
 void makeshipdead(int shipnum) {
   if (shipnum == 0) return;
 
-  const char* sql = "DELETE FROM tbl_ship WHERE ship_id = ?";
+  const char* sql = "DELETE FROM tbl_ship WHERE id = ?";
   sqlite3_stmt* stmt;
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, nullptr);
   sqlite3_bind_int(stmt, 1, shipnum);
@@ -1206,7 +1102,7 @@ void makeshipdead(int shipnum) {
 void makecommoddead(int commodnum) {
   if (commodnum == 0) return;
 
-  const char* sql = "DELETE FROM tbl_commod WHERE commod_id = ?";
+  const char* sql = "DELETE FROM tbl_commod WHERE id = ?";
   sqlite3_stmt* stmt;
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, nullptr);
   sqlite3_bind_int(stmt, 1, commodnum);
@@ -1225,8 +1121,7 @@ void putpower(power p[MAXPLAYERS]) {
 
     const char* tail;
     sqlite3_stmt* stmt;
-    const char* sql =
-        "REPLACE INTO tbl_power (player_id, power_data) VALUES (?1, ?2);";
+    const char* sql = "REPLACE INTO tbl_power (id, data) VALUES (?1, ?2);";
     sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
     sqlite3_bind_int(stmt, 1, i);
     sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1,
@@ -1244,7 +1139,7 @@ void putpower(power p[MAXPLAYERS]) {
 void getpower(power p[MAXPLAYERS]) {
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT player_id, power_data FROM tbl_power";
+  const char* sql = "SELECT id, data FROM tbl_power";
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -1282,8 +1177,7 @@ void Putblock(block b[MAXPLAYERS]) {
 
     const char* tail;
     sqlite3_stmt* stmt;
-    const char* sql =
-        "REPLACE INTO tbl_block (player_id, block_data) VALUES (?1, ?2)";
+    const char* sql = "REPLACE INTO tbl_block (id, data) VALUES (?1, ?2)";
 
     sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
     sqlite3_bind_int(stmt, 1, i);
@@ -1303,8 +1197,7 @@ void Getblock(block b[MAXPLAYERS]) {
   // Read each block from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql =
-      "SELECT player_id, block_data FROM tbl_block ORDER BY player_id";
+  const char* sql = "SELECT id, data FROM tbl_block ORDER BY id";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 

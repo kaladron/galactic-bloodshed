@@ -30,7 +30,6 @@ export Sector getsector(const Planet&, int x, int y);
 export SectorMap getsmap(const Planet&);
 export int getdeadship();
 export int getdeadcommod();
-export void initsqldata();
 export void putsdata(stardata*);
 export void putrace(const Race&);
 export void putstar(const Star&, starnum_t);

@@ -131,6 +131,7 @@ target_sources(
          gblib-planet.cppm
          gblib-race.cppm
          utils/gblib-rand.cppm
+         repositories/gblib-repositories.cppm
          gblib-sector.cppm
          gblib-ships.cppm
          gblib-shlmisc.cppm
@@ -343,6 +344,10 @@ add_test(NAME GB_database_test COMMAND database_test)
 add_executable(json_store_test dal/json_store_test.cc)
 target_link_libraries(json_store_test PRIVATE dallib)
 add_test(NAME GB_json_store_test COMMAND json_store_test)
+
+add_executable(race_repository_test repositories/race_repository_test.cc)
+target_link_libraries(race_repository_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_race_repository_test COMMAND race_repository_test)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

@@ -1148,24 +1148,6 @@ std::optional<Commod> commod_from_json(const std::string& json_str) {
   return std::nullopt;
 }
 
-// JSON serialization functions for Ship - for backward compatibility with tests
-std::optional<std::string> ship_to_json(const Ship& ship) {
-  auto result = glz::write_json(ship);
-  if (result.has_value()) {
-    return result.value();
-  }
-  return std::nullopt;
-}
-
-std::optional<Ship> ship_from_json(const std::string& json_str) {
-  Ship ship{};
-  auto result = glz::read_json(ship, json_str);
-  if (!result) {
-    return ship;
-  }
-  return std::nullopt;
-}
-
 // JSON serialization functions for Sector
 std::optional<std::string> sector_to_json(const Sector& sector) {
   auto result = glz::write_json(sector);

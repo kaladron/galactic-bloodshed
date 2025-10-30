@@ -108,4 +108,14 @@ Sql::Sql() { initialize_database(PKGSTATEDIR "gb.db"); }
 
 Sql::Sql(const std::string& db_path) { initialize_database(db_path); }
 
-Sql::~Sql() { close_files(); }
+Sql::~Sql() {
+  close_files();
+  if (dbconn) {
+    // Use close_v2 which waits for all prepared statements to be finalized
+    int rc = sqlite3_close_v2(dbconn);
+    if (rc != SQLITE_OK) {
+      std::println(stderr, "SQLite close failed: {}", sqlite3_errmsg(dbconn));
+    }
+    dbconn = nullptr;
+  }
+}

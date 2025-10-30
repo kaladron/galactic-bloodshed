@@ -2,6 +2,7 @@
 
 // \file makeuniv.cc Universe creation program.
 
+import dallib;
 import gblib;
 import std.compat;
 
@@ -163,8 +164,9 @@ int main(int argc, char* argv[]) {
   Makestar_init();
   Sdata.numstars = nstars;
 
-  Sql db{};
-  initsqldata();
+  // Create database and initialize schema
+  Database db(PKGSTATEDIR "gb.db");
+  initialize_schema(db);
 
   for (starnum_t star = 0; star < nstars; star++) {
     stars.emplace_back(Makestar(star));
@@ -194,9 +196,9 @@ int main(int argc, char* argv[]) {
       }
 #endif
 
-  db.putsdata(&Sdata);
+  putsdata(&Sdata);
   for (starnum_t star = 0; star < Sdata.numstars; star++)
-    db.putstar(stars[star], star);
+    putstar(stars[star], star);
   chmod(STARDATAFL, 00660);
 
   EmptyFile(SHIPDATAFL);

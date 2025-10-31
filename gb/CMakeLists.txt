@@ -132,6 +132,7 @@ target_sources(
          gblib-race.cppm
          utils/gblib-rand.cppm
          repositories/gblib-repositories.cppm
+         services/gblib-services.cppm
          gblib-sector.cppm
          gblib-ships.cppm
          gblib-shlmisc.cppm

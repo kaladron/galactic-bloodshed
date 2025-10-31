@@ -101,8 +101,8 @@ export struct stardata {
   ap_t AP[MAXPLAYERS];     /* Action pts for each player */
   unsigned short VN_hitlist[MAXPLAYERS];
   /* # of ships destroyed by each player */
-  char VN_index1[MAXPLAYERS]; /* negative value is used */
-  char VN_index2[MAXPLAYERS]; /* VN's record of destroyed ships
+  int VN_index1[MAXPLAYERS]; /* negative value is used */
+  int VN_index2[MAXPLAYERS]; /* VN's record of destroyed ships
                                         systems where they bought it */
   unsigned long dummy[2];
 };

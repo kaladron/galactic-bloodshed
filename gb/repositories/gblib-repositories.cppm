@@ -164,7 +164,7 @@ export class RaceRepository : public Repository<Race> {
 
   // Domain-specific methods
   std::optional<Race> find_by_player(player_t player);
-  bool save_race(const Race& race);
+  bool save_race(const Race& race, player_t player);
 
  protected:
   std::optional<std::string> serialize(const Race& race) const override;
@@ -197,8 +197,8 @@ std::optional<Race> RaceRepository::find_by_player(player_t player) {
   return find(player);
 }
 
-bool RaceRepository::save_race(const Race& race) {
-  return save(race.Playernum, race);
+bool RaceRepository::save_race(const Race& race, player_t player) {
+  return save(player, race);
 }
 
 // Glaze reflection for Ship special function data structures
@@ -329,7 +329,7 @@ export class ShipRepository : public Repository<Ship> {
 
   // Domain-specific methods
   std::optional<Ship> find_by_number(shipnum_t num);
-  bool save_ship(const Ship& ship);
+  bool save_ship(const Ship& ship, shipnum_t num);
   void delete_ship(shipnum_t num);
   shipnum_t next_ship_number();
   shipnum_t count_all_ships();
@@ -365,8 +365,8 @@ std::optional<Ship> ShipRepository::find_by_number(shipnum_t num) {
   return find(num);
 }
 
-bool ShipRepository::save_ship(const Ship& ship) {
-  return save(ship.number, ship);
+bool ShipRepository::save_ship(const Ship& ship, shipnum_t num) {
+  return save(num, ship);
 }
 
 void ShipRepository::delete_ship(shipnum_t num) { remove(num); }
@@ -753,7 +753,9 @@ export class StardataRepository : public Repository<stardata> {
   // Domain-specific methods
   // Note: stardata is typically a singleton (id=1)
   std::optional<stardata> get_global_data() { return find(1); }
-  bool save_global_data(const stardata& sdata) { return save(1, sdata); }
+  bool save_global_data(const stardata& sdata, int id = 1) {
+    return save(id, sdata);
+  }
 
  protected:
   std::optional<std::string> serialize(const stardata& sdata) const override {

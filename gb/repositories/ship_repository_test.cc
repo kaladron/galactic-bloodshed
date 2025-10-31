@@ -63,7 +63,7 @@ int main() {
 
   // Test 1: Save ship
   std::println("Test 1: Save ship...");
-  bool saved = repo.save_ship(test_ship);
+  bool saved = repo.save_ship(test_ship, test_ship.number);
   assert(saved && "Failed to save ship");
   std::println("  ✓ Ship saved successfully");
 
@@ -99,7 +99,7 @@ int main() {
   retrieved->fuel = 3000.0;
   retrieved->damage = 50;
   retrieved->xpos = 150.0;
-  saved = repo.save_ship(*retrieved);
+  saved = repo.save_ship(*retrieved, retrieved->number);
   assert(saved && "Failed to update ship");
   std::println("  ✓ Ship updated successfully");
 
@@ -117,12 +117,12 @@ int main() {
   Ship ship2 = test_ship;
   ship2.number = 2;
   strcpy(ship2.name, "USS Defiant");
-  repo.save_ship(ship2);
+  repo.save_ship(ship2, ship2.number);
 
   Ship ship3 = test_ship;
   ship3.number = 5;  // Gap at 3 and 4
   strcpy(ship3.name, "USS Voyager");
-  repo.save_ship(ship3);
+  repo.save_ship(ship3, ship3.number);
 
   std::println("  ✓ Multiple ships saved");
 

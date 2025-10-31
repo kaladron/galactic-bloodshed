@@ -7,6 +7,17 @@ import :repositories;
 import :types;
 import std.compat;
 
+// Hash function for composite keys
+namespace std {
+template <>
+struct hash<std::pair<starnum_t, planetnum_t>> {
+  size_t operator()(const std::pair<starnum_t, planetnum_t>& p) const {
+    return std::hash<starnum_t>{}(p.first) ^
+           (std::hash<planetnum_t>{}(p.second) << 1);
+  }
+};
+}  // namespace std
+
 // Forward declaration
 export class EntityManager;
 
@@ -64,4 +75,87 @@ class EntityHandle {
       dirty = false;
     }
   }
+};
+
+// Entity manager with caching and lifecycle management
+export class EntityManager {
+  Database& db;
+  JsonStore store;
+
+  // Repositories
+  RaceRepository races;
+  ShipRepository ships;
+  PlanetRepository planets;
+  StarRepository stars;
+  SectorRepository sectors;
+  CommodRepository commods;
+  BlockRepository blocks;
+  PowerRepository powers;
+  StardataRepository stardata_repo;
+
+  // In-memory cache (only one copy of each entity)
+  std::unordered_map<player_t, std::unique_ptr<Race>> race_cache;
+  std::unordered_map<shipnum_t, std::unique_ptr<Ship>> ship_cache;
+  std::unordered_map<std::pair<starnum_t, planetnum_t>, std::unique_ptr<Planet>>
+      planet_cache;
+  std::unordered_map<starnum_t, std::unique_ptr<star_struct>> star_cache;
+  // Note: Sectors are typically accessed in bulk via SectorMap, not cached
+  // individually
+  std::unordered_map<int, std::unique_ptr<Commod>> commod_cache;
+  std::unordered_map<int, std::unique_ptr<block>> block_cache;
+  std::unordered_map<int, std::unique_ptr<power>> power_cache;
+  std::unique_ptr<stardata> global_stardata_cache;  // Singleton
+
+  // Reference counting for concurrent access
+  std::unordered_map<player_t, int> race_refcount;
+  std::unordered_map<shipnum_t, int> ship_refcount;
+  std::unordered_map<std::pair<starnum_t, planetnum_t>, int> planet_refcount;
+  std::unordered_map<starnum_t, int> star_refcount;
+  std::unordered_map<int, int> commod_refcount;
+  std::unordered_map<int, int> block_refcount;
+  std::unordered_map<int, int> power_refcount;
+  int global_stardata_refcount = 0;
+
+  // Mutex for thread-safety (future-proofing)
+  std::mutex cache_mutex;
+
+ public:
+  explicit EntityManager(Database& database);
+
+  // Get entity handles (load from DB if not cached)
+  EntityHandle<Race> get_race(player_t player);
+  EntityHandle<Ship> get_ship(shipnum_t num);
+  EntityHandle<Planet> get_planet(starnum_t star, planetnum_t pnum);
+  EntityHandle<star_struct> get_star(starnum_t num);
+  EntityHandle<Commod> get_commod(int id);
+  EntityHandle<block> get_block(int id);
+  EntityHandle<power> get_power(int id);
+  EntityHandle<stardata> get_stardata();
+
+  // Direct access for read-only operations (no RAII overhead)
+  const Race* peek_race(player_t player);
+  const Ship* peek_ship(shipnum_t num);
+  const Planet* peek_planet(starnum_t star, planetnum_t pnum);
+  const star_struct* peek_star(starnum_t num);
+
+  // Create new entities
+  EntityHandle<Ship> create_ship();
+  void delete_ship(shipnum_t num);
+
+  // Flush all dirty entities to database
+  void flush_all();
+
+  // Clear cache (for testing or after turn processing)
+  void clear_cache();
+
+ private:
+  // Release methods called by EntityHandle destructor
+  void release_race(player_t player);
+  void release_ship(shipnum_t num);
+  void release_planet(starnum_t star, planetnum_t pnum);
+  void release_star(starnum_t num);
+  void release_commod(int id);
+  void release_block(int id);
+  void release_power(int id);
+  void release_stardata();
 };

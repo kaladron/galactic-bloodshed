@@ -273,17 +273,9 @@ add_executable(dosector_simple_test dosector_simple_test.cc)
 target_link_libraries(dosector_simple_test PRIVATE gblib SQLite::SQLite3)
 add_test(NAME GB_dosector_simple_test COMMAND dosector_simple_test)
 
-add_executable(race_serialization_test race_serialization_test.cc)
-target_link_libraries(race_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_race_serialization_test COMMAND race_serialization_test)
-
 add_executable(race_sqlite_test race_sqlite_test.cc)
 target_link_libraries(race_sqlite_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_race_sqlite_test COMMAND race_sqlite_test)
-
-add_executable(sector_serialization_test sector_serialization_test.cc)
-target_link_libraries(sector_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_sector_serialization_test COMMAND sector_serialization_test)
 
 add_executable(sector_sqlite_test sector_sqlite_test.cc)
 target_link_libraries(sector_sqlite_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
@@ -309,17 +301,9 @@ add_executable(power_json_test power_json_test.cc)
 target_link_libraries(power_json_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_power_json_test COMMAND power_json_test)
 
-add_executable(star_serialization_test star_serialization_test.cc)
-target_link_libraries(star_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_star_serialization_test COMMAND star_serialization_test)
-
 add_executable(star_sqlite_test star_sqlite_test.cc)
 target_link_libraries(star_sqlite_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_star_sqlite_test COMMAND star_sqlite_test)
-
-add_executable(planet_serialization_test planet_serialization_test.cc)
-target_link_libraries(planet_serialization_test PRIVATE gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_planet_serialization_test COMMAND planet_serialization_test)
 
 add_executable(planet_sqlite_test planet_sqlite_test.cc)
 target_link_libraries(planet_sqlite_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)

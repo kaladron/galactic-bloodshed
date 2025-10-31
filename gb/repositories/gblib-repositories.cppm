@@ -111,6 +111,50 @@ struct meta<Race> {
       "planet_points", &T::planet_points, "governors", &T::governors,
       "governor", &T::governor);
 };
+
+// Glaze reflection for Commod
+template <>
+struct meta<Commod> {
+  using T = Commod;
+  static constexpr auto value = object(
+      "owner", &T::owner, "governor", &T::governor, "type", &T::type, "amount",
+      &T::amount, "deliver", &T::deliver, "bid", &T::bid, "bidder", &T::bidder,
+      "bidder_gov", &T::bidder_gov, "star_from", &T::star_from, "planet_from",
+      &T::planet_from, "star_to", &T::star_to, "planet_to", &T::planet_to);
+};
+
+// Glaze reflection for stardata
+template <>
+struct meta<stardata> {
+  using T = stardata;
+  static constexpr auto value =
+      object("numstars", &T::numstars, "ships", &T::ships, "AP", &T::AP,
+             "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
+             "VN_index2", &T::VN_index2, "dummy", &T::dummy);
+};
+
+// Glaze reflection for block
+template <>
+struct meta<block> {
+  using T = block;
+  static constexpr auto value =
+      object("Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
+             "invite", &T::invite, "pledge", &T::pledge, "atwar", &T::atwar,
+             "allied", &T::allied, "next", &T::next, "systems_owned",
+             &T::systems_owned, "VPs", &T::VPs, "money", &T::money);
+};
+
+// Glaze reflection for power
+template <>
+struct meta<power> {
+  using T = power;
+  static constexpr auto value =
+      object("troops", &T::troops, "popn", &T::popn, "resource", &T::resource,
+             "fuel", &T::fuel, "destruct", &T::destruct, "ships_owned",
+             &T::ships_owned, "planets_owned", &T::planets_owned,
+             "sectors_owned", &T::sectors_owned, "money", &T::money, "sum_mob",
+             &T::sum_mob, "sum_eff", &T::sum_eff);
+};
 }  // namespace glz
 
 // RaceRepository - provides type-safe access to Race entities
@@ -603,3 +647,130 @@ bool SectorRepository::save_map(const SectorMap& map, const Planet& planet) {
   }
   return all_saved;
 }
+
+// ============================================================================
+// CommodRepository - Repository for commodity market data
+// ============================================================================
+export class CommodRepository : public Repository<Commod> {
+ public:
+  explicit CommodRepository(JsonStore& store)
+      : Repository<Commod>(store, "tbl_commod") {}
+
+  // Domain-specific methods
+  std::optional<Commod> find_by_id(int id) { return find(id); }
+  bool save_commod(const Commod& commod, int id) { return save(id, commod); }
+
+ protected:
+  std::optional<std::string> serialize(const Commod& commod) const override {
+    auto result = glz::write_json(commod);
+    if (result.has_value()) {
+      return result.value();
+    }
+    return std::nullopt;
+  }
+
+  std::optional<Commod> deserialize(
+      const std::string& json_str) const override {
+    Commod commod{};
+    auto result = glz::read_json(commod, json_str);
+    if (!result) {
+      return commod;
+    }
+    return std::nullopt;
+  }
+};
+
+// ============================================================================
+// BlockRepository - Repository for alliance block data
+// ============================================================================
+export class BlockRepository : public Repository<block> {
+ public:
+  explicit BlockRepository(JsonStore& store)
+      : Repository<block>(store, "tbl_block") {}
+
+  // Domain-specific methods
+  std::optional<block> find_by_id(int id) { return find(id); }
+  bool save_block(const block& b, int id) { return save(id, b); }
+
+ protected:
+  std::optional<std::string> serialize(const block& b) const override {
+    auto result = glz::write_json(b);
+    if (result.has_value()) {
+      return result.value();
+    }
+    return std::nullopt;
+  }
+
+  std::optional<block> deserialize(const std::string& json_str) const override {
+    block b{};
+    auto result = glz::read_json(b, json_str);
+    if (!result) {
+      return b;
+    }
+    return std::nullopt;
+  }
+};
+
+// ============================================================================
+// PowerRepository - Repository for player power statistics
+// ============================================================================
+export class PowerRepository : public Repository<power> {
+ public:
+  explicit PowerRepository(JsonStore& store)
+      : Repository<power>(store, "tbl_power") {}
+
+  // Domain-specific methods
+  std::optional<power> find_by_id(int id) { return find(id); }
+  bool save_power(const power& p, int id) { return save(id, p); }
+
+ protected:
+  std::optional<std::string> serialize(const power& p) const override {
+    auto result = glz::write_json(p);
+    if (result.has_value()) {
+      return result.value();
+    }
+    return std::nullopt;
+  }
+
+  std::optional<power> deserialize(const std::string& json_str) const override {
+    power p{};
+    auto result = glz::read_json(p, json_str);
+    if (!result) {
+      return p;
+    }
+    return std::nullopt;
+  }
+};
+
+// ============================================================================
+// StardataRepository - Repository for global star system statistics
+// ============================================================================
+export class StardataRepository : public Repository<stardata> {
+ public:
+  explicit StardataRepository(JsonStore& store)
+      : Repository<stardata>(store, "tbl_stardata") {}
+
+  // Domain-specific methods
+  // Note: stardata is typically a singleton (id=1)
+  std::optional<stardata> get_global_data() { return find(1); }
+  bool save_global_data(const stardata& sdata) { return save(1, sdata); }
+
+ protected:
+  std::optional<std::string> serialize(const stardata& sdata) const override {
+    auto result = glz::write_json(sdata);
+    if (result.has_value()) {
+      return result.value();
+    }
+    return std::nullopt;
+  }
+
+  std::optional<stardata> deserialize(
+      const std::string& json_str) const override {
+    stardata sdata{};
+    auto result = glz::read_json(sdata, json_str);
+    if (!result) {
+      return sdata;
+    }
+    return std::nullopt;
+  }
+};

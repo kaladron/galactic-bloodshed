@@ -27,60 +27,17 @@ import std.compat;
 
 module gblib;
 
-// Glaze reflection for Commod so we can serialize to JSON
-namespace glz {
-template <>
-struct meta<Commod> {
-  using T = Commod;
-  static constexpr auto value = object(
-      "owner", &T::owner, "governor", &T::governor, "type", &T::type, "amount",
-      &T::amount, "deliver", &T::deliver, "bid", &T::bid, "bidder", &T::bidder,
-      "bidder_gov", &T::bidder_gov, "star_from", &T::star_from, "planet_from",
-      &T::planet_from, "star_to", &T::star_to, "planet_to", &T::planet_to);
-};
-
-// Glaze reflection for stardata so we can serialize to JSON
-template <>
-struct meta<stardata> {
-  using T = stardata;
-  static constexpr auto value =
-      object("numstars", &T::numstars, "ships", &T::ships, "AP", &T::AP,
-             "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
-             "VN_index2", &T::VN_index2, "dummy", &T::dummy);
-};
-
-// Glaze reflection for block so we can serialize to JSON
-template <>
-struct meta<block> {
-  using T = block;
-  static constexpr auto value =
-      object("Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
-             "invite", &T::invite, "pledge", &T::pledge, "atwar", &T::atwar,
-             "allied", &T::allied, "next", &T::next, "systems_owned",
-             &T::systems_owned, "VPs", &T::VPs, "money", &T::money);
-};
-
-// Glaze reflection for power so we can serialize to JSON
-template <>
-struct meta<power> {
-  using T = power;
-  static constexpr auto value =
-      object("troops", &T::troops, "popn", &T::popn, "resource", &T::resource,
-             "fuel", &T::fuel, "destruct", &T::destruct, "ships_owned",
-             &T::ships_owned, "planets_owned", &T::planets_owned,
-             "sectors_owned", &T::sectors_owned, "money", &T::money, "sum_mob",
-             &T::sum_mob, "sum_eff", &T::sum_eff);
-};
-
-// Note: Glaze reflection for star_struct has been moved to
-// gb/repositories/gblib-repositories.cppm as part of StarRepository
-
-// Note: Glaze reflection for Sector has been moved to
-// gb/repositories/gblib-repositories.cppm as part of SectorRepository
-
-// Note: Glaze reflections for plroute, plinfo, and Planet have been moved to
-// gb/repositories/gblib-repositories.cppm as part of PlanetRepository
-}  // namespace glz
+// Note: All Glaze reflections have been moved to
+// gb/repositories/gblib-repositories.cppm as part of the Repository classes:
+// - Commod -> CommodRepository
+// - stardata -> StardataRepository
+// - block -> BlockRepository
+// - power -> PowerRepository
+// - star_struct -> StarRepository
+// - Sector -> SectorRepository
+// - plroute, plinfo, Planet -> PlanetRepository
+// - Ship and related types -> ShipRepository
+// - Race, toggletype, Race::gov -> RaceRepository
 
 static int commoddata, racedata, shdata, stdata;
 

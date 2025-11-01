@@ -68,7 +68,7 @@ int main() {
 
   // Test 1: Save race
   std::println("Test 1: Save race...");
-  bool saved = repo.save_race(test_race, test_race.Playernum);
+  bool saved = repo.save_race(test_race);
   assert(saved && "Failed to save race");
   std::println("  ✓ Race saved successfully");
 
@@ -100,7 +100,7 @@ int main() {
   std::println("Test 4: Update race...");
   retrieved->tech = 50.0;
   retrieved->morale = 2000;
-  saved = repo.save_race(*retrieved, retrieved->Playernum);
+  saved = repo.save_race(*retrieved);
   assert(saved && "Failed to update race");
   std::println("  ✓ Race updated successfully");
 

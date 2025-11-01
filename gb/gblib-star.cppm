@@ -96,6 +96,8 @@ export class Star {
 
 /* this data will all be read at once */
 export struct stardata {
+  int id{
+      0};  // Stardata ID for database persistence (usually 1 for global data)
   unsigned short numstars; /* # of stars */
   unsigned short ships;    /* 1st ship in orbit */
   ap_t AP[MAXPLAYERS];     /* Action pts for each player */

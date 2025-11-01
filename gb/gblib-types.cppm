@@ -113,6 +113,7 @@ export struct sectinfo {
 };
 
 export struct Commod {
+  int id{0};  // Commodity ID for database persistence
   player_t owner;
   governor_t governor;
   CommodType type;

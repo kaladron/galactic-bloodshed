@@ -124,7 +124,7 @@ EntityHandle<Race> EntityManager::get_race(player_t player) {
   return get_entity_impl<Race>(
       this, player, race_cache, race_refcount, cache_mutex,
       [this](player_t p) { return races.find_by_player(p); },
-      [this](const Race& r, player_t p) { races.save_race(r, p); },
+      [this](const Race& r, player_t) { races.save_race(r); },
       [this](player_t p) { release_race(p); });
 }
 
@@ -141,7 +141,7 @@ EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
   return get_entity_impl<Ship>(
       this, num, ship_cache, ship_refcount, cache_mutex,
       [this](shipnum_t n) { return ships.find_by_number(n); },
-      [this](const Ship& s, shipnum_t n) { ships.save_ship(s, n); },
+      [this](const Ship& s, shipnum_t) { ships.save_ship(s); },
       [this](shipnum_t n) { release_ship(n); });
 }
 
@@ -170,7 +170,7 @@ EntityHandle<Ship> EntityManager::create_ship() {
 
   return {this, iter->second.get(), [this, num](const Ship& s) {
             std::lock_guard lock(cache_mutex);
-            ships.save_ship(s, num);
+            ships.save_ship(s);
             release_ship(num);
           }};
 }
@@ -199,7 +199,7 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
     planet_refcount[key]++;
     return {this, it->second.get(), [this, star, pnum](const Planet& p) {
               std::lock_guard lock(cache_mutex);
-              planets.save_at_location(p, star, pnum);
+              planets.save_planet(p);
               release_planet(star, pnum);
             }};
   }
@@ -217,7 +217,7 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
 
   return {this, iter->second.get(), [this, star, pnum](const Planet& p) {
             std::lock_guard lock(cache_mutex);
-            planets.save_at_location(p, star, pnum);
+            planets.save_planet(p);
             release_planet(star, pnum);
           }};
 }
@@ -249,7 +249,7 @@ EntityHandle<star_struct> EntityManager::get_star(starnum_t num) {
   return get_entity_impl<star_struct>(
       this, num, star_cache, star_refcount, cache_mutex,
       [this](starnum_t n) { return stars.find_by_number(n); },
-      [this](const star_struct& s, starnum_t n) { stars.save_star(s, n); },
+      [this](const star_struct& s, starnum_t) { stars.save_star(s); },
       [this](starnum_t n) { release_star(n); });
 }
 
@@ -266,7 +266,7 @@ EntityHandle<Commod> EntityManager::get_commod(int id) {
   return get_entity_impl<Commod>(
       this, id, commod_cache, commod_refcount, cache_mutex,
       [this](int i) { return commods.find_by_id(i); },
-      [this](const Commod& c, int i) { commods.save_commod(c, i); },
+      [this](const Commod& c, int) { commods.save_commod(c); },
       [this](int i) { release_commod(i); });
 }
 
@@ -279,7 +279,7 @@ EntityHandle<block> EntityManager::get_block(int id) {
   return get_entity_impl<block>(
       this, id, block_cache, block_refcount, cache_mutex,
       [this](int i) { return blocks.find_by_id(i); },
-      [this](const block& b, int i) { blocks.save_block(b, i); },
+      [this](const block& b, int) { blocks.save_block(b); },
       [this](int i) { release_block(i); });
 }
 
@@ -292,7 +292,7 @@ EntityHandle<power> EntityManager::get_power(int id) {
   return get_entity_impl<power>(
       this, id, power_cache, power_refcount, cache_mutex,
       [this](int i) { return powers.find_by_id(i); },
-      [this](const power& p, int i) { powers.save_power(p, i); },
+      [this](const power& p, int) { powers.save_power(p); },
       [this](int i) { release_power(i); });
 }
 
@@ -308,7 +308,7 @@ EntityHandle<stardata> EntityManager::get_stardata() {
     global_stardata_refcount++;
     return {this, global_stardata_cache.get(), [this](const stardata& sd) {
               std::lock_guard lock(cache_mutex);
-              stardata_repo.save_global_data(sd, 1);
+              stardata_repo.save_global_data(sd);
               release_stardata();
             }};
   }
@@ -323,7 +323,7 @@ EntityHandle<stardata> EntityManager::get_stardata() {
 
   return {this, global_stardata_cache.get(), [this](const stardata& sd) {
             std::lock_guard lock(cache_mutex);
-            stardata_repo.save_global_data(sd, 1);
+            stardata_repo.save_global_data(sd);
             release_stardata();
           }};
 }
@@ -340,31 +340,31 @@ void EntityManager::release_stardata() {
 void EntityManager::flush_all() {
   std::lock_guard lock(cache_mutex);
 
-  // Save all cached entities using standardized (entity, key) signature
+  // Save all cached entities - entities now contain their own IDs
   flush_cache_impl<Race>(
-      race_cache, [this](player_t p, const Race& r) { races.save_race(r, p); });
-  flush_cache_impl<Ship>(ship_cache, [this](shipnum_t n, const Ship& s) {
-    ships.save_ship(s, n);
+      race_cache, [this](player_t, const Race& r) { races.save_race(r); });
+  flush_cache_impl<Ship>(ship_cache, [this](shipnum_t, const Ship& s) {
+    ships.save_ship(s);
   });
   flush_cache_impl<Planet>(planet_cache,
-                           [this](const auto& key, const Planet& p) {
-                             planets.save_at_location(p, key.first, key.second);
+                           [this](const auto&, const Planet& p) {
+                             planets.save_planet(p);
                            });
   flush_cache_impl<star_struct>(
       star_cache,
-      [this](starnum_t n, const star_struct& s) { stars.save_star(s, n); });
-  flush_cache_impl<Commod>(commod_cache, [this](int id, const Commod& c) {
-    commods.save_commod(c, id);
+      [this](starnum_t, const star_struct& s) { stars.save_star(s); });
+  flush_cache_impl<Commod>(commod_cache, [this](int, const Commod& c) {
+    commods.save_commod(c);
   });
-  flush_cache_impl<block>(block_cache, [this](int id, const block& b) {
-    blocks.save_block(b, id);
+  flush_cache_impl<block>(block_cache, [this](int, const block& b) {
+    blocks.save_block(b);
   });
-  flush_cache_impl<power>(power_cache, [this](int id, const power& p) {
-    powers.save_power(p, id);
+  flush_cache_impl<power>(power_cache, [this](int, const power& p) {
+    powers.save_power(p);
   });
 
   if (global_stardata_cache) {
-    stardata_repo.save_global_data(*global_stardata_cache, 1);
+    stardata_repo.save_global_data(*global_stardata_cache);
   }
 }
 

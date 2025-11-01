@@ -89,6 +89,7 @@ export class Planet {
 
   unsigned char explored = 0;
 
+  starnum_t star_id = 0; /* star system containing this planet */
   planetnum_t planet_id = 0;
 };
 

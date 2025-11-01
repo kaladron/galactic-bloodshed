@@ -23,7 +23,7 @@ void test_entity_manager_basic() {
   // Use RaceRepository directly to save initial data
   JsonStore store(db);
   RaceRepository races(store);
-  races.save_race(race, race.Playernum);
+  races.save_race(race);
 
   // Get race through EntityManager
   {
@@ -60,7 +60,7 @@ void test_entity_manager_caching() {
 
   JsonStore store(db);
   ShipRepository ships(store);
-  ships.save_ship(ship, ship.number);
+  ships.save_ship(ship);
 
   // Get ship multiple times
   const Ship* first_ptr = nullptr;
@@ -102,19 +102,20 @@ void test_entity_manager_composite_keys() {
 
   // Create a planet
   Planet planet{};
-  planet.planet_id = 1;
+  planet.star_id = 5;
+  planet.planet_id = 2;
   planet.Maxx = 10;
   planet.Maxy = 10;
 
   JsonStore store(db);
   PlanetRepository planets(store);
-  planets.save_at_location(planet, 5, 2);  // star 5, planet 2
+  planets.save_planet(planet);
 
   // Get planet using composite key
   {
     auto handle1 = em.get_planet(5, 2);
     assert(handle1.get() != nullptr);
-    assert(handle1->planet_id == 1);
+    assert(handle1->planet_id == 2);
     assert(handle1->Maxx == 10);
 
     // Modify the planet
@@ -191,7 +192,7 @@ void test_entity_manager_read_only_access() {
 
   JsonStore store(db);
   RaceRepository races(store);
-  races.save_race(race, race.Playernum);
+  races.save_race(race);
 
   // Load into cache and keep handle alive
   auto handle = em.get_race(1);
@@ -228,12 +229,12 @@ void test_entity_manager_flush_all() {
   Race race{};
   race.Playernum = 1;
   race.tech = 50.0;
-  races.save_race(race, race.Playernum);
+  races.save_race(race);
 
   Ship ship{};
   ship.number = 100;
   ship.fuel = 1000.0;
-  ships.save_ship(ship, ship.number);
+  ships.save_ship(ship);
 
   // Load and modify both
   {
@@ -274,7 +275,7 @@ void test_entity_manager_clear_cache() {
 
   JsonStore store(db);
   RaceRepository races(store);
-  races.save_race(race, race.Playernum);
+  races.save_race(race);
 
   // Load into cache and keep handle alive
   {
@@ -319,6 +320,7 @@ void test_entity_manager_singleton_stardata() {
 
   // Create initial stardata
   stardata sd{};
+  sd.id = 1;  // Stardata is a singleton with id=1
   sd.numstars = 100;
   sd.ships = 50;
 

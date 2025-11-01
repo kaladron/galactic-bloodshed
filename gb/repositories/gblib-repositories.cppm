@@ -117,10 +117,11 @@ template <>
 struct meta<Commod> {
   using T = Commod;
   static constexpr auto value = object(
-      "owner", &T::owner, "governor", &T::governor, "type", &T::type, "amount",
-      &T::amount, "deliver", &T::deliver, "bid", &T::bid, "bidder", &T::bidder,
-      "bidder_gov", &T::bidder_gov, "star_from", &T::star_from, "planet_from",
-      &T::planet_from, "star_to", &T::star_to, "planet_to", &T::planet_to);
+      "id", &T::id, "owner", &T::owner, "governor", &T::governor, "type",
+      &T::type, "amount", &T::amount, "deliver", &T::deliver, "bid", &T::bid,
+      "bidder", &T::bidder, "bidder_gov", &T::bidder_gov, "star_from",
+      &T::star_from, "planet_from", &T::planet_from, "star_to", &T::star_to,
+      "planet_to", &T::planet_to);
 };
 
 // Glaze reflection for stardata
@@ -128,8 +129,8 @@ template <>
 struct meta<stardata> {
   using T = stardata;
   static constexpr auto value =
-      object("numstars", &T::numstars, "ships", &T::ships, "AP", &T::AP,
-             "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
+      object("id", &T::id, "numstars", &T::numstars, "ships", &T::ships, "AP",
+             &T::AP, "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
              "VN_index2", &T::VN_index2, "dummy", &T::dummy);
 };
 
@@ -149,11 +150,11 @@ template <>
 struct meta<power> {
   using T = power;
   static constexpr auto value =
-      object("troops", &T::troops, "popn", &T::popn, "resource", &T::resource,
-             "fuel", &T::fuel, "destruct", &T::destruct, "ships_owned",
-             &T::ships_owned, "planets_owned", &T::planets_owned,
-             "sectors_owned", &T::sectors_owned, "money", &T::money, "sum_mob",
-             &T::sum_mob, "sum_eff", &T::sum_eff);
+      object("id", &T::id, "troops", &T::troops, "popn", &T::popn, "resource",
+             &T::resource, "fuel", &T::fuel, "destruct", &T::destruct,
+             "ships_owned", &T::ships_owned, "planets_owned",
+             &T::planets_owned, "sectors_owned", &T::sectors_owned, "money",
+             &T::money, "sum_mob", &T::sum_mob, "sum_eff", &T::sum_eff);
 };
 }  // namespace glz
 
@@ -164,7 +165,7 @@ export class RaceRepository : public Repository<Race> {
 
   // Domain-specific methods
   std::optional<Race> find_by_player(player_t player);
-  bool save_race(const Race& race, player_t player);
+  bool save_race(const Race& race);
 
  protected:
   std::optional<std::string> serialize(const Race& race) const override;
@@ -197,8 +198,8 @@ std::optional<Race> RaceRepository::find_by_player(player_t player) {
   return find(player);
 }
 
-bool RaceRepository::save_race(const Race& race, player_t player) {
-  return save(player, race);
+bool RaceRepository::save_race(const Race& race) {
+  return save(race.Playernum, race);
 }
 
 // Glaze reflection for Ship special function data structures
@@ -329,7 +330,7 @@ export class ShipRepository : public Repository<Ship> {
 
   // Domain-specific methods
   std::optional<Ship> find_by_number(shipnum_t num);
-  bool save_ship(const Ship& ship, shipnum_t num);
+  bool save_ship(const Ship& ship);
   void delete_ship(shipnum_t num);
   shipnum_t next_ship_number();
   shipnum_t count_all_ships();
@@ -365,8 +366,8 @@ std::optional<Ship> ShipRepository::find_by_number(shipnum_t num) {
   return find(num);
 }
 
-bool ShipRepository::save_ship(const Ship& ship, shipnum_t num) {
-  return save(num, ship);
+bool ShipRepository::save_ship(const Ship& ship) {
+  return save(ship.number, ship);
 }
 
 void ShipRepository::delete_ship(shipnum_t num) { remove(num); }
@@ -413,7 +414,8 @@ struct meta<Planet> {
              &T::conditions, "popn", &T::popn, "troops", &T::troops, "maxpopn",
              &T::maxpopn, "total_resources", &T::total_resources, "slaved_to",
              &T::slaved_to, "type", &T::type, "expltimer", &T::expltimer,
-             "explored", &T::explored, "planet_id", &T::planet_id);
+             "explored", &T::explored, "star_id", &T::star_id, "planet_id",
+             &T::planet_id);
 };
 }  // namespace glz
 
@@ -426,11 +428,15 @@ export class PlanetRepository : public Repository<Planet> {
   // Domain-specific methods
   // Note: Planets use composite keys (star_id, planet_order) in database
   std::optional<Planet> find_by_location(starnum_t star, planetnum_t pnum);
-  bool save_at_location(const Planet& planet, starnum_t star, planetnum_t pnum);
+  bool save_planet(const Planet& planet);
 
  protected:
   std::optional<std::string> serialize(const Planet& planet) const override;
   std::optional<Planet> deserialize(const std::string& json_str) const override;
+  
+ private:
+  // Helper for internal use with explicit parameters
+  bool save_planet_impl(const Planet& planet, starnum_t star, planetnum_t pnum);
 };
 
 // PlanetRepository implementation
@@ -466,7 +472,11 @@ std::optional<Planet> PlanetRepository::find_by_location(starnum_t star,
   return deserialize(*json);
 }
 
-bool PlanetRepository::save_at_location(const Planet& planet, starnum_t star,
+bool PlanetRepository::save_planet(const Planet& planet) {
+  return save_planet_impl(planet, planet.star_id, planet.planet_id);
+}
+
+bool PlanetRepository::save_planet_impl(const Planet& planet, starnum_t star,
                                         planetnum_t pnum) {
   auto json = serialize(planet);
   if (!json) return false;
@@ -500,7 +510,7 @@ export class StarRepository : public Repository<star_struct> {
 
   // Domain-specific methods
   std::optional<star_struct> find_by_number(starnum_t num);
-  bool save_star(const star_struct& star, starnum_t num);
+  bool save_star(const star_struct& star);
 
  protected:
   std::optional<std::string> serialize(
@@ -536,8 +546,8 @@ std::optional<star_struct> StarRepository::find_by_number(starnum_t num) {
   return find(num);
 }
 
-bool StarRepository::save_star(const star_struct& star, starnum_t num) {
-  return save(num, star);
+bool StarRepository::save_star(const star_struct& star) {
+  return save(star.star_id, star);
 }
 
 // Glaze reflection for Sector
@@ -658,7 +668,7 @@ export class CommodRepository : public Repository<Commod> {
 
   // Domain-specific methods
   std::optional<Commod> find_by_id(int id) { return find(id); }
-  bool save_commod(const Commod& commod, int id) { return save(id, commod); }
+  bool save_commod(const Commod& commod) { return save(commod.id, commod); }
 
  protected:
   std::optional<std::string> serialize(const Commod& commod) const override {
@@ -690,7 +700,7 @@ export class BlockRepository : public Repository<block> {
 
   // Domain-specific methods
   std::optional<block> find_by_id(int id) { return find(id); }
-  bool save_block(const block& b, int id) { return save(id, b); }
+  bool save_block(const block& b) { return save(b.Playernum, b); }
 
  protected:
   std::optional<std::string> serialize(const block& b) const override {
@@ -721,7 +731,7 @@ export class PowerRepository : public Repository<power> {
 
   // Domain-specific methods
   std::optional<power> find_by_id(int id) { return find(id); }
-  bool save_power(const power& p, int id) { return save(id, p); }
+  bool save_power(const power& p) { return save(p.id, p); }
 
  protected:
   std::optional<std::string> serialize(const power& p) const override {
@@ -753,8 +763,8 @@ export class StardataRepository : public Repository<stardata> {
   // Domain-specific methods
   // Note: stardata is typically a singleton (id=1)
   std::optional<stardata> get_global_data() { return find(1); }
-  bool save_global_data(const stardata& sdata, int id = 1) {
-    return save(id, sdata);
+  bool save_global_data(const stardata& sdata) {
+    return save(sdata.id, sdata);
   }
 
  protected:

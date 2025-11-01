@@ -95,6 +95,7 @@ export class Race {
 // TODO(jeffbailey): Should the items after this be in their own fragment?
 
 export struct power {
+  int id{0};           // Power entry ID for database persistence
   population_t troops; /* total troops */
   population_t popn;   /* total population */
   resource_t resource; /* total resource in stock */

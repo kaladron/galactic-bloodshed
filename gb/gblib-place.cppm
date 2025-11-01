@@ -3,6 +3,7 @@
 export module gblib:place;
 
 import :files_shl;
+import :gameobj;
 import :globals;
 import :shlmisc;
 import :star;

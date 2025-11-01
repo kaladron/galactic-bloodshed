@@ -122,6 +122,7 @@ target_sources(
          gblib-files_shl.cppm
          gblib-fire.cppm
          gblib-fuel.cppm
+         gblib-gameobj.cppm
          gblib-globals.cppm
          gblib-map.cppm
          gblib-misc.cppm

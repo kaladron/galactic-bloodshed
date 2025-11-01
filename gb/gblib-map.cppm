@@ -2,6 +2,7 @@
 
 export module gblib:map;
 
+import :gameobj;
 import :planet;
 import :race;
 import :sector;

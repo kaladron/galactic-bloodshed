@@ -15,6 +15,7 @@ export import :doturncmd;
 export import :files_shl;
 export import :fire;
 export import :fuel;
+export import :gameobj;
 export import :map;
 export import :misc;
 export import :move;

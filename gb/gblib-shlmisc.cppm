@@ -2,6 +2,7 @@
 
 export module gblib:shlmisc;
 
+import :gameobj;
 import :ships;
 import :star;
 

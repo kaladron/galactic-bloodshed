@@ -2,6 +2,7 @@
 
 export module gblib:sql;
 
+import :gameobj;
 import :ships;
 import :star;
 

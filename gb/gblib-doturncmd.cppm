@@ -2,6 +2,7 @@
 
 export module gblib:doturncmd;
 
+import :gameobj;
 import :types;
 
 export void do_turn(Db&, int);

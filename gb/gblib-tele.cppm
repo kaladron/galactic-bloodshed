@@ -4,6 +4,7 @@ export module gblib:tele;
 
 import std;
 
+import :gameobj;
 import :types;
 
 export void check_for_telegrams(GameObj &);

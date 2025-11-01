@@ -13,6 +13,7 @@ module;
 
 export module gblib:misc;
 
+import :gameobj;
 import :planet;
 import :race;
 import :ships;
@@ -24,7 +25,7 @@ import std.compat;
 
 export class DescriptorData : public GameObj {
  public:
-  DescriptorData(int sock, Db &db_) : GameObj{db_} {
+  DescriptorData(int sock, Db &db_, EntityManager& em) : GameObj{db_, em} {
     // TODO(jeffbailey): Pull the fprintf stuff out of this constructor
     struct sockaddr_in6 addr;
     socklen_t addr_len = sizeof(addr);

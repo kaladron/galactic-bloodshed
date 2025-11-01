@@ -4,6 +4,7 @@ export module gblib:ships;
 
 import std.compat;
 
+import :gameobj;
 import :planet;
 import :sector;
 

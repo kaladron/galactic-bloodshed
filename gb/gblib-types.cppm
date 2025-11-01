@@ -149,35 +149,6 @@ export struct Victory {
   unsigned long rawscore;
 };
 
-export class Db {
- public:
-  virtual ~Db() = default;
-  virtual int Numcommods() = 0;
-  virtual player_t Numraces() = 0;
-
- protected:
-  Db() = default;
-};
-
-export class GameObj {
- public:
-  player_t player;
-  governor_t governor;
-  bool god = false;
-  double lastx[2] = {0.0, 0.0};
-  double lasty[2] = {0.0, 0.0};
-  double zoom[2] = {1.0, 0.5};                ///< last coords for zoom
-  ScopeLevel level = ScopeLevel::LEVEL_PLAN;  ///< what directory level
-  starnum_t snum;    ///< what star system obj # (level=0)
-  planetnum_t pnum;  ///< number of planet
-  shipnum_t shipno;  ///< # of ship
-  std::stringstream out;
-  Db &db;
-  GameObj(Db &db_) : db(db_) {}
-  GameObj(const GameObj &) = delete;
-  GameObj &operator=(const GameObj &) = delete;
-};
-
 export struct Coordinates {
   int x;
   int y;

@@ -3,6 +3,7 @@
 // found in the COPYING file.
 
 import commands;
+import dallib;
 import gblib;
 import std.compat;
 
@@ -39,7 +40,7 @@ static double GetComplexity(const ShipType);
 static void set_signals();
 static void help(const command_t&, GameObj&);
 static void process_command(GameObj&, const command_t& argv);
-static int shovechars(int, Db&);
+static int shovechars(int, Db&, EntityManager&);
 
 static void GB_time(const command_t&, GameObj&);
 static void GB_schedule(const command_t&, GameObj&);
@@ -337,6 +338,11 @@ std::string do_prompt(GameObj& g) {
 int main(int argc, char** argv) {
   struct stat stbuf;
 
+  // Create Database and EntityManager for dependency injection
+  Database database{PKGSTATEDIR "gb.db"};
+  EntityManager entity_manager{database};
+
+  // Keep Sql for backward compatibility during migration
   Sql db{};
   std::println("      ***   Galactic Bloodshed ver {0} ***", GB_VERSION);
   std::println();
@@ -426,7 +432,7 @@ int main(int argc, char** argv) {
   Putblock(Blocks);
   compute_power_blocks();
   set_signals();
-  int sock = shovechars(port, db);
+  int sock = shovechars(port, db, entity_manager);
   close_sockets(sock);
   std::println("Going down.");
   return 0;
@@ -459,7 +465,7 @@ static struct timeval msec_add(struct timeval t, int x) {
   return t;
 }
 
-static int shovechars(int port, Db& db) {
+static int shovechars(int port, Db& db, EntityManager& entity_manager) {
   fd_set input_set;
   fd_set output_set;
   struct timeval last_slice;
@@ -517,7 +523,7 @@ static int shovechars(int port, Db& db) {
 
       if (FD_ISSET(sock, &input_set)) {
         try {
-          descriptor_list.emplace_back(sock, db);
+          descriptor_list.emplace_back(sock, db, entity_manager);
           auto& newd = descriptor_list.back();
           make_nonblocking(newd.descriptor);
           welcome_user(newd);

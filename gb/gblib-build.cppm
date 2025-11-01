@@ -2,6 +2,7 @@
 
 export module gblib:build;
 
+import :gameobj;
 import :race;
 import :ships;
 import :star;

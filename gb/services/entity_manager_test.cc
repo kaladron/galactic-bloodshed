@@ -23,7 +23,7 @@ void test_entity_manager_basic() {
   // Use RaceRepository directly to save initial data
   JsonStore store(db);
   RaceRepository races(store);
-  races.save_race(race);
+  races.save(race);
 
   // Get race through EntityManager
   {
@@ -60,7 +60,7 @@ void test_entity_manager_caching() {
 
   JsonStore store(db);
   ShipRepository ships(store);
-  ships.save_ship(ship);
+  ships.save(ship);
 
   // Get ship multiple times
   const Ship* first_ptr = nullptr;
@@ -109,7 +109,7 @@ void test_entity_manager_composite_keys() {
 
   JsonStore store(db);
   PlanetRepository planets(store);
-  planets.save_planet(planet);
+  planets.save(planet);
 
   // Get planet using composite key
   {
@@ -192,7 +192,7 @@ void test_entity_manager_read_only_access() {
 
   JsonStore store(db);
   RaceRepository races(store);
-  races.save_race(race);
+  races.save(race);
 
   // Load into cache and keep handle alive
   auto handle = em.get_race(1);
@@ -229,12 +229,12 @@ void test_entity_manager_flush_all() {
   Race race{};
   race.Playernum = 1;
   race.tech = 50.0;
-  races.save_race(race);
+  races.save(race);
 
   Ship ship{};
   ship.number = 100;
   ship.fuel = 1000.0;
-  ships.save_ship(ship);
+  ships.save(ship);
 
   // Load and modify both
   {
@@ -275,7 +275,7 @@ void test_entity_manager_clear_cache() {
 
   JsonStore store(db);
   RaceRepository races(store);
-  races.save_race(race);
+  races.save(race);
 
   // Load into cache and keep handle alive
   {
@@ -326,7 +326,7 @@ void test_entity_manager_singleton_stardata() {
 
   JsonStore store(db);
   StardataRepository stardata_repo(store);
-  stardata_repo.save_global_data(sd);
+  stardata_repo.save(sd);
 
   // Get stardata (singleton)
   {

@@ -53,7 +53,7 @@ int main() {
 
   // Test 1: Save star
   std::println("Test 1: Save star...");
-  bool saved = repo.save_star(test_star);
+  bool saved = repo.save(test_star);
   assert(saved && "Failed to save star");
   std::println("  ✓ Star saved successfully");
 
@@ -99,7 +99,7 @@ int main() {
   retrieved->ships = 100;
   retrieved->temperature = 20;
   retrieved->stability = 8;
-  saved = repo.save_star(*retrieved);
+  saved = repo.save(*retrieved);
   assert(saved && "Failed to update star");
   std::println("  ✓ Star updated successfully");
 
@@ -119,14 +119,14 @@ int main() {
   std::strncpy(star2.name, "Alpha Centauri", NAMESIZE - 1);
   star2.xpos = 50.0;
   star2.ypos = 75.0;
-  repo.save_star(star2);
+  repo.save(star2);
 
   star_struct star3 = test_star;
   star3.star_id = 5;  // Gap at 3 and 4
   std::strncpy(star3.name, "Proxima", NAMESIZE - 1);
   star3.xpos = 200.0;
   star3.ypos = 150.0;
-  repo.save_star(star3);
+  repo.save(star3);
 
   std::println("  ✓ Multiple stars saved");
 

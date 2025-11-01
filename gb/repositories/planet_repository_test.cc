@@ -35,7 +35,7 @@ int main() {
   planet1.explored = 1;
 
   // Save to star 1, planet 2
-  assert(repo.save_planet(planet1));
+  assert(repo.save(planet1));
 
   // Retrieve and verify
   auto retrieved1 = repo.find_by_location(1, 2);
@@ -76,7 +76,7 @@ int main() {
   planet2.conditions[METHANE] = 1;
   planet2.conditions[TOXIC] = 25;
 
-  assert(repo.save_planet(planet2));
+  assert(repo.save(planet2));
 
   auto retrieved2 = repo.find_by_location(2, 1);
   assert(retrieved2.has_value());
@@ -129,7 +129,7 @@ int main() {
   planet3.info[1].mob_points = 50000;
   planet3.info[1].est_production = 2500.75;
 
-  assert(repo.save_planet(planet3));
+  assert(repo.save(planet3));
 
   auto retrieved3 = repo.find_by_location(3, 0);
   assert(retrieved3.has_value());
@@ -187,7 +187,7 @@ int main() {
   planet4.info[1].route[1].x = 15;
   planet4.info[1].route[1].y = 25;
 
-  assert(repo.save_planet(planet4));
+  assert(repo.save(planet4));
 
   auto retrieved4 = repo.find_by_location(4, 3);
   assert(retrieved4.has_value());
@@ -213,7 +213,7 @@ int main() {
   retrieved1->popn = 200000;
   retrieved1->troops = 10000;
   // star_id already set from original creation
-  assert(repo.save_planet(*retrieved1));
+  assert(repo.save(*retrieved1));
   
   auto updated = repo.find_by_location(1, 2);
   assert(updated.has_value());
@@ -241,8 +241,8 @@ int main() {
   planet6.Maxy = 12;
 
   // Save both to star 5
-  assert(repo.save_planet(planet5));
-  assert(repo.save_planet(planet6));
+  assert(repo.save(planet5));
+  assert(repo.save(planet6));
 
   auto p5 = repo.find_by_location(5, 0);
   auto p6 = repo.find_by_location(5, 1);
@@ -277,7 +277,7 @@ int main() {
   planet7.info[3].fuel = 250;
   planet7.info[3].popn = 10000;
 
-  assert(repo.save_planet(planet7));
+  assert(repo.save(planet7));
 
   auto retrieved7 = repo.find_by_location(6, 1);
   assert(retrieved7.has_value());

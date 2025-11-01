@@ -33,7 +33,7 @@ void test_commod_repository() {
   c1.planet_to = 9;
 
   // Test 1: Save and retrieve
-  assert(repo.save_commod(c1));
+  assert(repo.save(c1));
   auto retrieved = repo.find_by_id(1);
   assert(retrieved.has_value());
   assert(retrieved->owner == 1);
@@ -43,7 +43,7 @@ void test_commod_repository() {
 
   // Test 2: Update
   c1.amount = 200;
-  assert(repo.save_commod(c1));
+  assert(repo.save(c1));
   retrieved = repo.find_by_id(1);
   assert(retrieved.has_value());
   assert(retrieved->amount == 200);
@@ -53,7 +53,7 @@ void test_commod_repository() {
   c2.id = 5;
   c2.owner = 10;
   c2.amount = 500;
-  assert(repo.save_commod(c2));
+  assert(repo.save(c2));
   assert(repo.find_by_id(1).has_value());
   assert(repo.find_by_id(5).has_value());
 
@@ -91,7 +91,7 @@ void test_block_repository() {
   b1.money = 5000;
 
   // Test 1: Save and retrieve
-  assert(repo.save_block(b1));
+  assert(repo.save(b1));
   auto retrieved = repo.find_by_id(1);
   assert(retrieved.has_value());
   assert(retrieved->Playernum == 1);
@@ -102,7 +102,7 @@ void test_block_repository() {
   // Test 2: Update
   b1.VPs = 2000;
   b1.money = 10000;
-  assert(repo.save_block(b1));
+  assert(repo.save(b1));
   retrieved = repo.find_by_id(1);
   assert(retrieved.has_value());
   assert(retrieved->VPs == 2000);
@@ -113,7 +113,7 @@ void test_block_repository() {
   b2.Playernum = 3;
   std::strcpy(b2.name, "Beta Coalition");
   b2.VPs = 500;
-  assert(repo.save_block(b2));
+  assert(repo.save(b2));
   assert(repo.find_by_id(1).has_value());
   assert(repo.find_by_id(3).has_value());
 
@@ -147,7 +147,7 @@ void test_power_repository() {
   p1.id = 1;
 
   // Test 1: Save and retrieve
-  assert(repo.save_power(p1));
+  assert(repo.save(p1));
   auto retrieved = repo.find_by_id(1);
   assert(retrieved.has_value());
   assert(retrieved->troops == 1000);
@@ -158,7 +158,7 @@ void test_power_repository() {
   // Test 2: Update
   p1.troops = 2000;
   p1.ships_owned = 30;
-  assert(repo.save_power(p1));
+  assert(repo.save(p1));
   retrieved = repo.find_by_id(1);
   assert(retrieved.has_value());
   assert(retrieved->troops == 2000);
@@ -170,13 +170,13 @@ void test_power_repository() {
   p2.troops = 500;
   p2.popn = 2000;
   p2.ships_owned = 10;
-  assert(repo.save_power(p2));
+  assert(repo.save(p2));
   assert(repo.find_by_id(1).has_value());
   assert(repo.find_by_id(2).has_value());
 
   // Test 4: Gap finding
   p1.id = 5;
-  assert(repo.save_power(p1));
+  assert(repo.save(p1));
   int next_id = repo.next_available_id();
   assert(next_id == 3);  // Should find gap at 3
 
@@ -207,7 +207,7 @@ void test_stardata_repository() {
   sd.VN_index2[1] = 15;
 
   // Test 1: Save and retrieve global data
-  assert(repo.save_global_data(sd));
+  assert(repo.save(sd));
   auto retrieved = repo.get_global_data();
   assert(retrieved.has_value());
   assert(retrieved->numstars == 50);
@@ -219,7 +219,7 @@ void test_stardata_repository() {
   // Test 2: Update global data
   sd.numstars = 75;
   sd.ships = 200;
-  assert(repo.save_global_data(sd));
+  assert(repo.save(sd));
   retrieved = repo.get_global_data();
   assert(retrieved.has_value());
   assert(retrieved->numstars == 75);

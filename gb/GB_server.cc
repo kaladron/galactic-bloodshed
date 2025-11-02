@@ -44,8 +44,8 @@ static int shovechars(int, Db&, EntityManager&);
 
 static void GB_time(const command_t&, GameObj&);
 static void GB_schedule(const command_t&, GameObj&);
-static void do_update(Db&, bool = false);
-static void do_segment(Db&, int, int);
+static void do_update(Db&, EntityManager&, bool = false);
+static void do_segment(Db&, EntityManager&, int, int);
 static int make_socket(int);
 static void shutdownsock(DescriptorData&);
 static void load_race_data(Db&);
@@ -571,18 +571,18 @@ static int shovechars(int port, Db& db, EntityManager& entity_manager) {
       }
     }
     if (go_time > 0 && now >= go_time) {
-      do_next_thing(db);
+      do_next_thing(db, entity_manager);
       go_time = 0;
     }
   }
   return sock;
 }
 
-void do_next_thing(Db& db) {
+void do_next_thing(Db& db, EntityManager& entity_manager) {
   if (nsegments_done < segments)
-    do_segment(db, 0, 1);
+    do_segment(db, entity_manager, 0, 1);
   else
-    do_update(db);
+    do_update(db, entity_manager);
 }
 
 static int make_socket(int port) {
@@ -846,10 +846,10 @@ static void check_connect(DescriptorData& d, std::string_view message) {
 
   if (EXTERNAL_TRIGGER) {
     if (race_password == SEGMENT_PASSWORD) {
-      do_segment(d.db, 1, 0);
+      do_segment(d.db, d.entity_manager, 1, 0);
       return;
     } else if (race_password == UPDATE_PASSWORD) {
-      do_update(d.db, true);
+      do_update(d.db, d.entity_manager, true);
       return;
     }
   }
@@ -912,7 +912,7 @@ static void check_connect(DescriptorData& d, std::string_view message) {
   GB::commands::treasury({}, d);
 }
 
-static void do_update(Db& db, bool force) {
+static void do_update(Db& db, EntityManager& entity_manager, bool force) {
   time_t clk = time(nullptr);
   struct stat stbuf;
 
@@ -972,7 +972,7 @@ static void do_update(Db& db, bool force) {
   }
 
   update_flag = true;
-  if (!fakeit) do_turn(db, 1);
+  if (!fakeit) do_turn(db, entity_manager, 1);
   update_flag = false;
   clk = time(nullptr);
   std::string finish_msg =
@@ -984,7 +984,7 @@ static void do_update(Db& db, bool force) {
   }
 }
 
-static void do_segment(Db& db, int override, int segment) {
+static void do_segment(Db& db, EntityManager& entity_manager, int override, int segment) {
   time_t clk = time(nullptr);
   struct stat stbuf;
 
@@ -1012,7 +1012,7 @@ static void do_segment(Db& db, int override, int segment) {
   }
 
   update_flag = true;
-  if (!fakeit) do_turn(db, 0);
+  if (!fakeit) do_turn(db, entity_manager, 0);
   update_flag = false;
   unlink(SEGMENTFL);
   if (FILE* sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
@@ -1118,9 +1118,9 @@ static void process_command(GameObj& g, const command_t& argv) {
     shutdown_flag = true;
     g.out << "Doing shutdown.\n";
   } else if (argv[0] == "@@update" && God)
-    do_update(g.db, true);
+    do_update(g.db, g.entity_manager, true);
   else if (argv[0] == "@@segment" && God)
-    do_segment(g.db, 1, std::stoi(argv[1]));
+    do_segment(g.db, g.entity_manager, 1, std::stoi(argv[1]));
   else {
     g.out << "'" << argv[0] << "':illegal command error.\n";
   }

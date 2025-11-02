@@ -42,7 +42,7 @@ static void process_abms_and_missiles(int update);
 static void update_victory_scores(int update);
 static void finalize_turn(int update);
 
-void do_turn(Db& db, int update) {
+void do_turn(Db& db, EntityManager& entity_manager, int update) {
   initialize_data(update);
   process_ships();
   process_stars_and_planets(update);
@@ -55,7 +55,14 @@ void do_turn(Db& db, int update) {
   insert_ships_into_lists();
   process_abms_and_missiles(update);
   update_victory_scores(update);
+  
+  // Flush all dirty entities to database in one batch
+  entity_manager.flush_all();
+  
   finalize_turn(update);
+  
+  // Clear cache to free memory after turn completes
+  entity_manager.clear_cache();
 }
 
 static void initialize_data(int update) {

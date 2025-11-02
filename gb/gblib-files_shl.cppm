@@ -5,8 +5,6 @@ module;
 #include <sqlite3.h>
 #include <sys/types.h>
 
-#include "gb/sql/dbdecl.h"
-
 export module gblib:files_shl;
 
 import :ships;

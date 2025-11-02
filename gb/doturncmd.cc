@@ -33,7 +33,7 @@ static void initialize_data(int update);
 static void process_ships();
 static void process_stars_and_planets(int update);
 static void process_races(int update);
-static void process_market(Db& db, int update);
+static void process_market(EntityManager&, int update);
 static void process_ship_masses_and_ownership();
 static void process_ship_turns(int update);
 static void prepare_dead_ships();
@@ -42,13 +42,13 @@ static void process_abms_and_missiles(int update);
 static void update_victory_scores(int update);
 static void finalize_turn(int update);
 
-void do_turn(Db& db, EntityManager& entity_manager, int update) {
+void do_turn(EntityManager& entity_manager, int update) {
   initialize_data(update);
   process_ships();
   process_stars_and_planets(update);
   process_races(update);
   output_ground_attacks();
-  process_market(db, update);
+  process_market(entity_manager, update);
   process_ship_masses_and_ownership();
   process_ship_turns(update);
   prepare_dead_ships();
@@ -150,10 +150,10 @@ static void process_races(int update) {
   output_ground_attacks();
 }
 
-static void process_market(Db& db, int update) {
+static void process_market(EntityManager& entity_manager, int update) {
   if (MARKET && update) {
     /* reset market */
-    Num_commods = db.Numcommods();
+    Num_commods = entity_manager.num_commods();
     clr_commodfree();
     for (commodnum_t i = Num_commods; i >= 1; i--) {
       auto c = getcommod(i);

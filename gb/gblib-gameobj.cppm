@@ -8,16 +8,6 @@ import std.compat;
 // Forward declaration for EntityManager (defined in gblib:services)
 export class EntityManager;
 
-export class Db {
- public:
-  virtual ~Db() = default;
-  virtual int Numcommods() = 0;
-  virtual player_t Numraces() = 0;
-
- protected:
-  Db() = default;
-};
-
 export class GameObj {
  public:
   player_t player;
@@ -31,10 +21,9 @@ export class GameObj {
   planetnum_t pnum;  ///< number of planet
   shipnum_t shipno;  ///< # of ship
   std::stringstream out;
-  Db &db;
   EntityManager& entity_manager;  ///< Entity lifecycle manager
 
-  GameObj(Db &db_, EntityManager& em) : db(db_), entity_manager(em) {}
+  explicit GameObj(EntityManager& em) : entity_manager(em) {}
   GameObj(const GameObj &) = delete;
   GameObj &operator=(const GameObj &) = delete;
 };

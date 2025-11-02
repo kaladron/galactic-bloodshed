@@ -31,7 +31,6 @@ export import :services;
 export import :ships;
 export import :shlmisc;
 export import :shootblast;
-export import :sql;
 export import :star;
 export import :tele;
 export import :tweakables;

@@ -80,7 +80,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(scn)
 
 # Include directories
-include_directories(.. sql)
+include_directories(..)
 
 # Attempt to find SQLite3 on the system
 find_package(SQLite3 REQUIRED)
@@ -138,7 +138,6 @@ target_sources(
          gblib-ships.cppm
          gblib-shlmisc.cppm
          gblib-shootblast.cppm
-         sql/gblib-sql.cppm
          gblib-star.cppm
          gblib-tele.cppm
          gblib-tweakables.cppm
@@ -164,7 +163,6 @@ target_sources(
           ships.cc
           shlmisc.cc
           shootblast.cc
-          sql/sql.cc
           star.cc
           tele.cc
           victory.cc

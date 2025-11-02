@@ -142,6 +142,10 @@ export class EntityManager {
   EntityHandle<Ship> create_ship();
   void delete_ship(shipnum_t num);
 
+  // Count methods (for queries)
+  int num_commods();
+  player_t num_races();
+
   // Flush all dirty entities to database
   void flush_all();
 

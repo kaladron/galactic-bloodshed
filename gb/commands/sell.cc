@@ -123,7 +123,7 @@ void sell(const command_t &argv, GameObj &g) {
   int commodno;
   while ((commodno = getdeadcommod()) == 0);
 
-  if (commodno == -1) commodno = g.db.Numcommods() + 1;
+  if (commodno == -1) commodno = g.entity_manager.num_commods() + 1;
   g.out << std::format("Lot #{} - {} units of {}.\n", commodno, amount, item);
   std::string buf =
       std::format("Lot #{} - {} units of {} for sale by {} [{}].\n", commodno,

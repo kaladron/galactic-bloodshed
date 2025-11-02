@@ -336,6 +336,17 @@ void EntityManager::release_stardata() {
   }
 }
 
+// Query methods
+int EntityManager::num_commods() {
+  // Count commods by listing all IDs in the database
+  return store.list_ids("tbl_commod").size();
+}
+
+player_t EntityManager::num_races() {
+  // Count races by listing all IDs in the database
+  return store.list_ids("tbl_race").size();
+}
+
 // Utility methods
 void EntityManager::flush_all() {
   std::lock_guard lock(cache_mutex);

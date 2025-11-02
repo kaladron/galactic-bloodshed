@@ -3,6 +3,7 @@
 // found in the COPYING file.
 
 import gblib;
+import dallib;
 import std.compat;
 
 #include <strings.h>
@@ -30,8 +31,11 @@ int enroll_valid_race() {
       return 1 ;
       }
   */
-  Sql db{};
-  auto Playernum = db.Numraces() + 1;
+  // Create Database and EntityManager for dependency injection
+  Database database{PKGSTATEDIR "gb.db"};
+  EntityManager entity_manager{database};
+  
+  auto Playernum = entity_manager.num_races() + 1;
   if ((Playernum == 1) && (race_info.priv_type != P_GOD)) {
     sprintf(race_info.rejection,
             "The first race enrolled must have God privileges.\n");
@@ -46,7 +50,7 @@ int enroll_valid_race() {
 
   getsdata(&Sdata);
   for (auto i = 0; i < Sdata.numstars; i++) {
-    auto s = db.getstar(i);
+    auto s = getstar(i);
     stars.push_back(s);
   }
 

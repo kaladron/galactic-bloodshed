@@ -19,7 +19,7 @@ void bid(const command_t &argv, GameObj &g) {
     notify(Playernum, Governor,
            "  Lot Stock      Type  Owner  Bidder  Amount "
            "Cost/Unit    Ship  Dest\n");
-    for (auto i = 1; i <= g.db.Numcommods(); i++) {
+    for (auto i = 1; i <= g.entity_manager.num_commods(); i++) {
       auto c = getcommod(i);
       if (c.owner && c.amount) {
         auto rate = (double)c.bid / (double)c.amount;
@@ -60,7 +60,7 @@ void bid(const command_t &argv, GameObj &g) {
     g.out << "+++ Galactic Bloodshed Commodities Market +++\n\n";
     g.out << "  Lot Stock      Type  Owner  Bidder  Amount "
              "Cost/Unit    Ship  Dest\n";
-    for (auto i = 1; i <= g.db.Numcommods(); i++) {
+    for (auto i = 1; i <= g.entity_manager.num_commods(); i++) {
       auto c = getcommod(i);
       if (c.owner && c.amount && (c.type == item)) {
         auto rate = (double)c.bid / (double)c.amount;
@@ -112,7 +112,7 @@ void bid(const command_t &argv, GameObj &g) {
 
     auto lot = std::stoi(argv[1]);
     money_t bid0 = std::stoi(argv[2]);
-    if ((lot <= 0) || lot > g.db.Numcommods()) {
+    if ((lot <= 0) || lot > g.entity_manager.num_commods()) {
       g.out << "Illegal lot number.\n";
       return;
     }

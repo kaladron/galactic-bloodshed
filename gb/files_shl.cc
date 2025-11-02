@@ -79,7 +79,6 @@ void openracedata(int* fd) {
   }
 }
 
-void Sql::getsdata(stardata* S) { ::getsdata(S); }
 void getsdata(stardata* S) {
   // Read from SQLite database
   const char* tail;
@@ -118,7 +117,6 @@ void getsdata(stardata* S) {
   *S = stardata{};
 }
 
-Race Sql::getrace(player_t rnum) { return ::getrace(rnum); };
 Race getrace(player_t rnum) {
   // Read from SQLite database
   const char* tail;
@@ -161,7 +159,6 @@ Race getrace(player_t rnum) {
   return r;
 }
 
-Star Sql::getstar(const starnum_t star) { return ::getstar(star); }
 Star getstar(const starnum_t star) {
   // Read from SQLite database
   const char* tail;
@@ -202,9 +199,6 @@ Star getstar(const starnum_t star) {
   return Star(star_struct{});
 }
 
-Planet Sql::getplanet(const starnum_t star, const planetnum_t pnum) {
-  return ::getplanet(star, pnum);
-}
 Planet getplanet(const starnum_t star, const planetnum_t pnum) {
   const char* tail;
   sqlite3_stmt* stmt;
@@ -333,16 +327,10 @@ std::optional<Ship> getship(std::string_view shipstring) {
   if (!shipnum) return {};
   return ::getship(*shipnum);
 }
-std::optional<Ship> Sql::getship(const shipnum_t shipnum) {
-  return ::getship(shipnum);
-}
 std::optional<Ship> getship(const shipnum_t shipnum) {
   return getship(nullptr, shipnum);
 }
 
-std::optional<Ship> Sql::getship(Ship** s, const shipnum_t shipnum) {
-  return ::getship(s, shipnum);
-}
 std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
   if (shipnum <= 0) return {};
 
@@ -398,7 +386,6 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
   return {};
 }
 
-Commod Sql::getcommod(commodnum_t commodnum) { return ::getcommod(commodnum); }
 Commod getcommod(commodnum_t commodnum) {
   // Read from SQLite database
   const char* tail;
@@ -499,7 +486,6 @@ int getdeadcommod() {
   return result;
 }
 
-void Sql::putsdata(stardata* S) { ::putsdata(S); }
 void putsdata(stardata* S) {
   // Serialize stardata to JSON using existing function
   auto json_result = stardata_to_json(*S);
@@ -524,7 +510,6 @@ void putsdata(stardata* S) {
   sqlite3_finalize(stmt);
 }
 
-void Sql::putrace(const Race& r) { ::putrace(r); }
 void putrace(const Race& r) {
   // Serialize Race to JSON using existing function
   auto json_result = race_to_json(r);
@@ -549,7 +534,6 @@ void putrace(const Race& r) {
   sqlite3_finalize(stmt);
 }
 
-void Sql::putstar(const Star& star, starnum_t snum) { ::putstar(star, snum); }
 void putstar(const Star& star, starnum_t snum) {
   star_struct s = star.get_struct();
 
@@ -586,9 +570,6 @@ static void end_bulk_insert() {
   sqlite3_exec(dbconn, "END TRANSACTION", nullptr, nullptr, &err_msg);
 }
 
-void Sql::putplanet(const Planet& p, const Star& star, const planetnum_t pnum) {
-  ::putplanet(p, star, pnum);
-}
 void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
   // Serialize Planet to JSON
   auto json_result = planet_to_json(p);
@@ -663,7 +644,6 @@ void putsmap(const SectorMap& map, const Planet& p) {
   end_bulk_insert();
 }
 
-void Sql::putship(Ship* s) { ::putship(*s); }
 void putship(const Ship& s) {
   // Serialize Ship to JSON
   auto json_result = glz::write_json(s);
@@ -689,9 +669,6 @@ void putship(const Ship& s) {
   sqlite3_finalize(stmt);
 }
 
-void Sql::putcommod(const Commod& c, int commodnum) {
-  return ::putcommod(c, commodnum);
-}
 void putcommod(const Commod& c, int commodnum) {
   // Serialize Commod to JSON using existing function
   auto json_result = commod_to_json(c);
@@ -717,28 +694,6 @@ void putcommod(const Commod& c, int commodnum) {
   sqlite3_finalize(stmt);
 }
 
-player_t Sql::Numraces() {
-  const char* tail = nullptr;
-  sqlite3_stmt* stmt;
-
-  const auto sql = "SELECT COUNT(*) FROM tbl_race;";
-
-  int err = sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-  if (err != SQLITE_OK) {
-    std::println(stderr, "SQLite error in Numraces prepare: {}",
-                 sqlite3_errmsg(dbconn));
-    return 0;
-  }
-
-  player_t count = 0;
-  if (sqlite3_step(stmt) == SQLITE_ROW) {
-    count = sqlite3_column_int(stmt, 0);
-  }
-
-  sqlite3_finalize(stmt);
-  return count;
-}
-
 shipnum_t Numships() /* return number of ships */
 {
   const char* tail = nullptr;
@@ -756,13 +711,6 @@ shipnum_t Numships() /* return number of ships */
   shipnum_t count = sqlite3_column_int(stmt, 0);
   sqlite3_finalize(stmt);
   return count;
-}
-
-int Sql::Numcommods() {
-  struct stat buffer;
-
-  fstat(commoddata, &buffer);
-  return ((int)(buffer.st_size / sizeof(Commod)));
 }
 
 off_t getnewslength(NewsType type) {

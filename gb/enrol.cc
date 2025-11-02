@@ -6,6 +6,7 @@
 
 import std.compat;
 import gblib;
+import dallib;
 
 #include <sqlite3.h>
 #include <strings.h>
@@ -76,11 +77,13 @@ int main() {
   Planet planet;
   unsigned char not_found[PlanetType::DESERT + 1];
 
-  Sql db{};
+  // Create Database and EntityManager for dependency injection
+  Database database{PKGSTATEDIR "gb.db"};
+  EntityManager entity_manager{database};
 
   srandom(getpid());
 
-  if ((Playernum = db.Numraces() + 1) >= MAXPLAYERS) {
+  if ((Playernum = entity_manager.num_races() + 1) >= MAXPLAYERS) {
     printf("There are already %d players; No more allowed.\n", MAXPLAYERS - 1);
     exit(-1);
   }
@@ -98,12 +101,12 @@ int main() {
   }
   idx = idx - 1;
 
-  db.getsdata(&Sdata);
+  getsdata(&Sdata);
 
   // TODO(jeffbailey): factor out routine for initialising this.
   stars.reserve(Sdata.numstars);
   for (i = 0; i < Sdata.numstars; i++) {
-    auto s = db.getstar(i);
+    auto s = getstar(i);
     stars.push_back(s);
   }
   printf("There is still space for player %d.\n", Playernum);
@@ -340,8 +343,8 @@ int main() {
       }
       race.likes[j] = (double)k / 100.0;
     }
-  printf("Numraces = %d\n", db.Numraces());
-  Playernum = race.Playernum = db.Numraces() + 1;
+  printf("Numraces = %d\n", entity_manager.num_races());
+  Playernum = race.Playernum = entity_manager.num_races() + 1;
 
   sigemptyset(&block);
   sigaddset(&block, SIGHUP);
@@ -425,12 +428,12 @@ int main() {
     std::cout << std::format("Created on sector {},{} on /{}/{}\n", s.land_x,
                              s.land_y, stars[s.storbits].get_name(),
                              stars[s.storbits].get_planet_name(s.pnumorbits));
-    db.putship(&s);
+    putship(s);
   }
 
   for (j = 0; j < MAXPLAYERS; j++) race.points[j] = 0;
 
-  db.putrace(race);
+  putrace(race);
 
   planet.info[Playernum - 1].numsectsowned = 1;
   planet.explored = 0;
@@ -451,11 +454,11 @@ int main() {
   putplanet(planet, stars[star], pnum);
 
   /* make star explored and stuff */
-  stars[star] = db.getstar(star);
+  stars[star] = getstar(star);
   setbit(stars[star].explored(), Playernum);
   setbit(stars[star].inhabited(), Playernum);
   stars[star].AP(Playernum - 1) = 5;
-  db.putstar(stars[star], star);
+  putstar(stars[star], star);
 
   sigprocmask(SIG_SETMASK, &mask, nullptr);
 

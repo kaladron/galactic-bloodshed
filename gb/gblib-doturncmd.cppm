@@ -6,5 +6,5 @@ import :gameobj;
 import :services;
 import :types;
 
-export void do_turn(Db&, EntityManager&, int);
+export void do_turn(EntityManager&, int);
 export void handle_victory();

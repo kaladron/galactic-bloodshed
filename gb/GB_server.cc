@@ -40,15 +40,15 @@ static double GetComplexity(const ShipType);
 static void set_signals();
 static void help(const command_t&, GameObj&);
 static void process_command(GameObj&, const command_t& argv);
-static int shovechars(int, Db&, EntityManager&);
+static int shovechars(int, EntityManager&);
 
 static void GB_time(const command_t&, GameObj&);
 static void GB_schedule(const command_t&, GameObj&);
-static void do_update(Db&, EntityManager&, bool = false);
-static void do_segment(Db&, EntityManager&, int, int);
+static void do_update(EntityManager&, bool = false);
+static void do_segment(EntityManager&, int, int);
 static int make_socket(int);
 static void shutdownsock(DescriptorData&);
-static void load_race_data(Db&);
+static void load_race_data(EntityManager&);
 static void load_star_data();
 static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
@@ -342,8 +342,6 @@ int main(int argc, char** argv) {
   Database database{PKGSTATEDIR "gb.db"};
   EntityManager entity_manager{database};
 
-  // Keep Sql for backward compatibility during migration
-  Sql db{};
   std::println("      ***   Galactic Bloodshed ver {0} ***", GB_VERSION);
   std::println();
   time_t clk = time(nullptr);
@@ -420,7 +418,7 @@ int main(int argc, char** argv) {
              ctime(&next_update_time));
   std::print(stderr, "      Next Segment   : {0}", ctime(&next_segment_time));
 
-  load_race_data(db); /* make sure you do this first */
+  load_race_data(entity_manager); /* make sure you do this first */
   load_star_data();   /* get star data */
   getpower(Power);    /* get power report from database */
   Getblock(Blocks);   /* get alliance block data */
@@ -432,7 +430,7 @@ int main(int argc, char** argv) {
   Putblock(Blocks);
   compute_power_blocks();
   set_signals();
-  int sock = shovechars(port, db, entity_manager);
+  int sock = shovechars(port, entity_manager);
   close_sockets(sock);
   std::println("Going down.");
   return 0;
@@ -465,7 +463,7 @@ static struct timeval msec_add(struct timeval t, int x) {
   return t;
 }
 
-static int shovechars(int port, Db& db, EntityManager& entity_manager) {
+static int shovechars(int port, EntityManager& entity_manager) {
   fd_set input_set;
   fd_set output_set;
   struct timeval last_slice;
@@ -523,7 +521,7 @@ static int shovechars(int port, Db& db, EntityManager& entity_manager) {
 
       if (FD_ISSET(sock, &input_set)) {
         try {
-          descriptor_list.emplace_back(sock, db, entity_manager);
+          descriptor_list.emplace_back(sock, entity_manager);
           auto& newd = descriptor_list.back();
           make_nonblocking(newd.descriptor);
           welcome_user(newd);
@@ -571,18 +569,18 @@ static int shovechars(int port, Db& db, EntityManager& entity_manager) {
       }
     }
     if (go_time > 0 && now >= go_time) {
-      do_next_thing(db, entity_manager);
+      do_next_thing(entity_manager);
       go_time = 0;
     }
   }
   return sock;
 }
 
-void do_next_thing(Db& db, EntityManager& entity_manager) {
+void do_next_thing(EntityManager& entity_manager) {
   if (nsegments_done < segments)
-    do_segment(db, entity_manager, 0, 1);
+    do_segment(entity_manager, 0, 1);
   else
-    do_update(db, entity_manager);
+    do_update(entity_manager);
 }
 
 static int make_socket(int port) {
@@ -846,10 +844,10 @@ static void check_connect(DescriptorData& d, std::string_view message) {
 
   if (EXTERNAL_TRIGGER) {
     if (race_password == SEGMENT_PASSWORD) {
-      do_segment(d.db, d.entity_manager, 1, 0);
+      do_segment(d.entity_manager, 1, 0);
       return;
     } else if (race_password == UPDATE_PASSWORD) {
-      do_update(d.db, d.entity_manager, true);
+      do_update(d.entity_manager, true);
       return;
     }
   }
@@ -912,7 +910,7 @@ static void check_connect(DescriptorData& d, std::string_view message) {
   GB::commands::treasury({}, d);
 }
 
-static void do_update(Db& db, EntityManager& entity_manager, bool force) {
+static void do_update(EntityManager& entity_manager, bool force) {
   time_t clk = time(nullptr);
   struct stat stbuf;
 
@@ -972,7 +970,7 @@ static void do_update(Db& db, EntityManager& entity_manager, bool force) {
   }
 
   update_flag = true;
-  if (!fakeit) do_turn(db, entity_manager, 1);
+  if (!fakeit) do_turn(entity_manager, 1);
   update_flag = false;
   clk = time(nullptr);
   std::string finish_msg =
@@ -984,7 +982,7 @@ static void do_update(Db& db, EntityManager& entity_manager, bool force) {
   }
 }
 
-static void do_segment(Db& db, EntityManager& entity_manager, int override, int segment) {
+static void do_segment(EntityManager& entity_manager, int override, int segment) {
   time_t clk = time(nullptr);
   struct stat stbuf;
 
@@ -1012,7 +1010,7 @@ static void do_segment(Db& db, EntityManager& entity_manager, int override, int 
   }
 
   update_flag = true;
-  if (!fakeit) do_turn(db, entity_manager, 0);
+  if (!fakeit) do_turn(entity_manager, 0);
   update_flag = false;
   unlink(SEGMENTFL);
   if (FILE* sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
@@ -1118,9 +1116,9 @@ static void process_command(GameObj& g, const command_t& argv) {
     shutdown_flag = true;
     g.out << "Doing shutdown.\n";
   } else if (argv[0] == "@@update" && God)
-    do_update(g.db, g.entity_manager, true);
+    do_update(g.entity_manager, true);
   else if (argv[0] == "@@segment" && God)
-    do_segment(g.db, g.entity_manager, 1, std::stoi(argv[1]));
+    do_segment(g.entity_manager, 1, std::stoi(argv[1]));
   else {
     g.out << "'" << argv[0] << "':illegal command error.\n";
   }
@@ -1129,8 +1127,8 @@ static void process_command(GameObj& g, const command_t& argv) {
   g.out << do_prompt(g);
 }
 
-static void load_race_data(Db& db) {
-  Num_races = db.Numraces();
+static void load_race_data(EntityManager& entity_manager) {
+  Num_races = entity_manager.num_races();
   races.reserve(Num_races);
   for (int i = 1; i <= Num_races; i++) {
     Race r = getrace(i); /* allocates into memory */

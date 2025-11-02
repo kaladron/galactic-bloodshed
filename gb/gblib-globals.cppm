@@ -4,8 +4,6 @@ module;
 
 import std;
 
-#include "gb/sql/dbdecl.h"
-
 export module gblib:globals;
 
 import :misc;

@@ -5,7 +5,7 @@
 #ifndef GB_SERVER_H
 #define GB_SERVER_H
 
-void do_next_thing(Db&, EntityManager&);
+void do_next_thing(EntityManager&);
 void compute_power_blocks();
 
 #endif  // GB_SERVER_H

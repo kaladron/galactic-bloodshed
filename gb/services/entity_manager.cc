@@ -54,16 +54,28 @@ EntityHandle<Entity> get_entity_impl(
       });
 }
 
-template <typename Entity, typename Key>
+template <typename Entity, typename Key, typename FindFn>
 const Entity* peek_entity_impl(
     Key key, std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
-    std::mutex& cache_mutex) {
+    std::mutex& cache_mutex, FindFn find_fn) {
   std::lock_guard lock(cache_mutex);
+  
+  // Check if already cached
   auto it = cache.find(key);
   if (it != cache.end()) {
     return it->second.get();
   }
-  return nullptr;
+  
+  // Load from repository if not cached
+  auto entity_opt = find_fn(key);
+  if (!entity_opt) {
+    return nullptr;
+  }
+  
+  // Cache the entity (but don't increment refcount - this is read-only)
+  auto [iter, inserted] =
+      cache.emplace(key, std::make_unique<Entity>(std::move(*entity_opt)));
+  return iter->second.get();
 }
 
 template <typename Entity, typename Key>
@@ -129,7 +141,9 @@ EntityHandle<Race> EntityManager::get_race(player_t player) {
 }
 
 const Race* EntityManager::peek_race(player_t player) {
-  return peek_entity_impl<Race>(player, race_cache, cache_mutex);
+  return peek_entity_impl<Race>(
+      player, race_cache, cache_mutex,
+      [this](player_t p) { return races.find_by_player(p); });
 }
 
 void EntityManager::release_race(player_t player) {
@@ -146,7 +160,9 @@ EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
 }
 
 const Ship* EntityManager::peek_ship(shipnum_t num) {
-  return peek_entity_impl<Ship>(num, ship_cache, cache_mutex);
+  return peek_entity_impl<Ship>(
+      num, ship_cache, cache_mutex,
+      [this](shipnum_t n) { return ships.find_by_number(n); });
 }
 
 void EntityManager::release_ship(shipnum_t num) {
@@ -225,11 +241,24 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
 const Planet* EntityManager::peek_planet(starnum_t star, planetnum_t pnum) {
   std::lock_guard lock(cache_mutex);
 
-  auto it = planet_cache.find(std::make_pair(star, pnum));
+  auto key = std::make_pair(star, pnum);
+  
+  // Check if already cached
+  auto it = planet_cache.find(key);
   if (it != planet_cache.end()) {
     return it->second.get();
   }
-  return nullptr;
+
+  // Load from repository if not cached
+  auto planet_opt = planets.find_by_location(star, pnum);
+  if (!planet_opt) {
+    return nullptr;
+  }
+
+  // Cache the entity (but don't increment refcount - this is read-only)
+  auto [iter, inserted] = planet_cache.emplace(
+      key, std::make_unique<Planet>(std::move(*planet_opt)));
+  return iter->second.get();
 }
 
 void EntityManager::release_planet(starnum_t star, planetnum_t pnum) {
@@ -254,7 +283,9 @@ EntityHandle<star_struct> EntityManager::get_star(starnum_t num) {
 }
 
 const star_struct* EntityManager::peek_star(starnum_t num) {
-  return peek_entity_impl<star_struct>(num, star_cache, cache_mutex);
+  return peek_entity_impl<star_struct>(
+      num, star_cache, cache_mutex,
+      [this](starnum_t n) { return stars.find_by_number(n); });
 }
 
 void EntityManager::release_star(starnum_t num) {

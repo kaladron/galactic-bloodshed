@@ -297,11 +297,12 @@ void test_entity_manager_clear_cache() {
     // Handle goes out of scope here
   }
 
-  // Now verify cache is empty (handle was released)
+  // Now verify peek reloads from database (even if cache was empty)
   const Race* after_clear = em.peek_race(1);
-  assert(after_clear == nullptr);
+  assert(after_clear != nullptr);
+  assert(after_clear->tech == 50.0);
 
-  std::println("  ✓ Cache is empty after handle release");
+  std::println("  ✓ peek_* reloads from database after cache clear");
 
   // Can still load from database
   auto handle2 = em.get_race(1);

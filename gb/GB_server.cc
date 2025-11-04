@@ -247,37 +247,50 @@ std::string do_prompt(GameObj& g) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] / )\n", Sdata.AP[Playernum - 1]);
       return prompt.str();
-    case ScopeLevel::LEVEL_STAR:
+    case ScopeLevel::LEVEL_STAR: {
+      auto star = g.entity_manager.get_star(g.snum);
+      const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1} )\n",
-                            stars[g.snum].AP(Playernum - 1),
-                            stars[g.snum].get_name());
+                            star_ref.AP[Playernum - 1],
+                            star_ref.name);
       return prompt.str();
-    case ScopeLevel::LEVEL_PLAN:
+    }
+    case ScopeLevel::LEVEL_PLAN: {
+      auto star = g.entity_manager.get_star(g.snum);
+      const auto& star_ref = star.read();
       prompt << std::format(
-          " ( [{0}] /{1}/{2} )\n", stars[g.snum].AP(Playernum - 1),
-          stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum));
+          " ( [{0}] /{1}/{2} )\n", star_ref.AP[Playernum - 1],
+          star_ref.name, star_ref.pnames[g.pnum]);
       return prompt.str();
+    }
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.
   }
 
-  auto s = getship(g.shipno);
+  const auto* s = g.entity_manager.peek_ship(g.shipno);
+  if (!s) return " ( [?] /#? )\n";
   switch (s->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [[0]] /#{1} )\n", Sdata.AP[Playernum - 1],
                             g.shipno);
       return prompt.str();
-    case ScopeLevel::LEVEL_STAR:
+    case ScopeLevel::LEVEL_STAR: {
+      auto star = g.entity_manager.get_star(s->storbits);
+      const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1}/#{2} )\n",
-                            stars[s->storbits].AP(Playernum - 1),
-                            stars[s->storbits].get_name(), g.shipno);
+                            star_ref.AP[Playernum - 1],
+                            star_ref.name, g.shipno);
       return prompt.str();
-    case ScopeLevel::LEVEL_PLAN:
+    }
+    case ScopeLevel::LEVEL_PLAN: {
+      auto star = g.entity_manager.get_star(s->storbits);
+      const auto& star_ref = star.read();
       prompt << std::format(
-          " ( [{0}] /{1}/{2}/#{3} )\n", stars[s->storbits].AP(Playernum - 1),
-          stars[s->storbits].get_name(),
-          stars[s->storbits].get_planet_name(g.pnum), g.shipno);
+          " ( [{0}] /{1}/{2}/#{3} )\n", star_ref.AP[Playernum - 1],
+          star_ref.name,
+          star_ref.pnames[g.pnum], g.shipno);
       return prompt.str();
+    }
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.  (Ship within a ship)
   }
@@ -286,47 +299,61 @@ std::string do_prompt(GameObj& g) {
      are in a ship within a ship, or deeper. I am certain this can be
      done more elegantly (a lot more) but I don't feel like trying
      that right now. right now I want it to function. Maarten */
-  auto s2 = getship(s->destshipno);
+  const auto* s2 = g.entity_manager.peek_ship(s->destshipno);
+  if (!s2) return " ( [?] /#?/#? )\n";
   switch (s2->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] /#{1}/#{2} )\n", Sdata.AP[Playernum - 1],
                             s->destshipno, g.shipno);
       return prompt.str();
-    case ScopeLevel::LEVEL_STAR:
+    case ScopeLevel::LEVEL_STAR: {
+      const auto* star = g.entity_manager.peek_star(s->storbits);
+      if (!star) return " ( [?] /?/#?/#? )\n";
       prompt << std::format(
-          " ( [{0}] /{1}/#{2}/#{3} )\n", stars[s->storbits].AP(Playernum - 1),
-          stars[s->storbits].get_name(), s->destshipno, g.shipno);
+          " ( [{0}] /{1}/#{2}/#{3} )\n", star->AP[Playernum - 1],
+          star->name, s->destshipno, g.shipno);
       return prompt.str();
-    case ScopeLevel::LEVEL_PLAN:
+    }
+    case ScopeLevel::LEVEL_PLAN: {
+      const auto* star = g.entity_manager.peek_star(s->storbits);
+      if (!star) return " ( [?] /?/?/#?/#? )\n";
       prompt << std::format(
           " ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
-          stars[s->storbits].AP(Playernum - 1), stars[s->storbits].get_name(),
-          stars[s->storbits].get_planet_name(g.pnum), s->destshipno, g.shipno);
+          star->AP[Playernum - 1], star->name,
+          star->pnames[g.pnum], s->destshipno, g.shipno);
       return prompt.str();
+    }
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.  (Ship w/in ship w/in ship)
   }
 
   while (s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
-    s2 = getship(s2->destshipno);
+    s2 = g.entity_manager.peek_ship(s2->destshipno);
+    if (!s2) return " ( [?] / /../#?/#? )\n";
   }
   switch (s2->whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] / /../#{1}/#{2} )\n",
                             Sdata.AP[Playernum - 1], s->destshipno, g.shipno);
       return prompt.str();
-    case ScopeLevel::LEVEL_STAR:
+    case ScopeLevel::LEVEL_STAR: {
+      const auto* star = g.entity_manager.peek_star(s->storbits);
+      if (!star) return " ( [?] /?/ /../#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
-                            stars[s->storbits].AP(Playernum - 1),
-                            stars[s->storbits].get_name(), s->destshipno,
+                            star->AP[Playernum - 1],
+                            star->name, s->destshipno,
                             g.shipno);
       return prompt.str();
-    case ScopeLevel::LEVEL_PLAN:
+    }
+    case ScopeLevel::LEVEL_PLAN: {
+      const auto* star = g.entity_manager.peek_star(s->storbits);
+      if (!star) return " ( [?] /?/?/ /../#?/#? )\n";
       prompt << std::format(
           " ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
-          stars[s->storbits].AP(Playernum - 1), stars[s->storbits].get_name(),
-          stars[s->storbits].get_planet_name(g.pnum), s->destshipno, g.shipno);
+          star->AP[Playernum - 1], star->name,
+          star->pnames[g.pnum], s->destshipno, g.shipno);
       return prompt.str();
+    }
     case ScopeLevel::LEVEL_SHIP:
       break;  // (Ship w/in ship w/in ship w/in ship)
   }

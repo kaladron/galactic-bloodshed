@@ -20,8 +20,7 @@ void personal(const command_t& argv, GameObj& g) {
     g.out << "Only the leader can do this.\n";
     return;
   }
-  auto race = races[Playernum - 1];
-  race.info = message;
-  putrace(race);
+  auto race = g.entity_manager.get_race(Playernum);
+  race->info = message;
 }
 }  // namespace GB::commands

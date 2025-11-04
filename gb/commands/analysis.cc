@@ -75,7 +75,12 @@ void do_analysis(GameObj &g, player_t ThisPlayer, Mode mode, int sector_type,
   }
 
   auto &race = races[Playernum - 1];
-  const auto planet = getplanet(Starnum, Planetnum);
+  auto planet_handle = g.entity_manager.get_planet(Starnum, Planetnum);
+  if (!planet_handle.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+  const auto& planet = planet_handle.read();
 
   if (!planet.info[Playernum - 1].explored) {
     return;

@@ -306,6 +306,7 @@ Star Makestar(starnum_t snum) {
     auto smap = getsmap(planet);
     planet.xpos = xpos;
     planet.ypos = ypos;
+    planet.star_id = snum;  // Set which star this planet belongs to
     planet.total_resources = 0;
     Numtypes[type]++;
     if (printplaninfo) {

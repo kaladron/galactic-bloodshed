@@ -40,7 +40,11 @@ void distance(const command_t &argv, GameObj &g) {
   y1 = 0.0;
   /* get position in absolute units */
   if (from.level == ScopeLevel::LEVEL_SHIP) {
-    auto ship = getship(from.shipno);
+    const auto* ship = g.entity_manager.peek_ship(from.shipno);
+    if (!ship) {
+      g.out << "Ship not found.\n";
+      return;
+    }
     if (ship->owner != Playernum) {
       g.out << "Nice try.\n";
       return;
@@ -48,16 +52,34 @@ void distance(const command_t &argv, GameObj &g) {
     x0 = ship->xpos;
     y0 = ship->ypos;
   } else if (from.level == ScopeLevel::LEVEL_PLAN) {
-    const auto p = getplanet(from.snum, from.pnum);
-    x0 = p.xpos + stars[from.snum].xpos();
-    y0 = p.ypos + stars[from.snum].ypos();
+    const auto* p = g.entity_manager.peek_planet(from.snum, from.pnum);
+    if (!p) {
+      g.out << "Planet not found.\n";
+      return;
+    }
+    const auto* star = g.entity_manager.peek_star(from.snum);
+    if (!star) {
+      g.out << "Star not found.\n";
+      return;
+    }
+    x0 = p->xpos + star->xpos;
+    y0 = p->ypos + star->ypos;
   } else if (from.level == ScopeLevel::LEVEL_STAR) {
-    x0 = stars[from.snum].xpos();
-    y0 = stars[from.snum].ypos();
+    const auto* star = g.entity_manager.peek_star(from.snum);
+    if (!star) {
+      g.out << "Star not found.\n";
+      return;
+    }
+    x0 = star->xpos;
+    y0 = star->ypos;
   }
 
   if (to.level == ScopeLevel::LEVEL_SHIP) {
-    auto ship = getship(to.shipno);
+    const auto* ship = g.entity_manager.peek_ship(to.shipno);
+    if (!ship) {
+      g.out << "Ship not found.\n";
+      return;
+    }
     if (ship->owner != Playernum) {
       g.out << "Nice try.\n";
       return;
@@ -65,12 +87,26 @@ void distance(const command_t &argv, GameObj &g) {
     x1 = ship->xpos;
     y1 = ship->ypos;
   } else if (to.level == ScopeLevel::LEVEL_PLAN) {
-    const auto p = getplanet(to.snum, to.pnum);
-    x1 = p.xpos + stars[to.snum].xpos();
-    y1 = p.ypos + stars[to.snum].ypos();
+    const auto* p = g.entity_manager.peek_planet(to.snum, to.pnum);
+    if (!p) {
+      g.out << "Planet not found.\n";
+      return;
+    }
+    const auto* star = g.entity_manager.peek_star(to.snum);
+    if (!star) {
+      g.out << "Star not found.\n";
+      return;
+    }
+    x1 = p->xpos + star->xpos;
+    y1 = p->ypos + star->ypos;
   } else if (to.level == ScopeLevel::LEVEL_STAR) {
-    x1 = stars[to.snum].xpos();
-    y1 = stars[to.snum].ypos();
+    const auto* star = g.entity_manager.peek_star(to.snum);
+    if (!star) {
+      g.out << "Star not found.\n";
+      return;
+    }
+    x1 = star->xpos;
+    y1 = star->ypos;
   }
   /* compute the distance */
   dist = sqrt(Distsq(x0, y0, x1, y1));

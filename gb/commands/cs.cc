@@ -18,13 +18,16 @@ void cs(const command_t &argv, GameObj &g) {
     g.level = race.governor[Governor].deflevel;
     if ((g.snum = race.governor[Governor].defsystem) >= Sdata.numstars)
       g.snum = Sdata.numstars - 1;
-    if ((g.pnum = race.governor[Governor].defplanetnum) >=
-        stars[g.snum].numplanets())
-      g.pnum = stars[g.snum].numplanets() - 1;
+    const auto* star = g.entity_manager.peek_star(g.snum);
+    if (star &&
+        (g.pnum = race.governor[Governor].defplanetnum) >= star->numplanets)
+      g.pnum = star->numplanets - 1;
     g.shipno = 0;
     g.lastx[0] = g.lasty[0] = 0.0;
-    g.lastx[1] = stars[g.snum].xpos();
-    g.lasty[1] = stars[g.snum].ypos();
+    if (star) {
+      g.lastx[1] = star->xpos;
+      g.lasty[1] = star->ypos;
+    }
     return;
   }
 
@@ -45,24 +48,38 @@ void cs(const command_t &argv, GameObj &g) {
         break;
       case ScopeLevel::LEVEL_STAR:
         if (where.level == ScopeLevel::LEVEL_UNIV) {
-          g.lastx[1] = stars[g.snum].xpos();
-          g.lasty[1] = stars[g.snum].ypos();
+          const auto* star = g.entity_manager.peek_star(g.snum);
+          if (star) {
+            g.lastx[1] = star->xpos;
+            g.lasty[1] = star->ypos;
+          }
         } else
           g.lastx[0] = g.lasty[0] = 0.0;
         break;
       case ScopeLevel::LEVEL_PLAN: {
-        const auto planet = getplanet(g.snum, g.pnum);
+        const auto* planet = g.entity_manager.peek_planet(g.snum, g.pnum);
+        if (!planet) {
+          g.lastx[0] = g.lasty[0] = 0.0;
+          break;
+        }
+        const auto* star = g.entity_manager.peek_star(g.snum);
         if (where.level == ScopeLevel::LEVEL_STAR && where.snum == g.snum) {
-          g.lastx[0] = planet.xpos;
-          g.lasty[0] = planet.ypos;
+          g.lastx[0] = planet->xpos;
+          g.lasty[0] = planet->ypos;
         } else if (where.level == ScopeLevel::LEVEL_UNIV) {
-          g.lastx[1] = stars[g.snum].xpos() + planet.xpos;
-          g.lasty[1] = stars[g.snum].ypos() + planet.ypos;
+          if (star) {
+            g.lastx[1] = star->xpos + planet->xpos;
+            g.lasty[1] = star->ypos + planet->ypos;
+          }
         } else
           g.lastx[0] = g.lasty[0] = 0.0;
       } break;
       case ScopeLevel::LEVEL_SHIP:
-        auto s = getship(g.shipno);
+        const auto* s = g.entity_manager.peek_ship(g.shipno);
+        if (!s) {
+          g.lastx[0] = g.lasty[0] = 0.0;
+          break;
+        }
         if (!s->docked) {
           switch (where.level) {
             case ScopeLevel::LEVEL_UNIV:
@@ -73,8 +90,14 @@ void cs(const command_t &argv, GameObj &g) {
               if (s->whatorbits >= ScopeLevel::LEVEL_STAR &&
                   s->storbits == where.snum) {
                 /* we are going UP from the ship.. change last*/
-                g.lastx[0] = s->xpos - stars[s->storbits].xpos();
-                g.lasty[0] = s->ypos - stars[s->storbits].ypos();
+                const auto* orbit_star =
+                    g.entity_manager.peek_star(s->storbits);
+                if (orbit_star) {
+                  g.lastx[0] = s->xpos - orbit_star->xpos;
+                  g.lasty[0] = s->ypos - orbit_star->ypos;
+                } else {
+                  g.lastx[0] = g.lasty[0] = 0.0;
+                }
               } else
                 g.lastx[0] = g.lasty[0] = 0.0;
               break;
@@ -82,9 +105,16 @@ void cs(const command_t &argv, GameObj &g) {
               if (s->whatorbits == ScopeLevel::LEVEL_PLAN &&
                   s->storbits == where.snum && s->pnumorbits == where.pnum) {
                 /* same */
-                const auto planet = getplanet(s->storbits, s->pnumorbits);
-                g.lastx[0] = s->xpos - stars[s->storbits].xpos() - planet.xpos;
-                g.lasty[0] = s->ypos - stars[s->storbits].ypos() - planet.ypos;
+                const auto* planet =
+                    g.entity_manager.peek_planet(s->storbits, s->pnumorbits);
+                const auto* orbit_star =
+                    g.entity_manager.peek_star(s->storbits);
+                if (planet && orbit_star) {
+                  g.lastx[0] = s->xpos - orbit_star->xpos - planet->xpos;
+                  g.lasty[0] = s->ypos - orbit_star->ypos - planet->ypos;
+                } else {
+                  g.lastx[0] = g.lasty[0] = 0.0;
+                }
               } else
                 g.lastx[0] = g.lasty[0] = 0.0;
               break;
@@ -112,10 +142,10 @@ void cs(const command_t &argv, GameObj &g) {
       return;
     }
 
-    race.governor[Governor].deflevel = where.level;
-    race.governor[Governor].defsystem = where.snum;
-    race.governor[Governor].defplanetnum = where.pnum;
-    putrace(race);
+    auto race_handle = g.entity_manager.get_race(Playernum);
+    race_handle->governor[Governor].deflevel = where.level;
+    race_handle->governor[Governor].defsystem = where.snum;
+    race_handle->governor[Governor].defplanetnum = where.pnum;
 
     std::string where_str = where.to_string();
     g.out << "New home system is " << where_str << "\n";

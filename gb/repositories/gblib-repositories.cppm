@@ -414,8 +414,8 @@ struct meta<Planet> {
              &T::conditions, "popn", &T::popn, "troops", &T::troops, "maxpopn",
              &T::maxpopn, "total_resources", &T::total_resources, "slaved_to",
              &T::slaved_to, "type", &T::type, "expltimer", &T::expltimer,
-             "explored", &T::explored, "star_id", &T::star_id, "planet_id",
-             &T::planet_id);
+             "explored", &T::explored, "star_id", &T::star_id, "planet_order",
+             &T::planet_order);
 };
 }  // namespace glz
 
@@ -473,7 +473,7 @@ std::optional<Planet> PlanetRepository::find_by_location(starnum_t star,
 }
 
 bool PlanetRepository::save(const Planet& planet) {
-  return save_planet_impl(planet, planet.star_id, planet.planet_id);
+  return save_planet_impl(planet, planet.star_id, planet.planet_order);
 }
 
 bool PlanetRepository::save_planet_impl(const Planet& planet, starnum_t star,
@@ -481,10 +481,9 @@ bool PlanetRepository::save_planet_impl(const Planet& planet, starnum_t star,
   auto json = serialize(planet);
   if (!json) return false;
 
-  // Use multi-key storage: id, star_id, planet_order
-  // The table has id as primary key + star_id/planet_order for lookups
+  // Use composite key (star_id, planet_order) - no 'id' column
   std::vector<std::pair<std::string, int>> keys = {
-      {"id", planet.planet_id}, {"star_id", star}, {"planet_order", pnum}};
+      {"star_id", star}, {"planet_order", pnum}};
   return store.store_multi(table_name, keys, *json);
 }
 
@@ -564,14 +563,14 @@ struct meta<Sector> {
 }  // namespace glz
 
 // SectorRepository - provides type-safe access to Sector entities
-// Note: Sectors use composite keys (planet_id, xpos, ypos) in database
+// Note: Sectors use composite keys (star_id, planet_order, xpos, ypos) in database
 export class SectorRepository : public Repository<Sector> {
  public:
   SectorRepository(JsonStore& store);
 
   // Domain-specific methods for individual sectors
-  std::optional<Sector> find_sector(int planet_id, int x, int y);
-  bool save_sector(const Sector& sector, int planet_id, int x, int y);
+  std::optional<Sector> find_sector(int star_id, int planet_order, int x, int y);
+  bool save_sector(const Sector& sector, int star_id, int planet_order, int x, int y);
 
   // Bulk operations for sector maps
   SectorMap load_map(const Planet& planet);
@@ -605,24 +604,24 @@ std::optional<Sector> SectorRepository::deserialize(
   return std::nullopt;
 }
 
-std::optional<Sector> SectorRepository::find_sector(int planet_id, int x,
-                                                    int y) {
-  // Use multi-key retrieval: WHERE planet_id=? AND xpos=? AND ypos=?
+std::optional<Sector> SectorRepository::find_sector(int star_id, int planet_order,
+                                                    int x, int y) {
+  // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND ypos=?
   std::vector<std::pair<std::string, int>> keys = {
-      {"planet_id", planet_id}, {"xpos", x}, {"ypos", y}};
+      {"star_id", star_id}, {"planet_order", planet_order}, {"xpos", x}, {"ypos", y}};
   auto json = store.retrieve_multi(table_name, keys);
   if (!json) return std::nullopt;
   return deserialize(*json);
 }
 
-bool SectorRepository::save_sector(const Sector& sector, int planet_id, int x,
-                                   int y) {
+bool SectorRepository::save_sector(const Sector& sector, int star_id, int planet_order,
+                                   int x, int y) {
   auto json = serialize(sector);
   if (!json) return false;
 
-  // Use multi-key storage: planet_id, xpos, ypos
+  // Use multi-key storage: star_id, planet_order, xpos, ypos
   std::vector<std::pair<std::string, int>> keys = {
-      {"planet_id", planet_id}, {"xpos", x}, {"ypos", y}};
+      {"star_id", star_id}, {"planet_order", planet_order}, {"xpos", x}, {"ypos", y}};
   return store.store_multi(table_name, keys, *json);
 }
 
@@ -634,7 +633,7 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
   // database For now, we'll load sectors individually
   for (int y = 0; y < planet.Maxy; y++) {
     for (int x = 0; x < planet.Maxx; x++) {
-      auto sector = find_sector(planet.planet_id, x, y);
+      auto sector = find_sector(planet.star_id, planet.planet_order, x, y);
       if (sector.has_value()) {
         smap.put(std::move(*sector));
       }
@@ -650,7 +649,7 @@ bool SectorRepository::save_map(const SectorMap& map, const Planet& planet) {
   for (int y = 0; y < planet.Maxy; y++) {
     for (int x = 0; x < planet.Maxx; x++) {
       const auto& sector = map.get(x, y);
-      if (!save_sector(sector, planet.planet_id, x, y)) {
+      if (!save_sector(sector, planet.star_id, planet.planet_order, x, y)) {
         all_saved = false;
       }
     }

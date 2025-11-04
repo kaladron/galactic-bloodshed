@@ -224,12 +224,13 @@ void Makesurface(const Planet &p, SectorMap &smap) {
 }
 }  // namespace
 
-Planet makeplanet(double dist, short stemp, PlanetType type) {
-  static planetnum_t planet_id = 0;
+Planet makeplanet(double dist, short stemp, PlanetType type,
+                  starnum_t star_id, planetnum_t planet_order) {
   Planet planet{type};
 
-  planet.planet_id = planet_id;
-  planet_id++;
+  // Set location explicitly - no global counter needed
+  planet.star_id = star_id;
+  planet.planet_order = planet_order;
   planet.expltimer = 5;
   planet.conditions[TEMP] = planet.conditions[RTEMP] = Temperature(dist, stemp);
 

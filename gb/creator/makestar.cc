@@ -302,11 +302,10 @@ Star Makestar(starnum_t snum) {
     } else {
       throw std::runtime_error("No PlanetType left, bailing");
     }
-    auto planet = makeplanet(dist, star.temperature, type);
+    auto planet = makeplanet(dist, star.temperature, type, snum, i);
     auto smap = getsmap(planet);
     planet.xpos = xpos;
     planet.ypos = ypos;
-    planet.star_id = snum;  // Set which star this planet belongs to
     planet.total_resources = 0;
     Numtypes[type]++;
     if (printplaninfo) {

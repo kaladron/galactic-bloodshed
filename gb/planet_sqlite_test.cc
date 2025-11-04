@@ -21,7 +21,8 @@ int main() {
   Planet test_planet(PlanetType::EARTH);
 
   // Initialize scalar fields
-  test_planet.planet_id = 42;
+  test_planet.star_id = 5;
+  test_planet.planet_order = 2;
   test_planet.xpos = 100.5;
   test_planet.ypos = 200.7;
   test_planet.ships = 10;
@@ -113,7 +114,8 @@ int main() {
   Planet retrieved = getplanet(1, 2);  // star_id = 1, planet_order = 2
 
   // Verify scalar fields
-  assert(retrieved.planet_id == test_planet.planet_id);
+  assert(retrieved.star_id == test_planet.star_id);
+  assert(retrieved.planet_order == test_planet.planet_order);
   assert(retrieved.xpos == test_planet.xpos);
   assert(retrieved.ypos == test_planet.ypos);
   assert(retrieved.ships == test_planet.ships);

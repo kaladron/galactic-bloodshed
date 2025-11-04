@@ -13,19 +13,18 @@ module dallib;
 void initialize_schema(Database& db) {
   const char* tbl_create = R"(
       CREATE TABLE tbl_planet(
-          id INT PRIMARY KEY NOT NULL,
           star_id INT NOT NULL,
           planet_order INT NOT NULL,
-          data TEXT NOT NULL);
-
-  CREATE INDEX star_planet ON tbl_planet (star_id, planet_order);
+          data TEXT NOT NULL,
+          PRIMARY KEY(star_id, planet_order));
 
   CREATE TABLE tbl_sector(
-    planet_id INT NOT NULL,
+    star_id INT NOT NULL,
+    planet_order INT NOT NULL,
     xpos INT NOT NULL,
     ypos INT NOT NULL,
     data TEXT NOT NULL,
-    PRIMARY KEY(planet_id, xpos, ypos));
+    PRIMARY KEY(star_id, planet_order, xpos, ypos));
 
   CREATE TABLE tbl_star(
     id INT PRIMARY KEY NOT NULL,

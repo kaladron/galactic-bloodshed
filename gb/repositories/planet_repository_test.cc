@@ -19,7 +19,7 @@ int main() {
   std::println("Test 1: Save and retrieve basic planet...");
   Planet planet1(PlanetType::EARTH);
   planet1.star_id = 1;  // Star 1
-  planet1.planet_id = 2;  // Planet 2
+  planet1.planet_order = 2;  // Planet 2
   planet1.xpos = 100.5;
   planet1.ypos = 200.7;
   planet1.ships = 10;
@@ -40,7 +40,7 @@ int main() {
   // Retrieve and verify
   auto retrieved1 = repo.find_by_location(1, 2);
   assert(retrieved1.has_value());
-  assert(retrieved1->planet_id == 2);
+  assert(retrieved1->planet_order == 2);
   assert(retrieved1->xpos == 100.5);
   assert(retrieved1->ypos == 200.7);
   assert(retrieved1->ships == 10);
@@ -60,7 +60,7 @@ int main() {
   std::println("\nTest 2: Save planet with atmospheric conditions...");
   Planet planet2(PlanetType::ICEBALL);
   planet2.star_id = 2;  // Star 2
-  planet2.planet_id = 1;  // Planet 1
+  planet2.planet_order = 1;  // Planet 1
   planet2.xpos = 50.0;
   planet2.ypos = 75.0;
   planet2.Maxy = 15;
@@ -80,7 +80,7 @@ int main() {
 
   auto retrieved2 = repo.find_by_location(2, 1);
   assert(retrieved2.has_value());
-  assert(retrieved2->planet_id == 1);
+  assert(retrieved2->planet_order == 1);
   assert(retrieved2->conditions[TEMP] == 50);
   assert(retrieved2->conditions[OXYGEN] == 20);
   assert(retrieved2->conditions[CO2] == 5);
@@ -97,7 +97,7 @@ int main() {
   std::println("\nTest 3: Save planet with player info...");
   Planet planet3(PlanetType::ASTEROID);
   planet3.star_id = 3;  // Star 3
-  planet3.planet_id = 0;  // Planet 0
+  planet3.planet_order = 0;  // Planet 0
   planet3.xpos = 123.4;
   planet3.ypos = 567.8;
   planet3.Maxx = 25;
@@ -133,7 +133,7 @@ int main() {
 
   auto retrieved3 = repo.find_by_location(3, 0);
   assert(retrieved3.has_value());
-  assert(retrieved3->planet_id == 0);
+  assert(retrieved3->planet_order == 0);
   assert(retrieved3->info[1].fuel == 500);
   assert(retrieved3->info[1].destruct == 250);
   assert(retrieved3->info[1].resource == 10000);
@@ -164,7 +164,7 @@ int main() {
   std::println("\nTest 4: Save planet with shipping routes...");
   Planet planet4(PlanetType::EARTH);
   planet4.star_id = 4;  // Star 4
-  planet4.planet_id = 3;  // Planet 3
+  planet4.planet_order = 3;  // Planet 3
   planet4.xpos = 10.0;
   planet4.ypos = 20.0;
   planet4.Maxx = 30;
@@ -191,7 +191,7 @@ int main() {
 
   auto retrieved4 = repo.find_by_location(4, 3);
   assert(retrieved4.has_value());
-  assert(retrieved4->planet_id == 3);
+  assert(retrieved4->planet_order == 3);
   assert(retrieved4->info[1].route[0].set == 1);
   assert(retrieved4->info[1].route[0].dest_star == 5);
   assert(retrieved4->info[1].route[0].dest_planet == 3);
@@ -217,7 +217,7 @@ int main() {
   
   auto updated = repo.find_by_location(1, 2);
   assert(updated.has_value());
-  assert(updated->planet_id == 2);
+  assert(updated->planet_order == 2);
   assert(updated->popn == 200000);
   assert(updated->troops == 10000);
   std::println("✓ Planet update works correctly");
@@ -226,7 +226,7 @@ int main() {
   std::println("\nTest 6: Multiple planets in same star...");
   Planet planet5(PlanetType::GASGIANT);
   planet5.star_id = 5;  // Star 5
-  planet5.planet_id = 0;  // Planet 0
+  planet5.planet_order = 0;  // Planet 0
   planet5.xpos = 200.0;
   planet5.ypos = 300.0;
   planet5.Maxx = 10;
@@ -234,7 +234,7 @@ int main() {
 
   Planet planet6(PlanetType::WATER);
   planet6.star_id = 5;  // Star 5
-  planet6.planet_id = 1;  // Planet 1
+  planet6.planet_order = 1;  // Planet 1
   planet6.xpos = 250.0;
   planet6.ypos = 350.0;
   planet6.Maxx = 12;
@@ -248,8 +248,8 @@ int main() {
   auto p6 = repo.find_by_location(5, 1);
   assert(p5.has_value());
   assert(p6.has_value());
-  assert(p5->planet_id == 0);
-  assert(p6->planet_id == 1);
+  assert(p5->planet_order == 0);
+  assert(p6->planet_order == 1);
   assert(p5->type == PlanetType::GASGIANT);
   assert(p6->type == PlanetType::WATER);
   std::println("✓ Multiple planets per star works correctly");
@@ -264,7 +264,7 @@ int main() {
   std::println("\nTest 8: Multiple players on same planet...");
   Planet planet7(PlanetType::EARTH);
   planet7.star_id = 6;  // Star 6
-  planet7.planet_id = 1;  // Planet 1
+  planet7.planet_order = 1;  // Planet 1
   planet7.xpos = 111.1;
   planet7.ypos = 222.2;
   planet7.Maxx = 20;
@@ -281,7 +281,7 @@ int main() {
 
   auto retrieved7 = repo.find_by_location(6, 1);
   assert(retrieved7.has_value());
-  assert(retrieved7->planet_id == 1);
+  assert(retrieved7->planet_order == 1);
   assert(retrieved7->info[1].fuel == 1000);
   assert(retrieved7->info[1].popn == 50000);
   assert(retrieved7->info[2].fuel == 500);

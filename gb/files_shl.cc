@@ -233,12 +233,13 @@ Sector getsector(const Planet& p, const int x, const int y) {
   sqlite3_stmt* stmt;
   const char* sql =
       "SELECT data FROM tbl_sector "
-      "WHERE planet_id=?1 AND xpos=?2 AND ypos=?3";
+      "WHERE star_id=?1 AND planet_order=?2 AND xpos=?3 AND ypos=?4";
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
-  sqlite3_bind_int(stmt, 1, p.planet_id);
-  sqlite3_bind_int(stmt, 2, x);
-  sqlite3_bind_int(stmt, 3, y);
+  sqlite3_bind_int(stmt, 1, p.star_id);
+  sqlite3_bind_int(stmt, 2, p.planet_order);
+  sqlite3_bind_int(stmt, 3, x);
+  sqlite3_bind_int(stmt, 4, y);
 
   auto result = sqlite3_step(stmt);
   if (result == SQLITE_ROW) {
@@ -256,12 +257,12 @@ Sector getsector(const Planet& p, const int x, const int y) {
         return std::move(sector_opt.value());
       } else {
         std::println(
-            stderr, "Error: Failed to deserialize Sector from JSON for planet {} at ({}, {})",
-            p.planet_id, x, y);
+            stderr, "Error: Failed to deserialize Sector from JSON for planet ({},{}) at ({}, {})",
+            p.star_id, p.planet_order, x, y);
       }
     } else {
-      std::println(stderr, "Error: NULL JSON data retrieved for sector at planet {} ({}, {})",
-                   p.planet_id, x, y);
+      std::println(stderr, "Error: NULL JSON data retrieved for sector at planet ({},{}) at ({}, {})",
+                   p.star_id, p.planet_order, x, y);
       sqlite3_finalize(stmt);
     }
   } else {
@@ -279,7 +280,7 @@ SectorMap getsmap(const Planet& p) {
   sqlite3_stmt* stmt = nullptr;
   const char* sql =
       "SELECT data FROM tbl_sector "
-      "WHERE planet_id=?1 ORDER BY ypos, xpos";
+      "WHERE star_id=?1 AND planet_order=?2 ORDER BY ypos, xpos";
 
   if (dbconn == nullptr) {
     std::println(stderr, "FATAL: getsmap called with NULL database connection");
@@ -293,7 +294,8 @@ SectorMap getsmap(const Planet& p) {
     exit(-1);
   }
 
-  sqlite3_bind_int(stmt, 1, p.planet_id);
+  sqlite3_bind_int(stmt, 1, p.star_id);
+  sqlite3_bind_int(stmt, 2, p.planet_order);
 
   SectorMap smap(p);
 
@@ -308,8 +310,8 @@ SectorMap getsmap(const Planet& p) {
         smap.put(std::move(sector_opt.value()));
       } else {
         std::println(stderr, 
-                     "FATAL: Failed to deserialize Sector from JSON for planet {}", 
-                     p.planet_id);
+                     "FATAL: Failed to deserialize Sector from JSON for planet ({},{})", 
+                     p.star_id, p.planet_order);
         exit(-1);
       }
     }
@@ -582,16 +584,15 @@ void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
   const char* tail = nullptr;
   sqlite3_stmt* stmt;
   const char* sql =
-      "REPLACE INTO tbl_planet (id, star_id, planet_order, data) "
-      "VALUES (?1, ?2, ?3, ?4)";
+      "INSERT OR REPLACE INTO tbl_planet (star_id, planet_order, data) "
+      "VALUES (?1, ?2, ?3)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
   auto star = s.get_struct();
-  sqlite3_bind_int(stmt, 1, p.planet_id);
-  sqlite3_bind_int(stmt, 2, star.star_id);
-  sqlite3_bind_int(stmt, 3, pnum);
-  sqlite3_bind_text(stmt, 4, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int(stmt, 1, star.star_id);
+  sqlite3_bind_int(stmt, 2, pnum);
+  sqlite3_bind_text(stmt, 3, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     std::println(stderr, "SQLite error in putplanet: {}",
@@ -615,14 +616,15 @@ void putsector(const Sector& s, const Planet& p, const int x, const int y) {
   const char* tail = nullptr;
   sqlite3_stmt* stmt;
   const char* sql =
-      "REPLACE INTO tbl_sector (planet_id, xpos, ypos, data) "
-      "VALUES (?1, ?2, ?3, ?4)";
+      "INSERT OR REPLACE INTO tbl_sector (star_id, planet_order, xpos, ypos, data) "
+      "VALUES (?1, ?2, ?3, ?4, ?5)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-  sqlite3_bind_int(stmt, 1, p.planet_id);
-  sqlite3_bind_int(stmt, 2, x);
-  sqlite3_bind_int(stmt, 3, y);
-  sqlite3_bind_text(stmt, 4, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int(stmt, 1, p.star_id);
+  sqlite3_bind_int(stmt, 2, p.planet_order);
+  sqlite3_bind_int(stmt, 3, x);
+  sqlite3_bind_int(stmt, 4, y);
+  sqlite3_bind_text(stmt, 5, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     std::println(stderr, "SQLite error in putsector: {}", sqlite3_errmsg(dbconn));

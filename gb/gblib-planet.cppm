@@ -89,8 +89,9 @@ export class Planet {
 
   unsigned char explored = 0;
 
-  starnum_t star_id = 0; /* star system containing this planet */
-  planetnum_t planet_id = 0;
+  starnum_t star_id = 0;        // Star system containing this planet (0-99)
+  planetnum_t planet_order = 0; // Order within star system (0-based: 0, 1, 2...)
+                                // Composite key: (star_id, planet_order)
 };
 
 //* Return gravity for the Planet

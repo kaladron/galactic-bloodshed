@@ -5,6 +5,7 @@
 #ifndef MAKEPLANET_H
 #define MAKEPLANET_H
 
-Planet makeplanet(double, short, PlanetType);
+Planet makeplanet(double dist, short stemp, PlanetType type,
+                  starnum_t star_id, planetnum_t planet_order);
 
 #endif  // MAKEPLANET_H

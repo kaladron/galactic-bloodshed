@@ -18,7 +18,8 @@ int main() {
 
   // Create a test planet to associate sectors with
   Planet test_planet{PlanetType::EARTH};
-  test_planet.planet_id = 42;
+  test_planet.star_id = 3;
+  test_planet.planet_order = 2;
   test_planet.Maxx = 10;
   test_planet.Maxy = 10;
 
@@ -117,7 +118,8 @@ int main() {
   // This should return a SectorMap with no sectors (empty vector)
   // Accessing it would throw, so we just verify it doesn't crash on creation
   Planet empty_planet{PlanetType::MARS};
-  empty_planet.planet_id = 99;
+  empty_planet.star_id = 10;
+  empty_planet.planet_order = 0;
   empty_planet.Maxx = 5;
   empty_planet.Maxy = 5;
   

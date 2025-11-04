@@ -103,7 +103,7 @@ void test_entity_manager_composite_keys() {
   // Create a planet
   Planet planet{};
   planet.star_id = 5;
-  planet.planet_id = 2;
+  planet.planet_order = 2;
   planet.Maxx = 10;
   planet.Maxy = 10;
 
@@ -115,7 +115,7 @@ void test_entity_manager_composite_keys() {
   {
     auto handle1 = em.get_planet(5, 2);
     assert(handle1.get() != nullptr);
-    assert(handle1->planet_id == 2);
+    assert(handle1->planet_order == 2);
     assert(handle1->Maxx == 10);
 
     // Modify the planet

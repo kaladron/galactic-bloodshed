@@ -32,7 +32,11 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     g.out << std::format("rst: no such ship #{}\n", *shipno);
     return;
   }
-  auto ship = getship(*shipno);
+  const auto* ship = g.entity_manager.peek_ship(*shipno);
+  if (!ship) {
+    g.out << "Ship not found.\n";
+    return;
+  }
   if (ship->owner != g.player) {
     g.out << "You do not own this ship.\n";
     return;
@@ -51,11 +55,20 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   }
   std::string plan_buf;
   if (landed(*ship) && (ship->whatorbits == ScopeLevel::LEVEL_PLAN)) {
-    const auto p = getplanet(ship->storbits, ship->pnumorbits);
-    gravity_factor = p.gravity();
-    plan_buf =
-        std::format("/{}/{}", stars[ship->storbits].get_name(),
-                    stars[ship->storbits].get_planet_name(ship->pnumorbits));
+    const auto* p =
+        g.entity_manager.peek_planet(ship->storbits, ship->pnumorbits);
+    if (!p) {
+      g.out << "Planet data not found.\n";
+      return;
+    }
+    const auto* star_ptr = g.entity_manager.peek_star(ship->storbits);
+    if (!star_ptr) {
+      g.out << "Star data not found.\n";
+      return;
+    }
+    gravity_factor = p->gravity();
+    plan_buf = std::format("/{}/{}", star_ptr->name,
+                           star_ptr->pnames[ship->pnumorbits]);
   }
   std::string deststr;
   if (argv.size() == 2) {
@@ -69,8 +82,14 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     return;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
-    auto tmpship = getship(tmpdest.shipno);
-    if (!followable(*ship, *tmpship)) {
+    const auto* tmpship = g.entity_manager.peek_ship(tmpdest.shipno);
+    if (!tmpship) {
+      g.out << "Destination ship not found.\n";
+      return;
+    }
+    // followable takes non-const reference to target (may modify it)
+    Ship mutable_target = *tmpship;
+    if (!followable(*ship, mutable_target)) {
       g.out << "The ship's destination is out of range.\n";
       return;
     }
@@ -78,10 +97,12 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   if (tmpdest.level != ScopeLevel::LEVEL_UNIV &&
       tmpdest.level != ScopeLevel::LEVEL_SHIP &&
       ((ship->storbits != tmpdest.snum) &&
-       tmpdest.level != ScopeLevel::LEVEL_STAR) &&
-      isclr(stars[tmpdest.snum].explored(), ship->owner)) {
-    g.out << "You haven't explored the destination system.\n";
-    return;
+       tmpdest.level != ScopeLevel::LEVEL_STAR)) {
+    const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
+    if (!dest_star || isclr(dest_star->explored, ship->owner)) {
+      g.out << "You haven't explored the destination system.\n";
+      return;
+    }
   }
   if (tmpdest.level == ScopeLevel::LEVEL_UNIV) {
     g.out << "Invalid ship destination.\n";
@@ -98,7 +119,11 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     return;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
-    auto tmpship = getship(tmpdest.shipno);
+    const auto* tmpship = g.entity_manager.peek_ship(tmpdest.shipno);
+    if (!tmpship) {
+      g.out << "Destination ship not found.\n";
+      return;
+    }
     if (tmpship->owner != g.player) {
       g.out << "Nice try.\n";
       return;
@@ -106,14 +131,24 @@ void proj_fuel(const command_t &argv, GameObj &g) {
     x_1 = tmpship->xpos;
     y_1 = tmpship->ypos;
   } else if (tmpdest.level == ScopeLevel::LEVEL_PLAN) {
-    const auto p = getplanet(tmpdest.snum, tmpdest.pnum);
-    x_1 = p.xpos + stars[tmpdest.snum].xpos();
-    y_1 = p.ypos + stars[tmpdest.snum].ypos();
+    const auto* p = g.entity_manager.peek_planet(tmpdest.snum, tmpdest.pnum);
+    const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
+    if (!p || !dest_star) {
+      g.out << "Destination planet or star not found.\n";
+      return;
+    }
+    x_1 = p->xpos + dest_star->xpos;
+    y_1 = p->ypos + dest_star->ypos;
   } else if (tmpdest.level == ScopeLevel::LEVEL_STAR) {
-    x_1 = stars[tmpdest.snum].xpos();
-    y_1 = stars[tmpdest.snum].ypos();
+    const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
+    if (!dest_star) {
+      g.out << "Destination star not found.\n";
+      return;
+    }
+    x_1 = dest_star->xpos;
+    y_1 = dest_star->ypos;
   } else {
-    printf("ERROR 99\n");
+    g.out << "ERROR: Invalid destination level\n";
     return;
   }
 
@@ -126,50 +161,51 @@ void proj_fuel(const command_t &argv, GameObj &g) {
   }
 
   /*  First get the results based on current fuel load.  */
-  auto fuelcheckship = getship(*shipno);
-  level = fuelcheckship->fuel;
+  // Make a mutable copy for do_trip calculations
+  Ship fuelcheckship = *ship;
+  level = fuelcheckship.fuel;
   auto [current_settings, number_segments] = do_trip(
-      tmpdest, *fuelcheckship, fuelcheckship->fuel, gravity_factor, x_1, y_1);
+      tmpdest, fuelcheckship, fuelcheckship.fuel, gravity_factor, x_1, y_1);
   current_segs = number_segments;
-  if (current_settings) current_fuel = level - fuelcheckship->fuel;
-  level = fuelcheckship->max_fuel;
+  if (current_settings) current_fuel = level - fuelcheckship.fuel;
+  level = fuelcheckship.max_fuel;
 
   /*  2nd loop to determine lowest fuel needed...  */
   fuel_usage = level;
   opt_settings = 0;
   while (computing) {
-    auto tmpship = getship(*shipno);
+    Ship tmpship = *ship;
     std::tie(computing, number_segments) =
-        do_trip(tmpdest, *tmpship, level, gravity_factor, x_1, y_1);
-    if ((computing) && (tmpship->fuel >= 0.05)) {
+        do_trip(tmpdest, tmpship, level, gravity_factor, x_1, y_1);
+    if ((computing) && (tmpship.fuel >= 0.05)) {
       fuel_usage = level;
       opt_settings = 1;
-      level -= tmpship->fuel;
+      level -= tmpship.fuel;
     } else if (computing) {
       computing = false;
       fuel_usage = level;
     }
   }
 
-  auto tmpship = getship(*shipno);
+  Ship tmpship = *ship;
   g.out << std::format(
       "\n  ----- ===== FUEL ESTIMATES ===== ----\n\nAt Current Fuel "
       "Cargo ({:.2f}f):\n",
-      tmpship->fuel);
-  domass(*tmpship);
+      tmpship.fuel);
+  domass(tmpship);
   if (!current_settings) {
     g.out << "The ship will not be able to complete the trip.\n";
   } else {
-    fuel_output(g, dist, current_fuel, gravity_factor, tmpship->mass,
+    fuel_output(g, dist, current_fuel, gravity_factor, tmpship.mass,
                 current_segs, plan_buf);
   }
   g.out << std::format("At Optimum Fuel Level ({:.2f}f):\n", fuel_usage);
   if (!opt_settings) {
     g.out << std::format("The ship will not be able to complete the trip.\n");
   } else {
-    tmpship->fuel = fuel_usage;
-    domass(*tmpship);
-    fuel_output(g, dist, fuel_usage, gravity_factor, tmpship->mass,
+    tmpship.fuel = fuel_usage;
+    domass(tmpship);
+    fuel_output(g, dist, fuel_usage, gravity_factor, tmpship.mass,
                 number_segments, plan_buf);
   }
 }

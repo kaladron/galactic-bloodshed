@@ -26,25 +26,25 @@ returns tech_report_star(GameObj &g, const Star &star, starnum_t snum) {
 
   returns totals{};
   for (planetnum_t i = 0; i < star.numplanets(); i++) {
-    const auto pl = getplanet(snum, i);
-    if (!pl.info[Playernum - 1].explored ||
-        !pl.info[Playernum - 1].numsectsowned) {
+    const auto* pl = g.entity_manager.peek_planet(snum, i);
+    if (!pl || !pl->info[Playernum - 1].explored ||
+        !pl->info[Playernum - 1].numsectsowned) {
       continue;
     }
 
     std::string location =
         std::format("{}/{}/{}", star.get_name(), star.get_planet_name(i),
-                    (pl.info[Playernum - 1].autorep ? "*" : ""));
+                    (pl->info[Playernum - 1].autorep ? "*" : ""));
 
-    auto gain = tech_prod(pl.info[Playernum - 1].tech_invest,
-                          pl.info[Playernum - 1].popn);
-    auto max_gain =
-        tech_prod(pl.info[Playernum - 1].prod_res, pl.info[Playernum - 1].popn);
+    auto gain = tech_prod(pl->info[Playernum - 1].tech_invest,
+                          pl->info[Playernum - 1].popn);
+    auto max_gain = tech_prod(pl->info[Playernum - 1].prod_res,
+                              pl->info[Playernum - 1].popn);
 
     g.out << std::format("{:16.16} {:10} {:10} {:8.3f} {:8.3f}\n", location,
-                         pl.info[Playernum - 1].popn,
-                         pl.info[Playernum - 1].tech_invest, gain, max_gain);
-    totals.invest += pl.info[Playernum - 1].tech_invest;
+                         pl->info[Playernum - 1].popn,
+                         pl->info[Playernum - 1].tech_invest, gain, max_gain);
+    totals.invest += pl->info[Playernum - 1].tech_invest;
     totals.gain += gain;
     totals.max_gain += max_gain;
   }
@@ -67,8 +67,10 @@ void tech_status(const command_t &argv, GameObj &g) {
   returns totals{};
   if (argv.size() == 1) {
     for (starnum_t star = 0; star < Sdata.numstars; star++) {
-      stars[star] = getstar(star);
-      totals = tech_report_star(g, stars[star], star);
+      const auto* star_ptr = g.entity_manager.peek_star(star);
+      if (!star_ptr) continue;
+      Star star_wrapper(*star_ptr);
+      totals = tech_report_star(g, star_wrapper, star);
     }
   } else { /* Several arguments */
     for (int k = 1; k < argv.size(); k++) {
@@ -79,8 +81,10 @@ void tech_status(const command_t &argv, GameObj &g) {
         continue;
       } /* ok, a proper location */
       starnum_t star = where.snum;
-      stars[star] = getstar(star);
-      tech_report_star(g, stars[star], star);
+      const auto* star_ptr = g.entity_manager.peek_star(star);
+      if (!star_ptr) continue;
+      Star star_wrapper(*star_ptr);
+      tech_report_star(g, star_wrapper, star);
     }
   }
   g.out << std::format("       Total Popn:  {:7}\n", Power[Playernum - 1].popn);

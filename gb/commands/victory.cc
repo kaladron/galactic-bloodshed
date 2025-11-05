@@ -20,11 +20,12 @@ void victory(const command_t &argv, GameObj &g) {
   for (int i = 0; auto &vic : viclist) {
     i++;
     if (g.god) {
+      const auto* race = g.entity_manager.peek_race(vic.racenum);
+      if (!race) continue;
       g.out << std::format("{:2} {} [{:2}] {:<15} {:5} {:6.2} {:3} {} {}\n", i,
                            vic.Thing ? 'M' : ' ', vic.racenum, vic.name,
-                           vic.rawscore, vic.tech, vic.IQ,
-                           races[vic.racenum - 1].password,
-                           races[vic.racenum - 1].governor[0].password);
+                           vic.rawscore, vic.tech, vic.IQ, race->password,
+                           race->governor[0].password);
     } else {
       g.out << std::format("{:2}   [{:2}] {:<15.15}\n", i, vic.racenum,
                            vic.name);

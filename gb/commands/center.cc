@@ -24,7 +24,12 @@ void center(const command_t &argv, GameObj &g) {
     g.out << "CHEATER!!!\n";
     return;
   }
-  g.lastx[1] = stars[where.snum].xpos();
-  g.lasty[1] = stars[where.snum].ypos();
+  const auto* star = g.entity_manager.peek_star(where.snum);
+  if (!star) {
+    g.out << "center: star data not found.\n";
+    return;
+  }
+  g.lastx[1] = star->xpos;
+  g.lasty[1] = star->ypos;
 }
 }  // namespace GB::commands

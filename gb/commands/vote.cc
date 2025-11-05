@@ -15,15 +15,16 @@ void show_votes(GameObj& g) {
   int nays = 0;
   int yays = 0;
 
-  for (const auto& race : races) {
-    if (race.God || race.Guest) continue;
+  for (player_t i = 1; i <= Num_races; i++) {
+    const auto* race = g.entity_manager.peek_race(i);
+    if (!race || race->God || race->Guest) continue;
     nvotes++;
-    if (race.votes) {
+    if (race->votes) {
       yays++;
-      if (g.god) g.out << std::format("  {0} voted go.\n", race.name);
+      if (g.god) g.out << std::format("  {0} voted go.\n", race->name);
     } else {
       nays++;
-      if (g.god) g.out << std::format("  {0} voted wait.\n", race.name);
+      if (g.god) g.out << std::format("  {0} voted wait.\n", race->name);
     }
   }
   g.out << std::format("  Total votes = {0}, Go = {1}, Wait = {2}.\n", nvotes,
@@ -45,10 +46,11 @@ void check_votes(GameObj& g) {
   int nays = 0;
   int yays = 0;
   int nvotes = 0;
-  for (const auto& r : races) {
-    if (r.God || r.Guest) continue;
+  for (player_t i = 1; i <= Num_races; i++) {
+    const auto* r = g.entity_manager.peek_race(i);
+    if (!r || r->God || r->Guest) continue;
     nvotes++;
-    if (r.votes) {
+    if (r->votes) {
       yays++;
     } else {
       nays++;
@@ -66,7 +68,7 @@ namespace GB::commands {
 void vote(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
 
-  auto& race = races[Playernum - 1];
+  auto race = g.entity_manager.get_race(Playernum);
 
   if (g.god) {
     g.out << "Your vote doesn't count, however, here is the count.\n";
@@ -74,7 +76,7 @@ void vote(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (race.Guest) {
+  if (race->Guest) {
     g.out << "You are not allowed to vote, but, here is the count.\n";
     show_votes(g);
     return;
@@ -82,7 +84,7 @@ void vote(const command_t& argv, GameObj& g) {
 
   if (argv.size() <= 2) {
     g.out << std::format("Your vote on updates is {0}\n",
-                         race.votes ? "go" : "wait");
+                         race->votes ? "go" : "wait");
     show_votes(g);
     return;
   }
@@ -94,16 +96,14 @@ void vote(const command_t& argv, GameObj& g) {
   }
 
   if (argv[2] == "go") {
-    race.votes = true;
+    race->votes = true;
     check = true;
   } else if (argv[2] == "wait")
-    race.votes = false;
+    race->votes = false;
   else {
     g.out << std::format("No such update choice '{0}'\n", argv[2].c_str());
     return;
   }
-
-  putrace(race);
 
   if (check) check_votes(g);
 }

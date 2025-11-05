@@ -24,9 +24,14 @@ void map(const command_t &argv, GameObj &g) {
       g.out << "Bad scope.\n";
       return;
     case ScopeLevel::LEVEL_PLAN: {
-      const auto p = getplanet(where->snum, where->pnum);
-      show_map(g, where->snum, where->pnum, p);
-      if (stars[where->snum].stability() > 50)
+      const auto* p = g.entity_manager.peek_planet(where->snum, where->pnum);
+      if (!p) {
+        g.out << "Planet not found.\n";
+        return;
+      }
+      show_map(g, where->snum, where->pnum, *p);
+      const auto* star = g.entity_manager.peek_star(where->snum);
+      if (star && star->stability > 50)
         g.out << "WARNING! This planet's primary is unstable.\n";
     } break;
     default:

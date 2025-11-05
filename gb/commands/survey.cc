@@ -97,7 +97,12 @@ void survey(const command_t &argv, GameObj &g) {
   auto &race = races[Playernum - 1];
 
   if (where->level == ScopeLevel::LEVEL_PLAN) {
-    const auto p = getplanet(where->snum, where->pnum);
+    const auto* p_ptr = g.entity_manager.peek_planet(where->snum, where->pnum);
+    if (!p_ptr) {
+      g.out << "Planet not found.\n";
+      return;
+    }
+    const auto& p = *p_ptr;
 
     compat = p.compatibility(race);
 
@@ -138,7 +143,11 @@ void survey(const command_t &argv, GameObj &g) {
         inhere = p.info[Playernum - 1].numsectsowned;
         shiplist = p.ships;
         while (shiplist) {
-          auto shipa = getship(shiplist);
+          const auto* shipa = g.entity_manager.peek_ship(shiplist);
+          if (!shipa) {
+            shiplist = 0;
+            continue;
+          }
           if (shipa->owner == Playernum &&
               (shipa->popn || (shipa->type == ShipType::OTYPE_PROBE)))
             inhere = 1;

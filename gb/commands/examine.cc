@@ -30,9 +30,10 @@ void examine(const command_t &argv, GameObj &g) {
     return;
   }
 
-  auto ship = getship(*shipno);
+  auto ship = g.entity_manager.get_ship(*shipno);
 
-  if (!ship) {
+  if (!ship.get()) {
+    g.out << "Ship not found.\n";
     return;
   }
 
@@ -72,7 +73,6 @@ void examine(const command_t &argv, GameObj &g) {
       deductAPs(g, APcount, ship->storbits);
 
     ship->examined = 1;
-    putship(*ship);
   }
 
   if (has_switch(*ship)) {

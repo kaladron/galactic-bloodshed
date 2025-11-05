@@ -26,12 +26,17 @@ void whois(const command_t &argv, GameObj &g) {
       continue;
     }
 
-    const auto &race = races[j - 1];
+    const auto* race = g.entity_manager.peek_race(j);
+    if (!race) {
+      g.out << std::format("Race #{} not found.\n", j);
+      continue;
+    }
+
     if (j == g.player) {
-      g.out << std::format("[{:2d}, {}] {} \"{}\"\n", j, g.governor, race.name,
-                           race.governor[g.governor].name);
+      g.out << std::format("[{:2d}, {}] {} \"{}\"\n", j, g.governor, race->name,
+                           race->governor[g.governor].name);
     } else {
-      g.out << std::format("[{:2d}] {}\n", j, race.name);
+      g.out << std::format("[{:2d}] {}\n", j, race->name);
     }
   }
 }

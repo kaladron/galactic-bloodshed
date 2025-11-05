@@ -32,8 +32,12 @@ void page(const command_t &argv, GameObj &g) {
       g.out << "No such player.\n";
       return;
     }
-    auto &alien = races[who - 1];
-    APcount *= !alien.God;
+    const auto* alien = g.entity_manager.peek_race(who);
+    if (!alien) {
+      g.out << "Race not found.\n";
+      return;
+    }
+    APcount *= !alien->God;
     if (argv.size() > 1) gov = std::stoi(argv[2]);
   }
 
@@ -48,10 +52,14 @@ void page(const command_t &argv, GameObj &g) {
         return;
       }
 
-      auto &race = races[Playernum - 1];
+      const auto* race = g.entity_manager.peek_race(Playernum);
+      if (!race) {
+        g.out << "Race data not found.\n";
+        return;
+      }
 
       auto msg = std::format("{} \"{}\" page(s) you from the {} star system.\n",
-                             race.name, race.governor[Governor].name,
+                             race->name, race->governor[Governor].name,
                              stars[g.snum].get_name());
 
       if (to_block) {

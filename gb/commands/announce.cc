@@ -37,8 +37,13 @@ void announce(const command_t &argv, GameObj &g) {
     return;
   }
 
-  auto &race = races[Playernum - 1];
-  if (mode == Communicate::SHOUT && !race.God) {
+  const auto* race = g.entity_manager.peek_race(Playernum);
+  if (!race) {
+    g.out << "Race data not found.\n";
+    return;
+  }
+
+  if (mode == Communicate::SHOUT && !race->God) {
     g.out << "You are not privileged to use this command.\n";
     return;
   }
@@ -61,14 +66,14 @@ void announce(const command_t &argv, GameObj &g) {
       break;
     default:
       if ((mode == Communicate::ANN) &&
-          !(!!isset(stars[g.snum].inhabited(), Playernum) || race.God)) {
+          !(!!isset(stars[g.snum].inhabited(), Playernum) || race->God)) {
         g.out << "You do not inhabit this system or have diety privileges.\n";
         return;
       }
   }
 
-  std::string msg = std::format("{} \"{}\" [{},{}] {} {}\n", race.name,
-                                race.governor[Governor].name, Playernum,
+  std::string msg = std::format("{} \"{}\" [{},{}] {} {}\n", race->name,
+                                race->governor[Governor].name, Playernum,
                                 Governor, std::to_underlying(mode), message);
 
   switch (mode) {

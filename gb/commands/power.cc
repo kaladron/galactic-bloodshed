@@ -56,12 +56,16 @@ void power(const command_t &argv, GameObj &g) {
     }
   }
 
-  auto &race = races[Playernum - 1];
+  const auto* race = g.entity_manager.peek_race(Playernum);
+  if (!race) {
+    g.out << "Race data not found.\n";
+    return;
+  }
 
   g.out << std::format(
       "         ========== Galactic Bloodshed Power Report ==========\n");
 
-  if (race.God)
+  if (race->God)
     g.out << std::format(
         "{}  #  Name               VP  mil  civ cash ship pl  res fuel dest "
         "morl VNs\n",
@@ -78,14 +82,19 @@ void power(const command_t &argv, GameObj &g) {
     for (const auto &vic : vicvec) {
       rank++;
       p = vic.racenum;
-      auto &r = races[p - 1];
-      if (!r.dissolved && race.translate[p - 1] >= 10) {
-        g.out << prepare_output_line(race, r, p, rank);
+      const auto* r = g.entity_manager.peek_race(p);
+      if (!r) continue;
+      if (!r->dissolved && race->translate[p - 1] >= 10) {
+        g.out << prepare_output_line(*race, *r, p, rank);
       }
     }
   } else {
-    auto &r = races[p - 1];
-    g.out << prepare_output_line(race, r, p, 0);
+    const auto* r = g.entity_manager.peek_race(p);
+    if (!r) {
+      g.out << "Race not found.\n";
+      return;
+    }
+    g.out << prepare_output_line(*race, *r, p, 0);
   }
 }
 }  // namespace GB::commands

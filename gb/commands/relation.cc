@@ -31,24 +31,29 @@ void relation(const command_t &argv, GameObj &g) {
     }
   }
 
-  auto &race = races[q - 1];
+  const auto* race = g.entity_manager.peek_race(q);
+  if (!race) {
+    g.out << "Race not found.\n";
+    return;
+  }
 
   notify(Playernum, Governor,
          std::format("\n              Racial Relations Report for {}\n\n",
-                     race.name));
+                     race->name));
   g.out << " #       know             Race name       Yours        Theirs\n";
   g.out << " -       ----             ---------       -----        ------\n";
-  for (auto r : races) {
-    if (r.Playernum == race.Playernum) continue;
+  for (player_t i = 1; i <= Num_races; i++) {
+    const auto* r = g.entity_manager.peek_race(i);
+    if (!r || r->Playernum == race->Playernum) continue;
     notify(Playernum, Governor,
            std::format("{:2} {:5} ({:3d}%) {:>20.20} : {:>10}   {:>10}\n",
-                       r.Playernum,
-                       ((race.God || (race.translate[r.Playernum - 1] > 30)) &&
-                        r.Metamorph && (Playernum == q))
+                       r->Playernum,
+                       ((race->God || (race->translate[r->Playernum - 1] > 30)) &&
+                        r->Metamorph && (Playernum == q))
                            ? "Morph"
                            : "     ",
-                       race.translate[r.Playernum - 1], r.name,
-                       allied(race, r.Playernum), allied(r, q)));
+                       race->translate[r->Playernum - 1], r->name,
+                       allied(*race, r->Playernum), allied(*r, q)));
   }
 }
 }  // namespace GB::commands

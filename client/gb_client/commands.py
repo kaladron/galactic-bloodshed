@@ -94,6 +94,14 @@ class CommandProcessor:
             aliases=["so"],
             help_text="Show the current parsed orbit/system map"
         ))
+        
+        self.register_command(Command(
+            name="history",
+            handler=self._cmd_history,
+            cmd_type=CommandType.CLIENT,
+            aliases=["hist"],
+            help_text="Show command history"
+        ))
     
     def register_command(self, command: Command):
         """Register a command and its aliases"""
@@ -106,6 +114,9 @@ class CommandProcessor:
         if not line.strip():
             return
         
+        # Expand history commands first (before variables)
+        line = self._expand_history(line)
+        
         # Expand variables
         line = self._expand_variables(line)
         
@@ -114,6 +125,40 @@ class CommandProcessor:
         
         for cmd in commands:
             await self._execute_single_command(cmd)
+    
+    def _expand_history(self, line: str) -> str:
+        """Expand history commands (!! and !n)"""
+        import re
+        
+        # Get history from UI
+        history = self.client.ui.get_history()
+        if not history:
+            logging.debug("No history available for expansion")
+            return line
+        
+        # Handle !! (last command)
+        if line.strip() == '!!':
+            expanded = history[-1]
+            logging.debug(f"Expanded !! to: {expanded!r}")
+            return expanded
+        
+        # Handle !n (command number n)
+        # Match !<number> at the start of the line or after whitespace
+        match = re.match(r'^!(\d+)(?:\s|$)', line)
+        if match:
+            cmd_num = int(match.group(1))
+            if 1 <= cmd_num <= len(history):
+                # Replace !n with the command
+                remaining = line[match.end():]
+                expanded = history[cmd_num - 1] + (' ' + remaining if remaining else '')
+                logging.debug(f"Expanded !{cmd_num} to: {expanded!r}")
+                return expanded
+            else:
+                self.client.display_output(f"Error: No such command in history: !{cmd_num}")
+                logging.debug(f"!{cmd_num} out of range (history has {len(history)} commands)")
+                return ""  # Return empty to skip execution
+        
+        return line
     
     def _expand_variables(self, line: str) -> str:
         """Expand $variable references"""
@@ -168,6 +213,11 @@ class CommandProcessor:
         for name, cmd in self.commands.items():
             if name == cmd.name:  # Only show primary name, not aliases
                 self.client.display_output(f"  {name}: {cmd.help_text}")
+        
+        self.client.display_output("\nHistory features:")
+        self.client.display_output("  UP/DOWN arrows: Navigate command history")
+        self.client.display_output("  !!: Repeat last command")
+        self.client.display_output("  !n: Repeat command number n (use 'history' to see numbers)")
     
     async def _cmd_set(self, args: str):
         """Set a variable"""
@@ -209,3 +259,24 @@ class CommandProcessor:
         from .protocol import OrbitMapParser
         formatted = OrbitMapParser.format_orbit_display(self.client.state.current_orbit_map)
         self.client.display_output(formatted)
+    
+    async def _cmd_history(self, args: str):
+        """Display command history"""
+        history = self.client.ui.get_history()
+        if not history:
+            self.client.display_output("No command history yet.")
+            return
+        
+        # Parse optional argument for how many commands to show
+        try:
+            count = int(args) if args.strip() else len(history)
+        except ValueError:
+            count = len(history)
+        
+        # Show last 'count' commands
+        start_idx = max(0, len(history) - count)
+        self.client.display_output("\nCommand History:")
+        for i, cmd in enumerate(history[start_idx:], start=start_idx + 1):
+            self.client.display_output(f"  {i:3d}  {cmd}")
+        self.client.display_output(f"\nTotal: {len(history)} commands (use !<number> to repeat)")
+

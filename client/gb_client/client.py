@@ -219,6 +219,8 @@ class GBClient:
                 else:
                     # Fallback to line-based input
                     line = await loop.run_in_executor(None, input, "> ")
+                    # Add to history in non-curses mode too
+                    self.ui.add_to_history(line)
                     await self.command_processor.process_command(line)
             except EOFError:
                 break

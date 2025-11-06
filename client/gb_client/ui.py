@@ -43,6 +43,11 @@ class TerminalUI:
         self.last_displayed_map: Optional['PlanetMap'] = None  # Track last map for redraw
         self.last_displayed_orbit: Optional['OrbitMap'] = None  # Track last orbit map for redraw
         
+        # Command history
+        self.command_history: deque = deque(maxlen=1000)  # Store last 1000 commands
+        self.history_index: int = -1  # Current position in history (-1 = not browsing)
+        self.history_buffer: str = ""  # Stores current input when starting to browse history
+        
     def init(self, stdscr=None):
         """Initialize the terminal UI"""
         if not self.use_curses:
@@ -64,6 +69,8 @@ class TerminalUI:
             
             # Create input window (last line only, for prompt)
             self.input_win = curses.newwin(1, self.width, self.height - 1, 0)
+            # Enable keypad mode so arrow keys work properly
+            self.input_win.keypad(True)
             
             self.refresh_status()
             self.refresh_input()
@@ -95,6 +102,8 @@ class TerminalUI:
             
             self.status_win = curses.newwin(1, self.width, self.height - 2, 0)
             self.input_win = curses.newwin(1, self.width, self.height - 1, 0)
+            # Enable keypad mode so arrow keys work properly
+            self.input_win.keypad(True)
             
             # Redraw the status bar and input line
             self.refresh_status()
@@ -363,6 +372,32 @@ class TerminalUI:
         except curses.error:
             return None
     
+    def add_to_history(self, command: str):
+        """Add a command to history
+        
+        Skips empty commands and duplicate consecutive commands.
+        Also skips history expansion commands (!! and !n).
+        """
+        if not command.strip():
+            return
+        
+        # Don't add history expansion commands to history
+        if command.strip() == '!!':
+            return
+        if command.strip().startswith('!') and command.strip()[1:].split()[0].isdigit():
+            return
+        
+        # Don't add if it's the same as the last command
+        if self.command_history and self.command_history[-1] == command:
+            return
+        
+        self.command_history.append(command)
+        logging.debug(f"Added to history: {command!r} (total: {len(self.command_history)})")
+    
+    def get_history(self) -> list[str]:
+        """Get all command history"""
+        return list(self.command_history)
+    
     def handle_input_char(self, ch: int) -> Optional[str]:
         """Handle input character, return complete line if Enter pressed"""
         if ch == curses.KEY_RESIZE:  # Terminal resize
@@ -370,10 +405,57 @@ class TerminalUI:
             return None
         elif ch == ord('\n'):  # Enter
             line = self.input_buffer
+            
+            # Add to history
+            self.add_to_history(line)
+            
+            # Reset history browsing state
+            self.history_index = -1
+            self.history_buffer = ""
+            
             self.input_buffer = ""
             self.input_pos = 0
             self.refresh_input()
             return line
+        elif ch == curses.KEY_UP:  # Up arrow - previous command
+            logging.debug(f"UP arrow pressed, history_index={self.history_index}, history_len={len(self.command_history)}")
+            if not self.command_history:
+                return None
+            
+            # First time browsing? Save current input
+            if self.history_index == -1:
+                self.history_buffer = self.input_buffer
+                self.history_index = len(self.command_history)
+            
+            # Move backward in history
+            if self.history_index > 0:
+                self.history_index -= 1
+                self.input_buffer = self.command_history[self.history_index]
+                self.input_pos = len(self.input_buffer)
+                logging.debug(f"Loaded history[{self.history_index}]: {self.input_buffer!r}")
+                self.refresh_input()
+            return None
+        elif ch == curses.KEY_DOWN:  # Down arrow - next command
+            logging.debug(f"DOWN arrow pressed, history_index={self.history_index}")
+            if self.history_index == -1:
+                return None  # Not browsing history
+            
+            # Move forward in history
+            self.history_index += 1
+            
+            if self.history_index >= len(self.command_history):
+                # Reached the end, restore original input
+                self.input_buffer = self.history_buffer
+                self.history_index = -1
+                self.history_buffer = ""
+                logging.debug(f"Restored original input: {self.input_buffer!r}")
+            else:
+                self.input_buffer = self.command_history[self.history_index]
+                logging.debug(f"Loaded history[{self.history_index}]: {self.input_buffer!r}")
+            
+            self.input_pos = len(self.input_buffer)
+            self.refresh_input()
+            return None
         elif ch == curses.KEY_BACKSPACE or ch == 127 or ch == 8:  # Backspace
             if self.input_pos > 0:
                 self.input_buffer = (

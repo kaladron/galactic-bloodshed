@@ -38,7 +38,7 @@ using report_array = std::array<bool, NUMSTYPES>;
 // Context structure holding all rst command state
 struct RstContext {
   std::vector<reportdata> rd;
-  char shiplist[256];
+  std::string shiplist;
   bool Status;
   bool SHip;
   bool Stock;
@@ -52,7 +52,7 @@ struct RstContext {
 };
 
 static bool Getrship(GameObj&, RstContext&, shipnum_t);
-static bool listed(int, char*);
+static bool listed(int, const std::string&);
 static void plan_getrships(GameObj&, RstContext&, player_t, starnum_t,
                            planetnum_t);
 static void ship_report(GameObj&, RstContext&, shipnum_t,
@@ -109,7 +109,7 @@ void rst(const command_t& argv, GameObj& g) {
       ctx.who = std::stoi(argv[2]);
     else {
       ctx.who = 999; /* treat argv[2].c_str() as a list of ship types */
-      strcpy(ctx.shiplist, argv[2].c_str());
+      ctx.shiplist = argv[2];
     }
   } else
     ctx.who = 0;
@@ -533,11 +533,9 @@ static bool Getrship(GameObj& g, RstContext& ctx, shipnum_t shipno) {
   return false;
 }
 
-static bool listed(int type, char* string) {
-  char* p;
-
-  for (p = string; *p; p++) {
-    if (Shipltrs[type] == *p) return true;
+static bool listed(int type, const std::string& string) {
+  for (char c : string) {
+    if (Shipltrs[type] == c) return true;
   }
   return false;
 }

@@ -197,6 +197,13 @@ static void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
   guntype_t caliber;
   double Dist;
 
+  // Get race from EntityManager
+  const auto* race = g.entity_manager.peek_race(Playernum);
+  if (!race) {
+    g.out << "Race not found.\n";
+    return;
+  }
+
   /* last ship gotten from disk */
   auto& s = ctx.rd[indx].s;
   auto& p = ctx.rd[indx].p;
@@ -351,8 +358,6 @@ static void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
           dispshiploc_brief(s), locstrn);
     }
 
-    auto& race = races[Playernum - 1];
-
     if (ctx.Tactical) {
       int fev = 0;
       int fspeed = 0;
@@ -363,11 +368,12 @@ static void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
                "fuel dam spd evad               orbits\n";
 
       if (ctx.rd[indx].type == PLANET) {
-        tech = race.tech;
+        const auto* star = g.entity_manager.peek_star(ctx.rd[indx].star);
+        tech = race->tech;
         /* tac report from planet */
         g.out << std::format(
             "(planet){:15.15}{:4.0f} {:4}M           {:5} {:6}\n",
-            stars[ctx.rd[indx].star].get_planet_name(ctx.rd[indx].pnum), tech,
+            star ? star->pnames[ctx.rd[indx].pnum] : "Unknown", tech,
             p.info[Playernum - 1].guns, p.info[Playernum - 1].destruct,
             p.info[Playernum - 1].fuel);
         caliber = GTYPE_MEDIUM;
@@ -412,16 +418,17 @@ static void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
       if (sight)
         for (i = 0; i < Num_ships; i++) {
           double range = ctx.rd[indx].type == PLANET
-                             ? gun_range(race)
+                             ? gun_range(*race)
                              : gun_range(ctx.rd[indx].s);
           if (i != indx &&
               (Dist = sqrt(Distsq(ctx.rd[indx].x, ctx.rd[indx].y, ctx.rd[i].x,
                                   ctx.rd[i].y))) < range) {
             if (ctx.rd[i].type == PLANET) {
               /* tac report at planet */
+              const auto* star = g.entity_manager.peek_star(ctx.rd[i].star);
               g.out << std::format(
                   " {:13}(planet)          {:8.0f}\n",
-                  stars[ctx.rd[i].star].get_planet_name(ctx.rd[i].pnum), Dist);
+                  star ? star->pnames[ctx.rd[i].pnum] : "Unknown", Dist);
             } else if (!ctx.who || ctx.who == ctx.rd[i].s.owner ||
                        (ctx.who == 999 &&
                         listed((int)ctx.rd[i].s.type, ctx.shiplist))) {
@@ -449,16 +456,13 @@ static void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
                 if (ctx.rd[indx].type != PLANET && laser_on(ctx.rd[indx].s) &&
                     ctx.rd[indx].s.focus)
                   prob = prob * prob / 100;
-                auto war_status =
-                    isset(races[Playernum - 1].atwar, ctx.rd[i].s.owner)
-                        ? "-"
-                    : isset(races[Playernum - 1].allied, ctx.rd[i].s.owner)
-                        ? "+"
-                        : " ";
+                auto war_status = isset(race->atwar, ctx.rd[i].s.owner) ? "-"
+                                  : isset(race->allied, ctx.rd[i].s.owner)
+                                      ? "+"
+                                      : " ";
                 if (!ctx.enemies_only ||
                     (ctx.enemies_only &&
-                     (!isset(races[Playernum - 1].allied,
-                             ctx.rd[i].s.owner)))) {
+                     (!isset(race->allied, ctx.rd[i].s.owner)))) {
                   g.out << std::format(
                       "{:13} {}{:2},{:1} {:c}{:14.14} {:4.0f}  {:4}   {:4} {}  "
                       "{:3}  "
@@ -486,6 +490,9 @@ static void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
 
 static void plan_getrships(GameObj& g, RstContext& ctx, player_t Playernum,
                            starnum_t snum, planetnum_t pnum) {
+  const auto* star = g.entity_manager.peek_star(snum);
+  if (!star) return;
+
   ctx.rd.resize(Num_ships + 1);
   ctx.rd[Num_ships].p = getplanet(snum, pnum);
   const auto& p = ctx.rd[Num_ships].p;
@@ -494,8 +501,8 @@ static void plan_getrships(GameObj& g, RstContext& ctx, player_t Playernum,
   ctx.rd[Num_ships].pnum = pnum;
   ctx.rd[Num_ships].type = PLANET;
   ctx.rd[Num_ships].n = 0;
-  ctx.rd[Num_ships].x = stars[snum].xpos() + p.xpos;
-  ctx.rd[Num_ships].y = stars[snum].ypos() + p.ypos;
+  ctx.rd[Num_ships].x = star->xpos + p.xpos;
+  ctx.rd[Num_ships].y = star->ypos + p.ypos;
   Num_ships++;
 
   if (p.info[Playernum - 1].explored) {
@@ -507,21 +514,24 @@ static void plan_getrships(GameObj& g, RstContext& ctx, player_t Playernum,
 
 static void star_getrships(GameObj& g, RstContext& ctx, player_t Playernum,
                            starnum_t snum) {
-  if (isset(stars[snum].explored(), Playernum)) {
-    shipnum_t shn = stars[snum].ships();
+  const auto* star = g.entity_manager.peek_star(snum);
+  if (!star) return;
+
+  if (isset(star->explored, Playernum)) {
+    shipnum_t shn = star->ships;
     while (shn && Getrship(g, ctx, shn))
       shn = ctx.rd[Num_ships - 1].s.nextship;
-    for (planetnum_t i = 0; i < stars[snum].numplanets(); i++)
+    for (planetnum_t i = 0; i < star->numplanets; i++)
       plan_getrships(g, ctx, Playernum, snum, i);
   }
 }
 
 /* get a ship from the disk and add it to the ship list we're maintaining. */
 static bool Getrship(GameObj& g, RstContext& ctx, shipnum_t shipno) {
-  auto shiptmp = getship(shipno);
-  if (shiptmp) {
+  const auto* ship = g.entity_manager.peek_ship(shipno);
+  if (ship) {
     ctx.rd.resize(Num_ships + 1);
-    ctx.rd[Num_ships].s = *shiptmp;
+    ctx.rd[Num_ships].s = *ship;
     ctx.rd[Num_ships].type = SHIP;
     ctx.rd[Num_ships].n = shipno;
     ctx.rd[Num_ships].x = ctx.rd[Num_ships].s.xpos;

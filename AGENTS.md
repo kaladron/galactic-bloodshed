@@ -5,7 +5,7 @@
 **Galactic Bloodshed** is a multiplayer space empire game server written in modern C++26. This is a modernization of a classic game from the early 1990s, now using C++ Modules, CMake, and contemporary C++ practices.
 
 ### Key Characteristics
-- **Language**: C++26 with C++ Modules (using `import std.compat`)
+- **Language**: C++26 with C++ Modules (prefer `import std;` over `import std.compat;`)
 - **Build System**: CMake with module support
 - **Compiler**: LLVM/Clang with libc++
 - **Architecture**: Command-based server with player actions as free functions
@@ -25,45 +25,52 @@
 ### Build Commands
 This project uses **CMake**, not make. The build directory is typically `build/`.
 
+**IMPORTANT**: Always run build commands from the workspace root using `-C build` flag to avoid getting lost in the directory tree.
+
 ```bash
-# Configure (first time only)
-cd /workspaces/galactic-bloodshed
-mkdir -p build
-cd build
-cmake ..
+# Configure (first time only from workspace root)
+cmake -S . -B build
 
-# Build everything
-cmake --build .
+# Build everything (from workspace root)
+cmake --build build
 
-# Build specific targets
-cmake --build . --target GB           # Main game server
-cmake --build . --target makeuniv     # Universe generator
-cmake --build . --target enrol        # Player enrollment
-cmake --build . --target race_sqlite_test  # Database test
+# Build specific targets (from workspace root)
+cmake --build build --target GB           # Main game server
+cmake --build build --target makeuniv     # Universe generator
+cmake --build build --target enrol        # Player enrollment
+cmake --build build --target race_sqlite_test  # Database test
 
-# Clean build
-cmake --build . --clean-first
+# Using ninja directly (from workspace root)
+ninja -C build                            # Build all
+ninja -C build GB                         # Build specific target
 
-# Run tests
-ctest                          # Run all tests
-ctest -R [test_name]          # Run specific test
-ctest --verbose               # Run tests with verbose output
+# Clean build (from workspace root)
+cmake --build build --clean-first
+
+# Run tests (from workspace root using subshell)
+(cd build && ctest)                       # Run all tests
+(cd build && ctest -R [test_name])       # Run specific test
+(cd build && ctest --verbose)            # Run tests with verbose output
 ```
 
 ### Common Build Commands for AI Agents
-- **Full build**: `cd /workspaces/galactic-bloodshed/build && cmake --build .`
-- **Incremental build**: `cd /workspaces/galactic-bloodshed/build && cmake --build .`
-- **Test specific component**: `cd /workspaces/galactic-bloodshed/build && cmake --build . --target [target_name]`
-- **Run all tests**: `cd /workspaces/galactic-bloodshed/build && ctest`
-- **Run specific test**: `cd /workspaces/galactic-bloodshed/build && ctest -R [test_name]`
-- **Run tests with verbose output**: `cd /workspaces/galactic-bloodshed/build && ctest --verbose`
+**Always execute from `/workspaces/galactic-bloodshed` (workspace root):**
+
+- **Full build**: `cmake --build build` or `ninja -C build`
+- **Incremental build**: `cmake --build build` or `ninja -C build`
+- **Build specific target**: `cmake --build build --target [target_name]` or `ninja -C build [target_name]`
+- **Clean build**: `cmake --build build --clean-first`
+- **Run all tests**: `(cd build && ctest)` (uses subshell to avoid changing directory)
+- **Run specific test**: `(cd build && ctest -R [test_name])`
+- **Run tests with verbose output**: `(cd build && ctest --verbose)`
 
 ### ⚠️ Important Notes
 - **DO NOT use `make`** - This project uses CMake, not traditional makefiles
-- Always build from the `build/` directory
-- Use `cmake --build .` instead of raw `make` commands
+- **Stay in workspace root** - Use `cmake --build build` or `ninja -C build` to avoid cd'ing around
+- Use `cmake --build build` or `ninja -C build` instead of cd'ing into build/ directory
 - The build system handles C++ modules automatically
 - **Prefer `ctest`** over directly running test executables for consistency and better output
+- For ctest, use subshell: `(cd build && ctest)` to run from workspace root
 
 ## 🏗️ Architecture & Code Organization
 
@@ -103,7 +110,7 @@ Every source file MUST follow this exact pattern:
 module;
 
 import gblib;
-import std.compat;  // or import std; if specifically needed
+import std;  // Prefer std over std.compat for new code
 
 module commands;  // or appropriate module partition
 
@@ -131,23 +138,29 @@ void commandname(const command_t& argv, GameObj& g) {
         return;
     }
     
-    // 3. Retrieve game objects using gblib:files_shl
-    auto planet = getplanet(g.snum, g.pnum);
-    auto ship = getship(argv[1]);  // Returns std::optional<Ship>
-    if (!ship) {
-        g.out << "Ship not found.\n";
+    // 3. Retrieve game objects using EntityManager
+    // Read-only access (no modifications)
+    const auto* race = g.entity_manager.peek_race(g.player);
+    if (!race) {
+        g.out << "Race not found.\n";
+        return;
+    }
+    
+    // Read-write access (auto-saves on scope exit)
+    auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+    if (!planet_handle.get()) {
+        g.out << "Planet not found.\n";
         return;
     }
     
     // 4. Perform game logic
-    // ...
+    auto& planet = *planet_handle;  // Marks dirty, will auto-save
+    planet.popn += 1000;
     
     // 5. Write output to player
-    g.out << std::format("Success: {}\n", result);
+    g.out << std::format("Success: population now {}\n", planet.popn);
     
-    // 6. Persist changes
-    putship(*ship);
-    putplanet(planet, stars[g.snum], g.pnum);
+    // 6. Auto-save happens when planet_handle goes out of scope
 }
 ```
 
@@ -191,6 +204,72 @@ g.out << std::format("{:<15} {:>5} {:>5}\n", name, crew, tech);
 
 ### Accessing Game Data
 
+**IMPORTANT:** The codebase is migrating from global arrays and direct file I/O to an EntityManager-based architecture. Use the new patterns below for all new code.
+
+#### Modern Pattern: EntityManager (Use This!)
+
+The `EntityManager` provides centralized, RAII-based entity lifecycle management:
+
+**Read-Only Access (peek methods - no auto-save):**
+```cpp
+// Read race data (no modifications, no auto-save)
+const auto* race = g.entity_manager.peek_race(g.player);
+if (!race) {
+    g.out << "Race not found.\n";
+    return;
+}
+g.out << std::format("Race: {}\n", race->name);
+
+// Read star data
+const auto* star = g.entity_manager.peek_star(star_id);
+
+// Read planet data (composite key)
+const auto* planet = g.entity_manager.peek_planet(star_id, planet_num);
+```
+
+**Read-Write Access (get methods - RAII with auto-save):**
+```cpp
+// Get entity for modification (auto-saves on scope exit)
+auto race_handle = g.entity_manager.get_race(g.player);
+if (!race_handle.get()) {
+    g.out << "Race not found.\n";
+    return;
+}
+
+// Read-only access without marking dirty
+const auto& race_read = race_handle.read();
+g.out << std::format("Current tech: {}\n", race_read.tech);
+
+// Modification access (marks dirty, triggers auto-save)
+auto& race = *race_handle;
+race.tech += 10.5;
+// Auto-saves when race_handle goes out of scope
+
+// Explicit early save if needed
+race_handle.save();
+```
+
+**Available EntityManager Methods:**
+- **Races**: `peek_race(id)`, `get_race(id)`
+- **Ships**: `peek_ship(id)`, `get_ship(id)`, `num_ships()`
+- **Stars**: `peek_star(id)`, `get_star(id)`
+- **Planets**: `peek_planet(star_id, planet_num)`, `get_planet(star_id, planet_num)`
+- **Sectors**: `peek_sector(planet_id, x, y)`, `get_sector(planet_id, x, y)`
+- **Commodities**: `peek_commod(id)`, `get_commod(id)`, `num_commods()`
+- **Blocks**: `peek_block(id)`, `get_block(id)`
+- **Power**: `peek_power(id)`, `get_power(id)`
+- **Global Data**: `peek_stardata()`, `get_stardata()`
+
+**Key Benefits:**
+- **RAII**: Auto-saves modified entities when handle goes out of scope
+- **Caching**: Entities loaded once, reused across multiple accesses
+- **Type-safe**: Compile-time checking of entity types
+- **No manual persistence**: No need to call `put*()` functions
+
+#### Legacy Pattern (Being Phased Out)
+
+**⚠️ DEPRECATED - Do not use in new code:**
+
 #### Read Operations
 ```cpp
 // Get star system
@@ -224,6 +303,8 @@ putplanet(planet, stars[snum], pnum);
 finish_build_ship(sector, x, y, planet, snum, pnum, outside, level, builder);
 ```
 
+**Note:** These legacy functions will be removed in Phase 6 of the database migration. All new code should use EntityManager.
+
 ### Working with GameObj Context
 
 The `GameObj& g` parameter provides:
@@ -234,6 +315,7 @@ The `GameObj& g` parameter provides:
 - `g.pnum` - Current planet number
 - `g.shipno` - Current ship number
 - `g.out` - Output stream to player
+- `g.entity_manager` - **NEW:** Centralized entity access (use this instead of global arrays!)
 
 ### Writing Tests
 
@@ -242,17 +324,18 @@ When creating new test files, follow this essential pattern for database initial
 ```cpp
 // SPDX-License-Identifier: Apache-2.0
 
+import dallib;
 import gblib;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // CRITICAL: Always create in-memory database BEFORE calling initsqldata()
-  Sql db(":memory:");
+  // CRITICAL: Always create in-memory database BEFORE calling initialize_schema()
+  Database db(":memory:");
 
   // Initialize database tables - this creates all required tables
-  initsqldata();
+  initialize_schema(db);
 
   // Your test logic here...
   
@@ -262,11 +345,12 @@ int main() {
 ```
 
 **⚠️ Critical Database Initialization Rules for Tests:**
-- **ALWAYS** create `Sql db(":memory:");` before calling `initsqldata()`
+- **ALWAYS** create `Database db(":memory:");` before calling `initialize_schema(db)`
 - This creates all required tables including `tbl_ship`, `tbl_race`, `tbl_commod`, etc.
 - Without this, tests will segfault when trying to access non-existent database files
-- The `initsqldata()` function creates the database schema but requires an active connection
+- The `initialize_schema()` function creates the database schema but requires an active connection
 - All working tests follow this pattern - never deviate from it
+- Tests typically also need `import dallib;` in addition to `import gblib;`
 
 ## ⚠️ Critical Rules & Anti-patterns
 
@@ -281,7 +365,8 @@ int main() {
 - ❌ Bypass the gblib access layer for data persistence
 
 ### ALWAYS:
-- ✅ Use `import gblib; import std.compat;` module imports
+- ✅ Use `import gblib;` and prefer `import std;` over `import std.compat;`
+- ✅ For tests, also add `import dallib;`
 - ✅ Write all output through `g.out`
 - ✅ Check `std::optional` values before use
 - ✅ Use early returns with clear error messages
@@ -334,7 +419,7 @@ Before submitting any code:
 ```cpp
 module;
 import gblib;
-import std.compat;
+import std;  // Prefer std over std.compat for new code
 #include "gb/files.h"  // Only if needed for constants
 module commands;
 ```
@@ -361,7 +446,7 @@ Use these from `gb/files.h`:
 
 1. **Build Issues**: 
    - Ensure you're using LLVM/Clang with libc++
-   - Always use `cmake --build .` from the `build/` directory
+   - Always use `cmake --build build` from the workspace root using `-C build` flag
    - **Never use `make`** - this project uses CMake exclusively
 2. **Module Errors**: Check module import order and partition syntax
 3. **Runtime Errors**: Look for unchecked `std::optional` access
@@ -370,7 +455,7 @@ Use these from `gb/files.h`:
 6. **Test Failures**: 
    - Use `ctest` or `ctest --verbose` to run tests from `build/` directory
    - Individual test executables can be run directly: `./gb/race_sqlite_test`
-   - Always ensure tests use `Sql db(":memory:");` before `initsqldata()`
+   - Always ensure tests use `Database db(":memory:");` before `initialize_schema(db)`
 
 ## � Python Client Development
 
@@ -418,11 +503,140 @@ cd /workspaces/galactic-bloodshed/client
    - Don't call `endwin()` manually - causes "endwin() returned ERR"
    - Wrapper automatically restores terminal on exit
 
-## �📚 Additional Resources
+## 📚 Quick Task Reference
 
-- [`docs/COPILOT_TASKS.md`](docs/COPILOT_TASKS.md) - Task playbooks
-- [`.github/copilot-instructions.md`](.github/copilot-instructions.md) - Copilot-specific guidance
-- [`docs/gb_FAQ.txt`](docs/gb_FAQ.txt) - Historical game documentation
+These recipes provide step-by-step instructions for common tasks.
+
+### Add a New Command
+1. **Export in `gb/commands/commands.cppm`**:
+   ```cpp
+   export void foo(const command_t&, GameObj&);
+   ```
+
+2. **Create `gb/commands/foo.cc`**:
+   ```cpp
+   // SPDX-License-Identifier: Apache-2.0
+   module;
+   import gblib;
+   import std;
+   module commands;
+
+   namespace GB::commands {
+   void foo(const command_t& argv, GameObj& g) {
+     // Validate g.level, parse argv
+     // Use g.entity_manager to access entities
+     // Write to g.out, return early on errors
+   }
+   }  // namespace GB::commands
+   ```
+
+3. **Add source file to `commands` target in `gb/CMakeLists.txt`**:
+   ```cmake
+   PRIVATE commands/foo.cc
+   ```
+
+4. **Wire it in `gb/GB_server.cc::getCommands()`**:
+   ```cpp
+   {"foo", GB::commands::foo},
+   {"f", GB::commands::foo},  // Optional alias
+   ```
+
+5. **Build and test**:
+   ```bash
+   ninja -C build
+   (cd build && ctest)
+   ```
+
+### Read from Database
+Use EntityManager for all entity access:
+```cpp
+// Read-only access (peek methods)
+const auto* race = g.entity_manager.peek_race(g.player);
+const auto* star = g.entity_manager.peek_star(star_id);
+const auto* planet = g.entity_manager.peek_planet(star_id, planet_num);
+
+// Always check for null
+if (!race) {
+  g.out << "Race not found.\n";
+  return;
+}
+```
+Always check pointers before use. On failure: print message and return early.
+
+### Write to Database
+Use EntityManager get methods for read-write access with RAII:
+```cpp
+// Get entity handle (auto-saves on scope exit)
+auto race_handle = g.entity_manager.get_race(g.player);
+if (!race_handle.get()) {
+  g.out << "Race not found.\n";
+  return;
+}
+
+// Modify entity (marks dirty)
+auto& race = *race_handle;
+race.tech += 10.5;
+// Auto-saves when race_handle goes out of scope
+
+// Or use explicit save if needed early
+race_handle.save();
+```
+No need to call put* functions - RAII handles persistence automatically.
+
+### Print Aligned Tables
+Use `std::format` to build headers and rows:
+```cpp
+g.out << std::format("{:<15} {:>5} {:>5}\n", "Name", "Crew", "Tech");
+g.out << std::format("{:<15.15} {:>5} {:>5}\n", ship_name, crew, tech);
+```
+Follow patterns in `gb/commands/build.cc` for column widths and alignment.
+
+### Validate Scope and Permissions
+```cpp
+// Scope check
+if (g.level != ScopeLevel::LEVEL_SHIP && g.level != ScopeLevel::LEVEL_PLAN) {
+  g.out << "Must be at ship or planet scope.\n";
+  return;
+}
+
+// Permission/capability checks
+if (ship.tech < required_tech && !race.God) {
+  g.out << "Insufficient technology level.\n";
+  return;
+}
+
+// Toggle flags
+if (!race.governor[g.governor].toggle.autoreport) {
+  g.out << "Autoreport is disabled.\n";
+  return;
+}
+```
+
+### Add Tests
+Small unit-style tests can be added alongside existing tests:
+```cpp
+// SPDX-License-Identifier: Apache-2.0
+import dallib;
+import gblib;
+import std.compat;
+#include <cassert>
+
+int main() {
+  Database db(":memory:");
+  initialize_schema(db);
+  
+  // Test logic with assertions
+  assert(result == expected);
+  
+  std::println("Test passed!");
+  return 0;
+}
+```
+Wire into CTest via `gb/CMakeLists.txt`.
+
+## 📖 Additional Resources
+
+- [`docs/gb_FAQ.txt`](docs/gb_FAQ.txt) - Historical game documentation and FAQ
 
 ---
 

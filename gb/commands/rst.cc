@@ -43,11 +43,11 @@ using report_array = std::array<bool, NUMSTYPES>;
 static std::vector<reportdata> rd;
 static bool enemies_only;
 static int who;
-static bool Getrship(player_t, governor_t, shipnum_t);
+static bool Getrship(GameObj&, shipnum_t);
 static bool listed(int, char*);
-static void plan_getrships(player_t, governor_t, starnum_t, planetnum_t);
+static void plan_getrships(GameObj&, player_t, starnum_t, planetnum_t);
 static void ship_report(GameObj &, shipnum_t, const report_array &);
-static void star_getrships(player_t, governor_t, starnum_t);
+static void star_getrships(GameObj&, player_t, starnum_t);
 
 namespace GB::commands {
 void rst(const command_t &argv, GameObj &g) {
@@ -111,13 +111,12 @@ void rst(const command_t &argv, GameObj &g) {
       while (l < MAXARGS && *argv[l].c_str() != '\0') {
         sscanf(argv[l].c_str() + (*argv[l].c_str() == '#'), "%lu", &shipno);
         if (shipno > n_ships || shipno < 1) {
-          notify(Playernum, Governor,
-                 std::format("rst: no such ship #{} \n", shipno));
+          g.out << std::format("rst: no such ship #{} \n", shipno);
           return;
         }
-        (void)Getrship(Playernum, Governor, shipno);
+        (void)Getrship(g, shipno);
         if (rd[Num_ships - 1].s.whatorbits != ScopeLevel::LEVEL_UNIV) {
-          star_getrships(Playernum, Governor, rd[Num_ships - 1].s.storbits);
+          star_getrships(g, Playernum, rd[Num_ships - 1].s.storbits);
           ship_report(g, Num_ships - 1, Report_types);
         } else
           ship_report(g, Num_ships - 1, Report_types);
@@ -131,8 +130,7 @@ void rst(const command_t &argv, GameObj &g) {
       shipnum_t i = NUMSTYPES;
       while (--i && Shipltrs[i] != c);
       if (Shipltrs[i] != c) {
-        notify(Playernum, Governor,
-               std::format("'{}' -- no such ship letter\n", c));
+        g.out << std::format("'{}' -- no such ship letter\n", c);
       } else
         Report_types[i] = true;
     }
@@ -142,34 +140,33 @@ void rst(const command_t &argv, GameObj &g) {
     case ScopeLevel::LEVEL_UNIV:
       if (!(Tactical && argv.size() < 2)) {
         shipnum_t shn = Sdata.ships;
-        while (shn && Getrship(Playernum, Governor, shn))
+        while (shn && Getrship(g, shn))
           shn = rd[Num_ships - 1].s.nextship;
 
         for (starnum_t i = 0; i < Sdata.numstars; i++)
-          star_getrships(Playernum, Governor, i);
+          star_getrships(g, Playernum, i);
         for (shipnum_t i = 0; i < Num_ships; i++)
           ship_report(g, i, Report_types);
       } else {
-        notify(Playernum, Governor,
-               "You can't do tactical option from universe level.\n");
+        g.out << "You can't do tactical option from universe level.\n";
         return;
       }
       break;
     case ScopeLevel::LEVEL_PLAN:
-      plan_getrships(Playernum, Governor, g.snum, g.pnum);
+      plan_getrships(g, Playernum, g.snum, g.pnum);
       for (shipnum_t i = 0; i < Num_ships; i++) ship_report(g, i, Report_types);
       break;
     case ScopeLevel::LEVEL_STAR:
-      star_getrships(Playernum, Governor, g.snum);
+      star_getrships(g, Playernum, g.snum);
       for (shipnum_t i = 0; i < Num_ships; i++) ship_report(g, i, Report_types);
       break;
     case ScopeLevel::LEVEL_SHIP:
-      (void)Getrship(Playernum, Governor, g.shipno);
+      (void)Getrship(g, g.shipno);
       ship_report(g, 0, Report_types); /* first ship report */
       shipnum_t shn = rd[0].s.ships;
       Num_ships = 0;
 
-      while (shn && Getrship(Playernum, Governor, shn))
+      while (shn && Getrship(g, shn))
         shn = rd[Num_ships - 1].s.nextship;
 
       for (shipnum_t i = 0; i < Num_ships; i++) ship_report(g, i, Report_types);
@@ -200,40 +197,36 @@ static void ship_report(GameObj &g, shipnum_t indx,
        !(s.type == ShipType::OTYPE_GREEN && !s.docked))) {
     if (rd[indx].type != PLANET && Stock) {
       if (first) {
-        notify(Playernum, Governor,
-               "    #       name        x  hanger   res        des       "
-               "  fuel      crew/mil\n");
+        g.out << "    #       name        x  hanger   res        des       "
+                 "  fuel      crew/mil\n";
         if (!SHip) first = false;
       }
-      notify(Playernum, Governor,
-             std::format(
-                 "{:5} {:c} "
-                 "{:14.14}{:3}{:4}:{:<3}{:5}:{:<5}{:5}:{:<5}{:7.1f}:{:<6}{}/{}:{}\n",
-                 shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
-                 s.crystals, s.hanger, s.max_hanger, s.resource, max_resource(s),
-                 s.destruct, max_destruct(s), s.fuel, max_fuel(s), s.popn,
-                 s.troops, s.max_crew));
+      g.out << std::format(
+          "{:5} {:c} "
+          "{:14.14}{:3}{:4}:{:<3}{:5}:{:<5}{:5}:{:<5}{:7.1f}:{:<6}{}/{}:{}\n",
+          shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
+          s.crystals, s.hanger, s.max_hanger, s.resource, max_resource(s),
+          s.destruct, max_destruct(s), s.fuel, max_fuel(s), s.popn,
+          s.troops, s.max_crew);
     }
 
     if (rd[indx].type != PLANET && Status) {
       if (first) {
-        notify(Playernum, Governor,
-               "    #       name       las cew hyp    guns   arm tech "
-               "spd cost  mass size\n");
+        g.out << "    #       name       las cew hyp    guns   arm tech "
+                 "spd cost  mass size\n";
         if (!SHip) first = false;
       }
-      notify(Playernum, Governor,
-             std::format(
-                 "{:5} {:c} {:14.14} {}{}{}{:3}{:c}/{:3}{:c}{:4}{:5.0f}{:4}{:5}{:7.1f}{:4}",
-                 shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
-                 s.laser ? "yes " : "    ", s.cew ? "yes " : "    ",
-                 s.hyper_drive.has ? "yes " : "    ", s.primary,
-                 Caliber[s.primtype], s.secondary, Caliber[s.sectype], armor(s),
-                 s.tech, max_speed(s), shipcost(s), mass(s), size(s)));
+      g.out << std::format(
+          "{:5} {:c} {:14.14} {}{}{}{:3}{:c}/{:3}{:c}{:4}{:5.0f}{:4}{:5}{:7.1f}{:4}",
+          shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
+          s.laser ? "yes " : "    ", s.cew ? "yes " : "    ",
+          s.hyper_drive.has ? "yes " : "    ", s.primary,
+          Caliber[s.primtype], s.secondary, Caliber[s.sectype], armor(s),
+          s.tech, max_speed(s), shipcost(s), mass(s), size(s));
       if (s.type == ShipType::STYPE_POD) {
         if (std::holds_alternative<PodData>(s.special)) {
           auto pod = std::get<PodData>(s.special);
-          notify(Playernum, Governor, std::format(" ({})", pod.temperature));
+          g.out << std::format(" ({})", pod.temperature);
         }
       }
       g.out << "\n";
@@ -241,39 +234,34 @@ static void ship_report(GameObj &g, shipnum_t indx,
 
     if (rd[indx].type != PLANET && Weapons) {
       if (first) {
-        notify(Playernum, Governor,
-               "    #       name      laser   cew     safe     guns    "
-               "damage   class\n");
+        g.out << "    #       name      laser   cew     safe     guns    "
+                 "damage   class\n";
         if (!SHip) first = false;
       }
-      notify(
-          Playernum, Governor,
-          std::format(
-              "{:5} {:c} {:14.14} {}  {:3}/{:<4}  {:4}  {:3}{:c}/{:3}{:c}    {:3}%  {:c} {}\n",
-              shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
-              s.laser ? "yes " : "    ", s.cew, s.cew_range,
-              (int)((1.0 - .01 * s.damage) * s.tech / 4.0), s.primary,
-              Caliber[s.primtype], s.secondary, Caliber[s.sectype], s.damage,
-              s.type == ShipType::OTYPE_FACTORY ? Shipltrs[s.build_type] : ' ',
-              ((s.type == ShipType::OTYPE_TERRA) ||
-               (s.type == ShipType::OTYPE_PLOW))
-                  ? "Standard"
-                  : s.shipclass));
+      g.out << std::format(
+          "{:5} {:c} {:14.14} {}  {:3}/{:<4}  {:4}  {:3}{:c}/{:3}{:c}    {:3}%  {:c} {}\n",
+          shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
+          s.laser ? "yes " : "    ", s.cew, s.cew_range,
+          (int)((1.0 - .01 * s.damage) * s.tech / 4.0), s.primary,
+          Caliber[s.primtype], s.secondary, Caliber[s.sectype], s.damage,
+          s.type == ShipType::OTYPE_FACTORY ? Shipltrs[s.build_type] : ' ',
+          ((s.type == ShipType::OTYPE_TERRA) ||
+           (s.type == ShipType::OTYPE_PLOW))
+              ? "Standard"
+              : s.shipclass);
     }
 
     if (rd[indx].type != PLANET && Factories &&
         (s.type == ShipType::OTYPE_FACTORY)) {
       if (first) {
-        notify(Playernum, Governor,
-               "   #    Cost Tech Mass Sz A Crw Ful Crg Hng Dst Sp "
-               "Weapons Lsr CEWs Range Dmg\n");
+        g.out << "   #    Cost Tech Mass Sz A Crw Ful Crg Hng Dst Sp "
+                 "Weapons Lsr CEWs Range Dmg\n";
         if (!SHip) first = false;
       }
       if ((s.build_type == 0) || (s.build_type == ShipType::OTYPE_FACTORY)) {
-        notify(Playernum, Governor,
-               std::format("{:5}               (No ship type specified yet)           "
-                          "           75% (OFF)",
-                          shipno));
+        g.out << std::format("{:5}               (No ship type specified yet)           "
+                            "           75% (OFF)",
+                            shipno);
       } else {
         std::string tmpbuf1;
         if (s.primtype) {
@@ -300,24 +288,22 @@ static void ship_report(GameObj &g, shipnum_t indx,
         std::string tmpbuf3 = s.cew ? std::format("{:4}", s.cew) : "----";
         std::string tmpbuf4 = s.cew ? std::format("{:5}", s.cew_range) : "-----";
         
-        notify(Playernum, Governor,
-               std::format(
-                   "{:5} {:c}{:4}{:6.1f}{:5.1f}{:3}{:2}{:4}{:4}{:4}{:4}{:4} {}{:1} {}/{} {} "
-                   "{} {} {:02}%{}\n",
-                   shipno, Shipltrs[s.build_type], s.build_cost, s.complexity,
-                   s.base_mass, ship_size(s), s.armor, s.max_crew, s.max_fuel,
-                   s.max_resource, s.max_hanger, s.max_destruct,
-                   s.hyper_drive.has ? (s.mount ? "+" : "*") : " ", s.max_speed,
-                   tmpbuf1, tmpbuf2, s.laser ? "yes" : " no", tmpbuf3, tmpbuf4,
-                   s.damage, s.damage ? (s.on ? "" : "*") : ""));
+        g.out << std::format(
+            "{:5} {:c}{:4}{:6.1f}{:5.1f}{:3}{:2}{:4}{:4}{:4}{:4}{:4} {}{:1} {}/{} {} "
+            "{} {} {:02}%{}\n",
+            shipno, Shipltrs[s.build_type], s.build_cost, s.complexity,
+            s.base_mass, ship_size(s), s.armor, s.max_crew, s.max_fuel,
+            s.max_resource, s.max_hanger, s.max_destruct,
+            s.hyper_drive.has ? (s.mount ? "+" : "*") : " ", s.max_speed,
+            tmpbuf1, tmpbuf2, s.laser ? "yes" : " no", tmpbuf3, tmpbuf4,
+            s.damage, s.damage ? (s.on ? "" : "*") : "");
       }
     }
 
     if (rd[indx].type != PLANET && Report) {
       if (first) {
-        notify(Playernum, Governor,
-               " #      name       gov dam crew mil  des fuel sp orbits  "
-               "   destination\n");
+        g.out << " #      name       gov dam crew mil  des fuel sp orbits  "
+                 "   destination\n";
         if (!SHip) first = false;
       }
       std::string locstrn;
@@ -337,12 +323,11 @@ static void ship_report(GameObj &g, shipnum_t indx,
         strng = std::format("INACTIVE({})", s.rad);
       }
 
-      notify(Playernum, Governor,
-             std::format("{:c}{:<5} {:12.12} {:2} {:3}{:5}{:4}{:5}{:5.0f} {:c}{:1} {:<10} {:<18}\n",
-                        Shipltrs[s.type], shipno, (s.active ? s.name : strng), s.governor,
-                        s.damage, s.popn, s.troops, s.destruct, s.fuel,
-                        s.hyper_drive.has ? (s.mounted ? '+' : '*') : ' ', s.speed,
-                        dispshiploc_brief(s), locstrn));
+      g.out << std::format("{:c}{:<5} {:12.12} {:2} {:3}{:5}{:4}{:5}{:5.0f} {:c}{:1} {:<10} {:<18}\n",
+                          Shipltrs[s.type], shipno, (s.active ? s.name : strng), s.governor,
+                          s.damage, s.popn, s.troops, s.destruct, s.fuel,
+                          s.hyper_drive.has ? (s.mounted ? '+' : '*') : ' ', s.speed,
+                          dispshiploc_brief(s), locstrn);
     }
 
     auto &race = races[Playernum - 1];
@@ -353,18 +338,16 @@ static void ship_report(GameObj &g, shipnum_t indx,
       int fdam = 0;
       double tech;
 
-      notify(Playernum, Governor,
-             "\n  #         name        tech    guns  armor size dest   "
-             "fuel dam spd evad               orbits\n");
+      g.out << "\n  #         name        tech    guns  armor size dest   "
+               "fuel dam spd evad               orbits\n";
 
       if (rd[indx].type == PLANET) {
         tech = race.tech;
         /* tac report from planet */
-        notify(Playernum, Governor,
-               std::format("(planet){:15.15}{:4.0f} {:4}M           {:5} {:6}\n",
-                          stars[rd[indx].star].get_planet_name(rd[indx].pnum),
-                          tech, p.info[Playernum - 1].guns,
-                          p.info[Playernum - 1].destruct, p.info[Playernum - 1].fuel));
+        g.out << std::format("(planet){:15.15}{:4.0f} {:4}M           {:5} {:6}\n",
+                            stars[rd[indx].star].get_planet_name(rd[indx].pnum),
+                            tech, p.info[Playernum - 1].guns,
+                            p.info[Playernum - 1].destruct, p.info[Playernum - 1].fuel);
         caliber = GTYPE_MEDIUM;
       } else {
         Place where{s.whatorbits, s.storbits, s.pnumorbits};
@@ -377,21 +360,20 @@ static void ship_report(GameObj &g, shipnum_t indx,
         }
         fdam = s.damage;
         auto orb = std::format("{:30.30}", where.to_string());
-        notify(Playernum, Governor,
-               std::format(
-                   "{:3} {:c} {:16.16} {:4.0f}{:3}{:c}/{:3}{:c}{:6}{:5}{:5}{:7.1f}{:3}%  {}  "
-                   "{:3}{:21.22}",
-                   shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
-                   s.tech, s.primary, Caliber[s.primtype], s.secondary,
-                   Caliber[s.sectype], s.armor, s.size, s.destruct, s.fuel,
-                   s.damage, fspeed, (fev ? "yes" : "   "), orb));
+        g.out << std::format(
+            "{:3} {:c} {:16.16} {:4.0f}{:3}{:c}/{:3}{:c}{:6}{:5}{:5}{:7.1f}{:3}%  {}  "
+            "{:3}{:21.22}",
+            shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
+            s.tech, s.primary, Caliber[s.primtype], s.secondary,
+            Caliber[s.sectype], s.armor, s.size, s.destruct, s.fuel,
+            s.damage, fspeed, (fev ? "yes" : "   "), orb);
         if (landed(s)) {
-          notify(Playernum, Governor, std::format(" ({},{})", s.land_x, s.land_y));
+          g.out << std::format(" ({},{})", s.land_x, s.land_y);
         }
         if (!s.active) {
-          notify(Playernum, Governor, std::format(" INACTIVE({})", s.rad));
+          g.out << std::format(" INACTIVE({})", s.rad);
         }
-        notify(Playernum, Governor, "\n");
+        g.out << "\n";
       }
 
       sight = 0;
@@ -401,9 +383,8 @@ static void ship_report(GameObj &g, shipnum_t indx,
         sight = 1;
 
       /* tactical display */
-      notify(Playernum, Governor,
-             "\n  Tactical: #  own typ        name   rng   (50%) size "
-             "spd evade hit  dam  loc\n");
+      g.out << "\n  Tactical: #  own typ        name   rng   (50%) size "
+               "spd evade hit  dam  loc\n";
 
       if (sight)
         for (i = 0; i < Num_ships; i++) {
@@ -413,10 +394,9 @@ static void ship_report(GameObj &g, shipnum_t indx,
                                                rd[i].y))) < range) {
             if (rd[i].type == PLANET) {
               /* tac report at planet */
-              notify(Playernum, Governor,
-                     std::format(" {:13}(planet)          {:8.0f}\n",
-                                stars[rd[i].star].get_planet_name(rd[i].pnum),
-                                Dist));
+              g.out << std::format(" {:13}(planet)          {:8.0f}\n",
+                                  stars[rd[i].star].get_planet_name(rd[i].pnum),
+                                  Dist);
             } else if (!who || who == rd[i].s.owner ||
                        (who == 999 && listed((int)rd[i].s.type, shiplist))) {
               /* tac report at ship */
@@ -448,22 +428,20 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 if (!enemies_only ||
                     (enemies_only &&
                      (!isset(races[Playernum - 1].allied, rd[i].s.owner)))) {
-                  notify(Playernum, Governor,
-                         std::format(
-                             "{:13} {}{:2},{:1} {:c}{:14.14} {:4.0f}  {:4}   {:4} {}  {:3}  "
-                             "{:3}% {:3}%{}",
-                             rd[i].n, war_status,
-                             rd[i].s.owner, rd[i].s.governor, Shipltrs[rd[i].s.type],
-                             rd[i].s.name, Dist, factor, body, tspeed,
-                             (tev ? "yes" : "   "), prob, rd[i].s.damage,
-                             (rd[i].s.active ? "" : " INACTIVE")));
+                  g.out << std::format(
+                      "{:13} {}{:2},{:1} {:c}{:14.14} {:4.0f}  {:4}   {:4} {}  {:3}  "
+                      "{:3}% {:3}%{}",
+                      rd[i].n, war_status,
+                      rd[i].s.owner, rd[i].s.governor, Shipltrs[rd[i].s.type],
+                      rd[i].s.name, Dist, factor, body, tspeed,
+                      (tev ? "yes" : "   "), prob, rd[i].s.damage,
+                      (rd[i].s.active ? "" : " INACTIVE"));
                   if (landed(rd[i].s)) {
-                    notify(Playernum, Governor,
-                           std::format(" ({},{})", rd[i].s.land_x, rd[i].s.land_y));
+                    g.out << std::format(" ({},{})", rd[i].s.land_x, rd[i].s.land_y);
                   } else {
-                    notify(Playernum, Governor, "     ");
+                    g.out << "     ";
                   }
-                  notify(Playernum, Governor, "\n");
+                  g.out << "\n";
                 }
               }
             }
@@ -473,7 +451,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
   }
 }
 
-static void plan_getrships(player_t Playernum, governor_t Governor,
+static void plan_getrships(GameObj& g, player_t Playernum,
                            starnum_t snum, planetnum_t pnum) {
   rd.resize(Num_ships + 1);
   rd[Num_ships].p = getplanet(snum, pnum);
@@ -489,25 +467,24 @@ static void plan_getrships(player_t Playernum, governor_t Governor,
 
   if (p.info[Playernum - 1].explored) {
     shipnum_t shn = p.ships;
-    while (shn && Getrship(Playernum, Governor, shn))
+    while (shn && Getrship(g, shn))
       shn = rd[Num_ships - 1].s.nextship;
   }
 }
 
-static void star_getrships(player_t Playernum, governor_t Governor,
+static void star_getrships(GameObj& g, player_t Playernum,
                            starnum_t snum) {
   if (isset(stars[snum].explored(), Playernum)) {
     shipnum_t shn = stars[snum].ships();
-    while (shn && Getrship(Playernum, Governor, shn))
+    while (shn && Getrship(g, shn))
       shn = rd[Num_ships - 1].s.nextship;
     for (planetnum_t i = 0; i < stars[snum].numplanets(); i++)
-      plan_getrships(Playernum, Governor, snum, i);
+      plan_getrships(g, Playernum, snum, i);
   }
 }
 
 /* get a ship from the disk and add it to the ship list we're maintaining. */
-static bool Getrship(player_t Playernum, governor_t Governor,
-                     shipnum_t shipno) {
+static bool Getrship(GameObj& g, shipnum_t shipno) {
   auto shiptmp = getship(shipno);
   if (shiptmp) {
     rd.resize(Num_ships + 1);
@@ -519,8 +496,7 @@ static bool Getrship(player_t Playernum, governor_t Governor,
     Num_ships++;
     return true;
   }
-  notify(Playernum, Governor,
-         std::format("Getrship: error on ship get ({}).\n", shipno));
+  g.out << std::format("Getrship: error on ship get ({}).\n", shipno);
   return false;
 }
 

@@ -23,7 +23,7 @@ enum ReportType {
 static const char Caliber[] = {' ', 'L', 'M', 'H'};
 static char shiplist[256];
 
-static unsigned char Status, SHip, Stock, Report, Weapons, Factories, first;
+static bool Status, SHip, Stock, Report, Weapons, Factories, first;
 
 static bool Tactical;
 
@@ -38,14 +38,15 @@ struct reportdata {
   double y;
 };
 
-using report_array = std::array<char, NUMSTYPES>;
+using report_array = std::array<bool, NUMSTYPES>;
 
 static struct reportdata *rd;
-static int enemies_only, who;
+static bool enemies_only;
+static int who;
 
 static void Free_rlist();
-static int Getrship(player_t, governor_t, shipnum_t);
-static int listed(int, char *);
+static bool Getrship(player_t, governor_t, shipnum_t);
+static bool listed(int, char*);
 static void plan_getrships(player_t, governor_t, starnum_t, planetnum_t);
 static void ship_report(GameObj &, shipnum_t, const report_array &);
 static void star_getrships(player_t, governor_t, starnum_t);
@@ -58,33 +59,38 @@ void rst(const command_t &argv, GameObj &g) {
   shipnum_t shipno;
 
   report_array Report_types;
-  Report_types.fill(1);
+  Report_types.fill(true);
 
-  enemies_only = 0;
+  enemies_only = false;
   Num_ships = 0;
-  first = 1;
+  first = true;
   if (argv[0] == "report") {
-    Report = 1;
-    Weapons = Status = Stock = SHip = Tactical = Factories = 0;
+    Report = true;
+    Weapons = Status = Stock = SHip = Factories = false;
+    Tactical = false;
   } else if (argv[0] == "stock") {
-    Stock = 1;
-    Weapons = Status = Report = SHip = Tactical = Factories = 0;
+    Stock = true;
+    Weapons = Status = Report = SHip = Factories = false;
+    Tactical = false;
   } else if (argv[0] == "tactical") {
     Tactical = true;
-    Weapons = Status = Report = SHip = Stock = Factories = 0;
+    Weapons = Status = Report = SHip = Stock = Factories = false;
   } else if (argv[0] == "ship") {
-    SHip = Report = Stock = 1;
+    SHip = Report = Stock = true;
     Tactical = false;
-    Weapons = Status = Factories = 1;
+    Weapons = Status = Factories = true;
   } else if (argv[0] == "stats") {
-    Status = 1;
-    Weapons = Report = Stock = Tactical = SHip = Factories = 0;
+    Status = true;
+    Weapons = Report = Stock = SHip = Factories = false;
+    Tactical = false;
   } else if (argv[0] == "weapons") {
-    Weapons = 1;
-    Status = Report = Stock = Tactical = SHip = Factories = 0;
+    Weapons = true;
+    Status = Report = Stock = SHip = Factories = false;
+    Tactical = false;
   } else if (argv[0] == "factories") {
-    Factories = 1;
-    Status = Report = Stock = Tactical = SHip = Weapons = 0;
+    Factories = true;
+    Status = Report = Stock = SHip = Weapons = false;
+    Tactical = false;
   }
   shipnum_t n_ships = Numships();
   rd = (struct reportdata *)malloc(sizeof(struct reportdata) *
@@ -124,7 +130,7 @@ void rst(const command_t &argv, GameObj &g) {
       Free_rlist();
       return;
     }
-    Report_types.fill(0);
+    Report_types.fill(false);
 
     for (const auto &c : argv[1]) {
       shipnum_t i = NUMSTYPES;
@@ -133,7 +139,7 @@ void rst(const command_t &argv, GameObj &g) {
         sprintf(buf, "'%c' -- no such ship letter\n", c);
         notify(Playernum, Governor, buf);
       } else
-        Report_types[i] = 1;
+        Report_types[i] = true;
     }
   }
 
@@ -213,7 +219,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 "    #       name        x  hanger   res        des       "
                 "  fuel      crew/mil\n");
         notify(Playernum, Governor, buf);
-        if (!SHip) first = 0;
+        if (!SHip) first = false;
       }
       sprintf(buf,
               "%5lu %c "
@@ -231,7 +237,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 "    #       name       las cew hyp    guns   arm tech "
                 "spd cost  mass size\n");
         notify(Playernum, Governor, buf);
-        if (!SHip) first = 0;
+        if (!SHip) first = false;
       }
       sprintf(buf,
               "%5lu %c %14.14s %s%s%s%3lu%c/%3lu%c%4lu%5.0f%4lu%5lu%7.1f%4u",
@@ -257,7 +263,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 "    #       name      laser   cew     safe     guns    "
                 "damage   class\n");
         notify(Playernum, Governor, buf);
-        if (!SHip) first = 0;
+        if (!SHip) first = false;
       }
       sprintf(
           buf,
@@ -281,7 +287,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 "   #    Cost Tech Mass Sz A Crw Ful Crg Hng Dst Sp "
                 "Weapons Lsr CEWs Range Dmg\n");
         notify(Playernum, Governor, buf);
-        if (!SHip) first = 0;
+        if (!SHip) first = false;
       }
       if ((s.build_type == 0) || (s.build_type == ShipType::OTYPE_FACTORY)) {
         sprintf(buf,
@@ -333,7 +339,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
                 " #      name       gov dam crew mil  des fuel sp orbits  "
                 "   destination\n");
         notify(Playernum, Governor, buf);
-        if (!SHip) first = 0;
+        if (!SHip) first = false;
       }
       if (s.docked)
         if (s.whatdest == ScopeLevel::LEVEL_SHIP)
@@ -473,8 +479,8 @@ static void ship_report(GameObj &g, shipnum_t indx,
                         rd[i].s.name, Dist, factor, body, tspeed,
                         (tev ? "yes" : "   "), prob, rd[i].s.damage,
                         (rd[i].s.active ? "" : " INACTIVE"));
-                if ((enemies_only == 0) ||
-                    ((enemies_only == 1) &&
+                if (!enemies_only ||
+                    (enemies_only &&
                      (!isset(races[Playernum - 1].allied, rd[i].s.owner)))) {
                   notify(Playernum, Governor, buf);
                   if (landed(rd[i].s)) {
@@ -527,7 +533,8 @@ static void star_getrships(player_t Playernum, governor_t Governor,
 }
 
 /* get a ship from the disk and add it to the ship list we're maintaining. */
-static int Getrship(player_t Playernum, governor_t Governor, shipnum_t shipno) {
+static bool Getrship(player_t Playernum, governor_t Governor,
+                     shipnum_t shipno) {
   auto shiptmp = getship(shipno);
   if (shiptmp) {
     rd[Num_ships].s = *shiptmp;
@@ -536,21 +543,21 @@ static int Getrship(player_t Playernum, governor_t Governor, shipnum_t shipno) {
     rd[Num_ships].x = rd[Num_ships].s.xpos;
     rd[Num_ships].y = rd[Num_ships].s.ypos;
     Num_ships++;
-    return 1;
+    return true;
   }
   char buf[256];
   sprintf(buf, "Getrship: error on ship get (%lu).\n", shipno);
   notify(Playernum, Governor, buf);
-  return 0;
+  return false;
 }
 
 static void Free_rlist() { free(rd); }
 
-static int listed(int type, char *string) {
+static bool listed(int type, char* string) {
   char *p;
 
   for (p = string; *p; p++) {
-    if (Shipltrs[type] == *p) return 1;
+    if (Shipltrs[type] == *p) return true;
   }
-  return 0;
+  return false;
 }

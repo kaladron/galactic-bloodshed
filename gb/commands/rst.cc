@@ -40,11 +40,9 @@ struct reportdata {
 
 using report_array = std::array<bool, NUMSTYPES>;
 
-static struct reportdata *rd;
+static std::vector<reportdata> rd;
 static bool enemies_only;
 static int who;
-
-static void Free_rlist();
 static bool Getrship(player_t, governor_t, shipnum_t);
 static bool listed(int, char*);
 static void plan_getrships(player_t, governor_t, starnum_t, planetnum_t);
@@ -93,8 +91,8 @@ void rst(const command_t &argv, GameObj &g) {
     Tactical = false;
   }
   shipnum_t n_ships = Numships();
-  rd = (struct reportdata *)malloc(sizeof(struct reportdata) *
-                                   (n_ships + Sdata.numstars * MAXPLANETS));
+  rd.clear();
+  rd.reserve(n_ships + Sdata.numstars * MAXPLANETS);
   /* (one list entry for each ship, planet in universe) */
 
   if (argv.size() == 3) {
@@ -116,7 +114,6 @@ void rst(const command_t &argv, GameObj &g) {
         if (shipno > n_ships || shipno < 1) {
           sprintf(buf, "rst: no such ship #%lu \n", shipno);
           notify(Playernum, Governor, buf);
-          free(rd);
           return;
         }
         (void)Getrship(Playernum, Governor, shipno);
@@ -127,7 +124,6 @@ void rst(const command_t &argv, GameObj &g) {
           ship_report(g, Num_ships - 1, Report_types);
         l++;
       }
-      Free_rlist();
       return;
     }
     Report_types.fill(false);
@@ -157,7 +153,6 @@ void rst(const command_t &argv, GameObj &g) {
       } else {
         notify(Playernum, Governor,
                "You can't do tactical option from universe level.\n");
-        free(rd); /* nothing allocated */
         return;
       }
       break;
@@ -181,7 +176,6 @@ void rst(const command_t &argv, GameObj &g) {
       for (shipnum_t i = 0; i < Num_ships; i++) ship_report(g, i, Report_types);
       break;
   }
-  Free_rlist();
 }
 }  // namespace GB::commands
 
@@ -503,6 +497,7 @@ static void ship_report(GameObj &g, shipnum_t indx,
 
 static void plan_getrships(player_t Playernum, governor_t Governor,
                            starnum_t snum, planetnum_t pnum) {
+  rd.resize(Num_ships + 1);
   rd[Num_ships].p = getplanet(snum, pnum);
   const auto &p = rd[Num_ships].p;
   /* add this planet into the ship list */
@@ -537,6 +532,7 @@ static bool Getrship(player_t Playernum, governor_t Governor,
                      shipnum_t shipno) {
   auto shiptmp = getship(shipno);
   if (shiptmp) {
+    rd.resize(Num_ships + 1);
     rd[Num_ships].s = *shiptmp;
     rd[Num_ships].type = SHIP;
     rd[Num_ships].n = shipno;
@@ -550,8 +546,6 @@ static bool Getrship(player_t Playernum, governor_t Governor,
   notify(Playernum, Governor, buf);
   return false;
 }
-
-static void Free_rlist() { free(rd); }
 
 static bool listed(int type, char* string) {
   char *p;

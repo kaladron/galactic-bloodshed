@@ -91,6 +91,12 @@ class ReportItem {
     return std::nullopt;
   }
 
+  // Get next ship in linked list (ships only)
+  virtual shipnum_t next_ship() const { return 0; }
+
+  // Get ships docked/landed on this item (ships only)
+  virtual shipnum_t child_ships() const { return 0; }
+
   // Check if we should report this item
   virtual bool should_report(player_t player_num, governor_t governor,
                              const ReportArray& rep_on) const = 0;
@@ -131,6 +137,10 @@ class ShipReportItem : public ReportItem {
   TacticalParams get_tactical_params(const Race& race) const override;
 
   std::optional<starnum_t> get_star_orbit() const override;
+
+  shipnum_t next_ship() const override;
+
+  shipnum_t child_ships() const override;
 
   bool should_report(player_t player_num, governor_t governor,
                      const ReportArray& rep_on) const override;
@@ -244,9 +254,7 @@ void plan_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
   if (planet->info[player_num - 1].explored) {
     shipnum_t shn = planet->ships;
     while (shn && get_report_ship(g, ctx, shn)) {
-      // Downcast to get next ship
-      auto* ship_item = dynamic_cast<ShipReportItem*>(ctx.rd.back().get());
-      shn = ship_item->ship().nextship;
+      shn = ctx.rd.back()->next_ship();
     }
   }
 }
@@ -259,8 +267,7 @@ void star_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
   if (isset(star->explored, player_num)) {
     shipnum_t shn = star->ships;
     while (shn && get_report_ship(g, ctx, shn)) {
-      auto* ship_item = dynamic_cast<ShipReportItem*>(ctx.rd.back().get());
-      shn = ship_item->ship().nextship;
+      shn = ctx.rd.back()->next_ship();
     }
     for (planetnum_t i = 0; i < star->numplanets; i++)
       plan_get_report_ships(g, ctx, player_num, snum, i);
@@ -482,9 +489,7 @@ bool PlanetReportItem::should_report(
     player_t player_num, [[maybe_unused]] governor_t governor,
     [[maybe_unused]] const ReportArray& rep_on) const {
   // Don't report on planets where we don't own any sectors
-  if (!planet_->info[player_num - 1].numsectsowned) return false;
-
-  return true;
+  return planet_->info[player_num - 1].numsectsowned != 0;
 }
 
 void ShipReportItem::print_tactical_target(
@@ -614,6 +619,10 @@ std::optional<starnum_t> ShipReportItem::get_star_orbit() const {
   }
   return std::nullopt;
 }
+
+shipnum_t ShipReportItem::next_ship() const { return ship_->nextship; }
+
+shipnum_t ShipReportItem::child_ships() const { return ship_->ships; }
 
 void PlanetReportItem::print_tactical_target(
     GameObj& g, [[maybe_unused]] RstContext& ctx,
@@ -828,8 +837,7 @@ void rst(const command_t& argv, GameObj& g) {
       if (!ctx.flags.tactical || argv.size() >= 2) {
         shipnum_t shn = Sdata.ships;
         while (shn && get_report_ship(g, ctx, shn)) {
-          auto* ship_item = dynamic_cast<ShipReportItem*>(ctx.rd.back().get());
-          shn = ship_item->ship().nextship;
+          shn = ctx.rd.back()->next_ship();
         }
 
         for (starnum_t i = 0; i < Sdata.numstars; i++)
@@ -866,13 +874,11 @@ void rst(const command_t& argv, GameObj& g) {
       ship_report(g, ctx, 0, report_types); /* first ship report */
 
       // Get ships docked in this ship
-      auto* ship_item = dynamic_cast<ShipReportItem*>(ctx.rd[0].get());
-      shipnum_t shn = ship_item->ship().ships;
+      shipnum_t shn = ctx.rd[0]->child_ships();
       shipnum_t first_child = ctx.num_ships;
 
       while (shn && get_report_ship(g, ctx, shn)) {
-        auto* child_item = dynamic_cast<ShipReportItem*>(ctx.rd.back().get());
-        shn = child_item->ship().nextship;
+        shn = ctx.rd.back()->next_ship();
       }
 
       for (shipnum_t i = first_child; i < ctx.rd.size(); i++)

@@ -167,6 +167,7 @@ Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
       if ((ship->owner == Playernum || ignoreexpl || g.god) &&
           (ship->alive || g.god)) {
         level = ScopeLevel::LEVEL_SHIP;
+        shipno = ship->number;
         snum = ship->storbits;
         pnum = ship->pnumorbits;
         return;

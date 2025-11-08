@@ -133,11 +133,11 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
   /* launched canister, non-owned ships don't show up */
   if ((ctx.rd[indx].type == ReportType::PLANET &&
        p.info[Playernum - 1].numsectsowned) ||
-      (ctx.rd[indx].type != ReportType::PLANET && s.alive &&
+      (ctx.rd[indx].type == ReportType::SHIP && s.alive &&
        s.owner == Playernum && authorized(Governor, s) && rep_on[s.type] &&
        (s.type != ShipType::OTYPE_CANIST || s.docked) &&
        (s.type != ShipType::OTYPE_GREEN || s.docked))) {
-    if (ctx.rd[indx].type != ReportType::PLANET && ctx.Stock) {
+    if (ctx.rd[indx].type == ReportType::SHIP && ctx.Stock) {
       if (ctx.first) {
         g.out << "    #       name        x  hanger   res        des       "
                  "  fuel      crew/mil\n";
@@ -152,7 +152,7 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
           s.max_crew);
     }
 
-    if (ctx.rd[indx].type != ReportType::PLANET && ctx.Status) {
+    if (ctx.rd[indx].type == ReportType::SHIP && ctx.Status) {
       if (ctx.first) {
         g.out << "    #       name       las cew hyp    guns   arm tech "
                  "spd cost  mass size\n";
@@ -175,7 +175,7 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
       g.out << "\n";
     }
 
-    if (ctx.rd[indx].type != ReportType::PLANET && ctx.Weapons) {
+    if (ctx.rd[indx].type == ReportType::SHIP && ctx.Weapons) {
       if (ctx.first) {
         g.out << "    #       name      laser   cew     safe     guns    "
                  "damage   class\n";
@@ -195,7 +195,7 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
               : s.shipclass);
     }
 
-    if (ctx.rd[indx].type != ReportType::PLANET && ctx.Factories &&
+    if (ctx.rd[indx].type == ReportType::SHIP && ctx.Factories &&
         (s.type == ShipType::OTYPE_FACTORY)) {
       if (ctx.first) {
         g.out << "   #    Cost Tech Mass Sz A Crw Ful Crg Hng Dst Sp "
@@ -247,7 +247,7 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
       }
     }
 
-    if (ctx.rd[indx].type != ReportType::PLANET && ctx.Report) {
+    if (ctx.rd[indx].type == ReportType::SHIP && ctx.Report) {
       if (ctx.first) {
         g.out << " #      name       gov dam crew mil  des fuel sp orbits  "
                  "   destination\n";
@@ -371,7 +371,7 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
                 auto [prob, factor] =
                     hit_odds(Dist, tech, fdam, fev, tev, fspeed, tspeed, body,
                              caliber, defense);
-                if (ctx.rd[indx].type != ReportType::PLANET &&
+                if (ctx.rd[indx].type == ReportType::SHIP &&
                     laser_on(ctx.rd[indx].s) && ctx.rd[indx].s.focus)
                   prob = prob * prob / 100;
                 const auto* war_status =

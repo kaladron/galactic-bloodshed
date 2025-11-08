@@ -374,47 +374,30 @@ void print_tactical_target_ship(GameObj& g, RstContext& ctx, const Race& race,
 }
 
 struct TacticalParams {
-  double tech;
-  guntype_t caliber;
-  bool fev;
-  int fspeed;
-  int fdam;
+  double tech = 0.0;
+  bool fev = false;
+  int fspeed = 0;
 };
 
-TacticalParams print_tactical_header_summary(GameObj& g, RstContext& ctx,
-                                             shipnum_t indx, const Ship& s,
-                                             const Planet& p, shipnum_t shipno,
-                                             const Race& race) {
+void print_tactical_header_summary(GameObj& g, RstContext& ctx, shipnum_t indx,
+                                   const Ship& s, const Planet& p,
+                                   shipnum_t shipno,
+                                   const TacticalParams& params) {
   player_t Playernum = g.player;
-
-  TacticalParams params{};
-  params.fev = false;
-  params.fspeed = 0;
-  params.fdam = 0;
 
   g.out << "\n  #         name        tech    guns  armor size dest   "
            "fuel dam spd evad               orbits\n";
 
   if (ctx.rd[indx].type == ReportType::PLANET) {
     const auto* star = g.entity_manager.peek_star(ctx.rd[indx].star);
-    params.tech = race.tech;
     /* tac report from planet */
     g.out << std::format("(planet){:15.15}{:4.0f} {:4}M           {:5} {:6}\n",
                          star ? star->pnames[ctx.rd[indx].pnum] : "Unknown",
                          params.tech, p.info[Playernum - 1].guns,
                          p.info[Playernum - 1].destruct,
                          p.info[Playernum - 1].fuel);
-    params.caliber = GTYPE_MEDIUM;
   } else {
     Place where{s.whatorbits, s.storbits, s.pnumorbits};
-    params.tech = s.tech;
-    params.caliber = current_caliber(s);
-    if ((s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) && !s.docked &&
-        s.active) {
-      params.fspeed = s.speed;
-      params.fev = s.protect.evade;
-    }
-    params.fdam = s.damage;
     auto orb = std::format("{:30.30}", where.to_string());
     g.out << std::format(
         "{:3} {:c} {:16.16} "
@@ -432,8 +415,6 @@ TacticalParams print_tactical_header_summary(GameObj& g, RstContext& ctx,
     }
     g.out << "\n";
   }
-
-  return params;
 }
 
 void print_tactical_target_planet(GameObj& g, RstContext& ctx, int i,
@@ -453,8 +434,18 @@ void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
   const auto* race = g.entity_manager.peek_race(Playernum);
   if (!race) return;
 
-  auto params =
-      print_tactical_header_summary(g, ctx, indx, s, p, shipno, *race);
+  // Calculate tactical parameters
+  TacticalParams params{};
+  params.tech = ctx.rd[indx].type == ReportType::PLANET ? race->tech : s.tech;
+
+  if (ctx.rd[indx].type == ReportType::SHIP &&
+      (s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) && !s.docked &&
+      s.active) {
+    params.fspeed = s.speed;
+    params.fev = s.protect.evade;
+  }
+
+  print_tactical_header_summary(g, ctx, indx, s, p, shipno, params);
 
   bool sight = ctx.rd[indx].type == ReportType::PLANET || shipsight(s);
 
@@ -474,9 +465,13 @@ void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
       if (ctx.rd[i].type == ReportType::PLANET) {
         print_tactical_target_planet(g, ctx, i, Dist);
       } else {
+        // Calculate ship-specific combat parameters
+        int fdam = ctx.rd[indx].type == ReportType::PLANET ? 0 : s.damage;
+        guntype_t caliber = ctx.rd[indx].type == ReportType::PLANET
+                                ? GTYPE_MEDIUM
+                                : current_caliber(s);
         print_tactical_target_ship(g, ctx, *race, indx, i, Dist, params.tech,
-                                   params.fdam, params.fev, params.fspeed,
-                                   params.caliber);
+                                   fdam, params.fev, params.fspeed, caliber);
       }
     }
   }

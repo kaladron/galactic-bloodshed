@@ -6,6 +6,11 @@
 ///
 /// Implements various reporting modes for ships and planets including status,
 /// stock levels, tactical combat information, and factory configurations.
+///
+/// This file provides a polymorphic reporting system for ships and planets,
+/// allowing multiple report types (status, stock, tactical, weapons, etc.)
+/// to be generated based on command-line options. The system uses virtual
+/// dispatch through the ReportItem base class.
 
 module;
 
@@ -15,50 +20,93 @@ import std.compat;
 module commands;
 
 namespace {
+// ============================================================================
+// Constants and Type Definitions
+// ============================================================================
+
+/// Gun caliber display characters for output formatting
 constexpr char kCaliber[] = {' ', 'L', 'M', 'H'};
 
+/// Array indicating which ship types to include in the report
 using ReportArray = std::array<bool, NUMSTYPES>;
 
 // Forward declarations
 struct RstContext;
 
-// Tactical parameters for combat calculations
+/// Tactical combat parameters used for calculating hit probabilities
+/// and displaying combat-relevant information in tactical reports.
 struct TacticalParams {
-  double tech = 0.0;
-  bool fev = false;
-  int fspeed = 0;
+  double tech = 0.0;   ///< Technology level of firing entity
+  bool fev = false;    ///< Whether firing entity is evading
+  int fspeed = 0;      ///< Speed of firing entity
 };
 
-// Abstract base class for report items (ships and planets)
+/// Tactical combat parameters used for calculating hit probabilities
+/// and displaying combat-relevant information in tactical reports.
+struct TacticalParams {
+  double tech = 0.0;   ///< Technology level of firing entity
+  bool fev = false;    ///< Whether firing entity is evading
+  int fspeed = 0;      ///< Speed of firing entity
+};
+
+// ============================================================================
+// ReportItem Class Hierarchy
+// ============================================================================
+
+/// Abstract base class for report items (ships and planets).
+///
+/// This class provides a polymorphic interface for generating various types
+/// of reports for both ships and planets. Different report types (status,
+/// stock, tactical, weapons, factories) are implemented as virtual methods
+/// that can be overridden by derived classes.
+///
+/// The class uses the Template Method pattern where ship_report() calls
+/// these virtual methods in sequence based on active report flags.
 class ReportItem {
  protected:
-  double x_;
-  double y_;
+  double x_;  ///< X coordinate in space
+  double y_;  ///< Y coordinate in space
 
  public:
   ReportItem(double x, double y) : x_(x), y_(y) {}
   virtual ~ReportItem() = default;
 
+  /// Get X coordinate of this item
   double x() const { return x_; }
+  
+  /// Get Y coordinate of this item
   double y() const { return y_; }
 
-  // Report generation methods
+  // Report generation methods - default implementations do nothing
+  // (overridden by derived classes as needed)
+  
+  /// Generate stock report (resources, fuel, crew, etc.)
   virtual void report_stock([[maybe_unused]] GameObj& g,
                             [[maybe_unused]] RstContext& ctx) const {}
+  
+  /// Generate status report (technology, weapons, armor, etc.)
   virtual void report_status([[maybe_unused]] GameObj& g,
                              [[maybe_unused]] RstContext& ctx) const {}
+  
+  /// Generate weapons report (laser, CEW, guns, damage, etc.)
   virtual void report_weapons([[maybe_unused]] GameObj& g,
                               [[maybe_unused]] RstContext& ctx) const {}
+  
+  /// Generate factory report (ship being built, costs, etc.)
   virtual void report_factories([[maybe_unused]] GameObj& g,
                                 [[maybe_unused]] RstContext& ctx) const {}
+  
+  /// Generate general status report (orbits, destination, damage, crew)
   virtual void report_general([[maybe_unused]] GameObj& g,
                               [[maybe_unused]] RstContext& ctx) const {}
+  
+  /// Generate tactical combat report showing nearby targets and hit probabilities
   virtual void report_tactical(
       [[maybe_unused]] GameObj& g, [[maybe_unused]] RstContext& ctx,
       [[maybe_unused]] const TacticalParams& params) const {}
 
-  // Tactical target display - default no-op for items that don't appear in
-  // tactical
+  /// Display this item as a tactical target in another item's tactical report.
+  /// Shows distance, hit probability, evasion, and other combat-relevant data.
   virtual void print_tactical_target(
       [[maybe_unused]] GameObj& g, [[maybe_unused]] RstContext& ctx,
       [[maybe_unused]] const Race& race, [[maybe_unused]] shipnum_t indx,
@@ -66,46 +114,67 @@ class ReportItem {
       [[maybe_unused]] int fdam, [[maybe_unused]] bool fev,
       [[maybe_unused]] int fspeed, [[maybe_unused]] guntype_t caliber) const {}
 
-  // Apply laser focus bonus to hit probability (ships only)
+  /// Apply laser focus bonus to hit probability.
+  /// Ships with active lasers and focus enabled get squared probability.
+  /// Default implementation returns the probability unchanged (for planets).
   virtual int apply_laser_focus(int prob) const { return prob; }
 
-  // Print tactical report header summary (different for ships vs planets)
+  /// Print the header summary line for tactical reports.
+  /// Shows the firing entity's stats (tech, guns, armor, etc.)
   virtual void print_tactical_header_summary(
       [[maybe_unused]] GameObj& g, [[maybe_unused]] player_t player_num,
       [[maybe_unused]] const TacticalParams& params) const {}
 
-  // Get tactical parameters for this item
+  /// Get tactical parameters for this item (tech, speed, evasion)
   virtual TacticalParams get_tactical_params(
       [[maybe_unused]] const Race& race) const {
     return TacticalParams{};
   }
 
-  // Get star number if ship is in a star system (ships only)
+  /// Get star number if this item is in a star system.
+  /// Returns nullopt for items in deep space or not applicable.
   virtual std::optional<starnum_t> get_star_orbit() const {
     return std::nullopt;
   }
 
-  // Get next ship in linked list (ships only)
+  /// Get next ship number in linked list (ships only).
+  /// Returns 0 for planets or end of list.
   virtual shipnum_t next_ship() const { return 0; }
 
-  // Get ships docked/landed on this item (ships only)
+  /// Get first child ship docked/landed on this item (ships only).
+  /// Returns 0 for planets or no children.
   virtual shipnum_t child_ships() const { return 0; }
 
-  // Check if we should report this item
+  /// Check if this item should be included in the report.
+  /// Filters by owner, governor authorization, ship type, etc.
   virtual bool should_report(player_t player_num, governor_t governor,
                              const ReportArray& rep_on) const = 0;
 };
 
-// Ship report item - holds non-owning pointer from peek_ship
+/// Check if this item should be included in the report.
+  /// Filters by owner, governor authorization, ship type, etc.
+  virtual bool should_report(player_t player_num, governor_t governor,
+                             const ReportArray& rep_on) const = 0;
+};
+
+/// Ship report item - holds non-owning pointer from peek_ship.
+///
+/// Represents a ship in the report system. This class wraps a ship pointer
+/// obtained from the EntityManager and provides all ship-specific reporting
+/// functionality including stock, status, weapons, factories, and tactical
+/// reports.
 class ShipReportItem : public ReportItem {
-  shipnum_t n_;
-  const Ship* ship_;
+  shipnum_t n_;      ///< Ship number
+  const Ship* ship_; ///< Non-owning pointer to ship data
 
  public:
   ShipReportItem(shipnum_t n, const Ship* ship)
       : ReportItem(ship->xpos, ship->ypos), n_(n), ship_(ship) {}
 
+  /// Get ship number
   shipnum_t shipno() const { return n_; }
+  
+  /// Get reference to ship data
   const Ship& ship() const { return *ship_; }
 
   void report_stock(GameObj& g, RstContext& ctx) const override;
@@ -129,29 +198,50 @@ class ShipReportItem : public ReportItem {
 
   TacticalParams get_tactical_params(const Race& race) const override;
 
-  std::optional<starnum_t> get_star_orbit() const override;
+  /// Get star number if ship is orbiting a star system
+  std::optional<starnum_t> get_star_orbit() const override {
+    if (ship_->whatorbits != ScopeLevel::LEVEL_UNIV) {
+      return ship_->storbits;
+    }
+    return std::nullopt;
+  }
 
-  shipnum_t next_ship() const override;
+  /// Get next ship number in the linked list
+  shipnum_t next_ship() const override { return ship_->nextship; }
 
-  shipnum_t child_ships() const override;
+  /// Get first child ship docked/landed on this ship
+  shipnum_t child_ships() const override { return ship_->ships; }
 
   bool should_report(player_t player_num, governor_t governor,
                      const ReportArray& rep_on) const override;
 };
 
-// Planet report item - holds non-owning pointer from peek_planet
+  bool should_report(player_t player_num, governor_t governor,
+                     const ReportArray& rep_on) const override;
+};
+
+/// Planet report item - holds non-owning pointer from peek_planet.
+///
+/// Represents a planet in the report system. Planets primarily appear in
+/// tactical reports to show planetary defenses and as potential targets.
+/// Unlike ships, planets don't have stock, status, weapons, or factory reports.
 class PlanetReportItem : public ReportItem {
-  starnum_t star_;
-  planetnum_t pnum_;
-  const Planet* planet_;
+  starnum_t star_;       ///< Star system number
+  planetnum_t pnum_;     ///< Planet number within star system
+  const Planet* planet_; ///< Non-owning pointer to planet data
 
  public:
   PlanetReportItem(starnum_t star, planetnum_t pnum, const Planet* planet,
                    double x, double y)
       : ReportItem(x, y), star_(star), pnum_(pnum), planet_(planet) {}
 
+  /// Get star system number
   starnum_t star() const { return star_; }
+  
+  /// Get planet number within star system
   planetnum_t pnum() const { return pnum_; }
+  
+  /// Get reference to planet data
   const Planet& planet() const { return *planet_; }
 
   void report_tactical(GameObj& g, RstContext& ctx,
@@ -172,30 +262,38 @@ class PlanetReportItem : public ReportItem {
                      const ReportArray& rep_on) const override;
 };
 
-// Report mode flags - all default to false
+// ============================================================================
+// Report Configuration Structures
+// ============================================================================
+
+/// Report mode flags - all default to false.
+/// These flags control which report types are active for a given command.
 struct ReportFlags {
-  bool status = false;
-  bool ship = false;
-  bool stock = false;
-  bool report = false;
-  bool weapons = false;
-  bool factories = false;
-  bool tactical = false;
+  bool status = false;     ///< Show status report (tech, guns, armor, etc.)
+  bool ship = false;       ///< Show comprehensive ship report (all types)
+  bool stock = false;      ///< Show stock report (resources, fuel, crew)
+  bool report = false;     ///< Show general report (orbits, destination)
+  bool weapons = false;    ///< Show weapons report (laser, CEW, guns)
+  bool factories = false;  ///< Show factory report (ship being built)
+  bool tactical = false;   ///< Show tactical combat report
 };
 
-// Context structure holding all rst command state
+/// Context structure holding all rst command state.
+/// This structure is passed through the entire reporting pipeline and
+/// maintains state about what items to report, which flags are active,
+/// and formatting state like whether headers have been printed.
 struct RstContext {
-  std::vector<std::unique_ptr<ReportItem>> rd;
-  std::string shiplist;
-  ReportFlags flags;
-  bool first;
-  bool enemies_only;
-  int who;
+  std::vector<std::unique_ptr<ReportItem>> rd; ///< Collection of items to report
+  std::string shiplist;      ///< Ship type filter string (e.g., "dsc" for destroyers/scouts/cruisers)
+  ReportFlags flags;         ///< Active report modes
+  bool first;                ///< True if we haven't printed headers yet
+  bool enemies_only;         ///< True to filter out allied ships in tactical
+  int who;                   ///< Player filter (0=all, player#, or 999=shiplist filter)
 };
 
-// Map of command names to their report flag configurations
-// TODO(jeffbailey): Replace with std::unordered_map when available in C++20
-// modules
+/// Map of command names to their report flag configurations.
+/// Defines which report types are enabled for each command variant.
+/// TODO(jeffbailey): Replace with std::unordered_map when available in C++20 modules
 constexpr auto kCommandReportModes = std::array{
     std::pair{"report", ReportFlags{.report = true}},
     std::pair{"stock", ReportFlags{.stock = true}},
@@ -211,12 +309,26 @@ constexpr auto kCommandReportModes = std::array{
     std::pair{"factories", ReportFlags{.factories = true}},
 };
 
+// ============================================================================
+// Helper Functions - Ship/Planet Collection
+// ============================================================================
+
+/// Check if a ship type letter appears in the filter string.
+///
+/// \param type Ship type index
+/// \param string Filter string containing ship type letters
+/// \return true if the ship's letter is in the filter string
 bool listed(int type, const std::string& string) {
   return std::ranges::any_of(string,
                              [type](char c) { return Shipltrs[type] == c; });
 }
 
-/* get a ship from the disk and add it to the ship list we're maintaining. */
+/// Load a ship from the entity manager and add it to the report list.
+///
+/// \param g Game context
+/// \param ctx Report context to add ship to
+/// \param shipno Ship number to load
+/// \return true if ship was successfully loaded, false otherwise
 bool get_report_ship(GameObj& g, RstContext& ctx, shipnum_t shipno) {
   const auto* ship = g.entity_manager.peek_ship(shipno);
   if (ship) {
@@ -227,6 +339,16 @@ bool get_report_ship(GameObj& g, RstContext& ctx, shipnum_t shipno) {
   return false;
 }
 
+/// Collect all ships at a planet and the planet itself for reporting.
+///
+/// Adds the planet to the report list, then walks the linked list of ships
+/// at that planet, adding each explored ship to the report list.
+///
+/// \param g Game context
+/// \param ctx Report context to add items to
+/// \param player_num Player number for exploration check
+/// \param snum Star system number
+/// \param pnum Planet number within star system
 void plan_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
                            starnum_t snum, planetnum_t pnum) {
   const auto* star = g.entity_manager.peek_star(snum);
@@ -241,6 +363,7 @@ void plan_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
   ctx.rd.push_back(
       std::make_unique<PlanetReportItem>(snum, pnum, planet, x, y));
 
+  // Add ships at this planet if explored
   if (planet->info[player_num - 1].explored) {
     shipnum_t shn = planet->ships;
     while (shn && get_report_ship(g, ctx, shn)) {
@@ -249,22 +372,44 @@ void plan_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
   }
 }
 
+/// Collect all ships in a star system and all planets for reporting.
+///
+/// Walks the ship list at star level, then iterates through all planets
+/// in the star system, collecting ships at each planet.
+///
+/// \param g Game context
+/// \param ctx Report context to add items to
+/// \param player_num Player number for exploration check
+/// \param snum Star system number
 void star_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
                            starnum_t snum) {
   const auto* star = g.entity_manager.peek_star(snum);
   if (!star) return;
 
   if (isset(star->explored, player_num)) {
+    // Add ships orbiting the star
     shipnum_t shn = star->ships;
     while (shn && get_report_ship(g, ctx, shn)) {
       shn = ctx.rd.back()->next_ship();
     }
+    // Add planets and their ships
     for (planetnum_t i = 0; i < star->numplanets; i++)
       plan_get_report_ships(g, ctx, player_num, snum, i);
   }
 }
 
-// ShipReportItem virtual method implementations
+// ============================================================================
+// ShipReportItem Method Implementations
+// ============================================================================
+
+/// Generate stock report for a ship.
+///
+/// Shows resources, fuel, crew, cargo capacity, and other inventory items.
+/// Format: # type name crystals hanger resources destruct fuel crew/troops
+/// Generate stock report for a ship.
+///
+/// Shows resources, fuel, crew, cargo capacity, and other inventory items.
+/// Format: # type name crystals hanger resources destruct fuel crew/troops
 void ShipReportItem::report_stock(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.stock) return;
 
@@ -282,6 +427,14 @@ void ShipReportItem::report_stock(GameObj& g, RstContext& ctx) const {
       max_destruct(s), s.fuel, max_fuel(s), s.popn, s.troops, s.max_crew);
 }
 
+/// Generate status report for a ship.
+///
+/// Shows technology, weapons systems, armor, speed, and other ship stats.
+/// Format: # type name laser cew hyper guns armor tech speed cost mass size
+/// Generate status report for a ship.
+///
+/// Shows technology, weapons systems, armor, speed, and other ship stats.
+/// Format: # type name laser cew hyper guns armor tech speed cost mass size
 void ShipReportItem::report_status(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.status) return;
 
@@ -308,6 +461,14 @@ void ShipReportItem::report_status(GameObj& g, RstContext& ctx) const {
   g.out << "\n";
 }
 
+/// Generate weapons report for a ship.
+///
+/// Shows combat-related information: laser, CEW, guns, damage, and class.
+/// Format: # type name laser cew guns damage class
+/// Generate weapons report for a ship.
+///
+/// Shows combat-related information: laser, CEW, guns, damage, and class.
+/// Format: # type name laser cew guns damage class
 void ShipReportItem::report_weapons(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.weapons) return;
 
@@ -330,6 +491,16 @@ void ShipReportItem::report_weapons(GameObj& g, RstContext& ctx) const {
           : s.shipclass);
 }
 
+/// Generate factory report for a ship.
+///
+/// Shows the configuration of ships being built by factory ships, including
+/// cost, tech level, mass, size, armor, weapons, and other stats.
+/// Only displays for factory-type ships that have a build configuration.
+/// Generate factory report for a ship.
+///
+/// Shows the configuration of ships being built by factory ships, including
+/// cost, tech level, mass, size, armor, weapons, and other stats.
+/// Only displays for factory-type ships that have a build configuration.
 void ShipReportItem::report_factories(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.factories || ship_->type != ShipType::OTYPE_FACTORY) return;
 
@@ -408,6 +579,10 @@ void ShipReportItem::report_factories(GameObj& g, RstContext& ctx) const {
       s.damage ? (s.on ? "" : "*") : "");
 }
 
+/// Generate general report for a ship.
+///
+/// Shows ship location, destination, governor, damage, crew, and fuel status.
+/// This is the main overview report showing where ships are and where they're going.
 void ShipReportItem::report_general(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.report) return;
 
@@ -445,6 +620,16 @@ void ShipReportItem::report_general(GameObj& g, RstContext& ctx) const {
       dispshiploc_brief(s), locstrn);
 }
 
+/// Check if a ship should be included in the report.
+///
+/// Filters ships based on:
+/// - Ship must be alive
+/// - Must be owned by the reporting player
+/// - Governor must be authorized for this ship
+/// - Ship type must be in the requested filter
+/// - Special rules for canisters and greenhouse gases (only show when docked)
+///
+/// \return true if ship should be included in report
 bool ShipReportItem::should_report(player_t player_num, governor_t governor,
                                    const ReportArray& rep_on) const {
   const auto& s = *ship_;
@@ -470,6 +655,15 @@ bool ShipReportItem::should_report(player_t player_num, governor_t governor,
   return true;
 }
 
+// ============================================================================
+// PlanetReportItem Method Implementations
+// ============================================================================
+
+/// Check if a planet should be included in the report.
+///
+/// Planets are included only if the player owns at least one sector on them.
+///
+/// \return true if planet should be included in report
 bool PlanetReportItem::should_report(
     player_t player_num, [[maybe_unused]] governor_t governor,
     [[maybe_unused]] const ReportArray& rep_on) const {
@@ -477,6 +671,23 @@ bool PlanetReportItem::should_report(
   return planet_->info[player_num - 1].numsectsowned != 0;
 }
 
+// ============================================================================
+// Tactical Report Methods
+// ============================================================================
+
+/// Display a ship as a tactical target in another entity's tactical report.
+///
+/// Shows the ship's distance, hit probability, size, speed, evasion, damage,
+/// and location. Applies various filters:
+/// - Player filter (ctx.who)
+/// - Ship type filter (ctx.shiplist)
+/// - Ownership filter (don't show own ships)
+/// - Alive status filter
+/// - Special ship type filter (canisters, greenhouse gases)
+/// - Enemies-only filter (ctx.enemies_only)
+///
+/// Calculates hit probability based on distance, technology, evasion, speed,
+/// and other combat factors.
 void ShipReportItem::print_tactical_target(
     GameObj& g, [[maybe_unused]] RstContext& ctx, const Race& race,
     [[maybe_unused]] shipnum_t indx, double dist, double tech, int fdam,
@@ -553,6 +764,14 @@ void ShipReportItem::print_tactical_target(
   g.out << "\n";
 }
 
+/// Apply laser focus bonus to hit probability.
+///
+/// When a ship has an active laser and focus enabled, the hit probability
+/// is squared (prob * prob / 100), making focused laser fire significantly
+/// more accurate.
+///
+/// \param prob Base hit probability (0-100)
+/// \return Modified hit probability with laser focus applied
 int ShipReportItem::apply_laser_focus(int prob) const {
   if (laser_on(*ship_) && ship_->focus) {
     return prob * prob / 100;
@@ -560,6 +779,10 @@ int ShipReportItem::apply_laser_focus(int prob) const {
   return prob;
 }
 
+/// Print tactical header summary for a ship.
+///
+/// Displays the firing ship's combat-relevant stats including tech, guns,
+/// armor, size, speed, evasion, and current location.
 void ShipReportItem::print_tactical_header_summary(
     GameObj& g, [[maybe_unused]] player_t player_num,
     const TacticalParams& params) const {
@@ -583,6 +806,13 @@ void ShipReportItem::print_tactical_header_summary(
   g.out << "\n";
 }
 
+/// Get tactical combat parameters for this ship.
+///
+/// Returns the ship's technology level, speed, and evasion status.
+/// Speed and evasion are only set if the ship is actively moving
+/// (has a destination or navigation on, not docked, and active).
+///
+/// \return TacticalParams with ship's combat parameters
 TacticalParams ShipReportItem::get_tactical_params(
     [[maybe_unused]] const Race& race) const {
   TacticalParams params{};
@@ -598,17 +828,10 @@ TacticalParams ShipReportItem::get_tactical_params(
   return params;
 }
 
-std::optional<starnum_t> ShipReportItem::get_star_orbit() const {
-  if (ship_->whatorbits != ScopeLevel::LEVEL_UNIV) {
-    return ship_->storbits;
-  }
-  return std::nullopt;
-}
-
-shipnum_t ShipReportItem::next_ship() const { return ship_->nextship; }
-
-shipnum_t ShipReportItem::child_ships() const { return ship_->ships; }
-
+/// Display a planet as a tactical target.
+///
+/// Shows the planet name and distance. Planets don't have the detailed
+/// combat stats that ships have, so this is a simplified display.
 void PlanetReportItem::print_tactical_target(
     GameObj& g, [[maybe_unused]] RstContext& ctx,
     [[maybe_unused]] const Race& race, [[maybe_unused]] shipnum_t indx,
@@ -620,6 +843,10 @@ void PlanetReportItem::print_tactical_target(
                        star ? star->pnames[pnum_] : "Unknown", dist);
 }
 
+/// Print tactical header summary for a planet.
+///
+/// Shows the planet's defensive capabilities including tech level (from race),
+/// number of guns, destruct stores, and fuel.
 void PlanetReportItem::print_tactical_header_summary(
     GameObj& g, player_t player_num, const TacticalParams& params) const {
   const auto& p = *planet_;
@@ -632,6 +859,12 @@ void PlanetReportItem::print_tactical_header_summary(
                        p.info[player_num - 1].fuel);
 }
 
+/// Get tactical combat parameters for a planet.
+///
+/// Returns the race's technology level. Planets don't have speed or evasion.
+///
+/// \param race The race that owns sectors on this planet
+/// \return TacticalParams with race technology
 TacticalParams PlanetReportItem::get_tactical_params(const Race& race) const {
   TacticalParams params{};
   params.tech = race.tech;
@@ -639,6 +872,16 @@ TacticalParams PlanetReportItem::get_tactical_params(const Race& race) const {
   return params;
 }
 
+/// Generate tactical combat report for a ship.
+///
+/// Shows the ship's current status and all nearby targets within gun range.
+/// For each target, displays distance, hit probability, size, speed, evasion,
+/// and damage status. Only shows targets if the ship has sight capability.
+///
+/// The report includes:
+/// - Ship's header summary with combat stats
+/// - List of all targets within gun range
+/// - Hit probabilities calculated based on distance, speed, evasion, etc.
 void ShipReportItem::report_tactical(GameObj& g, RstContext& ctx,
                                      const TacticalParams& params) const {
   if (!ctx.flags.tactical) return;
@@ -678,6 +921,16 @@ void ShipReportItem::report_tactical(GameObj& g, RstContext& ctx,
   }
 }
 
+/// Generate tactical combat report for a planet.
+///
+/// Shows the planet's defensive capabilities and all nearby targets within
+/// gun range. Similar to ship tactical but uses race tech instead of ship tech,
+/// and planets don't have damage or ship-specific gun calibers.
+///
+/// The report includes:
+/// - Planet's header summary with defensive stats
+/// - List of all targets within gun range
+/// - Distance to each target
 void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
                                        const TacticalParams& params) const {
   if (!ctx.flags.tactical) return;
@@ -712,6 +965,20 @@ void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
   }
 }
 
+// ============================================================================
+// Main Report Function
+// ============================================================================
+
+/// Generate all requested reports for a single item (ship or planet).
+///
+/// This is the main entry point for generating reports. It checks if the item
+/// should be reported based on filters, then calls all active report methods
+/// in sequence based on the report flags.
+///
+/// \param g Game context
+/// \param ctx Report context with flags and state
+/// \param item The ship or planet to report on
+/// \param rep_on Array indicating which ship types to include
 void ship_report(GameObj& g, RstContext& ctx, const ReportItem& item,
                  const ReportArray& rep_on) {
   player_t player_num = g.player;
@@ -742,7 +1009,31 @@ void ship_report(GameObj& g, RstContext& ctx, const ReportItem& item,
 }
 }  // namespace
 
+// ============================================================================
+// Command Entry Point
+// ============================================================================
+
 namespace GB::commands {
+/// Main entry point for ship and planet reporting commands.
+///
+/// This command supports multiple report types through different command names:
+/// - report: General location and status report
+/// - stock: Resource and inventory report
+/// - tactical: Combat situation report with targets
+/// - stats: Technology and capabilities report
+/// - weapons: Weapons systems report
+/// - factories: Factory ship build configuration report
+/// - ship: Comprehensive report (all of the above)
+///
+/// Usage patterns:
+/// 1. `<cmd>` - Report all ships at current scope
+/// 2. `<cmd> <types>` - Report ships of specified types (e.g., "dsc" for destroyers/scouts/cruisers)
+/// 3. `<cmd> #<shipno> [#<shipno> ...]` - Report specific ships by number
+/// 4. `<cmd> <types> <player>` - Filter by ship types and player number
+/// 5. `<cmd> <types> <ship_types>` - Filter by ship types appearing in another ship type list
+///
+/// \param argv Command arguments (argv[0] is the command name)
+/// \param g Game context with player, governor, and scope information
 void rst(const command_t& argv, GameObj& g) {
   const player_t player_num = g.player;
 
@@ -765,6 +1056,7 @@ void rst(const command_t& argv, GameObj& g) {
   ctx.rd.reserve(n_ships + Sdata.numstars * MAXPLANETS);
   /* (one list entry for each ship, planet in universe) */
 
+  // Parse optional third argument: player number or ship type filter
   if (argv.size() == 3) {
     if (isdigit(argv[2][0]))
       ctx.who = std::stoi(argv[2]);
@@ -775,9 +1067,10 @@ void rst(const command_t& argv, GameObj& g) {
   } else
     ctx.who = 0;
 
+  // Parse second argument: ship numbers or ship type filter
   if (argv.size() >= 2) {
     if (*argv[1].c_str() == '#' || isdigit(*argv[1].c_str())) {
-      /* report on a couple ships */
+      // Report on specific ships by number
       int l = 1;
       while (l < MAXARGS && *argv[l].c_str() != '\0') {
         shipnum_t shipno;
@@ -798,6 +1091,8 @@ void rst(const command_t& argv, GameObj& g) {
       }
       return;
     }
+    
+    // Parse ship type filter string
     report_types.fill(false);
 
     for (const auto& c : argv[1]) {
@@ -810,16 +1105,22 @@ void rst(const command_t& argv, GameObj& g) {
     }
   }
 
+  // Generate reports based on current scope level
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
+      // Universe level: report all ships everywhere
       if (!ctx.flags.tactical || argv.size() >= 2) {
+        // Collect ships in deep space
         shipnum_t shn = Sdata.ships;
         while (shn && get_report_ship(g, ctx, shn)) {
           shn = ctx.rd.back()->next_ship();
         }
 
+        // Collect ships in all star systems
         for (starnum_t i = 0; i < Sdata.numstars; i++)
           star_get_report_ships(g, ctx, player_num, i);
+        
+        // Generate reports for all collected items
         for (const auto& item : ctx.rd)
           ship_report(g, ctx, *item, report_types);
       } else {
@@ -827,15 +1128,21 @@ void rst(const command_t& argv, GameObj& g) {
         return;
       }
       break;
+      
     case ScopeLevel::LEVEL_PLAN:
+      // Planet level: report ships at this planet
       plan_get_report_ships(g, ctx, player_num, g.snum, g.pnum);
       for (const auto& item : ctx.rd) ship_report(g, ctx, *item, report_types);
       break;
+      
     case ScopeLevel::LEVEL_STAR:
+      // Star system level: report all ships in this star system
       star_get_report_ships(g, ctx, player_num, g.snum);
       for (const auto& item : ctx.rd) ship_report(g, ctx, *item, report_types);
       break;
+      
     case ScopeLevel::LEVEL_SHIP:
+      // Ship level: report this ship and any ships docked/landed on it
       if (g.shipno == 0) {
         g.out << "Error: No ship is currently scoped. Use 'cs #<shipno>' to "
                  "scope to a ship.\n";
@@ -849,7 +1156,7 @@ void rst(const command_t& argv, GameObj& g) {
       }
       ship_report(g, ctx, *ctx.rd[0], report_types); /* first ship report */
 
-      // Get ships docked in this ship
+      // Get ships docked/landed on this ship
       shipnum_t shn = ctx.rd[0]->child_ships();
       shipnum_t first_child = ctx.rd.size();
 
@@ -862,4 +1169,5 @@ void rst(const command_t& argv, GameObj& g) {
       break;
   }
 }
+}  // namespace GB::commands
 }  // namespace GB::commands

@@ -317,46 +317,104 @@ void report_general(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
       dispshiploc_brief(s), locstrn);
 }
 
-void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
-                     const Planet& p, shipnum_t shipno) {
-  // Only report if Tactical flag is enabled
-  if (!ctx.flags.Tactical) return;
-
+void print_tactical_target_ship(GameObj& g, RstContext& ctx, const Race& race,
+                                shipnum_t indx, int i, double Dist, double tech,
+                                int fdam, bool fev, int fspeed,
+                                guntype_t caliber) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
-  const auto* race = g.entity_manager.peek_race(Playernum);
-  if (!race) return;
+  if (!ctx.who || ctx.who == ctx.rd[i].s.owner ||
+      (ctx.who == 999 && listed((int)ctx.rd[i].s.type, ctx.shiplist))) {
+    /* tac report at ship */
+    if ((ctx.rd[i].s.owner != Playernum ||
+         !authorized(Governor, ctx.rd[i].s)) &&
+        ctx.rd[i].s.alive && ctx.rd[i].s.type != ShipType::OTYPE_CANIST &&
+        ctx.rd[i].s.type != ShipType::OTYPE_GREEN) {
+      bool tev = false;
+      int tspeed = 0;
+      int body = 0;
 
-  bool fev = false;
-  int fspeed = 0;
-  int fdam = 0;
+      if ((ctx.rd[i].s.whatdest != ScopeLevel::LEVEL_UNIV ||
+           ctx.rd[i].s.navigate.on) &&
+          !ctx.rd[i].s.docked && ctx.rd[i].s.active) {
+        tspeed = ctx.rd[i].s.speed;
+        tev = ctx.rd[i].s.protect.evade;
+      }
+      body = size(ctx.rd[i].s);
+      auto defense = getdefense(ctx.rd[i].s);
+      auto [prob, factor] = hit_odds(Dist, tech, fdam, fev, tev, fspeed, tspeed,
+                                     body, caliber, defense);
+      if (ctx.rd[indx].type == ReportType::SHIP && laser_on(ctx.rd[indx].s) &&
+          ctx.rd[indx].s.focus)
+        prob = prob * prob / 100;
+      const auto* war_status = isset(race.atwar, ctx.rd[i].s.owner)    ? "-"
+                               : isset(race.allied, ctx.rd[i].s.owner) ? "+"
+                                                                       : " ";
+      if (!ctx.enemies_only ||
+          (ctx.enemies_only && (!isset(race.allied, ctx.rd[i].s.owner)))) {
+        g.out << std::format(
+            "{:13} {}{:2},{:1} {:c}{:14.14} {:4.0f}  {:4}   {:4} {}  "
+            "{:3}  "
+            "{:3}% {:3}%{}",
+            ctx.rd[i].n, war_status, ctx.rd[i].s.owner, ctx.rd[i].s.governor,
+            Shipltrs[ctx.rd[i].s.type], ctx.rd[i].s.name, Dist, factor, body,
+            tspeed, (tev ? "yes" : "   "), prob, ctx.rd[i].s.damage,
+            (ctx.rd[i].s.active ? "" : " INACTIVE"));
+        if (landed(ctx.rd[i].s)) {
+          g.out << std::format(" ({},{})", ctx.rd[i].s.land_x,
+                               ctx.rd[i].s.land_y);
+        } else {
+          g.out << "     ";
+        }
+        g.out << "\n";
+      }
+    }
+  }
+}
+
+struct TacticalParams {
   double tech;
   guntype_t caliber;
+  bool fev;
+  int fspeed;
+  int fdam;
+};
+
+TacticalParams print_tactical_header_summary(GameObj& g, RstContext& ctx,
+                                             shipnum_t indx, const Ship& s,
+                                             const Planet& p, shipnum_t shipno,
+                                             const Race& race) {
+  player_t Playernum = g.player;
+
+  TacticalParams params{};
+  params.fev = false;
+  params.fspeed = 0;
+  params.fdam = 0;
 
   g.out << "\n  #         name        tech    guns  armor size dest   "
            "fuel dam spd evad               orbits\n";
 
   if (ctx.rd[indx].type == ReportType::PLANET) {
     const auto* star = g.entity_manager.peek_star(ctx.rd[indx].star);
-    tech = race->tech;
+    params.tech = race.tech;
     /* tac report from planet */
     g.out << std::format("(planet){:15.15}{:4.0f} {:4}M           {:5} {:6}\n",
                          star ? star->pnames[ctx.rd[indx].pnum] : "Unknown",
-                         tech, p.info[Playernum - 1].guns,
+                         params.tech, p.info[Playernum - 1].guns,
                          p.info[Playernum - 1].destruct,
                          p.info[Playernum - 1].fuel);
-    caliber = GTYPE_MEDIUM;
+    params.caliber = GTYPE_MEDIUM;
   } else {
     Place where{s.whatorbits, s.storbits, s.pnumorbits};
-    tech = s.tech;
-    caliber = current_caliber(s);
+    params.tech = s.tech;
+    params.caliber = current_caliber(s);
     if ((s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) && !s.docked &&
         s.active) {
-      fspeed = s.speed;
-      fev = s.protect.evade;
+      params.fspeed = s.speed;
+      params.fev = s.protect.evade;
     }
-    fdam = s.damage;
+    params.fdam = s.damage;
     auto orb = std::format("{:30.30}", where.to_string());
     g.out << std::format(
         "{:3} {:c} {:16.16} "
@@ -364,8 +422,8 @@ void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
         "{:3}{:21.22}",
         shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"), s.tech,
         s.primary, Caliber[s.primtype], s.secondary, Caliber[s.sectype],
-        s.armor, s.size, s.destruct, s.fuel, s.damage, fspeed,
-        (fev ? "yes" : "   "), orb);
+        s.armor, s.size, s.destruct, s.fuel, s.damage, params.fspeed,
+        (params.fev ? "yes" : "   "), orb);
     if (landed(s)) {
       g.out << std::format(" ({},{})", s.land_x, s.land_y);
     }
@@ -374,6 +432,29 @@ void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
     }
     g.out << "\n";
   }
+
+  return params;
+}
+
+void print_tactical_target_planet(GameObj& g, RstContext& ctx, int i,
+                                  double Dist) {
+  const auto* star = g.entity_manager.peek_star(ctx.rd[i].star);
+  g.out << std::format(" {:13}(planet)          {:8.0f}\n",
+                       star ? star->pnames[ctx.rd[i].pnum] : "Unknown", Dist);
+}
+
+void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
+                     const Planet& p, shipnum_t shipno) {
+  // Only report if Tactical flag is enabled
+  if (!ctx.flags.Tactical) return;
+
+  player_t Playernum = g.player;
+
+  const auto* race = g.entity_manager.peek_race(Playernum);
+  if (!race) return;
+
+  auto params =
+      print_tactical_header_summary(g, ctx, indx, s, p, shipno, *race);
 
   bool sight = ctx.rd[indx].type == ReportType::PLANET || shipsight(s);
 
@@ -391,60 +472,11 @@ void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
     if (i != indx && (Dist = sqrt(Distsq(ctx.rd[indx].x, ctx.rd[indx].y,
                                          ctx.rd[i].x, ctx.rd[i].y))) < range) {
       if (ctx.rd[i].type == ReportType::PLANET) {
-        /* tac report at planet */
-        const auto* star = g.entity_manager.peek_star(ctx.rd[i].star);
-        g.out << std::format(" {:13}(planet)          {:8.0f}\n",
-                             star ? star->pnames[ctx.rd[i].pnum] : "Unknown",
-                             Dist);
-      } else if (!ctx.who || ctx.who == ctx.rd[i].s.owner ||
-                 (ctx.who == 999 &&
-                  listed((int)ctx.rd[i].s.type, ctx.shiplist))) {
-        /* tac report at ship */
-        if ((ctx.rd[i].s.owner != Playernum ||
-             !authorized(Governor, ctx.rd[i].s)) &&
-            ctx.rd[i].s.alive && ctx.rd[i].s.type != ShipType::OTYPE_CANIST &&
-            ctx.rd[i].s.type != ShipType::OTYPE_GREEN) {
-          bool tev = false;
-          int tspeed = 0;
-          int body = 0;
-
-          if ((ctx.rd[i].s.whatdest != ScopeLevel::LEVEL_UNIV ||
-               ctx.rd[i].s.navigate.on) &&
-              !ctx.rd[i].s.docked && ctx.rd[i].s.active) {
-            tspeed = ctx.rd[i].s.speed;
-            tev = ctx.rd[i].s.protect.evade;
-          }
-          body = size(ctx.rd[i].s);
-          auto defense = getdefense(ctx.rd[i].s);
-          auto [prob, factor] = hit_odds(Dist, tech, fdam, fev, tev, fspeed,
-                                         tspeed, body, caliber, defense);
-          if (ctx.rd[indx].type == ReportType::SHIP &&
-              laser_on(ctx.rd[indx].s) && ctx.rd[indx].s.focus)
-            prob = prob * prob / 100;
-          const auto* war_status = isset(race->atwar, ctx.rd[i].s.owner) ? "-"
-                                   : isset(race->allied, ctx.rd[i].s.owner)
-                                       ? "+"
-                                       : " ";
-          if (!ctx.enemies_only ||
-              (ctx.enemies_only && (!isset(race->allied, ctx.rd[i].s.owner)))) {
-            g.out << std::format(
-                "{:13} {}{:2},{:1} {:c}{:14.14} {:4.0f}  {:4}   {:4} {}  "
-                "{:3}  "
-                "{:3}% {:3}%{}",
-                ctx.rd[i].n, war_status, ctx.rd[i].s.owner,
-                ctx.rd[i].s.governor, Shipltrs[ctx.rd[i].s.type],
-                ctx.rd[i].s.name, Dist, factor, body, tspeed,
-                (tev ? "yes" : "   "), prob, ctx.rd[i].s.damage,
-                (ctx.rd[i].s.active ? "" : " INACTIVE"));
-            if (landed(ctx.rd[i].s)) {
-              g.out << std::format(" ({},{})", ctx.rd[i].s.land_x,
-                                   ctx.rd[i].s.land_y);
-            } else {
-              g.out << "     ";
-            }
-            g.out << "\n";
-          }
-        }
+        print_tactical_target_planet(g, ctx, i, Dist);
+      } else {
+        print_tactical_target_ship(g, ctx, *race, indx, i, Dist, params.tech,
+                                   params.fdam, params.fev, params.fspeed,
+                                   params.caliber);
       }
     }
   }

@@ -108,7 +108,7 @@ void upgrade(const command_t &argv, GameObj &g) {
         return;
       }
       ship.primtype =
-          MIN(Shipdata[dirship->build_type][ABIL_PRIMARY], ship.primtype);
+          MIN(shipdata_primary(dirship->build_type), ship.primtype);
     } else {
       g.out << "No such gun characteristic.\n";
       return;
@@ -134,7 +134,7 @@ void upgrade(const command_t &argv, GameObj &g) {
         return;
       }
       ship.sectype =
-          MIN(Shipdata[dirship->build_type][ABIL_SECONDARY], ship.sectype);
+          MIN(shipdata_secondary(dirship->build_type), ship.sectype);
     } else {
       g.out << "No such gun characteristic.\n";
       return;

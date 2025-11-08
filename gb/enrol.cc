@@ -383,9 +383,9 @@ int main() {
     s.armor = Shipdata[ShipType::OTYPE_GOV][ABIL_ARMOR];
     s.guns = PRIMARY;
     s.primary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
-    s.primtype = Shipdata[ShipType::OTYPE_GOV][ABIL_PRIMARY];
+    s.primtype = shipdata_primary(ShipType::OTYPE_GOV);
     s.secondary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
-    s.sectype = Shipdata[ShipType::OTYPE_GOV][ABIL_SECONDARY];
+    s.sectype = shipdata_secondary(ShipType::OTYPE_GOV);
     s.max_crew = Shipdata[ShipType::OTYPE_GOV][ABIL_MAXCREW];
     s.max_destruct = Shipdata[ShipType::OTYPE_GOV][ABIL_DESTCAP];
     s.max_resource = Shipdata[ShipType::OTYPE_GOV][ABIL_CARGO];

@@ -390,9 +390,9 @@ void Getship(Ship *s, ShipType i, const Race &r) {
   s->armor = Shipdata[i][ABIL_ARMOR];
   s->guns = Shipdata[i][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
   s->primary = Shipdata[i][ABIL_GUNS];
-  s->primtype = Shipdata[i][ABIL_PRIMARY];
-  s->secondary = Shipdata[i][ABIL_GUNS];
-  s->sectype = Shipdata[i][ABIL_SECONDARY];
+  s->primtype = shipdata_primary(i);
+  s->primary = Shipdata[i][ABIL_GUNS];
+  s->sectype = shipdata_secondary(i);
   s->max_crew = Shipdata[i][ABIL_MAXCREW];
   s->max_resource = Shipdata[i][ABIL_CARGO];
   s->max_hanger = Shipdata[i][ABIL_HANGER];

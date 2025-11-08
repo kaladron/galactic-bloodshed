@@ -153,8 +153,9 @@ std::string ship_to_string(const Ship &s) {
 
 double getmass(const Ship &s) {
   return (1.0 + MASS_ARMOR * s.armor + MASS_SIZE * (s.size - s.max_hanger) +
-          MASS_HANGER * s.max_hanger + MASS_GUNS * s.primary * s.primtype +
-          MASS_GUNS * s.secondary * s.sectype);
+          MASS_HANGER * s.max_hanger +
+          MASS_GUNS * s.primary * static_cast<int>(s.primtype) +
+          MASS_GUNS * s.secondary * static_cast<int>(s.sectype));
 }
 
 unsigned int ship_size(const Ship &s) {

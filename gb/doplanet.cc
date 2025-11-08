@@ -824,9 +824,9 @@ int doplanet(const starnum_t starnum, Planet &planet,
         s2->armor = Shipdata[ShipType::OTYPE_TOXWC][ABIL_ARMOR];
         s2->guns = GTYPE_NONE;
         s2->primary = Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS];
-        s2->primtype = Shipdata[ShipType::OTYPE_TOXWC][ABIL_PRIMARY];
-        s2->secondary = Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS];
-        s2->sectype = Shipdata[ShipType::OTYPE_TOXWC][ABIL_SECONDARY];
+        s2->primtype = shipdata_primary(ShipType::OTYPE_TOXWC);
+        s2->primary = Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS];
+        s2->sectype = shipdata_secondary(ShipType::OTYPE_TOXWC);
         s2->max_crew = Shipdata[ShipType::OTYPE_TOXWC][ABIL_MAXCREW];
         s2->max_resource = Shipdata[ShipType::OTYPE_TOXWC][ABIL_CARGO];
         s2->max_fuel = Shipdata[ShipType::OTYPE_TOXWC][ABIL_FUELCAP];

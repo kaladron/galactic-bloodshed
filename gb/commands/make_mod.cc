@@ -161,9 +161,9 @@ void make_mod(const command_t &argv, GameObj &g) {
     dirship->armor = Shipdata[*i][ABIL_ARMOR];
     dirship->guns = GTYPE_NONE; /* this keeps track of the factory status! */
     dirship->primary = Shipdata[*i][ABIL_GUNS];
-    dirship->primtype = Shipdata[*i][ABIL_PRIMARY];
-    dirship->secondary = Shipdata[*i][ABIL_GUNS];
-    dirship->sectype = Shipdata[*i][ABIL_SECONDARY];
+    dirship->primtype = shipdata_primary(*i);
+    dirship->primary = Shipdata[*i][ABIL_GUNS];
+    dirship->sectype = shipdata_secondary(*i);
     dirship->max_crew = Shipdata[*i][ABIL_MAXCREW];
     dirship->max_resource = Shipdata[*i][ABIL_CARGO];
     dirship->max_hanger = Shipdata[*i][ABIL_HANGER];
@@ -255,8 +255,8 @@ void make_mod(const command_t &argv, GameObj &g) {
             g.out << "No such caliber.\n";
             return;
           }
-          dirship->primtype = MIN(Shipdata[dirship->build_type][ABIL_PRIMARY],
-                                  dirship->primtype);
+          dirship->primtype =
+              MIN(shipdata_primary(dirship->build_type), dirship->primtype);
         } else {
           g.out << "No such gun characteristic.\n";
           return;
@@ -276,8 +276,8 @@ void make_mod(const command_t &argv, GameObj &g) {
             g.out << "No such caliber.\n";
             return;
           }
-          dirship->sectype = MIN(Shipdata[dirship->build_type][ABIL_SECONDARY],
-                                 dirship->sectype);
+          dirship->sectype =
+              MIN(shipdata_secondary(dirship->build_type), dirship->sectype);
         } else {
           g.out << "No such gun characteristic.\n";
           return;

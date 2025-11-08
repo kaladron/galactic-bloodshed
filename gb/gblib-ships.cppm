@@ -570,3 +570,17 @@ export const char* Shipnames[NUMSTYPES] = {"Spore pod",
                                            "Mech",
                                            "Bunker",
                                            "Lander"};
+
+/// Type-safe accessor for primary gun caliber from Shipdata
+/// \param ship_type The ship type to query
+/// \return Primary gun caliber as guntype_t
+export inline guntype_t shipdata_primary(ShipType ship_type) {
+  return static_cast<guntype_t>(Shipdata[ship_type][ABIL_PRIMARY]);
+}
+
+/// Type-safe accessor for secondary gun caliber from Shipdata
+/// \param ship_type The ship type to query
+/// \return Secondary gun caliber as guntype_t
+export inline guntype_t shipdata_secondary(ShipType ship_type) {
+  return static_cast<guntype_t>(Shipdata[ship_type][ABIL_SECONDARY]);
+}

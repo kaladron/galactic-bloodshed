@@ -230,9 +230,9 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
           s2->armor = ship.armor + 1;
           s2->guns = Shipdata[shipbuild][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
           s2->primary = Shipdata[shipbuild][ABIL_GUNS];
-          s2->primtype = Shipdata[shipbuild][ABIL_PRIMARY];
-          s2->secondary = Shipdata[shipbuild][ABIL_GUNS];
-          s2->sectype = Shipdata[shipbuild][ABIL_SECONDARY];
+          s2->primtype = shipdata_primary(shipbuild);
+          s2->secondary = 0;
+          s2->sectype = shipdata_secondary(shipbuild);
           s2->max_crew = Shipdata[shipbuild][ABIL_MAXCREW];
           s2->max_resource = Shipdata[shipbuild][ABIL_CARGO];
           s2->max_fuel = Shipdata[shipbuild][ABIL_FUELCAP];

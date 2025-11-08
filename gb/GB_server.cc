@@ -1279,9 +1279,9 @@ static double GetComplexity(const ShipType ship) {
   s.armor = Shipdata[ship][ABIL_ARMOR];
   s.guns = Shipdata[ship][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
   s.primary = Shipdata[ship][ABIL_GUNS];
-  s.primtype = Shipdata[ship][ABIL_PRIMARY];
+  s.primtype = shipdata_primary(ship);
   s.secondary = Shipdata[ship][ABIL_GUNS];
-  s.sectype = Shipdata[ship][ABIL_SECONDARY] ? SECONDARY : GTYPE_NONE;
+  s.sectype = shipdata_secondary(ship);
   s.max_crew = Shipdata[ship][ABIL_MAXCREW];
   s.max_resource = Shipdata[ship][ABIL_CARGO];
   s.max_hanger = Shipdata[ship][ABIL_HANGER];

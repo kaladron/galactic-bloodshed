@@ -44,20 +44,15 @@ class ReportItem {
 
   // Report generation methods
   virtual void report_stock([[maybe_unused]] GameObj& g,
-                            [[maybe_unused]] RstContext& ctx,
-                            [[maybe_unused]] bool& first) const {}
+                            [[maybe_unused]] RstContext& ctx) const {}
   virtual void report_status([[maybe_unused]] GameObj& g,
-                             [[maybe_unused]] RstContext& ctx,
-                             [[maybe_unused]] bool& first) const {}
+                             [[maybe_unused]] RstContext& ctx) const {}
   virtual void report_weapons([[maybe_unused]] GameObj& g,
-                              [[maybe_unused]] RstContext& ctx,
-                              [[maybe_unused]] bool& first) const {}
+                              [[maybe_unused]] RstContext& ctx) const {}
   virtual void report_factories([[maybe_unused]] GameObj& g,
-                                [[maybe_unused]] RstContext& ctx,
-                                [[maybe_unused]] bool& first) const {}
+                                [[maybe_unused]] RstContext& ctx) const {}
   virtual void report_general([[maybe_unused]] GameObj& g,
-                              [[maybe_unused]] RstContext& ctx,
-                              [[maybe_unused]] bool& first) const {}
+                              [[maybe_unused]] RstContext& ctx) const {}
   virtual void report_tactical(
       [[maybe_unused]] GameObj& g, [[maybe_unused]] RstContext& ctx,
       [[maybe_unused]] shipnum_t indx,
@@ -114,12 +109,11 @@ class ShipReportItem : public ReportItem {
   shipnum_t shipno() const { return n_; }
   const Ship& ship() const { return *ship_; }
 
-  void report_stock(GameObj& g, RstContext& ctx, bool& first) const override;
-  void report_status(GameObj& g, RstContext& ctx, bool& first) const override;
-  void report_weapons(GameObj& g, RstContext& ctx, bool& first) const override;
-  void report_factories(GameObj& g, RstContext& ctx,
-                        bool& first) const override;
-  void report_general(GameObj& g, RstContext& ctx, bool& first) const override;
+  void report_stock(GameObj& g, RstContext& ctx) const override;
+  void report_status(GameObj& g, RstContext& ctx) const override;
+  void report_weapons(GameObj& g, RstContext& ctx) const override;
+  void report_factories(GameObj& g, RstContext& ctx) const override;
+  void report_general(GameObj& g, RstContext& ctx) const override;
   void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx,
                        const TacticalParams& params) const override;
 
@@ -275,14 +269,13 @@ void star_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
 }
 
 // ShipReportItem virtual method implementations
-void ShipReportItem::report_stock(GameObj& g, RstContext& ctx,
-                                  bool& first) const {
+void ShipReportItem::report_stock(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.stock) return;
 
-  if (first) {
+  if (ctx.first) {
     g.out << "    #       name        x  hanger   res        des       "
              "  fuel      crew/mil\n";
-    if (!ctx.flags.ship) first = false;
+    if (!ctx.flags.ship) ctx.first = false;
   }
   const auto& s = *ship_;
   g.out << std::format(
@@ -293,14 +286,13 @@ void ShipReportItem::report_stock(GameObj& g, RstContext& ctx,
       max_destruct(s), s.fuel, max_fuel(s), s.popn, s.troops, s.max_crew);
 }
 
-void ShipReportItem::report_status(GameObj& g, RstContext& ctx,
-                                   bool& first) const {
+void ShipReportItem::report_status(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.status) return;
 
-  if (first) {
+  if (ctx.first) {
     g.out << "    #       name       las cew hyp    guns   arm tech "
              "spd cost  mass size\n";
-    if (!ctx.flags.ship) first = false;
+    if (!ctx.flags.ship) ctx.first = false;
   }
   const auto& s = *ship_;
   g.out << std::format(
@@ -320,14 +312,13 @@ void ShipReportItem::report_status(GameObj& g, RstContext& ctx,
   g.out << "\n";
 }
 
-void ShipReportItem::report_weapons(GameObj& g, RstContext& ctx,
-                                    bool& first) const {
+void ShipReportItem::report_weapons(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.weapons) return;
 
-  if (first) {
+  if (ctx.first) {
     g.out << "    #       name      laser   cew     safe     guns    "
              "damage   class\n";
-    if (!ctx.flags.ship) first = false;
+    if (!ctx.flags.ship) ctx.first = false;
   }
   const auto& s = *ship_;
   g.out << std::format(
@@ -343,14 +334,13 @@ void ShipReportItem::report_weapons(GameObj& g, RstContext& ctx,
           : s.shipclass);
 }
 
-void ShipReportItem::report_factories(GameObj& g, RstContext& ctx,
-                                      bool& first) const {
+void ShipReportItem::report_factories(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.factories || ship_->type != ShipType::OTYPE_FACTORY) return;
 
-  if (first) {
+  if (ctx.first) {
     g.out << "   #    Cost Tech Mass Sz A Crw Ful Crg Hng Dst Sp "
              "Weapons Lsr CEWs Range Dmg\n";
-    if (!ctx.flags.ship) first = false;
+    if (!ctx.flags.ship) ctx.first = false;
   }
 
   const auto& s = *ship_;
@@ -422,14 +412,13 @@ void ShipReportItem::report_factories(GameObj& g, RstContext& ctx,
       s.damage ? (s.on ? "" : "*") : "");
 }
 
-void ShipReportItem::report_general(GameObj& g, RstContext& ctx,
-                                    bool& first) const {
+void ShipReportItem::report_general(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.report) return;
 
-  if (first) {
+  if (ctx.first) {
     g.out << " #      name       gov dam crew mil  des fuel sp orbits  "
              "   destination\n";
-    if (!ctx.flags.ship) first = false;
+    if (!ctx.flags.ship) ctx.first = false;
   }
 
   const auto& s = *ship_;
@@ -755,11 +744,11 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
   TacticalParams params = ctx.rd[indx]->get_tactical_params(*race);
 
   // Polymorphic dispatch to appropriate report methods
-  ctx.rd[indx]->report_stock(g, ctx, ctx.first);
-  ctx.rd[indx]->report_status(g, ctx, ctx.first);
-  ctx.rd[indx]->report_weapons(g, ctx, ctx.first);
-  ctx.rd[indx]->report_factories(g, ctx, ctx.first);
-  ctx.rd[indx]->report_general(g, ctx, ctx.first);
+  ctx.rd[indx]->report_stock(g, ctx);
+  ctx.rd[indx]->report_status(g, ctx);
+  ctx.rd[indx]->report_weapons(g, ctx);
+  ctx.rd[indx]->report_factories(g, ctx);
+  ctx.rd[indx]->report_general(g, ctx);
   ctx.rd[indx]->report_tactical(g, ctx, indx, params);
 }
 }  // namespace

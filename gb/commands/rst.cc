@@ -213,48 +213,72 @@ void report_factories(GameObj& g, RstContext& ctx, shipnum_t indx,
              "Weapons Lsr CEWs Range Dmg\n";
     if (!ctx.flags.SHip) ctx.first = false;
   }
+
   if ((s.build_type == 0) || (s.build_type == ShipType::OTYPE_FACTORY)) {
     g.out << std::format(
         "{:5}               (No ship type specified yet)           "
         "           75% (OFF)",
         shipno);
-  } else {
-    std::string tmpbuf1;
-    if (s.primtype) {
-      const auto* caliber = s.primtype == GTYPE_LIGHT    ? "L"
-                            : s.primtype == GTYPE_MEDIUM ? "M"
-                            : s.primtype == GTYPE_HEAVY  ? "H"
-                                                         : "N";
-      tmpbuf1 = std::format("{:2}{}", s.primary, caliber);
-    } else {
-      tmpbuf1 = "---";
-    }
-
-    std::string tmpbuf2;
-    if (s.sectype) {
-      const auto* caliber = s.sectype == GTYPE_LIGHT    ? "L"
-                            : s.sectype == GTYPE_MEDIUM ? "M"
-                            : s.sectype == GTYPE_HEAVY  ? "H"
-                                                        : "N";
-      tmpbuf2 = std::format("{:2}{}", s.secondary, caliber);
-    } else {
-      tmpbuf2 = "---";
-    }
-
-    std::string tmpbuf3 = s.cew ? std::format("{:4}", s.cew) : "----";
-    std::string tmpbuf4 = s.cew ? std::format("{:5}", s.cew_range) : "-----";
-
-    g.out << std::format(
-        "{:5} {:c}{:4}{:6.1f}{:5.1f}{:3}{:2}{:4}{:4}{:4}{:4}{:4} {}{:1} "
-        "{}/{} {} "
-        "{} {} {:02}%{}\n",
-        shipno, Shipltrs[s.build_type], s.build_cost, s.complexity, s.base_mass,
-        ship_size(s), s.armor, s.max_crew, s.max_fuel, s.max_resource,
-        s.max_hanger, s.max_destruct,
-        s.hyper_drive.has ? (s.mount ? "+" : "*") : " ", s.max_speed, tmpbuf1,
-        tmpbuf2, s.laser ? "yes" : " no", tmpbuf3, tmpbuf4, s.damage,
-        s.damage ? (s.on ? "" : "*") : "");
+    return;
   }
+
+  std::string tmpbuf1;
+  if (s.primtype) {
+    const char* caliber;
+    switch (s.primtype) {
+      case GTYPE_LIGHT:
+        caliber = "L";
+        break;
+      case GTYPE_MEDIUM:
+        caliber = "M";
+        break;
+      case GTYPE_HEAVY:
+        caliber = "H";
+        break;
+      default:
+        caliber = "N";
+        break;
+    }
+    tmpbuf1 = std::format("{:2}{}", s.primary, caliber);
+  } else {
+    tmpbuf1 = "---";
+  }
+
+  std::string tmpbuf2;
+  if (s.sectype) {
+    const char* caliber;
+    switch (s.sectype) {
+      case GTYPE_LIGHT:
+        caliber = "L";
+        break;
+      case GTYPE_MEDIUM:
+        caliber = "M";
+        break;
+      case GTYPE_HEAVY:
+        caliber = "H";
+        break;
+      default:
+        caliber = "N";
+        break;
+    }
+    tmpbuf2 = std::format("{:2}{}", s.secondary, caliber);
+  } else {
+    tmpbuf2 = "---";
+  }
+
+  std::string tmpbuf3 = s.cew ? std::format("{:4}", s.cew) : "----";
+  std::string tmpbuf4 = s.cew ? std::format("{:5}", s.cew_range) : "-----";
+
+  g.out << std::format(
+      "{:5} {:c}{:4}{:6.1f}{:5.1f}{:3}{:2}{:4}{:4}{:4}{:4}{:4} {}{:1} "
+      "{}/{} {} "
+      "{} {} {:02}%{}\n",
+      shipno, Shipltrs[s.build_type], s.build_cost, s.complexity, s.base_mass,
+      ship_size(s), s.armor, s.max_crew, s.max_fuel, s.max_resource,
+      s.max_hanger, s.max_destruct,
+      s.hyper_drive.has ? (s.mount ? "+" : "*") : " ", s.max_speed, tmpbuf1,
+      tmpbuf2, s.laser ? "yes" : " no", tmpbuf3, tmpbuf4, s.damage,
+      s.damage ? (s.on ? "" : "*") : "");
 }
 
 void report_general(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,

@@ -208,10 +208,6 @@ class ShipReportItem : public ReportItem {
                      const ReportArray& rep_on) const override;
 };
 
-  bool should_report(player_t player_num, governor_t governor,
-                     const ReportArray& rep_on) const override;
-};
-
 /// Planet report item - holds non-owning pointer from peek_planet.
 ///
 /// Represents a planet in the report system. Planets primarily appear in

@@ -19,7 +19,7 @@ namespace {
 // CONSTANTS
 // ============================================================================
 
-constexpr char kCaliber[] = {' ', 'L', 'M', 'H'};
+// (No global constants needed - caliber mapping is in caliber_char() function)
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -228,6 +228,24 @@ constexpr auto kCommandReportModes = std::array{
 // HELPER FUNCTIONS
 // ============================================================================
 
+/// Get display character for gun caliber type
+/// \param caliber Gun caliber type (GTYPE_NONE=0, GTYPE_LIGHT=1,
+/// GTYPE_MEDIUM=2, GTYPE_HEAVY=3)
+/// \return Character representing caliber ('L', 'M', 'H', or ' ' for none)
+constexpr char caliber_char(guntype_t caliber) {
+  switch (caliber) {
+    case GTYPE_LIGHT:
+      return 'L';
+    case GTYPE_MEDIUM:
+      return 'M';
+    case GTYPE_HEAVY:
+      return 'H';
+    case GTYPE_NONE:
+    default:
+      return ' ';
+  }
+}
+
 bool listed(int type, const std::string& string) {
   return std::ranges::any_of(string,
                              [type](char c) { return Shipltrs[type] == c; });
@@ -316,8 +334,8 @@ void ShipReportItem::report_status(GameObj& g, RstContext& ctx) const {
       "{}{}{}{:3}{:c}/{:3}{:c}{:4}{:5.0f}{:4}{:5}{:7.1f}{:4}",
       n_, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
       s.laser ? "yes " : "    ", s.cew ? "yes " : "    ",
-      s.hyper_drive.has ? "yes " : "    ", s.primary, kCaliber[s.primtype],
-      s.secondary, kCaliber[s.sectype], armor(s), s.tech, max_speed(s),
+      s.hyper_drive.has ? "yes " : "    ", s.primary, caliber_char(s.primtype),
+      s.secondary, caliber_char(s.sectype), armor(s), s.tech, max_speed(s),
       shipcost(s), mass(s), size(s));
   if (s.type == ShipType::STYPE_POD) {
     if (std::holds_alternative<PodData>(s.special)) {
@@ -343,7 +361,7 @@ void ShipReportItem::report_weapons(GameObj& g, RstContext& ctx) const {
       n_, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
       s.laser ? "yes " : "    ", s.cew, s.cew_range,
       (int)((1.0 - .01 * s.damage) * s.tech / 4.0), s.primary,
-      kCaliber[s.primtype], s.secondary, kCaliber[s.sectype], s.damage,
+      caliber_char(s.primtype), s.secondary, caliber_char(s.sectype), s.damage,
       s.type == ShipType::OTYPE_FACTORY ? Shipltrs[s.build_type] : ' ',
       ((s.type == ShipType::OTYPE_TERRA) || (s.type == ShipType::OTYPE_PLOW))
           ? "Standard"
@@ -369,49 +387,13 @@ void ShipReportItem::report_factories(GameObj& g, RstContext& ctx) const {
     return;
   }
 
-  std::string tmpbuf1;
-  if (s.primtype) {
-    const char* caliber;
-    switch (s.primtype) {
-      case GTYPE_LIGHT:
-        caliber = "L";
-        break;
-      case GTYPE_MEDIUM:
-        caliber = "M";
-        break;
-      case GTYPE_HEAVY:
-        caliber = "H";
-        break;
-      default:
-        caliber = "N";
-        break;
-    }
-    tmpbuf1 = std::format("{:2}{}", s.primary, caliber);
-  } else {
-    tmpbuf1 = "---";
-  }
+  std::string tmpbuf1 =
+      s.primtype ? std::format("{:2}{}", s.primary, caliber_char(s.primtype))
+                 : "---";
 
-  std::string tmpbuf2;
-  if (s.sectype) {
-    const char* caliber;
-    switch (s.sectype) {
-      case GTYPE_LIGHT:
-        caliber = "L";
-        break;
-      case GTYPE_MEDIUM:
-        caliber = "M";
-        break;
-      case GTYPE_HEAVY:
-        caliber = "H";
-        break;
-      default:
-        caliber = "N";
-        break;
-    }
-    tmpbuf2 = std::format("{:2}{}", s.secondary, caliber);
-  } else {
-    tmpbuf2 = "---";
-  }
+  std::string tmpbuf2 =
+      s.sectype ? std::format("{:2}{}", s.secondary, caliber_char(s.sectype))
+                : "---";
 
   std::string tmpbuf3 = s.cew ? std::format("{:4}", s.cew) : "----";
   std::string tmpbuf4 = s.cew ? std::format("{:5}", s.cew_range) : "-----";
@@ -599,9 +581,9 @@ void ShipReportItem::print_tactical_header_summary(
       "{:4.0f}{:3}{:c}/{:3}{:c}{:6}{:5}{:5}{:7.1f}{:3}%  {}  "
       "{:3}{:21.22}",
       n_, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"), s.tech, s.primary,
-      kCaliber[s.primtype], s.secondary, kCaliber[s.sectype], s.armor, s.size,
-      s.destruct, s.fuel, s.damage, params.fspeed, (params.fev ? "yes" : "   "),
-      orb);
+      caliber_char(s.primtype), s.secondary, caliber_char(s.sectype), s.armor,
+      s.size, s.destruct, s.fuel, s.damage, params.fspeed,
+      (params.fev ? "yes" : "   "), orb);
   if (landed(s)) {
     g.out << std::format(" ({},{})", s.land_x, s.land_y);
   }

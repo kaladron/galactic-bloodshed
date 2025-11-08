@@ -15,21 +15,51 @@ import std.compat;
 module commands;
 
 namespace {
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
 constexpr char kCaliber[] = {' ', 'L', 'M', 'H'};
+
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
 
 using ReportArray = std::array<bool, NUMSTYPES>;
 
 // Forward declarations
+class ReportItem;
 struct RstContext;
 
-// Tactical parameters for combat calculations
 struct TacticalParams {
   double tech = 0.0;
   bool fev = false;
   int fspeed = 0;
 };
 
-// Abstract base class for report items (ships and planets)
+struct ReportFlags {
+  bool status = false;
+  bool ship = false;
+  bool stock = false;
+  bool report = false;
+  bool weapons = false;
+  bool factories = false;
+  bool tactical = false;
+};
+
+struct RstContext {
+  std::vector<std::unique_ptr<ReportItem>> rd;
+  std::string shiplist;
+  ReportFlags flags;
+  bool first;
+  bool enemies_only;
+  int who;
+};
+
+// ============================================================================
+// BASE CLASS: ReportItem
+// ============================================================================
+
 class ReportItem {
  protected:
   double x_;
@@ -95,6 +125,10 @@ class ReportItem {
   virtual bool should_report(player_t player_num, governor_t governor,
                              const ReportArray& rep_on) const = 0;
 };
+
+// ============================================================================
+// DERIVED CLASSES
+// ============================================================================
 
 // Ship report item - holds non-owning pointer from peek_ship
 class ShipReportItem : public ReportItem {
@@ -172,27 +206,6 @@ class PlanetReportItem : public ReportItem {
                      const ReportArray& rep_on) const override;
 };
 
-// Report mode flags - all default to false
-struct ReportFlags {
-  bool status = false;
-  bool ship = false;
-  bool stock = false;
-  bool report = false;
-  bool weapons = false;
-  bool factories = false;
-  bool tactical = false;
-};
-
-// Context structure holding all rst command state
-struct RstContext {
-  std::vector<std::unique_ptr<ReportItem>> rd;
-  std::string shiplist;
-  ReportFlags flags;
-  bool first;
-  bool enemies_only;
-  int who;
-};
-
 // Map of command names to their report flag configurations
 // TODO(jeffbailey): Replace with std::unordered_map when available in C++20
 // modules
@@ -210,6 +223,10 @@ constexpr auto kCommandReportModes = std::array{
     std::pair{"weapons", ReportFlags{.weapons = true}},
     std::pair{"factories", ReportFlags{.factories = true}},
 };
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
 
 bool listed(int type, const std::string& string) {
   return std::ranges::any_of(string,
@@ -264,7 +281,10 @@ void star_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
   }
 }
 
-// ShipReportItem virtual method implementations
+// ============================================================================
+// SHIP REPORT METHOD IMPLEMENTATIONS
+// ============================================================================
+
 void ShipReportItem::report_stock(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.stock) return;
 
@@ -470,12 +490,20 @@ bool ShipReportItem::should_report(player_t player_num, governor_t governor,
   return true;
 }
 
+// ============================================================================
+// PLANET REPORT METHOD IMPLEMENTATIONS
+// ============================================================================
+
 bool PlanetReportItem::should_report(
     player_t player_num, [[maybe_unused]] governor_t governor,
     [[maybe_unused]] const ReportArray& rep_on) const {
   // Don't report on planets where we don't own any sectors
   return planet_->info[player_num - 1].numsectsowned != 0;
 }
+
+// ============================================================================
+// TACTICAL REPORT IMPLEMENTATIONS
+// ============================================================================
 
 void ShipReportItem::print_tactical_target(
     GameObj& g, [[maybe_unused]] RstContext& ctx, const Race& race,
@@ -708,6 +736,10 @@ void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
   }
 }
 
+// ============================================================================
+// MAIN REPORT DRIVER
+// ============================================================================
+
 void ship_report(GameObj& g, RstContext& ctx, const ReportItem& item,
                  const ReportArray& rep_on) {
   player_t player_num = g.player;
@@ -737,6 +769,10 @@ void ship_report(GameObj& g, RstContext& ctx, const ReportItem& item,
   item.report_tactical(g, ctx, params);
 }
 }  // namespace
+
+// ============================================================================
+// COMMAND ENTRY POINT
+// ============================================================================
 
 namespace GB::commands {
 void rst(const command_t& argv, GameObj& g) {

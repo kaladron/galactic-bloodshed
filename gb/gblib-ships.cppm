@@ -271,9 +271,9 @@ export class Ship {
   unsigned char merchant; /* this contains the route number */
   unsigned char guns;     /* current gun system which is active */
   unsigned long primary;  /* describe primary gun system */
-  unsigned long primtype;
+  guntype_t primtype;
   unsigned long secondary; /* describe secondary guns */
-  unsigned long sectype;
+  guntype_t sectype;
 
   unsigned short hanger;     /* amount of hanger space used */
   unsigned short max_hanger; /* total hanger space */

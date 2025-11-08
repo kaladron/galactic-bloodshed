@@ -483,8 +483,8 @@ guntype_t current_caliber(const Ship &ship) {
   if (ship.laser && ship.fire_laser) return GTYPE_LIGHT;
   if (ship.type == ShipType::STYPE_MINE) return GTYPE_LIGHT;
   if (ship.type == ShipType::STYPE_MISSILE) return GTYPE_HEAVY;
-  if (ship.guns == PRIMARY) return static_cast<guntype_t>(ship.primtype);
-  if (ship.guns == SECONDARY) return static_cast<guntype_t>(ship.sectype);
+  if (ship.guns == PRIMARY) return ship.primtype;
+  if (ship.guns == SECONDARY) return ship.sectype;
 
   return GTYPE_NONE;
 }

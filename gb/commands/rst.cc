@@ -41,14 +41,6 @@ struct TacticalParams {
   int fspeed = 0;      ///< Speed of firing entity
 };
 
-/// Tactical combat parameters used for calculating hit probabilities
-/// and displaying combat-relevant information in tactical reports.
-struct TacticalParams {
-  double tech = 0.0;   ///< Technology level of firing entity
-  bool fev = false;    ///< Whether firing entity is evading
-  int fspeed = 0;      ///< Speed of firing entity
-};
-
 // ============================================================================
 // ReportItem Class Hierarchy
 // ============================================================================

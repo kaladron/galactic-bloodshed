@@ -326,53 +326,77 @@ void print_tactical_target_ship(GameObj& g, RstContext& ctx, const Race& race,
   const player_t player_num = g.player;
   const governor_t governor = g.governor;
 
-  if (!ctx.who || ctx.who == ctx.rd[i].s.owner ||
-      (ctx.who == 999 && listed((int)ctx.rd[i].s.type, ctx.shiplist))) {
-    /* tac report at ship */
-    if ((ctx.rd[i].s.owner != player_num ||
-         !authorized(governor, ctx.rd[i].s)) &&
-        ctx.rd[i].s.alive && ctx.rd[i].s.type != ShipType::OTYPE_CANIST &&
-        ctx.rd[i].s.type != ShipType::OTYPE_GREEN) {
-      bool tev = false;
-      int tspeed = 0;
-      int body = 0;
-
-      if ((ctx.rd[i].s.whatdest != ScopeLevel::LEVEL_UNIV ||
-           ctx.rd[i].s.navigate.on) &&
-          !ctx.rd[i].s.docked && ctx.rd[i].s.active) {
-        tspeed = ctx.rd[i].s.speed;
-        tev = ctx.rd[i].s.protect.evade;
-      }
-      body = size(ctx.rd[i].s);
-      auto defense = getdefense(ctx.rd[i].s);
-      auto [prob, factor] = hit_odds(dist, tech, fdam, fev, tev, fspeed, tspeed,
-                                     body, caliber, defense);
-      if (ctx.rd[indx].type == ReportType::Ship && laser_on(ctx.rd[indx].s) &&
-          ctx.rd[indx].s.focus)
-        prob = prob * prob / 100;
-      const auto* war_status = isset(race.atwar, ctx.rd[i].s.owner)    ? "-"
-                               : isset(race.allied, ctx.rd[i].s.owner) ? "+"
-                                                                       : " ";
-      if (!ctx.enemies_only ||
-          (ctx.enemies_only && (!isset(race.allied, ctx.rd[i].s.owner)))) {
-        g.out << std::format(
-            "{:13} {}{:2},{:1} {:c}{:14.14} {:4.0f}  {:4}   {:4} {}  "
-            "{:3}  "
-            "{:3}% {:3}%{}",
-            ctx.rd[i].n, war_status, ctx.rd[i].s.owner, ctx.rd[i].s.governor,
-            Shipltrs[ctx.rd[i].s.type], ctx.rd[i].s.name, dist, factor, body,
-            tspeed, (tev ? "yes" : "   "), prob, ctx.rd[i].s.damage,
-            (ctx.rd[i].s.active ? "" : " INACTIVE"));
-        if (landed(ctx.rd[i].s)) {
-          g.out << std::format(" ({},{})", ctx.rd[i].s.land_x,
-                               ctx.rd[i].s.land_y);
-        } else {
-          g.out << "     ";
-        }
-        g.out << "\n";
-      }
-    }
+  // Filter ships not matching the "who" filter (player filter or ship type
+  // list)
+  if (ctx.who && ctx.who != ctx.rd[i].s.owner &&
+      (ctx.who != 999 || !listed((int)ctx.rd[i].s.type, ctx.shiplist))) {
+    return;
   }
+
+  // Don't show ships we own and are authorized for
+  if (ctx.rd[i].s.owner == player_num && authorized(governor, ctx.rd[i].s)) {
+    return;
+  }
+
+  // Don't show dead ships
+  if (!ctx.rd[i].s.alive) {
+    return;
+  }
+
+  // Don't show canisters or greenhouse gases
+  if (ctx.rd[i].s.type == ShipType::OTYPE_CANIST ||
+      ctx.rd[i].s.type == ShipType::OTYPE_GREEN) {
+    return;
+  }
+
+  // Calculate target ship's evasion and speed (only if moving and active)
+  bool tev = false;
+  int tspeed = 0;
+  if ((ctx.rd[i].s.whatdest != ScopeLevel::LEVEL_UNIV ||
+       ctx.rd[i].s.navigate.on) &&
+      !ctx.rd[i].s.docked && ctx.rd[i].s.active) {
+    tspeed = ctx.rd[i].s.speed;
+    tev = ctx.rd[i].s.protect.evade;
+  }
+
+  // Calculate combat parameters
+  int body = size(ctx.rd[i].s);
+  auto defense = getdefense(ctx.rd[i].s);
+  auto [prob, factor] = hit_odds(dist, tech, fdam, fev, tev, fspeed, tspeed,
+                                 body, caliber, defense);
+
+  // Apply laser focus bonus if applicable
+  if (ctx.rd[indx].type == ReportType::Ship && laser_on(ctx.rd[indx].s) &&
+      ctx.rd[indx].s.focus) {
+    prob = prob * prob / 100;
+  }
+
+  // Determine diplomatic status indicator
+  const auto* war_status = isset(race.atwar, ctx.rd[i].s.owner)    ? "-"
+                           : isset(race.allied, ctx.rd[i].s.owner) ? "+"
+                                                                   : " ";
+
+  // Filter out allied ships if enemies-only mode is enabled
+  if (ctx.enemies_only && isset(race.allied, ctx.rd[i].s.owner)) {
+    return;
+  }
+
+  // Output tactical information for this target ship
+  g.out << std::format(
+      "{:13} {}{:2},{:1} {:c}{:14.14} {:4.0f}  {:4}   {:4} {}  "
+      "{:3}  "
+      "{:3}% {:3}%{}",
+      ctx.rd[i].n, war_status, ctx.rd[i].s.owner, ctx.rd[i].s.governor,
+      Shipltrs[ctx.rd[i].s.type], ctx.rd[i].s.name, dist, factor, body, tspeed,
+      (tev ? "yes" : "   "), prob, ctx.rd[i].s.damage,
+      (ctx.rd[i].s.active ? "" : " INACTIVE"));
+
+  if (landed(ctx.rd[i].s)) {
+    g.out << std::format(" ({},{})", ctx.rd[i].s.land_x, ctx.rd[i].s.land_y);
+  } else {
+    g.out << "     ";
+  }
+  g.out << "\n";
 }
 
 struct TacticalParams {

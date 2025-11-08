@@ -36,20 +36,43 @@ struct reportdata {
 
 using report_array = std::array<bool, NUMSTYPES>;
 
+// Report mode flags - all default to false
+struct ReportFlags {
+  bool Status = false;
+  bool SHip = false;
+  bool Stock = false;
+  bool Report = false;
+  bool Weapons = false;
+  bool Factories = false;
+  bool Tactical = false;
+};
+
 // Context structure holding all rst command state
 struct RstContext {
   std::vector<reportdata> rd;
   std::string shiplist;
-  bool Status;
-  bool SHip;
-  bool Stock;
-  bool Report;
-  bool Weapons;
-  bool Factories;
+  ReportFlags flags;
   bool first;
-  bool Tactical;
   bool enemies_only;
   int who;
+};
+
+// Map of command names to their report flag configurations
+// TODO(jeffbailey): Replace with std::unordered_map when available in C++20
+// modules
+constexpr auto CommandReportModes = std::array{
+    std::pair{"report", ReportFlags{.Report = true}},
+    std::pair{"stock", ReportFlags{.Stock = true}},
+    std::pair{"tactical", ReportFlags{.Tactical = true}},
+    std::pair{"ship", ReportFlags{.Status = true,
+                                  .SHip = true,
+                                  .Stock = true,
+                                  .Report = true,
+                                  .Weapons = true,
+                                  .Factories = true}},
+    std::pair{"stats", ReportFlags{.Status = true}},
+    std::pair{"weapons", ReportFlags{.Weapons = true}},
+    std::pair{"factories", ReportFlags{.Factories = true}},
 };
 
 bool listed(int type, const std::string& string) {
@@ -169,11 +192,11 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
   }
 
   // All early-return filters passed - proceed with reporting
-  if (ctx.rd[indx].type == ReportType::SHIP && ctx.Stock) {
+  if (ctx.rd[indx].type == ReportType::SHIP && ctx.flags.Stock) {
     if (ctx.first) {
       g.out << "    #       name        x  hanger   res        des       "
                "  fuel      crew/mil\n";
-      if (!ctx.SHip) ctx.first = false;
+      if (!ctx.flags.SHip) ctx.first = false;
     }
     g.out << std::format(
         "{:5} {:c} "
@@ -183,11 +206,11 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
         max_destruct(s), s.fuel, max_fuel(s), s.popn, s.troops, s.max_crew);
   }
 
-  if (ctx.rd[indx].type == ReportType::SHIP && ctx.Status) {
+  if (ctx.rd[indx].type == ReportType::SHIP && ctx.flags.Status) {
     if (ctx.first) {
       g.out << "    #       name       las cew hyp    guns   arm tech "
                "spd cost  mass size\n";
-      if (!ctx.SHip) ctx.first = false;
+      if (!ctx.flags.SHip) ctx.first = false;
     }
     g.out << std::format(
         "{:5} {:c} {:14.14} "
@@ -206,11 +229,11 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
     g.out << "\n";
   }
 
-  if (ctx.rd[indx].type == ReportType::SHIP && ctx.Weapons) {
+  if (ctx.rd[indx].type == ReportType::SHIP && ctx.flags.Weapons) {
     if (ctx.first) {
       g.out << "    #       name      laser   cew     safe     guns    "
                "damage   class\n";
-      if (!ctx.SHip) ctx.first = false;
+      if (!ctx.flags.SHip) ctx.first = false;
     }
     g.out << std::format(
         "{:5} {:c} {:14.14} {}  {:3}/{:<4}  {:4}  {:3}{:c}/{:3}{:c}    {:3}% "
@@ -225,12 +248,12 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
             : s.shipclass);
   }
 
-  if (ctx.rd[indx].type == ReportType::SHIP && ctx.Factories &&
+  if (ctx.rd[indx].type == ReportType::SHIP && ctx.flags.Factories &&
       (s.type == ShipType::OTYPE_FACTORY)) {
     if (ctx.first) {
       g.out << "   #    Cost Tech Mass Sz A Crw Ful Crg Hng Dst Sp "
                "Weapons Lsr CEWs Range Dmg\n";
-      if (!ctx.SHip) ctx.first = false;
+      if (!ctx.flags.SHip) ctx.first = false;
     }
     if ((s.build_type == 0) || (s.build_type == ShipType::OTYPE_FACTORY)) {
       g.out << std::format(
@@ -276,11 +299,11 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
     }
   }
 
-  if (ctx.rd[indx].type == ReportType::SHIP && ctx.Report) {
+  if (ctx.rd[indx].type == ReportType::SHIP && ctx.flags.Report) {
     if (ctx.first) {
       g.out << " #      name       gov dam crew mil  des fuel sp orbits  "
                "   destination\n";
-      if (!ctx.SHip) ctx.first = false;
+      if (!ctx.flags.SHip) ctx.first = false;
     }
     std::string locstrn;
     if (s.docked) {
@@ -309,7 +332,7 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
         dispshiploc_brief(s), locstrn);
   }
 
-  if (ctx.Tactical) {
+  if (ctx.flags.Tactical) {
     bool fev = false;
     int fspeed = 0;
     int fdam = 0;
@@ -445,35 +468,15 @@ void rst(const command_t& argv, GameObj& g) {
   ctx.enemies_only = false;
   Num_ships = 0;
   ctx.first = true;
-  if (argv[0] == "report") {
-    ctx.Report = true;
-    ctx.Weapons = ctx.Status = ctx.Stock = ctx.SHip = ctx.Factories = false;
-    ctx.Tactical = false;
-  } else if (argv[0] == "stock") {
-    ctx.Stock = true;
-    ctx.Weapons = ctx.Status = ctx.Report = ctx.SHip = ctx.Factories = false;
-    ctx.Tactical = false;
-  } else if (argv[0] == "tactical") {
-    ctx.Tactical = true;
-    ctx.Weapons = ctx.Status = ctx.Report = ctx.SHip = ctx.Stock =
-        ctx.Factories = false;
-  } else if (argv[0] == "ship") {
-    ctx.SHip = ctx.Report = ctx.Stock = true;
-    ctx.Tactical = false;
-    ctx.Weapons = ctx.Status = ctx.Factories = true;
-  } else if (argv[0] == "stats") {
-    ctx.Status = true;
-    ctx.Weapons = ctx.Report = ctx.Stock = ctx.SHip = ctx.Factories = false;
-    ctx.Tactical = false;
-  } else if (argv[0] == "weapons") {
-    ctx.Weapons = true;
-    ctx.Status = ctx.Report = ctx.Stock = ctx.SHip = ctx.Factories = false;
-    ctx.Tactical = false;
-  } else if (argv[0] == "factories") {
-    ctx.Factories = true;
-    ctx.Status = ctx.Report = ctx.Stock = ctx.SHip = ctx.Weapons = false;
-    ctx.Tactical = false;
+
+  // Set report flags based on command name
+  for (const auto& [cmd, flags] : CommandReportModes) {
+    if (argv[0] == cmd) {
+      ctx.flags = flags;
+      break;
+    }
   }
+
   shipnum_t n_ships = Numships();
   ctx.rd.reserve(n_ships + Sdata.numstars * MAXPLANETS);
   /* (one list entry for each ship, planet in universe) */
@@ -523,7 +526,7 @@ void rst(const command_t& argv, GameObj& g) {
 
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
-      if (!ctx.Tactical || argv.size() >= 2) {
+      if (!ctx.flags.Tactical || argv.size() >= 2) {
         shipnum_t shn = Sdata.ships;
         while (shn && Getrship(g, ctx, shn))
           shn = ctx.rd[Num_ships - 1].s.nextship;

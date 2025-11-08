@@ -131,9 +131,9 @@ class ShipReportItem : public ReportItem {
 
   std::optional<starnum_t> get_star_orbit() const override;
 
-  shipnum_t next_ship() const override;
+  shipnum_t next_ship() const override { return ship_->nextship; }
 
-  shipnum_t child_ships() const override;
+  shipnum_t child_ships() const override { return ship_->ships; }
 
   bool should_report(player_t player_num, governor_t governor,
                      const ReportArray& rep_on) const override;
@@ -604,10 +604,6 @@ std::optional<starnum_t> ShipReportItem::get_star_orbit() const {
   }
   return std::nullopt;
 }
-
-shipnum_t ShipReportItem::next_ship() const { return ship_->nextship; }
-
-shipnum_t ShipReportItem::child_ships() const { return ship_->ships; }
 
 void PlanetReportItem::print_tactical_target(
     GameObj& g, [[maybe_unused]] RstContext& ctx,

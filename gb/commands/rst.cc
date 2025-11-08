@@ -15,25 +15,159 @@ import std.compat;
 module commands;
 
 namespace {
-enum class ReportType {
-  Ship,
-  Planet,
-};
-
 constexpr char kCaliber[] = {' ', 'L', 'M', 'H'};
 
-struct ReportData {
-  ReportType type; /* ship or planet */
-  Ship s;
-  Planet p;
-  shipnum_t n;
-  starnum_t star;
-  planetnum_t pnum;
-  double x;
-  double y;
+using ReportArray = std::array<bool, NUMSTYPES>;
+
+// Forward declarations
+struct RstContext;
+
+// Tactical parameters for combat calculations
+struct TacticalParams {
+  double tech = 0.0;
+  bool fev = false;
+  int fspeed = 0;
 };
 
-using ReportArray = std::array<bool, NUMSTYPES>;
+// Abstract base class for report items (ships and planets)
+class ReportItem {
+ protected:
+  double x_;
+  double y_;
+
+ public:
+  ReportItem(double x, double y) : x_(x), y_(y) {}
+  virtual ~ReportItem() = default;
+
+  double x() const { return x_; }
+  double y() const { return y_; }
+
+  // Report generation methods
+  virtual void report_stock([[maybe_unused]] GameObj& g,
+                            [[maybe_unused]] RstContext& ctx,
+                            [[maybe_unused]] bool& first) const {}
+  virtual void report_status([[maybe_unused]] GameObj& g,
+                             [[maybe_unused]] RstContext& ctx,
+                             [[maybe_unused]] bool& first) const {}
+  virtual void report_weapons([[maybe_unused]] GameObj& g,
+                              [[maybe_unused]] RstContext& ctx,
+                              [[maybe_unused]] bool& first) const {}
+  virtual void report_factories([[maybe_unused]] GameObj& g,
+                                [[maybe_unused]] RstContext& ctx,
+                                [[maybe_unused]] bool& first) const {}
+  virtual void report_general([[maybe_unused]] GameObj& g,
+                              [[maybe_unused]] RstContext& ctx,
+                              [[maybe_unused]] bool& first) const {}
+  virtual void report_tactical(
+      [[maybe_unused]] GameObj& g, [[maybe_unused]] RstContext& ctx,
+      [[maybe_unused]] shipnum_t indx,
+      [[maybe_unused]] const TacticalParams& params) const {}
+
+  // Tactical target display - default no-op for items that don't appear in
+  // tactical
+  virtual void print_tactical_target(
+      [[maybe_unused]] GameObj& g, [[maybe_unused]] RstContext& ctx,
+      [[maybe_unused]] const Race& race, [[maybe_unused]] shipnum_t indx,
+      [[maybe_unused]] double dist, [[maybe_unused]] double tech,
+      [[maybe_unused]] int fdam, [[maybe_unused]] bool fev,
+      [[maybe_unused]] int fspeed, [[maybe_unused]] guntype_t caliber) const {}
+
+  // Apply laser focus bonus to hit probability (ships only)
+  virtual int apply_laser_focus(int prob) const { return prob; }
+
+  // Print tactical report header summary (different for ships vs planets)
+  virtual void print_tactical_header_summary(
+      [[maybe_unused]] GameObj& g, [[maybe_unused]] player_t player_num,
+      [[maybe_unused]] const TacticalParams& params) const {}
+
+  // Get tactical parameters for this item
+  virtual TacticalParams get_tactical_params(
+      [[maybe_unused]] const Race& race) const {
+    return TacticalParams{};
+  }
+
+  // Get star number if ship is in a star system (ships only)
+  virtual std::optional<starnum_t> get_star_orbit() const {
+    return std::nullopt;
+  }
+
+  // Check if we should report this item
+  virtual bool should_report(player_t player_num, governor_t governor,
+                             const ReportArray& rep_on) const = 0;
+};
+
+// Ship report item - holds non-owning pointer from peek_ship
+class ShipReportItem : public ReportItem {
+  shipnum_t n_;
+  const Ship* ship_;
+
+ public:
+  ShipReportItem(shipnum_t n, const Ship* ship)
+      : ReportItem(ship->xpos, ship->ypos), n_(n), ship_(ship) {}
+
+  shipnum_t shipno() const { return n_; }
+  const Ship& ship() const { return *ship_; }
+
+  void report_stock(GameObj& g, RstContext& ctx, bool& first) const override;
+  void report_status(GameObj& g, RstContext& ctx, bool& first) const override;
+  void report_weapons(GameObj& g, RstContext& ctx, bool& first) const override;
+  void report_factories(GameObj& g, RstContext& ctx,
+                        bool& first) const override;
+  void report_general(GameObj& g, RstContext& ctx, bool& first) const override;
+  void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx,
+                       const TacticalParams& params) const override;
+
+  void print_tactical_target(GameObj& g, RstContext& ctx, const Race& race,
+                             shipnum_t indx, double dist, double tech, int fdam,
+                             bool fev, int fspeed,
+                             guntype_t caliber) const override;
+
+  int apply_laser_focus(int prob) const override;
+
+  void print_tactical_header_summary(
+      GameObj& g, player_t player_num,
+      const TacticalParams& params) const override;
+
+  TacticalParams get_tactical_params(const Race& race) const override;
+
+  std::optional<starnum_t> get_star_orbit() const override;
+
+  bool should_report(player_t player_num, governor_t governor,
+                     const ReportArray& rep_on) const override;
+};
+
+// Planet report item - holds non-owning pointer from peek_planet
+class PlanetReportItem : public ReportItem {
+  starnum_t star_;
+  planetnum_t pnum_;
+  const Planet* planet_;
+
+ public:
+  PlanetReportItem(starnum_t star, planetnum_t pnum, const Planet* planet,
+                   double x, double y)
+      : ReportItem(x, y), star_(star), pnum_(pnum), planet_(planet) {}
+
+  starnum_t star() const { return star_; }
+  planetnum_t pnum() const { return pnum_; }
+  const Planet& planet() const { return *planet_; }
+
+  void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx,
+                       const TacticalParams& params) const override;
+
+  void print_tactical_target(GameObj& g, RstContext& ctx, const Race& race,
+                             shipnum_t indx, double dist, double tech, int fdam,
+                             bool fev, int fspeed,
+                             guntype_t caliber) const override;
+
+  void print_tactical_header_summary(
+      GameObj& g, player_t player_num,
+      const TacticalParams& params) const override;
+
+  TacticalParams get_tactical_params(const Race& race) const override;
+
+  bool should_report(player_t player_num, governor_t governor,
+                     const ReportArray& rep_on) const override;
+};
 
 // Report mode flags - all default to false
 struct ReportFlags {
@@ -48,7 +182,7 @@ struct ReportFlags {
 
 // Context structure holding all rst command state
 struct RstContext {
-  std::vector<ReportData> rd;
+  std::vector<std::unique_ptr<ReportItem>> rd;
   std::string shiplist;
   ReportFlags flags;
   bool first;
@@ -84,12 +218,7 @@ bool listed(int type, const std::string& string) {
 bool get_report_ship(GameObj& g, RstContext& ctx, shipnum_t shipno) {
   const auto* ship = g.entity_manager.peek_ship(shipno);
   if (ship) {
-    ctx.rd.resize(ctx.num_ships + 1);
-    ctx.rd[ctx.num_ships].s = *ship;
-    ctx.rd[ctx.num_ships].type = ReportType::Ship;
-    ctx.rd[ctx.num_ships].n = shipno;
-    ctx.rd[ctx.num_ships].x = ctx.rd[ctx.num_ships].s.xpos;
-    ctx.rd[ctx.num_ships].y = ctx.rd[ctx.num_ships].s.ypos;
+    ctx.rd.push_back(std::make_unique<ShipReportItem>(shipno, ship));
     ctx.num_ships++;
     return true;
   }
@@ -102,22 +231,23 @@ void plan_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
   const auto* star = g.entity_manager.peek_star(snum);
   if (!star) return;
 
-  ctx.rd.resize(ctx.num_ships + 1);
-  ctx.rd[ctx.num_ships].p = getplanet(snum, pnum);
-  const auto& p = ctx.rd[ctx.num_ships].p;
-  /* add this planet into the ship list */
-  ctx.rd[ctx.num_ships].star = snum;
-  ctx.rd[ctx.num_ships].pnum = pnum;
-  ctx.rd[ctx.num_ships].type = ReportType::Planet;
-  ctx.rd[ctx.num_ships].n = 0;
-  ctx.rd[ctx.num_ships].x = star->xpos + p.xpos;
-  ctx.rd[ctx.num_ships].y = star->ypos + p.ypos;
+  const auto* planet = g.entity_manager.peek_planet(snum, pnum);
+  if (!planet) return;
+
+  // Add planet to report list
+  double x = star->xpos + planet->xpos;
+  double y = star->ypos + planet->ypos;
+  ctx.rd.push_back(
+      std::make_unique<PlanetReportItem>(snum, pnum, planet, x, y));
   ctx.num_ships++;
 
-  if (p.info[player_num - 1].explored) {
-    shipnum_t shn = p.ships;
-    while (shn && get_report_ship(g, ctx, shn))
-      shn = ctx.rd[ctx.num_ships - 1].s.nextship;
+  if (planet->info[player_num - 1].explored) {
+    shipnum_t shn = planet->ships;
+    while (shn && get_report_ship(g, ctx, shn)) {
+      // Downcast to get next ship
+      auto* ship_item = dynamic_cast<ShipReportItem*>(ctx.rd.back().get());
+      shn = ship_item->ship().nextship;
+    }
   }
 }
 
@@ -128,45 +258,48 @@ void star_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
 
   if (isset(star->explored, player_num)) {
     shipnum_t shn = star->ships;
-    while (shn && get_report_ship(g, ctx, shn))
-      shn = ctx.rd[ctx.num_ships - 1].s.nextship;
+    while (shn && get_report_ship(g, ctx, shn)) {
+      auto* ship_item = dynamic_cast<ShipReportItem*>(ctx.rd.back().get());
+      shn = ship_item->ship().nextship;
+    }
     for (planetnum_t i = 0; i < star->numplanets; i++)
       plan_get_report_ships(g, ctx, player_num, snum, i);
   }
 }
 
-void report_stock(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
-                  shipnum_t shipno) {
-  // Only report for ships with Stock flag enabled
-  if (ctx.rd[indx].type != ReportType::Ship || !ctx.flags.stock) return;
+// ShipReportItem virtual method implementations
+void ShipReportItem::report_stock(GameObj& g, RstContext& ctx,
+                                  bool& first) const {
+  if (!ctx.flags.stock) return;
 
-  if (ctx.first) {
+  if (first) {
     g.out << "    #       name        x  hanger   res        des       "
              "  fuel      crew/mil\n";
-    if (!ctx.flags.ship) ctx.first = false;
+    if (!ctx.flags.ship) first = false;
   }
+  const auto& s = *ship_;
   g.out << std::format(
       "{:5} {:c} "
       "{:14.14}{:3}{:4}:{:<3}{:5}:{:<5}{:5}:{:<5}{:7.1f}:{:<6}{}/{}:{}\n",
-      shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"), s.crystals,
+      n_, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"), s.crystals,
       s.hanger, s.max_hanger, s.resource, max_resource(s), s.destruct,
       max_destruct(s), s.fuel, max_fuel(s), s.popn, s.troops, s.max_crew);
 }
 
-void report_status(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
-                   shipnum_t shipno) {
-  // Only report for ships with Status flag enabled
-  if (ctx.rd[indx].type != ReportType::Ship || !ctx.flags.status) return;
+void ShipReportItem::report_status(GameObj& g, RstContext& ctx,
+                                   bool& first) const {
+  if (!ctx.flags.status) return;
 
-  if (ctx.first) {
+  if (first) {
     g.out << "    #       name       las cew hyp    guns   arm tech "
              "spd cost  mass size\n";
-    if (!ctx.flags.ship) ctx.first = false;
+    if (!ctx.flags.ship) first = false;
   }
+  const auto& s = *ship_;
   g.out << std::format(
       "{:5} {:c} {:14.14} "
       "{}{}{}{:3}{:c}/{:3}{:c}{:4}{:5.0f}{:4}{:5}{:7.1f}{:4}",
-      shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
+      n_, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
       s.laser ? "yes " : "    ", s.cew ? "yes " : "    ",
       s.hyper_drive.has ? "yes " : "    ", s.primary, kCaliber[s.primtype],
       s.secondary, kCaliber[s.sectype], armor(s), s.tech, max_speed(s),
@@ -180,20 +313,20 @@ void report_status(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
   g.out << "\n";
 }
 
-void report_weapons(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
-                    shipnum_t shipno) {
-  // Only report for ships with Weapons flag enabled
-  if (ctx.rd[indx].type != ReportType::Ship || !ctx.flags.weapons) return;
+void ShipReportItem::report_weapons(GameObj& g, RstContext& ctx,
+                                    bool& first) const {
+  if (!ctx.flags.weapons) return;
 
-  if (ctx.first) {
+  if (first) {
     g.out << "    #       name      laser   cew     safe     guns    "
              "damage   class\n";
-    if (!ctx.flags.ship) ctx.first = false;
+    if (!ctx.flags.ship) first = false;
   }
+  const auto& s = *ship_;
   g.out << std::format(
       "{:5} {:c} {:14.14} {}  {:3}/{:<4}  {:4}  {:3}{:c}/{:3}{:c}    {:3}% "
       " {:c} {}\n",
-      shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
+      n_, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"),
       s.laser ? "yes " : "    ", s.cew, s.cew_range,
       (int)((1.0 - .01 * s.damage) * s.tech / 4.0), s.primary,
       kCaliber[s.primtype], s.secondary, kCaliber[s.sectype], s.damage,
@@ -203,24 +336,23 @@ void report_weapons(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
           : s.shipclass);
 }
 
-void report_factories(GameObj& g, RstContext& ctx, shipnum_t indx,
-                      const Ship& s, shipnum_t shipno) {
-  // Only report for ships with Factories flag enabled and factory type
-  if (ctx.rd[indx].type != ReportType::Ship || !ctx.flags.factories ||
-      s.type != ShipType::OTYPE_FACTORY)
-    return;
+void ShipReportItem::report_factories(GameObj& g, RstContext& ctx,
+                                      bool& first) const {
+  if (!ctx.flags.factories || ship_->type != ShipType::OTYPE_FACTORY) return;
 
-  if (ctx.first) {
+  if (first) {
     g.out << "   #    Cost Tech Mass Sz A Crw Ful Crg Hng Dst Sp "
              "Weapons Lsr CEWs Range Dmg\n";
-    if (!ctx.flags.ship) ctx.first = false;
+    if (!ctx.flags.ship) first = false;
   }
+
+  const auto& s = *ship_;
 
   if ((s.build_type == 0) || (s.build_type == ShipType::OTYPE_FACTORY)) {
     g.out << std::format(
         "{:5}               (No ship type specified yet)           "
         "           75% (OFF)",
-        shipno);
+        n_);
     return;
   }
 
@@ -275,7 +407,7 @@ void report_factories(GameObj& g, RstContext& ctx, shipnum_t indx,
       "{:5} {:c}{:4}{:6.1f}{:5.1f}{:3}{:2}{:4}{:4}{:4}{:4}{:4} {}{:1} "
       "{}/{} {} "
       "{} {} {:02}%{}\n",
-      shipno, Shipltrs[s.build_type], s.build_cost, s.complexity, s.base_mass,
+      n_, Shipltrs[s.build_type], s.build_cost, s.complexity, s.base_mass,
       ship_size(s), s.armor, s.max_crew, s.max_fuel, s.max_resource,
       s.max_hanger, s.max_destruct,
       s.hyper_drive.has ? (s.mount ? "+" : "*") : " ", s.max_speed, tmpbuf1,
@@ -283,16 +415,18 @@ void report_factories(GameObj& g, RstContext& ctx, shipnum_t indx,
       s.damage ? (s.on ? "" : "*") : "");
 }
 
-void report_general(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
-                    shipnum_t shipno) {
-  // Only report for ships with Report flag enabled
-  if (ctx.rd[indx].type != ReportType::Ship || !ctx.flags.report) return;
+void ShipReportItem::report_general(GameObj& g, RstContext& ctx,
+                                    bool& first) const {
+  if (!ctx.flags.report) return;
 
-  if (ctx.first) {
+  if (first) {
     g.out << " #      name       gov dam crew mil  des fuel sp orbits  "
              "   destination\n";
-    if (!ctx.flags.ship) ctx.first = false;
+    if (!ctx.flags.ship) first = false;
   }
+
+  const auto& s = *ship_;
+
   std::string locstrn;
   if (s.docked) {
     if (s.whatdest == ScopeLevel::LEVEL_SHIP)
@@ -313,71 +447,102 @@ void report_general(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
   g.out << std::format(
       "{:c}{:<5} {:12.12} {:2} {:3}{:5}{:4}{:5}{:5.0f} {:c}{:1} {:<10} "
       "{:<18}\n",
-      Shipltrs[s.type], shipno, (s.active ? s.name : strng), s.governor,
-      s.damage, s.popn, s.troops, s.destruct, s.fuel,
+      Shipltrs[s.type], n_, (s.active ? s.name : strng), s.governor, s.damage,
+      s.popn, s.troops, s.destruct, s.fuel,
       s.hyper_drive.has ? (s.mounted ? '+' : '*') : ' ', s.speed,
       dispshiploc_brief(s), locstrn);
 }
 
-void print_tactical_target_ship(GameObj& g, RstContext& ctx, const Race& race,
-                                shipnum_t indx, int i, double dist, double tech,
-                                int fdam, bool fev, int fspeed,
-                                guntype_t caliber) {
+bool ShipReportItem::should_report(player_t player_num, governor_t governor,
+                                   const ReportArray& rep_on) const {
+  const auto& s = *ship_;
+
+  // Don't report on ships that are dead
+  if (!s.alive) return false;
+
+  // Don't report on ships not owned by this player
+  if (s.owner != player_num) return false;
+
+  // Don't report on ships this governor is not authorized for
+  if (!authorized(governor, s)) return false;
+
+  // Don't report on ships whose type isn't in the requested report filter
+  if (!rep_on[s.type]) return false;
+
+  // Don't report on undocked canisters (launched canisters don't show up)
+  if (s.type == ShipType::OTYPE_CANIST && !s.docked) return false;
+
+  // Don't report on undocked greens (launched greens don't show up)
+  if (s.type == ShipType::OTYPE_GREEN && !s.docked) return false;
+
+  return true;
+}
+
+bool PlanetReportItem::should_report(
+    player_t player_num, [[maybe_unused]] governor_t governor,
+    [[maybe_unused]] const ReportArray& rep_on) const {
+  // Don't report on planets where we don't own any sectors
+  if (!planet_->info[player_num - 1].numsectsowned) return false;
+
+  return true;
+}
+
+void ShipReportItem::print_tactical_target(
+    GameObj& g, [[maybe_unused]] RstContext& ctx, const Race& race,
+    [[maybe_unused]] shipnum_t indx, double dist, double tech, int fdam,
+    bool fev, int fspeed, guntype_t caliber) const {
   const player_t player_num = g.player;
   const governor_t governor = g.governor;
 
+  const auto& s = *ship_;
+
   // Filter ships not matching the "who" filter (player filter or ship type
   // list)
-  if (ctx.who && ctx.who != ctx.rd[i].s.owner &&
-      (ctx.who != 999 || !listed((int)ctx.rd[i].s.type, ctx.shiplist))) {
+  if (ctx.who && ctx.who != s.owner &&
+      (ctx.who != 999 || !listed((int)s.type, ctx.shiplist))) {
     return;
   }
 
   // Don't show ships we own and are authorized for
-  if (ctx.rd[i].s.owner == player_num && authorized(governor, ctx.rd[i].s)) {
+  if (s.owner == player_num && authorized(governor, s)) {
     return;
   }
 
   // Don't show dead ships
-  if (!ctx.rd[i].s.alive) {
+  if (!s.alive) {
     return;
   }
 
   // Don't show canisters or greenhouse gases
-  if (ctx.rd[i].s.type == ShipType::OTYPE_CANIST ||
-      ctx.rd[i].s.type == ShipType::OTYPE_GREEN) {
+  if (s.type == ShipType::OTYPE_CANIST || s.type == ShipType::OTYPE_GREEN) {
     return;
   }
 
   // Calculate target ship's evasion and speed (only if moving and active)
   bool tev = false;
   int tspeed = 0;
-  if ((ctx.rd[i].s.whatdest != ScopeLevel::LEVEL_UNIV ||
-       ctx.rd[i].s.navigate.on) &&
-      !ctx.rd[i].s.docked && ctx.rd[i].s.active) {
-    tspeed = ctx.rd[i].s.speed;
-    tev = ctx.rd[i].s.protect.evade;
+  if ((s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) && !s.docked &&
+      s.active) {
+    tspeed = s.speed;
+    tev = s.protect.evade;
   }
 
   // Calculate combat parameters
-  int body = size(ctx.rd[i].s);
-  auto defense = getdefense(ctx.rd[i].s);
+  int body = size(s);
+  auto defense = getdefense(s);
   auto [prob, factor] = hit_odds(dist, tech, fdam, fev, tev, fspeed, tspeed,
                                  body, caliber, defense);
 
   // Apply laser focus bonus if applicable
-  if (ctx.rd[indx].type == ReportType::Ship && laser_on(ctx.rd[indx].s) &&
-      ctx.rd[indx].s.focus) {
-    prob = prob * prob / 100;
-  }
+  prob = ctx.rd[indx]->apply_laser_focus(prob);
 
   // Determine diplomatic status indicator
-  const auto* war_status = isset(race.atwar, ctx.rd[i].s.owner)    ? "-"
-                           : isset(race.allied, ctx.rd[i].s.owner) ? "+"
-                                                                   : " ";
+  const auto* war_status = isset(race.atwar, s.owner)    ? "-"
+                           : isset(race.allied, s.owner) ? "+"
+                                                         : " ";
 
   // Filter out allied ships if enemies-only mode is enabled
-  if (ctx.enemies_only && isset(race.allied, ctx.rd[i].s.owner)) {
+  if (ctx.enemies_only && isset(race.allied, s.owner)) {
     return;
   }
 
@@ -386,123 +551,172 @@ void print_tactical_target_ship(GameObj& g, RstContext& ctx, const Race& race,
       "{:13} {}{:2},{:1} {:c}{:14.14} {:4.0f}  {:4}   {:4} {}  "
       "{:3}  "
       "{:3}% {:3}%{}",
-      ctx.rd[i].n, war_status, ctx.rd[i].s.owner, ctx.rd[i].s.governor,
-      Shipltrs[ctx.rd[i].s.type], ctx.rd[i].s.name, dist, factor, body, tspeed,
-      (tev ? "yes" : "   "), prob, ctx.rd[i].s.damage,
-      (ctx.rd[i].s.active ? "" : " INACTIVE"));
+      n_, war_status, s.owner, s.governor, Shipltrs[s.type], s.name, dist,
+      factor, body, tspeed, (tev ? "yes" : "   "), prob, s.damage,
+      (s.active ? "" : " INACTIVE"));
 
-  if (landed(ctx.rd[i].s)) {
-    g.out << std::format(" ({},{})", ctx.rd[i].s.land_x, ctx.rd[i].s.land_y);
+  if (landed(s)) {
+    g.out << std::format(" ({},{})", s.land_x, s.land_y);
   } else {
     g.out << "     ";
   }
   g.out << "\n";
 }
 
-struct TacticalParams {
-  double tech = 0.0;
-  bool fev = false;
-  int fspeed = 0;
-};
-
-void print_tactical_header_summary(GameObj& g, RstContext& ctx, shipnum_t indx,
-                                   const Ship& s, const Planet& p,
-                                   shipnum_t shipno,
-                                   const TacticalParams& params) {
-  const player_t player_num = g.player;
-
-  g.out << "\n  #         name        tech    guns  armor size dest   "
-           "fuel dam spd evad               orbits\n";
-
-  if (ctx.rd[indx].type == ReportType::Planet) {
-    const auto* star = g.entity_manager.peek_star(ctx.rd[indx].star);
-    /* tac report from planet */
-    g.out << std::format("(planet){:15.15}{:4.0f} {:4}M           {:5} {:6}\n",
-                         star ? star->pnames[ctx.rd[indx].pnum] : "Unknown",
-                         params.tech, p.info[player_num - 1].guns,
-                         p.info[player_num - 1].destruct,
-                         p.info[player_num - 1].fuel);
-  } else {
-    Place where{s.whatorbits, s.storbits, s.pnumorbits};
-    auto orb = std::format("{:30.30}", where.to_string());
-    g.out << std::format(
-        "{:3} {:c} {:16.16} "
-        "{:4.0f}{:3}{:c}/{:3}{:c}{:6}{:5}{:5}{:7.1f}{:3}%  {}  "
-        "{:3}{:21.22}",
-        shipno, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"), s.tech,
-        s.primary, kCaliber[s.primtype], s.secondary, kCaliber[s.sectype],
-        s.armor, s.size, s.destruct, s.fuel, s.damage, params.fspeed,
-        (params.fev ? "yes" : "   "), orb);
-    if (landed(s)) {
-      g.out << std::format(" ({},{})", s.land_x, s.land_y);
-    }
-    if (!s.active) {
-      g.out << std::format(" INACTIVE({})", s.rad);
-    }
-    g.out << "\n";
+int ShipReportItem::apply_laser_focus(int prob) const {
+  if (laser_on(*ship_) && ship_->focus) {
+    return prob * prob / 100;
   }
+  return prob;
 }
 
-void print_tactical_target_planet(GameObj& g, RstContext& ctx, int i,
-                                  double dist) {
-  const auto* star = g.entity_manager.peek_star(ctx.rd[i].star);
-  g.out << std::format(" {:13}(planet)          {:8.0f}\n",
-                       star ? star->pnames[ctx.rd[i].pnum] : "Unknown", dist);
+void ShipReportItem::print_tactical_header_summary(
+    GameObj& g, [[maybe_unused]] player_t player_num,
+    const TacticalParams& params) const {
+  const auto& s = *ship_;
+  Place where{s.whatorbits, s.storbits, s.pnumorbits};
+  auto orb = std::format("{:30.30}", where.to_string());
+  g.out << std::format(
+      "{:3} {:c} {:16.16} "
+      "{:4.0f}{:3}{:c}/{:3}{:c}{:6}{:5}{:5}{:7.1f}{:3}%  {}  "
+      "{:3}{:21.22}",
+      n_, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"), s.tech, s.primary,
+      kCaliber[s.primtype], s.secondary, kCaliber[s.sectype], s.armor, s.size,
+      s.destruct, s.fuel, s.damage, params.fspeed, (params.fev ? "yes" : "   "),
+      orb);
+  if (landed(s)) {
+    g.out << std::format(" ({},{})", s.land_x, s.land_y);
+  }
+  if (!s.active) {
+    g.out << std::format(" INACTIVE({})", s.rad);
+  }
+  g.out << "\n";
 }
 
-void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
-                     const Planet& p, shipnum_t shipno) {
-  // Only report if Tactical flag is enabled
-  if (!ctx.flags.tactical) return;
-
-  const player_t player_num = g.player;
-
-  const auto* race = g.entity_manager.peek_race(player_num);
-  if (!race) return;
-
-  // Calculate tactical parameters
+TacticalParams ShipReportItem::get_tactical_params(
+    [[maybe_unused]] const Race& race) const {
   TacticalParams params{};
-  params.tech = ctx.rd[indx].type == ReportType::Planet ? race->tech : s.tech;
+  const auto& s = *ship_;
+  params.tech = s.tech;
 
-  if (ctx.rd[indx].type == ReportType::Ship &&
-      (s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) && !s.docked &&
+  if ((s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) && !s.docked &&
       s.active) {
     params.fspeed = s.speed;
     params.fev = s.protect.evade;
   }
 
-  print_tactical_header_summary(g, ctx, indx, s, p, shipno, params);
+  return params;
+}
 
-  bool sight = ctx.rd[indx].type == ReportType::Planet || shipsight(s);
+std::optional<starnum_t> ShipReportItem::get_star_orbit() const {
+  if (ship_->whatorbits != ScopeLevel::LEVEL_UNIV) {
+    return ship_->storbits;
+  }
+  return std::nullopt;
+}
+
+void PlanetReportItem::print_tactical_target(
+    GameObj& g, [[maybe_unused]] RstContext& ctx,
+    [[maybe_unused]] const Race& race, [[maybe_unused]] shipnum_t indx,
+    double dist, [[maybe_unused]] double tech, [[maybe_unused]] int fdam,
+    [[maybe_unused]] bool fev, [[maybe_unused]] int fspeed,
+    [[maybe_unused]] guntype_t caliber) const {
+  const auto* star = g.entity_manager.peek_star(star_);
+  g.out << std::format(" {:13}(planet)          {:8.0f}\n",
+                       star ? star->pnames[pnum_] : "Unknown", dist);
+}
+
+void PlanetReportItem::print_tactical_header_summary(
+    GameObj& g, player_t player_num, const TacticalParams& params) const {
+  const auto& p = *planet_;
+  const auto* star = g.entity_manager.peek_star(star_);
+
+  g.out << std::format("(planet){:15.15}{:4.0f} {:4}M           {:5} {:6}\n",
+                       star ? star->pnames[pnum_] : "Unknown", params.tech,
+                       p.info[player_num - 1].guns,
+                       p.info[player_num - 1].destruct,
+                       p.info[player_num - 1].fuel);
+}
+
+TacticalParams PlanetReportItem::get_tactical_params(const Race& race) const {
+  TacticalParams params{};
+  params.tech = race.tech;
+  // Planets don't have speed or evasion
+  return params;
+}
+
+void ShipReportItem::report_tactical(GameObj& g, RstContext& ctx,
+                                     shipnum_t indx,
+                                     const TacticalParams& params) const {
+  if (!ctx.flags.tactical) return;
+
+  const player_t player_num = g.player;
+  const auto* race = g.entity_manager.peek_race(player_num);
+  if (!race) return;
+
+  const auto& s = *ship_;
+
+  g.out << "\n  #         name        tech    guns  armor size dest   "
+           "fuel dam spd evad               orbits\n";
+  ctx.rd[indx]->print_tactical_header_summary(g, player_num, params);
+
+  bool sight = shipsight(s);
+  if (!sight) return;
 
   /* tactical display */
   g.out << "\n  Tactical: #  own typ        name   rng   (50%) size "
            "spd evade hit  dam  loc\n";
 
-  if (!sight) return;
+  for (int i = 0; i < ctx.num_ships; i++) {
+    if (i == indx) continue;
+
+    double range = gun_range(s);
+    double dist = sqrt(Distsq(ctx.rd[indx]->x(), ctx.rd[indx]->y(),
+                              ctx.rd[i]->x(), ctx.rd[i]->y()));
+    if (dist >= range) continue;
+
+    // Calculate ship-specific combat parameters
+    int fdam = s.damage;
+    guntype_t caliber = current_caliber(s);
+
+    // Polymorphic call - works for both ships and planets
+    ctx.rd[i]->print_tactical_target(g, ctx, *race, indx, dist, params.tech,
+                                     fdam, params.fev, params.fspeed, caliber);
+  }
+}
+
+void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
+                                       shipnum_t indx,
+                                       const TacticalParams& params) const {
+  if (!ctx.flags.tactical) return;
+
+  const player_t player_num = g.player;
+  const auto* race = g.entity_manager.peek_race(player_num);
+  if (!race) return;
+
+  g.out << "\n  #         name        tech    guns  armor size dest   "
+           "fuel dam spd evad               orbits\n";
+  ctx.rd[indx]->print_tactical_header_summary(g, player_num, params);
+
+  /* tactical display */
+  g.out << "\n  Tactical: #  own typ        name   rng   (50%) size "
+           "spd evade hit  dam  loc\n";
 
   for (int i = 0; i < ctx.num_ships; i++) {
     if (i == indx) continue;
 
-    double range = ctx.rd[indx].type == ReportType::Planet
-                       ? gun_range(*race)
-                       : gun_range(ctx.rd[indx].s);
-    double dist =
-        sqrt(Distsq(ctx.rd[indx].x, ctx.rd[indx].y, ctx.rd[i].x, ctx.rd[i].y));
+    double range = gun_range(*race);
+    double dist = sqrt(Distsq(ctx.rd[indx]->x(), ctx.rd[indx]->y(),
+                              ctx.rd[i]->x(), ctx.rd[i]->y()));
     if (dist >= range) continue;
 
-    if (ctx.rd[i].type == ReportType::Planet) {
-      print_tactical_target_planet(g, ctx, i, dist);
-      continue;
-    }
+    // Calculate ship-specific combat parameters from planet perspective
+    int fdam = 0;  // Planets don't have damage
+    guntype_t caliber = GTYPE_MEDIUM;
 
-    // Calculate ship-specific combat parameters
-    int fdam = ctx.rd[indx].type == ReportType::Planet ? 0 : s.damage;
-    guntype_t caliber = ctx.rd[indx].type == ReportType::Planet
-                            ? GTYPE_MEDIUM
-                            : current_caliber(s);
-    print_tactical_target_ship(g, ctx, *race, indx, i, dist, params.tech, fdam,
-                               params.fev, params.fspeed, caliber);
+    // Polymorphic call - works for both ships and planets
+    ctx.rd[i]->print_tactical_target(g, ctx, *race, indx, dist, params.tech,
+                                     fdam, params.fev, params.fspeed, caliber);
   }
 }
 
@@ -523,56 +737,21 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
     return;
   }
 
-  /* last ship gotten from disk */
-  auto& s = ctx.rd[indx].s;
-  auto& p = ctx.rd[indx].p;
-  shipnum_t shipno = ctx.rd[indx].n;
-
-  // Don't report on planets where we don't own any sectors
-  if (ctx.rd[indx].type == ReportType::Planet &&
-      !p.info[player_num - 1].numsectsowned) {
+  // Check if this item should be reported
+  if (!ctx.rd[indx]->should_report(player_num, governor, rep_on)) {
     return;
   }
 
-  // Don't report on ships that are dead
-  if (ctx.rd[indx].type == ReportType::Ship && !s.alive) {
-    return;
-  }
+  // Calculate tactical parameters for report_tactical (polymorphic)
+  TacticalParams params = ctx.rd[indx]->get_tactical_params(*race);
 
-  // Don't report on ships not owned by this player
-  if (ctx.rd[indx].type == ReportType::Ship && s.owner != player_num) {
-    return;
-  }
-
-  // Don't report on ships this governor is not authorized for
-  if (ctx.rd[indx].type == ReportType::Ship && !authorized(governor, s)) {
-    return;
-  }
-
-  // Don't report on ships whose type isn't in the requested report filter
-  if (ctx.rd[indx].type == ReportType::Ship && !rep_on[s.type]) {
-    return;
-  }
-
-  // Don't report on undocked canisters (launched canisters don't show up)
-  if (ctx.rd[indx].type == ReportType::Ship &&
-      s.type == ShipType::OTYPE_CANIST && !s.docked) {
-    return;
-  }
-
-  // Don't report on undocked greens (launched greens don't show up)
-  if (ctx.rd[indx].type == ReportType::Ship &&
-      s.type == ShipType::OTYPE_GREEN && !s.docked) {
-    return;
-  }
-
-  // All early-return filters passed - proceed with reporting
-  report_stock(g, ctx, indx, s, shipno);
-  report_status(g, ctx, indx, s, shipno);
-  report_weapons(g, ctx, indx, s, shipno);
-  report_factories(g, ctx, indx, s, shipno);
-  report_general(g, ctx, indx, s, shipno);
-  report_tactical(g, ctx, indx, s, p, shipno);
+  // Polymorphic dispatch to appropriate report methods
+  ctx.rd[indx]->report_stock(g, ctx, ctx.first);
+  ctx.rd[indx]->report_status(g, ctx, ctx.first);
+  ctx.rd[indx]->report_weapons(g, ctx, ctx.first);
+  ctx.rd[indx]->report_factories(g, ctx, ctx.first);
+  ctx.rd[indx]->report_general(g, ctx, ctx.first);
+  ctx.rd[indx]->report_tactical(g, ctx, indx, params);
 }
 }  // namespace
 
@@ -621,12 +800,13 @@ void rst(const command_t& argv, GameObj& g) {
           return;
         }
         get_report_ship(g, ctx, shipno);
-        if (ctx.rd[ctx.num_ships - 1].s.whatorbits != ScopeLevel::LEVEL_UNIV) {
-          star_get_report_ships(g, ctx, player_num,
-                                ctx.rd[ctx.num_ships - 1].s.storbits);
+        // Check if ship is in a star system and load those ships too
+        if (auto star_opt = ctx.rd.back()->get_star_orbit()) {
+          star_get_report_ships(g, ctx, player_num, *star_opt);
           ship_report(g, ctx, ctx.num_ships - 1, report_types);
-        } else
+        } else {
           ship_report(g, ctx, ctx.num_ships - 1, report_types);
+        }
         l++;
       }
       return;
@@ -647,8 +827,10 @@ void rst(const command_t& argv, GameObj& g) {
     case ScopeLevel::LEVEL_UNIV:
       if (!ctx.flags.tactical || argv.size() >= 2) {
         shipnum_t shn = Sdata.ships;
-        while (shn && get_report_ship(g, ctx, shn))
-          shn = ctx.rd[ctx.num_ships - 1].s.nextship;
+        while (shn && get_report_ship(g, ctx, shn)) {
+          auto* ship_item = dynamic_cast<ShipReportItem*>(ctx.rd.back().get());
+          shn = ship_item->ship().nextship;
+        }
 
         for (starnum_t i = 0; i < Sdata.numstars; i++)
           star_get_report_ships(g, ctx, player_num, i);
@@ -682,11 +864,16 @@ void rst(const command_t& argv, GameObj& g) {
         return;
       }
       ship_report(g, ctx, 0, report_types); /* first ship report */
-      shipnum_t shn = ctx.rd[0].s.ships;
+
+      // Get ships docked in this ship
+      auto* ship_item = dynamic_cast<ShipReportItem*>(ctx.rd[0].get());
+      shipnum_t shn = ship_item->ship().ships;
       shipnum_t first_child = ctx.num_ships;
 
-      while (shn && get_report_ship(g, ctx, shn))
-        shn = ctx.rd[ctx.num_ships - 1].s.nextship;
+      while (shn && get_report_ship(g, ctx, shn)) {
+        auto* child_item = dynamic_cast<ShipReportItem*>(ctx.rd.back().get());
+        shn = child_item->ship().nextship;
+      }
 
       for (shipnum_t i = first_child; i < ctx.rd.size(); i++)
         ship_report(g, ctx, i, report_types);

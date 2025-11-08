@@ -1,12 +1,11 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/*
- *  ship -- report -- stock -- tactical -- stuff on ship
- *
- *  Command "factories" programmed by varneyml@gb.erc.clarkson.edu
- */
+/// \file rst.cc
+/// \brief Ship and planet reporting commands (report, stock, tactical, stats,
+///        weapons, factories)
+///
+/// Implements various reporting modes for ships and planets including status,
+/// stock levels, tactical combat information, and factory configurations.
 
 module;
 
@@ -55,6 +54,7 @@ struct RstContext {
   bool first;
   bool enemies_only;
   int who;
+  shipnum_t num_ships = 0;  // Local counter instead of global Num_ships
 };
 
 // Map of command names to their report flag configurations
@@ -84,13 +84,13 @@ bool listed(int type, const std::string& string) {
 bool Getrship(GameObj& g, RstContext& ctx, shipnum_t shipno) {
   const auto* ship = g.entity_manager.peek_ship(shipno);
   if (ship) {
-    ctx.rd.resize(Num_ships + 1);
-    ctx.rd[Num_ships].s = *ship;
-    ctx.rd[Num_ships].type = ReportType::SHIP;
-    ctx.rd[Num_ships].n = shipno;
-    ctx.rd[Num_ships].x = ctx.rd[Num_ships].s.xpos;
-    ctx.rd[Num_ships].y = ctx.rd[Num_ships].s.ypos;
-    Num_ships++;
+    ctx.rd.resize(ctx.num_ships + 1);
+    ctx.rd[ctx.num_ships].s = *ship;
+    ctx.rd[ctx.num_ships].type = ReportType::SHIP;
+    ctx.rd[ctx.num_ships].n = shipno;
+    ctx.rd[ctx.num_ships].x = ctx.rd[ctx.num_ships].s.xpos;
+    ctx.rd[ctx.num_ships].y = ctx.rd[ctx.num_ships].s.ypos;
+    ctx.num_ships++;
     return true;
   }
   g.out << std::format("Getrship: error on ship get ({}).\n", shipno);
@@ -102,21 +102,22 @@ void plan_getrships(GameObj& g, RstContext& ctx, player_t Playernum,
   const auto* star = g.entity_manager.peek_star(snum);
   if (!star) return;
 
-  ctx.rd.resize(Num_ships + 1);
-  ctx.rd[Num_ships].p = getplanet(snum, pnum);
-  const auto& p = ctx.rd[Num_ships].p;
+  ctx.rd.resize(ctx.num_ships + 1);
+  ctx.rd[ctx.num_ships].p = getplanet(snum, pnum);
+  const auto& p = ctx.rd[ctx.num_ships].p;
   /* add this planet into the ship list */
-  ctx.rd[Num_ships].star = snum;
-  ctx.rd[Num_ships].pnum = pnum;
-  ctx.rd[Num_ships].type = ReportType::PLANET;
-  ctx.rd[Num_ships].n = 0;
-  ctx.rd[Num_ships].x = star->xpos + p.xpos;
-  ctx.rd[Num_ships].y = star->ypos + p.ypos;
-  Num_ships++;
+  ctx.rd[ctx.num_ships].star = snum;
+  ctx.rd[ctx.num_ships].pnum = pnum;
+  ctx.rd[ctx.num_ships].type = ReportType::PLANET;
+  ctx.rd[ctx.num_ships].n = 0;
+  ctx.rd[ctx.num_ships].x = star->xpos + p.xpos;
+  ctx.rd[ctx.num_ships].y = star->ypos + p.ypos;
+  ctx.num_ships++;
 
   if (p.info[Playernum - 1].explored) {
     shipnum_t shn = p.ships;
-    while (shn && Getrship(g, ctx, shn)) shn = ctx.rd[Num_ships - 1].s.nextship;
+    while (shn && Getrship(g, ctx, shn))
+      shn = ctx.rd[ctx.num_ships - 1].s.nextship;
   }
 }
 
@@ -127,7 +128,8 @@ void star_getrships(GameObj& g, RstContext& ctx, player_t Playernum,
 
   if (isset(star->explored, Playernum)) {
     shipnum_t shn = star->ships;
-    while (shn && Getrship(g, ctx, shn)) shn = ctx.rd[Num_ships - 1].s.nextship;
+    while (shn && Getrship(g, ctx, shn))
+      shn = ctx.rd[ctx.num_ships - 1].s.nextship;
     for (planetnum_t i = 0; i < star->numplanets; i++)
       plan_getrships(g, ctx, Playernum, snum, i);
   }
@@ -455,25 +457,28 @@ void report_tactical(GameObj& g, RstContext& ctx, shipnum_t indx, const Ship& s,
 
   if (!sight) return;
 
-  for (int i = 0; i < Num_ships; i++) {
+  for (int i = 0; i < ctx.num_ships; i++) {
+    if (i == indx) continue;
+
     double range = ctx.rd[indx].type == ReportType::PLANET
                        ? gun_range(*race)
                        : gun_range(ctx.rd[indx].s);
-    double Dist;
-    if (i != indx && (Dist = sqrt(Distsq(ctx.rd[indx].x, ctx.rd[indx].y,
-                                         ctx.rd[i].x, ctx.rd[i].y))) < range) {
-      if (ctx.rd[i].type == ReportType::PLANET) {
-        print_tactical_target_planet(g, ctx, i, Dist);
-      } else {
-        // Calculate ship-specific combat parameters
-        int fdam = ctx.rd[indx].type == ReportType::PLANET ? 0 : s.damage;
-        guntype_t caliber = ctx.rd[indx].type == ReportType::PLANET
-                                ? GTYPE_MEDIUM
-                                : current_caliber(s);
-        print_tactical_target_ship(g, ctx, *race, indx, i, Dist, params.tech,
-                                   fdam, params.fev, params.fspeed, caliber);
-      }
+    double Dist =
+        sqrt(Distsq(ctx.rd[indx].x, ctx.rd[indx].y, ctx.rd[i].x, ctx.rd[i].y));
+    if (Dist >= range) continue;
+
+    if (ctx.rd[i].type == ReportType::PLANET) {
+      print_tactical_target_planet(g, ctx, i, Dist);
+      continue;
     }
+
+    // Calculate ship-specific combat parameters
+    int fdam = ctx.rd[indx].type == ReportType::PLANET ? 0 : s.damage;
+    guntype_t caliber = ctx.rd[indx].type == ReportType::PLANET
+                            ? GTYPE_MEDIUM
+                            : current_caliber(s);
+    print_tactical_target_ship(g, ctx, *race, indx, i, Dist, params.tech, fdam,
+                               params.fev, params.fspeed, caliber);
   }
 }
 
@@ -481,6 +486,11 @@ void ship_report(GameObj& g, RstContext& ctx, shipnum_t indx,
                  const report_array& rep_on) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
+
+  // Bounds check - ensure indx is within the vector
+  if (indx >= ctx.rd.size()) {
+    return;
+  }
 
   // Get race from EntityManager
   const auto* race = g.entity_manager.peek_race(Playernum);
@@ -551,7 +561,6 @@ void rst(const command_t& argv, GameObj& g) {
 
   RstContext ctx;
   ctx.enemies_only = false;
-  Num_ships = 0;
   ctx.first = true;
 
   // Set report flags based on command name
@@ -588,11 +597,12 @@ void rst(const command_t& argv, GameObj& g) {
           return;
         }
         Getrship(g, ctx, shipno);
-        if (ctx.rd[Num_ships - 1].s.whatorbits != ScopeLevel::LEVEL_UNIV) {
-          star_getrships(g, ctx, Playernum, ctx.rd[Num_ships - 1].s.storbits);
-          ship_report(g, ctx, Num_ships - 1, Report_types);
+        if (ctx.rd[ctx.num_ships - 1].s.whatorbits != ScopeLevel::LEVEL_UNIV) {
+          star_getrships(g, ctx, Playernum,
+                         ctx.rd[ctx.num_ships - 1].s.storbits);
+          ship_report(g, ctx, ctx.num_ships - 1, Report_types);
         } else
-          ship_report(g, ctx, Num_ships - 1, Report_types);
+          ship_report(g, ctx, ctx.num_ships - 1, Report_types);
         l++;
       }
       return;
@@ -614,11 +624,11 @@ void rst(const command_t& argv, GameObj& g) {
       if (!ctx.flags.Tactical || argv.size() >= 2) {
         shipnum_t shn = Sdata.ships;
         while (shn && Getrship(g, ctx, shn))
-          shn = ctx.rd[Num_ships - 1].s.nextship;
+          shn = ctx.rd[ctx.num_ships - 1].s.nextship;
 
         for (starnum_t i = 0; i < Sdata.numstars; i++)
           star_getrships(g, ctx, Playernum, i);
-        for (shipnum_t i = 0; i < Num_ships; i++)
+        for (shipnum_t i = 0; i < ctx.rd.size(); i++)
           ship_report(g, ctx, i, Report_types);
       } else {
         g.out << "You can't do tactical option from universe level.\n";
@@ -627,24 +637,34 @@ void rst(const command_t& argv, GameObj& g) {
       break;
     case ScopeLevel::LEVEL_PLAN:
       plan_getrships(g, ctx, Playernum, g.snum, g.pnum);
-      for (shipnum_t i = 0; i < Num_ships; i++)
+      for (shipnum_t i = 0; i < ctx.rd.size(); i++)
         ship_report(g, ctx, i, Report_types);
       break;
     case ScopeLevel::LEVEL_STAR:
       star_getrships(g, ctx, Playernum, g.snum);
-      for (shipnum_t i = 0; i < Num_ships; i++)
+      for (shipnum_t i = 0; i < ctx.rd.size(); i++)
         ship_report(g, ctx, i, Report_types);
       break;
     case ScopeLevel::LEVEL_SHIP:
+      if (g.shipno == 0) {
+        g.out << "Error: No ship is currently scoped. Use 'cs #<shipno>' to "
+                 "scope to a ship.\n";
+        return;
+      }
       Getrship(g, ctx, g.shipno);
+      if (ctx.rd.empty()) {
+        g.out << std::format("Error: Unable to retrieve ship #{} data.\n",
+                             g.shipno);
+        return;
+      }
       ship_report(g, ctx, 0, Report_types); /* first ship report */
       shipnum_t shn = ctx.rd[0].s.ships;
-      Num_ships = 0;
+      shipnum_t first_child = ctx.num_ships;
 
       while (shn && Getrship(g, ctx, shn))
-        shn = ctx.rd[Num_ships - 1].s.nextship;
+        shn = ctx.rd[ctx.num_ships - 1].s.nextship;
 
-      for (shipnum_t i = 0; i < Num_ships; i++)
+      for (shipnum_t i = first_child; i < ctx.rd.size(); i++)
         ship_report(g, ctx, i, Report_types);
       break;
   }

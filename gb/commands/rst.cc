@@ -16,11 +16,6 @@ import tabulate;
 module commands;
 
 namespace {
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
-// (No global constants needed - caliber mapping is in caliber_char() function)
 
 // ============================================================================
 // TYPE DEFINITIONS

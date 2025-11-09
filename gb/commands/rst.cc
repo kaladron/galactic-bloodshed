@@ -69,41 +69,28 @@ class ReportItem {
   double y() const { return y_; }
 
   // Report generation methods
-  virtual void report_stock([[maybe_unused]] GameObj& g,
-                            [[maybe_unused]] RstContext& ctx) const {}
-  virtual void report_status([[maybe_unused]] GameObj& g,
-                             [[maybe_unused]] RstContext& ctx) const {}
-  virtual void report_weapons([[maybe_unused]] GameObj& g,
-                              [[maybe_unused]] RstContext& ctx) const {}
-  virtual void report_factories([[maybe_unused]] GameObj& g,
-                                [[maybe_unused]] RstContext& ctx) const {}
-  virtual void report_general([[maybe_unused]] GameObj& g,
-                              [[maybe_unused]] RstContext& ctx) const {}
-  virtual void report_tactical(
-      [[maybe_unused]] GameObj& g, [[maybe_unused]] RstContext& ctx,
-      [[maybe_unused]] const TacticalParams& params) const {}
+  virtual void report_stock(GameObj&, RstContext&) const {}
+  virtual void report_status(GameObj&, RstContext&) const {}
+  virtual void report_weapons(GameObj&, RstContext&) const {}
+  virtual void report_factories(GameObj&, RstContext&) const {}
+  virtual void report_general(GameObj&, RstContext&) const {}
+  virtual void report_tactical(GameObj&, RstContext&,
+                               const TacticalParams&) const {}
 
   // Apply laser focus bonus to hit probability (ships only)
   virtual int apply_laser_focus(int prob) const { return prob; }
 
   // Add header row to tactical summary table (polymorphic)
-  virtual void add_tactical_header_row(
-      [[maybe_unused]] tabulate::Table& table, [[maybe_unused]] GameObj& g,
-      [[maybe_unused]] player_t player_num,
-      [[maybe_unused]] const TacticalParams& params) const {}
+  virtual void add_tactical_header_row(tabulate::Table&, GameObj&, player_t,
+                                       const TacticalParams&) const {}
 
   // Add target row to tactical targets table (polymorphic)
-  virtual void add_tactical_target_row(
-      [[maybe_unused]] tabulate::Table& table, [[maybe_unused]] GameObj& g,
-      [[maybe_unused]] RstContext& ctx, [[maybe_unused]] const Race& race,
-      [[maybe_unused]] shipnum_t indx, [[maybe_unused]] double dist,
-      [[maybe_unused]] double tech, [[maybe_unused]] int fdam,
-      [[maybe_unused]] bool fev, [[maybe_unused]] int fspeed,
-      [[maybe_unused]] guntype_t caliber) const {}
+  virtual void add_tactical_target_row(tabulate::Table&, GameObj&, RstContext&,
+                                       const Race&, shipnum_t, double, double,
+                                       int, bool, int, guntype_t) const {}
 
   // Get tactical parameters for this item
-  virtual TacticalParams get_tactical_params(
-      [[maybe_unused]] const Race& race) const {
+  virtual TacticalParams get_tactical_params(const Race&) const {
     return TacticalParams{};
   }
 
@@ -723,9 +710,9 @@ void ShipReportItem::add_tactical_header_row(
 
 void ShipReportItem::add_tactical_target_row(tabulate::Table& table, GameObj& g,
                                              RstContext& ctx, const Race& race,
-                                             [[maybe_unused]] shipnum_t indx,
-                                             double dist, double tech, int fdam,
-                                             bool fev, int fspeed,
+                                             shipnum_t indx, double dist,
+                                             double tech, int fdam, bool fev,
+                                             int fspeed,
                                              guntype_t caliber) const {
   const player_t player_num = g.player;
   const governor_t governor = g.governor;

@@ -69,8 +69,8 @@ struct RstContext {
 
 class ReportItem {
  protected:
-  double x_;
-  double y_;
+  const double x_;
+  const double y_;
 
  public:
   ReportItem(double x, double y) : x_(x), y_(y) {}

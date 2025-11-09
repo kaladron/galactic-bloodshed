@@ -50,6 +50,14 @@ CheckOptions:
     value: lower_case
   - key: readability-identifier-naming.MemberCase
     value: lower_case
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.ProtectedMemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.ConstantMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.ConstantMemberSuffix
+    value: '_'
   - key: readability-identifier-naming.ConstantCase
     value: CamelCase
   - key: readability-identifier-naming.ConstantPrefix

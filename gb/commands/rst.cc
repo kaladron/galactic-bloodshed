@@ -9,6 +9,10 @@
 
 module;
 
+// Include tabulate first to avoid mixing libc++ header modules with textual
+// includes
+#include <tabulate/table.hpp>
+
 import gblib;
 import std.compat;
 
@@ -306,18 +310,47 @@ void star_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
 void ShipReportItem::report_stock(GameObj& g, RstContext& ctx) const {
   if (!ctx.flags.stock) return;
 
+  const auto& s = *ship_;
+
+  // Create table
+  tabulate::Table table;
+
+  // Format table: no borders, just spacing between columns
+  table.format().hide_border().column_separator("  ");
+
+  // Set column alignments and widths
+  table.column(0).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(1).format().width(16);
+  table.column(2).format().width(3).font_align(tabulate::FontAlign::center);
+  table.column(3).format().width(10).font_align(tabulate::FontAlign::center);
+  table.column(4).format().width(12).font_align(tabulate::FontAlign::center);
+  table.column(5).format().width(12).font_align(tabulate::FontAlign::center);
+  table.column(6).format().width(14).font_align(tabulate::FontAlign::center);
+  table.column(7).format().width(12).font_align(tabulate::FontAlign::center);
+
+  // Add header row only on first call
   if (ctx.first) {
-    g.out << "    #       name        x  hanger   res        des       "
-             "  fuel      crew/mil\n";
+    table.add_row(
+        {"#", "name", "x", "hanger", "res", "des", "fuel", "crew/mil"});
+    // Format header row with bold
+    table[0].format().font_style({tabulate::FontStyle::bold});
+
     if (!ctx.flags.ship) ctx.first = false;
   }
-  const auto& s = *ship_;
-  g.out << std::format(
-      "{:5} {:c} "
-      "{:14.14}{:3}{:4}:{:<3}{:5}:{:<5}{:5}:{:<5}{:7.1f}:{:<6}{}/{}:{}\n",
-      n_, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"), s.crystals,
-      s.hanger, s.max_hanger, s.resource, max_resource(s), s.destruct,
-      max_destruct(s), s.fuel, max_fuel(s), s.popn, s.troops, s.max_crew);
+
+  // Add data row
+  table.add_row(
+      {std::format("{}", n_),
+       std::format("{}{} {}", Shipltrs[s.type], s.crystals ? 'x' : ' ',
+                   s.active ? s.name : "INACTIVE"),
+       std::format("{}", s.crystals),
+       std::format("{}:{}", s.hanger, s.max_hanger),
+       std::format("{}:{}", s.resource, max_resource(s)),
+       std::format("{}:{}", s.destruct, max_destruct(s)),
+       std::format("{:.1f}:{}", s.fuel, max_fuel(s)),
+       std::format("{}/{}:{}", s.popn, s.troops, s.max_crew)});
+
+  g.out << table << "\n";
 }
 
 void ShipReportItem::report_status(GameObj& g, RstContext& ctx) const {

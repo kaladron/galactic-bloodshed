@@ -79,6 +79,15 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(scn)
 
+FetchContent_Declare(
+  tabulate
+  GIT_REPOSITORY https://github.com/p-ranav/tabulate.git
+  GIT_TAG master
+  GIT_SHALLOW TRUE
+  EXCLUDE_FROM_ALL)
+
+FetchContent_MakeAvailable(tabulate)
+
 # Include directories
 include_directories(..)
 
@@ -251,7 +260,7 @@ target_sources(
           commands/whois.cc
           commands/zoom.cc)
 target_link_libraries(commands PRIVATE gblib SQLite::SQLite3 glaze::glaze
-                                       scn::scn)
+                                       scn::scn tabulate::tabulate)
 
 add_executable(GB GB_server.cc)
 target_link_libraries(GB PRIVATE gblib commands SQLite::SQLite3 glaze::glaze)

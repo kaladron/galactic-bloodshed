@@ -76,6 +76,12 @@ class ReportItem {
   ReportItem(double x, double y) : x_(x), y_(y) {}
   virtual ~ReportItem() = default;
 
+  // Non-copyable and non-movable (polymorphic base class with unique ownership)
+  ReportItem(const ReportItem&) = delete;
+  ReportItem& operator=(const ReportItem&) = delete;
+  ReportItem(ReportItem&&) = delete;
+  ReportItem& operator=(ReportItem&&) = delete;
+
   double x() const { return x_; }
   double y() const { return y_; }
 

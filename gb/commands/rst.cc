@@ -233,7 +233,7 @@ constexpr char caliber_char(guntype_t caliber) {
   }
 }
 
-bool listed(int type, const std::string& string) {
+bool listed(ShipType type, const std::string& string) {
   return std::ranges::any_of(string,
                              [type](char c) { return Shipltrs[type] == c; });
 }
@@ -730,7 +730,7 @@ void ShipReportItem::add_tactical_target_row(tabulate::Table& table, GameObj& g,
     }
   } else if (!ctx.shiplist.empty()) {
     // Ship type filter mode: show only ships whose type is in the list
-    if (!listed((int)s.type, ctx.shiplist)) {
+    if (!listed(s.type, ctx.shiplist)) {
       return;
     }
   }

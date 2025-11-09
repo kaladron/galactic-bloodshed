@@ -658,9 +658,8 @@ bool ShipReportItem::should_report(player_t player_num, governor_t governor,
 // PLANET REPORT METHOD IMPLEMENTATIONS
 // ============================================================================
 
-bool PlanetReportItem::should_report(
-    player_t player_num, [[maybe_unused]] governor_t governor,
-    [[maybe_unused]] const ReportArray& rep_on) const {
+bool PlanetReportItem::should_report(player_t player_num, governor_t,
+                                     const ReportArray&) const {
   // Don't report on planets where we don't own any sectors
   return planet_->info[player_num - 1].numsectsowned != 0;
 }
@@ -677,8 +676,8 @@ int ShipReportItem::apply_laser_focus(int prob) const {
 }
 
 void ShipReportItem::add_tactical_header_row(
-    tabulate::Table& table, [[maybe_unused]] GameObj& g,
-    [[maybe_unused]] player_t player_num, const TacticalParams& params) const {
+    tabulate::Table& table, GameObj&, player_t,
+    const TacticalParams& params) const {
   const auto& s = *ship_;
   Place where{s.whatorbits, s.storbits, s.pnumorbits};
 
@@ -798,8 +797,7 @@ void ShipReportItem::add_tactical_target_row(tabulate::Table& table, GameObj& g,
                  std::format("{}{}", loc_str, status_suffix)});
 }
 
-TacticalParams ShipReportItem::get_tactical_params(
-    [[maybe_unused]] const Race& race) const {
+TacticalParams ShipReportItem::get_tactical_params(const Race&) const {
   TacticalParams params{};
   const auto& s = *ship_;
   params.tech = s.tech;
@@ -836,12 +834,11 @@ void PlanetReportItem::add_tactical_header_row(
                  ""});
 }
 
-void PlanetReportItem::add_tactical_target_row(
-    tabulate::Table& table, GameObj& g, [[maybe_unused]] RstContext& ctx,
-    [[maybe_unused]] const Race& race, [[maybe_unused]] shipnum_t indx,
-    double dist, [[maybe_unused]] double tech, [[maybe_unused]] int fdam,
-    [[maybe_unused]] bool fev, [[maybe_unused]] int fspeed,
-    [[maybe_unused]] guntype_t caliber) const {
+void PlanetReportItem::add_tactical_target_row(tabulate::Table& table,
+                                               GameObj& g, RstContext&,
+                                               const Race&, shipnum_t,
+                                               double dist, double, int, bool,
+                                               int, guntype_t) const {
   const auto* star = g.entity_manager.peek_star(star_);
   std::string name_str = star ? star->pnames[pnum_] : "Unknown";
 

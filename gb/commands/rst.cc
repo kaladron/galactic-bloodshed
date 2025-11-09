@@ -9,12 +9,9 @@
 
 module;
 
-// Include tabulate first to avoid mixing libc++ header modules with textual
-// includes
-#include <tabulate/table.hpp>
-
 import gblib;
 import std.compat;
+import tabulate;
 
 module commands;
 

@@ -96,6 +96,13 @@ find_package(SQLite3 REQUIRED)
 
 # Libraries
 
+# Create tabulate module wrapper library
+add_library(tabulate_module)
+target_sources(
+  tabulate_module
+  PUBLIC FILE_SET CXX_MODULES FILES third_party/tabulate.cppm)
+target_link_libraries(tabulate_module PUBLIC tabulate::tabulate)
+
 # Executable targets
 add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
                         creator/makeuniv.cc)
@@ -260,7 +267,7 @@ target_sources(
           commands/whois.cc
           commands/zoom.cc)
 target_link_libraries(commands PRIVATE gblib SQLite::SQLite3 glaze::glaze
-                                       scn::scn tabulate::tabulate)
+                                       scn::scn tabulate_module)
 
 add_executable(GB GB_server.cc)
 target_link_libraries(GB PRIVATE gblib commands SQLite::SQLite3 glaze::glaze)

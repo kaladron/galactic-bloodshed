@@ -49,7 +49,8 @@ struct RstContext {
   ReportFlags flags;
   bool first;
   bool enemies_only;
-  int who;
+  std::optional<player_t>
+      filter_player;  // Filter by player number (nullopt = no filter)
 };
 
 // ============================================================================
@@ -719,11 +720,19 @@ void ShipReportItem::add_tactical_target_row(tabulate::Table& table, GameObj& g,
 
   const auto& s = *ship_;
 
-  // Filter ships not matching the "who" filter (player filter or ship type
-  // list)
-  if (ctx.who && ctx.who != s.owner &&
-      (ctx.who != 999 || !listed((int)s.type, ctx.shiplist))) {
-    return;
+  // Filter ships based on player filter or ship type list
+  // If filter_player is set, only show ships owned by that player
+  // If shiplist is non-empty, only show ships whose type is in the list
+  if (ctx.filter_player.has_value()) {
+    // Player filter mode: show only ships owned by specified player
+    if (s.owner != *ctx.filter_player) {
+      return;
+    }
+  } else if (!ctx.shiplist.empty()) {
+    // Ship type filter mode: show only ships whose type is in the list
+    if (!listed((int)s.type, ctx.shiplist)) {
+      return;
+    }
   }
 
   // Don't show ships we own and are authorized for
@@ -1124,14 +1133,17 @@ void rst(const command_t& argv, GameObj& g) {
   /* (one list entry for each ship, planet in universe) */
 
   if (argv.size() == 3) {
-    if (isdigit(argv[2][0]))
-      ctx.who = std::stoi(argv[2]);
-    else {
-      ctx.who = 999; /* treat argv[2].c_str() as a list of ship types */
+    if (isdigit(argv[2][0])) {
+      // Filter by player number
+      ctx.filter_player = std::stoi(argv[2]);
+    } else {
+      // Filter by ship type list (no player filter)
       ctx.shiplist = argv[2];
     }
-  } else
-    ctx.who = 0;
+  } else {
+    // No filtering
+    ctx.filter_player = std::nullopt;
+  }
 
   if (argv.size() >= 2) {
     if (*argv[1].c_str() == '#' || isdigit(*argv[1].c_str())) {

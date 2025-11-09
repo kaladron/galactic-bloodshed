@@ -1134,8 +1134,6 @@ void rst(const command_t& argv, GameObj& g) {
   }
 
   shipnum_t n_ships = Numships();
-  ctx.rd.reserve(n_ships + Sdata.numstars * MAXPLANETS);
-  /* (one list entry for each ship, planet in universe) */
 
   if (argv.size() == 3) {
     if (isdigit(argv[2][0])) {

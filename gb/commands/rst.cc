@@ -88,22 +88,23 @@ class ReportItem {
       [[maybe_unused]] GameObj& g, [[maybe_unused]] RstContext& ctx,
       [[maybe_unused]] const TacticalParams& params) const {}
 
-  // Tactical target display - default no-op for items that don't appear in
-  // tactical
-  virtual void print_tactical_target(
-      [[maybe_unused]] GameObj& g, [[maybe_unused]] RstContext& ctx,
-      [[maybe_unused]] const Race& race, [[maybe_unused]] shipnum_t indx,
-      [[maybe_unused]] double dist, [[maybe_unused]] double tech,
-      [[maybe_unused]] int fdam, [[maybe_unused]] bool fev,
-      [[maybe_unused]] int fspeed, [[maybe_unused]] guntype_t caliber) const {}
-
   // Apply laser focus bonus to hit probability (ships only)
   virtual int apply_laser_focus(int prob) const { return prob; }
 
-  // Print tactical report header summary (different for ships vs planets)
-  virtual void print_tactical_header_summary(
-      [[maybe_unused]] GameObj& g, [[maybe_unused]] player_t player_num,
+  // Add header row to tactical summary table (polymorphic)
+  virtual void add_tactical_header_row(
+      [[maybe_unused]] tabulate::Table& table, [[maybe_unused]] GameObj& g,
+      [[maybe_unused]] player_t player_num,
       [[maybe_unused]] const TacticalParams& params) const {}
+
+  // Add target row to tactical targets table (polymorphic)
+  virtual void add_tactical_target_row(
+      [[maybe_unused]] tabulate::Table& table, [[maybe_unused]] GameObj& g,
+      [[maybe_unused]] RstContext& ctx, [[maybe_unused]] const Race& race,
+      [[maybe_unused]] shipnum_t indx, [[maybe_unused]] double dist,
+      [[maybe_unused]] double tech, [[maybe_unused]] int fdam,
+      [[maybe_unused]] bool fev, [[maybe_unused]] int fspeed,
+      [[maybe_unused]] guntype_t caliber) const {}
 
   // Get tactical parameters for this item
   virtual TacticalParams get_tactical_params(
@@ -151,16 +152,17 @@ class ShipReportItem : public ReportItem {
   void report_tactical(GameObj& g, RstContext& ctx,
                        const TacticalParams& params) const override;
 
-  void print_tactical_target(GameObj& g, RstContext& ctx, const Race& race,
-                             shipnum_t indx, double dist, double tech, int fdam,
-                             bool fev, int fspeed,
-                             guntype_t caliber) const override;
+  void add_tactical_header_row(tabulate::Table& table, GameObj& g,
+                               player_t player_num,
+                               const TacticalParams& params) const override;
+
+  void add_tactical_target_row(tabulate::Table& table, GameObj& g,
+                               RstContext& ctx, const Race& race,
+                               shipnum_t indx, double dist, double tech,
+                               int fdam, bool fev, int fspeed,
+                               guntype_t caliber) const override;
 
   int apply_laser_focus(int prob) const override;
-
-  void print_tactical_header_summary(
-      GameObj& g, player_t player_num,
-      const TacticalParams& params) const override;
 
   TacticalParams get_tactical_params(const Race& race) const override;
 
@@ -192,14 +194,15 @@ class PlanetReportItem : public ReportItem {
   void report_tactical(GameObj& g, RstContext& ctx,
                        const TacticalParams& params) const override;
 
-  void print_tactical_target(GameObj& g, RstContext& ctx, const Race& race,
-                             shipnum_t indx, double dist, double tech, int fdam,
-                             bool fev, int fspeed,
-                             guntype_t caliber) const override;
+  void add_tactical_header_row(tabulate::Table& table, GameObj& g,
+                               player_t player_num,
+                               const TacticalParams& params) const override;
 
-  void print_tactical_header_summary(
-      GameObj& g, player_t player_num,
-      const TacticalParams& params) const override;
+  void add_tactical_target_row(tabulate::Table& table, GameObj& g,
+                               RstContext& ctx, const Race& race,
+                               shipnum_t indx, double dist, double tech,
+                               int fdam, bool fev, int fspeed,
+                               guntype_t caliber) const override;
 
   TacticalParams get_tactical_params(const Race& race) const override;
 
@@ -683,10 +686,52 @@ bool PlanetReportItem::should_report(
 // TACTICAL REPORT IMPLEMENTATIONS
 // ============================================================================
 
-void ShipReportItem::print_tactical_target(
-    GameObj& g, [[maybe_unused]] RstContext& ctx, const Race& race,
-    [[maybe_unused]] shipnum_t indx, double dist, double tech, int fdam,
-    bool fev, int fspeed, guntype_t caliber) const {
+int ShipReportItem::apply_laser_focus(int prob) const {
+  if (laser_on(*ship_) && ship_->focus) {
+    return prob * prob / 100;
+  }
+  return prob;
+}
+
+void ShipReportItem::add_tactical_header_row(
+    tabulate::Table& table, [[maybe_unused]] GameObj& g,
+    [[maybe_unused]] player_t player_num, const TacticalParams& params) const {
+  const auto& s = *ship_;
+  Place where{s.whatorbits, s.storbits, s.pnumorbits};
+
+  std::string name_str = s.active ? s.name : "INACTIVE";
+  std::string orbits_str = where.to_string();
+
+  // Build landed location suffix
+  std::string location_suffix;
+  if (landed(s)) {
+    location_suffix = std::format(" ({},{})", s.land_x, s.land_y);
+  }
+
+  // Build inactive suffix
+  std::string inactive_suffix;
+  if (!s.active) {
+    inactive_suffix = std::format(" INACTIVE({})", s.rad);
+  }
+
+  table.add_row(
+      {std::format("{}", n_), std::format("{}", Shipltrs[s.type]), name_str,
+       std::format("{:.0f}", s.tech),
+       std::format("{}{}/{}{}", s.primary, caliber_char(s.primtype),
+                   s.secondary, caliber_char(s.sectype)),
+       std::format("{}", s.armor), std::format("{}", s.size),
+       std::format("{}", s.destruct), std::format("{:.1f}", s.fuel),
+       std::format("{}%", s.damage), std::format("{}", params.fspeed),
+       params.fev ? "yes" : "",
+       std::format("{}{}{}", orbits_str, location_suffix, inactive_suffix)});
+}
+
+void ShipReportItem::add_tactical_target_row(tabulate::Table& table, GameObj& g,
+                                             RstContext& ctx, const Race& race,
+                                             [[maybe_unused]] shipnum_t indx,
+                                             double dist, double tech, int fdam,
+                                             bool fev, int fspeed,
+                                             guntype_t caliber) const {
   const player_t player_num = g.player;
   const governor_t governor = g.governor;
 
@@ -742,51 +787,24 @@ void ShipReportItem::print_tactical_target(
     return;
   }
 
-  // Output tactical information for this target ship
-  g.out << std::format(
-      "{:13} {}{:2},{:1} {:c}{:14.14} {:4.0f}  {:4}   {:4} {}  "
-      "{:3}  "
-      "{:3}% {:3}%{}",
-      n_, war_status, s.owner, s.governor, Shipltrs[s.type], s.name, dist,
-      factor, body, tspeed, (tev ? "yes" : "   "), prob, s.damage,
-      (s.active ? "" : " INACTIVE"));
-
+  // Build location string
+  std::string loc_str;
   if (landed(s)) {
-    g.out << std::format(" ({},{})", s.land_x, s.land_y);
-  } else {
-    g.out << "     ";
+    loc_str = std::format("({},{})", s.land_x, s.land_y);
   }
-  g.out << "\n";
-}
 
-int ShipReportItem::apply_laser_focus(int prob) const {
-  if (laser_on(*ship_) && ship_->focus) {
-    return prob * prob / 100;
-  }
-  return prob;
-}
+  // Build status suffix
+  std::string status_suffix = s.active ? "" : " INACTIVE";
 
-void ShipReportItem::print_tactical_header_summary(
-    GameObj& g, [[maybe_unused]] player_t player_num,
-    const TacticalParams& params) const {
-  const auto& s = *ship_;
-  Place where{s.whatorbits, s.storbits, s.pnumorbits};
-  auto orb = std::format("{:30.30}", where.to_string());
-  g.out << std::format(
-      "{:3} {:c} {:16.16} "
-      "{:4.0f}{:3}{:c}/{:3}{:c}{:6}{:5}{:5}{:7.1f}{:3}%  {}  "
-      "{:3}{:21.22}",
-      n_, Shipltrs[s.type], (s.active ? s.name : "INACTIVE"), s.tech, s.primary,
-      caliber_char(s.primtype), s.secondary, caliber_char(s.sectype), s.armor,
-      s.size, s.destruct, s.fuel, s.damage, params.fspeed,
-      (params.fev ? "yes" : "   "), orb);
-  if (landed(s)) {
-    g.out << std::format(" ({},{})", s.land_x, s.land_y);
-  }
-  if (!s.active) {
-    g.out << std::format(" INACTIVE({})", s.rad);
-  }
-  g.out << "\n";
+  // Add row to table
+  table.add_row({std::format("{}", n_),
+                 std::format("{}{},{}", war_status, s.owner, s.governor),
+                 std::format("{}", Shipltrs[s.type]),
+                 std::format("{:.14}", s.name), std::format("{:.0f}", dist),
+                 std::format("{}", factor), std::format("{}", body),
+                 std::format("{}", tspeed), tev ? "yes" : "",
+                 std::format("{}%", prob), std::format("{}%", s.damage),
+                 std::format("{}{}", loc_str, status_suffix)});
 }
 
 TacticalParams ShipReportItem::get_tactical_params(
@@ -811,27 +829,33 @@ std::optional<starnum_t> ShipReportItem::get_star_orbit() const {
   return std::nullopt;
 }
 
-void PlanetReportItem::print_tactical_target(
-    GameObj& g, [[maybe_unused]] RstContext& ctx,
+void PlanetReportItem::add_tactical_header_row(
+    tabulate::Table& table, GameObj& g, player_t player_num,
+    const TacticalParams& params) const {
+  const auto& p = *planet_;
+  const auto* star = g.entity_manager.peek_star(star_);
+
+  std::string name_str =
+      std::format("(planet){}", star ? star->pnames[pnum_] : "Unknown");
+
+  table.add_row({"", "", name_str, std::format("{:.0f}", params.tech),
+                 std::format("{}M", p.info[player_num - 1].guns), "", "",
+                 std::format("{}", p.info[player_num - 1].destruct),
+                 std::format("{}", p.info[player_num - 1].fuel), "", "", "",
+                 ""});
+}
+
+void PlanetReportItem::add_tactical_target_row(
+    tabulate::Table& table, GameObj& g, [[maybe_unused]] RstContext& ctx,
     [[maybe_unused]] const Race& race, [[maybe_unused]] shipnum_t indx,
     double dist, [[maybe_unused]] double tech, [[maybe_unused]] int fdam,
     [[maybe_unused]] bool fev, [[maybe_unused]] int fspeed,
     [[maybe_unused]] guntype_t caliber) const {
   const auto* star = g.entity_manager.peek_star(star_);
-  g.out << std::format(" {:13}(planet)          {:8.0f}\n",
-                       star ? star->pnames[pnum_] : "Unknown", dist);
-}
+  std::string name_str = star ? star->pnames[pnum_] : "Unknown";
 
-void PlanetReportItem::print_tactical_header_summary(
-    GameObj& g, player_t player_num, const TacticalParams& params) const {
-  const auto& p = *planet_;
-  const auto* star = g.entity_manager.peek_star(star_);
-
-  g.out << std::format("(planet){:15.15}{:4.0f} {:4}M           {:5} {:6}\n",
-                       star ? star->pnames[pnum_] : "Unknown", params.tech,
-                       p.info[player_num - 1].guns,
-                       p.info[player_num - 1].destruct,
-                       p.info[player_num - 1].fuel);
+  table.add_row({"", "(planet)", "", name_str, std::format("{:.0f}", dist), "",
+                 "", "", "", "", "", ""});
 }
 
 TacticalParams PlanetReportItem::get_tactical_params(const Race& race) const {
@@ -851,16 +875,80 @@ void ShipReportItem::report_tactical(GameObj& g, RstContext& ctx,
 
   const auto& s = *ship_;
 
-  g.out << "\n  #         name        tech    guns  armor size dest   "
-           "fuel dam spd evad               orbits\n";
-  print_tactical_header_summary(g, player_num, params);
-
   bool sight = shipsight(s);
   if (!sight) return;
 
-  /* tactical display */
-  g.out << "\n  Tactical: #  own typ        name   rng   (50%) size "
-           "spd evade hit  dam  loc\n";
+  // Create header summary table
+  tabulate::Table header_table;
+  header_table.format().hide_border().column_separator("  ");
+
+  // Configure column widths and alignments for header table
+  header_table.column(0).format().width(3).font_align(
+      tabulate::FontAlign::right);  // #
+  header_table.column(1).format().width(1).font_align(
+      tabulate::FontAlign::center);           // type
+  header_table.column(2).format().width(16);  // name
+  header_table.column(3).format().width(4).font_align(
+      tabulate::FontAlign::right);  // tech
+  header_table.column(4).format().width(7).font_align(
+      tabulate::FontAlign::center);  // guns
+  header_table.column(5).format().width(5).font_align(
+      tabulate::FontAlign::right);  // armor
+  header_table.column(6).format().width(4).font_align(
+      tabulate::FontAlign::right);  // size
+  header_table.column(7).format().width(5).font_align(
+      tabulate::FontAlign::right);  // dest
+  header_table.column(8).format().width(7).font_align(
+      tabulate::FontAlign::right);  // fuel
+  header_table.column(9).format().width(3).font_align(
+      tabulate::FontAlign::right);  // dam
+  header_table.column(10).format().width(3).font_align(
+      tabulate::FontAlign::right);  // spd
+  header_table.column(11).format().width(4).font_align(
+      tabulate::FontAlign::center);            // evad
+  header_table.column(12).format().width(30);  // orbits
+
+  // Add header row
+  header_table.add_row({"#", "", "name", "tech", "guns", "armor", "size",
+                        "dest", "fuel", "dam", "spd", "evad", "orbits"});
+  header_table[0].format().font_style({tabulate::FontStyle::bold});
+
+  // Add data row polymorphically
+  add_tactical_header_row(header_table, g, player_num, params);
+
+  g.out << "\n" << header_table << "\n";
+
+  // Create tactical targets table
+  tabulate::Table tactical_table;
+  tactical_table.format().hide_border().column_separator("  ");
+
+  // Configure column widths and alignments for tactical table
+  tactical_table.column(0).format().width(13);  // #
+  tactical_table.column(1).format().width(5).font_align(
+      tabulate::FontAlign::center);  // own
+  tactical_table.column(2).format().width(3).font_align(
+      tabulate::FontAlign::center);             // typ
+  tactical_table.column(3).format().width(14);  // name
+  tactical_table.column(4).format().width(4).font_align(
+      tabulate::FontAlign::right);  // rng
+  tactical_table.column(5).format().width(4).font_align(
+      tabulate::FontAlign::right);  // (50%)
+  tactical_table.column(6).format().width(4).font_align(
+      tabulate::FontAlign::right);  // size
+  tactical_table.column(7).format().width(3).font_align(
+      tabulate::FontAlign::right);  // spd
+  tactical_table.column(8).format().width(5).font_align(
+      tabulate::FontAlign::center);  // evade
+  tactical_table.column(9).format().width(3).font_align(
+      tabulate::FontAlign::right);  // hit
+  tactical_table.column(10).format().width(3).font_align(
+      tabulate::FontAlign::right);               // dam
+  tactical_table.column(11).format().width(10);  // loc
+
+  // Add tactical header row
+  tactical_table.add_row({"Tactical: #", "own", "typ", "name", "rng", "(50%)",
+                          "size", "spd", "evade", "hit", "dam", "loc"});
+  tactical_table[0].format().font_style({tabulate::FontStyle::bold});
 
   for (shipnum_t i = 0; i < ctx.rd.size(); i++) {
     // Skip ourselves
@@ -874,9 +962,16 @@ void ShipReportItem::report_tactical(GameObj& g, RstContext& ctx,
     int fdam = s.damage;
     guntype_t caliber = current_caliber(s);
 
-    // Polymorphic call - works for both ships and planets
-    ctx.rd[i]->print_tactical_target(g, ctx, *race, i, dist, params.tech, fdam,
-                                     params.fev, params.fspeed, caliber);
+    // Polymorphic call - adds row to table for ships, skips for planets not in
+    // range
+    ctx.rd[i]->add_tactical_target_row(tactical_table, g, ctx, *race, i, dist,
+                                       params.tech, fdam, params.fev,
+                                       params.fspeed, caliber);
+  }
+
+  // Only output tactical table if we have targets
+  if (tactical_table.size() > 1) {  // More than just the header
+    g.out << "\n" << tactical_table << "\n";
   }
 }
 
@@ -888,13 +983,77 @@ void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
   const auto* race = g.entity_manager.peek_race(player_num);
   if (!race) return;
 
-  g.out << "\n  #         name        tech    guns  armor size dest   "
-           "fuel dam spd evad               orbits\n";
-  print_tactical_header_summary(g, player_num, params);
+  // Create header summary table
+  tabulate::Table header_table;
+  header_table.format().hide_border().column_separator("  ");
 
-  /* tactical display */
-  g.out << "\n  Tactical: #  own typ        name   rng   (50%) size "
-           "spd evade hit  dam  loc\n";
+  // Configure column widths and alignments for header table
+  header_table.column(0).format().width(3).font_align(
+      tabulate::FontAlign::right);  // #
+  header_table.column(1).format().width(1).font_align(
+      tabulate::FontAlign::center);           // type
+  header_table.column(2).format().width(16);  // name
+  header_table.column(3).format().width(4).font_align(
+      tabulate::FontAlign::right);  // tech
+  header_table.column(4).format().width(7).font_align(
+      tabulate::FontAlign::center);  // guns
+  header_table.column(5).format().width(5).font_align(
+      tabulate::FontAlign::right);  // armor
+  header_table.column(6).format().width(4).font_align(
+      tabulate::FontAlign::right);  // size
+  header_table.column(7).format().width(5).font_align(
+      tabulate::FontAlign::right);  // dest
+  header_table.column(8).format().width(7).font_align(
+      tabulate::FontAlign::right);  // fuel
+  header_table.column(9).format().width(3).font_align(
+      tabulate::FontAlign::right);  // dam
+  header_table.column(10).format().width(3).font_align(
+      tabulate::FontAlign::right);  // spd
+  header_table.column(11).format().width(4).font_align(
+      tabulate::FontAlign::center);            // evad
+  header_table.column(12).format().width(30);  // orbits
+
+  // Add header row
+  header_table.add_row({"#", "", "name", "tech", "guns", "armor", "size",
+                        "dest", "fuel", "dam", "spd", "evad", "orbits"});
+  header_table[0].format().font_style({tabulate::FontStyle::bold});
+
+  // Add data row polymorphically
+  add_tactical_header_row(header_table, g, player_num, params);
+
+  g.out << "\n" << header_table << "\n";
+
+  // Create tactical targets table
+  tabulate::Table tactical_table;
+  tactical_table.format().hide_border().column_separator("  ");
+
+  // Configure column widths and alignments for tactical table
+  tactical_table.column(0).format().width(13);  // #
+  tactical_table.column(1).format().width(5).font_align(
+      tabulate::FontAlign::center);  // own
+  tactical_table.column(2).format().width(3).font_align(
+      tabulate::FontAlign::center);             // typ
+  tactical_table.column(3).format().width(14);  // name
+  tactical_table.column(4).format().width(4).font_align(
+      tabulate::FontAlign::right);  // rng
+  tactical_table.column(5).format().width(4).font_align(
+      tabulate::FontAlign::right);  // (50%)
+  tactical_table.column(6).format().width(4).font_align(
+      tabulate::FontAlign::right);  // size
+  tactical_table.column(7).format().width(3).font_align(
+      tabulate::FontAlign::right);  // spd
+  tactical_table.column(8).format().width(5).font_align(
+      tabulate::FontAlign::center);  // evade
+  tactical_table.column(9).format().width(3).font_align(
+      tabulate::FontAlign::right);  // hit
+  tactical_table.column(10).format().width(3).font_align(
+      tabulate::FontAlign::right);               // dam
+  tactical_table.column(11).format().width(10);  // loc
+
+  // Add tactical header row
+  tactical_table.add_row({"Tactical: #", "own", "typ", "name", "rng", "(50%)",
+                          "size", "spd", "evade", "hit", "dam", "loc"});
+  tactical_table[0].format().font_style({tabulate::FontStyle::bold});
 
   for (shipnum_t i = 0; i < ctx.rd.size(); i++) {
     // Skip ourselves
@@ -908,9 +1067,16 @@ void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
     int fdam = 0;  // Planets don't have damage
     guntype_t caliber = GTYPE_MEDIUM;
 
-    // Polymorphic call - works for both ships and planets
-    ctx.rd[i]->print_tactical_target(g, ctx, *race, i, dist, params.tech, fdam,
-                                     params.fev, params.fspeed, caliber);
+    // Polymorphic call - adds row to table for ships, skips for planets not in
+    // range
+    ctx.rd[i]->add_tactical_target_row(tactical_table, g, ctx, *race, i, dist,
+                                       params.tech, fdam, params.fev,
+                                       params.fspeed, caliber);
+  }
+
+  // Only output tactical table if we have targets
+  if (tactical_table.size() > 1) {  // More than just the header
+    g.out << "\n" << tactical_table << "\n";
   }
 }
 

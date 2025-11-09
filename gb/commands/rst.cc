@@ -40,6 +40,7 @@ struct FiringShipParams {
   bool evade = false;
   int speed = 0;
   guntype_t caliber = GTYPE_NONE;
+  bool laser_focused = false;  // Laser is on and focused
 };
 
 struct ReportFlags {
@@ -96,7 +97,7 @@ class ReportItem {
 
   // Add target row to tactical targets table (polymorphic)
   virtual void add_tactical_target_row(tabulate::Table&, GameObj&, RstContext&,
-                                       const Race&, shipnum_t indx, double dist,
+                                       const Race&, double dist,
                                        const FiringShipParams& firer) const {}
 
   // Get tactical parameters for this item
@@ -149,8 +150,7 @@ class ShipReportItem : public ReportItem {
                                const TacticalParams& params) const override;
 
   void add_tactical_target_row(tabulate::Table& table, GameObj& g,
-                               RstContext& ctx, const Race& race,
-                               shipnum_t indx, double dist,
+                               RstContext& ctx, const Race& race, double dist,
                                const FiringShipParams& firer) const override;
 
   int apply_laser_focus(int prob) const override;
@@ -190,8 +190,7 @@ class PlanetReportItem : public ReportItem {
                                const TacticalParams& params) const override;
 
   void add_tactical_target_row(tabulate::Table& table, GameObj& g,
-                               RstContext& ctx, const Race& race,
-                               shipnum_t indx, double dist,
+                               RstContext& ctx, const Race& race, double dist,
                                const FiringShipParams& firer) const override;
 
   TacticalParams get_tactical_params(const Race& race) const override;
@@ -717,7 +716,7 @@ void ShipReportItem::add_tactical_header_row(
 
 void ShipReportItem::add_tactical_target_row(
     tabulate::Table& table, GameObj& g, RstContext& ctx, const Race& race,
-    shipnum_t indx, double dist, const FiringShipParams& firer) const {
+    double dist, const FiringShipParams& firer) const {
   const player_t player_num = g.player;
   const governor_t governor = g.governor;
 
@@ -769,8 +768,10 @@ void ShipReportItem::add_tactical_target_row(
       hit_odds(dist, firer.tech, firer.damage, firer.evade, tev, firer.speed,
                tspeed, body, firer.caliber, defense);
 
-  // Apply laser focus bonus if applicable
-  prob = ctx.rd[indx]->apply_laser_focus(prob);
+  // Apply laser focus bonus if firer has it
+  if (firer.laser_focused) {
+    prob = prob * prob / 100;
+  }
 
   // Determine diplomatic status indicator
   const auto* war_status = isset(race.atwar, s.owner)    ? "-"
@@ -841,8 +842,7 @@ void PlanetReportItem::add_tactical_header_row(
 
 void PlanetReportItem::add_tactical_target_row(tabulate::Table& table,
                                                GameObj& g, RstContext&,
-                                               const Race&, shipnum_t,
-                                               double dist,
+                                               const Race&, double dist,
                                                const FiringShipParams&) const {
   const auto* star = g.entity_manager.peek_star(star_);
   std::string name_str = star ? star->pnames[pnum_] : "Unknown";
@@ -943,12 +943,12 @@ void ShipReportItem::report_tactical(GameObj& g, RstContext& ctx,
                           "size", "spd", "evade", "hit", "dam", "loc"});
   tactical_table[0].format().font_style({tabulate::FontStyle::bold});
 
-  for (shipnum_t i = 0; i < ctx.rd.size(); i++) {
+  for (const auto& target : ctx.rd) {
     // Skip ourselves
-    if (ctx.rd[i]->x() == x_ && ctx.rd[i]->y() == y_) continue;
+    if (target->x() == x_ && target->y() == y_) continue;
 
     double range = gun_range(s);
-    double dist = sqrt(Distsq(x_, y_, ctx.rd[i]->x(), ctx.rd[i]->y()));
+    double dist = sqrt(Distsq(x_, y_, target->x(), target->y()));
     if (dist >= range) continue;
 
     // Build firing ship parameters
@@ -958,12 +958,12 @@ void ShipReportItem::report_tactical(GameObj& g, RstContext& ctx,
         .evade = params.fev,
         .speed = params.fspeed,
         .caliber = current_caliber(s),
+        .laser_focused = (laser_on(s) && s.focus),
     };
 
     // Polymorphic call - adds row to table for ships, skips for planets not in
     // range
-    ctx.rd[i]->add_tactical_target_row(tactical_table, g, ctx, *race, i, dist,
-                                       firer);
+    target->add_tactical_target_row(tactical_table, g, ctx, *race, dist, firer);
   }
 
   // Only output tactical table if we have targets
@@ -1067,11 +1067,12 @@ void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
         .evade = params.fev,
         .speed = params.fspeed,
         .caliber = GTYPE_MEDIUM,
+        .laser_focused = false,  // Planets don't have laser focus
     };
 
     // Polymorphic call - adds row to table for ships, skips for planets not in
     // range
-    ctx.rd[i]->add_tactical_target_row(tactical_table, g, ctx, *race, i, dist,
+    ctx.rd[i]->add_tactical_target_row(tactical_table, g, ctx, *race, dist,
                                        firer);
   }
 

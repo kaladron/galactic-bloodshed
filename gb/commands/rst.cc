@@ -88,9 +88,6 @@ class ReportItem {
   virtual void report_tactical(GameObj&, RstContext&,
                                const TacticalParams&) const {}
 
-  // Apply laser focus bonus to hit probability (ships only)
-  virtual int apply_laser_focus(int prob) const { return prob; }
-
   // Add header row to tactical summary table (polymorphic)
   virtual void add_tactical_header_row(tabulate::Table&, GameObj&, player_t,
                                        const TacticalParams&) const = 0;
@@ -152,8 +149,6 @@ class ShipReportItem : public ReportItem {
   void add_tactical_target_row(tabulate::Table& table, GameObj& g,
                                RstContext& ctx, const Race& race, double dist,
                                const FiringShipParams& firer) const override;
-
-  int apply_laser_focus(int prob) const override;
 
   TacticalParams get_tactical_params(const Race& race) const override;
 
@@ -673,13 +668,6 @@ bool PlanetReportItem::should_report(player_t player_num, governor_t,
 // ============================================================================
 // TACTICAL REPORT IMPLEMENTATIONS
 // ============================================================================
-
-int ShipReportItem::apply_laser_focus(int prob) const {
-  if (laser_on(*ship_) && ship_->focus) {
-    return prob * prob / 100;
-  }
-  return prob;
-}
 
 void ShipReportItem::add_tactical_header_row(
     tabulate::Table& table, GameObj&, player_t,

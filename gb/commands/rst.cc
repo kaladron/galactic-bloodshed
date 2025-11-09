@@ -21,7 +21,7 @@ namespace {
 // TYPE DEFINITIONS
 // ============================================================================
 
-using ReportArray = std::array<bool, NUMSTYPES>;
+using ReportSet = std::unordered_set<char>;
 
 // Forward declarations
 class ReportItem;
@@ -121,7 +121,7 @@ class ReportItem {
 
   // Check if we should report this item
   virtual bool should_report(player_t player_num, governor_t governor,
-                             const ReportArray& rep_on) const = 0;
+                             const ReportSet& rep_on) const = 0;
 };
 
 // ============================================================================
@@ -165,7 +165,7 @@ class ShipReportItem : public ReportItem {
   shipnum_t child_ships() const override { return ship_->ships; }
 
   bool should_report(player_t player_num, governor_t governor,
-                     const ReportArray& rep_on) const override;
+                     const ReportSet& rep_on) const override;
 };
 
 // Planet report item - holds non-owning pointer from peek_planet
@@ -197,7 +197,7 @@ class PlanetReportItem : public ReportItem {
   TacticalParams get_tactical_params(const Race& race) const override;
 
   bool should_report(player_t player_num, governor_t governor,
-                     const ReportArray& rep_on) const override;
+                     const ReportSet& rep_on) const override;
 };
 
 // Map of command names to their report flag configurations
@@ -637,7 +637,7 @@ void ShipReportItem::report_general(GameObj& g, RstContext& ctx) const {
 }
 
 bool ShipReportItem::should_report(player_t player_num, governor_t governor,
-                                   const ReportArray& rep_on) const {
+                                   const ReportSet& rep_on) const {
   const auto& s = *ship_;
 
   // Don't report on ships that are dead
@@ -650,7 +650,7 @@ bool ShipReportItem::should_report(player_t player_num, governor_t governor,
   if (!authorized(governor, s)) return false;
 
   // Don't report on ships whose type isn't in the requested report filter
-  if (!rep_on[s.type]) return false;
+  if (!rep_on.contains(Shipltrs[s.type])) return false;
 
   // Don't report on undocked canisters (launched canisters don't show up)
   if (s.type == ShipType::OTYPE_CANIST && !s.docked) return false;
@@ -666,7 +666,7 @@ bool ShipReportItem::should_report(player_t player_num, governor_t governor,
 // ============================================================================
 
 bool PlanetReportItem::should_report(player_t player_num, governor_t,
-                                     const ReportArray&) const {
+                                     const ReportSet&) const {
   // Don't report on planets where we don't own any sectors
   return planet_->info[player_num - 1].numsectsowned != 0;
 }
@@ -1081,7 +1081,7 @@ void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
 // ============================================================================
 
 void ship_report(GameObj& g, RstContext& ctx, const ReportItem& item,
-                 const ReportArray& rep_on) {
+                 const ReportSet& rep_on) {
   player_t player_num = g.player;
   governor_t governor = g.governor;
 
@@ -1118,8 +1118,7 @@ namespace GB::commands {
 void rst(const command_t& argv, GameObj& g) {
   const player_t player_num = g.player;
 
-  ReportArray report_types;
-  report_types.fill(true);
+  ReportSet report_types;
 
   RstContext ctx;
   ctx.enemies_only = false;
@@ -1171,16 +1170,21 @@ void rst(const command_t& argv, GameObj& g) {
       }
       return;
     }
-    report_types.fill(false);
 
-    for (const auto& c : argv[1]) {
-      shipnum_t i = NUMSTYPES;
-      while (--i && Shipltrs[i] != c);
-      if (Shipltrs[i] != c) {
-        g.out << std::format("'{}' -- no such ship letter\n", c);
-      } else
-        report_types[i] = true;
+    // Parse ship type letters and add to set - only valid ship letters
+    std::ranges::copy_if(
+        argv[1], std::inserter(report_types, report_types.end()),
+        [](char c) { return std::ranges::contains(Shipltrs, c); });
+
+    // Warn if no valid ship types were found
+    if (report_types.empty()) {
+      g.out << std::format("'{}' -- no valid ship letters found\n", argv[1]);
+      return;
     }
+  } else {
+    // No ship type filter specified - report all types
+    std::ranges::copy(Shipltrs,
+                      std::inserter(report_types, report_types.end()));
   }
 
   switch (g.level) {

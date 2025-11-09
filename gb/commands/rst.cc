@@ -1226,16 +1226,16 @@ void rst(const command_t& argv, GameObj& g) {
       }
       ship_report(g, ctx, *ctx.rd[0], report_types); /* first ship report */
 
-      // Get ships docked in this ship
+      // Report on ships docked in this ship
+      RstContext docked_ctx = ctx;  // Copy context settings
+      docked_ctx.rd.clear();        // But use separate report list
       shipnum_t shn = ctx.rd[0]->child_ships();
-      shipnum_t first_child = ctx.rd.size();
-
-      while (shn && get_report_ship(g, ctx, shn)) {
-        shn = ctx.rd.back()->next_ship();
+      while (shn && get_report_ship(g, docked_ctx, shn)) {
+        shn = docked_ctx.rd.back()->next_ship();
       }
-
-      for (shipnum_t i = first_child; i < ctx.rd.size(); i++)
-        ship_report(g, ctx, *ctx.rd[i], report_types);
+      for (const auto& item : docked_ctx.rd) {
+        ship_report(g, docked_ctx, *item, report_types);
+      }
       break;
   }
 }

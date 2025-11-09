@@ -93,12 +93,12 @@ class ReportItem {
 
   // Add header row to tactical summary table (polymorphic)
   virtual void add_tactical_header_row(tabulate::Table&, GameObj&, player_t,
-                                       const TacticalParams&) const {}
+                                       const TacticalParams&) const = 0;
 
   // Add target row to tactical targets table (polymorphic)
   virtual void add_tactical_target_row(tabulate::Table&, GameObj&, RstContext&,
                                        const Race&, double dist,
-                                       const FiringShipParams& firer) const {}
+                                       const FiringShipParams& firer) const = 0;
 
   // Get tactical parameters for this item
   virtual TacticalParams get_tactical_params(const Race&) const {

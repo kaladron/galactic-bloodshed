@@ -168,17 +168,14 @@ class ShipReportItem : public ReportItem {
 
 // Planet report item - holds non-owning pointer from peek_planet
 class PlanetReportItem : public ReportItem {
-  starnum_t star_;
-  planetnum_t pnum_;
   const Planet* planet_;
 
  public:
-  PlanetReportItem(starnum_t star, planetnum_t pnum, const Planet* planet,
-                   double x, double y)
-      : ReportItem(x, y), star_(star), pnum_(pnum), planet_(planet) {}
+  PlanetReportItem(const Planet* planet, double x, double y)
+      : ReportItem(x, y), planet_(planet) {}
 
-  starnum_t star() const { return star_; }
-  planetnum_t pnum() const { return pnum_; }
+  starnum_t star() const { return planet_->star_id; }
+  planetnum_t pnum() const { return planet_->planet_order; }
   const Planet& planet() const { return *planet_; }
 
   void report_tactical(GameObj& g, RstContext& ctx,
@@ -265,8 +262,7 @@ void plan_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
   // Add planet to report list
   double x = star->xpos + planet->xpos;
   double y = star->ypos + planet->ypos;
-  ctx.rd.push_back(
-      std::make_unique<PlanetReportItem>(snum, pnum, planet, x, y));
+  ctx.rd.push_back(std::make_unique<PlanetReportItem>(planet, x, y));
 
   if (planet->info[player_num - 1].explored) {
     shipnum_t shn = planet->ships;
@@ -817,10 +813,10 @@ void PlanetReportItem::add_tactical_header_row(
     tabulate::Table& table, GameObj& g, player_t player_num,
     const TacticalParams& params) const {
   const auto& p = *planet_;
-  const auto* star = g.entity_manager.peek_star(star_);
+  const auto* star = g.entity_manager.peek_star(p.star_id);
 
-  std::string name_str =
-      std::format("(planet){}", star ? star->pnames[pnum_] : "Unknown");
+  std::string name_str = std::format(
+      "(planet){}", star ? star->pnames[p.planet_order] : "Unknown");
 
   table.add_row({"", "", name_str, std::format("{:.0f}", params.tech),
                  std::format("{}M", p.info[player_num - 1].guns), "", "",
@@ -833,8 +829,9 @@ void PlanetReportItem::add_tactical_target_row(tabulate::Table& table,
                                                GameObj& g, RstContext&,
                                                const Race&, double dist,
                                                const FiringShipParams&) const {
-  const auto* star = g.entity_manager.peek_star(star_);
-  std::string name_str = star ? star->pnames[pnum_] : "Unknown";
+  const auto& p = *planet_;
+  const auto* star = g.entity_manager.peek_star(p.star_id);
+  std::string name_str = star ? star->pnames[p.planet_order] : "Unknown";
 
   table.add_row({"", "(planet)", "", name_str, std::format("{:.0f}", dist), "",
                  "", "", "", "", "", ""});

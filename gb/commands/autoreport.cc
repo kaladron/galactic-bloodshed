@@ -14,13 +14,19 @@ module commands;
 
 namespace GB::commands {
 void autoreport(const command_t &argv, GameObj &g) {
-  if (g.governor && stars[g.snum].governor(g.player - 1) != g.governor) {
+  const auto* star = g.entity_manager.peek_star(g.snum);
+  if (!star) {
+    g.out << "Star not found.\n";
+    return;
+  }
+
+  if (g.governor && star->governor[g.player - 1] != g.governor) {
     g.out << "You are not authorized to do this here.\n";
     return;
   }
 
-  starnum_t snum;
-  planetnum_t pnum;
+  starnum_t snum = 0;
+  planetnum_t pnum = 0;
 
   switch (argv.size()) {
     case 1:
@@ -45,16 +51,24 @@ void autoreport(const command_t &argv, GameObj &g) {
       return;
   }
 
-  auto p = getplanet(snum, pnum);
+  // Get planet for modification (RAII auto-saves on scope exit)
+  auto planet_handle = g.entity_manager.get_planet(snum, pnum);
+  if (!planet_handle.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+
+  auto& p = *planet_handle;
   if (p.info[g.player - 1].autorep) {
     p.info[g.player - 1].autorep = 0;
   } else {
     p.info[g.player - 1].autorep = TELEG_MAX_AUTO;
   }
-  putplanet(p, stars[snum], pnum);
 
+  // Get star name for output message
+  const auto* target_star = g.entity_manager.peek_star(snum);
   g.out << std::format("Autoreport on %{0} has been %{1}.\n",
-                       stars[snum].get_planet_name(pnum),
+                       target_star ? target_star->pnames[pnum] : "Unknown",
                        (p.info[g.player - 1].autorep ? "set" : "unset"));
 }
 }  // namespace GB::commands

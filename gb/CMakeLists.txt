@@ -370,6 +370,10 @@ add_executable(entity_manager_test services/entity_manager_test.cc)
 target_link_libraries(entity_manager_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_entity_manager_test COMMAND entity_manager_test)
 
+add_executable(autoreport_test commands/autoreport_test.cc)
+target_link_libraries(autoreport_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_autoreport_test COMMAND autoreport_test)
+
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug
     COMMAND ${CMAKE_COMMAND} -E env 

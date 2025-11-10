@@ -130,14 +130,12 @@ class ReportItem {
 
 // Ship report item - holds non-owning pointer from peek_ship
 class ShipReportItem : public ReportItem {
-  shipnum_t n_;
   const Ship* ship_;
 
  public:
-  ShipReportItem(shipnum_t n, const Ship* ship)
-      : ReportItem(ship->xpos, ship->ypos), n_(n), ship_(ship) {}
+  ShipReportItem(const Ship* ship)
+      : ReportItem(ship->xpos, ship->ypos), ship_(ship) {}
 
-  shipnum_t shipno() const { return n_; }
   const Ship& ship() const { return *ship_; }
 
   void report_stock(GameObj& g, RstContext& ctx) const override;
@@ -249,7 +247,7 @@ bool listed(ShipType type, const std::string& string) {
 bool get_report_ship(GameObj& g, RstContext& ctx, shipnum_t shipno) {
   const auto* ship = g.entity_manager.peek_ship(shipno);
   if (ship) {
-    ctx.rd.push_back(std::make_unique<ShipReportItem>(shipno, ship));
+    ctx.rd.push_back(std::make_unique<ShipReportItem>(ship));
     return true;
   }
   g.out << std::format("get_report_ship: error on ship get ({}).\n", shipno);
@@ -330,7 +328,7 @@ void ShipReportItem::report_stock(GameObj& g, RstContext& ctx) const {
 
   // Add data row
   table.add_row(
-      {std::format("{}", n_),
+      {std::format("{}", s.number),
        std::format("{}{} {}", Shipltrs[s.type], s.crystals ? 'x' : ' ',
                    s.active ? s.name : "INACTIVE"),
        std::format("{}", s.crystals),
@@ -390,10 +388,9 @@ void ShipReportItem::report_status(GameObj& g, RstContext& ctx) const {
 
   // Add data row
   table.add_row(
-      {std::format("{}", n_), std::format("{}", Shipltrs[s.type]),
-       std::format("{}", s.active ? s.name : "INACTIVE"),
-       s.laser ? "yes" : "", s.cew ? "yes" : "",
-       s.hyper_drive.has ? "yes" : "",
+      {std::format("{}", s.number), std::format("{}", Shipltrs[s.type]),
+       std::format("{}", s.active ? s.name : "INACTIVE"), s.laser ? "yes" : "",
+       s.cew ? "yes" : "", s.hyper_drive.has ? "yes" : "",
        std::format("{}{}/{}{}", s.primary, caliber_char(s.primtype),
                    s.secondary, caliber_char(s.sectype)),
        std::format("{}", armor(s)), std::format("{:.0f}", s.tech),
@@ -455,9 +452,8 @@ void ShipReportItem::report_weapons(GameObj& g, RstContext& ctx) const {
 
   // Add data row
   table.add_row(
-      {std::format("{}", n_), std::format("{}", Shipltrs[s.type]),
-       std::format("{}", s.active ? s.name : "INACTIVE"),
-       s.laser ? "yes" : "",
+      {std::format("{}", s.number), std::format("{}", Shipltrs[s.type]),
+       std::format("{}", s.active ? s.name : "INACTIVE"), s.laser ? "yes" : "",
        std::format("{}/{}", s.cew, s.cew_range),
        std::format("{}", (int)((1.0 - .01 * s.damage) * s.tech / 4.0)),
        std::format("{}{}/{}{}", s.primary, caliber_char(s.primtype),
@@ -511,9 +507,9 @@ void ShipReportItem::report_factories(GameObj& g, RstContext& ctx) const {
 
   // Handle special case for no ship type specified
   if ((s.build_type == 0) || (s.build_type == ShipType::OTYPE_FACTORY)) {
-    table.add_row(
-        {std::format("{}", n_), "", "", "", "", "", "", "", "", "", "", "", "",
-         "(No ship type specified yet)", "", "", "", "75% (OFF)"});
+    table.add_row({std::format("{}", s.number), "", "", "", "", "", "", "", "",
+                   "", "", "", "", "(No ship type specified yet)", "", "", "",
+                   "75% (OFF)"});
     g.out << table << "\n";
     return;
   }
@@ -547,14 +543,13 @@ void ShipReportItem::report_factories(GameObj& g, RstContext& ctx) const {
 
   // Add data row
   table.add_row(
-      {std::format("{}", n_), std::format("{}", Shipltrs[s.build_type]),
+      {std::format("{}", s.number), std::format("{}", Shipltrs[s.build_type]),
        std::format("{}", s.build_cost), std::format("{:.1f}", s.complexity),
        std::format("{:.1f}", s.base_mass), std::format("{}", ship_size(s)),
        std::format("{}", s.armor), std::format("{}", s.max_crew),
        std::format("{}", s.max_fuel), std::format("{}", s.max_resource),
        std::format("{}", s.max_hanger), std::format("{}", s.max_destruct),
-       speed_indicator,
-       std::format("{}/{}", prim_guns, sec_guns),
+       speed_indicator, std::format("{}/{}", prim_guns, sec_guns),
        s.laser ? "yes" : " no", cew_str, range_str, damage_status});
 
   g.out << table << "\n";
@@ -626,12 +621,12 @@ void ShipReportItem::report_general(GameObj& g, RstContext& ctx) const {
   speed_indicator += std::format("{}", s.speed);
 
   // Add data row
-  table.add_row(
-      {std::format("{}", Shipltrs[s.type]), std::format("{}", n_), name_str,
-       std::format("{}", s.governor), std::format("{}", s.damage),
-       std::format("{}", s.popn), std::format("{}", s.troops),
-       std::format("{}", s.destruct), std::format("{:.0f}", s.fuel),
-       speed_indicator, dispshiploc_brief(s), locstrn});
+  table.add_row({std::format("{}", Shipltrs[s.type]),
+                 std::format("{}", s.number), name_str,
+                 std::format("{}", s.governor), std::format("{}", s.damage),
+                 std::format("{}", s.popn), std::format("{}", s.troops),
+                 std::format("{}", s.destruct), std::format("{:.0f}", s.fuel),
+                 speed_indicator, dispshiploc_brief(s), locstrn});
 
   g.out << table << "\n";
 }
@@ -697,8 +692,8 @@ void ShipReportItem::add_tactical_header_row(
   }
 
   table.add_row(
-      {std::format("{}", n_), std::format("{}", Shipltrs[s.type]), name_str,
-       std::format("{:.0f}", s.tech),
+      {std::format("{}", s.number), std::format("{}", Shipltrs[s.type]),
+       name_str, std::format("{:.0f}", s.tech),
        std::format("{}{}/{}{}", s.primary, caliber_char(s.primtype),
                    s.secondary, caliber_char(s.sectype)),
        std::format("{}", s.armor), std::format("{}", s.size),
@@ -787,7 +782,7 @@ void ShipReportItem::add_tactical_target_row(
   std::string status_suffix = s.active ? "" : " INACTIVE";
 
   // Add row to table
-  table.add_row({std::format("{}", n_),
+  table.add_row({std::format("{}", s.number),
                  std::format("{}{},{}", war_status, s.owner, s.governor),
                  std::format("{}", Shipltrs[s.type]),
                  std::format("{:.14}", s.name), std::format("{:.0f}", dist),

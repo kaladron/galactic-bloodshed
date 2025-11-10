@@ -702,9 +702,6 @@ void ShipReportItem::add_tactical_header_row(
 void ShipReportItem::add_tactical_target_row(
     tabulate::Table& table, GameObj& g, RstContext& ctx, const Race& race,
     double dist, const FiringShipParams& firer) const {
-  const player_t player_num = g.player;
-  const governor_t governor = g.governor;
-
   const auto& s = *ship_;
 
   // Filter ships based on player filter or ship type list
@@ -723,7 +720,7 @@ void ShipReportItem::add_tactical_target_row(
   }
 
   // Don't show ships we own and are authorized for
-  if (s.owner == player_num && authorized(governor, s)) {
+  if (s.owner == g.player && authorized(g.governor, s)) {
     return;
   }
 
@@ -848,8 +845,7 @@ void ShipReportItem::report_tactical(GameObj& g, RstContext& ctx,
                                      const TacticalParams& params) const {
   if (!ctx.flags.tactical) return;
 
-  const player_t player_num = g.player;
-  const auto* race = g.entity_manager.peek_race(player_num);
+  const auto* race = g.entity_manager.peek_race(g.player);
   if (!race) return;
 
   const auto& s = *ship_;
@@ -893,7 +889,7 @@ void ShipReportItem::report_tactical(GameObj& g, RstContext& ctx,
   header_table[0].format().font_style({tabulate::FontStyle::bold});
 
   // Add data row polymorphically
-  add_tactical_header_row(header_table, g, player_num, params);
+  add_tactical_header_row(header_table, g, g.player, params);
 
   g.out << "\n" << header_table << "\n";
 
@@ -962,8 +958,7 @@ void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
                                        const TacticalParams& params) const {
   if (!ctx.flags.tactical) return;
 
-  const player_t player_num = g.player;
-  const auto* race = g.entity_manager.peek_race(player_num);
+  const auto* race = g.entity_manager.peek_race(g.player);
   if (!race) return;
 
   // Create header summary table
@@ -1002,7 +997,7 @@ void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
   header_table[0].format().font_style({tabulate::FontStyle::bold});
 
   // Add data row polymorphically
-  add_tactical_header_row(header_table, g, player_num, params);
+  add_tactical_header_row(header_table, g, g.player, params);
 
   g.out << "\n" << header_table << "\n";
 
@@ -1074,18 +1069,15 @@ void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
 
 void ship_report(GameObj& g, RstContext& ctx, const ReportItem& item,
                  const ReportSet& rep_on) {
-  player_t player_num = g.player;
-  governor_t governor = g.governor;
-
   // Get race from EntityManager
-  const auto* race = g.entity_manager.peek_race(player_num);
+  const auto* race = g.entity_manager.peek_race(g.player);
   if (!race) {
     g.out << "Race not found.\n";
     return;
   }
 
   // Check if this item should be reported
-  if (!item.should_report(player_num, governor, rep_on)) {
+  if (!item.should_report(g.player, g.governor, rep_on)) {
     return;
   }
 
@@ -1108,8 +1100,6 @@ void ship_report(GameObj& g, RstContext& ctx, const ReportItem& item,
 
 namespace GB::commands {
 void rst(const command_t& argv, GameObj& g) {
-  const player_t player_num = g.player;
-
   ReportSet report_types;
 
   RstContext ctx;
@@ -1153,7 +1143,7 @@ void rst(const command_t& argv, GameObj& g) {
         get_report_ship(g, ctx, shipno);
         // Check if ship is in a star system and load those ships too
         if (auto star_opt = ctx.rd.back()->get_star_orbit()) {
-          star_get_report_ships(g, ctx, player_num, *star_opt);
+          star_get_report_ships(g, ctx, g.player, *star_opt);
           ship_report(g, ctx, *ctx.rd.back(), report_types);
         } else {
           ship_report(g, ctx, *ctx.rd.back(), report_types);
@@ -1188,7 +1178,7 @@ void rst(const command_t& argv, GameObj& g) {
         }
 
         for (starnum_t i = 0; i < Sdata.numstars; i++)
-          star_get_report_ships(g, ctx, player_num, i);
+          star_get_report_ships(g, ctx, g.player, i);
         for (const auto& item : ctx.rd)
           ship_report(g, ctx, *item, report_types);
       } else {
@@ -1197,11 +1187,11 @@ void rst(const command_t& argv, GameObj& g) {
       }
       break;
     case ScopeLevel::LEVEL_PLAN:
-      plan_get_report_ships(g, ctx, player_num, g.snum, g.pnum);
+      plan_get_report_ships(g, ctx, g.player, g.snum, g.pnum);
       for (const auto& item : ctx.rd) ship_report(g, ctx, *item, report_types);
       break;
     case ScopeLevel::LEVEL_STAR:
-      star_get_report_ships(g, ctx, player_num, g.snum);
+      star_get_report_ships(g, ctx, g.player, g.snum);
       for (const auto& item : ctx.rd) ship_report(g, ctx, *item, report_types);
       break;
     case ScopeLevel::LEVEL_SHIP:

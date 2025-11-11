@@ -118,6 +118,23 @@ static void process_abms_and_missiles(TurnState& state, int update);
 static void update_victory_scores(TurnState& state, int update);
 static void finalize_turn(TurnState& state, int update);
 
+/**
+ * Process one game turn - either a movement segment or a full update.
+ *
+ * The game operates on a cycle of multiple movement segments followed by
+ * a full update:
+ * - Movement segments (update=0): Ships move, repairs occur, missiles/ABMs
+ *   process, but planets don't produce and races don't gain tech/APs
+ * - Full updates (update=1): Everything from movement segments PLUS planet
+ *   production, tech advances, AP calculations, discoveries, victory checks
+ *
+ * Typically 2-6 movement segments occur between each full update. This allows
+ * ship movement and combat to happen more frequently than economic/tech growth.
+ *
+ * @param entity_manager Database entity manager for persistent storage
+ * @param update 1 for full update with production/tech, 0 for movement only
+ *               TODO: Should be bool for type safety
+ */
 void do_turn(EntityManager& entity_manager, int update) {
   TurnState state;  // Create turn-local state
   
@@ -230,6 +247,20 @@ static void process_races(int update) {
   output_ground_attacks();
 }
 
+/**
+ * Process commodity market transactions.
+ *
+ * Only runs during full updates (update=1), not movement segments.
+ * For each commodity on the market:
+ * - Delivers commodities that weren't yet delivered
+ * - Processes bids: transfers money and goods if bidder can afford it
+ * - Charges shipping costs based on distance
+ * - Sends telegrams to buyers and sellers
+ * - Removes sold/expired commodities
+ *
+ * @param entity_manager Database entity manager for commodity storage
+ * @param update 1 to process market, 0 to skip (movement segment only)
+ */
 static void process_market(EntityManager& entity_manager, int update) {
   if (MARKET && update) {
     /* reset market */

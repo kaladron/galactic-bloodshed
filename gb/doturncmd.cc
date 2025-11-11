@@ -7,6 +7,7 @@ module;
 import gblib;
 import std.compat;
 
+#include <cassert>
 #include <strings.h>
 
 #include "gb/GB_server.h"
@@ -60,13 +61,29 @@ struct TurnState {
     // Note: Blocks is not reset here; it accumulates across the turn
   }
   
-  // Bounds-checked accessors (optional, for future hardening)
+  // Bounds-checked accessor for ship vector
+  Ship* get_ship(shipnum_t shipno) noexcept {
+    assert(shipno >= 0 && "Ship index must be non-negative");
+    assert(shipno < ships.size() && "Ship index out of bounds");
+    return ships[shipno].get();
+  }
+  
+  const Ship* get_ship(shipnum_t shipno) const noexcept {
+    assert(shipno >= 0 && "Ship index must be non-negative");
+    assert(shipno < ships.size() && "Ship index out of bounds");
+    return ships[shipno].get();
+  }
+  
+  // Bounds-checked accessors for star population data
   unsigned long& star_popn(starnum_t star, player_t player) noexcept {
-    // TODO: Add asserts in debug builds
+    assert(star >= 0 && star < NUMSTARS && "Star index out of bounds");
+    assert(player >= 1 && player <= MAXPLAYERS && "Player index out of bounds");
     return starpopns[star][player - 1];
   }
   
   const unsigned long& star_popn(starnum_t star, player_t player) const noexcept {
+    assert(star >= 0 && star < NUMSTARS && "Star index out of bounds");
+    assert(player >= 1 && player <= MAXPLAYERS && "Player index out of bounds");
     return starpopns[star][player - 1];
   }
 };

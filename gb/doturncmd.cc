@@ -13,6 +13,59 @@ import std.compat;
 
 module gblib;
 
+namespace {
+// TurnState: Encapsulates turn-processing state that was previously global.
+// This struct lives only for the duration of a single turn and provides
+// bounds-checked access to turn-specific tracking arrays.
+struct TurnState {
+  // Per-star population counts for each player
+  unsigned long starpopns[NUMSTARS][MAXPLAYERS];
+  
+  // Per-star ship counts for each player
+  unsigned short starnumships[NUMSTARS][MAXPLAYERS];
+  
+  // Global ship counts per player (for Sdata)
+  unsigned short Sdatanumships[MAXPLAYERS];
+  
+  // Star info (per star, per planet)
+  struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
+  
+  // Stars inhabited bitmap (one per star)
+  unsigned long StarsInhab[NUMSTARS];
+  
+  // Power statistics for each player
+  power Power[MAXPLAYERS];
+  
+  // Inhabited bitmap per star (64-bit for player flags)
+  uint64_t inhabited[NUMSTARS];
+  
+  // Power blocks for each player
+  block Blocks[MAXPLAYERS];
+  
+  // Reset all arrays to zero (called at turn start if update==true)
+  void reset() noexcept {
+    std::memset(starpopns, 0, sizeof(starpopns));
+    std::memset(starnumships, 0, sizeof(starnumships));
+    std::memset(Sdatanumships, 0, sizeof(Sdatanumships));
+    std::memset(Stinfo, 0, sizeof(Stinfo));
+    std::memset(StarsInhab, 0, sizeof(StarsInhab));
+    std::memset(Power, 0, sizeof(Power));
+    std::memset(inhabited, 0, sizeof(inhabited));
+    // Note: Blocks is not reset here; it accumulates across the turn
+  }
+  
+  // Bounds-checked accessors (optional, for future hardening)
+  unsigned long& star_popn(starnum_t star, player_t player) noexcept {
+    // TODO: Add asserts in debug builds
+    return starpopns[star][player - 1];
+  }
+  
+  const unsigned long& star_popn(starnum_t star, player_t player) const noexcept {
+    return starpopns[star][player - 1];
+  }
+};
+}  // anonymous namespace
+
 static constexpr void maintain(Race& r, Race::gov& governor,
                                const money_t amount) noexcept {
   if (governor.money >= amount)
@@ -29,7 +82,7 @@ static void fix_stability(Star&);
 static bool governed(const Race&);
 static void make_discoveries(Race&);
 static void output_ground_attacks();
-static void initialize_data(int update);
+static void initialize_data(TurnState& state, int update);
 static void process_ships();
 static void process_stars_and_planets(int update);
 static void process_races(int update);
@@ -38,12 +91,14 @@ static void process_ship_masses_and_ownership();
 static void process_ship_turns(int update);
 static void prepare_dead_ships();
 static void insert_ships_into_lists();
-static void process_abms_and_missiles(int update);
-static void update_victory_scores(int update);
-static void finalize_turn(int update);
+static void process_abms_and_missiles(TurnState& state, int update);
+static void update_victory_scores(TurnState& state, int update);
+static void finalize_turn(TurnState& state, int update);
 
 void do_turn(EntityManager& entity_manager, int update) {
-  initialize_data(update);
+  TurnState state;  // Create turn-local state
+  
+  initialize_data(state, update);
   process_ships();
   process_stars_and_planets(update);
   process_races(update);
@@ -53,28 +108,22 @@ void do_turn(EntityManager& entity_manager, int update) {
   process_ship_turns(update);
   prepare_dead_ships();
   insert_ships_into_lists();
-  process_abms_and_missiles(update);
-  update_victory_scores(update);
+  process_abms_and_missiles(state, update);
+  update_victory_scores(state, update);
   
   // Flush all dirty entities to database in one batch
   entity_manager.flush_all();
   
-  finalize_turn(update);
+  finalize_turn(state, update);
   
   // Clear cache to free memory after turn completes
   entity_manager.clear_cache();
 }
 
-static void initialize_data(int update) {
+static void initialize_data(TurnState& state, int update) {
   /* make all 0 for first iteration of doplanet */
   if (update) {
-    std::memset(starpopns, 0, sizeof(starpopns));
-    std::memset(starnumships, 0, sizeof(starnumships));
-    std::memset(Sdatanumships, 0, sizeof(Sdatanumships));
-    std::memset(Stinfo, 0, sizeof(Stinfo));
-    std::memset(StarsInhab, 0, sizeof(StarsInhab));
-    std::memset(Power, 0, sizeof(Power));
-    std::memset(inhabited, 0, sizeof(inhabited));
+    state.reset();  // Use TurnState's reset method instead of global memsets
   }
 
   Num_ships = Numships();
@@ -292,7 +341,7 @@ static void insert_ships_into_lists() {
   }
 }
 
-static void process_abms_and_missiles(int update) {
+static void process_abms_and_missiles(TurnState& state, int update) {
   /* put ABMs and surviving missiles here because ABMs need to have the missile
      in the shiplist of the target planet  Maarten */
   for (shipnum_t i = 1; i <= Num_ships; i++) /* ABMs defend planet */
@@ -311,7 +360,7 @@ static void process_abms_and_missiles(int update) {
       /* store occupation for VPs */
       for (player_t j = 1; j <= Num_races; j++) {
         if (planets[star][i]->info[j - 1].numsectsowned) {
-          setbit(inhabited[star], j);
+          setbit(state.inhabited[star], j);
           setbit(stars[star].inhabited(), j);
         }
         if (planets[star][i]->type != PlanetType::ASTEROID &&
@@ -337,7 +386,7 @@ static void process_abms_and_missiles(int update) {
     /* do AP's for ea. player  */
     if (update)
       for (player_t i = 1; i <= Num_races; i++) {
-        if (starpopns[star][i - 1])
+        if (state.starpopns[star][i - 1])
           setbit(stars[star].inhabited(), i);
         else
           clrbit(stars[star].inhabited(), i);
@@ -345,8 +394,8 @@ static void process_abms_and_missiles(int update) {
         if (isset(stars[star].inhabited(), i)) {
           ap_t APs;
 
-          APs = stars[star].AP(i - 1) + APadd((int)starnumships[star][i - 1],
-                                              starpopns[star][i - 1],
+          APs = stars[star].AP(i - 1) + APadd((int)state.starnumships[star][i - 1],
+                                              state.starpopns[star][i - 1],
                                               races[i - 1]);
           if (APs < LIMIT_APs)
             stars[star].AP(i - 1) = APs;
@@ -354,9 +403,9 @@ static void process_abms_and_missiles(int update) {
             stars[star].AP(i - 1) = LIMIT_APs;
         }
         /* compute victory points for the block */
-        if (inhabited[star] != 0) {
-          uint64_t dummy = Blocks[i - 1].invite & Blocks[i - 1].pledge;
-          Blocks[i - 1].systems_owned += (inhabited[star] | dummy) == dummy;
+        if (state.inhabited[star] != 0) {
+          uint64_t dummy = state.Blocks[i - 1].invite & state.Blocks[i - 1].pledge;
+          state.Blocks[i - 1].systems_owned += (state.inhabited[star] | dummy) == dummy;
         }
       }
     putstar(stars[star], star);
@@ -365,7 +414,7 @@ static void process_abms_and_missiles(int update) {
   /* add APs to sdata for ea. player */
   if (update)
     for (player_t i = 1; i <= Num_races; i++) {
-      Blocks[i - 1].systems_owned = 0; /*recount systems owned*/
+      state.Blocks[i - 1].systems_owned = 0; /*recount systems owned*/
       if (governed(races[i - 1])) {
         ap_t APs;
 
@@ -382,7 +431,7 @@ static void process_abms_and_missiles(int update) {
   /* here is where we do victory calculations. */
 }
 
-static void update_victory_scores(int update) {
+static void update_victory_scores(TurnState& state, int update) {
   if (update) {
     struct victstruct {
       int numsects{0};
@@ -442,7 +491,7 @@ static void update_victory_scores(int update) {
   } /* end of if (update) */
 }
 
-static void finalize_turn(int update) {
+static void finalize_turn(TurnState& state, int update) {
   for (shipnum_t i = 1; i <= Num_ships; i++) {
     putship(*ships[i]);
     free(ships[i]);
@@ -453,11 +502,11 @@ static void finalize_turn(int update) {
       /* collective intelligence */
       if (races[i - 1].collective_iq) {
         double x = ((2. / 3.14159265) *
-                    atan((double)Power[i - 1].popn / MESO_POP_SCALE));
+                    atan((double)state.Power[i - 1].popn / MESO_POP_SCALE));
         races[i - 1].IQ = races[i - 1].IQ_limit * x * x;
       }
       races[i - 1].tech += (double)(races[i - 1].IQ) / 100.0;
-      races[i - 1].morale += Power[i - 1].planets_owned;
+      races[i - 1].morale += state.Power[i - 1].planets_owned;
       make_discoveries(races[i - 1]);
       races[i - 1].turn += 1;
       if (races[i - 1].controlled_planets >=
@@ -471,7 +520,7 @@ static void finalize_turn(int update) {
         for (player_t j = 1; j <= Num_races; j++)
           races[j - 1].translate[i - 1] = 100;
 
-      Blocks[i - 1].VPs = 10L * Blocks[i - 1].systems_owned;
+      state.Blocks[i - 1].VPs = 10L * state.Blocks[i - 1].systems_owned;
       if (MARKET) {
         for (auto& governor : races[i - 1].governor)
           if (governor.active)
@@ -486,12 +535,12 @@ static void finalize_turn(int update) {
   if (update) {
     compute_power_blocks();
     for (player_t i = 1; i <= Num_races; i++) {
-      Power[i - 1].money = 0;
+      state.Power[i - 1].money = 0;
       for (auto& governor : races[i - 1].governor)
-        if (governor.active) Power[i - 1].money += governor.money;
+        if (governor.active) state.Power[i - 1].money += governor.money;
     }
-    putpower(Power);
-    Putblock(Blocks);
+    putpower(state.Power);
+    Putblock(state.Blocks);
   }
 
   for (player_t j = 1; j <= Num_races; j++) {

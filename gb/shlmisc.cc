@@ -196,19 +196,22 @@ void deductAPs(const GameObj& g, ap_t APs, ScopeLevel level) {
 void deductAPs(const GameObj& g, ap_t APs, starnum_t snum) {
   if (APs == 0) return;
 
-  stars[snum] = getstar(snum);
+  // Get star for modification (RAII auto-saves on scope exit)
+  auto star_handle = g.entity_manager.get_star(snum);
+  if (!star_handle.get()) {
+    return;
+  }
 
-  if (stars[snum].AP(g.player - 1) >= APs)
-    stars[snum].AP(g.player - 1) -= APs;
+  auto& star = *star_handle;
+  if (star.AP[g.player - 1] >= APs)
+    star.AP[g.player - 1] -= APs;
   else {
-    stars[snum].AP(g.player - 1) = 0;
+    star.AP[g.player - 1] = 0;
     std::string cheater_msg =
         "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
         "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n";
     notify(g.player, g.governor, cheater_msg);
   }
-
-  putstar(stars[snum], snum);
 }
 
 void get4args(const char* s, int* xl, int* xh, int* yl, int* yh) {

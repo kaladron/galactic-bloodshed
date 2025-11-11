@@ -9,21 +9,28 @@ module commands;
 
 namespace GB::commands {
 void motto(const command_t &argv, GameObj &g) {
-  // TODO(jeffbailey): ap_t APcount = 0;
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  if (g.governor) {
+    g.out << "You are not authorized to do this.\n";
+    return;
+  }
 
+  // Concatenate all arguments after command name into motto string
   std::stringstream ss_message;
   std::copy(++argv.begin(), argv.end(),
             std::ostream_iterator<std::string>(ss_message, " "));
   std::string message = ss_message.str();
 
-  if (Governor) {
-    g.out << "You are not authorized to do this.\n";
+  // Get block for modification (RAII auto-saves on scope exit)
+  auto block_handle = g.entity_manager.get_block(g.player);
+  if (!block_handle.get()) {
+    g.out << "Block not found.\n";
     return;
   }
-  strncpy(Blocks[Playernum - 1].motto, message.c_str(), MOTTOSIZE - 1);
-  Putblock(Blocks);
+
+  auto &block = *block_handle;
+  std::strncpy(block.motto, message.c_str(), MOTTOSIZE - 1);
+  block.motto[MOTTOSIZE - 1] = '\0';  // Ensure null termination
+
   g.out << "Done.\n";
 }
 }  // namespace GB::commands

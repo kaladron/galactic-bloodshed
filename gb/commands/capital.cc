@@ -13,19 +13,23 @@ module commands;
 
 namespace GB::commands {
 void capital(const command_t &argv, GameObj &g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
-  ap_t APcount = 50;
+  const ap_t kAPCost = 50;
 
-  auto &race = races[Playernum - 1];
-  if (Governor) {
+  // Get race for read-only access initially
+  const auto* race = g.entity_manager.peek_race(g.player);
+  if (!race) {
+    g.out << "Race not found.\n";
+    return;
+  }
+
+  if (g.governor) {
     g.out << "Only the leader may designate the capital.\n";
     return;
   }
 
-  shipnum_t shipno;
+  shipnum_t shipno = 0;
   if (argv.size() != 2)
-    shipno = race.Gov_ship;
+    shipno = race->Gov_ship;
   else {
     auto shiptmp = string_to_shipnum(argv[1]);
     if (!shiptmp) {
@@ -35,14 +39,14 @@ void capital(const command_t &argv, GameObj &g) {
     shipno = *shiptmp;
   }
 
-  auto s = getship(shipno);
+  const auto* s = g.entity_manager.peek_ship(shipno);
   if (!s) {
     g.out << "Change the capital to be what ship?\n";
     return;
   }
 
   if (argv.size() == 2) {
-    shipnum_t snum = s->storbits;
+    starnum_t snum = s->storbits;
     if (testship(*s, g)) {
       g.out << "You can't do that!\n";
       return;
@@ -51,7 +55,14 @@ void capital(const command_t &argv, GameObj &g) {
       g.out << "Try landing this ship first!\n";
       return;
     }
-    if (!enufAP(Playernum, Governor, stars[snum].AP(Playernum - 1), APcount)) {
+
+    const auto* star = g.entity_manager.peek_star(snum);
+    if (!star) {
+      g.out << "Star not found.\n";
+      return;
+    }
+
+    if (!enufAP(g.player, g.governor, star->AP[g.player - 1], kAPCost)) {
       return;
     }
     if (s->type != ShipType::OTYPE_GOV) {
@@ -59,9 +70,16 @@ void capital(const command_t &argv, GameObj &g) {
                            Shipnames[ShipType::OTYPE_GOV]);
       return;
     }
-    deductAPs(g, APcount, snum);
-    race.Gov_ship = shipno;
-    putrace(race);
+    deductAPs(g, kAPCost, snum);
+
+    // Get race for modification (RAII auto-saves on scope exit)
+    auto race_handle = g.entity_manager.get_race(g.player);
+    if (!race_handle.get()) {
+      g.out << "Race not found.\n";
+      return;
+    }
+    auto& race_mut = *race_handle;
+    race_mut.Gov_ship = shipno;
   }
 
   g.out << std::format(

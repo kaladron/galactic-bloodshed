@@ -14,17 +14,21 @@ module commands;
 
 namespace GB::commands {
 void highlight(const command_t &argv, GameObj &g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
-  // TODO(jeffbailey): ap_t APcount = 0;
-  player_t n;
+  player_t n = 0;
 
   if (!(n = get_player(argv[1]))) {
     g.out << "No such player.\n";
     return;
   }
-  auto &race = races[Playernum - 1];
-  race.governor[Governor].toggle.highlight = n;
-  putrace(race);
+
+  // Get race for modification (RAII auto-saves on scope exit)
+  auto race_handle = g.entity_manager.get_race(g.player);
+  if (!race_handle.get()) {
+    g.out << "Race not found.\n";
+    return;
+  }
+
+  auto& race = *race_handle;
+  race.governor[g.governor].toggle.highlight = n;
 }
 }  // namespace GB::commands

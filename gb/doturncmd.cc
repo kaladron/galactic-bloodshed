@@ -108,7 +108,7 @@ static void output_ground_attacks();
 static void initialize_data(TurnState& state, int update);
 static void process_ships(TurnState& state);
 static void process_stars_and_planets(int update);
-static void process_races(int update);
+static void process_races(EntityManager& entity_manager, int update);
 static void process_market(EntityManager&, int update);
 static void process_ship_masses_and_ownership(TurnState& state);
 static void process_ship_turns(TurnState& state, int update);
@@ -141,7 +141,7 @@ void do_turn(EntityManager& entity_manager, int update) {
   initialize_data(state, update);
   process_ships(state);
   process_stars_and_planets(update);
-  process_races(update);
+  process_races(entity_manager, update);
   output_ground_attacks();
   process_market(entity_manager, update);
   process_ship_masses_and_ownership(state);
@@ -213,16 +213,23 @@ static void process_stars_and_planets(int update) {
   }
 }
 
-static void process_races(int update) {
+static void process_races(EntityManager& entity_manager, int update) {
   VN_brain.Most_mad = 0; /* not mad at anyone for starts */
 
   for (player_t i = 1; i <= Num_races; i++) {
+    // Load race using EntityManager - RAII handle auto-saves on scope exit
+    auto race_handle = entity_manager.get_race(i);
+    if (!race_handle.get()) {
+      // Skip if race not found (shouldn't happen in normal operation)
+      continue;
+    }
+
     /* increase tech; change to something else */
     if (update) {
       /* Reset controlled planet count */
-      races[i - 1].controlled_planets = 0;
-      races[i - 1].planet_points = 0;
-      for (auto& governor : races[i - 1].governor)
+      race_handle->controlled_planets = 0;
+      race_handle->planet_points = 0;
+      for (auto& governor : race_handle->governor)
         if (governor.active) {
           governor.maintain = 0;
           governor.cost_market = 0;
@@ -240,8 +247,9 @@ static void process_races(int update) {
     if (VOTING) {
       /* Reset their vote for Update go. */
       // TODO(jeffbailey): This doesn't seem to work.
-      races[i - 1].votes = false;
+      race_handle->votes = false;
     }
+    // Auto-save happens when race_handle goes out of scope
   }
 
   output_ground_attacks();

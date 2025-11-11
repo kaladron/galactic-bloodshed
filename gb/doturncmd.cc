@@ -45,6 +45,9 @@ struct TurnState {
   // Ship array - modern C++ vector with RAII management
   std::vector<std::unique_ptr<Ship>> ships;
 
+  // Total number of ships (cached from Numships() for turn processing)
+  shipnum_t num_ships{0};
+
   // Reset all arrays to zero (called at turn start if update==true)
   void reset() noexcept {
     std::memset(starpopns, 0, sizeof(starpopns));
@@ -129,17 +132,18 @@ static void initialize_data(TurnState& state, int update) {
     state.reset();  // Use TurnState's reset method instead of global memsets
   }
 
-  Num_ships = Numships();
+  state.num_ships = Numships();
+  Num_ships = state.num_ships;  // TODO: Remove global once fully migrated
 }
 
 static void process_ships(TurnState& state) {
   // TODO(jeffbailey): We loop through the ships twice here because that's what
   // the code did before.  It's probably not necessary.
 
-  // Allocate vector with Num_ships + 1 elements (0-index unused, 1-indexed)
-  state.ships.resize(Num_ships + 1);
+  // Allocate vector with num_ships + 1 elements (0-index unused, 1-indexed)
+  state.ships.resize(state.num_ships + 1);
 
-  for (shipnum_t i = 1; i <= Num_ships; i++) {
+  for (shipnum_t i = 1; i <= state.num_ships; i++) {
     auto ship_opt = getship(i);
     if (ship_opt) {
       state.ships[i] = std::make_unique<Ship>(*ship_opt);
@@ -147,7 +151,7 @@ static void process_ships(TurnState& state) {
     }
   }
 
-  for (shipnum_t i = 1; i <= Num_ships; i++) {
+  for (shipnum_t i = 1; i <= state.num_ships; i++) {
     auto ship_opt = getship(i);
     if (ship_opt) {
       state.ships[i] = std::make_unique<Ship>(*ship_opt);
@@ -273,7 +277,7 @@ static void process_market(EntityManager& entity_manager, int update) {
 
 static void process_ship_masses_and_ownership(TurnState& state) {
   /* check ship masses - ownership */
-  for (shipnum_t i = 1; i <= Num_ships; i++)
+  for (shipnum_t i = 1; i <= state.num_ships; i++)
     if (state.ships[i] && state.ships[i]->alive) {
       domass(*state.ships[i]);
       doown(*state.ships[i]);
@@ -283,7 +287,7 @@ static void process_ship_masses_and_ownership(TurnState& state) {
 static void process_ship_turns(TurnState& state, int update) {
   /* do all ships one turn - do slower ships first */
   for (int j = 0; j <= 9; j++)
-    for (shipnum_t i = 1; i <= Num_ships; i++) {
+    for (shipnum_t i = 1; i <= state.num_ships; i++) {
       if (state.ships[i] && state.ships[i]->alive &&
           state.ships[i]->speed == j) {
         doship(*state.ships[i], update);
@@ -296,7 +300,7 @@ static void process_ship_turns(TurnState& state, int update) {
   if (MARKET) {
     /* do maintenance costs */
     if (update)
-      for (shipnum_t i = 1; i <= Num_ships; i++)
+      for (shipnum_t i = 1; i <= state.num_ships; i++)
         if (state.ships[i] && state.ships[i]->alive &&
             Shipdata[state.ships[i]->type][ABIL_MAINTAIN]) {
           if (state.ships[i]->popn)
@@ -314,13 +318,13 @@ static void process_ship_turns(TurnState& state, int update) {
 static void prepare_dead_ships(TurnState& state) {
   /* prepare dead ships for recycling */
   clr_shipfree();
-  for (shipnum_t i = 1; i <= Num_ships; i++)
+  for (shipnum_t i = 1; i <= state.num_ships; i++)
     if (state.ships[i] && !state.ships[i]->alive) makeshipdead(i);
 }
 
 static void insert_ships_into_lists(TurnState& state) {
   /* erase next ship pointers - reset in insert_sh_... */
-  for (shipnum_t i = 1; i <= Num_ships; i++) {
+  for (shipnum_t i = 1; i <= state.num_ships; i++) {
     if (state.ships[i]) {
       state.ships[i]->nextship = 0;
       state.ships[i]->ships = 0;
@@ -336,7 +340,7 @@ static void insert_ships_into_lists(TurnState& state) {
   }
 
   /* insert ship into the list of wherever it might be */
-  for (shipnum_t i = Num_ships; i >= 1; i--) {
+  for (shipnum_t i = state.num_ships; i >= 1; i--) {
     if (state.ships[i] && state.ships[i]->alive) {
       switch (state.ships[i]->whatorbits) {
         case ScopeLevel::LEVEL_UNIV:
@@ -362,17 +366,17 @@ static void insert_ships_into_lists(TurnState& state) {
 static void process_abms_and_missiles(TurnState& state, int update) {
   /* put ABMs and surviving missiles here because ABMs need to have the missile
      in the shiplist of the target planet  Maarten */
-  for (shipnum_t i = 1; i <= Num_ships; i++) /* ABMs defend planet */
+  for (shipnum_t i = 1; i <= state.num_ships; i++) /* ABMs defend planet */
     if (state.ships[i] && (state.ships[i]->type == ShipType::OTYPE_ABM) &&
         state.ships[i]->alive)
       doabm(*state.ships[i]);
 
-  for (shipnum_t i = 1; i <= Num_ships; i++)
+  for (shipnum_t i = 1; i <= state.num_ships; i++)
     if (state.ships[i] && (state.ships[i]->type == ShipType::STYPE_MISSILE) &&
         state.ships[i]->alive && attack_planet(*state.ships[i]))
       domissile(*state.ships[i]);
 
-  for (shipnum_t i = Num_ships; i >= 1; i--)
+  for (shipnum_t i = state.num_ships; i >= 1; i--)
     if (state.ships[i]) putship(*state.ships[i]);
 
   for (starnum_t star = 0; star < Sdata.numstars; star++) {
@@ -486,7 +490,7 @@ static void update_victory_scores(TurnState& state, int update) {
       } /* end of planet searchings */
     } /* end of star searchings */
 
-    for (shipnum_t i = 1; i <= Num_ships; i++) {
+    for (shipnum_t i = 1; i <= state.num_ships; i++) {
       if (!state.ships[i] || !state.ships[i]->alive) continue;
       victory[state.ships[i]->owner - 1].shipcost += state.ships[i]->build_cost;
       victory[state.ships[i]->owner - 1].shiptech += state.ships[i]->tech;
@@ -513,7 +517,7 @@ static void update_victory_scores(TurnState& state, int update) {
 
 static void finalize_turn(TurnState& state, int update) {
   // Save all ships and automatically clean them up via unique_ptr
-  for (shipnum_t i = 1; i <= Num_ships; i++) {
+  for (shipnum_t i = 1; i <= state.num_ships; i++) {
     if (state.ships[i]) {
       putship(*state.ships[i]);
     }
@@ -603,7 +607,7 @@ static ap_t APadd(const int sh, const population_t popn, const Race& race,
  * @return True if the race is governed, false otherwise.
  */
 static bool governed(const Race& race, const TurnState& state) {
-  return (race.Gov_ship && race.Gov_ship <= Num_ships &&
+  return (race.Gov_ship && race.Gov_ship <= state.num_ships &&
           state.ships[race.Gov_ship] != nullptr &&
           state.ships[race.Gov_ship]->alive &&
           state.ships[race.Gov_ship]->docked &&

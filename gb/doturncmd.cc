@@ -106,7 +106,7 @@ static bool governed(const Race&, const TurnState&);
 static void make_discoveries(Race&);
 static void output_ground_attacks();
 static void initialize_data(TurnState& state, int update);
-static void process_ships(TurnState& state);
+static void process_ships(EntityManager& entity_manager, TurnState& state);
 static void process_stars_and_planets(int update);
 static void process_races(EntityManager& entity_manager, int update);
 static void process_market(EntityManager&, int update);
@@ -139,7 +139,7 @@ void do_turn(EntityManager& entity_manager, int update) {
   TurnState state;  // Create turn-local state
   
   initialize_data(state, update);
-  process_ships(state);
+  process_ships(entity_manager, state);
   process_stars_and_planets(update);
   process_races(entity_manager, update);
   output_ground_attacks();
@@ -170,26 +170,24 @@ static void initialize_data(TurnState& state, int update) {
   Num_ships = state.num_ships;  // TODO: Remove global once fully migrated
 }
 
-static void process_ships(TurnState& state) {
-  // TODO(jeffbailey): We loop through the ships twice here because that's what
-  // the code did before.  It's probably not necessary.
+static void process_ships(EntityManager& entity_manager, TurnState& state) {
+  // Load all ships using EntityManager for consistent single-source-of-truth
 
   // Allocate vector with num_ships + 1 elements (0-index unused, 1-indexed)
   state.ships.resize(state.num_ships + 1);
 
   for (shipnum_t i = 1; i <= state.num_ships; i++) {
-    auto ship_opt = getship(i);
-    if (ship_opt) {
-      state.ships[i] = std::make_unique<Ship>(*ship_opt);
-      domine(*state.ships[i], 0);
+    auto ship_handle = entity_manager.get_ship(i);
+    if (!ship_handle.get()) {
+      continue;  // Skip if ship not found
     }
-  }
 
-  for (shipnum_t i = 1; i <= state.num_ships; i++) {
-    auto ship_opt = getship(i);
-    if (ship_opt) {
-      state.ships[i] = std::make_unique<Ship>(*ship_opt);
-    }
+    // Copy ship into TurnState for turn processing
+    // The handle will auto-save modifications when it goes out of scope
+    state.ships[i] = std::make_unique<Ship>(*ship_handle);
+
+    // Process mine detonation logic
+    domine(*state.ships[i], 0);
   }
 }
 

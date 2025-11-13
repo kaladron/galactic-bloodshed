@@ -28,28 +28,43 @@ void invite(const command_t& argv, GameObj& g) {
     g.out << "Not needed, you are the leader.\n";
     return;
   }
-  auto& race = races[g.player - 1];
-  auto& alien = races[n - 1];
+
+  const auto* race = g.entity_manager.peek_race(g.player);
+  if (!race) {
+    g.out << "Race not found.\n";
+    return;
+  }
+  const auto* alien = g.entity_manager.peek_race(n);
+  if (!alien) {
+    g.out << "Target race not found.\n";
+    return;
+  }
+
+  auto block_handle = g.entity_manager.get_block(g.player);
+  if (!block_handle.get()) {
+    g.out << "Block not found.\n";
+    return;
+  }
+  auto& block = *block_handle;
+
   std::string buf;
   if (mode) {
-    setbit(Blocks[g.player - 1].invite, n);
-    buf = std::format("{} [{}] has invited you to join {}\n", race.name,
-                      g.player, Blocks[g.player - 1].name);
+    setbit(block.invite, n);
+    buf = std::format("{} [{}] has invited you to join {}\n", race->name,
+                      g.player, block.name);
     warn_race(n, buf);
-    buf = std::format("{} [{}] has been invited to join {} [{}]\n", alien.name,
-                      n, Blocks[g.player - 1].name, g.player);
+    buf = std::format("{} [{}] has been invited to join {} [{}]\n", alien->name,
+                      n, block.name, g.player);
     warn_race(g.player, buf);
   } else {
-    clrbit(Blocks[g.player - 1].invite, n);
-    buf = std::format("You have been blackballed from {} [{}]\n",
-                      Blocks[g.player - 1].name, g.player);
+    clrbit(block.invite, n);
+    buf = std::format("You have been blackballed from {} [{}]\n", block.name,
+                      g.player);
     warn_race(n, buf);
-    buf = std::format("{} [{}] has been blackballed from {} [{}]\n", alien.name,
-                      n, Blocks[g.player - 1].name, g.player);
+    buf = std::format("{} [{}] has been blackballed from {} [{}]\n",
+                      alien->name, n, block.name, g.player);
     warn_race(g.player, buf);
   }
   post(buf, NewsType::DECLARATION);
-
-  Putblock(Blocks);
 }
 }  // namespace GB::commands

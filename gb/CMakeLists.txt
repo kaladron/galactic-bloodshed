@@ -386,6 +386,10 @@ add_executable(capital_test commands/capital_test.cc)
 target_link_libraries(capital_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_capital_test COMMAND capital_test)
 
+add_executable(bless_test commands/bless_test.cc)
+target_link_libraries(bless_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_bless_test COMMAND bless_test)
+
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug
     COMMAND ${CMAKE_COMMAND} -E env 

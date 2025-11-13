@@ -30,34 +30,44 @@ void unpledge(const command_t& argv, GameObj& g) {
     g.out << "Not needed, you are the leader.\n";
     return;
   }
-  auto& race = races[Playernum - 1];
-  clrbit(Blocks[n - 1].pledge, Playernum);
-  std::string quit_notification =
-      std::format("{} [{}] has quit {} [{}].\n", race.name, Playernum,
-                  Blocks[n - 1].name, n);
+
+  const auto* race = g.entity_manager.peek_race(Playernum);
+  if (!race) {
+    g.out << "Race not found.\n";
+    return;
+  }
+
+  auto block_handle = g.entity_manager.get_block(n);
+  if (!block_handle.get()) {
+    g.out << "Block not found.\n";
+    return;
+  }
+  auto& block = *block_handle;
+
+  clrbit(block.pledge, Playernum);
+  std::string quit_notification = std::format(
+      "{} [{}] has quit {} [{}].\n", race->name, Playernum, block.name, n);
   warn_race(n, quit_notification);
   std::string player_notification =
-      std::format("You have quit {}\n", Blocks[n - 1].name);
+      std::format("You have quit {}\n", block.name);
   warn_race(Playernum, player_notification);
 
   switch (int_rand(1, 20)) {
     case 1: {
       std::string taunt_postmsg =
           std::format("{} [{}] calls {} [{}] a bunch of geeks and QUITS!\n",
-                      race.name, Playernum, Blocks[n - 1].name, n);
+                      race->name, Playernum, block.name, n);
       post(taunt_postmsg, NewsType::DECLARATION);
       break;
     }
     default: {
-      std::string quit_postmsg =
-          std::format("{} [{}] has QUIT {} [{}]!\n", race.name, Playernum,
-                      Blocks[n - 1].name, n);
+      std::string quit_postmsg = std::format(
+          "{} [{}] has QUIT {} [{}]!\n", race->name, Playernum, block.name, n);
       post(quit_postmsg, NewsType::DECLARATION);
       break;
     }
   }
 
   compute_power_blocks();
-  Putblock(Blocks);
 }
 }  // namespace GB::commands

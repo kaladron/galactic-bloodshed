@@ -24,7 +24,7 @@ void bless(const command_t& argv, GameObj& g) {
     return;
   }
   player_t who = std::stoi(argv[1]);
-  if (who < 1 || who > Num_races) {
+  if (who < 1 || who > g.entity_manager.num_races()) {
     g.out << "No such player number.\n";
     return;
   }
@@ -34,7 +34,12 @@ void bless(const command_t& argv, GameObj& g) {
   }
   amount = std::stoi(argv[3]);
 
-  auto& race = races[who - 1];
+  auto race_handle = g.entity_manager.get_race(who);
+  if (!race_handle.get()) {
+    g.out << "Race not found.\n";
+    return;
+  }
+  auto& race = *race_handle;
   /* race characteristics? */
   Mod = 1;
 
@@ -137,91 +142,120 @@ void bless(const command_t& argv, GameObj& g) {
          std::format("Deity set your plated preference to {}%\n", amount));
   } else
     Mod = 0;
-  if (Mod) putrace(race);
   if (Mod) return;
   /* ok, must be the planet then */
   commod = argv[2][0];
-  auto planet = getplanet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  if (!planet_handle.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+  auto& planet = *planet_handle;
   if (argv[2] == "explorebit") {
     planet.info[who - 1].explored = 1;
-    stars[g.snum] = getstar(g.snum);
-    setbit(stars[g.snum].explored(), who);
-    putstar(stars[g.snum], g.snum);
+    auto star_handle = g.entity_manager.get_star(g.snum);
+    if (!star_handle.get()) {
+      g.out << "Star not found.\n";
+      return;
+    }
+    auto& star = *star_handle;
+    setbit(star.explored, who);
     warn(who, 0,
-         std::format("Deity set your explored bit at /{}/{}.\n",
-                     stars[g.snum].get_name(),
-                     stars[g.snum].get_planet_name(g.pnum)));
+         std::format("Deity set your explored bit at /{}/{}.\n", star.name,
+                     star.pnames[g.pnum]));
   } else if (argv[2] == "noexplorebit") {
     planet.info[who - 1].explored = 0;
+    const auto* star_ptr = g.entity_manager.peek_star(g.snum);
+    if (!star_ptr) {
+      g.out << "Star not found.\n";
+      return;
+    }
     warn(who, 0,
          std::format("Deity reset your explored bit at /{}/{}.\n",
-                     stars[g.snum].get_name(),
-                     stars[g.snum].get_planet_name(g.pnum)));
+                     star_ptr->name, star_ptr->pnames[g.pnum]));
   } else if (argv[2] == "planetpopulation") {
     planet.info[who - 1].popn = std::stoi(argv[3]);
     planet.popn++;
+    const auto* star_ptr = g.entity_manager.peek_star(g.snum);
+    if (!star_ptr) {
+      g.out << "Star not found.\n";
+      return;
+    }
     warn(who, 0,
          std::format("Deity set your population variable to {} at /{}/{}.\n",
-                     planet.info[who - 1].popn, stars[g.snum].get_name(),
-                     stars[g.snum].get_planet_name(g.pnum)));
+                     planet.info[who - 1].popn, star_ptr->name,
+                     star_ptr->pnames[g.pnum]));
   } else if (argv[2] == "inhabited") {
-    stars[g.snum] = getstar(g.snum);
-    setbit(stars[g.snum].inhabited(), Playernum);
-    putstar(stars[g.snum], g.snum);
+    auto star_handle = g.entity_manager.get_star(g.snum);
+    if (!star_handle.get()) {
+      g.out << "Star not found.\n";
+      return;
+    }
+    auto& star = *star_handle;
+    setbit(star.inhabited, Playernum);
     warn(who, 0,
          std::format("Deity has set your inhabited bit for /{}/{}.\n",
-                     stars[g.snum].get_name(),
-                     stars[g.snum].get_planet_name(g.pnum)));
+                     star.name, star.pnames[g.pnum]));
   } else if (argv[2] == "numsectsowned") {
     planet.info[who - 1].numsectsowned = std::stoi(argv[3]);
+    const auto* star_ptr = g.entity_manager.peek_star(g.snum);
+    if (!star_ptr) {
+      g.out << "Star not found.\n";
+      return;
+    }
     warn(who, 0,
          std::format(
              "Deity set your \"numsectsowned\" variable at /{}/{} to {}.\n",
-             stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum),
+             star_ptr->name, star_ptr->pnames[g.pnum],
              planet.info[who - 1].numsectsowned));
   } else {
+    const auto* star_ptr = g.entity_manager.peek_star(g.snum);
+    if (!star_ptr) {
+      g.out << "Star not found.\n";
+      return;
+    }
     switch (commod) {
       case 'r':
         planet.info[who - 1].resource += amount;
         warn(who, 0,
              std::format("Deity gave you {} resources at {}/{}.\n", amount,
-                         stars[g.snum].get_name(),
-                         stars[g.snum].get_planet_name(g.pnum)));
+                         star_ptr->name, star_ptr->pnames[g.pnum]));
         break;
       case 'd':
         planet.info[who - 1].destruct += amount;
         warn(who, 0,
              std::format("Deity gave you {} destruct at {}/{}.\n", amount,
-                         stars[g.snum].get_name(),
-                         stars[g.snum].get_planet_name(g.pnum)));
+                         star_ptr->name, star_ptr->pnames[g.pnum]));
         break;
       case 'f':
         planet.info[who - 1].fuel += amount;
         warn(who, 0,
              std::format("Deity gave you {} fuel at {}/{}.\n", amount,
-                         stars[g.snum].get_name(),
-                         stars[g.snum].get_planet_name(g.pnum)));
+                         star_ptr->name, star_ptr->pnames[g.pnum]));
         break;
       case 'x':
         planet.info[who - 1].crystals += amount;
         warn(who, 0,
              std::format("Deity gave you {} crystals at {}/{}.\n", amount,
-                         stars[g.snum].get_name(),
-                         stars[g.snum].get_planet_name(g.pnum)));
+                         star_ptr->name, star_ptr->pnames[g.pnum]));
         break;
-      case 'a':
-        stars[g.snum] = getstar(g.snum);
-        stars[g.snum].AP(who - 1) += amount;
-        putstar(stars[g.snum], g.snum);
+      case 'a': {
+        auto star_handle = g.entity_manager.get_star(g.snum);
+        if (!star_handle.get()) {
+          g.out << "Star not found.\n";
+          return;
+        }
+        auto& star = *star_handle;
+        star.AP[who - 1] += amount;
         warn(who, 0,
              std::format("Deity gave you {} action points at {}.\n", amount,
-                         stars[g.snum].get_name()));
+                         star.name));
         break;
+      }
       default:
         g.out << "No such commodity.\n";
         return;
     }
   }
-  putplanet(planet, stars[g.snum], g.pnum);
 }
 }  // namespace GB::commands

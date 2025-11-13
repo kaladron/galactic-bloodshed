@@ -44,12 +44,19 @@ void toggle(const command_t &argv, GameObj &g) {
   governor_t Governor = g.governor;
   // TODO(jeffbailey): ap_t APcount = 0;
 
-  auto &race = races[Playernum - 1];
+  auto race_handle = g.entity_manager.get_race(Playernum);
+  if (!race_handle.get()) {
+    g.out << "Race not found.\n";
+    return;
+  }
 
   if (argv.size() != 1) {
+    const auto& race = race_handle.read();
     display_toggles(g, race.governor[Governor], race);
     return;
   }
+
+  auto& race = *race_handle;
 
   if (argv[1] == "inverse")
     tog(g, &race.governor[Governor].toggle.inverse, "inverse");
@@ -73,6 +80,5 @@ void toggle(const command_t &argv, GameObj &g) {
     g.out << std::format("No such option '{}'\n", argv[1]);
     return;
   }
-  putrace(race);
 }
 }  // namespace GB::commands

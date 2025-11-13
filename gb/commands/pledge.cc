@@ -32,29 +32,41 @@ void pledge(const command_t& argv, GameObj& g) {
     g.out << "Not needed, you are the leader.\n";
     return;
   }
-  auto& race = races[Playernum - 1];
-  setbit(Blocks[n - 1].pledge, Playernum);
-  warn_race(n, std::format("{} [{}] has pledged {}.\n", race.name, Playernum,
-                           Blocks[n - 1].name));
-  warn_race(Playernum, std::format("You have pledged allegiance to {}.\n",
-                                   Blocks[n - 1].name));
+
+  const auto* race = g.entity_manager.peek_race(Playernum);
+  if (!race) {
+    g.out << "Race not found.\n";
+    return;
+  }
+
+  auto block_handle = g.entity_manager.get_block(n);
+  if (!block_handle.get()) {
+    g.out << "Block not found.\n";
+    return;
+  }
+  auto& block = *block_handle;
+
+  setbit(block.pledge, Playernum);
+  warn_race(n, std::format("{} [{}] has pledged {}.\n", race->name, Playernum,
+                           block.name));
+  warn_race(Playernum,
+            std::format("You have pledged allegiance to {}.\n", block.name));
 
   std::string msg;
   switch (int_rand(1, 20)) {
     case 1:
       msg = std::format(
           "{} [{}] joins the band wagon and pledges allegiance to {} [{}]!\n",
-          race.name, Playernum, Blocks[n - 1].name, n);
+          race->name, Playernum, block.name, n);
       break;
     default:
-      msg = std::format("{} [{}] pledges allegiance to {} [{}].\n", race.name,
-                        Playernum, Blocks[n - 1].name, n);
+      msg = std::format("{} [{}] pledges allegiance to {} [{}].\n", race->name,
+                        Playernum, block.name, n);
       break;
   }
 
   post(msg, NewsType::DECLARATION);
 
   compute_power_blocks();
-  Putblock(Blocks);
 }
 }  // namespace GB::commands

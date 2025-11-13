@@ -107,7 +107,8 @@ static void make_discoveries(Race&);
 static void output_ground_attacks();
 static void initialize_data(TurnState& state, int update);
 static void process_ships(EntityManager& entity_manager, TurnState& state);
-static void process_stars_and_planets(int update);
+static void process_stars_and_planets(EntityManager& entity_manager,
+                                      int update);
 static void process_races(EntityManager& entity_manager, int update);
 static void process_market(EntityManager&, int update);
 static void process_ship_masses_and_ownership(TurnState& state);
@@ -140,7 +141,7 @@ void do_turn(EntityManager& entity_manager, int update) {
   
   initialize_data(state, update);
   process_ships(entity_manager, state);
-  process_stars_and_planets(update);
+  process_stars_and_planets(entity_manager, update);
   process_races(entity_manager, update);
   output_ground_attacks();
   process_market(entity_manager, update);
@@ -191,15 +192,24 @@ static void process_ships(EntityManager& entity_manager, TurnState& state) {
   }
 }
 
-static void process_stars_and_planets(int update) {
-  /* get all stars and planets */
-  getsdata(&Sdata);
+static void process_stars_and_planets(EntityManager& entity_manager,
+                                      int update) {
+  /* Load global stardata and stars using EntityManager */
+  auto sdata_handle = entity_manager.get_stardata();
+  Sdata = sdata_handle.read();  // Copy to global for backward compatibility
+
   Planet_count = 0;
   for (starnum_t star = 0; star < Sdata.numstars; star++) {
-    stars[star] = getstar(star);
+    auto star_handle = entity_manager.get_star(star);
+    if (!star_handle.get()) continue;
+
+    // Copy star to global array for backward compatibility with commands
+    stars[star] = star_handle.read();
     if (update) fix_stability(stars[star]); /* nova */
 
     for (planetnum_t i = 0; i < stars[star].numplanets(); i++) {
+      // Keep using legacy getplanet for now - Planet has no copy constructor
+      // TODO: Migrate to EntityManager once command layer is migrated
       planets[star][i] = std::make_unique<Planet>(getplanet(star, i));
       if (planets[star][i]->type != PlanetType::ASTEROID) Planet_count++;
       if (update) moveplanet(star, *planets[star][i], i);

@@ -21,17 +21,30 @@ void technology(const command_t &argv, GameObj &g) {
                          static_cast<int>(g.level));
     return;
   }
-  if (!stars[g.snum].control(Playernum, Governor)) {
+
+  const auto* star = g.entity_manager.peek_star(g.snum);
+  if (!star) {
+    g.out << "Star not found.\n";
+    return;
+  }
+
+  // Check control: governor must match or be 0
+  if (Governor != 0 && star->governor[Playernum - 1] != Governor) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount)) {
+  if (!enufAP(Playernum, Governor, star->AP[Playernum - 1], APcount)) {
     return;
   }
 
-  auto p = getplanet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  if (!planet_handle.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
 
   if (argv.size() < 2) {
+    const auto& p = planet_handle.read();
     g.out << std::format(
         "Current investment : {}    Technology production/update: {:.3f}\n",
         p.info[Playernum - 1].tech_invest,
@@ -39,6 +52,7 @@ void technology(const command_t &argv, GameObj &g) {
                   p.info[Playernum - 1].popn));
     return;
   }
+
   money_t invest = std::stoi(argv[1]);
 
   if (invest < 0) {
@@ -46,9 +60,8 @@ void technology(const command_t &argv, GameObj &g) {
     return;
   }
 
+  auto& p = *planet_handle;
   p.info[Playernum - 1].tech_invest = invest;
-
-  putplanet(p, stars[g.snum], g.pnum);
 
   deductAPs(g, APcount, g.snum);
 

@@ -79,8 +79,8 @@ void test_block_repository() {
   // Test data
   block b1{};
   b1.Playernum = 1;
-  std::strcpy(b1.name, "Alliance Alpha");
-  std::strcpy(b1.motto, "United we stand");
+  b1.name = "Alliance Alpha";
+  b1.motto = "United we stand";
   b1.invite = 1;
   b1.pledge = 1;
   b1.atwar = 2;
@@ -95,7 +95,7 @@ void test_block_repository() {
   auto retrieved = repo.find_by_id(1);
   assert(retrieved.has_value());
   assert(retrieved->Playernum == 1);
-  assert(std::strcmp(retrieved->name, "Alliance Alpha") == 0);
+  assert(retrieved->name == "Alliance Alpha");
   assert(retrieved->systems_owned == 10);
   assert(retrieved->VPs == 1000);
 
@@ -111,7 +111,7 @@ void test_block_repository() {
   // Test 3: Multiple blocks
   block b2{};
   b2.Playernum = 3;
-  std::strcpy(b2.name, "Beta Coalition");
+  b2.name = "Beta Coalition";
   b2.VPs = 500;
   assert(repo.save(b2));
   assert(repo.find_by_id(1).has_value());

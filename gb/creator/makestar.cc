@@ -227,10 +227,10 @@ Star Makestar(starnum_t snum) {
                  int_rand(100, 400) + int_rand(0, 9) / 10.0;
   star.temperature = round_rand(star.gravity / 100.0);
   /* + int_rand(0,2) - 1 ; */
-  strcpy(star.name, NextStarName());
+  star.name = NextStarName();
   place_star(star);
   if (printstarinfo)
-    printf("Star %s: gravity %1.1f, temp %d\n", star.name, star.gravity,
+    printf("Star %s: gravity %1.1f, temp %d\n", star.name.c_str(), star.gravity,
            (int)star.temperature);
   /*
    * Generate planets for this star: */
@@ -248,7 +248,7 @@ Star Makestar(starnum_t snum) {
     xpos = dist * sin(angle);
     ypos = dist * cos(angle);
 
-    strcpy(star.pnames[i], NextPlanetName(i));
+    star.pnames[i] = NextPlanetName(i);
 
     roll = int_rand(1, 100);
     if ((int_rand(1, 100) <= 10) || (temperature > 400)) {
@@ -309,10 +309,10 @@ Star Makestar(starnum_t snum) {
     planet.total_resources = 0;
     Numtypes[type]++;
     if (printplaninfo) {
-      printf("Planet %s: temp %d, type %s (%u)\n", star.pnames[i],
+      printf("Planet %s: temp %d, type %s (%u)\n", star.pnames[i].c_str(),
              planet.conditions[RTEMP], Nametypes[planet.type], planet.type);
       printf("Position is (%1.0f,%1.0f) relative to %s; distance %1.0f.\n",
-             planet.xpos, planet.ypos, star.name, dist);
+             planet.xpos, planet.ypos, star.name.c_str(), dist);
       printf("sect map(%dx%d):\n", planet.Maxx, planet.Maxy);
       for (y = 0; y < planet.Maxy; y++) {
         for (x = 0; x < planet.Maxx; x++) {

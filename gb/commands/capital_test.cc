@@ -26,7 +26,7 @@ void test_designate_capital() {
   // Create star
   star_struct star{};
   star.star_id = 1;
-  std::strncpy(star.name, "Test Star", sizeof(star.name) - 1);
+  star.name = "Test Star";
   star.AP[0] = 100;  // Sufficient AP for player 1
 
   StarRepository stars_repo(store);
@@ -122,7 +122,7 @@ void test_ship_not_landed() {
   // Create star
   star_struct star{};
   star.star_id = 1;
-  std::strncpy(star.name, "Test Star", sizeof(star.name) - 1);
+  star.name = "Test Star";
   star.AP[0] = 100;
 
   StarRepository stars_repo(store);
@@ -180,7 +180,7 @@ void test_query_capital() {
   ship.number = 42;
   ship.type = ShipType::OTYPE_GOV;
   ship.owner = 1;
-  std::strncpy(ship.name, "Capital Ship", sizeof(ship.name) - 1);
+  ship.name = "Capital Ship";
   ship.alive = true;
   ship.active = true;
 

@@ -21,8 +21,8 @@ void test_motto_database_persistence() {
   // Setup: Create a block with initial empty motto
   block b{};
   b.Playernum = 1;
-  std::strncpy(b.name, "Test Alliance", sizeof(b.name) - 1);
-  b.motto[0] = '\0';  // Initially empty
+  b.name = "Test Alliance";
+  b.motto = "";  // Initially empty
 
   JsonStore store(db);
   BlockRepository blocks(store);

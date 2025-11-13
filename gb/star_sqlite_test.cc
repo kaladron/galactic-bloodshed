@@ -21,7 +21,7 @@ int main() {
 
   // Initialize scalar fields
   test_star.ships = 42;
-  std::strncpy(test_star.name, "TestStar", NAMESIZE - 1);
+  test_star.name = "TestStar";
   test_star.xpos = 100.5;
   test_star.ypos = 200.75;
   test_star.numplanets = 5;
@@ -47,7 +47,7 @@ int main() {
 
   // Initialize planet names
   for (int i = 0; i < MAXPLANETS; i++) {
-    std::snprintf(test_star.pnames[i], NAMESIZE, "Planet%d", i);
+    test_star.pnames[i] = std::format("Planet{}", i);
   }
 
   // Create Star object from star_struct
@@ -62,7 +62,7 @@ int main() {
 
   // Verify scalar fields
   assert(retrieved.ships == test_star.ships);
-  assert(std::strcmp(retrieved.name, test_star.name) == 0);
+  assert(retrieved.name == test_star.name);
   assert(retrieved.xpos == test_star.xpos);
   assert(retrieved.ypos == test_star.ypos);
   assert(retrieved.numplanets == test_star.numplanets);
@@ -87,7 +87,7 @@ int main() {
 
   // Verify planet names
   for (int i = 0; i < MAXPLANETS; i++) {
-    assert(std::strcmp(retrieved.pnames[i], test_star.pnames[i]) == 0);
+    assert(retrieved.pnames[i] == test_star.pnames[i]);
   }
 
   // Database connection will be cleaned up automatically by Sql destructor

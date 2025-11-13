@@ -444,7 +444,7 @@ void order_move(GameObj& g, const command_t& argv, Ship& ship) {
       return;
     }
   }
-  strcpy(ship.shipclass, moveseq.c_str());
+  ship.shipclass = moveseq;
   /* This is the index keeping track of which order in shipclass is next. */
   ship.special = TerraformData{.index = 0};
 }

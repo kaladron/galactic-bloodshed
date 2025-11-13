@@ -2,13 +2,11 @@
 
 export module gblib:ships;
 
-import std.compat;
+import std;
 
 import :gameobj;
 import :planet;
 import :sector;
-
-import std.compat; // For std::variant
 
 export enum guntype_t { GTYPE_NONE, GTYPE_LIGHT, GTYPE_MEDIUM, GTYPE_HEAVY };
 
@@ -168,8 +166,8 @@ export class Ship {
   shipnum_t number;               ///< ship knows its own number
   player_t owner;                 ///< owner of ship
   governor_t governor;            ///< subordinate that controls the ship
-  char name[SHIP_NAMESIZE];       ///< name of ship (optional)
-  char shipclass[SHIP_NAMESIZE];  ///< shipclass of ship - designated by player
+  std::string name;               ///< name of ship (optional)
+  std::string shipclass;          ///< shipclass of ship - designated by player
 
   unsigned char race; /* race type - used when you gain alien
                          ships during revolts and whatnot - usually

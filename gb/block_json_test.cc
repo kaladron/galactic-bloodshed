@@ -20,8 +20,8 @@ int main() {
 
   // Initialize some test data for a few players
   test_blocks[0].Playernum = 1;
-  strcpy(test_blocks[0].name, "TestPlayer1");
-  strcpy(test_blocks[0].motto, "TestMotto1");
+  test_blocks[0].name = "TestPlayer1";
+  test_blocks[0].motto = "TestMotto1";
   test_blocks[0].invite = 0x123;
   test_blocks[0].pledge = 0x456;
   test_blocks[0].atwar = 0x789;
@@ -32,8 +32,8 @@ int main() {
   test_blocks[0].money = 50000;
 
   test_blocks[1].Playernum = 2;
-  strcpy(test_blocks[1].name, "TestPlayer2");
-  strcpy(test_blocks[1].motto, "TestMotto2");
+  test_blocks[1].name = "TestPlayer2";
+  test_blocks[1].motto = "TestMotto2";
   test_blocks[1].invite = 0xDEF;
   test_blocks[1].pledge = 0x321;
   test_blocks[1].atwar = 0x654;
@@ -57,8 +57,8 @@ int main() {
 
   // Verify key fields for first player
   assert(retrieved_blocks[0].Playernum == test_blocks[0].Playernum);
-  assert(strcmp(retrieved_blocks[0].name, test_blocks[0].name) == 0);
-  assert(strcmp(retrieved_blocks[0].motto, test_blocks[0].motto) == 0);
+  assert(retrieved_blocks[0].name == test_blocks[0].name);
+  assert(retrieved_blocks[0].motto == test_blocks[0].motto);
   assert(retrieved_blocks[0].invite == test_blocks[0].invite);
   assert(retrieved_blocks[0].pledge == test_blocks[0].pledge);
   assert(retrieved_blocks[0].atwar == test_blocks[0].atwar);
@@ -70,8 +70,8 @@ int main() {
 
   // Verify key fields for second player
   assert(retrieved_blocks[1].Playernum == test_blocks[1].Playernum);
-  assert(strcmp(retrieved_blocks[1].name, test_blocks[1].name) == 0);
-  assert(strcmp(retrieved_blocks[1].motto, test_blocks[1].motto) == 0);
+  assert(retrieved_blocks[1].name == test_blocks[1].name);
+  assert(retrieved_blocks[1].motto == test_blocks[1].motto);
   assert(retrieved_blocks[1].invite == test_blocks[1].invite);
   assert(retrieved_blocks[1].pledge == test_blocks[1].pledge);
   assert(retrieved_blocks[1].atwar == test_blocks[1].atwar);

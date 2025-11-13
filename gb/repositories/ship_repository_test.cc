@@ -20,8 +20,8 @@ int main() {
   test_ship.number = 1;
   test_ship.owner = 2;
   test_ship.governor = 0;
-  strcpy(test_ship.name, "USS Enterprise");
-  strcpy(test_ship.shipclass, "Cruiser");
+  test_ship.name = "USS Enterprise";
+  test_ship.shipclass = "Cruiser";
   test_ship.race = 2;
   test_ship.xpos = 100.5;
   test_ship.ypos = 200.7;
@@ -78,8 +78,8 @@ int main() {
   assert(retrieved->number == test_ship.number);
   assert(retrieved->owner == test_ship.owner);
   assert(retrieved->governor == test_ship.governor);
-  assert(strcmp(retrieved->name, test_ship.name) == 0);
-  assert(strcmp(retrieved->shipclass, test_ship.shipclass) == 0);
+  assert(retrieved->name == test_ship.name);
+  assert(retrieved->shipclass == test_ship.shipclass);
   assert(retrieved->race == test_ship.race);
   assert(retrieved->xpos == test_ship.xpos);
   assert(retrieved->ypos == test_ship.ypos);
@@ -116,12 +116,12 @@ int main() {
   std::println("Test 6: Save multiple ships...");
   Ship ship2 = test_ship;
   ship2.number = 2;
-  strcpy(ship2.name, "USS Defiant");
+  ship2.name = "USS Defiant";
   repo.save(ship2);
 
   Ship ship3 = test_ship;
   ship3.number = 5;  // Gap at 3 and 4
-  strcpy(ship3.name, "USS Voyager");
+  ship3.name = "USS Voyager";
   repo.save(ship3);
 
   std::println("  ✓ Multiple ships saved");

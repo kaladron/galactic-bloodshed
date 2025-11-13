@@ -838,7 +838,7 @@ int doplanet(const starnum_t starnum, Planet &planet,
         s2->mass = s2->base_mass;
         s2->alive = 1;
         s2->active = 1;
-        sprintf(s2->name, "Scum%04ld", Num_ships);
+        s2->name = std::format("Scum{:04d}", Num_ships);
 
         insert_sh_plan(planet, s2);
 

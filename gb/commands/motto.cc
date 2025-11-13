@@ -28,8 +28,7 @@ void motto(const command_t &argv, GameObj &g) {
   }
 
   auto &block = *block_handle;
-  std::strncpy(block.motto, message.c_str(), MOTTOSIZE - 1);
-  block.motto[MOTTOSIZE - 1] = '\0';  // Ensure null termination
+  block.motto = message;
 
   g.out << "Done.\n";
 }

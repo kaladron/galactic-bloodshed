@@ -21,9 +21,9 @@ void test_autoreport_database_persistence() {
   // Setup: Create a star
   star_struct star{};
   star.star_id = 1;
-  std::strncpy(star.name, "Test Star", sizeof(star.name) - 1);
+  star.name = "Test Star";
   star.numplanets = 1;
-  std::strncpy(star.pnames[0], "Test Planet", sizeof(star.pnames[0]) - 1);
+  star.pnames[0] = "Test Planet";
   star.governor[0] = 0;  // Player 1 (index 0) governor 0
 
   JsonStore store(db);

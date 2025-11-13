@@ -394,7 +394,7 @@ int main() {
     s.build_cost = Shipdata[ShipType::OTYPE_GOV][ABIL_COST];
     s.size = 100;
     s.base_mass = 100.0;
-    sprintf(s.shipclass, "Standard");
+    s.shipclass = "Standard";
 
     s.fuel = 0.0;
     s.popn = Shipdata[s.type][ABIL_MAXCREW];

@@ -274,10 +274,10 @@ void create_ship_by_planet(int Playernum, int Governor, const Race &race,
   newship.ypos = stars[snum].ypos() + planet.ypos;
   newship.land_x = x;
   newship.land_y = y;
-  sprintf(newship.shipclass, (((newship.type == ShipType::OTYPE_TERRA) ||
-                               (newship.type == ShipType::OTYPE_PLOW))
-                                  ? "5"
-                                  : "Standard"));
+  newship.shipclass = (((newship.type == ShipType::OTYPE_TERRA) ||
+                        (newship.type == ShipType::OTYPE_PLOW))
+                           ? "5"
+                           : "Standard");
   newship.whatorbits = ScopeLevel::LEVEL_PLAN;
   newship.whatdest = ScopeLevel::LEVEL_PLAN;
   newship.deststar = snum;
@@ -369,10 +369,10 @@ void create_ship_by_ship(int Playernum, int Governor, const Race &race,
   newship->ypos = builder->ypos;
   newship->land_x = builder->land_x;
   newship->land_y = builder->land_y;
-  sprintf(newship->shipclass, (((newship->type == ShipType::OTYPE_TERRA) ||
-                                (newship->type == ShipType::OTYPE_PLOW))
-                                   ? "5"
-                                   : "Standard"));
+  newship->shipclass = (((newship->type == ShipType::OTYPE_TERRA) ||
+                         (newship->type == ShipType::OTYPE_PLOW))
+                            ? "5"
+                            : "Standard");
   builder->resource -= newship->build_cost;
 
   std::string message =

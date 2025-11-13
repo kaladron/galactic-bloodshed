@@ -132,10 +132,6 @@ export constexpr int MAXPLAYERS = 64;
 export constexpr int NUM_DISCOVERIES = 80;
 
 export constexpr int NAMESIZE = 18;
-export constexpr int RNAMESIZE = 35;
-export constexpr int MOTTOSIZE = 64;
-export constexpr int PERSONALSIZE = 128;
-export constexpr int PLACENAMESIZE = (NAMESIZE + NAMESIZE + 13);
 export constexpr int NUMSTARS = 256;
 export constexpr int MAXPLANETS = 10;
 export constexpr int MAXGOVERNORS = 5u;

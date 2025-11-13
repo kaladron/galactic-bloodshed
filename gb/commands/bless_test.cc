@@ -30,8 +30,8 @@ void test_bless_technology() {
   // Create a minimal star and planet for bless to work at planet scope
   star_struct star{};
   star.star_id = 1;
-  std::strcpy(star.name, "TestStar");
-  std::strcpy(star.pnames[0], "TestPlanet");
+  star.name = "TestStar";
+  star.pnames[0] = "TestPlanet";
   StarRepository star_repo(store);
   star_repo.save(star);
 
@@ -82,8 +82,8 @@ void test_bless_money() {
 
   star_struct star{};
   star.star_id = 1;
-  std::strcpy(star.name, "TestStar");
-  std::strcpy(star.pnames[0], "TestPlanet");
+  star.name = "TestStar";
+  star.pnames[0] = "TestPlanet";
   StarRepository star_repo(store);
   star_repo.save(star);
 

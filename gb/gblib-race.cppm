@@ -111,8 +111,8 @@ export struct power {
 
 export struct block {
   player_t Playernum;
-  char name[RNAMESIZE];
-  char motto[MOTTOSIZE];
+  std::string name;
+  std::string motto;
   uint64_t invite;
   uint64_t pledge;
   uint64_t atwar;

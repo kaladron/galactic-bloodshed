@@ -19,7 +19,7 @@ int main() {
   // Create a test star
   star_struct test_star{};
   test_star.ships = 42;
-  std::strncpy(test_star.name, "Sol", NAMESIZE - 1);
+  test_star.name = "Sol";
   test_star.xpos = 100.5;
   test_star.ypos = 200.75;
   test_star.numplanets = 8;
@@ -42,14 +42,14 @@ int main() {
   }
 
   // Initialize planet names
-  std::strncpy(test_star.pnames[0], "Mercury", NAMESIZE - 1);
-  std::strncpy(test_star.pnames[1], "Venus", NAMESIZE - 1);
-  std::strncpy(test_star.pnames[2], "Earth", NAMESIZE - 1);
-  std::strncpy(test_star.pnames[3], "Mars", NAMESIZE - 1);
-  std::strncpy(test_star.pnames[4], "Jupiter", NAMESIZE - 1);
-  std::strncpy(test_star.pnames[5], "Saturn", NAMESIZE - 1);
-  std::strncpy(test_star.pnames[6], "Uranus", NAMESIZE - 1);
-  std::strncpy(test_star.pnames[7], "Neptune", NAMESIZE - 1);
+  test_star.pnames[0] = "Mercury";
+  test_star.pnames[1] = "Venus";
+  test_star.pnames[2] = "Earth";
+  test_star.pnames[3] = "Mars";
+  test_star.pnames[4] = "Jupiter";
+  test_star.pnames[5] = "Saturn";
+  test_star.pnames[6] = "Uranus";
+  test_star.pnames[7] = "Neptune";
 
   // Test 1: Save star
   std::println("Test 1: Save star...");
@@ -66,7 +66,7 @@ int main() {
   // Test 3: Verify data integrity
   std::println("Test 3: Verify data integrity...");
   assert(retrieved->ships == test_star.ships);
-  assert(strcmp(retrieved->name, test_star.name) == 0);
+  assert(retrieved->name == test_star.name);
   assert(retrieved->xpos == test_star.xpos);
   assert(retrieved->ypos == test_star.ypos);
   assert(retrieved->numplanets == test_star.numplanets);
@@ -90,7 +90,7 @@ int main() {
 
   // Verify planet names
   for (int i = 0; i < test_star.numplanets; i++) {
-    assert(strcmp(retrieved->pnames[i], test_star.pnames[i]) == 0);
+    assert(retrieved->pnames[i] == test_star.pnames[i]);
   }
   std::println("  ✓ All fields match original");
 
@@ -116,14 +116,14 @@ int main() {
   std::println("Test 6: Save multiple stars...");
   star_struct star2 = test_star;
   star2.star_id = 2;
-  std::strncpy(star2.name, "Alpha Centauri", NAMESIZE - 1);
+  star2.name = "Alpha Centauri";
   star2.xpos = 50.0;
   star2.ypos = 75.0;
   repo.save(star2);
 
   star_struct star3 = test_star;
   star3.star_id = 5;  // Gap at 3 and 4
-  std::strncpy(star3.name, "Proxima", NAMESIZE - 1);
+  star3.name = "Proxima";
   star3.xpos = 200.0;
   star3.ypos = 150.0;
   repo.save(star3);
@@ -134,7 +134,7 @@ int main() {
   std::println("Test 7: Retrieve second star...");
   auto star2_retrieved = repo.find_by_number(2);
   assert(star2_retrieved.has_value());
-  assert(strcmp(star2_retrieved->name, "Alpha Centauri") == 0);
+  assert(star2_retrieved->name == "Alpha Centauri");
   assert(star2_retrieved->xpos == 50.0);
   std::println("  ✓ Second star retrieved correctly");
 
@@ -142,7 +142,7 @@ int main() {
   std::println("Test 8: Retrieve third star...");
   auto star3_retrieved = repo.find_by_number(5);
   assert(star3_retrieved.has_value());
-  assert(strcmp(star3_retrieved->name, "Proxima") == 0);
+  assert(star3_retrieved->name == "Proxima");
   assert(star3_retrieved->xpos == 200.0);
   std::println("  ✓ Third star retrieved correctly");
 

@@ -103,7 +103,7 @@ int main() {
   // Create a test Star (needed for putplanet)
   star_struct test_star_data{};
   test_star_data.star_id = 1;
-  std::strncpy(test_star_data.name, "TestStar", NAMESIZE - 1);
+  test_star_data.name = "TestStar";
   test_star_data.numplanets = 5;
   Star test_star(test_star_data);
 

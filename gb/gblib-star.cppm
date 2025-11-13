@@ -4,18 +4,19 @@ export module gblib:star;
 
 import :types;
 import :tweakables;
+import std;
 
 export struct star_struct {
   unsigned short ships;            /* 1st ship in orbit */
-  char name[NAMESIZE];             /* name of star */
+  std::string name;                /* name of star */
   governor_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
   ap_t AP[MAXPLAYERS];             /* action pts alotted */
   uint64_t explored;               /* who's been here 64 bits*/
   uint64_t inhabited;              /* who lives here now 64 bits*/
   double xpos, ypos;
 
-  unsigned char numplanets;            /* # of planets in star system */
-  char pnames[MAXPLANETS][NAMESIZE];   /* names of planets */
+  unsigned char numplanets;                 /* # of planets in star system */
+  std::array<std::string, MAXPLANETS> pnames;  /* names of planets */
 
   unsigned char stability;   /* how close to nova it is */
   unsigned char nova_stage;  /* stage of nova */
@@ -30,17 +31,17 @@ export class Star {
  public:
   [[nodiscard]] std::string get_name() const { return star_struct.name; }
   void set_name(std::string_view name) {
-    std::strncpy(star_struct.name, name.data(), NAMESIZE - 1);
+    star_struct.name = name;
   }
 
   [[nodiscard]] std::string get_planet_name(planetnum_t pnum) const {
     return star_struct.pnames[pnum];
   }
   void set_planet_name(planetnum_t pnum, std::string_view name) {
-    std::strncpy(star_struct.pnames[pnum], name.data(), NAMESIZE - 1);
+    star_struct.pnames[pnum] = name;
   }
   [[nodiscard]] bool planet_name_isset(planetnum_t pnum) const {
-    return star_struct.pnames[pnum] != nullptr;
+    return !star_struct.pnames[pnum].empty();
   };
 
   // This is used both as a boolean and a setter.

@@ -55,7 +55,7 @@ void name(const command_t& argv, GameObj& g) {
   if (argv[1] == "ship") {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
       auto ship = getship(g.shipno);
-      strncpy(ship->name, namebuf.c_str(), SHIP_NAMESIZE);
+      ship->name = namebuf;
       putship(*ship);
       g.out << "Name set.\n";
       return;
@@ -74,7 +74,7 @@ void name(const command_t& argv, GameObj& g) {
         g.out << "This factory is already on line.\n";
         return;
       }
-      strncpy(ship->shipclass, namebuf.c_str(), SHIP_NAMESIZE - 1);
+      ship->shipclass = namebuf;
       putship(*ship);
       g.out << "Class set.\n";
       return;
@@ -88,7 +88,7 @@ void name(const command_t& argv, GameObj& g) {
       g.out << "You are not authorized to do this.\n";
       return;
     }
-    strncpy(Blocks[Playernum - 1].name, namebuf.c_str(), RNAMESIZE - 1);
+    Blocks[Playernum - 1].name = namebuf;
     Putblock(Blocks);
     g.out << "Done.\n";
   } else if (argv[1] == "star") {

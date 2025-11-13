@@ -64,7 +64,7 @@ Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
 Star createTestStar() {
   star_struct star_data{};
   star_data.ships = 0;
-  strcpy(star_data.name, "TestStar");
+  star_data.name = "TestStar";
   star_data.xpos = 0.0;
   star_data.ypos = 0.0;
   star_data.numplanets = 1;
@@ -82,7 +82,7 @@ Star createTestStar() {
   }
 
   for (int i = 0; i < MAXPLANETS; i++) {
-    strcpy(star_data.pnames[i], "TestPlanet");
+    star_data.pnames[i] = "TestPlanet";
   }
 
   return Star(star_data);

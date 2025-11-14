@@ -86,7 +86,7 @@ int main() {
   if ((Playernum = entity_manager.num_races() + 1) >= MAXPLAYERS) {
     std::println("There are already {} players; No more allowed.",
                  MAXPLAYERS - 1);
-    exit(-1);
+    return -1;
   }
 
   std::print("Enter racial type to be created (1-{}):", RACIAL_TYPES);
@@ -96,13 +96,13 @@ int main() {
   if (!idx_result) {
     std::println(stderr, "Error: Cannot read input - {}",
                  idx_result.error().msg());
-    exit(-1);
+    return -1;
   }
   idx = idx_result->value();
 
   if (idx <= 0 || idx > RACIAL_TYPES) {
     std::println("Bad racial index.");
-    exit(1);
+    return 1;
   }
   idx = idx - 1;
 
@@ -149,7 +149,7 @@ int main() {
         break;
       default:
         std::println("Oh well.");
-        exit(-1);
+        return -1;
     }
 
     std::println("Looking for type {} planet...", static_cast<int>(ppref));
@@ -198,7 +198,7 @@ int main() {
         found &= not_found[i];
       if (found) {
         std::println("Looks like there aren't any free planets left.  bye..");
-        exit(-1);
+        return -1;
       } else
         std::println("  Try a different one...");
       found = 0;
@@ -326,7 +326,7 @@ int main() {
     if (!choice_result) {
       std::println(stderr, "Error: Cannot read input - {}",
                    choice_result.error().msg());
-      exit(-1);
+      return -1;
     }
     i = choice_result->value();
 
@@ -352,7 +352,7 @@ int main() {
       if (!compat_result) {
         std::println(stderr, "Error: Cannot read input - {}",
                      compat_result.error().msg());
-        exit(-1);
+        return -1;
       }
       k = compat_result->value();
       race.likes[j] = (double)k / 100.0;

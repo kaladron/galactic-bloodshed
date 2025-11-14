@@ -137,6 +137,7 @@ export class EntityManager {
   const Ship* peek_ship(shipnum_t num);
   const Planet* peek_planet(starnum_t star, planetnum_t pnum);
   const star_struct* peek_star(starnum_t num);
+  const stardata* peek_stardata();
 
   // Create new entities
   EntityHandle<Ship> create_ship();

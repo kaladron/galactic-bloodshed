@@ -106,7 +106,12 @@ int main() {
   }
   idx = idx - 1;
 
-  getsdata(&Sdata);
+  const auto* stardata_ptr = entity_manager.peek_stardata();
+  if (!stardata_ptr) {
+    std::println(stderr, "Error: Cannot load star data");
+    return -1;
+  }
+  const auto& Sdata = *stardata_ptr;
 
   // TODO(jeffbailey): factor out routine for initialising this.
   stars.reserve(Sdata.numstars);

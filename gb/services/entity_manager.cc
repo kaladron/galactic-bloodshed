@@ -359,6 +359,25 @@ EntityHandle<stardata> EntityManager::get_stardata() {
           }};
 }
 
+const stardata* EntityManager::peek_stardata() {
+  std::lock_guard lock(cache_mutex);
+
+  // Check if already cached
+  if (global_stardata_cache) {
+    return global_stardata_cache.get();
+  }
+
+  // Load from repository if not cached
+  auto stardata_opt = stardata_repo.get_global_data();
+  if (!stardata_opt) {
+    return nullptr;
+  }
+
+  // Cache the entity (but don't increment refcount - this is read-only)
+  global_stardata_cache = std::make_unique<stardata>(*stardata_opt);
+  return global_stardata_cache.get();
+}
+
 void EntityManager::release_stardata() {
   global_stardata_refcount--;
   if (global_stardata_refcount <= 0) {

@@ -75,7 +75,7 @@ int main() {
   char c;
   struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
   Planet planet;
-  unsigned char not_found[PlanetType::DESERT + 1];
+  unsigned char not_found[PlanetType::DESERT + 1] = {};  // Zero-initialized
 
   // Create Database and EntityManager for dependency injection
   Database database{PKGSTATEDIR "gb.db"};
@@ -116,7 +116,6 @@ int main() {
   }
   std::println("There is still space for player {}.", Playernum);
 
-  bzero((char*)not_found, sizeof(not_found));
   do {
     std::print(
         "\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
@@ -362,15 +361,13 @@ int main() {
 
   /* build a capital ship to run the government */
   {
-    Ship s;
+    Ship s{};  // Uses default member initializers from Ship struct
     int shipno;
 
-    bzero(&s, sizeof(s));
     shipno = Numships() + 1;
     std::println("Creating government ship {}...", shipno);
     race.Gov_ship = shipno;
     planet.ships = shipno;
-    s.nextship = 0;
 
     s.type = ShipType::OTYPE_GOV;
     s.xpos = stars[star].xpos() + planet.xpos;
@@ -378,10 +375,8 @@ int main() {
     s.land_x = (char)secttypes[i].x;
     s.land_y = (char)secttypes[i].y;
 
-    s.speed = 0;
     s.owner = Playernum;
     s.race = Playernum;
-    s.governor = 0;
 
     s.tech = 100.0;
 
@@ -402,11 +397,8 @@ int main() {
     s.base_mass = 100.0;
     s.shipclass = "Standard";
 
-    s.fuel = 0.0;
     s.popn = Shipdata[s.type][ABIL_MAXCREW];
-    s.troops = 0;
     s.mass = s.base_mass + Shipdata[s.type][ABIL_MAXCREW] * race.mass;
-    s.destruct = s.resource = 0;
 
     s.alive = 1;
     s.active = 1;
@@ -420,16 +412,10 @@ int main() {
     s.destpnum = pnum;
     s.storbits = star;
     s.pnumorbits = pnum;
-    s.rad = 0;
-    s.damage = 0; /*Shipdata[s.type][ABIL_DAMAGE];*/
     /* (first capital is 100% efficient */
-    s.retaliate = 0;
-
-    s.ships = 0;
 
     s.on = 1;
 
-    s.name[0] = '\0';
     s.number = shipno;
     std::println("Created on sector {},{} on /{}/{}", s.land_x, s.land_y,
                  stars[s.storbits].get_name(),

@@ -163,118 +163,118 @@ export using SpecialData = std::variant<
 
 export class Ship {
  public:
-  shipnum_t number;               ///< ship knows its own number
-  player_t owner;                 ///< owner of ship
-  governor_t governor;            ///< subordinate that controls the ship
+  shipnum_t number{0};               ///< ship knows its own number
+  player_t owner{0};                 ///< owner of ship
+  governor_t governor{0};            ///< subordinate that controls the ship
   std::string name;               ///< name of ship (optional)
   std::string shipclass;          ///< shipclass of ship - designated by player
 
-  unsigned char race; /* race type - used when you gain alien
+  unsigned char race{0}; /* race type - used when you gain alien
                          ships during revolts and whatnot - usually
                          equal to owner */
-  double xpos;
-  double ypos;
-  double fuel;
-  double mass;
-  unsigned char land_x, land_y;
+  double xpos{0.0};
+  double ypos{0.0};
+  double fuel{0.0};
+  double mass{0.0};
+  unsigned char land_x{0}, land_y{0};
 
-  shipnum_t destshipno; /* destination ship # */
-  shipnum_t nextship;   /* next ship in linked list */
-  shipnum_t ships;      /* ships landed on it */
+  shipnum_t destshipno{0}; /* destination ship # */
+  shipnum_t nextship{0};   /* next ship in linked list */
+  shipnum_t ships{0};      /* ships landed on it */
 
-  unsigned char armor;
-  unsigned short size;
+  unsigned char armor{0};
+  unsigned short size{0};
 
-  unsigned short max_crew;
-  resource_t max_resource;
-  unsigned short max_destruct;
-  unsigned short max_fuel;
-  unsigned short max_speed;
-  ShipType build_type;  ///< for factories - type of ship it makes
-  unsigned short build_cost;
+  unsigned short max_crew{0};
+  resource_t max_resource{0};
+  unsigned short max_destruct{0};
+  unsigned short max_fuel{0};
+  unsigned short max_speed{0};
+  ShipType build_type{ShipType::STYPE_POD};  ///< for factories - type of ship it makes
+  unsigned short build_cost{0};
 
-  double base_mass;
-  double tech;       /* engineering technology rating */
-  double complexity; /* complexity rating */
+  double base_mass{0.0};
+  double tech{0.0};       /* engineering technology rating */
+  double complexity{0.0}; /* complexity rating */
 
-  unsigned short destruct; /* stuff it's carrying */
-  resource_t resource;
-  population_t popn;   /* crew */
-  population_t troops; /* marines */
-  unsigned short crystals;
+  unsigned short destruct{0}; /* stuff it's carrying */
+  resource_t resource{0};
+  population_t popn{0};   /* crew */
+  population_t troops{0}; /* marines */
+  unsigned short crystals{0};
 
   /* special ship functions - now using std::variant for type safety */
-  SpecialData special;
+  SpecialData special{};
 
-  short who_killed; /* who killed the ship */
+  short who_killed{0}; /* who killed the ship */
 
   struct {
-    unsigned char on;       /* toggles navigate mode */
-    unsigned char speed;    /* speed for navigate command */
-    unsigned short turns;   /* number turns left in maneuver */
-    unsigned short bearing; /* course */
+    unsigned char on{0};       /* toggles navigate mode */
+    unsigned char speed{0};    /* speed for navigate command */
+    unsigned short turns{0};   /* number turns left in maneuver */
+    unsigned short bearing{0}; /* course */
   } navigate;
 
   struct {
-    double maxrng;        /* maximum range for autoshoot */
-    unsigned char on;     /* toggle on/off */
-    unsigned char planet; /* planet defender */
-    unsigned char self;   /* retaliate if attacked */
-    unsigned char evade;  /* evasive action */
-    shipnum_t ship;       /* ship it is protecting */
+    double maxrng{0.0};        /* maximum range for autoshoot */
+    unsigned char on{0};     /* toggle on/off */
+    unsigned char planet{0}; /* planet defender */
+    unsigned char self{0};   /* retaliate if attacked */
+    unsigned char evade{0};  /* evasive action */
+    shipnum_t ship{0};       /* ship it is protecting */
   } protect;
 
   /* special systems */
-  unsigned char mount; /* has a crystal mount */
+  unsigned char mount{0}; /* has a crystal mount */
   struct {
-    unsigned char charge;
-    unsigned char ready;
-    unsigned char on;
-    unsigned char has;
+    unsigned char charge{0};
+    unsigned char ready{0};
+    unsigned char on{0};
+    unsigned char has{0};
   } hyper_drive;
-  unsigned char cew;        /* CEW strength */
-  unsigned short cew_range; /* CEW (confined-energy-weapon) range */
-  unsigned char cloak;      /* has cloaking device */
-  unsigned char laser;      /* has a laser */
-  unsigned char focus;      /* focused laser mode */
-  unsigned char fire_laser; /* retaliation strength for lasers */
+  unsigned char cew{0};        /* CEW strength */
+  unsigned short cew_range{0}; /* CEW (confined-energy-weapon) range */
+  unsigned char cloak{0};      /* has cloaking device */
+  unsigned char laser{0};      /* has a laser */
+  unsigned char focus{0};      /* focused laser mode */
+  unsigned char fire_laser{0}; /* retaliation strength for lasers */
 
-  starnum_t storbits;     /* what star # orbits */
-  starnum_t deststar;     /* destination star */
-  planetnum_t destpnum;   /* destination planet */
-  planetnum_t pnumorbits; /* # of planet if orbiting */
-  ScopeLevel whatdest;    /* where going */
-  ScopeLevel whatorbits;  /* where orbited */
+  starnum_t storbits{0};     /* what star # orbits */
+  starnum_t deststar{0};     /* destination star */
+  planetnum_t destpnum{0};   /* destination planet */
+  planetnum_t pnumorbits{0}; /* # of planet if orbiting */
+  ScopeLevel whatdest{ScopeLevel::LEVEL_UNIV};    /* where going */
+  ScopeLevel whatorbits{ScopeLevel::LEVEL_UNIV};  /* where orbited */
 
-  unsigned char damage; /* amt of damage */
-  int rad;              /* radiation level */
-  unsigned char retaliate;
-  unsigned short target;
+  unsigned char damage{0}; /* amt of damage */
+  int rad{0};              /* radiation level */
+  unsigned char retaliate{0};
+  unsigned short target{0};
 
-  ShipType type;       /* what type ship is */
-  unsigned char speed; /* what speed to travel at 0-9 */
+  ShipType type{ShipType::STYPE_POD};       /* what type ship is */
+  unsigned char speed{0}; /* what speed to travel at 0-9 */
 
-  unsigned char active; /* tells whether the ship is active */
-  unsigned char alive;  /* ship is alive */
-  unsigned char mode;
-  unsigned char bombard;  /* bombard planet we're orbiting */
-  unsigned char mounted;  /* has a crystal mounted */
-  unsigned char cloaked;  /* is cloaked ship */
-  unsigned char sheep;    /* is under influence of mind control */
-  unsigned char docked;   /* is landed on a planet or docked */
-  unsigned char notified; /* has been notified of something */
-  unsigned char examined; /* has been examined */
-  unsigned char on;       /* on or off */
+  unsigned char active{0}; /* tells whether the ship is active */
+  unsigned char alive{0};  /* ship is alive */
+  unsigned char mode{0};
+  unsigned char bombard{0};  /* bombard planet we're orbiting */
+  unsigned char mounted{0};  /* has a crystal mounted */
+  unsigned char cloaked{0};  /* is cloaked ship */
+  unsigned char sheep{0};    /* is under influence of mind control */
+  unsigned char docked{0};   /* is landed on a planet or docked */
+  unsigned char notified{0}; /* has been notified of something */
+  unsigned char examined{0}; /* has been examined */
+  unsigned char on{0};       /* on or off */
 
-  unsigned char merchant; /* this contains the route number */
-  unsigned char guns;     /* current gun system which is active */
-  unsigned long primary;  /* describe primary gun system */
-  guntype_t primtype;
-  unsigned long secondary; /* describe secondary guns */
-  guntype_t sectype;
+  unsigned char merchant{0}; /* this contains the route number */
+  unsigned char guns{0};     /* current gun system which is active */
+  unsigned long primary{0};  /* describe primary gun system */
+  guntype_t primtype{GTYPE_NONE};
+  unsigned long secondary{0}; /* describe secondary guns */
+  guntype_t sectype{GTYPE_NONE};
 
-  unsigned short hanger;     /* amount of hanger space used */
-  unsigned short max_hanger; /* total hanger space */
+  unsigned short hanger{0};     /* amount of hanger space used */
+  unsigned short max_hanger{0}; /* total hanger space */
 };
 
 export class Shiplist {

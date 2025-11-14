@@ -21,78 +21,76 @@ export using toggletype = struct {
 
 export class Race {
  public:
-  player_t Playernum;
+  player_t Playernum{0};
   std::string name; /* Racial name. */
   std::string password;
   std::string info;      /* personal information */
   std::string motto;     /* for a cute message */
-  bool absorb;           /* Does this race absorb enemies in combat? */
-  bool collective_iq;    /* Does this race have collective IQ? */
-  bool pods;             /* Can this race use pods? */
-  unsigned int fighters; /* Fight rating of this race. */
-  int IQ;
-  int IQ_limit; /* Asymtotic IQ for collective IQ races. */
-  unsigned int number_sexes;
-  unsigned int fertilize; /* Chance that this race will increase the
+  bool absorb{false};    /* Does this race absorb enemies in combat? */
+  bool collective_iq{false}; /* Does this race have collective IQ? */
+  bool pods{false};          /* Can this race use pods? */
+  unsigned int fighters{0};  /* Fight rating of this race. */
+  int IQ{0};
+  int IQ_limit{0}; /* Asymtotic IQ for collective IQ races. */
+  unsigned int number_sexes{1};
+  unsigned int fertilize{0}; /* Chance that this race will increase the
                               fertility of its sectors by 1 each update */
-  double adventurism;
-  double birthrate;
-  double mass;
-  double metabolism;
-  short conditions[OTHER + 1]; /* Atmosphere/temperature this race likes. */
-  double likes[SectorType::SEC_WASTED + 1]; /* Sector condition compats. */
-  unsigned int likesbest; /* 100% compat sector condition for this race. */
+  double adventurism{0.0};
+  double birthrate{0.0};
+  double mass{0.0};
+  double metabolism{0.0};
+  short conditions[OTHER + 1]{}; /* Atmosphere/temperature this race likes. */
+  double likes[SectorType::SEC_WASTED + 1]{}; /* Sector condition compats. */
+  unsigned int likesbest{0}; /* 100% compat sector condition for this race. */
 
-  bool dissolved; /* Player has quit. */
-  bool God;       /* Player is a God race. */
-  bool Guest;     /* Player is a guest race. */
-  bool Metamorph; /* Player is a morph; (for printing). */
-  bool monitor;
+  bool dissolved{false}; /* Player has quit. */
+  bool God{false};       /* Player is a God race. */
+  bool Guest{false};     /* Player is a guest race. */
+  bool Metamorph{false}; /* Player is a morph; (for printing). */
+  bool monitor{false};
   /* God is monitering this race. */  // TODO(jeffbailey): Remove this.
 
-  int translate[MAXPLAYERS]; /* translation mod for each player */
+  int translate[MAXPLAYERS]{}; /* translation mod for each player */
 
-  uint64_t atwar;
-  uint64_t allied;
+  uint64_t atwar{0};
+  uint64_t allied{0};
 
-  shipnum_t Gov_ship;                /* Shipnumber of government ship. */
-  long morale;                       /* race's morale level */
-  unsigned int points[MAXPLAYERS];   /* keep track of war status against
-                                        another player - for short reports */
-  unsigned short controlled_planets; /* Number of planets under control. */
-  unsigned short victory_turns;
-  unsigned short turn;
+  shipnum_t Gov_ship{0};                /* Shipnumber of government ship. */
+  long morale{0};                       /* race's morale level */
+  unsigned int points[MAXPLAYERS]{};    /* keep track of war status against
+                                         another player - for short reports */
+  unsigned short controlled_planets{0}; /* Number of planets under control. */
+  unsigned short victory_turns{0};
+  unsigned short turn{0};
 
-  double tech;
-  unsigned int discoveries[NUM_DISCOVERIES]; /* Tech discoveries. */
-  unsigned long victory_score;               /* Number of victory points. */
-  bool votes;
-  ap_t planet_points; /* For the determination of global APs */
+  double tech{0.0};
+  unsigned int discoveries[NUM_DISCOVERIES]{}; /* Tech discoveries. */
+  unsigned long victory_score{0};              /* Number of victory points. */
+  bool votes{false};
+  ap_t planet_points{0}; /* For the determination of global APs */
 
-  int governors;
+  int governors{0};
   struct gov {
     std::string name;
     std::string password;
-    bool active;
-    ScopeLevel deflevel;
-    unsigned int defsystem;
-    unsigned int defplanetnum; /* current default */
-    ScopeLevel homelevel;
-    unsigned int homesystem;
-    unsigned int homeplanetnum; /* home place */
-    unsigned long newspos[4];   /* news file pointers */
-    toggletype toggle;
-    money_t money;
-    unsigned long income;
-    money_t maintain;
-    unsigned long cost_tech;
-    unsigned long cost_market;
-    unsigned long profit_market;
-    time_t login; /* last login for this governor */
+    bool active{false};
+    ScopeLevel deflevel{ScopeLevel::LEVEL_UNIV};
+    unsigned int defsystem{0};
+    unsigned int defplanetnum{0}; /* current default */
+    ScopeLevel homelevel{ScopeLevel::LEVEL_UNIV};
+    unsigned int homesystem{0};
+    unsigned int homeplanetnum{0}; /* home place */
+    unsigned long newspos[4]{};    /* news file pointers */
+    toggletype toggle{};
+    money_t money{0};
+    unsigned long income{0};
+    money_t maintain{0};
+    unsigned long cost_tech{0};
+    unsigned long cost_market{0};
+    unsigned long profit_market{0};
+    time_t login{0}; /* last login for this governor */
   } governor[MAXGOVERNORS + 1];
 };
-
-// TODO(jeffbailey): Should the items after this be in their own fragment?
 
 export struct power {
   int id{0};           // Power entry ID for database persistence

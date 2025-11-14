@@ -85,11 +85,11 @@ int main() {
   srandom(getpid());
 
   if ((Playernum = entity_manager.num_races() + 1) >= MAXPLAYERS) {
-    printf("There are already %d players; No more allowed.\n", MAXPLAYERS - 1);
+    std::println("There are already {} players; No more allowed.", MAXPLAYERS - 1);
     exit(-1);
   }
 
-  printf("Enter racial type to be created (1-%d):", RACIAL_TYPES);
+  std::print("Enter racial type to be created (1-{}):", RACIAL_TYPES);
   if (scanf("%d", &idx) < 0) {
     perror("Cannot read input");
     exit(-1);
@@ -97,7 +97,7 @@ int main() {
   std::getchar();
 
   if (idx <= 0 || idx > RACIAL_TYPES) {
-    printf("Bad racial index.\n");
+    std::println("Bad racial index.");
     exit(1);
   }
   idx = idx - 1;
@@ -110,11 +110,11 @@ int main() {
     auto s = getstar(i);
     stars.push_back(s);
   }
-  printf("There is still space for player %d.\n", Playernum);
+  std::println("There is still space for player {}.", Playernum);
 
   bzero((char*)not_found, sizeof(not_found));
   do {
-    printf(
+    std::print(
         "\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
         "(i)ce, (w)ater, (d)esert, (f)orest? ");
     c = std::getchar();
@@ -143,11 +143,11 @@ int main() {
         ppref = PlanetType::FOREST;
         break;
       default:
-        printf("Oh well.\n");
+        std::println("Oh well.");
         exit(-1);
     }
 
-    printf("Looking for type %d planet...\n", ppref);
+    std::println("Looking for type {} planet...", static_cast<int>(ppref));
 
     /* find first planet of right type */
     count = 0;
@@ -187,15 +187,15 @@ int main() {
     }
 
     if (!found) {
-      printf("planet type not found in any free systems.\n");
+      std::println("planet type not found in any free systems.");
       not_found[ppref] = 1;
       for (found = 1, i = PlanetType::EARTH; i <= PlanetType::DESERT; i++)
         found &= not_found[i];
       if (found) {
-        printf("Looks like there aren't any free planets left.  bye..\n");
+        std::println("Looks like there aren't any free planets left.  bye..");
         exit(-1);
       } else
-        printf("  Try a different one...\n");
+        std::println("  Try a different one...");
       found = 0;
     }
 
@@ -203,7 +203,7 @@ int main() {
 
   Race race{};
 
-  printf("\n\tDeity/Guest/Normal (d/g/n) ?");
+  std::print("\n\tDeity/Guest/Normal (d/g/n) ?");
   c = std::getchar();
   std::getchar();
 
@@ -222,7 +222,7 @@ int main() {
   race.governor[0].toggle.inverse = 1;
   race.governor[0].toggle.color = 0;
   race.governor[0].active = 1;
-  printf("Enter the password for this race:");
+  std::print("Enter the password for this race:");
   char temp_password[256];
   if (scanf("%255s", temp_password) < 0) {
     perror("Cannot read input");
@@ -230,7 +230,7 @@ int main() {
   }
   race.password = temp_password;
   std::getchar();
-  printf("Enter the password for this leader:");
+  std::print("Enter the password for this leader:");
   char temp_gov_password[256];
   if (scanf("%255s", temp_gov_password) < 0) {
     perror("Cannot read input");
@@ -276,25 +276,25 @@ int main() {
     race.number_sexes = Sexes(idx);
     race.metabolism = Metabolism(idx);
 
-    printf("%s\n", race.Metamorph ? "METAMORPHIC" : "");
-    printf("       Birthrate: %.3f\n", race.birthrate);
-    printf("Fighting ability: %d\n", race.fighters);
-    printf("              IQ: %d\n", race.IQ);
-    printf("      Metabolism: %.2f\n", race.metabolism);
-    printf("     Adventurism: %.2f\n", race.adventurism);
-    printf("            Mass: %.2f\n", race.mass);
-    printf(" Number of sexes: %d (min req'd for colonization)\n",
+    std::println("{}", race.Metamorph ? "METAMORPHIC" : "");
+    std::println("       Birthrate: {:.3f}", race.birthrate);
+    std::println("Fighting ability: {}", race.fighters);
+    std::println("              IQ: {}", race.IQ);
+    std::println("      Metabolism: {:.2f}", race.metabolism);
+    std::println("     Adventurism: {:.2f}", race.adventurism);
+    std::println("            Mass: {:.2f}", race.mass);
+    std::println(" Number of sexes: {} (min req'd for colonization)",
            race.number_sexes);
 
-    printf("\n\nLook OK(y/n)\?");
+    std::print("\n\nLook OK(y/n)?");
     if (fgets(str, STRSIZE, stdin) == nullptr) exit(1);
   } while (str[0] != 'y');
 
   auto smap = getsmap(planet);
 
-  printf(
+  std::println(
       "\nChoose a primary sector preference. This race will prefer to "
-      "live\non this type of sector.\n");
+      "live\non this type of sector.");
 
   for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
     Sector& sector = sector_wrap;
@@ -308,7 +308,7 @@ int main() {
   planet.explored = 1;
   for (i = SectorType::SEC_SEA; i <= SectorType::SEC_WASTED; i++)
     if (secttypes[i].here) {
-      printf("(%2d): %c (%d, %d) (%s, %d sectors)\n", i,
+      std::println("({:2d}): {} ({}, {}) ({}, {} sectors)", i,
              desshow(secttypes[i].x, secttypes[i].y, smap), secttypes[i].x,
              secttypes[i].y, Desnames[i], secttypes[i].count);
     }
@@ -316,7 +316,7 @@ int main() {
 
   found = 0;
   do {
-    printf("\nchoice (enter the number): ");
+    std::print("\nchoice (enter the number): ");
     if (scanf("%d", &i) < 0) {
       perror("Cannot read input");
       exit(-1);
@@ -324,7 +324,7 @@ int main() {
     std::getchar();
     if (i < SectorType::SEC_SEA || i > SectorType::SEC_WASTED ||
         !secttypes[i].here) {
-      printf("There are none of that type here..\n");
+      std::println("There are none of that type here..");
     } else
       found = 1;
   } while (!found);
@@ -334,17 +334,17 @@ int main() {
   race.likes[i] = 1.0;
   race.likes[SectorType::SEC_PLATED] = 1.0;
   race.likes[SectorType::SEC_WASTED] = 0.0;
-  printf("\nEnter compatibilities of other sectors -\n");
+  std::println("\nEnter compatibilities of other sectors -");
   for (j = SectorType::SEC_SEA; j < SectorType::SEC_PLATED; j++)
     if (i != j) {
-      printf("%6s (%3d sectors) :", Desnames[j], secttypes[j].count);
+      std::print("{:6s} ({:3d} sectors) :", Desnames[j], secttypes[j].count);
       if (scanf("%d", &k) < 0) {
         perror("Cannot read input");
         exit(-1);
       }
       race.likes[j] = (double)k / 100.0;
     }
-  printf("Numraces = %d\n", entity_manager.num_races());
+  std::println("Numraces = {}", entity_manager.num_races());
   Playernum = race.Playernum = entity_manager.num_races() + 1;
 
   /* build a capital ship to run the government */
@@ -354,7 +354,7 @@ int main() {
 
     bzero(&s, sizeof(s));
     shipno = Numships() + 1;
-    printf("Creating government ship %d...\n", shipno);
+    std::println("Creating government ship {}...", shipno);
     race.Gov_ship = shipno;
     planet.ships = shipno;
     s.nextship = 0;
@@ -418,7 +418,7 @@ int main() {
 
     s.name[0] = '\0';
     s.number = shipno;
-    std::cout << std::format("Created on sector {},{} on /{}/{}\n", s.land_x,
+    std::println("Created on sector {},{} on /{}/{}", s.land_x,
                              s.land_y, stars[s.storbits].get_name(),
                              stars[s.storbits].get_planet_name(s.pnumorbits));
     putship(s);
@@ -453,10 +453,10 @@ int main() {
   stars[star].AP(Playernum - 1) = 5;
   putstar(stars[star], star);
 
-  printf("\nYou are player %d.\n\n", Playernum);
-  printf("Your race has been created on sector %d,%d on\n", secttypes[i].x,
+  std::println("\nYou are player {}.\n", Playernum);
+  std::println("Your race has been created on sector {},{} on", secttypes[i].x,
          secttypes[i].y);
-  std::cout << std::format("{}/{}.\n\n", stars[star].get_name(),
+  std::println("{}/{}.\n", stars[star].get_name(),
                            stars[star].get_planet_name(pnum));
   return 0;
 }

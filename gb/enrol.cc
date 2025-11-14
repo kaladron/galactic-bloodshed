@@ -1,10 +1,8 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /* enrol.c -- initializes to owner one sector and planet. */
 
-import std.compat;
+import std;
 import gblib;
 import dallib;
 
@@ -12,9 +10,10 @@ import dallib;
 #include <strings.h>
 #include <unistd.h>
 
-#include <csignal>
 #include <cstdio>
 #include <cstdlib>
+
+namespace GB::enrol {
 
 struct stype {
   char here;
@@ -55,7 +54,11 @@ static double db_Metabolism[RACIAL_TYPES] = {3.0,  2.7,  2.4, 1.0,  1.15,
   (int_rand(Min_Sexes[(x)], int_rand(Min_Sexes[(x)], Max_Sexes[(x)])))
 #define Metabolism(x) (db_Metabolism[(x)] + .01 * (double)int_rand(-15, 15))
 
+}  // namespace GB::enrol
+
 int main() {
+  using namespace GB::enrol;
+
   int pnum = 0;
   int star = 0;
   int found = 0;
@@ -66,8 +69,6 @@ int main() {
   int j;
   player_t Playernum;
   PlanetType ppref;
-  sigset_t mask;
-  sigset_t block;
   int idx;
   int k;
 #define STRSIZE 100
@@ -346,14 +347,6 @@ int main() {
   printf("Numraces = %d\n", entity_manager.num_races());
   Playernum = race.Playernum = entity_manager.num_races() + 1;
 
-  sigemptyset(&block);
-  sigaddset(&block, SIGHUP);
-  sigaddset(&block, SIGTERM);
-  sigaddset(&block, SIGINT);
-  sigaddset(&block, SIGQUIT);
-  sigaddset(&block, SIGSTOP);
-  sigaddset(&block, SIGTSTP);
-  sigprocmask(SIG_BLOCK, &block, &mask);
   /* build a capital ship to run the government */
   {
     Ship s;
@@ -460,8 +453,6 @@ int main() {
   stars[star].AP(Playernum - 1) = 5;
   putstar(stars[star], star);
 
-  sigprocmask(SIG_SETMASK, &mask, nullptr);
-
   printf("\nYou are player %d.\n\n", Playernum);
   printf("Your race has been created on sector %d,%d on\n", secttypes[i].x,
          secttypes[i].y);
@@ -469,6 +460,8 @@ int main() {
                            stars[star].get_planet_name(pnum));
   return 0;
 }
+
+namespace GB::enrol {
 
 static char desshow(const int x, const int y,
                     SectorMap& smap) /* copied from map.c */
@@ -498,3 +491,5 @@ static char desshow(const int x, const int y,
       return ('!');
   }
 }
+
+}  // namespace GB::enrol

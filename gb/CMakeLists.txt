@@ -103,6 +103,13 @@ target_sources(
   PUBLIC FILE_SET CXX_MODULES FILES third_party/tabulate.cppm)
 target_link_libraries(tabulate_module PUBLIC tabulate::tabulate)
 
+# Create scnlib module wrapper library
+add_library(scnlib_module)
+target_sources(
+  scnlib_module
+  PUBLIC FILE_SET CXX_MODULES FILES third_party/scnlib.cppm)
+target_link_libraries(scnlib_module PUBLIC scn::scn)
+
 # Executable targets
 add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
                         creator/makeuniv.cc)
@@ -267,13 +274,17 @@ target_sources(
           commands/whois.cc
           commands/zoom.cc)
 target_link_libraries(commands PRIVATE gblib SQLite::SQLite3 glaze::glaze
-                                       scn::scn tabulate_module)
+                                       scnlib_module tabulate_module)
 
 add_executable(GB GB_server.cc)
 target_link_libraries(GB PRIVATE gblib commands SQLite::SQLite3 glaze::glaze)
 install(TARGETS GB)
 
 # Test targets
+add_executable(scnlib_test scnlib_test.cc)
+target_link_libraries(scnlib_test PRIVATE scnlib_module)
+add_test(NAME GB_scnlib_test COMMAND scnlib_test)
+
 add_executable(shlmisc_test shlmisc_test.cc)
 target_link_libraries(shlmisc_test PRIVATE gblib SQLite::SQLite3)
 add_test(NAME GB_shlmisc_test COMMAND shlmisc_test)

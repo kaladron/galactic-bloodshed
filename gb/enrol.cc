@@ -5,6 +5,7 @@
 import std;
 import gblib;
 import dallib;
+import scnlib;
 
 #include <sqlite3.h>
 #include <strings.h>
@@ -90,11 +91,12 @@ int main() {
   }
 
   std::print("Enter racial type to be created (1-{}):", RACIAL_TYPES);
-  if (scanf("%d", &idx) < 0) {
-    perror("Cannot read input");
+  auto idx_result = scn::input<int>("{}");
+  if (!idx_result) {
+    std::println(stderr, "Error: Cannot read input - {}", idx_result.error().msg());
     exit(-1);
   }
-  std::getchar();
+  idx = idx_result->value();
 
   if (idx <= 0 || idx > RACIAL_TYPES) {
     std::println("Bad racial index.");
@@ -223,20 +225,20 @@ int main() {
   race.governor[0].toggle.color = 0;
   race.governor[0].active = 1;
   std::print("Enter the password for this race:");
-  char temp_password[256];
-  if (scanf("%255s", temp_password) < 0) {
-    perror("Cannot read input");
+  auto password_result = scn::input<std::string>("{}");
+  if (!password_result) {
+    std::println(stderr, "Error: Cannot read input - {}", password_result.error().msg());
     exit(-1);
   }
-  race.password = temp_password;
-  std::getchar();
+  race.password = password_result->value();
+  
   std::print("Enter the password for this leader:");
-  char temp_gov_password[256];
-  if (scanf("%255s", temp_gov_password) < 0) {
-    perror("Cannot read input");
+  auto gov_password_result = scn::input<std::string>("{}");
+  if (!gov_password_result) {
+    std::println(stderr, "Error: Cannot read input - {}", gov_password_result.error().msg());
     exit(-1);
   }
-  race.governor[0].password = temp_gov_password;
+  race.governor[0].password = gov_password_result->value();
   std::getchar();
 
   /* make conditions preferred by your people set to (more or less)
@@ -317,11 +319,13 @@ int main() {
   found = 0;
   do {
     std::print("\nchoice (enter the number): ");
-    if (scanf("%d", &i) < 0) {
-      perror("Cannot read input");
+    auto choice_result = scn::input<int>("{}");
+    if (!choice_result) {
+      std::println(stderr, "Error: Cannot read input - {}", choice_result.error().msg());
       exit(-1);
     }
-    std::getchar();
+    i = choice_result->value();
+    
     if (i < SectorType::SEC_SEA || i > SectorType::SEC_WASTED ||
         !secttypes[i].here) {
       std::println("There are none of that type here..");
@@ -338,10 +342,12 @@ int main() {
   for (j = SectorType::SEC_SEA; j < SectorType::SEC_PLATED; j++)
     if (i != j) {
       std::print("{:6s} ({:3d} sectors) :", Desnames[j], secttypes[j].count);
-      if (scanf("%d", &k) < 0) {
-        perror("Cannot read input");
+      auto compat_result = scn::input<int>("{}");
+      if (!compat_result) {
+        std::println(stderr, "Error: Cannot read input - {}", compat_result.error().msg());
         exit(-1);
       }
+      k = compat_result->value();
       race.likes[j] = (double)k / 100.0;
     }
   std::println("Numraces = {}", entity_manager.num_races());

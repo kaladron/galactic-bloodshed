@@ -116,7 +116,7 @@ add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
 target_link_libraries(makeuniv PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 
 add_executable(enrol enrol.cc)
-target_link_libraries(enrol PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+target_link_libraries(enrol PRIVATE gblib SQLite::SQLite3 glaze::glaze scnlib_module)
 
 add_executable(racegen GB_racegen.cc enroll.cc racegen.cc)
 target_link_libraries(racegen PRIVATE gblib SQLite::SQLite3 glaze::glaze)

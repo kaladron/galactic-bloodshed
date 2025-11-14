@@ -17,8 +17,8 @@ import scnlib;
 namespace GB::enrol {
 
 struct stype {
-  char here;
-  char x, y;
+  bool here;
+  int x, y;
   int count;
 };
 
@@ -72,8 +72,6 @@ int main() {
   PlanetType ppref;
   int idx;
   int k;
-#define STRSIZE 100
-  char str[STRSIZE];
   char c;
   struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
   Planet planet;
@@ -86,14 +84,18 @@ int main() {
   srandom(getpid());
 
   if ((Playernum = entity_manager.num_races() + 1) >= MAXPLAYERS) {
-    std::println("There are already {} players; No more allowed.", MAXPLAYERS - 1);
+    std::println("There are already {} players; No more allowed.",
+                 MAXPLAYERS - 1);
     exit(-1);
   }
 
   std::print("Enter racial type to be created (1-{}):", RACIAL_TYPES);
-  auto idx_result = scn::input<int>("{}");
+  std::string input_line;
+  std::getline(std::cin, input_line);
+  auto idx_result = scn::scan<int>(input_line, "{}");
   if (!idx_result) {
-    std::println(stderr, "Error: Cannot read input - {}", idx_result.error().msg());
+    std::println(stderr, "Error: Cannot read input - {}",
+                 idx_result.error().msg());
     exit(-1);
   }
   idx = idx_result->value();
@@ -119,8 +121,9 @@ int main() {
     std::print(
         "\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
         "(i)ce, (w)ater, (d)esert, (f)orest? ");
-    c = std::getchar();
-    std::getchar();
+    std::string planet_line;
+    std::getline(std::cin, planet_line);
+    c = (!planet_line.empty()) ? planet_line[0] : '\0';
 
     switch (c) {
       case 'w':
@@ -206,8 +209,9 @@ int main() {
   Race race{};
 
   std::print("\n\tDeity/Guest/Normal (d/g/n) ?");
-  c = std::getchar();
-  std::getchar();
+  std::string deity_line;
+  std::getline(std::cin, deity_line);
+  c = (!deity_line.empty()) ? deity_line[0] : '\0';
 
   race.God = (c == 'd');
   race.Guest = (c == 'g');
@@ -225,21 +229,14 @@ int main() {
   race.governor[0].toggle.color = 0;
   race.governor[0].active = 1;
   std::print("Enter the password for this race:");
-  auto password_result = scn::input<std::string>("{}");
-  if (!password_result) {
-    std::println(stderr, "Error: Cannot read input - {}", password_result.error().msg());
-    exit(-1);
-  }
-  race.password = password_result->value();
-  
+  std::string password_line;
+  std::getline(std::cin, password_line);
+  race.password = password_line;
+
   std::print("Enter the password for this leader:");
-  auto gov_password_result = scn::input<std::string>("{}");
-  if (!gov_password_result) {
-    std::println(stderr, "Error: Cannot read input - {}", gov_password_result.error().msg());
-    exit(-1);
-  }
-  race.governor[0].password = gov_password_result->value();
-  std::getchar();
+  std::string gov_password_line;
+  std::getline(std::cin, gov_password_line);
+  race.governor[0].password = gov_password_line;
 
   /* make conditions preferred by your people set to (more or less)
      those of the planet : higher the concentration of gas, the higher
@@ -263,6 +260,7 @@ int main() {
   race.turn = 0;
   race.allied = 0;
   race.atwar = 0;
+  char ok_char;
   do {
     race.mass = RMass(idx);
     race.birthrate = Birthrate(idx);
@@ -286,11 +284,13 @@ int main() {
     std::println("     Adventurism: {:.2f}", race.adventurism);
     std::println("            Mass: {:.2f}", race.mass);
     std::println(" Number of sexes: {} (min req'd for colonization)",
-           race.number_sexes);
+                 race.number_sexes);
 
     std::print("\n\nLook OK(y/n)?");
-    if (fgets(str, STRSIZE, stdin) == nullptr) exit(1);
-  } while (str[0] != 'y');
+    std::string ok_line;
+    std::getline(std::cin, ok_line);
+    ok_char = (!ok_line.empty()) ? ok_line[0] : '\0';
+  } while (ok_char != 'y');
 
   auto smap = getsmap(planet);
 
@@ -302,7 +302,7 @@ int main() {
     Sector& sector = sector_wrap;
     secttypes[sector.condition].count++;
     if (!secttypes[sector.condition].here) {
-      secttypes[sector.condition].here = 1;
+      secttypes[sector.condition].here = true;
       secttypes[sector.condition].x = sector.x;
       secttypes[sector.condition].y = sector.y;
     }
@@ -311,21 +311,25 @@ int main() {
   for (i = SectorType::SEC_SEA; i <= SectorType::SEC_WASTED; i++)
     if (secttypes[i].here) {
       std::println("({:2d}): {} ({}, {}) ({}, {} sectors)", i,
-             desshow(secttypes[i].x, secttypes[i].y, smap), secttypes[i].x,
-             secttypes[i].y, Desnames[i], secttypes[i].count);
+                   desshow(secttypes[i].x, secttypes[i].y, smap),
+                   secttypes[i].x, secttypes[i].y, Desnames[i],
+                   secttypes[i].count);
     }
   planet.explored = 0;
 
   found = 0;
   do {
     std::print("\nchoice (enter the number): ");
-    auto choice_result = scn::input<int>("{}");
+    std::string choice_line;
+    std::getline(std::cin, choice_line);
+    auto choice_result = scn::scan<int>(choice_line, "{}");
     if (!choice_result) {
-      std::println(stderr, "Error: Cannot read input - {}", choice_result.error().msg());
+      std::println(stderr, "Error: Cannot read input - {}",
+                   choice_result.error().msg());
       exit(-1);
     }
     i = choice_result->value();
-    
+
     if (i < SectorType::SEC_SEA || i > SectorType::SEC_WASTED ||
         !secttypes[i].here) {
       std::println("There are none of that type here..");
@@ -342,9 +346,12 @@ int main() {
   for (j = SectorType::SEC_SEA; j < SectorType::SEC_PLATED; j++)
     if (i != j) {
       std::print("{:6s} ({:3d} sectors) :", Desnames[j], secttypes[j].count);
-      auto compat_result = scn::input<int>("{}");
+      std::string compat_line;
+      std::getline(std::cin, compat_line);
+      auto compat_result = scn::scan<int>(compat_line, "{}");
       if (!compat_result) {
-        std::println(stderr, "Error: Cannot read input - {}", compat_result.error().msg());
+        std::println(stderr, "Error: Cannot read input - {}",
+                     compat_result.error().msg());
         exit(-1);
       }
       k = compat_result->value();
@@ -424,9 +431,9 @@ int main() {
 
     s.name[0] = '\0';
     s.number = shipno;
-    std::println("Created on sector {},{} on /{}/{}", s.land_x,
-                             s.land_y, stars[s.storbits].get_name(),
-                             stars[s.storbits].get_planet_name(s.pnumorbits));
+    std::println("Created on sector {},{} on /{}/{}", s.land_x, s.land_y,
+                 stars[s.storbits].get_name(),
+                 stars[s.storbits].get_planet_name(s.pnumorbits));
     putship(s);
   }
 
@@ -461,9 +468,9 @@ int main() {
 
   std::println("\nYou are player {}.\n", Playernum);
   std::println("Your race has been created on sector {},{} on", secttypes[i].x,
-         secttypes[i].y);
+               secttypes[i].y);
   std::println("{}/{}.\n", stars[star].get_name(),
-                           stars[star].get_planet_name(pnum));
+               stars[star].get_planet_name(pnum));
   return 0;
 }
 

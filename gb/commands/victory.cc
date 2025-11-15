@@ -55,6 +55,7 @@ void victory(const command_t& argv, GameObj& g) {
   // Add data rows
   for (int rank = 0; auto& vic : viclist) {
     rank++;
+    if (rank > count) break;
 
     // Build base row
     tabulate::Table::Row_t row = {

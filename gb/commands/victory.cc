@@ -53,12 +53,12 @@ void victory(const command_t& argv, GameObj& g) {
   table[0].format().font_style({tabulate::FontStyle::bold});
 
   // Add data rows
-  for (int i = 0; auto& vic : viclist) {
-    i++;
+  for (int rank = 0; auto& vic : viclist) {
+    rank++;
 
     // Build base row
     tabulate::Table::Row_t row = {
-        std::format("{}", i), std::format("{}", vic.Thing ? 'M' : ' '),
+        std::format("{}", rank), std::format("{}", vic.Thing ? 'M' : ' '),
         std::format("[{}]", vic.racenum), std::format("{:.15}", vic.name)};
 
     // Add god-only columns

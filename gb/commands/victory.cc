@@ -45,33 +45,37 @@ void victory(const command_t& argv, GameObj& g) {
   g.out << "----==== PLAYER RANKINGS ====----\n";
 
   // Add header row
+  tabulate::Table::Row_t header = {"No.", "", "Race", "Name"};
   if (g.god) {
-    table.add_row({"No.", "", "Race", "Name", "Score", "Tech", "IQ", "Password",
-                   "Gov Pass"});
-  } else {
-    table.add_row({"No.", "", "Race", "Name"});
+    header.insert(header.end(), {"Score", "Tech", "IQ", "Password", "Gov Pass"});
   }
+  table.add_row(header);
   table[0].format().font_style({tabulate::FontStyle::bold});
 
   // Add data rows
   for (int i = 0; auto& vic : viclist) {
     i++;
 
+    // Build base row
+    tabulate::Table::Row_t row = {
+        std::format("{}", i), std::format("{}", vic.Thing ? 'M' : ' '),
+        std::format("[{}]", vic.racenum), std::format("{:.15}", vic.name)};
+
+    // Add god-only columns
     if (g.god) {
       const auto* race = g.entity_manager.peek_race(vic.racenum);
       if (!race) continue;
 
-      table.add_row(
-          {std::format("{}", i), std::format("{}", vic.Thing ? 'M' : ' '),
-           std::format("[{}]", vic.racenum), std::format("{:.15}", vic.name),
-           std::format("{}", vic.rawscore), std::format("{:.2f}", vic.tech),
-           std::format("{}", vic.IQ), std::format("{}", race->password),
-           std::format("{}", race->governor[0].password)});
-    } else {
-      table.add_row(
-          {std::format("{}", i), std::format("{}", vic.Thing ? 'M' : ' '),
-           std::format("[{}]", vic.racenum), std::format("{:.15}", vic.name)});
+      row.insert(row.end(), {
+          std::format("{}", vic.rawscore),
+          std::format("{:.2f}", vic.tech),
+          std::format("{}", vic.IQ),
+          std::format("{}", race->password),
+          std::format("{}", race->governor[0].password)
+      });
     }
+
+    table.add_row(row);
   }
 
   g.out << table << "\n";

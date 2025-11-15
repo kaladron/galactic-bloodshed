@@ -67,8 +67,8 @@ void proj_fuel(const command_t &argv, GameObj &g) {
       return;
     }
     gravity_factor = p->gravity();
-    plan_buf = std::format("/{}/{}", star_ptr->name,
-                           star_ptr->pnames[ship->pnumorbits]);
+    plan_buf = std::format("/{}/{}", star_ptr->get_name(),
+                           star_ptr->get_planet_name(ship->pnumorbits));
   }
   std::string deststr;
   if (argv.size() == 2) {
@@ -99,7 +99,7 @@ void proj_fuel(const command_t &argv, GameObj &g) {
       ((ship->storbits != tmpdest.snum) &&
        tmpdest.level != ScopeLevel::LEVEL_STAR)) {
     const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
-    if (!dest_star || isclr(dest_star->explored, ship->owner)) {
+    if (!dest_star || isclr(dest_star->explored(), ship->owner)) {
       g.out << "You haven't explored the destination system.\n";
       return;
     }
@@ -137,16 +137,16 @@ void proj_fuel(const command_t &argv, GameObj &g) {
       g.out << "Destination planet or star not found.\n";
       return;
     }
-    x_1 = p->xpos + dest_star->xpos;
-    y_1 = p->ypos + dest_star->ypos;
+    x_1 = p->xpos + dest_star->xpos();
+    y_1 = p->ypos + dest_star->ypos();
   } else if (tmpdest.level == ScopeLevel::LEVEL_STAR) {
     const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
     if (!dest_star) {
       g.out << "Destination star not found.\n";
       return;
     }
-    x_1 = dest_star->xpos;
-    y_1 = dest_star->ypos;
+    x_1 = dest_star->xpos();
+    y_1 = dest_star->ypos();
   } else {
     g.out << "ERROR: Invalid destination level\n";
     return;

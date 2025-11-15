@@ -46,8 +46,8 @@ void explore(const command_t &argv, GameObj &g) {
       const auto* star_ptr = g.entity_manager.peek_star(star);
       if (!star_ptr) continue;
       
-      if (isset(star_ptr->explored, Playernum))
-        for (planetnum_t i = 0; i < star_ptr->numplanets; i++) {
+      if (isset(star_ptr->explored(), Playernum))
+        for (planetnum_t i = 0; i < star_ptr->numplanets(); i++) {
           const auto* pl = g.entity_manager.peek_planet(star, i);
           if (!pl) continue;
           
@@ -55,14 +55,14 @@ void explore(const command_t &argv, GameObj &g) {
             if (race.tech >= TECH_SEE_STABILITY) {
               notify(
                   Playernum, Governor,
-                  std::format("\n{:13} ({:2})[{:2}]\n", star_ptr->name,
-                              star_ptr->stability,
-                              star_ptr->AP[Playernum - 1]));
+                  std::format("\n{:13} ({:2})[{:2}]\n", star_ptr->get_name(),
+                              star_ptr->stability(),
+                              star_ptr->AP(Playernum - 1)));
             } else {
               notify(
                   Playernum, Governor,
-                  std::format("\n{:13} (/?/?)[{:2}]\n", star_ptr->name,
-                              star_ptr->AP[Playernum - 1]));
+                  std::format("\n{:13} (/?/?)[{:2}]\n", star_ptr->get_name(),
+                              star_ptr->AP(Playernum - 1)));
             }
           }
 
@@ -70,7 +70,7 @@ void explore(const command_t &argv, GameObj &g) {
 
           notify(Playernum, Governor,
                  std::format("  #{}. {:<15} [ ", i + 1,
-                             star_ptr->pnames[i]));
+                             star_ptr->get_planet_name(i)));
           if (pl->info[Playernum - 1].explored) {
             notify(Playernum, Governor, "Ex ");
             if (pl->info[Playernum - 1].autorep) {

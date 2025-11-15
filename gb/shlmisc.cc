@@ -203,10 +203,10 @@ void deductAPs(const GameObj& g, ap_t APs, starnum_t snum) {
   }
 
   auto& star = *star_handle;
-  if (star.AP[g.player - 1] >= APs)
-    star.AP[g.player - 1] -= APs;
+  if (star.AP(g.player - 1) >= APs)
+    star.AP(g.player - 1) -= APs;
   else {
-    star.AP[g.player - 1] = 0;
+    star.AP(g.player - 1) = 0;
     std::string cheater_msg =
         "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
         "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n";

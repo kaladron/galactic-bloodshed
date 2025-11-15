@@ -62,16 +62,16 @@ void distance(const command_t &argv, GameObj &g) {
       g.out << "Star not found.\n";
       return;
     }
-    x0 = p->xpos + star->xpos;
-    y0 = p->ypos + star->ypos;
+    x0 = p->xpos + star->xpos();
+    y0 = p->ypos + star->ypos();
   } else if (from.level == ScopeLevel::LEVEL_STAR) {
     const auto* star = g.entity_manager.peek_star(from.snum);
     if (!star) {
       g.out << "Star not found.\n";
       return;
     }
-    x0 = star->xpos;
-    y0 = star->ypos;
+    x0 = star->xpos();
+    y0 = star->ypos();
   }
 
   if (to.level == ScopeLevel::LEVEL_SHIP) {
@@ -97,16 +97,16 @@ void distance(const command_t &argv, GameObj &g) {
       g.out << "Star not found.\n";
       return;
     }
-    x1 = p->xpos + star->xpos;
-    y1 = p->ypos + star->ypos;
+    x1 = p->xpos + star->xpos();
+    y1 = p->ypos + star->ypos();
   } else if (to.level == ScopeLevel::LEVEL_STAR) {
     const auto* star = g.entity_manager.peek_star(to.snum);
     if (!star) {
       g.out << "Star not found.\n";
       return;
     }
-    x1 = star->xpos;
-    y1 = star->ypos;
+    x1 = star->xpos();
+    y1 = star->ypos();
   }
   /* compute the distance */
   dist = sqrt(Distsq(x0, y0, x1, y1));

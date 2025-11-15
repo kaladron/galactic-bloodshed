@@ -98,7 +98,7 @@ export class EntityManager {
   std::unordered_map<shipnum_t, std::unique_ptr<Ship>> ship_cache;
   std::unordered_map<std::pair<starnum_t, planetnum_t>, std::unique_ptr<Planet>>
       planet_cache;
-  std::unordered_map<starnum_t, std::unique_ptr<star_struct>> star_cache;
+  std::unordered_map<starnum_t, std::unique_ptr<Star>> star_cache;
   // Note: Sectors are typically accessed in bulk via SectorMap, not cached
   // individually
   std::unordered_map<int, std::unique_ptr<Commod>> commod_cache;
@@ -126,7 +126,7 @@ export class EntityManager {
   EntityHandle<Race> get_race(player_t player);
   EntityHandle<Ship> get_ship(shipnum_t num);
   EntityHandle<Planet> get_planet(starnum_t star, planetnum_t pnum);
-  EntityHandle<star_struct> get_star(starnum_t num);
+  EntityHandle<Star> get_star(starnum_t num);
   EntityHandle<Commod> get_commod(int id);
   EntityHandle<block> get_block(int id);
   EntityHandle<power> get_power(int id);
@@ -136,7 +136,7 @@ export class EntityManager {
   const Race* peek_race(player_t player);
   const Ship* peek_ship(shipnum_t num);
   const Planet* peek_planet(starnum_t star, planetnum_t pnum);
-  const star_struct* peek_star(starnum_t num);
+  const Star* peek_star(starnum_t num);
   const stardata* peek_stardata();
 
   // Create new entities

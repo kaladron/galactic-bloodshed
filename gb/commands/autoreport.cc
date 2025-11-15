@@ -20,7 +20,7 @@ void autoreport(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (g.governor && star->governor[g.player - 1] != g.governor) {
+  if (g.governor && star->governor(g.player - 1) != g.governor) {
     g.out << "You are not authorized to do this here.\n";
     return;
   }
@@ -68,7 +68,7 @@ void autoreport(const command_t& argv, GameObj& g) {
   // Get star name for output message
   const auto* target_star = g.entity_manager.peek_star(snum);
   g.out << std::format("Autoreport on {0} has been {1}.\n",
-                       target_star ? target_star->pnames[pnum] : "Unknown",
+                       target_star ? target_star->get_planet_name(pnum) : "Unknown",
                        (p.info[g.player - 1].autorep ? "set" : "unset"));
 }
 }  // namespace GB::commands

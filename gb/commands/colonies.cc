@@ -14,25 +14,25 @@ void colonies_at_star(GameObj &g, const Race &race, const starnum_t star) {
 
   const auto* star_ptr = g.entity_manager.peek_star(star);
   if (!star_ptr) return;
-  if (!isset(star_ptr->explored, Playernum)) return;
+  if (!isset(star_ptr->explored(), Playernum)) return;
 
-  for (auto i = 0; i < star_ptr->numplanets; i++) {
+  for (auto i = 0; i < star_ptr->numplanets(); i++) {
     const auto* pl = g.entity_manager.peek_planet(star, i);
     if (!pl) continue;
 
     if (!pl->info[Playernum - 1].explored ||
         !pl->info[Playernum - 1].numsectsowned ||
-        (Governor && star_ptr->governor[Playernum - 1] != Governor)) {
+        (Governor && star_ptr->governor(Playernum - 1) != Governor)) {
       continue;
     }
 
     auto formatted = std::format(
         " {:c} {:4.4}/{:<4.4}{:c}{:4d}{:3d}{:5d}{:8d}{:3d}{:6d}{:5d}{:6d} "
         "{:3d}/{:<3d}{:3.0f}/{:<3d}{:3d}/{:<3d}",
-        Psymbol[pl->type], star_ptr->name,
-        star_ptr->pnames[i],
+        Psymbol[pl->type], star_ptr->get_name(),
+        star_ptr->get_planet_name(i),
         (pl->info[Playernum - 1].autorep ? '*' : ' '),
-        star_ptr->governor[Playernum - 1],
+        star_ptr->governor(Playernum - 1),
         pl->info[Playernum - 1].numsectsowned,
         pl->info[Playernum - 1].tech_invest, pl->info[Playernum - 1].popn,
         pl->info[Playernum - 1].crystals, pl->info[Playernum - 1].resource,

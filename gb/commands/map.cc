@@ -31,7 +31,7 @@ void map(const command_t &argv, GameObj &g) {
       }
       show_map(g, where->snum, where->pnum, *p);
       const auto* star = g.entity_manager.peek_star(where->snum);
-      if (star && star->stability > 50)
+      if (star && star->stability() > 50)
         g.out << "WARNING! This planet's primary is unstable.\n";
     } break;
     default:

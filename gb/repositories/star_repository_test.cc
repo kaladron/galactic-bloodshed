@@ -16,40 +16,43 @@ int main() {
   JsonStore store(db);
   StarRepository repo(store);
 
-  // Create a test star
-  star_struct test_star{};
-  test_star.ships = 42;
-  test_star.name = "Sol";
-  test_star.xpos = 100.5;
-  test_star.ypos = 200.75;
-  test_star.numplanets = 8;
-  test_star.stability = 10;
-  test_star.nova_stage = 0;
-  test_star.temperature = 15;
-  test_star.gravity = 1.0;
-  test_star.star_id = 1;
-  test_star.explored = 0b101010;
-  test_star.inhabited = 0b110011;
+  // Create a test star_struct first, then wrap in Star
+  star_struct test_star_data{};
+  test_star_data.ships = 42;
+  test_star_data.name = "Sol";
+  test_star_data.xpos = 100.5;
+  test_star_data.ypos = 200.75;
+  test_star_data.numplanets = 8;
+  test_star_data.stability = 10;
+  test_star_data.nova_stage = 0;
+  test_star_data.temperature = 15;
+  test_star_data.gravity = 1.0;
+  test_star_data.star_id = 1;
+  test_star_data.explored = 0b101010;
+  test_star_data.inhabited = 0b110011;
 
   // Initialize governor array
   for (int i = 0; i < MAXPLAYERS; i++) {
-    test_star.governor[i] = i + 1;
+    test_star_data.governor[i] = i + 1;
   }
 
   // Initialize AP array
   for (int i = 0; i < MAXPLAYERS; i++) {
-    test_star.AP[i] = i * 100;
+    test_star_data.AP[i] = i * 100;
   }
 
   // Initialize planet names
-  test_star.pnames[0] = "Mercury";
-  test_star.pnames[1] = "Venus";
-  test_star.pnames[2] = "Earth";
-  test_star.pnames[3] = "Mars";
-  test_star.pnames[4] = "Jupiter";
-  test_star.pnames[5] = "Saturn";
-  test_star.pnames[6] = "Uranus";
-  test_star.pnames[7] = "Neptune";
+  test_star_data.pnames[0] = "Mercury";
+  test_star_data.pnames[1] = "Venus";
+  test_star_data.pnames[2] = "Earth";
+  test_star_data.pnames[3] = "Mars";
+  test_star_data.pnames[4] = "Jupiter";
+  test_star_data.pnames[5] = "Saturn";
+  test_star_data.pnames[6] = "Uranus";
+  test_star_data.pnames[7] = "Neptune";
+
+  // Wrap in Star object
+  Star test_star(test_star_data);
 
   // Test 1: Save star
   std::println("Test 1: Save star...");
@@ -63,42 +66,41 @@ int main() {
   assert(retrieved.has_value() && "Failed to retrieve star");
   std::println("  ✓ Star retrieved successfully");
 
-  // Test 3: Verify data integrity
+  // Test 3: Verify data integrity using Star accessor methods
   std::println("Test 3: Verify data integrity...");
-  assert(retrieved->ships == test_star.ships);
-  assert(retrieved->name == test_star.name);
-  assert(retrieved->xpos == test_star.xpos);
-  assert(retrieved->ypos == test_star.ypos);
-  assert(retrieved->numplanets == test_star.numplanets);
-  assert(retrieved->stability == test_star.stability);
-  assert(retrieved->nova_stage == test_star.nova_stage);
-  assert(retrieved->temperature == test_star.temperature);
-  assert(retrieved->gravity == test_star.gravity);
-  assert(retrieved->star_id == test_star.star_id);
-  assert(retrieved->explored == test_star.explored);
-  assert(retrieved->inhabited == test_star.inhabited);
+  assert(retrieved->get_name() == "Sol");
+  assert(retrieved->xpos() == 100.5);
+  assert(retrieved->ypos() == 200.75);
+  assert(retrieved->numplanets() == 8);
+  assert(retrieved->stability() == 10);
+  assert(retrieved->nova_stage() == 0);
+  assert(retrieved->temperature() == 15);
+  assert(retrieved->gravity() == 1.0);
+  assert(retrieved->explored() == 0b101010);
+  assert(retrieved->inhabited() == 0b110011);
 
-  // Verify governor array
+  // Verify governor array using accessor
   for (int i = 0; i < MAXPLAYERS; i++) {
-    assert(retrieved->governor[i] == test_star.governor[i]);
+    assert(retrieved->governor(i) == i + 1);
   }
 
-  // Verify AP array
+  // Verify AP array - need to get underlying struct for this
+  auto retrieved_data = retrieved->get_struct();
   for (int i = 0; i < MAXPLAYERS; i++) {
-    assert(retrieved->AP[i] == test_star.AP[i]);
+    assert(retrieved_data.AP[i] == i * 100);
   }
 
   // Verify planet names
-  for (int i = 0; i < test_star.numplanets; i++) {
-    assert(retrieved->pnames[i] == test_star.pnames[i]);
+  for (int i = 0; i < 8; i++) {
+    assert(retrieved->get_planet_name(i) == test_star_data.pnames[i]);
   }
   std::println("  ✓ All fields match original");
 
-  // Test 4: Update star
+  // Test 4: Update star using Star methods
   std::println("Test 4: Update star...");
-  retrieved->ships = 100;
-  retrieved->temperature = 20;
-  retrieved->stability = 8;
+  retrieved->ships() = 100;
+  retrieved->temperature() = 20;
+  retrieved->stability() = 8;
   saved = repo.save(*retrieved);
   assert(saved && "Failed to update star");
   std::println("  ✓ Star updated successfully");
@@ -107,25 +109,28 @@ int main() {
   std::println("Test 5: Retrieve updated star...");
   auto updated = repo.find_by_number(1);
   assert(updated.has_value() && "Failed to retrieve updated star");
-  assert(updated->ships == 100);
-  assert(updated->temperature == 20);
-  assert(updated->stability == 8);
+  auto updated_data = updated->get_struct();
+  assert(updated_data.ships == 100);
+  assert(updated->temperature() == 20);
+  assert(updated->stability() == 8);
   std::println("  ✓ Updated values verified");
 
   // Test 6: Save multiple stars
   std::println("Test 6: Save multiple stars...");
-  star_struct star2 = test_star;
-  star2.star_id = 2;
-  star2.name = "Alpha Centauri";
-  star2.xpos = 50.0;
-  star2.ypos = 75.0;
+  star_struct star2_data = test_star_data;
+  star2_data.star_id = 2;
+  star2_data.name = "Alpha Centauri";
+  star2_data.xpos = 50.0;
+  star2_data.ypos = 75.0;
+  Star star2(star2_data);
   repo.save(star2);
 
-  star_struct star3 = test_star;
-  star3.star_id = 5;  // Gap at 3 and 4
-  star3.name = "Proxima";
-  star3.xpos = 200.0;
-  star3.ypos = 150.0;
+  star_struct star3_data = test_star_data;
+  star3_data.star_id = 5;  // Gap at 3 and 4
+  star3_data.name = "Proxima";
+  star3_data.xpos = 200.0;
+  star3_data.ypos = 150.0;
+  Star star3(star3_data);
   repo.save(star3);
 
   std::println("  ✓ Multiple stars saved");
@@ -134,16 +139,16 @@ int main() {
   std::println("Test 7: Retrieve second star...");
   auto star2_retrieved = repo.find_by_number(2);
   assert(star2_retrieved.has_value());
-  assert(star2_retrieved->name == "Alpha Centauri");
-  assert(star2_retrieved->xpos == 50.0);
+  assert(star2_retrieved->get_name() == "Alpha Centauri");
+  assert(star2_retrieved->xpos() == 50.0);
   std::println("  ✓ Second star retrieved correctly");
 
   // Test 8: Retrieve third star
   std::println("Test 8: Retrieve third star...");
   auto star3_retrieved = repo.find_by_number(5);
   assert(star3_retrieved.has_value());
-  assert(star3_retrieved->name == "Proxima");
-  assert(star3_retrieved->xpos == 200.0);
+  assert(star3_retrieved->get_name() == "Proxima");
+  assert(star3_retrieved->xpos() == 200.0);
   std::println("  ✓ Third star retrieved correctly");
 
   // Test 9: Next available star number (should find gap at 3)

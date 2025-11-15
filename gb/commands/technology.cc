@@ -29,11 +29,11 @@ void technology(const command_t &argv, GameObj &g) {
   }
 
   // Check control: governor must match or be 0
-  if (Governor != 0 && star->governor[Playernum - 1] != Governor) {
+  if (Governor != 0 && star->governor(Playernum - 1) != Governor) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  if (!enufAP(Playernum, Governor, star->AP[Playernum - 1], APcount)) {
+  if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) {
     return;
   }
 

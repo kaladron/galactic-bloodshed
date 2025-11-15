@@ -503,50 +503,55 @@ struct meta<star_struct> {
 }  // namespace glz
 
 // StarRepository - provides type-safe access to Star entities
-export class StarRepository : public Repository<star_struct> {
+export class StarRepository : public Repository<Star> {
  public:
   StarRepository(JsonStore& store);
 
   // Domain-specific methods
-  std::optional<star_struct> find_by_number(starnum_t num);
-  bool save(const star_struct& star);
+  std::optional<Star> find_by_number(starnum_t num);
+  bool save(const Star& star);
 
  protected:
   std::optional<std::string> serialize(
-      const star_struct& star) const override;
-  std::optional<star_struct> deserialize(
+      const Star& star) const override;
+  std::optional<Star> deserialize(
       const std::string& json_str) const override;
 };
 
 // StarRepository implementation
 StarRepository::StarRepository(JsonStore& store)
-    : Repository<star_struct>(store, "tbl_star") {}
+    : Repository<Star>(store, "tbl_star") {}
 
 std::optional<std::string> StarRepository::serialize(
-    const star_struct& star) const {
-  auto result = glz::write_json(star);
+    const Star& star) const {
+  // Serialize the underlying star_struct, not the wrapper
+  star_struct data = star.get_struct();
+  auto result = glz::write_json(data);
   if (result.has_value()) {
     return result.value();
   }
   return std::nullopt;
 }
 
-std::optional<star_struct> StarRepository::deserialize(
+std::optional<Star> StarRepository::deserialize(
     const std::string& json_str) const {
-  star_struct star{};
-  auto result = glz::read_json(star, json_str);
+  // Deserialize to star_struct, then wrap in Star
+  star_struct data{};
+  auto result = glz::read_json(data, json_str);
   if (!result) {
-    return star;
+    return Star(data);  // Wrap the star_struct in Star
   }
   return std::nullopt;
 }
 
-std::optional<star_struct> StarRepository::find_by_number(starnum_t num) {
+std::optional<Star> StarRepository::find_by_number(starnum_t num) {
   return find(num);
 }
 
-bool StarRepository::save(const star_struct& star) {
-  return Repository<star_struct>::save(star.star_id, star);
+bool StarRepository::save(const Star& star) {
+  // Extract star_id from the Star wrapper
+  auto star_struct_data = star.get_struct();
+  return Repository<Star>::save(star_struct_data.star_id, star);
 }
 
 // Glaze reflection for Sector

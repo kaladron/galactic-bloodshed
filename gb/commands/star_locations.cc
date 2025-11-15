@@ -16,10 +16,10 @@ void star_locations(const command_t &argv, GameObj &g) {
     if (!star) continue;
     
     auto dist = std::sqrt(
-        Distsq(star->xpos, star->ypos, g.lastx[1], g.lasty[1]));
+        Distsq(star->xpos(), star->ypos(), g.lastx[1], g.lasty[1]));
     if (std::floor(dist) <= max) {
       g.out << std::format("({:2d}) {:20.20s} ({:8.0f},{:8.0f}) {:7.0f}\n", i,
-                           star->name, star->xpos, star->ypos, dist);
+                           star->get_name(), star->xpos(), star->ypos(), dist);
     }
   }
 }

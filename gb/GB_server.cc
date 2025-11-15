@@ -251,16 +251,16 @@ std::string do_prompt(GameObj& g) {
       auto star = g.entity_manager.get_star(g.snum);
       const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1} )\n",
-                            star_ref.AP[Playernum - 1],
-                            star_ref.name);
+                            star_ref.AP(Playernum - 1),
+                            star_ref.get_name());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
       auto star = g.entity_manager.get_star(g.snum);
       const auto& star_ref = star.read();
       prompt << std::format(
-          " ( [{0}] /{1}/{2} )\n", star_ref.AP[Playernum - 1],
-          star_ref.name, star_ref.pnames[g.pnum]);
+          " ( [{0}] /{1}/{2} )\n", star_ref.AP(Playernum - 1),
+          star_ref.get_name(), star_ref.get_planet_name(g.pnum));
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:
@@ -278,17 +278,17 @@ std::string do_prompt(GameObj& g) {
       auto star = g.entity_manager.get_star(s->storbits);
       const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1}/#{2} )\n",
-                            star_ref.AP[Playernum - 1],
-                            star_ref.name, g.shipno);
+                            star_ref.AP(Playernum - 1),
+                            star_ref.get_name(), g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
       auto star = g.entity_manager.get_star(s->storbits);
       const auto& star_ref = star.read();
       prompt << std::format(
-          " ( [{0}] /{1}/{2}/#{3} )\n", star_ref.AP[Playernum - 1],
-          star_ref.name,
-          star_ref.pnames[g.pnum], g.shipno);
+          " ( [{0}] /{1}/{2}/#{3} )\n", star_ref.AP(Playernum - 1),
+          star_ref.get_name(),
+          star_ref.get_planet_name(g.pnum), g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:
@@ -310,8 +310,8 @@ std::string do_prompt(GameObj& g) {
       const auto* star = g.entity_manager.peek_star(s->storbits);
       if (!star) return " ( [?] /?/#?/#? )\n";
       prompt << std::format(
-          " ( [{0}] /{1}/#{2}/#{3} )\n", star->AP[Playernum - 1],
-          star->name, s->destshipno, g.shipno);
+          " ( [{0}] /{1}/#{2}/#{3} )\n", star->AP(Playernum - 1),
+          star->get_name(), s->destshipno, g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
@@ -319,8 +319,8 @@ std::string do_prompt(GameObj& g) {
       if (!star) return " ( [?] /?/?/#?/#? )\n";
       prompt << std::format(
           " ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
-          star->AP[Playernum - 1], star->name,
-          star->pnames[g.pnum], s->destshipno, g.shipno);
+          star->AP(Playernum - 1), star->get_name(),
+          star->get_planet_name(g.pnum), s->destshipno, g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:
@@ -340,8 +340,8 @@ std::string do_prompt(GameObj& g) {
       const auto* star = g.entity_manager.peek_star(s->storbits);
       if (!star) return " ( [?] /?/ /../#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
-                            star->AP[Playernum - 1],
-                            star->name, s->destshipno,
+                            star->AP(Playernum - 1),
+                            star->get_name(), s->destshipno,
                             g.shipno);
       return prompt.str();
     }
@@ -350,8 +350,8 @@ std::string do_prompt(GameObj& g) {
       if (!star) return " ( [?] /?/?/ /../#?/#? )\n";
       prompt << std::format(
           " ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
-          star->AP[Playernum - 1], star->name,
-          star->pnames[g.pnum], s->destshipno, g.shipno);
+          star->AP(Playernum - 1), star->get_name(),
+          star->get_planet_name(g.pnum), s->destshipno, g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:

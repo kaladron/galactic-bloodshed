@@ -274,22 +274,22 @@ void EntityManager::release_planet(starnum_t star, planetnum_t pnum) {
 }
 
 // Star entity methods
-EntityHandle<star_struct> EntityManager::get_star(starnum_t num) {
-  return get_entity_impl<star_struct>(
+EntityHandle<Star> EntityManager::get_star(starnum_t num) {
+  return get_entity_impl<Star>(
       this, num, star_cache, star_refcount, cache_mutex,
       [this](starnum_t n) { return stars.find_by_number(n); },
-      [this](const star_struct& s) { stars.save(s); },
+      [this](const Star& s) { stars.save(s); },
       [this](starnum_t n) { release_star(n); });
 }
 
-const star_struct* EntityManager::peek_star(starnum_t num) {
-  return peek_entity_impl<star_struct>(
+const Star* EntityManager::peek_star(starnum_t num) {
+  return peek_entity_impl<Star>(
       num, star_cache, cache_mutex,
       [this](starnum_t n) { return stars.find_by_number(n); });
 }
 
 void EntityManager::release_star(starnum_t num) {
-  release_entity_impl<star_struct>(num, star_cache, star_refcount);
+  release_entity_impl<Star>(num, star_cache, star_refcount);
 }
 
 // Commod entity methods
@@ -406,8 +406,8 @@ void EntityManager::flush_all() {
   flush_cache_impl<Ship>(ship_cache, [this](const Ship& s) { ships.save(s); });
   flush_cache_impl<Planet>(planet_cache,
                            [this](const Planet& p) { planets.save(p); });
-  flush_cache_impl<star_struct>(star_cache,
-                                [this](const star_struct& s) { stars.save(s); });
+  flush_cache_impl<Star>(star_cache,
+                                [this](const Star& s) { stars.save(s); });
   flush_cache_impl<Commod>(commod_cache,
                            [this](const Commod& c) { commods.save(c); });
   flush_cache_impl<block>(block_cache, [this](const block& b) { blocks.save(b); });
@@ -426,7 +426,7 @@ void EntityManager::clear_cache() {
   clear_cache_impl<Race>(race_cache, race_refcount);
   clear_cache_impl<Ship>(ship_cache, ship_refcount);
   clear_cache_impl<Planet>(planet_cache, planet_refcount);
-  clear_cache_impl<star_struct>(star_cache, star_refcount);
+  clear_cache_impl<Star>(star_cache, star_refcount);
   clear_cache_impl<Commod>(commod_cache, commod_refcount);
   clear_cache_impl<block>(block_cache, block_refcount);
   clear_cache_impl<power>(power_cache, power_refcount);

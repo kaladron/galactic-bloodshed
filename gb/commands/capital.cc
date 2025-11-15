@@ -62,7 +62,7 @@ void capital(const command_t &argv, GameObj &g) {
       return;
     }
 
-    if (!enufAP(g.player, g.governor, star->AP[g.player - 1], kAPCost)) {
+    if (!enufAP(g.player, g.governor, star->AP(g.player - 1), kAPCost)) {
       return;
     }
     if (s->type != ShipType::OTYPE_GOV) {

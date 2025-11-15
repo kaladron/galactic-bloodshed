@@ -60,6 +60,7 @@ export class Star {
   [[nodiscard]] double ypos() const { return star_struct.ypos; }
 
   ap_t& AP(player_t playernum) { return star_struct.AP[playernum]; }
+  [[nodiscard]] ap_t AP(player_t playernum) const { return star_struct.AP[playernum]; }
 
   // which subordinate maintains the system
   governor_t& governor(player_t playernum) {
@@ -72,9 +73,11 @@ export class Star {
 
   /* 1st ship in orbit */
   unsigned short& ships() { return star_struct.ships; }
+  [[nodiscard]] unsigned short ships() const { return star_struct.ships; }
 
   // how close to nova it is
   unsigned char& stability() { return star_struct.stability; }
+  [[nodiscard]] unsigned char stability() const { return star_struct.stability; }
 
   // stage of nova
   unsigned char& nova_stage() { return star_struct.nova_stage; }

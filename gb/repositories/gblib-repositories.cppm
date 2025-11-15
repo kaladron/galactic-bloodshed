@@ -131,7 +131,7 @@ struct meta<stardata> {
   static constexpr auto value =
       object("id", &T::id, "numstars", &T::numstars, "ships", &T::ships, "AP",
              &T::AP, "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
-             "VN_index2", &T::VN_index2, "dummy", &T::dummy);
+             "VN_index2", &T::VN_index2);
 };
 
 // Glaze reflection for block
@@ -495,10 +495,10 @@ struct meta<star_struct> {
   static constexpr auto value =
       object("ships", &T::ships, "name", &T::name, "governor", &T::governor,
              "AP", &T::AP, "explored", &T::explored, "inhabited", &T::inhabited,
-             "xpos", &T::xpos, "ypos", &T::ypos, "numplanets", &T::numplanets,
-             "pnames", &T::pnames, "stability", &T::stability, "nova_stage",
-             &T::nova_stage, "temperature", &T::temperature, "gravity",
-             &T::gravity, "star_id", &T::star_id, "dummy", &T::dummy);
+             "xpos", &T::xpos, "ypos", &T::ypos, "pnames", &T::pnames,
+             "stability", &T::stability, "nova_stage", &T::nova_stage,
+             "temperature", &T::temperature, "gravity", &T::gravity,
+             "star_id", &T::star_id);
 };
 }  // namespace glz
 

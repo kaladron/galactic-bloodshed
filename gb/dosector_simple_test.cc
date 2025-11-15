@@ -67,7 +67,6 @@ Star createTestStar() {
   star_data.name = "TestStar";
   star_data.xpos = 0.0;
   star_data.ypos = 0.0;
-  star_data.numplanets = 1;
   star_data.stability = 50;
   star_data.nova_stage = 0;
   star_data.temperature = 100;
@@ -81,9 +80,7 @@ Star createTestStar() {
     star_data.AP[i] = 0;
   }
 
-  for (int i = 0; i < MAXPLANETS; i++) {
-    star_data.pnames[i] = "TestPlanet";
-  }
+  star_data.pnames.push_back("TestPlanet");
 
   return Star(star_data);
 }

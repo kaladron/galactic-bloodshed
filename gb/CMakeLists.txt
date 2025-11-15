@@ -329,6 +329,10 @@ add_executable(power_json_test power_json_test.cc)
 target_link_libraries(power_json_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_power_json_test COMMAND power_json_test)
 
+add_executable(star_test star_test.cc)
+target_link_libraries(star_test PRIVATE gblib)
+add_test(NAME GB_star_test COMMAND star_test)
+
 add_executable(star_sqlite_test star_sqlite_test.cc)
 target_link_libraries(star_sqlite_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_star_sqlite_test COMMAND star_sqlite_test)

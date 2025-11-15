@@ -24,7 +24,6 @@ int main() {
   test_star.name = "TestStar";
   test_star.xpos = 100.5;
   test_star.ypos = 200.75;
-  test_star.numplanets = 5;
   test_star.stability = 10;
   test_star.nova_stage = 0;
   test_star.temperature = 15;
@@ -45,9 +44,9 @@ int main() {
   test_star.explored = 0b101010;
   test_star.inhabited = 0b110011;
 
-  // Initialize planet names
-  for (int i = 0; i < MAXPLANETS; i++) {
-    test_star.pnames[i] = std::format("Planet{}", i);
+  // Initialize planet names - now using vector
+  for (int i = 0; i < 5; i++) {
+    test_star.pnames.push_back(std::format("Planet{}", i));
   }
 
   // Create Star object from star_struct
@@ -65,7 +64,7 @@ int main() {
   assert(retrieved.name == test_star.name);
   assert(retrieved.xpos == test_star.xpos);
   assert(retrieved.ypos == test_star.ypos);
-  assert(retrieved.numplanets == test_star.numplanets);
+  assert(retrieved.pnames.size() == test_star.pnames.size());
   assert(retrieved.stability == test_star.stability);
   assert(retrieved.nova_stage == test_star.nova_stage);
   assert(retrieved.temperature == test_star.temperature);
@@ -86,7 +85,7 @@ int main() {
   assert(retrieved.inhabited == test_star.inhabited);
 
   // Verify planet names
-  for (int i = 0; i < MAXPLANETS; i++) {
+  for (size_t i = 0; i < test_star.pnames.size(); i++) {
     assert(retrieved.pnames[i] == test_star.pnames[i]);
   }
 

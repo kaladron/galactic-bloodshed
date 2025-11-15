@@ -104,7 +104,10 @@ int main() {
   star_struct test_star_data{};
   test_star_data.star_id = 1;
   test_star_data.name = "TestStar";
-  test_star_data.numplanets = 5;
+  // Initialize with 5 empty planet names
+  for (int i = 0; i < 5; i++) {
+    test_star_data.pnames.push_back("");
+  }
   Star test_star(test_star_data);
 
   // Test putplanet - stores in SQLite as JSON

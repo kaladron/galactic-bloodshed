@@ -25,8 +25,6 @@ int main() {
   test_stardata.VN_hitlist[0] = 3;
   test_stardata.VN_index1[0] = 1;
   test_stardata.VN_index2[0] = 2;
-  test_stardata.dummy[0] = 12345;
-  test_stardata.dummy[1] = 67890;
 
   // Test putsdata - stores in SQLite as JSON
   putsdata(&test_stardata);
@@ -43,8 +41,6 @@ int main() {
   assert(retrieved_stardata.VN_hitlist[0] == test_stardata.VN_hitlist[0]);
   assert(retrieved_stardata.VN_index1[0] == test_stardata.VN_index1[0]);
   assert(retrieved_stardata.VN_index2[0] == test_stardata.VN_index2[0]);
-  assert(retrieved_stardata.dummy[0] == test_stardata.dummy[0]);
-  assert(retrieved_stardata.dummy[1] == test_stardata.dummy[1]);
 
   // Database connection will be cleaned up automatically by Sql destructor
 

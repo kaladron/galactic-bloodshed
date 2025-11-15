@@ -22,7 +22,6 @@ int main() {
   test_star_data.name = "Sol";
   test_star_data.xpos = 100.5;
   test_star_data.ypos = 200.75;
-  test_star_data.numplanets = 8;
   test_star_data.stability = 10;
   test_star_data.nova_stage = 0;
   test_star_data.temperature = 15;
@@ -41,15 +40,15 @@ int main() {
     test_star_data.AP[i] = i * 100;
   }
 
-  // Initialize planet names
-  test_star_data.pnames[0] = "Mercury";
-  test_star_data.pnames[1] = "Venus";
-  test_star_data.pnames[2] = "Earth";
-  test_star_data.pnames[3] = "Mars";
-  test_star_data.pnames[4] = "Jupiter";
-  test_star_data.pnames[5] = "Saturn";
-  test_star_data.pnames[6] = "Uranus";
-  test_star_data.pnames[7] = "Neptune";
+  // Initialize planet names using vector
+  test_star_data.pnames.push_back("Mercury");
+  test_star_data.pnames.push_back("Venus");
+  test_star_data.pnames.push_back("Earth");
+  test_star_data.pnames.push_back("Mars");
+  test_star_data.pnames.push_back("Jupiter");
+  test_star_data.pnames.push_back("Saturn");
+  test_star_data.pnames.push_back("Uranus");
+  test_star_data.pnames.push_back("Neptune");
 
   // Wrap in Star object
   Star test_star(test_star_data);

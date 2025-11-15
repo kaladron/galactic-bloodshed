@@ -22,8 +22,7 @@ void test_autoreport_database_persistence() {
   star_struct star{};
   star.star_id = 1;
   star.name = "Test Star";
-  star.numplanets = 1;
-  star.pnames[0] = "Test Planet";
+  star.pnames.push_back("Test Planet");
   star.governor[0] = 0;  // Player 1 (index 0) governor 0
 
   JsonStore store(db);

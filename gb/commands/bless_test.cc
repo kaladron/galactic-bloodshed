@@ -31,7 +31,7 @@ void test_bless_technology() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.pnames[0] = "TestPlanet";
+  star.pnames.push_back("TestPlanet");
   StarRepository star_repo(store);
   star_repo.save(star);
 
@@ -83,7 +83,7 @@ void test_bless_money() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.pnames[0] = "TestPlanet";
+  star.pnames.push_back("TestPlanet");
   StarRepository star_repo(store);
   star_repo.save(star);
 

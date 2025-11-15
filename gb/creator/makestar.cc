@@ -234,11 +234,12 @@ Star Makestar(starnum_t snum) {
            (int)star.temperature);
   /*
    * Generate planets for this star: */
-  star.numplanets = int_rand(minplanets, maxplanets);
+  int num_planets = int_rand(minplanets, maxplanets);
+  star.pnames.reserve(num_planets);  // Reserve space for efficiency
 
   distmin = PLANET_DIST_MIN;
-  for (i = 0; i < star.numplanets; i++) {
-    distsep = (PLANET_DIST_MAX - distmin) / (double)(star.numplanets - i);
+  for (i = 0; i < num_planets; i++) {
+    distsep = (PLANET_DIST_MAX - distmin) / (double)(num_planets - i);
     distmax = distmin + distsep;
     dist = distmin + double_rand() * (distmax - distmin);
     distmin = dist;
@@ -248,7 +249,7 @@ Star Makestar(starnum_t snum) {
     xpos = dist * sin(angle);
     ypos = dist * cos(angle);
 
-    star.pnames[i] = NextPlanetName(i);
+    star.pnames.push_back(NextPlanetName(i));
 
     roll = int_rand(1, 100);
     if ((int_rand(1, 100) <= 10) || (temperature > 400)) {

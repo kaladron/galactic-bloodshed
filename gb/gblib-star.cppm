@@ -15,8 +15,7 @@ export struct star_struct {
   uint64_t inhabited;              /* who lives here now 64 bits*/
   double xpos, ypos;
 
-  unsigned char numplanets;                 /* # of planets in star system */
-  std::array<std::string, MAXPLANETS> pnames;  /* names of planets */
+  std::vector<std::string> pnames;  /* names of planets (vector size = numplanets) */
 
   unsigned char stability;   /* how close to nova it is */
   unsigned char nova_stage;  /* stage of nova */
@@ -24,7 +23,6 @@ export struct star_struct {
   double gravity;            /* attraction of star in "Standards". */
 
   starnum_t star_id;
-  long dummy[1]; /* dummy bits for development */
 };
 
 export class Star {
@@ -35,12 +33,18 @@ export class Star {
   }
 
   [[nodiscard]] std::string get_planet_name(planetnum_t pnum) const {
+    if (pnum >= star_struct.pnames.size()) return "";
     return star_struct.pnames[pnum];
   }
   void set_planet_name(planetnum_t pnum, std::string_view name) {
+    // Resize vector if necessary to accommodate the planet number
+    if (pnum >= star_struct.pnames.size()) {
+      star_struct.pnames.resize(pnum + 1);
+    }
     star_struct.pnames[pnum] = name;
   }
   [[nodiscard]] bool planet_name_isset(planetnum_t pnum) const {
+    if (pnum >= star_struct.pnames.size()) return false;
     return !star_struct.pnames[pnum].empty();
   };
 
@@ -51,7 +55,7 @@ export class Star {
   uint64_t& inhabited() { return star_struct.inhabited; }
   [[nodiscard]] uint64_t inhabited() const { return star_struct.inhabited; }
 
-  [[nodiscard]] int numplanets() const { return star_struct.numplanets; }
+  [[nodiscard]] int numplanets() const { return star_struct.pnames.size(); }
 
   double& xpos() { return star_struct.xpos; }
   [[nodiscard]] double xpos() const { return star_struct.xpos; }
@@ -110,5 +114,4 @@ export struct stardata {
   int VN_index1[MAXPLAYERS]; /* negative value is used */
   int VN_index2[MAXPLAYERS]; /* VN's record of destroyed ships
                                         systems where they bought it */
-  unsigned long dummy[2];
 };

@@ -32,8 +32,12 @@ export class Star {
     star_struct.name = name;
   }
 
-  [[nodiscard]] std::string get_planet_name(planetnum_t pnum) const {
-    if (pnum >= star_struct.pnames.size()) return "";
+  [[nodiscard]] const std::string& get_planet_name(planetnum_t pnum) const {
+    if (pnum >= star_struct.pnames.size()) {
+      throw std::runtime_error(std::format(
+          "Planet number {} out of range for star '{}' (has {} planets)",
+          pnum, star_struct.name, star_struct.pnames.size()));
+    }
     return star_struct.pnames[pnum];
   }
   void set_planet_name(planetnum_t pnum, std::string_view name) {
@@ -44,7 +48,11 @@ export class Star {
     star_struct.pnames[pnum] = name;
   }
   [[nodiscard]] bool planet_name_isset(planetnum_t pnum) const {
-    if (pnum >= star_struct.pnames.size()) return false;
+    if (pnum >= star_struct.pnames.size()) {
+      throw std::runtime_error(std::format(
+          "Planet number {} out of range for star '{}' (has {} planets)",
+          pnum, star_struct.name, star_struct.pnames.size()));
+    }
     return !star_struct.pnames[pnum].empty();
   };
 

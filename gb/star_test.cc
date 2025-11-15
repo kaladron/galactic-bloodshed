@@ -25,7 +25,7 @@ int main() {
     std::println("  ✓ Basic creation and access works");
   }
 
-  // Test 2: Bounds checking on get_planet_name (out of range returns empty string)
+  // Test 2: Bounds checking on get_planet_name (out of range throws exception)
   std::println("Test 2: Bounds checking on get_planet_name...");
   {
     star_struct s{};
@@ -39,13 +39,20 @@ int main() {
     assert(star.get_planet_name(0) == "Planet1");
     assert(star.get_planet_name(1) == "Planet2");
     
-    // Out of bounds - should return empty string
-    assert(star.get_planet_name(2) == "");
-    assert(star.get_planet_name(99) == "");
-    std::println("  ✓ Out of bounds access returns empty string");
+    // Out of bounds - should throw exception
+    bool caught_exception = false;
+    try {
+      star.get_planet_name(2);
+    } catch (const std::runtime_error& e) {
+      caught_exception = true;
+      std::string msg = e.what();
+      assert(msg.find("Planet number 2 out of range") != std::string::npos);
+    }
+    assert(caught_exception);
+    std::println("  ✓ Out of bounds access throws exception");
   }
 
-  // Test 3: planet_name_isset bounds checking
+  // Test 3: planet_name_isset bounds checking (throws on out of bounds)
   std::println("Test 3: planet_name_isset bounds checking...");
   {
     star_struct s{};
@@ -59,8 +66,16 @@ int main() {
     assert(star.planet_name_isset(0) == true);   // Has name
     assert(star.planet_name_isset(1) == false);  // Empty name
     assert(star.planet_name_isset(2) == true);   // Has name
-    assert(star.planet_name_isset(99) == false); // Out of bounds
-    std::println("  ✓ planet_name_isset works correctly");
+    
+    // Out of bounds - should throw exception
+    bool caught_exception = false;
+    try {
+      star.planet_name_isset(99);
+    } catch (const std::runtime_error& e) {
+      caught_exception = true;
+    }
+    assert(caught_exception);
+    std::println("  ✓ planet_name_isset works correctly and throws on out of bounds");
   }
 
   // Test 4: set_planet_name with auto-resize
@@ -103,7 +118,7 @@ int main() {
     std::println("  ✓ Overwriting works correctly");
   }
 
-  // Test 6: Empty star (no planets)
+  // Test 6: Empty star (no planets, bounds checking throws)
   std::println("Test 6: Empty star (no planets)...");
   {
     star_struct s{};
@@ -112,9 +127,26 @@ int main() {
     
     Star star(s);
     assert(star.numplanets() == 0);
-    assert(star.get_planet_name(0) == "");
-    assert(star.planet_name_isset(0) == false);
-    std::println("  ✓ Empty star works correctly");
+    
+    // Out of bounds access should throw
+    bool caught_exception = false;
+    try {
+      star.get_planet_name(0);
+    } catch (const std::runtime_error& e) {
+      caught_exception = true;
+    }
+    assert(caught_exception);
+    
+    // planet_name_isset should also throw
+    caught_exception = false;
+    try {
+      star.planet_name_isset(0);
+    } catch (const std::runtime_error& e) {
+      caught_exception = true;
+    }
+    assert(caught_exception);
+    
+    std::println("  ✓ Empty star works correctly with exception-based bounds checking");
   }
 
   // Test 7: numplanets() reflects vector size

@@ -90,7 +90,7 @@ void Place::getplace2(GameObj& g, std::string_view string,
           level = ScopeLevel::LEVEL_PLAN;
           pnum = i;
           const auto p = getplanet(snum, i);
-          if (ignoreexpl || p.info[Playernum - 1].explored || g.god) {
+          if (ignoreexpl || p.info(Playernum - 1).explored || g.god) {
             if (string.starts_with('/')) string.remove_prefix(1);
             return getplace2(g, string, ignoreexpl);
           }

@@ -64,12 +64,12 @@ void cs(const command_t &argv, GameObj &g) {
         }
         const auto* star = g.entity_manager.peek_star(g.snum);
         if (where.level == ScopeLevel::LEVEL_STAR && where.snum == g.snum) {
-          g.lastx[0] = planet->xpos;
-          g.lasty[0] = planet->ypos;
+          g.lastx[0] = planet->xpos();
+          g.lasty[0] = planet->ypos();
         } else if (where.level == ScopeLevel::LEVEL_UNIV) {
           if (star) {
-            g.lastx[1] = star->xpos() + planet->xpos;
-            g.lasty[1] = star->ypos() + planet->ypos;
+            g.lastx[1] = star->xpos() + planet->xpos();
+            g.lasty[1] = star->ypos() + planet->ypos();
           }
         } else
           g.lastx[0] = g.lasty[0] = 0.0;
@@ -110,8 +110,8 @@ void cs(const command_t &argv, GameObj &g) {
                 const auto* orbit_star =
                     g.entity_manager.peek_star(s->storbits);
                 if (planet && orbit_star) {
-                  g.lastx[0] = s->xpos - orbit_star->xpos() - planet->xpos;
-                  g.lasty[0] = s->ypos - orbit_star->ypos() - planet->ypos;
+                  g.lastx[0] = s->xpos - orbit_star->xpos() - planet->xpos();
+                  g.lasty[0] = s->ypos - orbit_star->ypos() - planet->ypos();
                 } else {
                   g.lastx[0] = g.lasty[0] = 0.0;
                 }

@@ -211,7 +211,7 @@ static void process_stars_and_planets(EntityManager& entity_manager,
       // Keep using legacy getplanet for now - Planet has no copy constructor
       // TODO: Migrate to EntityManager once command layer is migrated
       planets[star][i] = std::make_unique<Planet>(getplanet(star, i));
-      if (planets[star][i]->type != PlanetType::ASTEROID) Planet_count++;
+      if (planets[star][i]->type() != PlanetType::ASTEROID) Planet_count++;
       if (update) moveplanet(star, *planets[star][i], i);
       if (!stars[star].planet_name_isset(i))
         stars[star].set_planet_name(i, std::format("NULL-{}", i));
@@ -300,19 +300,19 @@ static void process_market(EntityManager& entity_manager, int update) {
                  races[c.bidder - 1].governor[c.bidder_gov], cost);
         switch (c.type) {
           case CommodType::RESOURCE:
-            planets[c.star_to][c.planet_to]->info[c.bidder - 1].resource +=
+            planets[c.star_to][c.planet_to]->info(c.bidder - 1).resource +=
                 c.amount;
             break;
           case CommodType::FUEL:
-            planets[c.star_to][c.planet_to]->info[c.bidder - 1].fuel +=
+            planets[c.star_to][c.planet_to]->info(c.bidder - 1).fuel +=
                 c.amount;
             break;
           case CommodType::DESTRUCT:
-            planets[c.star_to][c.planet_to]->info[c.bidder - 1].destruct +=
+            planets[c.star_to][c.planet_to]->info(c.bidder - 1).destruct +=
                 c.amount;
             break;
           case CommodType::CRYSTAL:
-            planets[c.star_to][c.planet_to]->info[c.bidder - 1].crystals +=
+            planets[c.star_to][c.planet_to]->info(c.bidder - 1).crystals +=
                 c.amount;
             break;
         }
@@ -400,7 +400,7 @@ static void insert_ships_into_lists(TurnState& state) {
   for (starnum_t star = 0; star < Sdata.numstars; star++) {
     stars[star].ships() = 0;
     for (planetnum_t i = 0; i < stars[star].numplanets(); i++)
-      planets[star][i]->ships = 0;
+      planets[star][i]->ships() = 0;
   }
 
   /* insert ship into the list of wherever it might be */
@@ -447,16 +447,16 @@ static void process_abms_and_missiles(TurnState& state, int update) {
     for (planetnum_t i = 0; i < stars[star].numplanets(); i++) {
       /* store occupation for VPs */
       for (player_t j = 1; j <= Num_races; j++) {
-        if (planets[star][i]->info[j - 1].numsectsowned) {
+        if (planets[star][i]->info(j - 1).numsectsowned) {
           setbit(state.inhabited[star], j);
           setbit(stars[star].inhabited(), j);
         }
-        if (planets[star][i]->type != PlanetType::ASTEROID &&
-            (planets[star][i]->info[j - 1].numsectsowned >
-             planets[star][i]->Maxx * planets[star][i]->Maxy / 2))
+        if (planets[star][i]->type() != PlanetType::ASTEROID &&
+            (planets[star][i]->info(j - 1).numsectsowned >
+             planets[star][i]->Maxx() * planets[star][i]->Maxy() / 2))
           races[j - 1].controlled_planets++;
 
-        if (planets[star][i]->info[j - 1].numsectsowned)
+        if (planets[star][i]->info(j - 1).numsectsowned)
           races[j - 1].planet_points += planets[star][i]->get_points();
       }
       if (update) {
@@ -545,11 +545,11 @@ static void update_victory_scores(TurnState& state, int update) {
       /* do planets in the star next */
       for (planetnum_t i = 0; i < stars[star].numplanets(); i++) {
         for (player_t j = 0; j < Num_races; j++) {
-          if (!planets[star][i]->info[j].explored) continue;
-          victory[j].numsects += (int)planets[star][i]->info[j].numsectsowned;
-          victory[j].res += planets[star][i]->info[j].resource;
-          victory[j].des += (int)planets[star][i]->info[j].destruct;
-          victory[j].fuel += (int)planets[star][i]->info[j].fuel;
+          if (!planets[star][i]->info(j).explored) continue;
+          victory[j].numsects += (int)planets[star][i]->info(j).numsectsowned;
+          victory[j].res += planets[star][i]->info(j).resource;
+          victory[j].des += (int)planets[star][i]->info(j).destruct;
+          victory[j].fuel += (int)planets[star][i]->info(j).fuel;
         }
       } /* end of planet searchings */
     } /* end of star searchings */

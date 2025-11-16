@@ -208,7 +208,7 @@ void build(const command_t &argv, GameObj &g) {
             return;
           }
           sscanf(argv[2].c_str(), "%d,%d", &x, &y);
-          if (x < 0 || x >= planet.Maxx || y < 0 || y >= planet.Maxy) {
+          if (x < 0 || x >= planet.Maxx() || y < 0 || y >= planet.Maxy()) {
             g.out << "Illegal sector.\n";
             return;
           }
@@ -226,7 +226,7 @@ void build(const command_t &argv, GameObj &g) {
           Getship(&newship, *what, race);
         }
         if ((shipcost = newship.build_cost) >
-            planet.info[Playernum - 1].resource) {
+            planet.info(Playernum - 1).resource) {
           g.out << std::format("You need {}r to construct this ship.\n",
                                shipcost);
           finish_build_plan(sector, x, y, planet, snum, pnum);
@@ -334,7 +334,7 @@ void build(const command_t &argv, GameObj &g) {
         switch (builder->type) {
           case ShipType::OTYPE_FACTORY:
             if ((shipcost = newship.build_cost) >
-                planet.info[Playernum - 1].resource) {
+                planet.info(Playernum - 1).resource) {
               g.out << std::format("You need {}r to construct this ship.\n",
                                    shipcost);
               finish_build_ship(sector, x, y, planet, snum, pnum, outside,

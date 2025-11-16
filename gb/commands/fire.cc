@@ -233,7 +233,7 @@ void fire(const command_t &argv, GameObj &g) {
           sh = stars[to->storbits].ships();
         if (to->whatorbits == ScopeLevel::LEVEL_PLAN) { /* planet level ships */
           const auto p = getplanet(to->storbits, to->pnumorbits);
-          sh = p.ships;
+          sh = p.ships();
         }
         Shiplist shiplist(sh);
         for (auto &ship : shiplist) {

@@ -81,14 +81,14 @@ void bombard(const command_t &argv, GameObj &g) {
 
       if (argv.size() > 2) {
         sscanf(argv[2].c_str(), "%d,%d", &x, &y);
-        if (x < 0 || x > p.Maxx - 1 || y < 0 || y > p.Maxy - 1) {
+        if (x < 0 || x > p.Maxx() - 1 || y < 0 || y > p.Maxy() - 1) {
           g.out << "Illegal sector.\n";
           free(from);
           continue;
         }
       } else {
-        x = int_rand(0, (int)p.Maxx - 1);
-        y = int_rand(0, (int)p.Maxy - 1);
+        x = int_rand(0, (int)p.Maxx() - 1);
+        y = int_rand(0, (int)p.Maxy() - 1);
       }
       if (landed(*from) && !adjacent(p, {from->land_x, from->land_y}, {x, y})) {
         g.out << "You are not adjacent to that sector.\n";
@@ -96,7 +96,7 @@ void bombard(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      bool has_defense = has_planet_defense(p.ships, Playernum);
+      bool has_defense = has_planet_defense(p.ships(), Playernum);
 
       if (has_defense && !landed(*from)) {
         g.out << "Target has planetary defense networks.\n";
@@ -133,12 +133,12 @@ void bombard(const command_t &argv, GameObj &g) {
         /* planet retaliates - AFVs are immune to this */
         if (numdest && from->type != ShipType::OTYPE_AFV) {
           for (auto i = 1; i <= Num_races; i++)
-            if (Nuked[i - 1] && !p.slaved_to) {
+            if (Nuked[i - 1] && !p.slaved_to()) {
               /* add planet defense strength */
               auto &alien = races[i - 1];
-              strength = MIN(p.info[i - 1].destruct, p.info[i - 1].guns);
+              strength = MIN(p.info(i - 1).destruct, p.info(i - 1).guns);
 
-              p.info[i - 1].destruct -= strength;
+              p.info(i - 1).destruct -= strength;
 
               shoot_planet_to_ship(alien, *from, strength, long_buf, short_buf);
               warn(i, stars[from->storbits].governor(i - 1), long_buf);
@@ -152,7 +152,7 @@ void bombard(const command_t &argv, GameObj &g) {
       /* protecting ships retaliate individually if damage was inflicted */
       /* AFVs are immune to this */
       if (numdest && from->alive && from->type != ShipType::OTYPE_AFV) {
-        Shiplist shiplist(p.ships);
+        Shiplist shiplist(p.ships());
         for (auto ship : shiplist) {
           if (ship.protect.planet && ship.number != fromship && ship.alive &&
               ship.active) {

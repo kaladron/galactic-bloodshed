@@ -103,7 +103,7 @@ void give(const command_t &argv, GameObj &g) {
       putstar(stars[ship->storbits], ship->storbits);
 
       auto planet = getplanet((int)ship->storbits, (int)ship->pnumorbits);
-      planet.info[who - 1].explored = 1;
+      planet.info(who - 1).explored = 1;
       putplanet(planet, stars[ship->storbits], (int)ship->pnumorbits);
 
     } break;

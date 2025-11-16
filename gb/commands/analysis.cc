@@ -82,11 +82,11 @@ void do_analysis(GameObj &g, player_t ThisPlayer, Mode mode, int sector_type,
   }
   const auto& planet = planet_handle.read();
 
-  if (!planet.info[Playernum - 1].explored) {
+  if (!planet.info(Playernum - 1).explored) {
     return;
   }
 
-  auto TotalSect = planet.Maxx * planet.Maxy;
+  auto TotalSect = planet.Maxx() * planet.Maxy();
 
   for (auto smap = getsmap(planet); auto &sect : smap) {
     auto p = sect.owner;
@@ -150,7 +150,7 @@ void do_analysis(GameObj &g, player_t ThisPlayer, Mode mode, int sector_type,
                 .y = sect.y,
                 .des = sect.condition,
                 .value = maxsupport(race, sect, planet.compatibility(race),
-                                    planet.conditions[TOXIC])});
+                                    planet.conditions(TOXIC))});
       }
     }
   }

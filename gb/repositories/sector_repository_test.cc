@@ -17,10 +17,10 @@ int main() {
 
   // Create a test planet to associate sectors with
   Planet test_planet{};
-  test_planet.star_id = 5;
-  test_planet.planet_order = 1;
-  test_planet.Maxx = 10;
-  test_planet.Maxy = 10;
+  test_planet.star_id() = 5;
+  test_planet.planet_order() = 1;
+  test_planet.Maxx() = 10;
+  test_planet.Maxy() = 10;
 
   // Create a test sector
   Sector test_sector{};
@@ -40,13 +40,15 @@ int main() {
 
   // Test 1: Save sector
   std::println("Test 1: Save sector...");
-  bool saved = repo.save_sector(test_sector, test_planet.star_id, test_planet.planet_order, 5, 7);
+  bool saved = repo.save_sector(test_sector, test_planet.star_id(),
+                                test_planet.planet_order(), 5, 7);
   assert(saved && "Failed to save sector");
   std::println("  ✓ Sector saved successfully");
 
   // Test 2: Retrieve sector by location
   std::println("Test 2: Retrieve sector by location...");
-  auto retrieved = repo.find_sector(test_planet.star_id, test_planet.planet_order, 5, 7);
+  auto retrieved =
+      repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 5, 7);
   assert(retrieved.has_value() && "Failed to retrieve sector");
   std::println("  ✓ Sector retrieved successfully");
 
@@ -72,13 +74,15 @@ int main() {
   retrieved->eff = 90;
   retrieved->popn = 15000;
   retrieved->crystals = 150;
-  saved = repo.save_sector(*retrieved, test_planet.star_id, test_planet.planet_order, 5, 7);
+  saved = repo.save_sector(*retrieved, test_planet.star_id(),
+                           test_planet.planet_order(), 5, 7);
   assert(saved && "Failed to update sector");
   std::println("  ✓ Sector updated successfully");
 
   // Test 5: Retrieve updated sector
   std::println("Test 5: Retrieve updated sector...");
-  auto updated = repo.find_sector(test_planet.star_id, test_planet.planet_order, 5, 7);
+  auto updated =
+      repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 5, 7);
   assert(updated.has_value() && "Failed to retrieve updated sector");
   assert(updated->eff == 90);
   assert(updated->popn == 15000);
@@ -94,7 +98,8 @@ int main() {
   sector2.fert = 45;
   sector2.owner = 1;
   sector2.type = SectorType::SEC_SEA;
-  repo.save_sector(sector2, test_planet.star_id, test_planet.planet_order, 3, 4);
+  repo.save_sector(sector2, test_planet.star_id(), test_planet.planet_order(),
+                   3, 4);
 
   Sector sector3{};
   sector3.x = 8;
@@ -103,17 +108,20 @@ int main() {
   sector3.fert = 30;
   sector3.owner = 1;
   sector3.type = SectorType::SEC_MOUNT;
-  repo.save_sector(sector3, test_planet.star_id, test_planet.planet_order, 8, 2);
+  repo.save_sector(sector3, test_planet.star_id(), test_planet.planet_order(),
+                   8, 2);
   std::println("  ✓ Multiple sectors saved");
 
   // Test 7: Retrieve different sectors
   std::println("Test 7: Retrieve different sectors...");
-  auto sec2 = repo.find_sector(test_planet.star_id, test_planet.planet_order, 3, 4);
+  auto sec2 =
+      repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 3, 4);
   assert(sec2.has_value());
   assert(sec2->type == SectorType::SEC_SEA);
   assert(sec2->x == 3 && sec2->y == 4);
 
-  auto sec3 = repo.find_sector(test_planet.star_id, test_planet.planet_order, 8, 2);
+  auto sec3 =
+      repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 8, 2);
   assert(sec3.has_value());
   assert(sec3->type == SectorType::SEC_MOUNT);
   assert(sec3->x == 8 && sec3->y == 2);
@@ -121,17 +129,18 @@ int main() {
 
   // Test 8: Find non-existent sector
   std::println("Test 8: Find non-existent sector...");
-  auto not_found = repo.find_sector(test_planet.star_id, test_planet.planet_order, 99, 99);
+  auto not_found = repo.find_sector(test_planet.star_id(),
+                                    test_planet.planet_order(), 99, 99);
   assert(!not_found.has_value() && "Should not find non-existent sector");
   std::println("  ✓ Correctly returns nullopt for non-existent sector");
 
   // Test 9: Sectors on different planets don't interfere
   std::println("Test 9: Different planets...");
   Planet planet2{};
-  planet2.star_id = 5;
-  planet2.planet_order = 2;
-  planet2.Maxx = 10;
-  planet2.Maxy = 10;
+  planet2.star_id() = 5;
+  planet2.planet_order() = 2;
+  planet2.Maxx() = 10;
+  planet2.Maxy() = 10;
 
   Sector sector_p2{};
   sector_p2.x = 5;
@@ -140,11 +149,13 @@ int main() {
   sector_p2.fert = 50;
   sector_p2.owner = 2;  // Different owner
   sector_p2.type = SectorType::SEC_LAND;
-  repo.save_sector(sector_p2, planet2.star_id, planet2.planet_order, 5, 7);
+  repo.save_sector(sector_p2, planet2.star_id(), planet2.planet_order(), 5, 7);
 
   // Both sectors should exist independently
-  auto p1_sec = repo.find_sector(test_planet.star_id, test_planet.planet_order, 5, 7);
-  auto p2_sec = repo.find_sector(planet2.star_id, planet2.planet_order, 5, 7);
+  auto p1_sec =
+      repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 5, 7);
+  auto p2_sec =
+      repo.find_sector(planet2.star_id(), planet2.planet_order(), 5, 7);
   assert(p1_sec.has_value() && p2_sec.has_value());
   assert(p1_sec->owner == 1);
   assert(p2_sec->owner == 2);
@@ -153,10 +164,10 @@ int main() {
   // Test 10: Save and load SectorMap (bulk operation)
   std::println("Test 10: Save and load SectorMap (bulk)...");
   Planet small_planet{};
-  small_planet.star_id = 10;
-  small_planet.planet_order = 3;
-  small_planet.Maxx = 3;
-  small_planet.Maxy = 3;
+  small_planet.star_id() = 10;
+  small_planet.planet_order() = 3;
+  small_planet.Maxx() = 3;
+  small_planet.Maxy() = 3;
 
   // Create a sector map with all sectors initialized
   SectorMap test_map(small_planet, true);  // true = initialize all sectors

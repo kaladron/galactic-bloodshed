@@ -305,18 +305,18 @@ Star Makestar(starnum_t snum) {
     }
     auto planet = makeplanet(dist, star.temperature, type, snum, i);
     auto smap = getsmap(planet);
-    planet.xpos = xpos;
-    planet.ypos = ypos;
-    planet.total_resources = 0;
+    planet.xpos() = xpos;
+    planet.ypos() = ypos;
+    planet.total_resources() = 0;
     Numtypes[type]++;
     if (printplaninfo) {
       printf("Planet %s: temp %d, type %s (%u)\n", star.pnames[i].c_str(),
-             planet.conditions[RTEMP], Nametypes[planet.type], planet.type);
+             planet.conditions(RTEMP), Nametypes[planet.type()], static_cast<unsigned int>(planet.type()));
       printf("Position is (%1.0f,%1.0f) relative to %s; distance %1.0f.\n",
-             planet.xpos, planet.ypos, star.name.c_str(), dist);
-      printf("sect map(%dx%d):\n", planet.Maxx, planet.Maxy);
-      for (y = 0; y < planet.Maxy; y++) {
-        for (x = 0; x < planet.Maxx; x++) {
+             planet.xpos(), planet.ypos(), star.name.c_str(), dist);
+      printf("sect map(%dx%d):\n", planet.Maxx(), planet.Maxy());
+      for (y = 0; y < planet.Maxy(); y++) {
+        for (x = 0; x < planet.Maxx(); x++) {
           switch (smap.get(x, y).condition) {
             case SectorType::SEC_LAND:
               std::putchar(CHAR_LAND);
@@ -350,10 +350,10 @@ Star Makestar(starnum_t snum) {
     }
     /*
      * Tabulate statistics for this star's planets. */
-    for (y = 0; y < planet.Maxy; y++)
-      for (x = 0; x < planet.Maxx; x++) {
+    for (y = 0; y < planet.Maxy(); y++)
+      for (x = 0; x < planet.Maxx(); x++) {
         uint8_t d = smap.get(x, y).condition;
-        planet.total_resources += smap.get(x, y).resource;
+        planet.total_resources() += smap.get(x, y).resource;
         Resource[type] += smap.get(x, y).resource;
         Numsects[type][d]++;
         Fertsects[type][d] += smap.get(x, y).fert;

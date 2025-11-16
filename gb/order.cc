@@ -54,10 +54,10 @@ void mk_expl_aimed_at(GameObj &g, const Ship &s) {
       g.out << std::format("Planet {}\n", prin_aimed_at(s));
       auto p = getplanet(aimed_at.snum, aimed_at.pnum);
       if (auto dist =
-              sqrt(Distsq(xf, yf, str.xpos() + p.xpos, str.ypos() + p.ypos));
+              sqrt(Distsq(xf, yf, str.xpos() + p.xpos(), str.ypos() + p.ypos()));
           dist <= tele_range(s.type, s.tech)) {
         setbit(str.explored(), g.player);
-        p.info[g.player - 1].explored = 1;
+        p.info(g.player - 1).explored = 1;
         putplanet(p, stars[aimed_at.snum], aimed_at.pnum);
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
@@ -572,14 +572,14 @@ void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
     } else {
       auto planet = getplanet(ship.deststar, ship.destpnum);
       oncost = 2 * ship.build_cost;
-      if (planet.info[Playernum - 1].resource < oncost) {
+      if (planet.info(Playernum - 1).resource < oncost) {
         g.out << std::format(
             "You don't have {} resources on the planet to activate this "
             "factory.\n",
             oncost);
         return;
       }
-      planet.info[Playernum - 1].resource -= oncost;
+      planet.info(Playernum - 1).resource -= oncost;
       putplanet(planet, stars[ship.deststar], ship.destpnum);
     }
     g.out << std::format("Factory activated at a cost of {} resources.\n",

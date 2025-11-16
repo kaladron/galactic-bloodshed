@@ -45,12 +45,12 @@ void move_popn(const command_t &argv, GameObj &g) {
   }
   auto planet = getplanet(g.snum, g.pnum);
 
-  if (planet.slaved_to > 0 && planet.slaved_to != Playernum) {
+  if (planet.slaved_to() > 0 && planet.slaved_to() != Playernum) {
     g.out << "That planet has been enslaved!\n";
     return;
   }
   sscanf(argv[1].c_str(), "%d,%d", &x, &y);
-  if (x < 0 || y < 0 || x > planet.Maxx - 1 || y > planet.Maxy - 1) {
+  if (x < 0 || y < 0 || x > planet.Maxx() - 1 || y > planet.Maxy() - 1) {
     g.out << "Origin coordinates illegal.\n";
     return;
   }
@@ -71,7 +71,7 @@ void move_popn(const command_t &argv, GameObj &g) {
       return;
     }
 
-    if (x2 < 0 || y2 < 0 || x2 > planet.Maxx - 1 || y2 > planet.Maxy - 1) {
+    if (x2 < 0 || y2 < 0 || x2 > planet.Maxx() - 1 || y2 > planet.Maxy() - 1) {
       g.out << std::format("Illegal coordinates {},{}.\n", x2, y2);
       putplanet(planet, stars[g.snum], g.pnum);
       return;
@@ -228,8 +228,8 @@ void move_popn(const command_t &argv, GameObj &g) {
               "{} {} move in.\n", people,
               what == PopulationType::CIV ? "civilians" : "troops");
         }
-        planet.info[Playernum - 1].mob_points += (int)sect2.mobilization;
-        planet.info[old2owner - 1].mob_points -= (int)sect2.mobilization;
+        planet.info(Playernum - 1).mob_points += (int)sect2.mobilization;
+        planet.info(old2owner - 1).mob_points -= (int)sect2.mobilization;
       } else {
         g.out << std::format("The invasion was repulsed; try again.\n");
         telegram += "You fought them off!\n";
@@ -270,12 +270,12 @@ void move_popn(const command_t &argv, GameObj &g) {
         sect2.troops += people;
       }
       if (!sect2.owner)
-        planet.info[Playernum - 1].mob_points += (int)sect2.mobilization;
+        planet.info(Playernum - 1).mob_points += (int)sect2.mobilization;
       sect2.owner = Playernum;
     }
 
     if (!(sect.popn + sect.troops)) {
-      planet.info[Playernum - 1].mob_points -= (int)sect.mobilization;
+      planet.info(Playernum - 1).mob_points -= (int)sect.mobilization;
       sect.owner = 0;
     }
 

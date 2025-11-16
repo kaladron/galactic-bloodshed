@@ -35,11 +35,11 @@ void toxicity(const command_t &argv, GameObj &g) {
   }
 
   auto p = getplanet(g.snum, g.pnum);
-  p.info[g.player - 1].tox_thresh = thresh;
+  p.info(g.player - 1).tox_thresh = thresh;
   putplanet(p, stars[g.snum], g.pnum);
   deductAPs(g, APcount, g.snum);
 
   g.out << std::format(" New threshold is: {}\n",
-                       p.info[g.player - 1].tox_thresh);
+                       p.info(g.player - 1).tox_thresh);
 }
 }  // namespace GB::commands

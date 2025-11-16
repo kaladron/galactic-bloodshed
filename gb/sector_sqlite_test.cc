@@ -18,10 +18,10 @@ int main() {
 
   // Create a test planet to associate sectors with
   Planet test_planet{};
-  test_planet.star_id = 5;
-  test_planet.planet_order = 1;
-  test_planet.Maxx = 50;
-  test_planet.Maxy = 50;
+  test_planet.star_id() = 5;
+  test_planet.planet_order() = 1;
+  test_planet.Maxx() = 50;
+  test_planet.Maxy() = 50;
 
   // Create a test sector with various values
   Sector test_sector{};

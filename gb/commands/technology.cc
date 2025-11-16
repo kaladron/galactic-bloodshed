@@ -47,9 +47,9 @@ void technology(const command_t &argv, GameObj &g) {
     const auto& p = planet_handle.read();
     g.out << std::format(
         "Current investment : {}    Technology production/update: {:.3f}\n",
-        p.info[Playernum - 1].tech_invest,
-        tech_prod(p.info[Playernum - 1].tech_invest,
-                  p.info[Playernum - 1].popn));
+        p.info(Playernum - 1).tech_invest,
+        tech_prod(p.info(Playernum - 1).tech_invest,
+                  p.info(Playernum - 1).popn));
     return;
   }
 
@@ -61,12 +61,12 @@ void technology(const command_t &argv, GameObj &g) {
   }
 
   auto& p = *planet_handle;
-  p.info[Playernum - 1].tech_invest = invest;
+  p.info(Playernum - 1).tech_invest = invest;
 
   deductAPs(g, APcount, g.snum);
 
   g.out << std::format(
       "   New (ideal) tech production: {:.3f} (this planet)\n",
-      tech_prod(p.info[Playernum - 1].tech_invest, p.info[Playernum - 1].popn));
+      tech_prod(p.info(Playernum - 1).tech_invest, p.info(Playernum - 1).popn));
 }
 }  // namespace GB::commands

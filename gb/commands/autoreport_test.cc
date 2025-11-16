@@ -31,10 +31,10 @@ void test_autoreport_database_persistence() {
 
   // Setup: Create a planet with autoreport initially OFF
   Planet planet{};
-  planet.star_id = 1;
-  planet.planet_order = 0;
-  planet.info[0].numsectsowned = 10;  // Player 1 owns sectors
-  planet.info[0].autorep = 0;  // Initially OFF
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
+  planet.info(0).numsectsowned = 10;  // Player 1 owns sectors
+  planet.info(0).autorep = 0;  // Initially OFF
 
   PlanetRepository planets(store);
   planets.save(planet);
@@ -62,8 +62,8 @@ void test_autoreport_database_persistence() {
     // Verify database: autorep should be TELEG_MAX_AUTO (63)
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info[0].autorep == TELEG_MAX_AUTO);
-    std::println("    ✓ Database: autorep = {} (ON)", saved->info[0].autorep);
+    assert(saved->info(0).autorep == TELEG_MAX_AUTO);
+    std::println("    ✓ Database: autorep = {} (ON)", saved->info(0).autorep);
   }
 
   // TEST 2: Toggle autoreport OFF
@@ -81,8 +81,8 @@ void test_autoreport_database_persistence() {
     // Verify database: autorep should be 0
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info[0].autorep == 0);
-    std::println("    ✓ Database: autorep = {} (OFF)", saved->info[0].autorep);
+    assert(saved->info(0).autorep == 0);
+    std::println("    ✓ Database: autorep = {} (OFF)", saved->info(0).autorep);
   }
 
   // TEST 3: Toggle back ON again
@@ -94,8 +94,8 @@ void test_autoreport_database_persistence() {
     // Verify database: should be ON again
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info[0].autorep == TELEG_MAX_AUTO);
-    std::println("    ✓ Database: autorep = {} (ON)", saved->info[0].autorep);
+    assert(saved->info(0).autorep == TELEG_MAX_AUTO);
+    std::println("    ✓ Database: autorep = {} (ON)", saved->info(0).autorep);
   }
 
   std::println("  ✅ All autoreport database persistence tests passed!");

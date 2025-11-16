@@ -53,8 +53,8 @@ void insurgency(const command_t &argv, GameObj &g) {
   them = 0;
   for (i = 0; i < stars[g.snum].numplanets(); i++) {
     auto p = getplanet(g.snum, i);
-    eligible += p.info[Playernum - 1].popn;
-    them += p.info[who - 1].popn;
+    eligible += p.info(Playernum - 1).popn;
+    them += p.info(who - 1).popn;
   }
   if (!eligible) {
     g.out << "You must have population in the star system to attempt "
@@ -63,7 +63,7 @@ void insurgency(const command_t &argv, GameObj &g) {
   }
   auto p = getplanet(g.snum, g.pnum);
 
-  if (!p.info[who - 1].popn) {
+  if (!p.info(who - 1).popn) {
     g.out << "This player does not occupy this planet.\n";
     return;
   }
@@ -78,13 +78,13 @@ void insurgency(const command_t &argv, GameObj &g) {
     return;
   }
 
-  x = INSURG_FACTOR * (double)amount * (double)p.info[who - 1].tax /
-      (double)p.info[who - 1].popn;
+  x = INSURG_FACTOR * (double)amount * (double)p.info(who - 1).tax /
+      (double)p.info(who - 1).popn;
   x *= morale_factor((double)(race.morale - alien.morale));
   x *= morale_factor((double)(eligible - them) / 50.0);
   x *= morale_factor(10.0 *
-                     (double)(race.fighters * p.info[Playernum - 1].troops -
-                              alien.fighters * p.info[who - 1].troops)) /
+                     (double)(race.fighters * p.info(Playernum - 1).troops -
+                              alien.fighters * p.info(who - 1).troops)) /
        50.0;
   notify(Playernum, Governor, std::format("x = {}\n", x));
   chance = round_rand(200.0 * atan((double)x) / 3.14159265);
@@ -96,7 +96,7 @@ void insurgency(const command_t &argv, GameObj &g) {
       stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum),
       race.name, Playernum, alien.name, who, stars[g.snum].get_name(), eligible,
       Playernum, them, who, race.morale, Playernum, alien.morale, who, amount,
-      p.info[who - 1].popn, p.info[who - 1].tax, chance);
+      p.info(who - 1).popn, p.info(who - 1).tax, chance);
   if (success(chance)) {
     changed_hands = revolt(p, who, Playernum);
     notify(Playernum, Governor, long_msg);
@@ -108,7 +108,7 @@ void insurgency(const command_t &argv, GameObj &g) {
         stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum),
         race.name, Playernum, changed_hands, (changed_hands == 1) ? "" : "s");
     warn(who, stars[g.snum].governor(who - 1), long_msg);
-    p.info[Playernum - 1].tax = p.info[who - 1].tax;
+    p.info(Playernum - 1).tax = p.info(who - 1).tax;
     /* you inherit their tax rate (insurgency wars he he ) */
     post(std::format(
              "/{}/{}: Successful insurgency by {} [{}] against {} [{}]\n",

@@ -27,24 +27,24 @@ returns tech_report_star(GameObj &g, const Star &star, starnum_t snum) {
   returns totals{};
   for (planetnum_t i = 0; i < star.numplanets(); i++) {
     const auto* pl = g.entity_manager.peek_planet(snum, i);
-    if (!pl || !pl->info[Playernum - 1].explored ||
-        !pl->info[Playernum - 1].numsectsowned) {
+    if (!pl || !pl->info(Playernum - 1).explored ||
+        !pl->info(Playernum - 1).numsectsowned) {
       continue;
     }
 
     std::string location =
         std::format("{}/{}/{}", star.get_name(), star.get_planet_name(i),
-                    (pl->info[Playernum - 1].autorep ? "*" : ""));
+                    (pl->info(Playernum - 1).autorep ? "*" : ""));
 
-    auto gain = tech_prod(pl->info[Playernum - 1].tech_invest,
-                          pl->info[Playernum - 1].popn);
-    auto max_gain = tech_prod(pl->info[Playernum - 1].prod_res,
-                              pl->info[Playernum - 1].popn);
+    auto gain = tech_prod(pl->info(Playernum - 1).tech_invest,
+                          pl->info(Playernum - 1).popn);
+    auto max_gain = tech_prod(pl->info(Playernum - 1).prod_res,
+                              pl->info(Playernum - 1).popn);
 
     g.out << std::format("{:16.16} {:10} {:10} {:8.3f} {:8.3f}\n", location,
-                         pl->info[Playernum - 1].popn,
-                         pl->info[Playernum - 1].tech_invest, gain, max_gain);
-    totals.invest += pl->info[Playernum - 1].tech_invest;
+                         pl->info(Playernum - 1).popn,
+                         pl->info(Playernum - 1).tech_invest, gain, max_gain);
+    totals.invest += pl->info(Playernum - 1).tech_invest;
     totals.gain += gain;
     totals.max_gain += max_gain;
   }

@@ -46,7 +46,7 @@ std::expected<void, std::string> can_build_on_sector(const int what,
     return std::unexpected(temp);
   }
   if (what == ShipType::OTYPE_QUARRY) {
-    Shiplist shiplist(planet.ships);
+    Shiplist shiplist(planet.ships());
     for (auto s : shiplist) {
       if (s.alive && s.type == ShipType::OTYPE_QUARRY && s.land_x == c.x &&
           s.land_y == c.y) {
@@ -67,9 +67,9 @@ int getcount(const command_t &argv, const size_t elem) {
 bool can_build_at_planet(GameObj &g, const Star &star, const Planet &planet) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  if (planet.slaved_to && planet.slaved_to != Playernum) {
+  if (planet.slaved_to() && planet.slaved_to() != Playernum) {
     std::string message = std::format("This planet is enslaved by player {}.\n",
-                                      planet.slaved_to);
+                                      planet.slaved_to());
     notify(Playernum, Governor, message);
     return false;
   }
@@ -163,10 +163,10 @@ std::optional<ScopeLevel> build_at_ship(GameObj &g, Ship *builder,
 void autoload_at_planet(int Playernum, Ship *s, Planet *planet, Sector &sector,
                         int *crew, double *fuel) {
   *crew = MIN(s->max_crew, sector.popn);
-  *fuel = MIN((double)s->max_fuel, (double)planet->info[Playernum - 1].fuel);
+  *fuel = MIN((double)s->max_fuel, (double)planet->info(Playernum - 1).fuel);
   sector.popn -= *crew;
   if (!sector.popn && !sector.troops) sector.owner = 0;
-  planet->info[Playernum - 1].fuel -= (int)(*fuel);
+  planet->info(Playernum - 1).fuel -= (int)(*fuel);
 }
 
 void autoload_at_ship(Ship *s, Ship *b, int *crew, double *fuel) {
@@ -270,8 +270,8 @@ void create_ship_by_planet(int Playernum, int Governor, const Race &race,
   int shipno;
 
   newship.tech = race.tech;
-  newship.xpos = stars[snum].xpos() + planet.xpos;
-  newship.ypos = stars[snum].ypos() + planet.ypos;
+  newship.xpos = stars[snum].xpos() + planet.xpos();
+  newship.ypos = stars[snum].ypos() + planet.ypos();
   newship.land_x = x;
   newship.land_y = y;
   newship.shipclass = (((newship.type == ShipType::OTYPE_TERRA) ||
@@ -285,7 +285,7 @@ void create_ship_by_planet(int Playernum, int Governor, const Race &race,
   newship.storbits = snum;
   newship.pnumorbits = pnum;
   newship.docked = 1;
-  planet.info[Playernum - 1].resource -= newship.build_cost;
+  planet.info(Playernum - 1).resource -= newship.build_cost;
   while ((shipno = getdeadship()) == 0);
   if (shipno == -1) shipno = Numships() + 1;
   newship.number = shipno;
@@ -295,16 +295,16 @@ void create_ship_by_planet(int Playernum, int Governor, const Race &race,
   insert_sh_plan(planet, &newship);
   if (newship.type == ShipType::OTYPE_TOXWC) {
     std::string message = std::format("Toxin concentration on planet was {}%,",
-                                      planet.conditions[TOXIC]);
+                                      planet.conditions(TOXIC));
     notify(Playernum, Governor, message);
     unsigned char toxic_amount;
-    if (planet.conditions[TOXIC] > TOXMAX)
+    if (planet.conditions(TOXIC) > TOXMAX)
       toxic_amount = TOXMAX;
     else
-      toxic_amount = planet.conditions[TOXIC];
+      toxic_amount = planet.conditions(TOXIC);
     newship.special = WasteData{.toxic = toxic_amount};
-    planet.conditions[TOXIC] -= toxic_amount;
-    std::string toxMsg = std::format(" now {}%.\n", planet.conditions[TOXIC]);
+    planet.conditions(TOXIC) -= toxic_amount;
+    std::string toxMsg = std::format(" now {}%.\n", planet.conditions(TOXIC));
     notify(Playernum, Governor, toxMsg);
   }
   std::string message =

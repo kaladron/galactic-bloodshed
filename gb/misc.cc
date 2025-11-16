@@ -159,8 +159,8 @@ void insert_sh_star(Star &star, Ship *s) {
 }
 
 void insert_sh_plan(Planet &pl, Ship *s) {
-  s->nextship = pl.ships;
-  pl.ships = s->number;
+  s->nextship = pl.ships();
+  pl.ships() = s->number;
   s->whatorbits = ScopeLevel::LEVEL_PLAN;
 }
 
@@ -207,12 +207,12 @@ void remove_sh_star(Ship &s) {
  */
 void remove_sh_plan(Ship &s) {
   auto host = getplanet(s.storbits, s.pnumorbits);
-  shipnum_t sh = host.ships;
+  shipnum_t sh = host.ships();
 
   // If the ship is the first of the chain, point the star to the
   // next, which is zero if there are no other ships.
   if (sh == s.number) {
-    host.ships = s.nextship;
+    host.ships() = s.nextship;
     putplanet(host, stars[s.storbits], s.pnumorbits);
   } else {
     Shiplist shiplist(sh);

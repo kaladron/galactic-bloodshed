@@ -40,8 +40,8 @@ void tax(const command_t &argv, GameObj &g) {
 
   if (argv.size() < 2) {
     g.out << std::format("Current tax rate: {}%    Target: {}%\n",
-                         p.info[Playernum - 1].tax,
-                         p.info[Playernum - 1].newtax);
+                         p.info(Playernum - 1).tax,
+                         p.info(Playernum - 1).newtax);
     return;
   }
 
@@ -51,7 +51,7 @@ void tax(const command_t &argv, GameObj &g) {
     g.out << "Illegal value.\n";
     return;
   }
-  p.info[Playernum - 1].newtax = sum_tax;
+  p.info(Playernum - 1).newtax = sum_tax;
   putplanet(p, stars[g.snum], g.pnum);
 
   deductAPs(g, APcount, g.snum);

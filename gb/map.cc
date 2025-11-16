@@ -24,9 +24,9 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
   if (!race.governor[Governor].toggle.geography) {
     /* traverse ship list on planet; find out if we can look at
        ships here. */
-    iq = !!p.info[Playernum - 1].numsectsowned;
+    iq = !!p.info(Playernum - 1).numsectsowned;
 
-    Shiplist shiplist{p.ships};
+    Shiplist shiplist{p.ships()};
     for (const auto &s : shiplist) {
       if (s.owner == Playernum && authorized(Governor, s) &&
           (s.popn || (s.type == ShipType::OTYPE_PROBE)))
@@ -37,7 +37,7 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
   /* report that this is a planet map */
   g.out << '$';
   g.out << std::format("{};", stars[snum].get_planet_name(pnum));
-  g.out << std::format("{};{};{};", p.Maxx, p.Maxy, show);
+  g.out << std::format("{};{};{};", p.Maxx(), p.Maxy(), show);
 
   /* send map data */
   for (const auto &sector : smap) {
@@ -75,13 +75,13 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
   if (!show) return;
 
   g.out << std::format(
-      "Type: {:<8}   Sects {:<7}: {:<3}   Aliens:", Planet_types[p.type],
+      "Type: {:<8}   Sects {:<7}: {:<3}   Aliens:", Planet_types[p.type()],
       race.Metamorph ? "covered" : "owned",
-      p.info[Playernum - 1].numsectsowned);
-  if (p.explored || race.tech >= TECH_EXPLORE) {
+      p.info(Playernum - 1).numsectsowned);
+  if (p.explored() || race.tech >= TECH_EXPLORE) {
     bool f = false;
     for (auto i = 1U; i < MAXPLAYERS; i++) {
-      if (p.info[i - 1].numsectsowned != 0 && i != Playernum) {
+      if (p.info(i - 1).numsectsowned != 0 && i != Playernum) {
         f = true;
         g.out << std::format("{}{}", isset(race.atwar, i) ? '*' : ' ', i);
       }
@@ -93,34 +93,34 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
   g.out << "\n";
   g.out << std::format(
       "              Guns : {:<3}             Mob Points : {}\n",
-      p.info[Playernum - 1].guns, p.info[Playernum - 1].mob_points);
+      p.info(Playernum - 1).guns, p.info(Playernum - 1).mob_points);
   g.out << std::format(
       "      Mobilization : {:<3} ({:<3})     Compatibility: {:.2f}%",
-      p.info[Playernum - 1].comread, p.info[Playernum - 1].mob_set,
+      p.info(Playernum - 1).comread, p.info(Playernum - 1).mob_set,
       p.compatibility(race));
-  if (p.conditions[TOXIC] > 50) {
-    g.out << std::format("    ({}% TOXIC)\n", p.conditions[TOXIC]);
+  if (p.conditions(TOXIC) > 50) {
+    g.out << std::format("    ({}% TOXIC)\n", p.conditions(TOXIC));
   }
   g.out << "\n";
   g.out << std::format("Resource stockpile : {:<9}    Fuel stockpile: {}\n",
-                       p.info[Playernum - 1].resource,
-                       p.info[Playernum - 1].fuel);
+                       p.info(Playernum - 1).resource,
+                       p.info(Playernum - 1).fuel);
   g.out << std::format(
       "      Destruct cap : {:<9} {:>18}: {:<5} ({:<5}/{:<})\n",
-      p.info[Playernum - 1].destruct,
+      p.info(Playernum - 1).destruct,
       race.Metamorph ? "Tons of biomass" : "Total Population",
-      p.info[Playernum - 1].popn, p.popn,
-      round_rand(.01 * (100. - p.conditions[TOXIC]) * p.maxpopn));
+      p.info(Playernum - 1).popn, p.popn(),
+      round_rand(.01 * (100. - p.conditions(TOXIC)) * p.maxpopn()));
   g.out << std::format("          Crystals : {:<9} {:>18}: {:<5} ({:<5})\n",
-                       p.info[Playernum - 1].crystals, "Ground forces",
-                       p.info[Playernum - 1].troops, p.troops);
+                       p.info(Playernum - 1).crystals, "Ground forces",
+                       p.info(Playernum - 1).troops, p.troops());
   g.out << std::format("{} Total Resource Deposits     Tax rate {}%  New {}%\n",
-                       p.total_resources, p.info[Playernum - 1].tax,
-                       p.info[Playernum - 1].newtax);
+                       p.total_resources(), p.info(Playernum - 1).tax,
+                       p.info(Playernum - 1).newtax);
   g.out << std::format("Estimated Production Next Update : {:.2f}\n",
-                       p.info[Playernum - 1].est_production);
-  if (p.slaved_to) {
-    g.out << std::format("      ENSLAVED to player {};\n", p.slaved_to);
+                       p.info(Playernum - 1).est_production);
+  if (p.slaved_to()) {
+    g.out << std::format("      ENSLAVED to player {};\n", p.slaved_to());
   }
 }
 

@@ -224,18 +224,18 @@ void scrap(const command_t &argv, GameObj &g) {
             sect.owner = g.player;
             sect.popn += crewval;
             sect.troops += troopval;
-            planet.info[g.player - 1].numsectsowned++;
-            planet.info[g.player - 1].popn += crewval;
-            planet.info[g.player - 1].popn += troopval;
+            planet.info(g.player - 1).numsectsowned++;
+            planet.info(g.player - 1).popn += crewval;
+            planet.info(g.player - 1).popn += troopval;
             notify(
                 g.player, g.governor,
                 std::format("Sector {},{} Colonized.\n", s->land_x, s->land_y));
           }
-          planet.info[g.player - 1].resource += scrapval;
-          planet.popn += crewval;
-          planet.info[g.player - 1].destruct += destval;
-          planet.info[g.player - 1].fuel += (int)fuelval;
-          planet.info[g.player - 1].crystals += (int)xtalval;
+          planet.info(g.player - 1).resource += scrapval;
+          planet.popn() += crewval;
+          planet.info(g.player - 1).destruct += destval;
+          planet.info(g.player - 1).fuel += (int)fuelval;
+          planet.info(g.player - 1).crystals += (int)xtalval;
           putsector(sect, planet, s->land_x, s->land_y);
         }
         putplanet(planet, stars[s->storbits], s->pnumorbits);

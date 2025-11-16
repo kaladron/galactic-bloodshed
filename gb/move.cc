@@ -26,7 +26,7 @@ Coordinates get_move(const Planet& planet, const char direction,
     case '1':
     case 'b': {
       Coordinates to{from.x - 1, from.y + 1};
-      if (to.x == -1) to.x = planet.Maxx - 1;
+      if (to.x == -1) to.x = planet.Maxx() - 1;
       return to;
     }
     case '2':
@@ -35,25 +35,25 @@ Coordinates get_move(const Planet& planet, const char direction,
     case '3':
     case 'n': {
       Coordinates to{from.x + 1, from.y + 1};
-      if (to.x == planet.Maxx) to.x = 0;
+      if (to.x == planet.Maxx()) to.x = 0;
       return to;
     }
     case '4':
     case 'h': {
       Coordinates to{from.x - 1, from.y};
-      if (to.x == -1) to.x = planet.Maxx - 1;
+      if (to.x == -1) to.x = planet.Maxx() - 1;
       return to;
     }
     case '6':
     case 'l': {
       Coordinates to{from.x + 1, from.y};
-      if (to.x == planet.Maxx) to.x = 0;
+      if (to.x == planet.Maxx()) to.x = 0;
       return to;
     }
     case '7':
     case 'y': {
       Coordinates to{from.x - 1, from.y - 1};
-      if (to.x == -1) to.x = planet.Maxx - 1;
+      if (to.x == -1) to.x = planet.Maxx() - 1;
       return to;
     }
     case '8':
@@ -64,7 +64,7 @@ Coordinates get_move(const Planet& planet, const char direction,
     case '9':
     case 'u': {
       Coordinates to{from.x + 1, from.y - 1};
-      if (to.x == planet.Maxx) to.x = 0;
+      if (to.x == planet.Maxx()) to.x = 0;
       return to;
     }
     default:
@@ -86,7 +86,7 @@ void mech_defend(player_t Playernum, governor_t Governor, int* people,
 
   auto& race = races[Playernum - 1];
 
-  Shiplist shiplist{p.ships};
+  Shiplist shiplist{p.ships()};
   for (auto ship : shiplist) {
     if (civ + mil == 0) break;
     if (ship.owner != Playernum && ship.type == ShipType::OTYPE_AFV &&

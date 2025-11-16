@@ -1184,7 +1184,7 @@ static void load_star_data() {
   for (int s = 0; s < Sdata.numstars; s++) {
     for (int t = 0; t < stars[s].numplanets(); t++) {
       planets[s][t] = std::make_unique<Planet>(getplanet(s, t));
-      if (planets[s][t]->type != PlanetType::ASTEROID) Planet_count++;
+      if (planets[s][t]->type() != PlanetType::ASTEROID) Planet_count++;
     }
   }
 }

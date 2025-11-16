@@ -89,13 +89,13 @@ void bid(const command_t &argv, GameObj &g) {
     }
     auto p = getplanet(snum, pnum);
 
-    if (p.slaved_to && p.slaved_to != Playernum) {
+    if (p.slaved_to() && p.slaved_to() != Playernum) {
       g.out << std::format("This planet is enslaved to player {}.\n",
-                           p.slaved_to);
+                           p.slaved_to());
       return;
     }
     /* check to see if there is an undamaged gov center or space port here */
-    Shiplist shiplist(p.ships);
+    Shiplist shiplist(p.ships());
     bool ok = false;
     for (auto s : shiplist) {
       if (s.alive && (s.owner == Playernum) && !s.damage &&

@@ -101,10 +101,10 @@ void do_VN(Ship &ship) {
       !std::get<MindData>(ship.special).busy) {
     if (ship.fuel >= (double)ship.max_fuel) {
       ship.xpos = stars[ship.storbits].xpos() +
-                  planets[ship.storbits][ship.pnumorbits]->xpos +
+                  planets[ship.storbits][ship.pnumorbits]->xpos() +
                   int_rand(-10, 10);
       ship.ypos = stars[ship.storbits].ypos() +
-                  planets[ship.storbits][ship.pnumorbits]->ypos +
+                  planets[ship.storbits][ship.pnumorbits]->ypos() +
                   int_rand(-10, 10);
       ship.docked = 0;
       ship.whatdest = ScopeLevel::LEVEL_UNIV;
@@ -130,16 +130,16 @@ void do_VN(Ship &ship) {
 
   player_t f = 0;
   for (player_t i = 1; i <= Num_races; i++)
-    if (p->info[nums[i] - 1].resource) f = nums[i];
+    if (p->info(nums[i] - 1).resource) f = nums[i];
 
   // No resources to steal
   if (f == 0) return;
 
   // Steal the resources
 
-  auto prod = std::min(p->info[f - 1].resource,
+  auto prod = std::min(p->info(f - 1).resource,
                        Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
-  p->info[f - 1].resource -= prod;
+  p->info(f - 1).resource -= prod;
 
   std::string buf;
 
@@ -177,10 +177,10 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
       if (!(oldres = s.resource)) {
         /* move to another sector */
         xa = int_rand(-1, 1);
-        ship.land_x = mod(ship.land_x + xa, planet.Maxx);
+        ship.land_x = mod(ship.land_x + xa, planet.Maxx());
         ya = (ship.land_y == 0)
                  ? 1
-                 : ((ship.land_y == (planet.Maxy - 1)) ? -1 : int_rand(-1, 1));
+                 : ((ship.land_y == (planet.Maxy() - 1)) ? -1 : int_rand(-1, 1));
         ship.land_y += ya;
       } else {
         /* mine the sector */
@@ -211,8 +211,8 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
           ships[Num_ships] = (Ship *)malloc(sizeof(Ship));
           s2 = ships[Num_ships];
           bzero((char *)s2, sizeof(Ship));
-          s2->nextship = planet.ships;
-          planet.ships = Num_ships;
+          s2->nextship = planet.ships();
+          planet.ships() = Num_ships;
           s2->number = Num_ships;
           s2->whatorbits = ScopeLevel::LEVEL_PLAN;
           s2->storbits = ship.storbits;
@@ -317,7 +317,7 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
         if (ship.whatdest == ScopeLevel::LEVEL_PLAN &&
             ship.deststar == ship.storbits &&
             ship.destpnum == ship.pnumorbits) {
-          if (planet.type == PlanetType::GASGIANT) {
+          if (planet.type() == PlanetType::GASGIANT) {
             if (std::holds_alternative<MindData>(ship.special)) {
               auto mind = std::get<MindData>(ship.special);
               mind.busy = 0;
@@ -335,8 +335,8 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
               ship.whatdest = ScopeLevel::LEVEL_PLAN;
               ship.deststar = ship.storbits;
               ship.destpnum = ship.pnumorbits;
-              ship.xpos = stars[ship.storbits].xpos() + planet.xpos;
-              ship.ypos = stars[ship.storbits].ypos() + planet.ypos;
+              ship.xpos = stars[ship.storbits].xpos() + planet.xpos();
+              ship.ypos = stars[ship.storbits].ypos() + planet.ypos();
               ship.land_x = sect.x;
               ship.land_y = sect.y;
               if (std::holds_alternative<MindData>(ship.special)) {

@@ -102,10 +102,10 @@ void test_entity_manager_composite_keys() {
 
   // Create a planet
   Planet planet{};
-  planet.star_id = 5;
-  planet.planet_order = 2;
-  planet.Maxx = 10;
-  planet.Maxy = 10;
+  planet.star_id() = 5;
+  planet.planet_order() = 2;
+  planet.Maxx() = 10;
+  planet.Maxy() = 10;
 
   JsonStore store(db);
   PlanetRepository planets(store);
@@ -115,17 +115,17 @@ void test_entity_manager_composite_keys() {
   {
     auto handle1 = em.get_planet(5, 2);
     assert(handle1.get() != nullptr);
-    assert(handle1->planet_order == 2);
-    assert(handle1->Maxx == 10);
+    assert(handle1->planet_order() == 2);
+    assert(handle1->Maxx() == 10);
 
     // Modify the planet
-    handle1->Maxx = 15;
+    handle1->Maxx() = 15;
 
     // Get the same planet again - should return the SAME in-memory instance
     auto handle2 = em.get_planet(5, 2);
     assert(handle2.get() != nullptr);
     assert(handle2.get() == handle1.get());  // Same pointer!
-    assert(handle2->Maxx == 15);  // Sees the modification immediately
+    assert(handle2->Maxx() == 15);  // Sees the modification immediately
 
     std::println("  ✓ Multiple handles to same planet return identical instance");
     // Handles go out of scope here, triggering save
@@ -134,7 +134,7 @@ void test_entity_manager_composite_keys() {
   // Verify modification was persisted to database
   auto saved_planet = planets.find_by_location(5, 2);
   assert(saved_planet.has_value());
-  assert(saved_planet->Maxx == 15);
+  assert(saved_planet->Maxx() == 15);
 
   std::println("  ✓ Composite keys work for Planet entities");
 }

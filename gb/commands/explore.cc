@@ -71,26 +71,26 @@ void explore(const command_t &argv, GameObj &g) {
           notify(Playernum, Governor,
                  std::format("  #{}. {:<15} [ ", i + 1,
                              star_ptr->get_planet_name(i)));
-          if (pl->info[Playernum - 1].explored) {
+          if (pl->info(Playernum - 1).explored) {
             notify(Playernum, Governor, "Ex ");
-            if (pl->info[Playernum - 1].autorep) {
+            if (pl->info(Playernum - 1).autorep) {
               notify(Playernum, Governor, "Rep ");
             }
-            if (pl->info[Playernum - 1].numsectsowned) {
+            if (pl->info(Playernum - 1).numsectsowned) {
               notify(Playernum, Governor, "Inhab ");
             }
-            if (pl->slaved_to) {
+            if (pl->slaved_to()) {
               notify(Playernum, Governor, "SLAVED ");
             }
             for (j = 1; j <= Num_races; j++)
-              if (j != Playernum && pl->info[j - 1].numsectsowned) {
+              if (j != Playernum && pl->info(j - 1).numsectsowned) {
                 notify(Playernum, Governor, std::format("{} ", j));
               }
-            if (pl->conditions[TOXIC] > 70) {
+            if (pl->conditions(TOXIC) > 70) {
               notify(Playernum, Governor, "TOXIC ");
             }
             notify(Playernum, Governor,
-                   std::format("] {} {:2.0f}%\n", Planet_types[pl->type],
+                   std::format("] {} {:2.0f}%\n", Planet_types[pl->type()],
                                pl->compatibility(race)));
           } else {
             notify(Playernum, Governor, "No Data ]\n");

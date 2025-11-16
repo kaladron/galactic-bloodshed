@@ -13,11 +13,11 @@ namespace {
 void Migrate2(const Planet &planet, int xd, int yd, Sector &ps,
               population_t *people, SectorMap &smap) {
   /* attempt to migrate beyond screen, or too many people */
-  if (yd > planet.Maxy - 1 || yd < 0) return;
+  if (yd > planet.Maxy() - 1 || yd < 0) return;
 
   if (xd < 0)
-    xd = planet.Maxx - 1;
-  else if (xd > planet.Maxx - 1)
+    xd = planet.Maxx() - 1;
+  else if (xd > planet.Maxx() - 1)
     xd = 0;
 
   auto &pd = smap.get(xd, yd);
@@ -90,7 +90,7 @@ void updateMobilization(Sector &s, const plinfo &pinf) {
 // Update sector efficiency and plating
 void updateEfficiency(Sector &s, const Race &race, const Planet &planet) {
   if (s.eff < 100) {
-    int chance = round_rand((100.0 - (double)planet.info[s.owner - 1].tax) *
+    int chance = round_rand((100.0 - (double)planet.info(s.owner - 1).tax) *
                             race.likes[s.condition]);
     if (success(chance)) {
       s.eff += round_rand(race.metabolism);
@@ -133,7 +133,7 @@ population_t calculatePopulationChange(const Race &race, const Sector &s,
 void updatePopulationAndOwner(Sector &s, const Race &race, const Star &star,
                               const Planet &planet) {
   auto maxsup =
-      maxsupport(race, s, Compat[s.owner - 1], planet.conditions[TOXIC]);
+      maxsupport(race, s, Compat[s.owner - 1], planet.conditions(TOXIC));
   s.popn += calculatePopulationChange(race, s, maxsup);
 
   // Handle troops maintenance costs - we have to modify global state here
@@ -160,7 +160,7 @@ void produce(const Star &star, const Planet &planet, Sector &s) {
   processCrystalMining(race, s);
 
   // Handle mobilization
-  const auto &pinf = planet.info[s.owner - 1];
+  const auto &pinf = planet.info(s.owner - 1);
   updateMobilization(s, pinf);
 
   // Update efficiency, fertility and sector condition
@@ -174,7 +174,7 @@ void produce(const Star &star, const Planet &planet, Sector &s) {
 // spread()  -- spread population around.
 void spread(const Planet &pl, Sector &s, SectorMap &smap) {
   if (!s.owner) return;
-  if (pl.slaved_to && pl.slaved_to != s.owner)
+  if (pl.slaved_to() && pl.slaved_to() != s.owner)
     return; /* no one wants to go anywhere */
 
   auto &race = races[s.owner - 1];
@@ -204,11 +204,11 @@ void spread(const Planet &pl, Sector &s, SectorMap &smap) {
 void explore(const Planet &planet, Sector &s, int x, int y, int p) {
   // explore sectors surrounding sectors currently explored.
   if (Sectinfo[x][y].explored) {
-    Sectinfo[mod(x - 1, planet.Maxx)][y].explored = p;
-    Sectinfo[mod(x + 1, planet.Maxx)][y].explored = p;
+    Sectinfo[mod(x - 1, planet.Maxx())][y].explored = p;
+    Sectinfo[mod(x + 1, planet.Maxx())][y].explored = p;
     if (y == 0) {
       Sectinfo[x][1].explored = p;
-    } else if (y == planet.Maxy - 1) {
+    } else if (y == planet.Maxy() - 1) {
       Sectinfo[x][y - 1].explored = p;
     } else {
       Sectinfo[x][y - 1].explored = Sectinfo[x][y + 1].explored = p;

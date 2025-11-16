@@ -75,19 +75,19 @@ void dissolve(const command_t &argv, GameObj &g) {
       for (auto i = 0; i < stars[z].numplanets(); i++) {
         auto pl = getplanet(z, i);
 
-        if (pl.info[Playernum - 1].explored &&
-            pl.info[Playernum - 1].numsectsowned) {
-          pl.info[Playernum - 1].fuel = 0;
-          pl.info[Playernum - 1].destruct = 0;
-          pl.info[Playernum - 1].resource = 0;
-          pl.info[Playernum - 1].popn = 0;
-          pl.info[Playernum - 1].troops = 0;
-          pl.info[Playernum - 1].tax = 0;
-          pl.info[Playernum - 1].newtax = 0;
-          pl.info[Playernum - 1].crystals = 0;
-          pl.info[Playernum - 1].numsectsowned = 0;
-          pl.info[Playernum - 1].explored = 0;
-          pl.info[Playernum - 1].autorep = 0;
+        if (pl.info(Playernum - 1).explored &&
+            pl.info(Playernum - 1).numsectsowned) {
+          pl.info(Playernum - 1).fuel = 0;
+          pl.info(Playernum - 1).destruct = 0;
+          pl.info(Playernum - 1).resource = 0;
+          pl.info(Playernum - 1).popn = 0;
+          pl.info(Playernum - 1).troops = 0;
+          pl.info(Playernum - 1).tax = 0;
+          pl.info(Playernum - 1).newtax = 0;
+          pl.info(Playernum - 1).crystals = 0;
+          pl.info(Playernum - 1).numsectsowned = 0;
+          pl.info(Playernum - 1).explored = 0;
+          pl.info(Playernum - 1).autorep = 0;
         }
 
         auto smap = getsmap(pl);

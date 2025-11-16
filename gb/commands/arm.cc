@@ -33,13 +33,13 @@ void arm(const command_t &argv, GameObj &g) {
   }
   auto planet = getplanet(g.snum, g.pnum);
 
-  if (planet.slaved_to > 0 && planet.slaved_to != Playernum) {
+  if (planet.slaved_to() > 0 && planet.slaved_to() != Playernum) {
     g.out << "That planet has been enslaved!\n";
     return;
   }
 
   std::sscanf(argv[1].c_str(), "%d,%d", &x, &y);
-  if (x < 0 || y < 0 || x > planet.Maxx - 1 || y > planet.Maxy - 1) {
+  if (x < 0 || y < 0 || x > planet.Maxx() - 1 || y > planet.Maxy() - 1) {
     g.out << "Illegal coordinates.\n";
     return;
   }
@@ -50,7 +50,7 @@ void arm(const command_t &argv, GameObj &g) {
     return;
   }
   if (mode) {
-    max_allowed = MIN(sect.popn, planet.info[Playernum - 1].destruct *
+    max_allowed = MIN(sect.popn, planet.info(Playernum - 1).destruct *
                                      (sect.mobilization + 1));
     if (argv.size() < 3)
       amount = max_allowed;
@@ -80,11 +80,11 @@ void arm(const command_t &argv, GameObj &g) {
     cost = std::max(1U, amount / (sect.mobilization + 1));
     sect.troops += amount;
     sect.popn -= amount;
-    planet.popn -= amount;
-    planet.info[Playernum - 1].popn -= amount;
-    planet.troops += amount;
-    planet.info[Playernum - 1].troops += amount;
-    planet.info[Playernum - 1].destruct -= cost;
+    planet.popn() -= amount;
+    planet.info(Playernum - 1).popn -= amount;
+    planet.troops() += amount;
+    planet.info(Playernum - 1).troops += amount;
+    planet.info(Playernum - 1).destruct -= cost;
     g.out << std::format(
         "{} population armed at a cost of {} (now {} civilians, {} military)\n",
         amount, cost, sect.popn, sect.troops);
@@ -102,10 +102,10 @@ void arm(const command_t &argv, GameObj &g) {
     }
     sect.popn += amount;
     sect.troops -= amount;
-    planet.popn += amount;
-    planet.troops -= amount;
-    planet.info[Playernum - 1].popn += amount;
-    planet.info[Playernum - 1].troops -= amount;
+    planet.popn() += amount;
+    planet.troops() -= amount;
+    planet.info(Playernum - 1).popn += amount;
+    planet.info(Playernum - 1).troops -= amount;
     g.out << std::format("{} troops disarmed (now {} civilians, {} military)\n",
                          amount, sect.popn, sect.troops);
   }

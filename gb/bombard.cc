@@ -41,7 +41,7 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
   Nuked.fill(0);
 
   /* check to see if PDNs are present */
-  Shiplist shiplist(planet.ships);
+  Shiplist shiplist(planet.ships());
   for (auto s : shiplist) {
     if (s.alive && s.type == ShipType::OTYPE_PLANDEF && s.owner != ship.owner) {
       std::string notice =

@@ -46,14 +46,14 @@ void sell(const command_t &argv, GameObj &g) {
     return;
   auto p = getplanet(snum, pnum);
 
-  if (p.slaved_to && p.slaved_to != Playernum) {
+  if (p.slaved_to() && p.slaved_to() != Playernum) {
     g.out << std::format("This planet is enslaved to player {}.\n",
-                         p.slaved_to);
+                         p.slaved_to());
     return;
   }
   /* check to see if there is an undamage gov center or space port here */
   bool ok = false;
-  Shiplist shiplist(p.ships);
+  Shiplist shiplist(p.ships());
   for (auto s : shiplist) {
     if (s.alive && (s.owner == Playernum) && !s.damage &&
         Shipdata[s.type][ABIL_PORT]) {
@@ -69,39 +69,39 @@ void sell(const command_t &argv, GameObj &g) {
   CommodType item;
   switch (commod) {
     case 'r':
-      if (!p.info[Playernum - 1].resource) {
+      if (!p.info(Playernum - 1).resource) {
         g.out << "You don't have any resources here to sell!\n";
         return;
       }
-      amount = MIN(amount, p.info[Playernum - 1].resource);
-      p.info[Playernum - 1].resource -= amount;
+      amount = MIN(amount, p.info(Playernum - 1).resource);
+      p.info(Playernum - 1).resource -= amount;
       item = CommodType::RESOURCE;
       break;
     case 'd':
-      if (!p.info[Playernum - 1].destruct) {
+      if (!p.info(Playernum - 1).destruct) {
         g.out << "You don't have any destruct here to sell!\n";
         return;
       }
-      amount = MIN(amount, p.info[Playernum - 1].destruct);
-      p.info[Playernum - 1].destruct -= amount;
+      amount = MIN(amount, p.info(Playernum - 1).destruct);
+      p.info(Playernum - 1).destruct -= amount;
       item = CommodType::DESTRUCT;
       break;
     case 'f':
-      if (!p.info[Playernum - 1].fuel) {
+      if (!p.info(Playernum - 1).fuel) {
         g.out << "You don't have any fuel here to sell!\n";
         return;
       }
-      amount = MIN(amount, p.info[Playernum - 1].fuel);
-      p.info[Playernum - 1].fuel -= amount;
+      amount = MIN(amount, p.info(Playernum - 1).fuel);
+      p.info(Playernum - 1).fuel -= amount;
       item = CommodType::FUEL;
       break;
     case 'x':
-      if (!p.info[Playernum - 1].crystals) {
+      if (!p.info(Playernum - 1).crystals) {
         g.out << "You don't have any crystals here to sell!\n";
         return;
       }
-      amount = MIN(amount, p.info[Playernum - 1].crystals);
-      p.info[Playernum - 1].crystals -= amount;
+      amount = MIN(amount, p.info(Playernum - 1).crystals);
+      p.info(Playernum - 1).crystals -= amount;
       item = CommodType::CRYSTAL;
       break;
     default:

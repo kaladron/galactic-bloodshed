@@ -174,12 +174,12 @@ int main() {
         while (!found && pnum < stars[star].numplanets()) {
           planet = getplanet(star, pnum);
 
-          if (planet.type == ppref && stars[star].numplanets() != 1) {
+          if (planet.type() == ppref && stars[star].numplanets() != 1) {
             vacant = 1;
             for (i = 1; i <= Playernum; i++)
-              if (planet.info[i - 1].numsectsowned) vacant = 0;
-            if (vacant && planet.conditions[RTEMP] >= -50 &&
-                planet.conditions[RTEMP] <= 50) {
+              if (planet.info(i - 1).numsectsowned) vacant = 0;
+            if (vacant && planet.conditions(RTEMP) >= -50 &&
+                planet.conditions(RTEMP) <= 50) {
               found = 1;
             }
           }
@@ -245,7 +245,7 @@ int main() {
   /* make conditions preferred by your people set to (more or less)
      those of the planet : higher the concentration of gas, the higher
      percentage difference between planet and race (commented out) */
-  for (j = 0; j <= OTHER; j++) race.conditions[j] = planet.conditions[j];
+  for (j = 0; j <= OTHER; j++) race.conditions[j] = planet.conditions(static_cast<Conditions>(j));
   /*+ int_rand( round_rand(-planet->conditions[j]*2.0),
    * round_rand(planet->conditions[j]*2.0) )*/
 
@@ -311,7 +311,7 @@ int main() {
       secttypes[sector.condition].y = sector.y;
     }
   }
-  planet.explored = 1;
+  planet.explored() = 1;
   for (i = SectorType::SEC_SEA; i <= SectorType::SEC_WASTED; i++)
     if (secttypes[i].here) {
       std::println("({:2d}): {} ({}, {}) ({}, {} sectors)", i,
@@ -319,7 +319,7 @@ int main() {
                    secttypes[i].x, secttypes[i].y, Desnames[i],
                    secttypes[i].count);
     }
-  planet.explored = 0;
+  planet.explored() = 0;
 
   found = 0;
   do {
@@ -372,11 +372,11 @@ int main() {
     shipno = Numships() + 1;
     std::println("Creating government ship {}...", shipno);
     race.Gov_ship = shipno;
-    planet.ships = shipno;
+    planet.ships() = shipno;
 
     s.type = ShipType::OTYPE_GOV;
-    s.xpos = stars[star].xpos() + planet.xpos;
-    s.ypos = stars[star].ypos() + planet.ypos;
+    s.xpos = stars[star].xpos() + planet.xpos();
+    s.ypos = stars[star].ypos() + planet.ypos();
     s.land_x = (char)secttypes[i].x;
     s.land_y = (char)secttypes[i].y;
 
@@ -432,19 +432,19 @@ int main() {
 
   putrace(race);
 
-  planet.info[Playernum - 1].numsectsowned = 1;
-  planet.explored = 0;
-  planet.info[Playernum - 1].explored = 1;
+  planet.info(Playernum - 1).numsectsowned = 1;
+  planet.explored() = 0;
+  planet.info(Playernum - 1).explored = 1;
   /*planet->info[Playernum-1].autorep = 1;*/
 
   sect.owner = Playernum;
   sect.race = Playernum;
-  sect.popn = planet.popn = race.number_sexes;
+  sect.popn = planet.popn() = race.number_sexes;
   sect.fert = 100;
   sect.eff = 10;
-  sect.troops = planet.troops = 0;
-  planet.maxpopn =
-      maxsupport(race, sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
+  sect.troops = planet.troops() = 0;
+  planet.maxpopn() =
+      maxsupport(race, sect, 100.0, 0) * planet.Maxx() * planet.Maxy() / 2;
   /* (approximate) */
 
   putsector(sect, planet, secttypes[i].x, secttypes[i].y);

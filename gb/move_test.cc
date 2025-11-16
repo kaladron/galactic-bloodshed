@@ -8,8 +8,8 @@ import std;
 int main() {
   // Create a test planet with known dimensions
   Planet planet(PlanetType::EARTH);
-  planet.Maxx = 10;  // 0-9 range for x-coordinates
-  planet.Maxy = 8;   // 0-7 range for y-coordinates
+  planet.Maxx() = 10;  // 0-9 range for x-coordinates
+  planet.Maxy() = 8;   // 0-7 range for y-coordinates
 
   // Test numeric direction mappings (1-9, excluding 5)
 
@@ -153,8 +153,8 @@ int main() {
 
   // Test with minimal planet size
   Planet small_planet(PlanetType::ASTEROID);
-  small_planet.Maxx = 2;  // 0-1 range
-  small_planet.Maxy = 3;  // 0-2 range
+  small_planet.Maxx() = 2;  // 0-1 range
+  small_planet.Maxy() = 3;  // 0-2 range
 
   {
     // Test wrapping on small planet

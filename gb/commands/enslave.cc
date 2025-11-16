@@ -44,7 +44,7 @@ void enslave(const command_t &argv, GameObj &g) {
     return;
   }
   auto p = getplanet(s->storbits, s->pnumorbits);
-  if (p.info[Playernum - 1].numsectsowned == 0) {
+  if (p.info(Playernum - 1).numsectsowned == 0) {
     g.out << "You don't have a garrison on the planet.\n";
     return;
   }
@@ -52,9 +52,9 @@ void enslave(const command_t &argv, GameObj &g) {
   /* add up forces attacking, defending */
   attack = aliens = def = 0;
   for (auto i = 1; i < MAXPLAYERS; i++) {
-    if (p.info[i - 1].numsectsowned && i != Playernum) {
+    if (p.info(i - 1).numsectsowned && i != Playernum) {
       aliens = 1;
-      def += p.info[i - 1].destruct;
+      def += p.info(i - 1).destruct;
     }
   }
 
@@ -65,10 +65,10 @@ void enslave(const command_t &argv, GameObj &g) {
 
   auto &race = races[Playernum - 1];
 
-  Shiplist shiplist(p.ships);
+  Shiplist shiplist(p.ships());
   for (auto s2 : shiplist) {
     if (s2.alive && s2.active) {
-      if (p.info[s2.owner].numsectsowned && s2.owner != Playernum)
+      if (p.info(s2.owner).numsectsowned && s2.owner != Playernum)
         def += s2.destruct;
       else if (s2.owner == Playernum)
         attack += s2.destruct;
@@ -90,7 +90,7 @@ void enslave(const command_t &argv, GameObj &g) {
                           stars[s->storbits].get_planet_name(s->pnumorbits));
 
   if (def <= 2 * attack) {
-    p.slaved_to = Playernum;
+    p.slaved_to() = Playernum;
     putplanet(p, stars[s->storbits], s->pnumorbits);
 
     /* send telegs to anyone there */
@@ -106,7 +106,7 @@ void enslave(const command_t &argv, GameObj &g) {
         "You must maintain a garrison of 0.1%% the population of the\n");
     g.out << std::format(
         "planet (at least {:.0f}); otherwise there is a 50% chance that\n",
-        p.popn * 0.001);
+        p.popn() * 0.001);
     g.out << std::format("enslaved population will revolt.\n");
   } else {
     telegram << std::format("repulsed attempt at enslavement by {}!!\n",
@@ -120,7 +120,7 @@ void enslave(const command_t &argv, GameObj &g) {
   }
 
   for (auto i = 1; i < MAXPLAYERS; i++)
-    if (p.info[i - 1].numsectsowned && i != Playernum)
+    if (p.info(i - 1).numsectsowned && i != Playernum)
       warn(i, stars[s->storbits].governor(i - 1), telegram.str());
 }
 }  // namespace GB::commands

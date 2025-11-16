@@ -231,10 +231,10 @@ void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
              std::format("{} {} move in.\n", people,
                          what == PopulationType::CIV ? "civilians" : "troops"));
     }
-    planet.info[Playernum - 1].numsectsowned++;
-    planet.info[Playernum - 1].mob_points += sect.mobilization;
-    planet.info[oldowner - 1].numsectsowned--;
-    planet.info[oldowner - 1].mob_points -= sect.mobilization;
+    planet.info(Playernum - 1).numsectsowned++;
+    planet.info(Playernum - 1).mob_points += sect.mobilization;
+    planet.info(oldowner - 1).numsectsowned--;
+    planet.info(oldowner - 1).mob_points -= sect.mobilization;
   } else {
     notify(Playernum, Governor, "The invasion was repulsed; try again.\n");
     telegram += "You fought them off!\n";
@@ -407,7 +407,7 @@ void load(const command_t &argv, GameObj &g) {
             lolim =
                 diff ? 0 : -MIN(s->crystals, max_crystals(*s2) - s2->crystals);
           } else {
-            uplim = MIN(p.info[Playernum - 1].crystals,
+            uplim = MIN(p.info(Playernum - 1).crystals,
                         max_crystals(*s) - s->crystals);
             lolim = -s->crystals;
           }
@@ -436,7 +436,7 @@ void load(const command_t &argv, GameObj &g) {
                 diff ? 0 : MIN(s2->destruct, max_destruct(*s) - s->destruct);
             lolim = -MIN(s->destruct, max_destruct(*s2) - s2->destruct);
           } else {
-            uplim = MIN(p.info[Playernum - 1].destruct,
+            uplim = MIN(p.info(Playernum - 1).destruct,
                         max_destruct(*s) - s->destruct);
             lolim = -s->destruct;
           }
@@ -447,7 +447,7 @@ void load(const command_t &argv, GameObj &g) {
                 diff ? 0 : MIN((int)s2->fuel, (int)max_fuel(*s) - (int)s->fuel);
             lolim = -MIN((int)s->fuel, (int)max_fuel(*s2) - (int)s2->fuel);
           } else {
-            uplim = MIN((int)p.info[Playernum - 1].fuel,
+            uplim = MIN((int)p.info(Playernum - 1).fuel,
                         (int)max_fuel(*s) - (int)s->fuel);
             lolim = -(int)s->fuel;
           }
@@ -466,7 +466,7 @@ void load(const command_t &argv, GameObj &g) {
             else
               lolim = -MIN(s->resource, max_resource(*s2) - s2->resource);
           } else {
-            uplim = MIN(p.info[Playernum - 1].resource,
+            uplim = MIN(p.info(Playernum - 1).resource,
                         max_resource(*s) - s->resource);
             lolim = -s->resource;
           }
@@ -511,19 +511,19 @@ void load(const command_t &argv, GameObj &g) {
           } else {
             transfercrew = 1;
             if (!sect.popn && !sect.troops && amt < 0) {
-              p.info[Playernum - 1].numsectsowned++;
-              p.info[Playernum - 1].mob_points += sect.mobilization;
+              p.info(Playernum - 1).numsectsowned++;
+              p.info(Playernum - 1).mob_points += sect.mobilization;
               sect.owner = Playernum;
               notify(Playernum, Governor,
                      std::format("sector {},{} COLONIZED.\n", s->land_x,
                                  s->land_y));
             }
             sect.popn -= amt;
-            p.popn -= amt;
-            p.info[Playernum - 1].popn -= amt;
+            p.popn() -= amt;
+            p.info(Playernum - 1).popn -= amt;
             if (!sect.popn && !sect.troops) {
-              p.info[Playernum - 1].numsectsowned--;
-              p.info[Playernum - 1].mob_points -= sect.mobilization;
+              p.info(Playernum - 1).numsectsowned--;
+              p.info(Playernum - 1).mob_points -= sect.mobilization;
               sect.owner = 0;
               notify(Playernum, Governor,
                      std::format("sector {},{} evacuated.\n", s->land_x,
@@ -555,19 +555,19 @@ void load(const command_t &argv, GameObj &g) {
           } else {
             transfercrew = 1;
             if (!(sect.popn + sect.troops) && amt < 0) {
-              p.info[Playernum - 1].numsectsowned++;
-              p.info[Playernum - 1].mob_points += sect.mobilization;
+              p.info(Playernum - 1).numsectsowned++;
+              p.info(Playernum - 1).mob_points += sect.mobilization;
               sect.owner = Playernum;
               notify(Playernum, Governor,
                      std::format("sector {},{} OCCUPIED.\n", s->land_x,
                                  s->land_y));
             }
             sect.troops -= amt;
-            p.troops -= amt;
-            p.info[Playernum - 1].troops -= amt;
+            p.troops() -= amt;
+            p.info(Playernum - 1).troops -= amt;
             if (!(sect.troops + sect.popn)) {
-              p.info[Playernum - 1].numsectsowned--;
-              p.info[Playernum - 1].mob_points -= sect.mobilization;
+              p.info(Playernum - 1).numsectsowned--;
+              p.info(Playernum - 1).mob_points -= sect.mobilization;
               sect.owner = 0;
               notify(Playernum, Governor,
                      std::format("sector {},{} evacuated.\n", s->land_x,
@@ -587,7 +587,7 @@ void load(const command_t &argv, GameObj &g) {
             s2->destruct -= amt;
             if (!landed_on(*s, sh)) s2->mass -= amt * MASS_DESTRUCT;
           } else
-            p.info[Playernum - 1].destruct -= amt;
+            p.info(Playernum - 1).destruct -= amt;
 
           s->destruct += amt;
           s->mass += amt * MASS_DESTRUCT;
@@ -607,7 +607,7 @@ void load(const command_t &argv, GameObj &g) {
           if (sh) {
             s2->crystals -= amt;
           } else
-            p.info[Playernum - 1].crystals -= amt;
+            p.info(Playernum - 1).crystals -= amt;
           s->crystals += amt;
           notify(Playernum, Governor,
                  std::format("{} crystal(s) transferred.\n", amt));
@@ -617,7 +617,7 @@ void load(const command_t &argv, GameObj &g) {
             s2->fuel -= (double)amt;
             if (!landed_on(*s, sh)) s2->mass -= (double)amt * MASS_FUEL;
           } else
-            p.info[Playernum - 1].fuel -= amt;
+            p.info(Playernum - 1).fuel -= amt;
           rcv_fuel(*s, (double)amt);
           notify(Playernum, Governor,
                  std::format("{} fuel transferred.\n", amt));
@@ -627,7 +627,7 @@ void load(const command_t &argv, GameObj &g) {
             s2->resource -= amt;
             if (!landed_on(*s, sh)) s2->mass -= amt * MASS_RESOURCE;
           } else
-            p.info[Playernum - 1].resource -= amt;
+            p.info(Playernum - 1).resource -= amt;
           rcv_resource(*s, amt);
           notify(Playernum, Governor,
                  std::format("{} resources transferred.\n", amt));

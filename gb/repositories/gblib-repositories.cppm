@@ -406,8 +406,8 @@ struct meta<plinfo> {
 };
 
 template <>
-struct meta<Planet> {
-  using T = Planet;
+struct meta<planet_struct> {
+  using T = planet_struct;
   static constexpr auto value =
       object("xpos", &T::xpos, "ypos", &T::ypos, "ships", &T::ships, "Maxx",
              &T::Maxx, "Maxy", &T::Maxy, "info", &T::info, "conditions",
@@ -445,7 +445,9 @@ PlanetRepository::PlanetRepository(JsonStore& store)
 
 std::optional<std::string> PlanetRepository::serialize(
     const Planet& planet) const {
-  auto result = glz::write_json(planet);
+  // Extract planet_struct from Planet wrapper
+  planet_struct data = planet.get_struct();
+  auto result = glz::write_json(data);
   if (result.has_value()) {
     return result.value();
   }
@@ -454,10 +456,11 @@ std::optional<std::string> PlanetRepository::serialize(
 
 std::optional<Planet> PlanetRepository::deserialize(
     const std::string& json_str) const {
-  Planet planet{};
-  auto result = glz::read_json(planet, json_str);
+  // Deserialize to planet_struct, then wrap in Planet
+  planet_struct data{};
+  auto result = glz::read_json(data, json_str);
   if (!result) {
-    return planet;
+    return Planet(data);  // Wrap the planet_struct in Planet
   }
   return std::nullopt;
 }
@@ -473,7 +476,7 @@ std::optional<Planet> PlanetRepository::find_by_location(starnum_t star,
 }
 
 bool PlanetRepository::save(const Planet& planet) {
-  return save_planet_impl(planet, planet.star_id, planet.planet_order);
+  return save_planet_impl(planet, planet.star_id(), planet.planet_order());
 }
 
 bool PlanetRepository::save_planet_impl(const Planet& planet, starnum_t star,
@@ -636,9 +639,9 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
   // Retrieve all sectors for this planet, ordered by position
   // This requires a custom SQL query, so we'll use the store's underlying
   // database For now, we'll load sectors individually
-  for (int y = 0; y < planet.Maxy; y++) {
-    for (int x = 0; x < planet.Maxx; x++) {
-      auto sector = find_sector(planet.star_id, planet.planet_order, x, y);
+  for (int y = 0; y < planet.Maxy(); y++) {
+    for (int x = 0; x < planet.Maxx(); x++) {
+      auto sector = find_sector(planet.star_id(), planet.planet_order(), x, y);
       if (sector.has_value()) {
         smap.put(std::move(*sector));
       }
@@ -651,10 +654,10 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
 bool SectorRepository::save_map(const SectorMap& map, const Planet& planet) {
   // Save all sectors in the map
   bool all_saved = true;
-  for (int y = 0; y < planet.Maxy; y++) {
-    for (int x = 0; x < planet.Maxx; x++) {
+  for (int y = 0; y < planet.Maxy(); y++) {
+    for (int x = 0; x < planet.Maxx(); x++) {
       const auto& sector = map.get(x, y);
-      if (!save_sector(sector, planet.star_id, planet.planet_order, x, y)) {
+      if (!save_sector(sector, planet.star_id(), planet.planet_order(), x, y)) {
         all_saved = false;
       }
     }

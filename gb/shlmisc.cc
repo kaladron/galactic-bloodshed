@@ -50,7 +50,7 @@ shipnum_t start_shiplist(GameObj& g, const std::string_view p) {
       return stars[g.snum].ships();
     case ScopeLevel::LEVEL_PLAN: {
       const auto planet = getplanet(g.snum, g.pnum);
-      return planet.ships;
+      return planet.ships();
     }
     case ScopeLevel::LEVEL_SHIP:
       auto ship = getship(g.shipno);

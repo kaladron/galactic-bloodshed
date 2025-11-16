@@ -43,18 +43,18 @@ Race createTestRace(player_t playernum = 1) {
 // Helper function to create a test planet
 Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
   Planet planet(PlanetType::EARTH);
-  planet.Maxx = maxx;
-  planet.Maxy = maxy;
-  planet.slaved_to = 0;
+  planet.Maxx() = maxx;
+  planet.Maxy() = maxy;
+  planet.slaved_to() = 0;
 
   // Initialize conditions
-  planet.conditions[TOXIC] = 0;
+  planet.conditions(TOXIC) = 0;
 
   // Initialize player info
   for (int i = 0; i < MAXPLAYERS; i++) {
-    planet.info[i].tax = 0;
-    planet.info[i].mob_set = 0;
-    planet.info[i].resource = 0;
+    planet.info(i).tax = 0;
+    planet.info(i).mob_set = 0;
+    planet.info(i).resource = 0;
   }
 
   return planet;
@@ -152,26 +152,26 @@ void test_planet_creation() {
   auto planet = createTestPlanet(15, 20);
 
   // Test basic properties
-  assert(planet.Maxx == 15);
-  assert(planet.Maxy == 20);
-  assert(planet.slaved_to == 0);
-  assert(planet.conditions[TOXIC] == 0);
+  assert(planet.Maxx() == 15);
+  assert(planet.Maxy() == 20);
+  assert(planet.slaved_to() == 0);
+  assert(planet.conditions(TOXIC) == 0);
 
   // Test different planet types
   Planet earth_planet(PlanetType::EARTH);
-  assert(earth_planet.type == PlanetType::EARTH);
+  assert(earth_planet.type() == PlanetType::EARTH);
 
   Planet gas_planet(PlanetType::GASGIANT);
-  assert(gas_planet.type == PlanetType::GASGIANT);
+  assert(gas_planet.type() == PlanetType::GASGIANT);
 
   Planet asteroid(PlanetType::ASTEROID);
-  assert(asteroid.type == PlanetType::ASTEROID);
+  assert(asteroid.type() == PlanetType::ASTEROID);
 
   // Test player info initialization
   for (int i = 0; i < MAXPLAYERS; i++) {
-    assert(planet.info[i].tax == 0);
-    assert(planet.info[i].mob_set == 0);
-    assert(planet.info[i].resource == 0);
+    assert(planet.info(i).tax == 0);
+    assert(planet.info(i).mob_set == 0);
+    assert(planet.info(i).resource == 0);
   }
 }
 
@@ -301,12 +301,12 @@ void test_edge_cases() {
 
   // Test planet with minimum/maximum sizes
   auto tiny_planet = createTestPlanet(1, 1);
-  assert(tiny_planet.Maxx == 1);
-  assert(tiny_planet.Maxy == 1);
+  assert(tiny_planet.Maxx() == 1);
+  assert(tiny_planet.Maxy() == 1);
 
   auto large_planet = createTestPlanet(100, 100);
-  assert(large_planet.Maxx == 100);
-  assert(large_planet.Maxy == 100);
+  assert(large_planet.Maxx() == 100);
+  assert(large_planet.Maxy() == 100);
 }
 
 // Test data consistency and relationships
@@ -336,8 +336,8 @@ void test_data_consistency() {
   auto planet = createTestPlanet(10, 10);
 
   // Planet should fit within reasonable star system constraints
-  assert(planet.Maxx >= 1 && planet.Maxx <= 100);
-  assert(planet.Maxy >= 1 && planet.Maxy <= 100);
+  assert(planet.Maxx() >= 1 && planet.Maxx() <= 100);
+  assert(planet.Maxy() >= 1 && planet.Maxy() <= 100);
   assert(star.numplanets() >= 0 && star.numplanets() <= MAXPLANETS);
 }
 

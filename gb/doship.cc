@@ -69,8 +69,8 @@ void do_meta_infect(int who, Planet &p) {
   // is so far away from any other uses of Sectinfo that I'm having trouble
   // proving it.
   std::memset(Sectinfo, 0, sizeof(Sectinfo));
-  auto x = int_rand(0, p.Maxx - 1);
-  auto y = int_rand(0, p.Maxy - 1);
+  auto x = int_rand(0, p.Maxx() - 1);
+  auto y = int_rand(0, p.Maxy() - 1);
   auto owner = smap.get(x, y).owner;
   if (!owner ||
       (who != owner &&
@@ -78,8 +78,8 @@ void do_meta_infect(int who, Planet &p) {
            100.0 * (1.0 -
                     std::exp(-((double)(smap.get(x, y).troops *
                                         races[owner - 1].fighters / 50.0)))))) {
-    p.info[who - 1].explored = 1;
-    p.info[who - 1].numsectsowned += 1;
+    p.info(who - 1).explored = 1;
+    p.info(who - 1).numsectsowned += 1;
     smap.get(x, y).troops = 0;
     smap.get(x, y).popn = races[who - 1].number_sexes;
     smap.get(x, y).owner = who;
@@ -174,7 +174,7 @@ void do_canister(Ship &ship) {
                     prin_ship_orbits(ship));
 
     for (int j = 1; j <= Num_races; j++)
-      if (planets[ship.storbits][ship.pnumorbits]->info[j - 1].numsectsowned)
+      if (planets[ship.storbits][ship.pnumorbits]->info(j - 1).numsectsowned)
         push_telegram(j, stars[ship.storbits].governor(j - 1), telegram);
   }
 }
@@ -199,7 +199,7 @@ void do_greenhouse(Ship &ship) {
       std::string telegram = std::format(
           "Greenhouse gases at {} have dissipated.\n", prin_ship_orbits(ship));
       for (j = 1; j <= Num_races; j++)
-        if (planets[ship.storbits][ship.pnumorbits]->info[j - 1].numsectsowned)
+        if (planets[ship.storbits][ship.pnumorbits]->info(j - 1).numsectsowned)
           push_telegram(j, stars[ship.storbits].governor(j - 1), telegram);
     }
   }
@@ -245,12 +245,12 @@ void do_mirror(Ship &ship) {
       }
       break;
     case ScopeLevel::LEVEL_PLAN: {
-      double range =
-          std::sqrt(Distsq(ship.xpos, ship.ypos,
-                           stars[ship.storbits].xpos() +
-                               planets[ship.storbits][ship.pnumorbits]->xpos,
-                           stars[ship.storbits].ypos() +
-                               planets[ship.storbits][ship.pnumorbits]->ypos));
+      double range = std::sqrt(
+          Distsq(ship.xpos, ship.ypos,
+                 stars[ship.storbits].xpos() +
+                     planets[ship.storbits][ship.pnumorbits]->xpos(),
+                 stars[ship.storbits].ypos() +
+                     planets[ship.storbits][ship.pnumorbits]->ypos()));
 
       int i = range > PLORBITSIZE
                   ? PLORBITSIZE * aimed_at.intensity / range
@@ -287,7 +287,7 @@ void do_god(Ship &ship) {
 }
 
 constexpr double ap_planet_factor(const Planet &p) {
-  double x = p.Maxx * p.Maxy;
+  double x = p.Maxx() * p.Maxy();
   return (AP_FACTOR / (AP_FACTOR + x));
 }
 
@@ -308,9 +308,11 @@ void do_ap(Ship &ship) {
     if (ship.fuel >= 3.0) {
       use_fuel(ship, 3.0);
       for (auto j = RTEMP + 1; j <= OTHER; j++) {
-        auto d = round_rand(ap_planet_factor(*p) * crew_factor(ship) *
-                            (double)(race.conditions[j] - p->conditions[j]));
-        if (d) p->conditions[j] += d;
+        auto d =
+            round_rand(ap_planet_factor(*p) * crew_factor(ship) *
+                       (double)(race.conditions[j] -
+                                p->conditions(static_cast<Conditions>(j))));
+        if (d) p->conditions(static_cast<Conditions>(j)) += d;
       }
     } else if (!ship.notified) {
       ship.notified = 1;
@@ -396,7 +398,7 @@ void doship(Ship &ship, int update) {
       setbit(stars[ship.storbits].inhabited(), ship.owner);
       setbit(stars[ship.storbits].explored(), ship.owner);
       if (ship.whatorbits == ScopeLevel::LEVEL_PLAN) {
-        planets[ship.storbits][ship.pnumorbits]->info[ship.owner - 1].explored =
+        planets[ship.storbits][ship.pnumorbits]->info(ship.owner - 1).explored =
             1;
       }
     }
@@ -530,7 +532,7 @@ void domissile(Ship &ship) {
     auto &p = planets[ship.storbits][ship.pnumorbits];
     /* check to see if PDNs are present */
     auto pdn = 0;
-    auto sh2 = p->ships;
+    auto sh2 = p->ships();
     while (sh2 && !pdn) {
       if (ships[sh2]->alive && ships[sh2]->type == ShipType::OTYPE_PLANDEF) {
         /* attack the PDN instead */
@@ -548,18 +550,18 @@ void domissile(Ship &ship) {
         if (std::holds_alternative<ImpactData>(ship.special)) {
           auto impact = std::get<ImpactData>(ship.special);
           if (impact.scatter) {
-            auto bombx = int_rand(1, (int)p->Maxx) - 1;
-            auto bomby = int_rand(1, (int)p->Maxy) - 1;
+            auto bombx = int_rand(1, (int)p->Maxx()) - 1;
+            auto bomby = int_rand(1, (int)p->Maxy()) - 1;
             return {bombx, bomby};
           } else {
-            auto bombx = impact.x % p->Maxx;
-            auto bomby = impact.y % p->Maxy;
+            auto bombx = impact.x % p->Maxx();
+            auto bomby = impact.y % p->Maxy();
             return {bombx, bomby};
           }
         } else {
           // Default to random if no impact data
-          auto bombx = int_rand(1, (int)p->Maxx) - 1;
-          auto bomby = int_rand(1, (int)p->Maxy) - 1;
+          auto bombx = int_rand(1, (int)p->Maxx()) - 1;
+          auto bomby = int_rand(1, (int)p->Maxy()) - 1;
           return {bombx, bomby};
         }
       }();
@@ -581,7 +583,7 @@ void domissile(Ship &ship) {
           std::format("{} dropped on {}.\n\t{} sectors destroyed.\n",
                       ship_to_string(ship), prin_ship_orbits(ship), numdest);
       for (auto i = 1; i <= Num_races; i++) {
-        if (p->info[i - 1].numsectsowned && i != ship.owner) {
+        if (p->info(i - 1).numsectsowned && i != ship.owner) {
           push_telegram(i, stars[ship.storbits].governor(i - 1),
                         sectors_destroyed_msg);
         }
@@ -630,7 +632,7 @@ void domine(Ship &ship, int detonate) {
       return stars[ship.storbits].ships();
     } else {  // ScopeLevel::LEVEL_PLAN
       const auto planet = getplanet(ship.storbits, ship.pnumorbits);
-      return planet.ships;
+      return planet.ships();
     }
   }();
 
@@ -687,8 +689,8 @@ void domine(Ship &ship, int detonate) {
       if (landed(ship)) {
         return {ship.land_x, ship.land_y};
       } else {
-        int x = int_rand(0, (int)planet.Maxx - 1);
-        int y = int_rand(0, (int)planet.Maxy - 1);
+        int x = int_rand(0, (int)planet.Maxx() - 1);
+        int y = int_rand(0, (int)planet.Maxy() - 1);
         return {x, y};
       }
     }();
@@ -726,7 +728,7 @@ void doabm(Ship &ship) {
   if (landed(ship)) {
     const auto &p = planets[ship.storbits][ship.pnumorbits];
     /* check to see if missiles/mines are present */
-    auto sh2 = p->ships;
+    auto sh2 = p->ships();
     while (sh2 && ship.destruct) {
       if (ships[sh2]->alive &&
           ((ships[sh2]->type == ShipType::STYPE_MISSILE) ||

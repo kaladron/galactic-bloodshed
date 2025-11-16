@@ -38,12 +38,12 @@ void transfer(const command_t &argv, GameObj &g) {
                                        stars[g.snum].get_planet_name(g.pnum));
   switch (commod) {
     case 'r': {
-      if (give > planet.info[Playernum - 1].resource) {
+      if (give > planet.info(Playernum - 1).resource) {
         g.out << std::format("You don't have {} on this planet.\n", give);
         return;
       }
-      planet.info[Playernum - 1].resource -= give;
-      planet.info[player - 1].resource += give;
+      planet.info(Playernum - 1).resource -= give;
+      planet.info(player - 1).resource += give;
       std::string message = std::format(
           "{} {} resources transferred from player {} to player #{}\n",
           starplanet, give, Playernum, player);
@@ -52,12 +52,12 @@ void transfer(const command_t &argv, GameObj &g) {
     } break;
     case 'x':
     case '&': {
-      if (give > planet.info[Playernum - 1].crystals) {
+      if (give > planet.info(Playernum - 1).crystals) {
         g.out << std::format("You don't have {} on this planet.\n", give);
         return;
       }
-      planet.info[Playernum - 1].crystals -= give;
-      planet.info[player - 1].crystals += give;
+      planet.info(Playernum - 1).crystals -= give;
+      planet.info(player - 1).crystals += give;
       std::string message = std::format(
           "{} {} crystal(s) transferred from player {} to player #{}\n",
           starplanet, give, Playernum, player);
@@ -65,12 +65,12 @@ void transfer(const command_t &argv, GameObj &g) {
       warn_race(player, message);
     } break;
     case 'f': {
-      if (give > planet.info[Playernum - 1].fuel) {
+      if (give > planet.info(Playernum - 1).fuel) {
         g.out << std::format("You don't have {} fuel on this planet.\n", give);
         return;
       }
-      planet.info[Playernum - 1].fuel -= give;
-      planet.info[player - 1].fuel += give;
+      planet.info(Playernum - 1).fuel -= give;
+      planet.info(player - 1).fuel += give;
       std::string message =
           std::format("{} {} fuel transferred from player {} to player #{}\n",
                       starplanet, give, Playernum, player);
@@ -78,13 +78,13 @@ void transfer(const command_t &argv, GameObj &g) {
       warn_race(player, message);
     } break;
     case 'd': {
-      if (give > planet.info[Playernum - 1].destruct) {
+      if (give > planet.info(Playernum - 1).destruct) {
         g.out << std::format("You don't have {} destruct on this planet.\n",
                              give);
         return;
       }
-      planet.info[Playernum - 1].destruct -= give;
-      planet.info[player - 1].destruct += give;
+      planet.info(Playernum - 1).destruct -= give;
+      planet.info(player - 1).destruct += give;
       std::string message = std::format(
           "{} {} destruct transferred from player {} to player #{}\n",
           starplanet, give, Playernum, player);

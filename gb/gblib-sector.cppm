@@ -57,15 +57,15 @@ export class Sector {
 
 export class SectorMap {
  public:
-  SectorMap(const Planet &planet) : maxx_(planet.Maxx), maxy_(planet.Maxy) {
-    vec_.reserve(planet.Maxx * planet.Maxy);
+  SectorMap(const Planet &planet) : maxx_(planet.Maxx()), maxy_(planet.Maxy()) {
+    vec_.reserve(planet.Maxx() * planet.Maxy());
   }
 
   //! Add an empty sector for every potential space.  Used for initialization.
   SectorMap(const Planet &planet, bool)
-      : maxx_(planet.Maxx),
-        maxy_(planet.Maxy),
-        vec_(planet.Maxx * planet.Maxy) {}
+      : maxx_(planet.Maxx()),
+        maxy_(planet.Maxy()),
+        vec_(planet.Maxx() * planet.Maxy()) {}
 
   // TODO(jeffbailey): Should wrap this in a subclass so the underlying
   // vector isn't exposed to callers.

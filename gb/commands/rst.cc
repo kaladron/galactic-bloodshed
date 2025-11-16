@@ -174,8 +174,8 @@ class PlanetReportItem : public ReportItem {
   PlanetReportItem(const Planet* planet, double x, double y)
       : ReportItem(x, y), planet_(planet) {}
 
-  starnum_t star() const { return planet_->star_id; }
-  planetnum_t pnum() const { return planet_->planet_order; }
+  starnum_t star() const { return planet_->star_id(); }
+  planetnum_t pnum() const { return planet_->planet_order(); }
   const Planet& planet() const { return *planet_; }
 
   void report_tactical(GameObj& g, RstContext& ctx,
@@ -260,12 +260,12 @@ void plan_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
   if (!planet) return;
 
   // Add planet to report list
-  double x = star->xpos() + planet->xpos;
-  double y = star->ypos() + planet->ypos;
+  double x = star->xpos() + planet->xpos();
+  double y = star->ypos() + planet->ypos();
   ctx.rd.push_back(std::make_unique<PlanetReportItem>(planet, x, y));
 
-  if (planet->info[player_num - 1].explored) {
-    shipnum_t shn = planet->ships;
+  if (planet->info(player_num - 1).explored) {
+    shipnum_t shn = planet->ships();
     while (shn && get_report_ship(g, ctx, shn)) {
       shn = ctx.rd.back()->next_ship();
     }
@@ -659,7 +659,7 @@ bool ShipReportItem::should_report(player_t player_num, governor_t governor,
 bool PlanetReportItem::should_report(player_t player_num, governor_t,
                                      const ReportSet&) const {
   // Don't report on planets where we don't own any sectors
-  return planet_->info[player_num - 1].numsectsowned != 0;
+  return planet_->info(player_num - 1).numsectsowned != 0;
 }
 
 // ============================================================================
@@ -810,15 +810,15 @@ void PlanetReportItem::add_tactical_header_row(
     tabulate::Table& table, GameObj& g, player_t player_num,
     const TacticalParams& params) const {
   const auto& p = *planet_;
-  const auto* star = g.entity_manager.peek_star(p.star_id);
+  const auto* star = g.entity_manager.peek_star(p.star_id());
 
   std::string name_str = std::format(
-      "(planet){}", star ? star->get_planet_name(p.planet_order) : "Unknown");
+      "(planet){}", star ? star->get_planet_name(p.planet_order()) : "Unknown");
 
   table.add_row({"", "", name_str, std::format("{:.0f}", params.tech),
-                 std::format("{}M", p.info[player_num - 1].guns), "", "",
-                 std::format("{}", p.info[player_num - 1].destruct),
-                 std::format("{}", p.info[player_num - 1].fuel), "", "", "",
+                 std::format("{}M", p.info(player_num - 1).guns), "", "",
+                 std::format("{}", p.info(player_num - 1).destruct),
+                 std::format("{}", p.info(player_num - 1).fuel), "", "", "",
                  ""});
 }
 
@@ -827,8 +827,8 @@ void PlanetReportItem::add_tactical_target_row(tabulate::Table& table,
                                                const Race&, double dist,
                                                const FiringShipParams&) const {
   const auto& p = *planet_;
-  const auto* star = g.entity_manager.peek_star(p.star_id);
-  std::string name_str = star ? star->get_planet_name(p.planet_order) : "Unknown";
+  const auto* star = g.entity_manager.peek_star(p.star_id());
+  std::string name_str = star ? star->get_planet_name(p.planet_order()) : "Unknown";
 
   table.add_row({"", "(planet)", "", name_str, std::format("{:.0f}", dist), "",
                  "", "", "", "", "", ""});

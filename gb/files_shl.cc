@@ -236,8 +236,8 @@ Sector getsector(const Planet& p, const int x, const int y) {
       "WHERE star_id=?1 AND planet_order=?2 AND xpos=?3 AND ypos=?4";
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
-  sqlite3_bind_int(stmt, 1, p.star_id);
-  sqlite3_bind_int(stmt, 2, p.planet_order);
+  sqlite3_bind_int(stmt, 1, p.star_id());
+  sqlite3_bind_int(stmt, 2, p.planet_order());
   sqlite3_bind_int(stmt, 3, x);
   sqlite3_bind_int(stmt, 4, y);
 
@@ -258,11 +258,11 @@ Sector getsector(const Planet& p, const int x, const int y) {
       } else {
         std::println(
             stderr, "Error: Failed to deserialize Sector from JSON for planet ({},{}) at ({}, {})",
-            p.star_id, p.planet_order, x, y);
+            p.star_id(), p.planet_order(), x, y);
       }
     } else {
       std::println(stderr, "Error: NULL JSON data retrieved for sector at planet ({},{}) at ({}, {})",
-                   p.star_id, p.planet_order, x, y);
+                   p.star_id(), p.planet_order(), x, y);
       sqlite3_finalize(stmt);
     }
   } else {
@@ -294,8 +294,8 @@ SectorMap getsmap(const Planet& p) {
     exit(-1);
   }
 
-  sqlite3_bind_int(stmt, 1, p.star_id);
-  sqlite3_bind_int(stmt, 2, p.planet_order);
+  sqlite3_bind_int(stmt, 1, p.star_id());
+  sqlite3_bind_int(stmt, 2, p.planet_order());
 
   SectorMap smap(p);
 
@@ -311,7 +311,7 @@ SectorMap getsmap(const Planet& p) {
       } else {
         std::println(stderr, 
                      "FATAL: Failed to deserialize Sector from JSON for planet ({},{})", 
-                     p.star_id, p.planet_order);
+                     p.star_id(), p.planet_order());
         exit(-1);
       }
     }
@@ -620,8 +620,8 @@ void putsector(const Sector& s, const Planet& p, const int x, const int y) {
       "VALUES (?1, ?2, ?3, ?4, ?5)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-  sqlite3_bind_int(stmt, 1, p.star_id);
-  sqlite3_bind_int(stmt, 2, p.planet_order);
+  sqlite3_bind_int(stmt, 1, p.star_id());
+  sqlite3_bind_int(stmt, 2, p.planet_order());
   sqlite3_bind_int(stmt, 3, x);
   sqlite3_bind_int(stmt, 4, y);
   sqlite3_bind_text(stmt, 5, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
@@ -636,8 +636,8 @@ void putsector(const Sector& s, const Planet& p, const int x, const int y) {
 void putsmap(const SectorMap& map, const Planet& p) {
   start_bulk_insert();
 
-  for (int y = 0; y < p.Maxy; y++) {
-    for (int x = 0; x < p.Maxx; x++) {
+  for (int y = 0; y < p.Maxy(); y++) {
+    for (int x = 0; x < p.Maxx(); x++) {
       auto& sec = map.get(x, y);
       putsector(sec, p, x, y);
     }
@@ -1038,7 +1038,9 @@ std::optional<star_struct> star_from_json(const std::string& json_str) {
 
 // JSON serialization functions for Planet
 std::optional<std::string> planet_to_json(const Planet& planet) {
-  auto result = glz::write_json(planet);
+  // Extract planet_struct from Planet wrapper
+  planet_struct data = planet.get_struct();
+  auto result = glz::write_json(data);
   if (result.has_value()) {
     return result.value();
   }
@@ -1046,10 +1048,11 @@ std::optional<std::string> planet_to_json(const Planet& planet) {
 }
 
 std::optional<Planet> planet_from_json(const std::string& json_str) {
-  Planet planet{};
-  auto result = glz::read_json(planet, json_str);
+  // Deserialize to planet_struct, then wrap in Planet
+  planet_struct data{};
+  auto result = glz::read_json(data, json_str);
   if (!result) {
-    return planet;
+    return Planet(data);  // Wrap the planet_struct in Planet
   }
   return std::nullopt;
 }

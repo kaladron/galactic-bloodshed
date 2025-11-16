@@ -54,72 +54,158 @@ export struct plinfo {          // planetary stockpiles
   double est_production = 0;  // estimated production
 };
 
+// Internal struct holding raw planet data for serialization
+export struct planet_struct {
+  double xpos = 0;
+  double ypos = 0;
+  shipnum_t ships = 0;
+  unsigned char Maxx = 0;
+  unsigned char Maxy = 0;
+
+  std::array<plinfo, MAXPLAYERS> info{};
+  std::array<int, TOXIC + 1> conditions{};
+
+  population_t popn = 0;
+  population_t troops = 0;
+  population_t maxpopn = 0;
+  resource_t total_resources = 0;
+
+  player_t slaved_to = 0;
+  PlanetType type = PlanetType::EARTH;
+  unsigned char expltimer = 0;
+  unsigned char explored = 0;
+
+  starnum_t star_id = 0;
+  planetnum_t planet_order = 0;
+};
+
 export class Planet {
  public:
-  Planet() : type(PlanetType::EARTH) {};
-  Planet(PlanetType type) : type(type) {};
+  // Constructors
+  Planet() = default;
+  Planet(planet_struct in) : data_(in) {}
+  Planet(PlanetType type) { data_.type = type; }
   Planet(Planet &) = delete;
   Planet &operator=(const Planet &) = delete;
   Planet(Planet &&) = default;
   Planet &operator=(Planet &&) = default;
-  ~Planet() {};
+  ~Planet() = default;
 
+  // Accessor methods for simple fields
+  [[nodiscard]] double xpos() const { return data_.xpos; }
+  double& xpos() { return data_.xpos; }
+
+  [[nodiscard]] double ypos() const { return data_.ypos; }
+  double& ypos() { return data_.ypos; }
+
+  [[nodiscard]] shipnum_t ships() const { return data_.ships; }
+  shipnum_t& ships() { return data_.ships; }
+
+  [[nodiscard]] unsigned char Maxx() const { return data_.Maxx; }
+  unsigned char& Maxx() { return data_.Maxx; }
+
+  [[nodiscard]] unsigned char Maxy() const { return data_.Maxy; }
+  unsigned char& Maxy() { return data_.Maxy; }
+
+  [[nodiscard]] population_t popn() const { return data_.popn; }
+  population_t& popn() { return data_.popn; }
+
+  [[nodiscard]] population_t troops() const { return data_.troops; }
+  population_t& troops() { return data_.troops; }
+
+  [[nodiscard]] population_t maxpopn() const { return data_.maxpopn; }
+  population_t& maxpopn() { return data_.maxpopn; }
+
+  [[nodiscard]] resource_t total_resources() const { return data_.total_resources; }
+  resource_t& total_resources() { return data_.total_resources; }
+
+  [[nodiscard]] player_t slaved_to() const { return data_.slaved_to; }
+  player_t& slaved_to() { return data_.slaved_to; }
+
+  [[nodiscard]] PlanetType type() const { return data_.type; }
+  PlanetType& type() { return data_.type; }
+
+  [[nodiscard]] unsigned char expltimer() const { return data_.expltimer; }
+  unsigned char& expltimer() { return data_.expltimer; }
+
+  [[nodiscard]] unsigned char explored() const { return data_.explored; }
+  unsigned char& explored() { return data_.explored; }
+
+  [[nodiscard]] starnum_t star_id() const { return data_.star_id; }
+  starnum_t& star_id() { return data_.star_id; }
+
+  [[nodiscard]] planetnum_t planet_order() const { return data_.planet_order; }
+  planetnum_t& planet_order() { return data_.planet_order; }
+
+  // Array accessors with bounds checking
+  [[nodiscard]] const plinfo& info(player_t player) const {
+    if (player >= MAXPLAYERS) {
+      throw std::runtime_error(std::format(
+          "Player number {} out of range (max {})", player, MAXPLAYERS));
+    }
+    return data_.info[player];
+  }
+  plinfo& info(player_t player) {
+    if (player >= MAXPLAYERS) {
+      throw std::runtime_error(std::format(
+          "Player number {} out of range (max {})", player, MAXPLAYERS));
+    }
+    return data_.info[player];
+  }
+
+  [[nodiscard]] int conditions(Conditions cond) const {
+    if (cond < 0 || cond > TOXIC) {
+      throw std::runtime_error(std::format(
+          "Condition {} out of range (max {})", static_cast<int>(cond), static_cast<int>(TOXIC)));
+    }
+    return data_.conditions[cond];
+  }
+  int& conditions(Conditions cond) {
+    if (cond < 0 || cond > TOXIC) {
+      throw std::runtime_error(std::format(
+          "Condition {} out of range (max {})", static_cast<int>(cond), static_cast<int>(TOXIC)));
+    }
+    return data_.conditions[cond];
+  }
+
+  // Existing methods
   [[nodiscard]] double gravity() const;
   [[nodiscard]] double compatibility(const Race &) const;
   [[nodiscard]] ap_t get_points() const;
 
-  double xpos = 0;  // x,y relative to orbit */
-  double ypos = 0;
-  shipnum_t ships = 0;     // first ship in orbit (to be changed)
-  unsigned char Maxx = 0;  // size of map
-  unsigned char Maxy = 0;
+  // For repository serialization
+  [[nodiscard]] planet_struct get_struct() const { return data_; }
 
-  std::array<plinfo, MAXPLAYERS> info{};  // player info
-  std::array<int, TOXIC + 1>
-      conditions{};  // atmospheric conditions for terraforming
-
-  population_t popn = 0;
-  population_t troops = 0;
-  population_t maxpopn = 0; /* maximum population */
-  resource_t total_resources = 0;
-
-  player_t slaved_to = 0;
-  PlanetType type;             /* what type planet is */
-  unsigned char expltimer = 0; /* timer for explorations */
-
-  unsigned char explored = 0;
-
-  starnum_t star_id = 0;        // Star system containing this planet (0-99)
-  planetnum_t planet_order = 0; // Order within star system (0-based: 0, 1, 2...)
-                                // Composite key: (star_id, planet_order)
+ private:
+  planet_struct data_{};
 };
 
 //* Return gravity for the Planet
 double Planet::gravity() const {
-  return (double)Maxx * (double)Maxy * GRAV_FACTOR;
+  return (double)Maxx() * (double)Maxy() * GRAV_FACTOR;
 }
 
 double Planet::compatibility(const Race &race) const {
   double atmosphere = 1.0;
 
   /* make an adjustment for planetary temperature */
-  int add = 0.1 * ((double)conditions[TEMP] - race.conditions[TEMP]);
+  int add = 0.1 * ((double)conditions(TEMP) - race.conditions[TEMP]);
   double sum = 1.0 - ((double)abs(add) / 100.0);
 
   /* step through and report compatibility of each planetary gas */
   for (int i = TEMP + 1; i <= OTHER; i++) {
-    add = (double)conditions[i] - race.conditions[i];
-    atmosphere *= 1.0 - (double)abs(add) / 100.0;
+    add = (double)conditions(static_cast<Conditions>(i)) - race.conditions[i];
+    atmosphere *= 1.0 - ((double)abs(add) / 100.0);
   }
   sum *= atmosphere;
-  sum *= 100.0 - conditions[TOXIC];
+  sum *= 100.0 - conditions(TOXIC);
 
   if (sum < 0.0) return 0.0;
   return sum;
 }
 
 ap_t Planet::get_points() const {
-  switch (type) {
+  switch (type()) {
     case PlanetType::ASTEROID:
       return ASTEROID_POINTS;
     case PlanetType::EARTH:

@@ -160,7 +160,7 @@ int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
   if (has_switch(ship) && !ship.on) return -1;
   if (ship.whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
 
-  if (x < 0 || x > pl.Maxx - 1 || y < 0 || y > pl.Maxy - 1) return -1;
+  if (x < 0 || x > pl.Maxx() - 1 || y < 0 || y > pl.Maxy() - 1) return -1;
 
   double r = .4 * strength;
   if (!caliber) { /* figure out the appropriate gun caliber if not given*/
@@ -184,9 +184,9 @@ int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
 
   std::array<int, MAXPLAYERS> sum_mob{0};
 
-  for (auto y2 = 0; y2 < pl.Maxy; y2++) {
-    for (auto x2 = 0; x2 < pl.Maxx; x2++) {
-      int dx = std::min(std::abs(x2 - x), std::abs(x + (pl.Maxx - 1) - x2));
+  for (auto y2 = 0; y2 < pl.Maxy(); y2++) {
+    for (auto x2 = 0; x2 < pl.Maxx(); x2++) {
+      int dx = std::min(std::abs(x2 - x), std::abs(x + (pl.Maxx() - 1) - x2));
       int dy = std::abs(y2 - y);
       double d = std::sqrt((double)(dx * dx + dy * dy));
       auto &s = smap.get(x2, y2);
@@ -242,16 +242,16 @@ int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
       if (s.owner) sum_mob[s.owner - 1] += s.mobilization;
     }
   }
-  auto num_sectors = pl.Maxx * pl.Maxy;
+  auto num_sectors = pl.Maxx() * pl.Maxy();
   for (auto i = 1; i <= Num_races; i++) {
-    pl.info[i - 1].mob_points = sum_mob[i - 1];
-    pl.info[i - 1].comread = sum_mob[i - 1] / num_sectors;
-    pl.info[i - 1].guns = planet_guns(sum_mob[i - 1]);
+    pl.info(i - 1).mob_points = sum_mob[i - 1];
+    pl.info(i - 1).comread = sum_mob[i - 1] / num_sectors;
+    pl.info(i - 1).guns = planet_guns(sum_mob[i - 1]);
   }
 
   /* planet toxicity goes up a bit */
-  pl.conditions[TOXIC] += (100 - pl.conditions[TOXIC]) *
-                          ((double)numdest / (double)(pl.Maxx * pl.Maxy));
+  pl.conditions(TOXIC) += (100 - pl.conditions(TOXIC)) *
+                          ((double)numdest / (double)(pl.Maxx() * pl.Maxy()));
 
   sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(ship).c_str(),
           dispshiploc(ship).c_str(), oldowner);

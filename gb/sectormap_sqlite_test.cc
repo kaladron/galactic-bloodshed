@@ -18,17 +18,17 @@ int main() {
 
   // Create a test planet to associate sectors with
   Planet test_planet{PlanetType::EARTH};
-  test_planet.star_id = 3;
-  test_planet.planet_order = 2;
-  test_planet.Maxx = 10;
-  test_planet.Maxy = 10;
+  test_planet.star_id() = 3;
+  test_planet.planet_order() = 2;
+  test_planet.Maxx() = 10;
+  test_planet.Maxy() = 10;
 
   // Create a SectorMap with various sector types
   SectorMap test_smap(test_planet, true);
   
   // Populate the map with different sector types and values
-  for (int y = 0; y < test_planet.Maxy; y++) {
-    for (int x = 0; x < test_planet.Maxx; x++) {
+  for (int y = 0; y < test_planet.Maxy(); y++) {
+    for (int x = 0; x < test_planet.Maxx(); x++) {
       auto& sector = test_smap.get(x, y);
       sector.x = x;
       sector.y = y;
@@ -43,8 +43,8 @@ int main() {
       sector.race = sector.owner;
       
       // Vary sector types
-      if (x == 0 || x == test_planet.Maxx - 1 || 
-          y == 0 || y == test_planet.Maxy - 1) {
+      if (x == 0 || x == test_planet.Maxx() - 1 || y == 0 ||
+          y == test_planet.Maxy() - 1) {
         sector.type = SectorType::SEC_SEA;
         sector.condition = SectorType::SEC_SEA;
       } else if ((x + y) % 3 == 0) {
@@ -67,8 +67,8 @@ int main() {
   SectorMap retrieved_smap = getsmap(test_planet);
 
   // Verify all sectors were stored and retrieved correctly
-  for (int y = 0; y < test_planet.Maxy; y++) {
-    for (int x = 0; x < test_planet.Maxx; x++) {
+  for (int y = 0; y < test_planet.Maxy(); y++) {
+    for (int x = 0; x < test_planet.Maxx(); x++) {
       const auto& original = test_smap.get(x, y);
       const auto& retrieved = retrieved_smap.get(x, y);
       
@@ -118,11 +118,11 @@ int main() {
   // This should return a SectorMap with no sectors (empty vector)
   // Accessing it would throw, so we just verify it doesn't crash on creation
   Planet empty_planet{PlanetType::MARS};
-  empty_planet.star_id = 10;
-  empty_planet.planet_order = 0;
-  empty_planet.Maxx = 5;
-  empty_planet.Maxy = 5;
-  
+  empty_planet.star_id() = 10;
+  empty_planet.planet_order() = 0;
+  empty_planet.Maxx() = 5;
+  empty_planet.Maxy() = 5;
+
   SectorMap empty_smap = getsmap(empty_planet);
   // The map was created successfully but has no sectors in it
   // (this is the expected behavior for a planet with no saved sectors)

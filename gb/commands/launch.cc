@@ -176,10 +176,10 @@ void launch(const command_t &argv, GameObj &g) {
                              stars[s->storbits].get_planet_name(s->pnumorbits),
                              p.gravity());
         s->xpos =
-            stars[s->storbits].xpos() + p.xpos +
+            stars[s->storbits].xpos() + p.xpos() +
             (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
         s->ypos =
-            stars[s->storbits].ypos() + p.ypos +
+            stars[s->storbits].ypos() + p.ypos() +
             (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
 
         /* subtract fuel from ship */
@@ -203,10 +203,10 @@ void launch(const command_t &argv, GameObj &g) {
         }
         s->notified = 0;
         putship(*s);
-        if (!p.explored) {
+        if (!p.explored()) {
           /* not yet explored by owner; space exploration causes the
              player to see a whole map */
-          p.explored = 1;
+          p.explored() = 1;
           putplanet(p, stars[s->storbits], s->pnumorbits);
         }
         std::string observed =
@@ -214,7 +214,7 @@ void launch(const command_t &argv, GameObj &g) {
                         ship_to_string(*s), stars[s->storbits].get_name(),
                         stars[s->storbits].get_planet_name(s->pnumorbits));
         for (player_t i = 1; i <= Num_races; i++)
-          if (p.info[i - 1].numsectsowned && i != Playernum)
+          if (p.info(i - 1).numsectsowned && i != Playernum)
             notify(i, stars[s->storbits].governor(i - 1), observed);
 
         g.out << std::format("{} launched from planet,", ship_to_string(*s));

@@ -284,7 +284,7 @@ void capture(const command_t &argv, GameObj &g) {
       if (ship->alive) {
         if (sect.popn + sect.troops + boarders) {
           telegram += "You killed all the aliens in this sector!\n";
-          p.info[Playernum - 1].mob_points -= sect.mobilization;
+          p.info(Playernum - 1).mob_points -= sect.mobilization;
         }
         if (!boarders) {
           g.out << "Oh no! They killed your party to the last man!\n";

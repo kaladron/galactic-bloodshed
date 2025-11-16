@@ -59,12 +59,12 @@ void defend(const command_t &argv, GameObj &g) {
 
   auto p = getplanet(g.snum, g.pnum);
 
-  if (!p.info[Playernum - 1].numsectsowned) {
+  if (!p.info(Playernum - 1).numsectsowned) {
     g.out << "You do not occupy any sectors here.\n";
     return;
   }
 
-  if (p.slaved_to && p.slaved_to != Playernum) {
+  if (p.slaved_to() && p.slaved_to() != Playernum) {
     g.out << "This planet is enslaved.\n";
     return;
   }
@@ -95,7 +95,7 @@ void defend(const command_t &argv, GameObj &g) {
 
   sscanf(argv[2].c_str(), "%d,%d", &x, &y);
 
-  if (x < 0 || x > p.Maxx - 1 || y < 0 || y > p.Maxy - 1) {
+  if (x < 0 || x > p.Maxx() - 1 || y < 0 || y > p.Maxy() - 1) {
     g.out << "Illegal sector.\n";
     return;
   }
@@ -110,15 +110,15 @@ void defend(const command_t &argv, GameObj &g) {
   if (argv.size() >= 4)
     strength = std::stoi(argv[3]);
   else
-    strength = p.info[Playernum - 1].guns;
+    strength = p.info(Playernum - 1).guns;
 
-  strength = MIN(strength, p.info[Playernum - 1].destruct);
-  strength = MIN(strength, p.info[Playernum - 1].guns);
+  strength = MIN(strength, p.info(Playernum - 1).destruct);
+  strength = MIN(strength, p.info(Playernum - 1).guns);
 
   if (strength <= 0) {
     g.out << std::format("No attack - {} guns, {}d\n",
-                         p.info[Playernum - 1].guns,
-                         p.info[Playernum - 1].destruct);
+                         p.info(Playernum - 1).guns,
+                         p.info(Playernum - 1).destruct);
     return;
   }
   auto &race = races[Playernum - 1];
@@ -136,7 +136,7 @@ void defend(const command_t &argv, GameObj &g) {
     return;
   }
 
-  p.info[Playernum - 1].destruct -= strength;
+  p.info(Playernum - 1).destruct -= strength;
   if (!to->alive) post(short_buf, NewsType::COMBAT);
   notify_star(Playernum, Governor, to->storbits, short_buf);
   warn(to->owner, to->governor, long_buf);
@@ -167,7 +167,7 @@ void defend(const command_t &argv, GameObj &g) {
 
   /* protecting ships retaliate individually if damage was inflicted */
   if (damage) {
-    sh = p.ships;
+    sh = p.ships();
     while (sh) {
       (void)getship(&ship, sh);
       if (ship->protect.on && (ship->protect.ship == toship) &&

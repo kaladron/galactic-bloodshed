@@ -73,8 +73,8 @@ int enroll_valid_race() {
       /* look for uninhabited planets */
       for (pnum = 0; pnum < stars[star].numplanets(); pnum++) {
         planet = getplanet(star, pnum);
-        if ((planet.type == ppref) && (planet.conditions[RTEMP] >= -200) &&
-            (planet.conditions[RTEMP] <= 100))
+        if ((planet.type() == ppref) && (planet.conditions(RTEMP) >= -200) &&
+            (planet.conditions(RTEMP) <= 100))
           goto found_planet;
       }
     }
@@ -113,7 +113,7 @@ found_planet:
   race->governor[0].toggle.color = false;
   race->governor[0].active = true;
 
-  for (auto i = 0; i <= OTHER; i++) race->conditions[i] = planet.conditions[i];
+  for (auto i = 0; i <= OTHER; i++) race->conditions[i] = planet.conditions(static_cast<Conditions>(i));
 
   for (auto i = 1; i <= MAXPLAYERS; i++) {
     /* messages from autoreport, player #1 are decodable */
@@ -167,10 +167,10 @@ found_planet:
 
   sect.owner = Playernum;
   sect.race = Playernum;
-  sect.popn = planet.popn = race->number_sexes;
+  sect.popn = planet.popn() = race->number_sexes;
   sect.fert = 100;
   sect.eff = 10;
-  sect.troops = planet.troops = 0;
+  sect.troops = planet.troops() = 0;
 
   race->governors = 0;
 
@@ -181,12 +181,12 @@ found_planet:
     bzero(&s, sizeof(s));
     auto shipno = Numships() + 1;
     race->Gov_ship = shipno;
-    planet.ships = shipno;
+    planet.ships() = shipno;
     s.nextship = 0;
 
     s.type = ShipType::OTYPE_GOV;
-    s.xpos = stars[star].xpos() + planet.xpos;
-    s.ypos = stars[star].ypos() + planet.ypos;
+    s.xpos = stars[star].xpos() + planet.xpos();
+    s.ypos = stars[star].ypos() + planet.ypos();
     s.land_x = sect.x;
     s.land_y = sect.y;
 
@@ -246,13 +246,13 @@ found_planet:
     putship(s);
   }
 
-  planet.info[Playernum - 1].numsectsowned = 1;
-  planet.explored = 0;
-  planet.info[Playernum - 1].explored = 1;
+  planet.info(Playernum - 1).numsectsowned = 1;
+  planet.explored() = 0;
+  planet.info(Playernum - 1).explored = 1;
 
   // (approximate)
-  planet.maxpopn =
-      maxsupport(*race, sect, 100.0, 0) * planet.Maxx * planet.Maxy / 2;
+  planet.maxpopn() =
+      maxsupport(*race, sect, 100.0, 0) * planet.Maxx() * planet.Maxy() / 2;
 
   putrace(*race);
   putsector(sect, planet);

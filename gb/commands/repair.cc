@@ -42,7 +42,7 @@ void repair(const command_t &argv, GameObj &g) {
   }
 
   auto p = getplanet(where->snum, where->pnum);
-  if (!p.info[Playernum - 1].numsectsowned) {
+  if (!p.info(Playernum - 1).numsectsowned) {
     g.out << "You don't own any sectors on this planet.\n";
     return;
   }
@@ -52,28 +52,28 @@ void repair(const command_t &argv, GameObj &g) {
     // translate from lowx:hix,lowy:hiy
     get4args(argv[1].c_str(), &x2, &hix, &lowy, &hiy);
     x2 = std::max(0, x2);
-    hix = std::min(hix, p.Maxx - 1);
+    hix = std::min(hix, p.Maxx() - 1);
     lowy = std::max(0, lowy);
-    hiy = std::min(hiy, p.Maxy - 1);
+    hiy = std::min(hiy, p.Maxy() - 1);
   } else {
     /* repair entire planet */
     x2 = 0;
-    hix = p.Maxx - 1;
+    hix = p.Maxx() - 1;
     lowy = 0;
-    hiy = p.Maxy - 1;
+    hiy = p.Maxy() - 1;
   }
 
   int sectors = 0;
   int cost = 0;
   for (; lowy <= hiy; lowy++) {
     for (int lowx = x2; lowx <= hix; lowx++) {
-      if (p.info[Playernum - 1].resource >= SECTOR_REPAIR_COST) {
+      if (p.info(Playernum - 1).resource >= SECTOR_REPAIR_COST) {
         auto &s = smap.get(lowx, lowy);
         if (s.condition == SectorType::SEC_WASTED &&
             (s.owner == Playernum || !s.owner)) {
           s.condition = s.type;
           s.fert = std::min(100U, s.fert + 20);
-          p.info[Playernum - 1].resource -= SECTOR_REPAIR_COST;
+          p.info(Playernum - 1).resource -= SECTOR_REPAIR_COST;
           cost += SECTOR_REPAIR_COST;
           sectors += 1;
           putsector(s, p, lowx, lowy);

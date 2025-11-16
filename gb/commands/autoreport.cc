@@ -59,16 +59,16 @@ void autoreport(const command_t& argv, GameObj& g) {
   }
 
   auto& p = *planet_handle;
-  if (p.info[g.player - 1].autorep) {
-    p.info[g.player - 1].autorep = 0;
+  if (p.info(g.player - 1).autorep) {
+    p.info(g.player - 1).autorep = 0;
   } else {
-    p.info[g.player - 1].autorep = TELEG_MAX_AUTO;
+    p.info(g.player - 1).autorep = TELEG_MAX_AUTO;
   }
 
   // Get star name for output message
   const auto* target_star = g.entity_manager.peek_star(snum);
   g.out << std::format("Autoreport on {0} has been {1}.\n",
                        target_star ? target_star->get_planet_name(pnum) : "Unknown",
-                       (p.info[g.player - 1].autorep ? "set" : "unset"));
+                       (p.info(g.player - 1).autorep ? "set" : "unset"));
 }
 }  // namespace GB::commands

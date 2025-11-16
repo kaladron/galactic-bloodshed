@@ -36,8 +36,8 @@ void test_bless_technology() {
   star_repo.save(star);
 
   Planet planet{};
-  planet.star_id = 1;
-  planet.planet_order = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
@@ -88,8 +88,8 @@ void test_bless_money() {
   star_repo.save(star);
 
   Planet planet{};
-  planet.star_id = 1;
-  planet.planet_order = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
@@ -137,8 +137,8 @@ void test_bless_requires_god() {
   star_repo.save(star);
 
   Planet planet{};
-  planet.star_id = 1;
-  planet.planet_order = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 

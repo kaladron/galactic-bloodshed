@@ -28,7 +28,7 @@ int revolt(Planet &pl, const player_t victim, const player_t agent) {
     if (s.owner != victim || s.popn == 0) continue;
 
     // Revolt rate is a function of tax rate.
-    if (!success(pl.info[victim - 1].tax)) continue;
+    if (!success(pl.info(victim - 1).tax)) continue;
 
     if (long_rand(1, s.popn) <= 10L * races[victim - 1].fighters * s.troops)
       continue;
@@ -37,10 +37,10 @@ int revolt(Planet &pl, const player_t victim, const player_t agent) {
     s.owner = agent;               /* enemy gets it */
     s.popn = long_rand(1, s.popn); /* some people killed */
     s.troops = 0;                  /* all troops destroyed */
-    pl.info[victim - 1].numsectsowned -= 1;
-    pl.info[agent - 1].numsectsowned += 1;
-    pl.info[victim - 1].mob_points -= s.mobilization;
-    pl.info[agent - 1].mob_points += s.mobilization;
+    pl.info(victim - 1).numsectsowned -= 1;
+    pl.info(agent - 1).numsectsowned += 1;
+    pl.info(victim - 1).mob_points -= s.mobilization;
+    pl.info(agent - 1).mob_points += s.mobilization;
     revolted_sectors++;
   }
   putsmap(smap, pl);
@@ -50,7 +50,7 @@ int revolt(Planet &pl, const player_t victim, const player_t agent) {
 
 void moveplanet(const starnum_t starnum, Planet &planet,
                 const planetnum_t planetnum) {
-  if (planet.popn || planet.ships) Stinfo[starnum][planetnum].inhab = 1;
+  if (planet.popn() || planet.ships()) Stinfo[starnum][planetnum].inhab = 1;
 
   StarsInhab[starnum] = !!(stars[starnum].inhabited());
   StarsExpl[starnum] = !!(stars[starnum].explored());
@@ -58,20 +58,20 @@ void moveplanet(const starnum_t starnum, Planet &planet,
   stars[starnum].inhabited() = 0;
   if (!StarsExpl[starnum]) return; /* no one's explored the star yet */
 
-  double dist = std::hypot((double)(planet.ypos), (double)(planet.xpos));
+  double dist = std::hypot((double)(planet.ypos()), (double)(planet.xpos()));
 
-  double phase = std::atan2((double)(planet.ypos), (double)(planet.xpos));
+  double phase = std::atan2((double)(planet.ypos()), (double)(planet.xpos()));
   double period =
       dist *
       std::sqrt((double)(dist / (SYSTEMGRAVCONST * stars[starnum].gravity())));
   /* keppler's law */
 
-  double xadd = dist * std::cos((double)(-1. / period + phase)) - planet.xpos;
-  double yadd = dist * std::sin((double)(-1. / period + phase)) - planet.ypos;
+  double xadd = dist * std::cos((double)(-1. / period + phase)) - planet.xpos();
+  double yadd = dist * std::sin((double)(-1. / period + phase)) - planet.ypos();
   /* one update time unit - planets orbit counter-clockwise */
 
   /* adjust ships in orbit around the planet */
-  auto sh = planet.ships;
+  auto sh = planet.ships();
   while (sh) {
     auto ship = ships[sh];
     ship->xpos += xadd;
@@ -79,8 +79,8 @@ void moveplanet(const starnum_t starnum, Planet &planet,
     sh = ship->nextship;
   }
 
-  planet.xpos += xadd;
-  planet.ypos += yadd;
+  planet.xpos() += xadd;
+  planet.ypos() += yadd;
 }
 
 /**
@@ -99,7 +99,7 @@ void moveplanet(const starnum_t starnum, Planet &planet,
 bool adjacent(const Planet &p, const Coordinates from, const Coordinates to) {
   if (std::abs(from.y - to.y) > 1) return false;
   if (std::abs(from.x - to.x) <= 1) return true;
-  if (from.x == p.Maxx - 1 && to.x == 0) return true;
-  if (from.x == 0 && to.x == p.Maxx - 1) return true;
+  if (from.x == p.Maxx() - 1 && to.x == 0) return true;
+  if (from.x == 0 && to.x == p.Maxx() - 1) return true;
   return false;
 }

@@ -46,8 +46,8 @@ void dump(const command_t &argv, GameObj &g) {
 
         for (size_t i = 0; i < stars[star].numplanets(); i++) {
           auto planet = getplanet(star, i);
-          if (planet.info[Playernum - 1].explored) {
-            planet.info[player - 1].explored = 1;
+          if (planet.info(Playernum - 1).explored) {
+            planet.info(player - 1).explored = 1;
             putplanet(planet, stars[star], i);
           }
         }
@@ -67,8 +67,8 @@ void dump(const command_t &argv, GameObj &g) {
 
           for (j = 0; j < stars[star].numplanets(); j++) {
             auto planet = getplanet(star, j);
-            if (planet.info[Playernum - 1].explored) {
-              planet.info[player - 1].explored = 1;
+            if (planet.info(Playernum - 1).explored) {
+              planet.info(player - 1).explored = 1;
               putplanet(planet, stars[star], j);
             }
           }

@@ -41,8 +41,8 @@ void mobilize(const command_t &argv, GameObj &g) {
   if (argv.size() < 2) {
     notify(Playernum, Governor,
            std::format("Current mobilization: {}    Quota: {}\n",
-                       p.info[Playernum - 1].comread,
-                       p.info[Playernum - 1].mob_set));
+                       p.info(Playernum - 1).comread,
+                       p.info(Playernum - 1).mob_set));
     return;
   }
   int sum_mob = std::stoi(argv[1]);
@@ -51,7 +51,7 @@ void mobilize(const command_t &argv, GameObj &g) {
     g.out << "Illegal value.\n";
     return;
   }
-  p.info[Playernum - 1].mob_set = sum_mob;
+  p.info(Playernum - 1).mob_set = sum_mob;
   putplanet(p, stars[g.snum], g.pnum);
   deductAPs(g, APcount, g.snum);
 }

@@ -137,8 +137,8 @@ void proj_fuel(const command_t &argv, GameObj &g) {
       g.out << "Destination planet or star not found.\n";
       return;
     }
-    x_1 = p->xpos + dest_star->xpos();
-    y_1 = p->ypos + dest_star->ypos();
+    x_1 = p->xpos() + dest_star->xpos();
+    y_1 = p->ypos() + dest_star->ypos();
   } else if (tmpdest.level == ScopeLevel::LEVEL_STAR) {
     const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
     if (!dest_star) {

@@ -57,7 +57,7 @@ void walk(const command_t &argv, GameObj &g) {
     g.out << "Illegal move.\n";
     return;
   }
-  if (x < 0 || y < 0 || x > p.Maxx - 1 || y > p.Maxy - 1) {
+  if (x < 0 || y < 0 || x > p.Maxx() - 1 || y > p.Maxy() - 1) {
     g.out << std::format("Illegal coordinates {},{}.\n", x, y);
     putplanet(p, stars[g.snum], g.pnum);
     return;
@@ -69,7 +69,7 @@ void walk(const command_t &argv, GameObj &g) {
     return;
   }
   /* if the sector is occupied by non-aligned AFVs, each one will attack */
-  Shiplist shiplist{p.ships};
+  Shiplist shiplist{p.ships()};
   for (auto ship2 : shiplist) {
     if (ship2.owner != Playernum && ship2.type == ShipType::OTYPE_AFV &&
         landed(ship2) && retal_strength(ship2) && (ship2.land_x == x) &&
@@ -128,7 +128,7 @@ void walk(const command_t &argv, GameObj &g) {
         sect.popn = civ;
         sect.troops = mil;
         if (!(sect.popn + sect.troops)) {
-          p.info[sect.owner - 1].mob_points -= (int)sect.mobilization;
+          p.info(sect.owner - 1).mob_points -= (int)sect.mobilization;
           sect.owner = 0;
         }
       }
@@ -153,7 +153,7 @@ void walk(const command_t &argv, GameObj &g) {
     ship->land_y = y;
     use_fuel(*ship, AFV_FUEL_COST);
     for (auto i = 1; i <= Num_races; i++)
-      if (i != Playernum && p.info[i - 1].numsectsowned)
+      if (i != Playernum && p.info(i - 1).numsectsowned)
         notify(i, stars[g.snum].governor(i - 1), moving);
   }
   putship(*ship);

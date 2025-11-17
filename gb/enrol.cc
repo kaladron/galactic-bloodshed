@@ -76,7 +76,6 @@ int main() {
   struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
   Planet planet;
   unsigned char not_found[PlanetType::DESERT + 1] = {};  // Zero-initialized
-  const Star* selected_star = nullptr;
 
   // Create Database and EntityManager for dependency injection
   Database database{PKGSTATEDIR "gb.db"};
@@ -155,7 +154,6 @@ int main() {
     /* find first planet of right type */
     count = 0;
     found = 0;
-    selected_star = nullptr;
 
     for (star = 0; star < Sdata.numstars && !found && count < 100;) {
       const auto* star_ptr = entity_manager.peek_star(star);
@@ -182,7 +180,6 @@ int main() {
             if (vacant && planet.conditions(RTEMP) >= -50 &&
                 planet.conditions(RTEMP) <= 50) {
               found = 1;
-              selected_star = star_ptr;
             }
           }
           if (!found) {
@@ -211,11 +208,6 @@ int main() {
     }
 
   } while (!found);
-
-  if (!selected_star) {
-    std::println(stderr, "Error: Unable to load star data for selection");
-    return -1;
-  }
 
   Race race{};
 
@@ -382,8 +374,13 @@ int main() {
     planet.ships() = shipno;
 
     s.type = ShipType::OTYPE_GOV;
-    s.xpos = selected_star->xpos() + planet.xpos();
-    s.ypos = selected_star->ypos() + planet.ypos();
+    const auto* star_ptr = entity_manager.peek_star(star);
+    if (!star_ptr) {
+      std::println(stderr, "Error: Cannot access star for ship placement");
+      return -1;
+    }
+    s.xpos = star_ptr->xpos() + planet.xpos();
+    s.ypos = star_ptr->ypos() + planet.ypos();
     s.land_x = (char)secttypes[i].x;
     s.land_y = (char)secttypes[i].y;
 
@@ -461,10 +458,10 @@ int main() {
   /* (approximate) */
 
   putsector(sect, planet, secttypes[i].x, secttypes[i].y);
-  putplanet(planet, *selected_star, pnum);
 
   /* make star explored and stuff */
   auto star_record = getstar(star);
+  putplanet(planet, star_record, pnum);
   setbit(star_record.explored(), Playernum);
   setbit(star_record.inhabited(), Playernum);
   star_record.AP(Playernum - 1) = 5;

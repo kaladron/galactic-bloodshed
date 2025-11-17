@@ -270,6 +270,11 @@ race_handle.save();
 
 **⚠️ DEPRECATED - Do not use in new code:**
 
+**Note:** Some executables (like `enrol.cc`) still use a mixed pattern during migration:
+- `peek_*()` for read-only EntityManager access
+- `get*()` + `put*()` for writes (e.g., `getstar()` returns `Star` by value, then `putstar()` to persist)
+- This mixed approach will be fully replaced by EntityManager `get_*()` handles in future phases
+
 #### Read Operations
 ```cpp
 // Get star system
@@ -562,6 +567,8 @@ if (!race) {
 }
 ```
 Always check pointers before use. On failure: print message and return early.
+
+**Note:** `peek_*()` methods return cached pointers from EntityManager's internal cache, so repeated calls to the same entity are efficient.
 
 ### Write to Database
 Use EntityManager get methods for read-write access with RAII:

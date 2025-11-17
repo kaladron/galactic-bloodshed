@@ -74,7 +74,6 @@ int main() {
   int k;
   char c;
   struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
-  Planet planet;
   unsigned char not_found[PlanetType::DESERT + 1] = {};  // Zero-initialized
 
   // Create Database and EntityManager for dependency injection
@@ -171,14 +170,18 @@ int main() {
       if (check) {
         pnum = 0;
         while (!found && pnum < star_ptr->numplanets()) {
-          planet = getplanet(star, pnum);
+          const auto* planet_ptr = entity_manager.peek_planet(star, pnum);
+          if (!planet_ptr) {
+            pnum++;
+            continue;
+          }
 
-          if (planet.type() == ppref && star_ptr->numplanets() != 1) {
+          if (planet_ptr->type() == ppref && star_ptr->numplanets() != 1) {
             vacant = 1;
             for (i = 1; i <= Playernum; i++)
-              if (planet.info(i - 1).numsectsowned) vacant = 0;
-            if (vacant && planet.conditions(RTEMP) >= -50 &&
-                planet.conditions(RTEMP) <= 50) {
+              if (planet_ptr->info(i - 1).numsectsowned) vacant = 0;
+            if (vacant && planet_ptr->conditions(RTEMP) >= -50 &&
+                planet_ptr->conditions(RTEMP) <= 50) {
               found = 1;
             }
           }
@@ -244,7 +247,12 @@ int main() {
   /* make conditions preferred by your people set to (more or less)
      those of the planet : higher the concentration of gas, the higher
      percentage difference between planet and race (commented out) */
-  for (j = 0; j <= OTHER; j++) race.conditions[j] = planet.conditions(static_cast<Conditions>(j));
+  // Set race conditions based on chosen planet
+  const auto* cond_planet = entity_manager.peek_planet(star, pnum);
+  if (cond_planet) {
+    for (j = 0; j <= OTHER; j++)
+      race.conditions[j] = cond_planet->conditions(static_cast<Conditions>(j));
+  }
   /*+ int_rand( round_rand(-planet->conditions[j]*2.0),
    * round_rand(planet->conditions[j]*2.0) )*/
 
@@ -295,7 +303,12 @@ int main() {
     ok_char = (!ok_line.empty()) ? ok_line[0] : '\0';
   } while (ok_char != 'y');
 
-  auto smap = getsmap(planet);
+  const auto* planet_ptr = entity_manager.peek_planet(star, pnum);
+  if (!planet_ptr) {
+    std::println(stderr, "Error: Cannot load planet for sector analysis");
+    return -1;
+  }
+  auto smap = getsmap(*planet_ptr);
 
   std::println(
       "\nChoose a primary sector preference. This race will prefer to "
@@ -310,7 +323,7 @@ int main() {
       secttypes[sector.condition].y = sector.y;
     }
   }
-  planet.explored() = 1;
+  // Temporarily show sectors during selection (no need to persist)
   for (i = SectorType::SEC_SEA; i <= SectorType::SEC_WASTED; i++)
     if (secttypes[i].here) {
       std::println("({:2d}): {} ({}, {}) ({}, {} sectors)", i,
@@ -318,7 +331,6 @@ int main() {
                    secttypes[i].x, secttypes[i].y, Desnames[i],
                    secttypes[i].count);
     }
-  planet.explored() = 0;
 
   found = 0;
   do {
@@ -371,16 +383,17 @@ int main() {
     shipno = Numships() + 1;
     std::println("Creating government ship {}...", shipno);
     race.Gov_ship = shipno;
-    planet.ships() = shipno;
 
     s.type = ShipType::OTYPE_GOV;
     const auto* star_ptr = entity_manager.peek_star(star);
-    if (!star_ptr) {
-      std::println(stderr, "Error: Cannot access star for ship placement");
+    const auto* planet_ptr2 = entity_manager.peek_planet(star, pnum);
+    if (!star_ptr || !planet_ptr2) {
+      std::println(stderr,
+                   "Error: Cannot access star/planet for ship placement");
       return -1;
     }
-    s.xpos = star_ptr->xpos() + planet.xpos();
-    s.ypos = star_ptr->ypos() + planet.ypos();
+    s.xpos = star_ptr->xpos() + planet_ptr2->xpos();
+    s.ypos = star_ptr->ypos() + planet_ptr2->ypos();
     s.land_x = (char)secttypes[i].x;
     s.land_y = (char)secttypes[i].y;
 
@@ -442,16 +455,23 @@ int main() {
 
   putrace(race);
 
+  sect.owner = Playernum;
+  sect.race = Playernum;
+  sect.fert = 100;
+  sect.eff = 10;
+
+  // Get planet handle for final modifications
+  auto planet_handle = entity_manager.get_planet(star, pnum);
+  if (!planet_handle.get()) {
+    std::println(stderr, "Error: Cannot access planet for final updates");
+    return -1;
+  }
+  auto& planet = *planet_handle;
   planet.info(Playernum - 1).numsectsowned = 1;
   planet.explored() = 0;
   planet.info(Playernum - 1).explored = 1;
-  /*planet->info[Playernum-1].autorep = 1;*/
 
-  sect.owner = Playernum;
-  sect.race = Playernum;
   sect.popn = planet.popn() = race.number_sexes;
-  sect.fert = 100;
-  sect.eff = 10;
   sect.troops = planet.troops() = 0;
   planet.maxpopn() =
       maxsupport(race, sect, 100.0, 0) * planet.Maxx() * planet.Maxy() / 2;
@@ -461,7 +481,6 @@ int main() {
 
   /* make star explored and stuff */
   auto star_record = getstar(star);
-  putplanet(planet, star_record, pnum);
   setbit(star_record.explored(), Playernum);
   setbit(star_record.inhabited(), Playernum);
   star_record.AP(Playernum - 1) = 5;

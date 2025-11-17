@@ -76,6 +76,7 @@ int main() {
   struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
   Planet planet;
   unsigned char not_found[PlanetType::DESERT + 1] = {};  // Zero-initialized
+  const Star* selected_star = nullptr;
 
   // Create Database and EntityManager for dependency injection
   Database database{PKGSTATEDIR "gb.db"};
@@ -112,13 +113,6 @@ int main() {
     return -1;
   }
   const auto& Sdata = *stardata_ptr;
-
-  // TODO(jeffbailey): factor out routine for initialising this.
-  stars.reserve(Sdata.numstars);
-  for (i = 0; i < Sdata.numstars; i++) {
-    auto s = getstar(i);
-    stars.push_back(s);
-  }
   std::println("There is still space for player {}.", Playernum);
 
   do {
@@ -161,26 +155,34 @@ int main() {
     /* find first planet of right type */
     count = 0;
     found = 0;
+    selected_star = nullptr;
 
     for (star = 0; star < Sdata.numstars && !found && count < 100;) {
+      const auto* star_ptr = entity_manager.peek_star(star);
+      if (!star_ptr) {
+        count++;
+        star = int_rand(0, Sdata.numstars - 1);
+        continue;
+      }
+
       check = 1;
       /* skip over inhabited stars - or stars with just one planet! */
-      if (stars[star].inhabited() != 0 || stars[star].numplanets() < 2)
-        check = 0;
+      if (star_ptr->inhabited() != 0 || star_ptr->numplanets() < 2) check = 0;
 
       /* look for uninhabited planets */
       if (check) {
         pnum = 0;
-        while (!found && pnum < stars[star].numplanets()) {
+        while (!found && pnum < star_ptr->numplanets()) {
           planet = getplanet(star, pnum);
 
-          if (planet.type() == ppref && stars[star].numplanets() != 1) {
+          if (planet.type() == ppref && star_ptr->numplanets() != 1) {
             vacant = 1;
             for (i = 1; i <= Playernum; i++)
               if (planet.info(i - 1).numsectsowned) vacant = 0;
             if (vacant && planet.conditions(RTEMP) >= -50 &&
                 planet.conditions(RTEMP) <= 50) {
               found = 1;
+              selected_star = star_ptr;
             }
           }
           if (!found) {
@@ -209,6 +211,11 @@ int main() {
     }
 
   } while (!found);
+
+  if (!selected_star) {
+    std::println(stderr, "Error: Unable to load star data for selection");
+    return -1;
+  }
 
   Race race{};
 
@@ -375,8 +382,8 @@ int main() {
     planet.ships() = shipno;
 
     s.type = ShipType::OTYPE_GOV;
-    s.xpos = stars[star].xpos() + planet.xpos();
-    s.ypos = stars[star].ypos() + planet.ypos();
+    s.xpos = selected_star->xpos() + planet.xpos();
+    s.ypos = selected_star->ypos() + planet.ypos();
     s.land_x = (char)secttypes[i].x;
     s.land_y = (char)secttypes[i].y;
 
@@ -422,9 +429,15 @@ int main() {
     s.on = 1;
 
     s.number = shipno;
-    std::println("Created on sector {},{} on /{}/{}", s.land_x, s.land_y,
-                 stars[s.storbits].get_name(),
-                 stars[s.storbits].get_planet_name(s.pnumorbits));
+    if (const auto* storbit_star = entity_manager.peek_star(s.storbits);
+        storbit_star) {
+      std::println("Created on sector {},{} on /{}/{}", s.land_x, s.land_y,
+                   storbit_star->get_name(),
+                   storbit_star->get_planet_name(s.pnumorbits));
+    } else {
+      std::println("Created on sector {},{} on an unknown location", s.land_x,
+                   s.land_y);
+    }
     putship(s);
   }
 
@@ -448,20 +461,24 @@ int main() {
   /* (approximate) */
 
   putsector(sect, planet, secttypes[i].x, secttypes[i].y);
-  putplanet(planet, stars[star], pnum);
+  putplanet(planet, *selected_star, pnum);
 
   /* make star explored and stuff */
-  stars[star] = getstar(star);
-  setbit(stars[star].explored(), Playernum);
-  setbit(stars[star].inhabited(), Playernum);
-  stars[star].AP(Playernum - 1) = 5;
-  putstar(stars[star], star);
+  auto star_record = getstar(star);
+  setbit(star_record.explored(), Playernum);
+  setbit(star_record.inhabited(), Playernum);
+  star_record.AP(Playernum - 1) = 5;
+  putstar(star_record, star);
 
   std::println("\nYou are player {}.\n", Playernum);
   std::println("Your race has been created on sector {},{} on", secttypes[i].x,
                secttypes[i].y);
-  std::println("{}/{}.\n", stars[star].get_name(),
-               stars[star].get_planet_name(pnum));
+  if (const auto* home_star = entity_manager.peek_star(star); home_star) {
+    std::println("{}/{}.\n", home_star->get_name(),
+                 home_star->get_planet_name(pnum));
+  } else {
+    std::println("Unknown star/planet.\n");
+  }
   return 0;
 }
 

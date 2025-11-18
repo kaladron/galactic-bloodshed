@@ -360,6 +360,7 @@ Commands handle user interaction and translate user input into service calls.
 struct GameObj {
   player_t player;        // Current player
   governor_t governor;    // Current governor
+  const Race* race;       // Current player's race (cached)
   ScopeLevel level;       // Current scope level
   starnum_t snum;         // Current star
   planetnum_t pnum;       // Current planet

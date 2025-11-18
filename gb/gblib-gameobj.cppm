@@ -3,6 +3,7 @@
 export module gblib:gameobj;
 
 import :types;
+import :race;
 import std.compat;
 
 // Forward declaration for EntityManager (defined in gblib:services)
@@ -13,6 +14,7 @@ export class GameObj {
   player_t player;
   governor_t governor;
   bool god = false;
+  const Race* race = nullptr;  ///< Pointer to current player's race (valid during command execution)
   double lastx[2] = {0.0, 0.0};
   double lasty[2] = {0.0, 0.0};
   double zoom[2] = {1.0, 0.5};                ///< last coords for zoom

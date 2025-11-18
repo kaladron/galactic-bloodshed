@@ -76,7 +76,7 @@ void build(const command_t &argv, GameObj &g) {
           "{:>2} {:>4} {:>4}\n",
           "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
           "fuel", "crew", "sp", "tech", "cost");
-      auto &race = races[Playernum - 1];
+      const auto &race = *g.race;
       for (j = 0; j < NUMSTYPES; j++) {
         ShipType i{ShipVector[j]};
         if ((!Shipdata[i][ABIL_GOD]) || race.God) {
@@ -146,11 +146,11 @@ void build(const command_t &argv, GameObj &g) {
       }
       /* default parameters */
       g.out << std::format(
-          "\n{} {:<15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} {:>4} {:>4} "
+          "{} {:<15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} {:>4} {:>4} "
           "{:>2} {:>4} {:>4}\n",
           "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
           "fuel", "crew", "sp", "tech", "cost");
-      auto &race = races[Playernum - 1];
+      const auto &race = *g.race;
       g.out << std::format(
           "{} {:<15.15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} {:>4} {:>4} "
           "{:>2} {:.0f} {:>4}\n",
@@ -173,7 +173,7 @@ void build(const command_t &argv, GameObj &g) {
   }
   starnum_t snum = g.snum;
   planetnum_t pnum = g.pnum;
-  auto &race = races[Playernum - 1];
+  const auto &race = *g.race;
   count = 0; /* this used used to reset count in the loop */
   std::optional<ShipType> what;
   do {

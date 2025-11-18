@@ -1131,7 +1131,14 @@ static void dump_users(DescriptorData& e) {
  * @param argv The command arguments.
  */
 static void process_command(GameObj& g, const command_t& argv) {
-  bool God = races[g.player - 1].God;
+  const auto* race = g.entity_manager.peek_race(g.player);
+  if (!race) {
+    g.out << "Error: Could not find your race.\n";
+    return;
+  }
+  g.race = race;
+
+  bool God = g.race->God;
 
   const auto& commands = getCommands();
   auto command = commands.find(argv[0]);
@@ -1152,6 +1159,7 @@ static void process_command(GameObj& g, const command_t& argv) {
 
   /* compute the prompt and send to the player */
   g.out << do_prompt(g);
+  g.race = nullptr;
 }
 
 static void load_race_data(EntityManager& entity_manager) {

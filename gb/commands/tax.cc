@@ -19,29 +19,42 @@ void tax(const command_t &argv, GameObj &g) {
     g.out << "scope must be a planet.\n";
     return;
   }
-  if (!stars[g.snum].control(Playernum, Governor)) {
+  const auto* star = g.entity_manager.peek_star(g.snum);
+  if (!star) {
+    g.out << "Star not found.\n";
+    return;
+  }
+  if (!star->control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  auto &race = races[Playernum - 1];
-  if (!race.Gov_ship) {
+  const auto* race = g.entity_manager.peek_race(Playernum);
+  if (!race) {
+    g.out << "Race not found.\n";
+    return;
+  }
+  if (!race->Gov_ship) {
     g.out << "You have no government center active.\n";
     return;
   }
-  if (race.Guest) {
+  if (race->Guest) {
     g.out << "Sorry, but you can't do this when you are a guest.\n";
     return;
   }
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount)) {
+  if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) {
     return;
   }
 
-  auto p = getplanet(g.snum, g.pnum);
+  auto planet = g.entity_manager.get_planet(g.snum, g.pnum);
+  if (!planet.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
 
   if (argv.size() < 2) {
     g.out << std::format("Current tax rate: {}%    Target: {}%\n",
-                         p.info(Playernum - 1).tax,
-                         p.info(Playernum - 1).newtax);
+                         planet->info(Playernum - 1).tax,
+                         planet->info(Playernum - 1).newtax);
     return;
   }
 
@@ -51,8 +64,8 @@ void tax(const command_t &argv, GameObj &g) {
     g.out << "Illegal value.\n";
     return;
   }
-  p.info(Playernum - 1).newtax = sum_tax;
-  putplanet(p, stars[g.snum], g.pnum);
+  planet->info(Playernum - 1).newtax = sum_tax;
+  // Auto-saves when planet goes out of scope
 
   deductAPs(g, APcount, g.snum);
   g.out << "Set.\n";

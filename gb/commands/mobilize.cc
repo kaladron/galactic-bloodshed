@@ -28,21 +28,30 @@ void mobilize(const command_t &argv, GameObj &g) {
     g.out << "scope must be a planet.\n";
     return;
   }
-  if (!stars[g.snum].control(Playernum, Governor)) {
+  const auto* star = g.entity_manager.peek_star(g.snum);
+  if (!star) {
+    g.out << "Star not found.\n";
+    return;
+  }
+  if (!star->control(Playernum, Governor)) {
     g.out << "You are not authorized to do this here.\n";
     return;
   }
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount)) {
+  if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) {
     return;
   }
 
-  auto p = getplanet(g.snum, g.pnum);
+  auto planet = g.entity_manager.get_planet(g.snum, g.pnum);
+  if (!planet.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
 
   if (argv.size() < 2) {
     notify(Playernum, Governor,
            std::format("Current mobilization: {}    Quota: {}\n",
-                       p.info(Playernum - 1).comread,
-                       p.info(Playernum - 1).mob_set));
+                       planet->info(Playernum - 1).comread,
+                       planet->info(Playernum - 1).mob_set));
     return;
   }
   int sum_mob = std::stoi(argv[1]);
@@ -51,8 +60,7 @@ void mobilize(const command_t &argv, GameObj &g) {
     g.out << "Illegal value.\n";
     return;
   }
-  p.info(Playernum - 1).mob_set = sum_mob;
-  putplanet(p, stars[g.snum], g.pnum);
+  planet->info(Playernum - 1).mob_set = sum_mob;
   deductAPs(g, APcount, g.snum);
 }
 }  // namespace GB::commands

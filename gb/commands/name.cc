@@ -54,9 +54,12 @@ void name(const command_t& argv, GameObj& g) {
 
   if (argv[1] == "ship") {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
-      auto ship = getship(g.shipno);
+      auto ship = g.entity_manager.get_ship(g.shipno);
+      if (!ship.get()) {
+        g.out << "Ship not found.\n";
+        return;
+      }
       ship->name = namebuf;
-      putship(*ship);
       g.out << "Name set.\n";
       return;
     }
@@ -65,7 +68,11 @@ void name(const command_t& argv, GameObj& g) {
   }
   if (argv[1] == "class") {
     if (g.level == ScopeLevel::LEVEL_SHIP) {
-      auto ship = getship(g.shipno);
+      auto ship = g.entity_manager.get_ship(g.shipno);
+      if (!ship.get()) {
+        g.out << "Ship not found.\n";
+        return;
+      }
       if (ship->type != ShipType::OTYPE_FACTORY) {
         g.out << "You are not at a factory!\n";
         return;
@@ -75,7 +82,6 @@ void name(const command_t& argv, GameObj& g) {
         return;
       }
       ship->shipclass = namebuf;
-      putship(*ship);
       g.out << "Class set.\n";
       return;
     }
@@ -93,49 +99,70 @@ void name(const command_t& argv, GameObj& g) {
     g.out << "Done.\n";
   } else if (argv[1] == "star") {
     if (g.level == ScopeLevel::LEVEL_STAR) {
-      auto& race = races[Playernum - 1];
-      if (!race.God) {
+      const auto* race = g.entity_manager.peek_race(Playernum);
+      if (!race) {
+        g.out << "Race not found.\n";
+        return;
+      }
+      if (!race->God) {
         g.out << "Only dieties may name a star.\n";
         return;
       }
-      stars[g.snum].set_name(namebuf);
-      putstar(stars[g.snum], g.snum);
+      auto star = g.entity_manager.get_star(g.snum);
+      if (!star.get()) {
+        g.out << "Star not found.\n";
+        return;
+      }
+      star->set_name(namebuf);
     } else {
       g.out << "You have to 'cs' to a star to name it.\n";
       return;
     }
   } else if (argv[1] == "planet") {
     if (g.level == ScopeLevel::LEVEL_PLAN) {
-      stars[g.snum] = getstar(g.snum);
-      auto& race = races[Playernum - 1];
-      if (!race.God) {
+      const auto* race = g.entity_manager.peek_race(Playernum);
+      if (!race) {
+        g.out << "Race not found.\n";
+        return;
+      }
+      if (!race->God) {
         g.out << "Only deity can rename planets.\n";
         return;
       }
-      stars[g.snum].set_planet_name(g.pnum, namebuf);
-      putstar(stars[g.snum], g.snum);
+      auto star = g.entity_manager.get_star(g.snum);
+      if (!star.get()) {
+        g.out << "Star not found.\n";
+        return;
+      }
+      star->set_planet_name(g.pnum, namebuf);
       deductAPs(g, APcount, g.snum);
     } else {
       g.out << "You have to 'cs' to a planet to name it.\n";
       return;
     }
   } else if (argv[1] == "race") {
-    auto& race = races[Playernum - 1];
     if (Governor) {
       g.out << "You are not authorized to do this.\n";
       return;
     }
-    race.name = namebuf;
+    auto race = g.entity_manager.get_race(Playernum);
+    if (!race.get()) {
+      g.out << "Race not found.\n";
+      return;
+    }
+    race->name = namebuf;
     notify(Playernum, Governor,
-           std::format("Name changed to `{}'.\n", race.name));
-    putrace(race);
+           std::format("Name changed to `{}'.\n", race->name));
   } else if (argv[1] == "governor") {
-    auto& race = races[Playernum - 1];
-    race.governor[Governor].name = namebuf;
+    auto race = g.entity_manager.get_race(Playernum);
+    if (!race.get()) {
+      g.out << "Race not found.\n";
+      return;
+    }
+    race->governor[Governor].name = namebuf;
     notify(
         Playernum, Governor,
-        std::format("Name changed to `{}'.\n", race.governor[Governor].name));
-    putrace(race);
+        std::format("Name changed to `{}'.\n", race->governor[Governor].name));
   } else {
     g.out << "I don't know what you mean.\n";
     return;

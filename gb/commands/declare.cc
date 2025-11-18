@@ -46,8 +46,20 @@ void declare(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto& race = races[Playernum - 1];
-  auto& alien = races[n - 1];
+  auto race_handle = g.entity_manager.get_race(Playernum);
+  if (!race_handle.get()) {
+    g.out << "Race not found.\n";
+    return;
+  }
+
+  auto alien_handle = g.entity_manager.get_race(n);
+  if (!alien_handle.get()) {
+    g.out << "Alien race not found.\n";
+    return;
+  }
+
+  auto& race = *race_handle;
+  auto& alien = *alien_handle;
 
   switch (*argv[2].c_str()) {
     case 'a':
@@ -59,7 +71,7 @@ void declare(const command_t& argv, GameObj& g) {
       } else {
         notify(Playernum, Governor, "Good for you.\n");
       }
-      warn_race(n, std::format(
+      warn_race(g.entity_manager, n, std::format(
                        " Player #{} ({}) has declared an alliance with you!\n",
                        Playernum, race.name));
       news_msg = std::format("{} [{}] declares ALLIANCE with {} [{}].\n",
@@ -74,7 +86,7 @@ void declare(const command_t& argv, GameObj& g) {
       notify(Playernum, Governor, "Done.\n");
 
       warn_race(
-          n, std::format(" Player #{} ({}) has declared neutrality with you!\n",
+          g.entity_manager, n, std::format(" Player #{} ({}) has declared neutrality with you!\n",
                          Playernum, race.name));
       news_msg =
           std::format("{} [{}] declares a state of neutrality with {} [{}].\n",
@@ -91,7 +103,7 @@ void declare(const command_t& argv, GameObj& g) {
       } else {
         notify(Playernum, Governor, "Give 'em hell!\n");
       }
-      warn_race(n,
+      warn_race(g.entity_manager, n,
                 std::format(" Player #{} ({}) has declared war against you!\n",
                             Playernum, race.name));
       switch (int_rand(1, 5)) {
@@ -130,13 +142,11 @@ void declare(const command_t& argv, GameObj& g) {
   }
 
   post(news_msg, NewsType::DECLARATION);
-  warn_race(Playernum, news_msg);
+  warn_race(g.entity_manager, Playernum, news_msg);
 
   /* They, of course, learn more about you */
   alien.translate[Playernum - 1] =
       MIN(alien.translate[Playernum - 1] + d_mod, 100);
 
-  putrace(alien);
-  putrace(race);
 }
 }  // namespace GB::commands

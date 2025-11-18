@@ -112,6 +112,7 @@ bool enufAP(player_t Playernum, governor_t Governor, ap_t have, ap_t needed) {
  * \param govpass Password for the governor
  * \return player and governor numbers, or 0 and 0 if not found
  */
+// Old implementation using global races[] - for compatibility during migration
 std::tuple<player_t, governor_t> getracenum(const std::string& racepass,
                                             const std::string& govpass) {
   for (auto race : races) {
@@ -120,6 +121,28 @@ std::tuple<player_t, governor_t> getracenum(const std::string& racepass,
         if (!race.governor[j].password.empty() &&
             govpass == race.governor[j].password) {
           return {race.Playernum, j};
+        }
+      }
+    }
+  }
+  return {0, 0};
+}
+
+// New implementation using EntityManager
+std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
+                                            const std::string& racepass,
+                                            const std::string& govpass) {
+  // We need to iterate through all races to find password match
+  // Use Num_races as the upper bound
+  for (player_t p = 1; p <= Num_races; p++) {
+    const auto* race = entity_manager.peek_race(p);
+    if (!race) continue;
+    
+    if (racepass == race->password) {
+      for (governor_t j = 0; j <= MAXGOVERNORS; j++) {
+        if (!race->governor[j].password.empty() &&
+            govpass == race->governor[j].password) {
+          return {race->Playernum, j};
         }
       }
     }

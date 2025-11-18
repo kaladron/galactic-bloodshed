@@ -21,7 +21,13 @@ void grant(const command_t &argv, GameObj &g) {
   shipnum_t shipno;
   Ship *ship;
 
-  auto &race = races[Playernum - 1];
+  auto race_handle = g.entity_manager.get_race(Playernum);
+  if (!race_handle.get()) {
+    g.out << "Race not found.\n";
+    return;
+  }
+  auto& race = *race_handle;
+
   if (argv.size() < 3) {
     g.out << "Syntax: grant <governor> star\n";
     g.out << "        grant <governor> ship <shiplist>\n";
@@ -37,34 +43,41 @@ void grant(const command_t &argv, GameObj &g) {
     return;
   }
   if (argv[2] == "star") {
-    int snum;
     if (g.level != ScopeLevel::LEVEL_STAR) {
       g.out << "Please cs to the star system first.\n";
       return;
     }
-    snum = g.snum;
-    stars[snum].governor(Playernum - 1) = gov;
+    int snum = g.snum;
+    auto star_handle = g.entity_manager.get_star(snum);
+    if (!star_handle.get()) {
+      g.out << "Star not found.\n";
+      return;
+    }
+    star_handle->governor(Playernum - 1) = gov;
     warn(Playernum, gov,
          std::format("\"{}\" has granted you control of the /{} star system.\n",
-                     race.governor[Governor].name, stars[snum].get_name()));
-    putstar(stars[snum], snum);
+                     race.governor[Governor].name, star_handle->get_name()));
   } else if (argv[2] == "ship") {
     nextshipno = start_shiplist(g, argv[3]);
-    while ((shipno = do_shiplist(&ship, &nextshipno)))
+    while ((shipno = do_shiplist(&ship, &nextshipno))) {
       if (in_list(Playernum, argv[3], *ship, &nextshipno) &&
           authorized(Governor, *ship)) {
-        ship->governor = gov;
+        auto ship_handle = g.entity_manager.get_ship(shipno);
+        if (!ship_handle.get()) {
+          free(ship);
+          continue;
+        }
+        ship_handle->governor = gov;
         warn(Playernum, gov,
              std::format("\"{}\" granted you {} at {}\n",
                          race.governor[Governor].name, ship_to_string(*ship),
                          prin_ship_orbits(*ship)));
-        putship(*ship);
         notify(Playernum, Governor,
                std::format("{} granted to \"{}\"\n", ship_to_string(*ship),
                            race.governor[gov].name));
-        free(ship);
-      } else
-        free(ship);
+      }
+      free(ship);
+    }
   } else if (argv[2] == "money") {
     long amount = 0;
     if (argv.size() < 4) {
@@ -98,7 +111,6 @@ void grant(const command_t &argv, GameObj &g) {
                        race.governor[Governor].name, -amount));
     race.governor[Governor].money -= amount;
     race.governor[gov].money += amount;
-    putrace(race);
     return;
   } else
     g.out << "You can't grant that.\n";

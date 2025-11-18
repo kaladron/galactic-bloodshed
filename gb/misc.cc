@@ -72,9 +72,19 @@ void d_announce(const player_t Playernum, const governor_t Governor,
   }
 }
 
+// Old implementation using global races[] array - for compatibility during migration
 void warn_race(const player_t who, const std::string &message) {
   for (int i = 0; i <= MAXGOVERNORS; i++)
     if (races[who - 1].governor[i].active) warn(who, i, message);
+}
+
+// New implementation using EntityManager
+void warn_race(EntityManager& entity_manager, const player_t who, const std::string &message) {
+  const auto* race = entity_manager.peek_race(who);
+  if (!race) return;
+  
+  for (int i = 0; i <= MAXGOVERNORS; i++)
+    if (race->governor[i].active) warn(who, i, message);
 }
 
 void warn(const player_t who, const governor_t governor,
@@ -83,11 +93,26 @@ void warn(const player_t who, const governor_t governor,
     push_telegram(who, governor, message);
 }
 
+// Old implementation using global races[] and stars[] arrays - for compatibility during migration
 void warn_star(const player_t a, const starnum_t star,
                const std::string &message) {
   for (auto &race : races) {
     if (race.Playernum != a && isset(stars[star].inhabited(), race.Playernum))
       warn_race(race.Playernum, message);
+  }
+}
+
+// New implementation using EntityManager
+void warn_star(EntityManager& entity_manager, const player_t a, const starnum_t star,
+               const std::string &message) {
+  const auto* star_ptr = entity_manager.peek_star(star);
+  if (!star_ptr) return;
+  
+  // Iterate through all potential players in the inhabited bitmap
+  for (player_t p = 1; p <= Num_races; p++) {
+    if (p != a && isset(star_ptr->inhabited(), p)) {
+      warn_race(entity_manager, p, message);
+    }
   }
 }
 

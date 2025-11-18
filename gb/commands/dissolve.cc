@@ -15,7 +15,7 @@ namespace GB::commands {
 void dissolve(const command_t &argv, GameObj &g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  if (DISSOLVE) {
+  if (!DISSOLVE) {
     notify(Playernum, Governor,
            "Dissolve has been disabled. Please notify diety.\n");
     return;
@@ -51,64 +51,67 @@ void dissolve(const command_t &argv, GameObj &g) {
     if (argv[3][0] == 'w') waste = true;
   }
 
-  auto [player, governor] = getracenum(racepass, govpass);
+  auto [player, governor] = getracenum(g.entity_manager, racepass, govpass);
 
-  if (!player || !governor) {
+  if (!player) {
     g.out << "Password mismatch, self-destruct not initiated!\n";
     return;
   }
 
   auto n_ships = Numships();
   for (auto i = 1; i <= n_ships; i++) {
-    auto sp = getship(i);
-    if (sp->owner != Playernum) continue;
-    kill_ship(Playernum, &*sp);
+    auto ship_handle = g.entity_manager.get_ship(i);
+    if (!ship_handle.get() || ship_handle->owner != Playernum) continue;
+    kill_ship(Playernum, &*ship_handle);
     notify(Playernum, Governor,
            std::format("Ship #{}, self-destruct enabled\n", i));
-    putship(*sp);
   }
 
   getsdata(&Sdata);
   for (auto z = 0; z < Sdata.numstars; z++) {
-    stars[z] = getstar(z);
-    if (isset(stars[z].explored(), Playernum)) {
-      for (auto i = 0; i < stars[z].numplanets(); i++) {
-        auto pl = getplanet(z, i);
+    const auto* star = g.entity_manager.peek_star(z);
+    if (!star || !isset(star->explored(), Playernum)) continue;
 
-        if (pl.info(Playernum - 1).explored &&
-            pl.info(Playernum - 1).numsectsowned) {
-          pl.info(Playernum - 1).fuel = 0;
-          pl.info(Playernum - 1).destruct = 0;
-          pl.info(Playernum - 1).resource = 0;
-          pl.info(Playernum - 1).popn = 0;
-          pl.info(Playernum - 1).troops = 0;
-          pl.info(Playernum - 1).tax = 0;
-          pl.info(Playernum - 1).newtax = 0;
-          pl.info(Playernum - 1).crystals = 0;
-          pl.info(Playernum - 1).numsectsowned = 0;
-          pl.info(Playernum - 1).explored = 0;
-          pl.info(Playernum - 1).autorep = 0;
-        }
+    for (auto i = 0; i < star->numplanets(); i++) {
+      auto planet_handle = g.entity_manager.get_planet(z, i);
+      if (!planet_handle.get()) continue;
 
-        auto smap = getsmap(pl);
-        for (auto &s : smap) {
-          if (s.owner == Playernum) {
-            s.owner = 0;
-            s.troops = 0;
-            s.popn = 0;
-            if (waste) s.condition = SectorType::SEC_WASTED;
-          }
-        }
-        putsmap(smap, pl);
-        putstar(stars[z], z);
-        putplanet(pl, stars[z], i);
+      auto& pl = *planet_handle;
+      if (pl.info(Playernum - 1).explored &&
+          pl.info(Playernum - 1).numsectsowned) {
+        pl.info(Playernum - 1).fuel = 0;
+        pl.info(Playernum - 1).destruct = 0;
+        pl.info(Playernum - 1).resource = 0;
+        pl.info(Playernum - 1).popn = 0;
+        pl.info(Playernum - 1).troops = 0;
+        pl.info(Playernum - 1).tax = 0;
+        pl.info(Playernum - 1).newtax = 0;
+        pl.info(Playernum - 1).crystals = 0;
+        pl.info(Playernum - 1).numsectsowned = 0;
+        pl.info(Playernum - 1).explored = 0;
+        pl.info(Playernum - 1).autorep = 0;
       }
+
+      auto smap = getsmap(pl);
+      for (auto& s : smap) {
+        if (s.owner == Playernum) {
+          s.owner = 0;
+          s.troops = 0;
+          s.popn = 0;
+          if (waste) s.condition = SectorType::SEC_WASTED;
+        }
+      }
+      putsmap(smap, pl);
     }
   }
 
-  auto &race = races[Playernum - 1];
+  auto race_handle = g.entity_manager.get_race(Playernum);
+  if (!race_handle.get()) {
+    g.out << "Race not found.\n";
+    return;
+  }
+  auto& race = *race_handle;
   race.dissolved = true;
-  putrace(race);
 
   post(std::format("{} [{}] has dissolved.\n", race.name, Playernum),
        NewsType::DECLARATION);

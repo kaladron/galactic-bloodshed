@@ -38,6 +38,43 @@ Galactic Bloodshed uses a clean **n-tier architecture** with clear separation of
                  SQLite Database
 ```
 
+## Cross-Cutting Concerns
+
+**Location**: `gb/` (root directory)  
+**Modules**: `gblib` module partitions (`gblib:types`, `gblib:star`, `gblib:planet`, etc.)
+
+Cross-cutting concerns are fundamental components used across all architecture layers. These are not layers themselves but shared definitions that every layer depends on.
+
+### Domain Entities & Types
+Located in `gb/gblib-*.cppm` module partition files:
+
+- **`gblib-types.cppm`** - Core type definitions (player_t, shipnum_t, etc.)
+- **`gblib-race.cppm`** - Race entity structure
+- **`gblib-ships.cppm`** - Ship entity structure and ship types
+- **`gblib-star.cppm`** - Star entity structure and Star wrapper class
+- **`gblib-planet.cppm`** - Planet entity structure
+- **`gblib-sector.cppm`** - Sector entity structure
+- **`gblib-universe.cppm`** - Universe entity structure and Universe wrapper class
+- **`gblib-tweakables.cppm`** - Game configuration constants
+- **`gblib-globals.cppm`** - Global game state (being phased out)
+
+### Utility Functions
+- **`gblib-misc.cppm`** - Miscellaneous helper functions
+- **`gblib-shlmisc.cppm`** - Shell/command helper functions
+- **Game Logic Modules** - `gblib-doplanet.cppm`, `gblib-doship.cppm`, etc.
+
+### Why Root Directory?
+These components are in the root `gb/` directory because they:
+1. **Are not a layer** - They're foundational types, not a tier in the architecture
+2. **Used by all layers** - DAL, repositories, services, and commands all need them
+3. **Define the domain model** - Core game entities and types
+4. **Part of gblib module** - Exported as module partitions via `gblib.cppm`
+
+### Design Principle
+Cross-cutting concerns should have **no dependencies on any architecture layer**. They define pure data structures and types that layers operate on, but don't contain business logic or data access code themselves.
+
+---
+
 ## Layer Details
 
 ### Layer 1: Data Access Layer (DAL)

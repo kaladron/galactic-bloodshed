@@ -15,6 +15,9 @@ export void DontOwnErr(int, int, shipnum_t);
 export bool enufAP(player_t, governor_t, ap_t have, ap_t needed);
 export std::tuple<player_t, governor_t> getracenum(const std::string &,
                                                    const std::string &);
+export std::tuple<player_t, governor_t> getracenum(EntityManager&,
+                                                   const std::string &,
+                                                   const std::string &);
 export void get4args(const char *s, int *xl, int *xh, int *yl, int *yh);
 export player_t get_player(const std::string &);
 export void allocateAPs(const command_t &, GameObj &);

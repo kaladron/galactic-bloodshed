@@ -54,7 +54,7 @@ Located in `gb/gblib-*.cppm` module partition files:
 - **`gblib-star.cppm`** - Star entity structure and Star wrapper class
 - **`gblib-planet.cppm`** - Planet entity structure
 - **`gblib-sector.cppm`** - Sector entity structure
-- **`gblib-universe.cppm`** - Universe entity structure and Universe wrapper class
+- **`gblib-galaxy.cppm`** - Galaxy entity structure and Galaxy wrapper class
 - **`gblib-tweakables.cppm`** - Game configuration constants
 - **`gblib-globals.cppm`** - Global game state (being phased out)
 

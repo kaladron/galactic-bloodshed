@@ -360,7 +360,7 @@ Commands handle user interaction and translate user input into service calls.
 struct GameObj {
   player_t player;        // Current player
   governor_t governor;    // Current governor
-  const Race* race;       // Current player's race (cached)
+  const Race* race;       // Current player's race (set by process_command, always valid)
   ScopeLevel level;       // Current scope level
   starnum_t snum;         // Current star
   planetnum_t pnum;       // Current planet
@@ -370,6 +370,11 @@ struct GameObj {
   std::ostream& out;      // Output stream
 };
 ```
+
+**Race Access Pattern**: `g.race` is populated before command execution:
+- **Read-only checks**: Use `g.race->field` directly (no null check needed)
+- **Modifications**: Use `g.data.get_race(g.player)` for RAII (no null check needed)
+- **Other players**: Use `peek_race(id)` or `get_race(id)` with null checks
 
 **Command Pattern**
 ```cpp

@@ -138,15 +138,27 @@ void commandname(const command_t& argv, GameObj& g) {
         return;
     }
     
-    // 3. Retrieve game objects using EntityManager
-    // Read-only access (no modifications)
-    const auto* race = g.entity_manager.peek_race(g.player);
-    if (!race) {
-        g.out << "Race not found.\n";
+    // 3. Access current player's race (read-only)
+    // g.race is already set by process_command() - no need to check for null
+    // For read-only access to current player's race:
+    if (g.race->some_field) {
+        // Use g.race-> directly
+    }
+    
+    // For other entities (read-only):
+    const auto* star = g.entity_manager.peek_star(g.snum);
+    if (!star) {
+        g.out << "Star not found.\n";
         return;
     }
     
-    // Read-write access (auto-saves on scope exit)
+    // For modifying current player's race:
+    // g.race exists (set by process_command), but need get_race() for RAII
+    auto race_handle = g.entity_manager.get_race(g.player);  // No null check needed
+    auto& race = *race_handle;
+    race.tech += 10.5;  // Marks dirty, will auto-save
+    
+    // For modifying other entities:
     auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
     if (!planet_handle.get()) {
         g.out << "Planet not found.\n";
@@ -160,7 +172,7 @@ void commandname(const command_t& argv, GameObj& g) {
     // 5. Write output to player
     g.out << std::format("Success: population now {}\n", planet.popn);
     
-    // 6. Auto-save happens when planet_handle goes out of scope
+    // 6. Auto-save happens when handles go out of scope
 }
 ```
 
@@ -315,12 +327,18 @@ finish_build_ship(sector, x, y, planet, snum, pnum, outside, level, builder);
 The `GameObj& g` parameter provides:
 - `g.player` - Current player number (1-indexed)
 - `g.governor` - Current governor number
+- `g.race` - **Pointer to current player's race** (already populated by `process_command()`, always valid)
 - `g.level` - Current scope level (UNIV/STAR/PLAN/SHIP)
 - `g.snum` - Current star number
 - `g.pnum` - Current planet number
 - `g.shipno` - Current ship number
 - `g.out` - Output stream to player
 - `g.entity_manager` - **NEW:** Centralized entity access (use this instead of global arrays!)
+
+**Key Pattern**: `g.race` is pre-populated before any command executes:
+- For **read-only** access to current player's race: Use `g.race->field` directly
+- For **modifications** to current player's race: Use `g.entity_manager.get_race(g.player)` for RAII (no null check needed)
+- For **other players' races**: Use `peek_race(id)` or `get_race(id)` with null checks
 
 ### Writing Tests
 

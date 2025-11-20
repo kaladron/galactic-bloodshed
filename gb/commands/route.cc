@@ -27,7 +27,12 @@ void route(const command_t &argv, GameObj &g) {
            "You have to 'cs' to a planet to examine routes.\n");
     return;
   }
-  auto p = getplanet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  if (!planet_handle.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+  auto& p = *planet_handle;
   if (argv.size() == 1) { /* display all shipping routes that are active */
     for (i = 1; i <= MAX_ROUTES; i++)
       if (p.info(Playernum - 1).route[i - 1].set) {
@@ -47,11 +52,15 @@ void route(const command_t &argv, GameObj &g) {
         unload_flags += Resources(unload) ? 'r' : ' ';
         unload_flags += Crystals(unload) ? 'x' : ' ';
 
+        const auto* dest_star = g.entity_manager.peek_star(star);
         g.out << std::format(
             "{:2}  land {:2},{:2}   load: {}  unload: {}  -> {}/{}\n", i,
             p.info(Playernum - 1).route[i - 1].x,
             p.info(Playernum - 1).route[i - 1].y, load_flags, unload_flags,
-            stars[star].get_name(), stars[star].get_planet_name(planet));
+            dest_star ? dest_star->get_name() : "???",
+            (dest_star && planet < dest_star->numplanets())
+                ? dest_star->get_planet_name(planet)
+                : "???");
       }
     g.out << "Done.\n";
     return;
@@ -81,13 +90,17 @@ void route(const command_t &argv, GameObj &g) {
         if (Resources(unload)) unload_flags += 'r';
         if (Crystals(unload)) unload_flags += 'x';
       }
+      const auto* dest_star = g.entity_manager.peek_star(star);
       g.out << std::format(
           "{:2}  land {:2},{:2}   {}{}  -> {}/{}\n", i,
           p.info(Playernum - 1).route[i - 1].x,
           p.info(Playernum - 1).route[i - 1].y,
           (load ? std::format("load: {}", load_flags) : std::string{}),
           (unload ? std::format("  unload: {}", unload_flags) : std::string{}),
-          stars[star].get_name(), stars[star].get_planet_name(planet));
+          dest_star ? dest_star->get_name() : "???",
+          (dest_star && planet < dest_star->numplanets())
+              ? dest_star->get_planet_name(planet)
+              : "???");
     }
     g.out << "Done.\n";
     return;
@@ -157,6 +170,5 @@ void route(const command_t &argv, GameObj &g) {
     }
     g.out << "Set.\n";
   }
-  putplanet(p, stars[g.snum], g.pnum);
 }
 }  // namespace GB::commands

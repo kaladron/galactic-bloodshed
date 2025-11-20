@@ -23,8 +23,18 @@ void pay(const command_t &argv, GameObj &g) {
     g.out << "You are not authorized to do that.\n";
     return;
   }
-  auto &race = races[Playernum - 1];
-  auto &alien = races[who - 1];
+  auto race_handle = g.entity_manager.get_race(Playernum);
+  if (!race_handle.get()) {
+    g.out << "Race not found.\n";
+    return;
+  }
+  auto alien_handle = g.entity_manager.get_race(who);
+  if (!alien_handle.get()) {
+    g.out << "Alien race not found.\n";
+    return;
+  }
+  auto& race = *race_handle;
+  auto& alien = *alien_handle;
 
   amount = std::stoi(argv[2]);
   if (amount < 0) {
@@ -50,8 +60,5 @@ void pay(const command_t &argv, GameObj &g) {
   post(std::format("{} [{}] pays {} [{}].\n", race.name, Playernum, alien.name,
                    who),
        NewsType::TRANSFER);
-
-  putrace(alien);
-  putrace(race);
 }
 }  // namespace GB::commands

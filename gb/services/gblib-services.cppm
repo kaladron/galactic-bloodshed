@@ -146,6 +146,7 @@ export class EntityManager {
   // Count methods (for queries)
   int num_commods();
   player_t num_races();
+  shipnum_t num_ships();
 
   // Business logic operations (service layer)
   std::optional<player_t> find_player_by_name(const std::string& name);

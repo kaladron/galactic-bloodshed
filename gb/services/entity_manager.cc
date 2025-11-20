@@ -397,6 +397,11 @@ player_t EntityManager::num_races() {
   return store.list_ids("tbl_race").size();
 }
 
+shipnum_t EntityManager::num_ships() {
+  // Count ships by listing all IDs in the database
+  return store.list_ids("tbl_ship").size();
+}
+
 // Utility methods
 void EntityManager::flush_all() {
   std::lock_guard lock(cache_mutex);

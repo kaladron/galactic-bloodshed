@@ -669,7 +669,6 @@ void give_orders(GameObj& g, const command_t& argv, int /* APcount */,
     order_off(g, argv, ship);
   }
   ship.notified = 0;
-  putship(ship);
 }
 
 void DispOrdersHeader(int Playernum, int Governor) {

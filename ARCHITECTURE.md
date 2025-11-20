@@ -371,10 +371,11 @@ struct GameObj {
 };
 ```
 
-**Race Access Pattern**: `g.race` is populated before command execution:
-- **Read-only checks**: Use `g.race->field` directly (no null check needed)
-- **Modifications**: Use `g.data.get_race(g.player)` for RAII (no null check needed)
+**Race Access Pattern**: `g.race` is populated before command execution in production:
+- **Read-only checks**: Use `g.race->field` directly (always valid in production)
+- **Modifications**: Use `g.entity_manager.get_race(g.player)` for RAII (no null check needed)
 - **Other players**: Use `peek_race(id)` or `get_race(id)` with null checks
+- **In tests**: Set `g.race = entity_manager.peek_race(g.player);` after creating GameObj
 
 **Command Pattern**
 ```cpp

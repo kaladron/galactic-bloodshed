@@ -139,10 +139,10 @@ void commandname(const command_t& argv, GameObj& g) {
     }
     
     // 3. Access current player's race (read-only)
-    // g.race is already set by process_command() - no need to check for null
-    // For read-only access to current player's race:
+    // In production: g.race is always set by process_command()
+    // Use g.race-> directly for read-only access
     if (g.race->some_field) {
-        // Use g.race-> directly
+        // Use g.race-> for read-only checks
     }
     
     // For other entities (read-only):
@@ -153,8 +153,10 @@ void commandname(const command_t& argv, GameObj& g) {
     }
     
     // For modifying current player's race:
-    // g.race exists (set by process_command), but need get_race() for RAII
-    auto race_handle = g.entity_manager.get_race(g.player);  // No null check needed
+    // In production, g.race exists (set by process_command)
+    // In tests, g.race is null, but get_race() still works
+    // No null check needed for current player
+    auto race_handle = g.entity_manager.get_race(g.player);
     auto& race = *race_handle;
     race.tech += 10.5;  // Marks dirty, will auto-save
     
@@ -335,10 +337,11 @@ The `GameObj& g` parameter provides:
 - `g.out` - Output stream to player
 - `g.entity_manager` - **NEW:** Centralized entity access (use this instead of global arrays!)
 
-**Key Pattern**: `g.race` is pre-populated before any command executes:
+**Key Pattern**: `g.race` is pre-populated before any command executes in production:
 - For **read-only** access to current player's race: Use `g.race->field` directly
 - For **modifications** to current player's race: Use `g.entity_manager.get_race(g.player)` for RAII (no null check needed)
 - For **other players' races**: Use `peek_race(id)` or `get_race(id)` with null checks
+- **In tests**: Set `g.race = entity_manager.peek_race(g.player);` after creating GameObj to match production behavior
 
 ### Writing Tests
 
@@ -359,8 +362,34 @@ int main() {
 
   // Initialize database tables - this creates all required tables
   initialize_schema(db);
+  
+  // Create EntityManager for accessing entities
+  EntityManager em(db);
+  
+  // Create JsonStore for repository operations (if needed)
+  JsonStore store(db);
 
   // Your test logic here...
+  // Example: Create and save a race
+  Race race{};
+  race.Playernum = 1;
+  race.name = "TestRace";
+  race.Guest = false;
+  race.governor[0].money = 1000;
+  
+  RaceRepository races(store);
+  races.save(race);
+  
+  // Create GameObj for testing commands
+  GameObj g(em);
+  g.player = 1;
+  g.governor = 0;
+  g.race = em.peek_race(1);  // IMPORTANT: Set race pointer like production does
+  
+  // Verify with EntityManager
+  const auto* saved = em.peek_race(1);
+  assert(saved);
+  assert(saved->governor[0].money == 1000);
   
   std::println("Test passed!");
   return 0;
@@ -374,6 +403,8 @@ int main() {
 - The `initialize_schema()` function creates the database schema but requires an active connection
 - All working tests follow this pattern - never deviate from it
 - Tests typically also need `import dallib;` in addition to `import gblib;`
+- Create `EntityManager em(db)` after schema initialization for entity access
+- Create `JsonStore store(db)` if you need to use repositories directly
 
 ## ⚠️ Critical Rules & Anti-patterns
 

@@ -436,3 +436,136 @@ void EntityManager::clear_cache() {
     global_stardata_cache.reset();
   }
 }
+
+// Business logic operations
+std::optional<player_t> EntityManager::find_player_by_name(const std::string& name) {
+  player_t rnum = 0;
+
+  if (name.empty()) return std::nullopt;
+
+  if (isdigit(name[0])) {
+    if ((rnum = std::stoi(name)) < 1 || rnum > num_races()) return std::nullopt;
+    return rnum;
+  }
+  
+  // Iterate through all races using peek_race
+  for (player_t p = 1; p <= num_races(); p++) {
+    const auto* race = peek_race(p);
+    if (race && name == race->name) {
+      return race->Playernum;
+    }
+  }
+  return std::nullopt;
+}
+
+void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
+  if (std::holds_alternative<MindData>(ship.special)) {
+    auto mind = std::get<MindData>(ship.special);
+    mind.who_killed = Playernum;
+    ship.special = mind;
+  }
+  ship.alive = 0;
+  ship.notified = 0; /* prepare the ship for recycling */
+
+  if (ship.type != ShipType::STYPE_POD &&
+      ship.type != ShipType::OTYPE_FACTORY) {
+    /* pods don't do things to morale, ditto for factories */
+    auto victim_handle = get_race(ship.owner);
+    if (!victim_handle.get()) {
+      std::cerr << "Database corruption, race not found.";
+      std::abort();
+    }
+    auto& victim = *victim_handle;
+    if (victim.Gov_ship == ship.number) victim.Gov_ship = 0;
+    
+    if (!victim.God && Playernum != ship.owner &&
+        ship.type != ShipType::OTYPE_VN) {
+      auto killer_handle = get_race(Playernum);
+      if (!killer_handle.get()) {
+        std::cerr << "Database corruption, race not found.";
+        std::abort();
+      }
+      auto& killer = *killer_handle;
+      adjust_morale(killer, victim, (int)ship.build_cost);
+      // Both killer and victim auto-save when handles go out of scope
+    } else if (ship.owner == Playernum && !ship.docked && max_crew(ship)) {
+      victim.morale -= 2L * ship.build_cost; /* scuttle/scrap */
+    }
+    // victim auto-saves when handle goes out of scope
+  }
+
+  if (ship.type == ShipType::OTYPE_VN || ship.type == ShipType::OTYPE_BERS) {
+    auto sdata_handle = get_stardata();
+    if (!sdata_handle.get()) {
+      std::cerr << "Database corruption, stardata not found.";
+      std::abort();
+    }
+    auto& Sdata = *sdata_handle;
+    
+    /* add ship to VN shit list */
+    if (std::holds_alternative<MindData>(ship.special)) {
+      auto mind = std::get<MindData>(ship.special);
+      Sdata.VN_hitlist[mind.who_killed - 1] += 1;
+    }
+
+    /* keep track of where these VN's were shot up */
+    if (Sdata.VN_index1[Playernum - 1] == -1)
+      /* there's no star in the first index */
+      Sdata.VN_index1[Playernum - 1] = ship.storbits;
+    else if (Sdata.VN_index2[Playernum - 1] == -1)
+      /* there's no star in the second index */
+      Sdata.VN_index2[Playernum - 1] = ship.storbits;
+    else {
+      /* pick an index to supplant */
+      std::random_device rd;
+      std::mt19937 gen(rd());
+      std::uniform_int_distribution<int> dis(0, 1);
+      if (dis(gen))
+        Sdata.VN_index1[Playernum - 1] = ship.storbits;
+      else
+        Sdata.VN_index2[Playernum - 1] = ship.storbits;
+    }
+    // Sdata auto-saves when handle goes out of scope
+  }
+
+  if (ship.type == ShipType::OTYPE_TOXWC &&
+      ship.whatorbits == ScopeLevel::LEVEL_PLAN) {
+    auto planet_handle = get_planet(ship.storbits, ship.pnumorbits);
+    if (!planet_handle.get()) {
+      std::cerr << "Database corruption, planet not found.";
+      std::abort();
+    }
+    auto& planet = *planet_handle;
+    if (std::holds_alternative<WasteData>(ship.special)) {
+      auto waste = std::get<WasteData>(ship.special);
+      planet.conditions(TOXIC) =
+          MIN(100, planet.conditions(TOXIC) + waste.toxic);
+    }
+    // planet auto-saves when handle goes out of scope
+  }
+
+  /* undock the stuff docked with it */
+  if (ship.docked && ship.whatorbits != ScopeLevel::LEVEL_SHIP &&
+      ship.whatdest == ScopeLevel::LEVEL_SHIP) {
+    auto dest_ship_handle = get_ship(ship.destshipno);
+    if (!dest_ship_handle.get()) {
+      std::cerr << "Database corruption, ship not found.";
+      std::abort();
+    }
+    auto& s = *dest_ship_handle;
+    s.docked = 0;
+    s.whatdest = ScopeLevel::LEVEL_UNIV;
+    // s auto-saves when handle goes out of scope
+  }
+  
+  /* landed ships are killed */
+  Shiplist shiplist(ship.ships);
+  for (auto s : shiplist) {
+    kill_ship(Playernum, s);
+    auto ship_handle = get_ship(s.number);
+    if (ship_handle.get()) {
+      *ship_handle = s;  // Update with killed ship data
+      // auto-saves when handle goes out of scope
+    }
+  }
+}

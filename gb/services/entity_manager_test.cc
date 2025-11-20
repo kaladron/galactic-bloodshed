@@ -347,6 +347,233 @@ void test_entity_manager_singleton_stardata() {
   std::println("  ✓ Singleton stardata works correctly");
 }
 
+void test_entity_manager_get_player() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  std::println("Test: EntityManager find_player_by_name()");
+
+  // Create some test races
+  JsonStore store(db);
+  RaceRepository races(store);
+
+  Race race1{};
+  race1.Playernum = 1;
+  race1.name = "Humans";
+  races.save(race1);
+
+  Race race2{};
+  race2.Playernum = 2;
+  race2.name = "Vulcans";
+  races.save(race2);
+
+  Race race3{};
+  race3.Playernum = 3;
+  race3.name = "Klingons";
+  races.save(race3);
+
+  // Test: Find by name
+  auto p1 = em.find_player_by_name("Humans");
+  assert(p1.has_value() && p1.value() == 1);
+  std::println("  ✓ find_player_by_name finds race by name");
+
+  auto p2 = em.find_player_by_name("Vulcans");
+  assert(p2.has_value() && p2.value() == 2);
+
+  auto p3 = em.find_player_by_name("Klingons");
+  assert(p3.has_value() && p3.value() == 3);
+
+  // Test: Find by numeric string
+  auto p_num1 = em.find_player_by_name("1");
+  assert(p_num1.has_value() && p_num1.value() == 1);
+  std::println("  ✓ find_player_by_name finds race by number string");
+
+  auto p_num2 = em.find_player_by_name("2");
+  assert(p_num2.has_value() && p_num2.value() == 2);
+
+  // Test: Invalid inputs
+  auto p_empty = em.find_player_by_name("");
+  assert(!p_empty.has_value());
+  std::println("  ✓ find_player_by_name returns nullopt for empty string");
+
+  auto p_notfound = em.find_player_by_name("Romulans");
+  assert(!p_notfound.has_value());
+  std::println("  ✓ find_player_by_name returns nullopt for non-existent race");
+
+  auto p_invalid_num = em.find_player_by_name("999");
+  assert(!p_invalid_num.has_value());
+  std::println("  ✓ find_player_by_name returns nullopt for out-of-range number");
+
+  auto p_zero = em.find_player_by_name("0");
+  assert(!p_zero.has_value());
+  std::println("  ✓ find_player_by_name returns nullopt for invalid player number");
+}
+
+void test_entity_manager_kill_ship() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  std::println("Test: EntityManager kill_ship()");
+
+  JsonStore store(db);
+  RaceRepository races_repo(store);
+  ShipRepository ships_repo(store);
+  StardataRepository sdata_repo(store);
+
+  // Create killer and victim races
+  Race killer{};
+  killer.Playernum = 1;
+  killer.name = "Killer Race";
+  killer.morale = 1000;
+  killer.God = false;
+  races_repo.save(killer);
+
+  Race victim{};
+  victim.Playernum = 2;
+  victim.name = "Victim Race";
+  victim.morale = 1000;
+  victim.God = false;
+  victim.Gov_ship = 0;
+  races_repo.save(victim);
+
+  // Create a ship owned by victim
+  Ship ship{};
+  ship.number = 100;
+  ship.owner = 2;
+  ship.alive = 1;
+  ship.notified = 1;
+  ship.type = ShipType::STYPE_BATTLE;
+  ship.build_cost = 100;
+  ship.docked = false;
+  ships_repo.save(ship);
+
+  // Test: Kill ship
+  em.kill_ship(1, ship);
+
+  std::println("  ✓ kill_ship executed without errors");
+
+  // Verify ship is dead
+  assert(ship.alive == 0);
+  assert(ship.notified == 0);
+  std::println("  ✓ Ship marked as dead (alive=0, notified=0)");
+
+  // Verify morale changes were persisted
+  auto killer_after = races_repo.find_by_player(1);
+  auto victim_after = races_repo.find_by_player(2);
+  assert(killer_after.has_value());
+  assert(victim_after.has_value());
+
+  // Killer should have gained morale, victim should have lost morale
+  assert(killer_after->morale != 1000);  // Changed from initial
+  assert(victim_after->morale != 1000);  // Changed from initial
+  std::println("  ✓ Morale adjustments persisted for both races");
+
+  // Test: Kill VN ship (updates stardata)
+  stardata sdata{};
+  sdata.id = 1;
+  sdata.VN_hitlist[0] = 0;
+  sdata.VN_index1[0] = -1;
+  sdata.VN_index2[0] = -1;
+  sdata_repo.save(sdata);
+
+  Ship vn_ship{};
+  vn_ship.number = 200;
+  vn_ship.owner = 1;
+  vn_ship.alive = 1;
+  vn_ship.type = ShipType::OTYPE_VN;
+  vn_ship.storbits = 5;
+  
+  MindData mind{};
+  mind.who_killed = 1;
+  vn_ship.special = mind;
+  
+  ships_repo.save(vn_ship);
+
+  em.kill_ship(1, vn_ship);
+
+  std::println("  ✓ VN ship killed without errors");
+
+  // Verify VN tracking was updated
+  auto sdata_after = sdata_repo.get_global_data();
+  assert(sdata_after.has_value());
+  assert(sdata_after->VN_hitlist[0] == 1);  // Incremented
+  assert(sdata_after->VN_index1[0] == 5);   // Star index recorded
+  std::println("  ✓ VN tracking (VN_hitlist and VN_index) updated correctly");
+
+  // Test: Kill pod (no morale effects)
+  Race race3{};
+  race3.Playernum = 3;
+  race3.name = "Pod Owner";
+  race3.morale = 500;
+  races_repo.save(race3);
+
+  Ship pod{};
+  pod.number = 300;
+  pod.owner = 3;
+  pod.alive = 1;
+  pod.type = ShipType::STYPE_POD;
+  ships_repo.save(pod);
+
+  em.kill_ship(1, pod);
+
+  auto race3_after = races_repo.find_by_player(3);
+  assert(race3_after.has_value());
+  assert(race3_after->morale == 500);  // Unchanged - pods don't affect morale
+  std::println("  ✓ Pod death does not affect morale");
+}
+
+void test_entity_manager_kill_ship_gov_ship() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  std::println("Test: EntityManager kill_ship() with Gov_ship");
+
+  JsonStore store(db);
+  RaceRepository races_repo(store);
+  ShipRepository ships_repo(store);
+
+  // Create race with a government ship
+  Race race{};
+  race.Playernum = 1;
+  race.name = "Test Race";
+  race.Gov_ship = 100;  // Government ship number
+  race.morale = 1000;
+  race.God = false;
+  races_repo.save(race);
+
+  // Create killer race
+  Race killer{};
+  killer.Playernum = 2;
+  killer.name = "Killer Race";
+  killer.morale = 500;
+  killer.God = false;
+  races_repo.save(killer);
+
+  // Create the government ship
+  Ship gov_ship{};
+  gov_ship.number = 100;
+  gov_ship.owner = 1;
+  gov_ship.alive = 1;
+  gov_ship.type = ShipType::OTYPE_GOV;
+  gov_ship.build_cost = 500;
+  gov_ship.docked = false;
+  ships_repo.save(gov_ship);
+
+  // Kill the government ship
+  em.kill_ship(2, gov_ship);  // Killed by player 2
+
+  std::println("  ✓ Government ship killed");
+
+  // Verify Gov_ship was cleared
+  auto race_after = races_repo.find_by_player(1);
+  assert(race_after.has_value());
+  assert(race_after->Gov_ship == 0);  // Should be cleared
+  std::println("  ✓ Gov_ship field cleared when government ship is killed");
+}
+
 int main() {
   test_entity_manager_basic();
   test_entity_manager_caching();
@@ -356,6 +583,9 @@ int main() {
   test_entity_manager_flush_all();
   test_entity_manager_clear_cache();
   test_entity_manager_singleton_stardata();
+  test_entity_manager_get_player();
+  test_entity_manager_kill_ship();
+  test_entity_manager_kill_ship_gov_ship();
 
   std::println("\n✅ All EntityManager tests passed!");
   return 0;

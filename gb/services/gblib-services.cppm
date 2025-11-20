@@ -147,6 +147,10 @@ export class EntityManager {
   int num_commods();
   player_t num_races();
 
+  // Business logic operations (service layer)
+  std::optional<player_t> find_player_by_name(const std::string& name);
+  void kill_ship(player_t destroyer, Ship& ship);
+
   // Flush all dirty entities to database
   void flush_all();
 

@@ -21,13 +21,6 @@ void grant(const command_t &argv, GameObj &g) {
   shipnum_t shipno;
   Ship *ship;
 
-  auto race_handle = g.entity_manager.get_race(Playernum);
-  if (!race_handle.get()) {
-    g.out << "Race not found.\n";
-    return;
-  }
-  auto& race = *race_handle;
-
   if (argv.size() < 3) {
     g.out << "Syntax: grant <governor> star\n";
     g.out << "        grant <governor> ship <shiplist>\n";
@@ -38,10 +31,15 @@ void grant(const command_t &argv, GameObj &g) {
     g.out << "Bad governor number.\n";
     return;
   }
-  if (!race.governor[gov].active) {
+
+  if (!g.race->governor[gov].active) {
     g.out << "That governor is not active.\n";
     return;
   }
+
+  auto race_handle = g.entity_manager.get_race(Playernum);
+  auto& race = *race_handle;
+
   if (argv[2] == "star") {
     if (g.level != ScopeLevel::LEVEL_STAR) {
       g.out << "Please cs to the star system first.\n";

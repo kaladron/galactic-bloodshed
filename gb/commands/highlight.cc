@@ -23,11 +23,6 @@ void highlight(const command_t &argv, GameObj &g) {
 
   // Get race for modification (RAII auto-saves on scope exit)
   auto race_handle = g.entity_manager.get_race(g.player);
-  if (!race_handle.get()) {
-    g.out << "Race not found.\n";
-    return;
-  }
-
   auto& race = *race_handle;
   race.governor[g.governor].toggle.highlight = n;
 }

@@ -47,10 +47,6 @@ void declare(const command_t& argv, GameObj& g) {
   }
 
   auto race_handle = g.entity_manager.get_race(Playernum);
-  if (!race_handle.get()) {
-    g.out << "Race not found.\n";
-    return;
-  }
 
   auto alien_handle = g.entity_manager.get_race(n);
   if (!alien_handle.get()) {

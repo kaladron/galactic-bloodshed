@@ -45,10 +45,6 @@ void toggle(const command_t &argv, GameObj &g) {
   // TODO(jeffbailey): ap_t APcount = 0;
 
   auto race_handle = g.entity_manager.get_race(Playernum);
-  if (!race_handle.get()) {
-    g.out << "Race not found.\n";
-    return;
-  }
 
   if (argv.size() != 1) {
     const auto& race = race_handle.read();

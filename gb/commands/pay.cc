@@ -23,11 +23,9 @@ void pay(const command_t &argv, GameObj &g) {
     g.out << "You are not authorized to do that.\n";
     return;
   }
+
+  // g.race is already set by process_command(), no need to check
   auto race_handle = g.entity_manager.get_race(Playernum);
-  if (!race_handle.get()) {
-    g.out << "Race not found.\n";
-    return;
-  }
   auto alien_handle = g.entity_manager.get_race(who);
   if (!alien_handle.get()) {
     g.out << "Alien race not found.\n";
@@ -41,7 +39,7 @@ void pay(const command_t &argv, GameObj &g) {
     g.out << "You have to give a player a positive amount of money.\n";
     return;
   }
-  if (race.Guest) {
+  if (g.race->Guest) {
     g.out << "Nice try. Your attempt has been duly noted.\n";
     return;
   }

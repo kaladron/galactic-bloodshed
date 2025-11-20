@@ -15,13 +15,6 @@ namespace GB::commands {
 void capital(const command_t &argv, GameObj &g) {
   const ap_t kAPCost = 50;
 
-  // Get race for read-only access initially
-  const auto* race = g.entity_manager.peek_race(g.player);
-  if (!race) {
-    g.out << "Race not found.\n";
-    return;
-  }
-
   if (g.governor) {
     g.out << "Only the leader may designate the capital.\n";
     return;
@@ -29,7 +22,7 @@ void capital(const command_t &argv, GameObj &g) {
 
   shipnum_t shipno = 0;
   if (argv.size() != 2)
-    shipno = race->Gov_ship;
+    shipno = g.race->Gov_ship;
   else {
     auto shiptmp = string_to_shipnum(argv[1]);
     if (!shiptmp) {
@@ -74,10 +67,6 @@ void capital(const command_t &argv, GameObj &g) {
 
     // Get race for modification (RAII auto-saves on scope exit)
     auto race_handle = g.entity_manager.get_race(g.player);
-    if (!race_handle.get()) {
-      g.out << "Race not found.\n";
-      return;
-    }
     auto& race_mut = *race_handle;
     race_mut.Gov_ship = shipno;
   }

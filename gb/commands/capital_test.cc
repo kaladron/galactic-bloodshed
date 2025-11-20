@@ -54,6 +54,7 @@ void test_designate_capital() {
   GameObj g(entity_manager);
   g.player = 1;
   g.governor = 0;
+  g.race = entity_manager.peek_race(1);  // Set race pointer like production
 
   command_t argv{"capital", "1"};
   GB::commands::capital(argv, g);
@@ -91,6 +92,7 @@ void test_governor_cannot_designate() {
   GameObj g(entity_manager);
   g.player = 1;
   g.governor = 1;  // Not the leader
+  g.race = entity_manager.peek_race(1);  // Set race pointer like production
 
   command_t argv{"capital", "1"};
   GB::commands::capital(argv, g);
@@ -147,6 +149,7 @@ void test_ship_not_landed() {
   GameObj g(entity_manager);
   g.player = 1;
   g.governor = 0;
+  g.race = entity_manager.peek_race(1);  // Set race pointer like production
 
   command_t argv{"capital", "1"};
   GB::commands::capital(argv, g);
@@ -191,6 +194,7 @@ void test_query_capital() {
   GameObj g(entity_manager);
   g.player = 1;
   g.governor = 0;
+  g.race = entity_manager.peek_race(1);  // Set race pointer like production
 
   command_t argv{"capital"};  // No ship number argument
   GB::commands::capital(argv, g);

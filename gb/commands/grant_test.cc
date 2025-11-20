@@ -34,6 +34,7 @@ int main() {
   GameObj g(em);
   g.player = 1;
   g.governor = 0;
+  g.race = em.peek_race(1);  // Set race pointer like production
   g.level = ScopeLevel::LEVEL_UNIV;
 
   std::println("Test 1: Grant money to governor");

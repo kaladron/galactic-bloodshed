@@ -32,13 +32,13 @@ int main() {
   races.save(race1);
   races.save(race2);
 
-  // Setup stardata with AP points
-  StardataRepository stardata_repo(store);
-  stardata sdata{};
+  // Setup universe_struct with AP points
+  UniverseRepository universe_repo(store);
+  universe_struct sdata{};
   sdata.id = 1;
   sdata.AP[0] = 10;  // Give player 1 some AP points
   sdata.numstars = 0;
-  stardata_repo.save(sdata);
+  universe_repo.save(sdata);
   
   // Initialize global Sdata
   getsdata(&Sdata);

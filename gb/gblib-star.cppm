@@ -110,16 +110,3 @@ export class Star {
   star_struct star_struct{};
 };
 
-/* this data will all be read at once */
-export struct stardata {
-  int id{
-      0};  // Stardata ID for database persistence (usually 1 for global data)
-  unsigned short numstars; /* # of stars */
-  unsigned short ships;    /* 1st ship in orbit */
-  ap_t AP[MAXPLAYERS];     /* Action pts for each player */
-  unsigned short VN_hitlist[MAXPLAYERS];
-  /* # of ships destroyed by each player */
-  int VN_index1[MAXPLAYERS]; /* negative value is used */
-  int VN_index2[MAXPLAYERS]; /* VN's record of destroyed ships
-                                        systems where they bought it */
-};

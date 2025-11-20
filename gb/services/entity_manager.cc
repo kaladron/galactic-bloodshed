@@ -129,7 +129,7 @@ EntityManager::EntityManager(Database& database)
       commods(store),
       blocks(store),
       powers(store),
-      stardata_repo(store) {}
+      universe_repo(store) {}
 
 // Race entity methods
 EntityHandle<Race> EntityManager::get_race(player_t player) {
@@ -331,58 +331,58 @@ void EntityManager::release_power(int id) {
   release_entity_impl<power>(id, power_cache, power_refcount);
 }
 
-// Stardata entity methods (singleton)
-EntityHandle<stardata> EntityManager::get_stardata() {
+// Universe entity methods (singleton)
+EntityHandle<universe_struct> EntityManager::get_universe() {
   std::lock_guard lock(cache_mutex);
 
-  if (global_stardata_cache) {
-    global_stardata_refcount++;
-    return {this, global_stardata_cache.get(), [this](const stardata& sd) {
+  if (global_universe_cache) {
+    global_universe_refcount++;
+    return {this, global_universe_cache.get(), [this](const universe_struct& sd) {
               std::lock_guard lock(cache_mutex);
-              stardata_repo.save(sd);
-              release_stardata();
+              universe_repo.save(sd);
+              release_universe();
             }};
   }
 
-  auto stardata_opt = stardata_repo.get_global_data();
-  if (!stardata_opt) {
-    return {this, nullptr, [](const stardata&) {}};
+  auto universe_opt = universe_repo.get_global_data();
+  if (!universe_opt) {
+    return {this, nullptr, [](const universe_struct&) {}};
   }
 
-  global_stardata_cache = std::make_unique<stardata>(*stardata_opt);
-  global_stardata_refcount = 1;
+  global_universe_cache = std::make_unique<universe_struct>(*universe_opt);
+  global_universe_refcount = 1;
 
-  return {this, global_stardata_cache.get(), [this](const stardata& sd) {
+  return {this, global_universe_cache.get(), [this](const universe_struct& sd) {
             std::lock_guard lock(cache_mutex);
-            stardata_repo.save(sd);
-            release_stardata();
+            universe_repo.save(sd);
+            release_universe();
           }};
 }
 
-const stardata* EntityManager::peek_stardata() {
+const universe_struct* EntityManager::peek_universe() {
   std::lock_guard lock(cache_mutex);
 
   // Check if already cached
-  if (global_stardata_cache) {
-    return global_stardata_cache.get();
+  if (global_universe_cache) {
+    return global_universe_cache.get();
   }
 
   // Load from repository if not cached
-  auto stardata_opt = stardata_repo.get_global_data();
-  if (!stardata_opt) {
+  auto universe_opt = universe_repo.get_global_data();
+  if (!universe_opt) {
     return nullptr;
   }
 
   // Cache the entity (but don't increment refcount - this is read-only)
-  global_stardata_cache = std::make_unique<stardata>(*stardata_opt);
-  return global_stardata_cache.get();
+  global_universe_cache = std::make_unique<universe_struct>(*universe_opt);
+  return global_universe_cache.get();
 }
 
-void EntityManager::release_stardata() {
-  global_stardata_refcount--;
-  if (global_stardata_refcount <= 0) {
-    global_stardata_cache.reset();
-    global_stardata_refcount = 0;
+void EntityManager::release_universe() {
+  global_universe_refcount--;
+  if (global_universe_refcount <= 0) {
+    global_universe_cache.reset();
+    global_universe_refcount = 0;
   }
 }
 
@@ -413,8 +413,8 @@ void EntityManager::flush_all() {
   flush_cache_impl<block>(block_cache, [this](const block& b) { blocks.save(b); });
   flush_cache_impl<power>(power_cache, [this](const power& p) { powers.save(p); });
 
-  if (global_stardata_cache) {
-    stardata_repo.save(*global_stardata_cache);
+  if (global_universe_cache) {
+    universe_repo.save(*global_universe_cache);
   }
 }
 
@@ -431,9 +431,9 @@ void EntityManager::clear_cache() {
   clear_cache_impl<block>(block_cache, block_refcount);
   clear_cache_impl<power>(power_cache, power_refcount);
 
-  // Clear global stardata if no active handles
-  if (global_stardata_refcount == 0) {
-    global_stardata_cache.reset();
+  // Clear global universe_struct if no active handles
+  if (global_universe_refcount == 0) {
+    global_universe_cache.reset();
   }
 }
 
@@ -495,9 +495,9 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   }
 
   if (ship.type == ShipType::OTYPE_VN || ship.type == ShipType::OTYPE_BERS) {
-    auto sdata_handle = get_stardata();
+    auto sdata_handle = get_universe();
     if (!sdata_handle.get()) {
-      std::cerr << "Database corruption, stardata not found.";
+      std::cerr << "Database corruption, universe_struct not found.";
       std::abort();
     }
     auto& Sdata = *sdata_handle;

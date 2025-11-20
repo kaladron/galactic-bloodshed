@@ -30,7 +30,7 @@ module gblib;
 // Note: All Glaze reflections have been moved to
 // gb/repositories/gblib-repositories.cppm as part of the Repository classes:
 // - Commod -> CommodRepository
-// - stardata -> StardataRepository
+// - universe_struct -> UniverseRepository
 // - block -> BlockRepository
 // - power -> PowerRepository
 // - star_struct -> StarRepository
@@ -79,11 +79,11 @@ void openracedata(int* fd) {
   }
 }
 
-void getsdata(stardata* S) {
+void getsdata(universe_struct* S) {
   // Read from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "SELECT data FROM tbl_stardata WHERE id = 1";
+  const char* sql = "SELECT data FROM tbl_universe WHERE id = 1";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
 
@@ -98,23 +98,23 @@ void getsdata(stardata* S) {
       std::string json_string(json_data);
       sqlite3_finalize(stmt);
 
-      auto stardata_opt = stardata_from_json(json_string);
-      if (stardata_opt.has_value()) {
-        *S = stardata_opt.value();
+      auto universe_opt = universe_from_json(json_string);
+      if (universe_opt.has_value()) {
+        *S = universe_opt.value();
         return;
       } else {
-        std::println(stderr, "Error: Failed to deserialize stardata from JSON");
+        std::println(stderr, "Error: Failed to deserialize universe_struct from JSON");
       }
     } else {
-      std::println(stderr, "Error: NULL JSON data retrieved for stardata");
+      std::println(stderr, "Error: NULL JSON data retrieved for universe_struct");
       sqlite3_finalize(stmt);
     }
   } else {
     sqlite3_finalize(stmt);
   }
 
-  // Return empty stardata if not found or error
-  *S = stardata{};
+  // Return empty universe_struct if not found or error
+  *S = universe_struct{};
 }
 
 Race getrace(player_t rnum) {
@@ -488,18 +488,18 @@ int getdeadcommod() {
   return result;
 }
 
-void putsdata(stardata* S) {
-  // Serialize stardata to JSON using existing function
-  auto json_result = stardata_to_json(*S);
+void putsdata(universe_struct* S) {
+  // Serialize universe_struct to JSON using existing function
+  auto json_result = universe_to_json(*S);
   if (!json_result.has_value()) {
-    std::println(stderr, "Error: Failed to serialize stardata to JSON");
+    std::println(stderr, "Error: Failed to serialize universe_struct to JSON");
     return;
   }
 
   // Store in SQLite database as JSON
   const char* tail;
   sqlite3_stmt* stmt;
-  const char* sql = "REPLACE INTO tbl_stardata (id, data) VALUES (1, ?1)";
+  const char* sql = "REPLACE INTO tbl_universe (id, data) VALUES (1, ?1)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_text(stmt, 1, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
@@ -928,8 +928,8 @@ std::optional<Race> race_from_json(const std::string& json_str) {
   return std::nullopt;
 }
 
-// JSON serialization functions for stardata
-std::optional<std::string> stardata_to_json(const stardata& sdata) {
+// JSON serialization functions for universe_struct
+std::optional<std::string> universe_to_json(const universe_struct& sdata) {
   auto result = glz::write_json(sdata);
   if (result.has_value()) {
     return result.value();
@@ -937,8 +937,8 @@ std::optional<std::string> stardata_to_json(const stardata& sdata) {
   return std::nullopt;
 }
 
-std::optional<stardata> stardata_from_json(const std::string& json_str) {
-  stardata sdata{};
+std::optional<universe_struct> universe_from_json(const std::string& json_str) {
+  universe_struct sdata{};
   auto result = glz::read_json(sdata, json_str);
   if (!result) {
     return sdata;

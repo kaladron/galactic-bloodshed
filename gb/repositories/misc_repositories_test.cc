@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Test file for miscellaneous repositories:
-// CommodRepository, BlockRepository, PowerRepository, and StardataRepository
+// CommodRepository, BlockRepository, PowerRepository, and UniverseRepository
 
 import gblib;
 import dallib;
@@ -183,15 +183,15 @@ void test_power_repository() {
   std::println("✓ All PowerRepository tests passed");
 }
 
-void test_stardata_repository() {
+void test_universe_repository() {
   // Setup
   Database db(":memory:");
   initialize_schema(db);
   JsonStore store(db);
-  StardataRepository repo(store);
+  UniverseRepository repo(store);
 
-  // Test data - stardata is typically a singleton
-  stardata sd{};
+  // Test data - universe_struct is typically a singleton
+  universe_struct sd{};
   sd.id = 1;  // Stardata is a singleton with id=1
   sd.numstars = 50;
   sd.ships = 100;
@@ -239,7 +239,7 @@ void test_stardata_repository() {
   assert(retrieved->VN_index2[0] == 10);
   assert(retrieved->VN_index2[1] == 15);
 
-  std::println("✓ All StardataRepository tests passed");
+  std::println("✓ All UniverseRepository tests passed");
 }
 
 int main() {
@@ -248,7 +248,7 @@ int main() {
   test_commod_repository();
   test_block_repository();
   test_power_repository();
-  test_stardata_repository();
+  test_universe_repository();
 
   std::println("\n✅ All miscellaneous repository tests passed!");
   return 0;

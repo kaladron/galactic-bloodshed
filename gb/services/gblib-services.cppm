@@ -91,7 +91,7 @@ export class EntityManager {
   CommodRepository commods;
   BlockRepository blocks;
   PowerRepository powers;
-  StardataRepository stardata_repo;
+  UniverseRepository universe_repo;
 
   // In-memory cache (only one copy of each entity)
   std::unordered_map<player_t, std::unique_ptr<Race>> race_cache;
@@ -104,7 +104,7 @@ export class EntityManager {
   std::unordered_map<int, std::unique_ptr<Commod>> commod_cache;
   std::unordered_map<int, std::unique_ptr<block>> block_cache;
   std::unordered_map<int, std::unique_ptr<power>> power_cache;
-  std::unique_ptr<stardata> global_stardata_cache;  // Singleton
+  std::unique_ptr<universe_struct> global_universe_cache;  // Singleton
 
   // Reference counting for concurrent access
   std::unordered_map<player_t, int> race_refcount;
@@ -114,7 +114,7 @@ export class EntityManager {
   std::unordered_map<int, int> commod_refcount;
   std::unordered_map<int, int> block_refcount;
   std::unordered_map<int, int> power_refcount;
-  int global_stardata_refcount = 0;
+  int global_universe_refcount = 0;
 
   // Mutex for thread-safety (future-proofing)
   std::mutex cache_mutex;
@@ -130,14 +130,14 @@ export class EntityManager {
   EntityHandle<Commod> get_commod(int id);
   EntityHandle<block> get_block(int id);
   EntityHandle<power> get_power(int id);
-  EntityHandle<stardata> get_stardata();
+  EntityHandle<universe_struct> get_universe();
 
   // Direct access for read-only operations (no RAII overhead)
   const Race* peek_race(player_t player);
   const Ship* peek_ship(shipnum_t num);
   const Planet* peek_planet(starnum_t star, planetnum_t pnum);
   const Star* peek_star(starnum_t num);
-  const stardata* peek_stardata();
+  const universe_struct* peek_universe();
 
   // Create new entities
   EntityHandle<Ship> create_ship();
@@ -166,5 +166,5 @@ export class EntityManager {
   void release_commod(int id);
   void release_block(int id);
   void release_power(int id);
-  void release_stardata();
+  void release_universe();
 };

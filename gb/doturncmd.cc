@@ -194,8 +194,8 @@ static void process_ships(EntityManager& entity_manager, TurnState& state) {
 
 static void process_stars_and_planets(EntityManager& entity_manager,
                                       int update) {
-  /* Load global stardata and stars using EntityManager */
-  auto sdata_handle = entity_manager.get_stardata();
+  /* Load global universe_struct and stars using EntityManager */
+  auto sdata_handle = entity_manager.get_universe();
   Sdata = sdata_handle.read();  // Copy to global for backward compatibility
 
   Planet_count = 0;

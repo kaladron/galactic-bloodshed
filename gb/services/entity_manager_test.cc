@@ -312,26 +312,26 @@ void test_entity_manager_clear_cache() {
   std::println("  ✓ Entities can be reloaded after cache clear");
 }
 
-void test_entity_manager_singleton_stardata() {
+void test_entity_manager_singleton_universe() {
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println("Test: EntityManager singleton (stardata)");
+  std::println("Test: EntityManager singleton (universe_struct)");
 
-  // Create initial stardata
-  stardata sd{};
-  sd.id = 1;  // Stardata is a singleton with id=1
+  // Create initial universe_struct
+  universe_struct sd{};
+  sd.id = 1;  // Universe is a singleton with id=1
   sd.numstars = 100;
   sd.ships = 50;
 
   JsonStore store(db);
-  StardataRepository stardata_repo(store);
-  stardata_repo.save(sd);
+  UniverseRepository universe_repo(store);
+  universe_repo.save(sd);
 
-  // Get stardata (singleton)
+  // Get universe_struct (singleton)
   {
-    auto handle = em.get_stardata();
+    auto handle = em.get_universe();
     assert(handle.get() != nullptr);
     assert(handle->numstars == 100);
 
@@ -340,11 +340,11 @@ void test_entity_manager_singleton_stardata() {
   }
 
   // Verify modification persisted
-  auto saved = stardata_repo.get_global_data();
+  auto saved = universe_repo.get_global_data();
   assert(saved.has_value());
   assert(saved->numstars == 150);
 
-  std::println("  ✓ Singleton stardata works correctly");
+  std::println("  ✓ Singleton universe_struct works correctly");
 }
 
 void test_entity_manager_get_player() {
@@ -420,7 +420,7 @@ void test_entity_manager_kill_ship() {
   JsonStore store(db);
   RaceRepository races_repo(store);
   ShipRepository ships_repo(store);
-  StardataRepository sdata_repo(store);
+  UniverseRepository sdata_repo(store);
 
   // Create killer and victim races
   Race killer{};
@@ -470,8 +470,8 @@ void test_entity_manager_kill_ship() {
   assert(victim_after->morale != 1000);  // Changed from initial
   std::println("  ✓ Morale adjustments persisted for both races");
 
-  // Test: Kill VN ship (updates stardata)
-  stardata sdata{};
+  // Test: Kill VN ship (updates universe_struct)
+  universe_struct sdata{};
   sdata.id = 1;
   sdata.VN_hitlist[0] = 0;
   sdata.VN_index1[0] = -1;
@@ -582,7 +582,7 @@ int main() {
   test_entity_manager_read_only_access();
   test_entity_manager_flush_all();
   test_entity_manager_clear_cache();
-  test_entity_manager_singleton_stardata();
+  test_entity_manager_singleton_universe();
   test_entity_manager_get_player();
   test_entity_manager_kill_ship();
   test_entity_manager_kill_ship_gov_ship();

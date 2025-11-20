@@ -171,7 +171,7 @@ void strstr_to_queue(DescriptorData &d) {
 }
 
 /*utilities for dealing with ship lists */
-void insert_sh_univ(stardata *sdata, Ship *s) {
+void insert_sh_univ(universe_struct *sdata, Ship *s) {
   s->nextship = sdata->ships;
   sdata->ships = s->number;
   s->whatorbits = ScopeLevel::LEVEL_UNIV;

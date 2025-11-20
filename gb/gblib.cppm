@@ -34,6 +34,7 @@ export import :shootblast;
 export import :star;
 export import :tele;
 export import :tweakables;
+export import :universe;
 export import :globals;
 
 /**

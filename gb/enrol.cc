@@ -105,12 +105,12 @@ int main() {
   }
   idx = idx - 1;
 
-  const auto* stardata_ptr = entity_manager.peek_stardata();
-  if (!stardata_ptr) {
-    std::println(stderr, "Error: Cannot load star data");
+  const auto* universe_ptr = entity_manager.peek_universe();
+  if (!universe_ptr) {
+    std::println(stderr, "Error: Cannot load universe data");
     return -1;
   }
-  const auto& Sdata = *stardata_ptr;
+  const auto& Sdata = *universe_ptr;
   std::println("There is still space for player {}.", Playernum);
 
   do {

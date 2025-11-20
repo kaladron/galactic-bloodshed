@@ -32,12 +32,12 @@ int main() {
   RaceRepository races(store);
   races.save(race);
 
-  // Setup stardata (required by dissolve command)
-  StardataRepository stardata_repo(store);
-  stardata sdata{};
+  // Setup universe_struct (required by dissolve command)
+  UniverseRepository universe_repo(store);
+  universe_struct sdata{};
   sdata.id = 1;
   sdata.numstars = 0;  // No stars, simplifies test
-  stardata_repo.save(sdata);
+  universe_repo.save(sdata);
   
   // Initialize global Sdata
   getsdata(&Sdata);

@@ -165,6 +165,7 @@ target_sources(
          gblib-tele.cppm
          gblib-tweakables.cppm
          gblib-types.cppm
+         gblib-universe.cppm
   PRIVATE bombard.cc
           build.cc
           doplanet.cc
@@ -384,6 +385,10 @@ add_test(NAME GB_misc_repositories_test COMMAND misc_repositories_test)
 add_executable(entity_manager_test services/entity_manager_test.cc)
 target_link_libraries(entity_manager_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_entity_manager_test COMMAND entity_manager_test)
+
+add_executable(universe_test universe_test.cc)
+target_link_libraries(universe_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_universe_test COMMAND universe_test)
 
 add_executable(autoreport_test commands/autoreport_test.cc)
 target_link_libraries(autoreport_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)

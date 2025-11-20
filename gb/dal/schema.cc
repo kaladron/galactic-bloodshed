@@ -38,7 +38,7 @@ void initialize_schema(Database& db) {
     id INT PRIMARY KEY NOT NULL,
     data TEXT NOT NULL);
 
-  CREATE TABLE tbl_stardata(
+  CREATE TABLE tbl_universe(
     id INT PRIMARY KEY NOT NULL DEFAULT 1,
     data TEXT NOT NULL);
 

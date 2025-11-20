@@ -11,10 +11,11 @@ import :planet;
 import :race;
 import :star;
 import :types;
+import :universe;
 
 export std::vector<Race> races;
 
-export struct stardata Sdata;
+export universe_struct Sdata;
 
 export std::array<char, MAXPLAYERS> Nuked;
 export unsigned long StarsInhab[NUMSTARS];

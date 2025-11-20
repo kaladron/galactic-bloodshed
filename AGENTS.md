@@ -258,7 +258,7 @@ race_handle.save();
 - **Commodities**: `peek_commod(id)`, `get_commod(id)`, `num_commods()`
 - **Blocks**: `peek_block(id)`, `get_block(id)`
 - **Power**: `peek_power(id)`, `get_power(id)`
-- **Global Data**: `peek_stardata()`, `get_stardata()`
+- **Universe Data**: `peek_universe()`, `get_universe()`
 
 **Key Benefits:**
 - **RAII**: Auto-saves modified entities when handle goes out of scope

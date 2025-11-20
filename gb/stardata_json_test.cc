@@ -12,10 +12,10 @@ int main() {
   // Initialize database using Database class (in-memory for testing)
   Database db(":memory:");
 
-  // Initialize database tables - this will create the tbl_stardata table
+  // Initialize database tables - this will create the tbl_universe table
   initialize_schema(db);
 
-  stardata test_stardata{};
+  universe_struct test_stardata{};
 
   // Initialize some basic fields for testing
   test_stardata.numstars = 100;
@@ -30,7 +30,7 @@ int main() {
   putsdata(&test_stardata);
 
   // Test getsdata - reads from SQLite
-  stardata retrieved_stardata{};
+  universe_struct retrieved_stardata{};
   getsdata(&retrieved_stardata);
 
   // Verify key fields
@@ -44,6 +44,6 @@ int main() {
 
   // Database connection will be cleaned up automatically by Sql destructor
 
-  std::println("stardata SQLite JSON storage test passed!");
+  std::println("universe_struct SQLite JSON storage test passed!");
   return 0;
 }

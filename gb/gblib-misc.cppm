@@ -19,6 +19,7 @@ import :race;
 import :ships;
 import :star;
 import :tweakables;
+import :universe;
 import :types;
 
 import std.compat;
@@ -228,7 +229,7 @@ export std::string Estimate_i(const int data, const Race &r, const player_t p) {
   return "?";
 }
 
-export void insert_sh_univ(stardata *, Ship *);
+export void insert_sh_univ(universe_struct *, Ship *);
 export void insert_sh_star(Star &, Ship *);
 export void insert_sh_plan(Planet &, Ship *);
 export void insert_sh_ship(Ship *, Ship *);

@@ -9,6 +9,7 @@ export module gblib:files_shl;
 
 import :ships;
 import :star;
+import :universe;
 
 export void close_file(int);
 export void openstardata(int*);
@@ -16,7 +17,7 @@ export void openshdata(int*);
 export void opencommoddata(int*);
 export void opensectdata(int*);
 export void openracedata(int*);
-export void getsdata(stardata* S);
+export void getsdata(universe_struct* S);
 export Race getrace(player_t);
 export Star getstar(starnum_t);
 export Planet getplanet(starnum_t, planetnum_t);
@@ -28,7 +29,7 @@ export Sector getsector(const Planet&, int x, int y);
 export SectorMap getsmap(const Planet&);
 export int getdeadship();
 export int getdeadcommod();
-export void putsdata(stardata*);
+export void putsdata(universe_struct*);
 export void putrace(const Race&);
 export void putstar(const Star&, starnum_t);
 export void putplanet(const Planet&, const Star&, planetnum_t);
@@ -55,8 +56,8 @@ export std::optional<std::string> race_to_json(const Race&);
 export std::optional<Race> race_from_json(const std::string&);
 
 // JSON serialization functions for other data types
-export std::optional<std::string> stardata_to_json(const stardata&);
-export std::optional<stardata> stardata_from_json(const std::string&);
+export std::optional<std::string> universe_to_json(const universe_struct&);
+export std::optional<universe_struct> universe_from_json(const std::string&);
 export std::optional<std::string> block_to_json(const block&);
 export std::optional<block> block_from_json(const std::string&);
 export std::optional<std::string> power_to_json(const power&);

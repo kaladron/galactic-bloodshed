@@ -13,6 +13,7 @@ import :ships;
 import :star;
 import :planet;
 import :sector;
+import :universe;
 import std.compat;
 
 // Base template for repositories
@@ -124,10 +125,10 @@ struct meta<Commod> {
       "planet_to", &T::planet_to);
 };
 
-// Glaze reflection for stardata
+// Glaze reflection for universe_struct
 template <>
-struct meta<stardata> {
-  using T = stardata;
+struct meta<universe_struct> {
+  using T = universe_struct;
   static constexpr auto value =
       object("id", &T::id, "numstars", &T::numstars, "ships", &T::ships, "AP",
              &T::AP, "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
@@ -760,35 +761,36 @@ export class PowerRepository : public Repository<power> {
 };
 
 // ============================================================================
-// StardataRepository - Repository for global star system statistics
+// UniverseRepository - Repository for global universe-wide statistics
 // ============================================================================
-export class StardataRepository : public Repository<stardata> {
+export class UniverseRepository : public Repository<universe_struct> {
  public:
-  explicit StardataRepository(JsonStore& store)
-      : Repository<stardata>(store, "tbl_stardata") {}
+  explicit UniverseRepository(JsonStore& store)
+      : Repository<universe_struct>(store, "tbl_universe") {}
 
   // Domain-specific methods
-  // Note: stardata is typically a singleton (id=1)
-  std::optional<stardata> get_global_data() { return find(1); }
-  bool save(const stardata& sdata) {
-    return Repository<stardata>::save(sdata.id, sdata);
+  // Note: universe_struct is a singleton (id=1)
+  std::optional<universe_struct> get_global_data() { return find(1); }
+  bool save(const universe_struct& universe) {
+    return Repository<universe_struct>::save(universe.id, universe);
   }
 
  protected:
-  std::optional<std::string> serialize(const stardata& sdata) const override {
-    auto result = glz::write_json(sdata);
+  std::optional<std::string> serialize(
+      const universe_struct& universe) const override {
+    auto result = glz::write_json(universe);
     if (result.has_value()) {
       return result.value();
     }
     return std::nullopt;
   }
 
-  std::optional<stardata> deserialize(
+  std::optional<universe_struct> deserialize(
       const std::string& json_str) const override {
-    stardata sdata{};
-    auto result = glz::read_json(sdata, json_str);
+    universe_struct universe{};
+    auto result = glz::read_json(universe, json_str);
     if (!result) {
-      return sdata;
+      return universe;
     }
     return std::nullopt;
   }

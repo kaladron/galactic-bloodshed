@@ -57,15 +57,25 @@ export class Sector {
 
 export class SectorMap {
  public:
-  SectorMap(const Planet &planet) : maxx_(planet.Maxx()), maxy_(planet.Maxy()) {
+  SectorMap(const Planet &planet) 
+      : star_id_(planet.star_id()),
+        planet_order_(planet.planet_order()),
+        maxx_(planet.Maxx()), 
+        maxy_(planet.Maxy()) {
     vec_.reserve(planet.Maxx() * planet.Maxy());
   }
 
   //! Add an empty sector for every potential space.  Used for initialization.
   SectorMap(const Planet &planet, bool)
-      : maxx_(planet.Maxx()),
+      : star_id_(planet.star_id()),
+        planet_order_(planet.planet_order()),
+        maxx_(planet.Maxx()),
         maxy_(planet.Maxy()),
         vec_(planet.Maxx() * planet.Maxy()) {}
+
+  // Accessors for planet identity
+  [[nodiscard]] starnum_t star_id() const { return star_id_; }
+  [[nodiscard]] planetnum_t planet_order() const { return planet_order_; }
 
   // TODO(jeffbailey): Should wrap this in a subclass so the underlying
   // vector isn't exposed to callers.
@@ -80,8 +90,8 @@ export class SectorMap {
     return vec_.at(static_cast<size_t>(x + (y * maxx_)));
   }
   void put(Sector &&s) { vec_.emplace_back(std::move(s)); }
-  int get_maxx() { return maxx_; }
-  int get_maxy() { return maxy_; }
+  [[nodiscard]] int get_maxx() const { return maxx_; }
+  [[nodiscard]] int get_maxy() const { return maxy_; }
   Sector &get_random();
   // TODO(jeffbailey): Don't expose the underlying vector.
   std::vector<std::reference_wrapper<Sector>>
@@ -95,6 +105,8 @@ export class SectorMap {
 
  private:
   SectorMap(const int maxx, const int maxy) : maxx_(maxx), maxy_(maxy) {}
+  starnum_t star_id_;
+  planetnum_t planet_order_;
   int maxx_;
   int maxy_;
   std::vector<Sector> vec_;

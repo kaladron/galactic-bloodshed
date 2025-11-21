@@ -653,12 +653,12 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
 }
 
 bool SectorRepository::save_map(const SectorMap& map, const Planet& planet) {
-  // Save all sectors in the map
+  // Save all sectors in the map using map's stored planet identity
   bool all_saved = true;
-  for (int y = 0; y < planet.Maxy(); y++) {
-    for (int x = 0; x < planet.Maxx(); x++) {
+  for (int y = 0; y < map.get_maxy(); y++) {
+    for (int x = 0; x < map.get_maxx(); x++) {
       const auto& sector = map.get(x, y);
-      if (!save_sector(sector, planet.star_id(), planet.planet_order(), x, y)) {
+      if (!save_sector(sector, map.star_id(), map.planet_order(), x, y)) {
         all_saved = false;
       }
     }

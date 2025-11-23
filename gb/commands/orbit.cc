@@ -18,8 +18,8 @@ static std::string DispStar(const GameObj&, const ScopeLevel, const Star&, int,
                             const Race&);
 static std::string DispPlanet(const GameObj&, const ScopeLevel, const Planet&,
                               std::string_view, int, const Race&);
-static void DispShip(const GameObj&, const Place&, const Ship*, const Race&, char*,
-                     const Planet& = Planet());
+static void DispShip(const GameObj&, const Place&, const Ship*, const Race&,
+                     char*, const Planet& = Planet());
 
 namespace GB::commands {
 /* OPTIONS

@@ -70,9 +70,10 @@ int main() {
     fighter.alive = true;
 
     // Test single ship type filter
-    std::println("Testing pod: type={}, Shipltrs[type]='{}'", 
+    std::println("Testing pod: type={}, Shipltrs[type]='{}'",
                  static_cast<int>(pod.type), Shipltrs[pod.type]);
-    std::println("Filter 'p' matches pod: {}", GB::ship_matches_filter("p", pod));
+    std::println("Filter 'p' matches pod: {}",
+                 GB::ship_matches_filter("p", pod));
     assert(GB::ship_matches_filter("p", pod) == true);
     assert(GB::ship_matches_filter("p", destroyer) == false);
     assert(GB::ship_matches_filter("p", fighter) == false);

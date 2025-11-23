@@ -15,11 +15,11 @@ import :ships;
 
 struct ShipHandle::Impl {
   EntityHandle<Ship> handle;
-  
+
   explicit Impl(EntityHandle<Ship>&& h) : handle(std::move(h)) {}
 };
 
-ShipHandle::ShipHandle(EntityHandle<Ship>&& handle) 
+ShipHandle::ShipHandle(EntityHandle<Ship>&& handle)
     : pimpl(std::make_unique<Impl>(std::move(handle))) {}
 
 ShipHandle::~ShipHandle() = default;
@@ -62,30 +62,24 @@ void ShipHandle::save() {
 // ShipList constructors
 
 ShipList::ShipList(EntityManager& em, shipnum_t start, IterationType type)
-    : em(&em),
-      start_ship(start),
-      iteration_type(type),
+    : em(&em), start_ship(start), iteration_type(type),
       scope_level(ScopeLevel::LEVEL_UNIV) {}
 
 ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
-    : em(&em),
-      start_ship(1),  // Start from ship #1 for scope-based iteration
-      iteration_type(type),
-      scope_level(g.level),
-      snum(g.snum),
-      pnum(g.pnum),
+    : em(&em), start_ship(1),  // Start from ship #1 for scope-based iteration
+      iteration_type(type), scope_level(g.level), snum(g.snum), pnum(g.pnum),
       player(g.player) {}
 
 // ShipList iterator methods
 
 ShipList::MutableIterator ShipList::begin() {
-  return MutableIterator(*em, start_ship, iteration_type, scope_level,
-                         snum, pnum, player);
+  return MutableIterator(*em, start_ship, iteration_type, scope_level, snum,
+                         pnum, player);
 }
 
 ShipList::MutableIterator ShipList::end() {
-  return MutableIterator(*em, 0, iteration_type, scope_level, snum,
-                         pnum, player);
+  return MutableIterator(*em, 0, iteration_type, scope_level, snum, pnum,
+                         player);
 }
 
 // Helper to check if a ship matches the current scope
@@ -114,16 +108,11 @@ bool ShipList::matches_scope(const Ship& ship) const {
 // MutableIterator implementation
 
 ShipList::MutableIterator::MutableIterator(EntityManager& em, shipnum_t current,
-                                           IterationType type,
-                                           ScopeLevel level, starnum_t snum,
-                                           planetnum_t pnum, player_t player)
-    : em(em),
-      current(current),
-      type(type),
-      scope_level(level),
-      snum(snum),
-      pnum(pnum),
-      player(player) {
+                                           IterationType type, ScopeLevel level,
+                                           starnum_t snum, planetnum_t pnum,
+                                           player_t player)
+    : em(em), current(current), type(type), scope_level(level), snum(snum),
+      pnum(pnum), player(player) {
   // Advance to first matching ship
   if (current != 0) {
     advance_to_next_match();
@@ -153,13 +142,11 @@ ShipHandle ShipList::MutableIterator::operator*() {
   return ShipHandle(em.get_ship(current));
 }
 
-bool ShipList::MutableIterator::operator==(
-    const MutableIterator& other) const {
+bool ShipList::MutableIterator::operator==(const MutableIterator& other) const {
   return current == other.current;
 }
 
-bool ShipList::MutableIterator::operator!=(
-    const MutableIterator& other) const {
+bool ShipList::MutableIterator::operator!=(const MutableIterator& other) const {
   return !(*this == other);
 }
 

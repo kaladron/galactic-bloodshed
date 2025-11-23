@@ -177,4 +177,3 @@ string_to_shipnum(std::string_view s) {
   }
   return {};
 }
-

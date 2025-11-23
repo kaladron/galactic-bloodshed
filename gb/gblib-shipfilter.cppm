@@ -57,7 +57,8 @@ export bool ship_matches_filter(std::string_view filter, const Ship& ship) {
  * \param selection User-provided selection string
  * \return Ship number if a specific ship was selected, nullopt otherwise
  */
-export std::optional<shipnum_t> parse_ship_selection(std::string_view selection) {
+export std::optional<shipnum_t>
+parse_ship_selection(std::string_view selection) {
   // Strip leading '#' characters
   while (selection.size() > 1 && selection.front() == '#') {
     selection.remove_prefix(1);
@@ -67,7 +68,7 @@ export std::optional<shipnum_t> parse_ship_selection(std::string_view selection)
   if (selection.size() > 0 && std::isdigit(selection.front())) {
     return std::stoi(std::string(selection.begin(), selection.end()));
   }
-  
+
   return std::nullopt;
 }
 

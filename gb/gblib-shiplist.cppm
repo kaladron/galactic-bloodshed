@@ -33,10 +33,10 @@ public:
   const Ship* operator->() const;
   Ship* get();
   const Ship* get() const;
-  
+
   // Explicit read-only access (doesn't mark dirty)
   const Ship& peek() const;
-  
+
   // Force save without waiting for destructor
   void save();
 
@@ -48,14 +48,14 @@ private:
 /**
  * Modern ShipList class with EntityManager integration and RAII support.
  * Provides automatic save-on-scope-exit semantics through ShipHandle.
- * 
+ *
  * Usage:
  *   // Read-only iteration
  *   const ShipList ships(g.entity_manager, ship.ships);
  *   for (const auto* ship : ships) {
  *     g.out << ship->name << "\n";
  *   }
- *   
+ *
  *   // Mutable iteration (auto-saves on scope exit)
  *   ShipList ships(g.entity_manager, ship.ships);
  *   for (auto ship_handle : ships) {
@@ -92,7 +92,7 @@ private:
   starnum_t snum{0};
   planetnum_t pnum{0};
   player_t player{0};
-  
+
   // Helper to check if a ship matches the current scope
   bool matches_scope(const Ship& ship) const;
 };
@@ -108,9 +108,9 @@ public:
   using value_type = ShipHandle;
   using difference_type = std::ptrdiff_t;
 
-  MutableIterator(EntityManager& em, shipnum_t current, 
-                  IterationType type, ScopeLevel level,
-                  starnum_t snum, planetnum_t pnum, player_t player);
+  MutableIterator(EntityManager& em, shipnum_t current, IterationType type,
+                  ScopeLevel level, starnum_t snum, planetnum_t pnum,
+                  player_t player);
 
   MutableIterator& operator++();
   ShipHandle operator*();  // Defined in .cc file
@@ -125,7 +125,7 @@ private:
   starnum_t snum;
   planetnum_t pnum;
   player_t player;
-  
+
   void advance_to_next_match();
   bool matches_scope(const Ship& ship) const;
 };

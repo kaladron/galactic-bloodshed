@@ -10,10 +10,10 @@ int main() {
   // Create in-memory database and initialize schema
   Database db(":memory:");
   initialize_schema(db);
-  
+
   // Create EntityManager for accessing entities
   EntityManager em(db);
-  
+
   // Create JsonStore for repository operations
   JsonStore store(db);
 
@@ -23,7 +23,7 @@ int main() {
   race.name = "TestRace";
   race.Guest = false;
   race.governor[0].money = 1000;
-  
+
   RaceRepository races(store);
   races.save(race);
 
@@ -36,7 +36,7 @@ int main() {
   ship1.pnumorbits = 0;
   ship1.type = ShipType::OTYPE_FACTORY;
   ship1.nextship = 2;  // Linked list
-  
+
   Ship ship2{};
   ship2.number = 2;
   ship2.owner = 1;
@@ -45,7 +45,7 @@ int main() {
   ship2.pnumorbits = 0;
   ship2.type = ShipType::OTYPE_PROBE;
   ship2.nextship = 3;
-  
+
   Ship ship3{};
   ship3.number = 3;
   ship3.owner = 1;
@@ -54,7 +54,7 @@ int main() {
   ship3.pnumorbits = 0;
   ship3.type = ShipType::STYPE_CARGO;
   ship3.nextship = 0;  // End of list
-  
+
   ShipRepository ships_repo(store);
   ships_repo.save(ship1);
   ships_repo.save(ship2);
@@ -91,7 +91,8 @@ int main() {
       assert(ship.alive);
     }
     assert(count == 3);
-    std::println("✓ Test 2 passed: Scope iteration (UNIV) found {} ships", count);
+    std::println("✓ Test 2 passed: Scope iteration (UNIV) found {} ships",
+                 count);
   }
 
   // Test 3: Modify ship via handle
@@ -100,11 +101,11 @@ int main() {
     auto it = list.begin();
     ShipHandle handle = *it;
     Ship& ship = *handle;
-    
+
     ship.fuel += 100.0;
     // Handle should auto-save on destruction
   }
-  
+
   // Verify modification persisted
   {
     const auto* ship = em.peek_ship(1);

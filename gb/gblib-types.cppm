@@ -160,3 +160,21 @@ export struct Coordinates {
 
   Coordinates(int x_, int y_) : x(x_), y(y_) {}
 };
+
+/**
+ * \brief Convert input string to a shipnum_t
+ * \param s User-provided input string
+ * \return If the user provided a valid number, return it.
+ */
+export constexpr std::optional<shipnum_t>
+string_to_shipnum(std::string_view s) {
+  while (s.size() > 1 && s.front() == '#') {
+    s.remove_prefix(1);
+  }
+
+  if (s.size() > 0 && std::isdigit(s.front())) {
+    return std::stoi(std::string(s.begin(), s.end()));
+  }
+  return {};
+}
+

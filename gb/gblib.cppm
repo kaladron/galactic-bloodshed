@@ -29,6 +29,7 @@ export import :rand;
 export import :repositories;
 export import :services;
 export import :ships;
+export import :shipfilter;
 export import :shiplist;
 export import :shlmisc;
 export import :shootblast;
@@ -38,22 +39,8 @@ export import :tweakables;
 export import :universe;
 export import :globals;
 
-/**
- * \brief Convert input string to a shipnum_t
- * \param s User-provided input string
- * \return If the user provided a valid number, return it.
- */
-export constexpr std::optional<shipnum_t>
-string_to_shipnum(std::string_view s) {
-  while (s.size() > 1 && s.front() == '#') {
-    s.remove_prefix(1);
-  }
-
-  if (s.size() > 0 && std::isdigit(s.front())) {
-    return std::stoi(std::string(s.begin(), s.end()));
-  }
-  return {};
-}
+// Re-export string_to_shipnum from :types for convenience
+export import :types;
 
 export constexpr double morale_factor(const double x) {
   return (atan((double)x / 10000.) / 3.14159565 + .5);

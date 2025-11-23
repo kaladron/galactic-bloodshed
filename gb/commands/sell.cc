@@ -53,8 +53,9 @@ void sell(const command_t& argv, GameObj& g) {
   }
   /* check to see if there is an undamage gov center or space port here */
   bool ok = false;
-  Shiplist shiplist(p.ships());
-  for (auto s : shiplist) {
+  ShipList ships(g.entity_manager, p.ships());
+  for (auto ship_handle : ships) {
+    const Ship& s = ship_handle.peek();  // Read-only access
     if (s.alive && (s.owner == Playernum) && !s.damage &&
         Shipdata[s.type][ABIL_PORT]) {
       ok = true;

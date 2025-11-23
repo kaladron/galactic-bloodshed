@@ -18,33 +18,27 @@ void detonate(const command_t& argv, GameObj& g) {
     return;
   }
 
-  Ship* s;
-  shipnum_t shipno;
-  shipnum_t nextshipno;
+  ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
+  for (auto ship_handle : ships) {
+    Ship& s = *ship_handle;
 
-  nextshipno = start_shiplist(g, argv[1]);
+    if (!ship_matches_filter(argv[1], s)) continue;
+    if (!authorized(Governor, s)) continue;
 
-  while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, argv[1], *s, &nextshipno) &&
-        authorized(Governor, *s)) {
-      if (s->type != ShipType::STYPE_MINE) {
-        g.out << "That is not a mine.\n";
-        free(s);
-        continue;
-      }
-      if (!s->on) {
-        g.out << "The mine is not activated.\n";
-        free(s);
-        continue;
-      }
-      if (s->docked || s->whatorbits == ScopeLevel::LEVEL_SHIP) {
-        g.out << "The mine is docked or landed.\n";
-        free(s);
-        continue;
-      }
-      domine(*s, 1);
-      free(s);
-    } else
-      free(s);
+    if (s.type != ShipType::STYPE_MINE) {
+      g.out << "That is not a mine.\n";
+      continue;
+    }
+    if (!s.on) {
+      g.out << "The mine is not activated.\n";
+      continue;
+    }
+    if (s.docked || s.whatorbits == ScopeLevel::LEVEL_SHIP) {
+      g.out << "The mine is docked or landed.\n";
+      continue;
+    }
+
+    domine(s, 1);
+  }
 }
 }  // namespace GB::commands

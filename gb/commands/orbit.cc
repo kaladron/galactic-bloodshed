@@ -18,7 +18,7 @@ static std::string DispStar(const GameObj&, const ScopeLevel, const Star&, int,
                             const Race&);
 static std::string DispPlanet(const GameObj&, const ScopeLevel, const Planet&,
                               std::string_view, int, const Race&);
-static void DispShip(const GameObj&, const Place&, Ship*, const Race&, char*,
+static void DispShip(const GameObj&, const Place&, const Ship*, const Race&, char*,
                      const Planet& = Planet());
 
 namespace GB::commands {
@@ -99,9 +99,10 @@ void orbit(const command_t& argv, GameObj& g) {
           strcat(output, star.c_str());
         }
       if (!DontDispShips) {
-        Shiplist shiplist{Sdata.ships};
+        ShipList ships(g.entity_manager, Sdata.ships);
         char shipbuf[256];
-        for (auto& s : shiplist) {
+        for (auto ship_handle : ships) {
+          const Ship& s = ship_handle.peek();  // Read-only access
           if (DontDispNum != s.number) {
             shipbuf[0] = '\0';
             DispShip(g, *where, &s, Race, shipbuf);
@@ -130,8 +131,9 @@ void orbit(const command_t& argv, GameObj& g) {
       if (g.god)
         iq = true;
       else {
-        Shiplist shiplist{stars[where->snum].ships()};
-        for (auto& s : shiplist) {
+        ShipList ships(g.entity_manager, stars[where->snum].ships());
+        for (auto ship_handle : ships) {
+          const Ship& s = ship_handle.peek();  // Read-only access
           if (s.owner == g.player && shipsight(s)) {
             iq = true; /* you are there to sight, need a crew */
             break;
@@ -139,9 +141,10 @@ void orbit(const command_t& argv, GameObj& g) {
         }
       }
       if (!DontDispShips) {
-        Shiplist shiplist{stars[where->snum].ships()};
+        ShipList ships(g.entity_manager, stars[where->snum].ships());
         char shipbuf[256];
-        for (auto& s : shiplist) {
+        for (auto ship_handle : ships) {
+          const Ship& s = ship_handle.peek();  // Read-only access
           if (DontDispNum != s.number &&
               !(s.owner != g.player && s.type == ShipType::STYPE_MINE)) {
             if ((s.owner == g.player) || iq) {
@@ -164,8 +167,9 @@ void orbit(const command_t& argv, GameObj& g) {
       /* check to see if you have ships at landed or
          orbiting the planet, if so you can see orbiting enemy ships */
       bool iq = false;
-      Shiplist shiplist{p.ships()};
-      for (auto& s : shiplist) {
+      ShipList ships(g.entity_manager, p.ships());
+      for (auto ship_handle : ships) {
+        const Ship& s = ship_handle.peek();  // Read-only access
         if (s.owner == g.player && shipsight(s)) {
           iq = true; /* you are there to sight, need a crew */
           break;
@@ -174,7 +178,8 @@ void orbit(const command_t& argv, GameObj& g) {
       /* end check */
       if (!DontDispShips) {
         char shipbuf[256];
-        for (auto& s : shiplist) {
+        for (auto ship_handle : ships) {
+          const Ship& s = ship_handle.peek();  // Read-only access
           if (DontDispNum != s.number) {
             if (!landed(s)) {
               if ((s.owner == g.player) || iq) {
@@ -276,7 +281,7 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
   return ss.str();
 }
 
-static void DispShip(const GameObj& g, const Place& where, Ship* ship,
+static void DispShip(const GameObj& g, const Place& where, const Ship* ship,
                      const Race& r, char* string, const Planet& pl) {
   int x;
   int y;

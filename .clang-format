@@ -1,2 +1,128 @@
-BasedOnStyle: Google
+---
+Language: Cpp
+Standard: c++20
 
+# Indentation
+IndentWidth: 2
+UseTab: Never
+TabWidth: 2
+IndentCaseLabels: true
+IndentCaseBlocks: false
+IndentGotoLabels: false
+IndentPPDirectives: None
+IndentExternBlock: NoIndent
+IndentWrappedFunctionNames: false
+NamespaceIndentation: None
+
+# Alignment
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: None
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+AlignEscapedNewlines: Right
+AlignOperands: Align
+AlignTrailingComments: true
+
+# Line Breaking
+ColumnLimit: 80
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Attach
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeColon
+BreakInheritanceList: BeforeColon
+BreakStringLiterals: true
+
+# Spaces
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 2
+SpacesInAngles: Never
+SpacesInCStyleCastParentheses: false
+SpacesInConditionalStatement: false
+SpacesInContainerLiterals: false
+SpacesInLineCommentPrefix:
+  Minimum: 1
+  Maximum: -1
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+# Other formatting
+PointerAlignment: Left
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+ReflowComments: true
+SortIncludes: CaseSensitive
+SortUsingDeclarations: true
+
+# Penalties (for line breaking decisions)
+PenaltyBreakAssignment: 2
+PenaltyBreakBeforeFirstCallParameter: 19
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakOpenParenthesis: 0
+PenaltyBreakString: 1000
+PenaltyBreakTemplateDeclaration: 10
+PenaltyExcessCharacter: 1000000
+PenaltyIndentedWhitespace: 0
+PenaltyReturnTypeOnItsOwnLine: 60
+
+# Braces
+Cpp11BracedListStyle: true
+InsertBraces: false
+RemoveBracesLLVM: false
+
+# Comments
+FixNamespaceComments: true
+CommentPragmas: '^ IWYU pragma:'
+
+# Macros
+ForEachMacros: []
+StatementMacros: []
+TypenameMacros: []
+WhitespaceSensitiveMacros: []
+
+# Line endings
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: false
+SeparateDefinitionBlocks: Leave
+
+# Include ordering
+IncludeBlocks: Preserve
+IncludeCategories:
+  - Regex:           '^".*"'
+    Priority:        1
+  - Regex:           '^<.*\.h>'
+    Priority:        2
+  - Regex:           '^<.*>'
+    Priority:        3
+
+# Requires clauses (C++20)
+RequiresClausePosition: OwnLine
+IndentRequiresClause: true

@@ -159,6 +159,7 @@ target_sources(
          services/gblib-services.cppm
          gblib-sector.cppm
          gblib-ships.cppm
+         gblib-shiplist.cppm
          gblib-shlmisc.cppm
          gblib-shootblast.cppm
          gblib-star.cppm
@@ -185,6 +186,7 @@ target_sources(
           utils/rand.cc
           sectormap.cc
           ships.cc
+          shiplist.cc
           shlmisc.cc
           shootblast.cc
           star.cc
@@ -289,6 +291,10 @@ add_test(NAME GB_scnlib_test COMMAND scnlib_test)
 add_executable(shlmisc_test shlmisc_test.cc)
 target_link_libraries(shlmisc_test PRIVATE gblib SQLite::SQLite3)
 add_test(NAME GB_shlmisc_test COMMAND shlmisc_test)
+
+add_executable(shiplist_test shiplist_test.cc)
+target_link_libraries(shiplist_test PRIVATE gblib dallib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_shiplist_test COMMAND shiplist_test)
 
 add_executable(gblib_test gblib_test.cc)
 target_link_libraries(gblib_test PRIVATE gblib SQLite::SQLite3)

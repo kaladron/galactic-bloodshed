@@ -29,6 +29,7 @@ export import :rand;
 export import :repositories;
 export import :services;
 export import :ships;
+export import :shiplist;
 export import :shlmisc;
 export import :shootblast;
 export import :star;

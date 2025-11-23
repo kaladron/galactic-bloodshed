@@ -34,7 +34,7 @@ int enroll_valid_race() {
   // Create Database and EntityManager for dependency injection
   Database database{PKGSTATEDIR "gb.db"};
   EntityManager entity_manager{database};
-  
+
   auto Playernum = entity_manager.num_races() + 1;
   if ((Playernum == 1) && (race_info.priv_type != P_GOD)) {
     sprintf(race_info.rejection,
@@ -113,7 +113,8 @@ found_planet:
   race->governor[0].toggle.color = false;
   race->governor[0].active = true;
 
-  for (auto i = 0; i <= OTHER; i++) race->conditions[i] = planet.conditions(static_cast<Conditions>(i));
+  for (auto i = 0; i <= OTHER; i++)
+    race->conditions[i] = planet.conditions(static_cast<Conditions>(i));
 
   for (auto i = 1; i <= MAXPLAYERS; i++) {
     /* messages from autoreport, player #1 are decodable */

@@ -8,7 +8,7 @@ import std;
 module commands;
 
 namespace GB::commands {
-void read_messages(const command_t &argv, GameObj &g) {
+void read_messages(const command_t& argv, GameObj& g) {
   // TODO(jeffbailey): ap_t APcount = 0;
   if (argv.size() == 1 || argv[1] == "telegram")
     teleg_read(g);

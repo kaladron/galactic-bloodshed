@@ -29,20 +29,20 @@ static int fd;
 static int isserver = 0;
 
 static int critique_modification();
-static void execute(int argc, const char **argv);
+static void execute(int argc, const char** argv);
 static void fix_up_iq();
 static void initialize();
-static void help(int, const char *[]);
-static void load(int, const char *[]);
+static void help(int, const char*[]);
+static void load(int, const char*[]);
 static void metamorph();
-static int modify(int argc, const char *argv[]);
+static int modify(int argc, const char* argv[]);
 static void normal();
-static void print(int argc, const char *argv[]);
-static void save(int argc, const char *argv[]);
-static void send2(int argc, const char *argv[]);
-static void quit(int argc, const char **argv);
+static void print(int argc, const char* argv[]);
+static void save(int argc, const char* argv[]);
+static void send2(int argc, const char* argv[]);
+static void quit(int argc, const char** argv);
 
-int main(int, char **) {
+int main(int, char**) {
 #ifdef PRIV
   int port;
 
@@ -73,12 +73,12 @@ int main(int, char **) {
       fprintf(stderr, "server: can't open stream socket");
       exit(0);
     }
-    bzero((char *)&serv_addr, sizeof(serv_addr));
+    bzero((char*)&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_addr.sin_port = htons(port);
 
-    if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+    if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
       fprintf(stderr, "server: can't bind local address");
       exit(0);
     }
@@ -93,7 +93,7 @@ int main(int, char **) {
 
     for (;;) {
       clilen = sizeof(cli_addr);
-      fd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+      fd = accept(sockfd, (struct sockaddr*)&cli_addr, &clilen);
       if (fd < 0) fprintf(stderr, "server: accept error");
       if (fork()) {
         dup2(fd, 1);
@@ -247,16 +247,16 @@ static attribute attr[N_ATTRIBUTES] = {
      {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
      0}};
 
-const char *planet_print_name[N_HOME_PLANET_TYPES] = {
+const char* planet_print_name[N_HOME_PLANET_TYPES] = {
     "Earth", "Forest", "Desert", "Water", "Airless", "Iceball", "Jovian"};
 const int planet_cost[N_HOME_PLANET_TYPES] = {75, 50, 50, 50, -25, -25, 600};
 
-const char *race_print_name[N_RACE_TYPES] = {"Normal", "Metamorph"};
+const char* race_print_name[N_RACE_TYPES] = {"Normal", "Metamorph"};
 const int race_cost[N_RACE_TYPES] = {0, 0};
 
-const char *priv_print_name[N_PRIV_TYPES] = {"God", "Guest", "Normal"};
+const char* priv_print_name[N_PRIV_TYPES] = {"God", "Guest", "Normal"};
 
-const char *sector_print_name[N_SECTOR_TYPES] = {
+const char* sector_print_name[N_SECTOR_TYPES] = {
     "Water", "Land", "Mountain", "Gas", "Ice", "Forest", "Desert", "Plated"};
 
 const int blah[N_SECTOR_TYPES] = {-1, 0, 50, 100, 200, 300, 400, 500};
@@ -320,8 +320,8 @@ struct x race_info, cost_info, last;
 
 int npoints = STARTING_POINTS;
 int last_npoints = STARTING_POINTS;
-bool altered = false;     /* true iff race has been altered since last saved */
-bool changed = true;     /* true iff race has been changed since last printed */
+bool altered = false; /* true iff race has been altered since last saved */
+bool changed = true;  /* true iff race has been changed since last printed */
 bool please_quit = false; /* true iff you want to exit ASAP. */
 
 /**************
@@ -437,11 +437,11 @@ static void fix_up_iq() {
  * print out descriptions of the errors; otherwise, error message(s) will be
  * printed to that file.
  */
-int critique_to_file(FILE *f, int rigorous_checking, int is_player_race) {
+int critique_to_file(FILE* f, int rigorous_checking, int is_player_race) {
   int i;
   int nerrors = 0;
 
-#define FPRINTF \
+#define FPRINTF                                                                \
   if (f != nullptr) fprintf
 
   /*
@@ -588,9 +588,8 @@ int critique_to_file(FILE *f, int rigorous_checking, int is_player_race) {
      * Check that sector compats are reasonable. */
     if ((race_info.home_planet_type != H_JOVIAN) &&
         (race_info.n_sector_types == 1)) {
-      FPRINTF(f,
-              "Non-jovian races must be compat with at least one sector "
-              "type besides plated.\n");
+      FPRINTF(f, "Non-jovian races must be compat with at least one sector "
+                 "type besides plated.\n");
       nerrors += 1;
     }
     for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++)
@@ -598,10 +597,9 @@ int critique_to_file(FILE *f, int rigorous_checking, int is_player_race) {
           (race_info.compat[i] == 100.0))
         break;
     if (i == N_SECTOR_TYPES) {
-      FPRINTF(f,
-              "You must have 100%% compat with at least one sector type "
-              "that is common on\n  your home planet type.  (Marked with a "
-              "'*')\n");
+      FPRINTF(f, "You must have 100%% compat with at least one sector type "
+                 "that is common on\n  your home planet type.  (Marked with a "
+                 "'*')\n");
       nerrors += 1;
     }
   }
@@ -658,7 +656,7 @@ static void initialize() {
  * trying to tell you about them here, just run the program and diddle
  * with it to get the idea.
  */
-static void help(int argc, const char *argv[]) {
+static void help(int argc, const char* argv[]) {
   int i;
   int j;
   int helpp;
@@ -838,12 +836,12 @@ static void help(int argc, const char *argv[]) {
 
 /*
  * Return non-zero on failure, zero on success. */
-int load_from_file(FILE *g) {
+int load_from_file(FILE* g) {
   int i;
   char buf[80];
   char from_address[80];
 
-#define FSCANF(file, format, variable) \
+#define FSCANF(file, format, variable)                                         \
   if (EOF == fscanf((file), (format), (variable))) goto premature_end_of_file
 
   do {
@@ -882,9 +880,9 @@ premature_end_of_file:
 /*
  * Return non-zero on failure, zero on success. */
 
-static int load_from_filename(const char *filename) {
+static int load_from_filename(const char* filename) {
   int ret;
-  FILE *f = fopen(filename, "r");
+  FILE* f = fopen(filename, "r");
 
   if (f == nullptr) {
     printf("Unable to open file \"%s\".\n", filename);
@@ -895,7 +893,7 @@ static int load_from_filename(const char *filename) {
   return ret;
 }
 
-static void load(int argc, const char *argv[]) {
+static void load(int argc, const char* argv[]) {
   char c[64];
   int i;
 
@@ -919,10 +917,10 @@ static void load(int argc, const char *argv[]) {
   }
 }
 
-static int modify(int argc, const char *argv[]) {
+static int modify(int argc, const char* argv[]) {
   int i;
   int j;
-  static const char *help_strings[2] = {nullptr, "modify"};
+  static const char* help_strings[2] = {nullptr, "modify"};
   double f;
 
   if (argc < 3) {
@@ -1056,8 +1054,8 @@ static int modify(int argc, const char *argv[]) {
   return -1;
 }
 
-void print_to_file(FILE *f, int verbose) {
-#define FPRINTF \
+void print_to_file(FILE* f, int verbose) {
+#define FPRINTF                                                                \
   if (verbose) fprintf
   int i;
 
@@ -1121,10 +1119,10 @@ void print_to_file(FILE *f, int verbose) {
   for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++) {
     FPRINTF(f, "%13.13s: ", sector_print_name[i]);
     fprintf(f, " %3.0f", race_info.compat[i]);
-    FPRINTF(
-        f, "%%   %c[%4.0f]",
-        (planet_compat_cov[race_info.home_planet_type][i] == 1.0) ? '*' : ' ',
-        cost_info.compat[i]);
+    FPRINTF(f, "%%   %c[%4.0f]",
+            (planet_compat_cov[race_info.home_planet_type][i] == 1.0) ? '*'
+                                                                      : ' ',
+            cost_info.compat[i]);
     FPRINTF(f, (i & 01) ? "\n" : "     ");
   }
 
@@ -1136,8 +1134,8 @@ void print_to_file(FILE *f, int verbose) {
 #undef FPRINTF
 }
 
-static int print_to_filename(const char *filename, int verbose) {
-  FILE *f = fopen(filename, "w");
+static int print_to_filename(const char* filename, int verbose) {
+  FILE* f = fopen(filename, "w");
 
   if (f == nullptr) {
     printf("Unable to open file \"%s\".\n", filename);
@@ -1148,14 +1146,14 @@ static int print_to_filename(const char *filename, int verbose) {
   return 1;
 }
 
-static void print(int argc, const char *argv[]) {
+static void print(int argc, const char* argv[]) {
   if (argc == 1)
     print_to_file(stdout, 1);
   else if (print_to_filename(argv[1], 1))
     printf("Printed race to file \"%s\".\n", argv[1]);
 }
 
-static void save(int argc, const char *argv[]) {
+static void save(int argc, const char* argv[]) {
   if (argc > 1)
     strcpy(race_info.filename, argv[1]);
   else if (!race_info.filename[0])
@@ -1166,8 +1164,8 @@ static void save(int argc, const char *argv[]) {
   }
 }
 
-static void send2(int, const char **) {
-  FILE *f;
+static void send2(int, const char**) {
+  FILE* f;
   char sys[64];
 
   bcopy(&race_info, &last, sizeof(struct x));
@@ -1214,19 +1212,19 @@ static void send2(int, const char **) {
   unlink(race_info.password);
 }
 
-int Dialogue(const char *prompt, ...) {
+int Dialogue(const char* prompt, ...) {
   va_list ap;
 #define INPUTSIZE 512
   char input[INPUTSIZE];
-  char *carg;
+  char* carg;
   int len;
   int i;
   int argc = 0;
   int init = 0;
-  char *argv[16];
+  char* argv[16];
   printf("%s", prompt);
   va_start(ap, prompt);
-  while ((carg = va_arg(ap, char *)) != nullptr) {
+  while ((carg = va_arg(ap, char*)) != nullptr) {
     if (!init) {
       printf(" [%s", carg);
       init = 1;
@@ -1256,7 +1254,7 @@ int Dialogue(const char *prompt, ...) {
   return 0;
 }
 
-static void quit(int, const char **) {
+static void quit(int, const char**) {
   int i;
 
   if (please_quit) { /* This could happen if ^c is hit while here. */
@@ -1282,7 +1280,7 @@ static void quit(int, const char **) {
  * This function merely takes the space-parsed command line and executes
  * one of the commands above.
  */
-static void execute(int argc, const char **argv) {
+static void execute(int argc, const char** argv) {
   int i;
 
 #if 0
@@ -1332,8 +1330,8 @@ static void execute(int argc, const char **argv) {
 void modify_print_loop(int) {
 #define BUFSIZE 512
   char buf[BUFSIZE];
-  char *com;
-  const char *args[4];
+  char* com;
+  const char* args[4];
   int i;
 
   while (!please_quit) {
@@ -1358,10 +1356,12 @@ void modify_print_loop(int) {
     buf[strlen(buf) - 1] = '\0';
 
     for (i = 0; i < 4; i++) {
-      while (*com && (*com == ' ')) *com++ = '\0';
+      while (*com && (*com == ' '))
+        *com++ = '\0';
       if (!*com) break;
       args[i] = com;
-      while (*com && (*com != ' ')) com++;
+      while (*com && (*com != ' '))
+        com++;
     }
     execute(i, args);
   }

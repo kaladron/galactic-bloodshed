@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void order(const command_t &argv, GameObj &g) {
+void order(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 1;
@@ -46,7 +46,7 @@ void order(const command_t &argv, GameObj &g) {
           if (!ship) continue;
         }
         DispOrders(Playernum, Governor, *ship);
-        
+
         // in_list sets nextshipno=0 for #N selectors to signal early exit
         if (nextshipno == 0) break;
       }

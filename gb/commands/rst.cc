@@ -68,11 +68,11 @@ struct RstContext {
 // ============================================================================
 
 class ReportItem {
- protected:
+protected:
   const double x_;
   const double y_;
 
- public:
+public:
   ReportItem(double x, double y) : x_(x), y_(y) {}
   virtual ~ReportItem() = default;
 
@@ -82,8 +82,12 @@ class ReportItem {
   ReportItem(ReportItem&&) = delete;
   ReportItem& operator=(ReportItem&&) = delete;
 
-  double x() const { return x_; }
-  double y() const { return y_; }
+  double x() const {
+    return x_;
+  }
+  double y() const {
+    return y_;
+  }
 
   // Report generation methods
   virtual void report_stock(GameObj&, RstContext&) const {}
@@ -114,10 +118,14 @@ class ReportItem {
   }
 
   // Get next ship in linked list (ships only)
-  virtual shipnum_t next_ship() const { return 0; }
+  virtual shipnum_t next_ship() const {
+    return 0;
+  }
 
   // Get ships docked/landed on this item (ships only)
-  virtual shipnum_t child_ships() const { return 0; }
+  virtual shipnum_t child_ships() const {
+    return 0;
+  }
 
   // Check if we should report this item
   virtual bool should_report(player_t player_num, governor_t governor,
@@ -132,11 +140,13 @@ class ReportItem {
 class ShipReportItem : public ReportItem {
   const Ship* ship_;
 
- public:
+public:
   ShipReportItem(const Ship* ship)
       : ReportItem(ship->xpos, ship->ypos), ship_(ship) {}
 
-  const Ship& ship() const { return *ship_; }
+  const Ship& ship() const {
+    return *ship_;
+  }
 
   void report_stock(GameObj& g, RstContext& ctx) const override;
   void report_status(GameObj& g, RstContext& ctx) const override;
@@ -158,9 +168,13 @@ class ShipReportItem : public ReportItem {
 
   std::optional<starnum_t> get_star_orbit() const override;
 
-  shipnum_t next_ship() const override { return ship_->nextship; }
+  shipnum_t next_ship() const override {
+    return ship_->nextship;
+  }
 
-  shipnum_t child_ships() const override { return ship_->ships; }
+  shipnum_t child_ships() const override {
+    return ship_->ships;
+  }
 
   bool should_report(player_t player_num, governor_t governor,
                      const ReportSet& rep_on) const override;
@@ -170,13 +184,19 @@ class ShipReportItem : public ReportItem {
 class PlanetReportItem : public ReportItem {
   const Planet* planet_;
 
- public:
+public:
   PlanetReportItem(const Planet* planet, double x, double y)
       : ReportItem(x, y), planet_(planet) {}
 
-  starnum_t star() const { return planet_->star_id(); }
-  planetnum_t pnum() const { return planet_->planet_order(); }
-  const Planet& planet() const { return *planet_; }
+  starnum_t star() const {
+    return planet_->star_id();
+  }
+  planetnum_t pnum() const {
+    return planet_->planet_order();
+  }
+  const Planet& planet() const {
+    return *planet_;
+  }
 
   void report_tactical(GameObj& g, RstContext& ctx,
                        const TacticalParams& params) const override;
@@ -440,8 +460,7 @@ void ShipReportItem::report_weapons(GameObj& g, RstContext& ctx) const {
   // Add factory build type indicator if applicable
   std::string class_with_type;
   if (s.type == ShipType::OTYPE_FACTORY) {
-    class_with_type =
-        std::format("{} {}", Shipltrs[s.build_type], ship_class);
+    class_with_type = std::format("{} {}", Shipltrs[s.build_type], ship_class);
   } else {
     class_with_type = ship_class;
   }
@@ -493,8 +512,8 @@ void ShipReportItem::report_factories(GameObj& g, RstContext& ctx) const {
   // Add header row only on first call
   if (ctx.first) {
     table.add_row({"#", "", "Cost", "Tech", "Mass", "Sz", "A", "Crw", "Ful",
-                   "Crg", "Hng", "Dst", "Sp", "Weapons", "Lsr", "CEWs",
-                   "Range", "Dmg"});
+                   "Crg", "Hng", "Dst", "Sp", "Weapons", "Lsr", "CEWs", "Range",
+                   "Dmg"});
     // Format header row with bold
     table[0].format().font_style({tabulate::FontStyle::bold});
 
@@ -828,7 +847,8 @@ void PlanetReportItem::add_tactical_target_row(tabulate::Table& table,
                                                const FiringShipParams&) const {
   const auto& p = *planet_;
   const auto* star = g.entity_manager.peek_star(p.star_id());
-  std::string name_str = star ? star->get_planet_name(p.planet_order()) : "Unknown";
+  std::string name_str =
+      star ? star->get_planet_name(p.planet_order()) : "Unknown";
 
   table.add_row({"", "(planet)", "", name_str, std::format("{:.0f}", dist), "",
                  "", "", "", "", "", ""});
@@ -1188,11 +1208,13 @@ void rst(const command_t& argv, GameObj& g) {
       break;
     case ScopeLevel::LEVEL_PLAN:
       plan_get_report_ships(g, ctx, g.player, g.snum, g.pnum);
-      for (const auto& item : ctx.rd) ship_report(g, ctx, *item, report_types);
+      for (const auto& item : ctx.rd)
+        ship_report(g, ctx, *item, report_types);
       break;
     case ScopeLevel::LEVEL_STAR:
       star_get_report_ships(g, ctx, g.player, g.snum);
-      for (const auto& item : ctx.rd) ship_report(g, ctx, *item, report_types);
+      for (const auto& item : ctx.rd)
+        ship_report(g, ctx, *item, report_types);
       break;
     case ScopeLevel::LEVEL_SHIP:
       if (g.shipno == 0) {

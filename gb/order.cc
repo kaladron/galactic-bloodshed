@@ -10,7 +10,7 @@ import std.compat;
 module gblib;
 
 namespace {
-std::string prin_aimed_at(const Ship &ship) {
+std::string prin_aimed_at(const Ship& ship) {
   if (!std::holds_alternative<AimedAtData>(ship.special)) {
     return "Not aimed";
   }
@@ -22,13 +22,13 @@ std::string prin_aimed_at(const Ship &ship) {
 /*
  * mark wherever the ship is aimed at, as explored by the owning player.
  */
-void mk_expl_aimed_at(GameObj &g, const Ship &s) {
+void mk_expl_aimed_at(GameObj& g, const Ship& s) {
   if (!std::holds_alternative<AimedAtData>(s.special)) {
     g.out << "Ship is not aimed.\n";
     return;
   }
   const auto& aimed_at = std::get<AimedAtData>(s.special);
-  auto &str = stars[aimed_at.snum];
+  auto& str = stars[aimed_at.snum];
 
   auto xf = s.xpos;
   auto yf = s.ypos;
@@ -53,8 +53,8 @@ void mk_expl_aimed_at(GameObj &g, const Ship &s) {
     case ScopeLevel::LEVEL_PLAN: {
       g.out << std::format("Planet {}\n", prin_aimed_at(s));
       auto p = getplanet(aimed_at.snum, aimed_at.pnum);
-      if (auto dist =
-              sqrt(Distsq(xf, yf, str.xpos() + p.xpos(), str.ypos() + p.ypos()));
+      if (auto dist = sqrt(
+              Distsq(xf, yf, str.xpos() + p.xpos(), str.ypos() + p.ypos()));
           dist <= tele_range(s.type, s.tech)) {
         setbit(str.explored(), g.player);
         p.info(g.player - 1).explored = 1;
@@ -676,7 +676,7 @@ void DispOrdersHeader(int Playernum, int Governor) {
          "    #       name       sp orbits     destin     options\n");
 }
 
-void DispOrders(int Playernum, int Governor, const Ship &ship) {
+void DispOrders(int Playernum, int Governor, const Ship& ship) {
   if (ship.owner != Playernum || !authorized(Governor, ship) || !ship.alive)
     return;
 
@@ -796,18 +796,21 @@ void DispOrders(int Playernum, int Governor, const Ship &ship) {
 
   if (ship.type == ShipType::STYPE_MINE) {
     if (std::holds_alternative<TriggerData>(ship.special)) {
-      buffer << std::format("/trigger {}", std::get<TriggerData>(ship.special).radius);
+      buffer << std::format("/trigger {}",
+                            std::get<TriggerData>(ship.special).radius);
     }
   }
   if (ship.type == ShipType::OTYPE_TRANSDEV) {
     if (std::holds_alternative<TransportData>(ship.special)) {
-      buffer << std::format("/target {}", std::get<TransportData>(ship.special).target);
+      buffer << std::format("/target {}",
+                            std::get<TransportData>(ship.special).target);
     }
   }
   if (ship.type == ShipType::STYPE_MIRROR) {
     std::string intensity_str = "0";
     if (std::holds_alternative<AimedAtData>(ship.special)) {
-      intensity_str = std::to_string(std::get<AimedAtData>(ship.special).intensity);
+      intensity_str =
+          std::to_string(std::get<AimedAtData>(ship.special).intensity);
     }
     buffer << std::format("/aim {}/int {}", prin_aimed_at(ship), intensity_str);
   }

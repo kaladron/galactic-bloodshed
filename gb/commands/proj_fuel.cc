@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void proj_fuel(const command_t &argv, GameObj &g) {
+void proj_fuel(const command_t& argv, GameObj& g) {
   int opt_settings;
   bool computing = true;
   segments_t current_segs;

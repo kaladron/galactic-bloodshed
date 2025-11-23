@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include <cassert>
 #include <sqlite3.h>
+#include <cassert>
 
 import dallib;
 import std.compat;
@@ -11,7 +11,7 @@ int main() {
 
   // Create in-memory database and initialize a test table
   Database db(":memory:");
-  
+
   // Create a test table with id and data columns
   const char* create_sql = R"(
     CREATE TABLE test_table (
@@ -19,7 +19,7 @@ int main() {
       data TEXT NOT NULL
     )
   )";
-  
+
   sqlite3_stmt* stmt;
   sqlite3_prepare_v2(db.connection(), create_sql, -1, &stmt, nullptr);
   sqlite3_step(stmt);
@@ -75,7 +75,7 @@ int main() {
 
     // Fill the gap
     store.store("test_table", 4, R"({"id": 4})");
-    
+
     // Now should return 6 (next after max)
     next_id = store.find_next_available_id("test_table");
     assert(next_id == 6);
@@ -108,16 +108,16 @@ int main() {
         PRIMARY KEY (star_id, planet_order)
       )
     )";
-    
+
     sqlite3_prepare_v2(db.connection(), create_multi_sql, -1, &stmt, nullptr);
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);
 
     // Store with composite key
-    std::vector<std::pair<std::string, int>> keys = {
-        {"star_id", 10}, {"planet_order", 3}};
+    std::vector<std::pair<std::string, int>> keys = {{"star_id", 10},
+                                                     {"planet_order", 3}};
     std::string json = R"({"type": "planet", "name": "Earth"})";
-    
+
     bool stored = store.store_multi("multi_key_table", keys, json);
     assert(stored);
     std::println("✓ Can store with composite key");
@@ -131,7 +131,7 @@ int main() {
     // Store another entry with same star but different planet
     keys = {{"star_id", 10}, {"planet_order", 5}};
     stored = store.store_multi("multi_key_table", keys,
-                                R"({"type": "planet", "name": "Mars"})");
+                               R"({"type": "planet", "name": "Mars"})");
     assert(stored);
 
     // Verify we can retrieve both
@@ -156,7 +156,7 @@ int main() {
         data TEXT NOT NULL
       )
     )";
-    
+
     sqlite3_prepare_v2(db.connection(), create_empty_sql, -1, &stmt, nullptr);
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);

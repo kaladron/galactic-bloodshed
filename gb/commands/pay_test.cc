@@ -37,7 +37,7 @@ int main() {
     auto payee_handle = em.get_race(2);
     auto& p = *payer_handle;
     auto& a = *payee_handle;
-    
+
     int amount = 500;
     p.governor[0].money -= amount;
     a.governor[0].money += amount;
@@ -60,7 +60,7 @@ int main() {
     auto payee_handle = em.get_race(2);
     auto& p = *payer_handle;
     auto& a = *payee_handle;
-    
+
     int amount = 5000;
     p.governor[0].money -= amount;
     a.governor[0].money += amount;
@@ -83,7 +83,7 @@ int main() {
     auto payee_handle = em.get_race(2);
     auto& p = *payer_handle;
     auto& a = *payee_handle;
-    
+
     int amount = 1000;
     p.governor[1].money -= amount;  // From governor 1
     a.governor[0].money += amount;  // To leader
@@ -107,7 +107,7 @@ int main() {
       auto payee_handle = em.get_race(2);
       auto& p = *payer_handle;
       auto& a = *payee_handle;
-      
+
       int amount = 100;
       p.governor[0].money -= amount;
       a.governor[0].money += amount;

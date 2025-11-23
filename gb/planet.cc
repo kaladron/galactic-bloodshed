@@ -20,11 +20,11 @@ module gblib;
  * @param agent The player who will receive the revolted sectors.
  * @return The number of sectors that revolted.
  */
-int revolt(Planet &pl, const player_t victim, const player_t agent) {
+int revolt(Planet& pl, const player_t victim, const player_t agent) {
   int revolted_sectors = 0;
 
   auto smap = getsmap(pl);
-  for (auto &s : smap) {
+  for (auto& s : smap) {
     if (s.owner != victim || s.popn == 0) continue;
 
     // Revolt rate is a function of tax rate.
@@ -48,7 +48,7 @@ int revolt(Planet &pl, const player_t victim, const player_t agent) {
   return revolted_sectors;
 }
 
-void moveplanet(const starnum_t starnum, Planet &planet,
+void moveplanet(const starnum_t starnum, Planet& planet,
                 const planetnum_t planetnum) {
   if (planet.popn() || planet.ships()) Stinfo[starnum][planetnum].inhab = 1;
 
@@ -96,7 +96,7 @@ void moveplanet(const starnum_t starnum, Planet &planet,
  * @param to The target coordinates.
  * @return True if the coordinates are adjacent, false otherwise.
  */
-bool adjacent(const Planet &p, const Coordinates from, const Coordinates to) {
+bool adjacent(const Planet& p, const Coordinates from, const Coordinates to) {
   if (std::abs(from.y - to.y) > 1) return false;
   if (std::abs(from.x - to.x) <= 1) return true;
   if (from.x == p.Maxx() - 1 && to.x == 0) return true;

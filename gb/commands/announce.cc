@@ -16,7 +16,7 @@ enum class Communicate {
   UNKNOWN = ' ',
 };
 
-Communicate get_mode(const std::string &mode) {
+Communicate get_mode(const std::string& mode) {
   if (mode == "announce") return Communicate::ANN;
   if (mode == "broadcast" || mode == "'") return Communicate::BROADCAST;
   if (mode == "shout") return Communicate::SHOUT;
@@ -27,7 +27,7 @@ Communicate get_mode(const std::string &mode) {
 }  // namespace
 
 namespace GB::commands {
-void announce(const command_t &argv, GameObj &g) {
+void announce(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 

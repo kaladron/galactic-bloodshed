@@ -12,7 +12,7 @@ import std;
 module gblib;
 
 namespace {
-const char *get_news_file(NewsType type) {
+const char* get_news_file(NewsType type) {
   switch (type) {
     using enum NewsType;
     case DECLARATION:
@@ -45,7 +45,7 @@ void push_telegram(const player_t recipient, const governor_t gov,
   }
   auto now = std::chrono::system_clock::now();
   auto current_time = std::chrono::system_clock::to_time_t(now);
-  auto *current_tm = std::localtime(&current_time);
+  auto* current_tm = std::localtime(&current_time);
 
   telegram_file << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}\n",
                                current_tm->tm_mon + 1, current_tm->tm_mday,
@@ -80,7 +80,7 @@ void purge() {
  */
 void post(std::string msg, NewsType type) {
   // msg is intentionally a copy as we fix it up in here
-  const char *telefl = get_news_file(type);
+  const char* telefl = get_news_file(type);
 
   // look for special symbols
   std::ranges::replace(msg, ';', '\n');
@@ -92,7 +92,7 @@ void post(std::string msg, NewsType type) {
   }
   auto now = std::chrono::system_clock::now();
   auto current_time = std::chrono::system_clock::to_time_t(now);
-  auto *current_tm = std::localtime(&current_time);
+  auto* current_tm = std::localtime(&current_time);
   std::string outbuf = std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
                                    current_tm->tm_mon + 1, current_tm->tm_mday,
                                    current_tm->tm_hour, current_tm->tm_min,
@@ -109,7 +109,7 @@ void post(std::string msg, NewsType type) {
  * \param msg Message they will receive
  */
 void push_telegram_race(const player_t recipient, std::string_view msg) {
-  auto &race = races[recipient - 1];
+  auto& race = races[recipient - 1];
   for (governor_t j = 0; j <= MAXGOVERNORS; j++)
     if (race.governor[j].active) push_telegram(recipient, j, msg);
 }
@@ -123,7 +123,7 @@ void push_telegram_race(const player_t recipient, std::string_view msg) {
  * 254 to denote an autoreport. Then the time send, then the message, then
  * terminated by TELEG_DELIM.
  */
-void teleg_read(GameObj &g) {
+void teleg_read(GameObj& g) {
   std::string telegram_file =
       std::format("{0}.{1}.{2}", TELEGRAMFL, g.player, g.governor);
 
@@ -166,8 +166,8 @@ void teleg_read(GameObj &g) {
  * \description This function reads the news file based on the specified type
  * and game object.
  */
-void news_read(NewsType type, GameObj &g) {
-  const char *telegram_file = get_news_file(type);
+void news_read(NewsType type, GameObj& g) {
+  const char* telegram_file = get_news_file(type);
 
   std::ifstream teleg_read_fd(telegram_file);
   if (!teleg_read_fd.is_open()) {
@@ -175,7 +175,7 @@ void news_read(NewsType type, GameObj &g) {
     return;
   }
 
-  auto &race = races[g.player - 1];
+  auto& race = races[g.player - 1];
   if (race.governor[g.governor].newspos[std::to_underlying(type)] >
       newslength[type]) {
     race.governor[g.governor].newspos[std::to_underlying(type)] = 0;
@@ -199,7 +199,7 @@ void news_read(NewsType type, GameObj &g) {
  *
  * \arg g Game object
  */
-void check_for_telegrams(GameObj &g) {
+void check_for_telegrams(GameObj& g) {
   std::string filename =
       std::format("{}.{}.{}", TELEGRAMFL, g.player, g.governor);
 

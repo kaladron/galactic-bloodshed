@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void give(const command_t &argv, GameObj &g) {
+void give(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 5;
@@ -22,8 +22,8 @@ void give(const command_t &argv, GameObj &g) {
     g.out << "You are not authorized to do that.\n";
     return;
   }
-  auto &alien = races[who - 1];
-  auto &race = races[Playernum - 1];
+  auto& alien = races[who - 1];
+  auto& race = races[Playernum - 1];
   if (alien.Guest && !race.God) {
     g.out << "You can't give this player anything.\n";
     return;

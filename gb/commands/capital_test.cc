@@ -60,7 +60,7 @@ void test_designate_capital() {
   GB::commands::capital(argv, g);
 
   // Verify race Gov_ship was updated through EntityManager
-  const auto *updated_race = entity_manager.peek_race(1);
+  const auto* updated_race = entity_manager.peek_race(1);
   assert(updated_race != nullptr);
   assert(updated_race->Gov_ship == 1);
 
@@ -91,7 +91,7 @@ void test_governor_cannot_designate() {
   // Execute command as governor (not leader)
   GameObj g(entity_manager);
   g.player = 1;
-  g.governor = 1;  // Not the leader
+  g.governor = 1;                        // Not the leader
   g.race = entity_manager.peek_race(1);  // Set race pointer like production
 
   command_t argv{"capital", "1"};

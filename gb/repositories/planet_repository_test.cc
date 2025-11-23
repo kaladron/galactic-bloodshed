@@ -214,7 +214,7 @@ int main() {
   retrieved1->troops() = 10000;
   // star_id already set from original creation
   assert(repo.save(*retrieved1));
-  
+
   auto updated = repo.find_by_location(1, 2);
   assert(updated.has_value());
   assert(updated->planet_order() == 2);

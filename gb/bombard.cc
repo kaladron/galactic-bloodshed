@@ -31,7 +31,7 @@ module gblib;
  * @param r The race to which the ship belongs.
  * @return The number of sectors destroyed during the bombardment.
  */
-int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
+int berserker_bombard(Ship& ship, Planet& planet, const Race& r) {
   int x;
   int y;
   int x2 = -1;
@@ -56,8 +56,8 @@ int berserker_bombard(Ship &ship, Planet &planet, const Race &r) {
 
   /* look for someone to bombard-check for war */
   bool found = false;
-  for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
-    Sector &sect = sector_wrap;
+  for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
+    Sector& sect = sector_wrap;
     if (sect.owner && sect.owner != ship.owner &&
         (sect.condition != SectorType::SEC_WASTED)) {
       if (isset(r.atwar, sect.owner) ||

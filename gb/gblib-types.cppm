@@ -19,7 +19,12 @@ export using population_t = std::int64_t;
 
 export using command_t = std::vector<std::string>;
 
-export enum ScopeLevel { LEVEL_UNIV, LEVEL_STAR, LEVEL_PLAN, LEVEL_SHIP };
+export enum ScopeLevel {
+  LEVEL_UNIV,
+  LEVEL_STAR,
+  LEVEL_PLAN,
+  LEVEL_SHIP
+};
 
 export enum PlanetType {
   EARTH = 0,
@@ -65,7 +70,7 @@ export enum class CommodType {
 };
 export template <>
 struct std::formatter<CommodType> : std::formatter<std::string_view> {
-  auto format(CommodType type, format_context &ctx) const {
+  auto format(CommodType type, format_context& ctx) const {
     switch (type) {
       case CommodType::RESOURCE:
         return formatter<std::string_view>::format("resources", ctx);
@@ -129,7 +134,7 @@ export struct Commod {
 };
 
 export struct Victory {
-  std::weak_ordering operator<=>(const Victory &that) const {
+  std::weak_ordering operator<=>(const Victory& that) const {
     // Ensure that folks who shouldn't count are always ranked last.
     if (no_count && !that.no_count) return std::weak_ordering::greater;
     if (that.no_count && !no_count) return std::weak_ordering::less;

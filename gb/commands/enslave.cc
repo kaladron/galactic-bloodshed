@@ -12,7 +12,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void enslave(const command_t &argv, GameObj &g) {
+void enslave(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   ap_t APcount = 2;
@@ -63,7 +63,7 @@ void enslave(const command_t &argv, GameObj &g) {
     return;
   }
 
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
 
   Shiplist shiplist(p.ships());
   for (auto s2 : shiplist) {
@@ -95,10 +95,9 @@ void enslave(const command_t &argv, GameObj &g) {
 
     /* send telegs to anyone there */
     telegram << std::format("ENSLAVED by {}!!\n", ship_to_string(*s));
-    telegram << std::format(
-        "All material produced here will be\n"
-        "diverted to {} coffers.",
-        race.name);
+    telegram << std::format("All material produced here will be\n"
+                            "diverted to {} coffers.",
+                            race.name);
 
     g.out << "\nEnslavement successful.  All material produced here will\n";
     g.out << std::format("be diverted to {}.\n", race.name);

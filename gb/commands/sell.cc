@@ -8,7 +8,7 @@ import std;
 module commands;
 
 namespace GB::commands {
-void sell(const command_t &argv, GameObj &g) {
+void sell(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   ap_t APcount = 20;
@@ -29,7 +29,7 @@ void sell(const command_t &argv, GameObj &g) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
   if (race.Guest) {
     g.out << "Guest races can't sell anything.\n";
     return;
@@ -121,7 +121,8 @@ void sell(const command_t &argv, GameObj &g) {
   c.planet_from = pnum;
 
   int commodno;
-  while ((commodno = getdeadcommod()) == 0);
+  while ((commodno = getdeadcommod()) == 0)
+    ;
 
   if (commodno == -1) commodno = g.entity_manager.num_commods() + 1;
   g.out << std::format("Lot #{} - {} units of {}.\n", commodno, amount, item);
@@ -129,7 +130,8 @@ void sell(const command_t &argv, GameObj &g) {
       std::format("Lot #{} - {} units of {} for sale by {} [{}].\n", commodno,
                   amount, item, races[Playernum - 1].name, Playernum);
   post(buf, NewsType::TRANSFER);
-  for (player_t i = 1; i <= Num_races; i++) notify_race(i, buf);
+  for (player_t i = 1; i <= Num_races; i++)
+    notify_race(i, buf);
   putcommod(c, commodno);
   putplanet(p, stars[snum], pnum);
   deductAPs(g, APcount, snum);

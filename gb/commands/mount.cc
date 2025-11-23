@@ -8,13 +8,13 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void mount(const command_t &argv, GameObj &g) {
+void mount(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   bool mnt;
   mnt = argv[0] == "mount";
 
-  Ship *ship;
+  Ship* ship;
   shipnum_t shipno;
   shipnum_t nextshipno;
 

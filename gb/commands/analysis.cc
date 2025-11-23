@@ -16,24 +16,28 @@ struct anal_sect {
 };
 
 namespace {
-enum class Mode { top_five, bottom_five };
+enum class Mode {
+  top_five,
+  bottom_five
+};
 
 void insert(Mode mode, std::array<struct anal_sect, CARE> arr, anal_sect in) {
   for (int i = 0; i < CARE; i++)
     if ((mode == Mode::top_five && arr[i].value < in.value) ||
         (mode == Mode::bottom_five &&
          (arr[i].value > in.value || arr[i].value == -1))) {
-      for (int j = CARE - 1; j > i; j--) arr[j] = arr[j - 1];
+      for (int j = CARE - 1; j > i; j--)
+        arr[j] = arr[j - 1];
       arr[i] = in;
       return;
     }
 }
 
-void PrintTop(GameObj &g, const std::array<struct anal_sect, CARE> arr,
-              const std::string &name) {
+void PrintTop(GameObj& g, const std::array<struct anal_sect, CARE> arr,
+              const std::string& name) {
   g.out << std::format("{:>8}:", name);
 
-  for (const auto &as : arr) {
+  for (const auto& as : arr) {
     if (as.value == -1) continue;
     g.out << std::format("{:>5}{}({:>2},{:>2})", as.value, Dessymbols[as.des],
                          as.x, as.y);
@@ -41,7 +45,7 @@ void PrintTop(GameObj &g, const std::array<struct anal_sect, CARE> arr,
   g.out << "\n";
 }
 
-void do_analysis(GameObj &g, player_t ThisPlayer, Mode mode, int sector_type,
+void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
                  starnum_t Starnum, planetnum_t Planetnum) {
   player_t Playernum = g.player;
 
@@ -71,10 +75,11 @@ void do_analysis(GameObj &g, player_t ThisPlayer, Mode mode, int sector_type,
   std::array<int, SectorType::SEC_WASTED + 1> Sect{};
 
   for (int p = 0; p <= Num_races; p++) {
-    for (int i = 0; i <= SectorType::SEC_WASTED; i++) PlaySect[p][i] = 0;
+    for (int i = 0; i <= SectorType::SEC_WASTED; i++)
+      PlaySect[p][i] = 0;
   }
 
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
   auto planet_handle = g.entity_manager.get_planet(Starnum, Planetnum);
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
@@ -88,7 +93,7 @@ void do_analysis(GameObj &g, player_t ThisPlayer, Mode mode, int sector_type,
 
   auto TotalSect = planet.Maxx() * planet.Maxy();
 
-  for (auto smap = getsmap(planet); auto &sect : smap) {
+  for (auto smap = getsmap(planet); auto& sect : smap) {
     auto p = sect.owner;
 
     PlayEff[p] += sect.eff;
@@ -245,7 +250,7 @@ void do_analysis(GameObj &g, player_t ThisPlayer, Mode mode, int sector_type,
 }  // namespace
 
 namespace GB::commands {
-void analysis(const command_t &argv, GameObj &g) {
+void analysis(const command_t& argv, GameObj& g) {
   int sector_type = -1; /* -1 does analysis on all types */
   int do_player = -1;
   auto mode = Mode::top_five;
@@ -254,7 +259,7 @@ void analysis(const command_t &argv, GameObj &g) {
 
   bool skipped_first = false;
 
-  for (const auto &arg : argv) {
+  for (const auto& arg : argv) {
     // Skip the name of the command
     if (!skipped_first) {
       skipped_first = true;

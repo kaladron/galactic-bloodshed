@@ -56,7 +56,8 @@ void initialize_schema(Database& db) {
 )";
 
   char* err_msg = nullptr;
-  int err = sqlite3_exec(db.connection(), tbl_create, nullptr, nullptr, &err_msg);
+  int err =
+      sqlite3_exec(db.connection(), tbl_create, nullptr, nullptr, &err_msg);
   if (err != SQLITE_OK) {
     std::println(stderr, "SQL error: {}", err_msg);
     sqlite3_free(err_msg);

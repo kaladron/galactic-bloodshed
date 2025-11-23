@@ -24,7 +24,7 @@ module gblib;
  * @param segs The number of segments.
  * @param plan_buf The plan buffer.
  */
-void fuel_output(GameObj &g, const double dist, const double fuel,
+void fuel_output(GameObj& g, const double dist, const double fuel,
                  const double grav, const double mass, const segments_t segs,
                  const std::string_view plan_buf) {
   std::string grav_buf =
@@ -71,7 +71,7 @@ void fuel_output(GameObj &g, const double dist, const double fuel,
  * @return A tuple containing a boolean indicating if the trip was resolved
  * successfully and the number of segments taken.
  */
-std::tuple<bool, segments_t> do_trip(const Place &tmpdest, Ship &tmpship,
+std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
                                      const double fuel,
                                      const double gravity_factor, double x_1,
                                      const double y_1) {
@@ -86,8 +86,9 @@ std::tuple<bool, segments_t> do_trip(const Place &tmpdest, Ship &tmpship,
   if (tmpship.whatdest == ScopeLevel::LEVEL_SHIP || tmpship.ships) {
     /* Bring in the other ships.  moveship() uses ships[]. */
     Num_ships = Numships();
-    ships = (Ship **)malloc(sizeof(Ship *) * (Num_ships) + 1);
-    for (shipnum_t i = 1; i <= Num_ships; i++) (void)getship(&ships[i], i);
+    ships = (Ship**)malloc(sizeof(Ship*) * (Num_ships) + 1);
+    for (shipnum_t i = 1; i <= Num_ships; i++)
+      (void)getship(&ships[i], i);
   }
 
   bool trip_resolved = false;
@@ -125,14 +126,16 @@ std::tuple<bool, segments_t> do_trip(const Place &tmpdest, Ship &tmpship,
     if (((tmpship.fuel == fuel_level1) && (!tmpship.hyper_drive.on)) &&
         (trip_resolved == 0)) {
       if (tmpship.whatdest == ScopeLevel::LEVEL_SHIP) {
-        for (shipnum_t i = 1; i <= Num_ships; i++) free(ships[i]);
+        for (shipnum_t i = 1; i <= Num_ships; i++)
+          free(ships[i]);
         free(ships);
       }
       return {false, number_segments};
     }
   }
   if (tmpship.whatdest == ScopeLevel::LEVEL_SHIP || tmpship.ships) {
-    for (shipnum_t i = 1; i <= Num_ships; i++) free(ships[i]);
+    for (shipnum_t i = 1; i <= Num_ships; i++)
+      free(ships[i]);
     free(ships);
   }
   return {true, number_segments};

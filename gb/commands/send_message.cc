@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void send_message(const command_t &argv, GameObj &g) {
+void send_message(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   bool postit = argv[0] == "post";
@@ -37,10 +37,11 @@ void send_message(const command_t &argv, GameObj &g) {
     return;
   }
   if (postit) {
-    const auto &race = races[Playernum - 1];
+    const auto& race = races[Playernum - 1];
     msg = std::format("{} \"{}\" [{},{}]: ", race.name,
                       race.governor[Governor].name, Playernum, Governor);
-    for (j = 1; j < argv.size(); j++) msg += argv[j] + " ";
+    for (j = 1; j < argv.size(); j++)
+      msg += argv[j] + " ";
     msg += "\n";
     post(msg, NewsType::ANNOUNCE);
     return;
@@ -52,7 +53,7 @@ void send_message(const command_t &argv, GameObj &g) {
       g.out << "No such alliance block.\n";
       return;
     }
-    auto &alien = races[who - 1];
+    auto& alien = races[who - 1];
     APcount *= !alien.God;
   } else if (argv[1] == "star") {
     to_star = 1;
@@ -69,7 +70,7 @@ void send_message(const command_t &argv, GameObj &g) {
       g.out << "No such player.\n";
       return;
     }
-    auto &alien = races[who - 1];
+    auto& alien = races[who - 1];
     APcount *= !alien.God;
   }
 
@@ -90,7 +91,7 @@ void send_message(const command_t &argv, GameObj &g) {
       break;
   }
 
-  const auto &race = races[Playernum - 1];
+  const auto& race = races[Playernum - 1];
 
   /* send the message */
   if (to_block)
@@ -112,7 +113,8 @@ void send_message(const command_t &argv, GameObj &g) {
   else
     start = 2;
   /* put the message together */
-  for (j = start; j < argv.size(); j++) msg += argv[j] + " ";
+  for (j = start; j < argv.size(); j++)
+    msg += argv[j] + " ";
   /* post it */
   const auto notice = std::format(
       "{} \"{}\" [{},{}] has sent you a telegram. Use `read' to read it.\n",
@@ -148,7 +150,7 @@ void send_message(const command_t &argv, GameObj &g) {
       notify_race(who, notice);
     }
 
-    auto &alien = races[who - 1];
+    auto& alien = races[who - 1];
     /* translation modifier increases */
     alien.translate[Playernum - 1] =
         std::min(alien.translate[Playernum - 1] + 2, 100);

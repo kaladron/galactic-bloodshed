@@ -11,12 +11,12 @@ module commands;
 
 namespace GB::commands {
 /*! Planet vs ship */
-void defend(const command_t &argv, GameObj &g) {
+void defend(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 1;
   int sh;
-  Ship *ship;
+  Ship* ship;
   Ship dummy;
   int strength;
   int retal;
@@ -121,7 +121,7 @@ void defend(const command_t &argv, GameObj &g) {
                          p.info(Playernum - 1).destruct);
     return;
   }
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
 
   char long_buf[1024], short_buf[256];
   damage = shoot_planet_to_ship(race, *to, strength, long_buf, short_buf);

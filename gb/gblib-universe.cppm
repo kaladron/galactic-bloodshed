@@ -10,8 +10,7 @@ import std;
 // This was previously called "stardata" but that name was confusing
 // as it contains universe-wide data, not star-specific data
 export struct universe_struct {
-  int id{
-      0};  // Universe ID for database persistence (always 1 for singleton)
+  int id{0};  // Universe ID for database persistence (always 1 for singleton)
   unsigned short numstars{0}; /* Total # of stars in universe */
   unsigned short ships{0};    /* Head of universe-wide ship list */
   ap_t AP[MAXPLAYERS]{};      /* Action points for each player */
@@ -27,15 +26,23 @@ export struct universe_struct {
 export class Universe {
   universe_struct* data;
 
- public:
+public:
   explicit Universe(universe_struct& s) : data(&s) {}
 
   // Basic accessors
-  unsigned short numstars() const { return data->numstars; }
-  void set_numstars(unsigned short value) { data->numstars = value; }
+  unsigned short numstars() const {
+    return data->numstars;
+  }
+  void set_numstars(unsigned short value) {
+    data->numstars = value;
+  }
 
-  unsigned short ships() const { return data->ships; }
-  void set_ships(unsigned short value) { data->ships = value; }
+  unsigned short ships() const {
+    return data->ships;
+  }
+  void set_ships(unsigned short value) {
+    data->ships = value;
+  }
 
   // Action Point (AP) methods
   ap_t get_AP(player_t p) const {
@@ -50,8 +57,8 @@ export class Universe {
 
   void deduct_AP(player_t p, ap_t amount) {
     if (p < 1 || p > MAXPLAYERS) return;
-    data->AP[p - 1] = (data->AP[p - 1] > amount) ? (data->AP[p - 1] - amount)
-                                                  : 0;
+    data->AP[p - 1] =
+        (data->AP[p - 1] > amount) ? (data->AP[p - 1] - amount) : 0;
   }
 
   void add_AP(player_t p, ap_t amount) {
@@ -101,8 +108,16 @@ export class Universe {
   }
 
   // Direct access to underlying struct (for migration compatibility)
-  universe_struct* operator->() { return data; }
-  const universe_struct* operator->() const { return data; }
-  universe_struct& operator*() { return *data; }
-  const universe_struct& operator*() const { return *data; }
+  universe_struct* operator->() {
+    return data;
+  }
+  const universe_struct* operator->() const {
+    return data;
+  }
+  universe_struct& operator*() {
+    return *data;
+  }
+  const universe_struct& operator*() const {
+    return *data;
+  }
 };

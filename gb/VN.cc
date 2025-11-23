@@ -15,7 +15,7 @@ import std.compat;
 module gblib;
 
 namespace {
-void order_berserker(Ship &ship) {
+void order_berserker(Ship& ship) {
   /* give berserkers a mission - send to planet of offending player and bombard
    * it */
   ship.bombard = 1;
@@ -35,7 +35,7 @@ void order_berserker(Ship &ship) {
   ship.special = mind;
 }
 
-void order_VN(Ship &ship) {
+void order_VN(Ship& ship) {
   int min = 0;
   int min2 = 0;
 
@@ -80,11 +80,12 @@ void order_VN(Ship &ship) {
 }  // namespace
 
 /*  do_VN() -- called by doship() */
-void do_VN(Ship &ship) {
+void do_VN(Ship& ship) {
   if (!landed(ship)) {
     // Doing other things
-    if (!std::holds_alternative<MindData>(ship.special) || 
-        !std::get<MindData>(ship.special).busy) return;
+    if (!std::holds_alternative<MindData>(ship.special) ||
+        !std::get<MindData>(ship.special).busy)
+      return;
 
     // we were just built & launched
     if (ship.type == ShipType::OTYPE_BERS)
@@ -97,7 +98,7 @@ void do_VN(Ship &ship) {
   Stinfo[ship.storbits][ship.pnumorbits].inhab = 1;
 
   /* launch if no assignment */
-  if (!std::holds_alternative<MindData>(ship.special) || 
+  if (!std::holds_alternative<MindData>(ship.special) ||
       !std::get<MindData>(ship.special).busy) {
     if (ship.fuel >= (double)ship.max_fuel) {
       ship.xpos = stars[ship.storbits].xpos() +
@@ -117,13 +118,14 @@ void do_VN(Ship &ship) {
   /* steal resources from other players */
   /* permute list of people to steal from */
   std::array<int, MAXPLAYERS + 1> nums;
-  for (int i = 1; i <= Num_races; i++) nums[i] = i;
+  for (int i = 1; i <= Num_races; i++)
+    nums[i] = i;
   for (int i = 1; i <= Num_races; i++) {
     int f = int_rand(1, Num_races);
     std::swap(nums[i], nums[f]);
   }
 
-  auto &p = planets[ship.storbits][ship.pnumorbits];
+  auto& p = planets[ship.storbits][ship.pnumorbits];
 
   // Loop through permuted vector until someone has resources on
   // this planet to steal
@@ -160,7 +162,7 @@ void do_VN(Ship &ship) {
 }
 
 /*  planet_doVN() -- called by doplanet() */
-void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
+void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap) {
   int j;
   int oldres;
   int xa;
@@ -168,19 +170,20 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
   int prod;
 
   if (landed(ship)) {
-    if (ship.type == ShipType::OTYPE_VN && 
-        std::holds_alternative<MindData>(ship.special) && 
+    if (ship.type == ShipType::OTYPE_VN &&
+        std::holds_alternative<MindData>(ship.special) &&
         std::get<MindData>(ship.special).busy) {
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */
-      auto &s = smap.get(ship.land_x, ship.land_y);
+      auto& s = smap.get(ship.land_x, ship.land_y);
       if (!(oldres = s.resource)) {
         /* move to another sector */
         xa = int_rand(-1, 1);
         ship.land_x = mod(ship.land_x + xa, planet.Maxx());
-        ya = (ship.land_y == 0)
-                 ? 1
-                 : ((ship.land_y == (planet.Maxy() - 1)) ? -1 : int_rand(-1, 1));
+        ya =
+            (ship.land_y == 0)
+                ? 1
+                : ((ship.land_y == (planet.Maxy() - 1)) ? -1 : int_rand(-1, 1));
         ship.land_y += ya;
       } else {
         /* mine the sector */
@@ -198,7 +201,7 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
                                ? ShipType::OTYPE_BERS
                                : ShipType::OTYPE_VN;
       if (ship.resource >= Shipdata[shipbuild][ABIL_COST]) {
-        Ship *s2;
+        Ship* s2;
         int n;
         int numVNs;
         /* construct as many VNs as possible */
@@ -207,10 +210,10 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
           use_resource(ship, Shipdata[shipbuild][ABIL_COST]);
           /* must change size of ships pointer */
           ++Num_ships;
-          ships = (Ship **)realloc(ships, (Num_ships + 1) * sizeof(Ship *));
-          ships[Num_ships] = (Ship *)malloc(sizeof(Ship));
+          ships = (Ship**)realloc(ships, (Num_ships + 1) * sizeof(Ship*));
+          ships[Num_ships] = (Ship*)malloc(sizeof(Ship));
           s2 = ships[Num_ships];
-          bzero((char *)s2, sizeof(Ship));
+          bzero((char*)s2, sizeof(Ship));
           s2->nextship = planet.ships();
           planet.ships() = Num_ships;
           s2->number = Num_ships;
@@ -244,8 +247,9 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
           s2->alive = 1;
           if (shipbuild == ShipType::OTYPE_BERS) {
             /* target = person killed the most VN's */
-            auto ship_mind = std::holds_alternative<MindData>(ship.special) ? 
-                             std::get<MindData>(ship.special) : MindData{};
+            auto ship_mind = std::holds_alternative<MindData>(ship.special)
+                                 ? std::get<MindData>(ship.special)
+                                 : MindData{};
             s2->special = MindData{.progenitor = ship_mind.progenitor,
                                    .target = VN_brain.Most_mad,
                                    .generation = ship_mind.generation,
@@ -282,7 +286,8 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
             s2->tech = ship.tech + 20.0;
             n = int_rand(3, std::min(10, SHIP_NAMESIZE)); /* for name */
             s2->name[n] = '\0';
-            while (n--) s2->name[n] = (random() & 01) + '0';
+            while (n--)
+              s2->name[n] = (random() & 01) + '0';
             s2->owner = 1;
             s2->governor = 0;
             s2->active = 1;
@@ -312,7 +317,7 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
         }
       }
     } else { /* orbiting a planet */
-      if (std::holds_alternative<MindData>(ship.special) && 
+      if (std::holds_alternative<MindData>(ship.special) &&
           std::get<MindData>(ship.special).busy) {
         if (ship.whatdest == ScopeLevel::LEVEL_PLAN &&
             ship.deststar == ship.storbits &&
@@ -323,12 +328,11 @@ void planet_doVN(Ship &ship, Planet &planet, SectorMap &smap) {
               mind.busy = 0;
               ship.special = mind;
             }
-          }
-          else {
+          } else {
             /* find a place on the planet to land */
             bool found = false;
-            for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
-              Sector &sect = sector_wrap;
+            for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
+              Sector& sect = sector_wrap;
               if (sect.resource == 0) continue;
               found = true;
               ship.docked = 1;

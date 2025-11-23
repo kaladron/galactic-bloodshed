@@ -9,92 +9,108 @@ module gblib;
 // Essentialy everything in this file can move into a Ship class.
 
 /* can takeoff & land, is mobile, etc. */
-unsigned short speed_rating(const Ship &s) { return s.max_speed; }
+unsigned short speed_rating(const Ship& s) {
+  return s.max_speed;
+}
 
 /* has an on/off switch */
-bool has_switch(const Ship &s) { return Shipdata[s.type][ABIL_HASSWITCH]; }
+bool has_switch(const Ship& s) {
+  return Shipdata[s.type][ABIL_HASSWITCH];
+}
 
 /* can bombard planets */
-bool can_bombard(const Ship &s) {
+bool can_bombard(const Ship& s) {
   return Shipdata[s.type][ABIL_GUNS] && (s.type != ShipType::STYPE_MINE);
 }
 
 /* can navigate */
-bool can_navigate(const Ship &s) {
+bool can_navigate(const Ship& s) {
   return Shipdata[s.type][ABIL_SPEED] > 0 && s.type != ShipType::OTYPE_TERRA &&
          s.type != ShipType::OTYPE_VN;
 }
 
 /* can aim at things. */
-bool can_aim(const Ship &s) {
+bool can_aim(const Ship& s) {
   return s.type >= ShipType::STYPE_MIRROR && s.type <= ShipType::OTYPE_TRACT;
 }
 
 /* macros to get ship stats */
-unsigned long armor(const Ship &s) {
+unsigned long armor(const Ship& s) {
   return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_ARMOR]
                                              : s.armor * (100 - s.damage) / 100;
 }
 
-long guns(const Ship &s) {
+long guns(const Ship& s) {
   return (s.guns == GTYPE_NONE) ? 0
                                 : (s.guns == PRIMARY ? s.primary : s.secondary);
 }
 
-population_t max_crew(const Ship &s) {
+population_t max_crew(const Ship& s) {
   return (s.type == ShipType::OTYPE_FACTORY)
              ? Shipdata[s.type][ABIL_MAXCREW] - s.troops
              : s.max_crew - s.troops;
 }
 
-population_t max_mil(const Ship &s) {
+population_t max_mil(const Ship& s) {
   return (s.type == ShipType::OTYPE_FACTORY)
              ? Shipdata[s.type][ABIL_MAXCREW] - s.popn
              : s.max_crew - s.popn;
 }
 
-long max_resource(const Ship &s) {
+long max_resource(const Ship& s) {
   return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_CARGO]
                                              : s.max_resource;
 }
-int max_crystals(const Ship &) { return MAX_CRYSTALS; }
+int max_crystals(const Ship&) {
+  return MAX_CRYSTALS;
+}
 
-long max_fuel(const Ship &s) {
+long max_fuel(const Ship& s) {
   return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_FUELCAP]
                                              : s.max_fuel;
 }
 
-long max_destruct(const Ship &s) {
+long max_destruct(const Ship& s) {
   return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_DESTCAP]
                                              : s.max_destruct;
 }
 
-long max_speed(const Ship &s) {
+long max_speed(const Ship& s) {
   return (s.type == ShipType::OTYPE_FACTORY) ? Shipdata[s.type][ABIL_SPEED]
                                              : s.max_speed;
 }
 
-long shipcost(const Ship &s) {
+long shipcost(const Ship& s) {
   return (s.type == ShipType::OTYPE_FACTORY)
              ? 2L * s.build_cost * s.on + Shipdata[s.type][ABIL_COST]
              : s.build_cost;
 }
 
-double mass(const Ship &s) { return s.mass; }
+double mass(const Ship& s) {
+  return s.mass;
+}
 
-long shipsight(const Ship &s) {
+long shipsight(const Ship& s) {
   return (s.type == ShipType::OTYPE_PROBE) || s.popn;
 }
 
-long retaliate(const Ship &s) { return s.retaliate; }
+long retaliate(const Ship& s) {
+  return s.retaliate;
+}
 
-int size(const Ship &s) { return s.size; }
+int size(const Ship& s) {
+  return s.size;
+}
 
-int shipbody(const Ship &s) { return s.size - s.max_hanger; }
+int shipbody(const Ship& s) {
+  return s.size - s.max_hanger;
+}
 
-long hanger(const Ship &s) { return s.max_hanger - s.hanger; }
+long hanger(const Ship& s) {
+  return s.max_hanger - s.hanger;
+}
 
-long repair(const Ship &s) {
+long repair(const Ship& s) {
   return (s.type == ShipType::OTYPE_FACTORY) ? s.on : max_crew(s);
 }
 
@@ -108,7 +124,7 @@ Shiplist::Iterator::Iterator(shipnum_t a) {
   }
 }
 
-Shiplist::Iterator &Shiplist::Iterator::operator++() {
+Shiplist::Iterator& Shiplist::Iterator::operator++() {
   auto tmpship = getship(elem.nextship);
   if (tmpship) {
     elem = *tmpship;
@@ -119,7 +135,7 @@ Shiplist::Iterator &Shiplist::Iterator::operator++() {
   return *this;
 }
 
-int getdefense(const Ship &ship) {
+int getdefense(const Ship& ship) {
   if (landed(ship)) {
     const auto p = getplanet(ship.storbits, ship.pnumorbits);
     const auto sect = getsector(p, ship.land_x, ship.land_y);
@@ -129,13 +145,15 @@ int getdefense(const Ship &ship) {
   return 0;
 }
 
-bool laser_on(const Ship &ship) { return (ship.laser && ship.fire_laser); }
+bool laser_on(const Ship& ship) {
+  return (ship.laser && ship.fire_laser);
+}
 
-bool landed(const Ship &ship) {
+bool landed(const Ship& ship) {
   return (ship.whatdest == ScopeLevel::LEVEL_PLAN && ship.docked);
 }
 
-void capture_stuff(const Ship &ship, GameObj &g) {
+void capture_stuff(const Ship& ship, GameObj& g) {
   Shiplist shiplist(ship.ships);
   for (auto s : shiplist) {
     capture_stuff(s, g);  /* recursive call */
@@ -146,19 +164,19 @@ void capture_stuff(const Ship &ship, GameObj &g) {
   }
 }
 
-std::string ship_to_string(const Ship &s) {
+std::string ship_to_string(const Ship& s) {
   return std::format("{0}{1} {2} [{3}]", Shipltrs[s.type], s.number, s.name,
                      s.owner);
 }
 
-double getmass(const Ship &s) {
+double getmass(const Ship& s) {
   return (1.0 + MASS_ARMOR * s.armor + MASS_SIZE * (s.size - s.max_hanger) +
           MASS_HANGER * s.max_hanger +
           MASS_GUNS * s.primary * static_cast<int>(s.primtype) +
           MASS_GUNS * s.secondary * static_cast<int>(s.sectype));
 }
 
-unsigned int ship_size(const Ship &s) {
+unsigned int ship_size(const Ship& s) {
   const double size = 1.0 + SIZE_GUNS * s.primary + SIZE_GUNS * s.secondary +
                       SIZE_CREW * s.max_crew + SIZE_RESOURCE * s.max_resource +
                       SIZE_FUEL * s.max_fuel + SIZE_DESTRUCT * s.max_destruct +
@@ -166,7 +184,7 @@ unsigned int ship_size(const Ship &s) {
   return (std::floor(size));
 }
 
-double cost(const Ship &s) {
+double cost(const Ship& s) {
   /* compute how much it costs to build this ship */
   double factor = 0.0;
   factor += (double)Shipdata[s.build_type][ABIL_COST];
@@ -204,7 +222,7 @@ namespace {
  * @param value An integer value representing the value.
  * @param base An integer value representing the base.
  */
-void system_cost(double *advantage, double *disadvantage, int value, int base) {
+void system_cost(double* advantage, double* disadvantage, int value, int base) {
   const double factor = (((double)value + 1.0) / (base + 1.0)) - 1.0;
   if (factor >= 0.0)
     *advantage += factor;
@@ -215,7 +233,7 @@ void system_cost(double *advantage, double *disadvantage, int value, int base) {
 /* this routine will do landing, launching, loading, unloading, etc
         for merchant ships. The ship is within landing distance of
         the target Planet */
-static int do_merchant(Ship &s, Planet &p, std::stringstream &telegram) {
+static int do_merchant(Ship& s, Planet& p, std::stringstream& telegram) {
   int i = s.owner - 1;
   int j = s.merchant - 1; /* try to speed things up a bit */
 
@@ -353,14 +371,14 @@ static int do_merchant(Ship &s, Planet &p, std::stringstream &telegram) {
  * @param s The Ship object for which the complexity is calculated.
  * @return The complexity value of the ship.
  */
-double complexity(const Ship &s) {
+double complexity(const Ship& s) {
   double advantage = 0;
   double disadvantage = 0;
 
   system_cost(&advantage, &disadvantage, s.primary,
               Shipdata[s.build_type][ABIL_GUNS]);
-  system_cost(
-      &advantage, &disadvantage, s.secondary, Shipdata[s.build_type][ABIL_GUNS]
+  system_cost(&advantage, &disadvantage, s.secondary,
+              Shipdata[s.build_type][ABIL_GUNS]
 
   );
   system_cost(&advantage, &disadvantage, s.max_crew,
@@ -390,7 +408,7 @@ double complexity(const Ship &s) {
   return (factor * (double)Shipdata[s.build_type][ABIL_TECH]);
 }
 
-bool testship(const Ship &s, GameObj &g) {
+bool testship(const Ship& s, GameObj& g) {
   const player_t playernum = g.player;
   const governor_t governor = g.governor;
   if (!s.alive) {
@@ -412,7 +430,7 @@ bool testship(const Ship &s, GameObj &g) {
   return false;
 }
 
-void kill_ship(player_t Playernum, Ship *ship) {
+void kill_ship(player_t Playernum, Ship* ship) {
   if (std::holds_alternative<MindData>(ship->special)) {
     auto mind = std::get<MindData>(ship->special);
     mind.who_killed = Playernum;
@@ -424,11 +442,11 @@ void kill_ship(player_t Playernum, Ship *ship) {
   if (ship->type != ShipType::STYPE_POD &&
       ship->type != ShipType::OTYPE_FACTORY) {
     /* pods don't do things to morale, ditto for factories */
-    auto &victim = races[ship->owner - 1];
+    auto& victim = races[ship->owner - 1];
     if (victim.Gov_ship == ship->number) victim.Gov_ship = 0;
     if (!victim.God && Playernum != ship->owner &&
         ship->type != ShipType::OTYPE_VN) {
-      auto &killer = races[Playernum - 1];
+      auto& killer = races[Playernum - 1];
       adjust_morale(killer, victim, (int)ship->build_cost);
       putrace(killer);
     } else if (ship->owner == Playernum && !ship->docked && max_crew(*ship)) {
@@ -497,7 +515,7 @@ void kill_ship(player_t Playernum, Ship *ship) {
   }
 }
 
-std::string dispshiploc_brief(const Ship &ship) {
+std::string dispshiploc_brief(const Ship& ship) {
   switch (ship.whatorbits) {
     case ScopeLevel::LEVEL_STAR:
       return std::format("/{0:4.4s}", stars[ship.storbits].get_name());
@@ -511,7 +529,7 @@ std::string dispshiploc_brief(const Ship &ship) {
   }
 }
 
-std::string dispshiploc(const Ship &ship) {
+std::string dispshiploc(const Ship& ship) {
   switch (ship.whatorbits) {
     case ScopeLevel::LEVEL_STAR:
       return std::format("/{0}", stars[ship.storbits].get_name());
@@ -526,7 +544,7 @@ std::string dispshiploc(const Ship &ship) {
 }
 
 /// Determine whether the ship crashed or not.
-std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept {
+std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept {
   // Crash from insufficient fuel.
   if (s.fuel < fuel) return {true, 0};
 
@@ -537,16 +555,16 @@ std::tuple<bool, int> crash(const Ship &s, const double fuel) noexcept {
   return {false, 0};
 }
 
-int docked(const Ship &s) {
+int docked(const Ship& s) {
   return s.docked && s.whatdest == ScopeLevel::LEVEL_SHIP;
 }
 
-int overloaded(const Ship &s) {
+int overloaded(const Ship& s) {
   return (s.resource > max_resource(s)) || (s.fuel > max_fuel(s)) ||
          (s.popn + s.troops > s.max_crew) || (s.destruct > max_destruct(s));
 }
 
-std::string prin_ship_orbits(const Ship &s) {
+std::string prin_ship_orbits(const Ship& s) {
   switch (s.whatorbits) {
     case ScopeLevel::LEVEL_UNIV:
       return std::format("/({:0.0},{:1.0})", s.xpos, s.ypos);
@@ -564,12 +582,12 @@ std::string prin_ship_orbits(const Ship &s) {
   }
 }
 
-std::string prin_ship_dest(const Ship &ship) {
+std::string prin_ship_dest(const Ship& ship) {
   Place dest{ship.whatdest, ship.deststar, ship.destpnum, ship.destshipno};
   return dest.to_string();
 }
 
-void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
+void moveship(Ship& s, int mode, int send_messages, int checking_fuel) {
   double stardist;
   double movedist;
   double truedist;
@@ -585,7 +603,7 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
   ScopeLevel destlevel;
   int deststar = 0;
   int destpnum = 0;
-  Ship *dsh;
+  Ship* dsh;
 
   if (s.hyper_drive.has && s.hyper_drive.on) { /* do a hyperspace jump */
     if (!mode) return; /* we're not ready to jump until the update */
@@ -665,8 +683,8 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
       s.navigate.turns--;
       if (!s.navigate.turns) s.navigate.on = 0;
       /* check here for orbit breaking as well. Maarten */
-      auto &ost = stars[s.storbits];
-      const auto &opl = planets[s.storbits][s.pnumorbits];
+      auto& ost = stars[s.storbits];
+      const auto& opl = planets[s.storbits][s.pnumorbits];
       if (s.whatorbits == ScopeLevel::LEVEL_PLAN) {
         dist = std::sqrt(Distsq(s.xpos, s.ypos, ost.xpos() + opl->xpos(),
                                 ost.ypos() + opl->ypos()));
@@ -733,10 +751,10 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
         if (std::sqrt(Distsq(s.xpos, s.ypos, xdest, ydest)) <= DIST_TO_LAND)
           destlevel = ScopeLevel::LEVEL_UNIV;
       }
-      auto &dst = stars[deststar];
-      auto &ost = stars[s.storbits];
-      const auto &dpl = planets[deststar][destpnum];
-      const auto &opl = planets[s.storbits][s.pnumorbits];
+      auto& dst = stars[deststar];
+      auto& ost = stars[s.storbits];
+      const auto& dpl = planets[deststar][destpnum];
+      const auto& opl = planets[s.storbits][s.pnumorbits];
       truedist = movedist = std::sqrt(Distsq(s.xpos, s.ypos, xdest, ydest));
       /* Save some unneccesary calculation and domain errors for atan2
             Maarten */
@@ -877,14 +895,14 @@ void moveship(Ship &s, int mode, int send_messages, int checking_fuel) {
 /* deliver an "out of fuel" message.  Used by a number of ship-updating
  *  code segments; so that code isn't duplicated.
  */
-void msg_OOF(const Ship &s) {
+void msg_OOF(const Ship& s) {
   std::string telegram = std::format("{} is out of fuel at {}.",
                                      ship_to_string(s), prin_ship_orbits(s));
   push_telegram(s.owner, s.governor, telegram);
 }
 
 /* followable: returns 1 iff s1 can follow s2 */
-bool followable(const Ship &s1, Ship &s2) {
+bool followable(const Ship& s1, Ship& s2) {
   if (!s2.alive || !s1.active || s2.whatorbits == ScopeLevel::LEVEL_SHIP)
     return true;
 
@@ -893,7 +911,7 @@ bool followable(const Ship &s1, Ship &s2) {
 
   double range = 4.0 * logscale((int)(s1.tech + 1.0)) * SYSTEMSIZE;
 
-  auto &r = races[s2.owner - 1];
+  auto& r = races[s2.owner - 1];
   auto allied = r.allied;
   /* You can follow your own ships, your allies' ships, or nearby ships */
   return (s1.owner == s2.owner) || (isset(allied, s1.owner)) ||

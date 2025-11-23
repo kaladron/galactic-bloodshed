@@ -12,7 +12,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void repair(const command_t &argv, GameObj &g) {
+void repair(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   int hix;
   int lowy;
@@ -68,7 +68,7 @@ void repair(const command_t &argv, GameObj &g) {
   for (; lowy <= hiy; lowy++) {
     for (int lowx = x2; lowx <= hix; lowx++) {
       if (p.info(Playernum - 1).resource >= SECTOR_REPAIR_COST) {
-        auto &s = smap.get(lowx, lowy);
+        auto& s = smap.get(lowx, lowy);
         if (s.condition == SectorType::SEC_WASTED &&
             (s.owner == Playernum || !s.owner)) {
           s.condition = s.type;

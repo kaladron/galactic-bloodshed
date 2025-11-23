@@ -12,10 +12,10 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void scrap(const command_t &argv, GameObj &g) {
+void scrap(const command_t& argv, GameObj& g) {
   ap_t APcount = 1;
   Sector sect;
-  Ship *s;
+  Ship* s;
   shipnum_t shipno;
   shipnum_t nextshipno;
   int scrapval = 0;
@@ -57,7 +57,8 @@ void scrap(const command_t &argv, GameObj &g) {
         }
         notify(g.player, g.governor,
                std::format("WARNING: This will release {} toxin points back "
-                           "into the atmosphere!!\n", toxin_amount));
+                           "into the atmosphere!!\n",
+                           toxin_amount));
       }
       if (!s->docked) {
         notify(
@@ -192,7 +193,7 @@ void scrap(const command_t &argv, GameObj &g) {
       else
         deductAPs(g, APcount, s->storbits);
 
-      auto &race = races[g.player - 1];
+      auto& race = races[g.player - 1];
 
       // TODO(jeffbailey): kill_ship gets and saves the ship, which looks like
       // it'll be overwritten maybe here?

@@ -11,7 +11,7 @@ module commands;
 
 namespace GB::commands {
 /* upgrade ship characteristics */
-void upgrade(const command_t &argv, GameObj &g) {
+void upgrade(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused ap_t APcount = 1;
@@ -42,7 +42,7 @@ void upgrade(const command_t &argv, GameObj &g) {
     return;
   }
 
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
   auto ship = *dirship;
 
   if (argv.size() == 3)
@@ -107,8 +107,7 @@ void upgrade(const command_t &argv, GameObj &g) {
         g.out << "No such caliber.\n";
         return;
       }
-      ship.primtype =
-          MIN(shipdata_primary(dirship->build_type), ship.primtype);
+      ship.primtype = MIN(shipdata_primary(dirship->build_type), ship.primtype);
     } else {
       g.out << "No such gun characteristic.\n";
       return;
@@ -133,8 +132,7 @@ void upgrade(const command_t &argv, GameObj &g) {
         g.out << "No such caliber.\n";
         return;
       }
-      ship.sectype =
-          MIN(shipdata_secondary(dirship->build_type), ship.sectype);
+      ship.sectype = MIN(shipdata_secondary(dirship->build_type), ship.sectype);
     } else {
       g.out << "No such gun characteristic.\n";
       return;

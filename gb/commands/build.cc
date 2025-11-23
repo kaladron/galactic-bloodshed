@@ -10,16 +10,16 @@ import std.compat;
 module commands;
 
 namespace {
-void finish_build_plan(const Sector &sector, int x, int y, const Planet &planet,
+void finish_build_plan(const Sector& sector, int x, int y, const Planet& planet,
                        starnum_t snum, planetnum_t pnum) {
   putsector(sector, planet, x, y);
   putplanet(planet, stars[snum], pnum);
 }
 
-void finish_build_ship(const Sector &sector, int x, int y, const Planet &planet,
+void finish_build_ship(const Sector& sector, int x, int y, const Planet& planet,
                        starnum_t snum, planetnum_t pnum, bool outside,
                        ScopeLevel build_level,
-                       const std::optional<Ship> &builder) {
+                       const std::optional<Ship>& builder) {
   if (outside) switch (build_level) {
       case ScopeLevel::LEVEL_PLAN:
         putplanet(planet, stars[snum], pnum);
@@ -41,7 +41,7 @@ void finish_build_ship(const Sector &sector, int x, int y, const Planet &planet,
 }  // namespace
 
 namespace GB::commands {
-void build(const command_t &argv, GameObj &g) {
+void build(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused ap_t APcount = 1;
@@ -61,7 +61,7 @@ void build(const command_t &argv, GameObj &g) {
   double load_fuel;
   double tech;
 
-  FILE *fd;
+  FILE* fd;
   Sector sector;
   std::optional<Ship> builder;
   Ship newship;
@@ -76,7 +76,7 @@ void build(const command_t &argv, GameObj &g) {
           "{:>2} {:>4} {:>4}\n",
           "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
           "fuel", "crew", "sp", "tech", "cost");
-      const auto &race = *g.race;
+      const auto& race = *g.race;
       for (j = 0; j < NUMSTYPES; j++) {
         ShipType i{ShipVector[j]};
         if ((!Shipdata[i][ABIL_GOD]) || race.God) {
@@ -112,7 +112,8 @@ void build(const command_t &argv, GameObj &g) {
       /* look through ship description file */
       g.out << "\n";
       for (j = 0; j <= i; j++)
-        while (fgetc(fd) != '~');
+        while (fgetc(fd) != '~')
+          ;
       /* Give description */
       std::stringstream ss;
       while ((c = fgetc(fd)) != '~') {
@@ -150,7 +151,7 @@ void build(const command_t &argv, GameObj &g) {
           "{:>2} {:>4} {:>4}\n",
           "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
           "fuel", "crew", "sp", "tech", "cost");
-      const auto &race = *g.race;
+      const auto& race = *g.race;
       g.out << std::format(
           "{} {:<15.15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} {:>4} {:>4} "
           "{:>2} {:.0f} {:>4}\n",
@@ -173,7 +174,7 @@ void build(const command_t &argv, GameObj &g) {
   }
   starnum_t snum = g.snum;
   planetnum_t pnum = g.pnum;
-  const auto &race = *g.race;
+  const auto& race = *g.race;
   count = 0; /* this used used to reset count in the loop */
   std::optional<ShipType> what;
   do {

@@ -9,7 +9,7 @@ import :shlmisc;
 import :star;
 
 export class Place { /* used in function return for finding place */
- public:
+public:
   Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_,
         shipnum_t shipno_)
       : level(level_), snum(snum_), pnum(pnum_), shipno(shipno_) {}
@@ -24,7 +24,7 @@ export class Place { /* used in function return for finding place */
   bool err = false;
   std::string to_string();
 
- private:
+private:
   void getplace2(GameObj& g, std::string_view string, const bool ignoreexpl);
 };
 
@@ -54,8 +54,10 @@ void Place::getplace2(GameObj& g, std::string_view string,
         level = ScopeLevel::LEVEL_STAR;
         break;
     }
-    while (string.starts_with('.')) string.remove_prefix(1);
-    while (string.starts_with('/')) string.remove_prefix(1);
+    while (string.starts_with('.'))
+      string.remove_prefix(1);
+    while (string.starts_with('/'))
+      string.remove_prefix(1);
     getplace2(g, string, ignoreexpl);
     return;
   }

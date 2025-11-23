@@ -5,7 +5,7 @@
 #ifndef MAKEUNIV_H
 #define MAKEUNIV_H
 
-void place_star(star_struct &);
+void place_star(star_struct&);
 
 extern int autoname_plan;
 extern int autoname_star;

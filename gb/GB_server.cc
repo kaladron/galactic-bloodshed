@@ -250,17 +250,16 @@ std::string do_prompt(GameObj& g) {
     case ScopeLevel::LEVEL_STAR: {
       auto star = g.entity_manager.get_star(g.snum);
       const auto& star_ref = star.read();
-      prompt << std::format(" ( [{0}] /{1} )\n",
-                            star_ref.AP(Playernum - 1),
+      prompt << std::format(" ( [{0}] /{1} )\n", star_ref.AP(Playernum - 1),
                             star_ref.get_name());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
       auto star = g.entity_manager.get_star(g.snum);
       const auto& star_ref = star.read();
-      prompt << std::format(
-          " ( [{0}] /{1}/{2} )\n", star_ref.AP(Playernum - 1),
-          star_ref.get_name(), star_ref.get_planet_name(g.pnum));
+      prompt << std::format(" ( [{0}] /{1}/{2} )\n", star_ref.AP(Playernum - 1),
+                            star_ref.get_name(),
+                            star_ref.get_planet_name(g.pnum));
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:
@@ -278,17 +277,16 @@ std::string do_prompt(GameObj& g) {
       auto star = g.entity_manager.get_star(s->storbits);
       const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1}/#{2} )\n",
-                            star_ref.AP(Playernum - 1),
-                            star_ref.get_name(), g.shipno);
+                            star_ref.AP(Playernum - 1), star_ref.get_name(),
+                            g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
       auto star = g.entity_manager.get_star(s->storbits);
       const auto& star_ref = star.read();
-      prompt << std::format(
-          " ( [{0}] /{1}/{2}/#{3} )\n", star_ref.AP(Playernum - 1),
-          star_ref.get_name(),
-          star_ref.get_planet_name(g.pnum), g.shipno);
+      prompt << std::format(" ( [{0}] /{1}/{2}/#{3} )\n",
+                            star_ref.AP(Playernum - 1), star_ref.get_name(),
+                            star_ref.get_planet_name(g.pnum), g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:
@@ -309,18 +307,18 @@ std::string do_prompt(GameObj& g) {
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(s->storbits);
       if (!star) return " ( [?] /?/#?/#? )\n";
-      prompt << std::format(
-          " ( [{0}] /{1}/#{2}/#{3} )\n", star->AP(Playernum - 1),
-          star->get_name(), s->destshipno, g.shipno);
+      prompt << std::format(" ( [{0}] /{1}/#{2}/#{3} )\n",
+                            star->AP(Playernum - 1), star->get_name(),
+                            s->destshipno, g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
       const auto* star = g.entity_manager.peek_star(s->storbits);
       if (!star) return " ( [?] /?/?/#?/#? )\n";
-      prompt << std::format(
-          " ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
-          star->AP(Playernum - 1), star->get_name(),
-          star->get_planet_name(g.pnum), s->destshipno, g.shipno);
+      prompt << std::format(" ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
+                            star->AP(Playernum - 1), star->get_name(),
+                            star->get_planet_name(g.pnum), s->destshipno,
+                            g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:
@@ -340,18 +338,17 @@ std::string do_prompt(GameObj& g) {
       const auto* star = g.entity_manager.peek_star(s->storbits);
       if (!star) return " ( [?] /?/ /../#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
-                            star->AP(Playernum - 1),
-                            star->get_name(), s->destshipno,
-                            g.shipno);
+                            star->AP(Playernum - 1), star->get_name(),
+                            s->destshipno, g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
       const auto* star = g.entity_manager.peek_star(s->storbits);
       if (!star) return " ( [?] /?/?/ /../#?/#? )\n";
-      prompt << std::format(
-          " ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
-          star->AP(Playernum - 1), star->get_name(),
-          star->get_planet_name(g.pnum), s->destshipno, g.shipno);
+      prompt << std::format(" ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
+                            star->AP(Playernum - 1), star->get_name(),
+                            star->get_planet_name(g.pnum), s->destshipno,
+                            g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:
@@ -446,10 +443,10 @@ int main(int argc, char** argv) {
   std::print(stderr, "      Next Segment   : {0}", ctime(&next_segment_time));
 
   load_race_data(entity_manager); /* make sure you do this first */
-  load_star_data();   /* get star data */
-  getpower(Power);    /* get power report from database */
-  Getblock(Blocks);   /* get alliance block data */
-  SortShips();        /* Sort the ship list by tech for "build ?" */
+  load_star_data();               /* get star data */
+  getpower(Power);                /* get power report from database */
+  Getblock(Blocks);               /* get alliance block data */
+  SortShips();                    /* Sort the ship list by tech for "build ?" */
   for (player_t i = 1; i <= MAXPLAYERS; i++) {
     setbit(Blocks[i - 1].invite, i - 1);
     setbit(Blocks[i - 1].pledge, i - 1);
@@ -463,7 +460,9 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-static void set_signals() { signal(SIGPIPE, SIG_IGN); }
+static void set_signals() {
+  signal(SIGPIPE, SIG_IGN);
+}
 
 static struct timeval timeval_sub(struct timeval now, struct timeval then) {
   now.tv_sec -= then.tv_sec;
@@ -945,7 +944,8 @@ static void do_update(EntityManager& entity_manager, bool force) {
 
   std::string update_msg = std::format("{}DOING UPDATE...\n", ctime(&clk));
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++) notify_race(i, update_msg);
+    for (auto i = 1; i <= Num_races; i++)
+      notify_race(i, update_msg);
     force_output();
   }
 
@@ -1004,12 +1004,14 @@ static void do_update(EntityManager& entity_manager, bool force) {
       std::format("{}Update {} finished\n", ctime(&clk), nupdates_done);
   handle_victory();
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++) notify_race(i, finish_msg);
+    for (auto i = 1; i <= Num_races; i++)
+      notify_race(i, finish_msg);
     force_output();
   }
 }
 
-static void do_segment(EntityManager& entity_manager, int override, int segment) {
+static void do_segment(EntityManager& entity_manager, int override,
+                       int segment) {
   time_t clk = time(nullptr);
   struct stat stbuf;
 
@@ -1019,7 +1021,8 @@ static void do_segment(EntityManager& entity_manager, int override, int segment)
 
   std::string movement_msg = std::format("{}DOING MOVEMENT...\n", ctime(&clk));
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++) notify_race(i, movement_msg);
+    for (auto i = 1; i <= Num_races; i++)
+      notify_race(i, movement_msg);
     force_output();
   }
   if (override) {
@@ -1054,7 +1057,8 @@ static void do_segment(EntityManager& entity_manager, int override, int segment)
   clk = time(nullptr);
   std::string segment_msg = std::format("{}Segment finished\n", ctime(&clk));
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++) notify_race(i, segment_msg);
+    for (auto i = 1; i <= Num_races; i++)
+      notify_race(i, segment_msg);
     force_output();
   }
 }
@@ -1317,6 +1321,7 @@ static int ShipCompare(const void* S1, const void* S2) {
 }
 
 static void SortShips() {
-  for (int i = 0; i < NUMSTYPES; i++) ShipVector[i] = i;
+  for (int i = 0; i < NUMSTYPES; i++)
+    ShipVector[i] = i;
   qsort(ShipVector, NUMSTYPES, sizeof(int), ShipCompare);
 }

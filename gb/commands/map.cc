@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void map(const command_t &argv, GameObj &g) {
+void map(const command_t& argv, GameObj& g) {
   std::unique_ptr<Place> where;
 
   if (argv.size() > 1) {

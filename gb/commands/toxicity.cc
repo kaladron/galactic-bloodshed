@@ -11,7 +11,7 @@ import std;
 module commands;
 
 namespace GB::commands {
-void toxicity(const command_t &argv, GameObj &g) {
+void toxicity(const command_t& argv, GameObj& g) {
   constexpr ap_t APcount = 1;
 
   if (argv.size() != 2) {

@@ -131,7 +131,8 @@ void test_tax_database_persistence() {
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(0).newtax == 0);
-    std::println("    ✓ Database: newtax unchanged = {}", saved->info(0).newtax);
+    std::println("    ✓ Database: newtax unchanged = {}",
+                 saved->info(0).newtax);
   }
 
   std::println("  ✅ All tax database persistence tests passed!");

@@ -29,7 +29,7 @@ class EntityHandle {
   std::function<void(const T&)> save_fn;
   bool dirty = false;
 
- public:
+public:
   EntityHandle(EntityManager* mgr, T* ent, std::function<void(const T&)> save)
       : manager(mgr), entity(ent), save_fn(std::move(save)) {}
 
@@ -51,22 +51,30 @@ class EntityHandle {
     dirty = true;
     return *entity;
   }
-  const T& operator*() const { return *entity; }
+  const T& operator*() const {
+    return *entity;
+  }
 
   T* operator->() {
     dirty = true;
     return entity;
   }
-  const T* operator->() const { return entity; }
+  const T* operator->() const {
+    return entity;
+  }
 
   T* get() {
     dirty = true;
     return entity;
   }
-  const T* get() const { return entity; }
+  const T* get() const {
+    return entity;
+  }
 
   // Explicit read-only access (doesn't mark dirty)
-  const T& read() const { return *entity; }
+  const T& read() const {
+    return *entity;
+  }
 
   // Force save without waiting for destructor
   void save() {
@@ -119,7 +127,7 @@ export class EntityManager {
   // Mutex for thread-safety (future-proofing)
   std::mutex cache_mutex;
 
- public:
+public:
   explicit EntityManager(Database& database);
 
   // Get entity handles (load from DB if not cached)
@@ -158,7 +166,7 @@ export class EntityManager {
   // Clear cache (for testing or after turn processing)
   void clear_cache();
 
- private:
+private:
   // Release methods called by EntityHandle destructor
   void release_race(player_t player);
   void release_ship(shipnum_t num);

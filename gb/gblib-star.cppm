@@ -15,7 +15,8 @@ export struct star_struct {
   uint64_t inhabited;              /* who lives here now 64 bits*/
   double xpos, ypos;
 
-  std::vector<std::string> pnames;  /* names of planets (vector size = numplanets) */
+  std::vector<std::string>
+      pnames; /* names of planets (vector size = numplanets) */
 
   unsigned char stability;   /* how close to nova it is */
   unsigned char nova_stage;  /* stage of nova */
@@ -26,8 +27,10 @@ export struct star_struct {
 };
 
 export class Star {
- public:
-  [[nodiscard]] std::string get_name() const { return star_struct.name; }
+public:
+  [[nodiscard]] std::string get_name() const {
+    return star_struct.name;
+  }
   void set_name(std::string_view name) {
     star_struct.name = name;
   }
@@ -35,8 +38,8 @@ export class Star {
   [[nodiscard]] const std::string& get_planet_name(planetnum_t pnum) const {
     if (pnum >= star_struct.pnames.size()) {
       throw std::runtime_error(std::format(
-          "Planet number {} out of range for star '{}' (has {} planets)",
-          pnum, star_struct.name, star_struct.pnames.size()));
+          "Planet number {} out of range for star '{}' (has {} planets)", pnum,
+          star_struct.name, star_struct.pnames.size()));
     }
     return star_struct.pnames[pnum];
   }
@@ -50,29 +53,51 @@ export class Star {
   [[nodiscard]] bool planet_name_isset(planetnum_t pnum) const {
     if (pnum >= star_struct.pnames.size()) {
       throw std::runtime_error(std::format(
-          "Planet number {} out of range for star '{}' (has {} planets)",
-          pnum, star_struct.name, star_struct.pnames.size()));
+          "Planet number {} out of range for star '{}' (has {} planets)", pnum,
+          star_struct.name, star_struct.pnames.size()));
     }
     return !star_struct.pnames[pnum].empty();
   };
 
   // This is used both as a boolean and a setter.
-  uint64_t& explored() { return star_struct.explored; }
-  [[nodiscard]] uint64_t explored() const { return star_struct.explored; }
+  uint64_t& explored() {
+    return star_struct.explored;
+  }
+  [[nodiscard]] uint64_t explored() const {
+    return star_struct.explored;
+  }
 
-  uint64_t& inhabited() { return star_struct.inhabited; }
-  [[nodiscard]] uint64_t inhabited() const { return star_struct.inhabited; }
+  uint64_t& inhabited() {
+    return star_struct.inhabited;
+  }
+  [[nodiscard]] uint64_t inhabited() const {
+    return star_struct.inhabited;
+  }
 
-  [[nodiscard]] int numplanets() const { return star_struct.pnames.size(); }
+  [[nodiscard]] int numplanets() const {
+    return star_struct.pnames.size();
+  }
 
-  double& xpos() { return star_struct.xpos; }
-  [[nodiscard]] double xpos() const { return star_struct.xpos; }
+  double& xpos() {
+    return star_struct.xpos;
+  }
+  [[nodiscard]] double xpos() const {
+    return star_struct.xpos;
+  }
 
-  double& ypos() { return star_struct.ypos; }
-  [[nodiscard]] double ypos() const { return star_struct.ypos; }
+  double& ypos() {
+    return star_struct.ypos;
+  }
+  [[nodiscard]] double ypos() const {
+    return star_struct.ypos;
+  }
 
-  ap_t& AP(player_t playernum) { return star_struct.AP[playernum]; }
-  [[nodiscard]] ap_t AP(player_t playernum) const { return star_struct.AP[playernum]; }
+  ap_t& AP(player_t playernum) {
+    return star_struct.AP[playernum];
+  }
+  [[nodiscard]] ap_t AP(player_t playernum) const {
+    return star_struct.AP[playernum];
+  }
 
   // which subordinate maintains the system
   governor_t& governor(player_t playernum) {
@@ -84,29 +109,44 @@ export class Star {
   }
 
   /* 1st ship in orbit */
-  unsigned short& ships() { return star_struct.ships; }
-  [[nodiscard]] unsigned short ships() const { return star_struct.ships; }
+  unsigned short& ships() {
+    return star_struct.ships;
+  }
+  [[nodiscard]] unsigned short ships() const {
+    return star_struct.ships;
+  }
 
   // how close to nova it is
-  unsigned char& stability() { return star_struct.stability; }
-  [[nodiscard]] unsigned char stability() const { return star_struct.stability; }
+  unsigned char& stability() {
+    return star_struct.stability;
+  }
+  [[nodiscard]] unsigned char stability() const {
+    return star_struct.stability;
+  }
 
   // stage of nova
-  unsigned char& nova_stage() { return star_struct.nova_stage; }
+  unsigned char& nova_stage() {
+    return star_struct.nova_stage;
+  }
 
   // factor which expresses how hot the star is
-  unsigned char& temperature() { return star_struct.temperature; }
+  unsigned char& temperature() {
+    return star_struct.temperature;
+  }
 
   // attraction of star in "Standards".
-  double& gravity() { return star_struct.gravity; }
+  double& gravity() {
+    return star_struct.gravity;
+  }
 
   [[nodiscard]] int control(player_t, governor_t) const;
 
-  [[nodiscard]] star_struct get_struct() const { return star_struct; }
+  [[nodiscard]] star_struct get_struct() const {
+    return star_struct;
+  }
 
   Star(star_struct in) : star_struct(in) {}
 
- private:
+private:
   star_struct star_struct{};
 };
-

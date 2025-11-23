@@ -44,7 +44,9 @@ static int commoddata, racedata, shdata, stdata;
 static void start_bulk_insert();
 static void end_bulk_insert();
 
-void close_file(int fd) { close(fd); }
+void close_file(int fd) {
+  close(fd);
+}
 
 void openstardata(int* fd) {
   /*printf(" openstardata\n");*/
@@ -103,10 +105,12 @@ void getsdata(universe_struct* S) {
         *S = universe_opt.value();
         return;
       } else {
-        std::println(stderr, "Error: Failed to deserialize universe_struct from JSON");
+        std::println(stderr,
+                     "Error: Failed to deserialize universe_struct from JSON");
       }
     } else {
-      std::println(stderr, "Error: NULL JSON data retrieved for universe_struct");
+      std::println(stderr,
+                   "Error: NULL JSON data retrieved for universe_struct");
       sqlite3_finalize(stmt);
     }
   } else {
@@ -256,12 +260,15 @@ Sector getsector(const Planet& p, const int x, const int y) {
       if (sector_opt.has_value()) {
         return std::move(sector_opt.value());
       } else {
-        std::println(
-            stderr, "Error: Failed to deserialize Sector from JSON for planet ({},{}) at ({}, {})",
-            p.star_id(), p.planet_order(), x, y);
+        std::println(stderr,
+                     "Error: Failed to deserialize Sector from JSON for planet "
+                     "({},{}) at ({}, {})",
+                     p.star_id(), p.planet_order(), x, y);
       }
     } else {
-      std::println(stderr, "Error: NULL JSON data retrieved for sector at planet ({},{}) at ({}, {})",
+      std::println(stderr,
+                   "Error: NULL JSON data retrieved for sector at planet "
+                   "({},{}) at ({}, {})",
                    p.star_id(), p.planet_order(), x, y);
       sqlite3_finalize(stmt);
     }
@@ -278,15 +285,14 @@ Sector getsector(const Planet& p, const int x, const int y) {
 SectorMap getsmap(const Planet& p) {
   const char* tail = nullptr;
   sqlite3_stmt* stmt = nullptr;
-  const char* sql =
-      "SELECT data FROM tbl_sector "
-      "WHERE star_id=?1 AND planet_order=?2 ORDER BY ypos, xpos";
+  const char* sql = "SELECT data FROM tbl_sector "
+                    "WHERE star_id=?1 AND planet_order=?2 ORDER BY ypos, xpos";
 
   if (dbconn == nullptr) {
     std::println(stderr, "FATAL: getsmap called with NULL database connection");
     exit(-1);
   }
-  
+
   int rc = sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   if (rc != SQLITE_OK) {
     std::println(stderr, "FATAL: sqlite3_prepare_v2 failed in getsmap: {}",
@@ -302,16 +308,17 @@ SectorMap getsmap(const Planet& p) {
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     const char* json_data =
         reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-    
+
     if (json_data != nullptr) {
       std::string json_string(json_data);
       auto sector_opt = sector_from_json(json_string);
       if (sector_opt.has_value()) {
         smap.put(std::move(sector_opt.value()));
       } else {
-        std::println(stderr, 
-                     "FATAL: Failed to deserialize Sector from JSON for planet ({},{})", 
-                     p.star_id(), p.planet_order());
+        std::println(
+            stderr,
+            "FATAL: Failed to deserialize Sector from JSON for planet ({},{})",
+            p.star_id(), p.planet_order());
         exit(-1);
       }
     }
@@ -367,13 +374,12 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
           }
           **s = ship;
         }
-        
+
         return ship;
       } else {
-        std::println(
-            stderr,
-            "Error: Failed to deserialize Ship from JSON for ship {}",
-            shipnum);
+        std::println(stderr,
+                     "Error: Failed to deserialize Ship from JSON for ship {}",
+                     shipnum);
       }
     } else {
       std::println(stderr, "Error: NULL JSON data retrieved for ship {}",
@@ -602,7 +608,9 @@ void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
   sqlite3_finalize(stmt);
 }
 
-void putsector(const Sector& s, const Planet& p) { putsector(s, p, s.x, s.y); }
+void putsector(const Sector& s, const Planet& p) {
+  putsector(s, p, s.x, s.y);
+}
 
 void putsector(const Sector& s, const Planet& p, const int x, const int y) {
   // Serialize Sector to JSON using existing function
@@ -615,9 +623,9 @@ void putsector(const Sector& s, const Planet& p, const int x, const int y) {
   // Store in SQLite database as JSON
   const char* tail = nullptr;
   sqlite3_stmt* stmt;
-  const char* sql =
-      "INSERT OR REPLACE INTO tbl_sector (star_id, planet_order, xpos, ypos, data) "
-      "VALUES (?1, ?2, ?3, ?4, ?5)";
+  const char* sql = "INSERT OR REPLACE INTO tbl_sector (star_id, planet_order, "
+                    "xpos, ypos, data) "
+                    "VALUES (?1, ?2, ?3, ?4, ?5)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
   sqlite3_bind_int(stmt, 1, p.star_id());
@@ -627,7 +635,8 @@ void putsector(const Sector& s, const Planet& p, const int x, const int y) {
   sqlite3_bind_text(stmt, 5, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    std::println(stderr, "SQLite error in putsector: {}", sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite error in putsector: {}",
+                 sqlite3_errmsg(dbconn));
   }
 
   sqlite3_finalize(stmt);
@@ -664,8 +673,7 @@ void putship(const Ship& s) {
   sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    std::println(stderr, "SQLite error in putship: {}",
-                 sqlite3_errmsg(dbconn));
+    std::println(stderr, "SQLite error in putship: {}", sqlite3_errmsg(dbconn));
   }
 
   sqlite3_finalize(stmt);
@@ -746,9 +754,13 @@ off_t getnewslength(NewsType type) {
 }
 
 /* delete contents of dead ship file */
-void clr_shipfree() { fclose(fopen(SHIPFREEDATAFL, "w+")); }
+void clr_shipfree() {
+  fclose(fopen(SHIPFREEDATAFL, "w+"));
+}
 
-void clr_commodfree() { fclose(fopen(COMMODFREEDATAFL, "w+")); }
+void clr_commodfree() {
+  fclose(fopen(COMMODFREEDATAFL, "w+"));
+}
 
 /*
 ** writes the ship to the dead ship file at its end.

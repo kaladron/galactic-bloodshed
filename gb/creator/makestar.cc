@@ -25,8 +25,8 @@ import std.compat;
 static const double PLANET_DIST_MAX = 1900.0;
 static const double PLANET_DIST_MIN = 100.0;
 
-static char *NextStarName();
-static const char *NextPlanetName(int);
+static char* NextStarName();
+static const char* NextPlanetName(int);
 
 static int Numtypes[PlanetType::DESERT + 2] = {
     0,
@@ -51,11 +51,11 @@ static int numslist, namestcount;
 static char SNames[1000][20];
 static int star_list[1000];
 
-static int ReadNameList(char ss[1000][20], int n, int m, const char *filename);
-static void rand_list(int n, int *list);
+static int ReadNameList(char ss[1000][20], int n, int m, const char* filename);
+static void rand_list(int n, int* list);
 
 // TODO(jeffbailey): This should be syncd with the ones in GB_server.h:
-static const char *Nametypes[] = {"Earth",   "Asteroid", "Airless",
+static const char* Nametypes[] = {"Earth",   "Asteroid", "Airless",
                                   "Iceball", "Gaseous",  "Water",
                                   "Forest",  "Desert",   " >>"};
 
@@ -69,9 +69,8 @@ void PrintStatistics() {
   int y;
 
   printf("\nPlanet/Sector distribution -\n");
-  printf(
-      "Type NP     .    *    ^    ~    #    (    -    NS   Avg     Res    "
-      "Avg  A/Sec\n");
+  printf("Type NP     .    *    ^    ~    #    (    -    NS   Avg     Res    "
+         "Avg  A/Sec\n");
   for (i = 0; i <= PlanetType::DESERT + 1; i++) {
     printf("%3.3s%4d ", Nametypes[i], Numtypes[i]);
     if (i < PlanetType::DESERT + 1)
@@ -107,10 +106,10 @@ void PrintStatistics() {
   }
 }
 
-static int ReadNameList(char ss[1000][20], int n, int m, const char *filename) {
+static int ReadNameList(char ss[1000][20], int n, int m, const char* filename) {
   int i;
   int j;
-  FILE *f = fopen(filename, "r");
+  FILE* f = fopen(filename, "r");
 
   if (f == nullptr) {
     printf("Unable to open \"%s\".\n", filename);
@@ -126,7 +125,7 @@ static int ReadNameList(char ss[1000][20], int n, int m, const char *filename) {
     ss[i][j - 1] = '\0';
     while ('\n' != (j = getc(f)))
       if (EOF == j) goto out;
-  next:;
+next:;
   }
 out:
   fclose(f);
@@ -134,17 +133,19 @@ out:
   return i;
 }
 
-static void rand_list(int n, int *list) /* mix up the numbers 0 thru n */
+static void rand_list(int n, int* list) /* mix up the numbers 0 thru n */
 {
   short nums[1000];
   short k;
   short kk;
   short ii;
 
-  for (int i = 0; i <= n; i++) nums[i] = 0;
+  for (int i = 0; i <= n; i++)
+    nums[i] = 0;
   for (int j = 0; j <= n; j++) {
     int i = k = int_rand(0, n);
-    while (nums[k] != 0) k += nums[k];
+    while (nums[k] != 0)
+      k += nums[k];
     list[j] = k;
     if (k == n) {
       nums[k] = -n;
@@ -170,8 +171,8 @@ void Makeplanet_init() {
   namepcount = 0;
 }
 
-static const char *NextPlanetName(int i) {
-  const char *Numbers[] = {"1", "2",  "3",  "4",  "5",  "6",  "7", "8",
+static const char* NextPlanetName(int i) {
+  const char* Numbers[] = {"1", "2",  "3",  "4",  "5",  "6",  "7", "8",
                            "9", "10", "11", "12", "13", "14", "15"};
   if (autoname_plan && (namepcount < numplist))
     return PNames[planet_list[namepcount++]];
@@ -186,7 +187,7 @@ void Makestar_init() {
   namestcount = 0;
 }
 
-static char *NextStarName() {
+static char* NextStarName() {
   static char buf[20];
   int i;
 
@@ -194,8 +195,10 @@ static char *NextStarName() {
     return SNames[star_list[namestcount++]];
 
   printf("Next star name:");
-  for (i = 0; i < NAMESIZE - 4; i++) std::putchar('.');
-  for (i = 0; i < NAMESIZE - 4; i++) std::putchar('\010'); /* ^H */
+  for (i = 0; i < NAMESIZE - 4; i++)
+    std::putchar('.');
+  for (i = 0; i < NAMESIZE - 4; i++)
+    std::putchar('\010'); /* ^H */
   if (scanf("%14[^\n]", buf) < 0) {
     perror("Cannot read input");
     exit(-1);
@@ -311,7 +314,8 @@ Star Makestar(starnum_t snum) {
     Numtypes[type]++;
     if (printplaninfo) {
       printf("Planet %s: temp %d, type %s (%u)\n", star.pnames[i].c_str(),
-             planet.conditions(RTEMP), Nametypes[planet.type()], static_cast<unsigned int>(planet.type()));
+             planet.conditions(RTEMP), Nametypes[planet.type()],
+             static_cast<unsigned int>(planet.type()));
       printf("Position is (%1.0f,%1.0f) relative to %s; distance %1.0f.\n",
              planet.xpos(), planet.ypos(), star.name.c_str(), dist);
       printf("sect map(%dx%d):\n", planet.Maxx(), planet.Maxy());

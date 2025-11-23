@@ -6,4 +6,4 @@ import :planet;
 import :race;
 import :ships;
 
-export int berserker_bombard(Ship &, Planet &, const Race &);
+export int berserker_bombard(Ship&, Planet&, const Race&);

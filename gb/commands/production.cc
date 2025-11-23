@@ -10,7 +10,7 @@ import std.compat;
 module commands;
 
 namespace {
-void production_at_star(GameObj &g, starnum_t star) {
+void production_at_star(GameObj& g, starnum_t star) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
@@ -26,7 +26,8 @@ void production_at_star(GameObj &g, starnum_t star) {
         pl->info(Playernum - 1).numsectsowned &&
         (!Governor || star_ptr->governor(Playernum - 1) == Governor)) {
       const auto star4 = std::string(star_ptr->get_name()).substr(0, 4);
-      const auto planet4 = std::string(star_ptr->get_planet_name(i)).substr(0, 4);
+      const auto planet4 =
+          std::string(star_ptr->get_planet_name(i)).substr(0, 4);
       notify(
           Playernum, Governor,
           std::format(" {} {:>4}/{:<4}{}{:>3}{:>8.4f}{:>8}{:>3}{:>6}{:>5}{:>6} "
@@ -48,7 +49,7 @@ void production_at_star(GameObj &g, starnum_t star) {
 }  // namespace
 
 namespace GB::commands {
-void production(const command_t &argv, GameObj &g) {
+void production(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
 

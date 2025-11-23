@@ -20,7 +20,7 @@ int main() {
   race1.Playernum = 1;
   race1.name = "TestRace1";
   race1.governor[0].active = true;
-  
+
   Race race2{};
   race2.Playernum = 2;
   race2.name = "TestRace2";
@@ -39,10 +39,10 @@ int main() {
   sdata.AP[0] = 10;  // Give player 1 some AP points
   sdata.numstars = 0;
   universe_repo.save(sdata);
-  
+
   // Initialize global Sdata
   getsdata(&Sdata);
-  
+
   // Setup Num_races global
   Num_races = 2;
 
@@ -56,7 +56,7 @@ int main() {
   {
     command_t argv = {"declare", "2", "alliance"};
     GB::commands::declare(argv, g);
-    
+
     // Verify alliance was set
     const auto* saved_race1 = em.peek_race(1);
     const auto* saved_race2 = em.peek_race(2);
@@ -73,7 +73,7 @@ int main() {
   {
     command_t argv = {"declare", "2", "war"};
     GB::commands::declare(argv, g);
-    
+
     // Verify war was declared
     const auto* saved_race1 = em.peek_race(1);
     assert(saved_race1 != nullptr);
@@ -86,7 +86,7 @@ int main() {
   {
     command_t argv = {"declare", "2", "neutrality"};
     GB::commands::declare(argv, g);
-    
+
     // Verify neutrality was set
     const auto* saved_race1 = em.peek_race(1);
     assert(saved_race1 != nullptr);

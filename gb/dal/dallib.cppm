@@ -15,7 +15,7 @@ public:
   // Constructor: opens database connection
   // path defaults to ":memory:" for in-memory database
   explicit Database(const std::string& path = ":memory:");
-  
+
   // Destructor: closes connection
   ~Database();
 
@@ -31,11 +31,15 @@ public:
   void rollback();
 
   // Check if database is open
-  bool is_open() const { return conn != nullptr; }
+  bool is_open() const {
+    return conn != nullptr;
+  }
 
   // Internal access for JsonStore only
   // Note: This should only be used by DAL components
-  sqlite3* connection() { return conn; }
+  sqlite3* connection() {
+    return conn;
+  }
 };
 
 export class JsonStore {
@@ -57,9 +61,9 @@ public:
   bool store_multi(const std::string& table,
                    const std::vector<std::pair<std::string, int>>& keys,
                    const std::string& json);
-  std::optional<std::string> retrieve_multi(
-      const std::string& table,
-      const std::vector<std::pair<std::string, int>>& keys);
+  std::optional<std::string>
+  retrieve_multi(const std::string& table,
+                 const std::vector<std::pair<std::string, int>>& keys);
 };
 
 // Schema initialization

@@ -24,9 +24,10 @@ int main() {
   race.governor[0].password = "govpass";
   race.dissolved = false;
 
-  // NOTE: Not creating ships for this test because kill_ship() still uses global races[]
-  // We're just testing that the dissolved flag gets set correctly
-  
+  // NOTE: Not creating ships for this test because kill_ship() still uses
+  // global races[] We're just testing that the dissolved flag gets set
+  // correctly
+
   // Save via repositories
   JsonStore store(db);
   RaceRepository races(store);
@@ -38,19 +39,22 @@ int main() {
   sdata.id = 1;
   sdata.numstars = 0;  // No stars, simplifies test
   universe_repo.save(sdata);
-  
+
   // Initialize global Sdata
   getsdata(&Sdata);
-  
+
   // Setup Num_races global
   Num_races = 1;
-  
+
   // Load race into EntityManager cache to ensure getracenum can find it
   const auto* loaded_race = em.peek_race(1);
   assert(loaded_race != nullptr);
   assert(loaded_race->password == "testpass");
-  std::println("Race loaded into EntityManager: player={}, password={}", loaded_race->Playernum, loaded_race->password);
-  std::println("Governor 0: active={}, password='{}'", loaded_race->governor[0].active, loaded_race->governor[0].password);
+  std::println("Race loaded into EntityManager: player={}, password={}",
+               loaded_race->Playernum, loaded_race->password);
+  std::println("Governor 0: active={}, password='{}'",
+               loaded_race->governor[0].active,
+               loaded_race->governor[0].password);
   assert(loaded_race->governor[0].password == "govpass");
 
   // Create GameObj for command execution
@@ -64,17 +68,18 @@ int main() {
     command_t argv = {"dissolve", "testpass", "govpass"};
     GB::commands::dissolve(argv, g);
     std::println("Command output: {}", g.out.str());
-    
+
     // Verify race was dissolved
     const auto* saved_race = em.peek_race(1);
     assert(saved_race != nullptr);
     assert(saved_race->dissolved == true);
     std::println("    ✓ Race dissolved flag set to true");
-    
-    // TODO: Re-enable ship destruction test after kill_ship() migrated to EntityManager (Phase 3.7)
-    // Currently disabled because kill_ship() uses global races[] array
-    // Expected behavior: ship->alive should be false or ship->owner should be 0
-    // 
+
+    // TODO: Re-enable ship destruction test after kill_ship() migrated to
+    // EntityManager (Phase 3.7) Currently disabled because kill_ship() uses
+    // global races[] array Expected behavior: ship->alive should be false or
+    // ship->owner should be 0
+    //
     // Verify ship was destroyed (alive flag should be false)
     // const auto* saved_ship = em.peek_ship(1);
     // assert(saved_ship != nullptr);

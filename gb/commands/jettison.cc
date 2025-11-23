@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace {
-int jettison_check(GameObj &g, int amt, int max) {
+int jettison_check(GameObj& g, int amt, int max) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   if (amt == 0) amt = max;
@@ -26,7 +26,7 @@ int jettison_check(GameObj &g, int amt, int max) {
 }  // namespace
 
 namespace GB::commands {
-void jettison(const command_t &argv, GameObj &g) {
+void jettison(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 0;
@@ -35,7 +35,7 @@ void jettison(const command_t &argv, GameObj &g) {
   shipnum_t nextshipno;
   int amt;
   char commod;
-  Ship *s;
+  Ship* s;
 
   if (argv.size() < 2) {
     g.out << "Jettison what?\n";
@@ -79,7 +79,7 @@ void jettison(const command_t &argv, GameObj &g) {
       else
         amt = 0;
 
-      auto &race = races[Playernum - 1];
+      auto& race = races[Playernum - 1];
 
       commod = argv[2][0];
       switch (commod) {

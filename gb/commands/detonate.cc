@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void detonate(const command_t &argv, GameObj &g) {
+void detonate(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
 
@@ -18,7 +18,7 @@ void detonate(const command_t &argv, GameObj &g) {
     return;
   }
 
-  Ship *s;
+  Ship* s;
   shipnum_t shipno;
   shipnum_t nextshipno;
 

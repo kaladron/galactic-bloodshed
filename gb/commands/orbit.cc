@@ -14,12 +14,12 @@ module commands;
 static double Lastx, Lasty, Zoom;
 static const int SCALE = 100;
 
-static std::string DispStar(const GameObj &, const ScopeLevel, const Star &,
-                            int, const Race &);
-static std::string DispPlanet(const GameObj &, const ScopeLevel, const Planet &,
-                              std::string_view, int, const Race &);
-static void DispShip(const GameObj &, const Place &, Ship *, const Race &,
-                     char *, const Planet & = Planet());
+static std::string DispStar(const GameObj&, const ScopeLevel, const Star&, int,
+                            const Race&);
+static std::string DispPlanet(const GameObj&, const ScopeLevel, const Planet&,
+                              std::string_view, int, const Race&);
+static void DispShip(const GameObj&, const Place&, Ship*, const Race&, char*,
+                     const Planet& = Planet());
 
 namespace GB::commands {
 /* OPTIONS
@@ -32,7 +32,7 @@ namespace GB::commands {
  *  -(number) : Do not display that #'d ship or planet (in case it obstructs
  * 		the view of another object)
  */
-void orbit(const command_t &argv, GameObj &g) {
+void orbit(const command_t& argv, GameObj& g) {
   int DontDispNum = -1;
   int DontDispPlanets;
   int DontDispShips;
@@ -44,7 +44,8 @@ void orbit(const command_t &argv, GameObj &g) {
   /* find options, set flags accordingly */
   for (int flag = 1; flag <= argv.size() - 1; flag++)
     if (*argv[flag].c_str() == '-') {
-      for (int i = 1; argv[flag][i] != '\0'; i++) switch (argv[flag][i]) {
+      for (int i = 1; argv[flag][i] != '\0'; i++)
+        switch (argv[flag][i]) {
           case 's':
             DontDispShips = 1;
             break;
@@ -100,7 +101,7 @@ void orbit(const command_t &argv, GameObj &g) {
       if (!DontDispShips) {
         Shiplist shiplist{Sdata.ships};
         char shipbuf[256];
-        for (auto &s : shiplist) {
+        for (auto& s : shiplist) {
           if (DontDispNum != s.number) {
             shipbuf[0] = '\0';
             DispShip(g, *where, &s, Race, shipbuf);
@@ -130,7 +131,7 @@ void orbit(const command_t &argv, GameObj &g) {
         iq = true;
       else {
         Shiplist shiplist{stars[where->snum].ships()};
-        for (auto &s : shiplist) {
+        for (auto& s : shiplist) {
           if (s.owner == g.player && shipsight(s)) {
             iq = true; /* you are there to sight, need a crew */
             break;
@@ -140,7 +141,7 @@ void orbit(const command_t &argv, GameObj &g) {
       if (!DontDispShips) {
         Shiplist shiplist{stars[where->snum].ships()};
         char shipbuf[256];
-        for (auto &s : shiplist) {
+        for (auto& s : shiplist) {
           if (DontDispNum != s.number &&
               !(s.owner != g.player && s.type == ShipType::STYPE_MINE)) {
             if ((s.owner == g.player) || iq) {
@@ -164,7 +165,7 @@ void orbit(const command_t &argv, GameObj &g) {
          orbiting the planet, if so you can see orbiting enemy ships */
       bool iq = false;
       Shiplist shiplist{p.ships()};
-      for (auto &s : shiplist) {
+      for (auto& s : shiplist) {
         if (s.owner == g.player && shipsight(s)) {
           iq = true; /* you are there to sight, need a crew */
           break;
@@ -173,7 +174,7 @@ void orbit(const command_t &argv, GameObj &g) {
       /* end check */
       if (!DontDispShips) {
         char shipbuf[256];
-        for (auto &s : shiplist) {
+        for (auto& s : shiplist) {
           if (DontDispNum != s.number) {
             if (!landed(s)) {
               if ((s.owner == g.player) || iq) {
@@ -197,9 +198,9 @@ void orbit(const command_t &argv, GameObj &g) {
 
 // TODO(jeffbailey) Remove DontDispStar parameter as unused, but it really looks
 // like we should be doing something here.
-static std::string DispStar(const GameObj &g, const ScopeLevel level,
-                            const Star &star, int /* DontDispStars */,
-                            const Race &r) {
+static std::string DispStar(const GameObj& g, const ScopeLevel level,
+                            const Star& star, int /* DontDispStars */,
+                            const Race& r) {
   int x;
   int y;
 
@@ -234,9 +235,9 @@ static std::string DispStar(const GameObj &g, const ScopeLevel level,
 
 // TODO(jeffbailey): We remove DontDispPlanets as unused, but it really seems
 // like we should be doing something here!
-static std::string DispPlanet(const GameObj &g, const ScopeLevel level,
-                              const Planet &p, std::string_view name,
-                              int /* DontDispPlanets */, const Race &r) {
+static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
+                              const Planet& p, std::string_view name,
+                              int /* DontDispPlanets */, const Race& r) {
   int x = 0;  // TODO(jeffbailey): Check if init to 0 is right.
   int y = 0;
 
@@ -275,8 +276,8 @@ static std::string DispPlanet(const GameObj &g, const ScopeLevel level,
   return ss.str();
 }
 
-static void DispShip(const GameObj &g, const Place &where, Ship *ship,
-                     const Race &r, char *string, const Planet &pl) {
+static void DispShip(const GameObj& g, const Place& where, Ship* ship,
+                     const Race& r, char* string, const Planet& pl) {
   int x;
   int y;
   int wm;
@@ -292,12 +293,12 @@ static void DispShip(const GameObj &g, const Place &where, Ship *ship,
   switch (where.level) {
     case ScopeLevel::LEVEL_PLAN:
       x = (int)(SCALE +
-                (SCALE *
-                 (ship->xpos - (stars[where.snum].xpos() + pl.xpos()) - Lastx)) /
+                (SCALE * (ship->xpos - (stars[where.snum].xpos() + pl.xpos()) -
+                          Lastx)) /
                     (PLORBITSIZE * Zoom));
       y = (int)(SCALE +
-                (SCALE *
-                 (ship->ypos - (stars[where.snum].ypos() + pl.ypos()) - Lasty)) /
+                (SCALE * (ship->ypos - (stars[where.snum].ypos() + pl.ypos()) -
+                          Lasty)) /
                     (PLORBITSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_STAR:

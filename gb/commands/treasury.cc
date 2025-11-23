@@ -8,7 +8,7 @@ import std;
 module commands;
 
 namespace GB::commands {
-void treasury(const command_t &, GameObj &g) {
+void treasury(const command_t&, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): ap_t APcount = 0;

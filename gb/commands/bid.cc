@@ -8,7 +8,7 @@ import std;
 module commands;
 
 namespace GB::commands {
-void bid(const command_t &argv, GameObj &g) {
+void bid(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
 
@@ -132,7 +132,7 @@ void bid(const command_t &argv, GameObj &g) {
       g.out << std::format("You have to bid more than {}.\n", minbid);
       return;
     }
-    auto &race = races[Playernum - 1];
+    auto& race = races[Playernum - 1];
     if (race.Guest) {
       g.out << "Guest races cannot bid.\n";
       return;

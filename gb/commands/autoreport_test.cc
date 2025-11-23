@@ -34,7 +34,7 @@ void test_autoreport_database_persistence() {
   planet.star_id() = 1;
   planet.planet_order() = 0;
   planet.info(0).numsectsowned = 10;  // Player 1 owns sectors
-  planet.info(0).autorep = 0;  // Initially OFF
+  planet.info(0).autorep = 0;         // Initially OFF
 
   PlanetRepository planets(store);
   planets.save(planet);

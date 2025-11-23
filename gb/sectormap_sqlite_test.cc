@@ -25,7 +25,7 @@ int main() {
 
   // Create a SectorMap with various sector types
   SectorMap test_smap(test_planet, true);
-  
+
   // Populate the map with different sector types and values
   for (int y = 0; y < test_planet.Maxy(); y++) {
     for (int x = 0; x < test_planet.Maxx(); x++) {
@@ -41,7 +41,7 @@ int main() {
       sector.troops = x + y;
       sector.owner = (x + y) % 2 + 1;  // Alternate between player 1 and 2
       sector.race = sector.owner;
-      
+
       // Vary sector types
       if (x == 0 || x == test_planet.Maxx() - 1 || y == 0 ||
           y == test_planet.Maxy() - 1) {
@@ -71,7 +71,7 @@ int main() {
     for (int x = 0; x < test_planet.Maxx(); x++) {
       const auto& original = test_smap.get(x, y);
       const auto& retrieved = retrieved_smap.get(x, y);
-      
+
       assert(retrieved.x == original.x);
       assert(retrieved.y == original.y);
       assert(retrieved.eff == original.eff);
@@ -101,7 +101,7 @@ int main() {
 
   // Retrieve again and verify the updates
   SectorMap updated_smap = getsmap(test_planet);
-  
+
   for (int i = 0; i < 5; i++) {
     const auto& updated = updated_smap.get(i, i);
     assert(updated.eff == 100);

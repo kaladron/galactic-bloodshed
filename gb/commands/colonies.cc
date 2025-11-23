@@ -8,7 +8,7 @@ import std;
 module commands;
 
 namespace {
-void colonies_at_star(GameObj &g, const Race &race, const starnum_t star) {
+void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
@@ -29,8 +29,7 @@ void colonies_at_star(GameObj &g, const Race &race, const starnum_t star) {
     auto formatted = std::format(
         " {:c} {:4.4}/{:<4.4}{:c}{:4d}{:3d}{:5d}{:8d}{:3d}{:6d}{:5d}{:6d} "
         "{:3d}/{:<3d}{:3.0f}/{:<3d}{:3d}/{:<3d}",
-        Psymbol[pl->type()], star_ptr->get_name(),
-        star_ptr->get_planet_name(i),
+        Psymbol[pl->type()], star_ptr->get_name(), star_ptr->get_planet_name(i),
         (pl->info(Playernum - 1).autorep ? '*' : ' '),
         star_ptr->governor(Playernum - 1),
         pl->info(Playernum - 1).numsectsowned,
@@ -52,14 +51,14 @@ void colonies_at_star(GameObj &g, const Race &race, const starnum_t star) {
 }  // namespace
 
 namespace GB::commands {
-void colonies(const command_t &argv, GameObj &g) {
+void colonies(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
 
   g.out << "          ========== Colonization Report ==========\n";
   g.out << "  Planet     gov sec tech    popn  x   res  "
            "des  fuel  tax  cmpt/tox mob  Aliens\n";
 
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
   getsdata(&Sdata);
 
   if (argv.size() < 2)

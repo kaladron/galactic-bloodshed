@@ -22,7 +22,7 @@ void test_mobilize_database_persistence() {
   star_struct star_data{};
   star_data.star_id = 1;
   star_data.governor[0] = 0;  // Player 1 governor 0
-  star_data.AP[0] = 10;  // Give player 1 some action points
+  star_data.AP[0] = 10;       // Give player 1 some action points
   Star star{star_data};
 
   JsonStore store(db);
@@ -113,7 +113,8 @@ void test_mobilize_database_persistence() {
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(0).mob_set == 0);
-    std::println("    ✓ Database: mob_set unchanged = {}", saved->info(0).mob_set);
+    std::println("    ✓ Database: mob_set unchanged = {}",
+                 saved->info(0).mob_set);
   }
 
   std::println("  ✅ All mobilize database persistence tests passed!");

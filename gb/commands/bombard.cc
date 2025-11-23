@@ -9,13 +9,13 @@ module commands;
 
 namespace GB::commands {
 /*! Ship vs planet */
-void bombard(const command_t &argv, GameObj &g) {
+void bombard(const command_t& argv, GameObj& g) {
   int Playernum = g.player;
   int Governor = g.governor;
   ap_t APcount = 1;
   shipnum_t fromship;
   shipnum_t nextshipno;
-  Ship *from;
+  Ship* from;
   int x;
   int y;
 
@@ -135,7 +135,7 @@ void bombard(const command_t &argv, GameObj &g) {
           for (auto i = 1; i <= Num_races; i++)
             if (Nuked[i - 1] && !p.slaved_to()) {
               /* add planet defense strength */
-              auto &alien = races[i - 1];
+              auto& alien = races[i - 1];
               strength = MIN(p.info(i - 1).destruct, p.info(i - 1).guns);
 
               p.info(i - 1).destruct -= strength;
@@ -160,7 +160,7 @@ void bombard(const command_t &argv, GameObj &g) {
 
             strength = check_retal_strength(ship);
 
-            auto const &s2sresult =
+            auto const& s2sresult =
                 shoot_ship_to_ship(ship, *from, strength, 0);
             if (s2sresult) {
               auto [_, short_buf, long_buf] = *s2sresult;

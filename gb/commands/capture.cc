@@ -12,11 +12,11 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void capture(const command_t &argv, GameObj &g) {
+void capture(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   const ap_t APcount = 1;
-  Ship *ship;
+  Ship* ship;
   Ship s;
   player_t oldowner;
   governor_t oldgov;
@@ -113,8 +113,8 @@ void capture(const command_t &argv, GameObj &g) {
       else if ((boarders > sect.troops) && what == PopulationType::MIL)
         boarders = sect.troops;
 
-      auto &race = races[Playernum - 1];
-      auto &alien = races[ship->owner - 1];
+      auto& race = races[Playernum - 1];
+      auto& alien = races[ship->owner - 1];
 
       if (isset(race.allied, (ship->owner))) {
         notify(Playernum, Governor,
@@ -299,11 +299,11 @@ void capture(const command_t &argv, GameObj &g) {
             std::format("Casualties: Yours: {} civ/{} mil, Theirs: {} {}\n",
                         casualties1, casualties2, casualties,
                         what == PopulationType::CIV ? "civ" : "mil");
-        notify(
-            Playernum, Governor,
-            std::format("Casualties: Yours: {} {}, Theirs: {} civ/{} mil\n",
-                        casualties, what == PopulationType::CIV ? "civ" : "mil",
-                        casualties1, casualties2));
+        notify(Playernum, Governor,
+               std::format("Casualties: Yours: {} {}, Theirs: {} civ/{} mil\n",
+                           casualties,
+                           what == PopulationType::CIV ? "civ" : "mil",
+                           casualties1, casualties2));
       }
       warn(oldowner, oldgov, telegram);
       if (ship->owner != oldowner || !ship->alive) {

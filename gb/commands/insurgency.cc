@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void insurgency(const command_t &argv, GameObj &g) {
+void insurgency(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 10;
@@ -39,8 +39,8 @@ void insurgency(const command_t &argv, GameObj &g) {
     g.out << "No such player.\n";
     return;
   }
-  auto &race = races[Playernum - 1];
-  auto &alien = races[who - 1];
+  auto& race = races[Playernum - 1];
+  auto& alien = races[who - 1];
   if (alien.Guest) {
     g.out << "Don't be such a dickweed.\n";
     return;

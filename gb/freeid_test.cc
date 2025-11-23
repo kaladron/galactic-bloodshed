@@ -74,7 +74,7 @@ int main() {
 
   // Test 6: Test commodities work the same way
   std::println("\nTesting commod ID management...");
-  
+
   int cid1 = getdeadcommod();
   assert(cid1 == 1);
   std::println("✓ Test 6: Empty commod table returns ID 1");

@@ -34,7 +34,7 @@
 #define START_RECORD_STRING "<************"
 #define END_RECORD_STRING "************>"
 
-int Dialogue(const char *, ...);
+int Dialogue(const char*, ...);
 
 /**************
  * Attributes, attribute names, and parameters for attribute costs.
@@ -109,7 +109,7 @@ typedef struct {
 #define LAST_HOME_PLANET_TYPE H_JOVIAN
 #define N_HOME_PLANET_TYPES (LAST_HOME_PLANET_TYPE + 1)
 
-extern const char *planet_print_name[N_HOME_PLANET_TYPES];
+extern const char* planet_print_name[N_HOME_PLANET_TYPES];
 extern const int planet_cost[N_HOME_PLANET_TYPES];
 
 /**************
@@ -121,7 +121,7 @@ extern const int planet_cost[N_HOME_PLANET_TYPES];
 #define LAST_RACE_TYPE R_METAMORPH
 #define N_RACE_TYPES (LAST_RACE_TYPE + 1)
 
-extern const char *race_print_name[N_RACE_TYPES];
+extern const char* race_print_name[N_RACE_TYPES];
 extern const int race_cost[N_RACE_TYPES];
 
 /**************
@@ -134,7 +134,7 @@ extern const int race_cost[N_RACE_TYPES];
 #define LAST_PRIV_TYPE (P_NORMAL)
 #define N_PRIV_TYPES (LAST_PRIV_TYPE + 1)
 
-extern const char *priv_print_name[N_PRIV_TYPES];
+extern const char* priv_print_name[N_PRIV_TYPES];
 
 /**************
  * Sector types and names.  Sector costs are hardwired in currently.
@@ -151,7 +151,7 @@ extern const char *priv_print_name[N_PRIV_TYPES];
 #define LAST_SECTOR_TYPE S_PLATED
 #define N_SECTOR_TYPES (LAST_SECTOR_TYPE + 1)
 
-extern const char *sector_print_name[N_SECTOR_TYPES];
+extern const char* sector_print_name[N_SECTOR_TYPES];
 extern const int n_sector_types_cost[N_SECTOR_TYPES];
 
 /*
@@ -197,9 +197,9 @@ extern bool altered;     /* true iff race has been altered since last saved */
 extern bool changed;     /* true iff race has been changed since last printed */
 extern bool please_quit; /* true iff you want to exit ASAP. */
 
-int critique_to_file(FILE *f, int rigorous_checking, int is_player_race);
-void print_to_file(FILE *f, int verbose);
-int load_from_file(FILE *g);
+int critique_to_file(FILE* f, int rigorous_checking, int is_player_race);
+void print_to_file(FILE* f, int verbose);
+int load_from_file(FILE* g);
 int cost_of_race();
 void modify_print_loop(int level);
 

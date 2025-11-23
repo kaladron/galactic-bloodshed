@@ -10,18 +10,18 @@ import std;
 module commands;
 
 namespace {
-std::string prepare_output_line(const Race &race, const Race &r, player_t i,
+std::string prepare_output_line(const Race& race, const Race& r, player_t i,
                                 int rank) {
   std::stringstream ss;
   if (rank != 0) ss << std::format("{:2d} ", rank);
 
-  ss << std::format(
-      "[{:2d}]{}{}{:<15.15s} {:5s}", i,
-      isset(race.allied, i) ? "+" : (isset(race.atwar, i) ? "-" : " "),
-      isset(r.allied, race.Playernum)
-          ? "+"
-          : (isset(r.atwar, race.Playernum) ? "-" : " "),
-      r.name, Estimate_i((int)r.victory_score, race, i));
+  ss << std::format("[{:2d}]{}{}{:<15.15s} {:5s}", i,
+                    isset(race.allied, i) ? "+"
+                                          : (isset(race.atwar, i) ? "-" : " "),
+                    isset(r.allied, race.Playernum)
+                        ? "+"
+                        : (isset(r.atwar, race.Playernum) ? "-" : " "),
+                    r.name, Estimate_i((int)r.victory_score, race, i));
   ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].troops, race, i));
   ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].popn, race, i));
   ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].money, race, i));
@@ -43,7 +43,7 @@ std::string prepare_output_line(const Race &race, const Race &r, player_t i,
 }  // namespace
 
 namespace GB::commands {
-void power(const command_t &argv, GameObj &g) {
+void power(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   // TODO(jeffbailey): ap_t APcount = 0;
   // TODO(jeffbailey): Need to stop using -1 here for UB
@@ -79,7 +79,7 @@ void power(const command_t &argv, GameObj &g) {
   if (argv.size() < 2) {
     auto vicvec = create_victory_list();
     int rank = 0;
-    for (const auto &vic : vicvec) {
+    for (const auto& vic : vicvec) {
       rank++;
       p = vic.racenum;
       const auto* r = g.entity_manager.peek_race(p);

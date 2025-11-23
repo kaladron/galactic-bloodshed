@@ -10,7 +10,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void block(const command_t &argv, GameObj &g) {
+void block(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): ap_t APcount = 0;
@@ -107,17 +107,15 @@ void block(const command_t &argv, GameObj &g) {
       g.out << std::format(
           "{:5s}",
           Estimate_i(Power[r->Playernum - 1].ships_owned, *race, r->Playernum));
-      g.out << std::format(
-          "{:5s}", Estimate_i(Power[r->Playernum - 1].planets_owned, *race,
-                              r->Playernum));
-      g.out << std::format(
-          "{:5s}",
-          Estimate_i(Power[r->Playernum - 1].resource, *race, r->Playernum));
+      g.out << std::format("{:5s}",
+                           Estimate_i(Power[r->Playernum - 1].planets_owned,
+                                      *race, r->Playernum));
+      g.out << std::format("{:5s}", Estimate_i(Power[r->Playernum - 1].resource,
+                                               *race, r->Playernum));
       g.out << std::format("{:5s}", Estimate_i(Power[r->Playernum - 1].fuel,
                                                *race, r->Playernum));
-      g.out << std::format(
-          "{:5s}",
-          Estimate_i(Power[r->Playernum - 1].destruct, *race, r->Playernum));
+      g.out << std::format("{:5s}", Estimate_i(Power[r->Playernum - 1].destruct,
+                                               *race, r->Playernum));
       g.out << std::format(" {:3d}%%\n", race->translate[r->Playernum - 1]);
     }
   } else { /* list power report for all the alliance blocks (as of the last

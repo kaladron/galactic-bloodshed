@@ -6,30 +6,28 @@ import std.compat;
 
 module gblib;
 
-static std::pair<int, std::string> do_radiation(Ship &ship, double tech,
+static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
                                                 int strength, int hits);
-static std::pair<int, std::string> do_damage(player_t who, Ship &ship,
-                                             double tech, int strength,
-                                             int hits, int defense, int caliber,
-                                             double range,
-                                             const std::string_view weapon,
-                                             int hit_probability);
+static std::pair<int, std::string>
+do_damage(player_t who, Ship& ship, double tech, int strength, int hits,
+          int defense, int caliber, double range, const std::string_view weapon,
+          int hit_probability);
 
-static std::tuple<int, int, int> ship_disposition(const Ship &ship);
+static std::tuple<int, int, int> ship_disposition(const Ship& ship);
 static int CEW_hit(double dist, int cew_range);
 static int Num_hits(double dist, bool focus, int strength, double tech,
                     int damage, int fevade, int tevade, int fspeed, int tspeed,
                     int tbody, guntype_t caliber, int defense,
-                    int *hit_probability);
+                    int* hit_probability);
 static int cew_hit_odds(double dist, int cew_range);
-static std::string do_critical_hits(int penetrate, Ship &ship, int *hits,
-                                    int *damage, int defense);
+static std::string do_critical_hits(int penetrate, Ship& ship, int* hits,
+                                    int* damage, int defense);
 static double p_factor(double attacker, double defender);
-static void mutate_sector(Sector &s);
+static void mutate_sector(Sector& s);
 
-std::optional<std::tuple<int, std::string, std::string>> shoot_ship_to_ship(
-    const Ship &attacker, Ship &target, const int cew_strength, const int range,
-    const bool ignore) {
+std::optional<std::tuple<int, std::string, std::string>>
+shoot_ship_to_ship(const Ship& attacker, Ship& target, const int cew_strength,
+                   const int range, const bool ignore) {
   if (cew_strength <= 0) return std::nullopt;
 
   if (!(attacker.alive || ignore) || !target.alive) return std::nullopt;
@@ -122,8 +120,8 @@ std::optional<std::tuple<int, std::string, std::string>> shoot_ship_to_ship(
   return std::make_tuple(damage, short_msg, long_msg);
 }
 
-int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,
-                         char *short_msg) {
+int shoot_planet_to_ship(Race& race, Ship& ship, int strength, char* long_msg,
+                         char* short_msg) {
   if (strength <= 0) return -1;
   if (!ship.alive) return -1;
 
@@ -150,9 +148,9 @@ int shoot_planet_to_ship(Race &race, Ship &ship, int strength, char *long_msg,
 /**
  * @return Number of sectors destroyed.
  */
-int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
-                         SectorMap &smap, int ignore, int caliber,
-                         char *long_msg, char *short_msg) {
+int shoot_ship_to_planet(Ship& ship, Planet& pl, int strength, int x, int y,
+                         SectorMap& smap, int ignore, int caliber,
+                         char* long_msg, char* short_msg) {
   int numdest = 0;
 
   if (strength <= 0) return -1;
@@ -179,7 +177,7 @@ int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
       }
   }
 
-  auto &target = smap.get(x, y);
+  auto& target = smap.get(x, y);
   player_t oldowner = target.owner;
 
   std::array<int, MAXPLAYERS> sum_mob{0};
@@ -189,7 +187,7 @@ int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
       int dx = std::min(std::abs(x2 - x), std::abs(x + (pl.Maxx() - 1) - x2));
       int dy = std::abs(y2 - y);
       double d = std::sqrt((double)(dx * dx + dy * dy));
-      auto &s = smap.get(x2, y2);
+      auto& s = smap.get(x2, y2);
 
       if (d <= r) {
         double fac =
@@ -261,7 +259,7 @@ int shoot_ship_to_planet(Ship &ship, Planet &pl, int strength, int x, int y,
   return numdest;
 }
 
-static std::pair<int, std::string> do_radiation(Ship &ship, double tech,
+static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
                                                 int strength, int hits) {
   std::stringstream msg;
   double fac = (2. / 3.14159265) *
@@ -272,7 +270,8 @@ static std::pair<int, std::string> do_radiation(Ship &ship, double tech,
 
   int penetrate = 0;
   double r = 1.0;
-  for (int i = 1; i <= arm; i++) r *= fac;
+  for (int i = 1; i <= arm; i++)
+    r *= fac;
 
   for (int i = 1; i <= hits; i++) /* check to see how many hits penetrate */
     if (double_rand() <= r) penetrate += 1;
@@ -293,12 +292,10 @@ static std::pair<int, std::string> do_radiation(Ship &ship, double tech,
   return {dosage, msg.str()};
 }
 
-static std::pair<int, std::string> do_damage(player_t who, Ship &ship,
-                                             double tech, int strength,
-                                             int hits, int defense, int caliber,
-                                             double range,
-                                             const std::string_view weapon,
-                                             int hit_probability) {
+static std::pair<int, std::string>
+do_damage(player_t who, Ship& ship, double tech, int strength, int hits,
+          int defense, int caliber, double range, const std::string_view weapon,
+          int hit_probability) {
   std::stringstream msg;
 
   msg << std::format("\tAttack: {} {} at a range of {:.0f}\n", strength, weapon,
@@ -319,7 +316,8 @@ static std::pair<int, std::string> do_damage(player_t who, Ship &ship,
   int crithits = 0;
   int penetrate = 0;
   double r = 1.0;
-  for (int i = 1; i <= arm; i++) r *= fac;
+  for (int i = 1; i <= arm; i++)
+    r *= fac;
 
   for (int i = 1; i <= hits; i++) /* check to see how many hits penetrate */
     if (double_rand() <= r) penetrate += 1;
@@ -380,7 +378,7 @@ static std::pair<int, std::string> do_damage(player_t who, Ship &ship,
  * @param ship The ship for which the disposition is being determined.
  * @return A tuple containing the evade value, speed, and body size of the ship.
  */
-static std::tuple<int, int, int> ship_disposition(const Ship &ship) {
+static std::tuple<int, int, int> ship_disposition(const Ship& ship) {
   int evade = 0;
   int speed = 0;
   int body = size(ship);
@@ -403,7 +401,7 @@ static int CEW_hit(double dist, int cew_range) {
 
 static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
                     int fev, int tev, int fspeed, int tspeed, int body,
-                    guntype_t caliber, int defense, int *hit_probability) {
+                    guntype_t caliber, int defense, int* hit_probability) {
   auto [prob, factor] = hit_odds(dist, tech, fdam, fev, tev, fspeed, tspeed,
                                  body, caliber, defense);
 
@@ -479,7 +477,7 @@ double tele_range(ShipType type, double tech) {
   return std::log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
 }
 
-guntype_t current_caliber(const Ship &ship) {
+guntype_t current_caliber(const Ship& ship) {
   if (ship.laser && ship.fire_laser) return GTYPE_LIGHT;
   if (ship.type == ShipType::STYPE_MINE) return GTYPE_LIGHT;
   if (ship.type == ShipType::STYPE_MISSILE) return GTYPE_HEAVY;
@@ -489,8 +487,8 @@ guntype_t current_caliber(const Ship &ship) {
   return GTYPE_NONE;
 }
 
-static std::string do_critical_hits(int penetrate, Ship &ship, int *crithits,
-                                    int *critdam, int caliber) {
+static std::string do_critical_hits(int penetrate, Ship& ship, int* crithits,
+                                    int* critdam, int caliber) {
   std::stringstream critmsg;
   *critdam = 0;
   *crithits = 0;
@@ -533,20 +531,24 @@ static std::string do_critical_hits(int penetrate, Ship &ship, int *crithits,
   return critmsg.str();
 }
 
-std::tuple<int, int, int, int> do_collateral(Ship &ship, int damage) {
+std::tuple<int, int, int, int> do_collateral(Ship& ship, int damage) {
   /* compute crew/troop casualties */
   int casualties = 0;
   int casualties1 = 0;
   int primgundamage = 0;
   int secgundamage = 0;
 
-  for (auto i = 1; i <= ship.popn; i++) casualties += success(damage);
+  for (auto i = 1; i <= ship.popn; i++)
+    casualties += success(damage);
   ship.popn -= casualties;
-  for (auto i = 1; i <= ship.troops; i++) casualties1 += success(damage);
+  for (auto i = 1; i <= ship.troops; i++)
+    casualties1 += success(damage);
   ship.troops -= casualties1;
-  for (auto i = 1; i <= ship.primary; i++) primgundamage += success(damage);
+  for (auto i = 1; i <= ship.primary; i++)
+    primgundamage += success(damage);
   ship.primary -= primgundamage;
-  for (auto i = 1; i <= ship.secondary; i++) secgundamage += success(damage);
+  for (auto i = 1; i <= ship.secondary; i++)
+    secgundamage += success(damage);
   ship.secondary -= secgundamage;
   if (!ship.primary) ship.primtype = GTYPE_NONE;
   if (!ship.secondary) ship.sectype = GTYPE_NONE;
@@ -563,6 +565,6 @@ int planet_guns(long points) {
   return std::min(20L, points / 1000);
 }
 
-static void mutate_sector(Sector &s) {
+static void mutate_sector(Sector& s) {
   if (int_rand(0, 6) >= Defensedata[s.condition]) s.condition = s.type;
 }

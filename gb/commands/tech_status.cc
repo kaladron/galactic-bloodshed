@@ -15,7 +15,7 @@ struct returns {
   double max_gain = 0;
 };
 
-returns tech_report_star(GameObj &g, const Star &star, starnum_t snum) {
+returns tech_report_star(GameObj& g, const Star& star, starnum_t snum) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
 
@@ -53,7 +53,7 @@ returns tech_report_star(GameObj &g, const Star &star, starnum_t snum) {
 }  // namespace
 
 namespace GB::commands {
-void tech_status(const command_t &argv, GameObj &g) {
+void tech_status(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
 
   getsdata(&Sdata);

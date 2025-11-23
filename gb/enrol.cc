@@ -51,7 +51,7 @@ static double db_Metabolism[RACIAL_TYPES] = {3.0,  2.7,  2.4, 1.0,  1.15,
 #define Fighters(x) (db_Fighters[(x)] + int_rand(-1, 1))
 #define Intelligence(x) (db_Intelligence[(x)] + int_rand(-10, 10))
 #define Adventurism(x) (db_Adventurism[(x)] + 0.01 * (double)int_rand(-10, 10))
-#define Sexes(x) \
+#define Sexes(x)                                                               \
   (int_rand(Min_Sexes[(x)], int_rand(Min_Sexes[(x)], Max_Sexes[(x)])))
 #define Metabolism(x) (db_Metabolism[(x)] + .01 * (double)int_rand(-15, 15))
 
@@ -114,9 +114,8 @@ int main() {
   std::println("There is still space for player {}.", Playernum);
 
   do {
-    std::print(
-        "\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
-        "(i)ce, (w)ater, (d)esert, (f)orest? ");
+    std::print("\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
+               "(i)ce, (w)ater, (d)esert, (f)orest? ");
     std::string planet_line;
     std::getline(std::cin, planet_line);
     c = (!planet_line.empty()) ? planet_line[0] : '\0';
@@ -265,7 +264,8 @@ int main() {
   }
 
   /* assign racial characteristics */
-  for (i = 0; i < NUM_DISCOVERIES; i++) race.discoveries[i] = 0;
+  for (i = 0; i < NUM_DISCOVERIES; i++)
+    race.discoveries[i] = 0;
   race.tech = 0.0;
   race.morale = 0;
   race.turn = 0;
@@ -310,9 +310,8 @@ int main() {
   }
   auto smap = getsmap(*planet_ptr);
 
-  std::println(
-      "\nChoose a primary sector preference. This race will prefer to "
-      "live\non this type of sector.");
+  std::println("\nChoose a primary sector preference. This race will prefer to "
+               "live\non this type of sector.");
 
   for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
     Sector& sector = sector_wrap;
@@ -451,7 +450,8 @@ int main() {
     putship(s);
   }
 
-  for (j = 0; j < MAXPLAYERS; j++) race.points[j] = 0;
+  for (j = 0; j < MAXPLAYERS; j++)
+    race.points[j] = 0;
 
   putrace(race);
 

@@ -8,7 +8,7 @@ import std;
 module commands;
 
 namespace GB::commands {
-void arm(const command_t &argv, GameObj &g) {
+void arm(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int mode;
@@ -66,7 +66,7 @@ void arm(const command_t &argv, GameObj &g) {
       g.out << "You can't arm any civilians now.\n";
       return;
     }
-    auto &race = races[Playernum - 1];
+    auto& race = races[Playernum - 1];
     /*    enlist_cost = ENLIST_TROOP_COST * amount; */
     money_t enlist_cost = race.fighters * amount;
     if (enlist_cost > race.governor[Governor].money) {

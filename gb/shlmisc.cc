@@ -137,7 +137,7 @@ std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
   for (player_t p = 1; p <= Num_races; p++) {
     const auto* race = entity_manager.peek_race(p);
     if (!race) continue;
-    
+
     if (racepass == race->password) {
       for (governor_t j = 0; j <= MAXGOVERNORS; j++) {
         if (!race->governor[j].password.empty() &&
@@ -230,9 +230,8 @@ void deductAPs(const GameObj& g, ap_t APs, starnum_t snum) {
     star.AP(g.player - 1) -= APs;
   else {
     star.AP(g.player - 1) = 0;
-    std::string cheater_msg =
-        "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
-        "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n";
+    std::string cheater_msg = "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
+                              "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n";
     notify(g.player, g.governor, cheater_msg);
   }
 }
@@ -243,17 +242,20 @@ void get4args(const char* s, int* xl, int* xh, int* yl, int* yh) {
   const char* p = s;
 
   sscanf(p, "%[^,]", s1);
-  while ((*p != ':') && (*p != ',')) p++;
+  while ((*p != ':') && (*p != ','))
+    p++;
   if (*p == ':') {
     sscanf(s1, "%d:%d", xl, xh);
-    while (*p != ',') p++;
+    while (*p != ',')
+      p++;
   } else if (*p == ',') {
     sscanf(s1, "%d", xl);
     *xh = (*xl);
   }
 
   sscanf(p, "%s", s2);
-  while ((*p != ':') && (*p != '\0')) p++;
+  while ((*p != ':') && (*p != '\0'))
+    p++;
   if (*p == ':') {
     sscanf(s2, ",%d:%d", yl, yh);
   } else {

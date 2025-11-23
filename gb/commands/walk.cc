@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void walk(const command_t &argv, GameObj &g) {
+void walk(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   const ap_t APcount = 1;
@@ -50,7 +50,7 @@ void walk(const command_t &argv, GameObj &g) {
     return;
   }
   auto p = getplanet(ship->storbits, ship->pnumorbits);
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
 
   auto [x, y] = get_move(p, argv[2][0], {ship->land_x, ship->land_y});
   if (ship->land_x == x && ship->land_y == y) {
@@ -74,7 +74,7 @@ void walk(const command_t &argv, GameObj &g) {
     if (ship2.owner != Playernum && ship2.type == ShipType::OTYPE_AFV &&
         landed(ship2) && retal_strength(ship2) && (ship2.land_x == x) &&
         (ship2.land_y == y)) {
-      auto &alien = races[ship2.owner - 1];
+      auto& alien = races[ship2.owner - 1];
       if (!isset(race.allied, ship2.owner) || !isset(alien.allied, Playernum)) {
         int strength;
         int strength1;
@@ -102,7 +102,7 @@ void walk(const command_t &argv, GameObj &g) {
   if (ship->popn && ship->alive && sect.owner && sect.owner != Playernum) {
     auto oldowner = sect.owner;
     auto oldgov = stars[ship->storbits].governor(sect.owner - 1);
-    auto &alien = races[oldowner - 1];
+    auto& alien = races[oldowner - 1];
     if (!isset(race.allied, oldowner) || !isset(alien.allied, Playernum)) {
       if (!retal_strength(*ship)) {
         g.out << "You have nothing to attack with!\n";

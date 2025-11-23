@@ -14,7 +14,7 @@ module;
 export module tabulate;
 
 export namespace tabulate {
-using tabulate::Table;
 using tabulate::FontAlign;
 using tabulate::FontStyle;
+using tabulate::Table;
 }  // namespace tabulate

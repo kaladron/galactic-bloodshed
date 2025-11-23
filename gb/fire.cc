@@ -19,7 +19,7 @@ module gblib;
  */
 bool has_planet_defense(const shipnum_t shipno, const player_t Playernum) {
   Shiplist shiplist(shipno);
-  for (const auto &ship : shiplist) {
+  for (const auto& ship : shiplist) {
     if (ship.alive && ship.type == ShipType::OTYPE_PLANDEF &&
         ship.owner != Playernum) {
       return true;
@@ -36,7 +36,7 @@ bool has_planet_defense(const shipnum_t shipno, const player_t Playernum) {
  * @param cew Strength of Confined Energy Weapons.
  * @param strength A pointer to the strength value of the ship.
  */
-void check_overload(Ship &ship, int cew, int *strength) {
+void check_overload(Ship& ship, int cew, int* strength) {
   if (!(ship.laser && ship.fire_laser) && (cew == 0)) {
     return;
   }
@@ -64,7 +64,7 @@ void check_overload(Ship &ship, int cew, int *strength) {
   }
 }
 
-int check_retal_strength(const Ship &ship) {
+int check_retal_strength(const Ship& ship) {
   // irradiated ships dont retaliate
   if (!ship.active || !ship.alive) return 0;
 
@@ -73,7 +73,7 @@ int check_retal_strength(const Ship &ship) {
   return retal_strength(ship);
 }
 
-int retal_strength(const Ship &s) {
+int retal_strength(const Ship& s) {
   if (!s.alive) return 0;
   if (!Shipdata[s.type][ABIL_SPEED] && !landed(s)) return 0;
   /* land based ships */

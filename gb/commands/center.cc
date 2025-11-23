@@ -10,7 +10,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void center(const command_t &argv, GameObj &g) {
+void center(const command_t& argv, GameObj& g) {
   if (argv.size() != 2) {
     g.out << "center: which star?\n";
   }

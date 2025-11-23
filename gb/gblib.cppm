@@ -42,8 +42,8 @@ export import :globals;
  * \param s User-provided input string
  * \return If the user provided a valid number, return it.
  */
-export constexpr std::optional<shipnum_t> string_to_shipnum(
-    std::string_view s) {
+export constexpr std::optional<shipnum_t>
+string_to_shipnum(std::string_view s) {
   while (s.size() > 1 && s.front() == '#') {
     s.remove_prefix(1);
   }
@@ -63,14 +63,22 @@ export constexpr int M_DESTRUCT = 0x2;
 export constexpr int M_RESOURCES = 0x4;
 export constexpr int M_CRYSTALS = 0x8;
 
-export bool Fuel(int x) { return x & M_FUEL; }
-export bool Destruct(int x) { return x & M_DESTRUCT; };
-export bool Resources(int x) { return x & M_RESOURCES; };
-export bool Crystals(int x) { return x & M_CRYSTALS; };
+export bool Fuel(int x) {
+  return x & M_FUEL;
+}
+export bool Destruct(int x) {
+  return x & M_DESTRUCT;
+};
+export bool Resources(int x) {
+  return x & M_RESOURCES;
+};
+export bool Crystals(int x) {
+  return x & M_CRYSTALS;
+};
 
 export std::vector<Victory> create_victory_list();
 
-export constexpr auto maxsupport(const Race &r, const Sector &s, const double c,
+export constexpr auto maxsupport(const Race& r, const Sector& s, const double c,
                                  const int toxic) {
   if (r.likes[s.condition] == 0) return 0L;
   double a = ((double)s.eff + 1.0) * (double)s.fert;

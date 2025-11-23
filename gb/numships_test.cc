@@ -15,7 +15,7 @@ int main() {
 
   // Test initial state - should have 0 ships
   shipnum_t initial_count = Numships();
-  
+
   // Create test ships
   Ship test_ship1{};
   test_ship1.number = 1;

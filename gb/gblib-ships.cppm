@@ -8,7 +8,12 @@ import :gameobj;
 import :planet;
 import :sector;
 
-export enum guntype_t { GTYPE_NONE, GTYPE_LIGHT, GTYPE_MEDIUM, GTYPE_HEAVY };
+export enum guntype_t {
+  GTYPE_NONE,
+  GTYPE_LIGHT,
+  GTYPE_MEDIUM,
+  GTYPE_HEAVY
+};
 
 export inline constexpr int PRIMARY = 1;
 export inline constexpr int SECONDARY = 2;
@@ -149,25 +154,25 @@ export struct WasteData {
 };
 
 // Variant type for special ship functions
-export using SpecialData = std::variant<
-  AimedAtData,    // Space Mirror
-  MindData,       /* VNs and berserkers */
-  PodData,        /* spore pods */
-  TimerData,      /* dust canisters, greenhouse gases */
-  ImpactData,     /* missiles */
-  TriggerData,    /* mines */
-  TerraformData,  /* terraformers */
-  TransportData,  /* AVPM */
-  WasteData       /* toxic waste containers */
->;
+export using SpecialData =
+    std::variant<AimedAtData,   // Space Mirror
+                 MindData,      /* VNs and berserkers */
+                 PodData,       /* spore pods */
+                 TimerData,     /* dust canisters, greenhouse gases */
+                 ImpactData,    /* missiles */
+                 TriggerData,   /* mines */
+                 TerraformData, /* terraformers */
+                 TransportData, /* AVPM */
+                 WasteData      /* toxic waste containers */
+                 >;
 
 export class Ship {
- public:
-  shipnum_t number{0};               ///< ship knows its own number
-  player_t owner{0};                 ///< owner of ship
-  governor_t governor{0};            ///< subordinate that controls the ship
-  std::string name;               ///< name of ship (optional)
-  std::string shipclass;          ///< shipclass of ship - designated by player
+public:
+  shipnum_t number{0};     ///< ship knows its own number
+  player_t owner{0};       ///< owner of ship
+  governor_t governor{0};  ///< subordinate that controls the ship
+  std::string name;        ///< name of ship (optional)
+  std::string shipclass;   ///< shipclass of ship - designated by player
 
   unsigned char race{0}; /* race type - used when you gain alien
                          ships during revolts and whatnot - usually
@@ -190,7 +195,8 @@ export class Ship {
   unsigned short max_destruct{0};
   unsigned short max_fuel{0};
   unsigned short max_speed{0};
-  ShipType build_type{ShipType::STYPE_POD};  ///< for factories - type of ship it makes
+  ShipType build_type{
+      ShipType::STYPE_POD};  ///< for factories - type of ship it makes
   unsigned short build_cost{0};
 
   double base_mass{0.0};
@@ -216,7 +222,7 @@ export class Ship {
   } navigate;
 
   struct {
-    double maxrng{0.0};        /* maximum range for autoshoot */
+    double maxrng{0.0};      /* maximum range for autoshoot */
     unsigned char on{0};     /* toggle on/off */
     unsigned char planet{0}; /* planet defender */
     unsigned char self{0};   /* retaliate if attacked */
@@ -239,20 +245,20 @@ export class Ship {
   unsigned char focus{0};      /* focused laser mode */
   unsigned char fire_laser{0}; /* retaliation strength for lasers */
 
-  starnum_t storbits{0};     /* what star # orbits */
-  starnum_t deststar{0};     /* destination star */
-  planetnum_t destpnum{0};   /* destination planet */
-  planetnum_t pnumorbits{0}; /* # of planet if orbiting */
-  ScopeLevel whatdest{ScopeLevel::LEVEL_UNIV};    /* where going */
-  ScopeLevel whatorbits{ScopeLevel::LEVEL_UNIV};  /* where orbited */
+  starnum_t storbits{0};                         /* what star # orbits */
+  starnum_t deststar{0};                         /* destination star */
+  planetnum_t destpnum{0};                       /* destination planet */
+  planetnum_t pnumorbits{0};                     /* # of planet if orbiting */
+  ScopeLevel whatdest{ScopeLevel::LEVEL_UNIV};   /* where going */
+  ScopeLevel whatorbits{ScopeLevel::LEVEL_UNIV}; /* where orbited */
 
   unsigned char damage{0}; /* amt of damage */
   int rad{0};              /* radiation level */
   unsigned char retaliate{0};
   unsigned short target{0};
 
-  ShipType type{ShipType::STYPE_POD};       /* what type ship is */
-  unsigned char speed{0}; /* what speed to travel at 0-9 */
+  ShipType type{ShipType::STYPE_POD}; /* what type ship is */
+  unsigned char speed{0};             /* what speed to travel at 0-9 */
 
   unsigned char active{0}; /* tells whether the ship is active */
   unsigned char alive{0};  /* ship is alive */
@@ -278,26 +284,32 @@ export class Ship {
 };
 
 export class Shiplist {
- public:
+public:
   Shiplist(shipnum_t a) : first(a) {}
 
   class Iterator {
-   public:
+  public:
     Iterator(shipnum_t a);
-    auto& operator*() { return elem; }
+    auto& operator*() {
+      return elem;
+    }
     Iterator& operator++();
     bool operator!=(const Iterator& rhs) {
       return elem.number != rhs.elem.number;
     }
 
-   private:
+  private:
     Ship elem{};
   };
 
-  auto begin() { return Shiplist::Iterator(first); }
-  auto end() { return Shiplist::Iterator(0); }
+  auto begin() {
+    return Shiplist::Iterator(first);
+  }
+  auto end() {
+    return Shiplist::Iterator(0);
+  }
 
- private:
+private:
   shipnum_t first;
 };
 

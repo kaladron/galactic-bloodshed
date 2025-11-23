@@ -12,7 +12,7 @@ import std;
 module commands;
 
 namespace GB::commands {
-void capital(const command_t &argv, GameObj &g) {
+void capital(const command_t& argv, GameObj& g) {
   const ap_t kAPCost = 50;
 
   if (g.governor) {
@@ -71,8 +71,8 @@ void capital(const command_t &argv, GameObj &g) {
     race_mut.Gov_ship = shipno;
   }
 
-  g.out << std::format(
-      "Efficiency of governmental center: {:.0f}%.\n",
-      ((double)s->popn / (double)max_crew(*s)) * (100 - (double)s->damage));
+  g.out << std::format("Efficiency of governmental center: {:.0f}%.\n",
+                       ((double)s->popn / (double)max_crew(*s)) *
+                           (100 - (double)s->damage));
 }
 }  // namespace GB::commands

@@ -72,7 +72,7 @@ static const int cond[] = {SectorType::SEC_SEA,    SectorType::SEC_MOUNT,
                            SectorType::SEC_FOREST, SectorType::SEC_DESERT};
 
 namespace {
-void MakeEarthAtmosphere(Planet &planet, const int chance) {
+void MakeEarthAtmosphere(Planet& planet, const int chance) {
   int atmos = 100;
 
   if (int_rand(0, 99) > chance) {
@@ -99,7 +99,7 @@ void MakeEarthAtmosphere(Planet &planet, const int chance) {
 }
 
 //! Returns # of neighbors of a given designation that a sector has.
-int neighbors(SectorMap &smap, int x, int y, int type) {
+int neighbors(SectorMap& smap, int x, int y, int type) {
   int l = x - 1;
   int r = x + 1; /* Left and right columns. */
   int n = 0;     /* Number of neighbors so far. */
@@ -122,9 +122,9 @@ int neighbors(SectorMap &smap, int x, int y, int type) {
 }
 
 //! Randomly places n sectors of designation type on a planet.
-void seed(SectorMap &smap, SectorType type, int n) {
+void seed(SectorMap& smap, SectorType type, int n) {
   while (n-- > 0) {
-    auto &s = smap.get_random();
+    auto& s = smap.get_random();
     s.type = s.condition = type;
   }
 }
@@ -133,7 +133,7 @@ void seed(SectorMap &smap, SectorType type, int n) {
  *  of adjacent sectors of the same type that must be found for the sector to
  *  become type.
  */
-void grow(SectorMap &smap, SectorType type, int n, int rate) {
+void grow(SectorMap& smap, SectorType type, int n, int rate) {
   std::vector<std::tuple<int, int, int>> worklist;  // x, y, type
 
   // We don't want to alter the current map, as this is iterative.
@@ -149,8 +149,8 @@ void grow(SectorMap &smap, SectorType type, int n, int rate) {
     }
   }
 
-  for (auto &[x, y, sector_type] : worklist) {
-    auto &s = smap.get(x, y);
+  for (auto& [x, y, sector_type] : worklist) {
+    auto& s = smap.get(x, y);
     s.condition = s.type = sector_type;
   }
 }
@@ -167,7 +167,7 @@ void grow(SectorMap &smap, SectorType type, int n, int rate) {
  * @param y The y-coordinate (latitude index) of the sector.
  * @return The calculated temperature of the sector.
  */
-int SectTemp(const Planet &p, const int y) {
+int SectTemp(const Planet& p, const int y) {
   // Temperature factor.
   const int TFAC = 10;
 
@@ -191,8 +191,8 @@ int SectTemp(const Planet &p, const int y) {
  * @param p The planet for which the surface is being generated.
  * @param smap The sector map representing the planet's surface.
  */
-void Makesurface(const Planet &p, SectorMap &smap) {
-  for (auto &s : smap) {
+void Makesurface(const Planet& p, SectorMap& smap) {
+  for (auto& s : smap) {
     s.type = s.condition;
     s.resource = int_rand(rmin[p.type()][s.type], rmax[p.type()][s.type]);
     s.fert = int_rand(Fmin[p.type()][s.type], Fmax[p.type()][s.type]);
@@ -224,8 +224,8 @@ void Makesurface(const Planet &p, SectorMap &smap) {
 }
 }  // namespace
 
-Planet makeplanet(double dist, short stemp, PlanetType type,
-                  starnum_t star_id, planetnum_t planet_order) {
+Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
+                  planetnum_t planet_order) {
   Planet planet{type};
 
   // Set location explicitly - no global counter needed
@@ -237,7 +237,8 @@ Planet makeplanet(double dist, short stemp, PlanetType type,
   planet.Maxx() = int_rand(xmin[type], xmax[type]);
   auto f = (double)planet.Maxx() / RATIOXY;
   planet.Maxy() = round_rand(f) + 1;
-  if (!(planet.Maxy() % 2)) planet.Maxy()++; /* make odd number of latitude bands */
+  if (!(planet.Maxy() % 2))
+    planet.Maxy()++; /* make odd number of latitude bands */
 
   if (type == PlanetType::ASTEROID)
     planet.Maxy() = int_rand(1, 3); /* Asteroids have funny shapes. */
@@ -248,7 +249,7 @@ Planet makeplanet(double dist, short stemp, PlanetType type,
   SectorMap smap(planet, true);
   for (auto y = 0; y < planet.Maxy(); y++) {
     for (auto x = 0; x < planet.Maxx(); x++) {
-      auto &s = smap.get(x, y);
+      auto& s = smap.get(x, y);
       s.x = x;
       s.y = y;
       s.type = s.condition = t;
@@ -305,7 +306,7 @@ Planet makeplanet(double dist, short stemp, PlanetType type,
       for (auto y = 0; y < planet.Maxy(); y++)
         for (auto x = 0; x < planet.Maxx(); x++)
           if (!int_rand(0, 3)) {
-            auto &s = smap.get_random();
+            auto& s = smap.get_random();
             s.type = s.condition = SectorType::SEC_LAND;
           }
       seed(smap, SectorType::SEC_DESERT, int_rand(1, total_sects));

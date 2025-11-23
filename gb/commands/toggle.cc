@@ -11,12 +11,12 @@ import std;
 module commands;
 
 namespace {
-void tog(GameObj &g, bool *op, const char *name) {
+void tog(GameObj& g, bool* op, const char* name) {
   *op = !(*op);
   g.out << std::format("{0} is now {1}\n", name, *op ? "on" : "off");
 }
 
-void display_toggles(GameObj &g, const Race::gov &governor, const Race &race) {
+void display_toggles(GameObj& g, const Race::gov& governor, const Race& race) {
   g.out << std::format("gag is {}\n", governor.toggle.gag ? "ON" : "OFF");
   g.out << std::format("inverse is {}\n",
                        governor.toggle.inverse ? "ON" : "OFF");
@@ -39,7 +39,7 @@ void display_toggles(GameObj &g, const Race::gov &governor, const Race &race) {
 }  // namespace
 
 namespace GB::commands {
-void toggle(const command_t &argv, GameObj &g) {
+void toggle(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // TODO(jeffbailey): ap_t APcount = 0;

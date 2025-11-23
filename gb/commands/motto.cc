@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void motto(const command_t &argv, GameObj &g) {
+void motto(const command_t& argv, GameObj& g) {
   if (g.governor) {
     g.out << "You are not authorized to do this.\n";
     return;
@@ -27,7 +27,7 @@ void motto(const command_t &argv, GameObj &g) {
     return;
   }
 
-  auto &block = *block_handle;
+  auto& block = *block_handle;
   block.motto = message;
 
   g.out << "Done.\n";

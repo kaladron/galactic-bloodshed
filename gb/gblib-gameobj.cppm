@@ -10,11 +10,12 @@ import std.compat;
 export class EntityManager;
 
 export class GameObj {
- public:
+public:
   player_t player;
   governor_t governor;
   bool god = false;
-  const Race* race = nullptr;  ///< Pointer to current player's race (valid during command execution)
+  const Race* race = nullptr;  ///< Pointer to current player's race (valid
+                               ///< during command execution)
   double lastx[2] = {0.0, 0.0};
   double lasty[2] = {0.0, 0.0};
   double zoom[2] = {1.0, 0.5};                ///< last coords for zoom
@@ -26,6 +27,6 @@ export class GameObj {
   EntityManager& entity_manager;  ///< Entity lifecycle manager
 
   explicit GameObj(EntityManager& em) : entity_manager(em) {}
-  GameObj(const GameObj &) = delete;
-  GameObj &operator=(const GameObj &) = delete;
+  GameObj(const GameObj&) = delete;
+  GameObj& operator=(const GameObj&) = delete;
 };

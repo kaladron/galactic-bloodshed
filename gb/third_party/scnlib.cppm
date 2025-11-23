@@ -14,7 +14,7 @@
 ///
 /// Example usage:
 ///   import scnlib;
-///   
+///
 ///   auto result = scn::scan<int>("42", "{}");
 ///   if (result) {
 ///       auto [value] = result->values();
@@ -29,14 +29,14 @@ export module scnlib;
 
 export namespace scn {
 // Core scanning functions
-using scn::scan;
-using scn::prompt;
 using scn::input;
+using scn::prompt;
+using scn::scan;
 using scn::scan_value;
 
 // Result types
-using scn::scan_result;
 using scn::scan_error;
+using scn::scan_result;
 
 // Common type aliases for convenience
 using scn::expected;

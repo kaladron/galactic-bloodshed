@@ -8,10 +8,10 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void cs(const command_t &argv, GameObj &g) {
+void cs(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
 
   // Change to default scope
   if (argv.size() == 1) {

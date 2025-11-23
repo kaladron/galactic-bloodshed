@@ -8,7 +8,7 @@ import std;
 module commands;
 
 namespace GB::commands {
-void whois(const command_t &argv, GameObj &g) {
+void whois(const command_t& argv, GameObj& g) {
   // TODO(jeffbailey): ap_t APcount = 0;
 
   if (argv.size() <= 1) {
@@ -16,7 +16,7 @@ void whois(const command_t &argv, GameObj &g) {
     return;
   }
 
-  for (const auto &player :
+  for (const auto& player :
        std::ranges::subrange(argv.begin() + 1, argv.end())) {
     const auto j = std::stoi(player);
 

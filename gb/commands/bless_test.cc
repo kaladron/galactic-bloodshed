@@ -22,7 +22,7 @@ void test_bless_technology() {
   race.tech = 10.0;
   race.mass = 1.0;
   race.metabolism = 1.0;
-  
+
   JsonStore store(db);
   RaceRepository race_repo(store);
   race_repo.save(race);
@@ -75,7 +75,7 @@ void test_bless_money() {
   race.mass = 1.0;
   race.metabolism = 1.0;
   race.governor[0].money = 100;
-  
+
   JsonStore store(db);
   RaceRepository race_repo(store);
   race_repo.save(race);
@@ -126,7 +126,7 @@ void test_bless_requires_god() {
   race.tech = 10.0;
   race.mass = 1.0;
   race.metabolism = 1.0;
-  
+
   JsonStore store(db);
   RaceRepository race_repo(store);
   race_repo.save(race);
@@ -160,7 +160,7 @@ void test_bless_requires_god() {
   const auto* race_ptr = em.peek_race(1);
   assert(race_ptr);
   assert(race_ptr->tech == 10.0);  // Unchanged
-  
+
   std::string out_str = g.out.str();
   assert(out_str.find("not privileged") != std::string::npos);
 
@@ -178,7 +178,7 @@ void test_bless_requires_planet_scope() {
   race.tech = 10.0;
   race.mass = 1.0;
   race.metabolism = 1.0;
-  
+
   JsonStore store(db);
   RaceRepository race_repo(store);
   race_repo.save(race);
@@ -201,7 +201,7 @@ void test_bless_requires_planet_scope() {
   const auto* race_ptr = em.peek_race(1);
   assert(race_ptr);
   assert(race_ptr->tech == 10.0);  // Unchanged
-  
+
   std::string out_str = g.out.str();
   assert(out_str.find("cs to the planet") != std::string::npos);
 

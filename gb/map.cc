@@ -7,8 +7,8 @@ import std;
 
 module gblib;
 
-void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
-              const Planet &p) {
+void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
+              const Planet& p) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   int iq = 0;
@@ -19,7 +19,7 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
                        // client interface.  Can remove the conditional as soon
                        // as we know that it's not client affecting.
 
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
   auto smap = getsmap(p);
   if (!race.governor[Governor].toggle.geography) {
     /* traverse ship list on planet; find out if we can look at
@@ -27,7 +27,7 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
     iq = !!p.info(Playernum - 1).numsectsowned;
 
     Shiplist shiplist{p.ships()};
-    for (const auto &s : shiplist) {
+    for (const auto& s : shiplist) {
       if (s.owner == Playernum && authorized(Governor, s) &&
           (s.popn || (s.type == ShipType::OTYPE_PROBE)))
         iq = 1;
@@ -40,7 +40,7 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
   g.out << std::format("{};{};{};", p.Maxx(), p.Maxy(), show);
 
   /* send map data */
-  for (const auto &sector : smap) {
+  for (const auto& sector : smap) {
     bool owned1 = (sector.owner == race.governor[Governor].toggle.highlight);
     if (shiplocs[sector.x][sector.y] && iq) {
       if (race.governor[Governor].toggle.color)
@@ -124,8 +124,8 @@ void show_map(GameObj &g, const starnum_t snum, const planetnum_t pnum,
   }
 }
 
-char desshow(const player_t Playernum, const governor_t Governor, const Race &r,
-             const Sector &s) {
+char desshow(const player_t Playernum, const governor_t Governor, const Race& r,
+             const Sector& s) {
   if (s.troops && !r.governor[Governor].toggle.geography) {
     if (s.owner == Playernum) return CHAR_MY_TROOPS;
     if (isset(r.allied, s.owner)) return CHAR_ALLIED_TROOPS;

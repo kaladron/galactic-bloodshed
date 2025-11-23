@@ -14,9 +14,9 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void examine(const command_t &argv, GameObj &g) {
+void examine(const command_t& argv, GameObj& g) {
   const ap_t APcount = 0;
-  FILE *fd;
+  FILE* fd;
   char ch;
 
   if (argv.size() < 2) {
@@ -54,7 +54,8 @@ void examine(const command_t &argv, GameObj &g) {
 
   /* look through ship data file */
   for (int t = 0; t <= ship->type; t++)
-    while (fgetc(fd) != '~');
+    while (fgetc(fd) != '~')
+      ;
 
   /* look through ship data file */
   g.out << "\n";

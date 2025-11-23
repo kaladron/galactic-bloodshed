@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void make_mod(const command_t &argv, GameObj &g) {
+void make_mod(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int mode;
@@ -42,7 +42,7 @@ void make_mod(const command_t &argv, GameObj &g) {
     g.out << "This factory is already online.\n";
     return;
   }
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
 
   /* Save  size of the factory, and set it to the
      correct values for the design.  Maarten */

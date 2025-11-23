@@ -12,7 +12,7 @@ module commands;
 
 namespace GB::commands {
 /// Zoom in or out for orbit display
-void zoom(const command_t &argv, GameObj &g) {
+void zoom(const command_t& argv, GameObj& g) {
   int i = (g.level == ScopeLevel::LEVEL_UNIV);
 
   if (argv.size() > 1) {

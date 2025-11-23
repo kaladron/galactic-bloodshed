@@ -9,7 +9,7 @@ import std;
 module gblib;
 
 namespace {
-void do_repair(Ship &ship) {
+void do_repair(Ship& ship) {
   double maxrep = REPAIR_RATE / (double)segments;
 
   /* stations repair for free, and ships docked with them */
@@ -38,7 +38,7 @@ void do_repair(Ship &ship) {
   }
 }
 
-void do_habitat(Ship &ship) {
+void do_habitat(Ship& ship) {
   /* In v5.0+ Habitats make resources out of fuel */
   if (ship.on) {
     double fuse = ship.fuel * ((double)ship.popn / (double)ship.max_crew) *
@@ -63,7 +63,7 @@ void do_habitat(Ship &ship) {
   rcv_popn(ship, add, races[ship.owner - 1].mass);
 }
 
-void do_meta_infect(int who, Planet &p) {
+void do_meta_infect(int who, Planet& p) {
   auto smap = getsmap(p);
   // TODO(jeffbailey): I'm pretty certain this memset is unnecessary, but this
   // is so far away from any other uses of Sectinfo that I'm having trouble
@@ -99,12 +99,12 @@ int infect_planet(int who, int star, int p) {
   return 0;
 }
 
-void do_pod(Ship &ship) {
+void do_pod(Ship& ship) {
   if (!std::holds_alternative<PodData>(ship.special)) {
     return;
   }
   auto pod = std::get<PodData>(ship.special);
-  
+
   switch (ship.whatorbits) {
     case ScopeLevel::LEVEL_STAR: {
       if (pod.temperature < POD_THRESHOLD) {
@@ -150,16 +150,16 @@ void do_pod(Ship &ship) {
   }
 }
 
-void do_canister(Ship &ship) {
+void do_canister(Ship& ship) {
   if (ship.whatorbits != ScopeLevel::LEVEL_PLAN || landed(ship)) {
     return;
   }
-  
+
   if (!std::holds_alternative<TimerData>(ship.special)) {
     return;
   }
   auto timer = std::get<TimerData>(ship.special);
-  
+
   if (++timer.count < DISSIPATE) {
     ship.special = timer;
     if (Stinfo[ship.storbits][ship.pnumorbits].temp_add < -90)
@@ -179,13 +179,13 @@ void do_canister(Ship &ship) {
   }
 }
 
-void do_greenhouse(Ship &ship) {
+void do_greenhouse(Ship& ship) {
   if (ship.whatorbits == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
     if (!std::holds_alternative<TimerData>(ship.special)) {
       return;
     }
     auto timer = std::get<TimerData>(ship.special);
-    
+
     if (++timer.count < DISSIPATE) {
       ship.special = timer;
       if (Stinfo[ship.storbits][ship.pnumorbits].temp_add > 90)
@@ -205,30 +205,27 @@ void do_greenhouse(Ship &ship) {
   }
 }
 
-void do_mirror(Ship &ship) {
+void do_mirror(Ship& ship) {
   if (!std::holds_alternative<AimedAtData>(ship.special)) {
     return;
   }
   auto aimed_at = std::get<AimedAtData>(ship.special);
-  
+
   switch (aimed_at.level) {
     case ScopeLevel::LEVEL_SHIP: /* ship aimed at is a legal ship now */
       /* if in the same system */
       if ((ship.whatorbits == ScopeLevel::LEVEL_STAR ||
            ship.whatorbits == ScopeLevel::LEVEL_PLAN) &&
           (ships[aimed_at.shipno] != nullptr) &&
-          (ships[aimed_at.shipno]->whatorbits ==
-               ScopeLevel::LEVEL_STAR ||
-           ships[aimed_at.shipno]->whatorbits ==
-               ScopeLevel::LEVEL_PLAN) &&
+          (ships[aimed_at.shipno]->whatorbits == ScopeLevel::LEVEL_STAR ||
+           ships[aimed_at.shipno]->whatorbits == ScopeLevel::LEVEL_PLAN) &&
           ship.storbits == ships[aimed_at.shipno]->storbits &&
           ships[aimed_at.shipno]->alive) {
         auto s = ships[aimed_at.shipno];
         auto range = std::sqrt(Distsq(ship.xpos, ship.ypos, s->xpos, s->ypos));
-        auto i =
-            int_rand(0, round_rand((2. / ((double)(shipbody(*s)))) *
-                                   (double)(aimed_at.intensity) /
-                                   (range / PLORBITSIZE + 1.0)));
+        auto i = int_rand(0, round_rand((2. / ((double)(shipbody(*s)))) *
+                                        (double)(aimed_at.intensity) /
+                                        (range / PLORBITSIZE + 1.0)));
         std::stringstream telegram_buf;
         telegram_buf << std::format("{} aimed at {}\n", ship_to_string(ship),
                                     ship_to_string(*s));
@@ -252,9 +249,8 @@ void do_mirror(Ship &ship) {
                  stars[ship.storbits].ypos() +
                      planets[ship.storbits][ship.pnumorbits]->ypos()));
 
-      int i = range > PLORBITSIZE
-                  ? PLORBITSIZE * aimed_at.intensity / range
-                  : aimed_at.intensity;
+      int i = range > PLORBITSIZE ? PLORBITSIZE * aimed_at.intensity / range
+                                  : aimed_at.intensity;
 
       i = round_rand(.01 * (100.0 - (double)(ship.damage)) * (double)i);
       Stinfo[ship.storbits][aimed_at.pnum].temp_add += i;
@@ -262,8 +258,7 @@ void do_mirror(Ship &ship) {
     case ScopeLevel::LEVEL_STAR:
       /* have to be in the same system as the star; otherwise
          it's not too fair.. */
-      if (aimed_at.snum > 0 &&
-          aimed_at.snum < Sdata.numstars &&
+      if (aimed_at.snum > 0 && aimed_at.snum < Sdata.numstars &&
           ship.whatorbits > ScopeLevel::LEVEL_UNIV &&
           aimed_at.snum == ship.storbits) {
         std::random_device rd;
@@ -277,7 +272,7 @@ void do_mirror(Ship &ship) {
   }
 }
 
-void do_god(Ship &ship) {
+void do_god(Ship& ship) {
   /* gods have infinite power.... heh heh heh */
   if (races[ship.owner - 1].God) {
     ship.fuel = max_fuel(ship);
@@ -286,25 +281,25 @@ void do_god(Ship &ship) {
   }
 }
 
-constexpr double ap_planet_factor(const Planet &p) {
+constexpr double ap_planet_factor(const Planet& p) {
   double x = p.Maxx() * p.Maxy();
   return (AP_FACTOR / (AP_FACTOR + x));
 }
 
-double crew_factor(const Ship &ship) {
+double crew_factor(const Ship& ship) {
   int maxcrew = Shipdata[ship.type][ABIL_MAXCREW];
 
   if (!maxcrew) return 0.0;
   return ((double)ship.popn / (double)maxcrew);
 }
 
-void do_ap(Ship &ship) {
+void do_ap(Ship& ship) {
   /* if landed on planet, change conditions to be like race */
   if (landed(ship) && ship.on) {
     // TODO(jeffbailey): Not obvious here how the modified planet is saved
     // to disk
-    auto &p = planets[ship.storbits][ship.pnumorbits];
-    auto &race = races[ship.owner - 1];
+    auto& p = planets[ship.storbits][ship.pnumorbits];
+    auto& race = races[ship.owner - 1];
     if (ship.fuel >= 3.0) {
       use_fuel(ship, 3.0);
       for (auto j = RTEMP + 1; j <= OTHER; j++) {
@@ -322,14 +317,14 @@ void do_ap(Ship &ship) {
   }
 }
 
-void do_oap(Ship &ship) {
+void do_oap(Ship& ship) {
   /* "indimidate" the planet below, for enslavement purposes. */
   if (ship.whatorbits == ScopeLevel::LEVEL_PLAN)
     Stinfo[ship.storbits][ship.pnumorbits].intimidated = 1;
 }
 }  // namespace
 
-void doship(Ship &ship, int update) {
+void doship(Ship& ship, int update) {
   /*ship is active */
   ship.active = 1;
 
@@ -370,7 +365,7 @@ void doship(Ship &ship, int update) {
     }
 
     if (ship.type == ShipType::OTYPE_FACTORY && !ship.on) {
-      auto &race = races[ship.owner - 1];
+      auto& race = races[ship.owner - 1];
       ship.tech = race.tech;
     }
 
@@ -492,7 +487,7 @@ void doship(Ship &ship, int update) {
   }
 }
 
-void domass(Ship &ship) {
+void domass(Ship& ship) {
   auto rmass = races[ship.owner - 1].mass;
 
   auto sh = ship.ships;
@@ -511,7 +506,7 @@ void domass(Ship &ship) {
   ship.mass += (double)ship.resource * MASS_RESOURCE;
 }
 
-void doown(Ship &ship) {
+void doown(Ship& ship) {
   auto sh = ship.ships;
   while (sh) {
     doown(*ships[sh]); /* recursive call */
@@ -521,7 +516,7 @@ void doown(Ship &ship) {
   }
 }
 
-void domissile(Ship &ship) {
+void domissile(Ship& ship) {
   if (!ship.alive || !ship.owner) return;
   if (!ship.on || ship.docked) return;
 
@@ -529,7 +524,7 @@ void domissile(Ship &ship) {
   if (ship.whatdest == ScopeLevel::LEVEL_PLAN &&
       ship.whatorbits == ScopeLevel::LEVEL_PLAN &&
       ship.destpnum == ship.pnumorbits) {
-    auto &p = planets[ship.storbits][ship.pnumorbits];
+    auto& p = planets[ship.storbits][ship.pnumorbits];
     /* check to see if PDNs are present */
     auto pdn = 0;
     auto sh2 = p->ships();
@@ -604,7 +599,7 @@ void domissile(Ship &ship) {
       /* do the attack */
       auto s2sresult =
           shoot_ship_to_ship(ship, *ships[sh2], (int)ship.destruct, 0);
-      auto const &[damage, short_buf, long_buf] = *s2sresult;
+      auto const& [damage, short_buf, long_buf] = *s2sresult;
       push_telegram(ship.owner, ship.governor, long_buf);
       push_telegram(ships[sh2]->owner, ships[sh2]->governor, long_buf);
       kill_ship(ship.owner, &ship);
@@ -613,7 +608,7 @@ void domissile(Ship &ship) {
   }
 }
 
-void domine(Ship &ship, int detonate) {
+void domine(Ship& ship, int detonate) {
   if (ship.type != ShipType::STYPE_MINE || !ship.alive || !ship.owner) {
     return;
   }
@@ -640,7 +635,7 @@ void domine(Ship &ship, int detonate) {
   // radius.
   bool rad = false;
   if (!detonate) {
-    auto &r = races[ship.owner - 1];
+    auto& r = races[ship.owner - 1];
     Shiplist shiplist(sh);
     for (auto s : shiplist) {
       double xd = s.xpos - ship.xpos;
@@ -672,7 +667,7 @@ void domine(Ship &ship, int detonate) {
       auto s2sresult =
           shoot_ship_to_ship(ship, s, (int)(ship.destruct), 0, false);
       if (s2sresult) {
-        auto const &[damage, short_buf, long_buf] = *s2sresult;
+        auto const& [damage, short_buf, long_buf] = *s2sresult;
         post(short_buf, NewsType::COMBAT);
         warn(s.owner, s.governor, long_buf);
         putship(s);
@@ -721,12 +716,12 @@ void domine(Ship &ship, int detonate) {
   putship(ship);
 }
 
-void doabm(Ship &ship) {
+void doabm(Ship& ship) {
   if (!ship.alive || !ship.owner) return;
   if (!ship.on || !ship.retaliate || !ship.destruct) return;
 
   if (landed(ship)) {
-    const auto &p = planets[ship.storbits][ship.pnumorbits];
+    const auto& p = planets[ship.storbits][ship.pnumorbits];
     /* check to see if missiles/mines are present */
     auto sh2 = p->ships();
     while (sh2 && ship.destruct) {
@@ -743,7 +738,7 @@ void doabm(Ship &ship) {
         numdest = MIN(numdest, ship.destruct);
         numdest = MIN(numdest, ship.retaliate);
         ship.destruct -= numdest;
-        auto const &s2sresult =
+        auto const& s2sresult =
             shoot_ship_to_ship(ship, *ships[sh2], numdest, 0);
         auto [damange, short_buf, long_buf] = *s2sresult;
         push_telegram(ship.owner, ship.governor, long_buf);
@@ -755,7 +750,7 @@ void doabm(Ship &ship) {
   }
 }
 
-int do_weapon_plant(Ship &ship) {
+int do_weapon_plant(Ship& ship) {
   auto maxrate = (int)(races[ship.owner - 1].tech / 2.0);
 
   auto rate = round_rand(MIN((double)ship.resource / (double)RES_COST_WPLANT,

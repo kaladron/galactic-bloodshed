@@ -12,14 +12,14 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void grant(const command_t &argv, GameObj &g) {
+void grant(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   // ap_t APcount = 0; TODO(jeffbailey);
   governor_t gov;
   shipnum_t nextshipno;
   shipnum_t shipno;
-  Ship *ship;
+  Ship* ship;
 
   if (argv.size() < 3) {
     g.out << "Syntax: grant <governor> star\n";

@@ -149,12 +149,12 @@ void test_universe_persistence() {
 
   Database db(":memory:");
   initialize_schema(db);
-  
+
   // Create initial universe data in database (singleton with id=1)
   {
     JsonStore store(db);
     UniverseRepository repo(store);
-    
+
     universe_struct u{};
     u.id = 1;
     u.numstars = 200;
@@ -162,10 +162,10 @@ void test_universe_persistence() {
     u.AP[0] = 1000;  // Player 1
     u.AP[1] = 2000;  // Player 2
     u.VN_hitlist[0] = 5;
-    
+
     repo.save(u);
   }
-  
+
   // Now use EntityManager to retrieve and verify
   EntityManager em(db);
   const auto* universe = em.peek_universe();

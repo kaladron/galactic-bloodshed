@@ -55,7 +55,7 @@ int main() {
   test_ship.mounted = false;
   test_ship.cloaked = false;
   test_ship.docked = false;
-  test_ship.guns = 1;  // Light guns
+  test_ship.guns = 1;     // Light guns
   test_ship.primary = 0;  // No primary weapon
   test_ship.primtype = GTYPE_NONE;
   test_ship.secondary = 0;  // No secondary weapon

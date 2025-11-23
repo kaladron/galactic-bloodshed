@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void profile(const command_t &argv, GameObj &g) {
+void profile(const command_t& argv, GameObj& g) {
   const auto* race = g.entity_manager.peek_race(g.player);
   if (!race) {
     g.out << "Race not found.\n";
@@ -38,9 +38,9 @@ void profile(const command_t &argv, GameObj &g) {
                          tele_range(ShipType::OTYPE_STELE, race->tech));
     g.out << std::format("Updates active: {}    ground: {}\n\n", race->turn,
                          tele_range(ShipType::OTYPE_GTELE, race->tech));
-    g.out << std::format(
-        "{}  Planet Conditions\t      Sector Preferences\n",
-        race->Metamorph ? "Metamorphic Race\t" : "Normal Race\t\t");
+    g.out << std::format("{}  Planet Conditions\t      Sector Preferences\n",
+                         race->Metamorph ? "Metamorphic Race\t"
+                                         : "Normal Race\t\t");
     g.out << std::format("Fert:    {}%\t\t  Temp:\t{}\n", race->fertilize,
                          race->conditions[TEMP]);
     g.out << std::format("Rate:    {}\t\t  methane  {}%\t      {} {} {}\n",
@@ -97,7 +97,7 @@ void profile(const command_t &argv, GameObj &g) {
     g.out << "Player does not exist.\n";
     return;
   }
-  auto &r = races[p - 1];
+  auto& r = races[p - 1];
   g.out << std::format("------ Race report on {} ({}) ------\n", r.name, p);
   if (race->God && r.God) {
     g.out << "*** Deity Status ***\n";
@@ -126,7 +126,8 @@ void profile(const command_t &argv, GameObj &g) {
   g.out << std::format("Mass:    {}", Estimate_f(r.mass, *race, p));
   g.out << std::format("\t\t  oxygen   {}%",
                        Estimate_i((int)(r.conditions[OXYGEN]), *race, p));
-  g.out << std::format("\t\t  guns:   {}\n", Estimate_f(gun_range(r), *race, p));
+  g.out << std::format("\t\t  guns:   {}\n",
+                       Estimate_f(gun_range(r), *race, p));
   g.out << std::format("Fight:   {}", Estimate_i((int)(r.fighters), *race, p));
   g.out << std::format("\t\t  helium   {}%",
                        Estimate_i((int)(r.conditions[HELIUM]), *race, p));
@@ -155,8 +156,8 @@ void profile(const command_t &argv, GameObj &g) {
                        Estimate_i((int)(r.conditions[OTHER]), *race, p));
   g.out << std::format("\t\tMorale:   {}\n",
                        Estimate_i((int)(r.morale), *race, p));
-  g.out << std::format(
-      "Sector type preference : {}\n",
-      race->translate[p - 1] > 80 ? Desnames[r.likesbest] : " ? ");
+  g.out << std::format("Sector type preference : {}\n",
+                       race->translate[p - 1] > 80 ? Desnames[r.likesbest]
+                                                   : " ? ");
 }
 }  // namespace GB::commands

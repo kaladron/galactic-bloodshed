@@ -31,7 +31,7 @@ bool JsonStore::store(const std::string& table, int id,
 }
 
 std::optional<std::string> JsonStore::retrieve(const std::string& table,
-                                                int id) {
+                                               int id) {
   if (!db.is_open()) return std::nullopt;
 
   std::string sql = std::format("SELECT data FROM {} WHERE id = ?", table);
@@ -142,8 +142,8 @@ bool JsonStore::store_multi(
   columns += ", data";
   placeholders += ", ?";
 
-  std::string sql =
-      std::format("REPLACE INTO {} ({}) VALUES ({})", table, columns, placeholders);
+  std::string sql = std::format("REPLACE INTO {} ({}) VALUES ({})", table,
+                                columns, placeholders);
 
   sqlite3_stmt* stmt;
   int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);

@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void route(const command_t &argv, GameObj &g) {
+void route(const command_t& argv, GameObj& g) {
   // TODO(jeffbailey): This seems to segfault with no args.
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
@@ -20,7 +20,7 @@ void route(const command_t &argv, GameObj &g) {
   unsigned char planet;
   unsigned char load;
   unsigned char unload;
-  const char *c;
+  const char* c;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
     notify(Playernum, Governor,

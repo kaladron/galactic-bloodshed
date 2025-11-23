@@ -11,7 +11,7 @@ module commands;
 
 namespace GB::commands {
 /*! Ship vs ship */
-void fire(const command_t &argv, GameObj &g) {
+void fire(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount;
@@ -33,7 +33,7 @@ void fire(const command_t &argv, GameObj &g) {
   shipnum_t toship;
   shipnum_t sh;
   shipnum_t nextshipno;
-  Ship *from;
+  Ship* from;
   Ship dummy;
   int strength;
   int maxstrength;
@@ -194,7 +194,7 @@ void fire(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      auto const &[damage, short_buf, long_buf] = *s2sresult;
+      auto const& [damage, short_buf, long_buf] = *s2sresult;
 
       if (laser_on(*from) || cew)
         use_fuel(*from, 2.0 * (double)strength);
@@ -214,7 +214,7 @@ void fire(const command_t &argv, GameObj &g) {
 
         auto s2sresult = shoot_ship_to_ship(dummy, *from, strength, 0, true);
         if (s2sresult) {
-          auto const &[damage, short_buf, long_buf] = *s2sresult;
+          auto const& [damage, short_buf, long_buf] = *s2sresult;
 
           if (laser_on(*to))
             use_fuel(*to, 2.0 * (double)strength);
@@ -236,7 +236,7 @@ void fire(const command_t &argv, GameObj &g) {
           sh = p.ships();
         }
         Shiplist shiplist(sh);
-        for (auto &ship : shiplist) {
+        for (auto& ship : shiplist) {
           if (!from->alive) break;
           if (ship.protect.on && (ship.protect.ship == toship) &&
               (ship.protect.ship == toship) && ship.number != fromship &&
@@ -246,7 +246,7 @@ void fire(const command_t &argv, GameObj &g) {
 
             auto s2sresult = shoot_ship_to_ship(ship, *from, strength, 0);
             if (s2sresult) {
-              auto const &[damange, short_buf, long_buf] = *s2sresult;
+              auto const& [damange, short_buf, long_buf] = *s2sresult;
               if (laser_on(ship))
                 use_fuel(ship, 2.0 * (double)strength);
               else

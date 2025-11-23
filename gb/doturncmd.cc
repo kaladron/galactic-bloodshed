@@ -7,8 +7,8 @@ module;
 import gblib;
 import std.compat;
 
-#include <cassert>
 #include <strings.h>
+#include <cassert>
 
 #include "gb/GB_server.h"
 
@@ -21,25 +21,25 @@ namespace {
 struct TurnState {
   // Per-star population counts for each player
   unsigned long starpopns[NUMSTARS][MAXPLAYERS];
-  
+
   // Per-star ship counts for each player
   unsigned short starnumships[NUMSTARS][MAXPLAYERS];
-  
+
   // Global ship counts per player (for Sdata)
   unsigned short Sdatanumships[MAXPLAYERS];
-  
+
   // Star info (per star, per planet)
   struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
-  
+
   // Stars inhabited bitmap (one per star)
   unsigned long StarsInhab[NUMSTARS];
-  
+
   // Power statistics for each player
   power Power[MAXPLAYERS];
-  
+
   // Inhabited bitmap per star (64-bit for player flags)
   uint64_t inhabited[NUMSTARS];
-  
+
   // Power blocks for each player
   block Blocks[MAXPLAYERS];
 
@@ -60,28 +60,29 @@ struct TurnState {
     std::memset(inhabited, 0, sizeof(inhabited));
     // Note: Blocks is not reset here; it accumulates across the turn
   }
-  
+
   // Bounds-checked accessor for ship vector
   Ship* get_ship(shipnum_t shipno) noexcept {
     assert(shipno >= 0 && "Ship index must be non-negative");
     assert(shipno < ships.size() && "Ship index out of bounds");
     return ships[shipno].get();
   }
-  
+
   const Ship* get_ship(shipnum_t shipno) const noexcept {
     assert(shipno >= 0 && "Ship index must be non-negative");
     assert(shipno < ships.size() && "Ship index out of bounds");
     return ships[shipno].get();
   }
-  
+
   // Bounds-checked accessors for star population data
   unsigned long& star_popn(starnum_t star, player_t player) noexcept {
     assert(star >= 0 && star < NUMSTARS && "Star index out of bounds");
     assert(player >= 1 && player <= MAXPLAYERS && "Player index out of bounds");
     return starpopns[star][player - 1];
   }
-  
-  const unsigned long& star_popn(starnum_t star, player_t player) const noexcept {
+
+  const unsigned long& star_popn(starnum_t star,
+                                 player_t player) const noexcept {
     assert(star >= 0 && star < NUMSTARS && "Star index out of bounds");
     assert(player >= 1 && player <= MAXPLAYERS && "Player index out of bounds");
     return starpopns[star][player - 1];
@@ -138,7 +139,7 @@ static void finalize_turn(TurnState& state, int update);
  */
 void do_turn(EntityManager& entity_manager, int update) {
   TurnState state;  // Create turn-local state
-  
+
   initialize_data(state, update);
   process_ships(entity_manager, state);
   process_stars_and_planets(entity_manager, update);
@@ -151,12 +152,12 @@ void do_turn(EntityManager& entity_manager, int update) {
   insert_ships_into_lists(state);
   process_abms_and_missiles(state, update);
   update_victory_scores(state, update);
-  
+
   // Flush all dirty entities to database in one batch
   entity_manager.flush_all();
-  
+
   finalize_turn(state, update);
-  
+
   // Clear cache to free memory after turn completes
   entity_manager.clear_cache();
 }
@@ -492,8 +493,10 @@ static void process_abms_and_missiles(TurnState& state, int update) {
         }
         /* compute victory points for the block */
         if (state.inhabited[star] != 0) {
-          uint64_t dummy = state.Blocks[i - 1].invite & state.Blocks[i - 1].pledge;
-          state.Blocks[i - 1].systems_owned += (state.inhabited[star] | dummy) == dummy;
+          uint64_t dummy =
+              state.Blocks[i - 1].invite & state.Blocks[i - 1].pledge;
+          state.Blocks[i - 1].systems_owned +=
+              (state.inhabited[star] | dummy) == dummy;
         }
       }
     putstar(stars[star], star);
@@ -618,7 +621,8 @@ static void finalize_turn(TurnState& state, int update) {
             maintain(races[i - 1], governor, governor.maintain);
       }
     }
-    for (player_t i = 1; i <= Num_races; i++) putrace(races[i - 1]);
+    for (player_t i = 1; i <= Num_races; i++)
+      putrace(races[i - 1]);
   }
 
   // No manual free() needed - vector cleanup is automatic
@@ -698,7 +702,8 @@ void fix_stability(Star& s) {
           "Notice\n\n  Scientists report that star {}\nis no longer undergoing "
           "nova.\n",
           s.get_name());
-      for (i = 1; i <= Num_races; i++) push_telegram_race(i, telegram_msg);
+      for (i = 1; i <= Num_races; i++)
+        push_telegram_race(i, telegram_msg);
 
       /* telegram everyone when nova over? */
     } else
@@ -713,7 +718,8 @@ void fix_stability(Star& s) {
           "***** BULLETIN! ******\n\n  Scientists report that star {}\nis "
           "undergoing nova.\n",
           s.get_name());
-      for (i = 1; i <= Num_races; i++) push_telegram_race(i, telegram_msg);
+      for (i = 1; i <= Num_races; i++)
+        push_telegram_race(i, telegram_msg);
     } else
       s.stability() += a;
   } else {

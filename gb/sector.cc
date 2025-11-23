@@ -6,7 +6,7 @@ module gblib;
 
 import std;
 
-std::ostream &operator<<(std::ostream &os, const Sector &s) {
+std::ostream& operator<<(std::ostream& os, const Sector& s) {
   os << "Efficiency: " << s.eff << std::endl;
   os << "Fertility: " << s.fert << std::endl;
   os << "Mobilization: " << s.mobilization << std::endl;

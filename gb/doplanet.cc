@@ -14,12 +14,12 @@ import std.compat;
 module gblib;
 
 namespace {
-bool moveship_onplanet(Ship &ship, const Planet &planet) {
+bool moveship_onplanet(Ship& ship, const Planet& planet) {
   if (!std::holds_alternative<TerraformData>(ship.special)) {
     ship.on = 0;
     return false;
   }
-  
+
   auto terraform = std::get<TerraformData>(ship.special);
   if (ship.shipclass[terraform.index] == 's') {
     ship.on = 0;
@@ -44,8 +44,7 @@ bool moveship_onplanet(Ship &ship, const Planet &planet) {
   if (planet.Maxy() == 1) y = 0;
   if (ship.shipclass[terraform.index + 1] != '\0') {
     ++terraform.index;
-    if ((ship.shipclass[terraform.index + 1] == '\0') &&
-        (!ship.notified)) {
+    if ((ship.shipclass[terraform.index + 1] == '\0') && (!ship.notified)) {
       ship.notified = 1;
       std::string teleg_buf =
           std::format("%{0} is out of orders at %{1}.", ship_to_string(ship),
@@ -63,9 +62,9 @@ bool moveship_onplanet(Ship &ship, const Planet &planet) {
 }
 
 // move, and then terraform
-void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
+void terraform(Ship& ship, Planet& planet, SectorMap& smap) {
   if (!moveship_onplanet(ship, planet)) return;
-  auto &s = smap.get(ship.land_x, ship.land_y);
+  auto& s = smap.get(ship.land_x, ship.land_y);
 
   if (s.condition == races[ship.owner - 1].likesbest) {
     std::string buf = std::format(" T{} is full of zealots!!!", ship.number);
@@ -98,9 +97,9 @@ void terraform(Ship &ship, Planet &planet, SectorMap &smap) {
   }
 }
 
-void plow(Ship *ship, Planet &planet, SectorMap &smap) {
+void plow(Ship* ship, Planet& planet, SectorMap& smap) {
   if (!moveship_onplanet(*ship, planet)) return;
-  auto &s = smap.get(ship->land_x, ship->land_y);
+  auto& s = smap.get(ship->land_x, ship->land_y);
   if ((races[ship->owner - 1].likes[s.condition]) && (s.fert < 100)) {
     int adjust = round_rand(
         10 * (0.01 * (100.0 - (double)ship->damage) * (double)ship->popn) /
@@ -121,8 +120,8 @@ void plow(Ship *ship, Planet &planet, SectorMap &smap) {
   }
 }
 
-void do_dome(Ship *ship, SectorMap &smap) {
-  auto &s = smap.get(ship->land_x, ship->land_y);
+void do_dome(Ship* ship, SectorMap& smap) {
+  auto& s = smap.get(ship->land_x, ship->land_y);
   if (s.eff >= 100) {
     std::string buf = std::format(" Y{} is full of zealots!!!", ship->number);
     push_telegram(ship->owner, ship->governor, buf);
@@ -135,8 +134,8 @@ void do_dome(Ship *ship, SectorMap &smap) {
   use_resource(*ship, RES_COST_DOME);
 }
 
-void do_quarry(Ship *ship, Planet &planet, SectorMap &smap) {
-  auto &s = smap.get(ship->land_x, ship->land_y);
+void do_quarry(Ship* ship, Planet& planet, SectorMap& smap) {
+  auto& s = smap.get(ship->land_x, ship->land_y);
 
   if ((ship->fuel < (double)FUEL_COST_QUARRY)) {
     if (!ship->notified) msg_OOF(*ship);
@@ -157,7 +156,7 @@ void do_quarry(Ship *ship, Planet &planet, SectorMap &smap) {
     s.fert = 0;
 }
 
-void do_berserker(Ship *ship, Planet &planet) {
+void do_berserker(Ship* ship, Planet& planet) {
   if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
       ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
       ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {
@@ -171,7 +170,7 @@ void do_berserker(Ship *ship, Planet &planet) {
   }
 }
 
-void do_recover(Planet &planet, int starnum, int planetnum) {
+void do_recover(Planet& planet, int starnum, int planetnum) {
   int owners = 0;
   player_t i;
   player_t j;
@@ -310,32 +309,32 @@ void do_recover(Planet &planet, int starnum, int planetnum) {
   }
 }
 
-double est_production(const Sector &s) {
+double est_production(const Sector& s) {
   return (races[s.owner - 1].metabolism * (double)s.eff * (double)s.eff /
           200.0);
 }
 }  // namespace
 
-int doplanet(const starnum_t starnum, Planet &planet,
+int doplanet(const starnum_t starnum, Planet& planet,
              const planetnum_t planetnum) {
   int shipno;
   int nukex;
   int nukey;
   int o = 0;
   int i;
-  Ship *ship;
+  Ship* ship;
   double fadd;
   int timer = 20;
   unsigned char allmod = 0;
   unsigned char allexp = 0;
 
-  bzero((char *)Sectinfo, sizeof(Sectinfo));
+  bzero((char*)Sectinfo, sizeof(Sectinfo));
 
-  bzero((char *)avg_mob, sizeof(avg_mob));
-  bzero((char *)prod_res, sizeof(prod_res));
-  bzero((char *)prod_fuel, sizeof(prod_fuel));
-  bzero((char *)prod_destruct, sizeof(prod_destruct));
-  bzero((char *)prod_crystals, sizeof(prod_crystals));
+  bzero((char*)avg_mob, sizeof(avg_mob));
+  bzero((char*)prod_res, sizeof(prod_res));
+  bzero((char*)prod_fuel, sizeof(prod_fuel));
+  bzero((char*)prod_destruct, sizeof(prod_destruct));
+  bzero((char*)prod_crystals, sizeof(prod_crystals));
 
   tot_resdep = prod_eff = prod_mob = tot_captured = 0;
   Claims = 0;
@@ -495,8 +494,8 @@ int doplanet(const starnum_t starnum, Planet &planet,
                             Stinfo[starnum][planetnum].temp_add +
                             int_rand(-5, 5);
 
-  for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
-    Sector &p = sector_wrap;
+  for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
+    Sector& p = sector_wrap;
     if (p.owner && (p.popn || p.troops)) {
       allmod = 1;
       if (!stars[starnum].nova_stage()) {
@@ -558,7 +557,7 @@ int doplanet(const starnum_t starnum, Planet &planet,
                         */
   }
 
-  for (auto &p : smap) {
+  for (auto& p : smap) {
     if (p.owner) planet.info(p.owner - 1).numsectsowned++;
   }
 
@@ -571,9 +570,9 @@ int doplanet(const starnum_t starnum, Planet &planet,
         while (!Claims && !allexp && timer > 0) {
           timer -= 1;
           o = 1;
-          for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
+          for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
             if (!Claims) break;
-            Sector &p = sector_wrap;
+            Sector& p = sector_wrap;
             /* find out if all sectors have been explored */
             o &= Sectinfo[p.x][p.y].explored;
             if (((Sectinfo[p.x][p.y].explored == i) && !(random() & 02)) &&
@@ -599,7 +598,7 @@ int doplanet(const starnum_t starnum, Planet &planet,
     // TODO(jeffbailey): Replace this with getrandom.
     nukex = int_rand(0, (int)planet.Maxx() - 1);
     nukey = int_rand(0, (int)planet.Maxy() - 1);
-    auto &p = smap.get(nukex, nukey);
+    auto& p = smap.get(nukex, nukey);
     p.condition = SectorType::SEC_WASTED;
     p.popn = p.owner = p.troops = 0;
   }
@@ -685,8 +684,8 @@ int doplanet(const starnum_t starnum, Planet &planet,
     planet.info(i - 1).troops = 0;
   }
 
-  for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
-    Sector &p = sector_wrap;
+  for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
+    Sector& p = sector_wrap;
     if (p.owner) {
       planet.info(p.owner - 1).numsectsowned++;
       planet.info(p.owner - 1).troops += p.troops;
@@ -694,7 +693,7 @@ int doplanet(const starnum_t starnum, Planet &planet,
       planet.popn() += p.popn;
       planet.troops() += p.troops;
       planet.maxpopn() += maxsupport(races[p.owner - 1], p, Compat[p.owner - 1],
-                                   planet.conditions(TOXIC));
+                                     planet.conditions(TOXIC));
       Power[p.owner - 1].troops += p.troops;
       Power[p.owner - 1].popn += p.popn;
       Power[p.owner - 1].sum_eff += p.eff;
@@ -725,7 +724,7 @@ int doplanet(const starnum_t starnum, Planet &planet,
       /* first nuke some random sectors from the revolt */
       i = planet.popn() / 1000 + 1;
       while (--i) {
-        auto &p = smap.get(int_rand(0, (int)planet.Maxx() - 1),
+        auto& p = smap.get(int_rand(0, (int)planet.Maxx() - 1),
                            int_rand(0, (int)planet.Maxy() - 1));
         if (p.popn + p.troops) {
           p.owner = p.popn = p.troops = 0;
@@ -733,8 +732,8 @@ int doplanet(const starnum_t starnum, Planet &planet,
         }
       }
       /* now nuke all sectors belonging to former master */
-      for (auto shuffled = smap.shuffle(); auto &sector_wrap : shuffled) {
-        Sector &p = sector_wrap;
+      for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
+        Sector& p = sector_wrap;
         if (Stinfo[starnum][planetnum].intimidated && random() & 01) {
           if (p.owner == planet.slaved_to()) {
             p.owner = 0;
@@ -811,13 +810,13 @@ int doplanet(const starnum_t starnum, Planet &planet,
           planet.conditions(TOXIC) >= planet.info(i - 1).tox_thresh &&
           planet.info(i - 1).resource >=
               Shipcost(ShipType::OTYPE_TOXWC, races[i - 1])) {
-        Ship *s2;
+        Ship* s2;
         int t;
         ++Num_ships;
-        ships = (Ship **)realloc(ships,
-                                 (unsigned)((Num_ships + 1) * sizeof(Ship *)));
-        s2 = ships[Num_ships] = (Ship *)malloc(sizeof(Ship));
-        bzero((char *)s2, sizeof(Ship));
+        ships =
+            (Ship**)realloc(ships, (unsigned)((Num_ships + 1) * sizeof(Ship*)));
+        s2 = ships[Num_ships] = (Ship*)malloc(sizeof(Ship));
+        bzero((char*)s2, sizeof(Ship));
         s2->number = Num_ships;
         s2->type = ShipType::OTYPE_TOXWC;
 

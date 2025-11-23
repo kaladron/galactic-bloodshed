@@ -45,7 +45,9 @@ void InitFile(const std::string& path, void* buffer = nullptr, size_t len = 0) {
   fclose(f);
 }
 
-void EmptyFile(const std::string& path) { InitFile(path); }
+void EmptyFile(const std::string& path) {
+  InitFile(path);
+}
 };  // namespace
 
 int main(int argc, char* argv[]) {
@@ -100,7 +102,7 @@ int main(int argc, char* argv[]) {
         default:
           std::println("");
           std::println("Unknown option \"{}\".", argv[i]);
-        usage:
+usage:
           std::println("");
           std::println(
               "Usage: makeuniv [-a] [-b] [-e E] [-l MIN] [-m MAX] [-s N] [-v] "

@@ -20,13 +20,13 @@ export using toggletype = struct {
 };
 
 export class Race {
- public:
+public:
   player_t Playernum{0};
   std::string name; /* Racial name. */
   std::string password;
-  std::string info;      /* personal information */
-  std::string motto;     /* for a cute message */
-  bool absorb{false};    /* Does this race absorb enemies in combat? */
+  std::string info;          /* personal information */
+  std::string motto;         /* for a cute message */
+  bool absorb{false};        /* Does this race absorb enemies in combat? */
   bool collective_iq{false}; /* Does this race have collective IQ? */
   bool pods{false};          /* Can this race use pods? */
   unsigned int fighters{0};  /* Fight rating of this race. */
@@ -154,11 +154,17 @@ export constexpr bool Hyper_drive(const Race& r) {
   return r.discoveries[D_HYPER_DRIVE];
 }
 
-export constexpr bool Laser(const Race& r) { return r.discoveries[D_LASER]; }
+export constexpr bool Laser(const Race& r) {
+  return r.discoveries[D_LASER];
+}
 
-export constexpr bool Cew(const Race& r) { return r.discoveries[D_CEW]; }
+export constexpr bool Cew(const Race& r) {
+  return r.discoveries[D_CEW];
+}
 
-export constexpr bool Vn(const Race& r) { return r.discoveries[D_VN]; }
+export constexpr bool Vn(const Race& r) {
+  return r.discoveries[D_VN];
+}
 
 export constexpr bool Tractor_beam(const Race& r) {
   return r.discoveries[D_TRACTOR_BEAM];
@@ -168,9 +174,13 @@ export constexpr bool Transporter(const Race& r) {
   return r.discoveries[D_TRANSPORTER];
 }
 
-export constexpr bool Avpm(const Race& r) { return r.discoveries[D_AVPM]; }
+export constexpr bool Avpm(const Race& r) {
+  return r.discoveries[D_AVPM];
+}
 
-export constexpr bool Cloak(const Race& r) { return r.discoveries[D_CLOAK]; }
+export constexpr bool Cloak(const Race& r) {
+  return r.discoveries[D_CLOAK];
+}
 
 export constexpr bool Wormhole(const Race& r) {
   return r.discoveries[D_WORMHOLE];

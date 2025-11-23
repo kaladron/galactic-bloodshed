@@ -10,7 +10,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void move_popn(const command_t &argv, GameObj &g) {
+void move_popn(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   PopulationType what =
@@ -143,8 +143,8 @@ void move_popn(const command_t &argv, GameObj &g) {
 
     if (Assault) {
       ground_assaults[Playernum - 1][sect2.owner - 1][g.snum] += 1;
-      auto &race = races[Playernum - 1];
-      auto &alien = races[sect2.owner - 1];
+      auto& race = races[Playernum - 1];
+      auto& alien = races[sect2.owner - 1];
       /* races find out about each other */
       alien.translate[Playernum - 1] =
           MIN(alien.translate[Playernum - 1] + 5, 100);
@@ -224,9 +224,9 @@ void move_popn(const command_t &argv, GameObj &g) {
         g.out << std::format("VICTORY! The sector is yours!\n");
         telegram += "Sector CAPTURED!\n";
         if (people) {
-          g.out << std::format(
-              "{} {} move in.\n", people,
-              what == PopulationType::CIV ? "civilians" : "troops");
+          g.out << std::format("{} {} move in.\n", people,
+                               what == PopulationType::CIV ? "civilians"
+                                                           : "troops");
         }
         planet.info(Playernum - 1).mob_points += (int)sect2.mobilization;
         planet.info(old2owner - 1).mob_points -= (int)sect2.mobilization;
@@ -256,11 +256,11 @@ void move_popn(const command_t &argv, GameObj &g) {
                               casualties2, casualties3, casualties,
                               what == PopulationType::CIV ? "civ" : "mil");
       warn(old2owner, old2gov, telegram);
-      notify(
-          Playernum, Governor,
-          std::format("Casualties: You: {} {}, Them: {} civ/{} mil\n",
-                      casualties, what == PopulationType::CIV ? "civ" : "mil",
-                      casualties2, casualties3));
+      notify(Playernum, Governor,
+             std::format("Casualties: You: {} {}, Them: {} civ/{} mil\n",
+                         casualties,
+                         what == PopulationType::CIV ? "civ" : "mil",
+                         casualties2, casualties3));
     } else {
       if (what == PopulationType::CIV) {
         sect.popn -= people;

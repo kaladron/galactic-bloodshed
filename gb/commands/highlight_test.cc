@@ -54,7 +54,8 @@ void test_highlight_database_persistence() {
     auto saved = races_repo.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.highlight == 2);
-    std::println("    ✓ Database: highlight = {}", saved->governor[0].toggle.highlight);
+    std::println("    ✓ Database: highlight = {}",
+                 saved->governor[0].toggle.highlight);
   }
 
   // TEST 2: Change highlight to player 1 (self)
@@ -66,7 +67,8 @@ void test_highlight_database_persistence() {
     auto saved = races_repo.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.highlight == 1);
-    std::println("    ✓ Database: highlight = {}", saved->governor[0].toggle.highlight);
+    std::println("    ✓ Database: highlight = {}",
+                 saved->governor[0].toggle.highlight);
   }
 
   // TEST 3: Change back to player 2
@@ -78,7 +80,8 @@ void test_highlight_database_persistence() {
     auto saved = races_repo.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.highlight == 2);
-    std::println("    ✓ Database: highlight = {}", saved->governor[0].toggle.highlight);
+    std::println("    ✓ Database: highlight = {}",
+                 saved->governor[0].toggle.highlight);
   }
 
   // TEST 4: Invalid player number

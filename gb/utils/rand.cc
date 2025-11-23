@@ -14,7 +14,9 @@ import std.compat;
 module gblib;
 
 /* double double_rand() this returns a random number between 0 and 1 */
-double double_rand() { return (double)random() / 2147483648.0; }
+double double_rand() {
+  return (double)random() / 2147483648.0;
+}
 
 /*	int int_rand(low,hi) -	this returns an integer random number
  *				between hi and low, inclusive. */
@@ -35,4 +37,6 @@ int round_rand(double x) {
   return ((double_rand() > (x - (double)((int)x))) ? (int)x : (int)(x + 1));
 }
 
-bool success(int x) { return int_rand(1, 100) <= (x); }
+bool success(int x) {
+  return int_rand(1, 100) <= (x);
+}

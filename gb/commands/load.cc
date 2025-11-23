@@ -8,14 +8,14 @@ import std.compat;
 module commands;
 
 namespace {
-int landed_on(const Ship &s, const shipnum_t shipno) {
+int landed_on(const Ship& s, const shipnum_t shipno) {
   return (s.whatorbits == ScopeLevel::LEVEL_SHIP && s.destshipno == shipno);
 }
 
-void do_transporter(const Race &race, GameObj &g, Ship *s) {
+void do_transporter(const Race& race, GameObj& g, Ship* s) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  Ship *s2;
+  Ship* s2;
 
   Playernum = race.Playernum;
 
@@ -116,8 +116,8 @@ void do_transporter(const Race &race, GameObj &g, Ship *s) {
   free(s2);
 }
 
-void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
-                              Sector &sect, PopulationType what, int people) {
+void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
+                              Sector& sect, PopulationType what, int people) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   double astrength;
@@ -139,8 +139,8 @@ void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
     return;
   }
   ground_assaults[Playernum - 1][sect.owner - 1][g.snum] += 1;
-  auto &race = races[Playernum - 1];
-  auto &alien = races[sect.owner - 1];
+  auto& race = races[Playernum - 1];
+  auto& alien = races[sect.owner - 1];
   /* races find out about each other */
   alien.translate[Playernum - 1] = MIN(alien.translate[Playernum - 1] + 5, 100);
   race.translate[sect.owner - 1] = MIN(race.translate[sect.owner - 1] + 5, 100);
@@ -266,7 +266,7 @@ void unload_onto_alien_sector(GameObj &g, Planet &planet, Ship *ship,
 }  // namespace
 
 namespace GB::commands {
-void load(const command_t &argv, GameObj &g) {
+void load(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 0;
@@ -278,8 +278,8 @@ void load(const command_t &argv, GameObj &g) {
   int uplim;
   int amt;
   int transfercrew;
-  Ship *s;
-  Ship *s2;
+  Ship* s;
+  Ship* s2;
   Planet p;
   Sector sect;
   shipnum_t shipno;
@@ -488,7 +488,7 @@ void load(const command_t &argv, GameObj &g) {
         continue;
       }
 
-      auto &race = races[Playernum - 1];
+      auto& race = races[Playernum - 1];
 
       if (amt == 0) amt = (mode ? lolim : uplim);
 

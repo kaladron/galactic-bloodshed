@@ -188,7 +188,8 @@ void test_name_planet_persistence() {
     auto saved = stars_repo.find_by_number(1);
     assert(saved.has_value());
     assert(saved->get_planet_name(0) == "New Earth");
-    std::println("    ✓ Database: planet name = '{}'", saved->get_planet_name(0));
+    std::println("    ✓ Database: planet name = '{}'",
+                 saved->get_planet_name(0));
   }
 
   std::println("  ✅ Planet naming test passed!");

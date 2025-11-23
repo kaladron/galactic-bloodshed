@@ -80,62 +80,124 @@ export struct planet_struct {
 };
 
 export class Planet {
- public:
+public:
   // Constructors
   Planet() = default;
   Planet(planet_struct in) : data_(in) {}
-  Planet(PlanetType type) { data_.type = type; }
-  Planet(Planet &) = delete;
-  Planet &operator=(const Planet &) = delete;
-  Planet(Planet &&) = default;
-  Planet &operator=(Planet &&) = default;
+  Planet(PlanetType type) {
+    data_.type = type;
+  }
+  Planet(Planet&) = delete;
+  Planet& operator=(const Planet&) = delete;
+  Planet(Planet&&) = default;
+  Planet& operator=(Planet&&) = default;
   ~Planet() = default;
 
   // Accessor methods for simple fields
-  [[nodiscard]] double xpos() const { return data_.xpos; }
-  double& xpos() { return data_.xpos; }
+  [[nodiscard]] double xpos() const {
+    return data_.xpos;
+  }
+  double& xpos() {
+    return data_.xpos;
+  }
 
-  [[nodiscard]] double ypos() const { return data_.ypos; }
-  double& ypos() { return data_.ypos; }
+  [[nodiscard]] double ypos() const {
+    return data_.ypos;
+  }
+  double& ypos() {
+    return data_.ypos;
+  }
 
-  [[nodiscard]] shipnum_t ships() const { return data_.ships; }
-  shipnum_t& ships() { return data_.ships; }
+  [[nodiscard]] shipnum_t ships() const {
+    return data_.ships;
+  }
+  shipnum_t& ships() {
+    return data_.ships;
+  }
 
-  [[nodiscard]] unsigned char Maxx() const { return data_.Maxx; }
-  unsigned char& Maxx() { return data_.Maxx; }
+  [[nodiscard]] unsigned char Maxx() const {
+    return data_.Maxx;
+  }
+  unsigned char& Maxx() {
+    return data_.Maxx;
+  }
 
-  [[nodiscard]] unsigned char Maxy() const { return data_.Maxy; }
-  unsigned char& Maxy() { return data_.Maxy; }
+  [[nodiscard]] unsigned char Maxy() const {
+    return data_.Maxy;
+  }
+  unsigned char& Maxy() {
+    return data_.Maxy;
+  }
 
-  [[nodiscard]] population_t popn() const { return data_.popn; }
-  population_t& popn() { return data_.popn; }
+  [[nodiscard]] population_t popn() const {
+    return data_.popn;
+  }
+  population_t& popn() {
+    return data_.popn;
+  }
 
-  [[nodiscard]] population_t troops() const { return data_.troops; }
-  population_t& troops() { return data_.troops; }
+  [[nodiscard]] population_t troops() const {
+    return data_.troops;
+  }
+  population_t& troops() {
+    return data_.troops;
+  }
 
-  [[nodiscard]] population_t maxpopn() const { return data_.maxpopn; }
-  population_t& maxpopn() { return data_.maxpopn; }
+  [[nodiscard]] population_t maxpopn() const {
+    return data_.maxpopn;
+  }
+  population_t& maxpopn() {
+    return data_.maxpopn;
+  }
 
-  [[nodiscard]] resource_t total_resources() const { return data_.total_resources; }
-  resource_t& total_resources() { return data_.total_resources; }
+  [[nodiscard]] resource_t total_resources() const {
+    return data_.total_resources;
+  }
+  resource_t& total_resources() {
+    return data_.total_resources;
+  }
 
-  [[nodiscard]] player_t slaved_to() const { return data_.slaved_to; }
-  player_t& slaved_to() { return data_.slaved_to; }
+  [[nodiscard]] player_t slaved_to() const {
+    return data_.slaved_to;
+  }
+  player_t& slaved_to() {
+    return data_.slaved_to;
+  }
 
-  [[nodiscard]] PlanetType type() const { return data_.type; }
-  PlanetType& type() { return data_.type; }
+  [[nodiscard]] PlanetType type() const {
+    return data_.type;
+  }
+  PlanetType& type() {
+    return data_.type;
+  }
 
-  [[nodiscard]] unsigned char expltimer() const { return data_.expltimer; }
-  unsigned char& expltimer() { return data_.expltimer; }
+  [[nodiscard]] unsigned char expltimer() const {
+    return data_.expltimer;
+  }
+  unsigned char& expltimer() {
+    return data_.expltimer;
+  }
 
-  [[nodiscard]] unsigned char explored() const { return data_.explored; }
-  unsigned char& explored() { return data_.explored; }
+  [[nodiscard]] unsigned char explored() const {
+    return data_.explored;
+  }
+  unsigned char& explored() {
+    return data_.explored;
+  }
 
-  [[nodiscard]] starnum_t star_id() const { return data_.star_id; }
-  starnum_t& star_id() { return data_.star_id; }
+  [[nodiscard]] starnum_t star_id() const {
+    return data_.star_id;
+  }
+  starnum_t& star_id() {
+    return data_.star_id;
+  }
 
-  [[nodiscard]] planetnum_t planet_order() const { return data_.planet_order; }
-  planetnum_t& planet_order() { return data_.planet_order; }
+  [[nodiscard]] planetnum_t planet_order() const {
+    return data_.planet_order;
+  }
+  planetnum_t& planet_order() {
+    return data_.planet_order;
+  }
 
   // Array accessors with bounds checking
   [[nodiscard]] const plinfo& info(player_t player) const {
@@ -155,28 +217,32 @@ export class Planet {
 
   [[nodiscard]] int conditions(Conditions cond) const {
     if (cond < 0 || cond > TOXIC) {
-      throw std::runtime_error(std::format(
-          "Condition {} out of range (max {})", static_cast<int>(cond), static_cast<int>(TOXIC)));
+      throw std::runtime_error(std::format("Condition {} out of range (max {})",
+                                           static_cast<int>(cond),
+                                           static_cast<int>(TOXIC)));
     }
     return data_.conditions[cond];
   }
   int& conditions(Conditions cond) {
     if (cond < 0 || cond > TOXIC) {
-      throw std::runtime_error(std::format(
-          "Condition {} out of range (max {})", static_cast<int>(cond), static_cast<int>(TOXIC)));
+      throw std::runtime_error(std::format("Condition {} out of range (max {})",
+                                           static_cast<int>(cond),
+                                           static_cast<int>(TOXIC)));
     }
     return data_.conditions[cond];
   }
 
   // Existing methods
   [[nodiscard]] double gravity() const;
-  [[nodiscard]] double compatibility(const Race &) const;
+  [[nodiscard]] double compatibility(const Race&) const;
   [[nodiscard]] ap_t get_points() const;
 
   // For repository serialization
-  [[nodiscard]] planet_struct get_struct() const { return data_; }
+  [[nodiscard]] planet_struct get_struct() const {
+    return data_;
+  }
 
- private:
+private:
   planet_struct data_{};
 };
 
@@ -185,7 +251,7 @@ double Planet::gravity() const {
   return (double)Maxx() * (double)Maxy() * GRAV_FACTOR;
 }
 
-double Planet::compatibility(const Race &race) const {
+double Planet::compatibility(const Race& race) const {
   double atmosphere = 1.0;
 
   /* make an adjustment for planetary temperature */
@@ -225,8 +291,8 @@ ap_t Planet::get_points() const {
   }
 }
 
-export int revolt(Planet &pl, player_t victim, player_t agent);
+export int revolt(Planet& pl, player_t victim, player_t agent);
 
-export void moveplanet(starnum_t starnum, Planet &planet,
+export void moveplanet(starnum_t starnum, Planet& planet,
                        planetnum_t planetnum);
-export bool adjacent(const Planet &, Coordinates from, Coordinates to);
+export bool adjacent(const Planet&, Coordinates from, Coordinates to);

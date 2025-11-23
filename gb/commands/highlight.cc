@@ -13,7 +13,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void highlight(const command_t &argv, GameObj &g) {
+void highlight(const command_t& argv, GameObj& g) {
   player_t n = 0;
 
   if (!(n = get_player(argv[1]))) {

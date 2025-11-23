@@ -21,7 +21,7 @@ import std.compat;
 // Derived classes must implement serialize/deserialize for their specific type
 export template <typename T>
 class Repository {
- protected:
+protected:
   JsonStore& store;
   std::string table_name;
 
@@ -29,7 +29,7 @@ class Repository {
   virtual std::optional<std::string> serialize(const T& entity) const = 0;
   virtual std::optional<T> deserialize(const std::string& json) const = 0;
 
- public:
+public:
   Repository(JsonStore& js, std::string table)
       : store(js), table_name(std::move(table)) {}
 
@@ -56,13 +56,19 @@ class Repository {
   }
 
   // Remove entity by ID
-  bool remove(int id) { return store.remove(table_name, id); }
+  bool remove(int id) {
+    return store.remove(table_name, id);
+  }
 
   // Get next available ID
-  int next_available_id() { return store.find_next_available_id(table_name); }
+  int next_available_id() {
+    return store.find_next_available_id(table_name);
+  }
 
   // List all IDs in the table
-  std::vector<int> list_ids() { return store.list_ids(table_name); }
+  std::vector<int> list_ids() {
+    return store.list_ids(table_name);
+  }
 };
 
 // Glaze reflection for Race (must be in global glz namespace)
@@ -70,11 +76,11 @@ namespace glz {
 template <>
 struct meta<toggletype> {
   using T = toggletype;
-  static constexpr auto value = object(
-      "invisible", &T::invisible, "standby", &T::standby, "color", &T::color,
-      "gag", &T::gag, "double_digits", &T::double_digits, "inverse",
-      &T::inverse, "geography", &T::geography, "autoload", &T::autoload,
-      "highlight", &T::highlight, "compat", &T::compat);
+  static constexpr auto value =
+      object("invisible", &T::invisible, "standby", &T::standby, "color",
+             &T::color, "gag", &T::gag, "double_digits", &T::double_digits,
+             "inverse", &T::inverse, "geography", &T::geography, "autoload",
+             &T::autoload, "highlight", &T::highlight, "compat", &T::compat);
 };
 
 template <>
@@ -117,12 +123,12 @@ struct meta<Race> {
 template <>
 struct meta<Commod> {
   using T = Commod;
-  static constexpr auto value = object(
-      "id", &T::id, "owner", &T::owner, "governor", &T::governor, "type",
-      &T::type, "amount", &T::amount, "deliver", &T::deliver, "bid", &T::bid,
-      "bidder", &T::bidder, "bidder_gov", &T::bidder_gov, "star_from",
-      &T::star_from, "planet_from", &T::planet_from, "star_to", &T::star_to,
-      "planet_to", &T::planet_to);
+  static constexpr auto value =
+      object("id", &T::id, "owner", &T::owner, "governor", &T::governor, "type",
+             &T::type, "amount", &T::amount, "deliver", &T::deliver, "bid",
+             &T::bid, "bidder", &T::bidder, "bidder_gov", &T::bidder_gov,
+             "star_from", &T::star_from, "planet_from", &T::planet_from,
+             "star_to", &T::star_to, "planet_to", &T::planet_to);
 };
 
 // Glaze reflection for universe_struct
@@ -153,22 +159,22 @@ struct meta<power> {
   static constexpr auto value =
       object("id", &T::id, "troops", &T::troops, "popn", &T::popn, "resource",
              &T::resource, "fuel", &T::fuel, "destruct", &T::destruct,
-             "ships_owned", &T::ships_owned, "planets_owned",
-             &T::planets_owned, "sectors_owned", &T::sectors_owned, "money",
-             &T::money, "sum_mob", &T::sum_mob, "sum_eff", &T::sum_eff);
+             "ships_owned", &T::ships_owned, "planets_owned", &T::planets_owned,
+             "sectors_owned", &T::sectors_owned, "money", &T::money, "sum_mob",
+             &T::sum_mob, "sum_eff", &T::sum_eff);
 };
 }  // namespace glz
 
 // RaceRepository - provides type-safe access to Race entities
 export class RaceRepository : public Repository<Race> {
- public:
+public:
   RaceRepository(JsonStore& store);
 
   // Domain-specific methods
   std::optional<Race> find_by_player(player_t player);
   bool save(const Race& race);
 
- protected:
+protected:
   std::optional<std::string> serialize(const Race& race) const override;
   std::optional<Race> deserialize(const std::string& json_str) const override;
 };
@@ -185,8 +191,8 @@ std::optional<std::string> RaceRepository::serialize(const Race& race) const {
   return std::nullopt;
 }
 
-std::optional<Race> RaceRepository::deserialize(
-    const std::string& json_str) const {
+std::optional<Race>
+RaceRepository::deserialize(const std::string& json_str) const {
   Race race{};
   auto result = glz::read_json(race, json_str);
   if (!result) {
@@ -326,7 +332,7 @@ struct meta<Ship> {
 
 // ShipRepository - provides type-safe access to Ship entities
 export class ShipRepository : public Repository<Ship> {
- public:
+public:
   ShipRepository(JsonStore& store);
 
   // Domain-specific methods
@@ -336,7 +342,7 @@ export class ShipRepository : public Repository<Ship> {
   shipnum_t next_ship_number();
   shipnum_t count_all_ships();
 
- protected:
+protected:
   std::optional<std::string> serialize(const Ship& ship) const override;
   std::optional<Ship> deserialize(const std::string& json_str) const override;
 };
@@ -353,8 +359,8 @@ std::optional<std::string> ShipRepository::serialize(const Ship& ship) const {
   return std::nullopt;
 }
 
-std::optional<Ship> ShipRepository::deserialize(
-    const std::string& json_str) const {
+std::optional<Ship>
+ShipRepository::deserialize(const std::string& json_str) const {
   Ship ship{};
   auto result = glz::read_json(ship, json_str);
   if (!result) {
@@ -371,9 +377,13 @@ bool ShipRepository::save(const Ship& ship) {
   return Repository<Ship>::save(ship.number, ship);
 }
 
-void ShipRepository::delete_ship(shipnum_t num) { remove(num); }
+void ShipRepository::delete_ship(shipnum_t num) {
+  remove(num);
+}
 
-shipnum_t ShipRepository::next_ship_number() { return next_available_id(); }
+shipnum_t ShipRepository::next_ship_number() {
+  return next_available_id();
+}
 
 shipnum_t ShipRepository::count_all_ships() {
   return static_cast<shipnum_t>(list_ids().size());
@@ -409,21 +419,20 @@ struct meta<plinfo> {
 template <>
 struct meta<planet_struct> {
   using T = planet_struct;
-  static constexpr auto value =
-      object("xpos", &T::xpos, "ypos", &T::ypos, "ships", &T::ships, "Maxx",
-             &T::Maxx, "Maxy", &T::Maxy, "info", &T::info, "conditions",
-             &T::conditions, "popn", &T::popn, "troops", &T::troops, "maxpopn",
-             &T::maxpopn, "total_resources", &T::total_resources, "slaved_to",
-             &T::slaved_to, "type", &T::type, "expltimer", &T::expltimer,
-             "explored", &T::explored, "star_id", &T::star_id, "planet_order",
-             &T::planet_order);
+  static constexpr auto value = object(
+      "xpos", &T::xpos, "ypos", &T::ypos, "ships", &T::ships, "Maxx", &T::Maxx,
+      "Maxy", &T::Maxy, "info", &T::info, "conditions", &T::conditions, "popn",
+      &T::popn, "troops", &T::troops, "maxpopn", &T::maxpopn, "total_resources",
+      &T::total_resources, "slaved_to", &T::slaved_to, "type", &T::type,
+      "expltimer", &T::expltimer, "explored", &T::explored, "star_id",
+      &T::star_id, "planet_order", &T::planet_order);
 };
 }  // namespace glz
 
 // PlanetRepository - provides type-safe access to Planet entities
 // Planets are stored with composite key (star_id, planet_order)
 export class PlanetRepository : public Repository<Planet> {
- public:
+public:
   PlanetRepository(JsonStore& store);
 
   // Domain-specific methods
@@ -431,11 +440,11 @@ export class PlanetRepository : public Repository<Planet> {
   std::optional<Planet> find_by_location(starnum_t star, planetnum_t pnum);
   bool save(const Planet& planet);
 
- protected:
+protected:
   std::optional<std::string> serialize(const Planet& planet) const override;
   std::optional<Planet> deserialize(const std::string& json_str) const override;
-  
- private:
+
+private:
   // Helper for internal use with explicit parameters
   bool save_planet_impl(const Planet& planet, starnum_t star, planetnum_t pnum);
 };
@@ -444,8 +453,8 @@ export class PlanetRepository : public Repository<Planet> {
 PlanetRepository::PlanetRepository(JsonStore& store)
     : Repository<Planet>(store, "tbl_planet") {}
 
-std::optional<std::string> PlanetRepository::serialize(
-    const Planet& planet) const {
+std::optional<std::string>
+PlanetRepository::serialize(const Planet& planet) const {
   // Extract planet_struct from Planet wrapper
   planet_struct data = planet.get_struct();
   auto result = glz::write_json(data);
@@ -455,8 +464,8 @@ std::optional<std::string> PlanetRepository::serialize(
   return std::nullopt;
 }
 
-std::optional<Planet> PlanetRepository::deserialize(
-    const std::string& json_str) const {
+std::optional<Planet>
+PlanetRepository::deserialize(const std::string& json_str) const {
   // Deserialize to planet_struct, then wrap in Planet
   planet_struct data{};
   auto result = glz::read_json(data, json_str);
@@ -486,8 +495,8 @@ bool PlanetRepository::save_planet_impl(const Planet& planet, starnum_t star,
   if (!json) return false;
 
   // Use composite key (star_id, planet_order) - no 'id' column
-  std::vector<std::pair<std::string, int>> keys = {
-      {"star_id", star}, {"planet_order", pnum}};
+  std::vector<std::pair<std::string, int>> keys = {{"star_id", star},
+                                                   {"planet_order", pnum}};
   return store.store_multi(table_name, keys, *json);
 }
 
@@ -496,38 +505,34 @@ namespace glz {
 template <>
 struct meta<star_struct> {
   using T = star_struct;
-  static constexpr auto value =
-      object("ships", &T::ships, "name", &T::name, "governor", &T::governor,
-             "AP", &T::AP, "explored", &T::explored, "inhabited", &T::inhabited,
-             "xpos", &T::xpos, "ypos", &T::ypos, "pnames", &T::pnames,
-             "stability", &T::stability, "nova_stage", &T::nova_stage,
-             "temperature", &T::temperature, "gravity", &T::gravity,
-             "star_id", &T::star_id);
+  static constexpr auto value = object(
+      "ships", &T::ships, "name", &T::name, "governor", &T::governor, "AP",
+      &T::AP, "explored", &T::explored, "inhabited", &T::inhabited, "xpos",
+      &T::xpos, "ypos", &T::ypos, "pnames", &T::pnames, "stability",
+      &T::stability, "nova_stage", &T::nova_stage, "temperature",
+      &T::temperature, "gravity", &T::gravity, "star_id", &T::star_id);
 };
 }  // namespace glz
 
 // StarRepository - provides type-safe access to Star entities
 export class StarRepository : public Repository<Star> {
- public:
+public:
   StarRepository(JsonStore& store);
 
   // Domain-specific methods
   std::optional<Star> find_by_number(starnum_t num);
   bool save(const Star& star);
 
- protected:
-  std::optional<std::string> serialize(
-      const Star& star) const override;
-  std::optional<Star> deserialize(
-      const std::string& json_str) const override;
+protected:
+  std::optional<std::string> serialize(const Star& star) const override;
+  std::optional<Star> deserialize(const std::string& json_str) const override;
 };
 
 // StarRepository implementation
 StarRepository::StarRepository(JsonStore& store)
     : Repository<Star>(store, "tbl_star") {}
 
-std::optional<std::string> StarRepository::serialize(
-    const Star& star) const {
+std::optional<std::string> StarRepository::serialize(const Star& star) const {
   // Serialize the underlying star_struct, not the wrapper
   star_struct data = star.get_struct();
   auto result = glz::write_json(data);
@@ -537,8 +542,8 @@ std::optional<std::string> StarRepository::serialize(
   return std::nullopt;
 }
 
-std::optional<Star> StarRepository::deserialize(
-    const std::string& json_str) const {
+std::optional<Star>
+StarRepository::deserialize(const std::string& json_str) const {
   // Deserialize to star_struct, then wrap in Star
   star_struct data{};
   auto result = glz::read_json(data, json_str);
@@ -572,20 +577,23 @@ struct meta<Sector> {
 }  // namespace glz
 
 // SectorRepository - provides type-safe access to Sector entities
-// Note: Sectors use composite keys (star_id, planet_order, xpos, ypos) in database
+// Note: Sectors use composite keys (star_id, planet_order, xpos, ypos) in
+// database
 export class SectorRepository : public Repository<Sector> {
- public:
+public:
   SectorRepository(JsonStore& store);
 
   // Domain-specific methods for individual sectors
-  std::optional<Sector> find_sector(int star_id, int planet_order, int x, int y);
-  bool save_sector(const Sector& sector, int star_id, int planet_order, int x, int y);
+  std::optional<Sector> find_sector(int star_id, int planet_order, int x,
+                                    int y);
+  bool save_sector(const Sector& sector, int star_id, int planet_order, int x,
+                   int y);
 
   // Bulk operations for sector maps
   SectorMap load_map(const Planet& planet);
   bool save_map(const SectorMap& map, const Planet& planet);
 
- protected:
+protected:
   std::optional<std::string> serialize(const Sector& sector) const override;
   std::optional<Sector> deserialize(const std::string& json_str) const override;
 };
@@ -594,8 +602,8 @@ export class SectorRepository : public Repository<Sector> {
 SectorRepository::SectorRepository(JsonStore& store)
     : Repository<Sector>(store, "tbl_sector") {}
 
-std::optional<std::string> SectorRepository::serialize(
-    const Sector& sector) const {
+std::optional<std::string>
+SectorRepository::serialize(const Sector& sector) const {
   auto result = glz::write_json(sector);
   if (result.has_value()) {
     return result.value();
@@ -603,8 +611,8 @@ std::optional<std::string> SectorRepository::serialize(
   return std::nullopt;
 }
 
-std::optional<Sector> SectorRepository::deserialize(
-    const std::string& json_str) const {
+std::optional<Sector>
+SectorRepository::deserialize(const std::string& json_str) const {
   Sector sector{};
   auto result = glz::read_json(sector, json_str);
   if (!result) {
@@ -613,24 +621,31 @@ std::optional<Sector> SectorRepository::deserialize(
   return std::nullopt;
 }
 
-std::optional<Sector> SectorRepository::find_sector(int star_id, int planet_order,
-                                                    int x, int y) {
-  // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND ypos=?
+std::optional<Sector>
+SectorRepository::find_sector(int star_id, int planet_order, int x, int y) {
+  // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND
+  // ypos=?
   std::vector<std::pair<std::string, int>> keys = {
-      {"star_id", star_id}, {"planet_order", planet_order}, {"xpos", x}, {"ypos", y}};
+      {"star_id", star_id},
+      {"planet_order", planet_order},
+      {"xpos", x},
+      {"ypos", y}};
   auto json = store.retrieve_multi(table_name, keys);
   if (!json) return std::nullopt;
   return deserialize(*json);
 }
 
-bool SectorRepository::save_sector(const Sector& sector, int star_id, int planet_order,
-                                   int x, int y) {
+bool SectorRepository::save_sector(const Sector& sector, int star_id,
+                                   int planet_order, int x, int y) {
   auto json = serialize(sector);
   if (!json) return false;
 
   // Use multi-key storage: star_id, planet_order, xpos, ypos
   std::vector<std::pair<std::string, int>> keys = {
-      {"star_id", star_id}, {"planet_order", planet_order}, {"xpos", x}, {"ypos", y}};
+      {"star_id", star_id},
+      {"planet_order", planet_order},
+      {"xpos", x},
+      {"ypos", y}};
   return store.store_multi(table_name, keys, *json);
 }
 
@@ -670,15 +685,19 @@ bool SectorRepository::save_map(const SectorMap& map, const Planet& planet) {
 // CommodRepository - Repository for commodity market data
 // ============================================================================
 export class CommodRepository : public Repository<Commod> {
- public:
+public:
   explicit CommodRepository(JsonStore& store)
       : Repository<Commod>(store, "tbl_commod") {}
 
   // Domain-specific methods
-  std::optional<Commod> find_by_id(int id) { return find(id); }
-  bool save(const Commod& commod) { return Repository<Commod>::save(commod.id, commod); }
+  std::optional<Commod> find_by_id(int id) {
+    return find(id);
+  }
+  bool save(const Commod& commod) {
+    return Repository<Commod>::save(commod.id, commod);
+  }
 
- protected:
+protected:
   std::optional<std::string> serialize(const Commod& commod) const override {
     auto result = glz::write_json(commod);
     if (result.has_value()) {
@@ -687,8 +706,8 @@ export class CommodRepository : public Repository<Commod> {
     return std::nullopt;
   }
 
-  std::optional<Commod> deserialize(
-      const std::string& json_str) const override {
+  std::optional<Commod>
+  deserialize(const std::string& json_str) const override {
     Commod commod{};
     auto result = glz::read_json(commod, json_str);
     if (!result) {
@@ -702,15 +721,19 @@ export class CommodRepository : public Repository<Commod> {
 // BlockRepository - Repository for alliance block data
 // ============================================================================
 export class BlockRepository : public Repository<block> {
- public:
+public:
   explicit BlockRepository(JsonStore& store)
       : Repository<block>(store, "tbl_block") {}
 
   // Domain-specific methods
-  std::optional<block> find_by_id(int id) { return find(id); }
-  bool save(const block& b) { return Repository<block>::save(b.Playernum, b); }
+  std::optional<block> find_by_id(int id) {
+    return find(id);
+  }
+  bool save(const block& b) {
+    return Repository<block>::save(b.Playernum, b);
+  }
 
- protected:
+protected:
   std::optional<std::string> serialize(const block& b) const override {
     auto result = glz::write_json(b);
     if (result.has_value()) {
@@ -733,15 +756,19 @@ export class BlockRepository : public Repository<block> {
 // PowerRepository - Repository for player power statistics
 // ============================================================================
 export class PowerRepository : public Repository<power> {
- public:
+public:
   explicit PowerRepository(JsonStore& store)
       : Repository<power>(store, "tbl_power") {}
 
   // Domain-specific methods
-  std::optional<power> find_by_id(int id) { return find(id); }
-  bool save(const power& p) { return Repository<power>::save(p.id, p); }
+  std::optional<power> find_by_id(int id) {
+    return find(id);
+  }
+  bool save(const power& p) {
+    return Repository<power>::save(p.id, p);
+  }
 
- protected:
+protected:
   std::optional<std::string> serialize(const power& p) const override {
     auto result = glz::write_json(p);
     if (result.has_value()) {
@@ -764,20 +791,22 @@ export class PowerRepository : public Repository<power> {
 // UniverseRepository - Repository for global universe-wide statistics
 // ============================================================================
 export class UniverseRepository : public Repository<universe_struct> {
- public:
+public:
   explicit UniverseRepository(JsonStore& store)
       : Repository<universe_struct>(store, "tbl_universe") {}
 
   // Domain-specific methods
   // Note: universe_struct is a singleton (id=1)
-  std::optional<universe_struct> get_global_data() { return find(1); }
+  std::optional<universe_struct> get_global_data() {
+    return find(1);
+  }
   bool save(const universe_struct& universe) {
     return Repository<universe_struct>::save(universe.id, universe);
   }
 
- protected:
-  std::optional<std::string> serialize(
-      const universe_struct& universe) const override {
+protected:
+  std::optional<std::string>
+  serialize(const universe_struct& universe) const override {
     auto result = glz::write_json(universe);
     if (result.has_value()) {
       return result.value();
@@ -785,8 +814,8 @@ export class UniverseRepository : public Repository<universe_struct> {
     return std::nullopt;
   }
 
-  std::optional<universe_struct> deserialize(
-      const std::string& json_str) const override {
+  std::optional<universe_struct>
+  deserialize(const std::string& json_str) const override {
     universe_struct universe{};
     auto result = glz::read_json(universe, json_str);
     if (!result) {

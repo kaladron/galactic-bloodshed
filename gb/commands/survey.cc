@@ -18,7 +18,7 @@ module commands;
 
 constexpr int MAX_SHIPS_PER_SECTOR = 10;
 
-static const char *Tox[] = {
+static const char* Tox[] = {
     "Stage 0, mild",
     "Stage 1, mild",
     "Stage 2, semi-mild",
@@ -40,7 +40,7 @@ static std::string_view stability_label(int pct) {
   if (pct < 100) return "WARNING! Nova iminent!";
   return "undergoing nova";
 }
-void survey(const command_t &argv, GameObj &g) {
+void survey(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   int lowx;
@@ -94,7 +94,7 @@ void survey(const command_t &argv, GameObj &g) {
     }
   }
 
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
 
   if (where->level == ScopeLevel::LEVEL_PLAN) {
     const auto* p_ptr = g.entity_manager.peek_planet(where->snum, where->pnum);
@@ -140,7 +140,7 @@ void survey(const command_t &argv, GameObj &g) {
                              p.maxpopn(), p.conditions(TOXIC),
                              p.compatibility(race), p.slaved_to()));
         }
-        bzero((struct shipstuff *)shiplocs, sizeof(shiplocs));
+        bzero((struct shipstuff*)shiplocs, sizeof(shiplocs));
         inhere = p.info(Playernum - 1).numsectsowned;
         shiplist = p.ships();
         while (shiplist) {
@@ -171,7 +171,7 @@ void survey(const command_t &argv, GameObj &g) {
       }
       for (; lowy <= hiy; lowy++)
         for (lowx = x2; lowx <= hix; lowx++) {
-          auto &s = smap.get(lowx, lowy);
+          auto& s = smap.get(lowx, lowy);
           /* if (s->owner==Playernum) */
           if (!mode) {
             notify(Playernum, Governor,
@@ -304,18 +304,18 @@ void survey(const command_t &argv, GameObj &g) {
       crystal_count = avg_fert = avg_resource = 0;
       for (lowx = 0; lowx < p.Maxx(); lowx++)
         for (lowy = 0; lowy < p.Maxy(); lowy++) {
-          auto &s = smap.get(lowx, lowy);
+          auto& s = smap.get(lowx, lowy);
           avg_fert += s.fert;
           avg_resource += s.resource;
           if (race.discoveries[D_CRYSTAL] || race.God)
             crystal_count += !!s.crystals;
         }
-      notify(
-          Playernum, Governor,
-          std::format("{:>29}: {}\n{:>29}: {}\n{:>29}: {}\n",
-                      "Average fertility", avg_fert / (p.Maxx() * p.Maxy()),
-                      "Average resource", avg_resource / (p.Maxx() * p.Maxy()),
-                      "Crystal sectors", crystal_count));
+      notify(Playernum, Governor,
+             std::format("{:>29}: {}\n{:>29}: {}\n{:>29}: {}\n",
+                         "Average fertility", avg_fert / (p.Maxx() * p.Maxy()),
+                         "Average resource",
+                         avg_resource / (p.Maxx() * p.Maxy()),
+                         "Crystal sectors", crystal_count));
       notify(Playernum, Governor,
              std::format("{:>29}: {}\n", "Total resource deposits",
                          p.total_resources()));

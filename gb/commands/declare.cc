@@ -67,9 +67,10 @@ void declare(const command_t& argv, GameObj& g) {
       } else {
         notify(Playernum, Governor, "Good for you.\n");
       }
-      warn_race(g.entity_manager, n, std::format(
-                       " Player #{} ({}) has declared an alliance with you!\n",
-                       Playernum, race.name));
+      warn_race(
+          g.entity_manager, n,
+          std::format(" Player #{} ({}) has declared an alliance with you!\n",
+                      Playernum, race.name));
       news_msg = std::format("{} [{}] declares ALLIANCE with {} [{}].\n",
                              race.name, Playernum, alien.name, n);
       d_mod = 30;
@@ -82,8 +83,9 @@ void declare(const command_t& argv, GameObj& g) {
       notify(Playernum, Governor, "Done.\n");
 
       warn_race(
-          g.entity_manager, n, std::format(" Player #{} ({}) has declared neutrality with you!\n",
-                         Playernum, race.name));
+          g.entity_manager, n,
+          std::format(" Player #{} ({}) has declared neutrality with you!\n",
+                      Playernum, race.name));
       news_msg =
           std::format("{} [{}] declares a state of neutrality with {} [{}].\n",
                       race.name, Playernum, alien.name, n);
@@ -143,6 +145,5 @@ void declare(const command_t& argv, GameObj& g) {
   /* They, of course, learn more about you */
   alien.translate[Playernum - 1] =
       MIN(alien.translate[Playernum - 1] + d_mod, 100);
-
 }
 }  // namespace GB::commands

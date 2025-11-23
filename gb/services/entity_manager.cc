@@ -15,11 +15,11 @@ namespace {
 
 template <typename Entity, typename Key, typename FindFn, typename SaveFn,
           typename ReleaseFn>
-EntityHandle<Entity> get_entity_impl(
-    EntityManager* manager, Key key,
-    std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
-    std::unordered_map<Key, int>& refcount, std::mutex& cache_mutex,
-    FindFn find_fn, SaveFn save_fn, ReleaseFn release_fn) {
+EntityHandle<Entity>
+get_entity_impl(EntityManager* manager, Key key,
+                std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
+                std::unordered_map<Key, int>& refcount, std::mutex& cache_mutex,
+                FindFn find_fn, SaveFn save_fn, ReleaseFn release_fn) {
   std::lock_guard lock(cache_mutex);
 
   // Check if already cached
@@ -55,23 +55,24 @@ EntityHandle<Entity> get_entity_impl(
 }
 
 template <typename Entity, typename Key, typename FindFn>
-const Entity* peek_entity_impl(
-    Key key, std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
-    std::mutex& cache_mutex, FindFn find_fn) {
+const Entity*
+peek_entity_impl(Key key,
+                 std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
+                 std::mutex& cache_mutex, FindFn find_fn) {
   std::lock_guard lock(cache_mutex);
-  
+
   // Check if already cached
   auto it = cache.find(key);
   if (it != cache.end()) {
     return it->second.get();
   }
-  
+
   // Load from repository if not cached
   auto entity_opt = find_fn(key);
   if (!entity_opt) {
     return nullptr;
   }
-  
+
   // Cache the entity (but don't increment refcount - this is read-only)
   auto [iter, inserted] =
       cache.emplace(key, std::make_unique<Entity>(std::move(*entity_opt)));
@@ -119,17 +120,9 @@ void flush_cache_impl(
 }  // namespace
 
 EntityManager::EntityManager(Database& database)
-    : db(database),
-      store(database),
-      races(store),
-      ships(store),
-      planets(store),
-      stars(store),
-      sectors(store),
-      commods(store),
-      blocks(store),
-      powers(store),
-      universe_repo(store) {}
+    : db(database), store(database), races(store), ships(store), planets(store),
+      stars(store), sectors(store), commods(store), blocks(store),
+      powers(store), universe_repo(store) {}
 
 // Race entity methods
 EntityHandle<Race> EntityManager::get_race(player_t player) {
@@ -242,7 +235,7 @@ const Planet* EntityManager::peek_planet(starnum_t star, planetnum_t pnum) {
   std::lock_guard lock(cache_mutex);
 
   auto key = std::make_pair(star, pnum);
-  
+
   // Check if already cached
   auto it = planet_cache.find(key);
   if (it != planet_cache.end()) {
@@ -337,7 +330,8 @@ EntityHandle<universe_struct> EntityManager::get_universe() {
 
   if (global_universe_cache) {
     global_universe_refcount++;
-    return {this, global_universe_cache.get(), [this](const universe_struct& sd) {
+    return {this, global_universe_cache.get(),
+            [this](const universe_struct& sd) {
               std::lock_guard lock(cache_mutex);
               universe_repo.save(sd);
               release_universe();
@@ -411,12 +405,13 @@ void EntityManager::flush_all() {
   flush_cache_impl<Ship>(ship_cache, [this](const Ship& s) { ships.save(s); });
   flush_cache_impl<Planet>(planet_cache,
                            [this](const Planet& p) { planets.save(p); });
-  flush_cache_impl<Star>(star_cache,
-                                [this](const Star& s) { stars.save(s); });
+  flush_cache_impl<Star>(star_cache, [this](const Star& s) { stars.save(s); });
   flush_cache_impl<Commod>(commod_cache,
                            [this](const Commod& c) { commods.save(c); });
-  flush_cache_impl<block>(block_cache, [this](const block& b) { blocks.save(b); });
-  flush_cache_impl<power>(power_cache, [this](const power& p) { powers.save(p); });
+  flush_cache_impl<block>(block_cache,
+                          [this](const block& b) { blocks.save(b); });
+  flush_cache_impl<power>(power_cache,
+                          [this](const power& p) { powers.save(p); });
 
   if (global_universe_cache) {
     universe_repo.save(*global_universe_cache);
@@ -443,7 +438,8 @@ void EntityManager::clear_cache() {
 }
 
 // Business logic operations
-std::optional<player_t> EntityManager::find_player_by_name(const std::string& name) {
+std::optional<player_t>
+EntityManager::find_player_by_name(const std::string& name) {
   player_t rnum = 0;
 
   if (name.empty()) return std::nullopt;
@@ -452,7 +448,7 @@ std::optional<player_t> EntityManager::find_player_by_name(const std::string& na
     if ((rnum = std::stoi(name)) < 1 || rnum > num_races()) return std::nullopt;
     return rnum;
   }
-  
+
   // Iterate through all races using peek_race
   for (player_t p = 1; p <= num_races(); p++) {
     const auto* race = peek_race(p);
@@ -482,7 +478,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     }
     auto& victim = *victim_handle;
     if (victim.Gov_ship == ship.number) victim.Gov_ship = 0;
-    
+
     if (!victim.God && Playernum != ship.owner &&
         ship.type != ShipType::OTYPE_VN) {
       auto killer_handle = get_race(Playernum);
@@ -506,7 +502,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
       std::abort();
     }
     auto& Sdata = *sdata_handle;
-    
+
     /* add ship to VN shit list */
     if (std::holds_alternative<MindData>(ship.special)) {
       auto mind = std::get<MindData>(ship.special);
@@ -562,7 +558,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     s.whatdest = ScopeLevel::LEVEL_UNIV;
     // s auto-saves when handle goes out of scope
   }
-  
+
   /* landed ships are killed */
   Shiplist shiplist(ship.ships);
   for (auto s : shiplist) {

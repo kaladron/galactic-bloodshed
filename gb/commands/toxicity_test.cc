@@ -99,7 +99,8 @@ int main() {
     assert(p2);
     assert(p1->info(0).tox_thresh == 75);
     assert(p2->info(0).tox_thresh == 25);
-    std::println("✓ Multiple planets with different thresholds saved correctly");
+    std::println(
+        "✓ Multiple planets with different thresholds saved correctly");
   }
 
   std::println("All toxicity tests passed!");

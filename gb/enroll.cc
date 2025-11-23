@@ -15,15 +15,15 @@ import gblib;
 
 #include "gb/racegen.h"
 
-static const char *DEFAULT_ENROLLMENT_FILENAME = "enroll.saves";
-static const char *DEFAULT_ENROLLMENT_FAILURE_FILENAME = "failures.saves";
+static const char* DEFAULT_ENROLLMENT_FILENAME = "enroll.saves";
+static const char* DEFAULT_ENROLLMENT_FAILURE_FILENAME = "failures.saves";
 
 /*
  * Returns: 0 if the race was successfully enrolled, or 1 if not.
  */
-static int enroll_player_race(const char *failure_filename) {
+static int enroll_player_race(const char* failure_filename) {
   char c[128];
-  FILE *g;
+  FILE* g;
   int n;
   static int recursing = 0;
   static int successful_enroll_in_fix_mode = 0;
@@ -141,9 +141,9 @@ static int enroll_player_race(const char *failure_filename) {
   return 0;
 }
 
-int enroll(int argc, const char *argv[]) {
+int enroll(int argc, const char* argv[]) {
   int ret;
-  FILE *g;
+  FILE* g;
 
   if (argc < 2) argv[1] = DEFAULT_ENROLLMENT_FAILURE_FILENAME;
   g = fopen(argv[1], "w+");
@@ -171,9 +171,9 @@ int enroll(int argc, const char *argv[]) {
 /**************
  * Iteratively loads races from a file, and enrolls them.
  */
-void process(int argc, const char *argv[]) {
-  FILE *f;
-  FILE *g;
+void process(int argc, const char* argv[]) {
+  FILE* f;
+  FILE* g;
   int n;
   int nenrolled;
 

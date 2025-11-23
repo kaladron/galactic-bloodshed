@@ -8,7 +8,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void dump(const command_t &argv, GameObj &g) {
+void dump(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 10;
@@ -26,7 +26,7 @@ void dump(const command_t &argv, GameObj &g) {
 
   /* transfer all planet and star knowledge to the player */
   /* get all stars and planets */
-  auto &race = races[Playernum - 1];
+  auto& race = races[Playernum - 1];
   if (race.Guest) {
     g.out << "Cheater!\n";
     return;

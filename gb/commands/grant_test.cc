@@ -41,15 +41,14 @@ int main() {
   {
     command_t argv = {"grant", "1", "money", "200"};
     GB::commands::grant(argv, g);
-    
+
     // Verify money was transferred
     const auto* saved_race = em.peek_race(1);
     assert(saved_race != nullptr);
     assert(saved_race->governor[0].money == 800);  // 1000 - 200
     assert(saved_race->governor[1].money == 700);  // 500 + 200
     std::println("    ✓ Money granted: gov[0]={}, gov[1]={}",
-                 saved_race->governor[0].money,
-                 saved_race->governor[1].money);
+                 saved_race->governor[0].money, saved_race->governor[1].money);
   }
 
   std::println("\n✅ All grant tests passed!");

@@ -12,7 +12,7 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void dissolve(const command_t &argv, GameObj &g) {
+void dissolve(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   if (!DISSOLVE) {

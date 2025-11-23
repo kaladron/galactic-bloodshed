@@ -16,12 +16,9 @@ namespace {
 // Apply SQLite pragmas for strict mode (from existing apply_sqlite_strict_mode)
 void apply_pragmas(sqlite3* db) {
   const char* pragmas[] = {
-      "PRAGMA foreign_keys = ON;",
-      "PRAGMA journal_mode = WAL;",
-      "PRAGMA synchronous = NORMAL;",
-      "PRAGMA temp_store = MEMORY;",
-      "PRAGMA mmap_size = 30000000000;",
-      "PRAGMA page_size = 4096;",
+      "PRAGMA foreign_keys = ON;",       "PRAGMA journal_mode = WAL;",
+      "PRAGMA synchronous = NORMAL;",    "PRAGMA temp_store = MEMORY;",
+      "PRAGMA mmap_size = 30000000000;", "PRAGMA page_size = 4096;",
       "PRAGMA cache_size = -64000;",  // 64MB cache
   };
 
@@ -31,7 +28,8 @@ void apply_pragmas(sqlite3* db) {
     if (rc != SQLITE_OK) {
       std::string error = errmsg ? errmsg : "Unknown error";
       sqlite3_free(errmsg);
-      throw std::runtime_error(std::format("Failed to apply pragma: {}", error));
+      throw std::runtime_error(
+          std::format("Failed to apply pragma: {}", error));
     }
   }
 }
@@ -99,7 +97,8 @@ void Database::begin_transaction() {
   if (rc != SQLITE_OK) {
     std::string error = errmsg ? errmsg : "Unknown error";
     sqlite3_free(errmsg);
-    throw std::runtime_error(std::format("Failed to begin transaction: {}", error));
+    throw std::runtime_error(
+        std::format("Failed to begin transaction: {}", error));
   }
 }
 
@@ -113,7 +112,8 @@ void Database::commit() {
   if (rc != SQLITE_OK) {
     std::string error = errmsg ? errmsg : "Unknown error";
     sqlite3_free(errmsg);
-    throw std::runtime_error(std::format("Failed to commit transaction: {}", error));
+    throw std::runtime_error(
+        std::format("Failed to commit transaction: {}", error));
   }
 }
 
@@ -127,6 +127,7 @@ void Database::rollback() {
   if (rc != SQLITE_OK) {
     std::string error = errmsg ? errmsg : "Unknown error";
     sqlite3_free(errmsg);
-    throw std::runtime_error(std::format("Failed to rollback transaction: {}", error));
+    throw std::runtime_error(
+        std::format("Failed to rollback transaction: {}", error));
   }
 }

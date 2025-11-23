@@ -214,7 +214,7 @@ int main() {
   for (int y = 0; y < 3; y++) {
     for (int x = 0; x < 3; x++) {
       auto& sec = loaded_map.get(x, y);
-      sec.eff += 10;  // Increase efficiency by 10
+      sec.eff += 10;    // Increase efficiency by 10
       sec.popn += 500;  // Add population
     }
   }

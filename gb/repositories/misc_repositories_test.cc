@@ -202,7 +202,8 @@ void test_universe_repository() {
   sd.VN_hitlist[1] = 2;
   // VN_index arrays are int arrays for VN tracking
   sd.VN_index1[0] = 5;
-  sd.VN_index1[1] = -3;  // Test negative values (comment says negative values are used)
+  sd.VN_index1[1] =
+      -3;  // Test negative values (comment says negative values are used)
   sd.VN_index2[0] = 10;
   sd.VN_index2[1] = 15;
 

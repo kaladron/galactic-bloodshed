@@ -14,12 +14,12 @@ import std.compat;
 module commands;
 
 namespace GB::commands {
-void dock(const command_t &argv, GameObj &g) {
+void dock(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = (argv[0] == "dock") ? 0 : 1;
   int Assault = (argv[0] == "assault") ? 1 : 0;
-  Ship *s;
+  Ship* s;
   Ship ship;
   population_t boarders = 0;
   int dam = 0;
@@ -39,8 +39,8 @@ void dock(const command_t &argv, GameObj &g) {
   double bstrength;
   double b2strength;
   double Dist;
-  Race *race;
-  Race *alien;
+  Race* race;
+  Race* alien;
 
   if (argv.size() < 3) {
     g.out << "Dock with what?\n";
@@ -160,10 +160,10 @@ void dock(const command_t &argv, GameObj &g) {
           0.05 + Dist * 0.025 * (Assault ? 2.0 : 1.0) * sqrt((double)s->mass);
 
       if (Dist > DIST_TO_DOCK) {
-        notify(
-            Playernum, Governor,
-            std::format("{} must be {:.2f} or closer to {}.\n",
-                        ship_to_string(*s), DIST_TO_DOCK, ship_to_string(*s2)));
+        notify(Playernum, Governor,
+               std::format("{} must be {:.2f} or closer to {}.\n",
+                           ship_to_string(*s), DIST_TO_DOCK,
+                           ship_to_string(*s2)));
         free(s);
         continue;
       }

@@ -37,7 +37,7 @@ int main() {
   ship.name = "TestShip";
   ship.speed = 5;
   ship.popn = 100;  // Crew
-  
+
   // Save ship via repository
   ShipRepository ships_repo(store);
   ships_repo.save(ship);
@@ -53,13 +53,13 @@ int main() {
   {
     // Clear cache to ensure we get fresh data
     em.clear_cache();
-    
+
     command_t argv = {"order", "#1", "defense", "on"};
     GB::commands::order(argv, g);
-    
+
     // Clear cache again to force reload from database
     em.clear_cache();
-    
+
     // Verify defense order was set
     const auto* saved_ship = em.peek_ship(1);
     assert(saved_ship != nullptr);
@@ -74,13 +74,13 @@ int main() {
   {
     // Clear cache to ensure we get fresh data
     em.clear_cache();
-    
+
     command_t argv = {"order", "#1", "defense", "off"};
     GB::commands::order(argv, g);
-    
+
     // Clear cache again to force reload from database
     em.clear_cache();
-    
+
     // Verify defense was turned off
     const auto* saved_ship = em.peek_ship(1);
     assert(saved_ship != nullptr);
@@ -94,7 +94,7 @@ int main() {
     // This should just display orders without modifications
     command_t argv = {"order"};
     GB::commands::order(argv, g);
-    
+
     // Verify ship state unchanged
     const auto* saved_ship = em.peek_ship(1);
     assert(saved_ship != nullptr);

@@ -47,7 +47,8 @@ void victory(const command_t& argv, GameObj& g) {
   // Add header row
   tabulate::Table::Row_t header = {"No.", "", "Race", "Name"};
   if (g.god) {
-    header.insert(header.end(), {"Score", "Tech", "IQ", "Password", "Gov Pass"});
+    header.insert(header.end(),
+                  {"Score", "Tech", "IQ", "Password", "Gov Pass"});
   }
   table.add_row(header);
   table[0].format().font_style({tabulate::FontStyle::bold});
@@ -67,13 +68,11 @@ void victory(const command_t& argv, GameObj& g) {
       const auto* race = g.entity_manager.peek_race(vic.racenum);
       if (!race) continue;
 
-      row.insert(row.end(), {
-          std::format("{}", vic.rawscore),
-          std::format("{:.2f}", vic.tech),
-          std::format("{}", vic.IQ),
-          std::format("{}", race->password),
-          std::format("{}", race->governor[0].password)
-      });
+      row.insert(row.end(),
+                 {std::format("{}", vic.rawscore),
+                  std::format("{:.2f}", vic.tech), std::format("{}", vic.IQ),
+                  std::format("{}", race->password),
+                  std::format("{}", race->governor[0].password)});
     }
 
     table.add_row(row);

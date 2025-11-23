@@ -81,7 +81,8 @@ void test_entity_manager_caching() {
     // Verify modification visible via other handle (same instance)
     assert(handle2->fuel == 500.0);
 
-    std::println("  ✓ Modifications visible across all handles (same instance)");
+    std::println(
+        "  ✓ Modifications visible across all handles (same instance)");
   }
 
   // After all handles released, cache should be cleared
@@ -127,7 +128,8 @@ void test_entity_manager_composite_keys() {
     assert(handle2.get() == handle1.get());  // Same pointer!
     assert(handle2->Maxx() == 15);  // Sees the modification immediately
 
-    std::println("  ✓ Multiple handles to same planet return identical instance");
+    std::println(
+        "  ✓ Multiple handles to same planet return identical instance");
     // Handles go out of scope here, triggering save
   }
 
@@ -403,11 +405,13 @@ void test_entity_manager_get_player() {
 
   auto p_invalid_num = em.find_player_by_name("999");
   assert(!p_invalid_num.has_value());
-  std::println("  ✓ find_player_by_name returns nullopt for out-of-range number");
+  std::println(
+      "  ✓ find_player_by_name returns nullopt for out-of-range number");
 
   auto p_zero = em.find_player_by_name("0");
   assert(!p_zero.has_value());
-  std::println("  ✓ find_player_by_name returns nullopt for invalid player number");
+  std::println(
+      "  ✓ find_player_by_name returns nullopt for invalid player number");
 }
 
 void test_entity_manager_kill_ship() {
@@ -484,11 +488,11 @@ void test_entity_manager_kill_ship() {
   vn_ship.alive = 1;
   vn_ship.type = ShipType::OTYPE_VN;
   vn_ship.storbits = 5;
-  
+
   MindData mind{};
   mind.who_killed = 1;
   vn_ship.special = mind;
-  
+
   ships_repo.save(vn_ship);
 
   em.kill_ship(1, vn_ship);

@@ -50,10 +50,10 @@ private:
  * Provides automatic save-on-scope-exit semantics through ShipHandle.
  *
  * Usage:
- *   // Read-only iteration
+ *   // Read-only iteration (const ShipList)
  *   const ShipList ships(g.entity_manager, ship.ships);
- *   for (const auto* ship : ships) {
- *     g.out << ship->name << "\n";
+ *   for (const Ship* ship : ships) {
+ *     g.out << ship->name << "\n";  // Read-only, no modifications allowed
  *   }
  *
  *   // Mutable iteration (auto-saves on scope exit)
@@ -80,12 +80,18 @@ public:
   class MutableIterator;
   class ConstIterator;
 
-  // Iterator support
+  // Iterator support - mutable version
   MutableIterator begin();
   MutableIterator end();
 
+  // Iterator support - const version (read-only)
+  ConstIterator begin() const;
+  ConstIterator end() const;
+  ConstIterator cbegin() const;
+  ConstIterator cend() const;
+
 private:
-  EntityManager* em{nullptr};
+  mutable EntityManager* em{nullptr};
   shipnum_t start_ship{0};
   IterationType iteration_type;
   ScopeLevel scope_level{ScopeLevel::LEVEL_UNIV};
@@ -116,6 +122,41 @@ public:
   ShipHandle operator*();  // Defined in .cc file
   bool operator==(const MutableIterator& other) const;
   bool operator!=(const MutableIterator& other) const;
+
+private:
+  EntityManager& em;
+  shipnum_t current;
+  IterationType type;
+  ScopeLevel scope_level;
+  starnum_t snum;
+  planetnum_t pnum;
+  player_t player;
+
+  void advance_to_next_match();
+  bool matches_scope(const Ship& ship) const;
+};
+
+/**
+ * Iterator for const (read-only) ship access - returns const Ship*
+ * Uses peek_ship() to avoid marking entities as dirty.
+ * Provides compile-time guarantees against modification.
+ */
+class ShipList::ConstIterator {
+public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = const Ship*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = const Ship**;
+  using reference = const Ship*&;
+
+  ConstIterator(EntityManager& em, shipnum_t current, IterationType type,
+                ScopeLevel level, starnum_t snum, planetnum_t pnum,
+                player_t player);
+
+  ConstIterator& operator++();
+  const Ship* operator*() const;
+  bool operator==(const ConstIterator& other) const;
+  bool operator!=(const ConstIterator& other) const;
 
 private:
   EntityManager& em;

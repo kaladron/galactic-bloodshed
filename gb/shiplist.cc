@@ -82,6 +82,24 @@ ShipList::MutableIterator ShipList::end() {
                          player);
 }
 
+ShipList::ConstIterator ShipList::begin() const {
+  return ConstIterator(*em, start_ship, iteration_type, scope_level, snum,
+                       pnum, player);
+}
+
+ShipList::ConstIterator ShipList::end() const {
+  return ConstIterator(*em, 0, iteration_type, scope_level, snum, pnum,
+                       player);
+}
+
+ShipList::ConstIterator ShipList::cbegin() const {
+  return begin();
+}
+
+ShipList::ConstIterator ShipList::cend() const {
+  return end();
+}
+
 // Helper to check if a ship matches the current scope
 bool ShipList::matches_scope(const Ship& ship) const {
   if (iteration_type == IterationType::Nested) {
@@ -175,6 +193,98 @@ void ShipList::MutableIterator::advance_to_next_match() {
 }
 
 bool ShipList::MutableIterator::matches_scope(const Ship& ship) const {
+  if (type == IterationType::Nested) {
+    return true;  // Nested iteration doesn't filter by scope
+  }
+
+  // Scope-based filtering
+  if (!ship.alive) return false;
+
+  switch (scope_level) {
+    case ScopeLevel::LEVEL_UNIV:
+      return true;  // All ships match universe scope
+    case ScopeLevel::LEVEL_STAR:
+      return ship.storbits == snum;
+    case ScopeLevel::LEVEL_PLAN:
+      return ship.storbits == snum && ship.pnumorbits == pnum;
+    case ScopeLevel::LEVEL_SHIP:
+      // At ship scope, match ships owned by the player
+      return ship.owner == player;
+  }
+  return false;
+}
+
+// ConstIterator implementation
+
+ShipList::ConstIterator::ConstIterator(EntityManager& em, shipnum_t current,
+                                       IterationType type, ScopeLevel level,
+                                       starnum_t snum, planetnum_t pnum,
+                                       player_t player)
+    : em(em), current(current), type(type), scope_level(level), snum(snum),
+      pnum(pnum), player(player) {
+  // Advance to first matching ship
+  if (current != 0) {
+    advance_to_next_match();
+  }
+}
+
+ShipList::ConstIterator& ShipList::ConstIterator::operator++() {
+  if (current == 0) return *this;
+
+  if (type == IterationType::Nested) {
+    // Follow nextship linked list
+    const auto* ship = em.peek_ship(current);
+    current = ship ? ship->nextship : 0;
+  } else {
+    // Scope-based: increment to next ship number
+    ++current;
+    if (current > em.num_ships()) {
+      current = 0;
+    }
+  }
+
+  advance_to_next_match();
+  return *this;
+}
+
+const Ship* ShipList::ConstIterator::operator*() const {
+  // Use peek_ship to get read-only access without marking dirty
+  return em.peek_ship(current);
+}
+
+bool ShipList::ConstIterator::operator==(const ConstIterator& other) const {
+  return current == other.current;
+}
+
+bool ShipList::ConstIterator::operator!=(const ConstIterator& other) const {
+  return !(*this == other);
+}
+
+void ShipList::ConstIterator::advance_to_next_match() {
+  while (current != 0) {
+    const auto* ship = em.peek_ship(current);
+    if (!ship) {
+      current = 0;
+      return;
+    }
+
+    if (matches_scope(*ship)) {
+      return;  // Found a matching ship
+    }
+
+    // Move to next ship
+    if (type == IterationType::Nested) {
+      current = ship->nextship;
+    } else {
+      ++current;
+      if (current > em.num_ships()) {
+        current = 0;
+      }
+    }
+  }
+}
+
+bool ShipList::ConstIterator::matches_scope(const Ship& ship) const {
   if (type == IterationType::Nested) {
     return true;  // Nested iteration doesn't filter by scope
   }

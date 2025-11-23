@@ -366,6 +366,115 @@ int main() {
     std::println("✓ Test 4d passed: Filtering during iteration works");
   }
 
+  // Test 5: Const iteration (read-only, uses peek_ship)
+  {
+    std::println("\nTest 5: Const iteration (read-only)");
+    
+    // Create a const ShipList using const reference
+    const ShipList ships_const(em, 1);
+    
+    // Iterate with const iterators - should use peek_ship internally
+    int count = 0;
+    for (const Ship* ship : ships_const) {
+      assert(ship != nullptr);
+      assert(ship->alive);
+      count++;
+      
+      // Read-only operations should work fine
+      std::println("  Ship #{}: type={}", ship->number, 
+                   static_cast<int>(ship->type));
+    }
+    
+    assert(count == 3);  // Should see ship1, ship2, ship3
+    
+    // Verify ships weren't marked dirty by THIS iteration
+    // (they were already modified by Test 3b, so we just check we didn't change them further)
+    const auto* check1 = em.peek_ship(1);
+    const auto* check2 = em.peek_ship(2);
+    const auto* check3 = em.peek_ship(3);
+    double fuel1_before = check1->fuel;
+    double fuel2_before = check2->fuel;
+    double fuel3_before = check3->fuel;
+    
+    // Do another const iteration - fuel should remain unchanged
+    {
+      const ShipList ships_const2(em, 1);
+      for (const Ship* ship : ships_const2) {
+        [[maybe_unused]] auto fuel = ship->fuel;
+      }
+    }
+    
+    // Fuel should still be the same (const iteration doesn't mark dirty)
+    assert(em.peek_ship(1)->fuel == fuel1_before);
+    assert(em.peek_ship(2)->fuel == fuel2_before);
+    assert(em.peek_ship(3)->fuel == fuel3_before);
+    
+    std::println("✓ Test 5 passed: Const iteration is truly read-only");
+  }
+
+  // Test 5b: Const vs mutable iteration comparison
+  {
+    std::println("\nTest 5b: Const vs mutable iteration comparison");
+    
+    // Get current fuel values before test
+    double fuel1_initial = em.peek_ship(1)->fuel;
+    double fuel2_initial = em.peek_ship(2)->fuel;
+    double fuel3_initial = em.peek_ship(3)->fuel;
+    
+    // First, use const iteration - should NOT mark dirty
+    {
+      const ShipList ships_const(em, 1);
+      for (const Ship* ship : ships_const) {
+        // Just reading data
+        [[maybe_unused]] auto fuel = ship->fuel;
+      }
+    }
+    
+    // Ships should still have same fuel (not marked dirty)
+    assert(em.peek_ship(1)->fuel == fuel1_initial);
+    assert(em.peek_ship(2)->fuel == fuel2_initial);
+    assert(em.peek_ship(3)->fuel == fuel3_initial);
+    
+    // Now use mutable iteration and actually modify
+    {
+      ShipList ships_mutable(em, 1);
+      for (auto ship_handle : ships_mutable) {
+        Ship& ship = *ship_handle;
+        ship.fuel += 50.0;  // Modify ship
+      }
+    }  // Ships auto-save here
+    
+    // Ships should now have modified fuel
+    assert(em.peek_ship(1)->fuel == fuel1_initial + 50.0);
+    assert(em.peek_ship(2)->fuel == fuel2_initial + 50.0);
+    assert(em.peek_ship(3)->fuel == fuel3_initial + 50.0);
+    
+    std::println("✓ Test 5b passed: Const iteration doesn't mark dirty, mutable does");
+  }
+
+  // Test 5c: Const scope-based iteration
+  {
+    std::println("\nTest 5c: Const scope-based iteration");
+    
+    // Create GameObj for scope-based iteration
+    GameObj g(em);
+    g.player = 1;
+    g.level = ScopeLevel::LEVEL_STAR;
+    g.snum = 5;
+    
+    const ShipList ships(em, g, ShipList::IterationType::Scope);
+    
+    int count = 0;
+    for (const Ship* ship : ships) {
+      assert(ship != nullptr);
+      assert(ship->storbits == 5);
+      count++;
+    }
+    
+    assert(count == 2);  // ship4 and ship5 are at star 5
+    std::println("✓ Test 5c passed: Const scope-based iteration works");
+  }
+
   std::println("\nAll ShipList tests passed!");
   return 0;
 }

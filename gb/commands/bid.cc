@@ -95,11 +95,11 @@ void bid(const command_t& argv, GameObj& g) {
       return;
     }
     /* check to see if there is an undamaged gov center or space port here */
-    Shiplist shiplist(p.ships());
+    const ShipList kShiplist(g.entity_manager, p.ships());
     bool ok = false;
-    for (auto s : shiplist) {
-      if (s.alive && (s.owner == Playernum) && !s.damage &&
-          Shipdata[s.type][ABIL_PORT]) {
+    for (const Ship* s : kShiplist) {
+      if (s->alive && (s->owner == Playernum) && !s->damage &&
+          Shipdata[s->type][ABIL_PORT]) {
         ok = true;
         break;
       }

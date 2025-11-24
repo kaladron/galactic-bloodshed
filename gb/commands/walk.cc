@@ -69,8 +69,9 @@ void walk(const command_t& argv, GameObj& g) {
     return;
   }
   /* if the sector is occupied by non-aligned AFVs, each one will attack */
-  Shiplist shiplist{p.ships()};
-  for (auto ship2 : shiplist) {
+  ShipList shiplist(g.entity_manager, p.ships());
+  for (auto ship_handle : shiplist) {
+    Ship& ship2 = *ship_handle;
     if (ship2.owner != Playernum && ship2.type == ShipType::OTYPE_AFV &&
         landed(ship2) && retal_strength(ship2) && (ship2.land_x == x) &&
         (ship2.land_y == y)) {
@@ -93,7 +94,6 @@ void walk(const command_t& argv, GameObj& g) {
             notify_star(Playernum, Governor, ship->storbits, short_buf);
           }
         }
-        putship(ship2);
       }
     }
     if (!ship->alive) break;

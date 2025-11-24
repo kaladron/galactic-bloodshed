@@ -65,13 +65,13 @@ void enslave(const command_t& argv, GameObj& g) {
 
   auto& race = races[Playernum - 1];
 
-  Shiplist shiplist(p.ships());
-  for (auto s2 : shiplist) {
-    if (s2.alive && s2.active) {
-      if (p.info(s2.owner).numsectsowned && s2.owner != Playernum)
-        def += s2.destruct;
-      else if (s2.owner == Playernum)
-        attack += s2.destruct;
+  const ShipList kShiplist(g.entity_manager, p.ships());
+  for (const Ship* s2 : kShiplist) {
+    if (s2->alive && s2->active) {
+      if (p.info(s2->owner).numsectsowned && s2->owner != Playernum)
+        def += s2->destruct;
+      else if (s2->owner == Playernum)
+        attack += s2->destruct;
     }
   }
 

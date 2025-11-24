@@ -278,12 +278,9 @@ void load(const command_t& argv, GameObj& g) {
   int uplim;
   int amt;
   int transfercrew;
-  Ship* s;
   Ship* s2;
   Planet p;
   Sector sect;
-  shipnum_t shipno;
-  shipnum_t nextshipno;
 
   if (argv.size() < 2) {
     if (mode == 0) {
@@ -294,422 +291,408 @@ void load(const command_t& argv, GameObj& g) {
     return;
   }
 
-  nextshipno = start_shiplist(g, argv[1]);
+  ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
+  for (auto ship_handle : ships) {
+    Ship& s = *ship_handle;
 
-  while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, argv[1], *s, &nextshipno) &&
-        authorized(Governor, *s)) {
-      if (s->owner != Playernum || !s->alive) {
-        free(s);
+    if (!ship_matches_filter(argv[1], s)) continue;
+    if (!authorized(Governor, s)) continue;
+    if (s.owner != Playernum || !s.alive) {
+      continue;
+    }
+    if (!s.active) {
+      notify(
+          Playernum, Governor,
+          std::format("{} is irradiated and inactive.\n", ship_to_string(s)));
+
+      continue;
+    }
+    if (s.whatorbits == ScopeLevel::LEVEL_UNIV) {
+      if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
         continue;
       }
-      if (!s->active) {
+    } else if (!enufAP(Playernum, Governor, stars[s.storbits].AP(Playernum - 1),
+                       APcount))
+      continue;
+    if (!s.docked) {
+      notify(Playernum, Governor,
+             std::format("{} is not landed or docked.\n", ship_to_string(s)));
+
+      continue;
+    } /* ship has a recipient */
+    if (s.whatdest == ScopeLevel::LEVEL_PLAN) {
+      notify(
+          Playernum, Governor,
+          std::format("{} at {},{}\n", ship_to_string(s), s.land_x, s.land_y));
+      if (s.storbits != g.snum || s.pnumorbits != g.pnum) {
         notify(Playernum, Governor,
-               std::format("{} is irradiated and inactive.\n",
-                           ship_to_string(*s)));
-        free(s);
+               "Change scope to the planet this ship is landed on.\n");
+
         continue;
       }
-      if (s->whatorbits == ScopeLevel::LEVEL_UNIV) {
-        if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
-          free(s);
-          continue;
-        }
-      } else if (!enufAP(Playernum, Governor,
-                         stars[s->storbits].AP(Playernum - 1), APcount))
-        continue;
-      if (!s->docked) {
-        notify(
-            Playernum, Governor,
-            std::format("{} is not landed or docked.\n", ship_to_string(*s)));
-        free(s);
-        continue;
-      } /* ship has a recipient */
-      if (s->whatdest == ScopeLevel::LEVEL_PLAN) {
+    } else { /* ship is docked */
+      if (!s.destshipno) {
         notify(Playernum, Governor,
-               std::format("{} at {},{}\n", ship_to_string(*s), s->land_x,
-                           s->land_y));
-        if (s->storbits != g.snum || s->pnumorbits != g.pnum) {
-          notify(Playernum, Governor,
-                 "Change scope to the planet this ship is landed on.\n");
-          free(s);
-          continue;
-        }
-      } else { /* ship is docked */
-        if (!s->destshipno) {
-          notify(Playernum, Governor,
-                 std::format("{} is not docked.\n", ship_to_string(*s)));
-          free(s);
-          continue;
-        }
-        if (!getship(&s2, (int)s->destshipno)) {
-          g.out << "Destination ship is bogus.\n";
-          free(s);
-          continue;
-        }
-        if (!s2->alive || !(s->whatorbits == ScopeLevel::LEVEL_SHIP ||
-                            s2->destshipno == shipno)) {
-          /* the ship it was docked with died or
-             undocked with it or something. */
-          s->docked = 0;
-          s->whatdest = ScopeLevel::LEVEL_UNIV;
-          putship(*s);
-          notify(Playernum, Governor,
-                 std::format("{} is not docked.\n", ship_to_string(*s2)));
-          free(s);
-          free(s2);
-          continue;
-        }
-        if (overloaded(*s2) && s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
-          notify(Playernum, Governor,
-                 std::format("{} is overloaded!\n", ship_to_string(*s2)));
-          free(s);
-          free(s2);
-          continue;
-        }
-        notify(Playernum, Governor,
-               std::format("{} docked with {}\n", ship_to_string(*s),
-                           ship_to_string(*s2)));
-        sh = 1;
-        if (s2->owner != Playernum) {
-          notify(Playernum, Governor,
-                 std::format("Player {} owns that ship.\n", s2->owner));
-          diff = 1;
-        }
+               std::format("{} is not docked.\n", ship_to_string(s)));
+
+        continue;
       }
+      if (!getship(&s2, (int)s.destshipno)) {
+        g.out << "Destination ship is bogus.\n";
 
-      commod = argv[2][0];
-      if (argv.size() > 3)
-        amt = std::stoi(argv[3]);
-      else
-        amt = 0;
+        continue;
+      }
+      if (!s2->alive || !(s.whatorbits == ScopeLevel::LEVEL_SHIP ||
+                          s2->destshipno == s.number)) {
+        /* the ship it was docked with died or
+           undocked with it or something. */
+        s.docked = 0;
+        s.whatdest = ScopeLevel::LEVEL_UNIV;
 
-      if (mode) amt = -amt; /* unload */
+        notify(Playernum, Governor,
+               std::format("{} is not docked.\n", ship_to_string(*s2)));
 
-      if (amt < 0 && s->type == ShipType::OTYPE_VN) {
-        g.out << "You can't unload VNs.\n";
-        free(s);
+        free(s2);
+        continue;
+      }
+      if (overloaded(*s2) && s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
+        notify(Playernum, Governor,
+               std::format("{} is overloaded!\n", ship_to_string(*s2)));
+
+        free(s2);
+        continue;
+      }
+      notify(Playernum, Governor,
+             std::format("{} docked with {}\n", ship_to_string(s),
+                         ship_to_string(*s2)));
+      sh = 1;
+      if (s2->owner != Playernum) {
+        notify(Playernum, Governor,
+               std::format("Player {} owns that ship.\n", s2->owner));
+        diff = 1;
+      }
+    }
+
+    commod = argv[2][0];
+    if (argv.size() > 3)
+      amt = std::stoi(argv[3]);
+    else
+      amt = 0;
+
+    if (mode) amt = -amt; /* unload */
+
+    if (amt < 0 && s.type == ShipType::OTYPE_VN) {
+      g.out << "You can't unload VNs.\n";
+
+      if (sh) free(s2);
+      continue;
+    }
+
+    if (!sh) p = getplanet(g.snum, g.pnum);
+
+    if (!sh && (commod == 'c' || commod == 'm'))
+      sect = getsector(p, s.land_x, s.land_y);
+
+    switch (commod) {
+      case 'x':
+      case '&':
+        if (sh) {
+          uplim = diff ? 0 : MIN(s2->crystals, max_crystals(s) - s.crystals);
+          lolim = diff ? 0 : -MIN(s.crystals, max_crystals(*s2) - s2->crystals);
+        } else {
+          uplim =
+              MIN(p.info(Playernum - 1).crystals, max_crystals(s) - s.crystals);
+          lolim = -s.crystals;
+        }
+        break;
+      case 'c':
+        if (sh) {
+          uplim = diff ? 0 : MIN(s2->popn, max_crew(s) - s.popn);
+          lolim = diff ? 0 : -MIN(s.popn, max_crew(*s2) - s2->popn);
+        } else {
+          uplim = MIN(sect.popn, max_crew(s) - s.popn);
+          lolim = -s.popn;
+        }
+        break;
+      case 'm':
+        if (sh) {
+          uplim = diff ? 0 : MIN(s2->troops, max_mil(s) - s.troops);
+          lolim = diff ? 0 : -MIN(s.troops, max_mil(*s2) - s2->troops);
+        } else {
+          uplim = MIN(sect.troops, max_mil(s) - s.troops);
+          lolim = -s.troops;
+        }
+        break;
+      case 'd':
+        if (sh) {
+          uplim = diff ? 0 : MIN(s2->destruct, max_destruct(s) - s.destruct);
+          lolim = -MIN(s.destruct, max_destruct(*s2) - s2->destruct);
+        } else {
+          uplim =
+              MIN(p.info(Playernum - 1).destruct, max_destruct(s) - s.destruct);
+          lolim = -s.destruct;
+        }
+        break;
+      case 'f':
+        if (sh) {
+          uplim = diff ? 0 : MIN((int)s2->fuel, (int)max_fuel(s) - (int)s.fuel);
+          lolim = -MIN((int)s.fuel, (int)max_fuel(*s2) - (int)s2->fuel);
+        } else {
+          uplim = MIN((int)p.info(Playernum - 1).fuel,
+                      (int)max_fuel(s) - (int)s.fuel);
+          lolim = -(int)s.fuel;
+        }
+        break;
+      case 'r':
+        if (sh) {
+          if (s.type == ShipType::STYPE_SHUTTLE &&
+              s.whatorbits != ScopeLevel::LEVEL_SHIP)
+            uplim = diff ? 0 : s2->resource;
+          else
+            uplim = diff ? 0 : MIN(s2->resource, max_resource(s) - s.resource);
+          if (s2->type == ShipType::STYPE_SHUTTLE &&
+              s.whatorbits != ScopeLevel::LEVEL_SHIP)
+            lolim = -s.resource;
+          else
+            lolim = -MIN(s.resource, max_resource(*s2) - s2->resource);
+        } else {
+          uplim =
+              MIN(p.info(Playernum - 1).resource, max_resource(s) - s.resource);
+          lolim = -s.resource;
+        }
+        break;
+      default:
+        g.out << "No such commodity valid.\n";
         if (sh) free(s2);
+
         continue;
-      }
+    }
 
-      if (!sh) p = getplanet(g.snum, g.pnum);
+    if (amt < lolim || amt > uplim) {
+      notify(Playernum, Governor,
+             std::format("you can only transfer between {} and {}.\n", lolim,
+                         uplim));
 
-      if (!sh && (commod == 'c' || commod == 'm'))
-        sect = getsector(p, s->land_x, s->land_y);
+      if (sh) free(s2);
 
-      switch (commod) {
-        case 'x':
-        case '&':
-          if (sh) {
-            uplim =
-                diff ? 0 : MIN(s2->crystals, max_crystals(*s) - s->crystals);
-            lolim =
-                diff ? 0 : -MIN(s->crystals, max_crystals(*s2) - s2->crystals);
-          } else {
-            uplim = MIN(p.info(Playernum - 1).crystals,
-                        max_crystals(*s) - s->crystals);
-            lolim = -s->crystals;
-          }
-          break;
-        case 'c':
-          if (sh) {
-            uplim = diff ? 0 : MIN(s2->popn, max_crew(*s) - s->popn);
-            lolim = diff ? 0 : -MIN(s->popn, max_crew(*s2) - s2->popn);
-          } else {
-            uplim = MIN(sect.popn, max_crew(*s) - s->popn);
-            lolim = -s->popn;
-          }
-          break;
-        case 'm':
-          if (sh) {
-            uplim = diff ? 0 : MIN(s2->troops, max_mil(*s) - s->troops);
-            lolim = diff ? 0 : -MIN(s->troops, max_mil(*s2) - s2->troops);
-          } else {
-            uplim = MIN(sect.troops, max_mil(*s) - s->troops);
-            lolim = -s->troops;
-          }
-          break;
-        case 'd':
-          if (sh) {
-            uplim =
-                diff ? 0 : MIN(s2->destruct, max_destruct(*s) - s->destruct);
-            lolim = -MIN(s->destruct, max_destruct(*s2) - s2->destruct);
-          } else {
-            uplim = MIN(p.info(Playernum - 1).destruct,
-                        max_destruct(*s) - s->destruct);
-            lolim = -s->destruct;
-          }
-          break;
-        case 'f':
-          if (sh) {
-            uplim =
-                diff ? 0 : MIN((int)s2->fuel, (int)max_fuel(*s) - (int)s->fuel);
-            lolim = -MIN((int)s->fuel, (int)max_fuel(*s2) - (int)s2->fuel);
-          } else {
-            uplim = MIN((int)p.info(Playernum - 1).fuel,
-                        (int)max_fuel(*s) - (int)s->fuel);
-            lolim = -(int)s->fuel;
-          }
-          break;
-        case 'r':
-          if (sh) {
-            if (s->type == ShipType::STYPE_SHUTTLE &&
-                s->whatorbits != ScopeLevel::LEVEL_SHIP)
-              uplim = diff ? 0 : s2->resource;
-            else
-              uplim =
-                  diff ? 0 : MIN(s2->resource, max_resource(*s) - s->resource);
-            if (s2->type == ShipType::STYPE_SHUTTLE &&
-                s->whatorbits != ScopeLevel::LEVEL_SHIP)
-              lolim = -s->resource;
-            else
-              lolim = -MIN(s->resource, max_resource(*s2) - s2->resource);
-          } else {
-            uplim = MIN(p.info(Playernum - 1).resource,
-                        max_resource(*s) - s->resource);
-            lolim = -s->resource;
-          }
-          break;
-        default:
-          g.out << "No such commodity valid.\n";
-          if (sh) free(s2);
-          free(s);
-          continue;
-      }
+      continue;
+    }
 
-      if (amt < lolim || amt > uplim) {
+    auto& race = races[Playernum - 1];
+
+    if (amt == 0) amt = (mode ? lolim : uplim);
+
+    switch (commod) {
+      case 'c':
+        if (sh) {
+          s2->popn -= amt;
+          if (!landed_on(s, s2->number)) s2->mass -= amt * race.mass;
+          transfercrew = 1;
+        } else if (sect.owner && sect.owner != Playernum) {
+          notify(Playernum, Governor,
+                 "That sector is already occupied by another player!\n");
+          /* fight a land battle */
+          unload_onto_alien_sector(g, p, &s, sect, PopulationType::CIV, -amt);
+
+          putsector(sect, p, s.land_x, s.land_y);
+          putplanet(p, stars[g.snum], g.pnum);
+
+          return;
+        } else {
+          transfercrew = 1;
+          if (!sect.popn && !sect.troops && amt < 0) {
+            p.info(Playernum - 1).numsectsowned++;
+            p.info(Playernum - 1).mob_points += sect.mobilization;
+            sect.owner = Playernum;
+            notify(
+                Playernum, Governor,
+                std::format("sector {},{} COLONIZED.\n", s.land_x, s.land_y));
+          }
+          sect.popn -= amt;
+          p.popn() -= amt;
+          p.info(Playernum - 1).popn -= amt;
+          if (!sect.popn && !sect.troops) {
+            p.info(Playernum - 1).numsectsowned--;
+            p.info(Playernum - 1).mob_points -= sect.mobilization;
+            sect.owner = 0;
+            notify(
+                Playernum, Governor,
+                std::format("sector {},{} evacuated.\n", s.land_x, s.land_y));
+          }
+        }
+        if (transfercrew) {
+          s.popn += amt;
+          s.mass += amt * race.mass;
+          notify(Playernum, Governor,
+                 std::format("crew complement of {} is now {}.\n",
+                             ship_to_string(s), s.popn));
+        }
+        break;
+      case 'm':
+        if (sh) {
+          s2->troops -= amt;
+          if (!landed_on(s, s2->number)) s2->mass -= amt * race.mass;
+          transfercrew = 1;
+        } else if (sect.owner && sect.owner != Playernum) {
+          notify(Playernum, Governor,
+                 "That sector is already occupied by another player!\n");
+          unload_onto_alien_sector(g, p, &s, sect, PopulationType::MIL, -amt);
+
+          putsector(sect, p, s.land_x, s.land_y);
+          putplanet(p, stars[g.snum], g.pnum);
+
+          return;
+        } else {
+          transfercrew = 1;
+          if (!(sect.popn + sect.troops) && amt < 0) {
+            p.info(Playernum - 1).numsectsowned++;
+            p.info(Playernum - 1).mob_points += sect.mobilization;
+            sect.owner = Playernum;
+            notify(Playernum, Governor,
+                   std::format("sector {},{} OCCUPIED.\n", s.land_x, s.land_y));
+          }
+          sect.troops -= amt;
+          p.troops() -= amt;
+          p.info(Playernum - 1).troops -= amt;
+          if (!(sect.troops + sect.popn)) {
+            p.info(Playernum - 1).numsectsowned--;
+            p.info(Playernum - 1).mob_points -= sect.mobilization;
+            sect.owner = 0;
+            notify(
+                Playernum, Governor,
+                std::format("sector {},{} evacuated.\n", s.land_x, s.land_y));
+          }
+        }
+        if (transfercrew) {
+          s.troops += amt;
+          s.mass += amt * race.mass;
+          notify(Playernum, Governor,
+                 std::format("troop complement of {} is now {}.\n",
+                             ship_to_string(s), s.troops));
+        }
+        break;
+      case 'd':
+        if (sh) {
+          s2->destruct -= amt;
+          if (!landed_on(s, s2->number)) s2->mass -= amt * MASS_DESTRUCT;
+        } else
+          p.info(Playernum - 1).destruct -= amt;
+
+        s.destruct += amt;
+        s.mass += amt * MASS_DESTRUCT;
         notify(Playernum, Governor,
-               std::format("you can only transfer between {} and {}.\n", lolim,
-                           uplim));
+               std::format("{} destruct transferred.\n", amt));
+        if (!max_crew(s)) {
+          notify(Playernum, Governor, std::format("\n{} ", ship_to_string(s)));
+          if (s.destruct) {
+            notify(Playernum, Governor, "now boobytrapped.\n");
+          } else {
+            notify(Playernum, Governor, "no longer boobytrapped.\n");
+          }
+        }
+        break;
+      case 'x':
+        if (sh) {
+          s2->crystals -= amt;
+        } else
+          p.info(Playernum - 1).crystals -= amt;
+        s.crystals += amt;
+        notify(Playernum, Governor,
+               std::format("{} crystal(s) transferred.\n", amt));
+        break;
+      case 'f':
+        if (sh) {
+          s2->fuel -= (double)amt;
+          if (!landed_on(s, s2->number)) s2->mass -= (double)amt * MASS_FUEL;
+        } else
+          p.info(Playernum - 1).fuel -= amt;
+        rcv_fuel(s, (double)amt);
+        notify(Playernum, Governor, std::format("{} fuel transferred.\n", amt));
+        break;
+      case 'r':
+        if (sh) {
+          s2->resource -= amt;
+          if (!landed_on(s, s2->number)) s2->mass -= amt * MASS_RESOURCE;
+        } else
+          p.info(Playernum - 1).resource -= amt;
+        rcv_resource(s, amt);
+        notify(Playernum, Governor,
+               std::format("{} resources transferred.\n", amt));
+        break;
+      default:
+        g.out << "No such commodity.\n";
 
         if (sh) free(s2);
-        free(s);
+
         continue;
-      }
+    }
 
-      auto& race = races[Playernum - 1];
-
-      if (amt == 0) amt = (mode ? lolim : uplim);
-
+    if (sh) {
+      /* ship to ship transfer */
+      std::string tele_lines;
       switch (commod) {
-        case 'c':
-          if (sh) {
-            s2->popn -= amt;
-            if (!landed_on(*s, sh)) s2->mass -= amt * race.mass;
-            transfercrew = 1;
-          } else if (sect.owner && sect.owner != Playernum) {
-            notify(Playernum, Governor,
-                   "That sector is already occupied by another player!\n");
-            /* fight a land battle */
-            unload_onto_alien_sector(g, p, s, sect, PopulationType::CIV, -amt);
-            putship(*s);
-            putsector(sect, p, s->land_x, s->land_y);
-            putplanet(p, stars[g.snum], g.pnum);
-            free(s);
-            return;
-          } else {
-            transfercrew = 1;
-            if (!sect.popn && !sect.troops && amt < 0) {
-              p.info(Playernum - 1).numsectsowned++;
-              p.info(Playernum - 1).mob_points += sect.mobilization;
-              sect.owner = Playernum;
-              notify(Playernum, Governor,
-                     std::format("sector {},{} COLONIZED.\n", s->land_x,
-                                 s->land_y));
-            }
-            sect.popn -= amt;
-            p.popn() -= amt;
-            p.info(Playernum - 1).popn -= amt;
-            if (!sect.popn && !sect.troops) {
-              p.info(Playernum - 1).numsectsowned--;
-              p.info(Playernum - 1).mob_points -= sect.mobilization;
-              sect.owner = 0;
-              notify(Playernum, Governor,
-                     std::format("sector {},{} evacuated.\n", s->land_x,
-                                 s->land_y));
-            }
-          }
-          if (transfercrew) {
-            s->popn += amt;
-            s->mass += amt * race.mass;
-            notify(Playernum, Governor,
-                   std::format("crew complement of {} is now {}.\n",
-                               ship_to_string(*s), s->popn));
-          }
-          break;
-        case 'm':
-          if (sh) {
-            s2->troops -= amt;
-            if (!landed_on(*s, sh)) s2->mass -= amt * race.mass;
-            transfercrew = 1;
-          } else if (sect.owner && sect.owner != Playernum) {
-            notify(Playernum, Governor,
-                   "That sector is already occupied by another player!\n");
-            unload_onto_alien_sector(g, p, s, sect, PopulationType::MIL, -amt);
-            putship(*s);
-            putsector(sect, p, s->land_x, s->land_y);
-            putplanet(p, stars[g.snum], g.pnum);
-            free(s);
-            return;
-          } else {
-            transfercrew = 1;
-            if (!(sect.popn + sect.troops) && amt < 0) {
-              p.info(Playernum - 1).numsectsowned++;
-              p.info(Playernum - 1).mob_points += sect.mobilization;
-              sect.owner = Playernum;
-              notify(Playernum, Governor,
-                     std::format("sector {},{} OCCUPIED.\n", s->land_x,
-                                 s->land_y));
-            }
-            sect.troops -= amt;
-            p.troops() -= amt;
-            p.info(Playernum - 1).troops -= amt;
-            if (!(sect.troops + sect.popn)) {
-              p.info(Playernum - 1).numsectsowned--;
-              p.info(Playernum - 1).mob_points -= sect.mobilization;
-              sect.owner = 0;
-              notify(Playernum, Governor,
-                     std::format("sector {},{} evacuated.\n", s->land_x,
-                                 s->land_y));
-            }
-          }
-          if (transfercrew) {
-            s->troops += amt;
-            s->mass += amt * race.mass;
-            notify(Playernum, Governor,
-                   std::format("troop complement of {} is now {}.\n",
-                               ship_to_string(*s), s->troops));
-          }
-          break;
-        case 'd':
-          if (sh) {
-            s2->destruct -= amt;
-            if (!landed_on(*s, sh)) s2->mass -= amt * MASS_DESTRUCT;
-          } else
-            p.info(Playernum - 1).destruct -= amt;
-
-          s->destruct += amt;
-          s->mass += amt * MASS_DESTRUCT;
-          notify(Playernum, Governor,
-                 std::format("{} destruct transferred.\n", amt));
-          if (!max_crew(*s)) {
-            notify(Playernum, Governor,
-                   std::format("\n{} ", ship_to_string(*s)));
-            if (s->destruct) {
-              notify(Playernum, Governor, "now boobytrapped.\n");
-            } else {
-              notify(Playernum, Governor, "no longer boobytrapped.\n");
-            }
-          }
-          break;
-        case 'x':
-          if (sh) {
-            s2->crystals -= amt;
-          } else
-            p.info(Playernum - 1).crystals -= amt;
-          s->crystals += amt;
-          notify(Playernum, Governor,
-                 std::format("{} crystal(s) transferred.\n", amt));
-          break;
-        case 'f':
-          if (sh) {
-            s2->fuel -= (double)amt;
-            if (!landed_on(*s, sh)) s2->mass -= (double)amt * MASS_FUEL;
-          } else
-            p.info(Playernum - 1).fuel -= amt;
-          rcv_fuel(*s, (double)amt);
-          notify(Playernum, Governor,
-                 std::format("{} fuel transferred.\n", amt));
-          break;
         case 'r':
-          if (sh) {
-            s2->resource -= amt;
-            if (!landed_on(*s, sh)) s2->mass -= amt * MASS_RESOURCE;
-          } else
-            p.info(Playernum - 1).resource -= amt;
-          rcv_resource(*s, amt);
           notify(Playernum, Governor,
                  std::format("{} resources transferred.\n", amt));
+          tele_lines += std::format("{} Resources\n", amt);
+          break;
+        case 'f':
+          notify(Playernum, Governor,
+                 std::format("{} fuel transferred.\n", amt));
+          tele_lines += std::format("{} Fuel\n", amt);
+          break;
+        case 'd':
+          notify(Playernum, Governor,
+                 std::format("{} destruct transferred.\n", amt));
+          tele_lines += std::format("{} Destruct\n", amt);
+          break;
+        case 'x':
+        case '&':
+          notify(Playernum, Governor,
+                 std::format("{} crystals transferred.\n", amt));
+          tele_lines += std::format("{} Crystal(s)\n", amt);
+          break;
+        case 'c':
+          notify(Playernum, Governor,
+                 std::format("{} popn transferred.\n", amt));
+          tele_lines +=
+              std::format("{} {}\n", amt,
+                          race.Metamorph ? "tons of biomass" : "population");
+          break;
+        case 'm':
+          notify(Playernum, Governor,
+                 std::format("{} military transferred.\n", amt));
+          tele_lines +=
+              std::format("{} {}\n", amt,
+                          race.Metamorph ? "tons of biomass" : "population");
           break;
         default:
-          g.out << "No such commodity.\n";
-
-          if (sh) free(s2);
-          free(s);
-          continue;
+          break;
       }
-
-      if (sh) {
-        /* ship to ship transfer */
-        std::string tele_lines;
-        switch (commod) {
-          case 'r':
-            notify(Playernum, Governor,
-                   std::format("{} resources transferred.\n", amt));
-            tele_lines += std::format("{} Resources\n", amt);
-            break;
-          case 'f':
-            notify(Playernum, Governor,
-                   std::format("{} fuel transferred.\n", amt));
-            tele_lines += std::format("{} Fuel\n", amt);
-            break;
-          case 'd':
-            notify(Playernum, Governor,
-                   std::format("{} destruct transferred.\n", amt));
-            tele_lines += std::format("{} Destruct\n", amt);
-            break;
-          case 'x':
-          case '&':
-            notify(Playernum, Governor,
-                   std::format("{} crystals transferred.\n", amt));
-            tele_lines += std::format("{} Crystal(s)\n", amt);
-            break;
-          case 'c':
-            notify(Playernum, Governor,
-                   std::format("{} popn transferred.\n", amt));
-            tele_lines +=
-                std::format("{} {}\n", amt,
-                            race.Metamorph ? "tons of biomass" : "population");
-            break;
-          case 'm':
-            notify(Playernum, Governor,
-                   std::format("{} military transferred.\n", amt));
-            tele_lines +=
-                std::format("{} {}\n", amt,
-                            race.Metamorph ? "tons of biomass" : "population");
-            break;
-          default:
-            break;
-        }
-        if (!tele_lines.empty()) {
-          auto s2_owner = s2->owner;
-          auto s2_gov = s2->governor;
-          auto s2_name = ship_to_string(*s2);
-          auto msg = std::format(
-              "Audio-vibatory-physio-molecular transport device #{} gave your "
-              "ship {} the following:\n{}",
-              ship_to_string(*s), s2_name, tele_lines);
-          warn(s2_owner, s2_gov, msg);
-        }
-        putship(*s2);
-        free(s2);
-      } else {
-        if (commod == 'c' || commod == 'm') {
-          putsector(sect, p, s->land_x, s->land_y);
-        }
-        putplanet(p, stars[g.snum], g.pnum);
+      if (!tele_lines.empty()) {
+        auto s2_owner = s2->owner;
+        auto s2_gov = s2->governor;
+        auto s2_name = ship_to_string(*s2);
+        auto msg = std::format(
+            "Audio-vibatory-physio-molecular transport device #{} gave your "
+            "ship {} the following:\n{}",
+            ship_to_string(s), s2_name, tele_lines);
+        warn(s2_owner, s2_gov, msg);
       }
+      putship(*s2);
+      free(s2);
+    } else {
+      if (commod == 'c' || commod == 'm') {
+        putsector(sect, p, s.land_x, s.land_y);
+      }
+      putplanet(p, stars[g.snum], g.pnum);
+    }
 
-      /* do transporting here */
-      if (s->type == ShipType::OTYPE_TRANSDEV && s->on &&
-          std::holds_alternative<TransportData>(s->special) &&
-          std::get<TransportData>(s->special).target)
-        do_transporter(race, g, s);
-
-      putship(*s);
-      free(s);
-    } else
-      free(s); /* make sure you do this! */
+    /* do transporting here */
+    if (s.type == ShipType::OTYPE_TRANSDEV && s.on &&
+        std::holds_alternative<TransportData>(s.special) &&
+        std::get<TransportData>(s.special).target)
+      do_transporter(race, g, &s);
+  }
 }
 }  // namespace GB::commands

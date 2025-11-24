@@ -330,54 +330,44 @@ void land(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 1;
-  Ship* s;
   char buf[2048];
-
-  shipnum_t shipno;
-
-  shipnum_t nextshipno;
 
   if (argv.size() < 2) {
     g.out << "Land what?\n";
     return;
   }
 
-  nextshipno = start_shiplist(g, argv[1]);
+  ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
 
-  while ((shipno = do_shiplist(&s, &nextshipno)))
-    if (in_list(Playernum, argv[1], *s, &nextshipno) &&
-        authorized(Governor, *s)) {
-      if (overloaded(*s)) {
-        sprintf(buf, "%s is too overloaded to land.\n",
-                ship_to_string(*s).c_str());
-        notify(Playernum, Governor, buf);
-        free(s);
-        continue;
-      }
-      if (s->type == ShipType::OTYPE_QUARRY) {
-        g.out << "You can't load quarries onto ship.\n";
-        free(s);
-        continue;
-      }
-      if (docked(*s)) {
-        g.out << "That ship is docked to another ship.\n";
-        free(s);
-        continue;
-      }
+  for (auto ship_handle : ships) {
+    Ship& s = *ship_handle;  // Get mutable access upfront
 
-      /* attempting to land on a friendly ship (for carriers/stations/etc) */
-      if (argv[2][0] == '#') {
-        land_friendly(argv, g, *s);
-        putship(*s);
-        free(s);
-        continue;
-      } else { /* attempting to land on a planet */
-        land_planet(argv, g, *s, APcount);
-        putship(*s);
-        free(s);
-        continue;
-      }
-      free(s);
+    if (!ship_matches_filter(argv[1], s)) continue;
+    if (!authorized(Governor, s)) continue;
+
+    if (overloaded(s)) {
+      sprintf(buf, "%s is too overloaded to land.\n",
+              ship_to_string(s).c_str());
+      notify(Playernum, Governor, buf);
+      continue;
     }
+    if (s.type == ShipType::OTYPE_QUARRY) {
+      g.out << "You can't load quarries onto ship.\n";
+      continue;
+    }
+    if (docked(s)) {
+      g.out << "That ship is docked to another ship.\n";
+      continue;
+    }
+
+    /* attempting to land on a friendly ship (for carriers/stations/etc) */
+    if (argv[2][0] == '#') {
+      land_friendly(argv, g, s);
+      continue;
+    } else { /* attempting to land on a planet */
+      land_planet(argv, g, s, APcount);
+      continue;
+    }
+  }
 }
 }  // namespace GB::commands

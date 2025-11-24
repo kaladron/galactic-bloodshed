@@ -113,7 +113,8 @@ static void process_stars_and_planets(EntityManager& entity_manager,
 static void process_races(EntityManager& entity_manager, int update);
 static void process_market(EntityManager&, int update);
 static void process_ship_masses_and_ownership(TurnState& state);
-static void process_ship_turns(TurnState& state, int update);
+static void process_ship_turns(EntityManager& entity_manager, TurnState& state,
+                               int update);
 static void prepare_dead_ships(TurnState& state);
 static void insert_ships_into_lists(TurnState& state);
 static void process_abms_and_missiles(TurnState& state, int update);
@@ -147,7 +148,7 @@ void do_turn(EntityManager& entity_manager, int update) {
   output_ground_attacks();
   process_market(entity_manager, update);
   process_ship_masses_and_ownership(state);
-  process_ship_turns(state, update);
+  process_ship_turns(entity_manager, state, update);
   prepare_dead_ships(state);
   insert_ships_into_lists(state);
   process_abms_and_missiles(state, update);
@@ -189,7 +190,7 @@ static void process_ships(EntityManager& entity_manager, TurnState& state) {
     state.ships[i] = std::make_unique<Ship>(*ship_handle);
 
     // Process mine detonation logic
-    domine(*state.ships[i], 0);
+    domine(*state.ships[i], 0, entity_manager);
   }
 }
 
@@ -349,13 +350,14 @@ static void process_ship_masses_and_ownership(TurnState& state) {
     }
 }
 
-static void process_ship_turns(TurnState& state, int update) {
+static void process_ship_turns(EntityManager& entity_manager, TurnState& state,
+                               int update) {
   /* do all ships one turn - do slower ships first */
   for (int j = 0; j <= 9; j++)
     for (shipnum_t i = 1; i <= state.num_ships; i++) {
       if (state.ships[i] && state.ships[i]->alive &&
           state.ships[i]->speed == j) {
-        doship(*state.ships[i], update);
+        doship(*state.ships[i], update, entity_manager);
         if ((state.ships[i]->type == ShipType::STYPE_MISSILE) &&
             !attack_planet(*state.ships[i]))
           domissile(*state.ships[i]);

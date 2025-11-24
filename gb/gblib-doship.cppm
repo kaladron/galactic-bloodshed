@@ -2,12 +2,13 @@
 
 export module gblib:doship;
 
+import :gameobj;
 import :ships;
 
-export void doship(Ship&, int);
+export void doship(Ship&, int, EntityManager&);
 export void domass(Ship&);
 export void doown(Ship&);
 export void domissile(Ship&);
-export void domine(Ship&, int);
+export void domine(Ship&, int, EntityManager&);
 export void doabm(Ship&);
 export int do_weapon_plant(Ship&);

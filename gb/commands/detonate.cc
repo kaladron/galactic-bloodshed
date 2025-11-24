@@ -38,7 +38,7 @@ void detonate(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    domine(s, 1);
+    domine(s, 1, g.entity_manager);
   }
 }
 }  // namespace GB::commands

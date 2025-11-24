@@ -324,7 +324,7 @@ void do_oap(Ship& ship) {
 }
 }  // namespace
 
-void doship(Ship& ship, int update) {
+void doship(Ship& ship, int update, EntityManager& entity_manager) {
   /*ship is active */
   ship.active = 1;
 
@@ -608,7 +608,7 @@ void domissile(Ship& ship) {
   }
 }
 
-void domine(Ship& ship, int detonate) {
+void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   if (ship.type != ShipType::STYPE_MINE || !ship.alive || !ship.owner) {
     return;
   }
@@ -636,8 +636,9 @@ void domine(Ship& ship, int detonate) {
   bool rad = false;
   if (!detonate) {
     auto& r = races[ship.owner - 1];
-    Shiplist shiplist(sh);
-    for (auto s : shiplist) {
+    const ShipList kShiplist(entity_manager, sh);
+    for (const Ship* s_ptr : kShiplist) {
+      const Ship& s = *s_ptr;
       double xd = s.xpos - ship.xpos;
       double yd = s.ypos - ship.ypos;
       double range = std::sqrt(xd * xd + yd * yd);
@@ -660,8 +661,9 @@ void domine(Ship& ship, int detonate) {
       "{} detonated at {}\n", ship_to_string(ship), prin_ship_orbits(ship));
   post(postmsg, NewsType::COMBAT);
   notify_star(ship.owner, ship.governor, ship.storbits, postmsg);
-  Shiplist shiplist(sh);
-  for (auto s : shiplist) {
+  ShipList shiplist(entity_manager, sh);
+  for (auto ship_handle : shiplist) {
+    Ship& s = *ship_handle;
     if (sh != ship.number && s.alive && (s.type != ShipType::OTYPE_CANIST) &&
         (s.type != ShipType::OTYPE_GREEN)) {
       auto s2sresult =

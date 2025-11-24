@@ -204,7 +204,7 @@ void insert_sh_ship(Ship* s, Ship* s2) {
  * \brief Remove a ship from the list of ships orbiting the star
  * \arg s Ship to remove
  */
-void remove_sh_star(Ship& s) {
+void remove_sh_star(EntityManager& entity_manager, Ship& s) {
   stars[s.storbits] = getstar(s.storbits);
   shipnum_t sh = stars[s.storbits].ships();
 
@@ -214,11 +214,11 @@ void remove_sh_star(Ship& s) {
     stars[s.storbits].ships() = s.nextship;
     putstar(stars[s.storbits], s.storbits);
   } else {
-    Shiplist shiplist(sh);
-    for (auto s2 : shiplist) {
+    ShipList ships(entity_manager, sh);
+    for (auto ship_handle : ships) {
+      Ship& s2 = *ship_handle;
       if (s2.nextship == s.number) {
         s2.nextship = s.nextship;
-        putship(s2);
         break;
       }
     }
@@ -233,7 +233,7 @@ void remove_sh_star(Ship& s) {
  * \brief Remove a ship from the list of ships orbiting the planet
  * \arg s Ship to remove
  */
-void remove_sh_plan(Ship& s) {
+void remove_sh_plan(EntityManager& entity_manager, Ship& s) {
   auto host = getplanet(s.storbits, s.pnumorbits);
   shipnum_t sh = host.ships();
 
@@ -243,11 +243,11 @@ void remove_sh_plan(Ship& s) {
     host.ships() = s.nextship;
     putplanet(host, stars[s.storbits], s.pnumorbits);
   } else {
-    Shiplist shiplist(sh);
-    for (auto s2 : shiplist) {
+    ShipList ships(entity_manager, sh);
+    for (auto ship_handle : ships) {
+      Ship& s2 = *ship_handle;
       if (s2.nextship == s.number) {
         s2.nextship = s.nextship;
-        putship(s2);
         break;
       }
     }
@@ -262,7 +262,7 @@ void remove_sh_plan(Ship& s) {
  * \brief Remove a ship from the list of ships in the ship
  * \arg s Ship to remove
  */
-void remove_sh_ship(Ship& s, Ship& host) {
+void remove_sh_ship(EntityManager& entity_manager, Ship& s, Ship& host) {
   shipnum_t sh = host.ships;
 
   // If the ship is the first of the chain, point the ship to the
@@ -270,11 +270,11 @@ void remove_sh_ship(Ship& s, Ship& host) {
   if (sh == s.number) {
     host.ships = s.nextship;
   } else {
-    Shiplist shiplist(sh);
-    for (auto s2 : shiplist) {
+    ShipList ships(entity_manager, sh);
+    for (auto ship_handle : ships) {
+      Ship& s2 = *ship_handle;
       if (s2.nextship == s.number) {
         s2.nextship = s.nextship;
-        putship(s2);
         break;
       }
     }

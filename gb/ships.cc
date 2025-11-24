@@ -154,12 +154,12 @@ bool landed(const Ship& ship) {
 }
 
 void capture_stuff(const Ship& ship, GameObj& g) {
-  Shiplist shiplist(ship.ships);
-  for (auto s : shiplist) {
+  ShipList ships(g.entity_manager, ship.ships);
+  for (auto ship_handle : ships) {
+    Ship& s = *ship_handle;
     capture_stuff(s, g);  /* recursive call */
     s.owner = ship.owner; /* make sure he gets all of the ships landed on it */
     s.governor = ship.governor;
-    putship(s);
     g.out << ship_to_string(s) << " CAPTURED!\n";
   }
 }

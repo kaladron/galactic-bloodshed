@@ -66,7 +66,6 @@ void survey(const command_t& argv, GameObj& g) {
   };
   struct numshipstuff shiplocs[MAX_X][MAX_Y];
   int inhere = 0;  // TODO(jeffbailey): Force init for some cases below
-  int shiplist;
   int i;
 
   int mode;
@@ -142,13 +141,8 @@ void survey(const command_t& argv, GameObj& g) {
         }
         bzero((struct shipstuff*)shiplocs, sizeof(shiplocs));
         inhere = p.info(Playernum - 1).numsectsowned;
-        shiplist = p.ships();
-        while (shiplist) {
-          const auto* shipa = g.entity_manager.peek_ship(shiplist);
-          if (!shipa) {
-            shiplist = 0;
-            continue;
-          }
+        const ShipList kShips(g.entity_manager, p.ships());
+        for (const Ship* shipa : kShips) {
           if (shipa->owner == Playernum &&
               (shipa->popn || (shipa->type == ShipType::OTYPE_PROBE)))
             inhere = 1;
@@ -157,7 +151,7 @@ void survey(const command_t& argv, GameObj& g) {
                   MAX_SHIPS_PER_SECTOR) {
             shiplocs[shipa->land_x][shipa->land_y]
                 .shipstuffs[shiplocs[shipa->land_x][shipa->land_y].pos]
-                .shipno = shiplist;
+                .shipno = shipa->number;
             shiplocs[shipa->land_x][shipa->land_y]
                 .shipstuffs[shiplocs[shipa->land_x][shipa->land_y].pos]
                 .owner = shipa->owner;
@@ -166,7 +160,6 @@ void survey(const command_t& argv, GameObj& g) {
                 .ltr = Shipltrs[shipa->type];
             shiplocs[shipa->land_x][shipa->land_y].pos++;
           }
-          shiplist = shipa->nextship;
         }
       }
       for (; lowy <= hiy; lowy++)

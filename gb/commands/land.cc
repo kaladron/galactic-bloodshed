@@ -76,7 +76,7 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
       return;
     }
     /* ok, load 'em up */
-    remove_sh_plan(s);
+    remove_sh_plan(g.entity_manager, s);
     /* get the target ship again because it had a pointer changed (and put to
      * disk) in the remove routines */
     s2 = getship(ship2no);
@@ -123,9 +123,9 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
 
     /* remove the ship from whatever scope it is currently in */
     if (s.whatorbits == ScopeLevel::LEVEL_PLAN)
-      remove_sh_plan(s);
+      remove_sh_plan(g.entity_manager, s);
     else if (s.whatorbits == ScopeLevel::LEVEL_STAR)
-      remove_sh_star(s);
+      remove_sh_star(g.entity_manager, s);
     else {
       g.out << "Ship is not in planet or star scope.\n";
       return;

@@ -12,44 +12,32 @@ void order(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 1;
-  shipnum_t nextshipno = 0;  // Used by in_list() to signal early termination
 
   if (argv.size() == 1) { /* display all ship orders */
     DispOrdersHeader(Playernum, Governor);
-    shipnum_t n_ships = g.entity_manager.num_ships();
-    for (shipnum_t i = 1; i <= n_ships; i++) {
-      const auto* ship = g.entity_manager.peek_ship(i);
-      if (!ship || !ship->alive) continue;
+    const ShipList kShips(g.entity_manager, g, ShipList::IterationType::Scope);
+    for (const Ship* ship : kShips) {
       if (ship->owner == Playernum && authorized(Governor, *ship)) {
         DispOrders(Playernum, Governor, *ship);
       }
     }
   } else if (argv.size() >= 2) {
     DispOrdersHeader(Playernum, Governor);
-    shipnum_t n_ships = g.entity_manager.num_ships();
-    for (shipnum_t i = 1; i <= n_ships; i++) {
-      const auto* ship = g.entity_manager.peek_ship(i);
-      if (!ship || !ship->alive) continue;
-      if (in_list(Playernum, argv[1], *ship, &nextshipno) &&
-          authorized(Governor, *ship)) {
-        if (argv.size() > 2) {
-          {
-            // Get mutable handle for modifications
-            auto ship_handle = g.entity_manager.get_ship(i);
-            if (ship_handle.get()) {
-              give_orders(g, argv, APcount, *ship_handle);
-              // Auto-saves when ship_handle goes out of scope
-            }
-          }  // ship_handle destructor runs here, may evict from cache
-          // Must peek again after EntityHandle destruction to get valid pointer
-          ship = g.entity_manager.peek_ship(i);
-          if (!ship) continue;
-        }
-        DispOrders(Playernum, Governor, *ship);
+    ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
+    for (auto ship_handle : ships) {
+      Ship& ship = *ship_handle;
 
-        // in_list sets nextshipno=0 for #N selectors to signal early exit
-        if (nextshipno == 0) break;
+      if (!ship_matches_filter(argv[1], ship)) continue;
+      if (!authorized(Governor, ship)) continue;
+
+      if (argv.size() > 2) {
+        give_orders(g, argv, APcount, ship);
       }
+
+      DispOrders(Playernum, Governor, ship);
+
+      // Early exit for specific ship number filters
+      if (is_ship_number_filter(argv[1])) break;
     }
   } else
     g.out << "I don't understand what you mean.\n";

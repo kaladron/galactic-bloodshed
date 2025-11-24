@@ -50,7 +50,7 @@ void launch(const command_t& argv, GameObj& g) {
       }
       auto s2 = getship(s.destshipno);
       if (landed(*s2)) {
-        remove_sh_ship(s, *s2);
+        remove_sh_ship(g.entity_manager, s, *s2);
         auto p = getplanet(s2->storbits, s2->pnumorbits);
         insert_sh_plan(p, &s);
         putplanet(p, stars[s2->storbits], s2->pnumorbits);
@@ -70,7 +70,7 @@ void launch(const command_t& argv, GameObj& g) {
                              stars[s.storbits].get_planet_name(s.pnumorbits));
         putship(*s2);
       } else if (s2->whatorbits == ScopeLevel::LEVEL_PLAN) {
-        remove_sh_ship(s, *s2);
+        remove_sh_ship(g.entity_manager, s, *s2);
         g.out << std::format("{} launched from {}.\n", ship_to_string(s),
                              ship_to_string(*s2));
         s.xpos = s2->xpos;
@@ -88,7 +88,7 @@ void launch(const command_t& argv, GameObj& g) {
                              stars[s.storbits].get_planet_name(s.pnumorbits));
         putship(*s2);
       } else if (s2->whatorbits == ScopeLevel::LEVEL_STAR) {
-        remove_sh_ship(s, *s2);
+        remove_sh_ship(g.entity_manager, s, *s2);
         g.out << std::format("{} launched from {}.\n", ship_to_string(s),
                              ship_to_string(*s2));
         s.xpos = s2->xpos;
@@ -104,7 +104,7 @@ void launch(const command_t& argv, GameObj& g) {
         g.out << std::format("Orbiting {}.\n", stars[s.storbits].get_name());
         putship(*s2);
       } else if (s2->whatorbits == ScopeLevel::LEVEL_UNIV) {
-        remove_sh_ship(s, *s2);
+        remove_sh_ship(g.entity_manager, s, *s2);
         g.out << std::format("{} launched from {}.\n", ship_to_string(s),
                              ship_to_string(*s2));
         s.xpos = s2->xpos;

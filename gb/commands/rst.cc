@@ -117,16 +117,6 @@ public:
     return std::nullopt;
   }
 
-  // Get next ship in linked list (ships only)
-  virtual shipnum_t next_ship() const {
-    return 0;
-  }
-
-  // Get ships docked/landed on this item (ships only)
-  virtual shipnum_t child_ships() const {
-    return 0;
-  }
-
   // Check if we should report this item
   virtual bool should_report(player_t player_num, governor_t governor,
                              const ReportSet& rep_on) const = 0;
@@ -167,14 +157,6 @@ public:
   TacticalParams get_tactical_params(const Race& race) const override;
 
   std::optional<starnum_t> get_star_orbit() const override;
-
-  shipnum_t next_ship() const override {
-    return ship_->nextship;
-  }
-
-  shipnum_t child_ships() const override {
-    return ship_->ships;
-  }
 
   bool should_report(player_t player_num, governor_t governor,
                      const ReportSet& rep_on) const override;
@@ -261,14 +243,8 @@ bool listed(ShipType type, const std::string& string) {
 }
 
 /* get a ship from the disk and add it to the ship list we're maintaining. */
-bool get_report_ship(GameObj& g, RstContext& ctx, shipnum_t shipno) {
-  const auto* ship = g.entity_manager.peek_ship(shipno);
-  if (ship) {
-    ctx.rd.push_back(std::make_unique<ShipReportItem>(ship));
-    return true;
-  }
-  g.out << std::format("get_report_ship: error on ship get ({}).\n", shipno);
-  return false;
+void add_report_ship(RstContext& ctx, const Ship* ship) {
+  ctx.rd.push_back(std::make_unique<ShipReportItem>(ship));
 }
 
 void plan_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
@@ -285,9 +261,9 @@ void plan_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
   ctx.rd.push_back(std::make_unique<PlanetReportItem>(planet, x, y));
 
   if (planet->info(player_num - 1).explored) {
-    shipnum_t shn = planet->ships();
-    while (shn && get_report_ship(g, ctx, shn)) {
-      shn = ctx.rd.back()->next_ship();
+    const ShipList ships(g.entity_manager, planet->ships());
+    for (const Ship* ship : ships) {
+      add_report_ship(ctx, ship);
     }
   }
 }
@@ -298,10 +274,11 @@ void star_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
   if (!star) return;
 
   if (isset(star->explored(), player_num)) {
-    shipnum_t shn = star->ships();
-    while (shn && get_report_ship(g, ctx, shn)) {
-      shn = ctx.rd.back()->next_ship();
+    const ShipList ships(g.entity_manager, star->ships());
+    for (const Ship* ship : ships) {
+      add_report_ship(ctx, ship);
     }
+
     for (planetnum_t i = 0; i < star->numplanets(); i++)
       plan_get_report_ships(g, ctx, player_num, snum, i);
   }
@@ -1160,14 +1137,15 @@ void rst(const command_t& argv, GameObj& g) {
           g.out << std::format("rst: no such ship #{} \n", shipno);
           return;
         }
-        get_report_ship(g, ctx, shipno);
-        // Check if ship is in a star system and load those ships too
-        if (auto star_opt = ctx.rd.back()->get_star_orbit()) {
-          star_get_report_ships(g, ctx, g.player, *star_opt);
-          ship_report(g, ctx, *ctx.rd.back(), report_types);
-        } else {
-          ship_report(g, ctx, *ctx.rd.back(), report_types);
+
+        const auto* ship = g.entity_manager.peek_ship(shipno);
+        if (!ship) {
+          g.out << std::format("rst: no such ship #{} \n", shipno);
+          return;
         }
+
+        add_report_ship(ctx, ship);
+        ship_report(g, ctx, *ctx.rd.back(), report_types);
         l++;
       }
       return;
@@ -1192,9 +1170,9 @@ void rst(const command_t& argv, GameObj& g) {
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
       if (!ctx.flags.tactical || argv.size() >= 2) {
-        shipnum_t shn = Sdata.ships;
-        while (shn && get_report_ship(g, ctx, shn)) {
-          shn = ctx.rd.back()->next_ship();
+        const ShipList univ_ships(g.entity_manager, Sdata.ships);
+        for (const Ship* ship : univ_ships) {
+          add_report_ship(ctx, ship);
         }
 
         for (starnum_t i = 0; i < Sdata.numstars; i++)
@@ -1222,30 +1200,23 @@ void rst(const command_t& argv, GameObj& g) {
                  "scope to a ship.\n";
         return;
       }
-      get_report_ship(g, ctx, g.shipno);
-      if (ctx.rd.empty()) {
+
+      const auto* scoped_ship = g.entity_manager.peek_ship(g.shipno);
+      if (!scoped_ship) {
         g.out << std::format("Error: Unable to retrieve ship #{} data.\n",
                              g.shipno);
         return;
       }
-      ship_report(g, ctx, *ctx.rd[0], report_types); /* first ship report */
+
+      // Report on the scoped ship directly
+      ShipReportItem scoped_item(scoped_ship);
+      ship_report(g, ctx, scoped_item, report_types);
 
       // Report on ships docked in this ship
-      RstContext docked_ctx{
-          .rd = {},  // Empty vector for docked ships
-          .shiplist = ctx.shiplist,
-          .flags = ctx.flags,
-          .first = ctx.first,
-          .enemies_only = ctx.enemies_only,
-          .filter_player = ctx.filter_player,
-      };
-
-      shipnum_t shn = ctx.rd[0]->child_ships();
-      while (shn && get_report_ship(g, docked_ctx, shn)) {
-        shn = docked_ctx.rd.back()->next_ship();
-      }
-      for (const auto& item : docked_ctx.rd) {
-        ship_report(g, docked_ctx, *item, report_types);
+      const ShipList docked_ships(g.entity_manager, scoped_ship->ships);
+      for (const Ship* ship : docked_ships) {
+        ShipReportItem docked_item(ship);
+        ship_report(g, ctx, docked_item, report_types);
       }
       break;
   }

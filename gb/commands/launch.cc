@@ -19,7 +19,7 @@ void launch(const command_t& argv, GameObj& g) {
   }
 
   ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
-  
+
   for (auto ship_handle : ships) {
     Ship& s = *ship_handle;  // Get mutable access upfront
 
@@ -32,8 +32,7 @@ void launch(const command_t& argv, GameObj& g) {
     }
 
     if (!s.docked && s.whatorbits != ScopeLevel::LEVEL_SHIP) {
-      g.out << std::format("{} is not landed or docked.\n",
-                           ship_to_string(s));
+      g.out << std::format("{} is not landed or docked.\n", ship_to_string(s));
       continue;
     }
     if (!landed(s)) APcount = 0;
@@ -67,9 +66,8 @@ void launch(const command_t& argv, GameObj& g) {
         s.whatdest = ScopeLevel::LEVEL_PLAN;
         s2->mass -= s.mass;
         s2->hanger -= size(s);
-        g.out << std::format(
-            "Landed on {}/{}.\n", stars[s.storbits].get_name(),
-            stars[s.storbits].get_planet_name(s.pnumorbits));
+        g.out << std::format("Landed on {}/{}.\n", stars[s.storbits].get_name(),
+                             stars[s.storbits].get_planet_name(s.pnumorbits));
         putship(*s2);
       } else if (s2->whatorbits == ScopeLevel::LEVEL_PLAN) {
         remove_sh_ship(s, *s2);
@@ -86,9 +84,8 @@ void launch(const command_t& argv, GameObj& g) {
         s.storbits = s2->storbits;
         s.pnumorbits = s2->pnumorbits;
         putplanet(p, stars[s2->storbits], s2->pnumorbits);
-        g.out << std::format(
-            "Orbiting {}/{}.\n", stars[s.storbits].get_name(),
-            stars[s.storbits].get_planet_name(s.pnumorbits));
+        g.out << std::format("Orbiting {}/{}.\n", stars[s.storbits].get_name(),
+                             stars[s.storbits].get_planet_name(s.pnumorbits));
         putship(*s2);
       } else if (s2->whatorbits == ScopeLevel::LEVEL_STAR) {
         remove_sh_ship(s, *s2);

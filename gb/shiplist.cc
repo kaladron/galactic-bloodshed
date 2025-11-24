@@ -83,13 +83,12 @@ ShipList::MutableIterator ShipList::end() {
 }
 
 ShipList::ConstIterator ShipList::begin() const {
-  return ConstIterator(*em, start_ship, iteration_type, scope_level, snum,
-                       pnum, player);
+  return ConstIterator(*em, start_ship, iteration_type, scope_level, snum, pnum,
+                       player);
 }
 
 ShipList::ConstIterator ShipList::end() const {
-  return ConstIterator(*em, 0, iteration_type, scope_level, snum, pnum,
-                       player);
+  return ConstIterator(*em, 0, iteration_type, scope_level, snum, pnum, player);
 }
 
 ShipList::ConstIterator ShipList::cbegin() const {

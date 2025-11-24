@@ -36,8 +36,10 @@ int main() {
 
   // Test is_ship_number_filter
   {
-    assert(GB::is_ship_number_filter("123") == true);
+    assert(GB::is_ship_number_filter("#123") == true);
     assert(GB::is_ship_number_filter("#456") == true);
+    assert(GB::is_ship_number_filter("123") ==
+           false);  // Without '#', it's a ship type filter
     assert(GB::is_ship_number_filter("f") == false);
     assert(GB::is_ship_number_filter("*") == false);
     assert(GB::is_ship_number_filter("") == false);
@@ -92,9 +94,19 @@ int main() {
     assert(GB::ship_matches_filter("*", destroyer) == true);
     assert(GB::ship_matches_filter("*", fighter) == true);
 
-    // Test ship number filter (should always return true per legacy behavior)
-    assert(GB::ship_matches_filter("#123", pod) == true);
-    assert(GB::ship_matches_filter("456", destroyer) == true);
+    // Test ship number filter - now checks if specific ship number matches
+    assert(GB::ship_matches_filter("#1", pod) == true);  // pod is ship #1
+    assert(GB::ship_matches_filter("#1", destroyer) ==
+           false);  // destroyer is ship #2
+    assert(GB::ship_matches_filter("#2", destroyer) ==
+           true);  // destroyer is ship #2
+    assert(GB::ship_matches_filter("#123", pod) ==
+           false);  // no ship #123 in this set
+
+    // Numeric strings WITHOUT '#' are treated as ship type filters
+    // They look for ships with type letters matching the digits
+    assert(GB::ship_matches_filter("123", pod) ==
+           false);  // pod is 'p', not '1', '2', or '3'
 
     // Test empty filter
     assert(GB::ship_matches_filter("", pod) == false);

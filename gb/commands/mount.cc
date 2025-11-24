@@ -14,67 +14,57 @@ void mount(const command_t& argv, GameObj& g) {
   bool mnt;
   mnt = argv[0] == "mount";
 
-  Ship* ship;
-  shipnum_t shipno;
-  shipnum_t nextshipno;
+  ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
+  for (auto ship_handle : ships) {
+    Ship& ship = *ship_handle;
 
-  nextshipno = start_shiplist(g, argv[1]);
-  while ((shipno = do_shiplist(&ship, &nextshipno)))
-    if (in_list(Playernum, argv[1], *ship, &nextshipno) &&
-        authorized(Governor, *ship)) {
-      if (!ship->mount) {
+    if (!ship_matches_filter(argv[1], ship)) continue;
+    if (!authorized(Governor, ship)) continue;
+
+    if (!ship.mount) {
+      notify(Playernum, Governor,
+             "This ship is not equipped with a crystal mount.\n");
+      continue;
+    }
+    if (ship.mounted && mnt) {
+      g.out << "You already have a crystal mounted.\n";
+      continue;
+    }
+    if (!ship.mounted && !mnt) {
+      g.out << "You don't have a crystal mounted.\n";
+      continue;
+    }
+    if (!ship.mounted && mnt) {
+      if (!ship.crystals) {
+        g.out << "You have no crystals on board.\n";
+        continue;
+      }
+      ship.mounted = 1;
+      ship.crystals--;
+      g.out << "Mounted.\n";
+    } else if (ship.mounted && !mnt) {
+      if (ship.crystals == max_crystals(ship)) {
         notify(Playernum, Governor,
-               "This ship is not equipped with a crystal mount.\n");
-        free(ship);
+               "You can't dismount the crystal. Max "
+               "allowed already on board.\n");
         continue;
       }
-      if (ship->mounted && mnt) {
-        g.out << "You already have a crystal mounted.\n";
-        free(ship);
-        continue;
+      ship.mounted = 0;
+      ship.crystals++;
+      g.out << "Dismounted.\n";
+      if (ship.hyper_drive.charge || ship.hyper_drive.ready) {
+        ship.hyper_drive.charge = 0;
+        ship.hyper_drive.ready = 0;
+        g.out << "Discharged.\n";
       }
-      if (!ship->mounted && !mnt) {
-        g.out << "You don't have a crystal mounted.\n";
-        free(ship);
-        continue;
+      if (ship.laser && ship.fire_laser) {
+        ship.fire_laser = 0;
+        g.out << "Laser deactivated.\n";
       }
-      if (!ship->mounted && mnt) {
-        if (!ship->crystals) {
-          g.out << "You have no crystals on board.\n";
-          free(ship);
-          continue;
-        }
-        ship->mounted = 1;
-        ship->crystals--;
-        g.out << "Mounted.\n";
-      } else if (ship->mounted && !mnt) {
-        if (ship->crystals == max_crystals(*ship)) {
-          notify(Playernum, Governor,
-                 "You can't dismount the crystal. Max "
-                 "allowed already on board.\n");
-          free(ship);
-          continue;
-        }
-        ship->mounted = 0;
-        ship->crystals++;
-        g.out << "Dismounted.\n";
-        if (ship->hyper_drive.charge || ship->hyper_drive.ready) {
-          ship->hyper_drive.charge = 0;
-          ship->hyper_drive.ready = 0;
-          g.out << "Discharged.\n";
-        }
-        if (ship->laser && ship->fire_laser) {
-          ship->fire_laser = 0;
-          g.out << "Laser deactivated.\n";
-        }
-      } else {
-        g.out << "Weird error in 'mount'.\n";
-        free(ship);
-        continue;
-      }
-      putship(*ship);
-      free(ship);
-    } else
-      free(ship);
+    } else {
+      g.out << "Weird error in 'mount'.\n";
+      continue;
+    }
+  }
 }
 }  // namespace GB::commands

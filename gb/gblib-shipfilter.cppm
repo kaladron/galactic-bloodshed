@@ -12,41 +12,6 @@ import std;
 namespace GB {
 
 /**
- * \brief Check if a ship matches the filter string
- *
- * Supports multiple filter types:
- * - "#123" or "123" - Match specific ship number
- * - "f" - Match ship type (single character from Shipltrs)
- * - "frd" - Match any of multiple ship types
- * - "*" - Match all ships (wildcard)
- *
- * \param filter User-provided filter string
- * \param ship Ship to check against filter
- * \return true if ship matches the filter
- */
-export bool ship_matches_filter(std::string_view filter, const Ship& ship) {
-  // Empty filter matches nothing
-  if (filter.empty()) return false;
-
-  // If filter is a ship number (#123 or 123), we don't check here
-  // because the caller should have already used string_to_shipnum()
-  // to start iteration at that specific ship. However, we return true
-  // to match the legacy in_list() behavior.
-  if (filter[0] == '#' || std::isdigit(filter[0])) {
-    return true;
-  }
-
-  // Match either the ship letter or * for wildcard
-  for (const auto& c : filter) {
-    if (c == ::Shipltrs[ship.type] || c == '*') {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
  * \brief Parse ship selection string to determine starting ship number
  *
  * Supports:
@@ -70,6 +35,42 @@ parse_ship_selection(std::string_view selection) {
   }
 
   return std::nullopt;
+}
+
+/**
+ * \brief Check if a ship matches the filter string
+ *
+ * Supports multiple filter types:
+ * - "#123" or "123" - Match specific ship number
+ * - "f" - Match ship type (single character from Shipltrs)
+ * - "frd" - Match any of multiple ship types
+ * - "*" - Match all ships (wildcard)
+ *
+ * \param filter User-provided filter string
+ * \param ship Ship to check against filter
+ * \return true if ship matches the filter
+ */
+export bool ship_matches_filter(std::string_view filter, const Ship& ship) {
+  // Empty filter matches nothing
+  if (filter.empty()) return false;
+
+  // If filter is a ship number (#123 or 123), check if it matches
+  if (filter[0] == '#' || std::isdigit(filter[0])) {
+    auto shipnum = parse_ship_selection(filter);
+    if (shipnum) {
+      return ship.number == *shipnum;
+    }
+    return false;
+  }
+
+  // Match either the ship letter or * for wildcard
+  for (const auto& c : filter) {
+    if (c == ::Shipltrs[ship.type] || c == '*') {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**

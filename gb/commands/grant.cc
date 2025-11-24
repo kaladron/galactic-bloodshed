@@ -17,9 +17,6 @@ void grant(const command_t& argv, GameObj& g) {
   governor_t Governor = g.governor;
   // ap_t APcount = 0; TODO(jeffbailey);
   governor_t gov;
-  shipnum_t nextshipno;
-  shipnum_t shipno;
-  Ship* ship;
 
   if (argv.size() < 3) {
     g.out << "Syntax: grant <governor> star\n";
@@ -56,25 +53,21 @@ void grant(const command_t& argv, GameObj& g) {
          std::format("\"{}\" has granted you control of the /{} star system.\n",
                      race.governor[Governor].name, star_handle->get_name()));
   } else if (argv[2] == "ship") {
-    nextshipno = start_shiplist(g, argv[3]);
-    while ((shipno = do_shiplist(&ship, &nextshipno))) {
-      if (in_list(Playernum, argv[3], *ship, &nextshipno) &&
-          authorized(Governor, *ship)) {
-        auto ship_handle = g.entity_manager.get_ship(shipno);
-        if (!ship_handle.get()) {
-          free(ship);
-          continue;
-        }
-        ship_handle->governor = gov;
-        warn(Playernum, gov,
-             std::format("\"{}\" granted you {} at {}\n",
-                         race.governor[Governor].name, ship_to_string(*ship),
-                         prin_ship_orbits(*ship)));
-        notify(Playernum, Governor,
-               std::format("{} granted to \"{}\"\n", ship_to_string(*ship),
-                           race.governor[gov].name));
-      }
-      free(ship);
+    ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
+    for (auto ship_handle : ships) {
+      Ship& ship = *ship_handle;
+
+      if (!ship_matches_filter(argv[3], ship)) continue;
+      if (!authorized(Governor, ship)) continue;
+
+      ship.governor = gov;
+      warn(Playernum, gov,
+           std::format("\"{}\" granted you {} at {}\n",
+                       race.governor[Governor].name, ship_to_string(ship),
+                       prin_ship_orbits(ship)));
+      notify(Playernum, Governor,
+             std::format("{} granted to \"{}\"\n", ship_to_string(ship),
+                         race.governor[gov].name));
     }
   } else if (argv[2] == "money") {
     long amount = 0;

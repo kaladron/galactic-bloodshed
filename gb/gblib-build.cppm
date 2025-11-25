@@ -24,8 +24,9 @@ export bool can_build_at_planet(GameObj& g, const Star& star,
 export std::expected<void, std::string> can_build_this(ShipType what,
                                                        const Race& race);
 export std::expected<void, std::string>
-can_build_on_sector(int what, const Race& race, const Planet& planet,
-                    const Sector& sector, const Coordinates& c);
+can_build_on_sector(EntityManager& entity_manager, int what, const Race& race,
+                    const Planet& planet, const Sector& sector,
+                    const Coordinates& c);
 export int getcount(const command_t& argv, size_t elem);
 export void autoload_at_planet(int Playernum, Ship* s, Planet* planet,
                                Sector& sector, int* crew, double* fuel);

@@ -214,8 +214,8 @@ void build(const command_t& argv, GameObj& g) {
             return;
           }
           sector = getsector(planet, x, y);
-          auto result =
-              can_build_on_sector(*what, race, planet, sector, {x, y});
+          auto result = can_build_on_sector(g.entity_manager, *what, race,
+                                            planet, sector, {x, y});
           if (!result && !race.God) {
             g.out << result.error();
             return;
@@ -322,8 +322,8 @@ void build(const command_t& argv, GameObj& g) {
               y = builder->land_y;
               what = builder->build_type;
               sector = getsector(planet, x, y);
-              auto result =
-                  can_build_on_sector(*what, race, planet, sector, {x, y});
+              auto result = can_build_on_sector(g.entity_manager, *what, race,
+                                                planet, sector, {x, y});
               if (!result) {
                 g.out << result.error();
                 return;

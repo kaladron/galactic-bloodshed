@@ -24,7 +24,8 @@ module gblib;
  * @return std::expected<void, std::string> Success or an error message string.
  */
 std::expected<void, std::string>
-can_build_on_sector(const int what, const Race& race, const Planet& planet,
+can_build_on_sector(EntityManager& entity_manager, const int what,
+                    const Race& race, const Planet& planet,
                     const Sector& sector, const Coordinates& c) {
   auto shipc = Shipltrs[what];
   if (!sector.popn) {
@@ -44,10 +45,10 @@ can_build_on_sector(const int what, const Race& race, const Planet& planet,
     return std::unexpected(temp);
   }
   if (what == ShipType::OTYPE_QUARRY) {
-    Shiplist shiplist(planet.ships());
-    for (auto s : shiplist) {
-      if (s.alive && s.type == ShipType::OTYPE_QUARRY && s.land_x == c.x &&
-          s.land_y == c.y) {
+    const ShipList shiplist(entity_manager, planet.ships());
+    for (const Ship* s : shiplist) {
+      if (s->alive && s->type == ShipType::OTYPE_QUARRY && s->land_x == c.x &&
+          s->land_y == c.y) {
         return std::unexpected("There already is a quarry here.\n");
       }
     }

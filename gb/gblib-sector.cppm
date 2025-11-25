@@ -28,7 +28,28 @@ export struct sector_struct {
 };
 
 export class Sector {
+private:
+  sector_struct data_;  // Private data member for encapsulation
+
 public:
+  // Constructor from sector_struct (for new pattern)
+  explicit Sector(const sector_struct& s) : data_(s) {
+    // Copy to public fields for backward compatibility
+    x = data_.x;
+    y = data_.y;
+    eff = data_.eff;
+    fert = data_.fert;
+    mobilization = data_.mobilization;
+    crystals = data_.crystals;
+    resource = data_.resource;
+    popn = data_.popn;
+    troops = data_.troops;
+    owner = data_.owner;
+    race = data_.race;
+    type = data_.type;
+    condition = data_.condition;
+  }
+
   Sector(unsigned int x_, unsigned int y_, unsigned int eff_,
          unsigned int fert_, unsigned int mobilization_, unsigned int crystals_,
          resource_t resource_, population_t popn_, population_t troops_,
@@ -36,7 +57,22 @@ public:
          unsigned int condition_)
       : x(x_), y(y_), eff(eff_), fert(fert_), mobilization(mobilization_),
         crystals(crystals_), resource(resource_), popn(popn_), troops(troops_),
-        owner(owner_), race(race_), type(type_), condition(condition_) {}
+        owner(owner_), race(race_), type(type_), condition(condition_) {
+    // Also populate data_ for consistency
+    data_.x = x_;
+    data_.y = y_;
+    data_.eff = eff_;
+    data_.fert = fert_;
+    data_.mobilization = mobilization_;
+    data_.crystals = crystals_;
+    data_.resource = resource_;
+    data_.popn = popn_;
+    data_.troops = troops_;
+    data_.owner = owner_;
+    data_.race = race_;
+    data_.type = type_;
+    data_.condition = condition_;
+  }
 
   Sector() = default;
   ~Sector() = default;
@@ -44,7 +80,8 @@ public:
   void operator=(const Sector&) = delete;
   Sector(Sector&&) = default;
   Sector& operator=(Sector&&) = default;
-  auto operator<=>(const Sector&) const = default;
+  // Comparison operator deleted due to complex member (data_)
+  auto operator<=>(const Sector&) const = delete;
 
   unsigned int x{0};
   unsigned int y{0};

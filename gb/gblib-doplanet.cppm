@@ -3,5 +3,7 @@
 export module gblib:doplanet;
 
 import :planet;
+import :services;
 
-export int doplanet(starnum_t starnum, Planet& planet, planetnum_t planetnum);
+export int doplanet(EntityManager&, starnum_t starnum, Planet& planet,
+                    planetnum_t planetnum);

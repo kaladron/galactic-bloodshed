@@ -31,7 +31,8 @@ module gblib;
  * @param r The race to which the ship belongs.
  * @return The number of sectors destroyed during the bombardment.
  */
-int berserker_bombard(Ship& ship, Planet& planet, const Race& r) {
+int berserker_bombard(EntityManager& entity_manager, Ship& ship,
+                       Planet& planet, const Race& r) {
   int x;
   int y;
   int x2 = -1;
@@ -41,9 +42,10 @@ int berserker_bombard(Ship& ship, Planet& planet, const Race& r) {
   Nuked.fill(0);
 
   /* check to see if PDNs are present */
-  Shiplist shiplist(planet.ships());
-  for (auto s : shiplist) {
-    if (s.alive && s.type == ShipType::OTYPE_PLANDEF && s.owner != ship.owner) {
+  const ShipList shiplist(entity_manager, planet.ships());
+  for (const Ship* s : shiplist) {
+    if (s->alive && s->type == ShipType::OTYPE_PLANDEF &&
+        s->owner != ship.owner) {
       std::string notice =
           std::format("Bombardment of {} cancelled, PDNs are present.\n",
                       prin_ship_orbits(ship));

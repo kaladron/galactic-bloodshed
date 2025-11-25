@@ -156,11 +156,13 @@ void do_quarry(Ship* ship, Planet& planet, SectorMap& smap) {
     s.fert = 0;
 }
 
-void do_berserker(Ship* ship, Planet& planet) {
+void do_berserker(EntityManager& entity_manager, Ship* ship,
+                  Planet& planet) {
   if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
       ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
       ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {
-    if (!berserker_bombard(*ship, planet, races[ship->owner - 1]))
+    if (!berserker_bombard(entity_manager, *ship, planet,
+                           races[ship->owner - 1]))
       ship->destpnum = int_rand(0, stars[ship->storbits].numplanets() - 1);
     else if (std::holds_alternative<MindData>(ship->special)) {
       auto mind = std::get<MindData>(ship->special);
@@ -315,8 +317,8 @@ double est_production(const Sector& s) {
 }
 }  // namespace
 
-int doplanet(const starnum_t starnum, Planet& planet,
-             const planetnum_t planetnum) {
+int doplanet(EntityManager& entity_manager, const starnum_t starnum,
+             Planet& planet, const planetnum_t planetnum) {
   int shipno;
   int nukex;
   int nukey;
@@ -374,7 +376,7 @@ int doplanet(const starnum_t starnum, Planet& planet,
           if (!ship->destruct || !ship->bombard)
             planet_doVN(*ship, planet, smap);
           else
-            do_berserker(ship, planet);
+            do_berserker(entity_manager, ship, planet);
           break;
         case ShipType::OTYPE_TERRA:
           if ((ship->on && landed(*ship) && ship->popn)) {

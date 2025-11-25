@@ -4,6 +4,7 @@ export module gblib:bombard;
 
 import :planet;
 import :race;
+import :services;
 import :ships;
 
-export int berserker_bombard(Ship&, Planet&, const Race&);
+export int berserker_bombard(EntityManager&, Ship&, Planet&, const Race&);

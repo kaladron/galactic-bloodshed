@@ -117,7 +117,8 @@ static void process_ship_turns(EntityManager& entity_manager, TurnState& state,
                                int update);
 static void prepare_dead_ships(TurnState& state);
 static void insert_ships_into_lists(TurnState& state);
-static void process_abms_and_missiles(TurnState& state, int update);
+static void process_abms_and_missiles(EntityManager& entity_manager,
+                                       TurnState& state, int update);
 static void update_victory_scores(TurnState& state, int update);
 static void finalize_turn(TurnState& state, int update);
 
@@ -151,7 +152,7 @@ void do_turn(EntityManager& entity_manager, int update) {
   process_ship_turns(entity_manager, state, update);
   prepare_dead_ships(state);
   insert_ships_into_lists(state);
-  process_abms_and_missiles(state, update);
+  process_abms_and_missiles(entity_manager, state, update);
   update_victory_scores(state, update);
 
   // Flush all dirty entities to database in one batch
@@ -430,7 +431,8 @@ static void insert_ships_into_lists(TurnState& state) {
   }
 }
 
-static void process_abms_and_missiles(TurnState& state, int update) {
+static void process_abms_and_missiles(EntityManager& entity_manager,
+                                       TurnState& state, int update) {
   /* put ABMs and surviving missiles here because ABMs need to have the missile
      in the shiplist of the target planet  Maarten */
   for (shipnum_t i = 1; i <= state.num_ships; i++) /* ABMs defend planet */
@@ -463,7 +465,7 @@ static void process_abms_and_missiles(TurnState& state, int update) {
           races[j - 1].planet_points += planets[star][i]->get_points();
       }
       if (update) {
-        if (doplanet(star, *planets[star][i], i)) {
+        if (doplanet(entity_manager, star, *planets[star][i], i)) {
           /* save smap gotten & altered by doplanet
              only if the planet is expl*/
           // TODO(jeffbailey): Added this in doplanet, but need to audit other

@@ -563,11 +563,11 @@ bool StarRepository::save(const Star& star) {
   return Repository<Star>::save(star_struct_data.star_id, star);
 }
 
-// Glaze reflection for Sector
+// Glaze reflection for sector_struct (POD)
 namespace glz {
 template <>
-struct meta<Sector> {
-  using T = Sector;
+struct meta<sector_struct> {
+  using T = sector_struct;
   static constexpr auto value = object(
       "x", &T::x, "y", &T::y, "eff", &T::eff, "fert", &T::fert, "mobilization",
       &T::mobilization, "crystals", &T::crystals, "resource", &T::resource,
@@ -591,7 +591,7 @@ public:
 
   // Bulk operations for sector maps
   SectorMap load_map(const Planet& planet);
-  bool save_map(const SectorMap& map, const Planet& planet);
+  bool save_map(const SectorMap& map);
 
 protected:
   std::optional<std::string> serialize(const Sector& sector) const override;
@@ -604,7 +604,9 @@ SectorRepository::SectorRepository(JsonStore& store)
 
 std::optional<std::string>
 SectorRepository::serialize(const Sector& sector) const {
-  auto result = glz::write_json(sector);
+  // Serialize the underlying sector_struct
+  const sector_struct& data = sector.to_struct();
+  auto result = glz::write_json(data);
   if (result.has_value()) {
     return result.value();
   }
@@ -613,10 +615,11 @@ SectorRepository::serialize(const Sector& sector) const {
 
 std::optional<Sector>
 SectorRepository::deserialize(const std::string& json_str) const {
-  Sector sector{};
-  auto result = glz::read_json(sector, json_str);
+  // Deserialize to sector_struct, then wrap in Sector
+  sector_struct data{};
+  auto result = glz::read_json(data, json_str);
   if (!result) {
-    return sector;
+    return Sector(data);
   }
   return std::nullopt;
 }
@@ -667,7 +670,7 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
   return smap;
 }
 
-bool SectorRepository::save_map(const SectorMap& map, const Planet& planet) {
+bool SectorRepository::save_map(const SectorMap& map) {
   // Save all sectors in the map using map's stored planet identity
   bool all_saved = true;
   for (int y = 0; y < map.get_maxy(); y++) {

@@ -1014,7 +1014,9 @@ std::optional<Commod> commod_from_json(const std::string& json_str) {
 
 // JSON serialization functions for Sector
 std::optional<std::string> sector_to_json(const Sector& sector) {
-  auto result = glz::write_json(sector);
+  // Serialize the underlying sector_struct
+  const sector_struct& data = sector.to_struct();
+  auto result = glz::write_json(data);
   if (result.has_value()) {
     return result.value();
   }
@@ -1022,10 +1024,11 @@ std::optional<std::string> sector_to_json(const Sector& sector) {
 }
 
 std::optional<Sector> sector_from_json(const std::string& json_str) {
-  Sector sector{};
-  auto result = glz::read_json(sector, json_str);
+  // Deserialize to sector_struct, then wrap in Sector
+  sector_struct data{};
+  auto result = glz::read_json(data, json_str);
   if (!result) {
-    return sector;
+    return Sector(data);
   }
   return std::nullopt;
 }

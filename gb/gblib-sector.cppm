@@ -78,8 +78,37 @@ public:
   ~Sector() = default;
   Sector(Sector&) = delete;
   void operator=(const Sector&) = delete;
-  Sector(Sector&&) = default;
-  Sector& operator=(Sector&&) = default;
+  
+  // Move constructor - must copy public fields for backward compatibility
+  Sector(Sector&& other) noexcept
+      : data_(std::move(other.data_)),
+        x(other.x), y(other.y), eff(other.eff), fert(other.fert),
+        mobilization(other.mobilization), crystals(other.crystals),
+        resource(other.resource), popn(other.popn), troops(other.troops),
+        owner(other.owner), race(other.race), type(other.type),
+        condition(other.condition) {}
+  
+  // Move assignment - must copy public fields for backward compatibility
+  Sector& operator=(Sector&& other) noexcept {
+    if (this != &other) {
+      data_ = std::move(other.data_);
+      x = other.x;
+      y = other.y;
+      eff = other.eff;
+      fert = other.fert;
+      mobilization = other.mobilization;
+      crystals = other.crystals;
+      resource = other.resource;
+      popn = other.popn;
+      troops = other.troops;
+      owner = other.owner;
+      race = other.race;
+      type = other.type;
+      condition = other.condition;
+    }
+    return *this;
+  }
+  
   // Comparison operator deleted due to complex member (data_)
   auto operator<=>(const Sector&) const = delete;
 

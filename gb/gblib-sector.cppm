@@ -83,6 +83,40 @@ public:
   // Comparison operator deleted due to complex member (data_)
   auto operator<=>(const Sector&) const = delete;
 
+  // Read accessors (const)
+  [[nodiscard]] unsigned int get_x() const noexcept { return data_.x; }
+  [[nodiscard]] unsigned int get_y() const noexcept { return data_.y; }
+  [[nodiscard]] unsigned int get_eff() const noexcept { return data_.eff; }
+  [[nodiscard]] unsigned int get_fert() const noexcept { return data_.fert; }
+  [[nodiscard]] unsigned int get_mobilization() const noexcept { return data_.mobilization; }
+  [[nodiscard]] unsigned int get_crystals() const noexcept { return data_.crystals; }
+  [[nodiscard]] resource_t get_resource() const noexcept { return data_.resource; }
+  [[nodiscard]] population_t get_popn() const noexcept { return data_.popn; }
+  [[nodiscard]] population_t get_troops() const noexcept { return data_.troops; }
+  [[nodiscard]] player_t get_owner() const noexcept { return data_.owner; }
+  [[nodiscard]] player_t get_race() const noexcept { return data_.race; }
+  [[nodiscard]] unsigned int get_type() const noexcept { return data_.type; }
+  [[nodiscard]] unsigned int get_condition() const noexcept { return data_.condition; }
+
+  // Write accessors (non-const)
+  void set_x(unsigned int val) noexcept { data_.x = val; x = val; }
+  void set_y(unsigned int val) noexcept { data_.y = val; y = val; }
+  void set_eff(unsigned int val) noexcept { data_.eff = val; eff = val; }
+  void set_fert(unsigned int val) noexcept { data_.fert = val; fert = val; }
+  void set_mobilization(unsigned int val) noexcept { data_.mobilization = val; mobilization = val; }
+  void set_crystals(unsigned int val) noexcept { data_.crystals = val; crystals = val; }
+  void set_resource(resource_t val) noexcept { data_.resource = val; resource = val; }
+  void set_popn(population_t val) noexcept { data_.popn = val; popn = val; }
+  void set_troops(population_t val) noexcept { data_.troops = val; troops = val; }
+  void set_owner(player_t val) noexcept { data_.owner = val; owner = val; }
+  void set_race(player_t val) noexcept { data_.race = val; race = val; }
+  void set_type(unsigned int val) noexcept { data_.type = val; type = val; }
+  void set_condition(unsigned int val) noexcept { data_.condition = val; condition = val; }
+
+  // Conversion operators
+  [[nodiscard]] const sector_struct& to_struct() const noexcept { return data_; }
+  [[nodiscard]] sector_struct& to_struct() noexcept { return data_; }
+
   unsigned int x{0};
   unsigned int y{0};
   unsigned int eff{0};          /* efficiency (0-100) */

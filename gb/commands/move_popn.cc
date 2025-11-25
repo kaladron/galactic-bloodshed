@@ -116,7 +116,8 @@ void move_popn(const command_t& argv, GameObj& g) {
                          what == PopulationType::CIV ? "population" : "troops");
 
     /* check for defending mechs */
-    mech_defend(Playernum, Governor, &people, what, planet, x2, y2, sect2);
+    mech_defend(g.entity_manager, Playernum, Governor, &people, what, planet,
+                x2, y2, sect2);
     if (!people) {
       putsector(sect, planet, x, y);
       putsector(sect2, planet, x2, y2);

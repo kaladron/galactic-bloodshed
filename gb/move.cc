@@ -72,9 +72,9 @@ Coordinates get_move(const Planet& planet, const char direction,
   }
 }
 
-void mech_defend(player_t Playernum, governor_t Governor, int* people,
-                 PopulationType type, const Planet& p, int x2, int y2,
-                 const Sector& s2) {
+void mech_defend(EntityManager& em, player_t Playernum, governor_t Governor,
+                 int* people, PopulationType type, const Planet& p, int x2,
+                 int y2, const Sector& s2) {
   population_t civ = 0;
   population_t mil = 0;
   int oldgov;
@@ -86,9 +86,10 @@ void mech_defend(player_t Playernum, governor_t Governor, int* people,
 
   auto& race = races[Playernum - 1];
 
-  Shiplist shiplist{p.ships()};
-  for (auto ship : shiplist) {
+  ShipList shiplist(em, p.ships());
+  for (auto ship_handle : shiplist) {
     if (civ + mil == 0) break;
+    Ship& ship = *ship_handle;
     if (ship.owner != Playernum && ship.type == ShipType::OTYPE_AFV &&
         landed(ship) && retal_strength(ship) && (ship.land_x == x2) &&
         (ship.land_y == y2)) {
@@ -109,7 +110,6 @@ void mech_defend(player_t Playernum, governor_t Governor, int* people,
           }
         }
       }
-      putship(ship);
     }
   }
   *people = civ + mil;

@@ -5,6 +5,28 @@ export module gblib:sector;
 import :types;
 import :planet;
 
+// POD struct containing all Sector data fields
+export struct sector_struct {
+  unsigned int x{0};
+  unsigned int y{0};
+  unsigned int eff{0};          /* efficiency (0-100) */
+  unsigned int fert{0};         /* max popn is proportional to this */
+  unsigned int mobilization{0}; /* percent popn is mobilized for war */
+  unsigned int crystals{0};
+  resource_t resource{0};
+
+  population_t popn{0};
+  population_t troops{0}; /* troops (additional combat value) */
+
+  player_t owner{0};         /* owner of place */
+  player_t race{0};          /* race type occupying sector
+                 (usually==owner) - makes things more
+                 realistic when alien races revolt and
+                 you gain control of them! */
+  unsigned int type{0};      /* underlying sector geology */
+  unsigned int condition{0}; /* environmental effects */
+};
+
 export class Sector {
 public:
   Sector(unsigned int x_, unsigned int y_, unsigned int eff_,

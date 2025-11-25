@@ -87,7 +87,7 @@ void bombard(const command_t& argv, GameObj& g) {
         continue;
       }
 
-      bool has_defense = has_planet_defense(p.ships(), Playernum);
+      bool has_defense = has_planet_defense(g.entity_manager, p.ships(), Playernum);
 
       if (has_defense && !landed(from)) {
         g.out << "Target has planetary defense networks.\n";

@@ -26,12 +26,13 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
        ships here. */
     iq = !!p.info(Playernum - 1).numsectsowned;
 
-    Shiplist shiplist{p.ships()};
-    for (const auto& s : shiplist) {
-      if (s.owner == Playernum && authorized(Governor, s) &&
-          (s.popn || (s.type == ShipType::OTYPE_PROBE)))
+    const ShipList shiplist(g.entity_manager, p.ships());
+    for (const Ship* s : shiplist) {
+      if (s->owner == Playernum && authorized(Governor, *s) &&
+          (s->popn || (s->type == ShipType::OTYPE_PROBE)))
         iq = 1;
-      if (s.alive && landed(s)) shiplocs[s.land_x][s.land_y] = Shipltrs[s.type];
+      if (s->alive && landed(*s))
+        shiplocs[s->land_x][s->land_y] = Shipltrs[s->type];
     }
   }
   /* report that this is a planet map */

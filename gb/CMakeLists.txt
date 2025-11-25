@@ -305,6 +305,10 @@ add_executable(gblib_test gblib_test.cc)
 target_link_libraries(gblib_test PRIVATE gblib SQLite::SQLite3)
 add_test(NAME GB_gblib_test COMMAND gblib_test)
 
+add_executable(build_test build_test.cc)
+target_link_libraries(build_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_build_test COMMAND build_test)
+
 add_executable(move_test move_test.cc)
 target_link_libraries(move_test PRIVATE gblib SQLite::SQLite3)
 add_test(NAME GB_move_test COMMAND move_test)

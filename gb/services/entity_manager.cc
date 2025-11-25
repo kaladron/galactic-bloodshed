@@ -560,12 +560,9 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   }
 
   /* landed ships are killed */
-  Shiplist shiplist(ship.ships);
-  for (auto s : shiplist) {
+  ShipList shiplist(*this, ship.ships);
+  for (auto ship_handle : shiplist) {
+    Ship& s = *ship_handle;      // Get mutable reference
     ::kill_ship(Playernum, &s);  // Call global kill_ship, not member
-    auto ship_handle = get_ship(s.number);
-    if (ship_handle.get()) {
-      *ship_handle = s;  // Update with killed ship data
-    }
   }
 }

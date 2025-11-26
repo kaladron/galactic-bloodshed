@@ -240,6 +240,90 @@ int main() {
   }
   std::println("  ✓ SectorMap updates saved and verified");
 
+  // Test 13: New load() method working with sector_struct directly
+  std::println("Test 13: New load() method (sector_struct)...");
+  sector_struct loaded_struct = repo.load(test_planet.star_id(),
+                                          test_planet.planet_order(), 5, 7);
+  assert(loaded_struct.x == 5);
+  assert(loaded_struct.y == 7);
+  assert(loaded_struct.eff == 90);  // From Test 5 update
+  assert(loaded_struct.popn == 15000);  // From Test 5 update
+  assert(loaded_struct.crystals == 150);  // From Test 5 update
+  std::println("  ✓ load() returns sector_struct correctly");
+
+  // Test 14: New save() method working with sector_struct directly
+  std::println("Test 14: New save() method (sector_struct)...");
+  sector_struct new_struct{};
+  new_struct.x = 9;
+  new_struct.y = 9;
+  new_struct.eff = 95;
+  new_struct.fert = 85;
+  new_struct.mobilization = 30;
+  new_struct.crystals = 200;
+  new_struct.resource = 750;
+  new_struct.popn = 20000;
+  new_struct.troops = 500;
+  new_struct.owner = 1;
+  new_struct.race = 1;
+  new_struct.type = SectorType::SEC_LAND;
+  new_struct.condition = 0;
+
+  repo.save(test_planet.star_id(), test_planet.planet_order(), 9, 9,
+            new_struct);
+  std::println("  ✓ save() with sector_struct completed");
+
+  // Test 15: Verify new save() persisted correctly using load()
+  std::println("Test 15: Verify save() persisted data...");
+  sector_struct verified = repo.load(test_planet.star_id(),
+                                     test_planet.planet_order(), 9, 9);
+  assert(verified.x == new_struct.x);
+  assert(verified.y == new_struct.y);
+  assert(verified.eff == new_struct.eff);
+  assert(verified.fert == new_struct.fert);
+  assert(verified.mobilization == new_struct.mobilization);
+  assert(verified.crystals == new_struct.crystals);
+  assert(verified.resource == new_struct.resource);
+  assert(verified.popn == new_struct.popn);
+  assert(verified.troops == new_struct.troops);
+  assert(verified.owner == new_struct.owner);
+  assert(verified.race == new_struct.race);
+  assert(verified.type == new_struct.type);
+  assert(verified.condition == new_struct.condition);
+  std::println("  ✓ Data persisted and retrieved correctly");
+
+  // Test 16: Verify load() returns default sector_struct for non-existent
+  std::println("Test 16: load() with non-existent sector...");
+  sector_struct empty = repo.load(test_planet.star_id(),
+                                  test_planet.planet_order(), 99, 99);
+  // Default-constructed sector_struct should have zero/default values
+  assert(empty.popn == 0);
+  assert(empty.owner == 0);
+  std::println("  ✓ load() returns default sector_struct for non-existent");
+
+  // Test 17: Round-trip test with both new methods
+  std::println("Test 17: Round-trip test (save then load)...");
+  sector_struct roundtrip{};
+  roundtrip.x = 1;
+  roundtrip.y = 1;
+  roundtrip.eff = 42;
+  roundtrip.fert = 73;
+  roundtrip.popn = 12345;
+  roundtrip.owner = 3;
+  roundtrip.type = SectorType::SEC_FOREST;
+  
+  repo.save(test_planet.star_id(), test_planet.planet_order(), 1, 1, roundtrip);
+  sector_struct retrieved_rt = repo.load(test_planet.star_id(),
+                                         test_planet.planet_order(), 1, 1);
+  
+  assert(retrieved_rt.x == roundtrip.x);
+  assert(retrieved_rt.y == roundtrip.y);
+  assert(retrieved_rt.eff == roundtrip.eff);
+  assert(retrieved_rt.fert == roundtrip.fert);
+  assert(retrieved_rt.popn == roundtrip.popn);
+  assert(retrieved_rt.owner == roundtrip.owner);
+  assert(retrieved_rt.type == roundtrip.type);
+  std::println("  ✓ Round-trip save/load works correctly");
+
   std::println("\nAll SectorRepository tests passed!");
   return 0;
 }

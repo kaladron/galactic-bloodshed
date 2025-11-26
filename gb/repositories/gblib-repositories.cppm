@@ -583,7 +583,16 @@ export class SectorRepository : public Repository<Sector> {
 public:
   SectorRepository(JsonStore& store);
 
-  // Domain-specific methods for individual sectors
+  // New domain-specific methods working with sector_struct
+  [[nodiscard]] sector_struct load(starnum_t star_id, 
+                                   std::size_t planet_order,
+                                   std::size_t x, std::size_t y);
+  
+  void save(starnum_t star_id, std::size_t planet_order,
+            std::size_t x, std::size_t y,
+            const sector_struct& sector);
+
+  // Legacy methods (for backward compatibility during migration)
   std::optional<Sector> find_sector(int star_id, int planet_order, int x,
                                     int y);
   bool save_sector(const Sector& sector, int star_id, int planet_order, int x,
@@ -624,6 +633,44 @@ SectorRepository::deserialize(const std::string& json_str) const {
   return std::nullopt;
 }
 
+// New methods working directly with sector_struct
+sector_struct SectorRepository::load(starnum_t star_id, 
+                                     std::size_t planet_order,
+                                     std::size_t x, std::size_t y) {
+  // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND ypos=?
+  std::vector<std::pair<std::string, int>> keys = {
+      {"star_id", static_cast<int>(star_id)},
+      {"planet_order", static_cast<int>(planet_order)},
+      {"xpos", static_cast<int>(x)},
+      {"ypos", static_cast<int>(y)}};
+  auto json = store.retrieve_multi(table_name, keys);
+  
+  sector_struct data{};
+  if (json) {
+    [[maybe_unused]] auto result = glz::read_json(data, *json);
+    // If read fails, return default-constructed sector_struct
+  }
+  return data;
+}
+
+void SectorRepository::save(starnum_t star_id, std::size_t planet_order,
+                            std::size_t x, std::size_t y,
+                            const sector_struct& sector) {
+  auto result = glz::write_json(sector);
+  if (!result.has_value()) {
+    return;  // Serialization failed
+  }
+
+  // Use multi-key storage: star_id, planet_order, xpos, ypos
+  std::vector<std::pair<std::string, int>> keys = {
+      {"star_id", static_cast<int>(star_id)},
+      {"planet_order", static_cast<int>(planet_order)},
+      {"xpos", static_cast<int>(x)},
+      {"ypos", static_cast<int>(y)}};
+  store.store_multi(table_name, keys, *result);
+}
+
+// Legacy methods (for backward compatibility)
 std::optional<Sector>
 SectorRepository::find_sector(int star_id, int planet_order, int x, int y) {
   // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND

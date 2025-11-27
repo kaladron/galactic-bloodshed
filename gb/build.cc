@@ -28,13 +28,13 @@ can_build_on_sector(EntityManager& entity_manager, const int what,
                     const Race& race, const Planet& planet,
                     const Sector& sector, const Coordinates& c) {
   auto shipc = Shipltrs[what];
-  if (!sector.popn) {
+  if (!sector.get_popn()) {
     return std::unexpected("You have no more civs in the sector!\n");
   }
-  if (sector.condition == SectorType::SEC_WASTED) {
+  if (sector.get_condition() == SectorType::SEC_WASTED) {
     return std::unexpected("You can't build on wasted sectors.\n");
   }
-  if (sector.owner != race.Playernum && !race.God) {
+  if (sector.get_owner() != race.Playernum && !race.God) {
     return std::unexpected("You don't own that sector.\n");
   }
   if ((!(Shipdata[what][ABIL_BUILD] & 1)) && !race.God) {
@@ -160,10 +160,10 @@ std::optional<ScopeLevel> build_at_ship(GameObj& g, Ship* builder,
 
 void autoload_at_planet(int Playernum, Ship* s, Planet* planet, Sector& sector,
                         int* crew, double* fuel) {
-  *crew = MIN(s->max_crew, sector.popn);
+  *crew = MIN(s->max_crew, sector.get_popn());
   *fuel = MIN((double)s->max_fuel, (double)planet->info(Playernum - 1).fuel);
-  sector.popn -= *crew;
-  if (!sector.popn && !sector.troops) sector.owner = 0;
+  sector.set_popn(sector.get_popn() - *crew);
+  if (!sector.get_popn() && !sector.get_troops()) sector.set_owner(0);
   planet->info(Playernum - 1).fuel -= (int)(*fuel);
 }
 

@@ -172,20 +172,21 @@ void survey(const command_t& argv, GameObj& g) {
             if ((d = desshow(Playernum, Governor, race, s)) == CHAR_CLOAKED) {
               notify(Playernum, Governor, "?  (    ?    )\n");
             } else {
-              notify(
-                  Playernum, Governor,
-                  std::format(
-                      " {}   {}   {:6}{:5}{:4}{:4}{:4}{:5}{:5}{:5}{:6}{}\n",
-                      Dessymbols[s.condition], Dessymbols[s.type], s.owner,
-                      s.race, s.eff, s.mobilization, s.fert, s.resource,
-                      s.troops, s.popn,
-                      maxsupport(race, s, compat, p.conditions(TOXIC)),
-                      ((s.crystals && (race.discoveries[D_CRYSTAL] || race.God))
-                           ? " yes"
-                           : " ")));
+              notify(Playernum, Governor,
+                     std::format(
+                         " {}   {}   {:6}{:5}{:4}{:4}{:4}{:5}{:5}{:5}{:6}{}\n",
+                         Dessymbols[s.get_condition()],
+                         Dessymbols[s.get_type()], s.get_owner(), s.get_race(),
+                         s.get_eff(), s.get_mobilization(), s.get_fert(),
+                         s.get_resource(), s.get_troops(), s.get_popn(),
+                         maxsupport(race, s, compat, p.conditions(TOXIC)),
+                         ((s.get_crystals() &&
+                           (race.discoveries[D_CRYSTAL] || race.God))
+                              ? " yes"
+                              : " ")));
             }
           } else { /* mode */
-            switch (s.condition) {
+            switch (s.get_condition()) {
               case SectorType::SEC_SEA:
                 sect_char = CHAR_SEA;
                 break;
@@ -214,19 +215,20 @@ void survey(const command_t& argv, GameObj& g) {
                 sect_char = '?';
                 break;
             }
-            notify(
-                Playernum, Governor,
-                std::format(
-                    "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
-                    CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
-                    desshow(Playernum, Governor, race, s),
-                    ((s.condition == SectorType::SEC_WASTED) ? 1 : 0), s.owner,
-                    s.eff, s.fert, s.mobilization,
-                    ((s.crystals && (race.discoveries[D_CRYSTAL] || race.God))
-                         ? 1
-                         : 0),
-                    s.resource, s.popn, s.troops,
-                    maxsupport(race, s, compat, p.conditions(TOXIC))));
+            notify(Playernum, Governor,
+                   std::format(
+                       "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
+                       CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
+                       desshow(Playernum, Governor, race, s),
+                       ((s.get_condition() == SectorType::SEC_WASTED) ? 1 : 0),
+                       s.get_owner(), s.get_eff(), s.get_fert(),
+                       s.get_mobilization(),
+                       ((s.get_crystals() &&
+                         (race.discoveries[D_CRYSTAL] || race.God))
+                            ? 1
+                            : 0),
+                       s.get_resource(), s.get_popn(), s.get_troops(),
+                       maxsupport(race, s, compat, p.conditions(TOXIC))));
 
             if (shiplocs[lowx][lowy].pos && inhere) {
               g.out << ";";
@@ -298,10 +300,10 @@ void survey(const command_t& argv, GameObj& g) {
       for (lowx = 0; lowx < p.Maxx(); lowx++)
         for (lowy = 0; lowy < p.Maxy(); lowy++) {
           auto& s = smap.get(lowx, lowy);
-          avg_fert += s.fert;
-          avg_resource += s.resource;
+          avg_fert += s.get_fert();
+          avg_resource += s.get_resource();
           if (race.discoveries[D_CRYSTAL] || race.God)
-            crystal_count += !!s.crystals;
+            crystal_count += !!s.get_crystals();
         }
       notify(Playernum, Governor,
              std::format("{:>29}: {}\n{:>29}: {}\n{:>29}: {}\n",

@@ -139,7 +139,7 @@ int getdefense(const Ship& ship) {
   if (landed(ship)) {
     const auto p = getplanet(ship.storbits, ship.pnumorbits);
     const auto sect = getsector(p, ship.land_x, ship.land_y);
-    return (2 * Defensedata[sect.condition]);
+    return (2 * Defensedata[sect.get_condition()]);
   }
   // No defense
   return 0;
@@ -241,7 +241,7 @@ static int do_merchant(Ship& s, Planet& p, std::stringstream& telegram) {
     return 0;
   /* check to see if the sector is owned by the player */
   auto sect = getsector(p, p.info(i).route[j].x, p.info(i).route[j].y);
-  if (sect.owner && (sect.owner != s.owner)) {
+  if (sect.get_owner() && (sect.get_owner() != s.owner)) {
     return 0;
   }
 

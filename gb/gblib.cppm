@@ -68,8 +68,8 @@ export std::vector<Victory> create_victory_list();
 
 export constexpr auto maxsupport(const Race& r, const Sector& s, const double c,
                                  const int toxic) {
-  if (r.likes[s.condition] == 0) return 0L;
-  double a = ((double)s.eff + 1.0) * (double)s.fert;
+  if (r.likes[s.get_condition()] == 0) return 0L;
+  double a = ((double)s.get_eff() + 1.0) * (double)s.get_fert();
   double b = (.01 * c);
 
   auto val = std::lround(a * b * .01 * (100.0 - (double)toxic));

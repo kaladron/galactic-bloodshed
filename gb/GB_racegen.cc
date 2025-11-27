@@ -158,7 +158,7 @@ found_planet:
   Sector& sect = [&]() -> Sector& {
     for (auto shuffled = smap.shuffle(); const auto& sector_wrap : shuffled) {
       Sector& current_sect = sector_wrap.get();
-      if (current_sect.condition == race->likesbest) {
+      if (current_sect.get_condition() == race->likesbest) {
         return current_sect;
       }
     }
@@ -166,12 +166,14 @@ found_planet:
     return smap.get(0, 0);
   }();
 
-  sect.owner = Playernum;
-  sect.race = Playernum;
-  sect.popn = planet.popn() = race->number_sexes;
-  sect.fert = 100;
-  sect.eff = 10;
-  sect.troops = planet.troops() = 0;
+  sect.set_owner(Playernum);
+  sect.set_race(Playernum);
+  sect.set_popn(race->number_sexes);
+  planet.popn() = race->number_sexes;
+  sect.set_fert(100);
+  sect.set_eff(10);
+  sect.set_troops(0);
+  planet.troops() = 0;
 
   race->governors = 0;
 
@@ -188,8 +190,8 @@ found_planet:
     s.type = ShipType::OTYPE_GOV;
     s.xpos = stars[star].xpos() + planet.xpos();
     s.ypos = stars[star].ypos() + planet.ypos();
-    s.land_x = sect.x;
-    s.land_y = sect.y;
+    s.land_x = sect.get_x();
+    s.land_y = sect.get_y();
 
     s.speed = 0;
     s.owner = Playernum;
@@ -269,7 +271,7 @@ found_planet:
 
   std::cout << std::format(
       "Player {} ({}) created on sector {},{} on {}/{}.\\n", Playernum,
-      race_info.name, sect.x, sect.y, stars[star].get_name(),
+      race_info.name, sect.get_x(), sect.get_y(), stars[star].get_name(),
       stars[star].get_planet_name(pnum));
   race_info.status = STATUS_ENROLLED;
   return 0;

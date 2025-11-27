@@ -138,15 +138,16 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
            "You have to unload to assault alien sectors.\n");
     return;
   }
-  ground_assaults[Playernum - 1][sect.owner - 1][g.snum] += 1;
+  ground_assaults[Playernum - 1][sect.get_owner() - 1][g.snum] += 1;
   auto& race = races[Playernum - 1];
-  auto& alien = races[sect.owner - 1];
+  auto& alien = races[sect.get_owner() - 1];
   /* races find out about each other */
   alien.translate[Playernum - 1] = MIN(alien.translate[Playernum - 1] + 5, 100);
-  race.translate[sect.owner - 1] = MIN(race.translate[sect.owner - 1] + 5, 100);
+  race.translate[sect.get_owner() - 1] =
+      MIN(race.translate[sect.get_owner() - 1] + 5, 100);
 
-  oldowner = (int)sect.owner;
-  oldgov = stars[g.snum].governor(sect.owner - 1);
+  oldowner = (int)sect.get_owner();
+  oldgov = stars[g.snum].governor(sect.get_owner() - 1);
 
   if (what == PopulationType::CIV)
     ship->popn -= people;
@@ -162,22 +163,26 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
 
   notify(Playernum, Governor,
          std::format("{} {} assault {} civ/{} mil\n", people,
-                     what == PopulationType::CIV ? "civ" : "mil", sect.popn,
-                     sect.troops));
+                     what == PopulationType::CIV ? "civ" : "mil",
+                     sect.get_popn(), sect.get_troops()));
   oldpopn = people;
-  old2popn = sect.popn;
-  old3popn = sect.troops;
+  old2popn = sect.get_popn();
+  old3popn = sect.get_troops();
 
-  defense = Defensedata[sect.condition];
-  ground_attack(race, alien, &people, what, &sect.popn, &sect.troops,
+  defense = Defensedata[sect.get_condition()];
+  auto temp_popn = sect.get_popn();
+  auto temp_troops = sect.get_troops();
+  ground_attack(race, alien, &people, what, &temp_popn, &temp_troops,
                 (int)ship->armor, defense, 1.0 - (double)ship->damage / 100.0,
-                alien.likes[sect.condition], &astrength, &dstrength,
+                alien.likes[sect.get_condition()], &astrength, &dstrength,
                 &casualties, &casualties2, &casualties3);
+  sect.set_popn(temp_popn);
+  sect.set_troops(temp_troops);
   notify(
       Playernum, Governor,
       std::format("Attack: {:.2f}   Defense: {:.2f}.\n", astrength, dstrength));
 
-  if (!(sect.popn + sect.troops)) { /* we got 'em */
+  if (!(sect.get_popn() + sect.get_troops())) { /* we got 'em */
     /* mesomorphs absorb the bodies of their victims */
     absorbed = 0;
     if (race.absorb) {
@@ -188,12 +193,12 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
              std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
     }
     if (what == PopulationType::CIV)
-      sect.popn = people + absorbed;
+      sect.set_popn(people + absorbed);
     else if (what == PopulationType::MIL) {
-      sect.popn = absorbed;
-      sect.troops = people;
+      sect.set_popn(absorbed);
+      sect.set_troops(people);
     }
-    sect.owner = Playernum;
+    sect.set_owner(Playernum);
     adjust_morale(race, alien, (int)alien.fighters);
   } else { /* retreat */
     absorbed = 0;
@@ -203,7 +208,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
              std::format("{} alien bodies absorbed.\n", absorbed));
       notify(Playernum, Governor,
              std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
-      sect.popn += absorbed;
+      sect.set_popn(sect.get_popn() + absorbed);
     }
     /* load them back up */
     notify(Playernum, Governor,
@@ -220,10 +225,10 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
       "/{}/{}: {} [{}] {} assaults {} [{}] {}({},{}) {}\n",
       stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum),
       race.name, Playernum, ship_to_string(*ship), alien.name, alien.Playernum,
-      Dessymbols[sect.condition], ship->land_x, ship->land_y,
-      (sect.owner == Playernum ? "VICTORY" : "DEFEAT"));
+      Dessymbols[sect.get_condition()], ship->land_x, ship->land_y,
+      (sect.get_owner() == Playernum ? "VICTORY" : "DEFEAT"));
 
-  if (sect.owner == Playernum) {
+  if (sect.get_owner() == Playernum) {
     notify(Playernum, Governor, "VICTORY! The sector is yours!\n");
     telegram += "Sector CAPTURED!\n";
     if (people) {
@@ -232,14 +237,14 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
                          what == PopulationType::CIV ? "civilians" : "troops"));
     }
     planet.info(Playernum - 1).numsectsowned++;
-    planet.info(Playernum - 1).mob_points += sect.mobilization;
+    planet.info(Playernum - 1).mob_points += sect.get_mobilization();
     planet.info(oldowner - 1).numsectsowned--;
-    planet.info(oldowner - 1).mob_points -= sect.mobilization;
+    planet.info(oldowner - 1).mob_points -= sect.get_mobilization();
   } else {
     notify(Playernum, Governor, "The invasion was repulsed; try again.\n");
     telegram += "You fought them off!\n";
   }
-  if (!(sect.popn + sect.troops + people)) {
+  if (!(sect.get_popn() + sect.get_troops() + people)) {
     telegram += "You killed all of them!\n";
     /* increase modifier */
     race.translate[oldowner - 1] = MIN(race.translate[oldowner - 1] + 5, 100);
@@ -410,7 +415,7 @@ void load(const command_t& argv, GameObj& g) {
           uplim = diff ? 0 : MIN(s2->popn, max_crew(s) - s.popn);
           lolim = diff ? 0 : -MIN(s.popn, max_crew(*s2) - s2->popn);
         } else {
-          uplim = MIN(sect.popn, max_crew(s) - s.popn);
+          uplim = MIN(sect.get_popn(), max_crew(s) - s.popn);
           lolim = -s.popn;
         }
         break;
@@ -419,7 +424,7 @@ void load(const command_t& argv, GameObj& g) {
           uplim = diff ? 0 : MIN(s2->troops, max_mil(s) - s.troops);
           lolim = diff ? 0 : -MIN(s.troops, max_mil(*s2) - s2->troops);
         } else {
-          uplim = MIN(sect.troops, max_mil(s) - s.troops);
+          uplim = MIN(sect.get_troops(), max_mil(s) - s.troops);
           lolim = -s.troops;
         }
         break;
@@ -488,7 +493,7 @@ void load(const command_t& argv, GameObj& g) {
           s2->popn -= amt;
           if (!landed_on(s, s2->number)) s2->mass -= amt * race.mass;
           transfercrew = 1;
-        } else if (sect.owner && sect.owner != Playernum) {
+        } else if (sect.get_owner() && sect.get_owner() != Playernum) {
           notify(Playernum, Governor,
                  "That sector is already occupied by another player!\n");
           /* fight a land battle */
@@ -500,21 +505,21 @@ void load(const command_t& argv, GameObj& g) {
           return;
         } else {
           transfercrew = 1;
-          if (!sect.popn && !sect.troops && amt < 0) {
+          if (!sect.get_popn() && !sect.get_troops() && amt < 0) {
             p.info(Playernum - 1).numsectsowned++;
-            p.info(Playernum - 1).mob_points += sect.mobilization;
-            sect.owner = Playernum;
+            p.info(Playernum - 1).mob_points += sect.get_mobilization();
+            sect.set_owner(Playernum);
             notify(
                 Playernum, Governor,
                 std::format("sector {},{} COLONIZED.\n", s.land_x, s.land_y));
           }
-          sect.popn -= amt;
+          sect.set_popn(sect.get_popn() - amt);
           p.popn() -= amt;
           p.info(Playernum - 1).popn -= amt;
-          if (!sect.popn && !sect.troops) {
+          if (!sect.get_popn() && !sect.get_troops()) {
             p.info(Playernum - 1).numsectsowned--;
-            p.info(Playernum - 1).mob_points -= sect.mobilization;
-            sect.owner = 0;
+            p.info(Playernum - 1).mob_points -= sect.get_mobilization();
+            sect.set_owner(0);
             notify(
                 Playernum, Governor,
                 std::format("sector {},{} evacuated.\n", s.land_x, s.land_y));
@@ -533,7 +538,7 @@ void load(const command_t& argv, GameObj& g) {
           s2->troops -= amt;
           if (!landed_on(s, s2->number)) s2->mass -= amt * race.mass;
           transfercrew = 1;
-        } else if (sect.owner && sect.owner != Playernum) {
+        } else if (sect.get_owner() && sect.get_owner() != Playernum) {
           notify(Playernum, Governor,
                  "That sector is already occupied by another player!\n");
           unload_onto_alien_sector(g, p, &s, sect, PopulationType::MIL, -amt);
@@ -544,20 +549,20 @@ void load(const command_t& argv, GameObj& g) {
           return;
         } else {
           transfercrew = 1;
-          if (!(sect.popn + sect.troops) && amt < 0) {
+          if (!(sect.get_popn() + sect.get_troops()) && amt < 0) {
             p.info(Playernum - 1).numsectsowned++;
-            p.info(Playernum - 1).mob_points += sect.mobilization;
-            sect.owner = Playernum;
+            p.info(Playernum - 1).mob_points += sect.get_mobilization();
+            sect.set_owner(Playernum);
             notify(Playernum, Governor,
                    std::format("sector {},{} OCCUPIED.\n", s.land_x, s.land_y));
           }
-          sect.troops -= amt;
+          sect.set_troops(sect.get_troops() - amt);
           p.troops() -= amt;
           p.info(Playernum - 1).troops -= amt;
-          if (!(sect.troops + sect.popn)) {
+          if (!(sect.get_troops() + sect.get_popn())) {
             p.info(Playernum - 1).numsectsowned--;
-            p.info(Playernum - 1).mob_points -= sect.mobilization;
-            sect.owner = 0;
+            p.info(Playernum - 1).mob_points -= sect.get_mobilization();
+            sect.set_owner(0);
             notify(
                 Playernum, Governor,
                 std::format("sector {},{} evacuated.\n", s.land_x, s.land_y));

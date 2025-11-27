@@ -102,7 +102,7 @@ void defend(const command_t& argv, GameObj& g) {
 
   /* check to see if you own the sector */
   auto sect = getsector(p, x, y);
-  if (sect.owner != Playernum) {
+  if (sect.get_owner() != Playernum) {
     g.out << "Nice try.\n";
     return;
   }

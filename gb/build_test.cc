@@ -27,14 +27,14 @@ int main() {
 
   // Create a normal sector owned by the race with population
   Sector good_sector{};
-  good_sector.owner = 1;
-  good_sector.popn = 100;
-  good_sector.condition = SectorType::SEC_LAND;
+  good_sector.set_owner(1);
+  good_sector.set_popn(100);
+  good_sector.set_condition(SectorType::SEC_LAND);
 
   // Test 1: Success case - can build on owned sector with population
   {
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, race, planet,
-                                       good_sector, {0, 0});
+                                      good_sector, {0, 0});
     assert(result.has_value());
     std::println("Test 1 passed: Can build on valid sector");
   }
@@ -42,11 +42,11 @@ int main() {
   // Test 2: Fail - no population
   {
     Sector no_pop_sector{};
-    no_pop_sector.owner = 1;
-    no_pop_sector.popn = 0;
-    no_pop_sector.condition = SectorType::SEC_LAND;
+    no_pop_sector.set_owner(1);
+    no_pop_sector.set_popn(0);
+    no_pop_sector.set_condition(SectorType::SEC_LAND);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, race, planet,
-                                       no_pop_sector, {0, 0});
+                                      no_pop_sector, {0, 0});
     assert(!result.has_value());
     assert(result.error() == "You have no more civs in the sector!\n");
     std::println("Test 2 passed: Rejects sector with no population");
@@ -55,11 +55,11 @@ int main() {
   // Test 3: Fail - wasted sector
   {
     Sector wasted_sector{};
-    wasted_sector.owner = 1;
-    wasted_sector.popn = 100;
-    wasted_sector.condition = SectorType::SEC_WASTED;
+    wasted_sector.set_owner(1);
+    wasted_sector.set_popn(100);
+    wasted_sector.set_condition(SectorType::SEC_WASTED);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, race, planet,
-                                       wasted_sector, {0, 0});
+                                      wasted_sector, {0, 0});
     assert(!result.has_value());
     assert(result.error() == "You can't build on wasted sectors.\n");
     std::println("Test 3 passed: Rejects wasted sector");
@@ -68,11 +68,11 @@ int main() {
   // Test 4: Fail - sector not owned by race
   {
     Sector alien_sector{};
-    alien_sector.owner = 2;  // Different player
-    alien_sector.popn = 100;
-    alien_sector.condition = SectorType::SEC_LAND;
+    alien_sector.set_owner(2);  // Different player
+    alien_sector.set_popn(100);
+    alien_sector.set_condition(SectorType::SEC_LAND);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, race, planet,
-                                       alien_sector, {0, 0});
+                                      alien_sector, {0, 0});
     assert(!result.has_value());
     assert(result.error() == "You don't own that sector.\n");
     std::println("Test 4 passed: Rejects sector owned by another player");
@@ -83,11 +83,11 @@ int main() {
     Race god_race = race;
     god_race.God = true;
     Sector alien_sector{};
-    alien_sector.owner = 2;
-    alien_sector.popn = 100;
-    alien_sector.condition = SectorType::SEC_LAND;
+    alien_sector.set_owner(2);
+    alien_sector.set_popn(100);
+    alien_sector.set_condition(SectorType::SEC_LAND);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, god_race,
-                                       planet, alien_sector, {0, 0});
+                                      planet, alien_sector, {0, 0});
     assert(result.has_value());
     std::println("Test 5 passed: God can build on alien sector");
   }
@@ -97,8 +97,8 @@ int main() {
     // Find a ship type that cannot be built on planets (ABIL_BUILD bit 0 not
     // set) Using STYPE_HABITAT which typically can't be built on planets
     if (!(Shipdata[ShipType::STYPE_HABITAT][ABIL_BUILD] & 1)) {
-      auto result = can_build_on_sector(
-          em, ShipType::STYPE_HABITAT, race, planet, good_sector, {0, 0});
+      auto result = can_build_on_sector(em, ShipType::STYPE_HABITAT, race,
+                                        planet, good_sector, {0, 0});
       assert(!result.has_value());
       assert(result.error().find("cannot be built on a planet") !=
              std::string::npos);
@@ -113,7 +113,7 @@ int main() {
   // Test 7: Success - quarry at new location
   {
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
-                                       good_sector, {5, 5});
+                                      good_sector, {5, 5});
     assert(result.has_value());
     std::println("Test 7 passed: Can build quarry at empty location");
   }
@@ -160,7 +160,7 @@ int main() {
 
     // Try to build another quarry at same location as the 3rd ship
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
-                                       good_sector, {3, 3});
+                                      good_sector, {3, 3});
     assert(!result.has_value());
     assert(result.error() == "There already is a quarry here.\n");
     std::println(
@@ -172,7 +172,7 @@ int main() {
   {
     // Quarry exists at (3,3), try building at (4,4)
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
-                                       good_sector, {4, 4});
+                                      good_sector, {4, 4});
     assert(result.has_value());
     std::println(
         "Test 9 passed: Can build quarry at different location than existing");
@@ -195,7 +195,7 @@ int main() {
 
     // Should be able to build at (7,7) since existing quarry is dead
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
-                                       good_sector, {7, 7});
+                                      good_sector, {7, 7});
     assert(result.has_value());
     std::println("Test 10 passed: Dead quarry doesn't block new construction");
   }

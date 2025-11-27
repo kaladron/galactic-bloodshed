@@ -584,13 +584,11 @@ public:
   SectorRepository(JsonStore& store);
 
   // New domain-specific methods working with sector_struct
-  [[nodiscard]] sector_struct load(starnum_t star_id, 
-                                   std::size_t planet_order,
+  [[nodiscard]] sector_struct load(starnum_t star_id, std::size_t planet_order,
                                    std::size_t x, std::size_t y);
-  
-  void save(starnum_t star_id, std::size_t planet_order,
-            std::size_t x, std::size_t y,
-            const sector_struct& sector);
+
+  void save(starnum_t star_id, std::size_t planet_order, std::size_t x,
+            std::size_t y, const sector_struct& sector);
 
   // Legacy methods (for backward compatibility during migration)
   std::optional<Sector> find_sector(int star_id, int planet_order, int x,
@@ -634,17 +632,18 @@ SectorRepository::deserialize(const std::string& json_str) const {
 }
 
 // New methods working directly with sector_struct
-sector_struct SectorRepository::load(starnum_t star_id, 
-                                     std::size_t planet_order,
-                                     std::size_t x, std::size_t y) {
-  // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND ypos=?
+sector_struct SectorRepository::load(starnum_t star_id,
+                                     std::size_t planet_order, std::size_t x,
+                                     std::size_t y) {
+  // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND
+  // ypos=?
   std::vector<std::pair<std::string, int>> keys = {
       {"star_id", static_cast<int>(star_id)},
       {"planet_order", static_cast<int>(planet_order)},
       {"xpos", static_cast<int>(x)},
       {"ypos", static_cast<int>(y)}};
   auto json = store.retrieve_multi(table_name, keys);
-  
+
   sector_struct data{};
   if (json) {
     [[maybe_unused]] auto result = glz::read_json(data, *json);

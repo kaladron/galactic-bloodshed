@@ -45,13 +45,13 @@ void arm(const command_t& argv, GameObj& g) {
   }
 
   auto sect = getsector(planet, x, y);
-  if (sect.owner != Playernum) {
+  if (sect.get_owner() != Playernum) {
     g.out << "You don't own that sector.\n";
     return;
   }
   if (mode) {
-    max_allowed = MIN(sect.popn, planet.info(Playernum - 1).destruct *
-                                     (sect.mobilization + 1));
+    max_allowed = MIN(sect.get_popn(), planet.info(Playernum - 1).destruct *
+                                           (sect.get_mobilization() + 1));
     if (argv.size() < 3)
       amount = max_allowed;
     else {
@@ -77,9 +77,9 @@ void arm(const command_t& argv, GameObj& g) {
     race.governor[Governor].money -= enlist_cost;
     putrace(race);
 
-    cost = std::max(1U, amount / (sect.mobilization + 1));
-    sect.troops += amount;
-    sect.popn -= amount;
+    cost = std::max(1U, amount / (sect.get_mobilization() + 1));
+    sect.set_troops(sect.get_troops() + amount);
+    sect.set_popn(sect.get_popn() - amount);
     planet.popn() -= amount;
     planet.info(Playernum - 1).popn -= amount;
     planet.troops() += amount;
@@ -87,27 +87,27 @@ void arm(const command_t& argv, GameObj& g) {
     planet.info(Playernum - 1).destruct -= cost;
     g.out << std::format(
         "{} population armed at a cost of {} (now {} civilians, {} military)\n",
-        amount, cost, sect.popn, sect.troops);
+        amount, cost, sect.get_popn(), sect.get_troops());
     g.out << std::format("This mobilization cost {} money.\n", enlist_cost);
   } else {
     if (argv.size() < 3)
-      amount = sect.troops;
+      amount = sect.get_troops();
     else {
       amount = std::stoi(argv[2]);
       if (amount <= 0) {
         g.out << "You must specify a positive number of civs to arm.\n";
         return;
       }
-      amount = MIN(sect.troops, amount);
+      amount = MIN(sect.get_troops(), amount);
     }
-    sect.popn += amount;
-    sect.troops -= amount;
+    sect.set_popn(sect.get_popn() + amount);
+    sect.set_troops(sect.get_troops() - amount);
     planet.popn() += amount;
     planet.troops() -= amount;
     planet.info(Playernum - 1).popn += amount;
     planet.info(Playernum - 1).troops -= amount;
     g.out << std::format("{} troops disarmed (now {} civilians, {} military)\n",
-                         amount, sect.popn, sect.troops);
+                         amount, sect.get_popn(), sect.get_troops());
   }
   putsector(sect, planet, x, y);
   putplanet(planet, stars[g.snum], g.pnum);

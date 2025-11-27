@@ -14,8 +14,13 @@ std::vector<std::reference_wrapper<Sector>> SectorMap::shuffle() {
   std::random_device rd;
   std::default_random_engine g(rd());
 
-  std::vector<std::reference_wrapper<Sector>> shuffled(vec_.begin(),
-                                                       vec_.end());
+  std::vector<std::reference_wrapper<Sector>> shuffled;
+  shuffled.reserve(grid_.size());
+
+  for (auto& sector : grid_) {
+    shuffled.push_back(std::ref(sector));
+  }
+
   std::ranges::shuffle(shuffled, g);
 
   return shuffled;

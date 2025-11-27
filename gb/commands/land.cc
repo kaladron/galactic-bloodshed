@@ -287,12 +287,13 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
 
   auto sect = getsector(p, x, y);
 
-  if (sect.condition == SectorType::SEC_WASTED) {
+  if (sect.get_condition() == SectorType::SEC_WASTED) {
     notify(Playernum, Governor, "Warning: That sector is a wasteland!\n");
-  } else if (sect.owner && sect.owner != Playernum) {
+  } else if (sect.get_owner() && sect.get_owner() != Playernum) {
     auto& race = races[Playernum - 1];
-    auto& alien = races[sect.owner - 1];
-    if (!(isset(race.allied, sect.owner) && isset(alien.allied, Playernum))) {
+    auto& alien = races[sect.get_owner() - 1];
+    if (!(isset(race.allied, sect.get_owner()) &&
+          isset(alien.allied, Playernum))) {
       sprintf(buf, "You have landed on an alien sector (%s).\n",
               alien.name.c_str());
       notify(Playernum, Governor, buf);

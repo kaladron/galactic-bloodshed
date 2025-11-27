@@ -315,11 +315,11 @@ int main() {
 
   for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
     Sector& sector = sector_wrap;
-    secttypes[sector.condition].count++;
-    if (!secttypes[sector.condition].here) {
-      secttypes[sector.condition].here = true;
-      secttypes[sector.condition].x = sector.x;
-      secttypes[sector.condition].y = sector.y;
+    secttypes[sector.get_condition()].count++;
+    if (!secttypes[sector.get_condition()].here) {
+      secttypes[sector.get_condition()].here = true;
+      secttypes[sector.get_condition()].x = sector.get_x();
+      secttypes[sector.get_condition()].y = sector.get_y();
     }
   }
   // Temporarily show sectors during selection (no need to persist)
@@ -455,10 +455,10 @@ int main() {
 
   putrace(race);
 
-  sect.owner = Playernum;
-  sect.race = Playernum;
-  sect.fert = 100;
-  sect.eff = 10;
+  sect.set_owner(Playernum);
+  sect.set_race(Playernum);
+  sect.set_fert(100);
+  sect.set_eff(10);
 
   // Get planet handle for final modifications
   auto planet_handle = entity_manager.get_planet(star, pnum);
@@ -471,8 +471,10 @@ int main() {
   planet.explored() = 0;
   planet.info(Playernum - 1).explored = 1;
 
-  sect.popn = planet.popn() = race.number_sexes;
-  sect.troops = planet.troops() = 0;
+  sect.set_popn(race.number_sexes);
+  planet.popn() = race.number_sexes;
+  sect.set_troops(0);
+  planet.troops() = 0;
   planet.maxpopn() =
       maxsupport(race, sect, 100.0, 0) * planet.Maxx() * planet.Maxy() / 2;
   /* (approximate) */
@@ -505,7 +507,7 @@ static char desshow(const int x, const int y,
 {
   const auto& s = smap.get(x, y);
 
-  switch (s.condition) {
+  switch (s.get_condition()) {
     case SectorType::SEC_WASTED:
       return CHAR_WASTED;
     case SectorType::SEC_SEA:

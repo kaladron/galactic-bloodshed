@@ -176,7 +176,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap) {
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */
       auto& s = smap.get(ship.land_x, ship.land_y);
-      if (!(oldres = s.resource)) {
+      if (!(oldres = s.get_resource())) {
         /* move to another sector */
         xa = int_rand(-1, 1);
         ship.land_x = mod(ship.land_x + xa, planet.Maxx());
@@ -187,9 +187,9 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap) {
         ship.land_y += ya;
       } else {
         /* mine the sector */
-        s.resource *= VN_RES_TAKE;
-        prod =
-            oldres - s.resource; /* poor way for a player to mine resources */
+        s.set_resource(s.get_resource() * VN_RES_TAKE);
+        prod = oldres -
+               s.get_resource(); /* poor way for a player to mine resources */
         if (ship.type == ShipType::OTYPE_VN)
           rcv_resource(ship, prod);
         else if (ship.type == ShipType::OTYPE_BERS)
@@ -333,7 +333,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap) {
             bool found = false;
             for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
               Sector& sect = sector_wrap;
-              if (sect.resource == 0) continue;
+              if (sect.get_resource() == 0) continue;
               found = true;
               ship.docked = 1;
               ship.whatdest = ScopeLevel::LEVEL_PLAN;
@@ -341,8 +341,8 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap) {
               ship.destpnum = ship.pnumorbits;
               ship.xpos = stars[ship.storbits].xpos() + planet.xpos();
               ship.ypos = stars[ship.storbits].ypos() + planet.ypos();
-              ship.land_x = sect.x;
-              ship.land_y = sect.y;
+              ship.land_x = sect.get_x();
+              ship.land_y = sect.get_y();
               if (std::holds_alternative<MindData>(ship.special)) {
                 auto mind = std::get<MindData>(ship.special);
                 mind.busy = 1;

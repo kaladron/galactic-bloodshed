@@ -125,12 +125,13 @@ void mech_attack_people(Ship& ship, population_t* civ, population_t* mil,
   auto astrength = MECH_ATTACK * ship.tech * (double)strength *
                    ((double)ship.armor + 1.0) * .01 *
                    (100.0 - (double)ship.damage) * .01 *
-                   (race.likes[sect.condition] + 1.0) *
+                   (race.likes[sect.get_condition()] + 1.0) *
                    morale_factor((double)(race.morale - alien.morale));
 
   auto dstrength = (double)(10 * oldmil * alien.fighters + oldciv) * 0.01 *
-                   alien.tech * .01 * (alien.likes[sect.condition] + 1.0) *
-                   ((double)Defensedata[sect.condition] + 1.0) *
+                   alien.tech * .01 *
+                   (alien.likes[sect.get_condition()] + 1.0) *
+                   ((double)Defensedata[sect.get_condition()] + 1.0) *
                    morale_factor((double)(alien.morale - race.morale));
 
   if (ignore) {
@@ -155,8 +156,8 @@ void mech_attack_people(Ship& ship, population_t* civ, population_t* mil,
           alien.Playernum);
   strcpy(long_msg, short_msg);
   std::string battle_msg = std::format(
-      "\tBattle at {},{} {}: {} guns fired on {} civ/{} mil\n", sect.x, sect.y,
-      Desnames[sect.condition], strength, oldciv, oldmil);
+      "\tBattle at {},{} {}: {} guns fired on {} civ/{} mil\n", sect.get_x(),
+      sect.get_y(), Desnames[sect.get_condition()], strength, oldciv, oldmil);
   strcat(long_msg, battle_msg.c_str());
   std::string attack_msg = std::format("\tAttack: {:.3f}   Defense: {:.3f}.\n",
                                        astrength, dstrength);
@@ -179,12 +180,12 @@ void people_attack_mech(Ship& ship, int civ, int mil, Race& race, Race& alien,
 
   dstrength = MECH_ATTACK * ship.tech * (double)strength *
               ((double)ship.armor + 1.0) * .01 * (100.0 - (double)ship.damage) *
-              .01 * (alien.likes[sect.condition] + 1.0) *
+              .01 * (alien.likes[sect.get_condition()] + 1.0) *
               morale_factor((double)(alien.morale - race.morale));
 
   astrength = (double)(10 * mil * race.fighters + civ) * .01 * race.tech * .01 *
-              (race.likes[sect.condition] + 1.0) *
-              ((double)Defensedata[sect.condition] + 1.0) *
+              (race.likes[sect.get_condition()] + 1.0) *
+              ((double)Defensedata[sect.get_condition()] + 1.0) *
               morale_factor((double)(race.morale - alien.morale));
   ammo = (int)log10((double)astrength + 1.0) - 1;
   ammo = std::min(strength, std::max(0, ammo));
@@ -201,9 +202,9 @@ void people_attack_mech(Ship& ship, int civ, int mil, Race& race, Race& alien,
           race.name.c_str(), race.Playernum,
           ship.alive ? "attacked" : "DESTROYED", ship_to_string(ship).c_str());
   strcpy(long_msg, short_msg);
-  std::string assault_msg =
-      std::format("\tBattle at {},{} {}: {} civ/{} mil assault {}\n", x, y,
-                  Desnames[sect.condition], civ, mil, Shipnames[ship.type]);
+  std::string assault_msg = std::format(
+      "\tBattle at {},{} {}: {} civ/{} mil assault {}\n", x, y,
+      Desnames[sect.get_condition()], civ, mil, Shipnames[ship.type]);
   strcat(long_msg, assault_msg.c_str());
   std::string attack_msg = std::format("\tAttack: {:.3f}   Defense: {:.3f}.\n",
                                        astrength, dstrength);

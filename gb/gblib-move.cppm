@@ -16,9 +16,8 @@ export void ground_attack(Race&, Race&, int*, PopulationType, population_t*,
                           double, double*, double*, int*, int*, int*);
 
 export void mech_defend(EntityManager& em, player_t Playernum,
-                        governor_t Governor, int* people,
-                        PopulationType type, const Planet& p, int x2, int y2,
-                        const Sector& s2);
+                        governor_t Governor, int* people, PopulationType type,
+                        const Planet& p, int x2, int y2, const Sector& s2);
 
 export void mech_attack_people(Ship& ship, population_t* civ, population_t* mil,
                                Race& race, Race& alien, const Sector& sect,

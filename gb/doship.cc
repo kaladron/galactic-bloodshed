@@ -71,21 +71,21 @@ void do_meta_infect(int who, Planet& p) {
   std::memset(Sectinfo, 0, sizeof(Sectinfo));
   auto x = int_rand(0, p.Maxx() - 1);
   auto y = int_rand(0, p.Maxy() - 1);
-  auto owner = smap.get(x, y).owner;
+  auto owner = smap.get(x, y).get_owner();
   if (!owner ||
       (who != owner &&
        (double)int_rand(1, 100) >
            100.0 * (1.0 -
-                    std::exp(-((double)(smap.get(x, y).troops *
+                    std::exp(-((double)(smap.get(x, y).get_troops() *
                                         races[owner - 1].fighters / 50.0)))))) {
     p.info(who - 1).explored = 1;
     p.info(who - 1).numsectsowned += 1;
-    smap.get(x, y).troops = 0;
-    smap.get(x, y).popn = races[who - 1].number_sexes;
-    smap.get(x, y).owner = who;
-    smap.get(x, y).condition = smap.get(x, y).type;
+    smap.get(x, y).set_troops(0);
+    smap.get(x, y).set_popn(races[who - 1].number_sexes);
+    smap.get(x, y).set_owner(who);
+    smap.get(x, y).set_condition(smap.get(x, y).get_type());
     if (POD_TERRAFORM) {
-      smap.get(x, y).condition = races[who - 1].likesbest;
+      smap.get(x, y).set_condition(races[who - 1].likesbest);
     }
     putsmap(smap, p);
   }

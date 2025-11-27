@@ -90,33 +90,33 @@ void test_sector_creation() {
   auto sector = createTestSector(5, 7, 80, 60, 25, 3, 200, 5000, 100, 2);
 
   // Test basic properties
-  assert(sector.x == 5);
-  assert(sector.y == 7);
-  assert(sector.eff == 80);
-  assert(sector.fert == 60);
-  assert(sector.mobilization == 25);
-  assert(sector.crystals == 3);
-  assert(sector.resource == 200);
-  assert(sector.popn == 5000);
-  assert(sector.troops == 100);
-  assert(sector.owner == 2);
+  assert(sector.get_x() == 5);
+  assert(sector.get_y() == 7);
+  assert(sector.get_eff() == 80);
+  assert(sector.get_fert() == 60);
+  assert(sector.get_mobilization() == 25);
+  assert(sector.get_crystals() == 3);
+  assert(sector.get_resource() == 200);
+  assert(sector.get_popn() == 5000);
+  assert(sector.get_troops() == 100);
+  assert(sector.get_owner() == 2);
 
   // Test sector types
   auto land_sector =
       createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 0, 1,
                        SectorType::SEC_LAND, SectorType::SEC_LAND);
-  assert(land_sector.type == SectorType::SEC_LAND);
-  assert(land_sector.condition == SectorType::SEC_LAND);
+  assert(land_sector.get_type() == SectorType::SEC_LAND);
+  assert(land_sector.get_condition() == SectorType::SEC_LAND);
 
   auto plated_sector =
       createTestSector(0, 0, 100, 50, 0, 0, 100, 1000, 0, 1,
                        SectorType::SEC_LAND, SectorType::SEC_PLATED);
-  assert(plated_sector.condition == SectorType::SEC_PLATED);
+  assert(plated_sector.get_condition() == SectorType::SEC_PLATED);
 
   auto wasted_sector =
       createTestSector(0, 0, 0, 0, 0, 0, 50, 0, 0, 0, SectorType::SEC_LAND,
                        SectorType::SEC_WASTED);
-  assert(wasted_sector.condition == SectorType::SEC_WASTED);
+  assert(wasted_sector.get_condition() == SectorType::SEC_WASTED);
 }
 
 // Test Race data structure functionality
@@ -217,37 +217,37 @@ void test_sectormap_functionality() {
   for (int y = 0; y < 5; y++) {
     for (int x = 0; x < 5; x++) {
       auto& sector = smap.get(x, y);
-      sector.x = x;
-      sector.y = y;
-      sector.owner = 1;
-      sector.popn = 100 * (x + y);
-      sector.condition = SectorType::SEC_LAND;
+      sector.set_x(x);
+      sector.set_y(y);
+      sector.set_owner(1);
+      sector.set_popn(100 * (x + y));
+      sector.set_condition(SectorType::SEC_LAND);
 
       // Verify the sector was set correctly
-      assert(smap.get(x, y).x == x);
-      assert(smap.get(x, y).y == y);
-      assert(smap.get(x, y).owner == 1);
-      assert(smap.get(x, y).popn == 100 * (x + y));
-      assert(smap.get(x, y).condition == SectorType::SEC_LAND);
+      assert(smap.get(x, y).get_x() == x);
+      assert(smap.get(x, y).get_y() == y);
+      assert(smap.get(x, y).get_owner() == 1);
+      assert(smap.get(x, y).get_popn() == 100 * (x + y));
+      assert(smap.get(x, y).get_condition() == SectorType::SEC_LAND);
     }
   }
 
   // Test boundary conditions
   auto& corner_sector = smap.get(0, 0);
-  corner_sector.eff = 100;
-  corner_sector.fert = 50;
-  corner_sector.resource = 1000;
+  corner_sector.set_eff(100);
+  corner_sector.set_fert(50);
+  corner_sector.set_resource(1000);
 
-  assert(smap.get(0, 0).eff == 100);
-  assert(smap.get(0, 0).fert == 50);
-  assert(smap.get(0, 0).resource == 1000);
+  assert(smap.get(0, 0).get_eff() == 100);
+  assert(smap.get(0, 0).get_fert() == 50);
+  assert(smap.get(0, 0).get_resource() == 1000);
 
   auto& opposite_corner = smap.get(4, 4);
-  opposite_corner.crystals = 10;
-  opposite_corner.mobilization = 75;
+  opposite_corner.set_crystals(10);
+  opposite_corner.set_mobilization(75);
 
-  assert(smap.get(4, 4).crystals == 10);
-  assert(smap.get(4, 4).mobilization == 75);
+  assert(smap.get(4, 4).get_crystals() == 10);
+  assert(smap.get(4, 4).get_mobilization() == 75);
 }
 
 // Test sector production calculations (mathematical functions)
@@ -266,7 +266,7 @@ void test_sector_calculations() {
   assert(low_support <= max_support);      // Should be lower or equal
 
   // Test with wasted sector
-  sector.condition = SectorType::SEC_WASTED;
+  sector.set_condition(SectorType::SEC_WASTED);
   population_t wasted_support = maxsupport(race, sector, 100.0, 0);
   assert(wasted_support < max_support);  // Wasted should support less
 }
@@ -275,18 +275,18 @@ void test_sector_calculations() {
 void test_edge_cases() {
   // Test sectors with zero values
   auto empty_sector = createTestSector(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-  assert(empty_sector.eff == 0);
-  assert(empty_sector.fert == 0);
-  assert(empty_sector.popn == 0);
-  assert(empty_sector.owner == 0);
+  assert(empty_sector.get_eff() == 0);
+  assert(empty_sector.get_fert() == 0);
+  assert(empty_sector.get_popn() == 0);
+  assert(empty_sector.get_owner() == 0);
 
   // Test sectors with maximum values
   auto max_sector = createTestSector(255, 255, 100, 100, 100, 255, 65535,
                                      1000000, 1000000, MAXPLAYERS - 1);
-  assert(max_sector.x == 255);
-  assert(max_sector.y == 255);
-  assert(max_sector.eff == 100);
-  assert(max_sector.fert == 100);
+  assert(max_sector.get_x() == 255);
+  assert(max_sector.get_y() == 255);
+  assert(max_sector.get_eff() == 100);
+  assert(max_sector.get_fert() == 100);
 
   // Test race with extreme values
   auto extreme_race = createTestRace(MAXPLAYERS - 1);
@@ -316,8 +316,8 @@ void test_data_consistency() {
                                  SectorType::SEC_LAND, SectorType::SEC_PLATED);
 
   // High efficiency should be consistent with plated condition
-  assert(sector.eff == 100);
-  assert(sector.condition == SectorType::SEC_PLATED);
+  assert(sector.get_eff() == 100);
+  assert(sector.get_condition() == SectorType::SEC_PLATED);
 
   // Test race-sector compatibility relationships
   auto race = createTestRace(1);

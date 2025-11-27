@@ -321,7 +321,7 @@ Star Makestar(starnum_t snum) {
       printf("sect map(%dx%d):\n", planet.Maxx(), planet.Maxy());
       for (y = 0; y < planet.Maxy(); y++) {
         for (x = 0; x < planet.Maxx(); x++) {
-          switch (smap.get(x, y).condition) {
+          switch (smap.get(x, y).get_condition()) {
             case SectorType::SEC_LAND:
               std::putchar(CHAR_LAND);
               break;
@@ -356,11 +356,11 @@ Star Makestar(starnum_t snum) {
      * Tabulate statistics for this star's planets. */
     for (y = 0; y < planet.Maxy(); y++)
       for (x = 0; x < planet.Maxx(); x++) {
-        uint8_t d = smap.get(x, y).condition;
-        planet.total_resources() += smap.get(x, y).resource;
-        Resource[type] += smap.get(x, y).resource;
+        uint8_t d = smap.get(x, y).get_condition();
+        planet.total_resources() += smap.get(x, y).get_resource();
+        Resource[type] += smap.get(x, y).get_resource();
         Numsects[type][d]++;
-        Fertsects[type][d] += smap.get(x, y).fert;
+        Fertsects[type][d] += smap.get(x, y).get_fert();
       }
     putplanet(planet, star, i);
   }

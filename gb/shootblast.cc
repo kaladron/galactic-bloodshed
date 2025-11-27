@@ -178,7 +178,7 @@ int shoot_ship_to_planet(Ship& ship, Planet& pl, int strength, int x, int y,
   }
 
   auto& target = smap.get(x, y);
-  player_t oldowner = target.owner;
+  player_t oldowner = target.get_owner();
 
   std::array<int, MAXPLAYERS> sum_mob{0};
 
@@ -193,51 +193,53 @@ int shoot_ship_to_planet(Ship& ship, Planet& pl, int strength, int x, int y,
         double fac =
             SECTOR_DAMAGE * (double)strength * (double)caliber / (d + 1.);
 
-        if (s.owner) {
+        if (s.get_owner()) {
           population_t kills = 0;
-          if (s.popn) {
-            kills = int_rand(0, ((int)(fac / 10.0) * s.popn)) /
-                    (1 + (s.condition == SectorType::SEC_PLATED));
-            if (kills > s.popn)
-              s.popn = 0;
+          if (s.get_popn()) {
+            kills = int_rand(0, ((int)(fac / 10.0) * s.get_popn())) /
+                    (1 + (s.get_condition() == SectorType::SEC_PLATED));
+            if (kills > s.get_popn())
+              s.set_popn(0);
             else
-              s.popn -= kills;
+              s.set_popn(s.get_popn() - kills);
           }
-          if (s.troops && (fac > 5.0 * (double)Defensedata[s.condition])) {
-            kills = int_rand(0, ((int)(fac / 20.0) * s.troops)) /
-                    (1 + (s.condition == SectorType::SEC_PLATED));
-            if (kills > s.troops)
-              s.troops = 0;
+          if (s.get_troops() &&
+              (fac > 5.0 * (double)Defensedata[s.get_condition()])) {
+            kills = int_rand(0, ((int)(fac / 20.0) * s.get_troops())) /
+                    (1 + (s.get_condition() == SectorType::SEC_PLATED));
+            if (kills > s.get_troops())
+              s.set_troops(0);
             else
-              s.troops -= kills;
+              s.set_troops(s.get_troops() - kills);
           }
 
-          if (!(s.popn + s.troops)) s.owner = 0;
+          if (!(s.get_popn() + s.get_troops())) s.set_owner(0);
         }
 
         if (fac >= 5.0 && !int_rand(0, 10)) mutate_sector(s);
 
-        if (round_rand(fac) > Defensedata[s.condition] * int_rand(0, 10)) {
-          if (s.owner) Nuked[s.owner - 1] = 1;
-          s.popn = 0;
-          s.troops = int_rand(0, (int)s.troops);
-          if (!s.troops) /* troops may survive this */
-            s.owner = 0;
-          s.eff = 0;
-          s.resource = s.resource / ((int)fac + 1);
-          s.mobilization = 0;
-          s.fert = 0; /*all is lost !*/
-          s.crystals = int_rand(0, (int)s.crystals);
-          s.condition = SectorType::SEC_WASTED;
+        if (round_rand(fac) >
+            Defensedata[s.get_condition()] * int_rand(0, 10)) {
+          if (s.get_owner()) Nuked[s.get_owner() - 1] = 1;
+          s.set_popn(0);
+          s.set_troops(int_rand(0, (int)s.get_troops()));
+          if (!s.get_troops()) /* troops may survive this */
+            s.set_owner(0);
+          s.set_eff(0);
+          s.set_resource(s.get_resource() / ((int)fac + 1));
+          s.set_mobilization(0);
+          s.set_fert(0); /*all is lost !*/
+          s.set_crystals(int_rand(0, (int)s.get_crystals()));
+          s.set_condition(SectorType::SEC_WASTED);
           numdest++;
         } else {
-          s.fert = std::max(0, (int)s.fert - (int)fac);
-          s.eff = std::max(0, (int)s.eff - (int)fac);
-          s.mobilization = std::max(0, (int)s.mobilization - (int)fac);
-          s.resource = std::max(0, (int)s.resource - (int)fac);
+          s.set_fert(std::max(0, (int)s.get_fert() - (int)fac));
+          s.set_eff(std::max(0, (int)s.get_eff() - (int)fac));
+          s.set_mobilization(std::max(0, (int)s.get_mobilization() - (int)fac));
+          s.set_resource(std::max(0, (int)s.get_resource() - (int)fac));
         }
       }
-      if (s.owner) sum_mob[s.owner - 1] += s.mobilization;
+      if (s.get_owner()) sum_mob[s.get_owner() - 1] += s.get_mobilization();
     }
   }
   auto num_sectors = pl.Maxx() * pl.Maxy();
@@ -566,5 +568,6 @@ int planet_guns(long points) {
 }
 
 static void mutate_sector(Sector& s) {
-  if (int_rand(0, 6) >= Defensedata[s.condition]) s.condition = s.type;
+  if (int_rand(0, 6) >= Defensedata[s.get_condition()])
+    s.set_condition(s.get_type());
 }

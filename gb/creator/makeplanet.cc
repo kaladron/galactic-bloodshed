@@ -109,14 +109,17 @@ int neighbors(SectorMap& smap, int x, int y, int type) {
   else if (r == smap.get_maxx())
     r = 0;
   if (y > 0)
-    n += (smap.get(x, y - 1).type == type) + (smap.get(l, y - 1).type == type) +
-         (smap.get(r, y - 1).type == type);
+    n += (smap.get(x, y - 1).get_type() == type) +
+         (smap.get(l, y - 1).get_type() == type) +
+         (smap.get(r, y - 1).get_type() == type);
 
-  n += (smap.get(l, y).type == type) + (smap.get(r, y).type == type);
+  n +=
+      (smap.get(l, y).get_type() == type) + (smap.get(r, y).get_type() == type);
 
   if (y < smap.get_maxy() - 1)
-    n += (smap.get(x, y + 1).type == type) + (smap.get(l, y + 1).type == type) +
-         (smap.get(r, y + 1).type == type);
+    n += (smap.get(x, y + 1).get_type() == type) +
+         (smap.get(l, y + 1).get_type() == type) +
+         (smap.get(r, y + 1).get_type() == type);
 
   return (n);
 }
@@ -125,7 +128,8 @@ int neighbors(SectorMap& smap, int x, int y, int type) {
 void seed(SectorMap& smap, SectorType type, int n) {
   while (n-- > 0) {
     auto& s = smap.get_random();
-    s.type = s.condition = type;
+    s.set_type(type);
+    s.set_condition(type);
   }
 }
 
@@ -151,7 +155,8 @@ void grow(SectorMap& smap, SectorType type, int n, int rate) {
 
   for (auto& [x, y, sector_type] : worklist) {
     auto& s = smap.get(x, y);
-    s.condition = s.type = sector_type;
+    s.set_condition(sector_type);
+    s.set_type(sector_type);
   }
 }
 
@@ -193,28 +198,31 @@ int SectTemp(const Planet& p, const int y) {
  */
 void Makesurface(const Planet& p, SectorMap& smap) {
   for (auto& s : smap) {
-    s.type = s.condition;
-    s.resource = int_rand(rmin[p.type()][s.type], rmax[p.type()][s.type]);
-    s.fert = int_rand(Fmin[p.type()][s.type], Fmax[p.type()][s.type]);
+    s.set_type(s.get_condition());
+    s.set_resource(
+        int_rand(rmin[p.type()][s.get_type()], rmax[p.type()][s.get_type()]));
+    s.set_fert(
+        int_rand(Fmin[p.type()][s.get_type()], Fmax[p.type()][s.get_type()]));
 
-    if (int_rand(0, 1000) < x_chance[s.type]) s.crystals = int_rand(4, 8);
+    if (int_rand(0, 1000) < x_chance[s.get_type()])
+      s.set_crystals(int_rand(4, 8));
 
     // We ice up the poles.
-    if ((s.y != 0) && (s.y != smap.get_maxy() - 1)) continue;
+    if ((s.get_y() != 0) && (s.get_y() != smap.get_maxy() - 1)) continue;
 
-    int temp = SectTemp(p, s.y);
-    switch (s.type) {
+    int temp = SectTemp(p, s.get_y());
+    switch (s.get_type()) {
       case SectorType::SEC_SEA:
-        if (success(-temp)) s.condition = SectorType::SEC_ICE;
+        if (success(-temp)) s.set_condition(SectorType::SEC_ICE);
         break;
       case SectorType::SEC_LAND:
         if (p.type() == PlanetType::EARTH) {
-          if (success(-temp)) s.condition = SectorType::SEC_ICE;
+          if (success(-temp)) s.set_condition(SectorType::SEC_ICE);
         }
         break;
       case SectorType::SEC_FOREST:
         if (p.type() == PlanetType::FOREST) {
-          if (success(-temp)) s.condition = SectorType::SEC_ICE;
+          if (success(-temp)) s.set_condition(SectorType::SEC_ICE);
           break;
         }
       default:
@@ -250,9 +258,10 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
   for (auto y = 0; y < planet.Maxy(); y++) {
     for (auto x = 0; x < planet.Maxx(); x++) {
       auto& s = smap.get(x, y);
-      s.x = x;
-      s.y = y;
-      s.type = s.condition = t;
+      s.set_x(x);
+      s.set_y(y);
+      s.set_type(t);
+      s.set_condition(t);
     }
   }
 
@@ -307,7 +316,8 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
         for (auto x = 0; x < planet.Maxx(); x++)
           if (!int_rand(0, 3)) {
             auto& s = smap.get_random();
-            s.type = s.condition = SectorType::SEC_LAND;
+            s.set_type(SectorType::SEC_LAND);
+            s.set_condition(SectorType::SEC_LAND);
           }
       seed(smap, SectorType::SEC_DESERT, int_rand(1, total_sects));
       break;

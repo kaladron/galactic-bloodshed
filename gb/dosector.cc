@@ -22,37 +22,39 @@ void Migrate2(const Planet& planet, int xd, int yd, Sector& ps,
 
   auto& pd = smap.get(xd, yd);
 
-  if (!pd.owner) {
-    int move = (int)((double)(*people) * Compat[ps.owner - 1] *
-                     races[ps.owner - 1].likes[pd.condition] / 100.0);
+  if (!pd.get_owner()) {
+    int move =
+        (int)((double)(*people) * Compat[ps.get_owner() - 1] *
+              races[ps.get_owner() - 1].likes[pd.get_condition()] / 100.0);
     if (!move) return;
     *people -= move;
-    pd.popn += move;
-    ps.popn -= move;
-    pd.owner = ps.owner;
+    pd.set_popn(pd.get_popn() + move);
+    ps.set_popn(ps.get_popn() - move);
+    pd.set_owner(ps.get_owner());
     tot_captured++;
     Claims = 1;
   }
 }
 
 void plate(Sector& s) {
-  s.eff = 100;
-  if (s.condition != SectorType::SEC_GAS) s.condition = SectorType::SEC_PLATED;
+  s.set_eff(100);
+  if (s.get_condition() != SectorType::SEC_GAS)
+    s.set_condition(SectorType::SEC_PLATED);
 }
 
 // Process resource production from a sector
 void processResourceProduction(const Race& race, Sector& s) {
-  if (!s.resource || !success(s.eff)) return;
+  if (!s.get_resource() || !success(s.get_eff())) return;
 
   resource_t prod = static_cast<resource_t>(round_rand(race.metabolism)) *
-                    static_cast<resource_t>(int_rand(1, s.eff));
-  prod = std::min(prod, s.resource);
-  s.resource -= prod;
+                    static_cast<resource_t>(int_rand(1, s.get_eff()));
+  prod = std::min(prod, s.get_resource());
+  s.set_resource(s.get_resource() - prod);
 
-  auto pfuel = prod * (1 + (s.condition == SectorType::SEC_GAS));
-  int owner_idx = s.owner - 1;
+  auto pfuel = prod * (1 + (s.get_condition() == SectorType::SEC_GAS));
+  int owner_idx = s.get_owner() - 1;
 
-  if (success(s.mobilization)) {
+  if (success(s.get_mobilization())) {
     prod_destruct[owner_idx] += prod;
   } else {
     prod_res[owner_idx] += prod;
@@ -63,38 +65,39 @@ void processResourceProduction(const Race& race, Sector& s) {
 
 // Process crystal mining in a sector
 void processCrystalMining(const Race& race, Sector& s) {
-  if (s.crystals && Crystal(race) && success(s.eff)) {
-    prod_crystals[s.owner - 1]++;
-    s.crystals--;
+  if (s.get_crystals() && Crystal(race) && success(s.get_eff())) {
+    prod_crystals[s.get_owner() - 1]++;
+    s.set_crystals(s.get_crystals() - 1);
   }
 }
 
 // Update sector mobilization based on planetary settings
 void updateMobilization(Sector& s, const plinfo& pinf) {
-  int owner_idx = s.owner - 1;
+  int owner_idx = s.get_owner() - 1;
 
-  if (s.mobilization < pinf.mob_set) {
+  if (s.get_mobilization() < pinf.mob_set) {
     if (pinf.resource + prod_res[owner_idx] > 0) {
-      s.mobilization++;
+      s.set_mobilization(s.get_mobilization() + 1);
       prod_res[owner_idx] -= round_rand(MOB_COST);
       prod_mob++;
     }
-  } else if (s.mobilization > pinf.mob_set) {
-    s.mobilization--;
+  } else if (s.get_mobilization() > pinf.mob_set) {
+    s.set_mobilization(s.get_mobilization() - 1);
     prod_mob--;
   }
 
-  avg_mob[owner_idx] += s.mobilization;
+  avg_mob[owner_idx] += s.get_mobilization();
 }
 
 // Update sector efficiency and plating
 void updateEfficiency(Sector& s, const Race& race, const Planet& planet) {
-  if (s.eff < 100) {
-    int chance = round_rand((100.0 - (double)planet.info(s.owner - 1).tax) *
-                            race.likes[s.condition]);
+  if (s.get_eff() < 100) {
+    int chance =
+        round_rand((100.0 - (double)planet.info(s.get_owner() - 1).tax) *
+                   race.likes[s.get_condition()]);
     if (success(chance)) {
-      s.eff += round_rand(race.metabolism);
-      if (s.eff >= 100) plate(s);
+      s.set_eff(s.get_eff() + round_rand(race.metabolism));
+      if (s.get_eff() >= 100) plate(s);
     }
   } else {
     plate(s);
@@ -103,64 +106,66 @@ void updateEfficiency(Sector& s, const Race& race, const Planet& planet) {
 
 // Update sector fertility and condition
 void updateFertilityAndCondition(Sector& s, const Race& race) {
-  if ((s.condition != SectorType::SEC_WASTED) && race.fertilize &&
-      (s.fert < 100)) {
-    s.fert += (int_rand(0, 100) < race.fertilize);
+  if ((s.get_condition() != SectorType::SEC_WASTED) && race.fertilize &&
+      (s.get_fert() < 100)) {
+    s.set_fert(s.get_fert() + (int_rand(0, 100) < race.fertilize));
   }
 
-  s.fert = std::min<int>(s.fert, 100);
+  s.set_fert(std::min<int>(s.get_fert(), 100));
 
-  if (s.condition == SectorType::SEC_WASTED && success(NATURAL_REPAIR)) {
-    s.condition = s.type;
+  if (s.get_condition() == SectorType::SEC_WASTED && success(NATURAL_REPAIR)) {
+    s.set_condition(s.get_type());
   }
 }
 
 // Calculate population change based on sector conditions
 population_t calculatePopulationChange(const Race& race, const Sector& s,
                                        population_t maxsup) {
-  population_t diff = s.popn - maxsup;
+  population_t diff = s.get_popn() - maxsup;
 
   if (diff < 0) {
-    if (s.popn >= race.number_sexes) {
+    if (s.get_popn() >= race.number_sexes) {
       return round_rand(-static_cast<double>(diff) * race.birthrate);
     }
     return 0;
   }
-  return -int_rand(0, std::min(2 * diff, s.popn));
+  return -int_rand(0, std::min(2 * diff, s.get_popn()));
 }
 
 // Handle population changes and owner updates
 void updatePopulationAndOwner(Sector& s, const Race& race, const Star& star,
                               const Planet& planet) {
   auto maxsup =
-      maxsupport(race, s, Compat[s.owner - 1], planet.conditions(TOXIC));
-  s.popn += calculatePopulationChange(race, s, maxsup);
+      maxsupport(race, s, Compat[s.get_owner() - 1], planet.conditions(TOXIC));
+  s.set_popn(s.get_popn() + calculatePopulationChange(race, s, maxsup));
 
   // Handle troops maintenance costs - we have to modify global state here
-  if (s.troops &&
-      races[s.owner - 1].governor[star.governor(s.owner - 1)].maintain) {
-    races[s.owner - 1].governor[star.governor(s.owner - 1)].maintain +=
-        UPDATE_TROOP_COST * s.troops;
+  if (s.get_troops() && races[s.get_owner() - 1]
+                            .governor[star.governor(s.get_owner() - 1)]
+                            .maintain) {
+    races[s.get_owner() - 1]
+        .governor[star.governor(s.get_owner() - 1)]
+        .maintain += UPDATE_TROOP_COST * s.get_troops();
   }
 
   // Update ownership if no population remains
-  if (!s.popn && !s.troops) {
-    s.owner = 0;
+  if (!s.get_popn() && !s.get_troops()) {
+    s.set_owner(0);
   }
 }
 }  // anonymous namespace
 
 //  produce() -- produce, stuff like that, on a sector.
 void produce(const Star& star, const Planet& planet, Sector& s) {
-  if (!s.owner) return;
-  auto& race = races[s.owner - 1];
+  if (!s.get_owner()) return;
+  auto& race = races[s.get_owner() - 1];
 
   // Process production and resources
   processResourceProduction(race, s);
   processCrystalMining(race, s);
 
   // Handle mobilization
-  const auto& pinf = planet.info(s.owner - 1);
+  const auto& pinf = planet.info(s.get_owner() - 1);
   updateMobilization(s, pinf);
 
   // Update efficiency, fertility and sector condition
@@ -173,16 +178,16 @@ void produce(const Star& star, const Planet& planet, Sector& s) {
 
 // spread()  -- spread population around.
 void spread(const Planet& pl, Sector& s, SectorMap& smap) {
-  if (!s.owner) return;
-  if (pl.slaved_to() && pl.slaved_to() != s.owner)
+  if (!s.get_owner()) return;
+  if (pl.slaved_to() && pl.slaved_to() != s.get_owner())
     return; /* no one wants to go anywhere */
 
-  auto& race = races[s.owner - 1];
+  auto& race = races[s.get_owner() - 1];
 
   /* the higher the fertility, the less people like to leave */
   population_t people =
-      round_rand(race.adventurism * static_cast<double>(s.popn) *
-                 (100. - s.fert) / 100.) -
+      round_rand(race.adventurism * static_cast<double>(s.get_popn()) *
+                 (100. - s.get_fert()) / 100.) -
       race.number_sexes; /* how many people want to move -
                                           one family stays behind */
 
@@ -192,7 +197,7 @@ void spread(const Planet& pl, Sector& s, SectorMap& smap) {
     int j = int_rand(0, 7);
     int x2 = x_adj[j];
     int y2 = y_adj[j];
-    Migrate2(pl, s.x + x2, s.y + y2, s, &people, smap);
+    Migrate2(pl, s.get_x() + x2, s.get_y() + y2, s, &people, smap);
     check--;
   }
 }
@@ -213,7 +218,7 @@ void explore(const Planet& planet, Sector& s, int x, int y, int p) {
     } else {
       Sectinfo[x][y - 1].explored = Sectinfo[x][y + 1].explored = p;
     }
-  } else if (s.owner == p) {
+  } else if (s.get_owner() == p) {
     Sectinfo[x][y].explored = p;
   }
 }

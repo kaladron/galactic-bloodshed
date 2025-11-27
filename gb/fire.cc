@@ -17,8 +17,8 @@ module gblib;
  * @param Playernum The player number.
  * @return True if there are planetary defense networks, false otherwise.
  */
-bool has_planet_defense(EntityManager& entity_manager,
-                        const shipnum_t shipno, const player_t Playernum) {
+bool has_planet_defense(EntityManager& entity_manager, const shipnum_t shipno,
+                        const player_t Playernum) {
   const ShipList shiplist(entity_manager, shipno);
   for (const Ship* s : shiplist) {
     if (s->alive && s->type == ShipType::OTYPE_PLANDEF &&

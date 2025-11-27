@@ -118,7 +118,7 @@ static void process_ship_turns(EntityManager& entity_manager, TurnState& state,
 static void prepare_dead_ships(TurnState& state);
 static void insert_ships_into_lists(TurnState& state);
 static void process_abms_and_missiles(EntityManager& entity_manager,
-                                       TurnState& state, int update);
+                                      TurnState& state, int update);
 static void update_victory_scores(TurnState& state, int update);
 static void finalize_turn(TurnState& state, int update);
 
@@ -432,7 +432,7 @@ static void insert_ships_into_lists(TurnState& state) {
 }
 
 static void process_abms_and_missiles(EntityManager& entity_manager,
-                                       TurnState& state, int update) {
+                                      TurnState& state, int update) {
   /* put ABMs and surviving missiles here because ABMs need to have the missile
      in the shiplist of the target planet  Maarten */
   for (shipnum_t i = 1; i <= state.num_ships; i++) /* ABMs defend planet */

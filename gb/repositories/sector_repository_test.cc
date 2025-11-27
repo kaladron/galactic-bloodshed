@@ -242,12 +242,12 @@ int main() {
 
   // Test 13: New load() method working with sector_struct directly
   std::println("Test 13: New load() method (sector_struct)...");
-  sector_struct loaded_struct = repo.load(test_planet.star_id(),
-                                          test_planet.planet_order(), 5, 7);
+  sector_struct loaded_struct =
+      repo.load(test_planet.star_id(), test_planet.planet_order(), 5, 7);
   assert(loaded_struct.x == 5);
   assert(loaded_struct.y == 7);
-  assert(loaded_struct.eff == 90);  // From Test 5 update
-  assert(loaded_struct.popn == 15000);  // From Test 5 update
+  assert(loaded_struct.eff == 90);        // From Test 5 update
+  assert(loaded_struct.popn == 15000);    // From Test 5 update
   assert(loaded_struct.crystals == 150);  // From Test 5 update
   std::println("  ✓ load() returns sector_struct correctly");
 
@@ -274,8 +274,8 @@ int main() {
 
   // Test 15: Verify new save() persisted correctly using load()
   std::println("Test 15: Verify save() persisted data...");
-  sector_struct verified = repo.load(test_planet.star_id(),
-                                     test_planet.planet_order(), 9, 9);
+  sector_struct verified =
+      repo.load(test_planet.star_id(), test_planet.planet_order(), 9, 9);
   assert(verified.x == new_struct.x);
   assert(verified.y == new_struct.y);
   assert(verified.eff == new_struct.eff);
@@ -293,8 +293,8 @@ int main() {
 
   // Test 16: Verify load() returns default sector_struct for non-existent
   std::println("Test 16: load() with non-existent sector...");
-  sector_struct empty = repo.load(test_planet.star_id(),
-                                  test_planet.planet_order(), 99, 99);
+  sector_struct empty =
+      repo.load(test_planet.star_id(), test_planet.planet_order(), 99, 99);
   // Default-constructed sector_struct should have zero/default values
   assert(empty.popn == 0);
   assert(empty.owner == 0);
@@ -310,11 +310,11 @@ int main() {
   roundtrip.popn = 12345;
   roundtrip.owner = 3;
   roundtrip.type = SectorType::SEC_FOREST;
-  
+
   repo.save(test_planet.star_id(), test_planet.planet_order(), 1, 1, roundtrip);
-  sector_struct retrieved_rt = repo.load(test_planet.star_id(),
-                                         test_planet.planet_order(), 1, 1);
-  
+  sector_struct retrieved_rt =
+      repo.load(test_planet.star_id(), test_planet.planet_order(), 1, 1);
+
   assert(retrieved_rt.x == roundtrip.x);
   assert(retrieved_rt.y == roundtrip.y);
   assert(retrieved_rt.eff == roundtrip.eff);

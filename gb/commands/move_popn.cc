@@ -60,7 +60,7 @@ void move_popn(const command_t& argv, GameObj& g) {
   n = 0;
   while (!done) {
     auto sect = getsector(planet, x, y);
-    if (sect.owner != Playernum) {
+    if (sect.get_owner() != Playernum) {
       g.out << std::format("You don't own sector {},{}!\n", x, y);
       return;
     }
@@ -88,26 +88,26 @@ void move_popn(const command_t& argv, GameObj& g) {
       people = std::stoi(argv[3]);
       if (people < 0) {
         if (what == PopulationType::CIV)
-          people = sect.popn + people;
+          people = sect.get_popn() + people;
         else if (what == PopulationType::MIL)
-          people = sect.troops + people;
+          people = sect.get_troops() + people;
       }
     } else {
       if (what == PopulationType::CIV)
-        people = sect.popn;
+        people = sect.get_popn();
       else if (what == PopulationType::MIL)
-        people = sect.troops;
+        people = sect.get_troops();
     }
 
-    if ((what == PopulationType::CIV && (abs(people) > sect.popn)) ||
-        (what == PopulationType::MIL && (abs(people) > sect.troops)) ||
+    if ((what == PopulationType::CIV && (abs(people) > sect.get_popn())) ||
+        (what == PopulationType::MIL && (abs(people) > sect.get_troops())) ||
         people <= 0) {
       if (what == PopulationType::CIV)
-        g.out << std::format("Bad value - {} civilians in [{},{}]\n", sect.popn,
-                             x, y);
+        g.out << std::format("Bad value - {} civilians in [{},{}]\n",
+                             sect.get_popn(), x, y);
       else if (what == PopulationType::MIL)
-        g.out << std::format("Bad value - {} troops in [{},{}]\n", sect.troops,
-                             x, y);
+        g.out << std::format("Bad value - {} troops in [{},{}]\n",
+                             sect.get_troops(), x, y);
       putplanet(planet, stars[g.snum], g.pnum);
       return;
     }
@@ -126,7 +126,7 @@ void move_popn(const command_t& argv, GameObj& g) {
       return;
     }
 
-    if (sect2.owner && (sect2.owner != Playernum))
+    if (sect2.get_owner() && (sect2.get_owner() != Playernum))
       Assault = 1;
     else
       Assault = 0;
@@ -143,43 +143,48 @@ void move_popn(const command_t& argv, GameObj& g) {
     }
 
     if (Assault) {
-      ground_assaults[Playernum - 1][sect2.owner - 1][g.snum] += 1;
+      ground_assaults[Playernum - 1][sect2.get_owner() - 1][g.snum] += 1;
       auto& race = races[Playernum - 1];
-      auto& alien = races[sect2.owner - 1];
+      auto& alien = races[sect2.get_owner() - 1];
       /* races find out about each other */
       alien.translate[Playernum - 1] =
           MIN(alien.translate[Playernum - 1] + 5, 100);
-      race.translate[sect2.owner - 1] =
-          MIN(race.translate[sect2.owner - 1] + 5, 100);
+      race.translate[sect2.get_owner() - 1] =
+          MIN(race.translate[sect2.get_owner() - 1] + 5, 100);
 
-      old2owner = (int)(sect2.owner);
-      old2gov = stars[g.snum].governor(sect2.owner - 1);
+      old2owner = (int)(sect2.get_owner());
+      old2gov = stars[g.snum].governor(sect2.get_owner() - 1);
       if (what == PopulationType::CIV)
-        sect.popn = std::max(0L, sect.popn - people);
+        sect.set_popn(std::max(0L, sect.get_popn() - people));
       else if (what == PopulationType::MIL)
-        sect.troops = std::max(0L, sect.troops - people);
+        sect.set_troops(std::max(0L, sect.get_troops() - people));
 
       if (what == PopulationType::CIV)
         g.out << std::format("{} civ assault {} civ/{} mil\n", people,
-                             sect2.popn, sect2.troops);
+                             sect2.get_popn(), sect2.get_troops());
       else if (what == PopulationType::MIL)
         g.out << std::format("{} mil assault {} civ/{} mil\n", people,
-                             sect2.popn, sect2.troops);
+                             sect2.get_popn(), sect2.get_troops());
       oldpopn = people;
-      old2popn = sect2.popn;
-      old3popn = sect2.troops;
+      old2popn = sect2.get_popn();
+      old3popn = sect2.get_troops();
 
-      ground_attack(race, alien, &people, what, &sect2.popn, &sect2.troops,
-                    Defensedata[sect.condition], Defensedata[sect2.condition],
-                    race.likes[sect.condition], alien.likes[sect2.condition],
-                    &astrength, &dstrength, &casualties, &casualties2,
-                    &casualties3);
+      auto sect2_popn = sect2.get_popn();
+      auto sect2_troops = sect2.get_troops();
+      ground_attack(
+          race, alien, &people, what, &sect2_popn, &sect2_troops,
+          Defensedata[sect.get_condition()], Defensedata[sect2.get_condition()],
+          race.likes[sect.get_condition()], alien.likes[sect2.get_condition()],
+          &astrength, &dstrength, &casualties, &casualties2, &casualties3);
+
+      sect2.set_popn(sect2_popn);
+      sect2.set_troops(sect2_troops);
 
       g.out << std::format("Attack: {:.2f}   Defense: {:.2f}.\n", astrength,
                            dstrength);
 
-      if (!(sect2.popn + sect2.troops)) { /* we got 'em */
-        sect2.owner = Playernum;
+      if (!(sect2.get_popn() + sect2.get_troops())) { /* we got 'em */
+        sect2.set_owner(Playernum);
         /* mesomorphs absorb the bodies of their victims */
         absorbed = 0;
         if (race.absorb) {
@@ -190,10 +195,10 @@ void move_popn(const command_t& argv, GameObj& g) {
               std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
         }
         if (what == PopulationType::CIV)
-          sect2.popn = people + absorbed;
+          sect2.set_popn(people + absorbed);
         else if (what == PopulationType::MIL) {
-          sect2.popn = absorbed;
-          sect2.troops = people;
+          sect2.set_popn(absorbed);
+          sect2.set_troops(people);
         }
         adjust_morale(race, alien, (int)alien.fighters);
       } else { /* retreat */
@@ -205,23 +210,23 @@ void move_popn(const command_t& argv, GameObj& g) {
           notify(
               Playernum, Governor,
               std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
-          sect2.popn += absorbed;
+          sect2.set_popn(sect2.get_popn() + absorbed);
         }
         if (what == PopulationType::CIV)
-          sect.popn += people;
+          sect.set_popn(sect.get_popn() + people);
         else if (what == PopulationType::MIL)
-          sect.troops += people;
+          sect.set_troops(sect.get_troops() + people);
         adjust_morale(alien, race, (int)race.fighters);
       }
 
       std::string telegram = std::format(
           "/{}/{}: {} [{}] {}({},{}) assaults {} [{}] {}({},{}) {}\n",
           stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum),
-          race.name, Playernum, Dessymbols[sect.condition], x, y, alien.name,
-          alien.Playernum, Dessymbols[sect2.condition], x2, y2,
-          (sect2.owner == Playernum ? "VICTORY" : "DEFEAT"));
+          race.name, Playernum, Dessymbols[sect.get_condition()], x, y,
+          alien.name, alien.Playernum, Dessymbols[sect2.get_condition()], x2,
+          y2, (sect2.get_owner() == Playernum ? "VICTORY" : "DEFEAT"));
 
-      if (sect2.owner == Playernum) {
+      if (sect2.get_owner() == Playernum) {
         g.out << std::format("VICTORY! The sector is yours!\n");
         telegram += "Sector CAPTURED!\n";
         if (people) {
@@ -229,15 +234,15 @@ void move_popn(const command_t& argv, GameObj& g) {
                                what == PopulationType::CIV ? "civilians"
                                                            : "troops");
         }
-        planet.info(Playernum - 1).mob_points += (int)sect2.mobilization;
-        planet.info(old2owner - 1).mob_points -= (int)sect2.mobilization;
+        planet.info(Playernum - 1).mob_points += (int)sect2.get_mobilization();
+        planet.info(old2owner - 1).mob_points -= (int)sect2.get_mobilization();
       } else {
         g.out << std::format("The invasion was repulsed; try again.\n");
         telegram += "You fought them off!\n";
         done = 1; /* end loop */
       }
 
-      if (!(sect.popn + sect.troops + people)) {
+      if (!(sect.get_popn() + sect.get_troops() + people)) {
         telegram += "You killed all of them!\n";
         /* increase modifier */
         race.translate[old2owner - 1] =
@@ -264,24 +269,24 @@ void move_popn(const command_t& argv, GameObj& g) {
                          casualties2, casualties3));
     } else {
       if (what == PopulationType::CIV) {
-        sect.popn -= people;
-        sect2.popn += people;
+        sect.set_popn(sect.get_popn() - people);
+        sect2.set_popn(sect2.get_popn() + people);
       } else if (what == PopulationType::MIL) {
-        sect.troops -= people;
-        sect2.troops += people;
+        sect.set_troops(sect.get_troops() - people);
+        sect2.set_troops(sect2.get_troops() + people);
       }
-      if (!sect2.owner)
-        planet.info(Playernum - 1).mob_points += (int)sect2.mobilization;
-      sect2.owner = Playernum;
+      if (!sect2.get_owner())
+        planet.info(Playernum - 1).mob_points += (int)sect2.get_mobilization();
+      sect2.set_owner(Playernum);
     }
 
-    if (!(sect.popn + sect.troops)) {
-      planet.info(Playernum - 1).mob_points -= (int)sect.mobilization;
-      sect.owner = 0;
+    if (!(sect.get_popn() + sect.get_troops())) {
+      planet.info(Playernum - 1).mob_points -= (int)sect.get_mobilization();
+      sect.set_owner(0);
     }
 
-    if (!(sect2.popn + sect2.troops)) {
-      sect2.owner = 0;
+    if (!(sect2.get_popn() + sect2.get_troops())) {
+      sect2.set_owner(0);
       done = 1;
     }
 

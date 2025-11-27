@@ -309,10 +309,10 @@ int main() {
     assert(GB::ship_matches_filter("#1", ship1) == true);   // ship1 is #1
     assert(GB::ship_matches_filter("#1", ship2) == false);  // ship2 is #2
     assert(GB::ship_matches_filter("#2", ship2) == true);   // ship2 is #2
-    
+
     // Numeric strings WITHOUT '#' are treated as ship type filters
-    // They look for ships with type letters matching the digits (e.g., '1', '2', '3')
-    // ship1 is type OTYPE_FACTORY = 'F', so "123" won't match
+    // They look for ships with type letters matching the digits (e.g., '1',
+    // '2', '3') ship1 is type OTYPE_FACTORY = 'F', so "123" won't match
     assert(GB::ship_matches_filter("123", ship1) == false);
 
     // Test empty filter
@@ -346,7 +346,8 @@ int main() {
   // Test 4c: is_ship_number_filter()
   {
     assert(GB::is_ship_number_filter("#123") == true);
-    assert(GB::is_ship_number_filter("456") == false);  // Without '#', it's a ship type filter
+    assert(GB::is_ship_number_filter("456") ==
+           false);  // Without '#', it's a ship type filter
     assert(GB::is_ship_number_filter("f") == false);
     assert(GB::is_ship_number_filter("*") == false);
     assert(GB::is_ship_number_filter("") == false);

@@ -42,30 +42,31 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
 
   /* send map data */
   for (const auto& sector : smap) {
-    bool owned1 = (sector.owner == race.governor[Governor].toggle.highlight);
-    if (shiplocs[sector.x][sector.y] && iq) {
+    bool owned1 =
+        (sector.get_owner() == race.governor[Governor].toggle.highlight);
+    if (shiplocs[sector.get_x()][sector.get_y()] && iq) {
       if (race.governor[Governor].toggle.color)
-        g.out << std::format("{}{}", (char)(sector.owner + '?'),
-                             shiplocs[sector.x][sector.y]);
+        g.out << std::format("{}{}", (char)(sector.get_owner() + '?'),
+                             shiplocs[sector.get_x()][sector.get_y()]);
       else {
         if (owned1 && race.governor[Governor].toggle.inverse)
-          g.out << std::format("1{}{}", (char)(sector.owner + '?'),
-                               shiplocs[sector.x][sector.y]);
+          g.out << std::format("1{}{}", (char)(sector.get_owner() + '?'),
+                               shiplocs[sector.get_x()][sector.get_y()]);
 
         else
-          g.out << std::format("0{}{}", (char)(sector.owner + '?'),
-                               shiplocs[sector.x][sector.y]);
+          g.out << std::format("0{}{}", (char)(sector.get_owner() + '?'),
+                               shiplocs[sector.get_x()][sector.get_y()]);
       }
     } else {
       if (race.governor[Governor].toggle.color) {
-        g.out << std::format("{}{}", (char)(sector.owner + '?'),
+        g.out << std::format("{}{}", (char)(sector.get_owner() + '?'),
                              desshow(Playernum, Governor, race, sector));
       } else {
         if (owned1 && race.governor[Governor].toggle.inverse) {
-          g.out << std::format("1{}{}", (char)(sector.owner + '?'),
+          g.out << std::format("1{}{}", (char)(sector.get_owner() + '?'),
                                desshow(Playernum, Governor, race, sector));
         } else {
-          g.out << std::format("0{}{}", (char)(sector.owner + '?'),
+          g.out << std::format("0{}{}", (char)(sector.get_owner() + '?'),
                                desshow(Playernum, Governor, race, sector));
         }
       }
@@ -127,29 +128,31 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
 
 char desshow(const player_t Playernum, const governor_t Governor, const Race& r,
              const Sector& s) {
-  if (s.troops && !r.governor[Governor].toggle.geography) {
-    if (s.owner == Playernum) return CHAR_MY_TROOPS;
-    if (isset(r.allied, s.owner)) return CHAR_ALLIED_TROOPS;
-    if (isset(r.atwar, s.owner)) return CHAR_ATWAR_TROOPS;
+  if (s.get_troops() && !r.governor[Governor].toggle.geography) {
+    if (s.get_owner() == Playernum) return CHAR_MY_TROOPS;
+    if (isset(r.allied, s.get_owner())) return CHAR_ALLIED_TROOPS;
+    if (isset(r.atwar, s.get_owner())) return CHAR_ATWAR_TROOPS;
 
     return CHAR_NEUTRAL_TROOPS;
   }
 
-  if (s.owner && !r.governor[Governor].toggle.geography &&
+  if (s.get_owner() && !r.governor[Governor].toggle.geography &&
       !r.governor[Governor].toggle.color) {
     if (!r.governor[Governor].toggle.inverse ||
-        s.owner != r.governor[Governor].toggle.highlight) {
+        s.get_owner() != r.governor[Governor].toggle.highlight) {
       if (!r.governor[Governor].toggle.double_digits)
-        return (s.owner % 10) + '0';
+        return (s.get_owner() % 10) + '0';
 
-      if (s.owner < 10 || s.x % 2) return (s.owner % 10) + '0';
-      return (s.owner / 10) + '0';
+      if (s.get_owner() < 10 || s.get_x() % 2)
+        return (s.get_owner() % 10) + '0';
+      return (s.get_owner() / 10) + '0';
     }
   }
 
-  if (s.crystals && (r.discoveries[D_CRYSTAL] || r.God)) return CHAR_CRYSTAL;
+  if (s.get_crystals() && (r.discoveries[D_CRYSTAL] || r.God))
+    return CHAR_CRYSTAL;
 
-  switch (s.condition) {
+  switch (s.get_condition()) {
     case SectorType::SEC_WASTED:
       return CHAR_WASTED;
     case SectorType::SEC_SEA:

@@ -131,8 +131,8 @@ void scrap(const command_t& argv, GameObj& g) {
         destval = 0;
 
       if (s.popn + s.troops) {
-        if (s.whatdest == ScopeLevel::LEVEL_PLAN && sect.owner > 0 &&
-            sect.owner != g.player) {
+        if (s.whatdest == ScopeLevel::LEVEL_PLAN && sect.get_owner() > 0 &&
+            sect.get_owner() != g.player) {
           g.out << "You don't own this sector; no crew can be recovered.\n";
         } else {
           notify(g.player, g.governor,
@@ -160,8 +160,8 @@ void scrap(const command_t& argv, GameObj& g) {
       }
 
       if (s.crystals + s.mounted) {
-        if (s.whatdest == ScopeLevel::LEVEL_PLAN && sect.owner > 0 &&
-            sect.owner != g.player) {
+        if (s.whatdest == ScopeLevel::LEVEL_PLAN && sect.get_owner() > 0 &&
+            sect.get_owner() != g.player) {
           g.out << "You don't own this sector; no crystals can be recovered.\n";
         } else {
           xtalval = s.crystals + s.mounted;
@@ -211,13 +211,13 @@ void scrap(const command_t& argv, GameObj& g) {
     if (s.whatorbits == ScopeLevel::LEVEL_PLAN) {
       auto planet = getplanet(s.storbits, s.pnumorbits);
       if (landed(s)) {
-        if (sect.owner == g.player) {
-          sect.popn += troopval;
-          sect.popn += crewval;
-        } else if (sect.owner == 0) {
-          sect.owner = g.player;
-          sect.popn += crewval;
-          sect.troops += troopval;
+        if (sect.get_owner() == g.player) {
+          sect.set_popn(sect.get_popn() + troopval);
+          sect.set_popn(sect.get_popn() + crewval);
+        } else if (sect.get_owner() == 0) {
+          sect.set_owner(g.player);
+          sect.set_popn(sect.get_popn() + crewval);
+          sect.set_troops(sect.get_troops() + troopval);
           planet.info(g.player - 1).numsectsowned++;
           planet.info(g.player - 1).popn += crewval;
           planet.info(g.player - 1).popn += troopval;

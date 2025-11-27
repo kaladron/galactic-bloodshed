@@ -609,7 +609,7 @@ void putplanet(const Planet& p, const Star& s, const planetnum_t pnum) {
 }
 
 void putsector(const Sector& s, const Planet& p) {
-  putsector(s, p, s.x, s.y);
+  putsector(s, p, s.get_x(), s.get_y());
 }
 
 void putsector(const Sector& s, const Planet& p, const int x, const int y) {

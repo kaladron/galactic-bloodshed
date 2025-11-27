@@ -31,8 +31,8 @@ module gblib;
  * @param r The race to which the ship belongs.
  * @return The number of sectors destroyed during the bombardment.
  */
-int berserker_bombard(EntityManager& entity_manager, Ship& ship,
-                       Planet& planet, const Race& r) {
+int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
+                      const Race& r) {
   int x;
   int y;
   int x2 = -1;
@@ -60,17 +60,17 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship,
   bool found = false;
   for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
     Sector& sect = sector_wrap;
-    if (sect.owner && sect.owner != ship.owner &&
-        (sect.condition != SectorType::SEC_WASTED)) {
-      if (isset(r.atwar, sect.owner) ||
+    if (sect.get_owner() && sect.get_owner() != ship.owner &&
+        (sect.get_condition() != SectorType::SEC_WASTED)) {
+      if (isset(r.atwar, sect.get_owner()) ||
           (ship.type == ShipType::OTYPE_BERS &&
            std::holds_alternative<MindData>(ship.special) &&
-           sect.owner == std::get<MindData>(ship.special).target)) {
+           sect.get_owner() == std::get<MindData>(ship.special).target)) {
         found = true;
         break;
       }
-      x = x2 = sect.x;
-      y = y2 = sect.y;
+      x = x2 = sect.get_x();
+      y = y2 = sect.get_y();
     }
   }
   if (x2 != -1) {
@@ -113,7 +113,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship,
 
   Nuked.fill(0);
   // save owner of destroyed sector
-  auto oldown = smap.get(x, y).owner;
+  auto oldown = smap.get(x, y).get_owner();
   ship.destruct -= str;
   ship.mass -= str * MASS_DESTRUCT;
 

@@ -94,11 +94,11 @@ void dissolve(const command_t& argv, GameObj& g) {
 
       auto smap = getsmap(pl);
       for (auto& s : smap) {
-        if (s.owner == Playernum) {
-          s.owner = 0;
-          s.troops = 0;
-          s.popn = 0;
-          if (waste) s.condition = SectorType::SEC_WASTED;
+        if (s.get_owner() == Playernum) {
+          s.set_owner(0);
+          s.set_troops(0);
+          s.set_popn(0);
+          if (waste) s.set_condition(SectorType::SEC_WASTED);
         }
       }
       putsmap(smap, pl);

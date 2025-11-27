@@ -94,66 +94,66 @@ void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
   auto TotalSect = planet.Maxx() * planet.Maxy();
 
   for (auto smap = getsmap(planet); auto& sect : smap) {
-    auto p = sect.owner;
+    auto p = sect.get_owner();
 
-    PlayEff[p] += sect.eff;
-    PlayMob[p] += sect.mobilization;
-    PlayRes[p] += sect.resource;
-    PlayPopn[p] += sect.popn;
-    PlayTroops[p] += sect.troops;
-    PlaySect[p][sect.condition]++;
+    PlayEff[p] += sect.get_eff();
+    PlayMob[p] += sect.get_mobilization();
+    PlayRes[p] += sect.get_resource();
+    PlayPopn[p] += sect.get_popn();
+    PlayTroops[p] += sect.get_troops();
+    PlaySect[p][sect.get_condition()]++;
     PlayTSect[p]++;
-    TotalEff += sect.eff;
-    TotalMob += sect.mobilization;
-    TotalRes += sect.resource;
-    TotalPopn += sect.popn;
-    TotalTroops += sect.troops;
-    Sect[sect.condition]++;
+    TotalEff += sect.get_eff();
+    TotalMob += sect.get_mobilization();
+    TotalRes += sect.get_resource();
+    TotalPopn += sect.get_popn();
+    TotalTroops += sect.get_troops();
+    Sect[sect.get_condition()]++;
 
-    if (sect.condition == SectorType::SEC_WASTED) {
+    if (sect.get_condition() == SectorType::SEC_WASTED) {
       WastedSect[p]++;
     }
-    if (sect.crystals && race.tech >= TECH_CRYSTAL) {
+    if (sect.get_crystals() && race.tech >= TECH_CRYSTAL) {
       PlayCrys[p]++;
       TotalCrys++;
     }
 
-    if (sector_type == -1 || sector_type == sect.condition) {
+    if (sector_type == -1 || sector_type == sect.get_condition()) {
       if (ThisPlayer < 0 || ThisPlayer == p) {
         insert(mode, Res,
-               {.x = sect.x,
-                .y = sect.y,
-                .des = sect.condition,
-                .value = sect.resource});
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_resource()});
         insert(mode, Eff,
-               {.x = sect.x,
-                .y = sect.y,
-                .des = sect.condition,
-                .value = sect.eff});
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_eff()});
         insert(mode, Mob,
-               {.x = sect.x,
-                .y = sect.y,
-                .des = sect.condition,
-                .value = sect.mobilization});
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_mobilization()});
         insert(mode, Frt,
-               {.x = sect.x,
-                .y = sect.y,
-                .des = sect.condition,
-                .value = sect.fert});
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_fert()});
         insert(mode, Popn,
-               {.x = sect.x,
-                .y = sect.y,
-                .des = sect.condition,
-                .value = sect.popn});
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_popn()});
         insert(mode, Troops,
-               {.x = sect.x,
-                .y = sect.y,
-                .des = sect.condition,
-                .value = sect.troops});
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_troops()});
         insert(mode, mPopn,
-               {.x = sect.x,
-                .y = sect.y,
-                .des = sect.condition,
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
                 .value = maxsupport(race, sect, planet.compatibility(race),
                                     planet.conditions(TOXIC))});
       }

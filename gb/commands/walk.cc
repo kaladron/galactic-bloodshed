@@ -64,7 +64,7 @@ void walk(const command_t& argv, GameObj& g) {
   }
   /* check to see if player is permited on the sector type */
   auto sect = getsector(p, x, y);
-  if (!race.likes[sect.condition]) {
+  if (!race.likes[sect.get_condition()]) {
     g.out << "Your ships cannot walk into that sector type!\n";
     return;
   }
@@ -99,18 +99,19 @@ void walk(const command_t& argv, GameObj& g) {
     if (!ship->alive) break;
   }
   /* if the sector is occupied by non-aligned player, attack them first */
-  if (ship->popn && ship->alive && sect.owner && sect.owner != Playernum) {
-    auto oldowner = sect.owner;
-    auto oldgov = stars[ship->storbits].governor(sect.owner - 1);
+  if (ship->popn && ship->alive && sect.get_owner() &&
+      sect.get_owner() != Playernum) {
+    auto oldowner = sect.get_owner();
+    auto oldgov = stars[ship->storbits].governor(sect.get_owner() - 1);
     auto& alien = races[oldowner - 1];
     if (!isset(race.allied, oldowner) || !isset(alien.allied, Playernum)) {
       if (!retal_strength(*ship)) {
         g.out << "You have nothing to attack with!\n";
         return;
       }
-      while ((sect.popn + sect.troops) && retal_strength(*ship)) {
-        auto civ = sect.popn;
-        auto mil = sect.troops;
+      while ((sect.get_popn() + sect.get_troops()) && retal_strength(*ship)) {
+        auto civ = sect.get_popn();
+        auto mil = sect.get_troops();
         mech_attack_people(*ship, &civ, &mil, race, alien, sect, false,
                            long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
@@ -118,18 +119,19 @@ void walk(const command_t& argv, GameObj& g) {
         notify_star(Playernum, Governor, ship->storbits, short_buf);
         post(short_buf, NewsType::COMBAT);
 
-        people_attack_mech(*ship, sect.popn, sect.troops, alien, race, sect, x,
-                           y, long_buf, short_buf);
+        people_attack_mech(*ship, sect.get_popn(), sect.get_troops(), alien,
+                           race, sect, x, y, long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien.Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, ship->storbits, short_buf);
         if (!ship->alive) post(short_buf, NewsType::COMBAT);
 
-        sect.popn = civ;
-        sect.troops = mil;
-        if (!(sect.popn + sect.troops)) {
-          p.info(sect.owner - 1).mob_points -= (int)sect.mobilization;
-          sect.owner = 0;
+        sect.set_popn(civ);
+        sect.set_troops(mil);
+        if (!(sect.get_popn() + sect.get_troops())) {
+          p.info(sect.get_owner() - 1).mob_points -=
+              (int)sect.get_mobilization();
+          sect.set_owner(0);
         }
       }
     }
@@ -140,8 +142,8 @@ void walk(const command_t& argv, GameObj& g) {
   }
 
   int succ = 0;
-  if ((sect.owner == Playernum || isset(race.allied, sect.owner) ||
-       !sect.owner) &&
+  if ((sect.get_owner() == Playernum || isset(race.allied, sect.get_owner()) ||
+       !sect.get_owner()) &&
       ship->alive)
     succ = 1;
 

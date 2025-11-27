@@ -38,7 +38,7 @@ int main() {
   test_data.race = 1;
   test_data.type = SectorType::SEC_LAND;
   test_data.condition = 0;
-  
+
   Sector test_sector(test_data);
 
   // Test putsector - stores in SQLite as JSON

@@ -594,3 +594,30 @@ export inline guntype_t shipdata_primary(ShipType ship_type) {
 export inline guntype_t shipdata_secondary(ShipType ship_type) {
   return static_cast<guntype_t>(Shipdata[ship_type][ABIL_SECONDARY]);
 }
+
+/// Get display character for gun caliber type
+/// \param caliber Gun caliber type (GTYPE_NONE=0, GTYPE_LIGHT=1,
+/// GTYPE_MEDIUM=2, GTYPE_HEAVY=3)
+/// \return Character representing caliber ('L', 'M', 'H', or ' ' for none)
+export constexpr char caliber_char(guntype_t caliber) {
+  switch (caliber) {
+    case GTYPE_LIGHT:
+      return 'L';
+    case GTYPE_MEDIUM:
+      return 'M';
+    case GTYPE_HEAVY:
+      return 'H';
+    case GTYPE_NONE:
+    default:
+      return ' ';
+  }
+}
+
+/// Check if ship type appears in filter string
+/// \param type Ship type to check
+/// \param filter String containing ship type letters to match
+/// \return True if ship type letter appears in filter string
+export inline bool listed(ShipType type, std::string_view filter) {
+  return std::ranges::any_of(filter,
+                             [type](char c) { return Shipltrs[type] == c; });
+}

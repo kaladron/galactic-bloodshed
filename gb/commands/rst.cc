@@ -219,29 +219,6 @@ constexpr auto kCommandReportModes = std::array{
 // HELPER FUNCTIONS
 // ============================================================================
 
-/// Get display character for gun caliber type
-/// \param caliber Gun caliber type (GTYPE_NONE=0, GTYPE_LIGHT=1,
-/// GTYPE_MEDIUM=2, GTYPE_HEAVY=3)
-/// \return Character representing caliber ('L', 'M', 'H', or ' ' for none)
-constexpr char caliber_char(guntype_t caliber) {
-  switch (caliber) {
-    case GTYPE_LIGHT:
-      return 'L';
-    case GTYPE_MEDIUM:
-      return 'M';
-    case GTYPE_HEAVY:
-      return 'H';
-    case GTYPE_NONE:
-    default:
-      return ' ';
-  }
-}
-
-bool listed(ShipType type, const std::string& string) {
-  return std::ranges::any_of(string,
-                             [type](char c) { return Shipltrs[type] == c; });
-}
-
 /* get a ship from the disk and add it to the ship list we're maintaining. */
 void add_report_ship(RstContext& ctx, const Ship* ship) {
   ctx.rd.push_back(std::make_unique<ShipReportItem>(ship));

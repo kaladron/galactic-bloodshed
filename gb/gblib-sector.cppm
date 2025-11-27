@@ -142,7 +142,9 @@ public:
   void set_type(unsigned int val) noexcept { data_.type = val; type = val; }
   void set_condition(unsigned int val) noexcept { data_.condition = val; condition = val; }
 
-  // Conversion operators
+  // Struct conversion methods - FOR SERIALIZATION USE ONLY
+  // These methods expose the underlying POD struct for serialization/deserialization.
+  // Regular code should use the accessor methods above instead.
   [[nodiscard]] const sector_struct& to_struct() const noexcept { return data_; }
   [[nodiscard]] sector_struct& to_struct() noexcept { return data_; }
 

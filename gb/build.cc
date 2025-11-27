@@ -31,7 +31,7 @@ can_build_on_sector(EntityManager& entity_manager, const int what,
   if (!sector.get_popn()) {
     return std::unexpected("You have no more civs in the sector!\n");
   }
-  if (sector.get_condition() == SectorType::SEC_WASTED) {
+  if (sector.is_wasted()) {
     return std::unexpected("You can't build on wasted sectors.\n");
   }
   if (sector.get_owner() != race.Playernum && !race.God) {

@@ -216,7 +216,7 @@ void capture(const command_t& argv, GameObj& g) {
           sect.set_troops(sect.get_troops() + boarders);
       }
 
-      if (!(sect.get_popn() + sect.get_troops())) sect.set_owner(0);
+      sect.clear_owner_if_empty();
 
       std::string telegram = std::format(
           "BULLETIN from {}/{}!!\n", stars[ship.storbits].get_name(),

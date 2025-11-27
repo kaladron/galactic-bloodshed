@@ -107,16 +107,81 @@ void test_sector_creation() {
                        SectorType::SEC_LAND, SectorType::SEC_LAND);
   assert(land_sector.get_type() == SectorType::SEC_LAND);
   assert(land_sector.get_condition() == SectorType::SEC_LAND);
+  assert(!land_sector.is_plated());
+  assert(!land_sector.is_wasted());
 
   auto plated_sector =
       createTestSector(0, 0, 100, 50, 0, 0, 100, 1000, 0, 1,
                        SectorType::SEC_LAND, SectorType::SEC_PLATED);
   assert(plated_sector.get_condition() == SectorType::SEC_PLATED);
+  assert(plated_sector.is_plated());
+  assert(!plated_sector.is_wasted());
 
   auto wasted_sector =
       createTestSector(0, 0, 0, 0, 0, 0, 50, 0, 0, 0, SectorType::SEC_LAND,
                        SectorType::SEC_WASTED);
   assert(wasted_sector.get_condition() == SectorType::SEC_WASTED);
+  assert(wasted_sector.is_wasted());
+  assert(!wasted_sector.is_plated());
+
+  // Test is_owned() method
+  auto owned_sector =
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 0, 1,
+                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+  assert(owned_sector.is_owned());
+
+  auto unowned_sector =
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 0,
+                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+  assert(!unowned_sector.is_owned());
+
+  // Test is_empty() method
+  auto empty_sector =
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 1,
+                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+  assert(empty_sector.is_empty());
+
+  auto populated_sector =
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 0, 1,
+                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+  assert(!populated_sector.is_empty());
+
+  auto troops_only_sector =
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 50, 1,
+                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+  assert(!troops_only_sector.is_empty());
+
+  // Test plate() method
+  auto unplated_sector =
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 0, 1,
+                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+  assert(!unplated_sector.is_plated());
+  assert(unplated_sector.get_eff() == 50);
+  unplated_sector.plate();
+  assert(unplated_sector.is_plated());
+  assert(unplated_sector.get_eff() == 100);
+
+  // Gas sectors don't get SEC_PLATED condition
+  auto gas_sector =
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 0, 1,
+                       SectorType::SEC_GAS, SectorType::SEC_GAS);
+  gas_sector.plate();
+  assert(gas_sector.get_eff() == 100);
+  assert(gas_sector.get_condition() == SectorType::SEC_GAS);
+
+  // Test clear_owner_if_empty() method
+  auto sector_with_popn =
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 0, 1,
+                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+  sector_with_popn.clear_owner_if_empty();
+  assert(sector_with_popn.get_owner() == 1);  // Still owned
+
+  auto sector_empty_owned =
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 1,
+                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+  assert(sector_empty_owned.get_owner() == 1);
+  sector_empty_owned.clear_owner_if_empty();
+  assert(sector_empty_owned.get_owner() == 0);  // Now unowned
 }
 
 // Test Race data structure functionality
@@ -317,7 +382,7 @@ void test_data_consistency() {
 
   // High efficiency should be consistent with plated condition
   assert(sector.get_eff() == 100);
-  assert(sector.get_condition() == SectorType::SEC_PLATED);
+  assert(sector.is_plated());
 
   // Test race-sector compatibility relationships
   auto race = createTestRace(1);

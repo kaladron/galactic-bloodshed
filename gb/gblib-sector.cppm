@@ -145,6 +145,34 @@ public:
     data_.condition = val;
   }
 
+  // State predicates - commonly used checks encapsulated as methods
+  [[nodiscard]] bool is_owned() const noexcept {
+    return data_.owner != 0;
+  }
+  [[nodiscard]] bool is_empty() const noexcept {
+    return data_.popn == 0 && data_.troops == 0;
+  }
+  [[nodiscard]] bool is_wasted() const noexcept {
+    return data_.condition == SectorType::SEC_WASTED;
+  }
+  [[nodiscard]] bool is_plated() const noexcept {
+    return data_.condition == SectorType::SEC_PLATED;
+  }
+
+  // State modification methods
+  /// Plate the sector - set efficiency to 100 and condition to SEC_PLATED
+  /// (unless it's a gas sector)
+  void plate() noexcept {
+    data_.eff = 100;
+    if (data_.condition != SectorType::SEC_GAS)
+      data_.condition = SectorType::SEC_PLATED;
+  }
+
+  /// Clear ownership if sector is empty (no popn or troops)
+  void clear_owner_if_empty() noexcept {
+    if (is_empty()) data_.owner = 0;
+  }
+
   // Struct conversion methods - FOR SERIALIZATION USE ONLY
   // These methods expose the underlying POD struct for
   // serialization/deserialization. Regular code should use the accessor methods

@@ -128,7 +128,7 @@ void walk(const command_t& argv, GameObj& g) {
 
         sect.set_popn(civ);
         sect.set_troops(mil);
-        if (!(sect.get_popn() + sect.get_troops())) {
+        if (sect.is_empty()) {
           p.info(sect.get_owner() - 1).mob_points -=
               (int)sect.get_mobilization();
           sect.set_owner(0);

@@ -23,7 +23,6 @@ static int cew_hit_odds(double dist, int cew_range);
 static std::string do_critical_hits(int penetrate, Ship& ship, int* hits,
                                     int* damage, int defense);
 static double p_factor(double attacker, double defender);
-static void mutate_sector(Sector& s);
 
 std::optional<std::tuple<int, std::string, std::string>>
 shoot_ship_to_ship(const Ship& attacker, Ship& target, const int cew_strength,
@@ -197,7 +196,7 @@ int shoot_ship_to_planet(Ship& ship, Planet& pl, int strength, int x, int y,
           population_t kills = 0;
           if (s.get_popn()) {
             kills = int_rand(0, ((int)(fac / 10.0) * s.get_popn())) /
-                    (1 + (s.get_condition() == SectorType::SEC_PLATED));
+                    (1 + s.is_plated());
             if (kills > s.get_popn())
               s.set_popn(0);
             else
@@ -206,17 +205,21 @@ int shoot_ship_to_planet(Ship& ship, Planet& pl, int strength, int x, int y,
           if (s.get_troops() &&
               (fac > 5.0 * (double)Defensedata[s.get_condition()])) {
             kills = int_rand(0, ((int)(fac / 20.0) * s.get_troops())) /
-                    (1 + (s.get_condition() == SectorType::SEC_PLATED));
+                    (1 + s.is_plated());
             if (kills > s.get_troops())
               s.set_troops(0);
             else
               s.set_troops(s.get_troops() - kills);
           }
 
-          if (!(s.get_popn() + s.get_troops())) s.set_owner(0);
+          s.clear_owner_if_empty();
         }
 
-        if (fac >= 5.0 && !int_rand(0, 10)) mutate_sector(s);
+        if (fac >= 5.0 && !int_rand(0, 10)) {
+          // mutate_sector: reset condition to underlying type
+          if (int_rand(0, 6) >= Defensedata[s.get_condition()])
+            s.set_condition(s.get_type());
+        }
 
         if (round_rand(fac) >
             Defensedata[s.get_condition()] * int_rand(0, 10)) {
@@ -565,9 +568,4 @@ static double p_factor(double attacker, double defender) {
 int planet_guns(long points) {
   if (points < 0) return 0; /* shouldn't happen */
   return std::min(20L, points / 1000);
-}
-
-static void mutate_sector(Sector& s) {
-  if (int_rand(0, 6) >= Defensedata[s.get_condition()])
-    s.set_condition(s.get_type());
 }

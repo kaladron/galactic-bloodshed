@@ -183,7 +183,7 @@ void move_popn(const command_t& argv, GameObj& g) {
       g.out << std::format("Attack: {:.2f}   Defense: {:.2f}.\n", astrength,
                            dstrength);
 
-      if (!(sect2.get_popn() + sect2.get_troops())) { /* we got 'em */
+      if (sect2.is_empty()) { /* we got 'em */
         sect2.set_owner(Playernum);
         /* mesomorphs absorb the bodies of their victims */
         absorbed = 0;
@@ -280,12 +280,12 @@ void move_popn(const command_t& argv, GameObj& g) {
       sect2.set_owner(Playernum);
     }
 
-    if (!(sect.get_popn() + sect.get_troops())) {
+    if (sect.is_empty()) {
       planet.info(Playernum - 1).mob_points -= (int)sect.get_mobilization();
       sect.set_owner(0);
     }
 
-    if (!(sect2.get_popn() + sect2.get_troops())) {
+    if (sect2.is_empty()) {
       sect2.set_owner(0);
       done = 1;
     }

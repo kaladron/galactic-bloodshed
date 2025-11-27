@@ -110,7 +110,7 @@ void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
     TotalTroops += sect.get_troops();
     Sect[sect.get_condition()]++;
 
-    if (sect.get_condition() == SectorType::SEC_WASTED) {
+    if (sect.is_wasted()) {
       WastedSect[p]++;
     }
     if (sect.get_crystals() && race.tech >= TECH_CRYSTAL) {

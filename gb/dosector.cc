@@ -22,7 +22,7 @@ void Migrate2(const Planet& planet, int xd, int yd, Sector& ps,
 
   auto& pd = smap.get(xd, yd);
 
-  if (!pd.get_owner()) {
+  if (!pd.is_owned()) {
     int move =
         (int)((double)(*people) * Compat[ps.get_owner() - 1] *
               races[ps.get_owner() - 1].likes[pd.get_condition()] / 100.0);
@@ -34,12 +34,6 @@ void Migrate2(const Planet& planet, int xd, int yd, Sector& ps,
     tot_captured++;
     Claims = 1;
   }
-}
-
-void plate(Sector& s) {
-  s.set_eff(100);
-  if (s.get_condition() != SectorType::SEC_GAS)
-    s.set_condition(SectorType::SEC_PLATED);
 }
 
 // Process resource production from a sector
@@ -97,23 +91,22 @@ void updateEfficiency(Sector& s, const Race& race, const Planet& planet) {
                    race.likes[s.get_condition()]);
     if (success(chance)) {
       s.set_eff(s.get_eff() + round_rand(race.metabolism));
-      if (s.get_eff() >= 100) plate(s);
+      if (s.get_eff() >= 100) s.plate();
     }
   } else {
-    plate(s);
+    s.plate();
   }
 }
 
 // Update sector fertility and condition
 void updateFertilityAndCondition(Sector& s, const Race& race) {
-  if ((s.get_condition() != SectorType::SEC_WASTED) && race.fertilize &&
-      (s.get_fert() < 100)) {
+  if (!s.is_wasted() && race.fertilize && (s.get_fert() < 100)) {
     s.set_fert(s.get_fert() + (int_rand(0, 100) < race.fertilize));
   }
 
   s.set_fert(std::min<int>(s.get_fert(), 100));
 
-  if (s.get_condition() == SectorType::SEC_WASTED && success(NATURAL_REPAIR)) {
+  if (s.is_wasted() && success(NATURAL_REPAIR)) {
     s.set_condition(s.get_type());
   }
 }
@@ -149,15 +142,13 @@ void updatePopulationAndOwner(Sector& s, const Race& race, const Star& star,
   }
 
   // Update ownership if no population remains
-  if (!s.get_popn() && !s.get_troops()) {
-    s.set_owner(0);
-  }
+  s.clear_owner_if_empty();
 }
 }  // anonymous namespace
 
 //  produce() -- produce, stuff like that, on a sector.
 void produce(const Star& star, const Planet& planet, Sector& s) {
-  if (!s.get_owner()) return;
+  if (!s.is_owned()) return;
   auto& race = races[s.get_owner() - 1];
 
   // Process production and resources
@@ -178,7 +169,7 @@ void produce(const Star& star, const Planet& planet, Sector& s) {
 
 // spread()  -- spread population around.
 void spread(const Planet& pl, Sector& s, SectorMap& smap) {
-  if (!s.get_owner()) return;
+  if (!s.is_owned()) return;
   if (pl.slaved_to() && pl.slaved_to() != s.get_owner())
     return; /* no one wants to go anywhere */
 

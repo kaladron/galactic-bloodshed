@@ -287,7 +287,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
 
   auto sect = getsector(p, x, y);
 
-  if (sect.get_condition() == SectorType::SEC_WASTED) {
+  if (sect.is_wasted()) {
     notify(Playernum, Governor, "Warning: That sector is a wasteland!\n");
   } else if (sect.get_owner() && sect.get_owner() != Playernum) {
     auto& race = races[Playernum - 1];

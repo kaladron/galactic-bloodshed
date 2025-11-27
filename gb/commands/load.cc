@@ -182,7 +182,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
       Playernum, Governor,
       std::format("Attack: {:.2f}   Defense: {:.2f}.\n", astrength, dstrength));
 
-  if (!(sect.get_popn() + sect.get_troops())) { /* we got 'em */
+  if (sect.is_empty()) { /* we got 'em */
     /* mesomorphs absorb the bodies of their victims */
     absorbed = 0;
     if (race.absorb) {
@@ -549,7 +549,7 @@ void load(const command_t& argv, GameObj& g) {
           return;
         } else {
           transfercrew = 1;
-          if (!(sect.get_popn() + sect.get_troops()) && amt < 0) {
+          if (sect.is_empty() && amt < 0) {
             p.info(Playernum - 1).numsectsowned++;
             p.info(Playernum - 1).mob_points += sect.get_mobilization();
             sect.set_owner(Playernum);
@@ -559,7 +559,7 @@ void load(const command_t& argv, GameObj& g) {
           sect.set_troops(sect.get_troops() - amt);
           p.troops() -= amt;
           p.info(Playernum - 1).troops -= amt;
-          if (!(sect.get_troops() + sect.get_popn())) {
+          if (sect.is_empty()) {
             p.info(Playernum - 1).numsectsowned--;
             p.info(Playernum - 1).mob_points -= sect.get_mobilization();
             sect.set_owner(0);

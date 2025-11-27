@@ -220,7 +220,7 @@ void survey(const command_t& argv, GameObj& g) {
                        "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
                        CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
                        desshow(Playernum, Governor, race, s),
-                       ((s.get_condition() == SectorType::SEC_WASTED) ? 1 : 0),
+                       (s.is_wasted() ? 1 : 0),
                        s.get_owner(), s.get_eff(), s.get_fert(),
                        s.get_mobilization(),
                        ((s.get_crystals() &&

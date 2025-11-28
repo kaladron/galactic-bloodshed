@@ -64,6 +64,7 @@ export void repair(const command_t&, GameObj&);
 export void reset(const command_t&, GameObj&);
 export void route(const command_t&, GameObj&);
 export void rst(const command_t&, GameObj&);
+export void tactical(const command_t&, GameObj&);
 export void sale(const command_t&, GameObj&);
 export void scrap(const command_t& argv, GameObj& g);
 export void send_message(const command_t&, GameObj&);

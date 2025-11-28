@@ -258,6 +258,7 @@ target_sources(
           commands/repair.cc
           commands/route.cc
           commands/rst.cc
+          commands/tactical.cc
           commands/scrap.cc
           commands/sell.cc
           commands/send_message.cc
@@ -408,6 +409,10 @@ add_test(NAME GB_universe_test COMMAND universe_test)
 add_executable(autoreport_test commands/autoreport_test.cc)
 target_link_libraries(autoreport_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_autoreport_test COMMAND autoreport_test)
+
+add_executable(tactical_test commands/tactical_test.cc)
+target_link_libraries(tactical_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze tabulate::tabulate)
+add_test(NAME GB_tactical_test COMMAND tactical_test)
 
 add_executable(motto_test commands/motto_test.cc)
 target_link_libraries(motto_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)

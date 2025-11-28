@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file rst.cc
-/// \brief Ship and planet reporting commands (report, stock, tactical, stats,
-///        weapons, factories)
+/// \brief Ship reporting commands (report, stock, stats, weapons, factories)
 ///
-/// Implements various reporting modes for ships and planets including status,
-/// stock levels, tactical combat information, and factory configurations.
+/// Implements various reporting modes for ships including status,
+/// stock levels, and factory configurations.
+///
+/// Note: Tactical reporting has been moved to tactical.cc
 
 module;
 
@@ -23,26 +24,6 @@ namespace {
 
 using ReportSet = std::unordered_set<char>;
 
-// Forward declarations
-class ReportItem;
-struct RstContext;
-
-struct TacticalParams {
-  double tech = 0.0;
-  bool fev = false;
-  int fspeed = 0;
-};
-
-// Parameters for the firing ship when calculating hit odds against targets
-struct FiringShipParams {
-  double tech = 0.0;
-  int damage = 0;
-  bool evade = false;
-  int speed = 0;
-  guntype_t caliber = GTYPE_NONE;
-  bool laser_focused = false;  // Laser is on and focused
-};
-
 struct ReportFlags {
   bool status = false;
   bool ship = false;
@@ -50,160 +31,17 @@ struct ReportFlags {
   bool report = false;
   bool weapons = false;
   bool factories = false;
-  bool tactical = false;
 };
 
 struct RstContext {
-  std::vector<std::unique_ptr<ReportItem>> rd;
-  std::string shiplist;
   ReportFlags flags;
-  bool first;
-  bool enemies_only;
-  std::optional<player_t>
-      filter_player;  // Filter by player number (nullopt = no filter)
-};
-
-// ============================================================================
-// BASE CLASS: ReportItem
-// ============================================================================
-
-class ReportItem {
-protected:
-  const double x_;
-  const double y_;
-
-public:
-  ReportItem(double x, double y) : x_(x), y_(y) {}
-  virtual ~ReportItem() = default;
-
-  // Non-copyable and non-movable (polymorphic base class with unique ownership)
-  ReportItem(const ReportItem&) = delete;
-  ReportItem& operator=(const ReportItem&) = delete;
-  ReportItem(ReportItem&&) = delete;
-  ReportItem& operator=(ReportItem&&) = delete;
-
-  double x() const {
-    return x_;
-  }
-  double y() const {
-    return y_;
-  }
-
-  // Report generation methods
-  virtual void report_stock(GameObj&, RstContext&) const {}
-  virtual void report_status(GameObj&, RstContext&) const {}
-  virtual void report_weapons(GameObj&, RstContext&) const {}
-  virtual void report_factories(GameObj&, RstContext&) const {}
-  virtual void report_general(GameObj&, RstContext&) const {}
-  virtual void report_tactical(GameObj&, RstContext&,
-                               const TacticalParams&) const {}
-
-  // Add header row to tactical summary table (polymorphic)
-  virtual void add_tactical_header_row(tabulate::Table&, GameObj&, player_t,
-                                       const TacticalParams&) const = 0;
-
-  // Add target row to tactical targets table (polymorphic)
-  virtual void add_tactical_target_row(tabulate::Table&, GameObj&, RstContext&,
-                                       const Race&, double dist,
-                                       const FiringShipParams& firer) const = 0;
-
-  // Get tactical parameters for this item
-  virtual TacticalParams get_tactical_params(const Race&) const {
-    return TacticalParams{};
-  }
-
-  // Get star number if ship is in a star system (ships only)
-  virtual std::optional<starnum_t> get_star_orbit() const {
-    return std::nullopt;
-  }
-
-  // Check if we should report this item
-  virtual bool should_report(player_t player_num, governor_t governor,
-                             const ReportSet& rep_on) const = 0;
-};
-
-// ============================================================================
-// DERIVED CLASSES
-// ============================================================================
-
-// Ship report item - holds non-owning pointer from peek_ship
-class ShipReportItem : public ReportItem {
-  const Ship* ship_;
-
-public:
-  ShipReportItem(const Ship* ship)
-      : ReportItem(ship->xpos, ship->ypos), ship_(ship) {}
-
-  const Ship& ship() const {
-    return *ship_;
-  }
-
-  void report_stock(GameObj& g, RstContext& ctx) const override;
-  void report_status(GameObj& g, RstContext& ctx) const override;
-  void report_weapons(GameObj& g, RstContext& ctx) const override;
-  void report_factories(GameObj& g, RstContext& ctx) const override;
-  void report_general(GameObj& g, RstContext& ctx) const override;
-  void report_tactical(GameObj& g, RstContext& ctx,
-                       const TacticalParams& params) const override;
-
-  void add_tactical_header_row(tabulate::Table& table, GameObj& g,
-                               player_t player_num,
-                               const TacticalParams& params) const override;
-
-  void add_tactical_target_row(tabulate::Table& table, GameObj& g,
-                               RstContext& ctx, const Race& race, double dist,
-                               const FiringShipParams& firer) const override;
-
-  TacticalParams get_tactical_params(const Race& race) const override;
-
-  std::optional<starnum_t> get_star_orbit() const override;
-
-  bool should_report(player_t player_num, governor_t governor,
-                     const ReportSet& rep_on) const override;
-};
-
-// Planet report item - holds non-owning pointer from peek_planet
-class PlanetReportItem : public ReportItem {
-  const Planet* planet_;
-
-public:
-  PlanetReportItem(const Planet* planet, double x, double y)
-      : ReportItem(x, y), planet_(planet) {}
-
-  starnum_t star() const {
-    return planet_->star_id();
-  }
-  planetnum_t pnum() const {
-    return planet_->planet_order();
-  }
-  const Planet& planet() const {
-    return *planet_;
-  }
-
-  void report_tactical(GameObj& g, RstContext& ctx,
-                       const TacticalParams& params) const override;
-
-  void add_tactical_header_row(tabulate::Table& table, GameObj& g,
-                               player_t player_num,
-                               const TacticalParams& params) const override;
-
-  void add_tactical_target_row(tabulate::Table& table, GameObj& g,
-                               RstContext& ctx, const Race& race, double dist,
-                               const FiringShipParams& firer) const override;
-
-  TacticalParams get_tactical_params(const Race& race) const override;
-
-  bool should_report(player_t player_num, governor_t governor,
-                     const ReportSet& rep_on) const override;
+  bool first = true;
 };
 
 // Map of command names to their report flag configurations
-// TODO(jeffbailey): Replace with std::unordered_map when available in C++20
-// modules
 constexpr auto kCommandReportModes = std::array{
     std::pair{"report", ReportFlags{.report = true}},
     std::pair{"stock", ReportFlags{.stock = true}},
-    std::pair{"tactical", ReportFlags{.tactical = true}},
     std::pair{"ship", ReportFlags{.status = true,
                                   .ship = true,
                                   .stock = true,
@@ -216,59 +54,11 @@ constexpr auto kCommandReportModes = std::array{
 };
 
 // ============================================================================
-// HELPER FUNCTIONS
+// SHIP REPORT FUNCTIONS
 // ============================================================================
 
-/* get a ship from the disk and add it to the ship list we're maintaining. */
-void add_report_ship(RstContext& ctx, const Ship* ship) {
-  ctx.rd.push_back(std::make_unique<ShipReportItem>(ship));
-}
-
-void plan_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
-                           starnum_t snum, planetnum_t pnum) {
-  const auto* star = g.entity_manager.peek_star(snum);
-  if (!star) return;
-
-  const auto* planet = g.entity_manager.peek_planet(snum, pnum);
-  if (!planet) return;
-
-  // Add planet to report list
-  double x = star->xpos() + planet->xpos();
-  double y = star->ypos() + planet->ypos();
-  ctx.rd.push_back(std::make_unique<PlanetReportItem>(planet, x, y));
-
-  if (planet->info(player_num - 1).explored) {
-    const ShipList ships(g.entity_manager, planet->ships());
-    for (const Ship* ship : ships) {
-      add_report_ship(ctx, ship);
-    }
-  }
-}
-
-void star_get_report_ships(GameObj& g, RstContext& ctx, player_t player_num,
-                           starnum_t snum) {
-  const auto* star = g.entity_manager.peek_star(snum);
-  if (!star) return;
-
-  if (isset(star->explored(), player_num)) {
-    const ShipList ships(g.entity_manager, star->ships());
-    for (const Ship* ship : ships) {
-      add_report_ship(ctx, ship);
-    }
-
-    for (planetnum_t i = 0; i < star->numplanets(); i++)
-      plan_get_report_ships(g, ctx, player_num, snum, i);
-  }
-}
-
-// ============================================================================
-// SHIP REPORT METHOD IMPLEMENTATIONS
-// ============================================================================
-
-void ShipReportItem::report_stock(GameObj& g, RstContext& ctx) const {
+void report_stock(GameObj& g, RstContext& ctx, const Ship& s) {
   if (!ctx.flags.stock) return;
-
-  const auto& s = *ship_;
 
   // Create table
   tabulate::Table table;
@@ -311,10 +101,8 @@ void ShipReportItem::report_stock(GameObj& g, RstContext& ctx) const {
   g.out << table << "\n";
 }
 
-void ShipReportItem::report_status(GameObj& g, RstContext& ctx) const {
+void report_status(GameObj& g, RstContext& ctx, const Ship& s) {
   if (!ctx.flags.status) return;
-
-  const auto& s = *ship_;
 
   // Create table
   tabulate::Table table;
@@ -371,10 +159,8 @@ void ShipReportItem::report_status(GameObj& g, RstContext& ctx) const {
   g.out << table << "\n";
 }
 
-void ShipReportItem::report_weapons(GameObj& g, RstContext& ctx) const {
+void report_weapons(GameObj& g, RstContext& ctx, const Ship& s) {
   if (!ctx.flags.weapons) return;
-
-  const auto& s = *ship_;
 
   // Create table
   tabulate::Table table;
@@ -432,10 +218,8 @@ void ShipReportItem::report_weapons(GameObj& g, RstContext& ctx) const {
   g.out << table << "\n";
 }
 
-void ShipReportItem::report_factories(GameObj& g, RstContext& ctx) const {
-  if (!ctx.flags.factories || ship_->type != ShipType::OTYPE_FACTORY) return;
-
-  const auto& s = *ship_;
+void report_factories(GameObj& g, RstContext& ctx, const Ship& s) {
+  if (!ctx.flags.factories || s.type != ShipType::OTYPE_FACTORY) return;
 
   // Create table
   tabulate::Table table;
@@ -524,10 +308,8 @@ void ShipReportItem::report_factories(GameObj& g, RstContext& ctx) const {
   g.out << table << "\n";
 }
 
-void ShipReportItem::report_general(GameObj& g, RstContext& ctx) const {
+void report_general(GameObj& g, RstContext& ctx, const Ship& s) {
   if (!ctx.flags.report) return;
-
-  const auto& s = *ship_;
 
   // Create table
   tabulate::Table table;
@@ -600,10 +382,12 @@ void ShipReportItem::report_general(GameObj& g, RstContext& ctx) const {
   g.out << table << "\n";
 }
 
-bool ShipReportItem::should_report(player_t player_num, governor_t governor,
-                                   const ReportSet& rep_on) const {
-  const auto& s = *ship_;
+// ============================================================================
+// FILTERING
+// ============================================================================
 
+bool should_report_ship(const Ship& s, player_t player_num,
+                        governor_t governor, const ReportSet& rep_on) {
   // Don't report on ships that are dead
   if (!s.alive) return false;
 
@@ -626,446 +410,58 @@ bool ShipReportItem::should_report(player_t player_num, governor_t governor,
 }
 
 // ============================================================================
-// PLANET REPORT METHOD IMPLEMENTATIONS
-// ============================================================================
-
-bool PlanetReportItem::should_report(player_t player_num, governor_t,
-                                     const ReportSet&) const {
-  // Don't report on planets where we don't own any sectors
-  return planet_->info(player_num - 1).numsectsowned != 0;
-}
-
-// ============================================================================
-// TACTICAL REPORT IMPLEMENTATIONS
-// ============================================================================
-
-void ShipReportItem::add_tactical_header_row(
-    tabulate::Table& table, GameObj&, player_t,
-    const TacticalParams& params) const {
-  const auto& s = *ship_;
-  Place where{s.whatorbits, s.storbits, s.pnumorbits};
-
-  std::string name_str = s.active ? s.name : "INACTIVE";
-  std::string orbits_str = where.to_string();
-
-  // Build landed location suffix
-  std::string location_suffix;
-  if (landed(s)) {
-    location_suffix = std::format(" ({},{})", s.land_x, s.land_y);
-  }
-
-  // Build inactive suffix
-  std::string inactive_suffix;
-  if (!s.active) {
-    inactive_suffix = std::format(" INACTIVE({})", s.rad);
-  }
-
-  table.add_row(
-      {std::format("{}", s.number), std::format("{}", Shipltrs[s.type]),
-       name_str, std::format("{:.0f}", s.tech),
-       std::format("{}{}/{}{}", s.primary, caliber_char(s.primtype),
-                   s.secondary, caliber_char(s.sectype)),
-       std::format("{}", s.armor), std::format("{}", s.size),
-       std::format("{}", s.destruct), std::format("{:.1f}", s.fuel),
-       std::format("{}%", s.damage), std::format("{}", params.fspeed),
-       params.fev ? "yes" : "",
-       std::format("{}{}{}", orbits_str, location_suffix, inactive_suffix)});
-}
-
-void ShipReportItem::add_tactical_target_row(
-    tabulate::Table& table, GameObj& g, RstContext& ctx, const Race& race,
-    double dist, const FiringShipParams& firer) const {
-  const auto& s = *ship_;
-
-  // Filter ships based on player filter or ship type list
-  // If filter_player is set, only show ships owned by that player
-  // If shiplist is non-empty, only show ships whose type is in the list
-  if (ctx.filter_player.has_value()) {
-    // Player filter mode: show only ships owned by specified player
-    if (s.owner != *ctx.filter_player) {
-      return;
-    }
-  } else if (!ctx.shiplist.empty()) {
-    // Ship type filter mode: show only ships whose type is in the list
-    if (!listed(s.type, ctx.shiplist)) {
-      return;
-    }
-  }
-
-  // Don't show ships we own and are authorized for
-  if (s.owner == g.player && authorized(g.governor, s)) {
-    return;
-  }
-
-  // Don't show dead ships
-  if (!s.alive) {
-    return;
-  }
-
-  // Don't show canisters or greenhouse gases
-  if (s.type == ShipType::OTYPE_CANIST || s.type == ShipType::OTYPE_GREEN) {
-    return;
-  }
-
-  // Calculate target ship's evasion and speed (only if moving and active)
-  bool tev = false;
-  int tspeed = 0;
-  if ((s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) && !s.docked &&
-      s.active) {
-    tspeed = s.speed;
-    tev = s.protect.evade;
-  }
-
-  // Calculate combat parameters using firer's data and target's data
-  int body = size(s);
-  auto defense = getdefense(s);
-  auto [prob, factor] =
-      hit_odds(dist, firer.tech, firer.damage, firer.evade, tev, firer.speed,
-               tspeed, body, firer.caliber, defense);
-
-  // Apply laser focus bonus if firer has it
-  if (firer.laser_focused) {
-    prob = prob * prob / 100;
-  }
-
-  // Determine diplomatic status indicator
-  const auto* war_status = isset(race.atwar, s.owner)    ? "-"
-                           : isset(race.allied, s.owner) ? "+"
-                                                         : " ";
-
-  // Filter out allied ships if enemies-only mode is enabled
-  if (ctx.enemies_only && isset(race.allied, s.owner)) {
-    return;
-  }
-
-  // Build location string
-  std::string loc_str;
-  if (landed(s)) {
-    loc_str = std::format("({},{})", s.land_x, s.land_y);
-  }
-
-  // Build status suffix
-  std::string status_suffix = s.active ? "" : " INACTIVE";
-
-  // Add row to table
-  table.add_row({std::format("{}", s.number),
-                 std::format("{}{},{}", war_status, s.owner, s.governor),
-                 std::format("{}", Shipltrs[s.type]),
-                 std::format("{:.14}", s.name), std::format("{:.0f}", dist),
-                 std::format("{}", factor), std::format("{}", body),
-                 std::format("{}", tspeed), tev ? "yes" : "",
-                 std::format("{}%", prob), std::format("{}%", s.damage),
-                 std::format("{}{}", loc_str, status_suffix)});
-}
-
-TacticalParams ShipReportItem::get_tactical_params(const Race&) const {
-  TacticalParams params{};
-  const auto& s = *ship_;
-  params.tech = s.tech;
-
-  if ((s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) && !s.docked &&
-      s.active) {
-    params.fspeed = s.speed;
-    params.fev = s.protect.evade;
-  }
-
-  return params;
-}
-
-std::optional<starnum_t> ShipReportItem::get_star_orbit() const {
-  if (ship_->whatorbits != ScopeLevel::LEVEL_UNIV) {
-    return ship_->storbits;
-  }
-  return std::nullopt;
-}
-
-void PlanetReportItem::add_tactical_header_row(
-    tabulate::Table& table, GameObj& g, player_t player_num,
-    const TacticalParams& params) const {
-  const auto& p = *planet_;
-  const auto* star = g.entity_manager.peek_star(p.star_id());
-
-  std::string name_str = std::format(
-      "(planet){}", star ? star->get_planet_name(p.planet_order()) : "Unknown");
-
-  table.add_row({"", "", name_str, std::format("{:.0f}", params.tech),
-                 std::format("{}M", p.info(player_num - 1).guns), "", "",
-                 std::format("{}", p.info(player_num - 1).destruct),
-                 std::format("{}", p.info(player_num - 1).fuel), "", "", "",
-                 ""});
-}
-
-void PlanetReportItem::add_tactical_target_row(tabulate::Table& table,
-                                               GameObj& g, RstContext&,
-                                               const Race&, double dist,
-                                               const FiringShipParams&) const {
-  const auto& p = *planet_;
-  const auto* star = g.entity_manager.peek_star(p.star_id());
-  std::string name_str =
-      star ? star->get_planet_name(p.planet_order()) : "Unknown";
-
-  table.add_row({"", "(planet)", "", name_str, std::format("{:.0f}", dist), "",
-                 "", "", "", "", "", ""});
-}
-
-TacticalParams PlanetReportItem::get_tactical_params(const Race& race) const {
-  TacticalParams params{};
-  params.tech = race.tech;
-  // Planets don't have speed or evasion
-  return params;
-}
-
-void ShipReportItem::report_tactical(GameObj& g, RstContext& ctx,
-                                     const TacticalParams& params) const {
-  if (!ctx.flags.tactical) return;
-
-  const auto* race = g.entity_manager.peek_race(g.player);
-  if (!race) return;
-
-  const auto& s = *ship_;
-
-  bool sight = shipsight(s);
-  if (!sight) return;
-
-  // Create header summary table
-  tabulate::Table header_table;
-  header_table.format().hide_border().column_separator("  ");
-
-  // Configure column widths and alignments for header table
-  header_table.column(0).format().width(3).font_align(
-      tabulate::FontAlign::right);  // #
-  header_table.column(1).format().width(1).font_align(
-      tabulate::FontAlign::center);           // type
-  header_table.column(2).format().width(16);  // name
-  header_table.column(3).format().width(4).font_align(
-      tabulate::FontAlign::right);  // tech
-  header_table.column(4).format().width(7).font_align(
-      tabulate::FontAlign::center);  // guns
-  header_table.column(5).format().width(5).font_align(
-      tabulate::FontAlign::right);  // armor
-  header_table.column(6).format().width(4).font_align(
-      tabulate::FontAlign::right);  // size
-  header_table.column(7).format().width(5).font_align(
-      tabulate::FontAlign::right);  // dest
-  header_table.column(8).format().width(7).font_align(
-      tabulate::FontAlign::right);  // fuel
-  header_table.column(9).format().width(3).font_align(
-      tabulate::FontAlign::right);  // dam
-  header_table.column(10).format().width(3).font_align(
-      tabulate::FontAlign::right);  // spd
-  header_table.column(11).format().width(4).font_align(
-      tabulate::FontAlign::center);            // evad
-  header_table.column(12).format().width(30);  // orbits
-
-  // Add header row
-  header_table.add_row({"#", "", "name", "tech", "guns", "armor", "size",
-                        "dest", "fuel", "dam", "spd", "evad", "orbits"});
-  header_table[0].format().font_style({tabulate::FontStyle::bold});
-
-  // Add data row polymorphically
-  add_tactical_header_row(header_table, g, g.player, params);
-
-  g.out << "\n" << header_table << "\n";
-
-  // Create tactical targets table
-  tabulate::Table tactical_table;
-  tactical_table.format().hide_border().column_separator("  ");
-
-  // Configure column widths and alignments for tactical table
-  tactical_table.column(0).format().width(13);  // #
-  tactical_table.column(1).format().width(5).font_align(
-      tabulate::FontAlign::center);  // own
-  tactical_table.column(2).format().width(3).font_align(
-      tabulate::FontAlign::center);             // typ
-  tactical_table.column(3).format().width(14);  // name
-  tactical_table.column(4).format().width(4).font_align(
-      tabulate::FontAlign::right);  // rng
-  tactical_table.column(5).format().width(4).font_align(
-      tabulate::FontAlign::right);  // (50%)
-  tactical_table.column(6).format().width(4).font_align(
-      tabulate::FontAlign::right);  // size
-  tactical_table.column(7).format().width(3).font_align(
-      tabulate::FontAlign::right);  // spd
-  tactical_table.column(8).format().width(5).font_align(
-      tabulate::FontAlign::center);  // evade
-  tactical_table.column(9).format().width(3).font_align(
-      tabulate::FontAlign::right);  // hit
-  tactical_table.column(10).format().width(3).font_align(
-      tabulate::FontAlign::right);               // dam
-  tactical_table.column(11).format().width(10);  // loc
-
-  // Add tactical header row
-  tactical_table.add_row({"Tactical: #", "own", "typ", "name", "rng", "(50%)",
-                          "size", "spd", "evade", "hit", "dam", "loc"});
-  tactical_table[0].format().font_style({tabulate::FontStyle::bold});
-
-  for (const auto& target : ctx.rd) {
-    // Skip ourselves
-    if (target->x() == x_ && target->y() == y_) continue;
-
-    double range = gun_range(s);
-    double dist = sqrt(Distsq(x_, y_, target->x(), target->y()));
-    if (dist >= range) continue;
-
-    // Build firing ship parameters
-    FiringShipParams firer{
-        .tech = params.tech,
-        .damage = s.damage,
-        .evade = params.fev,
-        .speed = params.fspeed,
-        .caliber = current_caliber(s),
-        .laser_focused = (laser_on(s) && s.focus),
-    };
-
-    // Polymorphic call - adds row to table for ships, skips for planets not in
-    // range
-    target->add_tactical_target_row(tactical_table, g, ctx, *race, dist, firer);
-  }
-
-  // Only output tactical table if we have targets
-  if (tactical_table.size() > 1) {  // More than just the header
-    g.out << "\n" << tactical_table << "\n";
-  }
-}
-
-void PlanetReportItem::report_tactical(GameObj& g, RstContext& ctx,
-                                       const TacticalParams& params) const {
-  if (!ctx.flags.tactical) return;
-
-  const auto* race = g.entity_manager.peek_race(g.player);
-  if (!race) return;
-
-  // Create header summary table
-  tabulate::Table header_table;
-  header_table.format().hide_border().column_separator("  ");
-
-  // Configure column widths and alignments for header table
-  header_table.column(0).format().width(3).font_align(
-      tabulate::FontAlign::right);  // #
-  header_table.column(1).format().width(1).font_align(
-      tabulate::FontAlign::center);           // type
-  header_table.column(2).format().width(16);  // name
-  header_table.column(3).format().width(4).font_align(
-      tabulate::FontAlign::right);  // tech
-  header_table.column(4).format().width(7).font_align(
-      tabulate::FontAlign::center);  // guns
-  header_table.column(5).format().width(5).font_align(
-      tabulate::FontAlign::right);  // armor
-  header_table.column(6).format().width(4).font_align(
-      tabulate::FontAlign::right);  // size
-  header_table.column(7).format().width(5).font_align(
-      tabulate::FontAlign::right);  // dest
-  header_table.column(8).format().width(7).font_align(
-      tabulate::FontAlign::right);  // fuel
-  header_table.column(9).format().width(3).font_align(
-      tabulate::FontAlign::right);  // dam
-  header_table.column(10).format().width(3).font_align(
-      tabulate::FontAlign::right);  // spd
-  header_table.column(11).format().width(4).font_align(
-      tabulate::FontAlign::center);            // evad
-  header_table.column(12).format().width(30);  // orbits
-
-  // Add header row
-  header_table.add_row({"#", "", "name", "tech", "guns", "armor", "size",
-                        "dest", "fuel", "dam", "spd", "evad", "orbits"});
-  header_table[0].format().font_style({tabulate::FontStyle::bold});
-
-  // Add data row polymorphically
-  add_tactical_header_row(header_table, g, g.player, params);
-
-  g.out << "\n" << header_table << "\n";
-
-  // Create tactical targets table
-  tabulate::Table tactical_table;
-  tactical_table.format().hide_border().column_separator("  ");
-
-  // Configure column widths and alignments for tactical table
-  tactical_table.column(0).format().width(13);  // #
-  tactical_table.column(1).format().width(5).font_align(
-      tabulate::FontAlign::center);  // own
-  tactical_table.column(2).format().width(3).font_align(
-      tabulate::FontAlign::center);             // typ
-  tactical_table.column(3).format().width(14);  // name
-  tactical_table.column(4).format().width(4).font_align(
-      tabulate::FontAlign::right);  // rng
-  tactical_table.column(5).format().width(4).font_align(
-      tabulate::FontAlign::right);  // (50%)
-  tactical_table.column(6).format().width(4).font_align(
-      tabulate::FontAlign::right);  // size
-  tactical_table.column(7).format().width(3).font_align(
-      tabulate::FontAlign::right);  // spd
-  tactical_table.column(8).format().width(5).font_align(
-      tabulate::FontAlign::center);  // evade
-  tactical_table.column(9).format().width(3).font_align(
-      tabulate::FontAlign::right);  // hit
-  tactical_table.column(10).format().width(3).font_align(
-      tabulate::FontAlign::right);               // dam
-  tactical_table.column(11).format().width(10);  // loc
-
-  // Add tactical header row
-  tactical_table.add_row({"Tactical: #", "own", "typ", "name", "rng", "(50%)",
-                          "size", "spd", "evade", "hit", "dam", "loc"});
-  tactical_table[0].format().font_style({tabulate::FontStyle::bold});
-
-  for (shipnum_t i = 0; i < ctx.rd.size(); i++) {
-    // Skip ourselves
-    if (ctx.rd[i]->x() == x_ && ctx.rd[i]->y() == y_) continue;
-
-    double range = gun_range(*race);
-    double dist = sqrt(Distsq(x_, y_, ctx.rd[i]->x(), ctx.rd[i]->y()));
-    if (dist >= range) continue;
-
-    // Build firing ship parameters from planet perspective
-    FiringShipParams firer{
-        .tech = params.tech,
-        .damage = 0,  // Planets don't have damage
-        .evade = params.fev,
-        .speed = params.fspeed,
-        .caliber = GTYPE_MEDIUM,
-        .laser_focused = false,  // Planets don't have laser focus
-    };
-
-    // Polymorphic call - adds row to table for ships, skips for planets not in
-    // range
-    ctx.rd[i]->add_tactical_target_row(tactical_table, g, ctx, *race, dist,
-                                       firer);
-  }
-
-  // Only output tactical table if we have targets
-  if (tactical_table.size() > 1) {  // More than just the header
-    g.out << "\n" << tactical_table << "\n";
-  }
-}
-
-// ============================================================================
 // MAIN REPORT DRIVER
 // ============================================================================
 
-void ship_report(GameObj& g, RstContext& ctx, const ReportItem& item,
+void ship_report(GameObj& g, RstContext& ctx, const Ship& s,
                  const ReportSet& rep_on) {
-  // Get race from EntityManager
-  const auto* race = g.entity_manager.peek_race(g.player);
-  if (!race) {
-    g.out << "Race not found.\n";
+  // Check if this ship should be reported
+  if (!should_report_ship(s, g.player, g.governor, rep_on)) {
     return;
   }
 
-  // Check if this item should be reported
-  if (!item.should_report(g.player, g.governor, rep_on)) {
-    return;
-  }
-
-  // Calculate tactical parameters for report_tactical (polymorphic)
-  TacticalParams params = item.get_tactical_params(*race);
-
-  // Polymorphic dispatch to appropriate report methods
-  item.report_stock(g, ctx);
-  item.report_status(g, ctx);
-  item.report_weapons(g, ctx);
-  item.report_factories(g, ctx);
-  item.report_general(g, ctx);
-  item.report_tactical(g, ctx, params);
+  // Dispatch to appropriate report methods
+  report_stock(g, ctx, s);
+  report_status(g, ctx, s);
+  report_weapons(g, ctx, s);
+  report_factories(g, ctx, s);
+  report_general(g, ctx, s);
 }
+
+// ============================================================================
+// SHIP COLLECTION HELPERS
+// ============================================================================
+
+void report_planet_ships(GameObj& g, RstContext& ctx, player_t player_num,
+                         starnum_t snum, planetnum_t pnum,
+                         const ReportSet& rep_on) {
+  const auto* planet = g.entity_manager.peek_planet(snum, pnum);
+  if (!planet) return;
+
+  if (planet->info(player_num - 1).explored) {
+    const ShipList ships(g.entity_manager, planet->ships());
+    for (const Ship* ship : ships) {
+      ship_report(g, ctx, *ship, rep_on);
+    }
+  }
+}
+
+void report_star_ships(GameObj& g, RstContext& ctx, player_t player_num,
+                       starnum_t snum, const ReportSet& rep_on) {
+  const auto* star = g.entity_manager.peek_star(snum);
+  if (!star) return;
+
+  if (isset(star->explored(), player_num)) {
+    const ShipList ships(g.entity_manager, star->ships());
+    for (const Ship* ship : ships) {
+      ship_report(g, ctx, *ship, rep_on);
+    }
+
+    for (planetnum_t i = 0; i < star->numplanets(); i++)
+      report_planet_ships(g, ctx, player_num, snum, i, rep_on);
+  }
+}
+
 }  // namespace
 
 // ============================================================================
@@ -1077,7 +473,6 @@ void rst(const command_t& argv, GameObj& g) {
   ReportSet report_types;
 
   RstContext ctx;
-  ctx.enemies_only = false;
   ctx.first = true;
 
   // Set report flags based on command name
@@ -1089,19 +484,6 @@ void rst(const command_t& argv, GameObj& g) {
   }
 
   shipnum_t n_ships = Numships();
-
-  if (argv.size() == 3) {
-    if (isdigit(argv[2][0])) {
-      // Filter by player number
-      ctx.filter_player = std::stoi(argv[2]);
-    } else {
-      // Filter by ship type list (no player filter)
-      ctx.shiplist = argv[2];
-    }
-  } else {
-    // No filtering
-    ctx.filter_player = std::nullopt;
-  }
 
   if (argv.size() >= 2) {
     if (*argv[1].c_str() == '#' || isdigit(*argv[1].c_str())) {
@@ -1121,8 +503,10 @@ void rst(const command_t& argv, GameObj& g) {
           return;
         }
 
-        add_report_ship(ctx, ship);
-        ship_report(g, ctx, *ctx.rd.back(), report_types);
+        // Report all types when reporting specific ships
+        std::ranges::copy(Shipltrs,
+                          std::inserter(report_types, report_types.end()));
+        ship_report(g, ctx, *ship, report_types);
         l++;
       }
       return;
@@ -1145,33 +529,26 @@ void rst(const command_t& argv, GameObj& g) {
   }
 
   switch (g.level) {
-    case ScopeLevel::LEVEL_UNIV:
-      if (!ctx.flags.tactical || argv.size() >= 2) {
-        const ShipList univ_ships(g.entity_manager, Sdata.ships);
-        for (const Ship* ship : univ_ships) {
-          add_report_ship(ctx, ship);
-        }
-
-        for (starnum_t i = 0; i < Sdata.numstars; i++)
-          star_get_report_ships(g, ctx, g.player, i);
-        for (const auto& item : ctx.rd)
-          ship_report(g, ctx, *item, report_types);
-      } else {
-        g.out << "You can't do tactical option from universe level.\n";
-        return;
+    case ScopeLevel::LEVEL_UNIV: {
+      const ShipList univ_ships(g.entity_manager, Sdata.ships);
+      for (const Ship* ship : univ_ships) {
+        ship_report(g, ctx, *ship, report_types);
       }
+
+      for (starnum_t i = 0; i < Sdata.numstars; i++)
+        report_star_ships(g, ctx, g.player, i, report_types);
       break;
+    }
+
     case ScopeLevel::LEVEL_PLAN:
-      plan_get_report_ships(g, ctx, g.player, g.snum, g.pnum);
-      for (const auto& item : ctx.rd)
-        ship_report(g, ctx, *item, report_types);
+      report_planet_ships(g, ctx, g.player, g.snum, g.pnum, report_types);
       break;
+
     case ScopeLevel::LEVEL_STAR:
-      star_get_report_ships(g, ctx, g.player, g.snum);
-      for (const auto& item : ctx.rd)
-        ship_report(g, ctx, *item, report_types);
+      report_star_ships(g, ctx, g.player, g.snum, report_types);
       break;
-    case ScopeLevel::LEVEL_SHIP:
+
+    case ScopeLevel::LEVEL_SHIP: {
       if (g.shipno == 0) {
         g.out << "Error: No ship is currently scoped. Use 'cs #<shipno>' to "
                  "scope to a ship.\n";
@@ -1186,16 +563,15 @@ void rst(const command_t& argv, GameObj& g) {
       }
 
       // Report on the scoped ship directly
-      ShipReportItem scoped_item(scoped_ship);
-      ship_report(g, ctx, scoped_item, report_types);
+      ship_report(g, ctx, *scoped_ship, report_types);
 
       // Report on ships docked in this ship
       const ShipList docked_ships(g.entity_manager, scoped_ship->ships);
       for (const Ship* ship : docked_ships) {
-        ShipReportItem docked_item(ship);
-        ship_report(g, ctx, docked_item, report_types);
+        ship_report(g, ctx, *ship, report_types);
       }
       break;
+    }
   }
 }
 }  // namespace GB::commands

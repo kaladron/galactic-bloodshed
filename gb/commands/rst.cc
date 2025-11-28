@@ -39,18 +39,18 @@ struct RstContext {
 };
 
 // Map of command names to their report flag configurations
-constexpr auto kCommandReportModes = std::array{
-    std::pair{"report", ReportFlags{.report = true}},
-    std::pair{"stock", ReportFlags{.stock = true}},
-    std::pair{"ship", ReportFlags{.status = true,
-                                  .ship = true,
-                                  .stock = true,
-                                  .report = true,
-                                  .weapons = true,
-                                  .factories = true}},
-    std::pair{"stats", ReportFlags{.status = true}},
-    std::pair{"weapons", ReportFlags{.weapons = true}},
-    std::pair{"factories", ReportFlags{.factories = true}},
+const std::unordered_map<std::string_view, ReportFlags> kCommandReportModes = {
+    {"report", ReportFlags{.report = true}},
+    {"stock", ReportFlags{.stock = true}},
+    {"ship", ReportFlags{.status = true,
+                         .ship = true,
+                         .stock = true,
+                         .report = true,
+                         .weapons = true,
+                         .factories = true}},
+    {"stats", ReportFlags{.status = true}},
+    {"weapons", ReportFlags{.weapons = true}},
+    {"factories", ReportFlags{.factories = true}},
 };
 
 // ============================================================================
@@ -386,8 +386,8 @@ void report_general(GameObj& g, RstContext& ctx, const Ship& s) {
 // FILTERING
 // ============================================================================
 
-bool should_report_ship(const Ship& s, player_t player_num,
-                        governor_t governor, const ReportSet& rep_on) {
+bool should_report_ship(const Ship& s, player_t player_num, governor_t governor,
+                        const ReportSet& rep_on) {
   // Don't report on ships that are dead
   if (!s.alive) return false;
 
@@ -476,11 +476,9 @@ void rst(const command_t& argv, GameObj& g) {
   ctx.first = true;
 
   // Set report flags based on command name
-  for (const auto& [cmd, flags] : kCommandReportModes) {
-    if (argv[0] == cmd) {
-      ctx.flags = flags;
-      break;
-    }
+  if (auto it = kCommandReportModes.find(argv[0]);
+      it != kCommandReportModes.end()) {
+    ctx.flags = it->second;
   }
 
   shipnum_t n_ships = Numships();

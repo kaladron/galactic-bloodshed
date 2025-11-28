@@ -67,18 +67,23 @@ public:
   TacticalItem(TacticalItem&&) = delete;
   TacticalItem& operator=(TacticalItem&&) = delete;
 
-  double x() const { return x_; }
-  double y() const { return y_; }
+  double x() const {
+    return x_;
+  }
+  double y() const {
+    return y_;
+  }
 
   // Add header row to tactical summary table (polymorphic)
   virtual void add_tactical_header_row(tabulate::Table&, GameObj&, player_t,
                                        const TacticalParams&) const = 0;
 
   // Add target row to tactical targets table (polymorphic)
-  virtual void add_tactical_target_row(
-      tabulate::Table&, GameObj&, TacticalContext&,
-      const std::vector<std::unique_ptr<TacticalItem>>&, const Race&,
-      double dist, const FiringShipParams& firer) const = 0;
+  virtual void
+  add_tactical_target_row(tabulate::Table&, GameObj&, TacticalContext&,
+                          const std::vector<std::unique_ptr<TacticalItem>>&,
+                          const Race&, double dist,
+                          const FiringShipParams& firer) const = 0;
 
   // Get tactical parameters for this item
   virtual TacticalParams get_tactical_params(const Race&) const {
@@ -90,10 +95,10 @@ public:
                                       governor_t governor) const = 0;
 
   // Generate tactical report for this item
-  virtual void report_tactical(
-      GameObj&, TacticalContext&,
-      const std::vector<std::unique_ptr<TacticalItem>>&,
-      const TacticalParams&) const = 0;
+  virtual void
+  report_tactical(GameObj&, TacticalContext&,
+                  const std::vector<std::unique_ptr<TacticalItem>>&,
+                  const TacticalParams&) const = 0;
 };
 
 // ============================================================================
@@ -108,7 +113,9 @@ public:
   explicit ShipTacticalItem(const Ship* ship)
       : TacticalItem(ship->xpos, ship->ypos), ship_(ship) {}
 
-  const Ship& ship() const { return *ship_; }
+  const Ship& ship() const {
+    return *ship_;
+  }
 
   void add_tactical_header_row(tabulate::Table& table, GameObj& g,
                                player_t player_num,
@@ -137,9 +144,15 @@ public:
   PlanetTacticalItem(const Planet* planet, double x, double y)
       : TacticalItem(x, y), planet_(planet) {}
 
-  starnum_t star() const { return planet_->star_id(); }
-  planetnum_t pnum() const { return planet_->planet_order(); }
-  const Planet& planet() const { return *planet_; }
+  starnum_t star() const {
+    return planet_->star_id();
+  }
+  planetnum_t pnum() const {
+    return planet_->planet_order();
+  }
+  const Planet& planet() const {
+    return *planet_;
+  }
 
   void add_tactical_header_row(tabulate::Table& table, GameObj& g,
                                player_t player_num,

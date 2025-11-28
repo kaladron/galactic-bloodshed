@@ -21,7 +21,9 @@ struct TestState {
   EntityManager em;
   JsonStore store;
 
-  TestState() : db(":memory:"), em(db), store(db) { initialize_schema(db); }
+  TestState() : db(":memory:"), em(db), store(db) {
+    initialize_schema(db);
+  }
 };
 
 // Create a minimal universe with ships for testing
@@ -104,7 +106,8 @@ void test_tactical_planet_scope() {
   std::string tactical_output = g_tactical.out.str();
 
   // Verify tactical produces output
-  assert(!tactical_output.empty() && "Tactical should produce output at planet scope");
+  assert(!tactical_output.empty() &&
+         "Tactical should produce output at planet scope");
 
   // Verify the output mentions the planet
   assert(tactical_output.find("TestPlanet") != std::string::npos &&
@@ -142,7 +145,8 @@ void test_tactical_ship_scope() {
   std::string tactical_output = g_tactical.out.str();
 
   // Verify we got output
-  assert(!tactical_output.empty() && "Tactical should produce output at ship scope");
+  assert(!tactical_output.empty() &&
+         "Tactical should produce output at ship scope");
 
   // Verify the output contains the planet name (showing surrounding area)
   assert(tactical_output.find("TestPlanet") != std::string::npos &&
@@ -177,7 +181,8 @@ void test_tactical_star_scope() {
   std::string tactical_output = g_tactical.out.str();
 
   // Verify tactical produces output
-  assert(!tactical_output.empty() && "Tactical should produce output at star scope");
+  assert(!tactical_output.empty() &&
+         "Tactical should produce output at star scope");
 
   // Verify the output mentions the planet
   assert(tactical_output.find("TestPlanet") != std::string::npos &&

@@ -215,20 +215,19 @@ void survey(const command_t& argv, GameObj& g) {
                 sect_char = '?';
                 break;
             }
-            notify(Playernum, Governor,
-                   std::format(
-                       "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
-                       CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy, sect_char,
-                       desshow(Playernum, Governor, race, s),
-                       (s.is_wasted() ? 1 : 0),
-                       s.get_owner(), s.get_eff(), s.get_fert(),
-                       s.get_mobilization(),
-                       ((s.get_crystals() &&
-                         (race.discoveries[D_CRYSTAL] || race.God))
-                            ? 1
-                            : 0),
-                       s.get_resource(), s.get_popn(), s.get_troops(),
-                       maxsupport(race, s, compat, p.conditions(TOXIC))));
+            notify(
+                Playernum, Governor,
+                std::format("{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
+                            CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy,
+                            sect_char, desshow(Playernum, Governor, race, s),
+                            (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(),
+                            s.get_fert(), s.get_mobilization(),
+                            ((s.get_crystals() &&
+                              (race.discoveries[D_CRYSTAL] || race.God))
+                                 ? 1
+                                 : 0),
+                            s.get_resource(), s.get_popn(), s.get_troops(),
+                            maxsupport(race, s, compat, p.conditions(TOXIC))));
 
             if (shiplocs[lowx][lowy].pos && inhere) {
               g.out << ";";

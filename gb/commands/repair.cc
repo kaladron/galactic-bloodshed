@@ -69,8 +69,7 @@ void repair(const command_t& argv, GameObj& g) {
     for (int lowx = x2; lowx <= hix; lowx++) {
       if (p.info(Playernum - 1).resource >= SECTOR_REPAIR_COST) {
         auto& s = smap.get(lowx, lowy);
-        if (s.is_wasted() &&
-            (s.get_owner() == Playernum || !s.is_owned())) {
+        if (s.is_wasted() && (s.get_owner() == Playernum || !s.is_owned())) {
           s.set_condition(s.get_type());
           s.set_fert(std::min(100U, s.get_fert() + 20));
           p.info(Playernum - 1).resource -= SECTOR_REPAIR_COST;

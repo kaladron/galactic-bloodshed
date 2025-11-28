@@ -131,14 +131,14 @@ void test_sector_creation() {
   assert(owned_sector.is_owned());
 
   auto unowned_sector =
-      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 0,
-                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 0, SectorType::SEC_LAND,
+                       SectorType::SEC_LAND);
   assert(!unowned_sector.is_owned());
 
   // Test is_empty() method
   auto empty_sector =
-      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 1,
-                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 1, SectorType::SEC_LAND,
+                       SectorType::SEC_LAND);
   assert(empty_sector.is_empty());
 
   auto populated_sector =
@@ -147,8 +147,8 @@ void test_sector_creation() {
   assert(!populated_sector.is_empty());
 
   auto troops_only_sector =
-      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 50, 1,
-                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 50, 1, SectorType::SEC_LAND,
+                       SectorType::SEC_LAND);
   assert(!troops_only_sector.is_empty());
 
   // Test plate() method
@@ -162,9 +162,8 @@ void test_sector_creation() {
   assert(unplated_sector.get_eff() == 100);
 
   // Gas sectors don't get SEC_PLATED condition
-  auto gas_sector =
-      createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 0, 1,
-                       SectorType::SEC_GAS, SectorType::SEC_GAS);
+  auto gas_sector = createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 0, 1,
+                                     SectorType::SEC_GAS, SectorType::SEC_GAS);
   gas_sector.plate();
   assert(gas_sector.get_eff() == 100);
   assert(gas_sector.get_condition() == SectorType::SEC_GAS);
@@ -177,8 +176,8 @@ void test_sector_creation() {
   assert(sector_with_popn.get_owner() == 1);  // Still owned
 
   auto sector_empty_owned =
-      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 1,
-                       SectorType::SEC_LAND, SectorType::SEC_LAND);
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 1, SectorType::SEC_LAND,
+                       SectorType::SEC_LAND);
   assert(sector_empty_owned.get_owner() == 1);
   sector_empty_owned.clear_owner_if_empty();
   assert(sector_empty_owned.get_owner() == 0);  // Now unowned

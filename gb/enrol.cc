@@ -80,6 +80,10 @@ int main() {
   Database database{PKGSTATEDIR "gb.db"};
   EntityManager entity_manager{database};
 
+  // Create JsonStore and RaceRepository for new race creation
+  JsonStore store{database};
+  RaceRepository races{store};
+
   srandom(getpid());
 
   if ((Playernum = entity_manager.num_races() + 1) >= MAXPLAYERS) {
@@ -460,7 +464,10 @@ int main() {
   for (j = 0; j < MAXPLAYERS; j++)
     race.points[j] = 0;
 
-  putrace(race);
+  if (!races.save(race)) {
+    std::println(stderr, "Error: Failed to save race to database");
+    return -1;
+  }
 
   sect.set_owner(Playernum);
   sect.set_race(Playernum);

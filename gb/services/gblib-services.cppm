@@ -107,8 +107,8 @@ export class EntityManager {
   std::unordered_map<std::pair<starnum_t, planetnum_t>, std::unique_ptr<Planet>>
       planet_cache;
   std::unordered_map<starnum_t, std::unique_ptr<Star>> star_cache;
-  // Note: Sectors are typically accessed in bulk via SectorMap, not cached
-  // individually
+    std::unordered_map<std::pair<starnum_t, planetnum_t>, std::unique_ptr<SectorMap>>
+      sectormap_cache;
   std::unordered_map<int, std::unique_ptr<Commod>> commod_cache;
   std::unordered_map<int, std::unique_ptr<block>> block_cache;
   std::unordered_map<int, std::unique_ptr<power>> power_cache;
@@ -119,6 +119,7 @@ export class EntityManager {
   std::unordered_map<shipnum_t, int> ship_refcount;
   std::unordered_map<std::pair<starnum_t, planetnum_t>, int> planet_refcount;
   std::unordered_map<starnum_t, int> star_refcount;
+  std::unordered_map<std::pair<starnum_t, planetnum_t>, int> sectormap_refcount;
   std::unordered_map<int, int> commod_refcount;
   std::unordered_map<int, int> block_refcount;
   std::unordered_map<int, int> power_refcount;
@@ -146,6 +147,10 @@ public:
   const Planet* peek_planet(starnum_t star, planetnum_t pnum);
   const Star* peek_star(starnum_t num);
   const universe_struct* peek_universe();
+
+  // Sector map operations (cached with RAII like other entities)
+  EntityHandle<SectorMap> get_sectormap(starnum_t star, planetnum_t pnum);
+  const SectorMap* peek_sectormap(starnum_t star, planetnum_t pnum);
 
   // Create new entities
   EntityHandle<Ship> create_ship();
@@ -176,4 +181,5 @@ private:
   void release_block(int id);
   void release_power(int id);
   void release_universe();
+  void release_sectormap(starnum_t star, planetnum_t pnum);
 };

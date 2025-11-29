@@ -406,6 +406,8 @@ void EntityManager::flush_all() {
   flush_cache_impl<Planet>(planet_cache,
                            [this](const Planet& p) { planets.save(p); });
   flush_cache_impl<Star>(star_cache, [this](const Star& s) { stars.save(s); });
+  flush_cache_impl<SectorMap>(sectormap_cache,
+                              [this](const SectorMap& sm) { sectors.save_map(sm); });
   flush_cache_impl<Commod>(commod_cache,
                            [this](const Commod& c) { commods.save(c); });
   flush_cache_impl<block>(block_cache,
@@ -427,6 +429,7 @@ void EntityManager::clear_cache() {
   clear_cache_impl<Ship>(ship_cache, ship_refcount);
   clear_cache_impl<Planet>(planet_cache, planet_refcount);
   clear_cache_impl<Star>(star_cache, star_refcount);
+  clear_cache_impl<SectorMap>(sectormap_cache, sectormap_refcount);
   clear_cache_impl<Commod>(commod_cache, commod_refcount);
   clear_cache_impl<block>(block_cache, block_refcount);
   clear_cache_impl<power>(power_cache, power_refcount);
@@ -564,5 +567,83 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   for (auto ship_handle : shiplist) {
     Ship& s = *ship_handle;      // Get mutable reference
     ::kill_ship(Playernum, &s);  // Call global kill_ship, not member
+  }
+}
+
+// SectorMap operations (cached with RAII like other entities)
+EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
+                                                     planetnum_t pnum) {
+  std::lock_guard lock(cache_mutex);
+
+  auto key = std::make_pair(star, pnum);
+
+  // Check if already cached
+  auto it = sectormap_cache.find(key);
+  if (it != sectormap_cache.end()) {
+    sectormap_refcount[key]++;
+    return {this, it->second.get(), [this, star, pnum](const SectorMap& sm) {
+              std::lock_guard lock(cache_mutex);
+              sectors.save_map(sm);
+              release_sectormap(star, pnum);
+            }};
+  }
+
+  // Need to load from repository - but we need the Planet to construct SectorMap
+  auto planet_opt = planets.find_by_location(star, pnum);
+  if (!planet_opt) {
+    return {this, nullptr, [](const SectorMap&) {}};
+  }
+
+  // Load the sector map
+  SectorMap loaded_map = sectors.load_map(*planet_opt);
+
+  // Cache the entity
+  auto [iter, inserted] = sectormap_cache.emplace(
+      key, std::make_unique<SectorMap>(std::move(loaded_map)));
+  sectormap_refcount[key] = 1;
+
+  return {this, iter->second.get(), [this, star, pnum](const SectorMap& sm) {
+            std::lock_guard lock(cache_mutex);
+            sectors.save_map(sm);
+            release_sectormap(star, pnum);
+          }};
+}
+
+const SectorMap* EntityManager::peek_sectormap(starnum_t star,
+                                               planetnum_t pnum) {
+  std::lock_guard lock(cache_mutex);
+
+  auto key = std::make_pair(star, pnum);
+
+  // Check if already cached
+  auto it = sectormap_cache.find(key);
+  if (it != sectormap_cache.end()) {
+    return it->second.get();
+  }
+
+  // Need to load from repository - but we need the Planet to construct SectorMap
+  auto planet_opt = planets.find_by_location(star, pnum);
+  if (!planet_opt) {
+    return nullptr;
+  }
+
+  // Load the sector map
+  SectorMap loaded_map = sectors.load_map(*planet_opt);
+
+  // Cache the entity (but don't increment refcount - this is read-only)
+  auto [iter, inserted] = sectormap_cache.emplace(
+      key, std::make_unique<SectorMap>(std::move(loaded_map)));
+  return iter->second.get();
+}
+
+void EntityManager::release_sectormap(starnum_t star, planetnum_t pnum) {
+  auto key = std::make_pair(star, pnum);
+  auto it = sectormap_refcount.find(key);
+  if (it != sectormap_refcount.end()) {
+    it->second--;
+    if (it->second <= 0) {
+      sectormap_cache.erase(key);
+      sectormap_refcount.erase(it);
+    }
   }
 }

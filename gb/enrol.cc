@@ -308,7 +308,14 @@ int main() {
     std::println(stderr, "Error: Cannot load planet for sector analysis");
     return -1;
   }
-  auto smap = getsmap(*planet_ptr);
+
+  // Get sectormap handle - will auto-save when handle goes out of scope
+  auto smap_handle = entity_manager.get_sectormap(star, pnum);
+  if (!smap_handle.get()) {
+    std::println(stderr, "Error: Cannot load sector map");
+    return -1;
+  }
+  auto& smap = *smap_handle;
 
   std::println("\nChoose a primary sector preference. This race will prefer to "
                "live\non this type of sector.");
@@ -479,7 +486,6 @@ int main() {
       maxsupport(race, sect, 100.0, 0) * planet.Maxx() * planet.Maxy() / 2;
   /* (approximate) */
 
-  putsector(sect, planet, secttypes[i].x, secttypes[i].y);
 
   /* make star explored and stuff */
   auto star_record = getstar(star);

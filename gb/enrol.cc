@@ -499,11 +499,15 @@ int main() {
 
 
   /* make star explored and stuff */
-  auto star_record = getstar(star);
-  setbit(star_record.explored(), Playernum);
-  setbit(star_record.inhabited(), Playernum);
-  star_record.AP(Playernum - 1) = 5;
-  putstar(star_record, star);
+  auto star_handle = entity_manager.get_star(star);
+  if (!star_handle.get()) {
+    std::println(stderr, "Error: Cannot access star for update");
+    return -1;
+  }
+  auto& star_ref = *star_handle;
+  setbit(star_ref.explored(), Playernum);
+  setbit(star_ref.inhabited(), Playernum);
+  star_ref.AP(Playernum - 1) = 5;
 
   std::println("\nYou are player {}.\n", Playernum);
   std::println("Your race has been created on sector {},{} on", secttypes[i].x,

@@ -126,6 +126,31 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
   }
 }
 
+char get_sector_char(unsigned int condition) {
+  switch (condition) {
+    case SectorType::SEC_WASTED:
+      return CHAR_WASTED;
+    case SectorType::SEC_SEA:
+      return CHAR_SEA;
+    case SectorType::SEC_LAND:
+      return CHAR_LAND;
+    case SectorType::SEC_MOUNT:
+      return CHAR_MOUNT;
+    case SectorType::SEC_GAS:
+      return CHAR_GAS;
+    case SectorType::SEC_PLATED:
+      return CHAR_PLATED;
+    case SectorType::SEC_ICE:
+      return CHAR_ICE;
+    case SectorType::SEC_DESERT:
+      return CHAR_DESERT;
+    case SectorType::SEC_FOREST:
+      return CHAR_FOREST;
+    default:
+      return ('?');
+  }
+}
+
 char desshow(const player_t Playernum, const governor_t Governor, const Race& r,
              const Sector& s) {
   if (s.get_troops() && !r.governor[Governor].toggle.geography) {
@@ -152,26 +177,5 @@ char desshow(const player_t Playernum, const governor_t Governor, const Race& r,
   if (s.get_crystals() && (r.discoveries[D_CRYSTAL] || r.God))
     return CHAR_CRYSTAL;
 
-  switch (s.get_condition()) {
-    case SectorType::SEC_WASTED:
-      return CHAR_WASTED;
-    case SectorType::SEC_SEA:
-      return CHAR_SEA;
-    case SectorType::SEC_LAND:
-      return CHAR_LAND;
-    case SectorType::SEC_MOUNT:
-      return CHAR_MOUNT;
-    case SectorType::SEC_GAS:
-      return CHAR_GAS;
-    case SectorType::SEC_PLATED:
-      return CHAR_PLATED;
-    case SectorType::SEC_ICE:
-      return CHAR_ICE;
-    case SectorType::SEC_DESERT:
-      return CHAR_DESERT;
-    case SectorType::SEC_FOREST:
-      return CHAR_FOREST;
-    default:
-      return ('?');
-  }
+  return get_sector_char(s.get_condition());
 }

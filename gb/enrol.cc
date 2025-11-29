@@ -24,8 +24,6 @@ struct stype {
 
 #define RACIAL_TYPES 10
 
-// TODO(jeffbailey): Copied from map.c, but they've diverged
-static char desshow(const int x, const int y, SectorMap&);
 
 /* racial types (10 racial types ) */
 static int Thing[RACIAL_TYPES] = {1, 1, 1, 0, 0, 0, 0, 0, 0, 0};
@@ -338,7 +336,7 @@ int main() {
   for (i = SectorType::SEC_SEA; i <= SectorType::SEC_WASTED; i++)
     if (secttypes[i].here) {
       std::println("({:2d}): {} ({}, {}) ({}, {} sectors)", i,
-                   desshow(secttypes[i].x, secttypes[i].y, smap),
+                   get_sector_char(smap.get(secttypes[i].x, secttypes[i].y).get_condition()),
                    secttypes[i].x, secttypes[i].y, Desnames[i],
                    secttypes[i].count);
     }
@@ -520,36 +518,3 @@ int main() {
   }
   return 0;
 }
-
-namespace GB::enrol {
-
-static char desshow(const int x, const int y,
-                    SectorMap& smap) /* copied from map.c */
-{
-  const auto& s = smap.get(x, y);
-
-  switch (s.get_condition()) {
-    case SectorType::SEC_WASTED:
-      return CHAR_WASTED;
-    case SectorType::SEC_SEA:
-      return CHAR_SEA;
-    case SectorType::SEC_LAND:
-      return CHAR_LAND;
-    case SectorType::SEC_MOUNT:
-      return CHAR_MOUNT;
-    case SectorType::SEC_GAS:
-      return CHAR_GAS;
-    case SectorType::SEC_PLATED:
-      return CHAR_PLATED;
-    case SectorType::SEC_DESERT:
-      return CHAR_DESERT;
-    case SectorType::SEC_FOREST:
-      return CHAR_FOREST;
-    case SectorType::SEC_ICE:
-      return CHAR_ICE;
-    default:
-      return ('!');
-  }
-}
-
-}  // namespace GB::enrol

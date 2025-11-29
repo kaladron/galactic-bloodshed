@@ -2,7 +2,7 @@
 
 module;
 
-#include <glaze/glaze.hpp>
+import glaze.json;
 
 export module gblib:repositories;
 

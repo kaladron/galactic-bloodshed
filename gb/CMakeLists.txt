@@ -110,6 +110,20 @@ target_sources(
   PUBLIC FILE_SET CXX_MODULES FILES third_party/scnlib.cppm)
 target_link_libraries(scnlib_module PUBLIC scn::scn)
 
+# Create glaze JSON module wrapper library
+add_library(glaze_json_module)
+target_sources(
+  glaze_json_module
+  PUBLIC FILE_SET CXX_MODULES FILES third_party/glaze_json.cppm)
+target_link_libraries(glaze_json_module PUBLIC glaze::glaze)
+
+# Create glaze TOML module wrapper library
+add_library(glaze_toml_module)
+target_sources(
+  glaze_toml_module
+  PUBLIC FILE_SET CXX_MODULES FILES third_party/glaze_toml.cppm)
+target_link_libraries(glaze_toml_module PUBLIC glaze::glaze)
+
 # Executable targets
 add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
                         creator/makeuniv.cc)
@@ -194,7 +208,7 @@ target_sources(
           tele.cc
           victory.cc
           VN.cc)
-target_link_libraries(gblib PUBLIC glaze::glaze dallib)
+target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module dallib)
 
 add_library(commands)
 target_sources(

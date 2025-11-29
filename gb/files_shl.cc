@@ -9,11 +9,8 @@
 
 module;
 
-// Include Glaze first to avoid mixing libc++ header modules with textual
-// includes
-#include <glaze/glaze.hpp>
-
 import std.compat;
+import glaze.json;
 
 #include <fcntl.h>
 #include <sqlite3.h>

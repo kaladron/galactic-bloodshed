@@ -80,9 +80,10 @@ int main() {
   Database database{PKGSTATEDIR "gb.db"};
   EntityManager entity_manager{database};
 
-  // Create JsonStore and RaceRepository for new race creation
+  // Create JsonStore and repositories for new entity creation
   JsonStore store{database};
   RaceRepository races{store};
+  ShipRepository ships{store};
 
   srandom(getpid());
 
@@ -388,9 +389,9 @@ int main() {
   /* build a capital ship to run the government */
   {
     Ship s{};  // Uses default member initializers from Ship struct
-    int shipno;
+    shipnum_t shipno;
 
-    shipno = Numships() + 1;
+    shipno = ships.next_ship_number();
     std::println("Creating government ship {}...", shipno);
     race.Gov_ship = shipno;
 
@@ -458,7 +459,10 @@ int main() {
       std::println("Created on sector {},{} on an unknown location", s.land_x,
                    s.land_y);
     }
-    putship(s);
+    if (!ships.save(s)) {
+      std::println(stderr, "Error: Failed to save ship to database");
+      return -1;
+    }
   }
 
   for (j = 0; j < MAXPLAYERS; j++)

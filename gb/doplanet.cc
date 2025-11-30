@@ -824,53 +824,63 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
           planet.conditions(TOXIC) >= planet.info(i - 1).tox_thresh &&
           planet.info(i - 1).resource >=
               Shipcost(ShipType::OTYPE_TOXWC, races[i - 1])) {
-        Ship* s2;
-        int t;
         ++Num_ships;
         ships =
             (Ship**)realloc(ships, (unsigned)((Num_ships + 1) * sizeof(Ship*)));
-        s2 = ships[Num_ships] = (Ship*)malloc(sizeof(Ship));
-        bzero((char*)s2, sizeof(Ship));
-        s2->number() = Num_ships;
-        s2->type() = ShipType::OTYPE_TOXWC;
 
-        s2->armor() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_ARMOR];
-        s2->guns() = GTYPE_NONE;
-        s2->primary() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS];
-        s2->primtype() = shipdata_primary(ShipType::OTYPE_TOXWC);
-        s2->primary() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS];
-        s2->sectype() = shipdata_secondary(ShipType::OTYPE_TOXWC);
-        s2->max_crew() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_MAXCREW];
-        s2->max_resource() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_CARGO];
-        s2->max_fuel() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_FUELCAP];
-        s2->max_destruct() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_DESTCAP];
-        s2->max_speed() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_SPEED];
-        s2->build_cost() = Shipcost(ShipType::OTYPE_TOXWC, races[i - 1]);
+        int t = std::min(TOXMAX, planet.conditions(TOXIC));
+        planet.conditions(TOXIC) -= t;
+
+        ship_struct data{
+            .number = Num_ships,
+            .owner = static_cast<player_t>(i),
+            .governor = stars[starnum].governor(i - 1),
+            .name = std::format("Scum{:04d}", Num_ships),
+            .xpos = stars[starnum].xpos() + planet.xpos(),
+            .ypos = stars[starnum].ypos() + planet.ypos(),
+            .mass = 1.0,
+            .land_x = static_cast<unsigned char>(
+                int_rand(0, (int)planet.Maxx() - 1)),
+            .land_y = static_cast<unsigned char>(
+                int_rand(0, (int)planet.Maxy() - 1)),
+            .armor = static_cast<unsigned char>(
+                Shipdata[ShipType::OTYPE_TOXWC][ABIL_ARMOR]),
+            .max_crew = static_cast<unsigned short>(
+                Shipdata[ShipType::OTYPE_TOXWC][ABIL_MAXCREW]),
+            .max_resource = static_cast<resource_t>(
+                Shipdata[ShipType::OTYPE_TOXWC][ABIL_CARGO]),
+            .max_destruct = static_cast<unsigned short>(
+                Shipdata[ShipType::OTYPE_TOXWC][ABIL_DESTCAP]),
+            .max_fuel = static_cast<unsigned short>(
+                Shipdata[ShipType::OTYPE_TOXWC][ABIL_FUELCAP]),
+            .max_speed = static_cast<unsigned short>(
+                Shipdata[ShipType::OTYPE_TOXWC][ABIL_SPEED]),
+            .build_cost = static_cast<unsigned short>(
+                Shipcost(ShipType::OTYPE_TOXWC, races[i - 1])),
+            .base_mass = 1.0,
+            .special = WasteData{.toxic = static_cast<unsigned char>(t)},
+            .storbits = starnum,
+            .deststar = starnum,
+            .destpnum = planetnum,
+            .pnumorbits = planetnum,
+            .whatdest = ScopeLevel::LEVEL_PLAN,
+            .whatorbits = ScopeLevel::LEVEL_PLAN,
+            .type = ShipType::OTYPE_TOXWC,
+            .active = 1,
+            .alive = 1,
+            .docked = 1,
+            .guns = GTYPE_NONE,
+            .primary = static_cast<unsigned long>(
+                Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS]),
+            .primtype = shipdata_primary(ShipType::OTYPE_TOXWC),
+            .sectype = shipdata_secondary(ShipType::OTYPE_TOXWC),
+        };
+
+        Ship* s2 = new Ship(std::move(data));
         s2->size() = ship_size(*s2);
-        s2->base_mass() = 1.0; /* a hack */
-        s2->mass() = s2->base_mass();
-        s2->alive() = 1;
-        s2->active() = 1;
-        s2->name() = std::format("Scum{:04d}", Num_ships);
+        ships[Num_ships] = s2;
 
         insert_sh_plan(planet, s2);
-
-        s2->whatorbits() = ScopeLevel::LEVEL_PLAN;
-        s2->storbits() = starnum;
-        s2->pnumorbits() = planetnum;
-        s2->docked() = 1;
-        s2->xpos() = stars[starnum].xpos() + planet.xpos();
-        s2->ypos() = stars[starnum].ypos() + planet.ypos();
-        s2->land_x() = int_rand(0, (int)planet.Maxx() - 1);
-        s2->land_y() = int_rand(0, (int)planet.Maxy() - 1);
-        s2->whatdest() = ScopeLevel::LEVEL_PLAN;
-        s2->deststar() = starnum;
-        s2->destpnum() = planetnum;
-        s2->owner() = i;
-        s2->governor() = stars[starnum].governor(i - 1);
-        t = std::min(TOXMAX, planet.conditions(TOXIC)); /* amt of tox */
-        planet.conditions(TOXIC) -= t;
-        s2->special() = WasteData{.toxic = static_cast<unsigned char>(t)};
       }
     } /* (if numsectsowned[i]) */
 

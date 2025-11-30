@@ -8,8 +8,6 @@ module;
 
 import std.compat;
 
-#include <strings.h>
-
 #include <cstdlib>
 
 module gblib;
@@ -211,41 +209,50 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap) {
           /* must change size of ships pointer */
           ++Num_ships;
           ships = (Ship**)realloc(ships, (Num_ships + 1) * sizeof(Ship*));
-          ships[Num_ships] = (Ship*)malloc(sizeof(Ship));
-          s2 = ships[Num_ships];
-          bzero((char*)s2, sizeof(Ship));
-          s2->nextship() = planet.ships();
-          planet.ships() = Num_ships;
-          s2->number() = Num_ships;
-          s2->whatorbits() = ScopeLevel::LEVEL_PLAN;
-          s2->storbits() = ship.storbits();
-          s2->pnumorbits() = ship.pnumorbits();
-          s2->docked() = 1;
-          s2->land_x() = ship.land_x();
-          s2->land_y() = ship.land_y();
-          s2->whatdest() = ship.whatdest();
-          s2->deststar() = ship.deststar();
-          s2->destpnum() = ship.destpnum();
-          s2->xpos() = ship.xpos();
-          s2->ypos() = ship.ypos();
-          s2->type() = shipbuild;
-          s2->mode() = 0;
-          s2->armor() = ship.armor() + 1;
-          s2->guns() = Shipdata[shipbuild][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
-          s2->primary() = Shipdata[shipbuild][ABIL_GUNS];
-          s2->primtype() = shipdata_primary(shipbuild);
-          s2->secondary() = 0;
-          s2->sectype() = shipdata_secondary(shipbuild);
-          s2->max_crew() = Shipdata[shipbuild][ABIL_MAXCREW];
-          s2->max_resource() = Shipdata[shipbuild][ABIL_CARGO];
-          s2->max_fuel() = Shipdata[shipbuild][ABIL_FUELCAP];
-          s2->max_destruct() = Shipdata[shipbuild][ABIL_DESTCAP];
-          s2->max_speed() = Shipdata[shipbuild][ABIL_SPEED];
-          ;
+
+          ship_struct data{
+              .number = Num_ships,
+              .xpos = ship.xpos(),
+              .ypos = ship.ypos(),
+              .land_x = ship.land_x(),
+              .land_y = ship.land_y(),
+              .nextship = planet.ships(),
+              .armor = static_cast<unsigned char>(ship.armor() + 1),
+              .max_crew = static_cast<unsigned short>(
+                  Shipdata[shipbuild][ABIL_MAXCREW]),
+              .max_resource =
+                  static_cast<resource_t>(Shipdata[shipbuild][ABIL_CARGO]),
+              .max_destruct = static_cast<unsigned short>(
+                  Shipdata[shipbuild][ABIL_DESTCAP]),
+              .max_fuel = static_cast<unsigned short>(
+                  Shipdata[shipbuild][ABIL_FUELCAP]),
+              .max_speed =
+                  static_cast<unsigned short>(Shipdata[shipbuild][ABIL_SPEED]),
+              .storbits = ship.storbits(),
+              .deststar = ship.deststar(),
+              .destpnum = ship.destpnum(),
+              .pnumorbits = ship.pnumorbits(),
+              .whatdest = ship.whatdest(),
+              .whatorbits = ScopeLevel::LEVEL_PLAN,
+              .type = shipbuild,
+              .alive = 1,
+              .mode = 0,
+              .docked = 1,
+              .guns = static_cast<unsigned char>(
+                  Shipdata[shipbuild][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE),
+              .primary =
+                  static_cast<unsigned long>(Shipdata[shipbuild][ABIL_GUNS]),
+              .primtype = shipdata_primary(shipbuild),
+          };
+          data.secondary = 0;
+          data.sectype = shipdata_secondary(shipbuild);
+
+          s2 = new Ship(std::move(data));
           s2->size() = ship_size(*s2);
           s2->base_mass() = getmass(*s2);
           s2->mass() = s2->base_mass();
-          s2->alive() = 1;
+          ships[Num_ships] = s2;
+          planet.ships() = Num_ships;
           if (shipbuild == ShipType::OTYPE_BERS) {
             /* target = person killed the most VN's */
             auto ship_mind = std::holds_alternative<MindData>(ship.special())

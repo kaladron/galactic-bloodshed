@@ -4,8 +4,6 @@ module;
 
 import std.compat;
 
-#include <strings.h>
-
 module gblib;
 
 /**
@@ -386,67 +384,63 @@ void create_ship_by_ship(int Playernum, int Governor, const Race& race,
 }
 
 void Getship(Ship* s, ShipType i, const Race& r) {
-  bzero((char*)s, sizeof(Ship));
-  // FIXME(XXX): Initialise the struct and put it in, not bzero!
-  s->type() = i;
-  s->armor() = Shipdata[i][ABIL_ARMOR];
-  s->guns() = Shipdata[i][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
-  s->primary() = Shipdata[i][ABIL_GUNS];
-  s->primtype() = shipdata_primary(i);
-  s->primary() = Shipdata[i][ABIL_GUNS];
-  s->sectype() = shipdata_secondary(i);
-  s->max_crew() = Shipdata[i][ABIL_MAXCREW];
-  s->max_resource() = Shipdata[i][ABIL_CARGO];
-  s->max_hanger() = Shipdata[i][ABIL_HANGER];
-  s->max_destruct() = Shipdata[i][ABIL_DESTCAP];
-  s->max_fuel() = Shipdata[i][ABIL_FUELCAP];
-  s->max_speed() = Shipdata[i][ABIL_SPEED];
-  s->build_type() = i;
-  s->mount() = r.God ? Shipdata[i][ABIL_MOUNT] : 0;
-  s->hyper_drive().has = r.God ? Shipdata[i][ABIL_JUMP] : 0;
-  s->cloak() = 0;
-  s->laser() = r.God ? Shipdata[i][ABIL_LASER] : 0;
-  s->cew() = 0;
-  s->cew_range() = 0;
+  ship_struct data{
+      .armor = static_cast<unsigned char>(Shipdata[i][ABIL_ARMOR]),
+      .max_crew = static_cast<unsigned short>(Shipdata[i][ABIL_MAXCREW]),
+      .max_resource = static_cast<resource_t>(Shipdata[i][ABIL_CARGO]),
+      .max_destruct = static_cast<unsigned short>(Shipdata[i][ABIL_DESTCAP]),
+      .max_fuel = static_cast<unsigned short>(Shipdata[i][ABIL_FUELCAP]),
+      .max_speed = static_cast<unsigned short>(Shipdata[i][ABIL_SPEED]),
+      .build_type = i,
+      .mount = static_cast<unsigned char>(r.God ? Shipdata[i][ABIL_MOUNT] : 0),
+      .hyper_drive = {.has = static_cast<unsigned char>(
+                          r.God ? Shipdata[i][ABIL_JUMP] : 0)},
+      .laser = static_cast<unsigned char>(r.God ? Shipdata[i][ABIL_LASER] : 0),
+      .type = i,
+      .guns = static_cast<unsigned char>(Shipdata[i][ABIL_PRIMARY] ? PRIMARY
+                                                                   : GTYPE_NONE),
+      .primary = static_cast<unsigned long>(Shipdata[i][ABIL_GUNS]),
+      .primtype = shipdata_primary(i),
+      .max_hanger = static_cast<unsigned short>(Shipdata[i][ABIL_HANGER]),
+  };
+  data.sectype = shipdata_secondary(i);
+
+  *s = Ship(std::move(data));
   s->size() = ship_size(*s);
   s->base_mass() = getmass(*s);
   s->mass() = getmass(*s);
   s->build_cost() = r.God ? 0 : (int)cost(*s);
   if (s->type() == ShipType::OTYPE_VN || s->type() == ShipType::OTYPE_BERS) {
     s->special() =
-        MindData{.progenitor = static_cast<unsigned char>(r.Playernum),
-                 .target = 0,
-                 .generation = 0,
-                 .busy = 0,
-                 .tampered = 0,
-                 .who_killed = 0};
+        MindData{.progenitor = static_cast<unsigned char>(r.Playernum)};
   }
 }
 
 void Getfactship(Ship* s, Ship* b) {
-  // FIXME(XXX): Initialise the struct and put it in, not bzero!
-  bzero((char*)s, sizeof(Ship));
-  s->type() = b->build_type();
-  s->armor() = b->armor();
-  s->primary() = b->primary();
-  s->primtype() = b->primtype();
-  s->secondary() = b->secondary();
-  s->sectype() = b->sectype();
-  s->guns() = s->primary() ? PRIMARY : GTYPE_NONE;
-  s->max_crew() = b->max_crew();
-  s->max_resource() = b->max_resource();
-  s->max_hanger() = b->max_hanger();
-  s->max_destruct() = b->max_destruct();
-  s->max_fuel() = b->max_fuel();
-  s->max_speed() = b->max_speed();
-  s->build_type() = b->build_type();
-  s->build_cost() = b->build_cost();
-  s->mount() = b->mount();
-  s->hyper_drive().has = b->hyper_drive().has;
-  s->cloak() = 0;
-  s->laser() = b->laser();
-  s->cew() = b->cew();
-  s->cew_range() = b->cew_range();
+  ship_struct data{
+      .armor = b->armor(),
+      .max_crew = b->max_crew(),
+      .max_resource = b->max_resource(),
+      .max_destruct = b->max_destruct(),
+      .max_fuel = b->max_fuel(),
+      .max_speed = b->max_speed(),
+      .build_type = b->build_type(),
+      .build_cost = b->build_cost(),
+      .mount = b->mount(),
+      .hyper_drive = {.has = b->hyper_drive().has},
+      .cew = b->cew(),
+      .cew_range = b->cew_range(),
+      .laser = b->laser(),
+      .type = b->build_type(),
+      .guns = static_cast<unsigned char>(b->primary() ? PRIMARY : GTYPE_NONE),
+      .primary = b->primary(),
+      .primtype = b->primtype(),
+      .max_hanger = b->max_hanger(),
+  };
+  data.secondary = b->secondary();
+  data.sectype = b->sectype();
+
+  *s = Ship(std::move(data));
   s->size() = ship_size(*s);
   s->base_mass() = getmass(*s);
   s->mass() = getmass(*s);

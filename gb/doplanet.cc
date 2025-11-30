@@ -839,10 +839,10 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
             .xpos = stars[starnum].xpos() + planet.xpos(),
             .ypos = stars[starnum].ypos() + planet.ypos(),
             .mass = 1.0,
-            .land_x = static_cast<unsigned char>(
-                int_rand(0, (int)planet.Maxx() - 1)),
-            .land_y = static_cast<unsigned char>(
-                int_rand(0, (int)planet.Maxy() - 1)),
+            .land_x =
+                static_cast<unsigned char>(int_rand(0, (int)planet.Maxx() - 1)),
+            .land_y =
+                static_cast<unsigned char>(int_rand(0, (int)planet.Maxy() - 1)),
             .armor = static_cast<unsigned char>(
                 Shipdata[ShipType::OTYPE_TOXWC][ABIL_ARMOR]),
             .max_crew = static_cast<unsigned short>(

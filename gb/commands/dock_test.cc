@@ -36,8 +36,8 @@ int main() {
   ss.name = "TestStar";
   ss.xpos = 100.0;
   ss.ypos = 200.0;
-  ss.explored = (1ULL << 1);     // Player 1 has explored this star (bit 1)
-  ss.AP[1] = 10;                 // Player 1 has APs
+  ss.explored = (1ULL << 1);  // Player 1 has explored this star (bit 1)
+  ss.AP[1] = 10;              // Player 1 has APs
   Star star(ss);
 
   // Save star via repository

@@ -234,7 +234,7 @@ namespace {
  * disadvantage.
  */
 class SystemCost {
- public:
+public:
   /**
    * Add a stat comparison to the running totals.
    *
@@ -242,8 +242,9 @@ class SystemCost {
    * @param base The baseline value from Shipdata template.
    */
   void add(int value, int base) {
-    const double ratio =
-        ((static_cast<double>(value) + 1.0) / (static_cast<double>(base) + 1.0)) - 1.0;
+    const double ratio = ((static_cast<double>(value) + 1.0) /
+                          (static_cast<double>(base) + 1.0)) -
+                         1.0;
     if (ratio >= 0.0) {
       advantage_ += ratio;
     } else {
@@ -255,7 +256,7 @@ class SystemCost {
     return {advantage_, disadvantage_};
   }
 
- private:
+private:
   double advantage_ = 0.0;
   double disadvantage_ = 0.0;
 };
@@ -398,7 +399,8 @@ static int do_merchant(Ship& s, Planet& p, std::stringstream& telegram) {
  *
  * The algorithm compares the ship's stats against the base template (Shipdata):
  * - Stats above baseline accumulate as "advantage" (linear growth)
- * - Stats below baseline accumulate as "disadvantage" (exponential decay penalty)
+ * - Stats below baseline accumulate as "disadvantage" (exponential decay
+ * penalty)
  *
  * These are combined into a deviation score, normalized by the ship's base tech
  * requirement (higher tech ships tolerate more customization), then squared to

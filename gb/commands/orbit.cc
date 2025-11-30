@@ -18,8 +18,8 @@ static std::string DispStar(const GameObj&, const ScopeLevel, const Star&, int,
                             const Race&);
 static std::string DispPlanet(const GameObj&, const ScopeLevel, const Planet&,
                               std::string_view, int, const Race&);
-static void DispShip(const GameObj&, EntityManager&, const Place&, const Ship*, const Race&,
-                     char*, const Planet& = Planet());
+static void DispShip(const GameObj&, EntityManager&, const Place&, const Ship*,
+                     const Race&, char*, const Planet& = Planet());
 
 namespace GB::commands {
 /* OPTIONS
@@ -124,8 +124,8 @@ void orbit(const command_t& argv, GameObj& g) {
         g.out << "Star not found.\n";
         return;
       }
-      std::string star = DispStar(g, ScopeLevel::LEVEL_STAR, *star_ptr,
-                                  DontDispStars, Race);
+      std::string star =
+          DispStar(g, ScopeLevel::LEVEL_STAR, *star_ptr, DontDispStars, Race);
       strcat(output, star.c_str());
 
       for (planetnum_t i = 0; i < star_ptr->numplanets(); i++)
@@ -134,8 +134,7 @@ void orbit(const command_t& argv, GameObj& g) {
           if (!p) continue;
           std::string planet =
               DispPlanet(g, ScopeLevel::LEVEL_STAR, *p,
-                         star_ptr->get_planet_name(i),
-                         DontDispPlanets, Race);
+                         star_ptr->get_planet_name(i), DontDispPlanets, Race);
           strcat(output, planet.c_str());
         }
       /* check to see if you have ships at orbiting the star, if so you can
@@ -180,10 +179,9 @@ void orbit(const command_t& argv, GameObj& g) {
         g.out << "Planet not found.\n";
         return;
       }
-      std::string planet =
-          DispPlanet(g, ScopeLevel::LEVEL_PLAN, *p,
-                     plan_star->get_planet_name(where->pnum),
-                     DontDispPlanets, Race);
+      std::string planet = DispPlanet(g, ScopeLevel::LEVEL_PLAN, *p,
+                                      plan_star->get_planet_name(where->pnum),
+                                      DontDispPlanets, Race);
       strcat(output, planet.c_str());
 
       /* check to see if you have ships at landed or
@@ -303,8 +301,9 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
   return ss.str();
 }
 
-static void DispShip(const GameObj& g, EntityManager& em, const Place& where, const Ship* ship,
-                     const Race& r, char* string, const Planet& pl) {
+static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
+                     const Ship* ship, const Race& r, char* string,
+                     const Planet& pl) {
   int x;
   int y;
   int wm;
@@ -318,29 +317,26 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where, co
   *string = '\0';
 
   // Get star position for coordinate calculations
-  const auto* where_star = (where.level != ScopeLevel::LEVEL_UNIV) 
-                           ? em.peek_star(where.snum) : nullptr;
+  const auto* where_star = (where.level != ScopeLevel::LEVEL_UNIV)
+                               ? em.peek_star(where.snum)
+                               : nullptr;
 
   switch (where.level) {
     case ScopeLevel::LEVEL_PLAN:
       if (!where_star) return;
-      x = (int)(SCALE +
-                (SCALE * (ship->xpos() -
-                          (where_star->xpos() + pl.xpos()) - Lastx)) /
-                    (PLORBITSIZE * Zoom));
-      y = (int)(SCALE +
-                (SCALE * (ship->ypos() -
-                          (where_star->ypos() + pl.ypos()) - Lasty)) /
-                    (PLORBITSIZE * Zoom));
+      x = (int)(SCALE + (SCALE * (ship->xpos() -
+                                  (where_star->xpos() + pl.xpos()) - Lastx)) /
+                            (PLORBITSIZE * Zoom));
+      y = (int)(SCALE + (SCALE * (ship->ypos() -
+                                  (where_star->ypos() + pl.ypos()) - Lasty)) /
+                            (PLORBITSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_STAR:
       if (!where_star) return;
-      x = (int)(SCALE +
-                (SCALE * (ship->xpos() - where_star->xpos() - Lastx)) /
-                    (SYSTEMSIZE * Zoom));
-      y = (int)(SCALE +
-                (SCALE * (ship->ypos() - where_star->ypos() - Lasty)) /
-                    (SYSTEMSIZE * Zoom));
+      x = (int)(SCALE + (SCALE * (ship->xpos() - where_star->xpos() - Lastx)) /
+                            (SYSTEMSIZE * Zoom));
+      y = (int)(SCALE + (SCALE * (ship->ypos() - where_star->ypos() - Lasty)) /
+                            (SYSTEMSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_UNIV:
       x = (int)(SCALE + (SCALE * (ship->xpos() - Lastx)) / (UNIVSIZE * Zoom));
@@ -368,7 +364,7 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where, co
           if (!aimed_star) {
             xt = yt = 0.0;
           } else if (where.level == ScopeLevel::LEVEL_PLAN &&
-              aimed_at.pnum == where.pnum) {
+                     aimed_at.pnum == where.pnum) {
             /* same planet */
             xt = aimed_star->xpos() + pl.xpos();
             yt = aimed_star->ypos() + pl.ypos();

@@ -397,8 +397,8 @@ void Getship(Ship* s, ShipType i, const Race& r) {
                           r.God ? Shipdata[i][ABIL_JUMP] : 0)},
       .laser = static_cast<unsigned char>(r.God ? Shipdata[i][ABIL_LASER] : 0),
       .type = i,
-      .guns = static_cast<unsigned char>(Shipdata[i][ABIL_PRIMARY] ? PRIMARY
-                                                                   : GTYPE_NONE),
+      .guns = static_cast<unsigned char>(
+          Shipdata[i][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE),
       .primary = static_cast<unsigned long>(Shipdata[i][ABIL_GUNS]),
       .primtype = shipdata_primary(i),
       .max_hanger = static_cast<unsigned short>(Shipdata[i][ABIL_HANGER]),

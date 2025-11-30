@@ -287,149 +287,310 @@ export struct ship_struct {
 };
 
 export class Ship {
-public:
-  shipnum_t number{0};     ///< ship knows its own number
-  player_t owner{0};       ///< owner of ship
-  governor_t governor{0};  ///< subordinate that controls the ship
-  std::string name;        ///< name of ship (optional)
-  std::string shipclass;   ///< shipclass of ship - designated by player
+ private:
+  ship_struct data_;  // Private data member for encapsulation
 
-  unsigned char race{0}; /* race type - used when you gain alien
-                         ships during revolts and whatnot - usually
-                         equal to owner */
-  double xpos{0.0};
-  double ypos{0.0};
-  double fuel{0.0};
-  double mass{0.0};
-  unsigned char land_x{0}, land_y{0};
+ public:
+  // Constructors
+  Ship() = default;
+  Ship(ship_struct in) : data_(std::move(in)) {}
+  ~Ship() = default;
 
-  shipnum_t destshipno{0}; /* destination ship # */
-  shipnum_t nextship{0};   /* next ship in linked list */
-  shipnum_t ships{0};      /* ships landed on it */
+  // Delete copy, allow move
+  Ship(const Ship&) = delete;
+  Ship& operator=(const Ship&) = delete;
+  Ship(Ship&& other) noexcept : data_(std::move(other.data_)) {}
+  Ship& operator=(Ship&& other) noexcept {
+    if (this != &other) {
+      data_ = std::move(other.data_);
+    }
+    return *this;
+  }
 
-  unsigned char armor{0};
-  unsigned short size{0};
+  // =========================================================================
+  // ACCESSOR METHODS - const and non-const pairs
+  // =========================================================================
 
-  unsigned short max_crew{0};
-  resource_t max_resource{0};
-  unsigned short max_destruct{0};
-  unsigned short max_fuel{0};
-  unsigned short max_speed{0};
-  ShipType build_type{
-      ShipType::STYPE_POD};  ///< for factories - type of ship it makes
-  unsigned short build_cost{0};
+  // Ship identity
+  [[nodiscard]] shipnum_t number() const { return data_.number; }
+  shipnum_t& number() { return data_.number; }
 
-  double base_mass{0.0};
-  double tech{0.0};       /* engineering technology rating */
-  double complexity{0.0}; /* complexity rating */
+  [[nodiscard]] player_t owner() const { return data_.owner; }
+  player_t& owner() { return data_.owner; }
 
-  unsigned short destruct{0}; /* stuff it's carrying */
-  resource_t resource{0};
-  population_t popn{0};   /* crew */
-  population_t troops{0}; /* marines */
-  unsigned short crystals{0};
+  [[nodiscard]] governor_t governor() const { return data_.governor; }
+  governor_t& governor() { return data_.governor; }
 
-  /* special ship functions - now using std::variant for type safety */
-  SpecialData special{};
+  [[nodiscard]] const std::string& name() const { return data_.name; }
+  std::string& name() { return data_.name; }
 
-  short who_killed{0}; /* who killed the ship */
+  [[nodiscard]] const std::string& shipclass() const { return data_.shipclass; }
+  std::string& shipclass() { return data_.shipclass; }
 
-  struct {
-    unsigned char on{0};       /* toggles navigate mode */
-    unsigned char speed{0};    /* speed for navigate command */
-    unsigned short turns{0};   /* number turns left in maneuver */
-    unsigned short bearing{0}; /* course */
-  } navigate;
+  [[nodiscard]] unsigned char race() const { return data_.race; }
+  unsigned char& race() { return data_.race; }
 
-  struct {
-    double maxrng{0.0};      /* maximum range for autoshoot */
-    unsigned char on{0};     /* toggle on/off */
-    unsigned char planet{0}; /* planet defender */
-    unsigned char self{0};   /* retaliate if attacked */
-    unsigned char evade{0};  /* evasive action */
-    shipnum_t ship{0};       /* ship it is protecting */
-  } protect;
+  // Position
+  [[nodiscard]] double xpos() const { return data_.xpos; }
+  double& xpos() { return data_.xpos; }
 
-  /* special systems */
-  unsigned char mount{0}; /* has a crystal mount */
-  struct {
-    unsigned char charge{0};
-    unsigned char ready{0};
-    unsigned char on{0};
-    unsigned char has{0};
-  } hyper_drive;
-  unsigned char cew{0};        /* CEW strength */
-  unsigned short cew_range{0}; /* CEW (confined-energy-weapon) range */
-  unsigned char cloak{0};      /* has cloaking device */
-  unsigned char laser{0};      /* has a laser */
-  unsigned char focus{0};      /* focused laser mode */
-  unsigned char fire_laser{0}; /* retaliation strength for lasers */
+  [[nodiscard]] double ypos() const { return data_.ypos; }
+  double& ypos() { return data_.ypos; }
 
-  starnum_t storbits{0};                         /* what star # orbits */
-  starnum_t deststar{0};                         /* destination star */
-  planetnum_t destpnum{0};                       /* destination planet */
-  planetnum_t pnumorbits{0};                     /* # of planet if orbiting */
-  ScopeLevel whatdest{ScopeLevel::LEVEL_UNIV};   /* where going */
-  ScopeLevel whatorbits{ScopeLevel::LEVEL_UNIV}; /* where orbited */
+  // Resources
+  [[nodiscard]] double fuel() const { return data_.fuel; }
+  double& fuel() { return data_.fuel; }
 
-  unsigned char damage{0}; /* amt of damage */
-  int rad{0};              /* radiation level */
-  unsigned char retaliate{0};
-  unsigned short target{0};
+  [[nodiscard]] double mass() const { return data_.mass; }
+  double& mass() { return data_.mass; }
 
-  ShipType type{ShipType::STYPE_POD}; /* what type ship is */
-  unsigned char speed{0};             /* what speed to travel at 0-9 */
+  [[nodiscard]] unsigned char land_x() const { return data_.land_x; }
+  unsigned char& land_x() { return data_.land_x; }
 
-  unsigned char active{0}; /* tells whether the ship is active */
-  unsigned char alive{0};  /* ship is alive */
-  unsigned char mode{0};
-  unsigned char bombard{0};  /* bombard planet we're orbiting */
-  unsigned char mounted{0};  /* has a crystal mounted */
-  unsigned char cloaked{0};  /* is cloaked ship */
-  unsigned char sheep{0};    /* is under influence of mind control */
-  unsigned char docked{0};   /* is landed on a planet or docked */
-  unsigned char notified{0}; /* has been notified of something */
-  unsigned char examined{0}; /* has been examined */
-  unsigned char on{0};       /* on or off */
+  [[nodiscard]] unsigned char land_y() const { return data_.land_y; }
+  unsigned char& land_y() { return data_.land_y; }
 
-  unsigned char merchant{0}; /* this contains the route number */
-  unsigned char guns{0};     /* current gun system which is active */
-  unsigned long primary{0};  /* describe primary gun system */
-  guntype_t primtype{GTYPE_NONE};
-  unsigned long secondary{0}; /* describe secondary guns */
-  guntype_t sectype{GTYPE_NONE};
+  // Ship references
+  [[nodiscard]] shipnum_t destshipno() const { return data_.destshipno; }
+  shipnum_t& destshipno() { return data_.destshipno; }
 
-  unsigned short hanger{0};     /* amount of hanger space used */
-  unsigned short max_hanger{0}; /* total hanger space */
+  [[nodiscard]] shipnum_t nextship() const { return data_.nextship; }
+  shipnum_t& nextship() { return data_.nextship; }
+
+  [[nodiscard]] shipnum_t ships() const { return data_.ships; }
+  shipnum_t& ships() { return data_.ships; }
+
+  // Stats
+  [[nodiscard]] unsigned char armor() const { return data_.armor; }
+  unsigned char& armor() { return data_.armor; }
+
+  [[nodiscard]] unsigned short size() const { return data_.size; }
+  unsigned short& size() { return data_.size; }
+
+  [[nodiscard]] unsigned short max_crew() const { return data_.max_crew; }
+  unsigned short& max_crew() { return data_.max_crew; }
+
+  [[nodiscard]] resource_t max_resource() const { return data_.max_resource; }
+  resource_t& max_resource() { return data_.max_resource; }
+
+  [[nodiscard]] unsigned short max_destruct() const {
+    return data_.max_destruct;
+  }
+  unsigned short& max_destruct() { return data_.max_destruct; }
+
+  [[nodiscard]] unsigned short max_fuel() const { return data_.max_fuel; }
+  unsigned short& max_fuel() { return data_.max_fuel; }
+
+  [[nodiscard]] unsigned short max_speed() const { return data_.max_speed; }
+  unsigned short& max_speed() { return data_.max_speed; }
+
+  // Build info
+  [[nodiscard]] ShipType build_type() const { return data_.build_type; }
+  ShipType& build_type() { return data_.build_type; }
+
+  [[nodiscard]] unsigned short build_cost() const { return data_.build_cost; }
+  unsigned short& build_cost() { return data_.build_cost; }
+
+  [[nodiscard]] double base_mass() const { return data_.base_mass; }
+  double& base_mass() { return data_.base_mass; }
+
+  [[nodiscard]] double tech() const { return data_.tech; }
+  double& tech() { return data_.tech; }
+
+  [[nodiscard]] double complexity() const { return data_.complexity; }
+  double& complexity() { return data_.complexity; }
+
+  // Cargo
+  [[nodiscard]] unsigned short destruct() const { return data_.destruct; }
+  unsigned short& destruct() { return data_.destruct; }
+
+  [[nodiscard]] resource_t resource() const { return data_.resource; }
+  resource_t& resource() { return data_.resource; }
+
+  [[nodiscard]] population_t popn() const { return data_.popn; }
+  population_t& popn() { return data_.popn; }
+
+  [[nodiscard]] population_t troops() const { return data_.troops; }
+  population_t& troops() { return data_.troops; }
+
+  [[nodiscard]] unsigned short crystals() const { return data_.crystals; }
+  unsigned short& crystals() { return data_.crystals; }
+
+  // Special data
+  [[nodiscard]] const SpecialData& special() const { return data_.special; }
+  SpecialData& special() { return data_.special; }
+
+  [[nodiscard]] short who_killed() const { return data_.who_killed; }
+  short& who_killed() { return data_.who_killed; }
+
+  // Navigation
+  [[nodiscard]] const NavigateData& navigate() const { return data_.navigate; }
+  NavigateData& navigate() { return data_.navigate; }
+
+  // Protection
+  [[nodiscard]] const ProtectData& protect() const { return data_.protect; }
+  ProtectData& protect() { return data_.protect; }
+
+  // Special systems
+  [[nodiscard]] unsigned char mount() const { return data_.mount; }
+  unsigned char& mount() { return data_.mount; }
+
+  [[nodiscard]] const HyperDriveData& hyper_drive() const {
+    return data_.hyper_drive;
+  }
+  HyperDriveData& hyper_drive() { return data_.hyper_drive; }
+
+  [[nodiscard]] unsigned char cew() const { return data_.cew; }
+  unsigned char& cew() { return data_.cew; }
+
+  [[nodiscard]] unsigned short cew_range() const { return data_.cew_range; }
+  unsigned short& cew_range() { return data_.cew_range; }
+
+  [[nodiscard]] unsigned char cloak() const { return data_.cloak; }
+  unsigned char& cloak() { return data_.cloak; }
+
+  [[nodiscard]] unsigned char laser() const { return data_.laser; }
+  unsigned char& laser() { return data_.laser; }
+
+  [[nodiscard]] unsigned char focus() const { return data_.focus; }
+  unsigned char& focus() { return data_.focus; }
+
+  [[nodiscard]] unsigned char fire_laser() const { return data_.fire_laser; }
+  unsigned char& fire_laser() { return data_.fire_laser; }
+
+  // Location
+  [[nodiscard]] starnum_t storbits() const { return data_.storbits; }
+  starnum_t& storbits() { return data_.storbits; }
+
+  [[nodiscard]] starnum_t deststar() const { return data_.deststar; }
+  starnum_t& deststar() { return data_.deststar; }
+
+  [[nodiscard]] planetnum_t destpnum() const { return data_.destpnum; }
+  planetnum_t& destpnum() { return data_.destpnum; }
+
+  [[nodiscard]] planetnum_t pnumorbits() const { return data_.pnumorbits; }
+  planetnum_t& pnumorbits() { return data_.pnumorbits; }
+
+  [[nodiscard]] ScopeLevel whatdest() const { return data_.whatdest; }
+  ScopeLevel& whatdest() { return data_.whatdest; }
+
+  [[nodiscard]] ScopeLevel whatorbits() const { return data_.whatorbits; }
+  ScopeLevel& whatorbits() { return data_.whatorbits; }
+
+  // Combat
+  [[nodiscard]] unsigned char damage() const { return data_.damage; }
+  unsigned char& damage() { return data_.damage; }
+
+  [[nodiscard]] int rad() const { return data_.rad; }
+  int& rad() { return data_.rad; }
+
+  [[nodiscard]] unsigned char retaliate() const { return data_.retaliate; }
+  unsigned char& retaliate() { return data_.retaliate; }
+
+  [[nodiscard]] unsigned short target() const { return data_.target; }
+  unsigned short& target() { return data_.target; }
+
+  // Type and speed
+  [[nodiscard]] ShipType type() const { return data_.type; }
+  ShipType& type() { return data_.type; }
+
+  [[nodiscard]] unsigned char speed() const { return data_.speed; }
+  unsigned char& speed() { return data_.speed; }
+
+  // Status flags
+  [[nodiscard]] unsigned char active() const { return data_.active; }
+  unsigned char& active() { return data_.active; }
+
+  [[nodiscard]] unsigned char alive() const { return data_.alive; }
+  unsigned char& alive() { return data_.alive; }
+
+  [[nodiscard]] unsigned char mode() const { return data_.mode; }
+  unsigned char& mode() { return data_.mode; }
+
+  [[nodiscard]] unsigned char bombard() const { return data_.bombard; }
+  unsigned char& bombard() { return data_.bombard; }
+
+  [[nodiscard]] unsigned char mounted() const { return data_.mounted; }
+  unsigned char& mounted() { return data_.mounted; }
+
+  [[nodiscard]] unsigned char cloaked() const { return data_.cloaked; }
+  unsigned char& cloaked() { return data_.cloaked; }
+
+  [[nodiscard]] unsigned char sheep() const { return data_.sheep; }
+  unsigned char& sheep() { return data_.sheep; }
+
+  [[nodiscard]] unsigned char docked() const { return data_.docked; }
+  unsigned char& docked() { return data_.docked; }
+
+  [[nodiscard]] unsigned char notified() const { return data_.notified; }
+  unsigned char& notified() { return data_.notified; }
+
+  [[nodiscard]] unsigned char examined() const { return data_.examined; }
+  unsigned char& examined() { return data_.examined; }
+
+  [[nodiscard]] unsigned char on() const { return data_.on; }
+  unsigned char& on() { return data_.on; }
+
+  // Merchant and weapons
+  [[nodiscard]] unsigned char merchant() const { return data_.merchant; }
+  unsigned char& merchant() { return data_.merchant; }
+
+  [[nodiscard]] unsigned char guns() const { return data_.guns; }
+  unsigned char& guns() { return data_.guns; }
+
+  [[nodiscard]] unsigned long primary() const { return data_.primary; }
+  unsigned long& primary() { return data_.primary; }
+
+  [[nodiscard]] guntype_t primtype() const { return data_.primtype; }
+  guntype_t& primtype() { return data_.primtype; }
+
+  [[nodiscard]] unsigned long secondary() const { return data_.secondary; }
+  unsigned long& secondary() { return data_.secondary; }
+
+  [[nodiscard]] guntype_t sectype() const { return data_.sectype; }
+  guntype_t& sectype() { return data_.sectype; }
+
+  // Hanger
+  [[nodiscard]] unsigned short hanger() const { return data_.hanger; }
+  unsigned short& hanger() { return data_.hanger; }
+
+  [[nodiscard]] unsigned short max_hanger() const { return data_.max_hanger; }
+  unsigned short& max_hanger() { return data_.max_hanger; }
+
+  // =========================================================================
+  // SERIALIZATION SUPPORT
+  // =========================================================================
+
+  // For repository serialization - returns copy of internal struct
+  [[nodiscard]] ship_struct get_struct() const { return data_; }
+
+  // Direct access to internal struct (FOR SERIALIZATION USE ONLY)
+  [[nodiscard]] const ship_struct& to_struct() const noexcept { return data_; }
+  [[nodiscard]] ship_struct& to_struct() noexcept { return data_; }
 };
 
 export class Shiplist {
-public:
+ public:
   Shiplist(shipnum_t a) : first(a) {}
 
   class Iterator {
-  public:
+   public:
     Iterator(shipnum_t a);
-    auto& operator*() {
-      return elem;
-    }
+    Ship& operator*() { return elem_ship; }
     Iterator& operator++();
     bool operator!=(const Iterator& rhs) {
-      return elem.number != rhs.elem.number;
+      return elem_ship.number() != rhs.elem_ship.number();
     }
 
-  private:
-    Ship elem{};
+   private:
+    ship_struct elem_data{};  // Store POD struct (copyable)
+    Ship elem_ship{elem_data};  // Wrap in Ship for access
   };
 
-  auto begin() {
-    return Shiplist::Iterator(first);
-  }
-  auto end() {
-    return Shiplist::Iterator(0);
-  }
+  auto begin() { return Shiplist::Iterator(first); }
+  auto end() { return Shiplist::Iterator(0); }
 
-private:
+ private:
   shipnum_t first;
 };
 

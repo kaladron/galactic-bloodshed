@@ -373,14 +373,22 @@ static int do_merchant(Ship& s, Planet& p, std::stringstream& telegram) {
 }  // namespace
 
 /**
- * Calculates the complexity of a ship.
+ * Calculates the complexity of a ship design.
  *
- * The complexity of a ship is used in two ways:
- * 1) Determine whether a ship is too complex for the race to create, limited
- * by race.tech.
- * 2) Used in sorting the order of the ships for display.
+ * Complexity determines whether a race can build a customized ship design.
+ * If complexity(ship) > race.tech, the ship cannot be built. It's also used
+ * for sorting ships in display order.
  *
- * This is a custom algorithm to GB.
+ * The algorithm compares the ship's stats against the base template (Shipdata):
+ * - Stats above baseline accumulate as "advantage" (linear growth)
+ * - Stats below baseline accumulate as "disadvantage" (exponential decay penalty)
+ *
+ * These are combined into a deviation score, normalized by the ship's base tech
+ * requirement (higher tech ships tolerate more customization), then squared to
+ * make large deviations exponentially more expensive.
+ *
+ * A ship with no modifications returns exactly its base ABIL_TECH value.
+ * Upgrades increase complexity; downgrades slightly decrease it.
  *
  * @param s The Ship object for which the complexity is calculated.
  * @return The complexity value of the ship.
@@ -410,16 +418,24 @@ double complexity(const Ship& s) {
   system_cost(&advantage, &disadvantage, s.armor(),
               Shipdata[s.build_type()][ABIL_ARMOR]);
 
-  // additional advantages/disadvantages
-  // TODO(jeffbailey): document this function in English.
-  double factor =
-      std::sqrt((1.0 + advantage) * std::exp(-(double)disadvantage / 10.0));
-  const double tmp =
-      COMPLEXITY_FACTOR * (factor - 1.0) /
-          std::sqrt((double)(Shipdata[s.build_type()][ABIL_TECH] + 1)) +
+  const double base_tech = Shipdata[s.build_type()][ABIL_TECH];
+
+  // Combine advantage and disadvantage into a single deviation score.
+  // Result is 1.0 for unmodified ships, >1.0 for upgrades, <1.0 for downgrades.
+  const double combined_deviation =
+      std::sqrt((1.0 + advantage) * std::exp(-disadvantage / 10.0));
+
+  // Normalize by base tech (higher tech ships tolerate more customization).
+  const double normalized_deviation =
+      (COMPLEXITY_FACTOR * (combined_deviation - 1.0) /
+       std::sqrt(base_tech + 1.0)) +
       1.0;
-  factor = tmp * tmp;
-  return (factor * (double)Shipdata[s.build_type()][ABIL_TECH]);
+
+  // Square to make large deviations exponentially more expensive.
+  const double complexity_multiplier =
+      normalized_deviation * normalized_deviation;
+
+  return complexity_multiplier * base_tech;
 }
 
 bool testship(const Ship& s, GameObj& g) {

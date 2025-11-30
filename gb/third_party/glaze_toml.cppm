@@ -120,7 +120,8 @@ using glz::for_each_field;
 using glz::read_toml;
 
 /// Read TOML from a file into an object
-/// Signature: error_ctx read_file_toml(T& obj, const char* path, Buffer& buffer)
+/// Signature: error_ctx read_file_toml(T& obj, const char* path, Buffer&
+/// buffer)
 using glz::read_file_toml;
 
 // ============================================================================
@@ -133,7 +134,8 @@ using glz::read_file_toml;
 using glz::write_toml;
 
 /// Write object to TOML file
-/// Signature: error_ctx write_file_toml(const T& obj, const char* path, Buffer& buffer)
+/// Signature: error_ctx write_file_toml(const T& obj, const char* path, Buffer&
+/// buffer)
 using glz::write_file_toml;
 
 // ============================================================================
@@ -165,7 +167,8 @@ using glz::format_error;
 // Wrappers for Customizing Behavior
 // ============================================================================
 
-/// Skip a field during serialization (acknowledge existence but don't read/write)
+/// Skip a field during serialization (acknowledge existence but don't
+/// read/write)
 using glz::skip;
 
 /// Hide a field from output while allowing API access

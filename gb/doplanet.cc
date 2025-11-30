@@ -15,23 +15,23 @@ module gblib;
 
 namespace {
 bool moveship_onplanet(Ship& ship, const Planet& planet) {
-  if (!std::holds_alternative<TerraformData>(ship.special)) {
-    ship.on = 0;
+  if (!std::holds_alternative<TerraformData>(ship.special())) {
+    ship.on() = 0;
     return false;
   }
 
-  auto terraform = std::get<TerraformData>(ship.special);
-  if (ship.shipclass[terraform.index] == 's') {
-    ship.on = 0;
+  auto terraform = std::get<TerraformData>(ship.special());
+  if (ship.shipclass()[terraform.index] == 's') {
+    ship.on() = 0;
     return false;
   }
-  if (ship.shipclass[terraform.index] == 'c') {
+  if (ship.shipclass()[terraform.index] == 'c') {
     terraform.index = 0; /* reset the orders */
-    ship.special = terraform;
+    ship.special() = terraform;
   }
 
-  auto [x, y] = get_move(planet, ship.shipclass[terraform.index],
-                         {ship.land_x, ship.land_y});
+  auto [x, y] = get_move(planet, ship.shipclass()[terraform.index],
+                         {ship.land_x(), ship.land_y()});
 
   bool bounced = false;
 
@@ -42,46 +42,46 @@ bool moveship_onplanet(Ship& ship, const Planet& planet) {
     y = 1;
   bounced = true; /* bounce off of north pole! */
   if (planet.Maxy() == 1) y = 0;
-  if (ship.shipclass[terraform.index + 1] != '\0') {
+  if (ship.shipclass()[terraform.index + 1] != '\0') {
     ++terraform.index;
-    if ((ship.shipclass[terraform.index + 1] == '\0') && (!ship.notified)) {
-      ship.notified = 1;
+    if ((ship.shipclass()[terraform.index + 1] == '\0') && (!ship.notified())) {
+      ship.notified() = 1;
       std::string teleg_buf =
           std::format("%{0} is out of orders at %{1}.", ship_to_string(ship),
                       prin_ship_orbits(ship));
-      push_telegram(ship.owner, ship.governor, teleg_buf);
+      push_telegram(ship.owner(), ship.governor(), teleg_buf);
     }
-    ship.special = terraform;
+    ship.special() = terraform;
   } else if (bounced) {
-    ship.shipclass[terraform.index] +=
-        ((ship.shipclass[terraform.index] > '5') ? -6 : 6);
+    ship.shipclass()[terraform.index] +=
+        ((ship.shipclass()[terraform.index] > '5') ? -6 : 6);
   }
-  ship.land_x = x;
-  ship.land_y = y;
+  ship.land_x() = x;
+  ship.land_y() = y;
   return true;
 }
 
 // move, and then terraform
 void terraform(Ship& ship, Planet& planet, SectorMap& smap) {
   if (!moveship_onplanet(ship, planet)) return;
-  auto& s = smap.get(ship.land_x, ship.land_y);
+  auto& s = smap.get(ship.land_x(), ship.land_y());
 
-  if (s.get_condition() == races[ship.owner - 1].likesbest) {
-    std::string buf = std::format(" T{} is full of zealots!!!", ship.number);
-    push_telegram(ship.owner, ship.governor, buf);
+  if (s.get_condition() == races[ship.owner() - 1].likesbest) {
+    std::string buf = std::format(" T{} is full of zealots!!!", ship.number());
+    push_telegram(ship.owner(), ship.governor(), buf);
     return;
   }
 
   if (s.get_condition() == SectorType::SEC_GAS) {
     std::string buf =
-        std::format(" T{} is trying to terraform gas.", ship.number);
-    push_telegram(ship.owner, ship.governor, buf);
+        std::format(" T{} is trying to terraform gas.", ship.number());
+    push_telegram(ship.owner(), ship.governor(), buf);
     return;
   }
 
-  if (success((100 - (int)ship.damage) * ship.popn / ship.max_crew)) {
+  if (success((100 - (int)ship.damage()) * ship.popn() / ship.max_crew())) {
     /* only condition can be terraformed, type doesn't change */
-    s.set_condition(races[ship.owner - 1].likesbest);
+    s.set_condition(races[ship.owner() - 1].likesbest);
     s.set_eff(0);
     s.set_mobilization(0);
     s.set_popn(0);
@@ -90,8 +90,8 @@ void terraform(Ship& ship, Planet& planet, SectorMap& smap) {
     use_fuel(ship, FUEL_COST_TERRA);
     if ((random() & 01) && (planet.conditions(TOXIC) < 100))
       planet.conditions(TOXIC) += 1;
-    if ((ship.fuel < (double)FUEL_COST_TERRA) && (!ship.notified)) {
-      ship.notified = 1;
+    if ((ship.fuel() < (double)FUEL_COST_TERRA) && (!ship.notified())) {
+      ship.notified() = 1;
       msg_OOF(ship);
     }
   }
@@ -99,21 +99,22 @@ void terraform(Ship& ship, Planet& planet, SectorMap& smap) {
 
 void plow(Ship* ship, Planet& planet, SectorMap& smap) {
   if (!moveship_onplanet(*ship, planet)) return;
-  auto& s = smap.get(ship->land_x, ship->land_y);
-  if ((races[ship->owner - 1].likes[s.get_condition()]) &&
+  auto& s = smap.get(ship->land_x(), ship->land_y());
+  if ((races[ship->owner() - 1].likes[s.get_condition()]) &&
       (s.get_fert() < 100)) {
     int adjust = round_rand(
-        10 * (0.01 * (100.0 - (double)ship->damage) * (double)ship->popn) /
-        ship->max_crew);
-    if ((ship->fuel < (double)FUEL_COST_PLOW) && (!ship->notified)) {
-      ship->notified = 1;
+        10 * (0.01 * (100.0 - (double)ship->damage()) * (double)ship->popn()) /
+        ship->max_crew());
+    if ((ship->fuel() < (double)FUEL_COST_PLOW) && (!ship->notified())) {
+      ship->notified() = 1;
       msg_OOF(*ship);
       return;
     }
     s.set_fert(std::min(100U, s.get_fert() + adjust));
     if (s.get_fert() >= 100) {
-      std::string buf = std::format(" K{} is full of zealots!!!", ship->number);
-      push_telegram(ship->owner, ship->governor, buf);
+      std::string buf =
+          std::format(" K{} is full of zealots!!!", ship->number());
+      push_telegram(ship->owner(), ship->governor(), buf);
     }
     use_fuel(*ship, FUEL_COST_PLOW);
     if ((random() & 01) && (planet.conditions(TOXIC) < 100))
@@ -122,33 +123,33 @@ void plow(Ship* ship, Planet& planet, SectorMap& smap) {
 }
 
 void do_dome(Ship* ship, SectorMap& smap) {
-  auto& s = smap.get(ship->land_x, ship->land_y);
+  auto& s = smap.get(ship->land_x(), ship->land_y());
   if (s.get_eff() >= 100) {
-    std::string buf = std::format(" Y{} is full of zealots!!!", ship->number);
-    push_telegram(ship->owner, ship->governor, buf);
+    std::string buf = std::format(" Y{} is full of zealots!!!", ship->number());
+    push_telegram(ship->owner(), ship->governor(), buf);
     return;
   }
-  int adjust = round_rand(.05 * (100. - (double)ship->damage) *
-                          (double)ship->popn / ship->max_crew);
+  int adjust = round_rand(.05 * (100. - (double)ship->damage()) *
+                          (double)ship->popn() / ship->max_crew());
   s.set_eff(s.get_eff() + adjust);
   s.set_eff(std::min<unsigned int>(s.get_eff(), 100));
   use_resource(*ship, RES_COST_DOME);
 }
 
 void do_quarry(Ship* ship, Planet& planet, SectorMap& smap) {
-  auto& s = smap.get(ship->land_x, ship->land_y);
+  auto& s = smap.get(ship->land_x(), ship->land_y());
 
-  if ((ship->fuel < (double)FUEL_COST_QUARRY)) {
-    if (!ship->notified) msg_OOF(*ship);
-    ship->notified = 1;
+  if ((ship->fuel() < (double)FUEL_COST_QUARRY)) {
+    if (!ship->notified()) msg_OOF(*ship);
+    ship->notified() = 1;
     return;
   }
   /* nuke the sector */
   s.set_condition(SectorType::SEC_WASTED);
-  int prod = round_rand(races[ship->owner - 1].metabolism * (double)ship->popn /
-                        (double)ship->max_crew);
-  ship->fuel -= FUEL_COST_QUARRY;
-  prod_res[ship->owner - 1] += prod;
+  int prod = round_rand(races[ship->owner() - 1].metabolism *
+                        (double)ship->popn() / (double)ship->max_crew());
+  ship->fuel() -= FUEL_COST_QUARRY;
+  prod_res[ship->owner() - 1] += prod;
   int tox = int_rand(0, int_rand(0, prod));
   planet.conditions(TOXIC) = std::min(100, planet.conditions(TOXIC) + tox);
   if (s.get_fert() >= prod)
@@ -158,14 +159,15 @@ void do_quarry(Ship* ship, Planet& planet, SectorMap& smap) {
 }
 
 void do_berserker(EntityManager& entity_manager, Ship* ship, Planet& planet) {
-  if (ship->whatdest == ScopeLevel::LEVEL_PLAN &&
-      ship->whatorbits == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
-      ship->storbits == ship->deststar && ship->pnumorbits == ship->destpnum) {
+  if (ship->whatdest() == ScopeLevel::LEVEL_PLAN &&
+      ship->whatorbits() == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
+      ship->storbits() == ship->deststar() &&
+      ship->pnumorbits() == ship->destpnum()) {
     if (!berserker_bombard(entity_manager, *ship, planet,
-                           races[ship->owner - 1]))
-      ship->destpnum = int_rand(0, stars[ship->storbits].numplanets() - 1);
-    else if (std::holds_alternative<MindData>(ship->special)) {
-      auto mind = std::get<MindData>(ship->special);
+                           races[ship->owner() - 1]))
+      ship->destpnum() = int_rand(0, stars[ship->storbits()].numplanets() - 1);
+    else if (std::holds_alternative<MindData>(ship->special())) {
+      auto mind = std::get<MindData>(ship->special());
       if (Sdata.VN_hitlist[mind.who_killed - 1] > 0)
         --Sdata.VN_hitlist[mind.who_killed - 1];
     }
@@ -365,106 +367,106 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
   shipno = planet.ships();
   while (shipno) {
     ship = ships[shipno];
-    if (ship->alive && !ship->rad) {
+    if (ship->alive() && !ship->rad()) {
       /* planet level functions - do these here because they use the sector map
               or affect planet production */
-      switch (ship->type) {
+      switch (ship->type()) {
         case ShipType::OTYPE_VN:
           planet_doVN(*ship, planet, smap);
           break;
         case ShipType::OTYPE_BERS:
-          if (!ship->destruct || !ship->bombard)
+          if (!ship->destruct() || !ship->bombard())
             planet_doVN(*ship, planet, smap);
           else
             do_berserker(entity_manager, ship, planet);
           break;
         case ShipType::OTYPE_TERRA:
-          if ((ship->on && landed(*ship) && ship->popn)) {
-            if (ship->fuel >= (double)FUEL_COST_TERRA)
+          if ((ship->on() && landed(*ship) && ship->popn())) {
+            if (ship->fuel() >= (double)FUEL_COST_TERRA)
               terraform(*ship, planet, smap);
-            else if (!ship->notified) {
-              ship->notified = 1;
+            else if (!ship->notified()) {
+              ship->notified() = 1;
               msg_OOF(*ship);
             }
           }
           break;
         case ShipType::OTYPE_PLOW:
-          if (ship->on && landed(*ship)) {
-            if (ship->fuel >= (double)FUEL_COST_PLOW)
+          if (ship->on() && landed(*ship)) {
+            if (ship->fuel() >= (double)FUEL_COST_PLOW)
               plow(ship, planet, smap);
-            else if (!ship->notified) {
-              ship->notified = 1;
+            else if (!ship->notified()) {
+              ship->notified() = 1;
               msg_OOF(*ship);
             }
-          } else if (ship->on) {
-            std::string buf = std::format("K{} is not landed.", ship->number);
-            push_telegram(ship->owner, ship->governor, buf);
+          } else if (ship->on()) {
+            std::string buf = std::format("K{} is not landed.", ship->number());
+            push_telegram(ship->owner(), ship->governor(), buf);
           } else {
             std::string buf =
-                std::format("K{} is not switched on.", ship->number);
-            push_telegram(ship->owner, ship->governor, buf);
+                std::format("K{} is not switched on.", ship->number());
+            push_telegram(ship->owner(), ship->governor(), buf);
           }
           break;
         case ShipType::OTYPE_DOME:
-          if (ship->on && landed(*ship)) {
-            if (ship->resource >= RES_COST_DOME)
+          if (ship->on() && landed(*ship)) {
+            if (ship->resource() >= RES_COST_DOME)
               do_dome(ship, smap);
             else {
               std::string buf = std::format(
-                  "Y{} does not have enough resources.", ship->number);
-              push_telegram(ship->owner, ship->governor, buf);
+                  "Y{} does not have enough resources.", ship->number());
+              push_telegram(ship->owner(), ship->governor(), buf);
             }
-          } else if (ship->on) {
-            std::string buf = std::format("Y{} is not landed.", ship->number);
-            push_telegram(ship->owner, ship->governor, buf);
+          } else if (ship->on()) {
+            std::string buf = std::format("Y{} is not landed.", ship->number());
+            push_telegram(ship->owner(), ship->governor(), buf);
           } else {
             std::string buf =
-                std::format("Y{} is not switched on.", ship->number);
-            push_telegram(ship->owner, ship->governor, buf);
+                std::format("Y{} is not switched on.", ship->number());
+            push_telegram(ship->owner(), ship->governor(), buf);
           }
           break;
         case ShipType::OTYPE_WPLANT:
           if (landed(*ship))
-            if (ship->resource >= RES_COST_WPLANT &&
-                ship->fuel >= FUEL_COST_WPLANT)
-              prod_destruct[ship->owner - 1] += do_weapon_plant(*ship);
+            if (ship->resource() >= RES_COST_WPLANT &&
+                ship->fuel() >= FUEL_COST_WPLANT)
+              prod_destruct[ship->owner() - 1] += do_weapon_plant(*ship);
             else {
-              if (ship->resource < RES_COST_WPLANT) {
+              if (ship->resource() < RES_COST_WPLANT) {
                 std::string buf = std::format(
-                    "W{} does not have enough resources.", ship->number);
-                push_telegram(ship->owner, ship->governor, buf);
+                    "W{} does not have enough resources.", ship->number());
+                push_telegram(ship->owner(), ship->governor(), buf);
               } else {
-                std::string buf =
-                    std::format("W{} does not have enough fuel.", ship->number);
-                push_telegram(ship->owner, ship->governor, buf);
+                std::string buf = std::format("W{} does not have enough fuel.",
+                                              ship->number());
+                push_telegram(ship->owner(), ship->governor(), buf);
               }
             }
           else {
-            std::string buf = std::format("W{} is not landed.", ship->number);
-            push_telegram(ship->owner, ship->governor, buf);
+            std::string buf = std::format("W{} is not landed.", ship->number());
+            push_telegram(ship->owner(), ship->governor(), buf);
           }
           break;
         case ShipType::OTYPE_QUARRY:
-          if ((ship->on && landed(*ship) && ship->popn)) {
-            if (ship->fuel >= FUEL_COST_QUARRY)
+          if ((ship->on() && landed(*ship) && ship->popn())) {
+            if (ship->fuel() >= FUEL_COST_QUARRY)
               do_quarry(ship, planet, smap);
-            else if (!ship->notified) {
-              ship->on = 0;
+            else if (!ship->notified()) {
+              ship->on() = 0;
               msg_OOF(*ship);
             }
           } else {
             std::string buf;
-            if (!ship->on) {
-              buf = std::format("q{} is not switched on.", ship->number);
+            if (!ship->on()) {
+              buf = std::format("q{} is not switched on.", ship->number());
             }
             if (!landed(*ship)) {
-              buf = std::format("q{} is not landed.", ship->number);
+              buf = std::format("q{} is not landed.", ship->number());
             }
-            if (!ship->popn) {
+            if (!ship->popn()) {
               buf = std::format("q{} does not have workers aboard.",
-                                ship->number);
+                                ship->number());
             }
-            push_telegram(ship->owner, ship->governor, buf);
+            push_telegram(ship->owner(), ship->governor(), buf);
           }
           break;
         default:
@@ -472,7 +474,7 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
       }
       /* add fuel for ships orbiting a gas giant */
       if (!landed(*ship) && planet.type() == PlanetType::GASGIANT) {
-        switch (ship->type) {
+        switch (ship->type()) {
           case ShipType::STYPE_TANKER:
             fadd = FUEL_GAS_ADD_TANKER;
             break;
@@ -483,11 +485,11 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
             fadd = FUEL_GAS_ADD;
             break;
         }
-        fadd = std::min((double)max_fuel(*ship) - ship->fuel, fadd);
+        fadd = std::min((double)max_fuel(*ship) - ship->fuel(), fadd);
         rcv_fuel(*ship, fadd);
       }
     }
-    shipno = ship->nextship;
+    shipno = ship->nextship();
   }
 
   /* check for space mirrors (among other things) warming the planet */
@@ -829,46 +831,46 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
             (Ship**)realloc(ships, (unsigned)((Num_ships + 1) * sizeof(Ship*)));
         s2 = ships[Num_ships] = (Ship*)malloc(sizeof(Ship));
         bzero((char*)s2, sizeof(Ship));
-        s2->number = Num_ships;
-        s2->type = ShipType::OTYPE_TOXWC;
+        s2->number() = Num_ships;
+        s2->type() = ShipType::OTYPE_TOXWC;
 
-        s2->armor = Shipdata[ShipType::OTYPE_TOXWC][ABIL_ARMOR];
-        s2->guns = GTYPE_NONE;
-        s2->primary = Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS];
-        s2->primtype = shipdata_primary(ShipType::OTYPE_TOXWC);
-        s2->primary = Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS];
-        s2->sectype = shipdata_secondary(ShipType::OTYPE_TOXWC);
-        s2->max_crew = Shipdata[ShipType::OTYPE_TOXWC][ABIL_MAXCREW];
-        s2->max_resource = Shipdata[ShipType::OTYPE_TOXWC][ABIL_CARGO];
-        s2->max_fuel = Shipdata[ShipType::OTYPE_TOXWC][ABIL_FUELCAP];
-        s2->max_destruct = Shipdata[ShipType::OTYPE_TOXWC][ABIL_DESTCAP];
-        s2->max_speed = Shipdata[ShipType::OTYPE_TOXWC][ABIL_SPEED];
-        s2->build_cost = Shipcost(ShipType::OTYPE_TOXWC, races[i - 1]);
-        s2->size = ship_size(*s2);
-        s2->base_mass = 1.0; /* a hack */
-        s2->mass = s2->base_mass;
-        s2->alive = 1;
-        s2->active = 1;
-        s2->name = std::format("Scum{:04d}", Num_ships);
+        s2->armor() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_ARMOR];
+        s2->guns() = GTYPE_NONE;
+        s2->primary() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS];
+        s2->primtype() = shipdata_primary(ShipType::OTYPE_TOXWC);
+        s2->primary() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS];
+        s2->sectype() = shipdata_secondary(ShipType::OTYPE_TOXWC);
+        s2->max_crew() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_MAXCREW];
+        s2->max_resource() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_CARGO];
+        s2->max_fuel() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_FUELCAP];
+        s2->max_destruct() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_DESTCAP];
+        s2->max_speed() = Shipdata[ShipType::OTYPE_TOXWC][ABIL_SPEED];
+        s2->build_cost() = Shipcost(ShipType::OTYPE_TOXWC, races[i - 1]);
+        s2->size() = ship_size(*s2);
+        s2->base_mass() = 1.0; /* a hack */
+        s2->mass() = s2->base_mass();
+        s2->alive() = 1;
+        s2->active() = 1;
+        s2->name() = std::format("Scum{:04d}", Num_ships);
 
         insert_sh_plan(planet, s2);
 
-        s2->whatorbits = ScopeLevel::LEVEL_PLAN;
-        s2->storbits = starnum;
-        s2->pnumorbits = planetnum;
-        s2->docked = 1;
-        s2->xpos = stars[starnum].xpos() + planet.xpos();
-        s2->ypos = stars[starnum].ypos() + planet.ypos();
-        s2->land_x = int_rand(0, (int)planet.Maxx() - 1);
-        s2->land_y = int_rand(0, (int)planet.Maxy() - 1);
-        s2->whatdest = ScopeLevel::LEVEL_PLAN;
-        s2->deststar = starnum;
-        s2->destpnum = planetnum;
-        s2->owner = i;
-        s2->governor = stars[starnum].governor(i - 1);
+        s2->whatorbits() = ScopeLevel::LEVEL_PLAN;
+        s2->storbits() = starnum;
+        s2->pnumorbits() = planetnum;
+        s2->docked() = 1;
+        s2->xpos() = stars[starnum].xpos() + planet.xpos();
+        s2->ypos() = stars[starnum].ypos() + planet.ypos();
+        s2->land_x() = int_rand(0, (int)planet.Maxx() - 1);
+        s2->land_y() = int_rand(0, (int)planet.Maxy() - 1);
+        s2->whatdest() = ScopeLevel::LEVEL_PLAN;
+        s2->deststar() = starnum;
+        s2->destpnum() = planetnum;
+        s2->owner() = i;
+        s2->governor() = stars[starnum].governor(i - 1);
         t = std::min(TOXMAX, planet.conditions(TOXIC)); /* amt of tox */
         planet.conditions(TOXIC) -= t;
-        s2->special = WasteData{.toxic = static_cast<unsigned char>(t)};
+        s2->special() = WasteData{.toxic = static_cast<unsigned char>(t)};
       }
     } /* (if numsectsowned[i]) */
 

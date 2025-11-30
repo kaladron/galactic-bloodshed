@@ -43,5 +43,5 @@ export constexpr double gun_range(const Race& r) {
  * @return The computed gun range as a double.
  */
 export constexpr double gun_range(const Ship& s) {
-  return logscale((int)(s.tech + 1.0)) * SYSTEMSIZE;
+  return logscale((int)(s.tech() + 1.0)) * SYSTEMSIZE;
 }

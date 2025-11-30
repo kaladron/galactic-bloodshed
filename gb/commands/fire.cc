@@ -54,27 +54,27 @@ void fire(const command_t& argv, GameObj& g) {
 
     if (!ship_matches_filter(argv[1], from)) continue;
     if (!authorized(Governor, from)) continue;
-    if (!from.active) {
+    if (!from.active()) {
       notify(Playernum, Governor,
              std::format("{} is irradiated and inactive.\n",
                          ship_to_string(from)));
       continue;
     }
-    if (from.whatorbits == ScopeLevel::LEVEL_UNIV) {
+    if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
       if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
         continue;
       }
     } else if (!enufAP(Playernum, Governor,
-                       stars[from.storbits].AP(Playernum - 1), APcount)) {
+                       stars[from.storbits()].AP(Playernum - 1), APcount)) {
       continue;
     }
     if (cew) {
-      if (!from.cew) {
+      if (!from.cew()) {
         notify(Playernum, Governor,
                "That ship is not equipped to fire CEWs.\n");
         continue;
       }
-      if (!from.mounted) {
+      if (!from.mounted()) {
         notify(Playernum, Governor,
                "You need to have a crystal mounted to fire CEWs.\n");
         continue;
@@ -86,7 +86,7 @@ void fire(const command_t& argv, GameObj& g) {
       return;
     }
     toship = *toshiptmp;
-    if (toship == from.number) {
+    if (toship == from.number()) {
       g.out << "Get real.\n";
       continue;
     }
@@ -99,7 +99,7 @@ void fire(const command_t& argv, GameObj& g) {
     retal = check_retal_strength(*to);
     bcopy(&*to, &dummy, sizeof(Ship));
 
-    if (from.type == ShipType::OTYPE_AFV) {
+    if (from.type() == ShipType::OTYPE_AFV) {
       if (!landed(from)) {
         notify(Playernum, Governor,
                std::format("{} isn't landed on a planet!\n",
@@ -114,24 +114,25 @@ void fire(const command_t& argv, GameObj& g) {
       }
     }
     if (landed(from) && landed(*to)) {
-      if ((from.storbits != to->storbits) ||
-          (from.pnumorbits != to->pnumorbits)) {
+      if ((from.storbits() != to->storbits()) ||
+          (from.pnumorbits() != to->pnumorbits())) {
         notify(Playernum, Governor,
                "Landed ships can only attack other "
                "landed ships if they are on the same "
                "planet!\n");
         continue;
       }
-      const auto p = getplanet(from.storbits, from.pnumorbits);
-      if (!adjacent(p, {from.land_x, from.land_y}, {to->land_x, to->land_y})) {
+      const auto p = getplanet(from.storbits(), from.pnumorbits());
+      if (!adjacent(p, {from.land_x(), from.land_y()},
+                    {to->land_x(), to->land_y()})) {
         g.out << "You are not adjacent to your target!\n";
         continue;
       }
     }
     if (cew) {
-      if (from.fuel < (double)from.cew) {
+      if (from.fuel() < (double)from.cew()) {
         notify(Playernum, Governor,
-               std::format("You need {} fuel to fire CEWs.\n", from.cew));
+               std::format("You need {} fuel to fire CEWs.\n", from.cew()));
         continue;
       }
       if (landed(from) || landed(*to)) {
@@ -140,8 +141,9 @@ void fire(const command_t& argv, GameObj& g) {
                "to ships landed on planets.\n");
         continue;
       }
-      notify(Playernum, Governor, std::format("CEW strength {}.\n", from.cew));
-      strength = from.cew / 2;
+      notify(Playernum, Governor,
+             std::format("CEW strength {}.\n", from.cew()));
+      strength = from.cew() / 2;
 
     } else {
       maxstrength = check_retal_strength(from);
@@ -182,14 +184,14 @@ void fire(const command_t& argv, GameObj& g) {
     else
       use_destruct(from, strength);
 
-    if (!to->alive) post(short_buf, NewsType::COMBAT);
-    notify_star(Playernum, Governor, from.storbits, short_buf);
-    warn(to->owner, to->governor, long_buf);
+    if (!to->alive()) post(short_buf, NewsType::COMBAT);
+    notify_star(Playernum, Governor, from.storbits(), short_buf);
+    warn(to->owner(), to->governor(), long_buf);
     notify(Playernum, Governor, long_buf);
     /* defending ship retaliates */
 
     strength = 0;
-    if (retal && damage && to->protect.self) {
+    if (retal && damage && to->protect().self) {
       strength = retal;
       if (laser_on(*to)) check_overload(*to, 0, &strength);
 
@@ -201,28 +203,28 @@ void fire(const command_t& argv, GameObj& g) {
           use_fuel(*to, 2.0 * (double)strength);
         else
           use_destruct(*to, strength);
-        if (!from.alive) post(short_buf, NewsType::COMBAT);
-        notify_star(Playernum, Governor, from.storbits, short_buf);
+        if (!from.alive()) post(short_buf, NewsType::COMBAT);
+        notify_star(Playernum, Governor, from.storbits(), short_buf);
         notify(Playernum, Governor, long_buf);
-        warn(to->owner, to->governor, long_buf);
+        warn(to->owner(), to->governor(), long_buf);
       }
     }
     /* protecting ships retaliate individually if damage was inflicted */
     /* AFVs immune to retaliation of this type */
-    if (damage && from.alive && from.type != ShipType::OTYPE_AFV) {
-      if (to->whatorbits == ScopeLevel::LEVEL_STAR) /* star level ships */
-        sh = stars[to->storbits].ships();
-      if (to->whatorbits == ScopeLevel::LEVEL_PLAN) { /* planet level ships */
-        const auto p = getplanet(to->storbits, to->pnumorbits);
+    if (damage && from.alive() && from.type() != ShipType::OTYPE_AFV) {
+      if (to->whatorbits() == ScopeLevel::LEVEL_STAR) /* star level ships */
+        sh = stars[to->storbits()].ships();
+      if (to->whatorbits() == ScopeLevel::LEVEL_PLAN) { /* planet level ships */
+        const auto p = getplanet(to->storbits(), to->pnumorbits());
         sh = p.ships();
       }
       ShipList shiplist(g.entity_manager, sh);
       for (auto ship_handle : shiplist) {
-        if (!from.alive) break;
+        if (!from.alive()) break;
         Ship& ship = *ship_handle;
-        if (ship.protect.on && (ship.protect.ship == toship) &&
-            (ship.protect.ship == toship) && ship.number != from.number &&
-            ship.number != toship && ship.alive && ship.active) {
+        if (ship.protect().on && (ship.protect().ship == toship) &&
+            (ship.protect().ship == toship) && ship.number() != from.number() &&
+            ship.number() != toship && ship.alive() && ship.active()) {
           strength = check_retal_strength(ship);
           if (laser_on(ship)) check_overload(ship, 0, &strength);
 
@@ -233,16 +235,16 @@ void fire(const command_t& argv, GameObj& g) {
               use_fuel(ship, 2.0 * (double)strength);
             else
               use_destruct(ship, strength);
-            if (!from.alive) post(short_buf, NewsType::COMBAT);
-            notify_star(Playernum, Governor, from.storbits, short_buf);
+            if (!from.alive()) post(short_buf, NewsType::COMBAT);
+            notify_star(Playernum, Governor, from.storbits(), short_buf);
             notify(Playernum, Governor, long_buf);
-            warn(ship.owner, ship.governor, long_buf);
+            warn(ship.owner(), ship.governor(), long_buf);
           }
         }
       }
     }
     putship(*to);
-    deductAPs(g, APcount, from.storbits);
+    deductAPs(g, APcount, from.storbits());
   }  // end of ShipList iteration
 }
 }  // namespace GB::commands

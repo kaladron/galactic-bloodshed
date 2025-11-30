@@ -17,7 +17,7 @@ void order(const command_t& argv, GameObj& g) {
     DispOrdersHeader(Playernum, Governor);
     const ShipList kShips(g.entity_manager, g, ShipList::IterationType::Scope);
     for (const Ship* ship : kShips) {
-      if (ship->owner == Playernum && authorized(Governor, *ship)) {
+      if (ship->owner() == Playernum && authorized(Governor, *ship)) {
         DispOrders(Playernum, Governor, *ship);
       }
     }

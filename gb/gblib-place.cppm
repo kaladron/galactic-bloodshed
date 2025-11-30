@@ -42,9 +42,9 @@ void Place::getplace2(GameObj& g, std::string_view string,
         return;
       case ScopeLevel::LEVEL_SHIP: {
         auto ship = getship(shipno);
-        level = ship->whatorbits;
+        level = ship->whatorbits();
         // TODO(jeffbailey): Fix 'cs .' for ships within ships
-        if (level == ScopeLevel::LEVEL_SHIP) shipno = ship->destshipno;
+        if (level == ScopeLevel::LEVEL_SHIP) shipno = ship->destshipno();
         break;
       }
       case ScopeLevel::LEVEL_STAR:
@@ -166,12 +166,12 @@ Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
         err = true;
         return;
       }
-      if ((ship->owner == Playernum || ignoreexpl || g.god) &&
-          (ship->alive || g.god)) {
+      if ((ship->owner() == Playernum || ignoreexpl || g.god) &&
+          (ship->alive() || g.god)) {
         level = ScopeLevel::LEVEL_SHIP;
-        shipno = ship->number;
-        snum = ship->storbits;
-        pnum = ship->pnumorbits;
+        shipno = ship->number();
+        snum = ship->storbits();
+        pnum = ship->pnumorbits();
         return;
       }
       err = true;

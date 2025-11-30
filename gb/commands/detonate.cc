@@ -25,15 +25,15 @@ void detonate(const command_t& argv, GameObj& g) {
     if (!ship_matches_filter(argv[1], s)) continue;
     if (!authorized(Governor, s)) continue;
 
-    if (s.type != ShipType::STYPE_MINE) {
+    if (s.type() != ShipType::STYPE_MINE) {
       g.out << "That is not a mine.\n";
       continue;
     }
-    if (!s.on) {
+    if (!s.on()) {
       g.out << "The mine is not activated.\n";
       continue;
     }
-    if (s.docked || s.whatorbits == ScopeLevel::LEVEL_SHIP) {
+    if (s.docked() || s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
       g.out << "The mine is docked or landed.\n";
       continue;
     }

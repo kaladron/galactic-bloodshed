@@ -111,7 +111,7 @@ class ShipTacticalItem : public TacticalItem {
 
 public:
   explicit ShipTacticalItem(const Ship* ship)
-      : TacticalItem(ship->xpos, ship->ypos), ship_(ship) {}
+      : TacticalItem(ship->xpos(), ship->ypos()), ship_(ship) {}
 
   const Ship& ship() const {
     return *ship_;
@@ -231,31 +231,31 @@ void ShipTacticalItem::add_tactical_header_row(
     tabulate::Table& table, GameObj&, player_t,
     const TacticalParams& params) const {
   const auto& s = *ship_;
-  Place where{s.whatorbits, s.storbits, s.pnumorbits};
+  Place where{s.whatorbits(), s.storbits(), s.pnumorbits()};
 
-  std::string name_str = s.active ? s.name : "INACTIVE";
+  std::string name_str = s.active() ? s.name() : "INACTIVE";
   std::string orbits_str = where.to_string();
 
   // Build landed location suffix
   std::string location_suffix;
   if (landed(s)) {
-    location_suffix = std::format(" ({},{})", s.land_x, s.land_y);
+    location_suffix = std::format(" ({},{})", s.land_x(), s.land_y());
   }
 
   // Build inactive suffix
   std::string inactive_suffix;
-  if (!s.active) {
-    inactive_suffix = std::format(" INACTIVE({})", s.rad);
+  if (!s.active()) {
+    inactive_suffix = std::format(" INACTIVE({})", s.rad());
   }
 
   table.add_row(
-      {std::format("{}", s.number), std::format("{}", Shipltrs[s.type]),
-       name_str, std::format("{:.0f}", s.tech),
-       std::format("{}{}/{}{}", s.primary, caliber_char(s.primtype),
-                   s.secondary, caliber_char(s.sectype)),
-       std::format("{}", s.armor), std::format("{}", s.size),
-       std::format("{}", s.destruct), std::format("{:.1f}", s.fuel),
-       std::format("{}%", s.damage), std::format("{}", params.fspeed),
+      {std::format("{}", s.number()), std::format("{}", Shipltrs[s.type()]),
+       name_str, std::format("{:.0f}", s.tech()),
+       std::format("{}{}/{}{}", s.primary(), caliber_char(s.primtype()),
+                   s.secondary(), caliber_char(s.sectype())),
+       std::format("{}", s.armor()), std::format("{}", s.size()),
+       std::format("{}", s.destruct()), std::format("{:.1f}", s.fuel()),
+       std::format("{}%", s.damage()), std::format("{}", params.fspeed),
        params.fev ? "yes" : "",
        std::format("{}{}{}", orbits_str, location_suffix, inactive_suffix)});
 }
@@ -271,38 +271,38 @@ void ShipTacticalItem::add_tactical_target_row(
   // If shiplist is non-empty, only show ships whose type is in the list
   if (ctx.filter_player.has_value()) {
     // Player filter mode: show only ships owned by specified player
-    if (s.owner != *ctx.filter_player) {
+    if (s.owner() != *ctx.filter_player) {
       return;
     }
   } else if (!ctx.shiplist.empty()) {
     // Ship type filter mode: show only ships whose type is in the list
-    if (!listed(s.type, ctx.shiplist)) {
+    if (!listed(s.type(), ctx.shiplist)) {
       return;
     }
   }
 
   // Don't show ships we own and are authorized for
-  if (s.owner == g.player && authorized(g.governor, s)) {
+  if (s.owner() == g.player && authorized(g.governor, s)) {
     return;
   }
 
   // Don't show dead ships
-  if (!s.alive) {
+  if (!s.alive()) {
     return;
   }
 
   // Don't show canisters or greenhouse gases
-  if (s.type == ShipType::OTYPE_CANIST || s.type == ShipType::OTYPE_GREEN) {
+  if (s.type() == ShipType::OTYPE_CANIST || s.type() == ShipType::OTYPE_GREEN) {
     return;
   }
 
   // Calculate target ship's evasion and speed (only if moving and active)
   bool tev = false;
   int tspeed = 0;
-  if ((s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) && !s.docked &&
-      s.active) {
-    tspeed = s.speed;
-    tev = s.protect.evade;
+  if ((s.whatdest() != ScopeLevel::LEVEL_UNIV || s.navigate().on) &&
+      !s.docked() && s.active()) {
+    tspeed = s.speed();
+    tev = s.protect().evade;
   }
 
   // Calculate combat parameters using firer's data and target's data
@@ -318,44 +318,44 @@ void ShipTacticalItem::add_tactical_target_row(
   }
 
   // Determine diplomatic status indicator
-  const auto* war_status = isset(race.atwar, s.owner)    ? "-"
-                           : isset(race.allied, s.owner) ? "+"
-                                                         : " ";
+  const auto* war_status = isset(race.atwar, s.owner())    ? "-"
+                           : isset(race.allied, s.owner()) ? "+"
+                                                           : " ";
 
   // Filter out allied ships if enemies-only mode is enabled
-  if (ctx.enemies_only && isset(race.allied, s.owner)) {
+  if (ctx.enemies_only && isset(race.allied, s.owner())) {
     return;
   }
 
   // Build location string
   std::string loc_str;
   if (landed(s)) {
-    loc_str = std::format("({},{})", s.land_x, s.land_y);
+    loc_str = std::format("({},{})", s.land_x(), s.land_y());
   }
 
   // Build status suffix
-  std::string status_suffix = s.active ? "" : " INACTIVE";
+  std::string status_suffix = s.active() ? "" : " INACTIVE";
 
   // Add row to table
-  table.add_row({std::format("{}", s.number),
-                 std::format("{}{},{}", war_status, s.owner, s.governor),
-                 std::format("{}", Shipltrs[s.type]),
-                 std::format("{:.14}", s.name), std::format("{:.0f}", dist),
+  table.add_row({std::format("{}", s.number()),
+                 std::format("{}{},{}", war_status, s.owner(), s.governor()),
+                 std::format("{}", Shipltrs[s.type()]),
+                 std::format("{:.14}", s.name()), std::format("{:.0f}", dist),
                  std::format("{}", factor), std::format("{}", body),
                  std::format("{}", tspeed), tev ? "yes" : "",
-                 std::format("{}%", prob), std::format("{}%", s.damage),
+                 std::format("{}%", prob), std::format("{}%", s.damage()),
                  std::format("{}{}", loc_str, status_suffix)});
 }
 
 TacticalParams ShipTacticalItem::get_tactical_params(const Race&) const {
   TacticalParams params{};
   const auto& s = *ship_;
-  params.tech = s.tech;
+  params.tech = s.tech();
 
-  if ((s.whatdest != ScopeLevel::LEVEL_UNIV || s.navigate.on) && !s.docked &&
-      s.active) {
-    params.fspeed = s.speed;
-    params.fev = s.protect.evade;
+  if ((s.whatdest() != ScopeLevel::LEVEL_UNIV || s.navigate().on) &&
+      !s.docked() && s.active()) {
+    params.fspeed = s.speed();
+    params.fev = s.protect().evade;
   }
 
   return params;
@@ -366,10 +366,10 @@ bool ShipTacticalItem::should_report_tactical(player_t player_num,
   const auto& s = *ship_;
 
   // Don't report on ships that are dead
-  if (!s.alive) return false;
+  if (!s.alive()) return false;
 
   // Don't report on ships not owned by this player
-  if (s.owner != player_num) return false;
+  if (s.owner() != player_num) return false;
 
   // Don't report on ships this governor is not authorized for
   if (!authorized(governor, s)) return false;
@@ -472,11 +472,11 @@ void ShipTacticalItem::report_tactical(
     // Build firing ship parameters
     FiringShipParams firer{
         .tech = params.tech,
-        .damage = s.damage,
+        .damage = s.damage(),
         .evade = params.fev,
         .speed = params.fspeed,
         .caliber = current_caliber(s),
-        .laser_focused = (laser_on(s) && s.focus),
+        .laser_focused = (laser_on(s) && s.focus()),
     };
 
     // Polymorphic call - adds row to table for ships, skips for planets not in
@@ -723,11 +723,11 @@ void tactical(const command_t& argv, GameObj& g) {
         add_tactical_ship(items, ship);
 
         // Then collect ships/planets in the same area based on ship's location
-        if (ship->whatorbits == ScopeLevel::LEVEL_STAR) {
-          star_get_tactical_items(g, items, g.player, ship->storbits);
-        } else if (ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
-          plan_get_tactical_items(g, items, g.player, ship->storbits,
-                                  ship->pnumorbits);
+        if (ship->whatorbits() == ScopeLevel::LEVEL_STAR) {
+          star_get_tactical_items(g, items, g.player, ship->storbits());
+        } else if (ship->whatorbits() == ScopeLevel::LEVEL_PLAN) {
+          plan_get_tactical_items(g, items, g.player, ship->storbits(),
+                                  ship->pnumorbits());
         }
 
         l++;
@@ -775,11 +775,11 @@ void tactical(const command_t& argv, GameObj& g) {
         // Also collect ships in the same area for targets (per documentation:
         // "Enemy ships will only appear on tactical display if they are in the
         // same scope as the calling ship")
-        if (scoped_ship->whatorbits == ScopeLevel::LEVEL_STAR) {
-          star_get_tactical_items(g, items, g.player, scoped_ship->storbits);
-        } else if (scoped_ship->whatorbits == ScopeLevel::LEVEL_PLAN) {
-          plan_get_tactical_items(g, items, g.player, scoped_ship->storbits,
-                                  scoped_ship->pnumorbits);
+        if (scoped_ship->whatorbits() == ScopeLevel::LEVEL_STAR) {
+          star_get_tactical_items(g, items, g.player, scoped_ship->storbits());
+        } else if (scoped_ship->whatorbits() == ScopeLevel::LEVEL_PLAN) {
+          plan_get_tactical_items(g, items, g.player, scoped_ship->storbits(),
+                                  scoped_ship->pnumorbits());
         }
       }
       break;

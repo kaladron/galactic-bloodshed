@@ -268,13 +268,13 @@ std::string do_prompt(GameObj& g) {
 
   const auto* s = g.entity_manager.peek_ship(g.shipno);
   if (!s) return " ( [?] /#? )\n";
-  switch (s->whatorbits) {
+  switch (s->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [[0]] /#{1} )\n", Sdata.AP[Playernum - 1],
                             g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
-      auto star = g.entity_manager.get_star(s->storbits);
+      auto star = g.entity_manager.get_star(s->storbits());
       const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1}/#{2} )\n",
                             star_ref.AP(Playernum - 1), star_ref.get_name(),
@@ -282,7 +282,7 @@ std::string do_prompt(GameObj& g) {
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
-      auto star = g.entity_manager.get_star(s->storbits);
+      auto star = g.entity_manager.get_star(s->storbits());
       const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1}/{2}/#{3} )\n",
                             star_ref.AP(Playernum - 1), star_ref.get_name(),
@@ -297,27 +297,27 @@ std::string do_prompt(GameObj& g) {
      are in a ship within a ship, or deeper. I am certain this can be
      done more elegantly (a lot more) but I don't feel like trying
      that right now. right now I want it to function. Maarten */
-  const auto* s2 = g.entity_manager.peek_ship(s->destshipno);
+  const auto* s2 = g.entity_manager.peek_ship(s->destshipno());
   if (!s2) return " ( [?] /#?/#? )\n";
-  switch (s2->whatorbits) {
+  switch (s2->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] /#{1}/#{2} )\n", Sdata.AP[Playernum - 1],
-                            s->destshipno, g.shipno);
+                            s->destshipno(), g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
-      const auto* star = g.entity_manager.peek_star(s->storbits);
+      const auto* star = g.entity_manager.peek_star(s->storbits());
       if (!star) return " ( [?] /?/#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/#{2}/#{3} )\n",
                             star->AP(Playernum - 1), star->get_name(),
-                            s->destshipno, g.shipno);
+                            s->destshipno(), g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
-      const auto* star = g.entity_manager.peek_star(s->storbits);
+      const auto* star = g.entity_manager.peek_star(s->storbits());
       if (!star) return " ( [?] /?/?/#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
                             star->AP(Playernum - 1), star->get_name(),
-                            star->get_planet_name(g.pnum), s->destshipno,
+                            star->get_planet_name(g.pnum), s->destshipno(),
                             g.shipno);
       return prompt.str();
     }
@@ -325,29 +325,29 @@ std::string do_prompt(GameObj& g) {
       break;  // That's the rest of this function.  (Ship w/in ship w/in ship)
   }
 
-  while (s2->whatorbits == ScopeLevel::LEVEL_SHIP) {
-    s2 = g.entity_manager.peek_ship(s2->destshipno);
+  while (s2->whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    s2 = g.entity_manager.peek_ship(s2->destshipno());
     if (!s2) return " ( [?] / /../#?/#? )\n";
   }
-  switch (s2->whatorbits) {
+  switch (s2->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] / /../#{1}/#{2} )\n",
-                            Sdata.AP[Playernum - 1], s->destshipno, g.shipno);
+                            Sdata.AP[Playernum - 1], s->destshipno(), g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
-      const auto* star = g.entity_manager.peek_star(s->storbits);
+      const auto* star = g.entity_manager.peek_star(s->storbits());
       if (!star) return " ( [?] /?/ /../#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
                             star->AP(Playernum - 1), star->get_name(),
-                            s->destshipno, g.shipno);
+                            s->destshipno(), g.shipno);
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
-      const auto* star = g.entity_manager.peek_star(s->storbits);
+      const auto* star = g.entity_manager.peek_star(s->storbits());
       if (!star) return " ( [?] /?/?/ /../#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
                             star->AP(Playernum - 1), star->get_name(),
-                            star->get_planet_name(g.pnum), s->destshipno,
+                            star->get_planet_name(g.pnum), s->destshipno(),
                             g.shipno);
       return prompt.str();
     }
@@ -1288,28 +1288,28 @@ void compute_power_blocks() {
 static double GetComplexity(const ShipType ship) {
   Ship s;
 
-  s.armor = Shipdata[ship][ABIL_ARMOR];
-  s.guns = Shipdata[ship][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
-  s.primary = Shipdata[ship][ABIL_GUNS];
-  s.primtype = shipdata_primary(ship);
-  s.secondary = Shipdata[ship][ABIL_GUNS];
-  s.sectype = shipdata_secondary(ship);
-  s.max_crew = Shipdata[ship][ABIL_MAXCREW];
-  s.max_resource = Shipdata[ship][ABIL_CARGO];
-  s.max_hanger = Shipdata[ship][ABIL_HANGER];
-  s.max_destruct = Shipdata[ship][ABIL_DESTCAP];
-  s.max_fuel = Shipdata[ship][ABIL_FUELCAP];
-  s.max_speed = Shipdata[ship][ABIL_SPEED];
-  s.build_type = ship;
-  s.mount = Shipdata[ship][ABIL_MOUNT];
-  s.hyper_drive.has = Shipdata[ship][ABIL_JUMP];
-  s.cloak = 0;
-  s.laser = Shipdata[ship][ABIL_LASER];
-  s.cew = 0;
-  s.cew_range = 0;
-  s.size = ship_size(s);
-  s.base_mass = getmass(s);
-  s.mass = getmass(s);
+  s.armor() = Shipdata[ship][ABIL_ARMOR];
+  s.guns() = Shipdata[ship][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
+  s.primary() = Shipdata[ship][ABIL_GUNS];
+  s.primtype() = shipdata_primary(ship);
+  s.secondary() = Shipdata[ship][ABIL_GUNS];
+  s.sectype() = shipdata_secondary(ship);
+  s.max_crew() = Shipdata[ship][ABIL_MAXCREW];
+  s.max_resource() = Shipdata[ship][ABIL_CARGO];
+  s.max_hanger() = Shipdata[ship][ABIL_HANGER];
+  s.max_destruct() = Shipdata[ship][ABIL_DESTCAP];
+  s.max_fuel() = Shipdata[ship][ABIL_FUELCAP];
+  s.max_speed() = Shipdata[ship][ABIL_SPEED];
+  s.build_type() = ship;
+  s.mount() = Shipdata[ship][ABIL_MOUNT];
+  s.hyper_drive().has = Shipdata[ship][ABIL_JUMP];
+  s.cloak() = 0;
+  s.laser() = Shipdata[ship][ABIL_LASER];
+  s.cew() = 0;
+  s.cew_range() = 0;
+  s.size() = ship_size(s);
+  s.base_mass() = getmass(s);
+  s.mass() = getmass(s);
 
   return complexity(s);
 }

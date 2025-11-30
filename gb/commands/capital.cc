@@ -39,7 +39,7 @@ void capital(const command_t& argv, GameObj& g) {
   }
 
   if (argv.size() == 2) {
-    starnum_t snum = s->storbits;
+    starnum_t snum = s->storbits();
     if (testship(*s, g)) {
       g.out << "You can't do that!\n";
       return;
@@ -58,7 +58,7 @@ void capital(const command_t& argv, GameObj& g) {
     if (!enufAP(g.player, g.governor, star->AP(g.player - 1), kAPCost)) {
       return;
     }
-    if (s->type != ShipType::OTYPE_GOV) {
+    if (s->type() != ShipType::OTYPE_GOV) {
       g.out << std::format("That ship is not a {}.\n",
                            Shipnames[ShipType::OTYPE_GOV]);
       return;
@@ -72,7 +72,7 @@ void capital(const command_t& argv, GameObj& g) {
   }
 
   g.out << std::format("Efficiency of governmental center: {:.0f}%.\n",
-                       ((double)s->popn / (double)max_crew(*s)) *
-                           (100 - (double)s->damage));
+                       ((double)s->popn() / (double)max_crew(*s)) *
+                           (100 - (double)s->damage()));
 }
 }  // namespace GB::commands

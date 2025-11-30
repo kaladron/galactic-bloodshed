@@ -359,17 +359,19 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
       std::string json_string(json_data);
       sqlite3_finalize(stmt);
 
-      // Deserialize from JSON
-      Ship ship{};
-      auto result = glz::read_json(ship, json_string);
+      // Deserialize from JSON into ship_struct, then wrap in Ship
+      ship_struct ship_data{};
+      auto result = glz::read_json(ship_data, json_string);
       if (!result) {
+        Ship ship{ship_data};
         // Handle the optional Ship** parameter for compatibility
         if (s != nullptr) {
           if ((*s = (Ship*)malloc(sizeof(Ship))) == nullptr) {
             printf("getship:malloc() error \n");
             exit(0);
           }
-          **s = ship;
+          // Use placement new to construct Ship in allocated memory
+          new (*s) Ship(ship_data);
         }
 
         return ship;
@@ -653,8 +655,8 @@ void putsmap(const SectorMap& map, const Planet& p) {
 }
 
 void putship(const Ship& s) {
-  // Serialize Ship to JSON
-  auto json_result = glz::write_json(s);
+  // Serialize ship_struct to JSON (Ship wrapper has get_struct())
+  auto json_result = glz::write_json(s.get_struct());
   if (!json_result.has_value()) {
     std::println(stderr, "Error: Failed to serialize Ship to JSON");
     return;
@@ -666,7 +668,7 @@ void putship(const Ship& s) {
   const char* sql = "REPLACE INTO tbl_ship (id, data) VALUES (?1, ?2)";
 
   sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-  sqlite3_bind_int(stmt, 1, s.number);
+  sqlite3_bind_int(stmt, 1, s.number());
   sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {

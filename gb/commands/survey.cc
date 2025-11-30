@@ -143,22 +143,22 @@ void survey(const command_t& argv, GameObj& g) {
         inhere = p.info(Playernum - 1).numsectsowned;
         const ShipList kShips(g.entity_manager, p.ships());
         for (const Ship* shipa : kShips) {
-          if (shipa->owner == Playernum &&
-              (shipa->popn || (shipa->type == ShipType::OTYPE_PROBE)))
+          if (shipa->owner() == Playernum &&
+              (shipa->popn() || (shipa->type() == ShipType::OTYPE_PROBE)))
             inhere = 1;
-          if (shipa->alive && landed(*shipa) &&
-              shiplocs[shipa->land_x][shipa->land_y].pos <
+          if (shipa->alive() && landed(*shipa) &&
+              shiplocs[shipa->land_x()][shipa->land_y()].pos <
                   MAX_SHIPS_PER_SECTOR) {
-            shiplocs[shipa->land_x][shipa->land_y]
-                .shipstuffs[shiplocs[shipa->land_x][shipa->land_y].pos]
-                .shipno = shipa->number;
-            shiplocs[shipa->land_x][shipa->land_y]
-                .shipstuffs[shiplocs[shipa->land_x][shipa->land_y].pos]
-                .owner = shipa->owner;
-            shiplocs[shipa->land_x][shipa->land_y]
-                .shipstuffs[shiplocs[shipa->land_x][shipa->land_y].pos]
-                .ltr = Shipltrs[shipa->type];
-            shiplocs[shipa->land_x][shipa->land_y].pos++;
+            shiplocs[shipa->land_x()][shipa->land_y()]
+                .shipstuffs[shiplocs[shipa->land_x()][shipa->land_y()].pos]
+                .shipno = shipa->number();
+            shiplocs[shipa->land_x()][shipa->land_y()]
+                .shipstuffs[shiplocs[shipa->land_x()][shipa->land_y()].pos]
+                .owner = shipa->owner();
+            shiplocs[shipa->land_x()][shipa->land_y()]
+                .shipstuffs[shiplocs[shipa->land_x()][shipa->land_y()].pos]
+                .ltr = Shipltrs[shipa->type()];
+            shiplocs[shipa->land_x()][shipa->land_y()].pos++;
           }
         }
       }

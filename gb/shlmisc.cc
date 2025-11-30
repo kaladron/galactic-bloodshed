@@ -12,7 +12,7 @@ import std.compat;
 module gblib;
 
 bool authorized(const governor_t Governor, const Ship& ship) {
-  return (!Governor || ship.governor == Governor);
+  return (!Governor || ship.governor() == Governor);
 }
 
 /**
@@ -54,7 +54,7 @@ shipnum_t start_shiplist(GameObj& g, const std::string_view p) {
     }
     case ScopeLevel::LEVEL_SHIP:
       auto ship = getship(g.shipno);
-      return ship->ships;
+      return ship->ships();
   }
 }
 
@@ -65,7 +65,7 @@ shipnum_t do_shiplist(Ship** s, shipnum_t* nextshipno) {
 
   if (!getship(s, shipno)) /* allocate memory, free in loop */
     return 0;
-  *nextshipno = (*s)->nextship;
+  *nextshipno = (*s)->nextship();
   return shipno;
 }
 
@@ -76,7 +76,7 @@ shipnum_t do_shiplist(Ship** s, shipnum_t* nextshipno) {
  */
 bool in_list(const player_t playernum, const std::string_view list,
              const Ship& s, shipnum_t* nextshipno) {
-  if (s.owner != playernum || !s.alive) return false;
+  if (s.owner() != playernum || !s.alive()) return false;
 
   if (list.length() == 0) return false;
 
@@ -87,7 +87,7 @@ bool in_list(const player_t playernum, const std::string_view list,
 
   // Match either the ship letter or * for wildcard.
   for (const auto& p : list)
-    if (p == Shipltrs[s.type] || p == '*') return true;
+    if (p == Shipltrs[s.type()] || p == '*') return true;
   return false;
 }
 

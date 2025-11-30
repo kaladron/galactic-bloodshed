@@ -102,7 +102,8 @@ using glz::for_each_field;
 using glz::read_json;
 
 /// Read JSON from a file into an object
-/// Signature: error_ctx read_file_json(T& obj, const char* path, Buffer& buffer)
+/// Signature: error_ctx read_file_json(T& obj, const char* path, Buffer&
+/// buffer)
 using glz::read_file_json;
 
 // ============================================================================
@@ -110,11 +111,13 @@ using glz::read_file_json;
 // ============================================================================
 
 /// Write object to JSON string
-/// Returns std::expected<std::string, error_ctx> or error_ctx if buffer provided
+/// Returns std::expected<std::string, error_ctx> or error_ctx if buffer
+/// provided
 using glz::write_json;
 
 /// Write object to JSON file
-/// Signature: error_ctx write_file_json(const T& obj, const char* path, Buffer& buffer)
+/// Signature: error_ctx write_file_json(const T& obj, const char* path, Buffer&
+/// buffer)
 using glz::write_file_json;
 
 // ============================================================================
@@ -161,7 +164,8 @@ using glz::set;
 // Wrappers for Customizing Behavior
 // ============================================================================
 
-/// Skip a field during serialization (acknowledge existence but don't read/write)
+/// Skip a field during serialization (acknowledge existence but don't
+/// read/write)
 using glz::skip;
 
 /// Hide a field from JSON output while allowing API access

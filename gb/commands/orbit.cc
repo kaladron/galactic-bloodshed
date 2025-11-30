@@ -103,7 +103,7 @@ void orbit(const command_t& argv, GameObj& g) {
         char shipbuf[256];
         for (auto ship_handle : ships) {
           const Ship& s = ship_handle.peek();  // Read-only access
-          if (DontDispNum != s.number) {
+          if (DontDispNum != s.number()) {
             shipbuf[0] = '\0';
             DispShip(g, *where, &s, Race, shipbuf);
             strcat(output, shipbuf);
@@ -134,7 +134,7 @@ void orbit(const command_t& argv, GameObj& g) {
         ShipList ships(g.entity_manager, stars[where->snum].ships());
         for (auto ship_handle : ships) {
           const Ship& s = ship_handle.peek();  // Read-only access
-          if (s.owner == g.player && shipsight(s)) {
+          if (s.owner() == g.player && shipsight(s)) {
             iq = true; /* you are there to sight, need a crew */
             break;
           }
@@ -145,9 +145,9 @@ void orbit(const command_t& argv, GameObj& g) {
         char shipbuf[256];
         for (auto ship_handle : ships) {
           const Ship& s = ship_handle.peek();  // Read-only access
-          if (DontDispNum != s.number &&
-              !(s.owner != g.player && s.type == ShipType::STYPE_MINE)) {
-            if ((s.owner == g.player) || iq) {
+          if (DontDispNum != s.number() &&
+              !(s.owner() != g.player && s.type() == ShipType::STYPE_MINE)) {
+            if ((s.owner() == g.player) || iq) {
               shipbuf[0] = '\0';
               DispShip(g, *where, &s, Race, shipbuf);
               strcat(output, shipbuf);
@@ -170,7 +170,7 @@ void orbit(const command_t& argv, GameObj& g) {
       ShipList ships(g.entity_manager, p.ships());
       for (auto ship_handle : ships) {
         const Ship& s = ship_handle.peek();  // Read-only access
-        if (s.owner == g.player && shipsight(s)) {
+        if (s.owner() == g.player && shipsight(s)) {
           iq = true; /* you are there to sight, need a crew */
           break;
         }
@@ -180,9 +180,9 @@ void orbit(const command_t& argv, GameObj& g) {
         char shipbuf[256];
         for (auto ship_handle : ships) {
           const Ship& s = ship_handle.peek();  // Read-only access
-          if (DontDispNum != s.number) {
+          if (DontDispNum != s.number()) {
             if (!landed(s)) {
-              if ((s.owner == g.player) || iq) {
+              if ((s.owner() == g.player) || iq) {
                 shipbuf[0] = '\0';
                 DispShip(g, *where, &s, Race, shipbuf, p);
                 strcat(output, shipbuf);
@@ -291,42 +291,42 @@ static void DispShip(const GameObj& g, const Place& where, const Ship* ship,
   double yt;
   double slope;
 
-  if (!ship->alive) return;
+  if (!ship->alive()) return;
 
   *string = '\0';
 
   switch (where.level) {
     case ScopeLevel::LEVEL_PLAN:
       x = (int)(SCALE +
-                (SCALE * (ship->xpos - (stars[where.snum].xpos() + pl.xpos()) -
-                          Lastx)) /
+                (SCALE * (ship->xpos() -
+                          (stars[where.snum].xpos() + pl.xpos()) - Lastx)) /
                     (PLORBITSIZE * Zoom));
       y = (int)(SCALE +
-                (SCALE * (ship->ypos - (stars[where.snum].ypos() + pl.ypos()) -
-                          Lasty)) /
+                (SCALE * (ship->ypos() -
+                          (stars[where.snum].ypos() + pl.ypos()) - Lasty)) /
                     (PLORBITSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_STAR:
       x = (int)(SCALE +
-                (SCALE * (ship->xpos - stars[where.snum].xpos() - Lastx)) /
+                (SCALE * (ship->xpos() - stars[where.snum].xpos() - Lastx)) /
                     (SYSTEMSIZE * Zoom));
       y = (int)(SCALE +
-                (SCALE * (ship->ypos - stars[where.snum].ypos() - Lasty)) /
+                (SCALE * (ship->ypos() - stars[where.snum].ypos() - Lasty)) /
                     (SYSTEMSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_UNIV:
-      x = (int)(SCALE + (SCALE * (ship->xpos - Lastx)) / (UNIVSIZE * Zoom));
-      y = (int)(SCALE + (SCALE * (ship->ypos - Lasty)) / (UNIVSIZE * Zoom));
+      x = (int)(SCALE + (SCALE * (ship->xpos() - Lastx)) / (UNIVSIZE * Zoom));
+      y = (int)(SCALE + (SCALE * (ship->ypos() - Lasty)) / (UNIVSIZE * Zoom));
       break;
     default:
       notify(g.player, g.governor, "WHOA! error in DispShip.\n");
       return;
   }
 
-  switch (ship->type) {
+  switch (ship->type()) {
     case ShipType::STYPE_MIRROR: {
-      if (std::holds_alternative<AimedAtData>(ship->special)) {
-        auto aimed_at = std::get<AimedAtData>(ship->special);
+      if (std::holds_alternative<AimedAtData>(ship->special())) {
+        auto aimed_at = std::get<AimedAtData>(ship->special());
         if (aimed_at.level == ScopeLevel::LEVEL_STAR) {
           xt = stars[aimed_at.snum].xpos();
           yt = stars[aimed_at.snum].ypos();
@@ -344,8 +344,8 @@ static void DispShip(const GameObj& g, const Place& where, const Ship* ship,
         } else if (aimed_at.level == ScopeLevel::LEVEL_SHIP) {
           auto aship = getship(aimed_at.shipno);
           if (aship) {
-            xt = aship->xpos;
-            yt = aship->ypos;
+            xt = aship->xpos();
+            yt = aship->ypos();
           } else {
             xt = yt = 0.0;
           }
@@ -357,26 +357,26 @@ static void DispShip(const GameObj& g, const Place& where, const Ship* ship,
       }
       wm = 0;
 
-      if (xt == ship->xpos) {
-        if (yt > ship->ypos)
+      if (xt == ship->xpos()) {
+        if (yt > ship->ypos())
           wm = 4;
         else
           wm = 0;
       } else {
-        slope = (yt - ship->ypos) / (xt - ship->xpos);
-        if (yt == ship->ypos) {
-          if (xt > ship->xpos)
+        slope = (yt - ship->ypos()) / (xt - ship->xpos());
+        if (yt == ship->ypos()) {
+          if (xt > ship->xpos())
             wm = 2;
           else
             wm = 6;
-        } else if (yt > ship->ypos) {
+        } else if (yt > ship->ypos()) {
           if (slope < -2.414) wm = 4;
           if (slope > -2.414) wm = 5;
           if (slope > -0.414) wm = 6;
           if (slope > 0.000) wm = 2;
           if (slope > 0.414) wm = 3;
           if (slope > 2.414) wm = 4;
-        } else if (yt < ship->ypos) {
+        } else if (yt < ship->ypos()) {
           if (slope < -2.414) wm = 0;
           if (slope > -2.414) wm = 1;
           if (slope > -0.414) wm = 2;
@@ -389,13 +389,13 @@ static void DispShip(const GameObj& g, const Place& where, const Ship* ship,
       /* (magnification) */
       if (x >= 0 && y >= 0) {
         if (r.governor[g.governor].toggle.color) {
-          sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'),
-                  x, y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
-                  ship->number);
+          sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner() + '?'),
+                  x, y, wm, Shipltrs[ship->type()], (char)(ship->owner() + '?'),
+                  ship->number());
         } else {
-          stand = (ship->owner == r.governor[g.governor].toggle.highlight);
+          stand = (ship->owner() == r.governor[g.governor].toggle.highlight);
           sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
-                  Shipltrs[ship->type], stand, ship->number);
+                  Shipltrs[ship->type()], stand, ship->number());
         }
       }
       break;
@@ -408,17 +408,18 @@ static void DispShip(const GameObj& g, const Place& where, const Ship* ship,
     default:
       /* other ships can only be seen when in system */
       wm = 0;
-      if (ship->whatorbits != ScopeLevel::LEVEL_UNIV ||
-          ((ship->owner == g.player) || g.god))
+      if (ship->whatorbits() != ScopeLevel::LEVEL_UNIV ||
+          ((ship->owner() == g.player) || g.god))
         if (x >= 0 && y >= 0) {
           if (r.governor[g.governor].toggle.color) {
-            sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner + '?'),
-                    x, y, wm, Shipltrs[ship->type], (char)(ship->owner + '?'),
-                    ship->number);
+            sprintf(string, "%c %d %d %d %c %c %lu;",
+                    (char)(ship->owner() + '?'), x, y, wm,
+                    Shipltrs[ship->type()], (char)(ship->owner() + '?'),
+                    ship->number());
           } else {
-            stand = (ship->owner == r.governor[g.governor].toggle.highlight);
+            stand = (ship->owner() == r.governor[g.governor].toggle.highlight);
             sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
-                    Shipltrs[ship->type], stand, ship->number);
+                    Shipltrs[ship->type()], stand, ship->number());
           }
         }
       break;

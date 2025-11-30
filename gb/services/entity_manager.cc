@@ -168,13 +168,14 @@ EntityHandle<Ship> EntityManager::create_ship() {
   // Get next available ship number
   shipnum_t num = ships.next_ship_number();
 
-  // Create new ship
-  Ship new_ship{};
-  new_ship.number = num;
+  // Create new ship using ship_struct for initialization
+  ship_struct data{};
+  data.number = num;
+  Ship new_ship{data};
 
   // Cache it
   auto [iter, inserted] =
-      ship_cache.emplace(num, std::make_unique<Ship>(new_ship));
+      ship_cache.emplace(num, std::make_unique<Ship>(std::move(new_ship)));
   ship_refcount[num] = 1;
 
   return {this, iter->second.get(), [this, num](const Ship& s) {
@@ -406,8 +407,8 @@ void EntityManager::flush_all() {
   flush_cache_impl<Planet>(planet_cache,
                            [this](const Planet& p) { planets.save(p); });
   flush_cache_impl<Star>(star_cache, [this](const Star& s) { stars.save(s); });
-  flush_cache_impl<SectorMap>(sectormap_cache,
-                              [this](const SectorMap& sm) { sectors.save_map(sm); });
+  flush_cache_impl<SectorMap>(
+      sectormap_cache, [this](const SectorMap& sm) { sectors.save_map(sm); });
   flush_cache_impl<Commod>(commod_cache,
                            [this](const Commod& c) { commods.save(c); });
   flush_cache_impl<block>(block_cache,
@@ -463,42 +464,43 @@ EntityManager::find_player_by_name(const std::string& name) {
 }
 
 void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
-  if (std::holds_alternative<MindData>(ship.special)) {
-    auto mind = std::get<MindData>(ship.special);
+  if (std::holds_alternative<MindData>(ship.special())) {
+    auto mind = std::get<MindData>(ship.special());
     mind.who_killed = Playernum;
-    ship.special = mind;
+    ship.special() = mind;
   }
-  ship.alive = 0;
-  ship.notified = 0; /* prepare the ship for recycling */
+  ship.alive() = 0;
+  ship.notified() = 0; /* prepare the ship for recycling */
 
-  if (ship.type != ShipType::STYPE_POD &&
-      ship.type != ShipType::OTYPE_FACTORY) {
+  if (ship.type() != ShipType::STYPE_POD &&
+      ship.type() != ShipType::OTYPE_FACTORY) {
     /* pods don't do things to morale, ditto for factories */
-    auto victim_handle = get_race(ship.owner);
+    auto victim_handle = get_race(ship.owner());
     if (!victim_handle.get()) {
       std::cerr << "Database corruption, race not found.";
       std::abort();
     }
     auto& victim = *victim_handle;
-    if (victim.Gov_ship == ship.number) victim.Gov_ship = 0;
+    if (victim.Gov_ship == ship.number()) victim.Gov_ship = 0;
 
-    if (!victim.God && Playernum != ship.owner &&
-        ship.type != ShipType::OTYPE_VN) {
+    if (!victim.God && Playernum != ship.owner() &&
+        ship.type() != ShipType::OTYPE_VN) {
       auto killer_handle = get_race(Playernum);
       if (!killer_handle.get()) {
         std::cerr << "Database corruption, race not found.";
         std::abort();
       }
       auto& killer = *killer_handle;
-      adjust_morale(killer, victim, (int)ship.build_cost);
+      adjust_morale(killer, victim, (int)ship.build_cost());
       // Both killer and victim auto-save when handles go out of scope
-    } else if (ship.owner == Playernum && !ship.docked && max_crew(ship)) {
-      victim.morale -= 2L * ship.build_cost; /* scuttle/scrap */
+    } else if (ship.owner() == Playernum && !ship.docked() && max_crew(ship)) {
+      victim.morale -= 2L * ship.build_cost(); /* scuttle/scrap */
     }
     // victim auto-saves when handle goes out of scope
   }
 
-  if (ship.type == ShipType::OTYPE_VN || ship.type == ShipType::OTYPE_BERS) {
+  if (ship.type() == ShipType::OTYPE_VN ||
+      ship.type() == ShipType::OTYPE_BERS) {
     auto sdata_handle = get_universe();
     if (!sdata_handle.get()) {
       std::cerr << "Database corruption, universe_struct not found.";
@@ -507,41 +509,41 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     auto& Sdata = *sdata_handle;
 
     /* add ship to VN shit list */
-    if (std::holds_alternative<MindData>(ship.special)) {
-      auto mind = std::get<MindData>(ship.special);
+    if (std::holds_alternative<MindData>(ship.special())) {
+      auto mind = std::get<MindData>(ship.special());
       Sdata.VN_hitlist[mind.who_killed - 1] += 1;
     }
 
     /* keep track of where these VN's were shot up */
     if (Sdata.VN_index1[Playernum - 1] == -1)
       /* there's no star in the first index */
-      Sdata.VN_index1[Playernum - 1] = ship.storbits;
+      Sdata.VN_index1[Playernum - 1] = ship.storbits();
     else if (Sdata.VN_index2[Playernum - 1] == -1)
       /* there's no star in the second index */
-      Sdata.VN_index2[Playernum - 1] = ship.storbits;
+      Sdata.VN_index2[Playernum - 1] = ship.storbits();
     else {
       /* pick an index to supplant */
       std::random_device rd;
       std::mt19937 gen(rd());
       std::uniform_int_distribution<int> dis(0, 1);
       if (dis(gen))
-        Sdata.VN_index1[Playernum - 1] = ship.storbits;
+        Sdata.VN_index1[Playernum - 1] = ship.storbits();
       else
-        Sdata.VN_index2[Playernum - 1] = ship.storbits;
+        Sdata.VN_index2[Playernum - 1] = ship.storbits();
     }
     // Sdata auto-saves when handle goes out of scope
   }
 
-  if (ship.type == ShipType::OTYPE_TOXWC &&
-      ship.whatorbits == ScopeLevel::LEVEL_PLAN) {
-    auto planet_handle = get_planet(ship.storbits, ship.pnumorbits);
+  if (ship.type() == ShipType::OTYPE_TOXWC &&
+      ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+    auto planet_handle = get_planet(ship.storbits(), ship.pnumorbits());
     if (!planet_handle.get()) {
       std::cerr << "Database corruption, planet not found.";
       std::abort();
     }
     auto& planet = *planet_handle;
-    if (std::holds_alternative<WasteData>(ship.special)) {
-      auto waste = std::get<WasteData>(ship.special);
+    if (std::holds_alternative<WasteData>(ship.special())) {
+      auto waste = std::get<WasteData>(ship.special());
       planet.conditions(TOXIC) =
           MIN(100, planet.conditions(TOXIC) + waste.toxic);
     }
@@ -549,21 +551,21 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   }
 
   /* undock the stuff docked with it */
-  if (ship.docked && ship.whatorbits != ScopeLevel::LEVEL_SHIP &&
-      ship.whatdest == ScopeLevel::LEVEL_SHIP) {
-    auto dest_ship_handle = get_ship(ship.destshipno);
+  if (ship.docked() && ship.whatorbits() != ScopeLevel::LEVEL_SHIP &&
+      ship.whatdest() == ScopeLevel::LEVEL_SHIP) {
+    auto dest_ship_handle = get_ship(ship.destshipno());
     if (!dest_ship_handle.get()) {
       std::cerr << "Database corruption, ship not found.";
       std::abort();
     }
     auto& s = *dest_ship_handle;
-    s.docked = 0;
-    s.whatdest = ScopeLevel::LEVEL_UNIV;
+    s.docked() = 0;
+    s.whatdest() = ScopeLevel::LEVEL_UNIV;
     // s auto-saves when handle goes out of scope
   }
 
   /* landed ships are killed */
-  ShipList shiplist(*this, ship.ships);
+  ShipList shiplist(*this, ship.ships());
   for (auto ship_handle : shiplist) {
     Ship& s = *ship_handle;      // Get mutable reference
     ::kill_ship(Playernum, &s);  // Call global kill_ship, not member
@@ -588,7 +590,8 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
             }};
   }
 
-  // Need to load from repository - but we need the Planet to construct SectorMap
+  // Need to load from repository - but we need the Planet to construct
+  // SectorMap
   auto planet_opt = planets.find_by_location(star, pnum);
   if (!planet_opt) {
     return {this, nullptr, [](const SectorMap&) {}};
@@ -621,7 +624,8 @@ const SectorMap* EntityManager::peek_sectormap(starnum_t star,
     return it->second.get();
   }
 
-  // Need to load from repository - but we need the Planet to construct SectorMap
+  // Need to load from repository - but we need the Planet to construct
+  // SectorMap
   auto planet_opt = planets.find_by_location(star, pnum);
   if (!planet_opt) {
     return nullptr;

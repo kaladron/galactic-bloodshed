@@ -59,7 +59,7 @@ export bool ship_matches_filter(std::string_view filter, const Ship& ship) {
   if (filter[0] == '#') {
     auto shipnum = parse_ship_selection(filter);
     if (shipnum) {
-      return ship.number == *shipnum;
+      return ship.number() == *shipnum;
     }
     return false;
   }
@@ -68,7 +68,7 @@ export bool ship_matches_filter(std::string_view filter, const Ship& ship) {
   // This includes numeric strings like "123" which look for ship types with
   // letters '1', '2', '3'
   for (const auto& c : filter) {
-    if (c == ::Shipltrs[ship.type] || c == '*') {
+    if (c == ::Shipltrs[ship.type()] || c == '*') {
       return true;
     }
   }

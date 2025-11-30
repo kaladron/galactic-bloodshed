@@ -98,8 +98,8 @@ void bid(const command_t& argv, GameObj& g) {
     const ShipList kShiplist(g.entity_manager, p.ships());
     bool ok = false;
     for (const Ship* s : kShiplist) {
-      if (s->alive && (s->owner == Playernum) && !s->damage &&
-          Shipdata[s->type][ABIL_PORT]) {
+      if (s->alive() && (s->owner() == Playernum) && !s->damage() &&
+          Shipdata[s->type()][ABIL_PORT]) {
         ok = true;
         break;
       }

@@ -186,9 +186,9 @@ static void process_ships(EntityManager& entity_manager, TurnState& state) {
       continue;  // Skip if ship not found
     }
 
-    // Copy ship into TurnState for turn processing
+    // Create Ship from struct (Ship copy is deleted, but struct copy works)
     // The handle will auto-save modifications when it goes out of scope
-    state.ships[i] = std::make_unique<Ship>(*ship_handle);
+    state.ships[i] = std::make_unique<Ship>(ship_handle->get_struct());
 
     // Process mine detonation logic
     domine(*state.ships[i], 0, entity_manager);
@@ -345,7 +345,7 @@ static void process_market(EntityManager& entity_manager, int update) {
 static void process_ship_masses_and_ownership(TurnState& state) {
   /* check ship masses - ownership */
   for (shipnum_t i = 1; i <= state.num_ships; i++)
-    if (state.ships[i] && state.ships[i]->alive) {
+    if (state.ships[i] && state.ships[i]->alive()) {
       domass(*state.ships[i]);
       doown(*state.ships[i]);
     }
@@ -356,10 +356,10 @@ static void process_ship_turns(EntityManager& entity_manager, TurnState& state,
   /* do all ships one turn - do slower ships first */
   for (int j = 0; j <= 9; j++)
     for (shipnum_t i = 1; i <= state.num_ships; i++) {
-      if (state.ships[i] && state.ships[i]->alive &&
-          state.ships[i]->speed == j) {
+      if (state.ships[i] && state.ships[i]->alive() &&
+          state.ships[i]->speed() == j) {
         doship(*state.ships[i], update, entity_manager);
-        if ((state.ships[i]->type == ShipType::STYPE_MISSILE) &&
+        if ((state.ships[i]->type() == ShipType::STYPE_MISSILE) &&
             !attack_planet(*state.ships[i]))
           domissile(*state.ships[i]);
       }
@@ -369,16 +369,16 @@ static void process_ship_turns(EntityManager& entity_manager, TurnState& state,
     /* do maintenance costs */
     if (update)
       for (shipnum_t i = 1; i <= state.num_ships; i++)
-        if (state.ships[i] && state.ships[i]->alive &&
-            Shipdata[state.ships[i]->type][ABIL_MAINTAIN]) {
-          if (state.ships[i]->popn)
-            races[state.ships[i]->owner - 1]
-                .governor[state.ships[i]->governor]
-                .maintain += state.ships[i]->build_cost;
-          if (state.ships[i]->troops)
-            races[state.ships[i]->owner - 1]
-                .governor[state.ships[i]->governor]
-                .maintain += UPDATE_TROOP_COST * state.ships[i]->troops;
+        if (state.ships[i] && state.ships[i]->alive() &&
+            Shipdata[state.ships[i]->type()][ABIL_MAINTAIN]) {
+          if (state.ships[i]->popn())
+            races[state.ships[i]->owner() - 1]
+                .governor[state.ships[i]->governor()]
+                .maintain += state.ships[i]->build_cost();
+          if (state.ships[i]->troops())
+            races[state.ships[i]->owner() - 1]
+                .governor[state.ships[i]->governor()]
+                .maintain += UPDATE_TROOP_COST * state.ships[i]->troops();
         }
   }
 }
@@ -387,15 +387,15 @@ static void prepare_dead_ships(TurnState& state) {
   /* prepare dead ships for recycling */
   clr_shipfree();
   for (shipnum_t i = 1; i <= state.num_ships; i++)
-    if (state.ships[i] && !state.ships[i]->alive) makeshipdead(i);
+    if (state.ships[i] && !state.ships[i]->alive()) makeshipdead(i);
 }
 
 static void insert_ships_into_lists(TurnState& state) {
   /* erase next ship pointers - reset in insert_sh_... */
   for (shipnum_t i = 1; i <= state.num_ships; i++) {
     if (state.ships[i]) {
-      state.ships[i]->nextship = 0;
-      state.ships[i]->ships = 0;
+      state.ships[i]->nextship() = 0;
+      state.ships[i]->ships() = 0;
     }
   }
 
@@ -409,22 +409,23 @@ static void insert_ships_into_lists(TurnState& state) {
 
   /* insert ship into the list of wherever it might be */
   for (shipnum_t i = state.num_ships; i >= 1; i--) {
-    if (state.ships[i] && state.ships[i]->alive) {
-      switch (state.ships[i]->whatorbits) {
+    if (state.ships[i] && state.ships[i]->alive()) {
+      switch (state.ships[i]->whatorbits()) {
         case ScopeLevel::LEVEL_UNIV:
           insert_sh_univ(&Sdata, state.ships[i].get());
           break;
         case ScopeLevel::LEVEL_STAR:
-          insert_sh_star(stars[state.ships[i]->storbits], state.ships[i].get());
+          insert_sh_star(stars[state.ships[i]->storbits()],
+                         state.ships[i].get());
           break;
         case ScopeLevel::LEVEL_PLAN:
-          insert_sh_plan(
-              *planets[state.ships[i]->storbits][state.ships[i]->pnumorbits],
-              state.ships[i].get());
+          insert_sh_plan(*planets[state.ships[i]->storbits()]
+                                 [state.ships[i]->pnumorbits()],
+                         state.ships[i].get());
           break;
         case ScopeLevel::LEVEL_SHIP:
           insert_sh_ship(state.ships[i].get(),
-                         state.ships[state.ships[i]->destshipno].get());
+                         state.ships[state.ships[i]->destshipno()].get());
           break;
       }
     }
@@ -436,13 +437,13 @@ static void process_abms_and_missiles(EntityManager& entity_manager,
   /* put ABMs and surviving missiles here because ABMs need to have the missile
      in the shiplist of the target planet  Maarten */
   for (shipnum_t i = 1; i <= state.num_ships; i++) /* ABMs defend planet */
-    if (state.ships[i] && (state.ships[i]->type == ShipType::OTYPE_ABM) &&
-        state.ships[i]->alive)
+    if (state.ships[i] && (state.ships[i]->type() == ShipType::OTYPE_ABM) &&
+        state.ships[i]->alive())
       doabm(*state.ships[i]);
 
   for (shipnum_t i = 1; i <= state.num_ships; i++)
-    if (state.ships[i] && (state.ships[i]->type == ShipType::STYPE_MISSILE) &&
-        state.ships[i]->alive && attack_planet(*state.ships[i]))
+    if (state.ships[i] && (state.ships[i]->type() == ShipType::STYPE_MISSILE) &&
+        state.ships[i]->alive() && attack_planet(*state.ships[i]))
       domissile(*state.ships[i]);
 
   for (shipnum_t i = state.num_ships; i >= 1; i--)
@@ -562,12 +563,13 @@ static void update_victory_scores(TurnState& state, int update) {
     } /* end of star searchings */
 
     for (shipnum_t i = 1; i <= state.num_ships; i++) {
-      if (!state.ships[i] || !state.ships[i]->alive) continue;
-      victory[state.ships[i]->owner - 1].shipcost += state.ships[i]->build_cost;
-      victory[state.ships[i]->owner - 1].shiptech += state.ships[i]->tech;
-      victory[state.ships[i]->owner - 1].res += state.ships[i]->resource;
-      victory[state.ships[i]->owner - 1].des += state.ships[i]->destruct;
-      victory[state.ships[i]->owner - 1].fuel += state.ships[i]->fuel;
+      if (!state.ships[i] || !state.ships[i]->alive()) continue;
+      victory[state.ships[i]->owner() - 1].shipcost +=
+          state.ships[i]->build_cost();
+      victory[state.ships[i]->owner() - 1].shiptech += state.ships[i]->tech();
+      victory[state.ships[i]->owner() - 1].res += state.ships[i]->resource();
+      victory[state.ships[i]->owner() - 1].des += state.ships[i]->destruct();
+      victory[state.ships[i]->owner() - 1].fuel += state.ships[i]->fuel();
     }
     /* now that we have the info.. calculate the raw score */
 
@@ -679,18 +681,19 @@ static ap_t APadd(const int sh, const population_t popn, const Race& race,
  * @return True if the race is governed, false otherwise.
  */
 static bool governed(const Race& race, const TurnState& state) {
-  return (race.Gov_ship && race.Gov_ship <= state.num_ships &&
-          state.ships[race.Gov_ship] != nullptr &&
-          state.ships[race.Gov_ship]->alive &&
-          state.ships[race.Gov_ship]->docked &&
-          (state.ships[race.Gov_ship]->whatdest == ScopeLevel::LEVEL_PLAN ||
-           (state.ships[race.Gov_ship]->whatorbits == ScopeLevel::LEVEL_SHIP &&
-            state.ships[state.ships[race.Gov_ship]->destshipno]->type ==
-                ShipType::STYPE_HABITAT &&
-            (state.ships[state.ships[race.Gov_ship]->destshipno]->whatorbits ==
-                 ScopeLevel::LEVEL_PLAN ||
-             state.ships[state.ships[race.Gov_ship]->destshipno]->whatorbits ==
-                 ScopeLevel::LEVEL_STAR))));
+  return (
+      race.Gov_ship && race.Gov_ship <= state.num_ships &&
+      state.ships[race.Gov_ship] != nullptr &&
+      state.ships[race.Gov_ship]->alive() &&
+      state.ships[race.Gov_ship]->docked() &&
+      (state.ships[race.Gov_ship]->whatdest() == ScopeLevel::LEVEL_PLAN ||
+       (state.ships[race.Gov_ship]->whatorbits() == ScopeLevel::LEVEL_SHIP &&
+        state.ships[state.ships[race.Gov_ship]->destshipno()]->type() ==
+            ShipType::STYPE_HABITAT &&
+        (state.ships[state.ships[race.Gov_ship]->destshipno()]->whatorbits() ==
+             ScopeLevel::LEVEL_PLAN ||
+         state.ships[state.ships[race.Gov_ship]->destshipno()]->whatorbits() ==
+             ScopeLevel::LEVEL_STAR))));
 }
 
 /* fix stability for stars */
@@ -830,7 +833,7 @@ static void make_discoveries(Race& r) {
 }
 
 static bool attack_planet(const Ship& ship) {
-  return ship.whatdest == ScopeLevel::LEVEL_PLAN;
+  return ship.whatdest() == ScopeLevel::LEVEL_PLAN;
 }
 
 static void output_ground_attacks() {

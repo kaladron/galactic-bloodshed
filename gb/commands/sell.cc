@@ -56,8 +56,8 @@ void sell(const command_t& argv, GameObj& g) {
   ShipList ships(g.entity_manager, p.ships());
   for (auto ship_handle : ships) {
     const Ship& s = ship_handle.peek();  // Read-only access
-    if (s.alive && (s.owner == Playernum) && !s.damage &&
-        Shipdata[s.type][ABIL_PORT]) {
+    if (s.alive() && (s.owner() == Playernum) && !s.damage() &&
+        Shipdata[s.type()][ABIL_PORT]) {
       ok = true;
       break;
     }

@@ -34,18 +34,18 @@ void test_designate_capital() {
 
   // Create government ship landed on planet
   Ship ship{};
-  ship.number = 1;
-  ship.type = ShipType::OTYPE_GOV;
-  ship.owner = 1;
-  ship.governor = 0;
-  ship.storbits = 1;
-  ship.whatorbits = ScopeLevel::LEVEL_PLAN;
-  ship.whatdest = ScopeLevel::LEVEL_PLAN;
-  ship.xpos = 10.0;
-  ship.ypos = 10.0;
-  ship.alive = true;
-  ship.active = true;
-  ship.docked = true;  // Required for landed() check
+  ship.number() = 1;
+  ship.type() = ShipType::OTYPE_GOV;
+  ship.owner() = 1;
+  ship.governor() = 0;
+  ship.storbits() = 1;
+  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+  ship.xpos() = 10.0;
+  ship.ypos() = 10.0;
+  ship.alive() = true;
+  ship.active() = true;
+  ship.docked() = true;  // Required for landed() check
 
   ShipRepository ships_repo(store);
   ships_repo.save(ship);
@@ -132,15 +132,15 @@ void test_ship_not_landed() {
 
   // Create ship NOT landed (in orbit)
   Ship ship{};
-  ship.number = 1;
-  ship.type = ShipType::OTYPE_GOV;
-  ship.owner = 1;
-  ship.governor = 0;
-  ship.storbits = 1;
-  ship.whatorbits = ScopeLevel::LEVEL_STAR;  // Orbiting star, not landed
-  ship.whatdest = ScopeLevel::LEVEL_STAR;
-  ship.alive = true;
-  ship.active = true;
+  ship.number() = 1;
+  ship.type() = ShipType::OTYPE_GOV;
+  ship.owner() = 1;
+  ship.governor() = 0;
+  ship.storbits() = 1;
+  ship.whatorbits() = ScopeLevel::LEVEL_STAR;  // Orbiting star, not landed
+  ship.whatdest() = ScopeLevel::LEVEL_STAR;
+  ship.alive() = true;
+  ship.active() = true;
 
   ShipRepository ships_repo(store);
   ships_repo.save(ship);
@@ -180,12 +180,12 @@ void test_query_capital() {
 
   // Create the capital ship
   Ship ship{};
-  ship.number = 42;
-  ship.type = ShipType::OTYPE_GOV;
-  ship.owner = 1;
-  ship.name = "Capital Ship";
-  ship.alive = true;
-  ship.active = true;
+  ship.number() = 42;
+  ship.type() = ShipType::OTYPE_GOV;
+  ship.owner() = 1;
+  ship.name() = "Capital Ship";
+  ship.alive() = true;
+  ship.active() = true;
 
   ShipRepository ships_repo(store);
   ships_repo.save(ship);

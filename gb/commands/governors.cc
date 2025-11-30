@@ -36,11 +36,11 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
   for (shipnum_t i = 1; i <= Num_ships; i++) {
     auto ship = entity_manager.get_ship(i);
     if (!ship.get()) continue;
-    if (ship->alive && (ship->owner == race.Playernum) &&
-        (ship->governor == src_gov)) {
-      ship->governor = tgt_gov;
+    if (ship->alive() && (ship->owner() == race.Playernum) &&
+        (ship->governor() == src_gov)) {
+      ship->governor() = tgt_gov;
       outmsg = std::format("Changed ownership of {0}{1}...\n",
-                           Shipltrs[ship->type], i);
+                           Shipltrs[ship->type()], i);
       notify(race.Playernum, 0, outmsg);
     }
   }

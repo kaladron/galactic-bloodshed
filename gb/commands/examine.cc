@@ -37,12 +37,12 @@ void examine(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (!ship->alive) {
+  if (!ship->alive()) {
     g.out << "that ship is dead.\n";
     return;
   }
-  if (ship->whatorbits == ScopeLevel::LEVEL_UNIV ||
-      isclr(stars[ship->storbits].inhabited(), g.player)) {
+  if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV ||
+      isclr(stars[ship->storbits()].inhabited(), g.player)) {
     g.out << "That ship it not visible to you.\n";
     return;
   }
@@ -53,7 +53,7 @@ void examine(const command_t& argv, GameObj& g) {
   }
 
   /* look through ship data file */
-  for (int t = 0; t <= ship->type; t++)
+  for (int t = 0; t <= ship->type(); t++)
     while (fgetc(fd) != '~')
       ;
 
@@ -67,19 +67,19 @@ void examine(const command_t& argv, GameObj& g) {
   g.out << ss.str();
   fclose(fd);
 
-  if (!ship->examined) {
-    if (ship->whatorbits == ScopeLevel::LEVEL_UNIV)
+  if (!ship->examined()) {
+    if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV)
       deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
     else
-      deductAPs(g, APcount, ship->storbits);
+      deductAPs(g, APcount, ship->storbits());
 
-    ship->examined = 1;
+    ship->examined() = 1;
   }
 
   if (has_switch(*ship)) {
     g.out << "This device has an on/off switch that can be set with order.\n";
   }
-  if (!ship->active) {
+  if (!ship->active()) {
     g.out << "This device has been irradiated;\n";
     g.out << "Its crew is dying and it cannot move for the time being.\n";
   }

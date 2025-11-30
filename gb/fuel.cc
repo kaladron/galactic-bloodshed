@@ -75,15 +75,15 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
                                      const double fuel,
                                      const double gravity_factor, double x_1,
                                      const double y_1) {
-  tmpship.fuel = fuel; /* load up the pseudo-ship */
+  tmpship.fuel() = fuel; /* load up the pseudo-ship */
   segments_t effective_segment_number = nsegments_done;
 
   /*  Set our temporary destination.... */
-  tmpship.destshipno = tmpdest.shipno;
-  tmpship.whatdest = tmpdest.level;
-  tmpship.deststar = tmpdest.snum;
-  tmpship.destpnum = tmpdest.pnum;
-  if (tmpship.whatdest == ScopeLevel::LEVEL_SHIP || tmpship.ships) {
+  tmpship.destshipno() = tmpdest.shipno;
+  tmpship.whatdest() = tmpdest.level;
+  tmpship.deststar() = tmpdest.snum;
+  tmpship.destpnum() = tmpdest.pnum;
+  if (tmpship.whatdest() == ScopeLevel::LEVEL_SHIP || tmpship.ships()) {
     /* Bring in the other ships.  moveship() uses ships[]. */
     Num_ships = Numships();
     ships = (Ship**)malloc(sizeof(Ship*) * (Num_ships) + 1);
@@ -95,22 +95,23 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
   segments_t number_segments = 0; /* Reset counter.  */
 
   /*  Launch the ship if it's on a planet.  */
-  double gravity_fuel = gravity_factor * tmpship.mass * LAUNCH_GRAV_MASS_FACTOR;
-  tmpship.fuel -= gravity_fuel;
-  tmpship.docked = 0;
+  double gravity_fuel =
+      gravity_factor * tmpship.mass() * LAUNCH_GRAV_MASS_FACTOR;
+  tmpship.fuel() -= gravity_fuel;
+  tmpship.docked() = 0;
 
   while (!trip_resolved) {
     domass(tmpship);
-    double fuel_level1 = tmpship.fuel;
+    double fuel_level1 = tmpship.fuel();
     moveship(tmpship, (effective_segment_number == segments), 0, 1);
     number_segments++;
     effective_segment_number++;
     if (effective_segment_number == (segments + 1))
       effective_segment_number = 1;
-    double x_0 = tmpship.xpos;
-    double y_0 = tmpship.ypos;
+    double x_0 = tmpship.xpos();
+    double y_0 = tmpship.ypos();
     double tmpdist = sqrt(Distsq(x_0, y_0, x_1, y_1));
-    switch (tmpship.whatdest) {
+    switch (tmpship.whatdest()) {
       case ScopeLevel::LEVEL_STAR:
         if (tmpdist <= SYSTEMSIZE) trip_resolved = true;
         break;
@@ -123,9 +124,9 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
       default:
         trip_resolved = true;
     }
-    if (((tmpship.fuel == fuel_level1) && (!tmpship.hyper_drive.on)) &&
+    if (((tmpship.fuel() == fuel_level1) && (!tmpship.hyper_drive().on)) &&
         (trip_resolved == 0)) {
-      if (tmpship.whatdest == ScopeLevel::LEVEL_SHIP) {
+      if (tmpship.whatdest() == ScopeLevel::LEVEL_SHIP) {
         for (shipnum_t i = 1; i <= Num_ships; i++)
           free(ships[i]);
         free(ships);
@@ -133,7 +134,7 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
       return {false, number_segments};
     }
   }
-  if (tmpship.whatdest == ScopeLevel::LEVEL_SHIP || tmpship.ships) {
+  if (tmpship.whatdest() == ScopeLevel::LEVEL_SHIP || tmpship.ships()) {
     for (shipnum_t i = 1; i <= Num_ships; i++)
       free(ships[i]);
     free(ships);

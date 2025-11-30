@@ -74,12 +74,12 @@ void defend(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (to->whatorbits != ScopeLevel::LEVEL_PLAN) {
+  if (to->whatorbits() != ScopeLevel::LEVEL_PLAN) {
     g.out << "The ship is not in planet orbit.\n";
     return;
   }
 
-  if (to->storbits != g.snum || to->pnumorbits != g.pnum) {
+  if (to->storbits() != g.snum || to->pnumorbits() != g.pnum) {
     g.out << "Target is not in orbit around this planet.\n";
     return;
   }
@@ -126,7 +126,7 @@ void defend(const command_t& argv, GameObj& g) {
   char long_buf[1024], short_buf[256];
   damage = shoot_planet_to_ship(race, *to, strength, long_buf, short_buf);
 
-  if (!to->alive && to->type == ShipType::OTYPE_TOXWC) {
+  if (!to->alive() && to->type() == ShipType::OTYPE_TOXWC) {
     /* get planet again since toxicity probably has changed */
     p = getplanet(g.snum, g.pnum);
   }
@@ -137,15 +137,15 @@ void defend(const command_t& argv, GameObj& g) {
   }
 
   p.info(Playernum - 1).destruct -= strength;
-  if (!to->alive) post(short_buf, NewsType::COMBAT);
-  notify_star(Playernum, Governor, to->storbits, short_buf);
-  warn(to->owner, to->governor, long_buf);
+  if (!to->alive()) post(short_buf, NewsType::COMBAT);
+  notify_star(Playernum, Governor, to->storbits(), short_buf);
+  warn(to->owner(), to->governor(), long_buf);
   notify(Playernum, Governor, long_buf);
 
   /* defending ship retaliates */
 
   strength = 0;
-  if (retal && damage && to->protect.self) {
+  if (retal && damage && to->protect().self) {
     strength = retal;
     if (laser_on(*to)) check_overload(*to, 0, &strength);
 
@@ -158,9 +158,9 @@ void defend(const command_t& argv, GameObj& g) {
         use_destruct(*to, strength);
 
       post(short_buf, NewsType::COMBAT);
-      notify_star(Playernum, Governor, to->storbits, short_buf);
+      notify_star(Playernum, Governor, to->storbits(), short_buf);
       notify(Playernum, Governor, long_buf);
-      warn(to->owner, to->governor, long_buf);
+      warn(to->owner(), to->governor(), long_buf);
     }
     putsmap(smap, p);
   }
@@ -170,9 +170,9 @@ void defend(const command_t& argv, GameObj& g) {
     sh = p.ships();
     while (sh) {
       (void)getship(&ship, sh);
-      if (ship->protect.on && (ship->protect.ship == toship) &&
-          (ship->protect.ship == toship) && sh != toship && ship->alive &&
-          ship->active) {
+      if (ship->protect().on && (ship->protect().ship == toship) &&
+          (ship->protect().ship == toship) && sh != toship && ship->alive() &&
+          ship->active()) {
         if (laser_on(*ship)) check_overload(*ship, 0, &strength);
         strength = check_retal_strength(*ship);
 
@@ -184,14 +184,14 @@ void defend(const command_t& argv, GameObj& g) {
           else
             use_destruct(*ship, strength);
           post(short_buf, NewsType::COMBAT);
-          notify_star(Playernum, Governor, ship->storbits, short_buf);
+          notify_star(Playernum, Governor, ship->storbits(), short_buf);
           notify(Playernum, Governor, long_buf);
-          warn(ship->owner, ship->governor, long_buf);
+          warn(ship->owner(), ship->governor(), long_buf);
         }
         putsmap(smap, p);
         putship(*ship);
       }
-      sh = ship->nextship;
+      sh = ship->nextship();
       free(ship);
     }
   }

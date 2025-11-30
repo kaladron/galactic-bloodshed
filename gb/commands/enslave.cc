@@ -30,20 +30,20 @@ void enslave(const command_t& argv, GameObj& g) {
   if (testship(*s, g)) {
     return;
   }
-  if (s->type != ShipType::STYPE_OAP) {
+  if (s->type() != ShipType::STYPE_OAP) {
     g.out << std::format("This ship is not an {}.\n",
                          Shipnames[ShipType::STYPE_OAP]);
     return;
   }
-  if (s->whatorbits != ScopeLevel::LEVEL_PLAN) {
+  if (s->whatorbits() != ScopeLevel::LEVEL_PLAN) {
     g.out << std::format("{} doesn't orbit a planet.\n", ship_to_string(*s));
     return;
   }
-  if (!enufAP(Playernum, Governor, stars[s->storbits].AP(Playernum - 1),
+  if (!enufAP(Playernum, Governor, stars[s->storbits()].AP(Playernum - 1),
               APcount)) {
     return;
   }
-  auto p = getplanet(s->storbits, s->pnumorbits);
+  auto p = getplanet(s->storbits(), s->pnumorbits());
   if (p.info(Playernum - 1).numsectsowned == 0) {
     g.out << "You don't have a garrison on the planet.\n";
     return;
@@ -67,15 +67,15 @@ void enslave(const command_t& argv, GameObj& g) {
 
   const ShipList kShiplist(g.entity_manager, p.ships());
   for (const Ship* s2 : kShiplist) {
-    if (s2->alive && s2->active) {
-      if (p.info(s2->owner).numsectsowned && s2->owner != Playernum)
-        def += s2->destruct;
-      else if (s2->owner == Playernum)
-        attack += s2->destruct;
+    if (s2->alive() && s2->active()) {
+      if (p.info(s2->owner()).numsectsowned && s2->owner() != Playernum)
+        def += s2->destruct();
+      else if (s2->owner() == Playernum)
+        attack += s2->destruct();
     }
   }
 
-  deductAPs(g, APcount, s->storbits);
+  deductAPs(g, APcount, s->storbits());
 
   g.out << "\nFor successful enslavement this ship and the other ships here\n";
   g.out << "that are yours must have a weapons\n";
@@ -85,13 +85,13 @@ void enslave(const command_t& argv, GameObj& g) {
                        prin_ship_orbits(*s), attack);
 
   std::stringstream telegram;
-  telegram << std::format("ALERT!!!\n\nPlanet /{}/{}",
-                          stars[s->storbits].get_name(),
-                          stars[s->storbits].get_planet_name(s->pnumorbits));
+  telegram << std::format(
+      "ALERT!!!\n\nPlanet /{}/{}", stars[s->storbits()].get_name(),
+      stars[s->storbits()].get_planet_name(s->pnumorbits()));
 
   if (def <= 2 * attack) {
     p.slaved_to() = Playernum;
-    putplanet(p, stars[s->storbits], s->pnumorbits);
+    putplanet(p, stars[s->storbits()], s->pnumorbits());
 
     /* send telegs to anyone there */
     telegram << std::format("ENSLAVED by {}!!\n", ship_to_string(*s));
@@ -120,6 +120,6 @@ void enslave(const command_t& argv, GameObj& g) {
 
   for (auto i = 1; i < MAXPLAYERS; i++)
     if (p.info(i - 1).numsectsowned && i != Playernum)
-      warn(i, stars[s->storbits].governor(i - 1), telegram.str());
+      warn(i, stars[s->storbits()].governor(i - 1), telegram.str());
 }
 }  // namespace GB::commands

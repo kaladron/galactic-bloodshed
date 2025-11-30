@@ -45,25 +45,25 @@ void jettison(const command_t& argv, GameObj& g) {
     if (!ship_matches_filter(argv[1], s)) continue;
     if (!authorized(Governor, s)) continue;
 
-    if (s.owner != Playernum || !s.alive) {
+    if (s.owner() != Playernum || !s.alive()) {
       continue;
     }
     if (landed(s)) {
       g.out << "Ship is landed, cannot jettison.\n";
       continue;
     }
-    if (!s.active) {
+    if (!s.active()) {
       notify(
           Playernum, Governor,
           std::format("{} is irradiated and inactive.\n", ship_to_string(s)));
       continue;
     }
-    if (s.whatorbits == ScopeLevel::LEVEL_UNIV) {
+    if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
       if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
         continue;
       }
-    } else if (!enufAP(Playernum, Governor, stars[s.storbits].AP(Playernum - 1),
-                       APcount)) {
+    } else if (!enufAP(Playernum, Governor,
+                       stars[s.storbits()].AP(Playernum - 1), APcount)) {
       continue;
     }
 
@@ -80,46 +80,46 @@ void jettison(const command_t& argv, GameObj& g) {
     commod = argv[2][0];
     switch (commod) {
       case 'x':
-        if ((amt = jettison_check(g, amt, (int)(ship.crystals))) > 0) {
-          ship.crystals -= amt;
+        if ((amt = jettison_check(g, amt, (int)(ship.crystals()))) > 0) {
+          ship.crystals() -= amt;
           notify(Playernum, Governor,
                  std::format("{} crystal{} jettisoned.\n", amt,
                              (amt == 1) ? "" : "s"));
         }
         break;
       case 'c':
-        if ((amt = jettison_check(g, amt, (int)(ship.popn))) > 0) {
-          ship.popn -= amt;
-          ship.mass -= amt * race.mass;
+        if ((amt = jettison_check(g, amt, (int)(ship.popn()))) > 0) {
+          ship.popn() -= amt;
+          ship.mass() -= amt * race.mass;
           notify(Playernum, Governor,
                  std::format("{} crew {} into deep space.\n", amt,
                              (amt == 1) ? "hurls itself" : "hurl themselves"));
           notify(Playernum, Governor,
                  std::format("Complement of {} is now {}.\n",
-                             ship_to_string(ship), ship.popn));
+                             ship_to_string(ship), ship.popn()));
         }
         break;
       case 'm':
-        if ((amt = jettison_check(g, amt, (int)(ship.troops))) > 0) {
+        if ((amt = jettison_check(g, amt, (int)(ship.troops()))) > 0) {
           notify(Playernum, Governor,
                  std::format("{} military {} into deep space.\n", amt,
                              (amt == 1) ? "hurls itself" : "hurl themselves"));
           notify(Playernum, Governor,
-                 std::format("Complement of ship #{} is now {}.\n", ship.number,
-                             ship.troops - amt));
-          ship.troops -= amt;
-          ship.mass -= amt * race.mass;
+                 std::format("Complement of ship #{} is now {}.\n",
+                             ship.number(), ship.troops() - amt));
+          ship.troops() -= amt;
+          ship.mass() -= amt * race.mass;
         }
         break;
       case 'd':
-        if ((amt = jettison_check(g, amt, (int)(ship.destruct))) > 0) {
+        if ((amt = jettison_check(g, amt, (int)(ship.destruct()))) > 0) {
           use_destruct(ship, amt);
           notify(Playernum, Governor,
                  std::format("{} destruct jettisoned.\n", amt));
           if (!max_crew(ship)) {
             notify(Playernum, Governor,
                    std::format("\n{} ", ship_to_string(ship)));
-            if (ship.destruct) {
+            if (ship.destruct()) {
               g.out << "still boobytrapped.\n";
             } else {
               g.out << "no longer boobytrapped.\n";
@@ -128,14 +128,14 @@ void jettison(const command_t& argv, GameObj& g) {
         }
         break;
       case 'f':
-        if ((amt = jettison_check(g, amt, (int)(ship.fuel))) > 0) {
+        if ((amt = jettison_check(g, amt, (int)(ship.fuel()))) > 0) {
           use_fuel(ship, (double)amt);
           notify(Playernum, Governor,
                  std::format("{} fuel jettisoned.\n", amt));
         }
         break;
       case 'r':
-        if ((amt = jettison_check(g, amt, (int)(ship.resource))) > 0) {
+        if ((amt = jettison_check(g, amt, (int)(ship.resource()))) > 0) {
           use_resource(ship, amt);
           notify(Playernum, Governor,
                  std::format("{} resources jettisoned.\n", amt));

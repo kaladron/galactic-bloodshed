@@ -54,26 +54,26 @@ int main() {
 
     // Create test ships
     Ship pod;
-    pod.number = 1;
-    pod.type = ShipType::STYPE_POD;  // 'p' at index 0
-    pod.owner = 1;
-    pod.alive = true;
+    pod.number() = 1;
+    pod.type() = ShipType::STYPE_POD;  // 'p' at index 0
+    pod.owner() = 1;
+    pod.alive() = true;
 
     Ship destroyer;
-    destroyer.number = 2;
-    destroyer.type = ShipType::STYPE_DESTROYER;  // 'd' at index 7
-    destroyer.owner = 1;
-    destroyer.alive = true;
+    destroyer.number() = 2;
+    destroyer.type() = ShipType::STYPE_DESTROYER;  // 'd' at index 7
+    destroyer.owner() = 1;
+    destroyer.alive() = true;
 
     Ship fighter;
-    fighter.number = 3;
-    fighter.type = ShipType::STYPE_FIGHTER;  // 'f' at index 8
-    fighter.owner = 1;
-    fighter.alive = true;
+    fighter.number() = 3;
+    fighter.type() = ShipType::STYPE_FIGHTER;  // 'f' at index 8
+    fighter.owner() = 1;
+    fighter.alive() = true;
 
     // Test single ship type filter
     std::println("Testing pod: type={}, Shipltrs[type]='{}'",
-                 static_cast<int>(pod.type), Shipltrs[pod.type]);
+                 static_cast<int>(pod.type()), Shipltrs[pod.type()]);
     std::println("Filter 'p' matches pod: {}",
                  GB::ship_matches_filter("p", pod));
     assert(GB::ship_matches_filter("p", pod) == true);

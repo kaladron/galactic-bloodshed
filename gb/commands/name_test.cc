@@ -20,8 +20,8 @@ void test_name_ship_persistence() {
 
   // Setup: Create a ship
   Ship ship{};
-  ship.number = 1;
-  ship.name = "Old Ship Name";
+  ship.number() = 1;
+  ship.name() = "Old Ship Name";
 
   JsonStore store(db);
   ShipRepository ships(store);
@@ -48,8 +48,8 @@ void test_name_ship_persistence() {
     // Verify database
     auto saved = ships.find_by_number(1);
     assert(saved.has_value());
-    assert(saved->name == "USS Enterprise");
-    std::println("    ✓ Database: ship name = '{}'", saved->name);
+    assert(saved->name() == "USS Enterprise");
+    std::println("    ✓ Database: ship name = '{}'", saved->name());
   }
 
   std::println("  ✅ Ship naming test passed!");

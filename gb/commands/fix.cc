@@ -99,28 +99,30 @@ void fix(const command_t& argv, GameObj& g) {
     }
     auto s = getship(g.shipno);
     if (argv[2] == "fuel") {
-      if (argv.size() > 3) s->fuel = (double)std::stoi(argv[3]);
-      notify(Playernum, Governor, std::format("fuel = {}\n", s->fuel));
+      if (argv.size() > 3) s->fuel() = (double)std::stoi(argv[3]);
+      notify(Playernum, Governor, std::format("fuel = {}\n", s->fuel()));
     } else if (argv[2] == "max_fuel") {
-      if (argv.size() > 3) s->max_fuel = std::stoi(argv[3]);
-      notify(Playernum, Governor, std::format("fuel = {}\n", s->max_fuel));
+      if (argv.size() > 3) s->max_fuel() = std::stoi(argv[3]);
+      notify(Playernum, Governor, std::format("fuel = {}\n", s->max_fuel()));
     } else if (argv[2] == "destruct") {
-      if (argv.size() > 3) s->destruct = std::stoi(argv[3]);
-      notify(Playernum, Governor, std::format("destruct = {}\n", s->destruct));
+      if (argv.size() > 3) s->destruct() = std::stoi(argv[3]);
+      notify(Playernum, Governor,
+             std::format("destruct = {}\n", s->destruct()));
     } else if (argv[2] == "resource") {
-      if (argv.size() > 3) s->resource = std::stoi(argv[3]);
-      notify(Playernum, Governor, std::format("resource = {}\n", s->resource));
+      if (argv.size() > 3) s->resource() = std::stoi(argv[3]);
+      notify(Playernum, Governor,
+             std::format("resource = {}\n", s->resource()));
     } else if (argv[2] == "damage") {
-      if (argv.size() > 3) s->damage = std::stoi(argv[3]);
-      notify(Playernum, Governor, std::format("damage = {}\n", s->damage));
+      if (argv.size() > 3) s->damage() = std::stoi(argv[3]);
+      notify(Playernum, Governor, std::format("damage = {}\n", s->damage()));
     } else if (argv[2] == "alive") {
-      s->alive = 1;
-      s->damage = 0;
+      s->alive() = 1;
+      s->damage() = 0;
       notify(Playernum, Governor,
              std::format("{} resurrected\n", ship_to_string(*s)));
     } else if (argv[2] == "dead") {
-      s->alive = 0;
-      s->damage = 100;
+      s->alive() = 0;
+      s->damage() = 100;
       notify(Playernum, Governor,
              std::format("{} destroyed\n", ship_to_string(*s)));
     } else {

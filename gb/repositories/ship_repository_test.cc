@@ -15,51 +15,54 @@ int main() {
   JsonStore store(db);
   ShipRepository repo(store);
 
-  // Create a test ship
-  Ship test_ship{};
-  test_ship.number = 1;
-  test_ship.owner = 2;
-  test_ship.governor = 0;
-  test_ship.name = "USS Enterprise";
-  test_ship.shipclass = "Cruiser";
-  test_ship.race = 2;
-  test_ship.xpos = 100.5;
-  test_ship.ypos = 200.7;
-  test_ship.fuel = 5000.0;
-  test_ship.mass = 1500.0;
-  test_ship.armor = 250;
-  test_ship.size = 1000;
-  test_ship.max_crew = 500;
-  test_ship.max_resource = 2000;
-  test_ship.max_destruct = 1000;
-  test_ship.max_fuel = 10000.0;
-  test_ship.max_speed = 9;
-  test_ship.build_type = ShipType::STYPE_CRUISER;
-  test_ship.build_cost = 50000.0;
-  test_ship.base_mass = 1200.0;
-  test_ship.tech = 25.5;
-  test_ship.complexity = 30;
-  test_ship.destruct = 500;
-  test_ship.resource = 1000;
-  test_ship.popn = 250;
-  test_ship.troops = 100;
-  test_ship.crystals = 50;
-  test_ship.damage = 0;
-  test_ship.rad = 0;
-  test_ship.type = ShipType::STYPE_CRUISER;
-  test_ship.speed = 5;
-  test_ship.active = true;
-  test_ship.alive = true;
-  test_ship.mode = false;
-  test_ship.bombard = false;
-  test_ship.mounted = false;
-  test_ship.cloaked = false;
-  test_ship.docked = false;
-  test_ship.guns = 1;     // Light guns
-  test_ship.primary = 0;  // No primary weapon
-  test_ship.primtype = GTYPE_NONE;
-  test_ship.secondary = 0;  // No secondary weapon
-  test_ship.sectype = GTYPE_NONE;
+  // Create a test ship using ship_struct (POD, copyable)
+  ship_struct test_data{};
+  test_data.number = 1;
+  test_data.owner = 2;
+  test_data.governor = 0;
+  test_data.name = "USS Enterprise";
+  test_data.shipclass = "Cruiser";
+  test_data.race = 2;
+  test_data.xpos = 100.5;
+  test_data.ypos = 200.7;
+  test_data.fuel = 5000.0;
+  test_data.mass = 1500.0;
+  test_data.armor = 250;
+  test_data.size = 1000;
+  test_data.max_crew = 500;
+  test_data.max_resource = 2000;
+  test_data.max_destruct = 1000;
+  test_data.max_fuel = 10000;
+  test_data.max_speed = 9;
+  test_data.build_type = ShipType::STYPE_CRUISER;
+  test_data.build_cost = 50000;
+  test_data.base_mass = 1200.0;
+  test_data.tech = 25.5;
+  test_data.complexity = 30;
+  test_data.destruct = 500;
+  test_data.resource = 1000;
+  test_data.popn = 250;
+  test_data.troops = 100;
+  test_data.crystals = 50;
+  test_data.damage = 0;
+  test_data.rad = 0;
+  test_data.type = ShipType::STYPE_CRUISER;
+  test_data.speed = 5;
+  test_data.active = true;
+  test_data.alive = true;
+  test_data.mode = false;
+  test_data.bombard = false;
+  test_data.mounted = false;
+  test_data.cloaked = false;
+  test_data.docked = false;
+  test_data.guns = 1;     // Light guns
+  test_data.primary = 0;  // No primary weapon
+  test_data.primtype = GTYPE_NONE;
+  test_data.secondary = 0;  // No secondary weapon
+  test_data.sectype = GTYPE_NONE;
+
+  // Wrap in Ship for saving
+  Ship test_ship(test_data);
 
   // Test 1: Save ship
   std::println("Test 1: Save ship...");
@@ -75,30 +78,30 @@ int main() {
 
   // Test 3: Verify data integrity
   std::println("Test 3: Verify data integrity...");
-  assert(retrieved->number == test_ship.number);
-  assert(retrieved->owner == test_ship.owner);
-  assert(retrieved->governor == test_ship.governor);
-  assert(retrieved->name == test_ship.name);
-  assert(retrieved->shipclass == test_ship.shipclass);
-  assert(retrieved->race == test_ship.race);
-  assert(retrieved->xpos == test_ship.xpos);
-  assert(retrieved->ypos == test_ship.ypos);
-  assert(retrieved->fuel == test_ship.fuel);
-  assert(retrieved->mass == test_ship.mass);
-  assert(retrieved->armor == test_ship.armor);
-  assert(retrieved->size == test_ship.size);
-  assert(retrieved->max_crew == test_ship.max_crew);
-  assert(retrieved->tech == test_ship.tech);
-  assert(retrieved->type == test_ship.type);
-  assert(retrieved->active == test_ship.active);
-  assert(retrieved->alive == test_ship.alive);
+  assert(retrieved->number() == test_ship.number());
+  assert(retrieved->owner() == test_ship.owner());
+  assert(retrieved->governor() == test_ship.governor());
+  assert(retrieved->name() == test_ship.name());
+  assert(retrieved->shipclass() == test_ship.shipclass());
+  assert(retrieved->race() == test_ship.race());
+  assert(retrieved->xpos() == test_ship.xpos());
+  assert(retrieved->ypos() == test_ship.ypos());
+  assert(retrieved->fuel() == test_ship.fuel());
+  assert(retrieved->mass() == test_ship.mass());
+  assert(retrieved->armor() == test_ship.armor());
+  assert(retrieved->size() == test_ship.size());
+  assert(retrieved->max_crew() == test_ship.max_crew());
+  assert(retrieved->tech() == test_ship.tech());
+  assert(retrieved->type() == test_ship.type());
+  assert(retrieved->active() == test_ship.active());
+  assert(retrieved->alive() == test_ship.alive());
   std::println("  ✓ All fields match original");
 
   // Test 4: Update ship
   std::println("Test 4: Update ship...");
-  retrieved->fuel = 3000.0;
-  retrieved->damage = 50;
-  retrieved->xpos = 150.0;
+  retrieved->fuel() = 3000.0;
+  retrieved->damage() = 50;
+  retrieved->xpos() = 150.0;
   saved = repo.save(*retrieved);
   assert(saved && "Failed to update ship");
   std::println("  ✓ Ship updated successfully");
@@ -107,21 +110,23 @@ int main() {
   std::println("Test 5: Retrieve updated ship...");
   auto updated = repo.find_by_number(1);
   assert(updated.has_value() && "Failed to retrieve updated ship");
-  assert(updated->fuel == 3000.0);
-  assert(updated->damage == 50);
-  assert(updated->xpos == 150.0);
+  assert(updated->fuel() == 3000.0);
+  assert(updated->damage() == 50);
+  assert(updated->xpos() == 150.0);
   std::println("  ✓ Updated values verified");
 
-  // Test 6: Save multiple ships
+  // Test 6: Save multiple ships (use ship_struct which is copyable)
   std::println("Test 6: Save multiple ships...");
-  Ship ship2 = test_ship;
-  ship2.number = 2;
-  ship2.name = "USS Defiant";
+  ship_struct ship2_data = test_data;  // Copy the POD struct
+  ship2_data.number = 2;
+  ship2_data.name = "USS Defiant";
+  Ship ship2(ship2_data);
   repo.save(ship2);
 
-  Ship ship3 = test_ship;
-  ship3.number = 5;  // Gap at 3 and 4
-  ship3.name = "USS Voyager";
+  ship_struct ship3_data = test_data;  // Copy the POD struct
+  ship3_data.number = 5;               // Gap at 3 and 4
+  ship3_data.name = "USS Voyager";
+  Ship ship3(ship3_data);
   repo.save(ship3);
 
   std::println("  ✓ Multiple ships saved");

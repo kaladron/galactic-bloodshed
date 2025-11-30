@@ -122,33 +122,33 @@ int main() {
   {
     // Create first ship - a probe at different location
     Ship probe1{};
-    probe1.number = 100;
-    probe1.type = ShipType::OTYPE_PROBE;
-    probe1.owner = 1;
-    probe1.alive = true;
-    probe1.land_x = 1;
-    probe1.land_y = 1;
-    probe1.nextship = 101;  // Links to second ship
+    probe1.number() = 100;
+    probe1.type() = ShipType::OTYPE_PROBE;
+    probe1.owner() = 1;
+    probe1.alive() = true;
+    probe1.land_x() = 1;
+    probe1.land_y() = 1;
+    probe1.nextship() = 101;  // Links to second ship
 
     // Create second ship - another probe at different location
     Ship probe2{};
-    probe2.number = 101;
-    probe2.type = ShipType::OTYPE_PROBE;
-    probe2.owner = 1;
-    probe2.alive = true;
-    probe2.land_x = 2;
-    probe2.land_y = 2;
-    probe2.nextship = 102;  // Links to third ship (the quarry)
+    probe2.number() = 101;
+    probe2.type() = ShipType::OTYPE_PROBE;
+    probe2.owner() = 1;
+    probe2.alive() = true;
+    probe2.land_x() = 2;
+    probe2.land_y() = 2;
+    probe2.nextship() = 102;  // Links to third ship (the quarry)
 
     // Create third ship - a quarry at coordinates (3, 3)
     Ship quarry{};
-    quarry.number = 102;
-    quarry.type = ShipType::OTYPE_QUARRY;
-    quarry.owner = 1;
-    quarry.alive = true;
-    quarry.land_x = 3;
-    quarry.land_y = 3;
-    quarry.nextship = 0;  // End of list
+    quarry.number() = 102;
+    quarry.type() = ShipType::OTYPE_QUARRY;
+    quarry.owner() = 1;
+    quarry.alive() = true;
+    quarry.land_x() = 3;
+    quarry.land_y() = 3;
+    quarry.nextship() = 0;  // End of list
 
     // Add all ships to planet's ship list (starts with ship 100)
     planet.ships() = 100;
@@ -182,12 +182,12 @@ int main() {
   {
     // Create a dead quarry at (7, 7)
     Ship dead_quarry{};
-    dead_quarry.number = 2;
-    dead_quarry.type = ShipType::OTYPE_QUARRY;
-    dead_quarry.owner = 1;
-    dead_quarry.alive = false;  // Dead
-    dead_quarry.land_x = 7;
-    dead_quarry.land_y = 7;
+    dead_quarry.number() = 2;
+    dead_quarry.type() = ShipType::OTYPE_QUARRY;
+    dead_quarry.owner() = 1;
+    dead_quarry.alive() = false;  // Dead
+    dead_quarry.land_x() = 7;
+    dead_quarry.land_y() = 7;
 
     JsonStore store(db);
     ShipRepository ships(store);

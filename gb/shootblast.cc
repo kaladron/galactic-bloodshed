@@ -29,27 +29,27 @@ shoot_ship_to_ship(const Ship& attacker, Ship& target, const int cew_strength,
                    const int range, const bool ignore) {
   if (cew_strength <= 0) return std::nullopt;
 
-  if (!(attacker.alive || ignore) || !target.alive) return std::nullopt;
-  if (attacker.whatorbits == ScopeLevel::LEVEL_SHIP ||
-      target.whatorbits == ScopeLevel::LEVEL_UNIV)
+  if (!(attacker.alive() || ignore) || !target.alive()) return std::nullopt;
+  if (attacker.whatorbits() == ScopeLevel::LEVEL_SHIP ||
+      target.whatorbits() == ScopeLevel::LEVEL_UNIV)
     return std::nullopt;
-  if (target.whatorbits == ScopeLevel::LEVEL_SHIP ||
-      target.whatorbits == ScopeLevel::LEVEL_UNIV)
+  if (target.whatorbits() == ScopeLevel::LEVEL_SHIP ||
+      target.whatorbits() == ScopeLevel::LEVEL_UNIV)
     return std::nullopt;
-  if (attacker.storbits != target.storbits) return std::nullopt;
-  if (has_switch(attacker) && !attacker.on) return std::nullopt;
+  if (attacker.storbits() != target.storbits()) return std::nullopt;
+  if (has_switch(attacker) && !attacker.on()) return std::nullopt;
 
   /* compute caliber */
   const auto caliber = current_caliber(attacker);
 
   double dist = [&attacker, &target]() -> double {
-    if (attacker.type ==
+    if (attacker.type() ==
         ShipType::STYPE_MISSILE) /* missiles hit at point blank range */
       return 0.0;
 
     double dist = std::sqrt(
-        Distsq(attacker.xpos, attacker.ypos, target.xpos, target.ypos));
-    if (attacker.type ==
+        Distsq(attacker.xpos(), attacker.ypos(), target.xpos(), target.ypos()));
+    if (attacker.type() ==
         ShipType::STYPE_MINE) { /* compute the effective range */
       dist *= dist / 200.0;     /* mines are very effective inside 200 */
     }
@@ -63,22 +63,22 @@ shoot_ship_to_ship(const Ship& attacker, Ship& target, const int cew_strength,
   auto [tevade, tspeed, tbody] = ship_disposition(target);
   auto defense = getdefense(target);
 
-  bool focus = laser_on(attacker) && attacker.focus;
+  bool focus = laser_on(attacker) && attacker.focus();
 
   int hit_probability;
   int hits = (range != 0)
-                 ? cew_strength * CEW_hit(dist, (int)attacker.cew_range)
-                 : Num_hits(dist, focus, cew_strength, attacker.tech,
-                            (int)attacker.damage, fevade, tevade, fspeed,
+                 ? cew_strength * CEW_hit(dist, (int)attacker.cew_range())
+                 : Num_hits(dist, focus, cew_strength, attacker.tech(),
+                            (int)attacker.damage(), fevade, tevade, fspeed,
                             tspeed, tbody, caliber, defense, &hit_probability);
 
   // mode is whether a ship has been set to radiative with the orders command.
-  if (attacker.mode) {
+  if (attacker.mode()) {
     auto [damage, damage_msg] =
-        do_radiation(target, attacker.tech, cew_strength, hits);
+        do_radiation(target, attacker.tech(), cew_strength, hits);
     std::string short_msg = std::format(
         "{}: {} {} {}\n", dispshiploc(target), ship_to_string(attacker),
-        target.alive ? "attacked" : "DESTROYED", ship_to_string(target));
+        target.alive() ? "attacked" : "DESTROYED", ship_to_string(target));
     std::string long_msg = short_msg;
     long_msg += damage_msg;
     return std::make_tuple(damage, short_msg, long_msg);
@@ -86,11 +86,11 @@ shoot_ship_to_ship(const Ship& attacker, Ship& target, const int cew_strength,
   }
 
   // CEW, destruct, lasers
-  auto weapon = [range, attacker, caliber] -> std::string {
+  auto weapon = [range, &attacker, caliber] -> std::string {
     if (range != 0) return "strength CEW";
 
     if (laser_on(attacker)) {
-      if (attacker.focus) return "strength focused laser";
+      if (attacker.focus()) return "strength focused laser";
       return "strength laser";
     }
 
@@ -109,11 +109,11 @@ shoot_ship_to_ship(const Ship& attacker, Ship& target, const int cew_strength,
   if (caliber == GTYPE_NONE) return std::nullopt;
 
   auto [damage, damage_msg] =
-      do_damage(attacker.owner, target, (double)attacker.tech, cew_strength,
+      do_damage(attacker.owner(), target, (double)attacker.tech(), cew_strength,
                 hits, defense, caliber, dist, weapon, hit_probability);
   std::string short_msg = std::format(
       "{}: {} {} {}\n", dispshiploc(target), ship_to_string(attacker),
-      target.alive ? "attacked" : "DESTROYED", ship_to_string(target));
+      target.alive() ? "attacked" : "DESTROYED", ship_to_string(target));
   std::string long_msg = short_msg;
   long_msg += damage_msg;
   return std::make_tuple(damage, short_msg, long_msg);
@@ -122,9 +122,9 @@ shoot_ship_to_ship(const Ship& attacker, Ship& target, const int cew_strength,
 int shoot_planet_to_ship(Race& race, Ship& ship, int strength, char* long_msg,
                          char* short_msg) {
   if (strength <= 0) return -1;
-  if (!ship.alive) return -1;
+  if (!ship.alive()) return -1;
 
-  if (ship.whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
+  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return -1;
 
   auto [evade, speed, body] = ship_disposition(ship);
 
@@ -136,7 +136,7 @@ int shoot_planet_to_ship(Race& race, Ship& ship, int strength, char* long_msg,
       do_damage(race.Playernum, ship, race.tech, strength, hits, 0,
                 GTYPE_MEDIUM, 0.0, "medium guns", hit_probability);
   sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(ship).c_str(),
-          race.Playernum, ship.alive ? "attacked" : "DESTROYED",
+          race.Playernum, ship.alive() ? "attacked" : "DESTROYED",
           ship_to_string(ship).c_str());
   strcpy(long_msg, short_msg);
   strcat(long_msg, damage_msg.c_str());
@@ -153,23 +153,23 @@ int shoot_ship_to_planet(Ship& ship, Planet& pl, int strength, int x, int y,
   int numdest = 0;
 
   if (strength <= 0) return -1;
-  if (!(ship.alive || ignore)) return -1;
-  if (has_switch(ship) && !ship.on) return -1;
-  if (ship.whatorbits != ScopeLevel::LEVEL_PLAN) return -1;
+  if (!(ship.alive() || ignore)) return -1;
+  if (has_switch(ship) && !ship.on()) return -1;
+  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return -1;
 
   if (x < 0 || x > pl.Maxx() - 1 || y < 0 || y > pl.Maxy() - 1) return -1;
 
   double r = .4 * strength;
   if (!caliber) { /* figure out the appropriate gun caliber if not given*/
-    if (ship.fire_laser)
+    if (ship.fire_laser())
       caliber = GTYPE_LIGHT;
     else
-      switch (ship.guns) {
+      switch (ship.guns()) {
         case PRIMARY:
-          caliber = ship.primtype;
+          caliber = ship.primtype();
           break;
         case SECONDARY:
-          caliber = ship.sectype;
+          caliber = ship.sectype();
           break;
         default:
           caliber = GTYPE_LIGHT;
@@ -268,7 +268,7 @@ static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
                                                 int strength, int hits) {
   std::stringstream msg;
   double fac = (2. / 3.14159265) *
-               std::atan((double)(5 * (tech + 1.0) / (ship.tech + 1.0)));
+               std::atan((double)(5 * (tech + 1.0) / (ship.tech() + 1.0)));
 
   int arm = std::max(0UL, armor(ship) - hits / 5);
   int body = shipbody(ship);
@@ -284,13 +284,13 @@ static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
   int dosage = round_rand(40. * (double)penetrate / (double)body);
   dosage = std::min(100, dosage);
 
-  if (dosage > ship.rad) ship.rad = std::max(ship.rad, dosage);
-  if (success(ship.rad)) ship.active = 0;
+  if (dosage > ship.rad()) ship.rad() = std::max(ship.rad(), dosage);
+  if (success(ship.rad())) ship.active() = 0;
 
   int casualties = 0;
   int casualties1 = 0;
   msg << std::format("\tAttack: {} radiation\n\t  Hits: {}\n", strength, hits);
-  msg << std::format("\t   Rad: {}% for a total of {}%\n", dosage, ship.rad);
+  msg << std::format("\t   Rad: {}% for a total of {}%\n", dosage, ship.rad());
   if (casualties || casualties1) {
     msg << std::format("\tKilled: {} civ + {} mil\n", casualties, casualties1);
   }
@@ -307,13 +307,13 @@ do_damage(player_t who, Ship& ship, double tech, int strength, int hits,
                      range);
   msg << std::format("\t  Hits: {}  {}% probability\n", hits, hit_probability);
   /* ship may lose some armor */
-  if (ship.armor)
+  if (ship.armor())
     if (success(hits * caliber)) {
-      ship.armor--;
-      msg << std::format("\t\tArmor reduced to {}\n", ship.armor);
+      ship.armor()--;
+      msg << std::format("\t\tArmor reduced to {}\n", ship.armor());
     }
 
-  double fac = p_factor(tech, ship.tech);
+  double fac = p_factor(tech, ship.tech());
   int arm = std::max(0UL, armor(ship) + defense - hits / 5);
   double body = std::sqrt((double)(0.1 * shipbody(ship)));
 
@@ -336,14 +336,14 @@ do_damage(player_t who, Ship& ship, double tech, int strength, int hits,
   if (crithits) damage += critdam;
 
   damage = std::min(100, damage);
-  ship.damage = std::min(100, (int)(ship.damage) + damage);
+  ship.damage() = std::min(100, (int)(ship.damage()) + damage);
 
   auto [casualties, casualties1, primgundamage, secgundamage] =
       do_collateral(ship, damage);
   /* set laser strength for ships to maximum safe limit */
-  if (ship.fire_laser) {
-    int safe = (int)((1.0 - .01 * ship.damage) * ship.tech / 4.0);
-    if (ship.fire_laser > safe) ship.fire_laser = safe;
+  if (ship.fire_laser()) {
+    int safe = (int)((1.0 - .01 * ship.damage()) * ship.tech() / 4.0);
+    if (ship.fire_laser() > safe) ship.fire_laser() = safe;
   }
 
   if (penetrate) {
@@ -358,7 +358,7 @@ do_damage(player_t who, Ship& ship, double tech, int strength, int hits,
   }
   if (damage) {
     msg << std::format("\tDamage: {}% damage for a total of {}%\n", damage,
-                       ship.damage);
+                       ship.damage());
   }
   if (primgundamage || secgundamage) {
     msg << std::format("\t Other: {} primary/{} secondary guns destroyed\n",
@@ -369,8 +369,8 @@ do_damage(player_t who, Ship& ship, double tech, int strength, int hits,
                        casualties1);
   }
 
-  if (ship.damage >= 100) kill_ship(who, &ship);
-  ship.build_cost = (int)cost(ship);
+  if (ship.damage() >= 100) kill_ship(who, &ship);
+  ship.build_cost() = (int)cost(ship);
   return {damage, msg.str()};
 }
 
@@ -387,9 +387,10 @@ static std::tuple<int, int, int> ship_disposition(const Ship& ship) {
   int evade = 0;
   int speed = 0;
   int body = size(ship);
-  if (ship.active && !ship.docked && (ship.whatdest || ship.navigate.on)) {
-    evade = ship.protect.evade;
-    speed = ship.speed;
+  if (ship.active() && !ship.docked() &&
+      (ship.whatdest() || ship.navigate().on)) {
+    evade = ship.protect().evade;
+    speed = ship.speed();
   }
   return {evade, speed, body};
 }
@@ -483,11 +484,11 @@ double tele_range(ShipType type, double tech) {
 }
 
 guntype_t current_caliber(const Ship& ship) {
-  if (ship.laser && ship.fire_laser) return GTYPE_LIGHT;
-  if (ship.type == ShipType::STYPE_MINE) return GTYPE_LIGHT;
-  if (ship.type == ShipType::STYPE_MISSILE) return GTYPE_HEAVY;
-  if (ship.guns == PRIMARY) return ship.primtype;
-  if (ship.guns == SECONDARY) return ship.sectype;
+  if (ship.laser() && ship.fire_laser()) return GTYPE_LIGHT;
+  if (ship.type() == ShipType::STYPE_MINE) return GTYPE_LIGHT;
+  if (ship.type() == ShipType::STYPE_MISSILE) return GTYPE_HEAVY;
+  if (ship.guns() == PRIMARY) return ship.primtype();
+  if (ship.guns() == SECONDARY) return ship.sectype();
 
   return GTYPE_NONE;
 }
@@ -507,30 +508,30 @@ static std::string do_critical_hits(int penetrate, Ship& ship, int* crithits,
   *critdam = std::min(100, *critdam);
   /* check for special systems damage */
   critmsg << "\t\tSpecial systems damage: ";
-  if (ship.cew && success(*critdam)) {
+  if (ship.cew() && success(*critdam)) {
     critmsg << "CEW ";
-    ship.cew = 0;
+    ship.cew() = 0;
   }
-  if (ship.laser && success(*critdam)) {
+  if (ship.laser() && success(*critdam)) {
     critmsg << "Laser ";
-    ship.laser = 0;
+    ship.laser() = 0;
   }
-  if (ship.cloak && success(*critdam)) {
+  if (ship.cloak() && success(*critdam)) {
     critmsg << "Cloak ";
-    ship.cloak = 0;
+    ship.cloak() = 0;
   }
-  if (ship.hyper_drive.has && success(*critdam)) {
+  if (ship.hyper_drive().has && success(*critdam)) {
     critmsg << "Hyper-drive ";
-    ship.hyper_drive.has = 0;
+    ship.hyper_drive().has = 0;
   }
-  if (ship.max_speed && success(*critdam)) {
-    ship.speed = 0;
-    ship.max_speed = int_rand(0, (int)ship.max_speed - 1);
-    critmsg << std::format("Speed={} ", ship.max_speed);
+  if (ship.max_speed() && success(*critdam)) {
+    ship.speed() = 0;
+    ship.max_speed() = int_rand(0, (int)ship.max_speed() - 1);
+    critmsg << std::format("Speed={} ", ship.max_speed());
   }
-  if (ship.armor && success(*critdam)) {
-    ship.armor = int_rand(0, (int)ship.armor - 1);
-    critmsg << std::format("Armor={} ", ship.armor);
+  if (ship.armor() && success(*critdam)) {
+    ship.armor() = int_rand(0, (int)ship.armor() - 1);
+    critmsg << std::format("Armor={} ", ship.armor());
   }
   critmsg << "\n";
   return critmsg.str();
@@ -543,20 +544,20 @@ std::tuple<int, int, int, int> do_collateral(Ship& ship, int damage) {
   int primgundamage = 0;
   int secgundamage = 0;
 
-  for (auto i = 1; i <= ship.popn; i++)
+  for (auto i = 1; i <= ship.popn(); i++)
     casualties += success(damage);
-  ship.popn -= casualties;
-  for (auto i = 1; i <= ship.troops; i++)
+  ship.popn() -= casualties;
+  for (auto i = 1; i <= ship.troops(); i++)
     casualties1 += success(damage);
-  ship.troops -= casualties1;
-  for (auto i = 1; i <= ship.primary; i++)
+  ship.troops() -= casualties1;
+  for (auto i = 1; i <= ship.primary(); i++)
     primgundamage += success(damage);
-  ship.primary -= primgundamage;
-  for (auto i = 1; i <= ship.secondary; i++)
+  ship.primary() -= primgundamage;
+  for (auto i = 1; i <= ship.secondary(); i++)
     secgundamage += success(damage);
-  ship.secondary -= secgundamage;
-  if (!ship.primary) ship.primtype = GTYPE_NONE;
-  if (!ship.secondary) ship.sectype = GTYPE_NONE;
+  ship.secondary() -= secgundamage;
+  if (!ship.primary()) ship.primtype() = GTYPE_NONE;
+  if (!ship.secondary()) ship.sectype() = GTYPE_NONE;
   return {casualties, casualties1, primgundamage, secgundamage};
 }
 

@@ -45,12 +45,12 @@ void distance(const command_t& argv, GameObj& g) {
       g.out << "Ship not found.\n";
       return;
     }
-    if (ship->owner != Playernum) {
+    if (ship->owner() != Playernum) {
       g.out << "Nice try.\n";
       return;
     }
-    x0 = ship->xpos;
-    y0 = ship->ypos;
+    x0 = ship->xpos();
+    y0 = ship->ypos();
   } else if (from.level == ScopeLevel::LEVEL_PLAN) {
     const auto* p = g.entity_manager.peek_planet(from.snum, from.pnum);
     if (!p) {
@@ -80,12 +80,12 @@ void distance(const command_t& argv, GameObj& g) {
       g.out << "Ship not found.\n";
       return;
     }
-    if (ship->owner != Playernum) {
+    if (ship->owner() != Playernum) {
       g.out << "Nice try.\n";
       return;
     }
-    x1 = ship->xpos;
-    y1 = ship->ypos;
+    x1 = ship->xpos();
+    y1 = ship->ypos();
   } else if (to.level == ScopeLevel::LEVEL_PLAN) {
     const auto* p = g.entity_manager.peek_planet(to.snum, to.pnum);
     if (!p) {

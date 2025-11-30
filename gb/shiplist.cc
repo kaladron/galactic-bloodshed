@@ -106,18 +106,18 @@ bool ShipList::matches_scope(const Ship& ship) const {
   }
 
   // Scope-based filtering
-  if (!ship.alive) return false;
+  if (!ship.alive()) return false;
 
   switch (scope_level) {
     case ScopeLevel::LEVEL_UNIV:
       return true;  // All ships match universe scope
     case ScopeLevel::LEVEL_STAR:
-      return ship.storbits == snum;
+      return ship.storbits() == snum;
     case ScopeLevel::LEVEL_PLAN:
-      return ship.storbits == snum && ship.pnumorbits == pnum;
+      return ship.storbits() == snum && ship.pnumorbits() == pnum;
     case ScopeLevel::LEVEL_SHIP:
       // At ship scope, match ships owned by the player
-      return ship.owner == player;
+      return ship.owner() == player;
   }
   return false;
 }
@@ -142,7 +142,7 @@ ShipList::MutableIterator& ShipList::MutableIterator::operator++() {
   if (type == IterationType::Nested) {
     // Follow nextship linked list
     const auto* ship = em.peek_ship(current);
-    current = ship ? ship->nextship : 0;
+    current = ship ? ship->nextship() : 0;
   } else {
     // Scope-based: increment to next ship number
     ++current;
@@ -181,7 +181,7 @@ void ShipList::MutableIterator::advance_to_next_match() {
 
     // Move to next ship
     if (type == IterationType::Nested) {
-      current = ship->nextship;
+      current = ship->nextship();
     } else {
       ++current;
       if (current > em.num_ships()) {
@@ -197,18 +197,18 @@ bool ShipList::MutableIterator::matches_scope(const Ship& ship) const {
   }
 
   // Scope-based filtering
-  if (!ship.alive) return false;
+  if (!ship.alive()) return false;
 
   switch (scope_level) {
     case ScopeLevel::LEVEL_UNIV:
       return true;  // All ships match universe scope
     case ScopeLevel::LEVEL_STAR:
-      return ship.storbits == snum;
+      return ship.storbits() == snum;
     case ScopeLevel::LEVEL_PLAN:
-      return ship.storbits == snum && ship.pnumorbits == pnum;
+      return ship.storbits() == snum && ship.pnumorbits() == pnum;
     case ScopeLevel::LEVEL_SHIP:
       // At ship scope, match ships owned by the player
-      return ship.owner == player;
+      return ship.owner() == player;
   }
   return false;
 }
@@ -233,7 +233,7 @@ ShipList::ConstIterator& ShipList::ConstIterator::operator++() {
   if (type == IterationType::Nested) {
     // Follow nextship linked list
     const auto* ship = em.peek_ship(current);
-    current = ship ? ship->nextship : 0;
+    current = ship ? ship->nextship() : 0;
   } else {
     // Scope-based: increment to next ship number
     ++current;
@@ -273,7 +273,7 @@ void ShipList::ConstIterator::advance_to_next_match() {
 
     // Move to next ship
     if (type == IterationType::Nested) {
-      current = ship->nextship;
+      current = ship->nextship();
     } else {
       ++current;
       if (current > em.num_ships()) {
@@ -289,18 +289,18 @@ bool ShipList::ConstIterator::matches_scope(const Ship& ship) const {
   }
 
   // Scope-based filtering
-  if (!ship.alive) return false;
+  if (!ship.alive()) return false;
 
   switch (scope_level) {
     case ScopeLevel::LEVEL_UNIV:
       return true;  // All ships match universe scope
     case ScopeLevel::LEVEL_STAR:
-      return ship.storbits == snum;
+      return ship.storbits() == snum;
     case ScopeLevel::LEVEL_PLAN:
-      return ship.storbits == snum && ship.pnumorbits == pnum;
+      return ship.storbits() == snum && ship.pnumorbits() == pnum;
     case ScopeLevel::LEVEL_SHIP:
       // At ship scope, match ships owned by the player
-      return ship.owner == player;
+      return ship.owner() == player;
   }
   return false;
 }

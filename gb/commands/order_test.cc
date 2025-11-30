@@ -28,15 +28,15 @@ int main() {
 
   // Create a test ship with default orders - use battleship which can bombard
   Ship ship{};
-  ship.number = 1;
-  ship.owner = 1;
-  ship.governor = 0;
-  ship.alive = true;
-  ship.active = true;
-  ship.type = ShipType::STYPE_BATTLE;  // Battleship can bombard
-  ship.name = "TestShip";
-  ship.speed = 5;
-  ship.popn = 100;  // Crew
+  ship.number() = 1;
+  ship.owner() = 1;
+  ship.governor() = 0;
+  ship.alive() = true;
+  ship.active() = true;
+  ship.type() = ShipType::STYPE_BATTLE;  // Battleship can bombard
+  ship.name() = "TestShip";
+  ship.speed() = 5;
+  ship.popn() = 100;  // Crew
 
   // Save ship via repository
   ShipRepository ships_repo(store);
@@ -64,10 +64,10 @@ int main() {
     const auto* saved_ship = em.peek_ship(1);
     assert(saved_ship != nullptr);
     std::println("    Ship found: number={}, protect.planet={}",
-                 saved_ship->number, saved_ship->protect.planet);
-    assert(saved_ship->protect.planet == 1);
+                 saved_ship->number(), saved_ship->protect().planet);
+    assert(saved_ship->protect().planet == 1);
     std::println("    ✓ Defense order set: protect.planet={}",
-                 saved_ship->protect.planet);
+                 saved_ship->protect().planet);
   }
 
   std::println("\nTest 2: Turn defense order off");
@@ -84,9 +84,9 @@ int main() {
     // Verify defense was turned off
     const auto* saved_ship = em.peek_ship(1);
     assert(saved_ship != nullptr);
-    assert(saved_ship->protect.planet == 0);
+    assert(saved_ship->protect().planet == 0);
     std::println("    ✓ Defense order turned off: protect.planet={}",
-                 saved_ship->protect.planet);
+                 saved_ship->protect().planet);
   }
 
   std::println("\nTest 3: Display all orders (no modifications)");
@@ -98,7 +98,7 @@ int main() {
     // Verify ship state unchanged
     const auto* saved_ship = em.peek_ship(1);
     assert(saved_ship != nullptr);
-    assert(saved_ship->protect.planet == 0);  // Still off from previous test
+    assert(saved_ship->protect().planet == 0);  // Still off from previous test
     std::println("    ✓ Display orders works without modification");
   }
 

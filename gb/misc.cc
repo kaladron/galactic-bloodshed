@@ -175,29 +175,29 @@ void strstr_to_queue(DescriptorData& d) {
 
 /*utilities for dealing with ship lists */
 void insert_sh_univ(universe_struct* sdata, Ship* s) {
-  s->nextship = sdata->ships;
-  sdata->ships = s->number;
-  s->whatorbits = ScopeLevel::LEVEL_UNIV;
+  s->nextship() = sdata->ships;
+  sdata->ships = s->number();
+  s->whatorbits() = ScopeLevel::LEVEL_UNIV;
 }
 
 void insert_sh_star(Star& star, Ship* s) {
-  s->nextship = star.ships();
-  star.ships() = s->number;
-  s->whatorbits = ScopeLevel::LEVEL_STAR;
+  s->nextship() = star.ships();
+  star.ships() = s->number();
+  s->whatorbits() = ScopeLevel::LEVEL_STAR;
 }
 
 void insert_sh_plan(Planet& pl, Ship* s) {
-  s->nextship = pl.ships();
-  pl.ships() = s->number;
-  s->whatorbits = ScopeLevel::LEVEL_PLAN;
+  s->nextship() = pl.ships();
+  pl.ships() = s->number();
+  s->whatorbits() = ScopeLevel::LEVEL_PLAN;
 }
 
 void insert_sh_ship(Ship* s, Ship* s2) {
-  s->nextship = s2->ships;
-  s2->ships = s->number;
-  s->whatorbits = ScopeLevel::LEVEL_SHIP;
-  s->whatdest = ScopeLevel::LEVEL_SHIP;
-  s->destshipno = s2->number;
+  s->nextship() = s2->ships();
+  s2->ships() = s->number();
+  s->whatorbits() = ScopeLevel::LEVEL_SHIP;
+  s->whatdest() = ScopeLevel::LEVEL_SHIP;
+  s->destshipno() = s2->number();
 }
 
 /**
@@ -205,28 +205,28 @@ void insert_sh_ship(Ship* s, Ship* s2) {
  * \arg s Ship to remove
  */
 void remove_sh_star(EntityManager& entity_manager, Ship& s) {
-  stars[s.storbits] = getstar(s.storbits);
-  shipnum_t sh = stars[s.storbits].ships();
+  stars[s.storbits()] = getstar(s.storbits());
+  shipnum_t sh = stars[s.storbits()].ships();
 
   // If the ship is the first of the chain, point the star to the
   // next, which is zero if there are no other ships.
-  if (sh == s.number) {
-    stars[s.storbits].ships() = s.nextship;
-    putstar(stars[s.storbits], s.storbits);
+  if (sh == s.number()) {
+    stars[s.storbits()].ships() = s.nextship();
+    putstar(stars[s.storbits()], s.storbits());
   } else {
     ShipList ships(entity_manager, sh);
     for (auto ship_handle : ships) {
       Ship& s2 = *ship_handle;
-      if (s2.nextship == s.number) {
-        s2.nextship = s.nextship;
+      if (s2.nextship() == s.number()) {
+        s2.nextship() = s.nextship();
         break;
       }
     }
   }
 
   // put in limbo - wait for insert_sh
-  s.whatorbits = ScopeLevel::LEVEL_UNIV;
-  s.nextship = 0;
+  s.whatorbits() = ScopeLevel::LEVEL_UNIV;
+  s.nextship() = 0;
 }
 
 /**
@@ -234,28 +234,28 @@ void remove_sh_star(EntityManager& entity_manager, Ship& s) {
  * \arg s Ship to remove
  */
 void remove_sh_plan(EntityManager& entity_manager, Ship& s) {
-  auto host = getplanet(s.storbits, s.pnumorbits);
+  auto host = getplanet(s.storbits(), s.pnumorbits());
   shipnum_t sh = host.ships();
 
   // If the ship is the first of the chain, point the star to the
   // next, which is zero if there are no other ships.
-  if (sh == s.number) {
-    host.ships() = s.nextship;
-    putplanet(host, stars[s.storbits], s.pnumorbits);
+  if (sh == s.number()) {
+    host.ships() = s.nextship();
+    putplanet(host, stars[s.storbits()], s.pnumorbits());
   } else {
     ShipList ships(entity_manager, sh);
     for (auto ship_handle : ships) {
       Ship& s2 = *ship_handle;
-      if (s2.nextship == s.number) {
-        s2.nextship = s.nextship;
+      if (s2.nextship() == s.number()) {
+        s2.nextship() = s.nextship();
         break;
       }
     }
   }
 
   // put in limbo - wait for insert_sh
-  s.whatorbits = ScopeLevel::LEVEL_UNIV;
-  s.nextship = 0;
+  s.whatorbits() = ScopeLevel::LEVEL_UNIV;
+  s.nextship() = 0;
 }
 
 /**
@@ -263,24 +263,24 @@ void remove_sh_plan(EntityManager& entity_manager, Ship& s) {
  * \arg s Ship to remove
  */
 void remove_sh_ship(EntityManager& entity_manager, Ship& s, Ship& host) {
-  shipnum_t sh = host.ships;
+  shipnum_t sh = host.ships();
 
   // If the ship is the first of the chain, point the ship to the
   // next, which is zero if there are no other ships.
-  if (sh == s.number) {
-    host.ships = s.nextship;
+  if (sh == s.number()) {
+    host.ships() = s.nextship();
   } else {
     ShipList ships(entity_manager, sh);
     for (auto ship_handle : ships) {
       Ship& s2 = *ship_handle;
-      if (s2.nextship == s.number) {
-        s2.nextship = s.nextship;
+      if (s2.nextship() == s.number()) {
+        s2.nextship() = s.nextship();
         break;
       }
     }
   }
 
   // put in limbo - wait for insert_sh
-  s.whatorbits = ScopeLevel::LEVEL_UNIV;
-  s.nextship = 0;
+  s.whatorbits() = ScopeLevel::LEVEL_UNIV;
+  s.nextship() = 0;
 }

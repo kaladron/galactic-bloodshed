@@ -61,7 +61,7 @@ void dissolve(const command_t& argv, GameObj& g) {
   auto n_ships = Numships();
   for (auto i = 1; i <= n_ships; i++) {
     auto ship_handle = g.entity_manager.get_ship(i);
-    if (!ship_handle.get() || ship_handle->owner != Playernum) continue;
+    if (!ship_handle.get() || ship_handle->owner() != Playernum) continue;
     kill_ship(Playernum, &*ship_handle);
     notify(Playernum, Governor,
            std::format("Ship #{}, self-destruct enabled\n", i));

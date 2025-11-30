@@ -29,31 +29,31 @@ int main() {
 
   // Create test ships
   Ship ship1{};
-  ship1.number = 1;
-  ship1.owner = 1;
-  ship1.alive = true;
-  ship1.storbits = 0;
-  ship1.pnumorbits = 0;
-  ship1.type = ShipType::OTYPE_FACTORY;
-  ship1.nextship = 2;  // Linked list
+  ship1.number() = 1;
+  ship1.owner() = 1;
+  ship1.alive() = true;
+  ship1.storbits() = 0;
+  ship1.pnumorbits() = 0;
+  ship1.type() = ShipType::OTYPE_FACTORY;
+  ship1.nextship() = 2;  // Linked list
 
   Ship ship2{};
-  ship2.number = 2;
-  ship2.owner = 1;
-  ship2.alive = true;
-  ship2.storbits = 0;
-  ship2.pnumorbits = 0;
-  ship2.type = ShipType::OTYPE_PROBE;
-  ship2.nextship = 3;
+  ship2.number() = 2;
+  ship2.owner() = 1;
+  ship2.alive() = true;
+  ship2.storbits() = 0;
+  ship2.pnumorbits() = 0;
+  ship2.type() = ShipType::OTYPE_PROBE;
+  ship2.nextship() = 3;
 
   Ship ship3{};
-  ship3.number = 3;
-  ship3.owner = 1;
-  ship3.alive = true;
-  ship3.storbits = 0;
-  ship3.pnumorbits = 0;
-  ship3.type = ShipType::STYPE_CARGO;
-  ship3.nextship = 0;  // End of list
+  ship3.number() = 3;
+  ship3.owner() = 1;
+  ship3.alive() = true;
+  ship3.storbits() = 0;
+  ship3.pnumorbits() = 0;
+  ship3.type() = ShipType::STYPE_CARGO;
+  ship3.nextship() = 0;  // End of list
 
   ShipRepository ships_repo(store);
   ships_repo.save(ship1);
@@ -67,8 +67,8 @@ int main() {
     for (auto handle : list) {
       count++;
       Ship& ship = *handle;
-      assert(ship.alive);
-      assert(ship.owner == 1);
+      assert(ship.alive());
+      assert(ship.owner() == 1);
     }
     assert(count == 3);
     std::println("✓ Test 1 passed: Nested iteration found {} ships", count);
@@ -78,48 +78,48 @@ int main() {
   {
     // Create a cargo ship that contains other ships
     Ship cargo{};
-    cargo.number = 4;  // Use contiguous numbering
-    cargo.owner = 1;
-    cargo.alive = true;
-    cargo.storbits = 0;
-    cargo.pnumorbits = 0;
-    cargo.type = ShipType::STYPE_CARGO;
-    cargo.ships = 5;  // Contains ship 5
-    cargo.nextship = 0;
+    cargo.number() = 4;  // Use contiguous numbering
+    cargo.owner() = 1;
+    cargo.alive() = true;
+    cargo.storbits() = 0;
+    cargo.pnumorbits() = 0;
+    cargo.type() = ShipType::STYPE_CARGO;
+    cargo.ships() = 5;  // Contains ship 5
+    cargo.nextship() = 0;
 
     Ship inner1{};
-    inner1.number = 5;
-    inner1.owner = 1;
-    inner1.alive = true;
-    inner1.storbits = 0;
-    inner1.pnumorbits = 0;
-    inner1.type = ShipType::OTYPE_PROBE;
-    inner1.ships = 0;
-    inner1.nextship = 6;  // Linked to ship 6
+    inner1.number() = 5;
+    inner1.owner() = 1;
+    inner1.alive() = true;
+    inner1.storbits() = 0;
+    inner1.pnumorbits() = 0;
+    inner1.type() = ShipType::OTYPE_PROBE;
+    inner1.ships() = 0;
+    inner1.nextship() = 6;  // Linked to ship 6
 
     Ship inner2{};
-    inner2.number = 6;
-    inner2.owner = 1;
-    inner2.alive = true;
-    inner2.storbits = 0;
-    inner2.pnumorbits = 0;
-    inner2.type = ShipType::OTYPE_PROBE;
-    inner2.ships = 0;
-    inner2.nextship = 0;
+    inner2.number() = 6;
+    inner2.owner() = 1;
+    inner2.alive() = true;
+    inner2.storbits() = 0;
+    inner2.pnumorbits() = 0;
+    inner2.type() = ShipType::OTYPE_PROBE;
+    inner2.ships() = 0;
+    inner2.nextship() = 0;
 
     ships_repo.save(cargo);
     ships_repo.save(inner1);
     ships_repo.save(inner2);
 
     // Iterate over ships contained in cargo (ship 5's nextship chain)
-    ShipList list(em, cargo.ships);
+    ShipList list(em, cargo.ships());
     int count = 0;
     for (auto handle : list) {
       count++;
       Ship& ship = *handle;
-      assert(ship.alive);
-      assert(ship.owner == 1);
-      assert(ship.type == ShipType::OTYPE_PROBE);
+      assert(ship.alive());
+      assert(ship.owner() == 1);
+      assert(ship.type() == ShipType::OTYPE_PROBE);
     }
     assert(count == 2);
     std::println(
@@ -142,7 +142,7 @@ int main() {
     for (auto handle : list) {
       count++;
       Ship& ship = *handle;
-      assert(ship.alive);
+      assert(ship.alive());
     }
     // At this point, only ships 1-6 exist (3 original + 3 from Test 1b)
     assert(count == 6);
@@ -154,22 +154,22 @@ int main() {
   {
     // Create ships at specific star
     Ship star_ship1{};
-    star_ship1.number = 7;
-    star_ship1.owner = 1;
-    star_ship1.alive = true;
-    star_ship1.storbits = 5;  // At star 5
-    star_ship1.pnumorbits = -1;
-    star_ship1.type = ShipType::OTYPE_FACTORY;
-    star_ship1.nextship = 0;
+    star_ship1.number() = 7;
+    star_ship1.owner() = 1;
+    star_ship1.alive() = true;
+    star_ship1.storbits() = 5;  // At star 5
+    star_ship1.pnumorbits() = -1;
+    star_ship1.type() = ShipType::OTYPE_FACTORY;
+    star_ship1.nextship() = 0;
 
     Ship star_ship2{};
-    star_ship2.number = 8;
-    star_ship2.owner = 1;
-    star_ship2.alive = true;
-    star_ship2.storbits = 5;  // Also at star 5
-    star_ship2.pnumorbits = -1;
-    star_ship2.type = ShipType::OTYPE_PROBE;
-    star_ship2.nextship = 0;
+    star_ship2.number() = 8;
+    star_ship2.owner() = 1;
+    star_ship2.alive() = true;
+    star_ship2.storbits() = 5;  // Also at star 5
+    star_ship2.pnumorbits() = -1;
+    star_ship2.type() = ShipType::OTYPE_PROBE;
+    star_ship2.nextship() = 0;
 
     ships_repo.save(star_ship1);
     ships_repo.save(star_ship2);
@@ -185,8 +185,8 @@ int main() {
     for (auto handle : list) {
       count++;
       Ship& ship = *handle;
-      assert(ship.alive);
-      assert(ship.storbits == 5);
+      assert(ship.alive());
+      assert(ship.storbits() == 5);
     }
     assert(count == 2);
     std::println("✓ Test 2b passed: Scope iteration (STAR) found {} ships",
@@ -197,13 +197,13 @@ int main() {
   {
     // Create ships at specific planet
     Ship planet_ship{};
-    planet_ship.number = 9;
-    planet_ship.owner = 1;
-    planet_ship.alive = true;
-    planet_ship.storbits = 10;
-    planet_ship.pnumorbits = 3;  // At planet 3 of star 10
-    planet_ship.type = ShipType::STYPE_CARGO;
-    planet_ship.nextship = 0;
+    planet_ship.number() = 9;
+    planet_ship.owner() = 1;
+    planet_ship.alive() = true;
+    planet_ship.storbits() = 10;
+    planet_ship.pnumorbits() = 3;  // At planet 3 of star 10
+    planet_ship.type() = ShipType::STYPE_CARGO;
+    planet_ship.nextship() = 0;
 
     ships_repo.save(planet_ship);
 
@@ -219,9 +219,9 @@ int main() {
     for (auto handle : list) {
       count++;
       Ship& ship = *handle;
-      assert(ship.alive);
-      assert(ship.storbits == 10);
-      assert(ship.pnumorbits == 3);
+      assert(ship.alive());
+      assert(ship.storbits() == 10);
+      assert(ship.pnumorbits() == 3);
     }
     assert(count == 1);
     std::println("✓ Test 2c passed: Scope iteration (PLAN) found {} ships",
@@ -235,14 +235,14 @@ int main() {
     ShipHandle handle = *it;
     Ship& ship = *handle;
 
-    ship.fuel += 100.0;
+    ship.fuel() += 100.0;
     // Handle should auto-save on destruction
   }
 
   // Verify modification persisted
   {
     const auto* ship = em.peek_ship(1);
-    assert(ship->fuel >= 100.0);
+    assert(ship->fuel() >= 100.0);
     std::println("✓ Test 3 passed: Ship modification persisted via RAII");
   }
 
@@ -251,8 +251,8 @@ int main() {
     ShipList list(em, 1, ShipList::IterationType::Nested);
     for (auto handle : list) {
       Ship& ship = *handle;
-      ship.fuel += 50.0;
-      ship.destruct += 10;
+      ship.fuel() += 50.0;
+      ship.destruct() += 10;
     }
     // All modifications should auto-save
   }
@@ -262,12 +262,12 @@ int main() {
     const auto* ship1 = em.peek_ship(1);
     const auto* ship2 = em.peek_ship(2);
     const auto* ship3 = em.peek_ship(3);
-    assert(ship1->fuel >= 150.0);  // 100 from test 3 + 50 from test 3b
-    assert(ship2->fuel >= 50.0);
-    assert(ship3->fuel >= 50.0);
-    assert(ship1->destruct >= 10);
-    assert(ship2->destruct >= 10);
-    assert(ship3->destruct >= 10);
+    assert(ship1->fuel() >= 150.0);  // 100 from test 3 + 50 from test 3b
+    assert(ship2->fuel() >= 50.0);
+    assert(ship3->fuel() >= 50.0);
+    assert(ship1->destruct() >= 10);
+    assert(ship2->destruct() >= 10);
+    assert(ship3->destruct() >= 10);
     std::println("✓ Test 3b passed: Multiple ship modifications persisted");
   }
 
@@ -279,7 +279,7 @@ int main() {
 
     // Read-only access shouldn't mark dirty
     const Ship& ship_read = handle.peek();
-    double initial_fuel = ship_read.fuel;
+    double initial_fuel = ship_read.fuel();
 
     // Verify we can read without modification
     assert(initial_fuel >= 150.0);
@@ -384,12 +384,12 @@ int main() {
     int count = 0;
     for (const Ship* ship : ships_const) {
       assert(ship != nullptr);
-      assert(ship->alive);
+      assert(ship->alive());
       count++;
 
       // Read-only operations should work fine
-      std::println("  Ship #{}: type={}", ship->number,
-                   static_cast<int>(ship->type));
+      std::println("  Ship #{}: type={}", ship->number(),
+                   static_cast<int>(ship->type()));
     }
 
     assert(count == 3);  // Should see ship1, ship2, ship3
@@ -400,22 +400,22 @@ int main() {
     const auto* check1 = em.peek_ship(1);
     const auto* check2 = em.peek_ship(2);
     const auto* check3 = em.peek_ship(3);
-    double fuel1_before = check1->fuel;
-    double fuel2_before = check2->fuel;
-    double fuel3_before = check3->fuel;
+    double fuel1_before = check1->fuel();
+    double fuel2_before = check2->fuel();
+    double fuel3_before = check3->fuel();
 
     // Do another const iteration - fuel should remain unchanged
     {
       const ShipList ships_const2(em, 1);
       for (const Ship* ship : ships_const2) {
-        [[maybe_unused]] auto fuel = ship->fuel;
+        [[maybe_unused]] auto fuel = ship->fuel();
       }
     }
 
     // Fuel should still be the same (const iteration doesn't mark dirty)
-    assert(em.peek_ship(1)->fuel == fuel1_before);
-    assert(em.peek_ship(2)->fuel == fuel2_before);
-    assert(em.peek_ship(3)->fuel == fuel3_before);
+    assert(em.peek_ship(1)->fuel() == fuel1_before);
+    assert(em.peek_ship(2)->fuel() == fuel2_before);
+    assert(em.peek_ship(3)->fuel() == fuel3_before);
 
     std::println("✓ Test 5 passed: Const iteration is truly read-only");
   }
@@ -425,37 +425,37 @@ int main() {
     std::println("\nTest 5b: Const vs mutable iteration comparison");
 
     // Get current fuel values before test
-    double fuel1_initial = em.peek_ship(1)->fuel;
-    double fuel2_initial = em.peek_ship(2)->fuel;
-    double fuel3_initial = em.peek_ship(3)->fuel;
+    double fuel1_initial = em.peek_ship(1)->fuel();
+    double fuel2_initial = em.peek_ship(2)->fuel();
+    double fuel3_initial = em.peek_ship(3)->fuel();
 
     // First, use const iteration - should NOT mark dirty
     {
       const ShipList ships_const(em, 1);
       for (const Ship* ship : ships_const) {
         // Just reading data
-        [[maybe_unused]] auto fuel = ship->fuel;
+        [[maybe_unused]] auto fuel = ship->fuel();
       }
     }
 
     // Ships should still have same fuel (not marked dirty)
-    assert(em.peek_ship(1)->fuel == fuel1_initial);
-    assert(em.peek_ship(2)->fuel == fuel2_initial);
-    assert(em.peek_ship(3)->fuel == fuel3_initial);
+    assert(em.peek_ship(1)->fuel() == fuel1_initial);
+    assert(em.peek_ship(2)->fuel() == fuel2_initial);
+    assert(em.peek_ship(3)->fuel() == fuel3_initial);
 
     // Now use mutable iteration and actually modify
     {
       ShipList ships_mutable(em, 1);
       for (auto ship_handle : ships_mutable) {
         Ship& ship = *ship_handle;
-        ship.fuel += 50.0;  // Modify ship
+        ship.fuel() += 50.0;  // Modify ship
       }
     }  // Ships auto-save here
 
     // Ships should now have modified fuel
-    assert(em.peek_ship(1)->fuel == fuel1_initial + 50.0);
-    assert(em.peek_ship(2)->fuel == fuel2_initial + 50.0);
-    assert(em.peek_ship(3)->fuel == fuel3_initial + 50.0);
+    assert(em.peek_ship(1)->fuel() == fuel1_initial + 50.0);
+    assert(em.peek_ship(2)->fuel() == fuel2_initial + 50.0);
+    assert(em.peek_ship(3)->fuel() == fuel3_initial + 50.0);
 
     std::println(
         "✓ Test 5b passed: Const iteration doesn't mark dirty, mutable does");
@@ -476,7 +476,7 @@ int main() {
     int count = 0;
     for (const Ship* ship : ships) {
       assert(ship != nullptr);
-      assert(ship->storbits == 5);
+      assert(ship->storbits() == 5);
       count++;
     }
 

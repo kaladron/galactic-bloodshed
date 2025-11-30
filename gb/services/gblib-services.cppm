@@ -107,7 +107,8 @@ export class EntityManager {
   std::unordered_map<std::pair<starnum_t, planetnum_t>, std::unique_ptr<Planet>>
       planet_cache;
   std::unordered_map<starnum_t, std::unique_ptr<Star>> star_cache;
-    std::unordered_map<std::pair<starnum_t, planetnum_t>, std::unique_ptr<SectorMap>>
+  std::unordered_map<std::pair<starnum_t, planetnum_t>,
+                     std::unique_ptr<SectorMap>>
       sectormap_cache;
   std::unordered_map<int, std::unique_ptr<Commod>> commod_cache;
   std::unordered_map<int, std::unique_ptr<block>> block_cache;

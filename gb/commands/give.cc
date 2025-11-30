@@ -50,25 +50,25 @@ void give(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (ship->owner != Playernum || !ship->alive) {
+  if (ship->owner() != Playernum || !ship->alive()) {
     DontOwnErr(Playernum, Governor, *shipno);
     return;
   }
-  if (ship->type == ShipType::STYPE_POD) {
+  if (ship->type() == ShipType::STYPE_POD) {
     g.out << "You cannot change the ownership of spore pods.\n";
     return;
   }
 
-  if ((ship->popn + ship->troops) && !race.God) {
+  if ((ship->popn() + ship->troops()) && !race.God) {
     g.out << "You can't give this ship away while it has crew/mil on board.\n";
     return;
   }
-  if (ship->ships && !race.God) {
+  if (ship->ships() && !race.God) {
     g.out
         << "You can't give away this ship, it has other ships loaded on it.\n";
     return;
   }
-  switch (ship->whatorbits) {
+  switch (ship->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
         return;
@@ -82,29 +82,29 @@ void give(const command_t& argv, GameObj& g) {
       break;
   }
 
-  ship->owner = who;
-  ship->governor = 0; /* give to the leader */
+  ship->owner() = who;
+  ship->governor() = 0; /* give to the leader */
   capture_stuff(*ship, g);
 
   putship(*ship);
 
   /* set inhabited/explored bits */
-  switch (ship->whatorbits) {
+  switch (ship->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       break;
     case ScopeLevel::LEVEL_STAR:
-      stars[ship->storbits] = getstar(ship->storbits);
-      setbit(stars[ship->storbits].explored(), who);
-      putstar(stars[ship->storbits], ship->storbits);
+      stars[ship->storbits()] = getstar(ship->storbits());
+      setbit(stars[ship->storbits()].explored(), who);
+      putstar(stars[ship->storbits()], ship->storbits());
       break;
     case ScopeLevel::LEVEL_PLAN: {
-      stars[ship->storbits] = getstar(ship->storbits);
-      setbit(stars[ship->storbits].explored(), who);
-      putstar(stars[ship->storbits], ship->storbits);
+      stars[ship->storbits()] = getstar(ship->storbits());
+      setbit(stars[ship->storbits()].explored(), who);
+      putstar(stars[ship->storbits()], ship->storbits());
 
-      auto planet = getplanet((int)ship->storbits, (int)ship->pnumorbits);
+      auto planet = getplanet((int)ship->storbits(), (int)ship->pnumorbits());
       planet.info(who - 1).explored = 1;
-      putplanet(planet, stars[ship->storbits], (int)ship->pnumorbits);
+      putplanet(planet, stars[ship->storbits()], (int)ship->pnumorbits());
 
     } break;
     default:
@@ -112,7 +112,7 @@ void give(const command_t& argv, GameObj& g) {
       return;
   }
 
-  switch (ship->whatorbits) {
+  switch (ship->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
       return;

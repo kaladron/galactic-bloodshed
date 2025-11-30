@@ -23,24 +23,24 @@ int main() {
 
   // Test 2: Create ships at 1, 2, 3, verify next is 4
   Ship ship1{};
-  ship1.number = 1;
-  ship1.owner = 1;
-  ship1.governor = 0;
-  ship1.name = "Ship1";
+  ship1.number() = 1;
+  ship1.owner() = 1;
+  ship1.governor() = 0;
+  ship1.name() = "Ship1";
   putship(ship1);
 
   Ship ship2{};
-  ship2.number = 2;
-  ship2.owner = 1;
-  ship2.governor = 0;
-  ship2.name = "Ship2";
+  ship2.number() = 2;
+  ship2.owner() = 1;
+  ship2.governor() = 0;
+  ship2.name() = "Ship2";
   putship(ship2);
 
   Ship ship3{};
-  ship3.number = 3;
-  ship3.owner = 1;
-  ship3.governor = 0;
-  ship3.name = "Ship3";
+  ship3.number() = 3;
+  ship3.owner() = 1;
+  ship3.governor() = 0;
+  ship3.name() = "Ship3";
   putship(ship3);
 
   int id2 = getdeadship();
@@ -55,10 +55,10 @@ int main() {
 
   // Test 4: Create ship at 2, verify next is 4 again
   Ship ship2b{};
-  ship2b.number = 2;
-  ship2b.owner = 1;
-  ship2b.governor = 0;
-  ship2b.name = "Ship2B";
+  ship2b.number() = 2;
+  ship2b.owner() = 1;
+  ship2b.governor() = 0;
+  ship2b.name() = "Ship2B";
   putship(ship2b);
 
   int id4 = getdeadship();

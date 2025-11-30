@@ -272,34 +272,36 @@ struct meta<WasteData> {
   static constexpr auto value = object("toxic", &T::toxic);
 };
 
-// Glaze reflection for anonymous structs in Ship class
+// Glaze reflection for NavigateData
 template <>
-struct meta<decltype(Ship::navigate)> {
-  using T = decltype(Ship::navigate);
+struct meta<NavigateData> {
+  using T = NavigateData;
   static constexpr auto value =
       object("on", &T::on, "speed", &T::speed, "turns", &T::turns, "bearing",
              &T::bearing);
 };
 
+// Glaze reflection for ProtectData
 template <>
-struct meta<decltype(Ship::protect)> {
-  using T = decltype(Ship::protect);
+struct meta<ProtectData> {
+  using T = ProtectData;
   static constexpr auto value =
       object("maxrng", &T::maxrng, "on", &T::on, "planet", &T::planet, "self",
              &T::self, "evade", &T::evade, "ship", &T::ship);
 };
 
+// Glaze reflection for HyperDriveData
 template <>
-struct meta<decltype(Ship::hyper_drive)> {
-  using T = decltype(Ship::hyper_drive);
+struct meta<HyperDriveData> {
+  using T = HyperDriveData;
   static constexpr auto value = object("charge", &T::charge, "ready", &T::ready,
                                        "on", &T::on, "has", &T::has);
 };
 
-// Glaze reflection for Ship class
+// Glaze reflection for ship_struct (POD for serialization)
 template <>
-struct meta<Ship> {
-  using T = Ship;
+struct meta<ship_struct> {
+  using T = ship_struct;
   static constexpr auto value = object(
       "number", &T::number, "owner", &T::owner, "governor", &T::governor,
       "name", &T::name, "shipclass", &T::shipclass, "race", &T::race, "xpos",
@@ -352,7 +354,9 @@ ShipRepository::ShipRepository(JsonStore& store)
     : Repository<Ship>(store, "tbl_ship") {}
 
 std::optional<std::string> ShipRepository::serialize(const Ship& ship) const {
-  auto result = glz::write_json(ship);
+  // Extract ship_struct from Ship wrapper
+  ship_struct data = ship.get_struct();
+  auto result = glz::write_json(data);
   if (result.has_value()) {
     return result.value();
   }
@@ -361,10 +365,11 @@ std::optional<std::string> ShipRepository::serialize(const Ship& ship) const {
 
 std::optional<Ship>
 ShipRepository::deserialize(const std::string& json_str) const {
-  Ship ship{};
-  auto result = glz::read_json(ship, json_str);
+  // Deserialize to ship_struct, then wrap in Ship
+  ship_struct data{};
+  auto result = glz::read_json(data, json_str);
   if (!result) {
-    return ship;
+    return Ship(data);  // Wrap the ship_struct in Ship
   }
   return std::nullopt;
 }
@@ -374,7 +379,7 @@ std::optional<Ship> ShipRepository::find_by_number(shipnum_t num) {
 }
 
 bool ShipRepository::save(const Ship& ship) {
-  return Repository<Ship>::save(ship.number, ship);
+  return Repository<Ship>::save(ship.number(), ship);
 }
 
 void ShipRepository::delete_ship(shipnum_t num) {

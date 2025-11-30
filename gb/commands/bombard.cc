@@ -30,21 +30,21 @@ void bombard(const command_t& argv, GameObj& g) {
 
     if (!ship_matches_filter(argv[1], from)) continue;
     if (!authorized(Governor, from)) continue;
-    if (!from.active) {
+    if (!from.active()) {
       g.out << std::format("{} is irradiated and inactive.\n",
                            ship_to_string(from));
       continue;
     }
 
-    if (from.whatorbits != ScopeLevel::LEVEL_PLAN) {
+    if (from.whatorbits() != ScopeLevel::LEVEL_PLAN) {
       g.out << "You must be in orbit around a planet to bombard.\n";
       continue;
     }
-    if (from.type == ShipType::OTYPE_AFV && !landed(from)) {
+    if (from.type() == ShipType::OTYPE_AFV && !landed(from)) {
       g.out << "This ship is not landed on the planet.\n";
       continue;
     }
-    if (!enufAP(Playernum, Governor, stars[from.storbits].AP(Playernum - 1),
+    if (!enufAP(Playernum, Governor, stars[from.storbits()].AP(Playernum - 1),
                 APcount)) {
       continue;
     }
@@ -70,7 +70,7 @@ void bombard(const command_t& argv, GameObj& g) {
     }
 
     /* get planet */
-    auto p = getplanet(from.storbits, from.pnumorbits);
+    auto p = getplanet(from.storbits(), from.pnumorbits());
 
     if (argv.size() > 2) {
       sscanf(argv[2].c_str(), "%d,%d", &x, &y);
@@ -82,7 +82,7 @@ void bombard(const command_t& argv, GameObj& g) {
       x = int_rand(0, (int)p.Maxx() - 1);
       y = int_rand(0, (int)p.Maxy() - 1);
     }
-    if (landed(from) && !adjacent(p, {from.land_x, from.land_y}, {x, y})) {
+    if (landed(from) && !adjacent(p, {from.land_x(), from.land_y()}, {x, y})) {
       g.out << "You are not adjacent to that sector.\n";
       continue;
     }
@@ -113,14 +113,15 @@ void bombard(const command_t& argv, GameObj& g) {
       use_destruct(from, strength);
 
     post(short_buf, NewsType::COMBAT);
-    notify_star(Playernum, Governor, from.storbits, short_buf);
+    notify_star(Playernum, Governor, from.storbits(), short_buf);
     for (auto i = 1; i <= Num_races; i++)
-      if (Nuked[i - 1]) warn(i, stars[from.storbits].governor(i - 1), long_buf);
+      if (Nuked[i - 1])
+        warn(i, stars[from.storbits()].governor(i - 1), long_buf);
     notify(Playernum, Governor, long_buf);
 
     if (DEFENSE) {
       /* planet retaliates - AFVs are immune to this */
-      if (numdest && from.type != ShipType::OTYPE_AFV) {
+      if (numdest && from.type() != ShipType::OTYPE_AFV) {
         for (auto i = 1; i <= Num_races; i++)
           if (Nuked[i - 1] && !p.slaved_to()) {
             /* add planet defense strength */
@@ -130,22 +131,22 @@ void bombard(const command_t& argv, GameObj& g) {
             p.info(i - 1).destruct -= strength;
 
             shoot_planet_to_ship(alien, from, strength, long_buf, short_buf);
-            warn(i, stars[from.storbits].governor(i - 1), long_buf);
+            warn(i, stars[from.storbits()].governor(i - 1), long_buf);
             notify(Playernum, Governor, long_buf);
-            if (!from.alive) post(short_buf, NewsType::COMBAT);
-            notify_star(Playernum, Governor, from.storbits, short_buf);
+            if (!from.alive()) post(short_buf, NewsType::COMBAT);
+            notify_star(Playernum, Governor, from.storbits(), short_buf);
           }
       }
     }
 
     /* protecting ships retaliate individually if damage was inflicted */
     /* AFVs are immune to this */
-    if (numdest && from.alive && from.type != ShipType::OTYPE_AFV) {
+    if (numdest && from.alive() && from.type() != ShipType::OTYPE_AFV) {
       ShipList shiplist(g.entity_manager, p.ships());
       for (auto ship_handle : shiplist) {
         Ship& ship = *ship_handle;
-        if (ship.protect.planet && ship.number != from.number && ship.alive &&
-            ship.active) {
+        if (ship.protect().planet && ship.number() != from.number() &&
+            ship.alive() && ship.active()) {
           if (laser_on(ship)) check_overload(ship, 0, &strength);
 
           strength = check_retal_strength(ship);
@@ -158,19 +159,19 @@ void bombard(const command_t& argv, GameObj& g) {
               use_fuel(ship, 2.0 * (double)strength);
             else
               use_destruct(ship, strength);
-            if (!from.alive) post(short_buf, NewsType::COMBAT);
-            notify_star(Playernum, Governor, from.storbits, short_buf);
-            warn(ship.owner, ship.governor, long_buf);
+            if (!from.alive()) post(short_buf, NewsType::COMBAT);
+            notify_star(Playernum, Governor, from.storbits(), short_buf);
+            warn(ship.owner(), ship.governor(), long_buf);
             notify(Playernum, Governor, long_buf);
           }
         }
-        if (!from.alive) break;
+        if (!from.alive()) break;
       }
     }
 
     /* write the stuff to disk */
-    putplanet(p, stars[from.storbits], (int)from.pnumorbits);
-    deductAPs(g, APcount, from.storbits);
+    putplanet(p, stars[from.storbits()], (int)from.pnumorbits());
+    deductAPs(g, APcount, from.storbits());
   }  // end of ShipList iteration
 }
 }  // namespace GB::commands

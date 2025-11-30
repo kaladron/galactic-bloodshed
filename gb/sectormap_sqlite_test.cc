@@ -225,7 +225,8 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
   // Test with non-existent planet
   {
     auto smap_handle = em.get_sectormap(999, 999);
-    assert(!smap_handle.get() && "Non-existent planet should return null handle");
+    assert(!smap_handle.get() &&
+           "Non-existent planet should return null handle");
   }
 
   std::println("  Non-existent planet handling: PASSED");
@@ -246,7 +247,7 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   planets.save(planet1);
 
   Planet planet2{PlanetType::WATER};
-  planet2.star_id() = 7;  // Same star
+  planet2.star_id() = 7;       // Same star
   planet2.planet_order() = 1;  // Different planet order
   planet2.Maxx() = 4;
   planet2.Maxy() = 4;

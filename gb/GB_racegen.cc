@@ -179,73 +179,73 @@ found_planet:
 
   // Build a capital ship to run the government
   {
-    Ship s;
+    ship_struct ss{};  // POD struct for initialization
 
-    bzero(&s, sizeof(s));
     auto shipno = Numships() + 1;
     race->Gov_ship = shipno;
     planet.ships() = shipno;
-    s.nextship = 0;
+    ss.nextship = 0;
 
-    s.type = ShipType::OTYPE_GOV;
-    s.xpos = stars[star].xpos() + planet.xpos();
-    s.ypos = stars[star].ypos() + planet.ypos();
-    s.land_x = sect.get_x();
-    s.land_y = sect.get_y();
+    ss.type = ShipType::OTYPE_GOV;
+    ss.xpos = stars[star].xpos() + planet.xpos();
+    ss.ypos = stars[star].ypos() + planet.ypos();
+    ss.land_x = sect.get_x();
+    ss.land_y = sect.get_y();
 
-    s.speed = 0;
-    s.owner = Playernum;
-    s.race = Playernum;
-    s.governor = 0;
+    ss.speed = 0;
+    ss.owner = Playernum;
+    ss.race = Playernum;
+    ss.governor = 0;
 
-    s.tech = 100.0;
+    ss.tech = 100.0;
 
-    s.build_type = ShipType::OTYPE_GOV;
-    s.armor = Shipdata[ShipType::OTYPE_GOV][ABIL_ARMOR];
-    s.guns = PRIMARY;
-    s.primary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
-    s.primtype = shipdata_primary(ShipType::OTYPE_GOV);
-    s.secondary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
-    s.sectype = shipdata_secondary(ShipType::OTYPE_GOV);
-    s.max_crew = Shipdata[ShipType::OTYPE_GOV][ABIL_MAXCREW];
-    s.max_destruct = Shipdata[ShipType::OTYPE_GOV][ABIL_DESTCAP];
-    s.max_resource = Shipdata[ShipType::OTYPE_GOV][ABIL_CARGO];
-    s.max_fuel = Shipdata[ShipType::OTYPE_GOV][ABIL_FUELCAP];
-    s.max_speed = Shipdata[ShipType::OTYPE_GOV][ABIL_SPEED];
-    s.build_cost = Shipdata[ShipType::OTYPE_GOV][ABIL_COST];
-    s.size = 100;
-    s.base_mass = 100.0;
-    s.shipclass = "Standard";
+    ss.build_type = ShipType::OTYPE_GOV;
+    ss.armor = Shipdata[ShipType::OTYPE_GOV][ABIL_ARMOR];
+    ss.guns = PRIMARY;
+    ss.primary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
+    ss.primtype = shipdata_primary(ShipType::OTYPE_GOV);
+    ss.secondary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
+    ss.sectype = shipdata_secondary(ShipType::OTYPE_GOV);
+    ss.max_crew = Shipdata[ShipType::OTYPE_GOV][ABIL_MAXCREW];
+    ss.max_destruct = Shipdata[ShipType::OTYPE_GOV][ABIL_DESTCAP];
+    ss.max_resource = Shipdata[ShipType::OTYPE_GOV][ABIL_CARGO];
+    ss.max_fuel = Shipdata[ShipType::OTYPE_GOV][ABIL_FUELCAP];
+    ss.max_speed = Shipdata[ShipType::OTYPE_GOV][ABIL_SPEED];
+    ss.build_cost = Shipdata[ShipType::OTYPE_GOV][ABIL_COST];
+    ss.size = 100;
+    ss.base_mass = 100.0;
+    ss.shipclass = "Standard";
 
-    s.fuel = 0.0;
-    s.popn = Shipdata[s.type][ABIL_MAXCREW];
-    s.troops = 0;
-    s.mass = s.base_mass + Shipdata[s.type][ABIL_MAXCREW] * race->mass;
-    s.destruct = s.resource = 0;
+    ss.fuel = 0.0;
+    ss.popn = Shipdata[ss.type][ABIL_MAXCREW];
+    ss.troops = 0;
+    ss.mass = ss.base_mass + Shipdata[ss.type][ABIL_MAXCREW] * race->mass;
+    ss.destruct = ss.resource = 0;
 
-    s.alive = 1;
-    s.active = 1;
-    s.protect.self = 1;
+    ss.alive = 1;
+    ss.active = 1;
+    ss.protect.self = 1;
 
-    s.docked = 1;
+    ss.docked = 1;
     /* docked on the planet */
-    s.whatorbits = ScopeLevel::LEVEL_PLAN;
-    s.whatdest = ScopeLevel::LEVEL_PLAN;
-    s.deststar = star;
-    s.destpnum = pnum;
-    s.storbits = star;
-    s.pnumorbits = pnum;
-    s.rad = 0;
-    s.damage = 0; /*Shipdata[s.type][ABIL_DAMAGE];*/
+    ss.whatorbits = ScopeLevel::LEVEL_PLAN;
+    ss.whatdest = ScopeLevel::LEVEL_PLAN;
+    ss.deststar = star;
+    ss.destpnum = pnum;
+    ss.storbits = star;
+    ss.pnumorbits = pnum;
+    ss.rad = 0;
+    ss.damage = 0; /*Shipdata[ss.type][ABIL_DAMAGE];*/
     /* (first capital is 100% efficient */
-    s.retaliate = 0;
+    ss.retaliate = 0;
 
-    s.ships = 0;
+    ss.ships = 0;
 
-    s.on = 1;
+    ss.on = 1;
 
-    s.name[0] = '\0';
-    s.number = shipno;
+    ss.name[0] = '\0';
+    ss.number = shipno;
+    Ship s{ss};  // Construct Ship from POD struct
     putship(s);
   }
 

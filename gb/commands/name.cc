@@ -59,7 +59,7 @@ void name(const command_t& argv, GameObj& g) {
         g.out << "Ship not found.\n";
         return;
       }
-      ship->name = namebuf;
+      ship->name() = namebuf;
       g.out << "Name set.\n";
       return;
     }
@@ -73,15 +73,15 @@ void name(const command_t& argv, GameObj& g) {
         g.out << "Ship not found.\n";
         return;
       }
-      if (ship->type != ShipType::OTYPE_FACTORY) {
+      if (ship->type() != ShipType::OTYPE_FACTORY) {
         g.out << "You are not at a factory!\n";
         return;
       }
-      if (ship->on) {
+      if (ship->on()) {
         g.out << "This factory is already on line.\n";
         return;
       }
-      ship->shipclass = namebuf;
+      ship->shipclass() = namebuf;
       g.out << "Class set.\n";
       return;
     }

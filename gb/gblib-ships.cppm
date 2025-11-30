@@ -287,10 +287,10 @@ export struct ship_struct {
 };
 
 export class Ship {
- private:
+private:
   ship_struct data_;  // Private data member for encapsulation
 
- public:
+public:
   // Constructors
   Ship() = default;
   Ship(ship_struct in) : data_(std::move(in)) {}
@@ -312,285 +312,593 @@ export class Ship {
   // =========================================================================
 
   // Ship identity
-  [[nodiscard]] shipnum_t number() const { return data_.number; }
-  shipnum_t& number() { return data_.number; }
+  [[nodiscard]] shipnum_t number() const {
+    return data_.number;
+  }
+  shipnum_t& number() {
+    return data_.number;
+  }
 
-  [[nodiscard]] player_t owner() const { return data_.owner; }
-  player_t& owner() { return data_.owner; }
+  [[nodiscard]] player_t owner() const {
+    return data_.owner;
+  }
+  player_t& owner() {
+    return data_.owner;
+  }
 
-  [[nodiscard]] governor_t governor() const { return data_.governor; }
-  governor_t& governor() { return data_.governor; }
+  [[nodiscard]] governor_t governor() const {
+    return data_.governor;
+  }
+  governor_t& governor() {
+    return data_.governor;
+  }
 
-  [[nodiscard]] const std::string& name() const { return data_.name; }
-  std::string& name() { return data_.name; }
+  [[nodiscard]] const std::string& name() const {
+    return data_.name;
+  }
+  std::string& name() {
+    return data_.name;
+  }
 
-  [[nodiscard]] const std::string& shipclass() const { return data_.shipclass; }
-  std::string& shipclass() { return data_.shipclass; }
+  [[nodiscard]] const std::string& shipclass() const {
+    return data_.shipclass;
+  }
+  std::string& shipclass() {
+    return data_.shipclass;
+  }
 
-  [[nodiscard]] unsigned char race() const { return data_.race; }
-  unsigned char& race() { return data_.race; }
+  [[nodiscard]] unsigned char race() const {
+    return data_.race;
+  }
+  unsigned char& race() {
+    return data_.race;
+  }
 
   // Position
-  [[nodiscard]] double xpos() const { return data_.xpos; }
-  double& xpos() { return data_.xpos; }
+  [[nodiscard]] double xpos() const {
+    return data_.xpos;
+  }
+  double& xpos() {
+    return data_.xpos;
+  }
 
-  [[nodiscard]] double ypos() const { return data_.ypos; }
-  double& ypos() { return data_.ypos; }
+  [[nodiscard]] double ypos() const {
+    return data_.ypos;
+  }
+  double& ypos() {
+    return data_.ypos;
+  }
 
   // Resources
-  [[nodiscard]] double fuel() const { return data_.fuel; }
-  double& fuel() { return data_.fuel; }
+  [[nodiscard]] double fuel() const {
+    return data_.fuel;
+  }
+  double& fuel() {
+    return data_.fuel;
+  }
 
-  [[nodiscard]] double mass() const { return data_.mass; }
-  double& mass() { return data_.mass; }
+  [[nodiscard]] double mass() const {
+    return data_.mass;
+  }
+  double& mass() {
+    return data_.mass;
+  }
 
-  [[nodiscard]] unsigned char land_x() const { return data_.land_x; }
-  unsigned char& land_x() { return data_.land_x; }
+  [[nodiscard]] unsigned char land_x() const {
+    return data_.land_x;
+  }
+  unsigned char& land_x() {
+    return data_.land_x;
+  }
 
-  [[nodiscard]] unsigned char land_y() const { return data_.land_y; }
-  unsigned char& land_y() { return data_.land_y; }
+  [[nodiscard]] unsigned char land_y() const {
+    return data_.land_y;
+  }
+  unsigned char& land_y() {
+    return data_.land_y;
+  }
 
   // Ship references
-  [[nodiscard]] shipnum_t destshipno() const { return data_.destshipno; }
-  shipnum_t& destshipno() { return data_.destshipno; }
+  [[nodiscard]] shipnum_t destshipno() const {
+    return data_.destshipno;
+  }
+  shipnum_t& destshipno() {
+    return data_.destshipno;
+  }
 
-  [[nodiscard]] shipnum_t nextship() const { return data_.nextship; }
-  shipnum_t& nextship() { return data_.nextship; }
+  [[nodiscard]] shipnum_t nextship() const {
+    return data_.nextship;
+  }
+  shipnum_t& nextship() {
+    return data_.nextship;
+  }
 
-  [[nodiscard]] shipnum_t ships() const { return data_.ships; }
-  shipnum_t& ships() { return data_.ships; }
+  [[nodiscard]] shipnum_t ships() const {
+    return data_.ships;
+  }
+  shipnum_t& ships() {
+    return data_.ships;
+  }
 
   // Stats
-  [[nodiscard]] unsigned char armor() const { return data_.armor; }
-  unsigned char& armor() { return data_.armor; }
+  [[nodiscard]] unsigned char armor() const {
+    return data_.armor;
+  }
+  unsigned char& armor() {
+    return data_.armor;
+  }
 
-  [[nodiscard]] unsigned short size() const { return data_.size; }
-  unsigned short& size() { return data_.size; }
+  [[nodiscard]] unsigned short size() const {
+    return data_.size;
+  }
+  unsigned short& size() {
+    return data_.size;
+  }
 
-  [[nodiscard]] unsigned short max_crew() const { return data_.max_crew; }
-  unsigned short& max_crew() { return data_.max_crew; }
+  [[nodiscard]] unsigned short max_crew() const {
+    return data_.max_crew;
+  }
+  unsigned short& max_crew() {
+    return data_.max_crew;
+  }
 
-  [[nodiscard]] resource_t max_resource() const { return data_.max_resource; }
-  resource_t& max_resource() { return data_.max_resource; }
+  [[nodiscard]] resource_t max_resource() const {
+    return data_.max_resource;
+  }
+  resource_t& max_resource() {
+    return data_.max_resource;
+  }
 
   [[nodiscard]] unsigned short max_destruct() const {
     return data_.max_destruct;
   }
-  unsigned short& max_destruct() { return data_.max_destruct; }
+  unsigned short& max_destruct() {
+    return data_.max_destruct;
+  }
 
-  [[nodiscard]] unsigned short max_fuel() const { return data_.max_fuel; }
-  unsigned short& max_fuel() { return data_.max_fuel; }
+  [[nodiscard]] unsigned short max_fuel() const {
+    return data_.max_fuel;
+  }
+  unsigned short& max_fuel() {
+    return data_.max_fuel;
+  }
 
-  [[nodiscard]] unsigned short max_speed() const { return data_.max_speed; }
-  unsigned short& max_speed() { return data_.max_speed; }
+  [[nodiscard]] unsigned short max_speed() const {
+    return data_.max_speed;
+  }
+  unsigned short& max_speed() {
+    return data_.max_speed;
+  }
 
   // Build info
-  [[nodiscard]] ShipType build_type() const { return data_.build_type; }
-  ShipType& build_type() { return data_.build_type; }
+  [[nodiscard]] ShipType build_type() const {
+    return data_.build_type;
+  }
+  ShipType& build_type() {
+    return data_.build_type;
+  }
 
-  [[nodiscard]] unsigned short build_cost() const { return data_.build_cost; }
-  unsigned short& build_cost() { return data_.build_cost; }
+  [[nodiscard]] unsigned short build_cost() const {
+    return data_.build_cost;
+  }
+  unsigned short& build_cost() {
+    return data_.build_cost;
+  }
 
-  [[nodiscard]] double base_mass() const { return data_.base_mass; }
-  double& base_mass() { return data_.base_mass; }
+  [[nodiscard]] double base_mass() const {
+    return data_.base_mass;
+  }
+  double& base_mass() {
+    return data_.base_mass;
+  }
 
-  [[nodiscard]] double tech() const { return data_.tech; }
-  double& tech() { return data_.tech; }
+  [[nodiscard]] double tech() const {
+    return data_.tech;
+  }
+  double& tech() {
+    return data_.tech;
+  }
 
-  [[nodiscard]] double complexity() const { return data_.complexity; }
-  double& complexity() { return data_.complexity; }
+  [[nodiscard]] double complexity() const {
+    return data_.complexity;
+  }
+  double& complexity() {
+    return data_.complexity;
+  }
 
   // Cargo
-  [[nodiscard]] unsigned short destruct() const { return data_.destruct; }
-  unsigned short& destruct() { return data_.destruct; }
+  [[nodiscard]] unsigned short destruct() const {
+    return data_.destruct;
+  }
+  unsigned short& destruct() {
+    return data_.destruct;
+  }
 
-  [[nodiscard]] resource_t resource() const { return data_.resource; }
-  resource_t& resource() { return data_.resource; }
+  [[nodiscard]] resource_t resource() const {
+    return data_.resource;
+  }
+  resource_t& resource() {
+    return data_.resource;
+  }
 
-  [[nodiscard]] population_t popn() const { return data_.popn; }
-  population_t& popn() { return data_.popn; }
+  [[nodiscard]] population_t popn() const {
+    return data_.popn;
+  }
+  population_t& popn() {
+    return data_.popn;
+  }
 
-  [[nodiscard]] population_t troops() const { return data_.troops; }
-  population_t& troops() { return data_.troops; }
+  [[nodiscard]] population_t troops() const {
+    return data_.troops;
+  }
+  population_t& troops() {
+    return data_.troops;
+  }
 
-  [[nodiscard]] unsigned short crystals() const { return data_.crystals; }
-  unsigned short& crystals() { return data_.crystals; }
+  [[nodiscard]] unsigned short crystals() const {
+    return data_.crystals;
+  }
+  unsigned short& crystals() {
+    return data_.crystals;
+  }
 
   // Special data
-  [[nodiscard]] const SpecialData& special() const { return data_.special; }
-  SpecialData& special() { return data_.special; }
+  [[nodiscard]] const SpecialData& special() const {
+    return data_.special;
+  }
+  SpecialData& special() {
+    return data_.special;
+  }
 
-  [[nodiscard]] short who_killed() const { return data_.who_killed; }
-  short& who_killed() { return data_.who_killed; }
+  [[nodiscard]] short who_killed() const {
+    return data_.who_killed;
+  }
+  short& who_killed() {
+    return data_.who_killed;
+  }
 
   // Navigation
-  [[nodiscard]] const NavigateData& navigate() const { return data_.navigate; }
-  NavigateData& navigate() { return data_.navigate; }
+  [[nodiscard]] const NavigateData& navigate() const {
+    return data_.navigate;
+  }
+  NavigateData& navigate() {
+    return data_.navigate;
+  }
 
   // Protection
-  [[nodiscard]] const ProtectData& protect() const { return data_.protect; }
-  ProtectData& protect() { return data_.protect; }
+  [[nodiscard]] const ProtectData& protect() const {
+    return data_.protect;
+  }
+  ProtectData& protect() {
+    return data_.protect;
+  }
 
   // Special systems
-  [[nodiscard]] unsigned char mount() const { return data_.mount; }
-  unsigned char& mount() { return data_.mount; }
+  [[nodiscard]] unsigned char mount() const {
+    return data_.mount;
+  }
+  unsigned char& mount() {
+    return data_.mount;
+  }
 
   [[nodiscard]] const HyperDriveData& hyper_drive() const {
     return data_.hyper_drive;
   }
-  HyperDriveData& hyper_drive() { return data_.hyper_drive; }
+  HyperDriveData& hyper_drive() {
+    return data_.hyper_drive;
+  }
 
-  [[nodiscard]] unsigned char cew() const { return data_.cew; }
-  unsigned char& cew() { return data_.cew; }
+  [[nodiscard]] unsigned char cew() const {
+    return data_.cew;
+  }
+  unsigned char& cew() {
+    return data_.cew;
+  }
 
-  [[nodiscard]] unsigned short cew_range() const { return data_.cew_range; }
-  unsigned short& cew_range() { return data_.cew_range; }
+  [[nodiscard]] unsigned short cew_range() const {
+    return data_.cew_range;
+  }
+  unsigned short& cew_range() {
+    return data_.cew_range;
+  }
 
-  [[nodiscard]] unsigned char cloak() const { return data_.cloak; }
-  unsigned char& cloak() { return data_.cloak; }
+  [[nodiscard]] unsigned char cloak() const {
+    return data_.cloak;
+  }
+  unsigned char& cloak() {
+    return data_.cloak;
+  }
 
-  [[nodiscard]] unsigned char laser() const { return data_.laser; }
-  unsigned char& laser() { return data_.laser; }
+  [[nodiscard]] unsigned char laser() const {
+    return data_.laser;
+  }
+  unsigned char& laser() {
+    return data_.laser;
+  }
 
-  [[nodiscard]] unsigned char focus() const { return data_.focus; }
-  unsigned char& focus() { return data_.focus; }
+  [[nodiscard]] unsigned char focus() const {
+    return data_.focus;
+  }
+  unsigned char& focus() {
+    return data_.focus;
+  }
 
-  [[nodiscard]] unsigned char fire_laser() const { return data_.fire_laser; }
-  unsigned char& fire_laser() { return data_.fire_laser; }
+  [[nodiscard]] unsigned char fire_laser() const {
+    return data_.fire_laser;
+  }
+  unsigned char& fire_laser() {
+    return data_.fire_laser;
+  }
 
   // Location
-  [[nodiscard]] starnum_t storbits() const { return data_.storbits; }
-  starnum_t& storbits() { return data_.storbits; }
+  [[nodiscard]] starnum_t storbits() const {
+    return data_.storbits;
+  }
+  starnum_t& storbits() {
+    return data_.storbits;
+  }
 
-  [[nodiscard]] starnum_t deststar() const { return data_.deststar; }
-  starnum_t& deststar() { return data_.deststar; }
+  [[nodiscard]] starnum_t deststar() const {
+    return data_.deststar;
+  }
+  starnum_t& deststar() {
+    return data_.deststar;
+  }
 
-  [[nodiscard]] planetnum_t destpnum() const { return data_.destpnum; }
-  planetnum_t& destpnum() { return data_.destpnum; }
+  [[nodiscard]] planetnum_t destpnum() const {
+    return data_.destpnum;
+  }
+  planetnum_t& destpnum() {
+    return data_.destpnum;
+  }
 
-  [[nodiscard]] planetnum_t pnumorbits() const { return data_.pnumorbits; }
-  planetnum_t& pnumorbits() { return data_.pnumorbits; }
+  [[nodiscard]] planetnum_t pnumorbits() const {
+    return data_.pnumorbits;
+  }
+  planetnum_t& pnumorbits() {
+    return data_.pnumorbits;
+  }
 
-  [[nodiscard]] ScopeLevel whatdest() const { return data_.whatdest; }
-  ScopeLevel& whatdest() { return data_.whatdest; }
+  [[nodiscard]] ScopeLevel whatdest() const {
+    return data_.whatdest;
+  }
+  ScopeLevel& whatdest() {
+    return data_.whatdest;
+  }
 
-  [[nodiscard]] ScopeLevel whatorbits() const { return data_.whatorbits; }
-  ScopeLevel& whatorbits() { return data_.whatorbits; }
+  [[nodiscard]] ScopeLevel whatorbits() const {
+    return data_.whatorbits;
+  }
+  ScopeLevel& whatorbits() {
+    return data_.whatorbits;
+  }
 
   // Combat
-  [[nodiscard]] unsigned char damage() const { return data_.damage; }
-  unsigned char& damage() { return data_.damage; }
+  [[nodiscard]] unsigned char damage() const {
+    return data_.damage;
+  }
+  unsigned char& damage() {
+    return data_.damage;
+  }
 
-  [[nodiscard]] int rad() const { return data_.rad; }
-  int& rad() { return data_.rad; }
+  [[nodiscard]] int rad() const {
+    return data_.rad;
+  }
+  int& rad() {
+    return data_.rad;
+  }
 
-  [[nodiscard]] unsigned char retaliate() const { return data_.retaliate; }
-  unsigned char& retaliate() { return data_.retaliate; }
+  [[nodiscard]] unsigned char retaliate() const {
+    return data_.retaliate;
+  }
+  unsigned char& retaliate() {
+    return data_.retaliate;
+  }
 
-  [[nodiscard]] unsigned short target() const { return data_.target; }
-  unsigned short& target() { return data_.target; }
+  [[nodiscard]] unsigned short target() const {
+    return data_.target;
+  }
+  unsigned short& target() {
+    return data_.target;
+  }
 
   // Type and speed
-  [[nodiscard]] ShipType type() const { return data_.type; }
-  ShipType& type() { return data_.type; }
+  [[nodiscard]] ShipType type() const {
+    return data_.type;
+  }
+  ShipType& type() {
+    return data_.type;
+  }
 
-  [[nodiscard]] unsigned char speed() const { return data_.speed; }
-  unsigned char& speed() { return data_.speed; }
+  [[nodiscard]] unsigned char speed() const {
+    return data_.speed;
+  }
+  unsigned char& speed() {
+    return data_.speed;
+  }
 
   // Status flags
-  [[nodiscard]] unsigned char active() const { return data_.active; }
-  unsigned char& active() { return data_.active; }
+  [[nodiscard]] unsigned char active() const {
+    return data_.active;
+  }
+  unsigned char& active() {
+    return data_.active;
+  }
 
-  [[nodiscard]] unsigned char alive() const { return data_.alive; }
-  unsigned char& alive() { return data_.alive; }
+  [[nodiscard]] unsigned char alive() const {
+    return data_.alive;
+  }
+  unsigned char& alive() {
+    return data_.alive;
+  }
 
-  [[nodiscard]] unsigned char mode() const { return data_.mode; }
-  unsigned char& mode() { return data_.mode; }
+  [[nodiscard]] unsigned char mode() const {
+    return data_.mode;
+  }
+  unsigned char& mode() {
+    return data_.mode;
+  }
 
-  [[nodiscard]] unsigned char bombard() const { return data_.bombard; }
-  unsigned char& bombard() { return data_.bombard; }
+  [[nodiscard]] unsigned char bombard() const {
+    return data_.bombard;
+  }
+  unsigned char& bombard() {
+    return data_.bombard;
+  }
 
-  [[nodiscard]] unsigned char mounted() const { return data_.mounted; }
-  unsigned char& mounted() { return data_.mounted; }
+  [[nodiscard]] unsigned char mounted() const {
+    return data_.mounted;
+  }
+  unsigned char& mounted() {
+    return data_.mounted;
+  }
 
-  [[nodiscard]] unsigned char cloaked() const { return data_.cloaked; }
-  unsigned char& cloaked() { return data_.cloaked; }
+  [[nodiscard]] unsigned char cloaked() const {
+    return data_.cloaked;
+  }
+  unsigned char& cloaked() {
+    return data_.cloaked;
+  }
 
-  [[nodiscard]] unsigned char sheep() const { return data_.sheep; }
-  unsigned char& sheep() { return data_.sheep; }
+  [[nodiscard]] unsigned char sheep() const {
+    return data_.sheep;
+  }
+  unsigned char& sheep() {
+    return data_.sheep;
+  }
 
-  [[nodiscard]] unsigned char docked() const { return data_.docked; }
-  unsigned char& docked() { return data_.docked; }
+  [[nodiscard]] unsigned char docked() const {
+    return data_.docked;
+  }
+  unsigned char& docked() {
+    return data_.docked;
+  }
 
-  [[nodiscard]] unsigned char notified() const { return data_.notified; }
-  unsigned char& notified() { return data_.notified; }
+  [[nodiscard]] unsigned char notified() const {
+    return data_.notified;
+  }
+  unsigned char& notified() {
+    return data_.notified;
+  }
 
-  [[nodiscard]] unsigned char examined() const { return data_.examined; }
-  unsigned char& examined() { return data_.examined; }
+  [[nodiscard]] unsigned char examined() const {
+    return data_.examined;
+  }
+  unsigned char& examined() {
+    return data_.examined;
+  }
 
-  [[nodiscard]] unsigned char on() const { return data_.on; }
-  unsigned char& on() { return data_.on; }
+  [[nodiscard]] unsigned char on() const {
+    return data_.on;
+  }
+  unsigned char& on() {
+    return data_.on;
+  }
 
   // Merchant and weapons
-  [[nodiscard]] unsigned char merchant() const { return data_.merchant; }
-  unsigned char& merchant() { return data_.merchant; }
+  [[nodiscard]] unsigned char merchant() const {
+    return data_.merchant;
+  }
+  unsigned char& merchant() {
+    return data_.merchant;
+  }
 
-  [[nodiscard]] unsigned char guns() const { return data_.guns; }
-  unsigned char& guns() { return data_.guns; }
+  [[nodiscard]] unsigned char guns() const {
+    return data_.guns;
+  }
+  unsigned char& guns() {
+    return data_.guns;
+  }
 
-  [[nodiscard]] unsigned long primary() const { return data_.primary; }
-  unsigned long& primary() { return data_.primary; }
+  [[nodiscard]] unsigned long primary() const {
+    return data_.primary;
+  }
+  unsigned long& primary() {
+    return data_.primary;
+  }
 
-  [[nodiscard]] guntype_t primtype() const { return data_.primtype; }
-  guntype_t& primtype() { return data_.primtype; }
+  [[nodiscard]] guntype_t primtype() const {
+    return data_.primtype;
+  }
+  guntype_t& primtype() {
+    return data_.primtype;
+  }
 
-  [[nodiscard]] unsigned long secondary() const { return data_.secondary; }
-  unsigned long& secondary() { return data_.secondary; }
+  [[nodiscard]] unsigned long secondary() const {
+    return data_.secondary;
+  }
+  unsigned long& secondary() {
+    return data_.secondary;
+  }
 
-  [[nodiscard]] guntype_t sectype() const { return data_.sectype; }
-  guntype_t& sectype() { return data_.sectype; }
+  [[nodiscard]] guntype_t sectype() const {
+    return data_.sectype;
+  }
+  guntype_t& sectype() {
+    return data_.sectype;
+  }
 
   // Hanger
-  [[nodiscard]] unsigned short hanger() const { return data_.hanger; }
-  unsigned short& hanger() { return data_.hanger; }
+  [[nodiscard]] unsigned short hanger() const {
+    return data_.hanger;
+  }
+  unsigned short& hanger() {
+    return data_.hanger;
+  }
 
-  [[nodiscard]] unsigned short max_hanger() const { return data_.max_hanger; }
-  unsigned short& max_hanger() { return data_.max_hanger; }
+  [[nodiscard]] unsigned short max_hanger() const {
+    return data_.max_hanger;
+  }
+  unsigned short& max_hanger() {
+    return data_.max_hanger;
+  }
 
   // =========================================================================
   // SERIALIZATION SUPPORT
   // =========================================================================
 
   // For repository serialization - returns copy of internal struct
-  [[nodiscard]] ship_struct get_struct() const { return data_; }
+  [[nodiscard]] ship_struct get_struct() const {
+    return data_;
+  }
 
   // Direct access to internal struct (FOR SERIALIZATION USE ONLY)
-  [[nodiscard]] const ship_struct& to_struct() const noexcept { return data_; }
-  [[nodiscard]] ship_struct& to_struct() noexcept { return data_; }
+  [[nodiscard]] const ship_struct& to_struct() const noexcept {
+    return data_;
+  }
+  [[nodiscard]] ship_struct& to_struct() noexcept {
+    return data_;
+  }
 };
 
 export class Shiplist {
- public:
+public:
   Shiplist(shipnum_t a) : first(a) {}
 
   class Iterator {
-   public:
+  public:
     Iterator(shipnum_t a);
-    Ship& operator*() { return elem_ship; }
+    Ship& operator*() {
+      return elem_ship;
+    }
     Iterator& operator++();
     bool operator!=(const Iterator& rhs) {
       return elem_ship.number() != rhs.elem_ship.number();
     }
 
-   private:
-    ship_struct elem_data{};  // Store POD struct (copyable)
+  private:
+    ship_struct elem_data{};    // Store POD struct (copyable)
     Ship elem_ship{elem_data};  // Wrap in Ship for access
   };
 
-  auto begin() { return Shiplist::Iterator(first); }
-  auto end() { return Shiplist::Iterator(0); }
+  auto begin() {
+    return Shiplist::Iterator(first);
+  }
+  auto end() {
+    return Shiplist::Iterator(0);
+  }
 
- private:
+private:
   shipnum_t first;
 };
 

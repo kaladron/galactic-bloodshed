@@ -90,13 +90,14 @@ void mech_defend(EntityManager& em, player_t Playernum, governor_t Governor,
   for (auto ship_handle : shiplist) {
     if (civ + mil == 0) break;
     Ship& ship = *ship_handle;
-    if (ship.owner != Playernum && ship.type == ShipType::OTYPE_AFV &&
-        landed(ship) && retal_strength(ship) && (ship.land_x == x2) &&
-        (ship.land_y == y2)) {
-      auto& alien = races[ship.owner - 1];
-      if (!isset(race.allied, ship.owner) || !isset(alien.allied, Playernum)) {
+    if (ship.owner() != Playernum && ship.type() == ShipType::OTYPE_AFV &&
+        landed(ship) && retal_strength(ship) && (ship.land_x() == x2) &&
+        (ship.land_y() == y2)) {
+      auto& alien = races[ship.owner() - 1];
+      if (!isset(race.allied, ship.owner()) ||
+          !isset(alien.allied, Playernum)) {
         while ((civ + mil) > 0 && retal_strength(ship)) {
-          oldgov = stars[ship.storbits].governor(alien.Playernum - 1);
+          oldgov = stars[ship.storbits()].governor(alien.Playernum - 1);
           char long_buf[1024], short_buf[256];
           mech_attack_people(ship, &civ, &mil, alien, race, s2, true, long_buf,
                              short_buf);
@@ -122,9 +123,9 @@ void mech_attack_people(Ship& ship, population_t* civ, population_t* mil,
   auto oldmil = *mil;
 
   auto strength = retal_strength(ship);
-  auto astrength = MECH_ATTACK * ship.tech * (double)strength *
-                   ((double)ship.armor + 1.0) * .01 *
-                   (100.0 - (double)ship.damage) * .01 *
+  auto astrength = MECH_ATTACK * ship.tech() * (double)strength *
+                   ((double)ship.armor() + 1.0) * .01 *
+                   (100.0 - (double)ship.damage()) * .01 *
                    (race.likes[sect.get_condition()] + 1.0) *
                    morale_factor((double)(race.morale - alien.morale));
 
@@ -178,9 +179,10 @@ void people_attack_mech(Ship& ship, int civ, int mil, Race& race, Race& alien,
 
   strength = retal_strength(ship);
 
-  dstrength = MECH_ATTACK * ship.tech * (double)strength *
-              ((double)ship.armor + 1.0) * .01 * (100.0 - (double)ship.damage) *
-              .01 * (alien.likes[sect.get_condition()] + 1.0) *
+  dstrength = MECH_ATTACK * ship.tech() * (double)strength *
+              ((double)ship.armor() + 1.0) * .01 *
+              (100.0 - (double)ship.damage()) * .01 *
+              (alien.likes[sect.get_condition()] + 1.0) *
               morale_factor((double)(alien.morale - race.morale));
 
   astrength = (double)(10 * mil * race.fighters + civ) * .01 * race.tech * .01 *
@@ -192,25 +194,26 @@ void people_attack_mech(Ship& ship, int civ, int mil, Race& race, Race& alien,
   use_destruct(ship, ammo);
   damage = int_rand(0, round_rand(100.0 * astrength / dstrength));
   damage = std::min(100, damage);
-  ship.damage += damage;
-  if (ship.damage >= 100) {
-    ship.damage = 100;
+  ship.damage() += damage;
+  if (ship.damage() >= 100) {
+    ship.damage() = 100;
     kill_ship(race.Playernum, &ship);
   }
   auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage);
   sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(ship).c_str(),
           race.name.c_str(), race.Playernum,
-          ship.alive ? "attacked" : "DESTROYED", ship_to_string(ship).c_str());
+          ship.alive() ? "attacked" : "DESTROYED",
+          ship_to_string(ship).c_str());
   strcpy(long_msg, short_msg);
   std::string assault_msg = std::format(
       "\tBattle at {},{} {}: {} civ/{} mil assault {}\n", x, y,
-      Desnames[sect.get_condition()], civ, mil, Shipnames[ship.type]);
+      Desnames[sect.get_condition()], civ, mil, Shipnames[ship.type()]);
   strcat(long_msg, assault_msg.c_str());
   std::string attack_msg = std::format("\tAttack: {:.3f}   Defense: {:.3f}.\n",
                                        astrength, dstrength);
   strcat(long_msg, attack_msg.c_str());
   std::string damage_msg = std::format(
-      "\t{}% damage inflicted for a total of {}%\n", damage, ship.damage);
+      "\t{}% damage inflicted for a total of {}%\n", damage, ship.damage());
   strcat(long_msg, damage_msg.c_str());
   std::string casualties_msg =
       std::format("\t{} civ/{} mil killed   {} prim/{} sec guns knocked out\n",

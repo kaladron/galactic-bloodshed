@@ -226,7 +226,7 @@ void build(const command_t& argv, GameObj& g) {
           }
           Getship(&newship, *what, race);
         }
-        if ((shipcost = newship.build_cost) >
+        if ((shipcost = newship.build_cost()) >
             planet.info(Playernum - 1).resource) {
           g.out << std::format("You need {}r to construct this ship.\n",
                                shipcost);
@@ -256,7 +256,7 @@ void build(const command_t& argv, GameObj& g) {
             return;
           }
           build_level = test_build_level.value();
-          switch (builder->type) {
+          switch (builder->type()) {
             case ShipType::OTYPE_FACTORY:
               if (!(count = getcount(argv, 2))) {
                 g.out << "Give a positive number of builds.\n";
@@ -301,7 +301,7 @@ void build(const command_t& argv, GameObj& g) {
               Getship(&newship, *what, race);
               break;
           }
-          if ((tech = builder->type == ShipType::OTYPE_FACTORY
+          if ((tech = builder->type() == ShipType::OTYPE_FACTORY
                           ? complexity(*builder)
                           : Shipdata[*what][ABIL_TECH]) > race.tech &&
               !race.God) {
@@ -313,14 +313,14 @@ void build(const command_t& argv, GameObj& g) {
           }
           if (outside && build_level == ScopeLevel::LEVEL_PLAN) {
             planet = getplanet(snum, pnum);
-            if (builder->type == ShipType::OTYPE_FACTORY) {
+            if (builder->type() == ShipType::OTYPE_FACTORY) {
               if (!can_build_at_planet(g, stars[snum], planet)) {
                 g.out << "You can't build that here.\n";
                 return;
               }
-              x = builder->land_x;
-              y = builder->land_y;
-              what = builder->build_type;
+              x = builder->land_x();
+              y = builder->land_y();
+              what = builder->build_type();
               sector = getsector(planet, x, y);
               auto result = can_build_on_sector(g.entity_manager, *what, race,
                                                 planet, sector, {x, y});
@@ -332,9 +332,9 @@ void build(const command_t& argv, GameObj& g) {
           }
         }
         /* build 'em */
-        switch (builder->type) {
+        switch (builder->type()) {
           case ShipType::OTYPE_FACTORY:
-            if ((shipcost = newship.build_cost) >
+            if ((shipcost = newship.build_cost()) >
                 planet.info(Playernum - 1).resource) {
               g.out << std::format("You need {}r to construct this ship.\n",
                                    shipcost);
@@ -355,7 +355,7 @@ void build(const command_t& argv, GameObj& g) {
             break;
           case ShipType::STYPE_SHUTTLE:
           case ShipType::STYPE_CARGO:
-            if (builder->resource < (shipcost = newship.build_cost)) {
+            if (builder->resource() < (shipcost = newship.build_cost())) {
               g.out << std::format("You need {}r to construct the ship.\n",
                                    shipcost);
               finish_build_ship(sector, x, y, planet, snum, pnum, outside,
@@ -373,13 +373,14 @@ void build(const command_t& argv, GameObj& g) {
             }
             break;
           default:
-            if (builder->hanger + ship_size(newship) > builder->max_hanger) {
+            if (builder->hanger() + ship_size(newship) >
+                builder->max_hanger()) {
               g.out << "Not enough hanger space.\n";
               finish_build_ship(sector, x, y, planet, snum, pnum, outside,
                                 build_level, builder);
               return;
             }
-            if (builder->resource < (shipcost = newship.build_cost)) {
+            if (builder->resource() < (shipcost = newship.build_cost())) {
               g.out << std::format("You need {}r to construct the ship.\n",
                                    shipcost);
               finish_build_ship(sector, x, y, planet, snum, pnum, outside,

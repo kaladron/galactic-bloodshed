@@ -75,9 +75,9 @@ void moveplanet(const starnum_t starnum, Planet& planet,
   auto sh = planet.ships();
   while (sh) {
     auto ship = ships[sh];
-    ship->xpos += xadd;
-    ship->ypos += yadd;
-    sh = ship->nextship;
+    ship->xpos() += xadd;
+    ship->ypos() += yadd;
+    sh = ship->nextship();
   }
 
   planet.xpos() += xadd;

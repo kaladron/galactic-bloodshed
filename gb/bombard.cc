@@ -44,12 +44,12 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   /* check to see if PDNs are present */
   const ShipList shiplist(entity_manager, planet.ships());
   for (const Ship* s : shiplist) {
-    if (s->alive && s->type == ShipType::OTYPE_PLANDEF &&
-        s->owner != ship.owner) {
+    if (s->alive() && s->type() == ShipType::OTYPE_PLANDEF &&
+        s->owner() != ship.owner()) {
       std::string notice =
           std::format("Bombardment of {} cancelled, PDNs are present.\n",
                       prin_ship_orbits(ship));
-      warn(ship.owner, ship.governor, notice);
+      warn(ship.owner(), ship.governor(), notice);
       return 0;
     }
   }
@@ -60,12 +60,12 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   bool found = false;
   for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
     Sector& sect = sector_wrap;
-    if (sect.get_owner() && sect.get_owner() != ship.owner &&
+    if (sect.get_owner() && sect.get_owner() != ship.owner() &&
         (sect.get_condition() != SectorType::SEC_WASTED)) {
       if (isset(r.atwar, sect.get_owner()) ||
-          (ship.type == ShipType::OTYPE_BERS &&
-           std::holds_alternative<MindData>(ship.special) &&
-           sect.get_owner() == std::get<MindData>(ship.special).target)) {
+          (ship.type() == ShipType::OTYPE_BERS &&
+           std::holds_alternative<MindData>(ship.special()) &&
+           sect.get_owner() == std::get<MindData>(ship.special()).target)) {
         found = true;
         break;
       }
@@ -81,30 +81,30 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
 
   if (!found) {
     /* there were no sectors worth bombing. */
-    if (!ship.notified) {
-      ship.notified = 1;
+    if (!ship.notified()) {
+      ship.notified() = 1;
       std::stringstream telegram;
-      telegram << std::format("Report from {}{} {}\n\n", Shipltrs[ship.type],
-                              ship.number, ship.name);
+      telegram << std::format("Report from {}{} {}\n\n", Shipltrs[ship.type()],
+                              ship.number(), ship.name());
       telegram << std::format(
           "Planet /{}/{} has been saturation bombed.\n",
-          stars[ship.storbits].get_name(),
-          stars[ship.storbits].get_planet_name(ship.pnumorbits));
-      notify(ship.owner, ship.governor, telegram.str());
+          stars[ship.storbits()].get_name(),
+          stars[ship.storbits()].get_planet_name(ship.pnumorbits()));
+      notify(ship.owner(), ship.governor(), telegram.str());
     }
     return 0;
   }
 
-  int str = MIN(Shipdata[ship.type][ABIL_GUNS] * (100 - ship.damage) / 100.,
-                ship.destruct);
+  int str = MIN(Shipdata[ship.type()][ABIL_GUNS] * (100 - ship.damage()) / 100.,
+                ship.destruct());
   if (!str) {
     /* no weapons! */
-    if (!ship.notified) {
-      ship.notified = 1;
+    if (!ship.notified()) {
+      ship.notified() = 1;
       std::string telegram =
           std::format("Bulletin\n\n {}{} {} has no weapons to bombard with.\n",
-                      Shipltrs[ship.type], ship.number, ship.name);
-      warn(ship.owner, ship.governor, telegram);
+                      Shipltrs[ship.type()], ship.number(), ship.name());
+      warn(ship.owner(), ship.governor(), telegram);
     }
     return 0;
   }
@@ -114,8 +114,8 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   Nuked.fill(0);
   // save owner of destroyed sector
   auto oldown = smap.get(x, y).get_owner();
-  ship.destruct -= str;
-  ship.mass -= str * MASS_DESTRUCT;
+  ship.destruct() -= str;
+  ship.mass() -= str * MASS_DESTRUCT;
 
   char long_buf[1024], short_buf[256];
   auto numdest = shoot_ship_to_planet(ship, planet, str, x, y, smap, 0, 0,
@@ -125,30 +125,30 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
 
   /* tell the bombarding player about it.. */
   std::stringstream telegram_report;
-  telegram_report << std::format("REPORT from ship #{}\n\n", ship.number);
+  telegram_report << std::format("REPORT from ship #{}\n\n", ship.number());
   telegram_report << short_buf;
   telegram_report << std::format(
       "sector {},{} (owner {}). {} sectors destroyed.\n", x, y, oldown,
       numdest);
-  notify(ship.owner, ship.governor, telegram_report.str());
+  notify(ship.owner(), ship.governor(), telegram_report.str());
 
   /* notify other player. */
   std::stringstream telegram_alert;
   telegram_alert << std::format(
-      "ALERT from planet /{}/{}\n", stars[ship.storbits].get_name(),
-      stars[ship.storbits].get_planet_name(ship.pnumorbits));
+      "ALERT from planet /{}/{}\n", stars[ship.storbits()].get_name(),
+      stars[ship.storbits()].get_planet_name(ship.pnumorbits()));
   telegram_alert << std::format(
       "{}{} {} bombarded sector {},{}; {} sectors destroyed.\n",
-      Shipltrs[ship.type], ship.number, ship.name, x, y, numdest);
+      Shipltrs[ship.type()], ship.number(), ship.name(), x, y, numdest);
 
   for (player_t i = 1; i <= Num_races; i++)
-    if (Nuked[i - 1] && i != ship.owner)
-      warn(i, stars[ship.storbits].governor(i - 1), telegram_alert.str());
+    if (Nuked[i - 1] && i != ship.owner())
+      warn(i, stars[ship.storbits()].governor(i - 1), telegram_alert.str());
 
   std::string combatpost = std::format(
-      "{}{} {} [{}] bombards {}/{}\n", Shipltrs[ship.type], ship.number,
-      ship.name, ship.owner, stars[ship.storbits].get_name(),
-      stars[ship.storbits].get_planet_name(ship.pnumorbits));
+      "{}{} {} [{}] bombards {}/{}\n", Shipltrs[ship.type()], ship.number(),
+      ship.name(), ship.owner(), stars[ship.storbits()].get_name(),
+      stars[ship.storbits()].get_planet_name(ship.pnumorbits()));
   post(combatpost, NewsType::COMBAT);
 
   putsmap(smap, planet);

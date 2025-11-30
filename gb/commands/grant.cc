@@ -60,7 +60,7 @@ void grant(const command_t& argv, GameObj& g) {
       if (!ship_matches_filter(argv[3], ship)) continue;
       if (!authorized(Governor, ship)) continue;
 
-      ship.governor = gov;
+      ship.governor() = gov;
       warn(Playernum, gov,
            std::format("\"{}\" granted you {} at {}\n",
                        race.governor[Governor].name, ship_to_string(ship),

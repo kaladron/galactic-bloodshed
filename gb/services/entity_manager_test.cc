@@ -52,11 +52,12 @@ void test_entity_manager_caching() {
 
   std::println("Test: EntityManager caching");
 
-  // Create a ship
-  Ship ship{};
-  ship.number = 100;
-  ship.owner = 1;
-  ship.fuel = 1000.0;
+  // Create a ship using ship_struct (POD, copyable)
+  ship_struct ship_data{};
+  ship_data.number = 100;
+  ship_data.owner = 1;
+  ship_data.fuel = 1000.0;
+  Ship ship(ship_data);
 
   JsonStore store(db);
   ShipRepository ships(store);
@@ -76,10 +77,10 @@ void test_entity_manager_caching() {
     std::println("  ✓ Multiple get calls return same cached instance");
 
     // Modify via one handle
-    handle1->fuel = 500.0;
+    handle1->fuel() = 500.0;
 
     // Verify modification visible via other handle (same instance)
-    assert(handle2->fuel == 500.0);
+    assert(handle2->fuel() == 500.0);
 
     std::println(
         "  ✓ Modifications visible across all handles (same instance)");
@@ -89,7 +90,7 @@ void test_entity_manager_caching() {
   // Get ship again - might be reloaded or cached depending on refcount
   auto handle3 = em.get_ship(100);
   assert(handle3.get() != nullptr);
-  assert(handle3->fuel == 500.0);  // Persisted value
+  assert(handle3->fuel() == 500.0);  // Persisted value
 
   std::println("  ✓ Entity persists after cache clear");
 }
@@ -153,10 +154,10 @@ void test_entity_manager_create_delete() {
   {
     auto handle = em.create_ship();
     assert(handle.get() != nullptr);
-    ship_num = handle->number;
+    ship_num = handle->number();
 
-    handle->owner = 1;
-    handle->fuel = 2000.0;
+    handle->owner() = 1;
+    handle->fuel() = 2000.0;
     // Auto-saves on scope exit
   }
 
@@ -165,7 +166,7 @@ void test_entity_manager_create_delete() {
   ShipRepository ships(store);
   auto loaded_ship = ships.find_by_number(ship_num);
   assert(loaded_ship.has_value());
-  assert(loaded_ship->fuel == 2000.0);
+  assert(loaded_ship->fuel() == 2000.0);
 
   std::println("  ✓ create_ship() creates and saves new ship");
 
@@ -233,9 +234,10 @@ void test_entity_manager_flush_all() {
   race.tech = 50.0;
   races.save(race);
 
-  Ship ship{};
-  ship.number = 100;
-  ship.fuel = 1000.0;
+  ship_struct ship_data{};
+  ship_data.number = 100;
+  ship_data.fuel = 1000.0;
+  Ship ship(ship_data);
   ships.save(ship);
 
   // Load and modify both
@@ -244,7 +246,7 @@ void test_entity_manager_flush_all() {
     auto ship_handle = em.get_ship(100);
 
     race_handle->tech = 75.0;
-    ship_handle->fuel = 500.0;
+    ship_handle->fuel() = 500.0;
 
     // Don't let handles go out of scope yet
     // Force flush while handles still exist
@@ -257,7 +259,7 @@ void test_entity_manager_flush_all() {
     assert(saved_race.has_value());
     assert(saved_race->tech == 75.0);
     assert(saved_ship.has_value());
-    assert(saved_ship->fuel == 500.0);
+    assert(saved_ship->fuel() == 500.0);
 
     std::println("  ✓ flush_all() saves all cached entities immediately");
   }
@@ -442,15 +444,16 @@ void test_entity_manager_kill_ship() {
   victim.Gov_ship = 0;
   races_repo.save(victim);
 
-  // Create a ship owned by victim
-  Ship ship{};
-  ship.number = 100;
-  ship.owner = 2;
-  ship.alive = 1;
-  ship.notified = 1;
-  ship.type = ShipType::STYPE_BATTLE;
-  ship.build_cost = 100;
-  ship.docked = false;
+  // Create a ship owned by victim using ship_struct
+  ship_struct ship_data{};
+  ship_data.number = 100;
+  ship_data.owner = 2;
+  ship_data.alive = 1;
+  ship_data.notified = 1;
+  ship_data.type = ShipType::STYPE_BATTLE;
+  ship_data.build_cost = 100;
+  ship_data.docked = false;
+  Ship ship(ship_data);
   ships_repo.save(ship);
 
   // Test: Kill ship
@@ -459,8 +462,8 @@ void test_entity_manager_kill_ship() {
   std::println("  ✓ kill_ship executed without errors");
 
   // Verify ship is dead
-  assert(ship.alive == 0);
-  assert(ship.notified == 0);
+  assert(ship.alive() == 0);
+  assert(ship.notified() == 0);
   std::println("  ✓ Ship marked as dead (alive=0, notified=0)");
 
   // Verify morale changes were persisted
@@ -482,17 +485,18 @@ void test_entity_manager_kill_ship() {
   sdata.VN_index2[0] = -1;
   sdata_repo.save(sdata);
 
-  Ship vn_ship{};
-  vn_ship.number = 200;
-  vn_ship.owner = 1;
-  vn_ship.alive = 1;
-  vn_ship.type = ShipType::OTYPE_VN;
-  vn_ship.storbits = 5;
+  ship_struct vn_data{};
+  vn_data.number = 200;
+  vn_data.owner = 1;
+  vn_data.alive = 1;
+  vn_data.type = ShipType::OTYPE_VN;
+  vn_data.storbits = 5;
 
   MindData mind{};
   mind.who_killed = 1;
-  vn_ship.special = mind;
+  vn_data.special = mind;
 
+  Ship vn_ship(vn_data);
   ships_repo.save(vn_ship);
 
   em.kill_ship(1, vn_ship);
@@ -513,11 +517,12 @@ void test_entity_manager_kill_ship() {
   race3.morale = 500;
   races_repo.save(race3);
 
-  Ship pod{};
-  pod.number = 300;
-  pod.owner = 3;
-  pod.alive = 1;
-  pod.type = ShipType::STYPE_POD;
+  ship_struct pod_data{};
+  pod_data.number = 300;
+  pod_data.owner = 3;
+  pod_data.alive = 1;
+  pod_data.type = ShipType::STYPE_POD;
+  Ship pod(pod_data);
   ships_repo.save(pod);
 
   em.kill_ship(1, pod);
@@ -556,14 +561,15 @@ void test_entity_manager_kill_ship_gov_ship() {
   killer.God = false;
   races_repo.save(killer);
 
-  // Create the government ship
-  Ship gov_ship{};
-  gov_ship.number = 100;
-  gov_ship.owner = 1;
-  gov_ship.alive = 1;
-  gov_ship.type = ShipType::OTYPE_GOV;
-  gov_ship.build_cost = 500;
-  gov_ship.docked = false;
+  // Create the government ship using ship_struct
+  ship_struct gov_data{};
+  gov_data.number = 100;
+  gov_data.owner = 1;
+  gov_data.alive = 1;
+  gov_data.type = ShipType::OTYPE_GOV;
+  gov_data.build_cost = 500;
+  gov_data.docked = false;
+  Ship gov_ship(gov_data);
   ships_repo.save(gov_ship);
 
   // Kill the government ship

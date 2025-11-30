@@ -24,7 +24,6 @@ struct stype {
 
 #define RACIAL_TYPES 10
 
-
 /* racial types (10 racial types ) */
 static int Thing[RACIAL_TYPES] = {1, 1, 1, 0, 0, 0, 0, 0, 0, 0};
 
@@ -335,10 +334,11 @@ int main() {
   // Temporarily show sectors during selection (no need to persist)
   for (i = SectorType::SEC_SEA; i <= SectorType::SEC_WASTED; i++)
     if (secttypes[i].here) {
-      std::println("({:2d}): {} ({}, {}) ({}, {} sectors)", i,
-                   get_sector_char(smap.get(secttypes[i].x, secttypes[i].y).get_condition()),
-                   secttypes[i].x, secttypes[i].y, Desnames[i],
-                   secttypes[i].count);
+      std::println(
+          "({:2d}): {} ({}, {}) ({}, {} sectors)", i,
+          get_sector_char(
+              smap.get(secttypes[i].x, secttypes[i].y).get_condition()),
+          secttypes[i].x, secttypes[i].y, Desnames[i], secttypes[i].count);
     }
 
   found = 0;
@@ -386,14 +386,14 @@ int main() {
 
   /* build a capital ship to run the government */
   {
-    Ship s{};  // Uses default member initializers from Ship struct
+    ship_struct ss{};  // POD struct for direct initialization
     shipnum_t shipno;
 
     shipno = ships.next_ship_number();
     std::println("Creating government ship {}...", shipno);
     race.Gov_ship = shipno;
 
-    s.type = ShipType::OTYPE_GOV;
+    ss.type = ShipType::OTYPE_GOV;
     const auto* star_ptr = entity_manager.peek_star(star);
     const auto* planet_ptr2 = entity_manager.peek_planet(star, pnum);
     if (!star_ptr || !planet_ptr2) {
@@ -401,62 +401,63 @@ int main() {
                    "Error: Cannot access star/planet for ship placement");
       return -1;
     }
-    s.xpos = star_ptr->xpos() + planet_ptr2->xpos();
-    s.ypos = star_ptr->ypos() + planet_ptr2->ypos();
-    s.land_x = (char)secttypes[i].x;
-    s.land_y = (char)secttypes[i].y;
+    ss.xpos = star_ptr->xpos() + planet_ptr2->xpos();
+    ss.ypos = star_ptr->ypos() + planet_ptr2->ypos();
+    ss.land_x = (char)secttypes[i].x;
+    ss.land_y = (char)secttypes[i].y;
 
-    s.owner = Playernum;
-    s.race = Playernum;
+    ss.owner = Playernum;
+    ss.race = Playernum;
 
-    s.tech = 100.0;
+    ss.tech = 100.0;
 
-    s.build_type = ShipType::OTYPE_GOV;
-    s.armor = Shipdata[ShipType::OTYPE_GOV][ABIL_ARMOR];
-    s.guns = PRIMARY;
-    s.primary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
-    s.primtype = shipdata_primary(ShipType::OTYPE_GOV);
-    s.secondary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
-    s.sectype = shipdata_secondary(ShipType::OTYPE_GOV);
-    s.max_crew = Shipdata[ShipType::OTYPE_GOV][ABIL_MAXCREW];
-    s.max_destruct = Shipdata[ShipType::OTYPE_GOV][ABIL_DESTCAP];
-    s.max_resource = Shipdata[ShipType::OTYPE_GOV][ABIL_CARGO];
-    s.max_fuel = Shipdata[ShipType::OTYPE_GOV][ABIL_FUELCAP];
-    s.max_speed = Shipdata[ShipType::OTYPE_GOV][ABIL_SPEED];
-    s.build_cost = Shipdata[ShipType::OTYPE_GOV][ABIL_COST];
-    s.size = 100;
-    s.base_mass = 100.0;
-    s.shipclass = "Standard";
+    ss.build_type = ShipType::OTYPE_GOV;
+    ss.armor = Shipdata[ShipType::OTYPE_GOV][ABIL_ARMOR];
+    ss.guns = PRIMARY;
+    ss.primary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
+    ss.primtype = shipdata_primary(ShipType::OTYPE_GOV);
+    ss.secondary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
+    ss.sectype = shipdata_secondary(ShipType::OTYPE_GOV);
+    ss.max_crew = Shipdata[ShipType::OTYPE_GOV][ABIL_MAXCREW];
+    ss.max_destruct = Shipdata[ShipType::OTYPE_GOV][ABIL_DESTCAP];
+    ss.max_resource = Shipdata[ShipType::OTYPE_GOV][ABIL_CARGO];
+    ss.max_fuel = Shipdata[ShipType::OTYPE_GOV][ABIL_FUELCAP];
+    ss.max_speed = Shipdata[ShipType::OTYPE_GOV][ABIL_SPEED];
+    ss.build_cost = Shipdata[ShipType::OTYPE_GOV][ABIL_COST];
+    ss.size = 100;
+    ss.base_mass = 100.0;
+    ss.shipclass = "Standard";
 
-    s.popn = Shipdata[s.type][ABIL_MAXCREW];
-    s.mass = s.base_mass + Shipdata[s.type][ABIL_MAXCREW] * race.mass;
+    ss.popn = Shipdata[ss.type][ABIL_MAXCREW];
+    ss.mass = ss.base_mass + Shipdata[ss.type][ABIL_MAXCREW] * race.mass;
 
-    s.alive = 1;
-    s.active = 1;
-    s.protect.self = 1;
+    ss.alive = 1;
+    ss.active = 1;
+    ss.protect.self = 1;
 
-    s.docked = 1;
+    ss.docked = 1;
     /* docked on the planet */
-    s.whatorbits = ScopeLevel::LEVEL_PLAN;
-    s.whatdest = ScopeLevel::LEVEL_PLAN;
-    s.deststar = star;
-    s.destpnum = pnum;
-    s.storbits = star;
-    s.pnumorbits = pnum;
+    ss.whatorbits = ScopeLevel::LEVEL_PLAN;
+    ss.whatdest = ScopeLevel::LEVEL_PLAN;
+    ss.deststar = star;
+    ss.destpnum = pnum;
+    ss.storbits = star;
+    ss.pnumorbits = pnum;
     /* (first capital is 100% efficient */
 
-    s.on = 1;
+    ss.on = 1;
 
-    s.number = shipno;
-    if (const auto* storbit_star = entity_manager.peek_star(s.storbits);
+    ss.number = shipno;
+    if (const auto* storbit_star = entity_manager.peek_star(ss.storbits);
         storbit_star) {
-      std::println("Created on sector {},{} on /{}/{}", s.land_x, s.land_y,
+      std::println("Created on sector {},{} on /{}/{}", ss.land_x, ss.land_y,
                    storbit_star->get_name(),
-                   storbit_star->get_planet_name(s.pnumorbits));
+                   storbit_star->get_planet_name(ss.pnumorbits));
     } else {
-      std::println("Created on sector {},{} on an unknown location", s.land_x,
-                   s.land_y);
+      std::println("Created on sector {},{} on an unknown location", ss.land_x,
+                   ss.land_y);
     }
+    Ship s{ss};  // Construct Ship from POD
     if (!ships.save(s)) {
       std::println(stderr, "Error: Failed to save ship to database");
       return -1;
@@ -494,7 +495,6 @@ int main() {
   planet.maxpopn() =
       maxsupport(race, sect, 100.0, 0) * planet.Maxx() * planet.Maxy() / 2;
   /* (approximate) */
-
 
   /* make star explored and stuff */
   auto star_handle = entity_manager.get_star(star);

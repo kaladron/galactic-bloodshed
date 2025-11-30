@@ -67,15 +67,15 @@ void setup_test_universe(TestState& state) {
   // Create some ships for the player
   // Ship 1: At planet scope
   Ship ship1{};
-  ship1.number = 1;
-  ship1.type = ShipType::OTYPE_FACTORY;
-  ship1.owner = 1;
-  ship1.governor = 0;
-  ship1.alive = true;
-  ship1.name = "Factory1";
-  ship1.whatorbits = ScopeLevel::LEVEL_PLAN;
-  ship1.storbits = 1;
-  ship1.pnumorbits = 0;
+  ship1.number() = 1;
+  ship1.type() = ShipType::OTYPE_FACTORY;
+  ship1.owner() = 1;
+  ship1.governor() = 0;
+  ship1.alive() = true;
+  ship1.name() = "Factory1";
+  ship1.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ship1.storbits() = 1;
+  ship1.pnumorbits() = 0;
 
   ShipRepository ships(state.store);
   ships.save(ship1);

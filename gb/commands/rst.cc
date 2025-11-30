@@ -88,15 +88,15 @@ void report_stock(GameObj& g, RstContext& ctx, const Ship& s) {
 
   // Add data row
   table.add_row(
-      {std::format("{}", s.number),
-       std::format("{}{} {}", Shipltrs[s.type], s.crystals ? 'x' : ' ',
-                   s.active ? s.name : "INACTIVE"),
-       std::format("{}", s.crystals),
-       std::format("{}:{}", s.hanger, s.max_hanger),
-       std::format("{}:{}", s.resource, max_resource(s)),
-       std::format("{}:{}", s.destruct, max_destruct(s)),
-       std::format("{:.1f}:{}", s.fuel, max_fuel(s)),
-       std::format("{}/{}:{}", s.popn, s.troops, s.max_crew)});
+      {std::format("{}", s.number()),
+       std::format("{}{} {}", Shipltrs[s.type()], s.crystals() ? 'x' : ' ',
+                   s.active() ? s.name() : "INACTIVE"),
+       std::format("{}", s.crystals()),
+       std::format("{}:{}", s.hanger(), s.max_hanger()),
+       std::format("{}:{}", s.resource(), max_resource(s)),
+       std::format("{}:{}", s.destruct(), max_destruct(s)),
+       std::format("{:.1f}:{}", s.fuel(), max_fuel(s)),
+       std::format("{}/{}:{}", s.popn(), s.troops(), s.max_crew())});
 
   g.out << table << "\n";
 }
@@ -137,21 +137,22 @@ void report_status(GameObj& g, RstContext& ctx, const Ship& s) {
 
   // Build special suffix for POD temperature
   std::string pod_suffix;
-  if (s.type == ShipType::STYPE_POD) {
-    if (std::holds_alternative<PodData>(s.special)) {
-      auto pod = std::get<PodData>(s.special);
+  if (s.type() == ShipType::STYPE_POD) {
+    if (std::holds_alternative<PodData>(s.special())) {
+      auto pod = std::get<PodData>(s.special());
       pod_suffix = std::format(" ({})", pod.temperature);
     }
   }
 
   // Add data row
   table.add_row(
-      {std::format("{}", s.number), std::format("{}", Shipltrs[s.type]),
-       std::format("{}", s.active ? s.name : "INACTIVE"), s.laser ? "yes" : "",
-       s.cew ? "yes" : "", s.hyper_drive.has ? "yes" : "",
-       std::format("{}{}/{}{}", s.primary, caliber_char(s.primtype),
-                   s.secondary, caliber_char(s.sectype)),
-       std::format("{}", armor(s)), std::format("{:.0f}", s.tech),
+      {std::format("{}", s.number()), std::format("{}", Shipltrs[s.type()]),
+       std::format("{}", s.active() ? s.name() : "INACTIVE"),
+       s.laser() ? "yes" : "", s.cew() ? "yes" : "",
+       s.hyper_drive().has ? "yes" : "",
+       std::format("{}{}/{}{}", s.primary(), caliber_char(s.primtype()),
+                   s.secondary(), caliber_char(s.sectype())),
+       std::format("{}", armor(s)), std::format("{:.0f}", s.tech()),
        std::format("{}", max_speed(s)), std::format("{}", shipcost(s)),
        std::format("{:.1f}", mass(s)),
        std::format("{}{}", size(s), pod_suffix)});
@@ -191,35 +192,37 @@ void report_weapons(GameObj& g, RstContext& ctx, const Ship& s) {
 
   // Determine ship class string
   std::string ship_class;
-  if ((s.type == ShipType::OTYPE_TERRA) || (s.type == ShipType::OTYPE_PLOW)) {
+  if ((s.type() == ShipType::OTYPE_TERRA) ||
+      (s.type() == ShipType::OTYPE_PLOW)) {
     ship_class = "Standard";
   } else {
-    ship_class = s.shipclass;
+    ship_class = s.shipclass();
   }
 
   // Add factory build type indicator if applicable
   std::string class_with_type;
-  if (s.type == ShipType::OTYPE_FACTORY) {
-    class_with_type = std::format("{} {}", Shipltrs[s.build_type], ship_class);
+  if (s.type() == ShipType::OTYPE_FACTORY) {
+    class_with_type =
+        std::format("{} {}", Shipltrs[s.build_type()], ship_class);
   } else {
     class_with_type = ship_class;
   }
 
   // Add data row
   table.add_row(
-      {std::format("{}", s.number), std::format("{}", Shipltrs[s.type]),
-       std::format("{}", s.active ? s.name : "INACTIVE"), s.laser ? "yes" : "",
-       std::format("{}/{}", s.cew, s.cew_range),
-       std::format("{}", (int)((1.0 - .01 * s.damage) * s.tech / 4.0)),
-       std::format("{}{}/{}{}", s.primary, caliber_char(s.primtype),
-                   s.secondary, caliber_char(s.sectype)),
-       std::format("{}%", s.damage), class_with_type});
+      {std::format("{}", s.number()), std::format("{}", Shipltrs[s.type()]),
+       std::format("{}", s.active() ? s.name() : "INACTIVE"),
+       s.laser() ? "yes" : "", std::format("{}/{}", s.cew(), s.cew_range()),
+       std::format("{}", (int)((1.0 - .01 * s.damage()) * s.tech() / 4.0)),
+       std::format("{}{}/{}{}", s.primary(), caliber_char(s.primtype()),
+                   s.secondary(), caliber_char(s.sectype())),
+       std::format("{}%", s.damage()), class_with_type});
 
   g.out << table << "\n";
 }
 
 void report_factories(GameObj& g, RstContext& ctx, const Ship& s) {
-  if (!ctx.flags.factories || s.type != ShipType::OTYPE_FACTORY) return;
+  if (!ctx.flags.factories || s.type() != ShipType::OTYPE_FACTORY) return;
 
   // Create table
   tabulate::Table table;
@@ -259,51 +262,55 @@ void report_factories(GameObj& g, RstContext& ctx, const Ship& s) {
   }
 
   // Handle special case for no ship type specified
-  if ((s.build_type == 0) || (s.build_type == ShipType::OTYPE_FACTORY)) {
-    table.add_row({std::format("{}", s.number), "", "", "", "", "", "", "", "",
-                   "", "", "", "", "(No ship type specified yet)", "", "", "",
-                   "75% (OFF)"});
+  // Note: build_type == STYPE_POD (0) could mean uninitialized, or factory set
+  // to build pods
+  if ((s.build_type() == ShipType::STYPE_POD) ||
+      (s.build_type() == ShipType::OTYPE_FACTORY)) {
+    table.add_row({std::format("{}", s.number()), "", "", "", "", "", "", "",
+                   "", "", "", "", "", "(No ship type specified yet)", "", "",
+                   "", "75% (OFF)"});
     g.out << table << "\n";
     return;
   }
 
   // Build weapon strings
-  std::string prim_guns =
-      s.primtype ? std::format("{}{}", s.primary, caliber_char(s.primtype))
-                 : "---";
+  std::string prim_guns = s.primtype() ? std::format("{}{}", s.primary(),
+                                                     caliber_char(s.primtype()))
+                                       : "---";
 
-  std::string sec_guns =
-      s.sectype ? std::format("{}{}", s.secondary, caliber_char(s.sectype))
-                : "---";
+  std::string sec_guns = s.sectype() ? std::format("{}{}", s.secondary(),
+                                                   caliber_char(s.sectype()))
+                                     : "---";
 
-  std::string cew_str = s.cew ? std::format("{}", s.cew) : "----";
-  std::string range_str = s.cew ? std::format("{}", s.cew_range) : "-----";
+  std::string cew_str = s.cew() ? std::format("{}", s.cew()) : "----";
+  std::string range_str = s.cew() ? std::format("{}", s.cew_range()) : "-----";
 
   // Build speed indicator (hyper + mount + speed)
   std::string speed_indicator;
-  if (s.hyper_drive.has) {
-    speed_indicator = s.mount ? "+" : "*";
+  if (s.hyper_drive().has) {
+    speed_indicator = s.mount() ? "+" : "*";
   } else {
     speed_indicator = " ";
   }
-  speed_indicator += std::format("{}", s.max_speed);
+  speed_indicator += std::format("{}", s.max_speed());
 
   // Build damage status
-  std::string damage_status = std::format("{}%", s.damage);
-  if (s.damage) {
-    if (!s.on) damage_status += "*";
+  std::string damage_status = std::format("{}%", s.damage());
+  if (s.damage()) {
+    if (!s.on()) damage_status += "*";
   }
 
   // Add data row
   table.add_row(
-      {std::format("{}", s.number), std::format("{}", Shipltrs[s.build_type]),
-       std::format("{}", s.build_cost), std::format("{:.1f}", s.complexity),
-       std::format("{:.1f}", s.base_mass), std::format("{}", ship_size(s)),
-       std::format("{}", s.armor), std::format("{}", s.max_crew),
-       std::format("{}", s.max_fuel), std::format("{}", s.max_resource),
-       std::format("{}", s.max_hanger), std::format("{}", s.max_destruct),
+      {std::format("{}", s.number()),
+       std::format("{}", Shipltrs[s.build_type()]),
+       std::format("{}", s.build_cost()), std::format("{:.1f}", s.complexity()),
+       std::format("{:.1f}", s.base_mass()), std::format("{}", ship_size(s)),
+       std::format("{}", s.armor()), std::format("{}", s.max_crew()),
+       std::format("{}", s.max_fuel()), std::format("{}", s.max_resource()),
+       std::format("{}", s.max_hanger()), std::format("{}", s.max_destruct()),
        speed_indicator, std::format("{}/{}", prim_guns, sec_guns),
-       s.laser ? "yes" : " no", cew_str, range_str, damage_status});
+       s.laser() ? "yes" : " no", cew_str, range_str, damage_status});
 
   g.out << table << "\n";
 }
@@ -343,41 +350,42 @@ void report_general(GameObj& g, RstContext& ctx, const Ship& s) {
 
   // Build location/destination string
   std::string locstrn;
-  if (s.docked) {
-    if (s.whatdest == ScopeLevel::LEVEL_SHIP)
-      locstrn = std::format("D#{}", s.destshipno);
+  if (s.docked()) {
+    if (s.whatdest() == ScopeLevel::LEVEL_SHIP)
+      locstrn = std::format("D#{}", s.destshipno());
     else
-      locstrn = std::format("L{:2},{:<2}", s.land_x, s.land_y);
-  } else if (s.navigate.on) {
-    locstrn = std::format("nav:{} ({})", s.navigate.bearing, s.navigate.turns);
+      locstrn = std::format("L{:2},{:<2}", s.land_x(), s.land_y());
+  } else if (s.navigate().on) {
+    locstrn =
+        std::format("nav:{} ({})", s.navigate().bearing, s.navigate().turns);
   } else {
     locstrn = prin_ship_dest(s);
   }
 
   // Build name string (may have special formatting for inactive ships)
   std::string name_str;
-  if (!s.active) {
-    name_str = std::format("INACTIVE({})", s.rad);
+  if (!s.active()) {
+    name_str = std::format("INACTIVE({})", s.rad());
   } else {
-    name_str = s.name;
+    name_str = s.name();
   }
 
   // Build speed indicator
   std::string speed_indicator;
-  if (s.hyper_drive.has) {
-    speed_indicator = s.mounted ? "+" : "*";
+  if (s.hyper_drive().has) {
+    speed_indicator = s.mounted() ? "+" : "*";
   } else {
     speed_indicator = " ";
   }
-  speed_indicator += std::format("{}", s.speed);
+  speed_indicator += std::format("{}", s.speed());
 
   // Add data row
-  table.add_row({std::format("{}", Shipltrs[s.type]),
-                 std::format("{}", s.number), name_str,
-                 std::format("{}", s.governor), std::format("{}", s.damage),
-                 std::format("{}", s.popn), std::format("{}", s.troops),
-                 std::format("{}", s.destruct), std::format("{:.0f}", s.fuel),
-                 speed_indicator, dispshiploc_brief(s), locstrn});
+  table.add_row(
+      {std::format("{}", Shipltrs[s.type()]), std::format("{}", s.number()),
+       name_str, std::format("{}", s.governor()), std::format("{}", s.damage()),
+       std::format("{}", s.popn()), std::format("{}", s.troops()),
+       std::format("{}", s.destruct()), std::format("{:.0f}", s.fuel()),
+       speed_indicator, dispshiploc_brief(s), locstrn});
 
   g.out << table << "\n";
 }
@@ -389,22 +397,22 @@ void report_general(GameObj& g, RstContext& ctx, const Ship& s) {
 bool should_report_ship(const Ship& s, player_t player_num, governor_t governor,
                         const ReportSet& rep_on) {
   // Don't report on ships that are dead
-  if (!s.alive) return false;
+  if (!s.alive()) return false;
 
   // Don't report on ships not owned by this player
-  if (s.owner != player_num) return false;
+  if (s.owner() != player_num) return false;
 
   // Don't report on ships this governor is not authorized for
   if (!authorized(governor, s)) return false;
 
   // Don't report on ships whose type isn't in the requested report filter
-  if (!rep_on.contains(Shipltrs[s.type])) return false;
+  if (!rep_on.contains(Shipltrs[s.type()])) return false;
 
   // Don't report on undocked canisters (launched canisters don't show up)
-  if (s.type == ShipType::OTYPE_CANIST && !s.docked) return false;
+  if (s.type() == ShipType::OTYPE_CANIST && !s.docked()) return false;
 
   // Don't report on undocked greens (launched greens don't show up)
-  if (s.type == ShipType::OTYPE_GREEN && !s.docked) return false;
+  if (s.type() == ShipType::OTYPE_GREEN && !s.docked()) return false;
 
   return true;
 }
@@ -564,7 +572,7 @@ void rst(const command_t& argv, GameObj& g) {
       ship_report(g, ctx, *scoped_ship, report_types);
 
       // Report on ships docked in this ship
-      const ShipList docked_ships(g.entity_manager, scoped_ship->ships);
+      const ShipList docked_ships(g.entity_manager, scoped_ship->ships());
       for (const Ship* ship : docked_ships) {
         ship_report(g, ctx, *ship, report_types);
       }

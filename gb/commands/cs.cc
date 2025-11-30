@@ -80,21 +80,21 @@ void cs(const command_t& argv, GameObj& g) {
           g.lastx[0] = g.lasty[0] = 0.0;
           break;
         }
-        if (!s->docked) {
+        if (!s->docked()) {
           switch (where.level) {
             case ScopeLevel::LEVEL_UNIV:
-              g.lastx[1] = s->xpos;
-              g.lasty[1] = s->ypos;
+              g.lastx[1] = s->xpos();
+              g.lasty[1] = s->ypos();
               break;
             case ScopeLevel::LEVEL_STAR:
-              if (s->whatorbits >= ScopeLevel::LEVEL_STAR &&
-                  s->storbits == where.snum) {
+              if (s->whatorbits() >= ScopeLevel::LEVEL_STAR &&
+                  s->storbits() == where.snum) {
                 /* we are going UP from the ship.. change last*/
                 const auto* orbit_star =
-                    g.entity_manager.peek_star(s->storbits);
+                    g.entity_manager.peek_star(s->storbits());
                 if (orbit_star) {
-                  g.lastx[0] = s->xpos - orbit_star->xpos();
-                  g.lasty[0] = s->ypos - orbit_star->ypos();
+                  g.lastx[0] = s->xpos() - orbit_star->xpos();
+                  g.lasty[0] = s->ypos() - orbit_star->ypos();
                 } else {
                   g.lastx[0] = g.lasty[0] = 0.0;
                 }
@@ -102,16 +102,17 @@ void cs(const command_t& argv, GameObj& g) {
                 g.lastx[0] = g.lasty[0] = 0.0;
               break;
             case ScopeLevel::LEVEL_PLAN:
-              if (s->whatorbits == ScopeLevel::LEVEL_PLAN &&
-                  s->storbits == where.snum && s->pnumorbits == where.pnum) {
+              if (s->whatorbits() == ScopeLevel::LEVEL_PLAN &&
+                  s->storbits() == where.snum &&
+                  s->pnumorbits() == where.pnum) {
                 /* same */
-                const auto* planet =
-                    g.entity_manager.peek_planet(s->storbits, s->pnumorbits);
+                const auto* planet = g.entity_manager.peek_planet(
+                    s->storbits(), s->pnumorbits());
                 const auto* orbit_star =
-                    g.entity_manager.peek_star(s->storbits);
+                    g.entity_manager.peek_star(s->storbits());
                 if (planet && orbit_star) {
-                  g.lastx[0] = s->xpos - orbit_star->xpos() - planet->xpos();
-                  g.lasty[0] = s->ypos - orbit_star->ypos() - planet->ypos();
+                  g.lastx[0] = s->xpos() - orbit_star->xpos() - planet->xpos();
+                  g.lasty[0] = s->ypos() - orbit_star->ypos() - planet->ypos();
                 } else {
                   g.lastx[0] = g.lasty[0] = 0.0;
                 }

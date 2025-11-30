@@ -66,8 +66,10 @@ private:
 export class ShipList {
 public:
   enum class IterationType {
-    Nested,  ///< Follow ship.ships linked list
-    Scope    ///< All ships at current scope (universe/star/planet/ship)
+    Nested,   ///< Follow ship.ships linked list
+    Scope,    ///< All ships at current scope (universe/star/planet/ship)
+    All,      ///< All ships in game (1..num_ships), including dead
+    AllAlive  ///< All alive ships in game (1..num_ships)
   };
 
   // Mutable version - returns ShipHandle
@@ -75,6 +77,8 @@ public:
            IterationType type = IterationType::Nested);
   ShipList(EntityManager& em, const GameObj& g,
            IterationType type = IterationType::Scope);
+  // Constructor for All/AllAlive iteration (all ships in game)
+  ShipList(EntityManager& em, IterationType type);
 
   // Forward declaration for iterators
   class MutableIterator;

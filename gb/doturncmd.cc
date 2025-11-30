@@ -19,6 +19,9 @@ namespace {
 // This struct lives only for the duration of a single turn and provides
 // bounds-checked access to turn-specific tracking arrays.
 struct TurnState {
+  // Reference to EntityManager for loading/saving entities
+  EntityManager& entity_manager;
+
   // Per-star population counts for each player
   unsigned long starpopns[NUMSTARS][MAXPLAYERS];
 
@@ -43,11 +46,10 @@ struct TurnState {
   // Power blocks for each player
   block Blocks[MAXPLAYERS];
 
-  // Ship array - modern C++ vector with RAII management
-  std::vector<std::unique_ptr<Ship>> ships;
-
-  // Total number of ships (cached from Numships() for turn processing)
-  shipnum_t num_ships{0};
+  // Constructor requires EntityManager reference
+  explicit TurnState(EntityManager& em) : entity_manager(em) {
+    reset();
+  }
 
   // Reset all arrays to zero (called at turn start if update==true)
   void reset() noexcept {
@@ -59,19 +61,6 @@ struct TurnState {
     std::memset(Power, 0, sizeof(Power));
     std::memset(inhabited, 0, sizeof(inhabited));
     // Note: Blocks is not reset here; it accumulates across the turn
-  }
-
-  // Bounds-checked accessor for ship vector
-  Ship* get_ship(shipnum_t shipno) noexcept {
-    assert(shipno >= 0 && "Ship index must be non-negative");
-    assert(shipno < ships.size() && "Ship index out of bounds");
-    return ships[shipno].get();
-  }
-
-  const Ship* get_ship(shipnum_t shipno) const noexcept {
-    assert(shipno >= 0 && "Ship index must be non-negative");
-    assert(shipno < ships.size() && "Ship index out of bounds");
-    return ships[shipno].get();
   }
 
   // Bounds-checked accessors for star population data
@@ -87,6 +76,162 @@ struct TurnState {
     assert(player >= 1 && player <= MAXPLAYERS && "Player index out of bounds");
     return starpopns[star][player - 1];
   }
+};
+
+// Simple iterator class for races (1-indexed, 1..num_races)
+// Returns RaceHandle for RAII auto-save behavior
+class RaceList {
+public:
+  explicit RaceList(EntityManager& em) : em_(&em), count_(em.num_races()) {}
+
+  class Iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = EntityHandle<Race>;
+    using difference_type = std::ptrdiff_t;
+
+    Iterator(EntityManager* em, player_t current, player_t end)
+        : em_(em), current_(current), end_(end) {
+      advance_to_valid();
+    }
+
+    EntityHandle<Race> operator*() {
+      return em_->get_race(current_);
+    }
+    Iterator& operator++() {
+      ++current_;
+      advance_to_valid();
+      return *this;
+    }
+    bool operator!=(const Iterator& other) const {
+      return current_ != other.current_;
+    }
+    bool operator==(const Iterator& other) const {
+      return current_ == other.current_;
+    }
+
+  private:
+    void advance_to_valid() {
+      while (current_ <= end_ && !em_->peek_race(current_)) {
+        ++current_;
+      }
+    }
+    EntityManager* em_;
+    player_t current_;
+    player_t end_;
+  };
+
+  Iterator begin() {
+    return Iterator(em_, 1, count_);
+  }
+  Iterator end() {
+    return Iterator(em_, count_ + 1, count_);
+  }
+
+private:
+  EntityManager* em_;
+  player_t count_;
+};
+
+// Simple iterator class for stars (0-indexed, 0..numstars-1)
+// Returns StarHandle for RAII auto-save behavior
+class StarList {
+public:
+  explicit StarList(EntityManager& em)
+      : em_(&em), count_(em.peek_universe()->numstars) {}
+
+  class Iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = EntityHandle<Star>;
+    using difference_type = std::ptrdiff_t;
+
+    Iterator(EntityManager* em, starnum_t current, starnum_t end)
+        : em_(em), current_(current), end_(end) {}
+
+    EntityHandle<Star> operator*() {
+      return em_->get_star(current_);
+    }
+    Iterator& operator++() {
+      ++current_;
+      return *this;
+    }
+    bool operator!=(const Iterator& other) const {
+      return current_ != other.current_;
+    }
+    bool operator==(const Iterator& other) const {
+      return current_ == other.current_;
+    }
+
+  private:
+    EntityManager* em_;
+    starnum_t current_;
+    starnum_t end_;
+  };
+
+  Iterator begin() {
+    return Iterator(em_, 0, count_);
+  }
+  Iterator end() {
+    return Iterator(em_, count_, count_);
+  }
+
+private:
+  EntityManager* em_;
+  starnum_t count_;
+};
+
+// Simple iterator class for planets of a star (0-indexed, 0..numplanets-1)
+// Returns PlanetHandle for RAII auto-save behavior
+class PlanetList {
+public:
+  PlanetList(EntityManager& em, starnum_t star, planetnum_t numplanets)
+      : em_(&em), star_(star), count_(numplanets) {}
+  PlanetList(EntityManager& em, starnum_t star, const Star& star_data)
+      : em_(&em), star_(star), count_(star_data.numplanets()) {}
+
+  class Iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = EntityHandle<Planet>;
+    using difference_type = std::ptrdiff_t;
+
+    Iterator(EntityManager* em, starnum_t star, planetnum_t current,
+             planetnum_t end)
+        : em_(em), star_(star), current_(current), end_(end) {}
+
+    EntityHandle<Planet> operator*() {
+      return em_->get_planet(star_, current_);
+    }
+    Iterator& operator++() {
+      ++current_;
+      return *this;
+    }
+    bool operator!=(const Iterator& other) const {
+      return current_ != other.current_;
+    }
+    bool operator==(const Iterator& other) const {
+      return current_ == other.current_;
+    }
+
+  private:
+    EntityManager* em_;
+    starnum_t star_;
+    planetnum_t current_;
+    planetnum_t end_;
+  };
+
+  Iterator begin() {
+    return Iterator(em_, star_, 0, count_);
+  }
+  Iterator end() {
+    return Iterator(em_, star_, count_, count_);
+  }
+
+private:
+  EntityManager* em_;
+  starnum_t star_;
+  planetnum_t count_;
 };
 }  // anonymous namespace
 
@@ -107,18 +252,15 @@ static bool governed(const Race&, const TurnState&);
 static void make_discoveries(Race&);
 static void output_ground_attacks();
 static void initialize_data(TurnState& state, int update);
-static void process_ships(EntityManager& entity_manager, TurnState& state);
-static void process_stars_and_planets(EntityManager& entity_manager,
-                                      int update);
-static void process_races(EntityManager& entity_manager, int update);
-static void process_market(EntityManager&, int update);
+static void process_ships(TurnState& state);
+static void process_stars_and_planets(TurnState& state, int update);
+static void process_races(TurnState& state, int update);
+static void process_market(TurnState& state, int update);
 static void process_ship_masses_and_ownership(TurnState& state);
-static void process_ship_turns(EntityManager& entity_manager, TurnState& state,
-                               int update);
+static void process_ship_turns(TurnState& state, int update);
 static void prepare_dead_ships(TurnState& state);
 static void insert_ships_into_lists(TurnState& state);
-static void process_abms_and_missiles(EntityManager& entity_manager,
-                                      TurnState& state, int update);
+static void process_abms_and_missiles(TurnState& state, int update);
 static void update_victory_scores(TurnState& state, int update);
 static void finalize_turn(TurnState& state, int update);
 
@@ -140,19 +282,20 @@ static void finalize_turn(TurnState& state, int update);
  *               TODO: Should be bool for type safety
  */
 void do_turn(EntityManager& entity_manager, int update) {
-  TurnState state;  // Create turn-local state
+  TurnState state(
+      entity_manager);  // Create turn-local state with EntityManager ref
 
   initialize_data(state, update);
-  process_ships(entity_manager, state);
-  process_stars_and_planets(entity_manager, update);
-  process_races(entity_manager, update);
+  process_ships(state);
+  process_stars_and_planets(state, update);
+  process_races(state, update);
   output_ground_attacks();
-  process_market(entity_manager, update);
+  process_market(state, update);
   process_ship_masses_and_ownership(state);
-  process_ship_turns(entity_manager, state, update);
+  process_ship_turns(state, update);
   prepare_dead_ships(state);
   insert_ships_into_lists(state);
-  process_abms_and_missiles(entity_manager, state, update);
+  process_abms_and_missiles(state, update);
   update_victory_scores(state, update);
 
   // Flush all dirty entities to database in one batch
@@ -169,78 +312,59 @@ static void initialize_data(TurnState& state, int update) {
   if (update) {
     state.reset();  // Use TurnState's reset method instead of global memsets
   }
-
-  state.num_ships = Numships();
-  Num_ships = state.num_ships;  // TODO: Remove global once fully migrated
 }
 
-static void process_ships(EntityManager& entity_manager, TurnState& state) {
-  // Load all ships using EntityManager for consistent single-source-of-truth
-
-  // Allocate vector with num_ships + 1 elements (0-index unused, 1-indexed)
-  state.ships.resize(state.num_ships + 1);
-
-  for (shipnum_t i = 1; i <= state.num_ships; i++) {
-    auto ship_handle = entity_manager.get_ship(i);
-    if (!ship_handle.get()) {
-      continue;  // Skip if ship not found
-    }
-
-    // Create Ship from struct (Ship copy is deleted, but struct copy works)
-    // The handle will auto-save modifications when it goes out of scope
-    state.ships[i] = std::make_unique<Ship>(ship_handle->get_struct());
-
-    // Process mine detonation logic
-    domine(*state.ships[i], 0, entity_manager);
+static void process_ships(TurnState& state) {
+  // Process mine detonation for each ship
+  for (auto ship_handle :
+       ShipList(state.entity_manager, ShipList::IterationType::All)) {
+    domine(*ship_handle, 0, state.entity_manager);
   }
 }
 
-static void process_stars_and_planets(EntityManager& entity_manager,
-                                      int update) {
-  /* Load global universe_struct and stars using EntityManager */
-  auto sdata_handle = entity_manager.get_universe();
-  Sdata = sdata_handle.read();  // Copy to global for backward compatibility
-
+static void process_stars_and_planets(TurnState& state, int update) {
   Planet_count = 0;
-  for (starnum_t star = 0; star < Sdata.numstars; star++) {
-    auto star_handle = entity_manager.get_star(star);
-    if (!star_handle.get()) continue;
+  for (auto star_handle : StarList(state.entity_manager)) {
+    const starnum_t star = star_handle->get_struct().star_id;
 
-    // Copy star to global array for backward compatibility with commands
-    stars[star] = star_handle.read();
-    if (update) fix_stability(stars[star]); /* nova */
-
-    for (planetnum_t i = 0; i < stars[star].numplanets(); i++) {
-      // Keep using legacy getplanet for now - Planet has no copy constructor
-      // TODO: Migrate to EntityManager once command layer is migrated
-      planets[star][i] = std::make_unique<Planet>(getplanet(star, i));
-      if (planets[star][i]->type() != PlanetType::ASTEROID) Planet_count++;
-      if (update) moveplanet(star, *planets[star][i], i);
-      if (!stars[star].planet_name_isset(i))
-        stars[star].set_planet_name(i, std::format("NULL-{}", i));
+    if (update) {
+      fix_stability(*star_handle); /* nova */
     }
-    if (stars[star].get_name()[0] == '\0')
-      stars[star].set_name(std::format("NULL-{}", star));
+
+    for (auto planet_handle :
+         PlanetList(state.entity_manager, star, *star_handle)) {
+      const planetnum_t pnum = planet_handle->planet_order();
+      if (planet_handle->type() != PlanetType::ASTEROID) {
+        Planet_count++;
+      }
+      if (update) {
+        moveplanet(star, *planet_handle, pnum);
+      }
+      if (!star_handle->planet_name_isset(pnum)) {
+        star_handle->set_planet_name(pnum, std::format("NULL-{}", pnum));
+      }
+    }
+    if (star_handle->get_name()[0] == '\0') {
+      star_handle->set_name(std::format("NULL-{}", star));
+    }
   }
 }
 
-static void process_races(EntityManager& entity_manager, int update) {
+static void process_races(TurnState& state, int update) {
   VN_brain.Most_mad = 0; /* not mad at anyone for starts */
 
-  for (player_t i = 1; i <= Num_races; i++) {
-    // Load race using EntityManager - RAII handle auto-saves on scope exit
-    auto race_handle = entity_manager.get_race(i);
-    if (!race_handle.get()) {
-      // Skip if race not found (shouldn't happen in normal operation)
-      continue;
-    }
+  // Get universe data for VN hitlist
+  auto sdata_handle = state.entity_manager.get_universe();
+
+  for (auto race_handle : RaceList(state.entity_manager)) {
+    const player_t player = race_handle->Playernum;
 
     /* increase tech; change to something else */
     if (update) {
       /* Reset controlled planet count */
       race_handle->controlled_planets = 0;
       race_handle->planet_points = 0;
-      for (auto& governor : race_handle->governor)
+      for (auto& governor : race_handle->governor) {
         if (governor.active) {
           governor.maintain = 0;
           governor.cost_market = 0;
@@ -248,19 +372,21 @@ static void process_races(EntityManager& entity_manager, int update) {
           governor.cost_tech = 0;
           governor.income = 0;
         }
+      }
       /* add VN program */
-      VN_brain.Total_mad += Sdata.VN_hitlist[i - 1];
+      VN_brain.Total_mad += sdata_handle->VN_hitlist[player - 1];
       /* find out who they're most mad at */
       if (VN_brain.Most_mad > 0 &&
-          Sdata.VN_hitlist[VN_brain.Most_mad - 1] <= Sdata.VN_hitlist[i - 1])
-        VN_brain.Most_mad = i;
+          sdata_handle->VN_hitlist[VN_brain.Most_mad - 1] <=
+              sdata_handle->VN_hitlist[player - 1]) {
+        VN_brain.Most_mad = player;
+      }
     }
     if (VOTING) {
       /* Reset their vote for Update go. */
       // TODO(jeffbailey): This doesn't seem to work.
       race_handle->votes = false;
     }
-    // Auto-save happens when race_handle goes out of scope
   }
 
   output_ground_attacks();
@@ -277,13 +403,13 @@ static void process_races(EntityManager& entity_manager, int update) {
  * - Sends telegrams to buyers and sellers
  * - Removes sold/expired commodities
  *
- * @param entity_manager Database entity manager for commodity storage
+ * @param state Turn state with entity data
  * @param update 1 to process market, 0 to skip (movement segment only)
  */
-static void process_market(EntityManager& entity_manager, int update) {
+static void process_market(TurnState& state, int update) {
   if (MARKET && update) {
     /* reset market */
-    Num_commods = entity_manager.num_commods();
+    Num_commods = state.entity_manager.num_commods();
     clr_commodfree();
     for (commodnum_t i = Num_commods; i >= 1; i--) {
       auto c = getcommod(i);
@@ -292,43 +418,50 @@ static void process_market(EntityManager& entity_manager, int update) {
         putcommod(c, i);
         continue;
       }
-      if (c.owner && c.bidder &&
-          (races[c.bidder - 1].governor[c.bidder_gov].money >= c.bid)) {
-        races[c.bidder - 1].governor[c.bidder_gov].money -= c.bid;
-        races[c.owner - 1].governor[c.governor].money += c.bid;
+
+      auto bidder_race = state.entity_manager.get_race(c.bidder);
+      auto owner_race = state.entity_manager.get_race(c.owner);
+
+      if (c.owner && c.bidder && bidder_race.get() && owner_race.get() &&
+          (bidder_race->governor[c.bidder_gov].money >= c.bid)) {
+        bidder_race->governor[c.bidder_gov].money -= c.bid;
+        owner_race->governor[c.governor].money += c.bid;
         auto [cost, dist] = shipping_cost(c.star_to, c.star_from, c.bid);
-        races[c.bidder - 1].governor[c.bidder_gov].cost_market += c.bid + cost;
-        races[c.owner - 1].governor[c.governor].profit_market += c.bid;
-        maintain(races[c.bidder - 1],
-                 races[c.bidder - 1].governor[c.bidder_gov], cost);
-        switch (c.type) {
-          case CommodType::RESOURCE:
-            planets[c.star_to][c.planet_to]->info(c.bidder - 1).resource +=
-                c.amount;
-            break;
-          case CommodType::FUEL:
-            planets[c.star_to][c.planet_to]->info(c.bidder - 1).fuel +=
-                c.amount;
-            break;
-          case CommodType::DESTRUCT:
-            planets[c.star_to][c.planet_to]->info(c.bidder - 1).destruct +=
-                c.amount;
-            break;
-          case CommodType::CRYSTAL:
-            planets[c.star_to][c.planet_to]->info(c.bidder - 1).crystals +=
-                c.amount;
-            break;
+        bidder_race->governor[c.bidder_gov].cost_market += c.bid + cost;
+        owner_race->governor[c.governor].profit_market += c.bid;
+        maintain(*bidder_race, bidder_race->governor[c.bidder_gov], cost);
+
+        auto planet_handle =
+            state.entity_manager.get_planet(c.star_to, c.planet_to);
+        if (planet_handle.get()) {
+          switch (c.type) {
+            case CommodType::RESOURCE:
+              planet_handle->info(c.bidder - 1).resource += c.amount;
+              break;
+            case CommodType::FUEL:
+              planet_handle->info(c.bidder - 1).fuel += c.amount;
+              break;
+            case CommodType::DESTRUCT:
+              planet_handle->info(c.bidder - 1).destruct += c.amount;
+              break;
+            case CommodType::CRYSTAL:
+              planet_handle->info(c.bidder - 1).crystals += c.amount;
+              break;
+          }
         }
+
+        auto star_handle = state.entity_manager.get_star(c.star_to);
         std::string purchased_msg = std::format(
             "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
             "arrived at /{}/{}\n",
-            i, races[c.owner - 1].name, c.owner, c.bid, c.amount, c.type,
-            stars[c.star_to].get_name(),
-            stars[c.star_to].get_planet_name(c.planet_to));
+            i, owner_race->name, c.owner, c.bid, c.amount, c.type,
+            star_handle.get() ? star_handle->get_name() : "unknown",
+            star_handle.get() ? star_handle->get_planet_name(c.planet_to)
+                              : "unknown");
         push_telegram(c.bidder, c.bidder_gov, purchased_msg);
-        std::string sold_msg = std::format(
-            "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", i, c.amount,
-            c.type, races[c.bidder - 1].name, c.bidder, c.bid);
+        std::string sold_msg =
+            std::format("Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", i,
+                        c.amount, c.type, bidder_race->name, c.bidder, c.bid);
         push_telegram(c.owner, c.governor, sold_msg);
         c.owner = c.governor = 0;
         c.bidder = c.bidder_gov = 0;
@@ -336,7 +469,9 @@ static void process_market(EntityManager& entity_manager, int update) {
         c.bidder = c.bidder_gov = 0;
         c.bid = 0;
       }
-      if (!c.owner) makecommoddead(i);
+      if (!c.owner) {
+        makecommoddead(i);
+      }
       putcommod(c, i);
     }
   }
@@ -344,185 +479,222 @@ static void process_market(EntityManager& entity_manager, int update) {
 
 static void process_ship_masses_and_ownership(TurnState& state) {
   /* check ship masses - ownership */
-  for (shipnum_t i = 1; i <= state.num_ships; i++)
-    if (state.ships[i] && state.ships[i]->alive()) {
-      domass(*state.ships[i]);
-      doown(*state.ships[i]);
-    }
+  for (auto ship_handle :
+       ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
+    domass(*ship_handle);
+    doown(*ship_handle);
+  }
 }
 
-static void process_ship_turns(EntityManager& entity_manager, TurnState& state,
-                               int update) {
+static void process_ship_turns(TurnState& state, int update) {
   /* do all ships one turn - do slower ships first */
-  for (int j = 0; j <= 9; j++)
-    for (shipnum_t i = 1; i <= state.num_ships; i++) {
-      if (state.ships[i] && state.ships[i]->alive() &&
-          state.ships[i]->speed() == j) {
-        doship(*state.ships[i], update, entity_manager);
-        if ((state.ships[i]->type() == ShipType::STYPE_MISSILE) &&
-            !attack_planet(*state.ships[i]))
-          domissile(*state.ships[i]);
+  for (int j = 0; j <= 9; j++) {
+    for (auto ship_handle :
+         ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
+      if (ship_handle->speed() == j) {
+        doship(*ship_handle, update, state.entity_manager);
+        if ((ship_handle->type() == ShipType::STYPE_MISSILE) &&
+            !attack_planet(*ship_handle)) {
+          domissile(*ship_handle);
+        }
       }
     }
+  }
 
   if (MARKET) {
     /* do maintenance costs */
-    if (update)
-      for (shipnum_t i = 1; i <= state.num_ships; i++)
-        if (state.ships[i] && state.ships[i]->alive() &&
-            Shipdata[state.ships[i]->type()][ABIL_MAINTAIN]) {
-          if (state.ships[i]->popn())
-            races[state.ships[i]->owner() - 1]
-                .governor[state.ships[i]->governor()]
-                .maintain += state.ships[i]->build_cost();
-          if (state.ships[i]->troops())
-            races[state.ships[i]->owner() - 1]
-                .governor[state.ships[i]->governor()]
-                .maintain += UPDATE_TROOP_COST * state.ships[i]->troops();
+    if (update) {
+      for (auto ship_handle :
+           ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
+        if (Shipdata[ship_handle->type()][ABIL_MAINTAIN]) {
+          auto race_handle =
+              state.entity_manager.get_race(ship_handle->owner());
+          if (!race_handle.get()) continue;
+
+          if (ship_handle->popn()) {
+            race_handle->governor[ship_handle->governor()].maintain +=
+                ship_handle->build_cost();
+          }
+          if (ship_handle->troops()) {
+            race_handle->governor[ship_handle->governor()].maintain +=
+                UPDATE_TROOP_COST * ship_handle->troops();
+          }
         }
+      }
+    }
   }
 }
 
 static void prepare_dead_ships(TurnState& state) {
   /* prepare dead ships for recycling */
   clr_shipfree();
-  for (shipnum_t i = 1; i <= state.num_ships; i++)
-    if (state.ships[i] && !state.ships[i]->alive()) makeshipdead(i);
+  const ShipList ships(state.entity_manager, ShipList::IterationType::All);
+  for (const Ship* ship : ships) {
+    if (!ship->alive()) {
+      makeshipdead(ship->number());
+    }
+  }
 }
 
 static void insert_ships_into_lists(TurnState& state) {
   /* erase next ship pointers - reset in insert_sh_... */
-  for (shipnum_t i = 1; i <= state.num_ships; i++) {
-    if (state.ships[i]) {
-      state.ships[i]->nextship() = 0;
-      state.ships[i]->ships() = 0;
-    }
+  for (auto ship_handle :
+       ShipList(state.entity_manager, ShipList::IterationType::All)) {
+    ship_handle->nextship() = 0;
+    ship_handle->ships() = 0;
   }
 
   /* clear ship list for insertion */
-  Sdata.ships = 0;
-  for (starnum_t star = 0; star < Sdata.numstars; star++) {
-    stars[star].ships() = 0;
-    for (planetnum_t i = 0; i < stars[star].numplanets(); i++)
-      planets[star][i]->ships() = 0;
+  auto sdata_handle = state.entity_manager.get_universe();
+  sdata_handle->ships = 0;
+
+  for (auto star_handle : StarList(state.entity_manager)) {
+    const starnum_t star = star_handle->get_struct().star_id;
+    star_handle->ships() = 0;
+    for (auto planet_handle :
+         PlanetList(state.entity_manager, star, *star_handle)) {
+      planet_handle->ships() = 0;
+    }
   }
 
   /* insert ship into the list of wherever it might be */
-  for (shipnum_t i = state.num_ships; i >= 1; i--) {
-    if (state.ships[i] && state.ships[i]->alive()) {
-      switch (state.ships[i]->whatorbits()) {
-        case ScopeLevel::LEVEL_UNIV:
-          insert_sh_univ(&Sdata, state.ships[i].get());
+  for (shipnum_t i = state.entity_manager.num_ships(); i >= 1; i--) {
+    auto ship_handle = state.entity_manager.get_ship(i);
+    if (ship_handle.get() && ship_handle->alive()) {
+      switch (ship_handle->whatorbits()) {
+        case ScopeLevel::LEVEL_UNIV: {
+          auto sdata = state.entity_manager.get_universe();
+          insert_sh_univ(sdata.get(), ship_handle.get());
           break;
-        case ScopeLevel::LEVEL_STAR:
-          insert_sh_star(stars[state.ships[i]->storbits()],
-                         state.ships[i].get());
+        }
+        case ScopeLevel::LEVEL_STAR: {
+          auto star = state.entity_manager.get_star(ship_handle->storbits());
+          if (star.get()) {
+            insert_sh_star(*star, ship_handle.get());
+          }
           break;
-        case ScopeLevel::LEVEL_PLAN:
-          insert_sh_plan(*planets[state.ships[i]->storbits()]
-                                 [state.ships[i]->pnumorbits()],
-                         state.ships[i].get());
+        }
+        case ScopeLevel::LEVEL_PLAN: {
+          auto planet = state.entity_manager.get_planet(
+              ship_handle->storbits(), ship_handle->pnumorbits());
+          if (planet.get()) {
+            insert_sh_plan(*planet, ship_handle.get());
+          }
           break;
-        case ScopeLevel::LEVEL_SHIP:
-          insert_sh_ship(state.ships[i].get(),
-                         state.ships[state.ships[i]->destshipno()].get());
+        }
+        case ScopeLevel::LEVEL_SHIP: {
+          auto dest_ship =
+              state.entity_manager.get_ship(ship_handle->destshipno());
+          if (dest_ship.get()) {
+            insert_sh_ship(ship_handle.get(), dest_ship.get());
+          }
           break;
+        }
       }
     }
   }
 }
 
-static void process_abms_and_missiles(EntityManager& entity_manager,
-                                      TurnState& state, int update) {
+static void process_abms_and_missiles(TurnState& state, int update) {
   /* put ABMs and surviving missiles here because ABMs need to have the missile
      in the shiplist of the target planet  Maarten */
-  for (shipnum_t i = 1; i <= state.num_ships; i++) /* ABMs defend planet */
-    if (state.ships[i] && (state.ships[i]->type() == ShipType::OTYPE_ABM) &&
-        state.ships[i]->alive())
-      doabm(*state.ships[i]);
+  for (auto ship_handle :
+       ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
+    if (ship_handle->type() == ShipType::OTYPE_ABM) {
+      doabm(*ship_handle);
+    }
+  }
 
-  for (shipnum_t i = 1; i <= state.num_ships; i++)
-    if (state.ships[i] && (state.ships[i]->type() == ShipType::STYPE_MISSILE) &&
-        state.ships[i]->alive() && attack_planet(*state.ships[i]))
-      domissile(*state.ships[i]);
+  for (auto ship_handle :
+       ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
+    if (ship_handle->type() == ShipType::STYPE_MISSILE &&
+        attack_planet(*ship_handle)) {
+      domissile(*ship_handle);
+    }
+  }
 
-  for (shipnum_t i = state.num_ships; i >= 1; i--)
-    if (state.ships[i]) putship(*state.ships[i]);
+  for (auto star_handle : StarList(state.entity_manager)) {
+    const starnum_t star = star_handle->get_struct().star_id;
 
-  for (starnum_t star = 0; star < Sdata.numstars; star++) {
-    for (planetnum_t i = 0; i < stars[star].numplanets(); i++) {
+    for (auto planet_handle :
+         PlanetList(state.entity_manager, star, *star_handle)) {
+      const planetnum_t pnum = planet_handle->planet_order();
+
       /* store occupation for VPs */
-      for (player_t j = 1; j <= Num_races; j++) {
-        if (planets[star][i]->info(j - 1).numsectsowned) {
-          setbit(state.inhabited[star], j);
-          setbit(stars[star].inhabited(), j);
-        }
-        if (planets[star][i]->type() != PlanetType::ASTEROID &&
-            (planets[star][i]->info(j - 1).numsectsowned >
-             planets[star][i]->Maxx() * planets[star][i]->Maxy() / 2))
-          races[j - 1].controlled_planets++;
+      for (auto race_handle : RaceList(state.entity_manager)) {
+        const player_t player = race_handle->Playernum;
 
-        if (planets[star][i]->info(j - 1).numsectsowned)
-          races[j - 1].planet_points += planets[star][i]->get_points();
+        if (planet_handle->info(player - 1).numsectsowned) {
+          setbit(state.inhabited[star], player);
+          setbit(star_handle->inhabited(), player);
+        }
+        if (planet_handle->type() != PlanetType::ASTEROID &&
+            (planet_handle->info(player - 1).numsectsowned >
+             planet_handle->Maxx() * planet_handle->Maxy() / 2)) {
+          race_handle->controlled_planets++;
+        }
+
+        if (planet_handle->info(player - 1).numsectsowned) {
+          race_handle->planet_points += planet_handle->get_points();
+        }
       }
       if (update) {
-        if (doplanet(entity_manager, star, *planets[star][i], i)) {
+        if (doplanet(state.entity_manager, star, *planet_handle, pnum)) {
           /* save smap gotten & altered by doplanet
              only if the planet is expl*/
-          // TODO(jeffbailey): Added this in doplanet, but need to audit other
-          // getsmaps to make sure they have matching putsmaps
-          // putsmap(smap, *planets[star][i]);
         }
       }
-      putplanet(*planets[star][i], stars[star], i);
     }
 
     /* do AP's for ea. player  */
-    if (update)
-      for (player_t i = 1; i <= Num_races; i++) {
-        if (state.starpopns[star][i - 1])
-          setbit(stars[star].inhabited(), i);
-        else
-          clrbit(stars[star].inhabited(), i);
+    if (update) {
+      for (auto race_handle : RaceList(state.entity_manager)) {
+        const player_t player = race_handle->Playernum;
 
-        if (isset(stars[star].inhabited(), i)) {
-          ap_t APs;
+        if (state.starpopns[star][player - 1]) {
+          setbit(star_handle->inhabited(), player);
+        } else {
+          clrbit(star_handle->inhabited(), player);
+        }
 
-          APs = stars[star].AP(i - 1) +
-                APadd((int)state.starnumships[star][i - 1],
-                      state.starpopns[star][i - 1], races[i - 1], state);
-          if (APs < LIMIT_APs)
-            stars[star].AP(i - 1) = APs;
-          else
-            stars[star].AP(i - 1) = LIMIT_APs;
+        if (isset(star_handle->inhabited(), player)) {
+          ap_t APs =
+              star_handle->AP(player - 1) +
+              APadd(static_cast<int>(state.starnumships[star][player - 1]),
+                    state.starpopns[star][player - 1], *race_handle, state);
+          if (APs < LIMIT_APs) {
+            star_handle->AP(player - 1) = APs;
+          } else {
+            star_handle->AP(player - 1) = LIMIT_APs;
+          }
         }
         /* compute victory points for the block */
         if (state.inhabited[star] != 0) {
           uint64_t dummy =
-              state.Blocks[i - 1].invite & state.Blocks[i - 1].pledge;
-          state.Blocks[i - 1].systems_owned +=
+              state.Blocks[player - 1].invite & state.Blocks[player - 1].pledge;
+          state.Blocks[player - 1].systems_owned +=
               (state.inhabited[star] | dummy) == dummy;
         }
       }
-    putstar(stars[star], star);
+    }
   }
 
   /* add APs to sdata for ea. player */
-  if (update)
-    for (player_t i = 1; i <= Num_races; i++) {
-      state.Blocks[i - 1].systems_owned = 0; /*recount systems owned*/
-      if (governed(races[i - 1], state)) {
-        ap_t APs;
-
-        APs = Sdata.AP[i - 1] + races[i - 1].planet_points;
-        if (APs < LIMIT_APs)
-          Sdata.AP[i - 1] = APs;
-        else
-          Sdata.AP[i - 1] = LIMIT_APs;
+  if (update) {
+    auto sdata_handle = state.entity_manager.get_universe();
+    for (auto race_handle : RaceList(state.entity_manager)) {
+      const player_t player = race_handle->Playernum;
+      state.Blocks[player - 1].systems_owned = 0; /*recount systems owned*/
+      if (governed(*race_handle, state)) {
+        ap_t APs = sdata_handle->AP[player - 1] + race_handle->planet_points;
+        if (APs < LIMIT_APs) {
+          sdata_handle->AP[player - 1] = APs;
+        } else {
+          sdata_handle->AP[player - 1] = LIMIT_APs;
+        }
       }
     }
-
-  putsdata(&Sdata);
+  }
 
   /* here is where we do victory calculations. */
 }
@@ -542,113 +714,131 @@ static void update_victory_scores(TurnState& state, int update) {
 
     std::array<victstruct, MAXPLAYERS> victory;
 
-    for (player_t i = 1; i <= Num_races; i++) {
-      victory[i - 1].morale = races[i - 1].morale;
-      victory[i - 1].money = races[i - 1].governor[0].money;
-      for (auto& governor : races[i - 1].governor)
-        if (governor.active) victory[i - 1].money += governor.money;
+    for (auto race_handle : RaceList(state.entity_manager)) {
+      const player_t player = race_handle->Playernum;
+      victory[player - 1].morale = race_handle->morale;
+      victory[player - 1].money = race_handle->governor[0].money;
+      for (auto& governor : race_handle->governor) {
+        if (governor.active) {
+          victory[player - 1].money += governor.money;
+        }
+      }
     }
 
-    for (starnum_t star = 0; star < Sdata.numstars; star++) {
+    for (auto star_handle : StarList(state.entity_manager)) {
       /* do planets in the star next */
-      for (planetnum_t i = 0; i < stars[star].numplanets(); i++) {
-        for (player_t j = 0; j < Num_races; j++) {
-          if (!planets[star][i]->info(j).explored) continue;
-          victory[j].numsects += (int)planets[star][i]->info(j).numsectsowned;
-          victory[j].res += planets[star][i]->info(j).resource;
-          victory[j].des += (int)planets[star][i]->info(j).destruct;
-          victory[j].fuel += (int)planets[star][i]->info(j).fuel;
+      for (auto planet_handle :
+           PlanetList(state.entity_manager, star_handle->get_struct().star_id,
+                      *star_handle)) {
+        for (auto race_handle : RaceList(state.entity_manager)) {
+          const player_t player = race_handle->Playernum;
+          if (!planet_handle->info(player - 1).explored) {
+            continue;
+          }
+          victory[player - 1].numsects +=
+              static_cast<int>(planet_handle->info(player - 1).numsectsowned);
+          victory[player - 1].res += planet_handle->info(player - 1).resource;
+          victory[player - 1].des +=
+              static_cast<int>(planet_handle->info(player - 1).destruct);
+          victory[player - 1].fuel +=
+              static_cast<int>(planet_handle->info(player - 1).fuel);
         }
       } /* end of planet searchings */
     } /* end of star searchings */
 
-    for (shipnum_t i = 1; i <= state.num_ships; i++) {
-      if (!state.ships[i] || !state.ships[i]->alive()) continue;
-      victory[state.ships[i]->owner() - 1].shipcost +=
-          state.ships[i]->build_cost();
-      victory[state.ships[i]->owner() - 1].shiptech += state.ships[i]->tech();
-      victory[state.ships[i]->owner() - 1].res += state.ships[i]->resource();
-      victory[state.ships[i]->owner() - 1].des += state.ships[i]->destruct();
-      victory[state.ships[i]->owner() - 1].fuel += state.ships[i]->fuel();
+    const ShipList ships(state.entity_manager,
+                         ShipList::IterationType::AllAlive);
+    for (const Ship* ship : ships) {
+      victory[ship->owner() - 1].shipcost += ship->build_cost();
+      victory[ship->owner() - 1].shiptech += ship->tech();
+      victory[ship->owner() - 1].res += ship->resource();
+      victory[ship->owner() - 1].des += ship->destruct();
+      victory[ship->owner() - 1].fuel += ship->fuel();
     }
     /* now that we have the info.. calculate the raw score */
 
-    for (player_t i = 0; i < Num_races; i++) {
-      races[i].victory_score =
-          (VICT_SECT * (int)victory[i].numsects) +
-          (VICT_SHIP * ((int)victory[i].shipcost +
-                        (VICT_TECH * (int)victory[i].shiptech))) +
-          (VICT_RES * ((int)victory[i].res + (int)victory[i].des)) +
-          (VICT_FUEL * (int)victory[i].fuel) +
-          (VICT_MONEY * (int)victory[i].money);
-      races[i].victory_score /= VICT_DIVISOR;
-      races[i].victory_score = (int)(morale_factor((double)victory[i].morale) *
-                                     races[i].victory_score);
+    for (auto race_handle : RaceList(state.entity_manager)) {
+      const player_t player = race_handle->Playernum;
+      race_handle->victory_score =
+          (VICT_SECT * victory[player - 1].numsects) +
+          (VICT_SHIP * (victory[player - 1].shipcost +
+                        (VICT_TECH * victory[player - 1].shiptech))) +
+          (VICT_RES * (victory[player - 1].res + victory[player - 1].des)) +
+          (VICT_FUEL * victory[player - 1].fuel) +
+          (VICT_MONEY * static_cast<int>(victory[player - 1].money));
+      race_handle->victory_score /= VICT_DIVISOR;
+      race_handle->victory_score = static_cast<int>(
+          morale_factor(static_cast<double>(victory[player - 1].morale)) *
+          race_handle->victory_score);
     }
   } /* end of if (update) */
 }
 
 static void finalize_turn(TurnState& state, int update) {
-  // Save all ships and automatically clean them up via unique_ptr
-  for (shipnum_t i = 1; i <= state.num_ships; i++) {
-    if (state.ships[i]) {
-      putship(*state.ships[i]);
-    }
-  }
-  // Vector will be automatically destroyed, cleaning up all unique_ptrs
-
   if (update) {
-    for (player_t i = 1; i <= Num_races; i++) {
+    for (auto race_handle : RaceList(state.entity_manager)) {
+      const player_t player = race_handle->Playernum;
+
       /* collective intelligence */
-      if (races[i - 1].collective_iq) {
+      if (race_handle->collective_iq) {
         double x = ((2. / 3.14159265) *
-                    atan((double)state.Power[i - 1].popn / MESO_POP_SCALE));
-        races[i - 1].IQ = races[i - 1].IQ_limit * x * x;
+                    atan(static_cast<double>(state.Power[player - 1].popn) /
+                         MESO_POP_SCALE));
+        race_handle->IQ = race_handle->IQ_limit * x * x;
       }
-      races[i - 1].tech += (double)(races[i - 1].IQ) / 100.0;
-      races[i - 1].morale += state.Power[i - 1].planets_owned;
-      make_discoveries(races[i - 1]);
-      races[i - 1].turn += 1;
-      if (races[i - 1].controlled_planets >=
-          Planet_count * VICTORY_PERCENT / 100)
-        races[i - 1].victory_turns++;
-      else
-        races[i - 1].victory_turns = 0;
+      race_handle->tech += static_cast<double>(race_handle->IQ) / 100.0;
+      race_handle->morale += state.Power[player - 1].planets_owned;
+      make_discoveries(*race_handle);
+      race_handle->turn += 1;
+      if (race_handle->controlled_planets >=
+          Planet_count * VICTORY_PERCENT / 100) {
+        race_handle->victory_turns++;
+      } else {
+        race_handle->victory_turns = 0;
+      }
 
-      if (races[i - 1].controlled_planets >=
-          Planet_count * VICTORY_PERCENT / 200)
-        for (player_t j = 1; j <= Num_races; j++)
-          races[j - 1].translate[i - 1] = 100;
+      if (race_handle->controlled_planets >=
+          Planet_count * VICTORY_PERCENT / 200) {
+        for (auto other_race : RaceList(state.entity_manager)) {
+          other_race->translate[player - 1] = 100;
+        }
+      }
 
-      state.Blocks[i - 1].VPs = 10L * state.Blocks[i - 1].systems_owned;
+      state.Blocks[player - 1].VPs =
+          10L * state.Blocks[player - 1].systems_owned;
       if (MARKET) {
-        for (auto& governor : races[i - 1].governor)
-          if (governor.active)
-            maintain(races[i - 1], governor, governor.maintain);
+        for (auto& governor : race_handle->governor) {
+          if (governor.active) {
+            maintain(*race_handle, governor, governor.maintain);
+          }
+        }
       }
     }
-    for (player_t i = 1; i <= Num_races; i++)
-      putrace(races[i - 1]);
   }
 
   // No manual free() needed - vector cleanup is automatic
 
   if (update) {
     compute_power_blocks();
-    for (player_t i = 1; i <= Num_races; i++) {
-      state.Power[i - 1].money = 0;
-      for (auto& governor : races[i - 1].governor)
-        if (governor.active) state.Power[i - 1].money += governor.money;
+    for (auto race_handle : RaceList(state.entity_manager)) {
+      const player_t player = race_handle->Playernum;
+      state.Power[player - 1].money = 0;
+      for (auto& governor : race_handle->governor) {
+        if (governor.active) {
+          state.Power[player - 1].money += governor.money;
+        }
+      }
     }
     putpower(state.Power);
     Putblock(state.Blocks);
   }
 
-  for (player_t j = 1; j <= Num_races; j++) {
-    if (update)
-      notify_race(j, "Finished with update.\n");
-    else
-      notify_race(j, "Finished with movement segment.\n");
+  for (auto race_handle : RaceList(state.entity_manager)) {
+    if (update) {
+      notify_race(race_handle->Playernum, "Finished with update.\n");
+    } else {
+      notify_race(race_handle->Playernum, "Finished with movement segment.\n");
+    }
   }
 }
 
@@ -681,19 +871,32 @@ static ap_t APadd(const int sh, const population_t popn, const Race& race,
  * @return True if the race is governed, false otherwise.
  */
 static bool governed(const Race& race, const TurnState& state) {
-  return (
-      race.Gov_ship && race.Gov_ship <= state.num_ships &&
-      state.ships[race.Gov_ship] != nullptr &&
-      state.ships[race.Gov_ship]->alive() &&
-      state.ships[race.Gov_ship]->docked() &&
-      (state.ships[race.Gov_ship]->whatdest() == ScopeLevel::LEVEL_PLAN ||
-       (state.ships[race.Gov_ship]->whatorbits() == ScopeLevel::LEVEL_SHIP &&
-        state.ships[state.ships[race.Gov_ship]->destshipno()]->type() ==
-            ShipType::STYPE_HABITAT &&
-        (state.ships[state.ships[race.Gov_ship]->destshipno()]->whatorbits() ==
-             ScopeLevel::LEVEL_PLAN ||
-         state.ships[state.ships[race.Gov_ship]->destshipno()]->whatorbits() ==
-             ScopeLevel::LEVEL_STAR))));
+  if (!race.Gov_ship || race.Gov_ship > state.entity_manager.num_ships()) {
+    return false;
+  }
+
+  const auto* gov_ship = state.entity_manager.peek_ship(race.Gov_ship);
+  if (!gov_ship || !gov_ship->alive() || !gov_ship->docked()) {
+    return false;
+  }
+
+  // Check if docked at a planet
+  if (gov_ship->whatdest() == ScopeLevel::LEVEL_PLAN) {
+    return true;
+  }
+
+  // Check if docked at a habitat that's orbiting a planet or star
+  if (gov_ship->whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    const auto* habitat =
+        state.entity_manager.peek_ship(gov_ship->destshipno());
+    if (habitat && habitat->type() == ShipType::STYPE_HABITAT &&
+        (habitat->whatorbits() == ScopeLevel::LEVEL_PLAN ||
+         habitat->whatorbits() == ScopeLevel::LEVEL_STAR)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /* fix stability for stars */

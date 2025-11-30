@@ -484,6 +484,102 @@ int main() {
     std::println("✓ Test 5c passed: Const scope-based iteration works");
   }
 
+  // Test 6: IterationType::All - iterates all ships including dead
+  {
+    std::println("\nTest 6: IterationType::All");
+
+    // Get count of all ships before adding dead ones
+    int alive_count = 0;
+    {
+      ShipList alive_ships(em, ShipList::IterationType::AllAlive);
+      for ([[maybe_unused]] auto handle : alive_ships) {
+        alive_count++;
+      }
+    }
+    std::println("  Found {} alive ships before adding dead ship", alive_count);
+
+    // Create a dead ship
+    Ship dead_ship{};
+    dead_ship.number() = 10;
+    dead_ship.owner() = 1;
+    dead_ship.alive() = false;  // This ship is dead
+    dead_ship.storbits() = 0;
+    dead_ship.pnumorbits() = 0;
+    dead_ship.type() = ShipType::OTYPE_FACTORY;
+    dead_ship.nextship() = 0;
+    ships_repo.save(dead_ship);
+
+    // All iteration should include dead ships
+    ShipList all_ships(em, ShipList::IterationType::All);
+    int all_count = 0;
+    bool found_dead = false;
+    for (auto handle : all_ships) {
+      all_count++;
+      Ship& ship = *handle;
+      if (ship.number() == 10 && !ship.alive()) {
+        found_dead = true;
+      }
+    }
+
+    assert(all_count == alive_count + 1);  // Should include the dead ship
+    assert(found_dead);
+    std::println(
+        "✓ Test 6 passed: All iteration found {} ships (including dead)",
+        all_count);
+  }
+
+  // Test 7: IterationType::AllAlive - iterates only alive ships
+  {
+    std::println("\nTest 7: IterationType::AllAlive");
+
+    ShipList alive_ships(em, ShipList::IterationType::AllAlive);
+    int alive_count = 0;
+    bool found_dead = false;
+    for (auto handle : alive_ships) {
+      alive_count++;
+      Ship& ship = *handle;
+      assert(ship.alive());  // All ships should be alive
+      if (ship.number() == 10) {
+        found_dead = true;  // Should not happen
+      }
+    }
+
+    assert(!found_dead);  // Dead ship should not be in AllAlive iteration
+    std::println(
+        "✓ Test 7 passed: AllAlive iteration found {} ships (alive only)",
+        alive_count);
+  }
+
+  // Test 7b: Const All/AllAlive iteration
+  {
+    std::println("\nTest 7b: Const All/AllAlive iteration");
+
+    // Const All iteration
+    const ShipList all_const(em, ShipList::IterationType::All);
+    int all_count = 0;
+    for (const Ship* ship : all_const) {
+      assert(ship != nullptr);
+      all_count++;
+    }
+    assert(all_count == 10);  // 9 alive + 1 dead from Test 6
+    std::println("  Const All iteration found {} ships", all_count);
+
+    // Const AllAlive iteration
+    const ShipList alive_const(em, ShipList::IterationType::AllAlive);
+    int alive_count = 0;
+    for (const Ship* ship : alive_const) {
+      assert(ship != nullptr);
+      assert(ship->alive());
+      alive_count++;
+    }
+    std::println("  Const AllAlive iteration found {} ships", alive_count);
+    std::println("  Expected alive_count ({}) == all_count - 1 ({})",
+                 alive_count, all_count - 1);
+    assert(alive_count == all_count - 1);  // One dead ship
+
+    std::println("✓ Test 7b passed: Const All/AllAlive iteration works");
+  }
+
   std::println("\nAll ShipList tests passed!");
   return 0;
 }

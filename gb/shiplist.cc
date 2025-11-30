@@ -70,6 +70,11 @@ ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
       iteration_type(type), scope_level(g.level), snum(g.snum), pnum(g.pnum),
       player(g.player) {}
 
+// Constructor for All/AllAlive iteration (all ships in game)
+ShipList::ShipList(EntityManager& em, IterationType type)
+    : em(&em), start_ship(1), iteration_type(type),
+      scope_level(ScopeLevel::LEVEL_UNIV) {}
+
 // ShipList iterator methods
 
 ShipList::MutableIterator ShipList::begin() {
@@ -103,6 +108,14 @@ ShipList::ConstIterator ShipList::cend() const {
 bool ShipList::matches_scope(const Ship& ship) const {
   if (iteration_type == IterationType::Nested) {
     return true;  // Nested iteration doesn't filter by scope
+  }
+
+  if (iteration_type == IterationType::All) {
+    return true;  // All ships, including dead
+  }
+
+  if (iteration_type == IterationType::AllAlive) {
+    return ship.alive();  // Only alive ships
   }
 
   // Scope-based filtering
@@ -194,6 +207,14 @@ void ShipList::MutableIterator::advance_to_next_match() {
 bool ShipList::MutableIterator::matches_scope(const Ship& ship) const {
   if (type == IterationType::Nested) {
     return true;  // Nested iteration doesn't filter by scope
+  }
+
+  if (type == IterationType::All) {
+    return true;  // All ships, including dead
+  }
+
+  if (type == IterationType::AllAlive) {
+    return ship.alive();  // Only alive ships
   }
 
   // Scope-based filtering
@@ -288,8 +309,18 @@ bool ShipList::ConstIterator::matches_scope(const Ship& ship) const {
     return true;  // Nested iteration doesn't filter by scope
   }
 
+  if (type == IterationType::All) {
+    return true;  // All ships, including dead
+  }
+
+  if (type == IterationType::AllAlive) {
+    return ship.alive();  // Only alive ships
+  }
+
   // Scope-based filtering
-  if (!ship.alive()) return false;
+  if (!ship.alive()) {
+    return false;
+  }
 
   switch (scope_level) {
     case ScopeLevel::LEVEL_UNIV:

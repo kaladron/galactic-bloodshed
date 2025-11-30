@@ -266,7 +266,7 @@ void build(const command_t& argv, GameObj& g) {
                 g.out << "Factories can only build when landed on a planet.\n";
                 return;
               }
-              Getfactship(&newship, &*builder);
+              newship = Getfactship(*builder);
               outside = true;
               break;
             case ShipType::STYPE_SHUTTLE:

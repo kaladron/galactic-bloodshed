@@ -416,34 +416,35 @@ void Getship(Ship* s, ShipType i, const Race& r) {
   }
 }
 
-void Getfactship(Ship* s, Ship* b) {
+Ship Getfactship(const Ship& b) {
   ship_struct data{
-      .armor = b->armor(),
-      .max_crew = b->max_crew(),
-      .max_resource = b->max_resource(),
-      .max_destruct = b->max_destruct(),
-      .max_fuel = b->max_fuel(),
-      .max_speed = b->max_speed(),
-      .build_type = b->build_type(),
-      .build_cost = b->build_cost(),
-      .mount = b->mount(),
-      .hyper_drive = {.has = b->hyper_drive().has},
-      .cew = b->cew(),
-      .cew_range = b->cew_range(),
-      .laser = b->laser(),
-      .type = b->build_type(),
-      .guns = static_cast<unsigned char>(b->primary() ? PRIMARY : GTYPE_NONE),
-      .primary = b->primary(),
-      .primtype = b->primtype(),
-      .max_hanger = b->max_hanger(),
+      .armor = b.armor(),
+      .max_crew = b.max_crew(),
+      .max_resource = b.max_resource(),
+      .max_destruct = b.max_destruct(),
+      .max_fuel = b.max_fuel(),
+      .max_speed = b.max_speed(),
+      .build_type = b.build_type(),
+      .build_cost = b.build_cost(),
+      .mount = b.mount(),
+      .hyper_drive = {.has = b.hyper_drive().has},
+      .cew = b.cew(),
+      .cew_range = b.cew_range(),
+      .laser = b.laser(),
+      .type = b.build_type(),
+      .guns = static_cast<unsigned char>(b.primary() ? PRIMARY : GTYPE_NONE),
+      .primary = b.primary(),
+      .primtype = b.primtype(),
+      .max_hanger = b.max_hanger(),
   };
-  data.secondary = b->secondary();
-  data.sectype = b->sectype();
+  data.secondary = b.secondary();
+  data.sectype = b.sectype();
 
-  *s = Ship(std::move(data));
-  s->size() = ship_size(*s);
-  s->base_mass() = getmass(*s);
-  s->mass() = getmass(*s);
+  Ship s(std::move(data));
+  s.size() = ship_size(s);
+  s.base_mass() = getmass(s);
+  s.mass() = getmass(s);
+  return s;
 }
 
 int Shipcost(ShipType i, const Race& r) {

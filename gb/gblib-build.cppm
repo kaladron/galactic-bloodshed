@@ -33,7 +33,7 @@ export void autoload_at_planet(int Playernum, Ship* s, Planet* planet,
 export void autoload_at_ship(Ship* s, Ship* b, int* crew, double* fuel);
 export void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
                                 double load_fuel, int load_crew);
-export void Getfactship(Ship* s, Ship* b);
+export Ship Getfactship(const Ship& b);
 
 export void create_ship_by_ship(int Playernum, int Governor, const Race& race,
                                 bool outside, Planet* planet, Ship* newship,

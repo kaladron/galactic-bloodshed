@@ -225,23 +225,40 @@ double cost(const Ship& s) {
 }
 
 namespace {
+
 /**
- * Permute the system cost advantage and disadvantage based on the given
- * value and base.
+ * Accumulates advantage and disadvantage scores for ship customization.
  *
- * @param advantage A pointer to a double variable representing the advantage.
- * @param disadvantage A pointer to a double variable representing the
+ * For each ship stat, compares the actual value against the baseline template.
+ * Stats above baseline contribute to advantage; stats below contribute to
  * disadvantage.
- * @param value An integer value representing the value.
- * @param base An integer value representing the base.
  */
-void system_cost(double* advantage, double* disadvantage, int value, int base) {
-  const double factor = (((double)value + 1.0) / (base + 1.0)) - 1.0;
-  if (factor >= 0.0)
-    *advantage += factor;
-  else
-    *disadvantage -= factor;
-}
+class SystemCost {
+ public:
+  /**
+   * Add a stat comparison to the running totals.
+   *
+   * @param value The ship's actual stat value.
+   * @param base The baseline value from Shipdata template.
+   */
+  void add(int value, int base) {
+    const double ratio =
+        ((static_cast<double>(value) + 1.0) / (static_cast<double>(base) + 1.0)) - 1.0;
+    if (ratio >= 0.0) {
+      advantage_ += ratio;
+    } else {
+      disadvantage_ -= ratio;
+    }
+  }
+
+  [[nodiscard]] std::pair<double, double> get() const {
+    return {advantage_, disadvantage_};
+  }
+
+ private:
+  double advantage_ = 0.0;
+  double disadvantage_ = 0.0;
+};
 
 /* this routine will do landing, launching, loading, unloading, etc
         for merchant ships. The ship is within landing distance of
@@ -394,31 +411,20 @@ static int do_merchant(Ship& s, Planet& p, std::stringstream& telegram) {
  * @return The complexity value of the ship.
  */
 double complexity(const Ship& s) {
-  double advantage = 0;
-  double disadvantage = 0;
+  SystemCost cost;
 
-  system_cost(&advantage, &disadvantage, s.primary(),
-              Shipdata[s.build_type()][ABIL_GUNS]);
-  system_cost(&advantage, &disadvantage, s.secondary(),
-              Shipdata[s.build_type()][ABIL_GUNS]
-
-  );
-  system_cost(&advantage, &disadvantage, s.max_crew(),
-              Shipdata[s.build_type()][ABIL_MAXCREW]);
-  system_cost(&advantage, &disadvantage, s.max_resource(),
-              Shipdata[s.build_type()][ABIL_CARGO]);
-  system_cost(&advantage, &disadvantage, s.max_fuel(),
-              Shipdata[s.build_type()][ABIL_FUELCAP]);
-  system_cost(&advantage, &disadvantage, s.max_destruct(),
-              Shipdata[s.build_type()][ABIL_DESTCAP]);
-  system_cost(&advantage, &disadvantage, s.max_speed(),
-              Shipdata[s.build_type()][ABIL_SPEED]);
-  system_cost(&advantage, &disadvantage, s.max_hanger(),
-              Shipdata[s.build_type()][ABIL_HANGER]);
-  system_cost(&advantage, &disadvantage, s.armor(),
-              Shipdata[s.build_type()][ABIL_ARMOR]);
+  cost.add(s.primary(), Shipdata[s.build_type()][ABIL_GUNS]);
+  cost.add(s.secondary(), Shipdata[s.build_type()][ABIL_GUNS]);
+  cost.add(s.max_crew(), Shipdata[s.build_type()][ABIL_MAXCREW]);
+  cost.add(s.max_resource(), Shipdata[s.build_type()][ABIL_CARGO]);
+  cost.add(s.max_fuel(), Shipdata[s.build_type()][ABIL_FUELCAP]);
+  cost.add(s.max_destruct(), Shipdata[s.build_type()][ABIL_DESTCAP]);
+  cost.add(s.max_speed(), Shipdata[s.build_type()][ABIL_SPEED]);
+  cost.add(s.max_hanger(), Shipdata[s.build_type()][ABIL_HANGER]);
+  cost.add(s.armor(), Shipdata[s.build_type()][ABIL_ARMOR]);
 
   const double base_tech = Shipdata[s.build_type()][ABIL_TECH];
+  const auto [advantage, disadvantage] = cost.get();
 
   // Combine advantage and disadvantage into a single deviation score.
   // Result is 1.0 for unmodified ships, >1.0 for upgrades, <1.0 for downgrades.

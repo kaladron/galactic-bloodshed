@@ -484,6 +484,14 @@ add_executable(order_test commands/order_test.cc)
 target_link_libraries(order_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_order_test COMMAND order_test)
 
+add_executable(orbit_test commands/orbit_test.cc)
+target_link_libraries(orbit_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_orbit_test COMMAND orbit_test)
+
+add_executable(dock_test commands/dock_test.cc)
+target_link_libraries(dock_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_dock_test COMMAND dock_test)
+
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug
     COMMAND ${CMAKE_COMMAND} -E env 

@@ -18,7 +18,7 @@ static std::string DispStar(const GameObj&, const ScopeLevel, const Star&, int,
                             const Race&);
 static std::string DispPlanet(const GameObj&, const ScopeLevel, const Planet&,
                               std::string_view, int, const Race&);
-static void DispShip(const GameObj&, const Place&, const Ship*, const Race&,
+static void DispShip(const GameObj&, EntityManager&, const Place&, const Ship*, const Race&,
                      char*, const Planet& = Planet());
 
 namespace GB::commands {
@@ -88,13 +88,20 @@ void orbit(const command_t& argv, GameObj& g) {
   /* orbit type of map */
   sprintf(output, "#");
 
-  auto Race = races[g.player - 1];
+  const auto* race_ptr = g.entity_manager.peek_race(g.player);
+  if (!race_ptr) {
+    g.out << "Race not found.\n";
+    return;
+  }
+  const Race& Race = *race_ptr;
 
   switch (where->level) {
     case ScopeLevel::LEVEL_UNIV:
       for (starnum_t i = 0; i < Sdata.numstars; i++)
         if (DontDispNum != i) {
-          std::string star = DispStar(g, ScopeLevel::LEVEL_UNIV, stars[i],
+          const auto* star_ptr = g.entity_manager.peek_star(i);
+          if (!star_ptr) continue;
+          std::string star = DispStar(g, ScopeLevel::LEVEL_UNIV, *star_ptr,
                                       DontDispStars, Race);
           strcat(output, star.c_str());
         }
@@ -105,23 +112,29 @@ void orbit(const command_t& argv, GameObj& g) {
           const Ship& s = ship_handle.peek();  // Read-only access
           if (DontDispNum != s.number()) {
             shipbuf[0] = '\0';
-            DispShip(g, *where, &s, Race, shipbuf);
+            DispShip(g, g.entity_manager, *where, &s, Race, shipbuf);
             strcat(output, shipbuf);
           }
         }
       }
       break;
     case ScopeLevel::LEVEL_STAR: {
-      std::string star = DispStar(g, ScopeLevel::LEVEL_STAR, stars[where->snum],
+      const auto* star_ptr = g.entity_manager.peek_star(where->snum);
+      if (!star_ptr) {
+        g.out << "Star not found.\n";
+        return;
+      }
+      std::string star = DispStar(g, ScopeLevel::LEVEL_STAR, *star_ptr,
                                   DontDispStars, Race);
       strcat(output, star.c_str());
 
-      for (planetnum_t i = 0; i < stars[where->snum].numplanets(); i++)
+      for (planetnum_t i = 0; i < star_ptr->numplanets(); i++)
         if (DontDispNum != i) {
-          const auto p = getplanet(where->snum, i);
+          const auto* p = g.entity_manager.peek_planet(where->snum, i);
+          if (!p) continue;
           std::string planet =
-              DispPlanet(g, ScopeLevel::LEVEL_STAR, p,
-                         stars[where->snum].get_planet_name(i).c_str(),
+              DispPlanet(g, ScopeLevel::LEVEL_STAR, *p,
+                         star_ptr->get_planet_name(i),
                          DontDispPlanets, Race);
           strcat(output, planet.c_str());
         }
@@ -131,7 +144,7 @@ void orbit(const command_t& argv, GameObj& g) {
       if (g.god)
         iq = true;
       else {
-        ShipList ships(g.entity_manager, stars[where->snum].ships());
+        ShipList ships(g.entity_manager, star_ptr->ships());
         for (auto ship_handle : ships) {
           const Ship& s = ship_handle.peek();  // Read-only access
           if (s.owner() == g.player && shipsight(s)) {
@@ -141,7 +154,7 @@ void orbit(const command_t& argv, GameObj& g) {
         }
       }
       if (!DontDispShips) {
-        ShipList ships(g.entity_manager, stars[where->snum].ships());
+        ShipList ships(g.entity_manager, star_ptr->ships());
         char shipbuf[256];
         for (auto ship_handle : ships) {
           const Ship& s = ship_handle.peek();  // Read-only access
@@ -149,7 +162,7 @@ void orbit(const command_t& argv, GameObj& g) {
               !(s.owner() != g.player && s.type() == ShipType::STYPE_MINE)) {
             if ((s.owner() == g.player) || iq) {
               shipbuf[0] = '\0';
-              DispShip(g, *where, &s, Race, shipbuf);
+              DispShip(g, g.entity_manager, *where, &s, Race, shipbuf);
               strcat(output, shipbuf);
             }
           }
@@ -157,17 +170,26 @@ void orbit(const command_t& argv, GameObj& g) {
       }
     } break;
     case ScopeLevel::LEVEL_PLAN: {
-      const auto p = getplanet(where->snum, where->pnum);
+      const auto* plan_star = g.entity_manager.peek_star(where->snum);
+      if (!plan_star) {
+        g.out << "Star not found.\n";
+        return;
+      }
+      const auto* p = g.entity_manager.peek_planet(where->snum, where->pnum);
+      if (!p) {
+        g.out << "Planet not found.\n";
+        return;
+      }
       std::string planet =
-          DispPlanet(g, ScopeLevel::LEVEL_PLAN, p,
-                     stars[where->snum].get_planet_name(where->pnum),
+          DispPlanet(g, ScopeLevel::LEVEL_PLAN, *p,
+                     plan_star->get_planet_name(where->pnum),
                      DontDispPlanets, Race);
       strcat(output, planet.c_str());
 
       /* check to see if you have ships at landed or
          orbiting the planet, if so you can see orbiting enemy ships */
       bool iq = false;
-      ShipList ships(g.entity_manager, p.ships());
+      ShipList ships(g.entity_manager, p->ships());
       for (auto ship_handle : ships) {
         const Ship& s = ship_handle.peek();  // Read-only access
         if (s.owner() == g.player && shipsight(s)) {
@@ -184,7 +206,7 @@ void orbit(const command_t& argv, GameObj& g) {
             if (!landed(s)) {
               if ((s.owner() == g.player) || iq) {
                 shipbuf[0] = '\0';
-                DispShip(g, *where, &s, Race, shipbuf, p);
+                DispShip(g, g.entity_manager, *where, &s, Race, shipbuf, *p);
                 strcat(output, shipbuf);
               }
             }
@@ -281,7 +303,7 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
   return ss.str();
 }
 
-static void DispShip(const GameObj& g, const Place& where, const Ship* ship,
+static void DispShip(const GameObj& g, EntityManager& em, const Place& where, const Ship* ship,
                      const Race& r, char* string, const Planet& pl) {
   int x;
   int y;
@@ -295,23 +317,29 @@ static void DispShip(const GameObj& g, const Place& where, const Ship* ship,
 
   *string = '\0';
 
+  // Get star position for coordinate calculations
+  const auto* where_star = (where.level != ScopeLevel::LEVEL_UNIV) 
+                           ? em.peek_star(where.snum) : nullptr;
+
   switch (where.level) {
     case ScopeLevel::LEVEL_PLAN:
+      if (!where_star) return;
       x = (int)(SCALE +
                 (SCALE * (ship->xpos() -
-                          (stars[where.snum].xpos() + pl.xpos()) - Lastx)) /
+                          (where_star->xpos() + pl.xpos()) - Lastx)) /
                     (PLORBITSIZE * Zoom));
       y = (int)(SCALE +
                 (SCALE * (ship->ypos() -
-                          (stars[where.snum].ypos() + pl.ypos()) - Lasty)) /
+                          (where_star->ypos() + pl.ypos()) - Lasty)) /
                     (PLORBITSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_STAR:
+      if (!where_star) return;
       x = (int)(SCALE +
-                (SCALE * (ship->xpos() - stars[where.snum].xpos() - Lastx)) /
+                (SCALE * (ship->xpos() - where_star->xpos() - Lastx)) /
                     (SYSTEMSIZE * Zoom));
       y = (int)(SCALE +
-                (SCALE * (ship->ypos() - stars[where.snum].ypos() - Lasty)) /
+                (SCALE * (ship->ypos() - where_star->ypos() - Lasty)) /
                     (SYSTEMSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_UNIV:
@@ -328,21 +356,33 @@ static void DispShip(const GameObj& g, const Place& where, const Ship* ship,
       if (std::holds_alternative<AimedAtData>(ship->special())) {
         auto aimed_at = std::get<AimedAtData>(ship->special());
         if (aimed_at.level == ScopeLevel::LEVEL_STAR) {
-          xt = stars[aimed_at.snum].xpos();
-          yt = stars[aimed_at.snum].ypos();
+          const auto* aimed_star = em.peek_star(aimed_at.snum);
+          if (aimed_star) {
+            xt = aimed_star->xpos();
+            yt = aimed_star->ypos();
+          } else {
+            xt = yt = 0.0;
+          }
         } else if (aimed_at.level == ScopeLevel::LEVEL_PLAN) {
-          if (where.level == ScopeLevel::LEVEL_PLAN &&
+          const auto* aimed_star = em.peek_star(aimed_at.snum);
+          if (!aimed_star) {
+            xt = yt = 0.0;
+          } else if (where.level == ScopeLevel::LEVEL_PLAN &&
               aimed_at.pnum == where.pnum) {
             /* same planet */
-            xt = stars[aimed_at.snum].xpos() + pl.xpos();
-            yt = stars[aimed_at.snum].ypos() + pl.ypos();
+            xt = aimed_star->xpos() + pl.xpos();
+            yt = aimed_star->ypos() + pl.ypos();
           } else { /* different planet */
-            const auto apl = getplanet(where.snum, where.pnum);
-            xt = stars[aimed_at.snum].xpos() + apl.xpos();
-            yt = stars[aimed_at.snum].ypos() + apl.ypos();
+            const auto* apl = em.peek_planet(where.snum, where.pnum);
+            if (apl) {
+              xt = aimed_star->xpos() + apl->xpos();
+              yt = aimed_star->ypos() + apl->ypos();
+            } else {
+              xt = yt = 0.0;
+            }
           }
         } else if (aimed_at.level == ScopeLevel::LEVEL_SHIP) {
-          auto aship = getship(aimed_at.shipno);
+          const auto* aship = em.peek_ship(aimed_at.shipno);
           if (aship) {
             xt = aship->xpos();
             yt = aship->ypos();

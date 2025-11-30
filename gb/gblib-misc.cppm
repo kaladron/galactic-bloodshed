@@ -49,8 +49,7 @@ public:
   ssize_t output_size{};
   std::deque<std::string> output;
   std::deque<std::string> input;
-  char* raw_input{};
-  char* raw_input_at{};
+  std::string raw_input;
   time_t last_time{};
   int quota{};
   bool operator==(const DescriptorData& rhs) const noexcept {

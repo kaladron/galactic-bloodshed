@@ -59,7 +59,7 @@ static bool do_command(DescriptorData&, std::string_view);
 static void goodbye_user(DescriptorData&);
 static void dump_users(DescriptorData&);
 static void close_sockets(int);
-static int process_input(DescriptorData&);
+static bool process_input(DescriptorData&);
 static void force_output();
 static void help_user(GameObj&);
 static int msec_diff(struct timeval, struct timeval);
@@ -761,39 +761,25 @@ static void save_command(DescriptorData& d, const std::string& command) {
   add_to_queue(d.input, command);
 }
 
-static int process_input(DescriptorData& d) {
-  int got;
-  char* p;
-  char* pend;
-  char* q;
-  char* qend;
-  char input_buf[2047];
+static bool process_input(DescriptorData& d) {
+  std::array<char, 2048> input_buf;
 
-  got = read(d.descriptor, input_buf, sizeof input_buf);
-  if (got <= 0) return 0;
-  if (!d.raw_input) {
-    d.raw_input = (char*)malloc(MAX_COMMAND_LEN * sizeof(char));
-    d.raw_input_at = d.raw_input;
-  }
-  p = d.raw_input_at;
-  pend = d.raw_input + MAX_COMMAND_LEN - 1;
-  for (q = input_buf, qend = input_buf + got; q < qend; q++) {
-    if (*q == '\n') {
-      *p = '\0';
-      if (p > d.raw_input) save_command(d, d.raw_input);
-      p = d.raw_input;
-    } else if (p < pend && isascii(*q) && isprint(*q)) {
-      *p++ = *q;
+  ssize_t got = read(d.descriptor, input_buf.data(), input_buf.size());
+  if (got <= 0) return false;
+
+  for (ssize_t i = 0; i < got; ++i) {
+    char c = input_buf[i];
+    if (c == '\n') {
+      if (!d.raw_input.empty()) {
+        save_command(d, d.raw_input);
+        d.raw_input.clear();
+      }
+    } else if (d.raw_input.size() < MAX_COMMAND_LEN - 1 &&
+               std::isprint(static_cast<unsigned char>(c))) {
+      d.raw_input += c;
     }
   }
-  if (p > d.raw_input) {
-    d.raw_input_at = p;
-  } else {
-    free(d.raw_input);
-    d.raw_input = nullptr;
-    d.raw_input_at = nullptr;
-  }
-  return 1;
+  return true;
 }
 
 static void process_commands() {

@@ -440,7 +440,7 @@ Ship Getfactship(const Ship& b) {
   data.secondary = b.secondary();
   data.sectype = b.sectype();
 
-  Ship s(std::move(data));
+  Ship s(data);
   s.size() = ship_size(s);
   s.base_mass() = getmass(s);
   s.mass() = getmass(s);

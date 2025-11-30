@@ -166,6 +166,126 @@ export using SpecialData =
                  WasteData      /* toxic waste containers */
                  >;
 
+// Named structs for nested ship data (replacing anonymous structs)
+export struct NavigateData {
+  unsigned char on{0};       /* toggles navigate mode */
+  unsigned char speed{0};    /* speed for navigate command */
+  unsigned short turns{0};   /* number turns left in maneuver */
+  unsigned short bearing{0}; /* course */
+};
+
+export struct ProtectData {
+  double maxrng{0.0};      /* maximum range for autoshoot */
+  unsigned char on{0};     /* toggle on/off */
+  unsigned char planet{0}; /* planet defender */
+  unsigned char self{0};   /* retaliate if attacked */
+  unsigned char evade{0};  /* evasive action */
+  shipnum_t ship{0};       /* ship it is protecting */
+};
+
+export struct HyperDriveData {
+  unsigned char charge{0};
+  unsigned char ready{0};
+  unsigned char on{0};
+  unsigned char has{0};
+};
+
+// POD struct containing all Ship data fields for serialization
+export struct ship_struct {
+  shipnum_t number{0};     ///< ship knows its own number
+  player_t owner{0};       ///< owner of ship
+  governor_t governor{0};  ///< subordinate that controls the ship
+  std::string name;        ///< name of ship (optional)
+  std::string shipclass;   ///< shipclass of ship - designated by player
+
+  unsigned char race{0}; /* race type - used when you gain alien
+                         ships during revolts and whatnot - usually
+                         equal to owner */
+  double xpos{0.0};
+  double ypos{0.0};
+  double fuel{0.0};
+  double mass{0.0};
+  unsigned char land_x{0}, land_y{0};
+
+  shipnum_t destshipno{0}; /* destination ship # */
+  shipnum_t nextship{0};   /* next ship in linked list */
+  shipnum_t ships{0};      /* ships landed on it */
+
+  unsigned char armor{0};
+  unsigned short size{0};
+
+  unsigned short max_crew{0};
+  resource_t max_resource{0};
+  unsigned short max_destruct{0};
+  unsigned short max_fuel{0};
+  unsigned short max_speed{0};
+  ShipType build_type{ShipType::STYPE_POD};
+  unsigned short build_cost{0};
+
+  double base_mass{0.0};
+  double tech{0.0};
+  double complexity{0.0};
+
+  unsigned short destruct{0};
+  resource_t resource{0};
+  population_t popn{0};
+  population_t troops{0};
+  unsigned short crystals{0};
+
+  SpecialData special{};
+
+  short who_killed{0};
+
+  NavigateData navigate;
+  ProtectData protect;
+
+  unsigned char mount{0};
+  HyperDriveData hyper_drive;
+  unsigned char cew{0};
+  unsigned short cew_range{0};
+  unsigned char cloak{0};
+  unsigned char laser{0};
+  unsigned char focus{0};
+  unsigned char fire_laser{0};
+
+  starnum_t storbits{0};
+  starnum_t deststar{0};
+  planetnum_t destpnum{0};
+  planetnum_t pnumorbits{0};
+  ScopeLevel whatdest{ScopeLevel::LEVEL_UNIV};
+  ScopeLevel whatorbits{ScopeLevel::LEVEL_UNIV};
+
+  unsigned char damage{0};
+  int rad{0};
+  unsigned char retaliate{0};
+  unsigned short target{0};
+
+  ShipType type{ShipType::STYPE_POD};
+  unsigned char speed{0};
+
+  unsigned char active{0};
+  unsigned char alive{0};
+  unsigned char mode{0};
+  unsigned char bombard{0};
+  unsigned char mounted{0};
+  unsigned char cloaked{0};
+  unsigned char sheep{0};
+  unsigned char docked{0};
+  unsigned char notified{0};
+  unsigned char examined{0};
+  unsigned char on{0};
+
+  unsigned char merchant{0};
+  unsigned char guns{0};
+  unsigned long primary{0};
+  guntype_t primtype{GTYPE_NONE};
+  unsigned long secondary{0};
+  guntype_t sectype{GTYPE_NONE};
+
+  unsigned short hanger{0};
+  unsigned short max_hanger{0};
+};
+
 export class Ship {
 public:
   shipnum_t number{0};     ///< ship knows its own number

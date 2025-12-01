@@ -342,7 +342,7 @@ static void process_ship_turns(TurnState& state, int update) {
         doship(*ship_handle, update, state.entity_manager);
         if ((ship_handle->type() == ShipType::STYPE_MISSILE) &&
             !attack_planet(*ship_handle)) {
-          domissile(*ship_handle);
+          domissile(*ship_handle, state.entity_manager);
         }
       }
     }
@@ -448,7 +448,7 @@ static void process_abms_and_missiles(TurnState& state, int update) {
   for (auto ship_handle :
        ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
     if (ship_handle->type() == ShipType::OTYPE_ABM) {
-      doabm(*ship_handle);
+      doabm(*ship_handle, state.entity_manager);
     }
   }
 
@@ -456,7 +456,7 @@ static void process_abms_and_missiles(TurnState& state, int update) {
        ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
     if (ship_handle->type() == ShipType::STYPE_MISSILE &&
         attack_planet(*ship_handle)) {
-      domissile(*ship_handle);
+      domissile(*ship_handle, state.entity_manager);
     }
   }
 

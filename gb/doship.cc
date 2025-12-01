@@ -524,7 +524,7 @@ void doown(Ship& ship) {
   }
 }
 
-void domissile(Ship& ship) {
+void domissile(Ship& ship, EntityManager& entity_manager) {
   if (!ship.alive() || !ship.owner()) return;
   if (!ship.on() || ship.docked()) return;
 
@@ -728,7 +728,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   putship(ship);
 }
 
-void doabm(Ship& ship) {
+void doabm(Ship& ship, EntityManager& entity_manager) {
   if (!ship.alive() || !ship.owner()) return;
   if (!ship.on() || !ship.retaliate() || !ship.destruct()) return;
 

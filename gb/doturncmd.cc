@@ -465,8 +465,6 @@ static void process_abms_and_missiles(TurnState& state, int update) {
 
     for (auto planet_handle :
          PlanetList(state.entity_manager, star, *star_handle)) {
-      const planetnum_t pnum = planet_handle->planet_order();
-
       /* store occupation for VPs */
       for (auto race_handle : RaceList(state.entity_manager)) {
         const player_t player = race_handle->Playernum;
@@ -486,7 +484,7 @@ static void process_abms_and_missiles(TurnState& state, int update) {
         }
       }
       if (update) {
-        if (doplanet(state.entity_manager, star, *planet_handle, pnum)) {
+        if (doplanet(state.entity_manager, *star_handle, *planet_handle)) {
           /* save smap gotten & altered by doplanet
              only if the planet is expl*/
         }

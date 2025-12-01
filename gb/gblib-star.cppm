@@ -128,9 +128,15 @@ public:
   unsigned char& nova_stage() {
     return star_struct.nova_stage;
   }
+  [[nodiscard]] unsigned char nova_stage() const {
+    return star_struct.nova_stage;
+  }
 
   // factor which expresses how hot the star is
   unsigned char& temperature() {
+    return star_struct.temperature;
+  }
+  [[nodiscard]] unsigned char temperature() const {
     return star_struct.temperature;
   }
 
@@ -138,11 +144,18 @@ public:
   double& gravity() {
     return star_struct.gravity;
   }
+  [[nodiscard]] double gravity() const {
+    return star_struct.gravity;
+  }
 
   [[nodiscard]] int control(player_t, governor_t) const;
 
   [[nodiscard]] star_struct get_struct() const {
     return star_struct;
+  }
+
+  [[nodiscard]] starnum_t star_id() const {
+    return star_struct.star_id;
   }
 
   Star(star_struct in) : star_struct(in) {}

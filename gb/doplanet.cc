@@ -169,9 +169,10 @@ void do_berserker(EntityManager& entity_manager, Ship* ship, Planet& planet) {
       ship->storbits() == ship->deststar() &&
       ship->pnumorbits() == ship->destpnum()) {
     const auto* race = entity_manager.peek_race(ship->owner());
-    if (!berserker_bombard(entity_manager, *ship, planet, *race))
-      ship->destpnum() = int_rand(0, stars[ship->storbits()].numplanets() - 1);
-    else if (std::holds_alternative<MindData>(ship->special())) {
+    if (!berserker_bombard(entity_manager, *ship, planet, *race)) {
+      const auto* dest_star = entity_manager.peek_star(ship->storbits());
+      ship->destpnum() = int_rand(0, dest_star->numplanets() - 1);
+    } else if (std::holds_alternative<MindData>(ship->special())) {
       auto mind = std::get<MindData>(ship->special());
       if (Sdata.VN_hitlist[mind.who_killed - 1] > 0)
         --Sdata.VN_hitlist[mind.who_killed - 1];
@@ -179,8 +180,8 @@ void do_berserker(EntityManager& entity_manager, Ship* ship, Planet& planet) {
   }
 }
 
-void do_recover(EntityManager& entity_manager, Planet& planet, int starnum,
-                int planetnum) {
+void do_recover(EntityManager& entity_manager, const Star& star,
+                Planet& planet) {
   int owners = 0;
   player_t i;
   player_t j;
@@ -191,6 +192,8 @@ void do_recover(EntityManager& entity_manager, Planet& planet, int starnum,
   int all_buddies_here = 1;
 
   uint64_t ownerbits = 0;
+
+  const planetnum_t planetnum = planet.planet_order();
 
   for (i = 1; i <= Num_races && all_buddies_here; i++) {
     if (planet.info(i - 1).numsectsowned > 0) {
@@ -230,13 +233,13 @@ void do_recover(EntityManager& entity_manager, Planet& planet, int starnum,
       if (isset(ownerbits, i)) {
         std::stringstream telegram_buf;
         telegram_buf << std::format("Recovery Report: Planet /{}/{}\n",
-                                    stars[starnum].get_name(),
-                                    stars[starnum].get_planet_name(planetnum));
-        push_telegram(i, stars[starnum].governor(i - 1), telegram_buf.str());
+                                    star.get_name(),
+                                    star.get_planet_name(planetnum));
+        push_telegram(i, star.governor(i - 1), telegram_buf.str());
         telegram_buf.str("");
         telegram_buf << std::format("{:<14} {:>5} {:>5} {:>5} {:>5}\n", "",
                                     "res", "destr", "fuel", "xtal");
-        push_telegram(i, stars[starnum].governor(i - 1), telegram_buf.str());
+        push_telegram(i, star.governor(i - 1), telegram_buf.str());
       }
     /* First: give the loot the the conquerers */
     for (i = 1; i <= Num_races && owners > 1; i++)
@@ -271,7 +274,7 @@ void do_recover(EntityManager& entity_manager, Planet& planet, int starnum,
                                       race->name, res, des, fuel, crystals);
           for (j = 1; j <= Num_races; j++) {
             if (isset(ownerbits, j)) {
-              push_telegram(j, stars[starnum].governor(j - 1),
+              push_telegram(j, star.governor(j - 1),
                             telegram_buf.str());
             }
           }
@@ -301,9 +304,9 @@ void do_recover(EntityManager& entity_manager, Planet& planet, int starnum,
                                        stolenfuel, stolencrystals);
         for (j = 1; j <= Num_races; j++) {
           if (isset(ownerbits, j)) {
-            push_telegram(j, stars[starnum].governor(j - 1),
+            push_telegram(j, star.governor(j - 1),
                           first_telegram.str());
-            push_telegram(j, stars[starnum].governor(j - 1),
+            push_telegram(j, star.governor(j - 1),
                           second_telegram.str());
           }
         }
@@ -328,8 +331,7 @@ double est_production(const Sector& s, EntityManager& entity_manager) {
 }
 }  // namespace
 
-int doplanet(EntityManager& entity_manager, const starnum_t starnum,
-             Planet& planet, const planetnum_t planetnum) {
+int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet) {
   int shipno;
   int nukex;
   int nukey;
@@ -340,6 +342,10 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
   int timer = 20;
   unsigned char allmod = 0;
   unsigned char allexp = 0;
+
+  // Extract indices for array access and ship creation
+  const starnum_t starnum = star.star_id();
+  const planetnum_t planetnum = planet.planet_order();
 
   bzero((char*)Sectinfo, sizeof(Sectinfo));
 
@@ -512,8 +518,8 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
     Sector& p = sector_wrap;
     if (p.get_owner() && (p.get_popn() || p.get_troops())) {
       allmod = 1;
-      if (!stars[starnum].nova_stage()) {
-        produce(stars[starnum], planet, p);
+      if (!star.nova_stage()) {
+        produce(star, planet, p);
         if (p.get_owner())
           planet.info(p.get_owner() - 1).est_production +=
               est_production(p, entity_manager);
@@ -522,7 +528,7 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
         /* damage sector from supernova */
         p.set_resource(p.get_resource() + 1);
         p.set_fert(p.get_fert() * 0.8);
-        if (stars[starnum].nova_stage() == 14) {
+        if (star.nova_stage() == 14) {
           p.set_popn(0);
           p.set_owner(0);
           p.set_troops(0);
@@ -580,7 +586,7 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
   }
 
   if (planet.expltimer() >= 1) planet.expltimer() -= 1;
-  if (!stars[starnum].nova_stage() && !planet.expltimer()) {
+  if (!star.nova_stage() && !planet.expltimer()) {
     if (!planet.expltimer()) planet.expltimer() = 5;
     for (i = 1; !Claims && !allexp && i <= Num_races; i++) {
       /* sectors have been modified for this player*/
@@ -634,8 +640,8 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
     if (planet.info(i - 1).autorep) {
       planet.info(i - 1).autorep--;
       std::stringstream telegram_buf;
-      telegram_buf << std::format("\nFrom /{}/{}\n", stars[starnum].get_name(),
-                                  stars[starnum].get_planet_name(planetnum));
+      telegram_buf << std::format("\nFrom /{}/{}\n", star.get_name(),
+                                  star.get_planet_name(planetnum));
 
       if (Stinfo[starnum][planetnum].temp_add) {
         telegram_buf << std::format("Temp: {} to {}\n",
@@ -652,10 +658,10 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
       if (tot_captured) {
         telegram_buf << std::format("{} sectors captured\n", tot_captured);
       }
-      if (stars[starnum].nova_stage()) {
+      if (star.nova_stage()) {
         telegram_buf << std::format(
             "This planet's primary is in a Stage {} nova.\n",
-            stars[starnum].nova_stage());
+            star.nova_stage());
       }
       /* remind the player that he should clean up the environment. */
       if (planet.conditions(TOXIC) > ENVIR_DAMAGE_TOX) {
@@ -666,19 +672,19 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
         telegram_buf << std::format("ENSLAVED to player {}\n",
                                     planet.slaved_to());
       }
-      push_telegram(i, stars[starnum].governor(i - 1), telegram_buf.str());
+      push_telegram(i, star.governor(i - 1), telegram_buf.str());
     }
   }
 
   /* find out who is on this planet, for nova notification */
-  if (stars[starnum].nova_stage() == 1) {
+  if (star.nova_stage() == 1) {
     {
       std::stringstream telegram_buf;
       telegram_buf << std::format("BULLETIN from /{}/{}\n",
-                                  stars[starnum].get_name(),
-                                  stars[starnum].get_planet_name(planetnum));
+                                  star.get_name(),
+                                  star.get_planet_name(planetnum));
       telegram_buf << std::format("\nStar {} is undergoing nova.\n",
-                                  stars[starnum].get_name());
+                                  star.get_name());
       if (planet.type() == PlanetType::EARTH ||
           planet.type() == PlanetType::WATER ||
           planet.type() == PlanetType::FOREST) {
@@ -688,13 +694,13 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
                    << TELEG_DELIM;
       for (i = 1; i <= Num_races; i++) {
         if (planet.info(i - 1).numsectsowned) {
-          push_telegram(i, stars[starnum].governor(i - 1), telegram_buf.str());
+          push_telegram(i, star.governor(i - 1), telegram_buf.str());
         }
       }
     }
   }
 
-  do_recover(entity_manager, planet, starnum, planetnum);
+  do_recover(entity_manager, star, planet);
 
   planet.popn() = 0;
   planet.troops() = 0;
@@ -775,8 +781,8 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
         std::stringstream telegram_buf;
         telegram_buf << std::format(
             "\nThere has been a SLAVE REVOLT on /{}/{}!\n",
-            stars[starnum].get_name(),
-            stars[starnum].get_planet_name(planetnum));
+            star.get_name(),
+            star.get_planet_name(planetnum));
         telegram_buf << std::format(
             "All population belonging to player #{} on the planet have been "
             "killed!\n",
@@ -784,7 +790,7 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
         telegram_buf << "Productions now go to their rightful owners.\n";
         for (i = 1; i <= Num_races; i++) {
           if (planet.info(i - 1).numsectsowned) {
-            push_telegram(i, stars[starnum].governor(i - 1),
+            push_telegram(i, star.governor(i - 1),
                           telegram_buf.str());
           }
         }
@@ -803,7 +809,7 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
       planet.info(player - 1).destruct += prod_destruct[player - 1];
       planet.info(player - 1).crystals += prod_crystals[player - 1];
 
-      auto gov_idx = stars[starnum].governor(player - 1);
+      auto gov_idx = star.governor(player - 1);
 
       /* tax the population - set new tax rate when done */
       if (race.Gov_ship) {
@@ -850,10 +856,10 @@ int doplanet(EntityManager& entity_manager, const starnum_t starnum,
         ship_struct data{
             .number = Num_ships,
             .owner = player,
-            .governor = stars[starnum].governor(player - 1),
+            .governor = star.governor(player - 1),
             .name = std::format("Scum{:04d}", Num_ships),
-            .xpos = stars[starnum].xpos() + planet.xpos(),
-            .ypos = stars[starnum].ypos() + planet.ypos(),
+            .xpos = star.xpos() + planet.xpos(),
+            .ypos = star.ypos() + planet.ypos(),
             .mass = 1.0,
             .land_x =
                 static_cast<unsigned char>(int_rand(0, (int)planet.Maxx() - 1)),

@@ -156,6 +156,7 @@ target_sources(
          gblib-dosector.cppm
          gblib-doship.cppm
          gblib-doturncmd.cppm
+         gblib-entitylists.cppm
          gblib-files_shl.cppm
          gblib-fire.cppm
          gblib-fuel.cppm
@@ -174,7 +175,6 @@ target_sources(
          gblib-sector.cppm
          gblib-ships.cppm
          gblib-shipfilter.cppm
-         gblib-shiplist.cppm
          gblib-shlmisc.cppm
          gblib-shootblast.cppm
          gblib-star.cppm
@@ -188,6 +188,7 @@ target_sources(
           dosector.cc
           doship.cc
           doturncmd.cc
+          entitylists.cc
           services/entity_manager.cc
           files_shl.cc
           fire.cc
@@ -201,7 +202,7 @@ target_sources(
           utils/rand.cc
           sectormap.cc
           ships.cc
-          shiplist.cc
+          entitylists.cc
           shlmisc.cc
           shootblast.cc
           star.cc

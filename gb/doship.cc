@@ -495,17 +495,17 @@ void doship(Ship& ship, int update, EntityManager& entity_manager) {
   }
 }
 
-void domass(Ship& ship) {
-  auto rmass = races[ship.owner() - 1].mass;
+void domass(Ship& ship, EntityManager& entity_manager) {
+  // Get race mass from EntityManager
+  const auto* race = entity_manager.peek_race(ship.owner());
+  double rmass = race ? race->mass : 1.0;  // Default mass if race not found
 
-  auto sh = ship.ships();
   ship.mass() = 0.0;
   ship.hanger() = 0;
-  while (sh) {
-    domass(*ships[sh]); /* recursive call */
-    ship.mass() += ships[sh]->mass();
-    ship.hanger() += ships[sh]->size();
-    sh = ships[sh]->nextship();
+  for (auto nested_ship : ShipList(entity_manager, ship.ships())) {
+    domass(*nested_ship, entity_manager); /* recursive call */
+    ship.mass() += nested_ship->mass();
+    ship.hanger() += nested_ship->size();
   }
   ship.mass() += getmass(ship);
   ship.mass() += (double)(ship.popn() + ship.troops()) * rmass;
@@ -514,13 +514,11 @@ void domass(Ship& ship) {
   ship.mass() += (double)ship.resource() * MASS_RESOURCE;
 }
 
-void doown(Ship& ship) {
-  auto sh = ship.ships();
-  while (sh) {
-    doown(*ships[sh]); /* recursive call */
-    ships[sh]->owner() = ship.owner();
-    ships[sh]->governor() = ship.governor();
-    sh = ships[sh]->nextship();
+void doown(Ship& ship, EntityManager& entity_manager) {
+  for (auto nested_ship : ShipList(entity_manager, ship.ships())) {
+    doown(*nested_ship, entity_manager); /* recursive call */
+    nested_ship->owner() = ship.owner();
+    nested_ship->governor() = ship.governor();
   }
 }
 

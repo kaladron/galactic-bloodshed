@@ -6,8 +6,8 @@ import :gameobj;
 import :ships;
 
 export void doship(Ship&, int, EntityManager&);
-export void domass(Ship&);
-export void doown(Ship&);
+export void domass(Ship&, EntityManager&);
+export void doown(Ship&, EntityManager&);
 export void domissile(Ship&, EntityManager&);
 export void domine(Ship&, int, EntityManager&);
 export void doabm(Ship&, EntityManager&);

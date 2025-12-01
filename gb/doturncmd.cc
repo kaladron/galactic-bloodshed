@@ -328,8 +328,8 @@ static void process_ship_masses_and_ownership(TurnState& state) {
   /* check ship masses - ownership */
   for (auto ship_handle :
        ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
-    domass(*ship_handle);
-    doown(*ship_handle);
+    domass(*ship_handle, state.entity_manager);
+    doown(*ship_handle, state.entity_manager);
   }
 }
 

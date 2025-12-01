@@ -164,8 +164,9 @@ void proj_fuel(const command_t& argv, GameObj& g) {
   // Make a mutable copy for do_trip calculations
   Ship fuelcheckship(ship->get_struct());
   level = fuelcheckship.fuel();
-  auto [current_settings, number_segments] = do_trip(
-      tmpdest, fuelcheckship, fuelcheckship.fuel(), gravity_factor, x_1, y_1);
+  auto [current_settings, number_segments] =
+      do_trip(tmpdest, fuelcheckship, fuelcheckship.fuel(), gravity_factor, x_1,
+              y_1, g.entity_manager);
   current_segs = number_segments;
   if (current_settings) current_fuel = level - fuelcheckship.fuel();
   level = fuelcheckship.max_fuel();
@@ -176,7 +177,8 @@ void proj_fuel(const command_t& argv, GameObj& g) {
   while (computing) {
     Ship tmpship(ship->get_struct());
     std::tie(computing, number_segments) =
-        do_trip(tmpdest, tmpship, level, gravity_factor, x_1, y_1);
+        do_trip(tmpdest, tmpship, level, gravity_factor, x_1, y_1,
+                g.entity_manager);
     if ((computing) && (tmpship.fuel() >= 0.05)) {
       fuel_usage = level;
       opt_settings = 1;
@@ -192,7 +194,7 @@ void proj_fuel(const command_t& argv, GameObj& g) {
       "\n  ----- ===== FUEL ESTIMATES ===== ----\n\nAt Current Fuel "
       "Cargo ({:.2f}f):\n",
       tmpship.fuel());
-  domass(tmpship);
+  domass(tmpship, g.entity_manager);
   if (!current_settings) {
     g.out << "The ship will not be able to complete the trip.\n";
   } else {
@@ -204,7 +206,7 @@ void proj_fuel(const command_t& argv, GameObj& g) {
     g.out << std::format("The ship will not be able to complete the trip.\n");
   } else {
     tmpship.fuel() = fuel_usage;
-    domass(tmpship);
+    domass(tmpship, g.entity_manager);
     fuel_output(g, dist, fuel_usage, gravity_factor, tmpship.mass(),
                 number_segments, plan_buf);
   }

@@ -67,6 +67,7 @@ void fuel_output(GameObj& g, const double dist, const double fuel,
  * @param gravity_factor The gravity factor affecting the ship's movement.
  * @param x_1 The x-coordinate of the destination.
  * @param y_1 The y-coordinate of the destination.
+ * @param entity_manager The EntityManager for entity access.
  *
  * @return A tuple containing a boolean indicating if the trip was resolved
  * successfully and the number of segments taken.
@@ -74,7 +75,8 @@ void fuel_output(GameObj& g, const double dist, const double fuel,
 std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
                                      const double fuel,
                                      const double gravity_factor, double x_1,
-                                     const double y_1) {
+                                     const double y_1,
+                                     EntityManager& entity_manager) {
   tmpship.fuel() = fuel; /* load up the pseudo-ship */
   segments_t effective_segment_number = nsegments_done;
 
@@ -101,7 +103,7 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
   tmpship.docked() = 0;
 
   while (!trip_resolved) {
-    domass(tmpship);
+    domass(tmpship, entity_manager);
     double fuel_level1 = tmpship.fuel();
     moveship(tmpship, (effective_segment_number == segments), 0, 1);
     number_segments++;

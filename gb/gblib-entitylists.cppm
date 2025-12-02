@@ -26,8 +26,9 @@
  *   }
  *
  *   // Iterate over ships (multiple modes available)
- *   for (auto ship_handle : ShipList(entity_manager, ShipList::IterationType::AllAlive)) {
- *     ship_handle->fuel += 10;  // Marks dirty, will auto-save
+ *   for (auto ship_handle : ShipList(entity_manager,
+ * ShipList::IterationType::AllAlive)) { ship_handle->fuel += 10;  // Marks
+ * dirty, will auto-save
  *   }
  */
 
@@ -64,7 +65,9 @@ public:
       advance_to_valid();
     }
 
-    EntityHandle<Race> operator*() { return em_->get_race(current_); }
+    EntityHandle<Race> operator*() {
+      return em_->get_race(current_);
+    }
 
     Iterator& operator++() {
       ++current_;
@@ -92,8 +95,12 @@ public:
     player_t end_;
   };
 
-  Iterator begin() { return Iterator(em_, 1, count_); }
-  Iterator end() { return Iterator(em_, count_ + 1, count_); }
+  Iterator begin() {
+    return Iterator(em_, 1, count_);
+  }
+  Iterator end() {
+    return Iterator(em_, count_ + 1, count_);
+  }
 
 private:
   EntityManager* em_;
@@ -115,10 +122,13 @@ public:
     using value_type = EntityHandle<Star>;
     using difference_type = std::ptrdiff_t;
 
-    Iterator(EntityManager* em, starnum_t current, [[maybe_unused]] starnum_t end)
+    Iterator(EntityManager* em, starnum_t current,
+             [[maybe_unused]] starnum_t end)
         : em_(em), current_(current) {}
 
-    EntityHandle<Star> operator*() { return em_->get_star(current_); }
+    EntityHandle<Star> operator*() {
+      return em_->get_star(current_);
+    }
 
     Iterator& operator++() {
       ++current_;
@@ -138,8 +148,12 @@ public:
     starnum_t current_;
   };
 
-  Iterator begin() { return Iterator(em_, 0, count_); }
-  Iterator end() { return Iterator(em_, count_, count_); }
+  Iterator begin() {
+    return Iterator(em_, 0, count_);
+  }
+  Iterator end() {
+    return Iterator(em_, count_, count_);
+  }
 
 private:
   EntityManager* em_;
@@ -191,8 +205,12 @@ public:
     planetnum_t current_;
   };
 
-  Iterator begin() { return Iterator(em_, star_, 0, count_); }
-  Iterator end() { return Iterator(em_, star_, count_, count_); }
+  Iterator begin() {
+    return Iterator(em_, star_, 0, count_);
+  }
+  Iterator end() {
+    return Iterator(em_, star_, count_, count_);
+  }
 
 private:
   EntityManager* em_;

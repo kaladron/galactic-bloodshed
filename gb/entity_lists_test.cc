@@ -167,8 +167,7 @@ int main() {
       if (!race_handle.get()) continue;
 
       // Use Playernum for array indexing instead of loop variable
-      power_values[race_handle->Playernum - 1] =
-          race_handle->governor[0].money;
+      power_values[race_handle->Playernum - 1] = race_handle->governor[0].money;
     }
 
     assert(power_values[0] == 1000);

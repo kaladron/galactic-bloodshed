@@ -20,7 +20,8 @@ import :types;
 
 // TurnStats: Encapsulates per-turn accumulating statistics.
 // Passed through doplanet() and doship() to replace global array usage.
-// Created fresh at the start of each turn; value-initialization zeros all arrays.
+// Created fresh at the start of each turn; value-initialization zeros all
+// arrays.
 export struct TurnStats {
   // Per-star population counts for each player
   std::array<std::array<unsigned long, MAXPLAYERS>, NUMSTARS> starpopns{};

@@ -471,8 +471,9 @@ static void process_abms_and_missiles(TurnState& state, int update) {
         if (isset(star_handle->inhabited(), player)) {
           ap_t APs =
               star_handle->AP(player - 1) +
-              APadd(static_cast<int>(state.stats.starnumships[star][player - 1]),
-                    state.stats.starpopns[star][player - 1], *race_handle, state);
+              APadd(
+                  static_cast<int>(state.stats.starnumships[star][player - 1]),
+                  state.stats.starpopns[star][player - 1], *race_handle, state);
           if (APs < LIMIT_APs) {
             star_handle->AP(player - 1) = APs;
           } else {
@@ -592,9 +593,10 @@ static void finalize_turn(TurnState& state, int update) {
 
       /* collective intelligence */
       if (race_handle->collective_iq) {
-        double x = ((2. / 3.14159265) *
-                    atan(static_cast<double>(state.stats.Power[player - 1].popn) /
-                         MESO_POP_SCALE));
+        double x =
+            ((2. / 3.14159265) *
+             atan(static_cast<double>(state.stats.Power[player - 1].popn) /
+                  MESO_POP_SCALE));
         race_handle->IQ = race_handle->IQ_limit * x * x;
       }
       race_handle->tech += static_cast<double>(race_handle->IQ) / 100.0;

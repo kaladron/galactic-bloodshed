@@ -51,7 +51,8 @@ int revolt(Planet& pl, const player_t victim, const player_t agent) {
 
 void moveplanet(const starnum_t starnum, Planet& planet,
                 const planetnum_t planetnum, TurnStats& stats) {
-  if (planet.popn() || planet.ships()) stats.Stinfo[starnum][planetnum].inhab = 1;
+  if (planet.popn() || planet.ships())
+    stats.Stinfo[starnum][planetnum].inhab = 1;
 
   stats.StarsInhab[starnum] = !!(stars[starnum].inhabited());
   stats.StarsExpl[starnum] = !!(stars[starnum].explored());

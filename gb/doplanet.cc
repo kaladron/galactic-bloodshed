@@ -274,8 +274,7 @@ void do_recover(EntityManager& entity_manager, const Star& star,
                                       race->name, res, des, fuel, crystals);
           for (j = 1; j <= Num_races; j++) {
             if (isset(ownerbits, j)) {
-              push_telegram(j, star.governor(j - 1),
-                            telegram_buf.str());
+              push_telegram(j, star.governor(j - 1), telegram_buf.str());
             }
           }
         }
@@ -304,10 +303,8 @@ void do_recover(EntityManager& entity_manager, const Star& star,
                                        stolenfuel, stolencrystals);
         for (j = 1; j <= Num_races; j++) {
           if (isset(ownerbits, j)) {
-            push_telegram(j, star.governor(j - 1),
-                          first_telegram.str());
-            push_telegram(j, star.governor(j - 1),
-                          second_telegram.str());
+            push_telegram(j, star.governor(j - 1), first_telegram.str());
+            push_telegram(j, star.governor(j - 1), second_telegram.str());
           }
         }
       }
@@ -446,7 +443,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
           if (landed(*ship))
             if (ship->resource() >= RES_COST_WPLANT &&
                 ship->fuel() >= FUEL_COST_WPLANT)
-              prod_destruct[ship->owner() - 1] += do_weapon_plant(*ship, entity_manager);
+              prod_destruct[ship->owner() - 1] +=
+                  do_weapon_plant(*ship, entity_manager);
             else {
               if (ship->resource() < RES_COST_WPLANT) {
                 std::string buf = std::format(
@@ -681,8 +679,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   if (star.nova_stage() == 1) {
     {
       std::stringstream telegram_buf;
-      telegram_buf << std::format("BULLETIN from /{}/{}\n",
-                                  star.get_name(),
+      telegram_buf << std::format("BULLETIN from /{}/{}\n", star.get_name(),
                                   star.get_planet_name(planetnum));
       telegram_buf << std::format("\nStar {} is undergoing nova.\n",
                                   star.get_name());
@@ -723,9 +720,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       planet.popn() += p.get_popn();
       planet.troops() += p.get_troops();
       const auto* owner_race = entity_manager.peek_race(p.get_owner());
-      planet.maxpopn() +=
-          maxsupport(*owner_race, p, Compat[p.get_owner() - 1],
-                     planet.conditions(TOXIC));
+      planet.maxpopn() += maxsupport(*owner_race, p, Compat[p.get_owner() - 1],
+                                     planet.conditions(TOXIC));
       stats.Power[p.get_owner() - 1].troops += p.get_troops();
       stats.Power[p.get_owner() - 1].popn += p.get_popn();
       stats.Power[p.get_owner() - 1].sum_eff += p.get_eff();
@@ -781,8 +777,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       {
         std::stringstream telegram_buf;
         telegram_buf << std::format(
-            "\nThere has been a SLAVE REVOLT on /{}/{}!\n",
-            star.get_name(),
+            "\nThere has been a SLAVE REVOLT on /{}/{}!\n", star.get_name(),
             star.get_planet_name(planetnum));
         telegram_buf << std::format(
             "All population belonging to player #{} on the planet have been "
@@ -791,8 +786,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         telegram_buf << "Productions now go to their rightful owners.\n";
         for (i = 1; i <= Num_races; i++) {
           if (planet.info(i - 1).numsectsowned) {
-            push_telegram(i, star.governor(i - 1),
-                          telegram_buf.str());
+            push_telegram(i, star.governor(i - 1), telegram_buf.str());
           }
         }
       }
@@ -878,8 +872,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
                 Shipdata[ShipType::OTYPE_TOXWC][ABIL_FUELCAP]),
             .max_speed = static_cast<unsigned short>(
                 Shipdata[ShipType::OTYPE_TOXWC][ABIL_SPEED]),
-            .build_cost =
-                static_cast<unsigned short>(Shipcost(ShipType::OTYPE_TOXWC, race)),
+            .build_cost = static_cast<unsigned short>(
+                Shipcost(ShipType::OTYPE_TOXWC, race)),
             .base_mass = 1.0,
             .special = WasteData{.toxic = static_cast<unsigned char>(t)},
             .storbits = starnum,

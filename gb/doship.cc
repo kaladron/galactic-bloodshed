@@ -213,7 +213,8 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
   }
 }
 
-void do_greenhouse(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
+void do_greenhouse(Ship& ship, EntityManager& entity_manager,
+                   TurnStats& stats) {
   if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
     if (!std::holds_alternative<TimerData>(ship.special())) {
       return;

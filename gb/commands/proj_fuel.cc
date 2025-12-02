@@ -176,9 +176,8 @@ void proj_fuel(const command_t& argv, GameObj& g) {
   opt_settings = 0;
   while (computing) {
     Ship tmpship(ship->get_struct());
-    std::tie(computing, number_segments) =
-        do_trip(tmpdest, tmpship, level, gravity_factor, x_1, y_1,
-                g.entity_manager);
+    std::tie(computing, number_segments) = do_trip(
+        tmpdest, tmpship, level, gravity_factor, x_1, y_1, g.entity_manager);
     if ((computing) && (tmpship.fuel() >= 0.05)) {
       fuel_usage = level;
       opt_settings = 1;

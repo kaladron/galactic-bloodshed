@@ -147,7 +147,7 @@ static void process_stars_and_planets(TurnState& state, int update) {
         Planet_count++;
       }
       if (update) {
-        moveplanet(star, *planet_handle, pnum, state.stats);
+        moveplanet(state.entity_manager, star, *planet_handle, pnum, state.stats);
       }
       if (!star_handle->planet_name_isset(pnum)) {
         star_handle->set_planet_name(pnum, std::format("NULL-{}", pnum));

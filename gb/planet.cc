@@ -49,8 +49,8 @@ int revolt(Planet& pl, const player_t victim, const player_t agent) {
   return revolted_sectors;
 }
 
-void moveplanet(const starnum_t starnum, Planet& planet,
-                const planetnum_t planetnum, TurnStats& stats) {
+void moveplanet(EntityManager& entity_manager, const starnum_t starnum,
+                Planet& planet, const planetnum_t planetnum, TurnStats& stats) {
   if (planet.popn() || planet.ships())
     stats.Stinfo[starnum][planetnum].inhab = 1;
 
@@ -73,12 +73,9 @@ void moveplanet(const starnum_t starnum, Planet& planet,
   /* one update time unit - planets orbit counter-clockwise */
 
   /* adjust ships in orbit around the planet */
-  auto sh = planet.ships();
-  while (sh) {
-    auto ship = ships[sh];
-    ship->xpos() += xadd;
-    ship->ypos() += yadd;
-    sh = ship->nextship();
+  for (auto ship_handle : ShipList(entity_manager, planet.ships())) {
+    ship_handle->xpos() += xadd;
+    ship_handle->ypos() += yadd;
   }
 
   planet.xpos() += xadd;

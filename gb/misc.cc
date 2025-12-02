@@ -128,6 +128,20 @@ void notify_star(const player_t a, const governor_t g, const starnum_t star,
     }
 }
 
+// New implementation using EntityManager
+void notify_star(EntityManager& entity_manager, const player_t a,
+                 const governor_t g, const starnum_t star,
+                 const std::string& message) {
+  const auto* star_ptr = entity_manager.peek_star(star);
+  if (!star_ptr) return;
+
+  for (auto& d : descriptor_list)
+    if (d.connected && (d.player != a || d.governor != g) &&
+        isset(star_ptr->inhabited(), d.player)) {
+      queue_string(d, message);
+    }
+}
+
 void adjust_morale(Race& winner, Race& loser, int amount) {
   winner.morale += amount;
   loser.morale -= amount;

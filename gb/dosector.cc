@@ -10,8 +10,8 @@ static const std::array<int, 8> x_adj = {-1, 0, 1, -1, 1, -1, 0, 1};
 static const std::array<int, 8> y_adj = {1, 1, 1, 0, 0, -1, -1, -1};
 
 namespace {
-void Migrate2(const Planet& planet, int xd, int yd, Sector& ps,
-              population_t* people, SectorMap& smap) {
+void Migrate2(EntityManager& entity_manager, const Planet& planet, int xd,
+              int yd, Sector& ps, population_t* people, SectorMap& smap) {
   /* attempt to migrate beyond screen, or too many people */
   if (yd > planet.Maxy() - 1 || yd < 0) return;
 
@@ -23,9 +23,10 @@ void Migrate2(const Planet& planet, int xd, int yd, Sector& ps,
   auto& pd = smap.get(xd, yd);
 
   if (!pd.is_owned()) {
-    int move =
-        (int)((double)(*people) * Compat[ps.get_owner() - 1] *
-              races[ps.get_owner() - 1].likes[pd.get_condition()] / 100.0);
+    const auto* race = entity_manager.peek_race(ps.get_owner());
+    if (!race) return;
+    int move = (int)((double)(*people) * Compat[ps.get_owner() - 1] *
+                     race->likes[pd.get_condition()] / 100.0);
     if (!move) return;
     *people -= move;
     pd.set_popn(pd.get_popn() + move);
@@ -126,19 +127,21 @@ population_t calculatePopulationChange(const Race& race, const Sector& s,
 }
 
 // Handle population changes and owner updates
-void updatePopulationAndOwner(Sector& s, const Race& race, const Star& star,
+void updatePopulationAndOwner(EntityManager& entity_manager, Sector& s,
+                              const Race& race, const Star& star,
                               const Planet& planet) {
   auto maxsup =
       maxsupport(race, s, Compat[s.get_owner() - 1], planet.conditions(TOXIC));
   s.set_popn(s.get_popn() + calculatePopulationChange(race, s, maxsup));
 
-  // Handle troops maintenance costs - we have to modify global state here
-  if (s.get_troops() && races[s.get_owner() - 1]
-                            .governor[star.governor(s.get_owner() - 1)]
-                            .maintain) {
-    races[s.get_owner() - 1]
-        .governor[star.governor(s.get_owner() - 1)]
-        .maintain += UPDATE_TROOP_COST * s.get_troops();
+  // Handle troops maintenance costs - get mutable race for governor update
+  if (s.get_troops()) {
+    auto race_handle = entity_manager.get_race(s.get_owner());
+    if (race_handle.get() &&
+        race_handle->governor[star.governor(s.get_owner() - 1)].maintain) {
+      (*race_handle).governor[star.governor(s.get_owner() - 1)].maintain +=
+          UPDATE_TROOP_COST * s.get_troops();
+    }
   }
 
   // Update ownership if no population remains
@@ -147,48 +150,53 @@ void updatePopulationAndOwner(Sector& s, const Race& race, const Star& star,
 }  // anonymous namespace
 
 //  produce() -- produce, stuff like that, on a sector.
-void produce(const Star& star, const Planet& planet, Sector& s) {
+void produce(EntityManager& entity_manager, const Star& star,
+             const Planet& planet, Sector& s) {
   if (!s.is_owned()) return;
-  auto& race = races[s.get_owner() - 1];
+  const auto* race = entity_manager.peek_race(s.get_owner());
+  if (!race) return;
 
   // Process production and resources
-  processResourceProduction(race, s);
-  processCrystalMining(race, s);
+  processResourceProduction(*race, s);
+  processCrystalMining(*race, s);
 
   // Handle mobilization
   const auto& pinf = planet.info(s.get_owner() - 1);
   updateMobilization(s, pinf);
 
   // Update efficiency, fertility and sector condition
-  updateEfficiency(s, race, planet);
-  updateFertilityAndCondition(s, race);
+  updateEfficiency(s, *race, planet);
+  updateFertilityAndCondition(s, *race);
 
   // Handle population changes and ownership
-  updatePopulationAndOwner(s, race, star, planet);
+  updatePopulationAndOwner(entity_manager, s, *race, star, planet);
 }
 
 // spread()  -- spread population around.
-void spread(const Planet& pl, Sector& s, SectorMap& smap) {
+void spread(EntityManager& entity_manager, const Planet& pl, Sector& s,
+            SectorMap& smap) {
   if (!s.is_owned()) return;
   if (pl.slaved_to() && pl.slaved_to() != s.get_owner())
     return; /* no one wants to go anywhere */
 
-  auto& race = races[s.get_owner() - 1];
+  const auto* race = entity_manager.peek_race(s.get_owner());
+  if (!race) return;
 
   /* the higher the fertility, the less people like to leave */
   population_t people =
-      round_rand(race.adventurism * static_cast<double>(s.get_popn()) *
+      round_rand(race->adventurism * static_cast<double>(s.get_popn()) *
                  (100. - s.get_fert()) / 100.) -
-      race.number_sexes; /* how many people want to move -
+      race->number_sexes; /* how many people want to move -
                                           one family stays behind */
 
-  int check = round_rand(6.0 * race.adventurism); /* more rounds for
+  int check = round_rand(6.0 * race->adventurism); /* more rounds for
                                                                high advent */
   while (people > 0 && check) {
     int j = int_rand(0, 7);
     int x2 = x_adj[j];
     int y2 = y_adj[j];
-    Migrate2(pl, s.get_x() + x2, s.get_y() + y2, s, &people, smap);
+    Migrate2(entity_manager, pl, s.get_x() + x2, s.get_y() + y2, s, &people,
+             smap);
     check--;
   }
 }

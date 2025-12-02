@@ -740,7 +740,8 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   std::string postmsg = std::format(
       "{} detonated at {}\n", ship_to_string(ship), prin_ship_orbits(ship));
   post(postmsg, NewsType::COMBAT);
-  notify_star(ship.owner(), ship.governor(), ship.storbits(), postmsg);
+  notify_star(entity_manager, ship.owner(), ship.governor(), ship.storbits(),
+              postmsg);
   ShipList shiplist(entity_manager, sh);
   for (auto ship_handle : shiplist) {
     Ship& s = *ship_handle;

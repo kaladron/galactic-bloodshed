@@ -518,11 +518,11 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     if (p.get_owner() && (p.get_popn() || p.get_troops())) {
       allmod = 1;
       if (!star.nova_stage()) {
-        produce(star, planet, p);
+        produce(entity_manager, star, planet, p);
         if (p.get_owner())
           planet.info(p.get_owner() - 1).est_production +=
               est_production(p, entity_manager);
-        spread(planet, p, smap);
+        spread(entity_manager, planet, p, smap);
       } else {
         /* damage sector from supernova */
         p.set_resource(p.get_resource() + 1);

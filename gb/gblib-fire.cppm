@@ -10,4 +10,5 @@ import :types;
 export int retal_strength(const Ship&);
 export int check_retal_strength(const Ship& ship);
 export bool has_planet_defense(EntityManager&, shipnum_t, player_t);
-export void check_overload(Ship& ship, int cew, int* strength);
+export void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
+                           int* strength);

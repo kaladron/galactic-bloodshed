@@ -37,7 +37,8 @@ bool has_planet_defense(EntityManager& entity_manager, const shipnum_t shipno,
  * @param cew Strength of Confined Energy Weapons.
  * @param strength A pointer to the strength value of the ship.
  */
-void check_overload(Ship& ship, int cew, int* strength) {
+void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
+                    int* strength) {
   if (!(ship.laser() && ship.fire_laser()) && (cew == 0)) {
     return;
   }
@@ -48,7 +49,7 @@ void check_overload(Ship& ship, int cew, int* strength) {
     std::string message = std::format(
         "{}: Matter-antimatter EXPLOSION from overloaded crystal on {}\n",
         dispshiploc(ship), ship_to_string(ship));
-    kill_ship(ship.owner(), &ship);
+    entity_manager.kill_ship(ship.owner(), ship);
     *strength = 0;
     warn(ship.owner(), ship.governor(), message);
     post(message, NewsType::COMBAT);

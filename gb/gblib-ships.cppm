@@ -7,6 +7,7 @@ import std;
 import :gameobj;
 import :planet;
 import :sector;
+import :turnstats;
 
 export enum guntype_t {
   GTYPE_NONE,
@@ -948,7 +949,7 @@ export void kill_ship(player_t, Ship*);
 export int docked(const Ship&);
 export int overloaded(const Ship&);
 export std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept;
-export void do_VN(Ship&);
+export void do_VN(Ship&, TurnStats&);
 export void planet_doVN(Ship&, Planet&, SectorMap&);
 export void use_fuel(Ship&, double);
 export void use_destruct(Ship&, int);

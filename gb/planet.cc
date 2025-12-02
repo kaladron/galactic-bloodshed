@@ -50,14 +50,14 @@ int revolt(Planet& pl, const player_t victim, const player_t agent) {
 }
 
 void moveplanet(const starnum_t starnum, Planet& planet,
-                const planetnum_t planetnum) {
-  if (planet.popn() || planet.ships()) Stinfo[starnum][planetnum].inhab = 1;
+                const planetnum_t planetnum, TurnStats& stats) {
+  if (planet.popn() || planet.ships()) stats.Stinfo[starnum][planetnum].inhab = 1;
 
-  StarsInhab[starnum] = !!(stars[starnum].inhabited());
-  StarsExpl[starnum] = !!(stars[starnum].explored());
+  stats.StarsInhab[starnum] = !!(stars[starnum].inhabited());
+  stats.StarsExpl[starnum] = !!(stars[starnum].explored());
 
   stars[starnum].inhabited() = 0;
-  if (!StarsExpl[starnum]) return; /* no one's explored the star yet */
+  if (!stats.StarsExpl[starnum]) return; /* no one's explored the star yet */
 
   double dist = std::hypot((double)(planet.ypos()), (double)(planet.xpos()));
 

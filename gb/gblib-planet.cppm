@@ -293,6 +293,4 @@ ap_t Planet::get_points() const {
 
 export int revolt(Planet& pl, player_t victim, player_t agent);
 
-export void moveplanet(starnum_t starnum, Planet& planet,
-                       planetnum_t planetnum);
 export bool adjacent(const Planet&, Coordinates from, Coordinates to);

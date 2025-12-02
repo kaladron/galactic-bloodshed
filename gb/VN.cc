@@ -78,7 +78,7 @@ void order_VN(Ship& ship) {
 }  // namespace
 
 /*  do_VN() -- called by doship() */
-void do_VN(Ship& ship) {
+void do_VN(Ship& ship, TurnStats& stats) {
   if (!landed(ship)) {
     // Doing other things
     if (!std::holds_alternative<MindData>(ship.special()) ||
@@ -93,7 +93,7 @@ void do_VN(Ship& ship) {
     return;
   }
 
-  Stinfo[ship.storbits()][ship.pnumorbits()].inhab = 1;
+  stats.Stinfo[ship.storbits()][ship.pnumorbits()].inhab = 1;
 
   /* launch if no assignment */
   if (!std::holds_alternative<MindData>(ship.special()) ||

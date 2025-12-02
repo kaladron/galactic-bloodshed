@@ -367,10 +367,10 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
   }
 }
 
-void do_oap(Ship& ship) {
+void do_oap(Ship& ship, TurnStats& stats) {
   /* "indimidate" the planet below, for enslavement purposes. */
   if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN)
-    Stinfo[ship.storbits()][ship.pnumorbits()].intimidated = 1;
+    stats.Stinfo[ship.storbits()][ship.pnumorbits()].intimidated = 1;
 }
 }  // namespace
 
@@ -533,10 +533,10 @@ void doship(Ship& ship, int update, EntityManager& entity_manager,
                                         .tampered = 0,
                                         .who_killed = 0};
             }
-            do_VN(ship);
+            do_VN(ship, stats);
             break;
           case ShipType::STYPE_OAP:
-            do_oap(ship);
+            do_oap(ship, stats);
             break;
           case ShipType::STYPE_HABITAT:
             do_habitat(ship, entity_manager);

@@ -15,7 +15,7 @@ import std;
 
 export module gblib:turnstats;
 
-import :misc;
+import :race;
 import :types;
 
 // TurnStats: Encapsulates per-turn accumulating statistics.
@@ -39,6 +39,9 @@ export struct TurnStats {
 
   // Stars inhabited bitmap (one per star)
   std::array<unsigned long, NUMSTARS> StarsInhab{};
+
+  // Stars explored bitmap (one per star)
+  std::array<unsigned long, NUMSTARS> StarsExpl{};
 
   // Power statistics for each player
   std::array<power, MAXPLAYERS> Power{};

@@ -18,63 +18,34 @@ namespace {
 // TurnState: Encapsulates turn-processing state that was previously global.
 // This struct lives only for the duration of a single turn and provides
 // bounds-checked access to turn-specific tracking arrays.
+//
+// The stats member contains arrays that are passed to doplanet() and doship()
+// for accumulating per-turn statistics (Power[], starpopns[], etc.).
 struct TurnState {
   // Reference to EntityManager for loading/saving entities
   EntityManager& entity_manager;
 
-  // Per-star population counts for each player
-  unsigned long starpopns[NUMSTARS][MAXPLAYERS];
-
-  // Per-star ship counts for each player
-  unsigned short starnumships[NUMSTARS][MAXPLAYERS];
-
-  // Global ship counts per player (for Sdata)
-  unsigned short Sdatanumships[MAXPLAYERS];
-
-  // Star info (per star, per planet)
-  struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
-
-  // Stars inhabited bitmap (one per star)
-  unsigned long StarsInhab[NUMSTARS];
-
-  // Power statistics for each player
-  power Power[MAXPLAYERS];
-
-  // Inhabited bitmap per star (64-bit for player flags)
-  uint64_t inhabited[NUMSTARS];
+  // Turn statistics - passed to doplanet() and doship() for accumulation
+  TurnStats stats;
 
   // Power blocks for each player
   block Blocks[MAXPLAYERS];
 
   // Constructor requires EntityManager reference
-  explicit TurnState(EntityManager& em) : entity_manager(em) {
-    reset();
-  }
+  explicit TurnState(EntityManager& em) : entity_manager(em) {}
 
-  // Reset all arrays to zero (called at turn start if update==true)
-  void reset() noexcept {
-    std::memset(starpopns, 0, sizeof(starpopns));
-    std::memset(starnumships, 0, sizeof(starnumships));
-    std::memset(Sdatanumships, 0, sizeof(Sdatanumships));
-    std::memset(Stinfo, 0, sizeof(Stinfo));
-    std::memset(StarsInhab, 0, sizeof(StarsInhab));
-    std::memset(Power, 0, sizeof(Power));
-    std::memset(inhabited, 0, sizeof(inhabited));
-    // Note: Blocks is not reset here; it accumulates across the turn
-  }
-
-  // Bounds-checked accessors for star population data
+  // Bounds-checked accessors for star population data (delegate to stats)
   unsigned long& star_popn(starnum_t star, player_t player) noexcept {
     assert(star >= 0 && star < NUMSTARS && "Star index out of bounds");
     assert(player >= 1 && player <= MAXPLAYERS && "Player index out of bounds");
-    return starpopns[star][player - 1];
+    return stats.starpopns[star][player - 1];
   }
 
   const unsigned long& star_popn(starnum_t star,
                                  player_t player) const noexcept {
     assert(star >= 0 && star < NUMSTARS && "Star index out of bounds");
     assert(player >= 1 && player <= MAXPLAYERS && "Player index out of bounds");
-    return starpopns[star][player - 1];
+    return stats.starpopns[star][player - 1];
   }
 };
 
@@ -98,7 +69,6 @@ static void fix_stability(Star&);
 static bool governed(const Race&, const TurnState&);
 static void make_discoveries(Race&);
 static void output_ground_attacks();
-static void initialize_data(TurnState& state, int update);
 static void process_ships(TurnState& state);
 static void process_stars_and_planets(TurnState& state, int update);
 static void process_races(TurnState& state, int update);
@@ -132,7 +102,6 @@ void do_turn(EntityManager& entity_manager, int update) {
   TurnState state(
       entity_manager);  // Create turn-local state with EntityManager ref
 
-  initialize_data(state, update);
   process_ships(state);
   process_stars_and_planets(state, update);
   process_races(state, update);
@@ -152,13 +121,6 @@ void do_turn(EntityManager& entity_manager, int update) {
 
   // Clear cache to free memory after turn completes
   entity_manager.clear_cache();
-}
-
-static void initialize_data(TurnState& state, int update) {
-  /* make all 0 for first iteration of doplanet */
-  if (update) {
-    state.reset();  // Use TurnState's reset method instead of global memsets
-  }
 }
 
 static void process_ships(TurnState& state) {
@@ -339,7 +301,7 @@ static void process_ship_turns(TurnState& state, int update) {
     for (auto ship_handle :
          ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
       if (ship_handle->speed() == j) {
-        doship(*ship_handle, update, state.entity_manager);
+        doship(*ship_handle, update, state.entity_manager, state.stats);
         if ((ship_handle->type() == ShipType::STYPE_MISSILE) &&
             !attack_planet(*ship_handle)) {
           domissile(*ship_handle, state.entity_manager);
@@ -460,6 +422,9 @@ static void process_abms_and_missiles(TurnState& state, int update) {
     }
   }
 
+  // Local inhabited bitmap - tracks which players inhabit each star this turn
+  std::array<uint64_t, NUMSTARS> inhabited{};
+
   for (auto star_handle : StarList(state.entity_manager)) {
     const starnum_t star = star_handle->get_struct().star_id;
 
@@ -470,7 +435,7 @@ static void process_abms_and_missiles(TurnState& state, int update) {
         const player_t player = race_handle->Playernum;
 
         if (planet_handle->info(player - 1).numsectsowned) {
-          setbit(state.inhabited[star], player);
+          setbit(inhabited[star], player);
           setbit(star_handle->inhabited(), player);
         }
         if (planet_handle->type() != PlanetType::ASTEROID &&
@@ -484,7 +449,8 @@ static void process_abms_and_missiles(TurnState& state, int update) {
         }
       }
       if (update) {
-        if (doplanet(state.entity_manager, *star_handle, *planet_handle)) {
+        if (doplanet(state.entity_manager, *star_handle, *planet_handle,
+                     state.stats)) {
           /* save smap gotten & altered by doplanet
              only if the planet is expl*/
         }
@@ -496,7 +462,7 @@ static void process_abms_and_missiles(TurnState& state, int update) {
       for (auto race_handle : RaceList(state.entity_manager)) {
         const player_t player = race_handle->Playernum;
 
-        if (state.starpopns[star][player - 1]) {
+        if (state.stats.starpopns[star][player - 1]) {
           setbit(star_handle->inhabited(), player);
         } else {
           clrbit(star_handle->inhabited(), player);
@@ -505,8 +471,8 @@ static void process_abms_and_missiles(TurnState& state, int update) {
         if (isset(star_handle->inhabited(), player)) {
           ap_t APs =
               star_handle->AP(player - 1) +
-              APadd(static_cast<int>(state.starnumships[star][player - 1]),
-                    state.starpopns[star][player - 1], *race_handle, state);
+              APadd(static_cast<int>(state.stats.starnumships[star][player - 1]),
+                    state.stats.starpopns[star][player - 1], *race_handle, state);
           if (APs < LIMIT_APs) {
             star_handle->AP(player - 1) = APs;
           } else {
@@ -514,11 +480,11 @@ static void process_abms_and_missiles(TurnState& state, int update) {
           }
         }
         /* compute victory points for the block */
-        if (state.inhabited[star] != 0) {
+        if (inhabited[star] != 0) {
           uint64_t dummy =
               state.Blocks[player - 1].invite & state.Blocks[player - 1].pledge;
           state.Blocks[player - 1].systems_owned +=
-              (state.inhabited[star] | dummy) == dummy;
+              (inhabited[star] | dummy) == dummy;
         }
       }
     }
@@ -627,12 +593,12 @@ static void finalize_turn(TurnState& state, int update) {
       /* collective intelligence */
       if (race_handle->collective_iq) {
         double x = ((2. / 3.14159265) *
-                    atan(static_cast<double>(state.Power[player - 1].popn) /
+                    atan(static_cast<double>(state.stats.Power[player - 1].popn) /
                          MESO_POP_SCALE));
         race_handle->IQ = race_handle->IQ_limit * x * x;
       }
       race_handle->tech += static_cast<double>(race_handle->IQ) / 100.0;
-      race_handle->morale += state.Power[player - 1].planets_owned;
+      race_handle->morale += state.stats.Power[player - 1].planets_owned;
       make_discoveries(*race_handle);
       race_handle->turn += 1;
       if (race_handle->controlled_planets >=
@@ -667,14 +633,14 @@ static void finalize_turn(TurnState& state, int update) {
     compute_power_blocks();
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
-      state.Power[player - 1].money = 0;
+      state.stats.Power[player - 1].money = 0;
       for (auto& governor : race_handle->governor) {
         if (governor.active) {
-          state.Power[player - 1].money += governor.money;
+          state.stats.Power[player - 1].money += governor.money;
         }
       }
     }
-    putpower(state.Power);
+    putpower(state.stats.Power.data());
     Putblock(state.Blocks);
   }
 

@@ -179,6 +179,7 @@ target_sources(
          gblib-shootblast.cppm
          gblib-star.cppm
          gblib-tele.cppm
+         gblib-turnstats.cppm
          gblib-tweakables.cppm
          gblib-types.cppm
          gblib-universe.cppm

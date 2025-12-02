@@ -331,7 +331,8 @@ double est_production(const Sector& s, EntityManager& entity_manager) {
 }
 }  // namespace
 
-int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet) {
+int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
+             TurnStats& stats) {
   int shipno;
   int nukex;
   int nukey;
@@ -511,7 +512,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet) {
   /* check for space mirrors (among other things) warming the planet */
   /* if a change in any artificial warming/cooling trends */
   planet.conditions(TEMP) = planet.conditions(RTEMP) +
-                            Stinfo[starnum][planetnum].temp_add +
+                            stats.Stinfo[starnum][planetnum].temp_add +
                             int_rand(-5, 5);
 
   for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
@@ -643,7 +644,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet) {
       telegram_buf << std::format("\nFrom /{}/{}\n", star.get_name(),
                                   star.get_planet_name(planetnum));
 
-      if (Stinfo[starnum][planetnum].temp_add) {
+      if (stats.Stinfo[starnum][planetnum].temp_add) {
         telegram_buf << std::format("Temp: {} to {}\n",
                                     planet.conditions(RTEMP),
                                     planet.conditions(TEMP));
@@ -725,11 +726,11 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet) {
       planet.maxpopn() +=
           maxsupport(*owner_race, p, Compat[p.get_owner() - 1],
                      planet.conditions(TOXIC));
-      Power[p.get_owner() - 1].troops += p.get_troops();
-      Power[p.get_owner() - 1].popn += p.get_popn();
-      Power[p.get_owner() - 1].sum_eff += p.get_eff();
-      Power[p.get_owner() - 1].sum_mob += p.get_mobilization();
-      starpopns[starnum][p.get_owner() - 1] += p.get_popn();
+      stats.Power[p.get_owner() - 1].troops += p.get_troops();
+      stats.Power[p.get_owner() - 1].popn += p.get_popn();
+      stats.Power[p.get_owner() - 1].sum_eff += p.get_eff();
+      stats.Power[p.get_owner() - 1].sum_mob += p.get_mobilization();
+      stats.starpopns[starnum][p.get_owner() - 1] += p.get_popn();
     } else {
       p.set_popn(0);
       p.set_troops(0);
@@ -767,7 +768,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet) {
       /* now nuke all sectors belonging to former master */
       for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
         Sector& p = sector_wrap;
-        if (Stinfo[starnum][planetnum].intimidated && random() & 01) {
+        if (stats.Stinfo[starnum][planetnum].intimidated && random() & 01) {
           if (p.get_owner() == planet.slaved_to()) {
             p.set_owner(0);
             p.set_popn(0);
@@ -916,11 +917,11 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet) {
     planet.conditions(TOXIC) = 0;
 
   for (i = 1; i <= Num_races; i++) {
-    Power[i - 1].resource += planet.info(i - 1).resource;
-    Power[i - 1].destruct += planet.info(i - 1).destruct;
-    Power[i - 1].fuel += planet.info(i - 1).fuel;
-    Power[i - 1].sectors_owned += planet.info(i - 1).numsectsowned;
-    Power[i - 1].planets_owned += !!planet.info(i - 1).numsectsowned;
+    stats.Power[i - 1].resource += planet.info(i - 1).resource;
+    stats.Power[i - 1].destruct += planet.info(i - 1).destruct;
+    stats.Power[i - 1].fuel += planet.info(i - 1).fuel;
+    stats.Power[i - 1].sectors_owned += planet.info(i - 1).numsectsowned;
+    stats.Power[i - 1].planets_owned += !!planet.info(i - 1).numsectsowned;
     if (planet.info(i - 1).numsectsowned) {
       /* combat readiness naturally moves towards the avg mobilization */
       planet.info(i - 1).mob_points = avg_mob[i - 1];

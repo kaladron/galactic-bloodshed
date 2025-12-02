@@ -35,6 +35,7 @@ export import :shlmisc;
 export import :shootblast;
 export import :star;
 export import :tele;
+export import :turnstats;
 export import :tweakables;
 export import :universe;
 export import :globals;

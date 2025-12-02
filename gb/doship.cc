@@ -176,7 +176,7 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
   }
 }
 
-void do_canister(Ship& ship, EntityManager& entity_manager) {
+void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
   if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN || landed(ship)) {
     return;
   }
@@ -188,10 +188,10 @@ void do_canister(Ship& ship, EntityManager& entity_manager) {
 
   if (++timer.count < DISSIPATE) {
     ship.special() = timer;
-    if (Stinfo[ship.storbits()][ship.pnumorbits()].temp_add < -90)
-      Stinfo[ship.storbits()][ship.pnumorbits()].temp_add = -100;
+    if (stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add < -90)
+      stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add = -100;
     else
-      Stinfo[ship.storbits()][ship.pnumorbits()].temp_add -= 10;
+      stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add -= 10;
   } else { /* timer expired; destroy canister */
     entity_manager.kill_ship(ship.owner(), ship);
 
@@ -213,7 +213,7 @@ void do_canister(Ship& ship, EntityManager& entity_manager) {
   }
 }
 
-void do_greenhouse(Ship& ship, EntityManager& entity_manager) {
+void do_greenhouse(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
   if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
     if (!std::holds_alternative<TimerData>(ship.special())) {
       return;
@@ -222,10 +222,10 @@ void do_greenhouse(Ship& ship, EntityManager& entity_manager) {
 
     if (++timer.count < DISSIPATE) {
       ship.special() = timer;
-      if (Stinfo[ship.storbits()][ship.pnumorbits()].temp_add > 90)
-        Stinfo[ship.storbits()][ship.pnumorbits()].temp_add = 100;
+      if (stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add > 90)
+        stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add = 100;
       else
-        Stinfo[ship.storbits()][ship.pnumorbits()].temp_add += 10;
+        stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add += 10;
     } else { /* timer expired; destroy canister */
       entity_manager.kill_ship(ship.owner(), ship);
       std::string telegram = std::format(
@@ -246,7 +246,7 @@ void do_greenhouse(Ship& ship, EntityManager& entity_manager) {
   }
 }
 
-void do_mirror(Ship& ship, EntityManager& entity_manager) {
+void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
   if (!std::holds_alternative<AimedAtData>(ship.special())) {
     return;
   }
@@ -298,7 +298,7 @@ void do_mirror(Ship& ship, EntityManager& entity_manager) {
                                   : aimed_at.intensity;
 
       i = round_rand(.01 * (100.0 - (double)(ship.damage())) * (double)i);
-      Stinfo[ship.storbits()][aimed_at.pnum].temp_add += i;
+      stats.Stinfo[ship.storbits()][aimed_at.pnum].temp_add += i;
     } break;
     case ScopeLevel::LEVEL_STAR:
       /* have to be in the same system as the star; otherwise
@@ -374,7 +374,8 @@ void do_oap(Ship& ship) {
 }
 }  // namespace
 
-void doship(Ship& ship, int update, EntityManager& entity_manager) {
+void doship(Ship& ship, int update, EntityManager& entity_manager,
+            TurnStats& stats) {
   /*ship is active */
   ship.active() = 1;
 
@@ -440,7 +441,7 @@ void doship(Ship& ship, int update, EntityManager& entity_manager) {
       /* to be able to map out worlds with this type of junk. Either a manned
        * ship, */
       /* or a probe, which is designed for this kind of work.  Maarten */
-      StarsInhab[ship.storbits()] = 1;
+      stats.StarsInhab[ship.storbits()] = 1;
       auto star_handle = entity_manager.get_star(ship.storbits());
       if (star_handle.get()) {
         setbit(star_handle->inhabited(), ship.owner());
@@ -457,25 +458,25 @@ void doship(Ship& ship, int update, EntityManager& entity_manager) {
 
     /* add ships, popn to total count to add AP's */
     if (update) {
-      Power[ship.owner() - 1].ships_owned++;
-      Power[ship.owner() - 1].resource += ship.resource();
-      Power[ship.owner() - 1].fuel += ship.fuel();
-      Power[ship.owner() - 1].destruct += ship.destruct();
-      Power[ship.owner() - 1].popn += ship.popn();
-      Power[ship.owner() - 1].troops += ship.troops();
+      stats.Power[ship.owner() - 1].ships_owned++;
+      stats.Power[ship.owner() - 1].resource += ship.resource();
+      stats.Power[ship.owner() - 1].fuel += ship.fuel();
+      stats.Power[ship.owner() - 1].destruct += ship.destruct();
+      stats.Power[ship.owner() - 1].popn += ship.popn();
+      stats.Power[ship.owner() - 1].troops += ship.troops();
     }
 
     if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-      Sdatanumships[ship.owner() - 1]++;
-      Sdatapopns[ship.owner()] += ship.popn();
+      stats.Sdatanumships[ship.owner() - 1]++;
+      stats.Sdatapopns[ship.owner()] += ship.popn();
     } else {
-      starnumships[ship.storbits()][ship.owner() - 1]++;
+      stats.starnumships[ship.storbits()][ship.owner() - 1]++;
       /* add popn of ships to popn */
-      starpopns[ship.storbits()][ship.owner() - 1] += ship.popn();
+      stats.starpopns[ship.storbits()][ship.owner() - 1] += ship.popn();
       /* set inhabited for ship */
       /* only if manned or probe.  Maarten */
       if (ship.popn() || ship.type() == ShipType::OTYPE_PROBE) {
-        StarsInhab[ship.storbits()] = 1;
+        stats.StarsInhab[ship.storbits()] = 1;
         auto star_handle = entity_manager.get_star(ship.storbits());
         if (star_handle.get()) {
           setbit(star_handle->inhabited(), ship.owner());
@@ -492,7 +493,7 @@ void doship(Ship& ship, int update, EntityManager& entity_manager) {
           ship.deststar() == ship.storbits() &&
           ship.destpnum() == ship.pnumorbits()) {
         /* ship bombards planet */
-        Stinfo[ship.storbits()][ship.pnumorbits()].inhab = 1;
+        stats.Stinfo[ship.storbits()][ship.pnumorbits()].inhab = 1;
       }
 
       /* repair ship by the amount of crew it has */
@@ -502,13 +503,13 @@ void doship(Ship& ship, int update, EntityManager& entity_manager) {
 
       if (update) switch (ship.type()) { /* do this stuff during updates only*/
           case ShipType::OTYPE_CANIST:
-            do_canister(ship, entity_manager);
+            do_canister(ship, entity_manager, stats);
             break;
           case ShipType::OTYPE_GREEN:
-            do_greenhouse(ship, entity_manager);
+            do_greenhouse(ship, entity_manager, stats);
             break;
           case ShipType::STYPE_MIRROR:
-            do_mirror(ship, entity_manager);
+            do_mirror(ship, entity_manager, stats);
             break;
           case ShipType::STYPE_GOD:
             do_god(ship, entity_manager);

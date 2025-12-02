@@ -445,7 +445,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet) {
           if (landed(*ship))
             if (ship->resource() >= RES_COST_WPLANT &&
                 ship->fuel() >= FUEL_COST_WPLANT)
-              prod_destruct[ship->owner() - 1] += do_weapon_plant(*ship);
+              prod_destruct[ship->owner() - 1] += do_weapon_plant(*ship, entity_manager);
             else {
               if (ship->resource() < RES_COST_WPLANT) {
                 std::string buf = std::format(

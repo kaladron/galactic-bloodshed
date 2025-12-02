@@ -11,4 +11,4 @@ export void doown(Ship&, EntityManager&);
 export void domissile(Ship&, EntityManager&);
 export void domine(Ship&, int, EntityManager&);
 export void doabm(Ship&, EntityManager&);
-export int do_weapon_plant(Ship&);
+export int do_weapon_plant(Ship&, EntityManager&);

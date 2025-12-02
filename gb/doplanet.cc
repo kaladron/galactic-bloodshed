@@ -330,12 +330,10 @@ double est_production(const Sector& s, EntityManager& entity_manager) {
 
 int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
              TurnStats& stats) {
-  int shipno;
   int nukex;
   int nukey;
   int o = 0;
   int i;
-  Ship* ship;
   double fadd;
   int timer = 20;
   unsigned char allmod = 0;
@@ -378,118 +376,117 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   }
 
   auto smap = getsmap(planet);
-  shipno = planet.ships();
-  while (shipno) {
-    ship = ships[shipno];
-    if (ship->alive() && !ship->rad()) {
+  for (auto ship_handle : ShipList(entity_manager, planet.ships())) {
+    auto& ship = *ship_handle;
+    if (ship.alive() && !ship.rad()) {
       /* planet level functions - do these here because they use the sector map
               or affect planet production */
-      switch (ship->type()) {
+      switch (ship.type()) {
         case ShipType::OTYPE_VN:
-          planet_doVN(*ship, planet, smap);
+          planet_doVN(ship, planet, smap, entity_manager);
           break;
         case ShipType::OTYPE_BERS:
-          if (!ship->destruct() || !ship->bombard())
-            planet_doVN(*ship, planet, smap);
+          if (!ship.destruct() || !ship.bombard())
+            planet_doVN(ship, planet, smap, entity_manager);
           else
-            do_berserker(entity_manager, ship, planet);
+            do_berserker(entity_manager, &ship, planet);
           break;
         case ShipType::OTYPE_TERRA:
-          if ((ship->on() && landed(*ship) && ship->popn())) {
-            if (ship->fuel() >= (double)FUEL_COST_TERRA)
-              terraform(*ship, planet, smap, entity_manager);
-            else if (!ship->notified()) {
-              ship->notified() = 1;
-              msg_OOF(*ship);
+          if ((ship.on() && landed(ship) && ship.popn())) {
+            if (ship.fuel() >= (double)FUEL_COST_TERRA)
+              terraform(ship, planet, smap, entity_manager);
+            else if (!ship.notified()) {
+              ship.notified() = 1;
+              msg_OOF(ship);
             }
           }
           break;
         case ShipType::OTYPE_PLOW:
-          if (ship->on() && landed(*ship)) {
-            if (ship->fuel() >= (double)FUEL_COST_PLOW)
-              plow(ship, planet, smap, entity_manager);
-            else if (!ship->notified()) {
-              ship->notified() = 1;
-              msg_OOF(*ship);
+          if (ship.on() && landed(ship)) {
+            if (ship.fuel() >= (double)FUEL_COST_PLOW)
+              plow(&ship, planet, smap, entity_manager);
+            else if (!ship.notified()) {
+              ship.notified() = 1;
+              msg_OOF(ship);
             }
-          } else if (ship->on()) {
-            std::string buf = std::format("K{} is not landed.", ship->number());
-            push_telegram(ship->owner(), ship->governor(), buf);
+          } else if (ship.on()) {
+            std::string buf = std::format("K{} is not landed.", ship.number());
+            push_telegram(ship.owner(), ship.governor(), buf);
           } else {
             std::string buf =
-                std::format("K{} is not switched on.", ship->number());
-            push_telegram(ship->owner(), ship->governor(), buf);
+                std::format("K{} is not switched on.", ship.number());
+            push_telegram(ship.owner(), ship.governor(), buf);
           }
           break;
         case ShipType::OTYPE_DOME:
-          if (ship->on() && landed(*ship)) {
-            if (ship->resource() >= RES_COST_DOME)
-              do_dome(ship, smap);
+          if (ship.on() && landed(ship)) {
+            if (ship.resource() >= RES_COST_DOME)
+              do_dome(&ship, smap);
             else {
               std::string buf = std::format(
-                  "Y{} does not have enough resources.", ship->number());
-              push_telegram(ship->owner(), ship->governor(), buf);
+                  "Y{} does not have enough resources.", ship.number());
+              push_telegram(ship.owner(), ship.governor(), buf);
             }
-          } else if (ship->on()) {
-            std::string buf = std::format("Y{} is not landed.", ship->number());
-            push_telegram(ship->owner(), ship->governor(), buf);
+          } else if (ship.on()) {
+            std::string buf = std::format("Y{} is not landed.", ship.number());
+            push_telegram(ship.owner(), ship.governor(), buf);
           } else {
             std::string buf =
-                std::format("Y{} is not switched on.", ship->number());
-            push_telegram(ship->owner(), ship->governor(), buf);
+                std::format("Y{} is not switched on.", ship.number());
+            push_telegram(ship.owner(), ship.governor(), buf);
           }
           break;
         case ShipType::OTYPE_WPLANT:
-          if (landed(*ship))
-            if (ship->resource() >= RES_COST_WPLANT &&
-                ship->fuel() >= FUEL_COST_WPLANT)
-              prod_destruct[ship->owner() - 1] +=
-                  do_weapon_plant(*ship, entity_manager);
+          if (landed(ship))
+            if (ship.resource() >= RES_COST_WPLANT &&
+                ship.fuel() >= FUEL_COST_WPLANT)
+              prod_destruct[ship.owner() - 1] +=
+                  do_weapon_plant(ship, entity_manager);
             else {
-              if (ship->resource() < RES_COST_WPLANT) {
+              if (ship.resource() < RES_COST_WPLANT) {
                 std::string buf = std::format(
-                    "W{} does not have enough resources.", ship->number());
-                push_telegram(ship->owner(), ship->governor(), buf);
+                    "W{} does not have enough resources.", ship.number());
+                push_telegram(ship.owner(), ship.governor(), buf);
               } else {
                 std::string buf = std::format("W{} does not have enough fuel.",
-                                              ship->number());
-                push_telegram(ship->owner(), ship->governor(), buf);
+                                              ship.number());
+                push_telegram(ship.owner(), ship.governor(), buf);
               }
             }
           else {
-            std::string buf = std::format("W{} is not landed.", ship->number());
-            push_telegram(ship->owner(), ship->governor(), buf);
+            std::string buf = std::format("W{} is not landed.", ship.number());
+            push_telegram(ship.owner(), ship.governor(), buf);
           }
           break;
         case ShipType::OTYPE_QUARRY:
-          if ((ship->on() && landed(*ship) && ship->popn())) {
-            if (ship->fuel() >= FUEL_COST_QUARRY)
-              do_quarry(ship, planet, smap, entity_manager);
-            else if (!ship->notified()) {
-              ship->on() = 0;
-              msg_OOF(*ship);
+          if ((ship.on() && landed(ship) && ship.popn())) {
+            if (ship.fuel() >= FUEL_COST_QUARRY)
+              do_quarry(&ship, planet, smap, entity_manager);
+            else if (!ship.notified()) {
+              ship.on() = 0;
+              msg_OOF(ship);
             }
           } else {
             std::string buf;
-            if (!ship->on()) {
-              buf = std::format("q{} is not switched on.", ship->number());
+            if (!ship.on()) {
+              buf = std::format("q{} is not switched on.", ship.number());
             }
-            if (!landed(*ship)) {
-              buf = std::format("q{} is not landed.", ship->number());
+            if (!landed(ship)) {
+              buf = std::format("q{} is not landed.", ship.number());
             }
-            if (!ship->popn()) {
+            if (!ship.popn()) {
               buf = std::format("q{} does not have workers aboard.",
-                                ship->number());
+                                ship.number());
             }
-            push_telegram(ship->owner(), ship->governor(), buf);
+            push_telegram(ship.owner(), ship.governor(), buf);
           }
           break;
         default:
           break;
       }
       /* add fuel for ships orbiting a gas giant */
-      if (!landed(*ship) && planet.type() == PlanetType::GASGIANT) {
-        switch (ship->type()) {
+      if (!landed(ship) && planet.type() == PlanetType::GASGIANT) {
+        switch (ship.type()) {
           case ShipType::STYPE_TANKER:
             fadd = FUEL_GAS_ADD_TANKER;
             break;
@@ -500,11 +497,10 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             fadd = FUEL_GAS_ADD;
             break;
         }
-        fadd = std::min((double)max_fuel(*ship) - ship->fuel(), fadd);
-        rcv_fuel(*ship, fadd);
+        fadd = std::min((double)max_fuel(ship) - ship.fuel(), fadd);
+        rcv_fuel(ship, fadd);
       }
     }
-    shipno = ship->nextship();
   }
 
   /* check for space mirrors (among other things) warming the planet */
@@ -841,18 +837,13 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
           planet.conditions(TOXIC) >= planet.info(player - 1).tox_thresh &&
           planet.info(player - 1).resource >=
               Shipcost(ShipType::OTYPE_TOXWC, race)) {
-        ++Num_ships;
-        ships =
-            (Ship**)realloc(ships, (unsigned)((Num_ships + 1) * sizeof(Ship*)));
-
         int t = std::min(TOXMAX, planet.conditions(TOXIC));
         planet.conditions(TOXIC) -= t;
 
-        ship_struct data{
-            .number = Num_ships,
+        // Create new ship via EntityManager with designated initializers
+        ship_struct s2{
             .owner = player,
             .governor = star.governor(player - 1),
-            .name = std::format("Scum{:04d}", Num_ships),
             .xpos = star.xpos() + planet.xpos(),
             .ypos = star.ypos() + planet.ypos(),
             .mass = 1.0,
@@ -892,12 +883,12 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             .primtype = shipdata_primary(ShipType::OTYPE_TOXWC),
             .sectype = shipdata_secondary(ShipType::OTYPE_TOXWC),
         };
+        auto ship_handle = entity_manager.create_ship(s2);
+        Ship& ship = *ship_handle;
+        ship.name() = std::format("Scum{:04d}", ship.number());
+        ship.size() = ship_size(ship);
 
-        Ship* s2 = new Ship(std::move(data));
-        s2->size() = ship_size(*s2);
-        ships[Num_ships] = s2;
-
-        insert_sh_plan(planet, s2);
+        insert_sh_plan(planet, &ship);
       }
     }
   } /* (if numsectsowned) */

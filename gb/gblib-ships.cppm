@@ -950,7 +950,7 @@ export int docked(const Ship&);
 export int overloaded(const Ship&);
 export std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept;
 export void do_VN(Ship&, TurnStats&);
-export void planet_doVN(Ship&, Planet&, SectorMap&);
+export void planet_doVN(Ship&, Planet&, SectorMap&, EntityManager&);
 export void use_fuel(Ship&, double);
 export void use_destruct(Ship&, int);
 export void use_resource(Ship&, int);

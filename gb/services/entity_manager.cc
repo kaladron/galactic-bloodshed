@@ -162,14 +162,14 @@ void EntityManager::release_ship(shipnum_t num) {
   release_entity_impl<Ship>(num, ship_cache, ship_refcount);
 }
 
-EntityHandle<Ship> EntityManager::create_ship() {
+EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
   std::lock_guard lock(cache_mutex);
 
   // Get next available ship number
   shipnum_t num = ships.next_ship_number();
 
-  // Create new ship using ship_struct for initialization
-  ship_struct data{};
+  // Create ship_struct, copying from provided data but overriding number
+  ship_struct data = init_data;
   data.number = num;
   Ship new_ship{data};
 

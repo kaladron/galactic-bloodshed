@@ -154,7 +154,7 @@ public:
   const SectorMap* peek_sectormap(starnum_t star, planetnum_t pnum);
 
   // Create new entities
-  EntityHandle<Ship> create_ship();
+  EntityHandle<Ship> create_ship(const ship_struct& data = {});
   void delete_ship(shipnum_t num);
 
   // Count methods (for queries)

@@ -160,7 +160,8 @@ void do_VN(Ship& ship, TurnStats& stats) {
 }
 
 /*  planet_doVN() -- called by doplanet() */
-void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap) {
+void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
+                 EntityManager& entity_manager) {
   int j;
   int oldres;
   int xa;
@@ -199,19 +200,14 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap) {
                                ? ShipType::OTYPE_BERS
                                : ShipType::OTYPE_VN;
       if (ship.resource() >= Shipdata[shipbuild][ABIL_COST]) {
-        Ship* s2;
-        int n;
         int numVNs;
         /* construct as many VNs as possible */
         numVNs = ship.resource() / Shipdata[shipbuild][ABIL_COST];
         for (j = 1; j <= numVNs; j++) {
           use_resource(ship, Shipdata[shipbuild][ABIL_COST]);
-          /* must change size of ships pointer */
-          ++Num_ships;
-          ships = (Ship**)realloc(ships, (Num_ships + 1) * sizeof(Ship*));
 
-          ship_struct data{
-              .number = Num_ships,
+          // Create new ship via EntityManager with designated initializers
+          ship_struct s2_data{
               .xpos = ship.xpos(),
               .ypos = ship.ypos(),
               .land_x = ship.land_x(),
@@ -243,77 +239,77 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap) {
               .primary =
                   static_cast<unsigned long>(Shipdata[shipbuild][ABIL_GUNS]),
               .primtype = shipdata_primary(shipbuild),
+              .secondary = 0,
+              .sectype = shipdata_secondary(shipbuild),
           };
-          data.secondary = 0;
-          data.sectype = shipdata_secondary(shipbuild);
+          auto ship_handle = entity_manager.create_ship(s2_data);
+          Ship& s2 = *ship_handle;
+          s2.size() = ship_size(s2);
+          s2.base_mass() = getmass(s2);
+          s2.mass() = s2.base_mass();
 
-          s2 = new Ship(std::move(data));
-          s2->size() = ship_size(*s2);
-          s2->base_mass() = getmass(*s2);
-          s2->mass() = s2->base_mass();
-          ships[Num_ships] = s2;
-          planet.ships() = Num_ships;
+          planet.ships() = s2.number();
           if (shipbuild == ShipType::OTYPE_BERS) {
             /* target = person killed the most VN's */
             auto ship_mind = std::holds_alternative<MindData>(ship.special())
                                  ? std::get<MindData>(ship.special())
                                  : MindData{};
-            s2->special() = MindData{.progenitor = ship_mind.progenitor,
-                                     .target = VN_brain.Most_mad,
-                                     .generation = ship_mind.generation,
-                                     .busy = 0,
-                                     .tampered = ship_mind.tampered,
-                                     .who_killed = ship_mind.who_killed};
-            s2->speed() = Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED];
-            s2->tech() = ship.tech() + 100.0;
-            s2->bombard() = 1;
-            s2->protect().self = 1;
-            s2->protect().planet = 1;
-            s2->armor() += 10; /* give 'em some armor */
-            s2->active() = 1;
-            s2->owner() = 1;
-            s2->governor() = 0;
-            s2->fuel() = 5 * ship.fuel(); /* give 'em some fuel */
-            s2->retaliate() = s2->primary();
-            s2->destruct() = 500;
+            s2.special() = MindData{.progenitor = ship_mind.progenitor,
+                                    .target = VN_brain.Most_mad,
+                                    .generation = ship_mind.generation,
+                                    .busy = 0,
+                                    .tampered = ship_mind.tampered,
+                                    .who_killed = ship_mind.who_killed};
+            s2.speed() = Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED];
+            s2.tech() = ship.tech() + 100.0;
+            s2.bombard() = 1;
+            s2.protect().self = 1;
+            s2.protect().planet = 1;
+            s2.armor() += 10; /* give 'em some armor */
+            s2.active() = 1;
+            s2.owner() = 1;
+            s2.governor() = 0;
+            s2.fuel() = 5 * ship.fuel(); /* give 'em some fuel */
+            s2.retaliate() = s2.primary();
+            s2.destruct() = 500;
             ship.fuel() *= 0.5; /* lose some fuel */
-            s2->hyper_drive().has = 1;
-            s2->hyper_drive().on = 1;
-            s2->hyper_drive().ready = 1;
-            s2->hyper_drive().charge = 0;
-            s2->mounted() = 1;
+            s2.hyper_drive().has = 1;
+            s2.hyper_drive().on = 1;
+            s2.hyper_drive().ready = 1;
+            s2.hyper_drive().charge = 0;
+            s2.mounted() = 1;
             auto buf = std::format("{0} constructed {1}.", ship_to_string(ship),
-                                   ship_to_string(*s2));
+                                   ship_to_string(s2));
             push_telegram(ship.owner(), ship.governor(), buf);
-            if (std::holds_alternative<MindData>(s2->special())) {
-              auto mind = std::get<MindData>(s2->special());
+            if (std::holds_alternative<MindData>(s2.special())) {
+              auto mind = std::get<MindData>(s2.special());
               mind.tampered = 0;
-              s2->special() = mind;
+              s2.special() = mind;
             }
           } else {
-            s2->tech() = ship.tech() + 20.0;
-            n = int_rand(3, std::min(10, SHIP_NAMESIZE)); /* for name */
-            s2->name()[n] = '\0';
+            s2.tech() = ship.tech() + 20.0;
+            int n = int_rand(3, std::min(10, SHIP_NAMESIZE)); /* for name */
+            s2.name()[n] = '\0';
             while (n--)
-              s2->name()[n] = (random() & 01) + '0';
-            s2->owner() = 1;
-            s2->governor() = 0;
-            s2->active() = 1;
-            s2->speed() = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
-            s2->bombard() = 0;
-            s2->fuel() = 0.5 * ship.fuel();
+              s2.name()[n] = (random() & 01) + '0';
+            s2.owner() = 1;
+            s2.governor() = 0;
+            s2.active() = 1;
+            s2.speed() = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
+            s2.bombard() = 0;
+            s2.fuel() = 0.5 * ship.fuel();
             ship.fuel() *= 0.5;
           }
           // Handle mind data for new ship and current ship
           if (std::holds_alternative<MindData>(ship.special())) {
             auto ship_mind = std::get<MindData>(ship.special());
-            s2->special() = MindData{.progenitor = ship_mind.progenitor,
-                                     .target = ship_mind.target,
-                                     .generation = static_cast<unsigned char>(
-                                         ship_mind.generation + 1),
-                                     .busy = 0,
-                                     .tampered = ship_mind.tampered,
-                                     .who_killed = ship_mind.who_killed};
+            s2.special() = MindData{.progenitor = ship_mind.progenitor,
+                                    .target = ship_mind.target,
+                                    .generation = static_cast<unsigned char>(
+                                        ship_mind.generation + 1),
+                                    .busy = 0,
+                                    .tampered = ship_mind.tampered,
+                                    .who_killed = ship_mind.who_killed};
             ship.special() =
                 MindData{.progenitor = ship_mind.progenitor,
                          .target = ship_mind.target,

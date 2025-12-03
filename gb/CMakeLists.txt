@@ -46,14 +46,25 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         "${CMAKE_SOURCE_DIR}/docs/"
         CACHE STRING "Path to the package document directory")
     message(STATUS "Debug build: Using source docs directory: ${DOCDIR}")
+    # Development mode: use source help directory
+    set(HELPDIR
+        "${CMAKE_SOURCE_DIR}/help/"
+        CACHE STRING "Path to the help files directory")
+    message(STATUS "Debug build: Using source help directory: ${HELPDIR}")
 else()
     # Production mode: use install directory
     set(DOCDIR
         "${CMAKE_INSTALL_FULL_DOCDIR}/"
         CACHE STRING "Path to the package document directory")
     message(STATUS "Release build: Using install docs directory: ${DOCDIR}")
+    # Production mode: use install directory for help files
+    set(HELPDIR
+        "${CMAKE_INSTALL_FULL_DOCDIR}/help/"
+        CACHE STRING "Path to the help files directory")
+    message(STATUS "Release build: Using install help directory: ${HELPDIR}")
 endif()
 add_definitions(-DDOCDIR="${DOCDIR}")
+add_definitions(-DHELPDIR="${HELPDIR}")
 
 # Require dot, treat the other components as optional
 find_package(Doxygen OPTIONAL_COMPONENTS dot)

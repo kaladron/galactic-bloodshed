@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-file(GLOB docs *.doc)
-install(FILES ${docs} DESTINATION "${CMAKE_INSTALL_FULL_DOCDIR}")
+# Install non-help documentation files
+install(FILES gb_FAQ.txt RACEGEN.COMPILE.HELP RACEGEN.PLAYER.HELP
+        DESTINATION "${CMAKE_INSTALL_FULL_DOCDIR}")

@@ -12,7 +12,7 @@
    GUEST flag.  The Second is the GAG flag, and the third is the INVISIBLE
    flag.
 
-   Player can set invisibility on/off by typing 'toggle visibilty'.
+   Player can set invisibility on/off by typing 'toggle visibility'.
    If invisibility is on, no other but your own governors can see you. 
    Currently logged in invisible players  are shown as cowards.
 

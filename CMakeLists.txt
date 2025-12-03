@@ -38,6 +38,62 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 include(cmake/compiler_setup.cmake)
 
+# clang-tidy target for running static analysis with auto-fix
+find_program(RUN_CLANG_TIDY_EXE NAMES run-clang-tidy)
+if(RUN_CLANG_TIDY_EXE)
+  add_custom_target(
+    tidy
+    COMMAND ${RUN_CLANG_TIDY_EXE}
+      -p ${CMAKE_BINARY_DIR}
+      -header-filter='.*galactic-bloodshed.*'
+      -quiet
+      "gb/.*\\.\(cc|cppm\)$$"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running clang-tidy..."
+    VERBATIM
+  )
+  add_custom_target(
+    tidy-fix
+    COMMAND ${RUN_CLANG_TIDY_EXE}
+      -p ${CMAKE_BINARY_DIR}
+      -header-filter='.*galactic-bloodshed.*'
+      -quiet
+      -fix
+      "gb/.*\\.\(cc|cppm\)$$"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running clang-tidy with --fix..."
+    VERBATIM
+  )
+else()
+  message(STATUS "run-clang-tidy not found, 'tidy' and 'tidy-fix' targets disabled")
+endif()
+
+# clang-format target for formatting all source files
+find_program(CLANG_FORMAT_EXE NAMES clang-format)
+if(CLANG_FORMAT_EXE)
+  file(GLOB_RECURSE ALL_SOURCE_FILES
+    ${CMAKE_SOURCE_DIR}/gb/*.cc
+    ${CMAKE_SOURCE_DIR}/gb/*.h
+    ${CMAKE_SOURCE_DIR}/gb/*.cppm
+  )
+  add_custom_target(
+    format
+    COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror --style=file ${ALL_SOURCE_FILES}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Checking clang-format compliance..."
+    VERBATIM
+  )
+  add_custom_target(
+    format-fix
+    COMMAND ${CLANG_FORMAT_EXE} -i --style=file ${ALL_SOURCE_FILES}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running clang-format on all source files..."
+    VERBATIM
+  )
+else()
+  message(STATUS "clang-format not found, 'format' and 'format-fix' targets disabled")
+endif()
+
 add_subdirectory(gb)
 add_subdirectory(data)
 add_subdirectory(docs)

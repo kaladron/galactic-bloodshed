@@ -13,6 +13,7 @@ Checks: clang-analyzer-*,
     -cppcoreguidelines-pro-bounds-pointer-arithmetic,
     -cppcoreguidelines-pro-type-union-access,
     hicpp-*,
+    -hicpp-braces-around-statements,
     misc-*,
     -misc-include-cleaner,
     -misc-no-recursion,
@@ -23,11 +24,14 @@ Checks: clang-analyzer-*,
     performance-*,
     -performance-enum-size,
     readability-*,
-    -readability-braces-around-statements,
+    readability-braces-around-statements,
     -readability-identifier-length,
     -readability-implicit-bool-conversion,
     -readability-magic-numbers,
     -readability-named-parameter,
+
+# Only check headers in our project, not system/libc++ headers
+HeaderFilterRegex: '^.*/workspaces/galactic-bloodshed/.*'
 
 CheckOptions:
   - key: readability-function-cognitive-complexity.Threshold
@@ -65,3 +69,6 @@ CheckOptions:
     value: k
   - key: readability-identifier-naming.GlobalConstantCase
     value: UPPER_CASE
+  # Allow single-line if statements without braces
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: 1

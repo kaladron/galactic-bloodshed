@@ -1,0 +1,29 @@
+# VICTORY
+
+## Name
+   victory [0] -- describe current standings of players
+
+## Syntax
+   victory [count]
+
+## Description
+ This command shows how close players are to winning the game.  It
+sorts the player list by proximity to winning, so the object of
+the game is to get your name to the top of the list. :-)
+
+ If count is specified, only the top count players are displayed.
+If count is omitted, all players are shown.
+
+Here are the winning conditions, where X and Y are settable for
+each game:
+
+(1) "Control" of a planet is more than 50% occupancy of same.
+(2) The first player to control X percent of all planets for Y
+    consecutive updates wins.
+(3) Any other players who control X percent of all planets at that
+    time also win.
+
+Note: Asteroids do not count in the victory totals.
+
+## See Also
+  power

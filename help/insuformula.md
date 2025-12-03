@@ -1,0 +1,73 @@
+# INSUFORMULA
+
+## Name
+   [10]insurgency -- try to force enemy population into civil revolt
+
+## Syntax
+
+insurgency <victim> <funds>   spend a given amount of funds to persuade
+                              the population of the victim to throw a 
+                              bloody little revolt.
+
+## Description
+
+   The insurgency command is used to persuade the population of a planet,
+through financial means, that they have had enough of their bloody
+dictator and should rise in revolt. This command will only work at planet
+scope.  You must have population in that planet's system, before you can
+attempt an insurgency.  The probability of a successful insurgency is
+given by the following formula: 
+
+ chance = tax factor * inhabiting factor * money factor * minimum money factor
+
+------
+					   victim
+ tax factor = TAX_RATE * 0.8  +   0.2 *  -------------
+					(victim + 1000) 
+victim = your victims population in system
+
+ So tax factor will be 0.2 if TAX_RATE is 0% and colony is big.
+There is safety factor that keeps tax factor near 0.0 if colony is very small.
+--------
+				  popula
+ inhabiting factor =  sqrt (-------------------)
+			     (popula + victim)
+popula = your population in system
+victim = your victims population in system
+
+ If you have a lot of population in system compared your victims population
+chance of successful insurgency will be much higher.
+---------
+			2 * money
+ money factor     =  ---------------
+		    (money + colony)
+
+money = amount of money you spend
+colony = victim population on colony in question
+----------
+			     money
+ minimum money factor =  --------------
+			 (money + 4000)
+
+money = amount of money you spend
+
+ This one prevents attempts to cause revoults too cheap. Factor dissapears
+(closes to 1) when amount of movey is big.
+----------
+
+  If the attempt fails, some of money spent on it goes to victim and
+the rest of it is lost permanently. 
+ If the attempt succeeds, each individual sector occupied by the player is
+evaluated for revoult. The chance that a sector will revolt is 
+
+revolt chance = compability factor * morale factor * 0.5 * military factor.
+
+compability factor is your compability % to sectortype in question.
+morale factor depends on  your and victims morale.
+military factor makes succeed harder if there is troops in sector.
+
+If the sector revolts, all troops are killed, and the instigating
+player gains control of the sector. 
+
+## See Also
+	money, tax, treasury

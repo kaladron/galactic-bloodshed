@@ -1,0 +1,36 @@
+# AUTOMOVE
+
+AUTO-MOVEMENT (hopping)
+
+TKY's are moving themselves once they consider their job done in
+sector they are landed. They will move to the most suitable sector to
+continue their job. Command 'order <ships> limit n' could be used to
+control their decision to move and command 'order <ships> hop
+[on|off]' could be used to turn auto-movement on or off.
+  Terraformers will terraform the sector they are landed on in one
+segment so 'limit n' setting is used to control the selection of the
+next sector to terraform: value n (in per cents) will limit their
+activity to sectors that has compatibility less that n% for your
+race. So if you have compatibilities 100% of land and 70% for water
+you should give 'order T limit 70' to prevent water sectors from being
+terraformed. T's will 1st look if there is suitable target sector that
+you own if not unowned sector are searched. If T hops to unowned
+sector that sector will be randomly chosen to prevent other players to
+predict where your T is going to be after update. NOTE: you can still
+T's move orders - move orders will be evaluated first and then auto-hop
+so using move and hop at same time could lead to quite confusing
+results.
+  Space plows will do auto-hop if the sector they are landed on has
+higher fertility that their limit setting. As with T's player's own
+sectors are preferred and old move code is still working. K's will hop
+to sector that has lowest fertility (even if it is higher than its
+limit setting - so you could give 'order K limit 1', K's will hop in
+every update but you planet will end up 100% fert in each sector) if
+all player's own sectors has 100% fert K's will hop to any sector that
+has any compatibility and has lowest fert. If there are more than one
+sector that has minimum fertility value target sector will be chosen
+by random.
+  Domes will auto-hop if the sector they are landed on has higher
+efficiency than their limit setting is. They will hop only to player's
+own sectors. Sector of lowest eff is chosen and if there is more than
+one sector with same eff target will be chosen by random.

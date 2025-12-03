@@ -1,0 +1,19 @@
+# DUMP
+
+## Name
+   dump [0] -- give another player your exploration data
+
+## Syntax
+   dump <race> [list of stars]
+
+## Description
+   This allows a player to give another player (usually a trusted
+ally) all of your exploration data. This information is permanently
+recorded in the receiving player's exploration list.
+
+  If a list of stars is given only those in the list will be dumped.
+For example - 'dump 12 /Sol /Regulus /Taurus' to transfer information
+of those star systems.
+
+## See Also
+   explore

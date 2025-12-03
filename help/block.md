@@ -1,0 +1,37 @@
+# BLOCK
+
+## Name
+   block [0] -- display list of power blocks
+
+## Syntax
+   block [<block leader #> | player <race> ]
+
+## Concept
+ Each race may lead one alliance block.
+Alliance blocks do not force alliances among its members.
+In fact, it solely is used for political purposes. However, an
+alliance block can win the game by accumulating the required number
+of victory points.
+
+## Description
+    With no arguments, the block command lists all alliance groups, 
+called power blocks, that are in effect. Each group is listed 
+with its current stats as estimated by your race's knowledge of 
+that group's leader.
+    Blocks are numbered by the race number of their leader. If 
+block is called with a single number for an argument, the report 
+will list all of that particular block's members and their stats 
+as estimated by your race.
+    If the keyword {{player}} and a number are specified with the block 
+command, that race's status with regard to power blocks is 
+reported: which, if any, block the race belongs to, whether it 
+has been invited to join a block, or whether it has pledged a 
+block.
+
+## Example
+block player 21         (List the block status of race 21)
+block player Neighbors  (List the block status of Neighbors)
+block 12                (List all members and stats of power block 12)
+
+## See Also
+	victory, invite, pledge

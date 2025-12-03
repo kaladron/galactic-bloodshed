@@ -50,4 +50,6 @@ compile_commands.json
 !WHATSNEW.md
 !DEVELOPERGUIDE.md
 !ARCHITECTURE.md
+# And all help files
+!help/*.md
 

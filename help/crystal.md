@@ -1,0 +1,46 @@
+# CRYSTAL
+
+## Concept
+
+   When the universe is created, some sectors on planets may contain
+crystal deposits denoted by a 'x'. As long as there are crystals in
+a sector the symbol remains on the sector. Through their explorations
+players will find sectors that have these deposits although they
+can never know exactly how many crystals are hidden in the sector.
+
+   When a player occupies a sector with crystal deposits in them, during
+the update, his race will attempt to find crystals. The probability of
+success per update is equal to the sector efficiency. During an update,
+the planet's total crystal production can be determined by setting
+autoreport. A line telling how many crystals are in the players stockpiles
+also will appear on map.
+
+   Crystals are like the other commodities, population, resources, fuel,
+and destruct. They may be loaded and unloaded from ships as for other
+commodities. They may also be captured just like other commodities.
+
+  If a ship with hyper-drive has at least one crystal on board, the player
+may mount the crystal into the hyper-drive (see help on the 'mount' 
+command). Only one crystal needs to be mounted. However a player may
+carry more if he/she chooses. If a player has a crystal mounted in the
+hyper-drive, the ship does not need to recharge, it is always considered
+to be charged for hyper-space jump during the update. The crystal also
+allows the ship to travel longer distances due to fuel efficiency.
+
+  Crystals in the hyper-drive also allows a player to use laser-beam-
+like weapons. These weapons, however, will consume fuel, not destruct
+to operate. These weapons have the same effect as normal fire, except
+there is no limit to how much fuel you may expend in an attack.
+
+  Players should be careful of the amount of fuel they wish to put
+through a crystal at anytime. Crystals may break, rendering them useless,
+or, in extreme cases, cause the detonation of the ship they are in,
+along with everything else nearby.
+
+ The maximum safe limit of fuel passing through a crystal depends
+on ships tech. For every point of fuel passed through above (shiptech/2)
+increases chance breaking it and every point of fuel passed throug
+above (shiptech) increases chance of blowing up the ship!
+
+## See Also
+   mount, fire, order

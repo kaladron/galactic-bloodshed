@@ -53,3 +53,4 @@ compile_commands.json
 # And all help files
 !help/*.md
 
+_codeql_detected_source_root

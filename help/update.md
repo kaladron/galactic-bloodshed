@@ -1,6 +1,6 @@
-UPDATE                        Galactic Bloodeshed                      UPDATE
+# UPDATE
 
-CONCEPT: update
+## Concept
 
 	An update is a "glorified move seg."  Basically, everything that
 happens in a move seg happens here PLUS the following:

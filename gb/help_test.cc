@@ -6,9 +6,6 @@
 import std;
 
 #include <cassert>
-#include <cstdio>
-#include <cstring>
-#include <filesystem>
 
 // Test that help files exist in the HELPDIR with .md extension
 void test_help_files_exist() {
@@ -41,23 +38,22 @@ void test_help_file_readable() {
   std::vector<std::string> test_files = {"help", "build", "cs", "map", "orbit"};
 
   for (const auto& name : test_files) {
-    char filepath[1024];
-    std::sprintf(filepath, "%s/%s.md", HELPDIR, name.c_str());
+    std::string filepath = std::format("{}/{}.md", HELPDIR, name);
 
-    FILE* f = std::fopen(filepath, "r");
-    assert(f != nullptr);
+    std::ifstream file(filepath);
+    assert(file.is_open());
 
     // Read first line to verify content
-    char buffer[256];
-    char* result = std::fgets(buffer, sizeof(buffer), f);
-    assert(result != nullptr);
+    std::string first_line;
+    std::getline(file, first_line);
+    assert(!first_line.empty());
 
     // Verify the first line contains the expected markdown header
-    assert(buffer[0] == '#');
+    assert(first_line[0] == '#');
 
-    std::fclose(f);
+    file.close();
     std::println("  ✓ {} readable, starts with: {}", name,
-                 std::string(buffer).substr(0, 20));
+                 first_line.substr(0, 20));
   }
 }
 
@@ -65,28 +61,27 @@ void test_help_file_readable() {
 void test_help_file_format() {
   std::println("Test: Help files have proper markdown format");
 
-  char filepath[1024];
-  std::sprintf(filepath, "%s/build.md", HELPDIR);
+  std::string filepath = std::format("{}/build.md", HELPDIR);
 
-  FILE* f = std::fopen(filepath, "r");
-  assert(f != nullptr);
+  std::ifstream file(filepath);
+  assert(file.is_open());
 
-  char buffer[2048];
+  std::string line;
   bool found_title = false;
   bool found_section = false;
 
-  while (std::fgets(buffer, sizeof(buffer), f)) {
+  while (std::getline(file, line)) {
     // Check for title (# TITLE)
-    if (buffer[0] == '#' && buffer[1] == ' ') {
+    if (line.size() >= 2 && line[0] == '#' && line[1] == ' ') {
       found_title = true;
     }
     // Check for section header (## Section)
-    if (buffer[0] == '#' && buffer[1] == '#' && buffer[2] == ' ') {
+    if (line.size() >= 3 && line[0] == '#' && line[1] == '#' && line[2] == ' ') {
       found_section = true;
     }
   }
 
-  std::fclose(f);
+  file.close();
 
   assert(found_title);
   assert(found_section);
@@ -97,11 +92,10 @@ void test_help_file_format() {
 void test_nonexistent_help_file() {
   std::println("Test: Non-existent help file returns null");
 
-  char filepath[1024];
-  std::sprintf(filepath, "%s/this_topic_does_not_exist.md", HELPDIR);
+  std::string filepath = std::format("{}/this_topic_does_not_exist.md", HELPDIR);
 
-  FILE* f = std::fopen(filepath, "r");
-  assert(f == nullptr);
+  std::ifstream file(filepath);
+  assert(!file.is_open());
   std::println("  ✓ Non-existent help file correctly not found");
 }
 

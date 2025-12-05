@@ -1,0 +1,28 @@
+# MOBILIZE
+
+## Name
+   mobilize [1] -- Increase military mobilization in sectors
+
+## Synopsis
+   mobilize <new quota>
+
+## Description
+  This command sets quotas for mobilization in sectors, for the production
+of `destructive capacity' which represents weapons in GB.
+
+  The `mobilization' of a sector represents its military readiness; the
+greater the percentage (up to 100), the higher the mobilization.  
+Sectors that are mobilized produce quantities of destructive capacity
+according to the degree of mobilization and the amount of resource 
+deposits in the sector.
+
+  This command only sets a quota, it does not do any actual work.  
+Mobilization will be built up by the citizenry a small amount at a time
+as the population works to organize things and set up factories 
+and shelters and so forth.  Each mobilization point on each sector (depends
+on game settings) costs 0.1 resource points to produce.  This amount is
+deducted from the resource points available on the planet. Planet need to
+have at least 1 resource before mobilization can rise.
+
+## See Also
+ defend, arm, commodities

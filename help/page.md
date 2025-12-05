@@ -1,0 +1,17 @@
+# PAGE
+
+## Name
+   page [0] -- tell anothe player that you are looking for them
+
+## Syntax
+   page <player>
+
+## Description
+   If a player not at universal scope, he/she can page another player. 
+The player must have diety status or physically be inhabiting the system in 
+some capacity. The paged player will get a message that the paging player
+is looking for him in the system. This is a way of calling someone for
+a conference.
+
+## See Also
+   announce, who

@@ -1,0 +1,26 @@
+# READ
+
+## Name
+   read [0] -- Read messages sent to you by other players, or read
+                    Galactic News.
+
+## Syntax
+   read -- Read all private telegrams sent to you.
+   read news -- Read the Galactic News
+(future increments
+   read declaration -- Read the Galactic News gossipcolumn
+   read combat -- Read Galactic News bloodshed
+   read bussiness -- Read Galactic News bussiness pages
+   read postings -- Read letters to editor
+ )	
+## Description
+   The "read" command is used to read telegrams sent to you by other players,
+or by the server during updates or segments.  The server will send you
+telegrams when things happen such as ships reaching their destinations, attacks
+against you when you were not digned into the game, and other such events.
+   The Galactic News contains information about new relations between races,
+combat reports, trading between races, and general message from other races.
+A player can post a message on The Galactic News by using the "post" command.
+
+## See Also
+   post, send

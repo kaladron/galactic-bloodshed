@@ -1,0 +1,27 @@
+# TOGGLE
+
+## Name
+   toggle [0] -- turn on/off some options
+
+## Syntax
+   toggle <option_name>
+
+## Description
+   Toggle turns on or off the named option.  If no option is given,
+toggle will list all available options and their values.
+
+   Options :
+		gag		will turn off global broadcasts
+		inverse		whether or not to use reverse video
+		double_digits	display aliens numbers with double digits
+		geography	if set, playernumbers will not be displayed
+		autoload	if set, full crew and fuel will be loaded after
+					building a new ship.
+		visible		controls whether or not the player
+					appears on the 'who' list.
+		compatibility	controls whether or not explored planets have
+					the compatibility displayed on orbit
+					maps.
+
+## See Also
+   map, highlight

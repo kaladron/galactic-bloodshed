@@ -1,0 +1,37 @@
+# DECLARE
+
+## Name
+   declare [0] -- state relations with other races
+
+## Syntax
+   declare <race> <status> 
+
+## Description
+  The friction between two disparate races competing for the same limited
+resources may be such that no matter what diplomatic means exist between
+them (telegram), conflict may still ensue.  
+
+  To facilitate this, a player may declare his/her race's intentions toward
+other races in the game, whether allied, neutral, or at war.
+
+  When invoked, a prompt will ask how he wishes his relations to be with that 
+racer, and the race number.  This will be in effect until the user changes
+his/her mind.
+
+  A race's relation state affects the way a few things happen in the game:
+
+  - A ship following another will 'lose sight' of that ship at a certain
+distance, if the other ship is not an ally.
+  - Mines look for ships belonging to enemy players.  If it finds one within
+	its trigger radius, it will detonate.
+  - A player is prompted when firing on or boarding (assault) a ship 
+	belonging to an ally.
+  - Allied ships and planets do not return fire.
+  - When bombard is set on a ship, that ship will fire at sectors owned by
+	players the owner is at war with.  If there are no such, it finds
+	players with which the owner is neutral.
+
+You may declare war, alliance, or neutrality.
+
+## See Also
+   commmunication, relations

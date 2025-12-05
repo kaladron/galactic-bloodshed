@@ -1,0 +1,35 @@
+# UPDATE
+
+## Concept
+
+	An update is a "glorified move seg."  Basically, everything that
+happens in a move seg happens here PLUS the following:
+	- Tax collecting and maintain expences paying.
+	- Resource, fuel, destruction, crystal and toxic waste production.
+	- Colony population growth.
+	- Sector and atmosphere developing.
+	- Racial technology and morale developing.
+	- Ships attempting hyperspace jumps either jump or charge
+	  in increments towards a level where they can jump.
+	- Marketing.
+	What this translates to is this:  The pace of the game depends
+almost entirely on how often these updates occur.  There will always be
+a given number of move segs (usually anywhere from 2 to 6) between updates,
+but updates are the real pulse of the game.  Also, you should note that
+the period right after updates is usually when the most frantic action in
+the game takes place.
+	This is important when choosing what game you wish to play in.  For
+example, if you live over in Europe and the update schedule is such that
+updates always occur at 4 am for you, you might want to pass on the game.
+If you aren't on at updates, enemies often get the chance of jump into your
+system and start attacking while you aren't on to defend yourself.  This
+can have disastrous effects.
+
+This clears up a bit what is happening during updates to TKY type ships:
+* process move orders (only T and K)
+* hop if sector is ready and autoscrap if hop fails
+* do your things to sector
+* autoscrap Y's
+
+## See Also
+  segment

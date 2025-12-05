@@ -1,0 +1,105 @@
+# BUILD
+
+## Name
+   build [0] -- construct a ship
+
+## Syntax
+Current Scope       Syntax
+
+Planet:		(I)	build <ship type> <sector x,y> [<# to build>]
+Factory:  	(II)	build [<# to build>]
+Other Ship:     (II)	build <ship type> [<# to build>]
+Any scope:         	build ? [<ship type>]
+
+## Description
+    The build command allows a race to convert their stored 
+resources into useful machinery. Many different types of ships, 
+buildings, devices, and weapons can be built in Galactic 
+Bloodshed, each with its own special characteristics and 
+abilities. Due to the complex design of ships in the game, this 
+command has several variants, each of which will be discussed 
+below. At a minimum, for every build variant, a race must have 
+the minimum technology level and resources on hand to create the 
+specified ship.
+    Each ship has a default set of parameters which can be listed 
+by using the command build ?. This variant can be executed at 
+any scope. Without any argument, this command will print a table 
+of all the default parameters for all ship types. Given a 
+specific ship type, this variant will print a short description 
+of the ship, where the ship can be built, and the default 
+parameters for that ship.
+ Some ships are built with a damage. Ships repair themselves 
+at rate 24% every update if there is resourses and civilians in
+ship or on sector where ship is landed on.
+    The other variants of the build command arise since ships can 
+be built in a variety of locations in Galactic Bloodshed: on a 
+planet surface, in factories, in other ships, or in space by 
+other ships. Certain ship types have restricted build locations. 
+Use the build ? command to see where a ship may be built. There 
+are currently five build locations for ships.
+ On a Planet
+ In a Factory: F
+ In Hanger of some ships
+ In Habitat
+ Outside some Ships
+
+    The first class of ships can use the first build variant (I) 
+when the current scope is set to a planet. The sector the ship 
+is built in must be specified along with the ship type. A race 
+must be above the minimum technology level to build the ship and 
+must have the resources available in the planetary stores. The 
+planet must not be enslaved to another race. A governor who 
+attempts to build on a planet must have control over that 
+planet. The specified sector must be owned by the builder, have 
+at least one civilian on the sector, and not be wasted. A second 
+Quarry (q) cannot be built on a sector.
+    The second class of ships must be built in Factories (F). A 
+brief summary of the building of these ships follows below (for 
+a more detailed description, see the manual section on ships):
+
+   1) A Factory (F) must be built. Factories can be built on 
+    planets or in Habitats--refer to the appropriate paragraph in 
+    this command to build a Factory. The rest of this summary 
+    assumes the Factory is on a planet. Factories on Habitats 
+    function similarly.
+   2) Change scope  to the Factory.
+   3) Decide which ship types this Factory will produce and execute 
+    the make command at this scope.
+   4) The design specifications may be changed via the modify 
+    command at this scope.
+   5) Once the design has been set, order the Factory on. An 
+    initial start-up cost for the Factory will be extracted from the 
+    planet's resource stockpile. This cost is twice the resources 
+    needed to build its specified ship. The type of ship produced 
+    and the design specifications cannot be changed once the Factory 
+    is online!
+   6) Factories are built with 48% - 75% damage. They do not require 
+    resources to be fixed but will repair themselves over the course 
+    of several updates--{{but only after they have been ordered online}}.
+   7) Once the Factory is completely repaired, change scope to the 
+    Factory again. The second build command variant (II)
+    can now be executed to produce ships from the Factory. 
+    The planet must have sufficient resources to produce the ships. 
+    The ships will appear on the same sector of the planet as the Factory.
+
+    The third and fourth class, when built, appear in the hanger of 
+the building ship. The current scope must be set to the building 
+ship, where the third build variant (III) can be used to 
+construct the ships. The building ship must have adequate hanger 
+space and resources for the ship to be built.
+    The fifth class of ships are built outside of the constructing 
+ship, and thus hanger space is not a factor. The third build 
+variant (III) is used for this class also. The building ships of 
+this class cannot construct ships when landed. Shuttles (s) can 
+be loaded with more resources than their specified maximum, but 
+they cannot land while overloaded (see the related command 
+load). These resources can then be used to make the large ships 
+in this class.
+
+## Example
+build F 5,4     (Build a Factory at sector 5,4. Current scope must 
+                    be a planet)
+build : 5       (Build five Space Probes inside a ship's hanger)
+
+## See Also
+	ships, technology, make, modify

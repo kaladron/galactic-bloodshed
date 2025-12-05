@@ -1,0 +1,95 @@
+# SURVEY
+
+## Name
+   survey [0] -- more detailed survey of planet, sector, star
+
+## Syntax
+   survey <xlow:xhi,ylow:yhi or x,y>
+
+## Description
+  survey gives a different report depending on what scope it is used on.
+The possible scopes are sector, planet, and star.
+
+Census on sector
+
+>  x,y cond/type  owner race eff mob frt  res  mil popn ^popn xtals
+>  0,0   o   #        2    0  15  10  34  205    0  517     0 
+
+  x,y: map coordinates on sector
+ cond: desicnation of sector appearance (after terraforming, nukeing etc.)
+ type: designation of sector (land, water, etc)
+owner: owner of sector
+ race: original owner (startingsectors only)
+  eff: efficiency (%age it is built up) of the sector
+  mob: % mobilization of the citizens in that sector
+  frt: fertility of the sector (supports people)
+  res: resource deposits in the sector
+ popn: population of the sector
+^popn: maximum population the sector can support
+xtals: this says yes if sector contains crystals (only if you have crystaltech)
+
+Census on planet
+
+Example planet Ergos:
+
+>Ergos
+>gravity   x,y absolute     x,y relative to Artemis
+>   0.30   193860.0,148066.4     -289.4,  -772.0
+
+  gravity: gravity of the planet (relative to Earth normal)
+  x,y absolute: coordinates relative to the Center of the Universe
+  x,y relative..: coordinates relative to the planet's primary
+
+>======== Planetary conditions: ========
+>atmosphere concentrations:
+>     methane 72%(72%)     oxygen 00%(00%)
+>         CO2 01%(01%)   hydrogen 12%(12%)      temperature: -28 (-25)
+>    nitrogen 02%(02%)     sulfur 01%(01%)           normal: -25
+>      helium 01%(01%)      other 11%(11%)
+>                     Toxicity: 14% (Stage 1, mild)
+>Total planetary compatibility: 85.74%
+>            Average fertility: 8
+>             Average resource: 202
+>              Crystal sectors: 0
+>      Total resource deposits: 24343
+
+  	======== planetary conditions: ========
+  Gives the atmospheric concentrations of certain key elements in the
+    planet's atmosphere: Oxygen, CO2, Methane, Hydrogen, Nitrogen, Helium,
+    Sulfur, surface temperature, normal temperature (without artificial
+    influencing factors like space mirrors), and 'Other'.  The 'Total 
+    planetary compatibility' is the difference between the weighted sum 
+    of each of these characteristics and the preferences of the player 
+    (expressed in parentheses after each characteristic).
+
+> fuel_stock  resource_stock dest_pot.   popltn    ^popltn
+>     173             92       101       1158       2901
+
+  fuel_stock: fuel the player has managed to stockpile on the planet
+  resource_stock: stockpiled resources on the planet
+  dest_pot: stockpiled destructive potential on the planet (weapons)
+  popltn: total population of living beings
+  ^popltn: maximum number of living beings the planet can support
+	(inhabited sectors only)
+
+Census on star
+
+Example star Artemis
+
+>Star Artemis
+>locn: 194149.437261,148838.373757
+>Gravity: 455.50	Instability: 2% (stable)
+>temperature class (1->10) 4
+>9 planets are Larissa Gorgon Bragi Geirrod Ergos Dagon Argus Euripedes Drak 
+
+  locn: x,y coordinates of the star from the Center of the Universe
+  gravity: gravitational influence
+  Instability: Stability of the star.  As stability approaches 100, the star
+	will become more and more unstable.  The player must have a technology
+	of 3 or more to determine the stability.
+  Temperature class: How hot the star is. Hotter it is faster the pods will
+		     warm.		
+  List of orbitting planets
+
+## See Also
+   colonies, explore

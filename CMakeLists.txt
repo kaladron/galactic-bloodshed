@@ -97,4 +97,5 @@ endif()
 add_subdirectory(gb)
 add_subdirectory(data)
 add_subdirectory(docs)
+add_subdirectory(help)
 

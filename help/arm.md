@@ -1,0 +1,42 @@
+# ARM
+
+## Name
+   arm [0] -- convert civilian population to military units
+
+## Syntax
+   arm <sector x,y> [<# of civs to arm>]
+
+## Description
+    The arm command transforms civilians into military units. The 
+current scope must be a planet and a sector coordinates must be 
+specified. This maximum number able to be armed is given by the 
+formula:
+
+        maxarm = (planet destruct x (2 * sector mobilization + 1))
+
+but can not exceed the population of the sector; e.g. if you 
+have 20d on a planet and the sector's mobilization is 5, a total 
+of 220 civs could be armed. If you specify a number of civs to 
+arm greater than maxarm , only maxarm  will be armed. If the 
+number of civs to convert is not specified, maxarm   or the 
+total population of the sector is armed, whichever is less.
+    Arming a sector also costs money. The method used to compute 
+the total cost of arming is selected by the deity before the 
+game begins. Typical methods charge a constant amount (default 
+is 5) per unit armed, or charge money equal to the race's fight 
+characteristic per unit armed. The default method is to use the 
+fight characteristic; e.g. if you armed 120 civs whose fight 
+value is 6, you need 720 money to arm them. If you do not have 
+the required amount of money to arm the number you specify, no 
+civs will be armed.
+    Use the disarm command to reverse the transformation. Distruct 
+used to arm is lost and is not regained by the use of disarm.
+
+## Example
+arm 1,5 20  (arm 20 civs from sector 1,5; will cost (20/(sector 
+                mob * 2 + 1)) destruct and (20 x 5) money)
+            (for this example, if mob. = 1 and cost = constant 5 
+                costs 7d and 100 money)
+
+## See Also
+	military, destruct, disarm, mobilize

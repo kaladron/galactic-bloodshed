@@ -1216,7 +1216,7 @@ static void help(const command_t& argv, GameObj& g) {
   if (argv.size() == 1) {
     help_user(g);
   } else {
-    sprintf(file, "%s/%s.doc", DOCDIR, argv[1].c_str());
+    sprintf(file, "%s/%s.md", HELPDIR, argv[1].c_str());
     if ((f = fopen(file, "r")) != nullptr) {
       char help_buf[2047];
       while (fgets(help_buf, sizeof help_buf, f)) {

@@ -1,26 +1,17 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /* scrap.c -- turn a ship to junk */
 
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 module commands;
 
 namespace GB::commands {
 void scrap(const command_t& argv, GameObj& g) {
-  ap_t APcount = 1;
-  Sector sect;
-  int scrapval = 0;
-  int destval = 0;
-  int crewval = 0;
-  int xtalval = 0;
-  int troopval = 0;
-  double fuelval = 0.0;
+  const ap_t APcount = 1;
 
   if (argv.size() < 2) {
     g.out << "Scrap what?\n";
@@ -41,10 +32,17 @@ void scrap(const command_t& argv, GameObj& g) {
     if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
       continue;
     }
-    if (!enufAP(g.player, g.governor, stars[s.storbits()].AP(g.player - 1),
-                APcount)) {
+
+    const auto* star = g.entity_manager.peek_star(s.storbits());
+    if (!star) {
+      notify(g.player, g.governor, "Star not found.\n");
       continue;
     }
+
+    if (!enufAP(g.player, g.governor, star->AP(g.player - 1), APcount)) {
+      continue;
+    }
+
     if (s.whatorbits() == ScopeLevel::LEVEL_PLAN &&
         s.type() == ShipType::OTYPE_TOXWC) {
       std::string toxin_amount = "0";
@@ -57,6 +55,7 @@ void scrap(const command_t& argv, GameObj& g) {
                          "into the atmosphere!!\n",
                          toxin_amount));
     }
+
     if (!s.docked()) {
       notify(
           g.player, g.governor,
@@ -64,27 +63,44 @@ void scrap(const command_t& argv, GameObj& g) {
               "{} is not landed or docked.\nNo resources can be reclaimed.\n",
               ship_to_string(s)));
     }
-    if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-      /* wc's release poison */
-      const auto planet = getplanet(s.storbits(), s.pnumorbits());
-      if (landed(s)) sect = getsector(planet, s.land_x(), s.land_y());
-    }
-    std::optional<Ship> s2;
+
+    // Handle docked ship - use optional since EntityHandle has no default
+    // constructor
+    std::optional<EntityHandle<Ship>> s2_handle_opt;
+    Ship* s2 = nullptr;
     if (docked(s)) {
-      s2 = getship(s.destshipno());
-      if (!s2) {
+      s2_handle_opt = g.entity_manager.get_ship(s.destshipno());
+      if (!s2_handle_opt || !s2_handle_opt->get()) {
         continue;
       }
+      s2 = &(*(*s2_handle_opt));
       // TODO(jeffbailey): Changed from !s.whatorbits, which didn't make any
       // sense.
-      if (!(s2->docked() && s2->destshipno() == s.number()) &&
+      if ((!s2->docked() || s2->destshipno() != s.number()) &&
           s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
         g.out << "Warning, other ship not docked..\n";
         continue;
       }
     }
 
-    scrapval = shipcost(s) / 2 + s.resource();
+    int scrapval = shipcost(s) / 2 + s.resource();
+    int destval = 0;
+    int crewval = 0;
+    int xtalval = 0;
+    int troopval = 0;
+    double fuelval = 0.0;
+
+    // Get sector for landed ships on planets
+    // Use optional since EntityHandle has no default constructor
+    std::optional<EntityHandle<SectorMap>> smap_handle_opt;
+    Sector* sect = nullptr;
+    if (s.whatorbits() == ScopeLevel::LEVEL_PLAN && landed(s)) {
+      smap_handle_opt =
+          g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
+      if (smap_handle_opt && smap_handle_opt->get()) {
+        sect = &smap_handle_opt->get()->get(s.land_x(), s.land_y());
+      }
+    }
 
     if (s.docked()) {
       notify(g.player, g.governor,
@@ -102,6 +118,7 @@ void scrap(const command_t& argv, GameObj& g) {
             g.player, g.governor,
             std::format("(There is only room for {} resources.)\n", scrapval));
       }
+
       if (s.fuel()) {
         notify(g.player, g.governor,
                std::format("Fuel recovery: {:.0f}.\n", s.fuel()));
@@ -113,8 +130,9 @@ void scrap(const command_t& argv, GameObj& g) {
               g.player, g.governor,
               std::format("(There is only room for {:.2f} fuel.)\n", fuelval));
         }
-      } else
+      } else {
         fuelval = 0.0;
+      }
 
       if (s.destruct()) {
         notify(g.player, g.governor,
@@ -127,12 +145,13 @@ void scrap(const command_t& argv, GameObj& g) {
               g.player, g.governor,
               std::format("(There is only room for {} destruct.)\n", destval));
         }
-      } else
+      } else {
         destval = 0;
+      }
 
       if (s.popn() + s.troops()) {
-        if (s.whatdest() == ScopeLevel::LEVEL_PLAN && sect.get_owner() > 0 &&
-            sect.get_owner() != g.player) {
+        if (s.whatdest() == ScopeLevel::LEVEL_PLAN && sect != nullptr &&
+            sect->get_owner() > 0 && sect->get_owner() != g.player) {
           g.out << "You don't own this sector; no crew can be recovered.\n";
         } else {
           notify(g.player, g.governor,
@@ -160,8 +179,8 @@ void scrap(const command_t& argv, GameObj& g) {
       }
 
       if (s.crystals() + s.mounted()) {
-        if (s.whatdest() == ScopeLevel::LEVEL_PLAN && sect.get_owner() > 0 &&
-            sect.get_owner() != g.player) {
+        if (s.whatdest() == ScopeLevel::LEVEL_PLAN && sect != nullptr &&
+            sect->get_owner() > 0 && sect->get_owner() != g.player) {
           g.out << "You don't own this sector; no crystals can be recovered.\n";
         } else {
           xtalval = s.crystals() + s.mounted();
@@ -175,49 +194,50 @@ void scrap(const command_t& argv, GameObj& g) {
           notify(g.player, g.governor,
                  std::format("Crystal recovery: {}.\n", xtalval));
         }
-      } else
+      } else {
         xtalval = 0;
+      }
     }
 
     /* more adjustments needed here for hanger. Maarten */
-    if (s.whatorbits() == ScopeLevel::LEVEL_SHIP) s2->hanger() -= s.size();
+    if (s.whatorbits() == ScopeLevel::LEVEL_SHIP && s2 != nullptr) {
+      s2->hanger() -= s.size();
+    }
 
-    if (s.whatorbits() == ScopeLevel::LEVEL_UNIV)
+    if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
       deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
+    }
     deductAPs(g, APcount, s.storbits());
 
-    auto& race = races[g.player - 1];
+    g.entity_manager.kill_ship(g.player, s);
 
-    // TODO(jeffbailey): kill_ship gets and saves the ship, which looks like
-    // it'll be overwritten maybe here?
-    kill_ship(g.player, &s);
-
-    if (docked(s)) {
+    if (docked(s) && s2 != nullptr) {
       s2->crystals() += xtalval;
-      rcv_fuel(*s2, (double)fuelval);
+      rcv_fuel(*s2, fuelval);
       rcv_destruct(*s2, destval);
       rcv_resource(*s2, scrapval);
-      rcv_troops(*s2, troopval, race.mass);
-      rcv_popn(*s2, crewval, race.mass);
+      rcv_troops(*s2, troopval, g.race->mass);
+      rcv_popn(*s2, crewval, g.race->mass);
       /* check for docking status in case scrapped ship is landed. Maarten */
-      if (!(s.whatorbits() == ScopeLevel::LEVEL_SHIP)) {
+      if (s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
         s2->docked() = 0; /* undock the surviving ship */
         s2->whatdest() = ScopeLevel::LEVEL_UNIV;
         s2->destshipno() = 0;
       }
-      putship(*s2);
     }
 
     if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-      auto planet = getplanet(s.storbits(), s.pnumorbits());
-      if (landed(s)) {
-        if (sect.get_owner() == g.player) {
-          sect.set_popn(sect.get_popn() + troopval);
-          sect.set_popn(sect.get_popn() + crewval);
-        } else if (sect.get_owner() == 0) {
-          sect.set_owner(g.player);
-          sect.set_popn(sect.get_popn() + crewval);
-          sect.set_troops(sect.get_troops() + troopval);
+      auto planet_handle =
+          g.entity_manager.get_planet(s.storbits(), s.pnumorbits());
+      if (planet_handle.get() && landed(s) && sect != nullptr) {
+        auto& planet = *planet_handle;
+        if (sect->get_owner() == g.player) {
+          sect->set_popn(sect->get_popn() + troopval);
+          sect->set_popn(sect->get_popn() + crewval);
+        } else if (sect->get_owner() == 0) {
+          sect->set_owner(g.player);
+          sect->set_popn(sect->get_popn() + crewval);
+          sect->set_troops(sect->get_troops() + troopval);
           planet.info(g.player - 1).numsectsowned++;
           planet.info(g.player - 1).popn += crewval;
           planet.info(g.player - 1).popn += troopval;
@@ -228,12 +248,11 @@ void scrap(const command_t& argv, GameObj& g) {
         planet.info(g.player - 1).resource += scrapval;
         planet.popn() += crewval;
         planet.info(g.player - 1).destruct += destval;
-        planet.info(g.player - 1).fuel += (int)fuelval;
-        planet.info(g.player - 1).crystals += (int)xtalval;
-        putsector(sect, planet, s.land_x(), s.land_y());
+        planet.info(g.player - 1).fuel += static_cast<int>(fuelval);
+        planet.info(g.player - 1).crystals += xtalval;
       }
-      putplanet(planet, stars[s.storbits()], s.pnumorbits());
     }
+
     if (landed(s)) {
       g.out << "\nScrapped.\n";
     } else {

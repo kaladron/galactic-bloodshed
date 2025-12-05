@@ -58,11 +58,11 @@ class CommandProcessor:
         ))
         
         self.register_command(Command(
-            name="help",
+            name="clienthelp",
             handler=self._cmd_help,
             cmd_type=CommandType.CLIENT,
-            aliases=["?"],
-            help_text="Show help information"
+            aliases=["chelp", "?"],
+            help_text="Show client help information"
         ))
         
         self.register_command(Command(

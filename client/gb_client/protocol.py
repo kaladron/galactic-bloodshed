@@ -255,8 +255,12 @@ class OrbitMapParser:
     
     @staticmethod
     def is_orbit_line(line: str) -> bool:
-        """Check if line is an orbit map data line"""
-        return line.startswith('#') and ' ' in line
+        """Check if line is an orbit map data line
+        
+        Orbit lines start with #<digit> (e.g., #1 or #0 for explored flag).
+        This distinguishes them from markdown headings which use # followed by space.
+        """
+        return len(line) >= 2 and line[0] == '#' and line[1].isdigit()
     
     @staticmethod
     def parse_orbit_map(line: str) -> Optional[OrbitMap]:

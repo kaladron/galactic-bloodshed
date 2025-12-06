@@ -93,9 +93,17 @@ void survey(const command_t& argv, GameObj& g) {
     }
   }
 
-  auto& race = races[Playernum - 1];
+  // Use g.race for read-only access to current player's race
+  auto& race = *g.race;
 
   if (where->level == ScopeLevel::LEVEL_PLAN) {
+    const auto* star_ptr = g.entity_manager.peek_star(where->snum);
+    if (!star_ptr) {
+      g.out << "Star not found.\n";
+      return;
+    }
+    const auto& star = *star_ptr;
+
     const auto* p_ptr = g.entity_manager.peek_planet(where->snum, where->pnum);
     if (!p_ptr) {
       g.out << "Planet not found.\n";
@@ -105,7 +113,8 @@ void survey(const command_t& argv, GameObj& g) {
 
     compat = p.compatibility(race);
 
-    if ((isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) ||
+    if ((argv.size() > 1 && isdigit(argv[1][0]) &&
+         index(argv[1].c_str(), ',') != nullptr) ||
         all) {
       auto smap = getsmap(p);
 
@@ -124,20 +133,20 @@ void survey(const command_t& argv, GameObj& g) {
       }
 
       if (!mode) {
-        notify(Playernum, Governor, std::format("{:2d},{:<2d} ", lowx, lowy));
+        g.out << " x,y cond/type  owner race eff mob frt  res  mil popn "
+                 "^popn xtals\n";
       }
       if (mode) {
         if (all) {
-          notify(Playernum, Governor,
-                 std::format("{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n",
-                             CSP_CLIENT, CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(),
-                             stars[where->snum].get_name(),
-                             stars[where->snum].get_planet_name(where->pnum),
-                             p.info(Playernum - 1).resource,
-                             p.info(Playernum - 1).fuel,
-                             p.info(Playernum - 1).destruct, p.popn(),
-                             p.maxpopn(), p.conditions(TOXIC),
-                             p.compatibility(race), p.slaved_to()));
+          g.out << std::format("{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n",
+                               CSP_CLIENT, CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(),
+                               star.get_name(),
+                               star.get_planet_name(where->pnum),
+                               p.info(Playernum - 1).resource,
+                               p.info(Playernum - 1).fuel,
+                               p.info(Playernum - 1).destruct, p.popn(),
+                               p.maxpopn(), p.conditions(TOXIC),
+                               p.compatibility(race), p.slaved_to());
         }
         bzero((struct shipstuff*)shiplocs, sizeof(shiplocs));
         inhere = p.info(Playernum - 1).numsectsowned;
@@ -167,23 +176,21 @@ void survey(const command_t& argv, GameObj& g) {
           auto& s = smap.get(lowx, lowy);
           /* if (s->owner==Playernum) */
           if (!mode) {
-            notify(Playernum, Governor,
-                   std::format("{:2d},{:<2d} ", lowx, lowy));
+            g.out << std::format("{:2d},{:<2d} ", lowx, lowy);
             if ((d = desshow(Playernum, Governor, race, s)) == CHAR_CLOAKED) {
-              notify(Playernum, Governor, "?  (    ?    )\n");
+              g.out << "?  (    ?    )\n";
             } else {
-              notify(Playernum, Governor,
-                     std::format(
-                         " {}   {}   {:6}{:5}{:4}{:4}{:4}{:5}{:5}{:5}{:6}{}\n",
-                         Dessymbols[s.get_condition()],
-                         Dessymbols[s.get_type()], s.get_owner(), s.get_race(),
-                         s.get_eff(), s.get_mobilization(), s.get_fert(),
-                         s.get_resource(), s.get_troops(), s.get_popn(),
-                         maxsupport(race, s, compat, p.conditions(TOXIC)),
-                         ((s.get_crystals() &&
-                           (race.discoveries[D_CRYSTAL] || race.God))
-                              ? " yes"
-                              : " ")));
+              g.out << std::format(
+                  " {}   {}   {:6}{:5}{:4}{:4}{:4}{:5}{:5}{:5}{:6}{}\n",
+                  Dessymbols[s.get_condition()],
+                  Dessymbols[s.get_type()], s.get_owner(), s.get_race(),
+                  s.get_eff(), s.get_mobilization(), s.get_fert(),
+                  s.get_resource(), s.get_troops(), s.get_popn(),
+                  maxsupport(race, s, compat, p.conditions(TOXIC)),
+                  ((s.get_crystals() &&
+                    (race.discoveries[D_CRYSTAL] || race.God))
+                       ? " yes"
+                       : " "));
             }
           } else { /* mode */
             switch (s.get_condition()) {
@@ -215,83 +222,70 @@ void survey(const command_t& argv, GameObj& g) {
                 sect_char = '?';
                 break;
             }
-            notify(
-                Playernum, Governor,
-                std::format("{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
-                            CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy,
-                            sect_char, desshow(Playernum, Governor, race, s),
-                            (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(),
-                            s.get_fert(), s.get_mobilization(),
-                            ((s.get_crystals() &&
-                              (race.discoveries[D_CRYSTAL] || race.God))
-                                 ? 1
-                                 : 0),
-                            s.get_resource(), s.get_popn(), s.get_troops(),
-                            maxsupport(race, s, compat, p.conditions(TOXIC))));
+            g.out << std::format("{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
+                                 CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy,
+                                 sect_char, desshow(Playernum, Governor, race, s),
+                                 (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(),
+                                 s.get_fert(), s.get_mobilization(),
+                                 ((s.get_crystals() &&
+                                   (race.discoveries[D_CRYSTAL] || race.God))
+                                      ? 1
+                                      : 0),
+                                 s.get_resource(), s.get_popn(), s.get_troops(),
+                                 maxsupport(race, s, compat, p.conditions(TOXIC)));
 
             if (shiplocs[lowx][lowy].pos && inhere) {
               g.out << ";";
               for (i = 0; i < shiplocs[lowx][lowy].pos; i++) {
-                notify(Playernum, Governor,
-                       std::format(" {} {} {};",
-                                   shiplocs[lowx][lowy].shipstuffs[i].shipno,
-                                   shiplocs[lowx][lowy].shipstuffs[i].ltr,
-                                   shiplocs[lowx][lowy].shipstuffs[i].owner));
+                g.out << std::format(" {} {} {};",
+                                     shiplocs[lowx][lowy].shipstuffs[i].shipno,
+                                     shiplocs[lowx][lowy].shipstuffs[i].ltr,
+                                     shiplocs[lowx][lowy].shipstuffs[i].owner);
               }
             }
             g.out << "\n";
           }
         }
       if (mode)
-        notify(Playernum, Governor,
-               std::format("{} {}\n", CSP_CLIENT, CSP_SURVEY_END));
+        g.out << std::format("{} {}\n", CSP_CLIENT, CSP_SURVEY_END);
     } else {
       /* survey of planet */
-      notify(Playernum, Governor,
-             std::format("{}:\n",
-                         stars[where->snum].get_planet_name(where->pnum)));
-      notify(Playernum, Governor,
-             std::format("gravity   x,y absolute     x,y relative to {}\n",
-                         stars[where->snum].get_name()));
-      notify(Playernum, Governor,
-             std::format("{:7.2f}   {:7.1f},{:7.1f}   {:8.1f},{:8.1f}\n",
-                         p.gravity(), p.xpos() + stars[where->snum].xpos(),
-                         p.ypos() + stars[where->snum].ypos(), p.xpos(),
-                         p.ypos()));
+      g.out << std::format("{}:\n",
+                           star.get_planet_name(where->pnum));
+      g.out << std::format("gravity   x,y absolute     x,y relative to {}\n",
+                           star.get_name());
+      g.out << std::format("{:7.2f}   {:7.1f},{:7.1f}   {:8.1f},{:8.1f}\n",
+                           p.gravity(), p.xpos() + star.xpos(),
+                           p.ypos() + star.ypos(), p.xpos(),
+                           p.ypos());
       g.out << "======== Planetary conditions: ========\n";
       g.out << "atmosphere concentrations:\n";
-      notify(Playernum, Governor,
-             std::format(
-                 "     methane {:02d}%({:02d}%)     oxygen {:02d}%({:02d}%)\n",
-                 p.conditions(METHANE), race.conditions[METHANE],
-                 p.conditions(OXYGEN), race.conditions[OXYGEN]));
-      notify(Playernum, Governor,
-             std::format("         CO2 {:02d}%({:02d}%)   hydrogen "
-                         "{:02d}%({:02d}%)      temperature: {:3d} ({:3d})\n",
-                         p.conditions(CO2), race.conditions[CO2],
-                         p.conditions(HYDROGEN), race.conditions[HYDROGEN],
-                         p.conditions(TEMP), race.conditions[TEMP]));
-      notify(Playernum, Governor,
-             std::format("    nitrogen {:02d}%({:02d}%)     sulfur "
-                         "{:02d}%({:02d}%)           normal: {:3d}\n",
-                         p.conditions(NITROGEN), race.conditions[NITROGEN],
-                         p.conditions(SULFUR), race.conditions[SULFUR],
-                         p.conditions(RTEMP)));
-      notify(Playernum, Governor,
-             std::format(
-                 "      helium {:02d}%({:02d}%)      other {:02d}%({:02d}%)\n",
-                 p.conditions(HELIUM), race.conditions[HELIUM],
-                 p.conditions(OTHER), race.conditions[OTHER]));
+      g.out << std::format(
+          "     methane {:02d}%({:02d}%)     oxygen {:02d}%({:02d}%)\n",
+          p.conditions(METHANE), race.conditions[METHANE],
+          p.conditions(OXYGEN), race.conditions[OXYGEN]);
+      g.out << std::format("         CO2 {:02d}%({:02d}%)   hydrogen "
+                           "{:02d}%({:02d}%)      temperature: {:3d} ({:3d})\n",
+                           p.conditions(CO2), race.conditions[CO2],
+                           p.conditions(HYDROGEN), race.conditions[HYDROGEN],
+                           p.conditions(TEMP), race.conditions[TEMP]);
+      g.out << std::format("    nitrogen {:02d}%({:02d}%)     sulfur "
+                           "{:02d}%({:02d}%)           normal: {:3d}\n",
+                           p.conditions(NITROGEN), race.conditions[NITROGEN],
+                           p.conditions(SULFUR), race.conditions[SULFUR],
+                           p.conditions(RTEMP));
+      g.out << std::format(
+          "      helium {:02d}%({:02d}%)      other {:02d}%({:02d}%)\n",
+          p.conditions(HELIUM), race.conditions[HELIUM],
+          p.conditions(OTHER), race.conditions[OTHER]);
       if ((tindex = p.conditions(TOXIC) / 10) < 0)
         tindex = 0;
       else if (tindex > 10)
         tindex = 11;
-      notify(Playernum, Governor,
-             std::format("                     Toxicity: {}% ({})\n",
-                         p.conditions(TOXIC), Tox[tindex]));
-      notify(Playernum, Governor,
-             std::format("Total planetary compatibility: {:.2f}%\n",
-                         p.compatibility(race)));
+      g.out << std::format("                     Toxicity: {}% ({})\n",
+                           p.conditions(TOXIC), Tox[tindex]);
+      g.out << std::format("Total planetary compatibility: {:.2f}%\n",
+                           p.compatibility(race));
 
       auto smap = getsmap(p);
 
@@ -304,63 +298,56 @@ void survey(const command_t& argv, GameObj& g) {
           if (race.discoveries[D_CRYSTAL] || race.God)
             crystal_count += !!s.get_crystals();
         }
-      notify(Playernum, Governor,
-             std::format("{:>29}: {}\n{:>29}: {}\n{:>29}: {}\n",
-                         "Average fertility", avg_fert / (p.Maxx() * p.Maxy()),
-                         "Average resource",
-                         avg_resource / (p.Maxx() * p.Maxy()),
-                         "Crystal sectors", crystal_count));
-      notify(Playernum, Governor,
-             std::format("{:>29}: {}\n", "Total resource deposits",
-                         p.total_resources()));
-      notify(Playernum, Governor,
-             std::format("fuel_stock  resource_stock dest_pot.   {}    ^{}\n",
-                         race.Metamorph ? "biomass" : "popltn",
-                         race.Metamorph ? "biomass" : "popltn"));
-      notify(Playernum, Governor,
-             std::format(
-                 "{:10}  {:14} {:9}  {:7}{:11}\n", p.info(Playernum - 1).fuel,
-                 p.info(Playernum - 1).resource, p.info(Playernum - 1).destruct,
-                 p.popn(), p.maxpopn()));
+      g.out << std::format("{:>29}: {}\n{:>29}: {}\n{:>29}: {}\n",
+                           "Average fertility", avg_fert / (p.Maxx() * p.Maxy()),
+                           "Average resource",
+                           avg_resource / (p.Maxx() * p.Maxy()),
+                           "Crystal sectors", crystal_count);
+      g.out << std::format("{:>29}: {}\n", "Total resource deposits",
+                           p.total_resources());
+      g.out << std::format("fuel_stock  resource_stock dest_pot.   {}    ^{}\n",
+                           race.Metamorph ? "biomass" : "popltn",
+                           race.Metamorph ? "biomass" : "popltn");
+      g.out << std::format(
+          "{:10}  {:14} {:9}  {:7}{:11}\n", p.info(Playernum - 1).fuel,
+          p.info(Playernum - 1).resource, p.info(Playernum - 1).destruct,
+          p.popn(), p.maxpopn());
       if (p.slaved_to()) {
-        notify(
-            Playernum, Governor,
-            std::format("This planet ENSLAVED to player {}!\n", p.slaved_to()));
+        g.out << std::format("This planet ENSLAVED to player {}!\n", p.slaved_to());
       }
     }
   } else if (where->level == ScopeLevel::LEVEL_STAR) {
-    notify(Playernum, Governor,
-           std::format("Star {}\n", stars[where->snum].get_name()));
-    notify(Playernum, Governor,
-           std::format("locn: {},{}\n", stars[where->snum].xpos(),
-                       stars[where->snum].ypos()));
+    const auto* star_ptr = g.entity_manager.peek_star(where->snum);
+    if (!star_ptr) {
+      g.out << "Star not found.\n";
+      return;
+    }
+    const auto& star = *star_ptr;
+
+    g.out << std::format("Star {}\n", star.get_name());
+    g.out << std::format("locn: {},{}\n", star.xpos(),
+                         star.ypos());
     if (race.God) {
-      for (i = 0; i < stars[where->snum].numplanets(); i++) {
-        notify(Playernum, Governor,
-               std::format(" \"{}\"\n", stars[where->snum].get_planet_name(i)));
+      for (i = 0; i < star.numplanets(); i++) {
+        g.out << std::format(" \"{}\"\n", star.get_planet_name(i));
       }
     }
-    notify(Playernum, Governor,
-           std::format("Gravity: {:.2f}\tInstability: ",
-                       stars[where->snum].gravity()));
+    g.out << std::format("Gravity: {:.2f}\tInstability: ",
+                         star.gravity());
 
     if (race.tech >= TECH_SEE_STABILITY || race.God) {
-      notify(Playernum, Governor,
-             std::format("{}% ({})\n", stars[where->snum].stability(),
-                         stability_label(stars[where->snum].stability())));
+      g.out << std::format("{}% ({})\n", star.stability(),
+                           stability_label(star.stability()));
     } else {
-      notify(Playernum, Governor, "(cannot determine)\n");
+      g.out << "(cannot determine)\n";
     }
-    notify(Playernum, Governor,
-           std::format("temperature class (1->10) {}\n",
-                       stars[where->snum].temperature()));
-    notify(Playernum, Governor,
-           std::format("{} planets are ", stars[where->snum].numplanets()));
-    for (x2 = 0; x2 < stars[where->snum].numplanets(); x2++) {
-      notify(Playernum, Governor,
-             std::format("{} ", stars[where->snum].get_planet_name(x2)));
+    g.out << std::format("temperature class (1->10) {}\n",
+                         star.temperature());
+    g.out << std::format("{} planets are ", star.numplanets());
+    for (x2 = 0; x2 < star.numplanets(); x2++) {
+      g.out << std::format("{} ", star.get_planet_name(x2));
     }
-    notify(Playernum, Governor, "\n");
+    g.out << "\n";
   } else if (where->level == ScopeLevel::LEVEL_UNIV) {
     g.out << "It's just _there_, you know?\n";
   } else {

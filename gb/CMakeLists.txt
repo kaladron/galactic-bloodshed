@@ -513,6 +513,10 @@ add_executable(scrap_test commands/scrap_test.cc)
 target_link_libraries(scrap_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_scrap_test COMMAND scrap_test)
 
+add_executable(survey_test commands/survey_test.cc)
+target_link_libraries(survey_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_survey_test COMMAND survey_test)
+
 add_executable(upgrade_test commands/upgrade_test.cc)
 target_link_libraries(upgrade_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_upgrade_test COMMAND upgrade_test)

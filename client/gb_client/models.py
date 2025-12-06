@@ -102,6 +102,59 @@ class OrbitMap:
 
 
 @dataclass
+class ShipInSector:
+    """Ship landed in a sector"""
+    shipno: int = 0
+    letter: str = "?"
+    owner: int = 0
+
+
+@dataclass
+class SurveySector:
+    """Detailed sector data from survey command"""
+    x: int = 0
+    y: int = 0
+    sect_char: str = "."  # Terrain type character
+    des: str = "."  # Description character (may show troops/ships)
+    wasted: bool = False
+    owner: int = 0
+    eff: int = 0  # Efficiency percentage
+    frt: int = 0  # Fertility
+    mob: int = 0  # Mobilization
+    xtal: bool = False  # Has crystals
+    res: int = 0  # Resources
+    civ: int = 0  # Civilian population
+    mil: int = 0  # Military population
+    mpopn: int = 0  # Max population
+    ships: List[ShipInSector] = field(default_factory=list)
+
+
+@dataclass
+class SurveyData:
+    """Survey data for a planet"""
+    maxx: int = 0  # Width
+    maxy: int = 0  # Height
+    star: str = ""
+    planet: str = ""
+    res: int = 0  # Resource stockpile
+    fuel: int = 0  # Fuel stockpile
+    des: int = 0  # Destruct potential
+    popn: int = 0  # Population
+    mpopn: int = 0  # Max population
+    tox: int = 0  # Toxicity
+    compat: float = 0.0  # Compatibility percentage
+    enslaved: int = 0  # Enslaved to player number (0 = not enslaved)
+    sectors: List[SurveySector] = field(default_factory=list)
+    
+    def get_sector(self, x: int, y: int) -> Optional[SurveySector]:
+        """Get sector at coordinates"""
+        for sector in self.sectors:
+            if sector.x == x and sector.y == y:
+                return sector
+        return None
+
+
+@dataclass
 class GameState:
     """Overall game state"""
     profile: Profile = field(default_factory=Profile)
@@ -113,3 +166,4 @@ class GameState:
     last_lot: str = ""
     current_map: Optional[PlanetMap] = None
     current_orbit_map: Optional[OrbitMap] = None
+    current_survey: Optional[SurveyData] = None

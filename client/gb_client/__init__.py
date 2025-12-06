@@ -21,11 +21,14 @@ from .models import (
     PlanetMap,
     OrbitObject,
     OrbitMap,
+    ShipInSector,
+    SurveySector,
+    SurveyData,
     GameState,
 )
 from .ui import TerminalUI
 from .network import NetworkBuffer, GameConnection
-from .protocol import CSPProtocol, MapParser, OrbitMapParser
+from .protocol import CSPProtocol, MapParser, OrbitMapParser, SurveyParser
 from .commands import CommandType, Command, CommandProcessor
 from .client import GBClient, setup_logging, main
 
@@ -39,6 +42,9 @@ __all__ = [
     'PlanetMap',
     'OrbitObject',
     'OrbitMap',
+    'ShipInSector',
+    'SurveySector',
+    'SurveyData',
     'GameState',
     # UI
     'TerminalUI',
@@ -49,6 +55,7 @@ __all__ = [
     'CSPProtocol',
     'MapParser',
     'OrbitMapParser',
+    'SurveyParser',
     # Commands
     'CommandType',
     'Command',

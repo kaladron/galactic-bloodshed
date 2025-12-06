@@ -12,9 +12,9 @@ import logging
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .models import PlanetMap, OrbitMap, Sector, OrbitObject
+    from .models import PlanetMap, OrbitMap, Sector, OrbitObject, SurveyData, SurveySector, ShipInSector
 
-from .models import PlanetMap, OrbitMap, Sector, OrbitObject
+from .models import PlanetMap, OrbitMap, Sector, OrbitObject, SurveyData, SurveySector, ShipInSector
 
 
 class CSPProtocol:
@@ -397,5 +397,175 @@ class OrbitMapParser:
             lines.append("")
             lines.append("Objects:")
             lines.extend(labels)
+        
+        return "\n".join(lines)
+
+
+class SurveyParser:
+    """Parser for survey command CSP messages
+    
+    The survey command sends CSP messages when used with coordinates or '-':
+    
+    CSP_SURVEY_INTRO (101): Planet overview
+    Format: | 101 <maxx> <maxy> <star> <planet> <res> <fuel> <des> <popn> <mpopn> <tox> <compat> <enslaved>
+    
+    CSP_SURVEY_SECTOR (102): Individual sector data (can be multiple)
+    Format: | 102 <x> <y> <sect_char> <des> <wasted> <owner> <eff> <frt> <mob> <xtal> <res> <civ> <mil> <mpopn>[;<shipno> <ltr> <owner>;...]
+    
+    CSP_SURVEY_END (103): End marker
+    Format: | 103
+    """
+    
+    CSP_SURVEY_INTRO = "101"
+    CSP_SURVEY_SECTOR = "102"
+    CSP_SURVEY_END = "103"
+    
+    @staticmethod
+    def parse_survey_intro(args: List[str]) -> Optional[SurveyData]:
+        """Parse survey intro message (CSP 101)
+        
+        Format: <maxx> <maxy> <star> <planet> <res> <fuel> <des> <popn> <mpopn> <tox> <compat> <enslaved>
+        
+        Args:
+            args: List of arguments from CSP message
+            
+        Returns:
+            SurveyData object with header info, or None if parsing fails
+        """
+        try:
+            if len(args) < 12:
+                logging.warning(f"Survey intro has too few args: {len(args)}")
+                return None
+            
+            survey = SurveyData(
+                maxx=int(args[0]),
+                maxy=int(args[1]),
+                star=args[2],
+                planet=args[3],
+                res=int(args[4]),
+                fuel=int(args[5]),
+                des=int(args[6]),
+                popn=int(args[7]),
+                mpopn=int(args[8]),
+                tox=int(args[9]),
+                compat=float(args[10]),
+                enslaved=int(args[11])
+            )
+            
+            logging.info(f"Parsed survey intro for {survey.star}/{survey.planet}: "
+                        f"{survey.maxx}x{survey.maxy}, compat={survey.compat:.1f}%")
+            
+            return survey
+            
+        except (ValueError, IndexError) as e:
+            logging.error(f"Failed to parse survey intro: {e}")
+            return None
+    
+    @staticmethod
+    def parse_survey_sector(args: List[str]) -> Optional[SurveySector]:
+        """Parse survey sector message (CSP 102)
+        
+        Format: <x> <y> <sect_char> <des> <wasted> <owner> <eff> <frt> <mob> <xtal> <res> <civ> <mil> <mpopn>[;<shipno> <ltr> <owner>;...]
+        
+        The ship data (after semicolon) is optional and contains semicolon-separated ship info.
+        
+        Args:
+            args: List of arguments from CSP message (may include ship data after semicolon)
+            
+        Returns:
+            SurveySector object, or None if parsing fails
+        """
+        try:
+            if len(args) < 14:
+                logging.warning(f"Survey sector has too few args: {len(args)}")
+                return None
+            
+            # Parse basic sector data
+            sector = SurveySector(
+                x=int(args[0]),
+                y=int(args[1]),
+                sect_char=args[2],
+                des=args[3],
+                wasted=(int(args[4]) != 0),
+                owner=int(args[5]),
+                eff=int(args[6]),
+                frt=int(args[7]),
+                mob=int(args[8]),
+                xtal=(int(args[9]) != 0),
+                res=int(args[10]),
+                civ=int(args[11]),
+                mil=int(args[12]),
+                mpopn=int(args[13])
+            )
+            
+            # Parse ship data if present (args[14] starts with semicolon, then ship data)
+            # The ship format is: ;<shipno> <ltr> <owner>;<shipno> <ltr> <owner>;...
+            if len(args) > 14:
+                ship_data = ' '.join(args[14:])  # Rejoin in case ships got split
+                # Remove leading semicolon and split by semicolon
+                ship_parts = [s.strip() for s in ship_data.split(';') if s.strip()]
+                
+                for ship_part in ship_parts:
+                    ship_fields = ship_part.split()
+                    if len(ship_fields) >= 3:
+                        ship = ShipInSector(
+                            shipno=int(ship_fields[0]),
+                            letter=ship_fields[1],
+                            owner=int(ship_fields[2])
+                        )
+                        sector.ships.append(ship)
+            
+            return sector
+            
+        except (ValueError, IndexError) as e:
+            logging.error(f"Failed to parse survey sector: {e}")
+            return None
+    
+    @staticmethod
+    def format_survey_display(survey: SurveyData) -> str:
+        """Format survey data for display in terminal
+        
+        Args:
+            survey: The parsed survey data
+            
+        Returns:
+            Formatted string ready for display
+        """
+        lines = []
+        
+        # Header
+        lines.append(f"=== Survey: {survey.star}/{survey.planet} ===")
+        lines.append(f"Size: {survey.maxx}x{survey.maxy}")
+        lines.append(f"Compatibility: {survey.compat:.2f}%")
+        lines.append(f"Population: {survey.popn} / {survey.mpopn} (max)")
+        lines.append(f"Toxicity: {survey.tox}%")
+        lines.append(f"Resources: {survey.res}  Fuel: {survey.fuel}  Destruct: {survey.des}")
+        if survey.enslaved:
+            lines.append(f"ENSLAVED to player {survey.enslaved}!")
+        lines.append("")
+        
+        # Sector table
+        if survey.sectors:
+            lines.append(" x,y cond/type  owner eff frt mob res  civ  mil ^popn xtals ships")
+            lines.append("-" * 75)
+            
+            for sector in survey.sectors:
+                # Format sector line
+                xtal_str = "yes" if sector.xtal else ""
+                wasted_str = "W" if sector.wasted else " "
+                
+                # Format ships if present
+                ships_str = ""
+                if sector.ships:
+                    ship_letters = [f"{s.letter}#{s.shipno}" for s in sector.ships]
+                    ships_str = " " + ",".join(ship_letters)
+                
+                line = (f"{sector.x:2d},{sector.y:<2d} {wasted_str}{sector.sect_char}   {sector.des}   "
+                       f"{sector.owner:5} {sector.eff:3}% {sector.frt:3} {sector.mob:3} "
+                       f"{sector.res:4} {sector.civ:4} {sector.mil:4} {sector.mpopn:5} "
+                       f"{xtal_str:5}{ships_str}")
+                lines.append(line)
+        else:
+            lines.append("(No sector data received)")
         
         return "\n".join(lines)

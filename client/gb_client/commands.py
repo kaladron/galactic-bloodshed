@@ -96,6 +96,14 @@ class CommandProcessor:
         ))
         
         self.register_command(Command(
+            name="showsurvey",
+            handler=self._cmd_showsurvey,
+            cmd_type=CommandType.CLIENT,
+            aliases=["ss"],
+            help_text="Show the current parsed survey data (use 'client_survey -' command to get CSP data)"
+        ))
+        
+        self.register_command(Command(
             name="history",
             handler=self._cmd_history,
             cmd_type=CommandType.CLIENT,
@@ -258,6 +266,16 @@ class CommandProcessor:
         
         from .protocol import OrbitMapParser
         formatted = OrbitMapParser.format_orbit_display(self.client.state.current_orbit_map)
+        self.client.display_output(formatted)
+    
+    async def _cmd_showsurvey(self, args: str):
+        """Display the currently parsed survey data"""
+        if not self.client.state.current_survey:
+            self.client.display_output("No survey data available. Use 'survey -' or 'survey x:x,y:y' command first.")
+            return
+        
+        from .protocol import SurveyParser
+        formatted = SurveyParser.format_survey_display(self.client.state.current_survey)
         self.client.display_output(formatted)
     
     async def _cmd_history(self, args: str):

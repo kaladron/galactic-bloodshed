@@ -19,7 +19,7 @@ from typing import List
 from .models import GameState, ScopeLevel
 from .ui import TerminalUI
 from .network import GameConnection
-from .protocol import CSPProtocol, MapParser, OrbitMapParser
+from .protocol import CSPProtocol, MapParser, OrbitMapParser, SurveyParser
 from .commands import CommandProcessor
 
 
@@ -182,6 +182,25 @@ class GBClient:
                 self.state.profile.scope.aps = int(args[0])
                 # Update status bar
                 self.ui.update_status(self.state.profile)
+        elif command == SurveyParser.CSP_SURVEY_INTRO:
+            # Survey intro - start new survey
+            survey = SurveyParser.parse_survey_intro(args)
+            if survey:
+                self.state.current_survey = survey
+                logging.info(f"Started survey for {survey.planet}")
+        elif command == SurveyParser.CSP_SURVEY_SECTOR:
+            # Survey sector - add to current survey
+            sector = SurveyParser.parse_survey_sector(args)
+            if sector and self.state.current_survey:
+                self.state.current_survey.sectors.append(sector)
+                logging.debug(f"Added sector {sector.x},{sector.y} to survey")
+        elif command == SurveyParser.CSP_SURVEY_END:
+            # Survey complete - display it
+            if self.state.current_survey:
+                display = SurveyParser.format_survey_display(self.state.current_survey)
+                self.display_output(display)
+                logging.info(f"Completed survey with {len(self.state.current_survey.sectors)} sectors")
+
     
     def update_scope(self, scope_parts: List[str]):
         """Update current scope from server"""

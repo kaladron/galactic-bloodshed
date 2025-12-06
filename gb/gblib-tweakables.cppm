@@ -37,7 +37,7 @@ export constexpr int COMMAND_BURST_SIZE =
 export constexpr int DISCONNECT_TIME = 7200;  // maximum idle time
 
 export constexpr const char* WELCOME_FILE = "welcome.txt";
-export constexpr const char* HELP_FILE = DOCDIR "help.txt";
+export constexpr const char* HELP_FILE = HELPDIR "help.md";
 export constexpr const char* LEAVE_MESSAGE =
     "\n*** Thank you for playing Galactic Bloodshed ***\n";
 

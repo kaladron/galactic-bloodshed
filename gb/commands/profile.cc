@@ -4,6 +4,7 @@ module;
 
 import gblib;
 import std.compat;
+import tabulate;
 
 module commands;
 
@@ -29,52 +30,99 @@ void profile(const command_t& argv, GameObj& g) {
         stars[race->governor[g.governor].homesystem].get_planet_name(
             race->governor[g.governor].homeplanetnum));
     if (race->Gov_ship == 0)
-      g.out << "NO DESIGNATED CAPITAL!!";
+      g.out << "NO DESIGNATED CAPITAL!!\n";
     else
-      g.out << std::format(
-          "Designated Capital: #{}    Ranges:     guns:   {}\n", race->Gov_ship,
-          gun_range(*race));
-    g.out << std::format("Morale: {}    space:  {}\n", race->morale,
+      g.out << std::format("Designated Capital: #{}\n", race->Gov_ship);
+    g.out << std::format("Morale: {}\n", race->morale);
+    g.out << std::format("Updates active: {}\n", race->turn);
+    g.out << "Ranges:\n";
+    g.out << std::format("  guns:   {:.2f}\n", gun_range(*race));
+    g.out << std::format("  space:  {:.2f}\n",
                          tele_range(ShipType::OTYPE_STELE, race->tech));
-    g.out << std::format("Updates active: {}    ground: {}\n\n", race->turn,
+    g.out << std::format("  ground: {:.2f}\n\n",
                          tele_range(ShipType::OTYPE_GTELE, race->tech));
-    g.out << std::format("{}  Planet Conditions\t      Sector Preferences\n",
-                         race->Metamorph ? "Metamorphic Race\t"
-                                         : "Normal Race\t\t");
-    g.out << std::format("Fert:    {}%\t\t  Temp:\t{}\n", race->fertilize,
-                         race->conditions[TEMP]);
-    g.out << std::format("Rate:    {}\t\t  methane  {}%\t      {} {} {}\n",
-                         race->birthrate, race->conditions[METHANE],
-                         Desnames[SectorType::SEC_SEA], CHAR_SEA,
-                         race->likes[SectorType::SEC_SEA] * 100.);
-    g.out << std::format("Mass:    {}\t\t  oxygen   {}%\t      {} {} {}\n",
-                         race->mass, race->conditions[OXYGEN],
-                         Desnames[SectorType::SEC_GAS], CHAR_GAS,
-                         race->likes[SectorType::SEC_GAS] * 100.);
-    g.out << std::format("Fight:   {}\t\t  helium   {}%\t      {} {} {}\n",
-                         race->fighters, race->conditions[HELIUM],
-                         Desnames[SectorType::SEC_ICE], CHAR_ICE,
-                         race->likes[SectorType::SEC_ICE] * 100.);
-    g.out << std::format("Metab:   {}\t\t  nitrogen {}%\t      {} {} {}\n",
-                         race->metabolism, race->conditions[NITROGEN],
-                         Desnames[SectorType::SEC_MOUNT], CHAR_MOUNT,
-                         race->likes[SectorType::SEC_MOUNT] * 100.);
-    g.out << std::format("Sexes:   {}\t\t  CO2      {}%\t      {} {} {}\n",
-                         race->number_sexes, race->conditions[CO2],
-                         Desnames[SectorType::SEC_LAND], CHAR_LAND,
-                         race->likes[SectorType::SEC_LAND] * 100.);
-    g.out << std::format("Explore: {}%\t\t  hydrogen {}%\t      {} {} {}\n",
-                         race->adventurism * 100.0, race->conditions[HYDROGEN],
-                         Desnames[SectorType::SEC_DESERT], CHAR_DESERT,
-                         race->likes[SectorType::SEC_DESERT] * 100.);
-    g.out << std::format("Avg Int: {}\t\t  sulfer   {}%\t      {} {} {}\n",
-                         race->IQ, race->conditions[SULFUR],
-                         Desnames[SectorType::SEC_FOREST], CHAR_FOREST,
-                         race->likes[SectorType::SEC_FOREST] * 100.);
-    g.out << std::format("Tech:    {}\t\t  other    {}%\t      {} {} {}\n",
-                         race->tech, race->conditions[OTHER],
-                         Desnames[SectorType::SEC_PLATED], CHAR_PLATED,
-                         race->likes[SectorType::SEC_PLATED] * 100.);
+
+    // Race characteristics and planet conditions table
+    g.out << std::format("{}\n\n",
+                         race->Metamorph ? "Metamorphic Race" : "Normal Race");
+
+    tabulate::Table race_table;
+    race_table.format().hide_border().column_separator("  ");
+
+    // Configure column alignments
+    race_table.column(0).format().width(10);  // Stat name
+    race_table.column(1)
+        .format()
+        .width(12)
+        .font_align(tabulate::FontAlign::right);  // Stat value
+    race_table.column(2).format().width(3);       // Spacer
+    race_table.column(3).format().width(10);      // Condition name
+    race_table.column(4)
+        .format()
+        .width(8)
+        .font_align(tabulate::FontAlign::right);  // Condition value
+    race_table.column(5).format().width(3);       // Spacer
+    race_table.column(6).format().width(12);      // Sector name
+    race_table.column(7)
+        .format()
+        .width(3)
+        .font_align(tabulate::FontAlign::center);  // Sector char
+    race_table.column(8)
+        .format()
+        .width(8)
+        .font_align(tabulate::FontAlign::right);  // Sector preference
+
+    // Add header row
+    race_table.add_row({"", "", "", "Planet", "Conditions", "", "Sector",
+                        "Preferences", ""});
+    race_table[0].format().font_style({tabulate::FontStyle::bold});
+
+    // Add data rows with proper alignment
+    race_table.add_row(
+        {"Fert:", std::format("{}%", race->fertilize), "", "Temp:",
+         std::format("{}", race->conditions[TEMP]), "", "", "", ""});
+    race_table.add_row({"Rate:", std::format("{:.2f}", race->birthrate), "",
+                        "methane:", std::format("{}%", race->conditions[METHANE]),
+                        "", Desnames[SectorType::SEC_SEA],
+                        std::format("{}", CHAR_SEA),
+                        std::format("{:.0f}", race->likes[SectorType::SEC_SEA] * 100.)});
+    race_table.add_row({"Mass:", std::format("{:.3f}", race->mass), "",
+                        "oxygen:", std::format("{}%", race->conditions[OXYGEN]),
+                        "", Desnames[SectorType::SEC_GAS],
+                        std::format("{}", CHAR_GAS),
+                        std::format("{:.0f}", race->likes[SectorType::SEC_GAS] * 100.)});
+    race_table.add_row({"Fight:", std::format("{}", race->fighters), "",
+                        "helium:", std::format("{}%", race->conditions[HELIUM]),
+                        "", Desnames[SectorType::SEC_ICE],
+                        std::format("{}", CHAR_ICE),
+                        std::format("{:.0f}", race->likes[SectorType::SEC_ICE] * 100.)});
+    race_table.add_row(
+        {"Metab:", std::format("{:.2f}", race->metabolism), "", "nitrogen:",
+         std::format("{}%", race->conditions[NITROGEN]), "",
+         Desnames[SectorType::SEC_MOUNT], std::format("{}", CHAR_MOUNT),
+         std::format("{:.0f}", race->likes[SectorType::SEC_MOUNT] * 100.)});
+    race_table.add_row(
+        {"Sexes:", std::format("{}", race->number_sexes), "", "CO2:",
+         std::format("{}%", race->conditions[CO2]), "",
+         Desnames[SectorType::SEC_LAND], std::format("{}", CHAR_LAND),
+         std::format("{:.0f}", race->likes[SectorType::SEC_LAND] * 100.)});
+    race_table.add_row(
+        {"Explore:", std::format("{:.0f}%", race->adventurism * 100.0), "",
+         "hydrogen:", std::format("{}%", race->conditions[HYDROGEN]), "",
+         Desnames[SectorType::SEC_DESERT], std::format("{}", CHAR_DESERT),
+         std::format("{:.0f}", race->likes[SectorType::SEC_DESERT] * 100.)});
+    race_table.add_row(
+        {"Avg Int:", std::format("{}", race->IQ), "", "sulfur:",
+         std::format("{}%", race->conditions[SULFUR]), "",
+         Desnames[SectorType::SEC_FOREST], std::format("{}", CHAR_FOREST),
+         std::format("{:.0f}", race->likes[SectorType::SEC_FOREST] * 100.)});
+    race_table.add_row(
+        {"Tech:", std::format("{:.2f}", race->tech), "", "other:",
+         std::format("{}%", race->conditions[OTHER]), "",
+         Desnames[SectorType::SEC_PLATED], std::format("{}", CHAR_PLATED),
+         std::format("{:.0f}", race->likes[SectorType::SEC_PLATED] * 100.)});
+
+    g.out << race_table << "\n\n";
 
     g.out << "Discoveries:";
     if (Crystal(*race)) g.out << "  Crystals";

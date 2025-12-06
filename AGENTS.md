@@ -81,11 +81,19 @@ cmake --build build --clean-first
 │   ├── commands/          # Player command implementations
 │   │   ├── commands.cppm  # Module interface exporting all commands
 │   │   └── *.cc          # Individual command implementations
+│   ├── dal/              # Data Access Layer (Database, JsonStore, Schema)
+│   ├── repositories/     # Repository pattern implementations
+│   ├── services/         # Service layer (EntityManager)
+│   ├── utils/            # Utility functions (rand)
+│   ├── creator/          # Universe generation tools
+│   ├── third_party/      # Third-party module wrappers
 │   ├── gblib-*.cppm      # Core library module partitions
 │   ├── GB_server.cc      # Main server with command dispatch
 │   └── CMakeLists.txt    # Build configuration
+├── client/                # Python client implementation
 ├── docs/                  # Documentation
 ├── cmake/                 # CMake configuration
+├── data/                  # Game data files
 └── CMakeLists.txt        # Root build file
 ```
 
@@ -97,6 +105,10 @@ The codebase uses C++ Modules with the following structure:
   - `gblib:files_shl` - File I/O and persistence layer
   - `gblib:misc` - Utility functions
   - `gblib:tweakables` - Game configuration constants
+  - `gblib:repositories` - Repository implementations
+  - `gblib:services` - Service layer (EntityManager)
+  - `gblib:rand` - Random number utilities
+- **`dallib`**: Data Access Layer module (Database, JsonStore, Schema)
 - **`commands`**: Player command implementations module
 
 ## 📝 Coding Standards & Conventions
@@ -352,7 +364,7 @@ When creating new test files, follow this essential pattern for database initial
 
 import dallib;
 import gblib;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -520,7 +532,7 @@ The project includes a Python client (`client/gb-client.py`) for connecting to t
 - **curses library** for terminal UI (split screen with output/input)
 - **Client-Server Protocol (CSP)** - messages prefixed with `|`
 
-### Phase 1 Complete (October 2025)
+### Phase 1 Complete (December 2025)
 Phase 1 implementation achieved:
 - ✅ Curses-based terminal UI with split screen
 - ✅ Character-by-character input with editing (backspace, arrows, etc.)
@@ -674,7 +686,7 @@ Small unit-style tests can be added alongside existing tests:
 // SPDX-License-Identifier: Apache-2.0
 import dallib;
 import gblib;
-import std.compat;
+import std;
 #include <cassert>
 
 int main() {

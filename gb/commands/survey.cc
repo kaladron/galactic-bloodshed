@@ -166,23 +166,213 @@ static std::string_view stability_label(int pct) {
   if (pct < 100) return "WARNING! Nova iminent!";
   return "undergoing nova";
 }
-void survey(const command_t& argv, GameObj& g) {
+
+// Helper: Survey planet sectors (detailed sector-by-sector view)
+static void survey_planet_sectors(GameObj& g, const Place& where,
+                                  const std::string& range_arg, bool all,
+                                  SurveyFormatter& formatter) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  int lowx;
-  int hix;
-  int lowy;
-  int hiy;
-  int x2;
-  int tindex;
-  double compat;
-  int avg_fert;
-  int avg_resource;
-  int crystal_count;
-  int all = 0; /* full survey 1, specific 0 */
-  SectorShipData shiplocs[MAX_X][MAX_Y]{};
-  int i;
+  auto& race = *g.race;
 
+  const auto* star_ptr = g.entity_manager.peek_star(where.snum);
+  if (!star_ptr) {
+    g.out << "Star not found.\n";
+    return;
+  }
+  const auto& star = *star_ptr;
+
+  const auto* p_ptr = g.entity_manager.peek_planet(where.snum, where.pnum);
+  if (!p_ptr) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+  const auto& p = *p_ptr;
+
+  double compat = p.compatibility(race);
+  auto smap = getsmap(p);
+
+  // Determine sector range
+  int lowx, hix, lowy, hiy;
+  if (!all) {
+    int x2;
+    get4args(range_arg.c_str(), &x2, &hix, &lowy, &hiy);
+    lowx = std::max(0, x2);
+    hix = std::min(hix, p.Maxx() - 1);
+    lowy = std::max(0, lowy);
+    hiy = std::min(hiy, p.Maxy() - 1);
+  } else {
+    lowx = 0;
+    hix = p.Maxx() - 1;
+    lowy = 0;
+    hiy = p.Maxy() - 1;
+  }
+
+  // Build ship location data if needed
+  SectorShipData shiplocs[MAX_X][MAX_Y]{};
+  int inhere = 0;  // Track if player has presence on planet
+  if (formatter.tracks_ships()) {
+    inhere = p.info(Playernum - 1).numsectsowned;
+    const ShipList kShips(g.entity_manager, p.ships());
+    for (const Ship* shipa : kShips) {
+      if (shipa->owner() == Playernum &&
+          (shipa->popn() || (shipa->type() == ShipType::OTYPE_PROBE)))
+        inhere = 1;
+      if (shipa->alive() && landed(*shipa) &&
+          shiplocs[shipa->land_x()][shipa->land_y()].count <
+              MAX_SHIPS_PER_SECTOR) {
+        auto& loc = shiplocs[shipa->land_x()][shipa->land_y()];
+        loc.ships[loc.count].shipno = shipa->number();
+        loc.ships[loc.count].owner = shipa->owner();
+        loc.ships[loc.count].ltr = Shipltrs[shipa->type()];
+        loc.count++;
+      }
+    }
+  }
+
+  formatter.write_header(g.out, p, star, star.get_planet_name(where.pnum),
+                         Playernum, race, all, inhere);
+
+  for (int y = lowy; y <= hiy; y++) {
+    for (int x = lowx; x <= hix; x++) {
+      auto& s = smap.get(x, y);
+      const SectorShipData* ship_data =
+          (shiplocs[x][y].count > 0) ? &shiplocs[x][y] : nullptr;
+      formatter.write_sector(g.out, x, y, s, race, Playernum, Governor, compat,
+                             p.conditions(TOXIC), ship_data, inhere);
+    }
+  }
+
+  formatter.write_footer(g.out);
+}
+
+// Helper: Survey planet overview (conditions, stats, etc.)
+static void survey_planet_overview(GameObj& g, const Place& where) {
+  const player_t Playernum = g.player;
+  auto& race = *g.race;
+
+  const auto* star_ptr = g.entity_manager.peek_star(where.snum);
+  if (!star_ptr) {
+    g.out << "Star not found.\n";
+    return;
+  }
+  const auto& star = *star_ptr;
+
+  const auto* p_ptr = g.entity_manager.peek_planet(where.snum, where.pnum);
+  if (!p_ptr) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+  const auto& p = *p_ptr;
+
+  g.out << std::format("{}:\n", star.get_planet_name(where.pnum));
+  g.out << std::format("gravity   x,y absolute     x,y relative to {}\n",
+                       star.get_name());
+  g.out << std::format("{:7.2f}   {:7.1f},{:7.1f}   {:8.1f},{:8.1f}\n",
+                       p.gravity(), p.xpos() + star.xpos(),
+                       p.ypos() + star.ypos(), p.xpos(), p.ypos());
+  g.out << "======== Planetary conditions: ========\n";
+  g.out << "atmosphere concentrations:\n";
+  g.out << std::format(
+      "     methane {:02d}%({:02d}%)     oxygen {:02d}%({:02d}%)\n",
+      p.conditions(METHANE), race.conditions[METHANE], p.conditions(OXYGEN),
+      race.conditions[OXYGEN]);
+  g.out << std::format("         CO2 {:02d}%({:02d}%)   hydrogen "
+                       "{:02d}%({:02d}%)      temperature: {:3d} ({:3d})\n",
+                       p.conditions(CO2), race.conditions[CO2],
+                       p.conditions(HYDROGEN), race.conditions[HYDROGEN],
+                       p.conditions(TEMP), race.conditions[TEMP]);
+  g.out << std::format("    nitrogen {:02d}%({:02d}%)     sulfur "
+                       "{:02d}%({:02d}%)           normal: {:3d}\n",
+                       p.conditions(NITROGEN), race.conditions[NITROGEN],
+                       p.conditions(SULFUR), race.conditions[SULFUR],
+                       p.conditions(RTEMP));
+  g.out << std::format(
+      "      helium {:02d}%({:02d}%)      other {:02d}%({:02d}%)\n",
+      p.conditions(HELIUM), race.conditions[HELIUM], p.conditions(OTHER),
+      race.conditions[OTHER]);
+
+  int tindex = p.conditions(TOXIC) / 10;
+  if (tindex < 0)
+    tindex = 0;
+  else if (tindex > 10)
+    tindex = 11;
+  g.out << std::format("                     Toxicity: {}% ({})\n",
+                       p.conditions(TOXIC), Tox[tindex]);
+  g.out << std::format("Total planetary compatibility: {:.2f}%\n",
+                       p.compatibility(race));
+
+  auto smap = getsmap(p);
+
+  int crystal_count = 0;
+  int avg_fert = 0;
+  int avg_resource = 0;
+  for (int x = 0; x < p.Maxx(); x++) {
+    for (int y = 0; y < p.Maxy(); y++) {
+      auto& s = smap.get(x, y);
+      avg_fert += s.get_fert();
+      avg_resource += s.get_resource();
+      if (race.discoveries[D_CRYSTAL] || race.God)
+        crystal_count += !!s.get_crystals();
+    }
+  }
+
+  g.out << std::format("{:>29}: {}\n{:>29}: {}\n{:>29}: {}\n",
+                       "Average fertility", avg_fert / (p.Maxx() * p.Maxy()),
+                       "Average resource", avg_resource / (p.Maxx() * p.Maxy()),
+                       "Crystal sectors", crystal_count);
+  g.out << std::format("{:>29}: {}\n", "Total resource deposits",
+                       p.total_resources());
+  g.out << std::format("fuel_stock  resource_stock dest_pot.   {}    ^{}\n",
+                       race.Metamorph ? "biomass" : "popltn",
+                       race.Metamorph ? "biomass" : "popltn");
+  g.out << std::format("{:10}  {:14} {:9}  {:7}{:11}\n",
+                       p.info(Playernum - 1).fuel,
+                       p.info(Playernum - 1).resource,
+                       p.info(Playernum - 1).destruct, p.popn(), p.maxpopn());
+  if (p.slaved_to()) {
+    g.out << std::format("This planet ENSLAVED to player {}!\n", p.slaved_to());
+  }
+}
+
+// Helper: Survey star system
+static void survey_star(GameObj& g, const Place& where) {
+  auto& race = *g.race;
+
+  const auto* star_ptr = g.entity_manager.peek_star(where.snum);
+  if (!star_ptr) {
+    g.out << "Star not found.\n";
+    return;
+  }
+  const auto& star = *star_ptr;
+
+  g.out << std::format("Star {}\n", star.get_name());
+  g.out << std::format("locn: {},{}\n", star.xpos(), star.ypos());
+
+  if (race.God) {
+    for (int i = 0; i < star.numplanets(); i++) {
+      g.out << std::format(" \"{}\"\n", star.get_planet_name(i));
+    }
+  }
+
+  g.out << std::format("Gravity: {:.2f}\tInstability: ", star.gravity());
+
+  if (race.tech >= TECH_SEE_STABILITY || race.God) {
+    g.out << std::format("{}% ({})\n", star.stability(),
+                         stability_label(star.stability()));
+  } else {
+    g.out << "(cannot determine)\n";
+  }
+
+  g.out << std::format("temperature class (1->10) {}\n", star.temperature());
+  g.out << std::format("{} planets are ", star.numplanets());
+  for (int i = 0; i < star.numplanets(); i++) {
+    g.out << std::format("{} ", star.get_planet_name(i));
+  }
+  g.out << "\n";
+}
+
+void survey(const command_t& argv, GameObj& g) {
   // Create appropriate formatter based on command name
   auto formatter = [&argv]() -> std::unique_ptr<SurveyFormatter> {
     if (argv[0] == "survey") {
@@ -192,203 +382,58 @@ void survey(const command_t& argv, GameObj& g) {
     }
   }();
 
+  // Determine what to survey
   std::unique_ptr<Place> where;
-  if (argv.size() == 1) { /* no args */
+  bool all = false;  // Full survey flag
+  std::string range_arg;
+
+  if (argv.size() == 1) {
+    // No args - use current scope
     where = std::make_unique<Place>(g.level, g.snum, g.pnum);
   } else {
-    /* they are surveying a sector */
+    // Parse argument to determine survey type
     if ((isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) ||
-        ((argv[1][0] == '-') && (all = 1))) {
+        ((argv[1][0] == '-') && (all = true))) {
+      // Sector range or full survey
       if (g.level != ScopeLevel::LEVEL_PLAN) {
         g.out << "There are no sectors here.\n";
         return;
       }
       where = std::make_unique<Place>(ScopeLevel::LEVEL_PLAN, g.snum, g.pnum);
-
+      if (!all) {
+        range_arg = argv[1];
+      }
     } else {
+      // Survey a named location
       where = std::make_unique<Place>(g, argv[1]);
       if (where->err || where->level == ScopeLevel::LEVEL_SHIP) return;
     }
   }
 
-  // Use g.race for read-only access to current player's race
-  auto& race = *g.race;
-
-  if (where->level == ScopeLevel::LEVEL_PLAN) {
-    const auto* star_ptr = g.entity_manager.peek_star(where->snum);
-    if (!star_ptr) {
-      g.out << "Star not found.\n";
-      return;
-    }
-    const auto& star = *star_ptr;
-
-    const auto* p_ptr = g.entity_manager.peek_planet(where->snum, where->pnum);
-    if (!p_ptr) {
-      g.out << "Planet not found.\n";
-      return;
-    }
-    const auto& p = *p_ptr;
-
-    compat = p.compatibility(race);
-
-    if ((argv.size() > 1 && isdigit(argv[1][0]) &&
-         index(argv[1].c_str(), ',') != nullptr) ||
-        all) {
-      auto smap = getsmap(p);
-
-      if (!all) {
-        get4args(argv[1].c_str(), &x2, &hix, &lowy, &hiy);
-        /* ^^^ translate from lowx:hix,lowy:hiy */
-        x2 = std::max(0, x2);
-        hix = std::min(hix, p.Maxx() - 1);
-        lowy = std::max(0, lowy);
-        hiy = std::min(hiy, p.Maxy() - 1);
+  // Dispatch based on scope level
+  switch (where->level) {
+    case ScopeLevel::LEVEL_PLAN:
+      // Check if this is a sector survey or planet overview
+      if ((argv.size() > 1 && isdigit(argv[1][0]) &&
+           index(argv[1].c_str(), ',') != nullptr) ||
+          all) {
+        survey_planet_sectors(g, *where, range_arg, all, *formatter);
       } else {
-        x2 = 0;
-        hix = p.Maxx() - 1;
-        lowy = 0;
-        hiy = p.Maxy() - 1;
+        survey_planet_overview(g, *where);
       }
+      break;
 
-      int inhere = 0;  // Track if player has presence on planet
-      if (formatter->tracks_ships()) {
-        inhere = p.info(Playernum - 1).numsectsowned;
-        const ShipList kShips(g.entity_manager, p.ships());
-        for (const Ship* shipa : kShips) {
-          if (shipa->owner() == Playernum &&
-              (shipa->popn() || (shipa->type() == ShipType::OTYPE_PROBE)))
-            inhere = 1;
-          if (shipa->alive() && landed(*shipa) &&
-              shiplocs[shipa->land_x()][shipa->land_y()].count <
-                  MAX_SHIPS_PER_SECTOR) {
-            auto& loc = shiplocs[shipa->land_x()][shipa->land_y()];
-            loc.ships[loc.count].shipno = shipa->number();
-            loc.ships[loc.count].owner = shipa->owner();
-            loc.ships[loc.count].ltr = Shipltrs[shipa->type()];
-            loc.count++;
-          }
-        }
-      }
+    case ScopeLevel::LEVEL_STAR:
+      survey_star(g, *where);
+      break;
 
-      formatter->write_header(g.out, p, star, star.get_planet_name(where->pnum),
-                              Playernum, race, all, inhere);
+    case ScopeLevel::LEVEL_UNIV:
+      g.out << "It's just _there_, you know?\n";
+      break;
 
-      for (; lowy <= hiy; lowy++)
-        for (lowx = x2; lowx <= hix; lowx++) {
-          auto& s = smap.get(lowx, lowy);
-          const SectorShipData* ship_data = (shiplocs[lowx][lowy].count > 0)
-                                                ? &shiplocs[lowx][lowy]
-                                                : nullptr;
-          formatter->write_sector(g.out, lowx, lowy, s, race, Playernum,
-                                  Governor, compat, p.conditions(TOXIC),
-                                  ship_data, inhere);
-        }
-
-      formatter->write_footer(g.out);
-    } else {
-      /* survey of planet */
-      g.out << std::format("{}:\n",
-                           star.get_planet_name(where->pnum));
-      g.out << std::format("gravity   x,y absolute     x,y relative to {}\n",
-                           star.get_name());
-      g.out << std::format("{:7.2f}   {:7.1f},{:7.1f}   {:8.1f},{:8.1f}\n",
-                           p.gravity(), p.xpos() + star.xpos(),
-                           p.ypos() + star.ypos(), p.xpos(),
-                           p.ypos());
-      g.out << "======== Planetary conditions: ========\n";
-      g.out << "atmosphere concentrations:\n";
-      g.out << std::format(
-          "     methane {:02d}%({:02d}%)     oxygen {:02d}%({:02d}%)\n",
-          p.conditions(METHANE), race.conditions[METHANE],
-          p.conditions(OXYGEN), race.conditions[OXYGEN]);
-      g.out << std::format("         CO2 {:02d}%({:02d}%)   hydrogen "
-                           "{:02d}%({:02d}%)      temperature: {:3d} ({:3d})\n",
-                           p.conditions(CO2), race.conditions[CO2],
-                           p.conditions(HYDROGEN), race.conditions[HYDROGEN],
-                           p.conditions(TEMP), race.conditions[TEMP]);
-      g.out << std::format("    nitrogen {:02d}%({:02d}%)     sulfur "
-                           "{:02d}%({:02d}%)           normal: {:3d}\n",
-                           p.conditions(NITROGEN), race.conditions[NITROGEN],
-                           p.conditions(SULFUR), race.conditions[SULFUR],
-                           p.conditions(RTEMP));
-      g.out << std::format(
-          "      helium {:02d}%({:02d}%)      other {:02d}%({:02d}%)\n",
-          p.conditions(HELIUM), race.conditions[HELIUM],
-          p.conditions(OTHER), race.conditions[OTHER]);
-      if ((tindex = p.conditions(TOXIC) / 10) < 0)
-        tindex = 0;
-      else if (tindex > 10)
-        tindex = 11;
-      g.out << std::format("                     Toxicity: {}% ({})\n",
-                           p.conditions(TOXIC), Tox[tindex]);
-      g.out << std::format("Total planetary compatibility: {:.2f}%\n",
-                           p.compatibility(race));
-
-      auto smap = getsmap(p);
-
-      crystal_count = avg_fert = avg_resource = 0;
-      for (lowx = 0; lowx < p.Maxx(); lowx++)
-        for (lowy = 0; lowy < p.Maxy(); lowy++) {
-          auto& s = smap.get(lowx, lowy);
-          avg_fert += s.get_fert();
-          avg_resource += s.get_resource();
-          if (race.discoveries[D_CRYSTAL] || race.God)
-            crystal_count += !!s.get_crystals();
-        }
-      g.out << std::format("{:>29}: {}\n{:>29}: {}\n{:>29}: {}\n",
-                           "Average fertility", avg_fert / (p.Maxx() * p.Maxy()),
-                           "Average resource",
-                           avg_resource / (p.Maxx() * p.Maxy()),
-                           "Crystal sectors", crystal_count);
-      g.out << std::format("{:>29}: {}\n", "Total resource deposits",
-                           p.total_resources());
-      g.out << std::format("fuel_stock  resource_stock dest_pot.   {}    ^{}\n",
-                           race.Metamorph ? "biomass" : "popltn",
-                           race.Metamorph ? "biomass" : "popltn");
-      g.out << std::format(
-          "{:10}  {:14} {:9}  {:7}{:11}\n", p.info(Playernum - 1).fuel,
-          p.info(Playernum - 1).resource, p.info(Playernum - 1).destruct,
-          p.popn(), p.maxpopn());
-      if (p.slaved_to()) {
-        g.out << std::format("This planet ENSLAVED to player {}!\n", p.slaved_to());
-      }
-    }
-  } else if (where->level == ScopeLevel::LEVEL_STAR) {
-    const auto* star_ptr = g.entity_manager.peek_star(where->snum);
-    if (!star_ptr) {
-      g.out << "Star not found.\n";
-      return;
-    }
-    const auto& star = *star_ptr;
-
-    g.out << std::format("Star {}\n", star.get_name());
-    g.out << std::format("locn: {},{}\n", star.xpos(),
-                         star.ypos());
-    if (race.God) {
-      for (i = 0; i < star.numplanets(); i++) {
-        g.out << std::format(" \"{}\"\n", star.get_planet_name(i));
-      }
-    }
-    g.out << std::format("Gravity: {:.2f}\tInstability: ",
-                         star.gravity());
-
-    if (race.tech >= TECH_SEE_STABILITY || race.God) {
-      g.out << std::format("{}% ({})\n", star.stability(),
-                           stability_label(star.stability()));
-    } else {
-      g.out << "(cannot determine)\n";
-    }
-    g.out << std::format("temperature class (1->10) {}\n",
-                         star.temperature());
-    g.out << std::format("{} planets are ", star.numplanets());
-    for (x2 = 0; x2 < star.numplanets(); x2++) {
-      g.out << std::format("{} ", star.get_planet_name(x2));
-    }
-    g.out << "\n";
-  } else if (where->level == ScopeLevel::LEVEL_UNIV) {
-    g.out << "It's just _there_, you know?\n";
-  } else {
-    g.out << "Illegal scope.\n";
+    default:
+      g.out << "Illegal scope.\n";
+      break;
   }
-} /* end survey */
+}
 }  // namespace GB::commands

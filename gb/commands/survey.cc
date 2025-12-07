@@ -17,23 +17,21 @@ import std;
 
 module commands;
 
+namespace {
 constexpr int MAX_SHIPS_PER_SECTOR = 10;
 
-static const char* Tox[] = {
-    "Stage 0, mild",
-    "Stage 1, mild",
-    "Stage 2, semi-mild",
-    "Stage 3, semi-semi mild",
-    "Stage 4, ecologically unsound",
-    "Stage 5: ecologically unsound",
-    "Stage 6: below birth threshold",
-    "Stage 7: ecologically unstable--below birth threshold",
-    "Stage 8: ecologically poisonous --below birth threshold",
-    "Stage 9: WARNING: nearing 100% toxicity",
-    "Stage 10: WARNING: COMPLETELY TOXIC!!!",
-    "???"};
-
-namespace GB::commands {
+const char* Tox[] = {"Stage 0, mild",
+                     "Stage 1, mild",
+                     "Stage 2, semi-mild",
+                     "Stage 3, semi-semi mild",
+                     "Stage 4, ecologically unsound",
+                     "Stage 5: ecologically unsound",
+                     "Stage 6: below birth threshold",
+                     "Stage 7: ecologically unstable--below birth threshold",
+                     "Stage 8: ecologically poisonous --below birth threshold",
+                     "Stage 9: WARNING: nearing 100% toxicity",
+                     "Stage 10: WARNING: COMPLETELY TOXIC!!!",
+                     "???"};
 
 // Ship location data for CSP output
 struct ShipLocInfo {
@@ -159,7 +157,7 @@ public:
   }
 };
 
-static std::string_view stability_label(int pct) {
+std::string_view stability_label(int pct) {
   if (pct < 20) return "stable";
   if (pct < 40) return "unstable";
   if (pct < 60) return "dangerous";
@@ -168,9 +166,8 @@ static std::string_view stability_label(int pct) {
 }
 
 // Helper: Parse survey arguments and determine location
-static std::optional<Place> parse_survey_location(const command_t& argv,
-                                                   GameObj& g, bool& all,
-                                                   std::string& range_arg) {
+std::optional<Place> parse_survey_location(const command_t& argv, GameObj& g,
+                                           bool& all, std::string& range_arg) {
   all = false;
   range_arg.clear();
 
@@ -202,9 +199,9 @@ static std::optional<Place> parse_survey_location(const command_t& argv,
 }
 
 // Helper: Survey planet sectors (detailed sector-by-sector view)
-static void survey_planet_sectors(GameObj& g, const Place& where,
-                                  const std::string& range_arg, bool all,
-                                  SurveyFormatter& formatter) {
+void survey_planet_sectors(GameObj& g, const Place& where,
+                           const std::string& range_arg, bool all,
+                           SurveyFormatter& formatter) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   auto& race = *g.race;
@@ -281,7 +278,7 @@ static void survey_planet_sectors(GameObj& g, const Place& where,
 }
 
 // Helper: Survey planet overview (conditions, stats, etc.)
-static void survey_planet_overview(GameObj& g, const Place& where) {
+void survey_planet_overview(GameObj& g, const Place& where) {
   const player_t Playernum = g.player;
   auto& race = *g.race;
 
@@ -370,7 +367,7 @@ static void survey_planet_overview(GameObj& g, const Place& where) {
 }
 
 // Helper: Survey star system
-static void survey_star(GameObj& g, const Place& where) {
+void survey_star(GameObj& g, const Place& where) {
   auto& race = *g.race;
 
   const auto* star_ptr = g.entity_manager.peek_star(where.snum);
@@ -405,6 +402,10 @@ static void survey_star(GameObj& g, const Place& where) {
   }
   g.out << "\n";
 }
+
+}  // namespace
+
+namespace GB::commands {
 
 void survey(const command_t& argv, GameObj& g) {
   // Create appropriate formatter based on command name

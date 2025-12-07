@@ -60,7 +60,7 @@ public:
   virtual void render_survey(std::ostream& out, const Planet& p,
                              const Star& star, std::string_view planet_name,
                              player_t player, const Race& race, bool all,
-                             int player_presence,
+                             bool player_presence,
                              const std::vector<SectorRowData>& rows) = 0;
 
   virtual bool tracks_ships() const = 0;
@@ -71,7 +71,7 @@ class HumanFormatter : public SurveyFormatter {
 public:
   void render_survey(std::ostream& out, const Planet& p, const Star& star,
                      std::string_view planet_name, player_t player,
-                     const Race& race, bool all, int player_presence,
+                     const Race& race, bool all, bool player_presence,
                      const std::vector<SectorRowData>& rows) override {
     tabulate::Table table;
     table.format().hide_border().column_separator(" ");
@@ -145,7 +145,7 @@ class CspFormatter : public SurveyFormatter {
 public:
   void render_survey(std::ostream& out, const Planet& p, const Star& star,
                      std::string_view planet_name, player_t player,
-                     const Race& race, bool all, int player_presence,
+                     const Race& race, bool all, bool player_presence,
                      const std::vector<SectorRowData>& rows) override {
     // Write CSP header
     if (all) {
@@ -276,14 +276,14 @@ void survey_planet_sectors(GameObj& g, const Place& where,
 
   // Build ship location data if needed
   SectorShipData shiplocs[MAX_X][MAX_Y]{};
-  int inhere = 0;  // Track if player has presence on planet
+  bool inhere = false;  // Track if player has presence on planet
   if (formatter.tracks_ships()) {
-    inhere = p.info(Playernum - 1).numsectsowned;
+    inhere = p.info(Playernum - 1).numsectsowned > 0;
     const ShipList kShips(g.entity_manager, p.ships());
     for (const Ship* shipa : kShips) {
       if (shipa->owner() == Playernum &&
           (shipa->popn() || (shipa->type() == ShipType::OTYPE_PROBE)))
-        inhere = 1;
+        inhere = true;
       if (shipa->alive() && landed(*shipa) &&
           shiplocs[shipa->land_x()][shipa->land_y()].count <
               MAX_SHIPS_PER_SECTOR) {
@@ -298,19 +298,20 @@ void survey_planet_sectors(GameObj& g, const Place& where,
 
   // Accumulate sector row data
   std::vector<SectorRowData> rows;
-  for (int y = lowy; y <= hiy; y++) {
-    for (int x = lowx; x <= hix; x++) {
-      auto& s = smap.get(x, y);
-      const SectorShipData* ship_data =
-          (shiplocs[x][y].count > 0) ? &shiplocs[x][y] : nullptr;
-      rows.push_back({.x = x,
-                      .y = y,
-                      .sector = &s,
-                      .desshow_char = desshow(Playernum, Governor, race, s),
-                      .compat = compat,
-                      .toxic = p.conditions(TOXIC),
-                      .ship_data = ship_data});
-    }
+  for (const auto& s : smap) {
+    int x = s.get_x();
+    int y = s.get_y();
+    if (x < lowx || x > hix || y < lowy || y > hiy) continue;
+
+    const SectorShipData* ship_data =
+        (shiplocs[x][y].count > 0) ? &shiplocs[x][y] : nullptr;
+    rows.push_back({.x = x,
+                    .y = y,
+                    .sector = &s,
+                    .desshow_char = desshow(Playernum, Governor, race, s),
+                    .compat = compat,
+                    .toxic = p.conditions(TOXIC),
+                    .ship_data = ship_data});
   }
 
   // Render the complete survey

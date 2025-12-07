@@ -85,5 +85,4 @@ export void vote(const command_t&, GameObj&);
 export void walk(const command_t&, GameObj&);
 export void whois(const command_t&, GameObj&);
 export void zoom(const command_t&, GameObj&);
-export void zoom(const command_t&, GameObj&);
 }  // namespace GB::commands

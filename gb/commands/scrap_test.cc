@@ -149,8 +149,8 @@ int main() {
     assert(carrier_before != nullptr);
     int initial_resource = carrier_before->resource();
     double initial_fuel = carrier_before->fuel();
-    std::println("    Carrier before: resource={}, fuel={:.0f}", initial_resource,
-                 initial_fuel);
+    std::println("    Carrier before: resource={}, fuel={:.0f}",
+                 initial_resource, initial_fuel);
 
     const auto* scrap_ship = em.peek_ship(2);
     assert(scrap_ship != nullptr);

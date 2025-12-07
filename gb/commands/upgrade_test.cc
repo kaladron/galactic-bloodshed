@@ -135,8 +135,8 @@ int main() {
 
     const auto* ship_after = em.peek_ship(1);
     assert(ship_after != nullptr);
-    std::println("    After: max_speed={}, resource={}", ship_after->max_speed(),
-                 ship_after->resource());
+    std::println("    After: max_speed={}, resource={}",
+                 ship_after->max_speed(), ship_after->resource());
 
     // Speed should have increased
     assert(ship_after->max_speed() >= initial_speed);

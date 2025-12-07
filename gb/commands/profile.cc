@@ -51,59 +51,51 @@ void profile(const command_t& argv, GameObj& g) {
 
     // Configure column alignments
     race_table.column(0).format().width(10);  // Stat name
-    race_table.column(1)
-        .format()
-        .width(12)
-        .font_align(tabulate::FontAlign::right);  // Stat value
-    race_table.column(2).format().width(3);       // Spacer
-    race_table.column(3).format().width(10);      // Condition name
-    race_table.column(4)
-        .format()
-        .width(8)
-        .font_align(tabulate::FontAlign::right);  // Condition value
-    race_table.column(5).format().width(3);       // Spacer
-    race_table.column(6).format().width(12);      // Sector name
-    race_table.column(7)
-        .format()
-        .width(3)
-        .font_align(tabulate::FontAlign::center);  // Sector char
-    race_table.column(8)
-        .format()
-        .width(8)
-        .font_align(tabulate::FontAlign::right);  // Sector preference
+    race_table.column(1).format().width(12).font_align(
+        tabulate::FontAlign::right);          // Stat value
+    race_table.column(2).format().width(3);   // Spacer
+    race_table.column(3).format().width(10);  // Condition name
+    race_table.column(4).format().width(8).font_align(
+        tabulate::FontAlign::right);          // Condition value
+    race_table.column(5).format().width(3);   // Spacer
+    race_table.column(6).format().width(12);  // Sector name
+    race_table.column(7).format().width(3).font_align(
+        tabulate::FontAlign::center);  // Sector char
+    race_table.column(8).format().width(8).font_align(
+        tabulate::FontAlign::right);  // Sector preference
 
     // Add header row
-    race_table.add_row({"", "", "", "Planet", "Conditions", "", "Sector",
-                        "Preferences", ""});
+    race_table.add_row(
+        {"", "", "", "Planet", "Conditions", "", "Sector", "Preferences", ""});
     race_table[0].format().font_style({tabulate::FontStyle::bold});
 
     // Add data rows with proper alignment
+    race_table.add_row({"Fert:", std::format("{}%", race->fertilize), "",
+                        "Temp:", std::format("{}", race->conditions[TEMP]), "",
+                        "", "", ""});
     race_table.add_row(
-        {"Fert:", std::format("{}%", race->fertilize), "", "Temp:",
-         std::format("{}", race->conditions[TEMP]), "", "", "", ""});
-    race_table.add_row({"Rate:", std::format("{:.2f}", race->birthrate), "",
-                        "methane:", std::format("{}%", race->conditions[METHANE]),
-                        "", Desnames[SectorType::SEC_SEA],
-                        std::format("{}", CHAR_SEA),
-                        std::format("{:.0f}", race->likes[SectorType::SEC_SEA] * 100.)});
-    race_table.add_row({"Mass:", std::format("{:.3f}", race->mass), "",
-                        "oxygen:", std::format("{}%", race->conditions[OXYGEN]),
-                        "", Desnames[SectorType::SEC_GAS],
-                        std::format("{}", CHAR_GAS),
-                        std::format("{:.0f}", race->likes[SectorType::SEC_GAS] * 100.)});
-    race_table.add_row({"Fight:", std::format("{}", race->fighters), "",
-                        "helium:", std::format("{}%", race->conditions[HELIUM]),
-                        "", Desnames[SectorType::SEC_ICE],
-                        std::format("{}", CHAR_ICE),
-                        std::format("{:.0f}", race->likes[SectorType::SEC_ICE] * 100.)});
+        {"Rate:", std::format("{:.2f}", race->birthrate), "",
+         "methane:", std::format("{}%", race->conditions[METHANE]), "",
+         Desnames[SectorType::SEC_SEA], std::format("{}", CHAR_SEA),
+         std::format("{:.0f}", race->likes[SectorType::SEC_SEA] * 100.)});
     race_table.add_row(
-        {"Metab:", std::format("{:.2f}", race->metabolism), "", "nitrogen:",
-         std::format("{}%", race->conditions[NITROGEN]), "",
+        {"Mass:", std::format("{:.3f}", race->mass), "",
+         "oxygen:", std::format("{}%", race->conditions[OXYGEN]), "",
+         Desnames[SectorType::SEC_GAS], std::format("{}", CHAR_GAS),
+         std::format("{:.0f}", race->likes[SectorType::SEC_GAS] * 100.)});
+    race_table.add_row(
+        {"Fight:", std::format("{}", race->fighters), "",
+         "helium:", std::format("{}%", race->conditions[HELIUM]), "",
+         Desnames[SectorType::SEC_ICE], std::format("{}", CHAR_ICE),
+         std::format("{:.0f}", race->likes[SectorType::SEC_ICE] * 100.)});
+    race_table.add_row(
+        {"Metab:", std::format("{:.2f}", race->metabolism), "",
+         "nitrogen:", std::format("{}%", race->conditions[NITROGEN]), "",
          Desnames[SectorType::SEC_MOUNT], std::format("{}", CHAR_MOUNT),
          std::format("{:.0f}", race->likes[SectorType::SEC_MOUNT] * 100.)});
     race_table.add_row(
-        {"Sexes:", std::format("{}", race->number_sexes), "", "CO2:",
-         std::format("{}%", race->conditions[CO2]), "",
+        {"Sexes:", std::format("{}", race->number_sexes), "",
+         "CO2:", std::format("{}%", race->conditions[CO2]), "",
          Desnames[SectorType::SEC_LAND], std::format("{}", CHAR_LAND),
          std::format("{:.0f}", race->likes[SectorType::SEC_LAND] * 100.)});
     race_table.add_row(
@@ -112,13 +104,13 @@ void profile(const command_t& argv, GameObj& g) {
          Desnames[SectorType::SEC_DESERT], std::format("{}", CHAR_DESERT),
          std::format("{:.0f}", race->likes[SectorType::SEC_DESERT] * 100.)});
     race_table.add_row(
-        {"Avg Int:", std::format("{}", race->IQ), "", "sulfur:",
-         std::format("{}%", race->conditions[SULFUR]), "",
+        {"Avg Int:", std::format("{}", race->IQ), "",
+         "sulfur:", std::format("{}%", race->conditions[SULFUR]), "",
          Desnames[SectorType::SEC_FOREST], std::format("{}", CHAR_FOREST),
          std::format("{:.0f}", race->likes[SectorType::SEC_FOREST] * 100.)});
     race_table.add_row(
-        {"Tech:", std::format("{:.2f}", race->tech), "", "other:",
-         std::format("{}%", race->conditions[OTHER]), "",
+        {"Tech:", std::format("{:.2f}", race->tech), "",
+         "other:", std::format("{}%", race->conditions[OTHER]), "",
          Desnames[SectorType::SEC_PLATED], std::format("{}", CHAR_PLATED),
          std::format("{:.0f}", race->likes[SectorType::SEC_PLATED] * 100.)});
 

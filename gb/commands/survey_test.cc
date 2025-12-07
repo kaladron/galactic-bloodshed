@@ -101,9 +101,10 @@ void test_survey_no_args_planet_scope() {
 
     // Verify output contains expected information
     std::string out_str = g.out.str();
-    // Note: notify() output doesn't go to g.out, so we can't check for planet name
-    // Check for information that IS written to g.out
-    assert(out_str.find("======== Planetary conditions: ========") != std::string::npos);
+    // Note: notify() output doesn't go to g.out, so we can't check for planet
+    // name Check for information that IS written to g.out
+    assert(out_str.find("======== Planetary conditions: ========") !=
+           std::string::npos);
     assert(out_str.find("atmosphere concentrations") != std::string::npos);
     std::println("    ✓ Output contains planet survey information");
   }

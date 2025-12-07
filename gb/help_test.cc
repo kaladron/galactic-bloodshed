@@ -76,7 +76,8 @@ void test_help_file_format() {
       found_title = true;
     }
     // Check for section header (## Section)
-    if (line.size() >= 3 && line[0] == '#' && line[1] == '#' && line[2] == ' ') {
+    if (line.size() >= 3 && line[0] == '#' && line[1] == '#' &&
+        line[2] == ' ') {
       found_section = true;
     }
   }
@@ -92,7 +93,8 @@ void test_help_file_format() {
 void test_nonexistent_help_file() {
   std::println("Test: Non-existent help file returns null");
 
-  std::string filepath = std::format("{}/this_topic_does_not_exist.md", HELPDIR);
+  std::string filepath =
+      std::format("{}/this_topic_does_not_exist.md", HELPDIR);
 
   std::ifstream file(filepath);
   assert(!file.is_open());

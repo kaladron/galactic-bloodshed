@@ -7,8 +7,9 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
+#include <ctype.h>
 #include <strings.h>
 
 #include "gb/csp.h"
@@ -33,6 +34,160 @@ static const char* Tox[] = {
     "???"};
 
 namespace GB::commands {
+
+// Ship location data for CSP output
+struct ShipLocInfo {
+  int shipno;
+  char ltr;
+  unsigned char owner;
+};
+
+struct SectorShipData {
+  int count;
+  ShipLocInfo ships[MAX_SHIPS_PER_SECTOR];
+};
+
+// Abstract base class for survey output formatting
+class SurveyFormatter {
+public:
+  virtual ~SurveyFormatter() = default;
+
+  virtual void write_header(std::ostream& out, const Planet& p,
+                            const Star& star, std::string_view planet_name,
+                            player_t player, const Race& race, bool all,
+                            int player_presence) = 0;
+
+  virtual void write_sector(std::ostream& out, int x, int y, const Sector& s,
+                            const Race& race, player_t player, governor_t gov,
+                            double compat, int toxic,
+                            const SectorShipData* ship_data,
+                            int player_presence) = 0;
+
+  virtual void write_footer(std::ostream& out) = 0;
+
+  virtual bool tracks_ships() const = 0;
+};
+
+// Human-readable formatter (for "survey" command)
+class HumanFormatter : public SurveyFormatter {
+public:
+  void write_header(std::ostream& out, const Planet& p, const Star& star,
+                    std::string_view planet_name, player_t player,
+                    const Race& race, bool all, int player_presence) override {
+    out << " x,y cond/type  owner race eff mob frt  res  mil popn ^popn "
+           "xtals\n";
+  }
+
+  void write_sector(std::ostream& out, int x, int y, const Sector& s,
+                    const Race& race, player_t player, governor_t gov,
+                    double compat, int toxic, const SectorShipData* ship_data,
+                    int player_presence) override {
+    out << std::format("{:2d},{:<2d} ", x, y);
+    char d = desshow(player, gov, race, s);
+    if (d == CHAR_CLOAKED) {
+      out << "?  (    ?    )\n";
+    } else {
+      out << std::format(
+          " {}   {}   {:6}{:5}{:4}{:4}{:4}{:5}{:5}{:5}{:6}{}\n",
+          Dessymbols[s.get_condition()], Dessymbols[s.get_type()],
+          s.get_owner(), s.get_race(), s.get_eff(), s.get_mobilization(),
+          s.get_fert(), s.get_resource(), s.get_troops(), s.get_popn(),
+          maxsupport(race, s, compat, toxic),
+          ((s.get_crystals() && (race.discoveries[D_CRYSTAL] || race.God))
+               ? " yes"
+               : " "));
+    }
+  }
+
+  void write_footer(std::ostream& out) override {
+    // Human format has no footer
+  }
+
+  bool tracks_ships() const override {
+    return false;
+  }
+};
+
+// CSP (Client Server Protocol) formatter (for "client_survey" command)
+class CspFormatter : public SurveyFormatter {
+public:
+  void write_header(std::ostream& out, const Planet& p, const Star& star,
+                    std::string_view planet_name, player_t player,
+                    const Race& race, bool all, int player_presence) override {
+    if (all) {
+      out << std::format(
+          "{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n", CSP_CLIENT,
+          CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(), star.get_name(), planet_name,
+          p.info(player - 1).resource, p.info(player - 1).fuel,
+          p.info(player - 1).destruct, p.popn(), p.maxpopn(),
+          p.conditions(TOXIC), p.compatibility(race), p.slaved_to());
+    }
+  }
+
+  void write_sector(std::ostream& out, int x, int y, const Sector& s,
+                    const Race& race, player_t player, governor_t gov,
+                    double compat, int toxic, const SectorShipData* ship_data,
+                    int player_presence) override {
+    char sect_char;
+    switch (s.get_condition()) {
+      case SectorType::SEC_SEA:
+        sect_char = CHAR_SEA;
+        break;
+      case SectorType::SEC_LAND:
+        sect_char = CHAR_LAND;
+        break;
+      case SectorType::SEC_MOUNT:
+        sect_char = CHAR_MOUNT;
+        break;
+      case SectorType::SEC_GAS:
+        sect_char = CHAR_GAS;
+        break;
+      case SectorType::SEC_PLATED:
+        sect_char = CHAR_PLATED;
+        break;
+      case SectorType::SEC_ICE:
+        sect_char = CHAR_ICE;
+        break;
+      case SectorType::SEC_DESERT:
+        sect_char = CHAR_DESERT;
+        break;
+      case SectorType::SEC_FOREST:
+        sect_char = CHAR_FOREST;
+        break;
+      default:
+        sect_char = '?';
+        break;
+    }
+
+    out << std::format(
+        "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", CSP_CLIENT,
+        CSP_SURVEY_SECTOR, x, y, sect_char, desshow(player, gov, race, s),
+        (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(), s.get_fert(),
+        s.get_mobilization(),
+        ((s.get_crystals() && (race.discoveries[D_CRYSTAL] || race.God)) ? 1
+                                                                         : 0),
+        s.get_resource(), s.get_popn(), s.get_troops(),
+        maxsupport(race, s, compat, toxic));
+
+    if (ship_data && ship_data->count > 0 && player_presence) {
+      out << ";";
+      for (int i = 0; i < ship_data->count; i++) {
+        out << std::format(" {} {} {};", ship_data->ships[i].shipno,
+                           ship_data->ships[i].ltr, ship_data->ships[i].owner);
+      }
+    }
+    out << "\n";
+  }
+
+  void write_footer(std::ostream& out) override {
+    out << std::format("{} {}\n", CSP_CLIENT, CSP_SURVEY_END);
+  }
+
+  bool tracks_ships() const override {
+    return true;
+  }
+};
+
 static std::string_view stability_label(int pct) {
   if (pct < 20) return "stable";
   if (pct < 40) return "unstable";
@@ -48,31 +203,23 @@ void survey(const command_t& argv, GameObj& g) {
   int lowy;
   int hiy;
   int x2;
-  char d;
-  char sect_char;
   int tindex;
   double compat;
   int avg_fert;
   int avg_resource;
   int crystal_count;
   int all = 0; /* full survey 1, specific 0 */
-  struct numshipstuff {
-    int pos;
-    struct shipstuff {
-      int shipno;
-      char ltr;
-      unsigned char owner;
-    } shipstuffs[MAX_SHIPS_PER_SECTOR];
-  };
-  struct numshipstuff shiplocs[MAX_X][MAX_Y];
-  int inhere = 0;  // TODO(jeffbailey): Force init for some cases below
+  SectorShipData shiplocs[MAX_X][MAX_Y]{};
   int i;
 
-  int mode;
-  if (argv[0] == "survey")
-    mode = 0;
-  else
-    mode = 1;
+  // Create appropriate formatter based on command name
+  auto formatter = [&argv]() -> std::unique_ptr<SurveyFormatter> {
+    if (argv[0] == "survey") {
+      return std::make_unique<HumanFormatter>();
+    } else {
+      return std::make_unique<CspFormatter>();
+    }
+  }();
 
   std::unique_ptr<Place> where;
   if (argv.size() == 1) { /* no args */
@@ -132,23 +279,8 @@ void survey(const command_t& argv, GameObj& g) {
         hiy = p.Maxy() - 1;
       }
 
-      if (!mode) {
-        g.out << " x,y cond/type  owner race eff mob frt  res  mil popn "
-                 "^popn xtals\n";
-      }
-      if (mode) {
-        if (all) {
-          g.out << std::format("{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n",
-                               CSP_CLIENT, CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(),
-                               star.get_name(),
-                               star.get_planet_name(where->pnum),
-                               p.info(Playernum - 1).resource,
-                               p.info(Playernum - 1).fuel,
-                               p.info(Playernum - 1).destruct, p.popn(),
-                               p.maxpopn(), p.conditions(TOXIC),
-                               p.compatibility(race), p.slaved_to());
-        }
-        bzero((struct shipstuff*)shiplocs, sizeof(shiplocs));
+      int inhere = 0;  // Track if player has presence on planet
+      if (formatter->tracks_ships()) {
         inhere = p.info(Playernum - 1).numsectsowned;
         const ShipList kShips(g.entity_manager, p.ships());
         for (const Ship* shipa : kShips) {
@@ -156,98 +288,32 @@ void survey(const command_t& argv, GameObj& g) {
               (shipa->popn() || (shipa->type() == ShipType::OTYPE_PROBE)))
             inhere = 1;
           if (shipa->alive() && landed(*shipa) &&
-              shiplocs[shipa->land_x()][shipa->land_y()].pos <
+              shiplocs[shipa->land_x()][shipa->land_y()].count <
                   MAX_SHIPS_PER_SECTOR) {
-            shiplocs[shipa->land_x()][shipa->land_y()]
-                .shipstuffs[shiplocs[shipa->land_x()][shipa->land_y()].pos]
-                .shipno = shipa->number();
-            shiplocs[shipa->land_x()][shipa->land_y()]
-                .shipstuffs[shiplocs[shipa->land_x()][shipa->land_y()].pos]
-                .owner = shipa->owner();
-            shiplocs[shipa->land_x()][shipa->land_y()]
-                .shipstuffs[shiplocs[shipa->land_x()][shipa->land_y()].pos]
-                .ltr = Shipltrs[shipa->type()];
-            shiplocs[shipa->land_x()][shipa->land_y()].pos++;
+            auto& loc = shiplocs[shipa->land_x()][shipa->land_y()];
+            loc.ships[loc.count].shipno = shipa->number();
+            loc.ships[loc.count].owner = shipa->owner();
+            loc.ships[loc.count].ltr = Shipltrs[shipa->type()];
+            loc.count++;
           }
         }
       }
+
+      formatter->write_header(g.out, p, star, star.get_planet_name(where->pnum),
+                              Playernum, race, all, inhere);
+
       for (; lowy <= hiy; lowy++)
         for (lowx = x2; lowx <= hix; lowx++) {
           auto& s = smap.get(lowx, lowy);
-          /* if (s->owner==Playernum) */
-          if (!mode) {
-            g.out << std::format("{:2d},{:<2d} ", lowx, lowy);
-            if ((d = desshow(Playernum, Governor, race, s)) == CHAR_CLOAKED) {
-              g.out << "?  (    ?    )\n";
-            } else {
-              g.out << std::format(
-                  " {}   {}   {:6}{:5}{:4}{:4}{:4}{:5}{:5}{:5}{:6}{}\n",
-                  Dessymbols[s.get_condition()],
-                  Dessymbols[s.get_type()], s.get_owner(), s.get_race(),
-                  s.get_eff(), s.get_mobilization(), s.get_fert(),
-                  s.get_resource(), s.get_troops(), s.get_popn(),
-                  maxsupport(race, s, compat, p.conditions(TOXIC)),
-                  ((s.get_crystals() &&
-                    (race.discoveries[D_CRYSTAL] || race.God))
-                       ? " yes"
-                       : " "));
-            }
-          } else { /* mode */
-            switch (s.get_condition()) {
-              case SectorType::SEC_SEA:
-                sect_char = CHAR_SEA;
-                break;
-              case SectorType::SEC_LAND:
-                sect_char = CHAR_LAND;
-                break;
-              case SectorType::SEC_MOUNT:
-                sect_char = CHAR_MOUNT;
-                break;
-              case SectorType::SEC_GAS:
-                sect_char = CHAR_GAS;
-                break;
-              case SectorType::SEC_PLATED:
-                sect_char = CHAR_PLATED;
-                break;
-              case SectorType::SEC_ICE:
-                sect_char = CHAR_ICE;
-                break;
-              case SectorType::SEC_DESERT:
-                sect_char = CHAR_DESERT;
-                break;
-              case SectorType::SEC_FOREST:
-                sect_char = CHAR_FOREST;
-                break;
-              default:
-                sect_char = '?';
-                break;
-            }
-            g.out << std::format("{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
-                                 CSP_CLIENT, CSP_SURVEY_SECTOR, lowx, lowy,
-                                 sect_char, desshow(Playernum, Governor, race, s),
-                                 (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(),
-                                 s.get_fert(), s.get_mobilization(),
-                                 ((s.get_crystals() &&
-                                   (race.discoveries[D_CRYSTAL] || race.God))
-                                      ? 1
-                                      : 0),
-                                 s.get_resource(), s.get_popn(), s.get_troops(),
-                                 maxsupport(race, s, compat, p.conditions(TOXIC)));
-
-            if (shiplocs[lowx][lowy].pos && inhere) {
-              g.out << ";";
-              for (i = 0; i < shiplocs[lowx][lowy].pos; i++) {
-                g.out << std::format(" {} {} {};",
-                                     shiplocs[lowx][lowy].shipstuffs[i].shipno,
-                                     shiplocs[lowx][lowy].shipstuffs[i].ltr,
-                                     shiplocs[lowx][lowy].shipstuffs[i].owner);
-              }
-            }
-            g.out << "\n";
-          }
+          const SectorShipData* ship_data = (shiplocs[lowx][lowy].count > 0)
+                                                ? &shiplocs[lowx][lowy]
+                                                : nullptr;
+          formatter->write_sector(g.out, lowx, lowy, s, race, Playernum,
+                                  Governor, compat, p.conditions(TOXIC),
+                                  ship_data, inhere);
         }
-      if (mode)
-        g.out << std::format("{} {}\n", CSP_CLIENT, CSP_SURVEY_END);
+
+      formatter->write_footer(g.out);
     } else {
       /* survey of planet */
       g.out << std::format("{}:\n",

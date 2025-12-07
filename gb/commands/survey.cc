@@ -320,27 +320,30 @@ void survey_planet_overview(GameObj& g, const Place& where) {
       race.conditions[OTHER]);
 
   int tindex = p.conditions(TOXIC) / 10;
-  if (tindex < 0)
+  if (tindex < 0) {
     tindex = 0;
-  else if (tindex > 10)
+  } else if (tindex > 10) {
     tindex = 11;
+  }
   g.out << std::format("                     Toxicity: {}% ({})\n",
                        p.conditions(TOXIC), Tox[tindex]);
   g.out << std::format("Total planetary compatibility: {:.2f}%\n",
                        p.compatibility(race));
 
-  auto smap = getsmap(p);
+  const auto* smap = g.entity_manager.peek_sectormap(where.snum, where.pnum);
+  if (!smap) {
+    g.out << "Sector map not found.\n";
+    return;
+  }
 
   int crystal_count = 0;
   int avg_fert = 0;
   int avg_resource = 0;
-  for (int x = 0; x < p.Maxx(); x++) {
-    for (int y = 0; y < p.Maxy(); y++) {
-      auto& s = smap.get(x, y);
-      avg_fert += s.get_fert();
-      avg_resource += s.get_resource();
-      if (race.discoveries[D_CRYSTAL] || race.God)
-        crystal_count += !!s.get_crystals();
+  for (const auto& s : *smap) {
+    avg_fert += s.get_fert();
+    avg_resource += s.get_resource();
+    if (race.discoveries[D_CRYSTAL] || race.God) {
+      crystal_count += !!s.get_crystals();
     }
   }
 
@@ -408,9 +411,8 @@ void survey(const command_t& argv, GameObj& g) {
   auto formatter = [&argv]() -> std::unique_ptr<SurveyFormatter> {
     if (argv[0] == "survey") {
       return std::make_unique<HumanFormatter>();
-    } else {
-      return std::make_unique<CspFormatter>();
     }
+    return std::make_unique<CspFormatter>();
   }();
 
   // Parse arguments and determine what to survey

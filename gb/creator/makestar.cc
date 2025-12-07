@@ -321,32 +321,7 @@ Star Makestar(starnum_t snum) {
       printf("sect map(%dx%d):\n", planet.Maxx(), planet.Maxy());
       for (y = 0; y < planet.Maxy(); y++) {
         for (x = 0; x < planet.Maxx(); x++) {
-          switch (smap.get(x, y).get_condition()) {
-            case SectorType::SEC_LAND:
-              std::putchar(CHAR_LAND);
-              break;
-            case SectorType::SEC_SEA:
-              std::putchar(CHAR_SEA);
-              break;
-            case SectorType::SEC_MOUNT:
-              std::putchar(CHAR_MOUNT);
-              break;
-            case SectorType::SEC_ICE:
-              std::putchar(CHAR_ICE);
-              break;
-            case SectorType::SEC_GAS:
-              std::putchar(CHAR_GAS);
-              break;
-            case SectorType::SEC_DESERT:
-              std::putchar(CHAR_DESERT);
-              break;
-            case SectorType::SEC_FOREST:
-              std::putchar(CHAR_FOREST);
-              break;
-            default:
-              std::putchar('?');
-              break;
-          }
+          std::putchar(get_sector_char(smap.get(x, y).get_condition()));
         }
         std::putchar('\n');
       }

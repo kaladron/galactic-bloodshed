@@ -128,36 +128,7 @@ public:
                     const Race& race, player_t player, governor_t gov,
                     double compat, int toxic, const SectorShipData* ship_data,
                     int player_presence) override {
-    char sect_char;
-    switch (s.get_condition()) {
-      case SectorType::SEC_SEA:
-        sect_char = CHAR_SEA;
-        break;
-      case SectorType::SEC_LAND:
-        sect_char = CHAR_LAND;
-        break;
-      case SectorType::SEC_MOUNT:
-        sect_char = CHAR_MOUNT;
-        break;
-      case SectorType::SEC_GAS:
-        sect_char = CHAR_GAS;
-        break;
-      case SectorType::SEC_PLATED:
-        sect_char = CHAR_PLATED;
-        break;
-      case SectorType::SEC_ICE:
-        sect_char = CHAR_ICE;
-        break;
-      case SectorType::SEC_DESERT:
-        sect_char = CHAR_DESERT;
-        break;
-      case SectorType::SEC_FOREST:
-        sect_char = CHAR_FOREST;
-        break;
-      default:
-        sect_char = '?';
-        break;
-    }
+    char sect_char = get_sector_char(s.get_condition());
 
     out << std::format(
         "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", CSP_CLIENT,

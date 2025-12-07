@@ -167,6 +167,40 @@ static std::string_view stability_label(int pct) {
   return "undergoing nova";
 }
 
+// Helper: Parse survey arguments and determine location
+static std::optional<Place> parse_survey_location(const command_t& argv,
+                                                   GameObj& g, bool& all,
+                                                   std::string& range_arg) {
+  all = false;
+  range_arg.clear();
+
+  if (argv.size() == 1) {
+    // No args - use current scope
+    return Place(g.level, g.snum, g.pnum);
+  }
+
+  // Parse argument to determine survey type
+  if ((isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) ||
+      ((argv[1][0] == '-') && (all = true))) {
+    // Sector range or full survey
+    if (g.level != ScopeLevel::LEVEL_PLAN) {
+      g.out << "There are no sectors here.\n";
+      return std::nullopt;
+    }
+    if (!all) {
+      range_arg = argv[1];
+    }
+    return Place(ScopeLevel::LEVEL_PLAN, g.snum, g.pnum);
+  }
+
+  // Survey a named location
+  Place where(g, argv[1]);
+  if (where.err || where.level == ScopeLevel::LEVEL_SHIP) {
+    return std::nullopt;
+  }
+  return where;
+}
+
 // Helper: Survey planet sectors (detailed sector-by-sector view)
 static void survey_planet_sectors(GameObj& g, const Place& where,
                                   const std::string& range_arg, bool all,
@@ -382,49 +416,29 @@ void survey(const command_t& argv, GameObj& g) {
     }
   }();
 
-  // Determine what to survey
-  std::unique_ptr<Place> where;
-  bool all = false;  // Full survey flag
+  // Parse arguments and determine what to survey
+  bool all = false;
   std::string range_arg;
+  auto where_opt = parse_survey_location(argv, g, all, range_arg);
+  if (!where_opt) return;
 
-  if (argv.size() == 1) {
-    // No args - use current scope
-    where = std::make_unique<Place>(g.level, g.snum, g.pnum);
-  } else {
-    // Parse argument to determine survey type
-    if ((isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) ||
-        ((argv[1][0] == '-') && (all = true))) {
-      // Sector range or full survey
-      if (g.level != ScopeLevel::LEVEL_PLAN) {
-        g.out << "There are no sectors here.\n";
-        return;
-      }
-      where = std::make_unique<Place>(ScopeLevel::LEVEL_PLAN, g.snum, g.pnum);
-      if (!all) {
-        range_arg = argv[1];
-      }
-    } else {
-      // Survey a named location
-      where = std::make_unique<Place>(g, argv[1]);
-      if (where->err || where->level == ScopeLevel::LEVEL_SHIP) return;
-    }
-  }
+  const auto& where = *where_opt;
 
   // Dispatch based on scope level
-  switch (where->level) {
+  switch (where.level) {
     case ScopeLevel::LEVEL_PLAN:
       // Check if this is a sector survey or planet overview
       if ((argv.size() > 1 && isdigit(argv[1][0]) &&
            index(argv[1].c_str(), ',') != nullptr) ||
           all) {
-        survey_planet_sectors(g, *where, range_arg, all, *formatter);
+        survey_planet_sectors(g, where, range_arg, all, *formatter);
       } else {
-        survey_planet_overview(g, *where);
+        survey_planet_overview(g, where);
       }
       break;
 
     case ScopeLevel::LEVEL_STAR:
-      survey_star(g, *where);
+      survey_star(g, where);
       break;
 
     case ScopeLevel::LEVEL_UNIV:

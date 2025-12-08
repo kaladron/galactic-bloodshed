@@ -6,9 +6,6 @@ import gblib;
 import std;
 import tabulate;
 
-#include <ctype.h>
-#include <strings.h>
-
 #include "gb/csp.h"
 #include "gb/csp_types.h"
 
@@ -39,7 +36,7 @@ struct ShipLocInfo {
 
 struct SectorShipData {
   int count;
-  ShipLocInfo ships[MAX_SHIPS_PER_SECTOR];
+  std::array<ShipLocInfo, MAX_SHIPS_PER_SECTOR> ships;
 };
 
 // Sector row data for rendering
@@ -212,7 +209,11 @@ std::optional<Place> parse_survey_location(const command_t& argv, GameObj& g,
   }
 
   // Parse argument to determine survey type
-  if ((isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) ||
+  if (argv[1].empty()) {
+    return Place(g.level, g.snum, g.pnum);
+  }
+
+  if ((std::isdigit(argv[1][0]) && argv[1].contains(',')) ||
       ((argv[1][0] == '-') && (all = true))) {
     // Sector range or full survey
     if (g.level != ScopeLevel::LEVEL_PLAN) {
@@ -237,9 +238,7 @@ std::optional<Place> parse_survey_location(const command_t& argv, GameObj& g,
 void survey_planet_sectors(GameObj& g, const Place& where,
                            const std::string& range_arg, bool all,
                            SurveyFormatter& formatter) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
-  auto& race = *g.race;
+  const auto& race = *g.race;
 
   const auto* star_ptr = g.entity_manager.peek_star(where.snum);
   if (!star_ptr) {
@@ -256,7 +255,11 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   const auto& p = *p_ptr;
 
   double compat = p.compatibility(race);
-  auto smap = getsmap(p);
+  const auto* smap = g.entity_manager.peek_sectormap(where.snum, where.pnum);
+  if (!smap) {
+    g.out << "Sector map not found.\n";
+    return;
+  }
 
   // Determine sector range
   int lowx, hix, lowy, hiy;
@@ -275,15 +278,17 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   }
 
   // Build ship location data if needed
-  SectorShipData shiplocs[MAX_X][MAX_Y]{};
+  std::vector<std::vector<SectorShipData>> shiplocs(
+      p.Maxx(), std::vector<SectorShipData>(p.Maxy()));
   bool inhere = false;  // Track if player has presence on planet
   if (formatter.tracks_ships()) {
-    inhere = p.info(Playernum - 1).numsectsowned > 0;
+    inhere = p.info(g.player - 1).numsectsowned > 0;
     const ShipList kShips(g.entity_manager, p.ships());
     for (const Ship* shipa : kShips) {
-      if (shipa->owner() == Playernum &&
-          (shipa->popn() || (shipa->type() == ShipType::OTYPE_PROBE)))
+      if (shipa->owner() == g.player &&
+          (shipa->popn() || (shipa->type() == ShipType::OTYPE_PROBE))) {
         inhere = true;
+      }
       if (shipa->alive() && landed(*shipa) &&
           shiplocs[shipa->land_x()][shipa->land_y()].count <
               MAX_SHIPS_PER_SECTOR) {
@@ -298,7 +303,7 @@ void survey_planet_sectors(GameObj& g, const Place& where,
 
   // Accumulate sector row data
   std::vector<SectorRowData> rows;
-  for (const auto& s : smap) {
+  for (const auto& s : *smap) {
     int x = s.get_x();
     int y = s.get_y();
     if (x < lowx || x > hix || y < lowy || y > hiy) continue;
@@ -308,7 +313,7 @@ void survey_planet_sectors(GameObj& g, const Place& where,
     rows.push_back({.x = x,
                     .y = y,
                     .sector = &s,
-                    .desshow_char = desshow(Playernum, Governor, race, s),
+                    .desshow_char = desshow(g.player, g.governor, race, s),
                     .compat = compat,
                     .toxic = p.conditions(TOXIC),
                     .ship_data = ship_data});
@@ -316,13 +321,12 @@ void survey_planet_sectors(GameObj& g, const Place& where,
 
   // Render the complete survey
   formatter.render_survey(g.out, p, star, star.get_planet_name(where.pnum),
-                          Playernum, race, all, inhere, rows);
+                          g.player, race, all, inhere, rows);
 }
 
 // Helper: Survey planet overview (conditions, stats, etc.)
 void survey_planet_overview(GameObj& g, const Place& where) {
-  const player_t Playernum = g.player;
-  auto& race = *g.race;
+  const auto& race = *g.race;
 
   const auto* star_ptr = g.entity_manager.peek_star(where.snum);
   if (!star_ptr) {
@@ -403,9 +407,8 @@ void survey_planet_overview(GameObj& g, const Place& where) {
                        race.Metamorph ? "biomass" : "popltn",
                        race.Metamorph ? "biomass" : "popltn");
   g.out << std::format("{:10}  {:14} {:9}  {:7}{:11}\n",
-                       p.info(Playernum - 1).fuel,
-                       p.info(Playernum - 1).resource,
-                       p.info(Playernum - 1).destruct, p.popn(), p.maxpopn());
+                       p.info(g.player - 1).fuel, p.info(g.player - 1).resource,
+                       p.info(g.player - 1).destruct, p.popn(), p.maxpopn());
   if (p.slaved_to()) {
     g.out << std::format("This planet ENSLAVED to player {}!\n", p.slaved_to());
   }
@@ -413,7 +416,7 @@ void survey_planet_overview(GameObj& g, const Place& where) {
 
 // Helper: Survey star system
 void survey_star(GameObj& g, const Place& where) {
-  auto& race = *g.race;
+  const auto& race = *g.race;
 
   const auto* star_ptr = g.entity_manager.peek_star(where.snum);
   if (!star_ptr) {
@@ -473,8 +476,8 @@ void survey(const command_t& argv, GameObj& g) {
   switch (where.level) {
     case ScopeLevel::LEVEL_PLAN:
       // Check if this is a sector survey or planet overview
-      if ((argv.size() > 1 && isdigit(argv[1][0]) &&
-           index(argv[1].c_str(), ',') != nullptr) ||
+      if ((argv.size() > 1 && std::isdigit(argv[1][0]) &&
+           argv[1].contains(',')) ||
           all) {
         survey_planet_sectors(g, where, range_arg, all, *formatter);
       } else {

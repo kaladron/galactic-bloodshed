@@ -50,11 +50,16 @@ void repair(const command_t& argv, GameObj& g) {
   auto smap = getsmap(p);
   if (isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) {
     // translate from lowx:hix,lowy:hiy
-    get4args(argv[1].c_str(), &x2, &hix, &lowy, &hiy);
-    x2 = std::max(0, x2);
-    hix = std::min(hix, p.Maxx() - 1);
-    lowy = std::max(0, lowy);
-    hiy = std::min(hiy, p.Maxy() - 1);
+    auto coords = get4args(argv[1]);
+    if (!coords) {
+      g.out << "Invalid coordinate format. Use: x,y or xl:xh,yl:yh\n";
+      return;
+    }
+    auto [x_low, x_high, y_low, y_high] = *coords;
+    x2 = std::max(0, x_low);
+    hix = std::min(x_high, p.Maxx() - 1);
+    lowy = std::max(0, y_low);
+    hiy = std::min(y_high, p.Maxy() - 1);
   } else {
     /* repair entire planet */
     x2 = 0;

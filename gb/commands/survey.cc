@@ -264,12 +264,16 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   // Determine sector range
   int lowx, hix, lowy, hiy;
   if (!all) {
-    int x2;
-    get4args(range_arg.c_str(), &x2, &hix, &lowy, &hiy);
+    auto coords = get4args(range_arg);
+    if (!coords) {
+      g.out << "Invalid coordinate format. Use: x,y or xl:xh,yl:yh\n";
+      return;
+    }
+    auto [x2, x_high, y_low, y_high] = *coords;
     lowx = std::max(0, x2);
-    hix = std::min(hix, p.Maxx() - 1);
-    lowy = std::max(0, lowy);
-    hiy = std::min(hiy, p.Maxy() - 1);
+    hix = std::min(x_high, p.Maxx() - 1);
+    lowy = std::max(0, y_low);
+    hiy = std::min(y_high, p.Maxy() - 1);
   } else {
     lowx = 0;
     hix = p.Maxx() - 1;

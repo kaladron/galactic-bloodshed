@@ -260,10 +260,12 @@ void test_survey_sector_range_with_header() {
     command_t cmd = {"survey", "0:2,0:2"};
     GB::commands::survey(cmd, g);
 
-    // Verify output contains the header line
+    // Verify output contains the header line (tabulate format)
     std::string out_str = g.out.str();
-    assert(out_str.find("x,y cond/type  owner race eff mob frt  res  mil popn "
-                        "^popn xtals") != std::string::npos);
+    assert(out_str.find("x,y") != std::string::npos);
+    assert(out_str.find("cond/type") != std::string::npos);
+    assert(out_str.find("owner") != std::string::npos);
+    assert(out_str.find("xtals") != std::string::npos);
     assert(out_str.find("0,0") != std::string::npos);
     std::println("    ✓ Output contains header and sector data");
   }

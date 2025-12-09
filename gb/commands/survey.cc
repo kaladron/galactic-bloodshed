@@ -240,26 +240,12 @@ void survey_planet_sectors(GameObj& g, const Place& where,
                            SurveyFormatter& formatter) {
   const auto& race = *g.race;
 
-  const auto* star_ptr = g.entity_manager.peek_star(where.snum);
-  if (!star_ptr) {
-    g.out << "Star not found.\n";
-    return;
-  }
-  const auto& star = *star_ptr;
+  const auto& star = *g.entity_manager.peek_star(where.snum);
 
-  const auto* p_ptr = g.entity_manager.peek_planet(where.snum, where.pnum);
-  if (!p_ptr) {
-    g.out << "Planet not found.\n";
-    return;
-  }
-  const auto& p = *p_ptr;
+  const auto& p = *g.entity_manager.peek_planet(where.snum, where.pnum);
 
   double compat = p.compatibility(race);
   const auto* smap = g.entity_manager.peek_sectormap(where.snum, where.pnum);
-  if (!smap) {
-    g.out << "Sector map not found.\n";
-    return;
-  }
 
   // Determine sector range
 
@@ -333,19 +319,9 @@ void survey_planet_sectors(GameObj& g, const Place& where,
 void survey_planet_overview(GameObj& g, const Place& where) {
   const auto& race = *g.race;
 
-  const auto* star_ptr = g.entity_manager.peek_star(where.snum);
-  if (!star_ptr) {
-    g.out << "Star not found.\n";
-    return;
-  }
-  const auto& star = *star_ptr;
+  const auto& star = *g.entity_manager.peek_star(where.snum);
 
-  const auto* p_ptr = g.entity_manager.peek_planet(where.snum, where.pnum);
-  if (!p_ptr) {
-    g.out << "Planet not found.\n";
-    return;
-  }
-  const auto& p = *p_ptr;
+  const auto& p = *g.entity_manager.peek_planet(where.snum, where.pnum);
 
   g.out << std::format("{}:\n", star.get_planet_name(where.pnum));
   g.out << std::format("gravity   x,y absolute     x,y relative to {}\n",
@@ -386,10 +362,6 @@ void survey_planet_overview(GameObj& g, const Place& where) {
                        p.compatibility(race));
 
   const auto* smap = g.entity_manager.peek_sectormap(where.snum, where.pnum);
-  if (!smap) {
-    g.out << "Sector map not found.\n";
-    return;
-  }
 
   int crystal_count = 0;
   int avg_fert = 0;
@@ -423,12 +395,7 @@ void survey_planet_overview(GameObj& g, const Place& where) {
 void survey_star(GameObj& g, const Place& where) {
   const auto& race = *g.race;
 
-  const auto* star_ptr = g.entity_manager.peek_star(where.snum);
-  if (!star_ptr) {
-    g.out << "Star not found.\n";
-    return;
-  }
-  const auto& star = *star_ptr;
+  const auto& star = *g.entity_manager.peek_star(where.snum);
 
   g.out << std::format("Star {}\n", star.get_name());
   g.out << std::format("locn: {},{}\n", star.xpos(), star.ypos());

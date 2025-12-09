@@ -584,6 +584,78 @@ void test_entity_manager_kill_ship_gov_ship() {
   std::println("  ✓ Gov_ship field cleared when government ship is killed");
 }
 
+void test_peek_star_throws_on_not_found() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  std::println("Test: peek_star throws EntityNotFoundError on not found");
+
+  // Try to peek a star that doesn't exist
+  bool exception_thrown = false;
+  try {
+    em.peek_star(999);
+  } catch (const EntityNotFoundError& e) {
+    exception_thrown = true;
+    std::string msg = e.what();
+    assert(msg.find("Star not found") != std::string::npos);
+    assert(msg.find("999") != std::string::npos);
+    std::println("  ✓ Exception message: {}", msg);
+  }
+  assert(exception_thrown);
+
+  std::println("  ✓ peek_star throws EntityNotFoundError for invalid star_id");
+}
+
+void test_peek_planet_throws_on_not_found() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  std::println("Test: peek_planet throws EntityNotFoundError on not found");
+
+  // Try to peek a planet that doesn't exist
+  bool exception_thrown = false;
+  try {
+    em.peek_planet(5, 3);
+  } catch (const EntityNotFoundError& e) {
+    exception_thrown = true;
+    std::string msg = e.what();
+    assert(msg.find("Planet not found") != std::string::npos);
+    assert(msg.find("5") != std::string::npos);
+    assert(msg.find("3") != std::string::npos);
+    std::println("  ✓ Exception message: {}", msg);
+  }
+  assert(exception_thrown);
+
+  std::println("  ✓ peek_planet throws EntityNotFoundError for invalid planet");
+}
+
+void test_peek_sectormap_throws_on_not_found() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  std::println("Test: peek_sectormap throws EntityNotFoundError on not found");
+
+  // Try to peek a sectormap for a planet that doesn't exist
+  bool exception_thrown = false;
+  try {
+    em.peek_sectormap(10, 5);
+  } catch (const EntityNotFoundError& e) {
+    exception_thrown = true;
+    std::string msg = e.what();
+    assert(msg.find("SectorMap not found") != std::string::npos);
+    assert(msg.find("10") != std::string::npos);
+    assert(msg.find("5") != std::string::npos);
+    std::println("  ✓ Exception message: {}", msg);
+  }
+  assert(exception_thrown);
+
+  std::println(
+      "  ✓ peek_sectormap throws EntityNotFoundError for invalid planet");
+}
+
 int main() {
   test_entity_manager_basic();
   test_entity_manager_caching();
@@ -596,6 +668,9 @@ int main() {
   test_entity_manager_get_player();
   test_entity_manager_kill_ship();
   test_entity_manager_kill_ship_gov_ship();
+  test_peek_star_throws_on_not_found();
+  test_peek_planet_throws_on_not_found();
+  test_peek_sectormap_throws_on_not_found();
 
   std::println("\n✅ All EntityManager tests passed!");
   return 0;

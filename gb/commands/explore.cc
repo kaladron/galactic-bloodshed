@@ -43,24 +43,22 @@ void explore(const command_t& argv, GameObj& g) {
       " Star  (stability)[AP]   #  Planet [Attributes] Type (Compatibility)\n");
   for (starnum_t star = 0; star < Sdata.numstars; star++)
     if ((starq == -1) || (starq == star)) {
-      const auto* star_ptr = g.entity_manager.peek_star(star);
-      if (!star_ptr) continue;
+      const auto& star_ref = *g.entity_manager.peek_star(star);
 
-      if (isset(star_ptr->explored(), Playernum))
-        for (planetnum_t i = 0; i < star_ptr->numplanets(); i++) {
-          const auto* pl = g.entity_manager.peek_planet(star, i);
-          if (!pl) continue;
+      if (isset(star_ref.explored(), Playernum))
+        for (planetnum_t i = 0; i < star_ref.numplanets(); i++) {
+          const auto& pl = *g.entity_manager.peek_planet(star, i);
 
           if (i == 0) {
             if (race.tech >= TECH_SEE_STABILITY) {
               notify(Playernum, Governor,
-                     std::format("\n{:13} ({:2})[{:2}]\n", star_ptr->get_name(),
-                                 star_ptr->stability(),
-                                 star_ptr->AP(Playernum - 1)));
+                     std::format("\n{:13} ({:2})[{:2}]\n", star_ref.get_name(),
+                                 star_ref.stability(),
+                                 star_ref.AP(Playernum - 1)));
             } else {
               notify(Playernum, Governor,
-                     std::format("\n{:13} (/?/?)[{:2}]\n", star_ptr->get_name(),
-                                 star_ptr->AP(Playernum - 1)));
+                     std::format("\n{:13} (/?/?)[{:2}]\n", star_ref.get_name(),
+                                 star_ref.AP(Playernum - 1)));
             }
           }
 
@@ -68,28 +66,28 @@ void explore(const command_t& argv, GameObj& g) {
 
           notify(Playernum, Governor,
                  std::format("  #{}. {:<15} [ ", i + 1,
-                             star_ptr->get_planet_name(i)));
-          if (pl->info(Playernum - 1).explored) {
+                             star_ref.get_planet_name(i)));
+          if (pl.info(Playernum - 1).explored) {
             notify(Playernum, Governor, "Ex ");
-            if (pl->info(Playernum - 1).autorep) {
+            if (pl.info(Playernum - 1).autorep) {
               notify(Playernum, Governor, "Rep ");
             }
-            if (pl->info(Playernum - 1).numsectsowned) {
+            if (pl.info(Playernum - 1).numsectsowned) {
               notify(Playernum, Governor, "Inhab ");
             }
-            if (pl->slaved_to()) {
+            if (pl.slaved_to()) {
               notify(Playernum, Governor, "SLAVED ");
             }
             for (j = 1; j <= Num_races; j++)
-              if (j != Playernum && pl->info(j - 1).numsectsowned) {
+              if (j != Playernum && pl.info(j - 1).numsectsowned) {
                 notify(Playernum, Governor, std::format("{} ", j));
               }
-            if (pl->conditions(TOXIC) > 70) {
+            if (pl.conditions(TOXIC) > 70) {
               notify(Playernum, Governor, "TOXIC ");
             }
             notify(Playernum, Governor,
-                   std::format("] {} {:2.0f}%\n", Planet_types[pl->type()],
-                               pl->compatibility(race)));
+                   std::format("] {} {:2.0f}%\n", Planet_types[pl.type()],
+                               pl.compatibility(race)));
           } else {
             notify(Playernum, Governor, "No Data ]\n");
           }

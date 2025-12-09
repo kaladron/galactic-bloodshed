@@ -233,26 +233,15 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
 }
 
 const Planet* EntityManager::peek_planet(starnum_t star, planetnum_t pnum) {
-  std::lock_guard lock(cache_mutex);
-
   auto key = std::make_pair(star, pnum);
-
-  // Check if already cached
-  auto it = planet_cache.find(key);
-  if (it != planet_cache.end()) {
-    return it->second.get();
+  const auto* planet = peek_entity_impl<Planet>(
+      key, planet_cache, cache_mutex,
+      [this, star, pnum](auto) { return planets.find_by_location(star, pnum); });
+  if (!planet) {
+    throw EntityNotFoundError(
+        std::format("Planet not found: star_id={}, planet_id={}", star, pnum));
   }
-
-  // Load from repository if not cached
-  auto planet_opt = planets.find_by_location(star, pnum);
-  if (!planet_opt) {
-    return nullptr;
-  }
-
-  // Cache the entity (but don't increment refcount - this is read-only)
-  auto [iter, inserted] = planet_cache.emplace(
-      key, std::make_unique<Planet>(std::move(*planet_opt)));
-  return iter->second.get();
+  return planet;
 }
 
 void EntityManager::release_planet(starnum_t star, planetnum_t pnum) {
@@ -277,9 +266,14 @@ EntityHandle<Star> EntityManager::get_star(starnum_t num) {
 }
 
 const Star* EntityManager::peek_star(starnum_t num) {
-  return peek_entity_impl<Star>(
+  const auto* star = peek_entity_impl<Star>(
       num, star_cache, cache_mutex,
       [this](starnum_t n) { return stars.find_by_number(n); });
+  if (!star) {
+    throw EntityNotFoundError(
+        std::format("Star not found: star_id={}", num));
+  }
+  return star;
 }
 
 void EntityManager::release_star(starnum_t num) {
@@ -614,30 +608,19 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
 
 const SectorMap* EntityManager::peek_sectormap(starnum_t star,
                                                planetnum_t pnum) {
-  std::lock_guard lock(cache_mutex);
-
   auto key = std::make_pair(star, pnum);
-
-  // Check if already cached
-  auto it = sectormap_cache.find(key);
-  if (it != sectormap_cache.end()) {
-    return it->second.get();
+  const auto* sectormap = peek_entity_impl<SectorMap>(
+      key, sectormap_cache, cache_mutex,
+      [this, star, pnum](auto) {
+        auto planet_opt = planets.find_by_location(star, pnum);
+        if (!planet_opt) return std::optional<SectorMap>{};
+        return std::optional<SectorMap>(sectors.load_map(*planet_opt));
+      });
+  if (!sectormap) {
+    throw EntityNotFoundError(
+        std::format("SectorMap not found: star_id={}, planet_id={}", star, pnum));
   }
-
-  // Need to load from repository - but we need the Planet to construct
-  // SectorMap
-  auto planet_opt = planets.find_by_location(star, pnum);
-  if (!planet_opt) {
-    return nullptr;
-  }
-
-  // Load the sector map
-  SectorMap loaded_map = sectors.load_map(*planet_opt);
-
-  // Cache the entity (but don't increment refcount - this is read-only)
-  auto [iter, inserted] = sectormap_cache.emplace(
-      key, std::make_unique<SectorMap>(std::move(loaded_map)));
-  return iter->second.get();
+  return sectormap;
 }
 
 void EntityManager::release_sectormap(starnum_t star, planetnum_t pnum) {

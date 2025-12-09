@@ -7,6 +7,14 @@ import :repositories;
 import :types;
 import std.compat;
 
+// Exception thrown when an entity is not found in the database
+// This represents a programming error or data corruption, not an expected condition
+export class EntityNotFoundError : public std::runtime_error {
+public:
+  explicit EntityNotFoundError(const std::string& msg) 
+      : std::runtime_error(msg) {}
+};
+
 // Hash function for composite keys
 namespace std {
 template <>

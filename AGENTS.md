@@ -191,10 +191,9 @@ void commandname(const command_t& argv, GameObj& g) {
 ```
 
 #### Error Handling
-- **NO EXCEPTIONS** in command paths
 - Use early returns with clear error messages
-- Use `std::optional` for maybe-values
-- Always check `.has_value()` before dereferencing
+- Use `std::optional` for maybe-values and always check `.has_value()` before dereferencing
+- `EntityNotFoundError` exceptions from `peek_star()`, `peek_planet()`, and `peek_sectormap()` indicate programming errors or data corruption and should propagate for admin investigation
 
 #### Output Formatting
 ```cpp
@@ -246,12 +245,17 @@ if (!race) {
 }
 g.out << std::format("Race: {}\n", race->name);
 
-// Read star data
-const auto* star = g.entity_manager.peek_star(star_id);
+// Read star data - throws EntityNotFoundError if not found
+const auto& star = *g.entity_manager.peek_star(star_id);
 
-// Read planet data (composite key)
-const auto* planet = g.entity_manager.peek_planet(star_id, planet_num);
+// Read planet data (composite key) - throws EntityNotFoundError if not found
+const auto& planet = *g.entity_manager.peek_planet(star_id, planet_num);
+
+// Read sectormap data - throws EntityNotFoundError if not found
+const auto* smap = g.entity_manager.peek_sectormap(star_id, planet_num);
 ```
+
+**IMPORTANT:** `peek_star()`, `peek_planet()`, and `peek_sectormap()` throw `EntityNotFoundError` instead of returning nullptr. Star/planet indices are always contiguous (0 to N-1), so by the time code has a valid star/planet number, the entity must exist or data is corrupt. These exceptions represent programming errors or data corruption, not expected conditions.
 
 **Read-Write Access (get methods - RAII with auto-save):**
 ```cpp
@@ -423,12 +427,12 @@ int main() {
 ### DO NOT:
 - ❌ Use `#include` for new code (except for legacy constants from `gb/files.h`, `gb/buffers.h`)
 - ❌ Use `printf`, `std::cout`, or direct console I/O
-- ❌ Throw exceptions in command paths
 - ❌ Use raw `new`/`delete` or manual memory management
 - ❌ Add external dependencies without approval
 - ❌ Hardcode file paths or magic numbers
 - ❌ Create global state variables
 - ❌ Bypass the gblib access layer for data persistence
+- ❌ Check for null pointers from `peek_star()`, `peek_planet()`, or `peek_sectormap()` - these throw exceptions instead
 
 ### ALWAYS:
 - ✅ Use `import gblib;` and prefer `import std;` over `import std.compat;`
@@ -439,6 +443,7 @@ int main() {
 - ✅ Use `std::format` for string formatting
 - ✅ End output lines with `\n`
 - ✅ Use existing constants from `gb/files.h` and `gblib:tweakables`
+- ✅ Dereference `peek_star()`, `peek_planet()`, and `peek_sectormap()` results directly - they throw on not-found
 - ✅ Follow the established command pattern exactly
 
 ## 🎮 Game Concepts
@@ -471,13 +476,14 @@ Before submitting any code:
 - [ ] File starts with `// SPDX-License-Identifier: Apache-2.0`
 - [ ] Uses module imports, not `#include` headers
 - [ ] All output goes through `g.out`
-- [ ] Error handling uses early returns, not exceptions
+- [ ] Error handling uses early returns
 - [ ] `std::optional` values are checked before use
 - [ ] String formatting uses `std::format`
 - [ ] No hardcoded paths or magic numbers
 - [ ] Command is registered in `GB_server.cc` if applicable
 - [ ] File is added to `CMakeLists.txt` if new
 - [ ] Code follows the established patterns exactly
+- [ ] No null checks for `peek_star()`, `peek_planet()`, or `peek_sectormap()` - these throw exceptions
 
 ## 🔍 Quick Reference
 

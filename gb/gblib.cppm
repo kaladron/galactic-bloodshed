@@ -8,6 +8,7 @@ export import dallib;
 
 export import :bombard;
 export import :build;
+export import :csp;
 export import :doplanet;
 export import :dosector;
 export import :doship;

@@ -163,6 +163,7 @@ target_sources(
          gblib.cppm
          gblib-bombard.cppm
          gblib-build.cppm
+         gblib-csp.cppm
          gblib-doplanet.cppm
          gblib-dosector.cppm
          gblib-doship.cppm

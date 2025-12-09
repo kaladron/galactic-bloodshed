@@ -6,9 +6,6 @@ import gblib;
 import std;
 import tabulate;
 
-#include "gb/csp.h"
-#include "gb/csp_types.h"
-
 module commands;
 
 namespace {
@@ -131,8 +128,8 @@ void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
   // Write CSP header
   if (all) {
     out << std::format(
-        "{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n", CSP_CLIENT,
-        CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(), star.get_name(), planet_name,
+        "{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n", GB::csp::CSP_CLIENT,
+        GB::csp::CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(), star.get_name(), planet_name,
         p.info(player - 1).resource, p.info(player - 1).fuel,
         p.info(player - 1).destruct, p.popn(), p.maxpopn(), p.conditions(TOXIC),
         p.compatibility(race), p.slaved_to());
@@ -144,8 +141,8 @@ void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
     char sect_char = get_sector_char(s.get_condition());
 
     out << std::format(
-        "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", CSP_CLIENT,
-        CSP_SURVEY_SECTOR, row.x, row.y, sect_char, row.desshow_char,
+        "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", GB::csp::CSP_CLIENT,
+        GB::csp::CSP_SURVEY_SECTOR, row.x, row.y, sect_char, row.desshow_char,
         (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(), s.get_fert(),
         s.get_mobilization(),
         ((s.get_crystals() && (race.discoveries[D_CRYSTAL] || race.God)) ? 1
@@ -165,7 +162,7 @@ void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
   }
 
   // Write CSP footer
-  out << std::format("{} {}\n", CSP_CLIENT, CSP_SURVEY_END);
+  out << std::format("{} {}\n", GB::csp::CSP_CLIENT, GB::csp::CSP_SURVEY_END);
 }
 
 std::string_view stability_label(int pct) {

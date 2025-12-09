@@ -14,18 +14,29 @@ module commands;
 namespace {
 constexpr int MAX_SHIPS_PER_SECTOR = 10;
 
-const char* Tox[] = {"Stage 0, mild",
-                     "Stage 1, mild",
-                     "Stage 2, semi-mild",
-                     "Stage 3, semi-semi mild",
-                     "Stage 4, ecologically unsound",
-                     "Stage 5: ecologically unsound",
-                     "Stage 6: below birth threshold",
-                     "Stage 7: ecologically unstable--below birth threshold",
-                     "Stage 8: ecologically poisonous --below birth threshold",
-                     "Stage 9: WARNING: nearing 100% toxicity",
-                     "Stage 10: WARNING: COMPLETELY TOXIC!!!",
-                     "???"};
+constexpr std::array<std::string_view, 12> kToxDescriptions = {
+    "Stage 0, mild",
+    "Stage 1, mild",
+    "Stage 2, semi-mild",
+    "Stage 3, semi-semi mild",
+    "Stage 4, ecologically unsound",
+    "Stage 5: ecologically unsound",
+    "Stage 6: below birth threshold",
+    "Stage 7: ecologically unstable--below birth threshold",
+    "Stage 8: ecologically poisonous --below birth threshold",
+    "Stage 9: WARNING: nearing 100% toxicity",
+    "Stage 10: WARNING: COMPLETELY TOXIC!!!",
+    "???"};
+
+std::string_view get_tox(int toxicity) {
+  int index = toxicity / 10;
+  if (index < 0) {
+    index = 0;
+  } else if (index > 10) {
+    index = 11;  // "???" for toxicity > 100%
+  }
+  return kToxDescriptions[index];
+}
 
 // Ship location data for CSP output
 struct ShipLocInfo {
@@ -350,14 +361,8 @@ void survey_planet_overview(GameObj& g, const Place& where) {
       p.conditions(HELIUM), race.conditions[HELIUM], p.conditions(OTHER),
       race.conditions[OTHER]);
 
-  int tindex = p.conditions(TOXIC) / 10;
-  if (tindex < 0) {
-    tindex = 0;
-  } else if (tindex > 10) {
-    tindex = 11;
-  }
   g.out << std::format("                     Toxicity: {}% ({})\n",
-                       p.conditions(TOXIC), Tox[tindex]);
+                       p.conditions(TOXIC), get_tox(p.conditions(TOXIC)));
   g.out << std::format("Total planetary compatibility: {:.2f}%\n",
                        p.compatibility(race));
 

@@ -60,145 +60,113 @@ struct SectorRowData {
   const SectorShipData* ship_data;
 };
 
-// Abstract base class for survey output formatting
-class SurveyFormatter {
-public:
-  virtual ~SurveyFormatter() = default;
-
-  virtual void render_survey(std::ostream& out, const Planet& p,
-                             const Star& star, std::string_view planet_name,
-                             player_t player, const Race& race, bool all,
-                             bool player_presence,
-                             const std::vector<SectorRowData>& rows) = 0;
-
-  virtual bool tracks_ships() const = 0;
-};
-
 // Human-readable formatter (for "survey" command)
-class HumanFormatter : public SurveyFormatter {
-public:
-  void render_survey(std::ostream& out, const Planet& p, const Star& star,
-                     std::string_view planet_name, player_t player,
-                     const Race& race, bool all, bool player_presence,
-                     const std::vector<SectorRowData>& rows) override {
-    tabulate::Table table;
-    table.format().hide_border().column_separator(" ");
+void render_human_survey(std::ostream& out, const Race& race,
+                         const std::vector<SectorRowData>& rows) {
+  tabulate::Table table;
+  table.format().hide_border().column_separator(" ");
 
-    // Configure column widths and alignments
-    table.column(0).format().width(6);  // x,y
-    table.column(1).format().width(9);  // cond/type
-    table.column(2).format().width(5).font_align(
-        tabulate::FontAlign::right);  // owner
-    table.column(3).format().width(4).font_align(
-        tabulate::FontAlign::right);  // race
-    table.column(4).format().width(3).font_align(
-        tabulate::FontAlign::right);  // eff
-    table.column(5).format().width(3).font_align(
-        tabulate::FontAlign::right);  // mob
-    table.column(6).format().width(3).font_align(
-        tabulate::FontAlign::right);  // frt
-    table.column(7).format().width(4).font_align(
-        tabulate::FontAlign::right);  // res
-    table.column(8).format().width(4).font_align(
-        tabulate::FontAlign::right);  // mil
-    table.column(9).format().width(4).font_align(
-        tabulate::FontAlign::right);  // popn
-    table.column(10).format().width(5).font_align(
-        tabulate::FontAlign::right);  // ^popn
-    table.column(11).format().width(5).font_align(
-        tabulate::FontAlign::right);  // xtals
+  // Configure column widths and alignments
+  table.column(0).format().width(6);  // x,y
+  table.column(1).format().width(9);  // cond/type
+  table.column(2).format().width(5).font_align(
+      tabulate::FontAlign::right);  // owner
+  table.column(3).format().width(4).font_align(
+      tabulate::FontAlign::right);  // race
+  table.column(4).format().width(3).font_align(
+      tabulate::FontAlign::right);  // eff
+  table.column(5).format().width(3).font_align(
+      tabulate::FontAlign::right);  // mob
+  table.column(6).format().width(3).font_align(
+      tabulate::FontAlign::right);  // frt
+  table.column(7).format().width(4).font_align(
+      tabulate::FontAlign::right);  // res
+  table.column(8).format().width(4).font_align(
+      tabulate::FontAlign::right);  // mil
+  table.column(9).format().width(4).font_align(
+      tabulate::FontAlign::right);  // popn
+  table.column(10).format().width(5).font_align(
+      tabulate::FontAlign::right);  // ^popn
+  table.column(11).format().width(5).font_align(
+      tabulate::FontAlign::right);  // xtals
 
-    // Add header row
-    table.add_row({"x,y", "cond/type", "owner", "race", "eff", "mob", "frt",
-                   "res", "mil", "popn", "^popn", "xtals"});
-    table[0].format().font_style({tabulate::FontStyle::bold});
+  // Add header row
+  table.add_row({"x,y", "cond/type", "owner", "race", "eff", "mob", "frt",
+                 "res", "mil", "popn", "^popn", "xtals"});
+  table[0].format().font_style({tabulate::FontStyle::bold});
 
-    // Add data rows
-    for (const auto& row : rows) {
-      const auto& s = *row.sector;
-      if (row.desshow_char == CHAR_CLOAKED) {
-        table.add_row({std::format("{},{}", row.x, row.y), "?  (    ?)", "", "",
-                       "", "", "", "", "", "", "", ""});
-      } else {
-        std::string cond_type =
-            std::format(" {}   {}", Dessymbols[s.get_condition()],
-                        Dessymbols[s.get_type()]);
-        std::string crystals =
-            (s.get_crystals() && (race.discoveries[D_CRYSTAL] || race.God))
-                ? "yes"
-                : "";
-        table.add_row(
-            {std::format("{},{}", row.x, row.y), cond_type,
-             std::format("{}", s.get_owner()), std::format("{}", s.get_race()),
-             std::format("{}", s.get_eff()),
-             std::format("{}", s.get_mobilization()),
-             std::format("{}", s.get_fert()),
-             std::format("{}", s.get_resource()),
-             std::format("{}", s.get_troops()), std::format("{}", s.get_popn()),
-             std::format("{}", maxsupport(race, s, row.compat, row.toxic)),
-             crystals});
-      }
+  // Add data rows
+  for (const auto& row : rows) {
+    const auto& s = *row.sector;
+    if (row.desshow_char == CHAR_CLOAKED) {
+      table.add_row({std::format("{},{}", row.x, row.y), "?  (    ?)", "", "",
+                     "", "", "", "", "", "", "", ""});
+    } else {
+      std::string cond_type = std::format(
+          " {}   {}", Dessymbols[s.get_condition()], Dessymbols[s.get_type()]);
+      std::string crystals =
+          (s.get_crystals() && (race.discoveries[D_CRYSTAL] || race.God))
+              ? "yes"
+              : "";
+      table.add_row(
+          {std::format("{},{}", row.x, row.y), cond_type,
+           std::format("{}", s.get_owner()), std::format("{}", s.get_race()),
+           std::format("{}", s.get_eff()),
+           std::format("{}", s.get_mobilization()),
+           std::format("{}", s.get_fert()), std::format("{}", s.get_resource()),
+           std::format("{}", s.get_troops()), std::format("{}", s.get_popn()),
+           std::format("{}", maxsupport(race, s, row.compat, row.toxic)),
+           crystals});
     }
-
-    out << table << "\n";
   }
 
-  bool tracks_ships() const override {
-    return false;
-  }
-};
+  out << table << "\n";
+}
 
 // CSP (Client Server Protocol) formatter (for "client_survey" command)
-class CspFormatter : public SurveyFormatter {
-public:
-  void render_survey(std::ostream& out, const Planet& p, const Star& star,
-                     std::string_view planet_name, player_t player,
-                     const Race& race, bool all, bool player_presence,
-                     const std::vector<SectorRowData>& rows) override {
-    // Write CSP header
-    if (all) {
-      out << std::format(
-          "{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n", CSP_CLIENT,
-          CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(), star.get_name(), planet_name,
-          p.info(player - 1).resource, p.info(player - 1).fuel,
-          p.info(player - 1).destruct, p.popn(), p.maxpopn(),
-          p.conditions(TOXIC), p.compatibility(race), p.slaved_to());
-    }
+void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
+                       std::string_view planet_name, player_t player,
+                       const Race& race, bool all, bool player_presence,
+                       const std::vector<SectorRowData>& rows) {
+  // Write CSP header
+  if (all) {
+    out << std::format(
+        "{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n", CSP_CLIENT,
+        CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(), star.get_name(), planet_name,
+        p.info(player - 1).resource, p.info(player - 1).fuel,
+        p.info(player - 1).destruct, p.popn(), p.maxpopn(), p.conditions(TOXIC),
+        p.compatibility(race), p.slaved_to());
+  }
 
-    // Write sector rows
-    for (const auto& row : rows) {
-      const auto& s = *row.sector;
-      char sect_char = get_sector_char(s.get_condition());
+  // Write sector rows
+  for (const auto& row : rows) {
+    const auto& s = *row.sector;
+    char sect_char = get_sector_char(s.get_condition());
 
-      out << std::format(
-          "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", CSP_CLIENT,
-          CSP_SURVEY_SECTOR, row.x, row.y, sect_char, row.desshow_char,
-          (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(), s.get_fert(),
-          s.get_mobilization(),
-          ((s.get_crystals() && (race.discoveries[D_CRYSTAL] || race.God)) ? 1
-                                                                           : 0),
-          s.get_resource(), s.get_popn(), s.get_troops(),
-          maxsupport(race, s, row.compat, row.toxic));
+    out << std::format(
+        "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", CSP_CLIENT,
+        CSP_SURVEY_SECTOR, row.x, row.y, sect_char, row.desshow_char,
+        (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(), s.get_fert(),
+        s.get_mobilization(),
+        ((s.get_crystals() && (race.discoveries[D_CRYSTAL] || race.God)) ? 1
+                                                                         : 0),
+        s.get_resource(), s.get_popn(), s.get_troops(),
+        maxsupport(race, s, row.compat, row.toxic));
 
-      if (row.ship_data && row.ship_data->count > 0 && player_presence) {
-        out << ";";
-        for (int i = 0; i < row.ship_data->count; i++) {
-          out << std::format(" {} {} {};", row.ship_data->ships[i].shipno,
-                             row.ship_data->ships[i].ltr,
-                             row.ship_data->ships[i].owner);
-        }
+    if (row.ship_data && row.ship_data->count > 0 && player_presence) {
+      out << ";";
+      for (int i = 0; i < row.ship_data->count; i++) {
+        out << std::format(" {} {} {};", row.ship_data->ships[i].shipno,
+                           row.ship_data->ships[i].ltr,
+                           row.ship_data->ships[i].owner);
       }
-      out << "\n";
     }
-
-    // Write CSP footer
-    out << std::format("{} {}\n", CSP_CLIENT, CSP_SURVEY_END);
+    out << "\n";
   }
 
-  bool tracks_ships() const override {
-    return true;
-  }
-};
+  // Write CSP footer
+  out << std::format("{} {}\n", CSP_CLIENT, CSP_SURVEY_END);
+}
 
 std::string_view stability_label(int pct) {
   if (pct < 20) return "stable";
@@ -248,7 +216,7 @@ std::optional<Place> parse_survey_location(const command_t& argv, GameObj& g,
 // Helper: Survey planet sectors (detailed sector-by-sector view)
 void survey_planet_sectors(GameObj& g, const Place& where,
                            const std::string& range_arg, bool all,
-                           SurveyFormatter& formatter) {
+                           bool is_csp_format) {
   const auto& race = *g.race;
 
   const auto& star = *g.entity_manager.peek_star(where.snum);
@@ -279,11 +247,11 @@ void survey_planet_sectors(GameObj& g, const Place& where,
     hiy = std::min(y_high, p.Maxy() - 1);
   }
 
-  // Build ship location data if needed
+  // Build ship location data if needed (only for CSP format)
   std::vector<std::vector<SectorShipData>> shiplocs(
       p.Maxx(), std::vector<SectorShipData>(p.Maxy()));
   bool inhere = false;  // Track if player has presence on planet
-  if (formatter.tracks_ships()) {
+  if (is_csp_format) {
     inhere = p.info(g.player - 1).numsectsowned > 0;
     const ShipList kShips(g.entity_manager, p.ships());
     for (const Ship* shipa : kShips) {
@@ -322,8 +290,12 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   }
 
   // Render the complete survey
-  formatter.render_survey(g.out, p, star, star.get_planet_name(where.pnum),
-                          g.player, race, all, inhere, rows);
+  if (is_csp_format) {
+    render_csp_survey(g.out, p, star, star.get_planet_name(where.pnum),
+                      g.player, race, all, inhere, rows);
+  } else {
+    render_human_survey(g.out, race, rows);
+  }
 }
 
 // Helper: Survey planet overview (conditions, stats, etc.)
@@ -433,13 +405,8 @@ void survey_star(GameObj& g, const Place& where) {
 namespace GB::commands {
 
 void survey(const command_t& argv, GameObj& g) {
-  // Create appropriate formatter based on command name
-  auto formatter = [&argv]() -> std::unique_ptr<SurveyFormatter> {
-    if (argv[0] == "survey") {
-      return std::make_unique<HumanFormatter>();
-    }
-    return std::make_unique<CspFormatter>();
-  }();
+  // Determine if this is CSP format based on command name
+  bool is_csp_format = (argv[0] == "client_survey");
 
   // Parse arguments and determine what to survey
   bool all = false;
@@ -456,7 +423,7 @@ void survey(const command_t& argv, GameObj& g) {
       if ((argv.size() > 1 && std::isdigit(argv[1][0]) &&
            argv[1].contains(',')) ||
           all) {
-        survey_planet_sectors(g, where, range_arg, all, *formatter);
+        survey_planet_sectors(g, where, range_arg, all, is_csp_format);
       } else {
         survey_planet_overview(g, where);
       }

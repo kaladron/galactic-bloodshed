@@ -262,7 +262,13 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   }
 
   // Determine sector range
-  int lowx, hix, lowy, hiy;
+
+  // Default for all.
+  int lowx = 0;
+  int hix = p.Maxx() - 1;
+  int lowy = 0;
+  int hiy = p.Maxy() - 1;
+
   if (!all) {
     auto coords = get4args(range_arg);
     if (!coords) {
@@ -274,11 +280,6 @@ void survey_planet_sectors(GameObj& g, const Place& where,
     hix = std::min(x_high, p.Maxx() - 1);
     lowy = std::max(0, y_low);
     hiy = std::min(y_high, p.Maxy() - 1);
-  } else {
-    lowx = 0;
-    hix = p.Maxx() - 1;
-    lowy = 0;
-    hiy = p.Maxy() - 1;
   }
 
   // Build ship location data if needed

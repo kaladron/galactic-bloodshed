@@ -5,7 +5,7 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 module commands;
 
@@ -25,7 +25,7 @@ void fix(const command_t& argv, GameObj& g) {
       g.out << "Change scope to the planet first.\n";
       return;
     }
-    auto p = getplanet(g.snum, g.pnum);
+    auto& p = *g.entity_manager.get_planet(g.snum, g.pnum);
     if (argv[2] == "Maxx") {
       if (argv.size() > 3) p.Maxx() = std::stoi(argv[3]);
       notify(Playernum, Governor, std::format("Maxx = {}\n", p.Maxx()));
@@ -88,7 +88,6 @@ void fix(const command_t& argv, GameObj& g) {
       g.out << "No such option for 'fix planet'.\n";
       return;
     }
-    if (argv.size() > 3) putplanet(p, stars[g.snum], g.pnum);
     return;
   }
   if (argv[1] == "ship") {
@@ -97,39 +96,36 @@ void fix(const command_t& argv, GameObj& g) {
              "Change scope to the ship you wish to fix.\n");
       return;
     }
-    auto s = getship(g.shipno);
+    auto& s = *g.entity_manager.get_ship(g.shipno);
     if (argv[2] == "fuel") {
-      if (argv.size() > 3) s->fuel() = (double)std::stoi(argv[3]);
-      notify(Playernum, Governor, std::format("fuel = {}\n", s->fuel()));
+      if (argv.size() > 3) s.fuel() = (double)std::stoi(argv[3]);
+      notify(Playernum, Governor, std::format("fuel = {}\n", s.fuel()));
     } else if (argv[2] == "max_fuel") {
-      if (argv.size() > 3) s->max_fuel() = std::stoi(argv[3]);
-      notify(Playernum, Governor, std::format("fuel = {}\n", s->max_fuel()));
+      if (argv.size() > 3) s.max_fuel() = std::stoi(argv[3]);
+      notify(Playernum, Governor, std::format("fuel = {}\n", s.max_fuel()));
     } else if (argv[2] == "destruct") {
-      if (argv.size() > 3) s->destruct() = std::stoi(argv[3]);
-      notify(Playernum, Governor,
-             std::format("destruct = {}\n", s->destruct()));
+      if (argv.size() > 3) s.destruct() = std::stoi(argv[3]);
+      notify(Playernum, Governor, std::format("destruct = {}\n", s.destruct()));
     } else if (argv[2] == "resource") {
-      if (argv.size() > 3) s->resource() = std::stoi(argv[3]);
-      notify(Playernum, Governor,
-             std::format("resource = {}\n", s->resource()));
+      if (argv.size() > 3) s.resource() = std::stoi(argv[3]);
+      notify(Playernum, Governor, std::format("resource = {}\n", s.resource()));
     } else if (argv[2] == "damage") {
-      if (argv.size() > 3) s->damage() = std::stoi(argv[3]);
-      notify(Playernum, Governor, std::format("damage = {}\n", s->damage()));
+      if (argv.size() > 3) s.damage() = std::stoi(argv[3]);
+      notify(Playernum, Governor, std::format("damage = {}\n", s.damage()));
     } else if (argv[2] == "alive") {
-      s->alive() = 1;
-      s->damage() = 0;
+      s.alive() = 1;
+      s.damage() = 0;
       notify(Playernum, Governor,
-             std::format("{} resurrected\n", ship_to_string(*s)));
+             std::format("{} resurrected\n", ship_to_string(s)));
     } else if (argv[2] == "dead") {
-      s->alive() = 0;
-      s->damage() = 100;
+      s.alive() = 0;
+      s.damage() = 100;
       notify(Playernum, Governor,
-             std::format("{} destroyed\n", ship_to_string(*s)));
+             std::format("{} destroyed\n", ship_to_string(s)));
     } else {
       g.out << "No such option for 'fix ship'.\n";
       return;
     }
-    putship(*s);
     return;
   }
   g.out << "Fix what?\n";

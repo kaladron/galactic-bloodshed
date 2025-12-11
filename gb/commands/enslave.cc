@@ -7,7 +7,7 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 module commands;
 
@@ -22,11 +22,13 @@ void enslave(const command_t& argv, GameObj& g) {
 
   auto shipno = string_to_shipnum(argv[1]);
   if (!shipno) return;
-  auto s = getship(*shipno);
+  auto ship_handle = g.entity_manager.get_ship(*shipno);
 
-  if (!s) {
+  if (!ship_handle.get()) {
+    g.out << "Ship not found.\n";
     return;
   }
+  auto* s = ship_handle.get();
   if (testship(*s, g)) {
     return;
   }
@@ -43,7 +45,7 @@ void enslave(const command_t& argv, GameObj& g) {
               APcount)) {
     return;
   }
-  auto p = getplanet(s->storbits(), s->pnumorbits());
+  auto& p = *g.entity_manager.get_planet(s->storbits(), s->pnumorbits());
   if (p.info(Playernum - 1).numsectsowned == 0) {
     g.out << "You don't have a garrison on the planet.\n";
     return;
@@ -62,8 +64,6 @@ void enslave(const command_t& argv, GameObj& g) {
     g.out << "There is no one else on this planet to enslave!\n";
     return;
   }
-
-  auto& race = races[Playernum - 1];
 
   const ShipList kShiplist(g.entity_manager, p.ships());
   for (const Ship* s2 : kShiplist) {
@@ -91,16 +91,15 @@ void enslave(const command_t& argv, GameObj& g) {
 
   if (def <= 2 * attack) {
     p.slaved_to() = Playernum;
-    putplanet(p, stars[s->storbits()], s->pnumorbits());
 
     /* send telegs to anyone there */
     telegram << std::format("ENSLAVED by {}!!\n", ship_to_string(*s));
     telegram << std::format("All material produced here will be\n"
                             "diverted to {} coffers.",
-                            race.name);
+                            g.race->name);
 
     g.out << "\nEnslavement successful.  All material produced here will\n";
-    g.out << std::format("be diverted to {}.\n", race.name);
+    g.out << std::format("be diverted to {}.\n", g.race->name);
     g.out << std::format(
         "You must maintain a garrison of 0.1%% the population of the\n");
     g.out << std::format(

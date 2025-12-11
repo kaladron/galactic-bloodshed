@@ -3,7 +3,8 @@
 module;
 
 import gblib;
-import std.compat;
+import scnlib;
+import std;
 
 #include <strings.h>
 
@@ -15,14 +16,10 @@ void defend(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 1;
-  int sh;
-  Ship* ship;
   Ship dummy;
   int strength;
   int retal;
   int damage;
-  int x;
-  int y;
   int numdest;
 
   if (!DEFENSE) return;
@@ -57,7 +54,7 @@ void defend(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto p = getplanet(g.snum, g.pnum);
+  auto& p = *g.entity_manager.get_planet(g.snum, g.pnum);
 
   if (!p.info(Playernum - 1).numsectsowned) {
     g.out << "You do not occupy any sectors here.\n";
@@ -69,10 +66,12 @@ void defend(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto to = getship(toship);
-  if (!to) {
+  auto to_handle = g.entity_manager.get_ship(toship);
+  if (!to_handle.get()) {
+    g.out << "Ship not found.\n";
     return;
   }
+  auto* to = to_handle.get();
 
   if (to->whatorbits() != ScopeLevel::LEVEL_PLAN) {
     g.out << "The ship is not in planet orbit.\n";
@@ -93,7 +92,12 @@ void defend(const command_t& argv, GameObj& g) {
   retal = check_retal_strength(*to);
   bcopy(&*to, &dummy, sizeof(Ship));
 
-  sscanf(argv[2].c_str(), "%d,%d", &x, &y);
+  auto xy_result = scn::scan<int, int>(argv[2], "{},{}");
+  if (!xy_result) {
+    g.out << "Bad format for sector.\n";
+    return;
+  }
+  auto [x, y] = xy_result->values();
 
   if (x < 0 || x > p.Maxx() - 1 || y < 0 || y > p.Maxy() - 1) {
     g.out << "Illegal sector.\n";
@@ -101,7 +105,8 @@ void defend(const command_t& argv, GameObj& g) {
   }
 
   /* check to see if you own the sector */
-  auto sect = getsector(p, x, y);
+  auto& smap = *g.entity_manager.get_sectormap(g.snum, g.pnum);
+  auto& sect = smap.get(x, y);
   if (sect.get_owner() != Playernum) {
     g.out << "Nice try.\n";
     return;
@@ -121,15 +126,10 @@ void defend(const command_t& argv, GameObj& g) {
                          p.info(Playernum - 1).destruct);
     return;
   }
-  auto& race = races[Playernum - 1];
+  auto& race = *g.entity_manager.get_race(Playernum);
 
   char long_buf[1024], short_buf[256];
   damage = shoot_planet_to_ship(race, *to, strength, long_buf, short_buf);
-
-  if (!to->alive() && to->type() == ShipType::OTYPE_TOXWC) {
-    /* get planet again since toxicity probably has changed */
-    p = getplanet(g.snum, g.pnum);
-  }
 
   if (damage < 0) {
     g.out << std::format("Target out of range  {}!\n", SYSTEMSIZE);
@@ -149,7 +149,6 @@ void defend(const command_t& argv, GameObj& g) {
     strength = retal;
     if (laser_on(*to)) check_overload(g.entity_manager, *to, 0, &strength);
 
-    auto smap = getsmap(p);
     if ((numdest = shoot_ship_to_planet(dummy, p, strength, x, y, smap, 0, 0,
                                         long_buf, short_buf)) >= 0) {
       if (laser_on(*to))
@@ -162,44 +161,34 @@ void defend(const command_t& argv, GameObj& g) {
       notify(Playernum, Governor, long_buf);
       warn(to->owner(), to->governor(), long_buf);
     }
-    putsmap(smap, p);
   }
 
   /* protecting ships retaliate individually if damage was inflicted */
   if (damage) {
-    sh = p.ships();
-    while (sh) {
-      (void)getship(&ship, sh);
+    const ShipList shiplist(g.entity_manager, p.ships());
+    for (const Ship* ship : shiplist) {
       if (ship->protect().on && (ship->protect().ship == toship) &&
-          (ship->protect().ship == toship) && sh != toship && ship->alive() &&
-          ship->active()) {
-        if (laser_on(*ship))
-          check_overload(g.entity_manager, *ship, 0, &strength);
+          ship->number() != toship && ship->alive() && ship->active()) {
         strength = check_retal_strength(*ship);
+        if (laser_on(*ship))
+          check_overload(g.entity_manager, const_cast<Ship&>(*ship), 0,
+                         &strength);
 
-        auto smap = getsmap(p);
         if ((numdest = shoot_ship_to_planet(*ship, p, strength, x, y, smap, 0,
                                             0, long_buf, short_buf)) >= 0) {
+          auto& ship_mut = *g.entity_manager.get_ship(ship->number());
           if (laser_on(*ship))
-            use_fuel(*ship, 2.0 * (double)strength);
+            use_fuel(ship_mut, 2.0 * (double)strength);
           else
-            use_destruct(*ship, strength);
+            use_destruct(ship_mut, strength);
           post(short_buf, NewsType::COMBAT);
           notify_star(Playernum, Governor, ship->storbits(), short_buf);
           notify(Playernum, Governor, long_buf);
           warn(ship->owner(), ship->governor(), long_buf);
         }
-        putsmap(smap, p);
-        putship(*ship);
       }
-      sh = ship->nextship();
-      free(ship);
     }
   }
-
-  /* write the ship stuff out to disk */
-  putship(*to);
-  putplanet(p, stars[g.snum], g.pnum);
 
   deductAPs(g, APcount, g.snum);
 }

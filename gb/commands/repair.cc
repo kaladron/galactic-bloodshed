@@ -5,8 +5,9 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
+#include <ctype.h>
 #include <strings.h>
 
 module commands;
@@ -41,13 +42,13 @@ void repair(const command_t& argv, GameObj& g) {
     g.out << "Scope must be a planet.\n";
   }
 
-  auto p = getplanet(where->snum, where->pnum);
+  auto& p = *g.entity_manager.get_planet(where->snum, where->pnum);
   if (!p.info(Playernum - 1).numsectsowned) {
     g.out << "You don't own any sectors on this planet.\n";
     return;
   }
 
-  auto smap = getsmap(p);
+  auto& smap = *g.entity_manager.get_sectormap(where->snum, where->pnum);
   if (isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) {
     // translate from lowx:hix,lowy:hiy
     auto coords = get4args(argv[1]);
@@ -80,12 +81,10 @@ void repair(const command_t& argv, GameObj& g) {
           p.info(Playernum - 1).resource -= SECTOR_REPAIR_COST;
           cost += SECTOR_REPAIR_COST;
           sectors += 1;
-          putsector(s, p, lowx, lowy);
         }
       }
     }
   }
-  putplanet(p, stars[where->snum], where->pnum);
 
   g.out << std::format("{0} sectors repaired at a cost of {1} resources.\n",
                        sectors, cost);

@@ -147,8 +147,8 @@ int shoot_planet_to_ship(Race& race, Ship& ship, int strength, char* long_msg,
 /**
  * @return Number of sectors destroyed.
  */
-int shoot_ship_to_planet(Ship& ship, Planet& pl, int strength, int x, int y,
-                         SectorMap& smap, int ignore, int caliber,
+int shoot_ship_to_planet(const Ship& ship, Planet& pl, int strength, int x,
+                         int y, SectorMap& smap, int ignore, int caliber,
                          char* long_msg, char* short_msg) {
   int numdest = 0;
 

@@ -3,9 +3,8 @@
 module;
 
 import gblib;
-import std.compat;
-
-#include <strings.h>
+import scnlib;
+import std;
 
 module commands;
 
@@ -25,8 +24,6 @@ void move_popn(const command_t& argv, GameObj& g) {
   int oldpopn;
   int old2popn;
   int old3popn;
-  int x = -1;
-  int y = -1;
   int old2owner;
   int old2gov;
   int absorbed;
@@ -39,27 +36,34 @@ void move_popn(const command_t& argv, GameObj& g) {
     g.out << "Wrong scope\n";
     return;
   }
-  if (!stars[g.snum].control(Playernum, Governor)) {
+  if (!g.entity_manager.peek_star(g.snum)->control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  auto planet = getplanet(g.snum, g.pnum);
+  auto& planet = *g.entity_manager.get_planet(g.snum, g.pnum);
 
   if (planet.slaved_to() > 0 && planet.slaved_to() != Playernum) {
     g.out << "That planet has been enslaved!\n";
     return;
   }
-  sscanf(argv[1].c_str(), "%d,%d", &x, &y);
+  auto xy_result = scn::scan<int, int>(argv[1], "{},{}");
+  if (!xy_result) {
+    g.out << "Bad format for sector.\n";
+    return;
+  }
+  auto [x, y] = xy_result->values();
   if (x < 0 || y < 0 || x > planet.Maxx() - 1 || y > planet.Maxy() - 1) {
     g.out << "Origin coordinates illegal.\n";
     return;
   }
 
+  auto& smap = *g.entity_manager.get_sectormap(g.snum, g.pnum);
+
   /* movement loop */
   done = 0;
   n = 0;
   while (!done) {
-    auto sect = getsector(planet, x, y);
+    auto& sect = smap.get(x, y);
     if (sect.get_owner() != Playernum) {
       g.out << std::format("You don't own sector {},{}!\n", x, y);
       return;
@@ -67,13 +71,11 @@ void move_popn(const command_t& argv, GameObj& g) {
     auto [x2, y2] = get_move(planet, argv[2][n++], {x, y});
     if (x == x2 && y == y2) {
       g.out << "Finished.\n";
-      putplanet(planet, stars[g.snum], g.pnum);
       return;
     }
 
     if (x2 < 0 || y2 < 0 || x2 > planet.Maxx() - 1 || y2 > planet.Maxy() - 1) {
       g.out << std::format("Illegal coordinates {},{}.\n", x2, y2);
-      putplanet(planet, stars[g.snum], g.pnum);
       return;
     }
 
@@ -83,7 +85,7 @@ void move_popn(const command_t& argv, GameObj& g) {
     }
 
     /* ok, the move is legal */
-    auto sect2 = getsector(planet, x2, y2);
+    auto& sect2 = smap.get(x2, y2);
     if (argv.size() >= 4) {
       people = std::stoi(argv[3]);
       if (people < 0) {
@@ -99,8 +101,9 @@ void move_popn(const command_t& argv, GameObj& g) {
         people = sect.get_troops();
     }
 
-    if ((what == PopulationType::CIV && (abs(people) > sect.get_popn())) ||
-        (what == PopulationType::MIL && (abs(people) > sect.get_troops())) ||
+    if ((what == PopulationType::CIV && (std::abs(people) > sect.get_popn())) ||
+        (what == PopulationType::MIL &&
+         (std::abs(people) > sect.get_troops())) ||
         people <= 0) {
       if (what == PopulationType::CIV)
         g.out << std::format("Bad value - {} civilians in [{},{}]\n",
@@ -108,7 +111,6 @@ void move_popn(const command_t& argv, GameObj& g) {
       else if (what == PopulationType::MIL)
         g.out << std::format("Bad value - {} troops in [{},{}]\n",
                              sect.get_troops(), x, y);
-      putplanet(planet, stars[g.snum], g.pnum);
       return;
     }
 
@@ -119,9 +121,6 @@ void move_popn(const command_t& argv, GameObj& g) {
     mech_defend(g.entity_manager, Playernum, Governor, &people, what, planet,
                 x2, y2, sect2);
     if (!people) {
-      putsector(sect, planet, x, y);
-      putsector(sect2, planet, x2, y2);
-      putplanet(planet, stars[g.snum], g.pnum);
       g.out << "Attack aborted.\n";
       return;
     }
@@ -133,19 +132,20 @@ void move_popn(const command_t& argv, GameObj& g) {
 
     /* action point cost depends on the size of the group being moved */
     if (what == PopulationType::CIV)
-      APcost = MOVE_FACTOR * ((int)log(1.0 + (double)people) + Assault) + 1;
+      APcost =
+          MOVE_FACTOR * ((int)std::log(1.0 + (double)people) + Assault) + 1;
     else if (what == PopulationType::MIL)
-      APcost = MOVE_FACTOR * ((int)log10(1.0 + (double)people) + Assault) + 1;
+      APcost =
+          MOVE_FACTOR * ((int)std::log10(1.0 + (double)people) + Assault) + 1;
 
     if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcost)) {
-      putplanet(planet, stars[g.snum], g.pnum);
       return;
     }
 
     if (Assault) {
       ground_assaults[Playernum - 1][sect2.get_owner() - 1][g.snum] += 1;
-      auto& race = races[Playernum - 1];
-      auto& alien = races[sect2.get_owner() - 1];
+      auto& race = *g.entity_manager.get_race(Playernum);
+      auto& alien = *g.entity_manager.get_race(sect2.get_owner());
       /* races find out about each other */
       alien.translate[Playernum - 1] =
           MIN(alien.translate[Playernum - 1] + 5, 100);
@@ -255,8 +255,6 @@ void move_popn(const command_t& argv, GameObj& g) {
         alien.translate[Playernum - 1] =
             MIN(alien.translate[Playernum - 1] + 5, 100);
       }
-      putrace(alien);
-      putrace(race);
 
       telegram += std::format("Casualties: You: {} civ/{} mil, Them: {} {}\n",
                               casualties2, casualties3, casualties,
@@ -289,9 +287,6 @@ void move_popn(const command_t& argv, GameObj& g) {
       sect2.set_owner(0);
       done = 1;
     }
-
-    putsector(sect, planet, x, y);
-    putsector(sect2, planet, x2, y2);
 
     deductAPs(g, APcost, g.snum);
     x = x2;

@@ -3,6 +3,7 @@
 module;
 
 import gblib;
+import scnlib;
 import std;
 
 module commands;
@@ -17,8 +18,6 @@ void arm(const command_t& argv, GameObj& g) {
   } else {
     mode = 0;  // disarm
   }
-  int x = -1;
-  int y = -1;
   int max_allowed;
   int amount = 0;
   money_t cost = 0;
@@ -27,24 +26,30 @@ void arm(const command_t& argv, GameObj& g) {
     g.out << "Change scope to planet level first.\n";
     return;
   }
-  if (!stars[g.snum].control(Playernum, Governor)) {
+  if (!g.entity_manager.peek_star(g.snum)->control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  auto planet = getplanet(g.snum, g.pnum);
+  auto& planet = *g.entity_manager.get_planet(g.snum, g.pnum);
 
   if (planet.slaved_to() > 0 && planet.slaved_to() != Playernum) {
     g.out << "That planet has been enslaved!\n";
     return;
   }
 
-  std::sscanf(argv[1].c_str(), "%d,%d", &x, &y);
+  auto xy_result = scn::scan<int, int>(argv[1], "{},{}");
+  if (!xy_result) {
+    g.out << "Bad format for sector.\n";
+    return;
+  }
+  auto [x, y] = xy_result->values();
   if (x < 0 || y < 0 || x > planet.Maxx() - 1 || y > planet.Maxy() - 1) {
     g.out << "Illegal coordinates.\n";
     return;
   }
 
-  auto sect = getsector(planet, x, y);
+  auto& smap = *g.entity_manager.get_sectormap(g.snum, g.pnum);
+  auto& sect = smap.get(x, y);
   if (sect.get_owner() != Playernum) {
     g.out << "You don't own that sector.\n";
     return;
@@ -66,16 +71,16 @@ void arm(const command_t& argv, GameObj& g) {
       g.out << "You can't arm any civilians now.\n";
       return;
     }
-    auto& race = races[Playernum - 1];
     /*    enlist_cost = ENLIST_TROOP_COST * amount; */
-    money_t enlist_cost = race.fighters * amount;
-    if (enlist_cost > race.governor[Governor].money) {
+    money_t enlist_cost = g.race->fighters * amount;
+    if (enlist_cost > g.race->governor[Governor].money) {
       g.out << std::format("You need {} money to enlist {} troops.\n",
                            enlist_cost, amount);
       return;
     }
-    race.governor[Governor].money -= enlist_cost;
-    putrace(race);
+    auto race_handle = g.entity_manager.get_race(Playernum);
+    auto& race_mut = *race_handle;
+    race_mut.governor[Governor].money -= enlist_cost;
 
     cost = std::max(1U, amount / (sect.get_mobilization() + 1));
     sect.set_troops(sect.get_troops() + amount);
@@ -109,7 +114,5 @@ void arm(const command_t& argv, GameObj& g) {
     g.out << std::format("{} troops disarmed (now {} civilians, {} military)\n",
                          amount, sect.get_popn(), sect.get_troops());
   }
-  putsector(sect, planet, x, y);
-  putplanet(planet, stars[g.snum], g.pnum);
 }
 }  // namespace GB::commands

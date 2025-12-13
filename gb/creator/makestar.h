@@ -7,7 +7,7 @@
 
 int Temperature(double dist, int stemp);
 void Makestar_init();
-Star Makestar(starnum_t);
+Star Makestar(Database& db, starnum_t);
 void Makeplanet_init();
 void PrintStatistics();
 

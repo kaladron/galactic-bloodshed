@@ -26,11 +26,17 @@ void arm(const command_t& argv, GameObj& g) {
     g.out << "Change scope to planet level first.\n";
     return;
   }
-  if (!g.entity_manager.peek_star(g.snum)->control(Playernum, Governor)) {
+  const auto& star = *g.entity_manager.peek_star(g.snum);
+  if (!star.control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  auto& planet = *g.entity_manager.get_planet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  if (!planet_handle.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+  auto& planet = *planet_handle;
 
   if (planet.slaved_to() > 0 && planet.slaved_to() != Playernum) {
     g.out << "That planet has been enslaved!\n";
@@ -48,7 +54,12 @@ void arm(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto& smap = *g.entity_manager.get_sectormap(g.snum, g.pnum);
+  auto smap_handle = g.entity_manager.get_sectormap(g.snum, g.pnum);
+  if (!smap_handle.get()) {
+    g.out << "Sector map not found.\n";
+    return;
+  }
+  auto& smap = *smap_handle;
   auto& sect = smap.get(x, y);
   if (sect.get_owner() != Playernum) {
     g.out << "You don't own that sector.\n";

@@ -43,9 +43,6 @@ int main() {
   // Initialize global Sdata
   getsdata(&Sdata);
 
-  // Setup Num_races global
-  Num_races = 1;
-
   // Load race into EntityManager cache to ensure getracenum can find it
   const auto* loaded_race = em.peek_race(1);
   assert(loaded_race != nullptr);
@@ -69,9 +66,14 @@ int main() {
     GB::commands::dissolve(argv, g);
     std::println("Command output: {}", g.out.str());
 
+    // Clear cache to force reload from database
+    em.clear_cache();
+
     // Verify race was dissolved
     const auto* saved_race = em.peek_race(1);
     assert(saved_race != nullptr);
+    std::println("DEBUG: Race dissolved = {}", saved_race->dissolved);
+    std::println("DEBUG: Race name = {}", saved_race->name);
     assert(saved_race->dissolved == true);
     std::println("    ✓ Race dissolved flag set to true");
 

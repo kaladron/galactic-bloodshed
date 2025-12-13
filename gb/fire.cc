@@ -48,7 +48,7 @@ void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
       (int)((1.0 - .01 * ship.damage()) * ship.tech() / 2.0)) {
     std::string message = std::format(
         "{}: Matter-antimatter EXPLOSION from overloaded crystal on {}\n",
-        dispshiploc(ship), ship_to_string(ship));
+        dispshiploc(entity_manager, ship), ship_to_string(ship));
     entity_manager.kill_ship(ship.owner(), ship);
     *strength = 0;
     warn(ship.owner(), ship.governor(), message);
@@ -58,7 +58,7 @@ void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
              (int)((1.0 - .01 * ship.damage()) * ship.tech() / 4.0)) {
     std::string message =
         std::format("{}: Crystal damaged from overloading on {}.\n",
-                    dispshiploc(ship), ship_to_string(ship));
+                    dispshiploc(entity_manager, ship), ship_to_string(ship));
     ship.fire_laser() = 0;
     ship.mounted() = 0;
     *strength = 0;

@@ -2,6 +2,7 @@
 
 // \file makeplanet.cc makes one planet
 
+import dallib;
 import gblib;
 import std;
 
@@ -232,8 +233,9 @@ void Makesurface(const Planet& p, SectorMap& smap) {
 }
 }  // namespace
 
-Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
-                  planetnum_t planet_order) {
+Planet makeplanet(Database& db, double dist, short stemp, PlanetType type,
+                  starnum_t star_id, planetnum_t planet_order,
+                  std::optional<SectorMap>& out_smap) {
   Planet planet{type};
 
   // Set location explicitly - no global counter needed
@@ -376,6 +378,8 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
   }
   Makesurface(planet,
               smap); /* determine surface geology based on environment */
-  putsmap(smap, planet);
+
+  // Move sectormap to output parameter - caller will save after calculations
+  out_smap = std::move(smap);
   return planet;
 }

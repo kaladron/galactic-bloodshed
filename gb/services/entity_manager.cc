@@ -235,8 +235,9 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
 const Planet* EntityManager::peek_planet(starnum_t star, planetnum_t pnum) {
   auto key = std::make_pair(star, pnum);
   const auto* planet = peek_entity_impl<Planet>(
-      key, planet_cache, cache_mutex,
-      [this, star, pnum](auto) { return planets.find_by_location(star, pnum); });
+      key, planet_cache, cache_mutex, [this, star, pnum](auto) {
+        return planets.find_by_location(star, pnum);
+      });
   if (!planet) {
     throw EntityNotFoundError(
         std::format("Planet not found: star_id={}, planet_id={}", star, pnum));
@@ -266,12 +267,12 @@ EntityHandle<Star> EntityManager::get_star(starnum_t num) {
 }
 
 const Star* EntityManager::peek_star(starnum_t num) {
-  const auto* star = peek_entity_impl<Star>(
-      num, star_cache, cache_mutex,
-      [this](starnum_t n) { return stars.find_by_number(n); });
+  const auto* star =
+      peek_entity_impl<Star>(num, star_cache, cache_mutex, [this](starnum_t n) {
+        return stars.find_by_number(n);
+      });
   if (!star) {
-    throw EntityNotFoundError(
-        std::format("Star not found: star_id={}", num));
+    throw EntityNotFoundError(std::format("Star not found: star_id={}", num));
   }
   return star;
 }
@@ -610,15 +611,14 @@ const SectorMap* EntityManager::peek_sectormap(starnum_t star,
                                                planetnum_t pnum) {
   auto key = std::make_pair(star, pnum);
   const auto* sectormap = peek_entity_impl<SectorMap>(
-      key, sectormap_cache, cache_mutex,
-      [this, star, pnum](auto) {
+      key, sectormap_cache, cache_mutex, [this, star, pnum](auto) {
         auto planet_opt = planets.find_by_location(star, pnum);
         if (!planet_opt) return std::optional<SectorMap>{};
         return std::optional<SectorMap>(sectors.load_map(*planet_opt));
       });
   if (!sectormap) {
-    throw EntityNotFoundError(
-        std::format("SectorMap not found: star_id={}, planet_id={}", star, pnum));
+    throw EntityNotFoundError(std::format(
+        "SectorMap not found: star_id={}, planet_id={}", star, pnum));
   }
   return sectormap;
 }

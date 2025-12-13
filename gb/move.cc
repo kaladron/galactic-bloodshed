@@ -72,9 +72,8 @@ Coordinates get_move(const Planet& planet, const char direction,
   }
 }
 
-void mech_defend(EntityManager& em, player_t Playernum, governor_t Governor,
-                 int* people, PopulationType type, const Planet& p, int x2,
-                 int y2, const Sector& s2) {
+void mech_defend(const GameObj& g, int* people, PopulationType type,
+                 const Planet& p, int x2, int y2, const Sector& s2) {
   population_t civ = 0;
   population_t mil = 0;
   int oldgov;
@@ -84,29 +83,32 @@ void mech_defend(EntityManager& em, player_t Playernum, governor_t Governor,
   else
     mil = *people;
 
-  auto& race = races[Playernum - 1];
+  // Use g.race for read-only access, get mutable handle only when needed
+  auto race_handle = g.entity_manager.get_race(g.player);
+  if (!race_handle.get()) return;
+  auto& race = *race_handle;
 
-  ShipList shiplist(em, p.ships());
+  ShipList shiplist(g.entity_manager, p.ships());
   for (auto ship_handle : shiplist) {
     if (civ + mil == 0) break;
     Ship& ship = *ship_handle;
-    if (ship.owner() != Playernum && ship.type() == ShipType::OTYPE_AFV &&
+    if (ship.owner() != g.player && ship.type() == ShipType::OTYPE_AFV &&
         landed(ship) && retal_strength(ship) && (ship.land_x() == x2) &&
         (ship.land_y() == y2)) {
       auto& alien = races[ship.owner() - 1];
-      if (!isset(race.allied, ship.owner()) ||
-          !isset(alien.allied, Playernum)) {
+      if (!isset(g.race->allied, ship.owner()) ||
+          !isset(alien.allied, g.player)) {
         while ((civ + mil) > 0 && retal_strength(ship)) {
           oldgov = stars[ship.storbits()].governor(alien.Playernum - 1);
           char long_buf[1024], short_buf[256];
-          mech_attack_people(ship, &civ, &mil, alien, race, s2, true, long_buf,
-                             short_buf);
-          notify(Playernum, Governor, long_buf);
+          mech_attack_people(g.entity_manager, ship, &civ, &mil, alien, race,
+                             s2, true, long_buf, short_buf);
+          notify(g.player, g.governor, long_buf);
           warn(alien.Playernum, oldgov, long_buf);
           if (civ + mil) {
-            people_attack_mech(ship, civ, mil, race, alien, s2, x2, y2,
-                               long_buf, short_buf);
-            notify(Playernum, Governor, long_buf);
+            people_attack_mech(g.entity_manager, ship, civ, mil, race, alien,
+                               s2, x2, y2, long_buf, short_buf);
+            notify(g.player, g.governor, long_buf);
             warn(alien.Playernum, oldgov, long_buf);
           }
         }
@@ -116,9 +118,10 @@ void mech_defend(EntityManager& em, player_t Playernum, governor_t Governor,
   *people = civ + mil;
 }
 
-void mech_attack_people(Ship& ship, population_t* civ, population_t* mil,
-                        Race& race, Race& alien, const Sector& sect,
-                        bool ignore, char* long_msg, char* short_msg) {
+void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
+                        population_t* mil, Race& race, Race& alien,
+                        const Sector& sect, bool ignore, char* long_msg,
+                        char* short_msg) {
   auto oldciv = *civ;
   auto oldmil = *mil;
 
@@ -151,7 +154,7 @@ void mech_attack_people(Ship& ship, population_t* civ, population_t* mil,
   cas_mil = MIN(oldmil, cas_mil);
   *civ -= cas_civ;
   *mil -= cas_mil;
-  sprintf(short_msg, "%s: %s %s %s [%d]\n", dispshiploc(ship).c_str(),
+  sprintf(short_msg, "%s: %s %s %s [%d]\n", dispshiploc(em, ship).c_str(),
           ship_to_string(ship).c_str(),
           (*civ + *mil) ? "attacked" : "slaughtered", alien.name.c_str(),
           alien.Playernum);
@@ -168,9 +171,9 @@ void mech_attack_people(Ship& ship, population_t* civ, population_t* mil,
   strcat(long_msg, casualties_msg.c_str());
 }
 
-void people_attack_mech(Ship& ship, int civ, int mil, Race& race, Race& alien,
-                        const Sector& sect, int x, int y, char* long_msg,
-                        char* short_msg) {
+void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
+                        Race& race, Race& alien, const Sector& sect, int x,
+                        int y, char* long_msg, char* short_msg) {
   int strength;
   double astrength;
   double dstrength;
@@ -200,7 +203,7 @@ void people_attack_mech(Ship& ship, int civ, int mil, Race& race, Race& alien,
     kill_ship(race.Playernum, &ship);
   }
   auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage);
-  sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(ship).c_str(),
+  sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
           race.name.c_str(), race.Playernum,
           ship.alive() ? "attacked" : "DESTROYED",
           ship_to_string(ship).c_str());

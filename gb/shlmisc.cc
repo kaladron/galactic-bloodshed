@@ -132,17 +132,14 @@ std::tuple<player_t, governor_t> getracenum(const std::string& racepass,
 std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
                                             const std::string& racepass,
                                             const std::string& govpass) {
-  // We need to iterate through all races to find password match
-  // Use Num_races as the upper bound
-  for (player_t p = 1; p <= Num_races; p++) {
-    const auto* race = entity_manager.peek_race(p);
-    if (!race) continue;
-
-    if (racepass == race->password) {
+  // Iterate through all races to find password match
+  for (auto race_handle : RaceList(entity_manager)) {
+    const auto& race = race_handle.read();
+    if (racepass == race.password) {
       for (governor_t j = 0; j <= MAXGOVERNORS; j++) {
-        if (!race->governor[j].password.empty() &&
-            govpass == race->governor[j].password) {
-          return {race->Playernum, j};
+        if (!race.governor[j].password.empty() &&
+            govpass == race.governor[j].password) {
+          return {race.Playernum, j};
         }
       }
     }
@@ -151,16 +148,17 @@ std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
 }
 
 /* returns player # from string containing that players name or #. */
-player_t get_player(const std::string& name) {
+player_t get_player(EntityManager& em, const std::string& name) {
   player_t rnum = 0;
 
   if (name.empty()) return 0;
 
   if (isdigit(name[0])) {
-    if ((rnum = std::stoi(name)) < 1 || rnum > Num_races) return 0;
+    if ((rnum = std::stoi(name)) < 1 || rnum > em.num_races()) return 0;
     return rnum;
   }
-  for (const auto& race : races) {
+  for (auto race_handle : RaceList(em)) {
+    const auto& race = race_handle.read();
     if (name == race.name) return race.Playernum;
   }
   return 0;

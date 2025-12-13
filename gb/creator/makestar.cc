@@ -9,6 +9,7 @@
 // G.O.D. [1] > ammonia melts at -78C
 // G.O.D. [1] > boils at -33
 
+import dallib;
 import gblib;
 import std.compat;
 
@@ -208,7 +209,7 @@ static char* NextStarName() {
   return buf;
 }
 
-Star Makestar(starnum_t snum) {
+Star Makestar(Database& db, starnum_t snum) {
   PlanetType type;
   int roll;
   int temperature;
@@ -306,8 +307,11 @@ Star Makestar(starnum_t snum) {
     } else {
       throw std::runtime_error("No PlanetType left, bailing");
     }
-    auto planet = makeplanet(dist, star.temperature, type, snum, i);
-    auto smap = getsmap(planet);
+    std::optional<SectorMap> smap_opt;
+    auto planet =
+        makeplanet(db, dist, star.temperature, type, snum, i, smap_opt);
+    auto& smap = *smap_opt;
+
     planet.xpos() = xpos;
     planet.ypos() = ypos;
     planet.total_resources() = 0;
@@ -337,7 +341,11 @@ Star Makestar(starnum_t snum) {
         Numsects[type][d]++;
         Fertsects[type][d] += smap.get(x, y).get_fert();
       }
-    putplanet(planet, star, i);
+
+    // Save sectormap and planet to database after calculations
+    JsonStore store(db);
+    SectorRepository(store).save_map(smap);
+    PlanetRepository(store).save(planet);
   }
   return star;
 }

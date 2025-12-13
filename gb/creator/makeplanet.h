@@ -5,7 +5,8 @@
 #ifndef MAKEPLANET_H
 #define MAKEPLANET_H
 
-Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
-                  planetnum_t planet_order);
+Planet makeplanet(Database& db, double dist, short stemp, PlanetType type,
+                  starnum_t star_id, planetnum_t planet_order,
+                  std::optional<SectorMap>& out_smap);
 
 #endif  // MAKEPLANET_H

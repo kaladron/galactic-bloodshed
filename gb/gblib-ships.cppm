@@ -949,7 +949,7 @@ export void kill_ship(player_t, Ship*);
 export int docked(const Ship&);
 export int overloaded(const Ship&);
 export std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept;
-export void do_VN(Ship&, TurnStats&);
+export void do_VN(EntityManager&, Ship&, TurnStats&);
 export void planet_doVN(Ship&, Planet&, SectorMap&, EntityManager&);
 export void use_fuel(Ship&, double);
 export void use_destruct(Ship&, int);
@@ -959,10 +959,10 @@ export void rcv_resource(Ship&, int);
 export void rcv_destruct(Ship&, int);
 export void rcv_popn(Ship&, int, double);
 export void rcv_troops(Ship&, int, double);
-export std::string prin_ship_orbits(const Ship&);
+export std::string prin_ship_orbits(EntityManager&, const Ship&);
 export std::string prin_ship_dest(const Ship&);
-export void moveship(Ship& ship, int x, int y, int z);
-export void msg_OOF(const Ship& ship);
+export void moveship(EntityManager&, Ship& ship, int x, int y, int z);
+export void msg_OOF(EntityManager&, const Ship& ship);
 export bool followable(const Ship& ship, Ship& target);
 
 export shipnum_t Num_ships;
@@ -971,7 +971,7 @@ export int ShipVector[NUMSTYPES];
 export Ship** ships;
 
 export std::string dispshiploc_brief(const Ship&);
-export std::string dispshiploc(const Ship&);
+export std::string dispshiploc(EntityManager&, const Ship&);
 
 export const char Shipltrs[] = {
     'p', 's', 'X', 'D', 'B', 'I', 'C', 'd',  'f', 'e', 'H', 'S',

@@ -15,7 +15,7 @@ void pay(const command_t& argv, GameObj& g) {
   int who;
   int amount;
 
-  if (!(who = get_player(argv[1]))) {
+  if (!(who = get_player(g.entity_manager, argv[1]))) {
     g.out << "No such player.\n";
     return;
   }

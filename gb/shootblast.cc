@@ -25,8 +25,8 @@ static std::string do_critical_hits(int penetrate, Ship& ship, int* hits,
 static double p_factor(double attacker, double defender);
 
 std::optional<std::tuple<int, std::string, std::string>>
-shoot_ship_to_ship(const Ship& attacker, Ship& target, const int cew_strength,
-                   const int range, const bool ignore) {
+shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
+                   const int cew_strength, const int range, const bool ignore) {
   if (cew_strength <= 0) return std::nullopt;
 
   if (!(attacker.alive() || ignore) || !target.alive()) return std::nullopt;
@@ -77,7 +77,7 @@ shoot_ship_to_ship(const Ship& attacker, Ship& target, const int cew_strength,
     auto [damage, damage_msg] =
         do_radiation(target, attacker.tech(), cew_strength, hits);
     std::string short_msg = std::format(
-        "{}: {} {} {}\n", dispshiploc(target), ship_to_string(attacker),
+        "{}: {} {} {}\n", dispshiploc(em, target), ship_to_string(attacker),
         target.alive() ? "attacked" : "DESTROYED", ship_to_string(target));
     std::string long_msg = short_msg;
     long_msg += damage_msg;
@@ -112,15 +112,15 @@ shoot_ship_to_ship(const Ship& attacker, Ship& target, const int cew_strength,
       do_damage(attacker.owner(), target, (double)attacker.tech(), cew_strength,
                 hits, defense, caliber, dist, weapon, hit_probability);
   std::string short_msg = std::format(
-      "{}: {} {} {}\n", dispshiploc(target), ship_to_string(attacker),
+      "{}: {} {} {}\n", dispshiploc(em, target), ship_to_string(attacker),
       target.alive() ? "attacked" : "DESTROYED", ship_to_string(target));
   std::string long_msg = short_msg;
   long_msg += damage_msg;
   return std::make_tuple(damage, short_msg, long_msg);
 }
 
-int shoot_planet_to_ship(Race& race, Ship& ship, int strength, char* long_msg,
-                         char* short_msg) {
+int shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
+                         int strength, char* long_msg, char* short_msg) {
   if (strength <= 0) return -1;
   if (!ship.alive()) return -1;
 
@@ -135,7 +135,7 @@ int shoot_planet_to_ship(Race& race, Ship& ship, int strength, char* long_msg,
   auto [damage, damage_msg] =
       do_damage(race.Playernum, ship, race.tech, strength, hits, 0,
                 GTYPE_MEDIUM, 0.0, "medium guns", hit_probability);
-  sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(ship).c_str(),
+  sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
           race.Playernum, ship.alive() ? "attacked" : "DESTROYED",
           ship_to_string(ship).c_str());
   strcpy(long_msg, short_msg);
@@ -147,9 +147,10 @@ int shoot_planet_to_ship(Race& race, Ship& ship, int strength, char* long_msg,
 /**
  * @return Number of sectors destroyed.
  */
-int shoot_ship_to_planet(const Ship& ship, Planet& pl, int strength, int x,
-                         int y, SectorMap& smap, int ignore, int caliber,
-                         char* long_msg, char* short_msg) {
+int shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
+                         int strength, int x, int y, SectorMap& smap,
+                         int ignore, int caliber, char* long_msg,
+                         char* short_msg) {
   int numdest = 0;
 
   if (strength <= 0) return -1;
@@ -257,7 +258,7 @@ int shoot_ship_to_planet(const Ship& ship, Planet& pl, int strength, int x,
                           ((double)numdest / (double)(pl.Maxx() * pl.Maxy()));
 
   sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(ship).c_str(),
-          dispshiploc(ship).c_str(), oldowner);
+          dispshiploc(em, ship).c_str(), oldowner);
   strcpy(long_msg, short_msg);
   std::string msg = std::format("\t{} sectors destroyed\n", numdest);
   strcat(long_msg, msg.c_str());

@@ -64,7 +64,7 @@ void grant(const command_t& argv, GameObj& g) {
       warn(Playernum, gov,
            std::format("\"{}\" granted you {} at {}\n",
                        race.governor[Governor].name, ship_to_string(ship),
-                       prin_ship_orbits(ship)));
+                       prin_ship_orbits(g.entity_manager, ship)));
       notify(Playernum, Governor,
              std::format("{} granted to \"{}\"\n", ship_to_string(ship),
                          race.governor[gov].name));

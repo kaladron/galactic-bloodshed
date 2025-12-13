@@ -49,7 +49,7 @@ void send_message(const command_t& argv, GameObj& g) {
   if (argv[1] == "block") {
     to_block = 1;
     g.out << "Sending message to alliance block.\n";
-    if (!(who = get_player(argv[2]))) {
+    if (!(who = get_player(g.entity_manager, argv[2]))) {
       g.out << "No such alliance block.\n";
       return;
     }
@@ -66,7 +66,7 @@ void send_message(const command_t& argv, GameObj& g) {
     star = where.snum;
     stars[star] = getstar(star);
   } else {
-    if (!(who = get_player(argv[1]))) {
+    if (!(who = get_player(g.entity_manager, argv[1]))) {
       g.out << "No such player.\n";
       return;
     }

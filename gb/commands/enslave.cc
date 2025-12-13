@@ -41,11 +41,30 @@ void enslave(const command_t& argv, GameObj& g) {
     g.out << std::format("{} doesn't orbit a planet.\n", ship_to_string(*s));
     return;
   }
-  if (!enufAP(Playernum, Governor, stars[s->storbits()].AP(Playernum - 1),
-              APcount)) {
+
+  // Use get_star to keep star alive for entire function
+  auto star_handle = g.entity_manager.get_star(s->storbits());
+  if (!star_handle.get()) {
+    g.out << "Star not found.\n";
     return;
   }
-  auto& p = *g.entity_manager.get_planet(s->storbits(), s->pnumorbits());
+  const auto& star = star_handle.read();
+
+  if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
+    return;
+  }
+
+  // Get star name/planet name before deductAPs modifies star
+  std::string star_name = star.get_name();
+  std::string planet_name = star.get_planet_name(s->pnumorbits());
+
+  auto planet_handle =
+      g.entity_manager.get_planet(s->storbits(), s->pnumorbits());
+  if (!planet_handle.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+  auto& p = *planet_handle;
   if (p.info(Playernum - 1).numsectsowned == 0) {
     g.out << "You don't have a garrison on the planet.\n";
     return;
@@ -82,12 +101,10 @@ void enslave(const command_t& argv, GameObj& g) {
   g.out << "capacity greater than twice that the enemy can muster, including\n";
   g.out << "the planet and all ships orbiting it.\n";
   g.out << std::format("\nTotal forces bearing on {}:   {}\n",
-                       prin_ship_orbits(*s), attack);
+                       prin_ship_orbits(g.entity_manager, *s), attack);
 
   std::stringstream telegram;
-  telegram << std::format(
-      "ALERT!!!\n\nPlanet /{}/{}", stars[s->storbits()].get_name(),
-      stars[s->storbits()].get_planet_name(s->pnumorbits()));
+  telegram << std::format("ALERT!!!\n\nPlanet /{}/{}", star_name, planet_name);
 
   if (def <= 2 * attack) {
     p.slaved_to() = Playernum;
@@ -119,6 +136,6 @@ void enslave(const command_t& argv, GameObj& g) {
 
   for (auto i = 1; i < MAXPLAYERS; i++)
     if (p.info(i - 1).numsectsowned && i != Playernum)
-      warn(i, stars[s->storbits()].governor(i - 1), telegram.str());
+      warn(i, star.governor(i - 1), telegram.str());
 }
 }  // namespace GB::commands

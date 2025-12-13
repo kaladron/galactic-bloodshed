@@ -14,7 +14,8 @@ import std.compat;
 module gblib;
 
 namespace {
-bool moveship_onplanet(Ship& ship, const Planet& planet) {
+bool moveship_onplanet(Ship& ship, const Planet& planet,
+                       EntityManager& entity_manager) {
   if (!std::holds_alternative<TerraformData>(ship.special())) {
     ship.on() = 0;
     return false;
@@ -48,7 +49,7 @@ bool moveship_onplanet(Ship& ship, const Planet& planet) {
       ship.notified() = 1;
       std::string teleg_buf =
           std::format("%{0} is out of orders at %{1}.", ship_to_string(ship),
-                      prin_ship_orbits(ship));
+                      prin_ship_orbits(entity_manager, ship));
       push_telegram(ship.owner(), ship.governor(), teleg_buf);
     }
     ship.special() = terraform;
@@ -64,7 +65,7 @@ bool moveship_onplanet(Ship& ship, const Planet& planet) {
 // move, and then terraform
 void terraform(Ship& ship, Planet& planet, SectorMap& smap,
                EntityManager& entity_manager) {
-  if (!moveship_onplanet(ship, planet)) return;
+  if (!moveship_onplanet(ship, planet, entity_manager)) return;
   auto& s = smap.get(ship.land_x(), ship.land_y());
 
   const auto* race = entity_manager.peek_race(ship.owner());
@@ -94,14 +95,14 @@ void terraform(Ship& ship, Planet& planet, SectorMap& smap,
       planet.conditions(TOXIC) += 1;
     if ((ship.fuel() < (double)FUEL_COST_TERRA) && (!ship.notified())) {
       ship.notified() = 1;
-      msg_OOF(ship);
+      msg_OOF(entity_manager, ship);
     }
   }
 }
 
 void plow(Ship* ship, Planet& planet, SectorMap& smap,
           EntityManager& entity_manager) {
-  if (!moveship_onplanet(*ship, planet)) return;
+  if (!moveship_onplanet(*ship, planet, entity_manager)) return;
   auto& s = smap.get(ship->land_x(), ship->land_y());
   const auto* race = entity_manager.peek_race(ship->owner());
   if ((race->likes[s.get_condition()]) && (s.get_fert() < 100)) {
@@ -110,7 +111,7 @@ void plow(Ship* ship, Planet& planet, SectorMap& smap,
         ship->max_crew());
     if ((ship->fuel() < (double)FUEL_COST_PLOW) && (!ship->notified())) {
       ship->notified() = 1;
-      msg_OOF(*ship);
+      msg_OOF(entity_manager, *ship);
       return;
     }
     s.set_fert(std::min(100U, s.get_fert() + adjust));
@@ -144,7 +145,7 @@ void do_quarry(Ship* ship, Planet& planet, SectorMap& smap,
   auto& s = smap.get(ship->land_x(), ship->land_y());
 
   if ((ship->fuel() < (double)FUEL_COST_QUARRY)) {
-    if (!ship->notified()) msg_OOF(*ship);
+    if (!ship->notified()) msg_OOF(entity_manager, *ship);
     ship->notified() = 1;
     return;
   }
@@ -397,7 +398,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
               terraform(ship, planet, smap, entity_manager);
             else if (!ship.notified()) {
               ship.notified() = 1;
-              msg_OOF(ship);
+              msg_OOF(entity_manager, ship);
             }
           }
           break;
@@ -407,7 +408,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
               plow(&ship, planet, smap, entity_manager);
             else if (!ship.notified()) {
               ship.notified() = 1;
-              msg_OOF(ship);
+              msg_OOF(entity_manager, ship);
             }
           } else if (ship.on()) {
             std::string buf = std::format("K{} is not landed.", ship.number());
@@ -464,7 +465,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
               do_quarry(&ship, planet, smap, entity_manager);
             else if (!ship.notified()) {
               ship.on() = 0;
-              msg_OOF(ship);
+              msg_OOF(entity_manager, ship);
             }
           } else {
             std::string buf;

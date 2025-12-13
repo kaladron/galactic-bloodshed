@@ -143,7 +143,8 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
       auto i = int_rand(0, star->numplanets() - 1);
       std::stringstream telegram_buf;
       telegram_buf << std::format("{} has warmed and exploded at {}\n",
-                                  ship_to_string(ship), prin_ship_orbits(ship));
+                                  ship_to_string(ship),
+                                  prin_ship_orbits(entity_manager, ship));
       if (infect_planet(ship.owner(), ship.storbits(), i, entity_manager)) {
         telegram_buf << std::format("\tmeta-colony established on {}.",
                                     star->get_planet_name(i));
@@ -164,7 +165,7 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
 
       std::string telegram =
           std::format("{} has decayed at {}\n", ship_to_string(ship),
-                      prin_ship_orbits(ship));
+                      prin_ship_orbits(entity_manager, ship));
       push_telegram(ship.owner(), ship.governor(), telegram);
       entity_manager.kill_ship(ship.owner(), ship);
       return;
@@ -197,7 +198,7 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
 
     std::string telegram =
         std::format("Canister of dust previously covering {} has dissipated.\n",
-                    prin_ship_orbits(ship));
+                    prin_ship_orbits(entity_manager, ship));
 
     const auto* star = entity_manager.peek_star(ship.storbits());
     const auto* planet =
@@ -229,8 +230,9 @@ void do_greenhouse(Ship& ship, EntityManager& entity_manager,
         stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add += 10;
     } else { /* timer expired; destroy canister */
       entity_manager.kill_ship(ship.owner(), ship);
-      std::string telegram = std::format(
-          "Greenhouse gases at {} have dissipated.\n", prin_ship_orbits(ship));
+      std::string telegram =
+          std::format("Greenhouse gases at {} have dissipated.\n",
+                      prin_ship_orbits(entity_manager, ship));
 
       const auto* star = entity_manager.peek_star(ship.storbits());
       const auto* planet =
@@ -363,7 +365,7 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
     } else if (!ship.notified()) {
       ship.notified() = 1;
       ship.on() = 0;
-      msg_OOF(ship);
+      msg_OOF(entity_manager, ship);
     }
   }
 }
@@ -424,7 +426,7 @@ void doship(Ship& ship, int update, EntityManager& entity_manager,
       if (race) ship.tech() = race->tech;
     }
 
-    if (ship.active()) moveship(ship, update, 1, 0);
+    if (ship.active()) moveship(entity_manager, ship, update, 1, 0);
 
     ship.size() = ship_size(ship); /* for debugging */
     if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
@@ -534,7 +536,7 @@ void doship(Ship& ship, int update, EntityManager& entity_manager,
                                         .tampered = 0,
                                         .who_killed = 0};
             }
-            do_VN(ship, stats);
+            do_VN(entity_manager, ship, stats);
             break;
           case ShipType::STYPE_OAP:
             do_oap(ship, stats);
@@ -631,21 +633,21 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
       // TODO(jeffbailey): This doesn't actually notify anyone and should.
       std::string bombdropmsg = std::format(
           "{} dropped on sector {},{} at planet {}.\n", ship_to_string(ship),
-          bombx, bomby, prin_ship_orbits(ship));
+          bombx, bomby, prin_ship_orbits(entity_manager, ship));
 
       auto smap_handle =
           entity_manager.get_sectormap(ship.storbits(), ship.pnumorbits());
       if (!smap_handle.get()) return;
       auto& smap = *smap_handle;
       char long_buf[1024], short_buf[256];
-      auto numdest =
-          shoot_ship_to_planet(ship, p, (int)ship.destruct(), bombx, bomby,
-                               smap, 0, GTYPE_HEAVY, long_buf, short_buf);
+      auto numdest = shoot_ship_to_planet(
+          entity_manager, ship, p, (int)ship.destruct(), bombx, bomby, smap, 0,
+          GTYPE_HEAVY, long_buf, short_buf);
       push_telegram(ship.owner(), ship.governor(), long_buf);
       entity_manager.kill_ship(ship.owner(), ship);
-      std::string sectors_destroyed_msg =
-          std::format("{} dropped on {}.\n\t{} sectors destroyed.\n",
-                      ship_to_string(ship), prin_ship_orbits(ship), numdest);
+      std::string sectors_destroyed_msg = std::format(
+          "{} dropped on {}.\n\t{} sectors destroyed.\n", ship_to_string(ship),
+          prin_ship_orbits(entity_manager, ship), numdest);
       const auto* star = entity_manager.peek_star(ship.storbits());
       for (auto race_handle : RaceList(entity_manager)) {
         const auto& race = race_handle.read();
@@ -659,7 +661,7 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
       if (numdest) {
         std::string dropmsg =
             std::format("{} dropped on {}.\n", ship_to_string(ship),
-                        prin_ship_orbits(ship));
+                        prin_ship_orbits(entity_manager, ship));
         post(dropmsg, NewsType::COMBAT);
       }
     }
@@ -674,8 +676,8 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
     if (dist <= ((double)ship.speed() * STRIKE_DISTANCE_FACTOR *
                  (100.0 - (double)ship.damage()) / 100.0)) {
       /* do the attack */
-      auto s2sresult =
-          shoot_ship_to_ship(ship, *target, (int)ship.destruct(), 0);
+      auto s2sresult = shoot_ship_to_ship(entity_manager, ship, *target,
+                                          (int)ship.destruct(), 0);
       auto const& [damage, short_buf, long_buf] = *s2sresult;
       push_telegram(ship.owner(), ship.governor(), long_buf);
       push_telegram(target->owner(), target->governor(), long_buf);
@@ -704,8 +706,9 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
       const auto* star = entity_manager.peek_star(ship.storbits());
       return star ? star->ships() : 0;
     } else {  // ScopeLevel::LEVEL_PLAN
-      const auto planet = getplanet(ship.storbits(), ship.pnumorbits());
-      return planet.ships();
+      const auto* planet =
+          entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
+      return planet->ships();
     }
   }();
 
@@ -737,8 +740,9 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
     return;
   }
 
-  std::string postmsg = std::format(
-      "{} detonated at {}\n", ship_to_string(ship), prin_ship_orbits(ship));
+  std::string postmsg =
+      std::format("{} detonated at {}\n", ship_to_string(ship),
+                  prin_ship_orbits(entity_manager, ship));
   post(postmsg, NewsType::COMBAT);
   notify_star(entity_manager, ship.owner(), ship.governor(), ship.storbits(),
               postmsg);
@@ -748,8 +752,8 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
     if (sh != ship.number() && s.alive() &&
         (s.type() != ShipType::OTYPE_CANIST) &&
         (s.type() != ShipType::OTYPE_GREEN)) {
-      auto s2sresult =
-          shoot_ship_to_ship(ship, s, (int)(ship.destruct()), 0, false);
+      auto s2sresult = shoot_ship_to_ship(entity_manager, ship, s,
+                                          (int)(ship.destruct()), 0, false);
       if (s2sresult) {
         auto const& [damage, short_buf, long_buf] = *s2sresult;
         post(short_buf, NewsType::COMBAT);
@@ -761,7 +765,9 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   /* if the mine is in orbit around a planet, nuke the planet too! */
   if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
     /* pick a random sector to nuke */
-    auto planet = getplanet(ship.storbits(), ship.pnumorbits());
+    auto planet_handle =
+        entity_manager.get_planet(ship.storbits(), ship.pnumorbits());
+    auto& planet = *planet_handle;
 
     auto [x, y] = [&ship, &planet]() -> std::pair<int, int> {
       if (landed(ship)) {
@@ -773,16 +779,14 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
       }
     }();
 
-    auto smap = getsmap(planet);
-    char long_buf[1024], short_buf[256];
-    auto numdest =
-        shoot_ship_to_planet(ship, planet, (int)(ship.destruct()), x, y, smap,
-                             0, GTYPE_LIGHT, long_buf, short_buf);
-    putsmap(smap, planet);
+    auto smap_handle =
+        entity_manager.get_sectormap(ship.storbits(), ship.pnumorbits());
+    auto& smap = *smap_handle;
 
-    const auto* star = entity_manager.peek_star(ship.storbits());
-    if (!star) return;
-    putplanet(planet, *star, (int)ship.pnumorbits());
+    char long_buf[1024], short_buf[256];
+    auto numdest = shoot_ship_to_planet(entity_manager, ship, planet,
+                                        (int)(ship.destruct()), x, y, smap, 0,
+                                        GTYPE_LIGHT, long_buf, short_buf);
 
     std::stringstream telegram;
     telegram << postmsg;
@@ -790,6 +794,10 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
       telegram << std::format(" - {} sectors destroyed.", numdest);
     }
     telegram << "\n";
+
+    const auto* star = entity_manager.peek_star(ship.storbits());
+    if (!star) return;
+
     for (auto race_handle : RaceList(entity_manager)) {
       const auto& race = race_handle.read();
       if (Nuked[race.Playernum - 1]) {
@@ -839,7 +847,8 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
       numdest = MIN(numdest, ship.destruct());
       numdest = MIN(numdest, ship.retaliate());
       ship.destruct() -= numdest;
-      auto const& s2sresult = shoot_ship_to_ship(ship, target, numdest, 0);
+      auto const& s2sresult =
+          shoot_ship_to_ship(entity_manager, ship, target, numdest, 0);
       auto [damage, short_buf, long_buf] = *s2sresult;
       push_telegram(ship.owner(), ship.governor(), long_buf);
       push_telegram(target.owner(), target.governor(), long_buf);

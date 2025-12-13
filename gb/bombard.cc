@@ -52,7 +52,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
         s->owner() != ship.owner()) {
       std::string notice =
           std::format("Bombardment of {} cancelled, PDNs are present.\n",
-                      prin_ship_orbits(ship));
+                      prin_ship_orbits(entity_manager, ship));
       warn(ship.owner(), ship.governor(), notice);
       return 0;
     }
@@ -121,8 +121,8 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   ship.mass() -= str * MASS_DESTRUCT;
 
   char long_buf[1024], short_buf[256];
-  auto numdest = shoot_ship_to_planet(ship, planet, str, x, y, smap, 0, 0,
-                                      long_buf, short_buf);
+  auto numdest = shoot_ship_to_planet(entity_manager, ship, planet, str, x, y,
+                                      smap, 0, 0, long_buf, short_buf);
   /* (0=dont get smap) */
   numdest = std::max(numdest, 0);
 

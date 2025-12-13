@@ -171,7 +171,7 @@ usage:
   initialize_schema(db);
 
   for (starnum_t star = 0; star < nstars; star++) {
-    stars.emplace_back(Makestar(star));
+    stars.emplace_back(Makestar(db, star));
   }
 
 #if 0
@@ -198,9 +198,16 @@ usage:
       }
 #endif
 
-  putsdata(&Sdata);
-  for (starnum_t star = 0; star < Sdata.numstars; star++)
-    putstar(stars[star], star);
+  // Save universe data and all stars to database using repositories
+  JsonStore store(db);
+  UniverseRepository universe_repo(store);
+  Sdata.id = 1;  // Universe data is a singleton with id=1
+  universe_repo.save(Sdata);
+
+  StarRepository star_repo(store);
+  for (starnum_t star = 0; star < Sdata.numstars; star++) {
+    star_repo.save(stars[star]);
+  }
   chmod(STARDATAFL, 00660);
 
   EmptyFile(SHIPDATAFL);

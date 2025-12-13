@@ -21,7 +21,7 @@ void unpledge(const command_t& argv, GameObj& g) {
     g.out << "Only leaders may pledge.\n";
     return;
   }
-  auto n = get_player(argv[1]);
+  auto n = get_player(g.entity_manager, argv[1]);
   if (n == 0) {
     g.out << "No such player.\n";
     return;

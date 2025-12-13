@@ -22,7 +22,7 @@ void transfer(const command_t& argv, GameObj& g) {
   if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount))
     return;
 
-  auto player = get_player(argv[1]);
+  auto player = get_player(g.entity_manager, argv[1]);
   if (player == 0) {
     g.out << "No such player.\n";
     return;

@@ -38,7 +38,8 @@ void defend(const command_t& argv, GameObj& g) {
            "Syntax: 'defend <ship> <sector> [<strength>]'.\n");
     return;
   }
-  if (Governor && stars[g.snum].governor(Playernum - 1) != Governor) {
+  const auto& star = *g.entity_manager.peek_star(g.snum);
+  if (Governor && star.governor(Playernum - 1) != Governor) {
     notify(Playernum, Governor,
            "You are not authorized to do that in this system.\n");
     return;
@@ -50,11 +51,16 @@ void defend(const command_t& argv, GameObj& g) {
   }
   auto toship = *toshiptmp;
 
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount)) {
+  if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
     return;
   }
 
-  auto& p = *g.entity_manager.get_planet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  if (!planet_handle.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+  auto& p = *planet_handle;
 
   if (!p.info(Playernum - 1).numsectsowned) {
     g.out << "You do not occupy any sectors here.\n";
@@ -105,7 +111,12 @@ void defend(const command_t& argv, GameObj& g) {
   }
 
   /* check to see if you own the sector */
-  auto& smap = *g.entity_manager.get_sectormap(g.snum, g.pnum);
+  auto smap_handle = g.entity_manager.get_sectormap(g.snum, g.pnum);
+  if (!smap_handle.get()) {
+    g.out << "Sector map not found.\n";
+    return;
+  }
+  auto& smap = *smap_handle;
   auto& sect = smap.get(x, y);
   if (sect.get_owner() != Playernum) {
     g.out << "Nice try.\n";
@@ -126,10 +137,18 @@ void defend(const command_t& argv, GameObj& g) {
                          p.info(Playernum - 1).destruct);
     return;
   }
-  auto& race = *g.entity_manager.get_race(Playernum);
+
+  // Need mutable race for shoot_planet_to_ship
+  auto race_handle = g.entity_manager.get_race(Playernum);
+  if (!race_handle.get()) {
+    g.out << "Race not found.\n";
+    return;
+  }
+  auto& race = *race_handle;
 
   char long_buf[1024], short_buf[256];
-  damage = shoot_planet_to_ship(race, *to, strength, long_buf, short_buf);
+  damage = shoot_planet_to_ship(g.entity_manager, race, *to, strength, long_buf,
+                                short_buf);
 
   if (damage < 0) {
     g.out << std::format("Target out of range  {}!\n", SYSTEMSIZE);
@@ -149,8 +168,9 @@ void defend(const command_t& argv, GameObj& g) {
     strength = retal;
     if (laser_on(*to)) check_overload(g.entity_manager, *to, 0, &strength);
 
-    if ((numdest = shoot_ship_to_planet(dummy, p, strength, x, y, smap, 0, 0,
-                                        long_buf, short_buf)) >= 0) {
+    if ((numdest = shoot_ship_to_planet(g.entity_manager, dummy, p, strength, x,
+                                        y, smap, 0, 0, long_buf, short_buf)) >=
+        0) {
       if (laser_on(*to))
         use_fuel(*to, 2.0 * (double)strength);
       else
@@ -174,9 +194,14 @@ void defend(const command_t& argv, GameObj& g) {
           check_overload(g.entity_manager, const_cast<Ship&>(*ship), 0,
                          &strength);
 
-        if ((numdest = shoot_ship_to_planet(*ship, p, strength, x, y, smap, 0,
-                                            0, long_buf, short_buf)) >= 0) {
-          auto& ship_mut = *g.entity_manager.get_ship(ship->number());
+        if ((numdest = shoot_ship_to_planet(g.entity_manager, *ship, p,
+                                            strength, x, y, smap, 0, 0,
+                                            long_buf, short_buf)) >= 0) {
+          auto ship_mut_handle = g.entity_manager.get_ship(ship->number());
+          if (!ship_mut_handle.get()) {
+            continue;
+          }
+          auto& ship_mut = *ship_mut_handle;
           if (laser_on(*ship))
             use_fuel(ship_mut, 2.0 * (double)strength);
           else

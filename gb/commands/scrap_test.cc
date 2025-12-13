@@ -67,8 +67,9 @@ int main() {
   sector.set_resource(50);
   sector.set_eff(100);
 
-  // Save sector map using legacy putsmap function
-  putsmap(smap, planet);
+  // Save sector map using Repository (DAL layer)
+  SectorRepository sector_repo(store);
+  sector_repo.save_map(smap);
 
   // Create first ship (carrier to receive scrapped resources)
   Ship ship1{};

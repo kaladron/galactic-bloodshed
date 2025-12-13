@@ -78,7 +78,7 @@ void order_VN(Ship& ship) {
 }  // namespace
 
 /*  do_VN() -- called by doship() */
-void do_VN(Ship& ship, TurnStats& stats) {
+void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
   if (!landed(ship)) {
     // Doing other things
     if (!std::holds_alternative<MindData>(ship.special()) ||
@@ -99,12 +99,10 @@ void do_VN(Ship& ship, TurnStats& stats) {
   if (!std::holds_alternative<MindData>(ship.special()) ||
       !std::get<MindData>(ship.special()).busy) {
     if (ship.fuel() >= (double)ship.max_fuel()) {
-      ship.xpos() = stars[ship.storbits()].xpos() +
-                    planets[ship.storbits()][ship.pnumorbits()]->xpos() +
-                    int_rand(-10, 10);
-      ship.ypos() = stars[ship.storbits()].ypos() +
-                    planets[ship.storbits()][ship.pnumorbits()]->ypos() +
-                    int_rand(-10, 10);
+      const auto* star = em.peek_star(ship.storbits());
+      const auto* planet = em.peek_planet(ship.storbits(), ship.pnumorbits());
+      ship.xpos() = star->xpos() + planet->xpos() + int_rand(-10, 10);
+      ship.ypos() = star->ypos() + planet->ypos() + int_rand(-10, 10);
       ship.docked() = 0;
       ship.whatdest() = ScopeLevel::LEVEL_UNIV;
     }
@@ -123,23 +121,23 @@ void do_VN(Ship& ship, TurnStats& stats) {
     std::swap(nums[i], nums[f]);
   }
 
-  auto& p = planets[ship.storbits()][ship.pnumorbits()];
+  auto planet_handle = em.get_planet(ship.storbits(), ship.pnumorbits());
 
   // Loop through permuted vector until someone has resources on
   // this planet to steal
 
   player_t f = 0;
   for (player_t i = 1; i <= Num_races; i++)
-    if (p->info(nums[i] - 1).resource) f = nums[i];
+    if (planet_handle->info(nums[i] - 1).resource) f = nums[i];
 
   // No resources to steal
   if (f == 0) return;
 
   // Steal the resources
 
-  auto prod = std::min(p->info(f - 1).resource,
+  auto prod = std::min(planet_handle->info(f - 1).resource,
                        Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
-  p->info(f - 1).resource -= prod;
+  planet_handle->info(f - 1).resource -= prod;
 
   std::string buf;
 
@@ -147,12 +145,12 @@ void do_VN(Ship& ship, TurnStats& stats) {
     rcv_resource(ship, prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_VN], ship.number(),
-                      prin_ship_orbits(ship).c_str());
+                      prin_ship_orbits(em, ship).c_str());
   } else if (ship.type() == ShipType::OTYPE_BERS) {
     rcv_destruct(ship, prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_BERS], ship.number(),
-                      prin_ship_orbits(ship));
+                      prin_ship_orbits(em, ship));
   }
 
   push_telegram_race(f, buf);

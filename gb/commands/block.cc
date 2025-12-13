@@ -24,7 +24,7 @@ void block(const command_t& argv, GameObj& g) {
   }
 
   if (argv.size() == 3 && argv[1] == "player") {
-    if (!(p = get_player(argv[2]))) {
+    if (!(p = get_player(g.entity_manager, argv[2]))) {
       g.out << "No such player.\n";
       return;
     }
@@ -78,7 +78,7 @@ void block(const command_t& argv, GameObj& g) {
     else
       g.out << "\n";
   } else if (argv.size() > 1) {
-    if (!(p = get_player(argv[1]))) {
+    if (!(p = get_player(g.entity_manager, argv[1]))) {
       g.out << "No such player,\n";
       return;
     }

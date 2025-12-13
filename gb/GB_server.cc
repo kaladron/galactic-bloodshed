@@ -49,7 +49,7 @@ static void do_segment(EntityManager&, int, int);
 static int make_socket(int);
 static void shutdownsock(DescriptorData&);
 static void load_race_data(EntityManager&);
-static void load_star_data();
+static void load_star_data(EntityManager&);
 static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
 static bool process_output(DescriptorData&);
@@ -443,7 +443,7 @@ int main(int argc, char** argv) {
   std::print(stderr, "      Next Segment   : {0}", ctime(&next_segment_time));
 
   load_race_data(entity_manager); /* make sure you do this first */
-  load_star_data();               /* get star data */
+  load_star_data(entity_manager); /* get star data */
   getpower(Power);                /* get power report from database */
   Getblock(Blocks);               /* get alliance block data */
   SortShips();                    /* Sort the ship list by tech for "build ?" */
@@ -1168,7 +1168,7 @@ static void load_race_data(EntityManager& entity_manager) {
 /**
  * get star database
  */
-static void load_star_data() {
+static void load_star_data(EntityManager& entity_manager) {
   Planet_count = 0;
   getsdata(&Sdata);
 
@@ -1181,8 +1181,8 @@ static void load_star_data() {
   // TODO(jeffbailey): Convert this to be a range-based for loop.
   for (int s = 0; s < Sdata.numstars; s++) {
     for (int t = 0; t < stars[s].numplanets(); t++) {
-      planets[s][t] = std::make_unique<Planet>(getplanet(s, t));
-      if (planets[s][t]->type() != PlanetType::ASTEROID) Planet_count++;
+      const auto* planet = entity_manager.peek_planet(s, t);
+      if (planet->type() != PlanetType::ASTEROID) Planet_count++;
     }
   }
 }

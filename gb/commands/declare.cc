@@ -25,7 +25,7 @@ void declare(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (!(n = get_player(argv[1]))) {
+  if (!(n = get_player(g.entity_manager, argv[1]))) {
     g.out << "No such player.\n";
     return;
   }

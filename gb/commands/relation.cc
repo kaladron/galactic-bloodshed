@@ -25,7 +25,7 @@ void relation(const command_t& argv, GameObj& g) {
   if (argv.size() == 1) {
     q = Playernum;
   } else {
-    if (!(q = get_player(argv[1]))) {
+    if (!(q = get_player(g.entity_manager, argv[1]))) {
       g.out << "No such player.\n";
       return;
     }

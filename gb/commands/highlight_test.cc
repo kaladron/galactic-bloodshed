@@ -33,12 +33,6 @@ void test_highlight_database_persistence() {
   races_repo.save(race1);
   races_repo.save(race2);
 
-  // IMPORTANT: Populate global races array for get_player() to work
-  races.resize(2);
-  races[0] = race1;
-  races[1] = race2;
-  Num_races = 2;
-
   // Create GameObj for command execution
   GameObj g(em);
   g.player = 1;

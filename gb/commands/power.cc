@@ -50,7 +50,7 @@ void power(const command_t& argv, GameObj& g) {
   player_t p = -1;
 
   if (argv.size() >= 2) {
-    if (!(p = get_player(argv[1]))) {
+    if (!(p = get_player(g.entity_manager, argv[1]))) {
       g.out << "No such player,\n";
       return;
     }

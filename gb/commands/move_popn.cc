@@ -36,11 +36,17 @@ void move_popn(const command_t& argv, GameObj& g) {
     g.out << "Wrong scope\n";
     return;
   }
-  if (!g.entity_manager.peek_star(g.snum)->control(Playernum, Governor)) {
+  const auto& star = *g.entity_manager.peek_star(g.snum);
+  if (!star.control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  auto& planet = *g.entity_manager.get_planet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  if (!planet_handle.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+  auto& planet = *planet_handle;
 
   if (planet.slaved_to() > 0 && planet.slaved_to() != Playernum) {
     g.out << "That planet has been enslaved!\n";
@@ -57,7 +63,12 @@ void move_popn(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto& smap = *g.entity_manager.get_sectormap(g.snum, g.pnum);
+  auto smap_handle = g.entity_manager.get_sectormap(g.snum, g.pnum);
+  if (!smap_handle.get()) {
+    g.out << "Sector map not found.\n";
+    return;
+  }
+  auto& smap = *smap_handle;
 
   /* movement loop */
   done = 0;
@@ -118,8 +129,7 @@ void move_popn(const command_t& argv, GameObj& g) {
                          what == PopulationType::CIV ? "population" : "troops");
 
     /* check for defending mechs */
-    mech_defend(g.entity_manager, Playernum, Governor, &people, what, planet,
-                x2, y2, sect2);
+    mech_defend(g, &people, what, planet, x2, y2, sect2);
     if (!people) {
       g.out << "Attack aborted.\n";
       return;
@@ -138,14 +148,19 @@ void move_popn(const command_t& argv, GameObj& g) {
       APcost =
           MOVE_FACTOR * ((int)std::log10(1.0 + (double)people) + Assault) + 1;
 
-    if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcost)) {
+    if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcost)) {
       return;
     }
 
     if (Assault) {
       ground_assaults[Playernum - 1][sect2.get_owner() - 1][g.snum] += 1;
-      auto& race = *g.entity_manager.get_race(Playernum);
-      auto& alien = *g.entity_manager.get_race(sect2.get_owner());
+      auto race_handle = g.entity_manager.get_race(Playernum);
+      auto alien_handle = g.entity_manager.get_race(sect2.get_owner());
+      if (!race_handle.get() || !alien_handle.get()) {
+        continue;
+      }
+      auto& race = *race_handle;
+      auto& alien = *alien_handle;
       /* races find out about each other */
       alien.translate[Playernum - 1] =
           MIN(alien.translate[Playernum - 1] + 5, 100);
@@ -153,7 +168,7 @@ void move_popn(const command_t& argv, GameObj& g) {
           MIN(race.translate[sect2.get_owner() - 1] + 5, 100);
 
       old2owner = (int)(sect2.get_owner());
-      old2gov = stars[g.snum].governor(sect2.get_owner() - 1);
+      old2gov = star.governor(sect2.get_owner() - 1);
       if (what == PopulationType::CIV)
         sect.set_popn(std::max(0L, sect.get_popn() - people));
       else if (what == PopulationType::MIL)
@@ -221,10 +236,10 @@ void move_popn(const command_t& argv, GameObj& g) {
 
       std::string telegram = std::format(
           "/{}/{}: {} [{}] {}({},{}) assaults {} [{}] {}({},{}) {}\n",
-          stars[g.snum].get_name(), stars[g.snum].get_planet_name(g.pnum),
-          race.name, Playernum, Dessymbols[sect.get_condition()], x, y,
-          alien.name, alien.Playernum, Dessymbols[sect2.get_condition()], x2,
-          y2, (sect2.get_owner() == Playernum ? "VICTORY" : "DEFEAT"));
+          star.get_name(), star.get_planet_name(g.pnum), race.name, Playernum,
+          Dessymbols[sect.get_condition()], x, y, alien.name, alien.Playernum,
+          Dessymbols[sect2.get_condition()], x2, y2,
+          (sect2.get_owner() == Playernum ? "VICTORY" : "DEFEAT"));
 
       if (sect2.get_owner() == Playernum) {
         g.out << std::format("VICTORY! The sector is yours!\n");

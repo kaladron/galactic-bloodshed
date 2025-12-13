@@ -98,8 +98,8 @@ void bombard(const command_t& argv, GameObj& g) {
 
     auto smap = getsmap(p);
     char long_buf[1024], short_buf[256];
-    auto numdest = shoot_ship_to_planet(from, p, strength, x, y, smap, 0, 0,
-                                        long_buf, short_buf);
+    auto numdest = shoot_ship_to_planet(g.entity_manager, from, p, strength, x,
+                                        y, smap, 0, 0, long_buf, short_buf);
     putsmap(smap, p);
 
     if (numdest < 0) {
@@ -130,7 +130,8 @@ void bombard(const command_t& argv, GameObj& g) {
 
             p.info(i - 1).destruct -= strength;
 
-            shoot_planet_to_ship(alien, from, strength, long_buf, short_buf);
+            shoot_planet_to_ship(g.entity_manager, alien, from, strength,
+                                 long_buf, short_buf);
             warn(i, stars[from.storbits()].governor(i - 1), long_buf);
             notify(Playernum, Governor, long_buf);
             if (!from.alive()) post(short_buf, NewsType::COMBAT);
@@ -152,7 +153,8 @@ void bombard(const command_t& argv, GameObj& g) {
 
           strength = check_retal_strength(ship);
 
-          auto const& s2sresult = shoot_ship_to_ship(ship, from, strength, 0);
+          auto const& s2sresult =
+              shoot_ship_to_ship(g.entity_manager, ship, from, strength, 0);
           if (s2sresult) {
             auto [_, short_buf, long_buf] = *s2sresult;
 

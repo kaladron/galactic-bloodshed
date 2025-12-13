@@ -25,7 +25,12 @@ void fix(const command_t& argv, GameObj& g) {
       g.out << "Change scope to the planet first.\n";
       return;
     }
-    auto& p = *g.entity_manager.get_planet(g.snum, g.pnum);
+    auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+    if (!planet_handle.get()) {
+      g.out << "Planet not found.\n";
+      return;
+    }
+    auto& p = *planet_handle;
     if (argv[2] == "Maxx") {
       if (argv.size() > 3) p.Maxx() = std::stoi(argv[3]);
       notify(Playernum, Governor, std::format("Maxx = {}\n", p.Maxx()));
@@ -96,7 +101,12 @@ void fix(const command_t& argv, GameObj& g) {
              "Change scope to the ship you wish to fix.\n");
       return;
     }
-    auto& s = *g.entity_manager.get_ship(g.shipno);
+    auto ship_handle = g.entity_manager.get_ship(g.shipno);
+    if (!ship_handle.get()) {
+      g.out << "Ship not found.\n";
+      return;
+    }
+    auto& s = *ship_handle;
     if (argv[2] == "fuel") {
       if (argv.size() > 3) s.fuel() = (double)std::stoi(argv[3]);
       notify(Playernum, Governor, std::format("fuel = {}\n", s.fuel()));

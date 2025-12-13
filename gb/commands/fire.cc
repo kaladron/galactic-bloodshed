@@ -171,7 +171,8 @@ void fire(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    auto s2sresult = shoot_ship_to_ship(from, *to, strength, cew);
+    auto s2sresult =
+        shoot_ship_to_ship(g.entity_manager, from, *to, strength, cew);
 
     if (!s2sresult) {
       g.out << "Illegal attack.\n";
@@ -196,7 +197,8 @@ void fire(const command_t& argv, GameObj& g) {
       strength = retal;
       if (laser_on(*to)) check_overload(g.entity_manager, *to, 0, &strength);
 
-      auto s2sresult = shoot_ship_to_ship(dummy, from, strength, 0, true);
+      auto s2sresult =
+          shoot_ship_to_ship(g.entity_manager, dummy, from, strength, 0, true);
       if (s2sresult) {
         auto const& [damage, short_buf, long_buf] = *s2sresult;
 
@@ -230,7 +232,8 @@ void fire(const command_t& argv, GameObj& g) {
           if (laser_on(ship))
             check_overload(g.entity_manager, ship, 0, &strength);
 
-          auto s2sresult = shoot_ship_to_ship(ship, from, strength, 0);
+          auto s2sresult =
+              shoot_ship_to_ship(g.entity_manager, ship, from, strength, 0);
           if (s2sresult) {
             auto const& [damange, short_buf, long_buf] = *s2sresult;
             if (laser_on(ship))

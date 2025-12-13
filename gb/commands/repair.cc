@@ -42,13 +42,23 @@ void repair(const command_t& argv, GameObj& g) {
     g.out << "Scope must be a planet.\n";
   }
 
-  auto& p = *g.entity_manager.get_planet(where->snum, where->pnum);
+  auto planet_handle = g.entity_manager.get_planet(where->snum, where->pnum);
+  if (!planet_handle.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+  auto& p = *planet_handle;
   if (!p.info(Playernum - 1).numsectsowned) {
     g.out << "You don't own any sectors on this planet.\n";
     return;
   }
 
-  auto& smap = *g.entity_manager.get_sectormap(where->snum, where->pnum);
+  auto smap_handle = g.entity_manager.get_sectormap(where->snum, where->pnum);
+  if (!smap_handle.get()) {
+    g.out << "Sector map not found.\n";
+    return;
+  }
+  auto& smap = *smap_handle;
   if (isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) {
     // translate from lowx:hix,lowy:hiy
     auto coords = get4args(argv[1]);

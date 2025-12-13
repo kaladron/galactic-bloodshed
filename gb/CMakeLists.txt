@@ -534,6 +534,36 @@ add_executable(fix_test commands/fix_test.cc)
 target_link_libraries(fix_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_fix_test COMMAND fix_test)
 
+# Batch 10 tests (sector operations)
+add_executable(arm_test commands/arm_test.cc)
+target_link_libraries(arm_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_arm_test COMMAND arm_test)
+
+add_executable(defend_test commands/defend_test.cc)
+target_link_libraries(defend_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_defend_test COMMAND defend_test)
+
+add_executable(repair_test commands/repair_test.cc)
+target_link_libraries(repair_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_repair_test COMMAND repair_test)
+
+# Batch 11 tests (population/ground operations)
+add_executable(move_popn_test commands/move_popn_test.cc)
+target_link_libraries(move_popn_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_move_popn_test COMMAND move_popn_test)
+
+add_executable(walk_test commands/walk_test.cc)
+target_link_libraries(walk_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_walk_test COMMAND walk_test)
+
+add_executable(enslave_test commands/enslave_test.cc)
+target_link_libraries(enslave_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_enslave_test COMMAND enslave_test)
+
+add_executable(insurgency_test commands/insurgency_test.cc)
+target_link_libraries(insurgency_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_insurgency_test COMMAND insurgency_test)
+
 add_executable(help_test help_test.cc)
 target_link_libraries(help_test PRIVATE gblib)
 add_test(NAME GB_help_test COMMAND help_test)

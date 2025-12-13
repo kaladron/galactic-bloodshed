@@ -14,6 +14,10 @@ int main() {
   // Initialize database tables - this creates all required tables
   initialize_schema(db);
 
+  // Use Repository to create new ships - this is the DAL layer
+  JsonStore store(db);
+  ShipRepository ship_repo(store);
+
   std::println("Testing gap-finding free ID management...");
 
   // Test 1: Empty table should return 1
@@ -27,21 +31,21 @@ int main() {
   ship1.owner() = 1;
   ship1.governor() = 0;
   ship1.name() = "Ship1";
-  putship(ship1);
+  ship_repo.save(ship1);
 
   Ship ship2{};
   ship2.number() = 2;
   ship2.owner() = 1;
   ship2.governor() = 0;
   ship2.name() = "Ship2";
-  putship(ship2);
+  ship_repo.save(ship2);
 
   Ship ship3{};
   ship3.number() = 3;
   ship3.owner() = 1;
   ship3.governor() = 0;
   ship3.name() = "Ship3";
-  putship(ship3);
+  ship_repo.save(ship3);
 
   int id2 = getdeadship();
   assert(id2 == 4);
@@ -59,7 +63,7 @@ int main() {
   ship2b.owner() = 1;
   ship2b.governor() = 0;
   ship2b.name() = "Ship2B";
-  putship(ship2b);
+  ship_repo.save(ship2b);
 
   int id4 = getdeadship();
   assert(id4 == 4);

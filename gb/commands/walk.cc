@@ -51,11 +51,25 @@ void walk(const command_t& argv, GameObj& g) {
                          AFV_FUEL_COST);
     return;
   }
-  if (!enufAP(Playernum, Governor, stars[ship->storbits()].AP(Playernum - 1),
-              APcount)) {
+
+  // Use get_star to keep star alive for entire function
+  auto star_handle = g.entity_manager.get_star(ship->storbits());
+  if (!star_handle.get()) {
+    g.out << "Star not found.\n";
     return;
   }
-  auto& p = *g.entity_manager.get_planet(ship->storbits(), ship->pnumorbits());
+  const auto& star = star_handle.read();
+
+  if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
+    return;
+  }
+  auto planet_handle =
+      g.entity_manager.get_planet(ship->storbits(), ship->pnumorbits());
+  if (!planet_handle.get()) {
+    g.out << "Planet not found.\n";
+    return;
+  }
+  auto& p = *planet_handle;
 
   auto [x, y] = get_move(p, argv[2][0], {ship->land_x(), ship->land_y()});
   if (ship->land_x() == x && ship->land_y() == y) {
@@ -64,11 +78,15 @@ void walk(const command_t& argv, GameObj& g) {
   }
   if (x < 0 || y < 0 || x > p.Maxx() - 1 || y > p.Maxy() - 1) {
     g.out << std::format("Illegal coordinates {},{}.\n", x, y);
-    putplanet(p, stars[g.snum], g.pnum);
     return;
   }
-  auto& smap = *g.entity_manager.get_sectormap(ship->storbits(),
-                                                ship->pnumorbits());
+  auto smap_handle =
+      g.entity_manager.get_sectormap(ship->storbits(), ship->pnumorbits());
+  if (!smap_handle.get()) {
+    g.out << "Sector map not found.\n";
+    return;
+  }
+  auto& smap = *smap_handle;
   /* check to see if player is permited on the sector type */
   auto& sect = smap.get(x, y);
   if (!g.race->likes[sect.get_condition()]) {
@@ -82,7 +100,11 @@ void walk(const command_t& argv, GameObj& g) {
     if (ship2.owner() != Playernum && ship2.type() == ShipType::OTYPE_AFV &&
         landed(ship2) && retal_strength(ship2) && (ship2.land_x() == x) &&
         (ship2.land_y() == y)) {
-      auto& alien = races[ship2.owner() - 1];
+      auto alien_handle = g.entity_manager.get_race(ship2.owner());
+      if (!alien_handle.get()) {
+        continue;
+      }
+      auto& alien = *alien_handle;
       if (!isset(g.race->allied, ship2.owner()) ||
           !isset(alien.allied, Playernum)) {
         int strength;
@@ -110,7 +132,7 @@ void walk(const command_t& argv, GameObj& g) {
   if (ship->popn() && ship->alive() && sect.get_owner() &&
       sect.get_owner() != Playernum) {
     auto oldowner = sect.get_owner();
-    auto oldgov = stars[ship->storbits()].governor(sect.get_owner() - 1);
+    auto oldgov = star.governor(sect.get_owner() - 1);
     Race& alien = *g.entity_manager.get_race(oldowner);
     Race& race_mut = *g.entity_manager.get_race(Playernum);
     if (!isset(g.race->allied, oldowner) || !isset(alien.allied, Playernum)) {
@@ -121,15 +143,16 @@ void walk(const command_t& argv, GameObj& g) {
       while ((sect.get_popn() + sect.get_troops()) && retal_strength(*ship)) {
         auto civ = sect.get_popn();
         auto mil = sect.get_troops();
-        mech_attack_people(*ship, &civ, &mil, race_mut, alien, sect, false,
-                           long_buf, short_buf);
+        mech_attack_people(g.entity_manager, *ship, &civ, &mil, race_mut, alien,
+                           sect, false, long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien.Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, ship->storbits(), short_buf);
         post(short_buf, NewsType::COMBAT);
 
-        people_attack_mech(*ship, sect.get_popn(), sect.get_troops(), alien,
-                           race_mut, sect, x, y, long_buf, short_buf);
+        people_attack_mech(g.entity_manager, *ship, sect.get_popn(),
+                           sect.get_troops(), alien, race_mut, sect, x, y,
+                           long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
         warn(alien.Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, ship->storbits(), short_buf);
@@ -147,21 +170,22 @@ void walk(const command_t& argv, GameObj& g) {
   }
 
   int succ = 0;
-  if ((sect.get_owner() == Playernum || isset(g.race->allied, sect.get_owner()) ||
-       !sect.get_owner()) &&
+  if ((sect.get_owner() == Playernum ||
+       isset(g.race->allied, sect.get_owner()) || !sect.get_owner()) &&
       ship->alive())
     succ = 1;
 
   if (ship->alive() && ship->popn() && succ) {
-    std::string moving = std::format("{} moving from {},{} to {},{} on {}.\n",
-                                     ship_to_string(*ship), ship->land_x(),
-                                     ship->land_y(), x, y, dispshiploc(*ship));
+    std::string moving =
+        std::format("{} moving from {},{} to {},{} on {}.\n",
+                    ship_to_string(*ship), ship->land_x(), ship->land_y(), x, y,
+                    dispshiploc(g.entity_manager, *ship));
     ship->land_x() = x;
     ship->land_y() = y;
     use_fuel(*ship, AFV_FUEL_COST);
     for (auto i = 1; i <= Num_races; i++)
       if (i != Playernum && p.info(i - 1).numsectsowned)
-        notify(i, stars[g.snum].governor(i - 1), moving);
+        notify(i, star.governor(i - 1), moving);
   }
   deductAPs(g, APcount, ship->storbits());
 }

@@ -44,10 +44,12 @@ int main() {
   test_ship3.alive() = 1;
   test_ship3.active() = 1;
 
-  // Store ships in database
-  putship(test_ship1);
-  putship(test_ship2);
-  putship(test_ship3);
+  // Store ships in database using Repository (DAL layer)
+  JsonStore store(db);
+  ShipRepository ship_repo(store);
+  ship_repo.save(test_ship1);
+  ship_repo.save(test_ship2);
+  ship_repo.save(test_ship3);
 
   // Test that Numships() returns the correct count
   shipnum_t count_after_inserts = Numships();

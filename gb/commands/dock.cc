@@ -380,9 +380,9 @@ void dock(const command_t& argv, GameObj& g) {
     }
 
     if (Assault) {
-      std::string telegram =
-          std::format("{} ASSAULTED by {} at {}\n", ship_to_string(s2),
-                      ship_to_string(s), prin_ship_orbits(s2));
+      std::string telegram = std::format(
+          "{} ASSAULTED by {} at {}\n", ship_to_string(s2), ship_to_string(s),
+          prin_ship_orbits(g.entity_manager, s2));
       telegram += std::format("Your damage: {}%, theirs: {}%.\n", dam2, dam);
       if (!s2.max_crew() && s2.destruct()) {
         telegram +=
@@ -451,7 +451,7 @@ void dock(const command_t& argv, GameObj& g) {
           "{} {} {} at {}.\n", ship_to_string(s),
           s2.alive() ? (s2.owner() == Playernum ? "CAPTURED" : "assaulted")
                      : "DESTROYED",
-          ship_to_string(s2), prin_ship_orbits(s));
+          ship_to_string(s2), prin_ship_orbits(g.entity_manager, s));
       if (s2.owner() == Playernum || !s2.alive()) post(news, NewsType::COMBAT);
       notify_star(Playernum, Governor, s.storbits(), news);
     } else {

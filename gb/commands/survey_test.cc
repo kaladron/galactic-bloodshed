@@ -82,7 +82,8 @@ void test_survey_no_args_planet_scope() {
 
   // Create a sector map (required for getsmap in survey)
   SectorMap smap(planet, true);
-  putsmap(smap, planet);
+  SectorRepository sector_repo(store);
+  sector_repo.save_map(smap);
 
   // Create GameObj for command execution
   GameObj g(em);
@@ -154,7 +155,8 @@ void test_survey_sector_mode_no_args() {
 
   // Create a sector map (required for getsmap in survey)
   SectorMap smap(planet, true);
-  putsmap(smap, planet);
+  SectorRepository sector_repo(store);
+  sector_repo.save_map(smap);
 
   // Create GameObj for command execution
   GameObj g(em);
@@ -242,8 +244,9 @@ void test_survey_sector_range_with_header() {
     }
   }
 
-  // Save sector map using legacy putsmap function
-  putsmap(smap, planet);
+  // Save sector map using Repository (DAL layer)
+  SectorRepository sector_repo(store);
+  sector_repo.save_map(smap);
 
   // Create GameObj for command execution
   GameObj g(em);

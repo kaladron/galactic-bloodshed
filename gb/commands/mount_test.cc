@@ -28,8 +28,8 @@ void test_mount_persistence() {
   ship.governor() = 0;
   ship.type() = ShipType::STYPE_HABITAT;  // Has crystal mount
   ship.alive() = true;
-  ship.crystals() = 2;      // Has 2 crystals on board
-  ship.mounted() = 0;  // Not mounted yet
+  ship.crystals() = 2;  // Has 2 crystals on board
+  ship.mounted() = 0;   // Not mounted yet
   ships.save(ship);
 
   // 3. Verify initial state via EntityManager
@@ -80,7 +80,7 @@ void test_dismount_persistence() {
   ship.type() = ShipType::STYPE_HABITAT;
   ship.alive() = true;
   ship.crystals() = 1;
-  ship.mounted() = 1;  // Crystal mounted
+  ship.mounted() = 1;              // Crystal mounted
   ship.hyper_drive().charge = 50;  // Charged
   ship.hyper_drive().ready = 1;
   ships.save(ship);
@@ -139,7 +139,7 @@ void test_mount_no_crystals() {
   ship.governor() = 0;
   ship.type() = ShipType::STYPE_HABITAT;
   ship.alive() = true;
-  ship.crystals() = 0;      // No crystals
+  ship.crystals() = 0;  // No crystals
   ship.mounted() = 0;
   ships.save(ship);
 

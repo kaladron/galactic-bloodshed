@@ -237,7 +237,8 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
           strength = MIN((int)p.info(i - 1).guns, (int)p.info(i - 1).destruct);
           if (strength) {
             char long_buf[1024], short_buf[256];
-            shoot_planet_to_ship(alien, s, strength, long_buf, short_buf);
+            shoot_planet_to_ship(g.entity_manager, alien, s, strength, long_buf,
+                                 short_buf);
             post(short_buf, NewsType::COMBAT);
             notify_star(0, 0, s.storbits(), short_buf);
             warn(i, stars[s.storbits()].governor(i - 1), long_buf);
@@ -257,9 +258,9 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     /* damaged ships stand of chance of crash landing */
     auto smap = getsmap(p);
     char long_buf[1024], short_buf[256];
-    numdest =
-        shoot_ship_to_planet(s, p, round_rand((double)(s.destruct()) / 3.), x,
-                             y, smap, 0, GTYPE_HEAVY, long_buf, short_buf);
+    numdest = shoot_ship_to_planet(
+        g.entity_manager, s, p, round_rand((double)(s.destruct()) / 3.), x, y,
+        smap, 0, GTYPE_HEAVY, long_buf, short_buf);
     putsmap(smap, p);
     sprintf(buf, "BOOM!! %s crashes on sector %d,%d with blast radius of %d.\n",
             ship_to_string(s).c_str(), x, y, numdest);

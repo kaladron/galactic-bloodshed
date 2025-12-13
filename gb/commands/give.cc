@@ -14,7 +14,7 @@ void give(const command_t& argv, GameObj& g) {
   ap_t APcount = 5;
   player_t who;
 
-  if (!(who = get_player(argv[1]))) {
+  if (!(who = get_player(g.entity_manager, argv[1]))) {
     g.out << "No such player.\n";
     return;
   }
@@ -121,9 +121,9 @@ void give(const command_t& argv, GameObj& g) {
       break;
   }
   g.out << "Owner changed.\n";
-  std::string givemsg =
-      std::format("{} [{}] gave you {} at {}.\n", race.name, Playernum,
-                  ship_to_string(*ship), prin_ship_orbits(*ship));
+  std::string givemsg = std::format("{} [{}] gave you {} at {}.\n", race.name,
+                                    Playernum, ship_to_string(*ship),
+                                    prin_ship_orbits(g.entity_manager, *ship));
   warn(who, 0, givemsg);
 
   if (!race.God) {

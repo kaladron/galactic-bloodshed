@@ -166,7 +166,7 @@ void test_fix_planet_temp_persistence() {
   JsonStore store(db);
   PlanetRepository planets(store);
 
-  // Create planet  
+  // Create planet
   Planet planet{};
   planet.star_id() = 1;
   planet.planet_order() = 0;

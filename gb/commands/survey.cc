@@ -129,8 +129,8 @@ void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
   if (all) {
     out << std::format(
         "{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n", GB::csp::CSP_CLIENT,
-        GB::csp::CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(), star.get_name(), planet_name,
-        p.info(player - 1).resource, p.info(player - 1).fuel,
+        GB::csp::CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(), star.get_name(),
+        planet_name, p.info(player - 1).resource, p.info(player - 1).fuel,
         p.info(player - 1).destruct, p.popn(), p.maxpopn(), p.conditions(TOXIC),
         p.compatibility(race), p.slaved_to());
   }

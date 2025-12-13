@@ -68,72 +68,6 @@ void verify_sectormap_equal(const SectorMap& original,
   }
 }
 
-void test_legacy_putsmap_getsmap() {
-  std::println("=== Testing legacy putsmap/getsmap ===");
-
-  // Create a test planet
-  Planet test_planet{PlanetType::EARTH};
-  test_planet.star_id() = 3;
-  test_planet.planet_order() = 2;
-  test_planet.Maxx() = 10;
-  test_planet.Maxy() = 10;
-
-  // Create and populate a SectorMap
-  SectorMap test_smap(test_planet, true);
-  populate_sectormap(test_smap, test_planet, 50, 100);
-
-  // Test putsmap - stores entire map in SQLite as JSON
-  putsmap(test_smap, test_planet);
-
-  // Test getsmap - reads entire map from SQLite
-  SectorMap retrieved_smap = getsmap(test_planet);
-
-  // Verify all sectors were stored and retrieved correctly
-  verify_sectormap_equal(test_smap, retrieved_smap, test_planet);
-
-  std::println("  putsmap/getsmap round-trip: PASSED");
-
-  // Test updating some sectors in the map
-  for (int i = 0; i < 5; i++) {
-    auto& sector = test_smap.get(i, i);
-    sector.set_eff(100);
-    sector.set_popn(50000);
-    sector.set_crystals(999);
-  }
-
-  // Save the updated map
-  putsmap(test_smap, test_planet);
-
-  // Retrieve again and verify the updates
-  SectorMap updated_smap = getsmap(test_planet);
-
-  for (int i = 0; i < 5; i++) {
-    const auto& updated = updated_smap.get(i, i);
-    assert(updated.get_eff() == 100);
-    assert(updated.get_popn() == 50000);
-    assert(updated.get_crystals() == 999);
-  }
-
-  // Verify other sectors remain unchanged
-  const auto& unchanged = updated_smap.get(5, 5);
-  assert(unchanged.get_eff() == test_smap.get(5, 5).get_eff());
-  assert(unchanged.get_popn() == test_smap.get(5, 5).get_popn());
-
-  std::println("  Update and re-save: PASSED");
-
-  // Test with an empty planet (no sectors saved yet)
-  Planet empty_planet{PlanetType::MARS};
-  empty_planet.star_id() = 10;
-  empty_planet.planet_order() = 0;
-  empty_planet.Maxx() = 5;
-  empty_planet.Maxy() = 5;
-
-  SectorMap empty_smap = getsmap(empty_planet);
-  // The map was created successfully (doesn't crash)
-
-  std::println("  Empty planet handling: PASSED");
-}
-
 void test_entitymanager_sectormap(EntityManager& em, Database& db) {
   std::println("=== Testing EntityManager get_sectormap/peek_sectormap ===");
 
@@ -148,10 +82,11 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
   test_planet.Maxy() = 6;
   planets.save(test_planet);
 
-  // Create initial sector data using legacy putsmap (to populate DB)
+  // Create initial sector data using Repository (DAL layer)
   SectorMap initial_smap(test_planet, true);
   populate_sectormap(initial_smap, test_planet, 25, 50);
-  putsmap(initial_smap, test_planet);
+  SectorRepository sectors(store);
+  sectors.save_map(initial_smap);
 
   // Test get_sectormap with RAII handle
   {
@@ -253,10 +188,11 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   planet2.Maxy() = 4;
   planets.save(planet2);
 
-  // Create different sector maps for each planet using legacy API
+  // Create different sector maps for each planet using Repository
   SectorMap smap1(planet1, true);
   populate_sectormap(smap1, planet1, 10, 100);
-  putsmap(smap1, planet1);
+  SectorRepository sectors(store);
+  sectors.save_map(smap1);
 
   SectorMap smap2(planet2, true);
   for (int y = 0; y < planet2.Maxy(); y++) {
@@ -270,7 +206,7 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
       sector.set_condition(SectorType::SEC_SEA);
     }
   }
-  putsmap(smap2, planet2);
+  sectors.save_map(smap2);
 
   // Load both via EntityManager and verify they're different
   const SectorMap* reload1 = em.peek_sectormap(7, 0);
@@ -289,59 +225,6 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   std::println("  Planet isolation: PASSED");
 }
 
-void test_interoperability(EntityManager& em, Database& db) {
-  std::println("=== Testing legacy/EntityManager interoperability ===");
-
-  // Create and save a planet
-  JsonStore store(db);
-  PlanetRepository planets(store);
-
-  Planet test_planet{PlanetType::FOREST};
-  test_planet.star_id() = 20;
-  test_planet.planet_order() = 0;
-  test_planet.Maxx() = 5;
-  test_planet.Maxy() = 5;
-  planets.save(test_planet);
-
-  // Save with legacy putsmap
-  SectorMap smap1(test_planet, true);
-  populate_sectormap(smap1, test_planet, 33, 200);
-  putsmap(smap1, test_planet);
-
-  // Load with EntityManager peek
-  const SectorMap* loaded_em = em.peek_sectormap(20, 0);
-  assert(loaded_em);
-  verify_sectormap_equal(smap1, *loaded_em, test_planet);
-
-  std::println("  putsmap -> EntityManager.peek_sectormap: PASSED");
-
-  // Modify and save with EntityManager handle (RAII auto-save)
-  {
-    auto smap_handle = em.get_sectormap(20, 0);
-    assert(smap_handle.get());
-    auto& smap = *smap_handle;
-
-    for (int i = 0; i < 3; i++) {
-      smap.get(i, i).set_eff(88);
-      smap.get(i, i).set_popn(99999);
-    }
-    // Auto-saves when handle goes out of scope
-  }
-
-  // Clear cache so next load comes from DB
-  em.clear_cache();
-
-  // Load with legacy getsmap
-  SectorMap loaded_legacy = getsmap(test_planet);
-
-  for (int i = 0; i < 3; i++) {
-    assert(loaded_legacy.get(i, i).get_eff() == 88);
-    assert(loaded_legacy.get(i, i).get_popn() == 99999);
-  }
-
-  std::println("  EntityManager.get_sectormap -> getsmap: PASSED");
-}
-
 int main() {
   // CRITICAL: Always create in-memory database BEFORE calling
   // initialize_schema()
@@ -354,10 +237,8 @@ int main() {
   EntityManager em(db);
 
   // Run all tests
-  test_legacy_putsmap_getsmap();
   test_entitymanager_sectormap(em, db);
   test_multiple_planets_isolation(em, db);
-  test_interoperability(em, db);
 
   std::println("\nAll SectorMap tests passed!");
   return 0;

@@ -28,7 +28,7 @@ void page(const command_t& argv, GameObj& g) {
     who = 0;  // TODO(jeffbailey): Init to zero to be sure it's initialized.
     gov = 0;  // TODO(jeffbailey): Init to zero to be sure it's initialized.
   } else {
-    if (!(who = get_player(argv[1]))) {
+    if (!(who = get_player(g.entity_manager, argv[1]))) {
       g.out << "No such player.\n";
       return;
     }

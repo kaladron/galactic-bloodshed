@@ -21,7 +21,7 @@ int main() {
   Planet test_planet(PlanetType::EARTH);
 
   // Initialize scalar fields
-  test_planet.star_id() = 5;
+  test_planet.star_id() = 1;  // Match the star we'll create below
   test_planet.planet_order() = 2;
   test_planet.xpos() = 100.5;
   test_planet.ypos() = 200.7;
@@ -100,7 +100,10 @@ int main() {
   test_planet.info(2).troops = 1000;
   test_planet.info(2).crystals = 50;
 
-  // Create a test Star (needed for putplanet)
+  // Use Repository to create new objects - this is the DAL layer
+  JsonStore store(db);
+
+  // Create a test Star (needed for planet storage)
   star_struct test_star_data{};
   test_star_data.star_id = 1;
   test_star_data.name = "TestStar";
@@ -110,11 +113,22 @@ int main() {
   }
   Star test_star(test_star_data);
 
-  // Test putplanet - stores in SQLite as JSON
-  putplanet(test_planet, test_star, 2);  // planet_order = 2
+  // Save star using repository
+  StarRepository star_repo(store);
+  star_repo.save(test_star);
 
-  // Test getplanet - reads from SQLite
-  Planet retrieved = getplanet(1, 2);  // star_id = 1, planet_order = 2
+  // Save planet using repository
+  PlanetRepository planet_repo(store);
+  planet_repo.save(test_planet);
+
+  // Create EntityManager to test retrieval
+  EntityManager em(db);
+
+  // Test EntityManager peek - reads from SQLite
+  const auto* retrieved_ptr =
+      em.peek_planet(1, 2);  // star_id = 1, planet_order = 2
+  assert(retrieved_ptr != nullptr);
+  const Planet& retrieved = *retrieved_ptr;
 
   // Verify scalar fields
   assert(retrieved.star_id() == test_planet.star_id());

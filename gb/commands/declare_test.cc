@@ -43,9 +43,6 @@ int main() {
   // Initialize global Sdata
   getsdata(&Sdata);
 
-  // Setup Num_races global
-  Num_races = 2;
-
   // Create GameObj for command execution
   GameObj g(em);
   g.player = 1;

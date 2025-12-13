@@ -132,7 +132,7 @@ void profile(const command_t& argv, GameObj& g) {
   }
 
   // Get information about another player.
-  player_t p = get_player(argv[1]);
+  player_t p = get_player(g.entity_manager, argv[1]);
   if (p == 0) {
     g.out << "Player does not exist.\n";
     return;

@@ -52,12 +52,18 @@ int main() {
   // Create Star object from star_struct
   Star test_star_obj(test_star);
 
-  // Test putstar - stores in SQLite as JSON
-  putstar(test_star_obj, 1);
+  // Use Repository to save - this is how new objects are created
+  JsonStore store(db);
+  StarRepository star_repo(store);
+  star_repo.save(test_star_obj);
 
-  // Test getstar - reads from SQLite
-  Star retrieved_star = getstar(1);
-  star_struct retrieved = retrieved_star.get_struct();
+  // Create EntityManager to test retrieval
+  EntityManager em(db);
+
+  // Test EntityManager peek - reads from SQLite via cache
+  const auto* retrieved_star_ptr = em.peek_star(1);
+  assert(retrieved_star_ptr != nullptr);
+  star_struct retrieved = retrieved_star_ptr->get_struct();
 
   // Verify scalar fields
   assert(retrieved.ships == test_star.ships);

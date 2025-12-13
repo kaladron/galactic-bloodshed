@@ -201,32 +201,9 @@ Star getstar(const starnum_t star) {
 }
 
 Planet getplanet(const starnum_t star, const planetnum_t pnum) {
-  const char* tail;
-  sqlite3_stmt* stmt;
-  const char* sql =
-      "SELECT data FROM tbl_planet WHERE star_id=?1 AND planet_order=?2";
-  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-
-  sqlite3_bind_int(stmt, 1, star);
-  sqlite3_bind_int(stmt, 2, pnum);
-
-  auto result = sqlite3_step(stmt);
-  if (result != SQLITE_ROW) {
-    sqlite3_finalize(stmt);
-    throw std::runtime_error("Database unable to return the requested planet");
-  }
-
-  // Deserialize Planet from JSON
-  const char* json_data =
-      reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-  auto planet_result = planet_from_json(json_data);
-  sqlite3_finalize(stmt);
-
-  if (!planet_result.has_value()) {
-    throw std::runtime_error("Failed to deserialize planet from JSON");
-  }
-
-  return std::move(planet_result.value());
+  throw std::runtime_error(
+      "DEPRECATED: getplanet() is removed. Use EntityManager::peek_planet() "
+      "or EntityManager::get_planet() instead.");
 }
 
 Sector getsector(const Planet& p, const int x, const int y) {
@@ -280,52 +257,9 @@ Sector getsector(const Planet& p, const int x, const int y) {
 }
 
 SectorMap getsmap(const Planet& p) {
-  const char* tail = nullptr;
-  sqlite3_stmt* stmt = nullptr;
-  const char* sql = "SELECT data FROM tbl_sector "
-                    "WHERE star_id=?1 AND planet_order=?2 ORDER BY ypos, xpos";
-
-  if (dbconn == nullptr) {
-    std::println(stderr, "FATAL: getsmap called with NULL database connection");
-    exit(-1);
-  }
-
-  int rc = sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-  if (rc != SQLITE_OK) {
-    std::println(stderr, "FATAL: sqlite3_prepare_v2 failed in getsmap: {}",
-                 sqlite3_errmsg(dbconn));
-    exit(-1);
-  }
-
-  sqlite3_bind_int(stmt, 1, p.star_id());
-  sqlite3_bind_int(stmt, 2, p.planet_order());
-
-  SectorMap smap(p);
-
-  while (sqlite3_step(stmt) == SQLITE_ROW) {
-    const char* json_data =
-        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-
-    if (json_data != nullptr) {
-      std::string json_string(json_data);
-      auto sector_opt = sector_from_json(json_string);
-      if (sector_opt.has_value()) {
-        smap.put(std::move(sector_opt.value()));
-      } else {
-        std::println(
-            stderr,
-            "FATAL: Failed to deserialize Sector from JSON for planet ({},{})",
-            p.star_id(), p.planet_order());
-        exit(-1);
-      }
-    }
-  }
-
-  sqlite3_clear_bindings(stmt);
-  sqlite3_reset(stmt);
-  sqlite3_finalize(stmt);
-
-  return smap;
+  throw std::runtime_error(
+      "DEPRECATED: getsmap() is removed. Use EntityManager::peek_sectormap() "
+      "or EntityManager::get_sectormap() instead.");
 }
 
 std::optional<Ship> getship(std::string_view shipstring) {
@@ -542,29 +476,9 @@ void putrace(const Race& r) {
 }
 
 void putstar(const Star& star, starnum_t snum) {
-  star_struct s = star.get_struct();
-
-  // Serialize Star to JSON
-  auto json_result = star_to_json(s);
-  if (!json_result.has_value()) {
-    std::println(stderr, "Error: Failed to serialize Star {} to JSON", snum);
-    return;
-  }
-
-  // Write to SQLite database
-  const char* tail;
-  sqlite3_stmt* stmt;
-  const char* sql = "REPLACE INTO tbl_star (id, data) VALUES (?1, ?2)";
-
-  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-  sqlite3_bind_int(stmt, 1, snum);
-  sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
-
-  if (sqlite3_step(stmt) != SQLITE_DONE) {
-    std::println(stderr, "SQLite error in putstar: {}", sqlite3_errmsg(dbconn));
-  }
-
-  sqlite3_finalize(stmt);
+  throw std::runtime_error(
+      "DEPRECATED: putstar() is removed. Use EntityManager::get_star() which "
+      "auto-saves when the handle goes out of scope.");
 }
 
 static void start_bulk_insert() {
@@ -642,40 +556,15 @@ void putsector(const Sector& s, const Planet& p, const int x, const int y) {
 }
 
 void putsmap(const SectorMap& map, const Planet& p) {
-  start_bulk_insert();
-
-  for (int y = 0; y < p.Maxy(); y++) {
-    for (int x = 0; x < p.Maxx(); x++) {
-      auto& sec = map.get(x, y);
-      putsector(sec, p, x, y);
-    }
-  }
-
-  end_bulk_insert();
+  throw std::runtime_error(
+      "DEPRECATED: putsmap() is removed. Use SectorRepository::save_map() "
+      "instead.");
 }
 
 void putship(const Ship& s) {
-  // Serialize ship_struct to JSON (Ship wrapper has get_struct())
-  auto json_result = glz::write_json(s.get_struct());
-  if (!json_result.has_value()) {
-    std::println(stderr, "Error: Failed to serialize Ship to JSON");
-    return;
-  }
-
-  // Store in SQLite database as JSON
-  const char* tail;
-  sqlite3_stmt* stmt;
-  const char* sql = "REPLACE INTO tbl_ship (id, data) VALUES (?1, ?2)";
-
-  sqlite3_prepare_v2(dbconn, sql, -1, &stmt, &tail);
-  sqlite3_bind_int(stmt, 1, s.number());
-  sqlite3_bind_text(stmt, 2, json_result.value().c_str(), -1, SQLITE_TRANSIENT);
-
-  if (sqlite3_step(stmt) != SQLITE_DONE) {
-    std::println(stderr, "SQLite error in putship: {}", sqlite3_errmsg(dbconn));
-  }
-
-  sqlite3_finalize(stmt);
+  throw std::runtime_error(
+      "DEPRECATED: putship() is removed. Use EntityManager::get_ship() which "
+      "auto-saves when the handle goes out of scope.");
 }
 
 void putcommod(const Commod& c, int commodnum) {

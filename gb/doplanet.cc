@@ -376,7 +376,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     avg_mob[i - 1] = 0;
   }
 
-  auto smap = getsmap(planet);
+  auto smap_handle = entity_manager.get_sectormap(starnum, planetnum);
+  auto& smap = *smap_handle;
   for (auto ship_handle : ShipList(entity_manager, planet.ships())) {
     auto& ship = *ship_handle;
     if (ship.alive() && !ship.rad()) {
@@ -917,6 +918,5 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       planet.info(i - 1).comread = 0;
     planet.info(i - 1).guns = planet_guns(planet.info(i - 1).mob_points);
   }
-  putsmap(smap, planet);
   return allmod;
 }

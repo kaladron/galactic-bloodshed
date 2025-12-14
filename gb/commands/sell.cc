@@ -25,12 +25,12 @@ void sell(const command_t& argv, GameObj& g) {
     g.out << "Syntax: sell <commodity> <amount>\n";
     return;
   }
-  if (Governor && stars[snum].governor(Playernum - 1) != Governor) {
+  const auto* star = g.entity_manager.peek_star(snum);
+  if (Governor && star->governor(Playernum - 1) != Governor) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
-  auto& race = races[Playernum - 1];
-  if (race.Guest) {
+  if (g.race->Guest) {
     g.out << "Guest races can't sell anything.\n";
     return;
   }
@@ -42,9 +42,10 @@ void sell(const command_t& argv, GameObj& g) {
     return;
   }
   APcount = MIN(APcount, amount);
-  if (!enufAP(Playernum, Governor, stars[snum].AP(Playernum - 1), APcount))
-    return;
-  auto p = getplanet(snum, pnum);
+  if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) return;
+
+  auto planet_handle = g.entity_manager.get_planet(snum, pnum);
+  auto& p = *planet_handle;
 
   if (p.slaved_to() && p.slaved_to() != Playernum) {
     g.out << std::format("This planet is enslaved to player {}.\n",
@@ -129,12 +130,13 @@ void sell(const command_t& argv, GameObj& g) {
   g.out << std::format("Lot #{} - {} units of {}.\n", commodno, amount, item);
   std::string buf =
       std::format("Lot #{} - {} units of {} for sale by {} [{}].\n", commodno,
-                  amount, item, races[Playernum - 1].name, Playernum);
+                  amount, item, g.race->name, Playernum);
   post(buf, NewsType::TRANSFER);
   for (player_t i = 1; i <= Num_races; i++)
     notify_race(i, buf);
+
   putcommod(c, commodno);
-  putplanet(p, stars[snum], pnum);
+
   deductAPs(g, APcount, snum);
 }
 }  // namespace GB::commands

@@ -86,7 +86,8 @@ void test_technology_database_persistence() {
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(0).tech_invest == 500);
-    std::println("    ✓ Database: tech_invest = {}", saved->info(0).tech_invest);
+    std::println("    ✓ Database: tech_invest = {}",
+                 saved->info(0).tech_invest);
   }
 
   // TEST 3: Set tech investment to 0
@@ -99,7 +100,8 @@ void test_technology_database_persistence() {
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(0).tech_invest == 0);
-    std::println("    ✓ Database: tech_invest = {}", saved->info(0).tech_invest);
+    std::println("    ✓ Database: tech_invest = {}",
+                 saved->info(0).tech_invest);
     g.out.str("");
   }
 
@@ -113,7 +115,8 @@ void test_technology_database_persistence() {
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(0).tech_invest == 10000);
-    std::println("    ✓ Database: tech_invest = {}", saved->info(0).tech_invest);
+    std::println("    ✓ Database: tech_invest = {}",
+                 saved->info(0).tech_invest);
     g.out.str("");
   }
 

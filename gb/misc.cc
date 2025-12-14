@@ -248,14 +248,14 @@ void remove_sh_star(EntityManager& entity_manager, Ship& s) {
  * \arg s Ship to remove
  */
 void remove_sh_plan(EntityManager& entity_manager, Ship& s) {
-  auto host = getplanet(s.storbits(), s.pnumorbits());
+  auto host_handle = entity_manager.get_planet(s.storbits(), s.pnumorbits());
+  auto& host = *host_handle;
   shipnum_t sh = host.ships();
 
   // If the ship is the first of the chain, point the star to the
   // next, which is zero if there are no other ships.
   if (sh == s.number()) {
     host.ships() = s.nextship();
-    putplanet(host, stars[s.storbits()], s.pnumorbits());
   } else {
     ShipList ships(entity_manager, sh);
     for (auto ship_handle : ships) {

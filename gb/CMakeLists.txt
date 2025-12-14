@@ -518,9 +518,29 @@ add_executable(dock_test commands/dock_test.cc)
 target_link_libraries(dock_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_dock_test COMMAND dock_test)
 
+add_executable(dump_test commands/dump_test.cc)
+target_link_libraries(dump_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_dump_test COMMAND dump_test)
+
+add_executable(jettison_test commands/jettison_test.cc)
+target_link_libraries(jettison_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_jettison_test COMMAND jettison_test)
+
 add_executable(scrap_test commands/scrap_test.cc)
 target_link_libraries(scrap_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_scrap_test COMMAND scrap_test)
+
+add_executable(sell_test commands/sell_test.cc)
+target_link_libraries(sell_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_sell_test COMMAND sell_test)
+
+add_executable(transfer_test commands/transfer_test.cc)
+target_link_libraries(transfer_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_transfer_test COMMAND transfer_test)
+
+add_executable(bid_test commands/bid_test.cc)
+target_link_libraries(bid_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_bid_test COMMAND bid_test)
 
 add_executable(survey_test commands/survey_test.cc)
 target_link_libraries(survey_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
@@ -575,6 +595,10 @@ add_test(NAME GB_enslave_test COMMAND enslave_test)
 add_executable(insurgency_test commands/insurgency_test.cc)
 target_link_libraries(insurgency_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_insurgency_test COMMAND insurgency_test)
+
+add_executable(land_test commands/land_test.cc)
+target_link_libraries(land_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_land_test COMMAND land_test)
 
 add_executable(help_test help_test.cc)
 target_link_libraries(help_test PRIVATE gblib)

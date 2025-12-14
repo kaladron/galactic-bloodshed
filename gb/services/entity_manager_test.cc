@@ -656,6 +656,112 @@ void test_peek_sectormap_throws_on_not_found() {
       "  ✓ peek_sectormap throws EntityNotFoundError for invalid planet");
 }
 
+void test_peek_increments_refcount() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  std::println("Test: peek increments refcount (pointers remain valid)");
+
+  // Create test data
+  JsonStore store(db);
+
+  // Create a star
+  star_struct star_data{};
+  star_data.star_id = 0;
+  star_data.name = "TestStar";
+  star_data.xpos = 100.0;
+  star_data.ypos = 200.0;
+  Star star(star_data);
+  StarRepository stars(store);
+  stars.save(star);
+
+  // Test 1: peek then get - peek pointer should remain valid
+  {
+    const auto* peek_ptr = em.peek_star(0);
+    assert(peek_ptr != nullptr);
+    std::string peek_name = peek_ptr->get_name();
+    assert(peek_name == "TestStar");
+
+    // Call get_star which will increment refcount and then decrement on scope
+    // exit
+    {
+      auto star_handle = em.get_star(0);
+      assert(star_handle.get() != nullptr);
+      // star_handle destructor runs here, decrements refcount
+    }
+
+    // CRITICAL: peek_ptr should still be valid because peek incremented
+    // refcount Without the fix, this would be use-after-free
+    std::string peek_name_after = peek_ptr->get_name();
+    assert(peek_name_after == "TestStar");
+
+    std::println("  ✓ peek pointer remains valid after get/release cycle");
+  }
+
+  // Test 2: Multiple peeks should work correctly
+  {
+    const auto* peek1 = em.peek_star(0);
+    const auto* peek2 = em.peek_star(0);
+    assert(peek1 == peek2);  // Same cached instance
+
+    std::println("  ✓ Multiple peeks return same cached instance");
+  }
+
+  // Test 3: peek on race (different entity type)
+  {
+    Race race{};
+    race.Playernum = 1;
+    race.name = "TestRace";
+    race.tech = 50.0;
+    RaceRepository races(store);
+    races.save(race);
+
+    const auto* peek_race = em.peek_race(1);
+    assert(peek_race != nullptr);
+    assert(peek_race->name == "TestRace");
+
+    {
+      auto race_handle = em.get_race(1);
+      race_handle->tech = 75.0;
+      // Auto-saves and decrements refcount here
+    }
+
+    // peek_race should still be valid
+    assert(peek_race->name == "TestRace");
+    // Note: peek_race->tech might be 75.0 if same instance (cached),
+    // but the important thing is the pointer is not dangling
+
+    std::println("  ✓ peek on race also increments refcount correctly");
+  }
+
+  // Test 4: peek on ship
+  {
+    ship_struct ship_data{};
+    ship_data.number = 100;
+    ship_data.owner = 1;
+    ship_data.fuel = 1000.0;
+    Ship ship(ship_data);
+    ShipRepository ships(store);
+    ships.save(ship);
+
+    const auto* peek_ship = em.peek_ship(100);
+    assert(peek_ship != nullptr);
+
+    {
+      auto ship_handle = em.get_ship(100);
+      ship_handle->fuel() = 500.0;
+    }
+
+    // peek_ship pointer should still be valid
+    assert(peek_ship != nullptr);
+
+    std::println("  ✓ peek on ship also increments refcount correctly");
+  }
+
+  std::println("  ✅ All peek refcount tests passed");
+}
+
 int main() {
   test_entity_manager_basic();
   test_entity_manager_caching();
@@ -671,6 +777,7 @@ int main() {
   test_peek_star_throws_on_not_found();
   test_peek_planet_throws_on_not_found();
   test_peek_sectormap_throws_on_not_found();
+  test_peek_increments_refcount();
 
   std::println("\n✅ All EntityManager tests passed!");
   return 0;

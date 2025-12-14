@@ -133,8 +133,10 @@ void walk(const command_t& argv, GameObj& g) {
       sect.get_owner() != Playernum) {
     auto oldowner = sect.get_owner();
     auto oldgov = star.governor(sect.get_owner() - 1);
-    Race& alien = *g.entity_manager.get_race(oldowner);
-    Race& race_mut = *g.entity_manager.get_race(Playernum);
+    auto alien_handle = g.entity_manager.get_race(oldowner);
+    Race& alien = *alien_handle;
+    auto race_handle = g.entity_manager.get_race(Playernum);
+    Race& race_mut = *race_handle;
     if (!isset(g.race->allied, oldowner) || !isset(alien.allied, Playernum)) {
       if (!retal_strength(*ship)) {
         g.out << "You have nothing to attack with!\n";

@@ -688,11 +688,11 @@ void load(const command_t& argv, GameObj& g) {
         auto s2_owner = s2->owner();
         auto s2_gov = s2->governor();
         auto s2_name = ship_to_string(*s2);
-        auto msg = std::format(
-            "Audio-vibatory-physio-molecular transport device #{} gave your "
-            "ship {} the following:\n{}",
-            ship_to_string(s), s2_name, tele_lines);
-        warn(s2_owner, s2_gov, msg);
+        warn(s2_owner, s2_gov,
+             std::format(
+                 "Audio-vibatory-physio-molecular transport device #{} gave "
+                 "your ship {} the following:\n{}",
+                 ship_to_string(s), s2_name, tele_lines));
       }
       putship(*s2);
       free(s2);

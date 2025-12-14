@@ -454,10 +454,14 @@ int Shipcost(ShipType i, const Race& r) {
   return ((int)cost(s));
 }
 
-std::tuple<money_t, double>
-shipping_cost(const starnum_t to, const starnum_t from, const money_t value) {
-  double dist = sqrt(Distsq(stars[to].xpos(), stars[to].ypos(),
-                            stars[from].xpos(), stars[from].ypos()));
+std::tuple<money_t, double> shipping_cost(EntityManager& em, const starnum_t to,
+                                          const starnum_t from,
+                                          const money_t value) {
+  const auto* star_to = em.peek_star(to);
+  const auto* star_from = em.peek_star(from);
+
+  double dist = sqrt(Distsq(star_to->xpos(), star_to->ypos(), star_from->xpos(),
+                            star_from->ypos()));
 
   int junk = (int)(dist / 10000.0);
   junk *= 10000;

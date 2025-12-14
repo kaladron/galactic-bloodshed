@@ -3,7 +3,7 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 module commands;
 
@@ -13,11 +13,10 @@ void dump(const command_t& argv, GameObj& g) {
   governor_t Governor = g.governor;
   ap_t APcount = 10;
   player_t player;
-  int star;
-  int j;
+  int star_id;
 
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount))
-    return;
+  const auto* star = g.entity_manager.peek_star(g.snum);
+  if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) return;
 
   if (!(player = get_player(g.entity_manager, argv[1]))) {
     notify(Playernum, Governor, "No such player.\n");
@@ -26,8 +25,7 @@ void dump(const command_t& argv, GameObj& g) {
 
   /* transfer all planet and star knowledge to the player */
   /* get all stars and planets */
-  auto& race = races[Playernum - 1];
-  if (race.Guest) {
+  if (g.race->Guest) {
     g.out << "Cheater!\n";
     return;
   }
@@ -38,41 +36,41 @@ void dump(const command_t& argv, GameObj& g) {
   getsdata(&Sdata);
 
   if (argv.size() < 3) {
-    for (star = 0; star < Sdata.numstars; star++) {
-      stars[star] = getstar(star);
+    for (auto current_star_handle : StarList(g.entity_manager)) {
+      auto& current_star = *current_star_handle;
+      star_id = current_star.get_struct().star_id;
 
-      if (isset(stars[star].explored(), Playernum)) {
-        setbit(stars[star].explored(), player);
+      if (isset(current_star.explored(), Playernum)) {
+        setbit(current_star.explored(), player);
 
-        for (size_t i = 0; i < stars[star].numplanets(); i++) {
-          auto planet = getplanet(star, i);
+        for (auto planet_handle :
+             PlanetList(g.entity_manager, star_id, current_star)) {
+          auto& planet = *planet_handle;
           if (planet.info(Playernum - 1).explored) {
             planet.info(player - 1).explored = 1;
-            putplanet(planet, stars[star], i);
           }
         }
-        putstar(stars[star], star);
       }
     }
   } else { /* list of places given */
-    for (size_t i = 2; i < argv.size(); i++) {
-      Place where{g, argv[i], true};
+    for (const auto& place_arg : argv | std::views::drop(2)) {
+      Place where{g, place_arg, true};
       if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
           where.level != ScopeLevel::LEVEL_SHIP) {
-        star = where.snum;
-        stars[star] = getstar(star);
+        star_id = where.snum;
+        auto current_star_handle = g.entity_manager.get_star(star_id);
+        auto& current_star = *current_star_handle;
 
-        if (isset(stars[star].explored(), Playernum)) {
-          setbit(stars[star].explored(), player);
+        if (isset(current_star.explored(), Playernum)) {
+          setbit(current_star.explored(), player);
 
-          for (j = 0; j < stars[star].numplanets(); j++) {
-            auto planet = getplanet(star, j);
+          for (auto planet_handle :
+               PlanetList(g.entity_manager, star_id, current_star)) {
+            auto& planet = *planet_handle;
             if (planet.info(Playernum - 1).explored) {
               planet.info(player - 1).explored = 1;
-              putplanet(planet, stars[star], j);
             }
           }
-          putstar(stars[star], star);
         }
       }
     }
@@ -80,8 +78,9 @@ void dump(const command_t& argv, GameObj& g) {
 
   deductAPs(g, APcount, g.snum);
 
-  warn_race(player, std::format("{} [{}] has given you exploration data.\n",
-                                race.name, Playernum));
+  warn_race(g.entity_manager, player,
+            std::format("{} [{}] has given you exploration data.\n",
+                        g.race->name, Playernum));
   g.out << "Exploration Data transferred.\n";
 }
 }  // namespace GB::commands

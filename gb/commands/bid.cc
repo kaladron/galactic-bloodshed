@@ -23,13 +23,15 @@ void bid(const command_t& argv, GameObj& g) {
       auto c = getcommod(i);
       if (c.owner && c.amount) {
         auto rate = (double)c.bid / (double)c.amount;
+        const auto* star_to = g.entity_manager.peek_star(c.star_to);
         std::string player_details =
             (c.bidder == Playernum)
-                ? std::format("{:4.4s}/{:<4.4s}", stars[c.star_to].get_name(),
-                              stars[c.star_to].get_planet_name(c.planet_to))
+                ? std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
+                              star_to->get_planet_name(c.planet_to))
                 : "";
 
-        auto [cost, dist] = shipping_cost(c.star_from, g.snum, c.bid);
+        auto [cost, dist] =
+            shipping_cost(g.entity_manager, c.star_from, g.snum, c.bid);
         g.out << std::format(" {:4}{}{:5}{:10}{:7}{:8}{:8}{:10.2}{:8} {:10}\n",
                              i, c.deliver ? '*' : ' ', c.amount, c.type,
                              c.owner, c.bidder, c.bid, rate, cost,
@@ -64,12 +66,14 @@ void bid(const command_t& argv, GameObj& g) {
       auto c = getcommod(i);
       if (c.owner && c.amount && (c.type == item)) {
         auto rate = (double)c.bid / (double)c.amount;
+        const auto* star_to = g.entity_manager.peek_star(c.star_to);
         std::string player_details =
             (c.bidder == Playernum)
-                ? std::format("{:4.4s}/{:<4.4s}", stars[c.star_to].get_name(),
-                              stars[c.star_to].get_planet_name(c.planet_to))
+                ? std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
+                              star_to->get_planet_name(c.planet_to))
                 : "";
-        auto [cost, dist] = shipping_cost(c.star_from, g.snum, c.bid);
+        auto [cost, dist] =
+            shipping_cost(g.entity_manager, c.star_from, g.snum, c.bid);
         g.out << std::format(" {:4}{}{:5}{:10}{:7}{:8}{:8}{:10.2}{:8} {:10}\n",
                              i, c.deliver ? '*' : ' ', c.amount, c.type,
                              c.owner, c.bidder, c.bid, rate, cost,
@@ -83,19 +87,20 @@ void bid(const command_t& argv, GameObj& g) {
     }
     auto snum = g.snum;
     auto pnum = g.pnum;
-    if (Governor && stars[snum].governor(Playernum - 1) != Governor) {
+    const auto* star = g.entity_manager.peek_star(snum);
+    if (Governor && star->governor(Playernum - 1) != Governor) {
       g.out << "You are not authorized in this system.\n";
       return;
     }
-    auto p = getplanet(snum, pnum);
+    const auto* p = g.entity_manager.peek_planet(snum, pnum);
 
-    if (p.slaved_to() && p.slaved_to() != Playernum) {
+    if (p->slaved_to() && p->slaved_to() != Playernum) {
       g.out << std::format("This planet is enslaved to player {}.\n",
-                           p.slaved_to());
+                           p->slaved_to());
       return;
     }
     /* check to see if there is an undamaged gov center or space port here */
-    const ShipList kShiplist(g.entity_manager, p.ships());
+    const ShipList kShiplist(g.entity_manager, p->ships());
     bool ok = false;
     for (const Ship* s : kShiplist) {
       if (s->alive() && (s->owner() == Playernum) && !s->damage() &&
@@ -132,12 +137,12 @@ void bid(const command_t& argv, GameObj& g) {
       g.out << std::format("You have to bid more than {}.\n", minbid);
       return;
     }
-    auto& race = races[Playernum - 1];
-    if (race.Guest) {
+    if (g.race->Guest) {
       g.out << "Guest races cannot bid.\n";
       return;
     }
-    if (bid0 > race.governor[Governor].money) {
+    // Need to check money via g.race->governor
+    if (bid0 > g.race->governor[Governor].money) {
       g.out << "Sorry, no buying on credit allowed.\n";
       return;
     }
@@ -145,7 +150,7 @@ void bid(const command_t& argv, GameObj& g) {
     if (c.bidder) {
       std::string bid_message = std::format(
           "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
-          c.amount, c.type, bid0, race.name, Playernum);
+          c.amount, c.type, bid0, g.race->name, Playernum);
       notify(c.bidder, c.bidder_gov, bid_message);
     }
     c.bid = bid0;
@@ -153,12 +158,14 @@ void bid(const command_t& argv, GameObj& g) {
     c.bidder_gov = Governor;
     c.star_to = snum;
     c.planet_to = pnum;
-    auto [shipping, dist] = shipping_cost(c.star_to, c.star_from, c.bid);
+    auto [shipping, dist] =
+        shipping_cost(g.entity_manager, c.star_to, c.star_from, c.bid);
+
+    putcommod(c, lot);
 
     g.out << std::format(
         "There will be an additional {} charged to you for shipping costs.\n",
         shipping);
-    putcommod(c, lot);
     g.out << "Bid accepted.\n";
   }
 }

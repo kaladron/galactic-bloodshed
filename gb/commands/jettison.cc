@@ -3,7 +3,7 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 module commands;
 
@@ -62,17 +62,17 @@ void jettison(const command_t& argv, GameObj& g) {
       if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
         continue;
       }
-    } else if (!enufAP(Playernum, Governor,
-                       stars[s.storbits()].AP(Playernum - 1), APcount)) {
-      continue;
+    } else {
+      const auto* star = g.entity_manager.peek_star(s.storbits());
+      if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) {
+        continue;
+      }
     }
 
     if (argv.size() > 3)
       amt = std::stoi(argv[3]);
     else
       amt = 0;
-
-    auto& race = races[Playernum - 1];
 
     // Now get mutable access for modifications
     Ship& ship = *ship_handle;
@@ -90,7 +90,7 @@ void jettison(const command_t& argv, GameObj& g) {
       case 'c':
         if ((amt = jettison_check(g, amt, (int)(ship.popn()))) > 0) {
           ship.popn() -= amt;
-          ship.mass() -= amt * race.mass;
+          ship.mass() -= amt * g.race->mass;
           notify(Playernum, Governor,
                  std::format("{} crew {} into deep space.\n", amt,
                              (amt == 1) ? "hurls itself" : "hurl themselves"));
@@ -108,7 +108,7 @@ void jettison(const command_t& argv, GameObj& g) {
                  std::format("Complement of ship #{} is now {}.\n",
                              ship.number(), ship.troops() - amt));
           ship.troops() -= amt;
-          ship.mass() -= amt * race.mass;
+          ship.mass() -= amt * g.race->mass;
         }
         break;
       case 'd':

@@ -190,6 +190,24 @@ void commandname(const command_t& argv, GameObj& g) {
 }
 ```
 
+#### ⚠️ CRITICAL: EntityHandle Lifetime Rule
+
+**ALWAYS use the two-step pattern** when calling `get_*()` methods. Dereferencing directly from the return value destroys the handle immediately, causing auto-save **before** your modifications:
+
+```cpp
+// ❌ WRONG - Handle destroyed immediately, auto-save happens too early!
+auto& planet = *g.entity_manager.get_planet(g.snum, g.pnum);
+planet.popn += 1000;  // This change is NOT saved!
+
+// ✅ CORRECT - Handle stays alive until scope exit
+auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+auto& planet = *planet_handle;
+planet.popn += 1000;  // Modifications happen here
+// Auto-save occurs when planet_handle goes out of scope
+```
+
+**Why:** `get_*()` returns an `EntityHandle<T>` temporary. When you dereference it immediately with `*`, the temporary is destroyed at the end of that statement, triggering the destructor and auto-save. Your subsequent modifications happen on a reference to data that's already been saved, so changes are lost.
+
 #### Error Handling
 - Use early returns with clear error messages
 - Use `std::optional` for maybe-values and always check `.has_value()` before dereferencing

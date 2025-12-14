@@ -4,13 +4,14 @@ export module gblib:build;
 
 import :gameobj;
 import :race;
+import :services;
 import :ships;
 import :star;
 import :types;
 
 export int Shipcost(ShipType, const Race&);
-export std::tuple<money_t, double> shipping_cost(starnum_t to, starnum_t from,
-                                                 money_t value);
+export std::tuple<money_t, double>
+shipping_cost(EntityManager& em, starnum_t to, starnum_t from, money_t value);
 export std::expected<void, std::string> can_build_on_ship(ShipType, const Race&,
                                                           const Ship&);
 export std::optional<ShipType> get_build_type(char);

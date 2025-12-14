@@ -236,7 +236,8 @@ static void process_market(TurnState& state, int update) {
           (bidder_race->governor[c.bidder_gov].money >= c.bid)) {
         bidder_race->governor[c.bidder_gov].money -= c.bid;
         owner_race->governor[c.governor].money += c.bid;
-        auto [cost, dist] = shipping_cost(c.star_to, c.star_from, c.bid);
+        auto [cost, dist] =
+            shipping_cost(state.entity_manager, c.star_to, c.star_from, c.bid);
         bidder_race->governor[c.bidder_gov].cost_market += c.bid + cost;
         owner_race->governor[c.governor].profit_market += c.bid;
         maintain(*bidder_race, bidder_race->governor[c.bidder_gov], cost);

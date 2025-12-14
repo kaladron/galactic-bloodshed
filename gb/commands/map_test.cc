@@ -41,9 +41,10 @@ int main() {
   ss.name = "TestStar";
   ss.xpos = 100.0;
   ss.ypos = 200.0;
-  ss.stability = 40;  // Stable star (< 50)
+  ss.stability = 40;          // Stable star (< 50)
   ss.explored = (1ULL << 1);  // Player 1 has explored
-  ss.pnames.push_back("TestPlanet");  // Add planet name so star knows it has a planet
+  ss.pnames.push_back(
+      "TestPlanet");  // Add planet name so star knows it has a planet
   Star star(ss);
 
   // Save star
@@ -79,12 +80,12 @@ int main() {
 
   // Create sectormap for the planet
   SectorMap smap(planet, true);
-  
+
   // Set up a few sectors
   for (int x = 0; x < planet.Maxx(); x++) {
     for (int y = 0; y < planet.Maxy(); y++) {
       Sector& s = smap.get(x, y);
-      
+
       // Create varied sector types
       if (x == 0 && y == 0) {
         s.set_condition(SectorType::SEC_LAND);
@@ -121,7 +122,7 @@ int main() {
   {
     command_t argv = {"map"};
     GB::commands::map(argv, g);
-    
+
     // The map command just displays output, doesn't modify data
     // Verify planet data is unchanged
     const auto* saved_planet = em.peek_planet(0, 0);
@@ -136,10 +137,10 @@ int main() {
     // Change to star level
     g.level = ScopeLevel::LEVEL_STAR;
     g.snum = 0;
-    
+
     command_t argv = {"map", "/TestStar/0"};
     GB::commands::map(argv, g);
-    
+
     // Verify data unchanged
     const auto* saved_planet = em.peek_planet(0, 0);
     assert(saved_planet != nullptr);
@@ -150,10 +151,10 @@ int main() {
   {
     // Set to ship scope - should be rejected
     g.level = ScopeLevel::LEVEL_SHIP;
-    
+
     command_t argv = {"map"};
     GB::commands::map(argv, g);
-    
+
     // Should output "Bad scope." error
     std::println("    ✓ Map correctly rejects ship scope");
   }
@@ -171,7 +172,7 @@ int main() {
     us.pnames.push_back("UnstablePlanet");  // Add planet name
     Star ustar(us);
     stars_repo.save(ustar);
-    
+
     // Create planet for unstable star
     Planet uplanet{PlanetType::EARTH};
     uplanet.star_id() = 1;
@@ -181,7 +182,7 @@ int main() {
     uplanet.explored() = true;
     uplanet.info(0).numsectsowned = 1;
     planets_repo.save(uplanet);
-    
+
     // Create minimal sectormap
     SectorMap usmap(uplanet, true);
     for (int x = 0; x < 3; x++) {
@@ -191,14 +192,14 @@ int main() {
       }
     }
     sector_repo.save_map(usmap);
-    
+
     g.level = ScopeLevel::LEVEL_PLAN;
     g.snum = 1;
     g.pnum = 0;
-    
+
     command_t argv = {"map"};
     GB::commands::map(argv, g);
-    
+
     // Should output unstable star warning
     std::println("    ✓ Map displays unstable star warning");
   }
@@ -207,10 +208,10 @@ int main() {
   {
     // At universe or star level, map command calls orbit instead
     g.level = ScopeLevel::LEVEL_UNIV;
-    
+
     command_t argv = {"map"};
     GB::commands::map(argv, g);
-    
+
     // This should fall through to orbit display
     std::println("    ✓ Map at universe level falls back to orbit");
   }

@@ -46,7 +46,7 @@ void toggle(const command_t& argv, GameObj& g) {
 
   auto race_handle = g.entity_manager.get_race(Playernum);
 
-  if (argv.size() != 1) {
+  if (argv.size() == 1) {
     const auto& race = race_handle.read();
     display_toggles(g, race.governor[Governor], race);
     return;

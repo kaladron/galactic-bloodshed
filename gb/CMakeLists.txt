@@ -466,6 +466,10 @@ add_executable(tax_test commands/tax_test.cc)
 target_link_libraries(tax_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_tax_test COMMAND tax_test)
 
+add_executable(technology_test commands/technology_test.cc)
+target_link_libraries(technology_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_technology_test COMMAND technology_test)
+
 add_executable(mobilize_test commands/mobilize_test.cc)
 target_link_libraries(mobilize_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_mobilize_test COMMAND mobilize_test)
@@ -493,6 +497,10 @@ add_test(NAME GB_route_test COMMAND route_test)
 add_executable(toxicity_test commands/toxicity_test.cc)
 target_link_libraries(toxicity_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_toxicity_test COMMAND toxicity_test)
+
+add_executable(toggle_test commands/toggle_test.cc)
+target_link_libraries(toggle_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_toggle_test COMMAND toggle_test)
 
 add_executable(pay_test commands/pay_test.cc)
 target_link_libraries(pay_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)

@@ -4,6 +4,17 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 set(CMAKE_EXE_LINKER_FLAGS "-lc++abi")
 
+# Prefer lld linker if available
+find_program(LLD_LINKER NAMES ld.lld lld)
+if(LLD_LINKER)
+    message(STATUS "Using lld linker: ${LLD_LINKER}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fuse-ld=lld")
+else()
+    message(STATUS "lld linker not found, using default linker")
+endif()
+
 enable_testing()
 
 # Set language version used

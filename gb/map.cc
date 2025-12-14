@@ -19,8 +19,8 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
                        // client interface.  Can remove the conditional as soon
                        // as we know that it's not client affecting.
 
-  auto& race = races[Playernum - 1];
-  auto smap = getsmap(p);
+  auto& race = *g.race;
+  const auto* smap = g.entity_manager.peek_sectormap(snum, pnum);
   if (!race.governor[Governor].toggle.geography) {
     /* traverse ship list on planet; find out if we can look at
        ships here. */
@@ -37,11 +37,12 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
   }
   /* report that this is a planet map */
   g.out << '$';
-  g.out << std::format("{};", stars[snum].get_planet_name(pnum));
+  const auto* star = g.entity_manager.peek_star(snum);
+  g.out << std::format("{};", star->get_planet_name(pnum));
   g.out << std::format("{};{};{};", p.Maxx(), p.Maxy(), show);
 
   /* send map data */
-  for (const auto& sector : smap) {
+  for (const auto& sector : *smap) {
     bool owned1 =
         (sector.get_owner() == race.governor[Governor].toggle.highlight);
     if (shiplocs[sector.get_x()][sector.get_y()] && iq) {

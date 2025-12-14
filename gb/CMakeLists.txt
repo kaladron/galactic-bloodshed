@@ -526,6 +526,10 @@ add_executable(make_mod_test commands/make_mod_test.cc)
 target_link_libraries(make_mod_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_make_mod_test COMMAND make_mod_test)
 
+add_executable(map_test commands/map_test.cc)
+target_link_libraries(map_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_map_test COMMAND map_test)
+
 add_executable(mount_test commands/mount_test.cc)
 target_link_libraries(mount_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_mount_test COMMAND mount_test)

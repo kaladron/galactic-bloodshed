@@ -66,6 +66,7 @@ int main() {
   ship.xpos() = 0.0;
   ship.ypos() = 0.0;
   ship.armor() = 100;
+  ship.size() = Shipdata[ShipType::OTYPE_FACTORY][ABIL_BUILD];
 
   ShipRepository ships(store);
   ships.save(ship);

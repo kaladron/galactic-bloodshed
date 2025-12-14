@@ -25,8 +25,12 @@ void Migrate2(EntityManager& entity_manager, const Planet& planet, int xd,
   if (!pd.is_owned()) {
     const auto* race = entity_manager.peek_race(ps.get_owner());
     if (!race) return;
-    int move = (int)((double)(*people) * Compat[ps.get_owner() - 1] *
-                     race->likes[pd.get_condition()] / 100.0);
+    double move_calc = (*people) * Compat[ps.get_owner() - 1] *
+                       race->likes[pd.get_condition()] / 100.0;
+    // Round and clamp to valid population_t range
+    auto move = std::clamp(std::lround(move_calc),
+                           population_t{0}, 
+                           std::numeric_limits<population_t>::max());
     if (!move) return;
     *people -= move;
     pd.set_popn(pd.get_popn() + move);

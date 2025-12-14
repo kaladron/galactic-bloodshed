@@ -111,17 +111,6 @@ void sell(const command_t& argv, GameObj& g) {
       return;
   }
 
-  Commod c;
-  c.owner = Playernum;
-  c.governor = Governor;
-  c.type = item;
-  c.amount = amount;
-  c.deliver = false;
-  c.bid = 0;
-  c.bidder = 0;
-  c.star_from = snum;
-  c.planet_from = pnum;
-
   int commodno;
   while ((commodno = getdeadcommod()) == 0)
     ;
@@ -135,7 +124,20 @@ void sell(const command_t& argv, GameObj& g) {
   for (player_t i = 1; i <= Num_races; i++)
     notify_race(i, buf);
 
-  putcommod(c, commodno);
+  Commod c{};
+  c.owner = Playernum;
+  c.governor = Governor;
+  c.type = item;
+  c.amount = amount;
+  c.deliver = false;
+  c.bid = 0;
+  c.bidder = 0;
+  c.star_from = snum;
+  c.planet_from = pnum;
+  c.star_to = 0;
+  c.planet_to = 0;
+
+  auto commod_handle = g.entity_manager.create_commod(c);
 
   deductAPs(g, APcount, snum);
 }

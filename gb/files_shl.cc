@@ -328,6 +328,11 @@ std::optional<Ship> getship(Ship** s, const shipnum_t shipnum) {
 }
 
 Commod getcommod(commodnum_t commodnum) {
+  throw std::runtime_error(
+      "DEPRECATED: getcommod() is removed. Use EntityManager::peek_commod() "
+      "for read-only access or EntityManager::get_commod() for read-write "
+      "access with auto-save.");
+
   // Read from SQLite database
   const char* tail;
   sqlite3_stmt* stmt;
@@ -568,6 +573,10 @@ void putship(const Ship& s) {
 }
 
 void putcommod(const Commod& c, int commodnum) {
+  throw std::runtime_error(
+      "DEPRECATED: putcommod() is removed. Use EntityManager::get_commod() "
+      "which auto-saves when the handle goes out of scope.");
+
   // Serialize Commod to JSON using existing function
   auto json_result = commod_to_json(c);
   if (!json_result.has_value()) {

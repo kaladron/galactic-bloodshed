@@ -79,55 +79,68 @@ int main() {
   // Test 6: Test commodities work the same way
   std::println("\nTesting commod ID management...");
 
+  // Create EntityManager and Repository for commodity tests
+  EntityManager em(db);
+  CommodRepository commod_repo(store);
+
   int cid1 = getdeadcommod();
   assert(cid1 == 1);
   std::println("✓ Test 6: Empty commod table returns ID 1");
 
-  // Create some commods
-  Commod c1{};
-  c1.owner = 1;
-  c1.governor = 0;
-  c1.type = CommodType::RESOURCE;
-  c1.amount = 100;
-  c1.deliver = true;
-  c1.bid = 0;
-  c1.bidder = 0;
-  c1.bidder_gov = 0;
-  c1.star_from = 0;
-  c1.planet_from = 0;
-  c1.star_to = 0;
-  c1.planet_to = 0;
-  putcommod(c1, 1);
+  // Create some commods using Repository
+  {
+    Commod c1{};
+    c1.id = 1;
+    c1.owner = 1;
+    c1.governor = 0;
+    c1.type = CommodType::RESOURCE;
+    c1.amount = 100;
+    c1.deliver = true;
+    c1.bid = 0;
+    c1.bidder = 0;
+    c1.bidder_gov = 0;
+    c1.star_from = 0;
+    c1.planet_from = 0;
+    c1.star_to = 0;
+    c1.planet_to = 0;
+    commod_repo.save(c1);
+  }
 
-  Commod c2{};
-  c2.owner = 1;
-  c2.governor = 0;
-  c2.type = CommodType::FUEL;
-  c2.amount = 200;
-  c2.deliver = true;
-  c2.bid = 0;
-  c2.bidder = 0;
-  c2.bidder_gov = 0;
-  c2.star_from = 0;
-  c2.planet_from = 0;
-  c2.star_to = 0;
-  c2.planet_to = 0;
-  putcommod(c2, 2);
+  {
+    Commod c2{};
+    c2.id = 2;
+    c2.owner = 1;
+    c2.governor = 0;
+    c2.type = CommodType::FUEL;
+    c2.amount = 200;
+    c2.deliver = true;
+    c2.bid = 0;
+    c2.bidder = 0;
+    c2.bidder_gov = 0;
+    c2.star_from = 0;
+    c2.planet_from = 0;
+    c2.star_to = 0;
+    c2.planet_to = 0;
+    commod_repo.save(c2);
+  }
 
-  Commod c4{};
-  c4.owner = 1;
-  c4.governor = 0;
-  c4.type = CommodType::CRYSTAL;
-  c4.amount = 300;
-  c4.deliver = true;
-  c4.bid = 0;
-  c4.bidder = 0;
-  c4.bidder_gov = 0;
-  c4.star_from = 0;
-  c4.planet_from = 0;
-  c4.star_to = 0;
-  c4.planet_to = 0;
-  putcommod(c4, 4);
+  {
+    Commod c4{};
+    c4.id = 4;
+    c4.owner = 1;
+    c4.governor = 0;
+    c4.type = CommodType::CRYSTAL;
+    c4.amount = 300;
+    c4.deliver = true;
+    c4.bid = 0;
+    c4.bidder = 0;
+    c4.bidder_gov = 0;
+    c4.star_from = 0;
+    c4.planet_from = 0;
+    c4.star_to = 0;
+    c4.planet_to = 0;
+    commod_repo.save(c4);
+  }
 
   int cid2 = getdeadcommod();
   assert(cid2 == 3);

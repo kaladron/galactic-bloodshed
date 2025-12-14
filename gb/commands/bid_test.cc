@@ -83,23 +83,24 @@ int main() {
     p.ships() = 1;
   }
 
-  // Create a commodity lot for sale
-  Commod commod{};
-  commod.owner = 2;  // Player 2 is selling
-  commod.governor = 0;
-  commod.type = CommodType::RESOURCE;
-  commod.amount = 100;
-  commod.deliver = false;
-  commod.bid = 500;  // Minimum bid
-  commod.bidder = 0;
-  commod.star_from = 0;
-  commod.planet_from = 0;
-  commod.star_to = 0;
-  commod.planet_to = 0;
-
-  // Save commodity using legacy putcommod (commodities not yet in
-  // EntityManager)
-  putcommod(commod, 1);
+  // Create a commodity lot for sale using Repository
+  CommodRepository commod_repo(store);
+  {
+    Commod commod{};
+    commod.id = 1;
+    commod.owner = 2;  // Player 2 is selling
+    commod.governor = 0;
+    commod.type = CommodType::RESOURCE;
+    commod.amount = 100;
+    commod.deliver = false;
+    commod.bid = 500;  // Minimum bid
+    commod.bidder = 0;
+    commod.star_from = 0;
+    commod.planet_from = 0;
+    commod.star_to = 0;
+    commod.planet_to = 0;
+    commod_repo.save(commod);
+  }
 
   // Create GameObj for player 1 (bidder)
   GameObj g(em);
@@ -112,27 +113,28 @@ int main() {
 
   std::println("Test 1: Place initial bid on commodity");
   {
-    auto c_before = getcommod(1);
-    std::println("  Before: bid={}, bidder={}", c_before.bid, c_before.bidder);
+    const auto* c_before = em.peek_commod(1);
+    std::println("  Before: bid={}, bidder={}", c_before->bid,
+                 c_before->bidder);
 
     command_t argv = {"bid", "1", "1000"};
     GB::commands::bid(argv, g);
     std::println("  Output: {}", g.out.str());
 
-    auto c_after = getcommod(1);
-    std::println("  After: bid={}, bidder={}", c_after.bid, c_after.bidder);
-    assert(c_after.bid == 1000);
-    assert(c_after.bidder == 1);
-    assert(c_after.bidder_gov == 0);
-    assert(c_after.star_to == 0);
-    assert(c_after.planet_to == 0);
+    const auto* c_after = em.peek_commod(1);
+    std::println("  After: bid={}, bidder={}", c_after->bid, c_after->bidder);
+    assert(c_after->bid == 1000);
+    assert(c_after->bidder == 1);
+    assert(c_after->bidder_gov == 0);
+    assert(c_after->star_to == 0);
+    assert(c_after->planet_to == 0);
     std::println("✓ Initial bid placed successfully");
   }
 
   std::println("Test 2: Raise existing bid");
   {
-    auto c_before = getcommod(1);
-    int previous_bid = c_before.bid;
+    const auto* c_before = em.peek_commod(1);
+    int previous_bid = c_before->bid;
 
     // Need to bid at least (1 + UP_BID) times the current bid
     int new_bid = (int)((double)previous_bid * (1.0 + UP_BID)) + 10;
@@ -140,24 +142,24 @@ int main() {
     command_t argv = {"bid", "1", std::to_string(new_bid)};
     GB::commands::bid(argv, g);
 
-    auto c_after = getcommod(1);
-    assert(c_after.bid == new_bid);
-    assert(c_after.bidder == 1);
+    const auto* c_after = em.peek_commod(1);
+    assert(c_after->bid == new_bid);
+    assert(c_after->bidder == 1);
     std::println("✓ Bid raised successfully");
   }
 
   std::println("Test 3: Cannot bid less than minimum");
   {
-    auto c_before = getcommod(1);
-    int previous_bid = c_before.bid;
+    const auto* c_before = em.peek_commod(1);
+    int previous_bid = c_before->bid;
 
     // Try to bid less than required
     command_t argv = {"bid", "1", "100"};
     GB::commands::bid(argv, g);
 
     // Bid should not change
-    auto c_after = getcommod(1);
-    assert(c_after.bid == previous_bid);
+    const auto* c_after = em.peek_commod(1);
+    assert(c_after->bid == previous_bid);
     std::println("✓ Low bid rejected");
   }
 
@@ -170,8 +172,8 @@ int main() {
       r.Guest = true;
     }
 
-    auto c_before = getcommod(1);
-    int previous_bid = c_before.bid;
+    const auto* c_before = em.peek_commod(1);
+    int previous_bid = c_before->bid;
 
     GameObj g2(em);
     g2.player = 1;
@@ -185,8 +187,8 @@ int main() {
     GB::commands::bid(argv, g2);
 
     // Bid should not change
-    auto c_after = getcommod(1);
-    assert(c_after.bid == previous_bid);
+    const auto* c_after = em.peek_commod(1);
+    assert(c_after->bid == previous_bid);
     std::println("✓ Guest race blocked from bidding");
   }
 

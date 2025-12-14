@@ -156,6 +156,7 @@ public:
   const Ship* peek_ship(shipnum_t num);
   const Planet* peek_planet(starnum_t star, planetnum_t pnum);
   const Star* peek_star(starnum_t num);
+  const Commod* peek_commod(int id);
   const universe_struct* peek_universe();
 
   // Sector map operations (cached with RAII like other entities)
@@ -165,6 +166,7 @@ public:
   // Create new entities
   EntityHandle<Ship> create_ship(const ship_struct& data = {});
   void delete_ship(shipnum_t num);
+  EntityHandle<Commod> create_commod(const Commod& data = {});
 
   // Count methods (for queries)
   int num_commods();

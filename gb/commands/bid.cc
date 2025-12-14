@@ -19,24 +19,21 @@ void bid(const command_t& argv, GameObj& g) {
     notify(Playernum, Governor,
            "  Lot Stock      Type  Owner  Bidder  Amount "
            "Cost/Unit    Ship  Dest\n");
-    for (auto i = 1; i <= g.entity_manager.num_commods(); i++) {
-      auto c = getcommod(i);
-      if (c.owner && c.amount) {
-        auto rate = (double)c.bid / (double)c.amount;
-        const auto* star_to = g.entity_manager.peek_star(c.star_to);
-        std::string player_details =
-            (c.bidder == Playernum)
-                ? std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
-                              star_to->get_planet_name(c.planet_to))
-                : "";
+    for (const auto* c : CommodList(g.entity_manager)) {
+      auto rate = (double)c->bid / (double)c->amount;
+      const auto* star_to = g.entity_manager.peek_star(c->star_to);
+      std::string player_details =
+          (c->bidder == Playernum)
+              ? std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
+                            star_to->get_planet_name(c->planet_to))
+              : "";
 
-        auto [cost, dist] =
-            shipping_cost(g.entity_manager, c.star_from, g.snum, c.bid);
-        g.out << std::format(" {:4}{}{:5}{:10}{:7}{:8}{:8}{:10.2}{:8} {:10}\n",
-                             i, c.deliver ? '*' : ' ', c.amount, c.type,
-                             c.owner, c.bidder, c.bid, rate, cost,
-                             player_details);
-      }
+      auto [cost, dist] =
+          shipping_cost(g.entity_manager, c->star_from, g.snum, c->bid);
+      g.out << std::format(" {:4}{}{:5}{:10}{:7}{:8}{:8}{:10.2}{:8} {:10}\n",
+                           c->id, c->deliver ? '*' : ' ', c->amount, c->type,
+                           c->owner, c->bidder, c->bid, rate, cost,
+                           player_details);
     }
   } else if (argv.size() == 2) {
     /* list all market blocks for sale of the requested type */
@@ -62,23 +59,21 @@ void bid(const command_t& argv, GameObj& g) {
     g.out << "+++ Galactic Bloodshed Commodities Market +++\n\n";
     g.out << "  Lot Stock      Type  Owner  Bidder  Amount "
              "Cost/Unit    Ship  Dest\n";
-    for (auto i = 1; i <= g.entity_manager.num_commods(); i++) {
-      auto c = getcommod(i);
-      if (c.owner && c.amount && (c.type == item)) {
-        auto rate = (double)c.bid / (double)c.amount;
-        const auto* star_to = g.entity_manager.peek_star(c.star_to);
-        std::string player_details =
-            (c.bidder == Playernum)
-                ? std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
-                              star_to->get_planet_name(c.planet_to))
-                : "";
-        auto [cost, dist] =
-            shipping_cost(g.entity_manager, c.star_from, g.snum, c.bid);
-        g.out << std::format(" {:4}{}{:5}{:10}{:7}{:8}{:8}{:10.2}{:8} {:10}\n",
-                             i, c.deliver ? '*' : ' ', c.amount, c.type,
-                             c.owner, c.bidder, c.bid, rate, cost,
-                             player_details);
-      }
+    for (const auto* c : CommodList(g.entity_manager)) {
+      if (c->type != item) continue;
+      auto rate = (double)c->bid / (double)c->amount;
+      const auto* star_to = g.entity_manager.peek_star(c->star_to);
+      std::string player_details =
+          (c->bidder == Playernum)
+              ? std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
+                            star_to->get_planet_name(c->star_to))
+              : "";
+      auto [cost, dist] =
+          shipping_cost(g.entity_manager, c->star_from, g.snum, c->bid);
+      g.out << std::format(" {:4}{}{:5}{:10}{:7}{:8}{:8}{:10.2}{:8} {:10}\n",
+                           c->id, c->deliver ? '*' : ' ', c->amount, c->type,
+                           c->owner, c->bidder, c->bid, rate, cost,
+                           player_details);
     }
   } else {
     if (g.level != ScopeLevel::LEVEL_PLAN) {
@@ -121,18 +116,20 @@ void bid(const command_t& argv, GameObj& g) {
       g.out << "Illegal lot number.\n";
       return;
     }
-    auto c = getcommod(lot);
-    if (!c.owner) {
+
+    // First peek to validate the lot
+    const auto* c_peek = g.entity_manager.peek_commod(lot);
+    if (!c_peek || !c_peek->owner) {
       g.out << "No such lot for sale.\n";
       return;
     }
-    if (c.owner == g.player &&
-        (c.star_from != g.snum || c.planet_from != g.pnum)) {
+    if (c_peek->owner == g.player &&
+        (c_peek->star_from != g.snum || c_peek->planet_from != g.pnum)) {
       g.out << "You can only set a minimum price for your "
                "lot from the location it was sold.\n";
       return;
     }
-    money_t minbid = (int)((double)c.bid * (1.0 + UP_BID));
+    money_t minbid = (int)((double)c_peek->bid * (1.0 + UP_BID));
     if (bid0 < minbid) {
       g.out << std::format("You have to bid more than {}.\n", minbid);
       return;
@@ -146,6 +143,10 @@ void bid(const command_t& argv, GameObj& g) {
       g.out << "Sorry, no buying on credit allowed.\n";
       return;
     }
+
+    auto commod_handle = g.entity_manager.get_commod(lot);
+    auto& c = *commod_handle;
+
     /* notify the previous bidder that he was just outbidded */
     if (c.bidder) {
       std::string bid_message = std::format(
@@ -160,8 +161,6 @@ void bid(const command_t& argv, GameObj& g) {
     c.planet_to = pnum;
     auto [shipping, dist] =
         shipping_cost(g.entity_manager, c.star_to, c.star_from, c.bid);
-
-    putcommod(c, lot);
 
     g.out << std::format(
         "There will be an additional {} charged to you for shipping costs.\n",

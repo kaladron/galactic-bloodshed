@@ -218,6 +218,72 @@ private:
   planetnum_t count_;
 };
 
+/**
+ * Iterator class for commodities (1-indexed, 1..num_commods).
+ * Returns const Commod* for read-only iteration.
+ * Only returns valid commodities (non-null, has owner, has amount).
+ */
+export class CommodList {
+public:
+  explicit CommodList(EntityManager& em) : em_(&em), count_(em.num_commods()) {}
+
+  class Iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const Commod*;
+    using difference_type = std::ptrdiff_t;
+
+    Iterator(EntityManager* em, int current, int end)
+        : em_(em), current_(current), end_(end) {
+      advance_to_valid();
+    }
+
+    const Commod* operator*() const {
+      return em_->peek_commod(current_);
+    }
+
+    Iterator& operator++() {
+      ++current_;
+      advance_to_valid();
+      return *this;
+    }
+
+    bool operator!=(const Iterator& other) const {
+      return current_ != other.current_;
+    }
+
+    bool operator==(const Iterator& other) const {
+      return current_ == other.current_;
+    }
+
+  private:
+    void advance_to_valid() {
+      while (current_ <= end_) {
+        const auto* c = em_->peek_commod(current_);
+        if (c && c->owner && c->amount) {
+          return;  // Found valid commodity
+        }
+        ++current_;
+      }
+    }
+
+    EntityManager* em_;
+    int current_;
+    int end_;
+  };
+
+  [[nodiscard]] Iterator begin() const {
+    return {em_, 1, count_};
+  }
+  [[nodiscard]] Iterator end() const {
+    return {em_, count_ + 1, count_};
+  }
+
+private:
+  EntityManager* em_;
+  int count_;
+};
+
 // ============================================================================
 // Ship iteration classes
 // ============================================================================

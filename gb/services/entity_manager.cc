@@ -18,17 +18,14 @@ template <typename Entity, typename Key, typename FindFn, typename SaveFn,
 EntityHandle<Entity>
 get_entity_impl(EntityManager* manager, Key key,
                 std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
-                std::unordered_map<Key, int>& refcount, std::mutex& cache_mutex,
+                std::unordered_map<Key, int>& refcount,
                 FindFn find_fn, SaveFn save_fn, ReleaseFn release_fn) {
-  std::lock_guard lock(cache_mutex);
-
   // Check if already cached
   auto it = cache.find(key);
   if (it != cache.end()) {
     refcount[key]++;
     return {manager, it->second.get(),
-            [&cache_mutex, save_fn, release_fn, key](const Entity& e) {
-              std::lock_guard lock(cache_mutex);
+            [save_fn, release_fn, key](const Entity& e) {
               save_fn(e);
               release_fn(key);
             }};
@@ -47,8 +44,7 @@ get_entity_impl(EntityManager* manager, Key key,
 
   return EntityHandle<Entity>(
       manager, iter->second.get(),
-      [&cache_mutex, save_fn, release_fn, key](const Entity& e) {
-        std::lock_guard lock(cache_mutex);
+      [save_fn, release_fn, key](const Entity& e) {
         save_fn(e);
         release_fn(key);
       });
@@ -59,9 +55,7 @@ const Entity*
 peek_entity_impl(Key key,
                  std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
                  std::unordered_map<Key, int>& refcount,
-                 std::mutex& cache_mutex, FindFn find_fn) {
-  std::lock_guard lock(cache_mutex);
-
+                 FindFn find_fn) {
   // Check if already cached
   auto it = cache.find(key);
   if (it != cache.end()) {
@@ -130,7 +124,7 @@ EntityManager::EntityManager(Database& database)
 // Race entity methods
 EntityHandle<Race> EntityManager::get_race(player_t player) {
   return get_entity_impl<Race>(
-      this, player, race_cache, race_refcount, cache_mutex,
+      this, player, race_cache, race_refcount,
       [this](player_t p) { return races.find_by_player(p); },
       [this](const Race& r) { races.save(r); },
       [this](player_t p) { release_race(p); });
@@ -138,7 +132,7 @@ EntityHandle<Race> EntityManager::get_race(player_t player) {
 
 const Race* EntityManager::peek_race(player_t player) {
   return peek_entity_impl<Race>(
-      player, race_cache, race_refcount, cache_mutex,
+      player, race_cache, race_refcount,
       [this](player_t p) { return races.find_by_player(p); });
 }
 
@@ -149,7 +143,7 @@ void EntityManager::release_race(player_t player) {
 // Ship entity methods
 EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
   return get_entity_impl<Ship>(
-      this, num, ship_cache, ship_refcount, cache_mutex,
+      this, num, ship_cache, ship_refcount,
       [this](shipnum_t n) { return ships.find_by_number(n); },
       [this](const Ship& s) { ships.save(s); },
       [this](shipnum_t n) { release_ship(n); });
@@ -157,7 +151,7 @@ EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
 
 const Ship* EntityManager::peek_ship(shipnum_t num) {
   return peek_entity_impl<Ship>(
-      num, ship_cache, ship_refcount, cache_mutex,
+      num, ship_cache, ship_refcount,
       [this](shipnum_t n) { return ships.find_by_number(n); });
 }
 
@@ -166,8 +160,6 @@ void EntityManager::release_ship(shipnum_t num) {
 }
 
 EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
-  std::lock_guard lock(cache_mutex);
-
   // Get next available ship number
   shipnum_t num = ships.next_ship_number();
 
@@ -182,15 +174,12 @@ EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
   ship_refcount[num] = 1;
 
   return {this, iter->second.get(), [this, num](const Ship& s) {
-            std::lock_guard lock(cache_mutex);
             ships.save(s);
             release_ship(num);
           }};
 }
 
 void EntityManager::delete_ship(shipnum_t num) {
-  std::lock_guard lock(cache_mutex);
-
   // Remove from cache if present
   ship_cache.erase(num);
   ship_refcount.erase(num);
@@ -199,11 +188,31 @@ void EntityManager::delete_ship(shipnum_t num) {
   ships.delete_ship(num);
 }
 
+EntityHandle<Commod> EntityManager::create_commod(const Commod& init_data) {
+  // Get next available commod ID
+  int id = commods.next_available_id();
+
+  // Create Commod, copying from provided data but overriding id
+  Commod new_commod = init_data;
+  new_commod.id = id;
+
+  // Save through repository (DAL)
+  commods.save(new_commod);
+
+  // Cache it
+  auto [iter, inserted] =
+      commod_cache.emplace(id, std::make_unique<Commod>(new_commod));
+  commod_refcount[id] = 1;
+
+  return {this, iter->second.get(), [this, id](const Commod& c) {
+            commods.save(c);
+            release_commod(id);
+          }};
+}
+
 // Planet entity methods
 EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
                                                planetnum_t pnum) {
-  std::lock_guard lock(cache_mutex);
-
   auto key = std::make_pair(star, pnum);
 
   // Check if already cached
@@ -211,7 +220,6 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
   if (it != planet_cache.end()) {
     planet_refcount[key]++;
     return {this, it->second.get(), [this, star, pnum](const Planet& p) {
-              std::lock_guard lock(cache_mutex);
               planets.save(p);
               release_planet(star, pnum);
             }};
@@ -229,7 +237,6 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
   planet_refcount[key] = 1;
 
   return {this, iter->second.get(), [this, star, pnum](const Planet& p) {
-            std::lock_guard lock(cache_mutex);
             planets.save(p);
             release_planet(star, pnum);
           }};
@@ -238,7 +245,7 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
 const Planet* EntityManager::peek_planet(starnum_t star, planetnum_t pnum) {
   auto key = std::make_pair(star, pnum);
   const auto* planet =
-      peek_entity_impl<Planet>(key, planet_cache, planet_refcount, cache_mutex,
+      peek_entity_impl<Planet>(key, planet_cache, planet_refcount,
                                [this, star, pnum](auto) {
                                  return planets.find_by_location(star, pnum);
                                });
@@ -264,7 +271,7 @@ void EntityManager::release_planet(starnum_t star, planetnum_t pnum) {
 // Star entity methods
 EntityHandle<Star> EntityManager::get_star(starnum_t num) {
   return get_entity_impl<Star>(
-      this, num, star_cache, star_refcount, cache_mutex,
+      this, num, star_cache, star_refcount,
       [this](starnum_t n) { return stars.find_by_number(n); },
       [this](const Star& s) { stars.save(s); },
       [this](starnum_t n) { release_star(n); });
@@ -272,7 +279,7 @@ EntityHandle<Star> EntityManager::get_star(starnum_t num) {
 
 const Star* EntityManager::peek_star(starnum_t num) {
   const auto* star = peek_entity_impl<Star>(
-      num, star_cache, star_refcount, cache_mutex,
+      num, star_cache, star_refcount,
       [this](starnum_t n) { return stars.find_by_number(n); });
   if (!star) {
     throw EntityNotFoundError(std::format("Star not found: star_id={}", num));
@@ -287,10 +294,16 @@ void EntityManager::release_star(starnum_t num) {
 // Commod entity methods
 EntityHandle<Commod> EntityManager::get_commod(int id) {
   return get_entity_impl<Commod>(
-      this, id, commod_cache, commod_refcount, cache_mutex,
+      this, id, commod_cache, commod_refcount,
       [this](int i) { return commods.find_by_id(i); },
       [this](const Commod& c) { commods.save(c); },
       [this](int i) { release_commod(i); });
+}
+
+const Commod* EntityManager::peek_commod(int id) {
+  return peek_entity_impl<Commod>(
+      id, commod_cache, commod_refcount,
+      [this](int i) { return commods.find_by_id(i); });
 }
 
 void EntityManager::release_commod(int id) {
@@ -300,7 +313,7 @@ void EntityManager::release_commod(int id) {
 // Block entity methods
 EntityHandle<block> EntityManager::get_block(int id) {
   return get_entity_impl<block>(
-      this, id, block_cache, block_refcount, cache_mutex,
+      this, id, block_cache, block_refcount,
       [this](int i) { return blocks.find_by_id(i); },
       [this](const block& b) { blocks.save(b); },
       [this](int i) { release_block(i); });
@@ -313,7 +326,7 @@ void EntityManager::release_block(int id) {
 // Power entity methods
 EntityHandle<power> EntityManager::get_power(int id) {
   return get_entity_impl<power>(
-      this, id, power_cache, power_refcount, cache_mutex,
+      this, id, power_cache, power_refcount,
       [this](int i) { return powers.find_by_id(i); },
       [this](const power& p) { powers.save(p); },
       [this](int i) { release_power(i); });
@@ -325,13 +338,10 @@ void EntityManager::release_power(int id) {
 
 // Universe entity methods (singleton)
 EntityHandle<universe_struct> EntityManager::get_universe() {
-  std::lock_guard lock(cache_mutex);
-
   if (global_universe_cache) {
     global_universe_refcount++;
     return {this, global_universe_cache.get(),
             [this](const universe_struct& sd) {
-              std::lock_guard lock(cache_mutex);
               universe_repo.save(sd);
               release_universe();
             }};
@@ -346,15 +356,12 @@ EntityHandle<universe_struct> EntityManager::get_universe() {
   global_universe_refcount = 1;
 
   return {this, global_universe_cache.get(), [this](const universe_struct& sd) {
-            std::lock_guard lock(cache_mutex);
             universe_repo.save(sd);
             release_universe();
           }};
 }
 
 const universe_struct* EntityManager::peek_universe() {
-  std::lock_guard lock(cache_mutex);
-
   // Check if already cached
   if (global_universe_cache) {
     return global_universe_cache.get();
@@ -397,8 +404,6 @@ shipnum_t EntityManager::num_ships() {
 
 // Utility methods
 void EntityManager::flush_all() {
-  std::lock_guard lock(cache_mutex);
-
   // Save all cached entities - entities now contain their own IDs
   flush_cache_impl<Race>(race_cache, [this](const Race& r) { races.save(r); });
   flush_cache_impl<Ship>(ship_cache, [this](const Ship& s) { ships.save(s); });
@@ -420,8 +425,6 @@ void EntityManager::flush_all() {
 }
 
 void EntityManager::clear_cache() {
-  std::lock_guard lock(cache_mutex);
-
   // Clear entities that have no active handles (refcount == 0)
   // Keep entities with active handles to avoid breaking those handles
   clear_cache_impl<Race>(race_cache, race_refcount);
@@ -573,8 +576,6 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
 // SectorMap operations (cached with RAII like other entities)
 EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
                                                      planetnum_t pnum) {
-  std::lock_guard lock(cache_mutex);
-
   auto key = std::make_pair(star, pnum);
 
   // Check if already cached
@@ -582,7 +583,6 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
   if (it != sectormap_cache.end()) {
     sectormap_refcount[key]++;
     return {this, it->second.get(), [this, star, pnum](const SectorMap& sm) {
-              std::lock_guard lock(cache_mutex);
               sectors.save_map(sm);
               release_sectormap(star, pnum);
             }};
@@ -604,7 +604,6 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
   sectormap_refcount[key] = 1;
 
   return {this, iter->second.get(), [this, star, pnum](const SectorMap& sm) {
-            std::lock_guard lock(cache_mutex);
             sectors.save_map(sm);
             release_sectormap(star, pnum);
           }};
@@ -614,7 +613,7 @@ const SectorMap* EntityManager::peek_sectormap(starnum_t star,
                                                planetnum_t pnum) {
   auto key = std::make_pair(star, pnum);
   const auto* sectormap = peek_entity_impl<SectorMap>(
-      key, sectormap_cache, sectormap_refcount, cache_mutex,
+      key, sectormap_cache, sectormap_refcount,
       [this, star, pnum](auto) {
         auto planet_opt = planets.find_by_location(star, pnum);
         if (!planet_opt) return std::optional<SectorMap>{};

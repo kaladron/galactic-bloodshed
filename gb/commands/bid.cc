@@ -4,6 +4,7 @@ module;
 
 import gblib;
 import std;
+import tabulate;
 
 module commands;
 
@@ -14,11 +15,29 @@ void bid(const command_t& argv, GameObj& g) {
 
   if (argv.size() == 1) {
     /* list all market blocks for sale */
-    notify(Playernum, Governor,
-           "+++ Galactic Bloodshed Commodities Market +++\n\n");
-    notify(Playernum, Governor,
-           "  Lot Stock      Type  Owner  Bidder  Amount "
-           "Cost/Unit    Ship  Dest\n");
+    g.out << "+++ Galactic Bloodshed Commodities Market +++\n\n";
+
+    tabulate::Table table;
+    table.format().hide_border().column_separator("  ");
+
+    // Configure column alignments and widths
+    table.column(0).format().width(4).font_align(tabulate::FontAlign::right);   // Lot
+    table.column(1).format().width(1).font_align(tabulate::FontAlign::center);  // Deliver marker
+    table.column(2).format().width(5).font_align(tabulate::FontAlign::right);   // Stock
+    table.column(3).format().width(10).font_align(tabulate::FontAlign::left);   // Type
+    table.column(4).format().width(7).font_align(tabulate::FontAlign::right);   // Owner
+    table.column(5).format().width(8).font_align(tabulate::FontAlign::right);   // Bidder
+    table.column(6).format().width(8).font_align(tabulate::FontAlign::right);   // Amount
+    table.column(7).format().width(10).font_align(tabulate::FontAlign::right);  // Cost/Unit
+    table.column(8).format().width(8).font_align(tabulate::FontAlign::right);   // Ship
+    table.column(9).format().width(10).font_align(tabulate::FontAlign::left);   // Dest
+
+    // Add header row
+    table.add_row({"Lot", "", "Stock", "Type", "Owner", "Bidder", "Amount",
+                   "Cost/Unit", "Ship", "Dest"});
+    table[0].format().font_style({tabulate::FontStyle::bold});
+
+    // Add data rows
     for (const auto* c : CommodList(g.entity_manager)) {
       auto rate = (double)c->bid / (double)c->amount;
       const auto* star_to = g.entity_manager.peek_star(c->star_to);
@@ -30,11 +49,20 @@ void bid(const command_t& argv, GameObj& g) {
 
       auto [cost, dist] =
           shipping_cost(g.entity_manager, c->star_from, g.snum, c->bid);
-      g.out << std::format(" {:4}{}{:5}{:10}{:7}{:8}{:8}{:10.2}{:8} {:10}\n",
-                           c->id, c->deliver ? '*' : ' ', c->amount, c->type,
-                           c->owner, c->bidder, c->bid, rate, cost,
-                           player_details);
+      
+      table.add_row({std::format("{}", c->id),
+                     c->deliver ? "*" : "",
+                     std::format("{}", c->amount),
+                     std::format("{}", c->type),
+                     std::format("{}", c->owner),
+                     std::format("{}", c->bidder),
+                     std::format("{}", c->bid),
+                     std::format("{:.2f}", rate),
+                     std::format("{}", cost),
+                     player_details});
     }
+
+    g.out << table << "\n";
   } else if (argv.size() == 2) {
     /* list all market blocks for sale of the requested type */
     auto commod = argv[1][0];
@@ -57,8 +85,28 @@ void bid(const command_t& argv, GameObj& g) {
         return;
     }
     g.out << "+++ Galactic Bloodshed Commodities Market +++\n\n";
-    g.out << "  Lot Stock      Type  Owner  Bidder  Amount "
-             "Cost/Unit    Ship  Dest\n";
+
+    tabulate::Table table;
+    table.format().hide_border().column_separator("  ");
+
+    // Configure column alignments and widths
+    table.column(0).format().width(4).font_align(tabulate::FontAlign::right);   // Lot
+    table.column(1).format().width(1).font_align(tabulate::FontAlign::center);  // Deliver marker
+    table.column(2).format().width(5).font_align(tabulate::FontAlign::right);   // Stock
+    table.column(3).format().width(10).font_align(tabulate::FontAlign::left);   // Type
+    table.column(4).format().width(7).font_align(tabulate::FontAlign::right);   // Owner
+    table.column(5).format().width(8).font_align(tabulate::FontAlign::right);   // Bidder
+    table.column(6).format().width(8).font_align(tabulate::FontAlign::right);   // Amount
+    table.column(7).format().width(10).font_align(tabulate::FontAlign::right);  // Cost/Unit
+    table.column(8).format().width(8).font_align(tabulate::FontAlign::right);   // Ship
+    table.column(9).format().width(10).font_align(tabulate::FontAlign::left);   // Dest
+
+    // Add header row
+    table.add_row({"Lot", "", "Stock", "Type", "Owner", "Bidder", "Amount",
+                   "Cost/Unit", "Ship", "Dest"});
+    table[0].format().font_style({tabulate::FontStyle::bold});
+
+    // Add data rows
     for (const auto* c : CommodList(g.entity_manager)) {
       if (c->type != item) continue;
       auto rate = (double)c->bid / (double)c->amount;
@@ -70,11 +118,20 @@ void bid(const command_t& argv, GameObj& g) {
               : "";
       auto [cost, dist] =
           shipping_cost(g.entity_manager, c->star_from, g.snum, c->bid);
-      g.out << std::format(" {:4}{}{:5}{:10}{:7}{:8}{:8}{:10.2}{:8} {:10}\n",
-                           c->id, c->deliver ? '*' : ' ', c->amount, c->type,
-                           c->owner, c->bidder, c->bid, rate, cost,
-                           player_details);
+      
+      table.add_row({std::format("{}", c->id),
+                     c->deliver ? "*" : "",
+                     std::format("{}", c->amount),
+                     std::format("{}", c->type),
+                     std::format("{}", c->owner),
+                     std::format("{}", c->bidder),
+                     std::format("{}", c->bid),
+                     std::format("{:.2f}", rate),
+                     std::format("{}", cost),
+                     player_details});
     }
+
+    g.out << table << "\n";
   } else {
     if (g.level != ScopeLevel::LEVEL_PLAN) {
       g.out << "You have to be in a planet scope to buy.\n";

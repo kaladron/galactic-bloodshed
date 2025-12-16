@@ -600,9 +600,17 @@ add_executable(land_test commands/land_test.cc)
 target_link_libraries(land_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_land_test COMMAND land_test)
 
+add_executable(launch_test commands/launch_test.cc)
+target_link_libraries(launch_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_launch_test COMMAND launch_test)
+
 add_executable(help_test help_test.cc)
 target_link_libraries(help_test PRIVATE gblib)
 add_test(NAME GB_help_test COMMAND help_test)
+
+add_executable(load_test commands/load_test.cc)
+target_link_libraries(load_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_load_test COMMAND load_test)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

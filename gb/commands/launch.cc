@@ -3,7 +3,7 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 module commands;
 
@@ -48,92 +48,103 @@ void launch(const command_t& argv, GameObj& g) {
         g.out << "Consider using 'scrap'.\n";
         continue;
       }
-      auto s2 = getship(s.destshipno());
-      if (landed(*s2)) {
-        remove_sh_ship(g.entity_manager, s, *s2);
-        auto p = getplanet(s2->storbits(), s2->pnumorbits());
+      auto s2_handle = g.entity_manager.get_ship(s.destshipno());
+      if (!s2_handle.get()) {
+        g.out << "Destination ship not found.\n";
+        continue;
+      }
+      auto& s2 = *s2_handle;
+      if (landed(s2)) {
+        remove_sh_ship(g.entity_manager, s, s2);
+        auto planet_handle =
+            g.entity_manager.get_planet(s2.storbits(), s2.pnumorbits());
+        auto& p = *planet_handle;
+        const auto& star = *g.entity_manager.peek_star(s2.storbits());
         insert_sh_plan(p, &s);
-        putplanet(p, stars[s2->storbits()], s2->pnumorbits());
-        s.storbits() = s2->storbits();
-        s.pnumorbits() = s2->pnumorbits();
-        s.destpnum() = s2->pnumorbits();
-        s.deststar() = s2->deststar();
-        s.xpos() = s2->xpos();
-        s.ypos() = s2->ypos();
-        s.land_x() = s2->land_x();
-        s.land_y() = s2->land_y();
+        s.storbits() = s2.storbits();
+        s.pnumorbits() = s2.pnumorbits();
+        s.destpnum() = s2.pnumorbits();
+        s.deststar() = s2.deststar();
+        s.xpos() = s2.xpos();
+        s.ypos() = s2.ypos();
+        s.land_x() = s2.land_x();
+        s.land_y() = s2.land_y();
         s.docked() = 1;
         s.whatdest() = ScopeLevel::LEVEL_PLAN;
-        s2->mass() -= s.mass();
-        s2->hanger() -= size(s);
-        g.out << std::format(
-            "Landed on {}/{}.\n", stars[s.storbits()].get_name(),
-            stars[s.storbits()].get_planet_name(s.pnumorbits()));
-        putship(*s2);
-      } else if (s2->whatorbits() == ScopeLevel::LEVEL_PLAN) {
-        remove_sh_ship(g.entity_manager, s, *s2);
+        s2.mass() -= s.mass();
+        s2.hanger() -= size(s);
+        g.out << std::format("Landed on {}/{}.\n", star.get_name(),
+                             star.get_planet_name(s.pnumorbits()));
+      } else if (s2.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+        remove_sh_ship(g.entity_manager, s, s2);
         g.out << std::format("{} launched from {}.\n", ship_to_string(s),
-                             ship_to_string(*s2));
-        s.xpos() = s2->xpos();
-        s.ypos() = s2->ypos();
+                             ship_to_string(s2));
+        s.xpos() = s2.xpos();
+        s.ypos() = s2.ypos();
         s.docked() = 0;
         s.whatdest() = ScopeLevel::LEVEL_UNIV;
-        s2->mass() -= s.mass();
-        s2->hanger() -= size(s);
-        auto p = getplanet(s2->storbits(), s2->pnumorbits());
+        s2.mass() -= s.mass();
+        s2.hanger() -= size(s);
+        auto planet_handle =
+            g.entity_manager.get_planet(s2.storbits(), s2.pnumorbits());
+        auto& p = *planet_handle;
+        const auto* star_ptr = g.entity_manager.peek_star(s2.storbits());
+        const auto& star = *star_ptr;
         insert_sh_plan(p, &s);
-        s.storbits() = s2->storbits();
-        s.pnumorbits() = s2->pnumorbits();
-        putplanet(p, stars[s2->storbits()], s2->pnumorbits());
-        g.out << std::format(
-            "Orbiting {}/{}.\n", stars[s.storbits()].get_name(),
-            stars[s.storbits()].get_planet_name(s.pnumorbits()));
-        putship(*s2);
-      } else if (s2->whatorbits() == ScopeLevel::LEVEL_STAR) {
-        remove_sh_ship(g.entity_manager, s, *s2);
+        s.storbits() = s2.storbits();
+        s.pnumorbits() = s2.pnumorbits();
+        g.out << std::format("Orbiting {}/{}.\n", star.get_name(),
+                             star.get_planet_name(s.pnumorbits()));
+      } else if (s2.whatorbits() == ScopeLevel::LEVEL_STAR) {
+        remove_sh_ship(g.entity_manager, s, s2);
         g.out << std::format("{} launched from {}.\n", ship_to_string(s),
-                             ship_to_string(*s2));
-        s.xpos() = s2->xpos();
-        s.ypos() = s2->ypos();
+                             ship_to_string(s2));
+        s.xpos() = s2.xpos();
+        s.ypos() = s2.ypos();
         s.docked() = 0;
         s.whatdest() = ScopeLevel::LEVEL_UNIV;
-        s2->mass() -= s.mass();
-        s2->hanger() -= size(s);
-        stars[s2->storbits()] = getstar(s2->storbits());
-        insert_sh_star(stars[s2->storbits()], &s);
-        s.storbits() = s2->storbits();
-        putstar(stars[s2->storbits()], s2->storbits());
-        g.out << std::format("Orbiting {}.\n", stars[s.storbits()].get_name());
-        putship(*s2);
-      } else if (s2->whatorbits() == ScopeLevel::LEVEL_UNIV) {
-        remove_sh_ship(g.entity_manager, s, *s2);
+        s2.mass() -= s.mass();
+        s2.hanger() -= size(s);
+        auto star_handle = g.entity_manager.get_star(s2.storbits());
+        auto& star = *star_handle;
+        insert_sh_star(star, &s);
+        s.storbits() = s2.storbits();
+        g.out << std::format("Orbiting {}.\n", star.get_name());
+      } else if (s2.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+        remove_sh_ship(g.entity_manager, s, s2);
         g.out << std::format("{} launched from {}.\n", ship_to_string(s),
-                             ship_to_string(*s2));
-        s.xpos() = s2->xpos();
-        s.ypos() = s2->ypos();
+                             ship_to_string(s2));
+        s.xpos() = s2.xpos();
+        s.ypos() = s2.ypos();
         s.docked() = 0;
         s.whatdest() = ScopeLevel::LEVEL_UNIV;
-        s2->mass() -= s.mass();
-        s2->hanger() -= size(s);
-        getsdata(&Sdata);
-        insert_sh_univ(&Sdata, &s);
+        s2.mass() -= s.mass();
+        s2.hanger() -= size(s);
+        auto univ_handle = g.entity_manager.get_universe();
+        auto& univ_data = *univ_handle;
+        insert_sh_univ(&univ_data, &s);
         g.out << "Universe level.\n";
-        putsdata(&Sdata);
-        putship(*s2);
       } else {
         g.out << "You can't launch that ship.\n";
         continue;
       }
     } else if (s.whatdest() == ScopeLevel::LEVEL_SHIP) {
-      auto s2 = getship(s.destshipno());
-      if (s2->whatorbits() == ScopeLevel::LEVEL_UNIV) {
-        if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
+      auto s2_handle = g.entity_manager.get_ship(s.destshipno());
+      if (!s2_handle.get()) {
+        g.out << "Destination ship not found.\n";
+        continue;
+      }
+      auto& s2 = *s2_handle;
+      if (s2.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+        const universe_struct* univ_data = g.entity_manager.peek_universe();
+        if (!enufAP(Playernum, Governor, univ_data->AP[Playernum - 1],
+                    APcount)) {
           continue;
         }
         deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
       } else {
-        if (!enufAP(Playernum, Governor, stars[s.storbits()].AP(Playernum - 1),
-                    APcount)) {
+        const auto& star = *g.entity_manager.peek_star(s.storbits());
+        if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
           continue;
         }
         deductAPs(g, APcount, s.storbits());
@@ -141,30 +152,31 @@ void launch(const command_t& argv, GameObj& g) {
       s.docked() = 0;
       s.whatdest() = ScopeLevel::LEVEL_UNIV;
       s.destshipno() = 0;
-      s2->docked() = 0;
-      s2->whatdest() = ScopeLevel::LEVEL_UNIV;
-      s2->destshipno() = 0;
+      s2.docked() = 0;
+      s2.whatdest() = ScopeLevel::LEVEL_UNIV;
+      s2.destshipno() = 0;
       g.out << std::format("{} undocked from {}.\n", ship_to_string(s),
-                           ship_to_string(*s2));
-      putship(*s2);
+                           ship_to_string(s2));
     } else {
-      if (!enufAP(Playernum, Governor, stars[s.storbits()].AP(Playernum - 1),
-                  APcount)) {
+      const auto* star_ptr = g.entity_manager.peek_star(s.storbits());
+      const auto& star = *star_ptr;
+      if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
         return;
       }
       deductAPs(g, APcount, s.storbits());
 
       /* adjust x,ypos to absolute coords */
-      auto p = getplanet((int)s.storbits(), (int)s.pnumorbits());
+      auto planet_handle =
+          g.entity_manager.get_planet((int)s.storbits(), (int)s.pnumorbits());
+      auto& p = *planet_handle;
       g.out << std::format("Planet /{}/{} has gravity field of {:.2f}\n",
-                           stars[s.storbits()].get_name(),
-                           stars[s.storbits()].get_planet_name(s.pnumorbits()),
-                           p.gravity());
+                           star.get_name(),
+                           star.get_planet_name(s.pnumorbits()), p.gravity());
       s.xpos() =
-          stars[s.storbits()].xpos() + p.xpos() +
+          star.xpos() + p.xpos() +
           (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
       s.ypos() =
-          stars[s.storbits()].ypos() + p.ypos() +
+          star.ypos() + p.ypos() +
           (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
 
       /* subtract fuel from ship */
@@ -190,15 +202,14 @@ void launch(const command_t& argv, GameObj& g) {
         /* not yet explored by owner; space exploration causes the
            player to see a whole map */
         p.explored() = 1;
-        putplanet(p, stars[s.storbits()], s.pnumorbits());
       }
-      std::string observed =
-          std::format("{} observed launching from planet /{}/{}.\n",
-                      ship_to_string(s), stars[s.storbits()].get_name(),
-                      stars[s.storbits()].get_planet_name(s.pnumorbits()));
+      std::string observed = std::format(
+          "{} observed launching from planet /{}/{}.\n", ship_to_string(s),
+          star.get_name(), star.get_planet_name(s.pnumorbits()));
       for (player_t i = 1; i <= Num_races; i++)
-        if (p.info(i - 1).numsectsowned && i != Playernum)
-          notify(i, stars[s.storbits()].governor(i - 1), observed);
+        if (p.info(i - 1).numsectsowned && i != Playernum) {
+          notify(i, star.governor(i - 1), observed);
+        }
 
       g.out << std::format("{} launched from planet,", ship_to_string(s));
       g.out << std::format(" using {:.1f} fuel.\n", fuel);

@@ -7,13 +7,6 @@ import gblib;
 import dallib;
 import scnlib;
 
-#include <sqlite3.h>
-#include <strings.h>
-#include <unistd.h>
-
-#include <cstdio>
-#include <cstdlib>
-
 namespace GB::enrol {
 
 struct stype {
@@ -82,8 +75,6 @@ int main() {
   RaceRepository races{store};
   ShipRepository ships{store};
 
-  srandom(getpid());
-
   if ((Playernum = entity_manager.num_races() + 1) >= MAXPLAYERS) {
     std::println("There are already {} players; No more allowed.",
                  MAXPLAYERS - 1);
@@ -95,7 +86,7 @@ int main() {
   std::getline(std::cin, input_line);
   auto idx_result = scn::scan<int>(input_line, "{}");
   if (!idx_result) {
-    std::println(stderr, "Error: Cannot read input - {}",
+    std::println(std::cerr, "Error: Cannot read input - {}",
                  idx_result.error().msg());
     return -1;
   }
@@ -109,7 +100,7 @@ int main() {
 
   const auto* universe_ptr = entity_manager.peek_universe();
   if (!universe_ptr) {
-    std::println(stderr, "Error: Cannot load universe data");
+    std::println(std::cerr, "Error: Cannot load universe data");
     return -1;
   }
   const auto& Sdata = *universe_ptr;
@@ -307,14 +298,14 @@ int main() {
 
   const auto* planet_ptr = entity_manager.peek_planet(star, pnum);
   if (!planet_ptr) {
-    std::println(stderr, "Error: Cannot load planet for sector analysis");
+    std::println(std::cerr, "Error: Cannot load planet for sector analysis");
     return -1;
   }
 
   // Get sectormap handle - will auto-save when handle goes out of scope
   auto smap_handle = entity_manager.get_sectormap(star, pnum);
   if (!smap_handle.get()) {
-    std::println(stderr, "Error: Cannot load sector map");
+    std::println(std::cerr, "Error: Cannot load sector map");
     return -1;
   }
   auto& smap = *smap_handle;
@@ -348,7 +339,7 @@ int main() {
     std::getline(std::cin, choice_line);
     auto choice_result = scn::scan<int>(choice_line, "{}");
     if (!choice_result) {
-      std::println(stderr, "Error: Cannot read input - {}",
+      std::println(std::cerr, "Error: Cannot read input - {}",
                    choice_result.error().msg());
       return -1;
     }
@@ -374,7 +365,7 @@ int main() {
       std::getline(std::cin, compat_line);
       auto compat_result = scn::scan<int>(compat_line, "{}");
       if (!compat_result) {
-        std::println(stderr, "Error: Cannot read input - {}",
+        std::println(std::cerr, "Error: Cannot read input - {}",
                      compat_result.error().msg());
         return -1;
       }
@@ -397,7 +388,7 @@ int main() {
     const auto* star_ptr = entity_manager.peek_star(star);
     const auto* planet_ptr2 = entity_manager.peek_planet(star, pnum);
     if (!star_ptr || !planet_ptr2) {
-      std::println(stderr,
+      std::println(std::cerr,
                    "Error: Cannot access star/planet for ship placement");
       return -1;
     }
@@ -459,7 +450,7 @@ int main() {
     }
     Ship s{ss};  // Construct Ship from POD
     if (!ships.save(s)) {
-      std::println(stderr, "Error: Failed to save ship to database");
+      std::println(std::cerr, "Error: Failed to save ship to database");
       return -1;
     }
   }
@@ -468,7 +459,7 @@ int main() {
     race.points[j] = 0;
 
   if (!races.save(race)) {
-    std::println(stderr, "Error: Failed to save race to database");
+    std::println(std::cerr, "Error: Failed to save race to database");
     return -1;
   }
 
@@ -480,7 +471,7 @@ int main() {
   // Get planet handle for final modifications
   auto planet_handle = entity_manager.get_planet(star, pnum);
   if (!planet_handle.get()) {
-    std::println(stderr, "Error: Cannot access planet for final updates");
+    std::println(std::cerr, "Error: Cannot access planet for final updates");
     return -1;
   }
   auto& planet = *planet_handle;
@@ -499,7 +490,7 @@ int main() {
   /* make star explored and stuff */
   auto star_handle = entity_manager.get_star(star);
   if (!star_handle.get()) {
-    std::println(stderr, "Error: Cannot access star for update");
+    std::println(std::cerr, "Error: Cannot access star for update");
     return -1;
   }
   auto& star_ref = *star_handle;

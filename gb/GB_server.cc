@@ -435,12 +435,12 @@ int main(int argc, char** argv) {
   segment_buf = std::format("Last Segment {0:2d} : {1}", nsegments_done,
                             ctime(&last_segment_time));
 
-  std::print("{}", update_buf);
-  std::print("{}", segment_buf);
+  std::print(std::cerr, "{}", update_buf);
+  std::print(std::cerr, "{}", segment_buf);
   srandom(getpid());
-  std::print("      Next Update {0}  : {1}", nupdates_done + 1,
+  std::print(std::cerr, "      Next Update {0}  : {1}", nupdates_done + 1,
              ctime(&next_update_time));
-  std::print("      Next Segment   : {0}", ctime(&next_segment_time));
+  std::print(std::cerr, "      Next Segment   : {0}", ctime(&next_segment_time));
 
   load_race_data(entity_manager); /* make sure you do this first */
   load_star_data(entity_manager); /* get star data */
@@ -657,10 +657,10 @@ static struct timeval update_quotas(struct timeval last,
 
 static void shutdownsock(DescriptorData& d) {
   if (d.connected) {
-    std::println("DISCONNECT {0} Race={1} Governor={2}", d.descriptor,
+    std::println(std::cerr, "DISCONNECT {0} Race={1} Governor={2}", d.descriptor,
                  d.player, d.governor);
   } else {
-    std::println("DISCONNECT {0} never connected", d.descriptor);
+    std::println(std::cerr, "DISCONNECT {0} never connected", d.descriptor);
   }
   shutdown(d.descriptor, 2);
   close(d.descriptor);
@@ -868,7 +868,7 @@ static void check_connect(DescriptorData& d, std::string_view message) {
 
   if (!Playernum) {
     queue_string(d, "Connection refused.\n");
-    std::println("FAILED CONNECT {0},{1} on descriptor {2}\n",
+    std::println(std::cerr, "FAILED CONNECT {0},{1} on descriptor {2}\n",
                  race_password.c_str(), gov_password.c_str(), d.descriptor);
     return;
   }
@@ -883,7 +883,7 @@ static void check_connect(DescriptorData& d, std::string_view message) {
     }
   }
 
-  std::print("CONNECTED {0} \"{1}\" [{2},{3}] on descriptor {4}\n",
+  std::print(std::cerr, "CONNECTED {0} \"{1}\" [{2},{3}] on descriptor {4}\n",
              race.name, race.governor[Governor].name, Playernum, Governor,
              d.descriptor);
   d.connected = true;
@@ -957,13 +957,13 @@ static void do_update(EntityManager& entity_manager, bool force) {
   Power_blocks.time = clk;
   update_buf =
       std::format("Last Update {0:3d} : {1}", nupdates_done, ctime(&clk));
-  std::print("{}", ctime(&clk));
-  std::print("Next Update {0:3d} : {1}", nupdates_done + 1,
+  std::print(std::cerr, "{}", ctime(&clk));
+  std::print(std::cerr, "Next Update {0:3d} : {1}", nupdates_done + 1,
              ctime(&next_update_time));
   segment_buf =
       std::format("Last Segment {0:2d} : {1}", nsegments_done, ctime(&clk));
-  std::print("{}", ctime(&clk));
-  std::print("Next Segment {0:2d} : {1}",
+  std::print(std::cerr, "{}", ctime(&clk));
+  std::print(std::cerr, "Next Segment {0:2d} : {1}",
              nsegments_done == segments ? 1 : nsegments_done + 1,
              ctime(&next_segment_time));
   unlink(UPDATEFL);
@@ -1037,8 +1037,8 @@ static void do_segment(EntityManager& entity_manager, int override,
   }
   segment_buf =
       std::format("Last Segment {0:2d} : {1}", nsegments_done, ctime(&clk));
-  std::print("{0}", ctime(&clk));
-  std::print("Next Segment {0:2d} : {1}", nsegments_done,
+  std::print(std::cerr, "{0}", ctime(&clk));
+  std::print(std::cerr, "Next Segment {0:2d} : {1}", nsegments_done,
              ctime(&next_segment_time));
   clk = time(nullptr);
   std::string segment_msg = std::format("{}Segment finished\n", ctime(&clk));

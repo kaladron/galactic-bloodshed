@@ -4,8 +4,6 @@ module;
 
 #include <sqlite3.h>
 
-#include <cstdio>
-
 import std.compat;
 
 module dallib;
@@ -59,7 +57,7 @@ void initialize_schema(Database& db) {
   int err =
       sqlite3_exec(db.connection(), tbl_create, nullptr, nullptr, &err_msg);
   if (err != SQLITE_OK) {
-    std::println(stderr, "SQL error: {}", err_msg);
+    std::println("SQL error: {}", err_msg);
     sqlite3_free(err_msg);
   }
 }

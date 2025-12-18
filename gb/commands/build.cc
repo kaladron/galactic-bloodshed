@@ -3,68 +3,39 @@
 module;
 
 import gblib;
-import std.compat;
+import scnlib;
+import std;
 
 #include "gb/files.h"
+#include <cstdio>
 
 module commands;
-
-namespace {
-void finish_build_plan(const Sector& sector, int x, int y, const Planet& planet,
-                       starnum_t snum, planetnum_t pnum) {
-  putsector(sector, planet, x, y);
-  putplanet(planet, stars[snum], pnum);
-}
-
-void finish_build_ship(const Sector& sector, int x, int y, const Planet& planet,
-                       starnum_t snum, planetnum_t pnum, bool outside,
-                       ScopeLevel build_level,
-                       const std::optional<Ship>& builder) {
-  if (outside) switch (build_level) {
-      case ScopeLevel::LEVEL_PLAN:
-        putplanet(planet, stars[snum], pnum);
-        if (landed(*builder)) {
-          putsector(sector, planet, x, y);
-        }
-        break;
-      case ScopeLevel::LEVEL_STAR:
-        putstar(stars[snum], snum);
-        break;
-      case ScopeLevel::LEVEL_UNIV:
-        putsdata(&Sdata);
-        break;
-      default:
-        break;
-    }
-  putship(*builder);
-}
-}  // namespace
 
 namespace GB::commands {
 void build(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
   // TODO(jeffbailey): Fix unused ap_t APcount = 1;
-  Planet planet;
   char c;
   int j;
   int m;
   int n;
-  int x;
-  int y;
   int count;
-  bool outside;
+  bool outside = false;
   ScopeLevel level;
-  ScopeLevel build_level;
+  ScopeLevel build_level = ScopeLevel::LEVEL_UNIV;
   int shipcost;
   int load_crew;
   double load_fuel;
   double tech;
 
   FILE* fd;
-  Sector sector;
   std::optional<Ship> builder;
   Ship newship;
+
+  // Entity handles that persist across the loop
+  std::optional<EntityHandle<Planet>> planet_handle;
+  std::optional<EntityHandle<SectorMap>> sectormap_handle;
 
   if (argv.size() > 1 && argv[1][0] == '?') {
     /* information request */
@@ -177,9 +148,10 @@ void build(const command_t& argv, GameObj& g) {
   const auto& race = *g.race;
   count = 0; /* this used used to reset count in the loop */
   std::optional<ShipType> what;
+  int x, y;  // Coordinates for sector access
   do {
     switch (level) {
-      case ScopeLevel::LEVEL_PLAN:
+      case ScopeLevel::LEVEL_PLAN: {
         if (!count) { /* initialize loop variables */
           if (argv.size() < 2) {
             g.out << "Build what?\n";
@@ -203,17 +175,26 @@ void build(const command_t& argv, GameObj& g) {
             g.out << "Build where?\n";
             return;
           }
-          planet = getplanet(snum, pnum);
-          if (!can_build_at_planet(g, stars[snum], planet) && !race.God) {
+          planet_handle = g.entity_manager.get_planet(snum, pnum);
+          Planet& planet = **planet_handle;
+          const auto& star = *g.entity_manager.peek_star(snum);
+          if (!can_build_at_planet(g, star, planet) && !race.God) {
             g.out << "You can't build that here.\n";
             return;
           }
-          sscanf(argv[2].c_str(), "%d,%d", &x, &y);
+          auto xy_result = scn::scan<int, int>(argv[2], "{},{}");
+          if (!xy_result) {
+            g.out << "Invalid sector format. Use: x,y\n";
+            return;
+          }
+          std::tie(x, y) = xy_result->values();
           if (x < 0 || x >= planet.Maxx() || y < 0 || y >= planet.Maxy()) {
             g.out << "Illegal sector.\n";
             return;
           }
-          sector = getsector(planet, x, y);
+          sectormap_handle = g.entity_manager.get_sectormap(snum, pnum);
+          auto& sectormap = **sectormap_handle;
+          auto& sector = sectormap.get(x, y);
           auto result = can_build_on_sector(g.entity_manager, *what, race,
                                             planet, sector, {x, y});
           if (!result && !race.God) {
@@ -226,15 +207,17 @@ void build(const command_t& argv, GameObj& g) {
           }
           Getship(&newship, *what, race);
         }
+        Planet& planet = **planet_handle;
+        auto& sectormap = **sectormap_handle;
+        auto& sector = sectormap.get(x, y);
         if ((shipcost = newship.build_cost()) >
             planet.info(Playernum - 1).resource) {
           g.out << std::format("You need {}r to construct this ship.\n",
                                shipcost);
-          finish_build_plan(sector, x, y, planet, snum, pnum);
           return;
         }
-        create_ship_by_planet(Playernum, Governor, race, newship, planet, snum,
-                              pnum, x, y);
+        create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
+                              newship, planet, snum, pnum, x, y);
         if (race.governor[Governor].toggle.autoload &&
             what != ShipType::OTYPE_TRANSDEV && !race.God)
           autoload_at_planet(Playernum, &newship, &planet, sector, &load_crew,
@@ -244,11 +227,20 @@ void build(const command_t& argv, GameObj& g) {
           load_fuel = 0.0;
         }
         initialize_new_ship(g, race, &newship, load_fuel, load_crew);
-        putship(newship);
+        {
+          auto ship_handle = g.entity_manager.create_ship(newship.to_struct());
+          // Ship is now created in database with its data
+        }
         break;
-      case ScopeLevel::LEVEL_SHIP:
+      }
+      case ScopeLevel::LEVEL_SHIP: {
         if (!count) { /* initialize loop variables */
-          builder = getship(g.shipno);
+          auto builder_opt = getship(g.shipno);
+          if (!builder_opt) {
+            g.out << "Ship not found.\n";
+            return;
+          }
+          builder = std::move(*builder_opt);
           outside = false;
           auto test_build_level = build_at_ship(g, &*builder, &snum, &pnum);
           if (!test_build_level) {
@@ -312,16 +304,20 @@ void build(const command_t& argv, GameObj& g) {
             return;
           }
           if (outside && build_level == ScopeLevel::LEVEL_PLAN) {
-            planet = getplanet(snum, pnum);
+            planet_handle = g.entity_manager.get_planet(snum, pnum);
+            Planet& planet = **planet_handle;
             if (builder->type() == ShipType::OTYPE_FACTORY) {
-              if (!can_build_at_planet(g, stars[snum], planet)) {
+              const auto& star = *g.entity_manager.peek_star(snum);
+              if (!can_build_at_planet(g, star, planet)) {
                 g.out << "You can't build that here.\n";
                 return;
               }
               x = builder->land_x();
               y = builder->land_y();
               what = builder->build_type();
-              sector = getsector(planet, x, y);
+              sectormap_handle = g.entity_manager.get_sectormap(snum, pnum);
+              auto& sectormap = **sectormap_handle;
+              auto& sector = sectormap.get(x, y);
               auto result = can_build_on_sector(g.entity_manager, *what, race,
                                                 planet, sector, {x, y});
               if (!result) {
@@ -333,17 +329,18 @@ void build(const command_t& argv, GameObj& g) {
         }
         /* build 'em */
         switch (builder->type()) {
-          case ShipType::OTYPE_FACTORY:
+          case ShipType::OTYPE_FACTORY: {
+            Planet& planet = **planet_handle;
+            auto& sectormap = **sectormap_handle;
+            auto& sector = sectormap.get(x, y);
             if ((shipcost = newship.build_cost()) >
                 planet.info(Playernum - 1).resource) {
               g.out << std::format("You need {}r to construct this ship.\n",
                                    shipcost);
-              finish_build_ship(sector, x, y, planet, snum, pnum, outside,
-                                build_level, builder);
               return;
             }
-            create_ship_by_planet(Playernum, Governor, race, newship, planet,
-                                  snum, pnum, x, y);
+            create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
+                                  newship, planet, snum, pnum, x, y);
             if (race.governor[Governor].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God) {
               autoload_at_planet(Playernum, &newship, &planet, sector,
@@ -353,17 +350,17 @@ void build(const command_t& argv, GameObj& g) {
               load_fuel = 0.0;
             }
             break;
+          }
           case ShipType::STYPE_SHUTTLE:
-          case ShipType::STYPE_CARGO:
+          case ShipType::STYPE_CARGO: {
+            Planet& planet = **planet_handle;
             if (builder->resource() < (shipcost = newship.build_cost())) {
               g.out << std::format("You need {}r to construct the ship.\n",
                                    shipcost);
-              finish_build_ship(sector, x, y, planet, snum, pnum, outside,
-                                build_level, builder);
               return;
             }
-            create_ship_by_ship(Playernum, Governor, race, true, &planet,
-                                &newship, &*builder);
+            create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
+                                true, &planet, &newship, &*builder);
             if (race.governor[Governor].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God)
               autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
@@ -372,23 +369,20 @@ void build(const command_t& argv, GameObj& g) {
               load_fuel = 0.0;
             }
             break;
+          }
           default:
             if (builder->hanger() + ship_size(newship) >
                 builder->max_hanger()) {
               g.out << "Not enough hanger space.\n";
-              finish_build_ship(sector, x, y, planet, snum, pnum, outside,
-                                build_level, builder);
               return;
             }
             if (builder->resource() < (shipcost = newship.build_cost())) {
               g.out << std::format("You need {}r to construct the ship.\n",
                                    shipcost);
-              finish_build_ship(sector, x, y, planet, snum, pnum, outside,
-                                build_level, builder);
               return;
             }
-            create_ship_by_ship(Playernum, Governor, race, false, nullptr,
-                                &newship, &*builder);
+            create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
+                                false, nullptr, &newship, &*builder);
             if (race.governor[Governor].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God)
               autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
@@ -399,25 +393,21 @@ void build(const command_t& argv, GameObj& g) {
             break;
         }
         initialize_new_ship(g, race, &newship, load_fuel, load_crew);
-        putship(newship);
+        {
+          auto ship_handle = g.entity_manager.create_ship(newship.to_struct());
+          // Ship is now created in database with its data
+        }
+        {
+          auto builder_handle = g.entity_manager.get_ship(builder->number());
+          *builder_handle = std::move(*builder);
+        }
         break;
+      }
       default:
         // Shouldn't be possible.
         break;
     }
     count--;
   } while (count);
-  /* free stuff */
-  switch (level) {
-    case ScopeLevel::LEVEL_PLAN:
-      finish_build_plan(sector, x, y, planet, snum, pnum);
-      break;
-    case ScopeLevel::LEVEL_SHIP:
-      finish_build_ship(sector, x, y, planet, snum, pnum, outside, build_level,
-                        builder);
-      break;
-    default:
-      break;
-  }
 }
 }  // namespace GB::commands

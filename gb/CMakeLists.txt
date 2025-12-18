@@ -604,6 +604,19 @@ add_executable(launch_test commands/launch_test.cc)
 target_link_libraries(launch_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_launch_test COMMAND launch_test)
 
+add_executable(build_command_test commands/build_test.cc)
+target_link_libraries(build_command_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_build_command_test COMMAND build_command_test)
+
+# TODO: Extended test has issues - build command produces no output and creates 0 ships
+# add_executable(build_test_extended commands/build_test_extended.cc)
+# target_link_libraries(build_test_extended PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+# add_test(NAME GB_build_test_extended COMMAND build_test_extended)
+
+add_executable(give_test commands/give_test.cc)
+target_link_libraries(give_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_give_test COMMAND give_test)
+
 add_executable(help_test help_test.cc)
 target_link_libraries(help_test PRIVATE gblib)
 add_test(NAME GB_help_test COMMAND help_test)

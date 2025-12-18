@@ -261,14 +261,15 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
   notify(Playernum, Governor, message);
 }
 
-void create_ship_by_planet(int Playernum, int Governor, const Race& race,
-                           Ship& newship, Planet& planet, int snum, int pnum,
-                           int x, int y) {
+void create_ship_by_planet(EntityManager& entity_manager, int Playernum,
+                           int Governor, const Race& race, Ship& newship,
+                           Planet& planet, int snum, int pnum, int x, int y) {
   int shipno;
 
   newship.tech() = race.tech;
-  newship.xpos() = stars[snum].xpos() + planet.xpos();
-  newship.ypos() = stars[snum].ypos() + planet.ypos();
+  const auto& star = *entity_manager.peek_star(snum);
+  newship.xpos() = star.xpos() + planet.xpos();
+  newship.ypos() = star.ypos() + planet.ypos();
   newship.land_x() = x;
   newship.land_y() = y;
   newship.shipclass() = (((newship.type() == ShipType::OTYPE_TERRA) ||
@@ -319,9 +320,9 @@ void create_ship_by_planet(int Playernum, int Governor, const Race& race,
   notify(Playernum, Governor, locMsg);
 }
 
-void create_ship_by_ship(int Playernum, int Governor, const Race& race,
-                         bool outside, Planet* planet, Ship* newship,
-                         Ship* builder) {
+void create_ship_by_ship(EntityManager& entity_manager, int Playernum,
+                         int Governor, const Race& race, bool outside,
+                         Planet* planet, Ship* newship, Ship* builder) {
   int shipno;
 
   while ((shipno = getdeadship()) == 0)
@@ -342,9 +343,11 @@ void create_ship_by_ship(int Playernum, int Governor, const Race& race,
       case ScopeLevel::LEVEL_PLAN:
         insert_sh_plan(*planet, newship);
         break;
-      case ScopeLevel::LEVEL_STAR:
-        insert_sh_star(stars[builder->storbits()], newship);
+      case ScopeLevel::LEVEL_STAR: {
+        auto star_handle = entity_manager.get_star(builder->storbits());
+        insert_sh_star(*star_handle, newship);
         break;
+      }
       case ScopeLevel::LEVEL_UNIV:
         insert_sh_univ(&Sdata, newship);
         break;

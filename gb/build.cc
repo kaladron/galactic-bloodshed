@@ -230,23 +230,19 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
       g.out << "Processor OFF.\n";
       break;
     case ShipType::OTYPE_STELE:
-    case ShipType::OTYPE_GTELE: {
-      std::string message =
-          std::format("Telescope range is {:.2f}.\n",
-                      tele_range(newship->type(), newship->tech()));
-      notify(Playernum, Governor, message);
-    } break;
+    case ShipType::OTYPE_GTELE:
+      g.out << std::format("Telescope range is {:.2f}.\n",
+                           tele_range(newship->type(), newship->tech()));
+      break;
     default:
       break;
   }
   if (newship->damage()) {
-    std::string message = std::format(
+    g.out << std::format(
         "Warning: This ship is constructed with a {}% damage level.\n",
         newship->damage());
-    notify(Playernum, Governor, message);
     if (!Shipdata[newship->type()][ABIL_REPAIR] && newship->max_crew())
-      notify(Playernum, Governor,
-             "It will need resources to become fully operational.\n");
+      g.out << "It will need resources to become fully operational.\n";
   }
   if (Shipdata[newship->type()][ABIL_REPAIR] && newship->max_crew())
     g.out << "This ship does not need resources to repair.\n";
@@ -256,9 +252,8 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
   if (!newship->max_crew())
     g.out << "This ship is robotic, and may not repair itself.\n";
 
-  std::string message = std::format("Loaded with {} crew and {:.1f} fuel.\n",
-                                    load_crew, load_fuel);
-  notify(Playernum, Governor, message);
+  g.out << std::format("Loaded with {} crew and {:.1f} fuel.\n",
+                       load_crew, load_fuel);
 }
 
 void create_ship_by_planet(EntityManager& entity_manager, int Playernum,

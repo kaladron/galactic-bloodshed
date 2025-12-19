@@ -39,8 +39,10 @@ class EntityHandle {
   bool dirty = false;
 
 public:
-  EntityHandle(EntityManager* mgr, T* ent, std::function<void(const T&)> save)
-      : manager(mgr), entity(ent), save_fn(std::move(save)) {}
+  EntityHandle(EntityManager* mgr, T* ent, std::function<void(const T&)> save,
+               bool initial_dirty = false)
+      : manager(mgr), entity(ent), save_fn(std::move(save)),
+        dirty(initial_dirty) {}
 
   ~EntityHandle() {
     if (dirty && entity) {

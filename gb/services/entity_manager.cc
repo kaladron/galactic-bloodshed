@@ -168,10 +168,16 @@ EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
   data.number = num;
   Ship new_ship{data};
 
+  // Save immediately to database
+  ships.save(new_ship);
+
   // Cache it
   auto [iter, inserted] =
       ship_cache.emplace(num, std::make_unique<Ship>(std::move(new_ship)));
   ship_refcount[num] = 1;
+
+  // Save the new ship to database immediately
+  ships.save(*iter->second);
 
   return {this, iter->second.get(), [this, num](const Ship& s) {
             ships.save(s);

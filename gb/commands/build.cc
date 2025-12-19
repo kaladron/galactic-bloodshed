@@ -201,7 +201,7 @@ void build(const command_t& argv, GameObj& g) {
             g.out << result.error();
             return;
           }
-          if (!(count = getcount(argv, 4))) {
+          if (!(count = getcount(argv, 3))) {
             g.out << "Give a positive number of builds.\n";
             return;
           }

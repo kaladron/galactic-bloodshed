@@ -68,7 +68,7 @@ static bool attack_planet(const Ship&);
 static void fix_stability(EntityManager&, Star&);
 static bool governed(const Race&, const TurnState&);
 static void make_discoveries(EntityManager&, Race&);
-static void output_ground_attacks();
+static void output_ground_attacks(EntityManager&);
 static void process_ships(TurnState& state);
 static void process_stars_and_planets(TurnState& state, int update);
 static void process_races(TurnState& state, int update);
@@ -105,7 +105,7 @@ void do_turn(EntityManager& entity_manager, int update) {
   process_ships(state);
   process_stars_and_planets(state, update);
   process_races(state, update);
-  output_ground_attacks();
+  output_ground_attacks(state.entity_manager);
   process_market(state, update);
   process_ship_masses_and_ownership(state);
   process_ship_turns(state, update);
@@ -199,7 +199,7 @@ static void process_races(TurnState& state, int update) {
     }
   }
 
-  output_ground_attacks();
+  output_ground_attacks(state.entity_manager);
 }
 
 /**
@@ -768,11 +768,13 @@ void handle_victory(EntityManager& em) {
 
   for (i = 1; i <= Num_races; i++) {
     win_category[i - 1] = 0;
-    if (races[i - 1].controlled_planets >=
+    const auto* race = em.peek_race(i);
+    if (!race) continue;
+    if (race->controlled_planets >=
         Planet_count * VICTORY_PERCENT / 100) {
       win_category[i - 1] = LITTLE_WINNER;
     }
-    if (races[i - 1].victory_turns >= VICTORY_UPDATES) {
+    if (race->victory_turns >= VICTORY_UPDATES) {
       game_over++;
       win_category[i - 1] = BIG_WINNER;
     }
@@ -786,15 +788,19 @@ void handle_victory(EntityManager& em) {
       push_telegram_race(em, i, winner_msg);
       for (j = 1; j <= Num_races; j++)
         if (win_category[j - 1] == BIG_WINNER) {
+          const auto* winner_race = em.peek_race(j);
+          if (!winner_race) continue;
           std::string big_winner_msg =
-              std::format("*** [{:2d}] {:<30.30s} ***", j, races[j - 1].name);
+              std::format("*** [{:2d}] {:<30.30s} ***", j, winner_race->name);
           push_telegram_race(em, i, big_winner_msg);
         }
       push_telegram_race(em, i, "Lesser winners:");
       for (j = 1; j <= Num_races; j++)
         if (win_category[j - 1] == LITTLE_WINNER) {
+          const auto* winner_race = em.peek_race(j);
+          if (!winner_race) continue;
           std::string little_winner_msg =
-              std::format("+++ [{:2d}] {:<30.30s} +++", j, races[j - 1].name);
+              std::format("+++ [{:2d}] {:<30.30s} +++", j, winner_race->name);
           push_telegram_race(em, i, little_winner_msg);
         }
     }
@@ -854,7 +860,7 @@ static bool attack_planet(const Ship& ship) {
   return ship.whatdest() == ScopeLevel::LEVEL_PLAN;
 }
 
-static void output_ground_attacks() {
+static void output_ground_attacks(EntityManager& em) {
   int star;
   int i;
   int j;
@@ -863,9 +869,13 @@ static void output_ground_attacks() {
     for (i = 1; i <= Num_races; i++)
       for (j = 1; j <= Num_races; j++)
         if (ground_assaults[i - 1][j - 1][star]) {
+          const auto* star_ptr = em.peek_star(star);
+          const auto* race_i = em.peek_race(i);
+          const auto* race_j = em.peek_race(j);
+          if (!star_ptr || !race_i || !race_j) continue;
           std::string assault_news = std::format(
               "{}: {} [{}] assaults {} [{}] {} times.\n",
-              stars[star].get_name(), races[i - 1].name, i, races[j - 1].name,
+              star_ptr->get_name(), race_i->name, i, race_j->name,
               j, ground_assaults[i - 1][j - 1][star]);
           post(assault_news, NewsType::COMBAT);
           ground_assaults[i - 1][j - 1][star] = 0;

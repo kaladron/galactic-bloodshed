@@ -5,6 +5,7 @@ export module gblib:place;
 import :files_shl;
 import :gameobj;
 import :globals;
+import :services;
 import :shlmisc;
 import :star;
 
@@ -41,7 +42,12 @@ void Place::getplace2(GameObj& g, std::string_view string,
         err = true;
         return;
       case ScopeLevel::LEVEL_SHIP: {
-        auto ship = getship(shipno);
+        const auto* ship = g.entity_manager.peek_ship(shipno);
+        if (!ship) {
+          g.out << "Ship not found.\n";
+          err = true;
+          return;
+        }
         level = ship->whatorbits();
         // TODO(jeffbailey): Fix 'cs .' for ships within ships
         if (level == ScopeLevel::LEVEL_SHIP) shipno = ship->destshipno();
@@ -91,8 +97,13 @@ void Place::getplace2(GameObj& g, std::string_view string,
         if (substr == stars[snum].get_planet_name(i)) {
           level = ScopeLevel::LEVEL_PLAN;
           pnum = i;
-          const auto p = getplanet(snum, i);
-          if (ignoreexpl || p.info(Playernum - 1).explored || g.god) {
+          const auto* p = g.entity_manager.peek_planet(snum, i);
+          if (!p) {
+            g.out << "Planet not found.\n";
+            err = true;
+            return;
+          }
+          if (ignoreexpl || p->info(Playernum - 1).explored || g.god) {
             if (string.starts_with('/')) string.remove_prefix(1);
             return getplace2(g, string, ignoreexpl);
           }
@@ -160,7 +171,13 @@ Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
       getplace2(g, string, ignoreexpl);
       return;
     case '#': {
-      auto ship = getship(string);
+      auto shipnum = string_to_shipnum(string);
+      if (!shipnum) {
+        DontOwnErr(Playernum, Governor, shipno);
+        err = true;
+        return;
+      }
+      const auto* ship = g.entity_manager.peek_ship(*shipnum);
       if (!ship) {
         DontOwnErr(Playernum, Governor, shipno);
         err = true;

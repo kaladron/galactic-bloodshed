@@ -213,8 +213,13 @@ void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
     Place where{g, argv[3], true};
     if (!where.err) {
       if (where.level == ScopeLevel::LEVEL_SHIP) {
-        auto tmpship = getship(where.shipno);
-        if (!followable(g.entity_manager, ship, *tmpship)) {
+        auto tmpship_handle = g.entity_manager.get_ship(where.shipno);
+        if (!tmpship_handle.get()) {
+          g.out << "Warning: that ship is out of range.\n";
+          return;
+        }
+        auto& tmpship = *tmpship_handle;
+        if (!followable(g.entity_manager, ship, tmpship)) {
           g.out << "Warning: that ship is out of range.\n";
           return;
         }
@@ -543,10 +548,15 @@ void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
   if (ship.type() == ShipType::OTYPE_FACTORY) {
     unsigned int oncost = 0;
     if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-      auto s2 = getship(ship.destshipno());
-      if (s2->type() == ShipType::STYPE_HABITAT) {
+      auto s2_handle = g.entity_manager.get_ship(ship.destshipno());
+      if (!s2_handle.get()) {
+        g.out << "Ship not found.\n";
+        return;
+      }
+      auto& s2 = *s2_handle;
+      if (s2.type() == ShipType::STYPE_HABITAT) {
         oncost = HAB_FACT_ON_COST * ship.build_cost();
-        if (s2->resource() < oncost) {
+        if (s2.resource() < oncost) {
           g.out << std::format(
               "You don't have {} resources on Habitat #{} to activate this "
               "factory.\n",
@@ -555,18 +565,17 @@ void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
         }
         int hangerneeded =
             (1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship))) -
-            ((s2->max_hanger() - s2->hanger()) + ship.size());
+            ((s2.max_hanger() - s2.hanger()) + ship.size());
         if (hangerneeded > 0) {
           g.out << std::format(
               "Not enough hanger space free on Habitat #{}. Need {} more.\n",
               ship.destshipno(), hangerneeded);
           return;
         }
-        s2->resource() -= oncost;
-        s2->hanger() -= ship.size();
+        s2.resource() -= oncost;
+        s2.hanger() -= ship.size();
         ship.size() = 1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship));
-        s2->hanger() += ship.size();
-        putship(*s2);
+        s2.hanger() += ship.size();
       } else {
         g.out << "The factory is currently being transported.\n";
         return;

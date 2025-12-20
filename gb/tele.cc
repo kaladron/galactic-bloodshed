@@ -178,7 +178,13 @@ void news_read(NewsType type, GameObj& g) {
     return;
   }
 
-  auto& race = races[g.player - 1];
+  auto race_handle = g.entity_manager.get_race(g.player);
+  if (!race_handle.get()) {
+    g.out << "Race not found.\n";
+    return;
+  }
+  auto& race = *race_handle;
+
   if (race.governor[g.governor].newspos[std::to_underlying(type)] >
       newslength[type]) {
     race.governor[g.governor].newspos[std::to_underlying(type)] = 0;
@@ -194,7 +200,6 @@ void news_read(NewsType type, GameObj& g) {
 
   race.governor[g.governor].newspos[std::to_underlying(type)] =
       newslength[type];
-  putrace(race);
 }
 
 /**

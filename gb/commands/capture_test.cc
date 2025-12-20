@@ -61,6 +61,17 @@ int main() {
   PlanetRepository planets(store);
   planets.save(planet);
   
+  // Create sectormap with troops for attacker
+  {
+    SectorMap smap(planet, true);  // Initialize empty sectors
+    smap.get(5, 5).set_owner(2);  // Defender owns the sector
+    smap.get(5, 5).set_popn(50);
+    smap.get(5, 5).set_troops(100);  // Defender has troops
+    smap.get(5, 5).set_condition(SectorType::SEC_LAND);
+    SectorRepository sectors(store);
+    sectors.save_map(smap);
+  }
+  
   // Create defender's ship (landed on planet)
   ship_struct ship{};
   ship.number = 1;

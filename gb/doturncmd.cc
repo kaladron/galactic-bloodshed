@@ -65,9 +65,9 @@ static constexpr void maintain(Race& r, Race::gov& governor,
 
 static ap_t APadd(const int, const population_t, const Race&, const TurnState&);
 static bool attack_planet(const Ship&);
-static void fix_stability(Star&);
+static void fix_stability(EntityManager&, Star&);
 static bool governed(const Race&, const TurnState&);
-static void make_discoveries(Race&);
+static void make_discoveries(EntityManager&, Race&);
 static void output_ground_attacks();
 static void process_ships(TurnState& state);
 static void process_stars_and_planets(TurnState& state, int update);
@@ -137,7 +137,7 @@ static void process_stars_and_planets(TurnState& state, int update) {
     const starnum_t star = star_handle->get_struct().star_id;
 
     if (update) {
-      fix_stability(*star_handle); /* nova */
+      fix_stability(state.entity_manager, *star_handle); /* nova */
     }
 
     for (auto planet_handle :
@@ -603,7 +603,7 @@ static void finalize_turn(TurnState& state, int update) {
       }
       race_handle->tech += static_cast<double>(race_handle->IQ) / 100.0;
       race_handle->morale += state.stats.Power[player - 1].planets_owned;
-      make_discoveries(*race_handle);
+      make_discoveries(state.entity_manager, *race_handle);
       race_handle->turn += 1;
       if (race_handle->controlled_planets >=
           Planet_count * VICTORY_PERCENT / 100) {
@@ -715,7 +715,7 @@ static bool governed(const Race& race, const TurnState& state) {
 }
 
 /* fix stability for stars */
-void fix_stability(Star& s) {
+void fix_stability(EntityManager& em, Star& s) {
   int a;
   int i;
 
@@ -728,7 +728,7 @@ void fix_stability(Star& s) {
           "nova.\n",
           s.get_name());
       for (i = 1; i <= Num_races; i++)
-        push_telegram_race(i, telegram_msg);
+        push_telegram_race(em, i, telegram_msg);
 
       /* telegram everyone when nova over? */
     } else
@@ -744,7 +744,7 @@ void fix_stability(Star& s) {
           "undergoing nova.\n",
           s.get_name());
       for (i = 1; i <= Num_races; i++)
-        push_telegram_race(i, telegram_msg);
+        push_telegram_race(em, i, telegram_msg);
     } else
       s.stability() += a;
   } else {
@@ -756,7 +756,7 @@ void fix_stability(Star& s) {
   }
 }
 
-void handle_victory() {
+void handle_victory(EntityManager& em) {
   if (!VICTORY) return;
 
   int i, j;
@@ -779,72 +779,72 @@ void handle_victory() {
   }
   if (game_over) {
     for (i = 1; i <= Num_races; i++) {
-      push_telegram_race(i, "*** Attention ***");
-      push_telegram_race(i, "This game of Galactic Bloodshed is now *over*");
+      push_telegram_race(em, i, "*** Attention ***");
+      push_telegram_race(em, i, "This game of Galactic Bloodshed is now *over*");
       std::string winner_msg =
           std::format("The big winner{}", (game_over == 1) ? " is" : "s are");
-      push_telegram_race(i, winner_msg);
+      push_telegram_race(em, i, winner_msg);
       for (j = 1; j <= Num_races; j++)
         if (win_category[j - 1] == BIG_WINNER) {
           std::string big_winner_msg =
               std::format("*** [{:2d}] {:<30.30s} ***", j, races[j - 1].name);
-          push_telegram_race(i, big_winner_msg);
+          push_telegram_race(em, i, big_winner_msg);
         }
-      push_telegram_race(i, "Lesser winners:");
+      push_telegram_race(em, i, "Lesser winners:");
       for (j = 1; j <= Num_races; j++)
         if (win_category[j - 1] == LITTLE_WINNER) {
           std::string little_winner_msg =
               std::format("+++ [{:2d}] {:<30.30s} +++", j, races[j - 1].name);
-          push_telegram_race(i, little_winner_msg);
+          push_telegram_race(em, i, little_winner_msg);
         }
     }
   }
 }
 
-static void make_discoveries(Race& r) {
+static void make_discoveries(EntityManager& em, Race& r) {
   /* would be nicer to do this with a loop of course - but it's late */
   if (!Hyper_drive(r) && r.tech >= TECH_HYPER_DRIVE) {
-    push_telegram_race(r.Playernum,
+    push_telegram_race(em, r.Playernum,
                        "You have discovered HYPERDRIVE technology.\n");
     r.discoveries[D_HYPER_DRIVE] = 1;
   }
   if (!Laser(r) && r.tech >= TECH_LASER) {
-    push_telegram_race(r.Playernum, "You have discovered LASER technology.\n");
+    push_telegram_race(em, r.Playernum, "You have discovered LASER technology.\n");
     r.discoveries[D_LASER] = 1;
   }
   if (!Cew(r) && r.tech >= TECH_CEW) {
-    push_telegram_race(r.Playernum, "You have discovered CEW technology.\n");
+    push_telegram_race(em, r.Playernum, "You have discovered CEW technology.\n");
     r.discoveries[D_CEW] = 1;
   }
   if (!Vn(r) && r.tech >= TECH_VN) {
-    push_telegram_race(r.Playernum, "You have discovered VN technology.\n");
+    push_telegram_race(em, r.Playernum, "You have discovered VN technology.\n");
     r.discoveries[D_VN] = 1;
   }
   if (!Tractor_beam(r) && r.tech >= TECH_TRACTOR_BEAM) {
-    push_telegram_race(r.Playernum,
+    push_telegram_race(em, r.Playernum,
                        "You have discovered TRACTOR BEAM technology.\n");
     r.discoveries[D_TRACTOR_BEAM] = 1;
   }
   if (!Transporter(r) && r.tech >= TECH_TRANSPORTER) {
-    push_telegram_race(r.Playernum,
+    push_telegram_race(em, r.Playernum,
                        "You have discovered TRANSPORTER technology.\n");
     r.discoveries[D_TRANSPORTER] = 1;
   }
   if (!Avpm(r) && r.tech >= TECH_AVPM) {
-    push_telegram_race(r.Playernum, "You have discovered AVPM technology.\n");
+    push_telegram_race(em, r.Playernum, "You have discovered AVPM technology.\n");
     r.discoveries[D_AVPM] = 1;
   }
   if (!Cloak(r) && r.tech >= TECH_CLOAK) {
-    push_telegram_race(r.Playernum, "You have discovered CLOAK technology.\n");
+    push_telegram_race(em, r.Playernum, "You have discovered CLOAK technology.\n");
     r.discoveries[D_CLOAK] = 1;
   }
   if (!Wormhole(r) && r.tech >= TECH_WORMHOLE) {
-    push_telegram_race(r.Playernum,
+    push_telegram_race(em, r.Playernum,
                        "You have discovered WORMHOLE technology.\n");
     r.discoveries[D_WORMHOLE] = 1;
   }
   if (!Crystal(r) && r.tech >= TECH_CRYSTAL) {
-    push_telegram_race(r.Playernum,
+    push_telegram_race(em, r.Playernum,
                        "You have discovered CRYSTAL technology.\n");
     r.discoveries[D_CRYSTAL] = 1;
   }

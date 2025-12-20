@@ -159,7 +159,7 @@ void send_message(const command_t& argv, GameObj& g) {
     for (i = 1; i <= Num_races; i++) {
       if (isset(dummy, i)) {
         notify_race(i, block_msg);
-        push_telegram_race(i, msg);
+        push_telegram_race(g.entity_manager, i, msg);
       }
     }
   } else if (to_star) {
@@ -177,7 +177,7 @@ void send_message(const command_t& argv, GameObj& g) {
       push_telegram(who, gov, msg);
       notify(who, gov, notice);
     } else {
-      push_telegram_race(who, msg);
+      push_telegram_race(g.entity_manager, who, msg);
       notify_race(who, notice);
     }
 

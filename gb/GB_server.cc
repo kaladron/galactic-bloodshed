@@ -988,7 +988,7 @@ static void do_update(EntityManager& entity_manager, bool force) {
   clk = time(nullptr);
   std::string finish_msg =
       std::format("{}Update {} finished\n", ctime(&clk), nupdates_done);
-  handle_victory();
+  handle_victory(entity_manager);
   if (!fakeit) {
     for (auto i = 1; i <= Num_races; i++)
       notify_race(i, finish_msg);

@@ -7,4 +7,4 @@ import :services;
 import :types;
 
 export void do_turn(EntityManager&, int);
-export void handle_victory();
+export void handle_victory(EntityManager&);

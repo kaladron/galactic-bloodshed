@@ -31,6 +31,7 @@ int main() {
   receiver.Gov_ship = 0;
   receiver.God = false;
   receiver.name = "AlienRace";
+  receiver.translate[0] = 50;  // Initial translation with race 1
   
   RaceRepository races(store);
   races.save(sender);

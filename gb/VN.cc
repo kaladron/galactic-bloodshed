@@ -153,7 +153,7 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
                       prin_ship_orbits(em, ship));
   }
 
-  push_telegram_race(f, buf);
+  push_telegram_race(em, f, buf);
   if (f != ship.owner()) push_telegram(ship.owner(), ship.governor(), buf);
 }
 

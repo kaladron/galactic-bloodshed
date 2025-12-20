@@ -346,14 +346,6 @@ add_executable(dosector_simple_test dosector_simple_test.cc)
 target_link_libraries(dosector_simple_test PRIVATE gblib SQLite::SQLite3)
 add_test(NAME GB_dosector_simple_test COMMAND dosector_simple_test)
 
-add_executable(race_sqlite_test race_sqlite_test.cc)
-target_link_libraries(race_sqlite_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_race_sqlite_test COMMAND race_sqlite_test)
-
-add_executable(sector_sqlite_test sector_sqlite_test.cc)
-target_link_libraries(sector_sqlite_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_sector_sqlite_test COMMAND sector_sqlite_test)
-
 add_executable(sectormap_sqlite_test sectormap_sqlite_test.cc)
 target_link_libraries(sectormap_sqlite_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_sectormap_sqlite_test COMMAND sectormap_sqlite_test)

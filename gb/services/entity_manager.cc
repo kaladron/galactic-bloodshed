@@ -325,6 +325,11 @@ EntityHandle<block> EntityManager::get_block(int id) {
       [this](int i) { release_block(i); });
 }
 
+const block* EntityManager::peek_block(int id) {
+  return peek_entity_impl<block>(id, block_cache, block_refcount,
+                                  [this](int i) { return blocks.find_by_id(i); });
+}
+
 void EntityManager::release_block(int id) {
   release_entity_impl<block>(id, block_cache, block_refcount);
 }
@@ -336,6 +341,11 @@ EntityHandle<power> EntityManager::get_power(int id) {
       [this](int i) { return powers.find_by_id(i); },
       [this](const power& p) { powers.save(p); },
       [this](int i) { release_power(i); });
+}
+
+const power* EntityManager::peek_power(int id) {
+  return peek_entity_impl<power>(id, power_cache, power_refcount,
+                                  [this](int i) { return powers.find_by_id(i); });
 }
 
 void EntityManager::release_power(int id) {

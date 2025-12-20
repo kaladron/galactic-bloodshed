@@ -159,6 +159,8 @@ public:
   const Planet* peek_planet(starnum_t star, planetnum_t pnum);
   const Star* peek_star(starnum_t num);
   const Commod* peek_commod(int id);
+  const block* peek_block(int id);
+  const power* peek_power(int id);
   const universe_struct* peek_universe();
 
   // Sector map operations (cached with RAII like other entities)

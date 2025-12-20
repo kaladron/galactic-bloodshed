@@ -3,7 +3,7 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 module commands;
 
@@ -37,7 +37,13 @@ void send_message(const command_t& argv, GameObj& g) {
     return;
   }
   if (postit) {
-    const auto& race = races[Playernum - 1];
+    const auto* race_ptr =
+        g.race ? g.race : g.entity_manager.peek_race(Playernum);
+    if (!race_ptr) {
+      g.out << "Race not found.\n";
+      return;
+    }
+    const auto& race = *race_ptr;
     msg = std::format("{} \"{}\" [{},{}]: ", race.name,
                       race.governor[Governor].name, Playernum, Governor);
     for (j = 1; j < argv.size(); j++)
@@ -53,8 +59,12 @@ void send_message(const command_t& argv, GameObj& g) {
       g.out << "No such alliance block.\n";
       return;
     }
-    auto& alien = races[who - 1];
-    APcount *= !alien.God;
+    const auto* alien = g.entity_manager.peek_race(who);
+    if (!alien) {
+      g.out << "Alien race not found.\n";
+      return;
+    }
+    APcount *= !alien->God;
   } else if (argv[1] == "star") {
     to_star = 1;
     g.out << "Sending message to star system.\n";
@@ -64,14 +74,17 @@ void send_message(const command_t& argv, GameObj& g) {
       return;
     }
     star = where.snum;
-    stars[star] = getstar(star);
   } else {
     if (!(who = get_player(g.entity_manager, argv[1]))) {
       g.out << "No such player.\n";
       return;
     }
-    auto& alien = races[who - 1];
-    APcount *= !alien.God;
+    const auto* alien = g.entity_manager.peek_race(who);
+    if (!alien) {
+      g.out << "Alien race not found.\n";
+      return;
+    }
+    APcount *= !alien->God;
   }
 
   switch (g.level) {
@@ -84,29 +97,42 @@ void send_message(const command_t& argv, GameObj& g) {
       return;
 
     default:
-      stars[g.snum] = getstar(g.snum);
-      if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1),
+      if (!enufAP(Playernum, Governor,
+                  g.entity_manager.peek_star(g.snum)->AP(Playernum - 1),
                   APcount))
         return;
       break;
   }
 
-  const auto& race = races[Playernum - 1];
+  const auto* race_ptr =
+      g.race ? g.race : g.entity_manager.peek_race(Playernum);
+  if (!race_ptr) {
+    g.out << "Race not found.\n";
+    return;
+  }
+  const auto& race = *race_ptr;
 
   /* send the message */
-  if (to_block)
+  if (to_block) {
+    const auto* block = g.entity_manager.peek_block(who);
+    if (!block) {
+      g.out << "Block not found.\n";
+      return;
+    }
     msg = std::format("{} \"{}\" [{},{}] to {} [{}]: ", race.name,
                       race.governor[Governor].name, Playernum, Governor,
-                      Blocks[who - 1].name, who);
-  else if (to_star)
+                      block->name, who);
+  } else if (to_star) {
+    const auto& star_ref = *g.entity_manager.peek_star(star);
     msg = std::format("{} \"{}\" [{},{}] to inhabitants of {}: ", race.name,
                       race.governor[Governor].name, Playernum, Governor,
-                      stars[star].get_name());
-  else
+                      star_ref.get_name());
+  } else {
     msg = std::format("{} \"{}\" [{},{}]: ", race.name,
                       race.governor[Governor].name, Playernum, Governor);
+  }
 
-  if (to_star || to_block || isdigit(*argv[2].c_str()))
+  if (to_star || to_block || std::isdigit(*argv[2].c_str()))
     start = 3;
   else if (postit)
     start = 1;
@@ -120,11 +146,16 @@ void send_message(const command_t& argv, GameObj& g) {
       "{} \"{}\" [{},{}] has sent you a telegram. Use `read' to read it.\n",
       race.name, race.governor[Governor].name, Playernum, Governor);
   if (to_block) {
-    uint64_t dummy = (Blocks[who - 1].invite & Blocks[who - 1].pledge);
+    const auto* block = g.entity_manager.peek_block(who);
+    if (!block) {
+      g.out << "Block not found.\n";
+      return;
+    }
+    std::uint64_t dummy = (block->invite & block->pledge);
     const auto block_msg = std::format(
         "{} \"{}\" [{},{}] sends a message to {} [{}] alliance block.\n",
         race.name, race.governor[Governor].name, Playernum, Governor,
-        Blocks[who - 1].name, who);
+        block->name, who);
     for (i = 1; i <= Num_races; i++) {
       if (isset(dummy, i)) {
         notify_race(i, block_msg);
@@ -132,16 +163,16 @@ void send_message(const command_t& argv, GameObj& g) {
       }
     }
   } else if (to_star) {
-    const auto star_msg =
-        std::format("{} \"{}\" [{},{}] sends a stargram to {}.\n", race.name,
-                    race.governor[Governor].name, Playernum, Governor,
-                    stars[star].get_name());
+    const auto& star_ref = *g.entity_manager.peek_star(star);
+    const auto star_msg = std::format(
+        "{} \"{}\" [{},{}] sends a stargram to {}.\n", race.name,
+        race.governor[Governor].name, Playernum, Governor, star_ref.get_name());
     notify_star(Playernum, Governor, star, star_msg);
     warn_star(Playernum, star, msg);
   } else {
     int gov;
     if (who == Playernum) APcount = 0;
-    if (isdigit(*argv[2].c_str()) && (gov = std::stoi(argv[2])) >= 0 &&
+    if (std::isdigit(*argv[2].c_str()) && (gov = std::stoi(argv[2])) >= 0 &&
         gov <= MAXGOVERNORS) {
       push_telegram(who, gov, msg);
       notify(who, gov, notice);
@@ -150,11 +181,13 @@ void send_message(const command_t& argv, GameObj& g) {
       notify_race(who, notice);
     }
 
-    auto& alien = races[who - 1];
-    /* translation modifier increases */
-    alien.translate[Playernum - 1] =
-        std::min(alien.translate[Playernum - 1] + 2, 100);
-    putrace(alien);
+    auto alien_handle = g.entity_manager.get_race(who);
+    if (alien_handle.get()) {
+      auto& alien = *alien_handle;
+      /* translation modifier increases */
+      alien.translate[Playernum - 1] =
+          std::min(alien.translate[Playernum - 1] + 2, 100);
+    }
   }
   g.out << "Message sent.\n";
   deductAPs(g, APcount, g.snum);

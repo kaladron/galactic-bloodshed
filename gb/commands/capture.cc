@@ -5,7 +5,7 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 #include <strings.h>
 
@@ -37,7 +37,8 @@ void capture(const command_t& argv, GameObj& g) {
     g.out << "Capture what?\n";
     return;
   }
-  if (Governor && stars[g.snum].governor(Playernum - 1) != Governor) {
+  if (Governor &&
+      g.entity_manager.peek_star(g.snum)->governor(Playernum - 1) != Governor) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
@@ -59,16 +60,24 @@ void capture(const command_t& argv, GameObj& g) {
 
         continue;
       }
-      if (!enufAP(Playernum, Governor, stars[ship.storbits()].AP(Playernum - 1),
-                  APcount)) {
+      if (!enufAP(
+              Playernum, Governor,
+              g.entity_manager.peek_star(ship.storbits())->AP(Playernum - 1),
+              APcount)) {
         continue;
       }
 
       x = ship.land_x();
       y = ship.land_y();
 
-      auto p = getplanet(ship.storbits(), ship.pnumorbits());
-      auto sect = getsector(p, x, y);
+      auto planet_handle =
+          g.entity_manager.get_planet(ship.storbits(), ship.pnumorbits());
+      auto& p = *planet_handle;
+
+      auto sectormap_handle =
+          g.entity_manager.get_sectormap(ship.storbits(), ship.pnumorbits());
+      auto& smap = *sectormap_handle;
+      auto& sect = smap.get(x, y);
 
       if (sect.get_owner() != Playernum) {
         notify(Playernum, Governor,
@@ -108,12 +117,18 @@ void capture(const command_t& argv, GameObj& g) {
       else if ((boarders > sect.get_troops()) && what == PopulationType::MIL)
         boarders = sect.get_troops();
 
-      auto& race = races[Playernum - 1];
-      auto& alien = races[ship.owner() - 1];
+      const auto* race_ptr =
+          g.race ? g.race : g.entity_manager.peek_race(Playernum);
+      const auto& race = *race_ptr;
+      const auto* alien = g.entity_manager.peek_race(ship.owner());
+      if (!alien) {
+        g.out << "Ship owner race not found.\n";
+        continue;
+      }
 
       if (isset(race.allied, (ship.owner()))) {
         notify(Playernum, Governor,
-               std::format("Boarding the ship of your ally, {}\n", alien.name));
+               std::format("Boarding the ship of your ally, {}\n", alien->name));
       }
 
       olddpopn = ship.popn();
@@ -144,13 +159,13 @@ void capture(const command_t& argv, GameObj& g) {
                     .01 * race.tech *
                     (race.likes[sect.get_condition()] + 0.01) *
                     ((double)Defensedata[sect.get_condition()] + 1.0) *
-                    morale_factor((double)(race.morale - alien.morale)),
+                    morale_factor((double)(race.morale - alien->morale)),
                 dstrength =
                     ((double)ship.popn() +
-                     (double)ship.troops() * 10.0 * (double)alien.fighters) *
-                    .01 * alien.tech * ((double)(armor(ship)) + 0.01) * .01 *
+                     (double)ship.troops() * 10.0 * (double)alien->fighters) *
+                    .01 * alien->tech * ((double)(armor(ship)) + 0.01) * .01 *
                     (100.0 - (double)ship.damage()) *
-                    morale_factor((double)(alien.morale - race.morale))));
+                    morale_factor((double)(alien->morale - race.morale))));
         casualty_scale = std::min(boarders, ship.popn() + ship.troops());
         if (astrength > 0.0)
           casualties =
@@ -174,11 +189,11 @@ void capture(const command_t& argv, GameObj& g) {
 
         casualties1 = std::min(olddpopn, casualties1);
         ship.popn() -= casualties1;
-        ship.mass() -= casualties1 * alien.mass;
+        ship.mass() -= casualties1 * alien->mass;
 
         casualties2 = std::min(olddtroops, casualties2);
         ship.troops() -= casualties2;
-        ship.mass() -= casualties2 * alien.mass;
+        ship.mass() -= casualties2 * alien->mass;
 
       } else if (ship.destruct()) { /* booby trapped robot ships */
         booby = int_rand(0, 10 * ship.destruct());
@@ -191,7 +206,7 @@ void capture(const command_t& argv, GameObj& g) {
         ship.damage() += booby;
       }
       shipdam = std::min(100, shipdam);
-      if (ship.damage() >= 100) kill_ship(Playernum, &ship);
+      if (ship.damage() >= 100) g.entity_manager.kill_ship(Playernum, ship);
 
       if (!(ship.popn() + ship.troops()) && ship.alive()) {
         /* we got 'em */
@@ -206,8 +221,14 @@ void capture(const command_t& argv, GameObj& g) {
           sect.set_troops(sect.get_troops() + boarders - ship.troops());
           ship.mass() += ship.troops() * race.mass;
         }
-        if (olddpopn + olddtroops && ship.type() != ShipType::OTYPE_FACTORY)
-          adjust_morale(race, alien, ship.build_cost());
+        if (olddpopn + olddtroops && ship.type() != ShipType::OTYPE_FACTORY) {
+          // Need writable access to both races
+          auto race_handle = g.entity_manager.get_race(Playernum);
+          auto alien_handle = g.entity_manager.get_race(oldowner);
+          if (race_handle.get() && alien_handle.get()) {
+            adjust_morale(*race_handle, *alien_handle, ship.build_cost());
+          }
+        }
         /* unoccupied ships and factories don't count */
       } else { /* retreat */
         if (what == PopulationType::CIV)
@@ -218,14 +239,15 @@ void capture(const command_t& argv, GameObj& g) {
 
       sect.clear_owner_if_empty();
 
-      std::string telegram = std::format(
-          "BULLETIN from {}/{}!!\n", stars[ship.storbits()].get_name(),
-          stars[ship.storbits()].get_planet_name(ship.pnumorbits()));
+      const auto& star = *g.entity_manager.peek_star(ship.storbits());
+      std::string telegram =
+          std::format("BULLETIN from {}/{}!!\n", star.get_name(),
+                      star.get_planet_name(ship.pnumorbits()));
       telegram += std::format(
           "You are being attacked by{} Player #{} ({})!!!\n",
-          (isset(alien.allied, Playernum)
+          (isset(alien->allied, Playernum)
                ? " your ally"
-               : (isset(alien.atwar, Playernum) ? " your enemy" : " neutral")),
+               : (isset(alien->atwar, Playernum) ? " your enemy" : " neutral")),
           Playernum, race.name);
       telegram += std::format("{} at sector {},{} [owner {}] !\n",
                               ship_to_string(ship), x, y, sect.get_owner());
@@ -310,11 +332,6 @@ void capture(const command_t& argv, GameObj& g) {
         post(short_msg, NewsType::COMBAT);
         notify_star(Playernum, Governor, ship.storbits(), short_msg);
       }
-      putship(ship);
-      putsector(sect, p, x, y);
-      putplanet(p, stars[g.snum], g.pnum);
-      putrace(race);
-      putrace(alien);
       deductAPs(g, APcount, ship.storbits());
     }
   }

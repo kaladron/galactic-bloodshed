@@ -612,6 +612,14 @@ add_executable(build_test_extended commands/build_test_extended.cc)
 target_link_libraries(build_test_extended PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_build_test_extended COMMAND build_test_extended)
 
+add_executable(capture_test commands/capture_test.cc)
+target_link_libraries(capture_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_capture_test COMMAND capture_test)
+
+add_executable(detonate_test commands/detonate_test.cc)
+target_link_libraries(detonate_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_detonate_test COMMAND detonate_test)
+
 add_executable(give_test commands/give_test.cc)
 target_link_libraries(give_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_give_test COMMAND give_test)
@@ -623,6 +631,10 @@ add_test(NAME GB_help_test COMMAND help_test)
 add_executable(load_test commands/load_test.cc)
 target_link_libraries(load_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_load_test COMMAND load_test)
+
+add_executable(send_message_test commands/send_message_test.cc)
+target_link_libraries(send_message_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_send_message_test COMMAND send_message_test)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

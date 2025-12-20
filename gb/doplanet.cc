@@ -5,7 +5,7 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 #include <strings.h>
 
@@ -175,8 +175,11 @@ void do_berserker(EntityManager& entity_manager, Ship* ship, Planet& planet) {
       ship->destpnum() = int_rand(0, dest_star->numplanets() - 1);
     } else if (std::holds_alternative<MindData>(ship->special())) {
       auto mind = std::get<MindData>(ship->special());
-      if (Sdata.VN_hitlist[mind.who_killed - 1] > 0)
-        --Sdata.VN_hitlist[mind.who_killed - 1];
+      const auto* universe = entity_manager.peek_universe();
+      if (universe->VN_hitlist[mind.who_killed - 1] > 0) {
+        auto universe_handle = entity_manager.get_universe();
+        --universe_handle->VN_hitlist[mind.who_killed - 1];
+      }
     }
   }
 }
@@ -558,7 +561,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         }
     */
     /*
-        if (stars[starnum].nova_stage) {
+        if (entity_manager.peek_star(starnum)->nova_stage) {
             if (p->des==DES_ICE)
                 if(random()&01)
                     p->des = DES_LAND;

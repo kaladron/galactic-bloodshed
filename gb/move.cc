@@ -200,7 +200,7 @@ void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
   ship.damage() += damage;
   if (ship.damage() >= 100) {
     ship.damage() = 100;
-    kill_ship(race.Playernum, &ship);
+    em.kill_ship(race.Playernum, ship);
   }
   auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage);
   sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(em, ship).c_str(),

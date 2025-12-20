@@ -9,9 +9,9 @@ module gblib;
 static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
                                                 int strength, int hits);
 static std::pair<int, std::string>
-do_damage(player_t who, Ship& ship, double tech, int strength, int hits,
-          int defense, int caliber, double range, const std::string_view weapon,
-          int hit_probability);
+do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
+          int strength, int hits, int defense, int caliber, double range,
+          const std::string_view weapon, int hit_probability);
 
 static std::tuple<int, int, int> ship_disposition(const Ship& ship);
 static int CEW_hit(double dist, int cew_range);
@@ -109,8 +109,9 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
   if (caliber == GTYPE_NONE) return std::nullopt;
 
   auto [damage, damage_msg] =
-      do_damage(attacker.owner(), target, (double)attacker.tech(), cew_strength,
-                hits, defense, caliber, dist, weapon, hit_probability);
+      do_damage(em, attacker.owner(), target, (double)attacker.tech(),
+                cew_strength, hits, defense, caliber, dist, weapon,
+                hit_probability);
   std::string short_msg = std::format(
       "{}: {} {} {}\n", dispshiploc(em, target), ship_to_string(attacker),
       target.alive() ? "attacked" : "DESTROYED", ship_to_string(target));
@@ -133,7 +134,7 @@ int shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
                       body, GTYPE_MEDIUM, 1, &hit_probability);
 
   auto [damage, damage_msg] =
-      do_damage(race.Playernum, ship, race.tech, strength, hits, 0,
+      do_damage(em, race.Playernum, ship, race.tech, strength, hits, 0,
                 GTYPE_MEDIUM, 0.0, "medium guns", hit_probability);
   sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
           race.Playernum, ship.alive() ? "attacked" : "DESTROYED",
@@ -299,9 +300,9 @@ static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
 }
 
 static std::pair<int, std::string>
-do_damage(player_t who, Ship& ship, double tech, int strength, int hits,
-          int defense, int caliber, double range, const std::string_view weapon,
-          int hit_probability) {
+do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
+          int strength, int hits, int defense, int caliber, double range,
+          const std::string_view weapon, int hit_probability) {
   std::stringstream msg;
 
   msg << std::format("\tAttack: {} {} at a range of {:.0f}\n", strength, weapon,
@@ -370,7 +371,7 @@ do_damage(player_t who, Ship& ship, double tech, int strength, int hits,
                        casualties1);
   }
 
-  if (ship.damage() >= 100) kill_ship(who, &ship);
+  if (ship.damage() >= 100) em.kill_ship(who, ship);
   ship.build_cost() = (int)cost(ship);
   return {damage, msg.str()};
 }

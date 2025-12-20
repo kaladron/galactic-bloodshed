@@ -264,7 +264,8 @@ private:
 /* this routine will do landing, launching, loading, unloading, etc
         for merchant ships. The ship is within landing distance of
         the target Planet */
-static int do_merchant(Ship& s, Planet& p, std::stringstream& telegram) {
+static int do_merchant(EntityManager& em, Ship& s, Planet& p,
+                       std::stringstream& telegram) {
   int i = s.owner() - 1;
   int j = s.merchant() - 1; /* try to speed things up a bit */
 
@@ -287,8 +288,9 @@ static int do_merchant(Ship& s, Planet& p, std::stringstream& telegram) {
     s.land_y() = p.info(i).route[j].y;
     telegram << std::format("\t\tLanded on sector {},{}\n", s.land_x(),
                             s.land_y());
-    s.xpos() = p.xpos() + stars[s.storbits()].xpos();
-    s.ypos() = p.ypos() + stars[s.storbits()].ypos();
+    const auto& star = *em.peek_star(s.storbits());
+    s.xpos() = p.xpos() + star.xpos();
+    s.ypos() = p.ypos() + star.ypos();
     use_fuel(s, fuel);
     s.docked() = 1;
     s.whatdest() = ScopeLevel::LEVEL_PLAN;
@@ -468,101 +470,17 @@ bool testship(const Ship& s, GameObj& g) {
   return false;
 }
 
-void kill_ship(player_t Playernum, Ship* ship) {
-  if (std::holds_alternative<MindData>(ship->special())) {
-    auto mind = std::get<MindData>(ship->special());
-    mind.who_killed = Playernum;
-    ship->special() = mind;
-  }
-  ship->alive() = 0;
-  ship->notified() = 0; /* prepare the ship for recycling */
-
-  if (ship->type() != ShipType::STYPE_POD &&
-      ship->type() != ShipType::OTYPE_FACTORY) {
-    /* pods don't do things to morale, ditto for factories */
-    auto& victim = races[ship->owner() - 1];
-    if (victim.Gov_ship == ship->number()) victim.Gov_ship = 0;
-    if (!victim.God && Playernum != ship->owner() &&
-        ship->type() != ShipType::OTYPE_VN) {
-      auto& killer = races[Playernum - 1];
-      adjust_morale(killer, victim, (int)ship->build_cost());
-      putrace(killer);
-    } else if (ship->owner() == Playernum && !ship->docked() &&
-               max_crew(*ship)) {
-      victim.morale -= 2L * ship->build_cost(); /* scuttle/scrap */
-    }
-    putrace(victim);
-  }
-
-  if (ship->type() == ShipType::OTYPE_VN ||
-      ship->type() == ShipType::OTYPE_BERS) {
-    getsdata(&Sdata);
-    /* add ship to VN shit list */
-    if (std::holds_alternative<MindData>(ship->special())) {
-      auto mind = std::get<MindData>(ship->special());
-      Sdata.VN_hitlist[mind.who_killed - 1] += 1;
-    }
-
-    /* keep track of where these VN's were shot up */
-
-    if (Sdata.VN_index1[Playernum - 1] == -1)
-      /* there's no star in the first index */
-      Sdata.VN_index1[Playernum - 1] = ship->storbits();
-    else if (Sdata.VN_index2[Playernum - 1] == -1)
-      /* there's no star in the second index */
-      Sdata.VN_index2[Playernum - 1] = ship->storbits();
-    else {
-      /* pick an index to supplant */
-      std::random_device rd;
-      std::mt19937 gen(rd());
-      std::uniform_int_distribution<int> dis(0, 1);
-      if (dis(gen))
-        Sdata.VN_index1[Playernum - 1] = ship->storbits();
-      else
-        Sdata.VN_index2[Playernum - 1] = ship->storbits();
-    }
-    putsdata(&Sdata);
-  }
-
-  if (ship->type() == ShipType::OTYPE_TOXWC &&
-      ship->whatorbits() == ScopeLevel::LEVEL_PLAN) {
-    auto planet = getplanet(ship->storbits(), ship->pnumorbits());
-    if (std::holds_alternative<WasteData>(ship->special())) {
-      auto waste = std::get<WasteData>(ship->special());
-      planet.conditions(TOXIC) =
-          MIN(100, planet.conditions(TOXIC) + waste.toxic);
-    }
-    putplanet(planet, stars[ship->storbits()], ship->pnumorbits());
-  }
-
-  /* undock the stuff docked with it */
-  if (ship->docked() && ship->whatorbits() != ScopeLevel::LEVEL_SHIP &&
-      ship->whatdest() == ScopeLevel::LEVEL_SHIP) {
-    auto s = getship(ship->destshipno());
-    if (!s) {
-      std::cerr << "Database corruption, ship not found.";
-      std::abort();
-    }
-    s->docked() = 0;
-    s->whatdest() = ScopeLevel::LEVEL_UNIV;
-    putship(*s);
-  }
-  /* landed ships are killed */
-  Shiplist shiplist(ship->ships());
-  for (auto& s : shiplist) {
-    kill_ship(Playernum, &s);
-    putship(s);
-  }
-}
-
-std::string dispshiploc_brief(const Ship& ship) {
+std::string dispshiploc_brief(EntityManager& em, const Ship& ship) {
   switch (ship.whatorbits()) {
-    case ScopeLevel::LEVEL_STAR:
-      return std::format("/{0:4.4s}", stars[ship.storbits()].get_name());
-    case ScopeLevel::LEVEL_PLAN:
-      return std::format(
-          "/{0}/{1:4.4s}", stars[ship.storbits()].get_name(),
-          stars[ship.storbits()].get_planet_name(ship.pnumorbits()));
+    case ScopeLevel::LEVEL_STAR: {
+      const auto& star = *em.peek_star(ship.storbits());
+      return std::format("/{0:4.4s}", star.get_name());
+    }
+    case ScopeLevel::LEVEL_PLAN: {
+      const auto& star = *em.peek_star(ship.storbits());
+      return std::format("/{0}/{1:4.4s}", star.get_name(),
+                         star.get_planet_name(ship.pnumorbits()));
+    }
     case ScopeLevel::LEVEL_SHIP:
       return std::format("#{0}", ship.destshipno());
     case ScopeLevel::LEVEL_UNIV:
@@ -720,7 +638,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
         std::string telegram =
             std::format("{} has been lost in deep space.", ship_to_string(s));
         if (send_messages) push_telegram(s.owner(), s.governor(), telegram);
-        if (send_messages) kill_ship((int)(s.owner()), &s);
+        if (send_messages) em.kill_ship((int)(s.owner()), s);
       }
       return;
     }
@@ -796,15 +714,18 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
             s.whatorbits() == ScopeLevel::LEVEL_UNIV))) {
         destlevel = ScopeLevel::LEVEL_STAR;
         deststar = s.deststar();
-        xdest = stars[deststar].xpos();
-        ydest = stars[deststar].ypos();
+        const auto& dest_star = *em.peek_star(deststar);
+        xdest = dest_star.xpos();
+        ydest = dest_star.ypos();
       } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
                  s.storbits() == s.deststar()) {
         destlevel = ScopeLevel::LEVEL_PLAN;
         deststar = s.deststar();
         destpnum = s.destpnum();
-        xdest = stars[deststar].xpos() + planets[deststar][destpnum]->xpos();
-        ydest = stars[deststar].ypos() + planets[deststar][destpnum]->ypos();
+        const auto& dest_star = *em.peek_star(deststar);
+        const auto& dest_planet = *em.peek_planet(deststar, destpnum);
+        xdest = dest_star.xpos() + dest_planet.xpos();
+        ydest = dest_star.ypos() + dest_planet.ypos();
         if (std::sqrt(Distsq(s.xpos(), s.ypos(), xdest, ydest)) <= DIST_TO_LAND)
           destlevel = ScopeLevel::LEVEL_UNIV;
       }
@@ -837,7 +758,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
         movedist -= PLORBITSIZE * 0.90;
 
       if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
-          !followable(s, *ships[s.destshipno()])) {
+          !followable(em, s, *ships[s.destshipno()])) {
         s.whatdest() = ScopeLevel::LEVEL_UNIV;
         s.protect().evade = 0;
         std::string telegram = std::format(
@@ -931,7 +852,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
             telegram << std::format("{} within landing distance of {}.",
                                     ship_to_string(s), prin_ship_orbits(em, s));
             auto dpl_handle = em.get_planet(deststar, destpnum);
-            if (checking_fuel || !do_merchant(s, *dpl_handle, telegram))
+            if (checking_fuel || !do_merchant(em, s, *dpl_handle, telegram))
               if (s.whatdest() == ScopeLevel::LEVEL_PLAN)
                 s.whatdest() = ScopeLevel::LEVEL_UNIV;
           } else {
@@ -973,7 +894,7 @@ void msg_OOF(EntityManager& em, const Ship& s) {
 }
 
 /* followable: returns 1 iff s1 can follow s2 */
-bool followable(const Ship& s1, Ship& s2) {
+bool followable(EntityManager& em, const Ship& s1, Ship& s2) {
   if (!s2.alive() || !s1.active() || s2.whatorbits() == ScopeLevel::LEVEL_SHIP)
     return true;
 
@@ -982,8 +903,9 @@ bool followable(const Ship& s1, Ship& s2) {
 
   double range = 4.0 * logscale((int)(s1.tech() + 1.0)) * SYSTEMSIZE;
 
-  auto& r = races[s2.owner() - 1];
-  auto allied = r.allied;
+  const auto* r = em.peek_race(s2.owner());
+  if (!r) return false;
+  auto allied = r->allied;
   /* You can follow your own ships, your allies' ships, or nearby ships */
   return (s1.owner() == s2.owner()) || (isset(allied, s1.owner())) ||
          (std::sqrt(dx * dx + dy * dy) <= range);

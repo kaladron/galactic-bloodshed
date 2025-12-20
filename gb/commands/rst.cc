@@ -385,7 +385,7 @@ void report_general(GameObj& g, RstContext& ctx, const Ship& s) {
        name_str, std::format("{}", s.governor()), std::format("{}", s.damage()),
        std::format("{}", s.popn()), std::format("{}", s.troops()),
        std::format("{}", s.destruct()), std::format("{:.0f}", s.fuel()),
-       speed_indicator, dispshiploc_brief(s), locstrn});
+       speed_indicator, dispshiploc_brief(g.entity_manager, s), locstrn});
 
   g.out << table << "\n";
 }

@@ -18,7 +18,7 @@ void order(const command_t& argv, GameObj& g) {
     const ShipList kShips(g.entity_manager, g, ShipList::IterationType::Scope);
     for (const Ship* ship : kShips) {
       if (ship->owner() == Playernum && authorized(Governor, *ship)) {
-        DispOrders(Playernum, Governor, *ship);
+        DispOrders(g.entity_manager, Playernum, Governor, *ship);
       }
     }
   } else if (argv.size() >= 2) {
@@ -34,7 +34,7 @@ void order(const command_t& argv, GameObj& g) {
         give_orders(g, argv, APcount, ship);
       }
 
-      DispOrders(Playernum, Governor, ship);
+      DispOrders(g.entity_manager, Playernum, Governor, ship);
 
       // Early exit for specific ship number filters
       if (is_ship_number_filter(argv[1])) break;

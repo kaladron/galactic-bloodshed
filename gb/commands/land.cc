@@ -302,7 +302,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
       g.out << std::format(
           "You had {:.1f}f while the landing required {:.1f}f\n", s.fuel(),
           fuel);
-    kill_ship(s.owner(), &s);
+    g.entity_manager.kill_ship(s.owner(), s);
   } else {
     s.land_x() = x;
     s.land_y() = y;

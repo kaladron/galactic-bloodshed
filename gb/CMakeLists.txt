@@ -430,6 +430,10 @@ add_executable(entity_manager_test services/entity_manager_test.cc)
 target_link_libraries(entity_manager_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_entity_manager_test COMMAND entity_manager_test)
 
+add_executable(entity_manager_kill_ship_test services/entity_manager_kill_ship_test.cc)
+target_link_libraries(entity_manager_kill_ship_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_entity_manager_kill_ship_test COMMAND entity_manager_kill_ship_test)
+
 add_executable(entity_lists_test entity_lists_test.cc)
 target_link_libraries(entity_lists_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_entity_lists_test COMMAND entity_lists_test)

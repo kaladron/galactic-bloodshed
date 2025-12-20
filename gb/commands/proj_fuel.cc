@@ -89,7 +89,7 @@ void proj_fuel(const command_t& argv, GameObj& g) {
     }
     // followable takes non-const reference to target (may modify it)
     Ship mutable_target(tmpship->get_struct());
-    if (!followable(*ship, mutable_target)) {
+    if (!followable(g.entity_manager, *ship, mutable_target)) {
       g.out << "The ship's destination is out of range.\n";
       return;
     }

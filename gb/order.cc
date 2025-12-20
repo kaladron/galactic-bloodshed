@@ -211,7 +211,7 @@ void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
     if (!where.err) {
       if (where.level == ScopeLevel::LEVEL_SHIP) {
         auto tmpship = getship(where.shipno);
-        if (!followable(ship, *tmpship)) {
+        if (!followable(g.entity_manager, ship, *tmpship)) {
           g.out << "Warning: that ship is out of range.\n";
           return;
         }
@@ -679,7 +679,8 @@ void DispOrdersHeader(int Playernum, int Governor) {
          "    #       name       sp orbits     destin     options\n");
 }
 
-void DispOrders(int Playernum, int Governor, const Ship& ship) {
+void DispOrders(EntityManager& em, int Playernum, int Governor,
+                const Ship& ship) {
   if (ship.owner() != Playernum || !authorized(Governor, ship) || !ship.alive())
     return;
 
@@ -695,7 +696,7 @@ void DispOrders(int Playernum, int Governor, const Ship& ship) {
   buffer << std::format(
       "{:5} {} {:14.14} {}{} {:10.10} {}", ship.number(), Shipltrs[ship.type()],
       ship.name(), ship.hyper_drive().has ? (ship.mounted() ? '+' : '*') : ' ',
-      ship.speed(), dispshiploc_brief(ship), buffer.str());
+      ship.speed(), dispshiploc_brief(em, ship), buffer.str());
 
   if (ship.hyper_drive().on) {
     buffer << std::format("/jump {} {}",

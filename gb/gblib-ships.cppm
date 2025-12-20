@@ -945,7 +945,6 @@ export double getmass(const Ship&);
 export unsigned int ship_size(const Ship&);
 export double complexity(const Ship&);
 export bool testship(const Ship&, GameObj&);
-export void kill_ship(player_t, Ship*);
 export int docked(const Ship&);
 export int overloaded(const Ship&);
 export std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept;
@@ -963,14 +962,14 @@ export std::string prin_ship_orbits(EntityManager&, const Ship&);
 export std::string prin_ship_dest(const Ship&);
 export void moveship(EntityManager&, Ship& ship, int x, int y, int z);
 export void msg_OOF(EntityManager&, const Ship& ship);
-export bool followable(const Ship& ship, Ship& target);
+export bool followable(EntityManager&, const Ship& ship, Ship& target);
 
 export shipnum_t Num_ships;
 export int ShipVector[NUMSTYPES];
 
 export Ship** ships;
 
-export std::string dispshiploc_brief(const Ship&);
+export std::string dispshiploc_brief(EntityManager&, const Ship&);
 export std::string dispshiploc(EntityManager&, const Ship&);
 
 export const char Shipltrs[] = {

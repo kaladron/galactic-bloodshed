@@ -306,7 +306,8 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
     case ScopeLevel::LEVEL_STAR:
       /* have to be in the same system as the star; otherwise
          it's not too fair.. */
-      if (aimed_at.snum > 0 && aimed_at.snum < Sdata.numstars &&
+      if (aimed_at.snum > 0 &&
+          aimed_at.snum < entity_manager.peek_universe()->numstars &&
           ship.whatorbits() > ScopeLevel::LEVEL_UNIV &&
           aimed_at.snum == ship.storbits()) {
         auto star_handle = entity_manager.get_star(aimed_at.snum);

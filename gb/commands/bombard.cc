@@ -3,7 +3,8 @@
 module;
 
 import gblib;
-import std.compat;
+import scnlib;
+import std;
 
 module commands;
 
@@ -44,8 +45,8 @@ void bombard(const command_t& argv, GameObj& g) {
       g.out << "This ship is not landed on the planet.\n";
       continue;
     }
-    if (!enufAP(Playernum, Governor, stars[from.storbits()].AP(Playernum - 1),
-                APcount)) {
+    const auto* star = g.entity_manager.peek_star(from.storbits());
+    if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) {
       continue;
     }
 
@@ -69,11 +70,21 @@ void bombard(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    /* get planet */
-    auto p = getplanet(from.storbits(), from.pnumorbits());
+    /* get planet using RAII for modifications */
+    auto p_handle =
+        g.entity_manager.get_planet(from.storbits(), from.pnumorbits());
+    if (!p_handle.get()) {
+      continue;
+    }
+    Planet& p = *p_handle;
 
     if (argv.size() > 2) {
-      sscanf(argv[2].c_str(), "%d,%d", &x, &y);
+      auto scan_result = scn::scan<int, int>(argv[2], "{},{}");
+      if (!scan_result) {
+        g.out << "Invalid sector format.\n";
+        continue;
+      }
+      std::tie(x, y) = scan_result->values();
       if (x < 0 || x > p.Maxx() - 1 || y < 0 || y > p.Maxy() - 1) {
         g.out << "Illegal sector.\n";
         continue;
@@ -96,11 +107,16 @@ void bombard(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    auto smap = getsmap(p);
+    auto smap_handle =
+        g.entity_manager.get_sectormap(from.storbits(), from.pnumorbits());
+    if (!smap_handle.get()) {
+      g.out << "Failed to load sector map.\n";
+      continue;
+    }
+    SectorMap& smap = *smap_handle;
     char long_buf[1024], short_buf[256];
     auto numdest = shoot_ship_to_planet(g.entity_manager, from, p, strength, x,
                                         y, smap, 0, 0, long_buf, short_buf);
-    putsmap(smap, p);
 
     if (numdest < 0) {
       g.out << "Illegal attack.\n";
@@ -114,9 +130,12 @@ void bombard(const command_t& argv, GameObj& g) {
 
     post(short_buf, NewsType::COMBAT);
     notify_star(Playernum, Governor, from.storbits(), short_buf);
-    for (auto i = 1; i <= Num_races; i++)
-      if (Nuked[i - 1])
-        warn(i, stars[from.storbits()].governor(i - 1), long_buf);
+    for (auto i = 1; i <= Num_races; i++) {
+      if (Nuked[i - 1]) {
+        const auto* star = g.entity_manager.peek_star(from.storbits());
+        warn(i, star->governor(i - 1), long_buf);
+      }
+    }
     notify(Playernum, Governor, long_buf);
 
     if (DEFENSE) {
@@ -125,14 +144,18 @@ void bombard(const command_t& argv, GameObj& g) {
         for (auto i = 1; i <= Num_races; i++)
           if (Nuked[i - 1] && !p.slaved_to()) {
             /* add planet defense strength */
-            auto& alien = races[i - 1];
+            auto alien_handle = g.entity_manager.get_race(i);
+            if (!alien_handle.get()) continue;
+            Race& alien = *alien_handle;
+
             strength = MIN(p.info(i - 1).destruct, p.info(i - 1).guns);
 
             p.info(i - 1).destruct -= strength;
 
             shoot_planet_to_ship(g.entity_manager, alien, from, strength,
                                  long_buf, short_buf);
-            warn(i, stars[from.storbits()].governor(i - 1), long_buf);
+            const auto* star = g.entity_manager.peek_star(from.storbits());
+            warn(i, star->governor(i - 1), long_buf);
             notify(Playernum, Governor, long_buf);
             if (!from.alive()) post(short_buf, NewsType::COMBAT);
             notify_star(Playernum, Governor, from.storbits(), short_buf);
@@ -172,8 +195,6 @@ void bombard(const command_t& argv, GameObj& g) {
       }
     }
 
-    /* write the stuff to disk */
-    putplanet(p, stars[from.storbits()], (int)from.pnumorbits());
     deductAPs(g, APcount, from.storbits());
   }  // end of ShipList iteration
 }

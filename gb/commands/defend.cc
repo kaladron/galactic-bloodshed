@@ -16,7 +16,6 @@ void defend(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   ap_t APcount = 1;
-  Ship dummy;
   int strength;
   int retal;
   int damage;
@@ -95,8 +94,10 @@ void defend(const command_t& argv, GameObj& g) {
   }
 
   /* save defense strength for retaliation */
+  // Calculate retaliation strength BEFORE damage is applied.
+  // This pre-damage strength will be used if the ship retaliates,
+  // even though the ship itself will be modified by taking damage.
   retal = check_retal_strength(*to);
-  bcopy(&*to, &dummy, sizeof(Ship));
 
   auto xy_result = scn::scan<int, int>(argv[2], "{},{}");
   if (!xy_result) {
@@ -165,10 +166,14 @@ void defend(const command_t& argv, GameObj& g) {
 
   strength = 0;
   if (retal && damage && to->protect().self) {
+    // Use pre-damage retaliation strength (saved in 'retal' above).
+    // shoot_ship_to_planet() uses the explicit strength parameter,
+    // not the ship's current damage state, so this correctly applies
+    // the ship's original (pre-damage) attack capability.
     strength = retal;
     if (laser_on(*to)) check_overload(g.entity_manager, *to, 0, &strength);
 
-    if ((numdest = shoot_ship_to_planet(g.entity_manager, dummy, p, strength, x,
+    if ((numdest = shoot_ship_to_planet(g.entity_manager, *to, p, strength, x,
                                         y, smap, 0, 0, long_buf, short_buf)) >=
         0) {
       if (laser_on(*to))

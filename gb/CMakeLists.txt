@@ -620,6 +620,14 @@ add_executable(detonate_test commands/detonate_test.cc)
 target_link_libraries(detonate_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_detonate_test COMMAND detonate_test)
 
+add_executable(fire_test commands/fire_test.cc)
+target_link_libraries(fire_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_fire_test COMMAND fire_test)
+
+add_executable(bombard_test commands/bombard_test.cc)
+target_link_libraries(bombard_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_bombard_test COMMAND bombard_test)
+
 add_executable(give_test commands/give_test.cc)
 target_link_libraries(give_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_give_test COMMAND give_test)

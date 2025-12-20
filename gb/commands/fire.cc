@@ -3,7 +3,7 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 
 #include <strings.h>
 
@@ -31,7 +31,6 @@ void fire(const command_t& argv, GameObj& g) {
   }
   shipnum_t toship;
   shipnum_t sh;
-  Ship dummy;
   int strength;
   int maxstrength;
   int retal;
@@ -61,12 +60,15 @@ void fire(const command_t& argv, GameObj& g) {
       continue;
     }
     if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-      if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
+      const auto& universe = *g.entity_manager.peek_universe();
+      if (!enufAP(Playernum, Governor, universe.AP[Playernum - 1], APcount)) {
         continue;
       }
-    } else if (!enufAP(Playernum, Governor,
-                       stars[from.storbits()].AP(Playernum - 1), APcount)) {
-      continue;
+    } else {
+      const auto* star = g.entity_manager.peek_star(from.storbits());
+      if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) {
+        continue;
+      }
     }
     if (cew) {
       if (!from.cew()) {
@@ -90,14 +92,16 @@ void fire(const command_t& argv, GameObj& g) {
       g.out << "Get real.\n";
       continue;
     }
-    auto to = getship(toship);
+    const auto* to = g.entity_manager.peek_ship(toship);
     if (!to) {
       continue;
     }
 
     /* save defense attack strength for retaliation */
+    // Calculate retaliation strength BEFORE damage is applied.
+    // This pre-damage strength will be used if the target retaliates,
+    // even though the ship itself will be modified by taking damage.
     retal = check_retal_strength(*to);
-    bcopy(&*to, &dummy, sizeof(Ship));
 
     if (from.type() == ShipType::OTYPE_AFV) {
       if (!landed(from)) {
@@ -122,8 +126,9 @@ void fire(const command_t& argv, GameObj& g) {
                "planet!\n");
         continue;
       }
-      const auto p = getplanet(from.storbits(), from.pnumorbits());
-      if (!adjacent(p, {from.land_x(), from.land_y()},
+      const auto* p =
+          g.entity_manager.peek_planet(from.storbits(), from.pnumorbits());
+      if (!adjacent(*p, {from.land_x(), from.land_y()},
                     {to->land_x(), to->land_y()})) {
         g.out << "You are not adjacent to your target!\n";
         continue;
@@ -171,8 +176,15 @@ void fire(const command_t& argv, GameObj& g) {
       continue;
     }
 
+    // Get target ship for modification using RAII
+    auto to_handle = g.entity_manager.get_ship(toship);
+    if (!to_handle.get()) {
+      continue;
+    }
+    Ship& to_ship = *to_handle;
+
     auto s2sresult =
-        shoot_ship_to_ship(g.entity_manager, from, *to, strength, cew);
+        shoot_ship_to_ship(g.entity_manager, from, to_ship, strength, cew);
 
     if (!s2sresult) {
       g.out << "Illegal attack.\n";
@@ -186,40 +198,48 @@ void fire(const command_t& argv, GameObj& g) {
     else
       use_destruct(from, strength);
 
-    if (!to->alive()) post(short_buf, NewsType::COMBAT);
+    if (!to_ship.alive()) post(short_buf, NewsType::COMBAT);
     notify_star(Playernum, Governor, from.storbits(), short_buf);
-    warn(to->owner(), to->governor(), long_buf);
+    warn(to_ship.owner(), to_ship.governor(), long_buf);
     notify(Playernum, Governor, long_buf);
     /* defending ship retaliates */
 
     strength = 0;
-    if (retal && damage && to->protect().self) {
+    if (retal && damage && to_ship.protect().self) {
+      // Use pre-damage retaliation strength (saved in 'retal' above).
+      // shoot_ship_to_ship() uses the explicit strength parameter,
+      // not the ship's current damage state, so this correctly applies
+      // the ship's original (pre-damage) attack capability.
       strength = retal;
-      if (laser_on(*to)) check_overload(g.entity_manager, *to, 0, &strength);
+      if (laser_on(to_ship))
+        check_overload(g.entity_manager, to_ship, 0, &strength);
 
       auto s2sresult =
-          shoot_ship_to_ship(g.entity_manager, dummy, from, strength, 0, true);
+          shoot_ship_to_ship(g.entity_manager, to_ship, from, strength, 0, true);
       if (s2sresult) {
         auto const& [damage, short_buf, long_buf] = *s2sresult;
 
-        if (laser_on(*to))
-          use_fuel(*to, 2.0 * (double)strength);
+        if (laser_on(to_ship))
+          use_fuel(to_ship, 2.0 * (double)strength);
         else
-          use_destruct(*to, strength);
+          use_destruct(to_ship, strength);
         if (!from.alive()) post(short_buf, NewsType::COMBAT);
         notify_star(Playernum, Governor, from.storbits(), short_buf);
         notify(Playernum, Governor, long_buf);
-        warn(to->owner(), to->governor(), long_buf);
+        warn(to_ship.owner(), to_ship.governor(), long_buf);
       }
     }
     /* protecting ships retaliate individually if damage was inflicted */
     /* AFVs immune to retaliation of this type */
     if (damage && from.alive() && from.type() != ShipType::OTYPE_AFV) {
-      if (to->whatorbits() == ScopeLevel::LEVEL_STAR) /* star level ships */
-        sh = stars[to->storbits()].ships();
+      if (to->whatorbits() == ScopeLevel::LEVEL_STAR) { /* star level ships */
+        const auto* star = g.entity_manager.peek_star(to->storbits());
+        sh = star->ships();
+      }
       if (to->whatorbits() == ScopeLevel::LEVEL_PLAN) { /* planet level ships */
-        const auto p = getplanet(to->storbits(), to->pnumorbits());
-        sh = p.ships();
+        const auto* p =
+            g.entity_manager.peek_planet(to->storbits(), to->pnumorbits());
+        sh = p->ships();
       }
       ShipList shiplist(g.entity_manager, sh);
       for (auto ship_handle : shiplist) {
@@ -248,7 +268,6 @@ void fire(const command_t& argv, GameObj& g) {
         }
       }
     }
-    putship(*to);
     deductAPs(g, APcount, from.storbits());
   }  // end of ShipList iteration
 }

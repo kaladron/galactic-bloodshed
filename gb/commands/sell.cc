@@ -118,7 +118,7 @@ void sell(const command_t& argv, GameObj& g) {
   std::string buf =
       std::format("Lot #{} - {} units of {} for sale by {} [{}].\n", commodno,
                   amount, item, g.race->name, Playernum);
-  post(buf, NewsType::TRANSFER);
+  post(g.entity_manager, buf, NewsType::TRANSFER);
   for (player_t i = 1; i <= Num_races; i++)
     notify_race(i, buf);
 

@@ -128,7 +128,7 @@ void bombard(const command_t& argv, GameObj& g) {
     else
       use_destruct(from, strength);
 
-    post(short_buf, NewsType::COMBAT);
+    post(g.entity_manager, short_buf, NewsType::COMBAT);
     notify_star(Playernum, Governor, from.storbits(), short_buf);
     for (auto i = 1; i <= Num_races; i++) {
       if (Nuked[i - 1]) {
@@ -157,7 +157,8 @@ void bombard(const command_t& argv, GameObj& g) {
             const auto* star = g.entity_manager.peek_star(from.storbits());
             warn(i, star->governor(i - 1), long_buf);
             notify(Playernum, Governor, long_buf);
-            if (!from.alive()) post(short_buf, NewsType::COMBAT);
+            if (!from.alive())
+              post(g.entity_manager, short_buf, NewsType::COMBAT);
             notify_star(Playernum, Governor, from.storbits(), short_buf);
           }
       }
@@ -185,7 +186,8 @@ void bombard(const command_t& argv, GameObj& g) {
               use_fuel(ship, 2.0 * (double)strength);
             else
               use_destruct(ship, strength);
-            if (!from.alive()) post(short_buf, NewsType::COMBAT);
+            if (!from.alive())
+              post(g.entity_manager, short_buf, NewsType::COMBAT);
             notify_star(Playernum, Governor, from.storbits(), short_buf);
             warn(ship.owner(), ship.governor(), long_buf);
             notify(Playernum, Governor, long_buf);

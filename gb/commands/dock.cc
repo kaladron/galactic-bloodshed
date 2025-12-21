@@ -452,7 +452,8 @@ void dock(const command_t& argv, GameObj& g) {
           s2.alive() ? (s2.owner() == Playernum ? "CAPTURED" : "assaulted")
                      : "DESTROYED",
           ship_to_string(s2), prin_ship_orbits(g.entity_manager, s));
-      if (s2.owner() == Playernum || !s2.alive()) post(news, NewsType::COMBAT);
+      if (s2.owner() == Playernum || !s2.alive())
+        post(g.entity_manager, news, NewsType::COMBAT);
       notify_star(Playernum, Governor, s.storbits(), news);
     } else {
       notify(Playernum, Governor,

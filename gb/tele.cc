@@ -11,22 +11,6 @@ import std;
 
 module gblib;
 
-namespace {
-const char* get_news_file(NewsType type) {
-  switch (type) {
-    using enum NewsType;
-    case DECLARATION:
-      return DECLARATIONFL;
-    case TRANSFER:
-      return TRANSFERFL;
-    case COMBAT:
-      return COMBATFL;
-    case ANNOUNCE:
-      return ANNOUNCEFL;
-  }
-}
-}  // namespace
-
 /**
  * \brief Sends a message to everyone from person to person
  *
@@ -55,51 +39,28 @@ void push_telegram(const player_t recipient, const governor_t gov,
 
 /**
  * \brief Purges the News files.
+ *
+ * \param em EntityManager for news operations
  */
-void purge() {
-  std::error_code ec;
-  std::filesystem::resize_file(DECLARATIONFL, 0, ec);
-  newslength[NewsType::DECLARATION] = 0;
-
-  std::filesystem::resize_file(COMBATFL, 0, ec);
-  newslength[NewsType::COMBAT] = 0;
-
-  std::filesystem::resize_file(ANNOUNCEFL, 0, ec);
-  newslength[NewsType::ANNOUNCE] = 0;
-
-  std::filesystem::resize_file(TRANSFERFL, 0, ec);
-  newslength[NewsType::TRANSFER] = 0;
+void purge(EntityManager& em) {
+  em.purge_all_news();
 }
 
 /**
- * \brief Does the actual posting of messages to the news files
+ * \brief Does the actual posting of messages to the news database
  *
+ * \param em EntityManager for news operations
  * \param msg Message to send
  * \param type Type of message.  Valid types are DECLARATION, TRANSFER, COMBAT
  * and ANNOUNCE.
  */
-void post(std::string msg, NewsType type) {
+void post(EntityManager& em, std::string msg, NewsType type) {
   // msg is intentionally a copy as we fix it up in here
-  const char* telefl = get_news_file(type);
-
   // look for special symbols
   std::ranges::replace(msg, ';', '\n');
   std::ranges::replace(msg, '|', '\t');
 
-  std::ofstream news_file(telefl, std::ios::app);
-  if (!news_file.is_open()) {
-    return;
-  }
-  auto now = std::chrono::system_clock::now();
-  auto current_time = std::chrono::system_clock::to_time_t(now);
-  auto* current_tm = std::localtime(&current_time);
-  std::string outbuf = std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
-                                   current_tm->tm_mon + 1, current_tm->tm_mday,
-                                   current_tm->tm_hour, current_tm->tm_min,
-                                   current_tm->tm_sec, msg);
-  news_file << outbuf;
-  news_file.close();
-  newslength[type] += outbuf.length();
+  em.post_news(type, msg);
 }
 
 /**
@@ -167,18 +128,11 @@ void teleg_read(GameObj& g) {
  * ANNOUNCE.
  * \param g Game object
  *
- * \description This function reads the news file based on the specified type
- * and game object.
+ * \description This function reads the news from database based on the
+ * specified type and game object. It tracks which news the user has already
+ * read via newspos array in governor data.
  */
 void news_read(NewsType type, GameObj& g) {
-  const char* telegram_file = get_news_file(type);
-
-  std::ifstream teleg_read_fd(telegram_file);
-  if (!teleg_read_fd.is_open()) {
-    g.out << std::format("\nNews file {0} non-existent.\n", telegram_file);
-    return;
-  }
-
   auto race_handle = g.entity_manager.get_race(g.player);
   if (!race_handle.get()) {
     g.out << "Race not found.\n";
@@ -186,21 +140,33 @@ void news_read(NewsType type, GameObj& g) {
   }
   auto& race = *race_handle;
 
-  if (race.governor[g.governor].newspos[std::to_underlying(type)] >
-      newslength[type]) {
-    race.governor[g.governor].newspos[std::to_underlying(type)] = 0;
+  // Get the last news ID this governor has read for this type
+  int last_read_id =
+      race.governor[g.governor].newspos[std::to_underlying(type)];
+
+  // Get all news since last read
+  auto news_items = g.entity_manager.get_news_since(type, last_read_id);
+
+  if (news_items.empty()) {
+    // No new news
+    return;
   }
 
-  teleg_read_fd.seekg(
-      race.governor[g.governor].newspos[std::to_underlying(type)]);
-
-  std::string line;
-  while (std::getline(teleg_read_fd, line)) {
-    g.out << line + "\n";
+  // Display news items with timestamps
+  for (const auto& item : news_items) {
+    auto timestamp_time = static_cast<time_t>(item.timestamp);
+    auto* tm = std::localtime(&timestamp_time);
+    g.out << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
+                         tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min,
+                         tm->tm_sec, item.message);
+    if (!item.message.empty() && item.message.back() != '\n') {
+      g.out << "\n";
+    }
   }
 
-  race.governor[g.governor].newspos[std::to_underlying(type)] =
-      newslength[type];
+  // Update the last read position to the latest ID
+  int latest_id = g.entity_manager.get_latest_news_id(type);
+  race.governor[g.governor].newspos[std::to_underlying(type)] = latest_id;
 }
 
 /**

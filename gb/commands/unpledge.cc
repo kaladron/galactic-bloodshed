@@ -57,14 +57,14 @@ void unpledge(const command_t& argv, GameObj& g) {
       std::string taunt_postmsg =
           std::format("{} [{}] calls {} [{}] a bunch of geeks and QUITS!\n",
                       g.race->name, Playernum, block.name, n);
-      post(taunt_postmsg, NewsType::DECLARATION);
+      post(g.entity_manager, taunt_postmsg, NewsType::DECLARATION);
       break;
     }
     default: {
       std::string quit_postmsg =
           std::format("{} [{}] has QUIT {} [{}]!\n", g.race->name, Playernum,
                       block.name, n);
-      post(quit_postmsg, NewsType::DECLARATION);
+      post(g.entity_manager, quit_postmsg, NewsType::DECLARATION);
       break;
     }
   }

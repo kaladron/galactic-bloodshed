@@ -40,6 +40,25 @@ public:
   sqlite3* connection() {
     return conn;
   }
+
+  // News operations - SQL queries encapsulated in DAL
+  std::optional<int> news_add(int type, const std::string& message,
+                              int64_t timestamp);
+  std::vector<std::tuple<int, int, std::string, int64_t>>
+  news_get_since(int type, int since_id);
+  int news_get_latest_id(int type);
+  bool news_purge_type(int type);
+  bool news_purge_all();
+};
+
+// News item structure (minimal POD for data transfer)
+// Note: type is stored as int to avoid circular module dependencies
+// Repositories can cast it to/from NewsType enum
+export struct NewsItem {
+  int id{0};
+  int type{0};  // NewsType as int
+  std::string message;
+  int64_t timestamp{0};
 };
 
 export class JsonStore {

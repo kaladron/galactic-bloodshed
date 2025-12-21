@@ -145,7 +145,7 @@ void declare(const command_t& argv, GameObj& g) {
       return;
   }
 
-  post(news_msg, NewsType::DECLARATION);
+  post(g.entity_manager, news_msg, NewsType::DECLARATION);
   warn_race(g.entity_manager, Playernum, news_msg);
 
   /* They, of course, learn more about you */

@@ -157,7 +157,7 @@ void defend(const command_t& argv, GameObj& g) {
   }
 
   p.info(Playernum - 1).destruct -= strength;
-  if (!to->alive()) post(short_buf, NewsType::COMBAT);
+  if (!to->alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
   notify_star(Playernum, Governor, to->storbits(), short_buf);
   warn(to->owner(), to->governor(), long_buf);
   notify(Playernum, Governor, long_buf);
@@ -181,7 +181,7 @@ void defend(const command_t& argv, GameObj& g) {
       else
         use_destruct(*to, strength);
 
-      post(short_buf, NewsType::COMBAT);
+      post(g.entity_manager, short_buf, NewsType::COMBAT);
       notify_star(Playernum, Governor, to->storbits(), short_buf);
       notify(Playernum, Governor, long_buf);
       warn(to->owner(), to->governor(), long_buf);
@@ -211,7 +211,7 @@ void defend(const command_t& argv, GameObj& g) {
             use_fuel(ship_mut, 2.0 * (double)strength);
           else
             use_destruct(ship_mut, strength);
-          post(short_buf, NewsType::COMBAT);
+          post(g.entity_manager, short_buf, NewsType::COMBAT);
           notify_star(Playernum, Governor, ship->storbits(), short_buf);
           notify(Playernum, Governor, long_buf);
           warn(ship->owner(), ship->governor(), long_buf);

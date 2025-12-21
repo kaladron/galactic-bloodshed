@@ -65,6 +65,6 @@ void invite(const command_t& argv, GameObj& g) {
                       alien->name, n, block.name, g.player);
     warn_race(g.entity_manager, g.player, buf);
   }
-  post(buf, NewsType::DECLARATION);
+  post(g.entity_manager, buf, NewsType::DECLARATION);
 }
 }  // namespace GB::commands

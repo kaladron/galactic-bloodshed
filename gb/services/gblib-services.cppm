@@ -111,6 +111,7 @@ export class EntityManager {
   BlockRepository blocks;
   PowerRepository powers;
   UniverseRepository universe_repo;
+  NewsRepository news;
 
   // In-memory cache (only one copy of each entity)
   std::unordered_map<player_t, std::unique_ptr<Race>> race_cache;
@@ -182,6 +183,13 @@ public:
   // Business logic operations (service layer)
   std::optional<player_t> find_player_by_name(const std::string& name);
   void kill_ship(player_t destroyer, Ship& ship);
+
+  // News operations (service layer)
+  void post_news(NewsType type, std::string_view message);
+  std::vector<NewsItem> get_news_since(NewsType type, int since_id);
+  int get_latest_news_id(NewsType type);
+  void purge_news_type(NewsType type);
+  void purge_all_news();
 
   // Flush all dirty entities to database
   void flush_all();

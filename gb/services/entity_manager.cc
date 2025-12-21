@@ -117,7 +117,7 @@ void flush_cache_impl(
 EntityManager::EntityManager(Database& database)
     : db(database), store(database), races(store), ships(store), planets(store),
       stars(store), sectors(store), commods(store), blocks(store),
-      powers(store), universe_repo(store) {}
+      powers(store), universe_repo(store), news(database) {}
 
 // Race entity methods
 EntityHandle<Race> EntityManager::get_race(player_t player) {
@@ -664,4 +664,26 @@ void EntityManager::release_sectormap(starnum_t star, planetnum_t pnum) {
       sectormap_refcount.erase(it);
     }
   }
+}
+
+// News operations (Service Layer)
+void EntityManager::post_news(NewsType type, std::string_view message) {
+  news.add(type, message);
+}
+
+std::vector<NewsItem> EntityManager::get_news_since(NewsType type,
+                                                    int since_id) {
+  return news.get_since(type, since_id);
+}
+
+int EntityManager::get_latest_news_id(NewsType type) {
+  return news.get_latest_id(type);
+}
+
+void EntityManager::purge_news_type(NewsType type) {
+  news.purge_type(type);
+}
+
+void EntityManager::purge_all_news() {
+  news.purge_all();
 }

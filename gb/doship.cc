@@ -663,7 +663,7 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
         std::string dropmsg =
             std::format("{} dropped on {}.\n", ship_to_string(ship),
                         prin_ship_orbits(entity_manager, ship));
-        post(dropmsg, NewsType::COMBAT);
+        post(entity_manager, dropmsg, NewsType::COMBAT);
       }
     }
   } else if (ship.whatdest() == ScopeLevel::LEVEL_SHIP) {
@@ -683,7 +683,7 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
       push_telegram(ship.owner(), ship.governor(), long_buf);
       push_telegram(target->owner(), target->governor(), long_buf);
       entity_manager.kill_ship(ship.owner(), ship);
-      post(short_buf, NewsType::COMBAT);
+      post(entity_manager, short_buf, NewsType::COMBAT);
     }
   }
 }
@@ -744,7 +744,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   std::string postmsg =
       std::format("{} detonated at {}\n", ship_to_string(ship),
                   prin_ship_orbits(entity_manager, ship));
-  post(postmsg, NewsType::COMBAT);
+  post(entity_manager, postmsg, NewsType::COMBAT);
   notify_star(entity_manager, ship.owner(), ship.governor(), ship.storbits(),
               postmsg);
   ShipList shiplist(entity_manager, sh);
@@ -757,7 +757,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
                                           (int)(ship.destruct()), 0, false);
       if (s2sresult) {
         auto const& [damage, short_buf, long_buf] = *s2sresult;
-        post(short_buf, NewsType::COMBAT);
+        post(entity_manager, short_buf, NewsType::COMBAT);
         warn(s.owner(), s.governor(), long_buf);
       }
     }
@@ -853,7 +853,7 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
       auto [damage, short_buf, long_buf] = *s2sresult;
       push_telegram(ship.owner(), ship.governor(), long_buf);
       push_telegram(target.owner(), target.governor(), long_buf);
-      post(short_buf, NewsType::COMBAT);
+      post(entity_manager, short_buf, NewsType::COMBAT);
     }
   }
 }

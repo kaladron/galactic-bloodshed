@@ -66,7 +66,7 @@ void pledge(const command_t& argv, GameObj& g) {
       break;
   }
 
-  post(msg, NewsType::DECLARATION);
+  post(g.entity_manager, msg, NewsType::DECLARATION);
 
   compute_power_blocks(g.entity_manager);
 }

@@ -265,7 +265,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
             char long_buf[1024], short_buf[256];
             shoot_planet_to_ship(g.entity_manager, alien, s, strength, long_buf,
                                  short_buf);
-            post(short_buf, NewsType::COMBAT);
+            post(g.entity_manager, short_buf, NewsType::COMBAT);
             notify_star(0, 0, s.storbits(), short_buf);
             warn(i, star->governor(i - 1), long_buf);
             notify(s.owner(), s.governor(), long_buf);

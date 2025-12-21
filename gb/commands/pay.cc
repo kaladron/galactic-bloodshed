@@ -55,7 +55,8 @@ void pay(const command_t& argv, GameObj& g) {
   notify(Playernum, Governor,
          std::format("{} payed to {} [{}].\n", amount, alien.name, who));
 
-  post(std::format("{} [{}] pays {} [{}].\n", race.name, Playernum, alien.name,
+  post(g.entity_manager,
+       std::format("{} [{}] pays {} [{}].\n", race.name, Playernum, alien.name,
                    who),
        NewsType::TRANSFER);
 }

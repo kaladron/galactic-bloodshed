@@ -114,7 +114,8 @@ void insurgency(const command_t& argv, GameObj& g) {
     warn(who, star.governor(who - 1), long_msg);
     p.info(Playernum - 1).tax = p.info(who - 1).tax;
     /* you inherit their tax rate (insurgency wars he he ) */
-    post(std::format(
+    post(g.entity_manager,
+         std::format(
              "/{}/{}: Successful insurgency by {} [{}] against {} [{}]\n",
              star.get_name(), star.get_planet_name(g.pnum), g.race->name,
              Playernum, alien->name, who),
@@ -126,7 +127,8 @@ void insurgency(const command_t& argv, GameObj& g) {
                             star.get_name(), star.get_planet_name(g.pnum),
                             g.race->name, Playernum);
     warn(who, star.governor(who - 1), long_msg);
-    post(std::format("/{}/{}: Failed insurgency by {} [{}] against {} [{}]\n",
+    post(g.entity_manager,
+         std::format("/{}/{}: Failed insurgency by {} [{}] against {} [{}]\n",
                      star.get_name(), star.get_planet_name(g.pnum),
                      g.race->name, Playernum, alien->name, who),
          NewsType::DECLARATION);

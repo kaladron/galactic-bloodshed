@@ -153,7 +153,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
       std::format("{}{} {} [{}] bombards {}/{}\n", Shipltrs[ship.type()],
                   ship.number(), ship.name(), ship.owner(), star->get_name(),
                   star->get_planet_name(ship.pnumorbits()));
-  post(combatpost, NewsType::COMBAT);
+  post(entity_manager, combatpost, NewsType::COMBAT);
 
   return numdest;
 }

@@ -138,7 +138,7 @@ void give(const command_t& argv, GameObj& g) {
   if (!race.God) {
     std::string postmsg = std::format("{} [{}] gives {} [{}] a ship.\n",
                                       race.name, Playernum, alien.name, who);
-    post(postmsg, NewsType::TRANSFER);
+    post(g.entity_manager, postmsg, NewsType::TRANSFER);
   }
 }
 }  // namespace GB::commands

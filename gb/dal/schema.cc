@@ -53,6 +53,15 @@ void initialize_schema(Database& db) {
   CREATE TABLE tbl_ship(
     id INT PRIMARY KEY NOT NULL,
     data TEXT NOT NULL);
+
+  CREATE TABLE tbl_news(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type INT NOT NULL,
+    message TEXT NOT NULL,
+    timestamp INT NOT NULL);
+
+  CREATE INDEX idx_news_type ON tbl_news(type);
+  CREATE INDEX idx_news_timestamp ON tbl_news(type, timestamp);
 )";
 
   char* err_msg = nullptr;

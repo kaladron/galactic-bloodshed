@@ -8,8 +8,8 @@ import :gameobj;
 import :types;
 
 export void check_for_telegrams(GameObj&);
-export void purge();
-export void post(std::string, NewsType);
+export void purge(EntityManager&);
+export void post(EntityManager&, std::string, NewsType);
 export void push_telegram_race(EntityManager&, const player_t,
                                std::string_view);
 export void teleg_read(GameObj&);

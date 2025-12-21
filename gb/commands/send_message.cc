@@ -49,7 +49,7 @@ void send_message(const command_t& argv, GameObj& g) {
     for (j = 1; j < argv.size(); j++)
       msg += argv[j] + " ";
     msg += "\n";
-    post(msg, NewsType::ANNOUNCE);
+    post(g.entity_manager, msg, NewsType::ANNOUNCE);
     return;
   }
   if (argv[1] == "block") {

@@ -52,7 +52,7 @@ void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
     entity_manager.kill_ship(ship.owner(), ship);
     *strength = 0;
     warn(ship.owner(), ship.governor(), message);
-    post(message, NewsType::COMBAT);
+    post(entity_manager, message, NewsType::COMBAT);
     notify_star(ship.owner(), ship.governor(), ship.storbits(), message);
   } else if (int_rand(0, *strength) >
              (int)((1.0 - .01 * ship.damage()) * ship.tech() / 4.0)) {

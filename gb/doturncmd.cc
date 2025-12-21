@@ -891,7 +891,7 @@ static void output_ground_attacks(EntityManager& em) {
               std::format("{}: {} [{}] assaults {} [{}] {} times.\n",
                           star_ptr->get_name(), race_i->name, i, race_j->name,
                           j, ground_assaults[i - 1][j - 1][star]);
-          post(assault_news, NewsType::COMBAT);
+          post(em, assault_news, NewsType::COMBAT);
           ground_assaults[i - 1][j - 1][star] = 0;
         }
 }

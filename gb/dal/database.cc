@@ -131,3 +131,119 @@ void Database::rollback() {
         std::format("Failed to rollback transaction: {}", error));
   }
 }
+
+// News operations implementation
+std::optional<int> Database::news_add(int type, const std::string& message,
+                                      int64_t timestamp) {
+  if (!conn) return std::nullopt;
+
+  const char* sql = R"(
+    INSERT INTO tbl_news (type, message, timestamp)
+    VALUES (?, ?, ?)
+  )";
+
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+    return std::nullopt;
+  }
+
+  sqlite3_bind_int(stmt, 1, type);
+  sqlite3_bind_text(stmt, 2, message.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int64(stmt, 3, timestamp);
+
+  int result = sqlite3_step(stmt);
+  sqlite3_finalize(stmt);
+
+  if (result != SQLITE_DONE) {
+    return std::nullopt;
+  }
+
+  return static_cast<int>(sqlite3_last_insert_rowid(conn));
+}
+
+std::vector<std::tuple<int, int, std::string, int64_t>>
+Database::news_get_since(int type, int since_id) {
+  std::vector<std::tuple<int, int, std::string, int64_t>> items;
+  if (!conn) return items;
+
+  const char* sql = R"(
+    SELECT id, type, message, timestamp
+    FROM tbl_news
+    WHERE type = ? AND id > ?
+    ORDER BY timestamp ASC, id ASC
+  )";
+
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+    return items;
+  }
+
+  sqlite3_bind_int(stmt, 1, type);
+  sqlite3_bind_int(stmt, 2, since_id);
+
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    int id = sqlite3_column_int(stmt, 0);
+    int news_type = sqlite3_column_int(stmt, 1);
+    const char* msg_text =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+    std::string message = msg_text ? msg_text : "";
+    int64_t ts = sqlite3_column_int64(stmt, 3);
+    items.emplace_back(id, news_type, std::move(message), ts);
+  }
+
+  sqlite3_finalize(stmt);
+  return items;
+}
+
+int Database::news_get_latest_id(int type) {
+  if (!conn) return 0;
+
+  const char* sql = R"(
+    SELECT MAX(id) FROM tbl_news WHERE type = ?
+  )";
+
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+    return 0;
+  }
+
+  sqlite3_bind_int(stmt, 1, type);
+
+  int latest_id = 0;
+  if (sqlite3_step(stmt) == SQLITE_ROW) {
+    latest_id = sqlite3_column_int(stmt, 0);
+  }
+
+  sqlite3_finalize(stmt);
+  return latest_id;
+}
+
+bool Database::news_purge_type(int type) {
+  if (!conn) return false;
+
+  const char* sql = "DELETE FROM tbl_news WHERE type = ?";
+
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+    return false;
+  }
+
+  sqlite3_bind_int(stmt, 1, type);
+
+  int result = sqlite3_step(stmt);
+  sqlite3_finalize(stmt);
+
+  return result == SQLITE_DONE;
+}
+
+bool Database::news_purge_all() {
+  if (!conn) return false;
+
+  const char* sql = "DELETE FROM tbl_news";
+  char* err_msg = nullptr;
+  int result = sqlite3_exec(conn, sql, nullptr, nullptr, &err_msg);
+  if (err_msg) {
+    sqlite3_free(err_msg);
+  }
+  return result == SQLITE_OK;
+}

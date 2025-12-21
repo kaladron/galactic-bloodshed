@@ -39,7 +39,6 @@ export double Compat[MAXPLAYERS];
 export player_t Num_races;
 export unsigned long Num_commods;
 export planetnum_t Planet_count;
-export std::unordered_map<NewsType, unsigned long> newslength;
 
 export unsigned long segments;  // number of movement segments (global variable)
 export time_t next_update_time;   // When will next update be... approximately

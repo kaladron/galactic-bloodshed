@@ -59,7 +59,7 @@ static void process_commands();
 static bool do_command(DescriptorData&, std::string_view);
 static void goodbye_user(DescriptorData&);
 static void dump_users(DescriptorData&);
-static void close_sockets(int);
+static void close_sockets(int, EntityManager&);
 static bool process_input(DescriptorData&);
 static void force_output();
 static void help_user(GameObj&);
@@ -454,7 +454,7 @@ int main(int argc, char** argv) {
   compute_power_blocks(entity_manager);
   set_signals();
   int sock = shovechars(port, entity_manager);
-  close_sockets(sock);
+  close_sockets(sock, entity_manager);
   std::println("Going down.");
   return 0;
 }
@@ -502,13 +502,8 @@ static int shovechars(int port, EntityManager& entity_manager) {
   int sock = make_socket(port);
   gettimeofday(&last_slice, nullptr);
 
-  if (!shutdown_flag) post("Server started\n", NewsType::ANNOUNCE);
-
-  // TODO(Phase 6.3d): Migrate news file management to database
-  // newslength[NewsType::DECLARATION] = getnewslength(NewsType::DECLARATION);
-  // newslength[NewsType::TRANSFER] = getnewslength(NewsType::TRANSFER);
-  // newslength[NewsType::COMBAT] = getnewslength(NewsType::COMBAT);
-  // newslength[NewsType::ANNOUNCE] = getnewslength(NewsType::ANNOUNCE);
+  if (!shutdown_flag)
+    post(entity_manager, "Server started\n", NewsType::ANNOUNCE);
 
   while (!shutdown_flag) {
     fflush(stdout);
@@ -1077,10 +1072,10 @@ static void do_segment(EntityManager& entity_manager, int override,
   }
 }
 
-static void close_sockets(int sock) {
+static void close_sockets(int sock, EntityManager& entity_manager) {
   /* post message into news file */
   const char* shutdown_message = "Shutdown ordered by deity - Bye\n";
-  post(shutdown_message, NewsType::ANNOUNCE);
+  post(entity_manager, shutdown_message, NewsType::ANNOUNCE);
 
   for (auto& d : descriptor_list) {
     if (write(d.descriptor, shutdown_message, strlen(shutdown_message)) < 0) {
@@ -1165,7 +1160,7 @@ static void process_command(GameObj& g, const command_t& argv) {
   if (command != commands.end()) {
     command->second(argv, g);
   } else if (argv[0] == "purge" && God)
-    purge();
+    purge(g.entity_manager);
   else if (argv[0] == "@@shutdown" && God) {
     shutdown_flag = true;
     g.out << "Doing shutdown.\n";

@@ -330,7 +330,7 @@ void capture(const command_t& argv, GameObj& g) {
             "{}: {} [{}] {} {}\n", dispshiploc(g.entity_manager, ship),
             race.name, Playernum, (ship.alive() ? "assaults" : "DESTROYED"),
             ship_to_string(ship));
-        post(short_msg, NewsType::COMBAT);
+        post(g.entity_manager, short_msg, NewsType::COMBAT);
         notify_star(Playernum, Governor, ship.storbits(), short_msg);
       }
       deductAPs(g, APcount, ship.storbits());

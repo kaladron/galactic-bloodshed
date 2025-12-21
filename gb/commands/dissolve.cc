@@ -109,7 +109,8 @@ void dissolve(const command_t& argv, GameObj& g) {
   auto& race = *race_handle;
   race.dissolved = true;
 
-  post(std::format("{} [{}] has dissolved.\n", race.name, Playernum),
+  post(g.entity_manager,
+       std::format("{} [{}] has dissolved.\n", race.name, Playernum),
        NewsType::DECLARATION);
 }
 }  // namespace GB::commands

@@ -31,22 +31,26 @@ bool notify(const player_t race, const governor_t gov,
   return false;
 }
 
-void d_think(const player_t Playernum, const governor_t Governor,
-             const std::string& message) {
+void d_think(EntityManager& entity_manager, const player_t Playernum,
+             const governor_t Governor, const std::string& message) {
   for (auto& d : descriptor_list) {
-    if (d.connected && d.player == Playernum && d.governor != Governor &&
-        !races[d.player - 1].governor[d.governor].toggle.gag) {
-      queue_string(d, message);
+    if (d.connected && d.player == Playernum && d.governor != Governor) {
+      const auto* race = entity_manager.peek_race(d.player);
+      if (race && !race->governor[d.governor].toggle.gag) {
+        queue_string(d, message);
+      }
     }
   }
 }
 
-void d_broadcast(const player_t Playernum, const governor_t Governor,
-                 const std::string& message) {
+void d_broadcast(EntityManager& entity_manager, const player_t Playernum,
+                 const governor_t Governor, const std::string& message) {
   for (auto& d : descriptor_list) {
-    if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
-        !races[d.player - 1].governor[d.governor].toggle.gag) {
-      queue_string(d, message);
+    if (d.connected && !(d.player == Playernum && d.governor == Governor)) {
+      const auto* race = entity_manager.peek_race(d.player);
+      if (race && !race->governor[d.governor].toggle.gag) {
+        queue_string(d, message);
+      }
     }
   }
 }
@@ -60,23 +64,19 @@ void d_shout(const player_t Playernum, const governor_t Governor,
   }
 }
 
-void d_announce(const player_t Playernum, const governor_t Governor,
-                const starnum_t star, const std::string& message) {
+void d_announce(EntityManager& entity_manager, const player_t Playernum,
+                const governor_t Governor, const starnum_t star,
+                const std::string& message) {
   for (auto& d : descriptor_list) {
     if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
-        (isset(stars[star].inhabited(), d.player) || races[d.player - 1].God) &&
-        d.snum == star &&
-        !races[d.player - 1].governor[d.governor].toggle.gag) {
-      queue_string(d, message);
+        d.snum == star) {
+      const auto* race = entity_manager.peek_race(d.player);
+      if (race && (isset(stars[star].inhabited(), d.player) || race->God) &&
+          !race->governor[d.governor].toggle.gag) {
+        queue_string(d, message);
+      }
     }
   }
-}
-
-// Old implementation using global races[] array - for compatibility during
-// migration
-void warn_race(const player_t who, const std::string& message) {
-  for (int i = 0; i <= MAXGOVERNORS; i++)
-    if (races[who - 1].governor[i].active) warn(who, i, message);
 }
 
 // New implementation using EntityManager
@@ -93,16 +93,6 @@ void warn(const player_t who, const governor_t governor,
           const std::string& message) {
   if (!notify(who, governor, message) && !notify(who, 0, message))
     push_telegram(who, governor, message);
-}
-
-// Old implementation using global races[] and stars[] arrays - for
-// compatibility during migration
-void warn_star(const player_t a, const starnum_t star,
-               const std::string& message) {
-  for (auto& race : races) {
-    if (race.Playernum != a && isset(stars[star].inhabited(), race.Playernum))
-      warn_race(race.Playernum, message);
-  }
 }
 
 // New implementation using EntityManager
@@ -219,14 +209,14 @@ void insert_sh_ship(Ship* s, Ship* s2) {
  * \arg s Ship to remove
  */
 void remove_sh_star(EntityManager& entity_manager, Ship& s) {
-  stars[s.storbits()] = getstar(s.storbits());
-  shipnum_t sh = stars[s.storbits()].ships();
+  auto star_handle = entity_manager.get_star(s.storbits());
+  auto& star = *star_handle;
+  shipnum_t sh = star.ships();
 
   // If the ship is the first of the chain, point the star to the
   // next, which is zero if there are no other ships.
   if (sh == s.number()) {
-    stars[s.storbits()].ships() = s.nextship();
-    putstar(stars[s.storbits()], s.storbits());
+    star.ships() = s.nextship();
   } else {
     ShipList ships(entity_manager, sh);
     for (auto ship_handle : ships) {

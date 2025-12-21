@@ -52,14 +52,16 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
       break;
     case ScopeLevel::LEVEL_PLAN: {
       g.out << std::format("Planet {}\n", prin_aimed_at(s));
-      const auto& p = *g.entity_manager.peek_planet(aimed_at.snum, aimed_at.pnum);
+      const auto& p =
+          *g.entity_manager.peek_planet(aimed_at.snum, aimed_at.pnum);
       if (auto dist = sqrt(
               Distsq(xf, yf, str.xpos() + p.xpos(), str.ypos() + p.ypos()));
           dist <= tele_range(s.type(), s.tech())) {
         auto star_handle = g.entity_manager.get_star(aimed_at.snum);
         auto& star = *star_handle;
         setbit(star.explored(), g.player);
-        auto planet_handle = g.entity_manager.get_planet(aimed_at.snum, aimed_at.pnum);
+        auto planet_handle =
+            g.entity_manager.get_planet(aimed_at.snum, aimed_at.pnum);
         auto& planet = *planet_handle;
         planet.info(g.player - 1).explored = 1;
         g.out << std::format("Surveyed, distance {}.\n", dist);
@@ -230,7 +232,8 @@ void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
         if (where.level != ScopeLevel::LEVEL_UNIV &&
             ((ship.storbits() != where.snum) &&
              where.level != ScopeLevel::LEVEL_STAR) &&
-            isclr(g.entity_manager.peek_star(where.snum)->explored(), ship.owner())) {
+            isclr(g.entity_manager.peek_star(where.snum)->explored(),
+                  ship.owner())) {
           g.out << "You haven't explored this system.\n";
           return;
         }
@@ -584,7 +587,8 @@ void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
       g.out << "You cannot activate the factory here.\n";
       return;
     } else {
-      auto planet_handle = g.entity_manager.get_planet(ship.deststar(), ship.destpnum());
+      auto planet_handle =
+          g.entity_manager.get_planet(ship.deststar(), ship.destpnum());
       auto& planet = *planet_handle;
       oncost = 2 * ship.build_cost();
       if (planet.info(Playernum - 1).resource < oncost) {
@@ -839,9 +843,8 @@ void DispOrders(EntityManager& em, int Playernum, int Governor,
    * destination */
   if (ship.hyper_drive().on) {
     const auto& dest_star = *em.peek_star(ship.deststar());
-    double dist =
-        sqrt(Distsq(ship.xpos(), ship.ypos(), dest_star.xpos(),
-                    dest_star.ypos()));
+    double dist = sqrt(
+        Distsq(ship.xpos(), ship.ypos(), dest_star.xpos(), dest_star.ypos()));
     auto distfac = HYPER_DIST_FACTOR * (ship.tech() + 100.0);
 
     double fuse =

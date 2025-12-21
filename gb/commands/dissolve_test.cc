@@ -40,9 +40,6 @@ int main() {
   sdata.numstars = 0;  // No stars, simplifies test
   universe_repo.save(sdata);
 
-  // Initialize global Sdata
-  getsdata(&Sdata);
-
   // Load race into EntityManager cache to ensure getracenum can find it
   const auto* loaded_race = em.peek_race(1);
   assert(loaded_race != nullptr);

@@ -111,9 +111,7 @@ void sell(const command_t& argv, GameObj& g) {
       return;
   }
 
-  int commodno;
-  while ((commodno = getdeadcommod()) == 0)
-    ;
+  int commodno = g.entity_manager.next_available_commod_id();
 
   if (commodno == -1) commodno = g.entity_manager.num_commods() + 1;
   g.out << std::format("Lot #{} - {} units of {}.\n", commodno, amount, item);

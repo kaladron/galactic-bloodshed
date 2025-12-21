@@ -6,9 +6,10 @@ import std;
 
 module gblib;
 
-std::vector<Victory> create_victory_list() {
+std::vector<Victory> create_victory_list(EntityManager& entity_manager) {
   std::vector<Victory> victories;
-  for (const auto& race : races) {
+  for (auto race_handle : RaceList(entity_manager)) {
+    const auto& race = race_handle.read();
     Victory vic{.racenum = race.Playernum,
                 .name = race.name,
                 .tech = race.tech,

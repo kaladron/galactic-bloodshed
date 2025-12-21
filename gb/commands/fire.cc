@@ -214,8 +214,8 @@ void fire(const command_t& argv, GameObj& g) {
       if (laser_on(to_ship))
         check_overload(g.entity_manager, to_ship, 0, &strength);
 
-      auto s2sresult =
-          shoot_ship_to_ship(g.entity_manager, to_ship, from, strength, 0, true);
+      auto s2sresult = shoot_ship_to_ship(g.entity_manager, to_ship, from,
+                                          strength, 0, true);
       if (s2sresult) {
         auto const& [damage, short_buf, long_buf] = *s2sresult;
 

@@ -58,7 +58,7 @@ void dissolve(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto n_ships = Numships();
+  auto n_ships = g.entity_manager.num_ships();
   for (auto i = 1; i <= n_ships; i++) {
     auto ship_handle = g.entity_manager.get_ship(i);
     if (!ship_handle.get() || ship_handle->owner() != Playernum) continue;
@@ -67,8 +67,8 @@ void dissolve(const command_t& argv, GameObj& g) {
            std::format("Ship #{}, self-destruct enabled\n", i));
   }
 
-  getsdata(&Sdata);
-  for (auto z = 0; z < Sdata.numstars; z++) {
+  const auto& sdata = *g.entity_manager.peek_universe();
+  for (auto z = 0; z < sdata.numstars; z++) {
     const auto* star = g.entity_manager.peek_star(z);
     if (!star || !isset(star->explored(), Playernum)) continue;
 
@@ -92,7 +92,8 @@ void dissolve(const command_t& argv, GameObj& g) {
         pl.info(Playernum - 1).autorep = 0;
       }
 
-      auto smap = getsmap(pl);
+      auto smap_handle = g.entity_manager.get_sectormap(z, i);
+      auto& smap = *smap_handle;
       for (auto& s : smap) {
         if (s.get_owner() == Playernum) {
           s.set_owner(0);
@@ -101,7 +102,6 @@ void dissolve(const command_t& argv, GameObj& g) {
           if (waste) s.set_condition(SectorType::SEC_WASTED);
         }
       }
-      putsmap(smap, pl);
     }
   }
 

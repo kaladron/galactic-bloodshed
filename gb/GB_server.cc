@@ -48,8 +48,9 @@ static void do_update(EntityManager&, bool = false);
 static void do_segment(EntityManager&, int, int);
 static int make_socket(int);
 static void shutdownsock(DescriptorData&);
-static void load_race_data(EntityManager&);
-static void load_star_data(EntityManager&);
+static void load_power_data(EntityManager&);
+static void load_block_data(EntityManager&);
+static void save_block_data(Database&);
 static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
 static bool process_output(DescriptorData&);
@@ -442,17 +443,15 @@ int main(int argc, char** argv) {
              ctime(&next_update_time));
   std::print(stderr, "      Next Segment   : {0}", ctime(&next_segment_time));
 
-  load_race_data(entity_manager); /* make sure you do this first */
-  load_star_data(entity_manager); /* get star data */
-  getpower(Power);                /* get power report from database */
-  Getblock(Blocks);               /* get alliance block data */
-  SortShips();                    /* Sort the ship list by tech for "build ?" */
+  load_power_data(entity_manager); /* get power report from database */
+  load_block_data(entity_manager); /* get alliance block data */
+  SortShips(); /* Sort the ship list by tech for "build ?" */
   for (player_t i = 1; i <= MAXPLAYERS; i++) {
     setbit(Blocks[i - 1].invite, i - 1);
     setbit(Blocks[i - 1].pledge, i - 1);
   }
-  Putblock(Blocks);
-  compute_power_blocks();
+  save_block_data(database);
+  compute_power_blocks(entity_manager);
   set_signals();
   int sock = shovechars(port, entity_manager);
   close_sockets(sock);
@@ -505,10 +504,11 @@ static int shovechars(int port, EntityManager& entity_manager) {
 
   if (!shutdown_flag) post("Server started\n", NewsType::ANNOUNCE);
 
-  newslength[NewsType::DECLARATION] = getnewslength(NewsType::DECLARATION);
-  newslength[NewsType::TRANSFER] = getnewslength(NewsType::TRANSFER);
-  newslength[NewsType::COMBAT] = getnewslength(NewsType::COMBAT);
-  newslength[NewsType::ANNOUNCE] = getnewslength(NewsType::ANNOUNCE);
+  // TODO(Phase 6.3d): Migrate news file management to database
+  // newslength[NewsType::DECLARATION] = getnewslength(NewsType::DECLARATION);
+  // newslength[NewsType::TRANSFER] = getnewslength(NewsType::TRANSFER);
+  // newslength[NewsType::COMBAT] = getnewslength(NewsType::COMBAT);
+  // newslength[NewsType::ANNOUNCE] = getnewslength(NewsType::ANNOUNCE);
 
   while (!shutdown_flag) {
     fflush(stdout);
@@ -826,10 +826,13 @@ static bool do_command(DescriptorData& d, std::string_view comm) {
   } else if (d.connected && d.god && argv[0] == "emulate") {
     d.player = std::stoi(argv[1]);
     d.governor = std::stoi(argv[2]);
-    std::string emulate_msg = std::format(
-        "Emulating {} \"{}\" [{},{}]\n", races[d.player - 1].name,
-        races[d.player - 1].governor[d.governor].name, d.player, d.governor);
-    queue_string(d, emulate_msg);
+    const auto* race = d.entity_manager.peek_race(d.player);
+    if (race) {
+      std::string emulate_msg =
+          std::format("Emulating {} \"{}\" [{},{}]\n", race->name,
+                      race->governor[d.governor].name, d.player, d.governor);
+      queue_string(d, emulate_msg);
+    }
   } else {
     if (d.connected) {
       /* GB command parser */
@@ -864,7 +867,8 @@ static void check_connect(DescriptorData& d, std::string_view message) {
     }
   }
 
-  auto [Playernum, Governor] = getracenum(race_password, gov_password);
+  auto [Playernum, Governor] =
+      getracenum(d.entity_manager, race_password, gov_password);
 
   if (!Playernum) {
     queue_string(d, "Connection refused.\n");
@@ -873,7 +877,12 @@ static void check_connect(DescriptorData& d, std::string_view message) {
     return;
   }
 
-  auto& race = races[Playernum - 1];
+  auto race_handle = d.entity_manager.get_race(Playernum);
+  if (!race_handle.get()) {
+    queue_string(d, "Connection refused.\n");
+    return;
+  }
+  const auto& race = race_handle.read();
   /* check to see if this player is already connected, if so, nuke the
    * descriptor */
   for (auto& d0 : descriptor_list) {
@@ -891,6 +900,25 @@ static void check_connect(DescriptorData& d, std::string_view message) {
   d.god = race.God;
   d.player = Playernum;
   d.governor = Governor;
+  d.race =
+      d.entity_manager.peek_race(Playernum);  // Set race pointer for GameObj
+
+  // Initialize scope to default or safe values
+  d.level = race.governor[Governor].deflevel;
+  d.snum = race.governor[Governor].defsystem;
+  d.pnum = race.governor[Governor].defplanetnum;
+  d.shipno = 0;
+
+  // Validate and clamp star number
+  if (d.snum >= Sdata.numstars) {
+    d.snum = 0;  // Default to first star if invalid
+  }
+
+  // Validate and clamp planet number
+  const auto* init_star = d.entity_manager.peek_star(d.snum);
+  if (init_star && d.pnum >= init_star->numplanets()) {
+    d.pnum = 0;  // Default to first planet if invalid
+  }
 
   std::string login_msg =
       std::format("\n{} \"{}\" [{},{}] logged on.\n", race.name,
@@ -905,8 +933,8 @@ static void check_connect(DescriptorData& d, std::string_view message) {
   std::string last_login_msg = std::format(
       "\nLast login      : {}", ctime(&(race.governor[Governor].login)));
   notify(Playernum, Governor, last_login_msg);
-  race.governor[Governor].login = time(nullptr);
-  putrace(race);
+  auto& race_mut = *race_handle;
+  race_mut.governor[Governor].login = time(nullptr);
   if (!race.Gov_ship) {
     std::string no_gov_msg =
         "You have no Governmental Center.  No action points will be "
@@ -1074,23 +1102,25 @@ static void dump_users(DescriptorData& e) {
   std::string players_msg = std::format("Current Players: {}", ctime(&now));
   queue_string(e, players_msg);
   if (e.player) {
-    auto& r = races[e.player - 1];
-    God = r.God;
+    const auto* r = e.entity_manager.peek_race(e.player);
+    if (!r) return;
+    God = r->God;
   } else
     return;
 
   for (auto& d : descriptor_list) {
     if (d.connected && !d.god) {
-      auto& r = races[d.player - 1];
-      if (!r.governor[d.governor].toggle.invisible || e.player == d.player ||
+      const auto* r = d.entity_manager.peek_race(d.player);
+      if (!r) continue;
+      if (!r->governor[d.governor].toggle.invisible || e.player == d.player ||
           God) {
-        std::string temp = std::format("\"{}\"", r.governor[d.governor].name);
+        std::string temp = std::format("\"{}\"", r->governor[d.governor].name);
         std::string user_info = std::format(
             "{:20.20s} {:20.20s} [{:2d},{:2d}] {:4d}s idle {:4.4s} {} {}\n",
-            r.name, temp, d.player, d.governor, now - d.last_time,
+            r->name, temp, d.player, d.governor, now - d.last_time,
             God ? stars[d.snum].get_name().c_str() : "    ",
-            (r.governor[d.governor].toggle.gag ? "GAG" : "   "),
-            (r.governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
+            (r->governor[d.governor].toggle.gag ? "GAG" : "   "),
+            (r->governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, user_info);
       } else if (!God) /* deity lurks around */
         coward_count++;
@@ -1152,38 +1182,40 @@ static void process_command(GameObj& g, const command_t& argv) {
   g.race = nullptr;
 }
 
-static void load_race_data(EntityManager& entity_manager) {
-  Num_races = entity_manager.num_races();
-  races.reserve(Num_races);
-  for (int i = 1; i <= Num_races; i++) {
-    Race r = getrace(i); /* allocates into memory */
-    if (r.Playernum != i) {
-      r.Playernum = i;
-      putrace(r);
+/**
+ * Load power data from database
+ */
+static void load_power_data(EntityManager& entity_manager) {
+  for (int i : std::views::iota(1, MAXPLAYERS + 1)) {
+    const auto* power_ptr = entity_manager.peek_power(i);
+    if (power_ptr) {
+      Power[i - 1] = *power_ptr;
     }
-    races.push_back(r);
   }
 }
 
 /**
- * get star database
+ * Load block data from database
  */
-static void load_star_data(EntityManager& entity_manager) {
-  Planet_count = 0;
-  getsdata(&Sdata);
-
-  stars.reserve(Sdata.numstars);
-  for (auto i = 0; i < Sdata.numstars; i++) {
-    auto s = getstar(i);
-    stars.push_back(s);
-  }
-
-  // TODO(jeffbailey): Convert this to be a range-based for loop.
-  for (int s = 0; s < Sdata.numstars; s++) {
-    for (int t = 0; t < stars[s].numplanets(); t++) {
-      const auto* planet = entity_manager.peek_planet(s, t);
-      if (planet->type() != PlanetType::ASTEROID) Planet_count++;
+static void load_block_data(EntityManager& entity_manager) {
+  for (int i : std::views::iota(1, MAXPLAYERS + 1)) {
+    const auto* block_ptr = entity_manager.peek_block(i);
+    if (block_ptr) {
+      Blocks[i - 1] = *block_ptr;
     }
+  }
+}
+
+/**
+ * Save block data to database
+ */
+static void save_block_data(Database& db) {
+  JsonStore store(db);
+  BlockRepository block_repo(store);
+
+  for (int i : std::views::iota(1, MAXPLAYERS + 1)) {
+    Blocks[i - 1].Playernum = i;  // Ensure ID is set
+    block_repo.save(Blocks[i - 1]);
   }
 }
 
@@ -1235,37 +1267,38 @@ static void help(const command_t& argv, GameObj& g) {
   }
 }
 
-void compute_power_blocks() {
+void compute_power_blocks(EntityManager& entity_manager) {
   /* compute alliance block power */
   Power_blocks.time = time(nullptr);
-  for (auto& i : races) {
-    uint64_t dummy =
-        Blocks[i.Playernum - 1].invite & Blocks[i.Playernum - 1].pledge;
-    Power_blocks.members[i.Playernum - 1] = 0;
-    Power_blocks.sectors_owned[i.Playernum - 1] = 0;
-    Power_blocks.popn[i.Playernum - 1] = 0;
-    Power_blocks.ships_owned[i.Playernum - 1] = 0;
-    Power_blocks.resource[i.Playernum - 1] = 0;
-    Power_blocks.fuel[i.Playernum - 1] = 0;
-    Power_blocks.destruct[i.Playernum - 1] = 0;
-    Power_blocks.money[i.Playernum - 1] = 0;
-    Power_blocks.systems_owned[i.Playernum - 1] =
-        Blocks[i.Playernum - 1].systems_owned;
-    Power_blocks.VPs[i.Playernum - 1] = Blocks[i.Playernum - 1].VPs;
-    for (auto& j : races) {
-      if (isset(dummy, j.Playernum)) {
-        Power_blocks.members[i.Playernum - 1] += 1;
-        Power_blocks.sectors_owned[i.Playernum - 1] +=
-            Power[j.Playernum - 1].sectors_owned;
-        Power_blocks.money[i.Playernum - 1] += Power[j.Playernum - 1].money;
-        Power_blocks.popn[i.Playernum - 1] += Power[j.Playernum - 1].popn;
-        Power_blocks.ships_owned[i.Playernum - 1] +=
-            Power[j.Playernum - 1].ships_owned;
-        Power_blocks.resource[i.Playernum - 1] +=
-            Power[j.Playernum - 1].resource;
-        Power_blocks.fuel[i.Playernum - 1] += Power[j.Playernum - 1].fuel;
-        Power_blocks.destruct[i.Playernum - 1] +=
-            Power[j.Playernum - 1].destruct;
+  for (auto race_i_handle : RaceList(entity_manager)) {
+    const auto& race_i = race_i_handle.read();
+    const player_t i = race_i.Playernum;
+
+    uint64_t allied_members = Blocks[i - 1].invite & Blocks[i - 1].pledge;
+    Power_blocks.members[i - 1] = 0;
+    Power_blocks.sectors_owned[i - 1] = 0;
+    Power_blocks.popn[i - 1] = 0;
+    Power_blocks.ships_owned[i - 1] = 0;
+    Power_blocks.resource[i - 1] = 0;
+    Power_blocks.fuel[i - 1] = 0;
+    Power_blocks.destruct[i - 1] = 0;
+    Power_blocks.money[i - 1] = 0;
+    Power_blocks.systems_owned[i - 1] = Blocks[i - 1].systems_owned;
+    Power_blocks.VPs[i - 1] = Blocks[i - 1].VPs;
+
+    for (auto race_j_handle : RaceList(entity_manager)) {
+      const auto& race_j = race_j_handle.read();
+      const player_t j = race_j.Playernum;
+
+      if (isset(allied_members, j)) {
+        Power_blocks.members[i - 1] += 1;
+        Power_blocks.sectors_owned[i - 1] += Power[j - 1].sectors_owned;
+        Power_blocks.money[i - 1] += Power[j - 1].money;
+        Power_blocks.popn[i - 1] += Power[j - 1].popn;
+        Power_blocks.ships_owned[i - 1] += Power[j - 1].ships_owned;
+        Power_blocks.resource[i - 1] += Power[j - 1].resource;
+        Power_blocks.fuel[i - 1] += Power[j - 1].fuel;
+        Power_blocks.destruct[i - 1] += Power[j - 1].destruct;
       }
     }
   }

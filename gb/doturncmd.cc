@@ -218,14 +218,12 @@ static void process_races(TurnState& state, int update) {
  */
 static void process_market(TurnState& state, int update) {
   if (MARKET && update) {
-    /* reset market */
-    Num_commods = state.entity_manager.num_commods();
-    clr_commodfree();
-    for (commodnum_t i = Num_commods; i >= 1; i--) {
-      auto c = getcommod(i);
+    /* reset market - note: CommodList filters out null/invalid entries */
+    for (auto commod_handle : CommodList(state.entity_manager)) {
+      auto& c = *commod_handle;
+
       if (!c.deliver) {
         c.deliver = true;
-        putcommod(c, i);
         continue;
       }
 
@@ -265,14 +263,14 @@ static void process_market(TurnState& state, int update) {
         std::string purchased_msg = std::format(
             "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
             "arrived at /{}/{}\n",
-            i, owner_race->name, c.owner, c.bid, c.amount, c.type,
+            c.id, owner_race->name, c.owner, c.bid, c.amount, c.type,
             star_handle.get() ? star_handle->get_name() : "unknown",
             star_handle.get() ? star_handle->get_planet_name(c.planet_to)
                               : "unknown");
         push_telegram(c.bidder, c.bidder_gov, purchased_msg);
-        std::string sold_msg =
-            std::format("Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", i,
-                        c.amount, c.type, bidder_race->name, c.bidder, c.bid);
+        std::string sold_msg = std::format(
+            "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id, c.amount,
+            c.type, bidder_race->name, c.bidder, c.bid);
         push_telegram(c.owner, c.governor, sold_msg);
         c.owner = c.governor = 0;
         c.bidder = c.bidder_gov = 0;
@@ -281,9 +279,9 @@ static void process_market(TurnState& state, int update) {
         c.bid = 0;
       }
       if (!c.owner) {
-        makecommoddead(i);
+        // Commodity is dead - delete it after handle releases
+        state.entity_manager.delete_commod(c.id);
       }
-      putcommod(c, i);
     }
   }
 }
@@ -338,12 +336,18 @@ static void process_ship_turns(TurnState& state, int update) {
 
 static void prepare_dead_ships(TurnState& state) {
   /* prepare dead ships for recycling */
-  clr_shipfree();
+  // Collect ship numbers to delete (can't delete while iterating)
+  std::vector<shipnum_t> dead_ships;
   const ShipList ships(state.entity_manager, ShipList::IterationType::All);
   for (const Ship* ship : ships) {
     if (!ship->alive()) {
-      makeshipdead(ship->number());
+      dead_ships.push_back(ship->number());
     }
+  }
+
+  // Delete dead ships
+  for (shipnum_t num : dead_ships) {
+    state.entity_manager.delete_ship(num);
   }
 }
 
@@ -634,7 +638,7 @@ static void finalize_turn(TurnState& state, int update) {
   // No manual free() needed - vector cleanup is automatic
 
   if (update) {
-    compute_power_blocks();
+    compute_power_blocks(state.entity_manager);
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
       state.stats.Power[player - 1].money = 0;
@@ -644,8 +648,14 @@ static void finalize_turn(TurnState& state, int update) {
         }
       }
     }
-    putpower(state.stats.Power.data());
-    Putblock(state.Blocks);
+    // Save power and block data via EntityManager
+    for (int i : std::views::iota(0, MAXPLAYERS)) {
+      auto power_handle = state.entity_manager.get_power(i);
+      *power_handle = state.stats.Power[i];
+
+      auto block_handle = state.entity_manager.get_block(i);
+      *block_handle = state.Blocks[i];
+    }
   }
 
   for (auto race_handle : RaceList(state.entity_manager)) {
@@ -770,8 +780,7 @@ void handle_victory(EntityManager& em) {
     win_category[i - 1] = 0;
     const auto* race = em.peek_race(i);
     if (!race) continue;
-    if (race->controlled_planets >=
-        Planet_count * VICTORY_PERCENT / 100) {
+    if (race->controlled_planets >= Planet_count * VICTORY_PERCENT / 100) {
       win_category[i - 1] = LITTLE_WINNER;
     }
     if (race->victory_turns >= VICTORY_UPDATES) {
@@ -782,7 +791,8 @@ void handle_victory(EntityManager& em) {
   if (game_over) {
     for (i = 1; i <= Num_races; i++) {
       push_telegram_race(em, i, "*** Attention ***");
-      push_telegram_race(em, i, "This game of Galactic Bloodshed is now *over*");
+      push_telegram_race(em, i,
+                         "This game of Galactic Bloodshed is now *over*");
       std::string winner_msg =
           std::format("The big winner{}", (game_over == 1) ? " is" : "s are");
       push_telegram_race(em, i, winner_msg);
@@ -815,11 +825,13 @@ static void make_discoveries(EntityManager& em, Race& r) {
     r.discoveries[D_HYPER_DRIVE] = 1;
   }
   if (!Laser(r) && r.tech >= TECH_LASER) {
-    push_telegram_race(em, r.Playernum, "You have discovered LASER technology.\n");
+    push_telegram_race(em, r.Playernum,
+                       "You have discovered LASER technology.\n");
     r.discoveries[D_LASER] = 1;
   }
   if (!Cew(r) && r.tech >= TECH_CEW) {
-    push_telegram_race(em, r.Playernum, "You have discovered CEW technology.\n");
+    push_telegram_race(em, r.Playernum,
+                       "You have discovered CEW technology.\n");
     r.discoveries[D_CEW] = 1;
   }
   if (!Vn(r) && r.tech >= TECH_VN) {
@@ -837,11 +849,13 @@ static void make_discoveries(EntityManager& em, Race& r) {
     r.discoveries[D_TRANSPORTER] = 1;
   }
   if (!Avpm(r) && r.tech >= TECH_AVPM) {
-    push_telegram_race(em, r.Playernum, "You have discovered AVPM technology.\n");
+    push_telegram_race(em, r.Playernum,
+                       "You have discovered AVPM technology.\n");
     r.discoveries[D_AVPM] = 1;
   }
   if (!Cloak(r) && r.tech >= TECH_CLOAK) {
-    push_telegram_race(em, r.Playernum, "You have discovered CLOAK technology.\n");
+    push_telegram_race(em, r.Playernum,
+                       "You have discovered CLOAK technology.\n");
     r.discoveries[D_CLOAK] = 1;
   }
   if (!Wormhole(r) && r.tech >= TECH_WORMHOLE) {
@@ -873,10 +887,10 @@ static void output_ground_attacks(EntityManager& em) {
           const auto* race_i = em.peek_race(i);
           const auto* race_j = em.peek_race(j);
           if (!star_ptr || !race_i || !race_j) continue;
-          std::string assault_news = std::format(
-              "{}: {} [{}] assaults {} [{}] {} times.\n",
-              star_ptr->get_name(), race_i->name, i, race_j->name,
-              j, ground_assaults[i - 1][j - 1][star]);
+          std::string assault_news =
+              std::format("{}: {} [{}] assaults {} [{}] {} times.\n",
+                          star_ptr->get_name(), race_i->name, i, race_j->name,
+                          j, ground_assaults[i - 1][j - 1][star]);
           post(assault_news, NewsType::COMBAT);
           ground_assaults[i - 1][j - 1][star] = 0;
         }

@@ -872,37 +872,6 @@ public:
   }
 };
 
-export class Shiplist {
-public:
-  Shiplist(shipnum_t a) : first(a) {}
-
-  class Iterator {
-  public:
-    Iterator(shipnum_t a);
-    Ship& operator*() {
-      return elem_ship;
-    }
-    Iterator& operator++();
-    bool operator!=(const Iterator& rhs) {
-      return elem_ship.number() != rhs.elem_ship.number();
-    }
-
-  private:
-    ship_struct elem_data{};    // Store POD struct (copyable)
-    Ship elem_ship{elem_data};  // Wrap in Ship for access
-  };
-
-  auto begin() {
-    return Shiplist::Iterator(first);
-  }
-  auto end() {
-    return Shiplist::Iterator(0);
-  }
-
-private:
-  shipnum_t first;
-};
-
 /* can takeoff & land, is mobile, etc. */
 export unsigned short speed_rating(const Ship& s);
 
@@ -935,7 +904,7 @@ export int size(const Ship& s);
 export int shipbody(const Ship& s);
 export long hanger(const Ship& s);
 export long repair(const Ship& s);
-export int getdefense(const Ship&);
+export int getdefense(EntityManager&, const Ship&);
 export bool landed(const Ship&);
 export bool laser_on(const Ship&);
 export void capture_stuff(const Ship&, GameObj&);

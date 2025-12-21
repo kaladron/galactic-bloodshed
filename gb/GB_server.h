@@ -6,6 +6,6 @@
 #define GB_SERVER_H
 
 void do_next_thing(EntityManager&);
-void compute_power_blocks();
+void compute_power_blocks(EntityManager&);
 
 #endif  // GB_SERVER_H

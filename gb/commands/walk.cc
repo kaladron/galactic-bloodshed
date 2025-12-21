@@ -133,11 +133,9 @@ void walk(const command_t& argv, GameObj& g) {
       sect.get_owner() != Playernum) {
     auto oldowner = sect.get_owner();
     auto oldgov = star.governor(sect.get_owner() - 1);
-    auto alien_handle = g.entity_manager.get_race(oldowner);
-    Race& alien = *alien_handle;
-    auto race_handle = g.entity_manager.get_race(Playernum);
-    Race& race_mut = *race_handle;
-    if (!isset(g.race->allied, oldowner) || !isset(alien.allied, Playernum)) {
+    const auto* alien = g.entity_manager.peek_race(oldowner);
+    if (!alien) return;
+    if (!isset(g.race->allied, oldowner) || !isset(alien->allied, Playernum)) {
       if (!retal_strength(*ship)) {
         g.out << "You have nothing to attack with!\n";
         return;
@@ -145,18 +143,18 @@ void walk(const command_t& argv, GameObj& g) {
       while ((sect.get_popn() + sect.get_troops()) && retal_strength(*ship)) {
         auto civ = sect.get_popn();
         auto mil = sect.get_troops();
-        mech_attack_people(g.entity_manager, *ship, &civ, &mil, race_mut, alien,
+        mech_attack_people(g.entity_manager, *ship, &civ, &mil, *g.race, *alien,
                            sect, false, long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
-        warn(alien.Playernum, oldgov, long_buf);
+        warn(alien->Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, ship->storbits(), short_buf);
         post(short_buf, NewsType::COMBAT);
 
         people_attack_mech(g.entity_manager, *ship, sect.get_popn(),
-                           sect.get_troops(), alien, race_mut, sect, x, y,
+                           sect.get_troops(), *alien, *g.race, sect, x, y,
                            long_buf, short_buf);
         notify(Playernum, Governor, long_buf);
-        warn(alien.Playernum, oldgov, long_buf);
+        warn(alien->Playernum, oldgov, long_buf);
         notify_star(Playernum, Governor, ship->storbits(), short_buf);
         if (!ship->alive()) post(short_buf, NewsType::COMBAT);
 

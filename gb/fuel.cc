@@ -85,13 +85,6 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
   tmpship.whatdest() = tmpdest.level;
   tmpship.deststar() = tmpdest.snum;
   tmpship.destpnum() = tmpdest.pnum;
-  if (tmpship.whatdest() == ScopeLevel::LEVEL_SHIP || tmpship.ships()) {
-    /* Bring in the other ships.  moveship() uses ships[]. */
-    Num_ships = Numships();
-    ships = (Ship**)malloc(sizeof(Ship*) * (Num_ships) + 1);
-    for (shipnum_t i = 1; i <= Num_ships; i++)
-      (void)getship(&ships[i], i);
-  }
 
   bool trip_resolved = false;
   segments_t number_segments = 0; /* Reset counter.  */

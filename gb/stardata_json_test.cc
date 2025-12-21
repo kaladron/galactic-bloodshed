@@ -16,6 +16,7 @@ int main() {
   initialize_schema(db);
 
   universe_struct test_stardata{};
+  test_stardata.id = 1;  // CRITICAL: Universe is a singleton with id=1
 
   // Initialize some basic fields for testing
   test_stardata.numstars = 100;
@@ -26,21 +27,25 @@ int main() {
   test_stardata.VN_index1[0] = 1;
   test_stardata.VN_index2[0] = 2;
 
-  // Test putsdata - stores in SQLite as JSON
-  putsdata(&test_stardata);
+  // Test EntityManager - stores and retrieves universe data
+  // First save using repository to create the database record
+  JsonStore store(db);
+  UniverseRepository universe_repo(store);
+  universe_repo.save(test_stardata);
 
-  // Test getsdata - reads from SQLite
-  universe_struct retrieved_stardata{};
-  getsdata(&retrieved_stardata);
+  // Now use EntityManager to retrieve and verify
+  EntityManager em(db);
+  const auto* retrieved = em.peek_universe();
+  assert(retrieved);
 
   // Verify key fields
-  assert(retrieved_stardata.numstars == test_stardata.numstars);
-  assert(retrieved_stardata.ships == test_stardata.ships);
-  assert(retrieved_stardata.AP[0] == test_stardata.AP[0]);
-  assert(retrieved_stardata.AP[1] == test_stardata.AP[1]);
-  assert(retrieved_stardata.VN_hitlist[0] == test_stardata.VN_hitlist[0]);
-  assert(retrieved_stardata.VN_index1[0] == test_stardata.VN_index1[0]);
-  assert(retrieved_stardata.VN_index2[0] == test_stardata.VN_index2[0]);
+  assert(retrieved->numstars == test_stardata.numstars);
+  assert(retrieved->ships == test_stardata.ships);
+  assert(retrieved->AP[0] == test_stardata.AP[0]);
+  assert(retrieved->AP[1] == test_stardata.AP[1]);
+  assert(retrieved->VN_hitlist[0] == test_stardata.VN_hitlist[0]);
+  assert(retrieved->VN_index1[0] == test_stardata.VN_index1[0]);
+  assert(retrieved->VN_index2[0] == test_stardata.VN_index2[0]);
 
   // Database connection will be cleaned up automatically by Sql destructor
 

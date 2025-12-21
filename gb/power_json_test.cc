@@ -18,6 +18,7 @@ int main() {
   power test_power[MAXPLAYERS];
 
   // Initialize some test data for a few players
+  test_power[0].id = 1;  // CRITICAL: Set power id
   test_power[0].troops = 1000;
   test_power[0].popn = 50000;
   test_power[0].resource = 25000;
@@ -30,6 +31,7 @@ int main() {
   test_power[0].sum_mob = 75;
   test_power[0].sum_eff = 85;
 
+  test_power[1].id = 2;  // CRITICAL: Set power id
   test_power[1].troops = 800;
   test_power[1].popn = 40000;
   test_power[1].resource = 20000;
@@ -42,22 +44,33 @@ int main() {
   test_power[1].sum_mob = 60;
   test_power[1].sum_eff = 70;
 
-  // Initialize remaining power entries to zero
+  // Initialize remaining power entries to zero (but with id set!)
   for (int i = 2; i < MAXPLAYERS; i++) {
     test_power[i] = power{};
+    test_power[i].id = i + 1;  // CRITICAL: Set id for power records
   }
 
-  // Test putpower - stores in SQLite as JSON
-  putpower(test_power);
+  // Test EntityManager - stores and retrieves power data
+  // First save using repository
+  JsonStore store(db);
+  PowerRepository power_repo(store);
+  for (int i = 0; i < MAXPLAYERS; i++) {
+    power_repo.save(test_power[i]);
+  }
 
-  // Clear the array and reload
+  // Now use EntityManager to retrieve
+  EntityManager em(db);
   power loaded_power[MAXPLAYERS];
   for (int i = 0; i < MAXPLAYERS; i++) {
     loaded_power[i] = power{};
   }
 
-  // Test getpower - retrieves from SQLite and deserializes JSON
-  getpower(loaded_power);
+  // Retrieve from EntityManager
+  for (int i = 0; i < MAXPLAYERS; i++) {
+    const auto* power_ptr = em.peek_power(i + 1);
+    assert(power_ptr);  // Should exist now
+    loaded_power[i] = *power_ptr;
+  }
 
   // Verify the data matches
   assert(loaded_power[0].troops == test_power[0].troops);

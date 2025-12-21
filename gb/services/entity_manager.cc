@@ -18,8 +18,8 @@ template <typename Entity, typename Key, typename FindFn, typename SaveFn,
 EntityHandle<Entity>
 get_entity_impl(EntityManager* manager, Key key,
                 std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
-                std::unordered_map<Key, int>& refcount,
-                FindFn find_fn, SaveFn save_fn, ReleaseFn release_fn) {
+                std::unordered_map<Key, int>& refcount, FindFn find_fn,
+                SaveFn save_fn, ReleaseFn release_fn) {
   // Check if already cached
   auto it = cache.find(key);
   if (it != cache.end()) {
@@ -42,20 +42,18 @@ get_entity_impl(EntityManager* manager, Key key,
       cache.emplace(key, std::make_unique<Entity>(std::move(*entity_opt)));
   refcount[key] = 1;
 
-  return EntityHandle<Entity>(
-      manager, iter->second.get(),
-      [save_fn, release_fn, key](const Entity& e) {
-        save_fn(e);
-        release_fn(key);
-      });
+  return EntityHandle<Entity>(manager, iter->second.get(),
+                              [save_fn, release_fn, key](const Entity& e) {
+                                save_fn(e);
+                                release_fn(key);
+                              });
 }
 
 template <typename Entity, typename Key, typename FindFn>
 const Entity*
 peek_entity_impl(Key key,
                  std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
-                 std::unordered_map<Key, int>& refcount,
-                 FindFn find_fn) {
+                 std::unordered_map<Key, int>& refcount, FindFn find_fn) {
   // Check if already cached
   auto it = cache.find(key);
   if (it != cache.end()) {
@@ -194,6 +192,15 @@ void EntityManager::delete_ship(shipnum_t num) {
   ships.delete_ship(num);
 }
 
+void EntityManager::delete_commod(int id) {
+  // Remove from cache if present
+  commod_cache.erase(id);
+  commod_refcount.erase(id);
+
+  // Remove from database
+  commods.delete_commod(id);
+}
+
 EntityHandle<Commod> EntityManager::create_commod(const Commod& init_data) {
   // Get next available commod ID
   int id = commods.next_available_id();
@@ -250,11 +257,10 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
 
 const Planet* EntityManager::peek_planet(starnum_t star, planetnum_t pnum) {
   auto key = std::make_pair(star, pnum);
-  const auto* planet =
-      peek_entity_impl<Planet>(key, planet_cache, planet_refcount,
-                               [this, star, pnum](auto) {
-                                 return planets.find_by_location(star, pnum);
-                               });
+  const auto* planet = peek_entity_impl<Planet>(
+      key, planet_cache, planet_refcount, [this, star, pnum](auto) {
+        return planets.find_by_location(star, pnum);
+      });
   if (!planet) {
     throw EntityNotFoundError(
         std::format("Planet not found: star_id={}, planet_id={}", star, pnum));
@@ -326,8 +332,9 @@ EntityHandle<block> EntityManager::get_block(int id) {
 }
 
 const block* EntityManager::peek_block(int id) {
-  return peek_entity_impl<block>(id, block_cache, block_refcount,
-                                  [this](int i) { return blocks.find_by_id(i); });
+  return peek_entity_impl<block>(
+      id, block_cache, block_refcount,
+      [this](int i) { return blocks.find_by_id(i); });
 }
 
 void EntityManager::release_block(int id) {
@@ -344,8 +351,9 @@ EntityHandle<power> EntityManager::get_power(int id) {
 }
 
 const power* EntityManager::peek_power(int id) {
-  return peek_entity_impl<power>(id, power_cache, power_refcount,
-                                  [this](int i) { return powers.find_by_id(i); });
+  return peek_entity_impl<power>(
+      id, power_cache, power_refcount,
+      [this](int i) { return powers.find_by_id(i); });
 }
 
 void EntityManager::release_power(int id) {
@@ -406,6 +414,11 @@ void EntityManager::release_universe() {
 int EntityManager::num_commods() {
   // Count commods by listing all IDs in the database
   return store.list_ids("tbl_commod").size();
+}
+
+int EntityManager::next_available_commod_id() {
+  CommodRepository commod_repo(store);
+  return commod_repo.next_available_id();
 }
 
 player_t EntityManager::num_races() {
@@ -584,7 +597,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   /* landed ships are killed */
   ShipList shiplist(*this, ship.ships());
   for (auto ship_handle : shiplist) {
-    Ship& s = *ship_handle;  // Get mutable reference
+    Ship& s = *ship_handle;   // Get mutable reference
     kill_ship(Playernum, s);  // Recursive call to member function
   }
 }
@@ -629,8 +642,7 @@ const SectorMap* EntityManager::peek_sectormap(starnum_t star,
                                                planetnum_t pnum) {
   auto key = std::make_pair(star, pnum);
   const auto* sectormap = peek_entity_impl<SectorMap>(
-      key, sectormap_cache, sectormap_refcount,
-      [this, star, pnum](auto) {
+      key, sectormap_cache, sectormap_refcount, [this, star, pnum](auto) {
         auto planet_opt = planets.find_by_location(star, pnum);
         if (!planet_opt) return std::optional<SectorMap>{};
         return std::optional<SectorMap>(sectors.load_map(*planet_opt));

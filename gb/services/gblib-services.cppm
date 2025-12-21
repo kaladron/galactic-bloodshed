@@ -171,6 +171,8 @@ public:
   EntityHandle<Ship> create_ship(const ship_struct& data = {});
   void delete_ship(shipnum_t num);
   EntityHandle<Commod> create_commod(const Commod& data = {});
+  void delete_commod(int id);
+  int next_available_commod_id();
 
   // Count methods (for queries)
   int num_commods();

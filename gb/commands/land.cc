@@ -281,12 +281,13 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
   /* check to see if the ship crashes from lack of fuel or damage */
   if (auto [did_crash, roll] = crash(s, fuel); did_crash) {
     /* damaged ships stand of chance of crash landing */
-    auto smap = getsmap(p);
+    auto smap_handle =
+        g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
+    auto& smap = *smap_handle;
     char long_buf[1024], short_buf[256];
     numdest = shoot_ship_to_planet(
         g.entity_manager, s, p, round_rand((double)(s.destruct()) / 3.), x, y,
         smap, 0, GTYPE_HEAVY, long_buf, short_buf);
-    putsmap(smap, p);
     auto buf = std::format(
         "BOOM!! {} crashes on sector {},{} with blast radius of {}.\n",
         ship_to_string(s), x, y, numdest);
@@ -304,6 +305,11 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
           fuel);
     g.entity_manager.kill_ship(s.owner(), s);
   } else {
+    // Normal landing
+    auto smap_handle =
+        g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
+    auto& smap = *smap_handle;
+
     s.land_x() = x;
     s.land_y() = y;
     s.xpos() = p.xpos() + star->xpos();
@@ -315,15 +321,18 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     s.destpnum() = s.pnumorbits();
   }
 
-  auto sect = getsector(p, x, y);
+  auto smap_handle =
+      g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
+  auto& smap = *smap_handle;
+  auto& sector = smap.get(x, y);
 
-  if (sect.is_wasted()) {
+  if (sector.is_wasted()) {
     g.out << "Warning: That sector is a wasteland!\n";
-  } else if (sect.get_owner() && sect.get_owner() != Playernum) {
+  } else if (sector.get_owner() && sector.get_owner() != Playernum) {
     // Use g.race for current player (already set by process_command)
-    const auto* alien = g.entity_manager.peek_race(sect.get_owner());
+    const auto* alien = g.entity_manager.peek_race(sector.get_owner());
     if (!alien) return;  // Should never happen but be safe
-    if (!(isset(g.race->allied, sect.get_owner()) &&
+    if (!(isset(g.race->allied, sector.get_owner()) &&
           isset(alien->allied, Playernum))) {
       g.out << std::format("You have landed on an alien sector ({}).\n",
                            alien->name);
@@ -332,12 +341,11 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
                            alien->name);
     }
   }
+
   if (s.whatorbits() == ScopeLevel::LEVEL_UNIV)
     deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
   else
     deductAPs(g, APcount, s.storbits());
-
-  if (numdest) putsector(sect, p, x, y);
 
   /* send messages to anyone there */
   auto landing_msg =
@@ -369,7 +377,7 @@ void land(const command_t& argv, GameObj& g) {
   for (auto ship_handle : ships) {
     Ship& s = *ship_handle;  // Get mutable access upfront
 
-    if (!ship_matches_filter(argv[1], s)) continue;
+    if (!GB::ship_matches_filter(argv[1], s)) continue;
     if (!authorized(Governor, s)) continue;
 
     if (overloaded(s)) {

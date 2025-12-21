@@ -235,12 +235,13 @@ void build(const command_t& argv, GameObj& g) {
       }
       case ScopeLevel::LEVEL_SHIP: {
         if (!count) { /* initialize loop variables */
-          auto builder_opt = getship(g.shipno);
-          if (!builder_opt) {
+          const auto* builder_ptr = g.entity_manager.peek_ship(g.shipno);
+          if (!builder_ptr) {
             g.out << "Ship not found.\n";
             return;
           }
-          builder = std::move(*builder_opt);
+          builder =
+              Ship(builder_ptr->to_struct());  // Copy ship data to local Ship
           outside = false;
           auto test_build_level = build_at_ship(g, &*builder, &snum, &pnum);
           if (!test_build_level) {

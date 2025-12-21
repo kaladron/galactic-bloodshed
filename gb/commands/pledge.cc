@@ -47,9 +47,10 @@ void pledge(const command_t& argv, GameObj& g) {
   auto& block = *block_handle;
 
   setbit(block.pledge, Playernum);
-  warn_race(n, std::format("{} [{}] has pledged {}.\n", race->name, Playernum,
-                           block.name));
-  warn_race(Playernum,
+  warn_race(g.entity_manager, n,
+            std::format("{} [{}] has pledged {}.\n", g.race->name, Playernum,
+                        block.name));
+  warn_race(g.entity_manager, Playernum,
             std::format("You have pledged allegiance to {}.\n", block.name));
 
   std::string msg;
@@ -67,6 +68,6 @@ void pledge(const command_t& argv, GameObj& g) {
 
   post(msg, NewsType::DECLARATION);
 
-  compute_power_blocks();
+  compute_power_blocks(g.entity_manager);
 }
 }  // namespace GB::commands

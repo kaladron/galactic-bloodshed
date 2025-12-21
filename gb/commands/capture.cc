@@ -127,8 +127,9 @@ void capture(const command_t& argv, GameObj& g) {
       }
 
       if (isset(race.allied, (ship.owner()))) {
-        notify(Playernum, Governor,
-               std::format("Boarding the ship of your ally, {}\n", alien->name));
+        notify(
+            Playernum, Governor,
+            std::format("Boarding the ship of your ally, {}\n", alien->name));
       }
 
       olddpopn = ship.popn();

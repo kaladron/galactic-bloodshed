@@ -5,6 +5,8 @@
 #ifndef RACEGEN_H
 #define RACEGEN_H
 
+#include <cstdio>
+
 #define GBVERSION "1.7.3"
 #ifdef VERSION
 #undef VERSION
@@ -197,9 +199,9 @@ extern bool altered;     /* true iff race has been altered since last saved */
 extern bool changed;     /* true iff race has been changed since last printed */
 extern bool please_quit; /* true iff you want to exit ASAP. */
 
-int critique_to_file(FILE* f, int rigorous_checking, int is_player_race);
-void print_to_file(FILE* f, int verbose);
-int load_from_file(FILE* g);
+int critique_to_file(std::FILE* f, int rigorous_checking, int is_player_race);
+void print_to_file(std::FILE* f, int verbose);
+int load_from_file(std::FILE* g);
 int cost_of_race();
 void modify_print_loop(int level);
 

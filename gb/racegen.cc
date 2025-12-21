@@ -2,16 +2,15 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
-import std.compat;
-import gblib;
-
-#include "gb/racegen.h"
-
 #include <strings.h>
 #include <unistd.h>
 
 #include <cstdarg>
-#include <cstdio>
+
+import std.compat;
+import gblib;
+
+#include "gb/racegen.h"
 
 static int do_racegen();
 
@@ -437,7 +436,7 @@ static void fix_up_iq() {
  * print out descriptions of the errors; otherwise, error message(s) will be
  * printed to that file.
  */
-int critique_to_file(FILE* f, int rigorous_checking, int is_player_race) {
+int critique_to_file(std::FILE* f, int rigorous_checking, int is_player_race) {
   int i;
   int nerrors = 0;
 
@@ -836,7 +835,7 @@ static void help(int argc, const char* argv[]) {
 
 /*
  * Return non-zero on failure, zero on success. */
-int load_from_file(FILE* g) {
+int load_from_file(std::FILE* g) {
   int i;
   char buf[80];
   char from_address[80];
@@ -1054,7 +1053,7 @@ static int modify(int argc, const char* argv[]) {
   return -1;
 }
 
-void print_to_file(FILE* f, int verbose) {
+void print_to_file(std::FILE* f, int verbose) {
 #define FPRINTF                                                                \
   if (verbose) fprintf
   int i;

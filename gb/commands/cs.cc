@@ -11,23 +11,25 @@ namespace GB::commands {
 void cs(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
-  auto& race = races[Playernum - 1];
 
   // Change to default scope
   if (argv.size() == 1) {
-    g.level = race.governor[Governor].deflevel;
-    if ((g.snum = race.governor[Governor].defsystem) >= Sdata.numstars)
-      g.snum = Sdata.numstars - 1;
-    const auto* star = g.entity_manager.peek_star(g.snum);
-    if (star &&
-        (g.pnum = race.governor[Governor].defplanetnum) >= star->numplanets())
-      g.pnum = star->numplanets() - 1;
+    const auto* universe = g.entity_manager.peek_universe();
+    if (!universe) {
+      g.out << "cs: Universe data not available.\n";
+      return;
+    }
+
+    g.level = g.race->governor[Governor].deflevel;
+    if ((g.snum = g.race->governor[Governor].defsystem) >= universe->numstars)
+      g.snum = universe->numstars - 1;
+    const auto& star = *g.entity_manager.peek_star(g.snum);
+    if ((g.pnum = g.race->governor[Governor].defplanetnum) >= star.numplanets())
+      g.pnum = star.numplanets() - 1;
     g.shipno = 0;
     g.lastx[0] = g.lasty[0] = 0.0;
-    if (star) {
-      g.lastx[1] = star->xpos();
-      g.lasty[1] = star->ypos();
-    }
+    g.lastx[1] = star.xpos();
+    g.lasty[1] = star.ypos();
     return;
   }
 

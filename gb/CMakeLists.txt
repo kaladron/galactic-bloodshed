@@ -144,7 +144,7 @@ add_executable(enrol enrol.cc)
 target_link_libraries(enrol PRIVATE gblib SQLite::SQLite3 glaze::glaze scnlib_module)
 
 add_executable(racegen GB_racegen.cc enroll.cc racegen.cc)
-target_link_libraries(racegen PRIVATE gblib SQLite::SQLite3 glaze::glaze)
+target_link_libraries(racegen PRIVATE gblib dallib SQLite::SQLite3 glaze::glaze)
 
 # Create dallib as a separate library for Data Access Layer
 add_library(dallib)
@@ -169,7 +169,6 @@ target_sources(
          gblib-doship.cppm
          gblib-doturncmd.cppm
          gblib-entitylists.cppm
-         gblib-files_shl.cppm
          gblib-fire.cppm
          gblib-fuel.cppm
          gblib-gameobj.cppm
@@ -203,7 +202,6 @@ target_sources(
           doturncmd.cc
           entitylists.cc
           services/entity_manager.cc
-          files_shl.cc
           fire.cc
           fuel.cc
           load.cc
@@ -505,6 +503,10 @@ add_test(NAME GB_pay_test COMMAND pay_test)
 add_executable(order_test commands/order_test.cc)
 target_link_libraries(order_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_order_test COMMAND order_test)
+
+add_executable(cs_test commands/cs_test.cc)
+target_link_libraries(cs_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_cs_test COMMAND cs_test)
 
 add_executable(orbit_test commands/orbit_test.cc)
 target_link_libraries(orbit_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)

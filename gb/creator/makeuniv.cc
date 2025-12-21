@@ -217,16 +217,21 @@ usage:
   EmptyFile(PLAYERDATAFL);
   EmptyFile(RACEDATAFL);
 
+  // Initialize power and block array for all players
   {
-    struct power p[MAXPLAYERS];
-    bzero((char*)p, sizeof(p));
-    putpower(p);
-  }
+    JsonStore store(db);
+    BlockRepository block_repo(store);
+    PowerRepository power_repo(store);
 
-  {
-    struct block p[MAXPLAYERS];
-    bzero((char*)p, sizeof(p));
-    InitFile(BLOCKDATAFL, p, sizeof(p));
+    for (int i : std::views::iota(0, MAXPLAYERS)) {
+      power p{};
+      p.id = i;
+      power_repo.save(p);
+
+      block b{};
+      b.Playernum = i;
+      block_repo.save(b);
+    }
   }
 
   /*

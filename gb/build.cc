@@ -252,8 +252,8 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
   if (!newship->max_crew())
     g.out << "This ship is robotic, and may not repair itself.\n";
 
-  g.out << std::format("Loaded with {} crew and {:.1f} fuel.\n",
-                       load_crew, load_fuel);
+  g.out << std::format("Loaded with {} crew and {:.1f} fuel.\n", load_crew,
+                       load_fuel);
 }
 
 void create_ship_by_planet(EntityManager& entity_manager, int Playernum,
@@ -279,9 +279,9 @@ void create_ship_by_planet(EntityManager& entity_manager, int Playernum,
   newship.pnumorbits() = pnum;
   newship.docked() = 1;
   planet.info(Playernum - 1).resource -= newship.build_cost();
-  while ((shipno = getdeadship()) == 0)
-    ;
-  if (shipno == -1) shipno = Numships() + 1;
+
+  // Ship number will be assigned by EntityManager when created
+  shipno = entity_manager.num_ships() + 1;
   newship.number() = shipno;
   newship.owner() = Playernum;
   newship.governor() = Governor;
@@ -318,11 +318,8 @@ void create_ship_by_planet(EntityManager& entity_manager, int Playernum,
 void create_ship_by_ship(EntityManager& entity_manager, int Playernum,
                          int Governor, const Race& race, bool outside,
                          Planet* planet, Ship* newship, Ship* builder) {
-  int shipno;
-
-  while ((shipno = getdeadship()) == 0)
-    ;
-  if (shipno == -1) shipno = Numships() + 1;
+  // Ship number will be assigned by EntityManager when created
+  int shipno = entity_manager.num_ships() + 1;
   newship->number() = shipno;
   newship->owner() = Playernum;
   newship->governor() = Governor;

@@ -73,9 +73,9 @@ int main() {
   ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
   ship.storbits() = star_id;
   ship.pnumorbits() = 0;
-  ship.popn() = 0;     // No crew (required for transfer)
-  ship.troops() = 0;   // No troops (required for transfer)
-  ship.ships() = 0;    // No loaded ships (required for transfer)
+  ship.popn() = 0;    // No crew (required for transfer)
+  ship.troops() = 0;  // No troops (required for transfer)
+  ship.ships() = 0;   // No loaded ships (required for transfer)
   ShipRepository ships_repo(store);
   ships_repo.save(ship);
   const shipnum_t ship_id = ship.number();
@@ -100,7 +100,7 @@ int main() {
       const auto& race = race_handle.read();
       std::println("  Player {}: {}", race.Playernum, race.name);
     }
-    
+
     command_t argv = {"give", "Receiver", std::to_string(ship_id)};
     GB::commands::give(argv, g);
 
@@ -109,7 +109,7 @@ int main() {
     if (!result.empty()) {
       std::println("Give command output: {}", result);
     }
-    
+
     // The give command uses notify() which sends to connected clients,
     // not g.out. In tests, we verify success by checking the database.
 
@@ -133,7 +133,7 @@ int main() {
     assert(isset<std::uint64_t>(star_verify->explored(), 2U));
 
     std::println("Give command test passed: Ship ownership transferred");
-    
+
     // Clear output for next test
     g.out.str("");
   }
@@ -155,7 +155,7 @@ int main() {
     ship2.ships() = 0;
     const shipnum_t ship2_id = ship2.number();
     std::println("Ship2 ID: {}", ship2_id);
-    
+
     // Ship is auto-saved when handle goes out of scope
     em.clear_cache();
 
@@ -198,7 +198,7 @@ int main() {
     ship3.troops() = 0;
     ship3.ships() = 0;
     const shipnum_t ship3_id = ship3.number();
-    
+
     // Ship is auto-saved when handle goes out of scope
     em.clear_cache();
 

@@ -28,7 +28,7 @@ void proj_fuel(const command_t& argv, GameObj& g) {
     return;
   }
   auto shipno = string_to_shipnum(argv[1]);
-  if (!shipno || *shipno > Numships() || *shipno < 1) {
+  if (!shipno || *shipno > g.entity_manager.num_ships() || *shipno < 1) {
     g.out << std::format("rst: no such ship #{}\n", *shipno);
     return;
   }

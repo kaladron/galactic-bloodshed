@@ -102,7 +102,7 @@ void insurgency(const command_t& argv, GameObj& g) {
       g.race->morale, Playernum, alien->morale, who, amount,
       p.info(who - 1).popn, p.info(who - 1).tax, chance);
   if (success(chance)) {
-    changed_hands = revolt(p, who, Playernum);
+    changed_hands = revolt(p, g.entity_manager, g.snum, g.pnum, who, Playernum);
     notify(Playernum, Governor, long_msg);
     notify(Playernum, Governor,
            std::format("Success!  You liberate {} sector{}.\n", changed_hands,

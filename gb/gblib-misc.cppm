@@ -60,17 +60,15 @@ public:
 
 export void notify_race(player_t, const std::string&);
 export bool notify(player_t, governor_t, const std::string&);
-export void d_think(player_t, governor_t, const std::string&);
-export void d_broadcast(player_t, governor_t, const std::string&);
+export void d_think(EntityManager&, player_t, governor_t, const std::string&);
+export void d_broadcast(EntityManager&, player_t, governor_t,
+                        const std::string&);
 export void d_shout(player_t, governor_t, const std::string&);
-export void d_announce(player_t, governor_t, starnum_t, const std::string&);
-// Old signature for compatibility during migration
-export void warn_race(player_t, const std::string&);
+export void d_announce(EntityManager&, player_t, governor_t, starnum_t,
+                       const std::string&);
 // New signature using EntityManager
 export void warn_race(EntityManager&, player_t, const std::string&);
 export void warn(player_t, governor_t, const std::string&);
-// Old signature for compatibility during migration
-export void warn_star(player_t, starnum_t, const std::string&);
 // New signature using EntityManager
 export void warn_star(EntityManager&, player_t, starnum_t, const std::string&);
 // Old signature for compatibility during migration

@@ -16,60 +16,6 @@ bool authorized(const governor_t Governor, const Ship& ship) {
 }
 
 /**
- * \brief Get start of ship lists from either a ship number or ScopeLevel
- *
- * start_shiplist and in_list work together so that a user can enter one of:
- * * 1234 - a ship number
- * * #1234 - a ship number prefixed by an octothorpe.
- * * f - a letter representing the type of ship
- * * frd - A sequence of letters representing the type of ship.  Processing
- * stops after first match.
- * * \* - An Asterisk as a wildcard for first match.
- *
- * When a letter or asterisk is given, the shiplist is taken from the current
- * scope.
- *
- * \param g Game object for scope
- * \param p String that might contain ship number
- * \return Ship number at the start of the ship list.
- */
-shipnum_t start_shiplist(GameObj& g, const std::string_view p) {
-  // If a ship number is given, return that.
-  auto s = string_to_shipnum(p);
-  if (s) {
-    return *s;
-  }
-
-  // Ship number not given
-  switch (g.level) {
-    case ScopeLevel::LEVEL_UNIV:
-      getsdata(&Sdata);
-      return Sdata.ships;
-    case ScopeLevel::LEVEL_STAR:
-      stars[g.snum] = getstar(g.snum);
-      return stars[g.snum].ships();
-    case ScopeLevel::LEVEL_PLAN: {
-      const auto planet = getplanet(g.snum, g.pnum);
-      return planet.ships();
-    }
-    case ScopeLevel::LEVEL_SHIP:
-      auto ship = getship(g.shipno);
-      return ship->ships();
-  }
-}
-
-/* Step through linked list at current player scope */
-shipnum_t do_shiplist(Ship** s, shipnum_t* nextshipno) {
-  shipnum_t shipno;
-  if (!(shipno = *nextshipno)) return 0;
-
-  if (!getship(s, shipno)) /* allocate memory, free in loop */
-    return 0;
-  *nextshipno = (*s)->nextship();
-  return shipno;
-}
-
-/**
  * \brief Check is the ship is in the given input string.
  *
  * See start_shiplist's comment for more details.
@@ -112,23 +58,6 @@ bool enufAP(player_t Playernum, governor_t Governor, ap_t have, ap_t needed) {
  * \param govpass Password for the governor
  * \return player and governor numbers, or 0 and 0 if not found
  */
-// Old implementation using global races[] - for compatibility during migration
-std::tuple<player_t, governor_t> getracenum(const std::string& racepass,
-                                            const std::string& govpass) {
-  for (auto race : races) {
-    if (racepass == race.password) {
-      for (governor_t j = 0; j <= MAXGOVERNORS; j++) {
-        if (!race.governor[j].password.empty() &&
-            govpass == race.governor[j].password) {
-          return {race.Playernum, j};
-        }
-      }
-    }
-  }
-  return {0, 0};
-}
-
-// New implementation using EntityManager
 std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
                                             const std::string& racepass,
                                             const std::string& govpass) {
@@ -184,8 +113,9 @@ void allocateAPs(const command_t& argv, GameObj& g) {
     return;
   }
 
-  getsdata(&Sdata);
-  maxalloc = std::min(Sdata.AP[Playernum - 1],
+  auto univ_handle = g.entity_manager.get_universe();
+  auto& univ = *univ_handle;
+  maxalloc = std::min(univ.AP[Playernum - 1],
                       LIMIT_APs - stars[g.snum].AP(Playernum - 1));
   if (alloc > maxalloc) {
     std::string max_msg =
@@ -193,12 +123,10 @@ void allocateAPs(const command_t& argv, GameObj& g) {
     notify(Playernum, Governor, max_msg);
     return;
   }
-  Sdata.AP[Playernum - 1] -= alloc;
-  putsdata(&Sdata);
-  stars[g.snum] = getstar(g.snum);
-  stars[g.snum].AP(Playernum - 1) =
-      std::min(LIMIT_APs, stars[g.snum].AP(Playernum - 1) + alloc);
-  putstar(stars[g.snum], g.snum);
+  univ.AP[Playernum - 1] -= alloc;
+  auto star_handle = g.entity_manager.get_star(g.snum);
+  auto& star = *star_handle;
+  star.AP(Playernum - 1) = std::min(LIMIT_APs, star.AP(Playernum - 1) + alloc);
   std::string allocated_msg = "Allocated\n";
   notify(Playernum, Governor, allocated_msg);
 }
@@ -207,9 +135,9 @@ void deductAPs(const GameObj& g, ap_t APs, ScopeLevel level) {
   if (APs == 0) return;
 
   if (level == ScopeLevel::LEVEL_UNIV) {
-    getsdata(&Sdata);
-    Sdata.AP[g.player - 1] = std::max(0u, Sdata.AP[g.player - 1] - APs);
-    putsdata(&Sdata);
+    auto univ_handle = g.entity_manager.get_universe();
+    auto& univ = *univ_handle;
+    univ.AP[g.player - 1] = std::max(0u, univ.AP[g.player - 1] - APs);
     return;
   }
 }

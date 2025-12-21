@@ -28,16 +28,11 @@ void tax(const command_t& argv, GameObj& g) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  const auto* race = g.entity_manager.peek_race(Playernum);
-  if (!race) {
-    g.out << "Race not found.\n";
-    return;
-  }
-  if (!race->Gov_ship) {
+  if (!g.race->Gov_ship) {
     g.out << "You have no government center active.\n";
     return;
   }
-  if (race->Guest) {
+  if (g.race->Guest) {
     g.out << "Sorry, but you can't do this when you are a guest.\n";
     return;
   }

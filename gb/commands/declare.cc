@@ -30,9 +30,15 @@ void declare(const command_t& argv, GameObj& g) {
     return;
   }
 
-  /* look in sdata for APs first */
+  /* look in universe data for APs first */
+  const auto* universe = g.entity_manager.peek_universe();
+  if (!universe) {
+    g.out << "Universe data not found.\n";
+    return;
+  }
+
   /* enufAPs would print something */
-  if ((int)Sdata.AP[Playernum - 1] >= APcount) {
+  if ((int)universe->AP[Playernum - 1] >= APcount) {
     deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
     /* otherwise use current star */
   } else if ((g.level == ScopeLevel::LEVEL_STAR ||

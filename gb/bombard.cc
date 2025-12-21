@@ -58,7 +58,9 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
     }
   }
 
-  auto smap = getsmap(planet);
+  auto smap_handle =
+      entity_manager.get_sectormap(ship.storbits(), ship.pnumorbits());
+  auto& smap = *smap_handle;
 
   /* look for someone to bombard-check for war */
   bool found = false;
@@ -152,8 +154,6 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
                   ship.number(), ship.name(), ship.owner(), star->get_name(),
                   star->get_planet_name(ship.pnumorbits()));
   post(combatpost, NewsType::COMBAT);
-
-  putsmap(smap, planet);
 
   return numdest;
 }

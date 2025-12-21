@@ -307,7 +307,7 @@ void ShipTacticalItem::add_tactical_target_row(
 
   // Calculate combat parameters using firer's data and target's data
   int body = size(s);
-  auto defense = getdefense(s);
+  auto defense = getdefense(g.entity_manager, s);
   auto [prob, factor] =
       hit_odds(dist, firer.tech, firer.damage, firer.evade, tev, firer.speed,
                tspeed, body, firer.caliber, defense);
@@ -702,7 +702,7 @@ void tactical(const command_t& argv, GameObj& g) {
   // Handle specific ship number(s)
   if (argv.size() >= 2) {
     if (*argv[1].c_str() == '#' || isdigit(*argv[1].c_str())) {
-      shipnum_t n_ships = Numships();
+      shipnum_t n_ships = g.entity_manager.num_ships();
       int l = 1;
       while (l < MAXARGS && *argv[l].c_str() != '\0') {
         shipnum_t shipno;

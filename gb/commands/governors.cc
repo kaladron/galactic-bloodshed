@@ -22,18 +22,21 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
 
   /*  First do stars....  */
 
-  for (starnum_t i = 0; i < Sdata.numstars; i++)
-    if (stars[i].governor(race.Playernum - 1) == src_gov) {
-      stars[i].governor(race.Playernum - 1) = tgt_gov;
-      outmsg =
-          std::format("Changed juridiction of /{0}...\n", stars[i].get_name());
+  const auto& sdata = *entity_manager.peek_universe();
+  for (starnum_t i = 0; i < sdata.numstars; i++) {
+    const auto* star_check = entity_manager.peek_star(i);
+    if (star_check && star_check->governor(race.Playernum - 1) == src_gov) {
+      auto star_handle = entity_manager.get_star(i);
+      auto& star = *star_handle;
+      star.governor(race.Playernum - 1) = tgt_gov;
+      outmsg = std::format("Changed juridiction of /{0}...\n", star.get_name());
       notify(race.Playernum, 0, outmsg);
-      putstar(stars[i], i);
     }
+  }
 
   /*  Now do ships....  */
-  Num_ships = Numships();
-  for (shipnum_t i = 1; i <= Num_ships; i++) {
+  auto num_ships = entity_manager.num_ships();
+  for (shipnum_t i = 1; i <= num_ships; i++) {
     auto ship = entity_manager.get_ship(i);
     if (!ship.get()) continue;
     if (ship->alive() && (ship->owner() == race.Playernum) &&

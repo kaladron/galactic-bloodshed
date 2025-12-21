@@ -40,9 +40,6 @@ int main() {
   sdata.numstars = 0;
   universe_repo.save(sdata);
 
-  // Initialize global Sdata
-  getsdata(&Sdata);
-
   // Create GameObj for command execution
   GameObj g(em);
   g.player = 1;

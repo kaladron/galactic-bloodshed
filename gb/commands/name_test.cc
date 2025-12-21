@@ -33,6 +33,7 @@ void test_name_ship_persistence() {
   g.governor = 0;
   g.level = ScopeLevel::LEVEL_SHIP;
   g.shipno = 1;
+  g.race = em.peek_race(g.player);  // Set race pointer like production does
 
   // TEST: Rename ship
   std::println("  Testing: Rename ship to 'USS Enterprise'");
@@ -77,6 +78,7 @@ void test_name_race_persistence() {
   g.player = 1;
   g.governor = 0;  // Must be leader (governor 0)
   g.level = ScopeLevel::LEVEL_UNIV;
+  g.race = em.peek_race(g.player);  // Set race pointer like production does
 
   // TEST: Rename race
   std::println("  Testing: Rename race to 'Klingons'");
@@ -126,6 +128,7 @@ void test_name_star_persistence() {
   g.governor = 0;
   g.level = ScopeLevel::LEVEL_STAR;
   g.snum = 1;
+  g.race = em.peek_race(g.player);  // Set race pointer like production does
 
   // TEST: Rename star
   std::println("  Testing: Rename star to 'Alpha Centauri'");
@@ -177,6 +180,7 @@ void test_name_planet_persistence() {
   g.level = ScopeLevel::LEVEL_PLAN;
   g.snum = 1;
   g.pnum = 0;
+  g.race = em.peek_race(g.player);  // Set race pointer like production does
 
   // TEST: Rename planet
   std::println("  Testing: Rename planet to 'New Earth'");

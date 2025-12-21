@@ -119,35 +119,12 @@ long repair(const Ship& s) {
   return (s.type() == ShipType::OTYPE_FACTORY) ? s.on() : max_crew(s);
 }
 
-Shiplist::Iterator::Iterator(shipnum_t a) {
-  auto tmpship = getship(a);
-  if (tmpship) {
-    elem_data = tmpship->get_struct();
-    elem_ship = Ship(elem_data);
-  } else {
-    elem_data = ship_struct{};
-    elem_data.number = 0;
-    elem_ship = Ship(elem_data);
-  }
-}
-
-Shiplist::Iterator& Shiplist::Iterator::operator++() {
-  auto tmpship = getship(elem_ship.nextship());
-  if (tmpship) {
-    elem_data = tmpship->get_struct();
-    elem_ship = Ship(elem_data);
-  } else {
-    elem_data = ship_struct{};
-    elem_data.number = 0;
-    elem_ship = Ship(elem_data);
-  }
-  return *this;
-}
-
-int getdefense(const Ship& ship) {
+int getdefense(EntityManager& em, const Ship& ship) {
   if (landed(ship)) {
-    const auto p = getplanet(ship.storbits(), ship.pnumorbits());
-    const auto sect = getsector(p, ship.land_x(), ship.land_y());
+    const auto& p = *em.peek_planet(ship.storbits(), ship.pnumorbits());
+    const auto* smap = em.peek_sectormap(ship.storbits(), ship.pnumorbits());
+    if (!smap) return 0;
+    const auto& sect = smap->get(ship.land_x(), ship.land_y());
     return (2 * Defensedata[sect.get_condition()]);
   }
   // No defense
@@ -272,7 +249,9 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
   if (!s.merchant() || !p.info(i).route[j].set) /* not on shipping route */
     return 0;
   /* check to see if the sector is owned by the player */
-  auto sect = getsector(p, p.info(i).route[j].x, p.info(i).route[j].y);
+  const auto* smap = em.peek_sectormap(s.storbits(), s.pnumorbits());
+  if (!smap) return 0;
+  const auto& sect = smap->get(p.info(i).route[j].x, p.info(i).route[j].y);
   if (sect.get_owner() && (sect.get_owner() != s.owner())) {
     return 0;
   }
@@ -544,7 +523,7 @@ std::string prin_ship_orbits(EntityManager& em, const Ship& s) {
       }
       return "/";
     case ScopeLevel::LEVEL_SHIP:
-      if (auto mothership = getship(s.destshipno()); mothership) {
+      if (const auto* mothership = em.peek_ship(s.destshipno())) {
         return prin_ship_orbits(em, *mothership);
       } else {
         return "/";

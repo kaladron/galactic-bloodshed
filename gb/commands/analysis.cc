@@ -79,7 +79,6 @@ void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
       PlaySect[p][i] = 0;
   }
 
-  auto& race = races[Playernum - 1];
   auto planet_handle = g.entity_manager.get_planet(Starnum, Planetnum);
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
@@ -93,7 +92,8 @@ void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
 
   auto TotalSect = planet.Maxx() * planet.Maxy();
 
-  for (auto smap = getsmap(planet); auto& sect : smap) {
+  const auto& smap = *g.entity_manager.peek_sectormap(Starnum, Planetnum);
+  for (auto& sect : smap) {
     auto p = sect.get_owner();
 
     PlayEff[p] += sect.get_eff();
@@ -113,7 +113,7 @@ void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
     if (sect.is_wasted()) {
       WastedSect[p]++;
     }
-    if (sect.get_crystals() && race.tech >= TECH_CRYSTAL) {
+    if (sect.get_crystals() && g.race->tech >= TECH_CRYSTAL) {
       PlayCrys[p]++;
       TotalCrys++;
     }
@@ -150,12 +150,13 @@ void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
                 .y = sect.get_y(),
                 .des = sect.get_condition(),
                 .value = sect.get_troops()});
-        insert(mode, mPopn,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = maxsupport(race, sect, planet.compatibility(race),
-                                    planet.conditions(TOXIC))});
+        insert(
+            mode, mPopn,
+            {.x = sect.get_x(),
+             .y = sect.get_y(),
+             .des = sect.get_condition(),
+             .value = maxsupport(*g.race, sect, planet.compatibility(*g.race),
+                                 planet.conditions(TOXIC))});
       }
     }
   }

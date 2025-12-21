@@ -49,7 +49,7 @@ int main() {
   planet.ypos() = 0.0;
   planet.info(0).resource = 10000;  // Plenty of resources
   planet.info(0).fuel = 1000;
-  
+
   PlanetRepository planets_repo(store);
   planets_repo.save(planet);
 
@@ -111,7 +111,8 @@ int main() {
   }
 
   {
-    command_t argv = {"build", ":", "5,5", "1"};  // Try to build probe with no resources
+    command_t argv = {"build", ":", "5,5",
+                      "1"};  // Try to build probe with no resources
     GB::commands::build(argv, g);
 
     // The build command should fail due to insufficient resources.

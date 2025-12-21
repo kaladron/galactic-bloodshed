@@ -13,7 +13,7 @@ void victory(const command_t& argv, GameObj& g) {
   int count = (argv.size() > 1) ? std::stoi(argv[1]) : Num_races;
   count = std::min<player_t>(count, Num_races);
 
-  auto viclist = create_victory_list();
+  auto viclist = create_victory_list(g.entity_manager);
 
   // Create table
   tabulate::Table table;

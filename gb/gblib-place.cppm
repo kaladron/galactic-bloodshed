@@ -2,7 +2,6 @@
 
 export module gblib:place;
 
-import :files_shl;
 import :gameobj;
 import :globals;
 import :services;
@@ -13,7 +12,8 @@ export class Place { /* used in function return for finding place */
 public:
   Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_,
         shipnum_t shipno_)
-      : level(level_), snum(snum_), pnum(pnum_), shipno(shipno_) {}
+      : level(level_), snum(snum_), pnum(pnum_), shipno(shipno_),
+        entity_manager(nullptr) {}
 
   Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_);
 
@@ -26,6 +26,8 @@ public:
   std::string to_string();
 
 private:
+  EntityManager*
+      entity_manager;  // For accessing star/planet names in to_string()
   void getplace2(GameObj& g, std::string_view string, const bool ignoreexpl);
 };
 
@@ -75,26 +77,42 @@ void Place::getplace2(GameObj& g, std::string_view string,
   } while (!string.starts_with('/') && !string.empty());
 
   switch (level) {
-    case ScopeLevel::LEVEL_UNIV:
-      for (auto i = 0; i < Sdata.numstars; i++)
-        if (substr == stars[i].get_name()) {
+    case ScopeLevel::LEVEL_UNIV: {
+      const auto* universe = g.entity_manager.peek_universe();
+      if (!universe) {
+        g.out << "Universe data not available.\n";
+        err = true;
+        return;
+      }
+      for (auto i = 0; i < universe->numstars; i++) {
+        const auto* star = g.entity_manager.peek_star(i);
+        if (!star) continue;
+        if (substr == star->get_name()) {
           level = ScopeLevel::LEVEL_STAR;
           snum = i;
-          if (ignoreexpl || isset(stars[snum].explored(), Playernum) || g.god) {
+          if (ignoreexpl || isset(star->explored(), Playernum) || g.god) {
             if (string.starts_with('/')) string.remove_prefix(1);
             return getplace2(g, string, ignoreexpl);
           }
           g.out << std::format("You have not explored {0} yet.\n",
-                               stars[snum].get_name());
+                               star->get_name());
           err = true;
           return;
         }
+      }
       g.out << std::format("No such star {0}.\n", substr.data());
       err = true;
       return;
-    case ScopeLevel::LEVEL_STAR:
-      for (auto i = 0; i < stars[snum].numplanets(); i++)
-        if (substr == stars[snum].get_planet_name(i)) {
+    }
+    case ScopeLevel::LEVEL_STAR: {
+      const auto* star = g.entity_manager.peek_star(snum);
+      if (!star) {
+        g.out << "Star not found.\n";
+        err = true;
+        return;
+      }
+      for (auto i = 0; i < star->numplanets(); i++)
+        if (substr == star->get_planet_name(i)) {
           level = ScopeLevel::LEVEL_PLAN;
           pnum = i;
           const auto* p = g.entity_manager.peek_planet(snum, i);
@@ -108,13 +126,14 @@ void Place::getplace2(GameObj& g, std::string_view string,
             return getplace2(g, string, ignoreexpl);
           }
           g.out << std::format("You have not explored {0} yet.\n",
-                               stars[snum].get_planet_name(i));
+                               star->get_planet_name(i));
           err = true;
           return;
         }
       g.out << std::format("No such planet {0}.\n", substr.data());
       err = true;
       return;
+    }
     default:
       g.out << std::format("Can't descend to {0}.\n", substr.data());
       err = true;
@@ -131,12 +150,21 @@ std::string Place::to_string() {
   std::ostringstream out;
   switch (level) {
     case ScopeLevel::LEVEL_STAR:
-      out << "/" << stars[snum].get_name();
+      if (entity_manager) {
+        const auto* star = entity_manager->peek_star(snum);
+        if (star) {
+          out << "/" << star->get_name();
+        }
+      }
       out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_PLAN:
-      out << "/" << stars[snum].get_name() << "/"
-          << stars[snum].get_planet_name(pnum);
+      if (entity_manager) {
+        const auto* star = entity_manager->peek_star(snum);
+        if (star) {
+          out << "/" << star->get_name() << "/" << star->get_planet_name(pnum);
+        }
+      }
       out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_SHIP:
@@ -151,7 +179,8 @@ std::string Place::to_string() {
 }
 
 Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
-    : level(g.level), snum(g.snum), pnum(g.pnum) {
+    : level(g.level), snum(g.snum), pnum(g.pnum),
+      entity_manager(&g.entity_manager) {
   const player_t Playernum = g.player;
   const governor_t Governor = g.governor;
 

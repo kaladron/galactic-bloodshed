@@ -168,7 +168,7 @@ void send_message(const command_t& argv, GameObj& g) {
         "{} \"{}\" [{},{}] sends a stargram to {}.\n", race.name,
         race.governor[Governor].name, Playernum, Governor, star_ref.get_name());
     notify_star(Playernum, Governor, star, star_msg);
-    warn_star(Playernum, star, msg);
+    warn_star(g.entity_manager, Playernum, star, msg);
   } else {
     int gov;
     if (who == Playernum) APcount = 0;

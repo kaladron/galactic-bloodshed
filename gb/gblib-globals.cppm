@@ -13,8 +13,6 @@ import :star;
 import :types;
 import :universe;
 
-export std::vector<Race> races;
-
 export universe_struct Sdata;
 
 export std::array<char, MAXPLAYERS> Nuked;

@@ -14,7 +14,6 @@ export import :dosector;
 export import :doship;
 export import :doturncmd;
 export import :entitylists;
-export import :files_shl;
 export import :fire;
 export import :fuel;
 export import :gameobj;
@@ -66,7 +65,7 @@ export bool Crystals(int x) {
   return x & M_CRYSTALS;
 };
 
-export std::vector<Victory> create_victory_list();
+export std::vector<Victory> create_victory_list(EntityManager&);
 
 export constexpr auto maxsupport(const Race& r, const Sector& s, const double c,
                                  const int toxic) {

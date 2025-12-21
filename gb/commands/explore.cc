@@ -30,14 +30,13 @@ void explore(const command_t& argv, GameObj& g) {
     starq = where.snum;
   }
 
-  auto& race = races[Playernum - 1];
-
-  getsdata(&Sdata);
+  // TODO(jeffbailey): Use tabulate here.
+  const auto& sdata = *g.entity_manager.peek_universe();
   notify(Playernum, Governor,
          "         ========== Exploration Report ==========\n");
   notify(
       Playernum, Governor,
-      std::format(" Global action points : [{:2}]\n", Sdata.AP[Playernum - 1]));
+      std::format(" Global action points : [{:2}]\n", sdata.AP[Playernum - 1]));
   notify(
       Playernum, Governor,
       " Star  (stability)[AP]   #  Planet [Attributes] Type (Compatibility)\n");
@@ -50,7 +49,7 @@ void explore(const command_t& argv, GameObj& g) {
           const auto& pl = *g.entity_manager.peek_planet(star, i);
 
           if (i == 0) {
-            if (race.tech >= TECH_SEE_STABILITY) {
+            if (g.race->tech >= TECH_SEE_STABILITY) {
               notify(Playernum, Governor,
                      std::format("\n{:13} ({:2})[{:2}]\n", star_ref.get_name(),
                                  star_ref.stability(),
@@ -87,7 +86,7 @@ void explore(const command_t& argv, GameObj& g) {
             }
             notify(Playernum, Governor,
                    std::format("] {} {:2.0f}%\n", Planet_types[pl.type()],
-                               pl.compatibility(race)));
+                               pl.compatibility(*g.race)));
           } else {
             notify(Playernum, Governor, "No Data ]\n");
           }

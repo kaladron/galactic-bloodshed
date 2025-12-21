@@ -8,6 +8,9 @@ import :types;
 import :tweakables;
 import std;
 
+// Forward declaration to avoid circular dependency with :services
+export class EntityManager;
+
 // Merchant shipping route parameters
 export struct plroute {
   unsigned char set = 0;          // does the planet have orders?
@@ -291,6 +294,7 @@ ap_t Planet::get_points() const {
   }
 }
 
-export int revolt(Planet& pl, player_t victim, player_t agent);
+export int revolt(Planet& p, EntityManager& entity_manager, starnum_t star,
+                  planetnum_t pnum, player_t victim, player_t agent);
 
 export bool adjacent(const Planet&, Coordinates from, Coordinates to);

@@ -109,10 +109,11 @@ void post(std::string msg, NewsType type) {
  * \param recipient Race to receive
  * \param msg Message they will receive
  */
-void push_telegram_race(EntityManager& em, const player_t recipient, std::string_view msg) {
+void push_telegram_race(EntityManager& em, const player_t recipient,
+                        std::string_view msg) {
   const auto* race = em.peek_race(recipient);
   if (!race) return;
-  
+
   for (governor_t j = 0; j <= MAXGOVERNORS; j++)
     if (race->governor[j].active) push_telegram(recipient, j, msg);
 }

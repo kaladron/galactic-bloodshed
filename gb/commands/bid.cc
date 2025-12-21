@@ -71,8 +71,8 @@ void list_all_commodities(GameObj& g) {
 
   tabulate::Table table = create_commodity_table();
 
-  for (const auto* c : CommodList(g.entity_manager)) {
-    add_commodity_row(table, c, g);
+  for (auto c_handle : CommodList(g.entity_manager)) {
+    add_commodity_row(table, &c_handle.read(), g);
   }
 
   g.out << table << "\n";
@@ -104,9 +104,10 @@ void list_commodities_by_type(const command_t& argv, GameObj& g) {
 
   tabulate::Table table = create_commodity_table();
 
-  for (const auto* c : CommodList(g.entity_manager)) {
-    if (c->type != item) continue;
-    add_commodity_row(table, c, g);
+  for (auto c_handle : CommodList(g.entity_manager)) {
+    const auto& c = c_handle.read();
+    if (c.type != item) continue;
+    add_commodity_row(table, &c, g);
   }
 
   g.out << table << "\n";

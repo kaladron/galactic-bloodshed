@@ -96,8 +96,13 @@ void orbit(const command_t& argv, GameObj& g) {
   const Race& Race = *race_ptr;
 
   switch (where->level) {
-    case ScopeLevel::LEVEL_UNIV:
-      for (starnum_t i = 0; i < Sdata.numstars; i++)
+    case ScopeLevel::LEVEL_UNIV: {
+      const auto* universe = g.entity_manager.peek_universe();
+      if (!universe) {
+        g.out << "Universe data not available.\n";
+        return;
+      }
+      for (starnum_t i = 0; i < universe->numstars; i++)
         if (DontDispNum != i) {
           const auto* star_ptr = g.entity_manager.peek_star(i);
           if (!star_ptr) continue;
@@ -106,7 +111,7 @@ void orbit(const command_t& argv, GameObj& g) {
           strcat(output, star.c_str());
         }
       if (!DontDispShips) {
-        ShipList ships(g.entity_manager, Sdata.ships);
+        ShipList ships(g.entity_manager, universe->ships);
         char shipbuf[256];
         for (auto ship_handle : ships) {
           const Ship& s = ship_handle.peek();  // Read-only access
@@ -118,6 +123,7 @@ void orbit(const command_t& argv, GameObj& g) {
         }
       }
       break;
+    }
     case ScopeLevel::LEVEL_STAR: {
       const auto* star_ptr = g.entity_manager.peek_star(where->snum);
       if (!star_ptr) {

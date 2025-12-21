@@ -28,7 +28,8 @@ int main() {
   // Create test star
   star_struct ss{};
   ss.star_id = 0;
-  ss.pnames.emplace_back("TestPlanet");  // numplanets is derived from pnames.size()
+  ss.pnames.emplace_back(
+      "TestPlanet");  // numplanets is derived from pnames.size()
   ss.xpos = 100.0;
   ss.ypos = 200.0;
   Star star(ss);
@@ -55,7 +56,7 @@ int main() {
   ship.number() = 1;
   ship.owner() = 1;
   ship.governor() = 0;
-  ship.alive() = true;  // CRITICAL: Ship must be alive
+  ship.alive() = true;   // CRITICAL: Ship must be alive
   ship.active() = true;  // CRITICAL: Ship must be active
   ship.type() = ShipType::STYPE_SHUTTLE;
   ship.max_speed() = 5;  // CRITICAL: Ship needs speed_rating to be launchable
@@ -100,7 +101,8 @@ int main() {
   const auto* launched_ship = em.peek_ship(1);
   assert(launched_ship);
   std::println("Ship docked status: {}", launched_ship->docked());
-  std::println("Ship whatdest: {}", static_cast<int>(launched_ship->whatdest()));
+  std::println("Ship whatdest: {}",
+               static_cast<int>(launched_ship->whatdest()));
   assert(launched_ship->docked() == 0);
   assert(launched_ship->whatdest() == ScopeLevel::LEVEL_UNIV);
   assert(launched_ship->fuel() < 1000.0);  // Fuel consumed

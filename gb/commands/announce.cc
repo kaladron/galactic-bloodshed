@@ -72,22 +72,22 @@ void announce(const command_t& argv, GameObj& g) {
       }
   }
 
-  std::string msg = std::format("{} \"{}\" [{},{}] {} {}\n", race->name,
-                                race->governor[Governor].name, Playernum,
+  std::string msg = std::format("{} \"{}\" [{},{}] {} {}\n", g.race->name,
+                                g.race->governor[Governor].name, Playernum,
                                 Governor, std::to_underlying(mode), message);
 
   switch (mode) {
     case Communicate::ANN:
-      d_announce(Playernum, Governor, g.snum, msg);
+      d_announce(g.entity_manager, Playernum, Governor, g.snum, msg);
       break;
     case Communicate::BROADCAST:
-      d_broadcast(Playernum, Governor, msg);
+      d_broadcast(g.entity_manager, Playernum, Governor, msg);
       break;
     case Communicate::SHOUT:
       d_shout(Playernum, Governor, msg);
       break;
     case Communicate::THINK:
-      d_think(Playernum, Governor, msg);
+      d_think(g.entity_manager, Playernum, Governor, msg);
       break;
     case Communicate::UNKNOWN:  // Impossible
       break;

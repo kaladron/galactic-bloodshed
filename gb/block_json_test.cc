@@ -43,17 +43,28 @@ int main() {
   test_blocks[1].VPs = 800;
   test_blocks[1].money = 30000;
 
-  // Initialize remaining blocks to empty
+  // Initialize remaining blocks to empty (but with Player num set!)
   for (int i = 2; i < MAXPLAYERS; i++) {
     test_blocks[i] = block{};
+    test_blocks[i].Playernum = i + 1;  // CRITICAL: Set Playernum for ID
   }
 
-  // Test Putblock - stores in SQLite as JSON
-  Putblock(test_blocks);
+  // Test EntityManager - stores and retrieves block data
+  // First save using repository
+  JsonStore store(db);
+  BlockRepository block_repo(store);
+  for (int i = 0; i < MAXPLAYERS; i++) {
+    block_repo.save(test_blocks[i]);
+  }
 
-  // Test Getblock - reads from SQLite
+  // Now use EntityManager to retrieve and verify
+  EntityManager em(db);
   block retrieved_blocks[MAXPLAYERS];
-  Getblock(retrieved_blocks);
+  for (int i = 0; i < MAXPLAYERS; i++) {
+    const auto* block_ptr = em.peek_block(i + 1);
+    assert(block_ptr);  // Should exist now
+    retrieved_blocks[i] = *block_ptr;
+  }
 
   // Verify key fields for first player
   assert(retrieved_blocks[0].Playernum == test_blocks[0].Playernum);

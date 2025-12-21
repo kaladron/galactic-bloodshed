@@ -750,6 +750,9 @@ public:
   bool save(const Commod& commod) {
     return Repository<Commod>::save(commod.id, commod);
   }
+  void delete_commod(int id) {
+    store.remove(table_name, id);
+  }
 
 protected:
   std::optional<std::string> serialize(const Commod& commod) const override {

@@ -185,11 +185,11 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   defense = Defensedata[sect.get_condition()];
   auto temp_popn = sect.get_popn();
   auto temp_troops = sect.get_troops();
-  ground_attack(race, alien, &people, what, &temp_popn, &temp_troops,
-                (int)ship->armor(), defense,
+  ground_attack(race_handle.read(), alien_handle.read(), &people, what,
+                &temp_popn, &temp_troops, (int)ship->armor(), defense,
                 1.0 - (double)ship->damage() / 100.0,
-                alien.likes[sect.get_condition()], &astrength, &dstrength,
-                &casualties, &casualties2, &casualties3);
+                alien_handle.read().likes[sect.get_condition()], &astrength,
+                &dstrength, &casualties, &casualties2, &casualties3);
   sect.set_popn(temp_popn);
   sect.set_troops(temp_troops);
   notify(

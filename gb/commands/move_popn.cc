@@ -187,10 +187,12 @@ void move_popn(const command_t& argv, GameObj& g) {
       auto sect2_popn = sect2.get_popn();
       auto sect2_troops = sect2.get_troops();
       ground_attack(
-          race, alien, &people, what, &sect2_popn, &sect2_troops,
-          Defensedata[sect.get_condition()], Defensedata[sect2.get_condition()],
-          race.likes[sect.get_condition()], alien.likes[sect2.get_condition()],
-          &astrength, &dstrength, &casualties, &casualties2, &casualties3);
+          race_handle.read(), alien_handle.read(), &people, what, &sect2_popn,
+          &sect2_troops, Defensedata[sect.get_condition()],
+          Defensedata[sect2.get_condition()],
+          race_handle.read().likes[sect.get_condition()],
+          alien_handle.read().likes[sect2.get_condition()], &astrength,
+          &dstrength, &casualties, &casualties2, &casualties3);
 
       sect2.set_popn(sect2_popn);
       sect2.set_troops(sect2_troops);

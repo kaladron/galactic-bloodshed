@@ -56,16 +56,12 @@ void power(const command_t& argv, GameObj& g) {
     }
   }
 
-  const auto* race = g.entity_manager.peek_race(Playernum);
-  if (!race) {
-    g.out << "Race data not found.\n";
-    return;
-  }
+  const auto* race = g.race;  // Use pre-populated race from GameObj
 
   g.out << std::format(
       "         ========== Galactic Bloodshed Power Report ==========\n");
 
-  if (race->God)
+  if (g.race->God)
     g.out << std::format(
         "{}  #  Name               VP  mil  civ cash ship pl  res fuel dest "
         "morl VNs\n",
@@ -77,7 +73,7 @@ void power(const command_t& argv, GameObj& g) {
         argv.size() < 2 ? "rank" : "");
 
   if (argv.size() < 2) {
-    auto vicvec = create_victory_list();
+    auto vicvec = create_victory_list(g.entity_manager);
     int rank = 0;
     for (const auto& vic : vicvec) {
       rank++;

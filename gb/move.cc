@@ -86,7 +86,6 @@ void mech_defend(const GameObj& g, int* people, PopulationType type,
   // Use g.race for read-only access, get mutable handle only when needed
   auto race_handle = g.entity_manager.get_race(g.player);
   if (!race_handle.get()) return;
-  auto& race = *race_handle;
 
   ShipList shiplist(g.entity_manager, p.ships());
   for (auto ship_handle : shiplist) {
@@ -95,21 +94,22 @@ void mech_defend(const GameObj& g, int* people, PopulationType type,
     if (ship.owner() != g.player && ship.type() == ShipType::OTYPE_AFV &&
         landed(ship) && retal_strength(ship) && (ship.land_x() == x2) &&
         (ship.land_y() == y2)) {
-      auto& alien = races[ship.owner() - 1];
+      const auto* alien_ptr = g.entity_manager.peek_race(ship.owner());
+      if (!alien_ptr) continue;
       if (!isset(g.race->allied, ship.owner()) ||
-          !isset(alien.allied, g.player)) {
+          !isset(alien_ptr->allied, g.player)) {
         while ((civ + mil) > 0 && retal_strength(ship)) {
-          oldgov = stars[ship.storbits()].governor(alien.Playernum - 1);
+          oldgov = stars[ship.storbits()].governor(alien_ptr->Playernum - 1);
           char long_buf[1024], short_buf[256];
-          mech_attack_people(g.entity_manager, ship, &civ, &mil, alien, race,
-                             s2, true, long_buf, short_buf);
+          mech_attack_people(g.entity_manager, ship, &civ, &mil, *alien_ptr,
+                             *g.race, s2, true, long_buf, short_buf);
           notify(g.player, g.governor, long_buf);
-          warn(alien.Playernum, oldgov, long_buf);
+          warn(alien_ptr->Playernum, oldgov, long_buf);
           if (civ + mil) {
-            people_attack_mech(g.entity_manager, ship, civ, mil, race, alien,
-                               s2, x2, y2, long_buf, short_buf);
+            people_attack_mech(g.entity_manager, ship, civ, mil, *g.race,
+                               *alien_ptr, s2, x2, y2, long_buf, short_buf);
             notify(g.player, g.governor, long_buf);
-            warn(alien.Playernum, oldgov, long_buf);
+            warn(alien_ptr->Playernum, oldgov, long_buf);
           }
         }
       }
@@ -119,7 +119,7 @@ void mech_defend(const GameObj& g, int* people, PopulationType type,
 }
 
 void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
-                        population_t* mil, Race& race, Race& alien,
+                        population_t* mil, const Race& race, const Race& alien,
                         const Sector& sect, bool ignore, char* long_msg,
                         char* short_msg) {
   auto oldciv = *civ;
@@ -172,8 +172,8 @@ void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
 }
 
 void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
-                        Race& race, Race& alien, const Sector& sect, int x,
-                        int y, char* long_msg, char* short_msg) {
+                        const Race& race, const Race& alien, const Sector& sect,
+                        int x, int y, char* long_msg, char* short_msg) {
   int strength;
   double astrength;
   double dstrength;
@@ -224,11 +224,11 @@ void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
   strcat(long_msg, casualties_msg.c_str());
 }
 
-void ground_attack(Race& race, Race& alien, int* people, PopulationType what,
-                   population_t* civ, population_t* mil, unsigned int def1,
-                   unsigned int def2, double alikes, double dlikes,
-                   double* astrength, double* dstrength, int* casualties,
-                   int* casualties2, int* casualties3) {
+void ground_attack(const Race& race, const Race& alien, int* people,
+                   PopulationType what, population_t* civ, population_t* mil,
+                   unsigned int def1, unsigned int def2, double alikes,
+                   double dlikes, double* astrength, double* dstrength,
+                   int* casualties, int* casualties2, int* casualties3) {
   int casualty_scale;
 
   *astrength = (double)(*people * race.fighters *

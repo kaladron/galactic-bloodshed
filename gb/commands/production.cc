@@ -57,10 +57,10 @@ void production(const command_t& argv, GameObj& g) {
          "  Planet     gov    tech deposit  x   res  "
          "des  fuel    tax   tox  est prod\n");
 
-  getsdata(&Sdata);
+  const auto& sdata = *g.entity_manager.peek_universe();
 
   if (argv.size() < 2)
-    for (starnum_t star = 0; star < Sdata.numstars; star++)
+    for (starnum_t star = 0; star < sdata.numstars; star++)
       production_at_star(g, star);
   else
     for (int i = 1; i < argv.size(); i++) {

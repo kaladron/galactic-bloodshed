@@ -489,7 +489,7 @@ void rst(const command_t& argv, GameObj& g) {
     ctx.flags = it->second;
   }
 
-  shipnum_t n_ships = Numships();
+  shipnum_t n_ships = g.entity_manager.num_ships();
 
   if (argv.size() >= 2) {
     if (*argv[1].c_str() == '#' || isdigit(*argv[1].c_str())) {

@@ -46,20 +46,13 @@ void page(const command_t& argv, GameObj& g) {
       g.out << "You can't make pages at universal scope.\n";
       break;
     default:
-      stars[g.snum] = getstar(g.snum);
-      if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1),
-                  APcount)) {
-        return;
-      }
-
-      const auto* race = g.entity_manager.peek_race(Playernum);
-      if (!race) {
-        g.out << "Race data not found.\n";
+      const auto& star = *g.entity_manager.peek_star(g.snum);
+      if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
         return;
       }
 
       auto msg = std::format("{} \"{}\" page(s) you from the {} star system.\n",
-                             race->name, race->governor[Governor].name,
+                             g.race->name, g.race->governor[Governor].name,
                              stars[g.snum].get_name());
 
       if (to_block) {

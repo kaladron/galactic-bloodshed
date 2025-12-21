@@ -66,7 +66,8 @@ int main() {
   ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
   ship.storbits() = 0;
   ship.pnumorbits() = 0;
-  ship.whatdest() = ScopeLevel::LEVEL_PLAN;  // Important: must be PLAN for planet loading
+  ship.whatdest() =
+      ScopeLevel::LEVEL_PLAN;  // Important: must be PLAN for planet loading
   ship.deststar() = 0;
   ship.destpnum() = 0;
   ship.land_x() = 5;
@@ -162,6 +163,7 @@ int main() {
   }
 
   std::println("\n✅ All load command tests passed!");
-  std::println("The load command correctly transfers cargo and persists changes via EntityManager.");
+  std::println("The load command correctly transfers cargo and persists "
+               "changes via EntityManager.");
   return 0;
 }

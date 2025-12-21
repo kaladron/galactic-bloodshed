@@ -16,6 +16,15 @@ int main() {
   EntityManager em(db);
   JsonStore store(db);
 
+  // Create universe with 1 star
+  universe_struct us{};
+  us.id = 1;  // Universe is a singleton with ID 1
+  us.numstars = 1;
+  us.ships = 0;  // No ships at universe level
+
+  UniverseRepository universe_repo(store);
+  universe_repo.save(us);
+
   // Create test race
   Race race{};
   race.Playernum = 1;
@@ -214,6 +223,31 @@ int main() {
 
     // This should fall through to orbit display
     std::println("    ✓ Map at universe level falls back to orbit");
+  }
+
+  std::println("Test 6: Map at universe level with no universe (edge case)");
+  {
+    // Create a new EntityManager with no universe
+    Database db2(":memory:");
+    initialize_schema(db2);
+    EntityManager em2(db2);
+
+    // Create race but no universe
+    JsonStore store2(db2);
+    RaceRepository races2(store2);
+    races2.save(race);
+
+    GameObj g2(em2);
+    g2.player = 1;
+    g2.governor = 0;
+    g2.race = em2.peek_race(1);
+    g2.level = ScopeLevel::LEVEL_UNIV;
+
+    command_t argv = {"map"};
+    GB::commands::map(argv, g2);
+
+    // Should have printed error and not crashed
+    std::println("    ✓ Handled missing universe gracefully");
   }
 
   std::println("\n✅ All map tests passed!");

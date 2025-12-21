@@ -19,7 +19,7 @@ int main() {
   race.Guest = false;
   race.governor[0].active = true;
   race.governor[0].toggle.highlight = true;
-  
+
   JsonStore store(db);
   RaceRepository races(store);
   races.save(race);
@@ -38,7 +38,7 @@ int main() {
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
-  
+
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
@@ -49,7 +49,7 @@ int main() {
     smap.get(5, 5).set_popn(100);
     smap.get(5, 5).set_owner(2);  // Owned by race 2
     smap.get(5, 5).set_troops(10);
-    
+
     SectorRepository smap_repo(store);
     smap_repo.save_map(smap);
   }
@@ -72,7 +72,7 @@ int main() {
   attacker.ypos = 200.0;
   attacker.mass = 100.0;
   attacker.build_cost = 100;
-  
+
   auto attacker_handle = em.create_ship(attacker);
   attacker_handle.save();
 
@@ -96,18 +96,19 @@ int main() {
   command_t argv = {"bombard", "#1", "5,5", "10"};
   GB::commands::bombard(argv, g);
 
-  // Verify ship and planet still exist in database (persisted via EntityManager)
+  // Verify ship and planet still exist in database (persisted via
+  // EntityManager)
   const auto* ship = em.peek_ship(1);
   assert(ship);
   assert(ship->number() == 1);
-  
+
   const auto* planet_after = em.peek_planet(0, 0);
   assert(planet_after);
-  
+
   // Verify sector map persisted
   const auto* smap_after = em.peek_sectormap(0, 0);
   assert(smap_after);
-  
+
   // Test passed - command executed and data persisted via RAII
   std::println("bombard_test.cc: All assertions passed!");
   return 0;

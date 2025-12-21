@@ -52,11 +52,12 @@ returns tech_report_star(GameObj& g, const Star& star, starnum_t snum) {
 }
 }  // namespace
 
+// FIXME(jeffbailey): Use tabulate here.
 namespace GB::commands {
 void tech_status(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player;
 
-  getsdata(&Sdata);
+  const auto& sdata = *g.entity_manager.peek_universe();
 
   g.out << std::format(
       "             ========== Technology Report ==========\n\n");
@@ -66,7 +67,7 @@ void tech_status(const command_t& argv, GameObj& g) {
 
   returns totals{};
   if (argv.size() == 1) {
-    for (starnum_t star = 0; star < Sdata.numstars; star++) {
+    for (starnum_t star = 0; star < sdata.numstars; star++) {
       const auto* star_ptr = g.entity_manager.peek_star(star);
       if (!star_ptr) continue;
       Star star_wrapper(*star_ptr);

@@ -13,9 +13,6 @@ int main() {
   // Initialize database tables - this will create the ship tables
   initialize_schema(db);
 
-  // Test initial state - should have 0 ships
-  shipnum_t initial_count = Numships();
-
   // Create test ships
   Ship test_ship1{};
   test_ship1.number() = 1;
@@ -51,39 +48,45 @@ int main() {
   ship_repo.save(test_ship2);
   ship_repo.save(test_ship3);
 
-  // Test that Numships() returns the correct count
-  shipnum_t count_after_inserts = Numships();
-  assert(count_after_inserts == initial_count + 3);
+  // Create EntityManager
+  EntityManager entity_manager(db);
+
+  // Get initial count (should be 3)
+  shipnum_t initial_count = entity_manager.num_ships();
+
+  // Test that num_ships() returns the correct count
+  shipnum_t count_after_inserts = entity_manager.num_ships();
+  assert(count_after_inserts == 3);
 
   // Test that we can retrieve the ships
-  auto retrieved_ship1 = getship(1);
-  assert(retrieved_ship1.has_value());
-  assert(retrieved_ship1.value().number() == 1);
-  assert(retrieved_ship1.value().name() == "TestShip1");
-  assert(retrieved_ship1.value().type() == ShipType::STYPE_SHUTTLE);
+  const auto* retrieved_ship1 = entity_manager.peek_ship(1);
+  assert(retrieved_ship1);
+  assert(retrieved_ship1->number() == 1);
+  assert(retrieved_ship1->name() == "TestShip1");
+  assert(retrieved_ship1->type() == ShipType::STYPE_SHUTTLE);
 
-  auto retrieved_ship2 = getship(2);
-  assert(retrieved_ship2.has_value());
-  assert(retrieved_ship2.value().number() == 2);
-  assert(retrieved_ship2.value().name() == "TestShip2");
-  assert(retrieved_ship2.value().type() == ShipType::STYPE_CARGO);
+  const auto* retrieved_ship2 = entity_manager.peek_ship(2);
+  assert(retrieved_ship2);
+  assert(retrieved_ship2->number() == 2);
+  assert(retrieved_ship2->name() == "TestShip2");
+  assert(retrieved_ship2->type() == ShipType::STYPE_CARGO);
 
-  auto retrieved_ship3 = getship(3);
-  assert(retrieved_ship3.has_value());
-  assert(retrieved_ship3.value().number() == 3);
-  assert(retrieved_ship3.value().name() == "TestShip3");
-  assert(retrieved_ship3.value().type() == ShipType::STYPE_FIGHTER);
+  const auto* retrieved_ship3 = entity_manager.peek_ship(3);
+  assert(retrieved_ship3);
+  assert(retrieved_ship3->number() == 3);
+  assert(retrieved_ship3->name() == "TestShip3");
+  assert(retrieved_ship3->type() == ShipType::STYPE_FIGHTER);
 
-  // Test that retrieving a non-existent ship returns empty optional
-  auto non_existent_ship = getship(999);
-  assert(!non_existent_ship.has_value());
+  // Test that retrieving a non-existent ship returns nullptr
+  const auto* non_existent_ship = entity_manager.peek_ship(999);
+  assert(!non_existent_ship);
 
-  // Test that retrieving with invalid ship number returns empty optional
-  auto invalid_ship = getship(0);
-  assert(!invalid_ship.has_value());
+  // Test that retrieving with invalid ship number returns nullptr
+  const auto* invalid_ship = entity_manager.peek_ship(0);
+  assert(!invalid_ship);
 
-  auto negative_ship = getship(-1);
-  assert(!negative_ship.has_value());
+  const auto* negative_ship = entity_manager.peek_ship(-1);
+  assert(!negative_ship);
 
   std::println("Numships and ship storage test passed!");
   std::println("Initial count: {}, Final count: {}", initial_count,

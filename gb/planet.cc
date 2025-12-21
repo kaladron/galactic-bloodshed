@@ -20,10 +20,16 @@ module gblib;
  * @param agent The player who will receive the revolted sectors.
  * @return The number of sectors that revolted.
  */
-int revolt(Planet& pl, const player_t victim, const player_t agent) {
+int revolt(Planet& pl, EntityManager& entity_manager, const starnum_t snum,
+           const planetnum_t pnum, const player_t victim,
+           const player_t agent) {
   int revolted_sectors = 0;
 
-  auto smap = getsmap(pl);
+  const auto* victim_race = entity_manager.peek_race(victim);
+  if (!victim_race) return 0;
+
+  auto smap_handle = entity_manager.get_sectormap(snum, pnum);
+  auto& smap = *smap_handle;
   for (auto& s : smap) {
     if (s.get_owner() != victim || s.get_popn() == 0) continue;
 
@@ -31,7 +37,7 @@ int revolt(Planet& pl, const player_t victim, const player_t agent) {
     if (!success(pl.info(victim - 1).tax)) continue;
 
     if (long_rand(1, s.get_popn()) <=
-        10L * races[victim - 1].fighters * s.get_troops())
+        10L * victim_race->fighters * s.get_troops())
       continue;
 
     // Revolt successful.
@@ -44,7 +50,6 @@ int revolt(Planet& pl, const player_t victim, const player_t agent) {
     pl.info(agent - 1).mob_points += s.get_mobilization();
     revolted_sectors++;
   }
-  putsmap(smap, pl);
 
   return revolted_sectors;
 }

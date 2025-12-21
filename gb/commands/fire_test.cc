@@ -19,7 +19,7 @@ int main() {
   race.Guest = false;
   race.governor[0].active = true;
   race.governor[0].toggle.highlight = true;
-  
+
   JsonStore store(db);
   RaceRepository races(store);
   races.save(race);
@@ -49,7 +49,7 @@ int main() {
   attacker.ypos = 200.0;
   attacker.mass = 100.0;
   attacker.build_cost = 100;
-  
+
   auto attacker_handle = em.create_ship(attacker);
   attacker_handle.save();
 
@@ -69,7 +69,7 @@ int main() {
   target.damage = 0;
   target.mass = 50.0;
   target.build_cost = 50;
-  
+
   auto target_handle = em.create_ship(target);
   target_handle.save();
 
@@ -96,11 +96,11 @@ int main() {
   const auto* ship1 = em.peek_ship(1);
   assert(ship1);
   assert(ship1->number() == 1);
-  
+
   const auto* ship2 = em.peek_ship(2);
   assert(ship2);
   assert(ship2->number() == 2);
-  
+
   // Test passed - command executed and ships persisted via RAII
   std::println("fire_test.cc: All assertions passed!");
   return 0;

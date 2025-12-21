@@ -47,27 +47,28 @@ void unpledge(const command_t& argv, GameObj& g) {
   clrbit(block.pledge, Playernum);
   std::string quit_notification = std::format(
       "{} [{}] has quit {} [{}].\n", race->name, Playernum, block.name, n);
-  warn_race(n, quit_notification);
+  warn_race(g.entity_manager, n, quit_notification);
   std::string player_notification =
       std::format("You have quit {}\n", block.name);
-  warn_race(Playernum, player_notification);
+  warn_race(g.entity_manager, Playernum, player_notification);
 
   switch (int_rand(1, 20)) {
     case 1: {
       std::string taunt_postmsg =
           std::format("{} [{}] calls {} [{}] a bunch of geeks and QUITS!\n",
-                      race->name, Playernum, block.name, n);
+                      g.race->name, Playernum, block.name, n);
       post(taunt_postmsg, NewsType::DECLARATION);
       break;
     }
     default: {
-      std::string quit_postmsg = std::format(
-          "{} [{}] has QUIT {} [{}]!\n", race->name, Playernum, block.name, n);
+      std::string quit_postmsg =
+          std::format("{} [{}] has QUIT {} [{}]!\n", g.race->name, Playernum,
+                      block.name, n);
       post(quit_postmsg, NewsType::DECLARATION);
       break;
     }
   }
 
-  compute_power_blocks();
+  compute_power_blocks(g.entity_manager);
 }
 }  // namespace GB::commands

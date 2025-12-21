@@ -17,11 +17,7 @@ void block(const command_t& argv, GameObj& g) {
   player_t p;
   int dummy_;
 
-  const auto* race = g.entity_manager.peek_race(Playernum);
-  if (!race) {
-    g.out << "Race data not found.\n";
-    return;
-  }
+  const auto* race = g.race;  // Use pre-populated race from GameObj
 
   if (argv.size() == 3 && argv[1] == "player") {
     if (!(p = get_player(g.entity_manager, argv[2]))) {

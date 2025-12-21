@@ -14,6 +14,16 @@ int main() {
 
   // Create EntityManager
   EntityManager em(db);
+  JsonStore store(db);
+
+  // Create universe with 1 star and 2 ships at universe level
+  universe_struct us{};
+  us.id = 1;  // Universe is a singleton with ID 1
+  us.numstars = 1;
+  us.ships = 2;  // Ship #2 will be at universe level (in transit)
+
+  UniverseRepository universe_repo(store);
+  universe_repo.save(us);
 
   // Create test race
   Race race{};
@@ -22,7 +32,6 @@ int main() {
   race.governor[0].active = true;
 
   // Save race via repository
-  JsonStore store(db);
   RaceRepository races(store);
   races.save(race);
 
@@ -57,6 +66,22 @@ int main() {
   ShipRepository ships_repo(store);
   ships_repo.save(ship);
 
+  // Create a second ship at universe level (in transit between stars)
+  Ship ship2{};
+  ship2.number() = 2;
+  ship2.owner() = 1;
+  ship2.governor() = 0;
+  ship2.alive() = true;
+  ship2.active() = true;
+  ship2.type() = ShipType::STYPE_CRUISER;
+  ship2.name() = "Voyager";
+  ship2.whatorbits() = ScopeLevel::LEVEL_UNIV;
+  ship2.xpos() = 150.0;
+  ship2.ypos() = 250.0;
+  ship2.nextship() = 0;  // End of universe ship list
+
+  ships_repo.save(ship2);
+
   // Create GameObj for command execution
   GameObj g(em);
   g.player = 1;
@@ -89,11 +114,42 @@ int main() {
     command_t argv = {"orbit"};
     GB::commands::orbit(argv, g);
 
-    // Verify ship is still unchanged
+    // Verify ships are still unchanged
     const auto* saved_ship = em.peek_ship(1);
     assert(saved_ship != nullptr);
     assert(saved_ship->owner() == 1);
-    std::println("    ✓ Universe-level orbit works correctly");
+
+    const auto* saved_ship2 = em.peek_ship(2);
+    assert(saved_ship2 != nullptr);
+    assert(saved_ship2->owner() == 1);
+    assert(saved_ship2->whatorbits() == ScopeLevel::LEVEL_UNIV);
+    std::println(
+        "    ✓ Universe-level orbit displays stars and ships in transit");
+  }
+
+  std::println("Test 3: Orbit at universe level with no universe (edge case)");
+  {
+    // Create a new EntityManager with no universe
+    Database db2(":memory:");
+    initialize_schema(db2);
+    EntityManager em2(db2);
+
+    // Create race but no universe
+    JsonStore store2(db2);
+    RaceRepository races2(store2);
+    races2.save(race);
+
+    GameObj g2(em2);
+    g2.player = 1;
+    g2.governor = 0;
+    g2.race = em2.peek_race(1);
+    g2.level = ScopeLevel::LEVEL_UNIV;
+
+    command_t argv = {"orbit"};
+    GB::commands::orbit(argv, g2);
+
+    // Should have printed error and not crashed
+    std::println("    ✓ Handled missing universe gracefully");
   }
 
   std::println("\n✅ All orbit tests passed!");

@@ -94,17 +94,13 @@ void name(const command_t& argv, GameObj& g) {
       g.out << "You are not authorized to do this.\n";
       return;
     }
-    Blocks[Playernum - 1].name = namebuf;
-    Putblock(Blocks);
+    auto block_handle = g.entity_manager.get_block(Playernum);
+    auto& block = *block_handle;
+    block.name = namebuf;
     g.out << "Done.\n";
   } else if (argv[1] == "star") {
     if (g.level == ScopeLevel::LEVEL_STAR) {
-      const auto* race = g.entity_manager.peek_race(Playernum);
-      if (!race) {
-        g.out << "Race not found.\n";
-        return;
-      }
-      if (!race->God) {
+      if (!g.race->God) {
         g.out << "Only dieties may name a star.\n";
         return;
       }
@@ -120,12 +116,7 @@ void name(const command_t& argv, GameObj& g) {
     }
   } else if (argv[1] == "planet") {
     if (g.level == ScopeLevel::LEVEL_PLAN) {
-      const auto* race = g.entity_manager.peek_race(Playernum);
-      if (!race) {
-        g.out << "Race not found.\n";
-        return;
-      }
-      if (!race->God) {
+      if (!g.race->God) {
         g.out << "Only deity can rename planets.\n";
         return;
       }

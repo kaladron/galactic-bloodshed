@@ -4,7 +4,7 @@
 
 import gblib;
 import dallib;
-import std.compat;
+import std;
 
 #include <strings.h>
 
@@ -24,7 +24,6 @@ constexpr std::array<PlanetType, N_HOME_PLANET_TYPES> planet_translate = {
 int enroll_valid_race() {
   int star;
   int pnum;
-  Planet planet;
   /*
     if (race.status == STATUS_ENROLLED) {
       sprintf(race.rejection, "This race has already been enrolled!\n") ;
@@ -34,6 +33,7 @@ int enroll_valid_race() {
   // Create Database and EntityManager for dependency injection
   Database database{PKGSTATEDIR "gb.db"};
   EntityManager entity_manager{database};
+  JsonStore store{database};
 
   auto Playernum = entity_manager.num_races() + 1;
   if ((Playernum == 1) && (race_info.priv_type != P_GOD)) {
@@ -48,11 +48,8 @@ int enroll_valid_race() {
     return 1;
   }
 
-  getsdata(&Sdata);
-  for (auto i = 0; i < Sdata.numstars; i++) {
-    auto s = getstar(i);
-    stars.push_back(s);
-  }
+  const auto* universe = entity_manager.peek_universe();
+  auto numstars = universe->numstars;
 
   std::cout << std::format("Looking for {}..",
                            planet_print_name[race_info.home_planet_type]);
@@ -60,21 +57,23 @@ int enroll_valid_race() {
   auto ppref = planet_translate[race_info.home_planet_type];
   std::array<int, NUMSTARS> indirect;
   std::ranges::iota(indirect, 0);
-  auto last_star_left = Sdata.numstars - 1;
+  auto last_star_left = numstars - 1;
   while (last_star_left >= 0) {
     auto i = int_rand(0, last_star_left);
     star = indirect[i];
 
     std::cout << ".";
 
+    const auto* star_ptr = entity_manager.peek_star(star);
     // Skip over inhabited stars and stars with few planets. */
-    if ((stars[star].numplanets() < 2) || stars[star].inhabited()) {
+    if ((star_ptr->numplanets() < 2) || star_ptr->inhabited()) {
     } else {
       /* look for uninhabited planets */
-      for (pnum = 0; pnum < stars[star].numplanets(); pnum++) {
-        planet = getplanet(star, pnum);
-        if ((planet.type() == ppref) && (planet.conditions(RTEMP) >= -200) &&
-            (planet.conditions(RTEMP) <= 100))
+      for (pnum = 0; pnum < star_ptr->numplanets(); pnum++) {
+        const auto* planet_ptr = entity_manager.peek_planet(star, pnum);
+        if ((planet_ptr->type() == ppref) &&
+            (planet_ptr->conditions(RTEMP) >= -200) &&
+            (planet_ptr->conditions(RTEMP) <= 100))
           goto found_planet;
       }
     }
@@ -94,6 +93,11 @@ int enroll_valid_race() {
 
 found_planet:
   std::cout << " found!\n";
+
+  // Get handles for modification
+  auto planet_handle = entity_manager.get_planet(star, pnum);
+  auto& planet = *planet_handle;
+
   auto race = new Race{};
 
   race->Playernum = Playernum;
@@ -153,7 +157,8 @@ found_planet:
   }
 
   // Find sector to build capital on, and populate it
-  auto smap = getsmap(planet);
+  auto smap_handle = entity_manager.get_sectormap(star, pnum);
+  auto& smap = *smap_handle;
 
   Sector& sect = [&]() -> Sector& {
     for (auto shuffled = smap.shuffle(); const auto& sector_wrap : shuffled) {
@@ -181,14 +186,15 @@ found_planet:
   {
     ship_struct ss{};  // POD struct for initialization
 
-    auto shipno = Numships() + 1;
+    auto shipno = entity_manager.num_ships() + 1;
     race->Gov_ship = shipno;
     planet.ships() = shipno;
     ss.nextship = 0;
 
     ss.type = ShipType::OTYPE_GOV;
-    ss.xpos = stars[star].xpos() + planet.xpos();
-    ss.ypos = stars[star].ypos() + planet.ypos();
+    const auto* star_ptr = entity_manager.peek_star(star);
+    ss.xpos = star_ptr->xpos() + planet.xpos();
+    ss.ypos = star_ptr->ypos() + planet.ypos();
     ss.land_x = sect.get_x();
     ss.land_y = sect.get_y();
 
@@ -246,7 +252,10 @@ found_planet:
     ss.name[0] = '\0';
     ss.number = shipno;
     Ship s{ss};  // Construct Ship from POD struct
-    putship(s);
+
+    // Save ship using repository
+    ShipRepository ships(store);
+    ships.save(s);
   }
 
   planet.info(Playernum - 1).numsectsowned = 1;
@@ -257,22 +266,24 @@ found_planet:
   planet.maxpopn() =
       maxsupport(*race, sect, 100.0, 0) * planet.Maxx() * planet.Maxy() / 2;
 
-  putrace(*race);
-  putsector(sect, planet);
+  // Save race using repository
+  RaceRepository races(store);
+  races.save(*race);
 
-  stars[star] = getstar(star);
-  putplanet(planet, stars[star], pnum);
+  // planet_handle and smap_handle will auto-save when they go out of scope
 
-  /* make star explored and stuff */
-  setbit(stars[star].explored(), Playernum);
-  setbit(stars[star].inhabited(), Playernum);
-  stars[star].AP(Playernum - 1) = 5;
-  putstar(stars[star], star);
+  // Update star
+  auto star_handle = entity_manager.get_star(star);
+  auto& star_data = *star_handle;
+  setbit(star_data.explored(), Playernum);
+  setbit(star_data.inhabited(), Playernum);
+  star_data.AP(Playernum - 1) = 5;
+  // star_handle will auto-save when it goes out of scope
 
   std::cout << std::format(
       "Player {} ({}) created on sector {},{} on {}/{}.\\n", Playernum,
-      race_info.name, sect.get_x(), sect.get_y(), stars[star].get_name(),
-      stars[star].get_planet_name(pnum));
+      race_info.name, sect.get_x(), sect.get_y(), star_data.get_name(),
+      star_data.get_planet_name(pnum));
   race_info.status = STATUS_ENROLLED;
   return 0;
 }

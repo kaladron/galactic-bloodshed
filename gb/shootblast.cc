@@ -61,7 +61,7 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
   /* attack parameters */
   auto [fevade, fspeed, fbody] = ship_disposition(attacker);
   auto [tevade, tspeed, tbody] = ship_disposition(target);
-  auto defense = getdefense(target);
+  auto defense = getdefense(em, target);
 
   bool focus = laser_on(attacker) && attacker.focus();
 
@@ -108,10 +108,9 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
 
   if (caliber == GTYPE_NONE) return std::nullopt;
 
-  auto [damage, damage_msg] =
-      do_damage(em, attacker.owner(), target, (double)attacker.tech(),
-                cew_strength, hits, defense, caliber, dist, weapon,
-                hit_probability);
+  auto [damage, damage_msg] = do_damage(
+      em, attacker.owner(), target, (double)attacker.tech(), cew_strength, hits,
+      defense, caliber, dist, weapon, hit_probability);
   std::string short_msg = std::format(
       "{}: {} {} {}\n", dispshiploc(em, target), ship_to_string(attacker),
       target.alive() ? "attacked" : "DESTROYED", ship_to_string(target));

@@ -54,6 +54,7 @@ void test_tax_database_persistence() {
   g.level = ScopeLevel::LEVEL_PLAN;
   g.snum = 1;
   g.pnum = 0;
+  g.race = em.peek_race(g.player);  // Set race pointer like production does
 
   // TEST 1: Display current tax rate (no argument)
   std::println("  Testing: Display current tax rate");

@@ -220,7 +220,7 @@ private:
 
 /**
  * Iterator class for commodities (1-indexed, 1..num_commods).
- * Returns const Commod* for read-only iteration.
+ * Returns EntityHandle<Commod> for RAII auto-save behavior.
  * Only returns valid commodities (non-null, has owner, has amount).
  */
 export class CommodList {
@@ -230,7 +230,7 @@ public:
   class Iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const Commod*;
+    using value_type = EntityHandle<Commod>;
     using difference_type = std::ptrdiff_t;
 
     Iterator(EntityManager* em, int current, int end)
@@ -238,8 +238,8 @@ public:
       advance_to_valid();
     }
 
-    const Commod* operator*() const {
-      return em_->peek_commod(current_);
+    EntityHandle<Commod> operator*() {
+      return em_->get_commod(current_);
     }
 
     Iterator& operator++() {
@@ -272,10 +272,10 @@ public:
     int end_;
   };
 
-  [[nodiscard]] Iterator begin() const {
+  Iterator begin() {
     return {em_, 1, count_};
   }
-  [[nodiscard]] Iterator end() const {
+  Iterator end() {
     return {em_, count_ + 1, count_};
   }
 

@@ -53,9 +53,6 @@ export power_blocks Power_blocks;
 export bool update_flag = false;
 export std::list<DescriptorData> descriptor_list;
 
-// TEMPORARY: dbconn is now provided by dallib during transition
-// export sqlite3 *dbconn;  // REMOVED - now in dallib
-
 export struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
 export struct vnbrain VN_brain;
 export struct sectinfo Sectinfo[MAX_X][MAX_Y];

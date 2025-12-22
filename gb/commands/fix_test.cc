@@ -4,6 +4,7 @@
 /// \brief Unit tests for fix command (deity utilities)
 
 import dallib;
+import dallib;
 import gblib;
 import commands;
 import std;

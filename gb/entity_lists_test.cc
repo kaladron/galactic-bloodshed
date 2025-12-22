@@ -3,6 +3,7 @@
 // Test for RaceList, StarList, and PlanetList iteration helpers
 
 import dallib;
+import dallib;
 import gblib;
 import std.compat;
 

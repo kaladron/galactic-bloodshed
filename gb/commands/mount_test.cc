@@ -4,6 +4,7 @@
 /// \brief Unit tests for mount command
 
 import dallib;
+import dallib;
 import gblib;
 import commands;
 import std;

@@ -4,6 +4,7 @@
 /// \brief Test toggle command database persistence
 
 import dallib;
+import dallib;
 import gblib;
 import commands;
 import std;

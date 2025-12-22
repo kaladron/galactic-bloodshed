@@ -3,6 +3,7 @@
 // Test file for miscellaneous repositories:
 // CommodRepository, BlockRepository, PowerRepository, and UniverseRepository
 
+import dallib;
 import gblib;
 import dallib;
 import std.compat;

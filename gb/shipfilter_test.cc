@@ -4,6 +4,7 @@
 /// \brief Test ship filtering helper functions
 
 import dallib;
+import dallib;
 import gblib;
 import std.compat;
 

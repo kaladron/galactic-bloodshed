@@ -8,6 +8,7 @@
 /// current scope.
 
 import dallib;
+import dallib;
 import gblib;
 import commands;
 import std;

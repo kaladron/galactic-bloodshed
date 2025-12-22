@@ -4,6 +4,7 @@
 /// \brief Test survey command for edge cases and output formatting
 
 import dallib;
+import dallib;
 import gblib;
 import commands;
 import std;

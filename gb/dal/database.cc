@@ -8,10 +8,6 @@ import std.compat;
 
 module dallib;
 
-// TEMPORARY: Global dbconn for backward compatibility during transition
-// This will be removed in Phase 4 when all code uses Database class
-sqlite3* dbconn = nullptr;
-
 namespace {
 // Apply SQLite pragmas for strict mode (from existing apply_sqlite_strict_mode)
 void apply_pragmas(sqlite3* db) {
@@ -55,18 +51,10 @@ Database::Database(const std::string& path) {
     conn = nullptr;
     throw;
   }
-
-  // TEMPORARY: Set global dbconn for backward compatibility
-  // TODO: Remove this in Phase 4 when all code uses Database class
-  dbconn = conn;
 }
 
 Database::~Database() {
   if (conn) {
-    // TEMPORARY: Clear global dbconn if it points to our connection
-    if (dbconn == conn) {
-      dbconn = nullptr;
-    }
     sqlite3_close(conn);
     conn = nullptr;
   }

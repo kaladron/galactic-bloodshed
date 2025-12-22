@@ -454,7 +454,7 @@ void dock(const command_t& argv, GameObj& g) {
           ship_to_string(s2), prin_ship_orbits(g.entity_manager, s));
       if (s2.owner() == Playernum || !s2.alive())
         post(g.entity_manager, news, NewsType::COMBAT);
-      notify_star(Playernum, Governor, s.storbits(), news);
+      notify_star(g.entity_manager, Playernum, Governor, s.storbits(), news);
     } else {
       notify(Playernum, Governor,
              std::format("{} docked with {}.\n", ship_to_string(s),

@@ -53,7 +53,7 @@ void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
     *strength = 0;
     warn(ship.owner(), ship.governor(), message);
     post(entity_manager, message, NewsType::COMBAT);
-    notify_star(ship.owner(), ship.governor(), ship.storbits(), message);
+    notify_star(entity_manager, ship.owner(), ship.governor(), ship.storbits(), message);
   } else if (int_rand(0, *strength) >
              (int)((1.0 - .01 * ship.damage()) * ship.tech() / 4.0)) {
     std::string message =

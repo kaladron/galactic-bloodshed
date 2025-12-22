@@ -67,11 +67,14 @@ void d_shout(const player_t Playernum, const governor_t Governor,
 void d_announce(EntityManager& entity_manager, const player_t Playernum,
                 const governor_t Governor, const starnum_t star,
                 const std::string& message) {
+  const auto* star_ptr = entity_manager.peek_star(star);
+  if (!star_ptr) return;
+
   for (auto& d : descriptor_list) {
     if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
         d.snum == star) {
       const auto* race = entity_manager.peek_race(d.player);
-      if (race && (isset(stars[star].inhabited(), d.player) || race->God) &&
+      if (race && (isset(star_ptr->inhabited(), d.player) || race->God) &&
           !race->governor[d.governor].toggle.gag) {
         queue_string(d, message);
       }
@@ -109,16 +112,6 @@ void warn_star(EntityManager& entity_manager, const player_t a,
   }
 }
 
-void notify_star(const player_t a, const governor_t g, const starnum_t star,
-                 const std::string& message) {
-  for (auto& d : descriptor_list)
-    if (d.connected && (d.player != a || d.governor != g) &&
-        isset(stars[star].inhabited(), d.player)) {
-      queue_string(d, message);
-    }
-}
-
-// New implementation using EntityManager
 void notify_star(EntityManager& entity_manager, const player_t a,
                  const governor_t g, const starnum_t star,
                  const std::string& message) {

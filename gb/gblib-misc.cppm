@@ -71,8 +71,6 @@ export void warn_race(EntityManager&, player_t, const std::string&);
 export void warn(player_t, governor_t, const std::string&);
 // New signature using EntityManager
 export void warn_star(EntityManager&, player_t, starnum_t, const std::string&);
-// Old signature for compatibility during migration
-export void notify_star(player_t, governor_t, starnum_t, const std::string&);
 // New signature using EntityManager
 export void notify_star(EntityManager&, player_t, governor_t, starnum_t,
                         const std::string&);

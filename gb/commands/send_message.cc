@@ -167,7 +167,7 @@ void send_message(const command_t& argv, GameObj& g) {
     const auto star_msg = std::format(
         "{} \"{}\" [{},{}] sends a stargram to {}.\n", race.name,
         race.governor[Governor].name, Playernum, Governor, star_ref.get_name());
-    notify_star(Playernum, Governor, star, star_msg);
+    notify_star(g.entity_manager, Playernum, Governor, star, star_msg);
     warn_star(g.entity_manager, Playernum, star, msg);
   } else {
     int gov;

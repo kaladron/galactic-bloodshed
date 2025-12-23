@@ -41,8 +41,12 @@ void examine(const command_t& argv, GameObj& g) {
     g.out << "that ship is dead.\n";
     return;
   }
-  if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV ||
-      isclr(stars[ship->storbits()].inhabited(), g.player)) {
+  if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV) {
+    g.out << "That ship it not visible to you.\n";
+    return;
+  }
+  const auto& star = *g.entity_manager.peek_star(ship->storbits());
+  if (isclr(star.inhabited(), g.player)) {
     g.out << "That ship it not visible to you.\n";
     return;
   }

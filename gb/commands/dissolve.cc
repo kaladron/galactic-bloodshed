@@ -67,15 +67,12 @@ void dissolve(const command_t& argv, GameObj& g) {
            std::format("Ship #{}, self-destruct enabled\n", i));
   }
 
-  const auto& sdata = *g.entity_manager.peek_universe();
-  for (auto z = 0; z < sdata.numstars; z++) {
-    const auto* star = g.entity_manager.peek_star(z);
-    if (!star || !isset(star->explored(), Playernum)) continue;
+  for (auto star_handle : StarList(g.entity_manager)) {
+    const auto& star = *star_handle;
+    if (!isset(star.explored(), Playernum)) continue;
 
-    for (auto i = 0; i < star->numplanets(); i++) {
-      auto planet_handle = g.entity_manager.get_planet(z, i);
-      if (!planet_handle.get()) continue;
-
+    planetnum_t planet_num = 0;
+    for (auto planet_handle : PlanetList(g.entity_manager, star.star_id(), star)) {
       auto& pl = *planet_handle;
       if (pl.info(Playernum - 1).explored &&
           pl.info(Playernum - 1).numsectsowned) {
@@ -92,7 +89,7 @@ void dissolve(const command_t& argv, GameObj& g) {
         pl.info(Playernum - 1).autorep = 0;
       }
 
-      auto smap_handle = g.entity_manager.get_sectormap(z, i);
+      auto smap_handle = g.entity_manager.get_sectormap(star.star_id(), planet_num++);
       auto& smap = *smap_handle;
       for (auto& s : smap) {
         if (s.get_owner() == Playernum) {

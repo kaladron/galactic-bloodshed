@@ -10,8 +10,8 @@ import std;
 module commands;
 
 namespace {
-std::string prepare_output_line(const Race& race, const Race& r, player_t i,
-                                int rank) {
+std::string prepare_output_line(EntityManager& em, const Race& race,
+                                const Race& r, player_t i, int rank) {
   std::stringstream ss;
   if (rank != 0) ss << std::format("{:2d} ", rank);
 
@@ -33,9 +33,10 @@ std::string prepare_output_line(const Race& race, const Race& r, player_t i,
   ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].fuel, race, i));
   ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].destruct, race, i));
   ss << std::format("{:5s}", Estimate_i((int)r.morale, race, i));
-  if (race.God)
-    ss << std::format(" {:3d}\n", Sdata.VN_hitlist[i - 1]);
-  else
+  if (race.God) {
+    const auto* universe = em.peek_universe();
+    ss << std::format(" {:3d}\n", universe->VN_hitlist[i - 1]);
+  } else
     ss << std::format(" {:3d}%\n", race.translate[i - 1]);
 
   return ss.str();
@@ -81,7 +82,7 @@ void power(const command_t& argv, GameObj& g) {
       const auto* r = g.entity_manager.peek_race(p);
       if (!r) continue;
       if (!r->dissolved && race->translate[p - 1] >= 10) {
-        g.out << prepare_output_line(*race, *r, p, rank);
+        g.out << prepare_output_line(g.entity_manager, *race, *r, p, rank);
       }
     }
   } else {
@@ -90,7 +91,7 @@ void power(const command_t& argv, GameObj& g) {
       g.out << "Race not found.\n";
       return;
     }
-    g.out << prepare_output_line(*race, *r, p, 0);
+    g.out << prepare_output_line(g.entity_manager, *race, *r, p, 0);
   }
 }
 }  // namespace GB::commands

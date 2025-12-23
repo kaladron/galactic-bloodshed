@@ -162,8 +162,9 @@ void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
   }
 
   std::stringstream header;
-  header << std::format("\nAnalysis of /{}/{}:\n", stars[Starnum].get_name(),
-                        stars[Starnum].get_planet_name(Planetnum));
+  const auto& star = *g.entity_manager.peek_star(Starnum);
+  header << std::format("\nAnalysis of /{}/{}:\n", star.get_name(),
+                        star.get_planet_name(Planetnum));
   header << std::format("{} {}",
                         (mode == Mode::top_five ? "Highest" : "Lowest"), CARE);
   switch (sector_type) {
@@ -342,10 +343,12 @@ void analysis(const command_t& argv, GameObj& g) {
     case ScopeLevel::LEVEL_PLAN:
       do_analysis(g, do_player, mode, sector_type, where.snum, where.pnum);
       break;
-    case ScopeLevel::LEVEL_STAR:
-      for (planetnum_t pnum = 0; pnum < stars[where.snum].numplanets(); pnum++)
+    case ScopeLevel::LEVEL_STAR: {
+      const auto& star = *g.entity_manager.peek_star(where.snum);
+      for (planetnum_t pnum = 0; pnum < star.numplanets(); pnum++)
         do_analysis(g, do_player, mode, sector_type, where.snum, pnum);
       break;
+    }
   }
 }
 }  // namespace GB::commands

@@ -40,13 +40,13 @@ void explore(const command_t& argv, GameObj& g) {
   notify(
       Playernum, Governor,
       " Star  (stability)[AP]   #  Planet [Attributes] Type (Compatibility)\n");
-  for (starnum_t star = 0; star < Sdata.numstars; star++)
-    if ((starq == -1) || (starq == star)) {
-      const auto& star_ref = *g.entity_manager.peek_star(star);
+  for (auto star_handle : StarList(g.entity_manager)) {
+    const auto& star_ref = *star_handle;
+    if ((starq == -1) || (starq == star_ref.star_id())) {
 
       if (isset(star_ref.explored(), Playernum))
         for (planetnum_t i = 0; i < star_ref.numplanets(); i++) {
-          const auto& pl = *g.entity_manager.peek_planet(star, i);
+          const auto& pl = *g.entity_manager.peek_planet(star_ref.star_id(), i);
 
           if (i == 0) {
             if (g.race->tech >= TECH_SEE_STABILITY) {
@@ -92,5 +92,6 @@ void explore(const command_t& argv, GameObj& g) {
           }
         }
     }
+  }
 }
 }  // namespace GB::commands

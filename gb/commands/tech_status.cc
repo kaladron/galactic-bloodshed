@@ -67,11 +67,9 @@ void tech_status(const command_t& argv, GameObj& g) {
 
   returns totals{};
   if (argv.size() == 1) {
-    for (starnum_t star = 0; star < sdata.numstars; star++) {
-      const auto* star_ptr = g.entity_manager.peek_star(star);
-      if (!star_ptr) continue;
-      Star star_wrapper(*star_ptr);
-      totals = tech_report_star(g, star_wrapper, star);
+    for (auto star_handle : StarList(g.entity_manager)) {
+      const auto& star = *star_handle;
+      totals = tech_report_star(g, star, star.star_id());
     }
   } else { /* Several arguments */
     for (int k = 1; k < argv.size(); k++) {

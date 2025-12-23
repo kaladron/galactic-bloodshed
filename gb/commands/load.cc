@@ -322,7 +322,8 @@ void load(const command_t& argv, GameObj& g) {
       continue;
     }
     if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-      if (!enufAP(Playernum, Governor, Sdata.AP[Playernum - 1], APcount)) {
+      const auto* universe = g.entity_manager.peek_universe();
+      if (!enufAP(Playernum, Governor, universe->AP[Playernum - 1], APcount)) {
         continue;
       }
     } else {

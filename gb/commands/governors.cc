@@ -22,12 +22,9 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
 
   /*  First do stars....  */
 
-  const auto& sdata = *entity_manager.peek_universe();
-  for (starnum_t i = 0; i < sdata.numstars; i++) {
-    const auto* star_check = entity_manager.peek_star(i);
-    if (star_check && star_check->governor(race.Playernum - 1) == src_gov) {
-      auto star_handle = entity_manager.get_star(i);
-      auto& star = *star_handle;
+  for (auto star_handle : StarList(entity_manager)) {
+    auto& star = *star_handle;
+    if (star.governor(race.Playernum - 1) == src_gov) {
       star.governor(race.Playernum - 1) = tgt_gov;
       outmsg = std::format("Changed juridiction of /{0}...\n", star.get_name());
       notify(race.Playernum, 0, outmsg);

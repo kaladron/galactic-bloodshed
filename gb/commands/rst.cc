@@ -536,13 +536,16 @@ void rst(const command_t& argv, GameObj& g) {
 
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV: {
-      const ShipList univ_ships(g.entity_manager, Sdata.ships);
+      const auto* universe = g.entity_manager.peek_universe();
+      const ShipList univ_ships(g.entity_manager, universe->ships);
       for (const Ship* ship : univ_ships) {
         ship_report(g, ctx, *ship, report_types);
       }
 
-      for (starnum_t i = 0; i < Sdata.numstars; i++)
-        report_star_ships(g, ctx, g.player, i, report_types);
+      for (auto star_handle : StarList(g.entity_manager)) {
+        const auto& star = *star_handle;
+        report_star_ships(g, ctx, g.player, star.star_id(), report_types);
+      }
       break;
     }
 

@@ -102,14 +102,14 @@ void orbit(const command_t& argv, GameObj& g) {
         g.out << "Universe data not available.\n";
         return;
       }
-      for (starnum_t i = 0; i < universe->numstars; i++)
-        if (DontDispNum != i) {
-          const auto* star_ptr = g.entity_manager.peek_star(i);
-          if (!star_ptr) continue;
-          std::string star = DispStar(g, ScopeLevel::LEVEL_UNIV, *star_ptr,
+      for (auto star_handle : StarList(g.entity_manager)) {
+        const auto& star_ref = *star_handle;
+        if (DontDispNum != star_ref.star_id()) {
+          std::string star = DispStar(g, ScopeLevel::LEVEL_UNIV, star_ref,
                                       DontDispStars, Race);
           strcat(output, star.c_str());
         }
+      }
       if (!DontDispShips) {
         ShipList ships(g.entity_manager, universe->ships);
         char shipbuf[256];

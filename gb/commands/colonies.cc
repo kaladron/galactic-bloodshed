@@ -55,11 +55,11 @@ void colonies(const command_t& argv, GameObj& g) {
   g.out << "  Planet     gov sec tech    popn  x   res  "
            "des  fuel  tax  cmpt/tox mob  Aliens\n";
 
-  const auto& sdata = *g.entity_manager.peek_universe();
-
   if (argv.size() < 2)
-    for (starnum_t star = 0; star < sdata.numstars; star++)
-      colonies_at_star(g, *g.race, star);
+    for (auto star_handle : StarList(g.entity_manager)) {
+      const auto& star = *star_handle;
+      colonies_at_star(g, *g.race, star.star_id());
+    }
   else
     for (int i = 1; i < argv.size(); i++) {
       Place where{g, argv[i]};

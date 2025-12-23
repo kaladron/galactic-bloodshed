@@ -64,12 +64,14 @@ void announce(const command_t& argv, GameObj& g) {
     case ScopeLevel::LEVEL_UNIV:
       if (mode == Communicate::ANN) mode = Communicate::BROADCAST;
       break;
-    default:
+    default: {
+      const auto& star = *g.entity_manager.peek_star(g.snum);
       if ((mode == Communicate::ANN) &&
-          !(!!isset(stars[g.snum].inhabited(), Playernum) || race->God)) {
+          !(!!isset(star.inhabited(), Playernum) || race->God)) {
         g.out << "You do not inhabit this system or have diety privileges.\n";
         return;
       }
+    }
   }
 
   std::string msg = std::format("{} \"{}\" [{},{}] {} {}\n", g.race->name,

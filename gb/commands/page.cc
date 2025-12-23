@@ -17,7 +17,8 @@ void page(const command_t& argv, GameObj& g) {
   int gov;
   int to_block;
 
-  if (!enufAP(Playernum, Governor, stars[g.snum].AP(Playernum - 1), APcount))
+  const auto& star = *g.entity_manager.peek_star(g.snum);
+  if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount))
     return;
 
   gov = 0;  // TODO(jeffbailey): Init to zero.
@@ -53,7 +54,7 @@ void page(const command_t& argv, GameObj& g) {
 
       auto msg = std::format("{} \"{}\" page(s) you from the {} star system.\n",
                              g.race->name, g.race->governor[Governor].name,
-                             stars[g.snum].get_name());
+                             star.get_name());
 
       if (to_block) {
         uint64_t dummy =

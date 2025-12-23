@@ -24,10 +24,11 @@ void profile(const command_t& argv, GameObj& g) {
       g.out << "*** Diety Status ***\n";
     }
     g.out << std::format("Personal: {}\n", race->info);
+    const auto& homestar = *g.entity_manager.peek_star(race->governor[g.governor].homesystem);
     g.out << std::format(
         "Default Scope: /{}/{}\n",
-        stars[race->governor[g.governor].homesystem].get_name(),
-        stars[race->governor[g.governor].homesystem].get_planet_name(
+        homestar.get_name(),
+        homestar.get_planet_name(
             race->governor[g.governor].homeplanetnum));
     if (race->Gov_ship == 0)
       g.out << "NO DESIGNATED CAPITAL!!\n";

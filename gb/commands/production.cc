@@ -57,11 +57,11 @@ void production(const command_t& argv, GameObj& g) {
          "  Planet     gov    tech deposit  x   res  "
          "des  fuel    tax   tox  est prod\n");
 
-  const auto& sdata = *g.entity_manager.peek_universe();
-
   if (argv.size() < 2)
-    for (starnum_t star = 0; star < sdata.numstars; star++)
-      production_at_star(g, star);
+    for (auto star_handle : StarList(g.entity_manager)) {
+      const auto& star = *star_handle;
+      production_at_star(g, star.star_id());
+    }
   else
     for (int i = 1; i < argv.size(); i++) {
       Place where{g, argv[i]};

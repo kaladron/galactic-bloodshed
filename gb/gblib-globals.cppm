@@ -28,8 +28,6 @@ export unsigned long tot_captured, prod_mob;
 export unsigned long avg_mob[MAXPLAYERS];
 export unsigned char Claims;
 
-export std::array<std::array<std::unique_ptr<Planet>, MAXPLANETS>, NUMSTARS>
-    planets;
 export unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
 export uint64_t inhabited[NUMSTARS];
 export double Compat[MAXPLAYERS];

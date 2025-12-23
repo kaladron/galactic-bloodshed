@@ -30,6 +30,10 @@ static int nstars = -1;
 static int occupied[100][100];
 static int planetlesschance = 0;
 
+// Local storage for universe creation - not the global Sdata/stars
+static universe_struct Sdata{};
+static std::vector<Star> stars;
+
 namespace {
 void InitFile(const std::string& path, void* buffer = nullptr, size_t len = 0) {
   const char* filename = path.c_str();

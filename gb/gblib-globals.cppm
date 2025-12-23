@@ -13,12 +13,9 @@ import :star;
 import :types;
 import :universe;
 
-export universe_struct Sdata;
-
 export std::array<char, MAXPLAYERS> Nuked;
 export unsigned long StarsInhab[NUMSTARS];
 export unsigned long StarsExpl[NUMSTARS];
-export std::vector<Star> stars;
 export unsigned short Sdatanumships[MAXPLAYERS];
 export unsigned long Sdatapopns[MAXPLAYERS];
 export unsigned short starnumships[NUMSTARS][MAXPLAYERS];

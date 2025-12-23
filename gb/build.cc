@@ -340,9 +340,11 @@ void create_ship_by_ship(EntityManager& entity_manager, int Playernum,
         insert_sh_star(*star_handle, newship);
         break;
       }
-      case ScopeLevel::LEVEL_UNIV:
-        insert_sh_univ(&Sdata, newship);
+      case ScopeLevel::LEVEL_UNIV: {
+        auto univ_handle = entity_manager.get_universe();
+        insert_sh_univ(univ_handle.get(), newship);
         break;
+      }
       case ScopeLevel::LEVEL_SHIP:
         // TODO(jeffbailey): The compiler can't see that this is impossible.
         break;

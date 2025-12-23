@@ -115,8 +115,9 @@ void allocateAPs(const command_t& argv, GameObj& g) {
 
   auto univ_handle = g.entity_manager.get_universe();
   auto& univ = *univ_handle;
+  const auto& star = *g.entity_manager.peek_star(g.snum);
   maxalloc = std::min(univ.AP[Playernum - 1],
-                      LIMIT_APs - stars[g.snum].AP(Playernum - 1));
+                      LIMIT_APs - star.AP(Playernum - 1));
   if (alloc > maxalloc) {
     std::string max_msg =
         std::format("Illegal value ({}) - maximum = {}\n", alloc, maxalloc);
@@ -125,8 +126,8 @@ void allocateAPs(const command_t& argv, GameObj& g) {
   }
   univ.AP[Playernum - 1] -= alloc;
   auto star_handle = g.entity_manager.get_star(g.snum);
-  auto& star = *star_handle;
-  star.AP(Playernum - 1) = std::min(LIMIT_APs, star.AP(Playernum - 1) + alloc);
+  auto& star_write = *star_handle;
+  star_write.AP(Playernum - 1) = std::min(LIMIT_APs, star.AP(Playernum - 1) + alloc);
   std::string allocated_msg = "Allocated\n";
   notify(Playernum, Governor, allocated_msg);
 }

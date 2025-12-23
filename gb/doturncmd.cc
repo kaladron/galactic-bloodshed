@@ -875,23 +875,27 @@ static bool attack_planet(const Ship& ship) {
 }
 
 static void output_ground_attacks(EntityManager& em) {
-  int star;
-  int i;
-  int j;
-
-  for (star = 0; star < Sdata.numstars; star++)
-    for (i = 1; i <= Num_races; i++)
-      for (j = 1; j <= Num_races; j++)
-        if (ground_assaults[i - 1][j - 1][star]) {
-          const auto* star_ptr = em.peek_star(star);
-          const auto* race_i = em.peek_race(i);
-          const auto* race_j = em.peek_race(j);
-          if (!star_ptr || !race_i || !race_j) continue;
+  for (auto star_handle : StarList(em)) {
+    const auto& star = *star_handle;
+    const starnum_t star_num = star.star_id();
+    
+    for (auto race_i_handle : RaceList(em)) {
+      const auto& race_i = *race_i_handle;
+      const player_t i = race_i.Playernum;
+      
+      for (auto race_j_handle : RaceList(em)) {
+        const auto& race_j = *race_j_handle;
+        const player_t j = race_j.Playernum;
+        
+        if (ground_assaults[i - 1][j - 1][star_num]) {
           std::string assault_news =
               std::format("{}: {} [{}] assaults {} [{}] {} times.\n",
-                          star_ptr->get_name(), race_i->name, i, race_j->name,
-                          j, ground_assaults[i - 1][j - 1][star]);
+                          star.get_name(), race_i.name, i, race_j.name,
+                          j, ground_assaults[i - 1][j - 1][star_num]);
           post(em, assault_news, NewsType::COMBAT);
-          ground_assaults[i - 1][j - 1][star] = 0;
+          ground_assaults[i - 1][j - 1][star_num] = 0;
         }
+      }
+    }
+  }
 }

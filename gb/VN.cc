@@ -13,18 +13,20 @@ import std.compat;
 module gblib;
 
 namespace {
-void order_berserker(Ship& ship) {
+void order_berserker(EntityManager& em, Ship& ship) {
   /* give berserkers a mission - send to planet of offending player and bombard
    * it */
   ship.bombard() = 1;
   MindData mind{}; /* who to attack */
   mind.target = VN_brain.Most_mad;
   ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+  const auto* universe = em.peek_universe();
   if (random() & 01)
-    ship.deststar() = Sdata.VN_index1[mind.target - 1];
+    ship.deststar() = universe->VN_index1[mind.target - 1];
   else
-    ship.deststar() = Sdata.VN_index2[mind.target - 1];
-  ship.destpnum() = int_rand(0, stars[ship.deststar()].numplanets() - 1);
+    ship.deststar() = universe->VN_index2[mind.target - 1];
+  const auto& star = *em.peek_star(ship.deststar());
+  ship.destpnum() = int_rand(0, star.numplanets() - 1);
   if (ship.hyper_drive().has && ship.mounted()) {
     ship.hyper_drive().on = 1;
     ship.hyper_drive().ready = 1;
@@ -33,32 +35,40 @@ void order_berserker(Ship& ship) {
   ship.special() = mind;
 }
 
-void order_VN(Ship& ship) {
+void order_VN(EntityManager& em, Ship& ship) {
   int min = 0;
   int min2 = 0;
 
+  const auto* universe = em.peek_universe();
   /* find closest star */
-  for (auto s = 0; s < Sdata.numstars; s++)
-    if (s != ship.storbits() &&
-        Distsq(stars[s].xpos(), stars[s].ypos(), ship.xpos(), ship.ypos()) <
-            Distsq(stars[min].xpos(), stars[min].ypos(), ship.xpos(),
-                   ship.ypos())) {
-      min2 = min;
-      min = s;
+  for (auto s = 0; s < universe->numstars; s++) {
+    if (s != ship.storbits()) {
+      const auto& star_s = *em.peek_star(s);
+      const auto& star_min = *em.peek_star(min);
+      if (Distsq(star_s.xpos(), star_s.ypos(), ship.xpos(), ship.ypos()) <
+          Distsq(star_min.xpos(), star_min.ypos(), ship.xpos(),
+                 ship.ypos())) {
+        min2 = min;
+        min = s;
+      }
     }
+  }
 
   /* don't go there if we have a choice,
      and we have VN's there already */
-  if (isset(stars[min].inhabited(), 1U))
-    if (isset(stars[min2].inhabited(), 1U))
-      ship.deststar() = int_rand(0, (int)Sdata.numstars - 1);
+  const auto& star_min = *em.peek_star(min);
+  const auto& star_min2 = *em.peek_star(min2);
+  if (isset(star_min.inhabited(), 1U))
+    if (isset(star_min2.inhabited(), 1U))
+      ship.deststar() = int_rand(0, (int)universe->numstars - 1);
     else
       ship.deststar() = min2; /* 2nd closest star */
   else
     ship.deststar() = min;
 
-  if (stars[ship.deststar()].numplanets()) {
-    ship.destpnum() = int_rand(0, stars[ship.deststar()].numplanets() - 1);
+  const auto& dest_star = *em.peek_star(ship.deststar());
+  if (dest_star.numplanets()) {
+    ship.destpnum() = int_rand(0, dest_star.numplanets() - 1);
     ship.whatdest() = ScopeLevel::LEVEL_PLAN;
     if (std::holds_alternative<MindData>(ship.special())) {
       auto mind = std::get<MindData>(ship.special());
@@ -87,9 +97,9 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
 
     // we were just built & launched
     if (ship.type() == ShipType::OTYPE_BERS)
-      order_berserker(ship);
+      order_berserker(em, ship);
     else
-      order_VN(ship);
+      order_VN(em, ship);
     return;
   }
 
@@ -341,8 +351,9 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
               ship.whatdest() = ScopeLevel::LEVEL_PLAN;
               ship.deststar() = ship.storbits();
               ship.destpnum() = ship.pnumorbits();
-              ship.xpos() = stars[ship.storbits()].xpos() + planet.xpos();
-              ship.ypos() = stars[ship.storbits()].ypos() + planet.ypos();
+              const auto& star = *entity_manager.peek_star(ship.storbits());
+              ship.xpos() = star.xpos() + planet.xpos();
+              ship.ypos() = star.ypos() + planet.ypos();
               ship.land_x() = sect.get_x();
               ship.land_y() = sect.get_y();
               if (std::holds_alternative<MindData>(ship.special())) {

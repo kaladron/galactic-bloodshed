@@ -59,10 +59,12 @@ void moveplanet(EntityManager& entity_manager, const starnum_t starnum,
   if (planet.popn() || planet.ships())
     stats.Stinfo[starnum][planetnum].inhab = 1;
 
-  stats.StarsInhab[starnum] = !!(stars[starnum].inhabited());
-  stats.StarsExpl[starnum] = !!(stars[starnum].explored());
+  auto star_handle = entity_manager.get_star(starnum);
+  auto& star = *star_handle;
+  stats.StarsInhab[starnum] = !!(star.inhabited());
+  stats.StarsExpl[starnum] = !!(star.explored());
 
-  stars[starnum].inhabited() = 0;
+  star.inhabited() = 0;
   if (!stats.StarsExpl[starnum]) return; /* no one's explored the star yet */
 
   double dist = std::hypot((double)(planet.ypos()), (double)(planet.xpos()));
@@ -70,7 +72,7 @@ void moveplanet(EntityManager& entity_manager, const starnum_t starnum,
   double phase = std::atan2((double)(planet.ypos()), (double)(planet.xpos()));
   double period =
       dist *
-      std::sqrt((double)(dist / (SYSTEMGRAVCONST * stars[starnum].gravity())));
+      std::sqrt((double)(dist / (SYSTEMGRAVCONST * star.gravity())));
   /* keppler's law */
 
   double xadd = dist * std::cos((double)(-1. / period + phase)) - planet.xpos();

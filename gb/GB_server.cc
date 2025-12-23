@@ -244,9 +244,10 @@ std::string do_prompt(GameObj& g) {
   player_t Playernum = g.player;
   std::stringstream prompt;
 
+  const auto* universe = g.entity_manager.peek_universe();
   switch (g.level) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [{0}] / )\n", Sdata.AP[Playernum - 1]);
+      prompt << std::format(" ( [{0}] / )\n", universe->AP[Playernum - 1]);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       auto star = g.entity_manager.get_star(g.snum);
@@ -271,7 +272,7 @@ std::string do_prompt(GameObj& g) {
   if (!s) return " ( [?] /#? )\n";
   switch (s->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [[0]] /#{1} )\n", Sdata.AP[Playernum - 1],
+      prompt << std::format(" ( [[0]] /#{1} )\n", universe->AP[Playernum - 1],
                             g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
@@ -302,7 +303,7 @@ std::string do_prompt(GameObj& g) {
   if (!s2) return " ( [?] /#?/#? )\n";
   switch (s2->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [{0}] /#{1}/#{2} )\n", Sdata.AP[Playernum - 1],
+      prompt << std::format(" ( [{0}] /#{1}/#{2} )\n", universe->AP[Playernum - 1],
                             s->destshipno(), g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
@@ -333,7 +334,7 @@ std::string do_prompt(GameObj& g) {
   switch (s2->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] / /../#{1}/#{2} )\n",
-                            Sdata.AP[Playernum - 1], s->destshipno(), g.shipno);
+                            universe->AP[Playernum - 1], s->destshipno(), g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(s->storbits());
@@ -905,7 +906,8 @@ static void check_connect(DescriptorData& d, std::string_view message) {
   d.shipno = 0;
 
   // Validate and clamp star number
-  if (d.snum >= Sdata.numstars) {
+  const auto* universe = d.entity_manager.peek_universe();
+  if (d.snum >= universe->numstars) {
     d.snum = 0;  // Default to first star if invalid
   }
 
@@ -1110,10 +1112,11 @@ static void dump_users(DescriptorData& e) {
       if (!r->governor[d.governor].toggle.invisible || e.player == d.player ||
           God) {
         std::string temp = std::format("\"{}\"", r->governor[d.governor].name);
+        const auto& star = *d.entity_manager.peek_star(d.snum);
         std::string user_info = std::format(
             "{:20.20s} {:20.20s} [{:2d},{:2d}] {:4d}s idle {:4.4s} {} {}\n",
             r->name, temp, d.player, d.governor, now - d.last_time,
-            God ? stars[d.snum].get_name().c_str() : "    ",
+            God ? star.get_name() : "    ",
             (r->governor[d.governor].toggle.gag ? "GAG" : "   "),
             (r->governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, user_info);

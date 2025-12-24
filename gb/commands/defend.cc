@@ -19,12 +19,8 @@ void defend(const command_t& argv, GameObj& g) {
   int strength;
   int retal;
   int damage;
-  int numdest;
 
   if (!DEFENSE) return;
-
-  /* for telegramming and retaliating */
-  Nuked.fill(0);
 
   /* get the planet from the players current scope */
   if (g.level != ScopeLevel::LEVEL_PLAN) {
@@ -173,16 +169,17 @@ void defend(const command_t& argv, GameObj& g) {
     strength = retal;
     if (laser_on(*to)) check_overload(g.entity_manager, *to, 0, &strength);
 
-    if ((numdest = shoot_ship_to_planet(g.entity_manager, *to, p, strength, x,
-                                        y, smap, 0, 0, long_buf, short_buf)) >=
-        0) {
+    auto result = shoot_ship_to_planet(g.entity_manager, *to, p, strength, x, y,
+                                       smap, 0, 0, long_buf, short_buf);
+    if (result.numdest < 0) {
       if (laser_on(*to))
         use_fuel(*to, 2.0 * (double)strength);
       else
         use_destruct(*to, strength);
 
       post(g.entity_manager, short_buf, NewsType::COMBAT);
-      notify_star(g.entity_manager, Playernum, Governor, to->storbits(), short_buf);
+      notify_star(g.entity_manager, Playernum, Governor, to->storbits(),
+                  short_buf);
       notify(Playernum, Governor, long_buf);
       warn(to->owner(), to->governor(), long_buf);
     }
@@ -199,9 +196,10 @@ void defend(const command_t& argv, GameObj& g) {
           check_overload(g.entity_manager, const_cast<Ship&>(*ship), 0,
                          &strength);
 
-        if ((numdest = shoot_ship_to_planet(g.entity_manager, *ship, p,
-                                            strength, x, y, smap, 0, 0,
-                                            long_buf, short_buf)) >= 0) {
+        auto result2 =
+            shoot_ship_to_planet(g.entity_manager, *ship, p, strength, x, y,
+                                 smap, 0, 0, long_buf, short_buf);
+        if (result2.numdest >= 0) {
           auto ship_mut_handle = g.entity_manager.get_ship(ship->number());
           if (!ship_mut_handle.get()) {
             continue;
@@ -212,7 +210,8 @@ void defend(const command_t& argv, GameObj& g) {
           else
             use_destruct(ship_mut, strength);
           post(g.entity_manager, short_buf, NewsType::COMBAT);
-          notify_star(g.entity_manager, Playernum, Governor, ship->storbits(), short_buf);
+          notify_star(g.entity_manager, Playernum, Governor, ship->storbits(),
+                      short_buf);
           notify(Playernum, Governor, long_buf);
           warn(ship->owner(), ship->governor(), long_buf);
         }

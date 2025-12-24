@@ -541,7 +541,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
               int checking_fuel) {
   const auto* state = em.peek_server_state();
   if (!state) return;  // Can't move ships without knowing segments
-  
+
   double stardist;
   double movedist;
   double truedist;

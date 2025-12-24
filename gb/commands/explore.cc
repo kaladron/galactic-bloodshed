@@ -43,7 +43,6 @@ void explore(const command_t& argv, GameObj& g) {
   for (auto star_handle : StarList(g.entity_manager)) {
     const auto& star_ref = *star_handle;
     if ((starq == -1) || (starq == star_ref.star_id())) {
-
       if (isset(star_ref.explored(), Playernum))
         for (planetnum_t i = 0; i < star_ref.numplanets(); i++) {
           const auto& pl = *g.entity_manager.peek_planet(star_ref.star_id(), i);

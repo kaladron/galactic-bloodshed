@@ -71,7 +71,8 @@ void dissolve(const command_t& argv, GameObj& g) {
     const auto& star = *star_handle;
     if (!isset(star.explored(), Playernum)) continue;
 
-    for (auto planet_handle : PlanetList(g.entity_manager, star.star_id(), star)) {
+    for (auto planet_handle :
+         PlanetList(g.entity_manager, star.star_id(), star)) {
       auto& pl = *planet_handle;
       if (pl.info(Playernum - 1).explored &&
           pl.info(Playernum - 1).numsectsowned) {
@@ -88,7 +89,8 @@ void dissolve(const command_t& argv, GameObj& g) {
         pl.info(Playernum - 1).autorep = 0;
       }
 
-      auto smap_handle = g.entity_manager.get_sectormap(star.star_id(), pl.planet_order());
+      auto smap_handle =
+          g.entity_manager.get_sectormap(star.star_id(), pl.planet_order());
       auto& smap = *smap_handle;
       for (auto& s : smap) {
         if (s.get_owner() == Playernum) {

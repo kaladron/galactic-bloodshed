@@ -10,7 +10,8 @@ module commands;
 
 namespace GB::commands {
 void victory(const command_t& argv, GameObj& g) {
-  int count = (argv.size() > 1) ? std::stoi(argv[1]) : g.entity_manager.num_races();
+  int count =
+      (argv.size() > 1) ? std::stoi(argv[1]) : g.entity_manager.num_races();
   count = std::min<player_t>(count, g.entity_manager.num_races());
 
   auto viclist = create_victory_list(g.entity_manager);

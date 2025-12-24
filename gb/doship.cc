@@ -12,7 +12,7 @@ namespace {
 void do_repair(Ship& ship, EntityManager& entity_manager) {
   const auto* state = entity_manager.peek_server_state();
   if (!state) return;  // Can't repair without knowing segments
-  
+
   double maxrep = REPAIR_RATE / (double)state->segments;
 
   /* stations repair for free, and ships docked with them */
@@ -72,14 +72,14 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
 }
 
 void do_meta_infect(int who, starnum_t star, planetnum_t pnum, Planet& p,
-                    EntityManager& entity_manager) {
+                    EntityManager& entity_manager, TurnStats& stats) {
   auto smap_handle = entity_manager.get_sectormap(star, pnum);
   if (!smap_handle.get()) return;
   auto& smap = *smap_handle;
   // TODO(jeffbailey): I'm pretty certain this memset is unnecessary, but this
   // is so far away from any other uses of Sectinfo that I'm having trouble
   // proving it.
-  std::memset(Sectinfo, 0, sizeof(Sectinfo));
+  std::memset(stats.Sectinfo.data(), 0, sizeof(stats.Sectinfo));
   auto x = int_rand(0, p.Maxx() - 1);
   auto y = int_rand(0, p.Maxy() - 1);
   auto owner = smap.get(x, y).get_owner();
@@ -114,18 +114,18 @@ void do_meta_infect(int who, starnum_t star, planetnum_t pnum, Planet& p,
 }
 
 int infect_planet(int who, starnum_t star, planetnum_t pnum,
-                  EntityManager& entity_manager) {
+                  EntityManager& entity_manager, TurnStats& stats) {
   if (success(SPORE_SUCCESS_RATE)) {
     auto planet_handle = entity_manager.get_planet(star, pnum);
     if (planet_handle.get()) {
-      do_meta_infect(who, star, pnum, *planet_handle, entity_manager);
+      do_meta_infect(who, star, pnum, *planet_handle, entity_manager, stats);
       return 1;
     }
   }
   return 0;
 }
 
-void do_pod(Ship& ship, EntityManager& entity_manager) {
+void do_pod(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
   if (!std::holds_alternative<PodData>(ship.special())) {
     return;
   }
@@ -151,7 +151,8 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
       telegram_buf << std::format("{} has warmed and exploded at {}\n",
                                   ship_to_string(ship),
                                   prin_ship_orbits(entity_manager, ship));
-      if (infect_planet(ship.owner(), ship.storbits(), i, entity_manager)) {
+      if (infect_planet(ship.owner(), ship.storbits(), i, entity_manager,
+                        stats)) {
         telegram_buf << std::format("\tmeta-colony established on {}.",
                                     star->get_planet_name(i));
       } else {
@@ -560,7 +561,8 @@ void doship(Ship& ship, int update, EntityManager& entity_manager,
           default:
             break;
         }
-      if (ship.type() == ShipType::STYPE_POD) do_pod(ship, entity_manager);
+      if (ship.type() == ShipType::STYPE_POD)
+        do_pod(ship, entity_manager, stats);
     }
   }
 }
@@ -653,14 +655,14 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
       if (!smap_handle.get()) return;
       auto& smap = *smap_handle;
       char long_buf[1024], short_buf[256];
-      auto numdest = shoot_ship_to_planet(
+      auto result = shoot_ship_to_planet(
           entity_manager, ship, p, (int)ship.destruct(), bombx, bomby, smap, 0,
           GTYPE_HEAVY, long_buf, short_buf);
       push_telegram(ship.owner(), ship.governor(), long_buf);
       entity_manager.kill_ship(ship.owner(), ship);
       std::string sectors_destroyed_msg = std::format(
           "{} dropped on {}.\n\t{} sectors destroyed.\n", ship_to_string(ship),
-          prin_ship_orbits(entity_manager, ship), numdest);
+          prin_ship_orbits(entity_manager, ship), result.numdest);
       const auto* star = entity_manager.peek_star(ship.storbits());
       for (auto race_handle : RaceList(entity_manager)) {
         const auto& race = race_handle.read();
@@ -671,7 +673,7 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
                         sectors_destroyed_msg);
         }
       }
-      if (numdest) {
+      if (result.numdest) {
         std::string dropmsg =
             std::format("{} dropped on {}.\n", ship_to_string(ship),
                         prin_ship_orbits(entity_manager, ship));
@@ -797,14 +799,14 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
     auto& smap = *smap_handle;
 
     char long_buf[1024], short_buf[256];
-    auto numdest = shoot_ship_to_planet(entity_manager, ship, planet,
-                                        (int)(ship.destruct()), x, y, smap, 0,
-                                        GTYPE_LIGHT, long_buf, short_buf);
+    auto result = shoot_ship_to_planet(entity_manager, ship, planet,
+                                       (int)(ship.destruct()), x, y, smap, 0,
+                                       GTYPE_LIGHT, long_buf, short_buf);
 
     std::stringstream telegram;
     telegram << postmsg;
-    if (numdest > 0) {
-      telegram << std::format(" - {} sectors destroyed.", numdest);
+    if (result.numdest > 0) {
+      telegram << std::format(" - {} sectors destroyed.", result.numdest);
     }
     telegram << "\n";
 
@@ -813,7 +815,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
 
     for (auto race_handle : RaceList(entity_manager)) {
       const auto& race = race_handle.read();
-      if (Nuked[race.Playernum - 1]) {
+      if (result.nuked[race.Playernum - 1]) {
         warn(race.Playernum, star->governor(race.Playernum - 1),
              telegram.str());
       }

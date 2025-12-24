@@ -415,8 +415,7 @@ void EntityManager::release_universe() {
 EntityHandle<ServerState> EntityManager::get_server_state() {
   if (server_state_cache) {
     server_state_refcount++;
-    return {this, server_state_cache.get(),
-            [this](const ServerState& state) {
+    return {this, server_state_cache.get(), [this](const ServerState& state) {
               server_state_repo.save(state);
               release_server_state();
             }};

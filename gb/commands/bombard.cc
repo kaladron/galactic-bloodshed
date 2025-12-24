@@ -17,9 +17,6 @@ void bombard(const command_t& argv, GameObj& g) {
   int x;
   int y;
 
-  /* for telegramming and retaliating */
-  Nuked.fill(0);
-
   if (argv.size() < 2) {
     g.out << "Syntax: 'bombard <ship> [<x,y> [<strength>]]'.\n";
     return;
@@ -115,10 +112,10 @@ void bombard(const command_t& argv, GameObj& g) {
     }
     SectorMap& smap = *smap_handle;
     char long_buf[1024], short_buf[256];
-    auto numdest = shoot_ship_to_planet(g.entity_manager, from, p, strength, x,
-                                        y, smap, 0, 0, long_buf, short_buf);
+    auto result = shoot_ship_to_planet(g.entity_manager, from, p, strength, x,
+                                       y, smap, 0, 0, long_buf, short_buf);
 
-    if (numdest < 0) {
+    if (result.numdest < 0) {
       g.out << "Illegal attack.\n";
       continue;
     }
@@ -129,9 +126,10 @@ void bombard(const command_t& argv, GameObj& g) {
       use_destruct(from, strength);
 
     post(g.entity_manager, short_buf, NewsType::COMBAT);
-    notify_star(g.entity_manager, Playernum, Governor, from.storbits(), short_buf);
+    notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
+                short_buf);
     for (auto i = 1; i <= g.entity_manager.num_races(); i++) {
-      if (Nuked[i - 1]) {
+      if (result.nuked[i - 1]) {
         const auto* star = g.entity_manager.peek_star(from.storbits());
         warn(i, star->governor(i - 1), long_buf);
       }
@@ -140,9 +138,9 @@ void bombard(const command_t& argv, GameObj& g) {
 
     if (DEFENSE) {
       /* planet retaliates - AFVs are immune to this */
-      if (numdest && from.type() != ShipType::OTYPE_AFV) {
+      if (result.numdest && from.type() != ShipType::OTYPE_AFV) {
         for (auto i = 1; i <= g.entity_manager.num_races(); i++)
-          if (Nuked[i - 1] && !p.slaved_to()) {
+          if (result.nuked[i - 1] && !p.slaved_to()) {
             /* add planet defense strength */
             auto alien_handle = g.entity_manager.get_race(i);
             if (!alien_handle.get()) continue;
@@ -159,14 +157,15 @@ void bombard(const command_t& argv, GameObj& g) {
             notify(Playernum, Governor, long_buf);
             if (!from.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(g.entity_manager, Playernum, Governor, from.storbits(), short_buf);
+            notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
+                        short_buf);
           }
       }
     }
 
     /* protecting ships retaliate individually if damage was inflicted */
     /* AFVs are immune to this */
-    if (numdest && from.alive() && from.type() != ShipType::OTYPE_AFV) {
+    if (result.numdest && from.alive() && from.type() != ShipType::OTYPE_AFV) {
       ShipList shiplist(g.entity_manager, p.ships());
       for (auto ship_handle : shiplist) {
         Ship& ship = *ship_handle;
@@ -188,7 +187,8 @@ void bombard(const command_t& argv, GameObj& g) {
               use_destruct(ship, strength);
             if (!from.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(g.entity_manager, Playernum, Governor, from.storbits(), short_buf);
+            notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
+                        short_buf);
             warn(ship.owner(), ship.governor(), long_buf);
             notify(Playernum, Governor, long_buf);
           }

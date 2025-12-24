@@ -42,9 +42,6 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   const auto* star = entity_manager.peek_star(ship.storbits());
   if (!star) return 0;
 
-  /* for telegramming */
-  Nuked.fill(0);
-
   /* check to see if PDNs are present */
   const ShipList shiplist(entity_manager, planet.ships());
   for (const Ship* s : shiplist) {
@@ -116,17 +113,16 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
 
   // Enemy planet retaliates along with defending forces
 
-  Nuked.fill(0);
   // save owner of destroyed sector
   auto oldown = smap.get(x, y).get_owner();
   ship.destruct() -= str;
   ship.mass() -= str * MASS_DESTRUCT;
 
   char long_buf[1024], short_buf[256];
-  auto numdest = shoot_ship_to_planet(entity_manager, ship, planet, str, x, y,
-                                      smap, 0, 0, long_buf, short_buf);
+  auto result = shoot_ship_to_planet(entity_manager, ship, planet, str, x, y,
+                                     smap, 0, 0, long_buf, short_buf);
   /* (0=dont get smap) */
-  numdest = std::max(numdest, 0);
+  auto numdest = std::max(result.numdest, 0);
 
   /* tell the bombarding player about it.. */
   std::stringstream telegram_report;
@@ -146,7 +142,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
       Shipltrs[ship.type()], ship.number(), ship.name(), x, y, numdest);
 
   for (player_t i = 1; i <= entity_manager.num_races(); i++)
-    if (Nuked[i - 1] && i != ship.owner())
+    if (result.nuked[i - 1] && i != ship.owner())
       warn(i, star->governor(i - 1), telegram_alert.str());
 
   std::string combatpost =

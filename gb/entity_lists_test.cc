@@ -199,7 +199,8 @@ int main() {
 
   // Test 1: Const ShipList - should use ConstIterator returning const Ship*
   // Pattern: const ShipList shiplist{em, start}; for (const Ship* s : shiplist)
-  // Note: Inline ShipList{em, start} is a non-const rvalue, so must use named const
+  // Note: Inline ShipList{em, start} is a non-const rvalue, so must use named
+  // const
   std::println("  Testing const ShipList (read-only)...");
   {
     int count = 0;

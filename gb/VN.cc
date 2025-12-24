@@ -13,12 +13,12 @@ import std.compat;
 module gblib;
 
 namespace {
-void order_berserker(EntityManager& em, Ship& ship) {
+void order_berserker(EntityManager& em, Ship& ship, TurnStats& stats) {
   /* give berserkers a mission - send to planet of offending player and bombard
    * it */
   ship.bombard() = 1;
   MindData mind{}; /* who to attack */
-  mind.target = VN_brain.Most_mad;
+  mind.target = stats.VN_brain.Most_mad;
   ship.whatdest() = ScopeLevel::LEVEL_PLAN;
   const auto* universe = em.peek_universe();
   if (random() & 01)
@@ -46,8 +46,7 @@ void order_VN(EntityManager& em, Ship& ship) {
       const auto& star_s = *em.peek_star(s);
       const auto& star_min = *em.peek_star(min);
       if (Distsq(star_s.xpos(), star_s.ypos(), ship.xpos(), ship.ypos()) <
-          Distsq(star_min.xpos(), star_min.ypos(), ship.xpos(),
-                 ship.ypos())) {
+          Distsq(star_min.xpos(), star_min.ypos(), ship.xpos(), ship.ypos())) {
         min2 = min;
         min = s;
       }
@@ -97,7 +96,7 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
 
     // we were just built & launched
     if (ship.type() == ShipType::OTYPE_BERS)
-      order_berserker(em, ship);
+      order_berserker(em, ship, stats);
     else
       order_VN(em, ship);
     return;
@@ -169,7 +168,7 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
 
 /*  planet_doVN() -- called by doplanet() */
 void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
-                 EntityManager& entity_manager) {
+                 EntityManager& entity_manager, TurnStats& stats) {
   int j;
   int oldres;
   int xa;
@@ -204,7 +203,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
         rcv_fuel(ship, (double)prod);
       }
       /* now try to construct another machine */
-      ShipType shipbuild = (VN_brain.Total_mad > 100 && random() & 01)
+      ShipType shipbuild = (stats.VN_brain.Total_mad > 100 && random() & 01)
                                ? ShipType::OTYPE_BERS
                                : ShipType::OTYPE_VN;
       if (ship.resource() >= Shipdata[shipbuild][ABIL_COST]) {
@@ -263,7 +262,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
                                  ? std::get<MindData>(ship.special())
                                  : MindData{};
             s2.special() = MindData{.progenitor = ship_mind.progenitor,
-                                    .target = VN_brain.Most_mad,
+                                    .target = stats.VN_brain.Most_mad,
                                     .generation = ship_mind.generation,
                                     .busy = 0,
                                     .tampered = ship_mind.tampered,

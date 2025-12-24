@@ -6,17 +6,23 @@ import :misc;
 import :race;
 import :ships;
 
+// Result of shooting a ship at a planet
+export struct ShootToPlanetResult {
+  int numdest{0};  // Number of sectors destroyed, or -1 for error
+  std::array<char, MAXPLAYERS> nuked{};  // Which players' sectors were hit
+};
+
 // Damage, Short, Long
 export std::optional<std::tuple<int, std::string, std::string>>
 shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
                    int cew_strength, int range, bool ignore = false);
 export int shoot_planet_to_ship(EntityManager& em, Race& race, Ship& target,
                                 int strength, char* long_msg, char* short_msg);
-export int shoot_ship_to_planet(EntityManager& em, const Ship& attacker,
-                                Planet& target, int strength, int range,
-                                int accuracy, SectorMap& sector_map,
-                                int sector_x, int sector_y, char* long_msg,
-                                char* short_msg);
+export ShootToPlanetResult
+shoot_ship_to_planet(EntityManager& em, const Ship& attacker, Planet& target,
+                     int strength, int range, int accuracy,
+                     SectorMap& sector_map, int sector_x, int sector_y,
+                     char* long_msg, char* short_msg);
 export std::pair<int, int> hit_odds(double range, double tech, int fdam,
                                     int fev, int tev, int fspeed, int tspeed,
                                     int body, guntype_t caliber, int defense);

@@ -11,7 +11,8 @@ static const std::array<int, 8> y_adj = {1, 1, 1, 0, 0, -1, -1, -1};
 
 namespace {
 void Migrate2(EntityManager& entity_manager, const Planet& planet, int xd,
-              int yd, Sector& ps, population_t* people, SectorMap& smap) {
+              int yd, Sector& ps, population_t* people, SectorMap& smap,
+              TurnStats& stats) {
   /* attempt to migrate beyond screen, or too many people */
   if (yd > planet.Maxy() - 1 || yd < 0) return;
 
@@ -25,7 +26,7 @@ void Migrate2(EntityManager& entity_manager, const Planet& planet, int xd,
   if (!pd.is_owned()) {
     const auto* race = entity_manager.peek_race(ps.get_owner());
     if (!race) return;
-    double move_calc = (*people) * Compat[ps.get_owner() - 1] *
+    double move_calc = (*people) * stats.Compat[ps.get_owner() - 1] *
                        race->likes[pd.get_condition()] / 100.0;
     // Round and clamp to valid population_t range
     auto move = std::clamp(std::lround(move_calc), population_t{0},
@@ -35,13 +36,13 @@ void Migrate2(EntityManager& entity_manager, const Planet& planet, int xd,
     pd.set_popn(pd.get_popn() + move);
     ps.set_popn(ps.get_popn() - move);
     pd.set_owner(ps.get_owner());
-    tot_captured++;
-    Claims = 1;
+    stats.tot_captured++;
+    stats.Claims = 1;
   }
 }
 
 // Process resource production from a sector
-void processResourceProduction(const Race& race, Sector& s) {
+void processResourceProduction(const Race& race, Sector& s, TurnStats& stats) {
   if (!s.get_resource() || !success(s.get_eff())) return;
 
   resource_t prod = static_cast<resource_t>(round_rand(race.metabolism)) *
@@ -53,38 +54,38 @@ void processResourceProduction(const Race& race, Sector& s) {
   int owner_idx = s.get_owner() - 1;
 
   if (success(s.get_mobilization())) {
-    prod_destruct[owner_idx] += prod;
+    stats.prod_destruct[owner_idx] += prod;
   } else {
-    prod_res[owner_idx] += prod;
+    stats.prod_res[owner_idx] += prod;
   }
 
-  prod_fuel[owner_idx] += pfuel;
+  stats.prod_fuel[owner_idx] += pfuel;
 }
 
 // Process crystal mining in a sector
-void processCrystalMining(const Race& race, Sector& s) {
+void processCrystalMining(const Race& race, Sector& s, TurnStats& stats) {
   if (s.get_crystals() && Crystal(race) && success(s.get_eff())) {
-    prod_crystals[s.get_owner() - 1]++;
+    stats.prod_crystals[s.get_owner() - 1]++;
     s.set_crystals(s.get_crystals() - 1);
   }
 }
 
 // Update sector mobilization based on planetary settings
-void updateMobilization(Sector& s, const plinfo& pinf) {
+void updateMobilization(Sector& s, const plinfo& pinf, TurnStats& stats) {
   int owner_idx = s.get_owner() - 1;
 
   if (s.get_mobilization() < pinf.mob_set) {
-    if (pinf.resource + prod_res[owner_idx] > 0) {
+    if (pinf.resource + stats.prod_res[owner_idx] > 0) {
       s.set_mobilization(s.get_mobilization() + 1);
-      prod_res[owner_idx] -= round_rand(MOB_COST);
-      prod_mob++;
+      stats.prod_res[owner_idx] -= round_rand(MOB_COST);
+      stats.prod_mob++;
     }
   } else if (s.get_mobilization() > pinf.mob_set) {
     s.set_mobilization(s.get_mobilization() - 1);
-    prod_mob--;
+    stats.prod_mob--;
   }
 
-  avg_mob[owner_idx] += s.get_mobilization();
+  stats.avg_mob[owner_idx] += s.get_mobilization();
 }
 
 // Update sector efficiency and plating
@@ -132,9 +133,9 @@ population_t calculatePopulationChange(const Race& race, const Sector& s,
 // Handle population changes and owner updates
 void updatePopulationAndOwner(EntityManager& entity_manager, Sector& s,
                               const Race& race, const Star& star,
-                              const Planet& planet) {
-  auto maxsup =
-      maxsupport(race, s, Compat[s.get_owner() - 1], planet.conditions(TOXIC));
+                              const Planet& planet, TurnStats& stats) {
+  auto maxsup = maxsupport(race, s, stats.Compat[s.get_owner() - 1],
+                           planet.conditions(TOXIC));
   s.set_popn(s.get_popn() + calculatePopulationChange(race, s, maxsup));
 
   // Handle troops maintenance costs - get mutable race for governor update
@@ -154,30 +155,30 @@ void updatePopulationAndOwner(EntityManager& entity_manager, Sector& s,
 
 //  produce() -- produce, stuff like that, on a sector.
 void produce(EntityManager& entity_manager, const Star& star,
-             const Planet& planet, Sector& s) {
+             const Planet& planet, Sector& s, TurnStats& stats) {
   if (!s.is_owned()) return;
   const auto* race = entity_manager.peek_race(s.get_owner());
   if (!race) return;
 
   // Process production and resources
-  processResourceProduction(*race, s);
-  processCrystalMining(*race, s);
+  processResourceProduction(*race, s, stats);
+  processCrystalMining(*race, s, stats);
 
   // Handle mobilization
   const auto& pinf = planet.info(s.get_owner() - 1);
-  updateMobilization(s, pinf);
+  updateMobilization(s, pinf, stats);
 
   // Update efficiency, fertility and sector condition
   updateEfficiency(s, *race, planet);
   updateFertilityAndCondition(s, *race);
 
   // Handle population changes and ownership
-  updatePopulationAndOwner(entity_manager, s, *race, star, planet);
+  updatePopulationAndOwner(entity_manager, s, *race, star, planet, stats);
 }
 
 // spread()  -- spread population around.
 void spread(EntityManager& entity_manager, const Planet& pl, Sector& s,
-            SectorMap& smap) {
+            SectorMap& smap, TurnStats& stats) {
   if (!s.is_owned()) return;
   if (pl.slaved_to() && pl.slaved_to() != s.get_owner())
     return; /* no one wants to go anywhere */
@@ -199,7 +200,7 @@ void spread(EntityManager& entity_manager, const Planet& pl, Sector& s,
     int x2 = x_adj[j];
     int y2 = y_adj[j];
     Migrate2(entity_manager, pl, s.get_x() + x2, s.get_y() + y2, s, &people,
-             smap);
+             smap, stats);
     check--;
   }
 }
@@ -208,19 +209,20 @@ void spread(EntityManager& entity_manager, const Planet& pl, Sector& s,
         on earthtype planets.  */
 
 //  explore() -- mark sector and surrounding sectors as having been explored.
-void explore(const Planet& planet, Sector& s, int x, int y, int p) {
+void explore(const Planet& planet, Sector& s, int x, int y, int p,
+             TurnStats& stats) {
   // explore sectors surrounding sectors currently explored.
-  if (Sectinfo[x][y].explored) {
-    Sectinfo[mod(x - 1, planet.Maxx())][y].explored = p;
-    Sectinfo[mod(x + 1, planet.Maxx())][y].explored = p;
+  if (stats.Sectinfo[x][y].explored) {
+    stats.Sectinfo[mod(x - 1, planet.Maxx())][y].explored = p;
+    stats.Sectinfo[mod(x + 1, planet.Maxx())][y].explored = p;
     if (y == 0) {
-      Sectinfo[x][1].explored = p;
+      stats.Sectinfo[x][1].explored = p;
     } else if (y == planet.Maxy() - 1) {
-      Sectinfo[x][y - 1].explored = p;
+      stats.Sectinfo[x][y - 1].explored = p;
     } else {
-      Sectinfo[x][y - 1].explored = Sectinfo[x][y + 1].explored = p;
+      stats.Sectinfo[x][y - 1].explored = stats.Sectinfo[x][y + 1].explored = p;
     }
   } else if (s.get_owner() == p) {
-    Sectinfo[x][y].explored = p;
+    stats.Sectinfo[x][y].explored = p;
   }
 }

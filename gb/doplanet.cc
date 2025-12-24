@@ -141,7 +141,7 @@ void do_dome(Ship* ship, SectorMap& smap) {
 }
 
 void do_quarry(Ship* ship, Planet& planet, SectorMap& smap,
-               EntityManager& entity_manager) {
+               EntityManager& entity_manager, TurnStats& stats) {
   auto& s = smap.get(ship->land_x(), ship->land_y());
 
   if ((ship->fuel() < (double)FUEL_COST_QUARRY)) {
@@ -155,7 +155,7 @@ void do_quarry(Ship* ship, Planet& planet, SectorMap& smap,
   int prod = round_rand(race->metabolism * (double)ship->popn() /
                         (double)ship->max_crew());
   ship->fuel() -= FUEL_COST_QUARRY;
-  prod_res[ship->owner() - 1] += prod;
+  stats.prod_res[ship->owner() - 1] += prod;
   int tox = int_rand(0, int_rand(0, prod));
   planet.conditions(TOXIC) = std::min(100, planet.conditions(TOXIC) + tox);
   if (s.get_fert() >= prod)
@@ -164,7 +164,8 @@ void do_quarry(Ship* ship, Planet& planet, SectorMap& smap,
     s.set_fert(0);
 }
 
-void do_berserker(EntityManager& entity_manager, Ship* ship, Planet& planet) {
+void do_berserker(EntityManager& entity_manager, Ship* ship, Planet& planet,
+                  TurnStats& stats) {
   if (ship->whatdest() == ScopeLevel::LEVEL_PLAN &&
       ship->whatorbits() == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
       ship->storbits() == ship->deststar() &&
@@ -347,16 +348,11 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   const starnum_t starnum = star.star_id();
   const planetnum_t planetnum = planet.planet_order();
 
-  bzero((char*)Sectinfo, sizeof(Sectinfo));
-
-  bzero((char*)avg_mob, sizeof(avg_mob));
-  bzero((char*)prod_res, sizeof(prod_res));
-  bzero((char*)prod_fuel, sizeof(prod_fuel));
-  bzero((char*)prod_destruct, sizeof(prod_destruct));
-  bzero((char*)prod_crystals, sizeof(prod_crystals));
-
-  tot_resdep = prod_eff = prod_mob = tot_captured = 0;
-  Claims = 0;
+  // Reset per-planet state in TurnStats
+  // Note: TurnStats is reused across planets, so we reset per-planet fields
+  // here
+  stats.Sectinfo = {};
+  stats.Claims = 0;
 
   planet.maxpopn() = 0;
 
@@ -367,16 +363,16 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   /* reset global variables */
   for (i = 1; i <= entity_manager.num_races(); i++) {
     const auto* race = entity_manager.peek_race(i);
-    Compat[i - 1] = planet.compatibility(*race);
+    stats.Compat[i - 1] = planet.compatibility(*race);
     planet.info(i - 1).numsectsowned = 0;
     planet.info(i - 1).troops = 0;
     planet.info(i - 1).popn = 0;
     planet.info(i - 1).est_production = 0.0;
-    prod_crystals[i - 1] = 0;
-    prod_fuel[i - 1] = 0;
-    prod_destruct[i - 1] = 0;
-    prod_res[i - 1] = 0;
-    avg_mob[i - 1] = 0;
+    stats.prod_crystals[i - 1] = 0;
+    stats.prod_fuel[i - 1] = 0;
+    stats.prod_destruct[i - 1] = 0;
+    stats.prod_res[i - 1] = 0;
+    stats.avg_mob[i - 1] = 0;
   }
 
   auto smap_handle = entity_manager.get_sectormap(starnum, planetnum);
@@ -388,13 +384,13 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
               or affect planet production */
       switch (ship.type()) {
         case ShipType::OTYPE_VN:
-          planet_doVN(ship, planet, smap, entity_manager);
+          planet_doVN(ship, planet, smap, entity_manager, stats);
           break;
         case ShipType::OTYPE_BERS:
           if (!ship.destruct() || !ship.bombard())
-            planet_doVN(ship, planet, smap, entity_manager);
+            planet_doVN(ship, planet, smap, entity_manager, stats);
           else
-            do_berserker(entity_manager, &ship, planet);
+            do_berserker(entity_manager, &ship, planet, stats);
           break;
         case ShipType::OTYPE_TERRA:
           if ((ship.on() && landed(ship) && ship.popn())) {
@@ -445,7 +441,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
           if (landed(ship))
             if (ship.resource() >= RES_COST_WPLANT &&
                 ship.fuel() >= FUEL_COST_WPLANT)
-              prod_destruct[ship.owner() - 1] +=
+              stats.prod_destruct[ship.owner() - 1] +=
                   do_weapon_plant(ship, entity_manager);
             else {
               if (ship.resource() < RES_COST_WPLANT) {
@@ -466,7 +462,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         case ShipType::OTYPE_QUARRY:
           if ((ship.on() && landed(ship) && ship.popn())) {
             if (ship.fuel() >= FUEL_COST_QUARRY)
-              do_quarry(&ship, planet, smap, entity_manager);
+              do_quarry(&ship, planet, smap, entity_manager, stats);
             else if (!ship.notified()) {
               ship.on() = 0;
               msg_OOF(entity_manager, ship);
@@ -519,11 +515,11 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     if (p.get_owner() && (p.get_popn() || p.get_troops())) {
       allmod = 1;
       if (!star.nova_stage()) {
-        produce(entity_manager, star, planet, p);
+        produce(entity_manager, star, planet, p, stats);
         if (p.get_owner())
           planet.info(p.get_owner() - 1).est_production +=
               est_production(p, entity_manager);
-        spread(entity_manager, planet, p, smap);
+        spread(entity_manager, planet, p, smap, stats);
       } else {
         /* damage sector from supernova */
         p.set_resource(p.get_resource() + 1);
@@ -535,7 +531,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         } else
           p.set_popn(round_rand((double)p.get_popn() * .50));
       }
-      Sectinfo[p.get_x()][p.get_y()].done = 1;
+      stats.Sectinfo[p.get_x()][p.get_y()].done = 1;
     }
 
     if ((!p.get_popn() && !p.get_troops()) || !p.get_owner()) {
@@ -588,30 +584,31 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   if (planet.expltimer() >= 1) planet.expltimer() -= 1;
   if (!star.nova_stage() && !planet.expltimer()) {
     if (!planet.expltimer()) planet.expltimer() = 5;
-    for (i = 1; !Claims && !allexp && i <= entity_manager.num_races(); i++) {
+    for (i = 1; !stats.Claims && !allexp && i <= entity_manager.num_races();
+         i++) {
       /* sectors have been modified for this player*/
       if (planet.info(i - 1).numsectsowned > 0)
-        while (!Claims && !allexp && timer > 0) {
+        while (!stats.Claims && !allexp && timer > 0) {
           timer -= 1;
           o = 1;
           for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
-            if (!Claims) break;
+            if (!stats.Claims) break;
             Sector& p = sector_wrap;
             /* find out if all sectors have been explored */
-            o &= Sectinfo[p.get_x()][p.get_y()].explored;
+            o &= stats.Sectinfo[p.get_x()][p.get_y()].explored;
             const auto* explore_race = entity_manager.peek_race(i);
-            if (((Sectinfo[p.get_x()][p.get_y()].explored == i) &&
+            if (((stats.Sectinfo[p.get_x()][p.get_y()].explored == i) &&
                  !(random() & 02)) &&
                 (!p.get_owner() &&
                  p.get_condition() != SectorType::SEC_WASTED &&
                  p.get_condition() == explore_race->likesbest)) {
               /*  explorations have found an island */
-              Claims = i;
+              stats.Claims = i;
               p.set_popn(explore_race->number_sexes);
               p.set_owner(i);
-              tot_captured = 1;
+              stats.tot_captured = 1;
             } else
-              explore(planet, p, p.get_x(), p.get_y(), i);
+              explore(planet, p, p.get_x(), p.get_y(), i, stats);
           }
           allexp |= o; /* all sectors explored for this player */
         }
@@ -633,10 +630,10 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   }
 
   for (i = 1; i <= entity_manager.num_races(); i++) {
-    planet.info(i - 1).prod_crystals = prod_crystals[i - 1];
-    planet.info(i - 1).prod_res = prod_res[i - 1];
-    planet.info(i - 1).prod_fuel = prod_fuel[i - 1];
-    planet.info(i - 1).prod_dest = prod_destruct[i - 1];
+    planet.info(i - 1).prod_crystals = stats.prod_crystals[i - 1];
+    planet.info(i - 1).prod_res = stats.prod_res[i - 1];
+    planet.info(i - 1).prod_fuel = stats.prod_fuel[i - 1];
+    planet.info(i - 1).prod_dest = stats.prod_destruct[i - 1];
     if (planet.info(i - 1).autorep) {
       planet.info(i - 1).autorep--;
       std::stringstream telegram_buf;
@@ -649,14 +646,15 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
                                     planet.conditions(TEMP));
       }
       telegram_buf << std::format("Total      Prod: {}r {}f {}d\n",
-                                  prod_res[i - 1], prod_fuel[i - 1],
-                                  prod_destruct[i - 1]);
-      if (prod_crystals[i - 1]) {
+                                  stats.prod_res[i - 1], stats.prod_fuel[i - 1],
+                                  stats.prod_destruct[i - 1]);
+      if (stats.prod_crystals[i - 1]) {
         telegram_buf << std::format("    {} crystals found\n",
-                                    prod_crystals[i - 1]);
+                                    stats.prod_crystals[i - 1]);
       }
-      if (tot_captured) {
-        telegram_buf << std::format("{} sectors captured\n", tot_captured);
+      if (stats.tot_captured) {
+        telegram_buf << std::format("{} sectors captured\n",
+                                    stats.tot_captured);
       }
       if (star.nova_stage()) {
         telegram_buf << std::format(
@@ -721,8 +719,9 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       planet.popn() += p.get_popn();
       planet.troops() += p.get_troops();
       const auto* owner_race = entity_manager.peek_race(p.get_owner());
-      planet.maxpopn() += maxsupport(*owner_race, p, Compat[p.get_owner() - 1],
-                                     planet.conditions(TOXIC));
+      planet.maxpopn() +=
+          maxsupport(*owner_race, p, stats.Compat[p.get_owner() - 1],
+                     planet.conditions(TOXIC));
       stats.Power[p.get_owner() - 1].troops += p.get_troops();
       stats.Power[p.get_owner() - 1].popn += p.get_popn();
       stats.Power[p.get_owner() - 1].sum_eff += p.get_eff();
@@ -741,12 +740,13 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       for (i = 1; i <= entity_manager.num_races(); i++)
         /* add production to slave holder of planet */
         if (planet.info(i - 1).numsectsowned) {
-          planet.info(planet.slaved_to() - 1).resource += prod_res[i - 1];
-          prod_res[i - 1] = 0;
-          planet.info(planet.slaved_to() - 1).fuel += prod_fuel[i - 1];
-          prod_fuel[i - 1] = 0;
-          planet.info(planet.slaved_to() - 1).destruct += prod_destruct[i - 1];
-          prod_destruct[i - 1] = 0;
+          planet.info(planet.slaved_to() - 1).resource += stats.prod_res[i - 1];
+          stats.prod_res[i - 1] = 0;
+          planet.info(planet.slaved_to() - 1).fuel += stats.prod_fuel[i - 1];
+          stats.prod_fuel[i - 1] = 0;
+          planet.info(planet.slaved_to() - 1).destruct +=
+              stats.prod_destruct[i - 1];
+          stats.prod_destruct[i - 1] = 0;
         }
     } else {
       /* slave revolt! */
@@ -800,10 +800,10 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     auto& race = *race_handle;
     player_t player = race.Playernum;
     if (planet.info(player - 1).numsectsowned) {
-      planet.info(player - 1).fuel += prod_fuel[player - 1];
-      planet.info(player - 1).resource += prod_res[player - 1];
-      planet.info(player - 1).destruct += prod_destruct[player - 1];
-      planet.info(player - 1).crystals += prod_crystals[player - 1];
+      planet.info(player - 1).fuel += stats.prod_fuel[player - 1];
+      planet.info(player - 1).resource += stats.prod_res[player - 1];
+      planet.info(player - 1).destruct += stats.prod_destruct[player - 1];
+      planet.info(player - 1).crystals += stats.prod_crystals[player - 1];
 
       auto gov_idx = star.governor(player - 1);
 
@@ -914,9 +914,9 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     stats.Power[i - 1].planets_owned += !!planet.info(i - 1).numsectsowned;
     if (planet.info(i - 1).numsectsowned) {
       /* combat readiness naturally moves towards the avg mobilization */
-      planet.info(i - 1).mob_points = avg_mob[i - 1];
-      avg_mob[i - 1] /= (int)planet.info(i - 1).numsectsowned;
-      planet.info(i - 1).comread = avg_mob[i - 1];
+      planet.info(i - 1).mob_points = stats.avg_mob[i - 1];
+      stats.avg_mob[i - 1] /= (int)planet.info(i - 1).numsectsowned;
+      planet.info(i - 1).comread = stats.avg_mob[i - 1];
     } else
       planet.info(i - 1).comread = 0;
     planet.info(i - 1).guns = planet_guns(planet.info(i - 1).mob_points);

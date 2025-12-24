@@ -256,7 +256,7 @@ void test_server_state_repository() {
   ServerState state{};
   state.id = 1;
   state.segments = 10;
-  state.next_update_time = 1735000000;  // Some future timestamp
+  state.next_update_time = 1735000000;   // Some future timestamp
   state.next_segment_time = 1734900000;  // Earlier timestamp
   state.update_time_minutes = 60;
   state.nsegments_done = 3;

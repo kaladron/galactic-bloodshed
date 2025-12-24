@@ -65,7 +65,7 @@ static bool attack_planet(const Ship&);
 static void fix_stability(EntityManager&, Star&);
 static bool governed(const Race&, const TurnState&);
 static void make_discoveries(EntityManager&, Race&);
-static void output_ground_attacks(EntityManager&);
+static void output_ground_attacks(TurnState& state);
 static void process_ships(TurnState& state);
 static void process_stars_and_planets(TurnState& state, int update);
 static void process_races(TurnState& state, int update);
@@ -102,7 +102,7 @@ void do_turn(EntityManager& entity_manager, int update) {
   process_ships(state);
   process_stars_and_planets(state, update);
   process_races(state, update);
-  output_ground_attacks(state.entity_manager);
+  output_ground_attacks(state);
   process_market(state, update);
   process_ship_masses_and_ownership(state);
   process_ship_turns(state, update);
@@ -158,7 +158,7 @@ static void process_stars_and_planets(TurnState& state, int update) {
 }
 
 static void process_races(TurnState& state, int update) {
-  VN_brain.Most_mad = 0; /* not mad at anyone for starts */
+  state.stats.VN_brain.Most_mad = 0; /* not mad at anyone for starts */
 
   // Get universe data for VN hitlist
   auto sdata_handle = state.entity_manager.get_universe();
@@ -181,12 +181,12 @@ static void process_races(TurnState& state, int update) {
         }
       }
       /* add VN program */
-      VN_brain.Total_mad += sdata_handle->VN_hitlist[player - 1];
+      state.stats.VN_brain.Total_mad += sdata_handle->VN_hitlist[player - 1];
       /* find out who they're most mad at */
-      if (VN_brain.Most_mad > 0 &&
-          sdata_handle->VN_hitlist[VN_brain.Most_mad - 1] <=
+      if (state.stats.VN_brain.Most_mad > 0 &&
+          sdata_handle->VN_hitlist[state.stats.VN_brain.Most_mad - 1] <=
               sdata_handle->VN_hitlist[player - 1]) {
-        VN_brain.Most_mad = player;
+        state.stats.VN_brain.Most_mad = player;
       }
     }
     if (VOTING) {
@@ -196,7 +196,7 @@ static void process_races(TurnState& state, int update) {
     }
   }
 
-  output_ground_attacks(state.entity_manager);
+  output_ground_attacks(state);
 }
 
 /**
@@ -487,7 +487,8 @@ static void process_abms_and_missiles(TurnState& state, int update) {
         if (inhabited[star] != 0) {
           const auto* block_player = state.entity_manager.peek_block(player);
           if (block_player) {
-            uint64_t allied_members = block_player->invite & block_player->pledge;
+            uint64_t allied_members =
+                block_player->invite & block_player->pledge;
             if ((inhabited[star] | allied_members) == allied_members) {
               auto block_handle = state.entity_manager.get_block(player);
               block_handle->systems_owned++;
@@ -873,24 +874,25 @@ static bool attack_planet(const Ship& ship) {
   return ship.whatdest() == ScopeLevel::LEVEL_PLAN;
 }
 
-static void output_ground_attacks(EntityManager& em) {
+static void output_ground_attacks(TurnState& state) {
+  EntityManager& em = state.entity_manager;
   for (auto star_handle : StarList(em)) {
     const auto& star = *star_handle;
     const starnum_t star_num = star.star_id();
-    
+
     for (auto race_i_handle : RaceList(em)) {
       const auto& race_i = *race_i_handle;
       const player_t i = race_i.Playernum;
-      
+
       for (auto race_j_handle : RaceList(em)) {
         const auto& race_j = *race_j_handle;
         const player_t j = race_j.Playernum;
-        
+
         if (ground_assaults[i - 1][j - 1][star_num]) {
           std::string assault_news =
               std::format("{}: {} [{}] assaults {} [{}] {} times.\n",
-                          star.get_name(), race_i.name, i, race_j.name,
-                          j, ground_assaults[i - 1][j - 1][star_num]);
+                          star.get_name(), race_i.name, i, race_j.name, j,
+                          ground_assaults[i - 1][j - 1][star_num]);
           post(em, assault_news, NewsType::COMBAT);
           ground_assaults[i - 1][j - 1][star_num] = 0;
         }

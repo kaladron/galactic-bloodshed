@@ -27,8 +27,7 @@ std::string prepare_output_line(EntityManager& em, const Race& race,
   ss << std::format("{:5s}", Estimate_i((int)power_ptr->troops, race, i));
   ss << std::format("{:5s}", Estimate_i((int)power_ptr->popn, race, i));
   ss << std::format("{:5s}", Estimate_i((int)power_ptr->money, race, i));
-  ss << std::format("{:5s}",
-                    Estimate_i((int)power_ptr->ships_owned, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)power_ptr->ships_owned, race, i));
   ss << std::format("{:3s}",
                     Estimate_i((int)power_ptr->planets_owned, race, i));
   ss << std::format("{:5s}", Estimate_i((int)power_ptr->resource, race, i));

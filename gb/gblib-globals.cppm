@@ -13,32 +13,18 @@ import :star;
 import :types;
 import :universe;
 
-export std::array<char, MAXPLAYERS> Nuked;
-export unsigned long StarsInhab[NUMSTARS];
-export unsigned long StarsExpl[NUMSTARS];
-export unsigned short Sdatanumships[MAXPLAYERS];
-export unsigned long Sdatapopns[MAXPLAYERS];
-export unsigned short starnumships[NUMSTARS][MAXPLAYERS];
-export unsigned long starpopns[NUMSTARS][MAXPLAYERS];
-
-export unsigned long tot_resdep, prod_eff, prod_res[MAXPLAYERS];
-export unsigned long prod_fuel[MAXPLAYERS], prod_destruct[MAXPLAYERS];
-export unsigned long prod_crystals[MAXPLAYERS], prod_money[MAXPLAYERS];
-export unsigned long tot_captured, prod_mob;
-export unsigned long avg_mob[MAXPLAYERS];
-export unsigned char Claims;
-
+// Ground assault tracking - modified by commands, reported during turn
+// Cannot move to TurnStats because commands need access
 export unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
-export uint64_t inhabited[NUMSTARS];
-export double Compat[MAXPLAYERS];
+
+// These globals remain for now - they're not per-turn statistics
+// TODO: Consider moving to appropriate contexts in future refactoring
 export unsigned long Num_commods;
 export planetnum_t Planet_count;
 
+// Power blocks - computed during turn processing, read by commands (e.g., block
+// command)
 export power_blocks Power_blocks;
 
 export bool update_flag = false;
 export std::list<DescriptorData> descriptor_list;
-
-export struct stinfo Stinfo[NUMSTARS][MAXPLANETS];
-export struct vnbrain VN_brain;
-export struct sectinfo Sectinfo[MAX_X][MAX_Y];

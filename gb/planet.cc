@@ -71,8 +71,7 @@ void moveplanet(EntityManager& entity_manager, const starnum_t starnum,
 
   double phase = std::atan2((double)(planet.ypos()), (double)(planet.xpos()));
   double period =
-      dist *
-      std::sqrt((double)(dist / (SYSTEMGRAVCONST * star.gravity())));
+      dist * std::sqrt((double)(dist / (SYSTEMGRAVCONST * star.gravity())));
   /* keppler's law */
 
   double xadd = dist * std::cos((double)(-1. / period + phase)) - planet.xpos();

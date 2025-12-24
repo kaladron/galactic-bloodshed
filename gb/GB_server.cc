@@ -301,8 +301,9 @@ std::string do_prompt(GameObj& g) {
   if (!s2) return " ( [?] /#?/#? )\n";
   switch (s2->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [{0}] /#{1}/#{2} )\n", universe->AP[Playernum - 1],
-                            s->destshipno(), g.shipno);
+      prompt << std::format(" ( [{0}] /#{1}/#{2} )\n",
+                            universe->AP[Playernum - 1], s->destshipno(),
+                            g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(s->storbits());
@@ -332,7 +333,8 @@ std::string do_prompt(GameObj& g) {
   switch (s2->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] / /../#{1}/#{2} )\n",
-                            universe->AP[Playernum - 1], s->destshipno(), g.shipno);
+                            universe->AP[Playernum - 1], s->destshipno(),
+                            g.shipno);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(s->storbits());
@@ -419,7 +421,8 @@ int main(int argc, char** argv) {
     state.next_segment_time = clk + (144 * 3600);
   } else {
     if (state.next_segment_time == 0) {
-      state.next_segment_time = clk + (state.update_time_minutes * 60 / state.segments);
+      state.next_segment_time =
+          clk + (state.update_time_minutes * 60 / state.segments);
     }
     if (state.next_segment_time < clk) {
       state.next_segment_time = state.next_update_time;
@@ -436,12 +439,13 @@ int main(int argc, char** argv) {
   srandom(getpid());
   std::print(stderr, "      Next Update {0}  : {1}", nupdates_done + 1,
              ctime(&state.next_update_time));
-  std::print(stderr, "      Next Segment   : {0}", ctime(&state.next_segment_time));
+  std::print(stderr, "      Next Segment   : {0}",
+             ctime(&state.next_segment_time));
 
   // Initialize game data structures
   initialize_block_data(entity_manager);  // Ensure self-invite/self-pledge
   compute_power_blocks(entity_manager);   // Calculate alliance power stats
-  SortShips();                             // Sort ship list by tech for "build ?"
+  SortShips();  // Sort ship list by tech for "build ?"
 
   // Start server
   set_signals();
@@ -581,9 +585,11 @@ static int shovechars(int port, EntityManager& entity_manager) {
       const auto* state = entity_manager.peek_server_state();
       if (state) {
         if (now >= state->next_update_time) {
-          go_time = now + (int_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
+          go_time =
+              now + (int_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
         }
-        if (now >= state->next_segment_time && state->nsegments_done < state->segments) {
+        if (now >= state->next_segment_time &&
+            state->nsegments_done < state->segments) {
           go_time =
               now + (int_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
         }
@@ -600,7 +606,7 @@ static int shovechars(int port, EntityManager& entity_manager) {
 void do_next_thing(EntityManager& entity_manager) {
   const auto* state = entity_manager.peek_server_state();
   if (!state) return;
-  
+
   if (state->nsegments_done < state->segments)
     do_segment(entity_manager, 0, 1);
   else
@@ -972,10 +978,11 @@ static void do_update(EntityManager& entity_manager, bool force) {
     state.nsegments_done = state.segments;
   } else {
     if (force)
-      state.next_segment_time = clk + state.update_time_minutes * 60 / state.segments;
-    else
       state.next_segment_time =
-          state.next_update_time + state.update_time_minutes * 60 / state.segments;
+          clk + state.update_time_minutes * 60 / state.segments;
+    else
+      state.next_segment_time = state.next_update_time +
+                                state.update_time_minutes * 60 / state.segments;
     state.nsegments_done = 1;
   }
   if (force)
@@ -991,11 +998,12 @@ static void do_update(EntityManager& entity_manager, bool force) {
   std::print(stderr, "{}", ctime(&clk));
   std::print(stderr, "Next Update {0:3d} : {1}", nupdates_done + 1,
              ctime(&state.next_update_time));
-  segment_buf =
-      std::format("Last Segment {0:2d} : {1}", state.nsegments_done, ctime(&clk));
+  segment_buf = std::format("Last Segment {0:2d} : {1}", state.nsegments_done,
+                            ctime(&clk));
   std::print(stderr, "{}", ctime(&clk));
   std::print(stderr, "Next Segment {0:2d} : {1}",
-             state.nsegments_done == state.segments ? 1 : state.nsegments_done + 1,
+             state.nsegments_done == state.segments ? 1
+                                                    : state.nsegments_done + 1,
              ctime(&state.next_segment_time));
 
   update_flag = true;
@@ -1032,11 +1040,13 @@ static void do_segment(EntityManager& entity_manager, int override,
     force_output();
   }
   if (override) {
-    state.next_segment_time = clk + state.update_time_minutes * 60 / state.segments;
+    state.next_segment_time =
+        clk + state.update_time_minutes * 60 / state.segments;
     if (segment) {
       state.nsegments_done = segment;
-      state.next_update_time =
-          clk + state.update_time_minutes * 60 * (state.segments - segment + 1) / state.segments;
+      state.next_update_time = clk + state.update_time_minutes * 60 *
+                                         (state.segments - segment + 1) /
+                                         state.segments;
     } else {
       state.nsegments_done++;
     }
@@ -1048,8 +1058,8 @@ static void do_segment(EntityManager& entity_manager, int override,
   update_flag = true;
   if (!fakeit) do_turn(entity_manager, 0);
   update_flag = false;
-  segment_buf =
-      std::format("Last Segment {0:2d} : {1}", state.nsegments_done, ctime(&clk));
+  segment_buf = std::format("Last Segment {0:2d} : {1}", state.nsegments_done,
+                            ctime(&clk));
   std::print(stderr, "{0}", ctime(&clk));
   std::print(stderr, "Next Segment {0:2d} : {1}", state.nsegments_done,
              ctime(&state.next_segment_time));
@@ -1202,12 +1212,14 @@ static void GB_schedule(const command_t&, GameObj& g) {
     g.out << "Server state unavailable.\n";
     return;
   }
-  g.out << std::format("{0} minute update intervals\n", state->update_time_minutes);
+  g.out << std::format("{0} minute update intervals\n",
+                       state->update_time_minutes);
   g.out << std::format("{0} movement segments per update\n", state->segments);
   g.out << std::format("Current time    : {0}", ctime(&clk));
-  g.out << std::format("Next Segment {0:2d} : {1}",
-                       state->nsegments_done == state->segments ? 1 : state->nsegments_done + 1,
-                       ctime(&state->next_segment_time));
+  g.out << std::format(
+      "Next Segment {0:2d} : {1}",
+      state->nsegments_done == state->segments ? 1 : state->nsegments_done + 1,
+      ctime(&state->next_segment_time));
   g.out << std::format("Next Update {0:3d} : {1}", nupdates_done + 1,
                        ctime(&state->next_update_time));
 }
@@ -1248,7 +1260,7 @@ void compute_power_blocks(EntityManager& entity_manager) {
 
     const auto* block_i = entity_manager.peek_block(i);
     if (!block_i) continue;
-    
+
     uint64_t allied_members = block_i->invite & block_i->pledge;
     Power_blocks.members[i - 1] = 0;
     Power_blocks.sectors_owned[i - 1] = 0;

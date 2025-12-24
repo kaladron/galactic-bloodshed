@@ -6,5 +6,6 @@ import :planet;
 import :race;
 import :services;
 import :ships;
+import :turnstats;
 
 export int berserker_bombard(EntityManager&, Ship&, Planet&, const Race&);

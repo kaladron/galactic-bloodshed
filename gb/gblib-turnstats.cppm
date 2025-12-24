@@ -47,6 +47,37 @@ export struct TurnStats {
   // Power statistics for each player
   std::array<power, MAXPLAYERS> Power{};
 
+  // Production statistics per player
+  std::array<unsigned long, MAXPLAYERS> prod_res{};
+  std::array<unsigned long, MAXPLAYERS> prod_fuel{};
+  std::array<unsigned long, MAXPLAYERS> prod_destruct{};
+  std::array<unsigned long, MAXPLAYERS> prod_crystals{};
+  std::array<unsigned long, MAXPLAYERS> prod_money{};
+
+  // Average mobility per player
+  std::array<unsigned long, MAXPLAYERS> avg_mob{};
+
+  // Total production statistics (global accumulators)
+  unsigned long tot_resdep{};
+  unsigned long prod_eff{};
+  unsigned long tot_captured{};
+  unsigned long prod_mob{};
+
+  // Inhabited sectors bitmap (one per star)
+  std::array<uint64_t, NUMSTARS> inhabited{};
+
+  // Compatibility values per player (computed at planet start)
+  std::array<double, MAXPLAYERS> Compat{};
+
+  // Claims flag (set if any sector ownership changes)
+  unsigned char Claims{};
+
+  // VN brain state (VN AI state per turn)
+  vnbrain VN_brain{};
+
+  // Sector processing info (per sector on current planet)
+  std::array<std::array<sectinfo, MAX_Y>, MAX_X> Sectinfo{};
+
   // Non-copyable to prevent accidental copies of large arrays
   TurnStats(const TurnStats&) = delete;
   TurnStats& operator=(const TurnStats&) = delete;

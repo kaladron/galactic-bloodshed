@@ -52,9 +52,11 @@ void fuel_output(GameObj& g, const double dist, const double fuel,
   time_t effective_time =
       (state->segments == 1)
           ? state->next_update_time +
-                (static_cast<time_t>((segs - 1) * (state->update_time_minutes * 60)))
+                (static_cast<time_t>((segs - 1) *
+                                     (state->update_time_minutes * 60)))
           : state->next_segment_time +
-                ((segs - 1) * (state->update_time_minutes / state->segments) * 60);
+                ((segs - 1) * (state->update_time_minutes / state->segments) *
+                 60);
 
   g.out << std::format("ESTIMATED Arrival Time: {}\n",
                        std::ctime(&effective_time));
@@ -88,7 +90,7 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
     // Can't do trip calculations without server state
     return {false, 0};
   }
-  
+
   tmpship.fuel() = fuel; /* load up the pseudo-ship */
   segments_t effective_segment_number = state->nsegments_done;
 
@@ -110,8 +112,8 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
   while (!trip_resolved) {
     domass(tmpship, entity_manager);
     double fuel_level1 = tmpship.fuel();
-    moveship(entity_manager, tmpship, (effective_segment_number == state->segments), 0,
-             1);
+    moveship(entity_manager, tmpship,
+             (effective_segment_number == state->segments), 0, 1);
     number_segments++;
     effective_segment_number++;
     if (effective_segment_number == (state->segments + 1))

@@ -285,9 +285,10 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
         g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
     auto& smap = *smap_handle;
     char long_buf[1024], short_buf[256];
-    numdest = shoot_ship_to_planet(
+    auto result = shoot_ship_to_planet(
         g.entity_manager, s, p, round_rand((double)(s.destruct()) / 3.), x, y,
         smap, 0, GTYPE_HEAVY, long_buf, short_buf);
+    numdest = result.numdest;
     auto buf = std::format(
         "BOOM!! {} crashes on sector {},{} with blast radius of {}.\n",
         ship_to_string(s), x, y, numdest);

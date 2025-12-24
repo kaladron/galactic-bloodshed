@@ -18,8 +18,7 @@ void page(const command_t& argv, GameObj& g) {
   int to_block;
 
   const auto& star = *g.entity_manager.peek_star(g.snum);
-  if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount))
-    return;
+  if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) return;
 
   gov = 0;  // TODO(jeffbailey): Init to zero.
   to_block = 0;

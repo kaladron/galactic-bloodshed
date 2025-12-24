@@ -892,13 +892,16 @@ public:
 
   // Domain-specific methods
   // Note: ServerState is a singleton (id=1)
-  std::optional<ServerState> get_state() { return find(1); }
+  std::optional<ServerState> get_state() {
+    return find(1);
+  }
   bool save(const ServerState& state) {
     return Repository<ServerState>::save(state.id, state);
   }
 
 protected:
-  std::optional<std::string> serialize(const ServerState& state) const override {
+  std::optional<std::string>
+  serialize(const ServerState& state) const override {
     auto result = glz::write_json(state);
     if (result.has_value()) {
       return result.value();

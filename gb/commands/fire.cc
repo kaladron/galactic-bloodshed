@@ -37,9 +37,6 @@ void fire(const command_t& argv, GameObj& g) {
 
   sh = 0;  // TODO(jeffbailey): No idea what this is, init to 0.
 
-  /* for telegramming and retaliating */
-  Nuked.fill(0);
-
   if (argv.size() < 3) {
     std::string msg =
         "Syntax: '" + argv[0] + " <ship> <target> [<strength>]'.\n";
@@ -199,7 +196,8 @@ void fire(const command_t& argv, GameObj& g) {
       use_destruct(from, strength);
 
     if (!to_ship.alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
-    notify_star(g.entity_manager, Playernum, Governor, from.storbits(), short_buf);
+    notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
+                short_buf);
     warn(to_ship.owner(), to_ship.governor(), long_buf);
     notify(Playernum, Governor, long_buf);
     /* defending ship retaliates */
@@ -224,7 +222,8 @@ void fire(const command_t& argv, GameObj& g) {
         else
           use_destruct(to_ship, strength);
         if (!from.alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
-        notify_star(g.entity_manager, Playernum, Governor, from.storbits(), short_buf);
+        notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
+                    short_buf);
         notify(Playernum, Governor, long_buf);
         warn(to_ship.owner(), to_ship.governor(), long_buf);
       }
@@ -262,7 +261,8 @@ void fire(const command_t& argv, GameObj& g) {
               use_destruct(ship, strength);
             if (!from.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(g.entity_manager, Playernum, Governor, from.storbits(), short_buf);
+            notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
+                        short_buf);
             notify(Playernum, Governor, long_buf);
             warn(ship.owner(), ship.governor(), long_buf);
           }

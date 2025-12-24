@@ -145,20 +145,37 @@ int shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
 }
 
 /**
- * @return Number of sectors destroyed.
+ * @return Result containing number of sectors destroyed and which players were
+ * hit.
  */
-int shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
-                         int strength, int x, int y, SectorMap& smap,
-                         int ignore, int caliber, char* long_msg,
-                         char* short_msg) {
-  int numdest = 0;
+ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
+                                         Planet& pl, int strength, int x, int y,
+                                         SectorMap& smap, int ignore,
+                                         int caliber, char* long_msg,
+                                         char* short_msg) {
+  ShootToPlanetResult result;
 
-  if (strength <= 0) return -1;
-  if (!(ship.alive() || ignore)) return -1;
-  if (has_switch(ship) && !ship.on()) return -1;
-  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return -1;
+  if (strength <= 0) {
+    result.numdest = -1;
+    return result;
+  }
+  if (!(ship.alive() || ignore)) {
+    result.numdest = -1;
+    return result;
+  }
+  if (has_switch(ship) && !ship.on()) {
+    result.numdest = -1;
+    return result;
+  }
+  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) {
+    result.numdest = -1;
+    return result;
+  }
 
-  if (x < 0 || x > pl.Maxx() - 1 || y < 0 || y > pl.Maxy() - 1) return -1;
+  if (x < 0 || x > pl.Maxx() - 1 || y < 0 || y > pl.Maxy() - 1) {
+    result.numdest = -1;
+    return result;
+  }
 
   double r = .4 * strength;
   if (!caliber) { /* figure out the appropriate gun caliber if not given*/
@@ -224,7 +241,7 @@ int shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
 
         if (round_rand(fac) >
             Defensedata[s.get_condition()] * int_rand(0, 10)) {
-          if (s.get_owner()) Nuked[s.get_owner() - 1] = 1;
+          if (s.get_owner()) result.nuked[s.get_owner() - 1] = 1;
           s.set_popn(0);
           s.set_troops(int_rand(0, (int)s.get_troops()));
           if (!s.get_troops()) /* troops may survive this */
@@ -235,7 +252,7 @@ int shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
           s.set_fert(0); /*all is lost !*/
           s.set_crystals(int_rand(0, (int)s.get_crystals()));
           s.set_condition(SectorType::SEC_WASTED);
-          numdest++;
+          result.numdest++;
         } else {
           s.set_fert(std::max(0, (int)s.get_fert() - (int)fac));
           s.set_eff(std::max(0, (int)s.get_eff() - (int)fac));
@@ -254,15 +271,16 @@ int shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   }
 
   /* planet toxicity goes up a bit */
-  pl.conditions(TOXIC) += (100 - pl.conditions(TOXIC)) *
-                          ((double)numdest / (double)(pl.Maxx() * pl.Maxy()));
+  pl.conditions(TOXIC) +=
+      (100 - pl.conditions(TOXIC)) *
+      ((double)result.numdest / (double)(pl.Maxx() * pl.Maxy()));
 
   sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(ship).c_str(),
           dispshiploc(em, ship).c_str(), oldowner);
   strcpy(long_msg, short_msg);
-  std::string msg = std::format("\t{} sectors destroyed\n", numdest);
+  std::string msg = std::format("\t{} sectors destroyed\n", result.numdest);
   strcat(long_msg, msg.c_str());
-  return numdest;
+  return result;
 }
 
 static std::pair<int, std::string> do_radiation(Ship& ship, double tech,

@@ -37,7 +37,7 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
         pl.compatibility(race), pl.conditions(TOXIC),
         pl.info(Playernum - 1).comread, pl.info(Playernum - 1).mob_set);
     g.out << formatted;
-    for (auto j = 1; j <= Num_races; j++)
+    for (auto j = 1; j <= g.entity_manager.num_races(); j++)
       if ((j != Playernum) && (pl.info(j - 1).numsectsowned > 0)) {
         auto race_str = std::format(" {}", j);
         g.out << race_str;

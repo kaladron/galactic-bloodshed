@@ -32,7 +32,7 @@ void block(const command_t& argv, GameObj& g) {
     dummy_ = 0; /* Used as flag for finding a block */
     notify(Playernum, Governor,
            std::format("Race #{} [{}] is a member of ", p, r->name));
-    for (int i = 1; i <= Num_races; i++) {
+    for (int i = 1; i <= g.entity_manager.num_races(); i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i) continue;
       if (isset(block_i->pledge, p) && isset(block_i->invite, p)) {
@@ -49,7 +49,7 @@ void block(const command_t& argv, GameObj& g) {
     dummy_ = 0; /* Used as flag for finding a block */
     notify(Playernum, Governor,
            std::format("Race #{} [{}] has been invited to join ", p, r->name));
-    for (int i = 1; i <= Num_races; i++) {
+    for (int i = 1; i <= g.entity_manager.num_races(); i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i) continue;
       if (!isset(block_i->pledge, p) && isset(block_i->invite, p)) {
@@ -66,7 +66,7 @@ void block(const command_t& argv, GameObj& g) {
     dummy_ = 0; /* Used as flag for finding a block */
     notify(Playernum, Governor,
            std::format("Race #{} [{}] has pledged ", p, r->name));
-    for (int i = 1; i <= Num_races; i++) {
+    for (int i = 1; i <= g.entity_manager.num_races(); i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i) continue;
       if (isset(block_i->pledge, p) && !isset(block_i->invite, p)) {
@@ -100,7 +100,7 @@ void block(const command_t& argv, GameObj& g) {
            "  #  Name              troops  pop  money ship  plan  res fuel "
            "dest know\n");
 
-    for (player_t i = 1; i <= Num_races; i++) {
+    for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
       if (!isset(allied_members, i)) continue;
       const auto* r = g.entity_manager.peek_race(i);
       if (!r || r->dissolved) continue;
@@ -136,7 +136,7 @@ void block(const command_t& argv, GameObj& g) {
     notify(Playernum, Governor,
            " #  Name             memb money popn ship  sys  res fuel dest  VPs "
            "know\n");
-    for (auto i = 1; i <= Num_races; i++) {
+    for (auto i = 1; i <= g.entity_manager.num_races(); i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i || !block_i->VPs) continue;
       g.out << std::format("{:2d} {:<19.19}{:3d}", i, block_i->name,

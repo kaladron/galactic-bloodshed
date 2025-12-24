@@ -130,7 +130,7 @@ void bombard(const command_t& argv, GameObj& g) {
 
     post(g.entity_manager, short_buf, NewsType::COMBAT);
     notify_star(g.entity_manager, Playernum, Governor, from.storbits(), short_buf);
-    for (auto i = 1; i <= Num_races; i++) {
+    for (auto i = 1; i <= g.entity_manager.num_races(); i++) {
       if (Nuked[i - 1]) {
         const auto* star = g.entity_manager.peek_star(from.storbits());
         warn(i, star->governor(i - 1), long_buf);
@@ -141,7 +141,7 @@ void bombard(const command_t& argv, GameObj& g) {
     if (DEFENSE) {
       /* planet retaliates - AFVs are immune to this */
       if (numdest && from.type() != ShipType::OTYPE_AFV) {
-        for (auto i = 1; i <= Num_races; i++)
+        for (auto i = 1; i <= g.entity_manager.num_races(); i++)
           if (Nuked[i - 1] && !p.slaved_to()) {
             /* add planet defense strength */
             auto alien_handle = g.entity_manager.get_race(i);

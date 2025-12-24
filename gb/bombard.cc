@@ -145,7 +145,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
       "{}{} {} bombarded sector {},{}; {} sectors destroyed.\n",
       Shipltrs[ship.type()], ship.number(), ship.name(), x, y, numdest);
 
-  for (player_t i = 1; i <= Num_races; i++)
+  for (player_t i = 1; i <= entity_manager.num_races(); i++)
     if (Nuked[i - 1] && i != ship.owner())
       warn(i, star->governor(i - 1), telegram_alert.str());
 

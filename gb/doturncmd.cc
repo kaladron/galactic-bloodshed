@@ -736,7 +736,7 @@ void fix_stability(EntityManager& em, Star& s) {
           "Notice\n\n  Scientists report that star {}\nis no longer undergoing "
           "nova.\n",
           s.get_name());
-      for (i = 1; i <= Num_races; i++)
+      for (i = 1; i <= em.num_races(); i++)
         push_telegram_race(em, i, telegram_msg);
 
       /* telegram everyone when nova over? */
@@ -752,7 +752,7 @@ void fix_stability(EntityManager& em, Star& s) {
           "***** BULLETIN! ******\n\n  Scientists report that star {}\nis "
           "undergoing nova.\n",
           s.get_name());
-      for (i = 1; i <= Num_races; i++)
+      for (i = 1; i <= em.num_races(); i++)
         push_telegram_race(em, i, telegram_msg);
     } else
       s.stability() += a;
@@ -775,7 +775,7 @@ void handle_victory(EntityManager& em) {
   const int BIG_WINNER = 1;
   const int LITTLE_WINNER = 2;
 
-  for (i = 1; i <= Num_races; i++) {
+  for (i = 1; i <= em.num_races(); i++) {
     win_category[i - 1] = 0;
     const auto* race = em.peek_race(i);
     if (!race) continue;
@@ -788,14 +788,14 @@ void handle_victory(EntityManager& em) {
     }
   }
   if (game_over) {
-    for (i = 1; i <= Num_races; i++) {
+    for (i = 1; i <= em.num_races(); i++) {
       push_telegram_race(em, i, "*** Attention ***");
       push_telegram_race(em, i,
                          "This game of Galactic Bloodshed is now *over*");
       std::string winner_msg =
           std::format("The big winner{}", (game_over == 1) ? " is" : "s are");
       push_telegram_race(em, i, winner_msg);
-      for (j = 1; j <= Num_races; j++)
+      for (j = 1; j <= em.num_races(); j++)
         if (win_category[j - 1] == BIG_WINNER) {
           const auto* winner_race = em.peek_race(j);
           if (!winner_race) continue;
@@ -804,7 +804,7 @@ void handle_victory(EntityManager& em) {
           push_telegram_race(em, i, big_winner_msg);
         }
       push_telegram_race(em, i, "Lesser winners:");
-      for (j = 1; j <= Num_races; j++)
+      for (j = 1; j <= em.num_races(); j++)
         if (win_category[j - 1] == LITTLE_WINNER) {
           const auto* winner_race = em.peek_race(j);
           if (!winner_race) continue;

@@ -124,10 +124,10 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
   /* steal resources from other players */
   /* permute list of people to steal from */
   std::array<int, MAXPLAYERS + 1> nums;
-  for (int i = 1; i <= Num_races; i++)
+  for (int i = 1; i <= em.num_races(); i++)
     nums[i] = i;
-  for (int i = 1; i <= Num_races; i++) {
-    int f = int_rand(1, Num_races);
+  for (int i = 1; i <= em.num_races(); i++) {
+    int f = int_rand(1, em.num_races());
     std::swap(nums[i], nums[f]);
   }
 
@@ -137,7 +137,7 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
   // this planet to steal
 
   player_t f = 0;
-  for (player_t i = 1; i <= Num_races; i++)
+  for (player_t i = 1; i <= em.num_races(); i++)
     if (planet_handle->info(nums[i] - 1).resource) f = nums[i];
 
   // No resources to steal

@@ -77,7 +77,7 @@ void explore(const command_t& argv, GameObj& g) {
             if (pl.slaved_to()) {
               notify(Playernum, Governor, "SLAVED ");
             }
-            for (j = 1; j <= Num_races; j++)
+            for (j = 1; j <= g.entity_manager.num_races(); j++)
               if (j != Playernum && pl.info(j - 1).numsectsowned) {
                 notify(Playernum, Governor, std::format("{} ", j));
               }

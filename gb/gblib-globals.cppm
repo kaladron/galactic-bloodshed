@@ -31,7 +31,6 @@ export unsigned char Claims;
 export unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
 export uint64_t inhabited[NUMSTARS];
 export double Compat[MAXPLAYERS];
-export player_t Num_races;
 export unsigned long Num_commods;
 export planetnum_t Planet_count;
 

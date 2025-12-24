@@ -156,7 +156,7 @@ void send_message(const command_t& argv, GameObj& g) {
         "{} \"{}\" [{},{}] sends a message to {} [{}] alliance block.\n",
         race.name, race.governor[Governor].name, Playernum, Governor,
         block->name, who);
-    for (i = 1; i <= Num_races; i++) {
+    for (i = 1; i <= g.entity_manager.num_races(); i++) {
       if (isset(allied_members, i)) {
         notify_race(i, block_msg);
         push_telegram_race(g.entity_manager, i, msg);

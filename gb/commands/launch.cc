@@ -206,7 +206,7 @@ void launch(const command_t& argv, GameObj& g) {
       std::string observed = std::format(
           "{} observed launching from planet /{}/{}.\n", ship_to_string(s),
           star.get_name(), star.get_planet_name(s.pnumorbits()));
-      for (player_t i = 1; i <= Num_races; i++)
+      for (player_t i = 1; i <= g.entity_manager.num_races(); i++)
         if (p.info(i - 1).numsectsowned && i != Playernum) {
           notify(i, star.governor(i - 1), observed);
         }

@@ -74,7 +74,7 @@ void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
   std::array<int, MAXPLAYERS + 1> WastedSect{};
   std::array<int, SectorType::SEC_WASTED + 1> Sect{};
 
-  for (int p = 0; p <= Num_races; p++) {
+  for (int p = 0; p <= g.entity_manager.num_races(); p++) {
     for (int i = 0; i <= SectorType::SEC_WASTED; i++)
       PlaySect[p][i] = 0;
   }
@@ -224,7 +224,7 @@ void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
   }
   g.out << "\n----------------------------------------------"
            "---------------------------------\n";
-  for (player_t p = 0; p <= Num_races; p++)
+  for (player_t p = 0; p <= g.entity_manager.num_races(); p++)
     if (PlayTSect[p] != 0) {
       g.out << std::format(
           "{:>2} {:>3} {:>7} {:>6} {:>5.1f} {:>5.1f} {:>5} {:>2}", p,
@@ -316,7 +316,7 @@ void analysis(const command_t& argv, GameObj& g) {
     // Player number
     if (std::isdigit(arg[0])) {
       do_player = std::stoi(arg);
-      if (do_player > Num_races) {
+      if (do_player > g.entity_manager.num_races()) {
         g.out << "No such player #.\n";
         return;
       }

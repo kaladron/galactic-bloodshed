@@ -20,7 +20,7 @@ void whois(const command_t& argv, GameObj& g) {
        std::ranges::subrange(argv.begin() + 1, argv.end())) {
     const auto j = std::stoi(player);
 
-    if (j < 1 || j > Num_races) {
+    if (j < 1 || j > g.entity_manager.num_races()) {
       g.out << std::format("Identify: Invalid player number #{}. Try again.\n",
                            j);
       continue;

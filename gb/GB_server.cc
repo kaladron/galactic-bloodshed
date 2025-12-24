@@ -952,7 +952,7 @@ static void do_update(EntityManager& entity_manager, bool force) {
 
   std::string update_msg = std::format("{}DOING UPDATE...\n", ctime(&clk));
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++)
+    for (auto i = 1; i <= entity_manager.num_races(); i++)
       notify_race(i, update_msg);
     force_output();
   }
@@ -1012,7 +1012,7 @@ static void do_update(EntityManager& entity_manager, bool force) {
       std::format("{}Update {} finished\n", ctime(&clk), nupdates_done);
   handle_victory(entity_manager);
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++)
+    for (auto i = 1; i <= entity_manager.num_races(); i++)
       notify_race(i, finish_msg);
     force_output();
   }
@@ -1029,7 +1029,7 @@ static void do_segment(EntityManager& entity_manager, int override,
 
   std::string movement_msg = std::format("{}DOING MOVEMENT...\n", ctime(&clk));
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++)
+    for (auto i = 1; i <= entity_manager.num_races(); i++)
       notify_race(i, movement_msg);
     force_output();
   }
@@ -1065,7 +1065,7 @@ static void do_segment(EntityManager& entity_manager, int override,
   clk = time(nullptr);
   std::string segment_msg = std::format("{}Segment finished\n", ctime(&clk));
   if (!fakeit) {
-    for (auto i = 1; i <= Num_races; i++)
+    for (auto i = 1; i <= entity_manager.num_races(); i++)
       notify_race(i, segment_msg);
     force_output();
   }

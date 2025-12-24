@@ -185,7 +185,7 @@ void walk(const command_t& argv, GameObj& g) {
     ship->land_x() = x;
     ship->land_y() = y;
     use_fuel(*ship, AFV_FUEL_COST);
-    for (auto i = 1; i <= Num_races; i++)
+    for (auto i = 1; i <= g.entity_manager.num_races(); i++)
       if (i != Playernum && p.info(i - 1).numsectsowned)
         notify(i, star.governor(i - 1), moving);
   }

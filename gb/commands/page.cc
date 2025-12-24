@@ -63,7 +63,7 @@ void page(const command_t& argv, GameObj& g) {
           return;
         }
         uint64_t allied_members = block_player->invite & block_player->pledge;
-        for (i = 1; i <= Num_races; i++)
+        for (i = 1; i <= g.entity_manager.num_races(); i++)
           if (isset(allied_members, i) && i != Playernum) notify_race(i, msg);
       } else {
         if (argv.size() > 1)

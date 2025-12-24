@@ -105,7 +105,7 @@ void warn_star(EntityManager& entity_manager, const player_t a,
   if (!star_ptr) return;
 
   // Iterate through all potential players in the inhabited bitmap
-  for (player_t p = 1; p <= Num_races; p++) {
+  for (player_t p = 1; p <= entity_manager.num_races(); p++) {
     if (p != a && isset(star_ptr->inhabited(), p)) {
       warn_race(entity_manager, p, message);
     }

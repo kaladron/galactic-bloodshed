@@ -199,7 +199,7 @@ void do_recover(EntityManager& entity_manager, const Star& star,
 
   const planetnum_t planetnum = planet.planet_order();
 
-  for (i = 1; i <= Num_races && all_buddies_here; i++) {
+  for (i = 1; i <= entity_manager.num_races() && all_buddies_here; i++) {
     if (planet.info(i - 1).numsectsowned > 0) {
       owners++;
       setbit(ownerbits, i);
@@ -233,7 +233,7 @@ void do_recover(EntityManager& entity_manager, const Star& star,
     int givenfuel = 0;
     int givencrystals = 0;
 
-    for (i = 1; i <= Num_races; i++)
+    for (i = 1; i <= entity_manager.num_races(); i++)
       if (isset(ownerbits, i)) {
         std::stringstream telegram_buf;
         telegram_buf << std::format("Recovery Report: Planet /{}/{}\n",
@@ -246,7 +246,7 @@ void do_recover(EntityManager& entity_manager, const Star& star,
         push_telegram(i, star.governor(i - 1), telegram_buf.str());
       }
     /* First: give the loot the the conquerers */
-    for (i = 1; i <= Num_races && owners > 1; i++)
+    for (i = 1; i <= entity_manager.num_races() && owners > 1; i++)
       if (isset(ownerbits, i)) { /* We have a winnah! */
         if ((res = round_rand((double)stolenres / shares)) + givenres >
             stolenres)
@@ -276,7 +276,7 @@ void do_recover(EntityManager& entity_manager, const Star& star,
           const auto* race = entity_manager.peek_race(i);
           telegram_buf << std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}",
                                       race->name, res, des, fuel, crystals);
-          for (j = 1; j <= Num_races; j++) {
+          for (j = 1; j <= entity_manager.num_races(); j++) {
             if (isset(ownerbits, j)) {
               push_telegram(j, star.governor(j - 1), telegram_buf.str());
             }
@@ -284,9 +284,9 @@ void do_recover(EntityManager& entity_manager, const Star& star,
         }
       }
     /* Leftovers for last player */
-    for (; i <= Num_races; i++)
+    for (; i <= entity_manager.num_races(); i++)
       if (isset(ownerbits, i)) break;
-    if (i <= Num_races) { /* It should be */
+    if (i <= entity_manager.num_races()) { /* It should be */
       res = stolenres - givenres;
       des = stolendes - givendes;
       fuel = stolenfuel - givenfuel;
@@ -305,7 +305,7 @@ void do_recover(EntityManager& entity_manager, const Star& star,
         second_telegram << std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}\n",
                                        "Total:", stolenres, stolendes,
                                        stolenfuel, stolencrystals);
-        for (j = 1; j <= Num_races; j++) {
+        for (j = 1; j <= entity_manager.num_races(); j++) {
           if (isset(ownerbits, j)) {
             push_telegram(j, star.governor(j - 1), first_telegram.str());
             push_telegram(j, star.governor(j - 1), second_telegram.str());
@@ -316,7 +316,7 @@ void do_recover(EntityManager& entity_manager, const Star& star,
       push_telegram(1, 0, "Bug in stealing resources\n");
     }
     /* Next: take all the loot away from the losers */
-    for (i = 2; i <= Num_races; i++)
+    for (i = 2; i <= entity_manager.num_races(); i++)
       if (!isset(ownerbits, i)) {
         planet.info(i - 1).resource = 0;
         planet.info(i - 1).destruct = 0;
@@ -365,7 +365,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   planet.total_resources() = 0;
 
   /* reset global variables */
-  for (i = 1; i <= Num_races; i++) {
+  for (i = 1; i <= entity_manager.num_races(); i++) {
     const auto* race = entity_manager.peek_race(i);
     Compat[i - 1] = planet.compatibility(*race);
     planet.info(i - 1).numsectsowned = 0;
@@ -588,7 +588,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   if (planet.expltimer() >= 1) planet.expltimer() -= 1;
   if (!star.nova_stage() && !planet.expltimer()) {
     if (!planet.expltimer()) planet.expltimer() = 5;
-    for (i = 1; !Claims && !allexp && i <= Num_races; i++) {
+    for (i = 1; !Claims && !allexp && i <= entity_manager.num_races(); i++) {
       /* sectors have been modified for this player*/
       if (planet.info(i - 1).numsectsowned > 0)
         while (!Claims && !allexp && timer > 0) {
@@ -632,7 +632,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     p.set_troops(0);
   }
 
-  for (i = 1; i <= Num_races; i++) {
+  for (i = 1; i <= entity_manager.num_races(); i++) {
     planet.info(i - 1).prod_crystals = prod_crystals[i - 1];
     planet.info(i - 1).prod_res = prod_res[i - 1];
     planet.info(i - 1).prod_fuel = prod_fuel[i - 1];
@@ -691,7 +691,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       }
       telegram_buf << "This planet must be evacuated immediately!\n"
                    << TELEG_DELIM;
-      for (i = 1; i <= Num_races; i++) {
+      for (i = 1; i <= entity_manager.num_races(); i++) {
         if (planet.info(i - 1).numsectsowned) {
           push_telegram(i, star.governor(i - 1), telegram_buf.str());
         }
@@ -706,7 +706,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   planet.maxpopn() = 0;
   planet.total_resources() = 0;
 
-  for (i = 1; i <= Num_races; i++) {
+  for (i = 1; i <= entity_manager.num_races(); i++) {
     planet.info(i - 1).numsectsowned = 0;
     planet.info(i - 1).popn = 0;
     planet.info(i - 1).troops = 0;
@@ -738,7 +738,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   /* deal with enslaved planets */
   if (planet.slaved_to()) {
     if (planet.info(planet.slaved_to() - 1).popn > planet.popn() / 1000) {
-      for (i = 1; i <= Num_races; i++)
+      for (i = 1; i <= entity_manager.num_races(); i++)
         /* add production to slave holder of planet */
         if (planet.info(i - 1).numsectsowned) {
           planet.info(planet.slaved_to() - 1).resource += prod_res[i - 1];
@@ -785,7 +785,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             "killed!\n",
             planet.slaved_to());
         telegram_buf << "Productions now go to their rightful owners.\n";
-        for (i = 1; i <= Num_races; i++) {
+        for (i = 1; i <= entity_manager.num_races(); i++) {
           if (planet.info(i - 1).numsectsowned) {
             push_telegram(i, star.governor(i - 1), telegram_buf.str());
           }
@@ -906,7 +906,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   else if (planet.conditions(TOXIC) < 0)
     planet.conditions(TOXIC) = 0;
 
-  for (i = 1; i <= Num_races; i++) {
+  for (i = 1; i <= entity_manager.num_races(); i++) {
     stats.Power[i - 1].resource += planet.info(i - 1).resource;
     stats.Power[i - 1].destruct += planet.info(i - 1).destruct;
     stats.Power[i - 1].fuel += planet.info(i - 1).fuel;

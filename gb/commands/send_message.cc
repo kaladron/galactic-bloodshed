@@ -151,13 +151,13 @@ void send_message(const command_t& argv, GameObj& g) {
       g.out << "Block not found.\n";
       return;
     }
-    std::uint64_t dummy = (block->invite & block->pledge);
+    std::uint64_t allied_members = (block->invite & block->pledge);
     const auto block_msg = std::format(
         "{} \"{}\" [{},{}] sends a message to {} [{}] alliance block.\n",
         race.name, race.governor[Governor].name, Playernum, Governor,
         block->name, who);
     for (i = 1; i <= Num_races; i++) {
-      if (isset(dummy, i)) {
+      if (isset(allied_members, i)) {
         notify_race(i, block_msg);
         push_telegram_race(g.entity_manager, i, msg);
       }

@@ -88,7 +88,7 @@ void dissolve(const command_t& argv, GameObj& g) {
         pl.info(Playernum - 1).autorep = 0;
       }
 
-      auto smap_handle = g.entity_manager.get_sectormap(star.star_id(), pl.get_pnum());
+      auto smap_handle = g.entity_manager.get_sectormap(star.star_id(), pl.planet_order());
       auto& smap = *smap_handle;
       for (auto& s : smap) {
         if (s.get_owner() == Playernum) {

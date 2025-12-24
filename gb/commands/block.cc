@@ -33,7 +33,9 @@ void block(const command_t& argv, GameObj& g) {
     notify(Playernum, Governor,
            std::format("Race #{} [{}] is a member of ", p, r->name));
     for (int i = 1; i <= Num_races; i++) {
-      if (isset(Blocks[i - 1].pledge, p) && isset(Blocks[i - 1].invite, p)) {
+      const auto* block_i = g.entity_manager.peek_block(i);
+      if (!block_i) continue;
+      if (isset(block_i->pledge, p) && isset(block_i->invite, p)) {
         notify(Playernum, Governor,
                std::format("{}{}", (dummy_ == 0) ? " " : ", ", i));
         dummy_ = 1;
@@ -48,7 +50,9 @@ void block(const command_t& argv, GameObj& g) {
     notify(Playernum, Governor,
            std::format("Race #{} [{}] has been invited to join ", p, r->name));
     for (int i = 1; i <= Num_races; i++) {
-      if (!isset(Blocks[i - 1].pledge, p) && isset(Blocks[i - 1].invite, p)) {
+      const auto* block_i = g.entity_manager.peek_block(i);
+      if (!block_i) continue;
+      if (!isset(block_i->pledge, p) && isset(block_i->invite, p)) {
         notify(Playernum, Governor,
                std::format("{}{}", (dummy_ == 0) ? " " : ", ", i));
         dummy_ = 1;
@@ -63,7 +67,9 @@ void block(const command_t& argv, GameObj& g) {
     notify(Playernum, Governor,
            std::format("Race #{} [{}] has pledged ", p, r->name));
     for (int i = 1; i <= Num_races; i++) {
-      if (isset(Blocks[i - 1].pledge, p) && !isset(Blocks[i - 1].invite, p)) {
+      const auto* block_i = g.entity_manager.peek_block(i);
+      if (!block_i) continue;
+      if (isset(block_i->pledge, p) && !isset(block_i->invite, p)) {
         notify(Playernum, Governor,
                std::format("{}{}", (dummy_ == 0) ? " " : ", ", i));
         dummy_ = 1;
@@ -79,18 +85,23 @@ void block(const command_t& argv, GameObj& g) {
       return;
     }
     /* list the players who are in this alliance block */
-    uint64_t dummy = (Blocks[p - 1].invite & Blocks[p - 1].pledge);
+    const auto* block_p = g.entity_manager.peek_block(p);
+    if (!block_p) {
+      g.out << "Block not found.\n";
+      return;
+    }
+    uint64_t allied_members = (block_p->invite & block_p->pledge);
     notify(Playernum, Governor,
            std::format("         ========== {} Power Report ==========\n",
-                       Blocks[p - 1].name));
+                       block_p->name));
     notify(Playernum, Governor,
-           std::format("                 {:<64.64}\n", Blocks[p - 1].motto));
+           std::format("                 {:<64.64}\n", block_p->motto));
     notify(Playernum, Governor,
            "  #  Name              troops  pop  money ship  plan  res fuel "
            "dest know\n");
 
     for (player_t i = 1; i <= Num_races; i++) {
-      if (!isset(dummy, i)) continue;
+      if (!isset(allied_members, i)) continue;
       const auto* r = g.entity_manager.peek_race(i);
       if (!r || r->dissolved) continue;
       const auto* power_ptr = g.entity_manager.peek_power(r->Playernum);
@@ -125,30 +136,31 @@ void block(const command_t& argv, GameObj& g) {
     notify(Playernum, Governor,
            " #  Name             memb money popn ship  sys  res fuel dest  VPs "
            "know\n");
-    for (auto i = 1; i <= Num_races; i++)
-      if (Blocks[i - 1].VPs) {
-        g.out << std::format("{:2d} {:<19.19}{:3d}", i, Blocks[i - 1].name,
-                             Power_blocks.members[i - 1]);
-        g.out << std::format(
-            "{:5s}", Estimate_i((int)(Power_blocks.money[i - 1]), *race, i));
-        g.out << std::format(
-            "{:5s}", Estimate_i((int)(Power_blocks.popn[i - 1]), *race, i));
-        g.out << std::format(
-            "{:5s}",
-            Estimate_i((int)(Power_blocks.ships_owned[i - 1]), *race, i));
-        g.out << std::format(
-            "{:5s}",
-            Estimate_i((int)(Power_blocks.systems_owned[i - 1]), *race, i));
-        g.out << std::format(
-            "{:5s}", Estimate_i((int)(Power_blocks.resource[i - 1]), *race, i));
-        g.out << std::format(
-            "{:5s}", Estimate_i((int)(Power_blocks.fuel[i - 1]), *race, i));
-        g.out << std::format(
-            "{:5s}", Estimate_i((int)(Power_blocks.destruct[i - 1]), *race, i));
-        g.out << std::format(
-            "{:5s}", Estimate_i((int)(Power_blocks.VPs[i - 1]), *race, i));
-        g.out << std::format(" {:3d}%%\n", race->translate[i - 1]);
-      }
+    for (auto i = 1; i <= Num_races; i++) {
+      const auto* block_i = g.entity_manager.peek_block(i);
+      if (!block_i || !block_i->VPs) continue;
+      g.out << std::format("{:2d} {:<19.19}{:3d}", i, block_i->name,
+                           Power_blocks.members[i - 1]);
+      g.out << std::format(
+          "{:5s}", Estimate_i((int)(Power_blocks.money[i - 1]), *race, i));
+      g.out << std::format(
+          "{:5s}", Estimate_i((int)(Power_blocks.popn[i - 1]), *race, i));
+      g.out << std::format(
+          "{:5s}",
+          Estimate_i((int)(Power_blocks.ships_owned[i - 1]), *race, i));
+      g.out << std::format(
+          "{:5s}",
+          Estimate_i((int)(Power_blocks.systems_owned[i - 1]), *race, i));
+      g.out << std::format(
+          "{:5s}", Estimate_i((int)(Power_blocks.resource[i - 1]), *race, i));
+      g.out << std::format(
+          "{:5s}", Estimate_i((int)(Power_blocks.fuel[i - 1]), *race, i));
+      g.out << std::format(
+          "{:5s}", Estimate_i((int)(Power_blocks.destruct[i - 1]), *race, i));
+      g.out << std::format(
+          "{:5s}", Estimate_i((int)(Power_blocks.VPs[i - 1]), *race, i));
+      g.out << std::format(" {:3d}%%\n", race->translate[i - 1]);
+    }
   }
 }
 }  // namespace GB::commands

@@ -28,9 +28,6 @@ struct TurnState {
   // Turn statistics - passed to doplanet() and doship() for accumulation
   TurnStats stats;
 
-  // Power blocks for each player
-  block Blocks[MAXPLAYERS];
-
   // Constructor requires EntityManager reference
   explicit TurnState(EntityManager& em) : entity_manager(em) {}
 
@@ -488,10 +485,14 @@ static void process_abms_and_missiles(TurnState& state, int update) {
         }
         /* compute victory points for the block */
         if (inhabited[star] != 0) {
-          uint64_t dummy =
-              state.Blocks[player - 1].invite & state.Blocks[player - 1].pledge;
-          state.Blocks[player - 1].systems_owned +=
-              (inhabited[star] | dummy) == dummy;
+          const auto* block_player = state.entity_manager.peek_block(player);
+          if (block_player) {
+            uint64_t allied_members = block_player->invite & block_player->pledge;
+            if ((inhabited[star] | allied_members) == allied_members) {
+              auto block_handle = state.entity_manager.get_block(player);
+              block_handle->systems_owned++;
+            }
+          }
         }
       }
     }
@@ -502,7 +503,8 @@ static void process_abms_and_missiles(TurnState& state, int update) {
     auto sdata_handle = state.entity_manager.get_universe();
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
-      state.Blocks[player - 1].systems_owned = 0; /*recount systems owned*/
+      auto block_handle = state.entity_manager.get_block(player);
+      block_handle->systems_owned = 0; /*recount systems owned*/
       if (governed(*race_handle, state)) {
         ap_t APs = sdata_handle->AP[player - 1] + race_handle->planet_points;
         if (APs < LIMIT_APs) {
@@ -623,8 +625,8 @@ static void finalize_turn(TurnState& state, int update) {
         }
       }
 
-      state.Blocks[player - 1].VPs =
-          10L * state.Blocks[player - 1].systems_owned;
+      auto block_handle = state.entity_manager.get_block(player);
+      block_handle->VPs = 10L * block_handle->systems_owned;
       if (MARKET) {
         for (auto& governor : race_handle->governor) {
           if (governor.active) {
@@ -648,13 +650,10 @@ static void finalize_turn(TurnState& state, int update) {
         }
       }
     }
-    // Save power and block data via EntityManager
+    // Save power data via EntityManager
     for (int i : std::views::iota(0, MAXPLAYERS)) {
       auto power_handle = state.entity_manager.get_power(i);
       *power_handle = state.stats.Power[i];
-
-      auto block_handle = state.entity_manager.get_block(i);
-      *block_handle = state.Blocks[i];
     }
   }
 

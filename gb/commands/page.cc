@@ -57,10 +57,14 @@ void page(const command_t& argv, GameObj& g) {
                              star.get_name());
 
       if (to_block) {
-        uint64_t dummy =
-            Blocks[Playernum - 1].invite & Blocks[Playernum - 1].pledge;
+        const auto* block_player = g.entity_manager.peek_block(Playernum);
+        if (!block_player) {
+          g.out << "Block not found.\n";
+          return;
+        }
+        uint64_t allied_members = block_player->invite & block_player->pledge;
         for (i = 1; i <= Num_races; i++)
-          if (isset(dummy, i) && i != Playernum) notify_race(i, msg);
+          if (isset(allied_members, i) && i != Playernum) notify_race(i, msg);
       } else {
         if (argv.size() > 1)
           notify(who, gov, msg);

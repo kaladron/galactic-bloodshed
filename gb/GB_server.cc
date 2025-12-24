@@ -48,8 +48,7 @@ static void do_update(EntityManager&, bool = false);
 static void do_segment(EntityManager&, int, int);
 static int make_socket(int);
 static void shutdownsock(DescriptorData&);
-static void load_block_data(EntityManager&);
-static void save_block_data(Database&);
+static void initialize_block_data(EntityManager&);
 static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
 static bool process_output(DescriptorData&);
@@ -443,16 +442,16 @@ int main(int argc, char** argv) {
              ctime(&next_update_time));
   std::print(stderr, "      Next Segment   : {0}", ctime(&next_segment_time));
 
-  load_block_data(entity_manager); /* get alliance block data */
-  SortShips(); /* Sort the ship list by tech for "build ?" */
-  for (player_t i = 1; i <= MAXPLAYERS; i++) {
-    setbit(Blocks[i - 1].invite, i - 1);
-    setbit(Blocks[i - 1].pledge, i - 1);
-  }
-  save_block_data(database);
-  compute_power_blocks(entity_manager);
+  // Initialize game data structures
+  initialize_block_data(entity_manager);  // Ensure self-invite/self-pledge
+  compute_power_blocks(entity_manager);   // Calculate alliance power stats
+  SortShips();                             // Sort ship list by tech for "build ?"
+
+  // Start server
   set_signals();
   int sock = shovechars(port, entity_manager);
+
+  // Shutdown
   close_sockets(sock, entity_manager);
   std::println("Going down.");
   return 0;
@@ -1179,27 +1178,15 @@ static void process_command(GameObj& g, const command_t& argv) {
 }
 
 /**
- * Load block data from database
+ * Ensure each player has a self-invite/self-pledge in their block
  */
-static void load_block_data(EntityManager& entity_manager) {
-  for (int i : std::views::iota(1, MAXPLAYERS + 1)) {
-    const auto* block_ptr = entity_manager.peek_block(i);
-    if (block_ptr) {
-      Blocks[i - 1] = *block_ptr;
-    }
-  }
-}
-
-/**
- * Save block data to database
- */
-static void save_block_data(Database& db) {
-  JsonStore store(db);
-  BlockRepository block_repo(store);
-
-  for (int i : std::views::iota(1, MAXPLAYERS + 1)) {
-    Blocks[i - 1].Playernum = i;  // Ensure ID is set
-    block_repo.save(Blocks[i - 1]);
+static void initialize_block_data(EntityManager& entity_manager) {
+  for (auto race_handle : RaceList(entity_manager)) {
+    const auto& race = race_handle.read();
+    const player_t i = race.Playernum;
+    auto block_handle = entity_manager.get_block(i);
+    setbit(block_handle->invite, i - 1);
+    setbit(block_handle->pledge, i - 1);
   }
 }
 
@@ -1258,7 +1245,10 @@ void compute_power_blocks(EntityManager& entity_manager) {
     const auto& race_i = race_i_handle.read();
     const player_t i = race_i.Playernum;
 
-    uint64_t allied_members = Blocks[i - 1].invite & Blocks[i - 1].pledge;
+    const auto* block_i = entity_manager.peek_block(i);
+    if (!block_i) continue;
+    
+    uint64_t allied_members = block_i->invite & block_i->pledge;
     Power_blocks.members[i - 1] = 0;
     Power_blocks.sectors_owned[i - 1] = 0;
     Power_blocks.popn[i - 1] = 0;
@@ -1267,8 +1257,8 @@ void compute_power_blocks(EntityManager& entity_manager) {
     Power_blocks.fuel[i - 1] = 0;
     Power_blocks.destruct[i - 1] = 0;
     Power_blocks.money[i - 1] = 0;
-    Power_blocks.systems_owned[i - 1] = Blocks[i - 1].systems_owned;
-    Power_blocks.VPs[i - 1] = Blocks[i - 1].VPs;
+    Power_blocks.systems_owned[i - 1] = block_i->systems_owned;
+    Power_blocks.VPs[i - 1] = block_i->VPs;
 
     for (auto race_j_handle : RaceList(entity_manager)) {
       const auto& race_j = race_j_handle.read();

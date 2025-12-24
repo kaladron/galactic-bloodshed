@@ -48,7 +48,6 @@ static void do_update(EntityManager&, bool = false);
 static void do_segment(EntityManager&, int, int);
 static int make_socket(int);
 static void shutdownsock(DescriptorData&);
-static void load_power_data(EntityManager&);
 static void load_block_data(EntityManager&);
 static void save_block_data(Database&);
 static void make_nonblocking(int);
@@ -444,7 +443,6 @@ int main(int argc, char** argv) {
              ctime(&next_update_time));
   std::print(stderr, "      Next Segment   : {0}", ctime(&next_segment_time));
 
-  load_power_data(entity_manager); /* get power report from database */
   load_block_data(entity_manager); /* get alliance block data */
   SortShips(); /* Sort the ship list by tech for "build ?" */
   for (player_t i = 1; i <= MAXPLAYERS; i++) {
@@ -1181,18 +1179,6 @@ static void process_command(GameObj& g, const command_t& argv) {
 }
 
 /**
- * Load power data from database
- */
-static void load_power_data(EntityManager& entity_manager) {
-  for (int i : std::views::iota(1, MAXPLAYERS + 1)) {
-    const auto* power_ptr = entity_manager.peek_power(i);
-    if (power_ptr) {
-      Power[i - 1] = *power_ptr;
-    }
-  }
-}
-
-/**
  * Load block data from database
  */
 static void load_block_data(EntityManager& entity_manager) {
@@ -1289,14 +1275,16 @@ void compute_power_blocks(EntityManager& entity_manager) {
       const player_t j = race_j.Playernum;
 
       if (isset(allied_members, j)) {
+        const auto* power_ptr = entity_manager.peek_power(j);
+        if (!power_ptr) continue;
         Power_blocks.members[i - 1] += 1;
-        Power_blocks.sectors_owned[i - 1] += Power[j - 1].sectors_owned;
-        Power_blocks.money[i - 1] += Power[j - 1].money;
-        Power_blocks.popn[i - 1] += Power[j - 1].popn;
-        Power_blocks.ships_owned[i - 1] += Power[j - 1].ships_owned;
-        Power_blocks.resource[i - 1] += Power[j - 1].resource;
-        Power_blocks.fuel[i - 1] += Power[j - 1].fuel;
-        Power_blocks.destruct[i - 1] += Power[j - 1].destruct;
+        Power_blocks.sectors_owned[i - 1] += power_ptr->sectors_owned;
+        Power_blocks.money[i - 1] += power_ptr->money;
+        Power_blocks.popn[i - 1] += power_ptr->popn;
+        Power_blocks.ships_owned[i - 1] += power_ptr->ships_owned;
+        Power_blocks.resource[i - 1] += power_ptr->resource;
+        Power_blocks.fuel[i - 1] += power_ptr->fuel;
+        Power_blocks.destruct[i - 1] += power_ptr->destruct;
       }
     }
   }

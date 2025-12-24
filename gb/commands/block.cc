@@ -93,24 +93,26 @@ void block(const command_t& argv, GameObj& g) {
       if (!isset(dummy, i)) continue;
       const auto* r = g.entity_manager.peek_race(i);
       if (!r || r->dissolved) continue;
+      const auto* power_ptr = g.entity_manager.peek_power(r->Playernum);
+      if (!power_ptr) continue;
       g.out << std::format("{:2d} {:<20.20s} ", r->Playernum, r->name);
-      g.out << std::format("{:5s}", Estimate_i(Power[r->Playernum - 1].troops,
+      g.out << std::format("{:5s}", Estimate_i(power_ptr->troops,
                                                *race, r->Playernum));
-      g.out << std::format("{:5s}", Estimate_i(Power[r->Playernum - 1].popn,
+      g.out << std::format("{:5s}", Estimate_i(power_ptr->popn,
                                                *race, r->Playernum));
-      g.out << std::format("{:5s}", Estimate_i(Power[r->Playernum - 1].money,
+      g.out << std::format("{:5s}", Estimate_i(power_ptr->money,
                                                *race, r->Playernum));
       g.out << std::format(
           "{:5s}",
-          Estimate_i(Power[r->Playernum - 1].ships_owned, *race, r->Playernum));
+          Estimate_i(power_ptr->ships_owned, *race, r->Playernum));
       g.out << std::format("{:5s}",
-                           Estimate_i(Power[r->Playernum - 1].planets_owned,
+                           Estimate_i(power_ptr->planets_owned,
                                       *race, r->Playernum));
-      g.out << std::format("{:5s}", Estimate_i(Power[r->Playernum - 1].resource,
+      g.out << std::format("{:5s}", Estimate_i(power_ptr->resource,
                                                *race, r->Playernum));
-      g.out << std::format("{:5s}", Estimate_i(Power[r->Playernum - 1].fuel,
+      g.out << std::format("{:5s}", Estimate_i(power_ptr->fuel,
                                                *race, r->Playernum));
-      g.out << std::format("{:5s}", Estimate_i(Power[r->Playernum - 1].destruct,
+      g.out << std::format("{:5s}", Estimate_i(power_ptr->destruct,
                                                *race, r->Playernum));
       g.out << std::format(" {:3d}%%\n", race->translate[r->Playernum - 1]);
     }

@@ -41,7 +41,6 @@ export time_t next_segment_time;  // When will next segment be... approximately
 export std::chrono::minutes update_time;  // Interval between updates
 export segments_t nsegments_done;  // How many movements have we done so far?
 
-export power Power[MAXPLAYERS];
 export block Blocks[MAXPLAYERS];
 export power_blocks Power_blocks;
 

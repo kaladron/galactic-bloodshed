@@ -22,16 +22,18 @@ std::string prepare_output_line(EntityManager& em, const Race& race,
                         ? "+"
                         : (isset(r.atwar, race.Playernum) ? "-" : " "),
                     r.name, Estimate_i((int)r.victory_score, race, i));
-  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].troops, race, i));
-  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].popn, race, i));
-  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].money, race, i));
+  const auto* power_ptr = em.peek_power(i);
+  if (!power_ptr) return "";
+  ss << std::format("{:5s}", Estimate_i((int)power_ptr->troops, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)power_ptr->popn, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)power_ptr->money, race, i));
   ss << std::format("{:5s}",
-                    Estimate_i((int)Power[i - 1].ships_owned, race, i));
+                    Estimate_i((int)power_ptr->ships_owned, race, i));
   ss << std::format("{:3s}",
-                    Estimate_i((int)Power[i - 1].planets_owned, race, i));
-  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].resource, race, i));
-  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].fuel, race, i));
-  ss << std::format("{:5s}", Estimate_i((int)Power[i - 1].destruct, race, i));
+                    Estimate_i((int)power_ptr->planets_owned, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)power_ptr->resource, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)power_ptr->fuel, race, i));
+  ss << std::format("{:5s}", Estimate_i((int)power_ptr->destruct, race, i));
   ss << std::format("{:5s}", Estimate_i((int)r.morale, race, i));
   if (race.God) {
     const auto* universe = em.peek_universe();

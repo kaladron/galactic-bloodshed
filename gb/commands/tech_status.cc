@@ -86,7 +86,12 @@ void tech_status(const command_t& argv, GameObj& g) {
       tech_report_star(g, star_wrapper, star);
     }
   }
-  g.out << std::format("       Total Popn:  {:7}\n", Power[Playernum - 1].popn);
+  const auto* power_ptr = g.entity_manager.peek_power(Playernum);
+  if (!power_ptr) {
+    g.out << "       Total Popn:  unknown\n";
+  } else {
+    g.out << std::format("       Total Popn:  {:7}\n", power_ptr->popn);
+  }
   g.out << std::format("Tech: {:31}{:8.3f}{:8.3f}\n", totals.invest,
                        totals.gain, totals.max_gain);
 }

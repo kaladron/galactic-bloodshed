@@ -883,6 +883,41 @@ protected:
 };
 
 // ============================================================================
+// ServerStateRepository - Repository for server scheduling state
+// ============================================================================
+export class ServerStateRepository : public Repository<ServerState> {
+public:
+  explicit ServerStateRepository(JsonStore& store)
+      : Repository<ServerState>(store, "tbl_server_state") {}
+
+  // Domain-specific methods
+  // Note: ServerState is a singleton (id=1)
+  std::optional<ServerState> get_state() { return find(1); }
+  bool save(const ServerState& state) {
+    return Repository<ServerState>::save(state.id, state);
+  }
+
+protected:
+  std::optional<std::string> serialize(const ServerState& state) const override {
+    auto result = glz::write_json(state);
+    if (result.has_value()) {
+      return result.value();
+    }
+    return std::nullopt;
+  }
+
+  std::optional<ServerState>
+  deserialize(const std::string& json_str) const override {
+    ServerState state{};
+    auto result = glz::read_json(state, json_str);
+    if (!result) {
+      return state;
+    }
+    return std::nullopt;
+  }
+};
+
+// ============================================================================
 // NewsRepository - Repository for news/telegram items
 // Delegates all SQL operations to the DAL layer
 // ============================================================================

@@ -117,7 +117,8 @@ void flush_cache_impl(
 EntityManager::EntityManager(Database& database)
     : db(database), store(database), races(store), ships(store), planets(store),
       stars(store), sectors(store), commods(store), blocks(store),
-      powers(store), universe_repo(store), news(database) {}
+      powers(store), universe_repo(store), server_state_repo(store),
+      news(database) {}
 
 // Race entity methods
 EntityHandle<Race> EntityManager::get_race(player_t player) {
@@ -410,6 +411,69 @@ void EntityManager::release_universe() {
   }
 }
 
+// ServerState entity methods (singleton)
+EntityHandle<ServerState> EntityManager::get_server_state() {
+  if (server_state_cache) {
+    server_state_refcount++;
+    return {this, server_state_cache.get(),
+            [this](const ServerState& state) {
+              server_state_repo.save(state);
+              release_server_state();
+            }};
+  }
+
+  auto state_opt = server_state_repo.get_state();
+  if (!state_opt) {
+    // If not in DB, create default state
+    ServerState default_state{};
+    server_state_cache = std::make_unique<ServerState>(default_state);
+    server_state_refcount = 1;
+    // Will be saved when handle is destroyed
+    return {this, server_state_cache.get(),
+            [this](const ServerState& state) {
+              server_state_repo.save(state);
+              release_server_state();
+            },
+            true};  // Mark dirty so it gets saved
+  }
+
+  server_state_cache = std::make_unique<ServerState>(*state_opt);
+  server_state_refcount = 1;
+
+  return {this, server_state_cache.get(), [this](const ServerState& state) {
+            server_state_repo.save(state);
+            release_server_state();
+          }};
+}
+
+const ServerState* EntityManager::peek_server_state() {
+  // Check if already cached
+  if (server_state_cache) {
+    return server_state_cache.get();
+  }
+
+  // Load from repository if not cached
+  auto state_opt = server_state_repo.get_state();
+  if (!state_opt) {
+    // If not in DB, create default state
+    ServerState default_state{};
+    server_state_cache = std::make_unique<ServerState>(default_state);
+    return server_state_cache.get();
+  }
+
+  // Cache the entity (but don't increment refcount - this is read-only)
+  server_state_cache = std::make_unique<ServerState>(*state_opt);
+  return server_state_cache.get();
+}
+
+void EntityManager::release_server_state() {
+  server_state_refcount--;
+  if (server_state_refcount <= 0) {
+    server_state_cache.reset();
+    server_state_refcount = 0;
+  }
+}
+
 // Query methods
 int EntityManager::num_commods() {
   // Count commods by listing all IDs in the database
@@ -451,6 +515,10 @@ void EntityManager::flush_all() {
   if (global_universe_cache) {
     universe_repo.save(*global_universe_cache);
   }
+
+  if (server_state_cache) {
+    server_state_repo.save(*server_state_cache);
+  }
 }
 
 void EntityManager::clear_cache() {
@@ -468,6 +536,11 @@ void EntityManager::clear_cache() {
   // Clear global universe_struct if no active handles
   if (global_universe_refcount == 0) {
     global_universe_cache.reset();
+  }
+
+  // Clear server state if no active handles
+  if (server_state_refcount == 0) {
+    server_state_cache.reset();
   }
 }
 

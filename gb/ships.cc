@@ -539,6 +539,9 @@ std::string prin_ship_dest(const Ship& ship) {
 
 void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
               int checking_fuel) {
+  const auto* state = em.peek_server_state();
+  if (!state) return;  // Can't move ships without knowing segments
+  
   double stardist;
   double movedist;
   double truedist;
@@ -608,7 +611,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
   if (s.speed() && !s.docked() && s.alive() &&
       (s.whatdest() != ScopeLevel::LEVEL_UNIV || s.navigate().on)) {
     fuse = 0.5 * s.speed() * (1 + s.protect().evade) * s.mass() * FUEL_USE /
-           (double)segments;
+           (double)state->segments;
     if (s.fuel() < fuse) {
       if (send_messages) msg_OOF(em, s); /* send OOF notify */
       if (s.whatorbits() == ScopeLevel::LEVEL_UNIV &&
@@ -625,7 +628,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
       heading = .0174329252 * s.navigate().bearing;
       mfactor = SHIP_MOVE_SCALE * (1.0 - .01 * s.rad()) *
                 (1.0 - .01 * s.damage()) * SpeedConsts[s.speed()] *
-                MoveConsts[s.whatorbits()] / (double)segments;
+                MoveConsts[s.whatorbits()] / (double)state->segments;
       use_fuel(s, (double)fuse);
       sn = std::sin(heading);
       cs = std::cos(heading);
@@ -724,7 +727,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
           std::atan2((double)(xdest - s.xpos()), (double)(-ydest + s.ypos()));
       mfactor = SHIP_MOVE_SCALE * (1. - .01 * (double)s.rad()) *
                 (1. - .01 * (double)s.damage()) * SpeedConsts[s.speed()] *
-                MoveConsts[s.whatorbits()] / (double)segments;
+                MoveConsts[s.whatorbits()] / (double)state->segments;
 
       /* keep from ending up in the middle of the system. */
       if (destlevel == ScopeLevel::LEVEL_STAR &&

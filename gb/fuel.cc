@@ -37,18 +37,24 @@ void fuel_output(GameObj& g, const double dist, const double fuel,
       "Total Distance = {:.2f}   Number of Segments = {}\nFuel = {:.2f}{}  ",
       dist, segs, fuel, grav_buf);
 
-  if (nsegments_done > segments) {
+  const auto* state = g.entity_manager.peek_server_state();
+  if (!state) {
+    g.out << "Server state unavailable.\n";
+    return;
+  }
+
+  if (state->nsegments_done > state->segments) {
     g.out << "Estimated arrival time not available due to segment # "
              "discrepancy.\n";
     return;
   }
 
   time_t effective_time =
-      (segments == 1)
-          ? next_update_time +
-                (static_cast<time_t>((segs - 1) * (update_time.count() * 60)))
-          : next_segment_time +
-                ((segs - 1) * (update_time.count() / segments) * 60);
+      (state->segments == 1)
+          ? state->next_update_time +
+                (static_cast<time_t>((segs - 1) * (state->update_time_minutes * 60)))
+          : state->next_segment_time +
+                ((segs - 1) * (state->update_time_minutes / state->segments) * 60);
 
   g.out << std::format("ESTIMATED Arrival Time: {}\n",
                        std::ctime(&effective_time));
@@ -77,8 +83,14 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
                                      const double gravity_factor, double x_1,
                                      const double y_1,
                                      EntityManager& entity_manager) {
+  const auto* state = entity_manager.peek_server_state();
+  if (!state) {
+    // Can't do trip calculations without server state
+    return {false, 0};
+  }
+  
   tmpship.fuel() = fuel; /* load up the pseudo-ship */
-  segments_t effective_segment_number = nsegments_done;
+  segments_t effective_segment_number = state->nsegments_done;
 
   /*  Set our temporary destination.... */
   tmpship.destshipno() = tmpdest.shipno;
@@ -98,11 +110,11 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
   while (!trip_resolved) {
     domass(tmpship, entity_manager);
     double fuel_level1 = tmpship.fuel();
-    moveship(entity_manager, tmpship, (effective_segment_number == segments), 0,
+    moveship(entity_manager, tmpship, (effective_segment_number == state->segments), 0,
              1);
     number_segments++;
     effective_segment_number++;
-    if (effective_segment_number == (segments + 1))
+    if (effective_segment_number == (state->segments + 1))
       effective_segment_number = 1;
     double x_0 = tmpship.xpos();
     double y_0 = tmpship.ypos();

@@ -34,12 +34,6 @@ export double Compat[MAXPLAYERS];
 export unsigned long Num_commods;
 export planetnum_t Planet_count;
 
-export unsigned long segments;  // number of movement segments (global variable)
-export time_t next_update_time;   // When will next update be... approximately
-export time_t next_segment_time;  // When will next segment be... approximately
-export std::chrono::minutes update_time;  // Interval between updates
-export segments_t nsegments_done;  // How many movements have we done so far?
-
 export power_blocks Power_blocks;
 
 export bool update_flag = false;

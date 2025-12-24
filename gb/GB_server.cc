@@ -366,6 +366,10 @@ int main(int argc, char** argv) {
   Database database{PKGSTATEDIR "gb.db"};
   EntityManager entity_manager{database};
 
+  // Get server state handle (will auto-save on scope exit)
+  auto server_state_handle = entity_manager.get_server_state();
+  auto& state = *server_state_handle;
+
   std::println("      ***   Galactic Bloodshed ver {0} ***", GB_VERSION);
   std::println();
   time_t clk = time(nullptr);
@@ -375,72 +379,64 @@ int main(int argc, char** argv) {
     std::println("      The segment password is '%s'.", SEGMENT_PASSWORD);
   }
   int port;
+  std::chrono::minutes update_time;  // Local for command parsing
   switch (argc) {
     case 2:
       port = std::stoi(argv[1]);
       update_time = std::chrono::minutes(DEFAULT_UPDATE_TIME);
-      segments = MOVES_PER_UPDATE;
+      state.update_time_minutes = update_time.count();
+      state.segments = MOVES_PER_UPDATE;
       break;
     case 3:
       port = std::stoi(argv[1]);
       update_time = std::chrono::minutes(std::stoi(argv[2]));
-      segments = MOVES_PER_UPDATE;
+      state.update_time_minutes = update_time.count();
+      state.segments = MOVES_PER_UPDATE;
       break;
     case 4:
       port = std::stoi(argv[1]);
       update_time = std::chrono::minutes(std::stoi(argv[2]));
-      segments = std::stoi(argv[3]);
+      state.update_time_minutes = update_time.count();
+      state.segments = std::stoi(argv[3]);
       break;
     default:
       port = GB_PORT;
       update_time = DEFAULT_UPDATE_TIME;
-      segments = MOVES_PER_UPDATE;
+      state.update_time_minutes = update_time.count();
+      state.segments = MOVES_PER_UPDATE;
       break;
   }
   std::cerr << "      Port " << port << '\n';
   std::cerr << "      " << update_time << " minutes between updates" << '\n';
-  std::cerr << "      " << segments << " segments/update" << '\n';
+  std::cerr << "      " << state.segments << " segments/update" << '\n';
   start_buf = std::format("Server started  : {0}", ctime(&clk));
 
-  next_update_time = clk + (update_time.count() * 60);
-  if (stat(UPDATEFL, &stbuf) >= 0) {
-    if (FILE* sfile = fopen(UPDATEFL, "r"); sfile != nullptr) {
-      char dum[32];
-      if (fgets(dum, sizeof dum, sfile)) nupdates_done = atoi(dum);
-      if (fgets(dum, sizeof dum, sfile)) last_update_time = atol(dum);
-      if (fgets(dum, sizeof dum, sfile)) next_update_time = atol(dum);
-      fclose(sfile);
-    }
-    update_buf = std::format("Last Update {:3d} : {}", nupdates_done,
-                             ctime(&last_update_time));
+  // Initialize state from database or set defaults if first run
+  if (state.next_update_time == 0) {
+    state.next_update_time = clk + (state.update_time_minutes * 60);
   }
-  if (segments <= 1)
-    next_segment_time += (144 * 3600);
-  else {
-    next_segment_time = clk + (update_time.count() * 60 / segments);
-    if (stat(SEGMENTFL, &stbuf) >= 0) {
-      if (FILE* sfile = fopen(SEGMENTFL, "r"); sfile != nullptr) {
-        char dum[32];
-        if (fgets(dum, sizeof dum, sfile)) nsegments_done = atoi(dum);
-        if (fgets(dum, sizeof dum, sfile)) last_segment_time = atol(dum);
-        if (fgets(dum, sizeof dum, sfile)) next_segment_time = atol(dum);
-        fclose(sfile);
-      }
+  if (state.segments <= 1) {
+    state.next_segment_time = clk + (144 * 3600);
+  } else {
+    if (state.next_segment_time == 0) {
+      state.next_segment_time = clk + (state.update_time_minutes * 60 / state.segments);
     }
-    if (next_segment_time < clk) { /* gvc */
-      next_segment_time = next_update_time;
-      nsegments_done = segments;
+    if (state.next_segment_time < clk) {
+      state.next_segment_time = state.next_update_time;
+      state.nsegments_done = state.segments;
     }
   }
-  segment_buf = std::format("Last Segment {0:2d} : {1}", nsegments_done,
+  update_buf = std::format("Last Update {:3d} : {}", nupdates_done,
+                           ctime(&last_update_time));
+  segment_buf = std::format("Last Segment {0:2d} : {1}", state.nsegments_done,
                             ctime(&last_segment_time));
 
   std::print(stderr, "{}", update_buf);
   std::print(stderr, "{}", segment_buf);
   srandom(getpid());
   std::print(stderr, "      Next Update {0}  : {1}", nupdates_done + 1,
-             ctime(&next_update_time));
-  std::print(stderr, "      Next Segment   : {0}", ctime(&next_segment_time));
+             ctime(&state.next_update_time));
+  std::print(stderr, "      Next Segment   : {0}", ctime(&state.next_segment_time));
 
   // Initialize game data structures
   initialize_block_data(entity_manager);  // Ensure self-invite/self-pledge
@@ -450,6 +446,9 @@ int main(int argc, char** argv) {
   // Start server
   set_signals();
   int sock = shovechars(port, entity_manager);
+
+  // Save final state before shutdown
+  server_state_handle.save();
 
   // Shutdown
   close_sockets(sock, entity_manager);
@@ -579,12 +578,15 @@ static int shovechars(int port, EntityManager& entity_manager) {
       }
     }
     if (go_time == 0) {
-      if (now >= next_update_time) {
-        go_time = now + (int_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
-      }
-      if (now >= next_segment_time && nsegments_done < segments) {
-        go_time =
-            now + (int_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
+      const auto* state = entity_manager.peek_server_state();
+      if (state) {
+        if (now >= state->next_update_time) {
+          go_time = now + (int_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
+        }
+        if (now >= state->next_segment_time && state->nsegments_done < state->segments) {
+          go_time =
+              now + (int_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
+        }
       }
     }
     if (go_time > 0 && now >= go_time) {
@@ -596,10 +598,13 @@ static int shovechars(int port, EntityManager& entity_manager) {
 }
 
 void do_next_thing(EntityManager& entity_manager) {
-  if (nsegments_done < segments)
+  const auto* state = entity_manager.peek_server_state();
+  if (!state) return;
+  
+  if (state->nsegments_done < state->segments)
     do_segment(entity_manager, 0, 1);
   else
-    do_update(entity_manager);
+    do_update(entity_manager, false);
 }
 
 static int make_socket(int port) {
@@ -948,6 +953,10 @@ static void do_update(EntityManager& entity_manager, bool force) {
   time_t clk = time(nullptr);
   struct stat stbuf;
 
+  // Get server state handle (will auto-save on scope exit)
+  auto state_handle = entity_manager.get_server_state();
+  auto& state = *state_handle;
+
   bool fakeit = (!force && stat(nogofl.data(), &stbuf) >= 0);
 
   std::string update_msg = std::format("{}DOING UPDATE...\n", ctime(&clk));
@@ -957,22 +966,22 @@ static void do_update(EntityManager& entity_manager, bool force) {
     force_output();
   }
 
-  if (segments <= 1) {
+  if (state.segments <= 1) {
     /* Disables movement segments. */
-    next_segment_time = clk + (144 * 3600);
-    nsegments_done = segments;
+    state.next_segment_time = clk + (144 * 3600);
+    state.nsegments_done = state.segments;
   } else {
     if (force)
-      next_segment_time = clk + update_time.count() * 60 / segments;
+      state.next_segment_time = clk + state.update_time_minutes * 60 / state.segments;
     else
-      next_segment_time =
-          next_update_time + update_time.count() * 60 / segments;
-    nsegments_done = 1;
+      state.next_segment_time =
+          state.next_update_time + state.update_time_minutes * 60 / state.segments;
+    state.nsegments_done = 1;
   }
   if (force)
-    next_update_time = clk + update_time.count() * 60;
+    state.next_update_time = clk + state.update_time_minutes * 60;
   else
-    next_update_time += update_time.count() * 60;
+    state.next_update_time += state.update_time_minutes * 60;
 
   if (!fakeit) nupdates_done++;
 
@@ -981,28 +990,13 @@ static void do_update(EntityManager& entity_manager, bool force) {
       std::format("Last Update {0:3d} : {1}", nupdates_done, ctime(&clk));
   std::print(stderr, "{}", ctime(&clk));
   std::print(stderr, "Next Update {0:3d} : {1}", nupdates_done + 1,
-             ctime(&next_update_time));
+             ctime(&state.next_update_time));
   segment_buf =
-      std::format("Last Segment {0:2d} : {1}", nsegments_done, ctime(&clk));
+      std::format("Last Segment {0:2d} : {1}", state.nsegments_done, ctime(&clk));
   std::print(stderr, "{}", ctime(&clk));
   std::print(stderr, "Next Segment {0:2d} : {1}",
-             nsegments_done == segments ? 1 : nsegments_done + 1,
-             ctime(&next_segment_time));
-  unlink(UPDATEFL);
-  if (FILE* sfile = fopen(UPDATEFL, "w"); sfile != nullptr) {
-    std::println(sfile, "{0}", nupdates_done);
-    std::println(sfile, "{0}", clk);
-    std::println(sfile, "{0}", next_update_time);
-    fclose(sfile);
-  }
-  unlink(SEGMENTFL);
-  if (FILE* sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
-    std::println(sfile, "{0}", nsegments_done);
-    std::println(sfile, "{0}", clk);
-    std::println(sfile, "{0}", next_segment_time);
-    fflush(sfile);
-    fclose(sfile);
-  }
+             state.nsegments_done == state.segments ? 1 : state.nsegments_done + 1,
+             ctime(&state.next_segment_time));
 
   update_flag = true;
   if (!fakeit) do_turn(entity_manager, 1);
@@ -1023,9 +1017,13 @@ static void do_segment(EntityManager& entity_manager, int override,
   time_t clk = time(nullptr);
   struct stat stbuf;
 
+  // Get server state handle (will auto-save on scope exit)
+  auto state_handle = entity_manager.get_server_state();
+  auto& state = *state_handle;
+
   bool fakeit = (!override && stat(nogofl.data(), &stbuf) >= 0);
 
-  if (!override && segments <= 1) return;
+  if (!override && state.segments <= 1) return;
 
   std::string movement_msg = std::format("{}DOING MOVEMENT...\n", ctime(&clk));
   if (!fakeit) {
@@ -1034,34 +1032,27 @@ static void do_segment(EntityManager& entity_manager, int override,
     force_output();
   }
   if (override) {
-    next_segment_time = clk + update_time.count() * 60 / segments;
+    state.next_segment_time = clk + state.update_time_minutes * 60 / state.segments;
     if (segment) {
-      nsegments_done = segment;
-      next_update_time =
-          clk + update_time.count() * 60 * (segments - segment + 1) / segments;
+      state.nsegments_done = segment;
+      state.next_update_time =
+          clk + state.update_time_minutes * 60 * (state.segments - segment + 1) / state.segments;
     } else {
-      nsegments_done++;
+      state.nsegments_done++;
     }
   } else {
-    next_segment_time += update_time.count() * 60 / segments;
-    nsegments_done++;
+    state.next_segment_time += state.update_time_minutes * 60 / state.segments;
+    state.nsegments_done++;
   }
 
   update_flag = true;
   if (!fakeit) do_turn(entity_manager, 0);
   update_flag = false;
-  unlink(SEGMENTFL);
-  if (FILE* sfile = fopen(SEGMENTFL, "w"); sfile != nullptr) {
-    fprintf(sfile, "%d\n", nsegments_done);
-    fprintf(sfile, "%ld\n", clk);
-    fprintf(sfile, "%ld\n", next_segment_time);
-    fclose(sfile);
-  }
   segment_buf =
-      std::format("Last Segment {0:2d} : {1}", nsegments_done, ctime(&clk));
+      std::format("Last Segment {0:2d} : {1}", state.nsegments_done, ctime(&clk));
   std::print(stderr, "{0}", ctime(&clk));
-  std::print(stderr, "Next Segment {0:2d} : {1}", nsegments_done,
-             ctime(&next_segment_time));
+  std::print(stderr, "Next Segment {0:2d} : {1}", state.nsegments_done,
+             ctime(&state.next_segment_time));
   clk = time(nullptr);
   std::string segment_msg = std::format("{}Segment finished\n", ctime(&clk));
   if (!fakeit) {
@@ -1193,6 +1184,11 @@ static void initialize_block_data(EntityManager& entity_manager) {
 /* report back the update status */
 static void GB_time(const command_t&, GameObj& g) {
   time_t clk = time(nullptr);
+  const auto* state = g.entity_manager.peek_server_state();
+  if (!state) {
+    g.out << "Server state unavailable.\n";
+    return;
+  }
   g.out << start_buf;
   g.out << update_buf;
   g.out << segment_buf;
@@ -1201,14 +1197,19 @@ static void GB_time(const command_t&, GameObj& g) {
 
 static void GB_schedule(const command_t&, GameObj& g) {
   time_t clk = time(nullptr);
-  g.out << std::format("{0} minute update intervals\n", update_time);
-  g.out << std::format("{0} movement segments per update\n", segments);
+  const auto* state = g.entity_manager.peek_server_state();
+  if (!state) {
+    g.out << "Server state unavailable.\n";
+    return;
+  }
+  g.out << std::format("{0} minute update intervals\n", state->update_time_minutes);
+  g.out << std::format("{0} movement segments per update\n", state->segments);
   g.out << std::format("Current time    : {0}", ctime(&clk));
   g.out << std::format("Next Segment {0:2d} : {1}",
-                       nsegments_done == segments ? 1 : nsegments_done + 1,
-                       ctime(&next_segment_time));
+                       state->nsegments_done == state->segments ? 1 : state->nsegments_done + 1,
+                       ctime(&state->next_segment_time));
   g.out << std::format("Next Update {0:3d} : {1}", nupdates_done + 1,
-                       ctime(&next_update_time));
+                       ctime(&state->next_update_time));
 }
 
 static void help(const command_t& argv, GameObj& g) {

@@ -352,6 +352,57 @@ void test_entity_manager_singleton_universe() {
   std::println("  ✓ Singleton universe_struct works correctly");
 }
 
+void test_entity_manager_singleton_server_state() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  std::println("Test: EntityManager singleton (ServerState)");
+
+  // Create initial ServerState
+  ServerState state{};
+  state.id = 1;  // ServerState is a singleton with id=1
+  state.segments = 10;
+  state.next_update_time = 1735000000;
+  state.next_segment_time = 1734900000;
+  state.update_time_minutes = 60;
+  state.nsegments_done = 3;
+
+  JsonStore store(db);
+  ServerStateRepository server_state_repo(store);
+  server_state_repo.save(state);
+
+  // Get ServerState (singleton)
+  {
+    auto handle = em.get_server_state();
+    assert(handle.get() != nullptr);
+    assert(handle->segments == 10);
+    assert(handle->update_time_minutes == 60);
+    assert(handle->nsegments_done == 3);
+
+    // Modify
+    handle->segments = 15;
+    handle->nsegments_done = 7;
+  }
+
+  // Verify modification persisted
+  auto saved = server_state_repo.get_state();
+  assert(saved.has_value());
+  assert(saved->segments == 15);
+  assert(saved->nsegments_done == 7);
+  // Timestamps should be unchanged
+  assert(saved->next_update_time == 1735000000);
+  assert(saved->next_segment_time == 1734900000);
+
+  // Test peek access (read-only, no caching)
+  const auto* peeked = em.peek_server_state();
+  assert(peeked != nullptr);
+  assert(peeked->segments == 15);
+  assert(peeked->nsegments_done == 7);
+
+  std::println("  ✓ Singleton ServerState works correctly");
+}
+
 void test_entity_manager_get_player() {
   Database db(":memory:");
   initialize_schema(db);
@@ -772,6 +823,7 @@ int main() {
   test_entity_manager_flush_all();
   test_entity_manager_clear_cache();
   test_entity_manager_singleton_universe();
+  test_entity_manager_singleton_server_state();
   test_entity_manager_get_player();
   test_entity_manager_kill_ship();
   test_entity_manager_kill_ship_gov_ship();

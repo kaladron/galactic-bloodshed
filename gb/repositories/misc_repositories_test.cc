@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Test file for miscellaneous repositories:
-// CommodRepository, BlockRepository, PowerRepository, and UniverseRepository
+// CommodRepository, BlockRepository, PowerRepository, UniverseRepository,
+// and ServerStateRepository
 
 import dallib;
 import gblib;
@@ -244,6 +245,54 @@ void test_universe_repository() {
   std::println("✓ All UniverseRepository tests passed");
 }
 
+void test_server_state_repository() {
+  // Setup
+  Database db(":memory:");
+  initialize_schema(db);
+  JsonStore store(db);
+  ServerStateRepository repo(store);
+
+  // Test data - ServerState is a singleton with id=1
+  ServerState state{};
+  state.id = 1;
+  state.segments = 10;
+  state.next_update_time = 1735000000;  // Some future timestamp
+  state.next_segment_time = 1734900000;  // Earlier timestamp
+  state.update_time_minutes = 60;
+  state.nsegments_done = 3;
+
+  // Test 1: Save and retrieve server state
+  assert(repo.save(state));
+  auto retrieved = repo.get_state();
+  assert(retrieved.has_value());
+  assert(retrieved->id == 1);
+  assert(retrieved->segments == 10);
+  assert(retrieved->next_update_time == 1735000000);
+  assert(retrieved->next_segment_time == 1734900000);
+  assert(retrieved->update_time_minutes == 60);
+  assert(retrieved->nsegments_done == 3);
+
+  // Test 2: Update server state
+  state.segments = 15;
+  state.nsegments_done = 7;
+  state.update_time_minutes = 120;
+  assert(repo.save(state));
+  retrieved = repo.get_state();
+  assert(retrieved.has_value());
+  assert(retrieved->segments == 15);
+  assert(retrieved->nsegments_done == 7);
+  assert(retrieved->update_time_minutes == 120);
+
+  // Test 3: Timestamps are preserved
+  assert(retrieved->next_update_time == 1735000000);
+  assert(retrieved->next_segment_time == 1734900000);
+
+  // Test 4: ID remains 1 (singleton)
+  assert(retrieved->id == 1);
+
+  std::println("✓ All ServerStateRepository tests passed");
+}
+
 int main() {
   std::println("Running miscellaneous repository tests...\n");
 
@@ -251,6 +300,7 @@ int main() {
   test_block_repository();
   test_power_repository();
   test_universe_repository();
+  test_server_state_repository();
 
   std::println("\n✅ All miscellaneous repository tests passed!");
   return 0;

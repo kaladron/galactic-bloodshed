@@ -117,6 +117,15 @@ export struct sectinfo {
   unsigned char done; /* this sector has been updated */
 };
 
+export struct ServerState {
+  int id{1};  // Always 1 - singleton entity
+  unsigned long segments{1};      // Number of movement segments
+  time_t next_update_time{0};     // Next update timestamp
+  time_t next_segment_time{0};    // Next segment timestamp
+  int update_time_minutes{10};    // Interval between updates in minutes
+  segments_t nsegments_done{0};   // Segments completed this update
+};
+
 export struct Commod {
   int id{0};  // Commodity ID for database persistence
   player_t owner;

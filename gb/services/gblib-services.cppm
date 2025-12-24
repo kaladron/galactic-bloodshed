@@ -111,6 +111,7 @@ export class EntityManager {
   BlockRepository blocks;
   PowerRepository powers;
   UniverseRepository universe_repo;
+  ServerStateRepository server_state_repo;
   NewsRepository news;
 
   // In-memory cache (only one copy of each entity)
@@ -126,6 +127,7 @@ export class EntityManager {
   std::unordered_map<int, std::unique_ptr<block>> block_cache;
   std::unordered_map<int, std::unique_ptr<power>> power_cache;
   std::unique_ptr<universe_struct> global_universe_cache;  // Singleton
+  std::unique_ptr<ServerState> server_state_cache;         // Singleton
 
   // Reference counting for concurrent access
   std::unordered_map<player_t, int> race_refcount;
@@ -137,6 +139,7 @@ export class EntityManager {
   std::unordered_map<int, int> block_refcount;
   std::unordered_map<int, int> power_refcount;
   int global_universe_refcount = 0;
+  int server_state_refcount = 0;
 
   // Mutex for thread-safety (future-proofing)
   std::mutex cache_mutex;
@@ -153,6 +156,7 @@ public:
   EntityHandle<block> get_block(int id);
   EntityHandle<power> get_power(int id);
   EntityHandle<universe_struct> get_universe();
+  EntityHandle<ServerState> get_server_state();
 
   // Direct access for read-only operations (no RAII overhead)
   const Race* peek_race(player_t player);
@@ -163,6 +167,7 @@ public:
   const block* peek_block(int id);
   const power* peek_power(int id);
   const universe_struct* peek_universe();
+  const ServerState* peek_server_state();
 
   // Sector map operations (cached with RAII like other entities)
   EntityHandle<SectorMap> get_sectormap(starnum_t star, planetnum_t pnum);
@@ -207,5 +212,6 @@ private:
   void release_block(int id);
   void release_power(int id);
   void release_universe();
+  void release_server_state();
   void release_sectormap(starnum_t star, planetnum_t pnum);
 };

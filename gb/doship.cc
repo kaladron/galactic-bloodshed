@@ -10,7 +10,10 @@ module gblib;
 
 namespace {
 void do_repair(Ship& ship, EntityManager& entity_manager) {
-  double maxrep = REPAIR_RATE / (double)segments;
+  const auto* state = entity_manager.peek_server_state();
+  if (!state) return;  // Can't repair without knowing segments
+  
+  double maxrep = REPAIR_RATE / (double)state->segments;
 
   /* stations repair for free, and ships docked with them */
   int cost = [&ship, &maxrep, &entity_manager]() {
@@ -134,9 +137,12 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
       if (!star) return;
 
       if (pod.temperature < POD_THRESHOLD) {
-        pod.temperature +=
-            round_rand((double)star->temperature() / (double)segments);
-        ship.special() = pod;
+        const auto* state = entity_manager.peek_server_state();
+        if (state) {
+          pod.temperature +=
+              round_rand((double)star->temperature() / (double)state->segments);
+          ship.special() = pod;
+        }
         return;
       }
 
@@ -158,8 +164,11 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
 
     case ScopeLevel::LEVEL_PLAN: {
       if (pod.decay < POD_DECAY) {
-        pod.decay += round_rand(1.0 / (double)segments);
-        ship.special() = pod;
+        const auto* state = entity_manager.peek_server_state();
+        if (state) {
+          pod.decay += round_rand(1.0 / (double)state->segments);
+          ship.special() = pod;
+        }
         return;
       }
 
@@ -413,8 +422,11 @@ void doship(Ship& ship, int update, EntityManager& entity_manager,
       if (star && star->nova_stage() > 0) {
         /* damage ships from supernovae */
         /* Maarten: modified to take into account MOVES_PER_UPDATE */
-        ship.damage() +=
-            5L * star->nova_stage() / ((armor(ship) + 1) * segments);
+        const auto* state = entity_manager.peek_server_state();
+        if (state) {
+          ship.damage() +=
+              5L * star->nova_stage() / ((armor(ship) + 1) * state->segments);
+        }
         if (ship.damage() >= 100) {
           entity_manager.kill_ship(ship.owner(), ship);
           return;

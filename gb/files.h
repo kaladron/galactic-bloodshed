@@ -28,8 +28,6 @@ inline constexpr auto COMBATFL = NEWS(combat);
 inline constexpr auto ANNOUNCEFL = NEWS(announce);
 inline constexpr auto COMMODDATAFL = DATA(commod);
 inline constexpr auto COMMODFREEDATAFL = DATA(commodfree);
-inline constexpr auto UPDATEFL = DATA(Update.time);
-inline constexpr auto SEGMENTFL = DATA(Segment.time);
 
 #define PLANETLIST PATH(planet.list)
 #define STARLIST PATH(star.list)

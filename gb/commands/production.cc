@@ -5,12 +5,13 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
+import tabulate;
 
 module commands;
 
 namespace {
-void production_at_star(GameObj& g, starnum_t star) {
+void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
 
@@ -26,17 +27,22 @@ void production_at_star(GameObj& g, starnum_t star) {
       const auto star4 = std::string(star_ref.get_name()).substr(0, 4);
       const auto planet4 =
           std::string(star_ref.get_planet_name(i)).substr(0, 4);
-      g.out << std::format(
-          " {} {:>4}/{:<4}{}{:>3}{:>8.4f}{:>8}{:>3}{:>6}{:>5}{:>6} "
-          "{:>6}   {:>3}{:>8.2f}\n",
-          Psymbol[pl.type()], star4, planet4,
-          (pl.info(Playernum - 1).autorep ? '*' : ' '),
-          star_ref.governor(Playernum - 1), pl.info(Playernum - 1).prod_tech,
-          pl.total_resources(), pl.info(Playernum - 1).prod_crystals,
-          pl.info(Playernum - 1).prod_res, pl.info(Playernum - 1).prod_dest,
-          pl.info(Playernum - 1).prod_fuel, pl.info(Playernum - 1).prod_money,
-          pl.info(Playernum - 1).tox_thresh,
-          pl.info(Playernum - 1).est_production);
+
+      std::string autorep = pl.info(Playernum - 1).autorep ? "*" : " ";
+
+      table.add_row({std::string(1, Psymbol[pl.type()]),
+                     std::format("{}/{}", star4, planet4),
+                     autorep,
+                     std::format("{}", star_ref.governor(Playernum - 1)),
+                     std::format("{:.4f}", pl.info(Playernum - 1).prod_tech),
+                     std::format("{}", pl.total_resources()),
+                     std::format("{}", pl.info(Playernum - 1).prod_crystals),
+                     std::format("{}", pl.info(Playernum - 1).prod_res),
+                     std::format("{}", pl.info(Playernum - 1).prod_dest),
+                     std::format("{}", pl.info(Playernum - 1).prod_fuel),
+                     std::format("{}", pl.info(Playernum - 1).prod_money),
+                     std::format("{}", pl.info(Playernum - 1).tox_thresh),
+                     std::format("{:.2f}", pl.info(Playernum - 1).est_production)});
     }
   }
 }
@@ -44,17 +50,34 @@ void production_at_star(GameObj& g, starnum_t star) {
 
 namespace GB::commands {
 void production(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
-
   g.out << "          ============ Production Report ==========\n";
-  g.out << "  Planet     gov    tech deposit  x   res  "
-           "des  fuel    tax   tox  est prod\n";
+
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+
+  // Configure columns
+  table.column(0).format().width(1);   // Planet type symbol
+  table.column(1).format().width(9);   // Star/Planet
+  table.column(2).format().width(1);   // Autorep flag
+  table.column(3).format().width(3).font_align(tabulate::FontAlign::right);   // Gov
+  table.column(4).format().width(8).font_align(tabulate::FontAlign::right);   // Tech
+  table.column(5).format().width(8).font_align(tabulate::FontAlign::right);   // Deposit
+  table.column(6).format().width(3).font_align(tabulate::FontAlign::right);   // Crystals
+  table.column(7).format().width(6).font_align(tabulate::FontAlign::right);   // Res
+  table.column(8).format().width(5).font_align(tabulate::FontAlign::right);   // Dest
+  table.column(9).format().width(6).font_align(tabulate::FontAlign::right);   // Fuel
+  table.column(10).format().width(6).font_align(tabulate::FontAlign::right);  // Tax
+  table.column(11).format().width(3).font_align(tabulate::FontAlign::right);  // Tox
+  table.column(12).format().width(8).font_align(tabulate::FontAlign::right);  // Est prod
+
+  // Add header
+  table.add_row({"", "Planet", "", "gov", "tech", "deposit", "x", "res", "des", "fuel", "tax", "tox", "est prod"});
+  table[0].format().font_style({tabulate::FontStyle::bold});
 
   if (argv.size() < 2)
     for (auto star_handle : StarList(g.entity_manager)) {
       const auto& star = *star_handle;
-      production_at_star(g, star.star_id());
+      production_at_star(g, star.star_id(), table);
     }
   else
     for (int i = 1; i < argv.size(); i++) {
@@ -64,8 +87,9 @@ void production(const command_t& argv, GameObj& g) {
         g.out << std::format("Bad location `{}`.\n", argv[i]);
         continue;
       } /* ok, a proper location */
-      production_at_star(g, where.snum);
+      production_at_star(g, where.snum, table);
     }
-  g.out << "\n";
+
+  g.out << table << "\n";
 }
 }  // namespace GB::commands

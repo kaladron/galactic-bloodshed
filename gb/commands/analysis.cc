@@ -4,6 +4,7 @@ module;
 
 import gblib;
 import std;
+import tabulate;
 
 module commands;
 
@@ -21,7 +22,7 @@ enum class Mode {
   bottom_five
 };
 
-void insert(Mode mode, std::array<struct anal_sect, CARE> arr, anal_sect in) {
+void insert(Mode mode, std::array<struct anal_sect, CARE>& arr, anal_sect in) {
   for (int i = 0; i < CARE; i++)
     if ((mode == Mode::top_five && arr[i].value < in.value) ||
         (mode == Mode::bottom_five &&
@@ -45,7 +46,10 @@ void PrintTop(GameObj& g, const std::array<struct anal_sect, CARE> arr,
   g.out << "\n";
 }
 
-void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
+// FIXME: ThisPlayer uses -1 to mean "all players", 0 for "unoccupied", and
+// positive values for specific players. Consider using std::variant or
+// std::optional to make this more type-safe.
+void do_analysis(GameObj& g, int ThisPlayer, Mode mode, int sector_type,
                  starnum_t Starnum, planetnum_t Planetnum) {
   player_t Playernum = g.player;
 
@@ -216,37 +220,73 @@ void do_analysis(GameObj& g, player_t ThisPlayer, Mode mode, int sector_type,
   PrintTop(g, mPopn, "^Popn");
 
   g.out << "\n";
-  g.out << std::format("{:>2} {:>3} {:>7} {:>6} {:>5} {:>5} {:>5} {:>2}", "Pl",
-                       "sec", "popn", "troops", "a.eff", "a.mob", "res", "x");
 
+  // Build table with dynamic sector-type columns
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+
+  // Configure fixed columns
+  table.column(0).format().width(2).font_align(tabulate::FontAlign::right);
+  table.column(1).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(2).format().width(7).font_align(tabulate::FontAlign::right);
+  table.column(3).format().width(6).font_align(tabulate::FontAlign::right);
+  table.column(4).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(5).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(6).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(7).format().width(2).font_align(tabulate::FontAlign::right);
+  // Dynamic sector columns configured after adding rows
+
+  // Build header row
+  std::vector<std::string> table_header = {"Pl",    "sec",   "popn", "troops",
+                                           "a.eff", "a.mob", "res",  "x"};
   for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    g.out << std::format("{:>4}", Dessymbols[i]);
+    table_header.emplace_back(1, Dessymbols[i]);
   }
-  g.out << "\n----------------------------------------------"
-           "---------------------------------\n";
-  for (player_t p = 0; p <= g.entity_manager.num_races(); p++)
+  table.add_row(
+      tabulate::Table::Row_t(table_header.begin(), table_header.end()));
+  table[0].format().font_style({tabulate::FontStyle::bold});
+
+  // Add player rows
+  for (player_t p = 0; p <= g.entity_manager.num_races(); p++) {
     if (PlayTSect[p] != 0) {
-      g.out << std::format(
-          "{:>2} {:>3} {:>7} {:>6} {:>5.1f} {:>5.1f} {:>5} {:>2}", p,
-          PlayTSect[p], PlayPopn[p], PlayTroops[p],
-          static_cast<double>(PlayEff[p]) / PlayTSect[p],
-          static_cast<double>(PlayMob[p]) / PlayTSect[p], PlayRes[p],
-          PlayCrys[p]);
+      std::vector<std::string> row = {
+          std::format("{}", p),
+          std::format("{}", PlayTSect[p]),
+          std::format("{}", PlayPopn[p]),
+          std::format("{}", PlayTroops[p]),
+          std::format("{:.1f}", static_cast<double>(PlayEff[p]) / PlayTSect[p]),
+          std::format("{:.1f}", static_cast<double>(PlayMob[p]) / PlayTSect[p]),
+          std::format("{}", PlayRes[p]),
+          std::format("{}", PlayCrys[p])};
       for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-        g.out << std::format("{:>4}", PlaySect[p][i]);
+        row.push_back(std::format("{}", PlaySect[p][i]));
       }
-      g.out << "\n";
+      table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
     }
-  g.out << "------------------------------------------------"
-           "-------------------------------\n";
-  g.out << std::format(
-      "{:>2} {:>3} {:>7} {:>6} {:>5.1f} {:>5.1f} {:>5} {:>2}", "Tl", TotalSect,
-      TotalPopn, TotalTroops, static_cast<double>(TotalEff) / TotalSect,
-      static_cast<double>(TotalMob) / TotalSect, TotalRes, TotalCrys);
-  for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    g.out << std::format("{:>4}", Sect[i]);
   }
-  g.out << "\n";
+
+  // Add totals row
+  std::vector<std::string> totals = {
+      "Tl",
+      std::format("{}", TotalSect),
+      std::format("{}", TotalPopn),
+      std::format("{}", TotalTroops),
+      std::format("{:.1f}", static_cast<double>(TotalEff) / TotalSect),
+      std::format("{:.1f}", static_cast<double>(TotalMob) / TotalSect),
+      std::format("{}", TotalRes),
+      std::format("{}", TotalCrys)};
+  for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
+    totals.push_back(std::format("{}", Sect[i]));
+  }
+  table.add_row(tabulate::Table::Row_t(totals.begin(), totals.end()));
+
+  // Configure dynamic sector columns
+  for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
+    table.column(8 + i).format().width(4).font_align(
+        tabulate::FontAlign::right);
+  }
+
+  g.out << table << "\n";
 }
 
 }  // namespace

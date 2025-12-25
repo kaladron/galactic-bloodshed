@@ -29,14 +29,12 @@ void defend(const command_t& argv, GameObj& g) {
   }
 
   if (argv.size() < 3) {
-    notify(Playernum, Governor,
-           "Syntax: 'defend <ship> <sector> [<strength>]'.\n");
+    g.out << "Syntax: 'defend <ship> <sector> [<strength>]'.\n";
     return;
   }
   const auto& star = *g.entity_manager.peek_star(g.snum);
   if (Governor && star.governor(Playernum - 1) != Governor) {
-    notify(Playernum, Governor,
-           "You are not authorized to do that in this system.\n");
+    g.out << "You are not authorized to do that in this system.\n";
     return;
   }
   auto toshiptmp = string_to_shipnum(argv[1]);
@@ -156,7 +154,7 @@ void defend(const command_t& argv, GameObj& g) {
   if (!to->alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
   notify_star(g.entity_manager, Playernum, Governor, to->storbits(), short_buf);
   warn(to->owner(), to->governor(), long_buf);
-  notify(Playernum, Governor, long_buf);
+  g.out << long_buf;
 
   /* defending ship retaliates */
 
@@ -180,7 +178,7 @@ void defend(const command_t& argv, GameObj& g) {
       post(g.entity_manager, short_buf, NewsType::COMBAT);
       notify_star(g.entity_manager, Playernum, Governor, to->storbits(),
                   short_buf);
-      notify(Playernum, Governor, long_buf);
+      g.out << long_buf;
       warn(to->owner(), to->governor(), long_buf);
     }
   }
@@ -212,7 +210,7 @@ void defend(const command_t& argv, GameObj& g) {
           post(g.entity_manager, short_buf, NewsType::COMBAT);
           notify_star(g.entity_manager, Playernum, Governor, ship->storbits(),
                       short_buf);
-          notify(Playernum, Governor, long_buf);
+          g.out << long_buf;
           warn(ship->owner(), ship->governor(), long_buf);
         }
       }

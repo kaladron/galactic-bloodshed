@@ -57,9 +57,8 @@ void orbit(const command_t& argv, GameObj& g) {
             break;
           default:
             if (sscanf(argv[flag].c_str() + 1, "%d", &DontDispNum) != 1) {
-              notify(g.player, g.governor,
-                     std::format("Bad number {}.\n",
-                                 std::string_view(argv[flag]).substr(1)));
+              g.out << std::format("Bad number {}.\n",
+                                   std::string_view(argv[flag]).substr(1));
               DontDispNum = -1;
             }
             if (DontDispNum) DontDispNum--; /* make a '1' into a '0' */
@@ -81,7 +80,7 @@ void orbit(const command_t& argv, GameObj& g) {
   }
 
   if (where->err) {
-    notify(g.player, g.governor, "orbit: error in args.\n");
+    g.out << "orbit: error in args.\n";
     return;
   }
 
@@ -223,7 +222,7 @@ void orbit(const command_t& argv, GameObj& g) {
       return;
   }
   strcat(output, "\n");
-  notify(g.player, g.governor, output);
+  g.out << output;
 }
 }  // namespace GB::commands
 
@@ -349,7 +348,7 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
       y = (int)(SCALE + (SCALE * (ship->ypos() - Lasty)) / (UNIVSIZE * Zoom));
       break;
     default:
-      notify(g.player, g.governor, "WHOA! error in DispShip.\n");
+      g.out << "WHOA! error in DispShip.\n";
       return;
   }
 

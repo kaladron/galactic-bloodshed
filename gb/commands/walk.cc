@@ -112,7 +112,7 @@ void walk(const command_t& argv, GameObj& g) {
         while ((strength = retal_strength(ship2)) &&
                (strength1 = retal_strength(*ship))) {
           use_destruct(ship2, strength);
-          notify(Playernum, Governor, long_buf);
+          g.out << long_buf;
           warn(ship2.owner(), ship2.governor(), long_buf);
           if (!ship2.alive())
             post(g.entity_manager, short_buf, NewsType::COMBAT);
@@ -120,7 +120,7 @@ void walk(const command_t& argv, GameObj& g) {
                       short_buf);
           if (strength1) {
             use_destruct(*ship, strength1);
-            notify(Playernum, Governor, long_buf);
+            g.out << long_buf;
             warn(ship2.owner(), ship2.governor(), long_buf);
             if (!ship2.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
@@ -149,7 +149,7 @@ void walk(const command_t& argv, GameObj& g) {
         auto mil = sect.get_troops();
         mech_attack_people(g.entity_manager, *ship, &civ, &mil, *g.race, *alien,
                            sect, false, long_buf, short_buf);
-        notify(Playernum, Governor, long_buf);
+        g.out << long_buf;
         warn(alien->Playernum, oldgov, long_buf);
         notify_star(g.entity_manager, Playernum, Governor, ship->storbits(),
                     short_buf);
@@ -158,7 +158,7 @@ void walk(const command_t& argv, GameObj& g) {
         people_attack_mech(g.entity_manager, *ship, sect.get_popn(),
                            sect.get_troops(), *alien, *g.race, sect, x, y,
                            long_buf, short_buf);
-        notify(Playernum, Governor, long_buf);
+        g.out << long_buf;
         warn(alien->Playernum, oldgov, long_buf);
         notify_star(g.entity_manager, Playernum, Governor, ship->storbits(),
                     short_buf);

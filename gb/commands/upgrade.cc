@@ -177,10 +177,9 @@ void upgrade(const command_t& argv, GameObj& g) {
 
   /* check to see whether this ship can actually be built by this player */
   if ((complex = complexity(ship)) > race.tech) {
-    notify(Playernum, Governor,
-           std::format(
-               "This upgrade requires an engineering technology of {:.1f}.\n",
-               complex));
+    g.out << std::format(
+        "This upgrade requires an engineering technology of {:.1f}.\n",
+        complex);
     return;
   }
 
@@ -196,13 +195,11 @@ void upgrade(const command_t& argv, GameObj& g) {
     }
     s2 = &(*(*s2_handle_opt));
     if (s2->max_hanger() - (s2->hanger() - dirship.size()) < ship_size(ship)) {
-      notify(Playernum, Governor,
-             std::format("Not enough free hanger space on {}{}.\n",
-                         Shipltrs[s2->type()], dirship.destshipno()));
-      notify(Playernum, Governor,
-             std::format("{} more needed.\n",
-                         ship_size(ship) - (s2->max_hanger() -
-                                            (s2->hanger() - dirship.size()))));
+      g.out << std::format("Not enough free hanger space on {}{}.\n",
+                           Shipltrs[s2->type()], dirship.destshipno());
+      g.out << std::format("{} more needed.\n",
+                           ship_size(ship) - (s2->max_hanger() -
+                                              (s2->hanger() - dirship.size())));
       return;
     }
   }
@@ -220,18 +217,14 @@ void upgrade(const command_t& argv, GameObj& g) {
   }
 
   if (netcost > dirship.resource()) {
-    notify(Playernum, Governor,
-           std::format("Old value {}r   New value {}r\n", oldcost, newcost));
-    notify(Playernum, Governor,
-           std::format(
-               "You need {} resources on board to make this modification.\n",
-               netcost));
+    g.out << std::format("Old value {}r   New value {}r\n", oldcost, newcost);
+    g.out << std::format(
+        "You need {} resources on board to make this modification.\n",
+        netcost);
   } else if (netcost || race.God) {
-    notify(Playernum, Governor,
-           std::format("Old value {}r   New value {}r\n", oldcost, newcost));
-    notify(Playernum, Governor,
-           std::format("Characteristic modified at a cost of {} resources.\n",
-                       netcost));
+    g.out << std::format("Old value {}r   New value {}r\n", oldcost, newcost);
+    g.out << std::format("Characteristic modified at a cost of {} resources.\n",
+                         netcost);
     // Copy the modified fields from ship to dirship
     dirship.armor() = ship.armor();
     dirship.max_crew() = ship.max_crew();

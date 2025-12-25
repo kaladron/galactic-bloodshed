@@ -134,7 +134,7 @@ void bombard(const command_t& argv, GameObj& g) {
         warn(i, star->governor(i - 1), long_buf);
       }
     }
-    notify(Playernum, Governor, long_buf);
+    g.out << long_buf;
 
     if (DEFENSE) {
       /* planet retaliates - AFVs are immune to this */
@@ -154,7 +154,7 @@ void bombard(const command_t& argv, GameObj& g) {
                                  long_buf, short_buf);
             const auto* star = g.entity_manager.peek_star(from.storbits());
             warn(i, star->governor(i - 1), long_buf);
-            notify(Playernum, Governor, long_buf);
+            g.out << long_buf;
             if (!from.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
             notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
@@ -190,7 +190,7 @@ void bombard(const command_t& argv, GameObj& g) {
             notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
                         short_buf);
             warn(ship.owner(), ship.governor(), long_buf);
-            notify(Playernum, Governor, long_buf);
+            g.out << long_buf;
           }
         }
         if (!from.alive()) break;

@@ -17,11 +17,6 @@ import :universe;
 // Cannot move to TurnStats because commands need access
 export unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
 
-// These globals remain for now - they're not per-turn statistics
-// TODO: Consider moving to appropriate contexts in future refactoring
-export unsigned long Num_commods;
-export planetnum_t Planet_count;
-
 // Power blocks - computed during turn processing, read by commands (e.g., block
 // command)
 export power_blocks Power_blocks;

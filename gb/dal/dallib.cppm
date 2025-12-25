@@ -49,6 +49,9 @@ public:
   int news_get_latest_id(int type);
   bool news_purge_type(int type);
   bool news_purge_all();
+
+  // Planet queries
+  int count_non_asteroid_planets();
 };
 
 // News item structure (minimal POD for data transfer)

@@ -13,6 +13,7 @@ export struct universe_struct {
   int id{0};  // Universe ID for database persistence (always 1 for singleton)
   unsigned short numstars{0}; /* Total # of stars in universe */
   unsigned short ships{0};    /* Head of universe-wide ship list */
+  planetnum_t planet_count{0}; /* Count of non-asteroid planets (for victory) */
   ap_t AP[MAXPLAYERS]{};      /* Action points for each player */
   unsigned short VN_hitlist[MAXPLAYERS]{};
   /* # of ships destroyed by each player */

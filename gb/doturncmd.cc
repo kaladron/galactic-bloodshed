@@ -129,7 +129,6 @@ static void process_ships(TurnState& state) {
 }
 
 static void process_stars_and_planets(TurnState& state, int update) {
-  Planet_count = 0;
   for (auto star_handle : StarList(state.entity_manager)) {
     const starnum_t star = star_handle->get_struct().star_id;
 
@@ -140,9 +139,6 @@ static void process_stars_and_planets(TurnState& state, int update) {
     for (auto planet_handle :
          PlanetList(state.entity_manager, star, *star_handle)) {
       const planetnum_t pnum = planet_handle->planet_order();
-      if (planet_handle->type() != PlanetType::ASTEROID) {
-        Planet_count++;
-      }
       if (update) {
         moveplanet(state.entity_manager, star, *planet_handle, pnum,
                    state.stats);
@@ -596,6 +592,8 @@ static void update_victory_scores(TurnState& state, int update) {
 }
 
 static void finalize_turn(TurnState& state, int update) {
+  const planetnum_t planet_count =
+      state.entity_manager.peek_universe()->planet_count;
   if (update) {
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
@@ -613,14 +611,14 @@ static void finalize_turn(TurnState& state, int update) {
       make_discoveries(state.entity_manager, *race_handle);
       race_handle->turn += 1;
       if (race_handle->controlled_planets >=
-          Planet_count * VICTORY_PERCENT / 100) {
+          planet_count * VICTORY_PERCENT / 100) {
         race_handle->victory_turns++;
       } else {
         race_handle->victory_turns = 0;
       }
 
       if (race_handle->controlled_planets >=
-          Planet_count * VICTORY_PERCENT / 200) {
+          planet_count * VICTORY_PERCENT / 200) {
         for (auto other_race : RaceList(state.entity_manager)) {
           other_race->translate[player - 1] = 100;
         }
@@ -769,6 +767,7 @@ void fix_stability(EntityManager& em, Star& s) {
 void handle_victory(EntityManager& em) {
   if (!VICTORY) return;
 
+  const planetnum_t planet_count = em.peek_universe()->planet_count;
   int i, j;
   int game_over = 0;
   int win_category[64];
@@ -780,7 +779,7 @@ void handle_victory(EntityManager& em) {
     win_category[i - 1] = 0;
     const auto* race = em.peek_race(i);
     if (!race) continue;
-    if (race->controlled_planets >= Planet_count * VICTORY_PERCENT / 100) {
+    if (race->controlled_planets >= planet_count * VICTORY_PERCENT / 100) {
       win_category[i - 1] = LITTLE_WINNER;
     }
     if (race->victory_turns >= VICTORY_UPDATES) {

@@ -235,3 +235,24 @@ bool Database::news_purge_all() {
   }
   return result == SQLITE_OK;
 }
+
+int Database::count_non_asteroid_planets() {
+  if (!conn) return 0;
+
+  const char* sql =
+      "SELECT COUNT(*) FROM tbl_planet WHERE "
+      "json_extract(data, '$.type') != 'ASTEROID'";
+
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+    return 0;
+  }
+
+  int count = 0;
+  if (sqlite3_step(stmt) == SQLITE_ROW) {
+    count = sqlite3_column_int(stmt, 0);
+  }
+
+  sqlite3_finalize(stmt);
+  return count;
+}

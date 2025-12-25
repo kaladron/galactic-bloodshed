@@ -177,6 +177,9 @@ usage:
     stars.emplace_back(Makestar(db, star));
   }
 
+  // Count non-asteroid planets for victory conditions
+  Sdata.planet_count = static_cast<planetnum_t>(db.count_non_asteroid_planets());
+
 #if 0
   /* 
    * Try to more evenly space stars.  Essentially this is an inverse-gravity

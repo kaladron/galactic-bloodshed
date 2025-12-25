@@ -47,8 +47,7 @@ void name(const command_t& argv, GameObj& g) {
   }
 
   if (namebuf.size() < 1 || check) {
-    notify(Playernum, Governor,
-           std::format("Illegal name {}.\n", check ? "form" : "length"));
+    g.out << std::format("Illegal name {}.\n", check ? "form" : "length");
     return;
   }
 
@@ -142,8 +141,7 @@ void name(const command_t& argv, GameObj& g) {
       return;
     }
     race->name = namebuf;
-    notify(Playernum, Governor,
-           std::format("Name changed to `{}'.\n", race->name));
+    g.out << std::format("Name changed to `{}'.\n", race->name);
   } else if (argv[1] == "governor") {
     auto race = g.entity_manager.get_race(Playernum);
     if (!race.get()) {
@@ -151,9 +149,8 @@ void name(const command_t& argv, GameObj& g) {
       return;
     }
     race->governor[Governor].name = namebuf;
-    notify(
-        Playernum, Governor,
-        std::format("Name changed to `{}'.\n", race->governor[Governor].name));
+    g.out << std::format("Name changed to `{}'.\n",
+                         race->governor[Governor].name);
   } else {
     g.out << "I don't know what you mean.\n";
     return;

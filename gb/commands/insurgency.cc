@@ -90,7 +90,7 @@ void insurgency(const command_t& argv, GameObj& g) {
                      (double)(g.race->fighters * p.info(Playernum - 1).troops -
                               alien->fighters * p.info(who - 1).troops)) /
        50.0;
-  notify(Playernum, Governor, std::format("x = {}\n", x));
+  g.out << std::format("x = {}\n", x);
   chance = round_rand(200.0 * std::atan((double)x) / 3.14159265);
   std::string long_msg = std::format(
       "{}/{}: {} [{}] tries insurgency vs {} [{}]\n\t{}: {} total civs [{}]  "
@@ -103,10 +103,9 @@ void insurgency(const command_t& argv, GameObj& g) {
       p.info(who - 1).popn, p.info(who - 1).tax, chance);
   if (success(chance)) {
     changed_hands = revolt(p, g.entity_manager, g.snum, g.pnum, who, Playernum);
-    notify(Playernum, Governor, long_msg);
-    notify(Playernum, Governor,
-           std::format("Success!  You liberate {} sector{}.\n", changed_hands,
-                       (changed_hands == 1) ? "" : "s"));
+    g.out << long_msg;
+    g.out << std::format("Success!  You liberate {} sector{}.\n", changed_hands,
+                         (changed_hands == 1) ? "" : "s");
     long_msg += std::format(
         "A revolt on /{}/{} instigated by {} [{}] costs you {} sector{}\n",
         star.get_name(), star.get_planet_name(g.pnum), g.race->name, Playernum,
@@ -121,7 +120,7 @@ void insurgency(const command_t& argv, GameObj& g) {
              Playernum, alien->name, who),
          NewsType::DECLARATION);
   } else {
-    notify(Playernum, Governor, long_msg);
+    g.out << long_msg;
     g.out << "The insurgency failed!\n";
     long_msg += std::format("A revolt on /{}/{} instigated by {} [{}] fails\n",
                             star.get_name(), star.get_planet_name(g.pnum),

@@ -19,7 +19,7 @@ void dump(const command_t& argv, GameObj& g) {
   if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) return;
 
   if (!(player = get_player(g.entity_manager, argv[1]))) {
-    notify(Playernum, Governor, "No such player.\n");
+    g.out << "No such player.\n";
     return;
   }
 

@@ -347,8 +347,8 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
       x = (int)(SCALE + (SCALE * (ship->xpos() - Lastx)) / (UNIVSIZE * Zoom));
       y = (int)(SCALE + (SCALE * (ship->ypos() - Lasty)) / (UNIVSIZE * Zoom));
       break;
-    default:
-      g.out << "WHOA! error in DispShip.\n";
+    case ScopeLevel::LEVEL_SHIP:
+      // Ships can't orbit other ships; this case should never be reached.
       return;
   }
 

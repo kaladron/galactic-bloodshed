@@ -7,7 +7,8 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
+import tabulate;
 #include "gb/files.h"
 
 module commands;
@@ -67,10 +68,10 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
   // TODO(jeffbailey): Use C++17 Filesystem stuff when available
   std::string rm_telegram_file =
       std::format("rm {0}.{1}.{2}", TELEGRAMFL, race.Playernum, src_gov);
-  if (system(rm_telegram_file.c_str()) <
+  if (std::system(rm_telegram_file.c_str()) <
       0) { /*  Remove the telegram file too....  */
-    perror("gaaaaaaaah");
-    exit(-1);
+    std::perror("gaaaaaaaah");
+    std::exit(-1);
   }
 }
 }  // namespace
@@ -79,27 +80,45 @@ namespace GB::commands {
 void governors(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
-  // TODO(jeffbailey): ap_t APcount = 0;
   governor_t gov;
 
   auto race = g.entity_manager.get_race(Playernum);
   if (Governor ||
       argv.size() < 3) { /* the only thing governors can do with this */
-    for (governor_t i = 0; i <= MAXGOVERNORS; i++) {
-      auto line =
-          Governor
-              ? std::format("{0:>2} {1:<15.15} {2:>8} {3:>10} {4}", i,
-                            race->governor[i].name,
-                            race->governor[i].active ? "ACTIVE" : "INACTIVE",
-                            race->governor[i].money,
-                            ctime(&race->governor[i].login))
-              : std::format(
-                    "{0:>2} {1:<15.15} {2:<10.10} {3:>8} {4:>10} {5}", i,
-                    race->governor[i].name, race->governor[i].password,
-                    race->governor[i].active ? "ACTIVE" : "INACTIVE",
-                    race->governor[i].money, ctime(&race->governor[i].login));
-      g.out << line;
+    tabulate::Table table;
+    table.format().hide_border().column_separator("  ");
+
+    // Configure columns - password at end, only shown to governor 0
+    table.column(0).format().width(2).font_align(tabulate::FontAlign::right);
+    table.column(1).format().width(15);
+    table.column(2).format().width(8);
+    table.column(3).format().width(10).font_align(tabulate::FontAlign::right);
+    table.column(4).format().width(24);
+    if (!Governor) {
+      table.column(5).format().width(10);
+      table.add_row({"#", "Name", "Status", "Money", "Last Login", "Password"});
+    } else {
+      table.add_row({"#", "Name", "Status", "Money", "Last Login"});
     }
+    table[0].format().font_style({tabulate::FontStyle::bold});
+
+    for (governor_t i = 0; i <= MAXGOVERNORS; i++) {
+      std::string status = race->governor[i].active ? "ACTIVE" : "INACTIVE";
+      std::string login_time = std::ctime(&race->governor[i].login);
+      // Remove trailing newline from ctime
+      if (!login_time.empty() && login_time.back() == '\n') {
+        login_time.pop_back();
+      }
+
+      std::vector<std::string> row = {
+          std::format("{}", i), std::string(race->governor[i].name), status,
+          std::format("{}", race->governor[i].money), login_time};
+      if (!Governor) {
+        row.emplace_back(race->governor[i].password);
+      }
+      table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
+    }
+    g.out << table << "\n";
   } else if ((gov = std::stoi(argv[1])) > MAXGOVERNORS) {
     g.out << "No such governor.\n";
     return;

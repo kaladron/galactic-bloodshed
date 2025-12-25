@@ -30,14 +30,12 @@ void block(const command_t& argv, GameObj& g) {
       return;
     }
     dummy_ = 0; /* Used as flag for finding a block */
-    notify(Playernum, Governor,
-           std::format("Race #{} [{}] is a member of ", p, r->name));
+    g.out << std::format("Race #{} [{}] is a member of ", p, r->name);
     for (int i = 1; i <= g.entity_manager.num_races(); i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i) continue;
       if (isset(block_i->pledge, p) && isset(block_i->invite, p)) {
-        notify(Playernum, Governor,
-               std::format("{}{}", (dummy_ == 0) ? " " : ", ", i));
+        g.out << std::format("{}{}", (dummy_ == 0) ? " " : ", ", i);
         dummy_ = 1;
       }
     }
@@ -47,14 +45,12 @@ void block(const command_t& argv, GameObj& g) {
       g.out << "\n";
 
     dummy_ = 0; /* Used as flag for finding a block */
-    notify(Playernum, Governor,
-           std::format("Race #{} [{}] has been invited to join ", p, r->name));
+    g.out << std::format("Race #{} [{}] has been invited to join ", p, r->name);
     for (int i = 1; i <= g.entity_manager.num_races(); i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i) continue;
       if (!isset(block_i->pledge, p) && isset(block_i->invite, p)) {
-        notify(Playernum, Governor,
-               std::format("{}{}", (dummy_ == 0) ? " " : ", ", i));
+        g.out << std::format("{}{}", (dummy_ == 0) ? " " : ", ", i);
         dummy_ = 1;
       }
     }
@@ -64,14 +60,12 @@ void block(const command_t& argv, GameObj& g) {
       g.out << "\n";
 
     dummy_ = 0; /* Used as flag for finding a block */
-    notify(Playernum, Governor,
-           std::format("Race #{} [{}] has pledged ", p, r->name));
+    g.out << std::format("Race #{} [{}] has pledged ", p, r->name);
     for (int i = 1; i <= g.entity_manager.num_races(); i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i) continue;
       if (isset(block_i->pledge, p) && !isset(block_i->invite, p)) {
-        notify(Playernum, Governor,
-               std::format("{}{}", (dummy_ == 0) ? " " : ", ", i));
+        g.out << std::format("{}{}", (dummy_ == 0) ? " " : ", ", i);
         dummy_ = 1;
       }
     }
@@ -91,14 +85,11 @@ void block(const command_t& argv, GameObj& g) {
       return;
     }
     uint64_t allied_members = (block_p->invite & block_p->pledge);
-    notify(Playernum, Governor,
-           std::format("         ========== {} Power Report ==========\n",
-                       block_p->name));
-    notify(Playernum, Governor,
-           std::format("                 {:<64.64}\n", block_p->motto));
-    notify(Playernum, Governor,
-           "  #  Name              troops  pop  money ship  plan  res fuel "
-           "dest know\n");
+    g.out << std::format("         ========== {} Power Report ==========\n",
+                         block_p->name);
+    g.out << std::format("                 {:<64.64}\n", block_p->motto);
+    g.out << "  #  Name              troops  pop  money ship  plan  res fuel "
+             "dest know\n";
 
     for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
       if (!isset(allied_members, i)) continue;
@@ -127,13 +118,11 @@ void block(const command_t& argv, GameObj& g) {
     }
   } else { /* list power report for all the alliance blocks (as of the last
               update) */
-    notify(
-        Playernum, Governor,
-        std::format("         ========== Alliance Blocks as of {} ==========\n",
-                    std::asctime(std::localtime(&Power_blocks.time))));
-    notify(Playernum, Governor,
-           " #  Name             memb money popn ship  sys  res fuel dest  VPs "
-           "know\n");
+    g.out << std::format(
+        "         ========== Alliance Blocks as of {} ==========\n",
+        std::asctime(std::localtime(&Power_blocks.time)));
+    g.out << " #  Name             memb money popn ship  sys  res fuel dest  VPs "
+             "know\n";
     for (auto i = 1; i <= g.entity_manager.num_races(); i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i || !block_i->VPs) continue;

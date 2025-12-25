@@ -5,11 +5,58 @@ module;
 import gblib;
 import scnlib;
 import std;
+import tabulate;
 
 #include "gb/files.h"
 #include <cstdio>
 
 module commands;
+
+namespace {
+// Create a tabulate table for ship specifications
+tabulate::Table create_ship_spec_table() {
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+
+  table.column(0).format().width(1);   // Letter
+  table.column(1).format().width(15);  // Name
+  table.column(2).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(3).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(4).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(5).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(6).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(7).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(8).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(9).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(10).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(11).format().width(2).font_align(tabulate::FontAlign::right);
+  table.column(12).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(13).format().width(4).font_align(tabulate::FontAlign::right);
+
+  table.add_row({"?", "name", "cargo", "hang", "arm", "dest", "gun", "pri",
+                 "sec", "fuel", "crew", "sp", "tech", "cost"});
+  table[0].format().font_style({tabulate::FontStyle::bold});
+
+  return table;
+}
+
+void add_ship_spec_row(tabulate::Table& table, ShipType i, const Race& race) {
+  table.add_row(
+      {std::string(1, Shipltrs[i]), std::string(Shipnames[i]),
+       std::format("{}", Shipdata[i][ABIL_CARGO]),
+       std::format("{}", Shipdata[i][ABIL_HANGER]),
+       std::format("{}", Shipdata[i][ABIL_ARMOR]),
+       std::format("{}", Shipdata[i][ABIL_DESTCAP]),
+       std::format("{}", Shipdata[i][ABIL_GUNS]),
+       std::format("{}", Shipdata[i][ABIL_PRIMARY]),
+       std::format("{}", Shipdata[i][ABIL_SECONDARY]),
+       std::format("{}", Shipdata[i][ABIL_FUELCAP]),
+       std::format("{}", Shipdata[i][ABIL_MAXCREW]),
+       std::format("{}", Shipdata[i][ABIL_SPEED]),
+       std::format("{:.0f}", (double)Shipdata[i][ABIL_TECH]),
+       std::format("{}", Shipcost(i, race))});
+}
+}  // namespace
 
 namespace GB::commands {
 void build(const command_t& argv, GameObj& g) {
@@ -42,31 +89,19 @@ void build(const command_t& argv, GameObj& g) {
     if (argv.size() == 2) {
       /* Ship parameter list */
       g.out << "     - Default ship parameters -\n";
-      g.out << std::format(
-          "{} {:<15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} {:>4} {:>4} "
-          "{:>2} {:>4} {:>4}\n",
-          "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
-          "fuel", "crew", "sp", "tech", "cost");
+      auto table = create_ship_spec_table();
       const auto& race = *g.race;
       for (j = 0; j < NUMSTYPES; j++) {
         ShipType i{ShipVector[j]};
         if ((!Shipdata[i][ABIL_GOD]) || race.God) {
           if (race.pods || (i != ShipType::STYPE_POD)) {
             if (Shipdata[i][ABIL_PROGRAMMED]) {
-              g.out << std::format(
-                  "{} {:<15.15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} "
-                  "{:>4} {:>4} {:>2} {:.0f} {:>4}\n",
-                  Shipltrs[i], Shipnames[i], Shipdata[i][ABIL_CARGO],
-                  Shipdata[i][ABIL_HANGER], Shipdata[i][ABIL_ARMOR],
-                  Shipdata[i][ABIL_DESTCAP], Shipdata[i][ABIL_GUNS],
-                  Shipdata[i][ABIL_PRIMARY], Shipdata[i][ABIL_SECONDARY],
-                  Shipdata[i][ABIL_FUELCAP], Shipdata[i][ABIL_MAXCREW],
-                  Shipdata[i][ABIL_SPEED], (double)Shipdata[i][ABIL_TECH],
-                  Shipcost(i, race));
+              add_ship_spec_row(table, i, race);
             }
           }
         }
       }
+      g.out << table << "\n";
       return;
     }
     /* Description of specific ship type */
@@ -117,22 +152,10 @@ void build(const command_t& argv, GameObj& g) {
         g.out << "type ships.\n";
       }
       /* default parameters */
-      g.out << std::format(
-          "{} {:<15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} {:>4} {:>4} "
-          "{:>2} {:>4} {:>4}\n",
-          "?", "name", "cargo", "hang", "arm", "dest", "gun", "pri", "sec",
-          "fuel", "crew", "sp", "tech", "cost");
+      auto table = create_ship_spec_table();
       const auto& race = *g.race;
-      g.out << std::format(
-          "{} {:<15.15} {:>5} {:>5} {:>3} {:>4} {:>3} {:>3} {:>3} {:>4} {:>4} "
-          "{:>2} {:.0f} {:>4}\n",
-          Shipltrs[*i], Shipnames[*i], Shipdata[*i][ABIL_CARGO],
-          Shipdata[*i][ABIL_HANGER], Shipdata[*i][ABIL_ARMOR],
-          Shipdata[*i][ABIL_DESTCAP], Shipdata[*i][ABIL_GUNS],
-          Shipdata[*i][ABIL_PRIMARY], Shipdata[*i][ABIL_SECONDARY],
-          Shipdata[*i][ABIL_FUELCAP], Shipdata[*i][ABIL_MAXCREW],
-          Shipdata[*i][ABIL_SPEED], (double)Shipdata[*i][ABIL_TECH],
-          Shipcost(*i, race));
+      add_ship_spec_row(table, *i, race);
+      g.out << table << "\n";
     }
 
     return;

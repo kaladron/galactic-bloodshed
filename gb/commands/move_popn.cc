@@ -207,9 +207,9 @@ void move_popn(const command_t& argv, GameObj& g) {
         if (race.absorb) {
           absorbed = int_rand(0, old2popn + old3popn);
           g.out << std::format("{} alien bodies absorbed.\n", absorbed);
-          notify(
-              old2owner, old2gov,
-              std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
+          notify(old2owner, old2gov,
+                 std::format("Metamorphs have absorbed {} bodies!!!\n",
+                             absorbed));
         }
         if (what == PopulationType::CIV)
           sect2.set_popn(people + absorbed);
@@ -224,9 +224,8 @@ void move_popn(const command_t& argv, GameObj& g) {
           absorbed = int_rand(0, oldpopn - people);
           notify(old2owner, old2gov,
                  std::format("{} alien bodies absorbed.\n", absorbed));
-          notify(
-              Playernum, Governor,
-              std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
+          g.out << std::format("Metamorphs have absorbed {} bodies!!!\n",
+                               absorbed);
           sect2.set_popn(sect2.get_popn() + absorbed);
         }
         if (what == PopulationType::CIV)
@@ -277,11 +276,10 @@ void move_popn(const command_t& argv, GameObj& g) {
                               casualties2, casualties3, casualties,
                               what == PopulationType::CIV ? "civ" : "mil");
       warn(old2owner, old2gov, telegram);
-      notify(Playernum, Governor,
-             std::format("Casualties: You: {} {}, Them: {} civ/{} mil\n",
-                         casualties,
-                         what == PopulationType::CIV ? "civ" : "mil",
-                         casualties2, casualties3));
+      g.out << std::format("Casualties: You: {} {}, Them: {} civ/{} mil\n",
+                           casualties,
+                           what == PopulationType::CIV ? "civ" : "mil",
+                           casualties2, casualties3);
     } else {
       if (what == PopulationType::CIV) {
         sect.set_popn(sect.get_popn() - people);

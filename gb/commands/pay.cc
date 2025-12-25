@@ -52,8 +52,7 @@ void pay(const command_t& argv, GameObj& g) {
   alien.governor[0].money += amount;
   warn(who, 0,
        std::format("{} [{}] payed you {}.\n", race.name, Playernum, amount));
-  notify(Playernum, Governor,
-         std::format("{} payed to {} [{}].\n", amount, alien.name, who));
+  g.out << std::format("{} payed to {} [{}].\n", amount, alien.name, who);
 
   post(g.entity_manager,
        std::format("{} [{}] pays {} [{}].\n", race.name, Playernum, alien.name,

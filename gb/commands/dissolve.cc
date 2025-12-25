@@ -16,16 +16,14 @@ void dissolve(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player;
   governor_t Governor = g.governor;
   if (!DISSOLVE) {
-    notify(Playernum, Governor,
-           "Dissolve has been disabled. Please notify diety.\n");
+    g.out << "Dissolve has been disabled. Please notify diety.\n";
     return;
   }
 
   if (Governor) {
-    notify(Playernum, Governor,
-           "Only the leader may dissolve the race. The "
-           "leader has been notified of your "
-           "attempt!!!\n");
+    g.out << "Only the leader may dissolve the race. The "
+             "leader has been notified of your "
+             "attempt!!!\n";
     notify(Playernum, 0,
            std::format("Governor #{} has attempted to dissolve this race.\n",
                        Governor));
@@ -63,8 +61,7 @@ void dissolve(const command_t& argv, GameObj& g) {
     auto ship_handle = g.entity_manager.get_ship(i);
     if (!ship_handle.get() || ship_handle->owner() != Playernum) continue;
     g.entity_manager.kill_ship(Playernum, *ship_handle);
-    notify(Playernum, Governor,
-           std::format("Ship #{}, self-destruct enabled\n", i));
+    g.out << std::format("Ship #{}, self-destruct enabled\n", i);
   }
 
   for (auto star_handle : StarList(g.entity_manager)) {

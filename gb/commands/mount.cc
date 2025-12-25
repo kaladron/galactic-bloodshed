@@ -22,8 +22,7 @@ void mount(const command_t& argv, GameObj& g) {
     if (!authorized(Governor, ship)) continue;
 
     if (!ship.mount()) {
-      notify(Playernum, Governor,
-             "This ship is not equipped with a crystal mount.\n");
+      g.out << "This ship is not equipped with a crystal mount.\n";
       continue;
     }
     if (ship.mounted() && mnt) {
@@ -44,9 +43,8 @@ void mount(const command_t& argv, GameObj& g) {
       g.out << "Mounted.\n";
     } else if (ship.mounted() && !mnt) {
       if (ship.crystals() == max_crystals(ship)) {
-        notify(Playernum, Governor,
-               "You can't dismount the crystal. Max "
-               "allowed already on board.\n");
+        g.out << "You can't dismount the crystal. Max "
+                 "allowed already on board.\n";
         continue;
       }
       ship.mounted() = 0;

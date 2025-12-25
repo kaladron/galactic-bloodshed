@@ -65,9 +65,8 @@ void grant(const command_t& argv, GameObj& g) {
            std::format("\"{}\" granted you {} at {}\n",
                        race.governor[Governor].name, ship_to_string(ship),
                        prin_ship_orbits(g.entity_manager, ship)));
-      notify(Playernum, Governor,
-             std::format("{} granted to \"{}\"\n", ship_to_string(ship),
-                         race.governor[gov].name));
+      g.out << std::format("{} granted to \"{}\"\n", ship_to_string(ship),
+                           race.governor[gov].name);
     }
   } else if (argv[2] == "money") {
     long amount = 0;
@@ -85,13 +84,11 @@ void grant(const command_t& argv, GameObj& g) {
     else if (-amount > race.governor[gov].money)
       amount = -race.governor[gov].money;
     if (amount >= 0)
-      notify(Playernum, Governor,
-             std::format("{} money granted to \"{}\".\n", amount,
-                         race.governor[gov].name));
+      g.out << std::format("{} money granted to \"{}\".\n", amount,
+                           race.governor[gov].name);
     else
-      notify(Playernum, Governor,
-             std::format("{} money deducted from \"{}\".\n", -amount,
-                         race.governor[gov].name));
+      g.out << std::format("{} money deducted from \"{}\".\n", -amount,
+                           race.governor[gov].name);
     if (amount >= 0)
       warn(Playernum, gov,
            std::format("\"{}\" granted you {} money.\n",

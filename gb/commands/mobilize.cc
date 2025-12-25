@@ -48,10 +48,9 @@ void mobilize(const command_t& argv, GameObj& g) {
   }
 
   if (argv.size() < 2) {
-    notify(Playernum, Governor,
-           std::format("Current mobilization: {}    Quota: {}\n",
-                       planet->info(Playernum - 1).comread,
-                       planet->info(Playernum - 1).mob_set));
+    g.out << std::format("Current mobilization: {}    Quota: {}\n",
+                         planet->info(Playernum - 1).comread,
+                         planet->info(Playernum - 1).mob_set);
     return;
   }
   int sum_mob = std::stoi(argv[1]);

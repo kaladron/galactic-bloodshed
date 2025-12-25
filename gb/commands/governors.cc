@@ -98,7 +98,7 @@ void governors(const command_t& argv, GameObj& g) {
                     race->governor[i].name, race->governor[i].password,
                     race->governor[i].active ? "ACTIVE" : "INACTIVE",
                     race->governor[i].money, ctime(&race->governor[i].login));
-      notify(Playernum, Governor, line);
+      g.out << line;
     }
   } else if ((gov = std::stoi(argv[1])) > MAXGOVERNORS) {
     g.out << "No such governor.\n";

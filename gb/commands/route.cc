@@ -23,8 +23,7 @@ void route(const command_t& argv, GameObj& g) {
   const char* c;
 
   if (g.level != ScopeLevel::LEVEL_PLAN) {
-    notify(Playernum, Governor,
-           "You have to 'cs' to a planet to examine routes.\n");
+    g.out << "You have to 'cs' to a planet to examine routes.\n";
     return;
   }
   auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);

@@ -26,7 +26,7 @@ void scrap(const command_t& argv, GameObj& g) {
     if (!authorized(g.governor, s)) continue;
 
     if (s.max_crew() && !s.popn()) {
-      notify(g.player, g.governor, "Can't scrap that ship - no crew.\n");
+      g.out << "Can't scrap that ship - no crew.\n";
       continue;
     }
     if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
@@ -35,7 +35,7 @@ void scrap(const command_t& argv, GameObj& g) {
 
     const auto* star = g.entity_manager.peek_star(s.storbits());
     if (!star) {
-      notify(g.player, g.governor, "Star not found.\n");
+      g.out << "Star not found.\n";
       continue;
     }
 
@@ -50,18 +50,15 @@ void scrap(const command_t& argv, GameObj& g) {
         auto waste = std::get<WasteData>(s.special());
         toxin_amount = std::to_string(waste.toxic);
       }
-      notify(g.player, g.governor,
-             std::format("WARNING: This will release {} toxin points back "
-                         "into the atmosphere!!\n",
-                         toxin_amount));
+      g.out << std::format("WARNING: This will release {} toxin points back "
+                           "into the atmosphere!!\n",
+                           toxin_amount);
     }
 
     if (!s.docked()) {
-      notify(
-          g.player, g.governor,
-          std::format(
-              "{} is not landed or docked.\nNo resources can be reclaimed.\n",
-              ship_to_string(s)));
+      g.out << std::format(
+          "{} is not landed or docked.\nNo resources can be reclaimed.\n",
+          ship_to_string(s));
     }
 
     // Handle docked ship - use optional since EntityHandle has no default
@@ -103,47 +100,40 @@ void scrap(const command_t& argv, GameObj& g) {
     }
 
     if (s.docked()) {
-      notify(g.player, g.governor,
-             std::format("{}: original cost: {}\n", ship_to_string(s),
-                         shipcost(s)));
-      notify(g.player, g.governor,
-             std::format("         scrap value{}: {} rp's.\n",
-                         s.resource() ? "(with stockpile) " : "", scrapval));
+      g.out << std::format("{}: original cost: {}\n", ship_to_string(s),
+                           shipcost(s));
+      g.out << std::format("         scrap value{}: {} rp's.\n",
+                           s.resource() ? "(with stockpile) " : "", scrapval);
 
       if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
           s2->resource() + scrapval > max_resource(*s2) &&
           s2->type() != ShipType::STYPE_SHUTTLE) {
         scrapval = max_resource(*s2) - s2->resource();
-        notify(
-            g.player, g.governor,
-            std::format("(There is only room for {} resources.)\n", scrapval));
+        g.out << std::format("(There is only room for {} resources.)\n",
+                             scrapval);
       }
 
       if (s.fuel()) {
-        notify(g.player, g.governor,
-               std::format("Fuel recovery: {:.0f}.\n", s.fuel()));
+        g.out << std::format("Fuel recovery: {:.0f}.\n", s.fuel());
         fuelval = s.fuel();
         if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
             s2->fuel() + fuelval > max_fuel(*s2)) {
           fuelval = max_fuel(*s2) - s2->fuel();
-          notify(
-              g.player, g.governor,
-              std::format("(There is only room for {:.2f} fuel.)\n", fuelval));
+          g.out << std::format("(There is only room for {:.2f} fuel.)\n",
+                               fuelval);
         }
       } else {
         fuelval = 0.0;
       }
 
       if (s.destruct()) {
-        notify(g.player, g.governor,
-               std::format("Weapons recovery: {}.\n", s.destruct()));
+        g.out << std::format("Weapons recovery: {}.\n", s.destruct());
         destval = s.destruct();
         if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
             s2->destruct() + destval > max_destruct(*s2)) {
           destval = max_destruct(*s2) - s2->destruct();
-          notify(
-              g.player, g.governor,
-              std::format("(There is only room for {} destruct.)\n", destval));
+          g.out << std::format("(There is only room for {} destruct.)\n",
+                               destval);
         }
       } else {
         destval = 0;
@@ -154,23 +144,21 @@ void scrap(const command_t& argv, GameObj& g) {
             sect->get_owner() > 0 && sect->get_owner() != g.player) {
           g.out << "You don't own this sector; no crew can be recovered.\n";
         } else {
-          notify(g.player, g.governor,
-                 std::format("Population/Troops recovery: {}/{}.\n", s.popn(),
-                             s.troops()));
+          g.out << std::format("Population/Troops recovery: {}/{}.\n", s.popn(),
+                               s.troops());
           troopval = s.troops();
           if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
               s2->troops() + troopval > max_mil(*s2)) {
             troopval = max_mil(*s2) - s2->troops();
-            notify(
-                g.player, g.governor,
-                std::format("(There is only room for {} troops.)\n", troopval));
+            g.out << std::format("(There is only room for {} troops.)\n",
+                                 troopval);
           }
           crewval = s.popn();
           if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
               s2->popn() + crewval > max_crew(*s2)) {
             crewval = max_crew(*s2) - s2->popn();
-            notify(g.player, g.governor,
-                   std::format("(There is only room for {} crew.)\n", crewval));
+            g.out << std::format("(There is only room for {} crew.)\n",
+                                 crewval);
           }
         }
       } else {
@@ -187,12 +175,10 @@ void scrap(const command_t& argv, GameObj& g) {
           if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
               s2->crystals() + xtalval > max_crystals(*s2)) {
             xtalval = max_crystals(*s2) - s2->crystals();
-            notify(g.player, g.governor,
-                   std::format("(There is only room for {} crystals.)\n",
-                               xtalval));
+            g.out << std::format("(There is only room for {} crystals.)\n",
+                                 xtalval);
           }
-          notify(g.player, g.governor,
-                 std::format("Crystal recovery: {}.\n", xtalval));
+          g.out << std::format("Crystal recovery: {}.\n", xtalval);
         }
       } else {
         xtalval = 0;
@@ -241,9 +227,8 @@ void scrap(const command_t& argv, GameObj& g) {
           planet.info(g.player - 1).numsectsowned++;
           planet.info(g.player - 1).popn += crewval;
           planet.info(g.player - 1).popn += troopval;
-          notify(
-              g.player, g.governor,
-              std::format("Sector {},{} Colonized.\n", s.land_x(), s.land_y()));
+          g.out << std::format("Sector {},{} Colonized.\n", s.land_x(),
+                               s.land_y());
         }
         planet.info(g.player - 1).resource += scrapval;
         planet.popn() += crewval;

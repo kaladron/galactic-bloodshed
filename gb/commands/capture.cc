@@ -49,9 +49,8 @@ void capture(const command_t& argv, GameObj& g) {
     shipnum_t shipno = ship.number();
     if (ship.owner() != Playernum) {
       if (!landed(ship)) {
-        notify(Playernum, Governor,
-               std::format("{} #{} is not landed on a planet.\n",
-                           Shipnames[ship.type()], shipno));
+        g.out << std::format("{} #{} is not landed on a planet.\n",
+                             Shipnames[ship.type()], shipno);
 
         continue;
       }
@@ -80,10 +79,9 @@ void capture(const command_t& argv, GameObj& g) {
       auto& sect = smap.get(x, y);
 
       if (sect.get_owner() != Playernum) {
-        notify(Playernum, Governor,
-               std::format(
-                   "You don't own the sector where the ship is landed [{}].\n",
-                   sect.get_owner()));
+        g.out << std::format(
+            "You don't own the sector where the ship is landed [{}].\n",
+            sect.get_owner());
         continue;
       }
 
@@ -264,9 +262,8 @@ void capture(const command_t& argv, GameObj& g) {
       if (shipdam) {
         telegram += std::format("Total damage: {}% (now {}%)\n", shipdam,
                                 ship.damage());
-        notify(Playernum, Governor,
-               std::format("Damage inflicted:  Them: {}% (now {}%)\n", shipdam,
-                           ship.damage()));
+        g.out << std::format("Damage inflicted:  Them: {}% (now {}%)\n",
+                             shipdam, ship.damage());
       }
 
       if (!ship.alive()) {
@@ -280,15 +277,13 @@ void capture(const command_t& argv, GameObj& g) {
       if (ship.owner() == Playernum) {
         notify(oldowner, oldgov,
                std::format("{} CAPTURED!\n", ship_to_string(ship)));
-        notify(Playernum, Governor, "VICTORY! The ship is yours!\n");
+        g.out << "VICTORY! The ship is yours!\n";
         if (what == PopulationType::CIV)
-          notify(Playernum, Governor,
-                 std::format("{} boarders move in.\n",
-                             std::min(boarders, ship.popn())));
+          g.out << std::format("{} boarders move in.\n",
+                               std::min(boarders, ship.popn()));
         else if (what == PopulationType::MIL)
-          notify(Playernum, Governor,
-                 std::format("{} troops move in.\n",
-                             std::min(boarders, ship.troops())));
+          g.out << std::format("{} troops move in.\n",
+                               std::min(boarders, ship.troops()));
         capture_stuff(ship, g);
         auto short_buf = std::format(
             "{}: {} [{}] CAPTURED {}\n", dispshiploc(g.entity_manager, ship),
@@ -318,11 +313,10 @@ void capture(const command_t& argv, GameObj& g) {
             std::format("Casualties: Yours: {} civ/{} mil, Theirs: {} {}\n",
                         casualties1, casualties2, casualties,
                         what == PopulationType::CIV ? "civ" : "mil");
-        notify(Playernum, Governor,
-               std::format("Casualties: Yours: {} {}, Theirs: {} civ/{} mil\n",
-                           casualties,
-                           what == PopulationType::CIV ? "civ" : "mil",
-                           casualties1, casualties2));
+        g.out << std::format(
+            "Casualties: Yours: {} {}, Theirs: {} civ/{} mil\n", casualties,
+            what == PopulationType::CIV ? "civ" : "mil", casualties1,
+            casualties2);
       }
       warn(oldowner, oldgov, telegram);
       if (ship.owner() != oldowner || !ship.alive()) {

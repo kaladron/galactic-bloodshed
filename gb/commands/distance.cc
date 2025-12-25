@@ -26,12 +26,12 @@ void distance(const command_t& argv, GameObj& g) {
 
   Place from{g, argv[1], true};
   if (from.err) {
-    notify(Playernum, Governor, std::format("Bad scope '{}'\n", argv[1]));
+    g.out << std::format("Bad scope '{}'\n", argv[1]);
     return;
   }
   Place to{g, argv[2], true};
   if (to.err) {
-    notify(Playernum, Governor, std::format("Bad scope '{}'\n", argv[2]));
+    g.out << std::format("Bad scope '{}'\n", argv[2]);
   }
 
   x0 = 0.0;
@@ -110,6 +110,6 @@ void distance(const command_t& argv, GameObj& g) {
   }
   /* compute the distance */
   dist = sqrt(Distsq(x0, y0, x1, y1));
-  notify(Playernum, Governor, std::format("Distance = {}\n", dist));
+  g.out << std::format("Distance = {}\n", dist);
 }
 }  // namespace GB::commands

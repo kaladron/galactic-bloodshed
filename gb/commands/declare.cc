@@ -45,14 +45,12 @@ void declare(const command_t& argv, GameObj& g) {
               g.level == ScopeLevel::LEVEL_PLAN)) {
     const auto& star = *g.entity_manager.peek_star(g.snum);
     if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
-      notify(Playernum, Governor,
-             std::format("You don't have enough AP's ({})\n", APcount));
+      g.out << std::format("You don't have enough AP's ({})\n", APcount);
       return;
     }
     deductAPs(g, APcount, g.snum);
   } else {
-    notify(Playernum, Governor,
-           std::format("You don't have enough AP's ({})\n", APcount));
+    g.out << std::format("You don't have enough AP's ({})\n", APcount);
     return;
   }
 
@@ -72,10 +70,9 @@ void declare(const command_t& argv, GameObj& g) {
       setbit(race.allied, n);
       clrbit(race.atwar, n);
       if (success(5)) {
-        notify(Playernum, Governor,
-               "But would you want your sister to marry one?\n");
+        g.out << "But would you want your sister to marry one?\n";
       } else {
-        notify(Playernum, Governor, "Good for you.\n");
+        g.out << "Good for you.\n";
       }
       warn_race(
           g.entity_manager, n,
@@ -90,7 +87,7 @@ void declare(const command_t& argv, GameObj& g) {
     case 'n':
       clrbit(race.allied, n);
       clrbit(race.atwar, n);
-      notify(Playernum, Governor, "Done.\n");
+      g.out << "Done.\n";
 
       warn_race(
           g.entity_manager, n,
@@ -105,11 +102,10 @@ void declare(const command_t& argv, GameObj& g) {
       setbit(race.atwar, n);
       clrbit(race.allied, n);
       if (success(4)) {
-        notify(Playernum, Governor,
-               "Your enemies flaunt their secondary male reproductive glands "
-               "in your\ngeneral direction.\n");
+        g.out << "Your enemies flaunt their secondary male reproductive glands "
+                 "in your\ngeneral direction.\n";
       } else {
-        notify(Playernum, Governor, "Give 'em hell!\n");
+        g.out << "Give 'em hell!\n";
       }
       warn_race(g.entity_manager, n,
                 std::format(" Player #{} ({}) has declared war against you!\n",

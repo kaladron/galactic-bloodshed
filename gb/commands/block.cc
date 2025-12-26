@@ -130,9 +130,14 @@ void block(const command_t& argv, GameObj& g) {
     g.out << table << "\n";
   } else {
     /* list power report for all the alliance blocks (as of the last update) */
+    std::string time_str = std::asctime(std::localtime(&Power_blocks.time));
+    // Remove trailing newline from asctime
+    if (!time_str.empty() && time_str.back() == '\n') {
+      time_str.pop_back();
+    }
     g.out << std::format(
         "         ========== Alliance Blocks as of {} ==========\n",
-        std::asctime(std::localtime(&Power_blocks.time)));
+        time_str);
 
     tabulate::Table table;
     table.format().hide_border().column_separator("  ");
@@ -156,7 +161,7 @@ void block(const command_t& argv, GameObj& g) {
 
     for (auto i = 1; i <= g.entity_manager.num_races(); i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
-      if (!block_i || !block_i->VPs) continue;
+      if (!block_i || Power_blocks.members[i - 1] == 0) continue;
 
       table.add_row(
           {std::format("{}", i), std::string(block_i->name),

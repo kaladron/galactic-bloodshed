@@ -610,6 +610,10 @@ add_executable(build_test_extended commands/build_test_extended.cc)
 target_link_libraries(build_test_extended PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_build_test_extended COMMAND build_test_extended)
 
+add_executable(build_table_test commands/build_table_test.cc)
+target_link_libraries(build_table_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_build_table_test COMMAND build_table_test)
+
 add_executable(capture_test commands/capture_test.cc)
 target_link_libraries(capture_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_capture_test COMMAND capture_test)

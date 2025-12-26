@@ -24,6 +24,24 @@ jobs:
         # We can use the environment variables set in your Dockerfile
         run: cmake -S . -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug
 
+      - name: Check code formatting
+        run: |
+          ninja -C build format
+          if ! git diff --quiet; then
+            echo "❌ Code formatting issues detected!"
+            echo ""
+            echo "To fix formatting, run:"
+            echo "  ninja -C build format-fix"
+            echo ""
+            echo "Files that need formatting:"
+            git diff --name-only
+            echo ""
+            echo "💡 Tip: Install pre-commit hooks to catch this locally:"
+            echo "  ./tools/install-hooks.sh"
+            exit 1
+          fi
+          echo "✅ Code formatting is correct"
+
       - name: Build
         run: cmake --build build
 

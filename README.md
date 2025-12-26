@@ -27,3 +27,45 @@ called a "client" that is run from their local computer.
 ## Licensing
 
 I received permission from the authors of GB on December 9, 2021 to relicense the game to apache2.
+
+## 🚀 Getting Started
+
+### ⚠️ First-time Setup (Required!)
+
+After cloning the repository, run this command to install git hooks:
+
+```bash
+./tools/install-hooks.sh
+```
+
+This installs a pre-commit hook that checks code formatting before each commit, preventing CI failures.
+
+### Building
+
+```bash
+cmake -S . -B build
+cmake --build build
+```
+
+### Code Formatting
+
+The project uses clang-format for consistent code style. 
+
+**Check formatting:**
+```bash
+ninja -C build format
+```
+
+**Fix formatting issues:**
+```bash
+ninja -C build format-fix
+```
+
+The pre-commit hook will automatically check formatting before commits. To bypass (not recommended):
+```bash
+git commit --no-verify
+```
+
+### Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines.

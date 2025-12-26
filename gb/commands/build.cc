@@ -13,6 +13,18 @@ import tabulate;
 module commands;
 
 namespace {
+// Get ship types sorted by complexity (simplest first)
+std::array<ShipType, NUMSTYPES> get_sorted_ship_types() {
+  std::array<ShipType, NUMSTYPES> result;
+  for (int i = 0; i < NUMSTYPES; i++) {
+    result[i] = static_cast<ShipType>(i);
+  }
+  std::ranges::sort(result, [](ShipType a, ShipType b) {
+    return complexity(a) < complexity(b);
+  });
+  return result;
+}
+
 // Create a tabulate table for ship specifications
 tabulate::Table create_ship_spec_table() {
   tabulate::Table table;
@@ -91,8 +103,8 @@ void build(const command_t& argv, GameObj& g) {
       g.out << "     - Default ship parameters -\n";
       auto table = create_ship_spec_table();
       const auto& race = *g.race;
-      for (j = 0; j < NUMSTYPES; j++) {
-        ShipType i{ShipVector[j]};
+      auto sorted_ships = get_sorted_ship_types();
+      for (ShipType i : sorted_ships) {
         if ((!Shipdata[i][ABIL_GOD]) || race.God) {
           if (race.pods || (i != ShipType::STYPE_POD)) {
             if (Shipdata[i][ABIL_PROGRAMMED]) {

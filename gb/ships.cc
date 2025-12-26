@@ -427,6 +427,21 @@ double complexity(const Ship& s) {
   return complexity_multiplier * base_tech;
 }
 
+/**
+ * @brief Calculate the complexity (tech level) for a default ship of a type.
+ *
+ * For a ship with no modifications, this returns exactly its base ABIL_TECH
+ * value. This is useful for sorting ship types by their base complexity.
+ *
+ * @param type The ShipType to get default complexity for.
+ * @return The base complexity value for this ship type.
+ */
+double complexity(ShipType type) {
+  // For an unmodified ship, complexity() returns exactly the base tech.
+  // We can compute this directly without creating a full Ship object.
+  return static_cast<double>(Shipdata[type][ABIL_TECH]);
+}
+
 bool testship(const Ship& s, GameObj& g) {
   const player_t playernum = g.player;
   const governor_t governor = g.governor;

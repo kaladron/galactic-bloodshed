@@ -36,7 +36,6 @@ static std::string start_buf;
 static std::string update_buf;
 static std::string segment_buf;
 
-static double GetComplexity(const ShipType);
 static void set_signals();
 static void help(const command_t&, GameObj&);
 static void process_command(GameObj&, const command_t& argv);
@@ -64,8 +63,6 @@ static void help_user(GameObj&);
 static int msec_diff(struct timeval, struct timeval);
 static struct timeval msec_add(struct timeval, int);
 static void save_command(DescriptorData&, const std::string&);
-static int ShipCompare(const void*, const void*);
-static void SortShips();
 
 static void check_connect(DescriptorData&, std::string_view);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
@@ -445,7 +442,6 @@ int main(int argc, char** argv) {
   // Initialize game data structures
   initialize_block_data(entity_manager);  // Ensure self-invite/self-pledge
   compute_power_blocks(entity_manager);   // Calculate alliance power stats
-  SortShips();  // Sort ship list by tech for "build ?"
 
   // Start server
   set_signals();
@@ -1293,43 +1289,3 @@ void compute_power_blocks(EntityManager& entity_manager) {
   }
 }
 
-static double GetComplexity(const ShipType ship) {
-  Ship s;
-
-  s.armor() = Shipdata[ship][ABIL_ARMOR];
-  s.guns() = Shipdata[ship][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE;
-  s.primary() = Shipdata[ship][ABIL_GUNS];
-  s.primtype() = shipdata_primary(ship);
-  s.secondary() = Shipdata[ship][ABIL_GUNS];
-  s.sectype() = shipdata_secondary(ship);
-  s.max_crew() = Shipdata[ship][ABIL_MAXCREW];
-  s.max_resource() = Shipdata[ship][ABIL_CARGO];
-  s.max_hanger() = Shipdata[ship][ABIL_HANGER];
-  s.max_destruct() = Shipdata[ship][ABIL_DESTCAP];
-  s.max_fuel() = Shipdata[ship][ABIL_FUELCAP];
-  s.max_speed() = Shipdata[ship][ABIL_SPEED];
-  s.build_type() = ship;
-  s.mount() = Shipdata[ship][ABIL_MOUNT];
-  s.hyper_drive().has = Shipdata[ship][ABIL_JUMP];
-  s.cloak() = 0;
-  s.laser() = Shipdata[ship][ABIL_LASER];
-  s.cew() = 0;
-  s.cew_range() = 0;
-  s.size() = ship_size(s);
-  s.base_mass() = getmass(s);
-  s.mass() = getmass(s);
-
-  return complexity(s);
-}
-
-static int ShipCompare(const void* S1, const void* S2) {
-  const auto* s1 = (const ShipType*)S1;
-  const auto* s2 = (const ShipType*)S2;
-  return (int)(GetComplexity(*s1) - GetComplexity(*s2));
-}
-
-static void SortShips() {
-  for (int i = 0; i < NUMSTYPES; i++)
-    ShipVector[i] = i;
-  qsort(ShipVector, NUMSTYPES, sizeof(int), ShipCompare);
-}

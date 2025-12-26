@@ -913,6 +913,7 @@ export double cost(const Ship&);
 export double getmass(const Ship&);
 export unsigned int ship_size(const Ship&);
 export double complexity(const Ship&);
+export double complexity(ShipType);  // Complexity for default ship of this type
 export bool testship(const Ship&, GameObj&);
 export int docked(const Ship&);
 export int overloaded(const Ship&);
@@ -934,7 +935,6 @@ export void msg_OOF(EntityManager&, const Ship& ship);
 export bool followable(EntityManager&, const Ship& ship, Ship& target);
 
 export shipnum_t Num_ships;
-export int ShipVector[NUMSTYPES];
 
 export Ship** ships;
 

@@ -80,6 +80,20 @@ export void queue_string(DescriptorData&, const std::string&);
 export void add_to_queue(std::deque<std::string>&, const std::string&);
 export void strstr_to_queue(DescriptorData&);
 
+// Diagnostic logging for invariant violations
+export constexpr bool kDebugInvariants = true;
+
+export template <typename T, typename U>
+void log_invariant_violation(
+    std::string_view entity, std::string_view field, T attempted, U clamped_to,
+    std::source_location loc = std::source_location::current()) {
+  if constexpr (kDebugInvariants) {
+    std::print(
+        stderr, "[INVARIANT] {}::{}: attempted {}, clamped to {} (at {}:{})\n",
+        entity, field, attempted, clamped_to, loc.file_name(), loc.line());
+  }
+}
+
 void Fileread(int fd, char* p, size_t num, int posn) {
   if (lseek(fd, posn, L_SET) < 0) {
     perror("Fileread 1");

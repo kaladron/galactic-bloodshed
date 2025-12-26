@@ -359,8 +359,6 @@ std::string do_prompt(GameObj& g) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  struct stat stbuf;
-
   // Create Database and EntityManager for dependency injection
   Database database{PKGSTATEDIR "gb.db"};
   EntityManager entity_manager{database};
@@ -1288,4 +1286,3 @@ void compute_power_blocks(EntityManager& entity_manager) {
     }
   }
 }
-

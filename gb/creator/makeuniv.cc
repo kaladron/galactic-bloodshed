@@ -34,26 +34,6 @@ static int planetlesschance = 0;
 static universe_struct Sdata{};
 static std::vector<Star> stars;
 
-namespace {
-void InitFile(const std::string& path, void* buffer = nullptr, size_t len = 0) {
-  const char* filename = path.c_str();
-  FILE* f = fopen(filename, "w+");
-  if (buffer != nullptr && len > 0) {
-    if (f == nullptr) {
-      std::println("Unable to open \"{}\".", filename);
-      exit(-1);
-    }
-    fwrite(buffer, len, 1, f);
-  }
-  chmod(filename, 00660);
-  fclose(f);
-}
-
-void EmptyFile(const std::string& path) {
-  InitFile(path);
-}
-};  // namespace
-
 int main(int argc, char* argv[]) {
   int c;
   int i;
@@ -178,7 +158,8 @@ usage:
   }
 
   // Count non-asteroid planets for victory conditions
-  Sdata.planet_count = static_cast<planetnum_t>(db.count_non_asteroid_planets());
+  Sdata.planet_count =
+      static_cast<planetnum_t>(db.count_non_asteroid_planets());
 
 #if 0
   /* 
@@ -214,14 +195,6 @@ usage:
   for (starnum_t star = 0; star < Sdata.numstars; star++) {
     star_repo.save(stars[star]);
   }
-  chmod(STARDATAFL, 00660);
-
-  EmptyFile(SHIPDATAFL);
-  EmptyFile(SHIPFREEDATAFL);
-  EmptyFile(COMMODDATAFL);
-  EmptyFile(COMMODFREEDATAFL);
-  EmptyFile(PLAYERDATAFL);
-  EmptyFile(RACEDATAFL);
 
   // Initialize power and block array for all players
   {
@@ -250,14 +223,6 @@ usage:
     EmptyFile(str) ;
     }
 #endif
-
-  /*
-   * News files: directory and the 4 types of news. */
-  mkdir(NEWSDIR, 00770);
-  EmptyFile(DECLARATIONFL);
-  EmptyFile(TRANSFERFL);
-  EmptyFile(COMBATFL);
-  EmptyFile(ANNOUNCEFL);
 
   PrintStatistics();
 

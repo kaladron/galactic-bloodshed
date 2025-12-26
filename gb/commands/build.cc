@@ -53,20 +53,19 @@ tabulate::Table create_ship_spec_table() {
 }
 
 void add_ship_spec_row(tabulate::Table& table, ShipType i, const Race& race) {
-  table.add_row(
-      {std::string(1, Shipltrs[i]), std::string(Shipnames[i]),
-       std::format("{}", Shipdata[i][ABIL_CARGO]),
-       std::format("{}", Shipdata[i][ABIL_HANGER]),
-       std::format("{}", Shipdata[i][ABIL_ARMOR]),
-       std::format("{}", Shipdata[i][ABIL_DESTCAP]),
-       std::format("{}", Shipdata[i][ABIL_GUNS]),
-       std::format("{}", Shipdata[i][ABIL_PRIMARY]),
-       std::format("{}", Shipdata[i][ABIL_SECONDARY]),
-       std::format("{}", Shipdata[i][ABIL_FUELCAP]),
-       std::format("{}", Shipdata[i][ABIL_MAXCREW]),
-       std::format("{}", Shipdata[i][ABIL_SPEED]),
-       std::format("{:.0f}", (double)Shipdata[i][ABIL_TECH]),
-       std::format("{}", Shipcost(i, race))});
+  table.add_row({std::string(1, Shipltrs[i]), std::string(Shipnames[i]),
+                 std::format("{}", Shipdata[i][ABIL_CARGO]),
+                 std::format("{}", Shipdata[i][ABIL_HANGER]),
+                 std::format("{}", Shipdata[i][ABIL_ARMOR]),
+                 std::format("{}", Shipdata[i][ABIL_DESTCAP]),
+                 std::format("{}", Shipdata[i][ABIL_GUNS]),
+                 std::format("{}", Shipdata[i][ABIL_PRIMARY]),
+                 std::format("{}", Shipdata[i][ABIL_SECONDARY]),
+                 std::format("{}", Shipdata[i][ABIL_FUELCAP]),
+                 std::format("{}", Shipdata[i][ABIL_MAXCREW]),
+                 std::format("{}", Shipdata[i][ABIL_SPEED]),
+                 std::format("{:.0f}", (double)Shipdata[i][ABIL_TECH]),
+                 std::format("{}", Shipcost(i, race))});
 }
 }  // namespace
 

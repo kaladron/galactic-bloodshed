@@ -219,8 +219,7 @@ void upgrade(const command_t& argv, GameObj& g) {
   if (netcost > dirship.resource()) {
     g.out << std::format("Old value {}r   New value {}r\n", oldcost, newcost);
     g.out << std::format(
-        "You need {} resources on board to make this modification.\n",
-        netcost);
+        "You need {} resources on board to make this modification.\n", netcost);
   } else if (netcost || race.God) {
     g.out << std::format("Old value {}r   New value {}r\n", oldcost, newcost);
     g.out << std::format("Characteristic modified at a cost of {} resources.\n",

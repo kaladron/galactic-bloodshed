@@ -239,9 +239,8 @@ bool Database::news_purge_all() {
 int Database::count_non_asteroid_planets() {
   if (!conn) return 0;
 
-  const char* sql =
-      "SELECT COUNT(*) FROM tbl_planet WHERE "
-      "json_extract(data, '$.type') != 'ASTEROID'";
+  const char* sql = "SELECT COUNT(*) FROM tbl_planet WHERE "
+                    "json_extract(data, '$.type') != 'ASTEROID'";
 
   sqlite3_stmt* stmt = nullptr;
   if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {

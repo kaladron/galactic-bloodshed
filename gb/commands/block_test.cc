@@ -46,7 +46,7 @@ int main() {
   block1.Playernum = 1;
   block1.name = "ZeroVPBlock";
   block1.motto = "We have no VPs yet";
-  block1.VPs = 0;  // Zero VPs - this was the bug case
+  block1.VPs = 0;               // Zero VPs - this was the bug case
   block1.invite = (1ULL << 1);  // Player 1 invited
   block1.pledge = (1ULL << 1);  // Player 1 pledged
 
@@ -55,7 +55,7 @@ int main() {
   block2.Playernum = 2;
   block2.name = "HasVPsBlock";
   block2.motto = "We have some VPs";
-  block2.VPs = 100;  // Non-zero VPs
+  block2.VPs = 100;             // Non-zero VPs
   block2.invite = (1ULL << 2);  // Player 2 invited
   block2.pledge = (1ULL << 2);  // Player 2 pledged
 

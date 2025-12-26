@@ -30,11 +30,10 @@ void star_locations(const command_t& argv, GameObj& g) {
     auto dist =
         std::sqrt(Distsq(star.xpos(), star.ypos(), g.lastx[1], g.lasty[1]));
     if (std::floor(dist) <= max_dist) {
-      table.add_row({std::format("{}", star.star_id()),
-                     std::string(star.get_name()),
-                     std::format("{:.0f}", star.xpos()),
-                     std::format("{:.0f}", star.ypos()),
-                     std::format("{:.0f}", dist)});
+      table.add_row(
+          {std::format("{}", star.star_id()), std::string(star.get_name()),
+           std::format("{:.0f}", star.xpos()),
+           std::format("{:.0f}", star.ypos()), std::format("{:.0f}", dist)});
     }
   }
 

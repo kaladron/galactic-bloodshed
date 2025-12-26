@@ -30,19 +30,19 @@ void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
 
       std::string autorep = pl.info(Playernum - 1).autorep ? "*" : " ";
 
-      table.add_row({std::string(1, Psymbol[pl.type()]),
-                     std::format("{}/{}", star4, planet4),
-                     autorep,
-                     std::format("{}", star_ref.governor(Playernum - 1)),
-                     std::format("{:.4f}", pl.info(Playernum - 1).prod_tech),
-                     std::format("{}", pl.total_resources()),
-                     std::format("{}", pl.info(Playernum - 1).prod_crystals),
-                     std::format("{}", pl.info(Playernum - 1).prod_res),
-                     std::format("{}", pl.info(Playernum - 1).prod_dest),
-                     std::format("{}", pl.info(Playernum - 1).prod_fuel),
-                     std::format("{}", pl.info(Playernum - 1).prod_money),
-                     std::format("{}", pl.info(Playernum - 1).tox_thresh),
-                     std::format("{:.2f}", pl.info(Playernum - 1).est_production)});
+      table.add_row(
+          {std::string(1, Psymbol[pl.type()]),
+           std::format("{}/{}", star4, planet4), autorep,
+           std::format("{}", star_ref.governor(Playernum - 1)),
+           std::format("{:.4f}", pl.info(Playernum - 1).prod_tech),
+           std::format("{}", pl.total_resources()),
+           std::format("{}", pl.info(Playernum - 1).prod_crystals),
+           std::format("{}", pl.info(Playernum - 1).prod_res),
+           std::format("{}", pl.info(Playernum - 1).prod_dest),
+           std::format("{}", pl.info(Playernum - 1).prod_fuel),
+           std::format("{}", pl.info(Playernum - 1).prod_money),
+           std::format("{}", pl.info(Playernum - 1).tox_thresh),
+           std::format("{:.2f}", pl.info(Playernum - 1).est_production)});
     }
   }
 }
@@ -56,22 +56,33 @@ void production(const command_t& argv, GameObj& g) {
   table.format().hide_border().column_separator("  ");
 
   // Configure columns
-  table.column(0).format().width(1);   // Planet type symbol
-  table.column(1).format().width(9);   // Star/Planet
-  table.column(2).format().width(1);   // Autorep flag
-  table.column(3).format().width(3).font_align(tabulate::FontAlign::right);   // Gov
-  table.column(4).format().width(8).font_align(tabulate::FontAlign::right);   // Tech
-  table.column(5).format().width(8).font_align(tabulate::FontAlign::right);   // Deposit
-  table.column(6).format().width(3).font_align(tabulate::FontAlign::right);   // Crystals
-  table.column(7).format().width(6).font_align(tabulate::FontAlign::right);   // Res
-  table.column(8).format().width(5).font_align(tabulate::FontAlign::right);   // Dest
-  table.column(9).format().width(6).font_align(tabulate::FontAlign::right);   // Fuel
-  table.column(10).format().width(6).font_align(tabulate::FontAlign::right);  // Tax
-  table.column(11).format().width(3).font_align(tabulate::FontAlign::right);  // Tox
-  table.column(12).format().width(8).font_align(tabulate::FontAlign::right);  // Est prod
+  table.column(0).format().width(1);  // Planet type symbol
+  table.column(1).format().width(9);  // Star/Planet
+  table.column(2).format().width(1);  // Autorep flag
+  table.column(3).format().width(3).font_align(
+      tabulate::FontAlign::right);  // Gov
+  table.column(4).format().width(8).font_align(
+      tabulate::FontAlign::right);  // Tech
+  table.column(5).format().width(8).font_align(
+      tabulate::FontAlign::right);  // Deposit
+  table.column(6).format().width(3).font_align(
+      tabulate::FontAlign::right);  // Crystals
+  table.column(7).format().width(6).font_align(
+      tabulate::FontAlign::right);  // Res
+  table.column(8).format().width(5).font_align(
+      tabulate::FontAlign::right);  // Dest
+  table.column(9).format().width(6).font_align(
+      tabulate::FontAlign::right);  // Fuel
+  table.column(10).format().width(6).font_align(
+      tabulate::FontAlign::right);  // Tax
+  table.column(11).format().width(3).font_align(
+      tabulate::FontAlign::right);  // Tox
+  table.column(12).format().width(8).font_align(
+      tabulate::FontAlign::right);  // Est prod
 
   // Add header
-  table.add_row({"", "Planet", "", "gov", "tech", "deposit", "x", "res", "des", "fuel", "tax", "tox", "est prod"});
+  table.add_row({"", "Planet", "", "gov", "tech", "deposit", "x", "res", "des",
+                 "fuel", "tax", "tox", "est prod"});
   table[0].format().font_style({tabulate::FontStyle::bold});
 
   if (argv.size() < 2)

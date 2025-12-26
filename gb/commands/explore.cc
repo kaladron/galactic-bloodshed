@@ -53,12 +53,12 @@ void explore(const command_t& argv, GameObj& g) {
 
         // Configure columns
         table.column(0).format().width(3).font_align(
-            tabulate::FontAlign::right);                      // #
-        table.column(1).format().width(15);                   // Planet
-        table.column(2).format().width(30);                   // Attributes
-        table.column(3).format().width(12);                   // Type
+            tabulate::FontAlign::right);     // #
+        table.column(1).format().width(15);  // Planet
+        table.column(2).format().width(30);  // Attributes
+        table.column(3).format().width(12);  // Type
         table.column(4).format().width(6).font_align(
-            tabulate::FontAlign::right);                      // Compat
+            tabulate::FontAlign::right);  // Compat
 
         // Add header
         table.add_row({"#", "Planet", "Attributes", "Type", "Compat"});

@@ -136,8 +136,7 @@ void block(const command_t& argv, GameObj& g) {
       time_str.pop_back();
     }
     g.out << std::format(
-        "         ========== Alliance Blocks as of {} ==========\n",
-        time_str);
+        "         ========== Alliance Blocks as of {} ==========\n", time_str);
 
     tabulate::Table table;
     table.format().hide_border().column_separator("  ");

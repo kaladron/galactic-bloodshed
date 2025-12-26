@@ -15,12 +15,12 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
                    const Race& r, player_t i, int rank) {
   std::string rank_col = (rank != 0) ? std::format("{}", rank) : "";
 
-  std::string alliance_them = isset(race.allied, i)    ? "+"
-                              : isset(race.atwar, i)   ? "-"
-                                                       : " ";
-  std::string alliance_us = isset(r.allied, race.Playernum)    ? "+"
-                            : isset(r.atwar, race.Playernum)   ? "-"
-                                                               : " ";
+  std::string alliance_them = isset(race.allied, i)  ? "+"
+                              : isset(race.atwar, i) ? "-"
+                                                     : " ";
+  std::string alliance_us = isset(r.allied, race.Playernum)  ? "+"
+                            : isset(r.atwar, race.Playernum) ? "-"
+                                                             : " ";
 
   const auto* power_ptr = em.peek_power(i);
   if (!power_ptr) return;
@@ -33,10 +33,8 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
     know_col = std::format("{}%", race.translate[i - 1]);
   }
 
-  table.add_row({rank_col,
-                 std::format("[{:2d}]", i),
-                 alliance_them + alliance_us,
-                 std::string(r.name),
+  table.add_row({rank_col, std::format("[{:2d}]", i),
+                 alliance_them + alliance_us, std::string(r.name),
                  Estimate_i((int)r.victory_score, race, i),
                  Estimate_i((int)power_ptr->troops, race, i),
                  Estimate_i((int)power_ptr->popn, race, i),
@@ -46,8 +44,7 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
                  Estimate_i((int)power_ptr->resource, race, i),
                  Estimate_i((int)power_ptr->fuel, race, i),
                  Estimate_i((int)power_ptr->destruct, race, i),
-                 Estimate_i((int)r.morale, race, i),
-                 know_col});
+                 Estimate_i((int)r.morale, race, i), know_col});
 }
 }  // namespace
 
@@ -72,21 +69,33 @@ void power(const command_t& argv, GameObj& g) {
   table.format().hide_border().column_separator("  ");
 
   // Configure columns
-  table.column(0).format().width(4).font_align(tabulate::FontAlign::right);   // rank
-  table.column(1).format().width(4);                                           // #
-  table.column(2).format().width(2);                                           // alliance
-  table.column(3).format().width(15);                                          // name
-  table.column(4).format().width(5).font_align(tabulate::FontAlign::right);   // VP
-  table.column(5).format().width(5).font_align(tabulate::FontAlign::right);   // mil
-  table.column(6).format().width(5).font_align(tabulate::FontAlign::right);   // civ
-  table.column(7).format().width(5).font_align(tabulate::FontAlign::right);   // cash
-  table.column(8).format().width(5).font_align(tabulate::FontAlign::right);   // ship
-  table.column(9).format().width(3).font_align(tabulate::FontAlign::right);   // pl
-  table.column(10).format().width(5).font_align(tabulate::FontAlign::right);  // res
-  table.column(11).format().width(5).font_align(tabulate::FontAlign::right);  // fuel
-  table.column(12).format().width(5).font_align(tabulate::FontAlign::right);  // dest
-  table.column(13).format().width(5).font_align(tabulate::FontAlign::right);  // morl
-  table.column(14).format().width(5).font_align(tabulate::FontAlign::right);  // know/VNs
+  table.column(0).format().width(4).font_align(
+      tabulate::FontAlign::right);     // rank
+  table.column(1).format().width(4);   // #
+  table.column(2).format().width(2);   // alliance
+  table.column(3).format().width(15);  // name
+  table.column(4).format().width(5).font_align(
+      tabulate::FontAlign::right);  // VP
+  table.column(5).format().width(5).font_align(
+      tabulate::FontAlign::right);  // mil
+  table.column(6).format().width(5).font_align(
+      tabulate::FontAlign::right);  // civ
+  table.column(7).format().width(5).font_align(
+      tabulate::FontAlign::right);  // cash
+  table.column(8).format().width(5).font_align(
+      tabulate::FontAlign::right);  // ship
+  table.column(9).format().width(3).font_align(
+      tabulate::FontAlign::right);  // pl
+  table.column(10).format().width(5).font_align(
+      tabulate::FontAlign::right);  // res
+  table.column(11).format().width(5).font_align(
+      tabulate::FontAlign::right);  // fuel
+  table.column(12).format().width(5).font_align(
+      tabulate::FontAlign::right);  // dest
+  table.column(13).format().width(5).font_align(
+      tabulate::FontAlign::right);  // morl
+  table.column(14).format().width(5).font_align(
+      tabulate::FontAlign::right);  // know/VNs
 
   // Add header
   std::string rank_header = (argv.size() < 2) ? "rank" : "";

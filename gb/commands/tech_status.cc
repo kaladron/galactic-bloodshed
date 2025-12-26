@@ -44,7 +44,8 @@ void tech_report_star(GameObj& g, const Star& star, starnum_t snum,
 
     table.add_row({location, std::format("{}", pl->info(Playernum - 1).popn),
                    std::format("{}", pl->info(Playernum - 1).tech_invest),
-                   std::format("{:.3f}", gain), std::format("{:.3f}", max_gain)});
+                   std::format("{:.3f}", gain),
+                   std::format("{:.3f}", max_gain)});
 
     totals.invest += pl->info(Playernum - 1).tech_invest;
     totals.gain += gain;
@@ -67,10 +68,14 @@ void tech_status(const command_t& argv, GameObj& g) {
 
   // Configure columns
   table.column(0).format().width(16);  // Planet
-  table.column(1).format().width(10).font_align(tabulate::FontAlign::right);  // popn
-  table.column(2).format().width(10).font_align(tabulate::FontAlign::right);  // invest
-  table.column(3).format().width(8).font_align(tabulate::FontAlign::right);   // gain
-  table.column(4).format().width(8).font_align(tabulate::FontAlign::right);   // ^gain
+  table.column(1).format().width(10).font_align(
+      tabulate::FontAlign::right);  // popn
+  table.column(2).format().width(10).font_align(
+      tabulate::FontAlign::right);  // invest
+  table.column(3).format().width(8).font_align(
+      tabulate::FontAlign::right);  // gain
+  table.column(4).format().width(8).font_align(
+      tabulate::FontAlign::right);  // ^gain
 
   // Add header
   table.add_row({"Planet", "popn", "invest", "gain", "^gain"});

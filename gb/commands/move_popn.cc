@@ -207,9 +207,9 @@ void move_popn(const command_t& argv, GameObj& g) {
         if (race.absorb) {
           absorbed = int_rand(0, old2popn + old3popn);
           g.out << std::format("{} alien bodies absorbed.\n", absorbed);
-          notify(old2owner, old2gov,
-                 std::format("Metamorphs have absorbed {} bodies!!!\n",
-                             absorbed));
+          notify(
+              old2owner, old2gov,
+              std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
         }
         if (what == PopulationType::CIV)
           sect2.set_popn(people + absorbed);

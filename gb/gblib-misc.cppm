@@ -94,28 +94,6 @@ void log_invariant_violation(
   }
 }
 
-void Fileread(int fd, char* p, size_t num, int posn) {
-  if (lseek(fd, posn, L_SET) < 0) {
-    perror("Fileread 1");
-    return;
-  }
-  if ((read(fd, p, num)) != num) {
-    perror("Fileread 2");
-  }
-}
-
-void Filewrite(int fd, const char* p, size_t num, int posn) {
-  if (lseek(fd, posn, L_SET) < 0) {
-    perror("Filewrite 1");
-    return;
-  }
-
-  if ((write(fd, p, num)) != num) {
-    perror("Filewrite 2");
-    return;
-  }
-}
-
 export template <typename T>
 concept Unsigned = std::is_unsigned_v<T>;
 

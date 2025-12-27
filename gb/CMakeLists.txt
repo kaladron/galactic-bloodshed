@@ -99,6 +99,15 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(tabulate)
 
+# Fetch Boost (includes Asio)
+FetchContent_Declare(
+  Boost
+  URL https://github.com/boostorg/boost/releases/download/boost-1.90.0/boost-1.90.0-cmake.tar.xz
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  EXCLUDE_FROM_ALL
+)
+FetchContent_MakeAvailable(Boost)
+
 # Include directories
 include_directories(..)
 
@@ -134,6 +143,27 @@ target_sources(
   glaze_toml_module
   PUBLIC FILE_SET CXX_MODULES FILES third_party/glaze_toml.cppm)
 target_link_libraries(glaze_toml_module PUBLIC glaze::glaze)
+
+# Create asio_standalone interface library
+add_library(asio_standalone INTERFACE)
+target_link_libraries(asio_standalone INTERFACE Boost::headers)
+target_include_directories(asio_standalone INTERFACE 
+  ${Boost_SOURCE_DIR}/libs/asio/include
+  ${Boost_SOURCE_DIR}/libs/config/include
+  ${Boost_SOURCE_DIR}/libs/core/include
+  ${Boost_SOURCE_DIR}/libs/system/include
+  ${Boost_SOURCE_DIR}/libs/throw_exception/include
+  ${Boost_SOURCE_DIR}/libs/assert/include
+  ${Boost_SOURCE_DIR}/libs/predef/include
+)
+target_compile_definitions(asio_standalone INTERFACE ASIO_STANDALONE ASIO_NO_DEPRECATED)
+
+# Create asio module wrapper library
+add_library(asio_module)
+target_sources(
+  asio_module
+  PUBLIC FILE_SET CXX_MODULES FILES third_party/asio.cppm)
+target_link_libraries(asio_module PUBLIC asio_standalone)
 
 # Executable targets
 add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
@@ -315,6 +345,10 @@ install(TARGETS GB)
 add_executable(scnlib_test scnlib_test.cc)
 target_link_libraries(scnlib_test PRIVATE scnlib_module)
 add_test(NAME GB_scnlib_test COMMAND scnlib_test)
+
+add_executable(asio_test asio_test.cc)
+target_link_libraries(asio_test PRIVATE asio_module)
+add_test(NAME GB_asio_test COMMAND asio_test)
 
 add_executable(shlmisc_test shlmisc_test.cc)
 target_link_libraries(shlmisc_test PRIVATE gblib SQLite::SQLite3)
